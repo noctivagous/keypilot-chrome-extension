@@ -1,0 +1,104 @@
+:root {
+  /* Shared UI tokens for extension pages (GUI standard). */
+  --kp-text-primary: rgba(255, 255, 255, 0.92);
+  --kp-text-secondary: rgba(235, 235, 235, 0.74);
+  --kp-text-tertiary: rgba(235, 235, 235, 0.60);
+
+  --kp-surface-subsection: rgba(255, 255, 255, 0.045);
+  --kp-surface-subsection-hover: rgba(255, 255, 255, 0.060);
+  --kp-border-subsection: rgba(255, 255, 255, 0.14);
+  --kp-border-subsection-strong: rgba(255, 255, 255, 0.18);
+
+  --kp-radius-subsection: 7px;
+  --kp-radius-subsection-inner: 5px;
+
+  --kp-font-subsection-title: 12px;
+  --kp-font-subsection-sub: 11px;
+}
+
+/* Standard accordion container */
+.kp-accordion {
+  display: grid;
+  gap: 10px;
+}
+
+/* Standard subsection panel (details/summary) */
+.kp-subsection {
+  border-radius: var(--kp-radius-subsection);
+  border: 1px solid var(--kp-border-subsection);
+  background: var(--kp-surface-subsection);
+  overflow: clip;
+}
+
+.kp-subsection:hover {
+  border-color: var(--kp-border-subsection-strong);
+}
+
+.kp-subsection-summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 10px 10px;
+  user-select: none;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.kp-subsection-summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Caret: right-pointing triangle that rotates down when open */
+.kp-subsection-summary::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 7px solid var(--kp-text-secondary);
+  opacity: 0.9;
+  margin-top: 2px;
+  transform: rotate(0deg);
+  transform-origin: 2px 5px;
+  transition: transform 140ms ease;
+}
+
+.kp-subsection[open] > .kp-subsection-summary::before {
+  transform: rotate(90deg);
+}
+
+.kp-subsection[open] > .kp-subsection-summary {
+  border-bottom: 1px solid var(--kp-border-subsection);
+}
+
+.kp-subsection-summary-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.kp-subsection-title {
+  font-size: var(--kp-font-subsection-title);
+  font-weight: 700;
+  color: var(--kp-text-secondary);
+  letter-spacing: 0.15px;
+}
+
+.kp-subsection-sub {
+  font-size: var(--kp-font-subsection-sub);
+  color: var(--kp-text-tertiary);
+}
+
+.kp-subsection-body {
+  padding: 10px 10px 10px;
+}
+
+/* Standard “inner panels” used inside subsections */
+.kp-subsection .field,
+.kp-subsection .preview {
+  border-radius: var(--kp-radius-subsection-inner);
+  margin-bottom:5px;
+}
+
+

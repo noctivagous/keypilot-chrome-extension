@@ -1,0 +1,268 @@
+:root {
+  color-scheme: dark;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: linear-gradient(rgb(18, 18, 18) 0%, rgb(11, 11, 11) 100%);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.wrap {
+  box-sizing: border-box;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 18px 18px 40px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: 0.2px;
+}
+
+.sub {
+  margin: 6px 0 0 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.95);
+  border-radius: 5px;
+  padding: 10px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.btn:hover {
+  border-color: rgba(255,255,255,0.28);
+}
+
+.btn-secondary {
+  border-color: rgba(255,140,0,0.35);
+}
+
+.card {
+  margin-top: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(15,15,15,0.8);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
+  padding: 14px 14px 12px;
+}
+
+.card h2 {
+  margin: 0 0 10px 0;
+  font-size: 15px;
+}
+
+.radio-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.radio {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px;
+  border-radius: 7px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.35);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+.radio input {
+  transform: scale(1.1);
+}
+
+.radio-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 10px;
+  border-radius: 7px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.35);
+  cursor: pointer;
+  user-select: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+.toggle:hover {
+  border-color: rgba(255,255,255,0.18);
+}
+
+.toggle input[type="checkbox"] {
+  margin-top: 2px;
+  transform: scale(1.1);
+}
+
+.toggle-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toggle-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.toggle-sub {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.hint {
+  margin: 10px 0 0 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.70);
+}
+
+/* Mode Settings (layout; visuals come from ui-standards.css) */
+.subhead {
+  margin: 0 0 10px 0;
+  font-size: 12px;
+  color: rgba(235, 235, 235, 0.78);
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 10px;
+  border-radius: 7px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.35);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+.field-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(235, 235, 235, 0.78);
+}
+
+.field-hint {
+  font-size: 11px;
+  color: rgba(235, 235, 235, 0.60);
+}
+
+.select {
+  background: rgba(0,0,0,0.35);
+  color: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 5px;
+  padding: 10px 10px;
+  font-size: 13px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.range-row {
+  display: grid;
+  grid-template-columns: 1fr 110px;
+  gap: 10px;
+  align-items: center;
+}
+
+.number {
+  background: rgba(0,0,0,0.35);
+  color: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 5px;
+  padding: 10px 10px;
+  font-size: 13px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 10px;
+  border-radius: 7px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.35);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+.preview-title {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.preview-box {
+  height: 72px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(0,0,0,0.45);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.02);
+}
+
+.preview-box img {
+  width: 60px;
+  height: 60px;
+}
+
+.row-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.btn-small {
+  padding: 8px 10px;
+}
+
+.divider {
+  height: 1px;
+  background: rgba(255,255,255,0.10);
+  margin: 12px 0;
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+}
+
+

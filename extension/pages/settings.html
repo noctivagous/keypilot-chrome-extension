@@ -1,0 +1,220 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>KeyPilot Settings</title>
+    <link rel="stylesheet" href="ui-standards.css" />
+    <link rel="stylesheet" href="settings.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="header">
+        <div>
+          <h1>KeyPilot Settings</h1>
+          <p class="sub">Changes sync across tabs automatically.</p>
+        </div>
+        <div class="header-actions">
+          <!--<button id="open-guide" class="btn btn-secondary" type="button">Open Guide</button>-->
+          <button id="close" class="btn" type="button">Close</button>
+        </div>
+      </header>
+
+      <section class="card" aria-labelledby="search-engine-title">
+        <h2 id="search-engine-title">Search engine</h2>
+        <div class="radio-group" role="radiogroup" aria-label="Search engine">
+          <label class="radio">
+            <input type="radio" name="engine" value="brave" />
+            <span>Brave</span>
+            <img src="https://www.google.com/s2/favicons?domain=brave.com&sz=16" alt="Brave" class="radio-icon" />
+          </label>
+          <label class="radio">
+            <input type="radio" name="engine" value="google" />
+            <span>Google</span>
+            <img src="https://www.google.com/s2/favicons?domain=google.com&sz=16" alt="Google" class="radio-icon" />
+          </label>
+          <label class="radio">
+            <input type="radio" name="engine" value="duckduckgo" />
+            <span>DuckDuckGo</span>
+            <img src="https://www.google.com/s2/favicons?domain=duckduckgo.com&sz=16" alt="DuckDuckGo" class="radio-icon" />
+          </label>
+        </div>
+        <p class="hint">Used by the New Tab search box and KeyPilot’s omnibox (Alt+L).</p>
+      </section>
+
+      <section class="card" aria-labelledby="keyboard-reference-title">
+        <h2 id="keyboard-reference-title">Keyboard Reference Panel</h2>
+        <label class="toggle" for="keyboard-reference-key-feedback">
+          <input id="keyboard-reference-key-feedback" type="checkbox" />
+          <div class="toggle-text">
+            <div class="toggle-title">Show pressed-key feedback</div>
+            <div class="toggle-sub">Highlights keys in the floating keyboard reference panel on keydown/keyup.</div>
+          </div>
+        </label>
+      </section>
+
+      <section class="card" aria-labelledby="mode-settings-title">
+        <h2 id="mode-settings-title">Mode Settings</h2>
+
+        <div class="kp-accordion" id="mode-settings-accordion">
+          <details class="kp-subsection" id="click-mode-details">
+            <summary class="kp-subsection-summary">
+              <div class="kp-subsection-summary-text">
+                <div class="kp-subsection-title">Click Mode</div>
+                <div class="kp-subsection-sub">Cursor + green focus rectangle behavior.</div>
+              </div>
+            </summary>
+
+            <div class="kp-subsection-body">
+              <h3 class="subhead">Cursor</h3>
+
+              <div class="grid-2">
+                <label class="field">
+                  <div class="field-label">Type</div>
+                  <select id="click-cursor-type" class="select">
+                    <option value="crosshair">Crosshair</option>
+                    <option value="native_arrow">Native arrow</option>
+                    <option value="native_pointer">Native pointer</option>
+                  </select>
+                </label>
+
+                <div class="preview">
+                  <div class="preview-title">Preview</div>
+                  <div id="click-cursor-preview" class="preview-box" aria-label="Click cursor preview"></div>
+                </div>
+              </div>
+
+              <div class="grid-2">
+                <div class="field">
+                  <div class="field-label">Line width</div>
+                  <div class="range-row">
+                    <input id="click-cursor-linewidth-range" type="range" min="1" max="12" step="1" />
+                    <input id="click-cursor-linewidth-number" class="number" type="number" min="1" max="12" step="1" />
+                  </div>
+                  <div class="field-hint">Thickness of the crosshair lines (1–12).</div>
+                </div>
+
+                <div class="field">
+                  <div class="field-label">Size</div>
+                  <div class="range-row">
+                    <input id="click-cursor-size-range" type="range" min="5" max="60" step="1" />
+                    <input id="click-cursor-size-number" class="number" type="number" min="5" max="60" step="1" />
+                  </div>
+                  <div class="field-hint">Size of the cursor in pixels (5–60px).</div>
+                </div>
+              </div>
+
+              <div class="field">
+                <div class="field-label">Gap</div>
+                <div class="range-row">
+                  <input id="click-cursor-gap-range" type="range" min="0" max="20" step="1" />
+                  <input id="click-cursor-gap-number" class="number" type="number" min="0" max="20" step="1" />
+                </div>
+                <div class="field-hint">Gap between center and crosshair bars in pixels. 0 = intersecting lines, >0 = separate bars (0–20px).</div>
+              </div>
+
+              <div class="row-actions">
+                <button id="click-cursor-reset" class="btn btn-secondary btn-small" type="button">Reset cursor to defaults</button>
+              </div>
+
+              <div class="divider"></div>
+
+              <h3 class="subhead">Focus rectangle</h3>
+
+              <label class="toggle" for="click-overlay-fill">
+                <input id="click-overlay-fill" type="checkbox" />
+                <div class="toggle-text">
+                  <div class="toggle-title">Show transparent overlay</div>
+                  <div class="toggle-sub">Adds a translucent fill inside the green focus rectangle.</div>
+                </div>
+              </label>
+
+              <div class="field">
+                <div class="field-label">Rectangle thickness</div>
+                <div class="range-row">
+                  <input id="click-rect-thickness-range" type="range" min="1" max="16" step="1" />
+                  <input id="click-rect-thickness-number" class="number" type="number" min="1" max="16" step="1" />
+                </div>
+                <div class="field-hint">Border thickness for the green focus rectangle (1–16px).</div>
+              </div>
+
+              <div class="row-actions">
+                <button id="click-mode-reset" class="btn btn-secondary btn-small" type="button">Reset Click Mode to defaults</button>
+              </div>
+            </div>
+          </details>
+
+          <details class="kp-subsection" id="text-mode-details">
+            <summary class="kp-subsection-summary">
+              <div class="kp-subsection-summary-text">
+                <div class="kp-subsection-title">Text Mode</div>
+                <div class="kp-subsection-sub">Cursor + labels + orange text-field outlines.</div>
+              </div>
+            </summary>
+
+            <div class="kp-subsection-body">
+              <h3 class="subhead">Text mode cursor</h3>
+
+              <div class="grid-2">
+                <label class="field">
+                  <div class="field-label">Type</div>
+                  <select id="text-cursor-type" class="select">
+                    <option value="t_square">T-square</option>
+                    <option value="crosshair">Crosshair</option>
+                  </select>
+                </label>
+
+                <div class="preview">
+                  <div class="preview-title">Preview</div>
+                  <div id="text-cursor-preview" class="preview-box" aria-label="Text cursor preview"></div>
+                </div>
+              </div>
+
+              <div class="row-actions">
+                <button id="text-cursor-reset" class="btn btn-secondary btn-small" type="button">Reset cursor to defaults</button>
+              </div>
+
+              <div class="divider"></div>
+
+              <h3 class="subhead">Labels & outlines</h3>
+
+              <label class="toggle" for="text-labels-enabled">
+                <input id="text-labels-enabled" type="checkbox" />
+                <div class="toggle-text">
+                  <div class="toggle-title">Show labels above and below focused text field</div>
+                  <div class="toggle-sub">Shows “Active text field” and “Press ESC to close”. Turn off for outline-only.</div>
+                </div>
+              </label>
+
+              <div class="field">
+                <div class="field-label">Stroke thickness</div>
+                <div class="range-row">
+                  <input id="text-stroke-thickness-range" type="range" min="1" max="16" step="1" />
+                  <input id="text-stroke-thickness-number" class="number" type="number" min="1" max="16" step="1" />
+                </div>
+                <div class="field-hint">Thickness of the orange text-mode outlines (1–16px).</div>
+              </div>
+
+              <div class="row-actions">
+                <button id="text-mode-reset" class="btn btn-secondary btn-small" type="button">Reset Text Mode to defaults</button>
+              </div>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>About</h2>
+        <p>
+          <!-- Settings are stored in <code>chrome.storage.sync</code> so they stay consistent across tabs. -->
+          noctivagous.com
+        </p>
+      </section>
+    </main>
+
+    <script src="popover-bridge.js"></script>
+    <script type="module" src="settings.js"></script>
+  </body>
+</html>
+
+

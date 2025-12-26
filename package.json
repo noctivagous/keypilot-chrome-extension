@@ -1,0 +1,15 @@
+{
+  "name": "keypilot-chrome-extension",
+  "version": "1.0.0",
+  "description": "KeyPilot Chrome Extension",
+  "type": "module",
+  "main": "extension/build.js",
+  "scripts": {
+    "build": "cd extension && node build.js",
+    "build:minify": "cd extension && node build.js --minify",
+    "minify": "npm run build:minify"
+  },
+  "dependencies": {
+    "terser": "^5.36.0"
+  }
+}

@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>KeyPilot New Tab</title>
+    <link rel="stylesheet" href="newtab.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">KP</div>
+        <div>
+          <div class="title">KeyPilot</div>
+          <div class="subtitle">New Tab</div>
+        </div>
+      </div>
+      <div id="focus-hint" class="focus-hint" hidden>Click this page to focus</div>
+      <div class="actions">
+        <button id="btn-settings" class="btn btn-secondary" type="button">Settings</button>
+        <button id="btn-guide" class="btn" type="button">Guide</button>
+        <label class="kp-switch" for="kp-enabled-toggle" title="Toggle KeyPilot on/off (global)">
+          <span class="kp-switch-hint">KeyPilot: <span class="kp-switch-hint-keys">(Alt+K)</span></span>
+          <input id="kp-enabled-toggle" class="kp-switch-input" type="checkbox" role="switch" aria-label="KeyPilot enabled" />
+          <span class="kp-switch-track" aria-hidden="true">
+            <span class="kp-switch-thumb" aria-hidden="true"></span>
+          </span>
+          <span id="kp-enabled-text" class="kp-switch-state" aria-hidden="true">…</span>
+        </label>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="search card" aria-label="Search">
+        <form id="search-form">
+          <input id="search-input" type="text" spellcheck="false" autocomplete="off" placeholder="Search or enter address" />
+          <button class="btn" type="submit">Go</button>
+        </form>
+        <div id="search-suggestions" class="suggestions" hidden></div>
+        <div class="search-meta">
+          <span id="engine-label">Engine: …</span>
+        </div>
+      </section>
+
+      <section class="card" aria-label="Toolbar bookmarks">
+        <h2>Toolbar bookmarks</h2>
+        <div id="toolbar-bookmarks" class="toolbar"></div>
+        <div id="toolbar-empty" class="empty" hidden>No toolbar bookmarks found.</div>
+      </section>
+
+      <section class="card" aria-label="Recent bookmarks">
+        <h2>Recent bookmarks</h2>
+        <ol id="bookmark-list" class="bookmarks"></ol>
+        <div id="bookmark-empty" class="empty" hidden>No bookmarks found.</div>
+      </section>
+    </main>
+
+    <div id="modal-root" class="modal-root" hidden></div>
+
+    <script type="module" src="newtab.js"></script>
+  </body>
+</html>
+
+

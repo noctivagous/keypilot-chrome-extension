@@ -1,0 +1,113 @@
+:root {
+  color-scheme: dark;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: linear-gradient(rgb(18, 18, 18) 0%, rgb(11, 11, 11) 100%);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.wrap {
+  box-sizing: border-box;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 18px 18px 40px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: 0.2px;
+}
+
+.sub {
+  margin: 6px 0 0 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  background: linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.03) 100%);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.92);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn:hover {
+  border-color: rgba(255,255,255,0.28);
+}
+
+.btn-secondary {
+  border-color: rgba(255,140,0,0.35);
+}
+
+.card {
+  margin-top: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(20,20,20,0.6);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+  padding: 14px 14px 12px;
+}
+
+.card h2 {
+  margin: 0 0 10px 0;
+  font-size: 15px;
+}
+
+.list {
+  margin: 0;
+  padding-left: 18px;
+  color: rgba(255,255,255,0.86);
+}
+
+.list li {
+  margin: 8px 0;
+}
+
+kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 11px;
+  padding: 1px 6px;
+  border: 1px solid #3a3a3a;
+  border-bottom-color: #2a2a2a;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #2b2b2b 0%, #1a1a1a 100%);
+  color: #f1f1f1;
+}
+
+.p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.80);
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+}
+
+

@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>KeyPilot – Text box mode practice</title>
+    <style>
+      :root { color-scheme: dark; }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+        background: radial-gradient(1200px 700px at 20% 10%, #1a2236 0%, #0b0e14 55%, #07090c 100%);
+        color: rgba(255, 255, 255, 0.92);
+      }
+      .wrap {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 26px 18px 48px;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 6px 0;
+        letter-spacing: 0.2px;
+      }
+      .sub {
+        margin: 0 0 16px 0;
+        opacity: 0.85;
+      }
+      .card {
+        margin-top: 14px;
+        padding: 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(10, 12, 18, 0.58);
+        box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+      }
+      p { line-height: 1.55; margin: 10px 0; color: rgba(255, 255, 255, 0.86); }
+      ul { margin: 10px 0 0 18px; padding: 0; line-height: 1.55; }
+      li { margin: 6px 0; }
+      kbd {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 12px;
+        padding: 2px 6px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-bottom-color: rgba(0, 0, 0, 0.6);
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.95);
+      }
+      label { display: block; font-weight: 700; margin: 0 0 6px 0; }
+      input[type="text"], textarea {
+        width: 100%;
+        box-sizing: border-box;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(255, 255, 255, 0.06);
+        color: rgba(255, 255, 255, 0.95);
+        padding: 10px 12px;
+        font-size: 14px;
+        outline: none;
+      }
+      textarea { min-height: 120px; resize: vertical; }
+      input[type="text"]:focus, textarea:focus {
+        border-color: rgba(255, 140, 0, 0.55);
+        box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.18);
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      @media (max-width: 760px) {
+        .row { grid-template-columns: 1fr; }
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.92);
+        cursor: pointer;
+        font-weight: 700;
+      }
+      .btn:hover { filter: brightness(1.08); }
+      a {
+        color: rgba(91, 226, 241, 0.95);
+        text-decoration: underline;
+      }
+      .note { font-size: 12.5px; opacity: 0.86; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Text box mode practice</h1>
+      <p class="sub">Use this page to practice how KeyPilot behaves when a text field is focused.</p>
+
+      <div class="card">
+        <p>
+          When you focus a text field (like an <kbd>input</kbd> or <kbd>textarea</kbd>), you need to type normal characters.
+          But KeyPilot’s browsing controls also use characters (like <kbd>F</kbd>, <kbd>D</kbd>, <kbd>V</kbd>…), so KeyPilot
+          temporarily switches into <strong>text box mode</strong>.
+        </p>
+        <p><strong>In text box mode:</strong></p>
+        <ul>
+          <li>Typing works normally in the focused text field.</li>
+          <li>Most KeyPilot browsing shortcuts are effectively suspended until you exit.</li>
+          <li>Press <kbd>Esc</kbd> to exit text box mode and return to normal browsing.</li>
+        </ul>
+        <p class="note">
+          If you move the mouse and hover another element, KeyPilot gives you a short window (about 3 seconds) where you can still
+          click links/buttons with <kbd>F</kbd>.
+        </p>
+      </div>
+
+      <div class="card">
+        <p><strong>Step 1: Enter text mode</strong></p>
+        <div class="row">
+          <div>
+            <label for="practice-input">Practice input</label>
+            <input id="practice-input" type="text" placeholder="Click here to focus, then type..." />
+          </div>
+          <div>
+            <label for="practice-input-2">Second input (optional)</label>
+            <input id="practice-input-2" type="text" placeholder="Try switching between fields..." />
+          </div>
+        </div>
+        <div style="margin-top: 12px;">
+          <label for="practice-textarea">Practice textarea</label>
+          <textarea id="practice-textarea" placeholder="Type a few lines here..."></textarea>
+        </div>
+        <p class="note">When you’re done typing, press <kbd>Esc</kbd> to exit text box mode.</p>
+      </div>
+
+      <div class="card">
+        <p><strong>Step 2: Practice the “hover + F click” window</strong></p>
+        <p>
+          While still in text mode, move your mouse over this link or button, then press <kbd>F</kbd> to activate it during the
+          short countdown window:
+        </p>
+        <p>
+          <a href="#practice-anchor" id="practice-link">Practice link (jumps on this page)</a>
+        </p>
+        <button class="btn" type="button" id="practice-button">Practice button (no navigation)</button>
+        <p id="practice-anchor" class="note" style="margin-top: 10px;">
+          Anchor reached. Press <kbd>Esc</kbd> to exit text mode if needed.
+        </p>
+      </div>
+
+      <script>
+        document.getElementById('practice-button')?.addEventListener('click', () => {
+          try {
+            const btn = document.getElementById('practice-button');
+            btn.textContent = 'Clicked!';
+            setTimeout(() => { btn.textContent = 'Practice button (no navigation)'; }, 900);
+          } catch {}
+        });
+      </script>
+    </div>
+  </body>
+</html>
+
+
+

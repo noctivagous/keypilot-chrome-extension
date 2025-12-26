@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<onboarding version="1">
+  <slide id="basic_navigation" title="Welcome to KeyPilot">
+   <onEnter type="overlay"
+             title="Welcome to KeyPilot"
+             message="We'll show you how to use KeyPilot one step at a time." />
+   
+    <task id="click_link" label="Hover over a link and press the `F` key to click it.">
+      <when type="action" action="activate" target="link" />
+    </task>
+    <task id="go_back" label="To go back (history), press the `D` key.">
+      <when type="action" action="back" />
+    </task>
+    <task id="keyboard_key_info" label="While hovering over a key on the Keyboard Reference window below, press `F`  
+    to find out what it does.">
+      <when type="action" action="activate" target="keyboardHelpKey" />
+    </task>
+    <task id="toggle_extension" label="Press `Alt` + `K` to turn KeyPilot completely off. Press `Alt` + `K` again to turn it back on.">
+      <when type="action" action="toggleExtension" />
+    </task>
+  </slide>
+
+  <slide id="text_box_mode" title="Text box mode">
+    <onEnter type="overlay"
+             title="Nice — KeyPilot is back on"
+             message="Next up: text mode. Click into any text field to enter text mode, and press Escape to exit." />
+    <task id="enter_text_mode" label="Focus a text field to enter text mode.">
+      <when type="mode" mode="text_focus" change="enter" />
+    </task>
+    <task id="exit_text_mode" label="Press `Escape` to exit text mode.">
+      <when type="mode" mode="text_focus" change="exit" />
+    </task>
+  </slide>
+
+  <slide id="scrolling" title="Scrolling the page">
+    <task id="scroll_down" label="Scroll down with `V`.">
+      <when type="action" action="scrollDown" />
+    </task>
+    <task id="scroll_up" label="Scroll up with `C`.">
+      <when type="action" action="scrollUp" />
+    </task>
+    <task id="scroll_top" label="Go to the top of the page with `Z`.">
+      <when type="action" action="scrollTop" />
+    </task>
+    <task id="scroll_bottom" label="Go to the bottom of the page with `X`.">
+      <when type="action" action="scrollBottom" />
+    </task>
+  </slide>
+
+  <slide id="tabs" title="Tabs">
+    <task id="open_link_new_tab" label="Click a link into a new tab (`G`).">
+      <when type="action" action="activateNewTab" target="link" />
+    </task>
+    <task id="open_link_background_tab" label="Click a link into a new tab but don't open it (`H`).">
+      <when type="action" action="activateNewTabBackground" target="link" />
+    </task>
+    <task id="open_new_tab" label="Open a new tab (`T`).">
+      <when type="action" action="newTab" />
+    </task>
+    <task id="move_tabs" label="Move between tabs (`Q` and `W`).">
+      <when type="action" action="tabLeft" />
+    </task>
+    <task id="move_tabs_2" label="Move between tabs (`Q` and `W`).">
+      <when type="action" action="tabRight" />
+    </task>
+  </slide>
+</onboarding>
+
+

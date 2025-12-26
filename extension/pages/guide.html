@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>KeyPilot Guide</title>
+    <link rel="stylesheet" href="guide.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="header">
+        <div>
+          <h1>KeyPilot Guide</h1>
+          <p class="sub">Keyboard-first navigation reference.</p>
+        </div>
+        <div class="header-actions">
+        <!--  <button id="open-settings" class="btn btn-secondary" type="button">Open Settings</button>-->
+          <button id="close" class="btn" type="button">Close</button>
+        </div>
+      </header>
+
+      <section class="card">
+        <h2>Core keys</h2>
+        <ul class="list">
+          <li><kbd>F</kbd> click element under the KeyPilot cursor</li>
+          <li><kbd>D</kbd> / <kbd>S</kbd> back</li>
+          <li><kbd>R</kbd> forward</li>
+          <li><kbd>Q</kbd> / <kbd>W</kbd> tab left/right</li>
+          <li><kbd>Alt</kbd> + <kbd>L</kbd> omnibox</li>
+          <li><kbd>Esc</kbd> cancel / exit</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>Popover</h2>
+        <ul class="list">
+          <li><kbd>E</kbd> open link-under-cursor in popover</li>
+          <li><kbd>'</kbd> open Settings popover</li>
+          <li><kbd>Z</kbd>/<kbd>X</kbd>/<kbd>C</kbd>/<kbd>V</kbd>/<kbd>B</kbd>/<kbd>N</kbd> scroll</li>
+          <li><kbd>Esc</kbd> close</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>Extension notes</h2>
+        <p class="p">
+          KeyPilot runs as a content script on normal web pages. It’s unavailable on browser-internal pages
+          like <code>chrome://</code> and the Chrome Web Store.
+        </p>
+      </section>
+    </main>
+
+    <script src="popover-bridge.js"></script>
+    <script type="module" src="guide.js"></script>
+  </body>
+</html>
+
+
