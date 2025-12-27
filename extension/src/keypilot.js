@@ -69,9 +69,9 @@ export class KeyPilot extends EventManager {
     this.rectangleIntersectionObserver = null;
     this.edgeOnlyProcessingEnabled = FEATURE_FLAGS.ENABLE_EDGE_ONLY_PROCESSING;
 
-    // Mouse movement optimization: only query every 3+ pixels (increased threshold)
+    // Mouse movement optimization: only query every 2+ pixels (increased threshold)
     this.lastQueryPosition = { x: -1, y: -1 };
-    this.MOUSE_QUERY_THRESHOLD = 3;
+    this.MOUSE_QUERY_THRESHOLD = 1;
 
     // Post-click refresh: after UI-mutating clicks, re-query under cursor once the DOM settles.
     this._postClickRefreshToken = 0;
@@ -1179,21 +1179,65 @@ export class KeyPilot extends EventManager {
 
     this.performanceMetrics.mouseQueries++;
 
-    // Use traditional element detection for accuracy
-    const under = this.detector.deepElementFromPoint(x, y);
-    // Fast path: use spatial index (RBush) via IntersectionObserverManager when available.
-    // Fall back to the existing detector heuristics for correctness.
+    // ---- Mousemove hot-path optimization ----
+    // We used to always do `deepElementFromPoint()` (DOM hit-test) then map to a clickable element.
+    // When the RBush spatial index is ready, we can often pick the best candidate without any DOM
+    // hit-testing at all, which is a large perf win on pages with heavy layout / shadow DOM.
+    //
+    // Correctness note:
+    // - RBush is a bbox pre-filter. In rare cases (overlaps, complex shapes), `elementFromPoint`
+    //   can be more accurate. We still fall back to the DOM hit-test when needed.
+    const inPopoverMode = currentState.mode === MODES.POPOVER;
+    const inDeleteMode = this.state.isDeleteMode();
+
+    let under = null;
     let clickable = null;
-    try {
-      if (this.intersectionManager && typeof this.intersectionManager.findBestInteractiveForUnderPoint === 'function') {
-        clickable = this.intersectionManager.findBestInteractiveForUnderPoint({ x, y, underEl: under });
-      }
-    } catch { /* ignore */ }
-    if (!clickable) {
+
+    // Prefer RBush when we don't *need* the exact underlying element (delete mode, popover mode).
+    // In normal hover focus, the bbox-based result is usually good enough and avoids DOM queries.
+    const canSkipUnderPointQuery = fromMouseMove && !inDeleteMode && !inPopoverMode;
+    if (canSkipUnderPointQuery) {
       try {
-        if (this.intersectionManager?.metrics) this.intersectionManager.metrics.rtreeFallbacks++;
+        if (this.intersectionManager && typeof this.intersectionManager.queryInteractiveAtPoint === 'function') {
+          const candidates = this.intersectionManager.queryInteractiveAtPoint(x, y, 0);
+          if (candidates && candidates.length) {
+            // Pick the smallest-area candidate (tends to match the "closest" interactive target).
+            // This does not require elementFromPoint().
+            let best = null;
+            let bestArea = Infinity;
+            for (const el of candidates) {
+              const r = this.intersectionManager.elementPositionCache?.get?.(el);
+              const w = r && Number(r.width);
+              const h = r && Number(r.height);
+              const area = (Number.isFinite(w) ? w : 0) * (Number.isFinite(h) ? h : 0);
+              if (area > 0 && area < bestArea) {
+                bestArea = area;
+                best = el;
+              }
+            }
+            clickable = best || candidates[0] || null;
+          }
+        }
       } catch { /* ignore */ }
-      clickable = this.detector.findClickable(under);
+    }
+
+    // If RBush didn't yield a candidate (or we require exactness), use traditional hit-testing.
+    if (!clickable || inDeleteMode || inPopoverMode) {
+      // Use traditional element detection for accuracy
+      under = this.detector.deepElementFromPoint(x, y);
+      // Fast path: use spatial index (RBush) via IntersectionObserverManager when available.
+      // Fall back to the existing detector heuristics for correctness.
+      try {
+        if (!clickable && this.intersectionManager && typeof this.intersectionManager.findBestInteractiveForUnderPoint === 'function') {
+          clickable = this.intersectionManager.findBestInteractiveForUnderPoint({ x, y, underEl: under });
+        }
+      } catch { /* ignore */ }
+      if (!clickable) {
+        try {
+          if (this.intersectionManager?.metrics) this.intersectionManager.metrics.rtreeFallbacks++;
+        } catch { /* ignore */ }
+        clickable = this.detector.findClickable(under);
+      }
     }
 
     // Popover mode is modal: only track elements inside the popover UI.
@@ -1245,6 +1289,7 @@ export class KeyPilot extends EventManager {
     
     // Track with intersection manager for performance metrics and caching.
     // Pass through computed values to avoid redundant deepElementFromPoint() work on the hot mousemove path.
+    // Note: `under` may be null when we used the RBush fast-path.
     this.intersectionManager.trackElementAtPoint(x, y, under, clickable);
 
     // Debug logging when debug mode is enabled

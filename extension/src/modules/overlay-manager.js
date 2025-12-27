@@ -383,10 +383,12 @@ export class OverlayManager {
         className: CSS_CLASSES.FOCUS_OVERLAY,
         style: `
           position: fixed;
+          left: 0;
+          top: 0;
           pointer-events: none;
           z-index: ${Z_INDEX.OVERLAYS};
           background: ${backgroundColor};
-          will-change: transform;
+          will-change: transform, width, height;
         `
       });
       document.body.appendChild(this.focusOverlay);
@@ -425,9 +427,8 @@ export class OverlayManager {
     }
     
     if (rect.width > 0 && rect.height > 0) {
-      // Set position using left/top for now (simpler than transform)
-      this.focusOverlay.style.left = `${rect.left}px`;
-      this.focusOverlay.style.top = `${rect.top}px`;
+      // Position via transform to reduce layout work (fixed + translate3d).
+      this.focusOverlay.style.transform = `translate3d(${rect.left}px, ${rect.top}px, 0)`;
       this.focusOverlay.style.width = `${rect.width}px`;
       this.focusOverlay.style.height = `${rect.height}px`;
       this.focusOverlay.style.display = 'block';

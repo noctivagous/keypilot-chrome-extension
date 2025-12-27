@@ -600,9 +600,19 @@ export class IntersectionObserverManager {
   trackElementAtPoint(x, y, element = null, clickable = null) {
     // This method is called to track elements for performance optimization
     // It doesn't replace the main element detection, just optimizes it
-    
-    const resolvedElement = element || this.elementDetector.deepElementFromPoint(x, y);
-    const resolvedClickable = clickable || this.elementDetector.findClickable(resolvedElement);
+
+    // Important: callers on hot paths may provide `clickable` but intentionally omit `element`
+    // to avoid a DOM hit-test (`elementFromPoint`). Preserve that optimization here.
+    let resolvedElement = null;
+    let resolvedClickable = null;
+
+    if (!element && !clickable) {
+      resolvedElement = this.elementDetector.deepElementFromPoint(x, y);
+      resolvedClickable = this.elementDetector.findClickable(resolvedElement);
+    } else {
+      resolvedElement = element || clickable || null;
+      resolvedClickable = clickable || (resolvedElement ? this.elementDetector.findClickable(resolvedElement) : null);
+    }
     
     // Check if we found this element in our cache (for metrics)
     if (resolvedClickable && this.visibleInteractiveElements.has(resolvedClickable)) {
