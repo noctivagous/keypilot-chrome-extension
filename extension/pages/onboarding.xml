@@ -60,9 +60,10 @@
     <task id="move_tabs" label="Move between tabs (`Q` and `W`).">
       <when type="action" action="tabLeft" />
     </task>
+    <!--
     <task id="move_tabs_2" label="Move between tabs (`Q` and `W`).">
       <when type="action" action="tabRight" />
-    </task>
+    </task>-->
   </slide>
 </onboarding>
 

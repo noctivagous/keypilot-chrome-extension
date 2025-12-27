@@ -1217,6 +1217,39 @@
     return String(text || '').replace(/`([^`]+)`/g, '<kbd>$1</kbd>');
   }
 
+  /**
+   * Render backtick-wrapped key names as real <kbd> nodes without using innerHTML.
+   * This avoids Chromium parser warnings (and potential HTML injection) if task text contains
+   * markup like <link>, <meta>, etc.
+   *
+   * @param {HTMLElement} el
+   * @param {string} text
+   */
+  function renderKeyboardKeysInto(el, text) {
+    if (!el) return;
+    const s = String(text || '');
+    try {
+      while (el.firstChild) el.removeChild(el.firstChild);
+    } catch {
+      // Fallback for unusual nodes
+      try { el.textContent = ''; } catch { /* ignore */ }
+    }
+
+    // Split on backtick-wrapped segments: even indices are plain text, odd indices are key names.
+    const parts = s.split(/`([^`]+)`/g);
+    for (let i = 0; i < parts.length; i += 1) {
+      const part = parts[i];
+      if (!part) continue;
+      if (i % 2 === 1) {
+        const k = document.createElement('kbd');
+        k.textContent = part;
+        el.appendChild(k);
+      } else {
+        el.appendChild(document.createTextNode(part));
+      }
+    }
+  }
+
   function ensureOnboardingShell() {
     try {
       if (window !== window.top) return null;
@@ -1242,7 +1275,10 @@
         width: '360px',
         maxWidth: 'calc(100vw - 24px)',
         maxHeight: 'calc(100vh - 24px)',
-        display: 'flex',
+        // IMPORTANT: keep the shell truly hidden until refreshEarlyOnboardingVisibility()
+        // computes `shouldShow`. Some pages override `[hidden]{display:none}` and inline
+        // `display:flex` can cause a flash at page load.
+        display: 'none',
         flexDirection: 'column',
         overflow: 'hidden',
         zIndex: String(Z_ONBOARDING_PANEL),
@@ -1252,7 +1288,7 @@
         borderRadius: '14px',
         boxShadow: '0 12px 34px rgba(0,0,0,0.45)',
         fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
-        pointerEvents: 'auto'
+        pointerEvents: 'none'
       });
 
       try { applyPopupThemeVars(root); } catch { /* ignore */ }
@@ -1585,7 +1621,8 @@
         }
 
         const text = document.createElement('div');
-        text.innerHTML = formatKeyboardKeys(task.label || task.id);
+        // Avoid innerHTML parsing (can emit warnings on some sites if content contains head-only tags)
+        renderKeyboardKeysInto(text, task.label || task.id);
         Object.assign(text.style, {
           fontSize: '13px',
           lineHeight: '1.35',
@@ -1643,6 +1680,31 @@
     return result;
   }
 
+  async function readEnabledState() {
+    // returns: { enabled: boolean|null }
+    const result = { enabled: null };
+    const KEY = 'keypilot_enabled';
+    const parse = (obj) => {
+      try {
+        if (!obj || typeof obj !== 'object') return;
+        if (typeof obj[KEY] === 'boolean') result.enabled = obj[KEY];
+      } catch { /* ignore */ }
+    };
+
+    try {
+      const sync = await chrome.storage.sync.get([KEY]);
+      parse(sync);
+      if (result.enabled !== null) return result;
+    } catch { /* ignore */ }
+
+    try {
+      const local = await chrome.storage.local.get([KEY]);
+      parse(local);
+    } catch { /* ignore */ }
+
+    return result;
+  }
+
   async function refreshEarlyOnboardingVisibility() {
     try {
       if (isMainExtensionLoaded) return;
@@ -1651,7 +1713,11 @@
       if (!root) return;
 
       const state = await readOnboardingState();
-      const shouldShow = state.active === true && state.completed !== true;
+      const enabledState = await readEnabledState();
+      // Conservative default: if we can't confirm enabled, do not show.
+      // This matches the bundled onboarding behavior and prevents load-time flashes.
+      const isEnabled = enabledState.enabled === true;
+      const shouldShow = isEnabled && state.active === true && state.completed !== true;
       root.hidden = !shouldShow;
       // Do not rely on [hidden] alone; some pages override it.
       root.style.display = shouldShow ? 'flex' : 'none';
@@ -1679,7 +1745,7 @@
           if (isMainExtensionLoaded) return;
           if (area !== 'sync' && area !== 'local') return;
           if (!changes) return;
-          if (!changes[ONBOARDING_ACTIVE_STORAGE_KEY] && !changes[ONBOARDING_PROGRESS_STORAGE_KEY]) return;
+          if (!changes[ONBOARDING_ACTIVE_STORAGE_KEY] && !changes[ONBOARDING_PROGRESS_STORAGE_KEY] && !changes['keypilot_enabled']) return;
           refreshEarlyOnboardingVisibility(); // async
         } catch { /* ignore */ }
       };

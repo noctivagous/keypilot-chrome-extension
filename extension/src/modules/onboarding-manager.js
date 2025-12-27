@@ -206,6 +206,11 @@ export class OnboardingManager {
     this._lastRenderedSlideIndex = null;
     this._lastAction = null;
     this._isTransitioning = false;
+
+    // Cached "enabled" state to avoid startup races.
+    // IMPORTANT: treat unknown (null) as disabled so we never show onboarding when KeyPilot is OFF.
+    this._enabledCache = null; // boolean|null
+    this._enabledCacheTs = 0;
   }
 
   /**
@@ -295,21 +300,58 @@ export class OnboardingManager {
     this._render({ transition: { type: 'slide', dir: 1 }, reason: 'manualNext' });
   }
 
-  _isKeyPilotEnabled() {
-    // When KeyPilot is toggled off, the content script may still exist but should not
-    // keep extra hotkey listeners alive. Alt+K is handled separately.
+  _readEnabledFromGlobals() {
+    // Prefer the toggle handler's authoritative state.
     try {
       const th = window.__KeyPilotToggleHandler;
       if (th && typeof th.enabled === 'boolean') return th.enabled === true;
     } catch { /* ignore */ }
 
+    // Fall back to KeyPilot instance state ONLY once initialization is complete.
+    // During startup `kp.enabled` briefly defaults to true before KP_GET_STATE resolves.
     try {
       const kp = window.__KeyPilotInstance;
-      if (kp && typeof kp.enabled === 'boolean') return kp.enabled === true;
+      if (kp && kp.initializationComplete === true && typeof kp.enabled === 'boolean') {
+        return kp.enabled === true;
+      }
     } catch { /* ignore */ }
 
-    // If we can't tell, default to "enabled" so onboarding isn't broken on unusual pages.
-    return true;
+    return null;
+  }
+
+  async _syncEnabledFromServiceWorker() {
+    // The service worker is the source of truth for global enable/disable.
+    try {
+      const resp = await chrome.runtime.sendMessage({ type: 'KP_GET_STATE' });
+      if (resp && typeof resp.enabled === 'boolean') {
+        this._enabledCache = resp.enabled === true;
+        this._enabledCacheTs = Date.now();
+        return this._enabledCache;
+      }
+    } catch {
+      // ignore and fall back
+    }
+
+    const g = this._readEnabledFromGlobals();
+    if (typeof g === 'boolean') {
+      this._enabledCache = g === true;
+      this._enabledCacheTs = Date.now();
+      return this._enabledCache;
+    }
+
+    // Conservative default: if we can't confirm enabled, treat it as disabled.
+    this._enabledCache = false;
+    this._enabledCacheTs = Date.now();
+    return this._enabledCache;
+  }
+
+  _isKeyPilotEnabled() {
+    // When KeyPilot is toggled off, the content script may still exist but should not
+    // keep extra hotkey listeners alive. Alt+K is handled separately.
+    if (typeof this._enabledCache === 'boolean') return this._enabledCache === true;
+    const g = this._readEnabledFromGlobals();
+    if (typeof g === 'boolean') return g === true;
+    return false;
   }
 
   _setShiftSlashListenerEnabled(enabled) {
@@ -368,6 +410,10 @@ export class OnboardingManager {
     } catch {
       // ignore
     }
+
+    // Prime enabled state from the service worker before we decide whether to show anything.
+    await this._syncEnabledFromServiceWorker();
+
     // Shift + / re-opens onboarding, but ONLY while KeyPilot is enabled.
     this._setShiftSlashListenerEnabled(this._isKeyPilotEnabled());
 
@@ -519,6 +565,7 @@ export class OnboardingManager {
     if (next && !this._isKeyPilotEnabled()) {
       console.log('[KeyPilot Onboarding] KeyPilot disabled, hiding panel');
       this.panel.hide();
+      this.practicePanel.hide();
       this._isTransitioning = false;
       return;
     }
@@ -560,6 +607,13 @@ export class OnboardingManager {
     const index = this._currentSlideIndex();
 
     console.log('[KeyPilot Onboarding] _render called:', { active: this.active, completed: this.progress.completed, slide: slide?.id });
+
+    // Never show onboarding UI while KeyPilot is disabled.
+    if (!this._isKeyPilotEnabled()) {
+      this.panel.hide();
+      this.practicePanel.hide();
+      return;
+    }
 
     if (!this.active || this.progress.completed || !slide) {
       console.log('[KeyPilot Onboarding] Hiding panels (not active, completed, or no slide)');
@@ -781,14 +835,16 @@ export class OnboardingManager {
       if (a === 'toggleExtension') {
         const enabled = ev?.detail?.enabled;
         if (typeof enabled === 'boolean') {
+          this._enabledCache = enabled === true;
+          this._enabledCacheTs = Date.now();
           this._setShiftSlashListenerEnabled(enabled);
           if (!enabled) {
             console.log('[KeyPilot Onboarding] Extension toggled off, hiding panel');
             this.panel.hide();
+            this.practicePanel.hide();
             return;
           } else {
-            console.log('[KeyPilot Onboarding] Extension toggled on, showing panel');
-            this.panel.show();
+            console.log('[KeyPilot Onboarding] Extension toggled on, re-rendering onboarding');
             // Re-render to ensure the panel is in the correct state
             this._render();
           }

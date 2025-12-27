@@ -270,14 +270,18 @@ setupPopoverIframeBridge();
 
 // Initialize KeyPilot only in the top frame.
 if (window === window.top) {
-  initializeKeyPilot();
+  (async () => {
+    // Ensure we query the service worker toggle state before onboarding decides whether it can show.
+    // This prevents the onboarding walkthrough from briefly appearing on new tabs when KeyPilot is OFF.
+    await initializeKeyPilot();
 
-  // Initialize onboarding walkthrough (top-level only).
-  try {
-    const onboarding = new OnboardingManager();
-    onboarding.init(); // async; fire-and-forget
-    window.__KeyPilotOnboarding = onboarding;
-  } catch (e) {
-    console.warn('[KeyPilot] Failed to initialize onboarding:', e);
-  }
+    // Initialize onboarding walkthrough (top-level only).
+    try {
+      const onboarding = new OnboardingManager();
+      await onboarding.init();
+      window.__KeyPilotOnboarding = onboarding;
+    } catch (e) {
+      console.warn('[KeyPilot] Failed to initialize onboarding:', e);
+    }
+  })();
 }
