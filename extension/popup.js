@@ -53,7 +53,7 @@ class PopupToggleController {
             this.settingsButton.addEventListener('click', this.handleOpenSettingsClick.bind(this));
         }
 
-        // Open onboarding tutorial in the active tab (Shift+/ equivalent).
+        // Open onboarding tutorial in the active tab (Alt+/ equivalent).
         if (this.tutorialButton) {
             this.tutorialButton.addEventListener('click', this.handleOpenTutorialClick.bind(this));
         }

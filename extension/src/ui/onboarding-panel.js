@@ -264,7 +264,7 @@ export class OnboardingPanel {
           lineHeight: '1.35',
           color: 'rgba(255,255,255,0.85)'
         });
-        footer.textContent = 'Tip: Press Shift + / to re-open this walkthrough later.';
+        footer.textContent = 'Tip: Press Alt + / to re-open this walkthrough later.';
 
         targetSurface.appendChild(list);
         targetSurface.appendChild(footer);

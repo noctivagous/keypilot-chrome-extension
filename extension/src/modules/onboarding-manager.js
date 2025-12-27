@@ -348,23 +348,26 @@ export class OnboardingManager {
   _isKeyPilotEnabled() {
     // When KeyPilot is toggled off, the content script may still exist but should not
     // keep extra hotkey listeners alive. Alt+K is handled separately.
-    if (typeof this._enabledCache === 'boolean') return this._enabledCache === true;
+    // Prefer the toggle handler's authoritative state even if our cache is stale.
+    // This prevents hotkeys from being captured when the extension has been toggled OFF.
     const g = this._readEnabledFromGlobals();
     if (typeof g === 'boolean') return g === true;
+
+    if (typeof this._enabledCache === 'boolean') return this._enabledCache === true;
     return false;
   }
 
-  _setShiftSlashListenerEnabled(enabled) {
+  _setAltSlashListenerEnabled(enabled) {
     const next = !!enabled;
     try {
       if (next) {
-        if (this._shiftSlashListenerInstalled) return;
+        if (this._altSlashListenerInstalled) return;
         document.addEventListener('keydown', this._onDocKeydownCapture, true);
-        this._shiftSlashListenerInstalled = true;
+        this._altSlashListenerInstalled = true;
       } else {
-        if (!this._shiftSlashListenerInstalled) return;
+        if (!this._altSlashListenerInstalled) return;
         document.removeEventListener('keydown', this._onDocKeydownCapture, true);
-        this._shiftSlashListenerInstalled = false;
+        this._altSlashListenerInstalled = false;
       }
     } catch {
       // ignore
@@ -414,8 +417,8 @@ export class OnboardingManager {
     // Prime enabled state from the service worker before we decide whether to show anything.
     await this._syncEnabledFromServiceWorker();
 
-    // Shift + / re-opens onboarding, but ONLY while KeyPilot is enabled.
-    this._setShiftSlashListenerEnabled(this._isKeyPilotEnabled());
+    // Alt + / re-opens onboarding, but ONLY while KeyPilot is enabled.
+    this._setAltSlashListenerEnabled(this._isKeyPilotEnabled());
 
     // Show/hide based on persisted active flag.
     this._render();
@@ -561,7 +564,7 @@ export class OnboardingManager {
   async setActive(active) {
     const next = !!active;
     console.log('[KeyPilot Onboarding] setActive called:', { current: this.active, next });
-    // Don't allow Shift+/ (or other triggers) to reopen onboarding while KeyPilot is disabled.
+    // Don't allow Alt+/ (or other triggers) to reopen onboarding while KeyPilot is disabled.
     if (next && !this._isKeyPilotEnabled()) {
       console.log('[KeyPilot Onboarding] KeyPilot disabled, hiding panel');
       this.panel.hide();
@@ -806,13 +809,29 @@ export class OnboardingManager {
         if (st?.mode === MODES.TEXT_FOCUS) return;
       } catch { /* ignore */ }
 
-      // Shift + / is usually "?" depending on keyboard layout.
-      const isShiftSlash =
+      // Alt + / : open/close onboarding.
+      //
+      // Notes:
+      // - Prefer `e.code === 'Slash'` because `e.key` varies by layout.
+      // - Support AltGr layouts where the browser may report Ctrl+Alt, and/or AltGraph state.
+      const isAltOrAltGraph =
         !!e &&
-        !!e.shiftKey &&
-        (e.code === 'Slash' || e.key === '?' || e.key === '/');
+        (
+          e.altKey === true ||
+          (typeof e.getModifierState === 'function' && e.getModifierState('AltGraph') === true)
+        );
 
-      if (!isShiftSlash) return;
+      const isSlashKey =
+        !!e &&
+        (
+          e.code === 'Slash' ||
+          e.key === '/' ||
+          e.key === '?'
+        );
+
+      const isAltSlash = isAltOrAltGraph && isSlashKey;
+
+      if (!isAltSlash) return;
 
       e.preventDefault();
       e.stopPropagation();
@@ -837,7 +856,7 @@ export class OnboardingManager {
         if (typeof enabled === 'boolean') {
           this._enabledCache = enabled === true;
           this._enabledCacheTs = Date.now();
-          this._setShiftSlashListenerEnabled(enabled);
+          this._setAltSlashListenerEnabled(enabled);
           if (!enabled) {
             console.log('[KeyPilot Onboarding] Extension toggled off, hiding panel');
             this.panel.hide();
