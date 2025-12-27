@@ -1181,7 +1181,20 @@ export class KeyPilot extends EventManager {
 
     // Use traditional element detection for accuracy
     const under = this.detector.deepElementFromPoint(x, y);
-    let clickable = this.detector.findClickable(under);
+    // Fast path: use spatial index (RBush) via IntersectionObserverManager when available.
+    // Fall back to the existing detector heuristics for correctness.
+    let clickable = null;
+    try {
+      if (this.intersectionManager && typeof this.intersectionManager.findBestInteractiveForUnderPoint === 'function') {
+        clickable = this.intersectionManager.findBestInteractiveForUnderPoint({ x, y, underEl: under });
+      }
+    } catch { /* ignore */ }
+    if (!clickable) {
+      try {
+        if (this.intersectionManager?.metrics) this.intersectionManager.metrics.rtreeFallbacks++;
+      } catch { /* ignore */ }
+      clickable = this.detector.findClickable(under);
+    }
 
     // Popover mode is modal: only track elements inside the popover UI.
     // This prevents the green rectangle from following the background page.
@@ -1220,13 +1233,13 @@ export class KeyPilot extends EventManager {
       // Ensure we don't stay armed without user intention.
       if (this._textModeClickArmed || currentState.focusEl) {
         this._disarmTextModeClick();
-        this.state.setFocusElement(null);
+        if (currentState.focusEl) this.state.setFocusElement(null);
       } else {
         try { this.overlayManager?.setHoverClickLabelText?.('F clicks'); } catch { /* ignore */ }
       }
 
       // Clear delete element when not in delete mode
-      this.state.setDeleteElement(null);
+      if (currentState.deleteEl) this.state.setDeleteElement(null);
       return;
     }
     
@@ -1245,8 +1258,10 @@ export class KeyPilot extends EventManager {
       });
     }
 
-    // Always update focus element (for overlays in text focus mode too)
-    this.state.setFocusElement(clickable);
+    // Reduce overlay churn: only update state if focus element actually changed.
+    if (clickable !== currentState.focusEl) {
+      this.state.setFocusElement(clickable);
+    }
 
     // In text focus mode, (re)arm countdown on mouse-move hover changes.
     if (currentState.mode === MODES.TEXT_FOCUS) {
@@ -1268,10 +1283,14 @@ export class KeyPilot extends EventManager {
           id: under?.id
         });
       }
-      this.state.setDeleteElement(under);
+      if (under !== currentState.deleteEl) {
+        this.state.setDeleteElement(under);
+      }
     } else {
       // Clear delete element when not in delete mode
-      this.state.setDeleteElement(null);
+      if (currentState.deleteEl) {
+        this.state.setDeleteElement(null);
+      }
     }
 
     // Update text selection in highlight mode

@@ -41,16 +41,29 @@ export class IntersectionObserverManager {
     // Background discovery scheduling (avoid doing heavy querySelectorAll during hot startup)
     this._discoverScheduled = false;
     this._discoverIdleHandle = null;
+
+    // ---- Spatial index (RBush) for fast hit-testing ----
+    // Populated from `elementPositionCache` for visible interactive elements.
+    // NOTE: The bundle provides `RBush` as a global symbol (vendored in src/vendor/rbush.js).
+    this._rtree = null;
+    this._rtreeItemsByElement = new Map(); // Element -> item object (kept by reference for removal)
+    this._rtreeReady = false;
+    this._rtreeMaxEntries = 16;
+    this._rtreeRemoveEquals = null; // unused (reference removal)
     
     // Performance metrics
     this.metrics = {
       cacheHits: 0,
       cacheMisses: 0,
-      observerUpdates: 0
+      observerUpdates: 0,
+      rtreeQueries: 0,
+      rtreeHits: 0,
+      rtreeFallbacks: 0
     };
   }
 
   init() {
+    this.setupSpatialIndex();
     this.setupInteractiveElementObserver();
     this.setupOverlayObserver();
     this.setupMutationObserver();
@@ -58,6 +71,30 @@ export class IntersectionObserverManager {
     // Only start periodic updates after observers are set up
     if (this.interactiveObserver && this.overlayObserver) {
       this.startPeriodicCacheUpdate();
+    }
+  }
+
+  setupSpatialIndex() {
+    // Allow disabling via global flag for quick rollback / debugging.
+    // Example: `window.KEYPILOT_DISABLE_RBUSH = true`
+    if (typeof window !== 'undefined' && window.KEYPILOT_DISABLE_RBUSH) {
+      this._rtree = null;
+      this._rtreeReady = false;
+      return;
+    }
+
+    try {
+      if (typeof RBush === 'function') {
+        this._rtree = new RBush(this._rtreeMaxEntries);
+        this._rtreeReady = true;
+      } else {
+        this._rtree = null;
+        this._rtreeReady = false;
+      }
+    } catch (e) {
+      console.warn('[KeyPilot] Failed to init RBush index:', e);
+      this._rtree = null;
+      this._rtreeReady = false;
     }
   }
 
@@ -236,6 +273,7 @@ export class IntersectionObserverManager {
     this.observedInteractiveElements.delete(el);
     this.visibleInteractiveElements.delete(el);
     this.elementPositionCache.delete(el);
+    this._rtreeRemoveElement(el);
   }
 
   observeInteractiveInSubtree(root) {
@@ -293,6 +331,7 @@ export class IntersectionObserverManager {
             } else {
               this.visibleInteractiveElements.delete(element);
               this.elementPositionCache.delete(element);
+              this._rtreeRemoveElement(element);
             }
           });
         },
@@ -418,6 +457,141 @@ export class IntersectionObserverManager {
       height: rect.height,
       timestamp: Date.now()
     });
+
+    // Keep spatial index in sync (no extra DOM reads here — uses the rect we already computed).
+    this._rtreeUpsertElementRect(element, rect);
+  }
+
+  _rtreeEnabled() {
+    if (!this._rtreeReady || !this._rtree) return false;
+    try {
+      if (typeof window !== 'undefined' && window.KEYPILOT_DISABLE_RBUSH) return false;
+    } catch { /* ignore */ }
+    return true;
+  }
+
+  _rtreeUpsertElementRect(element, rectLike) {
+    if (!this._rtreeEnabled()) return;
+    if (!element || element.nodeType !== 1) return;
+    if (!rectLike) return;
+
+    const minX = Number(rectLike.left);
+    const minY = Number(rectLike.top);
+    const maxX = Number(rectLike.right);
+    const maxY = Number(rectLike.bottom);
+    if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) return;
+
+    // Ensure non-negative/valid box.
+    if (maxX <= minX || maxY <= minY) return;
+
+    const existing = this._rtreeItemsByElement.get(element);
+    if (existing) {
+      // RBush doesn't have an explicit update; remove + reinsert by reference.
+      try { this._rtree.remove(existing); } catch { /* ignore */ }
+      existing.minX = minX;
+      existing.minY = minY;
+      existing.maxX = maxX;
+      existing.maxY = maxY;
+      try { this._rtree.insert(existing); } catch { /* ignore */ }
+      return;
+    }
+
+    const item = { minX, minY, maxX, maxY, element };
+    this._rtreeItemsByElement.set(element, item);
+    try { this._rtree.insert(item); } catch { /* ignore */ }
+  }
+
+  _rtreeRemoveElement(element) {
+    if (!this._rtreeReady || !this._rtree) return;
+    const item = this._rtreeItemsByElement.get(element);
+    if (!item) return;
+    this._rtreeItemsByElement.delete(element);
+    try { this._rtree.remove(item); } catch { /* ignore */ }
+  }
+
+  /**
+   * Query indexed interactive elements that intersect a point (optionally with a radius).
+   * Returns Elements (not RBush item objects).
+   */
+  queryInteractiveAtPoint(x, y, radiusPx = 0) {
+    if (!this._rtreeEnabled()) return [];
+
+    const px = Number(x);
+    const py = Number(y);
+    const r = Math.max(0, Number(radiusPx) || 0);
+    if (!Number.isFinite(px) || !Number.isFinite(py)) return [];
+
+    this.metrics.rtreeQueries++;
+
+    const bbox = { minX: px - r, minY: py - r, maxX: px + r, maxY: py + r };
+    let items = [];
+    try {
+      items = this._rtree.search(bbox) || [];
+    } catch {
+      items = [];
+    }
+
+    if (!items.length) return [];
+    this.metrics.rtreeHits++;
+
+    const out = [];
+    for (const it of items) {
+      const el = it && it.element;
+      if (!el || el.nodeType !== 1) continue;
+      // Guard against stale items (detached nodes).
+      try {
+        if (!document.contains(el)) {
+          this._rtreeRemoveElement(el);
+          continue;
+        }
+      } catch { /* ignore */ }
+      out.push(el);
+    }
+    return out;
+  }
+
+  /**
+   * Best-effort mapping from a deep element at the cursor to the most likely
+   * interactive element, using the spatial index as a fast pre-filter.
+   *
+   * Strategy:
+   * - Query spatial index at point.
+   * - Prefer a candidate that is `underEl` or an ancestor of `underEl` (shadow-host aware).
+   * - Otherwise choose smallest-area candidate (often best matches "closest" target).
+   */
+  findBestInteractiveForUnderPoint({ x, y, underEl }) {
+    if (!this._rtreeEnabled()) return null;
+
+    const candidates = this.queryInteractiveAtPoint(x, y, 0);
+    if (!candidates.length) return null;
+
+    // Walk up from underEl and find first matching candidate.
+    if (underEl && underEl.nodeType === 1) {
+      const candSet = new Set(candidates);
+      let n = underEl;
+      let depth = 0;
+      while (n && depth++ < 12) {
+        if (candSet.has(n)) return n;
+        // Prefer parentElement, but handle shadow root hosts as well.
+        n = n.parentElement || (n.getRootNode && n.getRootNode() instanceof ShadowRoot ? n.getRootNode().host : null);
+      }
+    }
+
+    // Otherwise choose smallest area rect.
+    let best = null;
+    let bestArea = Infinity;
+    for (const el of candidates) {
+      const rect = this.elementPositionCache.get(el);
+      const w = rect && Number(rect.width);
+      const h = rect && Number(rect.height);
+      const area = (Number.isFinite(w) ? w : 0) * (Number.isFinite(h) ? h : 0);
+      if (area > 0 && area < bestArea) {
+        bestArea = area;
+        best = el;
+      }
+    }
+
+    return best || candidates[0] || null;
   }
 
   // Track element for performance metrics and caching
@@ -561,5 +735,12 @@ export class IntersectionObserverManager {
     this.visibleInteractiveElements.clear();
     this.elementPositionCache.clear();
     this.observedInteractiveElements.clear();
+
+    if (this._rtree && this._rtree.clear) {
+      try { this._rtree.clear(); } catch { /* ignore */ }
+    }
+    this._rtree = null;
+    this._rtreeReady = false;
+    this._rtreeItemsByElement.clear();
   }
 }

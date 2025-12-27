@@ -302,6 +302,7 @@ shortcuts for common web interactions, eliminating the need for mouse navigation
 
 
 
+
 - **Automatic Detection**: Extension detects when you're in text fields
 - **Context Switching**: Only ESC key intercepted in text mode
 - **Visual Feedback**: Orange crosshair indicates text focus mode

@@ -31,6 +31,8 @@ function getBuildTimestamp(now = new Date()) {
 
 const modules = [
   'src/config/constants.js',
+  // Vendored dependencies that must be available as globals in the bundle.
+  'src/vendor/rbush.js',
   // Shared UI helpers used by multiple modules (must be defined before import-stripped consumers).
   'src/ui/url-listing.js',
   'src/modules/state-manager.js',
