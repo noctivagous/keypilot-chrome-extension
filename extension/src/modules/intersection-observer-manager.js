@@ -475,10 +475,15 @@ export class IntersectionObserverManager {
     if (!element || element.nodeType !== 1) return;
     if (!rectLike) return;
 
-    const minX = Number(rectLike.left);
-    const minY = Number(rectLike.top);
-    const maxX = Number(rectLike.right);
-    const maxY = Number(rectLike.bottom);
+    // Convert viewport coordinates (from getBoundingClientRect) to page/document coordinates
+    // This ensures the spatial index remains valid across page scrolls
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft || 0;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+
+    const minX = Number(rectLike.left) + scrollX;
+    const minY = Number(rectLike.top) + scrollY;
+    const maxX = Number(rectLike.right) + scrollX;
+    const maxY = Number(rectLike.bottom) + scrollY;
     if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) return;
 
     // Ensure non-negative/valid box.
@@ -521,9 +526,16 @@ export class IntersectionObserverManager {
     const r = Math.max(0, Number(radiusPx) || 0);
     if (!Number.isFinite(px) || !Number.isFinite(py)) return [];
 
+    // Convert viewport coordinates to page/document coordinates to match stored rects
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft || 0;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+    
+    const pageX = px + scrollX;
+    const pageY = py + scrollY;
+
     this.metrics.rtreeQueries++;
 
-    const bbox = { minX: px - r, minY: py - r, maxX: px + r, maxY: py + r };
+    const bbox = { minX: pageX - r, minY: pageY - r, maxX: pageX + r, maxY: pageY + r };
     let items = [];
     try {
       items = this._rtree.search(bbox) || [];
