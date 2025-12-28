@@ -242,6 +242,10 @@ async function initializeKeyPilot() {
   try {
     // Create KeyPilot instance
     const keyPilot = new KeyPilot();
+
+    // Store reference globally for debugging/metrics panels (used by OverlayManager debug panel)
+    // Note: this is within the content-script isolated world; it is intended for KeyPilot internals.
+    window.keyPilot = keyPilot;
     
     // Create toggle handler and wrap KeyPilot instance
     const toggleHandler = new KeyPilotToggleHandler(keyPilot);
@@ -257,7 +261,8 @@ async function initializeKeyPilot() {
     
     // Fallback: initialize KeyPilot without toggle functionality
     try {
-      new KeyPilot();
+      const keyPilot = new KeyPilot();
+      window.keyPilot = keyPilot;
       console.warn('[KeyPilot] Initialized without toggle functionality as fallback');
     } catch (fallbackError) {
       console.error('[KeyPilot] Complete initialization failure:', fallbackError);

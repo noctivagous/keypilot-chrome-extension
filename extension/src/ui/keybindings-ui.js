@@ -145,11 +145,10 @@ export function renderKeybindingsKeyboard({ container, keybindings }) {
       const binding = keybindings && keybindings[item.id];
       const baseClass = item.className || 'key';
       const className = `${baseClass}${binding && binding.keyboardClass ? ' ' + binding.keyboardClass : ''}`;
-      const keyEl = el(doc, 'div', className);
+      const keyEl = el(doc, 'button', className);
       keyEl.dataset.kpActionId = item.id;
       keyEl.dataset.kpBaseClass = baseClass;
-      keyEl.setAttribute('role', 'button');
-      keyEl.setAttribute('tabindex', '0');
+      keyEl.type = 'button'; // Prevent form submission if inside a form
       keyEl.title = (binding && (binding.description || binding.label)) || item.fallbackText || item.id;
 
       const main = el(
@@ -169,7 +168,7 @@ export function renderKeybindingsKeyboard({ container, keybindings }) {
     }
   }
 
-  // Attach popover behavior via event delegation (reusable, not tied to any page).
+  // Attach popover behavior directly to each key element (reusable, not tied to any page).
   attachKeyPopoverBehavior({
     root: container,
     keybindings
@@ -301,22 +300,41 @@ function attachKeyPopoverBehavior({ root, keybindings }) {
   const pop = ensurePopover(doc, floatingContainer);
   if (!pop) return;
 
-  // Avoid attaching twice to the same root.
-  if (root.dataset.kpPopoverBound === 'true') return;
-  root.dataset.kpPopoverBound = 'true';
-
-  function findActionKeyEl(start) {
-    let el = start;
-    while (el && el !== root) {
-      if (el.dataset && el.dataset.kpActionId) return el;
-      el = el.parentElement;
-    }
-    return null;
+  // Store handlers on the root to avoid duplicate attachments
+  if (!root._kpKeyHandlers) {
+    root._kpKeyHandlers = {
+      click: null,
+      keydown: null,
+      docClick: null,
+      docKeydown: null,
+      resize: null
+    };
   }
 
-  root.addEventListener('click', (e) => {
-    const keyEl = findActionKeyEl(e.target);
-    if (!keyEl) return;
+  // Remove existing handlers if re-attaching
+  if (root._kpKeyHandlers.click) {
+    const keyElements = root.querySelectorAll('[data-kp-action-id]');
+    keyElements.forEach(keyEl => {
+      if (root._kpKeyHandlers.click) keyEl.removeEventListener('click', root._kpKeyHandlers.click);
+      if (root._kpKeyHandlers.keydown) keyEl.removeEventListener('keydown', root._kpKeyHandlers.keydown);
+    });
+  }
+
+  function handleKeyClick(e) {
+    // Handle clicks on button or its children (e.g., .key-main, .key-label)
+    const keyEl = e.currentTarget;
+    if (!keyEl || !keyEl.dataset || !keyEl.dataset.kpActionId) {
+      // If currentTarget isn't the button (shouldn't happen), try to find it
+      const button = e.target.closest('button[data-kp-action-id]');
+      if (!button) return;
+      const actionId = button.dataset.kpActionId;
+      const binding = keybindings && keybindings[actionId];
+      if (!binding) return;
+      e.preventDefault();
+      e.stopPropagation();
+      showPopoverForTarget({ doc, pop, targetEl: button, binding, actionId, container: floatingContainer });
+      return;
+    }
 
     const actionId = keyEl.dataset.kpActionId;
     const binding = keybindings && keybindings[actionId];
@@ -325,11 +343,11 @@ function attachKeyPopoverBehavior({ root, keybindings }) {
     e.preventDefault();
     e.stopPropagation();
     showPopoverForTarget({ doc, pop, targetEl: keyEl, binding, actionId, container: floatingContainer });
-  });
+  }
 
-  root.addEventListener('keydown', (e) => {
-    const keyEl = findActionKeyEl(e.target);
-    if (!keyEl) return;
+  function handleKeyKeydown(e) {
+    const keyEl = e.currentTarget;
+    if (!keyEl || !keyEl.dataset.kpActionId) return;
     if (e.key !== 'Enter' && e.key !== ' ') return;
 
     const actionId = keyEl.dataset.kpActionId;
@@ -339,21 +357,49 @@ function attachKeyPopoverBehavior({ root, keybindings }) {
     e.preventDefault();
     e.stopPropagation();
     showPopoverForTarget({ doc, pop, targetEl: keyEl, binding, actionId, container: floatingContainer });
+  }
+
+  // Store handlers for cleanup
+  root._kpKeyHandlers.click = handleKeyClick;
+  root._kpKeyHandlers.keydown = handleKeyKeydown;
+
+  // Attach handlers directly to each key element (can be button or div depending on context)
+  const keyElements = root.querySelectorAll('[data-kp-action-id]');
+
+  if (keyElements.length === 0) {
+    console.warn('[KeyPilot] No key elements found for popover behavior in:', root);
+  }
+
+  keyElements.forEach(keyEl => {
+    keyEl.addEventListener('click', handleKeyClick);
+    keyEl.addEventListener('keydown', handleKeyKeydown);
   });
 
-  // Close popover on outside click or Escape.
-  doc.addEventListener('click', (e) => {
-    if (pop.hidden) return;
-    const insidePopover = pop.contains(e.target);
-    const insideRoot = root.contains(e.target);
-    if (!insidePopover && !insideRoot) hidePopover(pop);
-  }, true);
+  // Close popover on outside click or Escape (only attach once)
+  if (!root._kpKeyHandlers.docClick) {
+    function handleDocClick(e) {
+      if (pop.hidden) return;
+      const insidePopover = pop.contains(e.target);
+      const insideRoot = root.contains(e.target);
+      if (!insidePopover && !insideRoot) hidePopover(pop);
+    }
+    
+    function handleDocKeydown(e) {
+      if (e.key === 'Escape') hidePopover(pop);
+    }
+    
+    function handleResize() {
+      hidePopover(pop);
+    }
 
-  doc.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') hidePopover(pop);
-  }, true);
+    root._kpKeyHandlers.docClick = handleDocClick;
+    root._kpKeyHandlers.docKeydown = handleDocKeydown;
+    root._kpKeyHandlers.resize = handleResize;
 
-  window.addEventListener('resize', () => hidePopover(pop));
+    doc.addEventListener('click', handleDocClick, true);
+    doc.addEventListener('keydown', handleDocKeydown, true);
+    window.addEventListener('resize', handleResize);
+  }
 }
 
 function normalizeLegendRows(keybindings, extraRows) {

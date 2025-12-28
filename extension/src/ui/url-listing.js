@@ -60,6 +60,28 @@ export function getChromeFavicon2Url(url, size = 32) {
 }
 
 /**
+ * Extracts and formats a URL for display: removes protocol and makes domain bold.
+ * @param {string} url
+ * @returns {string} HTML string with domain bolded
+ */
+export function formatUrlForDisplay(url) {
+  const u = String(url || '').trim();
+  if (!u) return '';
+
+  try {
+    // Remove protocol (http://, https://, etc.)
+    let cleanUrl = u.replace(/^https?:\/\//i, '');
+
+    // For display, we'll just return the cleaned URL
+    // The bold formatting will be handled in the calling code
+    return cleanUrl;
+  } catch {
+    // Fallback for invalid URLs
+    return u.replace(/^https?:\/\//i, '');
+  }
+}
+
+/**
  * Preferred MV3 approach:
  * - Requires "favicon" permission in manifest.
  * - For content scripts injecting DOM into pages, the internal path must be declared
@@ -286,13 +308,28 @@ export function renderUrlListing({
     const urlEl = doc.createElement('div');
 
     let faviconEl = null;
-    const urlText = typeof getUrl === 'function' ? String(getUrl(item, idx) || '') : '';
-    const titleText = typeof getTitle === 'function' ? String(getTitle(item, idx) || '') : (urlText || '');
+    const rawUrlText = typeof getUrl === 'function' ? String(getUrl(item, idx) || '') : '';
+    const titleText = typeof getTitle === 'function' ? String(getTitle(item, idx) || '') : (rawUrlText || '');
     const metaText = typeof getMeta === 'function' ? String(getMeta(item, idx) || '') : '';
 
     titleEl.textContent = titleText;
     metaEl.textContent = metaText;
-    urlEl.textContent = urlText;
+
+    // Format URL for display: remove protocol and make domain bold
+    if (rawUrlText) {
+      const cleanUrl = formatUrlForDisplay(rawUrlText);
+      // Extract domain (everything before the first /)
+      const domainMatch = cleanUrl.match(/^([^\/]+)/);
+      if (domainMatch) {
+        const domain = domainMatch[1];
+        const rest = cleanUrl.slice(domain.length);
+        urlEl.innerHTML = `<strong>${domain}</strong>${rest}`;
+      } else {
+        urlEl.textContent = cleanUrl;
+      }
+    } else {
+      urlEl.textContent = '';
+    }
 
     if (classNames.content) content.className = classNames.content;
     if (classNames.text) text.className = classNames.text;
@@ -364,7 +401,7 @@ export function renderUrlListing({
 
     if (showFavicon) {
       const faviconUrl = typeof getFaviconUrl === 'function' ? String(getFaviconUrl(item, idx) || '') : '';
-      faviconEl = createFaviconImg(doc, urlText, { size: 18, faviconUrl });
+      faviconEl = createFaviconImg(doc, rawUrlText, { size: 18, faviconUrl });
       if (classNames.favicon) faviconEl.className = classNames.favicon;
       if (useInlineStyles) {
         Object.assign(faviconEl.style, {

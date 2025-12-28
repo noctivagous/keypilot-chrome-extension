@@ -65,6 +65,10 @@ export class KeyPilot extends EventManager {
     this.intersectionManager = new IntersectionObserverManager(this.detector);
     this.scrollManager = new OptimizedScrollManager(this.overlayManager, this.state);
     
+    // Panel tracking for negative regions
+    this._panelTrackingInterval = null;
+    this._lastPanelCheck = 0;
+    
     // Edge-only rectangle intersection observer for performance optimization
     this.rectangleIntersectionObserver = null;
     this.edgeOnlyProcessingEnabled = FEATURE_FLAGS.ENABLE_EDGE_ONLY_PROCESSING;
@@ -321,7 +325,7 @@ export class KeyPilot extends EventManager {
       // Only apply the custom cursor once we know KeyPilot is enabled.
       // This prevents a brief "cursor flash" during page load when the extension is disabled.
       this.cursor.ensure();
-      this.initializeEnabledState();
+      await this.initializeEnabledState();
     } else {
       this.initializeDisabledState();
     }
@@ -342,6 +346,12 @@ export class KeyPilot extends EventManager {
 
     // Initialize cursor position using stored coordinates or fallback
     await this.initializeCursorPosition();
+
+    // Setup PopupManager tracking (must happen after overlayManager is initialized)
+    this._setupPopupManagerTracking();
+
+    // Start panel tracking for negative regions
+    this._startPanelTracking();
 
     this.initializationComplete = true;
     this.state.setState({ isInitialized: true });
@@ -524,8 +534,19 @@ export class KeyPilot extends EventManager {
         this.floatingKeyboardHelp.setKeybindings(KEYBINDINGS);
       }
 
-      if (next) this.floatingKeyboardHelp.show();
-      else this.floatingKeyboardHelp.hide();
+      if (next) {
+        this.floatingKeyboardHelp.show();
+        // Register panel container for negative region blocking
+        if (this.floatingKeyboardHelp.root && this.intersectionManager) {
+          this.intersectionManager.registerPanelContainer('floating-keyboard-help', this.floatingKeyboardHelp.root);
+        }
+      } else {
+        this.floatingKeyboardHelp.hide();
+        // Unregister panel container
+        if (this.intersectionManager) {
+          this.intersectionManager.unregisterPanelContainer('floating-keyboard-help');
+        }
+      }
 
       if (persist) this.setKeyboardHelpVisibleInStorage(next);
     } catch (e) {
@@ -557,14 +578,20 @@ export class KeyPilot extends EventManager {
   /**
    * Initialize KeyPilot in enabled state
    */
-  initializeEnabledState() {
+  async initializeEnabledState() {
+    // Set rendering mode for focus overlays (can be 'dom', 'canvas', 'css-custom-props')
+    this.overlayManager.setRenderingMode('canvas');
+
+    // Initialize debug panel if enabled
+    this.overlayManager.initDebugPanel();
+
     // Sync with early injection cursor state
     if (window.KEYPILOT_EARLY) {
       window.KEYPILOT_EARLY.setEnabled(true);
     }
-    
+
     this.focusDetector.start();
-    this.intersectionManager.init();
+    await this.intersectionManager.init();
     this.scrollManager.init();
     this.initializeEdgeOnlyProcessing();
     this.start();
@@ -1201,21 +1228,43 @@ export class KeyPilot extends EventManager {
         if (this.intersectionManager && typeof this.intersectionManager.queryInteractiveAtPoint === 'function') {
           const candidates = this.intersectionManager.queryInteractiveAtPoint(x, y, 0);
           if (candidates && candidates.length) {
-            // Pick the smallest-area candidate (tends to match the "closest" interactive target).
-            // This does not require elementFromPoint().
-            let best = null;
-            let bestArea = Infinity;
-            for (const el of candidates) {
-              const r = this.intersectionManager.elementPositionCache?.get?.(el);
-              const w = r && Number(r.width);
-              const h = r && Number(r.height);
-              const area = (Number.isFinite(w) ? w : 0) * (Number.isFinite(h) ? h : 0);
-              if (area > 0 && area < bestArea) {
-                bestArea = area;
-                best = el;
-              }
-            }
-            clickable = best || candidates[0] || null;
+            // Sort candidates by z-index (highest first), then by area (smallest first).
+            // This ensures elements on panels (like close buttons, keyboard keys) are selected
+            // over background page elements with lower z-index.
+            // Use stored z-index from rbush to avoid expensive getComputedStyle calls
+            const sortedCandidates = candidates.slice().sort((a, b) => {
+              // Get z-index from rbush (already computed and stored)
+              const getZIndex = (el) => {
+                if (this.intersectionManager && typeof this.intersectionManager.getZIndexForElement === 'function') {
+                  return this.intersectionManager.getZIndexForElement(el);
+                }
+                // Fallback to computing if method not available
+                try {
+                  const zIndex = window.getComputedStyle(el).zIndex;
+                  return zIndex === 'auto' ? 0 : parseInt(zIndex) || 0;
+                } catch {
+                  return 0;
+                }
+              };
+
+              const zA = getZIndex(a);
+              const zB = getZIndex(b);
+
+              // Higher z-index wins
+              if (zA !== zB) return zB - zA;
+
+              // Same z-index: smaller area wins (tends to match closer interactive targets)
+              const getArea = (el) => {
+                const r = this.intersectionManager.elementPositionCache?.get?.(el);
+                const w = r && Number(r.width);
+                const h = r && Number(r.height);
+                return (Number.isFinite(w) ? w : 0) * (Number.isFinite(h) ? h : 0);
+              };
+
+              return getArea(a) - getArea(b);
+            });
+
+            clickable = sortedCandidates[0] || null;
           }
         }
       } catch { /* ignore */ }
@@ -1910,7 +1959,7 @@ export class KeyPilot extends EventManager {
       }
 
       // Find all text nodes within the rectangle
-      const textNodesInRect = this.findTextNodesInRectangle(rect);
+      const textNodesInRect = this.findTextNodesForSelection(rect);
       
       if (textNodesInRect.length === 0) {
         return { success: false, selection: null, crossBoundary: false };
@@ -2020,12 +2069,19 @@ export class KeyPilot extends EventManager {
     return scriptTags > 10 || styleTags > 5 || totalElements > 2000 || langLinks > 50;
   }
 
+  // =============================================================================
+  // RECTANGLE SELECTION TOOL - Text node finding functions
+  // These functions are specifically for the rectangle selection tool that creates
+  // actual browser text selections from user-drawn rectangles
+  // =============================================================================
+
   /**
-   * Find all text nodes that are within or intersect with the given rectangle
+   * RECTANGLE SELECTION TOOL: Finds text nodes for creating browser text selections
+   * Used by createRectangleBasedSelection() to create actual text selections from user-drawn rectangles
    * @param {Object} rect - Rectangle with left, top, right, bottom properties
    * @returns {Array} - Array of text nodes within the rectangle
    */
-  findTextNodesInRectangle(rect) {
+  findTextNodesForSelection(rect) {
     // Use edge-only processing if available and enabled
     if (this.edgeOnlyProcessingEnabled && 
         this.rectangleIntersectionObserver && 
@@ -2054,7 +2110,7 @@ export class KeyPilot extends EventManager {
         
         // Fall back to spatial method if edge-only processing fails
         if (FEATURE_FLAGS.EDGE_ONLY_FALLBACK_ENABLED) {
-          return this.findTextNodesInRectangleSpatial(rect);
+          return this.findTextNodesForSelectionSpatial(rect);
         }
         
         return [];
@@ -2062,15 +2118,16 @@ export class KeyPilot extends EventManager {
     }
     
     // Fall back to spatial method if edge-only processing is disabled
-    return this.findTextNodesInRectangleSpatial(rect);
+    return this.findTextNodesForSelectionSpatial(rect);
   }
 
   /**
-   * Spatial method for finding text nodes in rectangle (original implementation)
+   * RECTANGLE SELECTION TOOL - SPATIAL METHOD: Performance-optimized text node finding
+   * Uses complex page detection and viewport culling for better performance on heavy sites
    * @param {Object} rect - Rectangle with left, top, right, bottom properties
    * @returns {Array} - Array of text nodes within the rectangle
    */
-  findTextNodesInRectangleSpatial(rect) {
+  findTextNodesForSelectionSpatial(rect) {
     const textNodes = [];
     const startTime = performance.now();
     
@@ -4547,7 +4604,7 @@ export class KeyPilot extends EventManager {
   /**
    * Enable KeyPilot functionality
    */
-  enable() {
+  async enable() {
     if (this.enabled) return;
     
     this.enabled = true;
@@ -4569,7 +4626,7 @@ export class KeyPilot extends EventManager {
       
       // Restart intersection manager
       if (this.intersectionManager) {
-        this.intersectionManager.init();
+        await this.intersectionManager.init();
       }
       
       // Restart scroll manager
@@ -4622,6 +4679,9 @@ export class KeyPilot extends EventManager {
         this.focusDetector.stop();
       }
       
+      // Stop panel tracking
+      this._stopPanelTracking();
+      
       // Clean up intersection manager
       if (this.intersectionManager) {
         this.intersectionManager.cleanup();
@@ -4646,6 +4706,10 @@ export class KeyPilot extends EventManager {
     if (this.floatingKeyboardHelp) {
       try {
         this.floatingKeyboardHelp.cleanup();
+        // Unregister panel container
+        if (this.intersectionManager) {
+          this.intersectionManager.unregisterPanelContainer('floating-keyboard-help');
+        }
       } catch { /* ignore */ }
       this.floatingKeyboardHelp = null;
     }
@@ -4681,8 +4745,144 @@ export class KeyPilot extends EventManager {
     return this.enabled;
   }
 
+  /**
+   * Start tracking panels for negative region registration
+   * Periodically checks for visible panel elements and registers them
+   */
+  _startPanelTracking() {
+    if (this._panelTrackingInterval) return;
+    
+    // Initial update
+    this._updatePanelRegistrations();
+    
+    // Update every 500ms to catch panel show/hide/resize
+    this._panelTrackingInterval = setInterval(() => {
+      this._updatePanelRegistrations();
+    }, 500);
+  }
+
+  /**
+   * Stop tracking panels
+   */
+  _stopPanelTracking() {
+    if (this._panelTrackingInterval) {
+      clearInterval(this._panelTrackingInterval);
+      this._panelTrackingInterval = null;
+    }
+  }
+
+  /**
+   * Setup PopupManager tracking for negative regions
+   * Hooks into PopupManager lifecycle to register/unregister backdrop and panels
+   */
+  _setupPopupManagerTracking() {
+    if (!this.overlayManager || !this.overlayManager.popupManager) return;
+    
+    const popupManager = this.overlayManager.popupManager;
+    
+    // Set up callback for panel lifecycle events
+    popupManager._onPanelChange = (type, data) => {
+      if (!this.intersectionManager) return;
+      
+      try {
+        switch (type) {
+          case 'backdrop-shown':
+          case 'backdrop-updated':
+            if (data.backdrop) {
+              this.intersectionManager.registerPanelContainer('popup-backdrop', data.backdrop);
+            }
+            break;
+            
+          case 'backdrop-hidden':
+            this.intersectionManager.unregisterPanelContainer('popup-backdrop');
+            break;
+            
+          case 'panel-shown':
+          case 'panel-updated':
+            if (data.id && data.panel) {
+              this.intersectionManager.registerPanelContainer(`popup-panel-${data.id}`, data.panel);
+            }
+            break;
+            
+          case 'panel-hidden':
+            if (data.id) {
+              this.intersectionManager.unregisterPanelContainer(`popup-panel-${data.id}`);
+            }
+            break;
+        }
+      } catch (e) {
+        if (window.KEYPILOT_DEBUG) {
+          console.warn('[KeyPilot Debug] Error in popup manager tracking:', e);
+        }
+      }
+    };
+  }
+
+  /**
+   * Update panel registrations based on current DOM state
+   * Registers visible panels as negative regions, unregisters hidden ones
+   */
+  _updatePanelRegistrations() {
+    if (!this.intersectionManager) return;
+    
+    // Track onboarding panel
+    const onboardingPanel = document.querySelector('.kp-onboarding-panel');
+    if (onboardingPanel && onboardingPanel.isConnected && onboardingPanel.hidden !== true) {
+      this.intersectionManager.registerPanelContainer('onboarding-panel', onboardingPanel);
+      // Update bounds in case panel moved/resized
+      this.intersectionManager.updatePanelContainer('onboarding-panel');
+    } else {
+      this.intersectionManager.unregisterPanelContainer('onboarding-panel');
+    }
+
+    // Track practice popover panel (step 2 of onboarding)
+    // The practice panel uses class 'kp-practice-popover' based on the root element
+    const practicePanel = document.querySelector('.kp-practice-popover');
+    if (practicePanel && practicePanel.isConnected && practicePanel.hidden !== true) {
+      this.intersectionManager.registerPanelContainer('practice-popover-panel', practicePanel);
+      // Update bounds in case panel moved/resized
+      this.intersectionManager.updatePanelContainer('practice-popover-panel');
+    } else {
+      this.intersectionManager.unregisterPanelContainer('practice-popover-panel');
+    }
+
+    // Floating keyboard help is handled in setKeyboardHelpVisible (already registered there)
+    // But update its bounds if it's visible
+    if (this.floatingKeyboardHelp && this.floatingKeyboardHelp.root) {
+      try {
+        if (this.floatingKeyboardHelp.isVisible && this.floatingKeyboardHelp.isVisible()) {
+          this.intersectionManager.updatePanelContainer('floating-keyboard-help');
+        }
+      } catch {
+        // ignore
+      }
+    }
+    
+    // PopupManager panels and backdrop are handled via lifecycle callbacks
+    // But update their bounds if they exist
+    if (this.overlayManager && this.overlayManager.popupManager) {
+      const pm = this.overlayManager.popupManager;
+      if (pm._backdrop && pm._backdrop.isConnected) {
+        // Important: register here (not only via lifecycle callbacks) so the negative region
+        // still gets created if RBush wasn't ready at the instant the backdrop was mounted.
+        // Also keeps fixed-position backdrop bounds correct across scroll changes.
+        this.intersectionManager.registerPanelContainer('popup-backdrop', pm._backdrop);
+      }
+      for (const entry of pm._stack || []) {
+        if (entry.panel && entry.panel.isConnected) {
+          // Same rationale as backdrop: ensure the panel negative region exists even if the
+          // initial "panel-shown" event fired before RBush finished initializing.
+          this.intersectionManager.registerPanelContainer(`popup-panel-${entry.id}`, entry.panel);
+        }
+      }
+    }
+  }
+
   cleanup() {
     this.stop();
+
+    // Stop panel tracking
+    this._stopPanelTracking();
 
     // Clean up intersection observer optimizations
     if (this.intersectionManager) {

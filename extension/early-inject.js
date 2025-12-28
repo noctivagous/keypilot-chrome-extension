@@ -406,7 +406,7 @@
         },
         {
           "id": "keyboard_key_info",
-          "label": "While hovering over a key on the Keyboard Reference window below, press `F`  \n    to find out what it does.",
+          "label": "Notice the Keyboard Reference window below. While hovering over a key, press `F`  \n    to find out what it does.",
           "when": {
             "type": "action",
             "action": "activate",
@@ -669,6 +669,13 @@
 
 .kp-keybindings-ui .key {
   position: relative;
+  /* Reset button default styles */
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  cursor: pointer;
+  /* End button reset */
   background: linear-gradient(180deg,
     rgba(45, 55, 72, 0.95) 0%,
     rgba(26, 32, 44, 0.95) 50%,

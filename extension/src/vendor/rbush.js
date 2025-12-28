@@ -477,6 +477,11 @@ class RBush {
   }
 }
 
+// Make RBush available as a global symbol in the bundle
+if (typeof window !== 'undefined') {
+  window.RBush = RBush;
+}
+
 function findItem(item, items, equalsFn) {
   if (!equalsFn) return items.indexOf(item);
   for (let i = 0; i < items.length; i++) {
@@ -586,5 +591,7 @@ function multiSelect(arr, left, right, n, compare) {
     stack.push(left, mid, mid, right);
   }
 }
+
+
 
 

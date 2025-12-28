@@ -3,11 +3,44 @@
  */
 export class ElementDetector {
   constructor() {
-    this.CLICKABLE_ROLES = ['link', 'button', 'slider'];
-    // Include <summary> so <details>/<summary> accordions are treated as interactive.
-    // Include <label> so labels (e.g. custom switches) are treated as clickable.
-    this.CLICKABLE_SEL = 'a[href], button, input, select, textarea, summary, label, video, audio';
-    this.FOCUSABLE_SEL = 'a[href], button, input, select, textarea, summary, label, video, audio, [contenteditable="true"]';
+    this.CLICKABLE_ROLES = ['link', 'button', 'slider', 'checkbox', 'radio', 'tab', 'menuitem', 'option', 'switch', 'treeitem', 'combobox', 'spinbutton'];
+
+    this.CLICKABLE_SEL = 'a[href], button, input, select, textarea, video, audio';
+    this.FOCUSABLE_SEL = 'a[href], button, input, select, textarea, video, audio, [contenteditable="true"], [role="button"], [role="link"], [role="checkbox"], [role="radio"], [role="tab"], [data-action], [data-toggle], [data-click], [data-href], [data-link], [vue-click], [ng-click]';
+
+    // Track elements with addEventListener click handlers
+    this.clickHandlerElements = new WeakSet();
+
+    // Wrap addEventListener to track click handlers
+    this.setupEventListenerTracking();
+  }
+
+  setupEventListenerTracking() {
+    // Store the original addEventListener
+    const originalAddEventListener = EventTarget.prototype.addEventListener;
+
+    // Wrap addEventListener to track click handlers
+    EventTarget.prototype.addEventListener = function(type, listener, options) {
+      // Call the original method
+      originalAddEventListener.call(this, type, listener, options);
+
+      // Track click handlers
+      if (type === 'click' && this instanceof Element) {
+        try {
+          // Use a WeakSet to avoid memory leaks
+          elementDetectorInstance.clickHandlerElements.add(this);
+        } catch {
+          // Ignore errors in tracking
+        }
+      }
+    };
+
+    // Also track the element detector instance for the wrapped function
+    window.elementDetectorInstance = this;
+  }
+
+  hasTrackedClickHandler(el) {
+    return this.clickHandlerElements.has(el);
   }
 
   deepElementFromPoint(x, y) {
@@ -29,12 +62,11 @@ export class ElementDetector {
     const hasRole = role && this.CLICKABLE_ROLES.includes(role);
     
     // Check for other interactive indicators
-    const hasClickHandler = el.onclick || el.getAttribute('onclick');
-    const hasTabIndex = el.hasAttribute('tabindex') && el.getAttribute('tabindex') !== '-1';
-    
+    const hasClickHandler = el.onclick || el.getAttribute('onclick') || this.hasTrackedClickHandler(el);
+
     // getComputedStyle() is relatively expensive; only use it as a last resort.
     let hasCursor = false;
-    if (!matchesSelector && !hasRole && !hasClickHandler && !hasTabIndex) {
+    if (!matchesSelector && !hasRole && !hasClickHandler) {
       try {
         hasCursor = !!(window.getComputedStyle && window.getComputedStyle(el).cursor === 'pointer');
       } catch {
@@ -43,7 +75,7 @@ export class ElementDetector {
     }
     
     // Debug logging
-    if (window.KEYPILOT_DEBUG && (matchesSelector || hasRole || hasClickHandler || hasTabIndex || hasCursor)) {
+    if (window.KEYPILOT_DEBUG && (matchesSelector || hasRole || hasClickHandler || hasCursor)) {
       console.log('[KeyPilot Debug] isLikelyInteractive:', {
         tagName: el.tagName,
         href: el.href,
@@ -51,13 +83,13 @@ export class ElementDetector {
         role: role,
         hasRole: hasRole,
         hasClickHandler: !!hasClickHandler,
-        hasTabIndex: hasTabIndex,
+        hasTrackedClickHandler: this.hasTrackedClickHandler(el),
         hasCursor: hasCursor,
         selector: this.FOCUSABLE_SEL
       });
     }
-    
-    return matchesSelector || hasRole || hasClickHandler || hasTabIndex || hasCursor;
+
+    return matchesSelector || hasRole || hasClickHandler || hasCursor;
   }
 
   findClickable(el) {

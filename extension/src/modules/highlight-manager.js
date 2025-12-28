@@ -679,7 +679,7 @@ export class HighlightManager extends EventManager {
 
     try {
       // Find all text nodes that intersect with the rectangle
-      const intersectingTextNodes = this.findTextNodesInRectangle(rectBounds);
+      const intersectingTextNodes = this.findTextNodesForHighlighting(rectBounds);
       
       if (intersectingTextNodes.length === 0) {
         return { startPosition: null, endPosition: null };
@@ -779,7 +779,19 @@ export class HighlightManager extends EventManager {
    * @param {Object} rectBounds - Rectangle bounds in document coordinates
    * @returns {Text[]} - Array of intersecting text nodes
    */
-  findTextNodesInRectangle(rectBounds) {
+  // =============================================================================
+  // VISUAL HIGHLIGHTING - Text node finding functions
+  // These functions are specifically for visual highlighting that shows green
+  // rectangles over text for UI feedback (not actual text selections)
+  // =============================================================================
+
+  /**
+   * VISUAL HIGHLIGHTING: Finds text nodes for displaying highlight rectangles
+   * Used by updateHighlightOverlay() to show green rectangles over text for UI feedback
+   * @param {Object} rectBounds - Rectangle bounds with left, top, right, bottom properties
+   * @returns {Array} - Array of text nodes that intersect with the rectangle
+   */
+  findTextNodesForHighlighting(rectBounds) {
     const textNodes = [];
     
     try {

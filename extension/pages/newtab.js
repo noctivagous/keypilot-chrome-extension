@@ -1,7 +1,9 @@
 import { buildSearchUrl, getEngineHomeUrl, getSettings, normalizeSearchEngine, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
-import { startKeyPilotOnPage } from './keypilot-page-init.js';
+import { KeyPilot } from '../src/keypilot.js';
+import { KeyPilotToggleHandler } from '../src/modules/keypilot-toggle-handler.js';
 import { OnboardingManager } from '../src/modules/onboarding-manager.js';
 import { renderUrlListing } from '../src/ui/url-listing.js';
+import '../src/vendor/rbush.js';
 
 let currentEngine = 'brave';
 const KP_ENABLED_STORAGE_KEY = 'keypilot_enabled';
@@ -382,7 +384,8 @@ async function renderBookmarks() {
 async function renderToolbarBookmarks() {
   const root = document.getElementById('toolbar-bookmarks');
   const empty = document.getElementById('toolbar-empty');
-  if (!root || !empty) return;
+  const section = document.getElementById('toolbar-bookmarks-section');
+  if (!root || !empty || !section) return;
 
   root.textContent = '';
 
@@ -394,63 +397,177 @@ async function renderToolbarBookmarks() {
     items = [];
   }
 
-  if (!items || !items.length) {
-    empty.hidden = false;
+  // Filter to only include bookmarks with URLs (exclude folders)
+  const bookmarks = (items || []).filter((n) => n && n.url);
+
+  if (!bookmarks.length) {
+    // Hide the entire section when no toolbar bookmarks exist
+    section.style.display = 'none';
     return;
   }
-  empty.hidden = true;
 
-  const renderNodes = async (nodes, container, level = 0) => {
-    for (const n of nodes) {
-      if (!n) continue;
-      if (n.url) {
-        const a = document.createElement('a');
-        a.className = 'toolbar-link';
-        a.href = n.url;
-        a.textContent = n.title || n.url;
-        a.addEventListener('click', (e) => {
-          e.preventDefault();
-          navigate(n.url);
-        }, { capture: true });
+  // Show the section when bookmarks exist
+  section.style.display = '';
 
-        const small = document.createElement('small');
-        small.textContent = n.url;
-        a.appendChild(small);
-        container.appendChild(a);
-        continue;
-      }
-
-      if (!n.id) continue;
-      const details = document.createElement('details');
-      const summary = document.createElement('summary');
-      summary.textContent = n.title || 'Folder';
-      details.appendChild(summary);
-
-      const childrenWrap = document.createElement('div');
-      childrenWrap.className = 'toolbar-folder-children';
-      if (level >= 1) {
-        childrenWrap.style.paddingLeft = '8px';
-      }
-      details.appendChild(childrenWrap);
-
-      details.addEventListener('toggle', async () => {
-        if (!details.open) return;
-        if (details.dataset.loaded === 'true') return;
-        details.dataset.loaded = 'true';
-        let children = [];
-        try {
-          children = await chrome.bookmarks.getChildren(String(n.id));
-        } catch {
-          children = [];
-        }
-        await renderNodes(children || [], childrenWrap, level + 1);
-      }, { capture: true });
-
-      container.appendChild(details);
+  renderUrlListing({
+    container: root,
+    items: bookmarks,
+    view: 'list',
+    useInlineStyles: false,
+    classNames: {
+      content: 'kp-url-content',
+      text: 'kp-url-text',
+      url: 'toolbar-url',
+      favicon: 'kp-url-favicon'
+    },
+    getTitle: (b) => b.title || b.url,
+    getUrl: (b) => b.url,
+    showFavicon: true,
+    showMetaLine: false,
+    showUrlLine: true,
+    decorateRow: ({ item, parts }) => {
+      // Add click handler for toolbar bookmarks
+      parts.titleEl.addEventListener('click', (e) => {
+        e.preventDefault();
+        navigate(item.url);
+      }, true);
+      parts.urlEl.addEventListener('click', (e) => {
+        e.preventDefault();
+        navigate(item.url);
+      }, true);
     }
-  };
+  });
+}
 
-  await renderNodes(items, root, 0);
+async function renderRecentHistory() {
+  const container = document.getElementById('recent-history');
+  if (!container) return;
+
+  container.textContent = '';
+
+  /** @type {Array<chrome.history.HistoryItem>} */
+  let historyItems = [];
+  try {
+    if (chrome.history?.search) {
+      const results = await chrome.history.search({
+        text: '', // empty string to get all history
+        maxResults: 10,
+        startTime: Date.now() - (30 * 24 * 60 * 60 * 1000) // last 30 days
+      });
+      historyItems = results || [];
+    }
+  } catch {
+    historyItems = [];
+  }
+
+  if (!historyItems.length) {
+    const empty = document.createElement('div');
+    empty.className = 'empty';
+    empty.textContent = 'No recent history found.';
+    container.appendChild(empty);
+    return;
+  }
+
+  // Convert history items to the format expected by renderUrlListing
+  const formattedItems = historyItems.map(item => ({
+    title: item.title || item.url,
+    url: item.url,
+    lastVisitTime: item.lastVisitTime
+  }));
+
+  renderUrlListing({
+    container,
+    items: formattedItems,
+    view: 'list',
+    useInlineStyles: false,
+    classNames: {
+      content: 'kp-url-content',
+      text: 'kp-url-text',
+      url: 'history-url',
+      favicon: 'kp-url-favicon'
+    },
+    getTitle: (h) => h.title || h.url,
+    getUrl: (h) => h.url,
+    showFavicon: true,
+    showMetaLine: false,
+    showUrlLine: true,
+    decorateRow: ({ item, parts }) => {
+      // Add click handler for history items
+      parts.titleEl.addEventListener('click', (e) => {
+        e.preventDefault();
+        navigate(item.url);
+      }, true);
+      parts.urlEl.addEventListener('click', (e) => {
+        e.preventDefault();
+        navigate(item.url);
+      }, true);
+    }
+  });
+}
+
+async function renderTopSites() {
+  const container = document.getElementById('top-sites');
+  if (!container) return;
+
+  container.textContent = '';
+
+  /** @type {Array<chrome.topSites.MostVisitedURL>} */
+  let topSites = [];
+  try {
+    if (chrome.topSites?.get) {
+      // Get the most frequently visited sites from Chrome's top sites
+      topSites = await chrome.topSites.get();
+      // Limit to top 5
+      topSites = topSites.slice(0, 5);
+    }
+  } catch {
+    topSites = [];
+  }
+
+  if (!topSites.length) {
+    const empty = document.createElement('div');
+    empty.className = 'empty';
+    empty.textContent = 'No frequently visited sites found.';
+    container.appendChild(empty);
+    return;
+  }
+
+  // Create horizontal list
+  const list = document.createElement('div');
+  list.className = 'top-sites-horizontal';
+
+  for (const site of topSites) {
+    const item = document.createElement('div');
+    item.className = 'top-site-item';
+
+    const link = document.createElement('a');
+    link.href = site.url;
+    link.className = 'top-site-link';
+    link.title = site.title || site.url;
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      navigate(site.url);
+    });
+
+    const favicon = document.createElement('img');
+    favicon.className = 'top-site-favicon';
+    favicon.src = `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent(site.url)}&size=32`;
+    favicon.onerror = () => {
+      // Fallback to default favicon if loading fails
+      favicon.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjA4KSIvPgo8L3N2Zz4=';
+    };
+
+    const title = document.createElement('div');
+    title.className = 'top-site-title';
+    title.textContent = site.title || site.url;
+
+    link.appendChild(favicon);
+    link.appendChild(title);
+    item.appendChild(link);
+    list.appendChild(item);
+  }
+
+  container.appendChild(list);
 }
 
 async function queryGlobalEnabledState() {
@@ -530,8 +647,36 @@ function initEnabledSwitch() {
 }
 
 async function init() {
-  // Run full KeyPilot runtime on the New Tab page.
-  await startKeyPilotOnPage({ allowInIframe: false });
+  // Initialize KeyPilot with toggle functionality (same as content script)
+  try {
+    // Create KeyPilot instance
+    const keyPilot = new KeyPilot();
+
+    // Store reference globally for debugging/metrics panels (used by OverlayManager debug panel)
+    // Note: this is within the content-script isolated world; it is intended for KeyPilot internals.
+    window.keyPilot = keyPilot;
+
+    // Create toggle handler and wrap KeyPilot instance
+    const toggleHandler = new KeyPilotToggleHandler(keyPilot);
+
+    // Initialize toggle handler (queries service worker for state)
+    await toggleHandler.initialize();
+
+    // Store reference globally for debugging
+    window.__KeyPilotToggleHandler = toggleHandler;
+
+  } catch (error) {
+    console.error('[KeyPilot] Failed to initialize with toggle functionality:', error);
+
+    // Fallback: initialize KeyPilot without toggle functionality
+    try {
+      const keyPilot = new KeyPilot();
+      window.keyPilot = keyPilot;
+      console.warn('[KeyPilot] Initialized without toggle functionality as fallback');
+    } catch (fallbackError) {
+      console.error('[KeyPilot] Complete initialization failure:', fallbackError);
+    }
+  }
 
   // Also run onboarding on the custom New Tab page.
   // Content scripts don't run on extension pages, so we bootstrap it here to keep the
@@ -595,6 +740,8 @@ async function init() {
     });
   }, true);
 
+  renderTopSites();
+
   document.getElementById('btn-guide')?.addEventListener('click', () => {
     // Calculate guide container dimensions + 10pt padding
     // The guide container has max-width: 920px and padding: 18px on each side (same as settings)
@@ -630,6 +777,7 @@ async function init() {
     createSuggestionsController({ inputEl: input, rootEl: suggestionsRoot });
   }
   renderToolbarBookmarks();
+  renderRecentHistory();
 }
 
 init();

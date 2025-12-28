@@ -42,11 +42,23 @@
         </div>
       </section>
 
-      <section class="card" aria-label="Toolbar bookmarks">
-        <h2>Toolbar bookmarks</h2>
-        <div id="toolbar-bookmarks" class="toolbar"></div>
-        <div id="toolbar-empty" class="empty" hidden>No toolbar bookmarks found.</div>
+      <section class="card top-sites-section" aria-label="Top visited sites">
+        <h2>Top visited sites</h2>
+        <div id="top-sites" class="top-sites-list"></div>
       </section>
+
+      <div class="toolbar-history-container">
+        <section id="toolbar-bookmarks-section" class="card toolbar-section" aria-label="Toolbar bookmarks">
+          <h2>Toolbar bookmarks</h2>
+          <div id="toolbar-bookmarks" class="toolbar"></div>
+          <div id="toolbar-empty" class="empty" hidden>No toolbar bookmarks found.</div>
+        </section>
+
+        <section class="card history-section" aria-label="Recent history">
+          <h2>Recent history</h2>
+          <div id="recent-history" class="history"></div>
+        </section>
+      </div>
 
       <section class="card" aria-label="Recent bookmarks">
         <h2>Recent bookmarks</h2>

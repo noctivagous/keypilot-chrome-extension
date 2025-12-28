@@ -86,7 +86,7 @@ export class KeyPilotToggleHandler extends EventManager {
    * @param {boolean} enabled - Whether KeyPilot should be enabled
    * @param {boolean} showNotification - Whether to show toggle notification (default: true)
    */
-  setEnabled(enabled, showNotification = true) {
+  async setEnabled(enabled, showNotification = true) {
     if (this.enabled === enabled) {
       return; // No change needed
     }
@@ -112,7 +112,7 @@ export class KeyPilotToggleHandler extends EventManager {
     }
 
     if (enabled) {
-      this.enableKeyPilot();
+      await this.enableKeyPilot();
     } else {
       this.disableKeyPilot();
     }
@@ -127,38 +127,63 @@ export class KeyPilotToggleHandler extends EventManager {
    * Enable KeyPilot functionality
    * Restores event listeners, CSS styles, and visual elements
    */
-  enableKeyPilot() {
+  async enableKeyPilot() {
     if (!this.keyPilot) return;
 
     try {
       // Restore all CSS styles first
       if (this.keyPilot.styleManager) {
-        this.keyPilot.styleManager.restoreAllStyles();
+        try {
+          this.keyPilot.styleManager.restoreAllStyles();
+        } catch (error) {
+          console.warn('[KeyPilotToggleHandler] Cannot restore styles on this page:', error.message);
+        }
       }
 
       // Restore event listeners
-      this.keyPilot.start();
+      try {
+        this.keyPilot.start();
+      } catch (error) {
+        console.warn('[KeyPilotToggleHandler] Cannot start event listeners on this page:', error.message);
+        // On chrome:// pages, continue with limited functionality
+      }
 
       // Ensure cursor is visible
       if (this.keyPilot.cursor) {
-        this.keyPilot.cursor.ensure();
-        // Explicitly show cursor after ensuring it exists
-        this.keyPilot.cursor.show();
+        try {
+          this.keyPilot.cursor.ensure();
+          // Explicitly show cursor after ensuring it exists
+          this.keyPilot.cursor.show();
+        } catch (error) {
+          console.warn('[KeyPilotToggleHandler] Cannot show cursor on this page:', error.message);
+        }
       }
 
       // Restore focus detector
       if (this.keyPilot.focusDetector) {
-        this.keyPilot.focusDetector.start();
+        try {
+          this.keyPilot.focusDetector.start();
+        } catch (error) {
+          console.warn('[KeyPilotToggleHandler] Cannot start focus detector on this page:', error.message);
+        }
       }
 
       // Restore intersection manager
       if (this.keyPilot.intersectionManager) {
-        this.keyPilot.intersectionManager.init();
+        try {
+          await this.keyPilot.intersectionManager.init();
+        } catch (error) {
+          console.warn('[KeyPilotToggleHandler] Cannot initialize intersection manager on this page:', error.message);
+        }
       }
 
       // Restore scroll manager
       if (this.keyPilot.scrollManager) {
-        this.keyPilot.scrollManager.init();
+        try {
+          this.keyPilot.scrollManager.init();
+        } catch (error) {
+          console.warn('[KeyPilotToggleHandler] Cannot initialize scroll manager on this page:', error.message);
+        }
       }
 
       // Restore floating keyboard reference (state is persisted in storage)

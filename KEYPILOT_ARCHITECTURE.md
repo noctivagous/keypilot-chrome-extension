@@ -9,7 +9,7 @@ KeyPilot is a Chrome extension that transforms web browsing into a keyboard-firs
 ### Extension Manifest (Manifest V3)
 - **Location**: `extension/manifest.json`
 - **Version**: <!-- KP_ARCHITECTURE_VERSION_START -->0.3.2<!-- KP_ARCHITECTURE_VERSION_END -->
-- **Build Date**: <!-- KP_ARCHITECTURE_BUILD_DATE_START -->Dec-25-2025-9:16PM<!-- KP_ARCHITECTURE_BUILD_DATE_END -->
+- **Build Date**: <!-- KP_ARCHITECTURE_BUILD_DATE_START -->Dec-28-2025<!-- KP_ARCHITECTURE_BUILD_DATE_END -->
 - **Purpose**: Defines extension metadata, permissions, and entry points
 - **Key Features**:
   - Service worker for background processing (`background.js`)
@@ -102,7 +102,7 @@ KeyPilot is a Chrome extension that transforms web browsing into a keyboard-firs
 - `PopupManager`: Handles popup window lifecycle and positioning
 - `SettingsManager`: Centralized settings storage and retrieval
 - `TabHistoryPopover`: Manages tab history navigation popover
-- `UrlListingManager`: Handles URL listing and navigation features
+- `UrlListingManager`: Handles URL listing and navigation features (shared helpers for omnibox, history, bookmarks)
 
 #### UI Components
 - `FloatingKeyboardHelp`: Floating keyboard visualization panel (K key toggle)
@@ -111,6 +111,7 @@ KeyPilot is a Chrome extension that transforms web browsing into a keyboard-firs
 - `PopupThemeVars`: Centralized theme variables for consistent styling across UI surfaces
 - `OnboardingPanel`: User onboarding interface and tutorial system
 - `PracticePopoverPanel`: Interactive practice mode for keyboard shortcuts
+- `UrlListingManager`: Shared URL listing helpers for omnibox suggestions, history popovers, and bookmark surfaces
 
 ### 4. Popup Interface (`popup.html` + `popup.js`)
 **Purpose**: User settings and status display
@@ -249,12 +250,16 @@ KeyPilot is a Chrome extension that transforms web browsing into a keyboard-firs
 - Efficient intersection observers
 - Minimal DOM manipulation
 - UI element adoption (main extension adopts early-injected elements)
+- Complex page detection with adaptive IO optimization (stricter limits for heavy sites)
 
 #### State Management
 - Chrome storage sync across devices
 - Cross-tab state synchronization
 - Persistent settings
 - Keyboard reference visibility persistence
+
+#### Performance Monitoring
+- Debug panel for performance metrics (optional, developer feature)
 
 #### Iframe Bridge
 - PostMessage-based communication between parent and popover iframe
@@ -318,7 +323,8 @@ extension/
 │   │   ├── keybindings-ui-shared.js  # Shared keyboard UI constants/CSS
 │   │   ├── onboarding-panel.js       # User onboarding interface
 │   │   ├── popup-theme-vars.js       # Centralized theme variables
-│   │   └── practice-popover-panel.js # Interactive practice exercises
+│   │   ├── practice-popover-panel.js # Interactive practice exercises
+│   │   └── url-listing.js            # Shared URL listing helpers
 │   ├── utils/             # Utility functions
 │   │   └── logger.js
 │   ├── content-script.js  # Entry point
@@ -452,4 +458,4 @@ extension/
 **Performance**: Optimized for immediate visual feedback
 **Compatibility**: Modern Chromium-based browsers
 
-*Last updated: December 25, 2025*
+*Last updated: December 28, 2025*

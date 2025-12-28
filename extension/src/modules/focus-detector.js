@@ -170,7 +170,7 @@ export class FocusDetector {
         if (mutation.type === 'attributes') {
           const attrName = mutation.attributeName;
           // Watch for tabindex changes or other focus-related attributes
-          if (attrName === 'tabindex' || attrName === 'contenteditable') {
+          if (attrName === 'contenteditable') {
             shouldCheckFocus = true;
           }
         }
@@ -191,7 +191,7 @@ export class FocusDetector {
     // Observe the entire document for attribute changes
     this.documentObserver.observe(document, {
       attributes: true,
-      attributeFilter: ['tabindex', 'contenteditable'],
+      attributeFilter: ['contenteditable'],
       subtree: true
     });
 

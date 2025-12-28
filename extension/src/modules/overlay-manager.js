@@ -7,6 +7,16 @@ import { PopupManager } from './popup-manager.js';
 
 export class OverlayManager {
   constructor() {
+    // Rendering mode configuration: 'dom' | 'canvas' | 'css-custom-props'
+    this.renderingMode = 'dom'; // Default to current DOM-based rendering
+
+    // Canvas rendering backend
+    this.canvasOverlay = null;
+    this.canvasContext = null;
+
+    // CSS Custom Properties rendering backend
+    this.cssCustomPropsOverlay = null;
+
     this.focusOverlay = null;
     this.deleteOverlay = null;
     this.focusedTextOverlay = null; // New overlay for focused text fields
@@ -26,9 +36,10 @@ export class OverlayManager {
     this._popoverMouseTrackerInstalled = false;
 
     // Central popup stack + blurred backdrop (kept below click overlays).
+    // Note: Panel change callback will be set by KeyPilot after initialization
     this.popupManager = new PopupManager();
     this._popoverPopupId = 'kpv2-iframe-popover';
-    
+
     // Initialize highlight manager
     this.highlightManager = new HighlightManager();
     
@@ -50,11 +61,267 @@ export class OverlayManager {
       clickMode: null,
       textMode: null
     };
+
+    // Debug panel for performance metrics
+    this.debugPanel = null;
+    this.debugPanelUpdateInterval = null;
     
     this.setupOverlayObserver();
     
     // Initialize highlight manager with observer
     this.highlightManager.initialize(this.overlayObserver);
+  }
+
+  // Canvas-based rendering backend
+  initCanvasRenderer() {
+    if (this.canvasOverlay) return;
+
+    this.canvasOverlay = document.createElement('canvas');
+    this.canvasOverlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: ${Z_INDEX.OVERLAYS};
+      will-change: transform;
+    `;
+
+    // Set canvas size to viewport
+    this.canvasOverlay.width = window.innerWidth;
+    this.canvasOverlay.height = window.innerHeight;
+
+    this.canvasContext = this.canvasOverlay.getContext('2d');
+    document.body.appendChild(this.canvasOverlay);
+
+    // Handle viewport resize
+    this._canvasResizeHandler = () => {
+      this.canvasOverlay.width = window.innerWidth;
+      this.canvasOverlay.height = window.innerHeight;
+    };
+    window.addEventListener('resize', this._canvasResizeHandler);
+
+    if (window.KEYPILOT_DEBUG) {
+      console.log('[KeyPilot Debug] Canvas renderer initialized');
+    }
+  }
+
+  cleanupCanvasRenderer() {
+    if (this.canvasOverlay) {
+      if (this._canvasResizeHandler) {
+        window.removeEventListener('resize', this._canvasResizeHandler);
+        this._canvasResizeHandler = null;
+      }
+      this.canvasOverlay.remove();
+      this.canvasOverlay = null;
+      this.canvasContext = null;
+    }
+  }
+
+  updateFocusOverlayCanvas(element, mode = MODES.NONE) {
+    if (!this.canvasContext || !element) {
+      this.hideFocusOverlayCanvas();
+      return;
+    }
+
+    // Don't outline modal/popover iframes
+    try {
+      if (element.tagName === 'IFRAME') {
+        const isPopoverIframe = this.popoverIframeElement && element === this.popoverIframeElement;
+        const isModalIframe = !!(element.classList && element.classList.contains('modal-iframe'));
+        if (isPopoverIframe || isModalIframe) {
+          this.hideFocusOverlayCanvas();
+          return;
+        }
+      }
+    } catch { /* ignore */ }
+
+    const rect = this.getBestRect(element);
+    if (!rect || rect.width <= 0 || rect.height <= 0) {
+      this.hideFocusOverlayCanvas();
+      return;
+    }
+
+    // Determine element type and colors
+    const isTextInput = element.matches && element.matches(SELECTORS.FOCUSABLE_TEXT);
+    const isVideo = element.tagName === 'VIDEO';
+    const isVeryLarge = rect.width > 512 && rect.height > 512;
+
+    let borderColor, shadowColor, backgroundColor;
+    if (isTextInput) {
+      borderColor = COLORS.ORANGE;
+      shadowColor = COLORS.ORANGE_SHADOW;
+      backgroundColor = 'transparent';
+    } else {
+      borderColor = COLORS.FOCUS_GREEN;
+      shadowColor = COLORS.GREEN_SHADOW;
+      backgroundColor = (isVideo || isVeryLarge) ? 'transparent' : COLORS.FOCUS_GREEN_BG_T2;
+    }
+
+    // Settings-driven behavior
+    const { rectangleThickness, overlayFillEnabled } = this._getClickModeSettings();
+    if (!isTextInput && !isVideo && !isVeryLarge && overlayFillEnabled === false) {
+      backgroundColor = 'transparent';
+    }
+
+    // Clear canvas and draw rectangle
+    this.canvasContext.clearRect(0, 0, this.canvasOverlay.width, this.canvasOverlay.height);
+
+    // Draw background fill if enabled
+    if (backgroundColor !== 'transparent') {
+      this.canvasContext.fillStyle = backgroundColor;
+      this.canvasContext.fillRect(rect.left, rect.top, rect.width, rect.height);
+    }
+
+    // Draw border
+    this.canvasContext.strokeStyle = borderColor;
+    this.canvasContext.lineWidth = rectangleThickness;
+    this.canvasContext.strokeRect(rect.left, rect.top, rect.width, rect.height);
+
+    // Draw shadow effect (simplified)
+    this.canvasContext.shadowColor = shadowColor;
+    this.canvasContext.shadowBlur = 4;
+    this.canvasContext.strokeRect(rect.left, rect.top, rect.width, rect.height);
+    this.canvasContext.shadowBlur = 0; // Reset shadow
+
+    if (window.KEYPILOT_DEBUG) {
+      console.log('[KeyPilot Debug] Canvas focus overlay updated:', {
+        rect: rect,
+        borderColor: borderColor,
+        backgroundColor: backgroundColor
+      });
+    }
+  }
+
+  hideFocusOverlayCanvas() {
+    if (this.canvasContext) {
+      this.canvasContext.clearRect(0, 0, this.canvasOverlay.width, this.canvasOverlay.height);
+    }
+  }
+
+  // CSS Custom Properties rendering backend
+  initCSSCustomPropsRenderer() {
+    if (this.cssCustomPropsOverlay) return;
+
+    this.cssCustomPropsOverlay = document.createElement('div');
+    this.cssCustomPropsOverlay.style.cssText = `
+      --rect-x: 0px;
+      --rect-y: 0px;
+      --rect-width: 0px;
+      --rect-height: 0px;
+      --rect-border-color: ${COLORS.FOCUS_GREEN};
+      --rect-background: transparent;
+      --rect-shadow-color: ${COLORS.GREEN_SHADOW};
+      --rect-shadow-bright-color: ${COLORS.GREEN_SHADOW_BRIGHT};
+      --rect-border-thickness: 2px;
+
+      position: fixed;
+      left: var(--rect-x);
+      top: var(--rect-y);
+      width: var(--rect-width);
+      height: var(--rect-height);
+      border: var(--rect-border-thickness) solid var(--rect-border-color);
+      background: var(--rect-background);
+      box-shadow: 0 0 0 2px var(--rect-shadow-color), 0 0 10px 2px var(--rect-shadow-bright-color);
+      pointer-events: none;
+      z-index: ${Z_INDEX.OVERLAYS};
+      will-change: transform;
+    `;
+
+    document.body.appendChild(this.cssCustomPropsOverlay);
+
+    if (window.KEYPILOT_DEBUG) {
+      console.log('[KeyPilot Debug] CSS Custom Properties renderer initialized');
+    }
+  }
+
+  cleanupCSSCustomPropsRenderer() {
+    if (this.cssCustomPropsOverlay) {
+      this.cssCustomPropsOverlay.remove();
+      this.cssCustomPropsOverlay = null;
+    }
+  }
+
+  updateFocusOverlayCSSCustomProps(element, mode = MODES.NONE) {
+    if (!this.cssCustomPropsOverlay || !element) {
+      this.hideFocusOverlayCSSCustomProps();
+      return;
+    }
+
+    // Don't outline modal/popover iframes
+    try {
+      if (element.tagName === 'IFRAME') {
+        const isPopoverIframe = this.popoverIframeElement && element === this.popoverIframeElement;
+        const isModalIframe = !!(element.classList && element.classList.contains('modal-iframe'));
+        if (isPopoverIframe || isModalIframe) {
+          this.hideFocusOverlayCSSCustomProps();
+          return;
+        }
+      }
+    } catch { /* ignore */ }
+
+    const rect = this.getBestRect(element);
+    if (!rect || rect.width <= 0 || rect.height <= 0) {
+      this.hideFocusOverlayCSSCustomProps();
+      return;
+    }
+
+    // Determine element type and colors
+    const isTextInput = element.matches && element.matches(SELECTORS.FOCUSABLE_TEXT);
+    const isVideo = element.tagName === 'VIDEO';
+    const isVeryLarge = rect.width > 512 && rect.height > 512;
+
+    let borderColor, shadowColor, backgroundColor, shadowBrightColor;
+    if (isTextInput) {
+      borderColor = COLORS.ORANGE;
+      shadowColor = COLORS.ORANGE_SHADOW;
+      shadowBrightColor = COLORS.ORANGE_SHADOW;
+      backgroundColor = 'transparent';
+    } else {
+      borderColor = COLORS.FOCUS_GREEN;
+      shadowColor = COLORS.GREEN_SHADOW;
+      shadowBrightColor = COLORS.GREEN_SHADOW_BRIGHT;
+      backgroundColor = (isVideo || isVeryLarge) ? 'transparent' : COLORS.FOCUS_GREEN_BG_T2;
+    }
+
+    // Settings-driven behavior
+    const { rectangleThickness, overlayFillEnabled } = this._getClickModeSettings();
+    if (!isTextInput && !isVideo && !isVeryLarge && overlayFillEnabled === false) {
+      backgroundColor = 'transparent';
+    }
+
+    // Update CSS custom properties
+    const overlay = this.cssCustomPropsOverlay;
+    overlay.style.setProperty('--rect-x', rect.left + 'px');
+    overlay.style.setProperty('--rect-y', rect.top + 'px');
+    overlay.style.setProperty('--rect-width', rect.width + 'px');
+    overlay.style.setProperty('--rect-height', rect.height + 'px');
+    overlay.style.setProperty('--rect-border-color', borderColor);
+    overlay.style.setProperty('--rect-background', backgroundColor);
+    overlay.style.setProperty('--rect-shadow-color', shadowColor);
+    overlay.style.setProperty('--rect-shadow-bright-color', shadowBrightColor);
+    overlay.style.setProperty('--rect-border-thickness', rectangleThickness + 'px');
+
+    overlay.style.display = 'block';
+    overlay.style.visibility = 'visible';
+    overlay.style.opacity = '1';
+
+    if (window.KEYPILOT_DEBUG) {
+      console.log('[KeyPilot Debug] CSS Custom Props focus overlay updated:', {
+        rect: rect,
+        borderColor: borderColor,
+        backgroundColor: backgroundColor
+      });
+    }
+  }
+
+  hideFocusOverlayCSSCustomProps() {
+    if (this.cssCustomPropsOverlay) {
+      this.cssCustomPropsOverlay.style.setProperty('--rect-width', '0px');
+      this.cssCustomPropsOverlay.style.setProperty('--rect-height', '0px');
+      this.cssCustomPropsOverlay.style.display = 'none';
+    }
   }
 
   setModeSettings(settings) {
@@ -315,7 +582,20 @@ export class OverlayManager {
     }
   }
 
+  // Unified interface that switches between rendering modes
   updateFocusOverlay(element, mode = MODES.NONE) {
+    switch (this.renderingMode) {
+      case 'canvas':
+        return this.updateFocusOverlayCanvas(element, mode);
+      case 'css-custom-props':
+        return this.updateFocusOverlayCSSCustomProps(element, mode);
+      case 'dom':
+      default:
+        return this.updateFocusOverlayDOM(element, mode);
+    }
+  }
+
+  updateFocusOverlayDOM(element, mode = MODES.NONE) {
     if (!element) {
       this.hideFocusOverlay();
       return;
@@ -450,9 +730,74 @@ export class OverlayManager {
     }
   }
 
+  // Unified hide interface that switches between rendering modes
   hideFocusOverlay() {
+    switch (this.renderingMode) {
+      case 'canvas':
+        return this.hideFocusOverlayCanvas();
+      case 'css-custom-props':
+        return this.hideFocusOverlayCSSCustomProps();
+      case 'dom':
+      default:
+        return this.hideFocusOverlayDOM();
+    }
+  }
+
+  hideFocusOverlayDOM() {
     if (this.focusOverlay) {
       this.focusOverlay.style.display = 'none';
+    }
+  }
+
+  /**
+   * Set the rendering mode for overlays
+   * @param {string} mode - 'dom', 'canvas', or 'css-custom-props'
+   */
+  setRenderingMode(mode) {
+    if (!['dom', 'canvas', 'css-custom-props'].includes(mode)) {
+      console.warn('[KeyPilot] Invalid rendering mode:', mode);
+      return;
+    }
+
+    // Cleanup current renderer
+    this.cleanupRenderingMode();
+
+    // Set new mode and initialize
+    this.renderingMode = mode;
+    this.initRenderingMode();
+
+    if (window.KEYPILOT_DEBUG) {
+      console.log('[KeyPilot Debug] Rendering mode changed to:', mode);
+    }
+  }
+
+  initRenderingMode() {
+    switch (this.renderingMode) {
+      case 'canvas':
+        this.initCanvasRenderer();
+        break;
+      case 'css-custom-props':
+        this.initCSSCustomPropsRenderer();
+        break;
+      case 'dom':
+      default:
+        // DOM renderer doesn't need explicit initialization
+        break;
+    }
+  }
+
+  cleanupRenderingMode() {
+    switch (this.renderingMode) {
+      case 'canvas':
+        this.cleanupCanvasRenderer();
+        break;
+      case 'css-custom-props':
+        this.cleanupCSSCustomPropsRenderer();
+        break;
+      case 'dom':
+      default:
+        // DOM renderer cleanup happens in cleanup() method
+        break;
     }
   }
 
@@ -461,24 +806,28 @@ export class OverlayManager {
    * Useful after clicks that mutate the DOM (accordions, menus, etc.) so we don't leave a stale rect.
    */
   fadeOutFocusOverlay(durationMs = 120) {
-    if (!this.focusOverlay) return;
-    if (this.focusOverlay.style.display === 'none') return;
+    if (this.renderingMode === 'dom' && this.focusOverlay) {
+      if (this.focusOverlay.style.display === 'none') return;
 
-    // Avoid stacking transitions; we'll reset after the fade completes.
-    this.focusOverlay.style.transition = `opacity ${durationMs}ms ease-out`;
-    this.focusOverlay.style.opacity = '0';
+      // Avoid stacking transitions; we'll reset after the fade completes.
+      this.focusOverlay.style.transition = `opacity ${durationMs}ms ease-out`;
+      this.focusOverlay.style.opacity = '0';
 
-    window.setTimeout(() => {
-      if (!this.focusOverlay) return;
-      // Only hide if we're still faded out (another update may have brought it back).
-      if (this.focusOverlay.style.opacity === '0') {
-        this.hideFocusOverlay();
-      }
-      // Clear transition so other overlay updates don't inherit this timing.
-      if (this.focusOverlay) {
-        this.focusOverlay.style.transition = '';
-      }
-    }, durationMs);
+      window.setTimeout(() => {
+        if (!this.focusOverlay) return;
+        // Only hide if we're still faded out (another update may have brought it back).
+        if (this.focusOverlay.style.opacity === '0') {
+          this.hideFocusOverlay();
+        }
+        // Clear transition so other overlay updates don't inherit this timing.
+        if (this.focusOverlay) {
+          this.focusOverlay.style.transition = '';
+        }
+      }, durationMs);
+    } else {
+      // For canvas and CSS custom props, just hide immediately
+      this.hideFocusOverlay();
+    }
   }
 
   updateDeleteOverlay(element) {
@@ -1498,6 +1847,9 @@ export class OverlayManager {
       this.visualViewportHandler = null;
     }
     
+    // Clean up all rendering backends
+    this.cleanupRenderingMode();
+
     if (this.focusOverlay) {
       this.focusOverlay.remove();
       this.focusOverlay = null;
@@ -1530,6 +1882,9 @@ export class OverlayManager {
       this.escExitLabelHover.remove();
       this.escExitLabelHover = null;
     }
+
+    // Clean up debug panel
+    this.cleanupDebugPanel();
   }
 
   createElement(tag, props = {}) {
@@ -2097,5 +2452,300 @@ export class OverlayManager {
    */
   isPopoverOpen() {
     return this.popoverContainer !== null;
+  }
+
+  // =============================================================================
+  // DEBUG PANEL - Performance metrics display in upper-right corner
+  // =============================================================================
+
+  /**
+   * Initialize debug panel if enabled
+   */
+  initDebugPanel() {
+    if (!FEATURE_FLAGS.ENABLE_DEBUG_PANEL) return;
+
+    this.createDebugPanel();
+    this.startDebugPanelUpdates();
+  }
+
+  /**
+   * Create the debug panel element
+   */
+  createDebugPanel() {
+    if (this.debugPanel) return;
+
+    this.debugPanel = document.createElement('div');
+    this.debugPanel.id = 'kpv2-debug-panel';
+    this.debugPanel.style.cssText = `
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.9);
+      color: #00ff00;
+      font-family: monospace;
+      font-size: 11px;
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: 1px solid #333;
+      z-index: ${Z_INDEX.DEBUG_HUD};
+      pointer-events: none;
+      max-width: 300px;
+      white-space: pre-wrap;
+      line-height: 1.4;
+    `;
+
+    document.body.appendChild(this.debugPanel);
+  }
+
+  /**
+   * Start periodic updates of debug panel data
+   */
+  startDebugPanelUpdates() {
+    if (!this.debugPanel) return;
+
+    // Update immediately
+    this.updateDebugPanel();
+
+    // Update every 2 seconds
+    this.debugPanelUpdateInterval = setInterval(() => {
+      this.updateDebugPanel();
+    }, 2000);
+  }
+
+  /**
+   * Update debug panel with current metrics
+   */
+  updateDebugPanel() {
+    if (!this.debugPanel || !FEATURE_FLAGS.ENABLE_DEBUG_PANEL) return;
+
+    const data = this.collectDebugData();
+    const content = this.formatDebugContent(data);
+
+    this.debugPanel.textContent = content;
+  }
+
+  /**
+   * Collect debug data from various sources
+   */
+  collectDebugData() {
+    const intersectionManager = window.keyPilot?.intersectionManager;
+    const complexPageDetector = intersectionManager?.complexPageDetector;
+    const currentState = window.keyPilot?.state?.getState?.() || {};
+
+    // Get hover element information
+    const hoverElement = currentState.focusEl;
+    let hoverInfo = 'None';
+    let clickableReasons = [];
+    if (hoverElement) {
+      const tagName = hoverElement.tagName?.toLowerCase() || 'unknown';
+      const className = hoverElement.className ? `.${hoverElement.className.split(' ')[0]}` : '';
+      const id = hoverElement.id ? `#${hoverElement.id}` : '';
+      const href = hoverElement.href ? ` → ${hoverElement.href.substring(0, 30)}...` : '';
+      const text = hoverElement.textContent?.trim().substring(0, 20) || '';
+      hoverInfo = `${tagName}${id}${className}${href ? href : text ? ` "${text}..."` : ''}`;
+
+      // Analyze why this element is clickable
+      clickableReasons = this.analyzeClickableReasons(hoverElement);
+    }
+
+    const isComplexPage = complexPageDetector ? complexPageDetector.complexityLevel !== 'low' : false;
+
+    return {
+      // Page complexity
+      complexityLevel: complexPageDetector?.complexityLevel || 'unknown',
+      isComplexPage: isComplexPage,
+
+      // Hover information
+      hoverElement: hoverInfo,
+      clickableReasons: clickableReasons,
+
+      // Element counts
+      totalElements: document.querySelectorAll('*').length,
+      interactiveElements: document.querySelectorAll(
+        'a[href], button, input, select, textarea, [role="button"], [role="link"], [contenteditable="true"], [onclick]'
+      ).length,
+
+      // IO metrics
+      ioObservations: intersectionManager?.observedInteractiveElements?.size || 0,
+      visibleElements: intersectionManager?.visibleInteractiveElements?.size || 0,
+
+      // RBush metrics
+      rbushEnabled: intersectionManager?._rtreeEnabled?.() || false,
+      rbushItems: intersectionManager?._rtreeItemsByElement?.size || 0,
+      rbushQueries: intersectionManager?.metrics?.rtreeQueries || 0,
+      rbushHits: intersectionManager?.metrics?.rtreeHits || 0,
+
+      // Performance metrics
+      cacheHits: intersectionManager?.metrics?.cacheHits || 0,
+      cacheMisses: intersectionManager?.metrics?.cacheMisses || 0,
+      observerUpdates: intersectionManager?.metrics?.observerUpdates || 0,
+
+      // Culling stats (only for medium/high complexity sites)
+      culledCount: isComplexPage ? (intersectionManager?.metrics?.culledCount || 0) : 0,
+      totalCulled: isComplexPage ? (intersectionManager?.metrics?.totalCulled || 0) : 0,
+
+      // Rendering mode
+      renderingMode: this.renderingMode || 'unknown',
+
+      // Memory estimate
+      estimatedMemory: this.estimateMemoryUsage()
+    };
+  }
+
+  /**
+   * Estimate memory usage of various components
+   */
+  estimateMemoryUsage() {
+    const intersectionManager = window.keyPilot?.intersectionManager;
+    let memoryKB = 0;
+
+    // Estimate RBush memory (rough approximation)
+    if (intersectionManager?._rtreeItemsByElement) {
+      memoryKB += intersectionManager._rtreeItemsByElement.size * 0.5; // ~0.5KB per item
+    }
+
+    // Estimate element cache memory
+    if (intersectionManager?.elementPositionCache) {
+      memoryKB += intersectionManager.elementPositionCache.size * 1; // ~1KB per cached element
+    }
+
+    return Math.round(memoryKB);
+  }
+
+  /**
+   * Analyze why an element is considered clickable
+   */
+  analyzeClickableReasons(element) {
+    if (!element || element.nodeType !== 1) return [];
+
+    const reasons = [];
+
+    // Check selector matches
+    const focusableSel = 'a[href], button, input, select, textarea, video, audio, [contenteditable="true"], [role="button"], [role="link"], [role="checkbox"], [role="radio"], [role="tab"], [data-action], [data-toggle], [data-click], [data-href], [data-link], [vue-click], [ng-click]';
+    const matchesSelector = element.matches && element.matches(focusableSel);
+    if (matchesSelector) {
+      reasons.push('CSS Selector Match');
+    }
+
+    // Check role attribute
+    const role = (element.getAttribute && (element.getAttribute('role') || '').trim().toLowerCase()) || '';
+    const clickableRoles = ['link', 'button', 'slider', 'checkbox', 'radio', 'tab', 'menuitem', 'option', 'switch', 'treeitem', 'combobox', 'spinbutton'];
+    const hasRole = role && clickableRoles.includes(role);
+    if (hasRole) {
+      reasons.push(`ARIA Role: "${role}"`);
+    }
+
+    // Check click handlers
+    const hasOnClick = element.onclick || element.getAttribute('onclick');
+    const elementDetector = window.keyPilot?.elementDetector;
+    const hasTrackedClickHandler = elementDetector?.hasTrackedClickHandler?.(element);
+    if (hasOnClick) {
+      reasons.push('onclick Attribute');
+    }
+    if (hasTrackedClickHandler) {
+      reasons.push('Event Listener (click)');
+    }
+
+    // Check cursor style (always check, not just when no other reasons found)
+    try {
+      const computedStyle = window.getComputedStyle && window.getComputedStyle(element);
+      const hasCursor = computedStyle && computedStyle.cursor === 'pointer';
+      if (hasCursor) {
+        reasons.push('CSS cursor: pointer');
+      }
+    } catch {
+      // Ignore getComputedStyle errors
+    }
+
+    // If element is determined to be clickable by isLikelyInteractive but we haven't found any reasons,
+    // add a generic reason to ensure we show something
+    if (reasons.length === 0) {
+      try {
+        const elementDetector = window.keyPilot?.elementDetector;
+        if (elementDetector && typeof elementDetector.isLikelyInteractive === 'function') {
+          const isClickable = elementDetector.isLikelyInteractive(element);
+          if (isClickable) {
+            // If it's clickable but we didn't find a specific reason, check more thoroughly
+            // This handles cases where the tracked click handler might not be detected yet
+            // or where cursor pointer wasn't checked due to other conditions
+            reasons.push('Likely Interactive (detected by element detector)');
+          }
+        }
+      } catch (e) {
+        // If isLikelyInteractive check fails, still try to provide a reason
+        // Check if element is in the intersection observer's observed elements
+        const intersectionManager = window.keyPilot?.intersectionManager;
+        if (intersectionManager?.observedInteractiveElements?.has?.(element)) {
+          reasons.push('Observed as Interactive Element');
+        }
+      }
+    }
+
+    return reasons;
+  }
+
+  /**
+   * Format debug data into readable display content
+   */
+  formatDebugContent(data) {
+    const cacheHitRate = data.cacheHits + data.cacheMisses > 0
+      ? Math.round((data.cacheHits / (data.cacheHits + data.cacheMisses)) * 100)
+      : 0;
+
+    const rbushHitRate = data.rbushQueries > 0
+      ? Math.round((data.rbushHits / data.rbushQueries) * 100)
+      : 0;
+
+    const cullingSection = data.isComplexPage ? `
+
+🗑️  Spatial Culling
+Last Cull: ${data.culledCount.toLocaleString()}
+Total Culled: ${data.totalCulled.toLocaleString()}` : '';
+
+    const clickableReasonsSection = data.clickableReasons.length > 0
+      ? `\n🔍 Clickable Because:\n${data.clickableReasons.map(reason => `  • ${reason}`).join('\n')}`
+      : '';
+
+    return `KeyPilot Debug Panel
+───────────────────
+Complexity: ${data.complexityLevel.toUpperCase()} ${data.isComplexPage ? '🔴' : '🟢'}
+Renderer: ${data.renderingMode.toUpperCase()}
+
+🎯 Hover: ${data.hoverElement}${clickableReasonsSection}
+
+📊 Elements
+Total: ${data.totalElements.toLocaleString()}
+Interactive: ${data.interactiveElements.toLocaleString()}
+
+👁️  IO Observer
+Observed: ${data.ioObservations.toLocaleString()}
+Visible: ${data.visibleElements.toLocaleString()}
+
+🌳 RBush Index
+Enabled: ${data.rbushEnabled ? '✅' : '❌'}
+Items: ${data.rbushItems.toLocaleString()}
+Queries: ${data.rbushQueries.toLocaleString()}
+Hit Rate: ${rbushHitRate}%${cullingSection}
+
+⚡ Performance
+Cache Hits: ${data.cacheHits.toLocaleString()} (${cacheHitRate}%)
+Observer Updates: ${data.observerUpdates.toLocaleString()}
+
+💾 Memory: ~${data.estimatedMemory}KB`;
+  }
+
+  /**
+   * Clean up debug panel
+   */
+  cleanupDebugPanel() {
+    if (this.debugPanelUpdateInterval) {
+      clearInterval(this.debugPanelUpdateInterval);
+      this.debugPanelUpdateInterval = null;
+    }
+
+    if (this.debugPanel) {
+      this.debugPanel.remove();
+      this.debugPanel = null;
+    }
   }
 }

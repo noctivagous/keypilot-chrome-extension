@@ -252,10 +252,16 @@ export class StyleManager {
     const existing = document.getElementById(id);
     if (existing) return;
 
-    const style = document.createElement('style');
-    style.id = id;
-    style.textContent = css;
-    document.head.appendChild(style);
+    try {
+      const style = document.createElement('style');
+      style.id = id;
+      style.textContent = css;
+      document.head.appendChild(style);
+    } catch (error) {
+      // On chrome:// pages and other restricted contexts, DOM modifications may be blocked
+      console.warn('[StyleManager] Cannot inject CSS on this page:', error.message);
+      // Continue without styles - KeyPilot will still work but without visual enhancements
+    }
   }
 
   injectIntoShadowRoot(shadowRoot) {

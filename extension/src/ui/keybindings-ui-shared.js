@@ -171,6 +171,13 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
 
 .${KEYBINDINGS_UI_ROOT_CLASS} .key {
   position: relative;
+  /* Reset button default styles */
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  cursor: pointer;
+  /* End button reset */
   background: linear-gradient(180deg,
     rgba(45, 55, 72, 0.95) 0%,
     rgba(26, 32, 44, 0.95) 50%,

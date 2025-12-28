@@ -508,4 +508,163 @@ h2 {
   height: 100%;
 }
 
+/* Two-column container for toolbar and history */
+.toolbar-history-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* When toolbar section is hidden, make history section full width */
+.toolbar-history-container:has(#toolbar-bookmarks-section[style*="display: none"]) {
+  grid-template-columns: 1fr;
+}
+
+/* Fixed height cards with scrolling */
+.toolbar-section,
+.history-section {
+  height: 400px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar styling */
+.toolbar-section::-webkit-scrollbar,
+.history-section::-webkit-scrollbar {
+  width: 8px;
+}
+
+.toolbar-section::-webkit-scrollbar-track,
+.history-section::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
+}
+
+.toolbar-section::-webkit-scrollbar-thumb,
+.history-section::-webkit-scrollbar-thumb {
+  background: rgba(255,140,0,0.30);
+  border-radius: 4px;
+}
+
+.toolbar-section::-webkit-scrollbar-thumb:hover,
+.history-section::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,140,0,0.50);
+}
+
+.history {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding-right: 4px; /* Prevent content from touching scrollbar */
+}
+
+.history .kp-url-content {
+  cursor: pointer;
+  padding: 8px 0;
+  border-radius: 6px;
+  transition: background 120ms ease;
+}
+
+.history .kp-url-content:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+.history .kp-url-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.history-url {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.60);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* Top sites horizontal list */
+.top-sites-horizontal {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 8px 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,140,0,0.30) rgba(255,255,255,0.05);
+}
+
+.top-sites-horizontal::-webkit-scrollbar {
+  height: 4px;
+}
+
+.top-sites-horizontal::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.05);
+  border-radius: 2px;
+}
+
+.top-sites-horizontal::-webkit-scrollbar-thumb {
+  background: rgba(255,140,0,0.30);
+  border-radius: 2px;
+}
+
+.top-sites-horizontal::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,140,0,0.50);
+}
+
+.top-site-item {
+  flex: 0 0 auto;
+  min-width: 0;
+  width: 100px; /* Fixed width for uniform sizing */
+}
+
+.top-site-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 8px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: rgba(255,255,255,0.92);
+  transition: all 120ms ease;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  width: 100%;
+  height: 90px; /* Fixed height for uniform sizing */
+  box-sizing: border-box;
+}
+
+.top-site-link:hover {
+  background: rgba(255,140,0,0.08);
+  border-color: rgba(255,140,0,0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+}
+
+.top-site-favicon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+
+.top-site-title {
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.2;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
+  max-width: 100%;
+}
+
 

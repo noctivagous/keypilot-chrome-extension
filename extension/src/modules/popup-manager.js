@@ -9,14 +9,18 @@ export class PopupManager {
   /**
    * @param {object} [opts]
    * @param {Document} [opts.doc]
+   * @param {(type: string, data: any) => void} [opts.onPanelChange] Optional callback for panel lifecycle events
    */
-  constructor({ doc } = {}) {
+  constructor({ doc, onPanelChange } = {}) {
     this.doc = doc || document;
 
     /** @type {HTMLDivElement|null} */
     this._backdrop = null;
     /** @type {Array<{id: string, panel: HTMLElement, onRequestClose?: () => void}>} */
     this._stack = [];
+
+    /** @type {(type: string, data: any) => void|null} */
+    this._onPanelChange = typeof onPanelChange === 'function' ? onPanelChange : null;
 
     this._backdropClickHandler = this._backdropClickHandler.bind(this);
   }
@@ -81,6 +85,13 @@ export class PopupManager {
 
     this._ensureMounted();
     this._recomputeZ();
+    
+    // Notify about panel shown
+    if (this._onPanelChange) {
+      try {
+        this._onPanelChange('panel-shown', { id: String(id), panel });
+      } catch { /* ignore */ }
+    }
   }
 
   /**
@@ -95,11 +106,26 @@ export class PopupManager {
     if (idx < 0) return;
 
     const removed = this._stack.splice(idx, 1)[0];
+    
+    // Notify about panel hidden
+    if (this._onPanelChange) {
+      try {
+        this._onPanelChange('panel-hidden', { id: targetId, panel: removed?.panel });
+      } catch { /* ignore */ }
+    }
+    
     this._withViewTransition(() => {
       try { removed?.panel?.remove?.(); } catch { /* ignore */ }
       if (!this._stack.length) {
         try { this._backdrop?.remove?.(); } catch { /* ignore */ }
         this._backdrop = null;
+        
+        // Notify about backdrop hidden
+        if (this._onPanelChange) {
+          try {
+            this._onPanelChange('backdrop-hidden', {});
+          } catch { /* ignore */ }
+        }
       }
     });
 
@@ -134,6 +160,13 @@ export class PopupManager {
       this._withViewTransition(() => {
         try { doc.body.appendChild(this._backdrop); } catch { /* ignore */ }
       });
+      
+      // Notify about backdrop shown
+      if (this._onPanelChange) {
+        try {
+          this._onPanelChange('backdrop-shown', { backdrop: this._backdrop });
+        } catch { /* ignore */ }
+      }
     }
 
     for (const entry of this._stack) {
@@ -152,6 +185,13 @@ export class PopupManager {
       this._backdrop.style.zIndex = String(Z_INDEX.POPUP_BACKDROP ?? Z_INDEX.VIEWPORT_MODAL_FRAME);
       // View transitions naming: backdrop participates, but only when something is open.
       this._backdrop.style.viewTransitionName = this._stack.length ? 'kpv2-popup-backdrop' : 'none';
+      
+      // Notify about backdrop z-index update (for negative region tracking)
+      if (this._onPanelChange && this._stack.length > 0) {
+        try {
+          this._onPanelChange('backdrop-updated', { backdrop: this._backdrop });
+        } catch { /* ignore */ }
+      }
     }
 
     const base = Z_INDEX.POPUP_PANEL_BASE ?? (Z_INDEX.VIEWPORT_MODAL_FRAME + 2);
@@ -168,6 +208,13 @@ export class PopupManager {
       const z = Math.min(base + i, max);
       panel.style.zIndex = String(z);
       panel.style.viewTransitionName = (top && top.id === entry.id) ? 'kpv2-popup-panel' : 'none';
+      
+      // Notify about panel z-index update (for negative region tracking)
+      if (this._onPanelChange) {
+        try {
+          this._onPanelChange('panel-updated', { id: entry.id, panel });
+        } catch { /* ignore */ }
+      }
     }
   }
 

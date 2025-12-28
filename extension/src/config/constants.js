@@ -555,7 +555,7 @@ export const EDGE_ONLY_SELECTION = {
 
   // Adaptive Processing Settings (Task 2.1)
   PAGE_COMPLEXITY_ANALYSIS: {
-    ENABLE_COMPLEXITY_ANALYSIS: true,   // Enable page complexity analysis
+    ENABLE_COMPLEXITY_ANALYSIS: false,   // Enable page complexity analysis
     ELEMENT_COUNT_THRESHOLD_LOW: 500,   // Low complexity threshold
     ELEMENT_COUNT_THRESHOLD_HIGH: 2000, // High complexity threshold
     DOM_DEPTH_THRESHOLD_LOW: 10,        // Low DOM depth threshold
@@ -623,8 +623,8 @@ export const EDGE_ONLY_SELECTION = {
   },
 
   // Debug and Monitoring
-  ENABLE_PERFORMANCE_LOGGING: true,    // Log detailed performance metrics
-  ENABLE_CACHE_METRICS: true,          // Track cache hit/miss ratios
+  ENABLE_PERFORMANCE_LOGGING: false,    // Log detailed performance metrics
+  ENABLE_CACHE_METRICS: false,          // Track cache hit/miss ratios
   ENABLE_MEMORY_LOGGING: false,        // Log memory usage (can be verbose)
   PERFORMANCE_LOG_INTERVAL: 5000,     // How often to log performance stats (ms)
 };
@@ -675,5 +675,6 @@ export const FEATURE_FLAGS = {
   DEBUG_RECTANGLE_SELECTION: false, // Enable detailed logging for rectangle selection
   DEBUG_EDGE_ONLY_PROCESSING: false, // Enable detailed logging for edge-only processing
   SHOW_SELECTION_METHOD_IN_UI: false, // Show which selection method was used in notifications
-  DEBUG_RECTANGLE_HUD: false // Show live rectangle debugging HUD with coordinates and calls
+  DEBUG_RECTANGLE_HUD: false, // Show live rectangle debugging HUD with coordinates and calls
+  ENABLE_DEBUG_PANEL: false // Enable upper-right debug panel showing performance metrics
 };
