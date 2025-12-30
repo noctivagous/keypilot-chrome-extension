@@ -76,6 +76,11 @@ export class KeyPilot extends EventManager {
     // Mouse movement optimization: only query every 2+ pixels (increased threshold)
     this.lastQueryPosition = { x: -1, y: -1 };
     this.MOUSE_QUERY_THRESHOLD = 1;
+    
+    // Mousemove hot-path optimization: coalesce hover work to once-per-frame.
+    // We still update cursor position immediately, but defer expensive hit-testing / RBush work.
+    this._mouseMoveRAF = 0;
+    this._pendingMouse = { x: -1, y: -1, underHint: null };
 
     // Post-click refresh: after UI-mutating clicks, re-query under cursor once the DOM settles.
     this._postClickRefreshToken = 0;
@@ -103,6 +108,27 @@ export class KeyPilot extends EventManager {
     this._boundScrollEndHandler = null;
 
     this.init();
+  }
+  
+  _getUnderElementHintFromMouseEvent(e) {
+    try {
+      let under = null;
+      const path = (e && typeof e.composedPath === 'function') ? e.composedPath() : null;
+      if (Array.isArray(path)) {
+        for (const n of path) {
+          if (n && n.nodeType === 1) { under = n; break; }
+        }
+      }
+      if (!under && e && e.target && e.target.nodeType === 1) under = e.target;
+      if (!under || under.nodeType !== 1) return null;
+      // HTML/BODY are too coarse to be useful as an occlusion gate.
+      try {
+        if (under.tagName === 'HTML' || under.tagName === 'BODY') return null;
+      } catch { /* ignore */ }
+      return under;
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -1203,8 +1229,24 @@ export class KeyPilot extends EventManager {
     // Update current mouse position in coordinate manager for beforeunload storage
     this.mouseCoordinateManager.updateCurrentMousePosition(x, y);
 
-    // Use optimized element detection with threshold (tagged as real mouse-move)
-    this.updateElementsUnderCursorWithThreshold(x, y, true);
+    // Coalesce hover detection to once-per-frame to avoid doing hit-testing at high mouse Hz.
+    // Also extract an "under element" hint from the event path so we can skip elementFromPoint.
+    this._pendingMouse.x = x;
+    this._pendingMouse.y = y;
+    this._pendingMouse.underHint = this._getUnderElementHintFromMouseEvent(e);
+
+    if (this._mouseMoveRAF) return;
+    this._mouseMoveRAF = window.requestAnimationFrame(() => {
+      this._mouseMoveRAF = 0;
+      if (!this.enabled) return;
+      // Use optimized element detection with threshold (tagged as real mouse-move)
+      this.updateElementsUnderCursorWithThreshold(
+        this._pendingMouse.x,
+        this._pendingMouse.y,
+        true,
+        this._pendingMouse.underHint
+      );
+    });
   }
 
   handleScroll(e) {
@@ -1218,7 +1260,7 @@ export class KeyPilot extends EventManager {
     return; // OptimizedScrollManager handles scroll events directly
   }
 
-  updateElementsUnderCursorWithThreshold(x, y, fromMouseMove = false) {
+  updateElementsUnderCursorWithThreshold(x, y, fromMouseMove = false, underHint = null) {
     // Check if mouse has moved enough to warrant a new query
     const deltaX = Math.abs(x - this.lastQueryPosition.x);
     const deltaY = Math.abs(y - this.lastQueryPosition.y);
@@ -1234,11 +1276,11 @@ export class KeyPilot extends EventManager {
     this.lastQueryPosition.y = y;
 
     // Perform the actual element query
-    this.updateElementsUnderCursor(x, y, fromMouseMove);
+    this.updateElementsUnderCursor(x, y, fromMouseMove, underHint);
   }
 
 
-  updateElementsUnderCursor(x, y, fromMouseMove = false) {
+  updateElementsUnderCursor(x, y, fromMouseMove = false, underHint = null) {
     const currentState = this.state.getState();
 
     this.performanceMetrics.mouseQueries++;
@@ -1267,11 +1309,14 @@ export class KeyPilot extends EventManager {
     const canUseOcclusionGatedRBush = fromMouseMove && !inDeleteMode && !inPopoverMode;
     if (canUseOcclusionGatedRBush) {
       try {
-        under = this.detector.deepElementFromPoint(x, y);
+        // Prefer event-derived target (composedPath) to avoid a DOM hit-test on the hot path.
+        under = underHint || null;
+        if (!under) under = this.detector.deepElementFromPoint(x, y);
         if (this.intersectionManager &&
             typeof this.intersectionManager.queryInteractiveAtPoint === 'function' &&
             typeof this.intersectionManager.pickBestInteractiveFromCandidates === 'function') {
           const candidates = this.intersectionManager.queryInteractiveAtPoint(x, y, 0);
+          // If we couldn't determine an "under" element, we can still do a best-effort pick.
           clickable = this.intersectionManager.pickBestInteractiveFromCandidates(candidates, under);
         }
       } catch { /* ignore */ }
@@ -1280,6 +1325,7 @@ export class KeyPilot extends EventManager {
     // If RBush didn't yield a candidate (or we require exactness), use traditional hit-testing.
     if (!clickable || inDeleteMode || inPopoverMode) {
       // Use traditional element detection for accuracy
+      if (!under) under = underHint || null;
       if (!under) under = this.detector.deepElementFromPoint(x, y);
 
       // Prefer RBush selection gated by `under` to avoid “click through”.

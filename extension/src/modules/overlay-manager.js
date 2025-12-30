@@ -8,7 +8,7 @@ import { PopupManager } from './popup-manager.js';
 export class OverlayManager {
   constructor() {
     // Rendering mode configuration: 'dom' | 'canvas' | 'css-custom-props'
-    this.renderingMode = 'dom'; // Default to current DOM-based rendering
+    this.renderingMode = 'canvas'; // Default to current DOM-based rendering
 
     // Canvas rendering backend
     this.canvasOverlay = null;
