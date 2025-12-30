@@ -296,18 +296,18 @@
     "keyboardClass": "key-activate"
   },
   "ACTIVATE_NEW_TAB": {
-    "label": "Click New Tab",
-    "description": "Click New Tab",
-    "keyLabel": "B",
-    "displayKey": "B",
-    "keyboardClass": "key-activate-new"
-  },
-  "ACTIVATE_NEW_TAB_OVER": {
     "label": "Middle Click",
     "description": "Open Link in New Tab (Background, like middle click)",
     "keyLabel": "G",
     "displayKey": "G",
     "keyboardClass": "key-activate-new-over"
+  },
+  "ACTIVATE_NEW_TAB_OVER": {
+    "label": "Click New Tab",
+    "description": "Click New Tab",
+    "keyLabel": "B",
+    "displayKey": "B",
+    "keyboardClass": "key-activate-new"
   },
   "TAB_HISTORY": {
     "label": "Tab History",
