@@ -4,12 +4,15 @@
  * Stored in chrome.storage.sync so values sync across Chrome profiles and across tabs.
  */
 
+import { CURSOR_MODE } from '../config/constants.js';
+
 export const SETTINGS_STORAGE_KEY = 'kp_settings_v1';
 
 /** @typedef {'brave'|'google'|'duckduckgo'} SearchEngine */
 
 /** @typedef {'crosshair'|'native_arrow'|'native_pointer'} ClickCursorType */
 /** @typedef {'t_square'|'crosshair'} TextCursorType */
+/** @typedef {typeof CURSOR_MODE[keyof typeof CURSOR_MODE]} CursorMode */
 
 /**
  * @typedef {{
@@ -39,6 +42,7 @@ export const SETTINGS_STORAGE_KEY = 'kp_settings_v1';
 /**
  * @typedef {{
  *   searchEngine: SearchEngine,
+ *   cursorMode: CursorMode,
  *   keyboardReferenceKeyFeedback: boolean,
  *   clickMode: ClickModeSettings,
  *   textMode: TextModeSettings
@@ -48,6 +52,7 @@ export const SETTINGS_STORAGE_KEY = 'kp_settings_v1';
 /** @type {KeyPilotSettings} */
 export const DEFAULT_SETTINGS = Object.freeze({
   searchEngine: 'brave',
+  cursorMode: CURSOR_MODE.NO_CUSTOM_CURSORS,
   // When true, the floating keyboard reference panel highlights keys on keydown/keyup.
   keyboardReferenceKeyFeedback: true,
   clickMode: Object.freeze({
@@ -102,6 +107,15 @@ export const SEARCH_ENGINE_META = Object.freeze({
 export function normalizeSearchEngine(raw) {
   if (raw === 'google' || raw === 'duckduckgo' || raw === 'brave') return raw;
   return DEFAULT_SETTINGS.searchEngine;
+}
+
+/**
+ * @param {any} raw
+ * @returns {CursorMode}
+ */
+export function normalizeCursorMode(raw) {
+  if (raw === CURSOR_MODE.NO_CUSTOM_CURSORS || raw === CURSOR_MODE.CUSTOM_CURSORS) return raw;
+  return DEFAULT_SETTINGS.cursorMode;
 }
 
 /**
@@ -217,6 +231,7 @@ export async function getSettings() {
       ...DEFAULT_SETTINGS,
       ...(stored && typeof stored === 'object' ? stored : {}),
       searchEngine: normalizeSearchEngine(stored?.searchEngine),
+      cursorMode: normalizeCursorMode(stored?.cursorMode),
       keyboardReferenceKeyFeedback: normalizeBoolean(
         stored?.keyboardReferenceKeyFeedback,
         DEFAULT_SETTINGS.keyboardReferenceKeyFeedback
@@ -258,6 +273,7 @@ export async function setSettings(partial) {
     }
   };
   next.searchEngine = normalizeSearchEngine(next.searchEngine);
+  next.cursorMode = normalizeCursorMode(next.cursorMode);
   next.keyboardReferenceKeyFeedback = normalizeBoolean(
     next.keyboardReferenceKeyFeedback,
     DEFAULT_SETTINGS.keyboardReferenceKeyFeedback

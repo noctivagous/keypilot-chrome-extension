@@ -14,7 +14,7 @@ import { IntersectionObserverManager } from './modules/intersection-observer-man
 import { OptimizedScrollManager } from './modules/optimized-scroll-manager.js';
 import { RectangleIntersectionObserver } from './modules/rectangle-intersection-observer.js';
 import { MouseCoordinateManager } from './modules/mouse-coordinate-manager.js';
-import { KEYBINDINGS, MODES, CSS_CLASSES, COLORS, Z_INDEX, RECTANGLE_SELECTION, EDGE_ONLY_SELECTION, FEATURE_FLAGS } from './config/constants.js';
+import { KEYBINDINGS, MODES, CURSOR_MODE, CSS_CLASSES, COLORS, Z_INDEX, RECTANGLE_SELECTION, EDGE_ONLY_SELECTION, FEATURE_FLAGS } from './config/constants.js';
 import { FloatingKeyboardHelp } from './ui/floating-keyboard-help.js';
 import { OmniboxManager } from './modules/omnibox-manager.js';
 import { TabHistoryPopover } from './modules/tab-history-popover.js';
@@ -319,12 +319,30 @@ export class KeyPilot extends EventManager {
     // Load persisted settings and keep them synced across tabs.
     await this.refreshSettingsFromStorage();
     this.installSettingsSync();
+
+    // Apply cursor-mode behavior as early as we can (after settings are loaded).
+    try {
+      this.styleManager?.setCursorOverridesEnabled?.(this._isCustomCursorModeEnabled());
+    } catch { /* ignore */ }
     
     // Only initialize functionality if enabled
     if (this.enabled) {
-      // Only apply the custom cursor once we know KeyPilot is enabled.
-      // This prevents a brief "cursor flash" during page load when the extension is disabled.
-      this.cursor.ensure();
+      if (this._isCustomCursorModeEnabled()) {
+        // Only apply the custom cursor once we know KeyPilot is enabled.
+        // This prevents a brief "cursor flash" during page load when the extension is disabled.
+        this.cursor.ensure();
+        // Apply the cursor immediately using the already-loaded settings, without waiting for the
+        // first hover/mousemove-driven state update. This also preserves the early-inject cursor
+        // (if present) by avoiding a default overwrite in CursorManager.ensure().
+        try {
+          const st = this.state?.getState?.() || {};
+          const mode = st.mode || MODES.NONE;
+          this.cursor.setMode(mode, this._buildCursorOptionsForState({ ...st, mode }));
+        } catch { /* ignore */ }
+      } else {
+        // Ensure we do not leave any cursor overrides behind.
+        try { this.cursor.cleanup(); } catch { /* ignore */ }
+      }
       await this.initializeEnabledState();
     } else {
       this.initializeDisabledState();
@@ -347,22 +365,25 @@ export class KeyPilot extends EventManager {
     // Initialize cursor position using stored coordinates or fallback
     await this.initializeCursorPosition();
 
-    // Setup PopupManager tracking (must happen after overlayManager is initialized)
-    this._setupPopupManagerTracking();
-
-    // Start panel tracking for negative regions
-    this._startPanelTracking();
+    // Note: occlusion is handled automatically via DOM hit-testing (no custom negative regions).
 
     this.initializationComplete = true;
     this.state.setState({ isInitialized: true });
   }
 
   async refreshSettingsFromStorage() {
+    const prevCursorMode = this._settings?.cursorMode;
     try {
       this._settings = await getSettings();
     } catch {
       this._settings = { ...DEFAULT_SETTINGS };
     }
+
+    // Apply cursor-mode behavior immediately.
+    const cursorEnabled = this._isCustomCursorModeEnabled();
+    try {
+      this.styleManager?.setCursorOverridesEnabled?.(cursorEnabled);
+    } catch { /* ignore */ }
 
     // Apply to runtime immediately.
     try {
@@ -379,15 +400,32 @@ export class KeyPilot extends EventManager {
       }
     } catch { /* ignore */ }
 
-    // Force cursor refresh to reflect updated settings.
-    try {
-      this.cursor.currentMode = null;
-      this.cursor.currentModeKey = null;
-      const st = this.state?.getState?.();
-      if (st && st.mode) {
-        this.cursor.setMode(st.mode, this._buildCursorOptionsForState(st));
-      }
-    } catch { /* ignore */ }
+    // Cursor behavior:
+    // - CUSTOM_CURSORS: ensure + refresh cursor
+    // - NO_CUSTOM_CURSORS: remove cursor overrides and skip cursor updates entirely
+    if (cursorEnabled) {
+      try {
+        this.cursor.ensure();
+      } catch { /* ignore */ }
+      try {
+        this.cursor.currentMode = null;
+        this.cursor.currentModeKey = null;
+        const st = this.state?.getState?.();
+        if (st && st.mode) {
+          this.cursor.setMode(st.mode, this._buildCursorOptionsForState(st));
+        }
+      } catch { /* ignore */ }
+    } else {
+      try {
+        // If we just switched away from CUSTOM_CURSORS, aggressively clean up.
+        if (prevCursorMode === CURSOR_MODE.CUSTOM_CURSORS) {
+          this.cursor.cleanup();
+        } else {
+          // Still ensure we aren't leaving any cursor variable set.
+          this.cursor.cleanup();
+        }
+      } catch { /* ignore */ }
+    }
 
     // Force overlay refresh.
     try {
@@ -536,16 +574,8 @@ export class KeyPilot extends EventManager {
 
       if (next) {
         this.floatingKeyboardHelp.show();
-        // Register panel container for negative region blocking
-        if (this.floatingKeyboardHelp.root && this.intersectionManager) {
-          this.intersectionManager.registerPanelContainer('floating-keyboard-help', this.floatingKeyboardHelp.root);
-        }
       } else {
         this.floatingKeyboardHelp.hide();
-        // Unregister panel container
-        if (this.intersectionManager) {
-          this.intersectionManager.unregisterPanelContainer('floating-keyboard-help');
-        }
       }
 
       if (persist) this.setKeyboardHelpVisibleInStorage(next);
@@ -865,8 +895,10 @@ export class KeyPilot extends EventManager {
     if (newState.mode !== prevState.mode ||
         (newState.mode === MODES.TEXT_FOCUS && newState.focusEl !== prevState.focusEl) ||
         (newState.mode === MODES.NONE && newState.focusEl !== prevState.focusEl)) {
-      const options = this._buildCursorOptionsForState(newState);
-      this.cursor.setMode(newState.mode, options);
+      if (this._isCustomCursorModeEnabled()) {
+        const options = this._buildCursorOptionsForState(newState);
+        this.cursor.setMode(newState.mode, options);
+      }
       this.updatePopupStatus(newState.mode);
     }
 
@@ -882,6 +914,11 @@ export class KeyPilot extends EventManager {
       newState.deleteEl !== prevState.deleteEl) {
       this.updateOverlays(newState.focusEl, newState.deleteEl);
     }
+  }
+
+  _isCustomCursorModeEnabled() {
+    const mode = this._settings?.cursorMode || DEFAULT_SETTINGS.cursorMode;
+    return mode === CURSOR_MODE.CUSTOM_CURSORS;
   }
 
   updatePopupStatus(mode) {
@@ -1220,52 +1257,22 @@ export class KeyPilot extends EventManager {
     let under = null;
     let clickable = null;
 
-    // Prefer RBush when we don't *need* the exact underlying element (delete mode, popover mode).
-    // In normal hover focus, the bbox-based result is usually good enough and avoids DOM queries.
-    const canSkipUnderPointQuery = fromMouseMove && !inDeleteMode && !inPopoverMode;
-    if (canSkipUnderPointQuery) {
+    // Generalized occlusion strategy:
+    // - Use RBush only as a fast bbox pre-filter.
+    // - Use a single DOM hit-test (`deepElementFromPoint`) to respect third-party overlays
+    //   (menus, dialogs, lightboxes, etc.). We only accept RBush candidates that are on the
+    //   ancestor chain of the hit-tested topmost element.
+    //
+    // This prevents “clicking through” overlays even when RBush still contains elements behind them.
+    const canUseOcclusionGatedRBush = fromMouseMove && !inDeleteMode && !inPopoverMode;
+    if (canUseOcclusionGatedRBush) {
       try {
-        if (this.intersectionManager && typeof this.intersectionManager.queryInteractiveAtPoint === 'function') {
+        under = this.detector.deepElementFromPoint(x, y);
+        if (this.intersectionManager &&
+            typeof this.intersectionManager.queryInteractiveAtPoint === 'function' &&
+            typeof this.intersectionManager.pickBestInteractiveFromCandidates === 'function') {
           const candidates = this.intersectionManager.queryInteractiveAtPoint(x, y, 0);
-          if (candidates && candidates.length) {
-            // Sort candidates by z-index (highest first), then by area (smallest first).
-            // This ensures elements on panels (like close buttons, keyboard keys) are selected
-            // over background page elements with lower z-index.
-            // Use stored z-index from rbush to avoid expensive getComputedStyle calls
-            const sortedCandidates = candidates.slice().sort((a, b) => {
-              // Get z-index from rbush (already computed and stored)
-              const getZIndex = (el) => {
-                if (this.intersectionManager && typeof this.intersectionManager.getZIndexForElement === 'function') {
-                  return this.intersectionManager.getZIndexForElement(el);
-                }
-                // Fallback to computing if method not available
-                try {
-                  const zIndex = window.getComputedStyle(el).zIndex;
-                  return zIndex === 'auto' ? 0 : parseInt(zIndex) || 0;
-                } catch {
-                  return 0;
-                }
-              };
-
-              const zA = getZIndex(a);
-              const zB = getZIndex(b);
-
-              // Higher z-index wins
-              if (zA !== zB) return zB - zA;
-
-              // Same z-index: smaller area wins (tends to match closer interactive targets)
-              const getArea = (el) => {
-                const r = this.intersectionManager.elementPositionCache?.get?.(el);
-                const w = r && Number(r.width);
-                const h = r && Number(r.height);
-                return (Number.isFinite(w) ? w : 0) * (Number.isFinite(h) ? h : 0);
-              };
-
-              return getArea(a) - getArea(b);
-            });
-
-            clickable = sortedCandidates[0] || null;
-          }
+          clickable = this.intersectionManager.pickBestInteractiveFromCandidates(candidates, under);
         }
       } catch { /* ignore */ }
     }
@@ -1273,14 +1280,19 @@ export class KeyPilot extends EventManager {
     // If RBush didn't yield a candidate (or we require exactness), use traditional hit-testing.
     if (!clickable || inDeleteMode || inPopoverMode) {
       // Use traditional element detection for accuracy
-      under = this.detector.deepElementFromPoint(x, y);
-      // Fast path: use spatial index (RBush) via IntersectionObserverManager when available.
-      // Fall back to the existing detector heuristics for correctness.
+      if (!under) under = this.detector.deepElementFromPoint(x, y);
+
+      // Prefer RBush selection gated by `under` to avoid “click through”.
       try {
-        if (!clickable && this.intersectionManager && typeof this.intersectionManager.findBestInteractiveForUnderPoint === 'function') {
-          clickable = this.intersectionManager.findBestInteractiveForUnderPoint({ x, y, underEl: under });
+        if (!clickable &&
+            this.intersectionManager &&
+            typeof this.intersectionManager.queryInteractiveAtPoint === 'function' &&
+            typeof this.intersectionManager.pickBestInteractiveFromCandidates === 'function') {
+          const candidates = this.intersectionManager.queryInteractiveAtPoint(x, y, 0);
+          clickable = this.intersectionManager.pickBestInteractiveFromCandidates(candidates, under);
         }
       } catch { /* ignore */ }
+
       if (!clickable) {
         try {
           if (this.intersectionManager?.metrics) this.intersectionManager.metrics.rtreeFallbacks++;
@@ -4679,9 +4691,6 @@ export class KeyPilot extends EventManager {
         this.focusDetector.stop();
       }
       
-      // Stop panel tracking
-      this._stopPanelTracking();
-      
       // Clean up intersection manager
       if (this.intersectionManager) {
         this.intersectionManager.cleanup();
@@ -4706,10 +4715,6 @@ export class KeyPilot extends EventManager {
     if (this.floatingKeyboardHelp) {
       try {
         this.floatingKeyboardHelp.cleanup();
-        // Unregister panel container
-        if (this.intersectionManager) {
-          this.intersectionManager.unregisterPanelContainer('floating-keyboard-help');
-        }
       } catch { /* ignore */ }
       this.floatingKeyboardHelp = null;
     }
@@ -4745,145 +4750,8 @@ export class KeyPilot extends EventManager {
     return this.enabled;
   }
 
-  /**
-   * Start tracking panels for negative region registration
-   * Periodically checks for visible panel elements and registers them
-   */
-  _startPanelTracking() {
-    if (this._panelTrackingInterval) return;
-    
-    // Initial update
-    this._updatePanelRegistrations();
-    
-    // Update every 500ms to catch panel show/hide/resize
-    this._panelTrackingInterval = setInterval(() => {
-      this._updatePanelRegistrations();
-    }, 500);
-  }
-
-  /**
-   * Stop tracking panels
-   */
-  _stopPanelTracking() {
-    if (this._panelTrackingInterval) {
-      clearInterval(this._panelTrackingInterval);
-      this._panelTrackingInterval = null;
-    }
-  }
-
-  /**
-   * Setup PopupManager tracking for negative regions
-   * Hooks into PopupManager lifecycle to register/unregister backdrop and panels
-   */
-  _setupPopupManagerTracking() {
-    if (!this.overlayManager || !this.overlayManager.popupManager) return;
-    
-    const popupManager = this.overlayManager.popupManager;
-    
-    // Set up callback for panel lifecycle events
-    popupManager._onPanelChange = (type, data) => {
-      if (!this.intersectionManager) return;
-      
-      try {
-        switch (type) {
-          case 'backdrop-shown':
-          case 'backdrop-updated':
-            if (data.backdrop) {
-              this.intersectionManager.registerPanelContainer('popup-backdrop', data.backdrop);
-            }
-            break;
-            
-          case 'backdrop-hidden':
-            this.intersectionManager.unregisterPanelContainer('popup-backdrop');
-            break;
-            
-          case 'panel-shown':
-          case 'panel-updated':
-            if (data.id && data.panel) {
-              this.intersectionManager.registerPanelContainer(`popup-panel-${data.id}`, data.panel);
-            }
-            break;
-            
-          case 'panel-hidden':
-            if (data.id) {
-              this.intersectionManager.unregisterPanelContainer(`popup-panel-${data.id}`);
-            }
-            break;
-        }
-      } catch (e) {
-        if (window.KEYPILOT_DEBUG) {
-          console.warn('[KeyPilot Debug] Error in popup manager tracking:', e);
-        }
-      }
-    };
-  }
-
-  /**
-   * Update panel registrations based on current DOM state
-   * Registers visible panels as negative regions, unregisters hidden ones
-   */
-  _updatePanelRegistrations() {
-    if (!this.intersectionManager) return;
-    
-    // Track onboarding panel
-    const onboardingPanel = document.querySelector('.kp-onboarding-panel');
-    if (onboardingPanel && onboardingPanel.isConnected && onboardingPanel.hidden !== true) {
-      this.intersectionManager.registerPanelContainer('onboarding-panel', onboardingPanel);
-      // Update bounds in case panel moved/resized
-      this.intersectionManager.updatePanelContainer('onboarding-panel');
-    } else {
-      this.intersectionManager.unregisterPanelContainer('onboarding-panel');
-    }
-
-    // Track practice popover panel (step 2 of onboarding)
-    // The practice panel uses class 'kp-practice-popover' based on the root element
-    const practicePanel = document.querySelector('.kp-practice-popover');
-    if (practicePanel && practicePanel.isConnected && practicePanel.hidden !== true) {
-      this.intersectionManager.registerPanelContainer('practice-popover-panel', practicePanel);
-      // Update bounds in case panel moved/resized
-      this.intersectionManager.updatePanelContainer('practice-popover-panel');
-    } else {
-      this.intersectionManager.unregisterPanelContainer('practice-popover-panel');
-    }
-
-    // Floating keyboard help is handled in setKeyboardHelpVisible (already registered there)
-    // But update its bounds if it's visible
-    if (this.floatingKeyboardHelp && this.floatingKeyboardHelp.root) {
-      try {
-        if (this.floatingKeyboardHelp.isVisible && this.floatingKeyboardHelp.isVisible()) {
-          this.intersectionManager.updatePanelContainer('floating-keyboard-help');
-        }
-      } catch {
-        // ignore
-      }
-    }
-    
-    // PopupManager panels and backdrop are handled via lifecycle callbacks
-    // But update their bounds if they exist
-    if (this.overlayManager && this.overlayManager.popupManager) {
-      const pm = this.overlayManager.popupManager;
-      if (pm._backdrop && pm._backdrop.isConnected) {
-        // Important: register here (not only via lifecycle callbacks) so the negative region
-        // still gets created if RBush wasn't ready at the instant the backdrop was mounted.
-        // Also keeps fixed-position backdrop bounds correct across scroll changes.
-        this.intersectionManager.registerPanelContainer('popup-backdrop', pm._backdrop);
-      }
-      for (const entry of pm._stack || []) {
-        if (entry.panel && entry.panel.isConnected) {
-          // Same rationale as backdrop: ensure the panel negative region exists even if the
-          // initial "panel-shown" event fired before RBush finished initializing.
-          this.intersectionManager.registerPanelContainer(`popup-panel-${entry.id}`, entry.panel);
-        }
-      }
-    }
-  }
-
   cleanup() {
     this.stop();
-
-    // Stop panel tracking
-    this._stopPanelTracking();
-
     // Clean up intersection observer optimizations
     if (this.intersectionManager) {
       this.intersectionManager.cleanup();

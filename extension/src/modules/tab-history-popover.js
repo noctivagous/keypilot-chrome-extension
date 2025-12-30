@@ -226,7 +226,7 @@ export class TabHistoryPopover {
         useInlineStyles: true,
         scrollY: true,
         style: {
-          overflowY: 'auto',
+          overflow: 'scroll',
           padding: '8px 6px',
           flex: '1 1 auto',
           minHeight: '0'
@@ -463,7 +463,7 @@ export class TabHistoryPopover {
           // Indent gutter + favicon.
           const gutter = document.createElement('div');
           Object.assign(gutter.style, {
-            width: `${Math.max(0, item.depth) * 14}px`,
+            width: '0px',
             flex: '0 0 auto'
           });
 

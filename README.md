@@ -30,11 +30,11 @@ shortcuts for common web interactions, eliminating the need for mouse navigation
 | Keys | Action |
 | --- | --- |
 | `R` | Go Forward (History) |
+| `B` | Click New Tab |
 | `D` | Go Back (History) |
 | `E` | Open Link in Popover |
 | `F` | Click Element |
-| `G` | Click New Tab |
-| `H` | Open Link in New Tab (Background, like middle click) |
+| `G` | Open Link in New Tab (Background, like middle click) |
 | `J` | Open Tab History (Branch-Retaining) |
 | `L` | Open Omnibox (Address Bar Overlay) |
 | `S` | Go Back (History) |
@@ -54,9 +54,7 @@ shortcuts for common web interactions, eliminating the need for mouse navigation
 
 | Keys | Action |
 | --- | --- |
-| `B` | Page Up |
 | `C` | Page Up (Instant) |
-| `N` | Page Down |
 | `V` | Page Down (Instant) |
 | `X` | Scroll to Bottom |
 | `Z` | Scroll to Top |
@@ -70,6 +68,20 @@ shortcuts for common web interactions, eliminating the need for mouse navigation
 | `Esc` | Exit Focus |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

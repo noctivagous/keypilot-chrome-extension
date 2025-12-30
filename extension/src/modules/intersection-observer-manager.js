@@ -49,7 +49,6 @@ export class IntersectionObserverManager {
     // NOTE: The bundle provides `RBush` as a global symbol (vendored in src/vendor/rbush.js).
     this._rtree = null;
     this._rtreeItemsByElement = new Map(); // Element -> item object (kept by reference for removal)
-    this._rtreeItemsByPanelId = new Map(); // Panel ID -> item object for negative regions
     this._rtreeReady = false;
     this._rtreeMaxEntries = 16;
     this._rtreeRemoveEquals = null; // unused (reference removal)
@@ -906,6 +905,13 @@ export class IntersectionObserverManager {
 
     // Remove elements that are no longer in the DOM
     for (const element of this.observedInteractiveElements) {
+      try {
+        if (element && element.isConnected === false) {
+          this.unobserveInteractiveElement(element);
+          continue;
+        }
+      } catch { /* ignore */ }
+      // Fallback for older environments / weird nodes.
       if (!document.contains(element)) {
         this.unobserveInteractiveElement(element);
       }
@@ -923,8 +929,8 @@ export class IntersectionObserverManager {
       timestamp: Date.now()
     });
 
-    // Keep spatial index in sync (no extra DOM reads here — uses the rect we already computed).
-    this._rtreeUpsertElementRect(element, rect);
+    // Keep spatial index in sync with clipped bounds (accounts for parent clipping).
+    this._rtreeUpsertElementRect(element);
   }
 
   _rtreeEnabled() {
@@ -953,20 +959,46 @@ export class IntersectionObserverManager {
     }
   }
 
-  _rtreeUpsertElementRect(element, rectLike) {
+  _rtreeUpsertElementRect(element) {
     if (!this._rtreeEnabled()) return;
     if (!element || element.nodeType !== 1) return;
-    if (!rectLike) return;
 
-    // Convert viewport coordinates (from getBoundingClientRect) to page/document coordinates
+    // Use getClientRects() to get visible rectangles (accounts for clipping by parent containers)
+    // This ensures we only index the actually clickable portions of elements
+    let clientRects;
+    try {
+      clientRects = element.getClientRects();
+    } catch (e) {
+      // Fallback to getBoundingClientRect if getClientRects fails
+      const rect = element.getBoundingClientRect();
+      clientRects = rect ? [rect] : [];
+    }
+
+    if (!clientRects || clientRects.length === 0) return;
+
+    // Compute union of all visible client rectangles
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const rect of clientRects) {
+      minX = Math.min(minX, rect.left);
+      minY = Math.min(minY, rect.top);
+      maxX = Math.max(maxX, rect.right);
+      maxY = Math.max(maxY, rect.bottom);
+    }
+
+    // Convert viewport coordinates to page/document coordinates
     // This ensures the spatial index remains valid across page scrolls
-    const scrollX = window.pageXOffset || document.documentElement.scrollLeft || 0;
-    const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+    const scrollX = (typeof window !== 'undefined' && typeof window.scrollX === 'number')
+      ? window.scrollX
+      : (window.pageXOffset || 0);
+    const scrollY = (typeof window !== 'undefined' && typeof window.scrollY === 'number')
+      ? window.scrollY
+      : (window.pageYOffset || 0);
 
-    const minX = Number(rectLike.left) + scrollX;
-    const minY = Number(rectLike.top) + scrollY;
-    const maxX = Number(rectLike.right) + scrollX;
-    const maxY = Number(rectLike.bottom) + scrollY;
+    minX = Number(minX) + scrollX;
+    minY = Number(minY) + scrollY;
+    maxX = Number(maxX) + scrollX;
+    maxY = Number(maxY) + scrollY;
+
     if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) return;
 
     // Ensure non-negative/valid box.
@@ -982,12 +1014,94 @@ export class IntersectionObserverManager {
       existing.maxX = maxX;
       existing.maxY = maxY;
       existing.zIndex = zIndex;
-      // Keep isNegative flag unchanged (should only be set for panel containers)
       try { this._rtree.insert(existing); } catch { /* ignore */ }
       return;
     }
 
-    const item = { minX, minY, maxX, maxY, element, zIndex, isNegative: false };
+    // =============================================================================
+    // RBUSH OPTIMIZATION: omit enclosed elements with same link destination
+    // If this element is a link and is completely enclosed by a larger element
+    // with the same link destination, omit the smaller element to reduce redundancy
+    // =============================================================================
+    const linkDestination = element.tagName === 'A' ? (element.getAttribute('href') || '') : '';
+    if (linkDestination) {
+      // Query for elements that might contain this element
+      const containingElements = this._rtree.search({
+        minX: minX - 1, // Slight expansion to handle edge cases
+        minY: minY - 1,
+        maxX: maxX + 1,
+        maxY: maxY + 1
+      }).filter(item => {
+        // Must contain this element
+        return item.element !== element && // Not the same element
+               item.minX <= minX &&
+               item.minY <= minY &&
+               item.maxX >= maxX &&
+               item.maxY >= maxY &&
+               item.element.tagName === 'A' &&
+               (item.element.getAttribute('href') || '') === linkDestination;
+      });
+
+      // If any larger element with same link destination contains this element, skip it
+      if (containingElements.length > 0) {
+        if (window.KEYPILOT_DEBUG) {
+          console.log('[KeyPilot Debug] Omitting enclosed link element:', {
+            smallerElement: element,
+            linkDestination,
+            enclosedBy: containingElements[0].element
+          });
+        }
+        return; // Don't add this smaller element
+      }
+    }
+
+    // =============================================================================
+    // RBUSH OPTIMIZATION: expand link bounds to include contained images
+    // When an <img> is inside an <a href=""> and the link's computed box is smaller
+    // than the image's computed box, expand the link's bounds to match the image
+    // =============================================================================
+    if (element.tagName === 'A') {
+      try {
+        const images = element.querySelectorAll('img');
+        for (const img of images) {
+          // Use getClientRects for images too, for consistency with clipping handling
+          let imgRects;
+          try {
+            imgRects = img.getClientRects();
+          } catch (e) {
+            const imgRect = img.getBoundingClientRect();
+            imgRects = imgRect ? [imgRect] : [];
+          }
+
+          if (imgRects && imgRects.length > 0) {
+            // Compute union of image's visible rectangles
+            let imgMinX = Infinity, imgMinY = Infinity, imgMaxX = -Infinity, imgMaxY = -Infinity;
+            for (const rect of imgRects) {
+              imgMinX = Math.min(imgMinX, rect.left);
+              imgMinY = Math.min(imgMinY, rect.top);
+              imgMaxX = Math.max(imgMaxX, rect.right);
+              imgMaxY = Math.max(imgMaxY, rect.bottom);
+            }
+
+            // Convert image viewport coordinates to page coordinates
+            imgMinX = imgMinX + scrollX;
+            imgMinY = imgMinY + scrollY;
+            imgMaxX = imgMaxX + scrollX;
+            imgMaxY = imgMaxY + scrollY;
+
+            // Expand link bounds to include image if image extends beyond link bounds
+            if (imgMinX < minX) minX = imgMinX;
+            if (imgMinY < minY) minY = imgMinY;
+            if (imgMaxX > maxX) maxX = imgMaxX;
+            if (imgMaxY > maxY) maxY = imgMaxY;
+          }
+        }
+      } catch (e) {
+        // Ignore errors when accessing image bounds
+      }
+    }
+
+    const item = { minX, minY, maxX, maxY, element, zIndex };
     this._rtreeItemsByElement.set(element, item);
     try { this._rtree.insert(item); } catch { /* ignore */ }
   }
@@ -1000,90 +1114,16 @@ export class IntersectionObserverManager {
     try { this._rtree.remove(item); } catch { /* ignore */ }
   }
 
-  /**
-   * Register a panel container as a negative region (blocking area)
-   * Negative regions block elements underneath them unless those elements have higher z-index
-   * @param {string} panelId - Unique identifier for the panel
-   * @param {HTMLElement} panelElement - The panel container element
-   */
-  registerPanelContainer(panelId, panelElement) {
-    if (!this._rtreeEnabled() || !panelElement || panelElement.nodeType !== 1) return;
-    
-    // Remove existing registration if present
-    this.unregisterPanelContainer(panelId);
-
-    try {
-      const rect = panelElement.getBoundingClientRect();
-      if (!rect || rect.width === 0 || rect.height === 0) return;
-
-      const scrollX = window.pageXOffset || document.documentElement.scrollLeft || 0;
-      const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
-
-      const minX = Number(rect.left) + scrollX;
-      const minY = Number(rect.top) + scrollY;
-      const maxX = Number(rect.right) + scrollX;
-      const maxY = Number(rect.bottom) + scrollY;
-      if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) return;
-      if (maxX <= minX || maxY <= minY) return;
-
-      const zIndex = this._computeZIndex(panelElement);
-      const item = { 
-        minX, 
-        minY, 
-        maxX, 
-        maxY, 
-        element: panelElement, 
-        zIndex, 
-        isNegative: true,
-        panelId 
-      };
-      
-      this._rtreeItemsByPanelId.set(panelId, item);
-      this._rtreeItemsByElement.set(panelElement, item);
-      try { 
-        this._rtree.insert(item); 
-      } catch { 
-        /* ignore */ 
-      }
-    } catch (e) {
-      if (window.KEYPILOT_DEBUG) {
-        console.warn('[KeyPilot Debug] Failed to register panel container:', e);
-      }
-    }
-  }
-
-  /**
-   * Unregister a panel container (remove its negative region)
-   * @param {string} panelId - Unique identifier for the panel
-   */
-  unregisterPanelContainer(panelId) {
-    if (!this._rtreeReady || !this._rtree) return;
-    const item = this._rtreeItemsByPanelId.get(panelId);
-    if (!item) return;
-    
-    this._rtreeItemsByPanelId.delete(panelId);
-    if (item.element) {
-      this._rtreeItemsByElement.delete(item.element);
-    }
-    try { 
-      this._rtree.remove(item); 
-    } catch { 
-      /* ignore */ 
-    }
-  }
-
-  /**
-   * Update a registered panel container's bounds (call when panel moves/resizes)
-   * @param {string} panelId - Unique identifier for the panel
-   */
-  updatePanelContainer(panelId) {
-    if (!this._rtreeEnabled()) return;
-    const item = this._rtreeItemsByPanelId.get(panelId);
-    if (!item || !item.element) return;
-
-    // Re-register to update bounds
-    this.registerPanelContainer(panelId, item.element);
-  }
+  // =============================================================================
+  // OCCLUSION NOTE
+  // We intentionally do NOT maintain custom “negative regions” in RBush anymore.
+  //
+  // Generalized occlusion is handled by pairing RBush (fast bbox candidate generation)
+  // with a single DOM hit-test (`elementFromPoint` / `deepElementFromPoint`) at the
+  // cursor. We only accept candidates that are in the ancestor chain of the topmost
+  // hit-tested element. This naturally respects third-party modals, menus, lightboxes,
+  // backdrops, and any other overlays.
+  // =============================================================================
 
   // =============================================================================
   // RBUSH SPATIAL INDEX - Mouse coordinate detection functions
@@ -1108,8 +1148,13 @@ export class IntersectionObserverManager {
     if (!Number.isFinite(px) || !Number.isFinite(py)) return [];
 
     // Convert viewport coordinates to page/document coordinates to match stored rects
-    const scrollX = window.pageXOffset || document.documentElement.scrollLeft || 0;
-    const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+    // Prefer `scrollX/scrollY` (fast path) and avoid touching layout-backed properties.
+    const scrollX = (typeof window !== 'undefined' && typeof window.scrollX === 'number')
+      ? window.scrollX
+      : (window.pageXOffset || 0);
+    const scrollY = (typeof window !== 'undefined' && typeof window.scrollY === 'number')
+      ? window.scrollY
+      : (window.pageYOffset || 0);
     
     const pageX = px + scrollX;
     const pageY = py + scrollY;
@@ -1127,109 +1172,23 @@ export class IntersectionObserverManager {
     if (!items.length) return [];
     this.metrics.rtreeHits++;
 
-    // Separate positive elements from negative regions
-    const positiveItems = [];
-    const negativeItems = [];
-    
-    for (const it of items) {
-      // Guard against stale items (detached nodes).
-      if (it.element) {
-        try {
-          if (!document.contains(it.element)) {
-            if (it.isNegative && it.panelId) {
-              this.unregisterPanelContainer(it.panelId);
-            } else {
-              this._rtreeRemoveElement(it.element);
-            }
-            continue;
-          }
-        } catch { /* ignore */ }
-      }
-
-      if (it.isNegative) {
-        negativeItems.push(it);
-      } else {
-        positiveItems.push(it);
-      }
-    }
-
-    // If there are negative regions, filter out positive elements that are occluded
-    if (negativeItems.length > 0 && positiveItems.length > 0) {
-      // Find the highest z-index negative region that contains this point
-      let highestNegativeZ = -Infinity;
-      let highestNegativeItem = null;
-      
-      for (const item of negativeItems) {
-        // Check if point is inside this negative region
-        if (pageX >= item.minX && pageX <= item.maxX && 
-            pageY >= item.minY && pageY <= item.maxY) {
-          const itemZ = item.zIndex || 0;
-          if (itemZ > highestNegativeZ) {
-            highestNegativeZ = itemZ;
-            highestNegativeItem = item;
-          }
-        }
-      }
-
-      // Filter positive items:
-      // - Keep if z-index is higher than the highest negative region (above the panel)
-      // - Keep if element is inside the panel (children render above parent due to DOM order, regardless of z-index)
-      // - Otherwise filter out (occluded by panel underneath)
-      const filtered = positiveItems.filter(item => {
-        const itemZ = item.zIndex || 0;
-        
-        // If no negative region at this point, keep all positive elements
-        if (highestNegativeZ === -Infinity) {
-          return true;
-        }
-        
-        // Keep if z-index is higher than the negative region (element is above the panel)
-        if (itemZ > highestNegativeZ) {
-          return true;
-        }
-        
-        // Keep if element is inside the panel (children naturally render above parent background
-        // due to DOM order within the same stacking context, even with z-index: auto or lower values)
-        if (highestNegativeItem && highestNegativeItem.element && item.element) {
-          try {
-            if (highestNegativeItem.element.contains(item.element)) {
-              return true;
-            }
-          } catch {
-            // ignore
-          }
-        }
-        
-        // Otherwise, element is underneath the panel and should be blocked
-        return false;
-      });
-
-      // Build result array from filtered positive items
-      const out = [];
-      for (const it of filtered) {
-        const el = it && it.element;
-        if (!el || el.nodeType !== 1) continue;
-        out.push(el);
-      }
-
-      // Show debug overlays for elements found via RBush tree query
-      if (out.length > 0) {
-        this.showRBushDebugOverlays(out);
-      }
-
-      return out;
-    }
-
-    // No negative regions, return all positive elements
+    // Return all positive elements (occlusion is handled by DOM hit-test gating at selection time).
+    // Also opportunistically clean up stale items. Prefer `isConnected` over `document.contains()`.
     const out = [];
-    for (const it of positiveItems) {
+    for (const it of items) {
       const el = it && it.element;
       if (!el || el.nodeType !== 1) continue;
+      try {
+        if (el.isConnected === false) {
+          this._rtreeRemoveElement(el);
+          continue;
+        }
+      } catch { /* ignore */ }
       out.push(el);
     }
 
     // Show debug overlays for elements found via RBush tree query
-    if (out.length > 0) {
+    if (FEATURE_FLAGS.ENABLE_DEBUG_PANEL && out.length > 0) {
       this.showRBushDebugOverlays(out);
     }
 
@@ -1251,34 +1210,47 @@ export class IntersectionObserverManager {
   }
 
   /**
-   * MOUSE COORDINATE DETECTION: Best-effort mapping from cursor position to interactive element
-   * Uses RBush spatial index as a fast pre-filter to find the most likely interactive element
-   * at mouse coordinates, avoiding expensive DOM queries during mouse movement.
+   * Pick the best interactive element from a set of RBush candidates, gated by the
+   * topmost DOM hit-test element under the cursor (`underEl`).
    *
-   * Strategy:
-   * - Query spatial index at point.
-   * - Prefer a candidate that is `underEl` or an ancestor of `underEl` (shadow-host aware).
-   * - Otherwise choose smallest-area candidate (often best matches "closest" target).
+   * Rules:
+   * - If `underEl` exists, ONLY accept candidates that are on the ancestor chain of `underEl`
+   *   (shadow-host aware). If none match, return null (prevents “clicking through” overlays).
+   * - If `underEl` is null/unknown, fall back to smallest-area candidate.
+   *
+   * @param {HTMLElement[]} candidates
+   * @param {HTMLElement|null} underEl
+   * @returns {HTMLElement|null}
    */
-  findBestInteractiveForUnderPoint({ x, y, underEl }) {
-    if (!this._rtreeEnabled()) return null;
+  pickBestInteractiveFromCandidates(candidates, underEl) {
+    if (!candidates || !candidates.length) return null;
 
-    const candidates = this.queryInteractiveAtPoint(x, y, 0);
-    if (!candidates.length) return null;
-
-    // Walk up from underEl and find first matching candidate.
+    // If we know what the browser considers topmost, never “click through” it.
     if (underEl && underEl.nodeType === 1) {
-      const candSet = new Set(candidates);
+      // Avoid allocating a Set for the common case where candidate count is small.
+      const useSet = candidates.length > 16;
+      const candSet = useSet ? new Set(candidates) : null;
       let n = underEl;
       let depth = 0;
-      while (n && depth++ < 12) {
-        if (candSet.has(n)) return n;
+      while (n && depth++ < 20) {
+        if (useSet) {
+          if (candSet.has(n)) return n;
+        } else {
+          if (candidates.includes(n)) return n;
+        }
         // Prefer parentElement, but handle shadow root hosts as well.
-        n = n.parentElement || (n.getRootNode && n.getRootNode() instanceof ShadowRoot ? n.getRootNode().host : null);
+        try {
+          const root = n.getRootNode && n.getRootNode();
+          n = n.parentElement || (root instanceof ShadowRoot ? root.host : null);
+        } catch {
+          n = n.parentElement;
+        }
       }
+      // Topmost element is not inside any RBush candidate -> treat as occluded / not interactive.
+      return null;
     }
 
-    // Otherwise choose smallest area rect.
+    // No underEl: choose smallest area rect (best-effort).
     let best = null;
     let bestArea = Infinity;
     for (const el of candidates) {
@@ -1291,8 +1263,26 @@ export class IntersectionObserverManager {
         best = el;
       }
     }
+    return best;
+  }
 
-    return best || candidates[0] || null;
+  /**
+   * MOUSE COORDINATE DETECTION: Best-effort mapping from cursor position to interactive element
+   * Uses RBush spatial index as a fast pre-filter to find the most likely interactive element
+   * at mouse coordinates, avoiding expensive DOM queries during mouse movement.
+   *
+   * Strategy:
+   * - Query spatial index at point.
+   * - Prefer a candidate that is `underEl` or an ancestor of `underEl` (shadow-host aware).
+   * - If none match the `underEl` chain, return null (prevents “click through” on overlays).
+   * - If `underEl` is null/unknown, fall back to smallest-area candidate (best-effort).
+   */
+  findBestInteractiveForUnderPoint({ x, y, underEl }) {
+    if (!this._rtreeEnabled()) return null;
+
+    const candidates = this.queryInteractiveAtPoint(x, y, 0);
+    const best = this.pickBestInteractiveFromCandidates(candidates, underEl);
+    return best || null;
   }
 
   /**
@@ -1323,10 +1313,22 @@ export class IntersectionObserverManager {
     }
     
     // Add to cache if it's interactive and visible but not already cached
-    if (resolvedClickable && this.interactiveObserver && this.isElementVisible(resolvedClickable) && !this.visibleInteractiveElements.has(resolvedClickable)) {
-      this.visibleInteractiveElements.add(resolvedClickable);
-      this.interactiveObserver.observe(resolvedClickable);
-      this.updateElementPositionCache(resolvedClickable, resolvedClickable.getBoundingClientRect());
+    if (resolvedClickable && this.interactiveObserver && !this.visibleInteractiveElements.has(resolvedClickable)) {
+      // Avoid redundant layout reads: compute rect once and reuse for visibility + caching.
+      let rect = null;
+      try { rect = resolvedClickable.getBoundingClientRect(); } catch { rect = null; }
+
+      if (rect &&
+          rect.width > 0 &&
+          rect.height > 0 &&
+          rect.bottom > 0 &&
+          rect.right > 0 &&
+          rect.top < window.innerHeight &&
+          rect.left < window.innerWidth) {
+        this.visibleInteractiveElements.add(resolvedClickable);
+        try { this.interactiveObserver.observe(resolvedClickable); } catch { /* ignore */ }
+        this.updateElementPositionCache(resolvedClickable, rect);
+      }
     }
     
     return resolvedClickable;
@@ -1516,7 +1518,6 @@ export class IntersectionObserverManager {
     this._rtree = null;
     this._rtreeReady = false;
     this._rtreeItemsByElement.clear();
-    this._rtreeItemsByPanelId.clear();
 
     // Stop spatial culling
     this.stopSpatialCulling();

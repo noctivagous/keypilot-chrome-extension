@@ -8,12 +8,54 @@ export class StyleManager {
     this.injectedStyles = new Set();
     this.shadowRootStyles = new Map(); // Track shadow root styles for cleanup
     this.isEnabled = true; // Track if styles should be active
+    // When false, KeyPilot must not override the page cursor at all.
+    this.cursorOverridesEnabled = false;
   }
 
-  injectSharedStyles() {
-    if (this.injectedStyles.has('main') || !this.isEnabled) return;
+  setCursorOverridesEnabled(enabled) {
+    const next = !!enabled;
+    if (this.cursorOverridesEnabled === next) return;
+    this.cursorOverridesEnabled = next;
 
-    const css = `
+    // Keep the html class in sync immediately.
+    try {
+      if (this.cursorOverridesEnabled) {
+        document.documentElement.classList.add(CSS_CLASSES.CURSOR_HIDDEN);
+      } else {
+        document.documentElement.classList.remove(CSS_CLASSES.CURSOR_HIDDEN);
+      }
+    } catch {
+      // ignore
+    }
+
+    // If we've already injected styles, update them in place so we don't require a full teardown.
+    try {
+      const mainStyle = document.getElementById(ELEMENT_IDS.STYLE);
+      if (mainStyle && typeof mainStyle.textContent === 'string') {
+        mainStyle.textContent = this._buildMainCSS();
+      }
+    } catch {
+      // ignore
+    }
+
+    // Update any shadow-root styles we previously injected.
+    try {
+      for (const [shadowRoot, styleEl] of this.shadowRootStyles) {
+        if (!shadowRoot || !styleEl) continue;
+        try {
+          styleEl.textContent = this._buildShadowCSS();
+        } catch {
+          // ignore
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  _buildMainCSS() {
+    const cursorCSS = this.cursorOverridesEnabled
+      ? `
       html.${CSS_CLASSES.CURSOR_HIDDEN} * {
         cursor: var(--kpv2-cursor, auto) !important;
       }
@@ -30,6 +72,11 @@ export class StyleManager {
       html.${CSS_CLASSES.CURSOR_HIDDEN} [tabindex] {
         cursor: var(--kpv2-cursor, auto) !important;
       }
+      `
+      : '';
+
+    return `
+      ${cursorCSS}
       
       .${CSS_CLASSES.FOCUS} { 
         filter: brightness(1.2) !important; 
@@ -146,8 +193,6 @@ export class StyleManager {
         font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
       }
       
-
-      
       #${ELEMENT_IDS.CURSOR} { 
         position: fixed !important; 
         left: var(--cursor-x, 0) !important; 
@@ -240,34 +285,11 @@ export class StyleManager {
         padding-left: 5pt !important;
       }
     `;
-
-    this.injectCSS(css, ELEMENT_IDS.STYLE);
-    this.injectedStyles.add('main');
-
-    // Hide default cursor
-    document.documentElement.classList.add(CSS_CLASSES.CURSOR_HIDDEN);
   }
 
-  injectCSS(css, id) {
-    const existing = document.getElementById(id);
-    if (existing) return;
-
-    try {
-      const style = document.createElement('style');
-      style.id = id;
-      style.textContent = css;
-      document.head.appendChild(style);
-    } catch (error) {
-      // On chrome:// pages and other restricted contexts, DOM modifications may be blocked
-      console.warn('[StyleManager] Cannot inject CSS on this page:', error.message);
-      // Continue without styles - KeyPilot will still work but without visual enhancements
-    }
-  }
-
-  injectIntoShadowRoot(shadowRoot) {
-    if (this.injectedStyles.has(shadowRoot) || !this.isEnabled) return;
-
-    const css = `
+  _buildShadowCSS() {
+    const cursorCSS = this.cursorOverridesEnabled
+      ? `
       /* Cursor override inside shadow DOM (archive.org and other web-components).
          Shadow roots don't inherit document-level CSS selectors like html.kpv2-cursor-hidden *,
          so we mirror the cursor rule via :host-context(). */
@@ -275,6 +297,11 @@ export class StyleManager {
       :host-context(html.${CSS_CLASSES.CURSOR_HIDDEN}) * {
         cursor: var(--kpv2-cursor, auto) !important;
       }
+      `
+      : '';
+
+    return `
+      ${cursorCSS}
 
       .${CSS_CLASSES.FOCUS} { 
         filter: brightness(1.2) !important; 
@@ -297,6 +324,44 @@ export class StyleManager {
       }
 
     `;
+  }
+
+  injectSharedStyles() {
+    if (this.injectedStyles.has('main') || !this.isEnabled) return;
+
+    const css = this._buildMainCSS();
+
+    this.injectCSS(css, ELEMENT_IDS.STYLE);
+    this.injectedStyles.add('main');
+
+    // Only hide/override the cursor when explicitly enabled.
+    if (this.cursorOverridesEnabled) {
+      document.documentElement.classList.add(CSS_CLASSES.CURSOR_HIDDEN);
+    } else {
+      document.documentElement.classList.remove(CSS_CLASSES.CURSOR_HIDDEN);
+    }
+  }
+
+  injectCSS(css, id) {
+    const existing = document.getElementById(id);
+    if (existing) return;
+
+    try {
+      const style = document.createElement('style');
+      style.id = id;
+      style.textContent = css;
+      document.head.appendChild(style);
+    } catch (error) {
+      // On chrome:// pages and other restricted contexts, DOM modifications may be blocked
+      console.warn('[StyleManager] Cannot inject CSS on this page:', error.message);
+      // Continue without styles - KeyPilot will still work but without visual enhancements
+    }
+  }
+
+  injectIntoShadowRoot(shadowRoot) {
+    if (this.injectedStyles.has(shadowRoot) || !this.isEnabled) return;
+
+    const css = this._buildShadowCSS();
 
     const style = document.createElement('style');
     style.id = 'keypilot-shadow-styles';

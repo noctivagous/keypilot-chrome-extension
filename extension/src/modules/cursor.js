@@ -49,9 +49,14 @@ export class CursorManager {
 
     // Mark cursor as initialized (using CSS cursor, no DOM element needed)
     this.cursorEl = { style: {} }; // Dummy object for compatibility
-    
-    // Apply CSS cursor to document
-    this.setMode('none', {});
+
+    // IMPORTANT:
+    // Do NOT clobber an existing cursor that may already be applied by `early-inject.js`.
+    // The main KeyPilot instance will immediately call `setMode()` with the correct
+    // settings-derived options once settings + initial mode are known.
+    //
+    // Previously, calling `setMode('none', {})` here overwrote the cursor CSS variable
+    // with hardcoded defaults (gap=0, size=15) until the first hover/mousemove updated state.
   }
 
   setMode(mode, options = {}) {

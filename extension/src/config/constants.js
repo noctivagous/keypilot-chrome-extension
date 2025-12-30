@@ -13,24 +13,24 @@ export const KEYBINDINGS = {
     displayKey: 'F'
   },
   ACTIVATE_NEW_TAB: {
-    keys: ['g', 'G'],
+    keys: ['b', 'B'],
     handler: 'handleActivateNewTabKey',
     label: 'Click New Tab',
     description: 'Click New Tab',
-    keyLabel: 'G',
+    keyLabel: 'B',
     keyboardClass: 'key-activate-new',
     row: 2,
-    displayKey: 'G'
+    displayKey: 'B'
   },
   ACTIVATE_NEW_TAB_OVER: {
-    keys: ['h', 'H'],
+    keys: ['g', 'G'],
     handler: 'handleActivateNewTabOverKey',
     label: 'Middle Click',
     description: 'Open Link in New Tab (Background, like middle click)',
-    keyLabel: 'H',
+    keyLabel: 'G',
     keyboardClass: 'key-activate-new-over',
     row: 2,
-    displayKey: 'H'
+    displayKey: 'G'
   },
   BACK: {
     keys: ['d', 'D'],
@@ -145,17 +145,6 @@ export const KEYBINDINGS = {
     row: null,
     displayKey: 'Esc'
   },
-  PAGE_UP: {
-    keys: ['b', 'B'],
-    handler: 'handlePageUp',
-    label: 'Page Up',
-    description: 'Page Up',
-    keyLabel: 'B',
-    keyboardClass: 'key-scroll',
-    row: 3,
-    displayKey: 'B'
-  },
-
   PAGE_UP_INSTANT: {
     keys: ['c', 'C'],
     handler: 'handleInstantPageUp',
@@ -165,16 +154,6 @@ export const KEYBINDINGS = {
     keyboardClass: 'key-scroll',
     row: 3,
     displayKey: 'C'
-  },
-  PAGE_DOWN: {
-    keys: ['n', 'N'],
-    handler: 'handlePageDown',
-    label: 'Page Down',
-    description: 'Page Down',
-    keyLabel: 'N',
-    keyboardClass: 'key-scroll',
-    row: 3,
-    displayKey: 'N'
   },
   PAGE_DOWN_INSTANT: {
     keys: ['v', 'V'],
@@ -368,6 +347,14 @@ export const MODES = {
   POPOVER: 'popover',
   OMNIBOX: 'omnibox'
 };
+
+// Cursor behavior mode:
+// - NO_CUSTOM_CURSORS: KeyPilot does not override the page cursor at all.
+// - CUSTOM_CURSORS: KeyPilot applies its cursor styling/overrides (current legacy behavior).
+export const CURSOR_MODE = Object.freeze({
+  NO_CUSTOM_CURSORS: 'NO-CUSTOM-CURSORS',
+  CUSTOM_CURSORS: 'CUSTOM-CURSORS'
+});
 
 export const COLORS = {
   // Primary cursor colors

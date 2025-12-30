@@ -15,6 +15,10 @@
   const ONBOARDING_PROGRESS_STORAGE_KEY = 'keypilot_onboarding_progress';
   const SETTINGS_STORAGE_KEY = 'kp_settings_v1';
   const Z_ONBOARDING_PANEL = 2147483017;
+  const CURSOR_MODE = {
+    NO_CUSTOM_CURSORS: 'NO-CUSTOM-CURSORS',
+    CUSTOM_CURSORS: 'CUSTOM-CURSORS'
+  };
   // Mirror the main extension's cursor mechanism so handoff is seamless.
   // See: `extension/src/modules/cursor.js` + `extension/src/modules/style-manager.js`
   const CURSOR_VAR = '--kpv2-cursor';
@@ -294,15 +298,15 @@
   "ACTIVATE_NEW_TAB": {
     "label": "Click New Tab",
     "description": "Click New Tab",
-    "keyLabel": "G",
-    "displayKey": "G",
+    "keyLabel": "B",
+    "displayKey": "B",
     "keyboardClass": "key-activate-new"
   },
   "ACTIVATE_NEW_TAB_OVER": {
     "label": "Middle Click",
     "description": "Open Link in New Tab (Background, like middle click)",
-    "keyLabel": "H",
-    "displayKey": "H",
+    "keyLabel": "G",
+    "displayKey": "G",
     "keyboardClass": "key-activate-new-over"
   },
   "TAB_HISTORY": {
@@ -359,20 +363,6 @@
     "description": "Page Down (Instant)",
     "keyLabel": "V",
     "displayKey": "V",
-    "keyboardClass": "key-scroll"
-  },
-  "PAGE_UP": {
-    "label": "Page Up",
-    "description": "Page Up",
-    "keyLabel": "B",
-    "displayKey": "B",
-    "keyboardClass": "key-scroll"
-  },
-  "PAGE_DOWN": {
-    "label": "Page Down",
-    "description": "Page Down",
-    "keyLabel": "N",
-    "displayKey": "N",
     "keyboardClass": "key-scroll"
   }
 };
@@ -515,7 +505,7 @@
       "tasks": [
         {
           "id": "open_link_new_tab",
-          "label": "Click a link into a new tab (`G`).",
+          "label": "Click a link into a new tab (`B`).",
           "when": {
             "type": "action",
             "action": "activateNewTab",
@@ -526,7 +516,7 @@
         },
         {
           "id": "open_link_background_tab",
-          "label": "Click a link into a new tab but don't open it (`H`).",
+          "label": "Click a link into a new tab but don't open it (`G`).",
           "when": {
             "type": "action",
             "action": "activateNewTabBackground",
@@ -1904,6 +1894,7 @@
    */
   async function getCursorSettings() {
     const defaultSettings = {
+      cursorMode: CURSOR_MODE.NO_CUSTOM_CURSORS,
       type: 'crosshair',
       lineWidth: 4,
       sizePixels: 10,
@@ -1915,8 +1906,14 @@
       const syncResult = await chrome.storage.sync.get([SETTINGS_STORAGE_KEY]);
       const stored = syncResult?.[SETTINGS_STORAGE_KEY];
       
-      if (stored && typeof stored === 'object' && stored.clickMode && stored.clickMode.cursor) {
-        const cursor = stored.clickMode.cursor;
+      if (stored && typeof stored === 'object') {
+        const cursorMode = stored.cursorMode === CURSOR_MODE.CUSTOM_CURSORS || stored.cursorMode === CURSOR_MODE.NO_CUSTOM_CURSORS
+          ? stored.cursorMode
+          : defaultSettings.cursorMode;
+
+        const cursor = (stored.clickMode && stored.clickMode.cursor && typeof stored.clickMode.cursor === 'object')
+          ? stored.clickMode.cursor
+          : {};
         // Check if gap is missing or if it's the old default (0) with old sizePixels default (15)
         // This handles fresh installs and migration from old defaults
         const hasOldDefaults = cursor.gap === 0 && cursor.sizePixels === 15;
@@ -1928,6 +1925,7 @@
           : defaultSettings.sizePixels;
         
         return {
+          cursorMode,
           type: cursor.type || defaultSettings.type,
           lineWidth: typeof cursor.lineWidth === 'number' ? cursor.lineWidth : defaultSettings.lineWidth,
           sizePixels: sizePixelsValue,
@@ -1940,8 +1938,14 @@
         const localResult = await chrome.storage.local.get([SETTINGS_STORAGE_KEY]);
         const stored = localResult?.[SETTINGS_STORAGE_KEY];
         
-        if (stored && typeof stored === 'object' && stored.clickMode && stored.clickMode.cursor) {
-          const cursor = stored.clickMode.cursor;
+        if (stored && typeof stored === 'object') {
+          const cursorMode = stored.cursorMode === CURSOR_MODE.CUSTOM_CURSORS || stored.cursorMode === CURSOR_MODE.NO_CUSTOM_CURSORS
+            ? stored.cursorMode
+            : defaultSettings.cursorMode;
+
+          const cursor = (stored.clickMode && stored.clickMode.cursor && typeof stored.clickMode.cursor === 'object')
+            ? stored.clickMode.cursor
+            : {};
           // Check if gap is missing or if it's the old default (0) with old sizePixels default (15)
           // This handles fresh installs and migration from old defaults
           const hasOldDefaults = cursor.gap === 0 && cursor.sizePixels === 15;
@@ -1953,6 +1957,7 @@
             : defaultSettings.sizePixels;
           
           return {
+            cursorMode,
             type: cursor.type || defaultSettings.type,
             lineWidth: typeof cursor.lineWidth === 'number' ? cursor.lineWidth : defaultSettings.lineWidth,
             sizePixels: sizePixelsValue,
@@ -1978,6 +1983,22 @@
 
     const settings = await getCursorSettings();
     cursorSettingsChanged = false;
+
+    // Cursor mode disabled: do not override the page cursor at all.
+    if (settings.cursorMode !== CURSOR_MODE.CUSTOM_CURSORS) {
+      try {
+        if (document.documentElement) {
+          document.documentElement.classList.remove(CURSOR_HIDDEN_CLASS);
+          document.documentElement.style.removeProperty(CURSOR_VAR);
+          document.documentElement.style.cursor = '';
+        }
+        if (document.body) {
+          document.body.style.cursor = '';
+        }
+      } catch {}
+      cursorApplied = true;
+      return;
+    }
 
     // Handle native cursor types
     if (settings.type === 'native_arrow') {
@@ -2547,6 +2568,7 @@
     setupMainLoadedHandoffListener();
     // Inject cursor CSS immediately so `checkExtensionState()` can apply the
     // cursor at document_start without waiting for the full early init.
+    // NOTE: The rules are scoped to `html.kpv2-cursor-hidden` so they are inert unless enabled.
     injectEarlyCSS();
 
     // Onboarding shell should appear as early as possible to avoid UI pop-in.

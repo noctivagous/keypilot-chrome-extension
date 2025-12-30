@@ -53,6 +53,22 @@
         </label>
       </section>
 
+      <section class="card" aria-labelledby="cursor-mode-title">
+        <h2 id="cursor-mode-title">Cursor</h2>
+        <div class="grid-2">
+          <label class="field">
+            <div class="field-label">Cursor mode</div>
+            <select id="cursor-mode" class="select">
+              <option value="NO-CUSTOM-CURSORS">No custom cursors</option>
+              <option value="CUSTOM-CURSORS">Custom cursors</option>
+            </select>
+          </label>
+          <div class="hint">
+            When “No custom cursors” is selected, KeyPilot won’t override the page cursor and cursor settings are hidden.
+          </div>
+        </div>
+      </section>
+
       <section class="card" aria-labelledby="mode-settings-title">
         <h2 id="mode-settings-title">Mode Settings</h2>
 
@@ -66,58 +82,60 @@
             </summary>
 
             <div class="kp-subsection-body">
-              <h3 class="subhead">Cursor</h3>
+              <div id="cursor-settings-click">
+                <h3 class="subhead">Cursor</h3>
 
-              <div class="grid-2">
-                <label class="field">
-                  <div class="field-label">Type</div>
-                  <select id="click-cursor-type" class="select">
-                    <option value="crosshair">Crosshair</option>
-                    <option value="native_arrow">Native arrow</option>
-                    <option value="native_pointer">Native pointer</option>
-                  </select>
-                </label>
+                <div class="grid-2">
+                  <label class="field">
+                    <div class="field-label">Type</div>
+                    <select id="click-cursor-type" class="select">
+                      <option value="crosshair">Crosshair</option>
+                      <option value="native_arrow">Native arrow</option>
+                      <option value="native_pointer">Native pointer</option>
+                    </select>
+                  </label>
 
-                <div class="preview">
-                  <div class="preview-title">Preview</div>
-                  <div id="click-cursor-preview" class="preview-box" aria-label="Click cursor preview"></div>
-                </div>
-              </div>
-
-              <div class="grid-2">
-                <div class="field">
-                  <div class="field-label">Line width</div>
-                  <div class="range-row">
-                    <input id="click-cursor-linewidth-range" type="range" min="1" max="12" step="1" />
-                    <input id="click-cursor-linewidth-number" class="number" type="number" min="1" max="12" step="1" />
+                  <div class="preview">
+                    <div class="preview-title">Preview</div>
+                    <div id="click-cursor-preview" class="preview-box" aria-label="Click cursor preview"></div>
                   </div>
-                  <div class="field-hint">Thickness of the crosshair lines (1–12).</div>
+                </div>
+
+                <div class="grid-2">
+                  <div class="field">
+                    <div class="field-label">Line width</div>
+                    <div class="range-row">
+                      <input id="click-cursor-linewidth-range" type="range" min="1" max="12" step="1" />
+                      <input id="click-cursor-linewidth-number" class="number" type="number" min="1" max="12" step="1" />
+                    </div>
+                    <div class="field-hint">Thickness of the crosshair lines (1–12).</div>
+                  </div>
+
+                  <div class="field">
+                    <div class="field-label">Size</div>
+                    <div class="range-row">
+                      <input id="click-cursor-size-range" type="range" min="5" max="60" step="1" />
+                      <input id="click-cursor-size-number" class="number" type="number" min="5" max="60" step="1" />
+                    </div>
+                    <div class="field-hint">Size of the cursor in pixels (5–60px).</div>
+                  </div>
                 </div>
 
                 <div class="field">
-                  <div class="field-label">Size</div>
+                  <div class="field-label">Gap</div>
                   <div class="range-row">
-                    <input id="click-cursor-size-range" type="range" min="5" max="60" step="1" />
-                    <input id="click-cursor-size-number" class="number" type="number" min="5" max="60" step="1" />
+                    <input id="click-cursor-gap-range" type="range" min="0" max="20" step="1" />
+                    <input id="click-cursor-gap-number" class="number" type="number" min="0" max="20" step="1" />
                   </div>
-                  <div class="field-hint">Size of the cursor in pixels (5–60px).</div>
+                  <div class="field-hint">Gap between center and crosshair bars in pixels. 0 = intersecting lines, >0 = separate bars (0–20px).</div>
                 </div>
-              </div>
 
-              <div class="field">
-                <div class="field-label">Gap</div>
-                <div class="range-row">
-                  <input id="click-cursor-gap-range" type="range" min="0" max="20" step="1" />
-                  <input id="click-cursor-gap-number" class="number" type="number" min="0" max="20" step="1" />
+                <div class="row-actions">
+                  <button id="click-cursor-reset" class="btn btn-secondary btn-small" type="button">Reset cursor to defaults</button>
                 </div>
-                <div class="field-hint">Gap between center and crosshair bars in pixels. 0 = intersecting lines, >0 = separate bars (0–20px).</div>
-              </div>
 
-              <div class="row-actions">
-                <button id="click-cursor-reset" class="btn btn-secondary btn-small" type="button">Reset cursor to defaults</button>
+                <div class="divider"></div>
               </div>
-
-              <div class="divider"></div>
 
               <h3 class="subhead">Focus rectangle</h3>
 
@@ -153,28 +171,30 @@
             </summary>
 
             <div class="kp-subsection-body">
-              <h3 class="subhead">Text mode cursor</h3>
+              <div id="cursor-settings-text">
+                <h3 class="subhead">Text mode cursor</h3>
 
-              <div class="grid-2">
-                <label class="field">
-                  <div class="field-label">Type</div>
-                  <select id="text-cursor-type" class="select">
-                    <option value="t_square">T-square</option>
-                    <option value="crosshair">Crosshair</option>
-                  </select>
-                </label>
+                <div class="grid-2">
+                  <label class="field">
+                    <div class="field-label">Type</div>
+                    <select id="text-cursor-type" class="select">
+                      <option value="t_square">T-square</option>
+                      <option value="crosshair">Crosshair</option>
+                    </select>
+                  </label>
 
-                <div class="preview">
-                  <div class="preview-title">Preview</div>
-                  <div id="text-cursor-preview" class="preview-box" aria-label="Text cursor preview"></div>
+                  <div class="preview">
+                    <div class="preview-title">Preview</div>
+                    <div id="text-cursor-preview" class="preview-box" aria-label="Text cursor preview"></div>
+                  </div>
                 </div>
-              </div>
 
-              <div class="row-actions">
-                <button id="text-cursor-reset" class="btn btn-secondary btn-small" type="button">Reset cursor to defaults</button>
-              </div>
+                <div class="row-actions">
+                  <button id="text-cursor-reset" class="btn btn-secondary btn-small" type="button">Reset cursor to defaults</button>
+                </div>
 
-              <div class="divider"></div>
+                <div class="divider"></div>
+              </div>
 
               <h3 class="subhead">Labels & outlines</h3>
 

@@ -1,4 +1,5 @@
-import { DEFAULT_SETTINGS, getSettings, normalizeSearchEngine, setSettings, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
+import { CURSOR_MODE } from '../src/config/constants.js';
+import { DEFAULT_SETTINGS, getSettings, normalizeCursorMode, normalizeSearchEngine, setSettings, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
 import { startKeyPilotOnPage } from './keypilot-page-init.js';
 import { CursorManager } from '../src/modules/cursor.js';
 
@@ -53,6 +54,27 @@ function renderCursorPreview({ container, kind, uri }) {
   container.appendChild(img);
 }
 
+function applyVisibility(el, visible) {
+  if (!el) return;
+  el.hidden = !visible;
+  // Some pages override [hidden]{display:none}; guard with inline display too.
+  el.style.display = visible ? '' : 'none';
+}
+
+function withOptionalViewTransition(fn) {
+  try {
+    if (typeof document.startViewTransition === 'function') {
+      document.startViewTransition(() => {
+        try { fn(); } catch { /* ignore */ }
+      });
+      return;
+    }
+  } catch {
+    // ignore
+  }
+  fn();
+}
+
 async function render() {
   // Start KeyPilot inside the Settings page (this page is often loaded in an iframe popover).
   await startKeyPilotOnPage({ allowInIframe: true });
@@ -63,6 +85,11 @@ async function render() {
   const keyFeedbackToggle = /** @type {HTMLInputElement|null} */ (document.getElementById('keyboard-reference-key-feedback'));
   const openGuideBtn = document.getElementById('open-guide');
   const closeBtn = document.getElementById('close');
+
+  // Cursor mode controls
+  const cursorModeSelect = /** @type {HTMLSelectElement|null} */ (document.getElementById('cursor-mode'));
+  const cursorSettingsClick = document.getElementById('cursor-settings-click');
+  const cursorSettingsText = document.getElementById('cursor-settings-text');
 
   // Mode Settings controls
   const clickCursorType = /** @type {HTMLSelectElement|null} */ (document.getElementById('click-cursor-type'));
@@ -131,6 +158,15 @@ async function render() {
     keyFeedbackToggle.checked = !!enabled;
   };
 
+  const applyCursorMode = (cursorMode) => {
+    const mode = normalizeCursorMode(cursorMode);
+    setInputValue(cursorModeSelect, mode);
+
+    const showCursorSettings = mode === CURSOR_MODE.CUSTOM_CURSORS;
+    applyVisibility(cursorSettingsClick, showCursorSettings);
+    applyVisibility(cursorSettingsText, showCursorSettings);
+  };
+
   const applyClickMode = (clickMode) => {
     const cm = clickMode || DEFAULT_SETTINGS.clickMode;
     setInputValue(clickCursorType, cm?.cursor?.type ?? DEFAULT_SETTINGS.clickMode.cursor.type);
@@ -181,11 +217,13 @@ async function render() {
   try {
     const settings = await getSettings();
     applyEngine(settings.searchEngine);
+    applyCursorMode(settings.cursorMode);
     applyKeyFeedbackToggle(settings.keyboardReferenceKeyFeedback);
     applyClickMode(settings.clickMode);
     applyTextMode(settings.textMode);
   } catch {
     applyEngine('brave');
+    applyCursorMode(DEFAULT_SETTINGS.cursorMode);
     applyKeyFeedbackToggle(true);
     applyClickMode(DEFAULT_SETTINGS.clickMode);
     applyTextMode(DEFAULT_SETTINGS.textMode);
@@ -201,6 +239,13 @@ async function render() {
 
   keyFeedbackToggle?.addEventListener('change', async () => {
     await setSettings({ keyboardReferenceKeyFeedback: !!keyFeedbackToggle.checked });
+  }, true);
+
+  cursorModeSelect?.addEventListener('change', async () => {
+    const next = normalizeCursorMode(cursorModeSelect.value);
+    await setSettings({ cursorMode: next });
+    const s = await getSettings();
+    withOptionalViewTransition(() => applyCursorMode(s.cursorMode));
   }, true);
 
   // Click Mode handlers
