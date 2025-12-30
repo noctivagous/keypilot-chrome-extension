@@ -15,12 +15,17 @@ export class FloatingKeyboardHelp {
   /**
    * @param {Object} params
    * @param {Record<string, any>} params.keybindings
+   * @param {any[]} [params.keyboardLayout]
+   * @param {string} [params.layoutId]
    */
-  constructor({ keybindings } = {}) {
+  constructor({ keybindings, keyboardLayout, layoutId } = {}) {
     this.keybindings = keybindings || {};
+    this.keyboardLayout = keyboardLayout || null;
+    this.layoutId = typeof layoutId === 'string' ? layoutId : '';
     this.root = null;
     this.keyboardContainer = null;
     this.closeBtn = null;
+    this.hintEl = null;
     this._onCloseClick = this._onCloseClick.bind(this);
 
     // Keydown/keyup visual feedback
@@ -38,6 +43,14 @@ export class FloatingKeyboardHelp {
 
   setKeybindings(keybindings) {
     this.keybindings = keybindings || {};
+    if (this.root && !this.root.hidden) {
+      this._render();
+    }
+  }
+
+  setKeyboardLayout({ keyboardLayout, layoutId } = {}) {
+    this.keyboardLayout = keyboardLayout || null;
+    this.layoutId = typeof layoutId === 'string' ? layoutId : '';
     if (this.root && !this.root.hidden) {
       this._render();
     }
@@ -106,6 +119,7 @@ export class FloatingKeyboardHelp {
           this.root = existing;
           this.keyboardContainer = keyboardContainer;
           this.closeBtn = closeBtn || null;
+          this.hintEl = existing.querySelector('[data-kp-floating-keyboard-hint="true"]') || null;
           if (this.closeBtn) {
             try {
               this.closeBtn.removeEventListener('click', this._onCloseClick);
@@ -166,6 +180,7 @@ export class FloatingKeyboardHelp {
 
     const hint = document.createElement('div');
     hint.textContent = 'Press K to toggle';
+    hint.setAttribute('data-kp-floating-keyboard-hint', 'true');
     Object.assign(hint.style, {
       marginLeft: 'auto',
       fontSize: '12px',
@@ -214,12 +229,24 @@ export class FloatingKeyboardHelp {
     this.root = root;
     this.keyboardContainer = keyboardContainer;
     this.closeBtn = closeBtn;
+    this.hintEl = hint;
   }
 
   _render() {
     if (!this.keyboardContainer) return;
     try {
-      renderKeybindingsKeyboard({ container: this.keyboardContainer, keybindings: this.keybindings });
+      const hint = this.hintEl;
+      const b = this.keybindings && this.keybindings.TOGGLE_KEYBOARD_HELP;
+      const key = (b && (b.displayKey || b.keyLabel)) ? String(b.displayKey || b.keyLabel) : 'K';
+      if (hint) hint.textContent = `Press ${key} to toggle`;
+    } catch { /* ignore */ }
+    try {
+      renderKeybindingsKeyboard({
+        container: this.keyboardContainer,
+        keybindings: this.keybindings,
+        keyboardLayout: this.keyboardLayout || undefined,
+        layoutId: this.layoutId || undefined
+      });
       this._rebuildKeyIndex();
     } catch (e) {
       // In case a page CSP / DOM edge case breaks rendering, fail gracefully.
@@ -314,6 +341,13 @@ export class FloatingKeyboardHelp {
 
     // The keyboard shows "Shift" twice; highlight both regardless of left/right.
     if (upper === 'SHIFT') return ['SHIFT'];
+
+    // Punctuation: map shifted glyphs back to the base key label shown on the keyboard UI.
+    // This keeps highlight feedback consistent (e.g. ':' highlights the ';' key).
+    if (upper === ':') return [';'];
+    if (upper === '?') return ['/'];
+    if (upper === '>') return ['.'];
+    if (upper === '<') return [','];
 
     // Default: the visible keys are mostly single characters or well-known names.
     return [upper];

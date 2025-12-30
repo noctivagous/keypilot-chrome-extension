@@ -9,7 +9,7 @@ KeyPilot is a Chrome extension that transforms web browsing into a keyboard-firs
 ### Extension Manifest (Manifest V3)
 - **Location**: `extension/manifest.json`
 - **Version**: <!-- KP_ARCHITECTURE_VERSION_START -->0.3.2<!-- KP_ARCHITECTURE_VERSION_END -->
-- **Build Date**: <!-- KP_ARCHITECTURE_BUILD_DATE_START -->Dec-28-2025<!-- KP_ARCHITECTURE_BUILD_DATE_END -->
+- **Build Date**: <!-- KP_ARCHITECTURE_BUILD_DATE_START -->Dec-30-2025<!-- KP_ARCHITECTURE_BUILD_DATE_END -->
 - **Purpose**: Defines extension metadata, permissions, and entry points
 - **Key Features**:
   - Service worker for background processing (`background.js`)
@@ -102,7 +102,7 @@ KeyPilot is a Chrome extension that transforms web browsing into a keyboard-firs
 - `PopupManager`: Handles popup window lifecycle and positioning
 - `SettingsManager`: Centralized settings storage and retrieval
 - `TabHistoryPopover`: Manages tab history navigation popover
-- `UrlListingManager`: Handles URL listing and navigation features (shared helpers for omnibox, history, bookmarks)
+- `url-listing.js`: Handles URL listing and navigation features (shared helpers for omnibox, history, bookmarks)
 
 #### UI Components
 - `FloatingKeyboardHelp`: Floating keyboard visualization panel (K key toggle)
@@ -111,7 +111,7 @@ KeyPilot is a Chrome extension that transforms web browsing into a keyboard-firs
 - `PopupThemeVars`: Centralized theme variables for consistent styling across UI surfaces
 - `OnboardingPanel`: User onboarding interface and tutorial system
 - `PracticePopoverPanel`: Interactive practice mode for keyboard shortcuts
-- `UrlListingManager`: Shared URL listing helpers for omnibox suggestions, history popovers, and bookmark surfaces
+- `url-listing.js`: Shared URL listing helpers for omnibox suggestions, history popovers, and bookmark surfaces
 
 ### 4. Popup Interface (`popup.html` + `popup.js`)
 **Purpose**: User settings and status display
@@ -315,8 +315,7 @@ extension/
 │   │   ├── state-manager.js
 │   │   ├── style-manager.js
 │   │   ├── tab-history-popover.js
-│   │   ├── text-element-filter.js
-│   │   └── url-listing-manager.js
+│   │   └── text-element-filter.js
 │   ├── ui/                 # UI components
 │   │   ├── floating-keyboard-help.js
 │   │   ├── keybindings-ui.js
@@ -458,4 +457,4 @@ extension/
 **Performance**: Optimized for immediate visual feedback
 **Compatibility**: Modern Chromium-based browsers
 
-*Last updated: December 28, 2025*
+*Last updated: December 30, 2025*

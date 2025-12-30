@@ -5,6 +5,7 @@
  */
 
 import { CURSOR_MODE } from '../config/constants.js';
+import { DEFAULT_KEYBOARD_LAYOUT_ID, normalizeKeyboardLayoutId } from '../config/keyboard-layouts.js';
 
 export const SETTINGS_STORAGE_KEY = 'kp_settings_v1';
 
@@ -43,6 +44,7 @@ export const SETTINGS_STORAGE_KEY = 'kp_settings_v1';
  * @typedef {{
  *   searchEngine: SearchEngine,
  *   cursorMode: CursorMode,
+ *   keyboardLayoutId: string,
  *   keyboardReferenceKeyFeedback: boolean,
  *   clickMode: ClickModeSettings,
  *   textMode: TextModeSettings
@@ -53,6 +55,7 @@ export const SETTINGS_STORAGE_KEY = 'kp_settings_v1';
 export const DEFAULT_SETTINGS = Object.freeze({
   searchEngine: 'brave',
   cursorMode: CURSOR_MODE.NO_CUSTOM_CURSORS,
+  keyboardLayoutId: DEFAULT_KEYBOARD_LAYOUT_ID,
   // When true, the floating keyboard reference panel highlights keys on keydown/keyup.
   keyboardReferenceKeyFeedback: true,
   clickMode: Object.freeze({
@@ -232,6 +235,7 @@ export async function getSettings() {
       ...(stored && typeof stored === 'object' ? stored : {}),
       searchEngine: normalizeSearchEngine(stored?.searchEngine),
       cursorMode: normalizeCursorMode(stored?.cursorMode),
+      keyboardLayoutId: normalizeKeyboardLayoutId(stored?.keyboardLayoutId),
       keyboardReferenceKeyFeedback: normalizeBoolean(
         stored?.keyboardReferenceKeyFeedback,
         DEFAULT_SETTINGS.keyboardReferenceKeyFeedback
@@ -274,6 +278,7 @@ export async function setSettings(partial) {
   };
   next.searchEngine = normalizeSearchEngine(next.searchEngine);
   next.cursorMode = normalizeCursorMode(next.cursorMode);
+  next.keyboardLayoutId = normalizeKeyboardLayoutId(next.keyboardLayoutId);
   next.keyboardReferenceKeyFeedback = normalizeBoolean(
     next.keyboardReferenceKeyFeedback,
     DEFAULT_SETTINGS.keyboardReferenceKeyFeedback

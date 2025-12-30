@@ -1,4 +1,5 @@
 import { CURSOR_MODE } from '../src/config/constants.js';
+import { normalizeKeyboardLayoutId } from '../src/config/keyboard-layouts.js';
 import { DEFAULT_SETTINGS, getSettings, normalizeCursorMode, normalizeSearchEngine, setSettings, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
 import { startKeyPilotOnPage } from './keypilot-page-init.js';
 import { CursorManager } from '../src/modules/cursor.js';
@@ -83,6 +84,7 @@ async function render() {
 
   const radios = Array.from(document.querySelectorAll('input[type="radio"][name="engine"]'));
   const keyFeedbackToggle = /** @type {HTMLInputElement|null} */ (document.getElementById('keyboard-reference-key-feedback'));
+  const keyboardLayoutSelect = /** @type {HTMLSelectElement|null} */ (document.getElementById('keyboard-layout'));
   const openGuideBtn = document.getElementById('open-guide');
   const closeBtn = document.getElementById('close');
 
@@ -158,6 +160,12 @@ async function render() {
     keyFeedbackToggle.checked = !!enabled;
   };
 
+  const applyKeyboardLayout = (layoutId) => {
+    if (!keyboardLayoutSelect) return;
+    const v = normalizeKeyboardLayoutId(layoutId);
+    setInputValue(keyboardLayoutSelect, v);
+  };
+
   const applyCursorMode = (cursorMode) => {
     const mode = normalizeCursorMode(cursorMode);
     setInputValue(cursorModeSelect, mode);
@@ -218,12 +226,14 @@ async function render() {
     const settings = await getSettings();
     applyEngine(settings.searchEngine);
     applyCursorMode(settings.cursorMode);
+    applyKeyboardLayout(settings.keyboardLayoutId);
     applyKeyFeedbackToggle(settings.keyboardReferenceKeyFeedback);
     applyClickMode(settings.clickMode);
     applyTextMode(settings.textMode);
   } catch {
     applyEngine('brave');
     applyCursorMode(DEFAULT_SETTINGS.cursorMode);
+    applyKeyboardLayout(DEFAULT_SETTINGS.keyboardLayoutId);
     applyKeyFeedbackToggle(true);
     applyClickMode(DEFAULT_SETTINGS.clickMode);
     applyTextMode(DEFAULT_SETTINGS.textMode);
@@ -239,6 +249,12 @@ async function render() {
 
   keyFeedbackToggle?.addEventListener('change', async () => {
     await setSettings({ keyboardReferenceKeyFeedback: !!keyFeedbackToggle.checked });
+  }, true);
+
+  keyboardLayoutSelect?.addEventListener('change', async () => {
+    await setSettings({ keyboardLayoutId: keyboardLayoutSelect.value });
+    const s = await getSettings();
+    withOptionalViewTransition(() => applyKeyboardLayout(s.keyboardLayoutId));
   }, true);
 
   cursorModeSelect?.addEventListener('change', async () => {

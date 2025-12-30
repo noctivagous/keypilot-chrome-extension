@@ -14,7 +14,8 @@ import { IntersectionObserverManager } from './modules/intersection-observer-man
 import { OptimizedScrollManager } from './modules/optimized-scroll-manager.js';
 import { RectangleIntersectionObserver } from './modules/rectangle-intersection-observer.js';
 import { MouseCoordinateManager } from './modules/mouse-coordinate-manager.js';
-import { KEYBINDINGS, MODES, CURSOR_MODE, CSS_CLASSES, COLORS, Z_INDEX, RECTANGLE_SELECTION, EDGE_ONLY_SELECTION, FEATURE_FLAGS } from './config/constants.js';
+import { MODES, CURSOR_MODE, CSS_CLASSES, COLORS, Z_INDEX, RECTANGLE_SELECTION, EDGE_ONLY_SELECTION, FEATURE_FLAGS } from './config/constants.js';
+import { buildKeybindingsForLayout, DEFAULT_KEYBOARD_LAYOUT_ID, getKeyboardUiLayoutForLayout, normalizeKeyboardLayoutId } from './config/keyboard-layouts.js';
 import { FloatingKeyboardHelp } from './ui/floating-keyboard-help.js';
 import { OmniboxManager } from './modules/omnibox-manager.js';
 import { TabHistoryPopover } from './modules/tab-history-popover.js';
@@ -46,6 +47,9 @@ export class KeyPilot extends EventManager {
     this.styleManager = new StyleManager();
     this.shadowDOMManager = new ShadowDOMManager(this.styleManager);
     this.floatingKeyboardHelp = null;
+    this.keybindings = buildKeybindingsForLayout(DEFAULT_KEYBOARD_LAYOUT_ID);
+    this._keyboardLayoutId = DEFAULT_KEYBOARD_LAYOUT_ID;
+    this._keyboardUiLayout = getKeyboardUiLayoutForLayout(DEFAULT_KEYBOARD_LAYOUT_ID);
     this.omniboxManager = new OmniboxManager({
       onClose: () => {
         try {
@@ -405,6 +409,11 @@ export class KeyPilot extends EventManager {
       this._settings = { ...DEFAULT_SETTINGS };
     }
 
+    // Apply keyboard layout immediately (used by key handling + keyboard reference UI).
+    try {
+      this._applyKeyboardLayoutFromSettings();
+    } catch { /* ignore */ }
+
     // Apply cursor-mode behavior immediately.
     const cursorEnabled = this._isCustomCursorModeEnabled();
     try {
@@ -456,6 +465,26 @@ export class KeyPilot extends EventManager {
     // Force overlay refresh.
     try {
       this.state?.setState?.({ _overlayUpdateTrigger: Date.now() });
+    } catch { /* ignore */ }
+  }
+
+  _applyKeyboardLayoutFromSettings() {
+    const layoutId = normalizeKeyboardLayoutId(this._settings?.keyboardLayoutId);
+    this._keyboardLayoutId = layoutId;
+    this.keybindings = buildKeybindingsForLayout(layoutId);
+    this._keyboardUiLayout = getKeyboardUiLayoutForLayout(layoutId);
+
+    // If the floating keyboard reference is active, keep it in sync (no flicker if layoutId matches).
+    try {
+      if (this.floatingKeyboardHelp) {
+        this.floatingKeyboardHelp.setKeybindings(this.keybindings);
+        if (typeof this.floatingKeyboardHelp.setKeyboardLayout === 'function') {
+          this.floatingKeyboardHelp.setKeyboardLayout({
+            keyboardLayout: this._keyboardUiLayout,
+            layoutId: this._keyboardLayoutId
+          });
+        }
+      }
     } catch { /* ignore */ }
   }
 
@@ -590,12 +619,23 @@ export class KeyPilot extends EventManager {
     }
 
     try {
+      const kb = this.keybindings || buildKeybindingsForLayout(DEFAULT_KEYBOARD_LAYOUT_ID);
       if (!this.floatingKeyboardHelp) {
         const FloatingKeyboardHelpClass = FloatingKeyboardHelp || window.FloatingKeyboardHelp;
-        this.floatingKeyboardHelp = new FloatingKeyboardHelpClass({ keybindings: KEYBINDINGS });
+        this.floatingKeyboardHelp = new FloatingKeyboardHelpClass({
+          keybindings: kb,
+          keyboardLayout: this._keyboardUiLayout,
+          layoutId: this._keyboardLayoutId
+        });
       } else {
         // Keep bindings current (in case they were updated).
-        this.floatingKeyboardHelp.setKeybindings(KEYBINDINGS);
+        this.floatingKeyboardHelp.setKeybindings(kb);
+        if (typeof this.floatingKeyboardHelp.setKeyboardLayout === 'function') {
+          this.floatingKeyboardHelp.setKeyboardLayout({
+            keyboardLayout: this._keyboardUiLayout,
+            layoutId: this._keyboardLayoutId
+          });
+        }
       }
 
       if (next) {
@@ -1016,10 +1056,11 @@ export class KeyPilot extends EventManager {
     }
 
     const currentState = this.state.getState();
+    const KB = this.keybindings || {};
 
     // Global default: Escape closes the frontmost "popover-like" UI.
     // Priority: omnibox (always visually on top) → PopupManager (topmost modal panel).
-    if (KEYBINDINGS.CANCEL.keys.includes(e.key)) {
+    if (KB.CANCEL?.keys?.includes?.(e.key)) {
       // Omnibox
       try {
         if (currentState.mode === MODES.OMNIBOX || this.omniboxManager?.isOpen?.()) {
@@ -1047,7 +1088,7 @@ export class KeyPilot extends EventManager {
     // If omnibox is open, let its input handler do the work.
     if (currentState.mode === MODES.OMNIBOX) {
       // Escape should always close omnibox.
-      if (KEYBINDINGS.CANCEL.keys.includes(e.key)) {
+      if (KB.CANCEL?.keys?.includes?.(e.key)) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
@@ -1061,7 +1102,7 @@ export class KeyPilot extends EventManager {
       console.log('[KeyPilot] Popover mode active, key pressed:', e.key);
       
       // Escape should close the popover (always, regardless of where it's pressed)
-      if (KEYBINDINGS.CANCEL.keys.includes(e.key)) {
+      if (KB.CANCEL?.keys?.includes?.(e.key)) {
         console.log('[KeyPilot] Escape key pressed while popover open');
         e.preventDefault();
         e.stopPropagation();
@@ -1072,32 +1113,32 @@ export class KeyPilot extends EventManager {
 
       // Scroll shortcuts should scroll the popover iframe (not the parent page)
       // This path covers cases where focus is still in the parent document.
-      if (KEYBINDINGS.PAGE_UP.keys.includes(e.key)) {
+      if (KB.PAGE_UP?.keys?.includes?.(e.key)) {
         e.preventDefault();
         this.overlayManager?.scrollPopoverBy?.(-800, 'smooth');
         return;
       }
-      if (KEYBINDINGS.PAGE_DOWN.keys.includes(e.key)) {
+      if (KB.PAGE_DOWN?.keys?.includes?.(e.key)) {
         e.preventDefault();
         this.overlayManager?.scrollPopoverBy?.(800, 'smooth');
         return;
       }
-      if (KEYBINDINGS.PAGE_UP_INSTANT.keys.includes(e.key)) {
+      if (KB.PAGE_UP_INSTANT?.keys?.includes?.(e.key)) {
         e.preventDefault();
         this.overlayManager?.scrollPopoverBy?.(-400, 'smooth');
         return;
       }
-      if (KEYBINDINGS.PAGE_DOWN_INSTANT.keys.includes(e.key)) {
+      if (KB.PAGE_DOWN_INSTANT?.keys?.includes?.(e.key)) {
         e.preventDefault();
         this.overlayManager?.scrollPopoverBy?.(400, 'smooth');
         return;
       }
-      if (KEYBINDINGS.PAGE_TOP.keys.includes(e.key)) {
+      if (KB.PAGE_TOP?.keys?.includes?.(e.key)) {
         e.preventDefault();
         this.overlayManager?.scrollPopoverToTop?.('smooth');
         return;
       }
-      if (KEYBINDINGS.PAGE_BOTTOM.keys.includes(e.key)) {
+      if (KB.PAGE_BOTTOM?.keys?.includes?.(e.key)) {
         e.preventDefault();
         this.overlayManager?.scrollPopoverToBottom?.('smooth');
         return;
@@ -1106,21 +1147,21 @@ export class KeyPilot extends EventManager {
       // Allow click keys to interact with popover UI (e.g. the × close button).
       // Popovers are normal z-index layers (not the browser top-layer), so the
       // green rectangle + F-to-click should work again.
-      if (KEYBINDINGS.ACTIVATE.keys.includes(e.key)) {
+      if (KB.ACTIVATE?.keys?.includes?.(e.key)) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
         this.handleActivateKey();
         return;
       }
-      if (KEYBINDINGS.ACTIVATE_NEW_TAB.keys.includes(e.key)) {
+      if (KB.ACTIVATE_NEW_TAB?.keys?.includes?.(e.key)) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
         this.handleActivateNewTabKey();
         return;
       }
-      if (KEYBINDINGS.ACTIVATE_NEW_TAB_OVER.keys.includes(e.key)) {
+      if (KB.ACTIVATE_NEW_TAB_OVER?.keys?.includes?.(e.key)) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
@@ -1138,7 +1179,7 @@ export class KeyPilot extends EventManager {
     // - ESC exits text focus (never clicks)
     // - Only F can click, and only when armed by mouse movement
     if (currentState.mode === MODES.TEXT_FOCUS) {
-      if (KEYBINDINGS.CANCEL.keys.includes(e.key)) {
+      if (KB.CANCEL?.keys?.includes?.(e.key)) {
         console.debug('Escape key detected in text focus mode');
         e.preventDefault();
         e.stopPropagation();
@@ -1147,7 +1188,7 @@ export class KeyPilot extends EventManager {
         return;
       }
 
-      if (KEYBINDINGS.ACTIVATE.keys.includes(e.key) && this._textModeClickArmed && currentState.focusEl) {
+      if (KB.ACTIVATE?.keys?.includes?.(e.key) && this._textModeClickArmed && currentState.focusEl) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
@@ -1160,7 +1201,7 @@ export class KeyPilot extends EventManager {
     // Don't handle keys if we're in a typing context but not in our text focus mode
     // (This handles edge cases where focus detection might miss something)
     if (this.isTypingContext(e.target)) {
-      if (KEYBINDINGS.CANCEL.keys.includes(e.key)) {
+      if (KB.CANCEL?.keys?.includes?.(e.key)) {
         this.cancelModes();
       }
       return;
@@ -1168,17 +1209,17 @@ export class KeyPilot extends EventManager {
 
     // Special handling for highlight mode - cancel on any key except H and ESC
     if (currentState.mode === MODES.HIGHLIGHT) {
-      if (KEYBINDINGS.CANCEL.keys.includes(e.key)) {
+      if (KB.CANCEL?.keys?.includes?.(e.key)) {
         // ESC key cancellation in highlight mode
         e.preventDefault();
         this.cancelHighlightMode();
         return;
-      } else if (KEYBINDINGS.HIGHLIGHT.keys.includes(e.key)) {
+      } else if (KB.HIGHLIGHT?.keys?.includes?.(e.key)) {
         // H key - complete the selection
         e.preventDefault();
         this.handleHighlightKey();
         return;
-      } else if (KEYBINDINGS.RECTANGLE_HIGHLIGHT.keys.includes(e.key)) {
+      } else if (KB.RECTANGLE_HIGHLIGHT?.keys?.includes?.(e.key)) {
         // R key - complete the selection (same as H key in highlight mode)
         e.preventDefault();
         this.completeSelection();
@@ -1192,7 +1233,7 @@ export class KeyPilot extends EventManager {
     }
 
     // Handle our keyboard shortcuts (table-driven via KEYBINDINGS.*.handler)
-    for (const keybinding of Object.values(KEYBINDINGS)) {
+    for (const keybinding of Object.values(KB)) {
       if (!keybinding?.handler || !Array.isArray(keybinding.keys)) continue;
 
       const matchOn = Array.isArray(keybinding.matchOn) ? keybinding.matchOn : ['key'];

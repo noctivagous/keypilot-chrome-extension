@@ -163,11 +163,6 @@ export class IntersectionObserverManager {
       this.complexPageDetector.staticMetrics.isSocialMedia = true;
     }
 
-    // Count initial resources
-    this.complexPageDetector.staticMetrics.scriptCount = document.querySelectorAll('script').length;
-    this.complexPageDetector.staticMetrics.styleCount = document.querySelectorAll('style, link[rel="stylesheet"]').length;
-    this.complexPageDetector.staticMetrics.initialElementCount = document.querySelectorAll('*').length;
-
     // Detect infinite scroll patterns
     this.complexPageDetector.staticMetrics.hasInfiniteScroll =
       hostname.includes('twitter') || hostname.includes('x.com') || hostname.includes('facebook') ||

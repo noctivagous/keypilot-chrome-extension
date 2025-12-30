@@ -30,6 +30,8 @@ function getBuildTimestamp(now = new Date()) {
 }
 
 const modules = [
+  // Keyboard layout architecture must be defined before constants.js once imports are stripped.
+  'src/config/keyboard-layouts.js',
   'src/config/constants.js',
   // Vendored dependencies that must be available as globals in the bundle.
   'src/vendor/rbush.js',
@@ -95,14 +97,14 @@ for (const modulePath of modules) {
   // Remove imports and exports
   moduleContent = moduleContent
     // Remove ESM imports (single-line and multi-line) because we bundle into one IIFE.
-    // Note: `.*?` doesn't cross newlines, so use `[\s\S]*?` to handle multi-line imports.
-    .replace(/import\s+[\s\S]*?from\s+['"][^'"]*['"];?\s*\n?/g, '')
-    // Remove side-effect imports: `import './x.js';`
-    .replace(/import\s+['"][^'"]*['"];?\s*\n?/g, '')
+    // IMPORTANT: Anchor to line-start so we don't accidentally match the word "import" inside comments/strings.
+    .replace(/^\s*import\s+[\s\S]*?\bfrom\s+['"][^'"]*['"]\s*;?\s*$/gm, '')
+    // Remove side-effect imports: `import './x.js';` (also anchored to line-start)
+    .replace(/^\s*import\s+['"][^'"]*['"]\s*;?\s*$/gm, '')
     .replace(/^export\s+(class|function|const|let|var)\s+/gm, '$1 ')
     // Handle re-export syntax: `export { X } from './mod.js';`
-    .replace(/export\s*\{[^}]*\}\s*from\s+['"][^'"]*['"];?\s*\n?/g, '')
-    .replace(/export\s*\{[^}]*\}\s*;?\s*\n?/g, '')
+    .replace(/^\s*export\s*\{[^}]*\}\s*from\s+['"][^'"]*['"]\s*;?\s*$/gm, '')
+    .replace(/^\s*export\s*\{[^}]*\}\s*;?\s*$/gm, '')
     .replace(/^export\s+/gm, '');
   
   bundledContent += `

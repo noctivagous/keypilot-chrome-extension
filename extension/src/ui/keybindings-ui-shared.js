@@ -21,62 +21,13 @@ export const KEYBINDINGS_UI_FONT_PLACEHOLDERS = {
   DOSIS: '__KP_FONT_DOSIS_URL__'
 };
 
+import { DEFAULT_KEYBOARD_LAYOUT_ID, getKeyboardUiLayoutForLayout } from '../config/keyboard-layouts.js';
+
 /**
  * Canonical keyboard layout used by both early-inject and the bundled UI.
  * Action keys reference IDs in `KEYBINDINGS`.
  */
-export const KEYBINDINGS_KEYBOARD_LAYOUT = [
-  [
-    { type: 'special', text: 'Tab', className: 'key key-tab' },
-    { type: 'action', id: 'TAB_LEFT', fallbackText: 'Tab Left' },
-    { type: 'action', id: 'TAB_RIGHT', fallbackText: 'Tab Right' },
-    { type: 'action', id: 'OPEN_POPOVER', fallbackText: 'Open Popover' },
-    { type: 'action', id: 'FORWARD', fallbackText: 'Go Forward' },
-    { type: 'action', id: 'NEW_TAB', fallbackText: 'New Tab' },
-    { type: 'key', text: 'Y' },
-    { type: 'key', text: 'U' },
-    { type: 'key', text: 'I' },
-    { type: 'key', text: 'O' },
-    { type: 'key', text: 'P' },
-    { type: 'key', text: '[' },
-    { type: 'key', text: ']' },
-    { type: 'action', id: 'DELETE', fallbackText: 'Delete Mode', className: 'key key-backspace' }
-  ],
-  [
-    { type: 'special', text: 'Caps', className: 'key key-caps' },
-    // A closes the current tab.
-    { type: 'action', id: 'CLOSE_TAB', fallbackText: 'Close Tab' },
-    { type: 'action', id: 'BACK2', fallbackText: 'Go Back' },
-    { type: 'action', id: 'BACK', fallbackText: 'Go Back' },
-    { type: 'action', id: 'ACTIVATE', fallbackText: 'Click Element' },
-    { type: 'action', id: 'ACTIVATE_NEW_TAB', fallbackText: 'Click New Tab' },
-    { type: 'key', text: 'H' },
-    { type: 'action', id: 'TAB_HISTORY', fallbackText: 'History' },
-    // K is a KeyPilot action: toggle the floating keyboard help (persisted).
-    { type: 'action', id: 'TOGGLE_KEYBOARD_HELP', fallbackText: 'KB Reference' },
-    // L opens the Omnibox overlay.
-    { type: 'action', id: 'OMNIBOX', fallbackText: 'Omnibox' },
-    { type: 'key', text: ';' },
-    { type: 'action', id: 'OPEN_SETTINGS_POPOVER', fallbackText: 'Settings' },
-    { type: 'special', text: 'Enter', className: 'key key-enter' }
-  ],
-  [
-    { type: 'special', text: 'Shift', className: 'key key-shift' },
-    // Physical keys: Z / X / C / V / B / N ...
-    // Z and X are reserved for scroll-to-top/bottom (Home/End equivalents).
-    { type: 'action', id: 'PAGE_TOP', fallbackText: 'Scroll To Top' },
-    { type: 'action', id: 'PAGE_BOTTOM', fallbackText: 'Scroll To Bottom' },
-    { type: 'action', id: 'PAGE_UP_INSTANT', fallbackText: 'Page Up Fast' },
-    { type: 'action', id: 'PAGE_DOWN_INSTANT', fallbackText: 'Page Down Fast' },
-    { type: 'action', id: 'ACTIVATE_NEW_TAB_OVER', fallbackText: 'Click New Tab Over' },
-    { type: 'key', text: 'N' },
-    { type: 'key', text: 'M' },
-    { type: 'key', text: ',' },
-    { type: 'key', text: '.' },
-    { type: 'key', text: '/' },
-    { type: 'special', text: 'Shift', className: 'key key-shift' }
-  ]
-];
+export const KEYBINDINGS_KEYBOARD_LAYOUT = getKeyboardUiLayoutForLayout(DEFAULT_KEYBOARD_LAYOUT_ID);
 
 /**
  * Generate the injected CSS used by the keyboard UI (both early + bundled).

@@ -44,6 +44,19 @@
 
       <section class="card" aria-labelledby="keyboard-reference-title">
         <h2 id="keyboard-reference-title">Keyboard Reference Panel</h2>
+        <div class="grid-2">
+          <label class="field">
+            <div class="field-label">Keyboard layout</div>
+            <select id="keyboard-layout" class="select">
+              <option value="browsing-right">Browsing: right-handed</option>
+              <option value="browsing-left">Browsing: left-handed</option>
+            </select>
+            <div class="field-hint">Controls which keys trigger KeyPilot actions and how the keyboard reference is labeled.</div>
+          </label>
+          <div class="hint">
+            You can switch layouts at any time. Changes sync across tabs automatically.
+          </div>
+        </div>
         <label class="toggle" for="keyboard-reference-key-feedback">
           <input id="keyboard-reference-key-feedback" type="checkbox" />
           <div class="toggle-text">

@@ -196,13 +196,30 @@ async function initKeybindingsUI() {
     if (!keyboardContainer && !legendTbody) return;
 
     try {
-        const constantsUrl = chrome.runtime.getURL('src/config/constants.js');
+        const settingsUrl = chrome.runtime.getURL('src/modules/settings-manager.js');
+        const layoutsUrl = chrome.runtime.getURL('src/config/keyboard-layouts.js');
         const uiUrl = chrome.runtime.getURL('src/ui/keybindings-ui.js');
 
-        const [{ KEYBINDINGS }, ui] = await Promise.all([
-            import(constantsUrl),
+        const [settingsMod, layouts, ui] = await Promise.all([
+            import(settingsUrl),
+            import(layoutsUrl),
             import(uiUrl)
         ]);
+
+        const settings = settingsMod && typeof settingsMod.getSettings === 'function'
+            ? await settingsMod.getSettings()
+            : null;
+        const layoutId = layouts && typeof layouts.normalizeKeyboardLayoutId === 'function'
+            ? layouts.normalizeKeyboardLayoutId(settings && settings.keyboardLayoutId)
+            : 'browsing-right';
+
+        const keybindings = layouts && typeof layouts.buildKeybindingsForLayout === 'function'
+            ? layouts.buildKeybindingsForLayout(layoutId)
+            : (ui && ui.KEYBINDINGS ? ui.KEYBINDINGS : {});
+
+        const keyboardLayout = layouts && typeof layouts.getKeyboardUiLayoutForLayout === 'function'
+            ? layouts.getKeyboardUiLayoutForLayout(layoutId)
+            : undefined;
 
         const extraRows = [
             { id: 'TOGGLE_EXTENSION', keys: await getToggleShortcutDisplay(), action: 'Toggle On/Off' }
@@ -211,7 +228,9 @@ async function initKeybindingsUI() {
         ui.renderKeybindingsUI({
             keyboardContainer,
             legendTbody,
-            keybindings: KEYBINDINGS,
+            keybindings,
+            keyboardLayout,
+            layoutId,
             extraRows
         });
     } catch (error) {

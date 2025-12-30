@@ -37,12 +37,38 @@ function getStyleCss() {
 }
 
 function ensureStylesInjected(doc = document) {
-  if (!doc.head) return;
+  if (!doc || !doc.head) return;
   const css = getStyleCss();
-  let style = doc.head.querySelector(`style[${KEYBINDINGS_UI_STYLE_ATTR}]`);
+  let style = null;
+  try {
+    const attr = typeof KEYBINDINGS_UI_STYLE_ATTR === 'string' && KEYBINDINGS_UI_STYLE_ATTR
+      ? KEYBINDINGS_UI_STYLE_ATTR
+      : 'data-kp-keybindings-ui-style';
+    style = doc.head.querySelector(`style[${attr}]`);
+  } catch {
+    // If the selector is invalid for any reason, fall back to "first matching style tag" search.
+    try {
+      const all = doc.head.querySelectorAll('style');
+      for (const s of all) {
+        if (s && s.getAttribute && s.getAttribute('data-kp-keybindings-ui-style') === 'true') {
+          style = s;
+          break;
+        }
+      }
+    } catch { /* ignore */ }
+  }
   if (!style) {
     style = doc.createElement('style');
-    style.setAttribute(KEYBINDINGS_UI_STYLE_ATTR, 'true');
+    try {
+      style.setAttribute(
+        (typeof KEYBINDINGS_UI_STYLE_ATTR === 'string' && KEYBINDINGS_UI_STYLE_ATTR)
+          ? KEYBINDINGS_UI_STYLE_ATTR
+          : 'data-kp-keybindings-ui-style',
+        'true'
+      );
+    } catch {
+      // ignore
+    }
     style.textContent = css;
     doc.head.appendChild(style);
     return;
@@ -100,19 +126,36 @@ function updateExistingKeyboardDOM({ container, keybindings }) {
  * @param {Object} params
  * @param {HTMLElement} params.container
  * @param {Record<string, {label?: string, description?: string, displayKey?: string, keyboardClass?: string}>} params.keybindings
+ * @param {any[]} [params.keyboardLayout]
+ * @param {string} [params.layoutId]
  */
-export function renderKeybindingsKeyboard({ container, keybindings }) {
+export function renderKeybindingsKeyboard({ container, keybindings, keyboardLayout, layoutId } = {}) {
   if (!container) return;
   const doc = container.ownerDocument || document;
   ensureStylesInjected(doc);
 
+  const layout = (keyboardLayout && Array.isArray(keyboardLayout)) ? keyboardLayout : KEYBINDINGS_KEYBOARD_LAYOUT;
+  const layoutKey = typeof layoutId === 'string' ? layoutId : '';
+
   // If an early-inject (or previous render) already built the keyboard DOM,
   // just update the labels/classes to avoid flicker and layout jumps.
-  const existingVisual = container.querySelector(':scope > .keyboard-visual');
+  let existingVisual = null;
+  try {
+    existingVisual = container.querySelector(':scope > .keyboard-visual');
+  } catch {
+    // Some environments (or odd documents) may not support :scope; fall back.
+    try { existingVisual = container.querySelector('.keyboard-visual'); } catch { /* ignore */ }
+  }
   if (existingVisual && existingVisual.dataset && existingVisual.dataset.kpKeyboardBuilt === 'true') {
-    if (updateExistingKeyboardDOM({ container, keybindings })) {
-      attachKeyPopoverBehavior({ root: container, keybindings });
-      return;
+    const existingLayoutKey = String(existingVisual.dataset.kpLayoutId || '');
+    // If the caller provided a layoutId, only reuse DOM when it matches exactly.
+    // This ensures switching layouts re-builds the keyboard positions (not just labels).
+    const canReuse = !layoutKey ? true : (existingLayoutKey === layoutKey);
+    if (canReuse) {
+      if (updateExistingKeyboardDOM({ container, keybindings })) {
+        attachKeyPopoverBehavior({ root: container, keybindings });
+        return;
+      }
     }
   }
 
@@ -120,12 +163,11 @@ export function renderKeybindingsKeyboard({ container, keybindings }) {
 
   const visual = el(doc, 'div', `keyboard-visual ${KEYBINDINGS_UI_ROOT_CLASS}`);
   visual.dataset.kpKeyboardBuilt = 'true';
+  if (layoutKey) visual.dataset.kpLayoutId = layoutKey;
   container.appendChild(visual);
 
   // Layout is intentionally stable + reusable (not tied to popup.html).
   // Action keys are looked up by ID in `keybindings`.
-  const layout = KEYBINDINGS_KEYBOARD_LAYOUT;
-
   for (const row of layout) {
     const rowEl = el(doc, 'div', 'keyboard-row');
     visual.appendChild(rowEl);
@@ -456,8 +498,8 @@ export function renderKeybindingsLegendTable({ tbody, keybindings, extraRows = [
 /**
  * Convenience wrapper for rendering both keyboard + legend.
  */
-export function renderKeybindingsUI({ keyboardContainer, legendTbody, keybindings, extraRows = [] }) {
-  renderKeybindingsKeyboard({ container: keyboardContainer, keybindings });
+export function renderKeybindingsUI({ keyboardContainer, legendTbody, keybindings, keyboardLayout, layoutId, extraRows = [] }) {
+  renderKeybindingsKeyboard({ container: keyboardContainer, keybindings, keyboardLayout, layoutId });
   renderKeybindingsLegendTable({ tbody: legendTbody, keybindings, extraRows });
 }
 
