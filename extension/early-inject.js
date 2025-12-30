@@ -131,9 +131,8 @@
       "fallbackText": "Click New Tab"
     },
     {
-      "type": "action",
-      "id": "ACTIVATE_NEW_TAB_OVER",
-      "fallbackText": "Click New Tab Over"
+      "type": "key",
+      "text": "H"
     },
     {
       "type": "action",
@@ -193,13 +192,12 @@
     },
     {
       "type": "action",
-      "id": "PAGE_UP",
-      "fallbackText": "Page Up"
+      "id": "ACTIVATE_NEW_TAB_OVER",
+      "fallbackText": "Click New Tab Over"
     },
     {
-      "type": "action",
-      "id": "PAGE_DOWN",
-      "fallbackText": "Page Down"
+      "type": "key",
+      "text": "N"
     },
     {
       "type": "key",
@@ -296,18 +294,11 @@
     "keyboardClass": "key-activate"
   },
   "ACTIVATE_NEW_TAB": {
-    "label": "Middle Click",
+    "label": "Click Tab Over",
     "description": "Open Link in New Tab (Background, like middle click)",
     "keyLabel": "G",
     "displayKey": "G",
     "keyboardClass": "key-activate-new-over"
-  },
-  "ACTIVATE_NEW_TAB_OVER": {
-    "label": "Click New Tab",
-    "description": "Click New Tab",
-    "keyLabel": "B",
-    "displayKey": "B",
-    "keyboardClass": "key-activate-new"
   },
   "TAB_HISTORY": {
     "label": "Tab History",
@@ -364,6 +355,13 @@
     "keyLabel": "V",
     "displayKey": "V",
     "keyboardClass": "key-scroll"
+  },
+  "ACTIVATE_NEW_TAB_OVER": {
+    "label": "Click New Tab",
+    "description": "Click New Tab",
+    "keyLabel": "B",
+    "displayKey": "B",
+    "keyboardClass": "key-activate-new"
   }
 };
   const EARLY_ONBOARDING_MODEL = {

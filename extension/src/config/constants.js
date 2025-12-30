@@ -15,7 +15,7 @@ export const KEYBINDINGS = {
   ACTIVATE_NEW_TAB: {
     keys: ['g', 'G'],
     handler: 'handleActivateNewTabOverKey',
-    label: 'Middle Click',
+    label: 'Click Tab Over',
     description: 'Open Link in New Tab (Background, like middle click)',
     keyLabel: 'G',
     keyboardClass: 'key-activate-new-over',
