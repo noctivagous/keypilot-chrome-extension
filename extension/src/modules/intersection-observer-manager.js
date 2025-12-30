@@ -43,6 +43,9 @@ export class IntersectionObserverManager {
     // Background discovery scheduling (avoid doing heavy querySelectorAll during hot startup)
     this._discoverScheduled = false;
     this._discoverIdleHandle = null;
+    this._discoverWalker = null;
+    this._discoverCursor = null;
+    this._discoverDone = false;
 
     // ---- Spatial index (RBush) for fast hit-testing ----
     // Populated from `elementPositionCache` for visible interactive elements.
@@ -74,13 +77,10 @@ export class IntersectionObserverManager {
       isAnalyzed: false,
       complexityLevel: 'unknown',
       lastAnalysis: 0,
-      analysisInterval: 10000, // Re-analyze every 10 seconds
+      analysisInterval: 30000, // Re-analyze every 30 seconds (cheap, but no need to spam)
 
       // Static metrics (computed once)
       staticMetrics: {
-        scriptCount: 0,
-        styleCount: 0,
-        initialElementCount: 0,
         hasInfiniteScroll: false,
         isSocialMedia: false,
         urlPatterns: []
@@ -88,12 +88,11 @@ export class IntersectionObserverManager {
 
       // Dynamic metrics (updated periodically)
       dynamicMetrics: {
-        currentElementCount: 0,
-        interactiveElementCount: 0,
         observerCount: 0,
-        mutationRate: 0,
-        scrollEventsPerSecond: 0,
-        mouseMoveEventsPerSecond: 0
+        visibleCount: 0,
+        rbushItems: 0,
+        pendingMutations: 0,
+        rtreeHitRate: 0,
       },
 
       // IO adaptation settings
@@ -171,28 +170,29 @@ export class IntersectionObserverManager {
 
     // Detect infinite scroll patterns
     this.complexPageDetector.staticMetrics.hasInfiniteScroll =
-      document.querySelectorAll('[data-testid*="timeline"], [role="feed"], .timeline, .feed').length > 0 ||
-      hostname.includes('twitter') || hostname.includes('facebook') || hostname.includes('reddit');
+      hostname.includes('twitter') || hostname.includes('x.com') || hostname.includes('facebook') ||
+      hostname.includes('instagram') || hostname.includes('reddit');
+
+    // Avoid expensive DOM-wide counting here. We lean on hostname heuristics + internal counters.
   }
 
   /**
    * Dynamic analysis: Current DOM state, performance metrics, user interaction patterns
    */
   performDynamicAnalysis() {
-    // Current element counts
-    this.complexPageDetector.dynamicMetrics.currentElementCount = document.querySelectorAll('*').length;
-    this.complexPageDetector.dynamicMetrics.interactiveElementCount = document.querySelectorAll(
-      'a[href], button, input, select, textarea, [role="button"], [role="link"], [contenteditable="true"], [onclick]'
-    ).length;
     this.complexPageDetector.dynamicMetrics.observerCount = this.observedInteractiveElements.size;
+    this.complexPageDetector.dynamicMetrics.visibleCount = this.visibleInteractiveElements.size;
+    this.complexPageDetector.dynamicMetrics.rbushItems = this._rtreeItemsByElement?.size || 0;
+    this.complexPageDetector.dynamicMetrics.pendingMutations =
+      (this._pendingAddedRoots?.size || 0) +
+      (this._pendingRemovedRoots?.length || 0) +
+      (this._pendingAttributeTargets?.size || 0);
 
-    // Estimate mutation rate (how often DOM changes)
-    const timeSinceLastAnalysis = Date.now() - this.complexPageDetector.lastAnalysis;
-    if (timeSinceLastAnalysis > 0) {
-      const elementGrowth = this.complexPageDetector.dynamicMetrics.currentElementCount -
-                           this.complexPageDetector.staticMetrics.initialElementCount;
-      this.complexPageDetector.dynamicMetrics.mutationRate = elementGrowth / (timeSinceLastAnalysis / 1000); // elements per second
-    }
+    const queries = Number(this.metrics?.rtreeQueries) || 0;
+    const hits = Number(this.metrics?.rtreeHits) || 0;
+    this.complexPageDetector.dynamicMetrics.rtreeHitRate = queries > 0 ? (hits / queries) : 0;
+
+    // Note: we intentionally avoid expensive mutation-rate estimation via DOM-wide counts.
   }
 
   /**
@@ -207,17 +207,14 @@ export class IntersectionObserverManager {
     // Static factors (high weight)
     if (staticMetrics.isSocialMedia) complexityScore += 30;
     if (staticMetrics.hasInfiniteScroll) complexityScore += 20;
-    if (staticMetrics.scriptCount > 20) complexityScore += 15;
-    if (staticMetrics.styleCount > 10) complexityScore += 10;
-    if (staticMetrics.initialElementCount > 1000) complexityScore += 15;
-
-    // Dynamic factors (medium weight)
-    if (dynamicMetrics.currentElementCount > 2000) complexityScore += 15;
-    if (dynamicMetrics.interactiveElementCount > 500) complexityScore += 15;
-    if (dynamicMetrics.mutationRate > 10) complexityScore += 10; // High DOM mutation rate
 
     // Performance factors (high weight)
     if (dynamicMetrics.observerCount > 200) complexityScore += 20;
+    if (dynamicMetrics.observerCount > 600) complexityScore += 20;
+    if (dynamicMetrics.rbushItems > 500) complexityScore += 10;
+    if (dynamicMetrics.rbushItems > 2000) complexityScore += 20;
+    if (dynamicMetrics.pendingMutations > 200) complexityScore += 15;
+    if (dynamicMetrics.pendingMutations > 1000) complexityScore += 25;
 
     // Determine level
     if (complexityScore >= 50) {
@@ -813,11 +810,11 @@ export class IntersectionObserverManager {
     if (this._discoverScheduled) return;
     this._discoverScheduled = true;
 
-    const run = () => {
+    const run = (deadline) => {
       this._discoverScheduled = false;
       this._discoverIdleHandle = null;
       try {
-        this.discoverInteractiveElements();
+        this.discoverInteractiveElements(deadline);
       } catch (e) {
         console.warn('[KeyPilot] Failed to discover interactive elements:', e);
       }
@@ -827,63 +824,102 @@ export class IntersectionObserverManager {
     if (typeof window.requestIdleCallback === 'function') {
       this._discoverIdleHandle = window.requestIdleCallback(run, { timeout: 1000 });
     } else {
-      this._discoverIdleHandle = window.setTimeout(run, 0);
+      this._discoverIdleHandle = window.setTimeout(() => run({ timeRemaining: () => 0 }), 0);
     }
   }
 
-  discoverInteractiveElements() {
+  resetDiscoveryAndSchedule() {
+    // Reset the incremental discovery cursor so we can re-seed observations around the
+    // current viewport (useful after scroll-end, major DOM changes, SPA navigations, etc.).
+    this._discoverWalker = null;
+    this._discoverCursor = null;
+    this._discoverDone = false;
+    this._discoverScheduled = false;
+    this.scheduleDiscoverInteractiveElements();
+  }
+
+  _ensureDiscoverWalker() {
+    if (this._discoverWalker && this._discoverCursor) return;
+    try {
+      const root = document.body || document.documentElement;
+      if (!root) return;
+      this._discoverWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+      this._discoverCursor = this._discoverWalker.currentNode;
+    } catch {
+      this._discoverWalker = null;
+      this._discoverCursor = null;
+    }
+  }
+
+  discoverInteractiveElements(deadline) {
     // Skip if observer is not initialized
     if (!this.interactiveObserver) {
       return;
     }
 
     const adaptation = this.getIOAdaptation();
-    const isComplexPage = this.isComplexPage();
 
-    let elementsToObserve;
+    // Locality-first, incremental discovery:
+    // - Avoid full-page synchronous querySelectorAll.
+    // - Walk the DOM in idle slices, but only observe elements near the viewport.
+    // - Respect a global max observation cap (adaptive).
+    const timeRemaining = typeof deadline?.timeRemaining === 'function'
+      ? () => deadline.timeRemaining()
+      : () => 0;
 
-    if (isComplexPage) {
-      // Spatial culling for complex pages: only observe elements near viewport
-      const viewportBounds = this.getViewportBounds(adaptation.spatialCullDistance);
-      elementsToObserve = this.findElementsInSpatialBounds(viewportBounds, adaptation.maxObservations);
-
-      if (window.KEYPILOT_DEBUG) {
-        console.log('[KeyPilot Debug] Spatial culling for complex page:', {
-          viewportBounds,
-          elementsFound: elementsToObserve.length,
-          maxObservations: adaptation.maxObservations
-        });
-      }
-    } else {
-      // Standard behavior for simple pages
-      const interactiveElements = document.querySelectorAll(this.interactiveSelector);
-      elementsToObserve = Array.from(interactiveElements);
+    const cap = Math.max(0, Number(adaptation.maxObservations) || 0);
+    if (cap > 0 && this.observedInteractiveElements.size >= cap) {
+      this._discoverDone = true;
+      return;
     }
 
-    // Observe new elements (with batching for performance)
-    const batchSize = adaptation.batchSize;
-    for (let i = 0; i < elementsToObserve.length; i += batchSize) {
-      const batch = elementsToObserve.slice(i, i + batchSize);
+    this._ensureDiscoverWalker();
+    if (!this._discoverWalker) return;
 
-      // Use requestIdleCallback for non-blocking observation
-      if (typeof window.requestIdleCallback === 'function') {
-        window.requestIdleCallback(() => {
-          batch.forEach(element => {
-            if (!this.isElementObserved(element)) {
-              this.observeInteractiveElement(element);
-            }
-          });
-        });
-      } else {
-        // Fallback for browsers without requestIdleCallback
-        setTimeout(() => {
-          batch.forEach(element => {
-            if (!this.isElementObserved(element)) {
-              this.observeInteractiveElement(element);
-            }
-          });
-        }, 0);
+    const margin = Math.max(0, Number(adaptation.spatialCullDistance) || 0);
+    const vw = window.innerWidth || 0;
+    const vh = window.innerHeight || 0;
+
+    let observedThisSlice = 0;
+    const maxPerSlice = Math.max(10, Number(adaptation.batchSize) || 50);
+
+    while (this._discoverCursor) {
+      // Stay responsive: stop when idle budget is low and we already did some work.
+      if (observedThisSlice >= maxPerSlice) break;
+      if (observedThisSlice > 0 && timeRemaining() < 2) break;
+
+      const el = this._discoverCursor;
+      // Advance cursor early so errors don't stall scanning.
+      try {
+        this._discoverCursor = this._discoverWalker.nextNode();
+      } catch {
+        this._discoverCursor = null;
       }
+
+      if (!el || el.nodeType !== 1) continue;
+      if (cap > 0 && this.observedInteractiveElements.size >= cap) { this._discoverDone = true; break; }
+      if (this.isElementObserved(el)) continue;
+
+      let matches = false;
+      try { matches = !!(el.matches && el.matches(this.interactiveSelector)); } catch { matches = false; }
+      if (!matches) continue;
+
+      // Viewport-first: only observe if the element is near the viewport in viewport coordinates.
+      // (This avoids scrollX/scrollY and keeps discovery locality-first.)
+      let rect;
+      try { rect = el.getBoundingClientRect(); } catch { rect = null; }
+      if (!rect) continue;
+      if (rect.bottom < -margin || rect.top > vh + margin || rect.right < -margin || rect.left > vw + margin) continue;
+
+      this.observeInteractiveElement(el);
+      observedThisSlice++;
+    }
+
+    // If scanning is not done and we haven't hit cap, schedule another idle slice.
+    if (!this._discoverDone && this._discoverCursor && (cap === 0 || this.observedInteractiveElements.size < cap)) {
+      this.scheduleDiscoverInteractiveElements();
+    } else {
+      this._discoverDone = true;
     }
 
     // Clean up observers for removed elements
@@ -1487,6 +1523,9 @@ export class IntersectionObserverManager {
       this._discoverIdleHandle = null;
     }
     this._discoverScheduled = false;
+    this._discoverWalker = null;
+    this._discoverCursor = null;
+    this._discoverDone = false;
 
     if (this.interactiveObserver) {
       this.interactiveObserver.disconnect();

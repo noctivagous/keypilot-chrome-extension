@@ -678,7 +678,11 @@ export class KeyPilot extends EventManager {
       this._boundScrollEndHandler = (event) => {
         const { mouseX, mouseY } = event.detail || {};
         if (typeof mouseX !== 'number' || typeof mouseY !== 'number') return;
-        this.updateElementsUnderCursor(mouseX, mouseY);
+        // After scrolling, the viewport changes: re-seed incremental interactive discovery so RBush
+        // stays locality-first without any full-document scan.
+        try { this.intersectionManager?.resetDiscoveryAndSchedule?.(); } catch { /* ignore */ }
+        // Prefer a cached event-derived "under element" hint to avoid a DOM hit-test on scroll-end.
+        this.updateElementsUnderCursor(mouseX, mouseY, false, this._pendingMouse?.underHint || null);
       };
     }
     document.addEventListener('keypilot:scroll-end', this._boundScrollEndHandler);
