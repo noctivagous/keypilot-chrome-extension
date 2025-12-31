@@ -161,14 +161,31 @@ export class KeyPilot extends EventManager {
     };
 
     try {
-      if (target && target.tagName === 'A' && target.href) {
+      // Treat both real anchors and "link-like" UI rows as links for onboarding semantics.
+      //
+      // Important: many extension surfaces (New Tab, omnibox suggestions, etc) render clickable
+      // rows via `renderUrlListing()` which sets `role="link"` + `data-kp-url` instead of `<a>`.
+      const el = target instanceof Element ? target : null;
+
+      // 1) Native anchors
+      if (el && el.tagName === 'A' && /** @type {any} */ (el).href) {
         detail.isLink = true;
-        detail.href = target.href;
-      } else if (target && typeof target.closest === 'function') {
-        const a = target.closest('a[href]');
-        if (a && a.tagName === 'A' && a.href) {
+        detail.href = /** @type {any} */ (el).href;
+      } else if (el && typeof el.closest === 'function') {
+        const a = el.closest('a[href]');
+        if (a && a.tagName === 'A' && /** @type {any} */ (a).href) {
           detail.isLink = true;
-          detail.href = a.href;
+          detail.href = /** @type {any} */ (a).href;
+        }
+      }
+
+      // 2) Link-like rows (e.g. `role="link"` + `data-kp-url`)
+      if (!detail.isLink && el && typeof el.closest === 'function') {
+        const linkish = /** @type {HTMLElement|null} */ (el.closest('[role="link"]'));
+        if (linkish) {
+          detail.isLink = true;
+          const kpUrl = linkish?.dataset?.kpUrl ? String(linkish.dataset.kpUrl) : '';
+          if (kpUrl) detail.href = kpUrl;
         }
       }
     } catch {
@@ -4540,6 +4557,10 @@ export class KeyPilot extends EventManager {
   handleOpenOmnibox() {
     try {
       if (window !== window.top) return;
+      // Omnibox should not be affected by text focus mode.
+      // If the user was in text mode, clear it before opening omnibox.
+      try { this._disarmTextModeClick?.(); } catch { /* ignore */ }
+      try { this.focusDetector?.clearTextFocus?.(); } catch { /* ignore */ }
       this.state.setMode(MODES.OMNIBOX);
       this.omniboxManager?.show?.('');
     } catch (e) {
@@ -4681,7 +4702,25 @@ export class KeyPilot extends EventManager {
     }
 
     const currentState = this.state.getState();
-    this.overlayManager.updateOverlays(focusEl, deleteEl, currentState.mode, currentState.focusedTextElement);
+
+    // Display-only coalescing: for same-destination link clusters, draw a single unioned rect
+    // to reduce flicker while preserving correct element selection for clicks.
+    let focusRectOverride = null;
+    try {
+      if (focusEl &&
+          this.intersectionManager &&
+          typeof this.intersectionManager.getDisplayRectForElement === 'function') {
+        focusRectOverride = this.intersectionManager.getDisplayRectForElement(focusEl, { tolerancePx: 6 });
+      }
+    } catch { /* ignore */ }
+
+    this.overlayManager.updateOverlays(
+      focusEl,
+      deleteEl,
+      currentState.mode,
+      currentState.focusedTextElement,
+      focusRectOverride
+    );
   }
 
   logPerformanceMetrics() {

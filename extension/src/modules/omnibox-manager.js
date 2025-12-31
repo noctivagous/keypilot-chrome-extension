@@ -25,6 +25,9 @@ export class OmniboxManager {
     /** @type {Array<{title: string, url: string, source: string}>} */
     this._suggestions = [];
     this._selectedIndex = -1;
+    // Track whether the user has explicitly moved into the list via Arrow keys.
+    // We use this to avoid "Enter always commits first row" unless that's intended.
+    this._userNavigatedList = false;
     this._debounceTimer = null;
     this._lastQuery = '';
 
@@ -56,6 +59,7 @@ export class OmniboxManager {
 
     this._open = true;
     this._ensureDom();
+    this._userNavigatedList = false;
 
     // Set value and focus.
     if (this._input) {
@@ -75,6 +79,7 @@ export class OmniboxManager {
     this._clearDebounce();
     this._suggestions = [];
     this._selectedIndex = -1;
+    this._userNavigatedList = false;
     this._lastQuery = '';
 
     try {
@@ -211,6 +216,7 @@ export class OmniboxManager {
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
+      this._userNavigatedList = true;
       this._moveSelection(key === 'ArrowDown' ? 1 : -1);
       return;
     }
@@ -232,9 +238,17 @@ export class OmniboxManager {
       return;
     }
 
+    // Special behavior to make omnibox feel like a real address bar:
+    // - When the "input row" is active (_selectedIndex === -1), ArrowDown moves into the list at 0.
+    // - When the first row is selected, ArrowUp returns to input (clears selection).
     let next = this._selectedIndex;
-    if (next === -1) next = delta > 0 ? 0 : count - 1;
-    else next = (next + delta + count) % count;
+    if (delta < 0 && next === 0) {
+      next = -1;
+    } else if (next === -1) {
+      next = delta > 0 ? 0 : -1;
+    } else {
+      next = (next + delta + count) % count;
+    }
 
     this._selectedIndex = next;
     this._renderSuggestions();
@@ -255,7 +269,12 @@ export class OmniboxManager {
   _commit() {
     const raw = (this._input?.value || '').trim();
     const selected = this._selectedIndex >= 0 ? this._suggestions[this._selectedIndex] : null;
-    const target = selected?.url ? selected.url : raw;
+    // If the user hasn't explicitly navigated the list, treat Enter as committing the input,
+    // UNLESS the selected row is our "closest domain" convenience row (source === 'domain').
+    const allowSelected =
+      this._selectedIndex >= 0 &&
+      (this._userNavigatedList || selected?.source === 'domain');
+    const target = allowSelected && selected?.url ? selected.url : raw;
     if (!target) {
       this.hide();
       return;
@@ -375,7 +394,10 @@ export class OmniboxManager {
     if (current !== this._lastQuery) return;
 
     this._suggestions = suggestions;
-    this._selectedIndex = suggestions.length ? 0 : -1;
+    // Default selection: nothing selected. User must press ArrowDown (or hover/click)
+    // to move into the list.
+    this._selectedIndex = -1;
+    this._userNavigatedList = false;
     this._renderSuggestions();
   }
 
@@ -432,6 +454,7 @@ export class OmniboxManager {
       },
       onRowMouseEnter: ({ idx }) => {
         this._selectedIndex = idx;
+        this._userNavigatedList = true;
         this._renderSuggestions();
       },
       onRowMouseDown: ({ idx, event }) => {
@@ -439,6 +462,7 @@ export class OmniboxManager {
         event.preventDefault();
         event.stopPropagation();
         this._selectedIndex = idx;
+        this._userNavigatedList = true;
         this._commit();
       }
     });

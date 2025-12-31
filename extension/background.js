@@ -996,33 +996,132 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
 
         case 'KP_OMNIBOX_SUGGEST': {
-          // Return omnibox suggestions from history + bookmarks.
+          // Return omnibox suggestions from:
+          // - topSites (most visited)
+          // - bookmarks (bookmark bar first, then others)
+          // - history
+          //
+          // Also inject a "closest domain" convenience row (source: 'domain') when the
+          // query looks like a domain prefix (no spaces) and we can find a strong match.
           const query = typeof message.query === 'string' ? message.query.trim() : '';
           const maxResults = Math.max(1, Math.min(25, Number(message.maxResults) || 12));
 
-          /** @type {Array<{title: string, url: string, source: 'history'|'bookmark'}>} */
-          const suggestions = [];
-          /** @type {Set<string>} */
-          const seenUrls = new Set();
+          const queryLower = query.toLowerCase();
+
+          /** @type {Array<any>} */
+          const candidates = [];
+          /** @type {Map<string, any>} */
+          const bestByUrl = new Map();
+
+          const safeUrlHost = (url) => {
+            try {
+              const u = new URL(String(url || '').trim());
+              const h = (u.hostname || '').toLowerCase();
+              return h.replace(/^www\./, '');
+            } catch {
+              return '';
+            }
+          };
 
           const normalizeUrl = (url) => {
             if (!url || typeof url !== 'string') return '';
             return url.trim();
           };
 
-          const addSuggestion = ({ title, url, source }) => {
-            const normalizedUrl = normalizeUrl(url);
-            if (!normalizedUrl) return;
-            if (seenUrls.has(normalizedUrl)) return;
-            seenUrls.add(normalizedUrl);
-            suggestions.push({
-              title: typeof title === 'string' ? title : '',
-              url: normalizedUrl,
-              source
-            });
+          const computeBaseScore = ({ source, isToolbar, url, title, historyVisitCount, historyTypedCount, historyLastVisitTime }) => {
+            // Primary priority tiers:
+            // - topSites / most visited
+            // - bookmark bar ("toolbar")
+            // - other bookmarks
+            // - history
+            let score = 0;
+            if (source === 'topSites') score += 4000;
+            else if (source === 'bookmark') score += isToolbar ? 3200 : 2800;
+            else if (source === 'history') score += 2000;
+
+            // Within-tier heuristics.
+            score += Math.min(800, Math.max(0, Number(historyVisitCount) || 0) * 8);
+            score += Math.min(400, Math.max(0, Number(historyTypedCount) || 0) * 20);
+            score += Math.min(500, Math.max(0, Math.floor(((Number(historyLastVisitTime) || 0) - (Date.now() - 30 * 24 * 60 * 60 * 1000)) / (24 * 60 * 60 * 1000))) * 5);
+
+            const host = safeUrlHost(url);
+            // Query fit boosts (favor prefix host matches like "gma" -> gmail.com)
+            if (queryLower && host) {
+              if (host === queryLower) score += 1500;
+              else if (host.startsWith(queryLower)) score += 1200 - Math.min(300, host.length - queryLower.length);
+              else if (host.includes(queryLower)) score += 600 - Math.min(300, host.indexOf(queryLower));
+            }
+            const t = String(title || '').toLowerCase();
+            if (queryLower && t) {
+              if (t.startsWith(queryLower)) score += 250;
+              else if (t.includes(queryLower)) score += 120;
+            }
+            return score;
           };
 
-          // 1) History
+          const addCandidate = ({ title, url, source, isToolbar = false, historyVisitCount = 0, historyTypedCount = 0, historyLastVisitTime = 0 }) => {
+            const normalizedUrl = normalizeUrl(url);
+            if (!normalizedUrl) return;
+
+            const entry = {
+              title: typeof title === 'string' ? title : '',
+              url: normalizedUrl,
+              source,
+              isToolbar: Boolean(isToolbar),
+              host: safeUrlHost(normalizedUrl),
+              score: computeBaseScore({
+                source,
+                isToolbar,
+                url: normalizedUrl,
+                title,
+                historyVisitCount,
+                historyTypedCount,
+                historyLastVisitTime
+              })
+            };
+
+            const prev = bestByUrl.get(normalizedUrl);
+            if (!prev || entry.score > prev.score) {
+              bestByUrl.set(normalizedUrl, entry);
+            }
+          };
+
+          // 0) Most visited / top sites
+          try {
+            if (chrome.topSites && typeof chrome.topSites.get === 'function') {
+              const topSites = await chrome.topSites.get();
+              for (const site of topSites || []) {
+                const url = site?.url || '';
+                const title = site?.title || '';
+                // If user typed something, only include topSites that match reasonably.
+                if (queryLower) {
+                  const host = safeUrlHost(url);
+                  const t = String(title || '').toLowerCase();
+                  if (!host.startsWith(queryLower) && !host.includes(queryLower) && !t.includes(queryLower)) continue;
+                }
+                addCandidate({ title, url, source: 'topSites' });
+              }
+            }
+          } catch {
+            // ignore
+          }
+
+          // 1) Bookmarks (only nodes with urls)
+          try {
+            if (chrome.bookmarks && typeof chrome.bookmarks.search === 'function') {
+              const bookmarkNodes = await chrome.bookmarks.search(query || '');
+              for (const node of bookmarkNodes || []) {
+                if (!node || !node.url) continue;
+                // Chrome bookmark bar is usually id "1" (Bookmarks Bar). Use parentId as a heuristic.
+                const isToolbar = String(node.parentId || '') === '1';
+                addCandidate({ title: node?.title || '', url: node?.url || '', source: 'bookmark', isToolbar });
+              }
+            }
+          } catch (e) {
+            console.warn('KP_OMNIBOX_SUGGEST: bookmark search failed:', e?.message || e);
+          }
+
+          // 2) History
           try {
             if (chrome.history && typeof chrome.history.search === 'function') {
               const historyItems = await chrome.history.search({
@@ -1031,26 +1130,92 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 startTime: 0
               });
               for (const item of historyItems || []) {
-                addSuggestion({ title: item?.title || '', url: item?.url || '', source: 'history' });
-                if (suggestions.length >= maxResults) break;
+                addCandidate({
+                  title: item?.title || '',
+                  url: item?.url || '',
+                  source: 'history',
+                  historyVisitCount: Number(item?.visitCount) || 0,
+                  historyTypedCount: Number(item?.typedCount) || 0,
+                  historyLastVisitTime: Number(item?.lastVisitTime) || 0
+                });
               }
             }
           } catch (e) {
             console.warn('KP_OMNIBOX_SUGGEST: history search failed:', e?.message || e);
           }
 
-          // 2) Bookmarks (only nodes with urls)
-          try {
-            if (suggestions.length < maxResults && chrome.bookmarks && typeof chrome.bookmarks.search === 'function') {
-              const bookmarkNodes = await chrome.bookmarks.search(query || '');
-              for (const node of bookmarkNodes || []) {
-                if (!node || !node.url) continue;
-                addSuggestion({ title: node?.title || '', url: node?.url || '', source: 'bookmark' });
-                if (suggestions.length >= maxResults) break;
+          candidates.push(...bestByUrl.values());
+
+          // Sort by score descending.
+          candidates.sort((a, b) => (Number(b?.score) || 0) - (Number(a?.score) || 0));
+
+          // Compute "closest domain" row.
+          // Only when query is domain-ish: no spaces, at least 2 chars.
+          let closestDomain = '';
+          if (queryLower && queryLower.length >= 2 && !/\s/.test(queryLower)) {
+            /** @type {Map<string, any>} */
+            const bestByHost = new Map();
+            for (const c of candidates) {
+              const host = String(c?.host || '').toLowerCase().replace(/^www\./, '');
+              if (!host) continue;
+              // Require at least partial host match so we don't suggest random domains.
+              if (!host.startsWith(queryLower) && !host.includes(queryLower)) continue;
+
+              // Prefer bookmarks (and toolbar) over history by bumping hostScore.
+              let hostScore = Number(c?.score) || 0;
+              if (c?.source === 'bookmark') hostScore += c?.isToolbar ? 1200 : 900;
+              if (c?.source === 'topSites') hostScore += 700;
+              if (host === queryLower) hostScore += 1000;
+              if (host.startsWith(queryLower)) hostScore += 700;
+
+              const prev = bestByHost.get(host);
+              if (!prev || hostScore > (Number(prev?.hostScore) || 0)) {
+                bestByHost.set(host, { host, hostScore });
               }
             }
-          } catch (e) {
-            console.warn('KP_OMNIBOX_SUGGEST: bookmark search failed:', e?.message || e);
+            let best = null;
+            for (const v of bestByHost.values()) {
+              if (!best || (Number(v.hostScore) || 0) > (Number(best.hostScore) || 0)) best = v;
+            }
+            closestDomain = best?.host || '';
+          }
+
+          /** @type {Array<any>} */
+          const finalSuggestions = [];
+
+          // Insert domain row at the top if we found one.
+          if (closestDomain) {
+            finalSuggestions.push({
+              title: closestDomain,
+              url: `https://${closestDomain}`,
+              source: 'domain'
+            });
+          }
+
+          // If we have a closest domain, bring URLs from that domain to the top (below the domain row),
+          // then keep the rest in their score order.
+          if (closestDomain) {
+            for (const c of candidates) {
+              if (c?.host === closestDomain) finalSuggestions.push(c);
+            }
+            for (const c of candidates) {
+              if (c?.host !== closestDomain) finalSuggestions.push(c);
+            }
+          } else {
+            finalSuggestions.push(...candidates);
+          }
+
+          // De-dupe by URL one more time (in case the domain URL matches a real entry), then cap.
+          /** @type {Set<string>} */
+          const seenUrls = new Set();
+          const suggestions = [];
+          for (const s of finalSuggestions) {
+            const u = normalizeUrl(s?.url || '');
+            if (!u) continue;
+            if (seenUrls.has(u)) continue;
+            seenUrls.add(u);
+            suggestions.push(s);
+            if (suggestions.length >= maxResults) break;
           }
 
           sendResponse({

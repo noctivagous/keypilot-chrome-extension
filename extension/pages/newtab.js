@@ -8,6 +8,51 @@ import '../src/vendor/rbush.js';
 let currentEngine = 'brave';
 const KP_ENABLED_STORAGE_KEY = 'keypilot_enabled';
 
+function parseUrlForThreeLineDisplay(rawUrl) {
+  const input = String(rawUrl || '').trim();
+  if (!input) return { domain: '', path: '' };
+
+  try {
+    const u = new URL(input, 'https://example.invalid');
+    const scheme = (u.protocol || '').replace(/:$/, '');
+    const host = (u.hostname || '') + (u.port ? `:${u.port}` : '');
+
+    // Domain line: prefer host if present; otherwise fall back to scheme.
+    const domain = host || scheme || input;
+
+    // Path line: everything after the domain: pathname + search + hash.
+    // Keep '/' for empty paths so the third line isn't blank for homepages.
+    const pathname = u.pathname || '';
+    const rest = `${pathname || ''}${u.search || ''}${u.hash || ''}`;
+    const path = rest || (host ? '/' : '');
+
+    return { domain, path };
+  } catch {
+    // Very defensive fallback: attempt split on first slash after scheme.
+    const m = input.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\/([^\/?#]+)([^\s]*)?$/);
+    if (m) {
+      const domain = m[1] || input;
+      const path = m[2] || '/';
+      return { domain, path };
+    }
+    return { domain: input, path: '' };
+  }
+}
+
+function renderThreeLineUrlListingEntry({ item, parts }) {
+  const url = String(item?.url || '').trim();
+  const title = String(item?.title || '').trim();
+  const { domain, path } = parseUrlForThreeLineDisplay(url);
+
+  // Order requirement:
+  // 1) domain
+  // 2) page title
+  // 3) path
+  parts.titleEl.textContent = domain || url || '';
+  parts.metaEl.textContent = title;
+  parts.urlEl.textContent = path;
+}
+
 function toUrlOrSearch(text) {
   const t = String(text || '').trim();
   if (!t) return getEngineHomeUrl(currentEngine);
@@ -169,6 +214,7 @@ function createSuggestionsController({ inputEl, rootEl }) {
   /** @type {Array<{title: string, url: string, source: string}>} */
   let suggestions = [];
   let selectedIndex = -1;
+  let userNavigatedList = false;
   let debounceTimer = null;
   let lastQuery = '';
 
@@ -182,6 +228,7 @@ function createSuggestionsController({ inputEl, rootEl }) {
   const hide = () => {
     suggestions = [];
     selectedIndex = -1;
+    userNavigatedList = false;
     rootEl.hidden = true;
     rootEl.textContent = '';
   };
@@ -204,18 +251,20 @@ function createSuggestionsController({ inputEl, rootEl }) {
         rowSelected: 'selected',
         content: 'kp-url-content',
         text: 'kp-url-text',
-        title: 'suggestion-title',
-        url: 'suggestion-url',
+        title: 'kp-url-domain',
+        meta: 'kp-url-title',
+        url: 'kp-url-path',
         favicon: 'kp-url-favicon'
       },
       getTitle: (s) => s.title || s.url,
       getUrl: (s) => s.url,
       showFavicon: true,
-      showMetaLine: false,
+      showMetaLine: true,
       showUrlLine: true,
       selectedIndex,
-      decorateRow: ({ row, idx }) => {
+      decorateRow: ({ row, item, idx, parts }) => {
         row.dataset.kpSuggestionIndex = String(idx);
+        renderThreeLineUrlListingEntry({ item, parts });
       },
       onRowMouseEnter: ({ idx }) => {
         selectedIndex = idx;
@@ -263,7 +312,10 @@ function createSuggestionsController({ inputEl, rootEl }) {
       // stale guard
       if ((inputEl.value || '').trim() !== lastQuery) return;
       suggestions = next;
-      selectedIndex = suggestions.length ? 0 : -1;
+      // Default selection: nothing selected. User must press ArrowDown (or hover/click)
+      // to move into the list.
+      selectedIndex = -1;
+      userNavigatedList = false;
       render();
     }, 90);
   };
@@ -275,9 +327,15 @@ function createSuggestionsController({ inputEl, rootEl }) {
       render();
       return;
     }
+    // Omnibox-like behavior: ArrowUp from the first row returns to the input (clears selection).
     let next = selectedIndex;
-    if (next === -1) next = delta > 0 ? 0 : count - 1;
-    else next = (next + delta + count) % count;
+    if (delta < 0 && next === 0) {
+      next = -1;
+    } else if (next === -1) {
+      next = delta > 0 ? 0 : -1;
+    } else {
+      next = (next + delta + count) % count;
+    }
     selectedIndex = next;
     render();
   };
@@ -285,7 +343,10 @@ function createSuggestionsController({ inputEl, rootEl }) {
   const commit = () => {
     const raw = (inputEl.value || '').trim();
     const selected = selectedIndex >= 0 ? suggestions[selectedIndex] : null;
-    const target = selected?.url ? selected.url : raw;
+    const allowSelected =
+      selectedIndex >= 0 &&
+      (userNavigatedList || selected?.source === 'domain');
+    const target = allowSelected && selected?.url ? selected.url : raw;
     hide();
     navigate(toUrlOrSearch(target));
   };
@@ -310,6 +371,7 @@ function createSuggestionsController({ inputEl, rootEl }) {
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
+      userNavigatedList = true;
       moveSelection(e.key === 'ArrowDown' ? 1 : -1);
       return;
     }
@@ -356,27 +418,23 @@ async function renderBookmarks() {
     useInlineStyles: false,
     rowTag: 'li',
     classNames: {
+      row: 'kp-url-row',
       content: 'kp-url-content',
       text: 'kp-url-text',
-      url: 'bookmark-url',
+      title: 'kp-url-domain',
+      meta: 'kp-url-title',
+      url: 'kp-url-path',
       favicon: 'kp-url-favicon'
     },
     getTitle: (b) => b.title || b.url,
     getUrl: (b) => b.url,
     showFavicon: true,
-    showMetaLine: false,
+    showMetaLine: true,
     showUrlLine: true,
-    decorateRow: ({ item, parts }) => {
-      // Match existing CSS expectations: `<a>` for title and `.bookmark-url` below it.
-      const a = document.createElement('a');
-      a.href = item.url;
-      a.textContent = item.title || item.url;
-      a.addEventListener('click', (e) => {
-        e.preventDefault();
-        navigate(item.url);
-      }, true);
-      parts.titleEl.textContent = '';
-      parts.titleEl.appendChild(a);
+    decorateRow: ({ item, parts }) => renderThreeLineUrlListingEntry({ item, parts }),
+    onRowClick: ({ item, event }) => {
+      event.preventDefault();
+      navigate(item.url);
     }
   });
 }
@@ -415,26 +473,23 @@ async function renderToolbarBookmarks() {
     view: 'list',
     useInlineStyles: false,
     classNames: {
+      row: 'kp-url-row',
       content: 'kp-url-content',
       text: 'kp-url-text',
-      url: 'toolbar-url',
+      title: 'kp-url-domain',
+      meta: 'kp-url-title',
+      url: 'kp-url-path',
       favicon: 'kp-url-favicon'
     },
     getTitle: (b) => b.title || b.url,
     getUrl: (b) => b.url,
     showFavicon: true,
-    showMetaLine: false,
+    showMetaLine: true,
     showUrlLine: true,
-    decorateRow: ({ item, parts }) => {
-      // Add click handler for toolbar bookmarks
-      parts.titleEl.addEventListener('click', (e) => {
-        e.preventDefault();
-        navigate(item.url);
-      }, true);
-      parts.urlEl.addEventListener('click', (e) => {
-        e.preventDefault();
-        navigate(item.url);
-      }, true);
+    decorateRow: ({ item, parts }) => renderThreeLineUrlListingEntry({ item, parts }),
+    onRowClick: ({ item, event }) => {
+      event.preventDefault();
+      navigate(item.url);
     }
   });
 }
@@ -451,10 +506,11 @@ async function renderRecentHistory() {
     if (chrome.history?.search) {
       const results = await chrome.history.search({
         text: '', // empty string to get all history
-        maxResults: 10,
+        maxResults: 30,
         startTime: Date.now() - (30 * 24 * 60 * 60 * 1000) // last 30 days
       });
-      historyItems = results || [];
+      // Filter out chrome-extension URLs
+      historyItems = (results || []).filter(item => !item.url?.startsWith('chrome-extension://'));
     }
   } catch {
     historyItems = [];
@@ -481,26 +537,23 @@ async function renderRecentHistory() {
     view: 'list',
     useInlineStyles: false,
     classNames: {
+      row: 'kp-url-row',
       content: 'kp-url-content',
       text: 'kp-url-text',
-      url: 'history-url',
+      title: 'kp-url-domain',
+      meta: 'kp-url-title',
+      url: 'kp-url-path',
       favicon: 'kp-url-favicon'
     },
     getTitle: (h) => h.title || h.url,
     getUrl: (h) => h.url,
     showFavicon: true,
-    showMetaLine: false,
+    showMetaLine: true,
     showUrlLine: true,
-    decorateRow: ({ item, parts }) => {
-      // Add click handler for history items
-      parts.titleEl.addEventListener('click', (e) => {
-        e.preventDefault();
-        navigate(item.url);
-      }, true);
-      parts.urlEl.addEventListener('click', (e) => {
-        e.preventDefault();
-        navigate(item.url);
-      }, true);
+    decorateRow: ({ item, parts }) => renderThreeLineUrlListingEntry({ item, parts }),
+    onRowClick: ({ item, event }) => {
+      event.preventDefault();
+      navigate(item.url);
     }
   });
 }
@@ -517,8 +570,8 @@ async function renderTopSites() {
     if (chrome.topSites?.get) {
       // Get the most frequently visited sites from Chrome's top sites
       topSites = await chrome.topSites.get();
-      // Limit to top 5
-      topSites = topSites.slice(0, 5);
+      // Limit to top 7
+      topSites = topSites.slice(0, 8);
     }
   } catch {
     topSites = [];
@@ -692,19 +745,23 @@ async function init() {
   }
 
   const focusHint = document.getElementById('focus-hint');
+
   const refreshFocusHint = () => {
     // Best-effort heuristic: on the New Tab page, focusing the omnibox typically blurs the page
     // while the document remains visible. We avoid showing the hint when the tab isn't visible.
     const shouldShow = document.visibilityState === 'visible' && !document.hasFocus();
-    if (focusHint) focusHint.hidden = !shouldShow;
+    try {
+      document.body?.classList?.toggle('kp-unfocused', shouldShow);
+    } catch {
+      // ignore
+    }
+    if (focusHint) {
+      focusHint.hidden = !shouldShow;
+    }
   };
   window.addEventListener('focus', refreshFocusHint, true);
   window.addEventListener('blur', refreshFocusHint, true);
   document.addEventListener('visibilitychange', refreshFocusHint, true);
-  document.addEventListener('pointerdown', () => {
-    // User is clicking back into the page; hide immediately to reduce perceived lag/flicker.
-    if (focusHint) focusHint.hidden = true;
-  }, { capture: true });
   // Chrome doesn't always emit blur/focus events when the omnibox steals focus; poll cheaply.
   const focusHintPoll = setInterval(() => {
     if (document.visibilityState !== 'visible') return;

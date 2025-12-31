@@ -11,7 +11,7 @@
     <task id="go_back" label="To go back (history), press the `D` key.">
       <when type="action" action="back" />
     </task>
-    <task id="keyboard_key_info" label="Notice the Keyboard Reference window below. While hovering over a key, press `F`  
+    <task id="keyboard_key_info" label="Notice the Keyboard Reference window below. While hovering over a key, press the `F` key  
     to find out what it does.">
       <when type="action" action="activate" target="keyboardHelpKey" />
     </task>

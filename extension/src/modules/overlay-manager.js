@@ -4,6 +4,7 @@
 import { CSS_CLASSES, Z_INDEX, SELECTORS, MODES, COLORS, FEATURE_FLAGS } from '../config/constants.js';
 import { HighlightManager } from './highlight-manager.js';
 import { PopupManager } from './popup-manager.js';
+import { DEFAULT_SETTINGS } from './settings-manager.js';
 
 export class OverlayManager {
   constructor() {
@@ -72,6 +73,27 @@ export class OverlayManager {
     this.highlightManager.initialize(this.overlayObserver);
   }
 
+  /**
+   * Treat any element that is a <video> OR contains a <video> descendant as "video-like".
+   * This is used to disable the green transparent fill on video players and their
+   * clickable wrapper containers (common on many sites).
+   *
+   * Keep this fast: it runs on hover updates.
+   * @param {Element|null} element
+   * @returns {boolean}
+   */
+  isVideoLikeElement(element) {
+    try {
+      if (!element || !(element instanceof Element)) return false;
+      if (element.tagName === 'VIDEO') return true;
+      // Fast path: if it can't possibly contain a video.
+      if (!element.querySelector) return false;
+      return !!element.querySelector('video');
+    } catch {
+      return false;
+    }
+  }
+
   // Canvas-based rendering backend
   initCanvasRenderer() {
     if (this.canvasOverlay) return;
@@ -119,7 +141,7 @@ export class OverlayManager {
     }
   }
 
-  updateFocusOverlayCanvas(element, mode = MODES.NONE) {
+  updateFocusOverlayCanvas(element, mode = MODES.NONE, rectOverride = null) {
     if (!this.canvasContext || !element) {
       this.hideFocusOverlayCanvas();
       return;
@@ -137,7 +159,9 @@ export class OverlayManager {
       }
     } catch { /* ignore */ }
 
-    const rect = this.getBestRect(element);
+    const rect = (rectOverride && typeof rectOverride === 'object')
+      ? rectOverride
+      : this.getBestRect(element);
     if (!rect || rect.width <= 0 || rect.height <= 0) {
       this.hideFocusOverlayCanvas();
       return;
@@ -145,7 +169,7 @@ export class OverlayManager {
 
     // Determine element type and colors
     const isTextInput = element.matches && element.matches(SELECTORS.FOCUSABLE_TEXT);
-    const isVideo = element.tagName === 'VIDEO';
+    const isVideo = this.isVideoLikeElement(element);
     const isVeryLarge = rect.width > 512 && rect.height > 512;
 
     let borderColor, shadowColor, backgroundColor;
@@ -243,7 +267,7 @@ export class OverlayManager {
     }
   }
 
-  updateFocusOverlayCSSCustomProps(element, mode = MODES.NONE) {
+  updateFocusOverlayCSSCustomProps(element, mode = MODES.NONE, rectOverride = null) {
     if (!this.cssCustomPropsOverlay || !element) {
       this.hideFocusOverlayCSSCustomProps();
       return;
@@ -261,7 +285,9 @@ export class OverlayManager {
       }
     } catch { /* ignore */ }
 
-    const rect = this.getBestRect(element);
+    const rect = (rectOverride && typeof rectOverride === 'object')
+      ? rectOverride
+      : this.getBestRect(element);
     if (!rect || rect.width <= 0 || rect.height <= 0) {
       this.hideFocusOverlayCSSCustomProps();
       return;
@@ -269,7 +295,7 @@ export class OverlayManager {
 
     // Determine element type and colors
     const isTextInput = element.matches && element.matches(SELECTORS.FOCUSABLE_TEXT);
-    const isVideo = element.tagName === 'VIDEO';
+    const isVideo = this.isVideoLikeElement(element);
     const isVeryLarge = rect.width > 512 && rect.height > 512;
 
     let borderColor, shadowColor, backgroundColor, shadowBrightColor;
@@ -324,7 +350,12 @@ export class OverlayManager {
     }
   }
 
-  setModeSettings(settings) {
+  // SELECTION RECTANGLE FUNCTIONALITY ONLY
+  setSelectionMode(mode) {
+    return this.highlightManager.setSelectionMode(mode);
+  }
+
+  _getClickModeSettings() {
     const s = settings && typeof settings === 'object' ? settings : {};
     this._modeSettings = {
       clickMode: s.clickMode && typeof s.clickMode === 'object' ? s.clickMode : null,
@@ -344,12 +375,11 @@ export class OverlayManager {
 
   _getTextModeSettings() {
     const tm = this._modeSettings?.textMode && typeof this._modeSettings.textMode === 'object'
-      ? this._modeSettings.textMode
-      : {};
+      ? { ...DEFAULT_SETTINGS.textMode, ...this._modeSettings.textMode }
+      : DEFAULT_SETTINGS.textMode;
     const strokeThickness = Number(tm.strokeThickness);
     const thickness = Number.isFinite(strokeThickness) ? Math.min(Math.max(strokeThickness, 1), 16) : 3;
-    const labelsEnabled = tm.labelsEnabled === false ? false : true;
-    return { strokeThickness: thickness, labelsEnabled };
+    return { strokeThickness: thickness, labelsEnabled: tm.labelsEnabled };
   }
 
   setHoverClickLabelText(text) {
@@ -519,7 +549,7 @@ export class OverlayManager {
     );
   }
 
-  updateOverlays(focusEl, deleteEl, mode, focusedTextElement = null) {
+  updateOverlays(focusEl, deleteEl, mode, focusedTextElement = null, focusRectOverride = null) {
     // Debug logging when debug mode is enabled
     if (window.KEYPILOT_DEBUG && focusEl) {
       console.log('[KeyPilot Debug] Updating overlays:', {
@@ -534,7 +564,7 @@ export class OverlayManager {
     // Popovers are modal but still need the green rectangle so the user can F-click UI
     // affordances like the close (×) button.
     if (mode === 'none' || mode === 'text_focus' || mode === 'highlight' || mode === 'popover') {
-      this.updateFocusOverlay(focusEl, mode);
+      this.updateFocusOverlay(focusEl, mode, focusRectOverride);
       
       if (mode === 'text_focus') {
         // Labels are attached to the focused text field, not the hovered element.
@@ -583,19 +613,19 @@ export class OverlayManager {
   }
 
   // Unified interface that switches between rendering modes
-  updateFocusOverlay(element, mode = MODES.NONE) {
+  updateFocusOverlay(element, mode = MODES.NONE, rectOverride = null) {
     switch (this.renderingMode) {
       case 'canvas':
-        return this.updateFocusOverlayCanvas(element, mode);
+        return this.updateFocusOverlayCanvas(element, mode, rectOverride);
       case 'css-custom-props':
-        return this.updateFocusOverlayCSSCustomProps(element, mode);
+        return this.updateFocusOverlayCSSCustomProps(element, mode, rectOverride);
       case 'dom':
       default:
-        return this.updateFocusOverlayDOM(element, mode);
+        return this.updateFocusOverlayDOM(element, mode, rectOverride);
     }
   }
 
-  updateFocusOverlayDOM(element, mode = MODES.NONE) {
+  updateFocusOverlayDOM(element, mode = MODES.NONE, rectOverride = null) {
     if (!element) {
       this.hideFocusOverlay();
       return;
@@ -617,10 +647,12 @@ export class OverlayManager {
 
     // Determine if this is a text input element
     const isTextInput = element.matches && element.matches(SELECTORS.FOCUSABLE_TEXT);
-    const isVideo = element.tagName === 'VIDEO';
+    const isVideo = this.isVideoLikeElement(element);
 
     // We'll use this rect both for sizing/positioning and for deciding whether to render a fill.
-    const rect = this.getBestRect(element);
+    const rect = (rectOverride && typeof rectOverride === 'object')
+      ? rectOverride
+      : this.getBestRect(element);
     // If the hover target is extremely large, a filled overlay becomes distracting; keep just the frame.
     const isVeryLarge = rect && rect.width > 512 && rect.height > 512;
     
@@ -917,48 +949,57 @@ export class OverlayManager {
     }
   }
 
-  // Highlight methods delegated to HighlightManager
+  // SELECTION RECTANGLE FUNCTIONALITY ONLY
   updateHighlightRectangleOverlay(startPosition, currentPosition) {
     return this.highlightManager.updateHighlightRectangleOverlay(startPosition, currentPosition);
   }
 
+  // SELECTION RECTANGLE FUNCTIONALITY ONLY
   hideHighlightRectangleOverlay() {
     return this.highlightManager.hideHighlightRectangleOverlay();
   }
 
+  // SELECTION RECTANGLE FUNCTIONALITY ONLY
   updateHighlightSelectionOverlays(selection) {
     return this.highlightManager.updateHighlightSelectionOverlays(selection);
   }
 
+  // SELECTION RECTANGLE FUNCTIONALITY ONLY
   clearHighlightSelectionOverlays() {
     return this.highlightManager.clearHighlightSelectionOverlays();
   }
 
-  // Character selection methods
+  // SELECTION RECTANGLE FUNCTIONALITY ONLY
   setSelectionMode(mode) {
     return this.highlightManager.setSelectionMode(mode);
   }
 
+  // SELECTION RECTANGLE FUNCTIONALITY ONLY
   getSelectionMode() {
     return this.highlightManager.getSelectionMode();
   }
 
+  // SELECTION RECTANGLE FUNCTIONALITY ONLY
   startCharacterSelection(position, findTextNodeAtPosition, getTextOffsetAtPosition) {
     return this.highlightManager.startCharacterSelection(position, findTextNodeAtPosition, getTextOffsetAtPosition);
   }
 
+  // SELECTION RECTANGLE FUNCTIONALITY ONLY
   updateCharacterSelection(currentPosition, startPosition, findTextNodeAtPosition, getTextOffsetAtPosition) {
     return this.highlightManager.updateCharacterSelection(currentPosition, startPosition, findTextNodeAtPosition, getTextOffsetAtPosition);
   }
 
+  // SELECTION RECTANGLE FUNCTIONALITY ONLY
   completeCharacterSelection() {
     return this.highlightManager.completeCharacterSelection();
   }
 
+  // SELECTION RECTANGLE FUNCTIONALITY ONLY
   clearCharacterSelection() {
     return this.highlightManager.clearCharacterSelection();
   }
 
+  // SELECTION RECTANGLE FUNCTIONALITY ONLY
   /**
    * Create selection overlays for a specific range with shadow DOM support
    * @param {Range} range - DOM Range object
@@ -1023,6 +1064,7 @@ export class OverlayManager {
     }
   }
 
+  // SELECTION RECTANGLE FUNCTIONALITY ONLY
   /**
    * Get client rectangles for a range with shadow DOM support
    * @param {Range} range - DOM Range object
@@ -1044,6 +1086,7 @@ export class OverlayManager {
     }
   }
 
+  // SELECTION RECTANGLE FUNCTIONALITY ONLY
   /**
    * Get alternative client rectangles for shadow DOM ranges
    * @param {Range} range - DOM Range object
@@ -1073,6 +1116,7 @@ export class OverlayManager {
     }
   }
 
+  // SELECTION RECTANGLE FUNCTIONALITY ONLY
   /**
    * Calculate rectangles for shadow DOM ranges manually
    * @param {Range} range - DOM Range object
@@ -1112,6 +1156,7 @@ export class OverlayManager {
     }
   }
 
+  // SELECTION RECTANGLE FUNCTIONALITY ONLY
   /**
    * Get rectangle for a portion of a text node
    * @param {Text} textNode - Text node

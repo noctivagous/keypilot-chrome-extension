@@ -31,44 +31,52 @@ body {
   margin: 0 auto;
 }
 
-.focus-hint {
-  flex: 1;
-  text-align: center;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.25px;
-  color: rgba(255, 200, 130, 0.92);
-  text-shadow: 0 0 18px rgba(255, 140, 0, 0.20);
-  animation: kp-focus-hint-pulse 1200ms ease-in-out infinite;
-  user-select: none;
-  padding: 4px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,140,0,0.22);
-  background: rgba(0,0,0,0.16);
-  margin: 0 12px;
-  white-space: nowrap;
+/* Unfocused state: blur the page content and add tint */
+body.kp-unfocused .main {
+  filter: blur(2px);
 }
 
-@keyframes kp-focus-hint-pulse {
-  0% {
-    opacity: 0.35;
-    transform: translateY(0);
-    border-color: rgba(255,140,0,0.10);
-    box-shadow: 0 0 0 rgba(255,140,0,0);
-  }
-  50% {
-    opacity: 1;
-    transform: translateY(-1px);
-    border-color: rgba(255,140,0,0.40);
-    box-shadow: 0 0 24px rgba(255,140,0,0.12);
-  }
-  100% {
-    opacity: 0.35;
-    transform: translateY(0);
-    border-color: rgba(255,140,0,0.10);
-    box-shadow: 0 0 0 rgba(255,140,0,0);
-  }
+body.kp-unfocused header {
+  filter: blur(2px);
 }
+
+body.kp-unfocused::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 2147483040; /* below focus-hint + modals */
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.07);
+  mix-blend-mode: lighten;
+}
+
+/* Top message overlay for unfocused state */
+.focus-hint {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2147483042; /* above tint, below modal (modal-root is 2147483045) */
+  pointer-events: none;
+  filter: none; /* Ensure focus hint stays sharp even when page is blurred */
+}
+
+.focus-hint-message {
+  padding: 12px 20px;
+  text-align: center;
+  user-select: none;
+  color: rgba(255, 240, 220, 0.94);
+  background: rgba(0, 0, 0, 0.85);
+  border-bottom: 1px solid rgba(255, 140, 0, 0.40);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.30);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  opacity: 0.92;
+}
+
 
 .brand {
   display: flex;
@@ -271,11 +279,16 @@ body {
 .suggestion-row {
   padding: 10px 12px;
   border-left: 3px solid transparent;
-  cursor: default;
+  cursor: pointer;
 }
 
 .suggestion-row:hover {
   background: rgba(255,140,0,0.12);
+}
+
+.suggestion-row:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255,140,0,0.16);
 }
 
 .suggestion-row.selected {
@@ -302,6 +315,27 @@ body {
 }
 
 /* Shared URL listing helpers (used by newtab.js via renderUrlListing) */
+.kp-url-row {
+  display: block;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  background: rgba(0,0,0,0);
+  border: 1px solid rgba(255,255,255,0.06);
+  margin: 6px 6px 6px 6px;
+  min-width: 0;
+}
+
+.kp-url-row:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+.kp-url-row:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255,140,0,0.16);
+  border-color: rgba(255,140,0,0.45);
+}
+
 .kp-url-content {
   display: flex;
   align-items: center;
@@ -312,6 +346,36 @@ body {
 .kp-url-text {
   min-width: 0;
   flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kp-url-domain,
+.kp-url-title,
+.kp-url-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.kp-url-domain {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.15px;
+  color: rgba(255, 200, 130, 0.92);
+}
+
+.kp-url-title {
+  font-size: 13px;
+  font-weight: 650;
+  color: rgba(255,255,255,0.92);
+}
+
+.kp-url-path {
+  font-size: 11px;
+  color: rgba(255,255,255,0.58);
 }
 
 .kp-url-favicon {
@@ -331,6 +395,10 @@ h2 {
   display: grid;
   gap: 8px;
   min-width: 0;
+}
+
+.toolbar .kp-url-row {
+  margin: 0;
 }
 
 .toolbar details {
@@ -400,29 +468,9 @@ h2 {
   align-items: flex-start;
 }
 
-.bookmarks a {
-  color: rgba(255,255,255,0.92);
-  text-decoration: none;
-  display: block;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.bookmarks a:hover {
-  text-decoration: underline;
-}
-
-.bookmark-url {
-  display: block;
-  margin-top: 2px;
-  font-size: 12px;
-  color: rgba(255,255,255,0.60);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
+/* Bookmarks now use the shared three-line URL renderer on the row itself. */
+.bookmarks .kp-url-row {
+  margin: 8px 0;
 }
 
 .empty {
@@ -559,34 +607,11 @@ h2 {
   padding-right: 4px; /* Prevent content from touching scrollbar */
 }
 
-.history .kp-url-content {
-  cursor: pointer;
-  padding: 8px 0;
-  border-radius: 6px;
-  transition: background 120ms ease;
+.history .kp-url-row {
+  margin: 0;
 }
 
-.history .kp-url-content:hover {
-  background: rgba(255,255,255,0.05);
-}
-
-.history .kp-url-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
-}
-
-.history-url {
-  display: block;
-  margin-top: 2px;
-  font-size: 12px;
-  color: rgba(255,255,255,0.60);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
-}
+/* History uses .kp-url-row hover/focus styles + the shared three-line renderer. */
 
 /* Top sites horizontal list */
 .top-sites-horizontal {

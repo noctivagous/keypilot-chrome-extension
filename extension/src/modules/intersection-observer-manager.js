@@ -55,6 +55,20 @@ export class IntersectionObserverManager {
     this._rtreeReady = false;
     this._rtreeMaxEntries = 16;
     this._rtreeRemoveEquals = null; // unused (reference removal)
+
+    // Destination index for link grouping / display coalescing.
+    // Key: normalized destination (string), Value: Set<HTMLElement>
+    this._destIndex = new Map();
+    // Cache for display-rect coalescing (computed on demand).
+    this._displayRectCache = {
+      version: 0,
+      destination: null,
+      anchorEl: null,
+      // Store the rect in *page coordinates* (minX/minY/maxX/maxY). We convert to viewport
+      // coordinates on demand so scrolling doesn't stale-cache the overlay position.
+      pageRect: null
+    };
+    this._rtreeVersion = 0;
     
     // Performance metrics
     this.metrics = {
@@ -972,6 +986,59 @@ export class IntersectionObserverManager {
     return true;
   }
 
+  _getScrollXY() {
+    const scrollX = (typeof window !== 'undefined' && typeof window.scrollX === 'number')
+      ? window.scrollX
+      : (window.pageXOffset || 0);
+    const scrollY = (typeof window !== 'undefined' && typeof window.scrollY === 'number')
+      ? window.scrollY
+      : (window.pageYOffset || 0);
+    return { scrollX, scrollY };
+  }
+
+  /**
+   * Extract and normalize a destination string for an element.
+   * For now we only use <a href> to keep semantics reliable.
+   * @param {HTMLElement} element
+   * @returns {string} normalized destination or '' if none
+   */
+  _getNormalizedDestination(element) {
+    try {
+      if (!element || element.nodeType !== 1) return '';
+      if (element.tagName !== 'A') return '';
+      const hrefAttr = element.getAttribute && element.getAttribute('href');
+      if (!hrefAttr) return '';
+      // Prefer the fully-resolved absolute href when available (handles base tags).
+      const resolved = element.href || hrefAttr;
+      // Normalize via URL when possible.
+      try {
+        return new URL(resolved, window.location.href).href;
+      } catch {
+        return String(resolved || '');
+      }
+    } catch {
+      return '';
+    }
+  }
+
+  _destIndexAdd(element, destination) {
+    if (!destination) return;
+    let set = this._destIndex.get(destination);
+    if (!set) {
+      set = new Set();
+      this._destIndex.set(destination, set);
+    }
+    set.add(element);
+  }
+
+  _destIndexRemove(element, destination) {
+    if (!destination) return;
+    const set = this._destIndex.get(destination);
+    if (!set) return;
+    set.delete(element);
+    if (set.size === 0) this._destIndex.delete(destination);
+  }
+
   /**
    * Compute z-index for an element (including handling auto and stacking contexts)
    * @param {HTMLElement} element
@@ -1018,12 +1085,7 @@ export class IntersectionObserverManager {
 
     // Convert viewport coordinates to page/document coordinates
     // This ensures the spatial index remains valid across page scrolls
-    const scrollX = (typeof window !== 'undefined' && typeof window.scrollX === 'number')
-      ? window.scrollX
-      : (window.pageXOffset || 0);
-    const scrollY = (typeof window !== 'undefined' && typeof window.scrollY === 'number')
-      ? window.scrollY
-      : (window.pageYOffset || 0);
+    const { scrollX, scrollY } = this._getScrollXY();
 
     minX = Number(minX) + scrollX;
     minY = Number(minY) + scrollY;
@@ -1040,12 +1102,23 @@ export class IntersectionObserverManager {
     if (existing) {
       // RBush doesn't have an explicit update; remove + reinsert by reference.
       try { this._rtree.remove(existing); } catch { /* ignore */ }
+
+      // Maintain destination index if it changed.
+      const nextDest = this._getNormalizedDestination(element);
+      const prevDest = existing.destination || '';
+      if (prevDest !== nextDest) {
+        this._destIndexRemove(element, prevDest);
+        this._destIndexAdd(element, nextDest);
+        existing.destination = nextDest;
+      }
+
       existing.minX = minX;
       existing.minY = minY;
       existing.maxX = maxX;
       existing.maxY = maxY;
       existing.zIndex = zIndex;
       try { this._rtree.insert(existing); } catch { /* ignore */ }
+      this._rtreeVersion++;
       return;
     }
 
@@ -1054,8 +1127,8 @@ export class IntersectionObserverManager {
     // If this element is a link and is completely enclosed by a larger element
     // with the same link destination, omit the smaller element to reduce redundancy
     // =============================================================================
-    const linkDestination = element.tagName === 'A' ? (element.getAttribute('href') || '') : '';
-    if (linkDestination) {
+    const destination = this._getNormalizedDestination(element);
+    if (destination) {
       // Query for elements that might contain this element
       const containingElements = this._rtree.search({
         minX: minX - 1, // Slight expansion to handle edge cases
@@ -1070,7 +1143,7 @@ export class IntersectionObserverManager {
                item.maxX >= maxX &&
                item.maxY >= maxY &&
                item.element.tagName === 'A' &&
-               (item.element.getAttribute('href') || '') === linkDestination;
+               (item.destination || '') === destination;
       });
 
       // If any larger element with same link destination contains this element, skip it
@@ -1078,12 +1151,39 @@ export class IntersectionObserverManager {
         if (window.KEYPILOT_DEBUG) {
           console.log('[KeyPilot Debug] Omitting enclosed link element:', {
             smallerElement: element,
-            linkDestination,
+            linkDestination: destination,
             enclosedBy: containingElements[0].element
           });
         }
         return; // Don't add this smaller element
       }
+
+      // Order-independent improvement:
+      // If THIS element encloses already-indexed smaller link elements with the same destination,
+      // remove the smaller ones before inserting the larger one. This prevents duplicate boxes
+      // and reduces hover flicker due to insertion order.
+      try {
+        const enclosedCandidates = this._rtree.search({
+          minX: minX - 1,
+          minY: minY - 1,
+          maxX: maxX + 1,
+          maxY: maxY + 1
+        }) || [];
+        for (const it of enclosedCandidates) {
+          const el2 = it && it.element;
+          if (!el2 || el2 === element) continue;
+          if (it.minX >= minX &&
+              it.minY >= minY &&
+              it.maxX <= maxX &&
+              it.maxY <= maxY &&
+              (it.destination || '') === destination) {
+            // Don't remove equal-sized rects (could be the same link rendered twice with same bbox).
+            const strictlyInside = (it.minX > minX || it.minY > minY || it.maxX < maxX || it.maxY < maxY);
+            if (!strictlyInside) continue;
+            this._rtreeRemoveElement(el2);
+          }
+        }
+      } catch { /* ignore */ }
     }
 
     // =============================================================================
@@ -1132,9 +1232,11 @@ export class IntersectionObserverManager {
       }
     }
 
-    const item = { minX, minY, maxX, maxY, element, zIndex };
+    const item = { minX, minY, maxX, maxY, element, zIndex, destination };
     this._rtreeItemsByElement.set(element, item);
     try { this._rtree.insert(item); } catch { /* ignore */ }
+    this._destIndexAdd(element, destination);
+    this._rtreeVersion++;
   }
 
   _rtreeRemoveElement(element) {
@@ -1143,6 +1245,165 @@ export class IntersectionObserverManager {
     if (!item) return;
     this._rtreeItemsByElement.delete(element);
     try { this._rtree.remove(item); } catch { /* ignore */ }
+    try { this._destIndexRemove(element, item.destination || ''); } catch { /* ignore */ }
+    this._rtreeVersion++;
+  }
+
+  _rectIntersects(a, b) {
+    if (!a || !b) return false;
+    return !(a.maxX <= b.minX || a.minX >= b.maxX || a.maxY <= b.minY || a.minY >= b.maxY);
+  }
+
+  _rectExpandedIntersects(a, b, tolPx = 0) {
+    const t = Math.max(0, Number(tolPx) || 0);
+    const aa = {
+      minX: a.minX - t,
+      minY: a.minY - t,
+      maxX: a.maxX + t,
+      maxY: a.maxY + t
+    };
+    return this._rectIntersects(aa, b);
+  }
+
+  _unionRects(items) {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const it of items) {
+      if (!it) continue;
+      minX = Math.min(minX, Number(it.minX));
+      minY = Math.min(minY, Number(it.minY));
+      maxX = Math.max(maxX, Number(it.maxX));
+      maxY = Math.max(maxY, Number(it.maxY));
+    }
+    if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) return null;
+    if (maxX <= minX || maxY <= minY) return null;
+    return { minX, minY, maxX, maxY };
+  }
+
+  _rectContainsPoint(rect, px, py) {
+    return px >= rect.minX && px <= rect.maxX && py >= rect.minY && py <= rect.maxY;
+  }
+
+  _toViewportRect(pageRect) {
+    if (!pageRect) return null;
+    const { scrollX, scrollY } = this._getScrollXY();
+    const left = pageRect.minX - scrollX;
+    const top = pageRect.minY - scrollY;
+    const width = pageRect.maxX - pageRect.minX;
+    const height = pageRect.maxY - pageRect.minY;
+    if (!Number.isFinite(left) || !Number.isFinite(top) || !Number.isFinite(width) || !Number.isFinite(height)) return null;
+    if (width <= 0 || height <= 0) return null;
+    return { left, top, width, height };
+  }
+
+  /**
+   * Compute a "display rectangle" for an element that may be part of a cluster
+   * of adjacent/overlapping links with the same destination.
+   *
+   * This is display-only: we still select a real DOM element for click behavior.
+   *
+   * Safety rule:
+   * - Do NOT return a coalesced rect if it would intersect any RBush item that has
+   *   a different destination (conservative: avoids obscuring other links).
+   *
+   * @param {HTMLElement} element
+   * @param {object} [opts]
+   * @param {number} [opts.tolerancePx] proximity threshold for clustering
+   * @returns {{left:number,top:number,width:number,height:number}|null}
+   */
+  getDisplayRectForElement(element, opts = {}) {
+    if (!this._rtreeEnabled()) return null;
+    if (!element || element.nodeType !== 1) return null;
+
+    const destination = this._getNormalizedDestination(element);
+    if (!destination) return null;
+
+    // Cache: same destination + same anchor element + same RBush version.
+    if (this._displayRectCache &&
+        this._displayRectCache.version === this._rtreeVersion &&
+        this._displayRectCache.destination === destination &&
+        this._displayRectCache.anchorEl === element) {
+      // Convert cached page rect to viewport rect using current scroll offsets.
+      return this._toViewportRect(this._displayRectCache.pageRect) || null;
+    }
+
+    const anchorItem = this._rtreeItemsByElement.get(element);
+    if (!anchorItem) return null;
+
+    const tol = Math.max(0, Number(opts.tolerancePx));
+    const tolerancePx = Number.isFinite(tol) ? tol : 6;
+
+    const set = this._destIndex.get(destination);
+    if (!set || set.size < 2) {
+      this._displayRectCache = { version: this._rtreeVersion, destination, anchorEl: element, pageRect: anchorItem };
+      return this._toViewportRect(anchorItem);
+    }
+
+    // Build items list for this destination.
+    const items = [];
+    for (const el of set) {
+      const it = this._rtreeItemsByElement.get(el);
+      if (!it) continue;
+      // Skip stale nodes proactively.
+      try {
+        if (el && el.isConnected === false) {
+          this._rtreeRemoveElement(el);
+          continue;
+        }
+      } catch { /* ignore */ }
+      items.push(it);
+    }
+    if (items.length < 2) {
+      this._displayRectCache = { version: this._rtreeVersion, destination, anchorEl: element, pageRect: anchorItem };
+      return this._toViewportRect(anchorItem);
+    }
+
+    // Cluster by proximity/overlap; return the connected component that includes anchorItem.
+    const visited = new Set();
+    const queue = [anchorItem];
+    visited.add(anchorItem);
+
+    while (queue.length) {
+      const cur = queue.pop();
+      for (const other of items) {
+        if (visited.has(other)) continue;
+        if (this._rectExpandedIntersects(cur, other, tolerancePx) || this._rectExpandedIntersects(other, cur, tolerancePx)) {
+          visited.add(other);
+          queue.push(other);
+        }
+      }
+    }
+
+    // If there wasn't actually a multi-rect cluster, return the anchor rect.
+    if (visited.size < 2) {
+      this._displayRectCache = { version: this._rtreeVersion, destination, anchorEl: element, pageRect: anchorItem };
+      return this._toViewportRect(anchorItem);
+    }
+
+    const component = Array.from(visited);
+    const unionPageRect = this._unionRects(component);
+    if (!unionPageRect) {
+      this._displayRectCache = { version: this._rtreeVersion, destination, anchorEl: element, pageRect: anchorItem };
+      return this._toViewportRect(anchorItem);
+    }
+
+    // Conservative conflict check: if union intersects any other-destination item, don't coalesce.
+    try {
+      const hits = this._rtree.search(unionPageRect) || [];
+      for (const it of hits) {
+        if (!it || !it.element) continue;
+        if (component.includes(it)) continue;
+        const otherDest = it.destination || '';
+        // If the other item has no destination, ignore it (buttons, inputs, etc.).
+        // Only enforce the "don't obscure" rule across destinations we can reason about.
+        if (otherDest && otherDest !== destination) {
+          this._displayRectCache = { version: this._rtreeVersion, destination, anchorEl: element, pageRect: anchorItem };
+          return this._toViewportRect(anchorItem);
+        }
+      }
+    } catch { /* ignore */ }
+
+    this._displayRectCache = { version: this._rtreeVersion, destination, anchorEl: element, pageRect: unionPageRect };
+    return this._toViewportRect(unionPageRect);
   }
 
   // =============================================================================

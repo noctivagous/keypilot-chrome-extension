@@ -422,6 +422,22 @@ export function renderUrlListing({
     content.appendChild(text);
     row.appendChild(content);
 
+    // If the caller provided a row click handler, make the row explicitly interactive.
+    // This helps KeyPilot's IntersectionObserverManager discover/index these rows (via `[role="link"]`)
+    // and improves accessibility (keyboard focus + Enter/Space activation).
+    if (typeof onRowClick === 'function') {
+      try {
+        // Only set these when the row itself is the click target.
+        row.setAttribute('role', 'link');
+        // Make keyboard focusable unless it's already focusable (e.g. <a>, <button>).
+        if (typeof row.tabIndex !== 'number' || row.tabIndex < 0) row.tabIndex = 0;
+        if (rawUrlText) row.dataset.kpUrl = rawUrlText;
+        if (titleText) row.setAttribute('aria-label', titleText);
+      } catch {
+        // ignore
+      }
+    }
+
     if (typeof onRowMouseEnter === 'function') {
       row.addEventListener('mouseenter', () => onRowMouseEnter({ row, item, idx }), { passive: true });
     }
@@ -430,6 +446,17 @@ export function renderUrlListing({
     }
     if (typeof onRowClick === 'function') {
       row.addEventListener('click', (event) => onRowClick({ row, item, idx, event }), true);
+      // Keyboard activation for accessibility + consistency with "clickable row" semantics.
+      row.addEventListener('keydown', (event) => {
+        try {
+          const k = event && typeof event.key === 'string' ? event.key : '';
+          if (k !== 'Enter' && k !== ' ') return;
+          event.preventDefault();
+          onRowClick({ row, item, idx, event: /** @type {any} */ (event) });
+        } catch {
+          // ignore
+        }
+      }, true);
     }
 
     const parts = {

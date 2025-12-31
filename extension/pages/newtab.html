@@ -15,7 +15,6 @@
           <div class="subtitle">New Tab</div>
         </div>
       </div>
-      <div id="focus-hint" class="focus-hint" hidden>Click this page to focus</div>
       <div class="actions">
         <button id="btn-settings" class="btn btn-secondary" type="button">Settings</button>
         <button id="btn-guide" class="btn" type="button">Guide</button>
@@ -68,6 +67,11 @@
     </main>
 
     <div id="modal-root" class="modal-root" hidden></div>
+    <div id="focus-hint" class="focus-hint" hidden>
+      <div class="focus-hint-message" aria-hidden="true">
+        Address bar above has focus. Click to focus page.
+      </div>
+    </div>
 
     <script type="module" src="newtab.js"></script>
   </body>

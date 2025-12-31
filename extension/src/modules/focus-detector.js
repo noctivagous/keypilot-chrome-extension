@@ -228,6 +228,11 @@ export class FocusDetector {
 
     // Check if it matches our text input selectors
     try {
+      // KeyPilot omnibox is a text input, but we do NOT want it to trigger text focus mode.
+      // Omnibox is its own overlay/mode, and entering text_focus here breaks its keyboard UX.
+      if (element.classList?.contains?.(CSS_CLASSES.OMNIBOX_INPUT)) return false;
+      const omniboxRoot = element.closest?.(`.${CSS_CLASSES.OMNIBOX_BACKDROP}`) || element.closest?.(`.${CSS_CLASSES.OMNIBOX_PANEL}`);
+      if (omniboxRoot) return false;
       return element.matches(SELECTORS.FOCUSABLE_TEXT);
     } catch {
       return false;

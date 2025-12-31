@@ -171,10 +171,10 @@ export class FloatingKeyboardHelp {
     });
 
     const title = document.createElement('div');
-    title.textContent = 'KeyPilot keyboard reference';
+    title.textContent = 'Keyboard Reference';
     Object.assign(title.style, {
       fontSize: '13px',
-      fontWeight: '600',
+      fontWeight: 'normal',
       letterSpacing: '0.2px'
     });
 

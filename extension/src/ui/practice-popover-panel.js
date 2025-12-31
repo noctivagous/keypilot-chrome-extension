@@ -162,7 +162,7 @@ export class PracticePopoverPanel {
 
     const intro = card('Text Boxes'); // card('What you’re practicing');
     intro.appendChild(
-      p('When a text box is focused, the keyboard keys are of course used for text entry. Focus a text field with F to enter text box mode (typing works normally). Press Esc to exit text box mode and return to normal browsing.')
+      p('When a text box is focused, the keyboard keys are of course used for text entry. Focus a text field with F to enter text box mode (typing works normally). Press `Esc` to exit text box mode and return to normal browsing.')
     );
     const tip = document.createElement('div');
     Object.assign(tip.style, { marginTop: '8px', fontSize: '12px', opacity: '0.82', lineHeight: '1.45' });
