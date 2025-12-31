@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "KeyPilot Minimal",
     "version": "0.3.2",
-    "description": "Dec-31-2025-3:19AM Keyboard-first navigation: F click link under cursor; D back; R forward; S delete mode; ESC cancel.",
+    "description": "Dec-31-2025-3:37AM Keyboard-first navigation: F click link under cursor; D back; R forward; S delete mode; ESC cancel.",
     "action": {
         "default_title": "KeyPilot Minimal",
         "default_popup": "popup.html"
