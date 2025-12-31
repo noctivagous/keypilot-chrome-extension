@@ -613,7 +613,8 @@ async function renderTopSites() {
 
     const title = document.createElement('div');
     title.className = 'top-site-title';
-    title.textContent = site.title || site.url;
+    const { domain } = parseUrlForThreeLineDisplay(site.url);
+    title.textContent = domain || site.url;
 
     link.appendChild(favicon);
     link.appendChild(title);

@@ -1064,7 +1064,7 @@
         },
         {
           "id": "keyboard_key_info",
-          "label": "Notice the Keyboard Reference window below. While hovering over a key, press the `F` key  \n    to find out what it does.",
+          "label": "Notice the Keyboard Reference window below. While hovering over one of its keys, press the `F` key  \n    to find out what it does.",
           "when": {
             "type": "action",
             "action": "activate",

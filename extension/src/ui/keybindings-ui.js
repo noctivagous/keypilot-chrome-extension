@@ -422,8 +422,7 @@ function attachKeyPopoverBehavior({ root, keybindings }) {
     function handleDocClick(e) {
       if (pop.hidden) return;
       const insidePopover = pop.contains(e.target);
-      const insideRoot = root.contains(e.target);
-      if (!insidePopover && !insideRoot) hidePopover(pop);
+      if (!insidePopover) hidePopover(pop);
     }
     
     function handleDocKeydown(e) {
