@@ -2,7 +2,7 @@ import { buildSearchUrl, getEngineHomeUrl, getSettings, normalizeSearchEngine, S
 import { KeyPilot } from '../src/keypilot.js';
 import { KeyPilotToggleHandler } from '../src/modules/keypilot-toggle-handler.js';
 import { OnboardingManager } from '../src/modules/onboarding-manager.js';
-import { renderUrlListing } from '../src/ui/url-listing.js';
+import { getExtensionFaviconUrl, renderUrlListing } from '../src/ui/url-listing.js';
 import '../src/vendor/rbush.js';
 
 let currentEngine = 'brave';
@@ -604,7 +604,8 @@ async function renderTopSites() {
 
     const favicon = document.createElement('img');
     favicon.className = 'top-site-favicon';
-    favicon.src = `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent(site.url)}&size=32`;
+    // Use the shared MV3 helper (handles runtime.getURL correctly + falls back when unavailable).
+    favicon.src = getExtensionFaviconUrl(site.url, 32);
     favicon.onerror = () => {
       // Fallback to default favicon if loading fails
       favicon.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjA4KSIvPgo8L3N2Zz4=';
