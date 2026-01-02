@@ -4778,6 +4778,29 @@ export class KeyPilot extends EventManager {
       
       // Reset state to normal mode
       this.state.reset();
+
+      // Force a hover/overlay refresh immediately on re-enable.
+      // Without this, focus overlays can remain hidden until the mouse moves past the
+      // threshold gate in `updateElementsUnderCursorWithThreshold()`, even though
+      // keyboard actions still work.
+      try {
+        const { lastMouse } = this.state.getState();
+        const x = Number(lastMouse?.x);
+        const y = Number(lastMouse?.y);
+        if (Number.isFinite(x) && Number.isFinite(y) && (x !== 0 || y !== 0)) {
+          // Bypass threshold gating: the DOM may have changed while disabled.
+          this.updateElementsUnderCursor(x, y, false, null);
+        } else {
+          // If we don't have a valid mouse position yet, attempt to seed it.
+          await this.initializeCursorPosition();
+          const s2 = this.state.getState();
+          const x2 = Number(s2.lastMouse?.x);
+          const y2 = Number(s2.lastMouse?.y);
+          if (Number.isFinite(x2) && Number.isFinite(y2) && (x2 !== 0 || y2 !== 0)) {
+            this.updateElementsUnderCursor(x2, y2, false, null);
+          }
+        }
+      } catch { /* ignore */ }
     }
 
     // Restore keyboard reference UI based on persisted state.

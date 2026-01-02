@@ -428,8 +428,10 @@ export class IntersectionObserverManager {
   }
 
   async init() {
-    // Setup spatial index asynchronously (doesn't block other initialization)
-    this.setupSpatialIndex();
+    // Setup spatial index and ensure it's ready before callers rely on RBush queries.
+    // KeyPilot.enable() awaits init(); without awaiting here, the extension can re-enable
+    // with RBush still uninitialized, causing hover selection to temporarily fail.
+    await this.setupSpatialIndex();
 
     this.setupInteractiveElementObserver();
     this.setupOverlayObserver();
