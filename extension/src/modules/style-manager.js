@@ -284,6 +284,13 @@ export class StyleManager {
       [contenteditable=""]:focus {
         padding-left: 5pt !important;
       }
+
+      /* Element styling for DOM hover mode */
+      .keypilot-focus-element {
+        box-shadow: 0 0 0 var(--keypilot-focus-ring-width, 3px) var(--keypilot-focus-ring-color, #2196f3) !important;
+        outline: 1px solid var(--keypilot-focus-ring-color, #2196f3) !important;
+        outline-offset: 1px !important;
+      }
     `;
   }
 

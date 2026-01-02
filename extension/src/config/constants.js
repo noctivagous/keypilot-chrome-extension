@@ -123,6 +123,8 @@ export const COLORS = {
   DELETE_RED: 'rgba(220,0,0,0.95)',
   HIGHLIGHT_BLUE: 'rgba(0,120,255,0.95)',
   ORANGE: '#ff8c00',
+  // Focus overlay (alternate) colors (used to visually distinguish DOM-hover targeting mode)
+  FOCUS_BLUE: 'rgba(33,150,243,0.95)',
 
   // Text and background colors
   TEXT_WHITE_PRIMARY: 'rgba(255,255,255,0.95)',
@@ -140,6 +142,8 @@ export const COLORS = {
   ORANGE_SHADOW_LIGHT: 'rgba(255,140,0,0.3)',
   GREEN_SHADOW: 'rgba(0,180,0,0.45)',
   GREEN_SHADOW_BRIGHT: 'rgba(0,180,0,0.5)',
+  BLUE_SHADOW: 'rgba(33,150,243,0.35)',
+  BLUE_SHADOW_BRIGHT: 'rgba(33,150,243,0.45)',
   DELETE_SHADOW: 'rgba(220,0,0,0.35)',
   DELETE_SHADOW_BRIGHT: 'rgba(220,0,0,0.45)',
   HIGHLIGHT_SHADOW: 'rgba(0,120,255,0.35)',
@@ -177,7 +181,8 @@ export const COLORS = {
   FOCUS_GREEN_BG: 'rgba(46, 204, 113, 0.9)',
   FOCUS_GREEN_BG_T2: 'rgba(46, 204, 113, 0.4)',
   FOCUS_GREEN_TEXT: '#fff',
-  FOCUS_GREEN: '#27ae60'
+  FOCUS_GREEN: '#27ae60',
+  FOCUS_BLUE_BG_T2: 'rgba(33,150,243,0.25)'
 };
 
 export const CURSOR_SETTINGS = {
@@ -417,6 +422,12 @@ export const FEATURE_FLAGS = {
 
   // UI feature flags
   SHOW_WINDOW_OUTLINE: false, // Show window outline during text mode
+
+  // Hover/click targeting strategy
+  // When enabled, KeyPilot will attach DOM hover listeners to analyzed interactive elements
+  // and drive `state.focusEl` from the browser's hover targeting (instead of RBush hit-tests)
+  // during normal browsing. Activation (F) still falls back to elementFromPoint if nothing is hovered.
+  ENABLE_DOM_HOVER_LISTENERS: true,
 
   // Debug and development flags
   DEBUG_RECTANGLE_SELECTION: false, // Enable detailed logging for rectangle selection

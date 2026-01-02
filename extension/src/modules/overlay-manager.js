@@ -66,11 +66,49 @@ export class OverlayManager {
     // Debug panel for performance metrics
     this.debugPanel = null;
     this.debugPanelUpdateInterval = null;
+
+    // When DOM-hover listener mode is enabled, render non-text focus rectangles in blue so it's
+    // visually obvious we're using browser-native hover targeting (vs RBush-driven hit-testing).
+    this._useDomHoverFocusColors = false;
     
     this.setupOverlayObserver();
     
     // Initialize highlight manager with observer
     this.highlightManager.initialize(this.overlayObserver);
+  }
+
+  /**
+   * Toggle alternate focus overlay colors (blue) for DOM-hover listener targeting mode.
+   * @param {boolean} enabled
+   */
+  setDomHoverFocusColorsEnabled(enabled) {
+    this._useDomHoverFocusColors = !!enabled;
+    if (window.KEYPILOT_DEBUG) {
+      console.log('[KeyPilot Debug] DOM hover focus colors enabled:', this._useDomHoverFocusColors);
+    }
+  }
+
+  _getNonTextFocusPalette() {
+    if (this._useDomHoverFocusColors) {
+      if (window.KEYPILOT_DEBUG) {
+        console.log('[KeyPilot Debug] Using blue focus colors for DOM hover mode');
+      }
+      return {
+        borderColor: COLORS.FOCUS_BLUE,
+        shadowColor: COLORS.BLUE_SHADOW,
+        shadowBrightColor: COLORS.BLUE_SHADOW_BRIGHT,
+        backgroundColor: COLORS.FOCUS_BLUE_BG_T2
+      };
+    }
+    if (window.KEYPILOT_DEBUG) {
+      console.log('[KeyPilot Debug] Using green focus colors for normal mode');
+    }
+    return {
+      borderColor: COLORS.FOCUS_GREEN,
+      shadowColor: COLORS.GREEN_SHADOW,
+      shadowBrightColor: COLORS.GREEN_SHADOW_BRIGHT,
+      backgroundColor: COLORS.FOCUS_GREEN_BG_T2
+    };
   }
 
   /**
@@ -178,9 +216,10 @@ export class OverlayManager {
       shadowColor = COLORS.ORANGE_SHADOW;
       backgroundColor = 'transparent';
     } else {
-      borderColor = COLORS.FOCUS_GREEN;
-      shadowColor = COLORS.GREEN_SHADOW;
-      backgroundColor = (isVideo || isVeryLarge) ? 'transparent' : COLORS.FOCUS_GREEN_BG_T2;
+      const p = this._getNonTextFocusPalette();
+      borderColor = p.borderColor;
+      shadowColor = p.shadowColor;
+      backgroundColor = (isVideo || isVeryLarge) ? 'transparent' : p.backgroundColor;
     }
 
     // Settings-driven behavior
@@ -229,15 +268,16 @@ export class OverlayManager {
     if (this.cssCustomPropsOverlay) return;
 
     this.cssCustomPropsOverlay = document.createElement('div');
+    const p = this._getNonTextFocusPalette();
     this.cssCustomPropsOverlay.style.cssText = `
       --rect-x: 0px;
       --rect-y: 0px;
       --rect-width: 0px;
       --rect-height: 0px;
-      --rect-border-color: ${COLORS.FOCUS_GREEN};
+      --rect-border-color: ${p.borderColor};
       --rect-background: transparent;
-      --rect-shadow-color: ${COLORS.GREEN_SHADOW};
-      --rect-shadow-bright-color: ${COLORS.GREEN_SHADOW_BRIGHT};
+      --rect-shadow-color: ${p.shadowColor};
+      --rect-shadow-bright-color: ${p.shadowBrightColor};
       --rect-border-thickness: 2px;
 
       position: fixed;
@@ -305,10 +345,11 @@ export class OverlayManager {
       shadowBrightColor = COLORS.ORANGE_SHADOW;
       backgroundColor = 'transparent';
     } else {
-      borderColor = COLORS.FOCUS_GREEN;
-      shadowColor = COLORS.GREEN_SHADOW;
-      shadowBrightColor = COLORS.GREEN_SHADOW_BRIGHT;
-      backgroundColor = (isVideo || isVeryLarge) ? 'transparent' : COLORS.FOCUS_GREEN_BG_T2;
+      const p = this._getNonTextFocusPalette();
+      borderColor = p.borderColor;
+      shadowColor = p.shadowColor;
+      shadowBrightColor = p.shadowBrightColor;
+      backgroundColor = (isVideo || isVeryLarge) ? 'transparent' : p.backgroundColor;
     }
 
     // Settings-driven behavior
@@ -523,7 +564,12 @@ export class OverlayManager {
           // Optimize rendering by hiding completely out-of-view overlays
           if (overlay === this.focusOverlay) {
             this.overlayVisibility.focus = isVisible;
-            overlay.style.visibility = isVisible ? 'visible' : 'hidden';
+            // Don't hide focus overlay when DOM hover colors are enabled (it should always be visible when shown)
+            if (!this._useDomHoverFocusColors) {
+              overlay.style.visibility = isVisible ? 'visible' : 'hidden';
+            } else {
+              overlay.style.visibility = 'visible';
+            }
           } else if (overlay === this.deleteOverlay) {
             this.overlayVisibility.delete = isVisible;
             overlay.style.visibility = isVisible ? 'visible' : 'hidden';
@@ -614,6 +660,11 @@ export class OverlayManager {
 
   // Unified interface that switches between rendering modes
   updateFocusOverlay(element, mode = MODES.NONE, rectOverride = null) {
+    // When DOM hover mode is enabled, use element styling instead of overlay elements
+    if (this._useDomHoverFocusColors) {
+      return this.updateFocusOverlayElementStyling(element, mode);
+    }
+
     switch (this.renderingMode) {
       case 'canvas':
         return this.updateFocusOverlayCanvas(element, mode, rectOverride);
@@ -625,7 +676,91 @@ export class OverlayManager {
     }
   }
 
+  /**
+   * Update focus overlay using element styling (for DOM hover mode)
+   * Styles the element directly instead of creating overlay elements
+   */
+  updateFocusOverlayElementStyling(element, mode = MODES.NONE) {
+    if (window.KEYPILOT_DEBUG) {
+      console.log('[KeyPilot Debug] updateFocusOverlayElementStyling called with:', {
+        element: element?.tagName,
+        mode: mode,
+        _useDomHoverFocusColors: this._useDomHoverFocusColors
+      });
+    }
+
+    // Clear any existing element styling first
+    this.clearElementFocusStyling();
+
+    if (!element) {
+      return;
+    }
+
+    // Don't style modal/popover iframes
+    try {
+      if (element.tagName === 'IFRAME') {
+        const isPopoverIframe = this.popoverIframeElement && element === this.popoverIframeElement;
+        const isModalIframe = !!(element.classList && element.classList.contains('modal-iframe'));
+        if (isPopoverIframe || isModalIframe) {
+          return;
+        }
+      }
+    } catch { /* ignore */ }
+
+    // Determine styling based on element type and mode
+    const isTextInput = element.matches && element.matches(SELECTORS.FOCUSABLE_TEXT);
+    const isVideo = this.isVideoLikeElement(element);
+
+    // Set CSS custom properties for styling
+    const ringColor = isTextInput ? COLORS.ORANGE : COLORS.FOCUS_BLUE; // Blue for DOM hover mode
+    const ringWidth = '3px';
+    const shadowColor = isTextInput ? COLORS.ORANGE_SHADOW : COLORS.BLUE_SHADOW;
+
+    // Apply styling using CSS custom properties
+    element.style.setProperty('--keypilot-focus-ring-color', ringColor);
+    element.style.setProperty('--keypilot-focus-ring-width', ringWidth);
+    element.style.setProperty('--keypilot-focus-shadow-color', shadowColor);
+
+    // Add the styling class
+    element.classList.add('keypilot-focus-element');
+
+    // Store reference for cleanup
+    this._currentStyledElement = element;
+
+    if (window.KEYPILOT_DEBUG) {
+      console.log('[KeyPilot Debug] Applied element styling:', {
+        tagName: element.tagName,
+        ringColor: ringColor,
+        isTextInput: isTextInput
+      });
+    }
+  }
+
+  /**
+   * Clear focus styling from the currently styled element
+   */
+  clearElementFocusStyling() {
+    if (this._currentStyledElement) {
+      try {
+        this._currentStyledElement.classList.remove('keypilot-focus-element');
+        this._currentStyledElement.style.removeProperty('--keypilot-focus-ring-color');
+        this._currentStyledElement.style.removeProperty('--keypilot-focus-ring-width');
+        this._currentStyledElement.style.removeProperty('--keypilot-focus-shadow-color');
+      } catch { /* ignore */ }
+      this._currentStyledElement = null;
+    }
+  }
+
   updateFocusOverlayDOM(element, mode = MODES.NONE, rectOverride = null) {
+    if (window.KEYPILOT_DEBUG) {
+      console.log('[KeyPilot Debug] updateFocusOverlayDOM called with:', {
+        element: element?.tagName,
+        mode: mode,
+        rectOverride: rectOverride,
+        _useDomHoverFocusColors: this._useDomHoverFocusColors
+      });
+    }
+
     if (!element) {
       this.hideFocusOverlay();
       return;
@@ -664,10 +799,10 @@ export class OverlayManager {
       shadowColor = COLORS.ORANGE_SHADOW;
       backgroundColor = 'transparent';
     } else {
-      // Green color for all non-text elements
-      borderColor = COLORS.FOCUS_GREEN;
-      shadowColor = COLORS.GREEN_SHADOW;
-      backgroundColor = (isVideo || isVeryLarge) ? 'transparent' : COLORS.FOCUS_GREEN_BG_T2;
+      const p = this._getNonTextFocusPalette();
+      borderColor = p.borderColor;
+      shadowColor = p.shadowColor;
+      backgroundColor = (isVideo || isVeryLarge) ? 'transparent' : p.backgroundColor;
     }
 
     // Settings-driven behavior for Click Mode focus rectangle.
@@ -726,7 +861,9 @@ export class OverlayManager {
     this.focusOverlay.style.opacity = '1';
     this.focusOverlay.style.border = `${rectangleThickness}px solid ${borderColor}`;
     this.focusOverlay.style.background = backgroundColor;
-    const brightShadowColor = isTextInput ? COLORS.ORANGE_SHADOW : COLORS.GREEN_SHADOW_BRIGHT;
+    const brightShadowColor = isTextInput
+      ? COLORS.ORANGE_SHADOW
+      : (this._useDomHoverFocusColors ? COLORS.BLUE_SHADOW_BRIGHT : COLORS.GREEN_SHADOW_BRIGHT);
     this.focusOverlay.style.boxShadow = `0 0 0 2px ${shadowColor}, 0 0 10px 2px ${brightShadowColor}`;
     
     // Debug logging for positioning
@@ -764,6 +901,12 @@ export class OverlayManager {
 
   // Unified hide interface that switches between rendering modes
   hideFocusOverlay() {
+    // When DOM hover mode is enabled, clear element styling
+    if (this._useDomHoverFocusColors) {
+      this.clearElementFocusStyling();
+      return;
+    }
+
     switch (this.renderingMode) {
       case 'canvas':
         return this.hideFocusOverlayCanvas();
@@ -2118,7 +2261,7 @@ export class OverlayManager {
     });
     kbdEsc.textContent = 'Esc';
     hintBar.appendChild(kbdEsc);
-    hintBar.appendChild(document.createTextNode(' to close. Use Z/X/C/V/B/N to scroll. Press F to click a link under the mouse.'));
+    hintBar.appendChild(document.createTextNode(' Use the same keyboard navigation controls.'));
 
     const title = this.createElement('div', {
       style: `

@@ -1,14 +1,17 @@
 {
     "manifest_version": 3,
-    "name": "KeyPilot Minimal",
-    "version": "0.3.2",
-    "description": "Jan-1-2026-9:40PM Keyboard-first navigation: F click link under cursor; D back; R forward; S delete mode; ESC cancel.",
+    "name": "KeyPilot",
+    "version": "0.3.4",
+    "description": "Jan-2-2026-6:00AM Keyboard-first navigation: F click link under cursor; D back; R forward; S delete mode; ESC cancel.",
     "action": {
         "default_title": "KeyPilot Minimal",
         "default_popup": "popup.html"
     },
     "background": {
         "service_worker": "background.js"
+    },
+    "content_security_policy": {
+        "extension_pages": "frame-src *; style-src 'self' 'unsafe-inline'; default-src 'self'"
     },
     "permissions": [
         "storage",

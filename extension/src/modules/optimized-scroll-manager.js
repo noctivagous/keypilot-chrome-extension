@@ -129,11 +129,15 @@ export class OptimizedScrollManager {
 
   handleScroll(event) {
     this.scrollMetrics.scrollEvents++;
-    
+
     // Mark scroll start
     if (!this.isScrolling) {
       this.isScrolling = true;
       this.scrollStartTime = performance.now();
+
+      // Hide focus overlay immediately when scrolling starts (for R-Tree mode)
+      // This prevents the green rectangle from staying visible during scroll
+      this.overlayManager?.hideFocusOverlay?.();
     }
 
     // Use throttled handler for performance

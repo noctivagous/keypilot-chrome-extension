@@ -68,6 +68,19 @@ export class KeyPilot extends EventManager {
     // Intersection Observer optimizations
     this.intersectionManager = new IntersectionObserverManager(this.detector);
     this.scrollManager = new OptimizedScrollManager(this.overlayManager, this.state);
+
+    // Optional hover target selection mode:
+    // Use browser-native hover targeting (mouseenter/mouseleave on analyzed interactive elements)
+    // instead of RBush/elementFromPoint work during normal browsing.
+    this._domHoverListenersEnabled = !!FEATURE_FLAGS.ENABLE_DOM_HOVER_LISTENERS;
+    try {
+      if (typeof window !== 'undefined' && window.KEYPILOT_ENABLE_DOM_HOVER_LISTENERS) {
+        this._domHoverListenersEnabled = true;
+      }
+      if (typeof window !== 'undefined' && window.KEYPILOT_DISABLE_DOM_HOVER_LISTENERS) {
+        this._domHoverListenersEnabled = false;
+      }
+    } catch { /* ignore */ }
     
     // Panel tracking for negative regions
     this._panelTrackingInterval = null;
@@ -113,6 +126,33 @@ export class KeyPilot extends EventManager {
 
     this.init();
   }
+
+  _handleDomHoverChange(el) {
+    try {
+      if (!this.enabled) return;
+      const currentState = this.state.getState();
+      // Only drive hover selection in normal browsing mode.
+      if (currentState.mode !== MODES.NONE) return;
+
+      const next = (el && el.nodeType === 1) ? el : null;
+      // HTML/BODY are too coarse to be useful hover targets.
+      try {
+        if (next && (next.tagName === 'HTML' || next.tagName === 'BODY')) return;
+      } catch { /* ignore */ }
+
+      if (window.KEYPILOT_DEBUG) {
+        console.log('[KeyPilot Debug] DOM hover change:', {
+          element: next?.tagName,
+          href: next?.href,
+          currentFocusEl: currentState.focusEl?.tagName
+        });
+      }
+
+      if (next !== currentState.focusEl) {
+        this.state.setFocusElement(next);
+      }
+    } catch { /* ignore */ }
+  }
   
   _getUnderElementHintFromMouseEvent(e) {
     try {
@@ -133,6 +173,68 @@ export class KeyPilot extends EventManager {
     } catch {
       return null;
     }
+  }
+
+  _isKeyPilotUiElement(el) {
+    try {
+      let n = el;
+      let guard = 0;
+      while (n && n.nodeType === 1 && guard++ < 12) {
+        const id = typeof n.id === 'string' ? n.id : '';
+        if (id && id.startsWith('kpv2-')) return true;
+        const cl = n.classList;
+        if (cl && cl.length) {
+          for (const c of cl) {
+            if (typeof c === 'string' && c.startsWith('kpv2-')) return true;
+          }
+        }
+        n = n.parentElement;
+      }
+    } catch { /* ignore */ }
+    return false;
+  }
+
+  /**
+   * When DOM-hover listener mode is enabled, `state.focusEl` is driven by delegated hover events.
+   * However, if the DOM changes under a stationary pointer (menus, dialogs, overlays), hover events
+   * may not fire and `focusEl` can become stale. This helper validates focusEl against the actual
+   * element under the cursor at activation time.
+   */
+  _getValidatedActivationTarget(currentState) {
+    const st = currentState || this.state.getState();
+    const x = st?.lastMouse?.x;
+    const y = st?.lastMouse?.y;
+    const focus = st?.focusEl;
+
+    let under = null;
+    try {
+      if (typeof x === 'number' && typeof y === 'number') {
+        under = this.detector.deepElementFromPoint(x, y);
+      }
+    } catch { /* ignore */ }
+
+    try {
+      if (under && this._isKeyPilotUiElement(under)) {
+        under = null;
+      }
+    } catch { /* ignore */ }
+
+    let target = focus || under;
+
+    // In DOM-hover mode, prefer focusEl when it's consistent with what's actually under the pointer.
+    // If not, fall back to a fresh under-cursor pick to avoid clicking stale targets.
+    try {
+      if (this._domHoverListenersEnabled && focus && under && focus instanceof Element && under instanceof Element) {
+        const consistent = focus.contains(under) || under.contains(focus);
+        if (!consistent) {
+          // Map under->clickable ancestor for better semantics (e.g. hovering a child inside a button).
+          const clickableUnder = this.detector.findClickable(under) || under;
+          target = clickableUnder;
+        }
+      }
+    } catch { /* ignore */ }
+
+    return target;
   }
 
   /**
@@ -704,7 +806,28 @@ export class KeyPilot extends EventManager {
     }
 
     this.focusDetector.start();
+
+    // Enable DOM-hover listener mode (optional) BEFORE init so RBush initialization
+    // can check the flag and skip initialization if DOM hover mode is enabled.
+    try {
+      if (this.intersectionManager &&
+          typeof this.intersectionManager.setDomHoverListenersEnabled === 'function') {
+        this.intersectionManager.setDomHoverListenersEnabled(
+          this._domHoverListenersEnabled,
+          (el) => this._handleDomHoverChange(el)
+        );
+      }
+    } catch { /* ignore */ }
+
     await this.intersectionManager.init();
+
+    // Visual indicator: use blue focus rectangles when DOM-hover mode is enabled.
+    try {
+      if (this.overlayManager && typeof this.overlayManager.setDomHoverFocusColorsEnabled === 'function') {
+        this.overlayManager.setDomHoverFocusColorsEnabled(this._domHoverListenersEnabled);
+      }
+    } catch { /* ignore */ }
+
     this.scrollManager.init();
     this.initializeEdgeOnlyProcessing();
     this.start();
@@ -1296,6 +1419,22 @@ export class KeyPilot extends EventManager {
     this._pendingMouse.x = x;
     this._pendingMouse.y = y;
     this._pendingMouse.underHint = this._getUnderElementHintFromMouseEvent(e);
+
+    // If DOM hover listeners are enabled, avoid explicit hover hit-testing in normal mode.
+    // This lets the browser resolve occlusion/clipping and reduces per-mousemove work.
+    try {
+      const st = this.state.getState();
+      if (this._domHoverListenersEnabled && st.mode === MODES.NONE) {
+        return;
+      }
+    } catch { /* ignore */ }
+
+    // Skip RBush queries during scrolling - overlay is already hidden at scroll start
+    try {
+      if (this.scrollManager && this.scrollManager.isScrolling) {
+        return;
+      }
+    } catch { /* ignore */ }
 
     if (this._mouseMoveRAF) return;
     this._mouseMoveRAF = window.requestAnimationFrame(() => {
@@ -4174,8 +4313,7 @@ export class KeyPilot extends EventManager {
 
   handleActivateKey() {
     const currentState = this.state.getState();
-    const target = currentState.focusEl ||
-      this.detector.deepElementFromPoint(currentState.lastMouse.x, currentState.lastMouse.y);
+    const target = this._getValidatedActivationTarget(currentState);
 
     if (!target || target === document.documentElement || target === document.body) {
       return;
@@ -4223,8 +4361,7 @@ export class KeyPilot extends EventManager {
 
   handleActivateNewTabKey() {
     const currentState = this.state.getState();
-    const target = currentState.focusEl ||
-      this.detector.deepElementFromPoint(currentState.lastMouse.x, currentState.lastMouse.y);
+    const target = this._getValidatedActivationTarget(currentState);
 
     if (!target || target === document.documentElement || target === document.body) {
       return;
@@ -4288,8 +4425,7 @@ export class KeyPilot extends EventManager {
 
   handleActivateNewTabOverKey() {
     const currentState = this.state.getState();
-    const target = currentState.focusEl ||
-      this.detector.deepElementFromPoint(currentState.lastMouse.x, currentState.lastMouse.y);
+    const target = this._getValidatedActivationTarget(currentState);
 
     if (!target || target === document.documentElement || target === document.body) {
       return;
@@ -4335,9 +4471,38 @@ export class KeyPilot extends EventManager {
   }
 
   handleOpenPopover() {
+    // Check if popover is already open - if so, close it (toggle behavior)
+    if (this.overlayManager.isPopoverOpen()) {
+      this.handleClosePopover();
+      return;
+    }
+
     const currentState = this.state.getState();
-    const target = currentState.focusEl ||
-      this.detector.deepElementFromPoint(currentState.lastMouse.x, currentState.lastMouse.y);
+    const { lastMouse } = currentState;
+
+    // Use the same element detection logic as updateElementsUnderCursor() with RBush optimization
+    let target = currentState.focusEl;
+    if (!target) {
+      const x = lastMouse.x;
+      const y = lastMouse.y;
+
+      // Use RBush spatial index for fast element detection (same as mouse hover logic)
+      try {
+        if (this.intersectionManager &&
+            typeof this.intersectionManager.queryInteractiveAtPoint === 'function' &&
+            typeof this.intersectionManager.pickBestInteractiveFromCandidates === 'function') {
+          const candidates = this.intersectionManager.queryInteractiveAtPoint(x, y, 0);
+          const under = this.detector.deepElementFromPoint(x, y);
+          target = this.intersectionManager.pickBestInteractiveFromCandidates(candidates, under);
+        }
+      } catch { /* ignore RBush errors */ }
+
+      // Fallback to traditional element detection if RBush failed
+      if (!target) {
+        const under = this.detector.deepElementFromPoint(x, y);
+        target = this.detector.findClickable(under);
+      }
+    }
 
     // Resolve to the closest anchor (including within shadow DOM).
     // deepElementFromPoint() often returns a child <div> inside a link (e.g. archive.org
@@ -4768,8 +4933,25 @@ export class KeyPilot extends EventManager {
       
       // Restart intersection manager
       if (this.intersectionManager) {
+        // Re-apply DOM-hover listener mode BEFORE re-init so RBush initialization
+        // can check the flag and skip initialization if DOM hover mode is enabled.
+        try {
+          if (typeof this.intersectionManager.setDomHoverListenersEnabled === 'function') {
+            this.intersectionManager.setDomHoverListenersEnabled(
+              this._domHoverListenersEnabled,
+              (el) => this._handleDomHoverChange(el)
+            );
+          }
+        } catch { /* ignore */ }
         await this.intersectionManager.init();
       }
+
+      // Re-apply visual indicator on enable.
+      try {
+        if (this.overlayManager && typeof this.overlayManager.setDomHoverFocusColorsEnabled === 'function') {
+          this.overlayManager.setDomHoverFocusColorsEnabled(this._domHoverListenersEnabled);
+        }
+      } catch { /* ignore */ }
       
       // Restart scroll manager
       if (this.scrollManager) {
@@ -4846,6 +5028,8 @@ export class KeyPilot extends EventManager {
       
       // Clean up intersection manager
       if (this.intersectionManager) {
+        // Ensure delegated DOM-hover listeners are detached promptly on disable.
+        try { this.intersectionManager.setDomHoverListenersEnabled(false, null); } catch { /* ignore */ }
         this.intersectionManager.cleanup();
       }
       

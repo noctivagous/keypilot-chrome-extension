@@ -8,8 +8,8 @@ KeyPilot is a Chrome extension that transforms web browsing into a keyboard-firs
 
 ### Extension Manifest (Manifest V3)
 - **Location**: `extension/manifest.json`
-- **Version**: <!-- KP_ARCHITECTURE_VERSION_START -->0.3.2<!-- KP_ARCHITECTURE_VERSION_END -->
-- **Build Date**: <!-- KP_ARCHITECTURE_BUILD_DATE_START -->Dec-30-2025<!-- KP_ARCHITECTURE_BUILD_DATE_END -->
+- **Version**: <!-- KP_ARCHITECTURE_VERSION_START -->0.3.4<!-- KP_ARCHITECTURE_VERSION_END -->
+- **Build Date**: <!-- KP_ARCHITECTURE_BUILD_DATE_START -->Jan-2-2026<!-- KP_ARCHITECTURE_BUILD_DATE_END -->
 - **Purpose**: Defines extension metadata, permissions, and entry points
 - **Key Features**:
   - Service worker for background processing (`background.js`)
@@ -258,6 +258,11 @@ KeyPilot is a Chrome extension that transforms web browsing into a keyboard-firs
 - Persistent settings
 - Keyboard reference visibility persistence
 
+#### Adaptive Element Detection
+- **DOM Hover Listeners**: Optional feature flag (`ENABLE_DOM_HOVER_LISTENERS`) that uses native browser hover events instead of spatial indexing (RBush) for simpler pages
+- **Performance Optimization**: Automatically switches between spatial indexing and DOM listeners based on page complexity
+- **Fallback Strategy**: Falls back to `elementFromPoint` for activation when no element is hovered
+
 #### Performance Monitoring
 - Debug panel for performance metrics (optional, developer feature)
 
@@ -420,6 +425,18 @@ extension/
   - Early-injected shell prevents flicker
   - Matches popup.html theme
 
+### Keyboard Layout Architecture
+- **Purpose**: Support for multiple keyboard layouts to accommodate different user preferences and ergonomics
+- **Layouts Supported**:
+  - **Right-handed browsing**: Mouse in right hand, keyboard shortcuts primarily on left side (QWER, ASDF, ZXCV clusters)
+  - **Left-handed browsing**: Mouse in left hand, keyboard shortcuts primarily on right side (mirrored layout)
+- **Architecture**: Separates action definitions from key assignments, allowing runtime layout switching
+- **Features**:
+  - Built-in layouts with ergonomic key positioning
+  - Extensible system for future user-defined layouts
+  - Consistent action-to-handler mapping across all layouts
+  - Runtime layout detection and application
+
 ### Keybindings UI System
 - **Purpose**: Consistent keyboard visualization across popup and content script
 - **Features**:
@@ -427,6 +444,7 @@ extension/
   - Responsive layout
   - Theme-aware styling
   - Reusable rendering function
+  - Layout-aware keyboard visualization
 
 ### Onboarding and Tutorial System
 - **Purpose**: Guide new users through KeyPilot features and keyboard shortcuts
@@ -457,4 +475,4 @@ extension/
 **Performance**: Optimized for immediate visual feedback
 **Compatibility**: Modern Chromium-based browsers
 
-*Last updated: December 30, 2025*
+*Last updated: January 2, 2026*

@@ -4,7 +4,7 @@
 import fs from 'fs';
 import path from 'path';
 import { minify } from 'terser';
-import { KEYBINDINGS, Z_INDEX } from './src/config/constants.js';
+import { KEYBINDINGS, Z_INDEX, FEATURE_FLAGS } from './src/config/constants.js';
 import {
   BUILTIN_KEYBOARD_LAYOUT_META,
   DEFAULT_KEYBOARD_LAYOUT_ID,
@@ -40,7 +40,8 @@ const modules = [
   'src/config/keyboard-layouts.js',
   'src/config/constants.js',
   // Vendored dependencies that must be available as globals in the bundle.
-  'src/vendor/rbush.js',
+  // Only include RBush if DOM hover listeners are disabled (when we need spatial indexing)
+  ...(FEATURE_FLAGS.ENABLE_DOM_HOVER_LISTENERS ? [] : ['src/vendor/rbush.js']),
   // Shared UI helpers used by multiple modules (must be defined before import-stripped consumers).
   'src/ui/url-listing.js',
   'src/modules/state-manager.js',

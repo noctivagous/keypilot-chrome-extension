@@ -20,6 +20,115 @@ export class IntersectionObserverManager {
     // Cache of element positions for quick lookups
     this.elementPositionCache = new Map();
     
+    // ---- DOM hover listener mode (alternative hover target selection) ----
+    // When enabled, we track a single "currently hovered" element using browser-native
+    // hover targeting (occlusion + clipping). We prefer *delegated* pointer events
+    // on `document` (one listener) over per-element listeners (many listeners) so we
+    // don't need to constantly attach/detach listeners as the page mutates.
+    this._domHoverEnabled = false;
+    this._domHoveredElement = null;
+    this._domHoverOnChange = null; // (HTMLElement|null) => void
+    this._domHoverUseDelegation = true;
+    this._domHoverDelegationAttached = false;
+    this._domHoverAttachedElements = new Set(); // legacy per-element mode
+    this._domHoverMetrics = { attached: 0, skipped: 0, delegated: 0 };
+
+    this._boundDomHoverEnter = (e) => {
+      try {
+        if (!this._domHoverEnabled) return;
+        const el = e?.currentTarget;
+        if (!el || el.nodeType !== 1) return;
+        // Keep a global debug hook for the "currently hovered" element.
+        try { window.__KP_HOVERED_INTERACTIVE_EL = el; } catch { /* ignore */ }
+        this._domHoveredElement = el;
+        if (typeof this._domHoverOnChange === 'function') {
+          try { this._domHoverOnChange(/** @type {HTMLElement} */ (el)); } catch { /* ignore */ }
+        }
+      } catch { /* ignore */ }
+    };
+
+    this._boundDomHoverLeave = (e) => {
+      try {
+        if (!this._domHoverEnabled) return;
+        const el = e?.currentTarget;
+        if (!el || el.nodeType !== 1) return;
+        if (this._domHoveredElement !== el) return;
+        this._domHoveredElement = null;
+        try { window.__KP_HOVERED_INTERACTIVE_EL = null; } catch { /* ignore */ }
+        if (typeof this._domHoverOnChange === 'function') {
+          try { this._domHoverOnChange(null); } catch { /* ignore */ }
+        }
+      } catch { /* ignore */ }
+    };
+
+    this._boundDocPointerOver = (e) => {
+      try {
+        if (!this._domHoverEnabled) return;
+        const path = (e && typeof e.composedPath === 'function') ? e.composedPath() : null;
+        let raw = null;
+        if (Array.isArray(path)) {
+          for (const n of path) {
+            if (n && n.nodeType === 1) { raw = n; break; }
+          }
+        }
+        if (!raw && e?.target && e.target.nodeType === 1) raw = e.target;
+        if (!raw || raw.nodeType !== 1) return;
+
+        const el = /** @type {HTMLElement} */ (raw);
+        if (this._isKeyPilotUiElement(el)) return;
+
+        // Map the actual event target to the nearest "clickable" ancestor using our detector
+        // (keeps semantics consistent with non-DOM-hover mode).
+        let clickable = null;
+        try {
+          clickable = this.elementDetector?.findClickable
+            ? this.elementDetector.findClickable(el)
+            : el;
+        } catch {
+          clickable = el;
+        }
+
+        const next = (clickable && clickable.nodeType === 1) ? /** @type {HTMLElement} */ (clickable) : null;
+        try {
+          if (next && (next.tagName === 'HTML' || next.tagName === 'BODY')) return;
+        } catch { /* ignore */ }
+
+        if (next === this._domHoveredElement) return;
+        this._domHoveredElement = next;
+        try { window.__KP_HOVERED_INTERACTIVE_EL = next; } catch { /* ignore */ }
+        if (typeof this._domHoverOnChange === 'function') {
+          try { this._domHoverOnChange(next); } catch { /* ignore */ }
+        }
+      } catch { /* ignore */ }
+    };
+
+    this._boundDocPointerOut = (e) => {
+      try {
+        if (!this._domHoverEnabled) return;
+        // When leaving the document/window, relatedTarget is typically null; clear hover.
+        const rt = e?.relatedTarget;
+        if (rt) return;
+        if (!this._domHoveredElement) return;
+        this._domHoveredElement = null;
+        try { window.__KP_HOVERED_INTERACTIVE_EL = null; } catch { /* ignore */ }
+        if (typeof this._domHoverOnChange === 'function') {
+          try { this._domHoverOnChange(null); } catch { /* ignore */ }
+        }
+      } catch { /* ignore */ }
+    };
+
+    this._boundWindowBlur = () => {
+      try {
+        if (!this._domHoverEnabled) return;
+        if (!this._domHoveredElement) return;
+        this._domHoveredElement = null;
+        try { window.__KP_HOVERED_INTERACTIVE_EL = null; } catch { /* ignore */ }
+        if (typeof this._domHoverOnChange === 'function') {
+          try { this._domHoverOnChange(null); } catch { /* ignore */ }
+        }
+      } catch { /* ignore */ }
+    };
+
     // Debounced cache update
     this.cacheUpdateTimeout = null;
 
@@ -53,6 +162,9 @@ export class IntersectionObserverManager {
     this._rtree = null;
     this._rtreeItemsByElement = new Map(); // Element -> item object (kept by reference for removal)
     this._rtreeReady = false;
+    // When DOM-hover targeting mode is enabled, we can disable RBush entirely so this mode is
+    // a true alternative (no index maintenance + no RBush queries in normal browsing).
+    this._rtreeDisabledByDomHover = false;
     this._rtreeMaxEntries = 16;
     this._rtreeRemoveEquals = null; // unused (reference removal)
 
@@ -118,6 +230,173 @@ export class IntersectionObserverManager {
         batchSize: 50
       }
     };
+  }
+
+  /**
+   * Enable/disable DOM hover listener mode.
+   * @param {boolean} enabled
+   * @param {(el: HTMLElement|null) => void} [onChange]
+   */
+  setDomHoverListenersEnabled(enabled, onChange) {
+    const next = !!enabled;
+    this._domHoverEnabled = next;
+    this._domHoverOnChange = typeof onChange === 'function' ? onChange : null;
+    // Make DOM-hover mode exclusive vs RBush (reduces work and avoids mixed-mode confusion).
+    this._rtreeDisabledByDomHover = next;
+
+    // Prefer delegated events on the document (one-time attach).
+    if (this._domHoverUseDelegation) {
+      if (next) this._domHoverAttachDelegated();
+      else this._domHoverDetachDelegated();
+    } else {
+      // Legacy per-element attach/detach for already-observed elements.
+      try {
+        for (const el of this.observedInteractiveElements) {
+          if (next) this._domHoverAttach(el);
+          else this._domHoverDetach(el);
+        }
+      } catch { /* ignore */ }
+    }
+
+    if (!next) {
+      this._domHoveredElement = null;
+      try { window.__KP_HOVERED_INTERACTIVE_EL = null; } catch { /* ignore */ }
+      if (typeof this._domHoverOnChange === 'function') {
+        try { this._domHoverOnChange(null); } catch { /* ignore */ }
+      }
+    }
+  }
+
+  /**
+   * @returns {HTMLElement|null}
+   */
+  getDomHoveredElement() {
+    return (this._domHoveredElement && this._domHoveredElement.nodeType === 1)
+      ? /** @type {HTMLElement} */ (this._domHoveredElement)
+      : null;
+  }
+
+  _rectsRoughlyEqual(a, b, tolPx = 1) {
+    const t = Math.max(0, Number(tolPx) || 0);
+    if (!a || !b) return false;
+    return (
+      Math.abs(a.left - b.left) <= t &&
+      Math.abs(a.top - b.top) <= t &&
+      Math.abs(a.right - b.right) <= t &&
+      Math.abs(a.bottom - b.bottom) <= t
+    );
+  }
+
+  _domHoverShouldAttach(el) {
+    try {
+      if (!el || el.nodeType !== 1) return false;
+      // Omit attaching to <a> links whose rect matches an interactive parent.
+      // This reduces duplicate hover targeting on "full-row link" UIs.
+      if (el.tagName === 'A') {
+        const parent = el.parentElement;
+        if (parent && parent.nodeType === 1) {
+          let parentMatches = false;
+          try { parentMatches = !!(parent.matches && parent.matches(this.interactiveSelector)); } catch { parentMatches = false; }
+          if (parentMatches) {
+            let r1 = null;
+            let r2 = null;
+            try { r1 = el.getBoundingClientRect(); } catch { r1 = null; }
+            try { r2 = parent.getBoundingClientRect(); } catch { r2 = null; }
+            if (r1 && r2 && this._rectsRoughlyEqual(r1, r2, 1)) return false;
+          }
+        }
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  _domHoverAttach(el) {
+    if (this._domHoverUseDelegation) return;
+    if (!this._domHoverEnabled) return;
+    if (!el || el.nodeType !== 1) return;
+    if (this._domHoverAttachedElements.has(el)) return;
+    if (!this._domHoverShouldAttach(el)) {
+      this._domHoverMetrics.skipped++;
+      return;
+    }
+    try {
+      // Use mouseenter/mouseleave to avoid event bubbling noise.
+      el.addEventListener('mouseenter', this._boundDomHoverEnter, true);
+      el.addEventListener('mouseleave', this._boundDomHoverLeave, true);
+      this._domHoverAttachedElements.add(el);
+      this._domHoverMetrics.attached++;
+    } catch {
+      // ignore
+    }
+  }
+
+  _domHoverDetach(el) {
+    if (this._domHoverUseDelegation) return;
+    if (!el || el.nodeType !== 1) return;
+    if (!this._domHoverAttachedElements.has(el)) return;
+    try {
+      el.removeEventListener('mouseenter', this._boundDomHoverEnter, true);
+      el.removeEventListener('mouseleave', this._boundDomHoverLeave, true);
+    } catch { /* ignore */ }
+    this._domHoverAttachedElements.delete(el);
+    // If we detach the currently hovered element, clear it.
+    if (this._domHoveredElement === el) {
+      this._domHoveredElement = null;
+      try { window.__KP_HOVERED_INTERACTIVE_EL = null; } catch { /* ignore */ }
+      if (typeof this._domHoverOnChange === 'function') {
+        try { this._domHoverOnChange(null); } catch { /* ignore */ }
+      }
+    }
+  }
+
+  _isKeyPilotUiElement(el) {
+    try {
+      let n = el;
+      let guard = 0;
+      while (n && n.nodeType === 1 && guard++ < 12) {
+        const id = typeof n.id === 'string' ? n.id : '';
+        if (id && id.startsWith('kpv2-')) return true;
+        const cl = n.classList;
+        if (cl && cl.length) {
+          for (const c of cl) {
+            if (typeof c === 'string' && c.startsWith('kpv2-')) return true;
+          }
+        }
+        n = n.parentElement;
+      }
+    } catch { /* ignore */ }
+    return false;
+  }
+
+  _domHoverAttachDelegated() {
+    if (!this._domHoverEnabled) return;
+    if (this._domHoverDelegationAttached) return;
+    try {
+      // Attach to `window` in capture phase so we're earlier than document-level capture listeners
+      // that might call stopImmediatePropagation(). Also attach mouseover/mouseout as a fallback
+      // for environments where PointerEvents are unavailable or suppressed.
+      window.addEventListener('pointerover', this._boundDocPointerOver, true);
+      window.addEventListener('pointerout', this._boundDocPointerOut, true);
+      window.addEventListener('mouseover', this._boundDocPointerOver, true);
+      window.addEventListener('mouseout', this._boundDocPointerOut, true);
+      window.addEventListener('blur', this._boundWindowBlur, true);
+      this._domHoverDelegationAttached = true;
+      this._domHoverMetrics.delegated++;
+    } catch { /* ignore */ }
+  }
+
+  _domHoverDetachDelegated() {
+    if (!this._domHoverDelegationAttached) return;
+    try {
+      window.removeEventListener('pointerover', this._boundDocPointerOver, true);
+      window.removeEventListener('pointerout', this._boundDocPointerOut, true);
+      window.removeEventListener('mouseover', this._boundDocPointerOver, true);
+      window.removeEventListener('mouseout', this._boundDocPointerOut, true);
+      window.removeEventListener('blur', this._boundWindowBlur, true);
+    } catch { /* ignore */ }
+    this._domHoverDelegationAttached = false;
   }
 
   // =============================================================================
@@ -457,6 +736,20 @@ export class IntersectionObserverManager {
       return;
     }
 
+    // Skip RBush initialization when DOM hover listeners are enabled
+    // This provides a true alternative to spatial indexing during normal browsing
+    // Note: Check runtime state (_domHoverEnabled) instead of compile-time flag since
+    // the mode can be toggled at runtime via window.KEYPILOT_ENABLE_DOM_HOVER_LISTENERS
+    if (this._domHoverEnabled) {
+      this._rtree = null;
+      this._rtreeReady = false;
+      this._rtreeDisabledByDomHover = true;
+      if (window.KEYPILOT_DEBUG) {
+        console.log('[KeyPilot Debug] RBush initialization skipped - DOM hover listeners enabled');
+      }
+      return;
+    }
+
     try {
       // Check if RBush is available globally (should be set by the bundle)
       if (typeof window !== 'undefined' && typeof window.RBush === 'function') {
@@ -679,6 +972,7 @@ export class IntersectionObserverManager {
     try {
       this.interactiveObserver.observe(el);
       this.observedInteractiveElements.add(el);
+      this._domHoverAttach(el);
     } catch {
       // Ignore failures on weird nodes
     }
@@ -692,6 +986,7 @@ export class IntersectionObserverManager {
     } catch {
       // Ignore
     }
+    this._domHoverDetach(el);
     this.observedInteractiveElements.delete(el);
     this.visibleInteractiveElements.delete(el);
     this.elementPositionCache.delete(el);
@@ -847,6 +1142,27 @@ export class IntersectionObserverManager {
     this._discoverDone = false;
     this._discoverScheduled = false;
     this.scheduleDiscoverInteractiveElements();
+
+    // Refresh RBush positions for all currently visible elements after scroll
+    // (IntersectionObserver only fires for elements entering/leaving, not for position changes)
+    this.refreshVisibleElementPositions();
+  }
+
+  refreshVisibleElementPositions() {
+    // Update RBush spatial index with new positions for all visible interactive elements
+    // This is needed after scrolling because elements that remain visible don't trigger
+    // IntersectionObserver callbacks, but their viewport coordinates have changed
+    if (!this._rtreeEnabled()) return;
+
+    try {
+      for (const element of this.visibleInteractiveElements) {
+        if (!element || element.nodeType !== 1) continue;
+        try {
+          const rect = element.getBoundingClientRect();
+          this.updateElementPositionCache(element, rect);
+        } catch { /* ignore stale/detached elements */ }
+      }
+    } catch { /* ignore */ }
   }
 
   _ensureDiscoverWalker() {
@@ -981,7 +1297,18 @@ export class IntersectionObserverManager {
   }
 
   _rtreeEnabled() {
-    if (!this._rtreeReady || !this._rtree) return false;
+    if (!this._rtreeReady || !this._rtree) {
+      if (window.KEYPILOT_DEBUG && this._rtreeDisabledByDomHover) {
+        console.log('[KeyPilot Debug] RBush disabled by DOM hover listeners');
+      }
+      return false;
+    }
+    if (this._rtreeDisabledByDomHover) {
+      if (window.KEYPILOT_DEBUG) {
+        console.log('[KeyPilot Debug] RBush disabled by DOM hover listeners');
+      }
+      return false;
+    }
     try {
       if (typeof window !== 'undefined' && window.KEYPILOT_DISABLE_RBUSH) return false;
     } catch { /* ignore */ }
@@ -1748,6 +2075,13 @@ export class IntersectionObserverManager {
 
   // Cleanup method
   cleanup() {
+    // Detach DOM hover listeners first (before we clear the observed set)
+    try {
+      // This handles both delegated + legacy per-element modes.
+      this.setDomHoverListenersEnabled(false, null);
+    } catch { /* ignore */ }
+    try { this._domHoverAttachedElements.clear(); } catch { /* ignore */ }
+
     if (this.mutationObserver) {
       try {
         this.mutationObserver.disconnect();
