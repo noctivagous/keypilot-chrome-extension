@@ -131,6 +131,11 @@ export class KeyPilotToggleHandler extends EventManager {
     if (!this.keyPilot) return;
 
     try {
+      // If we previously disabled via this handler, we may have fully cleaned up the
+      // OverlayManager (including tearing down the canvas renderer). Re-enable must
+      // explicitly revive the overlay renderer; otherwise hover rectangles won't draw
+      // even though key events work.
+
       // Restore all CSS styles first
       if (this.keyPilot.styleManager) {
         try {
@@ -185,6 +190,35 @@ export class KeyPilotToggleHandler extends EventManager {
           console.warn('[KeyPilotToggleHandler] Cannot initialize scroll manager on this page:', error.message);
         }
       }
+
+      // Restore overlay manager + rendering backend (canvas/DOM/etc.)
+      if (this.keyPilot.overlayManager) {
+        try {
+          // Recreate the overlay observer (it is disconnected + nulled in overlayManager.cleanup()).
+          this.keyPilot.overlayManager.setupOverlayObserver();
+          // Re-init highlight manager with the new observer.
+          if (this.keyPilot.overlayManager.highlightManager) {
+            this.keyPilot.overlayManager.highlightManager.initialize(this.keyPilot.overlayManager.overlayObserver);
+          }
+          // Re-init the active renderer (canvas overlay element, CSS custom props, etc.)
+          this.keyPilot.overlayManager.initRenderingMode();
+          // Debug panel (if enabled) lives inside overlay manager
+          this.keyPilot.overlayManager.initDebugPanel?.();
+        } catch (error) {
+          console.warn('[KeyPilotToggleHandler] Cannot restore overlays on this page:', error.message);
+        }
+      }
+
+      // Force an immediate hover refresh so the green rectangle reappears without requiring
+      // the user to move the mouse past the threshold gate.
+      try {
+        const st = this.keyPilot.state?.getState?.();
+        const x = Number(st?.lastMouse?.x);
+        const y = Number(st?.lastMouse?.y);
+        if (Number.isFinite(x) && Number.isFinite(y) && (x !== 0 || y !== 0)) {
+          this.keyPilot.updateElementsUnderCursor?.(x, y, false, null);
+        }
+      } catch { /* ignore */ }
 
       // Restore floating keyboard reference (state is persisted in storage)
       try {
