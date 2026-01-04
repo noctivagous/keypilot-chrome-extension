@@ -338,6 +338,21 @@ export class StyleManager {
         padding-left: 5pt !important;
       }
 
+      /* Element styling for DOM hover mode in shadow DOM */
+      .keypilot-focus-element {
+        box-shadow: 0 0 0 var(--keypilot-focus-ring-width, 3px) var(--keypilot-focus-ring-color, #2196f3) !important;
+        outline: 1px solid var(--keypilot-focus-ring-color, #2196f3) !important;
+        outline-offset: 1px !important;
+        /* Semi-transparent background fill */
+        background: var(--keypilot-focus-ring-bg-color, transparent) !important;
+      }
+
+      /* Inset fallback for clipped contexts in shadow DOM */
+      .keypilot-focus-element.keypilot-focus-element--inset {
+        outline: none !important;
+        box-shadow: inset 0 0 0 var(--keypilot-focus-ring-width, 3px) var(--keypilot-focus-ring-color, #2196f3) !important;
+      }
+
     `;
   }
 

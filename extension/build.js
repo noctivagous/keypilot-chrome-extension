@@ -42,6 +42,8 @@ const modules = [
   // Vendored dependencies that must be available as globals in the bundle.
   // Only include RBush if DOM hover listeners are disabled (when we need spatial indexing)
   ...(FEATURE_FLAGS.ENABLE_DOM_HOVER_LISTENERS ? [] : ['src/vendor/rbush.js']),
+  // Include shadow DOM query library when DOM hover listeners are enabled
+  ...(FEATURE_FLAGS.ENABLE_DOM_HOVER_LISTENERS ? ['../node_modules/query-selector-shadow-dom/dist/querySelectorShadowDom.js'] : []),
   // Shared UI helpers used by multiple modules (must be defined before import-stripped consumers).
   'src/ui/url-listing.js',
   'src/modules/state-manager.js',

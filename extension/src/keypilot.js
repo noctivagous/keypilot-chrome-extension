@@ -1044,6 +1044,10 @@ export class KeyPilot extends EventManager {
 
   setupShadowDOMSupport() {
     this.shadowDOMManager.setup();
+    // Connect shadow DOM manager to intersection observer for shadow element discovery
+    if (this.intersectionManager?.setShadowDOMManager) {
+      this.intersectionManager.setShadowDOMManager(this.shadowDOMManager);
+    }
   }
 
   setupPopupCommunication() {

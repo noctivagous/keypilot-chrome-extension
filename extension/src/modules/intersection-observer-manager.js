@@ -7,6 +7,7 @@ import { FEATURE_FLAGS } from '../config/constants.js';
 export class IntersectionObserverManager {
   constructor(elementDetector) {
     this.elementDetector = elementDetector;
+    this.shadowDOMManager = null; // Will be set by KeyPilot
     
     // Observer for tracking interactive elements in viewport
     this.interactiveObserver = null;
@@ -88,8 +89,35 @@ export class IntersectionObserverManager {
           clickable = el;
         }
 
+        // If no clickable found and we're in a shadow DOM context, try shadow-piercing query
+        if (!clickable && el.getRootNode() instanceof ShadowRoot) {
+          try {
+            // Search for interactive elements near the cursor position using shadow-piercing
+            const shadowElements = this.queryInteractiveAtPoint(e.clientX, e.clientY, 20);
+            if (shadowElements.length > 0) {
+              clickable = shadowElements[0]; // Take the first (closest) one
+            }
+          } catch (error) {
+            // Shadow query failed, continue with null clickable
+            if (window.KEYPILOT_DEBUG) {
+              console.warn('[KeyPilot] Shadow-piercing query failed:', error);
+            }
+          }
+        }
+
         // Check if we should focus the parent container instead of the individual clickable element
         clickable = this._findParentContainerForClickable(clickable);
+
+        // Log when hovering over clickable elements in shadow DOM
+        if (clickable && clickable.getRootNode() instanceof ShadowRoot) {
+          console.log('[KeyPilot] Hovering over clickable element in shadow DOM:', {
+            element: clickable,
+            tagName: clickable.tagName,
+            href: clickable.href || 'N/A',
+            shadowRoot: clickable.getRootNode(),
+            hostElement: clickable.getRootNode().host
+          });
+        }
 
         const next = (clickable && clickable.nodeType === 1) ? /** @type {HTMLElement} */ (clickable) : null;
         try {
@@ -427,6 +455,56 @@ export class IntersectionObserverManager {
     } catch {
       return '';
     }
+  }
+
+  /**
+   * Set the shadow DOM manager for shadow root discovery
+   * @param {Object} shadowDOMManager
+   */
+  setShadowDOMManager(shadowDOMManager) {
+    this.shadowDOMManager = shadowDOMManager;
+  }
+
+  /**
+   * Discover interactive elements inside tracked shadow roots
+   * @param {number} maxElements - Maximum elements to discover this slice
+   * @param {Function} timeRemaining - Function to check remaining idle time
+   * @returns {number} - Number of elements discovered
+   */
+  discoverShadowDOMElements(maxElements = 50, timeRemaining = () => 0) {
+    if (!this.shadowDOMManager?.shadowRoots?.size) return 0;
+    // Check if shadow DOM query functions are available (bundled globally)
+    if (typeof querySelectorAllDeep !== 'function') return 0;
+
+    let discovered = 0;
+    const cap = Math.max(0, Number(this.getIOAdaptation().maxObservations) || 0);
+
+    for (const shadowRoot of this.shadowDOMManager.shadowRoots) {
+      if (discovered >= maxElements) break;
+      if (timeRemaining() < 1) break;
+
+      try {
+        // Use shadow-piercing query to find interactive elements in this shadow root
+        const elements = querySelectorAllDeep(this.interactiveSelector, shadowRoot);
+
+        for (const el of elements) {
+          if (discovered >= maxElements) break;
+          if (cap > 0 && this.observedInteractiveElements.size >= cap) break;
+
+          if (!this.isElementObserved(el)) {
+            this.observeInteractiveElement(el);
+            discovered++;
+          }
+        }
+      } catch (error) {
+        // Skip problematic shadow roots
+        if (window.KEYPILOT_DEBUG) {
+          console.warn('[KeyPilot] Error discovering elements in shadow root:', error);
+        }
+      }
+    }
+
+    return discovered;
   }
 
   /**
@@ -1437,6 +1515,12 @@ export class IntersectionObserverManager {
 
       this.observeInteractiveElement(el);
       observedThisSlice++;
+    }
+
+    // Also discover elements in shadow DOM
+    if (timeRemaining() > 1) {
+      const shadowDiscovered = this.discoverShadowDOMElements(maxPerSlice - observedThisSlice, timeRemaining);
+      observedThisSlice += shadowDiscovered;
     }
 
     // If scanning is not done and we haven't hit cap, schedule another idle slice.

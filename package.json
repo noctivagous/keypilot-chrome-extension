@@ -10,6 +10,7 @@
     "minify": "npm run build:minify"
   },
   "dependencies": {
+    "query-selector-shadow-dom": "^1.0.1",
     "terser": "^5.36.0"
   }
 }
