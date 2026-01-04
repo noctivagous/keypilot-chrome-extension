@@ -88,6 +88,9 @@ export class IntersectionObserverManager {
           clickable = el;
         }
 
+        // Check if we should focus the parent container instead of the individual clickable element
+        clickable = this._findParentContainerForClickable(clickable);
+
         const next = (clickable && clickable.nodeType === 1) ? /** @type {HTMLElement} */ (clickable) : null;
         try {
           if (next && (next.tagName === 'HTML' || next.tagName === 'BODY')) return;
@@ -230,6 +233,200 @@ export class IntersectionObserverManager {
         batchSize: 50
       }
     };
+  }
+
+  /**
+   * Check if a parent container should be focused instead of an individual clickable element.
+   * If the hovered element is clickable and its parent has similar clickable properties,
+   * and all children of the parent have similar properties, focus the parent instead.
+   * @param {HTMLElement} element
+   * @returns {HTMLElement}
+   */
+  _findParentContainerForClickable(element) {
+    if (!element || element.nodeType !== 1) return element;
+
+    try {
+      // Only apply this logic to elements that are actually clickable
+      if (!this.elementDetector?.isLikelyInteractive(element)) return element;
+
+      const parent = element.parentElement;
+      if (!parent || parent.nodeType !== 1) return element;
+
+      // Check if parent is also clickable
+      if (!this.elementDetector.isLikelyInteractive(parent)) return element;
+
+      // Get the clickability profiles for comparison
+      const elementProfile = this._getClickabilityProfile(element);
+      const parentProfile = this._getClickabilityProfile(parent);
+
+      // Check if parent has similar clickable characteristics
+      if (!this._profilesAreSimilar(elementProfile, parentProfile)) return element;
+
+      // Check if all clickable children of parent have similar profiles
+      const children = Array.from(parent.children);
+      const clickableChildren = children.filter(child => {
+        if (child.nodeType !== 1) return false;
+        return this.elementDetector.isLikelyInteractive(child);
+      });
+
+      // If no other clickable children, return original element
+      if (clickableChildren.length === 0) return element;
+
+      // Check if all clickable children have similar profiles
+      const allChildrenSimilar = clickableChildren.every(child => {
+        const childProfile = this._getClickabilityProfile(child);
+        return this._profilesAreSimilar(elementProfile, childProfile);
+      });
+
+      // If all children have similar clickable characteristics, focus the parent
+      if (allChildrenSimilar) {
+        if (window.KEYPILOT_DEBUG) {
+          console.log('[KeyPilot Debug] Focusing parent container instead of child element:', {
+            originalElement: element,
+            parentElement: parent,
+            elementProfile: elementProfile,
+            parentProfile: parentProfile
+          });
+        }
+        return parent;
+      }
+    } catch (error) {
+      // If anything fails, return the original element
+      if (window.KEYPILOT_DEBUG) {
+        console.log('[KeyPilot Debug] Error in parent container detection:', error);
+      }
+    }
+
+    return element;
+  }
+
+  /**
+   * Get a profile of what makes an element clickable
+   * @param {HTMLElement} element
+   * @returns {Object} profile object
+   */
+  _getClickabilityProfile(element) {
+    const profile = {
+      tagName: element.tagName,
+      href: '',
+      role: '',
+      hasClickHandler: false,
+      hasCursorPointer: false,
+      inputType: '',
+      isContentEditable: false
+    };
+
+    try {
+      // Get href for links
+      if (element.tagName === 'A') {
+        profile.href = this._getNormalizedDestination(element);
+      }
+
+      // Get role attribute
+      profile.role = (element.getAttribute && element.getAttribute('role') || '').trim().toLowerCase();
+
+      // Check for click handlers
+      profile.hasClickHandler = !!(element.onclick ||
+                                   element.getAttribute('onclick') ||
+                                   this.elementDetector?.hasTrackedClickHandler(element));
+
+      // Check for cursor pointer (only if other conditions don't apply)
+      if (!profile.href && !profile.role && !profile.hasClickHandler) {
+        try {
+          profile.hasCursorPointer = !!(window.getComputedStyle &&
+                                       window.getComputedStyle(element).cursor === 'pointer');
+        } catch {
+          profile.hasCursorPointer = false;
+        }
+      }
+
+      // Get input type for form elements
+      if (element.tagName === 'INPUT') {
+        profile.inputType = (element.getAttribute('type') || 'text').toLowerCase();
+      }
+
+      // Check if content editable
+      profile.isContentEditable = !!(element.isContentEditable ||
+                                    element.getAttribute('contenteditable') === 'true');
+
+    } catch (error) {
+      // Ignore errors when building profile
+    }
+
+    return profile;
+  }
+
+  /**
+   * Check if two clickability profiles are similar enough to be considered
+   * part of the same interactive unit
+   * @param {Object} profile1
+   * @param {Object} profile2
+   * @returns {boolean}
+   */
+  _profilesAreSimilar(profile1, profile2) {
+    // Same tag name (button, input, etc.)
+    if (profile1.tagName === profile2.tagName) {
+      // For inputs, same type
+      if (profile1.tagName === 'INPUT' && profile1.inputType === profile2.inputType) {
+        return true;
+      }
+      // For other matching tags
+      if (profile1.tagName !== 'INPUT') {
+        return true;
+      }
+    }
+
+    // Same role attribute
+    if (profile1.role && profile1.role === profile2.role) {
+      return true;
+    }
+
+    // Same href (for links)
+    if (profile1.href && profile1.href === profile2.href) {
+      return true;
+    }
+
+    // Both have click handlers (similar interaction pattern)
+    if (profile1.hasClickHandler && profile2.hasClickHandler) {
+      return true;
+    }
+
+    // Both have cursor pointer (similar visual cue)
+    if (profile1.hasCursorPointer && profile2.hasCursorPointer) {
+      return true;
+    }
+
+    // Both are content editable
+    if (profile1.isContentEditable && profile2.isContentEditable) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Extract and normalize a destination string for an element.
+   * For now we only use <a href> to keep semantics reliable.
+   * @param {HTMLElement} element
+   * @returns {string} normalized destination or '' if none
+   */
+  _getNormalizedDestination(element) {
+    try {
+      if (!element || element.nodeType !== 1) return '';
+      if (element.tagName !== 'A') return '';
+      const hrefAttr = element.getAttribute && element.getAttribute('href');
+      if (!hrefAttr) return '';
+      // Prefer the fully-resolved absolute href when available (handles base tags).
+      const resolved = element.href || hrefAttr;
+      // Normalize via URL when possible.
+      try {
+        return new URL(resolved, window.location.href).href;
+      } catch {
+        return String(resolved || '');
+      }
+    } catch {
+      return '';
+    }
   }
 
   /**

@@ -54,9 +54,13 @@ export class ElementDetector {
     return el;
   }
 
-  isLikelyInteractive(el) {
+  isLikelyInteractive(el, opts = {}) {
     if (!el || el.nodeType !== 1) return false;
     
+    const allowCursor = (opts && Object.prototype.hasOwnProperty.call(opts, 'allowCursor'))
+      ? !!opts.allowCursor
+      : true;
+
     const matchesSelector = el.matches(this.FOCUSABLE_SEL);
     const role = (el.getAttribute && (el.getAttribute('role') || '').trim().toLowerCase()) || '';
     const hasRole = role && this.CLICKABLE_ROLES.includes(role);
@@ -66,7 +70,7 @@ export class ElementDetector {
 
     // getComputedStyle() is relatively expensive; only use it as a last resort.
     let hasCursor = false;
-    if (!matchesSelector && !hasRole && !hasClickHandler) {
+    if (allowCursor && !matchesSelector && !hasRole && !hasClickHandler) {
       try {
         hasCursor = !!(window.getComputedStyle && window.getComputedStyle(el).cursor === 'pointer');
       } catch {
@@ -85,6 +89,7 @@ export class ElementDetector {
         hasClickHandler: !!hasClickHandler,
         hasTrackedClickHandler: this.hasTrackedClickHandler(el),
         hasCursor: hasCursor,
+        allowCursor: allowCursor,
         selector: this.FOCUSABLE_SEL
       });
     }
@@ -95,8 +100,12 @@ export class ElementDetector {
   findClickable(el) {
     let n = el;
     let depth = 0;
+    let cursorOnlyCandidate = null;
     while (n && n !== document.body && n.nodeType === 1 && depth < 10) {
-      if (this.isLikelyInteractive(n)) {
+      // Prefer semantic clickables (anchors/buttons/roles/handlers/etc.) over cursor:pointer-only
+      // descendants. This avoids returning child <img>/<div> nodes inside <a href> that inherit
+      // cursor:pointer from the anchor.
+      if (this.isLikelyInteractive(n, { allowCursor: false })) {
         if (window.KEYPILOT_DEBUG) {
           console.log('[KeyPilot Debug] findClickable found:', {
             tagName: n.tagName,
@@ -107,11 +116,18 @@ export class ElementDetector {
         }
         return n;
       }
+
+      // Cursor-pointer-only fallback: store the first cursor candidate but keep walking up.
+      // If we later find a semantic interactive ancestor, we'll return that instead.
+      if (!cursorOnlyCandidate && this.isLikelyInteractive(n, { allowCursor: true })) {
+        cursorOnlyCandidate = n;
+      }
+
       n = n.parentElement || (n.getRootNode() instanceof ShadowRoot ? n.getRootNode().host : null);
       depth++;
     }
     
-    const finalResult = el && this.isLikelyInteractive(el) ? el : null;
+    const finalResult = cursorOnlyCandidate || (el && this.isLikelyInteractive(el) ? el : null);
     if (window.KEYPILOT_DEBUG && !finalResult && el) {
       console.log('[KeyPilot Debug] findClickable found nothing for:', {
         tagName: el.tagName,

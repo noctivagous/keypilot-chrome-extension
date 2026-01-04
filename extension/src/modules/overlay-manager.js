@@ -660,7 +660,8 @@ export class OverlayManager {
 
   // Unified interface that switches between rendering modes
   updateFocusOverlay(element, mode = MODES.NONE, rectOverride = null) {
-    // When DOM hover mode is enabled, use element styling instead of overlay elements
+    // When DOM hover mode is enabled, use element styling instead of overlay elements.
+    // (No overlay rectangles in this mode.)
     if (this._useDomHoverFocusColors) {
       return this.updateFocusOverlayElementStyling(element, mode);
     }
@@ -674,6 +675,25 @@ export class OverlayManager {
       default:
         return this.updateFocusOverlayDOM(element, mode, rectOverride);
     }
+  }
+
+  _isProbablyClippedByAncestorOverflow(element) {
+    try {
+      let n = element;
+      let depth = 0;
+      // Small walk up the tree is enough to catch line-clamp containers.
+      while (n && n.nodeType === 1 && depth++ < 10) {
+        const cs = window.getComputedStyle(n);
+        const ox = cs && cs.overflowX;
+        const oy = cs && cs.overflowY;
+        // overflow: clip/hidden/scroll/auto all clip descendant visuals.
+        const clipsX = ox && ox !== 'visible';
+        const clipsY = oy && oy !== 'visible';
+        if (clipsX || clipsY) return true;
+        n = n.parentElement;
+      }
+    } catch { /* ignore */ }
+    return false;
   }
 
   /**
@@ -696,11 +716,18 @@ export class OverlayManager {
       return;
     }
 
+    // In the wild (e.g. Engadget), an inline <a> sometimes wraps a block/flex child (<div>),
+    // which causes the anchor to be split into multiple inline fragments. Outline/box-shadow
+    // then renders as disjoint pieces (often thin strips). When we detect this, we style a
+    // better single-rect descendant (usually the anchor's wrapper) instead of the anchor.
+    const stylingTarget = this._resolveElementForFocusStyling(element) || element;
+    const useInset = this._isProbablyClippedByAncestorOverflow(stylingTarget);
+
     // Don't style modal/popover iframes
     try {
-      if (element.tagName === 'IFRAME') {
-        const isPopoverIframe = this.popoverIframeElement && element === this.popoverIframeElement;
-        const isModalIframe = !!(element.classList && element.classList.contains('modal-iframe'));
+      if (stylingTarget.tagName === 'IFRAME') {
+        const isPopoverIframe = this.popoverIframeElement && stylingTarget === this.popoverIframeElement;
+        const isModalIframe = !!(stylingTarget.classList && stylingTarget.classList.contains('modal-iframe'));
         if (isPopoverIframe || isModalIframe) {
           return;
         }
@@ -708,32 +735,131 @@ export class OverlayManager {
     } catch { /* ignore */ }
 
     // Determine styling based on element type and mode
-    const isTextInput = element.matches && element.matches(SELECTORS.FOCUSABLE_TEXT);
-    const isVideo = this.isVideoLikeElement(element);
+    const isTextInput = stylingTarget.matches && stylingTarget.matches(SELECTORS.FOCUSABLE_TEXT);
+    const isVideo = this.isVideoLikeElement(stylingTarget);
 
     // Set CSS custom properties for styling
     const ringColor = isTextInput ? COLORS.ORANGE : COLORS.FOCUS_BLUE; // Blue for DOM hover mode
     const ringWidth = '3px';
     const shadowColor = isTextInput ? COLORS.ORANGE_SHADOW : COLORS.BLUE_SHADOW;
+    const ringBgColor = isVideo ? 'transparent' : (isTextInput ? 'rgba(255,140,0,0.2)' : 'rgba(33,150,243,0.08)');
 
     // Apply styling using CSS custom properties
-    element.style.setProperty('--keypilot-focus-ring-color', ringColor);
-    element.style.setProperty('--keypilot-focus-ring-width', ringWidth);
-    element.style.setProperty('--keypilot-focus-shadow-color', shadowColor);
+    stylingTarget.style.setProperty('--keypilot-focus-ring-color', ringColor);
+    stylingTarget.style.setProperty('--keypilot-focus-ring-width', ringWidth);
+    stylingTarget.style.setProperty('--keypilot-focus-shadow-color', shadowColor);
+    stylingTarget.style.setProperty('--keypilot-focus-ring-bg-color', ringBgColor);
 
-    // Add the styling class
-    element.classList.add('keypilot-focus-element');
+    // Add the styling class (+ inset fallback when overflow clipping would hide the ring)
+    stylingTarget.classList.add('keypilot-focus-element');
+    if (useInset) stylingTarget.classList.add('keypilot-focus-element--inset');
+    else stylingTarget.classList.remove('keypilot-focus-element--inset');
 
     // Store reference for cleanup
-    this._currentStyledElement = element;
+    this._currentStyledElement = stylingTarget;
 
     if (window.KEYPILOT_DEBUG) {
       console.log('[KeyPilot Debug] Applied element styling:', {
-        tagName: element.tagName,
+        tagName: stylingTarget.tagName,
+        originalTagName: element?.tagName,
+        styledDifferentElement: stylingTarget !== element,
+        useInset: useInset,
         ringColor: ringColor,
         isTextInput: isTextInput
       });
     }
+  }
+
+  /**
+   * Choose the best element to apply the focus ring styling to.
+   *
+   * Problem: inline elements that contain block children can be split into multiple inline
+   * fragments, causing outline/box-shadow to render as disjoint pieces.
+   *
+   * Strategy:
+   * - If `element.getClientRects()` indicates fragmentation (2+ rects) and element is inline-ish,
+   *   find the largest descendant within a small depth that has exactly 1 client rect.
+   * - Otherwise, return `element`.
+   *
+   * @param {HTMLElement} element
+   * @returns {HTMLElement}
+   */
+  _resolveElementForFocusStyling(element) {
+    if (!element || element.nodeType !== 1) return element;
+
+    let rects = null;
+    try { rects = element.getClientRects(); } catch { rects = null; }
+    if (!rects || rects.length < 2) return element;
+
+    // Only apply this heuristic for inline-ish elements to avoid surprising results.
+    let display = '';
+    try { display = String(window.getComputedStyle(element)?.display || ''); } catch { display = ''; }
+    const inlineish = display.startsWith('inline');
+    if (!inlineish) return element;
+
+    // Compute union rect (viewport coords) of the fragmented element.
+    let uLeft = Infinity, uTop = Infinity, uRight = -Infinity, uBottom = -Infinity;
+    try {
+      for (const r of rects) {
+        uLeft = Math.min(uLeft, r.left);
+        uTop = Math.min(uTop, r.top);
+        uRight = Math.max(uRight, r.right);
+        uBottom = Math.max(uBottom, r.bottom);
+      }
+    } catch {
+      return element;
+    }
+    if (!Number.isFinite(uLeft) || !Number.isFinite(uTop) || !Number.isFinite(uRight) || !Number.isFinite(uBottom)) return element;
+
+    // Search a small subtree for a single-rect box that best matches the visible area.
+    // Prefer the largest-area candidate to get the wrapper (e.g. a flex div) rather than an <img>.
+    let best = null;
+    let bestArea = 0;
+    let nodesVisited = 0;
+    const maxNodes = 40;
+    const maxDepth = 4;
+
+    const queue = [{ el: element, depth: 0 }];
+    while (queue.length && nodesVisited < maxNodes) {
+      const cur = queue.shift();
+      const curEl = cur?.el;
+      const d = cur?.depth ?? 0;
+      if (!curEl || curEl.nodeType !== 1) continue;
+      nodesVisited++;
+
+      if (curEl !== element) {
+        let cr = null;
+        try { cr = curEl.getClientRects(); } catch { cr = null; }
+        if (cr && cr.length === 1) {
+          const r0 = cr[0];
+          const w = Number(r0.width);
+          const h = Number(r0.height);
+          const area = (Number.isFinite(w) ? w : 0) * (Number.isFinite(h) ? h : 0);
+          if (area > bestArea) {
+            // Ensure candidate overlaps union rect and is plausibly the visual wrapper.
+            const overlaps = !(r0.right <= uLeft || r0.left >= uRight || r0.bottom <= uTop || r0.top >= uBottom);
+            if (overlaps) {
+              bestArea = area;
+              best = curEl;
+            }
+          }
+        }
+      }
+
+      if (d >= maxDepth) continue;
+      try {
+        const kids = curEl.children;
+        if (kids && kids.length) {
+          for (let i = 0; i < kids.length; i++) {
+            const k = kids[i];
+            if (k && k.nodeType === 1) queue.push({ el: /** @type {HTMLElement} */ (k), depth: d + 1 });
+            if (queue.length > maxNodes) break;
+          }
+        }
+      } catch { /* ignore */ }
+    }
+
+    return best || element;
   }
 
   /**
@@ -743,9 +869,11 @@ export class OverlayManager {
     if (this._currentStyledElement) {
       try {
         this._currentStyledElement.classList.remove('keypilot-focus-element');
+        this._currentStyledElement.classList.remove('keypilot-focus-element--inset');
         this._currentStyledElement.style.removeProperty('--keypilot-focus-ring-color');
         this._currentStyledElement.style.removeProperty('--keypilot-focus-ring-width');
         this._currentStyledElement.style.removeProperty('--keypilot-focus-shadow-color');
+        this._currentStyledElement.style.removeProperty('--keypilot-focus-ring-bg-color');
       } catch { /* ignore */ }
       this._currentStyledElement = null;
     }

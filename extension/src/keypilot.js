@@ -4515,27 +4515,64 @@ export class KeyPilot extends EventManager {
 
     let probe = target;
     let link = probe;
+
+    // First try to find a traditional <a> element
     if (link.tagName !== 'A') {
       link = link.closest('a[href]');
+    }
+
+    // If no <a> element found, look for role="link" elements with data-kp-url
+    let url = null;
+    if (link && link.tagName === 'A' && link.href) {
+      url = link.href;
+    } else {
+      // Look for role="link" elements (used by renderUrlListing)
+      let roleLink = probe;
+      if (roleLink.getAttribute('role') !== 'link') {
+        roleLink = roleLink.closest('[role="link"]');
+      }
+
+      if (roleLink && roleLink.getAttribute('role') === 'link' && roleLink.dataset.kpUrl) {
+        url = roleLink.dataset.kpUrl;
+        link = roleLink; // Use the role="link" element as the link
+      }
     }
 
     // If we're inside a shadow root and closest() didn't find it, walk up to the host and retry.
     // This allows resolving links that span across shadow boundaries (common with web-components).
     let guard = 0;
-    while ((!link || link.tagName !== 'A' || !link.href) && guard++ < 10) {
+    while ((!url) && guard++ < 10) {
       const root = probe.getRootNode?.();
       if (!(root instanceof ShadowRoot) || !(root.host instanceof Element)) break;
       probe = root.host;
-      link = probe.closest?.('a[href]') || probe;
-      if (link && link.tagName === 'A' && link.href) break;
+
+      // Retry finding links in the host element
+      let hostLink = probe;
+      if (hostLink.tagName !== 'A') {
+        hostLink = hostLink.closest('a[href]');
+      }
+      if (hostLink && hostLink.tagName === 'A' && hostLink.href) {
+        url = hostLink.href;
+        link = hostLink;
+        break;
+      }
+
+      // Also check for role="link" in host
+      let hostRoleLink = probe;
+      if (hostRoleLink.getAttribute('role') !== 'link') {
+        hostRoleLink = hostRoleLink.closest('[role="link"]');
+      }
+      if (hostRoleLink && hostRoleLink.getAttribute('role') === 'link' && hostRoleLink.dataset.kpUrl) {
+        url = hostRoleLink.dataset.kpUrl;
+        link = hostRoleLink;
+        break;
+      }
     }
 
-    if (!link || link.tagName !== 'A' || !link.href) {
+    if (!url) {
       console.log('[KeyPilot] Open popover: not hovering over a link');
       return;
     }
-
-    const url = link.href;
     console.log('[KeyPilot] Opening popover for link:', url);
 
     // Show popover
