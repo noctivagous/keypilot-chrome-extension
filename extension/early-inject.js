@@ -1093,7 +1093,7 @@
       "tasks": [
         {
           "id": "enter_text_mode",
-          "label": "Focus a text field to enter text mode.",
+          "label": "Click a text field with F and it will receive typing.",
           "when": {
             "type": "mode",
             "action": "",
@@ -1104,7 +1104,7 @@
         },
         {
           "id": "exit_text_mode",
-          "label": "Press `Escape` to exit text mode.",
+          "label": "Press `Escape` to resume normal clicking.",
           "when": {
             "type": "mode",
             "action": "",
@@ -1206,7 +1206,7 @@
         },
         {
           "id": "move_tabs",
-          "label": "Move between tabs (`Q` and `W`).",
+          "label": "Move between tabs left (`Q`).",
           "when": {
             "type": "action",
             "action": "tabLeft",
@@ -1217,7 +1217,7 @@
         },
         {
           "id": "move_tabs_2",
-          "label": "Move between tabs (`Q` and `W`).",
+          "label": "Move between tabs right (`W`).",
           "when": {
             "type": "action",
             "action": "tabRight",

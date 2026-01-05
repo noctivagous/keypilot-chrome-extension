@@ -341,7 +341,7 @@ export class OnboardingPanel {
     }
   }
 
-  showOverlay({ title, message, primaryText = 'Got it', secondaryText = '', onPrimary = null, onSecondary = null } = {}) {
+  showOverlay({ title, message, primaryText = 'OK', secondaryText = '', onPrimary = null, onSecondary = null } = {}) {
     this._ensure();
     if (!this.root) return;
     if (!this._overlayEl) return;
@@ -353,7 +353,7 @@ export class OnboardingPanel {
     try { this._overlayMsgEl.textContent = String(message || ''); } catch { /* ignore */ }
 
     try {
-      this._overlayPrimaryBtn.textContent = String(primaryText || 'Got it');
+      this._overlayPrimaryBtn.textContent = String(primaryText || 'OK');
       this._overlayPrimaryBtn.hidden = false;
     } catch { /* ignore */ }
 
@@ -806,7 +806,7 @@ export class OnboardingPanel {
       secondary.addEventListener('click', this._onOverlaySecondary);
 
       const primary = mkBtn('primary');
-      primary.textContent = 'Got it';
+      primary.textContent = 'OK';
       primary.setAttribute('data-kp-onboarding-overlay-primary', 'true');
       primary.addEventListener('click', this._onOverlayPrimary);
 

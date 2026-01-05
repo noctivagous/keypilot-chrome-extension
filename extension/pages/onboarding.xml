@@ -23,11 +23,11 @@
   <slide id="text_box_mode" title="Text box mode">
     <onEnter type="overlay"
              title="Nice — KeyPilot is back on"
-             message="Next up: text mode. Click into any text field to enter text mode, and press Escape to exit." />
-    <task id="enter_text_mode" label="Focus a text field to enter text mode.">
+             message="Next up: text boxes." />
+    <task id="enter_text_mode" label="Click a text field with F and it will receive typing.">
       <when type="mode" mode="text_focus" change="enter" />
     </task>
-    <task id="exit_text_mode" label="Press `Escape` to exit text mode.">
+    <task id="exit_text_mode" label="Press `Escape` to resume normal clicking.">
       <when type="mode" mode="text_focus" change="exit" />
     </task>
   </slide>
@@ -57,13 +57,13 @@
     <task id="open_new_tab" label="Open a new tab (`T`).">
       <when type="action" action="newTab" />
     </task>
-    <task id="move_tabs" label="Move between tabs (`Q` and `W`).">
+    <task id="move_tabs" label="Move between tabs left (`Q`).">
       <when type="action" action="tabLeft" />
     </task>
-    <!--
-    <task id="move_tabs_2" label="Move between tabs (`Q` and `W`).">
+    
+    <task id="move_tabs_2" label="Move between tabs right (`W`).">
       <when type="action" action="tabRight" />
-    </task>-->
+    </task>
   </slide>
 </onboarding>
 

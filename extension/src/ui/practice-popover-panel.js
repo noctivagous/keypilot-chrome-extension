@@ -162,7 +162,7 @@ export class PracticePopoverPanel {
 
     const intro = card('Text Boxes'); // card('What you’re practicing');
     intro.appendChild(
-      p('When a text box is focused, the keyboard keys are of course used for text entry. Focus a text field with F to enter text box mode (typing works normally). Press `Esc` to exit text box mode and return to normal browsing.')
+      p('Click a text box with F to enter text box mode (typing works normally). Press `Esc` to exit text box mode and return to normal browsing.')
     );
     const tip = document.createElement('div');
     Object.assign(tip.style, { marginTop: '8px', fontSize: '12px', opacity: '0.82', lineHeight: '1.45' });
@@ -170,9 +170,9 @@ export class PracticePopoverPanel {
     tip.appendChild(kbd('F'));
     tip.appendChild(document.createTextNode(' during a short countdown window.'));
     intro.appendChild(tip);
-    wrap.appendChild(intro);
+//    wrap.appendChild(intro);
 
-    const fields = card('Step 1: Enter text mode');
+    const fields = card('Text Boxes');
     const grid = document.createElement('div');
     Object.assign(grid.style, {
       display: 'grid',
@@ -253,7 +253,7 @@ export class PracticePopoverPanel {
 
     const col1 = document.createElement('div');
     col1.appendChild(mkLabel('kp-practice-input-1', 'Practice input'));
-    col1.appendChild(mkInput('kp-practice-input-1', 'Click here to focus, then type…'));
+    col1.appendChild(mkInput('kp-practice-input-1', 'Click here with F, then type…'));
     const col2 = document.createElement('div');
     col2.appendChild(mkLabel('kp-practice-input-2', 'Second input (optional)'));
     col2.appendChild(mkInput('kp-practice-input-2', 'Try switching between fields…'));
@@ -323,7 +323,7 @@ export class PracticePopoverPanel {
     Object.assign(anchor.style, { marginTop: '10px', fontSize: '12px', opacity: '0.84', lineHeight: '1.45' });
     clickWin.appendChild(anchor);
 
-    wrap.appendChild(clickWin);
+    //wrap.appendChild(clickWin);
 
     this.body.appendChild(wrap);
   }
@@ -370,7 +370,7 @@ export class PracticePopoverPanel {
     });
 
     const title = document.createElement('div');
-    title.textContent = 'Entering Text Mode';
+    title.textContent = 'Entering Text';
     Object.assign(title.style, {
       fontSize: '13px',
       fontWeight: '900',

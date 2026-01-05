@@ -4387,7 +4387,11 @@ export class KeyPilot extends EventManager {
     });
 
     // If we're on/inside a link, open via background script so we can reliably focus the new tab.
+    // Support both:
+    // - traditional <a href="...">
+    // - KeyPilot URL listing rows rendered as `[role="link"][data-kp-url="..."]` (e.g. extension New Tab page)
     let link = target;
+    let url = null;
     try {
       if (link && link.tagName !== 'A' && typeof link.closest === 'function') {
         link = link.closest('a[href]');
@@ -4395,14 +4399,32 @@ export class KeyPilot extends EventManager {
     } catch { }
 
     if (link && link.tagName === 'A' && link.href) {
+      url = link.href;
+    } else {
+      // `renderUrlListing()` uses role="link" rows with `data-kp-url` instead of <a>.
+      try {
+        let roleLink = target;
+        if (roleLink instanceof Element) {
+          if (roleLink.getAttribute('role') !== 'link') {
+            roleLink = roleLink.closest?.('[role="link"][data-kp-url]') || null;
+          }
+          if (roleLink && roleLink.getAttribute('role') === 'link' && roleLink.dataset?.kpUrl) {
+            url = String(roleLink.dataset.kpUrl || '').trim() || null;
+            link = roleLink;
+          }
+        }
+      } catch { /* ignore */ }
+    }
+
+    if (url) {
       this.mouseCoordinateManager.handleLinkClick(currentState.lastMouse.x, currentState.lastMouse.y, link);
 
       try {
-        chrome.runtime.sendMessage({ type: 'KP_OPEN_URL_FOREGROUND', url: link.href });
+        chrome.runtime.sendMessage({ type: 'KP_OPEN_URL_FOREGROUND', url });
         this.showRipple(currentState.lastMouse.x, currentState.lastMouse.y);
         this.overlayManager.flashFocusOverlay();
         this.postClickRefresh(link, currentState.lastMouse.x, currentState.lastMouse.y);
-        this.emitAction('activateNewTab', { isLink: true, href: link.href });
+        this.emitAction('activateNewTab', { isLink: true, href: url });
         return;
       } catch (error) {
         console.error('[KeyPilot] Failed to open link in foreground tab:', error);
@@ -4443,34 +4465,56 @@ export class KeyPilot extends EventManager {
       }
     }
 
-    // Find the closest anchor element if the target is inside a link
+    // Find a URL to open:
+    // - traditional <a href="...">
+    // - KeyPilot URL listing rows rendered as `[role="link"][data-kp-url="..."]`
     let link = target;
-    if (link.tagName !== 'A') {
-      link = link.closest('a[href]');
+    let url = null;
+    try {
+      if (link && link.tagName !== 'A') {
+        link = link.closest?.('a[href]') || link;
+      }
+    } catch { /* ignore */ }
+
+    if (link && link.tagName === 'A' && link.href) {
+      url = link.href;
+    } else {
+      try {
+        let roleLink = target;
+        if (roleLink instanceof Element) {
+          if (roleLink.getAttribute('role') !== 'link') {
+            roleLink = roleLink.closest?.('[role="link"][data-kp-url]') || null;
+          }
+          if (roleLink && roleLink.getAttribute('role') === 'link' && roleLink.dataset?.kpUrl) {
+            url = String(roleLink.dataset.kpUrl || '').trim() || null;
+            link = roleLink;
+          }
+        }
+      } catch { /* ignore */ }
     }
 
-    // Only work if we have a hyperlink
-    if (!link || link.tagName !== 'A' || !link.href) {
+    // Only work if we have a URL
+    if (!url) {
       console.log('[KeyPilot] Activate New Tab Over: not hovering over a hyperlink');
       return;
     }
 
-    console.log('[KeyPilot] Opening link in new tab (background):', link.href);
+    console.log('[KeyPilot] Opening link in new tab (background):', url);
 
     // Store coordinates for link click
     this.mouseCoordinateManager.handleLinkClick(currentState.lastMouse.x, currentState.lastMouse.y, link);
 
     // Open link in a background tab (middle-click style: do NOT switch/focus the new tab).
     try {
-      chrome.runtime.sendMessage({ type: 'KP_OPEN_URL_BACKGROUND', url: link.href });
+      chrome.runtime.sendMessage({ type: 'KP_OPEN_URL_BACKGROUND', url });
       this.showRipple(currentState.lastMouse.x, currentState.lastMouse.y);
       this.overlayManager.flashFocusOverlay();
       this.postClickRefresh(link, currentState.lastMouse.x, currentState.lastMouse.y);
-      this.emitAction('activateNewTabBackground', { isLink: true, href: link.href });
+      this.emitAction('activateNewTabBackground', { isLink: true, href: url });
     } catch (error) {
       console.error('[KeyPilot] Failed to open link in background tab:', error);
       // Fallback (may focus the new tab depending on browser/user settings).
-      try { window.open(link.href, '_blank', 'noopener,noreferrer'); } catch { }
+      try { window.open(url, '_blank', 'noopener,noreferrer'); } catch { }
     }
   }
 

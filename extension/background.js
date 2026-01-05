@@ -371,28 +371,57 @@ class ExtensionToggleManager {
 
 // Helper function to check if a tab URL is skippable
 function isSkippableTab(tab) {
-  if (!tab.url) return true; // Skip tabs with no URL
+  // Skip tabs with no URL (rare, e.g. special transient tabs).
+  // Note: on some Chromium builds the overridden New Tab may still report a chrome:// URL
+  // (with the real extension URL showing up in pendingUrl). Handle both.
+  const url = typeof tab?.url === 'string' ? tab.url : '';
+  const pendingUrl = typeof tab?.pendingUrl === 'string' ? tab.pendingUrl : '';
+  if (!url && !pendingUrl) return true;
+
   // Always allow the KeyPilot custom New Tab page, even though it is an extension URL.
-  // We originally skipped chrome-extension:// pages to avoid "utility" pages, but now
-  // the new tab is a first-class page and should participate in left/right tab cycling.
-  try {
-    const kpNewTabUrl = chrome.runtime.getURL('pages/newtab.html');
-    if (tab.url === kpNewTabUrl || tab.url.startsWith(`${kpNewTabUrl}#`) || tab.url.startsWith(`${kpNewTabUrl}?`)) {
-      return false;
+  // We originally skipped chrome:// pages to avoid "utility" pages, but the overridden
+  // New Tab should participate in left/right tab cycling (Q/W).
+  const isKeyPilotNewTab = (u) => {
+    if (!u || typeof u !== 'string') return false;
+    const s = u.trim();
+    if (!s) return false;
+
+    // Common Chromium/Chrome variants when New Tab is overridden.
+    // Some builds still expose the visible URL as chrome://newtab or chrome://new-tab-page.
+    if (/^chrome:\/\/newtab\/?/i.test(s) || /^chrome:\/\/new-tab-page\/?/i.test(s)) {
+      return true;
     }
-  } catch {
-    // ignore
-  }
+
+    // Extension URL variants: allow exact match + query/hash + any URL that resolves to the same
+    // extension origin/path (in case of normalization or unexpected formatting).
+    try {
+      const kpNewTabUrl = chrome.runtime.getURL('pages/newtab.html');
+      if (s === kpNewTabUrl || s.startsWith(`${kpNewTabUrl}#`) || s.startsWith(`${kpNewTabUrl}?`)) {
+        return true;
+      }
+      const kp = new URL(kpNewTabUrl);
+      const parsed = new URL(s);
+      if (parsed.origin === kp.origin && parsed.pathname.endsWith('/pages/newtab.html')) {
+        return true;
+      }
+    } catch {
+      // ignore
+    }
+
+    return false;
+  };
+
+  if (isKeyPilotNewTab(url) || isKeyPilotNewTab(pendingUrl)) return false;
+
   const skipPatterns = [
     /^chrome:\/\//i,
-    /^chrome-extension:\/\//i,
     /^edge:\/\//i,
     /^about:/i,
     /^data:/i,
     /^chrome-native:/i,
     /^view-source:/i
   ];
-  return skipPatterns.some(pattern => pattern.test(tab.url));
+  return skipPatterns.some(pattern => pattern.test(url || pendingUrl));
 }
 
 // -----------------------------
