@@ -521,8 +521,13 @@ export class IntersectionObserverManager {
 
     // Prefer delegated events on the document (one-time attach).
     if (this._domHoverUseDelegation) {
-      if (next) this._domHoverAttachDelegated();
-      else this._domHoverDetachDelegated();
+      if (next) {
+        this._domHoverAttachDelegated();
+        // Check if mouse is currently over a clickable element
+        this._checkInitialMousePosition();
+      } else {
+        this._domHoverDetachDelegated();
+      }
     } else {
       // Legacy per-element attach/detach for already-observed elements.
       try {
@@ -672,6 +677,87 @@ export class IntersectionObserverManager {
       window.removeEventListener('blur', this._boundWindowBlur, true);
     } catch { /* ignore */ }
     this._domHoverDelegationAttached = false;
+  }
+
+  /**
+   * Check if mouse is currently positioned over a clickable element when DOM hover mode is enabled
+   * Adds a one-time mousemove listener to capture the first mouse movement
+   */
+  _checkInitialMousePosition() {
+    if (!this._domHoverEnabled) return;
+
+    // Add a one-time mousemove listener to capture the first mouse movement
+    const handleFirstMousemove = (e) => {
+      try {
+        // Remove this listener immediately to avoid repeated triggers
+        window.removeEventListener('mousemove', handleFirstMousemove, true);
+
+        // Get mouse position from the event
+        const mouseX = e.clientX;
+        const mouseY = e.clientY;
+
+        // Find the element at the mouse position
+        const elementAtPoint = this.elementDetector?.deepElementFromPoint
+          ? this.elementDetector.deepElementFromPoint(mouseX, mouseY)
+          : document.elementFromPoint(mouseX, mouseY);
+
+        if (!elementAtPoint || elementAtPoint.nodeType !== 1) return;
+
+        // Skip KeyPilot UI elements
+        if (this._isKeyPilotUiElement(elementAtPoint)) return;
+
+        // Find the clickable element
+        let clickable = null;
+        try {
+          clickable = this.elementDetector?.findClickable
+            ? this.elementDetector.findClickable(elementAtPoint)
+            : elementAtPoint;
+        } catch {
+          clickable = elementAtPoint;
+        }
+
+        // Check if we should focus the parent container instead
+        clickable = this._findParentContainerForClickable(clickable);
+
+        // Handle shadow DOM elements
+        if (!clickable && elementAtPoint.getRootNode() instanceof ShadowRoot) {
+          try {
+            const shadowElements = this.queryInteractiveAtPoint(mouseX, mouseY, 20);
+            if (shadowElements.length > 0) {
+              clickable = shadowElements[0];
+            }
+          } catch (error) {
+            if (window.KEYPILOT_DEBUG) {
+              console.warn('[KeyPilot] Shadow-piercing query failed:', error);
+            }
+          }
+        }
+
+        // If we found a clickable element, trigger the hover callback
+        if (clickable && clickable.nodeType === 1) {
+          const finalClickable = /** @type {HTMLElement} */ (clickable);
+          try {
+            if (finalClickable.tagName === 'HTML' || finalClickable.tagName === 'BODY') return;
+          } catch { /* ignore */ }
+
+          // Update hover state and trigger callback
+          if (finalClickable !== this._domHoveredElement) {
+            this._domHoveredElement = finalClickable;
+            try { window.__KP_HOVERED_INTERACTIVE_EL = finalClickable; } catch { /* ignore */ }
+            if (typeof this._domHoverOnChange === 'function') {
+              try { this._domHoverOnChange(finalClickable); } catch { /* ignore */ }
+            }
+          }
+        }
+      } catch (error) {
+        if (window.KEYPILOT_DEBUG) {
+          console.warn('[KeyPilot] Error in first mousemove check:', error);
+        }
+      }
+    };
+
+    // Add the one-time mousemove listener with capture
+    window.addEventListener('mousemove', handleFirstMousemove, true);
   }
 
   // =============================================================================

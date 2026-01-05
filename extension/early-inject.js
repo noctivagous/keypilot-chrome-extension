@@ -2824,7 +2824,6 @@
     try { applyPopupThemeVars(root); } catch { /* ignore */ }
 
     const header = doc.createElement('div');
-    header.id = 'kpv2-keyboard-help-header';
     Object.assign(header.style, {
       display: 'flex',
       alignItems: 'center',
@@ -2835,7 +2834,6 @@
     });
 
     const title = doc.createElement('div');
-    title.id = 'kpv2-keyboard-help-title';
     title.textContent = 'KeyPilot keyboard reference';
     Object.assign(title.style, {
       fontSize: '13px',
@@ -2844,7 +2842,6 @@
     });
 
     const hint = doc.createElement('div');
-    hint.id = 'kpv2-keyboard-help-hint';
     hint.textContent = 'Press K to toggle';
     hint.setAttribute('data-kp-floating-keyboard-hint', 'true');
     Object.assign(hint.style, {
@@ -2883,11 +2880,9 @@
     header.appendChild(closeBtn);
 
     const body = doc.createElement('div');
-    body.id = 'kpv2-keyboard-help-body';
     Object.assign(body.style, { padding: '10px 12px' });
 
     const keyboardContainer = doc.createElement('div');
-    keyboardContainer.id = 'kpv2-keyboard-help-keyboard';
     keyboardContainer.className = 'kp-floating-keyboard-help__keyboard';
     keyboardContainer.textContent = '';
     body.appendChild(keyboardContainer);
@@ -2908,7 +2903,7 @@
   function updateKeyboardHelpHintForLayout(layoutId) {
     try {
       if (!keyboardHelpRoot) return;
-      const hint = keyboardHelpRoot.querySelector('#kpv2-keyboard-help-hint');
+      const hint = keyboardHelpRoot.querySelector('[data-kp-floating-keyboard-hint="true"]');
       if (!hint) return;
       const data = getEarlyKeyboardDataForLayout(layoutId || keyboardLayoutId);
       const binding = data?.bindings?.TOGGLE_KEYBOARD_HELP;

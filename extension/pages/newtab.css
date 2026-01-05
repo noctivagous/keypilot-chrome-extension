@@ -17,7 +17,10 @@ body {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   background: radial-gradient(1200px 600px at 20% 10%, rgba(255,140,0,0.18), transparent 60%),
               radial-gradient(900px 500px at 80% 25%, rgba(0,180,0,0.14), transparent 65%),
-              linear-gradient(rgb(14, 14, 14) 0%, rgb(9, 9, 9) 100%);
+              rgb(11, 11, 11);
+  background-repeat: no-repeat;
+  background-size: 100% 100vh;
+  background-attachment: fixed;
   color: rgba(255,255,255,0.92);
   overflow-x: hidden; /* prevent long unbroken URLs from pushing layout sideways */
 }
@@ -62,10 +65,12 @@ body.kp-unfocused::before {
 }
 
 .focus-hint-message {
-  display: inline-block;
+  display: block;
+  width: 75vw;
+  max-width: 600px;
+  margin: 0 auto;
   padding: 12px 20px;
-  text-align: left;
-  margin-left: 100pt;
+  text-align: center;
   user-select: none;
   color: rgba(255, 240, 220, 0.94);
   background: rgba(0, 0, 0, 0.85);
