@@ -59,7 +59,10 @@ export class KeyPilot extends EventManager {
       }
     });
     this.tabHistoryPopover = new TabHistoryPopover({
-      popupManager: this.overlayManager?.popupManager
+      popupManager: this.overlayManager?.popupManager,
+      onStateChange: (open) => {
+        this.state.setPopoverOpen(open, open ? 'tab-history' : null);
+      }
     });
     this.KEYBOARD_HELP_STORAGE_KEY = 'keypilot_keyboard_help_visible';
     this._keyboardHelpVisible = false;
@@ -195,6 +198,29 @@ export class KeyPilot extends EventManager {
   }
 
   /**
+   * Check if an element is inside a valid popover container (iframe or popupManager modal)
+   * @param {Element} el
+   * @returns {boolean}
+   */
+  _isElementInPopover(el) {
+    if (!el || !(el instanceof Element)) return false;
+
+    // Check iframe popover container
+    const iframeContainer = this.overlayManager?.popoverContainer;
+    if (iframeContainer instanceof Element && iframeContainer.contains(el)) {
+      return true;
+    }
+
+    // Check popupManager modal
+    const modalPanel = this.overlayManager?.popupManager?.top()?.panel;
+    if (modalPanel instanceof Element && modalPanel.contains(el)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
    * When DOM-hover listener mode is enabled, `state.focusEl` is driven by delegated hover events.
    * However, if the DOM changes under a stationary pointer (menus, dialogs, overlays), hover events
    * may not fire and `focusEl` can become stale. This helper validates focusEl against the actual
@@ -215,7 +241,11 @@ export class KeyPilot extends EventManager {
 
     try {
       if (under && this._isKeyPilotUiElement(under)) {
-        under = null;
+        // Allow activation on KeyPilot UI elements that represent clickable content (e.g. history rows with data-kp-url)
+        if (!(under instanceof Element) ||
+            !(under.getAttribute('role') === 'link' && under.dataset?.kpUrl)) {
+          under = null;
+        }
       }
     } catch { /* ignore */ }
 
@@ -1555,16 +1585,7 @@ export class KeyPilot extends EventManager {
     // Popover mode is modal: only track elements inside the popover UI.
     // This prevents the green rectangle from following the background page.
     if (currentState.mode === MODES.POPOVER) {
-      const popoverContainer = this.overlayManager?.popoverContainer;
-      const isInsidePopover = (el) => {
-        try {
-          if (!popoverContainer || !(popoverContainer instanceof Element)) return false;
-          if (!el || !(el instanceof Element)) return false;
-          return popoverContainer.contains(el);
-        } catch {
-          return false;
-        }
-      };
+      const isInsidePopover = (el) => this._isElementInPopover(el);
 
       if (!isInsidePopover(under)) clickable = null;
       else if (clickable && !isInsidePopover(clickable)) clickable = null;
@@ -4325,8 +4346,7 @@ export class KeyPilot extends EventManager {
 
     // Popover mode is modal: don't allow activation on background page elements.
     if (currentState.mode === MODES.POPOVER) {
-      const popoverContainer = this.overlayManager?.popoverContainer;
-      if (popoverContainer instanceof Element && target instanceof Element && !popoverContainer.contains(target)) {
+      if (!this._isElementInPopover(target)) {
         return;
       }
     }
@@ -4373,8 +4393,7 @@ export class KeyPilot extends EventManager {
 
     // Popover mode is modal: don't allow activation on background page elements.
     if (currentState.mode === MODES.POPOVER) {
-      const popoverContainer = this.overlayManager?.popoverContainer;
-      if (popoverContainer instanceof Element && target instanceof Element && !popoverContainer.contains(target)) {
+      if (!this._isElementInPopover(target)) {
         return;
       }
     }
@@ -4459,8 +4478,7 @@ export class KeyPilot extends EventManager {
 
     // Popover mode is modal: don't allow activation on background page elements.
     if (currentState.mode === MODES.POPOVER) {
-      const popoverContainer = this.overlayManager?.popoverContainer;
-      if (popoverContainer instanceof Element && target instanceof Element && !popoverContainer.contains(target)) {
+      if (!this._isElementInPopover(target)) {
         return;
       }
     }

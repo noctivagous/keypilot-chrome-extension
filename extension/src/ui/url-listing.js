@@ -296,6 +296,12 @@ export function renderUrlListing({
       }
     }
 
+    // If using <a> tag, set href attribute for native link behavior
+    const rawUrlText = typeof getUrl === 'function' ? String(getUrl(item, idx) || '') : '';
+    if (rowTag === 'a' && rawUrlText && row instanceof HTMLAnchorElement) {
+      row.href = rawUrlText;
+    }
+
     // Structure:
     // row
     //  - content (flex)
@@ -308,7 +314,6 @@ export function renderUrlListing({
     const urlEl = doc.createElement('div');
 
     let faviconEl = null;
-    const rawUrlText = typeof getUrl === 'function' ? String(getUrl(item, idx) || '') : '';
     const titleText = typeof getTitle === 'function' ? String(getTitle(item, idx) || '') : (rawUrlText || '');
     const metaText = typeof getMeta === 'function' ? String(getMeta(item, idx) || '') : '';
 
@@ -339,7 +344,9 @@ export function renderUrlListing({
 
     if (useInlineStyles) {
       Object.assign(row.style, {
-        userSelect: 'none'
+        userSelect: 'none',
+        textDecoration: 'none',
+        color: 'inherit'
       });
       Object.assign(content.style, {
         display: 'flex',

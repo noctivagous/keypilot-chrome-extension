@@ -3,6 +3,9 @@
  */
 import { CSS_CLASSES, ELEMENT_IDS, COLORS, Z_INDEX } from '../config/constants.js';
 
+const BLUE_TINT_FILTER_ID = 'keypilot-blue-tint-filter';
+const BLUE_TINT_SVG_ID = 'keypilot-blue-tint-filter-svg';
+
 export class StyleManager {
   constructor() {
     this.injectedStyles = new Set();
@@ -288,16 +291,22 @@ export class StyleManager {
       /* Element styling for DOM hover mode */
       .keypilot-focus-element {
         box-shadow: 0 0 0 var(--keypilot-focus-ring-width, 3px) var(--keypilot-focus-ring-color, #2196f3) !important;
-        outline: 1px solid var(--keypilot-focus-ring-color, #2196f3) !important;
+        outline: 2px solid var(--keypilot-focus-ring-color, #2196f3) !important;
         outline-offset: 1px !important;
         /* Semi-transparent background fill */
         background: var(--keypilot-focus-ring-bg-color, transparent) !important;
+        /* SVG filter for blue tint instead of brightness/contrast/saturation */
+        filter: url(#keypilot-blue-tint-filter) !important;
       }
 
       /* Inset fallback for clipped contexts (e.g. line-clamp / overflow hidden). */
       .keypilot-focus-element.keypilot-focus-element--inset {
-        outline: none !important;
+        /* Keep outline for better visibility even with inset box-shadow */
+        outline: 2px solid var(--keypilot-focus-ring-color, #2196f3) !important;
+        outline-offset: -1px !important; /* Negative offset to ensure visibility */
         box-shadow: inset 0 0 0 var(--keypilot-focus-ring-width, 3px) var(--keypilot-focus-ring-color, #2196f3) !important;
+        /* Apply blue tint filter to inset styling too */
+        filter: url(#keypilot-blue-tint-filter) !important;
       }
     `;
   }
@@ -341,16 +350,22 @@ export class StyleManager {
       /* Element styling for DOM hover mode in shadow DOM */
       .keypilot-focus-element {
         box-shadow: 0 0 0 var(--keypilot-focus-ring-width, 3px) var(--keypilot-focus-ring-color, #2196f3) !important;
-        outline: 1px solid var(--keypilot-focus-ring-color, #2196f3) !important;
+        outline: 2px solid var(--keypilot-focus-ring-color, #2196f3) !important;
         outline-offset: 1px !important;
         /* Semi-transparent background fill */
         background: var(--keypilot-focus-ring-bg-color, transparent) !important;
+        /* SVG filter for blue tint instead of brightness/contrast/saturation */
+        filter: url(#keypilot-blue-tint-filter) !important;
       }
 
       /* Inset fallback for clipped contexts in shadow DOM */
       .keypilot-focus-element.keypilot-focus-element--inset {
-        outline: none !important;
+        /* Keep outline for better visibility even with inset box-shadow */
+        outline: 2px solid var(--keypilot-focus-ring-color, #2196f3) !important;
+        outline-offset: -1px !important; /* Negative offset to ensure visibility */
         box-shadow: inset 0 0 0 var(--keypilot-focus-ring-width, 3px) var(--keypilot-focus-ring-color, #2196f3) !important;
+        /* Apply blue tint filter to inset styling too */
+        filter: url(#keypilot-blue-tint-filter) !important;
       }
 
     `;
@@ -364,11 +379,89 @@ export class StyleManager {
     this.injectCSS(css, ELEMENT_IDS.STYLE);
     this.injectedStyles.add('main');
 
+    // Ensure the SVG filter exists as a real DOM node (CSS alone can't define it).
+    this._ensureBlueTintFilterInDocument();
+
     // Only hide/override the cursor when explicitly enabled.
     if (this.cursorOverridesEnabled) {
       document.documentElement.classList.add(CSS_CLASSES.CURSOR_HIDDEN);
     } else {
       document.documentElement.classList.remove(CSS_CLASSES.CURSOR_HIDDEN);
+    }
+  }
+
+  _ensureBlueTintFilterInDocument() {
+    this._ensureBlueTintFilterInRoot(document);
+  }
+
+  _ensureBlueTintFilterInShadowRoot(shadowRoot) {
+    this._ensureBlueTintFilterInRoot(shadowRoot);
+  }
+
+  _ensureBlueTintFilterInRoot(root) {
+    try {
+      const queryRoot = root && typeof root.querySelector === 'function' ? root : document;
+      const existing = queryRoot.querySelector(`#${BLUE_TINT_SVG_ID}`);
+      if (existing) return;
+
+      const ns = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(ns, 'svg');
+      svg.setAttribute('id', BLUE_TINT_SVG_ID);
+      svg.setAttribute('aria-hidden', 'true');
+      // Hidden, but present in the DOM for url(#...) references.
+      svg.style.position = 'absolute';
+      svg.style.width = '0';
+      svg.style.height = '0';
+      svg.style.overflow = 'hidden';
+      svg.style.pointerEvents = 'none';
+
+      const defs = document.createElementNS(ns, 'defs');
+      const filter = document.createElementNS(ns, 'filter');
+      filter.setAttribute('id', BLUE_TINT_FILTER_ID);
+      // Consistent, non-"hue rotate" blue cast.
+      filter.setAttribute('color-interpolation-filters', 'sRGB');
+
+      const matrix = document.createElementNS(ns, 'feColorMatrix');
+      matrix.setAttribute('type', 'matrix');
+      // 4x5 matrix (RGBA). Stronger blue cast + slightly reduced red/green.
+      // R' = 0.82R + 0.06G + 0.06B
+      // G' = 0.06R + 0.82G + 0.06B
+      // B' = 0.12R + 0.12G + 1.05B + 0.12
+      matrix.setAttribute(
+        'values',
+        '0.82 0.06 0.06 0 0  0.06 0.82 0.06 0 0  0.12 0.12 1.05 0 0.12  0 0 0 1 0'
+      );
+
+      // Slight brightness + contrast boost to keep tinted elements punchy.
+      const transfer = document.createElementNS(ns, 'feComponentTransfer');
+      const fr = document.createElementNS(ns, 'feFuncR');
+      const fg = document.createElementNS(ns, 'feFuncG');
+      const fb = document.createElementNS(ns, 'feFuncB');
+      // slope > 1 increases contrast, intercept lifts brightness.
+      fr.setAttribute('type', 'linear');
+      fr.setAttribute('slope', '1.08');
+      fr.setAttribute('intercept', '0.03');
+      fg.setAttribute('type', 'linear');
+      fg.setAttribute('slope', '1.08');
+      fg.setAttribute('intercept', '0.03');
+      fb.setAttribute('type', 'linear');
+      fb.setAttribute('slope', '1.10');
+      fb.setAttribute('intercept', '0.04');
+      transfer.appendChild(fr);
+      transfer.appendChild(fg);
+      transfer.appendChild(fb);
+
+      filter.appendChild(matrix);
+      filter.appendChild(transfer);
+      defs.appendChild(filter);
+      svg.appendChild(defs);
+
+      const parent = root instanceof ShadowRoot
+        ? root
+        : (document.body || document.documentElement || document);
+      parent.appendChild(svg);
+    } catch {
+      // If this fails, the hover ring still works; we just won't apply the tint.
     }
   }
 
@@ -398,6 +491,9 @@ export class StyleManager {
     style.textContent = css;
     shadowRoot.appendChild(style);
 
+    // Same filter must exist as a real node within this shadow root for url(#...) resolution.
+    this._ensureBlueTintFilterInShadowRoot(shadowRoot);
+
     this.injectedStyles.add(shadowRoot);
     this.shadowRootStyles.set(shadowRoot, style);
   }
@@ -420,6 +516,24 @@ export class StyleManager {
     for (const [shadowRoot, styleElement] of this.shadowRootStyles) {
       if (styleElement && styleElement.parentNode) {
         styleElement.remove();
+      }
+    }
+
+    // Remove our injected SVG filters (document + tracked shadow roots)
+    try {
+      const svg = document.getElementById(BLUE_TINT_SVG_ID);
+      if (svg) svg.remove();
+    } catch {
+      // ignore
+    }
+    for (const shadowRoot of this.shadowRootStyles.keys()) {
+      try {
+        const svg = shadowRoot && shadowRoot.querySelector
+          ? shadowRoot.querySelector(`#${BLUE_TINT_SVG_ID}`)
+          : null;
+        if (svg) svg.remove();
+      } catch {
+        // ignore
       }
     }
 

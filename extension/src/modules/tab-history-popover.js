@@ -5,13 +5,60 @@
  */
 import { createUrlListingContainer, renderUrlListing } from '../ui/url-listing.js';
 
+function parseUrlForThreeLineDisplay(rawUrl) {
+  const input = String(rawUrl || '').trim();
+  if (!input) return { domain: '', path: '' };
+
+  try {
+    const u = new URL(input, 'https://example.invalid');
+    const scheme = (u.protocol || '').replace(/:$/, '');
+    const host = (u.hostname || '') + (u.port ? `:${u.port}` : '');
+
+    // Domain line: prefer host if present; otherwise fall back to scheme.
+    const domain = host || scheme || input;
+
+    // Path line: everything after the domain: pathname + search + hash.
+    // Keep '/' for empty paths so the third line isn't blank for homepages.
+    const pathname = u.pathname || '';
+    const rest = `${pathname || ''}${u.search || ''}${u.hash || ''}`;
+    const path = rest || (host ? '/' : '');
+
+    return { domain, path };
+  } catch {
+    // Very defensive fallback: attempt split on first slash after scheme.
+    const m = input.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\/([^\/?#]+)([^\s]*)?$/);
+    if (m) {
+      const domain = m[1] || input;
+      const path = m[2] || '/';
+      return { domain, path };
+    }
+    return { domain: input, path: '' };
+  }
+}
+
+function renderThreeLineUrlListingEntry({ item, parts }) {
+  const url = String(item?.url || '').trim();
+  const title = String(item?.title || '').trim();
+  const { domain, path } = parseUrlForThreeLineDisplay(url);
+
+  // Order requirement:
+  // 1) domain
+  // 2) page title
+  // 3) path
+  parts.titleEl.textContent = domain || url || '';
+  parts.metaEl.textContent = title;
+  parts.urlEl.textContent = path;
+}
+
 export class TabHistoryPopover {
   /**
    * @param {object} opts
    * @param {import('./popup-manager.js').PopupManager} opts.popupManager
+   * @param {(open: boolean) => void} [opts.onStateChange] - Called when popover opens/closes
    */
-  constructor({ popupManager } = {}) {
+  constructor({ popupManager, onStateChange } = {}) {
     this.popupManager = popupManager || null;
+    this._onStateChange = typeof onStateChange === 'function' ? onStateChange : null;
     this._popupId = 'kpv2-tab-history-popover';
 
     /** @type {HTMLElement|null} */
@@ -44,11 +91,15 @@ export class TabHistoryPopover {
     this._open = true;
 
     this._ensureDom();
+    this._injectScrollbarStyles();
     this.popupManager.showModal({
       id: this._popupId,
       panel: this._panel,
       onRequestClose: () => this.hide()
     });
+
+    // Notify that popover opened
+    this._onStateChange?.(true);
 
     this._loadAndRender();
   }
@@ -57,11 +108,115 @@ export class TabHistoryPopover {
     if (!this.popupManager) return;
     if (!this._open) return;
     this._open = false;
+
+    // Notify that popover closed
+    this._onStateChange?.(false);
+
     try {
       this.popupManager.hideModal(this._popupId);
     } catch {
       // ignore
     }
+  }
+
+  _injectScrollbarStyles() {
+    const styleId = 'kpv2-tab-history-styles';
+    if (document.getElementById(styleId)) return; // Already injected
+
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+      /* Shared URL listing helpers (used by tab history popover) */
+      .kpv2-tab-history-panel .kp-url-row {
+        display: block;
+        padding: 8px 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        background: linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.06) 100%);
+        border: 1px solid rgba(255,255,255,0.12);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.15);
+        margin: 6px 6px 6px 6px;
+        min-width: 0;
+      }
+
+      .kpv2-tab-history-panel .kp-url-row:hover {
+        background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.35), 0 3px 6px rgba(0,0,0,0.20);
+        transform: translateY(-1px);
+      }
+
+      .kpv2-tab-history-panel .kp-url-row:focus-visible {
+        outline: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.15), 0 0 0 3px rgba(255,140,0,0.16);
+        border-color: rgba(255,140,0,0.45);
+      }
+
+      .kpv2-tab-history-panel .kp-url-content {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .kpv2-tab-history-panel .kp-url-text {
+        min-width: 0;
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .kpv2-tab-history-panel .kp-url-domain,
+      .kpv2-tab-history-panel .kp-url-title,
+      .kpv2-tab-history-panel .kp-url-path {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
+      }
+
+      .kpv2-tab-history-panel .kp-url-domain {
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.15px;
+        color: rgba(255, 200, 130, 0.92);
+      }
+
+      .kpv2-tab-history-panel .kp-url-title {
+        font-size: 13px;
+        font-weight: 650;
+        color: rgba(255,255,255,0.92);
+      }
+
+      .kpv2-tab-history-panel .kp-url-path {
+        font-size: 11px;
+        color: rgba(255,255,255,0.58);
+      }
+
+      .kpv2-tab-history-panel .kp-url-favicon {
+        width: 18px;
+        height: 18px;
+        border-radius: 4px;
+        background: rgba(255,255,255,0.08);
+        flex: 0 0 auto;
+      }
+
+      /* Dark theme scrollbar styling for tab history popover */
+      .kpv2-tab-history-panel ::-webkit-scrollbar {
+        width: 8px;
+      }
+      .kpv2-tab-history-panel ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.1);
+      }
+      .kpv2-tab-history-panel ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+      }
+      .kpv2-tab-history-panel ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+    `;
+    document.head.appendChild(style);
   }
 
   _ensureDom() {
@@ -155,7 +310,6 @@ export class TabHistoryPopover {
     const body = doc.createElement('div');
     Object.assign(body.style, {
       display: 'flex',
-      flexWrap: 'wrap',
       gap: '10px',
       padding: '10px',
       flex: '1 1 auto',
@@ -166,7 +320,7 @@ export class TabHistoryPopover {
     const makeColumn = ({ titleText }) => {
       const col = doc.createElement('div');
       Object.assign(col.style, {
-        flex: '1 1 420px',
+        flex: '1 1 0%',
         minWidth: '0',
         minHeight: '0',
         display: 'flex',
@@ -226,10 +380,13 @@ export class TabHistoryPopover {
         useInlineStyles: true,
         scrollY: true,
         style: {
-          overflow: 'scroll',
+          overflow: 'auto',
+          overflowX: 'hidden',
           padding: '8px 6px',
           flex: '1 1 auto',
-          minHeight: '0'
+          minHeight: '0',
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(255,255,255,0.2) rgba(0,0,0,0.1)'
         }
       });
 
@@ -430,11 +587,21 @@ export class TabHistoryPopover {
         container: this._tabList,
         items: renderItems,
         view: 'list',
-        useInlineStyles: true,
+        useInlineStyles: false,
+        classNames: {
+          row: 'kp-url-row',
+          content: 'kp-url-content',
+          text: 'kp-url-text',
+          title: 'kp-url-domain',
+          meta: 'kp-url-title',
+          url: 'kp-url-path',
+          favicon: 'kp-url-favicon'
+        },
+        rowTag: 'a',
         getTitle: (it) => (it.node?.title || it.node?.url || '').toString(),
         getUrl: (it) => String(it.node?.url || ''),
         showFavicon: true,
-        showMetaLine: false,
+        showMetaLine: true,
         showUrlLine: true,
         isSelected: (it) => it.id === cursorId,
         onRowClick: async ({ item, event }) => {
@@ -452,26 +619,8 @@ export class TabHistoryPopover {
         decorateRow: ({ row, item, idx, parts }) => {
           row.dataset.kpTabHistoryId = String(item.id);
 
-          // Hover highlight (keep selected highlight stable).
-          row.addEventListener('mouseenter', () => {
-            row.style.background = item.id === cursorId ? 'rgba(255,140,0,0.2)' : 'rgba(255,255,255,0.06)';
-          }, { passive: true });
-          row.addEventListener('mouseleave', () => {
-            row.style.background = item.id === cursorId ? 'rgba(255,140,0,0.18)' : 'rgba(0,0,0,0)';
-          }, { passive: true });
-
-          // Indent gutter + favicon.
-          const gutter = document.createElement('div');
-          Object.assign(gutter.style, {
-            width: '0px',
-            flex: '0 0 auto'
-          });
-
-          if (parts.faviconEl) {
-            parts.content.insertBefore(gutter, parts.faviconEl);
-          } else {
-            parts.content.insertBefore(gutter, parts.text);
-          }
+          // Use three-line layout like newtab
+          renderThreeLineUrlListingEntry({ item: { url: item.node?.url, title: item.node?.title }, parts });
 
           // Branch badge (+N)
           const badge = document.createElement('div');
@@ -531,16 +680,22 @@ export class TabHistoryPopover {
         container: this._browserList,
         items: deduped,
         view: 'list',
-        useInlineStyles: true,
+        useInlineStyles: false,
+        classNames: {
+          row: 'kp-url-row',
+          content: 'kp-url-content',
+          text: 'kp-url-text',
+          title: 'kp-url-domain',
+          meta: 'kp-url-title',
+          url: 'kp-url-path',
+          favicon: 'kp-url-favicon'
+        },
+        rowTag: 'a',
         getTitle: (it) => it.title,
         getUrl: (it) => it.url,
-        getMeta: (it) => {
-          const when = it.lastVisitTime ? new Date(it.lastVisitTime).toLocaleString() : '';
-          return when ? `${it.url} • ${when}` : it.url;
-        },
         showFavicon: true,
         showMetaLine: true,
-        showUrlLine: false,
+        showUrlLine: true,
         onRowClick: async ({ item, event }) => {
           event.preventDefault();
           event.stopPropagation();
@@ -551,13 +706,9 @@ export class TabHistoryPopover {
           }
           this.hide();
         },
-        decorateRow: ({ row }) => {
-          row.addEventListener('mouseenter', () => {
-            row.style.background = 'rgba(255,255,255,0.06)';
-          }, { passive: true });
-          row.addEventListener('mouseleave', () => {
-            row.style.background = 'rgba(0,0,0,0)';
-          }, { passive: true });
+        decorateRow: ({ row, item, parts }) => {
+          // Use three-line layout like newtab
+          renderThreeLineUrlListingEntry({ item, parts });
         }
       });
     };

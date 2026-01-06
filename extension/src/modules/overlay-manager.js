@@ -874,6 +874,8 @@ export class OverlayManager {
         this._currentStyledElement.style.removeProperty('--keypilot-focus-ring-width');
         this._currentStyledElement.style.removeProperty('--keypilot-focus-shadow-color');
         this._currentStyledElement.style.removeProperty('--keypilot-focus-ring-bg-color');
+        // Remove the filter when mouse moves out
+        this._currentStyledElement.style.removeProperty('filter');
       } catch { /* ignore */ }
       this._currentStyledElement = null;
     }
