@@ -192,14 +192,25 @@ export class ActivationHandler {
 
     const primary = pointTarget || el || activator;
     this.dispatchClickSequence(primary, clientX, clientY);
-    if (activator && activator !== primary) this.dispatchClickSequence(activator, clientX, clientY);
-
-    // As a final fallback, try programmatic click (some controls only wire to native click()).
+    // If `primary` is already inside the clickable activator (e.g. a <span> inside a <button>),
+    // the event will bubble to the activator. Dispatching again on the activator would double-click.
+    // Exception: <summary> needs the event target to be the <summary> itself to toggle <details>.
     try {
-      if (activator && typeof activator.click === 'function') {
-        activator.click();
+      const isSummary = (activator && activator.tagName === 'SUMMARY') || false;
+      const primaryNode = /** @type {any} */ (primary);
+      const activatorEl = /** @type {any} */ (activator);
+      const activatorContainsPrimary =
+        !!(!isSummary &&
+          activatorEl &&
+          primaryNode &&
+          typeof activatorEl.contains === 'function' &&
+          activatorEl.contains(primaryNode));
+      if (activator && activator !== primary && !activatorContainsPrimary) {
+        this.dispatchClickSequence(activator, clientX, clientY);
       }
-    } catch { }
+      // No extra `activator.click()` fallback here; it causes double activation for normal controls
+      // because `dispatchClickSequence()` already emits a click.
+    } catch { /* ignore */ }
 
     return true;
   }

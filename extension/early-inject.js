@@ -1228,6 +1228,12 @@
         }
       ],
       "onEnter": []
+    },
+    {
+      "id": "completion",
+      "title": "Tutorial complete",
+      "tasks": [],
+      "onEnter": []
     }
   ]
 };

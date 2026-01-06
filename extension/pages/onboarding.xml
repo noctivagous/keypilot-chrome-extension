@@ -65,6 +65,14 @@
       <when type="action" action="tabRight" />
     </task>
   </slide>
+  
+  <slide id="completion" title="Tutorial complete">
+    <body>
+You finished the tutorial and are ready to use KeyPilot.
+
+Tip: Press Alt + / any time to re-open this walkthrough.
+    </body>
+  </slide>
 </onboarding>
 
 

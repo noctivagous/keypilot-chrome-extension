@@ -114,6 +114,9 @@ function parseOnboardingXml(xmlText) {
     const title = slideEl.getAttribute('title') || '';
     if (!id) continue;
 
+    const bodyEl = slideEl.querySelector(':scope > body');
+    const bodyText = bodyEl ? String(bodyEl.textContent || '').trim() : '';
+
     const onEnter = [];
     const onEnterEls = slideEl.querySelectorAll(':scope > onEnter');
     for (const oe of onEnterEls) {
@@ -149,7 +152,7 @@ function parseOnboardingXml(xmlText) {
       tasks.push({ id: taskId, label, when });
     }
 
-    slides.push({ id, title, tasks, onEnter });
+    slides.push({ id, title, tasks, onEnter, bodyText });
   }
 
   return { slides };
@@ -206,6 +209,13 @@ export class OnboardingManager {
     this._lastRenderedSlideIndex = null;
     this._lastAction = null;
     this._isTransitioning = false;
+
+    // Cross-tab progress sync + transient recovery when tab becomes visible.
+    this._storageListenerBound = false;
+    this._storageChangeTimer = null;
+    this._onStorageChanged = this._onStorageChanged.bind(this);
+    this._onVisibilityChange = this._onVisibilityChange.bind(this);
+    this._visibilityBound = false;
 
     // Cached "enabled" state to avoid startup races.
     // IMPORTANT: treat unknown (null) as disabled so we never show onboarding when KeyPilot is OFF.
@@ -407,6 +417,19 @@ export class OnboardingManager {
       }
     }
 
+    // Keep onboarding state consistent across tabs/windows.
+    this._bindStorageSync();
+
+    // When the document becomes visible (user tab-switches), apply transient recovery.
+    if (!this._visibilityBound) {
+      this._visibilityBound = true;
+      try {
+        document.addEventListener('visibilitychange', this._onVisibilityChange, true);
+      } catch {
+        // ignore
+      }
+    }
+
     // Wire event listeners first (so actions right after load count).
     try {
       document.addEventListener('keypilot:action', this._onActionEvent, true);
@@ -461,7 +484,9 @@ export class OnboardingManager {
       }
 
       // Only handle actions onboarding cares about currently.
-      if (action !== 'back') {
+      // These are the actions that commonly happen concurrently with navigation/tab switching.
+      const handled = new Set(['back', 'newTab', 'tabLeft', 'tabRight']);
+      if (!handled.has(action)) {
         await storageRemoveTransient();
         return;
       }
@@ -474,7 +499,7 @@ export class OnboardingManager {
 
       for (const task of slide.tasks || []) {
         if (!task || !task.id || completed.has(task.id)) continue;
-        if (this._taskMatches(task, { type: 'action', action: 'back', detail: {} })) {
+        if (this._taskMatches(task, { type: 'action', action, detail: {} })) {
           completed.add(task.id);
           changed = true;
         }
@@ -486,6 +511,61 @@ export class OnboardingManager {
       if (!changed) return;
       this.progress.completedTaskIds = Array.from(completed);
       await this._persist();
+
+      // IMPORTANT: If a slide becomes complete via transient recovery (common for tab switches),
+      // we still need to auto-advance just like we do in the live `keypilot:action` handler.
+      const slideComplete = this._isSlideComplete(slide, completed);
+      if (slideComplete) {
+        this._handleSlideCompleted(slide, { cause: `transient:${action}`, completedTaskIds: Array.from(completed) });
+        await this._advanceSlide({ cause: `transient:${action}` });
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  _bindStorageSync() {
+    if (this._storageListenerBound) return;
+    this._storageListenerBound = true;
+    try {
+      chrome.storage.onChanged.addListener(this._onStorageChanged);
+    } catch {
+      // ignore
+    }
+  }
+
+  _onStorageChanged(changes, areaName) {
+    try {
+      if (!changes || typeof changes !== 'object') return;
+      if (!areaName || (areaName !== 'sync' && areaName !== 'local' && areaName !== 'session')) return;
+      const relevant =
+        Object.prototype.hasOwnProperty.call(changes, STORAGE_KEYS.ACTIVE) ||
+        Object.prototype.hasOwnProperty.call(changes, STORAGE_KEYS.PROGRESS);
+      if (!relevant) return;
+
+      // Debounce: multiple writes can come in quick bursts.
+      try { if (this._storageChangeTimer) clearTimeout(this._storageChangeTimer); } catch { /* ignore */ }
+      this._storageChangeTimer = setTimeout(() => {
+        this._loadProgress()
+          .then(() => {
+            withViewTransition(() => this._render({ reason: 'storageChanged' }));
+          })
+          .catch(() => {});
+      }, 50);
+    } catch {
+      // ignore
+    }
+  }
+
+  _onVisibilityChange() {
+    try {
+      if (document.visibilityState !== 'visible') return;
+      if (!this.active || this.progress.completed) return;
+      this._applyTransientActionHeuristicIfNeeded()
+        .then(() => {
+          withViewTransition(() => this._render({ reason: 'visibility' }));
+        })
+        .catch(() => {});
     } catch {
       // ignore
     }
@@ -520,6 +600,13 @@ export class OnboardingManager {
       if (!changed) return;
       this.progress.completedTaskIds = Array.from(completed);
       await this._persist();
+
+      // Mirror auto-advance behavior for BFCache/back-forward recovery.
+      const slideComplete = this._isSlideComplete(slide, completed);
+      if (slideComplete) {
+        this._handleSlideCompleted(slide, { cause: 'back_forward', completedTaskIds: Array.from(completed) });
+        await this._advanceSlide({ cause: 'back_forward' });
+      }
     } catch {
       // ignore
     }
@@ -641,6 +728,12 @@ export class OnboardingManager {
 
     const fromSlideId = this._lastRenderedSlideId;
 
+    // If an overlay was shown on the prior slide (e.g. via onEnter), ensure it doesn't
+    // persist into the next slide when the user manually navigates.
+    if (transition && transition.type === 'slide' && fromSlideId !== null && String(fromSlideId) !== String(slide.id)) {
+      try { this.panel.hideOverlay(); } catch { /* ignore */ }
+    }
+
     if (transition && transition.type === 'slide') {
       this._emit('slideTransitionStart', {
         fromSlideId,
@@ -652,6 +745,7 @@ export class OnboardingManager {
 
     const renderPromise = this.panel.render({
       title: slide.title || 'Welcome to KeyPilot',
+      bodyText: slide.bodyText || '',
       slideId: slide.id,
       slideIndex: index,
       slideCount: total,
@@ -724,6 +818,7 @@ export class OnboardingManager {
       this._persist(); // best-effort; don't block UI
       this._runOnEnter(slide);
     }
+
   }
 
   _runOnEnter(slide) {

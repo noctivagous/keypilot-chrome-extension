@@ -1768,14 +1768,26 @@ export class KeyPilot extends EventManager {
 
   handleTabLeftKey() {
     // Switch to the tab to the left
-    chrome.runtime.sendMessage({ type: 'KP_TAB_LEFT' });
+    // Emit + record transient action BEFORE switching tabs so onboarding can persist/recover reliably.
     this.emitAction('tabLeft');
+    try {
+      if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+        chrome.runtime.sendMessage({ type: 'KP_TRANSIENT_ACTION', action: 'tabLeft', timestamp: Date.now() }).catch(() => {});
+      }
+    } catch { /* ignore */ }
+    chrome.runtime.sendMessage({ type: 'KP_TAB_LEFT' });
   }
 
   handleTabRightKey() {
     // Switch to the tab to the right
-    chrome.runtime.sendMessage({ type: 'KP_TAB_RIGHT' });
+    // Emit + record transient action BEFORE switching tabs so onboarding can persist/recover reliably.
     this.emitAction('tabRight');
+    try {
+      if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+        chrome.runtime.sendMessage({ type: 'KP_TRANSIENT_ACTION', action: 'tabRight', timestamp: Date.now() }).catch(() => {});
+      }
+    } catch { /* ignore */ }
+    chrome.runtime.sendMessage({ type: 'KP_TAB_RIGHT' });
   }
 
   handleDeleteKey() {
@@ -4326,10 +4338,17 @@ export class KeyPilot extends EventManager {
     console.log('[KeyPilot] New tab key pressed!');
     
     try {
+      // Emit + record transient action BEFORE opening the new tab so onboarding can persist/recover reliably.
+      this.emitAction('newTab');
+      try {
+        if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+          chrome.runtime.sendMessage({ type: 'KP_TRANSIENT_ACTION', action: 'newTab', timestamp: Date.now() }).catch(() => {});
+        }
+      } catch { /* ignore */ }
+
       // Send message to background script to open a new tab
       chrome.runtime.sendMessage({ type: 'KP_NEW_TAB' });
       this.showFlashNotification('Opening New Tab...', COLORS.NOTIFICATION_INFO);
-      this.emitAction('newTab');
     } catch (error) {
       console.error('[KeyPilot] Failed to open new tab:', error);
       this.showFlashNotification('Failed to Open New Tab', COLORS.NOTIFICATION_ERROR);

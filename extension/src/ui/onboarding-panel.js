@@ -87,6 +87,7 @@ export class OnboardingPanel {
    *
    * @param {Object} params
    * @param {string} params.title
+   * @param {string} [params.bodyText]
    * @param {string} params.slideId
    * @param {number} params.slideIndex
    * @param {number} params.slideCount
@@ -95,11 +96,12 @@ export class OnboardingPanel {
    * @param {{type:'slide', dir:1|-1}|null} [params.transition]
    * @returns {Promise<void>}
    */
-  async render({ title, slideId, slideIndex, slideCount, tasks, completedTaskIds, transition = null }) {
+  async render({ title, bodyText = '', slideId, slideIndex, slideCount, tasks, completedTaskIds, transition = null }) {
     if (!this.root || this.root.hidden) return;
 
     try {
       const targetSurface = this.slideSurface || this.body;
+      const bodyTextStr = String(bodyText || '').trim();
 
       const updateDom = () => {
         if (this.titleEl) this.titleEl.textContent = String(title || 'Welcome to KeyPilot');
@@ -113,6 +115,7 @@ export class OnboardingPanel {
         const completedSet = completedTaskIds instanceof Set ? completedTaskIds : new Set();
         const normalizedTasks = (tasks || []).filter((t) => t && t.id);
         const existingRows = targetSurface.querySelectorAll('[data-kp-onboarding-task-id]');
+        const existingBody = targetSurface.querySelector('[data-kp-onboarding-body-text="true"]');
 
         // If we adopted an early-inject shell that already rendered rows, update in-place to avoid a visible blink.
         const canUpdateInPlace =
@@ -179,6 +182,20 @@ export class OnboardingPanel {
           }
         };
 
+        // Update / remove body text in-place (independent of task list update mode).
+        try {
+          if (bodyTextStr) {
+            if (existingBody) {
+              existingBody.innerHTML = formatKeyboardKeys(bodyTextStr).replace(/\n/g, '<br/>');
+              existingBody.style.display = 'block';
+              existingBody.style.marginBottom = normalizedTasks.length ? '12px' : '0px';
+            }
+          } else if (existingBody) {
+            existingBody.style.display = 'none';
+            existingBody.textContent = '';
+          }
+        } catch { /* ignore */ }
+
         if (canUpdateInPlace) {
           normalizedTasks.forEach((task, i) => {
             const done = completedSet.has(task.id);
@@ -188,6 +205,23 @@ export class OnboardingPanel {
         }
 
         clearElement(targetSurface);
+
+        // Optional slide body text (plain message above tasks).
+        try {
+          if (bodyTextStr) {
+            const body = document.createElement('div');
+            body.setAttribute('data-kp-onboarding-body-text', 'true');
+            body.innerHTML = formatKeyboardKeys(bodyTextStr).replace(/\n/g, '<br/>');
+            Object.assign(body.style, {
+              fontSize: '13px',
+              lineHeight: '1.45',
+              color: 'rgba(255,255,255,0.90)',
+              marginBottom: normalizedTasks.length ? '12px' : '0px',
+              opacity: '0.95'
+            });
+            targetSurface.appendChild(body);
+          }
+        } catch { /* ignore */ }
 
         const list = document.createElement('div');
         Object.assign(list.style, {
@@ -703,8 +737,15 @@ export class OnboardingPanel {
     try {
       if (this._overlayEl && this._overlayEl.isConnected) return;
 
+      // Overlay should cover ONLY the scrollable body area (between header and footer).
+      const bodyHost =
+        rootEl?.querySelector?.('[data-kp-onboarding-body="true"]') ||
+        rootEl?.querySelector?.(':scope > div[data-kp-onboarding-body]') ||
+        null;
+      const host = bodyHost || rootEl;
+
       // If existing overlay is present, adopt it.
-      const existing = rootEl.querySelector('[data-kp-onboarding-overlay="true"]');
+      const existing = host.querySelector('[data-kp-onboarding-overlay="true"]');
       if (existing) {
         this._overlayEl = existing;
         this._overlayTitleEl = existing.querySelector('[data-kp-onboarding-overlay-title="true"]');
@@ -818,7 +859,7 @@ export class OnboardingPanel {
       card.appendChild(btnRow);
       overlay.appendChild(card);
 
-      rootEl.appendChild(overlay);
+      host.appendChild(overlay);
 
       this._overlayEl = overlay;
       this._overlayTitleEl = title;
