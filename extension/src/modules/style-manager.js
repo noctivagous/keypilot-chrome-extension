@@ -288,6 +288,40 @@ export class StyleManager {
         padding-left: 5pt !important;
       }
 
+      /* Text inputs: tint background instead of drawing hover/focus frames.
+         - Hover: lighter background
+         - Focused (text mode): darker background
+         Also apply a consistent text treatment: dark gray text + 1px white shadow (no blur). */
+      .${CSS_CLASSES.TEXT_HOVER_INPUT},
+      .${CSS_CLASSES.TEXT_HOVER_INPUT_PARENT},
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT},
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT} {
+        color: var(--kpv2-text-input-color, rgba(55, 55, 55, 0.96)) !important;
+        text-shadow: var(--kpv2-text-input-text-shadow, 1px 1px 0 rgba(255, 255, 255, 0.95)) !important;
+      }
+
+      .${CSS_CLASSES.TEXT_HOVER_INPUT},
+      .${CSS_CLASSES.TEXT_HOVER_INPUT_PARENT} {
+        background-color: var(--kpv2-text-input-hover-bg, rgba(255, 140, 0, 0.18)) !important;
+      }
+
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT},
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT} {
+        background-color: var(--kpv2-text-input-focus-bg, rgba(255, 140, 0, 0.42)) !important;
+      }
+
+      .${CSS_CLASSES.TEXT_HOVER_INPUT},
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT} {
+        caret-color: var(--kpv2-text-input-color, rgba(55, 55, 55, 0.96)) !important;
+      }
+
+      /* Keep placeholders readable when we force text color. */
+      .${CSS_CLASSES.TEXT_HOVER_INPUT}::placeholder,
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT}::placeholder {
+        color: var(--kpv2-text-input-placeholder-color, rgba(55, 55, 55, 0.62)) !important;
+        text-shadow: var(--kpv2-text-input-text-shadow, 1px 1px 0 rgba(255, 255, 255, 0.85)) !important;
+      }
+
       /* Element styling for DOM hover mode */
       .keypilot-focus-element {
         box-shadow: 0 0 0 var(--keypilot-focus-ring-width, 3px) var(--keypilot-focus-ring-color, #2196f3) !important;
@@ -345,6 +379,36 @@ export class StyleManager {
       [contenteditable="true"]:focus,
       [contenteditable=""]:focus {
         padding-left: 5pt !important;
+      }
+
+      /* Text inputs: same tint + text treatment inside shadow DOM */
+      .${CSS_CLASSES.TEXT_HOVER_INPUT},
+      .${CSS_CLASSES.TEXT_HOVER_INPUT_PARENT},
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT},
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT} {
+        color: var(--kpv2-text-input-color, rgba(55, 55, 55, 0.96)) !important;
+        text-shadow: var(--kpv2-text-input-text-shadow, 1px 1px 0 rgba(255, 255, 255, 0.95)) !important;
+      }
+
+      .${CSS_CLASSES.TEXT_HOVER_INPUT},
+      .${CSS_CLASSES.TEXT_HOVER_INPUT_PARENT} {
+        background-color: var(--kpv2-text-input-hover-bg, rgba(255, 140, 0, 0.18)) !important;
+      }
+
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT},
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT} {
+        background-color: var(--kpv2-text-input-focus-bg, rgba(255, 140, 0, 0.42)) !important;
+      }
+
+      .${CSS_CLASSES.TEXT_HOVER_INPUT},
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT} {
+        caret-color: var(--kpv2-text-input-color, rgba(55, 55, 55, 0.96)) !important;
+      }
+
+      .${CSS_CLASSES.TEXT_HOVER_INPUT}::placeholder,
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT}::placeholder {
+        color: var(--kpv2-text-input-placeholder-color, rgba(55, 55, 55, 0.62)) !important;
+        text-shadow: var(--kpv2-text-input-text-shadow, 1px 1px 0 rgba(255, 255, 255, 0.85)) !important;
       }
 
       /* Element styling for DOM hover mode in shadow DOM */
@@ -575,7 +639,11 @@ export class StyleManager {
       CSS_CLASSES.ACTIVE_TEXT_INPUT_FRAME,
       CSS_CLASSES.ESC_EXIT_LABEL,
       CSS_CLASSES.HIGHLIGHT_OVERLAY,
-      CSS_CLASSES.HIGHLIGHT_SELECTION
+      CSS_CLASSES.HIGHLIGHT_SELECTION,
+      CSS_CLASSES.TEXT_FOCUS_INPUT,
+      CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT,
+      CSS_CLASSES.TEXT_HOVER_INPUT,
+      CSS_CLASSES.TEXT_HOVER_INPUT_PARENT
     ];
 
     // Remove classes from main document

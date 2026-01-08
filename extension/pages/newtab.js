@@ -667,7 +667,10 @@ function initEnabledSwitch() {
   const setUi = (enabled) => {
     const on = Boolean(enabled);
     toggle.checked = on;
-    if (stateText) stateText.textContent = on ? 'ON' : 'OFF';
+    if (stateText) {
+      stateText.textContent = on ? 'ON' : 'OFF';
+      stateText.setAttribute('data-state', on ? 'on' : 'off');
+    }
   };
 
   // Initial state.

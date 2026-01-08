@@ -70,6 +70,14 @@ export class OverlayManager {
     // When DOM-hover listener mode is enabled, render non-text focus rectangles in blue so it's
     // visually obvious we're using browser-native hover targeting (vs RBush-driven hit-testing).
     this._useDomHoverFocusColors = false;
+
+    // Text focus styling (we style the focused input + nearby wrapper parents directly).
+    this._textFocusCurrentElement = null;
+    this._textFocusStyledElements = new Set();
+
+    // Text input hover styling (we tint hovered inputs instead of drawing orange frames).
+    this._textHoverCurrentElement = null;
+    this._textHoverStyledElements = new Set();
     
     this.setupOverlayObserver();
     
@@ -553,6 +561,153 @@ export class OverlayManager {
     if (this.escExitLabelHover) this.escExitLabelHover.style.display = 'none';
   }
 
+  _clearTextFocusElementStyling() {
+    if (!this._textFocusStyledElements || this._textFocusStyledElements.size === 0) {
+      this._textFocusCurrentElement = null;
+      return;
+    }
+    try {
+      for (const el of this._textFocusStyledElements) {
+        if (!el || el.nodeType !== 1) continue;
+        try {
+          el.classList.remove(CSS_CLASSES.TEXT_FOCUS_INPUT);
+          el.classList.remove(CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT);
+        } catch { /* ignore */ }
+      }
+    } finally {
+      this._textFocusStyledElements.clear();
+      this._textFocusCurrentElement = null;
+    }
+  }
+
+  _getNearbyInputWrappers(inputEl) {
+    const parents = [];
+    if (!inputEl || inputEl.nodeType !== 1) return parents;
+
+    // Only attempt wrapper styling when we have a meaningful rect.
+    const inputRect = this.getBestRect(inputEl);
+    if (!inputRect || inputRect.width <= 0 || inputRect.height <= 0) return parents;
+
+    const maxDepth = 4;
+    const maxPad = 28; // px of allowed expansion around the input (rounded containers, icons, padding)
+    const maxAreaMultiple = 4.0; // avoid tinting large layout containers
+
+    let p = inputEl.parentElement;
+    let depth = 0;
+    while (p && depth++ < maxDepth) {
+      // Never tint the whole page.
+      if (p === document.body || p === document.documentElement) break;
+
+      let r;
+      try {
+        r = p.getBoundingClientRect();
+      } catch {
+        break;
+      }
+
+      if (!r || r.width <= 0 || r.height <= 0) {
+        p = p.parentElement;
+        continue;
+      }
+
+      const dx = Math.max(Math.abs(r.left - inputRect.left), Math.abs(r.right - inputRect.right));
+      const dy = Math.max(Math.abs(r.top - inputRect.top), Math.abs(r.bottom - inputRect.bottom));
+
+      const inputArea = inputRect.width * inputRect.height;
+      const area = r.width * r.height;
+
+      const closeEnough = dx <= maxPad && dy <= maxPad;
+      const notTooBig =
+        area <= inputArea * maxAreaMultiple &&
+        r.width <= inputRect.width + maxPad * 2 &&
+        r.height <= inputRect.height + maxPad * 2;
+
+      if (!closeEnough || !notTooBig) break;
+
+      parents.push(p);
+      p = p.parentElement;
+    }
+
+    return parents;
+  }
+
+  _applyTextFocusElementStyling(inputEl) {
+    if (!inputEl || inputEl.nodeType !== 1) {
+      this._clearTextFocusElementStyling();
+      return;
+    }
+
+    // Avoid thrashing the DOM on RAF-driven overlay refreshes.
+    if (this._textFocusCurrentElement === inputEl && this._textFocusStyledElements.size > 0) {
+      try { inputEl.classList.add(CSS_CLASSES.TEXT_FOCUS_INPUT); } catch { /* ignore */ }
+      return;
+    }
+
+    this._clearTextFocusElementStyling();
+    this._textFocusCurrentElement = inputEl;
+
+    try {
+      inputEl.classList.add(CSS_CLASSES.TEXT_FOCUS_INPUT);
+      this._textFocusStyledElements.add(inputEl);
+    } catch { /* ignore */ }
+
+    const parents = this._getNearbyInputWrappers(inputEl);
+    for (const p of parents) {
+      try {
+        p.classList.add(CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT);
+        this._textFocusStyledElements.add(p);
+      } catch { /* ignore */ }
+    }
+  }
+
+  _clearTextHoverElementStyling() {
+    if (!this._textHoverStyledElements || this._textHoverStyledElements.size === 0) {
+      this._textHoverCurrentElement = null;
+      return;
+    }
+    try {
+      for (const el of this._textHoverStyledElements) {
+        if (!el || el.nodeType !== 1) continue;
+        try {
+          el.classList.remove(CSS_CLASSES.TEXT_HOVER_INPUT);
+          el.classList.remove(CSS_CLASSES.TEXT_HOVER_INPUT_PARENT);
+        } catch { /* ignore */ }
+      }
+    } finally {
+      this._textHoverStyledElements.clear();
+      this._textHoverCurrentElement = null;
+    }
+  }
+
+  _applyTextHoverElementStyling(inputEl) {
+    if (!inputEl || inputEl.nodeType !== 1) {
+      this._clearTextHoverElementStyling();
+      return;
+    }
+
+    // Avoid thrashing while mouse is steady.
+    if (this._textHoverCurrentElement === inputEl && this._textHoverStyledElements.size > 0) {
+      try { inputEl.classList.add(CSS_CLASSES.TEXT_HOVER_INPUT); } catch { /* ignore */ }
+      return;
+    }
+
+    this._clearTextHoverElementStyling();
+    this._textHoverCurrentElement = inputEl;
+
+    try {
+      inputEl.classList.add(CSS_CLASSES.TEXT_HOVER_INPUT);
+      this._textHoverStyledElements.add(inputEl);
+    } catch { /* ignore */ }
+
+    const parents = this._getNearbyInputWrappers(inputEl);
+    for (const p of parents) {
+      try {
+        p.classList.add(CSS_CLASSES.TEXT_HOVER_INPUT_PARENT);
+        this._textHoverStyledElements.add(p);
+      } catch { /* ignore */ }
+    }
+  }
+
   setupOverlayObserver() {
     // Observer to optimize overlay rendering when out of view
     this.overlayObserver = new IntersectionObserver(
@@ -622,20 +777,23 @@ export class OverlayManager {
     } else {
       this.hideFocusOverlay();
     }
-    
-    // Show focused text overlay when in text focus mode
-    console.log('[KeyPilot] Text mode overlay check:', { mode, hasFocusedTextElement: !!focusedTextElement });
-    if (mode === 'text_focus' && focusedTextElement) {
-      console.log('[KeyPilot] Creating text mode overlays for:', focusedTextElement.tagName);
-      this.updateFocusedTextOverlay(focusedTextElement);
-      this.updateActiveTextInputFrame(focusedTextElement);
-    } else {
-      if (mode === 'text_focus' && !focusedTextElement) {
-        console.log('[KeyPilot] Text mode active but no focused text element');
-      }
-      this.hideFocusedTextOverlay();
-      this.hideActiveTextInputFrame();
+
+    // If there's no focus target at all, ensure we remove any hover tint.
+    if (!focusEl) {
+      this._clearTextHoverElementStyling();
     }
+    
+    // Text focus mode styling: tint the actual focused input (and nearby wrapper parents)
+    // instead of drawing an orange frame overlay.
+    if (mode === 'text_focus' && focusedTextElement) {
+      this._applyTextFocusElementStyling(focusedTextElement);
+    } else {
+      this._clearTextFocusElementStyling();
+    }
+
+    // Always suppress the legacy orange text-focus frame overlays (we now style the element itself).
+    this.hideFocusedTextOverlay();
+    this.hideActiveTextInputFrame();
     
     // Show viewport modal frame when in text focus mode (controlled by flag)
     this.updateViewportModalFrame(mode === 'text_focus' && FEATURE_FLAGS.SHOW_WINDOW_OUTLINE);
@@ -660,6 +818,21 @@ export class OverlayManager {
 
   // Unified interface that switches between rendering modes
   updateFocusOverlay(element, mode = MODES.NONE, rectOverride = null) {
+    // Text inputs should NOT get a ring/frame on hover. Instead, tint background.
+    // This applies regardless of rendering mode (canvas/dom/css-props) and also in DOM-hover styling mode.
+    try {
+      const isTextInput = element && element.matches && element.matches(SELECTORS.FOCUSABLE_TEXT);
+      if (isTextInput) {
+        // Clear any previous non-text focus visuals (rectangles / rings).
+        try { this.hideFocusOverlay(); } catch { /* ignore */ }
+        this._applyTextHoverElementStyling(element);
+        return;
+      }
+    } catch { /* ignore */ }
+
+    // Non-text elements: ensure we remove any lingering hover tint.
+    this._clearTextHoverElementStyling();
+
     // When DOM hover mode is enabled, use element styling instead of overlay elements.
     // (No overlay rectangles in this mode.)
     if (this._useDomHoverFocusColors) {

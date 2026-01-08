@@ -33,6 +33,10 @@ export const CSS_CLASSES = {
   VIEWPORT_MODAL_FRAME: 'kpv2-viewport-modal-frame',
   ACTIVE_TEXT_INPUT_FRAME: 'kpv2-active-text-input-frame',
   ESC_EXIT_LABEL: 'kpv2-esc-exit-label',
+  TEXT_FOCUS_INPUT: 'kpv2-text-focus-input',
+  TEXT_FOCUS_INPUT_PARENT: 'kpv2-text-focus-input-parent',
+  TEXT_HOVER_INPUT: 'kpv2-text-hover-input',
+  TEXT_HOVER_INPUT_PARENT: 'kpv2-text-hover-input-parent',
 
   // Omnibox overlay UI
   OMNIBOX_BACKDROP: 'kpv2-omnibox-backdrop',
