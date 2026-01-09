@@ -28,6 +28,7 @@ for common web interactions, eliminating the need for mouse navigation.
 | `G` | Open Link in New Tab (Background, like middle click) |
 | `J` | Open Tab History (Branch-Retaining) |
 | `L` | Open Omnibox (Address Bar Overlay) |
+| `P` | Open Link Preview in Popover |
 | `S` | Go Back (History) |
 | `'` | Open KeyPilot Settings |
 | `1` | Go to Site Root |
@@ -59,6 +60,7 @@ for common web interactions, eliminating the need for mouse navigation.
 | `Esc` | Exit Focus |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
 
 
 

@@ -2945,6 +2945,413 @@ export class OverlayManager {
     return this.popoverContainer !== null;
   }
 
+  /**
+   * Show a preview popover near the cursor (picture-in-picture style)
+   * @param {string} url - URL to load in iframe
+   * @param {Object} opts - Options including mouseX, mouseY for positioning
+   */
+  showPreviewPopover(url, opts = {}) {
+    // Remove existing popover if any
+    this.hidePopover();
+
+    const mouseX = opts.mouseX ?? window.innerWidth / 2;
+    const mouseY = opts.mouseY ?? window.innerHeight / 2;
+    const popoverWidth = 600;
+    const popoverHeight = 400;
+    const arrowSize = 10; // Size of triangle arrow
+    const margin = 20; // Margin from viewport edges
+
+    // Calculate placement (top or bottom of cursor)
+    const spaceAbove = mouseY - margin;
+    const spaceBelow = window.innerHeight - mouseY - margin;
+    const placement = spaceBelow >= popoverHeight + arrowSize ? 'bottom' : 'top';
+
+    // Calculate position
+    let top, left;
+    if (placement === 'bottom') {
+      top = mouseY + 20; // 20px below cursor
+    } else {
+      top = mouseY - popoverHeight - 20; // 20px above cursor
+    }
+
+    // Center horizontally under cursor, but clamp to viewport
+    left = mouseX - popoverWidth / 2;
+    left = Math.max(margin, Math.min(left, window.innerWidth - popoverWidth - margin));
+
+    // Calculate arrow position relative to popover
+    const arrowLeft = Math.max(20, Math.min(mouseX - left, popoverWidth - 20));
+
+    const titleText = (opts && typeof opts.title === 'string' && opts.title.trim()) ? opts.title.trim() : String(url || '');
+    const hintKeyLabel = (opts && typeof opts.hintKeyLabel === 'string' && opts.hintKeyLabel.trim()) ? opts.hintKeyLabel.trim() : 'P';
+    const closeKeys = Array.isArray(opts?.closeKeys) && opts.closeKeys.length
+      ? opts.closeKeys.map(String)
+      : ['Escape', 'p', 'P', 'e', 'E'];
+
+    // Centralized close request
+    const requestClosePopover = () => {
+      try {
+        if (window.__KeyPilotInstance && typeof window.__KeyPilotInstance.handleClosePopover === 'function') {
+          window.__KeyPilotInstance.handleClosePopover();
+          return;
+        }
+      } catch (_e) {
+        // Ignore and fall back to direct hide
+      }
+      this.hidePopover();
+    };
+
+    const ensureTopMouseTracking = () => {
+      if (this._popoverMouseTrackerInstalled) return;
+      this._popoverMouseTrackerInstalled = true;
+      const update = (e) => {
+        try {
+          if (!e) return;
+          if (typeof e.clientX === 'number') this._popoverLastMouse.x = e.clientX;
+          if (typeof e.clientY === 'number') this._popoverLastMouse.y = e.clientY;
+        } catch {
+          // ignore
+        }
+      };
+      try { document.addEventListener('mousemove', update, true); } catch { /* ignore */ }
+      try { document.addEventListener('pointermove', update, true); } catch { /* ignore */ }
+    };
+
+    const clickCloseIfHovered = () => {
+      try {
+        const btn = this.popoverCloseButton;
+        if (!btn) return false;
+        const x = this._popoverLastMouse.x;
+        const y = this._popoverLastMouse.y;
+        if (typeof x !== 'number' || typeof y !== 'number') return false;
+        const el = document.elementFromPoint(x, y);
+        if (!el) return false;
+        if (el === btn || btn.contains(el)) {
+          try { btn.click(); } catch { /* ignore */ }
+          return true;
+        }
+        return false;
+      } catch {
+        return false;
+      }
+    };
+
+    // Create popover container with triangle arrow
+    this.popoverContainer = this.createElement('div', {
+      className: 'kpv2-preview-popover-container',
+      tabindex: '-1',
+      role: 'dialog',
+      'aria-modal': 'true',
+      'data-placement': placement,
+      style: `
+        position: fixed;
+        top: ${top}px;
+        left: ${left}px;
+        width: ${popoverWidth}px;
+        height: ${popoverHeight}px;
+        background: linear-gradient(rgb(18, 18, 18) 0%, rgb(11, 11, 11) 100%);
+        border-radius: 8px;
+        border: 1px solid rgb(43, 43, 43);
+        box-shadow: rgba(0, 0, 0, 0.65) 0px 8px 24px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        --arrow-left: ${arrowLeft}px;
+        z-index: ${Z_INDEX.POPUP_PANEL_BASE};
+      `
+    });
+
+    // Inject triangle arrow CSS
+    const arrowStyle = this.createElement('style');
+    arrowStyle.textContent = `
+      .kpv2-preview-popover-container::before {
+        content: "";
+        position: absolute;
+        width: 0;
+        height: 0;
+        left: var(--arrow-left, 50%);
+        transform: translateX(-50%);
+        border: ${arrowSize}px solid transparent;
+      }
+      .kpv2-preview-popover-container::after {
+        content: "";
+        position: absolute;
+        width: 0;
+        height: 0;
+        left: var(--arrow-left, 50%);
+        transform: translateX(-50%);
+        border: ${arrowSize - 1}px solid transparent;
+      }
+      .kpv2-preview-popover-container[data-placement="bottom"]::before {
+        top: ${-arrowSize * 2}px;
+        border-bottom-color: rgb(43, 43, 43);
+      }
+      .kpv2-preview-popover-container[data-placement="bottom"]::after {
+        top: ${-arrowSize * 2 + 1}px;
+        border-bottom-color: rgb(18, 18, 18);
+      }
+      .kpv2-preview-popover-container[data-placement="top"]::before {
+        bottom: ${-arrowSize * 2}px;
+        border-top-color: rgb(43, 43, 43);
+      }
+      .kpv2-preview-popover-container[data-placement="top"]::after {
+        bottom: ${-arrowSize * 2 + 1}px;
+        border-top-color: rgb(11, 11, 11);
+      }
+    `;
+    document.head.appendChild(arrowStyle);
+
+    // Store iframe reference for focus management
+    let iframeRef = null;
+    this.popoverBridgeReady = false;
+
+    // Create header with close button
+    const header = this.createElement('div', {
+      style: `
+        padding: 8px 12px;
+        background: linear-gradient(180deg, #232323 0%, #151515 100%);
+        border-bottom: 1px solid #2b2b2b;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+      `
+    });
+
+    const title = this.createElement('div', {
+      style: `
+        font-size: 12px;
+        font-weight: 500;
+        color: #e8e8e8;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex: 1;
+        margin-right: 8px;
+      `
+    });
+    title.textContent = titleText;
+    header.appendChild(title);
+
+    const closeButton = this.createElement('button', {
+      style: `
+        background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
+        border: 1px solid #3a3a3a;
+        font-size: 16px;
+        cursor: pointer;
+        color: #e8e8e8;
+        padding: 2px 6px;
+        line-height: 1;
+        border-radius: 4px;
+        flex-shrink: 0;
+      `
+    });
+    closeButton.textContent = '×';
+    closeButton.title = 'Close (Esc)';
+    closeButton.onclick = () => requestClosePopover();
+    header.appendChild(closeButton);
+    this.popoverCloseButton = closeButton;
+    ensureTopMouseTracking();
+
+    // Create error message container (initially hidden)
+    const errorContainer = this.createElement('div', {
+      className: 'kpv2-popover-error',
+      style: `
+        flex: 1;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        text-align: center;
+        background: #f9f9f9;
+      `
+    });
+
+    const errorIcon = this.createElement('div', {
+      style: `
+        font-size: 32px;
+        margin-bottom: 12px;
+        color: #999;
+      `
+    });
+    errorIcon.textContent = '🚫';
+    errorContainer.appendChild(errorIcon);
+
+    const errorTitle = this.createElement('div', {
+      style: `
+        font-size: 14px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 6px;
+      `
+    });
+    errorTitle.textContent = 'Cannot Display Page';
+    errorContainer.appendChild(errorTitle);
+
+    const errorMessage = this.createElement('div', {
+      style: `
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 16px;
+        max-width: 300px;
+      `
+    });
+    errorMessage.textContent = 'This website prevents embedding in iframes.';
+    errorContainer.appendChild(errorMessage);
+
+    const openInTabButton = this.createElement('button', {
+      style: `
+        background: #4CAF50;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 500;
+      `
+    });
+    openInTabButton.textContent = 'Open in New Tab';
+    openInTabButton.onclick = () => {
+      window.open(url, '_blank');
+      requestClosePopover();
+    };
+    errorContainer.appendChild(openInTabButton);
+
+    // Create iframe
+    const iframe = this.createElement('iframe', {
+      src: url,
+      tabindex: '0',
+      style: `
+        flex: 1;
+        border: none;
+        width: 100%;
+        height: 100%;
+      `
+    });
+    iframeRef = iframe;
+    this.popoverIframeElement = iframe;
+    this.popoverIframeWindow = iframe.contentWindow || null;
+
+    // Initialize the iframe bridge
+    const sendBridgeInit = () => {
+      try {
+        iframe.contentWindow?.postMessage({ type: 'KP_POPOVER_BRIDGE_INIT' }, '*');
+      } catch {
+        // Ignore
+      }
+    };
+
+    // Detect iframe load errors
+    iframe.onerror = () => {
+      console.log('[KeyPilot] Iframe load error detected');
+      iframe.style.display = 'none';
+      errorContainer.style.display = 'flex';
+    };
+
+    const loadTimeout = setTimeout(() => {
+      console.log('[KeyPilot] Iframe load timeout - showing error as fallback');
+      iframe.style.display = 'none';
+      errorContainer.style.display = 'flex';
+    }, 30000);
+
+    iframe.onload = () => {
+      clearTimeout(loadTimeout);
+      console.log('[KeyPilot] Iframe loaded successfully');
+      sendBridgeInit();
+    };
+
+    this.popoverContainer.appendChild(header);
+    this.popoverContainer.appendChild(iframe);
+    this.popoverContainer.appendChild(errorContainer);
+
+    // Mount via PopupManager
+    this.popupManager?.showModal?.({
+      id: this._popoverPopupId,
+      panel: this.popoverContainer,
+      onRequestClose: requestClosePopover
+    });
+    sendBridgeInit();
+
+    // Retry window for iframe bridge init
+    try {
+      let attemptsLeft = 6;
+      this.popoverInitTimer = setInterval(() => {
+        if (!this.popoverContainer || attemptsLeft <= 0) {
+          clearInterval(this.popoverInitTimer);
+          this.popoverInitTimer = null;
+          return;
+        }
+        attemptsLeft -= 1;
+        sendBridgeInit();
+      }, 250);
+    } catch {
+      // Ignore
+    }
+
+    // Prevent body scroll when popover is open
+    document.body.style.overflow = 'hidden';
+
+    // Add keyboard event listeners
+    const handlePopoverKeyDown = (e) => {
+      console.log('[KeyPilot] Preview popover key event:', e.key);
+
+      // Escape key - close popover
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        requestClosePopover();
+        return;
+      }
+    };
+
+    document.addEventListener('keydown', handlePopoverKeyDown, true);
+    this.popoverContainer.addEventListener('keydown', handlePopoverKeyDown, true);
+
+    this.popoverKeyHandler = handlePopoverKeyDown;
+
+    // Listen for messages from iframe bridge
+    this.popoverMessageHandler = (event) => {
+      const data = event?.data;
+      if (!data || typeof data.type !== 'string') return;
+      if (this.popoverIframeWindow && event.source !== this.popoverIframeWindow) return;
+
+      if (data.type === 'KP_POPOVER_BRIDGE_READY') {
+        this.popoverBridgeReady = true;
+        try {
+          iframeRef?.focus();
+        } catch (_e) { }
+        try {
+          iframeRef?.contentWindow?.focus?.();
+        } catch (_e2) { }
+        return;
+      }
+
+      if (data.type === 'KP_POPOVER_REQUEST_CLOSE') {
+        if (closeKeys.includes(String(data.key))) requestClosePopover();
+      }
+
+      if (data.type === 'KP_POPOVER_BRIDGE_KEYDOWN') {
+        const k = String(data.key || '');
+        if (k === 'f' || k === 'F') {
+          clickCloseIfHovered();
+        }
+      }
+    };
+    window.addEventListener('message', this.popoverMessageHandler, true);
+
+    try {
+      closeButton.focus();
+    } catch (_e) {
+      try {
+        this.popoverContainer.focus();
+      } catch (_e2) {
+        // Ignore
+      }
+    }
+  }
+
   // =============================================================================
   // DEBUG PANEL - Performance metrics display in upper-right corner
   // =============================================================================

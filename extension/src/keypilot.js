@@ -4714,6 +4714,116 @@ export class KeyPilot extends EventManager {
     this.state.setPopoverOpen(true, url);
   }
 
+  handlePreviewLinkPopover() {
+    // Check if popover is already open - if so, close it (toggle behavior)
+    if (this.overlayManager.isPopoverOpen()) {
+      this.handleClosePopover();
+      return;
+    }
+
+    const currentState = this.state.getState();
+    const { lastMouse } = currentState;
+
+    // Use the same element detection logic as handleOpenPopover
+    let target = currentState.focusEl;
+    if (!target) {
+      const x = lastMouse.x;
+      const y = lastMouse.y;
+
+      // Use RBush spatial index for fast element detection
+      try {
+        if (this.intersectionManager &&
+            typeof this.intersectionManager.queryInteractiveAtPoint === 'function' &&
+            typeof this.intersectionManager.pickBestInteractiveFromCandidates === 'function') {
+          const candidates = this.intersectionManager.queryInteractiveAtPoint(x, y, 0);
+          const under = this.detector.deepElementFromPoint(x, y);
+          target = this.intersectionManager.pickBestInteractiveFromCandidates(candidates, under);
+        }
+      } catch { /* ignore RBush errors */ }
+
+      // Fallback to traditional element detection if RBush failed
+      if (!target) {
+        const under = this.detector.deepElementFromPoint(x, y);
+        target = this.detector.findClickable(under);
+      }
+    }
+
+    // Resolve to the closest anchor (including within shadow DOM)
+    if (!target || !(target instanceof Element)) {
+      console.log('[KeyPilot] Preview popover: not hovering over a link');
+      return;
+    }
+
+    let probe = target;
+    let link = probe;
+
+    // First try to find a traditional <a> element
+    if (link.tagName !== 'A') {
+      link = link.closest('a[href]');
+    }
+
+    // If no <a> element found, look for role="link" elements with data-kp-url
+    let url = null;
+    if (link && link.tagName === 'A' && link.href) {
+      url = link.href;
+    } else {
+      // Look for role="link" elements (used by renderUrlListing)
+      let roleLink = probe;
+      if (roleLink.getAttribute('role') !== 'link') {
+        roleLink = roleLink.closest('[role="link"]');
+      }
+
+      if (roleLink && roleLink.getAttribute('role') === 'link' && roleLink.dataset.kpUrl) {
+        url = roleLink.dataset.kpUrl;
+        link = roleLink;
+      }
+    }
+
+    // If we're inside a shadow root and closest() didn't find it, walk up to the host and retry
+    let guard = 0;
+    while ((!url) && guard++ < 10) {
+      const root = probe.getRootNode?.();
+      if (!(root instanceof ShadowRoot) || !(root.host instanceof Element)) break;
+      probe = root.host;
+
+      // Retry finding links in the host element
+      let hostLink = probe;
+      if (hostLink.tagName !== 'A') {
+        hostLink = hostLink.closest('a[href]');
+      }
+      if (hostLink && hostLink.tagName === 'A' && hostLink.href) {
+        url = hostLink.href;
+        link = hostLink;
+        break;
+      }
+
+      // Also check for role="link" in host
+      let hostRoleLink = probe;
+      if (hostRoleLink.getAttribute('role') !== 'link') {
+        hostRoleLink = hostRoleLink.closest('[role="link"]');
+      }
+      if (hostRoleLink && hostRoleLink.getAttribute('role') === 'link' && hostRoleLink.dataset.kpUrl) {
+        url = hostRoleLink.dataset.kpUrl;
+        link = hostRoleLink;
+        break;
+      }
+    }
+
+    if (!url) {
+      console.log('[KeyPilot] Preview popover: not hovering over a link');
+      return;
+    }
+    console.log('[KeyPilot] Opening preview popover for link:', url);
+
+    // Show preview popover near cursor
+    this.overlayManager.showPreviewPopover(url, {
+      title: 'Link Preview',
+      mouseX: lastMouse.x,
+      mouseY: lastMouse.y
+    });
+    this.state.setPopoverOpen(true, url);
+  }
+
   getSettingsPopoverUrl() {
     try {
       return chrome.runtime.getURL('pages/settings.html');

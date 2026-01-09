@@ -212,6 +212,13 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: 'key-open-popover',
     row: 2
   }),
+  PREVIEW_LINK_POPOVER: Object.freeze({
+    handler: 'handlePreviewLinkPopover',
+    label: 'Preview Link',
+    description: 'Open Link Preview in Popover',
+    keyboardClass: 'key-preview-popover',
+    row: 2
+  }),
   OPEN_SETTINGS_POPOVER: Object.freeze({
     handler: 'handleToggleSettingsPopover',
     label: 'Settings',
@@ -332,6 +339,7 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   TAB_LEFT: Object.freeze({ keys: ['q', 'Q'] }),
   TAB_RIGHT: Object.freeze({ keys: ['w', 'W'] }),
   OPEN_POPOVER: Object.freeze({ keys: ['e', 'E'] }),
+  PREVIEW_LINK_POPOVER: Object.freeze({ keys: ['p', 'P'] }),
   FORWARD: Object.freeze({ keys: ['r', 'R'] }),
   NEW_TAB: Object.freeze({ keys: ['t', 'T'] }),
 
@@ -373,6 +381,7 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   TAB_LEFT: Object.freeze({ keys: ['p', 'P'] }),
   TAB_RIGHT: Object.freeze({ keys: ['o', 'O'] }),
   OPEN_POPOVER: Object.freeze({ keys: ['i', 'I'] }),
+  PREVIEW_LINK_POPOVER: Object.freeze({ keys: ['w', 'W'] }),
   FORWARD: Object.freeze({ keys: ['u', 'U'] }),
   NEW_TAB: Object.freeze({ keys: ['y', 'Y'] }),
 
