@@ -24,6 +24,12 @@ export class LauncherPopover {
     this._isOpen = false;
     this._searchQuery = '';
     this._categoryOrder = ['favorites', 'bookmarks', 'history', 'social', 'news', 'productivity', 'entertainment', 'shopping'];
+    // Preview-related properties
+    this._previewError = null;
+    this._errorTitle = null;
+    this._errorMessage = null;
+    this._currentPreviewUrl = null;
+    this._previewBridgeTimer = null;
   }
 
   /**
@@ -70,6 +76,12 @@ export class LauncherPopover {
   hide() {
     if (!this._isOpen) return;
     this._isOpen = false;
+
+    // Clear any pending bridge initialization
+    if (this._previewBridgeTimer) {
+      clearInterval(this._previewBridgeTimer);
+      this._previewBridgeTimer = null;
+    }
 
     this._keypilot.overlayManager?.popupManager?.hideModal('launcher-popover');
 
@@ -542,8 +554,73 @@ export class LauncherPopover {
       background: #fff;
     `;
 
+    // Create error message container (initially hidden)
+    this._previewError = doc.createElement('div');
+    this._previewError.className = 'kp-launcher-preview-error';
+    this._previewError.style.cssText = `
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      text-align: center;
+      background: #f9f9f9;
+      border-radius: 8px;
+      margin: 8px;
+    `;
+
+    const errorIcon = doc.createElement('div');
+    errorIcon.style.cssText = `
+      font-size: 32px;
+      margin-bottom: 12px;
+      color: #999;
+    `;
+    errorIcon.textContent = '🚫';
+    this._previewError.appendChild(errorIcon);
+
+    this._errorTitle = doc.createElement('div');
+    this._errorTitle.style.cssText = `
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 6px;
+    `;
+    this._errorTitle.textContent = 'Cannot Display Page';
+    this._previewError.appendChild(this._errorTitle);
+
+    this._errorMessage = doc.createElement('div');
+    this._errorMessage.style.cssText = `
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 16px;
+      max-width: 300px;
+    `;
+    this._errorMessage.textContent = 'This website prevents embedding in iframes for security reasons.';
+    this._previewError.appendChild(this._errorMessage);
+
+    const openInTabButton = doc.createElement('button');
+    openInTabButton.style.cssText = `
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+    `;
+    openInTabButton.textContent = 'Open in New Tab';
+    openInTabButton.onclick = () => {
+      if (this._currentPreviewUrl) {
+        window.open(this._currentPreviewUrl, '_blank');
+      }
+    };
+    this._previewError.appendChild(openInTabButton);
+
     previewArea.appendChild(previewHeader);
     previewArea.appendChild(this._previewIframe);
+    previewArea.appendChild(this._previewError);
 
     this._previewArea = previewArea;
 
@@ -759,20 +836,22 @@ export class LauncherPopover {
       transition: all 0.2s;
     `;
 
-    // Main link area (3/4 width)
+    // Main link area (3/4 width) - add min-width: 0 to allow shrinking
     const mainLink = doc.createElement('a');
     mainLink.href = item.url;
     mainLink.target = '_blank';
     mainLink.rel = 'noopener noreferrer';
     mainLink.className = 'kp-launcher-card-main';
     mainLink.style.cssText = `
-      flex: 3;
+      flex: 1;
+      min-width: 0;
       display: flex;
       flex-direction: column;
       padding: 20px;
       text-decoration: none;
       color: inherit;
       cursor: pointer;
+      overflow: hidden;
     `;
 
     // Favicon
@@ -817,11 +896,12 @@ export class LauncherPopover {
     mainLink.appendChild(title);
     mainLink.appendChild(url);
 
-    // Preview button (1/4 width)
+    // Preview button (fixed width instead of flex)
     const previewBtn = doc.createElement('button');
     previewBtn.className = 'kp-launcher-card-preview';
     previewBtn.style.cssText = `
-      flex: 1;
+      width: 80px;
+      flex-shrink: 0;
       background: #1f1f1f;
       border: none;
       border-left: 1px solid #333;
@@ -832,7 +912,6 @@ export class LauncherPopover {
       justify-content: center;
       font-size: 24px;
       transition: all 0.2s;
-      min-width: 60px;
     `;
     previewBtn.innerHTML = '👁';
     previewBtn.title = 'Preview in iframe';
@@ -880,12 +959,94 @@ export class LauncherPopover {
   }
 
   /**
-   * Show preview iframe with URL
+   * Show preview iframe with URL using advanced bridge system
    */
   _showPreview(url) {
-    if (this._previewArea && this._previewIframe) {
-      this._previewArea.style.width = '40%';
-      this._previewIframe.src = url;
+    if (!this._previewArea || !this._previewIframe) return;
+
+    // Prevent CSP violation by blocking file:// URLs
+    if (url && url.startsWith('file://')) {
+      console.warn('[LauncherPopover] Cannot preview file:// URLs due to CSP restrictions');
+      this._showPreviewError('Cannot preview local files');
+      return;
+    }
+
+    // Track current preview URL for error recovery
+    this._currentPreviewUrl = url;
+
+    this._previewArea.style.width = '40%';
+    this._previewIframe.style.display = 'flex';
+    if (this._previewError) {
+      this._previewError.style.display = 'none';
+    }
+
+    // Clear any existing bridge initialization
+    if (this._previewBridgeTimer) {
+      clearInterval(this._previewBridgeTimer);
+      this._previewBridgeTimer = null;
+    }
+
+    // Initialize the iframe bridge (content script running inside the iframe)
+    // We retry a few times because content scripts in the frame may not be ready immediately
+    const sendBridgeInit = () => {
+      try {
+        this._previewIframe.contentWindow?.postMessage({ type: 'KP_POPOVER_BRIDGE_INIT' }, '*');
+      } catch {
+        // Ignore
+      }
+    };
+
+    // Handle iframe load errors (X-Frame-Options blocking, network errors, etc.)
+    this._previewIframe.onerror = () => {
+      console.log('[LauncherPopover] Preview iframe load error detected');
+      this._showPreviewError();
+    };
+
+    // Handle successful iframe load
+    this._previewIframe.onload = () => {
+      console.log('[LauncherPopover] Preview iframe loaded successfully');
+      sendBridgeInit();
+    };
+
+    // Set the URL to start loading
+    this._previewIframe.src = url;
+
+    // Send initial bridge init attempt
+    sendBridgeInit();
+
+    // Short retry window to cover slow frames / initial about:blank then navigation
+    try {
+      let attemptsLeft = 6; // ~1.5s total
+      this._previewBridgeTimer = setInterval(() => {
+        if (attemptsLeft <= 0 || !this._previewIframe || !this._isOpen) {
+          if (this._previewBridgeTimer) {
+            clearInterval(this._previewBridgeTimer);
+            this._previewBridgeTimer = null;
+          }
+          return;
+        }
+        attemptsLeft -= 1;
+        sendBridgeInit();
+      }, 250);
+    } catch {
+      // Ignore
+    }
+  }
+
+  /**
+   * Show preview error message
+   */
+  _showPreviewError(message = null) {
+    if (!this._previewArea) return;
+
+    this._previewArea.style.width = '40%';
+    this._previewIframe.style.display = 'none';
+    this._previewError.style.display = 'flex';
+
+    if (message) {
+      this._errorMessage.textContent = message;
+    } else {
+      this._errorMessage.textContent = 'This website prevents embedding in iframes for security reasons.';
     }
   }
 
