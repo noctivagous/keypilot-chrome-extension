@@ -1382,6 +1382,15 @@ export class KeyPilot extends EventManager {
         return;
       }
 
+      // Allow preview link popover toggle (P/W) to work even when popover is open
+      if (KB.PREVIEW_LINK_POPOVER?.keys?.includes?.(e.key)) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        this.handlePreviewLinkPopover();
+        return;
+      }
+
       // For all other keys when popover is open, let them pass through to the iframe
       // Don't prevent default so the iframe can handle navigation keys
       console.log('[KeyPilot] Letting key pass through to popover/iframe');

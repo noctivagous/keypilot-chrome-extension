@@ -1444,6 +1444,7 @@
 .kp-keybindings-ui .key.key-tab-right,
 .kp-keybindings-ui .key.key-new-tab,
 .kp-keybindings-ui .key.key-open-popover,
+.kp-keybindings-ui .key.key-preview-popover,
 .kp-keybindings-ui .key.key-page-up,
 .kp-keybindings-ui .key.key-page-down,
 .kp-keybindings-ui .key.key-page-up-instant,

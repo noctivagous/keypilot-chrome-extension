@@ -35,6 +35,9 @@ export class OverlayManager {
     this.popoverCloseButton = null; // close button element for keyboard activation (F)
     this._popoverLastMouse = { x: null, y: null }; // last known mouse position in top document
     this._popoverMouseTrackerInstalled = false;
+    this._isPreviewPopover = false; // track if current popover is preview style (no backdrop)
+    this._popoverArrowStyle = null; // style element for preview popover triangle
+    this._popoverClickOutsideHandler = null; // click outside handler for preview popover
 
     // Central popup stack + blurred backdrop (kept below click overlays).
     // Note: Panel change callback will be set by KeyPilot after initialization
@@ -2872,22 +2875,48 @@ export class OverlayManager {
       if (this.popoverContainer) {
         this.popoverContainer.removeEventListener('keydown', this.popoverKeyHandler, true);
       }
-      
+
       this.popoverKeyHandler = null;
     }
 
-    if (this.popoverContainer) {
-      // Unmount via PopupManager (removes panel + shared backdrop when last popup closes).
+    // Remove preview popover arrow style if exists
+    if (this._popoverArrowStyle) {
       try {
-        this.popupManager?.hideModal?.(this._popoverPopupId);
-      } catch {
-        // Fallback: direct remove
-        try { this.popoverContainer.remove(); } catch { /* ignore */ }
+        this._popoverArrowStyle.remove();
+      } catch { /* ignore */ }
+      this._popoverArrowStyle = null;
+    }
+
+    // Remove click-outside handler if exists
+    if (this._popoverClickOutsideHandler) {
+      try {
+        document.removeEventListener('mousedown', this._popoverClickOutsideHandler, true);
+      } catch { /* ignore */ }
+      this._popoverClickOutsideHandler = null;
+    }
+
+    if (this.popoverContainer) {
+      // For preview popover (direct mount), remove directly
+      // For regular popover, unmount via PopupManager
+      if (this._isPreviewPopover) {
+        try {
+          this.popoverContainer.remove();
+        } catch { /* ignore */ }
+      } else {
+        // Unmount via PopupManager (removes panel + shared backdrop when last popup closes).
+        try {
+          this.popupManager?.hideModal?.(this._popoverPopupId);
+        } catch {
+          // Fallback: direct remove
+          try { this.popoverContainer.remove(); } catch { /* ignore */ }
+        }
       }
       this.popoverContainer = null;
     }
 
-    // Restore body scroll
+    this._isPreviewPopover = false;
+
+    // Restore body scroll (only needed for regular popover, but doesn't hurt)
     document.body.style.overflow = '';
   }
 
@@ -2957,7 +2986,7 @@ export class OverlayManager {
     const mouseX = opts.mouseX ?? window.innerWidth / 2;
     const mouseY = opts.mouseY ?? window.innerHeight / 2;
     const popoverWidth = 600;
-    const popoverHeight = 400;
+    const popoverHeight = 600;
     const arrowSize = 10; // Size of triangle arrow
     const margin = 20; // Margin from viewport edges
 
@@ -2974,6 +3003,9 @@ export class OverlayManager {
       top = mouseY - popoverHeight - 20; // 20px above cursor
     }
 
+    // Clamp vertically to viewport bounds
+    top = Math.max(margin, Math.min(top, window.innerHeight - popoverHeight - margin));
+
     // Center horizontally under cursor, but clamp to viewport
     left = mouseX - popoverWidth / 2;
     left = Math.max(margin, Math.min(left, window.innerWidth - popoverWidth - margin));
@@ -2981,11 +3013,10 @@ export class OverlayManager {
     // Calculate arrow position relative to popover
     const arrowLeft = Math.max(20, Math.min(mouseX - left, popoverWidth - 20));
 
-    const titleText = (opts && typeof opts.title === 'string' && opts.title.trim()) ? opts.title.trim() : String(url || '');
-    const hintKeyLabel = (opts && typeof opts.hintKeyLabel === 'string' && opts.hintKeyLabel.trim()) ? opts.hintKeyLabel.trim() : 'P';
+    const titleText = 'Link Preview';
     const closeKeys = Array.isArray(opts?.closeKeys) && opts.closeKeys.length
       ? opts.closeKeys.map(String)
-      : ['Escape', 'p', 'P', 'e', 'E'];
+      : ['Escape', 'p', 'P'];
 
     // Centralized close request
     const requestClosePopover = () => {
@@ -3069,8 +3100,9 @@ export class OverlayManager {
         width: 0;
         height: 0;
         left: var(--arrow-left, 50%);
-        transform: translateX(-50%);
+        margin-left: -${arrowSize}px;
         border: ${arrowSize}px solid transparent;
+        z-index: 1;
       }
       .kpv2-preview-popover-container::after {
         content: "";
@@ -3078,27 +3110,29 @@ export class OverlayManager {
         width: 0;
         height: 0;
         left: var(--arrow-left, 50%);
-        transform: translateX(-50%);
+        margin-left: -${arrowSize - 1}px;
         border: ${arrowSize - 1}px solid transparent;
+        z-index: 2;
       }
       .kpv2-preview-popover-container[data-placement="bottom"]::before {
-        top: ${-arrowSize * 2}px;
+        top: -${arrowSize * 2}px;
         border-bottom-color: rgb(43, 43, 43);
       }
       .kpv2-preview-popover-container[data-placement="bottom"]::after {
-        top: ${-arrowSize * 2 + 1}px;
+        top: -${arrowSize * 2 - 1}px;
         border-bottom-color: rgb(18, 18, 18);
       }
       .kpv2-preview-popover-container[data-placement="top"]::before {
-        bottom: ${-arrowSize * 2}px;
+        bottom: -${arrowSize * 2}px;
         border-top-color: rgb(43, 43, 43);
       }
       .kpv2-preview-popover-container[data-placement="top"]::after {
-        bottom: ${-arrowSize * 2 + 1}px;
+        bottom: -${arrowSize * 2 - 1}px;
         border-top-color: rgb(11, 11, 11);
       }
     `;
     document.head.appendChild(arrowStyle);
+    this._popoverArrowStyle = arrowStyle;
 
     // Store iframe reference for focus management
     let iframeRef = null;
@@ -3117,10 +3151,9 @@ export class OverlayManager {
       `
     });
 
-    const title = this.createElement('div', {
+    const titleContainer = this.createElement('div', {
       style: `
         font-size: 12px;
-        font-weight: 500;
         color: #e8e8e8;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -3129,8 +3162,20 @@ export class OverlayManager {
         margin-right: 8px;
       `
     });
-    title.textContent = titleText;
-    header.appendChild(title);
+
+    const titleSpan = this.createElement('span', {
+      style: 'font-weight: 500; margin-right: 8px;'
+    });
+    titleSpan.textContent = titleText;
+    titleContainer.appendChild(titleSpan);
+
+    const hintSpan = this.createElement('span', {
+      style: 'color: #999; font-weight: normal;'
+    });
+    hintSpan.textContent = 'Press Esc / P to hide';
+    titleContainer.appendChild(hintSpan);
+
+    header.appendChild(titleContainer);
 
     const closeButton = this.createElement('button', {
       style: `
@@ -3265,12 +3310,33 @@ export class OverlayManager {
     this.popoverContainer.appendChild(iframe);
     this.popoverContainer.appendChild(errorContainer);
 
-    // Mount via PopupManager
-    this.popupManager?.showModal?.({
-      id: this._popoverPopupId,
-      panel: this.popoverContainer,
-      onRequestClose: requestClosePopover
-    });
+    // Mark this as a preview popover (for cleanup logic)
+    this._isPreviewPopover = true;
+
+    // Mount directly to document.body (no backdrop/blur for preview popover)
+    try {
+      document.body.appendChild(this.popoverContainer);
+    } catch (e) {
+      console.error('[KeyPilot] Failed to mount preview popover:', e);
+      this._isPreviewPopover = false;
+      return;
+    }
+
+    // Add click-outside-to-close handler for preview popover
+    this._popoverClickOutsideHandler = (e) => {
+      // Check if click is outside the popover container
+      if (this.popoverContainer && !this.popoverContainer.contains(e.target)) {
+        console.log('[KeyPilot] Click outside preview popover, closing');
+        requestClosePopover();
+      }
+    };
+    // Use a small delay to avoid immediately closing if the P key click triggered this
+    setTimeout(() => {
+      if (this.popoverContainer) {
+        document.addEventListener('mousedown', this._popoverClickOutsideHandler, true);
+      }
+    }, 100);
+
     sendBridgeInit();
 
     // Retry window for iframe bridge init
@@ -3289,14 +3355,15 @@ export class OverlayManager {
       // Ignore
     }
 
-    // Prevent body scroll when popover is open
-    document.body.style.overflow = 'hidden';
+    // Don't prevent body scroll for preview popover - page should remain interactive
 
     // Add keyboard event listeners
+    // Note: P/W toggle is handled by KeyPilot's handlePreviewLinkPopover
+    // This handler only needs to handle Escape
     const handlePopoverKeyDown = (e) => {
       console.log('[KeyPilot] Preview popover key event:', e.key);
 
-      // Escape key - close popover
+      // Escape always closes
       if (e.key === 'Escape') {
         e.preventDefault();
         e.stopPropagation();
@@ -3319,12 +3386,16 @@ export class OverlayManager {
 
       if (data.type === 'KP_POPOVER_BRIDGE_READY') {
         this.popoverBridgeReady = true;
-        try {
-          iframeRef?.focus();
-        } catch (_e) { }
-        try {
-          iframeRef?.contentWindow?.focus?.();
-        } catch (_e2) { }
+        // For preview popovers, DON'T auto-focus the iframe
+        // This allows P/W keys to reach the parent document for toggle behavior
+        if (!this._isPreviewPopover) {
+          try {
+            iframeRef?.focus();
+          } catch (_e) { }
+          try {
+            iframeRef?.contentWindow?.focus?.();
+          } catch (_e2) { }
+        }
         return;
       }
 

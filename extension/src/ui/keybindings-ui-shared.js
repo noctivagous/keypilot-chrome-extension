@@ -209,6 +209,7 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
 .${KEYBINDINGS_UI_ROOT_CLASS} .key.key-tab-right,
 .${KEYBINDINGS_UI_ROOT_CLASS} .key.key-new-tab,
 .${KEYBINDINGS_UI_ROOT_CLASS} .key.key-open-popover,
+.${KEYBINDINGS_UI_ROOT_CLASS} .key.key-preview-popover,
 .${KEYBINDINGS_UI_ROOT_CLASS} .key.key-page-up,
 .${KEYBINDINGS_UI_ROOT_CLASS} .key.key-page-down,
 .${KEYBINDINGS_UI_ROOT_CLASS} .key.key-page-up-instant,
