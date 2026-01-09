@@ -84,8 +84,9 @@
         "text": "O"
       },
       {
-        "type": "key",
-        "text": "P"
+        "type": "action",
+        "id": "PREVIEW_LINK_POPOVER",
+        "fallbackText": "Preview Link"
       },
       {
         "type": "key",
@@ -238,8 +239,9 @@
         "text": "Q"
       },
       {
-        "type": "key",
-        "text": "W"
+        "type": "action",
+        "id": "PREVIEW_LINK_POPOVER",
+        "fallbackText": "Preview Link"
       },
       {
         "type": "key",
@@ -455,6 +457,13 @@
       "displayKey": "T",
       "keyboardClass": "key-gray"
     },
+    "PREVIEW_LINK_POPOVER": {
+      "label": "Preview Link",
+      "description": "Open Link Preview in Popover",
+      "keyLabel": "P",
+      "displayKey": "P",
+      "keyboardClass": "key-preview-popover"
+    },
     "DELETE": {
       "label": "Delete Mode",
       "description": "Delete Mode",
@@ -603,6 +612,13 @@
       "keyLabel": "Y",
       "displayKey": "Y",
       "keyboardClass": "key-gray"
+    },
+    "PREVIEW_LINK_POPOVER": {
+      "label": "Preview Link",
+      "description": "Open Link Preview in Popover",
+      "keyLabel": "W",
+      "displayKey": "W",
+      "keyboardClass": "key-preview-popover"
     },
     "DELETE": {
       "label": "Delete Mode",
@@ -767,8 +783,9 @@
       "text": "O"
     },
     {
-      "type": "key",
-      "text": "P"
+      "type": "action",
+      "id": "PREVIEW_LINK_POPOVER",
+      "fallbackText": "Preview Link"
     },
     {
       "type": "key",
@@ -944,6 +961,13 @@
     "keyLabel": "T",
     "displayKey": "T",
     "keyboardClass": "key-gray"
+  },
+  "PREVIEW_LINK_POPOVER": {
+    "label": "Preview Link",
+    "description": "Open Link Preview in Popover",
+    "keyLabel": "P",
+    "displayKey": "P",
+    "keyboardClass": "key-preview-popover"
   },
   "DELETE": {
     "label": "Delete Mode",

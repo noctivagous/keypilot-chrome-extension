@@ -428,7 +428,7 @@ const KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: 'key', text: 'U' },
     { type: 'key', text: 'I' },
     { type: 'key', text: 'O' },
-    { type: 'key', text: 'P' },
+    { type: 'action', id: 'PREVIEW_LINK_POPOVER', fallbackText: 'Preview Link' },
     { type: 'key', text: '[' },
     { type: 'key', text: ']' },
     { type: 'action', id: 'DELETE', fallbackText: 'Delete Mode', className: 'key key-backspace' }
@@ -469,7 +469,7 @@ const KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
   [
     { type: 'special', text: 'Tab', className: 'key key-tab' },
     { type: 'key', text: 'Q' },
-    { type: 'key', text: 'W' },
+    { type: 'action', id: 'PREVIEW_LINK_POPOVER', fallbackText: 'Preview Link' }, // W
     { type: 'key', text: 'E' },
     { type: 'key', text: 'R' },
     { type: 'key', text: 'T' },
