@@ -1024,6 +1024,57 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
+        case 'KP_GET_BOOKMARKS': {
+          // Return bookmark tree for launcher popover
+          try {
+            if (chrome.bookmarks && typeof chrome.bookmarks.getTree === 'function') {
+              const bookmarkTree = await chrome.bookmarks.getTree();
+
+              // Flatten bookmark tree into array of bookmark objects
+              const bookmarks = [];
+              const extractBookmarks = (nodes) => {
+                for (const node of nodes) {
+                  if (node.url) {
+                    bookmarks.push({
+                      title: node.title || 'Untitled',
+                      url: node.url,
+                      dateAdded: node.dateAdded,
+                      id: node.id,
+                      parentId: node.parentId
+                    });
+                  }
+                  if (node.children) {
+                    extractBookmarks(node.children);
+                  }
+                }
+              };
+              extractBookmarks(bookmarkTree);
+
+              sendResponse({
+                type: 'KP_BOOKMARKS_RESPONSE',
+                bookmarks: bookmarks,
+                success: true
+              });
+            } else {
+              sendResponse({
+                type: 'KP_BOOKMARKS_RESPONSE',
+                bookmarks: [],
+                success: false,
+                error: 'Bookmarks API not available'
+              });
+            }
+          } catch (error) {
+            console.error('KP_GET_BOOKMARKS failed:', error);
+            sendResponse({
+              type: 'KP_BOOKMARKS_RESPONSE',
+              bookmarks: [],
+              success: false,
+              error: error.message
+            });
+          }
+          break;
+        }
+
         case 'KP_OMNIBOX_SUGGEST': {
           // Return omnibox suggestions from:
           // - topSites (most visited)

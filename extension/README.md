@@ -28,8 +28,9 @@ for common web interactions, eliminating the need for mouse navigation.
 | `J` | Open Tab History (Branch-Retaining) |
 | `L` | Open Omnibox (Address Bar Overlay) |
 | `S` | Go Back (History) |
+| `;` | Open Launcher (Quick Access to Sites) |
 | `'` | Open KeyPilot Settings |
-| `` ` `` | Go to Site Root |
+| `1` | Go to Site Root |
 
 #### Tabs
 
@@ -58,6 +59,18 @@ for common web interactions, eliminating the need for mouse navigation.
 | `Esc` | Exit Focus |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

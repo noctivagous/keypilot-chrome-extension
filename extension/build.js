@@ -64,6 +64,7 @@ const modules = [
   'src/modules/settings-manager.js',
   'src/modules/omnibox-manager.js',
   'src/modules/tab-history-popover.js',
+  'src/modules/launcher-popover.js',
   'src/modules/text-element-filter.js',
   'src/modules/edge-character-detector.js',
   'src/modules/rectangle-intersection-observer.js',

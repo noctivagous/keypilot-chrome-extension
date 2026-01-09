@@ -149,6 +149,13 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: null,
     row: null
   }),
+  LAUNCHER: Object.freeze({
+    handler: 'handleLauncherKey',
+    label: 'Open Launcher',
+    description: 'Open Launcher (Quick Access to Sites)',
+    keyboardClass: 'key-launcher',
+    row: null
+  }),
   CLOSE_TAB: Object.freeze({
     handler: 'handleCloseTabKey',
     label: 'Close Tab',
@@ -337,6 +344,7 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   TAB_HISTORY: Object.freeze({ keys: ['j', 'J'] }),
   TOGGLE_KEYBOARD_HELP: Object.freeze({ keys: ['k', 'K'] }),
   OMNIBOX: Object.freeze({ keys: ['l', 'L'] }),
+  LAUNCHER: Object.freeze({ keys: [';', ':', 'Semicolon'], matchOn: ['key', 'code'], displayKey: ';', keyLabel: ';' }),
 
   OPEN_SETTINGS_POPOVER: Object.freeze({ keys: ["'", 'Quote'], matchOn: ['key', 'code'], displayKey: "'" }),
 
@@ -346,8 +354,8 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   PAGE_DOWN_INSTANT: Object.freeze({ keys: ['v', 'V'] }),
   ACTIVATE_NEW_TAB_OVER: Object.freeze({ keys: ['b', 'B'] }),
 
+  ROOT: Object.freeze({ keys: ['1', '!'], displayKey: '1', keyLabel: '1' }),
   DELETE: Object.freeze({ keys: ['Backspace'], displayKey: 'Backspace', keyLabel: 'Backspace' }),
-  ROOT: Object.freeze({ keys: ['`', 'Backquote'], matchOn: ['key', 'code'], displayKey: '`', keyLabel: '`' }),
   CANCEL: Object.freeze({ keys: ['Escape'], displayKey: 'Esc', keyLabel: 'Esc' })
 });
 
@@ -379,6 +387,7 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   TAB_HISTORY: Object.freeze({ keys: ['f', 'F'] }),
   TOGGLE_KEYBOARD_HELP: Object.freeze({ keys: ['d', 'D'] }),
   OMNIBOX: Object.freeze({ keys: ['s', 'S'] }),
+  LAUNCHER: Object.freeze({ keys: ['a', 'A'] }),
 
   OPEN_SETTINGS_POPOVER: Object.freeze({ keys: ["'", 'Quote'], matchOn: ['key', 'code'], displayKey: "'" }),
 
@@ -389,8 +398,8 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   PAGE_DOWN_INSTANT: Object.freeze({ keys: ['m', 'M'] }),
   ACTIVATE_NEW_TAB_OVER: Object.freeze({ keys: ['n', 'N'] }),
 
+  ROOT: Object.freeze({ keys: ['1', '!'], displayKey: '1', keyLabel: '1' }),
   DELETE: Object.freeze({ keys: ['Backspace'], displayKey: 'Backspace', keyLabel: 'Backspace' }),
-  ROOT: Object.freeze({ keys: ['`', 'Backquote'], matchOn: ['key', 'code'], displayKey: '`', keyLabel: '`' }),
   CANCEL: Object.freeze({ keys: ['Escape'], displayKey: 'Esc', keyLabel: 'Esc' })
 });
 

@@ -19,6 +19,7 @@ import { buildKeybindingsForLayout, DEFAULT_KEYBOARD_LAYOUT_ID, getKeyboardUiLay
 import { FloatingKeyboardHelp } from './ui/floating-keyboard-help.js';
 import { OmniboxManager } from './modules/omnibox-manager.js';
 import { TabHistoryPopover } from './modules/tab-history-popover.js';
+import { LauncherPopover } from './modules/launcher-popover.js';
 import { DEFAULT_SETTINGS, getSettings, SETTINGS_STORAGE_KEY } from './modules/settings-manager.js';
 
 export class KeyPilot extends EventManager {
@@ -64,6 +65,7 @@ export class KeyPilot extends EventManager {
         this.state.setPopoverOpen(open, open ? 'tab-history' : null);
       }
     });
+    this.launcherPopover = new LauncherPopover(this);
     this.KEYBOARD_HELP_STORAGE_KEY = 'keypilot_keyboard_help_visible';
     this._keyboardHelpVisible = false;
     this._keyboardHelpStorageListener = null;
@@ -1216,6 +1218,24 @@ export class KeyPilot extends EventManager {
       return;
     }
 
+    // Alt+;: open launcher with search focused (Alt+A for left-handed)
+    if ((e.altKey || e.code === 'AltRight') && (e.key === ';' || e.key === ':' || e.code === 'Semicolon' || e.key === 'a' || e.key === 'A' || e.code === 'KeyA')) {
+      // Only operate in the top frame to avoid duplicates.
+      if (window !== window.top) return;
+      // Respect enabled state (do nothing when disabled).
+      if (!this.enabled) return;
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      if (this.launcherPopover.isOpen()) {
+        this.launcherPopover.hide();
+      } else {
+        this.launcherPopover.showWithSearchFocus();
+      }
+      return;
+    }
+
     // Don't handle keys if extension is disabled
     if (!this.enabled) {
       return;
@@ -1257,6 +1277,25 @@ export class KeyPilot extends EventManager {
           return;
         }
       } catch { /* ignore */ }
+
+      // Launcher popover
+      try {
+        if (this.launcherPopover?.isOpen?.()) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          this.launcherPopover.hide();
+          return;
+        }
+      } catch { /* ignore */ }
+    }
+
+    // If launcher is open, delegate keyboard handling to it
+    if (this.launcherPopover?.isOpen?.()) {
+      const handled = this.launcherPopover.handleKeyDown(e);
+      if (handled) {
+        return;
+      }
     }
 
     // If omnibox is open, let its input handler do the work.
@@ -4318,6 +4357,16 @@ export class KeyPilot extends EventManager {
       window.location.href = rootUrl;
     } else {
       console.log('[KeyPilot] Already at root, no navigation needed');
+    }
+  }
+
+  handleLauncherKey() {
+    console.log('[KeyPilot] Launcher key pressed!');
+
+    if (this.launcherPopover.isOpen()) {
+      this.launcherPopover.hide();
+    } else {
+      this.launcherPopover.show();
     }
   }
 
