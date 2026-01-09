@@ -1352,6 +1352,138 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
+        case 'KP_GET_TOP_SITES': {
+          // Return top visited sites from history
+          const maxResults = Math.max(1, Math.min(1000, Number(message.maxResults) || 1000));
+          const days = Math.max(1, Math.min(90, Number(message.days) || 30));
+          const startTime = Date.now() - days * 24 * 60 * 60 * 1000;
+
+          try {
+            if (chrome.history && typeof chrome.history.search === 'function') {
+              const historyItems = await chrome.history.search({
+                text: '',
+                maxResults: maxResults,
+                startTime: startTime
+              });
+
+              // Count visits by domain
+              const domainCounts = new Map();
+              for (const item of historyItems) {
+                if (item.url && item.visitCount) {
+                  try {
+                    const domain = new URL(item.url).hostname;
+                    const existing = domainCounts.get(domain) || { count: 0, title: item.title, url: item.url };
+                    existing.count += item.visitCount;
+                    domainCounts.set(domain, existing);
+                  } catch (e) {
+                    // Skip invalid URLs
+                  }
+                }
+              }
+
+              // Sort by visit count and return top 100
+              const topSites = Array.from(domainCounts.values())
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 100)
+                .map(item => ({ title: item.title, url: item.url }));
+
+              sendResponse({
+                type: 'KP_TOP_SITES_RESPONSE',
+                topSites: topSites,
+                success: true
+              });
+            } else {
+              sendResponse({
+                type: 'KP_TOP_SITES_RESPONSE',
+                topSites: [],
+                success: false,
+                error: 'History API not available'
+              });
+            }
+          } catch (error) {
+            console.error('KP_GET_TOP_SITES failed:', error);
+            sendResponse({
+              type: 'KP_TOP_SITES_RESPONSE',
+              topSites: [],
+              success: false,
+              error: error.message
+            });
+          }
+          break;
+        }
+
+        case 'KP_GET_HISTORY_FOR_DOMAINS': {
+          // Search history for specific domains
+          const domains = Array.isArray(message.domains) ? message.domains : [];
+          const days = Math.max(1, Math.min(90, Number(message.days) || 30));
+          const startTime = Date.now() - days * 24 * 60 * 60 * 1000;
+
+          try {
+            if (chrome.history && typeof chrome.history.search === 'function') {
+              const allResults = [];
+              const seenUrls = new Set();
+
+              // Search history for each domain
+              for (const domain of domains) {
+                try {
+                  const historyItems = await chrome.history.search({
+                    text: domain,
+                    maxResults: 100,
+                    startTime: startTime
+                  });
+
+                  // Filter to only include items that actually match the domain
+                  for (const item of historyItems) {
+                    if (item.url && !seenUrls.has(item.url)) {
+                      try {
+                        const itemDomain = new URL(item.url).hostname.replace('www.', '');
+                        // Check if the item's domain matches or is a subdomain of the target domain
+                        if (itemDomain === domain || itemDomain.endsWith('.' + domain)) {
+                          allResults.push({
+                            title: item.title || itemDomain,
+                            url: item.url,
+                            visitCount: item.visitCount || 0
+                          });
+                          seenUrls.add(item.url);
+                        }
+                      } catch (e) {
+                        // Skip invalid URLs
+                      }
+                    }
+                  }
+                } catch (error) {
+                  console.warn(`KP_GET_HISTORY_FOR_DOMAINS: error searching for domain ${domain}:`, error);
+                }
+              }
+
+              // Sort by visit count (most visited first)
+              const sortedResults = allResults.sort((a, b) => b.visitCount - a.visitCount);
+
+              sendResponse({
+                type: 'KP_HISTORY_FOR_DOMAINS_RESPONSE',
+                history: sortedResults,
+                success: true
+              });
+            } else {
+              sendResponse({
+                type: 'KP_HISTORY_FOR_DOMAINS_RESPONSE',
+                history: [],
+                success: false,
+                error: 'History API not available'
+              });
+            }
+          } catch (error) {
+            console.error('KP_GET_HISTORY_FOR_DOMAINS failed:', error);
+            sendResponse({
+              type: 'KP_HISTORY_FOR_DOMAINS_RESPONSE',
+              history: [],
+              success: false,
+              error: error.message
+            });
+          }
+          break;
+        }
+
         case 'KP_NAVGRAPH_GET': {
           const tabId = sender?.tab?.id;
           if (typeof tabId !== 'number') {

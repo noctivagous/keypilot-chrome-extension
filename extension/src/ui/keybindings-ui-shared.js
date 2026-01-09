@@ -325,6 +325,38 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
     0 0 8px rgba(255, 165, 0, 0.15);
 }
 
+.${KEYBINDINGS_UI_ROOT_CLASS} .key.key-launcher-orange {
+  background: linear-gradient(180deg,
+    rgba(184, 115, 51, 0.5) 0%,
+    rgba(160, 82, 45, 0.6) 50%,
+    rgba(139, 69, 19, 0.7) 100%);
+  border-color: rgba(184, 115, 51, 0.6);
+  border-top-color: rgba(184, 115, 51, 0.4);
+  border-bottom-color: rgba(139, 69, 19, 0.8);
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.4),
+    0 1px 3px rgba(0, 0, 0, 0.6),
+    inset 0 1px 1px rgba(184, 115, 51, 0.2),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.3),
+    0 0 8px rgba(184, 115, 51, 0.15);
+}
+
+.${KEYBINDINGS_UI_ROOT_CLASS} .key.key-settings-dark {
+  background: linear-gradient(180deg,
+    rgba(31, 41, 55, 0.8) 0%,
+    rgba(17, 24, 39, 0.9) 50%,
+    rgba(0, 0, 0, 0.95) 100%);
+  border-color: rgba(55, 65, 81, 0.8);
+  border-top-color: rgba(75, 85, 99, 0.6);
+  border-bottom-color: rgba(0, 0, 0, 0.95);
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.5),
+    0 1px 3px rgba(0, 0, 0, 0.7),
+    inset 0 1px 1px rgba(107, 114, 128, 0.3),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.4),
+    0 0 8px rgba(0, 0, 0, 0.2);
+}
+
 .${KEYBINDINGS_UI_ROOT_CLASS} .key.key-gray {
   background: linear-gradient(180deg,
     rgba(128, 128, 128, 0.5) 0%,
@@ -348,6 +380,22 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
     inset 0 1px 1px rgba(255, 165, 0, 0.2),
     inset 0 -2px 4px rgba(0, 0, 0, 0.3),
     0 0 8px rgba(255, 165, 0, 0.15);
+}
+
+.${KEYBINDINGS_UI_ROOT_CLASS} .key.key-launcher {
+  background: linear-gradient(180deg,
+    rgba(6, 182, 212, 0.5) 0%,
+    rgba(3, 105, 161, 0.6) 50%,
+    rgba(2, 132, 199, 0.7) 100%);
+  border-color: rgba(6, 182, 212, 0.6);
+  border-top-color: rgba(6, 182, 212, 0.4);
+  border-bottom-color: rgba(2, 132, 199, 0.8);
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.4),
+    0 1px 3px rgba(0, 0, 0, 0.6),
+    inset 0 1px 1px rgba(6, 182, 212, 0.2),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.3),
+    0 0 8px rgba(6, 182, 212, 0.15);
 }
 
 .${KEYBINDINGS_UI_ROOT_CLASS} .key.key-hatched {

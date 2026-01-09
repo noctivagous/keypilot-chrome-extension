@@ -20,6 +20,7 @@ for common web interactions, eliminating the need for mouse navigation.
 | Keys | Action |
 | --- | --- |
 | `R` | Go Forward (History) |
+| `;` | Open Launcher (Quick Access to Sites) |
 | `B` | Click New Tab |
 | `D` | Go Back (History) |
 | `E` | Open Link in Popover |
@@ -28,7 +29,6 @@ for common web interactions, eliminating the need for mouse navigation.
 | `J` | Open Tab History (Branch-Retaining) |
 | `L` | Open Omnibox (Address Bar Overlay) |
 | `S` | Go Back (History) |
-| `;` | Open Launcher (Quick Access to Sites) |
 | `'` | Open KeyPilot Settings |
 | `1` | Go to Site Root |
 
@@ -59,6 +59,19 @@ for common web interactions, eliminating the need for mouse navigation.
 | `Esc` | Exit Focus |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

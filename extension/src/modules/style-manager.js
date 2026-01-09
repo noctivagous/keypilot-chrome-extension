@@ -327,6 +327,8 @@ export class StyleManager {
         box-shadow: 0 0 0 var(--keypilot-focus-ring-width, 3px) var(--keypilot-focus-ring-color, #2196f3) !important;
         outline: 2px solid var(--keypilot-focus-ring-color, #2196f3) !important;
         outline-offset: 1px !important;
+        /* Reliable border fallback to ensure blue frame is always visible */
+        border: 1px solid var(--keypilot-focus-ring-color, #2196f3) !important;
         /* Semi-transparent background fill */
         background: var(--keypilot-focus-ring-bg-color, transparent) !important;
         /* SVG filter for blue tint instead of brightness/contrast/saturation */
@@ -339,6 +341,8 @@ export class StyleManager {
         outline: 2px solid var(--keypilot-focus-ring-color, #2196f3) !important;
         outline-offset: -1px !important; /* Negative offset to ensure visibility */
         box-shadow: inset 0 0 0 var(--keypilot-focus-ring-width, 3px) var(--keypilot-focus-ring-color, #2196f3) !important;
+        /* Reliable border fallback for inset styling too */
+        border: 1px solid var(--keypilot-focus-ring-color, #2196f3) !important;
         /* Apply blue tint filter to inset styling too */
         filter: url(#keypilot-blue-tint-filter) !important;
       }
@@ -416,6 +420,8 @@ export class StyleManager {
         box-shadow: 0 0 0 var(--keypilot-focus-ring-width, 3px) var(--keypilot-focus-ring-color, #2196f3) !important;
         outline: 2px solid var(--keypilot-focus-ring-color, #2196f3) !important;
         outline-offset: 1px !important;
+        /* Reliable border fallback to ensure blue frame is always visible */
+        border: 1px solid var(--keypilot-focus-ring-color, #2196f3) !important;
         /* Semi-transparent background fill */
         background: var(--keypilot-focus-ring-bg-color, transparent) !important;
         /* SVG filter for blue tint instead of brightness/contrast/saturation */
@@ -428,6 +434,8 @@ export class StyleManager {
         outline: 2px solid var(--keypilot-focus-ring-color, #2196f3) !important;
         outline-offset: -1px !important; /* Negative offset to ensure visibility */
         box-shadow: inset 0 0 0 var(--keypilot-focus-ring-width, 3px) var(--keypilot-focus-ring-color, #2196f3) !important;
+        /* Reliable border fallback for inset styling too */
+        border: 1px solid var(--keypilot-focus-ring-color, #2196f3) !important;
         /* Apply blue tint filter to inset styling too */
         filter: url(#keypilot-blue-tint-filter) !important;
       }

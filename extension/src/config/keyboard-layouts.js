@@ -151,10 +151,10 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
   }),
   LAUNCHER: Object.freeze({
     handler: 'handleLauncherKey',
-    label: 'Open Launcher',
+    label: 'Launcher',
     description: 'Open Launcher (Quick Access to Sites)',
-    keyboardClass: 'key-launcher',
-    row: null
+    keyboardClass: 'key-launcher-orange',
+    row: 2
   }),
   CLOSE_TAB: Object.freeze({
     handler: 'handleCloseTabKey',
@@ -216,7 +216,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     handler: 'handleToggleSettingsPopover',
     label: 'Settings',
     description: 'Open KeyPilot Settings',
-    keyboardClass: null,
+    keyboardClass: 'key-settings-dark',
     row: null
   }),
   OMNIBOX: Object.freeze({
@@ -344,7 +344,7 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   TAB_HISTORY: Object.freeze({ keys: ['j', 'J'] }),
   TOGGLE_KEYBOARD_HELP: Object.freeze({ keys: ['k', 'K'] }),
   OMNIBOX: Object.freeze({ keys: ['l', 'L'] }),
-  LAUNCHER: Object.freeze({ keys: [';', ':', 'Semicolon'], matchOn: ['key', 'code'], displayKey: ';', keyLabel: ';' }),
+  LAUNCHER: Object.freeze({ keys: [';', ':', 'Semicolon', '`', '~', 'Backquote'], matchOn: ['key', 'code'], displayKey: ';', keyLabel: ';' }),
 
   OPEN_SETTINGS_POPOVER: Object.freeze({ keys: ["'", 'Quote'], matchOn: ['key', 'code'], displayKey: "'" }),
 
@@ -387,7 +387,7 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   TAB_HISTORY: Object.freeze({ keys: ['f', 'F'] }),
   TOGGLE_KEYBOARD_HELP: Object.freeze({ keys: ['d', 'D'] }),
   OMNIBOX: Object.freeze({ keys: ['s', 'S'] }),
-  LAUNCHER: Object.freeze({ keys: ['a', 'A'] }),
+  LAUNCHER: Object.freeze({ keys: ['a', 'A', '`', '~', 'Backquote'], matchOn: ['key', 'code'], displayKey: 'a/`', keyLabel: 'a/`' }),
 
   OPEN_SETTINGS_POPOVER: Object.freeze({ keys: ["'", 'Quote'], matchOn: ['key', 'code'], displayKey: "'" }),
 
@@ -435,7 +435,7 @@ const KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: 'action', id: 'TAB_HISTORY', fallbackText: 'History' },
     { type: 'action', id: 'TOGGLE_KEYBOARD_HELP', fallbackText: 'KB Reference' },
     { type: 'action', id: 'OMNIBOX', fallbackText: 'Omnibox' },
-    { type: 'key', text: ';' },
+    { type: 'action', id: 'LAUNCHER', fallbackText: 'Launcher' },
     { type: 'action', id: 'OPEN_SETTINGS_POPOVER', fallbackText: 'Settings' },
     { type: 'special', text: 'Enter', className: 'key key-enter' }
   ],
@@ -475,7 +475,7 @@ const KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
   ],
   [
     { type: 'special', text: 'Caps', className: 'key key-caps' },
-    { type: 'key', text: 'A' },
+    { type: 'action', id: 'LAUNCHER', fallbackText: 'Launcher' },
     // Utility keys on the left (to avoid colliding with right-hand cluster)
     { type: 'action', id: 'OMNIBOX', fallbackText: 'Omnibox' }, // S
     { type: 'action', id: 'TOGGLE_KEYBOARD_HELP', fallbackText: 'KB Reference' }, // D

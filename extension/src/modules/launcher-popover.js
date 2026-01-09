@@ -18,18 +18,117 @@ export class LauncherPopover {
     this._gridContainer = null;
     this._searchInput = null;
     this._currentCategory = 'favorites';
+    this._categorySubTabs = {}; // Store per-category sub-tab selection
     this._currentSheet = 0;
-    this._itemsPerSheet = 12; // 3 rows x 4 cols
+    this._itemsPerSheet = 60; // Increased from 12 to 60 items per page
     this._categories = null;
     this._isOpen = false;
     this._searchQuery = '';
-    this._categoryOrder = ['favorites', 'bookmarks', 'history', 'social', 'news', 'productivity', 'entertainment', 'shopping'];
+    this._categoryOrder = ['favorites', 'bookmarks', 'history', 'social', 'news', 'productivity', 'videos', 'entertainment', 'shopping', 'ai', 'archive', 'searches'];
+    this._showDefaultSites = true; // Checkbox state for showing default sites (only affects favorites tab)
+
+    // Define available sub-tabs for each category (extensible for future types)
+    // Order matters: first in array is the default if history is empty
+    this._categorySubTabConfig = {
+      favorites: ['favorites', 'history'],
+      bookmarks: ['favorites', 'history'],
+      history: ['favorites', 'history'],
+      social: ['favorites', 'history'],
+      news: ['favorites', 'history'],
+      productivity: ['favorites', 'history'],
+      videos: ['favorites', 'history'],
+      entertainment: ['favorites', 'history'],
+      shopping: ['favorites', 'history'],
+      ai: ['favorites', 'history'],
+      archive: ['favorites', 'history'],
+      searches: ['favorites', 'history']
+    };
     // Preview-related properties
     this._previewError = null;
     this._errorTitle = null;
     this._errorMessage = null;
     this._currentPreviewUrl = null;
     this._previewBridgeTimer = null;
+    // Default sites per category
+    this._defaultSites = {
+      social: [
+        { title: 'Instagram', url: 'https://instagram.com', isDefault: true },
+        { title: 'Facebook', url: 'https://facebook.com', isDefault: true },
+        { title: 'X (Twitter)', url: 'https://x.com', isDefault: true },
+        { title: 'Reddit', url: 'https://reddit.com', isDefault: true },
+        { title: 'Bluesky', url: 'https://bsky.app', isDefault: true },
+        { title: 'LinkedIn', url: 'https://linkedin.com', isDefault: true },
+        { title: 'Threads', url: 'https://threads.net', isDefault: true },
+        { title: 'Mastodon', url: 'https://mastodon.social', isDefault: true }
+      ],
+      videos: [
+        { title: 'YouTube', url: 'https://youtube.com', isDefault: true },
+        { title: 'Rumble', url: 'https://rumble.com', isDefault: true },
+        { title: 'Twitch', url: 'https://twitch.tv', isDefault: true },
+        { title: 'Vimeo', url: 'https://vimeo.com', isDefault: true },
+        { title: 'Dailymotion', url: 'https://dailymotion.com', isDefault: true },
+        { title: 'Odysee', url: 'https://odysee.com', isDefault: true }
+      ],
+      entertainment: [
+        { title: 'Netflix', url: 'https://netflix.com', isDefault: true },
+        { title: 'Disney+', url: 'https://disneyplus.com', isDefault: true },
+        { title: 'Hulu', url: 'https://hulu.com', isDefault: true },
+        { title: 'YouTube', url: 'https://youtube.com', isDefault: true },
+        { title: 'HBO Max', url: 'https://max.com', isDefault: true },
+        { title: 'Prime Video', url: 'https://primevideo.com', isDefault: true },
+        { title: 'Paramount+', url: 'https://paramountplus.com', isDefault: true },
+        { title: 'Peacock', url: 'https://peacocktv.com', isDefault: true }
+      ],
+      news: [
+        { title: 'CNN', url: 'https://cnn.com', isDefault: true },
+        { title: 'BBC News', url: 'https://bbc.com/news', isDefault: true },
+        { title: 'NY Times', url: 'https://nytimes.com', isDefault: true },
+        { title: 'Reuters', url: 'https://reuters.com', isDefault: true },
+        { title: 'The Guardian', url: 'https://theguardian.com', isDefault: true },
+        { title: 'AP News', url: 'https://apnews.com', isDefault: true }
+      ],
+      productivity: [
+        { title: 'Gmail', url: 'https://gmail.com', isDefault: true },
+        { title: 'Google Calendar', url: 'https://calendar.google.com', isDefault: true },
+        { title: 'Google Drive', url: 'https://drive.google.com', isDefault: true },
+        { title: 'Google Docs', url: 'https://docs.google.com', isDefault: true },
+        { title: 'Notion', url: 'https://notion.so', isDefault: true },
+        { title: 'Slack', url: 'https://slack.com', isDefault: true },
+        { title: 'Trello', url: 'https://trello.com', isDefault: true }
+      ],
+      shopping: [
+        { title: 'Amazon', url: 'https://amazon.com', isDefault: true },
+        { title: 'eBay', url: 'https://ebay.com', isDefault: true },
+        { title: 'Walmart', url: 'https://walmart.com', isDefault: true },
+        { title: 'Target', url: 'https://target.com', isDefault: true },
+        { title: 'Etsy', url: 'https://etsy.com', isDefault: true }
+      ],
+      archive: [
+        { title: 'Internet Archive', url: 'https://archive.org', isDefault: true },
+        { title: 'Wayback Machine', url: 'https://web.archive.org', isDefault: true }
+      ],
+      ai: [
+        { title: 'ChatGPT', url: 'https://chat.openai.com', isDefault: true },
+        { title: 'Claude', url: 'https://claude.ai', isDefault: true },
+        { title: 'Grok', url: 'https://grok.com', isDefault: true },
+        { title: 'Gemini', url: 'https://gemini.google.com', isDefault: true },
+        { title: 'Copilot', url: 'https://copilot.microsoft.com', isDefault: true },
+        { title: 'Perplexity', url: 'https://perplexity.ai', isDefault: true },
+        { title: 'Poe', url: 'https://poe.com', isDefault: true },
+        { title: 'Character.AI', url: 'https://character.ai', isDefault: true },
+        { title: 'Hugging Face', url: 'https://huggingface.co/chat', isDefault: true }
+      ],
+      searches: [
+        { title: 'Google', url: 'https://google.com', isDefault: true },
+        { title: 'Bing', url: 'https://bing.com', isDefault: true },
+        { title: 'DuckDuckGo', url: 'https://duckduckgo.com', isDefault: true },
+        { title: 'Yahoo', url: 'https://yahoo.com', isDefault: true },
+        { title: 'Brave Search', url: 'https://search.brave.com', isDefault: true },
+        { title: 'Ecosia', url: 'https://ecosia.org', isDefault: true },
+        { title: 'Startpage', url: 'https://startpage.com', isDefault: true },
+        { title: 'Yandex', url: 'https://yandex.com', isDefault: true }
+      ]
+    };
   }
 
   /**
@@ -108,6 +207,21 @@ export class LauncherPopover {
   }
 
   /**
+   * Extract domains from default site list for a category
+   */
+  _getDefaultDomains(categoryKey) {
+    if (!this._defaultSites[categoryKey]) return [];
+    return this._defaultSites[categoryKey].map(site => {
+      try {
+        const url = new URL(site.url);
+        return url.hostname.replace('www.', '');
+      } catch (e) {
+        return '';
+      }
+    }).filter(domain => domain !== '');
+  }
+
+  /**
    * Load categories and their items from Chrome APIs
    */
   async _loadCategories() {
@@ -131,92 +245,246 @@ export class LauncherPopover {
       // Get top sites from history
       const topSites = await this._getTopSites();
 
-      // Build categories
+      // Get recent searches
+      const recentSearches = await this._getRecentSearches();
+
+      // Build categories with history and favorites sub-tabs
+      // History is searched specifically for default site domains
+      // Favorites only shows default sites if checkbox is enabled
+      const socialHistory = await this._getHistoryForDomains(this._getDefaultDomains('social'));
+      const newsHistory = await this._getHistoryForDomains(this._getDefaultDomains('news'));
+      const productivityHistory = await this._getHistoryForDomains(this._getDefaultDomains('productivity'));
+      const videosHistory = await this._getHistoryForDomains(this._getDefaultDomains('videos'));
+      const entertainmentHistory = await this._getHistoryForDomains(this._getDefaultDomains('entertainment'));
+      const shoppingHistory = await this._getHistoryForDomains(this._getDefaultDomains('shopping'));
+      const archiveHistory = await this._getHistoryForDomains(this._getDefaultDomains('archive'));
+      const aiHistory = await this._getHistoryForDomains(this._getDefaultDomains('ai'));
+
       this._categories = {
         favorites: {
           label: 'Favorites',
           icon: '⭐',
-          items: [...bookmarks.slice(0, 10), ...topSites.slice(0, 10)]
+          history: [...bookmarks.slice(0, 10), ...topSites.slice(0, 10)],
+          favorites: []
         },
         bookmarks: {
           label: 'Bookmarks',
           icon: '📑',
-          items: bookmarks
+          history: bookmarks,
+          favorites: []
         },
         history: {
           label: 'Recent',
           icon: '🕐',
-          items: topSites
+          history: topSites,
+          favorites: []
         },
         social: {
           label: 'Social Media',
           icon: '💬',
-          items: this._filterByKeywords(bookmarks, ['twitter', 'facebook', 'instagram', 'reddit', 'linkedin', 'tiktok'])
+          history: socialHistory,
+          favorites: this._showDefaultSites ? [...this._defaultSites.social] : []
         },
         news: {
           label: 'News',
           icon: '📰',
-          items: this._filterByKeywords(bookmarks, ['news', 'cnn', 'bbc', 'nytimes', 'reuters', 'guardian'])
+          history: newsHistory,
+          favorites: this._showDefaultSites ? [...this._defaultSites.news] : []
         },
         productivity: {
           label: 'Productivity',
           icon: '⚡',
-          items: this._filterByKeywords(bookmarks, ['gmail', 'calendar', 'drive', 'docs', 'notion', 'slack', 'trello'])
+          history: productivityHistory,
+          favorites: this._showDefaultSites ? [...this._defaultSites.productivity] : []
+        },
+        videos: {
+          label: 'Videos',
+          icon: '📹',
+          history: videosHistory,
+          favorites: this._showDefaultSites ? [...this._defaultSites.videos] : []
         },
         entertainment: {
           label: 'Entertainment',
           icon: '🎬',
-          items: this._filterByKeywords(bookmarks, ['youtube', 'netflix', 'spotify', 'twitch', 'hulu'])
+          history: entertainmentHistory,
+          favorites: this._showDefaultSites ? [...this._defaultSites.entertainment] : []
         },
         shopping: {
           label: 'Shopping',
           icon: '🛒',
-          items: this._filterByKeywords(bookmarks, ['amazon', 'ebay', 'walmart', 'target', 'shop'])
+          history: shoppingHistory,
+          favorites: this._showDefaultSites ? [...this._defaultSites.shopping] : []
+        },
+        ai: {
+          label: 'AI',
+          icon: '🤖',
+          history: aiHistory,
+          favorites: this._showDefaultSites ? [...this._defaultSites.ai] : []
+        },
+        archive: {
+          label: 'Internet Archive',
+          icon: '📚',
+          history: archiveHistory,
+          favorites: this._showDefaultSites ? [...this._defaultSites.archive] : []
+        },
+        searches: {
+          label: 'Searches',
+          icon: '🔍',
+          history: recentSearches,
+          favorites: this._showDefaultSites ? [...this._defaultSites.searches] : []
         }
       };
+
+      // Initialize default sub-tab selection for each category
+      // Use first sub-tab in config (usually 'favorites') if history count is 0,
+      // otherwise use second sub-tab (usually 'history')
+      for (const categoryKey in this._categories) {
+        if (!this._categorySubTabs[categoryKey]) {
+          const subTabConfig = this._categorySubTabConfig[categoryKey] || ['favorites', 'history'];
+          const historyCount = this._categories[categoryKey].history?.length || 0;
+          const favoritesCount = this._categories[categoryKey].favorites?.length || 0;
+
+          // Default to favorites (first in config) if it has items, otherwise history if it has items,
+          // otherwise just use first sub-tab
+          if (favoritesCount > 0) {
+            this._categorySubTabs[categoryKey] = subTabConfig[0];
+          } else if (historyCount > 0) {
+            this._categorySubTabs[categoryKey] = subTabConfig[1] || subTabConfig[0];
+          } else {
+            this._categorySubTabs[categoryKey] = subTabConfig[0];
+          }
+        }
+      }
     } catch (error) {
       console.error('[LauncherPopover] Error loading categories:', error);
       this._categories = {
-        favorites: { label: 'Favorites', icon: '⭐', items: [] }
+        favorites: { label: 'Favorites', icon: '⭐', history: [], favorites: [] }
       };
     }
   }
 
   /**
-   * Get top visited sites from history
+   * Get top visited sites from history via message passing
    */
   async _getTopSites() {
     try {
-      const historyItems = await chrome.history.search({
-        text: '',
-        maxResults: 100,
-        startTime: Date.now() - (30 * 24 * 60 * 60 * 1000) // Last 30 days
+      const response = await chrome.runtime.sendMessage({
+        type: 'KP_GET_TOP_SITES',
+        maxResults: 1000,
+        days: 30
       });
 
-      // Count visits by domain
-      const domainCounts = new Map();
-      for (const item of historyItems) {
-        if (item.url && item.visitCount) {
+      if (response && response.success && response.topSites) {
+        return response.topSites;
+      } else {
+        console.warn('[LauncherPopover] Failed to get top sites:', response?.error);
+        return [];
+      }
+    } catch (error) {
+      console.error('[LauncherPopover] Error getting top sites:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get history for specific domains via message passing
+   */
+  async _getHistoryForDomains(domains) {
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: 'KP_GET_HISTORY_FOR_DOMAINS',
+        domains: domains,
+        days: 30
+      });
+
+      if (response && response.success && response.history) {
+        return response.history;
+      } else {
+        console.warn('[LauncherPopover] Failed to get history for domains:', response?.error);
+        return [];
+      }
+    } catch (error) {
+      console.error('[LauncherPopover] Error getting history for domains:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get recent search queries from history via message passing
+   */
+  async _getRecentSearches() {
+    try {
+      // Get recent history from background script
+      const response = await chrome.runtime.sendMessage({
+        type: 'KP_GET_TOP_SITES',
+        maxResults: 1000,
+        days: 7
+      });
+
+      if (!response || !response.success || !response.topSites) {
+        console.warn('[LauncherPopover] Failed to get history for searches:', response?.error);
+        return [];
+      }
+
+      // Extract search queries from common search engines
+      const searches = [];
+      const seenQueries = new Set();
+
+      for (const item of response.topSites) {
+        if (item.url) {
           try {
-            const domain = new URL(item.url).hostname;
-            const existing = domainCounts.get(domain) || { count: 0, title: item.title, url: item.url };
-            existing.count += item.visitCount;
-            domainCounts.set(domain, existing);
+            const url = new URL(item.url);
+            let query = null;
+
+            // Google search
+            if (url.hostname.includes('google.com') && url.pathname === '/search') {
+              query = url.searchParams.get('q');
+            }
+            // Bing search
+            else if (url.hostname.includes('bing.com') && url.pathname === '/search') {
+              query = url.searchParams.get('q');
+            }
+            // DuckDuckGo search
+            else if (url.hostname.includes('duckduckgo.com')) {
+              query = url.searchParams.get('q');
+            }
+            // Yahoo search
+            else if (url.hostname.includes('yahoo.com') && url.pathname === '/search') {
+              query = url.searchParams.get('p');
+            }
+
+            if (query && !seenQueries.has(query)) {
+              seenQueries.add(query);
+              searches.push({
+                title: query,
+                url: item.url
+              });
+            }
           } catch (e) {
             // Skip invalid URLs
           }
         }
       }
 
-      // Sort by visit count and return top 50
-      return Array.from(domainCounts.values())
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 50)
-        .map(item => ({ title: item.title, url: item.url }));
+      return searches.slice(0, 50); // Return top 50 searches
     } catch (error) {
-      console.error('[LauncherPopover] Error getting top sites:', error);
+      console.error('[LauncherPopover] Error getting recent searches:', error);
       return [];
     }
+  }
+
+  /**
+   * Filter items by matching domains
+   */
+  _filterByDomains(items, domains) {
+    return items.filter(item => {
+      try {
+        const itemDomain = new URL(item.url).hostname.replace('www.', '');
+        return domains.some(domain => itemDomain === domain || itemDomain.endsWith('.' + domain));
+      } catch (e) {
+        return false;
+      }
+    });
   }
 
   /**
@@ -291,6 +559,47 @@ export class LauncherPopover {
     }
 
     sidebar.appendChild(this._tabListContainer);
+
+    // Checkbox for showing default sites
+    const checkboxContainer = doc.createElement('div');
+    checkboxContainer.style.cssText = `
+      padding: 12px 16px;
+      border-top: 1px solid #333;
+      margin-top: auto;
+    `;
+
+    const checkboxLabel = doc.createElement('label');
+    checkboxLabel.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #888;
+      font-size: 12px;
+      cursor: pointer;
+    `;
+
+    const checkbox = doc.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = this._showDefaultSites;
+    checkbox.style.cssText = `
+      cursor: pointer;
+    `;
+
+    checkbox.addEventListener('change', (e) => {
+      this._showDefaultSites = e.target.checked;
+      this._loadCategories().then(() => {
+        this._renderCategory(this._currentCategory);
+      });
+    });
+
+    const checkboxText = doc.createElement('span');
+    checkboxText.textContent = 'Show default sites';
+
+    checkboxLabel.appendChild(checkbox);
+    checkboxLabel.appendChild(checkboxText);
+    checkboxContainer.appendChild(checkboxLabel);
+
+    sidebar.appendChild(checkboxContainer);
 
     // Right content area
     const contentArea = doc.createElement('div');
@@ -426,6 +735,20 @@ export class LauncherPopover {
     header.appendChild(subtitle);
     header.appendChild(searchContainer);
 
+    // Sub-tabs container (dynamically populated based on category config)
+    this._subTabContainer = doc.createElement('div');
+    this._subTabContainer.className = 'kp-launcher-subtabs';
+    this._subTabContainer.style.cssText = `
+      display: flex;
+      gap: 8px;
+      padding: 16px 24px 0;
+      border-bottom: 1px solid #333;
+      background: #0f0f0f;
+    `;
+
+    // Sub-tabs will be populated dynamically when category changes
+    this._updateSubTabsUI();
+
     // Grid container
     this._gridContainer = doc.createElement('div');
     this._gridContainer.className = 'kp-launcher-grid-container';
@@ -474,6 +797,7 @@ export class LauncherPopover {
 
     // Assemble content area
     contentArea.appendChild(header);
+    contentArea.appendChild(this._subTabContainer);
     contentArea.appendChild(this._gridContainer);
     contentArea.appendChild(footer);
 
@@ -672,8 +996,10 @@ export class LauncherPopover {
     tab.addEventListener('click', () => {
       this._currentCategory = categoryKey;
       this._currentSheet = 0;
+      this._updateSubTabsUI(); // Rebuild sub-tabs for new category
       this._renderCategory(categoryKey);
       this._updateTabStyles();
+      this._updateSubTabStyles();
     });
 
     tab.addEventListener('mouseenter', () => {
@@ -691,6 +1017,95 @@ export class LauncherPopover {
     });
 
     return tab;
+  }
+
+  /**
+   * Create a sub-tab button for history/favorites
+   */
+  _createSubTab(type, label) {
+    const doc = document;
+    const subTab = doc.createElement('button');
+    subTab.className = 'kp-launcher-subtab';
+    subTab.dataset.type = type;
+
+    const currentSubTab = this._categorySubTabs[this._currentCategory] || 'history';
+    const isActive = type === currentSubTab;
+    subTab.style.cssText = `
+      padding: 10px 20px;
+      background: ${isActive ? '#2a2a2a' : 'transparent'};
+      border: none;
+      border-bottom: 2px solid ${isActive ? '#4CAF50' : 'transparent'};
+      color: ${isActive ? '#fff' : '#888'};
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    `;
+
+    subTab.textContent = label;
+
+    subTab.addEventListener('click', () => {
+      this._categorySubTabs[this._currentCategory] = type;
+      this._currentSheet = 0;
+      this._renderCategory(this._currentCategory);
+      this._updateSubTabStyles();
+    });
+
+    subTab.addEventListener('mouseenter', () => {
+      const currentSubTab = this._categorySubTabs[this._currentCategory] || 'history';
+      if (type !== currentSubTab) {
+        subTab.style.color = '#fff';
+      }
+    });
+
+    subTab.addEventListener('mouseleave', () => {
+      const currentSubTab = this._categorySubTabs[this._currentCategory] || 'history';
+      if (type !== currentSubTab) {
+        subTab.style.color = '#888';
+      }
+    });
+
+    return subTab;
+  }
+
+  /**
+   * Update sub-tab styles to reflect active sub-tab
+   */
+  _updateSubTabStyles() {
+    const subTabs = this._subTabContainer.querySelectorAll('.kp-launcher-subtab');
+    const currentSubTab = this._categorySubTabs[this._currentCategory] || 'favorites';
+    subTabs.forEach(subTab => {
+      const isActive = subTab.dataset.type === currentSubTab;
+      subTab.style.background = isActive ? '#2a2a2a' : 'transparent';
+      subTab.style.borderBottomColor = isActive ? '#4CAF50' : 'transparent';
+      subTab.style.color = isActive ? '#fff' : '#888';
+    });
+  }
+
+  /**
+   * Update sub-tabs UI based on current category configuration
+   */
+  _updateSubTabsUI() {
+    if (!this._subTabContainer) return;
+
+    // Clear existing sub-tabs
+    this._subTabContainer.innerHTML = '';
+
+    // Get sub-tab configuration for current category
+    const subTabConfig = this._categorySubTabConfig[this._currentCategory] || ['favorites', 'history'];
+
+    // Create sub-tabs based on configuration
+    const subTabLabels = {
+      'favorites': 'Favorites',
+      'history': 'History'
+      // Future sub-tab types can be added here
+    };
+
+    subTabConfig.forEach(subTabType => {
+      const label = subTabLabels[subTabType] || subTabType;
+      const subTab = this._createSubTab(subTabType, label);
+      this._subTabContainer.appendChild(subTab);
+    });
   }
 
   /**
@@ -764,7 +1179,9 @@ export class LauncherPopover {
     if (!this._categories || !this._categories[categoryKey]) return;
 
     const category = this._categories[categoryKey];
-    let items = category.items;
+    // Get items from the current sub-tab (history or favorites) for this category
+    const currentSubTab = this._categorySubTabs[categoryKey] || 'history';
+    let items = category[currentSubTab] || [];
 
     // Filter items based on search query
     if (this._searchQuery) {
@@ -817,19 +1234,35 @@ export class LauncherPopover {
   }
 
   /**
+   * Extract path from URL
+   */
+  _extractPath(url) {
+    try {
+      const urlObj = new URL(url);
+      const path = urlObj.pathname + urlObj.search + urlObj.hash;
+      // Return empty string if path is just '/'
+      return path === '/' ? '' : path;
+    } catch (e) {
+      return '';
+    }
+  }
+
+  /**
    * Create a grid card for a website
    */
   _createGridCard(item) {
     const doc = document;
     const domain = this._extractDomain(item.url);
+    const path = this._extractPath(item.url);
+    const isDefault = item.isDefault === true;
 
-    // Container
+    // Container - lighter color for default sites
     const container = doc.createElement('div');
     container.className = 'kp-launcher-card-container';
     container.style.cssText = `
       display: flex;
-      background: #2a2a2a;
-      border: 1px solid #333;
+      background: ${isDefault ? '#3a3a3a' : '#2a2a2a'};
+      border: 1px solid ${isDefault ? '#444' : '#333'};
       border-radius: 8px;
       overflow: hidden;
       min-height: 100px;
@@ -881,10 +1314,10 @@ export class LauncherPopover {
       white-space: nowrap;
     `;
 
-    // URL
-    const url = doc.createElement('div');
-    url.textContent = domain;
-    url.style.cssText = `
+    // Domain
+    const domainEl = doc.createElement('div');
+    domainEl.textContent = domain;
+    domainEl.style.cssText = `
       font-size: 12px;
       color: #888;
       overflow: hidden;
@@ -892,9 +1325,23 @@ export class LauncherPopover {
       white-space: nowrap;
     `;
 
+    // Path
+    const pathEl = doc.createElement('div');
+    pathEl.textContent = path;
+    pathEl.style.cssText = `
+      font-size: 11px;
+      color: #666;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-top: 2px;
+      ${path ? '' : 'display: none;'}
+    `;
+
     mainLink.appendChild(favicon);
     mainLink.appendChild(title);
-    mainLink.appendChild(url);
+    mainLink.appendChild(domainEl);
+    mainLink.appendChild(pathEl);
 
     // Preview button (fixed width instead of flex)
     const previewBtn = doc.createElement('button');
@@ -938,14 +1385,14 @@ export class LauncherPopover {
 
     // Hover effects for container
     container.addEventListener('mouseenter', () => {
-      container.style.background = '#333';
-      container.style.borderColor = '#444';
+      container.style.background = isDefault ? '#444' : '#333';
+      container.style.borderColor = isDefault ? '#555' : '#444';
       container.style.transform = 'translateY(-2px)';
     });
 
     container.addEventListener('mouseleave', () => {
-      container.style.background = '#2a2a2a';
-      container.style.borderColor = '#333';
+      container.style.background = isDefault ? '#3a3a3a' : '#2a2a2a';
+      container.style.borderColor = isDefault ? '#444' : '#333';
       container.style.transform = 'translateY(0)';
     });
 
@@ -1078,7 +1525,9 @@ export class LauncherPopover {
     if (!this._categories || !this._categories[this._currentCategory]) return;
 
     const category = this._categories[this._currentCategory];
-    const maxSheets = Math.ceil(category.items.length / this._itemsPerSheet);
+    const currentSubTab = this._categorySubTabs[this._currentCategory] || 'history';
+    const items = category[currentSubTab] || [];
+    const maxSheets = Math.ceil(items.length / this._itemsPerSheet);
 
     if (this._currentSheet < maxSheets - 1) {
       this._currentSheet++;
@@ -1095,8 +1544,10 @@ export class LauncherPopover {
       const newCategory = this._categoryOrder[currentIndex - 1];
       this._currentCategory = newCategory;
       this._currentSheet = 0;
+      this._updateSubTabsUI(); // Rebuild sub-tabs for new category
       this._renderCategory(newCategory);
       this._updateTabStyles();
+      this._updateSubTabStyles();
     }
   }
 
@@ -1109,8 +1560,10 @@ export class LauncherPopover {
       const newCategory = this._categoryOrder[currentIndex + 1];
       this._currentCategory = newCategory;
       this._currentSheet = 0;
+      this._updateSubTabsUI(); // Rebuild sub-tabs for new category
       this._renderCategory(newCategory);
       this._updateTabStyles();
+      this._updateSubTabStyles();
     }
   }
 
