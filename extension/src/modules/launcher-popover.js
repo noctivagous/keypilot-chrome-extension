@@ -1248,6 +1248,80 @@ export class LauncherPopover {
   }
 
   /**
+   * Extract YouTube video ID from URL
+   * Supports formats:
+   * - https://www.youtube.com/watch?v=VIDEO_ID
+   * - https://youtu.be/VIDEO_ID
+   * - https://www.youtube.com/embed/VIDEO_ID
+   * - https://www.youtube.com/v/VIDEO_ID
+   * @param {string} url
+   * @returns {string|null} Video ID or null if not a YouTube video URL
+   */
+  _extractYouTubeVideoId(url) {
+    if (!url || typeof url !== 'string') return null;
+
+    try {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname.replace(/^www\./, '');
+
+      // Check if it's a YouTube domain
+      if (!hostname.includes('youtube.com') && !hostname.includes('youtu.be')) {
+        return null;
+      }
+
+      // Handle youtu.be short URLs: https://youtu.be/VIDEO_ID
+      if (hostname.includes('youtu.be')) {
+        const videoId = urlObj.pathname.slice(1).split('?')[0].split('&')[0];
+        // YouTube video IDs are 11 characters
+        if (videoId && videoId.length === 11) {
+          return videoId;
+        }
+        return null;
+      }
+
+      // Handle youtube.com URLs
+      if (hostname.includes('youtube.com')) {
+        // Check for /watch?v=VIDEO_ID format
+        if (urlObj.pathname === '/watch' && urlObj.searchParams.has('v')) {
+          const videoId = urlObj.searchParams.get('v');
+          if (videoId && videoId.length === 11) {
+            return videoId;
+          }
+        }
+
+        // Check for /embed/VIDEO_ID format
+        const embedMatch = urlObj.pathname.match(/^\/embed\/([a-zA-Z0-9_-]{11})/);
+        if (embedMatch) {
+          return embedMatch[1];
+        }
+
+        // Check for /v/VIDEO_ID format
+        const vMatch = urlObj.pathname.match(/^\/v\/([a-zA-Z0-9_-]{11})/);
+        if (vMatch) {
+          return vMatch[1];
+        }
+      }
+
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /**
+   * Generate YouTube thumbnail URL
+   * @param {string} videoId
+   * @param {string} quality - 'default', 'mqdefault', 'hqdefault', 'sddefault', 'maxresdefault'
+   * @returns {string} Thumbnail URL
+   */
+  _getYouTubeThumbnailUrl(videoId, quality = 'hqdefault') {
+    if (!videoId || typeof videoId !== 'string') return null;
+    const validQualities = ['default', 'mqdefault', 'hqdefault', 'sddefault', 'maxresdefault'];
+    const q = validQualities.includes(quality) ? quality : 'hqdefault';
+    return `https://img.youtube.com/vi/${videoId}/${q}.jpg`;
+  }
+
+  /**
    * Create a grid card for a website
    */
   _createGridCard(item) {
@@ -1256,17 +1330,35 @@ export class LauncherPopover {
     const path = this._extractPath(item.url);
     const isDefault = item.isDefault === true;
 
-    // Container - lighter color for default sites
+    // Check if this is a YouTube video URL and get thumbnail
+    const youtubeVideoId = this._extractYouTubeVideoId(item.url);
+    const hasYouTubeThumbnail = youtubeVideoId !== null;
+    const thumbnailUrl = hasYouTubeThumbnail ? this._getYouTubeThumbnailUrl(youtubeVideoId, 'hqdefault') : null;
+
+    // Container - lighter color for default sites, with optional YouTube thumbnail background
     const container = doc.createElement('div');
     container.className = 'kp-launcher-card-container';
+    
+    // Build background style - use thumbnail if available, otherwise solid color
+    let backgroundStyle = '';
+    if (thumbnailUrl) {
+      backgroundStyle = `
+        background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.85) 100%),
+                    url(${thumbnailUrl}) center/cover no-repeat;
+      `;
+    } else {
+      backgroundStyle = `background: ${isDefault ? '#3a3a3a' : '#2a2a2a'};`;
+    }
+
     container.style.cssText = `
       display: flex;
-      background: ${isDefault ? '#3a3a3a' : '#2a2a2a'};
+      ${backgroundStyle}
       border: 1px solid ${isDefault ? '#444' : '#333'};
       border-radius: 8px;
       overflow: hidden;
       min-height: 100px;
       transition: all 0.2s;
+      position: relative;
     `;
 
     // Main link area (3/4 width) - add min-width: 0 to allow shrinking
@@ -1285,6 +1377,8 @@ export class LauncherPopover {
       color: inherit;
       cursor: pointer;
       overflow: hidden;
+      position: relative;
+      z-index: 1;
     `;
 
     // Favicon
@@ -1385,13 +1479,21 @@ export class LauncherPopover {
 
     // Hover effects for container
     container.addEventListener('mouseenter', () => {
-      container.style.background = isDefault ? '#444' : '#333';
+      if (thumbnailUrl) {
+        container.style.background = `linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.75) 100%), url(${thumbnailUrl}) center/cover no-repeat`;
+      } else {
+        container.style.background = isDefault ? '#444' : '#333';
+      }
       container.style.borderColor = isDefault ? '#555' : '#444';
       container.style.transform = 'translateY(-2px)';
     });
 
     container.addEventListener('mouseleave', () => {
-      container.style.background = isDefault ? '#3a3a3a' : '#2a2a2a';
+      if (thumbnailUrl) {
+        container.style.background = `linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.85) 100%), url(${thumbnailUrl}) center/cover no-repeat`;
+      } else {
+        container.style.background = isDefault ? '#3a3a3a' : '#2a2a2a';
+      }
       container.style.borderColor = isDefault ? '#444' : '#333';
       container.style.transform = 'translateY(0)';
     });

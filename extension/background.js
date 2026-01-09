@@ -1484,6 +1484,147 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
+        case 'KP_GET_FAVICON': {
+          // Fetch favicon for a website URL, with caching
+          const pageUrl = typeof message.pageUrl === 'string' ? message.pageUrl.trim() : '';
+          const size = Math.max(16, Math.min(256, Number(message.size) || 32));
+
+          if (!pageUrl) {
+            sendResponse({
+              type: 'KP_FAVICON_RESPONSE',
+              success: false,
+              error: 'Missing pageUrl'
+            });
+            break;
+          }
+
+          try {
+            // Parse URL to get domain
+            let urlObj;
+            try {
+              urlObj = new URL(pageUrl);
+            } catch (e) {
+              sendResponse({
+                type: 'KP_FAVICON_RESPONSE',
+                success: false,
+                error: 'Invalid URL'
+              });
+              break;
+            }
+
+            const domain = urlObj.hostname.replace(/^www\./, '');
+            const cacheKey = `kp_favicon_${domain}_${size}`;
+            const CACHE_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+            // Check cache first
+            try {
+              const cached = await chrome.storage.local.get([cacheKey]);
+              if (cached[cacheKey]) {
+                const cachedData = cached[cacheKey];
+                const age = Date.now() - (cachedData.timestamp || 0);
+                if (age < CACHE_DURATION_MS && cachedData.dataUrl) {
+                  sendResponse({
+                    type: 'KP_FAVICON_RESPONSE',
+                    success: true,
+                    dataUrl: cachedData.dataUrl,
+                    cached: true
+                  });
+                  break;
+                }
+              }
+            } catch (e) {
+              // Cache read failed, continue to fetch
+            }
+
+            // Try Chrome's built-in favicon API first (for visited sites)
+            try {
+              const chromeFaviconUrl = `chrome://favicon2/?size=${size}&pageUrl=${encodeURIComponent(pageUrl)}`;
+              // We can't directly test if this works, so we'll try fetching it
+              // But actually, we can't fetch chrome:// URLs. Let's try the extension favicon API instead.
+            } catch (e) {
+              // Ignore
+            }
+
+            // Try common favicon locations
+            // Order: Google's favicon service (most reliable), then DuckDuckGo, then direct site paths
+            const faviconUrls = [
+              `https://www.google.com/s2/favicons?domain=${domain}&sz=${size}`,
+              `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+              `${urlObj.origin}/favicon.ico`,
+              `${urlObj.origin}/favicon.png`,
+              `${urlObj.origin}/apple-touch-icon.png`
+            ];
+
+            let faviconDataUrl = null;
+
+            for (const faviconUrl of faviconUrls) {
+              try {
+                const response = await fetch(faviconUrl, {
+                  method: 'GET',
+                  mode: 'cors',
+                  credentials: 'omit',
+                  referrerPolicy: 'no-referrer',
+                  cache: 'default'
+                });
+
+                if (response.ok) {
+                  const blob = await response.blob();
+                  if (blob.size > 0 && blob.type.startsWith('image/')) {
+                    // Convert blob to data URL
+                    const reader = new FileReader();
+                    faviconDataUrl = await new Promise((resolve, reject) => {
+                      reader.onload = () => resolve(reader.result);
+                      reader.onerror = reject;
+                      reader.readAsDataURL(blob);
+                    });
+
+                    if (faviconDataUrl) {
+                      // Cache the result
+                      try {
+                        await chrome.storage.local.set({
+                          [cacheKey]: {
+                            dataUrl: faviconDataUrl,
+                            timestamp: Date.now()
+                          }
+                        });
+                      } catch (e) {
+                        // Cache write failed, but we still have the favicon
+                      }
+                      break;
+                    }
+                  }
+                }
+              } catch (e) {
+                // Try next URL
+                continue;
+              }
+            }
+
+            if (faviconDataUrl) {
+              sendResponse({
+                type: 'KP_FAVICON_RESPONSE',
+                success: true,
+                dataUrl: faviconDataUrl,
+                cached: false
+              });
+            } else {
+              sendResponse({
+                type: 'KP_FAVICON_RESPONSE',
+                success: false,
+                error: 'Favicon not found'
+              });
+            }
+          } catch (error) {
+            console.error('KP_GET_FAVICON failed:', error);
+            sendResponse({
+              type: 'KP_FAVICON_RESPONSE',
+              success: false,
+              error: error.message || 'Unknown error'
+            });
+          }
+          break;
+        }
+
         case 'KP_NAVGRAPH_GET': {
           const tabId = sender?.tab?.id;
           if (typeof tabId !== 'number') {

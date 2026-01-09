@@ -110,6 +110,33 @@ export function getExtensionFaviconUrl(pageUrl, size = 32) {
 }
 
 /**
+ * Request favicon from service worker via message passing
+ * @param {string} pageUrl
+ * @param {number} [size]
+ * @returns {Promise<string|null>} Data URL or null if failed
+ */
+async function requestFaviconFromServiceWorker(pageUrl, size = 32) {
+  try {
+    if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) {
+      return null;
+    }
+
+    const response = await chrome.runtime.sendMessage({
+      type: 'KP_GET_FAVICON',
+      pageUrl: pageUrl,
+      size: size
+    });
+
+    if (response && response.type === 'KP_FAVICON_RESPONSE' && response.success && response.dataUrl) {
+      return response.dataUrl;
+    }
+  } catch (e) {
+    // Message passing failed or service worker unavailable
+  }
+  return null;
+}
+
+/**
  * @param {Document} doc
  * @param {string} url
  * @param {object} [opts]
@@ -130,14 +157,29 @@ export function createFaviconImg(doc, url, { size = 18, faviconUrl, fallbackUrl 
   const primary = typeof faviconUrl === 'string' && faviconUrl ? faviconUrl : getExtensionFaviconUrl(url, 32);
   img.src = primary;
 
-  // If favicon fetch fails (no favicon, permission issue, blocked scheme, etc), fall back to our generic icon.
-  img.addEventListener('error', () => {
+  // If favicon fetch fails (no favicon, permission issue, blocked scheme, etc), try service worker, then fall back to generic icon.
+  img.addEventListener('error', async () => {
     try {
       img.removeAttribute('srcset');
+      
+      // Try fetching via service worker message passing
+      const dataUrl = await requestFaviconFromServiceWorker(url, size);
+      if (dataUrl) {
+        img.src = dataUrl;
+        return;
+      }
+      
+      // Final fallback to generic icon
       img.src = fallback;
       img.dataset.kpFaviconFallback = 'true';
     } catch {
-      // ignore
+      // If all else fails, use fallback
+      try {
+        img.src = fallback;
+        img.dataset.kpFaviconFallback = 'true';
+      } catch {
+        // ignore
+      }
     }
   }, { once: true });
 

@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "KeyPilot",
     "version": "0.3.4",
-    "description": "Jan-9-2026-5:10AM Keyboard-first navigation: F click link under cursor; D back; R forward; ESC cancel.",
+    "description": "Jan-9-2026-5:45AM Keyboard-first navigation: F click link under cursor; D back; R forward; ESC cancel.",
     "action": {
         "default_title": "KeyPilot Minimal",
         "default_popup": "popup.html"
@@ -11,7 +11,7 @@
         "service_worker": "background.js"
     },
     "content_security_policy": {
-        "extension_pages": "frame-src *; style-src 'self' 'unsafe-inline'; default-src 'self'"
+        "extension_pages": "frame-src *; style-src 'self' 'unsafe-inline'; img-src 'self' https://img.youtube.com https://www.google.com https://icons.duckduckgo.com data:; default-src 'self'"
     },
     "permissions": [
         "storage",
