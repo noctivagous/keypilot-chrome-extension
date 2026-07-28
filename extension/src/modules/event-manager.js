@@ -1,6 +1,12 @@
 /**
  * Centralized event management
+ *
+ * Build note: content-bundled.js concatenates modules and strips ESM imports.
+ * Free functions from earlier modules (e.g. `dom-context.js`) remain in scope.
+ * Never use `import { x as y }` aliases — the alias binding is deleted with the import.
  */
+import { isTypingContext, hasModifierKeys } from '../utils/dom-context.js';
+
 export class EventManager {
   constructor() {
     this.listeners = new Map();
@@ -80,16 +86,19 @@ export class EventManager {
     // Override in implementation
   }
 
+  /**
+   * Delegate to shared helper (module free function after import strip).
+   * Identifier resolves to the imported/bundled free function, not this method.
+   */
   isTypingContext(target) {
-    if (!target) return false;
-    
-    const tag = target.tagName?.toLowerCase();
-    return tag === 'input' || 
-           tag === 'textarea' || 
-           target.isContentEditable;
+    return isTypingContext(target);
   }
 
+  /**
+   * Delegate to shared helper (module free function after import strip).
+   * Identifier resolves to the imported/bundled free function, not this method.
+   */
   hasModifierKeys(e) {
-    return e.ctrlKey || e.metaKey || e.altKey || e.shiftKey;
+    return hasModifierKeys(e);
   }
 }

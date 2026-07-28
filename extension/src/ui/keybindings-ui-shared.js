@@ -37,7 +37,8 @@ export const KEYBINDINGS_KEYBOARD_LAYOUT = getKeyboardUiLayoutForLayout(DEFAULT_
  */
 export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
   const z = Number.isFinite(zKeybindingsPopover) ? zKeybindingsPopover : Number(zKeybindingsPopover);
-  const zIndex = Number.isFinite(z) ? z : 1000010;
+  // Default matches Z_INDEX.KEYBINDINGS_POPOVER in constants.js (stamped at build time when possible).
+  const zIndex = Number.isFinite(z) ? z : 2147483046;
 
   // Font URLs are optional because `build.js` needs to stamp CSS into `early-inject.js`
   // without knowing the runtime extension ID. When omitted, we emit placeholders that

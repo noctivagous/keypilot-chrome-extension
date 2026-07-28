@@ -86,18 +86,20 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: 'key-activate',
     row: 2
   }),
+  // Foreground new tab (switch to the new tab).
   ACTIVATE_NEW_TAB: Object.freeze({
-    handler: 'handleActivateNewTabOverKey',
-    label: 'Click Tab Over',
-    description: 'Open Link in New Tab (Background, like middle click)',
-    keyboardClass: 'key-activate-new-over',
-    row: 2
-  }),
-  ACTIVATE_NEW_TAB_OVER: Object.freeze({
     handler: 'handleActivateNewTabKey',
     label: 'Click New Tab',
-    description: 'Click New Tab',
+    description: 'Open Link in New Tab (Foreground)',
     keyboardClass: 'key-activate-new',
+    row: 2
+  }),
+  // Background new tab (middle-click style; do not switch focus).
+  ACTIVATE_NEW_TAB_BACKGROUND: Object.freeze({
+    handler: 'handleActivateNewTabBackgroundKey',
+    label: 'Click New Tab Background',
+    description: 'Open Link in New Tab (Background, like middle click)',
+    keyboardClass: 'key-activate-new-over',
     row: 2
   }),
   BACK: Object.freeze({
@@ -347,7 +349,7 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   BACK2: Object.freeze({ keys: ['s', 'S'] }),
   BACK: Object.freeze({ keys: ['d', 'D'] }),
   ACTIVATE: Object.freeze({ keys: ['f', 'F'] }),
-  ACTIVATE_NEW_TAB: Object.freeze({ keys: ['g', 'G'] }),
+  ACTIVATE_NEW_TAB_BACKGROUND: Object.freeze({ keys: ['g', 'G'] }),
 
   TAB_HISTORY: Object.freeze({ keys: ['j', 'J'] }),
   TOGGLE_KEYBOARD_HELP: Object.freeze({ keys: ['k', 'K'] }),
@@ -360,7 +362,7 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   PAGE_BOTTOM: Object.freeze({ keys: ['x', 'X'] }),
   PAGE_UP_INSTANT: Object.freeze({ keys: ['c', 'C'] }),
   PAGE_DOWN_INSTANT: Object.freeze({ keys: ['v', 'V'] }),
-  ACTIVATE_NEW_TAB_OVER: Object.freeze({ keys: ['b', 'B'] }),
+  ACTIVATE_NEW_TAB: Object.freeze({ keys: ['b', 'B'] }),
 
   ROOT: Object.freeze({ keys: ['1', '!'], displayKey: '1', keyLabel: '1' }),
   DELETE: Object.freeze({ keys: ['Backspace'], displayKey: 'Backspace', keyLabel: 'Backspace' }),
@@ -390,7 +392,7 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   BACK2: Object.freeze({ keys: ['l', 'L'] }),
   BACK: Object.freeze({ keys: ['k', 'K'] }),
   ACTIVATE: Object.freeze({ keys: ['j', 'J'] }),
-  ACTIVATE_NEW_TAB: Object.freeze({ keys: ['h', 'H'] }),
+  ACTIVATE_NEW_TAB_BACKGROUND: Object.freeze({ keys: ['h', 'H'] }),
 
   // Utility actions: keep on the left to avoid colliding with J/K/L cluster.
   TAB_HISTORY: Object.freeze({ keys: ['f', 'F'] }),
@@ -405,7 +407,7 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   PAGE_BOTTOM: Object.freeze({ keys: ['.', '>'], displayKey: '.', keyLabel: '.' }),
   PAGE_UP_INSTANT: Object.freeze({ keys: [',', '<'], displayKey: ',', keyLabel: ',' }),
   PAGE_DOWN_INSTANT: Object.freeze({ keys: ['m', 'M'] }),
-  ACTIVATE_NEW_TAB_OVER: Object.freeze({ keys: ['n', 'N'] }),
+  ACTIVATE_NEW_TAB: Object.freeze({ keys: ['n', 'N'] }),
 
   ROOT: Object.freeze({ keys: ['1', '!'], displayKey: '1', keyLabel: '1' }),
   DELETE: Object.freeze({ keys: ['Backspace'], displayKey: 'Backspace', keyLabel: 'Backspace' }),
@@ -439,7 +441,7 @@ const KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: 'action', id: 'BACK2', fallbackText: 'Go Back' },
     { type: 'action', id: 'BACK', fallbackText: 'Go Back' },
     { type: 'action', id: 'ACTIVATE', fallbackText: 'Click Element' },
-    { type: 'action', id: 'ACTIVATE_NEW_TAB', fallbackText: 'Click New Tab' },
+    { type: 'action', id: 'ACTIVATE_NEW_TAB_BACKGROUND', fallbackText: 'Click New Tab Background' },
     { type: 'key', text: 'H' },
     { type: 'action', id: 'TAB_HISTORY', fallbackText: 'History' },
     { type: 'action', id: 'TOGGLE_KEYBOARD_HELP', fallbackText: 'KB Reference' },
@@ -454,7 +456,7 @@ const KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: 'action', id: 'PAGE_BOTTOM', fallbackText: 'Scroll To Bottom' },
     { type: 'action', id: 'PAGE_UP_INSTANT', fallbackText: 'Page Up Fast' },
     { type: 'action', id: 'PAGE_DOWN_INSTANT', fallbackText: 'Page Down Fast' },
-    { type: 'action', id: 'ACTIVATE_NEW_TAB_OVER', fallbackText: 'Click New Tab Over' },
+    { type: 'action', id: 'ACTIVATE_NEW_TAB', fallbackText: 'Click New Tab' },
     { type: 'key', text: 'N' },
     { type: 'key', text: 'M' },
     { type: 'key', text: ',' },
@@ -490,7 +492,7 @@ const KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
     { type: 'action', id: 'TOGGLE_KEYBOARD_HELP', fallbackText: 'KB Reference' }, // D
     { type: 'action', id: 'TAB_HISTORY', fallbackText: 'History' }, // F
     { type: 'key', text: 'G' },
-    { type: 'action', id: 'ACTIVATE_NEW_TAB', fallbackText: 'Click New Tab' }, // H
+    { type: 'action', id: 'ACTIVATE_NEW_TAB_BACKGROUND', fallbackText: 'Click New Tab Background' }, // H
     { type: 'action', id: 'ACTIVATE', fallbackText: 'Click Element' }, // J
     { type: 'action', id: 'BACK', fallbackText: 'Go Back' }, // K
     { type: 'action', id: 'BACK2', fallbackText: 'Go Back' }, // L
@@ -505,7 +507,7 @@ const KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
     { type: 'key', text: 'C' },
     { type: 'key', text: 'V' },
     { type: 'key', text: 'B' },
-    { type: 'action', id: 'ACTIVATE_NEW_TAB_OVER', fallbackText: 'Click New Tab Over' }, // N
+    { type: 'action', id: 'ACTIVATE_NEW_TAB', fallbackText: 'Click New Tab' }, // N
     { type: 'action', id: 'PAGE_DOWN_INSTANT', fallbackText: 'Page Down Fast' }, // M
     { type: 'action', id: 'PAGE_UP_INSTANT', fallbackText: 'Page Up Fast' }, // ,
     { type: 'action', id: 'PAGE_BOTTOM', fallbackText: 'Scroll To Bottom' }, // .

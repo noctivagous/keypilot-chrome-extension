@@ -6,10 +6,19 @@
 
 import { CURSOR_MODE } from '../config/constants.js';
 import { DEFAULT_KEYBOARD_LAYOUT_ID, normalizeKeyboardLayoutId } from '../config/keyboard-layouts.js';
+import {
+  SEARCH_ENGINE_META,
+  DEFAULT_SEARCH_ENGINE_ID,
+  normalizeSearchEngineId,
+  getSearchEngineMeta
+} from '../config/search-engines.js';
 
 export const SETTINGS_STORAGE_KEY = 'kp_settings_v1';
 
-/** @typedef {'brave'|'google'|'duckduckgo'} SearchEngine */
+// Re-export search engine catalog so consumers can keep importing from settings-manager.
+export { SEARCH_ENGINE_META, DEFAULT_SEARCH_ENGINE_ID, getSearchEngineMeta };
+
+/** @typedef {import('../config/search-engines.js').SearchEngineId} SearchEngine */
 
 /** @typedef {'crosshair'|'native_arrow'|'native_pointer'} ClickCursorType */
 /** @typedef {'t_square'|'crosshair'} TextCursorType */
@@ -53,7 +62,7 @@ export const SETTINGS_STORAGE_KEY = 'kp_settings_v1';
 
 /** @type {KeyPilotSettings} */
 export const DEFAULT_SETTINGS = Object.freeze({
-  searchEngine: 'brave',
+  searchEngine: DEFAULT_SEARCH_ENGINE_ID,
   cursorMode: CURSOR_MODE.NO_CUSTOM_CURSORS,
   keyboardLayoutId: DEFAULT_KEYBOARD_LAYOUT_ID,
   // When true, the floating keyboard reference panel highlights keys on keydown/keyup.
@@ -82,34 +91,12 @@ export const DEFAULT_SETTINGS = Object.freeze({
   })
 });
 
-export const SEARCH_ENGINE_META = Object.freeze({
-  brave: Object.freeze({
-    id: 'brave',
-    label: 'Brave',
-    homeUrl: 'https://search.brave.com/',
-    searchUrlPrefix: 'https://search.brave.com/search?q='
-  }),
-  google: Object.freeze({
-    id: 'google',
-    label: 'Google',
-    homeUrl: 'https://www.google.com/',
-    searchUrlPrefix: 'https://www.google.com/search?q='
-  }),
-  duckduckgo: Object.freeze({
-    id: 'duckduckgo',
-    label: 'DuckDuckGo',
-    homeUrl: 'https://duckduckgo.com/',
-    searchUrlPrefix: 'https://duckduckgo.com/?q='
-  })
-});
-
 /**
  * @param {any} raw
  * @returns {SearchEngine}
  */
 export function normalizeSearchEngine(raw) {
-  if (raw === 'google' || raw === 'duckduckgo' || raw === 'brave') return raw;
-  return DEFAULT_SETTINGS.searchEngine;
+  return normalizeSearchEngineId(raw);
 }
 
 /**
@@ -298,7 +285,7 @@ export async function setSettings(partial) {
  * @param {string} query
  */
 export function buildSearchUrl(engine, query) {
-  const meta = SEARCH_ENGINE_META[normalizeSearchEngine(engine)];
+  const meta = getSearchEngineMeta(engine);
   const q = typeof query === 'string' ? query : '';
   return `${meta.searchUrlPrefix}${encodeURIComponent(q)}`;
 }
@@ -307,8 +294,7 @@ export function buildSearchUrl(engine, query) {
  * @param {SearchEngine} engine
  */
 export function getEngineHomeUrl(engine) {
-  const meta = SEARCH_ENGINE_META[normalizeSearchEngine(engine)];
-  return meta.homeUrl;
+  return getSearchEngineMeta(engine).homeUrl;
 }
 
 

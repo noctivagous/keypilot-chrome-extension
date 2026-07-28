@@ -1,8 +1,31 @@
 import { CURSOR_MODE } from '../src/config/constants.js';
 import { normalizeKeyboardLayoutId } from '../src/config/keyboard-layouts.js';
+import { SEARCH_ENGINE_META } from '../src/config/search-engines.js';
 import { DEFAULT_SETTINGS, getSettings, normalizeCursorMode, normalizeSearchEngine, setSettings, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
+import { GENERIC_FAVICON_DATA_URL, getExtensionFaviconUrl } from '../src/ui/url-listing.js';
 import { startKeyPilotOnPage } from './keypilot-page-init.js';
 import { CursorManager } from '../src/modules/cursor.js';
+
+/**
+ * Use Chrome's extension favicon endpoint (img-src 'self') instead of
+ * google.com/s2/favicons, which redirects to t2.gstatic.com and is CSP-blocked.
+ */
+function applySearchEngineIcons() {
+  const icons = document.querySelectorAll('img.radio-icon[data-favicon-for]');
+  icons.forEach((img) => {
+    const id = img.getAttribute('data-favicon-for');
+    const meta = id && SEARCH_ENGINE_META[id] ? SEARCH_ENGINE_META[id] : null;
+    const pageUrl = meta?.homeUrl || '';
+    if (!pageUrl) {
+      img.src = GENERIC_FAVICON_DATA_URL;
+      return;
+    }
+    img.src = getExtensionFaviconUrl(pageUrl, 32);
+    img.addEventListener('error', () => {
+      img.src = GENERIC_FAVICON_DATA_URL;
+    }, { once: true });
+  });
+}
 
 function postCloseRequest() {
   try {
@@ -77,6 +100,8 @@ function withOptionalViewTransition(fn) {
 }
 
 async function render() {
+  applySearchEngineIcons();
+
   // Start KeyPilot inside the Settings page (this page is often loaded in an iframe popover).
   await startKeyPilotOnPage({ allowInIframe: true });
 

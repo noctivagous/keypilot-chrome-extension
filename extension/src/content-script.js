@@ -4,6 +4,9 @@
 import { KeyPilot } from './keypilot.js';
 import { KeyPilotToggleHandler } from './modules/keypilot-toggle-handler.js';
 import { OnboardingManager } from './modules/onboarding-manager.js';
+import { SCROLL } from './config/constants.js';
+import { MSG } from './messaging/types.js';
+import { isTypingContext, hasModifierKeys } from './utils/dom-context.js';
 
 /**
  * When running inside an iframe, we normally avoid initializing full KeyPilot.
@@ -22,14 +25,6 @@ function setupPopoverIframeBridge() {
     let keyPilotStarted = false;
     let lastMouse = { x: null, y: null };
     let mouseInsideFrame = true;
-
-    const isTypingContext = (target) => {
-      if (!target) return false;
-      const tag = target.tagName?.toLowerCase();
-      return tag === 'input' || tag === 'textarea' || target.isContentEditable;
-    };
-
-    const hasModifierKeys = (e) => e.ctrlKey || e.metaKey || e.altKey || e.shiftKey;
 
     const updateMouse = (e) => {
       try {
@@ -101,11 +96,11 @@ function setupPopoverIframeBridge() {
       const data = event?.data;
       if (!data || typeof data.type !== 'string') return;
 
-      if (data.type === 'KP_POPOVER_BRIDGE_INIT') {
+      if (data.type === MSG.POPOVER_BRIDGE_INIT) {
         bridgeActive = true;
         // Ack so the parent can safely focus the iframe knowing close/scroll keys are bridged.
         try {
-          window.parent.postMessage({ type: 'KP_POPOVER_BRIDGE_READY' }, '*');
+          window.parent.postMessage({ type: MSG.POPOVER_BRIDGE_READY }, '*');
         } catch {
           // Ignore
         }
@@ -128,7 +123,7 @@ function setupPopoverIframeBridge() {
 
       if (!bridgeActive) return;
 
-      if (data.type === 'KP_POPOVER_SCROLL') {
+      if (data.type === MSG.POPOVER_SCROLL) {
         const behavior = data.behavior === 'auto' ? 'auto' : 'smooth';
         if (data.command === 'scrollBy') {
           const delta = Number(data.delta) || 0;
@@ -158,7 +153,7 @@ function setupPopoverIframeBridge() {
         e.stopPropagation();
         e.stopImmediatePropagation();
         try {
-          window.parent.postMessage({ type: 'KP_POPOVER_REQUEST_CLOSE', key }, '*');
+          window.parent.postMessage({ type: MSG.POPOVER_REQUEST_CLOSE, key }, '*');
         } catch {
           // Ignore
         }
@@ -173,7 +168,7 @@ function setupPopoverIframeBridge() {
         e.stopPropagation();
         e.stopImmediatePropagation();
         try {
-          window.parent.postMessage({ type: 'KP_POPOVER_BRIDGE_KEYDOWN', key }, '*');
+          window.parent.postMessage({ type: MSG.POPOVER_BRIDGE_KEYDOWN, key }, '*');
         } catch {
           // Ignore
         }
@@ -209,20 +204,21 @@ function setupPopoverIframeBridge() {
 
       // Scroll shortcuts (match KeyPilot keybindings) when not typing:
       // Z: up, X: down, C: up (smaller), V: down (smaller), B: top, N: bottom
+      // Note: B/N scroll top/bottom here is the historical bridge mapping (not layout-aware).
       if (isTypingContext(e.target)) return;
 
       if (key === 'z' || key === 'Z') {
         e.preventDefault();
-        scrollByY(-800, 'smooth');
+        scrollByY(-SCROLL.PAGE_PX, 'smooth');
       } else if (key === 'x' || key === 'X') {
         e.preventDefault();
-        scrollByY(800, 'smooth');
+        scrollByY(SCROLL.PAGE_PX, 'smooth');
       } else if (key === 'c' || key === 'C') {
         e.preventDefault();
-        scrollByY(-400, 'smooth');
+        scrollByY(-SCROLL.HALF_PAGE_PX, 'smooth');
       } else if (key === 'v' || key === 'V') {
         e.preventDefault();
-        scrollByY(400, 'smooth');
+        scrollByY(SCROLL.HALF_PAGE_PX, 'smooth');
       } else if (key === 'b' || key === 'B') {
         e.preventDefault();
         scrollToY(0, 'smooth');

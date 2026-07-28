@@ -14,7 +14,8 @@ import { IntersectionObserverManager } from './modules/intersection-observer-man
 import { OptimizedScrollManager } from './modules/optimized-scroll-manager.js';
 import { RectangleIntersectionObserver } from './modules/rectangle-intersection-observer.js';
 import { MouseCoordinateManager } from './modules/mouse-coordinate-manager.js';
-import { MODES, CURSOR_MODE, CSS_CLASSES, COLORS, Z_INDEX, RECTANGLE_SELECTION, EDGE_ONLY_SELECTION, FEATURE_FLAGS } from './config/constants.js';
+import { MODES, CURSOR_MODE, CSS_CLASSES, COLORS, Z_INDEX, RECTANGLE_SELECTION, EDGE_ONLY_SELECTION, FEATURE_FLAGS, SCROLL } from './config/constants.js';
+import { MSG } from './messaging/types.js';
 import { buildKeybindingsForLayout, DEFAULT_KEYBOARD_LAYOUT_ID, getKeyboardUiLayoutForLayout, normalizeKeyboardLayoutId } from './config/keyboard-layouts.js';
 import { FloatingKeyboardHelp } from './ui/floating-keyboard-help.js';
 import { OmniboxManager } from './modules/omnibox-manager.js';
@@ -806,7 +807,7 @@ export class KeyPilot extends EventManager {
    */
   async queryInitialState() {
     try {
-      const response = await chrome.runtime.sendMessage({ type: 'KP_GET_STATE' });
+      const response = await chrome.runtime.sendMessage({ type: MSG.GET_STATE });
       if (response && typeof response.enabled === 'boolean') {
         this.enabled = response.enabled;
         console.log('[KeyPilot] Initial state from service worker:', this.enabled ? 'enabled' : 'disabled');
@@ -1084,9 +1085,9 @@ export class KeyPilot extends EventManager {
 
   setupPopupCommunication() {
     chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-      if (msg.type === 'KP_GET_STATUS') {
+      if (msg.type === MSG.GET_STATUS) {
         sendResponse({ mode: this.state.getState().mode });
-      } else if (msg.type === 'KP_TOGGLE_STATE' || msg.type === 'KP_UPDATE_STATE') {
+      } else if (msg.type === MSG.TOGGLE_STATE || msg.type === MSG.UPDATE_STATE) {
         // Handle state change message from service worker
         if (typeof msg.enabled === 'boolean') {
           if (msg.enabled) {
@@ -1095,7 +1096,7 @@ export class KeyPilot extends EventManager {
             this.disable();
           }
         }
-      } else if (msg.type === 'KP_OPEN_SETTINGS_POPOVER') {
+      } else if (msg.type === MSG.OPEN_SETTINGS_POPOVER) {
         try {
           // Tab-local open (top frame only)
           if (window !== window.top) return;
@@ -1103,7 +1104,7 @@ export class KeyPilot extends EventManager {
         } catch (e) {
           console.warn('[KeyPilot] Failed to open settings popover via message:', e);
         }
-      } else if (msg.type === 'KP_OPEN_GUIDE_POPOVER') {
+      } else if (msg.type === MSG.OPEN_GUIDE_POPOVER) {
         try {
           // Tab-local open (top frame only)
           if (window !== window.top) return;
@@ -1111,7 +1112,7 @@ export class KeyPilot extends EventManager {
         } catch (e) {
           console.warn('[KeyPilot] Failed to open guide popover via message:', e);
         }
-      } else if (msg.type === 'KP_OPEN_ONBOARDING') {
+      } else if (msg.type === MSG.OPEN_ONBOARDING) {
         try {
           // Tab-local open (top frame only)
           if (window !== window.top) return;
@@ -1173,7 +1174,7 @@ export class KeyPilot extends EventManager {
       // If we run KeyPilot inside a popover iframe, sending KP_STATUS from that frame
       // would overwrite the popup UI with the iframe's mode.
       if (window !== window.top) return;
-      chrome.runtime.sendMessage({ type: 'KP_STATUS', mode });
+      chrome.runtime.sendMessage({ type: MSG.STATUS, mode });
     } catch (error) {
       // Popup might not be open
     }
@@ -1192,7 +1193,7 @@ export class KeyPilot extends EventManager {
       e.stopImmediatePropagation();
       // Send toggle message to background script
       if (typeof chrome !== 'undefined' && chrome.runtime) {
-        chrome.runtime.sendMessage({ type: 'KP_TOGGLE_STATE' }).catch(() => {
+        chrome.runtime.sendMessage({ type: MSG.TOGGLE_STATE }).catch(() => {
           // Ignore errors if background script is not available
         });
       }
@@ -1253,8 +1254,12 @@ export class KeyPilot extends EventManager {
     const KB = this.keybindings || {};
 
     // Global default: Escape closes the frontmost "popover-like" UI.
-    // Priority: omnibox (always visually on top) → PopupManager (topmost modal panel).
-    if (KB.CANCEL?.keys?.includes?.(e.key)) {
+    // Priority: omnibox → launcher → PopupManager (topmost modal panel).
+    // Match both e.key and e.code so Escape is reliable across layouts.
+    const isCancelKey = KB.CANCEL?.keys?.includes?.(e.key)
+      || e.key === 'Escape'
+      || e.code === 'Escape';
+    if (isCancelKey) {
       // Omnibox
       try {
         if (currentState.mode === MODES.OMNIBOX || this.omniboxManager?.isOpen?.()) {
@@ -1262,6 +1267,18 @@ export class KeyPilot extends EventManager {
           e.stopPropagation();
           e.stopImmediatePropagation();
           this.handleCloseOmnibox();
+          return;
+        }
+      } catch { /* ignore */ }
+
+      // Launcher (before generic PopupManager so we always clear launcher state,
+      // even if the modal stack entry was lost or show() is still in flight).
+      try {
+        if (this.launcherPopover?.isOpen?.()) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          this.launcherPopover.hide();
           return;
         }
       } catch { /* ignore */ }
@@ -1274,17 +1291,6 @@ export class KeyPilot extends EventManager {
           e.stopPropagation();
           e.stopImmediatePropagation();
           pm.requestCloseTop?.();
-          return;
-        }
-      } catch { /* ignore */ }
-
-      // Launcher popover
-      try {
-        if (this.launcherPopover?.isOpen?.()) {
-          e.preventDefault();
-          e.stopPropagation();
-          e.stopImmediatePropagation();
-          this.launcherPopover.hide();
           return;
         }
       } catch { /* ignore */ }
@@ -1328,22 +1334,22 @@ export class KeyPilot extends EventManager {
       // This path covers cases where focus is still in the parent document.
       if (KB.PAGE_UP?.keys?.includes?.(e.key)) {
         e.preventDefault();
-        this.overlayManager?.scrollPopoverBy?.(-800, 'smooth');
+        this.overlayManager?.scrollPopoverBy?.(-SCROLL.PAGE_PX, 'smooth');
         return;
       }
       if (KB.PAGE_DOWN?.keys?.includes?.(e.key)) {
         e.preventDefault();
-        this.overlayManager?.scrollPopoverBy?.(800, 'smooth');
+        this.overlayManager?.scrollPopoverBy?.(SCROLL.PAGE_PX, 'smooth');
         return;
       }
       if (KB.PAGE_UP_INSTANT?.keys?.includes?.(e.key)) {
         e.preventDefault();
-        this.overlayManager?.scrollPopoverBy?.(-400, 'smooth');
+        this.overlayManager?.scrollPopoverBy?.(-SCROLL.HALF_PAGE_PX, 'smooth');
         return;
       }
       if (KB.PAGE_DOWN_INSTANT?.keys?.includes?.(e.key)) {
         e.preventDefault();
-        this.overlayManager?.scrollPopoverBy?.(400, 'smooth');
+        this.overlayManager?.scrollPopoverBy?.(SCROLL.HALF_PAGE_PX, 'smooth');
         return;
       }
       if (KB.PAGE_TOP?.keys?.includes?.(e.key)) {
@@ -1374,11 +1380,11 @@ export class KeyPilot extends EventManager {
         this.handleActivateNewTabKey();
         return;
       }
-      if (KB.ACTIVATE_NEW_TAB_OVER?.keys?.includes?.(e.key)) {
+      if (KB.ACTIVATE_NEW_TAB_BACKGROUND?.keys?.includes?.(e.key)) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
-        this.handleActivateNewTabOverKey();
+        this.handleActivateNewTabBackgroundKey();
         return;
       }
 
@@ -1391,6 +1397,24 @@ export class KeyPilot extends EventManager {
         return;
       }
 
+      // History navigation must work even while a popover is open (parent focus).
+      // Without this, D/S/R are silently swallowed and feel like they need a second press
+      // after the popover is closed.
+      if (KB.BACK?.keys?.includes?.(e.key) || KB.BACK2?.keys?.includes?.(e.key)) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        this.handleBackKey();
+        return;
+      }
+      if (KB.FORWARD?.keys?.includes?.(e.key)) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        this.handleForwardKey();
+        return;
+      }
+
       // For all other keys when popover is open, let them pass through to the iframe
       // Don't prevent default so the iframe can handle navigation keys
       console.log('[KeyPilot] Letting key pass through to popover/iframe');
@@ -1400,6 +1424,7 @@ export class KeyPilot extends EventManager {
     // In text focus mode:
     // - ESC exits text focus (never clicks)
     // - Only F can click, and only when armed by mouse movement
+    // - History nav (D/S/R) still works: blur first, then navigate (avoids "press D twice")
     if (currentState.mode === MODES.TEXT_FOCUS) {
       if (KB.CANCEL?.keys?.includes?.(e.key)) {
         console.debug('Escape key detected in text focus mode');
@@ -1417,14 +1442,39 @@ export class KeyPilot extends EventManager {
         this._handleActivateFromTextFocus(currentState);
         return;
       }
+
+      if (this._isHistoryNavigationKey(KB, e)) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        this.handleEscapeFromTextFocus(currentState);
+        this._runHistoryNavigationKey(KB, e);
+        return;
+      }
       return;
     }
 
     // Don't handle keys if we're in a typing context but not in our text focus mode
-    // (This handles edge cases where focus detection might miss something)
-    if (this.isTypingContext(e.target)) {
+    // (This handles edge cases where focus detection might miss something).
+    // Check both event target and activeElement — some sites focus a field while
+    // the key event target is a parent wrapper.
+    const typingTarget = this.isTypingContext(e.target)
+      ? e.target
+      : (this.isTypingContext(document.activeElement) ? document.activeElement : null);
+    if (typingTarget) {
       if (KB.CANCEL?.keys?.includes?.(e.key)) {
         this.cancelModes();
+        return;
+      }
+      // Allow browser history keys even when a text field is focused (blur + go).
+      if (this._isHistoryNavigationKey(KB, e)) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        try { /** @type {any} */ (typingTarget).blur?.(); } catch { /* ignore */ }
+        try { this.focusDetector?.clearTextFocus?.(); } catch { /* ignore */ }
+        this._runHistoryNavigationKey(KB, e);
+        return;
       }
       return;
     }
@@ -1726,34 +1776,32 @@ export class KeyPilot extends EventManager {
   }
 
   handlePageUp() {
-    // Scroll up one page smoothly
     window.scrollBy({
-      top: -800,
+      top: -SCROLL.PAGE_PX,
       behavior: 'smooth'
     });
+    this.emitAction('scrollUp');
   }
 
   handlePageDown() {
-    // Scroll down one page smoothly
     window.scrollBy({
-      top: 800,
+      top: SCROLL.PAGE_PX,
       behavior: 'smooth'
     });
+    this.emitAction('scrollDown');
   }
 
   handleInstantPageUp() {
-    // Scroll down half of what V is (400px) smoothly
     window.scrollBy({
-      top: -400,
+      top: -SCROLL.HALF_PAGE_PX,
       behavior: 'smooth'
     });
     this.emitAction('scrollUp');
   }
 
   handleInstantPageDown() {
-    // Scroll up half of what C is smoothly
     window.scrollBy({
-      top: 400,
+      top: SCROLL.HALF_PAGE_PX,
       behavior: 'smooth'
     });
     this.emitAction('scrollDown');
@@ -1777,41 +1825,156 @@ export class KeyPilot extends EventManager {
     this.emitAction('scrollBottom');
   }
 
+  /**
+   * True when the event matches browser history back/forward keybindings.
+   * @param {Record<string, any>} KB
+   * @param {KeyboardEvent} e
+   */
+  _isHistoryNavigationKey(KB, e) {
+    if (!KB || !e) return false;
+    return !!(
+      KB.BACK?.keys?.includes?.(e.key) ||
+      KB.BACK2?.keys?.includes?.(e.key) ||
+      KB.FORWARD?.keys?.includes?.(e.key)
+    );
+  }
+
+  /**
+   * Run the history handler that matches this key (back vs forward).
+   * @param {Record<string, any>} KB
+   * @param {KeyboardEvent} e
+   */
+  _runHistoryNavigationKey(KB, e) {
+    if (KB.FORWARD?.keys?.includes?.(e.key)) {
+      this.handleForwardKey();
+      return;
+    }
+    // BACK and BACK2 share the same handler.
+    this.handleBackKey();
+  }
+
   handleBackKey() {
     // Emit BEFORE navigating away so onboarding (and other listeners) can observe/persist it.
+    // This is synchronous so listeners run before any navigation is requested.
     this.emitAction('back');
-
-    // Also record a transient action via the service worker so onboarding can recover
-    // even if the content-script unloads before async storage writes complete.
-    try {
-      if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
-        chrome.runtime.sendMessage({ type: 'KP_TRANSIENT_ACTION', action: 'back', timestamp: Date.now() }).catch(() => {});
-      }
-    } catch {
-      // ignore
-    }
-
-    // Defer the actual navigation slightly so async persistence has a chance to start.
-    // (This prevents "checkbox flashes then unchecks" when the content-script tears down mid-write.)
-    try {
-      setTimeout(() => {
-        try {
-          history.back();
-        } catch {
-          // ignore
-        }
-      }, 30);
-    } catch {
-      try {
-        history.back();
-      } catch {
-        // ignore
-      }
-    }
+    this._navigateHistory(-1, { recordTransientAction: 'back' });
   }
 
   handleForwardKey() {
-    history.forward();
+    this._navigateHistory(1);
+  }
+
+  /**
+   * Navigate browser session history (back/forward).
+   *
+   * Uses `history.back/forward` as the primary action (immediate, same stack as the page).
+   * Transient onboarding actions are recorded separately via the service worker.
+   *
+   * Silent hops (common SPA / in-page patterns that feel like "D did nothing"):
+   * - Only cleared a `#hash` fragment
+   * - URL is unchanged after a same-document `pushState` entry
+   * In those cases, take one automatic extra step so one keypress matches user intent.
+   *
+   * @param {-1|1} direction
+   * @param {{ recordTransientAction?: string }} [opts]
+   */
+  _navigateHistory(direction, opts = {}) {
+    const dir = direction < 0 ? -1 : 1;
+    const recordAction = typeof opts.recordTransientAction === 'string' ? opts.recordTransientAction : '';
+
+    // Onboarding recovery: record before unload, fire-and-forget (do not gate navigation on it).
+    if (recordAction) {
+      try {
+        if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+          chrome.runtime.sendMessage({
+            type: MSG.TRANSIENT_ACTION,
+            action: recordAction,
+            timestamp: Date.now()
+          }).catch(() => {});
+        }
+      } catch { /* ignore */ }
+    }
+
+    const step = () => {
+      try {
+        if (dir < 0) history.back();
+        else history.forward();
+      } catch { /* ignore */ }
+    };
+
+    // Popover iframe: only this frame's history.
+    if (window !== window.top) {
+      step();
+      return;
+    }
+
+    // Only auto-skip "invisible" hops when going back.
+    if (dir >= 0) {
+      step();
+      return;
+    }
+
+    const beforeHref = location.href;
+    const beforePath = `${location.pathname}${location.search}`;
+    const beforeHash = location.hash || '';
+
+    // Cancel any previous skip watcher (rapid D presses).
+    try {
+      if (this._historySkipCleanup) this._historySkipCleanup();
+    } catch { /* ignore */ }
+    this._historySkipCleanup = null;
+
+    let extraHopsUsed = 0;
+    const maxExtraHops = 1;
+
+    const cleanup = () => {
+      if (popListener) {
+        try { window.removeEventListener('popstate', popListener); } catch { /* ignore */ }
+        popListener = null;
+      }
+      if (timer) {
+        try { clearTimeout(timer); } catch { /* ignore */ }
+        timer = 0;
+      }
+      if (this._historySkipCleanup === cleanup) this._historySkipCleanup = null;
+    };
+
+    let popListener = () => {
+      try {
+        if (extraHopsUsed >= maxExtraHops) {
+          cleanup();
+          return;
+        }
+        const path = `${location.pathname}${location.search}`;
+        const hash = location.hash || '';
+        const href = location.href;
+
+        // Invisible hop patterns:
+        // 1) Full URL unchanged after back (same-document pushState with no URL change)
+        // 2) Only a hash fragment was cleared (page#section → page)
+        const urlUnchanged = href === beforeHref;
+        const onlyClearedHash = !!beforeHash && !hash && path === beforePath;
+
+        if (urlUnchanged || onlyClearedHash) {
+          extraHopsUsed += 1;
+          step();
+          // Keep listening briefly for the extra hop's popstate; timeout cleans up.
+          return;
+        }
+      } catch { /* ignore */ }
+      cleanup();
+    };
+
+    let timer = 0;
+    try {
+      window.addEventListener('popstate', popListener);
+      timer = window.setTimeout(cleanup, 500);
+      this._historySkipCleanup = cleanup;
+    } catch {
+      popListener = null;
+    }
+
+    step();
   }
 
   handleTabLeftKey() {
@@ -1820,10 +1983,10 @@ export class KeyPilot extends EventManager {
     this.emitAction('tabLeft');
     try {
       if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
-        chrome.runtime.sendMessage({ type: 'KP_TRANSIENT_ACTION', action: 'tabLeft', timestamp: Date.now() }).catch(() => {});
+        chrome.runtime.sendMessage({ type: MSG.TRANSIENT_ACTION, action: 'tabLeft', timestamp: Date.now() }).catch(() => {});
       }
     } catch { /* ignore */ }
-    chrome.runtime.sendMessage({ type: 'KP_TAB_LEFT' });
+    chrome.runtime.sendMessage({ type: MSG.TAB_LEFT });
   }
 
   handleTabRightKey() {
@@ -1832,10 +1995,10 @@ export class KeyPilot extends EventManager {
     this.emitAction('tabRight');
     try {
       if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
-        chrome.runtime.sendMessage({ type: 'KP_TRANSIENT_ACTION', action: 'tabRight', timestamp: Date.now() }).catch(() => {});
+        chrome.runtime.sendMessage({ type: MSG.TRANSIENT_ACTION, action: 'tabRight', timestamp: Date.now() }).catch(() => {});
       }
     } catch { /* ignore */ }
-    chrome.runtime.sendMessage({ type: 'KP_TAB_RIGHT' });
+    chrome.runtime.sendMessage({ type: MSG.TAB_RIGHT });
   }
 
   handleDeleteKey() {
@@ -4384,7 +4547,7 @@ export class KeyPilot extends EventManager {
     
     try {
       // Send message to background script to close the current tab
-      chrome.runtime.sendMessage({ type: 'KP_CLOSE_TAB' });
+      chrome.runtime.sendMessage({ type: MSG.CLOSE_TAB });
       this.showFlashNotification('Closing Tab...', COLORS.NOTIFICATION_INFO);
     } catch (error) {
       console.error('[KeyPilot] Failed to close tab:', error);
@@ -4400,12 +4563,12 @@ export class KeyPilot extends EventManager {
       this.emitAction('newTab');
       try {
         if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
-          chrome.runtime.sendMessage({ type: 'KP_TRANSIENT_ACTION', action: 'newTab', timestamp: Date.now() }).catch(() => {});
+          chrome.runtime.sendMessage({ type: MSG.TRANSIENT_ACTION, action: 'newTab', timestamp: Date.now() }).catch(() => {});
         }
       } catch { /* ignore */ }
 
       // Send message to background script to open a new tab
-      chrome.runtime.sendMessage({ type: 'KP_NEW_TAB' });
+      chrome.runtime.sendMessage({ type: MSG.NEW_TAB });
       this.showFlashNotification('Opening New Tab...', COLORS.NOTIFICATION_INFO);
     } catch (error) {
       console.error('[KeyPilot] Failed to open new tab:', error);
@@ -4516,7 +4679,7 @@ export class KeyPilot extends EventManager {
       this.mouseCoordinateManager.handleLinkClick(currentState.lastMouse.x, currentState.lastMouse.y, link);
 
       try {
-        chrome.runtime.sendMessage({ type: 'KP_OPEN_URL_FOREGROUND', url });
+        chrome.runtime.sendMessage({ type: MSG.OPEN_URL_FOREGROUND, url });
         this.showRipple(currentState.lastMouse.x, currentState.lastMouse.y);
         this.overlayManager.flashFocusOverlay();
         this.postClickRefresh(link, currentState.lastMouse.x, currentState.lastMouse.y);
@@ -4545,7 +4708,7 @@ export class KeyPilot extends EventManager {
     this.emitAction('activateNewTab', this._buildActivationDetail(target));
   }
 
-  handleActivateNewTabOverKey() {
+  handleActivateNewTabBackgroundKey() {
     const currentState = this.state.getState();
     const target = this._getValidatedActivationTarget(currentState);
 
@@ -4590,7 +4753,7 @@ export class KeyPilot extends EventManager {
 
     // Only work if we have a URL
     if (!url) {
-      console.log('[KeyPilot] Activate New Tab Over: not hovering over a hyperlink');
+      console.log('[KeyPilot] Activate New Tab Background: not hovering over a hyperlink');
       return;
     }
 
@@ -4601,7 +4764,7 @@ export class KeyPilot extends EventManager {
 
     // Open link in a background tab (middle-click style: do NOT switch/focus the new tab).
     try {
-      chrome.runtime.sendMessage({ type: 'KP_OPEN_URL_BACKGROUND', url });
+      chrome.runtime.sendMessage({ type: MSG.OPEN_URL_BACKGROUND, url });
       this.showRipple(currentState.lastMouse.x, currentState.lastMouse.y);
       this.overlayManager.flashFocusOverlay();
       this.postClickRefresh(link, currentState.lastMouse.x, currentState.lastMouse.y);
@@ -4984,6 +5147,14 @@ export class KeyPilot extends EventManager {
     const currentState = this.state.getState();
     
     console.log('[KeyPilot] Canceling modes, current mode:', currentState.mode);
+
+    // Launcher is not a state.mode but must still close on Escape/cancel.
+    try {
+      if (this.launcherPopover?.isOpen?.()) {
+        this.launcherPopover.hide();
+        return;
+      }
+    } catch { /* ignore */ }
     
     // Handle highlight mode cancellation specifically
     if (currentState.mode === MODES.HIGHLIGHT) {

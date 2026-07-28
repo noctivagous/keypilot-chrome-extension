@@ -26,6 +26,8 @@ export const CSS_CLASSES = {
   HIDDEN: 'kpv2-hidden',
   RIPPLE: 'kpv2-ripple',
   FOCUS_OVERLAY: 'kpv2-focus-overlay',
+  /** Temporary outline that scales up on F-click activation */
+  FOCUS_PULSE: 'kpv2-focus-pulse',
   DELETE_OVERLAY: 'kpv2-delete-overlay',
   HIGHLIGHT_OVERLAY: 'kpv2-highlight-overlay',
   HIGHLIGHT_SELECTION: 'kpv2-highlight-selection',
@@ -80,9 +82,9 @@ export const Z_INDEX = {
   OVERLAYS: 2147483020,
   OVERLAYS_ABOVE: 2147483021,
 
-  // Floating keyboard reference + its key-click tooltip popover
-  FLOATING_KEYBOARD_HELP: 1000000,
-  KEYBINDINGS_POPOVER: 1000010,
+  // Onboarding walkthrough panel (top-left)
+  // Keep BELOW the green hover/click overlays so rectangles + countdown label stay visible.
+  ONBOARDING_PANEL: 2147483017,
 
   // Iframe-based popover modal (Open Popover)
   POPOVER_IFRAME_MODAL: 2147483035,
@@ -92,16 +94,27 @@ export const Z_INDEX = {
   DEBUG_HUD: 2147483041,
   NOTIFICATION: 2147483040,
 
-  // Omnibox overlay (should sit above most UI, but below the cursor)
+  // Omnibox overlay (should sit above most UI, but below keyboard help + cursor)
   OMNIBOX: 2147483042,
 
-  // Onboarding walkthrough panel (top-left)
-  // Keep BELOW the green hover/click overlays so rectangles + countdown label stay visible.
-  ONBOARDING_PANEL: 2147483017,
+  // Floating keyboard reference + key-click tooltip (above page UI, below cursor)
+  FLOATING_KEYBOARD_HELP: 2147483045,
+  KEYBINDINGS_POPOVER: 2147483046,
 
   // Cursor should remain above everything else.
   CURSOR: 2147483050
 };
+
+/**
+ * Scroll distances for page / popover keyboard scrolling (single source of truth).
+ * Used by key handlers and popover iframe bridges.
+ */
+export const SCROLL = Object.freeze({
+  /** Z / X (and popover equivalents): large page step */
+  PAGE_PX: 800,
+  /** C / V: half step */
+  HALF_PAGE_PX: 400
+});
 
 export const MODES = {
   NONE: 'none',
@@ -189,17 +202,9 @@ export const COLORS = {
   FOCUS_BLUE_BG_T2: 'rgba(33,150,243,0.25)'
 };
 
-export const CURSOR_SETTINGS = {
-  DEFAULT_SIZE: 1.0,
-  MIN_SIZE: 0.5,
-  MAX_SIZE: 2.0,
-  SIZE_STEP: 0.1,
-  DEFAULT_VISIBLE: true,
-  STORAGE_KEYS: {
-    SIZE: 'keypilot_cursor_size',
-    VISIBLE: 'keypilot_cursor_visible'
-  }
-};
+// Legacy scale-based cursor storage (keypilot_cursor_size / keypilot_cursor_visible)
+// was removed. Cursor appearance lives in kp_settings_v1 via settings-manager
+// (clickMode.cursor + cursorMode).
 
 export const RECTANGLE_SELECTION = {
   // Visual rectangle settings

@@ -26,17 +26,18 @@
           <label class="radio">
             <input type="radio" name="engine" value="brave" />
             <span>Brave</span>
-            <img src="https://www.google.com/s2/favicons?domain=brave.com&sz=16" alt="Brave" class="radio-icon" />
+            <!-- Favicon src set in settings.js via chrome.runtime /_favicon/ (CSP-safe; Google s2 redirects to gstatic and is blocked). -->
+            <img data-favicon-for="brave" alt="" class="radio-icon" width="16" height="16" />
           </label>
           <label class="radio">
             <input type="radio" name="engine" value="google" />
             <span>Google</span>
-            <img src="https://www.google.com/s2/favicons?domain=google.com&sz=16" alt="Google" class="radio-icon" />
+            <img data-favicon-for="google" alt="" class="radio-icon" width="16" height="16" />
           </label>
           <label class="radio">
             <input type="radio" name="engine" value="duckduckgo" />
             <span>DuckDuckGo</span>
-            <img src="https://www.google.com/s2/favicons?domain=duckduckgo.com&sz=16" alt="DuckDuckGo" class="radio-icon" />
+            <img data-favicon-for="duckduckgo" alt="" class="radio-icon" width="16" height="16" />
           </label>
         </div>
         <p class="hint">Used by the New Tab search box and KeyPilot’s omnibox (Alt+L).</p>
@@ -245,7 +246,7 @@
       </section>
     </main>
 
-    <script src="popover-bridge.js"></script>
+    <script type="module" src="popover-bridge.js"></script>
     <script type="module" src="settings.js"></script>
   </body>
 </html>

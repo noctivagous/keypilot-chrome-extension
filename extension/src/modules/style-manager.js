@@ -98,6 +98,22 @@ export class StyleManager {
         60% { transform: translate(-50%, -50%) scale(1); opacity: 0.2; }
         100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
       }
+
+      /* F-key activation: outline scales up and fades out from the click target. */
+      @keyframes kpv2-focus-pulse {
+        0% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        55% {
+          transform: scale(1.12);
+          opacity: 0.85;
+        }
+        100% {
+          transform: scale(1.28);
+          opacity: 0;
+        }
+      }
       
       .${CSS_CLASSES.RIPPLE} { 
         position: fixed; 
@@ -110,6 +126,24 @@ export class StyleManager {
         border-radius: 50%; 
         background: radial-gradient(circle, ${COLORS.RIPPLE_GREEN} 0%, ${COLORS.RIPPLE_GREEN_MID} 60%, ${COLORS.RIPPLE_GREEN_TRANSPARENT} 70%); 
         animation: kpv2-ripple 420ms ease-out forwards; 
+      }
+
+      .${CSS_CLASSES.FOCUS_PULSE} {
+        position: fixed;
+        left: 0;
+        top: 0;
+        pointer-events: none;
+        z-index: ${Z_INDEX.OVERLAYS_ABOVE};
+        box-sizing: border-box;
+        border: 3px solid ${COLORS.FLASH_GREEN};
+        border-radius: 3px;
+        box-shadow:
+          0 0 0 2px ${COLORS.FLASH_GREEN_SHADOW},
+          0 0 18px 4px ${COLORS.FLASH_GREEN_GLOW};
+        background: transparent;
+        transform-origin: center center;
+        will-change: transform, opacity;
+        animation: kpv2-focus-pulse 420ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
       }
       
       .${CSS_CLASSES.FOCUS_OVERLAY} { 

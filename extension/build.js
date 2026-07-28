@@ -44,6 +44,11 @@ const modules = [
   ...(FEATURE_FLAGS.ENABLE_DOM_HOVER_LISTENERS ? [] : ['src/vendor/rbush.js']),
   // Include shadow DOM query library when DOM hover listeners are enabled
   ...(FEATURE_FLAGS.ENABLE_DOM_HOVER_LISTENERS ? ['../node_modules/query-selector-shadow-dom/dist/querySelectorShadowDom.js'] : []),
+  // Shared config / messaging / utils (must appear before import-stripped consumers).
+  'src/config/search-engines.js',
+  'src/config/url-policy.js',
+  'src/messaging/types.js',
+  'src/utils/dom-context.js',
   // Shared UI helpers used by multiple modules (must be defined before import-stripped consumers).
   'src/ui/url-listing.js',
   'src/modules/state-manager.js',

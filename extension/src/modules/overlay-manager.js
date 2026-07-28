@@ -81,6 +81,10 @@ export class OverlayManager {
     // Text input hover styling (we tint hovered inputs instead of drawing orange frames).
     this._textHoverCurrentElement = null;
     this._textHoverStyledElements = new Set();
+
+    // Last known focus target (used for F-click scale-up pulse across all render modes).
+    this._lastFocusElement = null;
+    this._lastFocusRect = null;
     
     this.setupOverlayObserver();
     
@@ -821,6 +825,24 @@ export class OverlayManager {
 
   // Unified interface that switches between rendering modes
   updateFocusOverlay(element, mode = MODES.NONE, rectOverride = null) {
+    // Remember target for activation pulse (F-click), independent of render backend.
+    try {
+      this._lastFocusElement = element || null;
+      if (element) {
+        const r = (rectOverride && typeof rectOverride === 'object')
+          ? rectOverride
+          : this.getBestRect(element);
+        this._lastFocusRect = r && r.width > 0 && r.height > 0
+          ? { left: r.left, top: r.top, width: r.width, height: r.height }
+          : null;
+      } else {
+        this._lastFocusRect = null;
+      }
+    } catch {
+      this._lastFocusElement = element || null;
+      this._lastFocusRect = null;
+    }
+
     // Text inputs should NOT get a ring/frame on hover. Instead, tint background.
     // This applies regardless of rendering mode (canvas/dom/css-props) and also in DOM-hover styling mode.
     try {
@@ -2054,34 +2076,100 @@ export class OverlayManager {
     return rect;
   }
 
-  flashFocusOverlay() {
-    if (!this.focusOverlay || this.focusOverlay.style.display === 'none') {
-      return; // No overlay to flash
+  /**
+   * Resolve the viewport rect of the current focus outline for activation feedback.
+   * Works across DOM-hover element styling, DOM overlay, CSS-custom-props, and canvas modes.
+   * @returns {{ left: number, top: number, width: number, height: number }|null}
+   */
+  _getFocusPulseRect() {
+    // Prefer live geometry from active visuals.
+    try {
+      if (this.focusOverlay && this.focusOverlay.style.display !== 'none') {
+        const r = this.focusOverlay.getBoundingClientRect();
+        if (r && r.width > 0 && r.height > 0) {
+          return { left: r.left, top: r.top, width: r.width, height: r.height };
+        }
+      }
+    } catch { /* ignore */ }
+
+    try {
+      if (this.cssCustomPropsOverlay && this.cssCustomPropsOverlay.style.display !== 'none') {
+        const r = this.cssCustomPropsOverlay.getBoundingClientRect();
+        if (r && r.width > 0 && r.height > 0) {
+          return { left: r.left, top: r.top, width: r.width, height: r.height };
+        }
+      }
+    } catch { /* ignore */ }
+
+    try {
+      const el = this._currentStyledElement || this._lastFocusElement;
+      if (el && el.nodeType === 1 && el.isConnected) {
+        const r = this.getBestRect(el);
+        if (r && r.width > 0 && r.height > 0) {
+          return { left: r.left, top: r.top, width: r.width, height: r.height };
+        }
+      }
+    } catch { /* ignore */ }
+
+    // Last known rect from hover tracking (may be slightly stale after scroll).
+    if (this._lastFocusRect && this._lastFocusRect.width > 0 && this._lastFocusRect.height > 0) {
+      return { ...this._lastFocusRect };
     }
-    
-    // Create flash animation by temporarily changing the overlay style
-    const originalBorder = this.focusOverlay.style.border;
-    const originalBoxShadow = this.focusOverlay.style.boxShadow;
-    
-    // Flash with brighter colors
-    this.focusOverlay.style.border = `3px solid ${COLORS.FLASH_GREEN}`;
-    this.focusOverlay.style.boxShadow = `0 0 0 2px ${COLORS.FLASH_GREEN_SHADOW}, 0 0 20px 4px ${COLORS.FLASH_GREEN_GLOW}`;
-    this.focusOverlay.style.transition = 'border 0.15s ease-out, box-shadow 0.15s ease-out';
-    
-    // Reset after animation
-    setTimeout(() => {
-      if (this.focusOverlay) {
-        this.focusOverlay.style.border = originalBorder;
-        this.focusOverlay.style.boxShadow = originalBoxShadow;
-        
-        // Remove transition after reset to avoid interfering with normal updates
+    return null;
+  }
+
+  /**
+   * F-key activation feedback: scale the focus outline up and fade it out.
+   * Uses a temporary floating rectangle so it works in every render mode
+   * (including DOM-hover element styling, where there is no focusOverlay div).
+   */
+  flashFocusOverlay() {
+    const rect = this._getFocusPulseRect();
+    if (!rect) return;
+
+    // Optional: briefly brighten the persistent DOM overlay if present.
+    try {
+      if (this.focusOverlay && this.focusOverlay.style.display !== 'none') {
+        const originalBorder = this.focusOverlay.style.border;
+        const originalBoxShadow = this.focusOverlay.style.boxShadow;
+        this.focusOverlay.style.border = `3px solid ${COLORS.FLASH_GREEN}`;
+        this.focusOverlay.style.boxShadow =
+          `0 0 0 2px ${COLORS.FLASH_GREEN_SHADOW}, 0 0 20px 4px ${COLORS.FLASH_GREEN_GLOW}`;
+        this.focusOverlay.style.transition = 'border 0.15s ease-out, box-shadow 0.15s ease-out';
         setTimeout(() => {
-          if (this.focusOverlay) {
-            this.focusOverlay.style.transition = '';
-          }
+          if (!this.focusOverlay) return;
+          this.focusOverlay.style.border = originalBorder;
+          this.focusOverlay.style.boxShadow = originalBoxShadow;
+          setTimeout(() => {
+            if (this.focusOverlay) this.focusOverlay.style.transition = '';
+          }, 150);
         }, 150);
       }
-    }, 150);
+    } catch { /* ignore */ }
+
+    // Scale-up pulse ghost (primary feedback).
+    try {
+      const pulse = document.createElement('div');
+      pulse.className = CSS_CLASSES.FOCUS_PULSE;
+      pulse.setAttribute('aria-hidden', 'true');
+      // Position via left/top/width/height; CSS animation scales from transform-origin center.
+      pulse.style.left = `${rect.left}px`;
+      pulse.style.top = `${rect.top}px`;
+      pulse.style.width = `${rect.width}px`;
+      pulse.style.height = `${rect.height}px`;
+      document.body.appendChild(pulse);
+      pulse.addEventListener('animationend', () => {
+        try { pulse.remove(); } catch { /* ignore */ }
+      }, { once: true });
+      // Safety cleanup if animationend never fires.
+      setTimeout(() => {
+        try { if (pulse.isConnected) pulse.remove(); } catch { /* ignore */ }
+      }, 800);
+    } catch (e) {
+      if (window.KEYPILOT_DEBUG) {
+        console.warn('[KeyPilot] focus pulse failed:', e);
+      }
+    }
   }
 
   createViewportModalFrame() {

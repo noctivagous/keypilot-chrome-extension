@@ -30,8 +30,8 @@
   // - `extension/src/ui/keybindings-ui-shared.js` (CSS + layout + style attr)
   // - `extension/pages/onboarding.xml` (early onboarding model)
   // Do not edit by hand.
-  const Z_FLOATING_KEYBOARD_HELP = 1000000;
-  const Z_KEYBINDINGS_POPOVER = 1000010;
+  const Z_FLOATING_KEYBOARD_HELP = 2147483045;
+  const Z_KEYBINDINGS_POPOVER = 2147483046;
   const KEYBINDINGS_UI_STYLE_ATTR = "data-kp-keybindings-ui-style";
   const DEFAULT_KEYBOARD_LAYOUT_ID = "browsing-right";
   const KEYBOARD_LAYOUTS_BY_ID = {
@@ -131,8 +131,8 @@
       },
       {
         "type": "action",
-        "id": "ACTIVATE_NEW_TAB",
-        "fallbackText": "Click New Tab"
+        "id": "ACTIVATE_NEW_TAB_BACKGROUND",
+        "fallbackText": "Click New Tab Background"
       },
       {
         "type": "key",
@@ -197,8 +197,8 @@
       },
       {
         "type": "action",
-        "id": "ACTIVATE_NEW_TAB_OVER",
-        "fallbackText": "Click New Tab Over"
+        "id": "ACTIVATE_NEW_TAB",
+        "fallbackText": "Click New Tab"
       },
       {
         "type": "key",
@@ -327,8 +327,8 @@
       },
       {
         "type": "action",
-        "id": "ACTIVATE_NEW_TAB",
-        "fallbackText": "Click New Tab"
+        "id": "ACTIVATE_NEW_TAB_BACKGROUND",
+        "fallbackText": "Click New Tab Background"
       },
       {
         "type": "action",
@@ -389,8 +389,8 @@
       },
       {
         "type": "action",
-        "id": "ACTIVATE_NEW_TAB_OVER",
-        "fallbackText": "Click New Tab Over"
+        "id": "ACTIVATE_NEW_TAB",
+        "fallbackText": "Click New Tab"
       },
       {
         "type": "action",
@@ -499,8 +499,8 @@
       "displayKey": "F",
       "keyboardClass": "key-activate"
     },
-    "ACTIVATE_NEW_TAB": {
-      "label": "Click Tab Over",
+    "ACTIVATE_NEW_TAB_BACKGROUND": {
+      "label": "Click New Tab Background",
       "description": "Open Link in New Tab (Background, like middle click)",
       "keyLabel": "G",
       "displayKey": "G",
@@ -569,9 +569,9 @@
       "displayKey": "V",
       "keyboardClass": "key-scroll"
     },
-    "ACTIVATE_NEW_TAB_OVER": {
+    "ACTIVATE_NEW_TAB": {
       "label": "Click New Tab",
-      "description": "Click New Tab",
+      "description": "Open Link in New Tab (Foreground)",
       "keyLabel": "B",
       "displayKey": "B",
       "keyboardClass": "key-activate-new"
@@ -655,8 +655,8 @@
       "displayKey": "J",
       "keyboardClass": "key-activate"
     },
-    "ACTIVATE_NEW_TAB": {
-      "label": "Click Tab Over",
+    "ACTIVATE_NEW_TAB_BACKGROUND": {
+      "label": "Click New Tab Background",
       "description": "Open Link in New Tab (Background, like middle click)",
       "keyLabel": "H",
       "displayKey": "H",
@@ -725,9 +725,9 @@
       "displayKey": "M",
       "keyboardClass": "key-scroll"
     },
-    "ACTIVATE_NEW_TAB_OVER": {
+    "ACTIVATE_NEW_TAB": {
       "label": "Click New Tab",
-      "description": "Click New Tab",
+      "description": "Open Link in New Tab (Foreground)",
       "keyLabel": "N",
       "displayKey": "N",
       "keyboardClass": "key-activate-new"
@@ -830,8 +830,8 @@
     },
     {
       "type": "action",
-      "id": "ACTIVATE_NEW_TAB",
-      "fallbackText": "Click New Tab"
+      "id": "ACTIVATE_NEW_TAB_BACKGROUND",
+      "fallbackText": "Click New Tab Background"
     },
     {
       "type": "key",
@@ -896,8 +896,8 @@
     },
     {
       "type": "action",
-      "id": "ACTIVATE_NEW_TAB_OVER",
-      "fallbackText": "Click New Tab Over"
+      "id": "ACTIVATE_NEW_TAB",
+      "fallbackText": "Click New Tab"
     },
     {
       "type": "key",
@@ -1004,8 +1004,8 @@
     "displayKey": "F",
     "keyboardClass": "key-activate"
   },
-  "ACTIVATE_NEW_TAB": {
-    "label": "Click Tab Over",
+  "ACTIVATE_NEW_TAB_BACKGROUND": {
+    "label": "Click New Tab Background",
     "description": "Open Link in New Tab (Background, like middle click)",
     "keyLabel": "G",
     "displayKey": "G",
@@ -1074,9 +1074,9 @@
     "displayKey": "V",
     "keyboardClass": "key-scroll"
   },
-  "ACTIVATE_NEW_TAB_OVER": {
+  "ACTIVATE_NEW_TAB": {
     "label": "Click New Tab",
-    "description": "Click New Tab",
+    "description": "Open Link in New Tab (Foreground)",
     "keyLabel": "B",
     "displayKey": "B",
     "keyboardClass": "key-activate-new"
@@ -1804,7 +1804,7 @@
 /* Popover (tooltip) shown when clicking a key */
 .kp-keybindings-popover {
   position: absolute;
-  z-index: 1000010;
+  z-index: 2147483046;
   max-width: 280px;
   background: var(--surface);
   color: var(--fg);

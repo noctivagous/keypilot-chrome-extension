@@ -3,6 +3,9 @@
  * Manages global extension state and coordinates toggle functionality across all tabs
  */
 
+import { isSkippableTab, isSkippableUrl } from './src/config/url-policy.js';
+import { MSG, TAB_UI_FORWARD_TYPES } from './src/messaging/types.js';
+
 const KEYBOARD_HELP_STORAGE_KEY = 'keypilot_keyboard_help_visible';
 const ONBOARDING_ACTIVE_STORAGE_KEY = 'keypilot_onboarding_active';
 const ONBOARDING_PROGRESS_STORAGE_KEY = 'keypilot_onboarding_progress';
@@ -92,16 +95,6 @@ class ExtensionToggleManager {
     this.STORAGE_KEY = 'keypilot_enabled';
     this.DEFAULT_STATE = true;
     this.initialized = false;
-    
-    // Cursor settings constants
-    this.CURSOR_STORAGE_KEYS = {
-      SIZE: 'keypilot_cursor_size',
-      VISIBLE: 'keypilot_cursor_visible'
-    };
-    this.CURSOR_DEFAULTS = {
-      SIZE: 1.0,
-      VISIBLE: true
-    };
   }
 
   /**
@@ -208,106 +201,6 @@ class ExtensionToggleManager {
   }
 
   /**
-   * Get cursor settings from storage
-   * @returns {Promise<{size: number, visible: boolean}>} Current cursor settings
-   */
-  async getCursorSettings() {
-    const settings = {
-      size: this.CURSOR_DEFAULTS.SIZE,
-      visible: this.CURSOR_DEFAULTS.VISIBLE
-    };
-
-    try {
-      // Try chrome.storage.sync first
-      const syncResult = await chrome.storage.sync.get([
-        this.CURSOR_STORAGE_KEYS.SIZE,
-        this.CURSOR_STORAGE_KEYS.VISIBLE
-      ]);
-      
-      if (syncResult[this.CURSOR_STORAGE_KEYS.SIZE] !== undefined) {
-        settings.size = syncResult[this.CURSOR_STORAGE_KEYS.SIZE];
-      }
-      if (syncResult[this.CURSOR_STORAGE_KEYS.VISIBLE] !== undefined) {
-        settings.visible = syncResult[this.CURSOR_STORAGE_KEYS.VISIBLE];
-      }
-      
-      return settings;
-    } catch (syncError) {
-      console.warn('chrome.storage.sync unavailable for cursor settings, trying local storage:', syncError);
-      
-      try {
-        // Fallback to chrome.storage.local
-        const localResult = await chrome.storage.local.get([
-          this.CURSOR_STORAGE_KEYS.SIZE,
-          this.CURSOR_STORAGE_KEYS.VISIBLE
-        ]);
-        
-        if (localResult[this.CURSOR_STORAGE_KEYS.SIZE] !== undefined) {
-          settings.size = localResult[this.CURSOR_STORAGE_KEYS.SIZE];
-        }
-        if (localResult[this.CURSOR_STORAGE_KEYS.VISIBLE] !== undefined) {
-          settings.visible = localResult[this.CURSOR_STORAGE_KEYS.VISIBLE];
-        }
-        
-        return settings;
-      } catch (localError) {
-        console.error('Both sync and local storage failed for cursor settings:', localError);
-      }
-    }
-    
-    // Return default settings if all storage methods fail
-    return settings;
-  }
-
-  /**
-   * Set cursor settings in storage and notify all tabs
-   * @param {Object} settings - Cursor settings object
-   * @param {number} [settings.size] - Cursor size (0.5 - 2.0)
-   * @param {boolean} [settings.visible] - Cursor visibility
-   * @returns {Promise<{size: number, visible: boolean}>} The settings that were set
-   */
-  async setCursorSettings(settings) {
-    // Get current settings first
-    const currentSettings = await this.getCursorSettings();
-    
-    // Merge with new settings, validating values
-    const newSettings = {
-      size: settings.size !== undefined ? 
-        Math.max(0.5, Math.min(2.0, Number(settings.size))) : currentSettings.size,
-      visible: settings.visible !== undefined ? 
-        Boolean(settings.visible) : currentSettings.visible
-    };
-
-    const settingsData = {
-      [this.CURSOR_STORAGE_KEYS.SIZE]: newSettings.size,
-      [this.CURSOR_STORAGE_KEYS.VISIBLE]: newSettings.visible,
-      timestamp: Date.now()
-    };
-
-    try {
-      // Try to save to chrome.storage.sync first
-      await chrome.storage.sync.set(settingsData);
-      console.log('Cursor settings saved to sync storage:', newSettings);
-    } catch (syncError) {
-      console.warn('Failed to save cursor settings to sync storage, trying local:', syncError);
-      
-      try {
-        // Fallback to chrome.storage.local
-        await chrome.storage.local.set(settingsData);
-        console.log('Cursor settings saved to local storage:', newSettings);
-      } catch (localError) {
-        console.error('Failed to save cursor settings to any storage:', localError);
-        // Continue execution even if storage fails
-      }
-    }
-
-    // Notify all tabs about the cursor settings change
-    await this.notifyAllTabsCursorSettings(newSettings);
-    
-    return newSettings;
-  }
-
-  /**
    * Notify all tabs about state change
    * @param {boolean} enabled - New enabled state
    */
@@ -315,7 +208,7 @@ class ExtensionToggleManager {
     try {
       const tabs = await chrome.tabs.query({});
       const message = {
-        type: 'KP_TOGGLE_STATE',
+        type: MSG.TOGGLE_STATE,
         enabled: enabled,
         timestamp: Date.now()
       };
@@ -338,90 +231,6 @@ class ExtensionToggleManager {
     }
   }
 
-  /**
-   * Notify all tabs about cursor settings change
-   * @param {Object} settings - New cursor settings
-   */
-  async notifyAllTabsCursorSettings(settings) {
-    try {
-      const tabs = await chrome.tabs.query({});
-      const message = {
-        type: 'KP_CURSOR_SETTINGS_CHANGED',
-        settings: settings,
-        timestamp: Date.now()
-      };
-
-      // Send message to all tabs
-      const notifications = tabs.map(async (tab) => {
-        try {
-          await chrome.tabs.sendMessage(tab.id, message);
-        } catch (error) {
-          // Ignore errors for tabs that don't have content scripts
-          console.debug('Could not notify tab', tab.id, 'about cursor settings:', error.message);
-        }
-      });
-
-      await Promise.allSettled(notifications);
-      console.log('Notified', tabs.length, 'tabs about cursor settings change:', settings);
-    } catch (error) {
-      console.error('Failed to notify tabs about cursor settings:', error);
-    }
-  }
-}
-
-// Helper function to check if a tab URL is skippable
-function isSkippableTab(tab) {
-  // Skip tabs with no URL (rare, e.g. special transient tabs).
-  // Note: on some Chromium builds the overridden New Tab may still report a chrome:// URL
-  // (with the real extension URL showing up in pendingUrl). Handle both.
-  const url = typeof tab?.url === 'string' ? tab.url : '';
-  const pendingUrl = typeof tab?.pendingUrl === 'string' ? tab.pendingUrl : '';
-  if (!url && !pendingUrl) return true;
-
-  // Always allow the KeyPilot custom New Tab page, even though it is an extension URL.
-  // We originally skipped chrome:// pages to avoid "utility" pages, but the overridden
-  // New Tab should participate in left/right tab cycling (Q/W).
-  const isKeyPilotNewTab = (u) => {
-    if (!u || typeof u !== 'string') return false;
-    const s = u.trim();
-    if (!s) return false;
-
-    // Common Chromium/Chrome variants when New Tab is overridden.
-    // Some builds still expose the visible URL as chrome://newtab or chrome://new-tab-page.
-    if (/^chrome:\/\/newtab\/?/i.test(s) || /^chrome:\/\/new-tab-page\/?/i.test(s)) {
-      return true;
-    }
-
-    // Extension URL variants: allow exact match + query/hash + any URL that resolves to the same
-    // extension origin/path (in case of normalization or unexpected formatting).
-    try {
-      const kpNewTabUrl = chrome.runtime.getURL('pages/newtab.html');
-      if (s === kpNewTabUrl || s.startsWith(`${kpNewTabUrl}#`) || s.startsWith(`${kpNewTabUrl}?`)) {
-        return true;
-      }
-      const kp = new URL(kpNewTabUrl);
-      const parsed = new URL(s);
-      if (parsed.origin === kp.origin && parsed.pathname.endsWith('/pages/newtab.html')) {
-        return true;
-      }
-    } catch {
-      // ignore
-    }
-
-    return false;
-  };
-
-  if (isKeyPilotNewTab(url) || isKeyPilotNewTab(pendingUrl)) return false;
-
-  const skipPatterns = [
-    /^chrome:\/\//i,
-    /^edge:\/\//i,
-    /^about:/i,
-    /^data:/i,
-    /^chrome-native:/i,
-    /^view-source:/i
-  ];
-  return skipPatterns.some(pattern => pattern.test(url || pendingUrl));
 }
 
 // -----------------------------
@@ -436,22 +245,6 @@ const NAVGRAPH_SAVE_DEBOUNCE_MS = 200;
 // - 'branching': retain multiple forward branches (tree)
 const NAVGRAPH_MODE_STORAGE_KEY = 'keypilot_tab_history_mode';
 const NAVGRAPH_MODE_DEFAULT = 'linear'; // 'linear' | 'branching'
-
-function isSkippableUrl(url) {
-  if (!url || typeof url !== 'string') return true;
-  const u = url.trim();
-  if (!u) return true;
-  const skipPatterns = [
-    /^chrome:\/\//i,
-    /^chrome-extension:\/\//i,
-    /^edge:\/\//i,
-    /^about:/i,
-    /^data:/i,
-    /^chrome-native:/i,
-    /^view-source:/i
-  ];
-  return skipPatterns.some((pattern) => pattern.test(u));
-}
 
 function getPreferredNavGraphStorageArea() {
   // Prefer session (clears with browser session), but fall back to local.
@@ -1413,46 +1206,48 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
 
         case 'KP_GET_HISTORY_FOR_DOMAINS': {
-          // Search history for specific domains
+          // Search history for specific domains (parallel per-domain searches).
           const domains = Array.isArray(message.domains) ? message.domains : [];
           const days = Math.max(1, Math.min(90, Number(message.days) || 30));
           const startTime = Date.now() - days * 24 * 60 * 60 * 1000;
 
           try {
             if (chrome.history && typeof chrome.history.search === 'function') {
-              const allResults = [];
               const seenUrls = new Set();
+              const allResults = [];
 
-              // Search history for each domain
-              for (const domain of domains) {
+              // Parallel domain searches — sequential awaits were a major launcher lag source.
+              const perDomain = await Promise.all(domains.map(async (domain) => {
                 try {
-                  const historyItems = await chrome.history.search({
+                  return await chrome.history.search({
                     text: domain,
-                    maxResults: 100,
+                    maxResults: 50,
                     startTime: startTime
                   });
-
-                  // Filter to only include items that actually match the domain
-                  for (const item of historyItems) {
-                    if (item.url && !seenUrls.has(item.url)) {
-                      try {
-                        const itemDomain = new URL(item.url).hostname.replace('www.', '');
-                        // Check if the item's domain matches or is a subdomain of the target domain
-                        if (itemDomain === domain || itemDomain.endsWith('.' + domain)) {
-                          allResults.push({
-                            title: item.title || itemDomain,
-                            url: item.url,
-                            visitCount: item.visitCount || 0
-                          });
-                          seenUrls.add(item.url);
-                        }
-                      } catch (e) {
-                        // Skip invalid URLs
-                      }
-                    }
-                  }
                 } catch (error) {
                   console.warn(`KP_GET_HISTORY_FOR_DOMAINS: error searching for domain ${domain}:`, error);
+                  return [];
+                }
+              }));
+
+              for (let i = 0; i < domains.length; i++) {
+                const domain = domains[i];
+                const historyItems = perDomain[i] || [];
+                for (const item of historyItems) {
+                  if (!item.url || seenUrls.has(item.url)) continue;
+                  try {
+                    const itemDomain = new URL(item.url).hostname.replace('www.', '');
+                    if (itemDomain === domain || itemDomain.endsWith('.' + domain)) {
+                      allResults.push({
+                        title: item.title || itemDomain,
+                        url: item.url,
+                        visitCount: item.visitCount || 0
+                      });
+                      seenUrls.add(item.url);
+                    }
+                  } catch {
+                    // Skip invalid URLs
+                  }
                 }
               }
 
@@ -1691,6 +1486,42 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
+        case MSG.OPEN_SETTINGS_POPOVER:
+        case MSG.OPEN_GUIDE_POPOVER:
+        case MSG.OPEN_ONBOARDING: {
+          // Extension pages (guide/settings iframes) call chrome.runtime.sendMessage.
+          // Content scripts own these handlers, so the service worker must forward
+          // to the originating tab (or the active tab as fallback).
+          if (!TAB_UI_FORWARD_TYPES.includes(message.type)) {
+            sendResponse({ type: MSG.ERROR, error: 'Unknown UI open type' });
+            break;
+          }
+          let tabId = sender?.tab?.id;
+          if (!tabId) {
+            try {
+              const [active] = await chrome.tabs.query({ active: true, currentWindow: true });
+              tabId = active?.id;
+            } catch {
+              tabId = null;
+            }
+          }
+          if (!tabId) {
+            sendResponse({ type: MSG.ERROR, error: 'No tab available to open UI' });
+            break;
+          }
+          try {
+            await chrome.tabs.sendMessage(tabId, { type: message.type });
+            sendResponse({ type: MSG.SUCCESS });
+          } catch (error) {
+            console.warn('[KeyPilot] Failed to forward UI open message:', error?.message || error);
+            sendResponse({
+              type: MSG.ERROR,
+              error: error?.message || 'Failed to open UI in tab'
+            });
+          }
+          break;
+        }
+
         case 'KP_GET_STATE':
           // Content script or popup requesting current state
           const currentState = await extensionToggleManager.getState();
@@ -1732,54 +1563,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           console.log('State toggled via message to:', toggledState);
           break;
           
-        case 'KP_GET_CURSOR_SETTINGS':
-          // Content script or popup requesting current cursor settings
-          const currentCursorSettings = await extensionToggleManager.getCursorSettings();
-          sendResponse({
-            type: 'KP_CURSOR_SETTINGS_RESPONSE',
-            settings: currentCursorSettings,
-            timestamp: Date.now()
-          });
-          console.log('Sent current cursor settings:', currentCursorSettings);
-          break;
-
-        case 'KP_SET_CURSOR_SIZE':
-          // Popup requesting cursor size change
-          if (typeof message.size === 'number' && message.size >= 0.5 && message.size <= 2.0) {
-            const newCursorSettings = await extensionToggleManager.setCursorSettings({ size: message.size });
-            sendResponse({
-              type: 'KP_CURSOR_SETTINGS_CHANGED',
-              settings: newCursorSettings,
-              timestamp: Date.now()
-            });
-            console.log('Cursor size changed via message to:', message.size);
-          } else {
-            console.error('Invalid cursor size value in KP_SET_CURSOR_SIZE:', message.size);
-            sendResponse({
-              type: 'KP_ERROR',
-              error: 'Invalid cursor size value'
-            });
-          }
-          break;
-
-        case 'KP_SET_CURSOR_VISIBILITY':
-          // Popup requesting cursor visibility change
-          if (typeof message.visible === 'boolean') {
-            const newCursorSettings = await extensionToggleManager.setCursorSettings({ visible: message.visible });
-            sendResponse({
-              type: 'KP_CURSOR_SETTINGS_CHANGED',
-              settings: newCursorSettings,
-              timestamp: Date.now()
-            });
-            console.log('Cursor visibility changed via message to:', message.visible);
-          } else {
-            console.error('Invalid cursor visibility value in KP_SET_CURSOR_VISIBILITY:', message.visible);
-            sendResponse({
-              type: 'KP_ERROR',
-              error: 'Invalid cursor visibility value'
-            });
-          }
-          break;
+        // Legacy KP_GET_CURSOR_SETTINGS / KP_SET_CURSOR_* removed.
+        // Cursor appearance is stored in kp_settings_v1 (settings-manager).
 
         case 'KP_CLOSE_TAB':
           // Request to close current tab
@@ -1803,6 +1588,58 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             });
           }
           break;
+
+        case 'KP_GO_BACK':
+        case 'KP_GO_FORWARD': {
+          // Browser history navigation for the sender tab.
+          // Optionally record a transient action first so onboarding can recover after unload.
+          const tabId = sender?.tab?.id;
+          const recordAction = typeof message.recordAction === 'string' ? message.recordAction : '';
+          const timestamp = typeof message.timestamp === 'number' ? message.timestamp : Date.now();
+
+          if (recordAction) {
+            const payload = {
+              action: recordAction,
+              timestamp,
+              tabId: tabId ?? null,
+              url: sender?.tab?.url ?? null
+            };
+            try {
+              await chrome.storage.local.set({ [TRANSIENT_ACTION_STORAGE_KEY]: payload });
+              try {
+                if (chrome.storage?.session?.set) {
+                  await chrome.storage.session.set({ [TRANSIENT_ACTION_STORAGE_KEY]: payload });
+                }
+              } catch {
+                // ignore session write failures
+              }
+            } catch (e) {
+              console.warn('[KeyPilot] Failed to record transient action before history nav:', e?.message || e);
+            }
+          }
+
+          if (!tabId) {
+            sendResponse({ type: 'KP_ERROR', error: 'No valid tab ID' });
+            break;
+          }
+
+          try {
+            if (message.type === 'KP_GO_BACK') {
+              await chrome.tabs.goBack(tabId);
+            } else {
+              await chrome.tabs.goForward(tabId);
+            }
+            sendResponse({ type: 'KP_SUCCESS' });
+          } catch (error) {
+            // No history entry / already at edge — treat as soft success.
+            console.warn('[KeyPilot] History navigation failed:', error?.message || error);
+            sendResponse({
+              type: 'KP_ERROR',
+              error: error?.message || 'History navigation failed'
+            });
+          }
+          break;
+        }
 
         case 'KP_TAB_LEFT':
           // Switch to the tab to the left

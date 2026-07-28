@@ -21,7 +21,7 @@ for common web interactions, eliminating the need for mouse navigation.
 | --- | --- |
 | `R` | Go Forward (History) |
 | `;` | Open Launcher (Quick Access to Sites) |
-| `B` | Click New Tab |
+| `B` | Open Link in New Tab (Foreground) |
 | `D` | Go Back (History) |
 | `E` | Open Link in Popover |
 | `F` | Click Element |
@@ -60,6 +60,14 @@ for common web interactions, eliminating the need for mouse navigation.
 | `Esc` | Exit Focus |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
+
+
+
+
+
+
+
 
 
 
