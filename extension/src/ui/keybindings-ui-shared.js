@@ -812,6 +812,48 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
     inset 0 1px 0 rgba(0, 0, 0, 0.2);
 }
 
+/*
+ * Link-hover hint: when the page pointer is over a link and the keyboard
+ * reference is open, highlight the keys that activate / open that link.
+ */
+.${KEYBINDINGS_UI_ROOT_CLASS} .key.kp-key-link-hint {
+  z-index: 2;
+  outline: none;
+  filter: brightness(1.12) saturate(1.15);
+  border-color: rgba(91, 226, 241, 0.85) !important;
+  border-top-color: rgba(180, 245, 255, 0.95) !important;
+  border-bottom-color: rgba(40, 180, 200, 0.9) !important;
+  box-shadow:
+    0 0 0 2px rgba(91, 226, 241, 0.55),
+    0 0 14px 3px rgba(91, 226, 241, 0.55),
+    0 0 28px 6px rgba(56, 189, 248, 0.28),
+    0 1px 0 rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+  animation: kp-key-link-hint-pulse 1.35s ease-in-out infinite;
+}
+
+@keyframes kp-key-link-hint-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 2px rgba(91, 226, 241, 0.5),
+      0 0 12px 2px rgba(91, 226, 241, 0.45),
+      0 0 22px 4px rgba(56, 189, 248, 0.22),
+      0 1px 0 rgba(0, 0, 0, 0.35),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px rgba(120, 240, 255, 0.75),
+      0 0 18px 5px rgba(91, 226, 241, 0.7),
+      0 0 34px 10px rgba(56, 189, 248, 0.38),
+      0 1px 0 rgba(0, 0, 0, 0.35),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.28),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+}
+
 /* Popover (tooltip) — matches the hovered key material via CSS vars */
 .kp-keybindings-popover {
   --kp-key-face: #3d4454;

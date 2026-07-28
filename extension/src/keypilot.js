@@ -75,6 +75,13 @@ export class KeyPilot extends EventManager {
     this.KEYBOARD_HELP_STORAGE_KEY = 'keypilot_keyboard_help_visible';
     this._keyboardHelpVisible = false;
     this._keyboardHelpStorageListener = null;
+
+    // Link-hover → keyboard key glow (debounced; video thumbs thrash focusEl).
+    this._LINK_HOVER_HINT_DEBOUNCE_MS = 90;
+    this._linkHoverHintTimer = null;
+    this._linkHoverHintPendingState = null;
+    /** @type {boolean|null} */
+    this._linkHoverHintLastApplied = null;
     
     // Intersection Observer optimizations
     this.intersectionManager = new IntersectionObserverManager(this.detector);
@@ -797,8 +804,11 @@ export class KeyPilot extends EventManager {
 
       if (next) {
         this.floatingKeyboardHelp.show();
+        // Apply link-hover key hints for the current pointer target immediately.
+        this._syncKeyboardLinkHoverHints(undefined, { immediate: true });
       } else {
         this.floatingKeyboardHelp.hide();
+        this._syncKeyboardLinkHoverHints(undefined, { immediate: true });
       }
 
       if (persist) this.setKeyboardHelpVisibleInStorage(next);
@@ -1175,6 +1185,70 @@ export class KeyPilot extends EventManager {
       newState.deleteEl !== prevState.deleteEl) {
       this.updateOverlays(newState.focusEl, newState.deleteEl);
     }
+
+    // Keyboard reference: glow keys that activate the currently hovered link.
+    // Debounced — focusEl can thrash on video thumbs / hover carousels.
+    if (newState.focusEl !== prevState.focusEl || newState.mode !== prevState.mode) {
+      this._syncKeyboardLinkHoverHints(newState);
+    }
+  }
+
+  /**
+   * Schedule (or immediately apply) link-hover keyboard key hints.
+   * Debounces rapid focusEl churn (e.g. YouTube preview thumbnails).
+   * @param {any} [state]
+   * @param {{ immediate?: boolean }} [opts]
+   */
+  _syncKeyboardLinkHoverHints(state, opts = {}) {
+    this._linkHoverHintPendingState = state;
+    if (opts.immediate) {
+      this._clearKeyboardLinkHoverHintTimer();
+      this._flushKeyboardLinkHoverHints();
+      return;
+    }
+    if (this._linkHoverHintTimer != null) {
+      try { clearTimeout(this._linkHoverHintTimer); } catch { /* ignore */ }
+    }
+    const delay = Number.isFinite(this._LINK_HOVER_HINT_DEBOUNCE_MS)
+      ? this._LINK_HOVER_HINT_DEBOUNCE_MS
+      : 90;
+    this._linkHoverHintTimer = setTimeout(() => {
+      this._linkHoverHintTimer = null;
+      this._flushKeyboardLinkHoverHints();
+    }, delay);
+  }
+
+  _clearKeyboardLinkHoverHintTimer() {
+    if (this._linkHoverHintTimer == null) return;
+    try { clearTimeout(this._linkHoverHintTimer); } catch { /* ignore */ }
+    this._linkHoverHintTimer = null;
+  }
+
+  /**
+   * When the keyboard reference is open and the pointer is over a link,
+   * highlight ACTIVATE / OPEN_POPOVER (and related) keys with a strong outline/glow.
+   */
+  _flushKeyboardLinkHoverHints() {
+    try {
+      const help = this.floatingKeyboardHelp;
+      if (!help || typeof help.setLinkHoverHints !== 'function') return;
+
+      let isLink = false;
+      if (this._keyboardHelpVisible && this.enabled && help.isVisible?.()) {
+        const st = this._linkHoverHintPendingState || this.state?.getState?.();
+        // Don't suggest page link actions while modal modes own the pointer.
+        if (!(st?.mode === MODES.POPOVER || st?.mode === MODES.DELETE ||
+              st?.mode === MODES.HIGHLIGHT || st?.mode === MODES.OMNIBOX)) {
+          const focusEl = st?.focusEl;
+          isLink = !!this._buildActivationDetail(focusEl)?.isLink;
+        }
+      }
+
+      // Skip redundant DOM class toggles when the boolean hasn't changed.
+      if (this._linkHoverHintLastApplied === isLink) return;
+      this._linkHoverHintLastApplied = isLink;
+      help.setLinkHoverHints(isLink);
+    } catch { /* ignore */ }
   }
 
   _isCustomCursorModeEnabled() {

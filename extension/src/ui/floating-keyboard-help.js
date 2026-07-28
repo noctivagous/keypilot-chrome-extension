@@ -31,10 +31,17 @@ export class FloatingKeyboardHelp {
     // Keydown/keyup visual feedback
     this._pressedLabels = new Set();
     this._keyElsByLabel = new Map();
+    /** @type {Map<string, HTMLElement[]>} */
+    this._keyElsByActionId = new Map();
     this._keydownBound = false;
     this._onDocKeyDown = this._onDocKeyDown.bind(this);
     this._onDocKeyUp = this._onDocKeyUp.bind(this);
     this._onWinBlur = this._onWinBlur.bind(this);
+
+    // When hovering a page link, highlight action keys that can activate it.
+    this._linkHoverHintActive = false;
+    /** @type {Set<string>} */
+    this._linkHoverHintActionIds = new Set();
 
     this._keyFeedbackEnabled = true;
     this._settingsBound = false;
@@ -73,6 +80,7 @@ export class FloatingKeyboardHelp {
 
   hide() {
     if (this.root) this.root.hidden = true;
+    this.setLinkHoverHints(false);
     this._unbindKeydownFeedback();
     this._unbindSettingsSync();
   }
@@ -431,6 +439,7 @@ export class FloatingKeyboardHelp {
   _rebuildKeyIndex() {
     if (!this.keyboardContainer) return;
     const map = new Map();
+    const byAction = new Map();
 
     // Index by the visible "key label":
     // - action keys use `.key-label` (e.g. Q/W/E...)
@@ -439,13 +448,23 @@ export class FloatingKeyboardHelp {
     for (const keyEl of keyEls) {
       const labelEl = keyEl.querySelector?.('.key-label');
       const label = this._normalizeLabel(labelEl ? labelEl.textContent : keyEl.textContent);
-      if (!label) continue;
-      const arr = map.get(label) || [];
-      arr.push(keyEl);
-      map.set(label, arr);
+      if (label) {
+        const arr = map.get(label) || [];
+        arr.push(keyEl);
+        map.set(label, arr);
+      }
+
+      // Also index by action id for link-hover hints (ACTIVATE, OPEN_POPOVER, …).
+      const actionId = keyEl.dataset?.kpActionId ? String(keyEl.dataset.kpActionId) : '';
+      if (actionId) {
+        const arr = byAction.get(actionId) || [];
+        arr.push(keyEl);
+        byAction.set(actionId, arr);
+      }
     }
 
     this._keyElsByLabel = map;
+    this._keyElsByActionId = byAction;
 
     // If we re-rendered while keys were held, re-apply pressed styling.
     for (const label of this._pressedLabels) {
@@ -453,6 +472,51 @@ export class FloatingKeyboardHelp {
       if (!els) continue;
       for (const el of els) el.classList.add('kp-key-pressed');
     }
+
+    // Re-apply link-hover hints after re-render.
+    if (this._linkHoverHintActive) {
+      this._applyLinkHoverHintClasses(true);
+    }
+  }
+
+  /**
+   * Highlight keyboard keys that activate/open a hovered page link.
+   * @param {boolean} active
+   * @param {string[]} [actionIds] defaults to click + popover link actions
+   */
+  setLinkHoverHints(active, actionIds) {
+    const next = Boolean(active);
+    const ids = Array.isArray(actionIds) && actionIds.length
+      ? actionIds.map(String)
+      : ['ACTIVATE', 'OPEN_POPOVER', 'PREVIEW_LINK_POPOVER', 'ACTIVATE_NEW_TAB', 'ACTIVATE_NEW_TAB_BACKGROUND'];
+
+    // Clear previous classes first.
+    this._applyLinkHoverHintClasses(false);
+
+    this._linkHoverHintActive = next;
+    this._linkHoverHintActionIds = new Set(next ? ids : []);
+
+    if (next && this.isVisible()) {
+      this._applyLinkHoverHintClasses(true);
+    }
+  }
+
+  /**
+   * @param {boolean} on
+   */
+  _applyLinkHoverHintClasses(on) {
+    try {
+      const ids = this._linkHoverHintActionIds;
+      if (!ids || ids.size === 0) return;
+      for (const actionId of ids) {
+        const els = this._keyElsByActionId.get(actionId);
+        if (!els) continue;
+        for (const el of els) {
+          if (on) el.classList.add('kp-key-link-hint');
+          else el.classList.remove('kp-key-link-hint');
+        }
+      }
+    } catch { /* ignore */ }
   }
 
   _setPressed(label, pressed) {
