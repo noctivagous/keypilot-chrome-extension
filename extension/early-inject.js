@@ -1506,15 +1506,15 @@
   bottom: auto;
   /* Leave a fixed bottom band for the letter; never push it */
   height: auto;
-  max-height: 26px;
+  max-height: 30px;
   box-sizing: border-box;
   margin: 0;
   padding: 0 1px;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 650;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   line-height: 1.1;
-  opacity: 0.88;
+  opacity: 0.9;
   text-transform: uppercase;
   color: rgba(248, 250, 252, 0.94);
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
@@ -1866,41 +1866,107 @@
     inset 0 1px 0 rgba(0, 0, 0, 0.2);
 }
 
-/* Popover (tooltip) shown when clicking a key */
+/* Popover (tooltip) — matches the hovered key material via CSS vars */
 .kp-keybindings-popover {
+  --kp-key-face: #3d4454;
+  --kp-key-mid: #343a48;
+  --kp-key-deep: #2c313e;
+  --kp-key-icon: #1a1e28;
+
   position: absolute;
   z-index: 2147483046;
-  max-width: 280px;
-  background: var(--surface);
-  color: var(--fg);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  max-width: 300px;
+  min-width: 160px;
+  color: rgba(248, 250, 252, 0.95);
+  border-radius: 8px;
   padding: 10px 12px;
   font-size: 12px;
   line-height: 1.35;
-  /* Position absolute relative to parent container avoids z-index stacking context issues */
+  pointer-events: none; /* hover tooltips shouldn't steal pointer */
+
+  /* Same low-profile key face treatment as .key */
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  border-top-color: rgba(255, 255, 255, 0.12);
+  border-bottom-color: rgba(0, 0, 0, 0.5);
+  background:
+    linear-gradient(180deg,
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0.02) 18%,
+      transparent 42%),
+    linear-gradient(180deg,
+      var(--kp-key-face) 0%,
+      var(--kp-key-mid) 70%,
+      var(--kp-key-deep) 100%);
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.45),
+    0 10px 24px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18);
 }
 
 .kp-keybindings-popover[hidden] { display: none; }
 
+.kp-keybindings-popover .kp-popover-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 6px 0;
+}
+
+.kp-keybindings-popover .kp-popover-icon {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-top-color: rgba(255, 255, 255, 0.1);
+  /* Glyph uses same darker icon color as keys */
+  background-color: var(--kp-key-icon);
+  background-image: none;
+  background-repeat: no-repeat;
+  background-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: 62% 62%;
+  mask-size: 62% 62%;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+}
+
+.kp-keybindings-popover .kp-popover-icon[hidden] {
+  display: none;
+}
+
+.kp-keybindings-popover .kp-popover-title-wrap {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 .kp-keybindings-popover .kp-popover-title {
   font-weight: 700;
-  margin: 0 0 4px 0;
-  color: var(--fg);
+  margin: 0 0 3px 0;
+  color: rgba(248, 250, 252, 0.96);
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
 }
 
 .kp-keybindings-popover .kp-popover-keys {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  color: var(--muted);
-  margin: 0 0 6px 0;
+  color: rgba(255, 255, 255, 0.72);
+  margin: 0;
   font-size: 11px;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
 }
 
 .kp-keybindings-popover .kp-popover-desc {
   margin: 0;
-  color: var(--fg);
+  color: rgba(248, 250, 252, 0.9);
   opacity: 0.95;
+  font-size: 11.5px;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
 }
 
 .kp-keybindings-popover::before {
@@ -1914,7 +1980,7 @@
 
 .kp-keybindings-popover[data-placement="top"]::before {
   top: 100%;
-  border-top-color: var(--border);
+  border-top-color: rgba(0, 0, 0, 0.45);
 }
 
 .kp-keybindings-popover[data-placement="top"]::after {
@@ -1925,12 +1991,12 @@
   left: var(--kp-arrow-left, 18px);
   top: calc(100% - 1px);
   border: 8px solid transparent;
-  border-top-color: var(--surface);
+  border-top-color: var(--kp-key-deep);
 }
 
 .kp-keybindings-popover[data-placement="bottom"]::before {
   bottom: 100%;
-  border-bottom-color: var(--border);
+  border-bottom-color: rgba(255, 255, 255, 0.12);
 }
 
 .kp-keybindings-popover[data-placement="bottom"]::after {
@@ -1941,7 +2007,7 @@
   left: var(--kp-arrow-left, 18px);
   bottom: calc(100% - 1px);
   border: 8px solid transparent;
-  border-bottom-color: var(--surface);
+  border-bottom-color: var(--kp-key-face);
 }
 
 /* Font Awesome-style faded key background icons (behind white labels) */
@@ -2784,7 +2850,12 @@
         keyEl.dataset.kpBaseClass = baseClass;
         keyEl.setAttribute('role', 'button');
         keyEl.setAttribute('tabindex', '0');
-        keyEl.title = (binding && (binding.description || binding.label)) || item.fallbackText || item.id;
+        // Prefer aria-label over title so the browser native tooltip doesn't fight our hover popover.
+        try { keyEl.removeAttribute('title'); } catch { /* ignore */ }
+        keyEl.setAttribute(
+          'aria-label',
+          (binding && (binding.description || binding.label)) || item.fallbackText || item.id
+        );
         // Only keys with functions get FA background icons.
         ensureBgIcon(keyEl);
 
@@ -3054,7 +3125,7 @@
     root.setAttribute('aria-label', 'KeyPilot keyboard reference');
     root.setAttribute('data-kp-early-floating-keyboard', 'true');
 
-    // Pro-app floating chrome (inline so host pages can't override it).
+    // Compact dark window chrome (inline so host pages can't override it).
     Object.assign(root.style, {
       position: 'fixed',
       left: '16px',
@@ -3064,12 +3135,11 @@
       maxHeight: 'calc(100vh - 24px)',
       overflow: 'auto',
       zIndex: String(Z_FLOATING_KEYBOARD_HELP),
-      background: 'linear-gradient(180deg, rgba(28, 30, 36, 0.98) 0%, rgba(16, 18, 22, 0.98) 100%)',
+      background: 'rgba(10, 11, 14, 0.98)',
       color: 'rgba(248, 250, 252, 0.95)',
-      border: '1px solid rgba(255, 255, 255, 0.1)',
-      borderRadius: '14px',
-      boxShadow:
-        '0 1px 0 rgba(255,255,255,0.06) inset, 0 18px 48px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.35)',
+      border: '1px solid rgba(255, 255, 255, 0.08)',
+      borderRadius: '4px',
+      boxShadow: '0 16px 40px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35)',
       fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
       pointerEvents: 'auto'
     });
@@ -3077,24 +3147,38 @@
     try { applyPopupThemeVars(root); } catch { /* ignore */ }
 
     const header = doc.createElement('div');
+    header.setAttribute('data-kp-floating-keyboard-titlebar', 'true');
     Object.assign(header.style, {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      gap: '12px',
-      padding: '11px 14px',
-      borderBottom: '1px solid rgba(255,255,255,0.08)',
-      background: 'linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%)'
+      gap: '8px',
+      height: '28px',
+      minHeight: '28px',
+      maxHeight: '28px',
+      boxSizing: 'border-box',
+      padding: '0 6px 0 10px',
+      margin: '0',
+      borderBottom: '1px solid rgba(0,0,0,0.55)',
+      background: 'linear-gradient(180deg, #1a1b1f 0%, #121316 100%)',
+      flex: '0 0 auto'
     });
 
     const title = doc.createElement('div');
     title.textContent = 'Keyboard Reference';
+    title.setAttribute('data-kp-floating-keyboard-title', 'true');
     Object.assign(title.style, {
-      fontSize: '12px',
-      fontWeight: '650',
-      letterSpacing: '0.04em',
-      textTransform: 'uppercase',
-      color: 'rgba(248, 250, 252, 0.88)'
+      fontSize: '11px',
+      fontWeight: '600',
+      letterSpacing: '0.01em',
+      textTransform: 'none',
+      color: 'rgba(220, 220, 225, 0.9)',
+      lineHeight: '28px',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      margin: '0',
+      padding: '0'
     });
 
     const hint = doc.createElement('div');
@@ -3102,14 +3186,16 @@
     hint.setAttribute('data-kp-floating-keyboard-hint', 'true');
     Object.assign(hint.style, {
       marginLeft: 'auto',
-      fontSize: '11px',
+      fontSize: '10px',
       fontWeight: '500',
-      letterSpacing: '0.02em',
-      color: 'rgba(148, 163, 184, 0.95)',
-      padding: '3px 8px',
-      borderRadius: '999px',
-      border: '1px solid rgba(255,255,255,0.08)',
-      background: 'rgba(0,0,0,0.25)'
+      letterSpacing: '0',
+      color: 'rgba(140, 145, 155, 0.95)',
+      padding: '0 4px',
+      borderRadius: '0',
+      border: 'none',
+      background: 'transparent',
+      lineHeight: '28px',
+      whiteSpace: 'nowrap'
     });
 
     const closeBtn = doc.createElement('button');
@@ -3118,18 +3204,21 @@
     closeBtn.setAttribute('aria-label', 'Close keyboard reference');
     closeBtn.setAttribute('data-kp-floating-keyboard-close', 'true');
     Object.assign(closeBtn.style, {
-      width: '28px',
-      height: '28px',
-      borderRadius: '8px',
-      border: '1px solid rgba(255,255,255,0.12)',
-      background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)',
-      color: 'rgba(248,250,252,0.92)',
+      width: '22px',
+      height: '22px',
+      minWidth: '22px',
+      minHeight: '22px',
+      borderRadius: '4px',
+      border: 'none',
+      background: 'transparent',
+      color: 'rgba(200, 200, 205, 0.9)',
       cursor: 'pointer',
-      fontSize: '17px',
-      lineHeight: '26px',
+      fontSize: '15px',
+      lineHeight: '20px',
       padding: '0',
+      margin: '0',
       flex: '0 0 auto',
-      boxShadow: '0 1px 0 rgba(255,255,255,0.06) inset'
+      boxShadow: 'none'
     });
     closeBtn.addEventListener('click', (e) => {
       // Match main extension behavior: hide without persisting.
@@ -3142,7 +3231,13 @@
     header.appendChild(closeBtn);
 
     const body = doc.createElement('div');
-    Object.assign(body.style, { padding: '12px 12px 13px' });
+    body.setAttribute('data-kp-floating-keyboard-body', 'true');
+    Object.assign(body.style, {
+      padding: '0',
+      margin: '0',
+      border: 'none',
+      background: 'transparent'
+    });
 
     const keyboardContainer = doc.createElement('div');
     keyboardContainer.className = 'kp-floating-keyboard-help__keyboard';

@@ -695,6 +695,12 @@ for common web interactions, eliminating the need for mouse navigation.
 
 
 
+
+
+
+
+
+
 ### 🎯 Smart Modes
 - **Normal Mode**: Green crosshair cursor with all shortcuts active
 - **Text Focus Mode**: Automatic activation in text fields with orange crosshair

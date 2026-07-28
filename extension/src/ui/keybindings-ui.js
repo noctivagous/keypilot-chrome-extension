@@ -9,6 +9,7 @@ import {
   KEYBINDINGS_UI_ROOT_CLASS,
   KEYBINDINGS_UI_STYLE_ATTR,
   ensureKeyBackgroundIcon,
+  getActionIconDataUri,
   getKeybindingsUiCss
 } from './keybindings-ui-shared.js';
 
@@ -114,7 +115,9 @@ function updateExistingKeyboardDOM({ container, keybindings }) {
     ensureKeyBackgroundIcon(doc, keyEl);
 
     const title = (binding && (binding.description || binding.label)) || actionId;
-    keyEl.title = title;
+    // Prefer aria-label over title so the browser native tooltip doesn't fight our hover popover.
+    try { keyEl.removeAttribute('title'); } catch { /* ignore */ }
+    keyEl.setAttribute('aria-label', title);
 
     const main = keyEl.querySelector('.key-main');
     if (main) main.textContent = (binding && binding.label) || actionId;
@@ -209,7 +212,12 @@ export function renderKeybindingsKeyboard({ container, keybindings, keyboardLayo
       keyEl.dataset.kpActionId = item.id;
       keyEl.dataset.kpBaseClass = baseClass;
       keyEl.type = 'button'; // Prevent form submission if inside a form
-      keyEl.title = (binding && (binding.description || binding.label)) || item.fallbackText || item.id;
+      // Prefer aria-label over title so the browser native tooltip doesn't fight our hover popover.
+      try { keyEl.removeAttribute('title'); } catch { /* ignore */ }
+      keyEl.setAttribute(
+        'aria-label',
+        (binding && (binding.description || binding.label)) || item.fallbackText || item.id
+      );
       // Only keys with functions get FA background icons.
       ensureKeyBackgroundIcon(doc, keyEl);
 
@@ -256,12 +264,33 @@ function ensurePopover(doc, container) {
     pop.className = 'kp-keybindings-popover';
     pop.hidden = true;
     pop.setAttribute('data-placement', 'top');
+    pop.setAttribute('role', 'tooltip');
     pop.innerHTML = `
-      <div class="kp-popover-title"></div>
-      <div class="kp-popover-keys"></div>
+      <div class="kp-popover-head">
+        <div class="kp-popover-icon" aria-hidden="true"></div>
+        <div class="kp-popover-title-wrap">
+          <div class="kp-popover-title"></div>
+          <div class="kp-popover-keys"></div>
+        </div>
+      </div>
       <p class="kp-popover-desc"></p>
     `;
     container.appendChild(pop);
+  } else if (pop && !pop.querySelector('.kp-popover-icon')) {
+    // Upgrade legacy popover markup (from older sessions / early inject).
+    try {
+      pop.setAttribute('role', 'tooltip');
+      pop.innerHTML = `
+        <div class="kp-popover-head">
+          <div class="kp-popover-icon" aria-hidden="true"></div>
+          <div class="kp-popover-title-wrap">
+            <div class="kp-popover-title"></div>
+            <div class="kp-popover-keys"></div>
+          </div>
+        </div>
+        <p class="kp-popover-desc"></p>
+      `;
+    } catch { /* ignore */ }
   }
   return pop;
 }
@@ -269,10 +298,46 @@ function ensurePopover(doc, container) {
 function hidePopover(pop) {
   if (!pop) return;
   pop.hidden = true;
+  try {
+    const iconEl = pop.querySelector('.kp-popover-icon');
+    if (iconEl) {
+      iconEl.style.backgroundImage = '';
+      iconEl.style.webkitMaskImage = '';
+      iconEl.style.maskImage = '';
+      iconEl.style.backgroundColor = '';
+      iconEl.hidden = true;
+    }
+    // Clear key-theme overrides so the next hover starts clean.
+    ['--kp-key-face', '--kp-key-mid', '--kp-key-deep', '--kp-key-icon'].forEach((prop) => {
+      try { pop.style.removeProperty(prop); } catch { /* ignore */ }
+    });
+  } catch { /* ignore */ }
 }
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
+}
+
+/**
+ * Copy keycap material CSS variables from the hovered key onto the popover
+ * so the tooltip matches that key's color family.
+ * @param {HTMLElement} pop
+ * @param {HTMLElement} targetEl
+ */
+function applyKeyMaterialToPopover(pop, targetEl) {
+  if (!pop || !targetEl) return;
+  try {
+    const cs = (targetEl.ownerDocument || document).defaultView?.getComputedStyle?.(targetEl);
+    if (!cs) return;
+    const face = (cs.getPropertyValue('--kp-key-face') || '').trim();
+    const mid = (cs.getPropertyValue('--kp-key-mid') || '').trim();
+    const deep = (cs.getPropertyValue('--kp-key-deep') || '').trim();
+    const icon = (cs.getPropertyValue('--kp-key-icon') || '').trim();
+    if (face) pop.style.setProperty('--kp-key-face', face);
+    if (mid) pop.style.setProperty('--kp-key-mid', mid);
+    if (deep) pop.style.setProperty('--kp-key-deep', deep);
+    if (icon) pop.style.setProperty('--kp-key-icon', icon);
+  } catch { /* ignore */ }
 }
 
 function showPopoverForTarget({ doc, pop, targetEl, binding, actionId, container }) {
@@ -281,14 +346,41 @@ function showPopoverForTarget({ doc, pop, targetEl, binding, actionId, container
   const titleEl = pop.querySelector('.kp-popover-title');
   const keysEl = pop.querySelector('.kp-popover-keys');
   const descEl = pop.querySelector('.kp-popover-desc');
+  const iconEl = pop.querySelector('.kp-popover-icon');
 
   const title = (binding && binding.label) || actionId;
   const keys = (binding && (binding.displayKey || binding.keyLabel)) || '';
   const desc = (binding && (binding.description || binding.label)) || '';
+  // Black SVG for mask (same approach as key glyphs).
+  const iconMaskUri = getActionIconDataUri(actionId, { fill: 'black' });
+
+  // Match popover surface to this key's material tokens.
+  applyKeyMaterialToPopover(pop, targetEl);
 
   if (titleEl) titleEl.textContent = title;
-  if (keysEl) keysEl.textContent = keys ? `Keys: ${keys}` : '';
+  if (keysEl) keysEl.textContent = keys ? `Key: ${keys}` : '';
   if (descEl) descEl.textContent = desc;
+  if (iconEl) {
+    if (iconMaskUri) {
+      iconEl.hidden = false;
+      iconEl.style.backgroundImage = 'none';
+      iconEl.style.backgroundColor = 'var(--kp-key-icon)';
+      iconEl.style.webkitMaskImage = iconMaskUri;
+      iconEl.style.maskImage = iconMaskUri;
+      iconEl.style.webkitMaskRepeat = 'no-repeat';
+      iconEl.style.maskRepeat = 'no-repeat';
+      iconEl.style.webkitMaskPosition = 'center';
+      iconEl.style.maskPosition = 'center';
+      iconEl.style.webkitMaskSize = '62% 62%';
+      iconEl.style.maskSize = '62% 62%';
+    } else {
+      iconEl.hidden = true;
+      iconEl.style.backgroundImage = '';
+      iconEl.style.webkitMaskImage = '';
+      iconEl.style.maskImage = '';
+      iconEl.style.backgroundColor = '';
+    }
+  }
 
   pop.hidden = false;
 
@@ -365,86 +457,90 @@ function attachKeyPopoverBehavior({ root, keybindings }) {
   // Store handlers on the root to avoid duplicate attachments
   if (!root._kpKeyHandlers) {
     root._kpKeyHandlers = {
-      click: null,
-      keydown: null,
-      docClick: null,
+      enter: null,
+      leave: null,
+      focusin: null,
+      focusout: null,
       docKeydown: null,
-      resize: null
+      resize: null,
+      hideTimer: null
     };
   }
 
+  const clearHideTimer = () => {
+    if (root._kpKeyHandlers.hideTimer != null) {
+      try { clearTimeout(root._kpKeyHandlers.hideTimer); } catch { /* ignore */ }
+      root._kpKeyHandlers.hideTimer = null;
+    }
+  };
+
+  const scheduleHide = () => {
+    clearHideTimer();
+    root._kpKeyHandlers.hideTimer = setTimeout(() => {
+      hidePopover(pop);
+      root._kpKeyHandlers.hideTimer = null;
+    }, 60);
+  };
+
+  const showForKeyEl = (keyEl) => {
+    if (!keyEl || !keyEl.dataset?.kpActionId) return;
+    const actionId = keyEl.dataset.kpActionId;
+    const binding = keybindings && keybindings[actionId];
+    if (!binding) return;
+    clearHideTimer();
+    showPopoverForTarget({ doc, pop, targetEl: keyEl, binding, actionId, container: floatingContainer });
+  };
+
   // Remove existing handlers if re-attaching
-  if (root._kpKeyHandlers.click) {
-    const keyElements = root.querySelectorAll('[data-kp-action-id]');
-    keyElements.forEach(keyEl => {
-      if (root._kpKeyHandlers.click) keyEl.removeEventListener('click', root._kpKeyHandlers.click);
-      if (root._kpKeyHandlers.keydown) keyEl.removeEventListener('keydown', root._kpKeyHandlers.keydown);
+  const keyElements = root.querySelectorAll('[data-kp-action-id]');
+  if (root._kpKeyHandlers.enter) {
+    keyElements.forEach((keyEl) => {
+      try {
+        if (root._kpKeyHandlers.enter) keyEl.removeEventListener('pointerenter', root._kpKeyHandlers.enter);
+        if (root._kpKeyHandlers.leave) keyEl.removeEventListener('pointerleave', root._kpKeyHandlers.leave);
+        if (root._kpKeyHandlers.focusin) keyEl.removeEventListener('focusin', root._kpKeyHandlers.focusin);
+        if (root._kpKeyHandlers.focusout) keyEl.removeEventListener('focusout', root._kpKeyHandlers.focusout);
+      } catch { /* ignore */ }
     });
   }
 
-  function handleKeyClick(e) {
-    // Handle clicks on button or its children (e.g., .key-main, .key-label)
-    const keyEl = e.currentTarget;
-    if (!keyEl || !keyEl.dataset || !keyEl.dataset.kpActionId) {
-      // If currentTarget isn't the button (shouldn't happen), try to find it
-      const button = e.target.closest('button[data-kp-action-id]');
-      if (!button) return;
-      const actionId = button.dataset.kpActionId;
-      const binding = keybindings && keybindings[actionId];
-      if (!binding) return;
-      e.preventDefault();
-      e.stopPropagation();
-      showPopoverForTarget({ doc, pop, targetEl: button, binding, actionId, container: floatingContainer });
-      return;
-    }
-
-    const actionId = keyEl.dataset.kpActionId;
-    const binding = keybindings && keybindings[actionId];
-    if (!binding) return;
-
-    e.preventDefault();
-    e.stopPropagation();
-    showPopoverForTarget({ doc, pop, targetEl: keyEl, binding, actionId, container: floatingContainer });
+  function handleKeyEnter(e) {
+    showForKeyEl(e.currentTarget);
   }
 
-  function handleKeyKeydown(e) {
-    const keyEl = e.currentTarget;
-    if (!keyEl || !keyEl.dataset.kpActionId) return;
-    if (e.key !== 'Enter' && e.key !== ' ') return;
-
-    const actionId = keyEl.dataset.kpActionId;
-    const binding = keybindings && keybindings[actionId];
-    if (!binding) return;
-
-    e.preventDefault();
-    e.stopPropagation();
-    showPopoverForTarget({ doc, pop, targetEl: keyEl, binding, actionId, container: floatingContainer });
+  function handleKeyLeave() {
+    scheduleHide();
   }
 
-  // Store handlers for cleanup
-  root._kpKeyHandlers.click = handleKeyClick;
-  root._kpKeyHandlers.keydown = handleKeyKeydown;
+  function handleKeyFocusIn(e) {
+    showForKeyEl(e.currentTarget);
+  }
 
-  // Attach handlers directly to each key element (can be button or div depending on context)
-  const keyElements = root.querySelectorAll('[data-kp-action-id]');
+  function handleKeyFocusOut() {
+    scheduleHide();
+  }
+
+  // Store handlers for cleanup / re-attach
+  root._kpKeyHandlers.enter = handleKeyEnter;
+  root._kpKeyHandlers.leave = handleKeyLeave;
+  root._kpKeyHandlers.focusin = handleKeyFocusIn;
+  root._kpKeyHandlers.focusout = handleKeyFocusOut;
 
   if (keyElements.length === 0) {
     console.warn('[KeyPilot] No key elements found for popover behavior in:', root);
   }
 
-  keyElements.forEach(keyEl => {
-    keyEl.addEventListener('click', handleKeyClick);
-    keyEl.addEventListener('keydown', handleKeyKeydown);
+  keyElements.forEach((keyEl) => {
+    // Hover (pointer) — primary interaction
+    keyEl.addEventListener('pointerenter', handleKeyEnter);
+    keyEl.addEventListener('pointerleave', handleKeyLeave);
+    // Keyboard focus for accessibility
+    keyEl.addEventListener('focusin', handleKeyFocusIn);
+    keyEl.addEventListener('focusout', handleKeyFocusOut);
   });
 
-  // Close popover on outside click or Escape (only attach once)
-  if (!root._kpKeyHandlers.docClick) {
-    function handleDocClick(e) {
-      if (pop.hidden) return;
-      const insidePopover = pop.contains(e.target);
-      if (!insidePopover) hidePopover(pop);
-    }
-    
+  // Escape / resize hide (only attach once per root)
+  if (!root._kpKeyHandlers.docKeydown) {
     function handleDocKeydown(e) {
       if (e.key === 'Escape') hidePopover(pop);
     }
@@ -453,11 +549,9 @@ function attachKeyPopoverBehavior({ root, keybindings }) {
       hidePopover(pop);
     }
 
-    root._kpKeyHandlers.docClick = handleDocClick;
     root._kpKeyHandlers.docKeydown = handleDocKeydown;
     root._kpKeyHandlers.resize = handleResize;
 
-    doc.addEventListener('click', handleDocClick, true);
     doc.addEventListener('keydown', handleDocKeydown, true);
     window.addEventListener('resize', handleResize);
   }

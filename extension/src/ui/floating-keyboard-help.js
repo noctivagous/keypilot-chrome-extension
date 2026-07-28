@@ -97,7 +97,7 @@ export class FloatingKeyboardHelp {
   }
 
   /**
-   * Pro-app panel chrome shared by create + early-inject adopt paths.
+   * Panel shell chrome shared by create + early-inject adopt paths.
    * @param {HTMLElement} root
    */
   _applyProPanelChrome(root) {
@@ -111,16 +111,110 @@ export class FloatingKeyboardHelp {
       maxHeight: 'calc(100vh - 24px)',
       overflow: 'auto',
       zIndex: String(Z_INDEX.FLOATING_KEYBOARD_HELP),
-      background: 'linear-gradient(180deg, rgba(28, 30, 36, 0.98) 0%, rgba(16, 18, 22, 0.98) 100%)',
+      background: 'rgba(10, 11, 14, 0.98)',
       color: 'rgba(248, 250, 252, 0.95)',
-      border: '1px solid rgba(255, 255, 255, 0.1)',
-      borderRadius: '14px',
-      boxShadow:
-        '0 1px 0 rgba(255,255,255,0.06) inset, 0 18px 48px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.35)',
+      border: '1px solid rgba(255, 255, 255, 0.08)',
+      borderRadius: '4px',
+      boxShadow: '0 16px 40px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35)',
       fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
       pointerEvents: 'auto'
     });
     applyPopupThemeVars(root);
+  }
+
+  /**
+   * Compact, dark window-style titlebar.
+   * @param {HTMLElement|null} header
+   * @param {{ titleEl?: HTMLElement|null, hintEl?: HTMLElement|null, closeBtn?: HTMLElement|null }} [parts]
+   */
+  _applyCompactTitlebar(header, parts = {}) {
+    if (!header || !header.style) return;
+    Object.assign(header.style, {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: '8px',
+      height: '28px',
+      minHeight: '28px',
+      maxHeight: '28px',
+      boxSizing: 'border-box',
+      padding: '0 6px 0 10px',
+      margin: '0',
+      borderBottom: '1px solid rgba(0,0,0,0.55)',
+      background: 'linear-gradient(180deg, #1a1b1f 0%, #121316 100%)',
+      flex: '0 0 auto'
+    });
+
+    const titleEl = parts.titleEl || header.querySelector('[data-kp-floating-keyboard-title="true"]') || header.firstElementChild;
+    if (titleEl && titleEl.style) {
+      Object.assign(titleEl.style, {
+        fontSize: '11px',
+        fontWeight: '600',
+        letterSpacing: '0.01em',
+        textTransform: 'none',
+        color: 'rgba(220, 220, 225, 0.9)',
+        lineHeight: '28px',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        margin: '0',
+        padding: '0'
+      });
+    }
+
+    const hintEl = parts.hintEl || header.querySelector('[data-kp-floating-keyboard-hint="true"]');
+    if (hintEl && hintEl.style) {
+      Object.assign(hintEl.style, {
+        marginLeft: 'auto',
+        fontSize: '10px',
+        fontWeight: '500',
+        letterSpacing: '0',
+        color: 'rgba(140, 145, 155, 0.95)',
+        padding: '0 4px',
+        borderRadius: '0',
+        border: 'none',
+        background: 'transparent',
+        lineHeight: '28px',
+        whiteSpace: 'nowrap'
+      });
+    }
+
+    const closeBtn = parts.closeBtn
+      || header.querySelector('button[data-kp-floating-keyboard-close="true"]')
+      || header.querySelector('button[aria-label="Close keyboard reference"]');
+    if (closeBtn && closeBtn.style) {
+      Object.assign(closeBtn.style, {
+        width: '22px',
+        height: '22px',
+        minWidth: '22px',
+        minHeight: '22px',
+        borderRadius: '4px',
+        border: 'none',
+        background: 'transparent',
+        color: 'rgba(200, 200, 205, 0.9)',
+        cursor: 'pointer',
+        fontSize: '15px',
+        lineHeight: '20px',
+        padding: '0',
+        margin: '0',
+        flex: '0 0 auto',
+        boxShadow: 'none'
+      });
+    }
+  }
+
+  /**
+   * Body that wraps `.kp-floating-keyboard-help__keyboard` — no chrome padding.
+   * @param {HTMLElement|null} body
+   */
+  _applyKeyboardBodyChrome(body) {
+    if (!body || !body.style) return;
+    Object.assign(body.style, {
+      padding: '0',
+      margin: '0',
+      border: 'none',
+      background: 'transparent'
+    });
   }
 
   _ensure() {
@@ -134,15 +228,23 @@ export class FloatingKeyboardHelp {
         const closeBtn =
           existing.querySelector('button[data-kp-floating-keyboard-close="true"]') ||
           existing.querySelector('button[aria-label="Close keyboard reference"]');
+        const header = existing.firstElementChild;
+        const body = keyboardContainer?.parentElement || null;
+        const hintEl = existing.querySelector('[data-kp-floating-keyboard-hint="true"]');
+        const titleEl = existing.querySelector('[data-kp-floating-keyboard-title="true"]')
+          || (header ? header.querySelector('div:not([data-kp-floating-keyboard-hint])') : null);
 
-        // Upgrade chrome to the current pro-app look (and keep z-index/theme in sync).
-        try { this._applyProPanelChrome(existing); } catch { /* ignore */ }
+        try {
+          this._applyProPanelChrome(existing);
+          this._applyCompactTitlebar(header, { titleEl, hintEl, closeBtn });
+          this._applyKeyboardBodyChrome(body);
+        } catch { /* ignore */ }
 
         if (keyboardContainer) {
           this.root = existing;
           this.keyboardContainer = keyboardContainer;
           this.closeBtn = closeBtn || null;
-          this.hintEl = existing.querySelector('[data-kp-floating-keyboard-hint="true"]') || null;
+          this.hintEl = hintEl || null;
           if (this.closeBtn) {
             try {
               this.closeBtn.removeEventListener('click', this._onCloseClick);
@@ -163,69 +265,31 @@ export class FloatingKeyboardHelp {
     this._applyProPanelChrome(root);
 
     const header = document.createElement('div');
-    Object.assign(header.style, {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: '12px',
-      padding: '11px 14px',
-      borderBottom: '1px solid rgba(255,255,255,0.08)',
-      background: 'linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%)'
-    });
+    header.setAttribute('data-kp-floating-keyboard-titlebar', 'true');
 
     const title = document.createElement('div');
     title.textContent = 'Keyboard Reference';
-    Object.assign(title.style, {
-      fontSize: '12px',
-      fontWeight: '650',
-      letterSpacing: '0.04em',
-      textTransform: 'uppercase',
-      color: 'rgba(248, 250, 252, 0.88)'
-    });
+    title.setAttribute('data-kp-floating-keyboard-title', 'true');
 
     const hint = document.createElement('div');
     hint.textContent = 'Press K to toggle';
     hint.setAttribute('data-kp-floating-keyboard-hint', 'true');
-    Object.assign(hint.style, {
-      marginLeft: 'auto',
-      fontSize: '11px',
-      fontWeight: '500',
-      letterSpacing: '0.02em',
-      color: 'rgba(148, 163, 184, 0.95)',
-      padding: '3px 8px',
-      borderRadius: '999px',
-      border: '1px solid rgba(255,255,255,0.08)',
-      background: 'rgba(0,0,0,0.25)'
-    });
 
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
     closeBtn.textContent = '×';
     closeBtn.setAttribute('aria-label', 'Close keyboard reference');
-    Object.assign(closeBtn.style, {
-      width: '28px',
-      height: '28px',
-      borderRadius: '8px',
-      border: '1px solid rgba(255,255,255,0.12)',
-      background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)',
-      color: 'rgba(248,250,252,0.92)',
-      cursor: 'pointer',
-      fontSize: '17px',
-      lineHeight: '26px',
-      padding: '0',
-      flex: '0 0 auto',
-      boxShadow: '0 1px 0 rgba(255,255,255,0.06) inset'
-    });
+    closeBtn.setAttribute('data-kp-floating-keyboard-close', 'true');
     closeBtn.addEventListener('click', this._onCloseClick);
 
     header.appendChild(title);
     header.appendChild(hint);
     header.appendChild(closeBtn);
+    this._applyCompactTitlebar(header, { titleEl: title, hintEl: hint, closeBtn });
 
     const body = document.createElement('div');
-    Object.assign(body.style, {
-      padding: '12px 12px 13px'
-    });
+    body.setAttribute('data-kp-floating-keyboard-body', 'true');
+    this._applyKeyboardBodyChrome(body);
 
     const keyboardContainer = document.createElement('div');
     keyboardContainer.className = 'kp-floating-keyboard-help__keyboard';

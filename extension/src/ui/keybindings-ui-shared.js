@@ -108,12 +108,26 @@ export const KEYBOARD_ACTION_ICON_IDS = Object.freeze({
 
 /**
  * @param {string} pathD
- * @returns {string} CSS url("data:image/svg+xml,...") for a solid glyph (used as CSS mask)
+ * @param {string} [fill='black']
+ * @returns {string} CSS url("data:image/svg+xml,...") for a solid glyph
  */
-function faIconDataUri(pathD) {
-  // Black fill is fine for mask-image; alpha defines the glyph shape.
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="black"><path d="${pathD}"/></svg>`;
+function faIconDataUri(pathD, fill = 'black') {
+  const safeFill = String(fill || 'black').replace(/"/g, '');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="${safeFill}"><path d="${pathD}"/></svg>`;
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+
+/**
+ * Data-URI for a KeyPilot action's Font Awesome-style icon (for popovers / UI chrome).
+ * @param {string} actionId
+ * @param {{ fill?: string }} [opts]
+ * @returns {string} empty string when no icon is mapped
+ */
+export function getActionIconDataUri(actionId, opts = {}) {
+  const iconName = KEYBOARD_ACTION_ICON_IDS[actionId];
+  const pathD = iconName ? FA_SOLID_PATHS[iconName] : null;
+  if (!pathD) return '';
+  return faIconDataUri(pathD, opts.fill || 'white');
 }
 
 /**
@@ -438,15 +452,15 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
   bottom: auto;
   /* Leave a fixed bottom band for the letter; never push it */
   height: auto;
-  max-height: 26px;
+  max-height: 30px;
   box-sizing: border-box;
   margin: 0;
   padding: 0 1px;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 650;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   line-height: 1.1;
-  opacity: 0.88;
+  opacity: 0.9;
   text-transform: uppercase;
   color: rgba(248, 250, 252, 0.94);
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
@@ -798,41 +812,107 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
     inset 0 1px 0 rgba(0, 0, 0, 0.2);
 }
 
-/* Popover (tooltip) shown when clicking a key */
+/* Popover (tooltip) — matches the hovered key material via CSS vars */
 .kp-keybindings-popover {
+  --kp-key-face: #3d4454;
+  --kp-key-mid: #343a48;
+  --kp-key-deep: #2c313e;
+  --kp-key-icon: #1a1e28;
+
   position: absolute;
   z-index: ${zIndex};
-  max-width: 280px;
-  background: var(--surface);
-  color: var(--fg);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  max-width: 300px;
+  min-width: 160px;
+  color: rgba(248, 250, 252, 0.95);
+  border-radius: 8px;
   padding: 10px 12px;
   font-size: 12px;
   line-height: 1.35;
-  /* Position absolute relative to parent container avoids z-index stacking context issues */
+  pointer-events: none; /* hover tooltips shouldn't steal pointer */
+
+  /* Same low-profile key face treatment as .key */
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  border-top-color: rgba(255, 255, 255, 0.12);
+  border-bottom-color: rgba(0, 0, 0, 0.5);
+  background:
+    linear-gradient(180deg,
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0.02) 18%,
+      transparent 42%),
+    linear-gradient(180deg,
+      var(--kp-key-face) 0%,
+      var(--kp-key-mid) 70%,
+      var(--kp-key-deep) 100%);
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.45),
+    0 10px 24px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18);
 }
 
 .kp-keybindings-popover[hidden] { display: none; }
 
+.kp-keybindings-popover .kp-popover-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 6px 0;
+}
+
+.kp-keybindings-popover .kp-popover-icon {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-top-color: rgba(255, 255, 255, 0.1);
+  /* Glyph uses same darker icon color as keys */
+  background-color: var(--kp-key-icon);
+  background-image: none;
+  background-repeat: no-repeat;
+  background-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: 62% 62%;
+  mask-size: 62% 62%;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+}
+
+.kp-keybindings-popover .kp-popover-icon[hidden] {
+  display: none;
+}
+
+.kp-keybindings-popover .kp-popover-title-wrap {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 .kp-keybindings-popover .kp-popover-title {
   font-weight: 700;
-  margin: 0 0 4px 0;
-  color: var(--fg);
+  margin: 0 0 3px 0;
+  color: rgba(248, 250, 252, 0.96);
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
 }
 
 .kp-keybindings-popover .kp-popover-keys {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  color: var(--muted);
-  margin: 0 0 6px 0;
+  color: rgba(255, 255, 255, 0.72);
+  margin: 0;
   font-size: 11px;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
 }
 
 .kp-keybindings-popover .kp-popover-desc {
   margin: 0;
-  color: var(--fg);
+  color: rgba(248, 250, 252, 0.9);
   opacity: 0.95;
+  font-size: 11.5px;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
 }
 
 .kp-keybindings-popover::before {
@@ -846,7 +926,7 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
 
 .kp-keybindings-popover[data-placement="top"]::before {
   top: 100%;
-  border-top-color: var(--border);
+  border-top-color: rgba(0, 0, 0, 0.45);
 }
 
 .kp-keybindings-popover[data-placement="top"]::after {
@@ -857,12 +937,12 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
   left: var(--kp-arrow-left, 18px);
   top: calc(100% - 1px);
   border: 8px solid transparent;
-  border-top-color: var(--surface);
+  border-top-color: var(--kp-key-deep);
 }
 
 .kp-keybindings-popover[data-placement="bottom"]::before {
   bottom: 100%;
-  border-bottom-color: var(--border);
+  border-bottom-color: rgba(255, 255, 255, 0.12);
 }
 
 .kp-keybindings-popover[data-placement="bottom"]::after {
@@ -873,7 +953,7 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
   left: var(--kp-arrow-left, 18px);
   bottom: calc(100% - 1px);
   border: 8px solid transparent;
-  border-bottom-color: var(--surface);
+  border-bottom-color: var(--kp-key-face);
 }
 
 /* Font Awesome-style faded key background icons (behind white labels) */
