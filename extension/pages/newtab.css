@@ -91,6 +91,21 @@ body.kp-unfocused::before {
   gap: 12px;
 }
 
+.kp-switches {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.kp-switch-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  color: rgba(255, 255, 255, 0.78);
+  text-transform: uppercase;
+}
+
 .logo {
   width: 38px;
   height: 38px;

@@ -3,6 +3,11 @@
  * Stores mouse coordinates in Chrome storage when links are clicked
  * and retrieves them for cursor positioning on page load
  */
+import {
+  isExtensionContextValid,
+  noteExtensionContextError
+} from '../utils/extension-context.js';
+
 export class MouseCoordinateManager {
   constructor() {
     this.storageKey = 'keypilot_last_mouse_coordinates';
@@ -17,6 +22,18 @@ export class MouseCoordinateManager {
     
     // Set up beforeunload listener to store coordinates when leaving page
     this.setupBeforeUnloadListener();
+  }
+
+  /**
+   * Persist coordinates to localStorage (works even when extension context is dead).
+   * @param {object} coordinates
+   */
+  _storeCoordinatesLocally(coordinates) {
+    try {
+      localStorage.setItem(this.storageKey, JSON.stringify(coordinates));
+    } catch {
+      // Ignore quota / private-mode failures
+    }
   }
 
   /**
@@ -38,22 +55,33 @@ export class MouseCoordinateManager {
     };
 
     try {
-      // Store in Chrome storage (sync if available, local as fallback)
-      if (chrome?.storage?.sync) {
-        await chrome.storage.sync.set({ [this.storageKey]: coordinates });
-      } else if (chrome?.storage?.local) {
-        await chrome.storage.local.set({ [this.storageKey]: coordinates });
-      } else {
-        // Fallback to localStorage if Chrome storage not available
-        localStorage.setItem(this.storageKey, JSON.stringify(coordinates));
+      // After extension reload/update, chrome.storage throws "Extension context invalidated".
+      // Prefer chrome storage when available; always keep a localStorage fallback.
+      if (isExtensionContextValid()) {
+        if (chrome?.storage?.sync) {
+          await chrome.storage.sync.set({ [this.storageKey]: coordinates });
+        } else if (chrome?.storage?.local) {
+          await chrome.storage.local.set({ [this.storageKey]: coordinates });
+        }
       }
 
+      // Mirror to localStorage for unload / invalidated-context recovery.
+      this._storeCoordinatesLocally(coordinates);
       this.lastStoredCoordinates = coordinates;
       
       if (window.KEYPILOT_DEBUG) {
         console.log('[KeyPilot] Mouse coordinates stored:', coordinates);
       }
     } catch (error) {
+      if (noteExtensionContextError(error)) {
+        // Expected after extension reload; degrade to localStorage without console noise.
+        this._storeCoordinatesLocally(coordinates);
+        this.lastStoredCoordinates = coordinates;
+        if (window.KEYPILOT_DEBUG) {
+          console.warn('[KeyPilot] Extension context invalidated; stored mouse coordinates in localStorage only');
+        }
+        return;
+      }
       console.warn('[KeyPilot] Failed to store mouse coordinates:', error);
     }
   }
@@ -66,15 +94,17 @@ export class MouseCoordinateManager {
     try {
       let result = null;
 
-      // Try Chrome storage first (sync, then local)
-      if (chrome?.storage?.sync) {
-        const syncResult = await chrome.storage.sync.get([this.storageKey]);
-        result = syncResult[this.storageKey];
-      }
-      
-      if (!result && chrome?.storage?.local) {
-        const localResult = await chrome.storage.local.get([this.storageKey]);
-        result = localResult[this.storageKey];
+      // Try Chrome storage first (sync, then local) when context is valid
+      if (isExtensionContextValid()) {
+        if (chrome?.storage?.sync) {
+          const syncResult = await chrome.storage.sync.get([this.storageKey]);
+          result = syncResult[this.storageKey];
+        }
+        
+        if (!result && chrome?.storage?.local) {
+          const localResult = await chrome.storage.local.get([this.storageKey]);
+          result = localResult[this.storageKey];
+        }
       }
       
       // Fallback to localStorage
@@ -93,6 +123,16 @@ export class MouseCoordinateManager {
 
       return result;
     } catch (error) {
+      if (noteExtensionContextError(error)) {
+        try {
+          const localStorageData = localStorage.getItem(this.storageKey);
+          if (localStorageData) {
+            this.lastStoredCoordinates = JSON.parse(localStorageData);
+            return this.lastStoredCoordinates;
+          }
+        } catch { /* ignore */ }
+        return null;
+      }
       console.warn('[KeyPilot] Failed to load stored mouse coordinates:', error);
       return null;
     }
@@ -196,17 +236,19 @@ export class MouseCoordinateManager {
 
     try {
       // Use localStorage for synchronous storage during beforeunload
-      localStorage.setItem(this.storageKey, JSON.stringify(coordinates));
+      this._storeCoordinatesLocally(coordinates);
       this.lastStoredCoordinates = coordinates;
       
-      // Also try Chrome storage but don't wait for it
-      if (chrome?.storage?.local) {
-        chrome.storage.local.set({ [this.storageKey]: coordinates }).catch(() => {
+      // Also try Chrome storage but don't wait for it (skip if context is dead)
+      if (isExtensionContextValid() && chrome?.storage?.local) {
+        chrome.storage.local.set({ [this.storageKey]: coordinates }).catch((error) => {
+          noteExtensionContextError(error);
           // Ignore errors during beforeunload
         });
       }
     } catch (error) {
       // Ignore storage errors during beforeunload
+      if (noteExtensionContextError(error)) return;
       if (window.KEYPILOT_DEBUG) {
         console.warn('[KeyPilot] Failed to store coordinates on beforeunload:', error);
       }
@@ -321,11 +363,13 @@ export class MouseCoordinateManager {
    */
   async clearStoredCoordinates() {
     try {
-      if (chrome?.storage?.sync) {
-        await chrome.storage.sync.remove([this.storageKey]);
-      }
-      if (chrome?.storage?.local) {
-        await chrome.storage.local.remove([this.storageKey]);
+      if (isExtensionContextValid()) {
+        if (chrome?.storage?.sync) {
+          await chrome.storage.sync.remove([this.storageKey]);
+        }
+        if (chrome?.storage?.local) {
+          await chrome.storage.local.remove([this.storageKey]);
+        }
       }
       localStorage.removeItem(this.storageKey);
       
@@ -335,6 +379,11 @@ export class MouseCoordinateManager {
         console.log('[KeyPilot] Cleared stored mouse coordinates');
       }
     } catch (error) {
+      if (noteExtensionContextError(error)) {
+        try { localStorage.removeItem(this.storageKey); } catch { /* ignore */ }
+        this.lastStoredCoordinates = null;
+        return;
+      }
       console.warn('[KeyPilot] Failed to clear stored coordinates:', error);
     }
   }

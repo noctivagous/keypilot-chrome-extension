@@ -1354,24 +1354,37 @@
   --kp-accent: #5be2f1;
 }
 
+/* ── Keyboard plate (pro app tray) ─────────────────────────────── */
 .keyboard-visual.kp-keybindings-ui {
-  background: var(--bg, #0f172a);
-  border-radius: 12px;
-  padding: 14px;
-  font-family: "Dosis", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --kp-kb-surface: #12151c;
+  --kp-kb-well: #0a0c11;
+  --kp-kb-rim: rgba(255, 255, 255, 0.08);
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px 11px 11px;
+  border-radius: 14px;
+  border: 1px solid var(--kp-kb-rim);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, transparent 28%),
+    radial-gradient(120% 80% at 50% 0%, rgba(91, 226, 241, 0.05) 0%, transparent 55%),
+    linear-gradient(180deg, #161a22 0%, var(--kp-kb-surface) 45%, var(--kp-kb-well) 100%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.45) inset,
+    0 12px 28px rgba(0, 0, 0, 0.45),
+    0 2px 0 rgba(0, 0, 0, 0.35);
+  font-family: "Dosis", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   font-size: 10px;
   line-height: 1.1;
   user-select: none;
-  border: 1px solid var(--border, #334155);
-  width: 100%;
-  box-sizing: border-box;
 }
 
 .kp-keybindings-ui .keyboard-row {
   display: flex;
   justify-content: center;
-  margin-bottom: 8px;
-  gap: 6px;
+  align-items: stretch;
+  margin-bottom: 7px;
+  gap: 5px;
   width: 100%;
 }
 
@@ -1379,51 +1392,85 @@
   margin-bottom: 0;
 }
 
+/* ── Base keycap: low-profile chiclet (flat + lightly realistic) ─ */
 .kp-keybindings-ui .key {
+  --kp-key-face: #3d4454;
+  --kp-key-mid: #343a48;
+  --kp-key-deep: #2c313e;
+  --kp-key-icon: #1a1e28;
+  --kp-key-glow: transparent;
+
   position: relative;
-  /* Reset button default styles */
+  box-sizing: border-box;
   margin: 0;
   font-family: inherit;
   font-size: inherit;
   line-height: inherit;
-  cursor: pointer;
-  /* End button reset */
-  background: linear-gradient(180deg,
-    rgba(45, 55, 72, 0.95) 0%,
-    rgba(26, 32, 44, 0.95) 50%,
-    rgba(15, 20, 30, 0.95) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-top: 1.5px solid rgba(255, 255, 255, 0.25);
-  border-bottom: 1.5px solid rgba(0, 0, 0, 0.6);
-  border-radius: 6px;
-  min-width: 32px;
-  /* Keep keys closer to square in narrow containers (popup, floating panel). */
-  min-height: 38px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: var(--fg, #f8fafc);
+  cursor: default;
+  appearance: none;
+  -webkit-appearance: none;
+  color: rgba(248, 250, 252, 0.94);
   text-align: center;
-  padding: 4px;
-  transition: all 0.2s ease;
-  flex: 1;
+  overflow: hidden;
+
+  /* Equal geometry for alphanumeric keys */
+  flex: 1 1 0;
+  min-width: 0;
+  width: 0;
+  height: 50px;
+  min-height: 50px;
+  max-height: 50px;
+  /* Block layout: letter/name layers are absolutely positioned (not flex-flow) */
+  display: block;
+  padding: 0;
+  border-radius: 7px;
+
+  /*
+   * Low-profile key: nearly flat face, thin rim, soft ground shadow.
+   * Reads more like a real chiclet key than a heavy 3D bevel.
+   */
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  border-top-color: rgba(255, 255, 255, 0.1);
+  border-bottom-color: rgba(0, 0, 0, 0.5);
+
+  background:
+    linear-gradient(180deg,
+      rgba(255, 255, 255, 0.07) 0%,
+      rgba(255, 255, 255, 0.02) 18%,
+      transparent 42%),
+    linear-gradient(180deg,
+      var(--kp-key-face) 0%,
+      var(--kp-key-mid) 70%,
+      var(--kp-key-deep) 100%);
+
   box-shadow:
-    0 4px 6px rgba(0, 0, 0, 0.4),
-    0 1px 3px rgba(0, 0, 0, 0.6),
-    inset 0 1px 1px rgba(255, 255, 255, 0.1),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.3);
+    0 1px 0 rgba(0, 0, 0, 0.45),
+    0 2px 4px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18);
+
+  transition:
+    transform 100ms ease,
+    box-shadow 100ms ease,
+    filter 100ms ease,
+    border-color 100ms ease,
+    background 100ms ease;
 }
 
+/* Minimal face sheen (not a tall sculpted plate) */
 .kp-keybindings-ui .key::before {
   content: '';
   position: absolute;
+  z-index: 0;
   top: 1px;
-  left: 1px;
-  right: 1px;
-  height: 30%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, transparent 100%);
-  border-radius: 5px 5px 0 0;
+  left: 2px;
+  right: 2px;
+  height: 38%;
+  border-radius: 5px 5px 40% 40%;
+  background: linear-gradient(180deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.02) 60%,
+    transparent 100%);
   pointer-events: none;
 }
 
@@ -1432,36 +1479,123 @@
 }
 
 .kp-keybindings-ui [data-kp-action-id]:hover {
-  transform: translateY(-2px);
+  filter: brightness(1.07);
+  border-top-color: rgba(255, 255, 255, 0.14);
   box-shadow:
-    0 6px 8px rgba(0, 0, 0, 0.4),
-    0 2px 4px rgba(0, 0, 0, 0.6),
-    inset 0 1px 2px rgba(255, 255, 255, 0.15),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.3);
+    0 1px 0 rgba(0, 0, 0, 0.4),
+    0 3px 8px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 0 10px var(--kp-key-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.16);
 }
 
-.kp-keybindings-ui .key .key-main {
-  font-size: 8px;
-  opacity: 0.7;
-  margin-bottom: 2px;
+/*
+ * Layered key legend (independent of each other):
+ * - .key-main  = action name — upper band only
+ * - .key-label = physical key letter — always pinned bottom-center
+ * - .key-text  = special / unassigned glyph
+ */
+.kp-keybindings-ui .key > .key-main {
+  position: absolute;
+  z-index: 1;
+  /* Pin action name to the top of the key face */
+  top: 3px;
+  left: 2px;
+  right: 2px;
+  bottom: auto;
+  /* Leave a fixed bottom band for the letter; never push it */
+  height: auto;
+  max-height: 26px;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0 1px;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  line-height: 1.1;
+  opacity: 0.88;
   text-transform: uppercase;
+  color: rgba(248, 250, 252, 0.94);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  word-break: break-word;
+  hyphens: auto;
+  text-align: center;
+  pointer-events: none;
 }
 
-.kp-keybindings-ui .key .key-label {
+/* Letter / chrome labels: fixed bottom layer on every key */
+.kp-keybindings-ui .key > .key-label,
+.kp-keybindings-ui .key > .key-text {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  bottom: 3px;
+  top: auto;
+  transform: none;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0 2px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1;
+  text-align: center;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+.kp-keybindings-ui .key > .key-label {
   font-size: 12px;
   font-weight: 700;
-  color: var(--kp-accent);
-  line-height: 1;
+  letter-spacing: 0.03em;
+  color: var(--kp-accent, #5be2f1);
 }
 
-/* Special keys: keep them wider than normal, but not so wide that letter keys become skinny in the popup */
-.kp-keybindings-ui .key.key-tab { flex: 1.25; }
-.kp-keybindings-ui .key.key-caps { flex: 1.35; }
-.kp-keybindings-ui .key.key-enter { flex: 1.55; }
-.kp-keybindings-ui .key.key-shift { flex: 1.65; }
-.kp-keybindings-ui .key.key-backspace { flex: 1.55; }
+/* Special chrome labels (Tab/Caps/…) */
+.kp-keybindings-ui .key > .key-text {
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  color: rgba(248, 250, 252, 0.92);
+}
 
-/* Action-specific keys */
+/* Unassigned letter-only keys: still bottom-centered (same letter layer) */
+.kp-keybindings-ui .key:not([data-kp-action-id]):not(.key-tab):not(.key-caps):not(.key-enter):not(.key-shift):not(.key-backspace) > .key-text {
+  bottom: 3px;
+  top: auto;
+  transform: none;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--kp-accent, #5be2f1);
+}
+
+/* Special keys: wider, same height */
+.kp-keybindings-ui .key.key-tab,
+.kp-keybindings-ui .key.key-caps,
+.kp-keybindings-ui .key.key-enter,
+.kp-keybindings-ui .key.key-shift,
+.kp-keybindings-ui .key.key-backspace {
+  height: 50px;
+  min-height: 50px;
+  max-height: 50px;
+  width: auto;
+}
+
+.kp-keybindings-ui .key.key-tab { flex: 1.25 1 0; }
+.kp-keybindings-ui .key.key-caps { flex: 1.35 1 0; }
+.kp-keybindings-ui .key.key-enter { flex: 1.55 1 0; }
+.kp-keybindings-ui .key.key-shift { flex: 1.65 1 0; }
+.kp-keybindings-ui .key.key-backspace { flex: 1.55 1 0; }
+
+/* ── Color families (muted pro tints + darker icon color) ─────── */
 .kp-keybindings-ui .key.key-activate,
 .kp-keybindings-ui .key.key-activate-new,
 .kp-keybindings-ui .key.key-activate-new-over,
@@ -1475,187 +1609,118 @@
 .kp-keybindings-ui .key.key-page-down-instant,
 .kp-keybindings-ui .key.key-help,
 .kp-keybindings-ui .key.key-omnibox {
-  background: linear-gradient(180deg,
-    rgba(34, 197, 94, 0.5) 0%,
-    rgba(22, 163, 74, 0.6) 50%,
-    rgba(21, 128, 61, 0.7) 100%);
-  border-color: rgba(5, 150, 105, 0.6);
-  border-top-color: rgba(34, 197, 94, 0.4);
-  border-bottom-color: rgba(21, 128, 61, 0.8);
-  box-shadow:
-    0 4px 6px rgba(0, 0, 0, 0.4),
-    0 1px 3px rgba(0, 0, 0, 0.6),
-    inset 0 1px 1px rgba(34, 197, 94, 0.2),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.3),
-    0 0 8px rgba(34, 197, 94, 0.15);
+  
+  --kp-key-face: #2f8f5b;
+  --kp-key-mid: #247a4c;
+  --kp-key-deep: #17633a;
+  --kp-key-icon: #0d3a22;
+  --kp-key-glow: rgba(34, 197, 94, 0.18);
+
 }
 
 .kp-keybindings-ui .key.key-back,
 .kp-keybindings-ui .key.key-forward,
 .kp-keybindings-ui .key.key-scroll-top,
 .kp-keybindings-ui .key.key-scroll-bottom {
-  background: linear-gradient(180deg,
-    rgba(56, 189, 248, 0.5) 0%,
-    rgba(14, 165, 233, 0.6) 50%,
-    rgba(2, 132, 199, 0.7) 100%);
-  border-color: rgba(4, 177, 225, 0.6);
-  border-top-color: rgba(56, 189, 248, 0.4);
-  border-bottom-color: rgba(2, 132, 199, 0.8);
-  box-shadow:
-    0 4px 6px rgba(0, 0, 0, 0.4),
-    0 1px 3px rgba(0, 0, 0, 0.6),
-    inset 0 1px 1px rgba(56, 189, 248, 0.2),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.3),
-    0 0 8px rgba(56, 189, 248, 0.15);
+  
+  --kp-key-face: #2f7ea8;
+  --kp-key-mid: #256b92;
+  --kp-key-deep: #1a5475;
+  --kp-key-icon: #0d3044;
+  --kp-key-glow: rgba(56, 189, 248, 0.16);
+
 }
 
 .kp-keybindings-ui .key.key-delete,
 .kp-keybindings-ui .key.key-close-tab {
-  background: linear-gradient(180deg,
-    rgba(248, 113, 113, 0.5) 0%,
-    rgba(239, 68, 68, 0.6) 50%,
-    rgba(220, 38, 38, 0.7) 100%);
-  border-color: rgba(220, 38, 38, 0.6);
-  border-top-color: rgba(248, 113, 113, 0.4);
-  border-bottom-color: rgba(220, 38, 38, 0.8);
-  box-shadow:
-    0 4px 6px rgba(0, 0, 0, 0.4),
-    0 1px 3px rgba(0, 0, 0, 0.6),
-    inset 0 1px 1px rgba(248, 113, 113, 0.2),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.3),
-    0 0 8px rgba(248, 113, 113, 0.15);
+  
+  --kp-key-face: #b84a4a;
+  --kp-key-mid: #9e3b3b;
+  --kp-key-deep: #7a2b2b;
+  --kp-key-icon: #401616;
+  --kp-key-glow: rgba(248, 113, 113, 0.16);
+
 }
 
 .kp-keybindings-ui .key.key-highlight,
 .kp-keybindings-ui .key.key-rect-highlight {
-  background: linear-gradient(180deg,
-    rgba(245, 158, 11, 0.5) 0%,
-    rgba(217, 119, 6, 0.6) 50%,
-    rgba(180, 83, 9, 0.7) 100%);
-  border-color: rgba(245, 158, 11, 0.6);
-  border-top-color: rgba(245, 158, 11, 0.4);
-  border-bottom-color: rgba(180, 83, 9, 0.8);
+  
+  --kp-key-face: #b8862d;
+  --kp-key-mid: #9a6f22;
+  --kp-key-deep: #7a5618;
+  --kp-key-icon: #3d2a0c;
+  --kp-key-glow: rgba(245, 158, 11, 0.14);
+
 }
 
 .kp-keybindings-ui .key.key-scroll {
-  background: linear-gradient(180deg,
-    rgba(139, 69, 19, 0.5) 0%,
-    rgba(101, 67, 33, 0.6) 50%,
-    rgba(92, 64, 35, 0.7) 100%);
-  border-color: rgba(139, 69, 19, 0.6);
-  border-top-color: rgba(139, 69, 19, 0.4);
-  border-bottom-color: rgba(92, 64, 35, 0.8);
-  box-shadow:
-    0 4px 6px rgba(0, 0, 0, 0.4),
-    0 1px 3px rgba(0, 0, 0, 0.6),
-    inset 0 1px 1px rgba(139, 69, 19, 0.2),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.3),
-    0 0 8px rgba(139, 69, 19, 0.15);
+  
+  --kp-key-face: #7a5638;
+  --kp-key-mid: #63452c;
+  --kp-key-deep: #4a3320;
+  --kp-key-icon: #26180f;
+  --kp-key-glow: rgba(180, 120, 70, 0.12);
+
 }
 
 .kp-keybindings-ui .key.key-purple {
-  background: linear-gradient(180deg,
-    rgba(147, 51, 234, 0.5) 0%,
-    rgba(124, 58, 237, 0.6) 50%,
-    rgba(88, 28, 135, 0.7) 100%);
-  border-color: rgba(147, 51, 234, 0.6);
-  border-top-color: rgba(147, 51, 234, 0.4);
-  border-bottom-color: rgba(88, 28, 135, 0.8);
-  box-shadow:
-    0 4px 6px rgba(0, 0, 0, 0.4),
-    0 1px 3px rgba(0, 0, 0, 0.6),
-    inset 0 1px 1px rgba(147, 51, 234, 0.2),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.3),
-    0 0 8px rgba(147, 51, 234, 0.15);
+  
+  --kp-key-face: #7a4ab8;
+  --kp-key-mid: #663d9e;
+  --kp-key-deep: #4e2e7a;
+  --kp-key-icon: #281646;
+  --kp-key-glow: rgba(167, 139, 250, 0.14);
+
 }
 
 .kp-keybindings-ui .key.key-orange {
-  background: linear-gradient(180deg,
-    rgba(255, 165, 0, 0.5) 0%,
-    rgba(255, 140, 0, 0.6) 50%,
-    rgba(255, 69, 0, 0.7) 100%);
-  border-color: rgba(255, 165, 0, 0.6);
-  border-top-color: rgba(255, 165, 0, 0.4);
-  border-bottom-color: rgba(255, 69, 0, 0.8);
-  box-shadow:
-    0 4px 6px rgba(0, 0, 0, 0.4),
-    0 1px 3px rgba(0, 0, 0, 0.6),
-    inset 0 1px 1px rgba(255, 165, 0, 0.2),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.3),
-    0 0 8px rgba(255, 165, 0, 0.15);
+  
+  --kp-key-face: #c97a28;
+  --kp-key-mid: #a8641e;
+  --kp-key-deep: #834f16;
+  --kp-key-icon: #3f250a;
+  --kp-key-glow: rgba(255, 165, 0, 0.14);
+
 }
 
 .kp-keybindings-ui .key.key-launcher-orange {
-  background: linear-gradient(180deg,
-    rgba(184, 115, 51, 0.5) 0%,
-    rgba(160, 82, 45, 0.6) 50%,
-    rgba(139, 69, 19, 0.7) 100%);
-  border-color: rgba(184, 115, 51, 0.6);
-  border-top-color: rgba(184, 115, 51, 0.4);
-  border-bottom-color: rgba(139, 69, 19, 0.8);
-  box-shadow:
-    0 4px 6px rgba(0, 0, 0, 0.4),
-    0 1px 3px rgba(0, 0, 0, 0.6),
-    inset 0 1px 1px rgba(184, 115, 51, 0.2),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.3),
-    0 0 8px rgba(184, 115, 51, 0.15);
+  
+  --kp-key-face: #a06a3a;
+  --kp-key-mid: #85562e;
+  --kp-key-deep: #664122;
+  --kp-key-icon: #322010;
+  --kp-key-glow: rgba(184, 115, 51, 0.12);
+
 }
 
 .kp-keybindings-ui .key.key-settings-dark {
-  background: linear-gradient(180deg,
-    rgba(31, 41, 55, 0.8) 0%,
-    rgba(17, 24, 39, 0.9) 50%,
-    rgba(0, 0, 0, 0.95) 100%);
-  border-color: rgba(55, 65, 81, 0.8);
-  border-top-color: rgba(75, 85, 99, 0.6);
-  border-bottom-color: rgba(0, 0, 0, 0.95);
-  box-shadow:
-    0 4px 6px rgba(0, 0, 0, 0.5),
-    0 1px 3px rgba(0, 0, 0, 0.7),
-    inset 0 1px 1px rgba(107, 114, 128, 0.3),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.4),
-    0 0 8px rgba(0, 0, 0, 0.2);
+  
+  --kp-key-face: #3a4250;
+  --kp-key-mid: #2a313c;
+  --kp-key-deep: #1a1f28;
+  --kp-key-icon: #0c0f14;
+  --kp-key-glow: rgba(148, 163, 184, 0.1);
+
 }
 
 .kp-keybindings-ui .key.key-gray {
-  background: linear-gradient(180deg,
-    rgba(128, 128, 128, 0.5) 0%,
-    rgba(105, 105, 105, 0.6) 50%,
-    rgba(85, 85, 85, 0.7) 100%);
-  border-color: rgba(128, 128, 128, 0.6);
-  border-top-color: rgba(128, 128, 128, 0.4);
-  border-bottom-color: rgba(85, 85, 85, 0.8);
-  box-shadow:
-    0 4px 6px rgba(0, 0, 0, 0.4),
-    0 1px 3px rgba(0, 0, 0, 0.6),
-    inset 0 1px 1px rgba(128, 128, 128, 0.2),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.3),
-    0 0 8px rgba(128, 128, 128, 0.15);
-}
-  border-top-color: rgba(255, 165, 0, 0.4);
-  border-bottom-color: rgba(255, 69, 0, 0.8);
-  box-shadow:
-    0 4px 6px rgba(0, 0, 0, 0.4),
-    0 1px 3px rgba(0, 0, 0, 0.6),
-    inset 0 1px 1px rgba(255, 165, 0, 0.2),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.3),
-    0 0 8px rgba(255, 165, 0, 0.15);
+  
+  --kp-key-face: #5a6270;
+  --kp-key-mid: #484f5c;
+  --kp-key-deep: #343a45;
+  --kp-key-icon: #1a1e26;
+  --kp-key-glow: rgba(148, 163, 184, 0.1);
+
 }
 
 .kp-keybindings-ui .key.key-launcher {
-  background: linear-gradient(180deg,
-    rgba(6, 182, 212, 0.5) 0%,
-    rgba(3, 105, 161, 0.6) 50%,
-    rgba(2, 132, 199, 0.7) 100%);
-  border-color: rgba(6, 182, 212, 0.6);
-  border-top-color: rgba(6, 182, 212, 0.4);
-  border-bottom-color: rgba(2, 132, 199, 0.8);
-  box-shadow:
-    0 4px 6px rgba(0, 0, 0, 0.4),
-    0 1px 3px rgba(0, 0, 0, 0.6),
-    inset 0 1px 1px rgba(6, 182, 212, 0.2),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.3),
-    0 0 8px rgba(6, 182, 212, 0.15);
+  
+  --kp-key-face: #2a8fa3;
+  --kp-key-mid: #22788a;
+  --kp-key-deep: #185e6d;
+  --kp-key-icon: #0c343c;
+  --kp-key-glow: rgba(34, 211, 238, 0.14);
+
 }
 
 .kp-keybindings-ui .key.key-hatched {
@@ -1786,19 +1851,19 @@
   border-radius: 4px;
 }
 
-/* Keydown/keyup feedback (used by the floating keyboard reference panel).
-   Keep this AFTER action-specific key styles so it always wins the cascade. */
+/* Keydown/keyup: shallow press (low-profile) */
 .kp-keybindings-ui .key.kp-key-pressed {
   transform: translateY(1px);
-  outline: 2px solid rgba(91, 226, 241, 0.65);
-  outline-offset: -2px;
+  outline: none;
+  filter: brightness(0.94);
+  border-top-color: rgba(0, 0, 0, 0.35);
+  border-bottom-color: rgba(255, 255, 255, 0.06);
   box-shadow:
-    0 2px 4px rgba(0, 0, 0, 0.45),
-    0 1px 2px rgba(0, 0, 0, 0.7),
-    inset 0 0 0 2px rgba(91, 226, 241, 0.22),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.35),
-    0 0 12px rgba(91, 226, 241, 0.28);
-  filter: brightness(1.12) saturate(1.18);
+    0 0 0 rgba(0, 0, 0, 0),
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(91, 226, 241, 0.28),
+    inset 0 2px 4px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(0, 0, 0, 0.2);
 }
 
 /* Popover (tooltip) shown when clicking a key */
@@ -1878,6 +1943,71 @@
   border: 8px solid transparent;
   border-bottom-color: var(--surface);
 }
+
+/* Font Awesome-style faded key background icons (behind white labels) */
+
+.kp-keybindings-ui .key > .key-bg-icon {
+  position: absolute;
+  inset: 7%;
+  z-index: 0;
+  pointer-events: none;
+  /* Color comes from the key family; shape from the mask */
+  background-color: var(--kp-key-icon, #0c1018);
+  background-image: none;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center center;
+  mask-position: center center;
+  -webkit-mask-size: 86% 86%;
+  mask-size: 86% 86%;
+  -webkit-mask-image: none;
+  mask-image: none;
+  opacity: 0.92;
+}
+
+/*
+ * IMPORTANT: do NOT force position:relative on all non-icon children.
+ * Action names (.key-main) and letter labels (.key-label) are absolutely
+ * layered; a later relative rule would put letters back into flex flow.
+ */
+
+.kp-keybindings-ui .key:hover > .key-bg-icon {
+  opacity: 1;
+}
+
+.kp-keybindings-ui .key.kp-key-pressed > .key-bg-icon {
+  opacity: 1;
+}
+
+/* Keys without functions never paint an icon layer */
+.kp-keybindings-ui .key:not([data-kp-action-id]) > .key-bg-icon {
+  display: none;
+}
+
+.kp-keybindings-ui .key[data-kp-action-id="ACTIVATE"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M320%200c17.7%200%2032%2014.3%2032%2032V176h16c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H352v16c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32V240H272v16c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32V240H192v80c0%2053%2043%2096%2096%2096h32c53%200%2096-43%2096-96V224h32c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H416V32c0-17.7-14.3-32-32-32H320zM192%2096c0-17.7-14.3-32-32-32H128C57.3%2064%200%20121.3%200%20192v96c0%2053%2043%2096%2096%2096h32c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H96c-17.7%200-32-14.3-32-32V192c0-35.3%2028.7-64%2064-64h32c17.7%200%2032-14.3%2032-32z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M320%200c17.7%200%2032%2014.3%2032%2032V176h16c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H352v16c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32V240H272v16c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32V240H192v80c0%2053%2043%2096%2096%2096h32c53%200%2096-43%2096-96V224h32c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H416V32c0-17.7-14.3-32-32-32H320zM192%2096c0-17.7-14.3-32-32-32H128C57.3%2064%200%20121.3%200%20192v96c0%2053%2043%2096%2096%2096h32c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H96c-17.7%200-32-14.3-32-32V192c0-35.3%2028.7-64%2064-64h32c17.7%200%2032-14.3%2032-32z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="ACTIVATE_NEW_TAB"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M320%200c-17.7%200-32%2014.3-32%2032s14.3%2032%2032%2032h82.7L201.4%20265.4c-12.5%2012.5-12.5%2032.8%200%2045.3s32.8%2012.5%2045.3%200L448%20109.3V192c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V32c0-17.7-14.3-32-32-32H320zM80%2032C35.8%2032%200%2067.8%200%20112V432c0%2044.2%2035.8%2080%2080%2080H400c44.2%200%2080-35.8%2080-80V320c0-17.7-14.3-32-32-32s-32%2014.3-32%2032V432c0%208.8-7.2%2016-16%2016H80c-8.8%200-16-7.2-16-16V112c0-8.8%207.2-16%2016-16H192c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H80z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M320%200c-17.7%200-32%2014.3-32%2032s14.3%2032%2032%2032h82.7L201.4%20265.4c-12.5%2012.5-12.5%2032.8%200%2045.3s32.8%2012.5%2045.3%200L448%20109.3V192c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V32c0-17.7-14.3-32-32-32H320zM80%2032C35.8%2032%200%2067.8%200%20112V432c0%2044.2%2035.8%2080%2080%2080H400c44.2%200%2080-35.8%2080-80V320c0-17.7-14.3-32-32-32s-32%2014.3-32%2032V432c0%208.8-7.2%2016-16%2016H80c-8.8%200-16-7.2-16-16V112c0-8.8%207.2-16%2016-16H192c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H80z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="ACTIVATE_NEW_TAB_BACKGROUND"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M64%20464H288c8.8%200%2016-7.2%2016-16V384h48v64c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V224c0-35.3%2028.7-64%2064-64h64v48H64c-8.8%200-16%207.2-16%2016V448c0%208.8%207.2%2016%2016%2016zM224%200c-35.3%200-64%2028.7-64%2064V288c0%2035.3%2028.7%2064%2064%2064H448c35.3%200%2064-28.7%2064-64V64c0-35.3-28.7-64-64-64H224zm0%2048H448c8.8%200%2016%207.2%2016%2016V288c0%208.8-7.2%2016-16%2016H224c-8.8%200-16-7.2-16-16V64c0-8.8%207.2-16%2016-16z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M64%20464H288c8.8%200%2016-7.2%2016-16V384h48v64c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V224c0-35.3%2028.7-64%2064-64h64v48H64c-8.8%200-16%207.2-16%2016V448c0%208.8%207.2%2016%2016%2016zM224%200c-35.3%200-64%2028.7-64%2064V288c0%2035.3%2028.7%2064%2064%2064H448c35.3%200%2064-28.7%2064-64V64c0-35.3-28.7-64-64-64H224zm0%2048H448c8.8%200%2016%207.2%2016%2016V288c0%208.8-7.2%2016-16%2016H224c-8.8%200-16-7.2-16-16V64c0-8.8%207.2-16%2016-16z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="BACK"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M9.4%20233.4c-12.5%2012.5-12.5%2032.8%200%2045.3l192%20192c12.5%2012.5%2032.8%2012.5%2045.3%200s12.5-32.8%200-45.3L109.3%20288%20480%20288c17.7%200%2032-14.3%2032-32s-14.3-32-32-32l-370.7%200%20137.4-137.4c12.5-12.5%2012.5-32.8%200-45.3s-32.8-12.5-45.3%200l-192%20192z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M9.4%20233.4c-12.5%2012.5-12.5%2032.8%200%2045.3l192%20192c12.5%2012.5%2032.8%2012.5%2045.3%200s12.5-32.8%200-45.3L109.3%20288%20480%20288c17.7%200%2032-14.3%2032-32s-14.3-32-32-32l-370.7%200%20137.4-137.4c12.5-12.5%2012.5-32.8%200-45.3s-32.8-12.5-45.3%200l-192%20192z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="BACK2"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M9.4%20233.4c-12.5%2012.5-12.5%2032.8%200%2045.3l192%20192c12.5%2012.5%2032.8%2012.5%2045.3%200s12.5-32.8%200-45.3L109.3%20288%20480%20288c17.7%200%2032-14.3%2032-32s-14.3-32-32-32l-370.7%200%20137.4-137.4c12.5-12.5%2012.5-32.8%200-45.3s-32.8-12.5-45.3%200l-192%20192z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M9.4%20233.4c-12.5%2012.5-12.5%2032.8%200%2045.3l192%20192c12.5%2012.5%2032.8%2012.5%2045.3%200s12.5-32.8%200-45.3L109.3%20288%20480%20288c17.7%200%2032-14.3%2032-32s-14.3-32-32-32l-370.7%200%20137.4-137.4c12.5-12.5%2012.5-32.8%200-45.3s-32.8-12.5-45.3%200l-192%20192z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="FORWARD"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M502.6%20278.6c12.5-12.5%2012.5-32.8%200-45.3l-192-192c-12.5-12.5-32.8-12.5-45.3%200s-12.5%2032.8%200%2045.3L402.7%20224%2032%20224c-17.7%200-32%2014.3-32%2032s14.3%2032%2032%2032l370.7%200-137.4%20137.4c-12.5%2012.5-12.5%2032.8%200%2045.3s32.8%2012.5%2045.3%200l192-192z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M502.6%20278.6c12.5-12.5%2012.5-32.8%200-45.3l-192-192c-12.5-12.5-32.8-12.5-45.3%200s-12.5%2032.8%200%2045.3L402.7%20224%2032%20224c-17.7%200-32%2014.3-32%2032s14.3%2032%2032%2032l370.7%200-137.4%20137.4c-12.5%2012.5-12.5%2032.8%200%2045.3s32.8%2012.5%2045.3%200l192-192z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="DELETE"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M135.2%2017.7L128%2032H32C14.3%2032%200%2046.3%200%2064S14.3%2096%2032%2096H480c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H384l-7.2-14.3C372.4%206.8%20361.3%200%20349.2%200H162.8c-12.1%200-23.2%206.8-28.6%2017.7zM32%20128V448c0%2035.3%2028.7%2064%2064%2064H416c35.3%200%2064-28.7%2064-64V128H32zm112%2064c8.8%200%2016%207.2%2016%2016V400c0%208.8-7.2%2016-16%2016s-16-7.2-16-16V208c0-8.8%207.2-16%2016-16zm96%200c8.8%200%2016%207.2%2016%2016V400c0%208.8-7.2%2016-16%2016s-16-7.2-16-16V208c0-8.8%207.2-16%2016-16zm96%200c8.8%200%2016%207.2%2016%2016V400c0%208.8-7.2%2016-16%2016s-16-7.2-16-16V208c0-8.8%207.2-16%2016-16z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M135.2%2017.7L128%2032H32C14.3%2032%200%2046.3%200%2064S14.3%2096%2032%2096H480c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H384l-7.2-14.3C372.4%206.8%20361.3%200%20349.2%200H162.8c-12.1%200-23.2%206.8-28.6%2017.7zM32%20128V448c0%2035.3%2028.7%2064%2064%2064H416c35.3%200%2064-28.7%2064-64V128H32zm112%2064c8.8%200%2016%207.2%2016%2016V400c0%208.8-7.2%2016-16%2016s-16-7.2-16-16V208c0-8.8%207.2-16%2016-16zm96%200c8.8%200%2016%207.2%2016%2016V400c0%208.8-7.2%2016-16%2016s-16-7.2-16-16V208c0-8.8%207.2-16%2016-16zm96%200c8.8%200%2016%207.2%2016%2016V400c0%208.8-7.2%2016-16%2016s-16-7.2-16-16V208c0-8.8%207.2-16%2016-16z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="TAB_LEFT"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M41.4%20233.4c-12.5%2012.5-12.5%2032.8%200%2045.3l160%20160c12.5%2012.5%2032.8%2012.5%2045.3%200s12.5-32.8%200-45.3L109.3%20256%20246.6%20118.6c12.5-12.5%2012.5-32.8%200-45.3s-32.8-12.5-45.3%200l-160%20160z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M41.4%20233.4c-12.5%2012.5-12.5%2032.8%200%2045.3l160%20160c12.5%2012.5%2032.8%2012.5%2045.3%200s12.5-32.8%200-45.3L109.3%20256%20246.6%20118.6c12.5-12.5%2012.5-32.8%200-45.3s-32.8-12.5-45.3%200l-160%20160z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="TAB_RIGHT"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M470.6%20278.6c12.5-12.5%2012.5-32.8%200-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3%200s-12.5%2032.8%200%2045.3L402.7%20256%20265.4%20393.4c-12.5%2012.5-12.5%2032.8%200%2045.3s32.8%2012.5%2045.3%200l160-160z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M470.6%20278.6c12.5-12.5%2012.5-32.8%200-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3%200s-12.5%2032.8%200%2045.3L402.7%20256%20265.4%20393.4c-12.5%2012.5-12.5%2032.8%200%2045.3s32.8%2012.5%2045.3%200l160-160z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="ROOT"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M575.8%20255.5c0%2018-15%2032.1-32%2032.1h-32l.7%20160.2c.2%2035.5-28.5%2064.3-64%2064.3H392c-22.1%200-40-17.9-40-40V448%20384c0-17.7-14.3-32-32-32H256c-17.7%200-32%2014.3-32%2032v64%2024c0%2022.1-17.9%2040-40%2040H128.1c-35.3%200-64-28.7-64-64V287.6H32c-18%200-32-14-32-32.1c0-9%203-17%2010-24L266.4%208c7-7%2015-8%2022-8s15%202%2021%207L564.8%20231.5c8%207%2012%2015%2011%2024z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M575.8%20255.5c0%2018-15%2032.1-32%2032.1h-32l.7%20160.2c.2%2035.5-28.5%2064.3-64%2064.3H392c-22.1%200-40-17.9-40-40V448%20384c0-17.7-14.3-32-32-32H256c-17.7%200-32%2014.3-32%2032v64%2024c0%2022.1-17.9%2040-40%2040H128.1c-35.3%200-64-28.7-64-64V287.6H32c-18%200-32-14-32-32.1c0-9%203-17%2010-24L266.4%208c7-7%2015-8%2022-8s15%202%2021%207L564.8%20231.5c8%207%2012%2015%2011%2024z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="LAUNCHER"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M156.6%20384.9L125.7%20354c-8.5-8.5-11.5-20.8-7.7-32.2c3-8.9%207-20.5%2011.8-33.8L24%20288c-8.6%200-16.6-4.6-20.9-12.1s-4.2-16.7%20.2-24.1l52.5-88.5c13-21.9%2036.5-35.3%2061.9-35.3h82.3c2.4-4%204.8-7.7%207.2-11.3C289.1-4.1%20411.1-8.1%20483.9%205.3c11.6%202.1%2020.6%2011.2%2022.8%2022.8c13.4%2072.9%209.3%20194.8-111.4%20276.7c-3.5%202.4-7.3%204.8-11.3%207.2v82.3c0%2025.4-13.4%2049-35.3%2061.9l-88.5%2052.5c-7.4%204.4-16.6%204.5-24.1%20.2s-12.1-12.2-12.1-20.9V384.9c-13.3%204.8-24.9%208.8-33.8%2011.8c-11.4%203.7-23.7%20.7-32.2-7.8zM215.3%20237.3c28.3-28.3%2073.1-31.3%20105.4-8.5L200.5%20348.5c-22.8-32.3-19.8-77.1%208.5-105.4l6.3-5.8z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M156.6%20384.9L125.7%20354c-8.5-8.5-11.5-20.8-7.7-32.2c3-8.9%207-20.5%2011.8-33.8L24%20288c-8.6%200-16.6-4.6-20.9-12.1s-4.2-16.7%20.2-24.1l52.5-88.5c13-21.9%2036.5-35.3%2061.9-35.3h82.3c2.4-4%204.8-7.7%207.2-11.3C289.1-4.1%20411.1-8.1%20483.9%205.3c11.6%202.1%2020.6%2011.2%2022.8%2022.8c13.4%2072.9%209.3%20194.8-111.4%20276.7c-3.5%202.4-7.3%204.8-11.3%207.2v82.3c0%2025.4-13.4%2049-35.3%2061.9l-88.5%2052.5c-7.4%204.4-16.6%204.5-24.1%20.2s-12.1-12.2-12.1-20.9V384.9c-13.3%204.8-24.9%208.8-33.8%2011.8c-11.4%203.7-23.7%20.7-32.2-7.8zM215.3%20237.3c28.3-28.3%2073.1-31.3%20105.4-8.5L200.5%20348.5c-22.8-32.3-19.8-77.1%208.5-105.4l6.3-5.8z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="CLOSE_TAB"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2048a208%20208%200%201%201%200%20416%20208%20208%200%201%201%200-416zm0%20464A256%20256%200%201%200%20256%200a256%20256%200%201%200%200%20512zM175%20175c9.4-9.4%2024.6-9.4%2033.9%200l47%2047%2047-47c9.4-9.4%2024.6-9.4%2033.9%200s9.4%2024.6%200%2033.9l-47%2047%2047%2047c9.4%209.4%209.4%2024.6%200%2033.9s-24.6%209.4-33.9%200l-47-47-47%2047c-9.4%209.4-24.6%209.4-33.9%200s-9.4-24.6%200-33.9l47-47-47-47c-9.4-9.4-9.4-24.6%200-33.9z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2048a208%20208%200%201%201%200%20416%20208%20208%200%201%201%200-416zm0%20464A256%20256%200%201%200%20256%200a256%20256%200%201%200%200%20512zM175%20175c9.4-9.4%2024.6-9.4%2033.9%200l47%2047%2047-47c9.4-9.4%2024.6-9.4%2033.9%200s9.4%2024.6%200%2033.9l-47%2047%2047%2047c9.4%209.4%209.4%2024.6%200%2033.9s-24.6%209.4-33.9%200l-47-47-47%2047c-9.4%209.4-24.6%209.4-33.9%200s-9.4-24.6%200-33.9l47-47-47-47c-9.4-9.4-9.4-24.6%200-33.9z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="CANCEL"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%20512A256%20256%200%201%200%20256%200a256%20256%200%201%200%200%20512zM175%20175c9.4-9.4%2024.6-9.4%2033.9%200L368%20334.1c9.4%209.4%209.4%2024.6%200%2033.9s-24.6%209.4-33.9%200L175%20208.9c-9.4-9.4-9.4-24.6%200-33.9z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%20512A256%20256%200%201%200%20256%200a256%20256%200%201%200%200%20512zM175%20175c9.4-9.4%2024.6-9.4%2033.9%200L368%20334.1c9.4%209.4%209.4%2024.6%200%2033.9s-24.6%209.4-33.9%200L175%20208.9c-9.4-9.4-9.4-24.6%200-33.9z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="PAGE_UP_INSTANT"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M233.4%20105.4c12.5-12.5%2032.8-12.5%2045.3%200l192%20192c12.5%2012.5%2012.5%2032.8%200%2045.3s-32.8%2012.5-45.3%200L256%20173.3%2086.6%20342.6c-12.5%2012.5-32.8%2012.5-45.3%200s-12.5-32.8%200-45.3l192-192z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M233.4%20105.4c12.5-12.5%2032.8-12.5%2045.3%200l192%20192c12.5%2012.5%2012.5%2032.8%200%2045.3s-32.8%2012.5-45.3%200L256%20173.3%2086.6%20342.6c-12.5%2012.5-32.8%2012.5-45.3%200s-12.5-32.8%200-45.3l192-192z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="PAGE_DOWN_INSTANT"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M233.4%20406.6c12.5%2012.5%2032.8%2012.5%2045.3%200l192-192c12.5-12.5%2012.5-32.8%200-45.3s-32.8-12.5-45.3%200L256%20338.7%2086.6%20169.4c-12.5-12.5-32.8-12.5-45.3%200s-12.5%2032.8%200%2045.3l192%20192z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M233.4%20406.6c12.5%2012.5%2032.8%2012.5%2045.3%200l192-192c12.5-12.5%2012.5-32.8%200-45.3s-32.8-12.5-45.3%200L256%20338.7%2086.6%20169.4c-12.5-12.5-32.8-12.5-45.3%200s-12.5%2032.8%200%2045.3l192%20192z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="PAGE_TOP"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M233.4%20105.4c12.5-12.5%2032.8-12.5%2045.3%200l96%2096c12.5%2012.5%2012.5%2032.8%200%2045.3s-32.8%2012.5-45.3%200L288%20205.3V384c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32V205.3l-41.4%2041.4c-12.5%2012.5-32.8%2012.5-45.3%200s-12.5-32.8%200-45.3l96-96zM64%20448c0-17.7%2014.3-32%2032-32H416c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H96c-17.7%200-32-14.3-32-32z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M233.4%20105.4c12.5-12.5%2032.8-12.5%2045.3%200l96%2096c12.5%2012.5%2012.5%2032.8%200%2045.3s-32.8%2012.5-45.3%200L288%20205.3V384c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32V205.3l-41.4%2041.4c-12.5%2012.5-32.8%2012.5-45.3%200s-12.5-32.8%200-45.3l96-96zM64%20448c0-17.7%2014.3-32%2032-32H416c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H96c-17.7%200-32-14.3-32-32z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="PAGE_BOTTOM"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M233.4%20406.6c12.5%2012.5%2032.8%2012.5%2045.3%200l96-96c12.5-12.5%2012.5-32.8%200-45.3s-32.8-12.5-45.3%200L288%20306.7V128c0-17.7-14.3-32-32-32s-32%2014.3-32%2032V306.7l-41.4-41.4c-12.5-12.5-32.8-12.5-45.3%200s-12.5%2032.8%200%2045.3l96%2096zM64%2064c0-17.7%2014.3-32%2032-32H416c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H96C78.3%2096%2064%2081.7%2064%2064z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M233.4%20406.6c12.5%2012.5%2032.8%2012.5%2045.3%200l96-96c12.5-12.5%2012.5-32.8%200-45.3s-32.8-12.5-45.3%200L288%20306.7V128c0-17.7-14.3-32-32-32s-32%2014.3-32%2032V306.7l-41.4-41.4c-12.5-12.5-32.8-12.5-45.3%200s-12.5%2032.8%200%2045.3l96%2096zM64%2064c0-17.7%2014.3-32%2032-32H416c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H96C78.3%2096%2064%2081.7%2064%2064z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="NEW_TAB"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M64%2032C28.7%2032%200%2060.7%200%2096V416c0%2035.3%2028.7%2064%2064%2064H448c35.3%200%2064-28.7%2064-64V160c0-35.3-28.7-64-64-64H298.5c-17%200-33.3-6.7-45.3-18.7L226.7%2050.7C214.7%2038.7%20198.5%2032%20181.5%2032H64zM232%20248v-48c0-13.3%2010.7-24%2024-24s24%2010.7%2024%2024v48h48c13.3%200%2024%2010.7%2024%2024s-10.7%2024-24%2024H280v48c0%2013.3-10.7%2024-24%2024s-24-10.7-24-24V296H184c-13.3%200-24-10.7-24-24s10.7-24%2024-24h48z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M64%2032C28.7%2032%200%2060.7%200%2096V416c0%2035.3%2028.7%2064%2064%2064H448c35.3%200%2064-28.7%2064-64V160c0-35.3-28.7-64-64-64H298.5c-17%200-33.3-6.7-45.3-18.7L226.7%2050.7C214.7%2038.7%20198.5%2032%20181.5%2032H64zM232%20248v-48c0-13.3%2010.7-24%2024-24s24%2010.7%2024%2024v48h48c13.3%200%2024%2010.7%2024%2024s-10.7%2024-24%2024H280v48c0%2013.3-10.7%2024-24%2024s-24-10.7-24-24V296H184c-13.3%200-24-10.7-24-24s10.7-24%2024-24h48z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="OPEN_POPOVER"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M64%2032C28.7%2032%200%2060.7%200%2096V416c0%2035.3%2028.7%2064%2064%2064H448c35.3%200%2064-28.7%2064-64V96c0-35.3-28.7-64-64-64H64zm32%2096H416c17.7%200%2032%2014.3%2032%2032v32H64V160c0-17.7%2014.3-32%2032-32z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M64%2032C28.7%2032%200%2060.7%200%2096V416c0%2035.3%2028.7%2064%2064%2064H448c35.3%200%2064-28.7%2064-64V96c0-35.3-28.7-64-64-64H64zm32%2096H416c17.7%200%2032%2014.3%2032%2032v32H64V160c0-17.7%2014.3-32%2032-32z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="PREVIEW_LINK_POPOVER"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2096c-89.6%200-168.5%2048.8-212.7%20122.3c-7.3%2012.1-7.3%2027.3%200%2039.4C87.5%20331.2%20166.4%20380%20256%20380s168.5-48.8%20212.7-122.3c7.3-12.1%207.3-27.3%200-39.4C424.5%20144.8%20345.6%2096%20256%2096zm0%20224a96%2096%200%201%201%200-192%2096%2096%200%201%201%200%20192zm0-144a48%2048%200%201%200%200%2096%2048%2048%200%201%200%200-96z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2096c-89.6%200-168.5%2048.8-212.7%20122.3c-7.3%2012.1-7.3%2027.3%200%2039.4C87.5%20331.2%20166.4%20380%20256%20380s168.5-48.8%20212.7-122.3c7.3-12.1%207.3-27.3%200-39.4C424.5%20144.8%20345.6%2096%20256%2096zm0%20224a96%2096%200%201%201%200-192%2096%2096%200%201%201%200%20192zm0-144a48%2048%200%201%200%200%2096%2048%2048%200%201%200%200-96z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="OPEN_SETTINGS_POPOVER"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M495.9%20166.1c3.3%2012.7%20.9%2026.3-7.1%2036.1l-37.3%2045.7c2.1%2011.1%203.2%2022.6%203.2%2034.3s-1.1%2023.2-3.2%2034.3l37.3%2045.7c8%209.8%2010.4%2023.4%207.1%2036.1c-6.3%2024.2-17.7%2046.6-33.1%2066.3c-8.1%2010.3-21.2%2014.9-33.9%2012.1l-57.5-12.7c-17.9%2015.3-38.4%2027.3-60.7%2035.4l-13.7%2057.5c-2.9%2012.1-12.9%2021.1-25.4%2022.4c-24.2%202.6-49.1%202.6-73.3%200c-12.5-1.3-22.5-10.3-25.4-22.4l-13.7-57.5c-22.3-8.1-42.8-20.1-60.7-35.4L71.6%20436.6c-12.7%202.8-25.8-1.8-33.9-12.1C22.3%20404.8%2010.9%20382.4%204.6%20358.2c-3.3-12.7-.9-26.3%207.1-36.1l37.3-45.7C46.9%20265.2%2045.8%20253.7%2045.8%20242s1.1-23.2%203.2-34.3L11.7%20161.9c-8-9.8-10.4-23.4-7.1-36.1C10.9%20101.6%2022.3%2079.2%2037.7%2059.5c8.1-10.3%2021.2-14.9%2033.9-12.1l57.5%2012.7c17.9-15.3%2038.4-27.3%2060.7-35.4L203.5-32.8c2.9-12.1%2012.9-21.1%2025.4-22.4c24.2-2.6%2049.1-2.6%2073.3%200c12.5%201.3%2022.5%2010.3%2025.4%2022.4l13.7%2057.5c22.3%208.1%2042.8%2020.1%2060.7%2035.4l57.5-12.7c12.7-2.8%2025.8%201.8%2033.9%2012.1c15.4%2019.7%2026.8%2042.1%2033.1%2066.3zM256%20336a80%2080%200%201%200%200-160%2080%2080%200%201%200%200%20160z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M495.9%20166.1c3.3%2012.7%20.9%2026.3-7.1%2036.1l-37.3%2045.7c2.1%2011.1%203.2%2022.6%203.2%2034.3s-1.1%2023.2-3.2%2034.3l37.3%2045.7c8%209.8%2010.4%2023.4%207.1%2036.1c-6.3%2024.2-17.7%2046.6-33.1%2066.3c-8.1%2010.3-21.2%2014.9-33.9%2012.1l-57.5-12.7c-17.9%2015.3-38.4%2027.3-60.7%2035.4l-13.7%2057.5c-2.9%2012.1-12.9%2021.1-25.4%2022.4c-24.2%202.6-49.1%202.6-73.3%200c-12.5-1.3-22.5-10.3-25.4-22.4l-13.7-57.5c-22.3-8.1-42.8-20.1-60.7-35.4L71.6%20436.6c-12.7%202.8-25.8-1.8-33.9-12.1C22.3%20404.8%2010.9%20382.4%204.6%20358.2c-3.3-12.7-.9-26.3%207.1-36.1l37.3-45.7C46.9%20265.2%2045.8%20253.7%2045.8%20242s1.1-23.2%203.2-34.3L11.7%20161.9c-8-9.8-10.4-23.4-7.1-36.1C10.9%20101.6%2022.3%2079.2%2037.7%2059.5c8.1-10.3%2021.2-14.9%2033.9-12.1l57.5%2012.7c17.9-15.3%2038.4-27.3%2060.7-35.4L203.5-32.8c2.9-12.1%2012.9-21.1%2025.4-22.4c24.2-2.6%2049.1-2.6%2073.3%200c12.5%201.3%2022.5%2010.3%2025.4%2022.4l13.7%2057.5c22.3%208.1%2042.8%2020.1%2060.7%2035.4l57.5-12.7c12.7-2.8%2025.8%201.8%2033.9%2012.1c15.4%2019.7%2026.8%2042.1%2033.1%2066.3zM256%20336a80%2080%200%201%200%200-160%2080%2080%200%201%200%200%20160z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="OMNIBOX"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M416%20208c0%2045.9-14.9%2088.3-40%20122.7L502.6%20457.4c12.5%2012.5%2012.5%2032.8%200%2045.3s-32.8%2012.5-45.3%200L330.7%20376c-34.4%2025.2-76.8%2040-122.7%2040C93.1%20416%200%20322.9%200%20208S93.1%200%20208%200S416%2093.1%20416%20208zM208%20352a144%20144%200%201%200%200-288%20144%20144%200%201%200%200%20288z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M416%20208c0%2045.9-14.9%2088.3-40%20122.7L502.6%20457.4c12.5%2012.5%2012.5%2032.8%200%2045.3s-32.8%2012.5-45.3%200L330.7%20376c-34.4%2025.2-76.8%2040-122.7%2040C93.1%20416%200%20322.9%200%20208S93.1%200%20208%200S416%2093.1%20416%20208zM208%20352a144%20144%200%201%200%200-288%20144%20144%200%201%200%200%20288z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="TAB_HISTORY"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%200C114.6%200%200%20114.6%200%20256S114.6%20512%20256%20512c53%200%20102-16.2%20142.7-43.9c10.8-7.4%2013.6-22.3%206.2-33.1s-22.3-13.6-33.1-6.2C340.8%20449.1%20299.6%20464%20256%20464C141.1%20464%2048%20370.9%2048%20256S141.1%2048%20256%2048c60.7%200%20115.5%2026.1%20153.4%2067.7l-33.5%2033.5c-9.4%209.4-2.7%2025.5%2010.5%2025.5H456c13.3%200%2024-10.7%2024-24V56c0-13.2-16.1-19.9-25.5-10.5L418.7%2081.3C368.5%2031.4%20315.1%200%20256%200zM232%20120c0-13.3-10.7-24-24-24s-24%2010.7-24%2024V256c0%206.4%202.5%2012.5%207%2017l72%2072c9.4%209.4%2024.6%209.4%2033.9%200s9.4-24.6%200-33.9l-65-65V120z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%200C114.6%200%200%20114.6%200%20256S114.6%20512%20256%20512c53%200%20102-16.2%20142.7-43.9c10.8-7.4%2013.6-22.3%206.2-33.1s-22.3-13.6-33.1-6.2C340.8%20449.1%20299.6%20464%20256%20464C141.1%20464%2048%20370.9%2048%20256S141.1%2048%20256%2048c60.7%200%20115.5%2026.1%20153.4%2067.7l-33.5%2033.5c-9.4%209.4-2.7%2025.5%2010.5%2025.5H456c13.3%200%2024-10.7%2024-24V56c0-13.2-16.1-19.9-25.5-10.5L418.7%2081.3C368.5%2031.4%20315.1%200%20256%200zM232%20120c0-13.3-10.7-24-24-24s-24%2010.7-24%2024V256c0%206.4%202.5%2012.5%207%2017l72%2072c9.4%209.4%2024.6%209.4%2033.9%200s9.4-24.6%200-33.9l-65-65V120z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="TOGGLE_KEYBOARD_HELP"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zm128%2064v32h32V160H128zm64%200v32h32V160H192zm64%200v32h32V160H256zm64%200v32h32V160H320zm64%200v32h32V160H384zM96%20256v32h64V256H96zm96%200v32h32V256H192zm64%200v32h32V256H256zm64%200v32h32V256H320zm64%200v32h32V256H384zm64%200v32h32V256H448zM128%20352v32H384V352H128z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zm128%2064v32h32V160H128zm64%200v32h32V160H192zm64%200v32h32V160H256zm64%200v32h32V160H320zm64%200v32h32V160H384zM96%20256v32h64V256H96zm96%200v32h32V256H192zm64%200v32h32V256H256zm64%200v32h32V256H320zm64%200v32h32V256H384zm64%200v32h32V256H448zM128%20352v32H384V352H128z%22%2F%3E%3C%2Fsvg%3E"); }
 `;
 // KP_EARLY_INJECT_UI_END
 
@@ -2619,12 +2749,30 @@
       visual.appendChild(rowEl);
 
       for (const item of row) {
+        const ensureBgIcon = (keyEl) => {
+          try {
+            if (keyEl.querySelector(':scope > .key-bg-icon')) return;
+          } catch {
+            if (keyEl.querySelector('.key-bg-icon')) return;
+          }
+          const icon = doc.createElement('span');
+          icon.className = 'key-bg-icon';
+          icon.setAttribute('aria-hidden', 'true');
+          keyEl.insertBefore(icon, keyEl.firstChild);
+        };
+
         if (item.type === 'special') {
-          rowEl.appendChild(el(doc, 'div', item.className || 'key', item.text));
+          // No KeyPilot function → no background icon.
+          const keyEl = el(doc, 'div', item.className || 'key');
+          keyEl.appendChild(el(doc, 'span', 'key-text', item.text));
+          rowEl.appendChild(keyEl);
           continue;
         }
         if (item.type === 'key') {
-          rowEl.appendChild(el(doc, 'div', 'key', item.text));
+          // Unassigned alphanumeric key → no background icon.
+          const keyEl = el(doc, 'div', 'key');
+          keyEl.appendChild(el(doc, 'span', 'key-text', item.text));
+          rowEl.appendChild(keyEl);
           continue;
         }
 
@@ -2637,6 +2785,8 @@
         keyEl.setAttribute('role', 'button');
         keyEl.setAttribute('tabindex', '0');
         keyEl.title = (binding && (binding.description || binding.label)) || item.fallbackText || item.id;
+        // Only keys with functions get FA background icons.
+        ensureBgIcon(keyEl);
 
         const main = el(doc, 'div', 'key-main', (binding && binding.label) || item.fallbackText || item.id);
         keyEl.appendChild(main);
@@ -2904,22 +3054,22 @@
     root.setAttribute('aria-label', 'KeyPilot keyboard reference');
     root.setAttribute('data-kp-early-floating-keyboard', 'true');
 
-    // Inline styles to avoid depending on any page CSS.
+    // Pro-app floating chrome (inline so host pages can't override it).
     Object.assign(root.style, {
       position: 'fixed',
       left: '16px',
       bottom: '16px',
-      width: '740px',
+      width: '760px',
       maxWidth: 'calc(100vw - 24px)',
       maxHeight: 'calc(100vh - 24px)',
       overflow: 'auto',
       zIndex: String(Z_FLOATING_KEYBOARD_HELP),
-      background: 'rgba(20, 20, 20, 0.92)',
-      color: 'rgba(255,255,255,0.95)',
-      border: '1px solid rgba(255,255,255,0.12)',
-      borderRadius: '12px',
-      boxShadow: '0 10px 30px rgba(0,0,0,0.4)',
-      /* backdrop-filter removed to prevent Chrome z-index stacking context bug */
+      background: 'linear-gradient(180deg, rgba(28, 30, 36, 0.98) 0%, rgba(16, 18, 22, 0.98) 100%)',
+      color: 'rgba(248, 250, 252, 0.95)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      borderRadius: '14px',
+      boxShadow:
+        '0 1px 0 rgba(255,255,255,0.06) inset, 0 18px 48px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.35)',
       fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
       pointerEvents: 'auto'
     });
@@ -2932,16 +3082,19 @@
       alignItems: 'center',
       justifyContent: 'space-between',
       gap: '12px',
-      padding: '0px 8px',
-      borderBottom: '1px solid rgba(255,255,255,0.1)'
+      padding: '11px 14px',
+      borderBottom: '1px solid rgba(255,255,255,0.08)',
+      background: 'linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%)'
     });
 
     const title = doc.createElement('div');
-    title.textContent = 'KeyPilot keyboard reference';
+    title.textContent = 'Keyboard Reference';
     Object.assign(title.style, {
-      fontSize: '13px',
-      fontWeight: '600',
-      letterSpacing: '0.2px'
+      fontSize: '12px',
+      fontWeight: '650',
+      letterSpacing: '0.04em',
+      textTransform: 'uppercase',
+      color: 'rgba(248, 250, 252, 0.88)'
     });
 
     const hint = doc.createElement('div');
@@ -2949,9 +3102,14 @@
     hint.setAttribute('data-kp-floating-keyboard-hint', 'true');
     Object.assign(hint.style, {
       marginLeft: 'auto',
-      fontSize: '12px',
+      fontSize: '11px',
       fontWeight: '500',
-      opacity: '0.8'
+      letterSpacing: '0.02em',
+      color: 'rgba(148, 163, 184, 0.95)',
+      padding: '3px 8px',
+      borderRadius: '999px',
+      border: '1px solid rgba(255,255,255,0.08)',
+      background: 'rgba(0,0,0,0.25)'
     });
 
     const closeBtn = doc.createElement('button');
@@ -2963,14 +3121,15 @@
       width: '28px',
       height: '28px',
       borderRadius: '8px',
-      border: '1px solid rgba(255,255,255,0.18)',
-      background: 'rgba(255,255,255,0.06)',
-      color: 'rgba(255,255,255,0.95)',
+      border: '1px solid rgba(255,255,255,0.12)',
+      background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)',
+      color: 'rgba(248,250,252,0.92)',
       cursor: 'pointer',
-      fontSize: '18px',
+      fontSize: '17px',
       lineHeight: '26px',
       padding: '0',
-      flex: '0 0 auto'
+      flex: '0 0 auto',
+      boxShadow: '0 1px 0 rgba(255,255,255,0.06) inset'
     });
     closeBtn.addEventListener('click', (e) => {
       // Match main extension behavior: hide without persisting.
@@ -2983,7 +3142,7 @@
     header.appendChild(closeBtn);
 
     const body = doc.createElement('div');
-    Object.assign(body.style, { padding: '10px 12px' });
+    Object.assign(body.style, { padding: '12px 12px 13px' });
 
     const keyboardContainer = doc.createElement('div');
     keyboardContainer.className = 'kp-floating-keyboard-help__keyboard';

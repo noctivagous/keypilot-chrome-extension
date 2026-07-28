@@ -49,6 +49,7 @@ const modules = [
   'src/config/url-policy.js',
   'src/messaging/types.js',
   'src/utils/dom-context.js',
+  'src/utils/extension-context.js',
   // Shared UI helpers used by multiple modules (must be defined before import-stripped consumers).
   'src/ui/url-listing.js',
   'src/modules/state-manager.js',

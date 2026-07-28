@@ -7,6 +7,7 @@ import '../src/vendor/rbush.js';
 
 let currentEngine = 'brave';
 const KP_ENABLED_STORAGE_KEY = 'keypilot_enabled';
+const KP_KEYBOARD_HELP_STORAGE_KEY = 'keypilot_keyboard_help_visible';
 
 function parseUrlForThreeLineDisplay(rawUrl) {
   const input = String(rawUrl || '').trim();
@@ -704,6 +705,107 @@ function initEnabledSwitch() {
   }, { capture: true });
 }
 
+async function queryKeyboardHelpVisible() {
+  // Prefer live KeyPilot instance when available (same process as the newtab page).
+  try {
+    const kp = window.keyPilot || window.__KeyPilotInstance;
+    if (kp && typeof kp.getKeyboardHelpVisibleFromStorage === 'function') {
+      return Boolean(await kp.getKeyboardHelpVisibleFromStorage());
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    const syncResult = await chrome.storage.sync.get([KP_KEYBOARD_HELP_STORAGE_KEY]);
+    if (typeof syncResult?.[KP_KEYBOARD_HELP_STORAGE_KEY] === 'boolean') {
+      return syncResult[KP_KEYBOARD_HELP_STORAGE_KEY];
+    }
+  } catch {
+    // ignore
+  }
+  try {
+    const localResult = await chrome.storage.local.get([KP_KEYBOARD_HELP_STORAGE_KEY]);
+    if (typeof localResult?.[KP_KEYBOARD_HELP_STORAGE_KEY] === 'boolean') {
+      return localResult[KP_KEYBOARD_HELP_STORAGE_KEY];
+    }
+  } catch {
+    // ignore
+  }
+  return false;
+}
+
+async function setKeyboardHelpVisible(visible) {
+  const desired = Boolean(visible);
+
+  // Prefer KeyPilot APIs so show/hide + persistence stay consistent with the K shortcut.
+  try {
+    const kp = window.keyPilot || window.__KeyPilotInstance;
+    if (kp && typeof kp.applyKeyboardHelpVisibility === 'function') {
+      kp.applyKeyboardHelpVisibility(desired, { persist: true });
+      return desired;
+    }
+  } catch {
+    // fall through to storage
+  }
+
+  const payload = { [KP_KEYBOARD_HELP_STORAGE_KEY]: desired, timestamp: Date.now() };
+  try {
+    await chrome.storage.sync.set(payload);
+    return desired;
+  } catch {
+    // fall through
+  }
+  try {
+    await chrome.storage.local.set(payload);
+  } catch {
+    // ignore
+  }
+  return desired;
+}
+
+function initKeyboardHelpSwitch() {
+  /** @type {HTMLInputElement | null} */
+  const toggle = /** @type {any} */ (document.getElementById('kp-keyboard-toggle'));
+  if (!toggle) return;
+  const stateText = document.getElementById('kp-keyboard-text');
+
+  const setUi = (visible) => {
+    const on = Boolean(visible);
+    toggle.checked = on;
+    if (stateText) {
+      stateText.textContent = on ? 'ON' : 'OFF';
+      stateText.setAttribute('data-state', on ? 'on' : 'off');
+    }
+  };
+
+  queryKeyboardHelpVisible().then(setUi).catch(() => setUi(false));
+
+  try {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== 'sync' && area !== 'local') return;
+      const c = changes?.[KP_KEYBOARD_HELP_STORAGE_KEY];
+      if (!c) return;
+      if (typeof c.newValue === 'boolean') setUi(c.newValue);
+    });
+  } catch {
+    // ignore
+  }
+
+  toggle.addEventListener('change', async () => {
+    const desired = toggle.checked;
+    toggle.disabled = true;
+    try {
+      const actual = await setKeyboardHelpVisible(desired);
+      setUi(actual);
+    } catch {
+      setUi(await queryKeyboardHelpVisible());
+    } finally {
+      toggle.disabled = false;
+    }
+  }, { capture: true });
+}
+
 async function init() {
   // Initialize KeyPilot with toggle functionality (same as content script)
   try {
@@ -833,6 +935,7 @@ async function init() {
   }
 
   initEnabledSwitch();
+  initKeyboardHelpSwitch();
 
   renderBookmarks();
   if (input && suggestionsRoot) {

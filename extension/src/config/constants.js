@@ -106,14 +106,17 @@ export const Z_INDEX = {
 };
 
 /**
- * Scroll distances for page / popover keyboard scrolling (single source of truth).
+ * Scroll distances / behavior for page / popover keyboard scrolling (defaults).
+ * Runtime values can be overridden via Settings (`kp_settings_v1.scroll`).
  * Used by key handlers and popover iframe bridges.
  */
 export const SCROLL = Object.freeze({
   /** Z / X (and popover equivalents): large page step */
   PAGE_PX: 800,
-  /** C / V: half step */
-  HALF_PAGE_PX: 400
+  /** C / V: smaller step (default = prior 400px × 1.25) */
+  HALF_PAGE_PX: 500,
+  /** Default CSS scroll-behavior for keyboard scrolling */
+  BEHAVIOR: 'smooth'
 });
 
 export const MODES = {

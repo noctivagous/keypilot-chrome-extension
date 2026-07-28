@@ -115,25 +115,38 @@ try {
 
     // Scroll shortcuts (match KeyPilot): Z/X/C/V + B/N top/bottom (bridge historical mapping).
     if (typing) return;
+
+    // Prefer live Settings from the KeyPilot instance when this extension page has one.
+    const kp = window.__KeyPilotInstance;
+    const pagePx = (typeof kp?._getPageScrollPx === 'function')
+      ? kp._getPageScrollPx()
+      : SCROLL.PAGE_PX;
+    const halfPx = (typeof kp?._getHalfPageScrollPx === 'function')
+      ? kp._getHalfPageScrollPx()
+      : SCROLL.HALF_PAGE_PX;
+    const behavior = (typeof kp?._getScrollBehavior === 'function')
+      ? kp._getScrollBehavior()
+      : (SCROLL.BEHAVIOR || 'smooth');
+
     if (key === 'z' || key === 'Z') {
       e.preventDefault();
-      scrollByY(-SCROLL.PAGE_PX, 'smooth');
+      scrollByY(-pagePx, behavior);
     } else if (key === 'x' || key === 'X') {
       e.preventDefault();
-      scrollByY(SCROLL.PAGE_PX, 'smooth');
+      scrollByY(pagePx, behavior);
     } else if (key === 'c' || key === 'C') {
       e.preventDefault();
-      scrollByY(-SCROLL.HALF_PAGE_PX, 'smooth');
+      scrollByY(-halfPx, behavior);
     } else if (key === 'v' || key === 'V') {
       e.preventDefault();
-      scrollByY(SCROLL.HALF_PAGE_PX, 'smooth');
+      scrollByY(halfPx, behavior);
     } else if (key === 'b' || key === 'B') {
       e.preventDefault();
-      scrollToY(0, 'smooth');
+      scrollToY(0, behavior);
     } else if (key === 'n' || key === 'N') {
       e.preventDefault();
       const height = document.documentElement?.scrollHeight || document.body?.scrollHeight || 0;
-      scrollToY(height, 'smooth');
+      scrollToY(height, behavior);
     }
   }, true);
 } catch (e) {

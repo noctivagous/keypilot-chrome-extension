@@ -4,7 +4,7 @@
  * Stored in chrome.storage.sync so values sync across Chrome profiles and across tabs.
  */
 
-import { CURSOR_MODE } from '../config/constants.js';
+import { CURSOR_MODE, SCROLL } from '../config/constants.js';
 import { DEFAULT_KEYBOARD_LAYOUT_ID, normalizeKeyboardLayoutId } from '../config/keyboard-layouts.js';
 import {
   SEARCH_ENGINE_META,
@@ -23,6 +23,7 @@ export { SEARCH_ENGINE_META, DEFAULT_SEARCH_ENGINE_ID, getSearchEngineMeta };
 /** @typedef {'crosshair'|'native_arrow'|'native_pointer'} ClickCursorType */
 /** @typedef {'t_square'|'crosshair'} TextCursorType */
 /** @typedef {typeof CURSOR_MODE[keyof typeof CURSOR_MODE]} CursorMode */
+/** @typedef {'smooth'|'instant'} ScrollSpeed */
 
 /**
  * @typedef {{
@@ -51,12 +52,20 @@ export { SEARCH_ENGINE_META, DEFAULT_SEARCH_ENGINE_ID, getSearchEngineMeta };
 
 /**
  * @typedef {{
+ *   halfPagePx: number,
+ *   speed: ScrollSpeed
+ * }} ScrollSettings
+ */
+
+/**
+ * @typedef {{
  *   searchEngine: SearchEngine,
  *   cursorMode: CursorMode,
  *   keyboardLayoutId: string,
  *   keyboardReferenceKeyFeedback: boolean,
  *   clickMode: ClickModeSettings,
- *   textMode: TextModeSettings
+ *   textMode: TextModeSettings,
+ *   scroll: ScrollSettings
  * }} KeyPilotSettings
  */
 
@@ -88,6 +97,12 @@ export const DEFAULT_SETTINGS = Object.freeze({
     labelsEnabled: false,
     // Stroke thickness in px for orange text-mode rectangles.
     strokeThickness: 3
+  }),
+  scroll: Object.freeze({
+    // C / V scroll distance in pixels (default = prior 400 × 1.25).
+    halfPagePx: SCROLL.HALF_PAGE_PX,
+    // Animation speed for keyboard scrolling: smooth (animated) or instant (jump).
+    speed: SCROLL.BEHAVIOR === 'smooth' ? 'smooth' : 'instant'
   })
 });
 
@@ -211,6 +226,43 @@ function normalizeTextMode(raw) {
 }
 
 /**
+ * @param {any} raw
+ * @returns {ScrollSpeed}
+ */
+function normalizeScrollSpeed(raw) {
+  if (raw === 'smooth' || raw === 'instant') return raw;
+  // Accept CSS scroll-behavior aliases from older/local experiments.
+  if (raw === 'auto') return 'instant';
+  return DEFAULT_SETTINGS.scroll.speed;
+}
+
+/**
+ * @param {any} raw
+ * @returns {ScrollSettings}
+ */
+function normalizeScroll(raw) {
+  const stored = raw && typeof raw === 'object' ? raw : {};
+  return {
+    halfPagePx: normalizeNumber(
+      stored.halfPagePx,
+      DEFAULT_SETTINGS.scroll.halfPagePx,
+      50,
+      2000
+    ),
+    speed: normalizeScrollSpeed(stored.speed)
+  };
+}
+
+/**
+ * Map Settings scroll speed to ScrollOptions.behavior.
+ * @param {ScrollSpeed|string|undefined|null} speed
+ * @returns {'smooth'|'auto'}
+ */
+export function scrollBehaviorFromSpeed(speed) {
+  return normalizeScrollSpeed(speed) === 'instant' ? 'auto' : 'smooth';
+}
+
+/**
  * @returns {Promise<KeyPilotSettings>}
  */
 export async function getSettings() {
@@ -228,10 +280,16 @@ export async function getSettings() {
         DEFAULT_SETTINGS.keyboardReferenceKeyFeedback
       ),
       clickMode: normalizeClickMode(stored?.clickMode),
-      textMode: normalizeTextMode(stored?.textMode)
+      textMode: normalizeTextMode(stored?.textMode),
+      scroll: normalizeScroll(stored?.scroll)
     };
   } catch (_e) {
-    return { ...DEFAULT_SETTINGS };
+    return {
+      ...DEFAULT_SETTINGS,
+      clickMode: { ...DEFAULT_SETTINGS.clickMode, cursor: { ...DEFAULT_SETTINGS.clickMode.cursor } },
+      textMode: { ...DEFAULT_SETTINGS.textMode },
+      scroll: { ...DEFAULT_SETTINGS.scroll }
+    };
   }
 }
 
@@ -261,6 +319,10 @@ export async function setSettings(partial) {
     textMode: {
       ...current.textMode,
       ...(p.textMode && typeof p.textMode === 'object' ? p.textMode : {})
+    },
+    scroll: {
+      ...current.scroll,
+      ...(p.scroll && typeof p.scroll === 'object' ? p.scroll : {})
     }
   };
   next.searchEngine = normalizeSearchEngine(next.searchEngine);
@@ -272,6 +334,7 @@ export async function setSettings(partial) {
   );
   next.clickMode = normalizeClickMode(next.clickMode);
   next.textMode = normalizeTextMode(next.textMode);
+  next.scroll = normalizeScroll(next.scroll);
   try {
     await chrome.storage.sync.set({ [SETTINGS_STORAGE_KEY]: next });
   } catch (_e) {

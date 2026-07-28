@@ -21,7 +21,12 @@ import { FloatingKeyboardHelp } from './ui/floating-keyboard-help.js';
 import { OmniboxManager } from './modules/omnibox-manager.js';
 import { TabHistoryPopover } from './modules/tab-history-popover.js';
 import { LauncherPopover } from './modules/launcher-popover.js';
-import { DEFAULT_SETTINGS, getSettings, SETTINGS_STORAGE_KEY } from './modules/settings-manager.js';
+import { DEFAULT_SETTINGS, getSettings, SETTINGS_STORAGE_KEY, scrollBehaviorFromSpeed } from './modules/settings-manager.js';
+import {
+  isExtensionContextValid,
+  noteExtensionContextError,
+  safeRuntimeSendMessage
+} from './utils/extension-context.js';
 
 export class KeyPilot extends EventManager {
   constructor() {
@@ -807,6 +812,11 @@ export class KeyPilot extends EventManager {
    */
   async queryInitialState() {
     try {
+      if (!isExtensionContextValid()) {
+        this.enabled = true;
+        console.log('[KeyPilot] Extension context invalid; defaulting to enabled until reload');
+        return;
+      }
       const response = await chrome.runtime.sendMessage({ type: MSG.GET_STATE });
       if (response && typeof response.enabled === 'boolean') {
         this.enabled = response.enabled;
@@ -817,6 +827,10 @@ export class KeyPilot extends EventManager {
         console.log('[KeyPilot] No valid state from service worker, defaulting to enabled');
       }
     } catch (error) {
+      if (noteExtensionContextError(error)) {
+        this.enabled = true;
+        return;
+      }
       // Service worker might not be available, default to enabled
       this.enabled = true;
       console.log('[KeyPilot] Service worker not available, defaulting to enabled:', error.message);
@@ -1174,10 +1188,55 @@ export class KeyPilot extends EventManager {
       // If we run KeyPilot inside a popover iframe, sending KP_STATUS from that frame
       // would overwrite the popup UI with the iframe's mode.
       if (window !== window.top) return;
-      chrome.runtime.sendMessage({ type: MSG.STATUS, mode });
+      this._sendRuntimeMessage({ type: MSG.STATUS, mode }, { silent: true });
     } catch (error) {
-      // Popup might not be open
+      // Popup might not be open / extension context may be invalidated
     }
+  }
+
+  /**
+   * Send a message to the service worker, handling "Extension context invalidated"
+   * (content script orphaned after extension reload/update).
+   * @param {object} message
+   * @param {{ silent?: boolean }} [opts]
+   * @returns {boolean}
+   */
+  _sendRuntimeMessage(message, opts = {}) {
+    return safeRuntimeSendMessage(message, {
+      onInvalidated: () => this._handleExtensionContextInvalidated(),
+      onError: (error) => {
+        if (opts.silent) return;
+        if (window.KEYPILOT_DEBUG) {
+          console.warn('[KeyPilot] runtime.sendMessage failed:', error);
+        }
+      }
+    });
+  }
+
+  /**
+   * One-time UX + quiet shutdown after the extension was reloaded/updated.
+   */
+  _handleExtensionContextInvalidated() {
+    if (this._extensionContextInvalidatedHandled) return;
+    this._extensionContextInvalidatedHandled = true;
+
+    if (window.KEYPILOT_DEBUG) {
+      console.warn('[KeyPilot] Extension context invalidated — reload the page to restore KeyPilot');
+    }
+
+    try {
+      this.showFlashNotification(
+        'KeyPilot updated — reload this page to restore shortcuts',
+        COLORS.NOTIFICATION_WARNING
+      );
+    } catch { /* ignore */ }
+
+    // Stop listening so orphaned content scripts don't keep throwing.
+    try {
+      if (typeof this.disable === 'function') {
+        this.disable();
+      }
+    } catch { /* ignore */ }
   }
 
   handleKeyDown(e) {
@@ -1192,11 +1251,7 @@ export class KeyPilot extends EventManager {
       // which could otherwise trigger a second toggle and effectively do nothing.
       e.stopImmediatePropagation();
       // Send toggle message to background script
-      if (typeof chrome !== 'undefined' && chrome.runtime) {
-        chrome.runtime.sendMessage({ type: MSG.TOGGLE_STATE }).catch(() => {
-          // Ignore errors if background script is not available
-        });
-      }
+      this._sendRuntimeMessage({ type: MSG.TOGGLE_STATE }, { silent: true });
       return;
     }
 
@@ -1334,32 +1389,32 @@ export class KeyPilot extends EventManager {
       // This path covers cases where focus is still in the parent document.
       if (KB.PAGE_UP?.keys?.includes?.(e.key)) {
         e.preventDefault();
-        this.overlayManager?.scrollPopoverBy?.(-SCROLL.PAGE_PX, 'smooth');
+        this.overlayManager?.scrollPopoverBy?.(-this._getPageScrollPx(), this._getScrollBehavior());
         return;
       }
       if (KB.PAGE_DOWN?.keys?.includes?.(e.key)) {
         e.preventDefault();
-        this.overlayManager?.scrollPopoverBy?.(SCROLL.PAGE_PX, 'smooth');
+        this.overlayManager?.scrollPopoverBy?.(this._getPageScrollPx(), this._getScrollBehavior());
         return;
       }
       if (KB.PAGE_UP_INSTANT?.keys?.includes?.(e.key)) {
         e.preventDefault();
-        this.overlayManager?.scrollPopoverBy?.(-SCROLL.HALF_PAGE_PX, 'smooth');
+        this.overlayManager?.scrollPopoverBy?.(-this._getHalfPageScrollPx(), this._getScrollBehavior());
         return;
       }
       if (KB.PAGE_DOWN_INSTANT?.keys?.includes?.(e.key)) {
         e.preventDefault();
-        this.overlayManager?.scrollPopoverBy?.(SCROLL.HALF_PAGE_PX, 'smooth');
+        this.overlayManager?.scrollPopoverBy?.(this._getHalfPageScrollPx(), this._getScrollBehavior());
         return;
       }
       if (KB.PAGE_TOP?.keys?.includes?.(e.key)) {
         e.preventDefault();
-        this.overlayManager?.scrollPopoverToTop?.('smooth');
+        this.overlayManager?.scrollPopoverToTop?.(this._getScrollBehavior());
         return;
       }
       if (KB.PAGE_BOTTOM?.keys?.includes?.(e.key)) {
         e.preventDefault();
-        this.overlayManager?.scrollPopoverToBottom?.('smooth');
+        this.overlayManager?.scrollPopoverToBottom?.(this._getScrollBehavior());
         return;
       }
 
@@ -1775,34 +1830,60 @@ export class KeyPilot extends EventManager {
     }
   }
 
+  /**
+   * C / V scroll distance (px), from Settings with SCROLL fallback.
+   * @returns {number}
+   */
+  _getHalfPageScrollPx() {
+    const n = Number(this._settings?.scroll?.halfPagePx);
+    if (Number.isFinite(n) && n > 0) return n;
+    return SCROLL.HALF_PAGE_PX;
+  }
+
+  /**
+   * Z / X scroll distance (px). Currently uses the constant; not yet a setting.
+   * @returns {number}
+   */
+  _getPageScrollPx() {
+    return SCROLL.PAGE_PX;
+  }
+
+  /**
+   * CSS scroll-behavior derived from Settings scroll.speed.
+   * @returns {'smooth'|'auto'}
+   */
+  _getScrollBehavior() {
+    return scrollBehaviorFromSpeed(this._settings?.scroll?.speed ?? DEFAULT_SETTINGS.scroll.speed);
+  }
+
   handlePageUp() {
     window.scrollBy({
-      top: -SCROLL.PAGE_PX,
-      behavior: 'smooth'
+      top: -this._getPageScrollPx(),
+      behavior: this._getScrollBehavior()
     });
     this.emitAction('scrollUp');
   }
 
   handlePageDown() {
     window.scrollBy({
-      top: SCROLL.PAGE_PX,
-      behavior: 'smooth'
+      top: this._getPageScrollPx(),
+      behavior: this._getScrollBehavior()
     });
     this.emitAction('scrollDown');
   }
 
   handleInstantPageUp() {
     window.scrollBy({
-      top: -SCROLL.HALF_PAGE_PX,
-      behavior: 'smooth'
+      top: -this._getHalfPageScrollPx(),
+      behavior: this._getScrollBehavior()
     });
     this.emitAction('scrollUp');
   }
 
   handleInstantPageDown() {
     window.scrollBy({
-      top: SCROLL.HALF_PAGE_PX,
-      behavior: 'smooth'
+      top: this._getHalfPageScrollPx(),
+      behavior: this._getScrollBehavior()
     });
     this.emitAction('scrollDown');
   }
@@ -1811,7 +1892,7 @@ export class KeyPilot extends EventManager {
     // Scroll to top of page (Home key equivalent)
     window.scrollTo({
       top: 0,
-      behavior: 'smooth'
+      behavior: this._getScrollBehavior()
     });
     this.emitAction('scrollTop');
   }
@@ -1820,7 +1901,7 @@ export class KeyPilot extends EventManager {
     // Scroll to bottom of page (End key equivalent)
     window.scrollTo({
       top: document.documentElement.scrollHeight,
-      behavior: 'smooth'
+      behavior: this._getScrollBehavior()
     });
     this.emitAction('scrollBottom');
   }
@@ -1884,15 +1965,11 @@ export class KeyPilot extends EventManager {
 
     // Onboarding recovery: record before unload, fire-and-forget (do not gate navigation on it).
     if (recordAction) {
-      try {
-        if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
-          chrome.runtime.sendMessage({
-            type: MSG.TRANSIENT_ACTION,
-            action: recordAction,
-            timestamp: Date.now()
-          }).catch(() => {});
-        }
-      } catch { /* ignore */ }
+      this._sendRuntimeMessage({
+        type: MSG.TRANSIENT_ACTION,
+        action: recordAction,
+        timestamp: Date.now()
+      }, { silent: true });
     }
 
     const step = () => {
@@ -1981,24 +2058,20 @@ export class KeyPilot extends EventManager {
     // Switch to the tab to the left
     // Emit + record transient action BEFORE switching tabs so onboarding can persist/recover reliably.
     this.emitAction('tabLeft');
-    try {
-      if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
-        chrome.runtime.sendMessage({ type: MSG.TRANSIENT_ACTION, action: 'tabLeft', timestamp: Date.now() }).catch(() => {});
-      }
-    } catch { /* ignore */ }
-    chrome.runtime.sendMessage({ type: MSG.TAB_LEFT });
+    this._sendRuntimeMessage({ type: MSG.TRANSIENT_ACTION, action: 'tabLeft', timestamp: Date.now() }, { silent: true });
+    if (!this._sendRuntimeMessage({ type: MSG.TAB_LEFT })) {
+      // Context invalidated — user already notified once via _handleExtensionContextInvalidated
+    }
   }
 
   handleTabRightKey() {
     // Switch to the tab to the right
     // Emit + record transient action BEFORE switching tabs so onboarding can persist/recover reliably.
     this.emitAction('tabRight');
-    try {
-      if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
-        chrome.runtime.sendMessage({ type: MSG.TRANSIENT_ACTION, action: 'tabRight', timestamp: Date.now() }).catch(() => {});
-      }
-    } catch { /* ignore */ }
-    chrome.runtime.sendMessage({ type: MSG.TAB_RIGHT });
+    this._sendRuntimeMessage({ type: MSG.TRANSIENT_ACTION, action: 'tabRight', timestamp: Date.now() }, { silent: true });
+    if (!this._sendRuntimeMessage({ type: MSG.TAB_RIGHT })) {
+      // Context invalidated — user already notified once via _handleExtensionContextInvalidated
+    }
   }
 
   handleDeleteKey() {
@@ -4547,9 +4620,18 @@ export class KeyPilot extends EventManager {
     
     try {
       // Send message to background script to close the current tab
-      chrome.runtime.sendMessage({ type: MSG.CLOSE_TAB });
+      if (!this._sendRuntimeMessage({ type: MSG.CLOSE_TAB })) {
+        if (!this._extensionContextInvalidatedHandled) {
+          this.showFlashNotification('Failed to Close Tab', COLORS.NOTIFICATION_ERROR);
+        }
+        return;
+      }
       this.showFlashNotification('Closing Tab...', COLORS.NOTIFICATION_INFO);
     } catch (error) {
+      if (noteExtensionContextError(error)) {
+        this._handleExtensionContextInvalidated();
+        return;
+      }
       console.error('[KeyPilot] Failed to close tab:', error);
       this.showFlashNotification('Failed to Close Tab', COLORS.NOTIFICATION_ERROR);
     }
@@ -4561,16 +4643,22 @@ export class KeyPilot extends EventManager {
     try {
       // Emit + record transient action BEFORE opening the new tab so onboarding can persist/recover reliably.
       this.emitAction('newTab');
-      try {
-        if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
-          chrome.runtime.sendMessage({ type: MSG.TRANSIENT_ACTION, action: 'newTab', timestamp: Date.now() }).catch(() => {});
-        }
-      } catch { /* ignore */ }
+      this._sendRuntimeMessage({ type: MSG.TRANSIENT_ACTION, action: 'newTab', timestamp: Date.now() }, { silent: true });
 
       // Send message to background script to open a new tab
-      chrome.runtime.sendMessage({ type: MSG.NEW_TAB });
+      if (!this._sendRuntimeMessage({ type: MSG.NEW_TAB })) {
+        // Invalidated context already shows a reload hint once.
+        if (!this._extensionContextInvalidatedHandled) {
+          this.showFlashNotification('Failed to Open New Tab', COLORS.NOTIFICATION_ERROR);
+        }
+        return;
+      }
       this.showFlashNotification('Opening New Tab...', COLORS.NOTIFICATION_INFO);
     } catch (error) {
+      if (noteExtensionContextError(error)) {
+        this._handleExtensionContextInvalidated();
+        return;
+      }
       console.error('[KeyPilot] Failed to open new tab:', error);
       this.showFlashNotification('Failed to Open New Tab', COLORS.NOTIFICATION_ERROR);
     }
@@ -4679,14 +4767,20 @@ export class KeyPilot extends EventManager {
       this.mouseCoordinateManager.handleLinkClick(currentState.lastMouse.x, currentState.lastMouse.y, link);
 
       try {
-        chrome.runtime.sendMessage({ type: MSG.OPEN_URL_FOREGROUND, url });
-        this.showRipple(currentState.lastMouse.x, currentState.lastMouse.y);
-        this.overlayManager.flashFocusOverlay();
-        this.postClickRefresh(link, currentState.lastMouse.x, currentState.lastMouse.y);
-        this.emitAction('activateNewTab', { isLink: true, href: url });
-        return;
+        if (this._sendRuntimeMessage({ type: MSG.OPEN_URL_FOREGROUND, url })) {
+          this.showRipple(currentState.lastMouse.x, currentState.lastMouse.y);
+          this.overlayManager.flashFocusOverlay();
+          this.postClickRefresh(link, currentState.lastMouse.x, currentState.lastMouse.y);
+          this.emitAction('activateNewTab', { isLink: true, href: url });
+          return;
+        }
+        // Context invalidated — fall through to legacy window.open path below.
       } catch (error) {
-        console.error('[KeyPilot] Failed to open link in foreground tab:', error);
+        if (noteExtensionContextError(error)) {
+          this._handleExtensionContextInvalidated();
+        } else {
+          console.error('[KeyPilot] Failed to open link in foreground tab:', error);
+        }
         // Fall through to legacy behavior below.
       }
     }
@@ -4764,15 +4858,23 @@ export class KeyPilot extends EventManager {
 
     // Open link in a background tab (middle-click style: do NOT switch/focus the new tab).
     try {
-      chrome.runtime.sendMessage({ type: MSG.OPEN_URL_BACKGROUND, url });
-      this.showRipple(currentState.lastMouse.x, currentState.lastMouse.y);
-      this.overlayManager.flashFocusOverlay();
-      this.postClickRefresh(link, currentState.lastMouse.x, currentState.lastMouse.y);
-      this.emitAction('activateNewTabBackground', { isLink: true, href: url });
+      if (this._sendRuntimeMessage({ type: MSG.OPEN_URL_BACKGROUND, url })) {
+        this.showRipple(currentState.lastMouse.x, currentState.lastMouse.y);
+        this.overlayManager.flashFocusOverlay();
+        this.postClickRefresh(link, currentState.lastMouse.x, currentState.lastMouse.y);
+        this.emitAction('activateNewTabBackground', { isLink: true, href: url });
+        return;
+      }
+      // Context invalidated — fall through to window.open fallback.
+      try { window.open(url, '_blank', 'noopener,noreferrer'); } catch { /* ignore */ }
     } catch (error) {
-      console.error('[KeyPilot] Failed to open link in background tab:', error);
+      if (noteExtensionContextError(error)) {
+        this._handleExtensionContextInvalidated();
+      } else {
+        console.error('[KeyPilot] Failed to open link in background tab:', error);
+      }
       // Fallback (may focus the new tab depending on browser/user settings).
-      try { window.open(url, '_blank', 'noopener,noreferrer'); } catch { }
+      try { window.open(url, '_blank', 'noopener,noreferrer'); } catch { /* ignore */ }
     }
   }
 
@@ -5022,10 +5124,10 @@ export class KeyPilot extends EventManager {
       this.handleClosePopover();
     }
 
-    // Calculate settings container dimensions + 10pt padding
-    // The settings container has max-width: 920px and padding: 18px on each side
-    const settingsContainerWidth = Math.min(920, window.innerWidth - 36) + 20; // 920px max + 10pt padding each side
-    const settingsContainerHeight = Math.min(window.innerHeight * 0.8, window.innerHeight - 100) + 20; // Use 80vh max + 10pt padding each side
+    // Master–detail settings layout: left nav (~168px) + detail pane.
+    // Prefer a wider frame than the old single-column cards so tabs stay readable.
+    const settingsContainerWidth = Math.min(980, window.innerWidth - 36) + 20;
+    const settingsContainerHeight = Math.min(window.innerHeight * 0.82, window.innerHeight - 80) + 20;
 
     this.overlayManager.showPopover(url, {
       title: 'KeyPilot Settings',

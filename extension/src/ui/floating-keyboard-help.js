@@ -96,6 +96,33 @@ export class FloatingKeyboardHelp {
     this.closeBtn = null;
   }
 
+  /**
+   * Pro-app panel chrome shared by create + early-inject adopt paths.
+   * @param {HTMLElement} root
+   */
+  _applyProPanelChrome(root) {
+    if (!root || !root.style) return;
+    Object.assign(root.style, {
+      position: 'fixed',
+      left: '16px',
+      bottom: '16px',
+      width: '760px',
+      maxWidth: 'calc(100vw - 24px)',
+      maxHeight: 'calc(100vh - 24px)',
+      overflow: 'auto',
+      zIndex: String(Z_INDEX.FLOATING_KEYBOARD_HELP),
+      background: 'linear-gradient(180deg, rgba(28, 30, 36, 0.98) 0%, rgba(16, 18, 22, 0.98) 100%)',
+      color: 'rgba(248, 250, 252, 0.95)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      borderRadius: '14px',
+      boxShadow:
+        '0 1px 0 rgba(255,255,255,0.06) inset, 0 18px 48px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.35)',
+      fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
+      pointerEvents: 'auto'
+    });
+    applyPopupThemeVars(root);
+  }
+
   _ensure() {
     if (this.root && this.root.isConnected) return;
 
@@ -108,12 +135,8 @@ export class FloatingKeyboardHelp {
           existing.querySelector('button[data-kp-floating-keyboard-close="true"]') ||
           existing.querySelector('button[aria-label="Close keyboard reference"]');
 
-        // Ensure the current z-index matches centralized constants (in case early-inject drifts).
-        try {
-          existing.style.zIndex = String(Z_INDEX.FLOATING_KEYBOARD_HELP);
-        } catch { /* ignore */ }
-        // Match popup.html theme tokens so the floating keyboard looks identical.
-        applyPopupThemeVars(existing);
+        // Upgrade chrome to the current pro-app look (and keep z-index/theme in sync).
+        try { this._applyProPanelChrome(existing); } catch { /* ignore */ }
 
         if (keyboardContainer) {
           this.root = existing;
@@ -137,28 +160,7 @@ export class FloatingKeyboardHelp {
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-label', 'KeyPilot keyboard reference');
 
-    // Keep styling mostly inline to avoid depending on any page CSS.
-    Object.assign(root.style, {
-      position: 'fixed',
-      left: '16px',
-      bottom: '16px',
-      width: '740px',
-      maxWidth: 'calc(100vw - 24px)',
-      maxHeight: 'calc(100vh - 24px)',
-      overflow: 'auto',
-      zIndex: String(Z_INDEX.FLOATING_KEYBOARD_HELP),
-      background: 'rgba(20, 20, 20, 0.92)',
-      color: 'rgba(255,255,255,0.95)',
-      border: '1px solid rgba(255,255,255,0.12)',
-      borderRadius: '12px',
-      boxShadow: '0 10px 30px rgba(0,0,0,0.4)',
-      /* backdrop-filter removed to prevent Chrome z-index stacking context bug */
-      fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
-      pointerEvents: 'auto'
-      /* Note: position: fixed creates a positioning context for absolute children */
-    });
-    // Match popup.html theme tokens so the floating keyboard looks identical.
-    applyPopupThemeVars(root);
+    this._applyProPanelChrome(root);
 
     const header = document.createElement('div');
     Object.assign(header.style, {
@@ -166,16 +168,19 @@ export class FloatingKeyboardHelp {
       alignItems: 'center',
       justifyContent: 'space-between',
       gap: '12px',
-      padding: '10px 12px',
-      borderBottom: '1px solid rgba(255,255,255,0.1)'
+      padding: '11px 14px',
+      borderBottom: '1px solid rgba(255,255,255,0.08)',
+      background: 'linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%)'
     });
 
     const title = document.createElement('div');
     title.textContent = 'Keyboard Reference';
     Object.assign(title.style, {
-      fontSize: '13px',
-      fontWeight: 'normal',
-      letterSpacing: '0.2px'
+      fontSize: '12px',
+      fontWeight: '650',
+      letterSpacing: '0.04em',
+      textTransform: 'uppercase',
+      color: 'rgba(248, 250, 252, 0.88)'
     });
 
     const hint = document.createElement('div');
@@ -183,9 +188,14 @@ export class FloatingKeyboardHelp {
     hint.setAttribute('data-kp-floating-keyboard-hint', 'true');
     Object.assign(hint.style, {
       marginLeft: 'auto',
-      fontSize: '12px',
+      fontSize: '11px',
       fontWeight: '500',
-      opacity: '0.8'
+      letterSpacing: '0.02em',
+      color: 'rgba(148, 163, 184, 0.95)',
+      padding: '3px 8px',
+      borderRadius: '999px',
+      border: '1px solid rgba(255,255,255,0.08)',
+      background: 'rgba(0,0,0,0.25)'
     });
 
     const closeBtn = document.createElement('button');
@@ -196,14 +206,15 @@ export class FloatingKeyboardHelp {
       width: '28px',
       height: '28px',
       borderRadius: '8px',
-      border: '1px solid rgba(255,255,255,0.18)',
-      background: 'rgba(255,255,255,0.06)',
-      color: 'rgba(255,255,255,0.95)',
+      border: '1px solid rgba(255,255,255,0.12)',
+      background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)',
+      color: 'rgba(248,250,252,0.92)',
       cursor: 'pointer',
-      fontSize: '18px',
+      fontSize: '17px',
       lineHeight: '26px',
       padding: '0',
-      flex: '0 0 auto'
+      flex: '0 0 auto',
+      boxShadow: '0 1px 0 rgba(255,255,255,0.06) inset'
     });
     closeBtn.addEventListener('click', this._onCloseClick);
 
@@ -213,7 +224,7 @@ export class FloatingKeyboardHelp {
 
     const body = document.createElement('div');
     Object.assign(body.style, {
-      padding: '10px 12px'
+      padding: '12px 12px 13px'
     });
 
     const keyboardContainer = document.createElement('div');

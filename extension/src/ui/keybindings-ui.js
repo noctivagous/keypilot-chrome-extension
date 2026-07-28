@@ -8,6 +8,7 @@ import {
   KEYBINDINGS_KEYBOARD_LAYOUT,
   KEYBINDINGS_UI_ROOT_CLASS,
   KEYBINDINGS_UI_STYLE_ATTR,
+  ensureKeyBackgroundIcon,
   getKeybindingsUiCss
 } from './keybindings-ui-shared.js';
 
@@ -91,6 +92,15 @@ function el(doc, tag, className, text) {
 }
 
 function updateExistingKeyboardDOM({ container, keybindings }) {
+  const doc = container.ownerDocument || document;
+
+  // Strip leftover icon layers from keys that have no KeyPilot function.
+  try {
+    container.querySelectorAll('.key:not([data-kp-action-id]) > .key-bg-icon').forEach((el) => {
+      try { el.remove(); } catch { /* ignore */ }
+    });
+  } catch { /* ignore */ }
+
   const actionEls = container.querySelectorAll('[data-kp-action-id]');
   if (!actionEls || actionEls.length === 0) return false;
 
@@ -100,6 +110,8 @@ function updateExistingKeyboardDOM({ container, keybindings }) {
     const baseClass = keyEl.dataset.kpBaseClass || 'key';
     const keyboardClass = binding && binding.keyboardClass ? String(binding.keyboardClass) : '';
     keyEl.className = `${baseClass}${keyboardClass ? ' ' + keyboardClass : ''}`;
+    // Only function-bearing keys get FA background icons.
+    ensureKeyBackgroundIcon(doc, keyEl);
 
     const title = (binding && (binding.description || binding.label)) || actionId;
     keyEl.title = title;
@@ -111,7 +123,7 @@ function updateExistingKeyboardDOM({ container, keybindings }) {
     const existingLabel = keyEl.querySelector('.key-label');
     if (labelText) {
       if (existingLabel) existingLabel.textContent = labelText;
-      else keyEl.appendChild(el(container.ownerDocument || document, 'div', 'key-label', labelText));
+      else keyEl.appendChild(el(doc, 'div', 'key-label', labelText));
     } else if (existingLabel) {
       existingLabel.remove();
     }
@@ -174,12 +186,18 @@ export function renderKeybindingsKeyboard({ container, keybindings, keyboardLayo
 
     for (const item of row) {
       if (item.type === 'special') {
-        rowEl.appendChild(el(doc, 'div', item.className || 'key', item.text));
+        // No KeyPilot function → no background icon.
+        const keyEl = el(doc, 'div', item.className || 'key');
+        keyEl.appendChild(el(doc, 'span', 'key-text', item.text));
+        rowEl.appendChild(keyEl);
         continue;
       }
 
       if (item.type === 'key') {
-        rowEl.appendChild(el(doc, 'div', item.className || 'key', item.text));
+        // Unassigned alphanumeric key → no background icon.
+        const keyEl = el(doc, 'div', item.className || 'key');
+        keyEl.appendChild(el(doc, 'span', 'key-text', item.text));
+        rowEl.appendChild(keyEl);
         continue;
       }
 
@@ -192,6 +210,8 @@ export function renderKeybindingsKeyboard({ container, keybindings, keyboardLayo
       keyEl.dataset.kpBaseClass = baseClass;
       keyEl.type = 'button'; // Prevent form submission if inside a form
       keyEl.title = (binding && (binding.description || binding.label)) || item.fallbackText || item.id;
+      // Only keys with functions get FA background icons.
+      ensureKeyBackgroundIcon(doc, keyEl);
 
       const main = el(
         doc,

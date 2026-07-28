@@ -8,9 +8,9 @@
     <link rel="stylesheet" href="settings.css" />
   </head>
   <body>
-    <main class="wrap">
+    <main class="settings-app">
       <header class="header">
-        <div>
+        <div class="header-text">
           <h1>KeyPilot Settings</h1>
           <p class="sub">Changes sync across tabs automatically.</p>
         </div>
@@ -20,82 +20,241 @@
         </div>
       </header>
 
-      <section class="card" aria-labelledby="search-engine-title">
-        <h2 id="search-engine-title">Search engine</h2>
-        <div class="radio-group" role="radiogroup" aria-label="Search engine">
-          <label class="radio">
-            <input type="radio" name="engine" value="brave" />
-            <span>Brave</span>
-            <!-- Favicon src set in settings.js via chrome.runtime /_favicon/ (CSP-safe; Google s2 redirects to gstatic and is blocked). -->
-            <img data-favicon-for="brave" alt="" class="radio-icon" width="16" height="16" />
-          </label>
-          <label class="radio">
-            <input type="radio" name="engine" value="google" />
-            <span>Google</span>
-            <img data-favicon-for="google" alt="" class="radio-icon" width="16" height="16" />
-          </label>
-          <label class="radio">
-            <input type="radio" name="engine" value="duckduckgo" />
-            <span>DuckDuckGo</span>
-            <img data-favicon-for="duckduckgo" alt="" class="radio-icon" width="16" height="16" />
-          </label>
-        </div>
-        <p class="hint">Used by the New Tab search box and KeyPilot’s omnibox (Alt+L).</p>
-      </section>
+      <div class="settings-shell">
+        <nav class="settings-nav" role="tablist" aria-label="Settings categories" aria-orientation="vertical">
+          <button
+            type="button"
+            class="settings-tab"
+            role="tab"
+            id="tab-search"
+            data-panel="search"
+            aria-controls="panel-search"
+            aria-selected="true"
+            tabindex="0"
+          >
+            Search
+          </button>
+          <button
+            type="button"
+            class="settings-tab"
+            role="tab"
+            id="tab-keyboard"
+            data-panel="keyboard"
+            aria-controls="panel-keyboard"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            Keyboard
+          </button>
+          <button
+            type="button"
+            class="settings-tab"
+            role="tab"
+            id="tab-cursor"
+            data-panel="cursor"
+            aria-controls="panel-cursor"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            Cursor
+          </button>
+          <button
+            type="button"
+            class="settings-tab"
+            role="tab"
+            id="tab-scrolling"
+            data-panel="scrolling"
+            aria-controls="panel-scrolling"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            Scrolling
+          </button>
+          <button
+            type="button"
+            class="settings-tab"
+            role="tab"
+            id="tab-click-mode"
+            data-panel="click-mode"
+            aria-controls="panel-click-mode"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            Click Mode
+          </button>
+          <button
+            type="button"
+            class="settings-tab"
+            role="tab"
+            id="tab-text-mode"
+            data-panel="text-mode"
+            aria-controls="panel-text-mode"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            Text Mode
+          </button>
+          <button
+            type="button"
+            class="settings-tab"
+            role="tab"
+            id="tab-about"
+            data-panel="about"
+            aria-controls="panel-about"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            About
+          </button>
+        </nav>
 
-      <section class="card" aria-labelledby="keyboard-reference-title">
-        <h2 id="keyboard-reference-title">Keyboard Reference Panel</h2>
-        <div class="grid-2">
-          <label class="field">
-            <div class="field-label">Keyboard layout</div>
-            <select id="keyboard-layout" class="select">
-              <option value="browsing-right">Browsing: right-handed</option>
-              <option value="browsing-left">Browsing: left-handed</option>
-            </select>
-            <div class="field-hint">Controls which keys trigger KeyPilot actions and how the keyboard reference is labeled.</div>
-          </label>
-          <div class="hint">
-            You can switch layouts at any time. Changes sync across tabs automatically.
-          </div>
-        </div>
-        <label class="toggle" for="keyboard-reference-key-feedback">
-          <input id="keyboard-reference-key-feedback" type="checkbox" />
-          <div class="toggle-text">
-            <div class="toggle-title">Show pressed-key feedback</div>
-            <div class="toggle-sub">Highlights keys in the floating keyboard reference panel on keydown/keyup.</div>
-          </div>
-        </label>
-      </section>
+        <div class="settings-detail">
+          <section
+            class="settings-panel is-active"
+            role="tabpanel"
+            id="panel-search"
+            data-panel="search"
+            aria-labelledby="tab-search"
+          >
+            <header class="panel-header">
+              <h2>Search engine</h2>
+              <p class="panel-lead">Used by the New Tab search box and KeyPilot’s omnibox (Alt+L).</p>
+            </header>
 
-      <section class="card" aria-labelledby="cursor-mode-title">
-        <h2 id="cursor-mode-title">Cursor</h2>
-        <div class="grid-2">
-          <label class="field">
-            <div class="field-label">Cursor mode</div>
-            <select id="cursor-mode" class="select">
-              <option value="NO-CUSTOM-CURSORS">No custom cursors</option>
-              <option value="CUSTOM-CURSORS">Custom cursors</option>
-            </select>
-          </label>
-          <div class="hint">
-            When “No custom cursors” is selected, KeyPilot won’t override the page cursor and cursor settings are hidden.
-          </div>
-        </div>
-      </section>
+            <div class="radio-group" role="radiogroup" aria-label="Search engine">
+              <label class="radio">
+                <input type="radio" name="engine" value="brave" />
+                <span>Brave</span>
+                <!-- Favicon src set in settings.js via chrome.runtime /_favicon/ (CSP-safe). -->
+                <img data-favicon-for="brave" alt="" class="radio-icon" width="16" height="16" />
+              </label>
+              <label class="radio">
+                <input type="radio" name="engine" value="google" />
+                <span>Google</span>
+                <img data-favicon-for="google" alt="" class="radio-icon" width="16" height="16" />
+              </label>
+              <label class="radio">
+                <input type="radio" name="engine" value="duckduckgo" />
+                <span>DuckDuckGo</span>
+                <img data-favicon-for="duckduckgo" alt="" class="radio-icon" width="16" height="16" />
+              </label>
+            </div>
+          </section>
 
-      <section class="card" aria-labelledby="mode-settings-title">
-        <h2 id="mode-settings-title">Mode Settings</h2>
+          <section
+            class="settings-panel"
+            role="tabpanel"
+            id="panel-keyboard"
+            data-panel="keyboard"
+            aria-labelledby="tab-keyboard"
+            hidden
+          >
+            <header class="panel-header">
+              <h2>Keyboard</h2>
+              <p class="panel-lead">Layout and floating keyboard reference panel behavior.</p>
+            </header>
 
-        <div class="kp-accordion" id="mode-settings-accordion">
-          <details class="kp-subsection" id="click-mode-details">
-            <summary class="kp-subsection-summary">
-              <div class="kp-subsection-summary-text">
-                <div class="kp-subsection-title">Click Mode</div>
-                <div class="kp-subsection-sub">Cursor + green focus rectangle behavior.</div>
+            <div class="stack">
+              <label class="field">
+                <div class="field-label">Keyboard layout</div>
+                <select id="keyboard-layout" class="select">
+                  <option value="browsing-right">Browsing: right-handed</option>
+                  <option value="browsing-left">Browsing: left-handed</option>
+                </select>
+                <div class="field-hint">Controls which keys trigger KeyPilot actions and how the keyboard reference is labeled.</div>
+              </label>
+
+              <label class="toggle" for="keyboard-reference-key-feedback">
+                <input id="keyboard-reference-key-feedback" type="checkbox" />
+                <div class="toggle-text">
+                  <div class="toggle-title">Show pressed-key feedback</div>
+                  <div class="toggle-sub">Highlights keys in the floating keyboard reference panel on keydown/keyup.</div>
+                </div>
+              </label>
+            </div>
+          </section>
+
+          <section
+            class="settings-panel"
+            role="tabpanel"
+            id="panel-cursor"
+            data-panel="cursor"
+            aria-labelledby="tab-cursor"
+            hidden
+          >
+            <header class="panel-header">
+              <h2>Cursor</h2>
+              <p class="panel-lead">Whether KeyPilot overrides the page cursor with custom cursors.</p>
+            </header>
+
+            <div class="stack">
+              <label class="field">
+                <div class="field-label">Cursor mode</div>
+                <select id="cursor-mode" class="select">
+                  <option value="NO-CUSTOM-CURSORS">No custom cursors</option>
+                  <option value="CUSTOM-CURSORS">Custom cursors</option>
+                </select>
+                <div class="field-hint">
+                  When “No custom cursors” is selected, KeyPilot won’t override the page cursor and per-mode cursor controls are hidden.
+                </div>
+              </label>
+            </div>
+          </section>
+
+          <section
+            class="settings-panel"
+            role="tabpanel"
+            id="panel-scrolling"
+            data-panel="scrolling"
+            aria-labelledby="tab-scrolling"
+            hidden
+          >
+            <header class="panel-header">
+              <h2>Scrolling</h2>
+              <p class="panel-lead">Keyboard page scrolling for C / V (smaller step). Z / X use a larger fixed step.</p>
+            </header>
+
+            <div class="stack">
+              <div class="grid-2">
+                <div class="field">
+                  <div class="field-label">C / V distance</div>
+                  <div class="range-row">
+                    <input id="scroll-half-page-range" type="range" min="50" max="2000" step="10" />
+                    <input id="scroll-half-page-number" class="number" type="number" min="50" max="2000" step="10" />
+                  </div>
+                  <div class="field-hint">Pixels scrolled by C (up) and V (down). Default 500.</div>
+                </div>
+
+                <label class="field">
+                  <div class="field-label">Scroll speed</div>
+                  <select id="scroll-speed" class="select">
+                    <option value="smooth">Smooth</option>
+                    <option value="instant">Instant</option>
+                  </select>
+                  <div class="field-hint">Animation for keyboard scrolling (C/V, Z/X, B/N).</div>
+                </label>
               </div>
-            </summary>
 
-            <div class="kp-subsection-body">
+              <div class="row-actions">
+                <button id="scroll-reset" class="btn btn-secondary btn-small" type="button">Reset scrolling to defaults</button>
+              </div>
+            </div>
+          </section>
+
+          <section
+            class="settings-panel"
+            role="tabpanel"
+            id="panel-click-mode"
+            data-panel="click-mode"
+            aria-labelledby="tab-click-mode"
+            hidden
+          >
+            <header class="panel-header">
+              <h2>Click Mode</h2>
+              <p class="panel-lead">Cursor + green focus rectangle behavior.</p>
+            </header>
+
+            <div class="stack">
               <div id="cursor-settings-click">
                 <h3 class="subhead">Cursor</h3>
 
@@ -141,7 +300,7 @@
                     <input id="click-cursor-gap-range" type="range" min="0" max="20" step="1" />
                     <input id="click-cursor-gap-number" class="number" type="number" min="0" max="20" step="1" />
                   </div>
-                  <div class="field-hint">Gap between center and crosshair bars in pixels. 0 = intersecting lines, >0 = separate bars (0–20px).</div>
+                  <div class="field-hint">Gap between center and crosshair bars in pixels. 0 = intersecting lines, &gt;0 = separate bars (0–20px).</div>
                 </div>
 
                 <div class="row-actions">
@@ -174,17 +333,22 @@
                 <button id="click-mode-reset" class="btn btn-secondary btn-small" type="button">Reset Click Mode to defaults</button>
               </div>
             </div>
-          </details>
+          </section>
 
-          <details class="kp-subsection" id="text-mode-details">
-            <summary class="kp-subsection-summary">
-              <div class="kp-subsection-summary-text">
-                <div class="kp-subsection-title">Text Mode</div>
-                <div class="kp-subsection-sub">Cursor + labels + orange text-field outlines.</div>
-              </div>
-            </summary>
+          <section
+            class="settings-panel"
+            role="tabpanel"
+            id="panel-text-mode"
+            data-panel="text-mode"
+            aria-labelledby="tab-text-mode"
+            hidden
+          >
+            <header class="panel-header">
+              <h2>Text Mode</h2>
+              <p class="panel-lead">Cursor + labels + orange text-field outlines.</p>
+            </header>
 
-            <div class="kp-subsection-body">
+            <div class="stack">
               <div id="cursor-settings-text">
                 <h3 class="subhead">Text mode cursor</h3>
 
@@ -210,7 +374,7 @@
                 <div class="divider"></div>
               </div>
 
-              <h3 class="subhead">Labels & outlines</h3>
+              <h3 class="subhead">Labels &amp; outlines</h3>
 
               <label class="toggle" for="text-labels-enabled">
                 <input id="text-labels-enabled" type="checkbox" />
@@ -233,22 +397,33 @@
                 <button id="text-mode-reset" class="btn btn-secondary btn-small" type="button">Reset Text Mode to defaults</button>
               </div>
             </div>
-          </details>
-        </div>
-      </section>
+          </section>
 
-      <section class="card">
-        <h2>About</h2>
-        <p>
-          <!-- Settings are stored in <code>chrome.storage.sync</code> so they stay consistent across tabs. -->
-          noctivagous.com
-        </p>
-      </section>
+          <section
+            class="settings-panel"
+            role="tabpanel"
+            id="panel-about"
+            data-panel="about"
+            aria-labelledby="tab-about"
+            hidden
+          >
+            <header class="panel-header">
+              <h2>About</h2>
+              <p class="panel-lead">KeyPilot settings sync via Chrome profile storage.</p>
+            </header>
+
+            <div class="stack">
+              <div class="about-card">
+                <p class="about-brand">noctivagous.com</p>
+                <p class="hint" style="margin:0;">Settings are stored in <code>chrome.storage.sync</code> so they stay consistent across tabs.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
     </main>
 
     <script type="module" src="popover-bridge.js"></script>
     <script type="module" src="settings.js"></script>
   </body>
 </html>
-
-

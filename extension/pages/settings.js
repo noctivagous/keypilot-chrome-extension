@@ -35,12 +35,111 @@ function postCloseRequest() {
   }
 }
 
-function installAccordionViewTransitions() {
-  // NOTE:
-  // We intentionally rely on native <details>/<summary> toggling for stability.
-  // Some Chromium builds still perform the native toggle even when the click is
-  // prevented, causing an open->close "double toggle" if we also toggle manually.
-  // The caret rotation is handled purely in CSS via details[open].
+const SETTINGS_TAB_STORAGE_KEY = 'kp_settings_active_tab';
+const SETTINGS_PANEL_IDS = Object.freeze([
+  'search',
+  'keyboard',
+  'cursor',
+  'scrolling',
+  'click-mode',
+  'text-mode',
+  'about'
+]);
+
+/**
+ * Master–detail left tabs: show one panel, update ARIA + optional persistence.
+ * @param {string} panelId
+ * @param {{ focusTab?: boolean, persist?: boolean }} [opts]
+ */
+function activateSettingsPanel(panelId, opts = {}) {
+  const id = SETTINGS_PANEL_IDS.includes(panelId) ? panelId : 'search';
+  const tabs = Array.from(document.querySelectorAll('.settings-tab[data-panel]'));
+  const panels = Array.from(document.querySelectorAll('.settings-panel[data-panel]'));
+
+  tabs.forEach((tab) => {
+    const selected = tab.getAttribute('data-panel') === id;
+    tab.setAttribute('aria-selected', selected ? 'true' : 'false');
+    tab.tabIndex = selected ? 0 : -1;
+    if (selected && opts.focusTab) {
+      try { tab.focus(); } catch { /* ignore */ }
+    }
+  });
+
+  panels.forEach((panel) => {
+    const selected = panel.getAttribute('data-panel') === id;
+    panel.classList.toggle('is-active', selected);
+    if (selected) {
+      panel.hidden = false;
+      panel.removeAttribute('hidden');
+    } else {
+      panel.hidden = true;
+    }
+  });
+
+  if (opts.persist !== false) {
+    try {
+      sessionStorage.setItem(SETTINGS_TAB_STORAGE_KEY, id);
+    } catch {
+      // ignore
+    }
+  }
+
+  // Scroll detail pane to top when switching sections.
+  try {
+    const detail = document.querySelector('.settings-detail');
+    if (detail) detail.scrollTop = 0;
+  } catch {
+    // ignore
+  }
+}
+
+function installSettingsMasterDetailNav() {
+  const nav = document.querySelector('.settings-nav');
+  const tabs = Array.from(document.querySelectorAll('.settings-tab[data-panel]'));
+  if (!nav || tabs.length === 0) return;
+
+  let initial = 'search';
+  try {
+    const hash = (location.hash || '').replace(/^#/, '');
+    if (SETTINGS_PANEL_IDS.includes(hash)) {
+      initial = hash;
+    } else {
+      const stored = sessionStorage.getItem(SETTINGS_TAB_STORAGE_KEY);
+      if (stored && SETTINGS_PANEL_IDS.includes(stored)) initial = stored;
+    }
+  } catch {
+    // ignore
+  }
+
+  activateSettingsPanel(initial, { persist: false });
+
+  nav.addEventListener('click', (e) => {
+    const tab = e.target?.closest?.('.settings-tab[data-panel]');
+    if (!tab || !nav.contains(tab)) return;
+    e.preventDefault();
+    const panelId = tab.getAttribute('data-panel');
+    withOptionalViewTransition(() => activateSettingsPanel(panelId));
+  });
+
+  // Arrow-key navigation within the vertical tablist (ARIA tabs pattern).
+  nav.addEventListener('keydown', (e) => {
+    if (!e) return;
+    const key = e.key;
+    if (key !== 'ArrowDown' && key !== 'ArrowUp' && key !== 'Home' && key !== 'End') return;
+    const currentIndex = tabs.findIndex((t) => t.getAttribute('aria-selected') === 'true');
+    if (currentIndex < 0) return;
+
+    let nextIndex = currentIndex;
+    if (key === 'ArrowDown') nextIndex = Math.min(tabs.length - 1, currentIndex + 1);
+    if (key === 'ArrowUp') nextIndex = Math.max(0, currentIndex - 1);
+    if (key === 'Home') nextIndex = 0;
+    if (key === 'End') nextIndex = tabs.length - 1;
+    if (nextIndex === currentIndex) return;
+
+    e.preventDefault();
+    const panelId = tabs[nextIndex].getAttribute('data-panel');
+    withOptionalViewTransition(() => activateSettingsPanel(panelId, { focusTab: true }));
+  });
 }
 
 function clampNumber(n, min, max) {
@@ -105,7 +204,7 @@ async function render() {
   // Start KeyPilot inside the Settings page (this page is often loaded in an iframe popover).
   await startKeyPilotOnPage({ allowInIframe: true });
 
-  installAccordionViewTransitions();
+  installSettingsMasterDetailNav();
 
   const radios = Array.from(document.querySelectorAll('input[type="radio"][name="engine"]'));
   const keyFeedbackToggle = /** @type {HTMLInputElement|null} */ (document.getElementById('keyboard-reference-key-feedback'));
@@ -140,6 +239,12 @@ async function render() {
   const textStrokeThicknessRange = /** @type {HTMLInputElement|null} */ (document.getElementById('text-stroke-thickness-range'));
   const textStrokeThicknessNumber = /** @type {HTMLInputElement|null} */ (document.getElementById('text-stroke-thickness-number'));
   const textModeResetBtn = document.getElementById('text-mode-reset');
+
+  // Scrolling controls (C / V distance + animation speed)
+  const scrollHalfPageRange = /** @type {HTMLInputElement|null} */ (document.getElementById('scroll-half-page-range'));
+  const scrollHalfPageNumber = /** @type {HTMLInputElement|null} */ (document.getElementById('scroll-half-page-number'));
+  const scrollSpeedSelect = /** @type {HTMLSelectElement|null} */ (document.getElementById('scroll-speed'));
+  const scrollResetBtn = document.getElementById('scroll-reset');
 
   const previewCursor = new CursorManager();
 
@@ -246,6 +351,15 @@ async function render() {
     }
   };
 
+  const applyScroll = (scroll) => {
+    const sc = scroll || DEFAULT_SETTINGS.scroll;
+    const half = sc?.halfPagePx ?? DEFAULT_SETTINGS.scroll.halfPagePx;
+    const speed = sc?.speed === 'instant' ? 'instant' : 'smooth';
+    setInputValue(scrollHalfPageRange, half);
+    setInputValue(scrollHalfPageNumber, half);
+    setInputValue(scrollSpeedSelect, speed);
+  };
+
   // Initial state
   try {
     const settings = await getSettings();
@@ -255,6 +369,7 @@ async function render() {
     applyKeyFeedbackToggle(settings.keyboardReferenceKeyFeedback);
     applyClickMode(settings.clickMode);
     applyTextMode(settings.textMode);
+    applyScroll(settings.scroll);
   } catch {
     applyEngine('brave');
     applyCursorMode(DEFAULT_SETTINGS.cursorMode);
@@ -262,6 +377,7 @@ async function render() {
     applyKeyFeedbackToggle(true);
     applyClickMode(DEFAULT_SETTINGS.clickMode);
     applyTextMode(DEFAULT_SETTINGS.textMode);
+    applyScroll(DEFAULT_SETTINGS.scroll);
   }
 
   // Change handler
@@ -391,6 +507,30 @@ async function render() {
     applyTextMode(s.textMode);
   }, true);
 
+  // Scrolling handlers
+  const commitScrollHalfPage = async (v) => {
+    const n = clampNumber(v, 50, 2000);
+    setInputValue(scrollHalfPageRange, n);
+    setInputValue(scrollHalfPageNumber, n);
+    await setSettings({ scroll: { halfPagePx: n } });
+  };
+
+  scrollHalfPageRange?.addEventListener('input', async () => commitScrollHalfPage(scrollHalfPageRange.value), true);
+  scrollHalfPageNumber?.addEventListener('input', async () => commitScrollHalfPage(scrollHalfPageNumber.value), true);
+
+  scrollSpeedSelect?.addEventListener('change', async () => {
+    const speed = scrollSpeedSelect.value === 'instant' ? 'instant' : 'smooth';
+    await setSettings({ scroll: { speed } });
+    const s = await getSettings();
+    applyScroll(s.scroll);
+  }, true);
+
+  scrollResetBtn?.addEventListener('click', async () => {
+    await setSettings({ scroll: { ...DEFAULT_SETTINGS.scroll } });
+    const s = await getSettings();
+    applyScroll(s.scroll);
+  }, true);
+
   // Sync when other tabs update.
   try {
     chrome.storage.onChanged.addListener((changes, area) => {
@@ -401,6 +541,7 @@ async function render() {
       applyKeyFeedbackToggle(entry.newValue.keyboardReferenceKeyFeedback);
       applyClickMode(entry.newValue.clickMode);
       applyTextMode(entry.newValue.textMode);
+      applyScroll(entry.newValue.scroll);
     });
   } catch {
     // ignore
