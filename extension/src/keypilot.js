@@ -5632,12 +5632,84 @@ export class KeyPilot extends EventManager {
   }
 
   /**
+   * Tear down every transient KeyPilot UI surface (popovers, launcher, omnibox,
+   * keyboard help, highlight mode, onboarding panels, flash toasts, etc.).
+   * Safe to call while already disabled / partially initialized.
+   */
+  dismissActiveUI() {
+    // Modes / highlight selection first so follow-up closes don't fight mode state.
+    try {
+      if (this.state?.getState?.()?.mode === MODES.HIGHLIGHT) {
+        this.cancelHighlightMode?.();
+      }
+    } catch { /* ignore */ }
+
+    // Launcher (;)
+    try { this.launcherPopover?.hide?.(); } catch { /* ignore */ }
+
+    // Omnibox (Alt+L)
+    try { this.handleCloseOmnibox?.(); } catch { /* ignore */ }
+    try { this.omniboxManager?.hide?.(); } catch { /* ignore */ }
+
+    // Tab history popover
+    try { this.tabHistoryPopover?.hide?.(); } catch { /* ignore */ }
+
+    // E-key / settings / guide iframe popovers + preview popovers
+    try { this.handleClosePopover?.(); } catch { /* ignore */ }
+    try { this.overlayManager?.hidePopover?.(); } catch { /* ignore */ }
+
+    // Any remaining PopupManager modals (backdrop + panels)
+    try { this.overlayManager?.popupManager?.closeAll?.(); } catch { /* ignore */ }
+
+    // Floating keyboard reference panel
+    if (this.floatingKeyboardHelp) {
+      try { this.floatingKeyboardHelp.cleanup(); } catch { /* ignore */ }
+      this.floatingKeyboardHelp = null;
+    }
+
+    // Focus / hover chrome
+    try {
+      this.overlayManager?.hideFocusOverlay?.();
+      this.overlayManager?.hideDeleteOverlay?.();
+      this.overlayManager?.hideEscExitLabel?.();
+      this.overlayManager?.hideActiveTextInputFrame?.();
+      this.overlayManager?.hideFocusedTextOverlay?.();
+    } catch { /* ignore */ }
+
+    // Onboarding / practice panels
+    try {
+      const ob = window.__KeyPilotOnboarding;
+      if (ob && typeof ob.setActive === 'function') {
+        void ob.setActive(false);
+      } else {
+        try { ob?.panel?.hide?.(); } catch { /* ignore */ }
+        try { ob?.practicePanel?.hide?.(); } catch { /* ignore */ }
+      }
+    } catch { /* ignore */ }
+
+    // Ephemeral toasts left on the page
+    try {
+      document.querySelectorAll(
+        '.kpv2-flash-notification, .kpv2-toggle-notification'
+      ).forEach((el) => {
+        try { el.remove(); } catch { /* ignore */ }
+      });
+    } catch { /* ignore */ }
+
+    // Reset mode/state so a re-enable starts clean
+    try { this.state?.reset?.(); } catch { /* ignore */ }
+  }
+
+  /**
    * Disable KeyPilot functionality
    */
   disable() {
     if (!this.enabled) return;
     
     this.enabled = false;
+
+    // Always dismiss popovers/launcher/omnibox even if init is incomplete.
+    this.dismissActiveUI();
     
     // Only cleanup if initialization is complete
     if (this.initializationComplete) {
@@ -5647,15 +5719,6 @@ export class KeyPilot extends EventManager {
       // Hide cursor
       if (this.cursor) {
         this.cursor.hide();
-      }
-      
-      // Hide all overlays
-      if (this.overlayManager) {
-        this.overlayManager.hideFocusOverlay();
-        this.overlayManager.hideDeleteOverlay();
-        this.overlayManager.hideEscExitLabel();
-        this.overlayManager.hideActiveTextInputFrame();
-        this.overlayManager.hideFocusedTextOverlay();
       }
       
       // Stop focus detector
@@ -5681,16 +5744,8 @@ export class KeyPilot extends EventManager {
         this.rectangleIntersectionObserver = null;
       }
       
-      // Clear any active state
+      // Clear any active state (again after manager cleanup)
       this.state.reset();
-    }
-
-    // Always remove the floating help panel when disabled (state is persisted separately).
-    if (this.floatingKeyboardHelp) {
-      try {
-        this.floatingKeyboardHelp.cleanup();
-      } catch { /* ignore */ }
-      this.floatingKeyboardHelp = null;
     }
     
     console.log('[KeyPilot] Extension disabled');
@@ -5725,6 +5780,7 @@ export class KeyPilot extends EventManager {
   }
 
   cleanup() {
+    try { this.dismissActiveUI(); } catch { /* ignore */ }
     this.stop();
     // Clean up intersection observer optimizations
     if (this.intersectionManager) {

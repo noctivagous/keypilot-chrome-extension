@@ -2391,6 +2391,10 @@ export class OverlayManager {
   }
 
   cleanup() {
+    // Close any open iframe/settings/guide/preview popovers and shared modal stack.
+    try { this.hidePopover(); } catch { /* ignore */ }
+    try { this.popupManager?.closeAll?.(); } catch { /* ignore */ }
+
     if (this.overlayObserver) {
       this.overlayObserver.disconnect();
       this.overlayObserver = null;

@@ -53,6 +53,45 @@ export class PopupManager {
   }
 
   /**
+   * Close every modal in the stack (launcher, settings, guide, tab history, etc.).
+   * Prefers each panel's onRequestClose so app state stays in sync; force-removes
+   * anything that remains.
+   */
+  closeAll() {
+    let guard = 32;
+    while (this._stack.length && guard-- > 0) {
+      const top = this.top();
+      if (!top) break;
+      const id = top.id;
+      try {
+        if (typeof top.onRequestClose === 'function') {
+          top.onRequestClose();
+        }
+      } catch {
+        // ignore
+      }
+      // If the close handler didn't remove this entry, force-unmount it.
+      if (this._stack.some((p) => p.id === id)) {
+        this.hideModal(id);
+      }
+    }
+    // Hard reset if anything is stuck.
+    if (this._stack.length) {
+      const leftover = this._stack.splice(0, this._stack.length);
+      for (const entry of leftover) {
+        try { entry?.panel?.remove?.(); } catch { /* ignore */ }
+      }
+    }
+    if (this._backdrop) {
+      try { this._backdrop.remove(); } catch { /* ignore */ }
+      this._backdrop = null;
+      if (this._onPanelChange) {
+        try { this._onPanelChange('backdrop-hidden', {}); } catch { /* ignore */ }
+      }
+    }
+  }
+
+  /**
    * Show a modal popup panel with a shared blurred backdrop.
    * The panel is assigned a z-index *below* the click rectangle overlays.
    *
@@ -106,28 +145,32 @@ export class PopupManager {
     if (idx < 0) return;
 
     const removed = this._stack.splice(idx, 1)[0];
-    
+
     // Notify about panel hidden
     if (this._onPanelChange) {
       try {
         this._onPanelChange('panel-hidden', { id: targetId, panel: removed?.panel });
       } catch { /* ignore */ }
     }
-    
-    this._withViewTransition(() => {
-      try { removed?.panel?.remove?.(); } catch { /* ignore */ }
-      if (!this._stack.length) {
-        try { this._backdrop?.remove?.(); } catch { /* ignore */ }
-        this._backdrop = null;
-        
-        // Notify about backdrop hidden
-        if (this._onPanelChange) {
-          try {
-            this._onPanelChange('backdrop-hidden', {});
-          } catch { /* ignore */ }
-        }
+
+    // Synchronous unmount — View Transitions here produced a blurry cross-fade
+    // snapshot of the panel that lingered then snapped away.
+    try { removed?.panel?.style && (removed.panel.style.viewTransitionName = 'none'); } catch { /* ignore */ }
+    try { removed?.panel?.remove?.(); } catch { /* ignore */ }
+
+    if (!this._stack.length) {
+      try {
+        if (this._backdrop) this._backdrop.style.viewTransitionName = 'none';
+      } catch { /* ignore */ }
+      try { this._backdrop?.remove?.(); } catch { /* ignore */ }
+      this._backdrop = null;
+
+      if (this._onPanelChange) {
+        try {
+          this._onPanelChange('backdrop-hidden', {});
+        } catch { /* ignore */ }
       }
-    });
+    }
 
     this._recomputeZ();
   }
@@ -136,8 +179,6 @@ export class PopupManager {
     const doc = this.doc;
     if (!doc || !doc.body) return;
 
-    this._ensureStyles();
-
     if (!this._backdrop) {
       const el = doc.createElement('div');
       el.className = CSS_CLASSES.POPUP_BACKDROP || 'kpv2-popup-backdrop';
@@ -145,23 +186,29 @@ export class PopupManager {
         position: 'fixed',
         inset: '0',
         background: 'rgba(0,0,0,0.35)',
+        // Blur only the page behind the dimmer — never the panel (sibling above).
         backdropFilter: 'blur(6px)',
         WebkitBackdropFilter: 'blur(6px)',
         outline: 'none',
-        // zIndex assigned in _recomputeZ()
-        pointerEvents: 'auto'
+        // zIndex assigned in _recomputeZ() before first paint when possible
+        pointerEvents: 'auto',
+        viewTransitionName: 'none'
       });
       el.addEventListener('click', this._backdropClickHandler, true);
       this._backdrop = el;
     }
 
-    // Ensure backdrop is in DOM before panels.
-    if (this._backdrop && !this._backdrop.isConnected) {
-      this._withViewTransition(() => {
-        try { doc.body.appendChild(this._backdrop); } catch { /* ignore */ }
-      });
-      
-      // Notify about backdrop shown
+    // Assign z-index before append so the first paint has correct stacking
+    // (panel above backdrop — avoids a frame where the panel is blurred by
+    // the backdrop-filter).
+    this._recomputeZ();
+
+    // Mount backdrop + panels in one synchronous batch. Separate
+    // startViewTransition() calls used to cross-fade blurry snapshots of the
+    // launcher on open.
+    const backdropJustMounted = !!(this._backdrop && !this._backdrop.isConnected);
+    if (backdropJustMounted) {
+      try { doc.body.appendChild(this._backdrop); } catch { /* ignore */ }
       if (this._onPanelChange) {
         try {
           this._onPanelChange('backdrop-shown', { backdrop: this._backdrop });
@@ -172,9 +219,8 @@ export class PopupManager {
     for (const entry of this._stack) {
       const panel = entry.panel;
       if (panel && !panel.isConnected) {
-        this._withViewTransition(() => {
-          try { doc.body.appendChild(panel); } catch { /* ignore */ }
-        });
+        try { panel.style.viewTransitionName = 'none'; } catch { /* ignore */ }
+        try { doc.body.appendChild(panel); } catch { /* ignore */ }
       }
     }
   }
@@ -183,9 +229,9 @@ export class PopupManager {
     // Backdrop below panels; panels in a bounded band below overlays.
     if (this._backdrop) {
       this._backdrop.style.zIndex = String(Z_INDEX.POPUP_BACKDROP ?? Z_INDEX.VIEWPORT_MODAL_FRAME);
-      // View transitions naming: backdrop participates, but only when something is open.
-      this._backdrop.style.viewTransitionName = this._stack.length ? 'kpv2-popup-backdrop' : 'none';
-      
+      // Do not participate in View Transitions (blurry snapshot morphs).
+      this._backdrop.style.viewTransitionName = 'none';
+
       // Notify about backdrop z-index update (for negative region tracking)
       if (this._onPanelChange && this._stack.length > 0) {
         try {
@@ -197,9 +243,6 @@ export class PopupManager {
     const base = Z_INDEX.POPUP_PANEL_BASE ?? (Z_INDEX.VIEWPORT_MODAL_FRAME + 2);
     const max = Z_INDEX.POPUP_PANEL_MAX ?? (Z_INDEX.OVERLAYS_BELOW_2 - 1);
 
-    // Only one element can own the same view-transition-name.
-    const top = this.top();
-
     for (let i = 0; i < this._stack.length; i++) {
       const entry = this._stack[i];
       const panel = entry.panel;
@@ -207,8 +250,8 @@ export class PopupManager {
 
       const z = Math.min(base + i, max);
       panel.style.zIndex = String(z);
-      panel.style.viewTransitionName = (top && top.id === entry.id) ? 'kpv2-popup-panel' : 'none';
-      
+      panel.style.viewTransitionName = 'none';
+
       // Notify about panel z-index update (for negative region tracking)
       if (this._onPanelChange) {
         try {
@@ -227,51 +270,6 @@ export class PopupManager {
       else this.hideModal();
     } catch {
       // ignore
-    }
-  }
-
-  _ensureStyles() {
-    const doc = this.doc;
-    if (!doc || !doc.head) return;
-
-    const STYLE_ID = 'kpv2-popup-manager-styles';
-    if (doc.getElementById(STYLE_ID)) return;
-
-    const style = doc.createElement('style');
-    style.id = STYLE_ID;
-    style.textContent = `
-      /* View Transitions: keep animations subtle and scoped to popup elements */
-      ::view-transition-old(kpv2-popup-backdrop),
-      ::view-transition-new(kpv2-popup-backdrop) {
-        animation-duration: 160ms;
-        animation-timing-function: ease-out;
-      }
-      ::view-transition-old(kpv2-popup-panel),
-      ::view-transition-new(kpv2-popup-panel) {
-        animation-duration: 180ms;
-        animation-timing-function: ease-out;
-      }
-    `;
-    doc.head.appendChild(style);
-  }
-
-  _withViewTransition(updateDom) {
-    const doc = this.doc;
-    const fn = typeof updateDom === 'function' ? updateDom : () => {};
-
-    // Prefer View Transitions when available; fall back cleanly if unsupported.
-    const vt = doc && typeof doc.startViewTransition === 'function' ? doc.startViewTransition.bind(doc) : null;
-    if (!vt) {
-      fn();
-      return;
-    }
-
-    try {
-      vt(() => {
-        try { fn(); } catch { /* ignore */ }
-      });
-    } catch {
-      fn();
     }
   }
 }

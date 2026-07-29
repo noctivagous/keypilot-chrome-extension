@@ -242,6 +242,21 @@ export class KeyPilotToggleHandler extends EventManager {
     if (!this.keyPilot) return;
 
     try {
+      // Close launcher / omnibox / popovers / onboarding before tearing down DOM.
+      try {
+        if (typeof this.keyPilot.dismissActiveUI === 'function') {
+          this.keyPilot.dismissActiveUI();
+        } else if (typeof this.keyPilot.disable === 'function' && this.keyPilot.enabled) {
+          // Fallback: full disable path also dismisses UI.
+          this.keyPilot.disable();
+        }
+      } catch (e) {
+        console.warn('[KeyPilotToggleHandler] dismissActiveUI failed:', e);
+      }
+
+      // Keep KeyPilot's own enabled flag in sync even when only this path runs.
+      try { this.keyPilot.enabled = false; } catch { /* ignore */ }
+
       // Stop event listeners first
       this.keyPilot.stop();
 
@@ -265,7 +280,7 @@ export class KeyPilotToggleHandler extends EventManager {
         this.keyPilot.focusDetector.stop();
       }
 
-      // Clean up overlays completely
+      // Clean up overlays completely (also closes popover stack)
       if (this.keyPilot.overlayManager) {
         this.keyPilot.overlayManager.cleanup();
       }
