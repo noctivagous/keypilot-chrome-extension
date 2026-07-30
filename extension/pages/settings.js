@@ -43,6 +43,7 @@ const SETTINGS_PANEL_IDS = Object.freeze([
   'scrolling',
   'click-mode',
   'text-mode',
+  'control-strip',
   'about'
 ]);
 
@@ -209,6 +210,8 @@ async function render() {
   const radios = Array.from(document.querySelectorAll('input[type="radio"][name="engine"]'));
   const keyFeedbackToggle = /** @type {HTMLInputElement|null} */ (document.getElementById('keyboard-reference-key-feedback'));
   const keyboardLayoutSelect = /** @type {HTMLSelectElement|null} */ (document.getElementById('keyboard-layout'));
+  const controlStripVisible = /** @type {HTMLInputElement|null} */ (document.getElementById('control-strip-visible'));
+  const controlStripCollapsed = /** @type {HTMLInputElement|null} */ (document.getElementById('control-strip-collapsed'));
   const openGuideBtn = document.getElementById('open-guide');
   const closeBtn = document.getElementById('close');
 
@@ -290,6 +293,12 @@ async function render() {
     keyFeedbackToggle.checked = !!enabled;
   };
 
+  const applyControlStrip = (controlStrip) => {
+    const cs = controlStrip || DEFAULT_SETTINGS.controlStrip;
+    if (controlStripVisible) controlStripVisible.checked = !!cs?.visible;
+    if (controlStripCollapsed) controlStripCollapsed.checked = !!cs?.collapsed;
+  };
+
   const applyKeyboardLayout = (layoutId) => {
     if (!keyboardLayoutSelect) return;
     const v = normalizeKeyboardLayoutId(layoutId);
@@ -367,6 +376,7 @@ async function render() {
     applyCursorMode(settings.cursorMode);
     applyKeyboardLayout(settings.keyboardLayoutId);
     applyKeyFeedbackToggle(settings.keyboardReferenceKeyFeedback);
+    applyControlStrip(settings.controlStrip);
     applyClickMode(settings.clickMode);
     applyTextMode(settings.textMode);
     applyScroll(settings.scroll);
@@ -375,6 +385,7 @@ async function render() {
     applyCursorMode(DEFAULT_SETTINGS.cursorMode);
     applyKeyboardLayout(DEFAULT_SETTINGS.keyboardLayoutId);
     applyKeyFeedbackToggle(true);
+    applyControlStrip(DEFAULT_SETTINGS.controlStrip);
     applyClickMode(DEFAULT_SETTINGS.clickMode);
     applyTextMode(DEFAULT_SETTINGS.textMode);
     applyScroll(DEFAULT_SETTINGS.scroll);
@@ -390,6 +401,14 @@ async function render() {
 
   keyFeedbackToggle?.addEventListener('change', async () => {
     await setSettings({ keyboardReferenceKeyFeedback: !!keyFeedbackToggle.checked });
+  }, true);
+
+  controlStripVisible?.addEventListener('change', async () => {
+    await setSettings({ controlStrip: { visible: !!controlStripVisible.checked } });
+  }, true);
+
+  controlStripCollapsed?.addEventListener('change', async () => {
+    await setSettings({ controlStrip: { collapsed: !!controlStripCollapsed.checked } });
   }, true);
 
   keyboardLayoutSelect?.addEventListener('change', async () => {
@@ -539,6 +558,7 @@ async function render() {
       if (!entry || !entry.newValue) return;
       applyEngine(entry.newValue.searchEngine);
       applyKeyFeedbackToggle(entry.newValue.keyboardReferenceKeyFeedback);
+      applyControlStrip(entry.newValue.controlStrip);
       applyClickMode(entry.newValue.clickMode);
       applyTextMode(entry.newValue.textMode);
       applyScroll(entry.newValue.scroll);

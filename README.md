@@ -65,11 +65,33 @@ shortcuts for common web interactions, eliminating the need for mouse navigation
 
 | Keys | Action |
 | --- | --- |
+| `Y` | Select text in a rectangle |
 | `Backspace` | Delete Mode |
+| `H` | Select text (character level) |
 | `K` | Show/Hide the floating KeyPilot keyboard reference |
 | `Esc` | Exit Focus |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
+
+
+### Control Strip
+
+A compact macOS Control Strip–style bar sits in the upper-left of the viewport by default (dark GUI Pro styling, matching the keyboard reference panel).
+
+| Control | Action |
+| --- | --- |
+| **ON / OFF** | Toggle KeyPilot (same as `Alt`+`K`) |
+| **KB** | Toggle the floating keyboard reference |
+| **Settings** | Open KeyPilot Settings |
+| **◀ / ▶** | Collapse to On/Off only, or expand |
+| **×** | Hide the strip |
+
+- After closing, press **`Alt`+`J`** to show the strip again.
+- Starts **collapsed** (On/Off only); expand to reach keyboard + settings icons.
+- Configure visibility and collapsed default under **Settings → Control Strip**.
+- While the tutorial walkthrough is open, the strip shifts down so it does not cover the panel.
+
 
 
 

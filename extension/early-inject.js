@@ -68,8 +68,9 @@
         "fallbackText": "New Tab"
       },
       {
-        "type": "key",
-        "text": "Y"
+        "type": "action",
+        "id": "RECTANGLE_HIGHLIGHT",
+        "fallbackText": "Rectangle Select"
       },
       {
         "type": "key",
@@ -135,8 +136,9 @@
         "fallbackText": "Click New Tab Background"
       },
       {
-        "type": "key",
-        "text": "H"
+        "type": "action",
+        "id": "HIGHLIGHT",
+        "fallbackText": "Text Select"
       },
       {
         "type": "action",
@@ -248,8 +250,9 @@
         "text": "E"
       },
       {
-        "type": "key",
-        "text": "R"
+        "type": "action",
+        "id": "RECTANGLE_HIGHLIGHT",
+        "fallbackText": "Rectangle Select"
       },
       {
         "type": "key",
@@ -322,8 +325,9 @@
         "fallbackText": "History"
       },
       {
-        "type": "key",
-        "text": "G"
+        "type": "action",
+        "id": "HIGHLIGHT",
+        "fallbackText": "Text Select"
       },
       {
         "type": "action",
@@ -457,6 +461,13 @@
       "displayKey": "T",
       "keyboardClass": "key-gray"
     },
+    "RECTANGLE_HIGHLIGHT": {
+      "label": "Rectangle Select",
+      "description": "Select text in a rectangle",
+      "keyLabel": "Y",
+      "displayKey": "Y",
+      "keyboardClass": "key-rect-highlight"
+    },
     "PREVIEW_LINK_POPOVER": {
       "label": "Preview Link",
       "description": "Open Link Preview in Popover",
@@ -505,6 +516,13 @@
       "keyLabel": "G",
       "displayKey": "G",
       "keyboardClass": "key-activate-new-over"
+    },
+    "HIGHLIGHT": {
+      "label": "Text Select",
+      "description": "Select text (character level)",
+      "keyLabel": "H",
+      "displayKey": "H",
+      "keyboardClass": "key-highlight"
     },
     "TAB_HISTORY": {
       "label": "Tab History",
@@ -613,6 +631,13 @@
       "displayKey": "Y",
       "keyboardClass": "key-gray"
     },
+    "RECTANGLE_HIGHLIGHT": {
+      "label": "Rectangle Select",
+      "description": "Select text in a rectangle",
+      "keyLabel": "R",
+      "displayKey": "R",
+      "keyboardClass": "key-rect-highlight"
+    },
     "PREVIEW_LINK_POPOVER": {
       "label": "Preview Link",
       "description": "Open Link Preview in Popover",
@@ -661,6 +686,13 @@
       "keyLabel": "H",
       "displayKey": "H",
       "keyboardClass": "key-activate-new-over"
+    },
+    "HIGHLIGHT": {
+      "label": "Text Select",
+      "description": "Select text (character level)",
+      "keyLabel": "G",
+      "displayKey": "G",
+      "keyboardClass": "key-highlight"
     },
     "TAB_HISTORY": {
       "label": "Tab History",
@@ -767,8 +799,9 @@
       "fallbackText": "New Tab"
     },
     {
-      "type": "key",
-      "text": "Y"
+      "type": "action",
+      "id": "RECTANGLE_HIGHLIGHT",
+      "fallbackText": "Rectangle Select"
     },
     {
       "type": "key",
@@ -834,8 +867,9 @@
       "fallbackText": "Click New Tab Background"
     },
     {
-      "type": "key",
-      "text": "H"
+      "type": "action",
+      "id": "HIGHLIGHT",
+      "fallbackText": "Text Select"
     },
     {
       "type": "action",
@@ -962,6 +996,13 @@
     "displayKey": "T",
     "keyboardClass": "key-gray"
   },
+  "RECTANGLE_HIGHLIGHT": {
+    "label": "Rectangle Select",
+    "description": "Select text in a rectangle",
+    "keyLabel": "Y",
+    "displayKey": "Y",
+    "keyboardClass": "key-rect-highlight"
+  },
   "PREVIEW_LINK_POPOVER": {
     "label": "Preview Link",
     "description": "Open Link Preview in Popover",
@@ -1010,6 +1051,13 @@
     "keyLabel": "G",
     "displayKey": "G",
     "keyboardClass": "key-activate-new-over"
+  },
+  "HIGHLIGHT": {
+    "label": "Text Select",
+    "description": "Select text (character level)",
+    "keyLabel": "H",
+    "displayKey": "H",
+    "keyboardClass": "key-highlight"
   },
   "TAB_HISTORY": {
     "label": "Tab History",

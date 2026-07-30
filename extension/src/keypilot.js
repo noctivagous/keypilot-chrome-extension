@@ -18,10 +18,11 @@ import { MODES, CURSOR_MODE, CSS_CLASSES, COLORS, Z_INDEX, RECTANGLE_SELECTION, 
 import { MSG } from './messaging/types.js';
 import { buildKeybindingsForLayout, DEFAULT_KEYBOARD_LAYOUT_ID, getKeyboardUiLayoutForLayout, normalizeKeyboardLayoutId } from './config/keyboard-layouts.js';
 import { FloatingKeyboardHelp } from './ui/floating-keyboard-help.js';
+import { ControlStrip } from './ui/control-strip.js';
 import { OmniboxManager } from './modules/omnibox-manager.js';
 import { TabHistoryPopover } from './modules/tab-history-popover.js';
 import { LauncherPopover } from './modules/launcher-popover.js';
-import { DEFAULT_SETTINGS, getSettings, SETTINGS_STORAGE_KEY, scrollBehaviorFromSpeed } from './modules/settings-manager.js';
+import { DEFAULT_SETTINGS, getSettings, setSettings, SETTINGS_STORAGE_KEY, scrollBehaviorFromSpeed } from './modules/settings-manager.js';
 import {
   isExtensionContextValid,
   noteExtensionContextError,
@@ -54,6 +55,7 @@ export class KeyPilot extends EventManager {
     this.styleManager = new StyleManager();
     this.shadowDOMManager = new ShadowDOMManager(this.styleManager);
     this.floatingKeyboardHelp = null;
+    this.controlStrip = null;
     this.keybindings = buildKeybindingsForLayout(DEFAULT_KEYBOARD_LAYOUT_ID);
     this._keyboardLayoutId = DEFAULT_KEYBOARD_LAYOUT_ID;
     this._keyboardUiLayout = getKeyboardUiLayoutForLayout(DEFAULT_KEYBOARD_LAYOUT_ID);
@@ -354,6 +356,15 @@ export class KeyPilot extends EventManager {
       // ignore
     }
 
+    try {
+      const el = target instanceof Element ? target : null;
+      if (el && typeof el.closest === 'function' && el.closest('.kp-control-strip')) {
+        detail.isControlStrip = true;
+      }
+    } catch {
+      // ignore
+    }
+
     return detail;
   }
 
@@ -556,6 +567,10 @@ export class KeyPilot extends EventManager {
     // Keep floating keyboard reference visibility synced across tabs.
     await this.setupKeyboardHelpSync();
 
+    // Control strip (upper-left): survives disable so On/Off remains available.
+    this.setupControlStrip();
+    this.applyControlStripFromSettings();
+
     // Initialize cursor position using stored coordinates or fallback
     await this.initializeCursorPosition();
 
@@ -630,6 +645,102 @@ export class KeyPilot extends EventManager {
     try {
       this.state?.setState?.({ _overlayUpdateTrigger: Date.now() });
     } catch { /* ignore */ }
+
+    // Control strip visibility / collapsed state.
+    try {
+      this.applyControlStripFromSettings();
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Create the control strip host (top frame only). Safe to call multiple times.
+   * Kept alive while KeyPilot is disabled so On/Off can re-enable the extension.
+   */
+  setupControlStrip() {
+    if (window !== window.top) return;
+    if (this.controlStrip) {
+      this._wireControlStripHandlers();
+      return;
+    }
+    try {
+      const ControlStripClass = ControlStrip || window.ControlStrip;
+      if (!ControlStripClass) return;
+      this.controlStrip = new ControlStripClass();
+      this._wireControlStripHandlers();
+      this.controlStrip.setEnabledState(!!this.enabled);
+      this.controlStrip.setKeyboardHelpActive(!!this._keyboardHelpVisible);
+    } catch (e) {
+      console.warn('[KeyPilot] Failed to create control strip:', e);
+      this.controlStrip = null;
+    }
+  }
+
+  _wireControlStripHandlers() {
+    if (!this.controlStrip || typeof this.controlStrip.setHandlers !== 'function') return;
+    this.controlStrip.setHandlers({
+      onToggleEnabled: () => {
+        this._sendRuntimeMessage({ type: MSG.TOGGLE_STATE }, { silent: true });
+      },
+      onToggleKeyboard: () => {
+        if (!this.enabled) return;
+        const next = !this._keyboardHelpVisible;
+        this.applyKeyboardHelpVisibility(next, { persist: true });
+      },
+      onOpenSettings: () => {
+        if (!this.enabled) return;
+        try {
+          this.handleOpenSettingsPopover();
+        } catch (e) {
+          console.warn('[KeyPilot] Control strip open settings failed:', e);
+        }
+      },
+      onCollapseChange: (collapsed) => {
+        void setSettings({ controlStrip: { collapsed: !!collapsed } });
+      },
+      onClose: () => {
+        void setSettings({ controlStrip: { visible: false } });
+      }
+    });
+  }
+
+  /**
+   * Apply control strip visibility + collapsed from settings (or defaults).
+   */
+  applyControlStripFromSettings() {
+    if (window !== window.top) return;
+    this.setupControlStrip();
+    if (!this.controlStrip) return;
+
+    const cs = this._settings?.controlStrip || DEFAULT_SETTINGS.controlStrip || {};
+    const visible = cs.visible !== false;
+    const collapsed = !!cs.collapsed;
+
+    this.controlStrip.setEnabledState(!!this.enabled);
+    this.controlStrip.setKeyboardHelpActive(!!this._keyboardHelpVisible);
+    // Avoid re-notifying storage when applying remote settings.
+    this.controlStrip.setCollapsed(collapsed, { notify: false });
+    this.controlStrip.setVisible(visible);
+  }
+
+  /**
+   * Show the control strip (Alt+J). Persists visible=true and expands for discoverability.
+   */
+  async showControlStripFromHotkey() {
+    if (window !== window.top) return;
+    this.setupControlStrip();
+    try {
+      await setSettings({ controlStrip: { visible: true, collapsed: false } });
+    } catch { /* ignore */ }
+    try {
+      if (this._settings) {
+        this._settings.controlStrip = {
+          ...(this._settings.controlStrip || DEFAULT_SETTINGS.controlStrip),
+          visible: true,
+          collapsed: false
+        };
+      }
+    } catch { /* ignore */ }
+    this.applyControlStripFromSettings();
   }
 
   _applyKeyboardLayoutFromSettings() {
@@ -811,6 +922,10 @@ export class KeyPilot extends EventManager {
         this._syncKeyboardLinkHoverHints(undefined, { immediate: true });
       }
 
+      try {
+        this.controlStrip?.setKeyboardHelpActive?.(!!next);
+      } catch { /* ignore */ }
+
       if (persist) this.setKeyboardHelpVisibleInStorage(next);
     } catch (e) {
       console.warn('[KeyPilot] Failed to apply keyboard reference visibility:', e);
@@ -886,7 +1001,8 @@ export class KeyPilot extends EventManager {
     } catch { /* ignore */ }
 
     this.scrollManager.init();
-    this.initializeEdgeOnlyProcessing();
+    // Edge-only rectangle selection is lazy-initialized on first rectangle
+    // highlight session — avoid ~startup DOM discovery when only browsing.
     this.start();
     this.cursor.show();
   }
@@ -936,9 +1052,16 @@ export class KeyPilot extends EventManager {
   }
 
   /**
-   * Initialize edge-only processing for rectangle selection optimization
+   * Initialize edge-only processing for rectangle selection optimization.
+   * Lazy: call only when entering rectangle highlight mode (not on enable).
+   * @param {{ force?: boolean }} [opts]
    */
-  initializeEdgeOnlyProcessing() {
+  initializeEdgeOnlyProcessing(opts = {}) {
+    // Already ready
+    if (this.rectangleIntersectionObserver) {
+      return true;
+    }
+
     // Check all feature flags for edge-only processing
     const edgeOnlyEnabled = FEATURE_FLAGS.USE_EDGE_ONLY_SELECTION && 
                            FEATURE_FLAGS.ENABLE_EDGE_ONLY_PROCESSING &&
@@ -952,12 +1075,14 @@ export class KeyPilot extends EventManager {
           edgeOnlyProcessingEnabled: this.edgeOnlyProcessingEnabled
         });
       }
-      return;
+      return false;
     }
 
     try {
       // Initialize rectangle intersection observer
-      console.log('[KeyPilot] Initializing RectangleIntersectionObserver...');
+      if (window.KEYPILOT_DEBUG || opts.force) {
+        console.log('[KeyPilot] Initializing RectangleIntersectionObserver (lazy)...');
+      }
       this.rectangleIntersectionObserver = new RectangleIntersectionObserver();
       
       if (this.rectangleIntersectionObserver) {
@@ -1000,10 +1125,21 @@ export class KeyPilot extends EventManager {
           predictiveCaching: FEATURE_FLAGS.ENABLE_PREDICTIVE_CACHING
         });
       }
+      return true;
     } catch (error) {
       console.warn('[KeyPilot] Failed to initialize edge-only processing:', error);
       this.edgeOnlyProcessingEnabled = false;
+      this.rectangleIntersectionObserver = null;
+      return false;
     }
+  }
+
+  /**
+   * Ensure rectangle edge-only stack exists (first rectangle session only).
+   */
+  ensureEdgeOnlyProcessingForRectangle() {
+    if (this.rectangleIntersectionObserver) return true;
+    return !!this.initializeEdgeOnlyProcessing();
   }
 
   /**
@@ -1329,6 +1465,18 @@ export class KeyPilot extends EventManager {
       return;
     }
 
+    // Alt+J: show control strip (works even when closed; persists visible).
+    // Also handled by KeyPilotToggleHandler's always-on listener when disabled.
+    if ((e.altKey || e.code === 'AltRight') && (e.key === 'j' || e.key === 'J' || e.code === 'KeyJ')) {
+      if (e.__kpControlStripHandled) return;
+      try { e.__kpControlStripHandled = true; } catch { /* ignore */ }
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      void this.showControlStripFromHotkey();
+      return;
+    }
+
     // Alt+L: open omnibox (top frame only)
     if ((e.altKey || e.code === 'AltRight') && (e.key === 'l' || e.key === 'L' || e.code === 'KeyL')) {
       // Only operate in the top frame to avoid duplicates.
@@ -1608,29 +1756,25 @@ export class KeyPilot extends EventManager {
       return;
     }
 
-    // Special handling for highlight mode - cancel on any key except H and ESC
+    // Special handling for highlight mode — complete with H/Y (layout-bound), cancel with Esc
+    // or any other key (which then falls through to its normal action).
     if (currentState.mode === MODES.HIGHLIGHT) {
       if (KB.CANCEL?.keys?.includes?.(e.key)) {
-        // ESC key cancellation in highlight mode
         e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
         this.cancelHighlightMode();
         return;
-      } else if (KB.HIGHLIGHT?.keys?.includes?.(e.key)) {
-        // H key - complete the selection
+      }
+      if (KB.HIGHLIGHT?.keys?.includes?.(e.key) || KB.RECTANGLE_HIGHLIGHT?.keys?.includes?.(e.key)) {
         e.preventDefault();
-        this.handleHighlightKey();
-        return;
-      } else if (KB.RECTANGLE_HIGHLIGHT?.keys?.includes?.(e.key)) {
-        // R key - complete the selection (same as H key in highlight mode)
-        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
         this.completeSelection();
         return;
-      } else {
-        // Any other key - cancel highlight mode and let the key execute its normal function
-        this.cancelHighlightMode();
-        // Don't prevent default - allow the functional key to execute after canceling
-        // Fall through to handle the key normally
       }
+      // Any other key — cancel highlight mode and let the key run normally
+      this.cancelHighlightMode();
     }
 
     // Handle our keyboard shortcuts (table-driven via KEYBINDINGS.*.handler)
@@ -2199,7 +2343,7 @@ export class KeyPilot extends EventManager {
 
     // Prevent highlight mode activation in text focus mode
     if (currentState.mode === MODES.TEXT_FOCUS) {
-      console.log('[KeyPilot] R key ignored - currently in text focus mode');
+      console.log('[KeyPilot] Rectangle highlight ignored - currently in text focus mode');
       return;
     }
 
@@ -2210,6 +2354,9 @@ export class KeyPilot extends EventManager {
       if (this.state.isDeleteMode()) {
         console.log('[KeyPilot] Canceling delete mode to enter rectangle highlight mode');
       }
+
+      // Lazy-init heavy edge-only stack only when rectangle mode is used.
+      try { this.ensureEdgeOnlyProcessingForRectangle(); } catch { /* ignore */ }
       
       // Enter highlight mode and start rectangle highlighting at current cursor position
       this.state.setMode(MODES.HIGHLIGHT);
@@ -2219,6 +2366,8 @@ export class KeyPilot extends EventManager {
       
       this.startHighlighting();
     } else {
+      // If already in character mode, switching via rectangle key completes current selection
+      // (same as second H press). Users re-enter with Y/R for rectangle.
       console.log('[KeyPilot] Completing rectangle highlight selection');
       this.completeSelection();
     }
@@ -5627,6 +5776,11 @@ export class KeyPilot extends EventManager {
     try {
       this.refreshKeyboardHelpVisibilityFromStorage();
     } catch { /* ignore */ }
+
+    try {
+      this.controlStrip?.setEnabledState?.(true);
+      this.controlStrip?.setKeyboardHelpActive?.(!!this._keyboardHelpVisible);
+    } catch { /* ignore */ }
     
     console.log('[KeyPilot] Extension enabled');
   }
@@ -5666,6 +5820,9 @@ export class KeyPilot extends EventManager {
       try { this.floatingKeyboardHelp.cleanup(); } catch { /* ignore */ }
       this.floatingKeyboardHelp = null;
     }
+
+    // Note: Control strip is intentionally NOT torn down here so users can
+    // re-enable KeyPilot from the On/Off segment while the extension is off.
 
     // Focus / hover chrome
     try {
@@ -5710,6 +5867,11 @@ export class KeyPilot extends EventManager {
 
     // Always dismiss popovers/launcher/omnibox even if init is incomplete.
     this.dismissActiveUI();
+
+    try {
+      this.controlStrip?.setEnabledState?.(false);
+      this.controlStrip?.setKeyboardHelpActive?.(false);
+    } catch { /* ignore */ }
     
     // Only cleanup if initialization is complete
     if (this.initializationComplete) {
@@ -5781,6 +5943,12 @@ export class KeyPilot extends EventManager {
 
   cleanup() {
     try { this.dismissActiveUI(); } catch { /* ignore */ }
+    try {
+      if (this.controlStrip) {
+        this.controlStrip.cleanup();
+        this.controlStrip = null;
+      }
+    } catch { /* ignore */ }
     this.stop();
     // Clean up intersection observer optimizations
     if (this.intersectionManager) {

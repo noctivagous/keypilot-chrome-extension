@@ -59,10 +59,18 @@ export { SEARCH_ENGINE_META, DEFAULT_SEARCH_ENGINE_ID, getSearchEngineMeta };
 
 /**
  * @typedef {{
+ *   visible: boolean,
+ *   collapsed: boolean
+ * }} ControlStripSettings
+ */
+
+/**
+ * @typedef {{
  *   searchEngine: SearchEngine,
  *   cursorMode: CursorMode,
  *   keyboardLayoutId: string,
  *   keyboardReferenceKeyFeedback: boolean,
+ *   controlStrip: ControlStripSettings,
  *   clickMode: ClickModeSettings,
  *   textMode: TextModeSettings,
  *   scroll: ScrollSettings
@@ -76,6 +84,11 @@ export const DEFAULT_SETTINGS = Object.freeze({
   keyboardLayoutId: DEFAULT_KEYBOARD_LAYOUT_ID,
   // When true, the floating keyboard reference panel highlights keys on keydown/keyup.
   keyboardReferenceKeyFeedback: true,
+  // Floating Control Strip (upper-left): visibility + collapsed (On/Off-only) state.
+  controlStrip: Object.freeze({
+    visible: true,
+    collapsed: true
+  }),
   clickMode: Object.freeze({
     cursor: Object.freeze({
       type: 'crosshair',
@@ -254,6 +267,18 @@ function normalizeScroll(raw) {
 }
 
 /**
+ * @param {any} raw
+ * @returns {ControlStripSettings}
+ */
+function normalizeControlStrip(raw) {
+  const stored = raw && typeof raw === 'object' ? raw : {};
+  return {
+    visible: normalizeBoolean(stored.visible, DEFAULT_SETTINGS.controlStrip.visible),
+    collapsed: normalizeBoolean(stored.collapsed, DEFAULT_SETTINGS.controlStrip.collapsed)
+  };
+}
+
+/**
  * Map Settings scroll speed to ScrollOptions.behavior.
  * @param {ScrollSpeed|string|undefined|null} speed
  * @returns {'smooth'|'auto'}
@@ -279,6 +304,7 @@ export async function getSettings() {
         stored?.keyboardReferenceKeyFeedback,
         DEFAULT_SETTINGS.keyboardReferenceKeyFeedback
       ),
+      controlStrip: normalizeControlStrip(stored?.controlStrip),
       clickMode: normalizeClickMode(stored?.clickMode),
       textMode: normalizeTextMode(stored?.textMode),
       scroll: normalizeScroll(stored?.scroll)
@@ -286,6 +312,7 @@ export async function getSettings() {
   } catch (_e) {
     return {
       ...DEFAULT_SETTINGS,
+      controlStrip: { ...DEFAULT_SETTINGS.controlStrip },
       clickMode: { ...DEFAULT_SETTINGS.clickMode, cursor: { ...DEFAULT_SETTINGS.clickMode.cursor } },
       textMode: { ...DEFAULT_SETTINGS.textMode },
       scroll: { ...DEFAULT_SETTINGS.scroll }
@@ -306,6 +333,10 @@ export async function setSettings(partial) {
   const next = {
     ...current,
     ...p,
+    controlStrip: {
+      ...current.controlStrip,
+      ...(p.controlStrip && typeof p.controlStrip === 'object' ? p.controlStrip : {})
+    },
     clickMode: {
       ...current.clickMode,
       ...(p.clickMode && typeof p.clickMode === 'object' ? p.clickMode : {}),
@@ -332,6 +363,7 @@ export async function setSettings(partial) {
     next.keyboardReferenceKeyFeedback,
     DEFAULT_SETTINGS.keyboardReferenceKeyFeedback
   );
+  next.controlStrip = normalizeControlStrip(next.controlStrip);
   next.clickMode = normalizeClickMode(next.clickMode);
   next.textMode = normalizeTextMode(next.textMode);
   next.scroll = normalizeScroll(next.scroll);

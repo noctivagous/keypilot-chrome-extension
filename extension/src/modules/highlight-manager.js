@@ -374,8 +374,10 @@ export class HighlightManager extends EventManager {
       calculatedValues
     );
 
-    // Update edge-only processing rectangle for all workflows
-    this.updateEdgeOnlyProcessingRectangle(rectOriginPoint, currentPosition);
+    // Edge-only stack is for rectangle mode only (character uses caret APIs).
+    if (this.selectionMode === 'rectangle') {
+      this.updateEdgeOnlyProcessingRectangle(rectOriginPoint, currentPosition);
+    }
 
     // Determine if rectangle should be visible based on configuration
     const shouldShowRectangle = this.shouldShowRectangle(width, height, deltaX, deltaY);
@@ -559,7 +561,101 @@ export class HighlightManager extends EventManager {
   }
 
   /**
-   * Update character-level selection to the current position
+   * Resolve a caret (text node + offset) at viewport coordinates via native APIs.
+   * Prefer caretRangeFromPoint / caretPositionFromPoint — O(1) vs TreeWalker scans.
+   * @param {number} x
+   * @param {number} y
+   * @param {Document} [ownerDocument]
+   * @returns {{ textNode: Text, offset: number }|null}
+   */
+  resolveCaretAtPoint(x, y, ownerDocument = document) {
+    try {
+      const doc = ownerDocument || document;
+
+      // Chromium / Safari
+      if (typeof doc.caretRangeFromPoint === 'function') {
+        const caretRange = doc.caretRangeFromPoint(x, y);
+        if (caretRange && caretRange.startContainer) {
+          const node = caretRange.startContainer;
+          if (node.nodeType === Node.TEXT_NODE) {
+            return { textNode: node, offset: caretRange.startOffset };
+          }
+          // Element container: try first text child at offset
+          if (node.nodeType === Node.ELEMENT_NODE && node.childNodes?.length) {
+            const child = node.childNodes[Math.min(caretRange.startOffset, node.childNodes.length - 1)];
+            if (child?.nodeType === Node.TEXT_NODE) {
+              return { textNode: child, offset: 0 };
+            }
+          }
+        }
+      }
+
+      // Firefox
+      if (typeof doc.caretPositionFromPoint === 'function') {
+        const pos = doc.caretPositionFromPoint(x, y);
+        if (pos && pos.offsetNode) {
+          const node = pos.offsetNode;
+          if (node.nodeType === Node.TEXT_NODE) {
+            return { textNode: node, offset: pos.offset };
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  }
+
+  /**
+   * Build a forward/backward Range from two caret points and apply it to Selection.
+   * @param {{ textNode: Text, offset: number }} start
+   * @param {{ textNode: Text, offset: number }} end
+   * @returns {Selection|null}
+   */
+  applyCaretSelection(start, end) {
+    if (!start?.textNode || !end?.textNode) return null;
+    try {
+      const ownerDocument = start.textNode.ownerDocument || document;
+      const selection = this.getSelectionForDocument(ownerDocument);
+      if (!selection) return null;
+
+      // Determine document order so setStart/setEnd never throws for reverse drag.
+      let first = start;
+      let second = end;
+      if (start.textNode === end.textNode) {
+        if (start.offset > end.offset) {
+          first = end;
+          second = start;
+        }
+      } else {
+        const pos = start.textNode.compareDocumentPosition(end.textNode);
+        if (pos & Node.DOCUMENT_POSITION_PRECEDING) {
+          // end is before start
+          first = end;
+          second = start;
+        }
+      }
+
+      const range = ownerDocument.createRange();
+      range.setStart(first.textNode, first.offset);
+      range.setEnd(second.textNode, second.offset);
+
+      selection.removeAllRanges();
+      selection.addRange(range);
+      return selection;
+    } catch (error) {
+      if (window.KEYPILOT_DEBUG) {
+        console.warn('[KeyPilot] applyCaretSelection failed:', error);
+      }
+      return null;
+    }
+  }
+
+  /**
+   * Update character-level selection to the current position.
+   * Fast path: native caret APIs (like browser drag-select).
+   * Fallback: rectangle-constrained character scan (legacy, expensive).
+   *
    * @param {Object} currentPosition - Current position {x, y} in viewport coordinates
    * @param {Object} startPosition - Start position {x, y} in viewport coordinates  
    * @param {Function} findTextNodeAtPosition - Function to find text node at position
@@ -575,39 +671,61 @@ export class HighlightManager extends EventManager {
     }
 
     try {
-      // Show the same rectangle overlay as rectangle selection mode
+      // Optional guide rect (no edge-only work in character mode)
       if (startPosition) {
         this.updateHighlightRectangleOverlay(startPosition, currentPosition);
       }
 
-      // Calculate rectangle bounds in document coordinates
-      const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-      const scrollY = window.pageYOffset || document.documentElement.scrollTop;
-      
-      const startDocX = startPosition.x + scrollX;
-      const startDocY = startPosition.y + scrollY;
-      const currentDocX = currentPosition.x + scrollX;
-      const currentDocY = currentPosition.y + scrollY;
-      
-      const rectBounds = {
-        left: Math.min(startDocX, currentDocX),
-        top: Math.min(startDocY, currentDocY),
-        right: Math.max(startDocX, currentDocX),
-        bottom: Math.max(startDocY, currentDocY)
+      const ownerDocument = this.characterStartTextNode.ownerDocument || document;
+      const startCaret = {
+        textNode: this.characterStartTextNode,
+        offset: this.characterStartOffset
       };
 
-      // Create rectangle-constrained character selection
-      const selection = this.createRectangleConstrainedCharacterSelection(rectBounds);
-      
-      if (selection) {
-        // Update visual selection overlays
-        this.updateHighlightSelectionOverlays(selection);
+      // Prefer native caret resolution at the live cursor
+      let endCaret = null;
+      if (FEATURE_FLAGS.USE_NATIVE_SELECTION_API !== false) {
+        endCaret = this.resolveCaretAtPoint(currentPosition.x, currentPosition.y, ownerDocument);
+      }
 
+      // Fallback helpers from KeyPilot when caret API misses (e.g. between nodes)
+      if (!endCaret && typeof findTextNodeAtPosition === 'function') {
+        const textNode = findTextNodeAtPosition(currentPosition.x, currentPosition.y);
+        if (textNode && typeof getTextOffsetAtPosition === 'function') {
+          const offset = getTextOffsetAtPosition(textNode, currentPosition.x, currentPosition.y);
+          if (typeof offset === 'number' && offset >= 0) {
+            endCaret = { textNode, offset };
+          }
+        }
+      }
+
+      let selection = null;
+      if (endCaret) {
+        selection = this.applyCaretSelection(startCaret, endCaret);
+      }
+
+      // Last resort: expensive rectangle-constrained scan (legacy)
+      if (!selection || !selection.toString()) {
+        if (startPosition && endCaret === null) {
+          const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+          const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+          const rectBounds = {
+            left: Math.min(startPosition.x + scrollX, currentPosition.x + scrollX),
+            top: Math.min(startPosition.y + scrollY, currentPosition.y + scrollY),
+            right: Math.max(startPosition.x + scrollX, currentPosition.x + scrollX),
+            bottom: Math.max(startPosition.y + scrollY, currentPosition.y + scrollY)
+          };
+          selection = this.createRectangleConstrainedCharacterSelection(rectBounds);
+        }
+      }
+
+      if (selection) {
+        this.updateHighlightSelectionOverlays(selection);
         if (window.KEYPILOT_DEBUG) {
-          console.log('[KeyPilot Debug] Rectangle-constrained character selection updated:', {
+          console.log('[KeyPilot Debug] Character selection updated (caret path):', {
             selectedText: selection.toString().substring(0, 100),
             rangeCount: selection.rangeCount,
-            rectBounds
+            usedNativeCaret: !!endCaret
           });
         }
       }

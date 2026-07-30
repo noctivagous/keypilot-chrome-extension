@@ -51,9 +51,8 @@ export class KeyPilotToggleHandler extends EventManager {
       }
     });
 
-    // Always-on toggle hotkey: when KeyPilot is disabled it won't have key listeners installed,
-    // so we must keep a separate listener that can re-enable it.
-    // Use capture so it works regardless of focused element.
+    // Always-on hotkeys: when KeyPilot is disabled it won't have key listeners installed,
+    // so we keep a separate capture listener for re-enable and control-strip restore.
     this.globalToggleKeyHandler = (e) => {
       try {
         // Avoid double-toggling if another handler already processed this event.
@@ -70,6 +69,21 @@ export class KeyPilotToggleHandler extends EventManager {
             chrome.runtime.sendMessage({ type: 'KP_TOGGLE_STATE' }).catch(() => {
               // Ignore errors if background script is not available
             });
+          }
+          return;
+        }
+
+        // Alt+J: show control strip (works while KeyPilot is disabled).
+        if (e && e.altKey && (e.key === 'j' || e.key === 'J' || e.code === 'KeyJ')) {
+          if (e.__kpControlStripHandled) return;
+          e.__kpControlStripHandled = true;
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          try {
+            this.keyPilot?.showControlStripFromHotkey?.();
+          } catch {
+            // Ignore
           }
         }
       } catch {
@@ -115,6 +129,18 @@ export class KeyPilotToggleHandler extends EventManager {
       await this.enableKeyPilot();
     } else {
       this.disableKeyPilot();
+    }
+
+    // Keep control strip On/Off segment in sync (strip survives disable).
+    try {
+      this.keyPilot?.controlStrip?.setEnabledState?.(!!enabled);
+      if (!enabled) {
+        this.keyPilot?.controlStrip?.setKeyboardHelpActive?.(false);
+      } else {
+        this.keyPilot?.controlStrip?.setKeyboardHelpActive?.(!!this.keyPilot?._keyboardHelpVisible);
+      }
+    } catch {
+      // Ignore
     }
 
     // Show notification to user only if requested

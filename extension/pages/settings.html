@@ -98,6 +98,18 @@
             type="button"
             class="settings-tab"
             role="tab"
+            id="tab-control-strip"
+            data-panel="control-strip"
+            aria-controls="panel-control-strip"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            Control Strip
+          </button>
+          <button
+            type="button"
+            class="settings-tab"
+            role="tab"
             id="tab-about"
             data-panel="about"
             aria-controls="panel-about"
@@ -396,6 +408,41 @@
               <div class="row-actions">
                 <button id="text-mode-reset" class="btn btn-secondary btn-small" type="button">Reset Text Mode to defaults</button>
               </div>
+            </div>
+          </section>
+
+          <section
+            class="settings-panel"
+            role="tabpanel"
+            id="panel-control-strip"
+            data-panel="control-strip"
+            aria-labelledby="tab-control-strip"
+            hidden
+          >
+            <header class="panel-header">
+              <h2>Control Strip</h2>
+              <p class="panel-lead">
+                Compact status strip in the upper-left of every page (macOS Control Strip style).
+                Press <kbd>Alt</kbd>+<kbd>J</kbd> to show it again after closing.
+              </p>
+            </header>
+
+            <div class="stack">
+              <label class="toggle" for="control-strip-visible">
+                <input id="control-strip-visible" type="checkbox" />
+                <div class="toggle-text">
+                  <div class="toggle-title">Show control strip</div>
+                  <div class="toggle-sub">When off, the strip is hidden until you enable this or press Alt+J.</div>
+                </div>
+              </label>
+
+              <label class="toggle" for="control-strip-collapsed">
+                <input id="control-strip-collapsed" type="checkbox" />
+                <div class="toggle-text">
+                  <div class="toggle-title">Collapsed by default</div>
+                  <div class="toggle-sub">Shows only the On/Off status segment until you expand the strip.</div>
+                </div>
+              </label>
             </div>
           </section>
 

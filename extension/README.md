@@ -55,11 +55,20 @@ for common web interactions, eliminating the need for mouse navigation.
 
 | Keys | Action |
 | --- | --- |
+| `Y` | Select text in a rectangle |
 | `Backspace` | Delete Mode |
+| `H` | Select text (character level) |
 | `K` | Show/Hide the floating KeyPilot keyboard reference |
 | `Esc` | Exit Focus |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
+
+
+### Control Strip
+
+Upper-left status strip (dark GUI Pro). **ON/OFF**, **KB** (keyboard reference), **Settings**, collapse, and close. Press **`Alt`+`J`** to restore after close. Options: **Settings → Control Strip**.
+
 
 
 

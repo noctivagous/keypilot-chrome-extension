@@ -79,6 +79,7 @@ const modules = [
   'src/ui/keybindings-ui.js',
   'src/ui/popup-theme-vars.js',
   'src/ui/floating-keyboard-help.js',
+  'src/ui/control-strip.js',
   'src/ui/onboarding-panel.js',
   'src/ui/practice-popover-panel.js',
   'src/modules/onboarding-manager.js',

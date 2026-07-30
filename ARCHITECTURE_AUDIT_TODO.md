@@ -16,10 +16,14 @@ Check items as you complete them.
 
 ## P0 — Product decisions
 
-- [ ] **Text-highlight subsystem:** choose one path  
-  - [ ] **Option A:** Re-bind `HIGHLIGHT` / `RECTANGLE_HIGHLIGHT` in `keyboard-layouts.js` and ship the feature  
+- [x] **Text-highlight subsystem:** choose one path  
+  - [x] **Option A:** Re-bind `HIGHLIGHT` / `RECTANGLE_HIGHLIGHT` in `keyboard-layouts.js` and ship the feature  
+    - Right: **H** = character text select, **Y** = rectangle select  
+    - Left: **G** = character, **R** = rectangle  
+    - Character default uses caret APIs (`caretRangeFromPoint`); edge-only stack is **lazy** (rectangle only)  
+    - Do not re-enable edge analytics/HUD by default  
   - [ ] **Option B:** Remove / freeze dormant selection stack (~8–10k LOC) and stop `initializeEdgeOnlyProcessing()` on enable  
-  - [ ] Document decision in README / architecture notes
+  - [x] Document decision in architecture notes (this file)
 - [ ] **Hover targeting:** keep DOM-hover only, or keep RBush as real fallback?  
   - [ ] If DOM-hover is permanent: drop or fully isolate RBush path + `src/vendor/rbush.js` when unused  
   - [ ] If dual-path stays: document primary vs fallback and when each runs
@@ -155,7 +159,7 @@ Check items as you complete them.
 
 ## Suggested execution order
 
-1. [ ] P0: Highlight keep vs delete; hover primary strategy  
+1. [x] P0: Highlight keep vs delete (Option A shipped: H character / Y rectangle); hover primary strategy still open  
 2. [ ] P1: Shared typing/scroll/URL/message SSOT helpers  
 3. [ ] P1: Launcher sites JSON + message registry  
 4. [ ] P2: Split navigation/activation out of `keypilot.js`  

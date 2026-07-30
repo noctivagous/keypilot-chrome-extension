@@ -248,6 +248,22 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     description: 'Show/Hide the floating KeyPilot keyboard reference',
     keyboardClass: 'key-purple',
     row: 2
+  }),
+  // Text select: default character-level (H on right-handed layout).
+  HIGHLIGHT: Object.freeze({
+    handler: 'handleHighlightKey',
+    label: 'Text Select',
+    description: 'Select text (character level)',
+    keyboardClass: 'key-highlight',
+    row: 2
+  }),
+  // Rectangle region select (Y on right-handed; R free on left-handed).
+  RECTANGLE_HIGHLIGHT: Object.freeze({
+    handler: 'handleRectangleHighlightKey',
+    label: 'Rectangle Select',
+    description: 'Select text in a rectangle',
+    keyboardClass: 'key-rect-highlight',
+    row: 1
   })
 });
 
@@ -350,6 +366,7 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   BACK: Object.freeze({ keys: ['d', 'D'] }),
   ACTIVATE: Object.freeze({ keys: ['f', 'F'] }),
   ACTIVATE_NEW_TAB_BACKGROUND: Object.freeze({ keys: ['g', 'G'] }),
+  HIGHLIGHT: Object.freeze({ keys: ['h', 'H'] }),
 
   TAB_HISTORY: Object.freeze({ keys: ['j', 'J'] }),
   TOGGLE_KEYBOARD_HELP: Object.freeze({ keys: ['k', 'K'] }),
@@ -363,6 +380,7 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   PAGE_UP_INSTANT: Object.freeze({ keys: ['c', 'C'] }),
   PAGE_DOWN_INSTANT: Object.freeze({ keys: ['v', 'V'] }),
   ACTIVATE_NEW_TAB: Object.freeze({ keys: ['b', 'B'] }),
+  RECTANGLE_HIGHLIGHT: Object.freeze({ keys: ['y', 'Y'] }),
 
   ROOT: Object.freeze({ keys: ['1', '!'], displayKey: '1', keyLabel: '1' }),
   DELETE: Object.freeze({ keys: ['Backspace'], displayKey: 'Backspace', keyLabel: 'Backspace' }),
@@ -393,6 +411,9 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   BACK: Object.freeze({ keys: ['k', 'K'] }),
   ACTIVATE: Object.freeze({ keys: ['j', 'J'] }),
   ACTIVATE_NEW_TAB_BACKGROUND: Object.freeze({ keys: ['h', 'H'] }),
+  // H is background-tab open on left; G/R free for selection.
+  HIGHLIGHT: Object.freeze({ keys: ['g', 'G'] }),
+  RECTANGLE_HIGHLIGHT: Object.freeze({ keys: ['r', 'R'] }),
 
   // Utility actions: keep on the left to avoid colliding with J/K/L cluster.
   TAB_HISTORY: Object.freeze({ keys: ['f', 'F'] }),
@@ -426,7 +447,7 @@ const KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: 'action', id: 'OPEN_POPOVER', fallbackText: 'Open Popover' },
     { type: 'action', id: 'FORWARD', fallbackText: 'Go Forward' },
     { type: 'action', id: 'NEW_TAB', fallbackText: 'New Tab' },
-    { type: 'key', text: 'Y' },
+    { type: 'action', id: 'RECTANGLE_HIGHLIGHT', fallbackText: 'Rectangle Select' },
     { type: 'key', text: 'U' },
     { type: 'key', text: 'I' },
     { type: 'key', text: 'O' },
@@ -442,7 +463,7 @@ const KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: 'action', id: 'BACK', fallbackText: 'Go Back' },
     { type: 'action', id: 'ACTIVATE', fallbackText: 'Click Element' },
     { type: 'action', id: 'ACTIVATE_NEW_TAB_BACKGROUND', fallbackText: 'Click New Tab Background' },
-    { type: 'key', text: 'H' },
+    { type: 'action', id: 'HIGHLIGHT', fallbackText: 'Text Select' },
     { type: 'action', id: 'TAB_HISTORY', fallbackText: 'History' },
     { type: 'action', id: 'TOGGLE_KEYBOARD_HELP', fallbackText: 'KB Reference' },
     { type: 'action', id: 'OMNIBOX', fallbackText: 'Omnibox' },
@@ -473,7 +494,7 @@ const KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
     { type: 'key', text: 'Q' },
     { type: 'action', id: 'PREVIEW_LINK_POPOVER', fallbackText: 'Preview Link' }, // W
     { type: 'key', text: 'E' },
-    { type: 'key', text: 'R' },
+    { type: 'action', id: 'RECTANGLE_HIGHLIGHT', fallbackText: 'Rectangle Select' }, // R
     { type: 'key', text: 'T' },
     { type: 'action', id: 'NEW_TAB', fallbackText: 'New Tab' }, // Y
     { type: 'action', id: 'FORWARD', fallbackText: 'Go Forward' }, // U
@@ -491,7 +512,7 @@ const KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
     { type: 'action', id: 'OMNIBOX', fallbackText: 'Omnibox' }, // S
     { type: 'action', id: 'TOGGLE_KEYBOARD_HELP', fallbackText: 'KB Reference' }, // D
     { type: 'action', id: 'TAB_HISTORY', fallbackText: 'History' }, // F
-    { type: 'key', text: 'G' },
+    { type: 'action', id: 'HIGHLIGHT', fallbackText: 'Text Select' }, // G
     { type: 'action', id: 'ACTIVATE_NEW_TAB_BACKGROUND', fallbackText: 'Click New Tab Background' }, // H
     { type: 'action', id: 'ACTIVATE', fallbackText: 'Click Element' }, // J
     { type: 'action', id: 'BACK', fallbackText: 'Go Back' }, // K

@@ -86,6 +86,9 @@ export const Z_INDEX = {
   // Keep BELOW the green hover/click overlays so rectangles + countdown label stay visible.
   ONBOARDING_PANEL: 2147483017,
 
+  // macOS-style control strip (upper-left; above onboarding when stacked, below keyboard help)
+  CONTROL_STRIP: 2147483025,
+
   // Iframe-based popover modal (Open Popover)
   POPOVER_IFRAME_MODAL: 2147483035,
 
@@ -417,7 +420,7 @@ export const FEATURE_FLAGS = {
   ENABLE_AUTOMATIC_FALLBACK: true,       // Auto-fallback on performance issues
   ENABLE_EDGE_BATCH_PROCESSING: true,    // Batch intersection updates
   ENABLE_PREDICTIVE_CACHING: true,       // Enable predictive caching
-  DETAILED_EDGE_LOGGING: true,           // Detailed debug logging for edge processing
+  DETAILED_EDGE_LOGGING: false,          // Detailed debug logging for edge processing (off for ship)
   EDGE_CACHE_SIZE_MANAGEMENT: true,      // Enable cache size management
   EDGE_ADAPTIVE_PROCESSING: true,        // Enable adaptive processing
   ENABLE_TEXT_ELEMENT_FILTER: true,      // Enable TextElementFilter class
