@@ -97,6 +97,14 @@ export class ElementDetector {
 
   isLikelyInteractive(el, opts = {}) {
     if (!el || el.nodeType !== 1) return false;
+
+    // Never treat the page root as a clickable hover target. Sites often put
+    // delegated click listeners on body/html; if we accept those, hover can
+    // "stick" on the previous real target when the pointer moves to empty chrome.
+    try {
+      if (el === document.body || el === document.documentElement) return false;
+      if (el.tagName === 'BODY' || el.tagName === 'HTML') return false;
+    } catch { /* ignore */ }
     
     const allowCursor = (opts && Object.prototype.hasOwnProperty.call(opts, 'allowCursor'))
       ? !!opts.allowCursor
@@ -431,7 +439,9 @@ export class ElementDetector {
     let n = el;
     let depth = 0;
     let cursorOnlyCandidate = null;
-    while (n && n !== document.body && n.nodeType === 1 && depth < 10) {
+    // Depth 20: archive.org-style nested open shadows (tile-dispatcher → collection-tile → …)
+    // can sit well below 10 steps from the deepest hit target.
+    while (n && n !== document.body && n.nodeType === 1 && depth < 20) {
       // Prefer semantic clickables (anchors/buttons/roles/handlers/etc.) over cursor:pointer-only
       // descendants. This avoids returning child <img>/<div> nodes inside <a href> that inherit
       // cursor:pointer from the anchor.

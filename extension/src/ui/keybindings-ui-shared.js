@@ -80,7 +80,10 @@ const FA_SOLID_PATHS = Object.freeze({
   // FA Free solid "i-cursor" — caret / character select
   'i-cursor': 'M128 64c0-17.7 14.3-32 32-32H352c17.7 0 32 14.3 32 32s-14.3 32-32 32H288v128h64c17.7 0 32 14.3 32 32s-14.3 32-32 32H288v128h64c17.7 0 32 14.3 32 32s-14.3 32-32 32H160c-17.7 0-32-14.3-32-32s14.3-32 32-32h64V288H160c-17.7 0-32-14.3-32-32s14.3-32 32-32h64V96H160c-17.7 0-32-14.3-32-32z',
   // FA Free solid "vector-square" — rectangle marquee corners
-  'vector-square': 'M32 32C14.3 32 0 46.3 0 64v64c0 17.7 14.3 32 32 32s32-14.3 32-32V96h64c17.7 0 32-14.3 32-32s-14.3-32-32-32H32zM32 320c-17.7 0-32 14.3-32 32v64c0 17.7 14.3 32 32 32h64c17.7 0 32-14.3 32-32s-14.3-32-32-32H64V352c0-17.7-14.3-32-32-32zM320 64c0 17.7 14.3 32 32 32h64v64c0 17.7 14.3 32 32 32s32-14.3 32-32V64c0-17.7-14.3-32-32-32H352c-17.7 0-32 14.3-32 32zM480 320c-17.7 0-32 14.3-32 32v64H384c-17.7 0-32 14.3-32 32s14.3 32 32 32h64c17.7 0 32-14.3 32-32V352c0-17.7-14.3-32-32-32z'
+  'vector-square': 'M32 32C14.3 32 0 46.3 0 64v64c0 17.7 14.3 32 32 32s32-14.3 32-32V96h64c17.7 0 32-14.3 32-32s-14.3-32-32-32H32zM32 320c-17.7 0-32 14.3-32 32v64c0 17.7 14.3 32 32 32h64c17.7 0 32-14.3 32-32s-14.3-32-32-32H64V352c0-17.7-14.3-32-32-32zM320 64c0 17.7 14.3 32 32 32h64v64c0 17.7 14.3 32 32 32s32-14.3 32-32V64c0-17.7-14.3-32-32-32H352c-17.7 0-32 14.3-32 32zM480 320c-17.7 0-32 14.3-32 32v64H384c-17.7 0-32 14.3-32 32s14.3 32 32 32h64c17.7 0 32-14.3 32-32V352c0-17.7-14.3-32-32-32z',
+
+  // FA Free solid "image" — copy hovered image
+  'image': 'M0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zM323.8 202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4 3.9-19.8 10.5l-87 127.6L170.7 297c-4.6-5.7-11.5-9-18.7-9s-14.2 3.3-18.7 9l-64 80c-5.8 7.2-6.9 17.1-2.9 25.4s12.4 13.6 21.6 13.6h96 32H424c8.9 0 17.1-4.9 21.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112 192a48 48 0 1 0 0-96 48 48 0 1 0 0 96z'
 });
 
 /**
@@ -114,7 +117,8 @@ export const KEYBOARD_ACTION_ICON_IDS = Object.freeze({
   TOGGLE_KEYBOARD_HELP: 'keyboard',
   // Selection tools (recently re-enabled; were missing from the icon map)
   HIGHLIGHT: 'i-cursor',
-  RECTANGLE_HIGHLIGHT: 'vector-square'
+  RECTANGLE_HIGHLIGHT: 'vector-square',
+  COPY_HOVERED_IMAGE: 'image'
 });
 
 /**
@@ -176,8 +180,12 @@ function getKeyboardKeyIconCss() {
   inset: 7%;
   z-index: 0;
   pointer-events: none;
-  /* Color comes from the key family; shape from the mask */
-  background-color: var(--kp-key-icon, #0c1018);
+  /*
+   * Transparent until an action rule applies both a mask and paint color.
+   * mask-image:none + solid background-color otherwise paints a dark rectangle
+   * (was visible on unmapped action keys like COPY_HOVERED_IMAGE before its icon).
+   */
+  background-color: transparent;
   background-image: none;
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
@@ -200,23 +208,39 @@ function getKeyboardKeyIconCss() {
   opacity: 1;
 }
 
-.${KEYBINDINGS_UI_ROOT_CLASS} .key.kp-key-pressed > .key-bg-icon {
-  opacity: 1;
-}
-
 /* Keys without functions never paint an icon layer */
 .${KEYBINDINGS_UI_ROOT_CLASS} .key:not([data-kp-action-id]) > .key-bg-icon {
   display: none;
 }
+
+/* Solid darken overlay for keydown feedback (more reliable than filter) */
+.${KEYBINDINGS_UI_ROOT_CLASS} .key > .key-press-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  box-sizing: border-box;
+  border-radius: inherit;
+  background: rgba(0, 0, 0, 0.78);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 70ms ease;
+}
+
+.${KEYBINDINGS_UI_ROOT_CLASS} .key.kp-key-pressed > .key-press-overlay,
+.${KEYBINDINGS_UI_ROOT_CLASS} .key > .key-press-overlay.is-on {
+  opacity: 1;
+}
 `);
 
   // Action-specific icon masks only (keys with KeyPilot functions).
+  // Color is applied here (not on the base rule) so unmapped actions stay transparent.
   for (const [actionId, iconName] of Object.entries(KEYBOARD_ACTION_ICON_IDS)) {
     const uri = iconUris[iconName];
     if (!uri) continue;
     lines.push(
       `.${KEYBINDINGS_UI_ROOT_CLASS} .key[data-kp-action-id="${actionId}"] > .key-bg-icon {` +
-      ` -webkit-mask-image: ${uri}; mask-image: ${uri}; }`
+      ` -webkit-mask-image: ${uri}; mask-image: ${uri};` +
+      ` background-color: var(--kp-key-icon, #0c1018); }`
     );
   }
 
@@ -240,6 +264,56 @@ export function ensureKeyBackgroundIcon(doc, keyEl) {
   icon.className = 'key-bg-icon';
   icon.setAttribute('aria-hidden', 'true');
   keyEl.insertBefore(icon, keyEl.firstChild);
+}
+
+/**
+ * Ensure a key has a dedicated press-feedback overlay element.
+ * Appended last so it paints above legends/icons.
+ * Safe to call repeatedly (idempotent).
+ * @param {Document} doc
+ * @param {HTMLElement} keyEl
+ * @returns {HTMLElement|null}
+ */
+export function ensureKeyPressOverlay(doc, keyEl) {
+  if (!doc || !keyEl) return null;
+  let overlay = null;
+  try {
+    overlay = keyEl.querySelector(':scope > .key-press-overlay');
+  } catch {
+    overlay = keyEl.querySelector('.key-press-overlay');
+  }
+  if (overlay) return overlay;
+  overlay = doc.createElement('span');
+  overlay.className = 'key-press-overlay';
+  overlay.setAttribute('aria-hidden', 'true');
+  keyEl.appendChild(overlay);
+  return overlay;
+}
+
+/**
+ * Toggle overt press feedback via a dedicated dark overlay element.
+ * Prefer this over filter/transform on the key itself.
+ * @param {HTMLElement} keyEl
+ * @param {boolean} pressed
+ * @param {Document} [doc]
+ */
+export function setKeyPressedState(keyEl, pressed, doc) {
+  if (!keyEl) return;
+  const d = doc || keyEl.ownerDocument || (typeof document !== 'undefined' ? document : null);
+  if (pressed) {
+    keyEl.classList.add('kp-key-pressed');
+    const overlay = d ? ensureKeyPressOverlay(d, keyEl) : null;
+    if (overlay) overlay.classList.add('is-on');
+  } else {
+    keyEl.classList.remove('kp-key-pressed');
+    let overlay = null;
+    try {
+      overlay = keyEl.querySelector(':scope > .key-press-overlay');
+    } catch {
+      overlay = keyEl.querySelector('.key-press-overlay');
+    }
+    if (overlay) overlay.classList.remove('is-on');
+  }
 }
 
 /**
@@ -318,7 +392,7 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
   --kp-kb-rim: rgba(255, 255, 255, 0.08);
   box-sizing: border-box;
   width: 100%;
-  padding: 12px 11px 11px;
+  padding: 5px;
   border-radius: 14px;
   border: 1px solid var(--kp-kb-rim);
   background:
@@ -809,19 +883,13 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
   border-radius: 4px;
 }
 
-/* Keydown/keyup: shallow press (low-profile) */
+/*
+ * Keydown/keyup press feedback is a dedicated .key-press-overlay element
+ * (see ensureKeyPressOverlay / setKeyPressedState). Avoid filter/transform
+ * on the key itself — those were hard to see on colored keycaps.
+ */
 .${KEYBINDINGS_UI_ROOT_CLASS} .key.kp-key-pressed {
-  transform: translateY(1px);
   outline: none;
-  filter: brightness(0.94);
-  border-top-color: rgba(0, 0, 0, 0.35);
-  border-bottom-color: rgba(255, 255, 255, 0.06);
-  box-shadow:
-    0 0 0 rgba(0, 0, 0, 0),
-    0 1px 2px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(91, 226, 241, 0.28),
-    inset 0 2px 4px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(0, 0, 0, 0.2);
 }
 
 /*

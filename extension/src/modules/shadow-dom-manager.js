@@ -1,5 +1,13 @@
 /**
  * Shadow DOM support and patching
+ *
+ * Style injection strategy (cheap + correct):
+ * 1. Pre-warm: patch attachShadow so new open roots get styles at creation.
+ * 2. Pre-warm: inject into open roots already present in the *light* DOM at setup
+ *    (shallow — nested roots inside those shadows are NOT eagerly walked).
+ * 3. Lazy (primary correctness): StyleManager.ensureStylesForNode() injects into
+ *    the owning open ShadowRoot on first hover/focus styling. No MutationObserver;
+ *    infinite-scroll / SPA content is covered when the user first targets it.
  */
 export class ShadowDOMManager {
   constructor(styleManager) {
@@ -13,6 +21,16 @@ export class ShadowDOMManager {
     this.processExistingShadowRoots();
   }
 
+  /**
+   * Track a shadow root we've injected (or intend to use) for optional IO discovery.
+   * @param {ShadowRoot} root
+   */
+  trackShadowRoot(root) {
+    if (root) {
+      try { this.shadowRoots.add(root); } catch { /* ignore */ }
+    }
+  }
+
   patchAttachShadow() {
     if (this.originalAttachShadow) return; // Already patched
 
@@ -20,7 +38,7 @@ export class ShadowDOMManager {
     this.originalAttachShadow = original;
 
     const styleManager = this.styleManager;
-    const shadowRoots = this.shadowRoots;
+    const manager = this;
 
     // Important: do NOT bind this function to the manager.
     // The receiver (`this`) must remain the element instance so original attachShadow works.
@@ -31,8 +49,10 @@ export class ShadowDOMManager {
       // Only open shadow roots are accessible to content scripts.
       try {
         if (init && init.mode === 'open' && root) {
+          // Optional pre-warm: O(1) per attach. Nested roots created after setup
+          // get styles without waiting for first hover.
           styleManager.injectIntoShadowRoot(root);
-          shadowRoots.add(root);
+          manager.trackShadowRoot(root);
         }
       } catch (error) {
         console.warn('[KeyPilot] Failed to inject styles into shadow root:', error);
@@ -42,6 +62,11 @@ export class ShadowDOMManager {
     };
   }
 
+  /**
+   * Shallow pre-warm only: light-DOM hosts with open shadow roots.
+   * Nested roots (e.g. archive.org app-root → … → media-button) are handled
+   * lazily via StyleManager.ensureStylesForNode when those elements are focused.
+   */
   processExistingShadowRoots() {
     const walker = document.createTreeWalker(
       document.documentElement,
@@ -55,7 +80,7 @@ export class ShadowDOMManager {
       if (node.shadowRoot) {
         try {
           this.styleManager.injectIntoShadowRoot(node.shadowRoot);
-          this.shadowRoots.add(node.shadowRoot);
+          this.trackShadowRoot(node.shadowRoot);
         } catch (error) {
           console.warn('[KeyPilot] Failed to inject styles into existing shadow root:', error);
         }

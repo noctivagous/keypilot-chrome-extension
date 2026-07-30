@@ -31,6 +31,19 @@ export class OmniboxManager {
     this._debounceTimer = null;
     this._lastQuery = '';
 
+    /**
+     * Prefer keyboard arrow selection over a stationary cursor sitting on a row.
+     * Hover only updates selection after the user actually moves the mouse
+     * (or after keyboard nav, until the next real mouse move).
+     * This also prevents re-renders from re-firing mouseenter under the cursor
+     * and undoing arrow-key selection.
+     */
+    this._mouseNavEnabled = false;
+    /** @type {number|null} */
+    this._lastMouseX = null;
+    /** @type {number|null} */
+    this._lastMouseY = null;
+
     /** @type {import('./settings-manager.js').SearchEngine} */
     this._searchEngine = 'brave';
     this._settingsListenerInstalled = false;
@@ -38,6 +51,7 @@ export class OmniboxManager {
     this._onBackdropClick = this._onBackdropClick.bind(this);
     this._onInput = this._onInput.bind(this);
     this._onKeyDown = this._onKeyDown.bind(this);
+    this._onListMouseMove = this._onListMouseMove.bind(this);
 
     // Load settings once and keep local cache updated.
     this._installSettingsListener();
@@ -60,6 +74,10 @@ export class OmniboxManager {
     this._open = true;
     this._ensureDom();
     this._userNavigatedList = false;
+    // Stationary cursor over the suggestion list must not steal selection.
+    this._mouseNavEnabled = false;
+    this._lastMouseX = null;
+    this._lastMouseY = null;
 
     // Set value and focus.
     if (this._input) {
@@ -80,12 +98,16 @@ export class OmniboxManager {
     this._suggestions = [];
     this._selectedIndex = -1;
     this._userNavigatedList = false;
+    this._mouseNavEnabled = false;
+    this._lastMouseX = null;
+    this._lastMouseY = null;
     this._lastQuery = '';
 
     try {
       this._backdrop?.removeEventListener('click', this._onBackdropClick, true);
       this._input?.removeEventListener('input', this._onInput, true);
       this._input?.removeEventListener('keydown', this._onKeyDown, true);
+      this._list?.removeEventListener('mousemove', this._onListMouseMove, true);
     } catch {
       // ignore
     }
@@ -173,6 +195,9 @@ export class OmniboxManager {
         borderTop: '1px solid rgba(255,140,0,0.15)'
       }
     });
+    // Track real pointer movement so hover selection can resume after keyboard nav
+    // (or after open with the cursor already over a row).
+    list.addEventListener('mousemove', this._onListMouseMove, { passive: true, capture: true });
 
     panel.appendChild(input);
     panel.appendChild(list);
@@ -217,6 +242,8 @@ export class OmniboxManager {
       e.stopPropagation();
       e.stopImmediatePropagation();
       this._userNavigatedList = true;
+      // Keyboard wins until the pointer actually moves again.
+      this._mouseNavEnabled = false;
       this._moveSelection(key === 'ArrowDown' ? 1 : -1);
       return;
     }
@@ -253,6 +280,63 @@ export class OmniboxManager {
     this._selectedIndex = next;
     this._renderSuggestions();
     this._scrollSelectedIntoView();
+  }
+
+  /**
+   * Enable mouse-driven selection only after a real pointer move.
+   * A cursor that is merely resting on a row (common when the omnibox opens)
+   * must not override keyboard arrow selection.
+   * @param {MouseEvent} e
+   */
+  _onListMouseMove(e) {
+    if (!this._open) return;
+
+    const x = e.clientX;
+    const y = e.clientY;
+
+    if (this._lastMouseX === null || this._lastMouseY === null) {
+      // Seed position on first move event; still treat this as intentional movement
+      // so a user who wiggles the mouse can hover immediately.
+      this._lastMouseX = x;
+      this._lastMouseY = y;
+      this._mouseNavEnabled = true;
+      this._selectRowUnderPoint(x, y);
+      return;
+    }
+
+    if (x === this._lastMouseX && y === this._lastMouseY) return;
+
+    this._lastMouseX = x;
+    this._lastMouseY = y;
+    this._mouseNavEnabled = true;
+    this._selectRowUnderPoint(x, y);
+  }
+
+  /**
+   * Select the suggestion row currently under the pointer (if any).
+   * Used after enabling mouse nav so hover works even when mouseenter does not
+   * re-fire (e.g. cursor stayed inside the same row across a re-render).
+   * @param {number} clientX
+   * @param {number} clientY
+   */
+  _selectRowUnderPoint(clientX, clientY) {
+    if (!this._list || !this._suggestions.length) return;
+
+    try {
+      const el = document.elementFromPoint(clientX, clientY);
+      const row = el?.closest?.('[data-kp-omnibox-index]');
+      if (!row || !this._list.contains(row)) return;
+
+      const idx = Number.parseInt(row.dataset.kpOmniboxIndex || '', 10);
+      if (!Number.isFinite(idx) || idx < 0 || idx >= this._suggestions.length) return;
+      if (idx === this._selectedIndex) return;
+
+      this._selectedIndex = idx;
+      this._userNavigatedList = true;
+      this._renderSuggestions();
+    } catch {
+      // ignore
+    }
   }
 
   _scrollSelectedIntoView() {
@@ -453,6 +537,11 @@ export class OmniboxManager {
         }
       },
       onRowMouseEnter: ({ idx }) => {
+        // Ignore hover until the user has actually moved the mouse.
+        // Prevents a stationary cursor (or re-render mouseenter) from fighting
+        // arrow-key selection.
+        if (!this._mouseNavEnabled) return;
+        if (idx === this._selectedIndex) return;
         this._selectedIndex = idx;
         this._userNavigatedList = true;
         this._renderSuggestions();
@@ -463,6 +552,7 @@ export class OmniboxManager {
         event.stopPropagation();
         this._selectedIndex = idx;
         this._userNavigatedList = true;
+        this._mouseNavEnabled = true;
         this._commit();
       }
     });

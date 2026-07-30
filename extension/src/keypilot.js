@@ -29,6 +29,7 @@ import {
   safeRuntimeSendMessage
 } from './utils/extension-context.js';
 import { storageGetValue, storageSetValue } from './utils/storage.js';
+import { getHoveredImage } from './utils/image-utils.js';
 
 export class KeyPilot extends EventManager {
   constructor() {
@@ -154,10 +155,10 @@ export class KeyPilot extends EventManager {
       // Only drive hover selection in normal browsing mode.
       if (currentState.mode !== MODES.NONE) return;
 
-      const next = (el && el.nodeType === 1) ? el : null;
-      // HTML/BODY are too coarse to be useful hover targets.
+      let next = (el && el.nodeType === 1) ? el : null;
+      // HTML/BODY are too coarse — treat as clear so hover chrome does not stick.
       try {
-        if (next && (next.tagName === 'HTML' || next.tagName === 'BODY')) return;
+        if (next && (next.tagName === 'HTML' || next.tagName === 'BODY')) next = null;
       } catch { /* ignore */ }
 
       if (window.KEYPILOT_DEBUG) {
@@ -766,6 +767,11 @@ export class KeyPilot extends EventManager {
     this.keybindings = buildKeybindingsForLayout(layoutId);
     this._keyboardUiLayout = getKeyboardUiLayoutForLayout(layoutId);
 
+    // Keep text-input SVG background hints in sync with layout-bound keys (F vs J, Esc).
+    try {
+      this._applyTextInputHintLabels();
+    } catch { /* ignore */ }
+
     // If the floating keyboard reference is active, keep it in sync (no flicker if layoutId matches).
     try {
       if (this.floatingKeyboardHelp) {
@@ -778,6 +784,27 @@ export class KeyPilot extends EventManager {
         }
       }
     } catch { /* ignore */ }
+  }
+
+  /**
+   * Paint layout-aware "click with F to enter" / "press Esc to exit" SVG
+   * background-images onto hovered/focused text inputs (via StyleManager CSS vars).
+   */
+  _applyTextInputHintLabels() {
+    const KB = this.keybindings || {};
+    const activate =
+      KB.ACTIVATE?.keyLabel ||
+      KB.ACTIVATE?.displayKey ||
+      (Array.isArray(KB.ACTIVATE?.keys) ? KB.ACTIVATE.keys[0] : null) ||
+      'F';
+    const cancel =
+      KB.CANCEL?.keyLabel ||
+      KB.CANCEL?.displayKey ||
+      'Esc';
+    this.styleManager?.setTextInputHintLabels?.({
+      hover: `click with ${activate} to enter`,
+      focus: `press ${cancel} to exit`
+    });
   }
 
   installSettingsSync() {
@@ -1719,61 +1746,15 @@ export class KeyPilot extends EventManager {
       return;
     }
 
-    // In text focus mode:
-    // - ESC exits text focus (never clicks)
-    // - Only F can click, and only when armed by mouse movement
-    // - History nav (D/S/R) still works: blur first, then navigate (avoids "press D twice")
-    if (currentState.mode === MODES.TEXT_FOCUS) {
-      if (KB.CANCEL?.keys?.includes?.(e.key)) {
-        console.debug('Escape key detected in text focus mode');
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        this.handleEscapeFromTextFocus(currentState);
-        return;
-      }
-
-      if (KB.ACTIVATE?.keys?.includes?.(e.key) && this._textModeClickArmed && currentState.focusEl) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        this._handleActivateFromTextFocus(currentState);
-        return;
-      }
-
-      if (this._isHistoryNavigationKey(KB, e)) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        this.handleEscapeFromTextFocus(currentState);
-        this._runHistoryNavigationKey(KB, e);
-        return;
-      }
-      return;
-    }
-
-    // Don't handle keys if we're in a typing context but not in our text focus mode
-    // (This handles edge cases where focus detection might miss something).
-    // Check both event target and activeElement — some sites focus a field while
-    // the key event target is a parent wrapper.
-    const typingTarget = this.isTypingContext(e.target)
-      ? e.target
-      : (this.isTypingContext(document.activeElement) ? document.activeElement : null);
-    if (typingTarget) {
-      if (KB.CANCEL?.keys?.includes?.(e.key)) {
-        this.cancelModes();
-        return;
-      }
-      // Allow browser history keys even when a text field is focused (blur + go).
-      if (this._isHistoryNavigationKey(KB, e)) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        try { /** @type {any} */ (typingTarget).blur?.(); } catch { /* ignore */ }
-        try { this.focusDetector?.clearTextFocus?.(); } catch { /* ignore */ }
-        this._runHistoryNavigationKey(KB, e);
-        return;
-      }
+    // -------------------------------------------------------------------------
+    // FAIL-CLOSED typing gate (after modal UI, before action-key dispatch).
+    // Google.com autofocuses <textarea name=q> before our content script loads;
+    // we must suppress Close Tab (A), etc. even when text_focus mode lagged.
+    // -------------------------------------------------------------------------
+    const typingGate = this._evaluateTypingGate(e, currentState, KB);
+    if (typingGate.blockActions) {
+      if (typingGate.handled) return;
+      // Swallow KeyPilot shortcuts; let the character type into the field.
       return;
     }
 
@@ -1810,6 +1791,20 @@ export class KeyPilot extends EventManager {
       const isMatch = matchOn.some((field) => keybinding.keys.includes(e[field]));
       if (!isMatch) continue;
 
+      // Final fail-closed guard: never dispatch action keys while typing.
+      if (this._isUnsafeToRunActionKey(e)) {
+        console.warn(
+          '[KeyPilot] Suppressed action while typing:',
+          keybinding.handler,
+          'key=',
+          e.key,
+          'active=',
+          document.activeElement && document.activeElement.tagName,
+          document.activeElement && document.activeElement.id
+        );
+        return;
+      }
+
       e.preventDefault();
       // Critical: when KeyPilot claims a key, we must fully consume it so page-level
       // shortcuts (e.g. Internet Archive BookReader 'f' fullscreen) don't also fire.
@@ -1820,12 +1815,279 @@ export class KeyPilot extends EventManager {
 
       const handlerFn = this[keybinding.handler];
       if (typeof handlerFn === 'function') {
-        handlerFn.call(this);
+        // Pass the event so handlers can re-check typing with the real event target.
+        handlerFn.call(this, e);
       } else {
         console.warn('[KeyPilot] Missing keybinding handler:', keybinding.handler, keybinding);
       }
       return;
     }
+  }
+
+  /**
+   * Dependency-free: is this element a place where letter keys should type?
+   * Intentionally does NOT call isTypingContext/resolveTypingTarget (avoids any
+   * bundle name-shadowing or swallowed-throw fail-open paths).
+   * @param {any} el
+   * @returns {boolean}
+   */
+  _isTextEntryElement(el) {
+    if (!el) return false;
+    try {
+      // Text node inside contenteditable
+      if (el.nodeType === 3) el = el.parentElement;
+    } catch { /* ignore */ }
+    if (!el || el.nodeType !== 1) return false;
+
+    try {
+      // Never treat KeyPilot chrome as page typing (omnibox has its own mode).
+      if (el.classList?.contains?.(CSS_CLASSES.OMNIBOX_INPUT)) return false;
+      if (el.closest?.(`.${CSS_CLASSES.OMNIBOX_BACKDROP}`) ||
+          el.closest?.(`.${CSS_CLASSES.OMNIBOX_PANEL}`)) {
+        return false;
+      }
+    } catch { /* ignore */ }
+
+    try {
+      if (el.isContentEditable) return true;
+    } catch { /* ignore */ }
+
+    let tag = '';
+    try { tag = String(el.tagName || '').toUpperCase(); } catch { tag = ''; }
+
+    if (tag === 'TEXTAREA') {
+      try { return !el.disabled; } catch { return true; }
+    }
+
+    if (tag === 'INPUT') {
+      try {
+        if (el.disabled || el.readOnly) return false;
+      } catch { /* ignore */ }
+      let type = 'text';
+      try { type = String(el.type || 'text').toLowerCase(); } catch { /* ignore */ }
+      // Everything that accepts keyboard text entry; exclude pure click controls.
+      if (
+        type === 'button' || type === 'submit' || type === 'reset' ||
+        type === 'checkbox' || type === 'radio' || type === 'file' ||
+        type === 'image' || type === 'range' || type === 'color' ||
+        type === 'hidden'
+      ) {
+        return false;
+      }
+      return true;
+    }
+
+    // ARIA text fields (custom widgets)
+    try {
+      const role = el.getAttribute?.('role');
+      if (role === 'textbox' || role === 'searchbox') return true;
+      // Google uses role=combobox on a real <textarea> (already handled). For
+      // custom comboboxes that accept typing, require contentEditable or aria-multiline.
+      if (role === 'combobox') {
+        if (el.isContentEditable) return true;
+        if (el.getAttribute?.('aria-multiline') === 'true') return true;
+        // If it has a value property and isn't a native select, treat as typing.
+        if ('value' in el && tag !== 'SELECT') return true;
+      }
+    } catch { /* ignore */ }
+
+    // Walk up for contenteditable hosts (event target may be a child span).
+    try {
+      let p = el.parentElement;
+      let depth = 0;
+      while (p && depth++ < 6) {
+        if (p.isContentEditable) return true;
+        p = p.parentElement;
+      }
+    } catch { /* ignore */ }
+
+    return false;
+  }
+
+  /**
+   * Find the live typing element from event + focus, without helper indirection.
+   * @param {KeyboardEvent|null|undefined} e
+   * @returns {Element|null}
+   */
+  _findLiveTypingElement(e) {
+    const candidates = [];
+
+    // 1) composedPath (shadow-aware real target)
+    try {
+      const path = e && typeof e.composedPath === 'function' ? e.composedPath() : null;
+      if (path) {
+        for (const n of path) {
+          if (n && n.nodeType === 1) {
+            candidates.push(n);
+            break;
+          }
+        }
+      }
+    } catch { /* ignore */ }
+
+    // 2) event.target
+    try {
+      if (e?.target) candidates.push(e.target);
+    } catch { /* ignore */ }
+
+    // 3) deep activeElement (open shadow)
+    try {
+      let active = document.activeElement;
+      let guard = 0;
+      while (active && active.shadowRoot && active.shadowRoot.activeElement && guard++ < 10) {
+        active = active.shadowRoot.activeElement;
+      }
+      if (active) candidates.push(active);
+    } catch { /* ignore */ }
+
+    // 4) FocusDetector memory
+    try {
+      const cur = this.focusDetector?.currentFocusedElement;
+      if (cur) candidates.push(cur);
+    } catch { /* ignore */ }
+
+    // 5) state.focusedTextElement
+    try {
+      const st = this.state?.getState?.();
+      if (st?.focusedTextElement) candidates.push(st.focusedTextElement);
+    } catch { /* ignore */ }
+
+    for (const c of candidates) {
+      if (this._isTextEntryElement(c)) {
+        // Prefer the actual element (not a text node parent already resolved)
+        return /** @type {Element} */ (c.nodeType === 1 ? c : c.parentElement);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * True when KeyPilot action keys (close tab, new tab, etc.) must not run.
+   * Fail-closed for any detected text entry surface.
+   * @param {KeyboardEvent|null|undefined} [e]
+   * @returns {boolean}
+   */
+  _isUnsafeToRunActionKey(e) {
+    try {
+      const st = this.state?.getState?.();
+      if (st?.mode === MODES.TEXT_FOCUS) return true;
+      if (st?.focusedTextElement) return true;
+    } catch { /* ignore */ }
+
+    try {
+      if (this.focusDetector?.isInTextFocus?.()) return true;
+    } catch { /* ignore */ }
+
+    if (this._findLiveTypingElement(e)) return true;
+
+    // Last resort: call shared helpers (may throw after bundle issues — ignore).
+    try {
+      if (typeof this.resolveTypingTarget === 'function' && this.resolveTypingTarget(e)) {
+        return true;
+      }
+    } catch { /* ignore */ }
+    try {
+      if (this.isTypingContext?.(e?.target)) return true;
+    } catch { /* ignore */ }
+
+    return false;
+  }
+
+  /**
+   * Call at the top of every tab/nav action handler.
+   * @param {string} actionName
+   * @param {KeyboardEvent|null|undefined} [e]
+   * @returns {boolean} true if the action is allowed to proceed
+   */
+  _allowActionKey(actionName, e) {
+    if (this._isUnsafeToRunActionKey(e)) {
+      console.warn(
+        `[KeyPilot] ${actionName} blocked — typing context`,
+        'active=',
+        document.activeElement && document.activeElement.tagName,
+        document.activeElement && document.activeElement.id
+      );
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Early typing gate for handleKeyDown.
+   * @param {KeyboardEvent} e
+   * @param {any} currentState
+   * @param {Record<string, any>} KB
+   * @returns {{ blockActions: boolean, handled: boolean }}
+   */
+  _evaluateTypingGate(e, currentState, KB) {
+    const inTextFocus =
+      currentState?.mode === MODES.TEXT_FOCUS || !!currentState?.focusedTextElement;
+
+    const typingTarget = this._findLiveTypingElement(e);
+
+    if (!inTextFocus && !typingTarget) {
+      return { blockActions: false, handled: false };
+    }
+
+    // Sync text-focus mode if we only discovered typing via the DOM probe.
+    if (typingTarget && !inTextFocus) {
+      try {
+        if (this.focusDetector?.isTextInput?.(typingTarget)) {
+          this.focusDetector.setTextFocus(typingTarget);
+        } else if (this.focusDetector?.setTextFocus) {
+          // isTextInput may be stricter; still force mode when our probe matched.
+          try { this.focusDetector.setTextFocus(typingTarget); } catch { /* ignore */ }
+        }
+      } catch { /* ignore */ }
+    }
+
+    // ESC exits text focus.
+    if (KB.CANCEL?.keys?.includes?.(e.key) || e.key === 'Escape' || e.code === 'Escape') {
+      console.debug('Escape key detected in text focus / typing context');
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      try {
+        this.handleEscapeFromTextFocus(currentState || this.state.getState());
+      } catch {
+        try { this.focusDetector?.clearTextFocus?.(); } catch { /* ignore */ }
+      }
+      return { blockActions: true, handled: true };
+    }
+
+    // Armed F-click while in text focus (hover-click countdown).
+    if (
+      (inTextFocus || !!typingTarget) &&
+      KB.ACTIVATE?.keys?.includes?.(e.key) &&
+      this._textModeClickArmed &&
+      currentState?.focusEl
+    ) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      this._handleActivateFromTextFocus(currentState);
+      return { blockActions: true, handled: true };
+    }
+
+    // History nav still works: blur + go (avoids "press D twice").
+    if (this._isHistoryNavigationKey(KB, e)) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      try {
+        if (inTextFocus || currentState?.mode === MODES.TEXT_FOCUS) {
+          this.handleEscapeFromTextFocus(currentState);
+        } else {
+          try { /** @type {any} */ (typingTarget)?.blur?.(); } catch { /* ignore */ }
+          try { this.focusDetector?.clearTextFocus?.(); } catch { /* ignore */ }
+        }
+      } catch { /* ignore */ }
+      this._runHistoryNavigationKey(KB, e);
+      return { blockActions: true, handled: true };
+    }
+
+    // All other keys (including T=new tab, A=close tab): block KeyPilot, allow typing.
+    return { blockActions: true, handled: false };
   }
 
   handleMouseMove(e) {
@@ -2048,7 +2310,8 @@ export class KeyPilot extends EventManager {
     return scrollBehaviorFromSpeed(this._settings?.scroll?.speed ?? DEFAULT_SETTINGS.scroll.speed);
   }
 
-  handlePageUp() {
+  handlePageUp(e) {
+    if (!this._allowActionKey('handlePageUp', e)) return;
     window.scrollBy({
       top: -this._getPageScrollPx(),
       behavior: this._getScrollBehavior()
@@ -2056,7 +2319,8 @@ export class KeyPilot extends EventManager {
     this.emitAction('scrollUp');
   }
 
-  handlePageDown() {
+  handlePageDown(e) {
+    if (!this._allowActionKey('handlePageDown', e)) return;
     window.scrollBy({
       top: this._getPageScrollPx(),
       behavior: this._getScrollBehavior()
@@ -2064,7 +2328,8 @@ export class KeyPilot extends EventManager {
     this.emitAction('scrollDown');
   }
 
-  handleInstantPageUp() {
+  handleInstantPageUp(e) {
+    if (!this._allowActionKey('handleInstantPageUp', e)) return;
     window.scrollBy({
       top: -this._getHalfPageScrollPx(),
       behavior: this._getScrollBehavior()
@@ -2072,7 +2337,8 @@ export class KeyPilot extends EventManager {
     this.emitAction('scrollUp');
   }
 
-  handleInstantPageDown() {
+  handleInstantPageDown(e) {
+    if (!this._allowActionKey('handleInstantPageDown', e)) return;
     window.scrollBy({
       top: this._getHalfPageScrollPx(),
       behavior: this._getScrollBehavior()
@@ -2080,7 +2346,8 @@ export class KeyPilot extends EventManager {
     this.emitAction('scrollDown');
   }
 
-  handlePageTop() {
+  handlePageTop(e) {
+    if (!this._allowActionKey('handlePageTop', e)) return;
     // Scroll to top of page (Home key equivalent)
     window.scrollTo({
       top: 0,
@@ -2089,7 +2356,8 @@ export class KeyPilot extends EventManager {
     this.emitAction('scrollTop');
   }
 
-  handlePageBottom() {
+  handlePageBottom(e) {
+    if (!this._allowActionKey('handlePageBottom', e)) return;
     // Scroll to bottom of page (End key equivalent)
     window.scrollTo({
       top: document.documentElement.scrollHeight,
@@ -2126,14 +2394,23 @@ export class KeyPilot extends EventManager {
     this.handleBackKey();
   }
 
-  handleBackKey() {
+  handleBackKey(e) {
+    // History is intentionally allowed from the typing gate (blur + go).
+    // Only block if this was invoked outside that path while still typing.
+    // (Typing gate calls this after blur; e may be undefined.)
+    if (e && this._isUnsafeToRunActionKey(e) && !this._isHistoryNavigationKey(this.keybindings || {}, e)) {
+      return;
+    }
     // Emit BEFORE navigating away so onboarding (and other listeners) can observe/persist it.
     // This is synchronous so listeners run before any navigation is requested.
     this.emitAction('back');
     this._navigateHistory(-1, { recordTransientAction: 'back' });
   }
 
-  handleForwardKey() {
+  handleForwardKey(e) {
+    if (e && this._isUnsafeToRunActionKey(e) && !this._isHistoryNavigationKey(this.keybindings || {}, e)) {
+      return;
+    }
     this._navigateHistory(1);
   }
 
@@ -2246,7 +2523,8 @@ export class KeyPilot extends EventManager {
     step();
   }
 
-  handleTabLeftKey() {
+  handleTabLeftKey(e) {
+    if (!this._allowActionKey('handleTabLeftKey', e)) return;
     // Switch to the tab to the left
     // Emit + record transient action BEFORE switching tabs so onboarding can persist/recover reliably.
     this.emitAction('tabLeft');
@@ -2256,7 +2534,8 @@ export class KeyPilot extends EventManager {
     }
   }
 
-  handleTabRightKey() {
+  handleTabRightKey(e) {
+    if (!this._allowActionKey('handleTabRightKey', e)) return;
     // Switch to the tab to the right
     // Emit + record transient action BEFORE switching tabs so onboarding can persist/recover reliably.
     this.emitAction('tabRight');
@@ -2266,7 +2545,8 @@ export class KeyPilot extends EventManager {
     }
   }
 
-  handleDeleteKey() {
+  handleDeleteKey(e) {
+    if (!this._allowActionKey('handleDeleteKey', e)) return;
     const currentState = this.state.getState();
 
     if (!this.state.isDeleteMode()) {
@@ -2282,7 +2562,8 @@ export class KeyPilot extends EventManager {
     }
   }
 
-  handleHighlightKey() {
+  handleHighlightKey(e) {
+    if (!this._allowActionKey('handleHighlightKey', e)) return;
     const currentState = this.state.getState();
 
     // Prevent highlight mode activation in text focus mode
@@ -2316,7 +2597,8 @@ export class KeyPilot extends EventManager {
     }
   }
 
-  handleRectangleHighlightKey() {
+  handleRectangleHighlightKey(e) {
+    if (!this._allowActionKey('handleRectangleHighlightKey', e)) return;
     const currentState = this.state.getState();
 
     // Prevent highlight mode activation in text focus mode
@@ -3176,6 +3458,121 @@ export class KeyPilot extends EventManager {
   }
 
   /**
+   * Copy image under the cursor to the clipboard (I on right-handed layout; E on left).
+   * Uses getHoveredImage utility — discovery is not clipboard-tied.
+   */
+  async handleCopyHoveredImageKey() {
+    const currentState = this.state.getState();
+    const x = Number(currentState?.lastMouse?.x);
+    const y = Number(currentState?.lastMouse?.y);
+
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      this.showFlashNotification('No image under cursor', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+
+    let result = null;
+    try {
+      result = await getHoveredImage(x, y);
+    } catch (error) {
+      console.warn('[KeyPilot] getHoveredImage failed:', error);
+      this.showFlashNotification('Could not copy image', COLORS.NOTIFICATION_ERROR);
+      return;
+    }
+
+    if (!result?.blob) {
+      this.showFlashNotification('No image under cursor', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+
+    try {
+      const ok = await this.copyImageToClipboard(result.blob, result.mimeType);
+      if (ok) {
+        // Distinct scale animation (shutter → pop → shrink), not the green F-click pulse.
+        try {
+          this.overlayManager?.flashImageCopyPulse?.(result.element);
+        } catch { /* ignore visual feedback failures */ }
+
+        const label =
+          result.kind === 'background' ? 'Background image'
+            : result.kind === 'svg' ? 'SVG'
+              : 'Image';
+        this.showFlashNotification(`${label} copied to clipboard`, COLORS.NOTIFICATION_SUCCESS);
+        this.emitAction('copy_hovered_image', {
+          kind: result.kind,
+          url: result.url ? String(result.url).slice(0, 200) : ''
+        });
+      } else {
+        this.showFlashNotification('Could not copy image', COLORS.NOTIFICATION_ERROR);
+      }
+    } catch (error) {
+      console.warn('[KeyPilot] copyImageToClipboard failed:', error);
+      let message = 'Could not copy image';
+      if (error?.name === 'NotAllowedError' || /permission/i.test(error?.message || '')) {
+        message = 'Clipboard permission denied';
+      } else if (/secure context/i.test(error?.message || '')) {
+        message = 'Clipboard requires HTTPS';
+      }
+      this.showFlashNotification(message, COLORS.NOTIFICATION_ERROR);
+    }
+  }
+
+  /**
+   * Write an image Blob to the system clipboard (PNG preferred).
+   * Separate from text copyToClipboard to keep that API type-safe.
+   *
+   * @param {Blob} blob
+   * @param {string} [mimeType='image/png']
+   * @returns {Promise<boolean>}
+   */
+  async copyImageToClipboard(blob, mimeType = 'image/png') {
+    if (!blob || !(blob instanceof Blob) || blob.size === 0) {
+      console.warn('[KeyPilot] Invalid blob provided to copyImageToClipboard');
+      return false;
+    }
+
+    const type = (mimeType && String(mimeType).startsWith('image/'))
+      ? String(mimeType)
+      : (blob.type && blob.type.startsWith('image/') ? blob.type : 'image/png');
+
+    if (!navigator.clipboard || typeof navigator.clipboard.write !== 'function') {
+      console.warn('[KeyPilot] Clipboard image write not available');
+      return false;
+    }
+
+    try {
+      // ClipboardItem often wants a Promise<Blob> for image types.
+      const item = new ClipboardItem({
+        [type]: Promise.resolve(blob)
+      });
+      const writePromise = navigator.clipboard.write([item]);
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Clipboard operation timed out')), 5000);
+      });
+      await Promise.race([writePromise, timeoutPromise]);
+      console.log('[KeyPilot] Image copied to clipboard:', type, blob.size);
+      return true;
+    } catch (error) {
+      // Some browsers require the exact type image/png only — retry as png wrapper.
+      if (type !== 'image/png') {
+        try {
+          const item = new ClipboardItem({
+            'image/png': Promise.resolve(blob)
+          });
+          await navigator.clipboard.write([item]);
+          console.log('[KeyPilot] Image copied to clipboard as image/png fallback');
+          return true;
+        } catch (retryErr) {
+          console.warn('[KeyPilot] Image clipboard write failed:', retryErr);
+          throw retryErr;
+        }
+      }
+      console.warn('[KeyPilot] Image clipboard write failed:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Cancel highlight mode and return to normal mode
    * Clears selection, visual indicators, and state with shadow DOM support
    */
@@ -3339,7 +3736,8 @@ export class KeyPilot extends EventManager {
     }
   }
 
-  handleRootKey() {
+  handleRootKey(e) {
+    if (!this._allowActionKey('handleRootKey', e)) return;
     console.log('[KeyPilot] Root key pressed!');
     console.log('[KeyPilot] Current URL:', window.location.href);
     console.log('[KeyPilot] Origin:', window.location.origin);
@@ -3355,7 +3753,8 @@ export class KeyPilot extends EventManager {
     }
   }
 
-  handleLauncherKey() {
+  handleLauncherKey(e) {
+    if (!this._allowActionKey('handleLauncherKey', e)) return;
     console.log('[KeyPilot] Launcher key pressed!');
 
     if (this.launcherPopover.isOpen()) {
@@ -3365,7 +3764,8 @@ export class KeyPilot extends EventManager {
     }
   }
 
-  handleCloseTabKey() {
+  handleCloseTabKey(e) {
+    if (!this._allowActionKey('handleCloseTabKey', e)) return;
     console.log('[KeyPilot] Close tab key pressed!');
     
     try {
@@ -3387,7 +3787,8 @@ export class KeyPilot extends EventManager {
     }
   }
 
-  handleNewTabKey() {
+  handleNewTabKey(e) {
+    if (!this._allowActionKey('handleNewTabKey', e)) return;
     console.log('[KeyPilot] New tab key pressed!');
     
     try {
@@ -3628,7 +4029,8 @@ export class KeyPilot extends EventManager {
     }
   }
 
-  handleOpenPopover() {
+  handleOpenPopover(e) {
+    if (!this._allowActionKey('handleOpenPopover', e)) return;
     // Check if popover is already open - if so, close it (toggle behavior)
     if (this.overlayManager.isPopoverOpen()) {
       this.handleClosePopover();
@@ -3721,7 +4123,8 @@ export class KeyPilot extends EventManager {
     this.state.setPopoverOpen(true, url);
   }
 
-  handlePreviewLinkPopover() {
+  handlePreviewLinkPopover(e) {
+    if (!this._allowActionKey('handlePreviewLinkPopover', e)) return;
     // Check if popover is already open - if so, close it (toggle behavior)
     if (this.overlayManager.isPopoverOpen()) {
       this.handleClosePopover();

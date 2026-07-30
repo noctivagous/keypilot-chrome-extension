@@ -9,6 +9,7 @@ import {
   KEYBINDINGS_UI_ROOT_CLASS,
   KEYBINDINGS_UI_STYLE_ATTR,
   ensureKeyBackgroundIcon,
+  ensureKeyPressOverlay,
   getActionIconDataUri,
   getKeybindingsUiCss
 } from './keybindings-ui-shared.js';
@@ -102,6 +103,13 @@ function updateExistingKeyboardDOM({ container, keybindings }) {
     });
   } catch { /* ignore */ }
 
+  // Every key gets a press-overlay host (shown on keydown).
+  try {
+    container.querySelectorAll('.key').forEach((keyEl) => {
+      ensureKeyPressOverlay(doc, keyEl);
+    });
+  } catch { /* ignore */ }
+
   const actionEls = container.querySelectorAll('[data-kp-action-id]');
   if (!actionEls || actionEls.length === 0) return false;
 
@@ -113,6 +121,7 @@ function updateExistingKeyboardDOM({ container, keybindings }) {
     keyEl.className = `${baseClass}${keyboardClass ? ' ' + keyboardClass : ''}`;
     // Only function-bearing keys get FA background icons.
     ensureKeyBackgroundIcon(doc, keyEl);
+    ensureKeyPressOverlay(doc, keyEl);
 
     const title = (binding && (binding.description || binding.label)) || actionId;
     // Prefer aria-label over title so the browser native tooltip doesn't fight our hover popover.
@@ -192,6 +201,7 @@ export function renderKeybindingsKeyboard({ container, keybindings, keyboardLayo
         // No KeyPilot function → no background icon.
         const keyEl = el(doc, 'div', item.className || 'key');
         keyEl.appendChild(el(doc, 'span', 'key-text', item.text));
+        ensureKeyPressOverlay(doc, keyEl);
         rowEl.appendChild(keyEl);
         continue;
       }
@@ -200,6 +210,7 @@ export function renderKeybindingsKeyboard({ container, keybindings, keyboardLayo
         // Unassigned alphanumeric key → no background icon.
         const keyEl = el(doc, 'div', item.className || 'key');
         keyEl.appendChild(el(doc, 'span', 'key-text', item.text));
+        ensureKeyPressOverlay(doc, keyEl);
         rowEl.appendChild(keyEl);
         continue;
       }
@@ -234,6 +245,7 @@ export function renderKeybindingsKeyboard({ container, keybindings, keyboardLayo
         keyEl.appendChild(el(doc, 'div', 'key-label', labelText));
       }
 
+      ensureKeyPressOverlay(doc, keyEl);
       rowEl.appendChild(keyEl);
     }
   }

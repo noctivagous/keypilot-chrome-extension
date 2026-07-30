@@ -4,8 +4,16 @@
  * Build note: content-bundled.js concatenates modules and strips ESM imports.
  * Free functions from earlier modules (e.g. `dom-context.js`) remain in scope.
  * Never use `import { x as y }` aliases — the alias binding is deleted with the import.
+ * Call free functions via distinct names (kpIsTypingContext, …) from methods so the
+ * method name cannot shadow the free function after bundling.
  */
-import { isTypingContext, hasModifierKeys } from '../utils/dom-context.js';
+import {
+  kpIsTypingContext,
+  kpHasModifierKeys,
+  kpGetDeepActiveElement,
+  kpGetComposedEventTarget,
+  kpResolveTypingTarget
+} from '../utils/dom-context.js';
 
 export class EventManager {
   constructor() {
@@ -47,23 +55,31 @@ export class EventManager {
   }
 
   addListener(element, event, handler, options = {}) {
-    const key = `${element.constructor.name}-${event}`;
+    // Include capture flag so capture + bubble listeners don't clobber each other.
+    const capture = !!(options && (options.capture || options === true));
+    const key = `${element.constructor.name}-${event}-${capture ? 'c' : 'b'}`;
     
     if (this.listeners.has(key)) {
-      this.removeListener(element, event);
+      this.removeListenerByKey(key);
     }
     
     element.addEventListener(event, handler, options);
-    this.listeners.set(key, { element, event, handler, options });
+    this.listeners.set(key, { element, event, handler, options, capture });
   }
 
-  removeListener(element, event) {
-    const key = `${element.constructor.name}-${event}`;
+  removeListenerByKey(key) {
     const listener = this.listeners.get(key);
-    
     if (listener) {
       listener.element.removeEventListener(listener.event, listener.handler, listener.options);
       this.listeners.delete(key);
+    }
+  }
+
+  removeListener(element, event) {
+    // Remove both capture and bubble variants for this element+event.
+    for (const capture of [true, false]) {
+      const key = `${element.constructor.name}-${event}-${capture ? 'c' : 'b'}`;
+      this.removeListenerByKey(key);
     }
   }
 
@@ -87,18 +103,41 @@ export class EventManager {
   }
 
   /**
-   * Delegate to shared helper (module free function after import strip).
-   * Identifier resolves to the imported/bundled free function, not this method.
+   * @param {EventTarget|null|undefined} target
+   * @returns {boolean}
    */
   isTypingContext(target) {
-    return isTypingContext(target);
+    return kpIsTypingContext(target);
   }
 
   /**
-   * Delegate to shared helper (module free function after import strip).
-   * Identifier resolves to the imported/bundled free function, not this method.
+   * @returns {Element|null}
+   */
+  getDeepActiveElement() {
+    return kpGetDeepActiveElement();
+  }
+
+  /**
+   * @param {Event|null|undefined} e
+   * @returns {EventTarget|null}
+   */
+  getComposedEventTarget(e) {
+    return kpGetComposedEventTarget(e);
+  }
+
+  /**
+   * @param {Event|null|undefined} e
+   * @returns {Element|null}
+   */
+  resolveTypingTarget(e) {
+    return kpResolveTypingTarget(e);
+  }
+
+  /**
+   * @param {KeyboardEvent|null|undefined} e
+   * @returns {boolean}
    */
   hasModifierKeys(e) {
-    return hasModifierKeys(e);
+    return kpHasModifierKeys(e);
   }
 }

@@ -7,6 +7,7 @@
  * `renderKeybindingsKeyboard()` injects its CSS into `document.head`.
  */
 import { renderKeybindingsKeyboard } from './keybindings-ui.js';
+import { setKeyPressedState } from './keybindings-ui-shared.js';
 import { Z_INDEX } from '../config/constants.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
 import { getSettings, SETTINGS_STORAGE_KEY } from '../modules/settings-manager.js';
@@ -632,11 +633,11 @@ export class FloatingKeyboardHelp {
     this._keyElsByLabel = map;
     this._keyElsByActionId = byAction;
 
-    // If we re-rendered while keys were held, re-apply pressed styling.
+    // If we re-rendered while keys were held, re-apply pressed overlay.
     for (const label of this._pressedLabels) {
       const els = this._keyElsByLabel.get(label);
       if (!els) continue;
-      for (const el of els) el.classList.add('kp-key-pressed');
+      for (const el of els) setKeyPressedState(el, true);
     }
 
     // Re-apply link-hover hints after re-render.
@@ -691,8 +692,7 @@ export class FloatingKeyboardHelp {
     const els = this._keyElsByLabel.get(norm);
     if (!els) return;
     for (const el of els) {
-      if (pressed) el.classList.add('kp-key-pressed');
-      else el.classList.remove('kp-key-pressed');
+      setKeyPressedState(el, pressed);
     }
   }
 

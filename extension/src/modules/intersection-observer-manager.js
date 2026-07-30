@@ -119,9 +119,10 @@ export class IntersectionObserverManager {
           });
         }
 
-        const next = (clickable && clickable.nodeType === 1) ? /** @type {HTMLElement} */ (clickable) : null;
+        let next = (clickable && clickable.nodeType === 1) ? /** @type {HTMLElement} */ (clickable) : null;
+        // html/body are never useful targets; treat as "no hover" so we clear sticky focus.
         try {
-          if (next && (next.tagName === 'HTML' || next.tagName === 'BODY')) return;
+          if (next && (next.tagName === 'HTML' || next.tagName === 'BODY')) next = null;
         } catch { /* ignore */ }
 
         if (next === this._domHoveredElement) return;
@@ -136,9 +137,22 @@ export class IntersectionObserverManager {
     this._boundDocPointerOut = (e) => {
       try {
         if (!this._domHoverEnabled) return;
-        // When leaving the document/window, relatedTarget is typically null; clear hover.
+        // Primary leave path is pointerover with next=null (non-clickable under cursor).
+        // Also clear when leaving the document/window (relatedTarget null), or when
+        // relatedTarget is html/body (sites with body-level click handlers used to
+        // early-return and leave the previous card stuck).
         const rt = e?.relatedTarget;
-        if (rt) return;
+        if (rt && rt.nodeType === 1) {
+          try {
+            if (rt.tagName === 'HTML' || rt.tagName === 'BODY') {
+              // fall through to clear
+            } else {
+              return; // still in-document; pointerover will update/clear
+            }
+          } catch {
+            return;
+          }
+        }
         if (!this._domHoveredElement) return;
         this._domHoveredElement = null;
         try { window.__KP_HOVERED_INTERACTIVE_EL = null; } catch { /* ignore */ }
@@ -734,10 +748,14 @@ export class IntersectionObserverManager {
 
         // If we found a clickable element, trigger the hover callback
         if (clickable && clickable.nodeType === 1) {
-          const finalClickable = /** @type {HTMLElement} */ (clickable);
+          let finalClickable = /** @type {HTMLElement} */ (clickable);
           try {
-            if (finalClickable.tagName === 'HTML' || finalClickable.tagName === 'BODY') return;
+            if (finalClickable.tagName === 'HTML' || finalClickable.tagName === 'BODY') {
+              finalClickable = null;
+            }
           } catch { /* ignore */ }
+
+          if (!finalClickable) return;
 
           // Update hover state and trigger callback
           if (finalClickable !== this._domHoveredElement) {

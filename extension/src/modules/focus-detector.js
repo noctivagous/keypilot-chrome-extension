@@ -1,7 +1,12 @@
 /**
  * Text field focus detection and management
  */
-import { SELECTORS, CSS_CLASSES } from '../config/constants.js';
+import { CSS_CLASSES } from '../config/constants.js';
+import {
+  kpIsTypingContext,
+  kpGetDeepActiveElement,
+  kpGetComposedEventTarget
+} from '../utils/dom-context.js';
 
 export class FocusDetector {
   constructor(stateManager, mouseCoordinateManager = null) {
@@ -12,41 +17,59 @@ export class FocusDetector {
     this.textElementResizeObserver = null; // ResizeObserver for focused text element
     this.documentObserver = null; // MutationObserver for document focus changes
     this.rafId = null; // requestAnimationFrame ID for position tracking
+
+    // Bound handlers so start/stop can add/remove the same function references.
+    this._onFocusIn = this.handleFocusIn.bind(this);
+    this._onFocusOut = this.handleFocusOut.bind(this);
   }
 
   start() {
     console.log('[KeyPilot] FocusDetector starting...');
 
     // Listen for focus/blur events
-    document.addEventListener('focusin', this.handleFocusIn.bind(this), true);
-    document.addEventListener('focusout', this.handleFocusOut.bind(this), true);
+    document.addEventListener('focusin', this._onFocusIn, true);
+    document.addEventListener('focusout', this._onFocusOut, true);
     console.log('[KeyPilot] Focus event listeners added');
 
     // Set up MutationObserver for document to catch programmatic focus changes
     this.setupDocumentObserver();
 
-    // Initial check with delay to catch elements focused on page load
+    // Immediate check: google.com (and others) autofocus the search box *before*
+    // our document_idle content script runs, so we never see that focusin.
+    try { this.checkCurrentFocus(); } catch { /* ignore */ }
+
+    // Follow-up checks for late autofocus / SPA replacements of the search field.
     setTimeout(() => {
       this.checkCurrentFocus();
       console.log('[KeyPilot] Initial focus check completed');
     }, 100);
+    setTimeout(() => this.checkCurrentFocus(), 500);
 
     // Also check when DOM is fully loaded
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => {
+        try { this.checkCurrentFocus(); } catch { /* ignore */ }
         setTimeout(() => this.checkCurrentFocus(), 100);
       });
     }
 
     // Check when page is fully loaded (including images, etc.)
     window.addEventListener('load', () => {
+      try { this.checkCurrentFocus(); } catch { /* ignore */ }
       setTimeout(() => this.checkCurrentFocus(), 100);
     });
+
+    // Returning to the tab: browser may restore focus without a focusin we saw.
+    try {
+      window.addEventListener('focus', () => {
+        setTimeout(() => this.checkCurrentFocus(), 0);
+      });
+    } catch { /* ignore */ }
   }
 
   stop() {
-    document.removeEventListener('focusin', this.handleFocusIn, true);
-    document.removeEventListener('focusout', this.handleFocusOut, true);
+    document.removeEventListener('focusin', this._onFocusIn, true);
+    document.removeEventListener('focusout', this._onFocusOut, true);
 
     // Clean up observers
     this.cleanupTextElementObservers();
@@ -59,19 +82,38 @@ export class FocusDetector {
   }
 
   handleFocusIn(e) {
-    console.log('[KeyPilot] FocusIn event:', e.target.tagName, e.target.type || 'N/A', 'id:', e.target.id || 'none');
+    // composedPath reaches into open shadow roots; event.target is often the host.
+    const composed = kpGetComposedEventTarget(e);
+    const deep = this.getDeepActiveElement();
+    const candidate = this.isTextInput(composed)
+      ? composed
+      : (this.isTextInput(deep) ? deep : null);
 
-    if (this.isTextInput(e.target)) {
-      console.log('[KeyPilot] Text input focused - setting text mode:', e.target.tagName, e.target.type || 'N/A');
-      this.setTextFocus(e.target);
+    console.log(
+      '[KeyPilot] FocusIn event:',
+      candidate?.tagName || e.target?.tagName,
+      candidate?.type || e.target?.type || 'N/A',
+      'id:',
+      candidate?.id || e.target?.id || 'none'
+    );
+
+    if (candidate) {
+      console.log('[KeyPilot] Text input focused - setting text mode:', candidate.tagName, candidate.type || 'N/A');
+      this.setTextFocus(candidate);
     } else {
       console.log('[KeyPilot] Non-text element focused - ignoring');
     }
   }
 
   handleFocusOut(e) {
-    if (this.isTextInput(e.target)) {
-      console.debug('Text input blurred:', e.target.tagName, e.target.type || 'N/A', 'ID:', e.target.id);
+    const composed = kpGetComposedEventTarget(e);
+    const leftText =
+      this.isTextInput(composed) ||
+      this.isTextInput(e.target) ||
+      (this.currentFocusedElement && e.target === this.currentFocusedElement);
+
+    if (leftText) {
+      console.debug('Text input blurred:', composed?.tagName || e.target?.tagName, composed?.type || e.target?.type || 'N/A');
       // Longer delay to allow for focus changes and prevent premature clearing during slider interaction
       setTimeout(() => {
         const currentlyFocused = this.getDeepActiveElement();
@@ -80,7 +122,12 @@ export class FocusDetector {
           console.debug('Clearing text focus - no text input currently focused');
           this.clearTextFocus();
         } else {
-          console.debug('Keeping text focus - text input still focused');
+          // Focus moved to another text field — keep/update text mode.
+          if (currentlyFocused !== this.currentFocusedElement) {
+            this.setTextFocus(currentlyFocused);
+          } else {
+            console.debug('Keeping text focus - text input still focused');
+          }
         }
       }, 100); // Increased delay to handle slider interactions
     }
@@ -213,27 +260,20 @@ export class FocusDetector {
   }
 
   getDeepActiveElement() {
-    let activeElement = document.activeElement;
-
-    // Traverse shadow DOM if needed
-    while (activeElement && activeElement.shadowRoot && activeElement.shadowRoot.activeElement) {
-      activeElement = activeElement.shadowRoot.activeElement;
-    }
-
-    return activeElement;
+    return kpGetDeepActiveElement();
   }
 
   isTextInput(element) {
     if (!element || element.nodeType !== 1) return false;
 
-    // Check if it matches our text input selectors
     try {
       // KeyPilot omnibox is a text input, but we do NOT want it to trigger text focus mode.
       // Omnibox is its own overlay/mode, and entering text_focus here breaks its keyboard UX.
       if (element.classList?.contains?.(CSS_CLASSES.OMNIBOX_INPUT)) return false;
       const omniboxRoot = element.closest?.(`.${CSS_CLASSES.OMNIBOX_BACKDROP}`) || element.closest?.(`.${CSS_CLASSES.OMNIBOX_PANEL}`);
       if (omniboxRoot) return false;
-      return element.matches(SELECTORS.FOCUSABLE_TEXT);
+      // Align with keyboard shortcut suppression (includes bare <input>, date types, etc.).
+      return kpIsTypingContext(element);
     } catch {
       return false;
     }

@@ -29,6 +29,7 @@ shortcuts for common web interactions, eliminating the need for mouse navigation
 
 | Keys | Action |
 | --- | --- |
+| `I` | Copy image under cursor to clipboard |
 | `R` | Go Forward (History) |
 | `;` | Open Launcher (Quick Access to Sites) |
 | `B` | Open Link in New Tab (Foreground) |
@@ -72,6 +73,23 @@ shortcuts for common web interactions, eliminating the need for mouse navigation
 | `Esc` | Exit Focus |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

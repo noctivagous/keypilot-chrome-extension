@@ -6,6 +6,37 @@ import { CSS_CLASSES, ELEMENT_IDS, COLORS, Z_INDEX } from '../config/constants.j
 const BLUE_TINT_FILTER_ID = 'keypilot-blue-tint-filter';
 const BLUE_TINT_SVG_ID = 'keypilot-blue-tint-filter-svg';
 
+/**
+ * Build a CSS `url("data:image/svg+xml,...")` background for tiny upper-left
+ * hint text painted on text inputs (not a DOM overlay).
+ *
+ * @param {string} text
+ * @param {{ fill?: string, fontSize?: number }} [opts]
+ * @returns {string}
+ */
+export function buildTextInputHintDataUri(text, opts = {}) {
+  const raw = String(text || '').trim() || ' ';
+  const fill = String(opts.fill || 'rgba(90, 45, 0, 0.78)');
+  const fontSize = Number.isFinite(opts.fontSize) ? opts.fontSize : 11;
+  // Escape for XML text content.
+  const safe = raw
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+  // Approximate width (system UI is roughly 0.55–0.62em per glyph at this size).
+  const width = Math.max(48, Math.ceil(raw.length * fontSize * 0.58) + 10);
+  const height = fontSize + 5;
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
+    `<text x="0" y="${fontSize}" ` +
+    `font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif" ` +
+    `font-size="${fontSize}" font-weight="600" fill="${fill}" ` +
+    `paint-order="stroke" stroke="rgba(255,255,255,0.55)" stroke-width="2.5">${safe}</text>` +
+    `</svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+
 export class StyleManager {
   constructor() {
     this.injectedStyles = new Set();
@@ -13,6 +44,53 @@ export class StyleManager {
     this.isEnabled = true; // Track if styles should be active
     // When false, KeyPilot must not override the page cursor at all.
     this.cursorOverridesEnabled = false;
+
+    // SVG background-image hints for orange text inputs (hover / focus).
+    this._textHoverHintLabel = 'click with F to enter';
+    this._textFocusHintLabel = 'press Esc to exit';
+    this._textHoverHintUri = buildTextInputHintDataUri(this._textHoverHintLabel);
+    this._textFocusHintUri = buildTextInputHintDataUri(this._textFocusHintLabel);
+  }
+
+  /**
+   * Update layout-aware hint copy and push CSS variables onto the document.
+   * @param {{ hover?: string, focus?: string }} labels
+   */
+  setTextInputHintLabels(labels = {}) {
+    if (typeof labels.hover === 'string' && labels.hover.trim()) {
+      this._textHoverHintLabel = labels.hover.trim();
+      this._textHoverHintUri = buildTextInputHintDataUri(this._textHoverHintLabel);
+    }
+    if (typeof labels.focus === 'string' && labels.focus.trim()) {
+      this._textFocusHintLabel = labels.focus.trim();
+      this._textFocusHintUri = buildTextInputHintDataUri(this._textFocusHintLabel);
+    }
+    this._applyTextInputHintCssVars();
+  }
+
+  /**
+   * Write hint background-image CSS vars on documentElement (and any tracked shadow roots).
+   */
+  _applyTextInputHintCssVars() {
+    const hoverUri = this._textHoverHintUri || 'none';
+    const focusUri = this._textFocusHintUri || 'none';
+    try {
+      document.documentElement.style.setProperty('--kpv2-text-hover-hint-image', hoverUri);
+      document.documentElement.style.setProperty('--kpv2-text-focus-hint-image', focusUri);
+    } catch { /* ignore */ }
+
+    // Shadow roots inherit CSS variables from the host in most cases, but
+    // open roots with closed inheritance may need the vars on :host — set on
+    // the host element when we know it.
+    try {
+      for (const shadowRoot of this.shadowRootStyles.keys()) {
+        const host = shadowRoot?.host;
+        if (host && host.style) {
+          host.style.setProperty('--kpv2-text-hover-hint-image', hoverUri);
+          host.style.setProperty('--kpv2-text-focus-hint-image', focusUri);
+        }
+      }
+    } catch { /* ignore */ }
   }
 
   setCursorOverridesEnabled(enabled) {
@@ -114,6 +192,33 @@ export class StyleManager {
           opacity: 0;
         }
       }
+
+      /*
+       * Image copy (I-key): shutter flash → slight pop → shrink away
+       * (read as "captured / pocketed" rather than the F-click expand-out pulse).
+       */
+      @keyframes kpv2-image-copy-pulse {
+        0% {
+          transform: scale(0.98);
+          opacity: 0;
+          background-color: ${COLORS.IMAGE_COPY_FLASH};
+        }
+        14% {
+          transform: scale(1);
+          opacity: 1;
+          background-color: ${COLORS.IMAGE_COPY_FLASH};
+        }
+        32% {
+          transform: scale(1.06);
+          opacity: 1;
+          background-color: ${COLORS.IMAGE_COPY_FILL};
+        }
+        100% {
+          transform: scale(0.58);
+          opacity: 0;
+          background-color: ${COLORS.IMAGE_COPY_FILL};
+        }
+      }
       
       .${CSS_CLASSES.RIPPLE} { 
         position: fixed; 
@@ -144,6 +249,24 @@ export class StyleManager {
         transform-origin: center center;
         will-change: transform, opacity;
         animation: kpv2-focus-pulse 420ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+      }
+
+      .${CSS_CLASSES.IMAGE_COPY_PULSE} {
+        position: fixed;
+        left: 0;
+        top: 0;
+        pointer-events: none;
+        z-index: ${Z_INDEX.OVERLAYS_ABOVE};
+        box-sizing: border-box;
+        border: 3px solid ${COLORS.IMAGE_COPY_FRAME};
+        border-radius: 6px;
+        box-shadow:
+          0 0 0 2px ${COLORS.IMAGE_COPY_FRAME_SHADOW},
+          0 0 22px 6px ${COLORS.IMAGE_COPY_FRAME_GLOW};
+        background-color: ${COLORS.IMAGE_COPY_FILL};
+        transform-origin: center center;
+        will-change: transform, opacity, background-color;
+        animation: kpv2-image-copy-pulse 520ms cubic-bezier(0.2, 0.75, 0.25, 1) forwards;
       }
       
       .${CSS_CLASSES.FOCUS_OVERLAY} { 
@@ -325,7 +448,8 @@ export class StyleManager {
       /* Text inputs: tint background instead of drawing hover/focus frames.
          - Hover: lighter background
          - Focused (text mode): darker background
-         Also apply a consistent text treatment: dark gray text + 1px white shadow (no blur). */
+         Also apply a consistent text treatment: dark gray text + 1px white shadow (no blur).
+         Hint copy is an SVG background-image (upper-left) — not a DOM overlay. */
       .${CSS_CLASSES.TEXT_HOVER_INPUT},
       .${CSS_CLASSES.TEXT_HOVER_INPUT_PARENT},
       .${CSS_CLASSES.TEXT_FOCUS_INPUT},
@@ -334,14 +458,30 @@ export class StyleManager {
         text-shadow: var(--kpv2-text-input-text-shadow, 1px 1px 0 rgba(255, 255, 255, 0.95)) !important;
       }
 
-      .${CSS_CLASSES.TEXT_HOVER_INPUT},
+      /* Wrapper parents: color tint only (no hint image — avoid double labels). */
       .${CSS_CLASSES.TEXT_HOVER_INPUT_PARENT} {
         background-color: var(--kpv2-text-input-hover-bg, rgba(255, 140, 0, 0.18)) !important;
       }
 
-      .${CSS_CLASSES.TEXT_FOCUS_INPUT},
       .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT} {
         background-color: var(--kpv2-text-input-focus-bg, rgba(255, 140, 0, 0.42)) !important;
+      }
+
+      /* The actual input/textarea/contenteditable: tint + SVG hint in upper-left. */
+      .${CSS_CLASSES.TEXT_HOVER_INPUT} {
+        background-color: var(--kpv2-text-input-hover-bg, rgba(255, 140, 0, 0.18)) !important;
+        background-image: var(--kpv2-text-hover-hint-image, none) !important;
+        background-repeat: no-repeat !important;
+        background-position: left 6px top 3px !important;
+        background-size: auto 12px !important;
+      }
+
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT} {
+        background-color: var(--kpv2-text-input-focus-bg, rgba(255, 140, 0, 0.42)) !important;
+        background-image: var(--kpv2-text-focus-hint-image, none) !important;
+        background-repeat: no-repeat !important;
+        background-position: left 6px top 3px !important;
+        background-size: auto 12px !important;
       }
 
       .${CSS_CLASSES.TEXT_HOVER_INPUT},
@@ -356,29 +496,36 @@ export class StyleManager {
         text-shadow: var(--kpv2-text-input-text-shadow, 1px 1px 0 rgba(255, 255, 255, 0.85)) !important;
       }
 
-      /* Element styling for DOM hover mode */
+      /* Element styling for DOM hover mode.
+         Paint-only ring (outline + layered box-shadow) — never border/padding,
+         so hover chrome cannot reflow neighboring layout. */
       .keypilot-focus-element {
-        box-shadow: 0 0 0 var(--keypilot-focus-ring-width, 3px) var(--keypilot-focus-ring-color, #2196f3) !important;
-        outline: 2px solid var(--keypilot-focus-ring-color, #2196f3) !important;
-        outline-offset: 1px !important;
-        /* Reliable border fallback to ensure blue frame is always visible */
-        border: 1px solid var(--keypilot-focus-ring-color, #2196f3) !important;
-        /* Semi-transparent background fill */
+        outline: 3px solid var(--keypilot-focus-ring-color, #2196f3) !important;
+        outline-offset: 2px !important;
+        /* Contrast halo + color ring + soft glow (all layout-safe). */
+        box-shadow:
+          0 0 0 2px rgba(255, 255, 255, 0.95),
+          0 0 0 calc(var(--keypilot-focus-ring-width, 3px) + 2px)
+            var(--keypilot-focus-ring-color, #2196f3),
+          0 0 14px 3px var(--keypilot-focus-shadow-color, rgba(33, 150, 243, 0.55)) !important;
         background: var(--keypilot-focus-ring-bg-color, transparent) !important;
-        /* SVG filter for blue tint instead of brightness/contrast/saturation */
-        filter: url(#keypilot-blue-tint-filter) !important;
+        /* Brightness only — url(#svg-filter) is invalid if the SVG is missing and
+           drops the entire filter chain; outline/box-shadow already carry the ring. */
+        filter: brightness(1.08) saturate(1.12) !important;
       }
 
       /* Inset fallback for clipped contexts (e.g. line-clamp / overflow hidden). */
       .keypilot-focus-element.keypilot-focus-element--inset {
-        /* Keep outline for better visibility even with inset box-shadow */
-        outline: 2px solid var(--keypilot-focus-ring-color, #2196f3) !important;
-        outline-offset: -1px !important; /* Negative offset to ensure visibility */
-        box-shadow: inset 0 0 0 var(--keypilot-focus-ring-width, 3px) var(--keypilot-focus-ring-color, #2196f3) !important;
-        /* Reliable border fallback for inset styling too */
-        border: 1px solid var(--keypilot-focus-ring-color, #2196f3) !important;
-        /* Apply blue tint filter to inset styling too */
-        filter: url(#keypilot-blue-tint-filter) !important;
+        /* Pull outline inside the box so overflow:hidden ancestors don't hide it. */
+        outline: 3px solid var(--keypilot-focus-ring-color, #2196f3) !important;
+        outline-offset: -3px !important;
+        box-shadow:
+          inset 0 0 0 var(--keypilot-focus-ring-width, 3px)
+            var(--keypilot-focus-ring-color, #2196f3),
+          inset 0 0 0 calc(var(--keypilot-focus-ring-width, 3px) + 2px)
+            rgba(255, 255, 255, 0.9) !important;
+        background: var(--keypilot-focus-ring-bg-color, transparent) !important;
+        filter: brightness(1.08) saturate(1.12) !important;
       }
     `;
   }
@@ -419,7 +566,7 @@ export class StyleManager {
         padding-left: 5pt !important;
       }
 
-      /* Text inputs: same tint + text treatment inside shadow DOM */
+      /* Text inputs: same tint + SVG hint treatment inside shadow DOM */
       .${CSS_CLASSES.TEXT_HOVER_INPUT},
       .${CSS_CLASSES.TEXT_HOVER_INPUT_PARENT},
       .${CSS_CLASSES.TEXT_FOCUS_INPUT},
@@ -428,14 +575,28 @@ export class StyleManager {
         text-shadow: var(--kpv2-text-input-text-shadow, 1px 1px 0 rgba(255, 255, 255, 0.95)) !important;
       }
 
-      .${CSS_CLASSES.TEXT_HOVER_INPUT},
       .${CSS_CLASSES.TEXT_HOVER_INPUT_PARENT} {
         background-color: var(--kpv2-text-input-hover-bg, rgba(255, 140, 0, 0.18)) !important;
       }
 
-      .${CSS_CLASSES.TEXT_FOCUS_INPUT},
       .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT} {
         background-color: var(--kpv2-text-input-focus-bg, rgba(255, 140, 0, 0.42)) !important;
+      }
+
+      .${CSS_CLASSES.TEXT_HOVER_INPUT} {
+        background-color: var(--kpv2-text-input-hover-bg, rgba(255, 140, 0, 0.18)) !important;
+        background-image: var(--kpv2-text-hover-hint-image, none) !important;
+        background-repeat: no-repeat !important;
+        background-position: left 6px top 3px !important;
+        background-size: auto 12px !important;
+      }
+
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT} {
+        background-color: var(--kpv2-text-input-focus-bg, rgba(255, 140, 0, 0.42)) !important;
+        background-image: var(--kpv2-text-focus-hint-image, none) !important;
+        background-repeat: no-repeat !important;
+        background-position: left 6px top 3px !important;
+        background-size: auto 12px !important;
       }
 
       .${CSS_CLASSES.TEXT_HOVER_INPUT},
@@ -449,29 +610,31 @@ export class StyleManager {
         text-shadow: var(--kpv2-text-input-text-shadow, 1px 1px 0 rgba(255, 255, 255, 0.85)) !important;
       }
 
-      /* Element styling for DOM hover mode in shadow DOM */
+      /* Element styling for DOM hover mode in shadow DOM.
+         Paint-only ring — never border/padding (avoids neighbor reflow). */
       .keypilot-focus-element {
-        box-shadow: 0 0 0 var(--keypilot-focus-ring-width, 3px) var(--keypilot-focus-ring-color, #2196f3) !important;
-        outline: 2px solid var(--keypilot-focus-ring-color, #2196f3) !important;
-        outline-offset: 1px !important;
-        /* Reliable border fallback to ensure blue frame is always visible */
-        border: 1px solid var(--keypilot-focus-ring-color, #2196f3) !important;
-        /* Semi-transparent background fill */
+        outline: 3px solid var(--keypilot-focus-ring-color, #2196f3) !important;
+        outline-offset: 2px !important;
+        box-shadow:
+          0 0 0 2px rgba(255, 255, 255, 0.95),
+          0 0 0 calc(var(--keypilot-focus-ring-width, 3px) + 2px)
+            var(--keypilot-focus-ring-color, #2196f3),
+          0 0 14px 3px var(--keypilot-focus-shadow-color, rgba(33, 150, 243, 0.55)) !important;
         background: var(--keypilot-focus-ring-bg-color, transparent) !important;
-        /* SVG filter for blue tint instead of brightness/contrast/saturation */
-        filter: url(#keypilot-blue-tint-filter) !important;
+        filter: brightness(1.08) saturate(1.12) !important;
       }
 
       /* Inset fallback for clipped contexts in shadow DOM */
       .keypilot-focus-element.keypilot-focus-element--inset {
-        /* Keep outline for better visibility even with inset box-shadow */
-        outline: 2px solid var(--keypilot-focus-ring-color, #2196f3) !important;
-        outline-offset: -1px !important; /* Negative offset to ensure visibility */
-        box-shadow: inset 0 0 0 var(--keypilot-focus-ring-width, 3px) var(--keypilot-focus-ring-color, #2196f3) !important;
-        /* Reliable border fallback for inset styling too */
-        border: 1px solid var(--keypilot-focus-ring-color, #2196f3) !important;
-        /* Apply blue tint filter to inset styling too */
-        filter: url(#keypilot-blue-tint-filter) !important;
+        outline: 3px solid var(--keypilot-focus-ring-color, #2196f3) !important;
+        outline-offset: -3px !important;
+        box-shadow:
+          inset 0 0 0 var(--keypilot-focus-ring-width, 3px)
+            var(--keypilot-focus-ring-color, #2196f3),
+          inset 0 0 0 calc(var(--keypilot-focus-ring-width, 3px) + 2px)
+            rgba(255, 255, 255, 0.9) !important;
+        background: var(--keypilot-focus-ring-bg-color, transparent) !important;
+        filter: brightness(1.08) saturate(1.12) !important;
       }
 
     `;
@@ -487,6 +650,9 @@ export class StyleManager {
 
     // Ensure the SVG filter exists as a real DOM node (CSS alone can't define it).
     this._ensureBlueTintFilterInDocument();
+
+    // Paint default text-input hint SVG background-images (layout can override later).
+    this._applyTextInputHintCssVars();
 
     // Only hide/override the cursor when explicitly enabled.
     if (this.cursorOverridesEnabled) {
@@ -587,21 +753,117 @@ export class StyleManager {
     }
   }
 
+  /**
+   * Ensure KeyPilot CSS applies for a node that may live inside open shadow DOM.
+   * Document-level styles do not pierce shadow boundaries, so we inject into the
+   * owning open ShadowRoot on first use (lazy). Safe / idempotent.
+   *
+   * @param {Node|null|undefined} node
+   * @returns {boolean} true if styles are available for this node (document or injected shadow)
+   */
+  ensureStylesForNode(node) {
+    if (!this.isEnabled || !node) return false;
+
+    let root = null;
+    try {
+      root = typeof node.getRootNode === 'function' ? node.getRootNode() : null;
+    } catch {
+      root = null;
+    }
+
+    // Light DOM / document: main stylesheet already covers these nodes.
+    if (!root || root === document || root instanceof Document) {
+      return true;
+    }
+
+    if (typeof ShadowRoot !== 'undefined' && root instanceof ShadowRoot) {
+      const ok = this.injectIntoShadowRoot(root);
+      // Keep optional IO discovery set in sync when we lazy-inject.
+      if (ok) {
+        try {
+          window.keyPilot?.shadowDOMManager?.trackShadowRoot?.(root);
+        } catch { /* ignore */ }
+      }
+      return ok;
+    }
+
+    // Closed shadow or unknown root: cannot inject.
+    return false;
+  }
+
+  /**
+   * Inject KeyPilot shadow CSS + blue-tint filter into an open shadow root.
+   * Idempotent. Used by:
+   * - attachShadow pre-warm (ShadowDOMManager)
+   * - lazy ensureStylesForNode on first hover/focus styling
+   *
+   * @param {ShadowRoot} shadowRoot
+   * @returns {boolean}
+   */
   injectIntoShadowRoot(shadowRoot) {
-    if (this.injectedStyles.has(shadowRoot) || !this.isEnabled) return;
+    if (!shadowRoot || !this.isEnabled) return false;
 
-    const css = this._buildShadowCSS();
+    // Fast path: already tracked this session.
+    if (this.injectedStyles.has(shadowRoot)) {
+      // Re-ensure filter node in case the host wiped it.
+      try { this._ensureBlueTintFilterInShadowRoot(shadowRoot); } catch { /* ignore */ }
+      // Keep text-input hint vars available on the host for CSS var resolution.
+      try {
+        const host = shadowRoot.host;
+        if (host?.style) {
+          host.style.setProperty('--kpv2-text-hover-hint-image', this._textHoverHintUri || 'none');
+          host.style.setProperty('--kpv2-text-focus-hint-image', this._textFocusHintUri || 'none');
+        }
+      } catch { /* ignore */ }
+      return true;
+    }
 
-    const style = document.createElement('style');
-    style.id = 'keypilot-shadow-styles';
-    style.textContent = css;
-    shadowRoot.appendChild(style);
+    try {
+      // Another path may have injected (or leftover from prior enable).
+      const existing = typeof shadowRoot.querySelector === 'function'
+        ? shadowRoot.querySelector('#keypilot-shadow-styles')
+        : null;
+      if (existing) {
+        this.injectedStyles.add(shadowRoot);
+        this.shadowRootStyles.set(shadowRoot, existing);
+        this._ensureBlueTintFilterInShadowRoot(shadowRoot);
+        try {
+          const host = shadowRoot.host;
+          if (host?.style) {
+            host.style.setProperty('--kpv2-text-hover-hint-image', this._textHoverHintUri || 'none');
+            host.style.setProperty('--kpv2-text-focus-hint-image', this._textFocusHintUri || 'none');
+          }
+        } catch { /* ignore */ }
+        return true;
+      }
 
-    // Same filter must exist as a real node within this shadow root for url(#...) resolution.
-    this._ensureBlueTintFilterInShadowRoot(shadowRoot);
+      const css = this._buildShadowCSS();
+      const style = document.createElement('style');
+      style.id = 'keypilot-shadow-styles';
+      style.textContent = css;
+      shadowRoot.appendChild(style);
 
-    this.injectedStyles.add(shadowRoot);
-    this.shadowRootStyles.set(shadowRoot, style);
+      // Filter must live in this shadow tree for url(#...) resolution on focus rings.
+      this._ensureBlueTintFilterInShadowRoot(shadowRoot);
+
+      this.injectedStyles.add(shadowRoot);
+      this.shadowRootStyles.set(shadowRoot, style);
+
+      try {
+        const host = shadowRoot.host;
+        if (host?.style) {
+          host.style.setProperty('--kpv2-text-hover-hint-image', this._textHoverHintUri || 'none');
+          host.style.setProperty('--kpv2-text-focus-hint-image', this._textFocusHintUri || 'none');
+        }
+      } catch { /* ignore */ }
+
+      return true;
+    } catch (error) {
+      if (window.KEYPILOT_DEBUG) {
+        console.warn('[StyleManager] Failed to inject styles into shadow root:', error);
+      }
+      return false;
+    }
   }
 
   /**
@@ -661,6 +923,9 @@ export class StyleManager {
 
     // Re-inject main styles
     this.injectSharedStyles();
+
+    // Re-apply text-input hint SVG background vars after restore.
+    this._applyTextInputHintCssVars();
 
     // Re-inject shadow root styles for any shadow roots we previously tracked
     // Note: We'll need to re-discover shadow roots since they may have changed

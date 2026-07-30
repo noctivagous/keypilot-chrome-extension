@@ -264,6 +264,15 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     description: 'Select text in a rectangle',
     keyboardClass: 'key-rect-highlight',
     row: 1
+  }),
+  // Copy image under cursor (I on right-handed; E on left-handed — I is OPEN_POPOVER there).
+  COPY_HOVERED_IMAGE: Object.freeze({
+    handler: 'handleCopyHoveredImageKey',
+    label: 'Copy Image',
+    description: 'Copy image under cursor to clipboard',
+    // Default key face (no tinted key-gray / family fill).
+    keyboardClass: null,
+    row: 1
   })
 });
 
@@ -381,6 +390,7 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   PAGE_DOWN_INSTANT: Object.freeze({ keys: ['v', 'V'] }),
   ACTIVATE_NEW_TAB: Object.freeze({ keys: ['b', 'B'] }),
   RECTANGLE_HIGHLIGHT: Object.freeze({ keys: ['y', 'Y'] }),
+  COPY_HOVERED_IMAGE: Object.freeze({ keys: ['i', 'I'] }),
 
   ROOT: Object.freeze({ keys: ['1', '!'], displayKey: '1', keyLabel: '1' }),
   DELETE: Object.freeze({ keys: ['Backspace'], displayKey: 'Backspace', keyLabel: 'Backspace' }),
@@ -429,6 +439,8 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   PAGE_UP_INSTANT: Object.freeze({ keys: [',', '<'], displayKey: ',', keyLabel: ',' }),
   PAGE_DOWN_INSTANT: Object.freeze({ keys: ['m', 'M'] }),
   ACTIVATE_NEW_TAB: Object.freeze({ keys: ['n', 'N'] }),
+  // I is OPEN_POPOVER on left-handed; E is free.
+  COPY_HOVERED_IMAGE: Object.freeze({ keys: ['e', 'E'] }),
 
   ROOT: Object.freeze({ keys: ['1', '!'], displayKey: '1', keyLabel: '1' }),
   DELETE: Object.freeze({ keys: ['Backspace'], displayKey: 'Backspace', keyLabel: 'Backspace' }),
@@ -449,7 +461,7 @@ const KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: 'action', id: 'NEW_TAB', fallbackText: 'New Tab' },
     { type: 'action', id: 'RECTANGLE_HIGHLIGHT', fallbackText: 'Rectangle Select' },
     { type: 'key', text: 'U' },
-    { type: 'key', text: 'I' },
+    { type: 'action', id: 'COPY_HOVERED_IMAGE', fallbackText: 'Copy Image' },
     { type: 'key', text: 'O' },
     { type: 'action', id: 'PREVIEW_LINK_POPOVER', fallbackText: 'Preview Link' },
     { type: 'key', text: '[' },
@@ -493,7 +505,7 @@ const KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
     { type: 'special', text: 'Tab', className: 'key key-tab' },
     { type: 'key', text: 'Q' },
     { type: 'action', id: 'PREVIEW_LINK_POPOVER', fallbackText: 'Preview Link' }, // W
-    { type: 'key', text: 'E' },
+    { type: 'action', id: 'COPY_HOVERED_IMAGE', fallbackText: 'Copy Image' }, // E
     { type: 'action', id: 'RECTANGLE_HIGHLIGHT', fallbackText: 'Rectangle Select' }, // R
     { type: 'key', text: 'T' },
     { type: 'action', id: 'NEW_TAB', fallbackText: 'New Tab' }, // Y

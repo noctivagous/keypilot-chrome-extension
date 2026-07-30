@@ -10,8 +10,10 @@ export const KEYBINDINGS = buildKeybindingsForLayout(DEFAULT_KEYBOARD_LAYOUT_ID)
 
 export const SELECTORS = {
   CLICKABLE: 'a[href], button, input, select, textarea',
-  TEXT_INPUTS: 'input[type="text"], input[type="search"], input[type="url"], input[type="email"], input[type="tel"], input[type="password"], input[type="number"], textarea',
-  FOCUSABLE_TEXT: 'input[type="text"], input[type="search"], input[type="url"], input[type="email"], input[type="tel"], input[type="password"], input[type="number"], textarea, [contenteditable="true"]'
+  // Prefer IDL-backed checks via isTypingContext() when possible. These selectors
+  // are best-effort for matches()/querySelector (note: bare <input> has no type attr).
+  TEXT_INPUTS: 'input:not([type]), input[type="text"], input[type="search"], input[type="url"], input[type="email"], input[type="tel"], input[type="password"], input[type="number"], input[type="date"], input[type="datetime-local"], input[type="month"], input[type="week"], input[type="time"], textarea',
+  FOCUSABLE_TEXT: 'input:not([type]), input[type="text"], input[type="search"], input[type="url"], input[type="email"], input[type="tel"], input[type="password"], input[type="number"], input[type="date"], input[type="datetime-local"], input[type="month"], input[type="week"], input[type="time"], textarea, [contenteditable="true"], [contenteditable=""], [contenteditable="plaintext-only"]'
 };
 
 export const ARIA_ROLES = {
@@ -55,6 +57,8 @@ export const CSS_CLASSES = {
   FOCUS_OVERLAY: 'kpv2-focus-overlay',
   /** Temporary outline that scales up on F-click activation */
   FOCUS_PULSE: 'kpv2-focus-pulse',
+  /** Temporary frame that scales (pop then shrink) when copying an image under cursor */
+  IMAGE_COPY_PULSE: 'kpv2-image-copy-pulse',
   DELETE_OVERLAY: 'kpv2-delete-overlay',
   HIGHLIGHT_OVERLAY: 'kpv2-highlight-overlay',
   HIGHLIGHT_SELECTION: 'kpv2-highlight-selection',
@@ -209,6 +213,13 @@ export const COLORS = {
   FLASH_GREEN: 'rgba(0,255,0,1)',
   FLASH_GREEN_SHADOW: 'rgba(0,255,0,0.8)',
   FLASH_GREEN_GLOW: 'rgba(0,255,0,0.9)',
+
+  // Image-copy pulse (distinct from green F-click pulse)
+  IMAGE_COPY_FRAME: 'rgba(33,150,243,0.95)',
+  IMAGE_COPY_FRAME_SHADOW: 'rgba(33,150,243,0.55)',
+  IMAGE_COPY_FRAME_GLOW: 'rgba(100,180,255,0.75)',
+  IMAGE_COPY_FILL: 'rgba(33,150,243,0.14)',
+  IMAGE_COPY_FLASH: 'rgba(255,255,255,0.45)',
 
   // Notification colors
   NOTIFICATION_SUCCESS: '#4CAF50',

@@ -678,6 +678,20 @@ export class OverlayManager {
     return parents;
   }
 
+  /**
+   * Lazy-inject KeyPilot CSS into the open ShadowRoot that owns `el` (if any).
+   * No-op for light DOM. See StyleManager.ensureStylesForNode.
+   * @param {Element|null|undefined} el
+   */
+  _ensureStylesForElement(el) {
+    try {
+      const sm = window.keyPilot?.styleManager;
+      if (sm && typeof sm.ensureStylesForNode === 'function') {
+        sm.ensureStylesForNode(el);
+      }
+    } catch { /* ignore */ }
+  }
+
   _applyTextFocusElementStyling(inputEl) {
     if (!inputEl || inputEl.nodeType !== 1) {
       this._clearTextFocusElementStyling();
@@ -694,6 +708,7 @@ export class OverlayManager {
     this._textFocusCurrentElement = inputEl;
 
     try {
+      this._ensureStylesForElement(inputEl);
       inputEl.classList.add(CSS_CLASSES.TEXT_FOCUS_INPUT);
       this._textFocusStyledElements.add(inputEl);
     } catch { /* ignore */ }
@@ -701,6 +716,7 @@ export class OverlayManager {
     const parents = this._getNearbyInputWrappers(inputEl);
     for (const p of parents) {
       try {
+        this._ensureStylesForElement(p);
         p.classList.add(CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT);
         this._textFocusStyledElements.add(p);
       } catch { /* ignore */ }
@@ -742,6 +758,7 @@ export class OverlayManager {
     this._textHoverCurrentElement = inputEl;
 
     try {
+      this._ensureStylesForElement(inputEl);
       inputEl.classList.add(CSS_CLASSES.TEXT_HOVER_INPUT);
       this._textHoverStyledElements.add(inputEl);
     } catch { /* ignore */ }
@@ -749,6 +766,7 @@ export class OverlayManager {
     const parents = this._getNearbyInputWrappers(inputEl);
     for (const p of parents) {
       try {
+        this._ensureStylesForElement(p);
         p.classList.add(CSS_CLASSES.TEXT_HOVER_INPUT_PARENT);
         this._textHoverStyledElements.add(p);
       } catch { /* ignore */ }
@@ -987,6 +1005,9 @@ export class OverlayManager {
       ? 'transparent'
       : (isTextInput ? 'rgba(255,140,0,0.2)' : 'rgba(33,150,243,0.08)');
 
+    // Shadow DOM: document CSS does not pierce; inject into this root on first use.
+    this._ensureStylesForElement(stylingTarget);
+
     // Apply styling using CSS custom properties
     stylingTarget.style.setProperty('--keypilot-focus-ring-color', ringColor);
     stylingTarget.style.setProperty('--keypilot-focus-ring-width', ringWidth);
@@ -1106,21 +1127,56 @@ export class OverlayManager {
   }
 
   /**
-   * Clear focus styling from the currently styled element
+   * Strip KeyPilot focus ring classes/vars from a single element.
+   * @param {Element|null|undefined} el
+   */
+  _stripFocusStylingFromElement(el) {
+    if (!el || el.nodeType !== 1) return;
+    try {
+      el.classList.remove('keypilot-focus-element');
+      el.classList.remove('keypilot-focus-element--inset');
+      el.style.removeProperty('--keypilot-focus-ring-color');
+      el.style.removeProperty('--keypilot-focus-ring-width');
+      el.style.removeProperty('--keypilot-focus-shadow-color');
+      el.style.removeProperty('--keypilot-focus-ring-bg-color');
+      el.style.removeProperty('filter');
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Clear focus styling from the currently styled element.
+   * Also sweeps the owning open ShadowRoot (and document) for leftovers —
+   * Lit re-renders / resolve-target swaps can strand the class on a node we
+   * no longer hold in `_currentStyledElement`, which looks like "stuck" hover.
    */
   clearElementFocusStyling() {
-    if (this._currentStyledElement) {
+    const primary = this._currentStyledElement;
+    this._currentStyledElement = null;
+
+    this._stripFocusStylingFromElement(primary);
+
+    // Sweep the last styled tree scope for any stranded focus rings.
+    let root = null;
+    try {
+      root = primary && typeof primary.getRootNode === 'function'
+        ? primary.getRootNode()
+        : null;
+    } catch { root = null; }
+
+    const roots = [];
+    if (root && typeof root.querySelectorAll === 'function') roots.push(root);
+    // Always also check the document — light-DOM leftovers.
+    try { roots.push(document); } catch { /* ignore */ }
+
+    for (const r of roots) {
       try {
-        this._currentStyledElement.classList.remove('keypilot-focus-element');
-        this._currentStyledElement.classList.remove('keypilot-focus-element--inset');
-        this._currentStyledElement.style.removeProperty('--keypilot-focus-ring-color');
-        this._currentStyledElement.style.removeProperty('--keypilot-focus-ring-width');
-        this._currentStyledElement.style.removeProperty('--keypilot-focus-shadow-color');
-        this._currentStyledElement.style.removeProperty('--keypilot-focus-ring-bg-color');
-        // Remove the filter when mouse moves out
-        this._currentStyledElement.style.removeProperty('filter');
+        const stranded = r.querySelectorAll(
+          '.keypilot-focus-element, .keypilot-focus-element--inset'
+        );
+        for (const el of stranded) {
+          this._stripFocusStylingFromElement(el);
+        }
       } catch { /* ignore */ }
-      this._currentStyledElement = null;
     }
   }
 
@@ -2073,11 +2129,13 @@ export class OverlayManager {
       prevDeleteEl.classList.remove(CSS_CLASSES.DELETE);
     }
 
-    // Add new classes
+    // Add new classes (ensure shadow styles first so brightness filter applies in open roots)
     if (focusEl) {
+      this._ensureStylesForElement(focusEl);
       focusEl.classList.add(CSS_CLASSES.FOCUS);
     }
     if (deleteEl) {
+      this._ensureStylesForElement(deleteEl);
       deleteEl.classList.add(CSS_CLASSES.DELETE);
     }
   }
@@ -2264,6 +2322,66 @@ export class OverlayManager {
     } catch (e) {
       if (window.KEYPILOT_DEBUG) {
         console.warn('[KeyPilot] focus pulse failed:', e);
+      }
+    }
+  }
+
+  /**
+   * Image-copy feedback: blue photo-frame over the source element that flashes,
+   * pops slightly, then shrinks away (distinct from the green F-click expand pulse).
+   *
+   * @param {Element|null|undefined} element - Image or background-image host element
+   */
+  flashImageCopyPulse(element) {
+    if (!element || element.nodeType !== 1) return;
+
+    let rect = null;
+    try {
+      rect = element.getBoundingClientRect();
+    } catch {
+      return;
+    }
+    if (!rect) return;
+
+    // Ignore degenerate / off-screen-ish rects.
+    const w = Number(rect.width) || 0;
+    const h = Number(rect.height) || 0;
+    if (w < 2 || h < 2) return;
+
+    // Cap extreme full-page backgrounds so the pulse stays readable.
+    const maxW = Math.max(48, (typeof window !== 'undefined' ? window.innerWidth : 1200) * 0.92);
+    const maxH = Math.max(48, (typeof window !== 'undefined' ? window.innerHeight : 800) * 0.92);
+    let left = rect.left;
+    let top = rect.top;
+    let width = w;
+    let height = h;
+    if (width > maxW) {
+      left += (width - maxW) / 2;
+      width = maxW;
+    }
+    if (height > maxH) {
+      top += (height - maxH) / 2;
+      height = maxH;
+    }
+
+    try {
+      const pulse = document.createElement('div');
+      pulse.className = CSS_CLASSES.IMAGE_COPY_PULSE;
+      pulse.setAttribute('aria-hidden', 'true');
+      pulse.style.left = `${left}px`;
+      pulse.style.top = `${top}px`;
+      pulse.style.width = `${width}px`;
+      pulse.style.height = `${height}px`;
+      document.body.appendChild(pulse);
+      pulse.addEventListener('animationend', () => {
+        try { pulse.remove(); } catch { /* ignore */ }
+      }, { once: true });
+      setTimeout(() => {
+        try { if (pulse.isConnected) pulse.remove(); } catch { /* ignore */ }
+      }, 900);
+    } catch (e) {
+      if (window.KEYPILOT_DEBUG) {
+        console.warn('[KeyPilot] image-copy pulse failed:', e);
       }
     }
   }
