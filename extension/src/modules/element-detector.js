@@ -1,6 +1,8 @@
 /**
  * Element detection and interaction utilities
  */
+import { CLICKABLE_CATEGORY } from '../config/constants.js';
+
 export class ElementDetector {
   constructor() {
     this.CLICKABLE_ROLES = ['link', 'button', 'slider', 'checkbox', 'radio', 'tab', 'menuitem', 'option', 'switch', 'treeitem', 'combobox', 'spinbutton'];
@@ -54,6 +56,45 @@ export class ElementDetector {
     return el;
   }
 
+  /**
+   * True when this element itself sets cursor:pointer (not merely inheriting it).
+   * Sites like suno.com put `cursor-pointer` on <body>, which would otherwise make
+   * every node look interactive via getComputedStyle().cursor.
+   */
+  hasExplicitCursorPointer(el) {
+    if (!el || el.nodeType !== 1) return false;
+    try {
+      if (el === document.body || el === document.documentElement) return false;
+    } catch { /* ignore */ }
+
+    try {
+      if (el.style && String(el.style.cursor || '').toLowerCase() === 'pointer') {
+        return true;
+      }
+    } catch { /* ignore */ }
+
+    try {
+      const cls = typeof el.className === 'string'
+        ? el.className
+        : (el.className && typeof el.className.baseVal === 'string' ? el.className.baseVal : '');
+      if (cls && (/\bcursor-pointer\b/i.test(cls) || /\bcursorPointer\b/.test(cls))) {
+        return true;
+      }
+    } catch { /* ignore */ }
+
+    // Local CSS rule: computed pointer while parent is not pointer.
+    try {
+      if (!window.getComputedStyle) return false;
+      const own = window.getComputedStyle(el).cursor;
+      if (own !== 'pointer') return false;
+      const parent = el.parentElement;
+      if (!parent) return false;
+      return window.getComputedStyle(parent).cursor !== 'pointer';
+    } catch {
+      return false;
+    }
+  }
+
   isLikelyInteractive(el, opts = {}) {
     if (!el || el.nodeType !== 1) return false;
     
@@ -69,13 +110,10 @@ export class ElementDetector {
     const hasClickHandler = el.onclick || el.getAttribute('onclick') || this.hasTrackedClickHandler(el);
 
     // getComputedStyle() is relatively expensive; only use it as a last resort.
+    // Ignore inherited cursor:pointer from body/html-wide styles.
     let hasCursor = false;
     if (allowCursor && !matchesSelector && !hasRole && !hasClickHandler) {
-      try {
-        hasCursor = !!(window.getComputedStyle && window.getComputedStyle(el).cursor === 'pointer');
-      } catch {
-        hasCursor = false;
-      }
+      hasCursor = this.hasExplicitCursorPointer(el);
     }
     
     // Debug logging
@@ -97,7 +135,299 @@ export class ElementDetector {
     return matchesSelector || hasRole || hasClickHandler || hasCursor;
   }
 
+  /**
+   * Whether an element is (or belongs to) a media/progress scrubber UI.
+   * Used for focus styling (no link-style fill) and activation routing.
+   */
+  isScrubberLike(el) {
+    if (!el || el.nodeType !== 1) return false;
+    try {
+      if (this.isNativeType(el, 'range')) return true;
+      const role = (el.getAttribute('role') || '').trim().toLowerCase();
+      if (role === 'slider') return true;
+      if (this.looksLikeScrubTrack(el)) return true;
+      if (typeof el.closest === 'function') {
+        if (el.closest('[role="slider"], input[type="range"]')) return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Thin, wide interactive bar — typical custom progress/seek track (Rumble, Suno presentation).
+   * Strict geometry only; no "nearby control" search.
+   */
+  looksLikeScrubTrack(el) {
+    if (!el || el.nodeType !== 1) return false;
+    try {
+      if (el.tagName === 'A' || el.tagName === 'BUTTON' || el.tagName === 'VIDEO' || el.tagName === 'AUDIO') {
+        return false;
+      }
+      // Never treat real controls as tracks.
+      if (typeof el.closest === 'function') {
+        if (el.closest('button, [role="button"], a[href], select, textarea')) return false;
+      }
+
+      const role = (el.getAttribute('role') || '').trim().toLowerCase();
+      if (role && role !== 'presentation' && role !== 'none' && role !== 'slider' && role !== 'progressbar') {
+        if (this.CLICKABLE_ROLES.includes(role) && role !== 'slider') return false;
+      }
+
+      const rect = el.getBoundingClientRect();
+      if (!rect || rect.width < 64 || rect.height <= 0 || rect.height > 28) return false;
+      if (rect.width / Math.max(rect.height, 1) < 4) return false;
+
+      let pe = 'auto';
+      try { pe = window.getComputedStyle(el).pointerEvents; } catch { /* ignore */ }
+      if (pe === 'none') return false;
+
+      // Pointer / presentation / progress semantics on this node (not inherited body cursor alone).
+      if (
+        this.hasExplicitCursorPointer(el) ||
+        role === 'presentation' ||
+        role === 'slider' ||
+        role === 'progressbar'
+      ) {
+        return true;
+      }
+
+      // Rumble-style: cursor may be set on a parent chrome node via inline style.
+      let cursor = '';
+      try { cursor = window.getComputedStyle(el).cursor; } catch { /* ignore */ }
+      if (cursor !== 'pointer') return false;
+      let p = el.parentElement;
+      let d = 0;
+      while (p && d < 3) {
+        if (this.hasExplicitCursorPointer(p)) return true;
+        // Parent is also a thin wide bar (track stack).
+        try {
+          const pr = p.getBoundingClientRect();
+          if (pr.width >= rect.width * 0.9 && pr.height > 0 && pr.height <= 28) return true;
+        } catch { /* ignore */ }
+        p = p.parentElement;
+        d++;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Structural range/slider for the hit element only — no proximity / playbar scanning.
+   * Thumb-style players: range is a sibling of the visual track under the same trackHost.
+   * @param {Element} el
+   * @returns {HTMLElement|null}
+   */
+  findRelatedRangeOrSlider(el) {
+    if (!el || el.nodeType !== 1) return null;
+
+    try {
+      if (this.isNativeType(el, 'range')) return /** @type {HTMLElement} */ (el);
+      const role = (el.getAttribute('role') || '').trim().toLowerCase();
+      if (role === 'slider') return /** @type {HTMLElement} */ (el);
+    } catch { /* ignore */ }
+
+    // Direct ancestor only (not "find any range in the playbar").
+    try {
+      if (typeof el.closest === 'function') {
+        const viaClosest = el.closest('input[type="range"], [role="slider"]');
+        if (viaClosest) return /** @type {HTMLElement} */ (viaClosest);
+      }
+    } catch { /* ignore */ }
+
+    // Structural sibling thumb: only when this node (or a short ancestor) is the scrub track.
+    // trackHost > [presentation track | wrapper > input[type=range]]
+    let n = el;
+    let depth = 0;
+    while (n && n.nodeType === 1 && depth < 5) {
+      const onTrack =
+        this.looksLikeScrubTrack(n) ||
+        ((n.getAttribute?.('role') || '').trim().toLowerCase() === 'presentation' &&
+          (() => {
+            try {
+              const r = n.getBoundingClientRect();
+              return r.width >= 64 && r.height > 0 && r.height <= 28;
+            } catch {
+              return false;
+            }
+          })());
+
+      if (onTrack && n.parentElement) {
+        for (const sib of n.parentElement.children) {
+          if (!sib || sib === n || sib.nodeType !== 1) continue;
+          if (this.isNativeType(sib, 'range')) return /** @type {HTMLElement} */ (sib);
+          const r = (sib.getAttribute?.('role') || '').trim().toLowerCase();
+          if (r === 'slider') return /** @type {HTMLElement} */ (sib);
+          // One level only: wrapper that holds the thumb-sized range input.
+          try {
+            for (const child of sib.children || []) {
+              if (this.isNativeType(child, 'range')) return /** @type {HTMLElement} */ (child);
+              const cr = (child.getAttribute?.('role') || '').trim().toLowerCase();
+              if (cr === 'slider') return /** @type {HTMLElement} */ (child);
+            }
+          } catch { /* ignore */ }
+        }
+      }
+
+      n = n.parentElement;
+      depth++;
+    }
+
+    return null;
+  }
+
+  /**
+   * Resolve a scrubber for the hit element only (track / range / role=slider).
+   * Does not pull in nearby play/volume buttons via playbar-wide searches.
+   * @param {Element|null} el
+   * @param {number} [clientX]
+   * @param {number} [clientY]
+   * @returns {{ kind: 'range'|'role-slider'|'track', control: HTMLElement, track: HTMLElement }|null}
+   */
+  resolveScrubber(el, clientX, clientY) {
+    if (!el || el.nodeType !== 1) return null;
+
+    // Play/volume/nav controls must never resolve as the progress scrubber.
+    try {
+      if (el.tagName === 'A' || el.tagName === 'TEXTAREA' || el.tagName === 'BUTTON') return null;
+      if (el.tagName === 'INPUT') {
+        const t = (el.getAttribute('type') || 'text').toLowerCase();
+        if (t !== 'range') return null;
+      }
+      if (typeof el.closest === 'function') {
+        if (el.closest('button, [role="button"], a[href], select, textarea')) return null;
+      }
+    } catch { /* ignore */ }
+
+    const control = this.findRelatedRangeOrSlider(el);
+    if (control) {
+      const kind = this.isNativeType(control, 'range') ? 'range' : 'role-slider';
+      const track = this.getScrubTrackElement(control, el) || control;
+      return { kind, control, track: /** @type {HTMLElement} */ (track) };
+    }
+
+    // Custom track with no ARIA/range (Rumble-style pure div scrubber).
+    let n = el;
+    let depth = 0;
+    while (n && n.nodeType === 1 && depth < 5) {
+      if (this.looksLikeScrubTrack(n)) {
+        try {
+          const r = n.getBoundingClientRect();
+          if (r.width > window.innerWidth * 0.98 && r.height > 40) {
+            n = n.parentElement;
+            depth++;
+            continue;
+          }
+        } catch { /* ignore */ }
+
+        let track = /** @type {HTMLElement} */ (n);
+        let p = n.parentElement;
+        let up = 0;
+        while (p && up < 3) {
+          if (this.looksLikeScrubTrack(p)) {
+            try {
+              const pr = p.getBoundingClientRect();
+              const tr = track.getBoundingClientRect();
+              if (pr.width >= tr.width * 0.9 && pr.height <= 28) track = /** @type {HTMLElement} */ (p);
+            } catch { /* ignore */ }
+          }
+          p = p.parentElement;
+          up++;
+        }
+
+        return { kind: 'track', control: track, track };
+      }
+      n = n.parentElement;
+      depth++;
+    }
+
+    return null;
+  }
+
+  /**
+   * For thumb-sized range inputs, return the full-width track element used for geometry/seek.
+   * @param {Element} control - range or role=slider
+   * @param {Element} [hintEl] - original hit element
+   * @returns {HTMLElement|null}
+   */
+  getScrubTrackElement(control, hintEl) {
+    if (!control || control.nodeType !== 1) return null;
+
+    try {
+      if ((control.getAttribute('role') || '').trim().toLowerCase() === 'slider') {
+        return /** @type {HTMLElement} */ (control);
+      }
+    } catch { /* ignore */ }
+
+    let controlRect = null;
+    try { controlRect = control.getBoundingClientRect(); } catch { controlRect = null; }
+
+    // Prefer an explicit presentation sibling/host around a tiny thumb input.
+    const roots = [];
+    try {
+      if (control.parentElement) roots.push(control.parentElement);
+      if (control.parentElement?.parentElement) roots.push(control.parentElement.parentElement);
+      if (control.parentElement?.parentElement?.parentElement) {
+        roots.push(control.parentElement.parentElement.parentElement);
+      }
+      if (hintEl && hintEl !== control) roots.push(hintEl, hintEl.parentElement);
+    } catch { /* ignore */ }
+
+    for (const root of roots) {
+      if (!root || !root.querySelector) continue;
+      try {
+        const presentation = root.querySelector?.(':scope > [role="presentation"], [role="presentation"]');
+        if (presentation) {
+          const pr = presentation.getBoundingClientRect();
+          if (pr.width > 40 && (!controlRect || pr.width > controlRect.width * 2)) {
+            return /** @type {HTMLElement} */ (presentation);
+          }
+        }
+      } catch { /* ignore */ }
+
+      // Host that is substantially wider than the thumb is the track.
+      try {
+        const rr = root.getBoundingClientRect();
+        if (controlRect && rr.width > controlRect.width * 3 && rr.height <= 48 && rr.height > 0) {
+          return /** @type {HTMLElement} */ (root);
+        }
+      } catch { /* ignore */ }
+    }
+
+    // Walk up for a significantly wider horizontal host.
+    let n = control.parentElement;
+    let depth = 0;
+    while (n && depth < 6) {
+      try {
+        const rr = n.getBoundingClientRect();
+        if (controlRect && rr.width > Math.max(controlRect.width * 3, 80) && rr.height <= 40) {
+          // Prefer a presentation child if present.
+          const pres = n.querySelector?.('[role="presentation"]');
+          if (pres) {
+            const pr = pres.getBoundingClientRect();
+            if (pr.width > 40) return /** @type {HTMLElement} */ (pres);
+          }
+          return /** @type {HTMLElement} */ (n);
+        }
+      } catch { /* ignore */ }
+      n = n.parentElement;
+      depth++;
+    }
+
+    // Hint element itself may be the track fill.
+    if (hintEl && this.looksLikeScrubTrack(hintEl)) {
+      return /** @type {HTMLElement} */ (hintEl);
+    }
+
+    return /** @type {HTMLElement} */ (control);
+  }
+
   findClickable(el) {
+    // Standard interactive walk only — no scrubber "proximity" remapping of hover focus.
+    // F-activation still resolves scrubbers from the hit target in ActivationHandler.
     let n = el;
     let depth = 0;
     let cursorOnlyCandidate = null;
@@ -156,5 +486,127 @@ export class ElementDetector {
   isContentEditable(el) {
     if (!el || el.nodeType !== 1) return false;
     return el.isContentEditable || el.getAttribute('contenteditable') === 'true';
+  }
+
+  /**
+   * Classify an interactive element into a clickable category.
+   * Categories drive hover chrome, F-key feedback, and activation — sliders are
+   * not treated as links even when they share a player bar with other controls.
+   *
+   * Priority: text > slider > button > link > media > control > generic
+   *
+   * @param {Element|null} el
+   * @returns {string} One of CLICKABLE_CATEGORY values
+   */
+  getClickableCategory(el) {
+    if (!el || el.nodeType !== 1) return CLICKABLE_CATEGORY.NONE;
+
+    try {
+      // 1) Text entry
+      if (this.isTextLike(el) || this.isContentEditable(el)) {
+        return CLICKABLE_CATEGORY.TEXT;
+      }
+
+      // 2) Slider / scrubber (before link — track fills must not inherit "link" UI)
+      if (this.isNativeType(el, 'range')) return CLICKABLE_CATEGORY.SLIDER;
+      const role = (el.getAttribute?.('role') || '').trim().toLowerCase();
+      if (role === 'slider' || role === 'progressbar') return CLICKABLE_CATEGORY.SLIDER;
+      if (this.looksLikeScrubTrack(el)) return CLICKABLE_CATEGORY.SLIDER;
+      try {
+        if (typeof el.closest === 'function' &&
+            el.closest('input[type="range"], [role="slider"], [role="progressbar"]')) {
+          return CLICKABLE_CATEGORY.SLIDER;
+        }
+      } catch { /* ignore */ }
+
+      // 3) Button — findClickable returns the button host itself when hovering children
+      if (el.tagName === 'BUTTON' || role === 'button') return CLICKABLE_CATEGORY.BUTTON;
+      try {
+        if (typeof el.matches === 'function' && el.matches('[role="button"]')) {
+          return CLICKABLE_CATEGORY.BUTTON;
+        }
+      } catch { /* ignore */ }
+
+      // 4) Link (navigation) — only when the resolved target is the link itself
+      if (el.tagName === 'A' && /** @type {any} */ (el).href) return CLICKABLE_CATEGORY.LINK;
+      if (role === 'link') return CLICKABLE_CATEGORY.LINK;
+      try {
+        if (typeof el.matches === 'function' && el.matches('a[href], [role="link"]')) {
+          return CLICKABLE_CATEGORY.LINK;
+        }
+      } catch { /* ignore */ }
+
+      // 5) Media surface (video/audio element or host that is the media control itself)
+      if (el.tagName === 'VIDEO' || el.tagName === 'AUDIO') return CLICKABLE_CATEGORY.MEDIA;
+
+      // 6) Other form / ARIA controls
+      if (el.tagName === 'SELECT') return CLICKABLE_CATEGORY.CONTROL;
+      if (this.isNativeType(el, 'checkbox') || this.isNativeType(el, 'radio') ||
+          this.isNativeType(el, 'file') || this.isNativeType(el, 'color') ||
+          this.isNativeType(el, 'date') || this.isNativeType(el, 'time')) {
+        return CLICKABLE_CATEGORY.CONTROL;
+      }
+      if (['checkbox', 'radio', 'tab', 'menuitem', 'option', 'switch', 'treeitem',
+           'combobox', 'spinbutton'].includes(role)) {
+        return CLICKABLE_CATEGORY.CONTROL;
+      }
+
+      // 7) Catch remaining interactive nodes (cursor / handlers / inputs)
+      if (el.tagName === 'INPUT') {
+        // Non-text, non-range inputs already handled; leftover types → control
+        return CLICKABLE_CATEGORY.CONTROL;
+      }
+      if (this.isLikelyInteractive(el)) return CLICKABLE_CATEGORY.GENERIC;
+
+      return CLICKABLE_CATEGORY.NONE;
+    } catch {
+      return CLICKABLE_CATEGORY.NONE;
+    }
+  }
+
+  /**
+   * Whether this category should get "link-style" hover/activation chrome:
+   * scale-up pulse, link key hints, navigational affordances.
+   * Sliders and media surfaces are excluded.
+   * @param {string} category
+   * @returns {boolean}
+   */
+  isLinkStyleCategory(category) {
+    return category === CLICKABLE_CATEGORY.LINK || category === CLICKABLE_CATEGORY.GENERIC;
+  }
+
+  /**
+   * Whether focus fill (blue wash) should be suppressed for this category/element.
+   * @param {Element|null} el
+   * @returns {boolean}
+   */
+  shouldSuppressFocusFillForElement(el) {
+    const cat = this.getClickableCategory(el);
+    if (cat === CLICKABLE_CATEGORY.SLIDER) return true;
+    if (cat === CLICKABLE_CATEGORY.TEXT) return true;
+    // Media: suppress only when the player shell has semantic seek chrome
+    // (thumbnail videos without a range/slider keep the blue wash).
+    if (cat === CLICKABLE_CATEGORY.MEDIA) {
+      try {
+        let root = el;
+        if (el?.tagName === 'VIDEO' && el.parentElement) root = el.parentElement;
+        let n = root;
+        let depth = 0;
+        while (n && n.nodeType === 1 && depth < 5) {
+          if (n === document.body || n === document.documentElement) break;
+          if (n.querySelector?.('input[type="range"], [role="slider"], [role="progressbar"]')) {
+            return true;
+          }
+          try {
+            const r = n.getBoundingClientRect();
+            if (r.height > window.innerHeight * 0.85 && r.width > window.innerWidth * 0.85) break;
+          } catch { /* ignore */ }
+          n = n.parentElement;
+          depth++;
+        }
+      } catch { /* ignore */ }
+      return false;
+    }
+    return false;
   }
 }

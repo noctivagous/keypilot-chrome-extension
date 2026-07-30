@@ -1,7 +1,7 @@
 /**
  * Visual overlay management for focus and delete indicators
  */
-import { CSS_CLASSES, Z_INDEX, SELECTORS, MODES, COLORS, FEATURE_FLAGS } from '../config/constants.js';
+import { CSS_CLASSES, Z_INDEX, SELECTORS, MODES, COLORS, FEATURE_FLAGS, CLICKABLE_CATEGORY } from '../config/constants.js';
 import { HighlightManager } from './highlight-manager.js';
 import { PopupManager } from './popup-manager.js';
 import { DEFAULT_SETTINGS } from './settings-manager.js';
@@ -128,21 +128,58 @@ export class OverlayManager {
   }
 
   /**
-   * Treat any element that is a <video> OR contains a <video> descendant as "video-like".
-   * This is used to disable the green transparent fill on video players and their
-   * clickable wrapper containers (common on many sites).
+   * Resolve clickable category for focus chrome decisions.
+   * @param {Element|null} element
+   * @returns {string}
+   */
+  getFocusCategory(element) {
+    try {
+      const detector = window.keyPilot?.detector || window.keyPilot?.elementDetector;
+      if (detector && typeof detector.getClickableCategory === 'function') {
+        return detector.getClickableCategory(element);
+      }
+    } catch { /* ignore */ }
+    return CLICKABLE_CATEGORY.NONE;
+  }
+
+  /**
+   * Suppress the semi-transparent blue focus fill by category:
+   * - slider: never (progress bars are not link-like)
+   * - media with seek chrome in the player shell: no fill (players, not thumbnails)
+   * - text: no blue wash
    *
-   * Keep this fast: it runs on hover updates.
+   * Links / generic / media thumbnails keep the fill.
+   *
+   * @param {Element|null} element
+   * @returns {boolean}
+   */
+  shouldSuppressFocusFill(element) {
+    try {
+      if (!element || !(element instanceof Element)) return false;
+      const detector = window.keyPilot?.detector || window.keyPilot?.elementDetector;
+      if (detector && typeof detector.shouldSuppressFocusFillForElement === 'function') {
+        return detector.shouldSuppressFocusFillForElement(element);
+      }
+      const cat = this.getFocusCategory(element);
+      return cat === CLICKABLE_CATEGORY.SLIDER || cat === CLICKABLE_CATEGORY.TEXT;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Media / slider surfaces for F-key scale-pulse skip (not link-style).
    * @param {Element|null} element
    * @returns {boolean}
    */
   isVideoLikeElement(element) {
     try {
       if (!element || !(element instanceof Element)) return false;
-      if (element.tagName === 'VIDEO') return true;
-      // Fast path: if it can't possibly contain a video.
-      if (!element.querySelector) return false;
-      return !!element.querySelector('video');
+      const cat = this.getFocusCategory(element);
+      if (cat === CLICKABLE_CATEGORY.SLIDER || cat === CLICKABLE_CATEGORY.MEDIA) return true;
+      // Fallback: raw video node if category unavailable
+      if (element.tagName === 'VIDEO' || element.tagName === 'AUDIO') return true;
+      return !!(element.querySelector && element.querySelector('video'));
     } catch {
       return false;
     }
@@ -223,7 +260,7 @@ export class OverlayManager {
 
     // Determine element type and colors
     const isTextInput = element.matches && element.matches(SELECTORS.FOCUSABLE_TEXT);
-    const isVideo = this.isVideoLikeElement(element);
+    const suppressFill = this.shouldSuppressFocusFill(element);
     const isVeryLarge = rect.width > 512 && rect.height > 512;
 
     let borderColor, shadowColor, backgroundColor;
@@ -235,12 +272,13 @@ export class OverlayManager {
       const p = this._getNonTextFocusPalette();
       borderColor = p.borderColor;
       shadowColor = p.shadowColor;
-      backgroundColor = (isVideo || isVeryLarge) ? 'transparent' : p.backgroundColor;
+      // Fill for thumbnails/links; suppress for scrubbers and players that have a seek bar.
+      backgroundColor = (suppressFill || isVeryLarge) ? 'transparent' : p.backgroundColor;
     }
 
     // Settings-driven behavior
     const { rectangleThickness, overlayFillEnabled } = this._getClickModeSettings();
-    if (!isTextInput && !isVideo && !isVeryLarge && overlayFillEnabled === false) {
+    if (!isTextInput && !suppressFill && !isVeryLarge && overlayFillEnabled === false) {
       backgroundColor = 'transparent';
     }
 
@@ -351,7 +389,7 @@ export class OverlayManager {
 
     // Determine element type and colors
     const isTextInput = element.matches && element.matches(SELECTORS.FOCUSABLE_TEXT);
-    const isVideo = this.isVideoLikeElement(element);
+    const suppressFill = this.shouldSuppressFocusFill(element);
     const isVeryLarge = rect.width > 512 && rect.height > 512;
 
     let borderColor, shadowColor, backgroundColor, shadowBrightColor;
@@ -365,12 +403,13 @@ export class OverlayManager {
       borderColor = p.borderColor;
       shadowColor = p.shadowColor;
       shadowBrightColor = p.shadowBrightColor;
-      backgroundColor = (isVideo || isVeryLarge) ? 'transparent' : p.backgroundColor;
+      // Fill for thumbnails/links; suppress for scrubbers and players that have a seek bar.
+      backgroundColor = (suppressFill || isVeryLarge) ? 'transparent' : p.backgroundColor;
     }
 
     // Settings-driven behavior
     const { rectangleThickness, overlayFillEnabled } = this._getClickModeSettings();
-    if (!isTextInput && !isVideo && !isVeryLarge && overlayFillEnabled === false) {
+    if (!isTextInput && !suppressFill && !isVeryLarge && overlayFillEnabled === false) {
       backgroundColor = 'transparent';
     }
 
@@ -937,13 +976,16 @@ export class OverlayManager {
 
     // Determine styling based on element type and mode
     const isTextInput = stylingTarget.matches && stylingTarget.matches(SELECTORS.FOCUSABLE_TEXT);
-    const isVideo = this.isVideoLikeElement(stylingTarget);
+    const suppressFill = this.shouldSuppressFocusFill(stylingTarget);
 
     // Set CSS custom properties for styling
     const ringColor = isTextInput ? COLORS.ORANGE : COLORS.FOCUS_BLUE; // Blue for DOM hover mode
     const ringWidth = '3px';
     const shadowColor = isTextInput ? COLORS.ORANGE_SHADOW : COLORS.BLUE_SHADOW;
-    const ringBgColor = isVideo ? 'transparent' : (isTextInput ? 'rgba(255,140,0,0.2)' : 'rgba(33,150,243,0.08)');
+    // Blue wash for thumbnails/links; none for scrubbers / players with a seek bar.
+    const ringBgColor = suppressFill
+      ? 'transparent'
+      : (isTextInput ? 'rgba(255,140,0,0.2)' : 'rgba(33,150,243,0.08)');
 
     // Apply styling using CSS custom properties
     stylingTarget.style.setProperty('--keypilot-focus-ring-color', ringColor);
@@ -1113,7 +1155,7 @@ export class OverlayManager {
 
     // Determine if this is a text input element
     const isTextInput = element.matches && element.matches(SELECTORS.FOCUSABLE_TEXT);
-    const isVideo = this.isVideoLikeElement(element);
+    const suppressFill = this.shouldSuppressFocusFill(element);
 
     // We'll use this rect both for sizing/positioning and for deciding whether to render a fill.
     const rect = (rectOverride && typeof rectOverride === 'object')
@@ -1133,12 +1175,13 @@ export class OverlayManager {
       const p = this._getNonTextFocusPalette();
       borderColor = p.borderColor;
       shadowColor = p.shadowColor;
-      backgroundColor = (isVideo || isVeryLarge) ? 'transparent' : p.backgroundColor;
+      // Fill for thumbnails/links; suppress for scrubbers and players that have a seek bar.
+      backgroundColor = (suppressFill || isVeryLarge) ? 'transparent' : p.backgroundColor;
     }
 
     // Settings-driven behavior for Click Mode focus rectangle.
     const { rectangleThickness, overlayFillEnabled } = this._getClickModeSettings();
-    if (!isTextInput && !isVideo && !isVeryLarge && overlayFillEnabled === false) {
+    if (!isTextInput && !suppressFill && !isVeryLarge && overlayFillEnabled === false) {
       backgroundColor = 'transparent';
     }
 
@@ -1150,7 +1193,7 @@ export class OverlayManager {
         text: element.textContent?.substring(0, 30),
         mode: mode,
         isTextInput: isTextInput,
-        isVideo: isVideo,
+        suppressFill: suppressFill,
         isVeryLarge: isVeryLarge,
         borderColor: borderColor
       });
@@ -2151,8 +2194,32 @@ export class OverlayManager {
    * F-key activation feedback: scale the focus outline up and fade it out.
    * Uses a temporary floating rectangle so it works in every render mode
    * (including DOM-hover element styling, where there is no focusOverlay div).
+   *
+   * Whether the scale effect runs is decided solely by CLICKABLE_CATEGORY via
+   * ElementDetector.isLinkStyleCategory (LINK + GENERIC only). Sliders, media,
+   * buttons, text, and controls never get the pulse.
+   *
+   * @param {Element|null} [activationTarget] - Element that was F-activated.
+   *   Prefer this over last-hover focus so category matches the real target.
    */
-  flashFocusOverlay() {
+  flashFocusOverlay(activationTarget = null) {
+    try {
+      const el = (activationTarget && activationTarget.nodeType === 1)
+        ? activationTarget
+        : (this._currentStyledElement || this._lastFocusElement);
+
+      const detector = window.keyPilot?.detector || window.keyPilot?.elementDetector;
+      const cat = (detector && typeof detector.getClickableCategory === 'function')
+        ? detector.getClickableCategory(el)
+        : this.getFocusCategory(el);
+
+      const showScale = (detector && typeof detector.isLinkStyleCategory === 'function')
+        ? detector.isLinkStyleCategory(cat)
+        : (cat === CLICKABLE_CATEGORY.LINK || cat === CLICKABLE_CATEGORY.GENERIC);
+
+      if (!showScale) return;
+    } catch { /* ignore */ }
+
     const rect = this._getFocusPulseRect();
     if (!rect) return;
 
@@ -2176,7 +2243,7 @@ export class OverlayManager {
       }
     } catch { /* ignore */ }
 
-    // Scale-up pulse ghost (primary feedback).
+    // Scale-up pulse ghost (link-style categories only).
     try {
       const pulse = document.createElement('div');
       pulse.className = CSS_CLASSES.FOCUS_PULSE;

@@ -90,6 +90,21 @@ export class ActivationHandler {
   smartClick(el, clientX, clientY, openInNewTab = false) {
     if (!el) return false;
 
+    // Scrubbers must not be promoted to a surrounding card/link activator.
+    // (Suno/Rumble progress bars sit inside large pointer/link-ish chrome.)
+    try {
+      const scrub = this.detector.resolveScrubber?.(el, clientX, clientY);
+      if (scrub?.control) {
+        if (scrub.kind === 'range' || this.detector.isNativeType(scrub.control, 'range')) {
+          return this.handleRange(scrub.control, clientX, clientY, scrub.track);
+        }
+        if (scrub.kind === 'role-slider') {
+          return this.handleRoleSlider(scrub.control, clientX, clientY, scrub.track);
+        }
+        return this.handleScrubberTrack(scrub.track || scrub.control, clientX, clientY);
+      }
+    } catch { /* ignore */ }
+
     // First, try to find a more specific clickable parent (links, buttons)
     // Prioritize links for video/audio elements (common on video websites)
     let activator = el;
@@ -234,6 +249,23 @@ export class ActivationHandler {
       }
     }
 
+    // Media scrubbers (thumb-style ranges, custom div tracks, role=slider).
+    // Resolve before generic radio/checkbox/text so track fills map to the real control.
+    try {
+      const scrub = this.detector.resolveScrubber?.(target, x, y);
+      if (scrub?.control) {
+        if (scrub.kind === 'range' || this.detector.isNativeType(scrub.control, 'range')) {
+          return this.handleRange(scrub.control, x, y, scrub.track);
+        }
+        if (scrub.kind === 'role-slider') {
+          return this.handleRoleSlider(scrub.control, x, y, scrub.track);
+        }
+        if (scrub.kind === 'track') {
+          return this.handleScrubberTrack(scrub.track || scrub.control, x, y);
+        }
+      }
+    } catch { /* ignore */ }
+
     // Handle different input types semantically
     if (this.detector.isNativeType(target, 'radio')) {
       return this.handleRadio(target);
@@ -244,7 +276,7 @@ export class ActivationHandler {
     }
 
     if (this.detector.isNativeType(target, 'range')) {
-      return this.handleRange(target, x);
+      return this.handleRange(target, x, y);
     }
 
     // Handle role="slider" elements
@@ -305,44 +337,260 @@ export class ActivationHandler {
     return true;
   }
 
-  handleRange(target, clientX) {
-    const rect = target.getBoundingClientRect();
+  /**
+   * Geometry used to map clientX → slider value.
+   * Thumb-sized range inputs are only ~12px wide and positioned with left:%;
+   * value math must use the full track host rect instead of the thumb box.
+   */
+  getSliderMetricsRect(control, trackHint = null) {
+    let track = trackHint;
+    try {
+      if (!track && this.detector.getScrubTrackElement) {
+        track = this.detector.getScrubTrackElement(control);
+      }
+    } catch { /* ignore */ }
+
+    let controlRect = null;
+    let trackRect = null;
+    try { controlRect = control.getBoundingClientRect(); } catch { controlRect = null; }
+    try { trackRect = track && track !== control ? track.getBoundingClientRect() : null; } catch { trackRect = null; }
+
+    // Prefer a substantially wider track when the control looks like a thumb-only range.
+    if (trackRect && trackRect.width > 0 && controlRect && controlRect.width > 0) {
+      if (trackRect.width >= controlRect.width * 2.5) return trackRect;
+    }
+    if (trackRect && trackRect.width > 40 && (!controlRect || controlRect.width < 24)) {
+      return trackRect;
+    }
+    if (controlRect && controlRect.width > 0) return controlRect;
+    return trackRect;
+  }
+
+  /**
+   * Pointer/mouse down+up at coordinates.
+   * Custom media scrubbers listen for this (not for programmatic range.value).
+   * mouseup is required on some players to commit the seek.
+   */
+  dispatchPointerSeek(target, clientX, clientY) {
+    if (!target) return;
+    const clientYSafe = Number.isFinite(clientY) ? clientY : (() => {
+      try {
+        const r = target.getBoundingClientRect();
+        return r.top + r.height / 2;
+      } catch {
+        return 0;
+      }
+    })();
+    // Full pointer+mouse sequence including mouseup (commit) at the seek point.
+    this.dispatchClickSequence(target, clientX, clientYSafe);
+  }
+
+  /**
+   * True when the range input is a positioned thumb and a separate wider track owns seek geometry
+   * (common custom players: small input with left:%, full-width visual track sibling).
+   */
+  isThumbStyleRange(control, track) {
+    if (!control || !track || track === control) return false;
+    try {
+      const cr = control.getBoundingClientRect();
+      const tr = track.getBoundingClientRect();
+      if (!cr || !tr || cr.width <= 0 || tr.width <= 0) return false;
+      return tr.width >= cr.width * 2.5;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Containment root for "is under-point inside this scrubber?" checks.
+   * Expands one level to a short track host (presentation + thumb wrapper) without
+   * expanding into a full playbar that would include play/volume buttons.
+   */
+  getSeekContainmentRoot(track) {
+    if (!track || track.nodeType !== 1) return track;
+    try {
+      const parent = track.parentElement;
+      if (!parent || parent === document.body || parent === document.documentElement) {
+        return track;
+      }
+      const pr = parent.getBoundingClientRect();
+      // Track hosts are short horizontal bars, not whole player chrome.
+      if (pr.height > 0 && pr.height <= 48 && pr.width >= 64) {
+        return parent;
+      }
+    } catch { /* ignore */ }
+    return track;
+  }
+
+  /**
+   * Prefer the real hit-target under the cursor (progress fill / remaining bar).
+   * Synthetic events on the outer presentation wrapper alone often move the knob
+   * UI without committing media seek; events on the under-point node do both.
+   */
+  resolveSeekPointTarget(track, clientX, clientY) {
+    if (!track) return track;
+    try {
+      if (Number.isFinite(clientX) && Number.isFinite(clientY) && this.detector?.deepElementFromPoint) {
+        const under = this.detector.deepElementFromPoint(clientX, clientY);
+        if (!under) return track;
+        const root = this.getSeekContainmentRoot(track) || track;
+        if (under === track || under === root ||
+            (typeof root.contains === 'function' && root.contains(under)) ||
+            (typeof track.contains === 'function' && track.contains(under))) {
+          return under;
+        }
+      }
+    } catch { /* ignore */ }
+    return track;
+  }
+
+  /**
+   * Find <audio>/<video> associated with a scrubber (same player shell, or duration ≈ range max).
+   * @param {Element} fromEl
+   * @param {HTMLInputElement|null} [rangeEl]
+   * @returns {HTMLMediaElement|null}
+   */
+  findAssociatedMedia(fromEl, rangeEl = null) {
+    try {
+      let n = fromEl;
+      let depth = 0;
+      while (n && n.nodeType === 1 && depth < 8) {
+        if (n === document.body || n === document.documentElement) break;
+        if (n.tagName === 'VIDEO' || n.tagName === 'AUDIO') {
+          return /** @type {HTMLMediaElement} */ (n);
+        }
+        try {
+          const list = n.querySelectorAll?.('audio, video');
+          if (list && list.length) {
+            let best = null;
+            for (const m of list) {
+              if (Number.isFinite(m.duration) && m.duration > 1) {
+                best = m;
+                break;
+              }
+              if (!best) best = m;
+            }
+            if (best) return /** @type {HTMLMediaElement} */ (best);
+          }
+        } catch { /* ignore */ }
+        try {
+          const r = n.getBoundingClientRect();
+          if (r.height > window.innerHeight * 0.85 && r.width > window.innerWidth * 0.85) break;
+        } catch { /* ignore */ }
+        n = n.parentElement;
+        depth++;
+      }
+    } catch { /* ignore */ }
+
+    // Match range max ≈ media duration (playback progress controls).
+    try {
+      const max = rangeEl ? this.asNum(rangeEl.max, NaN) : NaN;
+      if (Number.isFinite(max) && max > 1) {
+        const all = document.querySelectorAll('audio, video');
+        for (const m of all) {
+          if (Number.isFinite(m.duration) && Math.abs(m.duration - max) < 1.5) {
+            return /** @type {HTMLMediaElement} */ (m);
+          }
+        }
+      }
+    } catch { /* ignore */ }
+
+    return null;
+  }
+
+  /**
+   * Soft fallback: set media.currentTime from cursor position along the track.
+   * Used after pointer seek for custom players that update the knob but not media.
+   */
+  maybeSeekAssociatedMedia(trackEl, clientX, clientY, rangeEl = null) {
+    try {
+      if (!trackEl || !Number.isFinite(clientX)) return;
+      const media = this.findAssociatedMedia(trackEl, rangeEl);
+      if (!media || !Number.isFinite(media.duration) || media.duration <= 0) return;
+
+      const metricsEl = this.getSeekContainmentRoot(trackEl) || trackEl;
+      const rect = metricsEl.getBoundingClientRect();
+      if (!rect || rect.width <= 0) return;
+
+      const pct = this.clamp((clientX - rect.left) / rect.width, 0, 1);
+      const targetTime = pct * media.duration;
+      // Only nudge when clearly out of sync (avoid fighting smooth seeking UIs).
+      if (Math.abs(media.currentTime - targetTime) < 0.35) return;
+      media.currentTime = targetTime;
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Generic custom-scrubber seek: one pointer sequence on the element under the cursor.
+   * Do not set range.value from our geometry, do not fire on a tiny thumb input,
+   * do not double-dispatch on track + fill.
+   */
+  seekCustomScrubber(track, clientX, clientY, rangeEl = null) {
+    if (!track) return false;
+    const pointTarget = this.resolveSeekPointTarget(track, clientX, clientY);
+    this.dispatchPointerSeek(pointTarget, clientX, clientY);
+    // Soft media sync after pointer commit (custom React players).
+    this.maybeSeekAssociatedMedia(track, clientX, clientY, rangeEl);
+    return true;
+  }
+
+  handleRange(target, clientX, clientY = null, trackHint = null) {
+    let track = trackHint;
+    try {
+      if (!track && this.detector.getScrubTrackElement) {
+        track = this.detector.getScrubTrackElement(target);
+      }
+    } catch { /* ignore */ }
+    track = track || target;
+
+    // Thumb-style custom scrubbers: site owns seek math via pointer at clientX/Y on the
+    // visual hit target under the cursor (often a fill child of the track).
+    // Do NOT:
+    //  - set .value from our rect math (misses thumb-width compensation → offset knob)
+    //  - fire pointer events on the tiny range input (native range misreads clientX)
+    //  - double-dispatch (track wrapper + fill) — causes offset / UI-only seeks
+    if (this.isThumbStyleRange(target, track)) {
+      return this.seekCustomScrubber(track, clientX, clientY, target);
+    }
+
+    // Native full-width <input type="range">: map clientX onto the control and set value.
+    const rect = this.getSliderMetricsRect(target, track);
     const min = this.asNum(target.min, 0);
     const max = this.asNum(target.max, 100);
     const stepAttr = target.step && target.step !== 'any' ? this.asNum(target.step, 1) : 'any';
 
-    if (rect.width <= 0) return false;
-    const pct = this.clamp((clientX - rect.left) / rect.width, 0, 1);
-    let val = min + pct * (max - min);
+    if (rect && rect.width > 0) {
+      const pct = this.clamp((clientX - rect.left) / rect.width, 0, 1);
+      let val = min + pct * (max - min);
 
-    if (stepAttr !== 'any' && Number.isFinite(stepAttr) && stepAttr > 0) {
-      const steps = Math.round((val - min) / stepAttr);
-      val = min + steps * stepAttr;
+      if (stepAttr !== 'any' && Number.isFinite(stepAttr) && stepAttr > 0) {
+        const steps = Math.round((val - min) / stepAttr);
+        val = min + steps * stepAttr;
+      }
+      val = this.clamp(val, min, max);
+      const before = target.value;
+      try {
+        target.value = String(val);
+        if (target.value !== before) this.dispatchInputChange(target);
+      } catch { /* ignore */ }
     }
-    val = this.clamp(val, min, max);
-    const before = target.value;
-    target.value = String(val);
-    if (target.value !== before) this.dispatchInputChange(target);
+
+    // Coordinate sequence on the range itself for listeners that use clientX.
+    this.dispatchPointerSeek(target, clientX, clientY);
     return true;
   }
 
-  handleRoleSlider(target, clientX, clientY) {
-    // Handle ARIA slider elements with dual approach:
-    // 1. Update ARIA attributes for compliant sliders
-    // 2. Dispatch mouse events for custom implementations like YouTube
-
-    // First, try ARIA attribute approach for standard sliders
-    const rect = target.getBoundingClientRect();
-    if (rect.width > 0) {
+  handleRoleSlider(target, clientX, clientY, trackHint = null) {
+    // ARIA sliders: update aria-valuenow when present, then one coordinate pointer sequence.
+    const rect = this.getSliderMetricsRect(target, trackHint || target);
+    if (rect && rect.width > 0) {
       const min = this.asNum(target.getAttribute('aria-valuemin'), 0);
       const max = this.asNum(target.getAttribute('aria-valuemax'), 100);
       const step = this.asNum(target.getAttribute('aria-step'), 1);
 
-      // Calculate new value based on click position
       const pct = this.clamp((clientX - rect.left) / rect.width, 0, 1);
       let newValue = min + pct * (max - min);
 
-      // Apply step if specified
       if (step > 0) {
         const steps = Math.round((newValue - min) / step);
         newValue = min + steps * step;
@@ -350,15 +598,11 @@ export class ActivationHandler {
 
       newValue = this.clamp(newValue, min, max);
 
-      // Update aria-valuenow attribute
       const before = target.getAttribute('aria-valuenow');
-      target.setAttribute('aria-valuenow', String(newValue));
+      try { target.setAttribute('aria-valuenow', String(newValue)); } catch { /* ignore */ }
 
-      // Dispatch ARIA-compliant events if value changed
       if (String(newValue) !== before) {
         this.dispatchInputChange(target);
-
-        // Dispatch custom slider change event
         try {
           target.dispatchEvent(new CustomEvent('sliderchange', {
             bubbles: true,
@@ -368,22 +612,20 @@ export class ActivationHandler {
       }
     }
 
-    // Also dispatch mouse events for compatibility with custom implementations
-    const opts = {
-      bubbles: true,
-      cancelable: true,
-      composed: true,
-      view: window,
-      clientX,
-      clientY
-    };
-
-    try { target.dispatchEvent(new MouseEvent('pointerdown', opts)); } catch { }
-    try { target.dispatchEvent(new MouseEvent('mousedown', opts)); } catch { }
-    try { target.dispatchEvent(new MouseEvent('mouseup', opts)); } catch { }
-    try { target.dispatchEvent(new MouseEvent('click', opts)); } catch { }
-
+    const seekRoot = trackHint && trackHint !== target ? trackHint : target;
+    const pointTarget = this.resolveSeekPointTarget(seekRoot, clientX, clientY);
+    this.dispatchPointerSeek(pointTarget, clientX, clientY);
+    this.maybeSeekAssociatedMedia(seekRoot, clientX, clientY, null);
     return true;
+  }
+
+  /**
+   * Custom scrub tracks with no input/role (pure div progress bars).
+   * One pointer sequence on the under-cursor hit target.
+   */
+  handleScrubberTrack(track, clientX, clientY) {
+    if (!track) return false;
+    return this.seekCustomScrubber(track, clientX, clientY, null);
   }
 
   handleTextField(target) {

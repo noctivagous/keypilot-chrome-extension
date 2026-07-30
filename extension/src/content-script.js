@@ -4,9 +4,7 @@
 import { KeyPilot } from './keypilot.js';
 import { KeyPilotToggleHandler } from './modules/keypilot-toggle-handler.js';
 import { OnboardingManager } from './modules/onboarding-manager.js';
-import { SCROLL } from './config/constants.js';
-import { MSG } from './messaging/types.js';
-import { isTypingContext, hasModifierKeys } from './utils/dom-context.js';
+import { installPopoverIframeBridge } from './modules/popover-iframe-bridge.js';
 
 /**
  * When running inside an iframe, we normally avoid initializing full KeyPilot.
@@ -19,227 +17,22 @@ function setupPopoverIframeBridge() {
     // Only install in iframes
     if (window === window.top) return;
 
-    // Only activate bridge behavior after parent explicitly initializes it.
-    // This prevents interfering with random iframes on pages where KeyPilot isn't using a popover.
-    let bridgeActive = false;
-    let keyPilotStarted = false;
-    let lastMouse = { x: null, y: null };
-    let mouseInsideFrame = true;
-
-    const updateMouse = (e) => {
-      try {
-        if (!e) return;
-        if (typeof e.clientX === 'number') lastMouse.x = e.clientX;
-        if (typeof e.clientY === 'number') lastMouse.y = e.clientY;
-      } catch {
-        // Ignore
-      }
-    };
-
-    // Track mouse position so we can "F-click" links under the cursor inside the iframe.
-    document.addEventListener('mousemove', updateMouse, true);
-    document.addEventListener('pointermove', updateMouse, true);
-
-    // Track whether the user's mouse is currently inside this iframe document.
-    // If the mouse is outside (e.g. hovering the parent popover header/close button),
-    // we can forward certain keys (like F) to the parent so it can act on them.
-    try {
-      const setInside = (v) => { mouseInsideFrame = !!v; };
-      document.addEventListener('mouseenter', () => setInside(true), true);
-      document.addEventListener('mouseleave', () => setInside(false), true);
-      if (document.documentElement) {
-        document.documentElement.addEventListener('mouseenter', () => setInside(true), true);
-        document.documentElement.addEventListener('mouseleave', () => setInside(false), true);
-      }
-    } catch {
-      // ignore
-    }
-
-    const deepElementFromPoint = (x, y) => {
-      try {
-        let el = document.elementFromPoint(x, y);
-        // Walk into open shadow roots, if present.
-        while (el && el.shadowRoot && typeof el.shadowRoot.elementFromPoint === 'function') {
-          const inner = el.shadowRoot.elementFromPoint(x, y);
-          if (!inner || inner === el) break;
-          el = inner;
-        }
-        return el;
-      } catch {
-        return null;
-      }
-    };
-
-    const scrollByY = (deltaY, behavior = 'smooth') => {
-      try {
-        const el = document.scrollingElement || document.documentElement || document.body;
-        if (el && typeof el.scrollBy === 'function') {
-          el.scrollBy({ top: deltaY, behavior });
-        } else {
-          window.scrollBy({ top: deltaY, behavior });
-        }
-      } catch {
-        // Ignore
-      }
-    };
-
-    const scrollToY = (top, behavior = 'smooth') => {
-      try {
-        window.scrollTo({ top, behavior });
-      } catch {
-        // Ignore
-      }
-    };
-
-    // Parent -> iframe bridge control (handshake + scroll commands)
-    window.addEventListener('message', (event) => {
-      const data = event?.data;
-      if (!data || typeof data.type !== 'string') return;
-
-      if (data.type === MSG.POPOVER_BRIDGE_INIT) {
-        bridgeActive = true;
-        // Ack so the parent can safely focus the iframe knowing close/scroll keys are bridged.
+    installPopoverIframeBridge({
+      enableFClickBeforeKeyPilot: true,
+      onBridgeInit: () => {
+        // Marker for debugging / future conditional behavior.
+        try { window.__KP_POPOVER_IFRAME = true; } catch { /* ignore */ }
         try {
-          window.parent.postMessage({ type: MSG.POPOVER_BRIDGE_READY }, '*');
+          // Fire-and-forget; toggle handler will sync enabled state.
+          initializeKeyPilot();
         } catch {
-          // Ignore
+          // ignore
         }
-
-        // Start full KeyPilot inside the popover iframe (one-time) for the same
-        // cursor / overlay behavior as the top-level page.
-        if (!keyPilotStarted) {
-          keyPilotStarted = true;
-          // Marker for debugging / future conditional behavior.
-          try { window.__KP_POPOVER_IFRAME = true; } catch { }
-          try {
-            // Fire-and-forget; toggle handler will sync enabled state.
-            initializeKeyPilot();
-          } catch {
-            // Ignore
-          }
-        }
-        return;
+      },
+      onError: (error) => {
+        console.warn('[KeyPilot] Failed to install popover iframe bridge:', error);
       }
-
-      if (!bridgeActive) return;
-
-      if (data.type === MSG.POPOVER_SCROLL) {
-        const behavior = data.behavior === 'auto' ? 'auto' : 'smooth';
-        if (data.command === 'scrollBy') {
-          const delta = Number(data.delta) || 0;
-          scrollByY(delta, behavior);
-        } else if (data.command === 'scrollToTop') {
-          scrollToY(0, behavior);
-        } else if (data.command === 'scrollToBottom') {
-          const height = document.documentElement?.scrollHeight || document.body?.scrollHeight || 0;
-          scrollToY(height, behavior);
-        }
-      }
-    }, true);
-
-    document.addEventListener('keydown', (e) => {
-      if (!bridgeActive) return;
-      if (hasModifierKeys(e)) return;
-
-      const key = e.key;
-      const isEscape = key === 'Escape';
-      const isE = key === 'e' || key === 'E';
-      const isF = key === 'f' || key === 'F';
-
-      // Always allow Escape to close.
-      // Only treat "E" as close when not typing to avoid breaking text entry inside the iframe.
-      if (isEscape || (isE && !isTypingContext(e.target))) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        try {
-          window.parent.postMessage({ type: MSG.POPOVER_REQUEST_CLOSE, key }, '*');
-        } catch {
-          // Ignore
-        }
-        return;
-      }
-
-      // If the user's mouse is not inside the iframe (e.g. it's on the parent popover header/close),
-      // forward F to the parent so it can click the close button (or close the popover).
-      // We suppress the iframe's handling in this case to avoid accidental "F-click" inside the iframe.
-      if (isF && !isTypingContext(e.target) && !mouseInsideFrame) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        try {
-          window.parent.postMessage({ type: MSG.POPOVER_BRIDGE_KEYDOWN, key }, '*');
-        } catch {
-          // Ignore
-        }
-        return;
-      }
-
-      // F: click a link under the mouse cursor (when not typing).
-      // This gives KeyPilot users a keyboard activation path inside popover iframes
-      // before full KeyPilot starts inside the iframe.
-      if (isF && !keyPilotStarted && !isTypingContext(e.target)) {
-        let x = lastMouse.x;
-        let y = lastMouse.y;
-        if (typeof x !== 'number' || typeof y !== 'number') {
-          // Fallback to center of viewport if we haven't seen a mouse move yet.
-          x = Math.floor(window.innerWidth / 2);
-          y = Math.floor(window.innerHeight / 2);
-        }
-
-        const target = deepElementFromPoint(x, y);
-        const link = target?.closest?.('a[href]') || null;
-        if (link) {
-          e.preventDefault();
-          e.stopPropagation();
-          e.stopImmediatePropagation();
-          try {
-            link.click();
-          } catch {
-            // Ignore
-          }
-        }
-        return;
-      }
-
-      // Scroll shortcuts (match KeyPilot keybindings) when not typing:
-      // Z: up, X: down, C: up (smaller), V: down (smaller), B: top, N: bottom
-      // Note: B/N scroll top/bottom here is the historical bridge mapping (not layout-aware).
-      if (isTypingContext(e.target)) return;
-
-      // Prefer live Settings from the KeyPilot instance when this frame has one.
-      const kp = window.__KeyPilotInstance;
-      const pagePx = (typeof kp?._getPageScrollPx === 'function')
-        ? kp._getPageScrollPx()
-        : SCROLL.PAGE_PX;
-      const halfPx = (typeof kp?._getHalfPageScrollPx === 'function')
-        ? kp._getHalfPageScrollPx()
-        : SCROLL.HALF_PAGE_PX;
-      const behavior = (typeof kp?._getScrollBehavior === 'function')
-        ? kp._getScrollBehavior()
-        : (SCROLL.BEHAVIOR || 'smooth');
-
-      if (key === 'z' || key === 'Z') {
-        e.preventDefault();
-        scrollByY(-pagePx, behavior);
-      } else if (key === 'x' || key === 'X') {
-        e.preventDefault();
-        scrollByY(pagePx, behavior);
-      } else if (key === 'c' || key === 'C') {
-        e.preventDefault();
-        scrollByY(-halfPx, behavior);
-      } else if (key === 'v' || key === 'V') {
-        e.preventDefault();
-        scrollByY(halfPx, behavior);
-      } else if (key === 'b' || key === 'B') {
-        e.preventDefault();
-        scrollToY(0, behavior);
-      } else if (key === 'n' || key === 'N') {
-        e.preventDefault();
-        const height = document.documentElement?.scrollHeight || document.body?.scrollHeight || 0;
-        scrollToY(height, behavior);
-      }
-    }, true);
+    });
   } catch (error) {
     console.warn('[KeyPilot] Failed to install popover iframe bridge:', error);
   }

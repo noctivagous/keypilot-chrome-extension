@@ -5,6 +5,11 @@
 
 import { isSkippableTab, isSkippableUrl } from './src/config/url-policy.js';
 import { MSG, TAB_UI_FORWARD_TYPES } from './src/messaging/types.js';
+import {
+  storageGetValue,
+  storageSetValue,
+  storageSetObject
+} from './src/utils/storage.js';
 
 const KEYBOARD_HELP_STORAGE_KEY = 'keypilot_keyboard_help_visible';
 const ONBOARDING_ACTIVE_STORAGE_KEY = 'keypilot_onboarding_active';
@@ -13,53 +18,21 @@ const TRANSIENT_ACTION_STORAGE_KEY = 'keypilot_transient_action';
 
 async function ensureDefaultKeyboardHelpVisible() {
   // Only set a default if the user has never set a preference.
-  try {
-    const syncResult = await chrome.storage.sync.get([KEYBOARD_HELP_STORAGE_KEY]);
-    if (typeof syncResult?.[KEYBOARD_HELP_STORAGE_KEY] === 'boolean') return;
-  } catch {
-    // Ignore and fall back to local read.
-  }
+  const existing = await storageGetValue(KEYBOARD_HELP_STORAGE_KEY, undefined);
+  if (typeof existing === 'boolean') return;
 
-  try {
-    const localResult = await chrome.storage.local.get([KEYBOARD_HELP_STORAGE_KEY]);
-    if (typeof localResult?.[KEYBOARD_HELP_STORAGE_KEY] === 'boolean') return;
-  } catch {
-    // Ignore.
-  }
-
-  const payload = { [KEYBOARD_HELP_STORAGE_KEY]: true, timestamp: Date.now() };
-
-  try {
-    await chrome.storage.sync.set(payload);
-    console.log('Set default floating keyboard reference visibility: true (sync)');
-    return;
-  } catch {
-    // Fall back to local.
-  }
-
-  try {
-    await chrome.storage.local.set(payload);
-    console.log('Set default floating keyboard reference visibility: true (local)');
-  } catch (e) {
-    console.warn('Failed to set default floating keyboard reference visibility:', e);
+  const ok = await storageSetValue(KEYBOARD_HELP_STORAGE_KEY, true, { includeTimestamp: true });
+  if (ok) {
+    console.log('Set default floating keyboard reference visibility: true');
+  } else {
+    console.warn('Failed to set default floating keyboard reference visibility');
   }
 }
 
 async function ensureDefaultOnboardingState() {
   // Only set a default if onboarding has never been initialized.
-  try {
-    const syncResult = await chrome.storage.sync.get([ONBOARDING_ACTIVE_STORAGE_KEY]);
-    if (typeof syncResult?.[ONBOARDING_ACTIVE_STORAGE_KEY] === 'boolean') return;
-  } catch {
-    // Ignore and fall back to local read.
-  }
-
-  try {
-    const localResult = await chrome.storage.local.get([ONBOARDING_ACTIVE_STORAGE_KEY]);
-    if (typeof localResult?.[ONBOARDING_ACTIVE_STORAGE_KEY] === 'boolean') return;
-  } catch {
-    // Ignore.
-  }
+  const existing = await storageGetValue(ONBOARDING_ACTIVE_STORAGE_KEY, undefined);
+  if (typeof existing === 'boolean') return;
 
   const progress = {
     slideId: 'basic_navigation',
@@ -74,19 +47,11 @@ async function ensureDefaultOnboardingState() {
     [ONBOARDING_PROGRESS_STORAGE_KEY]: progress
   };
 
-  try {
-    await chrome.storage.sync.set(payload);
-    console.log('Set default onboarding state: active=true (sync)');
-    return;
-  } catch {
-    // Fall back to local.
-  }
-
-  try {
-    await chrome.storage.local.set(payload);
-    console.log('Set default onboarding state: active=true (local)');
-  } catch (e) {
-    console.warn('Failed to set default onboarding state:', e);
+  const ok = await storageSetObject(payload);
+  if (ok) {
+    console.log('Set default onboarding state: active=true');
+  } else {
+    console.warn('Failed to set default onboarding state');
   }
 }
 
@@ -120,28 +85,8 @@ class ExtensionToggleManager {
    * @returns {Promise<boolean>} Current enabled state
    */
   async getState() {
-    try {
-      // Try chrome.storage.sync first
-      const syncResult = await chrome.storage.sync.get([this.STORAGE_KEY]);
-      if (syncResult[this.STORAGE_KEY] !== undefined) {
-        return syncResult[this.STORAGE_KEY];
-      }
-    } catch (syncError) {
-      console.warn('chrome.storage.sync unavailable, trying local storage:', syncError);
-      
-      try {
-        // Fallback to chrome.storage.local
-        const localResult = await chrome.storage.local.get([this.STORAGE_KEY]);
-        if (localResult[this.STORAGE_KEY] !== undefined) {
-          return localResult[this.STORAGE_KEY];
-        }
-      } catch (localError) {
-        console.error('Both sync and local storage failed:', localError);
-      }
-    }
-    
-    // Return default state if all storage methods fail
-    return this.DEFAULT_STATE;
+    const value = await storageGetValue(this.STORAGE_KEY, this.DEFAULT_STATE);
+    return typeof value === 'boolean' ? value : this.DEFAULT_STATE;
   }
 
   /**
@@ -151,26 +96,11 @@ class ExtensionToggleManager {
    */
   async setState(enabled) {
     const state = Boolean(enabled);
-    const stateData = {
-      [this.STORAGE_KEY]: state,
-      timestamp: Date.now()
-    };
-
-    try {
-      // Try to save to chrome.storage.sync first
-      await chrome.storage.sync.set(stateData);
-      console.log('State saved to sync storage:', state);
-    } catch (syncError) {
-      console.warn('Failed to save to sync storage, trying local:', syncError);
-
-      try {
-        // Fallback to chrome.storage.local
-        await chrome.storage.local.set(stateData);
-        console.log('State saved to local storage:', state);
-      } catch (localError) {
-        console.error('Failed to save state to any storage:', localError);
-        // Continue execution even if storage fails
-      }
+    const ok = await storageSetValue(this.STORAGE_KEY, state, { includeTimestamp: true });
+    if (ok) {
+      console.log('State saved to storage:', state);
+    } else {
+      console.error('Failed to save state to any storage');
     }
 
     // Update content script execution state based on new state
@@ -284,22 +214,7 @@ class TabNavGraphManager {
     if (this._modeLoadStarted) return;
     this._modeLoadStarted = true;
 
-    let storedMode = null;
-    // Try sync first, then local.
-    try {
-      const res = await chrome.storage.sync.get([NAVGRAPH_MODE_STORAGE_KEY]);
-      storedMode = res?.[NAVGRAPH_MODE_STORAGE_KEY] ?? null;
-    } catch {
-      // ignore
-    }
-    if (!storedMode) {
-      try {
-        const res = await chrome.storage.local.get([NAVGRAPH_MODE_STORAGE_KEY]);
-        storedMode = res?.[NAVGRAPH_MODE_STORAGE_KEY] ?? null;
-      } catch {
-        // ignore
-      }
-    }
+    const storedMode = await storageGetValue(NAVGRAPH_MODE_STORAGE_KEY, null);
 
     if (storedMode === 'linear' || storedMode === 'branching') {
       this._mode = storedMode;
@@ -307,18 +222,9 @@ class TabNavGraphManager {
     }
 
     // Persist default if user has never set a preference (best-effort).
-    const payload = { [NAVGRAPH_MODE_STORAGE_KEY]: NAVGRAPH_MODE_DEFAULT, timestamp: Date.now() };
-    try {
-      await chrome.storage.sync.set(payload);
-      return;
-    } catch {
-      // ignore
-    }
-    try {
-      await chrome.storage.local.set(payload);
-    } catch {
-      // ignore
-    }
+    await storageSetValue(NAVGRAPH_MODE_STORAGE_KEY, NAVGRAPH_MODE_DEFAULT, {
+      includeTimestamp: true
+    });
   }
 
   _installListeners() {

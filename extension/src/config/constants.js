@@ -18,6 +18,33 @@ export const ARIA_ROLES = {
   CLICKABLE: ['link', 'button']
 };
 
+/**
+ * Semantic categories for interactive hover/activation targets.
+ * Hover UI, F-key feedback, and activation should branch on category — not treat
+ * every clickable the same as a hyperlink.
+ *
+ * Priority when classifying (most specific first):
+ *   text > slider > button > link > media > control > generic
+ */
+export const CLICKABLE_CATEGORY = {
+  /** Nothing interactive under the pointer */
+  NONE: 'none',
+  /** Navigation: <a href>, role=link, data-kp-url rows */
+  LINK: 'link',
+  /** Discrete actions: <button>, role=button */
+  BUTTON: 'button',
+  /** Typing surfaces: text inputs, textarea, contenteditable */
+  TEXT: 'text',
+  /** Video/audio surface (thumbnail or player body) */
+  MEDIA: 'media',
+  /** Continuous value: range, role=slider, media scrub tracks */
+  SLIDER: 'slider',
+  /** Other form/ARIA controls: checkbox, radio, select, tab, switch, … */
+  CONTROL: 'control',
+  /** Non-semantic interactive (cursor:pointer, onclick, tracked click listener) */
+  GENERIC: 'generic'
+};
+
 export const CSS_CLASSES = {
   CURSOR_HIDDEN: 'kpv2-cursor-hidden',
   FOCUS: 'kpv2-focus',

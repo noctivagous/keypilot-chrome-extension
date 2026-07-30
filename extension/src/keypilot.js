@@ -14,7 +14,7 @@ import { IntersectionObserverManager } from './modules/intersection-observer-man
 import { OptimizedScrollManager } from './modules/optimized-scroll-manager.js';
 import { RectangleIntersectionObserver } from './modules/rectangle-intersection-observer.js';
 import { MouseCoordinateManager } from './modules/mouse-coordinate-manager.js';
-import { MODES, CURSOR_MODE, CSS_CLASSES, COLORS, Z_INDEX, RECTANGLE_SELECTION, EDGE_ONLY_SELECTION, FEATURE_FLAGS, SCROLL } from './config/constants.js';
+import { MODES, CURSOR_MODE, CSS_CLASSES, COLORS, Z_INDEX, RECTANGLE_SELECTION, EDGE_ONLY_SELECTION, FEATURE_FLAGS, SCROLL, CLICKABLE_CATEGORY } from './config/constants.js';
 import { MSG } from './messaging/types.js';
 import { buildKeybindingsForLayout, DEFAULT_KEYBOARD_LAYOUT_ID, getKeyboardUiLayoutForLayout, normalizeKeyboardLayoutId } from './config/keyboard-layouts.js';
 import { FloatingKeyboardHelp } from './ui/floating-keyboard-help.js';
@@ -28,6 +28,7 @@ import {
   noteExtensionContextError,
   safeRuntimeSendMessage
 } from './utils/extension-context.js';
+import { storageGetValue, storageSetValue } from './utils/storage.js';
 
 export class KeyPilot extends EventManager {
   constructor() {
@@ -305,35 +306,32 @@ export class KeyPilot extends EventManager {
     const detail = {
       isLink: false,
       href: null,
-      isKeyboardHelpKey: false
+      isKeyboardHelpKey: false,
+      category: CLICKABLE_CATEGORY.NONE
     };
 
     try {
-      // Treat both real anchors and "link-like" UI rows as links for onboarding semantics.
-      //
-      // Important: many extension surfaces (New Tab, omnibox suggestions, etc) render clickable
-      // rows via `renderUrlListing()` which sets `role="link"` + `data-kp-url` instead of `<a>`.
       const el = target instanceof Element ? target : null;
 
-      // 1) Native anchors
-      if (el && el.tagName === 'A' && /** @type {any} */ (el).href) {
-        detail.isLink = true;
-        detail.href = /** @type {any} */ (el).href;
-      } else if (el && typeof el.closest === 'function') {
-        const a = el.closest('a[href]');
-        if (a && a.tagName === 'A' && /** @type {any} */ (a).href) {
-          detail.isLink = true;
-          detail.href = /** @type {any} */ (a).href;
-        }
+      // Category is the source of truth for "is this a link?" — sliders/media/buttons
+      // must not be reported as links even when nested near anchors in a player bar.
+      if (el && this.detector?.getClickableCategory) {
+        detail.category = this.detector.getClickableCategory(el);
       }
 
-      // 2) Link-like rows (e.g. `role="link"` + `data-kp-url`)
-      if (!detail.isLink && el && typeof el.closest === 'function') {
-        const linkish = /** @type {HTMLElement|null} */ (el.closest('[role="link"]'));
-        if (linkish) {
-          detail.isLink = true;
-          const kpUrl = linkish?.dataset?.kpUrl ? String(linkish.dataset.kpUrl) : '';
-          if (kpUrl) detail.href = kpUrl;
+      if (detail.category === CLICKABLE_CATEGORY.LINK) {
+        detail.isLink = true;
+        // Resolve href from the element or a link-like host.
+        if (el && el.tagName === 'A' && /** @type {any} */ (el).href) {
+          detail.href = /** @type {any} */ (el).href;
+        } else if (el && typeof el.closest === 'function') {
+          const a = el.closest('a[href]');
+          if (a && /** @type {any} */ (a).href) detail.href = /** @type {any} */ (a).href;
+          if (!detail.href) {
+            const linkish = /** @type {HTMLElement|null} */ (el.closest('[role="link"]'));
+            const kpUrl = linkish?.dataset?.kpUrl ? String(linkish.dataset.kpUrl) : '';
+            if (kpUrl) detail.href = kpUrl;
+          }
         }
       }
     } catch {
@@ -412,13 +410,13 @@ export class KeyPilot extends EventManager {
     // Try semantic activation first
     if (this.activator.handleSmartActivate(target, currentState.lastMouse.x, currentState.lastMouse.y)) {
       this.showRipple(currentState.lastMouse.x, currentState.lastMouse.y);
-      this.overlayManager.flashFocusOverlay();
+      this.overlayManager.flashFocusOverlay(target);
       this.postClickRefresh(target, currentState.lastMouse.x, currentState.lastMouse.y);
     } else {
       // Fallback to click
       this.activator.smartClick(target, currentState.lastMouse.x, currentState.lastMouse.y);
       this.showRipple(currentState.lastMouse.x, currentState.lastMouse.y);
-      this.overlayManager.flashFocusOverlay();
+      this.overlayManager.flashFocusOverlay(target);
       this.postClickRefresh(target, currentState.lastMouse.x, currentState.lastMouse.y);
     }
 
@@ -659,6 +657,7 @@ export class KeyPilot extends EventManager {
     if (window !== window.top) return;
     if (this.controlStrip) {
       this._wireControlStripHandlers();
+      this._syncControlStripEnabledFromRuntime();
       return;
     }
     try {
@@ -666,12 +665,31 @@ export class KeyPilot extends EventManager {
       if (!ControlStripClass) return;
       this.controlStrip = new ControlStripClass();
       this._wireControlStripHandlers();
-      this.controlStrip.setEnabledState(!!this.enabled);
       this.controlStrip.setKeyboardHelpActive(!!this._keyboardHelpVisible);
+      this._syncControlStripEnabledFromRuntime();
     } catch (e) {
       console.warn('[KeyPilot] Failed to create control strip:', e);
       this.controlStrip = null;
     }
+  }
+
+  /**
+   * Prefer toggle-handler state (global source of truth), then KeyPilot.enabled.
+   */
+  _syncControlStripEnabledFromRuntime() {
+    if (!this.controlStrip) return;
+    let on = !!this.enabled;
+    try {
+      const th = window.__KeyPilotToggleHandler;
+      if (th && typeof th.isEnabled === 'function') {
+        on = !!th.isEnabled();
+      } else if (th && typeof th.enabled === 'boolean') {
+        on = !!th.enabled;
+      }
+    } catch { /* ignore */ }
+    try {
+      this.controlStrip.setEnabledState(on);
+    } catch { /* ignore */ }
   }
 
   _wireControlStripHandlers() {
@@ -714,7 +732,7 @@ export class KeyPilot extends EventManager {
     const visible = cs.visible !== false;
     const collapsed = !!cs.collapsed;
 
-    this.controlStrip.setEnabledState(!!this.enabled);
+    this._syncControlStripEnabledFromRuntime();
     this.controlStrip.setKeyboardHelpActive(!!this._keyboardHelpVisible);
     // Avoid re-notifying storage when applying remote settings.
     this.controlStrip.setCollapsed(collapsed, { notify: false });
@@ -839,41 +857,15 @@ export class KeyPilot extends EventManager {
   }
 
   async getKeyboardHelpVisibleFromStorage() {
-    const key = this.KEYBOARD_HELP_STORAGE_KEY;
-    try {
-      const syncResult = await chrome.storage.sync.get([key]);
-      if (typeof syncResult?.[key] === 'boolean') return syncResult[key];
-    } catch {
-      // Ignore and fall back to local.
-    }
-
-    try {
-      const localResult = await chrome.storage.local.get([key]);
-      if (typeof localResult?.[key] === 'boolean') return localResult[key];
-    } catch {
-      // Ignore.
-    }
-
-    return false;
+    const value = await storageGetValue(this.KEYBOARD_HELP_STORAGE_KEY, false);
+    return typeof value === 'boolean' ? value : false;
   }
 
   async setKeyboardHelpVisibleInStorage(visible) {
     if (!chrome?.storage) return;
-    const key = this.KEYBOARD_HELP_STORAGE_KEY;
-    const payload = { [key]: Boolean(visible), timestamp: Date.now() };
-
-    try {
-      await chrome.storage.sync.set(payload);
-      return;
-    } catch {
-      // Fall back to local.
-    }
-
-    try {
-      await chrome.storage.local.set(payload);
-    } catch {
-      // Ignore.
-    }
+    await storageSetValue(this.KEYBOARD_HELP_STORAGE_KEY, Boolean(visible), {
+      includeTimestamp: true
+    });
   }
 
   /**
@@ -1265,8 +1257,16 @@ export class KeyPilot extends EventManager {
       if (msg.type === MSG.GET_STATUS) {
         sendResponse({ mode: this.state.getState().mode });
       } else if (msg.type === MSG.TOGGLE_STATE || msg.type === MSG.UPDATE_STATE) {
-        // Handle state change message from service worker
+        // Handle state change message from service worker.
+        // Prefer the toggle handler (single path for enable/disable + control strip sync).
         if (typeof msg.enabled === 'boolean') {
+          try {
+            const th = window.__KeyPilotToggleHandler;
+            if (th && typeof th.setEnabled === 'function') {
+              void th.setEnabled(msg.enabled, false);
+              return;
+            }
+          } catch { /* fall through */ }
           if (msg.enabled) {
             this.enable();
           } else {
@@ -1390,7 +1390,8 @@ export class KeyPilot extends EventManager {
         if (!(st?.mode === MODES.POPOVER || st?.mode === MODES.DELETE ||
               st?.mode === MODES.HIGHLIGHT || st?.mode === MODES.OMNIBOX)) {
           const focusEl = st?.focusEl;
-          isLink = !!this._buildActivationDetail(focusEl)?.isLink;
+          // Category-based: only true navigational links (not sliders / media chrome).
+          isLink = this.detector?.getClickableCategory?.(focusEl) === CLICKABLE_CATEGORY.LINK;
         }
       }
 
@@ -2388,13 +2389,11 @@ export class KeyPilot extends EventManager {
     console.log('[KeyPilot] Starting text selection at:', startPosition, 'Mode:', selectionMode);
     this.state.setHighlightStartPosition(startPosition);
 
+    // Selection geometry lives entirely in HighlightManager (caret APIs).
     if (selectionMode === 'character') {
-      // Character mode stays character mode — never silently switch to rectangle
-      // (that path used a heavy full-DOM scan and could freeze the page).
+      // Character mode stays character mode — never silently switch to rectangle.
       const success = this.overlayManager.startCharacterSelection(
-        { x: currentState.lastMouse.x, y: currentState.lastMouse.y },
-        this.findTextNodeAtPosition.bind(this),
-        this.getTextOffsetAtPosition.bind(this)
+        { x: currentState.lastMouse.x, y: currentState.lastMouse.y }
       );
 
       if (success) {
@@ -2413,9 +2412,7 @@ export class KeyPilot extends EventManager {
       };
       const seeded = this.overlayManager.updateRectangleSelectionFromCarets(
         viewportStart,
-        viewportStart,
-        this.findTextNodeAtPosition.bind(this),
-        this.getTextOffsetAtPosition.bind(this)
+        viewportStart
       );
       if (seeded) {
         this.state.setCurrentSelection(seeded);
@@ -2471,28 +2468,21 @@ export class KeyPilot extends EventManager {
     const hmOrigin = this.overlayManager?.highlightManager?.getOriginViewportPoint?.();
     const originVp = hmOrigin || startPosForOverlay;
 
+    // All caret resolution + selection geometry is HighlightManager-owned.
     if (selectionMode === 'character') {
       try {
-        this.overlayManager.updateCharacterSelection(
-          currentPos,
-          originVp,
-          this.findTextNodeAtPosition.bind(this),
-          this.getTextOffsetAtPosition.bind(this)
-        );
+        this.overlayManager.updateCharacterSelection(currentPos, originVp);
       } catch (error) {
         console.warn('[KeyPilot] Error updating character selection:', error);
       }
       return;
     }
 
-    // Rectangle selection mode: caret-based only on the mousemove/scroll path.
-    // Full spatial TreeWalker is reserved for completeSelection — it freezes pages if run every frame.
+    // Rectangle: caret-based only on the mousemove/scroll path (no TreeWalker).
     try {
       const caretSelection = this.overlayManager.updateRectangleSelectionFromCarets(
         originVp,
-        currentPos,
-        this.findTextNodeAtPosition.bind(this),
-        this.getTextOffsetAtPosition.bind(this)
+        currentPos
       );
       if (caretSelection) {
         this.state.setCurrentSelection(caretSelection);
@@ -2519,726 +2509,6 @@ export class KeyPilot extends EventManager {
       this.updateSelection({ force: true });
     } catch (e) {
       console.warn('[KeyPilot] refreshHighlightDuringScroll failed:', e);
-    }
-  }
-
-  /**
-   * Create a selection across potentially different document boundaries
-   * @param {Text} startNode - Starting text node
-   * @param {Object} startPos - Starting position with x, y coordinates
-   * @param {Text} currentNode - Current text node
-   * @param {Object} currentPos - Current position with x, y coordinates
-   * @returns {Object} - Result object with success flag, selection, and metadata
-   */
-  createCrossBoundarySelection(startNode, startPos, currentNode, currentPos) {
-    try {
-      // Check if nodes are in the same document context
-      const startDocument = startNode.ownerDocument || document;
-      const currentDocument = currentNode.ownerDocument || document;
-      const sameDocument = startDocument === currentDocument;
-      
-      // For cross-frame content, we can only select within the same document
-      if (!sameDocument) {
-        console.warn('[KeyPilot] Cross-frame selection not supported, limiting to current document');
-        // Try to select within the current document only
-        return this.createSingleDocumentSelection(currentNode, currentPos, currentNode, currentPos);
-      }
-      
-      // Check if nodes are in different shadow DOM contexts
-      const startRoot = this.getShadowRoot(startNode);
-      const currentRoot = this.getShadowRoot(currentNode);
-      const crossBoundary = startRoot !== currentRoot;
-      
-      if (crossBoundary) {
-        // Handle cross-shadow-boundary selection
-        return this.createCrossShadowSelection(startNode, startPos, currentNode, currentPos);
-      } else {
-        // Same document and shadow context - use standard selection
-        return this.createSingleDocumentSelection(startNode, startPos, currentNode, currentPos);
-      }
-      
-    } catch (error) {
-      console.warn('[KeyPilot] Error creating cross-boundary selection:', error);
-      return { success: false, selection: null, crossBoundary: false };
-    }
-  }
-
-  /**
-   * Create rectangle-based selection that includes all text nodes within the rectangle
-   * @param {Object} startPos - Starting position with x, y coordinates
-   * @param {Object} currentPos - Current position with x, y coordinates
-   * @returns {Object} - Result object with success flag and selection
-   */
-  createRectangleBasedSelection(startPos, currentPos) {
-    try {
-      // Convert current viewport position to document coordinates for scroll-independent selection
-      const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-      const scrollY = window.pageYOffset || document.documentElement.scrollTop;
-      
-      const currentDocX = currentPos.x + scrollX;
-      const currentDocY = currentPos.y + scrollY;
-      
-      // Calculate rectangle bounds in document coordinates
-      // This ensures the selection stays fixed to document content even if page scrolls
-      const rect = {
-        left: Math.min(startPos.x, currentDocX),
-        top: Math.min(startPos.y, currentDocY),
-        right: Math.max(startPos.x, currentDocX),
-        bottom: Math.max(startPos.y, currentDocY)
-      };
-
-      // Check if rectangle is too large (optional performance safeguard)
-      const rectWidth = rect.right - rect.left;
-      const rectHeight = rect.bottom - rect.top;
-      const rectArea = rectWidth * rectHeight;
-      
-      if (RECTANGLE_SELECTION.ENABLE_AREA_LIMIT && rectArea > RECTANGLE_SELECTION.MAX_AREA_PIXELS) {
-        console.warn('[KeyPilot] Selection rectangle too large, limiting for performance:', {
-          area: rectArea,
-          maxArea: RECTANGLE_SELECTION.MAX_AREA_PIXELS,
-          dimensions: `${rectWidth}x${rectHeight}`
-        });
-        this.showFlashNotification('Selection too large - try smaller area', COLORS.NOTIFICATION_WARNING);
-        return { success: false, selection: null, crossBoundary: false };
-      }
-
-      // Find all text nodes within the rectangle
-      const textNodesInRect = this.findTextNodesForSelection(rect);
-      
-      if (textNodesInRect.length === 0) {
-        return { success: false, selection: null, crossBoundary: false };
-      }
-      
-      // Additional safety check after finding nodes (DOM traversal performance)
-      if (RECTANGLE_SELECTION.ENABLE_NODE_LIMIT && textNodesInRect.length > RECTANGLE_SELECTION.MAX_TEXT_NODES) {
-        console.warn('[KeyPilot] Too many text nodes found, limiting selection for DOM performance:', {
-          nodeCount: textNodesInRect.length,
-          maxNodes: RECTANGLE_SELECTION.MAX_TEXT_NODES
-        });
-        this.showFlashNotification(`Selection contains too many elements (${textNodesInRect.length})`, COLORS.NOTIFICATION_WARNING);
-        return { success: false, selection: null, crossBoundary: false };
-      }
-
-      // Sort text nodes by document order
-      textNodesInRect.sort((a, b) => {
-        const comparison = a.compareDocumentPosition(b);
-        if (comparison & Node.DOCUMENT_POSITION_FOLLOWING) {
-          return -1; // a comes before b
-        } else if (comparison & Node.DOCUMENT_POSITION_PRECEDING) {
-          return 1; // a comes after b
-        }
-        return 0; // same node or no clear order
-      });
-
-      // Final filter using DOM API - should be minimal since TreeWalker already filtered
-      const filteredNodes = textNodesInRect.filter(node => {
-        const parent = node.parentElement;
-        if (!parent) return false;
-        
-        // Use DOM API for final safety check - this should be very fast
-        if (parent instanceof HTMLScriptElement ||
-            parent instanceof HTMLStyleElement ||
-            parent instanceof HTMLMetaElement) {
-          return false;
-        }
-        
-        // Check for elements with script-like attributes using DOM methods
-        if (parent.hasAttribute('onclick') || 
-            parent.hasAttribute('onload') || 
-            parent.hasAttribute('onerror')) {
-          return false;
-        }
-        
-        // Use DOM classList API for class checking
-        if (parent.classList.contains('script') || 
-            parent.classList.contains('code') ||
-            parent.classList.contains('highlight')) {
-          return false;
-        }
-        
-        return true;
-      });
-      
-      if (filteredNodes.length === 0) {
-        console.warn('[KeyPilot] All nodes filtered out (likely script content)');
-        this.showFlashNotification('Cannot select script content', COLORS.NOTIFICATION_WARNING);
-        return { success: false, selection: null, crossBoundary: false };
-      }
-
-      // Create selection from first to last filtered text node
-      const firstNode = filteredNodes[0];
-      const lastNode = filteredNodes[filteredNodes.length - 1];
-      
-      const ownerDocument = firstNode.ownerDocument || document;
-      const range = ownerDocument.createRange();
-      
-      // Set range to encompass all filtered text nodes
-      range.setStart(firstNode, 0);
-      range.setEnd(lastNode, lastNode.textContent.length);
-      
-      // Get appropriate selection object
-      const selection = this.getSelectionForDocument(ownerDocument);
-      if (!selection) {
-        return { success: false, selection: null, crossBoundary: false };
-      }
-      
-      // Update selection
-      selection.removeAllRanges();
-      selection.addRange(range);
-      
-      return { success: true, selection: selection, crossBoundary: false };
-      
-    } catch (error) {
-      console.warn('[KeyPilot] Error creating rectangle-based selection:', error);
-      return { success: false, selection: null, crossBoundary: false };
-    }
-  }
-
-  /**
-   * Detect if current page is complex (like Wiktionary) and needs stricter limits
-   * @returns {boolean} True if page is complex
-   */
-  detectComplexPage() {
-    // Quick heuristics to detect complex pages
-    const scriptTags = document.querySelectorAll('script').length;
-    const styleTags = document.querySelectorAll('style').length;
-    const totalElements = document.querySelectorAll('*').length;
-    const langLinks = document.querySelectorAll('.interlanguage-link, [class*="lang"]').length;
-    
-    // Wiktionary and similar complex pages typically have:
-    // - Many script tags (>10)
-    // - Many style tags (>5) 
-    // - Thousands of elements (>2000)
-    // - Many language links (>50)
-    return scriptTags > 10 || styleTags > 5 || totalElements > 2000 || langLinks > 50;
-  }
-
-  // =============================================================================
-  // RECTANGLE SELECTION TOOL - Text node finding functions
-  // These functions are specifically for the rectangle selection tool that creates
-  // actual browser text selections from user-drawn rectangles
-  // =============================================================================
-
-  /**
-   * RECTANGLE SELECTION TOOL: Finds text nodes for creating browser text selections
-   * Used by createRectangleBasedSelection() to create actual text selections from user-drawn rectangles
-   * @param {Object} rect - Rectangle with left, top, right, bottom properties
-   * @returns {Array} - Array of text nodes within the rectangle
-   */
-  findTextNodesForSelection(rect) {
-    // Edge-only IntersectionObserver is experimental and often returns an empty
-    // set (non-ancestor root). Prefer spatial whenever edge-only has no hits.
-    if (this.edgeOnlyProcessingEnabled &&
-        this.rectangleIntersectionObserver &&
-        FEATURE_FLAGS.USE_EDGE_ONLY_SELECTION &&
-        FEATURE_FLAGS.ENABLE_EDGE_ONLY_PROCESSING) {
-      try {
-        this.rectangleIntersectionObserver.updateRectangle(rect);
-        const edgeOnlyNodes = Array.from(this.rectangleIntersectionObserver.intersectingTextNodes || []);
-        if (edgeOnlyNodes.length > 0) {
-          return edgeOnlyNodes;
-        }
-      } catch (error) {
-        console.warn('[KeyPilot] Edge-only processing failed, falling back to spatial method:', error);
-      }
-      if (!FEATURE_FLAGS.EDGE_ONLY_FALLBACK_ENABLED) {
-        return [];
-      }
-    }
-
-    return this.findTextNodesForSelectionSpatial(rect);
-  }
-
-  /**
-   * RECTANGLE SELECTION TOOL - SPATIAL METHOD: Performance-optimized text node finding
-   * Uses complex page detection and viewport culling for better performance on heavy sites
-   * @param {Object} rect - Rectangle with left, top, right, bottom properties
-   * @returns {Array} - Array of text nodes within the rectangle
-   */
-  findTextNodesForSelectionSpatial(rect) {
-    const textNodes = [];
-    const startTime = performance.now();
-    
-    // Detect complex pages and use stricter limits
-    const isComplexPage = this.detectComplexPage();
-    const MAX_NODES = isComplexPage ? 50 : 100; // Stricter limit for complex pages
-    const MAX_TIME_MS = isComplexPage ? 25 : 50; // Faster timeout for complex pages
-    const MAX_CHARS = isComplexPage ? 25000 : 50000; // Smaller text limit for complex pages
-    
-    if (isComplexPage) {
-      console.log('[KeyPilot] Complex page detected, using stricter performance limits');
-    }
-    
-    try {
-      // Optimize: Limit TreeWalker to viewport + margin instead of entire document
-      const VIEWPORT_MARGIN = 200; // Extra pixels around viewport for safety
-
-      // Get viewport dimensions
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      const currentScrollX = window.pageXOffset || document.documentElement.scrollLeft;
-      const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
-
-      // Calculate expanded viewport bounds
-      const expandedViewport = {
-        left: currentScrollX - VIEWPORT_MARGIN,
-        top: currentScrollY - VIEWPORT_MARGIN,
-        right: currentScrollX + viewportWidth + VIEWPORT_MARGIN,
-        bottom: currentScrollY + viewportHeight + VIEWPORT_MARGIN
-      };
-
-      // Find elements within expanded viewport to limit TreeWalker scope
-      const elementsInViewport = [];
-      const allElements = document.querySelectorAll('*');
-
-      for (const element of allElements) {
-        try {
-          const elementRect = element.getBoundingClientRect();
-          if (elementRect.width > 0 && elementRect.height > 0) {
-            // Convert to document coordinates
-            const docRect = {
-              left: elementRect.left + currentScrollX,
-              top: elementRect.top + currentScrollY,
-              right: elementRect.right + currentScrollX,
-              bottom: elementRect.bottom + currentScrollY
-            };
-
-            // Check if element intersects with expanded viewport
-            const intersects = !(
-              docRect.right < expandedViewport.left ||
-              docRect.left > expandedViewport.right ||
-              docRect.bottom < expandedViewport.top ||
-              docRect.top > expandedViewport.bottom
-            );
-
-            if (intersects) {
-              elementsInViewport.push(element);
-            }
-          }
-        } catch (error) {
-          // Skip elements that cause errors (e.g., in Shadow DOM)
-          continue;
-        }
-
-        // Performance safeguard - limit viewport element collection
-        if (elementsInViewport.length >= 1000) {
-          break;
-        }
-      }
-
-      // Create TreeWalker for each element in viewport (more targeted than document.body)
-      const textNodes = [];
-      const processedNodes = new Set(); // Prevent duplicate processing
-      let totalChars = 0; // Track total characters processed
-
-      // Define the acceptNode function outside the loop for reuse
-      const acceptNodeFunction = (node) => {
-        // Performance safeguards - check limits before processing
-        if (textNodes.length >= MAX_NODES) {
-          console.warn('[KeyPilot] Reached maximum node limit, stopping selection');
-          return NodeFilter.FILTER_REJECT;
-        }
-
-        if (performance.now() - startTime > MAX_TIME_MS) {
-          console.warn('[KeyPilot] Selection taking too long, stopping for performance');
-          return NodeFilter.FILTER_REJECT;
-        }
-
-        // Skip empty or whitespace-only text nodes
-        if (!node.textContent || !node.textContent.trim()) {
-          return NodeFilter.FILTER_REJECT;
-        }
-
-        // Use DOM API to efficiently check if node should be excluded
-        let currentElement = node.parentElement;
-        while (currentElement) {
-          // Use instanceof for precise type checking - much faster than string comparison
-          if (currentElement instanceof HTMLScriptElement ||
-              currentElement instanceof HTMLStyleElement ||
-              currentElement instanceof HTMLMetaElement ||
-              currentElement instanceof HTMLLinkElement ||
-              currentElement instanceof HTMLTitleElement) {
-            return NodeFilter.FILTER_REJECT;
-          }
-
-          // Check for other non-content elements using DOM properties
-          const tagName = currentElement.tagName;
-          if (tagName === 'NOSCRIPT' || tagName === 'TEMPLATE' || tagName === 'HEAD') {
-            return NodeFilter.FILTER_REJECT;
-          }
-
-          // On complex pages, use DOM methods to check for excluded content
-          if (isComplexPage) {
-            // Use classList.contains() - faster than string includes
-            if (currentElement.classList.contains('interlanguage-link') ||
-                currentElement.classList.contains('footer') ||
-                currentElement.classList.contains('mw-portlet') ||
-                currentElement.id.startsWith('footer')) {
-              return NodeFilter.FILTER_REJECT;
-            }
-          }
-
-          // Use DOM API to check visibility efficiently
-          const computedStyle = window.getComputedStyle(currentElement);
-          if (computedStyle.display === 'none' || computedStyle.visibility === 'hidden') {
-            return NodeFilter.FILTER_REJECT;
-          }
-
-          // Only check immediate parent for most cases, traverse up for script/style
-          if (!(currentElement instanceof HTMLScriptElement) &&
-              !(currentElement instanceof HTMLStyleElement)) {
-            break;
-          }
-          currentElement = currentElement.parentElement;
-        }
-
-        // Check if text node intersects with rectangle
-        try {
-          const range = document.createRange();
-          range.selectNodeContents(node);
-          const nodeRect = range.getBoundingClientRect();
-
-          // Skip nodes with invalid rectangles
-          if (nodeRect.width === 0 || nodeRect.height === 0) {
-            return NodeFilter.FILTER_REJECT;
-          }
-
-          // Convert document rectangle to viewport coordinates for comparison
-          const currentScrollX = window.pageXOffset || document.documentElement.scrollLeft;
-          const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
-
-          const viewportRect = {
-            left: rect.left - currentScrollX,
-            top: rect.top - currentScrollY,
-            right: rect.right - currentScrollX,
-            bottom: rect.bottom - currentScrollY
-          };
-
-          // Check if node rectangle intersects with selection rectangle
-          const intersects = !(
-            nodeRect.right < viewportRect.left ||
-            nodeRect.left > viewportRect.right ||
-            nodeRect.bottom < viewportRect.top ||
-            nodeRect.top > viewportRect.bottom
-          );
-
-          return intersects ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-        } catch (error) {
-          console.warn('[KeyPilot] Error checking text node intersection:', error);
-          return NodeFilter.FILTER_REJECT;
-        }
-      };
-
-      for (const element of elementsInViewport) {
-        // Skip if we've already processed too many nodes
-        if (textNodes.length >= MAX_NODES) break;
-
-        const elementWalker = document.createTreeWalker(
-          element,
-          NodeFilter.SHOW_TEXT,
-          acceptNodeFunction,
-          false
-        );
-
-        let node;
-        while (node = elementWalker.nextNode()) {
-          // Skip if already processed (prevent duplicates across elements)
-          if (processedNodes.has(node)) continue;
-          processedNodes.add(node);
-
-          // Additional character limit check
-          totalChars += node.textContent.length;
-          if (totalChars > MAX_CHARS) {
-            console.warn('[KeyPilot] Selection too large, stopping to prevent performance issues');
-            break;
-          }
-
-          textNodes.push(node);
-
-          // Double-check performance limits during iteration
-          if (textNodes.length >= MAX_NODES || performance.now() - startTime > MAX_TIME_MS) {
-            break;
-          }
-        }
-      } // Close the element loop
-
-      // Only check shadow DOM if we haven't hit limits
-      if (textNodes.length < MAX_NODES && performance.now() - startTime < MAX_TIME_MS) {
-        this.findTextNodesInShadowDOMRectangle(document.body, rect, textNodes);
-      }
-      
-      const duration = performance.now() - startTime;
-      if (duration > 25 || textNodes.length > 50) {
-        console.log(`[KeyPilot] Large selection: ${textNodes.length} nodes, ${totalChars} chars, ${duration.toFixed(1)}ms`);
-      }
-      
-    } catch (error) {
-      console.warn('[KeyPilot] Error finding text nodes in rectangle:', error);
-    }
-    
-    return textNodes;
-  }
-
-  /**
-   * Find text nodes within shadow DOM elements that intersect with the rectangle
-   * @param {Element} element - Root element to search
-   * @param {Object} rect - Rectangle bounds
-   * @param {Array} textNodes - Array to add found text nodes to
-   */
-  findTextNodesInShadowDOMRectangle(element, rect, textNodes) {
-    try {
-      // Check if element has shadow root
-      if (element.shadowRoot) {
-        const walker = document.createTreeWalker(
-          element.shadowRoot,
-          NodeFilter.SHOW_TEXT,
-          {
-            acceptNode: (node) => {
-              if (!node.textContent || !node.textContent.trim()) {
-                return NodeFilter.FILTER_REJECT;
-              }
-              
-              try {
-                const range = element.shadowRoot.ownerDocument.createRange();
-                range.selectNodeContents(node);
-                const nodeRect = range.getBoundingClientRect();
-                
-                const intersects = !(
-                  nodeRect.right < rect.left ||
-                  nodeRect.left > rect.right ||
-                  nodeRect.bottom < rect.top ||
-                  nodeRect.top > rect.bottom
-                );
-                
-                return intersects ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-              } catch (error) {
-                return NodeFilter.FILTER_REJECT;
-              }
-            }
-          },
-          false
-        );
-        
-        let node;
-        while (node = walker.nextNode()) {
-          textNodes.push(node);
-        }
-      }
-      
-      // Recursively check child elements for shadow roots
-      for (const child of element.children) {
-        this.findTextNodesInShadowDOMRectangle(child, rect, textNodes);
-      }
-      
-    } catch (error) {
-      console.warn('[KeyPilot] Error finding shadow DOM text nodes:', error);
-    }
-  }
-
-  /**
-   * Create selection within a single document context
-   * @param {Text} startNode - Starting text node
-   * @param {Object} startPos - Starting position with x, y coordinates
-   * @param {Text} currentNode - Current text node
-   * @param {Object} currentPos - Current position with x, y coordinates
-   * @returns {Object} - Result object with success flag and selection
-   */
-  createSingleDocumentSelection(startNode, startPos, currentNode, currentPos) {
-    try {
-      const ownerDocument = startNode.ownerDocument || document;
-      const range = ownerDocument.createRange();
-      
-      // Calculate text offsets
-      const startOffset = this.getTextOffsetAtPosition(startNode, startPos.x, startPos.y);
-      const currentOffset = this.getTextOffsetAtPosition(currentNode, currentPos.x, currentPos.y);
-      
-      // Validate offsets
-      const startTextLength = startNode.textContent.length;
-      const currentTextLength = currentNode.textContent.length;
-      const validStartOffset = Math.max(0, Math.min(startOffset, startTextLength));
-      const validCurrentOffset = Math.max(0, Math.min(currentOffset, currentTextLength));
-      
-      // Set range based on direction of selection
-      if (startNode === currentNode) {
-        // Same text node - set range based on offset order
-        if (validStartOffset <= validCurrentOffset) {
-          range.setStart(startNode, validStartOffset);
-          range.setEnd(currentNode, validCurrentOffset);
-        } else {
-          range.setStart(currentNode, validCurrentOffset);
-          range.setEnd(startNode, validStartOffset);
-        }
-      } else {
-        // Different text nodes - use document position to determine order
-        const comparison = startNode.compareDocumentPosition(currentNode);
-        if (comparison & Node.DOCUMENT_POSITION_FOLLOWING) {
-          // Current node comes after start node
-          range.setStart(startNode, validStartOffset);
-          range.setEnd(currentNode, validCurrentOffset);
-        } else {
-          // Current node comes before start node
-          range.setStart(currentNode, validCurrentOffset);
-          range.setEnd(startNode, validStartOffset);
-        }
-      }
-      
-      // Validate range before applying
-      if (range.collapsed && validStartOffset === validCurrentOffset && startNode === currentNode) {
-        // Don't create empty selections unless we're at the exact start position
-        return { success: false, selection: null, crossBoundary: false };
-      }
-      
-      // Get appropriate selection object
-      const selection = this.getSelectionForDocument(ownerDocument);
-      if (!selection) {
-        return { success: false, selection: null, crossBoundary: false };
-      }
-      
-      // Update selection
-      selection.removeAllRanges();
-      selection.addRange(range);
-      
-      return { success: true, selection: selection, crossBoundary: false };
-      
-    } catch (error) {
-      console.warn('[KeyPilot] Error creating single document selection:', error);
-      return { success: false, selection: null, crossBoundary: false };
-    }
-  }
-
-  /**
-   * Create selection across shadow DOM boundaries
-   * @param {Text} startNode - Starting text node
-   * @param {Object} startPos - Starting position with x, y coordinates
-   * @param {Text} currentNode - Current text node
-   * @param {Object} currentPos - Current position with x, y coordinates
-   * @returns {Object} - Result object with success flag and selection
-   */
-  createCrossShadowSelection(startNode, startPos, currentNode, currentPos) {
-    try {
-      // For cross-shadow selections, we need to be more careful
-      // Try to create selection in the main document context
-      const mainSelection = window.getSelection();
-      
-      // Create ranges for both nodes in their respective contexts
-      const startRange = this.createRangeForTextNode(startNode);
-      const currentRange = this.createRangeForTextNode(currentNode);
-      
-      if (!startRange || !currentRange) {
-        return { success: false, selection: null, crossBoundary: true };
-      }
-      
-      // For cross-shadow selections, we'll select the entire range from start to current
-      // This is a limitation of the Selection API across shadow boundaries
-      try {
-        const combinedRange = document.createRange();
-        
-        // Try to set the range to span from start to current
-        // This may fail for some cross-shadow scenarios
-        combinedRange.setStart(startNode, this.getTextOffsetAtPosition(startNode, startPos.x, startPos.y));
-        combinedRange.setEnd(currentNode, this.getTextOffsetAtPosition(currentNode, currentPos.x, currentPos.y));
-        
-        mainSelection.removeAllRanges();
-        mainSelection.addRange(combinedRange);
-        
-        return { success: true, selection: mainSelection, crossBoundary: true };
-        
-      } catch (crossError) {
-        // Cross-shadow selection failed, fall back to selecting in the current node's context
-        console.warn('[KeyPilot] Cross-shadow selection failed, falling back to current node context:', crossError);
-        return this.createSingleDocumentSelection(currentNode, currentPos, currentNode, currentPos);
-      }
-      
-    } catch (error) {
-      console.warn('[KeyPilot] Error creating cross-shadow selection:', error);
-      return { success: false, selection: null, crossBoundary: true };
-    }
-  }
-
-  /**
-   * Get the shadow root for a given node
-   * @param {Node} node - Node to find shadow root for
-   * @returns {ShadowRoot|Document} - Shadow root or document
-   */
-  getShadowRoot(node) {
-    let current = node;
-    while (current) {
-      if (current.nodeType === Node.DOCUMENT_NODE) {
-        return current;
-      }
-      const root = current.getRootNode();
-      if (root instanceof ShadowRoot) {
-        return root;
-      }
-      if (root === document) {
-        return document;
-      }
-      current = current.parentNode;
-    }
-    return document;
-  }
-
-  /**
-   * Get the appropriate selection object for a document
-   * @param {Document} doc - Document to get selection for
-   * @returns {Selection|null} - Selection object or null
-   */
-  getSelectionForDocument(doc) {
-    try {
-      if (doc === document) {
-        return window.getSelection();
-      }
-      // For shadow DOM contexts, we typically use the main document selection
-      // as shadow roots don't have their own selection objects in most browsers
-      return window.getSelection();
-    } catch (error) {
-      console.warn('[KeyPilot] Error getting selection for document:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Safely clear selection with comprehensive error handling
-   */
-  clearSelectionSafely() {
-    // Clear main document selection
-    try {
-      if (window && typeof window.getSelection === 'function') {
-        const selection = window.getSelection();
-        if (selection) {
-          // Validate selection object before using
-          if (typeof selection.rangeCount === 'number' && 
-              typeof selection.removeAllRanges === 'function') {
-            
-            if (selection.rangeCount > 0) {
-              selection.removeAllRanges();
-              console.log('[KeyPilot] Cleared main document selection');
-            }
-          } else {
-            console.warn('[KeyPilot] Main selection object missing required methods');
-          }
-        }
-      }
-    } catch (error) {
-      console.warn('[KeyPilot] Error clearing main document selection:', error);
-    }
-    
-    // Clear stored selection from state
-    try {
-      const currentState = this.state.getState();
-      if (currentState && currentState.currentSelection) {
-        this.state.setCurrentSelection(null);
-        console.log('[KeyPilot] Cleared stored selection from state');
-      }
-    } catch (error) {
-      console.warn('[KeyPilot] Error clearing stored selection from state:', error);
-    }
-    
-    // Clear shadow DOM selections
-    try {
-      this.clearAllSelectionsWithShadowSupport();
-    } catch (error) {
-      console.warn('[KeyPilot] Error clearing shadow DOM selections:', error);
     }
   }
 
@@ -4069,485 +3339,6 @@ export class KeyPilot extends EventManager {
     }
   }
 
-  /**
-   * Find the text node at the given screen coordinates with comprehensive shadow DOM support and error handling
-   * @param {number} x - Screen X coordinate
-   * @param {number} y - Screen Y coordinate
-   * @returns {Text|null} - Text node at position or null if none found
-   */
-  findTextNodeAtPosition(x, y) {
-    try {
-      // Validate input coordinates
-      if (typeof x !== 'number' || typeof y !== 'number' || 
-          !isFinite(x) || !isFinite(y) || x < 0 || y < 0) {
-        return null;
-      }
-      
-      // Get element at position using deep shadow DOM traversal with error handling
-      let element = null;
-      try {
-        if (!this.detector || typeof this.detector.deepElementFromPoint !== 'function') {
-          throw new Error('Element detector not available or missing deepElementFromPoint method');
-        }
-        
-        element = this.detector.deepElementFromPoint(x, y);
-      } catch (detectorError) {
-        // Fallback to standard elementFromPoint
-        try {
-          element = document.elementFromPoint(x, y);
-        } catch {
-          return null;
-        }
-      }
-      
-      if (!element) {
-        return null;
-      }
-
-      // Check if element itself is a text node
-      if (element.nodeType === Node.TEXT_NODE) {
-        // Validate text node has content
-        if (element.textContent && element.textContent.trim()) {
-          return element;
-        }
-        return null;
-      }
-
-      // Skip non-selectable elements gracefully with error handling
-      try {
-        if (this.isNonSelectableElement(element)) {
-          return null;
-        }
-      } catch {
-        // Continue anyway - assume it might be selectable
-      }
-
-      // Prefer caret API before any TreeWalker (much cheaper)
-      try {
-        const caret = this.overlayManager?.highlightManager?.resolveCaretAtPoint?.(x, y, document);
-        if (caret?.textNode) return caret.textNode;
-      } catch { /* ignore */ }
-
-      // Find text nodes within the element with comprehensive error handling
-      let textNodes = [];
-      try {
-        textNodes = this.findTextNodesInElementWithShadowDOM(element);
-      } catch {
-        // Fallback: try simple text node search without shadow DOM
-        try {
-          textNodes = this.findTextNodesInElementSimple(element);
-        } catch {
-          return null;
-        }
-      }
-      
-      if (!textNodes || textNodes.length === 0) {
-        return null;
-      }
-      
-      // Find the text node closest to the cursor position with comprehensive error handling
-      let bestNode = null;
-      let bestDistance = Infinity;
-      
-      for (let i = 0; i < textNodes.length; i++) {
-        const node = textNodes[i];
-        
-        try {
-          // Validate text node
-          if (!node || node.nodeType !== Node.TEXT_NODE) {
-            console.warn(`[KeyPilot] Invalid text node at index ${i}`);
-            continue;
-          }
-          
-          // Skip empty text nodes
-          if (!node.textContent || !node.textContent.trim()) {
-            continue;
-          }
-          
-          // Create a range for this text node to get its position
-          let range = null;
-          try {
-            range = this.createRangeForTextNode(node);
-          } catch (rangeError) {
-            console.warn(`[KeyPilot] Error creating range for text node ${i}:`, rangeError);
-            continue;
-          }
-          
-          if (!range) {
-            continue;
-          }
-          
-          // Get bounding rectangle with error handling
-          let rect = null;
-          try {
-            rect = range.getBoundingClientRect();
-          } catch (rectError) {
-            console.warn(`[KeyPilot] Error getting bounding rect for text node ${i}:`, rectError);
-            continue;
-          }
-          
-          // Validate rectangle
-          if (!rect || typeof rect.width !== 'number' || typeof rect.height !== 'number' ||
-              typeof rect.left !== 'number' || typeof rect.top !== 'number') {
-            console.warn(`[KeyPilot] Invalid bounding rect for text node ${i}`);
-            continue;
-          }
-          
-          // Skip nodes with no visible area
-          if (rect.width <= 0 || rect.height <= 0) {
-            continue;
-          }
-          
-          // Calculate distance from cursor to text node with error handling
-          try {
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-            
-            // Validate calculated center
-            if (!isFinite(centerX) || !isFinite(centerY)) {
-              console.warn(`[KeyPilot] Invalid center coordinates for text node ${i}`);
-              continue;
-            }
-            
-            const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
-            
-            if (!isFinite(distance)) {
-              console.warn(`[KeyPilot] Invalid distance calculation for text node ${i}`);
-              continue;
-            }
-            
-            if (distance < bestDistance) {
-              bestDistance = distance;
-              bestNode = node;
-            }
-          } catch (distanceError) {
-            console.warn(`[KeyPilot] Error calculating distance for text node ${i}:`, distanceError);
-            continue;
-          }
-        } catch (nodeError) {
-          console.warn(`[KeyPilot] Error processing text node ${i}:`, nodeError);
-          continue;
-        }
-      }
-      
-      return bestNode;
-    } catch (error) {
-      if (window.KEYPILOT_DEBUG) {
-        console.error('[KeyPilot] Unexpected error finding text node at position:', error);
-      }
-      return null;
-    }
-  }
-
-  /**
-   * Simple fallback method to find text nodes without shadow DOM support
-   * @param {Element} element - Root element to search within
-   * @returns {Text[]} - Array of text nodes found
-   */
-  findTextNodesInElementSimple(element) {
-    const textNodes = [];
-    
-    try {
-      if (!element) {
-        return textNodes;
-      }
-      
-      // Create tree walker for simple text node traversal
-      const walker = document.createTreeWalker(
-        element,
-        NodeFilter.SHOW_TEXT,
-        {
-          acceptNode: (node) => {
-            try {
-              // Skip empty or whitespace-only text nodes
-              if (!node.textContent || !node.textContent.trim()) {
-                return NodeFilter.FILTER_REJECT;
-              }
-              
-              // Check if text node is visible
-              const parent = node.parentElement;
-              if (!parent) {
-                return NodeFilter.FILTER_REJECT;
-              }
-              
-              return NodeFilter.FILTER_ACCEPT;
-            } catch (error) {
-              return NodeFilter.FILTER_REJECT;
-            }
-          }
-        }
-      );
-
-      // Collect text nodes
-      let node;
-      while (node = walker.nextNode()) {
-        textNodes.push(node);
-      }
-    } catch (error) {
-      console.warn('[KeyPilot] Error in simple text node search:', error);
-    }
-    
-    return textNodes;
-  }
-
-  /**
-   * Find all text nodes within an element, including shadow DOM boundaries
-   * @param {Element} element - Root element to search within
-   * @returns {Text[]} - Array of text nodes found
-   */
-  findTextNodesInElementWithShadowDOM(element) {
-    const textNodes = [];
-    
-    try {
-      // Helper function to traverse nodes recursively
-      const traverseNodes = (root) => {
-        if (!root) return;
-        
-        // Create tree walker for this root
-        const walker = document.createTreeWalker(
-          root,
-          NodeFilter.SHOW_TEXT,
-          {
-            acceptNode: (node) => {
-              // Skip empty or whitespace-only text nodes
-              if (!node.textContent.trim()) {
-                return NodeFilter.FILTER_REJECT;
-              }
-              
-              // Check if text node is visible and selectable
-              const parent = node.parentElement;
-              if (!parent) return NodeFilter.FILTER_REJECT;
-              
-              // Skip non-selectable parent elements
-              if (this.isNonSelectableElement(parent)) {
-                return NodeFilter.FILTER_REJECT;
-              }
-              
-              try {
-                const style = window.getComputedStyle(parent);
-                if (style.display === 'none' || 
-                    style.visibility === 'hidden' || 
-                    style.userSelect === 'none') {
-                  return NodeFilter.FILTER_REJECT;
-                }
-              } catch (error) {
-                // If we can't get computed style, skip this node
-                return NodeFilter.FILTER_REJECT;
-              }
-              
-              return NodeFilter.FILTER_ACCEPT;
-            }
-          }
-        );
-
-        // Collect text nodes from this root
-        let node;
-        while (node = walker.nextNode()) {
-          textNodes.push(node);
-        }
-        
-        // Also traverse shadow DOM boundaries
-        if (root.nodeType === Node.ELEMENT_NODE) {
-          this.traverseShadowDOMForTextNodes(root, textNodes);
-        }
-      };
-      
-      // Start traversal from the given element
-      traverseNodes(element);
-      
-    } catch (error) {
-      console.warn('[KeyPilot] Error finding text nodes with shadow DOM support:', error);
-    }
-    
-    return textNodes;
-  }
-
-  /**
-   * Traverse shadow DOM boundaries to find text nodes
-   * @param {Element} element - Element to check for shadow DOM
-   * @param {Text[]} textNodes - Array to collect text nodes into
-   */
-  traverseShadowDOMForTextNodes(element, textNodes) {
-    try {
-      // Check if element has shadow root
-      if (element.shadowRoot) {
-        // Traverse the shadow root
-        const shadowWalker = document.createTreeWalker(
-          element.shadowRoot,
-          NodeFilter.SHOW_TEXT,
-          {
-            acceptNode: (node) => {
-              // Skip empty or whitespace-only text nodes
-              if (!node.textContent.trim()) {
-                return NodeFilter.FILTER_REJECT;
-              }
-              
-              // Check if text node is visible and selectable
-              const parent = node.parentElement;
-              if (!parent) return NodeFilter.FILTER_REJECT;
-              
-              // Skip non-selectable parent elements
-              if (this.isNonSelectableElement(parent)) {
-                return NodeFilter.FILTER_REJECT;
-              }
-              
-              try {
-                const style = window.getComputedStyle(parent);
-                if (style.display === 'none' || 
-                    style.visibility === 'hidden' || 
-                    style.userSelect === 'none') {
-                  return NodeFilter.FILTER_REJECT;
-                }
-              } catch (error) {
-                // If we can't get computed style, skip this node
-                return NodeFilter.FILTER_REJECT;
-              }
-              
-              return NodeFilter.FILTER_ACCEPT;
-            }
-          }
-        );
-
-        // Collect text nodes from shadow root
-        let shadowNode;
-        while (shadowNode = shadowWalker.nextNode()) {
-          textNodes.push(shadowNode);
-        }
-        
-        // Recursively check shadow DOM elements for nested shadow roots
-        const shadowElements = element.shadowRoot.querySelectorAll('*');
-        for (const shadowElement of shadowElements) {
-          this.traverseShadowDOMForTextNodes(shadowElement, textNodes);
-        }
-      }
-      
-      // Also check child elements for shadow roots
-      const childElements = element.querySelectorAll('*');
-      for (const childElement of childElements) {
-        this.traverseShadowDOMForTextNodes(childElement, textNodes);
-      }
-      
-    } catch (error) {
-      console.warn('[KeyPilot] Error traversing shadow DOM for text nodes:', error);
-    }
-  }
-
-  /**
-   * Create a range for a text node, handling cross-boundary scenarios
-   * @param {Text} textNode - Text node to create range for
-   * @returns {Range|null} - Range object or null if creation fails
-   */
-  createRangeForTextNode(textNode) {
-    try {
-      // Determine which document to use for range creation
-      const ownerDocument = textNode.ownerDocument || document;
-      const range = ownerDocument.createRange();
-      range.selectNodeContents(textNode);
-      return range;
-    } catch (error) {
-      console.warn('[KeyPilot] Error creating range for text node:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Check if an element is non-selectable (images, buttons, inputs, etc.)
-   * @param {Element} element - Element to check
-   * @returns {boolean} - True if element should be skipped for text selection
-   */
-  isNonSelectableElement(element) {
-    if (!element || !element.tagName) return true;
-    
-    const tagName = element.tagName.toLowerCase();
-    
-    // Skip form controls, media, and interactive elements
-    const nonSelectableTags = [
-      'img', 'video', 'audio', 'canvas', 'svg',
-      'input', 'button', 'select', 'textarea',
-      'iframe', 'embed', 'object'
-    ];
-    
-    if (nonSelectableTags.includes(tagName)) {
-      return true;
-    }
-    
-    // Skip elements with specific roles
-    const role = element.getAttribute('role');
-    if (role && ['button', 'link', 'menuitem', 'tab'].includes(role)) {
-      return true;
-    }
-    
-    // Skip contenteditable elements (they handle their own selection)
-    if (element.contentEditable === 'true') {
-      return true;
-    }
-    
-    return false;
-  }
-
-  /**
-   * Calculate the text offset within a text node at the given screen coordinates
-   * @param {Text} textNode - The text node
-   * @param {number} x - Screen X coordinate  
-   * @param {number} y - Screen Y coordinate
-   * @returns {number} - Character offset within the text node
-   */
-  getTextOffsetAtPosition(textNode, x, y) {
-    try {
-      const text = textNode.textContent;
-      if (!text) return 0;
-
-      // Binary search to find the closest character position
-      let left = 0;
-      let right = text.length;
-      let bestOffset = 0;
-      let bestDistance = Infinity;
-
-      while (left <= right) {
-        const mid = Math.floor((left + right) / 2);
-        
-        try {
-          // Create range at this offset
-          const range = document.createRange();
-          range.setStart(textNode, mid);
-          range.setEnd(textNode, Math.min(mid + 1, text.length));
-          
-          const rect = range.getBoundingClientRect();
-          if (rect.width === 0 && rect.height === 0) {
-            // Empty rect, try next position
-            left = mid + 1;
-            continue;
-          }
-          
-          // Calculate distance from cursor to character position
-          const charX = rect.left + rect.width / 2;
-          const charY = rect.top + rect.height / 2;
-          const distance = Math.sqrt(Math.pow(x - charX, 2) + Math.pow(y - charY, 2));
-          
-          if (distance < bestDistance) {
-            bestDistance = distance;
-            bestOffset = mid;
-          }
-          
-          // Adjust search range based on position
-          if (x < charX) {
-            right = mid - 1;
-          } else {
-            left = mid + 1;
-          }
-        } catch (error) {
-          // Skip problematic positions
-          left = mid + 1;
-        }
-      }
-      
-      return bestOffset;
-    } catch (error) {
-      console.warn('[KeyPilot] Error calculating text offset:', error);
-      return 0;
-    }
-  }
-
   handleRootKey() {
     console.log('[KeyPilot] Root key pressed!');
     console.log('[KeyPilot] Current URL:', window.location.href);
@@ -4655,7 +3446,7 @@ export class KeyPilot extends EventManager {
     // Try semantic activation first
     if (this.activator.handleSmartActivate(target, currentState.lastMouse.x, currentState.lastMouse.y)) {
       this.showRipple(currentState.lastMouse.x, currentState.lastMouse.y);
-      this.overlayManager.flashFocusOverlay();
+      this.overlayManager.flashFocusOverlay(target);
       this.postClickRefresh(target, currentState.lastMouse.x, currentState.lastMouse.y);
       this.emitAction('activate', activationDetail);
       return;
@@ -4665,7 +3456,7 @@ export class KeyPilot extends EventManager {
     // This ensures videos, custom elements, and other non-standard interactive elements work
     this.activator.smartClick(target, currentState.lastMouse.x, currentState.lastMouse.y);
     this.showRipple(currentState.lastMouse.x, currentState.lastMouse.y);
-    this.overlayManager.flashFocusOverlay();
+    this.overlayManager.flashFocusOverlay(target);
     this.postClickRefresh(target, currentState.lastMouse.x, currentState.lastMouse.y);
     this.emitAction('activate', activationDetail);
   }
@@ -4728,7 +3519,7 @@ export class KeyPilot extends EventManager {
       try {
         if (this._sendRuntimeMessage({ type: MSG.OPEN_URL_FOREGROUND, url })) {
           this.showRipple(currentState.lastMouse.x, currentState.lastMouse.y);
-          this.overlayManager.flashFocusOverlay();
+          this.overlayManager.flashFocusOverlay(link);
           this.postClickRefresh(link, currentState.lastMouse.x, currentState.lastMouse.y);
           this.emitAction('activateNewTab', { isLink: true, href: url });
           return;
@@ -4747,7 +3538,7 @@ export class KeyPilot extends EventManager {
     // Try semantic activation first (but force new tab for links)
     if (this.activator.handleSmartActivate(target, currentState.lastMouse.x, currentState.lastMouse.y, true)) {
       this.showRipple(currentState.lastMouse.x, currentState.lastMouse.y);
-      this.overlayManager.flashFocusOverlay();
+      this.overlayManager.flashFocusOverlay(target);
       this.postClickRefresh(target, currentState.lastMouse.x, currentState.lastMouse.y);
       this.emitAction('activateNewTab', this._buildActivationDetail(target));
       return;
@@ -4756,7 +3547,7 @@ export class KeyPilot extends EventManager {
     // Always try to click the element in new tab mode
     this.activator.smartClick(target, currentState.lastMouse.x, currentState.lastMouse.y, true);
     this.showRipple(currentState.lastMouse.x, currentState.lastMouse.y);
-    this.overlayManager.flashFocusOverlay();
+    this.overlayManager.flashFocusOverlay(target);
     this.postClickRefresh(target, currentState.lastMouse.x, currentState.lastMouse.y);
     this.emitAction('activateNewTab', this._buildActivationDetail(target));
   }
@@ -4819,7 +3610,7 @@ export class KeyPilot extends EventManager {
     try {
       if (this._sendRuntimeMessage({ type: MSG.OPEN_URL_BACKGROUND, url })) {
         this.showRipple(currentState.lastMouse.x, currentState.lastMouse.y);
-        this.overlayManager.flashFocusOverlay();
+        this.overlayManager.flashFocusOverlay(link);
         this.postClickRefresh(link, currentState.lastMouse.x, currentState.lastMouse.y);
         this.emitAction('activateNewTabBackground', { isLink: true, href: url });
         return;

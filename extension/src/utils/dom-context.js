@@ -1,6 +1,6 @@
 /**
  * Shared DOM/keyboard context helpers (single source of truth).
- * Used by EventManager, content-script iframe bridge, and popover-bridge pages.
+ * Used by EventManager and the shared popover iframe bridge.
  */
 
 /** Input types where letter keys should type, not run KeyPilot shortcuts. */

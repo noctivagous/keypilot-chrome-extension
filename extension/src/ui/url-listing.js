@@ -82,6 +82,35 @@ export function formatUrlForDisplay(url) {
 }
 
 /**
+ * Extract hostname without leading www. for display/grouping.
+ * @param {string} url
+ * @returns {string}
+ */
+export function extractDomain(url) {
+  try {
+    const hostname = new URL(String(url || '').trim()).hostname || '';
+    return hostname.replace(/^www\./i, '');
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Extract path + search + hash for display (empty string for bare `/`).
+ * @param {string} url
+ * @returns {string}
+ */
+export function extractPath(url) {
+  try {
+    const urlObj = new URL(String(url || '').trim());
+    const path = `${urlObj.pathname || ''}${urlObj.search || ''}${urlObj.hash || ''}`;
+    return path === '/' ? '' : path;
+  } catch {
+    return '';
+  }
+}
+
+/**
  * Preferred MV3 approach:
  * - Requires "favicon" permission in manifest.
  * - For content scripts injecting DOM into pages, the internal path must be declared

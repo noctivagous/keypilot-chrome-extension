@@ -13,6 +13,9 @@ export class KeyPilotToggleHandler extends EventManager {
     this.enabled = true;
     this.initialized = false;
     this.globalToggleKeyHandler = null;
+    this.ENABLED_STORAGE_KEY = 'keypilot_enabled';
+    this._onRuntimeMessage = this._onRuntimeMessage.bind(this);
+    this._onStorageChanged = this._onStorageChanged.bind(this);
     
     // Store original methods for restoration
     this.originalMethods = {
@@ -43,13 +46,22 @@ export class KeyPilotToggleHandler extends EventManager {
       this.setEnabled(true, false); // Don't show notification during initialization
     }
 
-    // Set up message listener for toggle state changes from service worker
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-      if (message.type === 'KP_TOGGLE_STATE') {
-        this.setEnabled(message.enabled); // Show notification for user-initiated toggles
-        sendResponse({ success: true });
+    // Broadcast path: service worker → tabs.sendMessage(KP_TOGGLE_STATE, { enabled }).
+    try {
+      chrome.runtime.onMessage.addListener(this._onRuntimeMessage);
+    } catch {
+      // ignore
+    }
+
+    // Storage path: keypilot_enabled is the cross-tab source of truth when messages miss
+    // (bfcache, sleeping tabs, race with content-script load).
+    try {
+      if (chrome?.storage?.onChanged?.addListener) {
+        chrome.storage.onChanged.addListener(this._onStorageChanged);
       }
-    });
+    } catch {
+      // ignore
+    }
 
     // Always-on hotkeys: when KeyPilot is disabled it won't have key listeners installed,
     // so we keep a separate capture listener for re-enable and control-strip restore.
@@ -96,45 +108,56 @@ export class KeyPilotToggleHandler extends EventManager {
   }
 
   /**
-   * Enable or disable KeyPilot functionality
-   * @param {boolean} enabled - Whether KeyPilot should be enabled
-   * @param {boolean} showNotification - Whether to show toggle notification (default: true)
+   * @param {any} message
+   * @param {chrome.runtime.MessageSender} _sender
+   * @param {(response?: any) => void} sendResponse
    */
-  async setEnabled(enabled, showNotification = true) {
-    if (this.enabled === enabled) {
-      return; // No change needed
-    }
-
-    // Sync with early injection cursor immediately
-    if (window.KEYPILOT_EARLY) {
-      window.KEYPILOT_EARLY.setEnabled(enabled);
-    }
-
-    this.enabled = enabled;
-
-    // Emit a semantic action for onboarding / telemetry consumers.
+  _onRuntimeMessage(message, _sender, sendResponse) {
     try {
-      document.dispatchEvent(new CustomEvent('keypilot:action', {
-        detail: {
-          action: 'toggleExtension',
-          enabled: !!enabled,
-          timestamp: Date.now()
+      // Broadcast from SW includes `enabled`. Ignore bare toggle *requests* (no enabled)
+      // that are only meant for the service worker.
+      if (message?.type === 'KP_TOGGLE_STATE' || message?.type === 'KP_UPDATE_STATE') {
+        if (typeof message.enabled === 'boolean') {
+          // Message path already represents a user-initiated global change.
+          void this.setEnabled(message.enabled, true);
+          try { sendResponse({ success: true }); } catch { /* ignore */ }
+          return true;
         }
-      }));
+      }
     } catch {
       // ignore
     }
+    return false;
+  }
 
-    if (enabled) {
-      await this.enableKeyPilot();
-    } else {
-      this.disableKeyPilot();
-    }
-
-    // Keep control strip On/Off segment in sync (strip survives disable).
+  /**
+   * @param {Record<string, chrome.storage.StorageChange>} changes
+   * @param {string} area
+   */
+  _onStorageChanged(changes, area) {
     try {
-      this.keyPilot?.controlStrip?.setEnabledState?.(!!enabled);
-      if (!enabled) {
+      if (area !== 'sync' && area !== 'local') return;
+      if (!changes || !Object.prototype.hasOwnProperty.call(changes, this.ENABLED_STORAGE_KEY)) return;
+      const entry = changes[this.ENABLED_STORAGE_KEY];
+      const next = entry?.newValue;
+      if (typeof next !== 'boolean') return;
+      // Storage is the durable cross-tab source of truth; no toast (message path may toast).
+      void this.setEnabled(next, false);
+    } catch {
+      // ignore
+    }
+  }
+
+  /**
+   * Keep the control strip On/Off segment aligned with extension state.
+   * Safe when the strip is not yet constructed (no-op).
+   * @param {boolean} enabled
+   */
+  _syncControlStripEnabled(enabled) {
+    try {
+      const on = !!enabled;
+      this.keyPilot?.controlStrip?.setEnabledState?.(on);
+      if (!on) {
         this.keyPilot?.controlStrip?.setKeyboardHelpActive?.(false);
       } else {
         this.keyPilot?.controlStrip?.setKeyboardHelpActive?.(!!this.keyPilot?._keyboardHelpVisible);
@@ -142,10 +165,65 @@ export class KeyPilotToggleHandler extends EventManager {
     } catch {
       // Ignore
     }
+  }
+
+  /**
+   * Enable or disable KeyPilot functionality
+   * @param {boolean} enabled - Whether KeyPilot should be enabled
+   * @param {boolean} showNotification - Whether to show toggle notification (default: true)
+   */
+  async setEnabled(enabled, showNotification = true) {
+    const next = !!enabled;
+
+    // Always refresh the control strip indicator (even if functional state is unchanged)
+    // so late-created strips and other-tab storage races stay visually correct.
+    this._syncControlStripEnabled(next);
+
+    if (this.enabled === next) {
+      // Still keep KeyPilot's flag aligned if strip-only refresh was needed.
+      try {
+        if (this.keyPilot && this.keyPilot.enabled !== next) {
+          if (next) await this.enableKeyPilot();
+          else this.disableKeyPilot();
+        }
+      } catch {
+        // ignore
+      }
+      return;
+    }
+
+    // Sync with early injection cursor immediately
+    if (window.KEYPILOT_EARLY) {
+      window.KEYPILOT_EARLY.setEnabled(next);
+    }
+
+    this.enabled = next;
+
+    // Emit a semantic action for onboarding / telemetry consumers.
+    try {
+      document.dispatchEvent(new CustomEvent('keypilot:action', {
+        detail: {
+          action: 'toggleExtension',
+          enabled: next,
+          timestamp: Date.now()
+        }
+      }));
+    } catch {
+      // ignore
+    }
+
+    if (next) {
+      await this.enableKeyPilot();
+    } else {
+      this.disableKeyPilot();
+    }
+
+    // Re-sync after enable/disable in case strip was (re)created during the transition.
+    this._syncControlStripEnabled(next);
 
     // Show notification to user only if requested
     if (showNotification) {
-      this.showToggleNotification(enabled);
+      this.showToggleNotification(next);
     }
   }
 
@@ -157,6 +235,9 @@ export class KeyPilotToggleHandler extends EventManager {
     if (!this.keyPilot) return;
 
     try {
+      // Keep KeyPilot's own enabled flag in sync (disableKeyPilot sets it false).
+      try { this.keyPilot.enabled = true; } catch { /* ignore */ }
+
       // If we previously disabled via this handler, we may have fully cleaned up the
       // OverlayManager (including tearing down the canvas renderer). Re-enable must
       // explicitly revive the overlay renderer; otherwise hover rectangles won't draw
@@ -395,7 +476,22 @@ export class KeyPilotToggleHandler extends EventManager {
    */
   cleanup() {
     // Remove message listeners
-    if (chrome.runtime && chrome.runtime.onMessage) {
+    try {
+      if (chrome?.runtime?.onMessage?.removeListener) {
+        chrome.runtime.onMessage.removeListener(this._onRuntimeMessage);
+      }
+    } catch {
+      // ignore
+    }
+    try {
+      if (chrome?.storage?.onChanged?.removeListener) {
+        chrome.storage.onChanged.removeListener(this._onStorageChanged);
+      }
+    } catch {
+      // ignore
+    }
+    // Legacy no-op path if an old handleMessage field existed
+    if (chrome.runtime && chrome.runtime.onMessage && this.handleMessage) {
       chrome.runtime.onMessage.removeListener(this.handleMessage);
     }
 

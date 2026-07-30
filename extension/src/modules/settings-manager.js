@@ -12,6 +12,7 @@ import {
   normalizeSearchEngineId,
   getSearchEngineMeta
 } from '../config/search-engines.js';
+import { storageGetValue, storageSetValue } from '../utils/storage.js';
 
 export const SETTINGS_STORAGE_KEY = 'kp_settings_v1';
 
@@ -292,11 +293,11 @@ export function scrollBehaviorFromSpeed(speed) {
  */
 export async function getSettings() {
   try {
-    const result = await chrome.storage.sync.get(SETTINGS_STORAGE_KEY);
-    const stored = result && result[SETTINGS_STORAGE_KEY] ? result[SETTINGS_STORAGE_KEY] : {};
+    let stored = await storageGetValue(SETTINGS_STORAGE_KEY, null);
+    if (!stored || typeof stored !== 'object') stored = {};
     return {
       ...DEFAULT_SETTINGS,
-      ...(stored && typeof stored === 'object' ? stored : {}),
+      ...stored,
       searchEngine: normalizeSearchEngine(stored?.searchEngine),
       cursorMode: normalizeCursorMode(stored?.cursorMode),
       keyboardLayoutId: normalizeKeyboardLayoutId(stored?.keyboardLayoutId),
@@ -367,11 +368,7 @@ export async function setSettings(partial) {
   next.clickMode = normalizeClickMode(next.clickMode);
   next.textMode = normalizeTextMode(next.textMode);
   next.scroll = normalizeScroll(next.scroll);
-  try {
-    await chrome.storage.sync.set({ [SETTINGS_STORAGE_KEY]: next });
-  } catch (_e) {
-    // ignore
-  }
+  await storageSetValue(SETTINGS_STORAGE_KEY, next);
   return next;
 }
 

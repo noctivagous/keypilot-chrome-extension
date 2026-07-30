@@ -47,6 +47,7 @@ const modules = [
   'src/messaging/types.js',
   'src/utils/dom-context.js',
   'src/utils/extension-context.js',
+  'src/utils/storage.js',
   // Shared UI helpers used by multiple modules (must be defined before import-stripped consumers).
   'src/ui/url-listing.js',
   'src/modules/state-manager.js',
@@ -63,6 +64,7 @@ const modules = [
   'src/modules/shadow-dom-manager.js',
   'src/modules/intersection-observer-manager.js',
   'src/modules/optimized-scroll-manager.js',
+  'src/modules/popover-iframe-bridge.js',
   'src/modules/keypilot-toggle-handler.js',
   'src/modules/settings-manager.js',
   'src/modules/omnibox-manager.js',

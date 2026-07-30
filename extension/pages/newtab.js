@@ -3,6 +3,7 @@ import { KeyPilot } from '../src/keypilot.js';
 import { KeyPilotToggleHandler } from '../src/modules/keypilot-toggle-handler.js';
 import { OnboardingManager } from '../src/modules/onboarding-manager.js';
 import { getExtensionFaviconUrl, renderUrlListing } from '../src/ui/url-listing.js';
+import { storageGetValue } from '../src/utils/storage.js';
 
 let currentEngine = 'brave';
 const KP_ENABLED_STORAGE_KEY = 'keypilot_enabled';
@@ -634,21 +635,9 @@ async function queryGlobalEnabledState() {
     // ignore
   }
 
-  // Fallback: read storage directly.
-  try {
-    const syncResult = await chrome.storage.sync.get([KP_ENABLED_STORAGE_KEY]);
-    if (typeof syncResult?.[KP_ENABLED_STORAGE_KEY] === 'boolean') return syncResult[KP_ENABLED_STORAGE_KEY];
-  } catch {
-    // ignore
-  }
-  try {
-    const localResult = await chrome.storage.local.get([KP_ENABLED_STORAGE_KEY]);
-    if (typeof localResult?.[KP_ENABLED_STORAGE_KEY] === 'boolean') return localResult[KP_ENABLED_STORAGE_KEY];
-  } catch {
-    // ignore
-  }
-
-  return true;
+  // Fallback: shared sync → local helper.
+  const value = await storageGetValue(KP_ENABLED_STORAGE_KEY, true);
+  return typeof value === 'boolean' ? value : true;
 }
 
 async function setGlobalEnabledState(enabled) {

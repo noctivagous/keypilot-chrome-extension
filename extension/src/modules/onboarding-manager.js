@@ -7,6 +7,7 @@
 import { MODES } from '../config/constants.js';
 import { OnboardingPanel } from '../ui/onboarding-panel.js';
 import { PracticePopoverPanel } from '../ui/practice-popover-panel.js';
+import { storageGetKeys, storageSetObject } from '../utils/storage.js';
 
 const STORAGE_KEYS = {
   ACTIVE: 'keypilot_onboarding_active',
@@ -22,19 +23,7 @@ function safeBool(v) {
 }
 
 async function storageGet(keys) {
-  // Prefer sync, fall back to local.
-  try {
-    const r = await chrome.storage.sync.get(keys);
-    return r || {};
-  } catch {
-    // ignore
-  }
-  try {
-    const r = await chrome.storage.local.get(keys);
-    return r || {};
-  } catch {
-    return {};
-  }
+  return storageGetKeys(keys);
 }
 
 async function storageGetTransient() {
@@ -72,17 +61,7 @@ async function storageRemoveTransient() {
 }
 
 async function storageSet(obj) {
-  try {
-    await chrome.storage.sync.set(obj);
-    return;
-  } catch {
-    // ignore
-  }
-  try {
-    await chrome.storage.local.set(obj);
-  } catch {
-    // ignore
-  }
+  await storageSetObject(obj);
 }
 
 function withViewTransition(updateDomFn) {

@@ -8,7 +8,11 @@
  */
 
 import { PopupManager } from './popup-manager.js';
-import { createUrlListingContainer, renderUrlListing, getExtensionFaviconUrl } from '../ui/url-listing.js';
+import {
+  createFaviconImg,
+  extractDomain,
+  extractPath
+} from '../ui/url-listing.js';
 import { LAUNCHER_SEARCH_SITES } from '../config/search-engines.js';
 
 export class LauncherPopover {
@@ -236,14 +240,9 @@ export class LauncherPopover {
    */
   _getDefaultDomains(categoryKey) {
     if (!this._defaultSites[categoryKey]) return [];
-    return this._defaultSites[categoryKey].map(site => {
-      try {
-        const url = new URL(site.url);
-        return url.hostname.replace('www.', '');
-      } catch (e) {
-        return '';
-      }
-    }).filter(domain => domain !== '');
+    return this._defaultSites[categoryKey]
+      .map((site) => extractDomain(site.url))
+      .filter((domain) => domain !== '');
   }
 
   /**
@@ -581,13 +580,10 @@ export class LauncherPopover {
    * Filter items by matching domains
    */
   _filterByDomains(items, domains) {
-    return items.filter(item => {
-      try {
-        const itemDomain = new URL(item.url).hostname.replace('www.', '');
-        return domains.some(domain => itemDomain === domain || itemDomain.endsWith('.' + domain));
-      } catch (e) {
-        return false;
-      }
+    return items.filter((item) => {
+      const itemDomain = extractDomain(item.url);
+      if (!itemDomain) return false;
+      return domains.some((domain) => itemDomain === domain || itemDomain.endsWith('.' + domain));
     });
   }
 
@@ -1363,20 +1359,6 @@ export class LauncherPopover {
   }
 
   /**
-   * Extract path from URL
-   */
-  _extractPath(url) {
-    try {
-      const urlObj = new URL(url);
-      const path = urlObj.pathname + urlObj.search + urlObj.hash;
-      // Return empty string if path is just '/'
-      return path === '/' ? '' : path;
-    } catch (e) {
-      return '';
-    }
-  }
-
-  /**
    * Extract YouTube video ID from URL
    * Supports formats:
    * - https://www.youtube.com/watch?v=VIDEO_ID
@@ -1455,8 +1437,9 @@ export class LauncherPopover {
    */
   _createGridCard(item) {
     const doc = document;
-    const domain = this._extractDomain(item.url);
-    const path = this._extractPath(item.url);
+    // Shared URL helpers (same as omnibox / history listings)
+    const domain = extractDomain(item.url) || String(item.url || '');
+    const path = extractPath(item.url);
     const isDefault = item.isDefault === true;
 
     // Check if this is a YouTube video URL and get thumbnail
@@ -1510,9 +1493,8 @@ export class LauncherPopover {
       z-index: 1;
     `;
 
-    // Favicon
-    const favicon = doc.createElement('img');
-    favicon.src = getExtensionFaviconUrl(item.url, 32);
+    // Favicon via shared url-listing helper (SW fallback + generic icon)
+    const favicon = createFaviconImg(doc, item.url, { size: 32 });
     favicon.style.cssText = `
       width: 32px;
       height: 32px;
@@ -1520,9 +1502,6 @@ export class LauncherPopover {
       border-radius: 6px;
       flex-shrink: 0;
     `;
-    favicon.onerror = () => {
-      favicon.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjA4KSIvPgo8L3N2Zz4=';
-    };
 
     // Title
     const title = doc.createElement('div');
@@ -1725,17 +1704,6 @@ export class LauncherPopover {
       this._errorMessage.textContent = message;
     } else {
       this._errorMessage.textContent = 'This website prevents embedding in iframes for security reasons.';
-    }
-  }
-
-  /**
-   * Extract domain from URL
-   */
-  _extractDomain(url) {
-    try {
-      return new URL(url).hostname.replace('www.', '');
-    } catch (e) {
-      return url;
     }
   }
 
