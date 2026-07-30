@@ -87,7 +87,10 @@ export class KeyPilot extends EventManager {
     
     // Intersection Observer optimizations
     this.intersectionManager = new IntersectionObserverManager(this.detector);
-    this.scrollManager = new OptimizedScrollManager(this.overlayManager, this.state);
+    this.scrollManager = new OptimizedScrollManager(this.overlayManager, this.state, {
+      // Live-refresh text/rectangle selection overlays every scroll frame (~60fps).
+      onScrollFrame: () => this.refreshHighlightDuringScroll()
+    });
 
     // Optional hover target selection mode:
     // Use browser-native hover targeting (mouseenter/mouseleave on analyzed interactive elements)
@@ -113,6 +116,11 @@ export class KeyPilot extends EventManager {
     // Mouse movement optimization: only query every 2+ pixels (increased threshold)
     this.lastQueryPosition = { x: -1, y: -1 };
     this.MOUSE_QUERY_THRESHOLD = 1;
+    // Highlight selection updates: last cursor pos we applied (avoid thrashing on micro-moves)
+    this._lastHighlightUpdatePos = { x: -1, y: -1 };
+    this._HIGHLIGHT_UPDATE_THRESHOLD = 2;
+    // Prevent re-entrant completeSelection / updates while finishing a session
+    this._completingHighlight = false;
     
     // Mousemove hot-path optimization: coalesce hover work to once-per-frame.
     // We still update cursor position immediately, but defer expensive hit-testing / RBush work.
@@ -877,6 +885,25 @@ export class KeyPilot extends EventManager {
     }
   }
 
+  /**
+   * Push a keydown/keyup into the floating keyboard reference so pressed keys
+   * light up even when KeyPilot stops the event with stopImmediatePropagation.
+   * @param {KeyboardEvent} e
+   * @param {'down'|'up'} phase
+   */
+  _reflectKeyOnKeyboardHelp(e, phase = 'down') {
+    try {
+      const help = this.floatingKeyboardHelp;
+      if (!help || !this._keyboardHelpVisible) return;
+      if (typeof help.isVisible === 'function' && !help.isVisible()) return;
+      if (phase === 'up') {
+        if (typeof help.reflectKeyUp === 'function') help.reflectKeyUp(e);
+        return;
+      }
+      if (typeof help.reflectKeyDown === 'function') help.reflectKeyDown(e);
+    } catch { /* ignore */ }
+  }
+
   applyKeyboardHelpVisibility(visible, { persist = false } = {}) {
     const next = Boolean(visible);
     this._keyboardHelpVisible = next;
@@ -1309,16 +1336,13 @@ export class KeyPilot extends EventManager {
       this.updatePopupStatus(newState.mode);
     }
 
-    // Update overlays when focused text element changes or when overlay update is triggered
+    // Update overlays when focus/delete targets change, mode changes (e.g. enter
+    // highlight → companion "Press H again…" instruction), or an explicit trigger fires.
     if (newState.focusedTextElement !== prevState.focusedTextElement ||
-        newState._overlayUpdateTrigger !== prevState._overlayUpdateTrigger) {
-      // Update overlays to show the focused text overlay
-      this.updateOverlays(newState.focusEl, newState.deleteEl);
-    }
-
-    // Update visual overlays
-    if (newState.focusEl !== prevState.focusEl ||
-      newState.deleteEl !== prevState.deleteEl) {
+        newState._overlayUpdateTrigger !== prevState._overlayUpdateTrigger ||
+        newState.focusEl !== prevState.focusEl ||
+        newState.deleteEl !== prevState.deleteEl ||
+        newState.mode !== prevState.mode) {
       this.updateOverlays(newState.focusEl, newState.deleteEl);
     }
 
@@ -1518,6 +1542,12 @@ export class KeyPilot extends EventManager {
     if (!this.enabled) {
       return;
     }
+
+    // Live key feedback on the floating keyboard reference.
+    // Must run before any stopImmediatePropagation() below — claimed shortcuts
+    // would otherwise never reach FloatingKeyboardHelp's document listener
+    // (EventManager registers its capture handler first).
+    this._reflectKeyOnKeyboardHelp(e, 'down');
 
     // Debug key presses
     console.log('[KeyPilot] Key pressed:', e.key, 'Code:', e.code);
@@ -1770,7 +1800,11 @@ export class KeyPilot extends EventManager {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
-        this.completeSelection();
+        // Fire-and-forget; completeSelection always exits highlight mode.
+        void this.completeSelection().catch((err) => {
+          console.error('[KeyPilot] completeSelection failed:', err);
+          try { this.cancelHighlightMode(); } catch { /* ignore */ }
+        });
         return;
       }
       // Any other key — cancel highlight mode and let the key run normally
@@ -2327,6 +2361,7 @@ export class KeyPilot extends EventManager {
       
       // Enter highlight mode and start highlighting at current cursor position
       this.state.setMode(MODES.HIGHLIGHT);
+      this._lastHighlightUpdatePos = { x: -1, y: -1 };
       
       // Set default selection mode to character-level
       this.overlayManager.setSelectionMode('character');
@@ -2334,7 +2369,10 @@ export class KeyPilot extends EventManager {
       this.startHighlighting();
     } else {
       console.log('[KeyPilot] Completing highlight selection');
-      this.completeSelection();
+      void this.completeSelection().catch((err) => {
+        console.error('[KeyPilot] completeSelection failed:', err);
+        try { this.cancelHighlightMode(); } catch { /* ignore */ }
+      });
     }
   }
 
@@ -2355,27 +2393,46 @@ export class KeyPilot extends EventManager {
         console.log('[KeyPilot] Canceling delete mode to enter rectangle highlight mode');
       }
 
-      // Lazy-init heavy edge-only stack only when rectangle mode is used.
-      try { this.ensureEdgeOnlyProcessingForRectangle(); } catch { /* ignore */ }
+      // Lazy-init edge-only stack only when explicitly enabled (off by default).
+      if (FEATURE_FLAGS.USE_EDGE_ONLY_SELECTION && FEATURE_FLAGS.ENABLE_EDGE_ONLY_PROCESSING) {
+        try { this.ensureEdgeOnlyProcessingForRectangle(); } catch { /* ignore */ }
+      }
       
       // Enter highlight mode and start rectangle highlighting at current cursor position
       this.state.setMode(MODES.HIGHLIGHT);
+      this._lastHighlightUpdatePos = { x: -1, y: -1 };
       
       // Set selection mode to rectangle
       this.overlayManager.setSelectionMode('rectangle');
       
       this.startHighlighting();
     } else {
-      // If already in character mode, switching via rectangle key completes current selection
-      // (same as second H press). Users re-enter with Y/R for rectangle.
+      // Second press completes (and always exits) current highlight session.
       console.log('[KeyPilot] Completing rectangle highlight selection');
-      this.completeSelection();
+      void this.completeSelection().catch((err) => {
+        console.error('[KeyPilot] completeSelection failed:', err);
+        try { this.cancelHighlightMode(); } catch { /* ignore */ }
+      });
     }
   }
 
   startHighlighting() {
     const currentState = this.state.getState();
     const selectionMode = this.overlayManager.getSelectionMode();
+
+    // Companion instruction: "Press H again to finish selection" (layout-aware key).
+    try {
+      const KB = this.keybindings || {};
+      const binding = selectionMode === 'rectangle' ? KB.RECTANGLE_HIGHLIGHT : KB.HIGHLIGHT;
+      const finishKey = Array.isArray(binding?.keys) && binding.keys.length
+        ? binding.keys.find((k) => k && k.length === 1) || binding.keys[0]
+        : (selectionMode === 'rectangle' ? 'Y' : 'H');
+      this.overlayManager.highlightManager?.showHighlightModeIndicator?.({ finishKey });
+    } catch {
+      try {
+        this.overlayManager.highlightManager?.showHighlightModeIndicator?.();
+      } catch { /* ignore */ }
+    }
     
     // Convert viewport coordinates to document coordinates for scroll-independent selection
     const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
@@ -2393,7 +2450,8 @@ export class KeyPilot extends EventManager {
     this.state.setHighlightStartPosition(startPosition);
 
     if (selectionMode === 'character') {
-      // Start character-level selection
+      // Character mode stays character mode — never silently switch to rectangle
+      // (that path used a heavy full-DOM scan and could freeze the page).
       const success = this.overlayManager.startCharacterSelection(
         { x: currentState.lastMouse.x, y: currentState.lastMouse.y },
         this.findTextNodeAtPosition.bind(this),
@@ -2402,138 +2460,47 @@ export class KeyPilot extends EventManager {
 
       if (success) {
         console.log('[KeyPilot] Character selection started successfully');
-        return;
       } else {
-        console.log('[KeyPilot] Character selection failed, falling back to rectangle mode');
-        this.overlayManager.setSelectionMode('rectangle');
+        console.log('[KeyPilot] No text at start point; character selection will seed when cursor hits text');
       }
+      return;
     }
 
-    // Rectangle selection mode (default fallback)
-
-    // Initialize edge-only processing for highlight mode if enabled
-    if (this.edgeOnlyProcessingEnabled && 
-        this.rectangleIntersectionObserver && 
-        FEATURE_FLAGS.USE_EDGE_ONLY_SELECTION &&
-        FEATURE_FLAGS.ENABLE_EDGE_ONLY_PROCESSING) {
-      
-      try {
-        // Initialize rectangle at starting position (zero size initially)
-        const initialRect = {
-          left: startPosition.x,
-          top: startPosition.y,
-          width: 0,
-          height: 0
-        };
-        
-        this.rectangleIntersectionObserver.updateRectangle(initialRect);
-        
-        if (window.KEYPILOT_DEBUG && FEATURE_FLAGS.DEBUG_EDGE_ONLY_PROCESSING) {
-          console.log('[KeyPilot Debug] Edge-only processing initialized for highlight mode:', {
-            startPosition: startPosition,
-            initialRect: initialRect,
-            caching: FEATURE_FLAGS.ENABLE_SELECTION_CACHING,
-            batchProcessing: FEATURE_FLAGS.ENABLE_EDGE_BATCH_PROCESSING
-          });
-        }
-      } catch (error) {
-        console.warn('[KeyPilot] Error initializing edge-only processing for highlight mode:', error);
-        
-        // Fall back to spatial method if edge-only initialization fails
-        if (FEATURE_FLAGS.ENABLE_AUTOMATIC_FALLBACK) {
-          console.log('[KeyPilot] Falling back to spatial selection method');
-          this.edgeOnlyProcessingEnabled = false;
-        }
-      }
-    }
-
-    // Initialize text selection at cursor position with comprehensive error handling
+    // Rectangle selection mode — seed caret at origin if possible (updates use dual-caret).
     try {
-      const textNode = this.findTextNodeAtPosition(startPosition.x, startPosition.y);
-      if (textNode) {
-        // Create range using appropriate document context with error handling
-        const ownerDocument = textNode.ownerDocument || document;
-        
-        // Validate document context
-        if (!ownerDocument || typeof ownerDocument.createRange !== 'function') {
-          throw new Error('Invalid document context for range creation');
-        }
-        
-        const range = ownerDocument.createRange();
-        const offset = this.getTextOffsetAtPosition(textNode, startPosition.x, startPosition.y);
-        
-        // Validate offset with bounds checking
-        const textLength = textNode.textContent ? textNode.textContent.length : 0;
-        if (textLength === 0) {
-          throw new Error('Text node has no content');
-        }
-        
-        const validOffset = Math.max(0, Math.min(offset, textLength));
-        
-        // Set range start position with error handling
-        try {
-          range.setStart(textNode, validOffset);
-          range.setEnd(textNode, validOffset);
-        } catch (rangeError) {
-          throw new Error(`Failed to set range position: ${rangeError.message}`);
-        }
-        
-        // Get appropriate selection object with validation
-        const selection = this.getSelectionForDocument(ownerDocument);
-        if (!selection) {
-          throw new Error('Could not get selection object for document context');
-        }
-        
-        // Validate selection API availability
-        if (typeof selection.removeAllRanges !== 'function' || typeof selection.addRange !== 'function') {
-          throw new Error('Selection API methods not available');
-        }
-        
-        // Clear any existing selection and set new range with error handling
-        try {
-          selection.removeAllRanges();
-          selection.addRange(range);
-        } catch (selectionError) {
-          throw new Error(`Failed to set selection range: ${selectionError.message}`);
-        }
-        
-        // Store the selection for updates
-        this.state.setCurrentSelection(selection);
-        
-        // Initialize visual selection overlays with error handling
-        try {
-          this.overlayManager.updateHighlightSelectionOverlays(selection);
-        } catch (overlayError) {
-          console.warn('[KeyPilot] Error updating selection overlays:', overlayError);
-          // Continue without visual overlays - selection still works
-        }
-        
-        console.log('[KeyPilot] Text selection initialized successfully at offset:', validOffset);
+      const viewportStart = {
+        x: currentState.lastMouse.x,
+        y: currentState.lastMouse.y
+      };
+      const seeded = this.overlayManager.updateRectangleSelectionFromCarets(
+        viewportStart,
+        viewportStart,
+        this.findTextNodeAtPosition.bind(this),
+        this.getTextOffsetAtPosition.bind(this)
+      );
+      if (seeded) {
+        this.state.setCurrentSelection(seeded);
+        console.log('[KeyPilot] Rectangle selection seeded at cursor');
       } else {
-        console.log('[KeyPilot] No text node found at position, selection will start when cursor moves to text');
-        // This is not an error - just no selectable content at current position
+        console.log('[KeyPilot] No text at rectangle origin; selection will start when drag hits text');
       }
     } catch (error) {
-      console.error('[KeyPilot] Error initializing text selection:', error);
-      
-      // Show user-friendly error message
-      this.showFlashNotification(
-        'Unable to start text selection at this position', 
-        COLORS.NOTIFICATION_ERROR
-      );
-      
-      // Don't exit highlight mode - user can try moving cursor to different position
-      // Continue without selection - will try again when cursor moves
+      console.warn('[KeyPilot] Error seeding rectangle selection:', error);
     }
   }
 
-  updateSelection() {
+  /**
+   * Update live text/rectangle selection.
+   * @param {{ force?: boolean }} [opts] - force=true bypasses mouse-move threshold (use on scroll)
+   */
+  updateSelection(opts = {}) {
+    if (this._completingHighlight) return;
+    const force = !!opts.force;
     const currentState = this.state.getState();
     const startPos = currentState.highlightStartPosition;
     const selectionMode = this.overlayManager.getSelectionMode();
     
     if (!startPos) {
-      console.warn('[KeyPilot] No start position for selection update');
       return;
     }
 
@@ -2542,29 +2509,34 @@ export class KeyPilot extends EventManager {
       y: currentState.lastMouse.y
     };
 
-    // Performance optimization: skip update if cursor hasn't moved much
-    // Use viewport coordinates for consistent comparison (both currentPos and startPos.viewportX/Y are viewport coords)
-    const startViewportX = startPos.viewportX || startPos.x;
-    const startViewportY = startPos.viewportY || startPos.y;
-    const deltaX = Math.abs(currentPos.x - startViewportX);
-    const deltaY = Math.abs(currentPos.y - startViewportY);
-    
-    // Use smaller threshold to ensure selection appears immediately
-    if (deltaX < 1 && deltaY < 1) {
-      return; // Cursor hasn't moved enough to warrant an update
+    // Skip micro-moves relative to last applied highlight update (not origin).
+    // Scroll-driven refresh must always run even if the mouse viewport point is unchanged.
+    if (!force) {
+      const last = this._lastHighlightUpdatePos || { x: -1, y: -1 };
+      const thr = this._HIGHLIGHT_UPDATE_THRESHOLD ?? 2;
+      if (Math.abs(currentPos.x - last.x) < thr && Math.abs(currentPos.y - last.y) < thr) {
+        return;
+      }
     }
+    this._lastHighlightUpdatePos = { x: currentPos.x, y: currentPos.y };
+
+    // Origin in document space (set at highlight start) → current viewport each frame.
+    // Never reuse frozen startPos.viewportX/Y after the page has scrolled.
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft || 0;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+    const startPosForOverlay = {
+      x: (typeof startPos.x === 'number' ? startPos.x : (startPos.viewportX ?? 0) + scrollX) - scrollX,
+      y: (typeof startPos.y === 'number' ? startPos.y : (startPos.viewportY ?? 0) + scrollY) - scrollY
+    };
+    // Prefer highlight-manager's document anchor when already seeded
+    const hmOrigin = this.overlayManager?.highlightManager?.getOriginViewportPoint?.();
+    const originVp = hmOrigin || startPosForOverlay;
 
     if (selectionMode === 'character') {
-      // Update character-level selection with rectangle overlay
-      const startPosForOverlay = {
-        x: startViewportX,
-        y: startViewportY
-      };
-      
       try {
         this.overlayManager.updateCharacterSelection(
           currentPos,
-          startPosForOverlay,
+          originVp,
           this.findTextNodeAtPosition.bind(this),
           this.getTextOffsetAtPosition.bind(this)
         );
@@ -2574,110 +2546,40 @@ export class KeyPilot extends EventManager {
       return;
     }
 
-    // Rectangle selection mode
-    // Update the highlight rectangle overlay to show selection area
-    // Use viewport coordinates for overlay positioning (overlays use fixed positioning)
-    const startPosForOverlay = {
-      x: startViewportX,
-      y: startViewportY
-    };
-    
+    // Rectangle selection mode: caret-based only on the mousemove/scroll path.
+    // Full spatial TreeWalker is reserved for completeSelection — it freezes pages if run every frame.
     try {
-      this.overlayManager.updateHighlightRectangleOverlay(startPosForOverlay, currentPos);
-    } catch (overlayError) {
-      console.warn('[KeyPilot] Error updating highlight rectangle overlay:', overlayError);
-    }
-
-    try {
-      // Use edge-only processing if available and enabled
-      if (this.edgeOnlyProcessingEnabled && 
-          this.rectangleIntersectionObserver && 
-          FEATURE_FLAGS.USE_EDGE_ONLY_SELECTION &&
-          FEATURE_FLAGS.ENABLE_EDGE_ONLY_PROCESSING) {
-        
-        // Edge-only processing is handled by the highlight manager's updateHighlightRectangleOverlay
-        // which calls updateEdgeOnlyProcessingRectangle automatically
-        
-        // Get selection from edge-only processing
-        const selection = this.overlayManager.highlightManager.getEdgeOnlySelection();
-        
-        if (selection) {
-          this.state.setCurrentSelection(selection);
-          
-          // Update visual selection overlays
-          try {
-            this.overlayManager.updateHighlightSelectionOverlays(selection);
-          } catch (overlayError) {
-            console.warn('[KeyPilot] Error updating selection overlays:', overlayError);
-          }
-
-          if (window.KEYPILOT_DEBUG && FEATURE_FLAGS.DETAILED_EDGE_LOGGING) {
-            console.log('[KeyPilot Debug] Edge-only selection updated:', {
-              selectedText: selection.toString().substring(0, 100),
-              rangeCount: selection.rangeCount
-            });
-          }
-        } else {
-          // Clear selection if no valid selection from edge-only processing
-          this.clearSelectionSafely();
-          try {
-            this.overlayManager.clearHighlightSelectionOverlays();
-          } catch (overlayError) {
-            console.warn('[KeyPilot] Error clearing selection overlays:', overlayError);
-          }
-        }
+      const caretSelection = this.overlayManager.updateRectangleSelectionFromCarets(
+        originVp,
+        currentPos,
+        this.findTextNodeAtPosition.bind(this),
+        this.getTextOffsetAtPosition.bind(this)
+      );
+      if (caretSelection) {
+        this.state.setCurrentSelection(caretSelection);
       } else {
-        // Fall back to rectangle-based selection (spatial method)
-        if (window.KEYPILOT_DEBUG && FEATURE_FLAGS.ENABLE_AUTOMATIC_FALLBACK) {
-          console.log('[KeyPilot Debug] Using spatial fallback method for rectangle selection');
-        }
-
-        const selectionResult = this.createRectangleBasedSelection(startPos, currentPos);
-        
-        if (selectionResult && selectionResult.success && selectionResult.selection) {
-          // Validate selection before storing
-          try {
-            const selectedText = selectionResult.selection.toString();
-            if (selectedText !== null && selectedText !== undefined) {
-              // Store updated selection
-              this.state.setCurrentSelection(selectionResult.selection);
-              
-              // Update visual selection overlays for real-time feedback with error handling
-              try {
-                this.overlayManager.updateHighlightSelectionOverlays(selectionResult.selection);
-              } catch (overlayError) {
-                console.warn('[KeyPilot] Error updating selection overlays:', overlayError);
-              }
-            }
-          } catch (validationError) {
-            console.warn('[KeyPilot] Error validating selection:', validationError);
-          }
-        } else {
-          // Clear selection if no valid selection could be created
-          this.clearSelectionSafely();
-          try {
-            this.overlayManager.clearHighlightSelectionOverlays();
-          } catch (overlayError) {
-            console.warn('[KeyPilot] Error clearing selection overlays:', overlayError);
-          }
+        try {
+          this.overlayManager.updateHighlightRectangleOverlay(originVp, currentPos);
+        } catch (overlayError) {
+          console.warn('[KeyPilot] Error updating highlight rectangle overlay:', overlayError);
         }
       }
     } catch (error) {
       console.error('[KeyPilot] Unexpected error updating selection:', error);
-      
-      // Show user-friendly error message for unexpected errors
-      this.showFlashNotification(
-        'Selection update failed - try moving cursor', 
-        COLORS.NOTIFICATION_ERROR
-      );
-      
-      // Clear selection on error but stay in highlight mode
-      this.clearSelectionSafely();
-      try {
-        this.overlayManager.clearHighlightSelectionOverlays();
-      } catch (overlayError) {
-        console.warn('[KeyPilot] Error clearing overlays after unexpected error:', overlayError);
-      }
+      // Stay in highlight mode; user can move cursor or press the key again to exit.
+    }
+  }
+
+  /**
+   * Called every scroll frame while in highlight mode so the dashed rectangle
+   * stays glued to page content (not only on scroll-end).
+   */
+  refreshHighlightDuringScroll() {
+    if (!this.enabled || this._completingHighlight || !this.state?.isHighlightMode?.()) return;
+    try {
+      this.updateSelection({ force: true });
+    } catch (e) {
+      console.warn('[KeyPilot] refreshHighlightDuringScroll failed:', e);
     }
   }
 
@@ -2885,42 +2787,26 @@ export class KeyPilot extends EventManager {
    * @returns {Array} - Array of text nodes within the rectangle
    */
   findTextNodesForSelection(rect) {
-    // Use edge-only processing if available and enabled
-    if (this.edgeOnlyProcessingEnabled && 
-        this.rectangleIntersectionObserver && 
+    // Edge-only IntersectionObserver is experimental and often returns an empty
+    // set (non-ancestor root). Prefer spatial whenever edge-only has no hits.
+    if (this.edgeOnlyProcessingEnabled &&
+        this.rectangleIntersectionObserver &&
+        FEATURE_FLAGS.USE_EDGE_ONLY_SELECTION &&
         FEATURE_FLAGS.ENABLE_EDGE_ONLY_PROCESSING) {
-      
       try {
-        // Update rectangle bounds for intersection observer
         this.rectangleIntersectionObserver.updateRectangle(rect);
-        
-        // Get text nodes from edge-only processing
-        const edgeOnlyNodes = Array.from(this.rectangleIntersectionObserver.intersectingTextNodes);
-        
-        if (window.KEYPILOT_DEBUG && FEATURE_FLAGS.DEBUG_EDGE_ONLY_PROCESSING) {
-          const metrics = this.rectangleIntersectionObserver.getMetrics();
-          console.log('[KeyPilot Debug] Using edge-only processing for rectangle selection:', {
-            textNodesFound: edgeOnlyNodes.length,
-            intersectingElements: this.rectangleIntersectionObserver.intersectingTextElements.size,
-            performanceGain: metrics.performanceGain,
-            cacheHitRatio: metrics.cacheHitRatio
-          });
+        const edgeOnlyNodes = Array.from(this.rectangleIntersectionObserver.intersectingTextNodes || []);
+        if (edgeOnlyNodes.length > 0) {
+          return edgeOnlyNodes;
         }
-        
-        return edgeOnlyNodes;
       } catch (error) {
         console.warn('[KeyPilot] Edge-only processing failed, falling back to spatial method:', error);
-        
-        // Fall back to spatial method if edge-only processing fails
-        if (FEATURE_FLAGS.EDGE_ONLY_FALLBACK_ENABLED) {
-          return this.findTextNodesForSelectionSpatial(rect);
-        }
-        
+      }
+      if (!FEATURE_FLAGS.EDGE_ONLY_FALLBACK_ENABLED) {
         return [];
       }
     }
-    
-    // Fall back to spatial method if edge-only processing is disabled
+
     return this.findTextNodesForSelectionSpatial(rect);
   }
 
@@ -3418,143 +3304,80 @@ export class KeyPilot extends EventManager {
   }
 
   async completeSelection() {
+    // Ignore re-entrant completes (double H / concurrent awaits) — those left mode
+    // stuck mid-copy and thrashing updateSelection, which froze pages on later uses.
+    if (this._completingHighlight) {
+      return;
+    }
+    this._completingHighlight = true;
+
     const currentState = this.state.getState();
     const selectionMode = this.overlayManager.getSelectionMode();
     
-    console.log('[KeyPilot] Completing text selection with comprehensive error handling, mode:', selectionMode);
+    console.log('[KeyPilot] Completing text selection, mode:', selectionMode);
+
+    const exitHighlight = () => {
+      try {
+        this.cancelHighlightMode();
+      } catch (e) {
+        console.warn('[KeyPilot] Error exiting highlight mode:', e);
+        try { this.state.setMode(MODES.NONE); } catch { /* ignore */ }
+      }
+    };
     
     try {
       let selectedText = '';
-      let selection = null;
-      let extractedContent = null;
+      let contentToClipboard = null;
 
+      // Capture text FIRST while the browser Selection is still intact.
+      // Do not reset session state until after we have the string.
       if (selectionMode === 'character') {
-        // Complete character-level selection
-        selectedText = this.overlayManager.completeCharacterSelection();
-        
-        if (!selectedText || selectedText.trim() === '') {
-          throw new Error('Character selection returned no text');
-        }
+        selectedText = this.overlayManager.peekCharacterSelectedText() || '';
       } else {
-        // Rectangle selection mode - use existing logic
         try {
-          selection = this.getCurrentSelectionWithShadowSupport();
-          if (!selection) {
-            throw new Error('No selection object available');
-          }
-          
-          // Validate selection has content
-          if (typeof selection.toString !== 'function') {
-            throw new Error('Selection object missing toString method');
-          }
-          
-          // Check if selection has ranges
-          if (typeof selection.rangeCount === 'number' && selection.rangeCount === 0) {
-            throw new Error('Selection has no ranges');
-          }
-          
-          // Extract content before doing anything that might clear the selection
-          if (FEATURE_FLAGS.ENABLE_RICH_TEXT_CLIPBOARD) {
-            try {
-              extractedContent = this.extractSelectionContent(selection);
-            } catch (extractError) {
-              console.warn('[KeyPilot] Error extracting rich text content, falling back to plain text:', extractError);
-              extractedContent = { 
-                plainText: selection.toString(), 
-                htmlContent: '', 
-                hasRichContent: false 
-              };
+          const selection = this.getCurrentSelectionWithShadowSupport();
+          if (selection && typeof selection.toString === 'function' && selection.rangeCount > 0) {
+            if (FEATURE_FLAGS.ENABLE_RICH_TEXT_CLIPBOARD) {
+              try {
+                contentToClipboard = this.extractSelectionContent(selection);
+                selectedText = contentToClipboard.plainText || '';
+              } catch (extractError) {
+                console.warn('[KeyPilot] Error extracting rich text content:', extractError);
+                selectedText = selection.toString() || '';
+              }
+            } else {
+              selectedText = selection.toString() || '';
             }
-          } else {
-            extractedContent = { 
-              plainText: selection.toString(), 
-              htmlContent: '', 
-              hasRichContent: false 
-            };
-          }
-          
-          selectedText = extractedContent.plainText;
-          if (!selectedText || selectedText.trim() === '') {
-            throw new Error('Selection returned empty or whitespace-only text content');
           }
         } catch (selectionError) {
           console.warn('[KeyPilot] Error getting current selection:', selectionError);
-          
-          // Try fallback: get selection from state
+        }
+
+        if (!selectedText || !selectedText.trim()) {
           try {
             const stateSelection = currentState.currentSelection;
             if (stateSelection && typeof stateSelection.toString === 'function') {
-              selectedText = stateSelection.toString();
-              selection = stateSelection;
-              console.log('[KeyPilot] Using fallback selection from state');
-            } else {
-              throw new Error('No valid fallback selection available');
+              selectedText = stateSelection.toString() || '';
             }
-          } catch (fallbackError) {
-            console.warn('[KeyPilot] Fallback selection also failed:', fallbackError);
-            
-            // Final fallback: try to recreate selection from highlight rectangle
-          try {
-            const startPos = currentState.highlightStartPosition;
-            const currentPos = { x: currentState.lastMouse.x, y: currentState.lastMouse.y };
-            
-            if (startPos && currentPos) {
-              console.log('[KeyPilot] Attempting to recreate selection from highlight rectangle');
-              const recreatedSelection = this.createRectangleBasedSelection(startPos, currentPos);
-              
-              if (recreatedSelection && recreatedSelection.success && recreatedSelection.selection) {
-                selectedText = recreatedSelection.selection.toString();
-                selection = recreatedSelection.selection;
-                console.log('[KeyPilot] Successfully recreated selection from rectangle');
-              } else {
-                throw new Error('Could not recreate selection from highlight rectangle');
-              }
-            } else {
-              throw new Error('No highlight position data available for recreation');
-            }
-          } catch (recreationError) {
-            console.error('[KeyPilot] All selection methods failed:', recreationError);
-            this.showFlashNotification('Unable to access selected text', COLORS.NOTIFICATION_ERROR);
-            return;
-          }
-        }
-      }
-      } // End of rectangle selection mode
-      
-      // Handle empty or whitespace-only selections
-      if (!selectedText || !selectedText.trim()) {
-        console.log('[KeyPilot] Empty or whitespace-only selection, canceling highlight mode');
-        this.cancelHighlightMode();
-        this.showFlashNotification('No text selected', COLORS.NOTIFICATION_INFO);
-        return;
-      }
-      
-      // Validate text content before copying
-      if (typeof selectedText !== 'string') {
-        console.error('[KeyPilot] Selected text is not a string:', typeof selectedText);
-        this.showFlashNotification('Invalid text selection', COLORS.NOTIFICATION_ERROR);
-        return;
-      }
-      
-      // Use the already extracted content if available
-      let contentToClipboard = extractedContent || selectedText;
-      
-      // If we don't have extracted content but have a selection, try to extract it
-      if (!extractedContent && selection && FEATURE_FLAGS.ENABLE_RICH_TEXT_CLIPBOARD) {
-        try {
-          contentToClipboard = this.extractSelectionContent(selection);
-          console.log('[KeyPilot] Extracted selection content:', {
-            plainTextLength: contentToClipboard.plainText?.length || 0,
-            hasRichContent: contentToClipboard.hasRichContent || false,
-            htmlContentLength: contentToClipboard.htmlContent?.length || 0
-          });
-        } catch (extractError) {
-          console.warn('[KeyPilot] Failed to extract rich content, using plain text:', extractError);
-          contentToClipboard = selectedText; // Fall back to plain text
+          } catch { /* ignore */ }
         }
       }
 
-      // Copy content to clipboard with comprehensive error handling
+      // Exit highlight mode immediately so mousemove/scroll stop updating selection
+      // before any async clipboard work. This was a major freeze source.
+      exitHighlight();
+      
+      if (!selectedText || !String(selectedText).trim()) {
+        console.log('[KeyPilot] Empty selection — exited highlight mode');
+        this.showFlashNotification('No text selected', COLORS.NOTIFICATION_INFO);
+        return;
+      }
+
+      selectedText = String(selectedText);
+      if (!contentToClipboard) {
+        contentToClipboard = selectedText;
+      }
+
       let copySuccess = false;
       let clipboardError = null;
       
@@ -3565,65 +3388,48 @@ export class KeyPilot extends EventManager {
         console.error('[KeyPilot] Clipboard operation threw error:', error);
         copySuccess = false;
       }
-      
+
       if (copySuccess) {
         const copyType = (contentToClipboard && contentToClipboard.hasRichContent) ? 'rich text' : 'plain text';
-        const textPreview = (typeof contentToClipboard === 'string') ? 
-          contentToClipboard.substring(0, 50) : 
-          contentToClipboard.plainText.substring(0, 50);
-        console.log(`[KeyPilot] Content successfully copied to clipboard (${copyType}):`, textPreview);
-        
-        // Clear selection and exit highlight mode with error handling
-        try {
-          this.cancelModes();
-        } catch (cancelError) {
-          console.warn('[KeyPilot] Error canceling modes after successful copy:', cancelError);
-          // Force exit highlight mode
-          this.state.setMode(MODES.NONE);
-        }
-        
-        // Show success confirmation with copy type
+        const textPreview = (typeof contentToClipboard === 'string')
+          ? contentToClipboard.substring(0, 50)
+          : (contentToClipboard.plainText || '').substring(0, 50);
+        console.log(`[KeyPilot] Content copied (${copyType}):`, textPreview);
+
         const notificationCopyType = (contentToClipboard && contentToClipboard.hasRichContent) ? 'Rich text' : 'Text';
         this.showFlashNotification(`${notificationCopyType} copied to clipboard`, COLORS.NOTIFICATION_SUCCESS);
         
-        // Flash the focus overlay for additional visual feedback with error handling
         try {
           this.overlayManager.flashFocusOverlay();
         } catch (flashError) {
           console.warn('[KeyPilot] Error flashing focus overlay:', flashError);
-          // Continue without visual feedback
         }
       } else {
         console.warn('[KeyPilot] Failed to copy text to clipboard');
-        
-        // Provide specific error message based on clipboard error
         let errorMessage = 'Failed to copy text';
         if (clipboardError) {
-          if (clipboardError.name === 'NotAllowedError' || clipboardError.message.includes('permission')) {
+          if (clipboardError.name === 'NotAllowedError' || clipboardError.message?.includes('permission')) {
             errorMessage = 'Clipboard access denied - check browser permissions';
-          } else if (clipboardError.message.includes('not supported')) {
+          } else if (clipboardError.message?.includes('not supported')) {
             errorMessage = 'Clipboard not supported in this context';
-          } else if (clipboardError.message.includes('secure context')) {
+          } else if (clipboardError.message?.includes('secure context')) {
             errorMessage = 'Clipboard requires secure connection (HTTPS)';
           }
         }
-        
-        // Don't exit highlight mode on clipboard failure - let user try again
         this.showFlashNotification(errorMessage, COLORS.NOTIFICATION_ERROR);
       }
     } catch (error) {
       console.error('[KeyPilot] Unexpected error completing selection:', error);
-      
-      // Provide user-friendly error message for unexpected errors
+      try { exitHighlight(); } catch { /* ignore */ }
       let errorMessage = 'Error copying text';
-      if (error.message.includes('Selection API')) {
+      if (error?.message?.includes('Selection API')) {
         errorMessage = 'Text selection not supported on this page';
-      } else if (error.message.includes('shadow')) {
+      } else if (error?.message?.includes('shadow')) {
         errorMessage = 'Cannot copy text from this element';
       }
-      
-      // Don't exit highlight mode on error - let user try again
       this.showFlashNotification(errorMessage, COLORS.NOTIFICATION_ERROR);
+    } finally {
+      this._completingHighlight = false;
     }
   }
 
@@ -4165,66 +3971,68 @@ export class KeyPilot extends EventManager {
    * Clears selection, visual indicators, and state with shadow DOM support
    */
   cancelHighlightMode() {
-    console.log('[KeyPilot] Canceling highlight mode with shadow DOM support');
-    
-    const selectionMode = this.overlayManager.getSelectionMode();
-    
-    if (selectionMode === 'character') {
-      // Clear character selection
+    console.log('[KeyPilot] Canceling highlight mode');
+
+    // Always fully clear both character + rectangle session state (previous path
+    // only cleared one branch and could leave characterSelectionActive stuck true).
+    try {
+      this.overlayManager.clearCharacterSelection();
+    } catch (error) {
+      console.warn('[KeyPilot] Error clearing character selection:', error);
+    }
+
+    try {
+      this.overlayManager.hideHighlightRectangleOverlay();
+    } catch (error) {
+      console.warn('[KeyPilot] Error clearing highlight rectangle overlay:', error);
+    }
+
+    try {
+      this.overlayManager.clearHighlightSelectionOverlays();
+    } catch (error) {
+      console.warn('[KeyPilot] Error clearing highlight overlays:', error);
+    }
+
+    // Hide companion instruction modal
+    try {
+      this.overlayManager.highlightManager?.hideHighlightModeIndicator?.();
+    } catch { /* ignore */ }
+
+    // Sweep any orphaned selection / instruction overlays left in the DOM
+    try {
+      document.querySelectorAll(
+        '.kpv2-highlight-selection-overlay, .kpv2-highlight-selection, .kpv2-highlight-rectangle-overlay, .kpv2-highlight-mode-indicator'
+      ).forEach((el) => {
+        try { el.remove(); } catch { /* ignore */ }
+      });
       try {
-        this.overlayManager.clearCharacterSelection();
-        console.log('[KeyPilot] Cleared character selection');
-      } catch (error) {
-        console.warn('[KeyPilot] Error clearing character selection:', error);
-      }
-    } else {
-      // Rectangle selection mode cleanup
-      // Clean up edge-only processing if active
-      if (this.edgeOnlyProcessingEnabled && 
-          this.rectangleIntersectionObserver && 
-          FEATURE_FLAGS.ENABLE_EDGE_ONLY_PROCESSING) {
-        
-        try {
-          // Reset rectangle to zero size to stop intersection processing
-          this.rectangleIntersectionObserver.updateRectangle({
-            left: 0,
-            top: 0,
-            width: 0,
-            height: 0
-          });
-          
-          if (window.KEYPILOT_DEBUG && FEATURE_FLAGS.DEBUG_EDGE_ONLY_PROCESSING) {
-            console.log('[KeyPilot Debug] Edge-only processing cleaned up for highlight mode cancellation');
-          }
-        } catch (error) {
-          console.warn('[KeyPilot] Error cleaning up edge-only processing:', error);
+        if (this.overlayManager?.highlightManager) {
+          this.overlayManager.highlightManager.highlightModeIndicator = null;
         }
-      }
-      
-      // Clear rectangle overlay
+      } catch { /* ignore */ }
+    } catch { /* ignore */ }
+
+    // Optional edge-only stack cleanup
+    if (this.edgeOnlyProcessingEnabled &&
+        this.rectangleIntersectionObserver &&
+        FEATURE_FLAGS.ENABLE_EDGE_ONLY_PROCESSING) {
       try {
-        this.overlayManager.hideHighlightRectangleOverlay();
-        console.log('[KeyPilot] Cleared highlight rectangle overlay');
+        this.rectangleIntersectionObserver.updateRectangle({
+          left: 0, top: 0, width: 0, height: 0
+        });
       } catch (error) {
-        console.warn('[KeyPilot] Error clearing highlight rectangle overlay:', error);
+        console.warn('[KeyPilot] Error cleaning up edge-only processing:', error);
       }
     }
     
     // Clear any active text selection immediately with shadow DOM support
     this.clearAllSelectionsWithShadowSupport();
     
-    // Clear visual selection overlays immediately
-    try {
-      this.overlayManager.clearHighlightSelectionOverlays();
-      console.log('[KeyPilot] Cleared highlight selection overlays');
-    } catch (error) {
-      console.warn('[KeyPilot] Error clearing highlight overlays:', error);
-    }
-    
     // Clear all highlight-related state
     this.state.setHighlightStartPosition(null);
     this.state.setCurrentSelection(null);
     this.state.setHighlightElement(null);
+    this._lastHighlightUpdatePos = { x: -1, y: -1 };
     
     // Return to normal mode
     this.state.setMode(MODES.NONE);
@@ -4333,7 +4141,6 @@ export class KeyPilot extends EventManager {
       // Validate input coordinates
       if (typeof x !== 'number' || typeof y !== 'number' || 
           !isFinite(x) || !isFinite(y) || x < 0 || y < 0) {
-        console.warn('[KeyPilot] Invalid coordinates provided to findTextNodeAtPosition:', { x, y });
         return null;
       }
       
@@ -4346,19 +4153,15 @@ export class KeyPilot extends EventManager {
         
         element = this.detector.deepElementFromPoint(x, y);
       } catch (detectorError) {
-        console.warn('[KeyPilot] Error using element detector:', detectorError);
-        
         // Fallback to standard elementFromPoint
         try {
           element = document.elementFromPoint(x, y);
-        } catch (fallbackError) {
-          console.warn('[KeyPilot] Fallback elementFromPoint also failed:', fallbackError);
+        } catch {
           return null;
         }
       }
       
       if (!element) {
-        console.log('[KeyPilot] No element found at position:', { x, y });
         return null;
       }
 
@@ -4367,41 +4170,39 @@ export class KeyPilot extends EventManager {
         // Validate text node has content
         if (element.textContent && element.textContent.trim()) {
           return element;
-        } else {
-          console.log('[KeyPilot] Text node at position has no content');
-          return null;
         }
+        return null;
       }
 
       // Skip non-selectable elements gracefully with error handling
       try {
         if (this.isNonSelectableElement(element)) {
-          console.log('[KeyPilot] Element at position is non-selectable:', element.tagName);
           return null;
         }
-      } catch (selectableError) {
-        console.warn('[KeyPilot] Error checking if element is selectable:', selectableError);
+      } catch {
         // Continue anyway - assume it might be selectable
       }
+
+      // Prefer caret API before any TreeWalker (much cheaper)
+      try {
+        const caret = this.overlayManager?.highlightManager?.resolveCaretAtPoint?.(x, y, document);
+        if (caret?.textNode) return caret.textNode;
+      } catch { /* ignore */ }
 
       // Find text nodes within the element with comprehensive error handling
       let textNodes = [];
       try {
         textNodes = this.findTextNodesInElementWithShadowDOM(element);
-      } catch (textNodesError) {
-        console.warn('[KeyPilot] Error finding text nodes in element:', textNodesError);
-        
+      } catch {
         // Fallback: try simple text node search without shadow DOM
         try {
           textNodes = this.findTextNodesInElementSimple(element);
-        } catch (fallbackError) {
-          console.warn('[KeyPilot] Fallback text node search also failed:', fallbackError);
+        } catch {
           return null;
         }
       }
       
       if (!textNodes || textNodes.length === 0) {
-        console.log('[KeyPilot] No text nodes found in element at position');
         return null;
       }
       
@@ -4490,15 +4291,11 @@ export class KeyPilot extends EventManager {
         }
       }
       
-      if (bestNode) {
-        console.log('[KeyPilot] Found best text node at distance:', bestDistance);
-      } else {
-        console.log('[KeyPilot] No suitable text node found at position');
-      }
-      
       return bestNode;
     } catch (error) {
-      console.error('[KeyPilot] Unexpected error finding text node at position:', error);
+      if (window.KEYPILOT_DEBUG) {
+        console.error('[KeyPilot] Unexpected error finding text node at position:', error);
+      }
       return null;
     }
   }

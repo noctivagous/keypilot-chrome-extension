@@ -1690,14 +1690,15 @@
 
 }
 
+/* Selection tools: indigo family (distinct from green activate / blue nav / amber unused) */
 .kp-keybindings-ui .key.key-highlight,
 .kp-keybindings-ui .key.key-rect-highlight {
   
-  --kp-key-face: #b8862d;
-  --kp-key-mid: #9a6f22;
-  --kp-key-deep: #7a5618;
-  --kp-key-icon: #3d2a0c;
-  --kp-key-glow: rgba(245, 158, 11, 0.14);
+  --kp-key-face: #5b6fd4;
+  --kp-key-mid: #4a5cbb;
+  --kp-key-deep: #3949a0;
+  --kp-key-icon: #1a2258;
+  --kp-key-glow: rgba(99, 102, 241, 0.18);
 
 }
 
@@ -2164,6 +2165,8 @@
 .kp-keybindings-ui .key[data-kp-action-id="OMNIBOX"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M416%20208c0%2045.9-14.9%2088.3-40%20122.7L502.6%20457.4c12.5%2012.5%2012.5%2032.8%200%2045.3s-32.8%2012.5-45.3%200L330.7%20376c-34.4%2025.2-76.8%2040-122.7%2040C93.1%20416%200%20322.9%200%20208S93.1%200%20208%200S416%2093.1%20416%20208zM208%20352a144%20144%200%201%200%200-288%20144%20144%200%201%200%200%20288z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M416%20208c0%2045.9-14.9%2088.3-40%20122.7L502.6%20457.4c12.5%2012.5%2012.5%2032.8%200%2045.3s-32.8%2012.5-45.3%200L330.7%20376c-34.4%2025.2-76.8%2040-122.7%2040C93.1%20416%200%20322.9%200%20208S93.1%200%20208%200S416%2093.1%20416%20208zM208%20352a144%20144%200%201%200%200-288%20144%20144%200%201%200%200%20288z%22%2F%3E%3C%2Fsvg%3E"); }
 .kp-keybindings-ui .key[data-kp-action-id="TAB_HISTORY"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%200C114.6%200%200%20114.6%200%20256S114.6%20512%20256%20512c53%200%20102-16.2%20142.7-43.9c10.8-7.4%2013.6-22.3%206.2-33.1s-22.3-13.6-33.1-6.2C340.8%20449.1%20299.6%20464%20256%20464C141.1%20464%2048%20370.9%2048%20256S141.1%2048%20256%2048c60.7%200%20115.5%2026.1%20153.4%2067.7l-33.5%2033.5c-9.4%209.4-2.7%2025.5%2010.5%2025.5H456c13.3%200%2024-10.7%2024-24V56c0-13.2-16.1-19.9-25.5-10.5L418.7%2081.3C368.5%2031.4%20315.1%200%20256%200zM232%20120c0-13.3-10.7-24-24-24s-24%2010.7-24%2024V256c0%206.4%202.5%2012.5%207%2017l72%2072c9.4%209.4%2024.6%209.4%2033.9%200s9.4-24.6%200-33.9l-65-65V120z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%200C114.6%200%200%20114.6%200%20256S114.6%20512%20256%20512c53%200%20102-16.2%20142.7-43.9c10.8-7.4%2013.6-22.3%206.2-33.1s-22.3-13.6-33.1-6.2C340.8%20449.1%20299.6%20464%20256%20464C141.1%20464%2048%20370.9%2048%20256S141.1%2048%20256%2048c60.7%200%20115.5%2026.1%20153.4%2067.7l-33.5%2033.5c-9.4%209.4-2.7%2025.5%2010.5%2025.5H456c13.3%200%2024-10.7%2024-24V56c0-13.2-16.1-19.9-25.5-10.5L418.7%2081.3C368.5%2031.4%20315.1%200%20256%200zM232%20120c0-13.3-10.7-24-24-24s-24%2010.7-24%2024V256c0%206.4%202.5%2012.5%207%2017l72%2072c9.4%209.4%2024.6%209.4%2033.9%200s9.4-24.6%200-33.9l-65-65V120z%22%2F%3E%3C%2Fsvg%3E"); }
 .kp-keybindings-ui .key[data-kp-action-id="TOGGLE_KEYBOARD_HELP"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zm128%2064v32h32V160H128zm64%200v32h32V160H192zm64%200v32h32V160H256zm64%200v32h32V160H320zm64%200v32h32V160H384zM96%20256v32h64V256H96zm96%200v32h32V256H192zm64%200v32h32V256H256zm64%200v32h32V256H320zm64%200v32h32V256H384zm64%200v32h32V256H448zM128%20352v32H384V352H128z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zm128%2064v32h32V160H128zm64%200v32h32V160H192zm64%200v32h32V160H256zm64%200v32h32V160H320zm64%200v32h32V160H384zM96%20256v32h64V256H96zm96%200v32h32V256H192zm64%200v32h32V256H256zm64%200v32h32V256H320zm64%200v32h32V256H384zm64%200v32h32V256H448zM128%20352v32H384V352H128z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="HIGHLIGHT"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M128%2064c0-17.7%2014.3-32%2032-32H352c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H288v128h64c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H288v128h64c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H160c-17.7%200-32-14.3-32-32s14.3-32%2032-32h64V288H160c-17.7%200-32-14.3-32-32s14.3-32%2032-32h64V96H160c-17.7%200-32-14.3-32-32z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M128%2064c0-17.7%2014.3-32%2032-32H352c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H288v128h64c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H288v128h64c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H160c-17.7%200-32-14.3-32-32s14.3-32%2032-32h64V288H160c-17.7%200-32-14.3-32-32s14.3-32%2032-32h64V96H160c-17.7%200-32-14.3-32-32z%22%2F%3E%3C%2Fsvg%3E"); }
+.kp-keybindings-ui .key[data-kp-action-id="RECTANGLE_HIGHLIGHT"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M32%2032C14.3%2032%200%2046.3%200%2064v64c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V96h64c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H32zM32%20320c-17.7%200-32%2014.3-32%2032v64c0%2017.7%2014.3%2032%2032%2032h64c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H64V352c0-17.7-14.3-32-32-32zM320%2064c0%2017.7%2014.3%2032%2032%2032h64v64c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V64c0-17.7-14.3-32-32-32H352c-17.7%200-32%2014.3-32%2032zM480%20320c-17.7%200-32%2014.3-32%2032v64H384c-17.7%200-32%2014.3-32%2032s14.3%2032%2032%2032h64c17.7%200%2032-14.3%2032-32V352c0-17.7-14.3-32-32-32z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M32%2032C14.3%2032%200%2046.3%200%2064v64c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V96h64c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H32zM32%20320c-17.7%200-32%2014.3-32%2032v64c0%2017.7%2014.3%2032%2032%2032h64c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H64V352c0-17.7-14.3-32-32-32zM320%2064c0%2017.7%2014.3%2032%2032%2032h64v64c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V64c0-17.7-14.3-32-32-32H352c-17.7%200-32%2014.3-32%2032zM480%20320c-17.7%200-32%2014.3-32%2032v64H384c-17.7%200-32%2014.3-32%2032s14.3%2032%2032%2032h64c17.7%200%2032-14.3%2032-32V352c0-17.7-14.3-32-32-32z%22%2F%3E%3C%2Fsvg%3E"); }
 `;
 // KP_EARLY_INJECT_UI_END
 
@@ -3272,9 +3275,11 @@
     });
 
     const hint = doc.createElement('div');
-    hint.textContent = 'Press K to toggle';
     hint.setAttribute('data-kp-floating-keyboard-hint', 'true');
     Object.assign(hint.style, {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '4px',
       marginLeft: 'auto',
       fontSize: '10px',
       fontWeight: '500',
@@ -3287,6 +3292,29 @@
       lineHeight: '28px',
       whiteSpace: 'nowrap'
     });
+    // "Press <kbd>K</kbd> to toggle" — key chip matches main extension titlebar.
+    hint.appendChild(doc.createTextNode('Press '));
+    const hintKbd = doc.createElement('kbd');
+    hintKbd.setAttribute('data-kp-floating-keyboard-hint-key', 'true');
+    hintKbd.textContent = 'K';
+    Object.assign(hintKbd.style, {
+      display: 'inline-block',
+      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+      fontSize: '10px',
+      fontWeight: '600',
+      lineHeight: '1.2',
+      padding: '1px 5px',
+      border: '1px solid rgba(255, 255, 255, 0.16)',
+      borderBottomColor: 'rgba(0, 0, 0, 0.55)',
+      borderRadius: '4px',
+      background: 'linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
+      color: 'rgba(230, 232, 238, 0.95)',
+      boxShadow: '0 1px 0 rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06)',
+      verticalAlign: 'middle'
+    });
+    hint.appendChild(hintKbd);
+    hint.appendChild(doc.createTextNode(' to toggle'));
+    try { hint.setAttribute('aria-label', 'Press K to toggle'); } catch { /* ignore */ }
 
     const closeBtn = doc.createElement('button');
     closeBtn.type = 'button';
@@ -3355,7 +3383,35 @@
       const data = getEarlyKeyboardDataForLayout(layoutId || keyboardLayoutId);
       const binding = data?.bindings?.TOGGLE_KEYBOARD_HELP;
       const key = binding && (binding.displayKey || binding.keyLabel) ? String(binding.displayKey || binding.keyLabel) : 'K';
-      hint.textContent = `Press ${key} to toggle`;
+
+      while (hint.firstChild) hint.removeChild(hint.firstChild);
+      hint.appendChild(document.createTextNode('Press '));
+      let kbd = null;
+      try { kbd = document.createElement('kbd'); } catch { kbd = null; }
+      if (kbd) {
+        kbd.setAttribute('data-kp-floating-keyboard-hint-key', 'true');
+        kbd.textContent = key;
+        Object.assign(kbd.style, {
+          display: 'inline-block',
+          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+          fontSize: '10px',
+          fontWeight: '600',
+          lineHeight: '1.2',
+          padding: '1px 5px',
+          border: '1px solid rgba(255, 255, 255, 0.16)',
+          borderBottomColor: 'rgba(0, 0, 0, 0.55)',
+          borderRadius: '4px',
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
+          color: 'rgba(230, 232, 238, 0.95)',
+          boxShadow: '0 1px 0 rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06)',
+          verticalAlign: 'middle'
+        });
+        hint.appendChild(kbd);
+      } else {
+        hint.appendChild(document.createTextNode(key));
+      }
+      hint.appendChild(document.createTextNode(' to toggle'));
+      try { hint.setAttribute('aria-label', `Press ${key} to toggle`); } catch { /* ignore */ }
     } catch { /* ignore */ }
   }
 

@@ -263,8 +263,8 @@ export class ControlStrip {
     const keyboardBtn = this._createSegmentButton({
       ariaLabel: 'Toggle keyboard reference',
       title: 'Keyboard reference',
-      iconActionId: 'TOGGLE_KEYBOARD_HELP',
-      compact: true
+      text: 'KB',
+      iconActionId: 'TOGGLE_KEYBOARD_HELP'
     });
     keyboardBtn.setAttribute('data-kp-control-strip-keyboard', 'true');
     keyboardBtn.addEventListener('click', this._onKeyboardClick);
@@ -272,8 +272,8 @@ export class ControlStrip {
     const settingsBtn = this._createSegmentButton({
       ariaLabel: 'Open KeyPilot settings',
       title: 'Settings',
-      iconActionId: 'OPEN_SETTINGS_POPOVER',
-      compact: true
+      text: 'Settings',
+      iconActionId: 'OPEN_SETTINGS_POPOVER'
     });
     settingsBtn.setAttribute('data-kp-control-strip-settings', 'true');
     settingsBtn.addEventListener('click', this._onSettingsClick);
@@ -375,13 +375,16 @@ export class ControlStrip {
 
     if (opts.iconActionId) {
       const icon = this._createActionIcon(opts.iconActionId);
-      if (icon) {
-        btn.appendChild(icon);
-      } else if (opts.text) {
-        btn.textContent = opts.text;
-      }
-    } else if (opts.text) {
-      btn.textContent = opts.text;
+      if (icon) btn.appendChild(icon);
+    }
+    if (opts.text) {
+      const label = document.createElement('span');
+      label.textContent = opts.text;
+      Object.assign(label.style, {
+        pointerEvents: 'none',
+        lineHeight: '1'
+      });
+      btn.appendChild(label);
     }
 
     Object.assign(btn.style, {

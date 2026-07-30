@@ -3,9 +3,15 @@
  * Reduces expensive operations during scroll events
  */
 export class OptimizedScrollManager {
-  constructor(overlayManager, stateManager) {
+  /**
+   * @param {*} overlayManager
+   * @param {*} stateManager
+   * @param {{ onScrollFrame?: () => void }} [hooks] - optional live scroll hooks (e.g. highlight refresh)
+   */
+  constructor(overlayManager, stateManager, hooks = {}) {
     this.overlayManager = overlayManager;
     this.stateManager = stateManager;
+    this.onScrollFrame = typeof hooks?.onScrollFrame === 'function' ? hooks.onScrollFrame : null;
     
     // Scroll state tracking
     this.isScrolling = false;
@@ -173,6 +179,16 @@ export class OptimizedScrollManager {
     // Update focused text element overlays (both focused text overlay and active text input frame)
     if (currentState.focusedTextElement && currentState.focusedTextElement.isConnected) {
       this.updateOverlayPosition(currentState.focusedTextElement, 'focusedText');
+    }
+
+    // Text / rectangle select: keep dashed selection rect + carets live with scroll
+    // (document-anchored origin). Without this, overlays only jumped on scroll-end.
+    if (currentState.mode === 'highlight' && this.onScrollFrame) {
+      try {
+        this.onScrollFrame();
+      } catch (e) {
+        // Non-fatal — selection refresh should never break scroll handling
+      }
     }
     
     this.scrollMetrics.overlayUpdates++;

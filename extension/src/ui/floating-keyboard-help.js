@@ -173,6 +173,9 @@ export class FloatingKeyboardHelp {
     const hintEl = parts.hintEl || header.querySelector('[data-kp-floating-keyboard-hint="true"]');
     if (hintEl && hintEl.style) {
       Object.assign(hintEl.style, {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px',
         marginLeft: 'auto',
         fontSize: '10px',
         fontWeight: '500',
@@ -280,8 +283,8 @@ export class FloatingKeyboardHelp {
     title.setAttribute('data-kp-floating-keyboard-title', 'true');
 
     const hint = document.createElement('div');
-    hint.textContent = 'Press K to toggle';
     hint.setAttribute('data-kp-floating-keyboard-hint', 'true');
+    this._setToggleHint(hint, 'K');
 
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
@@ -315,13 +318,51 @@ export class FloatingKeyboardHelp {
     this.hintEl = hint;
   }
 
+  /**
+   * Titlebar hint: "Press <kbd>K</kbd> to toggle" (key label is layout-aware).
+   * @param {HTMLElement|null} hintEl
+   * @param {string} keyLabel
+   */
+  _setToggleHint(hintEl, keyLabel) {
+    if (!hintEl) return;
+    const key = String(keyLabel || 'K').trim() || 'K';
+    // Rebuild so we don't leave stale key labels after layout switches.
+    while (hintEl.firstChild) hintEl.removeChild(hintEl.firstChild);
+
+    hintEl.appendChild(document.createTextNode('Press '));
+
+    const kbd = document.createElement('kbd');
+    kbd.setAttribute('data-kp-floating-keyboard-hint-key', 'true');
+    kbd.textContent = key;
+    Object.assign(kbd.style, {
+      display: 'inline-block',
+      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+      fontSize: '10px',
+      fontWeight: '600',
+      lineHeight: '1.2',
+      padding: '1px 5px',
+      border: '1px solid rgba(255, 255, 255, 0.16)',
+      borderBottomColor: 'rgba(0, 0, 0, 0.55)',
+      borderRadius: '4px',
+      background: 'linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
+      color: 'rgba(230, 232, 238, 0.95)',
+      boxShadow: '0 1px 0 rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06)',
+      verticalAlign: 'middle'
+    });
+    hintEl.appendChild(kbd);
+
+    hintEl.appendChild(document.createTextNode(' to toggle'));
+    try {
+      hintEl.setAttribute('aria-label', `Press ${key} to toggle`);
+    } catch { /* ignore */ }
+  }
+
   _render() {
     if (!this.keyboardContainer) return;
     try {
-      const hint = this.hintEl;
       const b = this.keybindings && this.keybindings.TOGGLE_KEYBOARD_HELP;
       const key = (b && (b.displayKey || b.keyLabel)) ? String(b.displayKey || b.keyLabel) : 'K';
-      if (hint) hint.textContent = `Press ${key} to toggle`;
+      this._setToggleHint(this.hintEl, key);
     } catch { /* ignore */ }
     try {
       renderKeybindingsKeyboard({
@@ -338,10 +379,28 @@ export class FloatingKeyboardHelp {
     }
   }
 
+  /**
+   * Public entry points used by KeyPilot's capture-phase handler.
+   * KeyPilot calls stopImmediatePropagation() on claimed shortcuts, which would
+   * otherwise prevent document-level listeners registered later from seeing keydown.
+   * @param {KeyboardEvent} e
+   */
+  reflectKeyDown(e) {
+    this._onDocKeyDown(e);
+  }
+
+  /**
+   * @param {KeyboardEvent} e
+   */
+  reflectKeyUp(e) {
+    this._onDocKeyUp(e);
+  }
+
   _bindKeydownFeedback() {
     if (this._keydownBound) return;
     try {
-      // Use capture so we still see events even if KeyPilot stops propagation in bubble phase.
+      // Capture listeners cover keys KeyPilot does not claim. Claimed shortcuts are
+      // reflected via reflectKeyDown() from KeyPilot before stopImmediatePropagation.
       document.addEventListener('keydown', this._onDocKeyDown, true);
       document.addEventListener('keyup', this._onDocKeyUp, true);
       window.addEventListener('blur', this._onWinBlur, true);
@@ -408,58 +467,165 @@ export class FloatingKeyboardHelp {
     return String(s || '').trim().toUpperCase();
   }
 
-  _labelsFromKeyboardEvent(e) {
-    // Prefer semantic key names so this works across keyboard layouts.
-    const key = e && typeof e.key === 'string' ? e.key : '';
-    if (!key) return [];
-    if (key === ' ') return []; // Space isn't represented on this mini keyboard.
+  /**
+   * Normalize an event/binding key token into the label(s) used on the keyboard UI.
+   * @param {string} token
+   * @returns {string[]}
+   */
+  _labelsFromToken(token) {
+    const raw = String(token || '').trim();
+    if (!raw || raw === ' ') return [];
 
-    const upper = this._normalizeLabel(key);
+    const upper = this._normalizeLabel(raw);
     if (!upper) return [];
 
-    // Match the UI's special key text.
-    if (upper === 'CAPSLOCK') return ['CAPS'];
-    if (upper === 'ESC' || upper === 'ESCAPE') return []; // not shown
-    if (upper === 'CONTROL' || upper === 'ALT' || upper === 'META') return []; // not shown
-
-    // The keyboard shows "Shift" twice; highlight both regardless of left/right.
+    // Match the UI's special key text / common KeyboardEvent.key values.
+    if (upper === 'CAPSLOCK' || upper === 'CAPS') return ['CAPS'];
+    if (upper === 'ESCAPE' || upper === 'ESC') return ['ESC']; // may be absent from mini layout
+    if (upper === 'CONTROL' || upper === 'CTRL' || upper === 'ALT' || upper === 'META' || upper === 'OS') {
+      return []; // not shown on the mini keyboard
+    }
     if (upper === 'SHIFT') return ['SHIFT'];
+    if (upper === 'ENTER' || upper === 'RETURN') return ['ENTER'];
+    if (upper === 'TAB') return ['TAB'];
+    if (upper === 'BACKSPACE') return ['BACKSPACE'];
+    if (upper === 'SEMICOLON') return [';'];
+    if (upper === 'QUOTE') return ["'"];
+    if (upper === 'BACKQUOTE' || upper === 'BACKTICK') return ['`'];
+    if (upper === 'BRACKETLEFT') return ['['];
+    if (upper === 'BRACKETRIGHT') return [']'];
+    if (upper === 'COMMA') return [','];
+    if (upper === 'PERIOD') return ['.'];
+    if (upper === 'SLASH') return ['/'];
+    if (upper === 'MINUS') return ['-'];
+    if (upper === 'EQUAL') return ['='];
+    if (upper === 'BACKSLASH') return ['\\'];
 
     // Punctuation: map shifted glyphs back to the base key label shown on the keyboard UI.
-    // This keeps highlight feedback consistent (e.g. ':' highlights the ';' key).
     if (upper === ':') return [';'];
     if (upper === '?') return ['/'];
     if (upper === '>') return ['.'];
     if (upper === '<') return [','];
+    if (upper === '"') return ["'"];
+    if (upper === '~') return ['`'];
+    if (upper === '{') return ['['];
+    if (upper === '}') return [']'];
+    if (upper === '_') return ['-'];
+    if (upper === '+') return ['='];
+    if (upper === '|') return ['\\'];
+    if (upper === '!') return ['1'];
+    if (upper === '@') return ['2'];
+    if (upper === '#') return ['3'];
+    if (upper === '$') return ['4'];
+    if (upper === '%') return ['5'];
+    if (upper === '^') return ['6'];
+    if (upper === '&') return ['7'];
+    if (upper === '*') return ['8'];
+    if (upper === '(') return ['9'];
+    if (upper === ')') return ['0'];
 
-    // Default: the visible keys are mostly single characters or well-known names.
     return [upper];
+  }
+
+  _labelsFromKeyboardEvent(e) {
+    // Prefer semantic key names so this works across keyboard layouts; also use
+    // KeyboardEvent.code so physical keys still light when key is a shifted glyph.
+    const out = [];
+    const seen = new Set();
+    const pushAll = (tokens) => {
+      for (const t of tokens || []) {
+        if (!t || seen.has(t)) continue;
+        seen.add(t);
+        out.push(t);
+      }
+    };
+
+    const key = e && typeof e.key === 'string' ? e.key : '';
+    if (key) pushAll(this._labelsFromToken(key));
+
+    const code = e && typeof e.code === 'string' ? e.code : '';
+    if (code) {
+      // KeyA → A, Digit1 → 1
+      if (/^Key[A-Z]$/i.test(code)) pushAll([code.slice(3).toUpperCase()]);
+      else if (/^Digit[0-9]$/.test(code)) pushAll([code.slice(5)]);
+      else pushAll(this._labelsFromToken(code));
+    }
+
+    return out;
+  }
+
+  /**
+   * @param {Map<string, HTMLElement[]>} map
+   * @param {string} label
+   * @param {HTMLElement} keyEl
+   */
+  _indexLabel(map, label, keyEl) {
+    const tokens = [];
+    const norm = this._normalizeLabel(label);
+    if (norm) tokens.push(norm);
+
+    // Composite display keys (e.g. "A/`", "F / G") → also index each part.
+    if (norm && /[/|,]/.test(norm)) {
+      for (const part of norm.split(/[/|,]+/)) {
+        const p = this._normalizeLabel(part);
+        if (p) tokens.push(p);
+      }
+    }
+
+    // Expand each token through the same alias map used for events.
+    const expanded = new Set();
+    for (const t of tokens) {
+      for (const alias of this._labelsFromToken(t)) {
+        if (alias) expanded.add(alias);
+      }
+      if (t) expanded.add(t);
+    }
+
+    for (const token of expanded) {
+      const arr = map.get(token) || [];
+      if (!arr.includes(keyEl)) arr.push(keyEl);
+      map.set(token, arr);
+    }
   }
 
   _rebuildKeyIndex() {
     if (!this.keyboardContainer) return;
     const map = new Map();
     const byAction = new Map();
+    const bindings = this.keybindings || {};
 
     // Index by the visible "key label":
     // - action keys use `.key-label` (e.g. Q/W/E...)
-    // - plain keys and specials use their own textContent (e.g. Y, Tab, Caps, Shift)
+    // - plain keys and specials use `.key-text` (e.g. Y, Tab, Caps, Shift)
+    // - also index binding.keys so event.key / event.code always resolve
     const keyEls = this.keyboardContainer.querySelectorAll('.key');
     for (const keyEl of keyEls) {
       const labelEl = keyEl.querySelector?.('.key-label');
-      const label = this._normalizeLabel(labelEl ? labelEl.textContent : keyEl.textContent);
-      if (label) {
-        const arr = map.get(label) || [];
-        arr.push(keyEl);
-        map.set(label, arr);
+      const textEl = keyEl.querySelector?.('.key-text');
+      if (labelEl && labelEl.textContent) {
+        this._indexLabel(map, labelEl.textContent, keyEl);
+      }
+      if (textEl && textEl.textContent) {
+        this._indexLabel(map, textEl.textContent, keyEl);
+      }
+      if (!labelEl && !textEl) {
+        this._indexLabel(map, keyEl.textContent, keyEl);
       }
 
       // Also index by action id for link-hover hints (ACTIVATE, OPEN_POPOVER, …).
       const actionId = keyEl.dataset?.kpActionId ? String(keyEl.dataset.kpActionId) : '';
       if (actionId) {
         const arr = byAction.get(actionId) || [];
-        arr.push(keyEl);
+        if (!arr.includes(keyEl)) arr.push(keyEl);
         byAction.set(actionId, arr);
+
+        const binding = bindings[actionId];
+        const keys = binding && Array.isArray(binding.keys) ? binding.keys : [];
+        for (const k of keys) {
+          this._indexLabel(map, k, keyEl);
+        }
+        if (binding?.displayKey) this._indexLabel(map, binding.displayKey, keyEl);
+        if (binding?.keyLabel) this._indexLabel(map, binding.keyLabel, keyEl);
       }
     }
 

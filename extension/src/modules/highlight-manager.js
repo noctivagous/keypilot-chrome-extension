@@ -24,8 +24,10 @@ export class HighlightManager extends EventManager {
     this.characterStartOffset = 0; // Starting character offset
 
     // Rectangle selection state
-    this.rectOriginPoint = null; // Origin point established by first H key press (viewport coordinates)
-    this.rectOriginDocumentPoint = null; // Origin point in document coordinates (accounts for scroll)
+    this.rectOriginPoint = null; // Origin point established by first press (viewport at press time)
+    this.rectOriginDocumentPoint = null; // Origin in document coordinates (scroll-stable anchor)
+    // Rectangle mode start caret (node+offset) — document-anchored; do not re-resolve from frozen viewport
+    this.rectangleStartCaret = null;
 
 
 
@@ -255,31 +257,63 @@ export class HighlightManager extends EventManager {
   }
 
   /**
-   * Update the highlight rectangle overlay showing the selection area
-   * @param {Object} rectOriginPoint - Origin point from first H key press {x, y} (viewport coordinates)
+   * Document-anchored origin converted to the current viewport (for caret resolve / overlay).
+   * @returns {{x:number,y:number}|null}
+   */
+  getOriginViewportPoint() {
+    if (!this.rectOriginDocumentPoint) return null;
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft || 0;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+    return {
+      x: this.rectOriginDocumentPoint.x - scrollX,
+      y: this.rectOriginDocumentPoint.y - scrollY
+    };
+  }
+
+  /**
+   * Ensure the selection origin is stored in document space (scroll-stable).
+   * @param {Object} viewportPoint - {x,y} viewport coordinates at anchor time
+   */
+  ensureRectOriginDocumentPoint(viewportPoint) {
+    if (this.rectOriginDocumentPoint || !viewportPoint) return;
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft || 0;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+    this.rectOriginPoint = { ...viewportPoint };
+    this.rectOriginDocumentPoint = {
+      x: viewportPoint.x + scrollX,
+      y: viewportPoint.y + scrollY
+    };
+  }
+
+  /**
+   * Update the highlight rectangle overlay showing the selection area.
+   * Origin is document-anchored so the rectangle stays glued to content while scrolling.
+   * @param {Object} rectOriginPoint - Origin point from first press {x, y} (viewport at press; used only to seed)
    * @param {Object} currentPosition - Current cursor position {x, y} (viewport coordinates)
    */
   updateHighlightRectangleOverlay(rectOriginPoint, currentPosition) {
-    if (!rectOriginPoint || !currentPosition) {
+    if (!currentPosition) {
       this.hideHighlightRectangleOverlay();
       return;
     }
 
-    // Store the original document coordinates when rectangle starts
+    // Seed document-space origin once; never recompute from a frozen viewport after scroll.
     if (!this.rectOriginDocumentPoint) {
-      this.rectOriginDocumentPoint = {
-        x: rectOriginPoint.x + window.scrollX,
-        y: rectOriginPoint.y + window.scrollY
-      };
-
-      // Show debug HUD when rectangle selection starts
+      if (!rectOriginPoint) {
+        this.hideHighlightRectangleOverlay();
+        return;
+      }
+      this.ensureRectOriginDocumentPoint(rectOriginPoint);
       this.showDebugHUD();
     }
 
-    // Convert current viewport position to document coordinates
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft || 0;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+
+    // Free end follows the cursor in viewport space → document via current scroll
     const currentDocumentPosition = {
-      x: currentPosition.x + window.scrollX,
-      y: currentPosition.y + window.scrollY
+      x: currentPosition.x + scrollX,
+      y: currentPosition.y + scrollY
     };
 
     if (window.KEYPILOT_DEBUG) {
@@ -324,16 +358,15 @@ export class HighlightManager extends EventManager {
       }
     }
 
-    // Desktop file selection behavior: rectangle drawn from origin to current position
-    // Use document coordinates for calculation, then convert back to viewport for positioning
+    // Desktop file selection behavior: rectangle from document-anchored origin → free end
     const documentLeft = Math.min(this.rectOriginDocumentPoint.x, currentDocumentPosition.x);
     const documentTop = Math.min(this.rectOriginDocumentPoint.y, currentDocumentPosition.y);
     const width = Math.abs(currentDocumentPosition.x - this.rectOriginDocumentPoint.x);
     const height = Math.abs(currentDocumentPosition.y - this.rectOriginDocumentPoint.y);
 
-    // Convert document coordinates back to viewport coordinates for positioning
-    const viewportLeft = documentLeft - window.scrollX;
-    const viewportTop = documentTop - window.scrollY;
+    // Convert document coordinates back to viewport for fixed-position overlay
+    const viewportLeft = documentLeft - scrollX;
+    const viewportTop = documentTop - scrollY;
 
     // Calculate direction for debugging
     const deltaX = currentDocumentPosition.x - this.rectOriginDocumentPoint.x;
@@ -494,6 +527,7 @@ export class HighlightManager extends EventManager {
 
   /**
    * Start character-level selection at the given position
+   * Prefer native caret APIs; fall back to findTextNode only if needed.
    * @param {Object} position - Position {x, y} in viewport coordinates
    * @param {Function} findTextNodeAtPosition - Function to find text node at position
    * @param {Function} getTextOffsetAtPosition - Function to get text offset at position
@@ -505,24 +539,47 @@ export class HighlightManager extends EventManager {
     }
 
     try {
-      // Initialize rectangle selection state for visual rectangle overlay
+      // Fresh session: drop any leftover overlay DOM from a previous run
+      this.clearHighlightSelectionOverlays();
+
+      // Document-anchored origin for the dashed guide rectangle
       this.rectOriginPoint = { ...position };
       this.rectOriginDocumentPoint = {
-        x: position.x + window.scrollX,
-        y: position.y + window.scrollY
+        x: position.x + (window.pageXOffset || document.documentElement.scrollLeft || 0),
+        y: position.y + (window.pageYOffset || document.documentElement.scrollTop || 0)
       };
 
-      // Find text node at the starting position
-      const textNode = findTextNodeAtPosition(position.x, position.y);
-      if (!textNode) {
+      // Prefer O(1) caret API over TreeWalker scan
+      let textNode = null;
+      let offset = 0;
+      const caret = this.resolveCaretAtPoint(position.x, position.y, document);
+      if (caret?.textNode) {
+        textNode = caret.textNode;
+        offset = caret.offset;
+      } else if (typeof findTextNodeAtPosition === 'function') {
+        textNode = findTextNodeAtPosition(position.x, position.y);
+        if (textNode && typeof getTextOffsetAtPosition === 'function') {
+          offset = getTextOffsetAtPosition(textNode, position.x, position.y);
+        }
+      }
+
+      if (!textNode || textNode.nodeType !== Node.TEXT_NODE) {
         if (window.KEYPILOT_DEBUG) {
           console.log('[KeyPilot Debug] No text node found at position for character selection');
         }
+        // Keep origin for rectangle guide; selection arms when cursor hits text
+        this.characterSelectionActive = false;
+        this.characterStartTextNode = null;
+        this.characterStartOffset = 0;
+        this.characterStartPosition = { ...position };
         return false;
       }
 
-      // Get character offset within the text node
-      const offset = getTextOffsetAtPosition(textNode, position.x, position.y);
+      if (typeof offset !== 'number' || offset < 0) {
+        offset = 0;
+      }
+      const maxOff = textNode.textContent ? textNode.textContent.length : 0;
+      offset = Math.max(0, Math.min(offset, maxOff));
 
       // Store character selection state
       this.characterSelectionActive = true;
@@ -536,7 +593,7 @@ export class HighlightManager extends EventManager {
       range.setStart(textNode, offset);
       range.setEnd(textNode, offset);
 
-      // Set browser selection
+      // Set browser selection (native paint — no custom overlays on the hot path)
       const selection = this.getSelectionForDocument(ownerDocument);
       if (selection) {
         selection.removeAllRanges();
@@ -653,8 +710,9 @@ export class HighlightManager extends EventManager {
 
   /**
    * Update character-level selection to the current position.
-   * Fast path: native caret APIs (like browser drag-select).
-   * Fallback: rectangle-constrained character scan (legacy, expensive).
+   * Fast path only: native caret APIs (like browser drag-select).
+   * The legacy full-document rectangle character scan is intentionally not used
+   * on the mousemove path — it freezes complex pages.
    *
    * @param {Object} currentPosition - Current position {x, y} in viewport coordinates
    * @param {Object} startPosition - Start position {x, y} in viewport coordinates  
@@ -662,18 +720,46 @@ export class HighlightManager extends EventManager {
    * @param {Function} getTextOffsetAtPosition - Function to get text offset at position
    */
   updateCharacterSelection(currentPosition, startPosition, findTextNodeAtPosition, getTextOffsetAtPosition) {
-    if (!this.characterSelectionActive || !this.characterStartTextNode) {
-      return false;
-    }
-
     if (!currentPosition || typeof currentPosition.x !== 'number' || typeof currentPosition.y !== 'number') {
       return false;
     }
 
+    // Drop detached start nodes (page re-render) so we can re-seed cleanly
+    if (this.characterStartTextNode && !this.characterStartTextNode.isConnected) {
+      this.characterSelectionActive = false;
+      this.characterStartTextNode = null;
+      this.characterStartOffset = 0;
+    }
+
+    if (!this.characterSelectionActive || !this.characterStartTextNode) {
+      // Late start: first press was not on text, or start node went away.
+      // Prefer caret API only (cheap). Avoid findTextNode TreeWalker on the hot path.
+      const caret = this.resolveCaretAtPoint(currentPosition.x, currentPosition.y, document);
+      if (caret?.textNode) {
+        if (!this.rectOriginDocumentPoint && startPosition) {
+          this.ensureRectOriginDocumentPoint(startPosition);
+        } else if (!this.rectOriginDocumentPoint) {
+          this.ensureRectOriginDocumentPoint(currentPosition);
+        }
+        this.characterSelectionActive = true;
+        this.characterStartPosition = { ...currentPosition };
+        this.characterStartTextNode = caret.textNode;
+        this.characterStartOffset = caret.offset;
+      } else {
+        // Still draw guide rect from origin → cursor while hunting for text
+        const originVp = this.getOriginViewportPoint() || startPosition;
+        if (originVp) {
+          this.updateHighlightRectangleOverlay(originVp, currentPosition);
+        }
+        return false;
+      }
+    }
+
     try {
-      // Optional guide rect (no edge-only work in character mode)
-      if (startPosition) {
-        this.updateHighlightRectangleOverlay(startPosition, currentPosition);
+      // Guide rect always uses document-anchored origin (scroll-stable).
+      const originVp = this.getOriginViewportPoint() || startPosition;
+      if (originVp) {
+        this.updateHighlightRectangleOverlay(originVp, currentPosition);
       }
 
       const ownerDocument = this.characterStartTextNode.ownerDocument || document;
@@ -682,13 +768,86 @@ export class HighlightManager extends EventManager {
         offset: this.characterStartOffset
       };
 
-      // Prefer native caret resolution at the live cursor
+      // Prefer native caret resolution at the live cursor (O(1))
       let endCaret = null;
       if (FEATURE_FLAGS.USE_NATIVE_SELECTION_API !== false) {
         endCaret = this.resolveCaretAtPoint(currentPosition.x, currentPosition.y, ownerDocument);
       }
 
-      // Fallback helpers from KeyPilot when caret API misses (e.g. between nodes)
+      // Keep last good selection when cursor is between text nodes.
+      // Do NOT call findTextNodeAtPosition here — it TreeWalks and freezes pages.
+      if (!endCaret) {
+        return true;
+      }
+
+      // Native Selection paint only — custom blue overlays thrash the main thread
+      // (create/destroy dozens of nodes + IO observe on every move/scroll).
+      const selection = this.applyCaretSelection(startCaret, endCaret);
+      if (selection && window.KEYPILOT_DEBUG) {
+        console.log('[KeyPilot Debug] Character selection updated (caret path):', {
+          selectedText: selection.toString().substring(0, 100),
+          rangeCount: selection.rangeCount,
+          usedNativeCaret: true
+        });
+      }
+
+      return true;
+    } catch (error) {
+      console.error('[KeyPilot] Error updating character selection:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Rectangle / intelligent selection: caret at origin → caret at current (browser drag semantics).
+   * Origin caret is stored as node+offset (scroll-stable). Free end follows the mouse viewport.
+   * Rectangle overlay is always document-anchored and safe to refresh during scroll.
+   * @param {Object} startPosition - {x, y} viewport at press (seed only)
+   * @param {Object} currentPosition - {x, y} viewport (live cursor)
+   * @param {Function} [findTextNodeAtPosition]
+   * @param {Function} [getTextOffsetAtPosition]
+   * @returns {Selection|null}
+   */
+  updateRectangleSelectionFromCarets(startPosition, currentPosition, findTextNodeAtPosition, getTextOffsetAtPosition) {
+    if (!currentPosition) return null;
+
+    try {
+      if (startPosition) {
+        this.ensureRectOriginDocumentPoint(startPosition);
+      }
+      this.updateHighlightRectangleOverlay(startPosition, currentPosition);
+
+      const ownerDocument = document;
+      let startCaret = this.rectangleStartCaret;
+      let endCaret = null;
+
+      // Resolve / refresh start caret once (or if node detached after DOM change)
+      const startNodeGone = startCaret?.textNode && !startCaret.textNode.isConnected;
+      if (!startCaret || startNodeGone) {
+        const originVp = this.getOriginViewportPoint() || startPosition;
+        if (originVp) {
+          if (FEATURE_FLAGS.USE_NATIVE_SELECTION_API !== false) {
+            startCaret = this.resolveCaretAtPoint(originVp.x, originVp.y, ownerDocument);
+          }
+          if (!startCaret && typeof findTextNodeAtPosition === 'function') {
+            const textNode = findTextNodeAtPosition(originVp.x, originVp.y);
+            if (textNode && typeof getTextOffsetAtPosition === 'function') {
+              const offset = getTextOffsetAtPosition(textNode, originVp.x, originVp.y);
+              if (typeof offset === 'number' && offset >= 0) {
+                startCaret = { textNode, offset };
+              }
+            }
+          }
+          if (startCaret) {
+            this.rectangleStartCaret = startCaret;
+          }
+        }
+      }
+
+      if (FEATURE_FLAGS.USE_NATIVE_SELECTION_API !== false) {
+        endCaret = this.resolveCaretAtPoint(currentPosition.x, currentPosition.y, ownerDocument);
+      }
+
       if (!endCaret && typeof findTextNodeAtPosition === 'function') {
         const textNode = findTextNodeAtPosition(currentPosition.x, currentPosition.y);
         if (textNode && typeof getTextOffsetAtPosition === 'function') {
@@ -699,42 +858,55 @@ export class HighlightManager extends EventManager {
         }
       }
 
-      let selection = null;
-      if (endCaret) {
-        selection = this.applyCaretSelection(startCaret, endCaret);
+      if (!startCaret || !endCaret) {
+        return null;
       }
 
-      // Last resort: expensive rectangle-constrained scan (legacy)
-      if (!selection || !selection.toString()) {
-        if (startPosition && endCaret === null) {
-          const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-          const scrollY = window.pageYOffset || document.documentElement.scrollTop;
-          const rectBounds = {
-            left: Math.min(startPosition.x + scrollX, currentPosition.x + scrollX),
-            top: Math.min(startPosition.y + scrollY, currentPosition.y + scrollY),
-            right: Math.max(startPosition.x + scrollX, currentPosition.x + scrollX),
-            bottom: Math.max(startPosition.y + scrollY, currentPosition.y + scrollY)
-          };
-          selection = this.createRectangleConstrainedCharacterSelection(rectBounds);
-        }
-      }
-
-      if (selection) {
-        this.updateHighlightSelectionOverlays(selection);
-        if (window.KEYPILOT_DEBUG) {
-          console.log('[KeyPilot Debug] Character selection updated (caret path):', {
-            selectedText: selection.toString().substring(0, 100),
-            rangeCount: selection.rangeCount,
-            usedNativeCaret: !!endCaret
-          });
-        }
-      }
-
-      return true;
+      // Native Selection paint only (no custom per-rect overlays on hot path).
+      return this.applyCaretSelection(startCaret, endCaret);
     } catch (error) {
-      console.error('[KeyPilot] Error updating character selection:', error);
-      return false;
+      console.warn('[KeyPilot] Error updating rectangle selection from carets:', error);
+      return null;
     }
+  }
+
+  /**
+   * Reposition highlight rectangle + selection overlays after scroll without a mouse move.
+   * Origin stays document-anchored; free end uses last known viewport mouse.
+   * @param {Object} currentViewportMouse - {x,y}
+   * @param {Function} [findTextNodeAtPosition]
+   * @param {Function} [getTextOffsetAtPosition]
+   * @returns {Selection|null|boolean}
+   */
+  syncSelectionToScroll(currentViewportMouse, findTextNodeAtPosition, getTextOffsetAtPosition) {
+    if (!currentViewportMouse || !this.rectOriginDocumentPoint) {
+      // Still try character path if active without rect seed
+      if (this.characterSelectionActive && this.characterStartTextNode) {
+        return this.updateCharacterSelection(
+          currentViewportMouse,
+          this.getOriginViewportPoint(),
+          findTextNodeAtPosition,
+          getTextOffsetAtPosition
+        );
+      }
+      return null;
+    }
+
+    if (this.selectionMode === 'character' || this.characterSelectionActive) {
+      return this.updateCharacterSelection(
+        currentViewportMouse,
+        this.getOriginViewportPoint(),
+        findTextNodeAtPosition,
+        getTextOffsetAtPosition
+      );
+    }
+
+    return this.updateRectangleSelectionFromCarets(
+      this.getOriginViewportPoint(),
+      currentViewportMouse,
+      findTextNodeAtPosition,
+      getTextOffsetAtPosition
+    );
   }
 
   /**
@@ -1023,22 +1195,32 @@ export class HighlightManager extends EventManager {
   }
 
   /**
+   * Read selected text without tearing down session state.
+   * Use before async clipboard so highlight mode can exit cleanly first.
+   * @returns {string}
+   */
+  peekCharacterSelectedText() {
+    try {
+      const selection = window.getSelection();
+      return selection ? (selection.toString() || '') : '';
+    } catch {
+      return '';
+    }
+  }
+
+  /**
    * Complete character selection and return the selected text
    * @returns {string|null} - Selected text or null if no selection
    */
   completeCharacterSelection() {
-    if (!this.characterSelectionActive) {
-      return null;
-    }
-
     try {
-      const selection = window.getSelection();
-      const selectedText = selection ? selection.toString() : '';
+      const selectedText = this.peekCharacterSelectedText();
       
       if (window.KEYPILOT_DEBUG) {
         console.log('[KeyPilot Debug] Character selection completed:', {
           selectedText: selectedText.substring(0, 100),
-          length: selectedText.length
+          length: selectedText.length,
+          wasActive: this.characterSelectionActive
         });
       }
 
@@ -1047,7 +1229,8 @@ export class HighlightManager extends EventManager {
       console.error('[KeyPilot] Error completing character selection:', error);
       return null;
     } finally {
-      this.resetCharacterSelection();
+      // Full teardown so the next H session starts clean
+      this.clearCharacterSelection();
     }
   }
 
@@ -1061,9 +1244,16 @@ export class HighlightManager extends EventManager {
         selection.removeAllRanges();
       }
       this.clearHighlightSelectionOverlays();
-      this.hideHighlightRectangleOverlay();
+      // Hide dashed guide without going through hide→reset→resetCharacter loops twice
+      if (this.highlightRectangleOverlay) {
+        this.highlightRectangleOverlay.style.display = 'none';
+      }
+      this.hideDebugHUD?.();
     } catch (error) {
       console.warn('[KeyPilot] Error clearing character selection:', error);
+    } finally {
+      // Always reset flags — previously leave-active state caused bad re-entry
+      this.resetCharacterSelection();
     }
   }
 
@@ -1134,6 +1324,7 @@ export class HighlightManager extends EventManager {
   resetRectangleSelection() {
     this.rectOriginPoint = null;
     this.rectOriginDocumentPoint = null;
+    this.rectangleStartCaret = null;
     this.debugUpdateCount = 0;
 
     if (window.KEYPILOT_DEBUG) {
@@ -1295,10 +1486,15 @@ export class HighlightManager extends EventManager {
     }
 
     try {
-      // Create overlays for each range in the selection
+      // Cap overlays so huge selections cannot create thousands of DOM nodes per frame
+      // (main-thread freeze). Browser native selection paint still shows the text.
+      const MAX_SELECTION_OVERLAY_RECTS = 80;
+      let created = 0;
+
       for (let i = 0; i < selection.rangeCount; i++) {
         const range = selection.getRangeAt(i);
-        this.createSelectionOverlaysForRangeWithShadowSupport(range);
+        created += this.createSelectionOverlaysForRangeWithShadowSupport(range, MAX_SELECTION_OVERLAY_RECTS - created);
+        if (created >= MAX_SELECTION_OVERLAY_RECTS) break;
       }
 
       if (window.KEYPILOT_DEBUG) {
@@ -1317,17 +1513,21 @@ export class HighlightManager extends EventManager {
   /**
    * Create selection overlays for a specific range with shadow DOM support
    * @param {Range} range - DOM Range object
+   * @param {number} [maxRects=80] - Max client rects to materialize as overlay nodes
+   * @returns {number} - Number of overlays created
    */
-  createSelectionOverlaysForRangeWithShadowSupport(range) {
+  createSelectionOverlaysForRangeWithShadowSupport(range, maxRects = 80) {
     if (!range || range.collapsed) {
-      return;
+      return 0;
     }
 
+    let created = 0;
     try {
       // Get all rectangles for the range (handles multi-line selections)
       const rects = this.getClientRectsWithShadowSupport(range);
+      const limit = Math.max(0, maxRects);
 
-      for (let i = 0; i < rects.length; i++) {
+      for (let i = 0; i < rects.length && created < limit; i++) {
         const rect = rects[i];
 
         // Skip zero-width or zero-height rectangles
@@ -1356,6 +1556,7 @@ export class HighlightManager extends EventManager {
         // Append to main document body (overlays should always be in main document)
         document.body.appendChild(overlay);
         this.highlightSelectionOverlays.push(overlay);
+        created++;
 
         // Start observing the overlay for visibility optimization
         if (this.overlayObserver) {
@@ -1366,6 +1567,7 @@ export class HighlightManager extends EventManager {
       if (window.KEYPILOT_DEBUG && rects.length > 0) {
         console.log('[KeyPilot Debug] Created selection overlays for range with shadow DOM support:', {
           rectCount: rects.length,
+          created,
           firstRect: {
             left: rects[0].left,
             top: rects[0].top,
@@ -1377,6 +1579,7 @@ export class HighlightManager extends EventManager {
     } catch (error) {
       console.warn('[KeyPilot] Error creating selection overlays for range with shadow DOM support:', error);
     }
+    return created;
   }
 
   /**
@@ -1516,16 +1719,19 @@ export class HighlightManager extends EventManager {
   }
 
   /**
-   * Show highlight mode indicator
+   * Show companion instruction overlay while selection is active.
+   * @param {{ finishKey?: string }} [opts] - physical key to press again (e.g. "H" or "Y")
    */
-  showHighlightModeIndicator() {
-    if (this.highlightModeIndicator) {
-      return; // Already showing
-    }
+  showHighlightModeIndicator(opts = {}) {
+    const finishKeyRaw = opts.finishKey || (this.selectionMode === 'character' ? 'H' : 'Y');
+    const finishKey = String(finishKeyRaw).toUpperCase();
+    const modeText = `Press ${finishKey} again to finish selection`;
 
-    const modeText = this.selectionMode === 'character' 
-      ? 'CHARACTER SELECTION - Press H to copy' 
-      : 'RECTANGLE SELECTION - Press H to copy';
+    if (this.highlightModeIndicator) {
+      this.highlightModeIndicator.textContent = modeText;
+      this.highlightModeIndicator.style.display = 'block';
+      return;
+    }
 
     this.highlightModeIndicator = this.createElement('div', {
       className: 'kpv2-highlight-mode-indicator',
@@ -1535,16 +1741,17 @@ export class HighlightManager extends EventManager {
         right: 20px;
         background: ${COLORS.HIGHLIGHT_BLUE};
         color: white;
-        padding: 8px 12px;
+        padding: 10px 14px;
         font-size: 14px;
         font-weight: bold;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        border-radius: 4px;
-        box-shadow: 0 2px 8px ${COLORS.HIGHLIGHT_SHADOW};
+        border-radius: 6px;
+        box-shadow: 0 2px 10px ${COLORS.HIGHLIGHT_SHADOW};
         z-index: ${Z_INDEX.MESSAGE_BOX};
         pointer-events: none;
         will-change: transform, opacity;
         animation: kpv2-pulse 1.5s ease-in-out infinite;
+        letter-spacing: 0.01em;
       `
     });
 

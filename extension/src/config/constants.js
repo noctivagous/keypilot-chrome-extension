@@ -400,26 +400,29 @@ export const EDGE_ONLY_SELECTION = {
 
 export const FEATURE_FLAGS = {
   // Rectangle Selection Method
-  USE_INTELLIGENT_RECTANGLE_SELECTION: true, // Use browser-native selection logic instead of spatial intersection
+  // Prefer caretRangeFromPoint (browser-native drag semantics). Edge-only IntersectionObserver
+  // is off by default: a non-ancestor fixed root never reports intersections, so selection
+  // stayed empty and completeSelection would not exit highlight mode.
+  USE_INTELLIGENT_RECTANGLE_SELECTION: true, // Use browser-native caret selection instead of spatial intersection
   USE_NATIVE_SELECTION_API: true, // Use document.caretRangeFromPoint for efficient selection
 
-  // Edge-Only Processing Control
-  ENABLE_EDGE_ONLY_PROCESSING: true,   // Use edge-only intersection processing
+  // Edge-Only Processing Control (experimental / heavy; off by default — see USE_EDGE_ONLY_SELECTION)
+  ENABLE_EDGE_ONLY_PROCESSING: false,  // Use edge-only intersection processing
   EDGE_ONLY_FALLBACK_ENABLED: true,    // Allow fallback to spatial method if edge-only fails
   FORCE_EDGE_ONLY_MODE: false,         // Force edge-only processing even if performance degrades
   ENABLE_EDGE_ONLY_CACHE: true,        // Enable text node caching for edge-only processing
 
   // Enhanced RectangleIntersectionObserver Integration (Task 2)
-  ENABLE_ENHANCED_RECTANGLE_OBSERVER: true, // Master flag for enhanced integration (Task 2.1, 2.2, 2.3)
+  ENABLE_ENHANCED_RECTANGLE_OBSERVER: false, // Master flag for enhanced integration (Task 2.1, 2.2, 2.3)
 
   // Edge-Only Processing Feature Flags (Task 1.1)
-  USE_EDGE_ONLY_SELECTION: true,         // Enable edge-only processing
+  USE_EDGE_ONLY_SELECTION: false,        // Off: broken root/target relationship; use caret/spatial instead
   ENABLE_SMART_TARGETING: true,          // Enable smart element targeting
   ENABLE_CHARACTER_DETECTION: true,      // Enable edge-level character detection
   ENABLE_SELECTION_CACHING: true,        // Enable text node caching
   ENABLE_AUTOMATIC_FALLBACK: true,       // Auto-fallback on performance issues
   ENABLE_EDGE_BATCH_PROCESSING: true,    // Batch intersection updates
-  ENABLE_PREDICTIVE_CACHING: true,       // Enable predictive caching
+  ENABLE_PREDICTIVE_CACHING: false,      // Predictive caching off with edge-only stack
   DETAILED_EDGE_LOGGING: false,          // Detailed debug logging for edge processing (off for ship)
   EDGE_CACHE_SIZE_MANAGEMENT: true,      // Enable cache size management
   EDGE_ADAPTIVE_PROCESSING: true,        // Enable adaptive processing

@@ -38,6 +38,7 @@ export class OverlayManager {
     this._isPreviewPopover = false; // track if current popover is preview style (no backdrop)
     this._popoverArrowStyle = null; // style element for preview popover triangle
     this._popoverClickOutsideHandler = null; // click outside handler for preview popover
+    this._previewPopoverDragCleanup = null; // teardown titlebar drag listeners
 
     // Central popup stack + blurred backdrop (kept below click overlays).
     // Note: Panel change callback will be set by KeyPilot after initialization
@@ -812,13 +813,15 @@ export class OverlayManager {
       this.hideDeleteOverlay();
     }
     
-    // Show highlight overlay in highlight mode
+    // Show highlight chrome in highlight mode (instruction + optional focus ring)
     if (mode === 'highlight') {
       this.highlightManager.updateHighlightOverlay(focusEl);
+      // finishKey is set explicitly in startHighlighting; keep indicator visible here
       this.highlightManager.showHighlightModeIndicator();
     } else {
       this.highlightManager.hideHighlightOverlay();
       this.highlightManager.hideHighlightModeIndicator();
+      // Leaving highlight: drop any leftover dashed guide (cancel also clears this)
       this.highlightManager.hideHighlightRectangleOverlay();
     }
   }
@@ -1458,6 +1461,32 @@ export class OverlayManager {
   // SELECTION RECTANGLE FUNCTIONALITY ONLY
   updateCharacterSelection(currentPosition, startPosition, findTextNodeAtPosition, getTextOffsetAtPosition) {
     return this.highlightManager.updateCharacterSelection(currentPosition, startPosition, findTextNodeAtPosition, getTextOffsetAtPosition);
+  }
+
+  // SELECTION RECTANGLE FUNCTIONALITY ONLY
+  updateRectangleSelectionFromCarets(startPosition, currentPosition, findTextNodeAtPosition, getTextOffsetAtPosition) {
+    return this.highlightManager.updateRectangleSelectionFromCarets(
+      startPosition,
+      currentPosition,
+      findTextNodeAtPosition,
+      getTextOffsetAtPosition
+    );
+  }
+
+  /**
+   * Live-refresh highlight rectangle + selection during scroll (document-anchored origin).
+   */
+  syncHighlightSelectionToScroll(currentViewportMouse, findTextNodeAtPosition, getTextOffsetAtPosition) {
+    return this.highlightManager.syncSelectionToScroll(
+      currentViewportMouse,
+      findTextNodeAtPosition,
+      getTextOffsetAtPosition
+    );
+  }
+
+  // SELECTION RECTANGLE FUNCTIONALITY ONLY
+  peekCharacterSelectedText() {
+    return this.highlightManager.peekCharacterSelectedText();
   }
 
   // SELECTION RECTANGLE FUNCTIONALITY ONLY
@@ -2987,6 +3016,14 @@ export class OverlayManager {
       this._popoverClickOutsideHandler = null;
     }
 
+    // Tear down preview titlebar drag handlers
+    if (this._previewPopoverDragCleanup) {
+      try {
+        this._previewPopoverDragCleanup();
+      } catch { /* ignore */ }
+      this._previewPopoverDragCleanup = null;
+    }
+
     if (this.popoverContainer) {
       // For preview popover (direct mount), remove directly
       // For regular popover, unmount via PopupManager
@@ -3230,8 +3267,9 @@ export class OverlayManager {
     let iframeRef = null;
     this.popoverBridgeReady = false;
 
-    // Create header with close button
+    // Create header with close button (titlebar is the drag handle)
     const header = this.createElement('div', {
+      className: 'kpv2-preview-popover-titlebar',
       style: `
         padding: 8px 12px;
         background: linear-gradient(180deg, #232323 0%, #151515 100%);
@@ -3240,8 +3278,13 @@ export class OverlayManager {
         justify-content: space-between;
         align-items: center;
         flex-shrink: 0;
+        cursor: grab;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: none;
       `
     });
+    header.title = 'Drag to move';
 
     const titleContainer = this.createElement('div', {
       style: `
@@ -3252,6 +3295,7 @@ export class OverlayManager {
         white-space: nowrap;
         flex: 1;
         margin-right: 8px;
+        pointer-events: none;
       `
     });
 
@@ -3288,6 +3332,111 @@ export class OverlayManager {
     header.appendChild(closeButton);
     this.popoverCloseButton = closeButton;
     ensureTopMouseTracking();
+
+    // Titlebar drag: move the preview popover; clamp to viewport; hide caret once moved.
+    let dragState = null;
+    const DRAG_MOVE_THRESHOLD_PX = 3;
+
+    const clampPopoverPosition = (leftPx, topPx) => {
+      const el = this.popoverContainer;
+      if (!el) return { left: leftPx, top: topPx };
+      const w = el.offsetWidth || popoverWidth;
+      const h = el.offsetHeight || popoverHeight;
+      const maxLeft = Math.max(margin, window.innerWidth - w - margin);
+      const maxTop = Math.max(margin, window.innerHeight - h - margin);
+      return {
+        left: Math.max(margin, Math.min(leftPx, maxLeft)),
+        top: Math.max(margin, Math.min(topPx, maxTop))
+      };
+    };
+
+    const hidePreviewArrow = () => {
+      const el = this.popoverContainer;
+      if (!el || el.dataset.kpDragged === '1') return;
+      el.dataset.kpDragged = '1';
+      el.removeAttribute('data-placement');
+    };
+
+    const onDragPointerMove = (e) => {
+      if (!dragState || !this.popoverContainer) return;
+      const dx = e.clientX - dragState.startX;
+      const dy = e.clientY - dragState.startY;
+      if (!dragState.moved) {
+        if (Math.abs(dx) < DRAG_MOVE_THRESHOLD_PX && Math.abs(dy) < DRAG_MOVE_THRESHOLD_PX) {
+          return;
+        }
+        dragState.moved = true;
+        hidePreviewArrow();
+        header.style.cursor = 'grabbing';
+        // Prevent iframe from swallowing pointer events mid-drag
+        if (this.popoverIframeElement) {
+          this.popoverIframeElement.style.pointerEvents = 'none';
+        }
+      }
+      const next = clampPopoverPosition(dragState.originLeft + dx, dragState.originTop + dy);
+      this.popoverContainer.style.left = `${next.left}px`;
+      this.popoverContainer.style.top = `${next.top}px`;
+    };
+
+    const endDrag = (e) => {
+      if (!dragState) return;
+      const pointerId = dragState.pointerId;
+      dragState = null;
+      header.style.cursor = 'grab';
+      if (this.popoverIframeElement) {
+        this.popoverIframeElement.style.pointerEvents = '';
+      }
+      try {
+        if (e && typeof e.pointerId === 'number') {
+          header.releasePointerCapture(e.pointerId);
+        } else if (typeof pointerId === 'number') {
+          header.releasePointerCapture(pointerId);
+        }
+      } catch { /* ignore */ }
+      document.removeEventListener('pointermove', onDragPointerMove, true);
+      document.removeEventListener('pointerup', endDrag, true);
+      document.removeEventListener('pointercancel', endDrag, true);
+    };
+
+    const onTitlebarPointerDown = (e) => {
+      // Close button keeps its own click behavior
+      if (e.target === closeButton || (closeButton.contains && closeButton.contains(e.target))) {
+        return;
+      }
+      // Primary button only for mouse
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (!this.popoverContainer) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const rect = this.popoverContainer.getBoundingClientRect();
+      dragState = {
+        startX: e.clientX,
+        startY: e.clientY,
+        originLeft: rect.left,
+        originTop: rect.top,
+        pointerId: e.pointerId,
+        moved: false
+      };
+
+      try {
+        header.setPointerCapture(e.pointerId);
+      } catch { /* ignore */ }
+
+      document.addEventListener('pointermove', onDragPointerMove, true);
+      document.addEventListener('pointerup', endDrag, true);
+      document.addEventListener('pointercancel', endDrag, true);
+    };
+
+    header.addEventListener('pointerdown', onTitlebarPointerDown);
+
+    this._previewPopoverDragCleanup = () => {
+      endDrag();
+      try {
+        header.removeEventListener('pointerdown', onTitlebarPointerDown);
+      } catch { /* ignore */ }
+    };
 
     // Create error message container (initially hidden)
     const errorContainer = this.createElement('div', {

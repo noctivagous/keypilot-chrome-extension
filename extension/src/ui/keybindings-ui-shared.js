@@ -72,7 +72,15 @@ const FA_SOLID_PATHS = Object.freeze({
   'up-long': 'M278.6 9.4c-12.5-12.5-32.8-12.5-45.3 0l-128 128c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L224 109.3V480c0 17.7 14.3 32 32 32s32-14.3 32-32V109.3l73.4 73.4c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-128-128z',
   'arrow-up-from-line': 'M233.4 105.4c12.5-12.5 32.8-12.5 45.3 0l96 96c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L288 205.3V384c0 17.7-14.3 32-32 32s-32-14.3-32-32V205.3l-41.4 41.4c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l96-96zM64 448c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H96c-17.7 0-32-14.3-32-32z',
   'arrow-down-to-line': 'M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l96-96c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L288 306.7V128c0-17.7-14.3-32-32-32s-32 14.3-32 32V306.7l-41.4-41.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l96 96zM64 64c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H96C78.3 96 64 81.7 64 64z',
-  'circle': 'M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512z'
+  'circle': 'M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512z',
+
+  // Text / rectangle selection
+  // FA Free solid "font" (A glyph) — text select
+  'font': 'M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c6.1 10.4 6.1 23.3 0 33.7s-17.4 16.5-29.9 16.5H35.4c-12.5 0-23.8-6.6-29.9-16.5s-6.1-23.3 0-33.7l216-368C228.7 39.5 241.8 32 256 32zm0 88.4L96.7 392h318.6L256 120.4z',
+  // FA Free solid "i-cursor" — caret / character select
+  'i-cursor': 'M128 64c0-17.7 14.3-32 32-32H352c17.7 0 32 14.3 32 32s-14.3 32-32 32H288v128h64c17.7 0 32 14.3 32 32s-14.3 32-32 32H288v128h64c17.7 0 32 14.3 32 32s-14.3 32-32 32H160c-17.7 0-32-14.3-32-32s14.3-32 32-32h64V288H160c-17.7 0-32-14.3-32-32s14.3-32 32-32h64V96H160c-17.7 0-32-14.3-32-32z',
+  // FA Free solid "vector-square" — rectangle marquee corners
+  'vector-square': 'M32 32C14.3 32 0 46.3 0 64v64c0 17.7 14.3 32 32 32s32-14.3 32-32V96h64c17.7 0 32-14.3 32-32s-14.3-32-32-32H32zM32 320c-17.7 0-32 14.3-32 32v64c0 17.7 14.3 32 32 32h64c17.7 0 32-14.3 32-32s-14.3-32-32-32H64V352c0-17.7-14.3-32-32-32zM320 64c0 17.7 14.3 32 32 32h64v64c0 17.7 14.3 32 32 32s32-14.3 32-32V64c0-17.7-14.3-32-32-32H352c-17.7 0-32 14.3-32 32zM480 320c-17.7 0-32 14.3-32 32v64H384c-17.7 0-32 14.3-32 32s14.3 32 32 32h64c17.7 0 32-14.3 32-32V352c0-17.7-14.3-32-32-32z'
 });
 
 /**
@@ -103,7 +111,10 @@ export const KEYBOARD_ACTION_ICON_IDS = Object.freeze({
   OPEN_SETTINGS_POPOVER: 'gear',
   OMNIBOX: 'magnifying-glass',
   TAB_HISTORY: 'clock-rotate-left',
-  TOGGLE_KEYBOARD_HELP: 'keyboard'
+  TOGGLE_KEYBOARD_HELP: 'keyboard',
+  // Selection tools (recently re-enabled; were missing from the icon map)
+  HIGHLIGHT: 'i-cursor',
+  RECTANGLE_HIGHLIGHT: 'vector-square'
 });
 
 /**
@@ -588,14 +599,15 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
   })}
 }
 
+/* Selection tools: indigo family (distinct from green activate / blue nav / amber unused) */
 .${KEYBINDINGS_UI_ROOT_CLASS} .key.key-highlight,
 .${KEYBINDINGS_UI_ROOT_CLASS} .key.key-rect-highlight {
   ${keycapMaterial({
-    face: '#b8862d',
-    mid: '#9a6f22',
-    deep: '#7a5618',
-    icon: '#3d2a0c',
-    glow: 'rgba(245, 158, 11, 0.14)'
+    face: '#5b6fd4',
+    mid: '#4a5cbb',
+    deep: '#3949a0',
+    icon: '#1a2258',
+    glow: 'rgba(99, 102, 241, 0.18)'
   })}
 }
 
