@@ -92,18 +92,9 @@ export class KeyPilot extends EventManager {
       onScrollFrame: () => this.refreshHighlightDuringScroll()
     });
 
-    // Optional hover target selection mode:
-    // Use browser-native hover targeting (mouseenter/mouseleave on analyzed interactive elements)
-    // instead of RBush/elementFromPoint work during normal browsing.
-    this._domHoverListenersEnabled = !!FEATURE_FLAGS.ENABLE_DOM_HOVER_LISTENERS;
-    try {
-      if (typeof window !== 'undefined' && window.KEYPILOT_ENABLE_DOM_HOVER_LISTENERS) {
-        this._domHoverListenersEnabled = true;
-      }
-      if (typeof window !== 'undefined' && window.KEYPILOT_DISABLE_DOM_HOVER_LISTENERS) {
-        this._domHoverListenersEnabled = false;
-      }
-    } catch { /* ignore */ }
+    // Permanent hover targeting: browser-native DOM hover listeners drive focusEl
+    // during normal browsing. RBush spatial indexing is retired (see architecture audit).
+    this._domHoverListenersEnabled = true;
     
     // Panel tracking for negative regions
     this._panelTrackingInterval = null;
@@ -123,7 +114,7 @@ export class KeyPilot extends EventManager {
     this._completingHighlight = false;
     
     // Mousemove hot-path optimization: coalesce hover work to once-per-frame.
-    // We still update cursor position immediately, but defer expensive hit-testing / RBush work.
+    // We still update cursor position immediately, but defer expensive hit-testing work.
     this._mouseMoveRAF = 0;
     this._pendingMouse = { x: -1, y: -1, underHint: null };
 
@@ -1006,13 +997,12 @@ export class KeyPilot extends EventManager {
 
     this.focusDetector.start();
 
-    // Enable DOM-hover listener mode (optional) BEFORE init so RBush initialization
-    // can check the flag and skip initialization if DOM hover mode is enabled.
+    // Enable DOM-hover listeners BEFORE init (permanent targeting path).
     try {
       if (this.intersectionManager &&
           typeof this.intersectionManager.setDomHoverListenersEnabled === 'function') {
         this.intersectionManager.setDomHoverListenersEnabled(
-          this._domHoverListenersEnabled,
+          true,
           (el) => this._handleDomHoverChange(el)
         );
       }
@@ -1020,10 +1010,10 @@ export class KeyPilot extends EventManager {
 
     await this.intersectionManager.init();
 
-    // Visual indicator: use blue focus rectangles when DOM-hover mode is enabled.
+    // Visual indicator: blue focus rectangles for DOM-hover targeting mode.
     try {
       if (this.overlayManager && typeof this.overlayManager.setDomHoverFocusColorsEnabled === 'function') {
-        this.overlayManager.setDomHoverFocusColorsEnabled(this._domHoverListenersEnabled);
+        this.overlayManager.setDomHoverFocusColorsEnabled(true);
       }
     } catch { /* ignore */ }
 
@@ -1058,8 +1048,8 @@ export class KeyPilot extends EventManager {
       this._boundScrollEndHandler = (event) => {
         const { mouseX, mouseY } = event.detail || {};
         if (typeof mouseX !== 'number' || typeof mouseY !== 'number') return;
-        // After scrolling, the viewport changes: re-seed incremental interactive discovery so RBush
-        // stays locality-first without any full-document scan.
+        // After scrolling, the viewport changes: re-seed incremental interactive discovery
+        // so locality-first discovery stays warm without a full-document scan.
         try { this.intersectionManager?.resetDiscoveryAndSchedule?.(); } catch { /* ignore */ }
         // Prefer a cached event-derived "under element" hint to avoid a DOM hit-test on scroll-end.
         this.updateElementsUnderCursor(mouseX, mouseY, false, this._pendingMouse?.underHint || null);
@@ -1859,8 +1849,8 @@ export class KeyPilot extends EventManager {
     this._pendingMouse.y = y;
     this._pendingMouse.underHint = this._getUnderElementHintFromMouseEvent(e);
 
-    // If DOM hover listeners are enabled, avoid explicit hover hit-testing in normal mode.
-    // This lets the browser resolve occlusion/clipping and reduces per-mousemove work.
+    // DOM-hover only: avoid explicit hover hit-testing in normal mode.
+    // The browser resolves occlusion/clipping; focusEl comes from hover listeners.
     try {
       const st = this.state.getState();
       if (this._domHoverListenersEnabled && st.mode === MODES.NONE) {
@@ -1868,7 +1858,7 @@ export class KeyPilot extends EventManager {
       }
     } catch { /* ignore */ }
 
-    // Skip RBush queries during scrolling - overlay is already hidden at scroll start
+    // Skip hit-testing during scrolling - overlay is already hidden at scroll start
     try {
       if (this.scrollManager && this.scrollManager.isScrolling) {
         return;
@@ -1925,66 +1915,16 @@ export class KeyPilot extends EventManager {
 
     this.performanceMetrics.mouseQueries++;
 
-    // ---- Mousemove hot-path optimization ----
-    // We used to always do `deepElementFromPoint()` (DOM hit-test) then map to a clickable element.
-    // When the RBush spatial index is ready, we can often pick the best candidate without any DOM
-    // hit-testing at all, which is a large perf win on pages with heavy layout / shadow DOM.
-    //
-    // Correctness note:
-    // - RBush is a bbox pre-filter. In rare cases (overlaps, complex shapes), `elementFromPoint`
-    //   can be more accurate. We still fall back to the DOM hit-test when needed.
-    const inPopoverMode = currentState.mode === MODES.POPOVER;
-    const inDeleteMode = this.state.isDeleteMode();
+    // DOM-hover only for normal browsing; this path is for delete / popover / text-focus
+    // and other modes that still need explicit under-cursor resolution via elementFromPoint.
+    let under = underHint || null;
+    if (!under) under = this.detector.deepElementFromPoint(x, y);
 
-    let under = null;
     let clickable = null;
-
-    // Generalized occlusion strategy:
-    // - Use RBush only as a fast bbox pre-filter.
-    // - Use a single DOM hit-test (`deepElementFromPoint`) to respect third-party overlays
-    //   (menus, dialogs, lightboxes, etc.). We only accept RBush candidates that are on the
-    //   ancestor chain of the hit-tested topmost element.
-    //
-    // This prevents “clicking through” overlays even when RBush still contains elements behind them.
-    const canUseOcclusionGatedRBush = fromMouseMove && !inDeleteMode && !inPopoverMode;
-    if (canUseOcclusionGatedRBush) {
-      try {
-        // Prefer event-derived target (composedPath) to avoid a DOM hit-test on the hot path.
-        under = underHint || null;
-        if (!under) under = this.detector.deepElementFromPoint(x, y);
-        if (this.intersectionManager &&
-            typeof this.intersectionManager.queryInteractiveAtPoint === 'function' &&
-            typeof this.intersectionManager.pickBestInteractiveFromCandidates === 'function') {
-          const candidates = this.intersectionManager.queryInteractiveAtPoint(x, y, 0);
-          // If we couldn't determine an "under" element, we can still do a best-effort pick.
-          clickable = this.intersectionManager.pickBestInteractiveFromCandidates(candidates, under);
-        }
-      } catch { /* ignore */ }
-    }
-
-    // If RBush didn't yield a candidate (or we require exactness), use traditional hit-testing.
-    if (!clickable || inDeleteMode || inPopoverMode) {
-      // Use traditional element detection for accuracy
-      if (!under) under = underHint || null;
-      if (!under) under = this.detector.deepElementFromPoint(x, y);
-
-      // Prefer RBush selection gated by `under` to avoid “click through”.
-      try {
-        if (!clickable &&
-            this.intersectionManager &&
-            typeof this.intersectionManager.queryInteractiveAtPoint === 'function' &&
-            typeof this.intersectionManager.pickBestInteractiveFromCandidates === 'function') {
-          const candidates = this.intersectionManager.queryInteractiveAtPoint(x, y, 0);
-          clickable = this.intersectionManager.pickBestInteractiveFromCandidates(candidates, under);
-        }
-      } catch { /* ignore */ }
-
-      if (!clickable) {
-        try {
-          if (this.intersectionManager?.metrics) this.intersectionManager.metrics.rtreeFallbacks++;
-        } catch { /* ignore */ }
-        clickable = this.detector.findClickable(under);
-      }
+    try {
+      clickable = this.detector.findClickable(under);
+    } catch {
+      clickable = null;
     }
 
     // Popover mode is modal: only track elements inside the popover UI.
@@ -2026,8 +1966,7 @@ export class KeyPilot extends EventManager {
     }
     
     // Track with intersection manager for performance metrics and caching.
-    // Pass through computed values to avoid redundant deepElementFromPoint() work on the hot mousemove path.
-    // Note: `under` may be null when we used the RBush fast-path.
+    // Pass through computed values to avoid redundant deepElementFromPoint() work.
     this.intersectionManager.trackElementAtPoint(x, y, under, clickable);
 
     // Debug logging when debug mode is enabled
@@ -4908,28 +4847,11 @@ export class KeyPilot extends EventManager {
     const currentState = this.state.getState();
     const { lastMouse } = currentState;
 
-    // Use the same element detection logic as updateElementsUnderCursor() with RBush optimization
+    // Prefer DOM-hover focusEl; fall back to elementFromPoint when nothing is hovered.
     let target = currentState.focusEl;
     if (!target) {
-      const x = lastMouse.x;
-      const y = lastMouse.y;
-
-      // Use RBush spatial index for fast element detection (same as mouse hover logic)
-      try {
-        if (this.intersectionManager &&
-            typeof this.intersectionManager.queryInteractiveAtPoint === 'function' &&
-            typeof this.intersectionManager.pickBestInteractiveFromCandidates === 'function') {
-          const candidates = this.intersectionManager.queryInteractiveAtPoint(x, y, 0);
-          const under = this.detector.deepElementFromPoint(x, y);
-          target = this.intersectionManager.pickBestInteractiveFromCandidates(candidates, under);
-        }
-      } catch { /* ignore RBush errors */ }
-
-      // Fallback to traditional element detection if RBush failed
-      if (!target) {
-        const under = this.detector.deepElementFromPoint(x, y);
-        target = this.detector.findClickable(under);
-      }
+      const under = this.detector.deepElementFromPoint(lastMouse.x, lastMouse.y);
+      target = this.detector.findClickable(under);
     }
 
     // Resolve to the closest anchor (including within shadow DOM).
@@ -5018,28 +4940,11 @@ export class KeyPilot extends EventManager {
     const currentState = this.state.getState();
     const { lastMouse } = currentState;
 
-    // Use the same element detection logic as handleOpenPopover
+    // Prefer DOM-hover focusEl; fall back to elementFromPoint when nothing is hovered.
     let target = currentState.focusEl;
     if (!target) {
-      const x = lastMouse.x;
-      const y = lastMouse.y;
-
-      // Use RBush spatial index for fast element detection
-      try {
-        if (this.intersectionManager &&
-            typeof this.intersectionManager.queryInteractiveAtPoint === 'function' &&
-            typeof this.intersectionManager.pickBestInteractiveFromCandidates === 'function') {
-          const candidates = this.intersectionManager.queryInteractiveAtPoint(x, y, 0);
-          const under = this.detector.deepElementFromPoint(x, y);
-          target = this.intersectionManager.pickBestInteractiveFromCandidates(candidates, under);
-        }
-      } catch { /* ignore RBush errors */ }
-
-      // Fallback to traditional element detection if RBush failed
-      if (!target) {
-        const under = this.detector.deepElementFromPoint(x, y);
-        target = this.detector.findClickable(under);
-      }
+      const under = this.detector.deepElementFromPoint(lastMouse.x, lastMouse.y);
+      target = this.detector.findClickable(under);
     }
 
     // Resolve to the closest anchor (including within shadow DOM)
@@ -5516,12 +5421,11 @@ export class KeyPilot extends EventManager {
       
       // Restart intersection manager
       if (this.intersectionManager) {
-        // Re-apply DOM-hover listener mode BEFORE re-init so RBush initialization
-        // can check the flag and skip initialization if DOM hover mode is enabled.
+        // Re-apply permanent DOM-hover targeting BEFORE re-init.
         try {
           if (typeof this.intersectionManager.setDomHoverListenersEnabled === 'function') {
             this.intersectionManager.setDomHoverListenersEnabled(
-              this._domHoverListenersEnabled,
+              true,
               (el) => this._handleDomHoverChange(el)
             );
           }
@@ -5532,7 +5436,7 @@ export class KeyPilot extends EventManager {
       // Re-apply visual indicator on enable.
       try {
         if (this.overlayManager && typeof this.overlayManager.setDomHoverFocusColorsEnabled === 'function') {
-          this.overlayManager.setDomHoverFocusColorsEnabled(this._domHoverListenersEnabled);
+          this.overlayManager.setDomHoverFocusColorsEnabled(true);
         }
       } catch { /* ignore */ }
       

@@ -441,10 +441,11 @@ export const FEATURE_FLAGS = {
   // UI feature flags
   SHOW_WINDOW_OUTLINE: false, // Show window outline during text mode
 
-  // Hover/click targeting strategy
-  // When enabled, KeyPilot will attach DOM hover listeners to analyzed interactive elements
-  // and drive `state.focusEl` from the browser's hover targeting (instead of RBush hit-tests)
-  // during normal browsing. Activation (F) still falls back to elementFromPoint if nothing is hovered.
+  // Hover/click targeting strategy (product decision: DOM-hover only)
+  // Permanent primary path: attach DOM hover listeners and drive `state.focusEl` from
+  // browser-native hover targeting. RBush spatial indexing is retired (vendor removed;
+  // residual index code is no-op / isolated). Activation (F) still falls back to
+  // elementFromPoint if nothing is hovered.
   ENABLE_DOM_HOVER_LISTENERS: true,
 
   // Debug and development flags

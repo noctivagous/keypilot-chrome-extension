@@ -187,15 +187,14 @@ export class IntersectionObserverManager {
     this._discoverCursor = null;
     this._discoverDone = false;
 
-    // ---- Spatial index (RBush) for fast hit-testing ----
-    // Populated from `elementPositionCache` for visible interactive elements.
-    // NOTE: The bundle provides `RBush` as a global symbol (vendored in src/vendor/rbush.js).
+    // ---- Spatial index (RBush) — RETIRED ----
+    // Product decision: DOM-hover only. Vendor `src/vendor/rbush.js` removed.
+    // Residual fields/methods stay as inert stubs so call sites remain safe until
+    // a later P3 tree-shake removes them entirely.
     this._rtree = null;
     this._rtreeItemsByElement = new Map(); // Element -> item object (kept by reference for removal)
     this._rtreeReady = false;
-    // When DOM-hover targeting mode is enabled, we can disable RBush entirely so this mode is
-    // a true alternative (no index maintenance + no RBush queries in normal browsing).
-    this._rtreeDisabledByDomHover = false;
+    this._rtreeDisabledByDomHover = true; // permanently disabled
     this._rtreeMaxEntries = 16;
     this._rtreeRemoveEquals = null; // unused (reference removal)
 
@@ -513,11 +512,11 @@ export class IntersectionObserverManager {
    * @param {(el: HTMLElement|null) => void} [onChange]
    */
   setDomHoverListenersEnabled(enabled, onChange) {
+    // DOM-hover is the permanent targeting path; RBush stays disabled.
     const next = !!enabled;
     this._domHoverEnabled = next;
     this._domHoverOnChange = typeof onChange === 'function' ? onChange : null;
-    // Make DOM-hover mode exclusive vs RBush (reduces work and avoids mixed-mode confusion).
-    this._rtreeDisabledByDomHover = next;
+    this._rtreeDisabledByDomHover = true;
 
     // Prefer delegated events on the document (one-time attach).
     if (this._domHoverUseDelegation) {
@@ -1089,89 +1088,20 @@ export class IntersectionObserverManager {
   }
 
   async setupSpatialIndex() {
-    // Allow disabling via global flag for quick rollback / debugging.
-    // Example: `window.KEYPILOT_DISABLE_RBUSH = true`
-    if (typeof window !== 'undefined' && window.KEYPILOT_DISABLE_RBUSH) {
-      this._rtree = null;
-      this._rtreeReady = false;
-      return;
-    }
-
-    // Skip RBush initialization when DOM hover listeners are enabled
-    // This provides a true alternative to spatial indexing during normal browsing
-    // Note: Check runtime state (_domHoverEnabled) instead of compile-time flag since
-    // the mode can be toggled at runtime via window.KEYPILOT_ENABLE_DOM_HOVER_LISTENERS
-    if (this._domHoverEnabled) {
-      this._rtree = null;
-      this._rtreeReady = false;
-      this._rtreeDisabledByDomHover = true;
-      if (window.KEYPILOT_DEBUG) {
-        console.log('[KeyPilot Debug] RBush initialization skipped - DOM hover listeners enabled');
-      }
-      return;
-    }
-
-    try {
-      // Check if RBush is available globally (should be set by the bundle)
-      if (typeof window !== 'undefined' && typeof window.RBush === 'function') {
-        this._rtree = new window.RBush(this._rtreeMaxEntries);
-        this._rtreeReady = true;
-        if (window.KEYPILOT_DEBUG) {
-          console.log('[KeyPilot Debug] RBush spatial index initialized successfully');
-        }
-      } else {
-        // RBush not available yet, wait for it to become available
-        this._rtree = null;
-        this._rtreeReady = false;
-        if (window.KEYPILOT_DEBUG) {
-          console.log('[KeyPilot Debug] RBush not available during setupSpatialIndex, waiting...');
-        }
-
-        // Wait for RBush to become available using a Promise
-        await this.waitForRBush();
-      }
-    } catch (e) {
-      console.warn('[KeyPilot] Failed to init RBush index:', e);
-      this._rtree = null;
-      this._rtreeReady = false;
+    // RBush retired (DOM-hover only). Keep stubs inert; do not init or wait for vendor.
+    this._rtree = null;
+    this._rtreeReady = false;
+    this._rtreeDisabledByDomHover = true;
+    if (window.KEYPILOT_DEBUG) {
+      console.log('[KeyPilot Debug] RBush spatial index skipped - DOM-hover only targeting');
     }
   }
 
   /**
-   * Wait for RBush to become available globally using a Promise
-   * Uses requestIdleCallback for efficient polling when available
+   * @deprecated RBush retired; no-op kept for API compatibility until tree-shake.
    */
   waitForRBush() {
-    return new Promise((resolve) => {
-      const checkRBush = () => {
-        if (typeof window !== 'undefined' && typeof window.RBush === 'function') {
-          // RBush is now available, initialize it
-          try {
-            this._rtree = new window.RBush(this._rtreeMaxEntries);
-            this._rtreeReady = true;
-            if (window.KEYPILOT_DEBUG) {
-              console.log('[KeyPilot Debug] RBush spatial index initialized successfully after waiting');
-            }
-            resolve();
-          } catch (e) {
-            console.warn('[KeyPilot] Failed to init RBush index after waiting:', e);
-            resolve(); // Resolve anyway to not block initialization
-          }
-        } else {
-          // RBush still not available, schedule another check
-          if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
-            // Use requestIdleCallback for better performance (waits until browser is idle)
-            window.requestIdleCallback(checkRBush, { timeout: 100 });
-          } else {
-            // Fallback to setTimeout
-            window.setTimeout(checkRBush, 10);
-          }
-        }
-      };
-
-      // Start checking
-      checkRBush();
-    });
+    return Promise.resolve();
   }
 
   setupMutationObserver() {
@@ -1664,22 +1594,8 @@ export class IntersectionObserverManager {
   }
 
   _rtreeEnabled() {
-    if (!this._rtreeReady || !this._rtree) {
-      if (window.KEYPILOT_DEBUG && this._rtreeDisabledByDomHover) {
-        console.log('[KeyPilot Debug] RBush disabled by DOM hover listeners');
-      }
-      return false;
-    }
-    if (this._rtreeDisabledByDomHover) {
-      if (window.KEYPILOT_DEBUG) {
-        console.log('[KeyPilot Debug] RBush disabled by DOM hover listeners');
-      }
-      return false;
-    }
-    try {
-      if (typeof window !== 'undefined' && window.KEYPILOT_DISABLE_RBUSH) return false;
-    } catch { /* ignore */ }
-    return true;
+    // Permanently disabled: DOM-hover only product decision.
+    return false;
   }
 
   _getScrollXY() {

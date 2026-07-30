@@ -4,7 +4,7 @@
 import fs from 'fs';
 import path from 'path';
 import { minify } from 'terser';
-import { KEYBINDINGS, Z_INDEX, FEATURE_FLAGS } from './src/config/constants.js';
+import { KEYBINDINGS, Z_INDEX } from './src/config/constants.js';
 import {
   BUILTIN_KEYBOARD_LAYOUT_META,
   DEFAULT_KEYBOARD_LAYOUT_ID,
@@ -39,11 +39,8 @@ const modules = [
   // Keyboard layout architecture must be defined before constants.js once imports are stripped.
   'src/config/keyboard-layouts.js',
   'src/config/constants.js',
-  // Vendored dependencies that must be available as globals in the bundle.
-  // Only include RBush if DOM hover listeners are disabled (when we need spatial indexing)
-  ...(FEATURE_FLAGS.ENABLE_DOM_HOVER_LISTENERS ? [] : ['src/vendor/rbush.js']),
-  // Include shadow DOM query library when DOM hover listeners are enabled
-  ...(FEATURE_FLAGS.ENABLE_DOM_HOVER_LISTENERS ? ['../node_modules/query-selector-shadow-dom/dist/querySelectorShadowDom.js'] : []),
+  // Shadow-DOM piercing query helper (DOM-hover targeting; RBush vendor retired).
+  '../node_modules/query-selector-shadow-dom/dist/querySelectorShadowDom.js',
   // Shared config / messaging / utils (must appear before import-stripped consumers).
   'src/config/search-engines.js',
   'src/config/url-policy.js',

@@ -3,7 +3,6 @@ import { KeyPilot } from '../src/keypilot.js';
 import { KeyPilotToggleHandler } from '../src/modules/keypilot-toggle-handler.js';
 import { OnboardingManager } from '../src/modules/onboarding-manager.js';
 import { getExtensionFaviconUrl, renderUrlListing } from '../src/ui/url-listing.js';
-import '../src/vendor/rbush.js';
 
 let currentEngine = 'brave';
 const KP_ENABLED_STORAGE_KEY = 'keypilot_enabled';

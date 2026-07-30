@@ -258,10 +258,9 @@ KeyPilot is a Chrome extension that transforms web browsing into a keyboard-firs
 - Persistent settings
 - Keyboard reference visibility persistence
 
-#### Adaptive Element Detection
-- **DOM Hover Listeners**: Optional feature flag (`ENABLE_DOM_HOVER_LISTENERS`) that uses native browser hover events instead of spatial indexing (RBush) for simpler pages
-- **Performance Optimization**: Automatically switches between spatial indexing and DOM listeners based on page complexity
-- **Fallback Strategy**: Falls back to `elementFromPoint` for activation when no element is hovered
+#### Hover / Element Targeting
+- **DOM Hover Listeners (permanent)**: Browser-native hover targeting drives `state.focusEl` during normal browsing. RBush spatial indexing is retired (`src/vendor/rbush.js` removed; residual index code is inert).
+- **Fallback Strategy**: Activation (F) and modes that need under-cursor picks still use `elementFromPoint` / `findClickable` when nothing is hovered
 
 #### Performance Monitoring
 - Debug panel for performance metrics (optional, developer feature)
