@@ -7,6 +7,10 @@ import { PopupManager } from './popup-manager.js';
 import { DEFAULT_SETTINGS } from './settings-manager.js';
 import { makePopoverResizable } from '../utils/popover-resize.js';
 import { createPreviewOpenActionButtons } from '../ui/preview-open-actions.js';
+import {
+  createPopoverTitlebar,
+  createTitlebarCloseHint
+} from '../ui/popover-titlebar.js';
 
 export class OverlayManager {
   constructor() {
@@ -2828,11 +2832,16 @@ export class OverlayManager {
   }
 
   /**
-   * Show popover with iframe containing the linked page
+   * Show popover with iframe containing the linked page.
+   * Uses the shared {@link createPopoverTitlebar} chrome: single titlebar with
+   * title, optional close-key hint, and uniform × close when enabled.
+   *
    * @param {string} url - The URL to load in the popover
    * @param {object} [opts]
-   * @param {string} [opts.title] - Optional title for the header (defaults to url)
-   * @param {string} [opts.hintKeyLabel] - Optional key label in the hint bar (defaults to 'P')
+   * @param {string} [opts.title] - Optional title for the titlebar (defaults to url)
+   * @param {string} [opts.hintKeyLabel] - Optional key label in the titlebar hint (defaults to 'P')
+   * @param {boolean} [opts.showClose=true] - Whether to show the titlebar close button
+   * @param {string|Node|null} [opts.titlebarHint] - Override titlebar hint (string or Node)
    * @param {string[]} [opts.closeKeys] - Keys forwarded from iframe that should request close (defaults to ['Escape','p','P'])
    * @param {string} [opts.width] - Optional fixed width (e.g., '920px', overrides default 80vw)
    * @param {string} [opts.height] - Optional fixed height (e.g., '600px', overrides default 80vh)
@@ -2930,97 +2939,25 @@ export class OverlayManager {
     let iframeRef = null;
     this.popoverBridgeReady = false;
 
-    // Create header with close button
-    const header = this.createElement('div', {
-      style: `
-        padding: 12px 16px;
-        background: linear-gradient(180deg, #232323 0%, #151515 100%);
-        border-bottom: 1px solid #2b2b2b;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-shrink: 0;
-      `
+    // Single standard titlebar: title + close hint + uniform × close (no second header bar).
+    const showClose = opts?.showClose !== false;
+    const titlebarHint = opts?.titlebarHint !== undefined
+      ? opts.titlebarHint
+      : createTitlebarCloseHint({
+        keys: [hintKeyLabel, 'Esc'],
+        suffix: 'Use the same keyboard navigation controls.'
+      });
+    const titlebarApi = createPopoverTitlebar({
+      title: titleText,
+      variant: 'modal',
+      showClose,
+      onClose: requestClosePopover,
+      closeTitle: 'Close (Esc)',
+      hint: titlebarHint,
+      className: 'kpv2-popover-titlebar'
     });
-
-    // Hint banner above the title bar
-    const hintBar = this.createElement('div', {
-      className: 'kpv2-popover-hint',
-      style: `
-        padding: 8px 16px;
-        background: linear-gradient(180deg, #1e1e1e 0%, #121212 100%);
-        border-bottom: 1px solid #2b2b2b;
-        font-size: 12px;
-        line-height: 1.4;
-        color: #d6d6d6;
-        flex-shrink: 0;
-      `
-    });
-    hintBar.appendChild(document.createTextNode('Press '));
-    const kbd = this.createElement('kbd', {
-      style: `
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-        font-size: 11px;
-        padding: 1px 6px;
-        border: 1px solid #3a3a3a;
-        border-bottom-color: #2a2a2a;
-        border-radius: 4px;
-        background: linear-gradient(180deg, #2b2b2b 0%, #1a1a1a 100%);
-        color: #f1f1f1;
-      `
-    });
-    kbd.textContent = hintKeyLabel;
-    hintBar.appendChild(kbd);
-    hintBar.appendChild(document.createTextNode(' / '));
-    const kbdEsc = this.createElement('kbd', {
-      style: `
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-        font-size: 11px;
-        padding: 1px 6px;
-        border: 1px solid #3a3a3a;
-        border-bottom-color: #2a2a2a;
-        border-radius: 4px;
-        background: linear-gradient(180deg, #2b2b2b 0%, #1a1a1a 100%);
-        color: #f1f1f1;
-      `
-    });
-    kbdEsc.textContent = 'Esc';
-    hintBar.appendChild(kbdEsc);
-    hintBar.appendChild(document.createTextNode(' Use the same keyboard navigation controls.'));
-
-    const title = this.createElement('div', {
-      style: `
-        font-size: 14px;
-        font-weight: 500;
-        color: #e8e8e8;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        flex: 1;
-        margin-right: 12px;
-      `
-    });
-    title.textContent = titleText;
-    header.appendChild(title);
-
-    const closeButton = this.createElement('button', {
-      style: `
-        background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
-        border: 1px solid #3a3a3a;
-        font-size: 20px;
-        cursor: pointer;
-        color: #e8e8e8;
-        padding: 4px 8px;
-        line-height: 1;
-        border-radius: 4px;
-        flex-shrink: 0;
-      `
-    });
-    closeButton.textContent = '×';
-    closeButton.title = 'Close (Esc)';
-    closeButton.onclick = () => requestClosePopover();
-    header.appendChild(closeButton);
-    this.popoverCloseButton = closeButton;
+    const header = titlebarApi.titlebar;
+    this.popoverCloseButton = titlebarApi.closeButton;
     ensureTopMouseTracking();
 
     // Create error message container (initially hidden)
@@ -3149,7 +3086,6 @@ export class OverlayManager {
       sendBridgeInit();
     };
 
-    this.popoverContainer.appendChild(hintBar);
     this.popoverContainer.appendChild(header);
     this.popoverContainer.appendChild(iframe);
     this.popoverContainer.appendChild(errorContainer);
@@ -3558,80 +3494,28 @@ export class OverlayManager {
     let iframeRef = null;
     this.popoverBridgeReady = false;
 
-    // Create header with close button (titlebar is the drag handle)
-    const header = this.createElement('div', {
-      className: 'kpv2-preview-popover-titlebar',
-      style: `
-        padding: 6px 10px;
-        background: linear-gradient(180deg, #232323 0%, #151515 100%);
-        border-bottom: 1px solid #2b2b2b;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 8px;
-        flex-shrink: 0;
-        cursor: grab;
-        user-select: none;
-        -webkit-user-select: none;
-        touch-action: none;
-      `
-    });
-    header.title = 'Drag to move';
-
-    const titleContainer = this.createElement('div', {
-      style: `
-        font-size: 12px;
-        color: #e8e8e8;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        flex: 1;
-        min-width: 0;
-        margin-right: 4px;
-        pointer-events: none;
-      `
-    });
-
-    const titleSpan = this.createElement('span', {
-      style: 'font-weight: 500; margin-right: 8px;'
-    });
-    titleSpan.textContent = titleText;
-    titleContainer.appendChild(titleSpan);
-
-    const hintSpan = this.createElement('span', {
-      style: 'color: #999; font-weight: normal;'
-    });
-    hintSpan.textContent = 'Press Esc / E to hide';
-    titleContainer.appendChild(hintSpan);
-
-    header.appendChild(titleContainer);
-
     // Shared outline Open / Open in New Tab controls (also used by Launcher preview).
-    const { openButton, openNewTabButton, actions: previewOpenActions } = createPreviewOpenActionButtons({
+    const { actions: previewOpenActions } = createPreviewOpenActionButtons({
       getUrl: () => url,
       afterOpen: () => requestClosePopover(),
       afterOpenNewTab: () => requestClosePopover()
     });
-    header.appendChild(previewOpenActions);
 
-    const closeButton = this.createElement('button', {
-      type: 'button',
-      style: `
-        background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
-        border: 1px solid #3a3a3a;
-        font-size: 16px;
-        cursor: pointer;
-        color: #e8e8e8;
-        padding: 2px 6px;
-        line-height: 1;
-        border-radius: 4px;
-        flex-shrink: 0;
-      `
+    // Single standard titlebar (drag handle): title + hint + actions + uniform × close.
+    const titlebarApi = createPopoverTitlebar({
+      title: titleText,
+      variant: 'preview',
+      draggable: true,
+      titleAttr: 'Drag to move',
+      showClose: true,
+      onClose: requestClosePopover,
+      closeTitle: 'Close (Esc)',
+      hint: 'Press Esc / E to hide',
+      actions: previewOpenActions,
+      className: 'kpv2-preview-popover-titlebar'
     });
-    closeButton.textContent = '×';
-    closeButton.title = 'Close (Esc)';
-    closeButton.onclick = () => requestClosePopover();
-    header.appendChild(closeButton);
+    const header = titlebarApi.titlebar;
+    const closeButton = titlebarApi.closeButton;
     this.popoverCloseButton = closeButton;
     ensureTopMouseTracking();
 
@@ -3702,7 +3586,7 @@ export class OverlayManager {
 
     const onTitlebarPointerDown = (e) => {
       // Action / close buttons keep their own click behavior (don't start a drag)
-      const interactive = [closeButton, openButton, openNewTabButton];
+      const interactive = titlebarApi.getInteractiveElements();
       for (const btn of interactive) {
         if (e.target === btn || (btn.contains && btn.contains(e.target))) {
           return;

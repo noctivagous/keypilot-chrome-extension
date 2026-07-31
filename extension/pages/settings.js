@@ -35,6 +35,27 @@ function postCloseRequest() {
   }
 }
 
+/**
+ * When Settings is embedded in the KeyPilot iframe popover, the outer chrome
+ * already provides a standard titlebar + × close. Hide the in-page header so
+ * we don't stack two header bars.
+ */
+function adaptHeaderForPopoverEmbed() {
+  try {
+    const embedded = window.parent && window.parent !== window;
+    if (!embedded) return;
+    document.documentElement.classList.add('kp-popover-embed');
+    document.body?.classList?.add('kp-popover-embed');
+    const header = document.querySelector('.settings-app > .header');
+    if (header) {
+      header.hidden = true;
+      header.setAttribute('aria-hidden', 'true');
+    }
+  } catch {
+    // ignore
+  }
+}
+
 const SETTINGS_TAB_STORAGE_KEY = 'kp_settings_active_tab';
 const SETTINGS_PANEL_IDS = Object.freeze([
   'search',
@@ -114,12 +135,16 @@ function installSettingsMasterDetailNav() {
 
   activateSettingsPanel(initial, { persist: false });
 
-  nav.addEventListener('click', (e) => {
-    const tab = e.target?.closest?.('.settings-tab[data-panel]');
-    if (!tab || !nav.contains(tab)) return;
-    e.preventDefault();
-    const panelId = tab.getAttribute('data-panel');
-    withOptionalViewTransition(() => activateSettingsPanel(panelId));
+  // Bind clicks on each tab, not the nav container.
+  // A delegated click listener on `.settings-nav` is tracked by KeyPilot as a
+  // click handler on the whole master column, so empty padding/gaps become one
+  // giant green focus rectangle instead of only the list items.
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', (e) => {
+      e.preventDefault();
+      const panelId = tab.getAttribute('data-panel');
+      withOptionalViewTransition(() => activateSettingsPanel(panelId));
+    });
   });
 
   // Arrow-key navigation within the vertical tablist (ARIA tabs pattern).
@@ -200,6 +225,7 @@ function withOptionalViewTransition(fn) {
 }
 
 async function render() {
+  adaptHeaderForPopoverEmbed();
   applySearchEngineIcons();
 
   // Start KeyPilot inside the Settings page (this page is often loaded in an iframe popover).

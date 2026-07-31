@@ -40,6 +40,12 @@ body {
   background: linear-gradient(180deg, rgba(35, 35, 35, 0.55) 0%, rgba(18, 18, 18, 0.2) 100%);
 }
 
+/* Outer KeyPilot popover titlebar owns title + close when embedded. */
+.kp-popover-embed .settings-app > .header,
+.header[hidden] {
+  display: none !important;
+}
+
 .header-text {
   min-width: 0;
 }

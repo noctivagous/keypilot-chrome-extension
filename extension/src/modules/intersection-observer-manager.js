@@ -293,6 +293,12 @@ export class IntersectionObserverManager {
       const parent = element.parentElement;
       if (!parent || parent.nodeType !== 1) return element;
 
+      // Never promote leaf controls into composite containers (tablist, nav, menu…).
+      // Those hosts often use delegated clicks; focusing the whole master list is wrong.
+      try {
+        if (this.elementDetector.isCompositeClickContainer?.(parent)) return element;
+      } catch { /* ignore */ }
+
       // Check if parent is also clickable
       if (!this.elementDetector.isLikelyInteractive(parent)) return element;
 

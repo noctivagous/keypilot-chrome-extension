@@ -28,6 +28,12 @@ body {
   margin-bottom: 14px;
 }
 
+/* Outer KeyPilot popover titlebar owns title + close when embedded. */
+.kp-popover-embed .header,
+.header[hidden] {
+  display: none !important;
+}
+
 h1 {
   margin: 0;
   font-size: 22px;

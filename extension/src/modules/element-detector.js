@@ -7,6 +7,14 @@ export class ElementDetector {
   constructor() {
     this.CLICKABLE_ROLES = ['link', 'button', 'slider', 'checkbox', 'radio', 'tab', 'menuitem', 'option', 'switch', 'treeitem', 'combobox', 'spinbutton'];
 
+    // Composite widgets / structural containers that often host delegated click
+    // listeners. A tracked click handler alone must not make the entire region
+    // a KeyPilot hover target — the leaf items (tabs, options, etc.) are.
+    this.COMPOSITE_CONTAINER_ROLES = [
+      'tablist', 'menu', 'menubar', 'listbox', 'tree', 'grid', 'radiogroup',
+      'toolbar', 'group', 'navigation', 'list', 'directory', 'rowgroup', 'table'
+    ];
+
     this.CLICKABLE_SEL = 'a[href], button, input, select, textarea, video, audio';
     this.FOCUSABLE_SEL = 'a[href], button, input, select, textarea, video, audio, [contenteditable="true"], [role="button"], [role="link"], [role="checkbox"], [role="radio"], [role="tab"], [data-action], [data-toggle], [data-click], [data-href], [data-link], [vue-click], [ng-click]';
 
@@ -15,6 +23,22 @@ export class ElementDetector {
 
     // Wrap addEventListener to track click handlers
     this.setupEventListenerTracking();
+  }
+
+  /**
+   * True when el is a layout/composite container that should not become a
+   * clickable hover target solely because of a delegated click listener.
+   * @param {Element} el
+   * @param {string} [role]
+   * @returns {boolean}
+   */
+  isCompositeClickContainer(el, role = '') {
+    if (!el || el.nodeType !== 1) return false;
+    const r = (role || (el.getAttribute && (el.getAttribute('role') || '').trim().toLowerCase()) || '');
+    if (r && this.COMPOSITE_CONTAINER_ROLES.includes(r)) return true;
+    const tag = el.tagName;
+    return tag === 'NAV' || tag === 'UL' || tag === 'OL' || tag === 'MENU' ||
+      tag === 'TABLE' || tag === 'TBODY' || tag === 'THEAD' || tag === 'TFOOT';
   }
 
   setupEventListenerTracking() {
@@ -113,9 +137,17 @@ export class ElementDetector {
     const matchesSelector = el.matches(this.FOCUSABLE_SEL);
     const role = (el.getAttribute && (el.getAttribute('role') || '').trim().toLowerCase()) || '';
     const hasRole = role && this.CLICKABLE_ROLES.includes(role);
-    
-    // Check for other interactive indicators
-    const hasClickHandler = el.onclick || el.getAttribute('onclick') || this.hasTrackedClickHandler(el);
+
+    // Explicit onclick attribute still counts as intentional interactivity.
+    // Tracked addEventListener('click') alone is weaker — often event delegation
+    // on a parent list/nav/tablist — and must not light up the whole container.
+    const hasInlineClick = !!(el.onclick || (el.getAttribute && el.getAttribute('onclick')));
+    const hasTrackedClick = this.hasTrackedClickHandler(el);
+    let hasClickHandler = hasInlineClick || hasTrackedClick;
+    if (hasClickHandler && !matchesSelector && !hasRole && !hasInlineClick &&
+        this.isCompositeClickContainer(el, role)) {
+      hasClickHandler = false;
+    }
 
     // getComputedStyle() is relatively expensive; only use it as a last resort.
     // Ignore inherited cursor:pointer from body/html-wide styles.
@@ -123,7 +155,7 @@ export class ElementDetector {
     if (allowCursor && !matchesSelector && !hasRole && !hasClickHandler) {
       hasCursor = this.hasExplicitCursorPointer(el);
     }
-    
+
     // Debug logging
     if (window.KEYPILOT_DEBUG && (matchesSelector || hasRole || hasClickHandler || hasCursor)) {
       console.log('[KeyPilot Debug] isLikelyInteractive:', {
