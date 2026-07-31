@@ -167,7 +167,7 @@ KeyPilot is a Chrome extension that transforms web browsing into a keyboard-firs
 - F key: Activate element under cursor
 - G key: Activate in new tab
 - H key: Middle click (open in new tab, background)
-- E key: Open link in popover iframe
+- P key: Open link in popover iframe
 - D/S: Browser back
 - R: Browser forward
 - Q/W: Previous/next tab
@@ -205,8 +205,8 @@ KeyPilot is a Chrome extension that transforms web browsing into a keyboard-firs
 
 #### Popover Mode
 - Modal iframe overlay (80vw x 80vh, centered)
-- E key opens link in popover iframe
-- ESC or E key closes popover
+- P key opens link in popover iframe
+- ESC or P key closes popover
 - F key closes popover when pressed outside iframe
 - Scroll shortcuts (Z/X/C/V/B/N) scroll the iframe content
 - Full KeyPilot functionality available inside popover iframe
@@ -410,8 +410,8 @@ extension/
   - Full KeyPilot functionality available inside popover iframes
   - Automatic bridge initialization and handshake protocol
 - **User Experience**: 
-  - E key opens link in popover
-  - ESC/E closes popover
+  - P key opens link in popover
+  - ESC/P closes popover
   - Scroll shortcuts work inside popover
   - Seamless keyboard navigation within iframe
 

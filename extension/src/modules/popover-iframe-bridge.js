@@ -180,9 +180,9 @@ export function installPopoverIframeBridge(options = {}) {
         return;
       }
 
-      // Close keys.
+      // Close keys (P toggles open-popover on right-handed layout).
       if (key === 'Escape') return requestClose();
-      if (!typing && (key === 'e' || key === 'E')) return requestClose();
+      if (!typing && (key === 'p' || key === 'P')) return requestClose();
       if (closeOnQuote && !typing && key === "'") return requestClose();
 
       // Pre-KeyPilot F: click link under cursor inside the iframe.

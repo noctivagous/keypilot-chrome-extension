@@ -5,6 +5,8 @@ import { CSS_CLASSES, Z_INDEX, SELECTORS, MODES, COLORS, FEATURE_FLAGS, CLICKABL
 import { HighlightManager } from './highlight-manager.js';
 import { PopupManager } from './popup-manager.js';
 import { DEFAULT_SETTINGS } from './settings-manager.js';
+import { makePopoverResizable } from '../utils/popover-resize.js';
+import { createPreviewOpenActionButtons } from '../ui/preview-open-actions.js';
 
 export class OverlayManager {
   constructor() {
@@ -39,6 +41,7 @@ export class OverlayManager {
     this._popoverArrowStyle = null; // style element for preview popover triangle
     this._popoverClickOutsideHandler = null; // click outside handler for preview popover
     this._previewPopoverDragCleanup = null; // teardown titlebar drag listeners
+    this._popoverResizeDispose = null; // teardown generic resize handles
 
     // Central popup stack + blurred backdrop (kept below click overlays).
     // Note: Panel change callback will be set by KeyPilot after initialization
@@ -2829,8 +2832,8 @@ export class OverlayManager {
    * @param {string} url - The URL to load in the popover
    * @param {object} [opts]
    * @param {string} [opts.title] - Optional title for the header (defaults to url)
-   * @param {string} [opts.hintKeyLabel] - Optional key label in the hint bar (defaults to 'E')
-   * @param {string[]} [opts.closeKeys] - Keys forwarded from iframe that should request close (defaults to ['Escape','e','E'])
+   * @param {string} [opts.hintKeyLabel] - Optional key label in the hint bar (defaults to 'P')
+   * @param {string[]} [opts.closeKeys] - Keys forwarded from iframe that should request close (defaults to ['Escape','p','P'])
    * @param {string} [opts.width] - Optional fixed width (e.g., '920px', overrides default 80vw)
    * @param {string} [opts.height] - Optional fixed height (e.g., '600px', overrides default 80vh)
    */
@@ -2839,10 +2842,10 @@ export class OverlayManager {
     this.hidePopover();
 
     const titleText = (opts && typeof opts.title === 'string' && opts.title.trim()) ? opts.title.trim() : String(url || '');
-    const hintKeyLabel = (opts && typeof opts.hintKeyLabel === 'string' && opts.hintKeyLabel.trim()) ? opts.hintKeyLabel.trim() : 'E';
+    const hintKeyLabel = (opts && typeof opts.hintKeyLabel === 'string' && opts.hintKeyLabel.trim()) ? opts.hintKeyLabel.trim() : 'P';
     const closeKeys = Array.isArray(opts?.closeKeys) && opts.closeKeys.length
       ? opts.closeKeys.map(String)
-      : ['Escape', 'e', 'E'];
+      : ['Escape', 'p', 'P'];
 
     // Centralized close request:
     // Always prefer going through KeyPilot so state (mode/popoverOpen) is updated.
@@ -3216,7 +3219,7 @@ export class OverlayManager {
 
       if (data.type === 'KP_POPOVER_BRIDGE_READY') {
         this.popoverBridgeReady = true;
-        // Auto-focus the iframe once we know the bridge is active, so Esc/E + scroll still work.
+        // Auto-focus the iframe once we know the bridge is active, so Esc/P + scroll still work.
         try {
           iframeRef?.focus();
         } catch (_e) { }
@@ -3319,6 +3322,14 @@ export class OverlayManager {
       this._previewPopoverDragCleanup = null;
     }
 
+    // Tear down resize handles (preview mounts outside PopupManager)
+    if (this._popoverResizeDispose) {
+      try {
+        this._popoverResizeDispose();
+      } catch { /* ignore */ }
+      this._popoverResizeDispose = null;
+    }
+
     if (this.popoverContainer) {
       // For preview popover (direct mount), remove directly
       // For regular popover, unmount via PopupManager
@@ -3408,39 +3419,25 @@ export class OverlayManager {
     this.hidePopover();
 
     const mouseX = opts.mouseX ?? window.innerWidth / 2;
-    const mouseY = opts.mouseY ?? window.innerHeight / 2;
     const popoverWidth = 600;
-    const popoverHeight = 600;
-    const arrowSize = 10; // Size of triangle arrow
+    const arrowSize = 10; // Kept for drag cleanup / style vars if user resizes later
     const margin = 20; // Margin from viewport edges
 
-    // Calculate placement (top or bottom of cursor)
-    const spaceAbove = mouseY - margin;
-    const spaceBelow = window.innerHeight - mouseY - margin;
-    const placement = spaceBelow >= popoverHeight + arrowSize ? 'bottom' : 'top';
-
-    // Calculate position
-    let top, left;
-    if (placement === 'bottom') {
-      top = mouseY + 20; // 20px below cursor
-    } else {
-      top = mouseY - popoverHeight - 20; // 20px above cursor
-    }
-
-    // Clamp vertically to viewport bounds
-    top = Math.max(margin, Math.min(top, window.innerHeight - popoverHeight - margin));
+    // Full viewport height with the existing edge margins (top + bottom).
+    const popoverHeight = Math.max(200, window.innerHeight - margin * 2);
+    const top = margin;
 
     // Center horizontally under cursor, but clamp to viewport
-    left = mouseX - popoverWidth / 2;
+    let left = mouseX - popoverWidth / 2;
     left = Math.max(margin, Math.min(left, window.innerWidth - popoverWidth - margin));
 
-    // Calculate arrow position relative to popover
+    // No top/bottom caret on a full-height panel (would sit outside the viewport).
     const arrowLeft = Math.max(20, Math.min(mouseX - left, popoverWidth - 20));
 
     const titleText = 'Link Preview';
     const closeKeys = Array.isArray(opts?.closeKeys) && opts.closeKeys.length
       ? opts.closeKeys.map(String)
-      : ['Escape', 'p', 'P'];
+      : ['Escape', 'e', 'E'];
 
     // Centralized close request
     const requestClosePopover = () => {
@@ -3490,13 +3487,12 @@ export class OverlayManager {
       }
     };
 
-    // Create popover container with triangle arrow
+    // Create popover container (full viewport height; no top/bottom caret).
     this.popoverContainer = this.createElement('div', {
       className: 'kpv2-preview-popover-container',
       tabindex: '-1',
       role: 'dialog',
       'aria-modal': 'true',
-      'data-placement': placement,
       style: `
         position: fixed;
         top: ${top}px;
@@ -3566,12 +3562,13 @@ export class OverlayManager {
     const header = this.createElement('div', {
       className: 'kpv2-preview-popover-titlebar',
       style: `
-        padding: 8px 12px;
+        padding: 6px 10px;
         background: linear-gradient(180deg, #232323 0%, #151515 100%);
         border-bottom: 1px solid #2b2b2b;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 8px;
         flex-shrink: 0;
         cursor: grab;
         user-select: none;
@@ -3589,7 +3586,8 @@ export class OverlayManager {
         text-overflow: ellipsis;
         white-space: nowrap;
         flex: 1;
-        margin-right: 8px;
+        min-width: 0;
+        margin-right: 4px;
         pointer-events: none;
       `
     });
@@ -3603,12 +3601,21 @@ export class OverlayManager {
     const hintSpan = this.createElement('span', {
       style: 'color: #999; font-weight: normal;'
     });
-    hintSpan.textContent = 'Press Esc / P to hide';
+    hintSpan.textContent = 'Press Esc / E to hide';
     titleContainer.appendChild(hintSpan);
 
     header.appendChild(titleContainer);
 
+    // Shared outline Open / Open in New Tab controls (also used by Launcher preview).
+    const { openButton, openNewTabButton, actions: previewOpenActions } = createPreviewOpenActionButtons({
+      getUrl: () => url,
+      afterOpen: () => requestClosePopover(),
+      afterOpenNewTab: () => requestClosePopover()
+    });
+    header.appendChild(previewOpenActions);
+
     const closeButton = this.createElement('button', {
+      type: 'button',
       style: `
         background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
         border: 1px solid #3a3a3a;
@@ -3694,9 +3701,12 @@ export class OverlayManager {
     };
 
     const onTitlebarPointerDown = (e) => {
-      // Close button keeps its own click behavior
-      if (e.target === closeButton || (closeButton.contains && closeButton.contains(e.target))) {
-        return;
+      // Action / close buttons keep their own click behavior (don't start a drag)
+      const interactive = [closeButton, openButton, openNewTabButton];
+      for (const btn of interactive) {
+        if (e.target === btn || (btn.contains && btn.contains(e.target))) {
+          return;
+        }
       }
       // Primary button only for mouse
       if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -3732,6 +3742,25 @@ export class OverlayManager {
         header.removeEventListener('pointerdown', onTitlebarPointerDown);
       } catch { /* ignore */ }
     };
+
+    // Generic resize handles (edges + SE grip). Shared util used by all popovers.
+    try {
+      this._popoverResizeDispose?.();
+    } catch { /* ignore */ }
+    try {
+      const resizeApi = makePopoverResizable(this.popoverContainer, {
+        minWidth: 280,
+        minHeight: 200,
+        margin,
+        onResizeStart: () => {
+          hidePreviewArrow();
+        }
+      });
+      this._popoverResizeDispose = resizeApi?.dispose || null;
+    } catch (e) {
+      console.warn('[KeyPilot] Failed to make preview popover resizable:', e?.message || e);
+      this._popoverResizeDispose = null;
+    }
 
     // Create error message container (initially hidden)
     const errorContainer = this.createElement('div', {
@@ -3866,7 +3895,7 @@ export class OverlayManager {
         requestClosePopover();
       }
     };
-    // Use a small delay to avoid immediately closing if the P key click triggered this
+    // Use a small delay to avoid immediately closing if the preview key click triggered this
     setTimeout(() => {
       if (this.popoverContainer) {
         document.addEventListener('mousedown', this._popoverClickOutsideHandler, true);
@@ -3894,7 +3923,7 @@ export class OverlayManager {
     // Don't prevent body scroll for preview popover - page should remain interactive
 
     // Add keyboard event listeners
-    // Note: P/W toggle is handled by KeyPilot's handlePreviewLinkPopover
+    // Note: E/W toggle is handled by KeyPilot's handlePreviewLinkPopover
     // This handler only needs to handle Escape
     const handlePopoverKeyDown = (e) => {
       console.log('[KeyPilot] Preview popover key event:', e.key);
@@ -3923,7 +3952,7 @@ export class OverlayManager {
       if (data.type === 'KP_POPOVER_BRIDGE_READY') {
         this.popoverBridgeReady = true;
         // For preview popovers, DON'T auto-focus the iframe
-        // This allows P/W keys to reach the parent document for toggle behavior
+        // This allows E/W keys to reach the parent document for toggle behavior
         if (!this._isPreviewPopover) {
           try {
             iframeRef?.focus();

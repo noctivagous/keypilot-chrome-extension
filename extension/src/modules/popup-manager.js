@@ -1,9 +1,12 @@
 import { CSS_CLASSES, Z_INDEX } from '../config/constants.js';
+import { makePopoverResizable } from '../utils/popover-resize.js';
 
 /**
  * PopupManager
  * Centralizes popup stacking + shared blurred backdrop so we don't rely on the
  * browser Popover API "top layer" (which can block our cursor/green-click overlay).
+ *
+ * All modal panels are resizable by default (edge + corner handles + SE grip).
  */
 export class PopupManager {
   /**
@@ -16,7 +19,7 @@ export class PopupManager {
 
     /** @type {HTMLDivElement|null} */
     this._backdrop = null;
-    /** @type {Array<{id: string, panel: HTMLElement, onRequestClose?: () => void}>} */
+    /** @type {Array<{id: string, panel: HTMLElement, onRequestClose?: () => void, resizeDispose?: () => void}>} */
     this._stack = [];
 
     /** @type {(type: string, data: any) => void|null} */
@@ -79,6 +82,7 @@ export class PopupManager {
     if (this._stack.length) {
       const leftover = this._stack.splice(0, this._stack.length);
       for (const entry of leftover) {
+        try { entry?.resizeDispose?.(); } catch { /* ignore */ }
         try { entry?.panel?.remove?.(); } catch { /* ignore */ }
       }
     }
@@ -94,13 +98,16 @@ export class PopupManager {
   /**
    * Show a modal popup panel with a shared blurred backdrop.
    * The panel is assigned a z-index *below* the click rectangle overlays.
+   * Panels are resizable by default (edges + corners + SE grip icon).
    *
    * @param {object} params
    * @param {string} params.id
    * @param {HTMLElement} params.panel
    * @param {() => void} [params.onRequestClose]
+   * @param {boolean} [params.resizable=true] Attach resize handles (default true)
+   * @param {{ minWidth?: number, minHeight?: number, margin?: number }} [params.resizeOptions]
    */
-  showModal({ id, panel, onRequestClose } = {}) {
+  showModal({ id, panel, onRequestClose, resizable = true, resizeOptions } = {}) {
     if (!id || !panel) return;
 
     // If already open, bring to front and update close handler.
@@ -113,23 +120,53 @@ export class PopupManager {
       this._stack.push(existing);
       this._ensureMounted();
       this._recomputeZ();
+      this._ensureResizable(existing, resizable, resizeOptions);
       return;
     }
 
-    this._stack.push({
+    /** @type {{id: string, panel: HTMLElement, onRequestClose?: () => void, resizeDispose?: () => void}} */
+    const entry = {
       id: String(id),
       panel,
       onRequestClose: typeof onRequestClose === 'function' ? onRequestClose : undefined
-    });
+    };
+    this._stack.push(entry);
 
     this._ensureMounted();
     this._recomputeZ();
-    
+    this._ensureResizable(entry, resizable, resizeOptions);
+
     // Notify about panel shown
     if (this._onPanelChange) {
       try {
         this._onPanelChange('panel-shown', { id: String(id), panel });
       } catch { /* ignore */ }
+    }
+  }
+
+  /**
+   * @param {{ panel: HTMLElement, resizeDispose?: () => void }} entry
+   * @param {boolean} resizable
+   * @param {object} [resizeOptions]
+   */
+  _ensureResizable(entry, resizable, resizeOptions) {
+    if (!entry?.panel) return;
+    if (resizable === false) {
+      try { entry.resizeDispose?.(); } catch { /* ignore */ }
+      entry.resizeDispose = undefined;
+      return;
+    }
+    // Already attached for this panel instance.
+    if (typeof entry.resizeDispose === 'function') return;
+    try {
+      const api = makePopoverResizable(entry.panel, resizeOptions || {});
+      if (api && typeof api.dispose === 'function') {
+        entry.resizeDispose = () => {
+          try { api.dispose(); } catch { /* ignore */ }
+        };
+      }
+    } catch (e) {
+      console.warn('[KeyPilot] Failed to attach popover resize handles:', e?.message || e);
     }
   }
 
@@ -145,6 +182,9 @@ export class PopupManager {
     if (idx < 0) return;
 
     const removed = this._stack.splice(idx, 1)[0];
+
+    // Tear down resize handles before unmount.
+    try { removed?.resizeDispose?.(); } catch { /* ignore */ }
 
     // Notify about panel hidden
     if (this._onPanelChange) {

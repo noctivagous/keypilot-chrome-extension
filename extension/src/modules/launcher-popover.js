@@ -14,6 +14,7 @@ import {
   extractPath
 } from '../ui/url-listing.js';
 import { LAUNCHER_SEARCH_SITES } from '../config/search-engines.js';
+import { createPreviewOpenActionButtons } from '../ui/preview-open-actions.js';
 
 export class LauncherPopover {
   constructor(keypilot) {
@@ -942,12 +943,13 @@ export class LauncherPopover {
     const previewHeader = doc.createElement('div');
     previewHeader.className = 'kp-launcher-preview-header';
     previewHeader.style.cssText = `
-      padding: 12px 16px;
+      padding: 8px 12px;
       border-bottom: 1px solid #333;
       background: #0f0f0f;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 8px;
     `;
 
     const previewTitle = doc.createElement('div');
@@ -957,26 +959,66 @@ export class LauncherPopover {
       color: #fff;
       font-size: 14px;
       font-weight: 500;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     `;
 
+    // Same Open / Open in New Tab controls as Link Preview titlebar
+    const { actions: previewOpenActions } = createPreviewOpenActionButtons({
+      doc,
+      getUrl: () => this._currentPreviewUrl,
+      afterOpen: () => {
+        try { this.hide(); } catch { /* ignore */ }
+      },
+      afterOpenNewTab: () => {
+        // Keep launcher open after spawning a tab so the user can keep browsing.
+      }
+    });
+
+    // Rightward collapse control (preview slides in from the right).
     const previewCloseBtn = doc.createElement('button');
-    previewCloseBtn.textContent = '×';
+    previewCloseBtn.type = 'button';
     previewCloseBtn.className = 'kp-launcher-preview-close';
+    previewCloseBtn.title = 'Collapse preview';
+    previewCloseBtn.setAttribute('aria-label', 'Collapse preview');
     previewCloseBtn.style.cssText = `
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       background: transparent;
-      border: none;
+      border: 1px solid transparent;
       color: #888;
-      font-size: 24px;
       cursor: pointer;
       padding: 0;
-      width: 24px;
-      height: 24px;
-      line-height: 1;
-      transition: color 0.2s;
+      width: 26px;
+      height: 26px;
+      border-radius: 5px;
+      flex-shrink: 0;
+      transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
     `;
+    // Outline chevron pointing right (collapse panel toward the right edge).
+    const collapseIcon = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    collapseIcon.setAttribute('viewBox', '0 0 24 24');
+    collapseIcon.setAttribute('width', '16');
+    collapseIcon.setAttribute('height', '16');
+    collapseIcon.setAttribute('aria-hidden', 'true');
+    collapseIcon.style.cssText = 'display: block; pointer-events: none;';
+    const collapsePath = doc.createElementNS('http://www.w3.org/2000/svg', 'path');
+    collapsePath.setAttribute('d', 'M9 6l6 6-6 6');
+    collapsePath.setAttribute('fill', 'none');
+    collapsePath.setAttribute('stroke', 'currentColor');
+    collapsePath.setAttribute('stroke-width', '2');
+    collapsePath.setAttribute('stroke-linecap', 'round');
+    collapsePath.setAttribute('stroke-linejoin', 'round');
+    collapseIcon.appendChild(collapsePath);
+    previewCloseBtn.appendChild(collapseIcon);
 
     previewCloseBtn.addEventListener('click', () => {
       previewArea.style.width = '0';
+      this._currentPreviewUrl = null;
       if (this._previewIframe) {
         this._previewIframe.src = 'about:blank';
       }
@@ -984,13 +1026,18 @@ export class LauncherPopover {
 
     previewCloseBtn.addEventListener('mouseenter', () => {
       previewCloseBtn.style.color = '#fff';
+      previewCloseBtn.style.background = 'rgba(255,255,255,0.06)';
+      previewCloseBtn.style.borderColor = '#3a3a3a';
     });
 
     previewCloseBtn.addEventListener('mouseleave', () => {
       previewCloseBtn.style.color = '#888';
+      previewCloseBtn.style.background = 'transparent';
+      previewCloseBtn.style.borderColor = 'transparent';
     });
 
     previewHeader.appendChild(previewTitle);
+    previewHeader.appendChild(previewOpenActions);
     previewHeader.appendChild(previewCloseBtn);
 
     // Preview iframe

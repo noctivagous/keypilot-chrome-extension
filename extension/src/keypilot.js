@@ -1713,7 +1713,7 @@ export class KeyPilot extends EventManager {
         return;
       }
 
-      // Allow preview link popover toggle (P/W) to work even when popover is open
+      // Allow preview link popover toggle (E/W) to work even when popover is open
       if (KB.PREVIEW_LINK_POPOVER?.keys?.includes?.(e.key)) {
         e.preventDefault();
         e.stopPropagation();
@@ -4272,7 +4272,7 @@ export class KeyPilot extends EventManager {
     this.overlayManager.showPopover(url, {
       title: 'KeyPilot Guide',
       hintKeyLabel: 'Esc',
-      closeKeys: ['Escape', "'", '"', 'e', 'E'],
+      closeKeys: ['Escape', "'", '"', 'p', 'P'],
       width: `${guideContainerWidth}px`,
       height: `${guideContainerHeight}px`
     });
@@ -4684,7 +4684,7 @@ export class KeyPilot extends EventManager {
     // Tab history popover
     try { this.tabHistoryPopover?.hide?.(); } catch { /* ignore */ }
 
-    // E-key / settings / guide iframe popovers + preview popovers
+    // P-key / settings / guide iframe popovers + preview popovers
     try { this.handleClosePopover?.(); } catch { /* ignore */ }
     try { this.overlayManager?.hidePopover?.(); } catch { /* ignore */ }
 

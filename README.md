@@ -34,12 +34,12 @@ shortcuts for common web interactions, eliminating the need for mouse navigation
 | `;` | Open Launcher (Quick Access to Sites) |
 | `B` | Open Link in New Tab (Foreground) |
 | `D` | Go Back (History) |
-| `E` | Open Link in Popover |
+| `E` | Open Link Preview in Popover |
 | `F` | Click Element |
 | `G` | Open Link in New Tab (Background, like middle click) |
 | `J` | Open Tab History (Branch-Retaining) |
 | `L` | Open Omnibox (Address Bar Overlay) |
-| `P` | Open Link Preview in Popover |
+| `P` | Open Link in Popover |
 | `S` | Go Back (History) |
 | `'` | Open KeyPilot Settings |
 | `1` | Go to Site Root |
@@ -73,6 +73,20 @@ shortcuts for common web interactions, eliminating the need for mouse navigation
 | `Esc` | Exit Focus |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

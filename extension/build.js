@@ -49,6 +49,7 @@ const modules = [
   'src/utils/extension-context.js',
   'src/utils/storage.js',
   'src/utils/image-utils.js',
+  'src/utils/popover-resize.js',
   // Shared UI helpers used by multiple modules (must be defined before import-stripped consumers).
   'src/ui/url-listing.js',
   'src/modules/state-manager.js',
@@ -78,6 +79,7 @@ const modules = [
   'src/ui/keybindings-ui-shared.js',
   'src/ui/keybindings-ui.js',
   'src/ui/popup-theme-vars.js',
+  'src/ui/preview-open-actions.js',
   'src/ui/floating-keyboard-help.js',
   'src/ui/control-strip.js',
   'src/ui/onboarding-panel.js',

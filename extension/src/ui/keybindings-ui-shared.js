@@ -1080,6 +1080,65 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
 
 /* Font Awesome-style faded key background icons (behind white labels) */
 ${keyIconCss}
+
+/*
+ * TEMP suspended: Floating Keyboard Reference flex-scale keys with panel resize.
+ * Keys use the global fixed 50px keycap rules again. Re-enable together with
+ * makePopoverResizable in floating-keyboard-help.js when resuming this work.
+ *
+ * .kp-floating-keyboard-help .kp-floating-keyboard-help__keyboard {
+ *   box-sizing: border-box;
+ *   flex: 1 1 auto;
+ *   min-height: 0;
+ *   width: 100%;
+ *   height: 100%;
+ *   display: flex;
+ *   flex-direction: column;
+ * }
+ * .kp-floating-keyboard-help .keyboard-visual.${KEYBINDINGS_UI_ROOT_CLASS} {
+ *   flex: 1 1 auto;
+ *   min-height: 0;
+ *   width: 100%;
+ *   height: 100%;
+ *   display: flex;
+ *   flex-direction: column;
+ *   gap: 7px;
+ *   padding: clamp(4px, 1.2%, 10px);
+ * }
+ * .kp-floating-keyboard-help .${KEYBINDINGS_UI_ROOT_CLASS} .keyboard-row {
+ *   flex: 1 1 0;
+ *   min-height: 0;
+ *   margin-bottom: 0;
+ *   gap: clamp(3px, 0.7%, 7px);
+ *   align-items: stretch;
+ * }
+ * .kp-floating-keyboard-help .${KEYBINDINGS_UI_ROOT_CLASS} .key,
+ * .kp-floating-keyboard-help .${KEYBINDINGS_UI_ROOT_CLASS} .key.key-tab,
+ * .kp-floating-keyboard-help .${KEYBINDINGS_UI_ROOT_CLASS} .key.key-caps,
+ * .kp-floating-keyboard-help .${KEYBINDINGS_UI_ROOT_CLASS} .key.key-enter,
+ * .kp-floating-keyboard-help .${KEYBINDINGS_UI_ROOT_CLASS} .key.key-shift,
+ * .kp-floating-keyboard-help .${KEYBINDINGS_UI_ROOT_CLASS} .key.key-backspace {
+ *   height: 100%;
+ *   min-height: 0;
+ *   max-height: none;
+ *   border-radius: clamp(5px, 12%, 10px);
+ *   container-type: size;
+ *   container-name: kp-key;
+ * }
+ * .kp-floating-keyboard-help .${KEYBINDINGS_UI_ROOT_CLASS} .key > .key-main {
+ *   font-size: clamp(9px, 18cqh, 15px);
+ *   max-height: 55%;
+ *   top: clamp(2px, 8cqh, 8px);
+ * }
+ * .kp-floating-keyboard-help .${KEYBINDINGS_UI_ROOT_CLASS} .key > .key-label {
+ *   font-size: clamp(10px, 22cqh, 18px);
+ *   bottom: clamp(2px, 8cqh, 8px);
+ * }
+ * .kp-floating-keyboard-help .${KEYBINDINGS_UI_ROOT_CLASS} .key > .key-text {
+ *   font-size: clamp(9px, 18cqh, 15px);
+ *   bottom: clamp(2px, 8cqh, 8px);
+ * }
+ */
 `;
 }
 

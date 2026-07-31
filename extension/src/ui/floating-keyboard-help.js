@@ -11,6 +11,7 @@ import { setKeyPressedState } from './keybindings-ui-shared.js';
 import { Z_INDEX } from '../config/constants.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
 import { getSettings, SETTINGS_STORAGE_KEY } from '../modules/settings-manager.js';
+import { makePopoverResizable } from '../utils/popover-resize.js';
 
 export class FloatingKeyboardHelp {
   /**
@@ -27,6 +28,8 @@ export class FloatingKeyboardHelp {
     this.keyboardContainer = null;
     this.closeBtn = null;
     this.hintEl = null;
+    /** @type {HTMLElement|null} */
+    this._titlebar = null;
     this._onCloseClick = this._onCloseClick.bind(this);
 
     // Keydown/keyup visual feedback
@@ -47,6 +50,13 @@ export class FloatingKeyboardHelp {
     this._keyFeedbackEnabled = true;
     this._settingsBound = false;
     this._onStorageChanged = this._onStorageChanged.bind(this);
+
+    // Titlebar drag + edge/corner resize
+    this._windowChromeBound = false;
+    /** @type {(() => void)|null} */
+    this._resizeDispose = null;
+    /** @type {(() => void)|null} */
+    this._dragDispose = null;
   }
 
   setKeybindings(keybindings) {
@@ -65,14 +75,40 @@ export class FloatingKeyboardHelp {
   }
 
   isVisible() {
-    return !!(this.root && this.root.isConnected && this.root.hidden === false);
+    if (!this.root || !this.root.isConnected) return false;
+    if (this.root.hidden) return false;
+    // Inline display:flex (panel chrome) can override [hidden] on some host pages;
+    // treat explicit none as hidden as well.
+    try {
+      if (this.root.style && this.root.style.display === 'none') return false;
+    } catch { /* ignore */ }
+    return true;
+  }
+
+  /**
+   * Show/hide must set both the `hidden` attribute and inline display.
+   * Our panel chrome uses display:flex; without clearing it, hide() can fail on
+   * pages that weaken or override [hidden]{display:none}.
+   * @param {boolean} visible
+   */
+  _setRootVisible(visible) {
+    if (!this.root) return;
+    if (visible) {
+      try { this.root.hidden = false; } catch { /* ignore */ }
+      try { this.root.style.display = 'flex'; } catch { /* ignore */ }
+      try { this.root.setAttribute('aria-hidden', 'false'); } catch { /* ignore */ }
+    } else {
+      try { this.root.hidden = true; } catch { /* ignore */ }
+      try { this.root.style.display = 'none'; } catch { /* ignore */ }
+      try { this.root.setAttribute('aria-hidden', 'true'); } catch { /* ignore */ }
+    }
   }
 
   show() {
     // Never show inside iframes (avoids duplicating the panel in popover iframes).
     if (window !== window.top) return;
     this._ensure();
-    this.root.hidden = false;
+    this._setRootVisible(true);
     this._render();
     this._bindSettingsSync();
     this._refreshKeyFeedbackSetting(); // async; best-effort
@@ -80,7 +116,7 @@ export class FloatingKeyboardHelp {
   }
 
   hide() {
-    if (this.root) this.root.hidden = true;
+    this._setRootVisible(false);
     this.setLinkHoverHints(false);
     this._unbindKeydownFeedback();
     this._unbindSettingsSync();
@@ -95,6 +131,7 @@ export class FloatingKeyboardHelp {
     try {
       if (this.closeBtn) this.closeBtn.removeEventListener('click', this._onCloseClick);
     } catch { /* ignore */ }
+    this._unbindWindowChrome();
     this._unbindKeydownFeedback();
     this._unbindSettingsSync();
     try {
@@ -103,22 +140,36 @@ export class FloatingKeyboardHelp {
     this.root = null;
     this.keyboardContainer = null;
     this.closeBtn = null;
+    this._titlebar = null;
   }
 
   /**
    * Panel shell chrome shared by create + early-inject adopt paths.
+   * Default docks bottom-left; titlebar drag can move it to any corner.
    * @param {HTMLElement} root
    */
   _applyProPanelChrome(root) {
     if (!root || !root.style) return;
+    // Preserve intentional hide (display:none) — chrome must not force flex on a
+    // hidden panel (that broke K-toggle / close after we added flex layout).
+    let display = 'flex';
+    try {
+      if (root.hidden || root.style.display === 'none') display = 'none';
+    } catch { /* ignore */ }
     Object.assign(root.style, {
       position: 'fixed',
       left: '16px',
       bottom: '16px',
+      top: 'auto',
+      right: 'auto',
       width: '760px',
       maxWidth: 'calc(100vw - 24px)',
       maxHeight: 'calc(100vh - 24px)',
-      overflow: 'auto',
+      // Flex column when visible (titlebar + body).
+      display,
+      flexDirection: 'column',
+      overflow: 'hidden',
+      boxSizing: 'border-box',
       zIndex: String(Z_INDEX.FLOATING_KEYBOARD_HELP),
       background: 'rgba(10, 11, 14, 0.98)',
       color: 'rgba(248, 250, 252, 0.95)',
@@ -132,7 +183,7 @@ export class FloatingKeyboardHelp {
   }
 
   /**
-   * Compact, dark window-style titlebar.
+   * Compact, dark window-style titlebar (drag handle).
    * @param {HTMLElement|null} header
    * @param {{ titleEl?: HTMLElement|null, hintEl?: HTMLElement|null, closeBtn?: HTMLElement|null }} [parts]
    */
@@ -151,8 +202,15 @@ export class FloatingKeyboardHelp {
       margin: '0',
       borderBottom: '1px solid rgba(0,0,0,0.55)',
       background: 'linear-gradient(180deg, #1a1b1f 0%, #121316 100%)',
-      flex: '0 0 auto'
+      flex: '0 0 auto',
+      cursor: 'grab',
+      userSelect: 'none',
+      WebkitUserSelect: 'none',
+      touchAction: 'none'
     });
+    try {
+      header.title = header.title || 'Drag to move';
+    } catch { /* ignore */ }
 
     const titleEl = parts.titleEl || header.querySelector('[data-kp-floating-keyboard-title="true"]') || header.firstElementChild;
     if (titleEl && titleEl.style) {
@@ -225,12 +283,205 @@ export class FloatingKeyboardHelp {
       padding: '0',
       margin: '0',
       border: 'none',
-      background: 'transparent'
+      background: 'transparent',
+      flex: '1 1 auto',
+      minHeight: '0',
+      // Fixed key sizes for now (resize/flex-scale temporarily suspended).
+      overflow: 'auto'
     });
   }
 
+  /**
+   * Keyboard host chrome.
+   * TEMP: plain block layout with fixed key sizes (flex-fill suspended with resize).
+   * @param {HTMLElement|null} keyboardContainer
+   */
+  _applyKeyboardHostChrome(keyboardContainer) {
+    if (!keyboardContainer || !keyboardContainer.style) return;
+    Object.assign(keyboardContainer.style, {
+      width: '100%',
+      boxSizing: 'border-box'
+    });
+  }
+
+  /**
+   * Convert bottom/right/centered layout into an explicit fixed top/left box
+   * so free drag + resize can pin the panel anywhere (including all four corners).
+   * @param {HTMLElement} panel
+   * @returns {{ left: number, top: number, width: number, height: number }}
+   */
+  _pinPanelGeometry(panel) {
+    const rect = panel.getBoundingClientRect();
+    const s = panel.style;
+    s.position = 'fixed';
+    s.transform = 'none';
+    try { s.webkitTransform = 'none'; } catch { /* ignore */ }
+    s.left = `${rect.left}px`;
+    s.top = `${rect.top}px`;
+    s.width = `${rect.width}px`;
+    s.height = `${rect.height}px`;
+    s.right = 'auto';
+    s.bottom = 'auto';
+    s.inset = 'auto';
+    s.margin = '0';
+    s.maxWidth = 'none';
+    s.maxHeight = 'none';
+    s.boxSizing = 'border-box';
+    return {
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height
+    };
+  }
+
+  /**
+   * Titlebar drag (free move, clamped to viewport so all four corners are reachable)
+   * + shared edge/corner resize with SE grip.
+   */
+  _bindWindowChrome() {
+    if (this._windowChromeBound || !this.root) return;
+    const panel = this.root;
+    const header = this._titlebar
+      || panel.querySelector('[data-kp-floating-keyboard-titlebar="true"]')
+      || panel.firstElementChild;
+    if (!header) return;
+
+    this._titlebar = header;
+    this._windowChromeBound = true;
+
+    const margin = 8;
+    const DRAG_MOVE_THRESHOLD_PX = 3;
+    /** @type {{ startX: number, startY: number, originLeft: number, originTop: number, pointerId: number, moved: boolean }|null} */
+    let dragState = null;
+
+    const clampPosition = (leftPx, topPx) => {
+      const w = panel.offsetWidth || panel.getBoundingClientRect().width;
+      const h = panel.offsetHeight || panel.getBoundingClientRect().height;
+      const maxLeft = Math.max(margin, window.innerWidth - w - margin);
+      const maxTop = Math.max(margin, window.innerHeight - h - margin);
+      return {
+        left: Math.max(margin, Math.min(leftPx, maxLeft)),
+        top: Math.max(margin, Math.min(topPx, maxTop))
+      };
+    };
+
+    const onDragPointerMove = (e) => {
+      if (!dragState || !this.root) return;
+      const dx = e.clientX - dragState.startX;
+      const dy = e.clientY - dragState.startY;
+      if (!dragState.moved) {
+        if (Math.abs(dx) < DRAG_MOVE_THRESHOLD_PX && Math.abs(dy) < DRAG_MOVE_THRESHOLD_PX) {
+          return;
+        }
+        dragState.moved = true;
+        try { header.style.cursor = 'grabbing'; } catch { /* ignore */ }
+      }
+      const next = clampPosition(dragState.originLeft + dx, dragState.originTop + dy);
+      panel.style.left = `${next.left}px`;
+      panel.style.top = `${next.top}px`;
+    };
+
+    const endDrag = (e) => {
+      if (!dragState) return;
+      const pointerId = dragState.pointerId;
+      dragState = null;
+      try { header.style.cursor = 'grab'; } catch { /* ignore */ }
+      try {
+        if (e && typeof e.pointerId === 'number') header.releasePointerCapture(e.pointerId);
+        else if (typeof pointerId === 'number') header.releasePointerCapture(pointerId);
+      } catch { /* ignore */ }
+      document.removeEventListener('pointermove', onDragPointerMove, true);
+      document.removeEventListener('pointerup', endDrag, true);
+      document.removeEventListener('pointercancel', endDrag, true);
+    };
+
+    const onTitlebarPointerDown = (e) => {
+      // Close button (and any future action controls) keep their own click behavior.
+      // Match by attribute too in case this.closeBtn wasn't wired (early-inject adopt).
+      try {
+        const t = /** @type {Element|null} */ (e.target instanceof Element ? e.target : e.target?.parentElement);
+        if (t?.closest?.('button[data-kp-floating-keyboard-close="true"], button[aria-label="Close keyboard reference"]')) {
+          return;
+        }
+      } catch { /* ignore */ }
+      const closeBtn = this.closeBtn;
+      if (closeBtn && (e.target === closeBtn || (closeBtn.contains && closeBtn.contains(/** @type {Node} */ (e.target))))) {
+        return;
+      }
+      // Don't start a drag from resize handles if they ever land in the header.
+      try {
+        if (e.target && /** @type {Element} */ (e.target).closest?.('.kpv2-popover-resize-handle')) {
+          return;
+        }
+      } catch { /* ignore */ }
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (!this.root) return;
+
+      // Only preventDefault for actual drag starts — don't block focus/clicks on chrome.
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Pin geometry so bottom-docked default becomes free top/left positioning.
+      const origin = this._pinPanelGeometry(panel);
+      dragState = {
+        startX: e.clientX,
+        startY: e.clientY,
+        originLeft: origin.left,
+        originTop: origin.top,
+        pointerId: e.pointerId,
+        moved: false
+      };
+
+      try { header.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      document.addEventListener('pointermove', onDragPointerMove, true);
+      document.addEventListener('pointerup', endDrag, true);
+      document.addEventListener('pointercancel', endDrag, true);
+    };
+
+    header.addEventListener('pointerdown', onTitlebarPointerDown);
+    this._dragDispose = () => {
+      endDrag();
+      try { header.removeEventListener('pointerdown', onTitlebarPointerDown); } catch { /* ignore */ }
+    };
+
+    // TEMP suspended: resize + aspect lock (return when key flex-scaling is ready).
+    // See keybindings-ui-shared.js floating-keyboard flex rules (also suspended).
+    // try {
+    //   this._resizeDispose?.();
+    // } catch { /* ignore */ }
+    // try {
+    //   const api = makePopoverResizable(panel, {
+    //     minWidth: 360,
+    //     minHeight: 160,
+    //     margin,
+    //     aspectRatio: true,
+    //     onResizeStart: () => {
+    //       this._pinPanelGeometry(panel);
+    //     }
+    //   });
+    //   this._resizeDispose = api?.dispose || null;
+    // } catch (err) {
+    //   console.warn('[KeyPilot] Failed to make keyboard reference resizable:', err?.message || err);
+    //   this._resizeDispose = null;
+    // }
+    this._resizeDispose = null;
+  }
+
+  _unbindWindowChrome() {
+    try { this._dragDispose?.(); } catch { /* ignore */ }
+    this._dragDispose = null;
+    try { this._resizeDispose?.(); } catch { /* ignore */ }
+    this._resizeDispose = null;
+    this._windowChromeBound = false;
+  }
+
   _ensure() {
-    if (this.root && this.root.isConnected) return;
+    if (this.root && this.root.isConnected) {
+      // Re-bind chrome if the root survived but listeners were torn down.
+      this._bindWindowChrome();
+      return;
+    }
 
     // If early-inject created the shell at document_start, adopt it to avoid flicker.
     try {
@@ -240,7 +491,9 @@ export class FloatingKeyboardHelp {
         const closeBtn =
           existing.querySelector('button[data-kp-floating-keyboard-close="true"]') ||
           existing.querySelector('button[aria-label="Close keyboard reference"]');
-        const header = existing.firstElementChild;
+        const header =
+          existing.querySelector('[data-kp-floating-keyboard-titlebar="true"]') ||
+          existing.firstElementChild;
         const body = keyboardContainer?.parentElement || null;
         const hintEl = existing.querySelector('[data-kp-floating-keyboard-hint="true"]');
         const titleEl = existing.querySelector('[data-kp-floating-keyboard-title="true"]')
@@ -250,6 +503,7 @@ export class FloatingKeyboardHelp {
           this._applyProPanelChrome(existing);
           this._applyCompactTitlebar(header, { titleEl, hintEl, closeBtn });
           this._applyKeyboardBodyChrome(body);
+          this._applyKeyboardHostChrome(keyboardContainer);
         } catch { /* ignore */ }
 
         if (keyboardContainer) {
@@ -257,12 +511,14 @@ export class FloatingKeyboardHelp {
           this.keyboardContainer = keyboardContainer;
           this.closeBtn = closeBtn || null;
           this.hintEl = hintEl || null;
+          this._titlebar = header || null;
           if (this.closeBtn) {
             try {
               this.closeBtn.removeEventListener('click', this._onCloseClick);
             } catch { /* ignore */ }
             this.closeBtn.addEventListener('click', this._onCloseClick);
           }
+          this._bindWindowChrome();
           return;
         }
       }
@@ -305,6 +561,7 @@ export class FloatingKeyboardHelp {
 
     const keyboardContainer = document.createElement('div');
     keyboardContainer.className = 'kp-floating-keyboard-help__keyboard';
+    this._applyKeyboardHostChrome(keyboardContainer);
     body.appendChild(keyboardContainer);
 
     root.appendChild(header);
@@ -317,6 +574,8 @@ export class FloatingKeyboardHelp {
     this.keyboardContainer = keyboardContainer;
     this.closeBtn = closeBtn;
     this.hintEl = hint;
+    this._titlebar = header;
+    this._bindWindowChrome();
   }
 
   /**

@@ -54,8 +54,8 @@
       },
       {
         "type": "action",
-        "id": "OPEN_POPOVER",
-        "fallbackText": "Open Popover"
+        "id": "PREVIEW_LINK_POPOVER",
+        "fallbackText": "Preview Link"
       },
       {
         "type": "action",
@@ -87,8 +87,8 @@
       },
       {
         "type": "action",
-        "id": "PREVIEW_LINK_POPOVER",
-        "fallbackText": "Preview Link"
+        "id": "OPEN_POPOVER",
+        "fallbackText": "Open Popover"
       },
       {
         "type": "key",
@@ -442,12 +442,12 @@
       "displayKey": "W",
       "keyboardClass": "key-gray"
     },
-    "OPEN_POPOVER": {
-      "label": "Open Popover",
-      "description": "Open Link in Popover",
+    "PREVIEW_LINK_POPOVER": {
+      "label": "Preview Link",
+      "description": "Open Link Preview in Popover",
       "keyLabel": "E",
       "displayKey": "E",
-      "keyboardClass": "key-open-popover"
+      "keyboardClass": "key-preview-popover"
     },
     "FORWARD": {
       "label": "Go Forward",
@@ -477,12 +477,12 @@
       "displayKey": "I",
       "keyboardClass": null
     },
-    "PREVIEW_LINK_POPOVER": {
-      "label": "Preview Link",
-      "description": "Open Link Preview in Popover",
+    "OPEN_POPOVER": {
+      "label": "Open Popover",
+      "description": "Open Link in Popover",
       "keyLabel": "P",
       "displayKey": "P",
-      "keyboardClass": "key-preview-popover"
+      "keyboardClass": "key-open-popover"
     },
     "DELETE": {
       "label": "Delete Mode",
@@ -619,12 +619,12 @@
       "displayKey": "O",
       "keyboardClass": "key-gray"
     },
-    "OPEN_POPOVER": {
-      "label": "Open Popover",
-      "description": "Open Link in Popover",
-      "keyLabel": "I",
-      "displayKey": "I",
-      "keyboardClass": "key-open-popover"
+    "PREVIEW_LINK_POPOVER": {
+      "label": "Preview Link",
+      "description": "Open Link Preview in Popover",
+      "keyLabel": "W",
+      "displayKey": "W",
+      "keyboardClass": "key-preview-popover"
     },
     "FORWARD": {
       "label": "Go Forward",
@@ -654,12 +654,12 @@
       "displayKey": "E",
       "keyboardClass": null
     },
-    "PREVIEW_LINK_POPOVER": {
-      "label": "Preview Link",
-      "description": "Open Link Preview in Popover",
-      "keyLabel": "W",
-      "displayKey": "W",
-      "keyboardClass": "key-preview-popover"
+    "OPEN_POPOVER": {
+      "label": "Open Popover",
+      "description": "Open Link in Popover",
+      "keyLabel": "I",
+      "displayKey": "I",
+      "keyboardClass": "key-open-popover"
     },
     "DELETE": {
       "label": "Delete Mode",
@@ -801,8 +801,8 @@
     },
     {
       "type": "action",
-      "id": "OPEN_POPOVER",
-      "fallbackText": "Open Popover"
+      "id": "PREVIEW_LINK_POPOVER",
+      "fallbackText": "Preview Link"
     },
     {
       "type": "action",
@@ -834,8 +834,8 @@
     },
     {
       "type": "action",
-      "id": "PREVIEW_LINK_POPOVER",
-      "fallbackText": "Preview Link"
+      "id": "OPEN_POPOVER",
+      "fallbackText": "Open Popover"
     },
     {
       "type": "key",
@@ -992,12 +992,12 @@
     "displayKey": "W",
     "keyboardClass": "key-gray"
   },
-  "OPEN_POPOVER": {
-    "label": "Open Popover",
-    "description": "Open Link in Popover",
+  "PREVIEW_LINK_POPOVER": {
+    "label": "Preview Link",
+    "description": "Open Link Preview in Popover",
     "keyLabel": "E",
     "displayKey": "E",
-    "keyboardClass": "key-open-popover"
+    "keyboardClass": "key-preview-popover"
   },
   "FORWARD": {
     "label": "Go Forward",
@@ -1027,12 +1027,12 @@
     "displayKey": "I",
     "keyboardClass": null
   },
-  "PREVIEW_LINK_POPOVER": {
-    "label": "Preview Link",
-    "description": "Open Link Preview in Popover",
+  "OPEN_POPOVER": {
+    "label": "Open Popover",
+    "description": "Open Link in Popover",
     "keyLabel": "P",
     "displayKey": "P",
-    "keyboardClass": "key-preview-popover"
+    "keyboardClass": "key-open-popover"
   },
   "DELETE": {
     "label": "Delete Mode",
@@ -2204,6 +2204,65 @@
 .kp-keybindings-ui .key[data-kp-action-id="HIGHLIGHT"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M128%2064c0-17.7%2014.3-32%2032-32H352c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H288v128h64c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H288v128h64c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H160c-17.7%200-32-14.3-32-32s14.3-32%2032-32h64V288H160c-17.7%200-32-14.3-32-32s14.3-32%2032-32h64V96H160c-17.7%200-32-14.3-32-32z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M128%2064c0-17.7%2014.3-32%2032-32H352c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H288v128h64c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H288v128h64c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H160c-17.7%200-32-14.3-32-32s14.3-32%2032-32h64V288H160c-17.7%200-32-14.3-32-32s14.3-32%2032-32h64V96H160c-17.7%200-32-14.3-32-32z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="RECTANGLE_HIGHLIGHT"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M32%2032C14.3%2032%200%2046.3%200%2064v64c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V96h64c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H32zM32%20320c-17.7%200-32%2014.3-32%2032v64c0%2017.7%2014.3%2032%2032%2032h64c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H64V352c0-17.7-14.3-32-32-32zM320%2064c0%2017.7%2014.3%2032%2032%2032h64v64c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V64c0-17.7-14.3-32-32-32H352c-17.7%200-32%2014.3-32%2032zM480%20320c-17.7%200-32%2014.3-32%2032v64H384c-17.7%200-32%2014.3-32%2032s14.3%2032%2032%2032h64c17.7%200%2032-14.3%2032-32V352c0-17.7-14.3-32-32-32z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M32%2032C14.3%2032%200%2046.3%200%2064v64c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V96h64c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H32zM32%20320c-17.7%200-32%2014.3-32%2032v64c0%2017.7%2014.3%2032%2032%2032h64c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H64V352c0-17.7-14.3-32-32-32zM320%2064c0%2017.7%2014.3%2032%2032%2032h64v64c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V64c0-17.7-14.3-32-32-32H352c-17.7%200-32%2014.3-32%2032zM480%20320c-17.7%200-32%2014.3-32%2032v64H384c-17.7%200-32%2014.3-32%2032s14.3%2032%2032%2032h64c17.7%200%2032-14.3%2032-32V352c0-17.7-14.3-32-32-32z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="COPY_HOVERED_IMAGE"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+
+/*
+ * TEMP suspended: Floating Keyboard Reference flex-scale keys with panel resize.
+ * Keys use the global fixed 50px keycap rules again. Re-enable together with
+ * makePopoverResizable in floating-keyboard-help.js when resuming this work.
+ *
+ * .kp-floating-keyboard-help .kp-floating-keyboard-help__keyboard {
+ *   box-sizing: border-box;
+ *   flex: 1 1 auto;
+ *   min-height: 0;
+ *   width: 100%;
+ *   height: 100%;
+ *   display: flex;
+ *   flex-direction: column;
+ * }
+ * .kp-floating-keyboard-help .keyboard-visual.kp-keybindings-ui {
+ *   flex: 1 1 auto;
+ *   min-height: 0;
+ *   width: 100%;
+ *   height: 100%;
+ *   display: flex;
+ *   flex-direction: column;
+ *   gap: 7px;
+ *   padding: clamp(4px, 1.2%, 10px);
+ * }
+ * .kp-floating-keyboard-help .kp-keybindings-ui .keyboard-row {
+ *   flex: 1 1 0;
+ *   min-height: 0;
+ *   margin-bottom: 0;
+ *   gap: clamp(3px, 0.7%, 7px);
+ *   align-items: stretch;
+ * }
+ * .kp-floating-keyboard-help .kp-keybindings-ui .key,
+ * .kp-floating-keyboard-help .kp-keybindings-ui .key.key-tab,
+ * .kp-floating-keyboard-help .kp-keybindings-ui .key.key-caps,
+ * .kp-floating-keyboard-help .kp-keybindings-ui .key.key-enter,
+ * .kp-floating-keyboard-help .kp-keybindings-ui .key.key-shift,
+ * .kp-floating-keyboard-help .kp-keybindings-ui .key.key-backspace {
+ *   height: 100%;
+ *   min-height: 0;
+ *   max-height: none;
+ *   border-radius: clamp(5px, 12%, 10px);
+ *   container-type: size;
+ *   container-name: kp-key;
+ * }
+ * .kp-floating-keyboard-help .kp-keybindings-ui .key > .key-main {
+ *   font-size: clamp(9px, 18cqh, 15px);
+ *   max-height: 55%;
+ *   top: clamp(2px, 8cqh, 8px);
+ * }
+ * .kp-floating-keyboard-help .kp-keybindings-ui .key > .key-label {
+ *   font-size: clamp(10px, 22cqh, 18px);
+ *   bottom: clamp(2px, 8cqh, 8px);
+ * }
+ * .kp-floating-keyboard-help .kp-keybindings-ui .key > .key-text {
+ *   font-size: clamp(9px, 18cqh, 15px);
+ *   bottom: clamp(2px, 8cqh, 8px);
+ * }
+ */
 `;
 // KP_EARLY_INJECT_UI_END
 

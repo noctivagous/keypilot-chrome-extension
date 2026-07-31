@@ -9,7 +9,7 @@ import { installPopoverIframeBridge } from './modules/popover-iframe-bridge.js';
 /**
  * When running inside an iframe, we normally avoid initializing full KeyPilot.
  * For KeyPilot popover iframes, we use a bridge handshake from the parent to:
- * - keep Esc/E close working via postMessage
+ * - keep Esc/P close working via postMessage
  * - optionally initialize full KeyPilot inside the iframe for the full cursor/overlay experience
  */
 function setupPopoverIframeBridge() {

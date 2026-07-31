@@ -365,8 +365,8 @@ function cloneAssignments(base) {
 const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   TAB_LEFT: Object.freeze({ keys: ['q', 'Q'] }),
   TAB_RIGHT: Object.freeze({ keys: ['w', 'W'] }),
-  OPEN_POPOVER: Object.freeze({ keys: ['e', 'E'] }),
-  PREVIEW_LINK_POPOVER: Object.freeze({ keys: ['p', 'P'] }),
+  OPEN_POPOVER: Object.freeze({ keys: ['p', 'P'] }),
+  PREVIEW_LINK_POPOVER: Object.freeze({ keys: ['e', 'E'] }),
   FORWARD: Object.freeze({ keys: ['r', 'R'] }),
   NEW_TAB: Object.freeze({ keys: ['t', 'T'] }),
 
@@ -456,14 +456,14 @@ const KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: 'special', text: 'Tab', className: 'key key-tab' },
     { type: 'action', id: 'TAB_LEFT', fallbackText: 'Tab Left' },
     { type: 'action', id: 'TAB_RIGHT', fallbackText: 'Tab Right' },
-    { type: 'action', id: 'OPEN_POPOVER', fallbackText: 'Open Popover' },
+    { type: 'action', id: 'PREVIEW_LINK_POPOVER', fallbackText: 'Preview Link' },
     { type: 'action', id: 'FORWARD', fallbackText: 'Go Forward' },
     { type: 'action', id: 'NEW_TAB', fallbackText: 'New Tab' },
     { type: 'action', id: 'RECTANGLE_HIGHLIGHT', fallbackText: 'Rectangle Select' },
     { type: 'key', text: 'U' },
     { type: 'action', id: 'COPY_HOVERED_IMAGE', fallbackText: 'Copy Image' },
     { type: 'key', text: 'O' },
-    { type: 'action', id: 'PREVIEW_LINK_POPOVER', fallbackText: 'Preview Link' },
+    { type: 'action', id: 'OPEN_POPOVER', fallbackText: 'Open Popover' },
     { type: 'key', text: '[' },
     { type: 'key', text: ']' },
     { type: 'action', id: 'DELETE', fallbackText: 'Delete Mode', className: 'key key-backspace' }
