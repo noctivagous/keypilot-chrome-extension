@@ -2207,6 +2207,106 @@ export class OverlayManager {
   }
 
   /**
+   * Read a non-zero computed border-radius from an element.
+   * @param {Element|null|undefined} el
+   * @returns {string|null}
+   */
+  _readNonZeroBorderRadius(el) {
+    try {
+      if (!el || el.nodeType !== 1) return null;
+      const cs = window.getComputedStyle(el);
+      if (!cs) return null;
+
+      let radius = String(cs.borderRadius || '').trim();
+      if (!radius) {
+        const tl = cs.borderTopLeftRadius || '0';
+        const tr = cs.borderTopRightRadius || '0';
+        const br = cs.borderBottomRightRadius || '0';
+        const bl = cs.borderBottomLeftRadius || '0';
+        radius = `${tl} ${tr} ${br} ${bl}`.trim();
+      }
+      if (!radius) return null;
+
+      // Collapse "0px 0px 0px 0px" / "0" / "0%" to null so callers can try children.
+      const tokens = radius.replace(/,/g, ' ').split(/\s+/).filter(Boolean);
+      if (
+        tokens.length > 0 &&
+        tokens.every((t) => /^(0|0px|0%)$/i.test(t))
+      ) {
+        return null;
+      }
+      return radius;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Resolve a CSS border-radius that matches the visual shape of the activation target.
+   * Prefer the element itself; if it is not rounded (common for <a> wrapping a card/image),
+   * use a large rounded descendant that fills most of the host box.
+   *
+   * @param {Element|null|undefined} element
+   * @returns {string|null} CSS border-radius value, or null to keep stylesheet default
+   */
+  _resolveElementBorderRadius(element) {
+    if (!element || element.nodeType !== 1) return null;
+
+    const own = this._readNonZeroBorderRadius(element);
+    if (own) return own;
+
+    try {
+      let parentArea = 0;
+      try {
+        const pr = element.getBoundingClientRect();
+        parentArea = Math.max(0, (pr.width || 0) * (pr.height || 0));
+      } catch {
+        parentArea = 0;
+      }
+
+      const candidates = [];
+      try {
+        if (element.children && element.children.length) {
+          for (const child of element.children) candidates.push(child);
+        }
+      } catch { /* ignore */ }
+
+      // Media often carries the visible corner radius on image links / cards.
+      try {
+        const media = element.querySelectorAll?.('img, svg, video, picture');
+        if (media && media.length) {
+          for (const m of media) candidates.push(m);
+        }
+      } catch { /* ignore */ }
+
+      let best = null;
+      let bestArea = 0;
+      for (const c of candidates) {
+        const radius = this._readNonZeroBorderRadius(c);
+        if (!radius) continue;
+        let area = 0;
+        try {
+          const cr = c.getBoundingClientRect();
+          area = Math.max(0, (cr.width || 0) * (cr.height || 0));
+        } catch {
+          area = 0;
+        }
+        if (area >= bestArea) {
+          bestArea = area;
+          best = radius;
+        }
+      }
+
+      // Avoid picking a tiny decorative rounded icon inside a larger link.
+      if (best && (parentArea <= 0 || bestArea >= parentArea * 0.35)) {
+        return best;
+      }
+    } catch { /* ignore */ }
+
+    return null;
+  }
+
+  /**
    * Resolve the viewport rect of the current focus outline for activation feedback.
    * Works across DOM-hover element styling, DOM overlay, CSS-custom-props, and canvas modes.
    * @returns {{ left: number, top: number, width: number, height: number }|null}
@@ -2261,11 +2361,11 @@ export class OverlayManager {
    *   Prefer this over last-hover focus so category matches the real target.
    */
   flashFocusOverlay(activationTarget = null) {
-    try {
-      const el = (activationTarget && activationTarget.nodeType === 1)
-        ? activationTarget
-        : (this._currentStyledElement || this._lastFocusElement);
+    const el = (activationTarget && activationTarget.nodeType === 1)
+      ? activationTarget
+      : (this._currentStyledElement || this._lastFocusElement);
 
+    try {
       const detector = window.keyPilot?.detector || window.keyPilot?.elementDetector;
       const cat = (detector && typeof detector.getClickableCategory === 'function')
         ? detector.getClickableCategory(el)
@@ -2311,6 +2411,11 @@ export class OverlayManager {
       pulse.style.top = `${rect.top}px`;
       pulse.style.width = `${rect.width}px`;
       pulse.style.height = `${rect.height}px`;
+      // Match corners to the clicked element (pill links, rounded cards, circular avatars).
+      const borderRadius = this._resolveElementBorderRadius(el);
+      if (borderRadius) {
+        pulse.style.borderRadius = borderRadius;
+      }
       document.body.appendChild(pulse);
       pulse.addEventListener('animationend', () => {
         try { pulse.remove(); } catch { /* ignore */ }
@@ -2372,6 +2477,11 @@ export class OverlayManager {
       pulse.style.top = `${top}px`;
       pulse.style.width = `${width}px`;
       pulse.style.height = `${height}px`;
+      // Match corners to the source image/host when it has a non-default radius.
+      const borderRadius = this._resolveElementBorderRadius(element);
+      if (borderRadius) {
+        pulse.style.borderRadius = borderRadius;
+      }
       document.body.appendChild(pulse);
       pulse.addEventListener('animationend', () => {
         try { pulse.remove(); } catch { /* ignore */ }

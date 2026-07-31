@@ -2055,7 +2055,11 @@ export class KeyPilot extends EventManager {
       return { blockActions: true, handled: true };
     }
 
-    // Armed F-click while in text focus (hover-click countdown).
+    // Text mode isolation (product rule): keyboard-ref actions do NOT run while typing.
+    // Only exceptions:
+    //   1) Esc — exit text mode
+    //   2) Armed F — optional hover-click after a mouse-move countdown (explicit UX)
+    // S/D/R, A, T, and every other binding must type into the field, not navigate.
     if (
       (inTextFocus || !!typingTarget) &&
       KB.ACTIVATE?.keys?.includes?.(e.key) &&
@@ -2069,24 +2073,7 @@ export class KeyPilot extends EventManager {
       return { blockActions: true, handled: true };
     }
 
-    // History nav still works: blur + go (avoids "press D twice").
-    if (this._isHistoryNavigationKey(KB, e)) {
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      try {
-        if (inTextFocus || currentState?.mode === MODES.TEXT_FOCUS) {
-          this.handleEscapeFromTextFocus(currentState);
-        } else {
-          try { /** @type {any} */ (typingTarget)?.blur?.(); } catch { /* ignore */ }
-          try { this.focusDetector?.clearTextFocus?.(); } catch { /* ignore */ }
-        }
-      } catch { /* ignore */ }
-      this._runHistoryNavigationKey(KB, e);
-      return { blockActions: true, handled: true };
-    }
-
-    // All other keys (including T=new tab, A=close tab): block KeyPilot, allow typing.
+    // Swallow all KeyPilot shortcuts; let the character reach the text field.
     return { blockActions: true, handled: false };
   }
 
@@ -2395,12 +2382,8 @@ export class KeyPilot extends EventManager {
   }
 
   handleBackKey(e) {
-    // History is intentionally allowed from the typing gate (blur + go).
-    // Only block if this was invoked outside that path while still typing.
-    // (Typing gate calls this after blur; e may be undefined.)
-    if (e && this._isUnsafeToRunActionKey(e) && !this._isHistoryNavigationKey(this.keybindings || {}, e)) {
-      return;
-    }
+    // Never run history shortcuts while typing (D/S are real letters in text mode).
+    if (!this._allowActionKey('handleBackKey', e)) return;
     // Emit BEFORE navigating away so onboarding (and other listeners) can observe/persist it.
     // This is synchronous so listeners run before any navigation is requested.
     this.emitAction('back');
@@ -2408,9 +2391,7 @@ export class KeyPilot extends EventManager {
   }
 
   handleForwardKey(e) {
-    if (e && this._isUnsafeToRunActionKey(e) && !this._isHistoryNavigationKey(this.keybindings || {}, e)) {
-      return;
-    }
+    if (!this._allowActionKey('handleForwardKey', e)) return;
     this._navigateHistory(1);
   }
 

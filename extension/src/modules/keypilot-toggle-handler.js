@@ -280,8 +280,21 @@ export class KeyPilotToggleHandler extends EventManager {
         }
       }
 
-      // Restore intersection manager
+      // Restore intersection manager + permanent DOM-hover targeting.
+      // cleanup() detaches delegated hover listeners; without re-enabling them,
+      // normal-mode focus outlines never return (mousemove hit-testing is skipped
+      // while KeyPilot._domHoverListenersEnabled stays true).
       if (this.keyPilot.intersectionManager) {
+        try {
+          if (typeof this.keyPilot.intersectionManager.setDomHoverListenersEnabled === 'function') {
+            this.keyPilot.intersectionManager.setDomHoverListenersEnabled(
+              true,
+              (el) => this.keyPilot._handleDomHoverChange?.(el)
+            );
+          }
+        } catch (error) {
+          console.warn('[KeyPilotToggleHandler] Cannot restore DOM hover listeners:', error.message);
+        }
         try {
           await this.keyPilot.intersectionManager.init();
         } catch (error) {
@@ -309,6 +322,10 @@ export class KeyPilotToggleHandler extends EventManager {
           }
           // Re-init the active renderer (canvas overlay element, CSS custom props, etc.)
           this.keyPilot.overlayManager.initRenderingMode();
+          // DOM-hover mode styles elements directly (blue focus ring) — re-apply after cleanup.
+          if (typeof this.keyPilot.overlayManager.setDomHoverFocusColorsEnabled === 'function') {
+            this.keyPilot.overlayManager.setDomHoverFocusColorsEnabled(true);
+          }
           // Debug panel (if enabled) lives inside overlay manager
           this.keyPilot.overlayManager.initDebugPanel?.();
         } catch (error) {
@@ -316,8 +333,10 @@ export class KeyPilotToggleHandler extends EventManager {
         }
       }
 
-      // Force an immediate hover refresh so the green rectangle reappears without requiring
-      // the user to move the mouse past the threshold gate.
+      // Force an immediate hover refresh so the focus outline reappears without requiring
+      // the user to move the mouse past the threshold gate. Prefer DOM-hover's initial
+      // under-cursor check (setDomHoverListenersEnabled already runs it); also seed via
+      // elementFromPoint for modes / paths that still use updateElementsUnderCursor.
       try {
         const st = this.keyPilot.state?.getState?.();
         const x = Number(st?.lastMouse?.x);

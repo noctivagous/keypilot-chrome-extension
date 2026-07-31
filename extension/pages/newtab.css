@@ -53,18 +53,29 @@ body.kp-unfocused::before {
   mix-blend-mode: lighten;
 }
 
-/* Top message overlay for unfocused state */
+/* Top message + full-page SVG background for unfocused state */
 .focus-hint {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  inset: 0;
   z-index: 2147483042; /* above tint, below modal (modal-root is 2147483045) */
   pointer-events: none;
   filter: none; /* Ensure focus hint stays sharp even when page is blurred */
 }
 
+/* SVG watermark layer: address-bar cue + upward chevrons + copy */
+.focus-hint-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url("focus-hint-bg.svg");
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: min(1100px, 92vw) auto;
+  opacity: 0.95;
+  pointer-events: none;
+}
+
 .focus-hint-message {
+  position: relative;
   display: block;
   width: 75vw;
   max-width: 600px;
