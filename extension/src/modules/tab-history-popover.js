@@ -1,6 +1,7 @@
 /**
  * TabHistoryPopover
  * - Renders a branching, per-tab navigation history (tracked by service worker).
+ * - Full-width panel with two stacked horizontal card rails (Tab + Browser).
  * - Uses PopupManager to keep z-index below click overlays and to enable View Transitions.
  */
 import { createUrlListingContainer, renderUrlListing } from '../ui/url-listing.js';
@@ -50,6 +51,18 @@ function renderThreeLineUrlListingEntry({ item, parts }) {
   parts.urlEl.textContent = path;
 }
 
+/** Shared classNames for horizontal history card rails. */
+const HISTORY_CARD_CLASS_NAMES = {
+  row: 'kp-url-row',
+  rowSelected: 'kp-url-row--selected',
+  content: 'kp-url-content',
+  text: 'kp-url-text',
+  title: 'kp-url-domain',
+  meta: 'kp-url-title',
+  url: 'kp-url-path',
+  favicon: 'kp-url-favicon'
+};
+
 export class TabHistoryPopover {
   /**
    * @param {object} opts
@@ -91,11 +104,13 @@ export class TabHistoryPopover {
     this._open = true;
 
     this._ensureDom();
-    this._injectScrollbarStyles();
+    this._injectStyles();
+    // Full-width rails: disable free-form resize so layout stays intentional.
     this.popupManager.showModal({
       id: this._popupId,
       panel: this._panel,
-      onRequestClose: () => this.hide()
+      onRequestClose: () => this.hide(),
+      resizable: false
     });
 
     // Notify that popover opened
@@ -119,91 +134,276 @@ export class TabHistoryPopover {
     }
   }
 
-  _injectScrollbarStyles() {
+  _injectStyles() {
     const styleId = 'kpv2-tab-history-styles';
-    if (document.getElementById(styleId)) return; // Already injected
+    // Always refresh styles so layout redesigns take effect after reloads without a stale cache.
+    const existing = document.getElementById(styleId);
+    if (existing) existing.remove();
 
     const style = document.createElement('style');
     style.id = styleId;
     style.textContent = `
-      /* Shared URL listing helpers (used by tab history popover) */
-      .kpv2-tab-history-panel .kp-url-row {
-        display: block;
-        padding: 8px 10px;
-        border-radius: 8px;
-        cursor: pointer;
-        background: linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.06) 100%);
-        border: 1px solid rgba(255,255,255,0.12);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.15);
-        margin: 6px 6px 6px 6px;
-        min-width: 0;
-      }
-
-      .kpv2-tab-history-panel .kp-url-row:hover {
-        background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%);
-        box-shadow: 0 6px 16px rgba(0,0,0,0.35), 0 3px 6px rgba(0,0,0,0.20);
-        transform: translateY(-1px);
-      }
-
-      .kpv2-tab-history-panel .kp-url-row:focus-visible {
+      .kpv2-tab-history-panel {
+        --kp-history-side-margin: 24px;
+        --kp-history-card-w: 140px;
+        box-sizing: border-box;
+        position: fixed;
+        left: 50%;
+        top: 12vh;
+        transform: translateX(-50%);
+        width: calc(100vw - (2 * var(--kp-history-side-margin)));
+        max-width: none;
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+        border-radius: 14px;
+        border: 1px solid rgba(255,140,0,0.25);
+        background: rgba(18, 18, 18, 0.92);
+        box-shadow: 0 18px 60px rgba(0,0,0,0.55);
+        overflow: hidden;
         outline: none;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.15), 0 0 0 3px rgba(255,140,0,0.16);
-        border-color: rgba(255,140,0,0.45);
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
       }
 
-      .kpv2-tab-history-panel .kp-url-content {
+      .kpv2-tab-history-panel .kpv2-history-header {
         display: flex;
         align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        border-bottom: 1px solid rgba(255,140,0,0.14);
+        background: linear-gradient(180deg, rgba(28,28,28,0.95) 0%, rgba(16,16,16,0.95) 100%);
+        flex: 0 0 auto;
+      }
+
+      .kpv2-tab-history-panel .kpv2-history-title-wrap {
+        display: flex;
+        align-items: baseline;
         gap: 10px;
         min-width: 0;
       }
 
+      .kpv2-tab-history-panel .kpv2-history-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: rgba(255,255,255,0.92);
+      }
+
+      .kpv2-tab-history-panel .kpv2-history-subtitle {
+        font-size: 12px;
+        font-weight: 600;
+        color: rgba(255,140,0,0.85);
+        white-space: nowrap;
+      }
+
+      .kpv2-tab-history-panel .kpv2-history-close {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.14);
+        background: rgba(0,0,0,0.25);
+        color: rgba(255,255,255,0.9);
+        font-size: 22px;
+        line-height: 1;
+        cursor: pointer;
+        flex: 0 0 auto;
+      }
+
+      .kpv2-tab-history-panel .kpv2-history-body {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: auto;
+      }
+
+      .kpv2-tab-history-panel .kpv2-history-section {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 12px;
+        overflow: hidden;
+        background: rgba(0,0,0,0.18);
+        flex: 0 0 auto;
+      }
+
+      .kpv2-tab-history-panel .kpv2-history-section-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        background: rgba(0,0,0,0.18);
+      }
+
+      .kpv2-tab-history-panel .kpv2-history-section-title {
+        font-size: 13px;
+        font-weight: 800;
+        color: rgba(255,255,255,0.9);
+      }
+
+      .kpv2-tab-history-panel .kpv2-history-section-hint {
+        font-size: 11px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.55);
+        white-space: nowrap;
+      }
+
+      .kpv2-tab-history-panel .kpv2-history-section-status {
+        padding: 6px 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        font-size: 12px;
+        color: rgba(255,255,255,0.65);
+      }
+
+      /* Horizontal card rail */
+      .kpv2-tab-history-panel .kpv2-history-rail {
+        display: flex !important;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: stretch;
+        gap: 10px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 10px 10px 12px;
+        scroll-snap-type: x proximity;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255,255,255,0.2) rgba(0,0,0,0.1);
+        min-height: calc(var(--kp-history-card-w) * 4 / 3 + 22px);
+      }
+
+      /* Vertical history cards */
+      .kpv2-tab-history-panel .kp-url-row {
+        box-sizing: border-box;
+        display: block;
+        position: relative;
+        flex: 0 0 auto;
+        width: var(--kp-history-card-w);
+        aspect-ratio: 3 / 4;
+        height: auto;
+        padding: 12px 10px;
+        border-radius: 12px;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+        user-select: none;
+        scroll-snap-align: start;
+        background: linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.05) 100%);
+        border: 1px solid rgba(255,255,255,0.12);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.15);
+        margin: 0;
+        min-width: 0;
+        overflow: hidden;
+        transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+      }
+
+      .kpv2-tab-history-panel .kp-url-row:hover {
+        background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%);
+        box-shadow: 0 8px 18px rgba(0,0,0,0.38), 0 3px 6px rgba(0,0,0,0.20);
+        transform: translateY(-2px);
+      }
+
+      .kpv2-tab-history-panel .kp-url-row:focus-visible {
+        outline: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.15), 0 0 0 3px rgba(255,140,0,0.22);
+        border-color: rgba(255,140,0,0.55);
+      }
+
+      .kpv2-tab-history-panel .kp-url-row--selected {
+        background: linear-gradient(180deg, rgba(255,140,0,0.22) 0%, rgba(255,140,0,0.10) 100%);
+        border-color: rgba(255,140,0,0.55);
+        box-shadow: 0 4px 14px rgba(255,140,0,0.18), 0 2px 4px rgba(0,0,0,0.15);
+      }
+
+      .kpv2-tab-history-panel .kp-url-row--selected:hover {
+        background: linear-gradient(180deg, rgba(255,140,0,0.28) 0%, rgba(255,140,0,0.12) 100%);
+      }
+
+      .kpv2-tab-history-panel .kp-url-content {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        min-width: 0;
+        height: 100%;
+      }
+
+      .kpv2-tab-history-panel .kp-url-favicon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: rgba(255,255,255,0.08);
+        flex: 0 0 auto;
+      }
+
       .kpv2-tab-history-panel .kp-url-text {
         min-width: 0;
+        width: 100%;
         flex: 1 1 auto;
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 3px;
+        overflow: hidden;
       }
 
-      .kpv2-tab-history-panel .kp-url-domain,
-      .kpv2-tab-history-panel .kp-url-title,
-      .kpv2-tab-history-panel .kp-url-path {
+      .kpv2-tab-history-panel .kp-url-domain {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.15px;
+        color: rgba(255, 200, 130, 0.92);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
         max-width: 100%;
       }
 
-      .kpv2-tab-history-panel .kp-url-domain {
-        font-size: 12px;
-        font-weight: 800;
-        letter-spacing: 0.15px;
-        color: rgba(255, 200, 130, 0.92);
-      }
-
       .kpv2-tab-history-panel .kp-url-title {
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 650;
         color: rgba(255,255,255,0.92);
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        white-space: normal;
+        word-break: break-word;
+        max-width: 100%;
+        line-height: 1.25;
       }
 
       .kpv2-tab-history-panel .kp-url-path {
-        font-size: 11px;
-        color: rgba(255,255,255,0.58);
+        font-size: 10px;
+        color: rgba(255,255,255,0.55);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
+        margin-top: auto;
       }
 
-      .kpv2-tab-history-panel .kp-url-favicon {
-        width: 18px;
-        height: 18px;
-        border-radius: 4px;
-        background: rgba(255,255,255,0.08);
-        flex: 0 0 auto;
+      .kpv2-tab-history-panel .kp-url-branch-badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 999px;
+        border: 1px solid rgba(255,140,0,0.35);
+        background: rgba(255,140,0,0.16);
+        color: rgba(255,140,0,0.95);
+        line-height: 1.2;
+        pointer-events: none;
       }
 
-      /* Dark theme scrollbar styling for tab history popover */
+      /* Scrollbars (vertical body + horizontal rails) */
       .kpv2-tab-history-panel ::-webkit-scrollbar {
         width: 8px;
+        height: 8px;
       }
       .kpv2-tab-history-panel ::-webkit-scrollbar-track {
         background: rgba(0, 0, 0, 0.1);
@@ -225,79 +425,31 @@ export class TabHistoryPopover {
     const doc = document;
     const panel = doc.createElement('div');
     panel.className = 'kpv2-tab-history-panel';
-    Object.assign(panel.style, {
-      position: 'fixed',
-      left: '50%',
-      top: '14vh',
-      transform: 'translateX(-50%)',
-      width: 'min(980px, calc(100vw - 32px))',
-      maxHeight: '72vh',
-      display: 'flex',
-      flexDirection: 'column',
-      borderRadius: '14px',
-      border: '1px solid rgba(255,140,0,0.25)',
-      background: 'rgba(18, 18, 18, 0.92)',
-      boxShadow: '0 18px 60px rgba(0,0,0,0.55)',
-      overflow: 'hidden',
-      outline: 'none'
-    });
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-label', 'History');
 
     const header = doc.createElement('div');
-    Object.assign(header.style, {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '12px 14px',
-      borderBottom: '1px solid rgba(255,140,0,0.14)',
-      background: 'linear-gradient(180deg, rgba(28,28,28,0.95) 0%, rgba(16,16,16,0.95) 100%)'
-    });
+    header.className = 'kpv2-history-header';
 
     const titleWrap = doc.createElement('div');
-    Object.assign(titleWrap.style, {
-      display: 'flex',
-      alignItems: 'baseline',
-      gap: '10px',
-      minWidth: '0'
-    });
+    titleWrap.className = 'kpv2-history-title-wrap';
 
     const title = doc.createElement('div');
+    title.className = 'kpv2-history-title';
     title.textContent = 'History';
-    Object.assign(title.style, {
-      fontSize: '14px',
-      fontWeight: '700',
-      color: 'rgba(255,255,255,0.92)',
-      fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif'
-    });
 
     const subtitle = doc.createElement('div');
-    subtitle.textContent = 'Tab (left) + Browser (right)';
-    Object.assign(subtitle.style, {
-      fontSize: '12px',
-      fontWeight: '600',
-      color: 'rgba(255,140,0,0.85)',
-      fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
-      whiteSpace: 'nowrap'
-    });
+    subtitle.className = 'kpv2-history-subtitle';
+    subtitle.textContent = 'Browser history · Tab history';
 
     titleWrap.appendChild(title);
     titleWrap.appendChild(subtitle);
 
     const closeBtn = doc.createElement('button');
     closeBtn.type = 'button';
+    closeBtn.className = 'kpv2-history-close';
     closeBtn.textContent = '×';
     closeBtn.setAttribute('aria-label', 'Close');
-    Object.assign(closeBtn.style, {
-      width: '34px',
-      height: '34px',
-      borderRadius: '10px',
-      border: '1px solid rgba(255,255,255,0.14)',
-      background: 'rgba(0,0,0,0.25)',
-      color: 'rgba(255,255,255,0.9)',
-      fontSize: '22px',
-      lineHeight: '1',
-      cursor: 'pointer',
-      flex: '0 0 auto'
-    });
     closeBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -308,107 +460,66 @@ export class TabHistoryPopover {
     header.appendChild(closeBtn);
 
     const body = doc.createElement('div');
-    Object.assign(body.style, {
-      display: 'flex',
-      gap: '10px',
-      padding: '10px',
-      flex: '1 1 auto',
-      minHeight: '0',
-      overflow: 'hidden'
-    });
+    body.className = 'kpv2-history-body';
 
-    const makeColumn = ({ titleText }) => {
-      const col = doc.createElement('div');
-      Object.assign(col.style, {
-        flex: '1 1 0%',
-        minWidth: '0',
-        minHeight: '0',
-        display: 'flex',
-        flexDirection: 'column',
-        border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: '12px',
-        overflow: 'hidden',
-        background: 'rgba(0,0,0,0.18)'
-      });
+    const makeSection = ({ titleText }) => {
+      const section = doc.createElement('section');
+      section.className = 'kpv2-history-section';
 
-      const colHeader = doc.createElement('div');
-      Object.assign(colHeader.style, {
-        display: 'flex',
-        alignItems: 'baseline',
-        justifyContent: 'space-between',
-        gap: '10px',
-        padding: '10px 12px',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
-        background: 'rgba(0,0,0,0.18)'
-      });
+      const sectionHeader = doc.createElement('div');
+      sectionHeader.className = 'kpv2-history-section-header';
 
-      const colTitle = doc.createElement('div');
-      colTitle.textContent = titleText;
-      Object.assign(colTitle.style, {
-        fontSize: '13px',
-        fontWeight: '800',
-        color: 'rgba(255,255,255,0.9)',
-        fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif'
-      });
+      const sectionTitle = doc.createElement('div');
+      sectionTitle.className = 'kpv2-history-section-title';
+      sectionTitle.textContent = titleText;
 
-      const colHint = doc.createElement('div');
-      colHint.textContent = 'Click to navigate';
-      Object.assign(colHint.style, {
-        fontSize: '11px',
-        fontWeight: '600',
-        color: 'rgba(255,255,255,0.55)',
-        fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
-        whiteSpace: 'nowrap'
-      });
+      const sectionHint = doc.createElement('div');
+      sectionHint.className = 'kpv2-history-section-hint';
+      sectionHint.textContent = 'Click to navigate';
 
-      colHeader.appendChild(colTitle);
-      colHeader.appendChild(colHint);
+      sectionHeader.appendChild(sectionTitle);
+      sectionHeader.appendChild(sectionHint);
 
-      const colStatus = doc.createElement('div');
-      Object.assign(colStatus.style, {
-        padding: '8px 12px',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        fontSize: '12px',
-        color: 'rgba(255,255,255,0.65)',
-        fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif'
-      });
-      colStatus.textContent = 'Loading…';
+      const sectionStatus = doc.createElement('div');
+      sectionStatus.className = 'kpv2-history-section-status';
+      sectionStatus.textContent = 'Loading…';
 
-      const colList = createUrlListingContainer({
+      const rail = createUrlListingContainer({
         doc,
         view: 'list',
-        useInlineStyles: true,
-        scrollY: true,
+        useInlineStyles: false,
+        scrollY: false,
+        className: 'kpv2-history-rail',
         style: {
-          overflow: 'auto',
-          overflowX: 'hidden',
-          padding: '8px 6px',
-          flex: '1 1 auto',
-          minHeight: '0',
-          scrollbarWidth: 'thin',
-          scrollbarColor: 'rgba(255,255,255,0.2) rgba(0,0,0,0.1)'
+          // Rail layout is owned by CSS; keep a minimal fallback if styles lag.
+          display: 'flex',
+          flexDirection: 'row',
+          overflowX: 'auto',
+          overflowY: 'hidden'
         }
       });
+      rail.setAttribute('role', 'list');
 
-      col.appendChild(colHeader);
-      col.appendChild(colStatus);
-      col.appendChild(colList);
-      return { col, colStatus, colList };
+      section.appendChild(sectionHeader);
+      section.appendChild(sectionStatus);
+      section.appendChild(rail);
+      return { section, sectionStatus, rail };
     };
 
-    const tabCol = makeColumn({ titleText: 'Tab history' });
-    const browserCol = makeColumn({ titleText: 'Browser history' });
+    const tabSection = makeSection({ titleText: 'Tab history' });
+    const browserSection = makeSection({ titleText: 'Browser history' });
 
     panel.appendChild(header);
-    body.appendChild(tabCol.col);
-    body.appendChild(browserCol.col);
+    // Browser history above Tab history
+    body.appendChild(browserSection.section);
+    body.appendChild(tabSection.section);
     panel.appendChild(body);
 
     this._panel = panel;
-    this._tabStatus = tabCol.colStatus;
-    this._tabList = tabCol.colList;
-    this._browserStatus = browserCol.colStatus;
-    this._browserList = browserCol.colList;
+    this._tabStatus = tabSection.sectionStatus;
+    this._tabList = tabSection.rail;
+    this._browserStatus = browserSection.sectionStatus;
+    this._browserList = browserSection.rail;
   }
 
   async _loadAndRender() {
@@ -588,15 +699,7 @@ export class TabHistoryPopover {
         items: renderItems,
         view: 'list',
         useInlineStyles: false,
-        classNames: {
-          row: 'kp-url-row',
-          content: 'kp-url-content',
-          text: 'kp-url-text',
-          title: 'kp-url-domain',
-          meta: 'kp-url-title',
-          url: 'kp-url-path',
-          favicon: 'kp-url-favicon'
-        },
+        classNames: HISTORY_CARD_CLASS_NAMES,
         rowTag: 'a',
         getTitle: (it) => (it.node?.title || it.node?.url || '').toString(),
         getUrl: (it) => String(it.node?.url || ''),
@@ -618,32 +721,38 @@ export class TabHistoryPopover {
         },
         decorateRow: ({ row, item, idx, parts }) => {
           row.dataset.kpTabHistoryId = String(item.id);
+          row.setAttribute('role', 'listitem');
 
           // Use three-line layout like newtab
           renderThreeLineUrlListingEntry({ item: { url: item.node?.url, title: item.node?.title }, parts });
 
-          // Branch badge (+N)
-          const badge = document.createElement('div');
+          // Branch badge (+N) — corner of card
           if (item.branchCount > 1) {
+            const badge = document.createElement('div');
+            badge.className = 'kp-url-branch-badge';
             badge.textContent = `+${item.branchCount - 1}`;
-            Object.assign(badge.style, {
-              fontSize: '11px',
-              fontWeight: '700',
-              padding: '2px 8px',
-              borderRadius: '999px',
-              border: '1px solid rgba(255,140,0,0.35)',
-              background: 'rgba(255,140,0,0.12)',
-              color: 'rgba(255,140,0,0.92)',
-              flex: '0 0 auto',
-              fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif'
-            });
-            parts.content.appendChild(badge);
+            badge.setAttribute('aria-label', `${item.branchCount - 1} more branches`);
+            row.appendChild(badge);
           }
 
           // Keep dataset index for debugging/consistency.
           row.dataset.kpUrlListingIndex = String(idx);
         }
       });
+
+      // Keep rail flex layout after renderUrlListing.
+      if (this._tabList) {
+        this._tabList.classList.add('kpv2-history-rail');
+        // Scroll selected card into view when present.
+        const selected = this._tabList.querySelector('.kp-url-row--selected');
+        if (selected && typeof selected.scrollIntoView === 'function') {
+          try {
+            selected.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+          } catch {
+            try { selected.scrollIntoView(); } catch { /* ignore */ }
+          }
+        }
+      }
     };
 
     try {
@@ -681,15 +790,7 @@ export class TabHistoryPopover {
         items: deduped,
         view: 'list',
         useInlineStyles: false,
-        classNames: {
-          row: 'kp-url-row',
-          content: 'kp-url-content',
-          text: 'kp-url-text',
-          title: 'kp-url-domain',
-          meta: 'kp-url-title',
-          url: 'kp-url-path',
-          favicon: 'kp-url-favicon'
-        },
+        classNames: HISTORY_CARD_CLASS_NAMES,
         rowTag: 'a',
         getTitle: (it) => it.title,
         getUrl: (it) => it.url,
@@ -707,10 +808,14 @@ export class TabHistoryPopover {
           this.hide();
         },
         decorateRow: ({ row, item, parts }) => {
-          // Use three-line layout like newtab
+          row.setAttribute('role', 'listitem');
           renderThreeLineUrlListingEntry({ item, parts });
         }
       });
+
+      if (this._browserList) {
+        this._browserList.classList.add('kpv2-history-rail');
+      }
     };
 
     try {
@@ -724,5 +829,3 @@ export class TabHistoryPopover {
     }
   }
 }
-
-
