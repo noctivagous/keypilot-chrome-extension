@@ -93,6 +93,17 @@ export class OverlayManager {
     // Last known focus target (used for F-click scale-up pulse across all render modes).
     this._lastFocusElement = null;
     this._lastFocusRect = null;
+
+    /**
+     * Active temporary click/image effect overlays.
+     * Fixed-position ghosts must be torn down when the source leaves view or the
+     * page navigates — otherwise they animate alone over the next screen.
+     * @type {Set<{ pulse: Element, sourceEl: Element|null, originRect: DOMRect|null, rafId: number, timeoutId: number, io: IntersectionObserver|null, teardown: () => void }>}
+     */
+    this._activeEphemeralEffects = new Set();
+    this._ephemeralEffectLifecycleInstalled = false;
+    /** @type {(() => void)|null} */
+    this._ephemeralEffectLifecycleDispose = null;
     
     this.setupOverlayObserver();
     
@@ -458,7 +469,11 @@ export class OverlayManager {
     return this.highlightManager.setSelectionMode(mode);
   }
 
-  _getClickModeSettings() {
+  /**
+   * Apply click/text mode settings from chrome.storage (via KeyPilot).
+   * @param {object|null|undefined} settings
+   */
+  setModeSettings(settings) {
     const s = settings && typeof settings === 'object' ? settings : {};
     this._modeSettings = {
       clickMode: s.clickMode && typeof s.clickMode === 'object' ? s.clickMode : null,
@@ -473,7 +488,16 @@ export class OverlayManager {
     const rectangleThickness = Number(cm.rectangleThickness);
     const thickness = Number.isFinite(rectangleThickness) ? Math.min(Math.max(rectangleThickness, 1), 16) : 3;
     const overlayFillEnabled = cm.overlayFillEnabled === false ? false : true;
-    return { rectangleThickness: thickness, overlayFillEnabled };
+    const rawEffect = cm.clickEffect;
+    const clickEffect =
+      rawEffect === 'flash' ||
+      rawEffect === 'dash' ||
+      rawEffect === 'marquee' ||
+      rawEffect === 'scale' ||
+      rawEffect === 'none'
+        ? rawEffect
+        : (DEFAULT_SETTINGS.clickMode?.clickEffect || 'flash');
+    return { rectangleThickness: thickness, overlayFillEnabled, clickEffect };
   }
 
   _getTextModeSettings() {
@@ -2356,11 +2380,326 @@ export class OverlayManager {
   }
 
   /**
-   * F-key activation feedback: scale the focus outline up and fade it out.
+   * Install one-shot page lifecycle hooks that wipe fixed-position click effects
+   * during navigation / hide (SPA soft-nav, full load, bfcache, tab background).
+   */
+  _installEphemeralEffectLifecycle() {
+    if (this._ephemeralEffectLifecycleInstalled) return;
+    this._ephemeralEffectLifecycleInstalled = true;
+
+    const clear = () => {
+      try { this.clearEphemeralEffects(); } catch { /* ignore */ }
+    };
+
+    /** @type {Array<[EventTarget, string, EventListenerOrEventListenerObject, boolean|AddEventListenerOptions|undefined]>} */
+    const bindings = [];
+    const bind = (target, type, handler, options) => {
+      try {
+        target.addEventListener(type, handler, options);
+        bindings.push([target, type, handler, options]);
+      } catch { /* ignore */ }
+    };
+
+    bind(window, 'pagehide', clear, true);
+    bind(window, 'beforeunload', clear, true);
+    bind(window, 'popstate', clear, true);
+    bind(window, 'hashchange', clear, true);
+    bind(document, 'visibilitychange', () => {
+      if (document.visibilityState === 'hidden') clear();
+    }, true);
+    bind(window, 'pageshow', (e) => {
+      // bfcache restore can leave stale fixed ghosts from the prior visit.
+      if (e && e.persisted) clear();
+    }, true);
+
+    // Same-document SPA navigations: clear only after the history entry changes.
+    // (Avoid Navigation API "navigate" — it fires at click time and would kill
+    // the intentional flash before the user sees it.)
+    // popstate/hashchange already bound; also poll while effects are live via rAF.
+    try {
+      this._ephemeralLastHref = String(location.href || '');
+      this._ephemeralOnUrlMaybeChanged = () => {
+        const next = String(location.href || '');
+        if (next !== this._ephemeralLastHref) {
+          this._ephemeralLastHref = next;
+          clear();
+        }
+      };
+    } catch { /* ignore */ }
+
+    this._ephemeralEffectLifecycleDispose = () => {
+      try {
+        this._ephemeralLastHref = null;
+        this._ephemeralOnUrlMaybeChanged = null;
+      } catch { /* ignore */ }
+      for (const [target, type, handler, options] of bindings) {
+        try { target.removeEventListener(type, handler, options); } catch { /* ignore */ }
+      }
+      bindings.length = 0;
+      this._ephemeralEffectLifecycleInstalled = false;
+      this._ephemeralEffectLifecycleDispose = null;
+    };
+  }
+
+  /**
+   * Remove every temporary click / image-copy effect overlay immediately.
+   */
+  clearEphemeralEffects() {
+    const entries = Array.from(this._activeEphemeralEffects || []);
+    for (const entry of entries) {
+      try { entry.teardown?.(); } catch { /* ignore */ }
+    }
+    this._activeEphemeralEffects?.clear?.();
+  }
+
+  /**
+   * Track a temporary fixed overlay so it is removed when the source target is
+   * gone/hidden or the page navigates — not only when the CSS animation ends.
+   *
+   * @param {Element} pulse
+   * @param {Element|null|undefined} sourceEl
+   * @param {{ left: number, top: number, width: number, height: number }|null|undefined} originRect
+   * @param {number} cleanupMs
+   */
+  _trackEphemeralEffect(pulse, sourceEl, originRect, cleanupMs) {
+    if (!pulse) return;
+    this._installEphemeralEffectLifecycle();
+
+    const entry = {
+      pulse,
+      sourceEl: sourceEl && sourceEl.nodeType === 1 ? sourceEl : null,
+      originRect: originRect
+        ? {
+            left: originRect.left,
+            top: originRect.top,
+            width: originRect.width,
+            height: originRect.height
+          }
+        : null,
+      rafId: 0,
+      timeoutId: 0,
+      io: /** @type {IntersectionObserver|null} */ (null),
+      teardown: () => {}
+    };
+
+    let tornDown = false;
+    const teardown = () => {
+      if (tornDown) return;
+      tornDown = true;
+      this._activeEphemeralEffects.delete(entry);
+      if (entry.rafId) {
+        try { cancelAnimationFrame(entry.rafId); } catch { /* ignore */ }
+        entry.rafId = 0;
+      }
+      if (entry.timeoutId) {
+        try { clearTimeout(entry.timeoutId); } catch { /* ignore */ }
+        entry.timeoutId = 0;
+      }
+      if (entry.io) {
+        try { entry.io.disconnect(); } catch { /* ignore */ }
+        entry.io = null;
+      }
+      try {
+        if (pulse.isConnected) pulse.remove();
+      } catch { /* ignore */ }
+    };
+    entry.teardown = teardown;
+    this._activeEphemeralEffects.add(entry);
+
+    // Source left the viewport / was covered away → drop the ghost immediately.
+    if (entry.sourceEl) {
+      try {
+        entry.io = new IntersectionObserver(
+          (records) => {
+            for (const r of records) {
+              if (!r.isIntersecting || r.intersectionRatio <= 0) {
+                teardown();
+                return;
+              }
+            }
+          },
+          { root: null, threshold: 0 }
+        );
+        entry.io.observe(entry.sourceEl);
+      } catch {
+        entry.io = null;
+      }
+    }
+
+    // Poll for disconnect / zero-size / large layout jump (SPA transition, scroll-away).
+    const origin = entry.originRect;
+    const tick = () => {
+      if (tornDown) return;
+
+      // SPA soft-nav often keeps the document alive but changes the URL.
+      try {
+        const onUrl = this._ephemeralOnUrlMaybeChanged;
+        if (typeof onUrl === 'function') onUrl();
+        if (tornDown) return;
+      } catch { /* ignore */ }
+
+      const src = entry.sourceEl;
+      if (src) {
+        if (!src.isConnected) {
+          teardown();
+          return;
+        }
+        try {
+          const r = src.getBoundingClientRect();
+          if (!(r.width > 0) || !(r.height > 0)) {
+            teardown();
+            return;
+          }
+          // Source moved far from the frozen ghost rect → page is transitioning.
+          if (origin) {
+            const dx = Math.abs(r.left - origin.left);
+            const dy = Math.abs(r.top - origin.top);
+            const dw = Math.abs(r.width - origin.width);
+            const dh = Math.abs(r.height - origin.height);
+            if (dx > 48 || dy > 48 || dw > 64 || dh > 64) {
+              teardown();
+              return;
+            }
+          }
+          // Covered / opacity-0 during view transitions.
+          try {
+            const cs = window.getComputedStyle(src);
+            if (cs) {
+              const op = parseFloat(cs.opacity);
+              if (cs.display === 'none' || cs.visibility === 'hidden' || (Number.isFinite(op) && op < 0.05)) {
+                teardown();
+                return;
+              }
+            }
+          } catch { /* ignore */ }
+        } catch {
+          teardown();
+          return;
+        }
+      }
+      // Host document gone / pulse orphaned.
+      if (!pulse.isConnected) {
+        teardown();
+        return;
+      }
+      entry.rafId = requestAnimationFrame(tick);
+    };
+    entry.rafId = requestAnimationFrame(tick);
+
+    try {
+      pulse.addEventListener('animationend', teardown, { once: true });
+    } catch { /* ignore */ }
+
+    const ms = Number.isFinite(cleanupMs) ? Math.max(200, cleanupMs) : 1000;
+    entry.timeoutId = setTimeout(teardown, ms);
+  }
+
+  /**
+   * Approximate border-radius in CSS px for SVG rx/ry from a CSS border-radius string.
+   * @param {string|null|undefined} borderRadius
+   * @param {number} width
+   * @param {number} height
+   * @returns {number}
+   */
+  _borderRadiusToSvgRx(borderRadius, width, height) {
+    if (!borderRadius) return 3;
+    const first = String(borderRadius).trim().split(/\s+/)[0] || '';
+    if (!first) return 3;
+    if (first.endsWith('%')) {
+      const p = parseFloat(first);
+      if (!Number.isFinite(p)) return 3;
+      return Math.max(0, Math.min(width, height) * (p / 100));
+    }
+    const n = parseFloat(first);
+    return Number.isFinite(n) ? Math.max(0, n) : 3;
+  }
+
+  /**
+   * Map clickEffect id → CSS class + safety cleanup ms.
+   * @param {string} clickEffect
+   * @returns {{ className: string, cleanupMs: number } | null}
+   */
+  _clickEffectPresentation(clickEffect) {
+    switch (clickEffect) {
+      case 'flash':
+        return { className: CSS_CLASSES.FOCUS_FLASH, cleanupMs: 500 };
+      case 'scale':
+        return { className: CSS_CLASSES.FOCUS_PULSE, cleanupMs: 800 };
+      case 'marquee':
+        return { className: CSS_CLASSES.FOCUS_MARQUEE, cleanupMs: 1200 };
+      case 'dash':
+        return { className: CSS_CLASSES.FOCUS_DASH, cleanupMs: 1100 };
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * Build the dash-chase SVG overlay (dashed stroke travels the perimeter).
+   * @param {{ left: number, top: number, width: number, height: number }} rect
+   * @param {string|null|undefined} borderRadius
+   * @returns {SVGSVGElement}
+   */
+  _createDashChasePulse(rect, borderRadius) {
+    const w = Math.max(1, rect.width);
+    const h = Math.max(1, rect.height);
+    const stroke = 3;
+    const inset = stroke / 2;
+    const rw = Math.max(1, w - stroke);
+    const rh = Math.max(1, h - stroke);
+    const rx = Math.min(this._borderRadiusToSvgRx(borderRadius, w, h), rw / 2, rh / 2);
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', CSS_CLASSES.FOCUS_DASH);
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('data-kp-ephemeral-effect', 'dash');
+    svg.setAttribute('width', String(w));
+    svg.setAttribute('height', String(h));
+    svg.style.left = `${rect.left}px`;
+    svg.style.top = `${rect.top}px`;
+    svg.style.width = `${w}px`;
+    svg.style.height = `${h}px`;
+
+    const shape = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    shape.setAttribute('x', String(inset));
+    shape.setAttribute('y', String(inset));
+    shape.setAttribute('width', String(rw));
+    shape.setAttribute('height', String(rh));
+    shape.setAttribute('rx', String(rx));
+    shape.setAttribute('ry', String(rx));
+    shape.setAttribute('fill', 'none');
+    shape.setAttribute('stroke', COLORS.FLASH_GREEN);
+    shape.setAttribute('stroke-width', String(stroke));
+    shape.setAttribute('stroke-linecap', 'round');
+    shape.setAttribute('vector-effect', 'non-scaling-stroke');
+
+    // Perimeter of rounded rect (good enough for dash patterning).
+    const straight = 2 * (Math.max(0, rw - 2 * rx) + Math.max(0, rh - 2 * rx));
+    const corners = 2 * Math.PI * rx;
+    const peri = Math.max(24, straight + corners);
+    const dash = Math.max(10, Math.min(36, peri * 0.09));
+    const gap = Math.max(6, Math.min(22, peri * 0.055));
+    shape.setAttribute('stroke-dasharray', `${dash} ${gap}`);
+    shape.style.setProperty('--kp-dash-peri', String(peri));
+    shape.classList.add(`${CSS_CLASSES.FOCUS_DASH}-stroke`);
+
+    svg.appendChild(shape);
+    return svg;
+  }
+
+  /**
+   * F-key activation feedback for link-style targets.
    * Uses a temporary floating rectangle so it works in every render mode
    * (including DOM-hover element styling, where there is no focusOverlay div).
    *
-   * Whether the scale effect runs is decided solely by CLICKABLE_CATEGORY via
+   * Effect style comes from settings (clickMode.clickEffect):
+   *   - flash (default): hard strobe on the outline
+   *   - dash: dashed border chases around the perimeter
+   *   - marquee: solid chaser light travels around the perimeter
+   *   - scale: outline expands and fades out
+   *   - none: no animation
+   *
+   * Whether any effect runs is decided solely by CLICKABLE_CATEGORY via
    * ElementDetector.isLinkStyleCategory (LINK + GENERIC only). Sliders, media,
    * buttons, text, and controls never get the pulse.
    *
@@ -2378,12 +2717,18 @@ export class OverlayManager {
         ? detector.getClickableCategory(el)
         : this.getFocusCategory(el);
 
-      const showScale = (detector && typeof detector.isLinkStyleCategory === 'function')
+      const showEffect = (detector && typeof detector.isLinkStyleCategory === 'function')
         ? detector.isLinkStyleCategory(cat)
         : (cat === CLICKABLE_CATEGORY.LINK || cat === CLICKABLE_CATEGORY.GENERIC);
 
-      if (!showScale) return;
+      if (!showEffect) return;
     } catch { /* ignore */ }
+
+    const { clickEffect } = this._getClickModeSettings();
+    if (clickEffect === 'none') return;
+
+    const presentation = this._clickEffectPresentation(clickEffect);
+    if (!presentation) return;
 
     const rect = this._getFocusPulseRect();
     if (!rect) return;
@@ -2408,29 +2753,56 @@ export class OverlayManager {
       }
     } catch { /* ignore */ }
 
-    // Scale-up pulse ghost (link-style categories only).
+    // Click-effect ghost (link-style categories only).
     try {
-      const pulse = document.createElement('div');
-      pulse.className = CSS_CLASSES.FOCUS_PULSE;
-      pulse.setAttribute('aria-hidden', 'true');
-      // Position via left/top/width/height; CSS animation scales from transform-origin center.
-      pulse.style.left = `${rect.left}px`;
-      pulse.style.top = `${rect.top}px`;
-      pulse.style.width = `${rect.width}px`;
-      pulse.style.height = `${rect.height}px`;
-      // Match corners to the clicked element (pill links, rounded cards, circular avatars).
+      // Prefer a live rect from the activation target when available so tracking
+      // compares against the same box we paint.
+      let liveRect = rect;
+      if (el && el.nodeType === 1) {
+        try {
+          const r = el.getBoundingClientRect();
+          if (r && r.width > 0 && r.height > 0) {
+            liveRect = {
+              left: r.left,
+              top: r.top,
+              width: r.width,
+              height: r.height
+            };
+          }
+        } catch { /* keep last-focus rect */ }
+      }
+
+      // Don't start an effect if the target is already gone / not painted.
+      if (el && el.nodeType === 1) {
+        if (!el.isConnected) return;
+        try {
+          const cs = window.getComputedStyle(el);
+          if (cs && (cs.display === 'none' || cs.visibility === 'hidden')) return;
+        } catch { /* ignore */ }
+      }
+
       const borderRadius = this._resolveElementBorderRadius(el);
-      if (borderRadius) {
-        pulse.style.borderRadius = borderRadius;
+      /** @type {HTMLElement|SVGSVGElement} */
+      let pulse;
+      if (clickEffect === 'dash') {
+        pulse = this._createDashChasePulse(liveRect, borderRadius);
+      } else {
+        pulse = document.createElement('div');
+        pulse.className = presentation.className;
+        pulse.setAttribute('aria-hidden', 'true');
+        pulse.setAttribute('data-kp-ephemeral-effect', clickEffect);
+        // Position via left/top/width/height; CSS animation scales from transform-origin center.
+        pulse.style.left = `${liveRect.left}px`;
+        pulse.style.top = `${liveRect.top}px`;
+        pulse.style.width = `${liveRect.width}px`;
+        pulse.style.height = `${liveRect.height}px`;
+        // Match corners to the clicked element (pill links, rounded cards, circular avatars).
+        if (borderRadius) {
+          pulse.style.borderRadius = borderRadius;
+        }
       }
       document.body.appendChild(pulse);
-      pulse.addEventListener('animationend', () => {
-        try { pulse.remove(); } catch { /* ignore */ }
-      }, { once: true });
-      // Safety cleanup if animationend never fires.
-      setTimeout(() => {
-        try { if (pulse.isConnected) pulse.remove(); } catch { /* ignore */ }
-      }, 800);
+      this._trackEphemeralEffect(pulse, el, liveRect, presentation.cleanupMs);
     } catch (e) {
       if (window.KEYPILOT_DEBUG) {
         console.warn('[KeyPilot] focus pulse failed:', e);
@@ -2477,9 +2849,11 @@ export class OverlayManager {
     }
 
     try {
+      if (!element.isConnected) return;
       const pulse = document.createElement('div');
       pulse.className = CSS_CLASSES.IMAGE_COPY_PULSE;
       pulse.setAttribute('aria-hidden', 'true');
+      pulse.setAttribute('data-kp-ephemeral-effect', 'image-copy');
       pulse.style.left = `${left}px`;
       pulse.style.top = `${top}px`;
       pulse.style.width = `${width}px`;
@@ -2490,12 +2864,12 @@ export class OverlayManager {
         pulse.style.borderRadius = borderRadius;
       }
       document.body.appendChild(pulse);
-      pulse.addEventListener('animationend', () => {
-        try { pulse.remove(); } catch { /* ignore */ }
-      }, { once: true });
-      setTimeout(() => {
-        try { if (pulse.isConnected) pulse.remove(); } catch { /* ignore */ }
-      }, 900);
+      this._trackEphemeralEffect(
+        pulse,
+        element,
+        { left, top, width, height },
+        900
+      );
     } catch (e) {
       if (window.KEYPILOT_DEBUG) {
         console.warn('[KeyPilot] image-copy pulse failed:', e);
@@ -2725,6 +3099,10 @@ export class OverlayManager {
     // Close any open iframe/settings/guide/preview popovers and shared modal stack.
     try { this.hidePopover(); } catch { /* ignore */ }
     try { this.popupManager?.closeAll?.(); } catch { /* ignore */ }
+
+    // Drop fixed click/image effect ghosts + their page lifecycle listeners.
+    try { this.clearEphemeralEffects(); } catch { /* ignore */ }
+    try { this._ephemeralEffectLifecycleDispose?.(); } catch { /* ignore */ }
 
     if (this.overlayObserver) {
       this.overlayObserver.disconnect();

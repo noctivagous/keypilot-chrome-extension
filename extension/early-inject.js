@@ -15,6 +15,12 @@
   const ONBOARDING_PROGRESS_STORAGE_KEY = 'keypilot_onboarding_progress';
   const SETTINGS_STORAGE_KEY = 'kp_settings_v1';
   const Z_ONBOARDING_PANEL = 2147483017;
+  // Keep in sync with Z_INDEX.CONTROL_STRIP in src/config/constants.js
+  const Z_CONTROL_STRIP = 2147483025;
+  const CONTROL_STRIP_DEFAULT_TOP_PX = 16;
+  const CONTROL_STRIP_DEFAULT_LEFT_PX = 16;
+  const CONTROL_STRIP_HEIGHT_PX = 28;
+  const CONTROL_STRIP_ONBOARDING_GAP_PX = 8;
   const CURSOR_MODE = {
     NO_CUSTOM_CURSORS: 'NO-CUSTOM-CURSORS',
     CUSTOM_CURSORS: 'CUSTOM-CURSORS'
@@ -2310,6 +2316,12 @@
   let keyboardHelpStorageListener = null;
   let onboardingRoot = null;
   let onboardingStorageListener = null;
+  // Control strip defaults match SettingsManager DEFAULT_SETTINGS.controlStrip
+  let controlStripRoot = null;
+  let controlStripDesiredVisible = true;
+  let controlStripCollapsed = true;
+  let controlStripStorageListener = null;
+  let controlStripRefs = null; // { statusBtn, statusDot, statusLabel, modules, keyboardBtn, settingsBtn, collapseBtn, closeBtn }
   let mainLoadedListenerInstalled = false;
 
   function setupMainLoadedHandoffListener() {
@@ -2359,6 +2371,15 @@
         }
       } catch {}
       onboardingStorageListener = null;
+
+      // Stop reacting to control-strip settings once the main extension is active.
+      // Keep the DOM so ControlStrip can adopt it without flicker.
+      try {
+        if (controlStripStorageListener && chrome?.storage?.onChanged) {
+          chrome.storage.onChanged.removeListener(controlStripStorageListener);
+        }
+      } catch {}
+      controlStripStorageListener = null;
 
       console.log('[KeyPilot Early] Handed off to main extension, cursor control yielded');
     }, { once: true });
@@ -2882,6 +2903,8 @@
         // Keep the early checklist in sync so the main bundled UI can adopt without a visual "pop".
         try { renderEarlyOnboardingContent(null, state); } catch { /* ignore */ }
       }
+      // Control strip sits below onboarding when both occupy the top-left.
+      try { syncEarlyControlStripOnboardingOffset(); } catch { /* ignore */ }
     } catch {
       // ignore
     }
@@ -3314,6 +3337,471 @@
   }
 
   /**
+   * Merge a partial controlStrip object into kp_settings_v1 (sync, then local fallback).
+   * @param {{ visible?: boolean, collapsed?: boolean }} partial
+   */
+  function persistEarlyControlStripSettings(partial) {
+    try {
+      if (!chrome?.storage) return;
+      const apply = (area) => {
+        area.get([SETTINGS_STORAGE_KEY], (result) => {
+          try {
+            if (chrome.runtime?.lastError) return;
+            const prev = result && result[SETTINGS_STORAGE_KEY] && typeof result[SETTINGS_STORAGE_KEY] === 'object'
+              ? result[SETTINGS_STORAGE_KEY]
+              : {};
+            const prevCs = prev.controlStrip && typeof prev.controlStrip === 'object' ? prev.controlStrip : {};
+            const next = {
+              ...prev,
+              controlStrip: {
+                visible: typeof partial.visible === 'boolean' ? partial.visible : (prevCs.visible !== false),
+                collapsed: typeof partial.collapsed === 'boolean' ? partial.collapsed : !!prevCs.collapsed
+              }
+            };
+            area.set({ [SETTINGS_STORAGE_KEY]: next }, () => {
+              try { void chrome.runtime?.lastError; } catch { /* ignore */ }
+            });
+          } catch { /* ignore */ }
+        });
+      };
+      apply(chrome.storage.sync);
+      // Also write local as a best-effort mirror (SettingsManager reads sync first).
+      try { apply(chrome.storage.local); } catch { /* ignore */ }
+    } catch { /* ignore */ }
+  }
+
+  function parseControlStripFromSettings(settingsObj) {
+    const cs = settingsObj && typeof settingsObj === 'object' && settingsObj.controlStrip
+      && typeof settingsObj.controlStrip === 'object'
+      ? settingsObj.controlStrip
+      : null;
+    return {
+      // Defaults match SettingsManager DEFAULT_SETTINGS.controlStrip
+      visible: cs ? cs.visible !== false : true,
+      collapsed: cs ? !!cs.collapsed : true
+    };
+  }
+
+  function createEarlyControlStripSegmentButton(opts) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.setAttribute('aria-label', opts.ariaLabel || '');
+    if (opts.title) btn.title = opts.title;
+    if (opts.text) {
+      const label = document.createElement('span');
+      label.textContent = opts.text;
+      Object.assign(label.style, {
+        pointerEvents: 'none',
+        lineHeight: '1'
+      });
+      btn.appendChild(label);
+    }
+    Object.assign(btn.style, {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '4px',
+      height: '100%',
+      minHeight: `${CONTROL_STRIP_HEIGHT_PX - 2}px`,
+      margin: '0',
+      padding: opts.compact ? '0 8px' : '0 10px',
+      border: 'none',
+      borderRight: opts.last ? 'none' : '1px solid rgba(255,255,255,0.08)',
+      borderRadius: '0',
+      background: opts.primary
+        ? 'linear-gradient(180deg, #1a1b1f 0%, #121316 100%)'
+        : 'transparent',
+      color: 'rgba(220, 220, 225, 0.92)',
+      fontSize: '11px',
+      fontWeight: '600',
+      letterSpacing: '0.01em',
+      lineHeight: '1',
+      cursor: 'pointer',
+      flex: '0 0 auto',
+      boxShadow: 'none',
+      outline: 'none',
+      whiteSpace: 'nowrap'
+    });
+    btn.addEventListener('mouseenter', () => {
+      try {
+        if (isMainExtensionLoaded) return;
+        if (btn === controlStripRefs?.keyboardBtn && keyboardHelpVisible) {
+          btn.style.background = 'rgba(59, 130, 246, 0.18)';
+        } else {
+          btn.style.background = opts.primary
+            ? 'linear-gradient(180deg, #22232a 0%, #18191e 100%)'
+            : 'rgba(255,255,255,0.06)';
+        }
+      } catch { /* ignore */ }
+    });
+    btn.addEventListener('mouseleave', () => {
+      try {
+        if (isMainExtensionLoaded) return;
+        if (btn === controlStripRefs?.keyboardBtn && keyboardHelpVisible) {
+          btn.style.background = 'rgba(59, 130, 246, 0.18)';
+        } else {
+          btn.style.background = opts.primary
+            ? 'linear-gradient(180deg, #1a1b1f 0%, #121316 100%)'
+            : 'transparent';
+        }
+      } catch { /* ignore */ }
+    });
+    return btn;
+  }
+
+  function renderEarlyControlStripStatus() {
+    const refs = controlStripRefs;
+    if (!refs || !refs.statusLabel || !refs.statusDot) return;
+    const on = !!isExtensionEnabled;
+    try {
+      refs.statusLabel.textContent = on ? 'ON' : 'OFF';
+      refs.statusDot.style.background = on
+        ? 'rgba(16, 185, 129, 0.95)'
+        : 'rgba(148, 163, 184, 0.85)';
+      refs.statusDot.style.boxShadow = on
+        ? '0 0 0 2px rgba(16, 185, 129, 0.2)'
+        : '0 0 0 2px rgba(148, 163, 184, 0.15)';
+      refs.statusLabel.style.color = on
+        ? 'rgba(167, 243, 208, 0.95)'
+        : 'rgba(148, 163, 184, 0.95)';
+      if (refs.statusBtn) {
+        refs.statusBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        refs.statusBtn.title = on
+          ? 'KeyPilot is on — click to turn off (Alt+K)'
+          : 'KeyPilot is off — click to turn on (Alt+K)';
+      }
+    } catch { /* ignore */ }
+  }
+
+  function renderEarlyControlStripKeyboard() {
+    const btn = controlStripRefs?.keyboardBtn;
+    if (!btn) return;
+    const active = !!keyboardHelpVisible && !!isExtensionEnabled;
+    try {
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+      btn.style.background = active ? 'rgba(59, 130, 246, 0.18)' : 'transparent';
+      btn.style.color = active
+        ? 'rgba(191, 219, 254, 0.98)'
+        : 'rgba(220, 220, 225, 0.92)';
+      btn.title = active ? 'Hide keyboard reference' : 'Show keyboard reference';
+    } catch { /* ignore */ }
+  }
+
+  function applyEarlyControlStripCollapsedLayout() {
+    const refs = controlStripRefs;
+    if (!controlStripRoot || !refs) return;
+    const collapsed = !!controlStripCollapsed;
+    try {
+      if (refs.modules) refs.modules.style.display = collapsed ? 'none' : 'flex';
+      if (refs.closeBtn) refs.closeBtn.style.display = collapsed ? 'none' : 'inline-flex';
+      if (refs.collapseBtn) {
+        refs.collapseBtn.textContent = collapsed ? '▶' : '◀';
+        refs.collapseBtn.setAttribute(
+          'aria-label',
+          collapsed ? 'Expand control strip' : 'Collapse control strip'
+        );
+        refs.collapseBtn.title = collapsed ? 'Expand' : 'Collapse';
+        refs.collapseBtn.style.borderRight = collapsed
+          ? 'none'
+          : '1px solid rgba(255,255,255,0.08)';
+      }
+      controlStripRoot.setAttribute('data-kp-collapsed', collapsed ? 'true' : 'false');
+    } catch { /* ignore */ }
+  }
+
+  function syncEarlyControlStripOnboardingOffset() {
+    if (!controlStripRoot || !controlStripRoot.isConnected) return;
+    let top = CONTROL_STRIP_DEFAULT_TOP_PX;
+    try {
+      const panel = document.querySelector('.kp-onboarding-panel');
+      if (panel && panel.isConnected) {
+        const hidden = panel.hidden === true
+          || panel.getAttribute('hidden') !== null
+          || panel.style.display === 'none'
+          || (window.getComputedStyle
+            && (window.getComputedStyle(panel).display === 'none'
+              || window.getComputedStyle(panel).visibility === 'hidden'));
+        if (!hidden) {
+          const rect = panel.getBoundingClientRect();
+          if (rect && rect.height > 0 && rect.bottom > 0) {
+            if (rect.left < 400 && rect.top < 120) {
+              top = Math.max(
+                CONTROL_STRIP_DEFAULT_TOP_PX,
+                Math.round(rect.bottom + CONTROL_STRIP_ONBOARDING_GAP_PX)
+              );
+            }
+          }
+        }
+      }
+    } catch { /* ignore */ }
+    try {
+      controlStripRoot.style.top = `${top}px`;
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Ensure the control strip shell exists early (document_start).
+   * The bundled ControlStrip will adopt this element later to avoid flicker.
+   */
+  function ensureEarlyControlStripShell() {
+    try {
+      if (window !== window.top) return null;
+      if (isMainExtensionLoaded) return controlStripRoot;
+      if (controlStripRoot && controlStripRoot.isConnected) return controlStripRoot;
+
+      const existing = document.querySelector('.kp-control-strip[data-kp-early-control-strip="true"]');
+      if (existing && existing.isConnected) {
+        controlStripRoot = existing;
+        controlStripRefs = {
+          statusBtn: existing.querySelector('[data-kp-control-strip-status="true"]'),
+          statusDot: existing.querySelector('[data-kp-control-strip-status-dot="true"]'),
+          statusLabel: existing.querySelector('[data-kp-control-strip-status-label="true"]'),
+          modules: existing.querySelector('[data-kp-control-strip-modules="true"]'),
+          keyboardBtn: existing.querySelector('[data-kp-control-strip-keyboard="true"]'),
+          settingsBtn: existing.querySelector('[data-kp-control-strip-settings="true"]'),
+          collapseBtn: existing.querySelector('[data-kp-control-strip-collapse="true"]'),
+          closeBtn: existing.querySelector('[data-kp-control-strip-close="true"]')
+        };
+        return controlStripRoot;
+      }
+
+      const root = document.createElement('div');
+      root.className = 'kp-control-strip';
+      root.hidden = true;
+      root.setAttribute('role', 'toolbar');
+      root.setAttribute('aria-label', 'KeyPilot control strip');
+      root.setAttribute('data-kp-control-strip', 'true');
+      root.setAttribute('data-kp-early-control-strip', 'true');
+      root.dataset.kpEarlyControlStrip = 'true';
+
+      Object.assign(root.style, {
+        position: 'fixed',
+        left: `${CONTROL_STRIP_DEFAULT_LEFT_PX}px`,
+        top: `${CONTROL_STRIP_DEFAULT_TOP_PX}px`,
+        height: `${CONTROL_STRIP_HEIGHT_PX}px`,
+        minHeight: `${CONTROL_STRIP_HEIGHT_PX}px`,
+        maxHeight: `${CONTROL_STRIP_HEIGHT_PX}px`,
+        // Stay fully hidden until applyEarlyControlStripVisibility decides.
+        display: 'none',
+        flexDirection: 'row',
+        alignItems: 'stretch',
+        zIndex: String(Z_CONTROL_STRIP),
+        background: 'rgba(10, 11, 14, 0.98)',
+        color: 'rgba(248, 250, 252, 0.95)',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        borderRadius: '4px',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.5), 0 1px 4px rgba(0,0,0,0.35)',
+        fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
+        pointerEvents: 'none',
+        overflow: 'hidden',
+        boxSizing: 'border-box',
+        userSelect: 'none',
+        WebkitUserSelect: 'none'
+      });
+      try { applyPopupThemeVars(root); } catch { /* ignore */ }
+
+      const statusBtn = createEarlyControlStripSegmentButton({
+        ariaLabel: 'Toggle KeyPilot on or off',
+        title: 'Toggle KeyPilot (Alt+K)',
+        primary: true
+      });
+      statusBtn.setAttribute('data-kp-control-strip-status', 'true');
+
+      const statusInner = document.createElement('span');
+      Object.assign(statusInner.style, {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '6px',
+        pointerEvents: 'none'
+      });
+
+      const statusDot = document.createElement('span');
+      Object.assign(statusDot.style, {
+        width: '7px',
+        height: '7px',
+        borderRadius: '50%',
+        flex: '0 0 auto',
+        background: 'rgba(16, 185, 129, 0.95)',
+        boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.2)'
+      });
+      statusDot.setAttribute('aria-hidden', 'true');
+      statusDot.setAttribute('data-kp-control-strip-status-dot', 'true');
+
+      const statusLabel = document.createElement('span');
+      statusLabel.textContent = 'ON';
+      statusLabel.setAttribute('data-kp-control-strip-status-label', 'true');
+      Object.assign(statusLabel.style, {
+        fontSize: '11px',
+        fontWeight: '700',
+        letterSpacing: '0.06em',
+        lineHeight: '1'
+      });
+
+      statusInner.appendChild(statusDot);
+      statusInner.appendChild(statusLabel);
+      statusBtn.appendChild(statusInner);
+
+      const modules = document.createElement('div');
+      modules.setAttribute('data-kp-control-strip-modules', 'true');
+      Object.assign(modules.style, {
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'stretch',
+        flex: '0 0 auto'
+      });
+
+      const keyboardBtn = createEarlyControlStripSegmentButton({
+        ariaLabel: 'Toggle keyboard reference',
+        title: 'Keyboard reference',
+        text: 'KB'
+      });
+      keyboardBtn.setAttribute('data-kp-control-strip-keyboard', 'true');
+
+      const settingsBtn = createEarlyControlStripSegmentButton({
+        ariaLabel: 'Open KeyPilot settings',
+        title: 'Settings',
+        text: 'Settings'
+      });
+      settingsBtn.setAttribute('data-kp-control-strip-settings', 'true');
+
+      modules.appendChild(keyboardBtn);
+      modules.appendChild(settingsBtn);
+
+      const collapseBtn = createEarlyControlStripSegmentButton({
+        ariaLabel: 'Collapse control strip',
+        title: 'Collapse',
+        text: '◀',
+        compact: true
+      });
+      collapseBtn.setAttribute('data-kp-control-strip-collapse', 'true');
+
+      const closeBtn = createEarlyControlStripSegmentButton({
+        ariaLabel: 'Close control strip',
+        title: 'Close (Alt+J to show again)',
+        text: '×',
+        compact: true,
+        last: true
+      });
+      closeBtn.setAttribute('data-kp-control-strip-close', 'true');
+
+      // Early interactions (guarded so main extension owns handlers after handoff).
+      statusBtn.addEventListener('click', (e) => {
+        try { e.preventDefault(); e.stopPropagation(); } catch { /* ignore */ }
+        if (isMainExtensionLoaded) return;
+        try {
+          if (typeof chrome !== 'undefined' && chrome.runtime) {
+            chrome.runtime.sendMessage({ type: 'KP_TOGGLE_STATE' });
+          }
+        } catch { /* ignore */ }
+      });
+
+      keyboardBtn.addEventListener('click', (e) => {
+        try { e.preventDefault(); e.stopPropagation(); } catch { /* ignore */ }
+        if (isMainExtensionLoaded) return;
+        if (!isExtensionEnabled) return;
+        const next = !keyboardHelpVisible;
+        applyEarlyKeyboardHelpVisibility(next);
+        try {
+          const payload = { [KEYBOARD_HELP_STORAGE_KEY]: next };
+          chrome.storage.sync.set(payload).catch(() => {
+            try { chrome.storage.local.set(payload).catch(() => {}); } catch { /* ignore */ }
+          });
+        } catch { /* ignore */ }
+        renderEarlyControlStripKeyboard();
+      });
+
+      settingsBtn.addEventListener('click', (e) => {
+        try { e.preventDefault(); e.stopPropagation(); } catch { /* ignore */ }
+        // Settings popover requires the main content script; no-op until handoff.
+      });
+
+      collapseBtn.addEventListener('click', (e) => {
+        try { e.preventDefault(); e.stopPropagation(); } catch { /* ignore */ }
+        if (isMainExtensionLoaded) return;
+        controlStripCollapsed = !controlStripCollapsed;
+        applyEarlyControlStripCollapsedLayout();
+        persistEarlyControlStripSettings({ collapsed: controlStripCollapsed });
+      });
+
+      closeBtn.addEventListener('click', (e) => {
+        try { e.preventDefault(); e.stopPropagation(); } catch { /* ignore */ }
+        if (isMainExtensionLoaded) return;
+        controlStripDesiredVisible = false;
+        applyEarlyControlStripVisibility();
+        persistEarlyControlStripSettings({ visible: false });
+      });
+
+      root.appendChild(statusBtn);
+      root.appendChild(modules);
+      root.appendChild(collapseBtn);
+      root.appendChild(closeBtn);
+
+      (document.body || document.documentElement).appendChild(root);
+
+      controlStripRoot = root;
+      controlStripRefs = {
+        statusBtn,
+        statusDot,
+        statusLabel,
+        modules,
+        keyboardBtn,
+        settingsBtn,
+        collapseBtn,
+        closeBtn
+      };
+
+      renderEarlyControlStripStatus();
+      renderEarlyControlStripKeyboard();
+      applyEarlyControlStripCollapsedLayout();
+      return controlStripRoot;
+    } catch {
+      return null;
+    }
+  }
+
+  function applyEarlyControlStripVisibility() {
+    if (isMainExtensionLoaded) return;
+    ensureEarlyControlStripShell();
+    if (!controlStripRoot) return;
+    // Control strip stays available even when KeyPilot is disabled (On/Off re-enable).
+    const show = !!controlStripDesiredVisible;
+    try {
+      controlStripRoot.hidden = !show;
+      controlStripRoot.style.display = show ? 'flex' : 'none';
+      controlStripRoot.style.pointerEvents = show ? 'auto' : 'none';
+    } catch { /* ignore */ }
+    if (show) {
+      applyEarlyControlStripCollapsedLayout();
+      renderEarlyControlStripStatus();
+      renderEarlyControlStripKeyboard();
+      syncEarlyControlStripOnboardingOffset();
+    }
+  }
+
+  function applyEarlyControlStripFromSettingsObject(settingsObj) {
+    const parsed = parseControlStripFromSettings(settingsObj);
+    controlStripDesiredVisible = parsed.visible;
+    controlStripCollapsed = parsed.collapsed;
+    applyEarlyControlStripVisibility();
+  }
+
+  function setupControlStripStorageListener() {
+    if (controlStripStorageListener || !chrome?.storage?.onChanged) return;
+    controlStripStorageListener = (changes, areaName) => {
+      if (isMainExtensionLoaded) return;
+      if (!changes || (areaName !== 'sync' && areaName !== 'local')) return;
+      if (!Object.prototype.hasOwnProperty.call(changes, SETTINGS_STORAGE_KEY)) return;
+      try {
+        const next = changes[SETTINGS_STORAGE_KEY]?.newValue;
+        applyEarlyControlStripFromSettingsObject(next && typeof next === 'object' ? next : null);
+      } catch { /* ignore */ }
+    };
+    try {
+      chrome.storage.onChanged.addListener(controlStripStorageListener);
+    } catch { /* ignore */ }
+  }
+
+  /**
    * Ensure the floating keyboard reference shell exists early (document_start).
    * The bundled extension will "adopt" this element later to avoid flicker.
    */
@@ -3534,6 +4022,7 @@
     ensureEarlyFloatingKeyboardHelpShell();
     if (!keyboardHelpRoot) return;
     keyboardHelpRoot.hidden = !(isExtensionEnabled && keyboardHelpVisible);
+    try { renderEarlyControlStripKeyboard(); } catch { /* ignore */ }
   }
 
   async function getKeyboardHelpVisibleFromStorage() {
@@ -3619,12 +4108,16 @@
           updateCursorVisibility();
           ensureEarlyFloatingKeyboardHelpShell();
           applyEarlyKeyboardHelpVisibility(false);
+          ensureEarlyControlStripShell();
+          applyEarlyControlStripVisibility();
           return;
         }
         isExtensionEnabled = result.keypilot_enabled !== false;
         keyboardHelpVisible = result[KEYBOARD_HELP_STORAGE_KEY] === true;
+        let settingsObj = null;
         try {
           const st = result && result[SETTINGS_STORAGE_KEY] && typeof result[SETTINGS_STORAGE_KEY] === 'object' ? result[SETTINGS_STORAGE_KEY] : null;
+          settingsObj = st;
           keyboardLayoutId = normalizeKeyboardLayoutId(st && st.keyboardLayoutId);
         } catch {
           keyboardLayoutId = normalizeKeyboardLayoutId(keyboardLayoutId);
@@ -3636,6 +4129,9 @@
         applyEarlyKeyboardHelpVisibility(keyboardHelpVisible);
         setupKeyboardHelpStorageListener();
         setupCursorSettingsListener();
+        // Control strip early shell (adopted later by main bundle).
+        applyEarlyControlStripFromSettingsObject(settingsObj);
+        setupControlStripStorageListener();
       });
     } else {
       // No chrome storage available, default to enabled
@@ -3643,6 +4139,8 @@
       updateCursorVisibility();
       ensureEarlyFloatingKeyboardHelpShell();
       applyEarlyKeyboardHelpVisibility(false);
+      ensureEarlyControlStripShell();
+      applyEarlyControlStripVisibility();
     }
   }
 
@@ -3650,11 +4148,24 @@
    * Check extension state from storage
    */
   async function checkExtensionState() {
+    let settingsObj = null;
     try {
       if (typeof chrome !== 'undefined' && chrome.storage) {
-        const result = await chrome.storage.sync.get(['keypilot_enabled', KEYBOARD_HELP_STORAGE_KEY]);
+        const result = await chrome.storage.sync.get([
+          'keypilot_enabled',
+          KEYBOARD_HELP_STORAGE_KEY,
+          SETTINGS_STORAGE_KEY
+        ]);
         isExtensionEnabled = result.keypilot_enabled !== false; // Default to true
         keyboardHelpVisible = result[KEYBOARD_HELP_STORAGE_KEY] === true;
+        try {
+          settingsObj = result && result[SETTINGS_STORAGE_KEY] && typeof result[SETTINGS_STORAGE_KEY] === 'object'
+            ? result[SETTINGS_STORAGE_KEY]
+            : null;
+          if (settingsObj) {
+            keyboardLayoutId = normalizeKeyboardLayoutId(settingsObj.keyboardLayoutId);
+          }
+        } catch { /* ignore */ }
       }
     } catch (error) {
       // Fallback to localStorage if Chrome storage fails
@@ -3670,6 +4181,8 @@
     applyEarlyKeyboardHelpVisibility(keyboardHelpVisible);
     setupKeyboardHelpStorageListener();
     setupCursorSettingsListener();
+    applyEarlyControlStripFromSettingsObject(settingsObj);
+    setupControlStripStorageListener();
   }
 
   /**
@@ -3682,6 +4195,17 @@
           isExtensionEnabled = message.enabled;
           updateCursorVisibility();
           applyEarlyKeyboardHelpVisibility(keyboardHelpVisible);
+          try { renderEarlyControlStripStatus(); } catch { /* ignore */ }
+          try { renderEarlyControlStripKeyboard(); } catch { /* ignore */ }
+        } else if (message.type === 'KP_TOGGLE_STATE' || message.type === 'KP_UPDATE_STATE') {
+          // Broadcast from service worker after toggle; keep strip On/Off indicator current.
+          if (typeof message.enabled === 'boolean') {
+            isExtensionEnabled = message.enabled;
+            updateCursorVisibility();
+            applyEarlyKeyboardHelpVisibility(keyboardHelpVisible);
+            try { renderEarlyControlStripStatus(); } catch { /* ignore */ }
+            try { renderEarlyControlStripKeyboard(); } catch { /* ignore */ }
+          }
         } else if (message.type === 'CURSOR_MODE_CHANGE') {
           currentMode = message.mode;
           // Early cursor only shows basic crosshair, mode changes handled by main extension
@@ -3920,9 +4444,14 @@
     // NOTE: The rules are scoped to `html.kpv2-cursor-hidden` so they are inert unless enabled.
     injectEarlyCSS();
 
-    // Onboarding shell should appear as early as possible to avoid UI pop-in.
+    // Onboarding + control strip shells should appear as early as possible to avoid UI pop-in.
     // The bundled content script will adopt this DOM and hydrate it later.
     setupEarlyOnboardingStorageSync();
+    // Kick control-strip shell immediately (visibility refined once storage returns).
+    try {
+      ensureEarlyControlStripShell();
+      applyEarlyControlStripVisibility();
+    } catch { /* ignore */ }
     await checkExtensionState();
 
     // Always start keyboard capture for Alt+K toggle, regardless of extension state
@@ -3931,6 +4460,13 @@
     if (isExtensionEnabled) {
       initEarlyInjection();
     } else {
+      // Keep control strip available so On/Off can re-enable before main bundle loads.
+      try {
+        ensureEarlyControlStripShell();
+        applyEarlyControlStripVisibility();
+        setupControlStripStorageListener();
+        setupStateListener();
+      } catch { /* ignore */ }
       console.log('[KeyPilot Early] Extension is disabled, skipping early injection but keeping Alt+K capture active');
     }
   }

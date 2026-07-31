@@ -341,6 +341,51 @@
                 <div class="field-hint">Border thickness for the green focus rectangle (1–16px).</div>
               </div>
 
+              <div class="divider"></div>
+
+              <h3 class="subhead">Click effect</h3>
+              <p class="field-hint" style="margin-top: 0;">
+                Visual feedback when you press <kbd>F</kbd> to activate a link-style target.
+              </p>
+
+              <div class="radio-group" role="radiogroup" aria-label="Click effect">
+                <label class="radio">
+                  <input type="radio" name="click-effect" value="flash" />
+                  <span>
+                    <span class="radio-title">Flash</span>
+                    <span class="radio-sub">Hard strobe on the outline (default)</span>
+                  </span>
+                </label>
+                <label class="radio">
+                  <input type="radio" name="click-effect" value="dash" />
+                  <span>
+                    <span class="radio-title">Dash chase</span>
+                    <span class="radio-sub">Dashed border marches around the edge</span>
+                  </span>
+                </label>
+                <label class="radio">
+                  <input type="radio" name="click-effect" value="marquee" />
+                  <span>
+                    <span class="radio-title">Marquee</span>
+                    <span class="radio-sub">Solid light travels around the border</span>
+                  </span>
+                </label>
+                <label class="radio">
+                  <input type="radio" name="click-effect" value="scale" />
+                  <span>
+                    <span class="radio-title">Scale</span>
+                    <span class="radio-sub">Outline expands outward and fades</span>
+                  </span>
+                </label>
+                <label class="radio">
+                  <input type="radio" name="click-effect" value="none" />
+                  <span>
+                    <span class="radio-title">None</span>
+                    <span class="radio-sub">No activation animation</span>
+                  </span>
+                </label>
+              </div>
+
               <div class="row-actions">
                 <button id="click-mode-reset" class="btn btn-secondary btn-small" type="button">Reset Click Mode to defaults</button>
               </div>

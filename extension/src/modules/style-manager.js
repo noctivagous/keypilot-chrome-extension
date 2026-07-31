@@ -193,6 +193,77 @@ export class StyleManager {
         }
       }
 
+      /* F-key activation: hard strobe on the outline (minimal motion). */
+      @keyframes kpv2-focus-flash {
+        0% {
+          opacity: 0;
+          border-color: ${COLORS.FLASH_GREEN};
+          box-shadow:
+            0 0 0 0 transparent,
+            0 0 0 0 transparent;
+        }
+        10% {
+          opacity: 1;
+          border-color: #ffffff;
+          box-shadow:
+            0 0 0 1px ${COLORS.FLASH_GREEN},
+            0 0 8px 1px ${COLORS.FLASH_GREEN_GLOW};
+        }
+        40% {
+          opacity: 1;
+          border-color: ${COLORS.FLASH_GREEN};
+          box-shadow:
+            0 0 0 1px ${COLORS.FLASH_GREEN_SHADOW},
+            0 0 5px 0 ${COLORS.FLASH_GREEN_GLOW};
+        }
+        100% {
+          opacity: 0;
+          border-color: ${COLORS.FLASH_GREEN};
+          box-shadow:
+            0 0 0 0 transparent,
+            0 0 0 0 transparent;
+        }
+      }
+
+      /* F-key activation: marquee chaser travels once around the perimeter, then fades. */
+      @keyframes kpv2-focus-marquee-spin {
+        0% {
+          transform: translate(-50%, -50%) rotate(0deg);
+          opacity: 1;
+        }
+        78% {
+          opacity: 1;
+        }
+        100% {
+          transform: translate(-50%, -50%) rotate(360deg);
+          opacity: 0;
+        }
+      }
+
+      @keyframes kpv2-focus-marquee-fade {
+        0%, 70% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
+
+      /* F-key activation: dashed stroke marches around the rect perimeter. */
+      @keyframes kpv2-focus-dash-chase {
+        0% {
+          stroke-dashoffset: 0;
+          opacity: 1;
+        }
+        78% {
+          opacity: 1;
+        }
+        100% {
+          stroke-dashoffset: calc(-1 * var(--kp-dash-peri, 200));
+          opacity: 0;
+        }
+      }
+
       /*
        * Image copy (I-key): shutter flash → slight pop → shrink away
        * (read as "captured / pocketed" rather than the F-click expand-out pulse).
@@ -249,6 +320,87 @@ export class StyleManager {
         transform-origin: center center;
         will-change: transform, opacity;
         animation: kpv2-focus-pulse 420ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+      }
+
+      /* Flash / strobe: brief bright border + glow, almost no geometry motion. */
+      .${CSS_CLASSES.FOCUS_FLASH} {
+        position: fixed;
+        left: 0;
+        top: 0;
+        pointer-events: none;
+        z-index: ${Z_INDEX.OVERLAYS_ABOVE};
+        box-sizing: border-box;
+        border: 3px solid ${COLORS.FLASH_GREEN};
+        border-radius: 3px;
+        background: transparent;
+        will-change: opacity, box-shadow, border-color;
+        animation: kpv2-focus-flash 320ms ease-out forwards;
+      }
+
+      /* Dash chase: SVG host; stroke animation lives on the child rect. */
+      .${CSS_CLASSES.FOCUS_DASH} {
+        position: fixed;
+        left: 0;
+        top: 0;
+        pointer-events: none;
+        z-index: ${Z_INDEX.OVERLAYS_ABOVE};
+        overflow: visible;
+        filter: drop-shadow(0 0 6px ${COLORS.FLASH_GREEN_GLOW});
+      }
+
+      .${CSS_CLASSES.FOCUS_DASH}-stroke {
+        will-change: stroke-dashoffset, opacity;
+        animation: kpv2-focus-dash-chase 720ms linear forwards;
+      }
+
+      /*
+       * Marquee click effect: a bright segment races around the element border
+       * (theater marquee / runway lights). Mask keeps only a thin ring visible.
+       */
+      .${CSS_CLASSES.FOCUS_MARQUEE} {
+        position: fixed;
+        left: 0;
+        top: 0;
+        pointer-events: none;
+        z-index: ${Z_INDEX.OVERLAYS_ABOVE};
+        box-sizing: border-box;
+        border-radius: 3px;
+        overflow: hidden;
+        padding: 3px;
+        background: transparent;
+        /* Ring-only mask: paint border, punch out the interior. */
+        -webkit-mask:
+          linear-gradient(#fff 0 0) content-box,
+          linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask:
+          linear-gradient(#fff 0 0) content-box,
+          linear-gradient(#fff 0 0);
+        mask-composite: exclude;
+        animation: kpv2-focus-marquee-fade 720ms ease-out forwards;
+      }
+
+      .${CSS_CLASSES.FOCUS_MARQUEE}::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 220%;
+        height: 220%;
+        transform: translate(-50%, -50%) rotate(0deg);
+        background: conic-gradient(
+          from 0deg,
+          transparent 0deg,
+          transparent 250deg,
+          ${COLORS.FLASH_GREEN_SHADOW} 280deg,
+          ${COLORS.FLASH_GREEN} 310deg,
+          #ffffff 328deg,
+          ${COLORS.FLASH_GREEN} 342deg,
+          transparent 360deg
+        );
+        box-shadow: 0 0 14px 2px ${COLORS.FLASH_GREEN_GLOW};
+        will-change: transform, opacity;
+        animation: kpv2-focus-marquee-spin 720ms linear forwards;
       }
 
       .${CSS_CLASSES.IMAGE_COPY_PULSE} {

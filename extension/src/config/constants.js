@@ -57,6 +57,12 @@ export const CSS_CLASSES = {
   FOCUS_OVERLAY: 'kpv2-focus-overlay',
   /** Temporary outline that scales up on F-click activation */
   FOCUS_PULSE: 'kpv2-focus-pulse',
+  /** Temporary outline with a marquee/chaser light traveling the perimeter on F-click */
+  FOCUS_MARQUEE: 'kpv2-focus-marquee',
+  /** Temporary hard flash (strobe) on F-click activation */
+  FOCUS_FLASH: 'kpv2-focus-flash',
+  /** Temporary dashed border whose dashes chase around the perimeter on F-click */
+  FOCUS_DASH: 'kpv2-focus-dash',
   /** Temporary frame that scales (pop then shrink) when copying an image under cursor */
   IMAGE_COPY_PULSE: 'kpv2-image-copy-pulse',
   DELETE_OVERLAY: 'kpv2-delete-overlay',

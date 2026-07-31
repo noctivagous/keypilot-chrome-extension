@@ -25,6 +25,16 @@ export { SEARCH_ENGINE_META, DEFAULT_SEARCH_ENGINE_ID, getSearchEngineMeta };
 /** @typedef {'t_square'|'crosshair'} TextCursorType */
 /** @typedef {typeof CURSOR_MODE[keyof typeof CURSOR_MODE]} CursorMode */
 /** @typedef {'smooth'|'instant'} ScrollSpeed */
+/** @typedef {'flash'|'dash'|'marquee'|'scale'|'none'} ClickEffect */
+
+/** Valid F-key click activation effects (order is settings UI preference). */
+export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
+  'flash',
+  'dash',
+  'marquee',
+  'scale',
+  'none'
+]));
 
 /**
  * @typedef {{
@@ -39,7 +49,8 @@ export { SEARCH_ENGINE_META, DEFAULT_SEARCH_ENGINE_ID, getSearchEngineMeta };
  * @typedef {{
  *   cursor: ClickCursorSettings,
  *   overlayFillEnabled: boolean,
- *   rectangleThickness: number
+ *   rectangleThickness: number,
+ *   clickEffect: ClickEffect
  * }} ClickModeSettings
  */
 
@@ -103,7 +114,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
     // When true, the green focus rectangle can include a translucent fill (where applicable).
     overlayFillEnabled: true,
     // Focus rectangle border thickness in px.
-    rectangleThickness: 3
+    rectangleThickness: 3,
+    // F-key activation feedback on link-style targets (flash is the default).
+    clickEffect: 'flash'
   }),
   textMode: Object.freeze({
     cursorType: 't_square',
@@ -172,6 +185,17 @@ function normalizeClickCursorType(raw) {
 
 /**
  * @param {any} raw
+ * @returns {ClickEffect}
+ */
+function normalizeClickEffect(raw) {
+  if (raw === 'flash' || raw === 'dash' || raw === 'marquee' || raw === 'scale' || raw === 'none') {
+    return raw;
+  }
+  return DEFAULT_SETTINGS.clickMode.clickEffect;
+}
+
+/**
+ * @param {any} raw
  * @returns {TextCursorType}
  */
 function normalizeTextCursorType(raw) {
@@ -217,7 +241,8 @@ function normalizeClickMode(raw) {
       DEFAULT_SETTINGS.clickMode.rectangleThickness,
       1,
       16
-    )
+    ),
+    clickEffect: normalizeClickEffect(stored.clickEffect)
   };
 }
 

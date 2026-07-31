@@ -1,7 +1,7 @@
 import { CURSOR_MODE } from '../src/config/constants.js';
 import { normalizeKeyboardLayoutId } from '../src/config/keyboard-layouts.js';
 import { SEARCH_ENGINE_META } from '../src/config/search-engines.js';
-import { DEFAULT_SETTINGS, getSettings, normalizeCursorMode, normalizeSearchEngine, setSettings, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
+import { CLICK_EFFECT_IDS, DEFAULT_SETTINGS, getSettings, normalizeCursorMode, normalizeSearchEngine, setSettings, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
 import { GENERIC_FAVICON_DATA_URL, getExtensionFaviconUrl } from '../src/ui/url-listing.js';
 import { startKeyPilotOnPage } from './keypilot-page-init.js';
 import { CursorManager } from '../src/modules/cursor.js';
@@ -258,6 +258,7 @@ async function render() {
   const clickOverlayFill = /** @type {HTMLInputElement|null} */ (document.getElementById('click-overlay-fill'));
   const clickRectThicknessRange = /** @type {HTMLInputElement|null} */ (document.getElementById('click-rect-thickness-range'));
   const clickRectThicknessNumber = /** @type {HTMLInputElement|null} */ (document.getElementById('click-rect-thickness-number'));
+  const clickEffectRadios = /** @type {HTMLInputElement[]} */ (Array.from(document.querySelectorAll('input[name="click-effect"]')));
   const clickCursorResetBtn = document.getElementById('click-cursor-reset');
   const clickModeResetBtn = document.getElementById('click-mode-reset');
 
@@ -352,6 +353,11 @@ async function render() {
     if (clickOverlayFill) clickOverlayFill.checked = !!cm?.overlayFillEnabled;
     setInputValue(clickRectThicknessRange, cm?.rectangleThickness ?? DEFAULT_SETTINGS.clickMode.rectangleThickness);
     setInputValue(clickRectThicknessNumber, cm?.rectangleThickness ?? DEFAULT_SETTINGS.clickMode.rectangleThickness);
+
+    const effect = cm?.clickEffect ?? DEFAULT_SETTINGS.clickMode.clickEffect ?? 'flash';
+    clickEffectRadios.forEach((r) => {
+      r.checked = r.value === effect;
+    });
 
     const type = cm?.cursor?.type ?? DEFAULT_SETTINGS.clickMode.cursor.type;
     if (type === 'native_arrow' || type === 'native_pointer') {
@@ -507,6 +513,18 @@ async function render() {
   clickRectThicknessRange?.addEventListener('input', async () => commitClickRectThickness(clickRectThicknessRange.value), true);
   clickRectThicknessNumber?.addEventListener('input', async () => commitClickRectThickness(clickRectThicknessNumber.value), true);
 
+  clickEffectRadios.forEach((radio) => {
+    radio.addEventListener('change', async () => {
+      if (!radio.checked) return;
+      const value = CLICK_EFFECT_IDS.includes(/** @type {any} */ (radio.value))
+        ? radio.value
+        : 'flash';
+      await setSettings({ clickMode: { clickEffect: value } });
+      const s = await getSettings();
+      applyClickMode(s.clickMode);
+    }, true);
+  });
+
   clickCursorResetBtn?.addEventListener('click', async () => {
     await setSettings({ clickMode: { cursor: { ...DEFAULT_SETTINGS.clickMode.cursor } } });
     const s = await getSettings();
@@ -514,7 +532,12 @@ async function render() {
   }, true);
 
   clickModeResetBtn?.addEventListener('click', async () => {
-    await setSettings({ clickMode: { ...DEFAULT_SETTINGS.clickMode } });
+    await setSettings({
+      clickMode: {
+        ...DEFAULT_SETTINGS.clickMode,
+        cursor: { ...DEFAULT_SETTINGS.clickMode.cursor }
+      }
+    });
     const s = await getSettings();
     applyClickMode(s.clickMode);
   }, true);

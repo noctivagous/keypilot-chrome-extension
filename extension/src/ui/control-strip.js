@@ -177,6 +177,43 @@ export class ControlStrip {
   _ensure() {
     if (this.root && this.root.isConnected) return;
 
+    // If early-inject created the shell at document_start, adopt it to avoid flicker.
+    try {
+      const existing = document.querySelector('.kp-control-strip[data-kp-early-control-strip="true"]');
+      if (existing && existing.isConnected) {
+        const statusBtn = existing.querySelector('[data-kp-control-strip-status="true"]');
+        const statusDot = existing.querySelector('[data-kp-control-strip-status-dot="true"]');
+        const statusLabel = existing.querySelector('[data-kp-control-strip-status-label="true"]');
+        const modules = existing.querySelector('[data-kp-control-strip-modules="true"]');
+        const keyboardBtn = existing.querySelector('[data-kp-control-strip-keyboard="true"]');
+        const settingsBtn = existing.querySelector('[data-kp-control-strip-settings="true"]');
+        const collapseBtn = existing.querySelector('[data-kp-control-strip-collapse="true"]');
+        const closeBtn = existing.querySelector('[data-kp-control-strip-close="true"]');
+
+        if (statusBtn && modules && keyboardBtn && settingsBtn && collapseBtn && closeBtn) {
+          // Enrich early shell with icons if it only has text labels.
+          try { this._ensureSegmentIcon(keyboardBtn, 'TOGGLE_KEYBOARD_HELP'); } catch { /* ignore */ }
+          try { this._ensureSegmentIcon(settingsBtn, 'OPEN_SETTINGS_POPOVER'); } catch { /* ignore */ }
+
+          this.root = existing;
+          this._modulesEl = modules;
+          this._statusBtn = statusBtn;
+          this._statusDot = statusDot;
+          this._statusLabel = statusLabel;
+          this._keyboardBtn = keyboardBtn;
+          this._settingsBtn = settingsBtn;
+          this._collapseBtn = collapseBtn;
+          this._closeBtn = closeBtn;
+
+          this._bindButtonHandlers();
+          this._renderStatus();
+          this._renderKeyboard();
+          this._applyCollapsedLayout();
+          return;
+        }
+      }
+    } catch { /* ignore */ }
+
     const root = document.createElement('div');
     root.className = ROOT_CLASS;
     root.hidden = true;
@@ -235,9 +272,11 @@ export class ControlStrip {
       boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.2)'
     });
     statusDot.setAttribute('aria-hidden', 'true');
+    statusDot.setAttribute('data-kp-control-strip-status-dot', 'true');
 
     const statusLabel = document.createElement('span');
     statusLabel.textContent = 'ON';
+    statusLabel.setAttribute('data-kp-control-strip-status-label', 'true');
     Object.assign(statusLabel.style, {
       fontSize: '11px',
       fontWeight: '700',
@@ -248,7 +287,6 @@ export class ControlStrip {
     statusInner.appendChild(statusDot);
     statusInner.appendChild(statusLabel);
     statusBtn.appendChild(statusInner);
-    statusBtn.addEventListener('click', this._onStatusClick);
 
     // Expandable modules (hidden when collapsed)
     const modules = document.createElement('div');
@@ -267,7 +305,6 @@ export class ControlStrip {
       iconActionId: 'TOGGLE_KEYBOARD_HELP'
     });
     keyboardBtn.setAttribute('data-kp-control-strip-keyboard', 'true');
-    keyboardBtn.addEventListener('click', this._onKeyboardClick);
 
     const settingsBtn = this._createSegmentButton({
       ariaLabel: 'Open KeyPilot settings',
@@ -276,7 +313,6 @@ export class ControlStrip {
       iconActionId: 'OPEN_SETTINGS_POPOVER'
     });
     settingsBtn.setAttribute('data-kp-control-strip-settings', 'true');
-    settingsBtn.addEventListener('click', this._onSettingsClick);
 
     modules.appendChild(keyboardBtn);
     modules.appendChild(settingsBtn);
@@ -289,7 +325,6 @@ export class ControlStrip {
       compact: true
     });
     collapseBtn.setAttribute('data-kp-control-strip-collapse', 'true');
-    collapseBtn.addEventListener('click', this._onCollapseClick);
 
     // Close
     const closeBtn = this._createSegmentButton({
@@ -300,7 +335,6 @@ export class ControlStrip {
       last: true
     });
     closeBtn.setAttribute('data-kp-control-strip-close', 'true');
-    closeBtn.addEventListener('click', this._onCloseClick);
 
     root.appendChild(statusBtn);
     root.appendChild(modules);
@@ -319,9 +353,54 @@ export class ControlStrip {
     this._collapseBtn = collapseBtn;
     this._closeBtn = closeBtn;
 
+    this._bindButtonHandlers();
     this._renderStatus();
     this._renderKeyboard();
     this._applyCollapsedLayout();
+  }
+
+  /**
+   * Attach click handlers (safe to call after early-inject adoption).
+   */
+  _bindButtonHandlers() {
+    try {
+      if (this._statusBtn) {
+        this._statusBtn.removeEventListener('click', this._onStatusClick);
+        this._statusBtn.addEventListener('click', this._onStatusClick);
+      }
+      if (this._keyboardBtn) {
+        this._keyboardBtn.removeEventListener('click', this._onKeyboardClick);
+        this._keyboardBtn.addEventListener('click', this._onKeyboardClick);
+      }
+      if (this._settingsBtn) {
+        this._settingsBtn.removeEventListener('click', this._onSettingsClick);
+        this._settingsBtn.addEventListener('click', this._onSettingsClick);
+      }
+      if (this._collapseBtn) {
+        this._collapseBtn.removeEventListener('click', this._onCollapseClick);
+        this._collapseBtn.addEventListener('click', this._onCollapseClick);
+      }
+      if (this._closeBtn) {
+        this._closeBtn.removeEventListener('click', this._onCloseClick);
+        this._closeBtn.addEventListener('click', this._onCloseClick);
+      }
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Prepend action icon into a segment button if missing (early shell is text-only).
+   * @param {HTMLElement|null} btn
+   * @param {string} actionId
+   */
+  _ensureSegmentIcon(btn, actionId) {
+    if (!btn || !actionId) return;
+    try {
+      if (btn.querySelector('img[data-kp-control-strip-icon="true"]')) return;
+      const icon = this._createActionIcon(actionId);
+      if (!icon) return;
+      icon.setAttribute('data-kp-control-strip-icon', 'true');
+      btn.insertBefore(icon, btn.firstChild);
+    } catch { /* ignore */ }
   }
 
   /**
@@ -375,7 +454,10 @@ export class ControlStrip {
 
     if (opts.iconActionId) {
       const icon = this._createActionIcon(opts.iconActionId);
-      if (icon) btn.appendChild(icon);
+      if (icon) {
+        try { icon.setAttribute('data-kp-control-strip-icon', 'true'); } catch { /* ignore */ }
+        btn.appendChild(icon);
+      }
     }
     if (opts.text) {
       const label = document.createElement('span');
