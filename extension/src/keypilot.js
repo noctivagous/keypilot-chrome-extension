@@ -1722,6 +1722,45 @@ export class KeyPilot extends EventManager {
         return;
       }
 
+      // Toggle popovers must work on a second press while mode is POPOVER.
+      // Tab History / Open Popover set MODES.POPOVER, which used to swallow their
+      // own keys and made J (and P) feel stuck open.
+      if (KB.TAB_HISTORY?.keys?.includes?.(e.key)) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        this.handleToggleTabHistoryPopover();
+        return;
+      }
+      if (KB.OPEN_POPOVER?.keys?.includes?.(e.key)) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        this.handleOpenPopover(e);
+        return;
+      }
+      if (KB.LAUNCHER?.keys?.includes?.(e.key)) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        this.handleLauncherKey(e);
+        return;
+      }
+      if (KB.TOGGLE_KEYBOARD_HELP?.keys?.includes?.(e.key)) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        this.handleToggleKeyboardHelp();
+        return;
+      }
+      if (KB.OPEN_SETTINGS_POPOVER?.keys?.includes?.(e.key)) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        this.handleToggleSettingsPopover();
+        return;
+      }
+
       // History navigation must work even while a popover is open (parent focus).
       // Without this, D/S/R are silently swallowed and feel like they need a second press
       // after the popover is closed.
