@@ -209,6 +209,7 @@ export class OverlayManager {
     if (this.canvasOverlay) return;
 
     this.canvasOverlay = document.createElement('canvas');
+    this.canvasOverlay.className = CSS_CLASSES.CANVAS_OVERLAY || 'kpv2-canvas-overlay';
     this.canvasOverlay.style.cssText = `
       position: fixed;
       top: 0;
@@ -341,6 +342,7 @@ export class OverlayManager {
     if (this.cssCustomPropsOverlay) return;
 
     this.cssCustomPropsOverlay = document.createElement('div');
+    this.cssCustomPropsOverlay.className = CSS_CLASSES.CSS_PROPS_OVERLAY || 'kpv2-css-props-overlay';
     const p = this._getNonTextFocusPalette();
     this.cssCustomPropsOverlay.style.cssText = `
       --rect-x: 0px;
@@ -1993,7 +1995,7 @@ export class OverlayManager {
 
     if (!this.focusedTextOverlay) {
       this.focusedTextOverlay = this.createElement('div', {
-        className: 'kpv2-focused-text-overlay',
+        className: CSS_CLASSES.FOCUSED_TEXT_OVERLAY || 'kpv2-focused-text-overlay',
         style: `
           position: fixed;
           pointer-events: none;

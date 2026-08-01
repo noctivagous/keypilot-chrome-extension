@@ -7,6 +7,115 @@ const BLUE_TINT_FILTER_ID = 'keypilot-blue-tint-filter';
 const BLUE_TINT_SVG_ID = 'keypilot-blue-tint-filter-svg';
 
 /**
+ * Print / Save-as-PDF CSS for KeyPilot.
+ *
+ * Two tiers (critical):
+ * - Tier A: hide pure injected chrome (control strip, overlays, popovers, …).
+ * - Tier B: neutralize decorations applied to host page elements (hover rings,
+ *   focus filters, text-input tints). Never display:none those — they are real
+ *   page content with KP classes temporarily attached.
+ *
+ * Keep early-inject EARLY_CSS print block in sync with this helper.
+ *
+ * @returns {string}
+ */
+export function buildKeyPilotPrintCss() {
+  const hide = [
+    // Cursor + style filter host
+    `#${ELEMENT_IDS.CURSOR}`,
+    `#${BLUE_TINT_SVG_ID}`,
+    // OverlayManager backends
+    `.${CSS_CLASSES.CANVAS_OVERLAY}`,
+    `.${CSS_CLASSES.CSS_PROPS_OVERLAY}`,
+    `.${CSS_CLASSES.FOCUS_OVERLAY}`,
+    `.${CSS_CLASSES.DELETE_OVERLAY}`,
+    `.${CSS_CLASSES.HIGHLIGHT_OVERLAY}`,
+    `.${CSS_CLASSES.HIGHLIGHT_SELECTION}`,
+    `.${CSS_CLASSES.FOCUSED_TEXT_OVERLAY}`,
+    `.${CSS_CLASSES.RIPPLE}`,
+    `.${CSS_CLASSES.FOCUS_PULSE}`,
+    `.${CSS_CLASSES.FOCUS_FLASH}`,
+    `.${CSS_CLASSES.FOCUS_DASH}`,
+    `.${CSS_CLASSES.FOCUS_MARQUEE}`,
+    `.${CSS_CLASSES.IMAGE_COPY_PULSE}`,
+    `.${CSS_CLASSES.VIEWPORT_MODAL_FRAME}`,
+    `.${CSS_CLASSES.ACTIVE_TEXT_INPUT_FRAME}`,
+    `.${CSS_CLASSES.ESC_EXIT_LABEL}`,
+    // Omnibox + modal chrome
+    `.${CSS_CLASSES.OMNIBOX_BACKDROP}`,
+    `.${CSS_CLASSES.OMNIBOX_PANEL}`,
+    `.${CSS_CLASSES.POPUP_BACKDROP}`,
+    // Other injected chrome (hard-coded class names in modules)
+    '.kpv2-toggle-notification',
+    '.kpv2-flash-notification',
+    '.kpv2-tab-history-panel',
+    '.kpv2-popover-container',
+    '.kpv2-preview-popover-container',
+    '#kpv2-debug-panel',
+    '#kpv2-rectangle-intersection-root',
+    // Light-DOM UI roots (kp-*)
+    '.kp-control-strip',
+    '.kp-floating-keyboard-help',
+    '.kp-onboarding-panel',
+    '.kp-launcher-container',
+    '.kp-keybindings-popover',
+    // Early-inject / attribute markers
+    '[data-kp-control-strip]',
+    '[data-kp-early-control-strip]',
+    '[data-kp-early-floating-keyboard]',
+    '[data-kp-ephemeral-effect]'
+  ].join(',\n    ');
+
+  return `
+      /* Hide KeyPilot chrome + neutralize host decorations when printing / saving as PDF.
+         Placed last so !important print rules beat earlier screen !important rules. */
+      @media print {
+        ${hide} {
+          display: none !important;
+          visibility: hidden !important;
+        }
+
+        /* Tier B: host-page hover / mode decorations — reset paint, keep the element. */
+        .keypilot-focus-element,
+        [data-kp-focus],
+        .${CSS_CLASSES.FOCUS},
+        .${CSS_CLASSES.DELETE},
+        .${CSS_CLASSES.HIGHLIGHT} {
+          outline: none !important;
+          outline-offset: 0 !important;
+          box-shadow: none !important;
+          filter: none !important;
+        }
+
+        .keypilot-focus-element,
+        [data-kp-focus="1"] {
+          background: transparent !important;
+        }
+
+        .${CSS_CLASSES.TEXT_HOVER_INPUT},
+        .${CSS_CLASSES.TEXT_HOVER_INPUT_PARENT},
+        .${CSS_CLASSES.TEXT_FOCUS_INPUT},
+        .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT} {
+          background-image: none !important;
+          background-color: revert !important;
+          color: revert !important;
+          text-shadow: none !important;
+          caret-color: auto !important;
+          filter: none !important;
+          box-shadow: none !important;
+          outline: none !important;
+        }
+
+        .${CSS_CLASSES.TEXT_HOVER_INPUT}::placeholder,
+        .${CSS_CLASSES.TEXT_FOCUS_INPUT}::placeholder {
+          color: revert !important;
+          text-shadow: none !important;
+        }
+      }
+  `;
+}
+
+/**
  * Build a CSS `url("data:image/svg+xml,...")` background for tiny upper-left
  * hint text painted on text inputs (not a DOM overlay).
  *
@@ -673,6 +782,7 @@ export class StyleManager {
         filter: none !important;
       }
 
+      ${buildKeyPilotPrintCss()}
     `;
   }
 
@@ -775,6 +885,7 @@ export class StyleManager {
         filter: none !important;
       }
 
+      ${buildKeyPilotPrintCss()}
     `;
   }
 

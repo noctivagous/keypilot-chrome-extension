@@ -599,6 +599,37 @@ export class LauncherPopover {
   }
 
   /**
+   * Inject light-DOM CSS that scopes/resets host-page rules for launcher controls.
+   *
+   * Host sites (e.g. firefox.com) style bare `button` / `[role="button"]` with large
+   * border-radius tokens. Because the launcher is mounted in the page document (not a
+   * shadow root), those rules paint our subtabs, clear btn, and card preview buttons
+   * unless we win the cascade. High-specificity selectors beat typical host `button`
+   * rules without !important so intentional inline border-radius values still win.
+   *
+   * @param {Document} doc
+   * @param {HTMLElement} container
+   */
+  _injectScopedStyles(doc, container) {
+    if (!doc || !container) return;
+    const style = doc.createElement('style');
+    style.setAttribute('data-kp-launcher-scope', 'true');
+    style.textContent = `
+      /* Reset form/control radii so host page button styles cannot leak in.
+         Specificity (html body .kp-launcher-container button) beats bare button /
+         [role=button] host rules; element inline styles still override this. */
+      html body .kp-launcher-container button,
+      html body .kp-launcher-container [role="button"],
+      html body .kp-launcher-container input,
+      html body .kp-launcher-container select,
+      html body .kp-launcher-container textarea {
+        border-radius: 0;
+      }
+    `;
+    container.appendChild(style);
+  }
+
+  /**
    * Build the launcher UI
    */
   _buildUI() {
@@ -632,6 +663,9 @@ export class LauncherPopover {
       -webkit-backface-visibility: hidden;
       -webkit-transform: translate(-50%, -50%) translateZ(0);
     `;
+
+    // Scope/reset host-page control styles before children mount.
+    this._injectScopedStyles(doc, this._container);
 
     this._boundContainerKeyDown = (e) => {
       if (e.key === 'Escape' || e.code === 'Escape') {

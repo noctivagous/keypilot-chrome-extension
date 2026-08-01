@@ -77,6 +77,13 @@ export const CSS_CLASSES = {
   TEXT_HOVER_INPUT: 'kpv2-text-hover-input',
   TEXT_HOVER_INPUT_PARENT: 'kpv2-text-hover-input-parent',
 
+  /** Canvas-based focus/delete overlay host (OverlayManager) */
+  CANVAS_OVERLAY: 'kpv2-canvas-overlay',
+  /** CSS custom-properties focus/delete overlay host (OverlayManager) */
+  CSS_PROPS_OVERLAY: 'kpv2-css-props-overlay',
+  /** Focused text-field overlay (OverlayManager) */
+  FOCUSED_TEXT_OVERLAY: 'kpv2-focused-text-overlay',
+
   // Omnibox overlay UI
   OMNIBOX_BACKDROP: 'kpv2-omnibox-backdrop',
   OMNIBOX_PANEL: 'kpv2-omnibox-panel',

@@ -2276,6 +2276,8 @@
   // Important: we intentionally mirror the main extension's cursor CSS contract:
   // - When `html` has `kpv2-cursor-hidden`, we force the cursor via `--kpv2-cursor`.
   // This prevents the "cursor pop-in" that used to happen at document_idle.
+  // Keep print rules in sync with buildKeyPilotPrintCss() in style-manager.js.
+  // Early shells (control strip, keyboard ref, onboarding) can exist before #kpv2-style.
   const EARLY_CSS = `
     /* KeyPilot early cursor (document_start) */
     html.${CURSOR_HIDDEN_CLASS} * {
@@ -2293,6 +2295,19 @@
     html.${CURSOR_HIDDEN_CLASS} [onclick],
     html.${CURSOR_HIDDEN_CLASS} [tabindex] {
       cursor: var(${CURSOR_VAR}, auto) !important;
+    }
+
+    /* Hide KeyPilot early chrome when printing / saving as PDF. */
+    @media print {
+      .kp-control-strip,
+      .kp-floating-keyboard-help,
+      .kp-onboarding-panel,
+      [data-kp-control-strip],
+      [data-kp-early-control-strip],
+      [data-kp-early-floating-keyboard] {
+        display: none !important;
+        visibility: hidden !important;
+      }
     }
   `;
 
