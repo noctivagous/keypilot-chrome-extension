@@ -78,13 +78,20 @@ export class IntersectionObserverManager {
         const el = /** @type {HTMLElement} */ (raw);
         if (this._isKeyPilotUiElement(el)) return;
 
-        // Map the actual event target to the nearest "clickable" ancestor using our detector
-        // (keeps semantics consistent with non-DOM-hover mode).
+        // Stable hover target: prefer host row/tab over nested More/sub-links,
+        // and stick while the pointer stays inside the previous host.
         let clickable = null;
         try {
-          clickable = this.elementDetector?.findClickable
-            ? this.elementDetector.findClickable(el)
-            : el;
+          if (this.elementDetector?.resolveHoverFocusTarget) {
+            clickable = this.elementDetector.resolveHoverFocusTarget(
+              el,
+              this._domHoveredElement
+            );
+          } else if (this.elementDetector?.findClickable) {
+            clickable = this.elementDetector.findClickable(el);
+          } else {
+            clickable = el;
+          }
         } catch {
           clickable = el;
         }
@@ -95,7 +102,10 @@ export class IntersectionObserverManager {
             // Search for interactive elements near the cursor position using shadow-piercing
             const shadowElements = this.queryInteractiveAtPoint(e.clientX, e.clientY, 20);
             if (shadowElements.length > 0) {
-              clickable = shadowElements[0]; // Take the first (closest) one
+              const shadowLeaf = shadowElements[0];
+              clickable = this.elementDetector?.resolveHoverFocusTarget
+                ? this.elementDetector.resolveHoverFocusTarget(shadowLeaf, this._domHoveredElement)
+                : shadowLeaf;
             }
           } catch (error) {
             // Shadow query failed, continue with null clickable
@@ -105,8 +115,10 @@ export class IntersectionObserverManager {
           }
         }
 
-        // Check if we should focus the parent container instead of the individual clickable element
-        clickable = this._findParentContainerForClickable(clickable);
+        // Optional composite promotion (after host stabilization).
+        if (clickable) {
+          clickable = this._findParentContainerForClickable(clickable);
+        }
 
         // Log when hovering over clickable elements in shadow DOM
         if (clickable && clickable.getRootNode() instanceof ShadowRoot) {
@@ -120,17 +132,15 @@ export class IntersectionObserverManager {
         }
 
         let next = (clickable && clickable.nodeType === 1) ? /** @type {HTMLElement} */ (clickable) : null;
-        // html/body are never useful targets; treat as "no hover" so we clear sticky focus.
+        // html/body are never useful targets; treat as clear so hover chrome does not stick.
         try {
           if (next && (next.tagName === 'HTML' || next.tagName === 'BODY')) next = null;
         } catch { /* ignore */ }
 
+        // Sticky host targeting (resolveHoverFocusTarget) already keeps focus while
+        // the pointer moves across nested children — no clear-debounce needed.
         if (next === this._domHoveredElement) return;
-        this._domHoveredElement = next;
-        try { window.__KP_HOVERED_INTERACTIVE_EL = next; } catch { /* ignore */ }
-        if (typeof this._domHoverOnChange === 'function') {
-          try { this._domHoverOnChange(next); } catch { /* ignore */ }
-        }
+        this._setDomHoveredElement(next);
       } catch { /* ignore */ }
     };
 
@@ -154,11 +164,7 @@ export class IntersectionObserverManager {
           }
         }
         if (!this._domHoveredElement) return;
-        this._domHoveredElement = null;
-        try { window.__KP_HOVERED_INTERACTIVE_EL = null; } catch { /* ignore */ }
-        if (typeof this._domHoverOnChange === 'function') {
-          try { this._domHoverOnChange(null); } catch { /* ignore */ }
-        }
+        this._setDomHoveredElement(null);
       } catch { /* ignore */ }
     };
 
@@ -166,11 +172,7 @@ export class IntersectionObserverManager {
       try {
         if (!this._domHoverEnabled) return;
         if (!this._domHoveredElement) return;
-        this._domHoveredElement = null;
-        try { window.__KP_HOVERED_INTERACTIVE_EL = null; } catch { /* ignore */ }
-        if (typeof this._domHoverOnChange === 'function') {
-          try { this._domHoverOnChange(null); } catch { /* ignore */ }
-        }
+        this._setDomHoveredElement(null);
       } catch { /* ignore */ }
     };
 
@@ -179,8 +181,9 @@ export class IntersectionObserverManager {
 
     // Selector used to discover "interactive" elements cheaply (no computed style).
     // Note: this intentionally doesn't include cursor:pointer-only elements.
+    // Include role=tab so discovery/observers see profile tab strips, etc.
     this.interactiveSelector =
-      'a[href], button, input, select, textarea, [role="button"], [role="link"], [contenteditable="true"], [onclick]';
+      'a[href], button, input, select, textarea, [role="button"], [role="link"], [role="tab"], [contenteditable="true"], [onclick]';
 
     // Track elements we have asked the IntersectionObserver to observe.
     // (An element may be observed but not currently intersecting/visible.)
@@ -527,6 +530,19 @@ export class IntersectionObserverManager {
   }
 
   /**
+   * Publish a new DOM-hover focus target (and debug hook).
+   * @param {HTMLElement|null} next
+   */
+  _setDomHoveredElement(next) {
+    const el = next && next.nodeType === 1 ? /** @type {HTMLElement} */ (next) : null;
+    this._domHoveredElement = el;
+    try { window.__KP_HOVERED_INTERACTIVE_EL = el; } catch { /* ignore */ }
+    if (typeof this._domHoverOnChange === 'function') {
+      try { this._domHoverOnChange(el); } catch { /* ignore */ }
+    }
+  }
+
+  /**
    * Enable/disable DOM hover listener mode.
    * @param {boolean} enabled
    * @param {(el: HTMLElement|null) => void} [onChange]
@@ -725,25 +741,30 @@ export class IntersectionObserverManager {
         // Skip KeyPilot UI elements
         if (this._isKeyPilotUiElement(elementAtPoint)) return;
 
-        // Find the clickable element
+        // Find the clickable element (stable host preferred)
         let clickable = null;
         try {
-          clickable = this.elementDetector?.findClickable
-            ? this.elementDetector.findClickable(elementAtPoint)
-            : elementAtPoint;
+          clickable = this.elementDetector?.resolveHoverFocusTarget
+            ? this.elementDetector.resolveHoverFocusTarget(elementAtPoint, this._domHoveredElement)
+            : (this.elementDetector?.findClickable
+              ? this.elementDetector.findClickable(elementAtPoint)
+              : elementAtPoint);
         } catch {
           clickable = elementAtPoint;
         }
 
         // Check if we should focus the parent container instead
-        clickable = this._findParentContainerForClickable(clickable);
+        if (clickable) clickable = this._findParentContainerForClickable(clickable);
 
         // Handle shadow DOM elements
         if (!clickable && elementAtPoint.getRootNode() instanceof ShadowRoot) {
           try {
             const shadowElements = this.queryInteractiveAtPoint(mouseX, mouseY, 20);
             if (shadowElements.length > 0) {
-              clickable = shadowElements[0];
+              const leaf = shadowElements[0];
+              clickable = this.elementDetector?.resolveHoverFocusTarget
+                ? this.elementDetector.resolveHoverFocusTarget(leaf, this._domHoveredElement)
+                : leaf;
             }
           } catch (error) {
             if (window.KEYPILOT_DEBUG) {

@@ -511,6 +511,124 @@ export class ElementDetector {
     return finalResult;
   }
 
+  /**
+   * True when `el` is nested chrome inside `host` (More menu, small sub-links,
+   * icon buttons) rather than the primary hover target for the row/card/tab.
+   * @param {Element} el
+   * @param {Element} host
+   * @returns {boolean}
+   */
+  _isNestedHoverChrome(el, host) {
+    if (!el || !host || el === host || el.nodeType !== 1 || host.nodeType !== 1) return false;
+    try {
+      if (!host.contains(el)) return false;
+    } catch {
+      return false;
+    }
+
+    const tag = el.tagName;
+    const role = ((el.getAttribute && el.getAttribute('role')) || '').trim().toLowerCase();
+    if (tag === 'BUTTON' || role === 'button') return true;
+    if (el.getAttribute && el.getAttribute('aria-haspopup')) return true;
+
+    // Small nested links inside a larger row/card (trend "with X", avatars, etc.).
+    if (tag === 'A' || role === 'link') {
+      try {
+        const er = el.getBoundingClientRect();
+        const hr = host.getBoundingClientRect();
+        const eArea = Math.max(1, er.width * er.height);
+        const hArea = Math.max(1, hr.width * hr.height);
+        return eArea < hArea * 0.35;
+      } catch {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Prefer a stable "host" interactive for hover chrome: row-sized role=link
+   * cards and role=tab strips, instead of nested More/buttons/sub-links.
+   * @param {Element} leaf
+   * @returns {Element|null}
+   */
+  _findPreferableHoverHost(leaf) {
+    if (!leaf || leaf.nodeType !== 1) return null;
+
+    /** @type {Element|null} */
+    let hostLink = null;
+    /** @type {Element|null} */
+    let hostTab = null;
+    let n = leaf;
+    let depth = 0;
+    while (n && n !== document.body && n.nodeType === 1 && depth++ < 14) {
+      const role = ((n.getAttribute && n.getAttribute('role')) || '').trim().toLowerCase();
+      if (role === 'tab') hostTab = n;
+      if (role === 'link') {
+        try {
+          const r = n.getBoundingClientRect();
+          // Row/card-ish: wide enough and tall enough to be the primary target.
+          if (r.width >= 100 && r.height >= 32) hostLink = n;
+        } catch { /* ignore */ }
+      }
+      n = n.parentElement || (n.getRootNode instanceof Function && n.getRootNode() instanceof ShadowRoot
+        ? n.getRootNode().host
+        : null);
+    }
+
+    // Tabs: always prefer the tab host over an inner label/button.
+    if (hostTab && (leaf === hostTab || hostTab.contains(leaf))) return hostTab;
+
+    // Link rows/cards: promote nested chrome up to the host row.
+    if (hostLink && hostLink.contains(leaf) && leaf !== hostLink) {
+      if (this._isNestedHoverChrome(leaf, hostLink)) return hostLink;
+    }
+    return null;
+  }
+
+  /**
+   * Resolve the element that should receive hover focus chrome / F-activate.
+   * Stabilizes against nested controls and brief nulls while still inside the
+   * previous host (generic fix for list rows, tabs, cards — not site-specific).
+   *
+   * @param {Element|null|undefined} underEl - Deepest node under the pointer
+   * @param {Element|null|undefined} prevFocus - Previous hover focus element
+   * @returns {Element|null}
+   */
+  resolveHoverFocusTarget(underEl, prevFocus = null) {
+    const under = underEl && underEl.nodeType === 1 ? underEl : null;
+    const prev = prevFocus && prevFocus.nodeType === 1 && prevFocus.isConnected
+      ? prevFocus
+      : null;
+
+    // Sticky: pointer still inside previous host → keep it when leaf is missing
+    // or is nested chrome (avoids thrash / clear between children).
+    if (prev && under) {
+      try {
+        if (prev.contains(under)) {
+          const leafInside = this.findClickable(under);
+          if (!leafInside || leafInside === prev || this._isNestedHoverChrome(leafInside, prev)) {
+            return prev;
+          }
+          // Leaf is a distinct primary target inside prev (e.g. large nested link):
+          // still prefer host for row-sized role=link / tab.
+          const host = this._findPreferableHoverHost(leafInside);
+          if (host === prev) return prev;
+          if (host) return host;
+          return leafInside;
+        }
+      } catch { /* ignore */ }
+    }
+
+    if (!under) return null;
+
+    const leaf = this.findClickable(under);
+    if (!leaf) return null;
+
+    const host = this._findPreferableHoverHost(leaf);
+    return host || leaf;
+  }
+
   isTextLike(el) {
     if (!el || el.nodeType !== 1) return false;
     if (el.tagName === 'TEXTAREA') return true;

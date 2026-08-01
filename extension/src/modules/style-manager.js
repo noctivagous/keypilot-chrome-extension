@@ -648,36 +648,44 @@ export class StyleManager {
         text-shadow: var(--kpv2-text-input-text-shadow, 1px 1px 0 rgba(255, 255, 255, 0.85)) !important;
       }
 
-      /* Element styling for DOM hover mode.
-         Paint-only ring (outline + layered box-shadow) — never border/padding,
-         so hover chrome cannot reflow neighboring layout. */
-      .keypilot-focus-element {
+      /*
+       * Element styling for DOM hover mode.
+       * Prefer [data-kp-focus] over class alone: SPAs (e.g. X) often reconcile
+       * className on hover and strip unknown classes, while data-* attributes
+       * usually survive. Keep the class for backwards compatibility / DevTools.
+       * Outline-first — many sites transition/zero box-shadow.
+       */
+      .keypilot-focus-element,
+      [data-kp-focus="1"] {
         outline: 3px solid var(--keypilot-focus-ring-color, #2196f3) !important;
         outline-offset: 2px !important;
-        /* Contrast halo + color ring + soft glow (all layout-safe). */
-        box-shadow:
-          0 0 0 2px rgba(255, 255, 255, 0.95),
-          0 0 0 calc(var(--keypilot-focus-ring-width, 3px) + 2px)
-            var(--keypilot-focus-ring-color, #2196f3),
-          0 0 14px 3px var(--keypilot-focus-shadow-color, rgba(33, 150, 243, 0.55)) !important;
+        box-shadow: none !important;
         background: var(--keypilot-focus-ring-bg-color, transparent) !important;
-        /* Brightness only — url(#svg-filter) is invalid if the SVG is missing and
-           drops the entire filter chain; outline/box-shadow already carry the ring. */
-        filter: brightness(1.08) saturate(1.12) !important;
+        filter: none !important;
       }
 
-      /* Inset fallback for clipped contexts (e.g. line-clamp / overflow hidden). */
-      .keypilot-focus-element.keypilot-focus-element--inset {
-        /* Pull outline inside the box so overflow:hidden ancestors don't hide it. */
+      .keypilot-focus-element.keypilot-focus-element--inset,
+      [data-kp-focus="1"][data-kp-focus-inset="1"] {
         outline: 3px solid var(--keypilot-focus-ring-color, #2196f3) !important;
         outline-offset: -3px !important;
-        box-shadow:
-          inset 0 0 0 var(--keypilot-focus-ring-width, 3px)
-            var(--keypilot-focus-ring-color, #2196f3),
-          inset 0 0 0 calc(var(--keypilot-focus-ring-width, 3px) + 2px)
-            rgba(255, 255, 255, 0.9) !important;
+        box-shadow: none !important;
         background: var(--keypilot-focus-ring-bg-color, transparent) !important;
-        filter: brightness(1.08) saturate(1.12) !important;
+        filter: none !important;
+      }
+
+      /*
+       * Temporarily neutralize ancestor clip/containment so the focus ring on the
+       * hover target (or a tight wrapper we promote to) can paint fully.
+       * Applied only while that target is focused; removed on clear.
+       */
+      .keypilot-clip-open {
+        overflow: visible !important;
+        overflow-x: visible !important;
+        overflow-y: visible !important;
+        content-visibility: visible !important;
+        contain: none !important;
+        clip-path: none !important;
+        -webkit-clip-path: none !important;
       }
     `;
   }
@@ -762,31 +770,33 @@ export class StyleManager {
         text-shadow: var(--kpv2-text-input-text-shadow, 1px 1px 0 rgba(255, 255, 255, 0.85)) !important;
       }
 
-      /* Element styling for DOM hover mode in shadow DOM.
-         Paint-only ring — never border/padding (avoids neighbor reflow). */
-      .keypilot-focus-element {
+      /* Element styling for DOM hover mode in shadow DOM (outline-first). */
+      .keypilot-focus-element,
+      [data-kp-focus="1"] {
         outline: 3px solid var(--keypilot-focus-ring-color, #2196f3) !important;
         outline-offset: 2px !important;
-        box-shadow:
-          0 0 0 2px rgba(255, 255, 255, 0.95),
-          0 0 0 calc(var(--keypilot-focus-ring-width, 3px) + 2px)
-            var(--keypilot-focus-ring-color, #2196f3),
-          0 0 14px 3px var(--keypilot-focus-shadow-color, rgba(33, 150, 243, 0.55)) !important;
+        box-shadow: none !important;
         background: var(--keypilot-focus-ring-bg-color, transparent) !important;
-        filter: brightness(1.08) saturate(1.12) !important;
+        filter: none !important;
       }
 
-      /* Inset fallback for clipped contexts in shadow DOM */
-      .keypilot-focus-element.keypilot-focus-element--inset {
+      .keypilot-focus-element.keypilot-focus-element--inset,
+      [data-kp-focus="1"][data-kp-focus-inset="1"] {
         outline: 3px solid var(--keypilot-focus-ring-color, #2196f3) !important;
         outline-offset: -3px !important;
-        box-shadow:
-          inset 0 0 0 var(--keypilot-focus-ring-width, 3px)
-            var(--keypilot-focus-ring-color, #2196f3),
-          inset 0 0 0 calc(var(--keypilot-focus-ring-width, 3px) + 2px)
-            rgba(255, 255, 255, 0.9) !important;
+        box-shadow: none !important;
         background: var(--keypilot-focus-ring-bg-color, transparent) !important;
-        filter: brightness(1.08) saturate(1.12) !important;
+        filter: none !important;
+      }
+
+      .keypilot-clip-open {
+        overflow: visible !important;
+        overflow-x: visible !important;
+        overflow-y: visible !important;
+        content-visibility: visible !important;
+        contain: none !important;
+        clip-path: none !important;
+        -webkit-clip-path: none !important;
       }
 
     `;

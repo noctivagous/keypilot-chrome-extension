@@ -46,6 +46,7 @@ export class OverlayManager {
     this._popoverClickOutsideHandler = null; // click outside handler for preview popover
     this._previewPopoverDragCleanup = null; // teardown titlebar drag listeners
     this._popoverResizeDispose = null; // teardown generic resize handles
+    this._popoverHybridFocusCleanup = null; // teardown chrome↔iframe focus routing
 
     // Central popup stack + blurred backdrop (kept below click overlays).
     // Note: Panel change callback will be set by KeyPilot after initialization
@@ -93,6 +94,13 @@ export class OverlayManager {
     // Last known focus target (used for F-click scale-up pulse across all render modes).
     this._lastFocusElement = null;
     this._lastFocusRect = null;
+
+    /**
+     * Ancestors we temporarily opened (overflow/content-visibility) so the focus
+     * ring on the hover target is not clipped. Cleared with focus styling.
+     * @type {Set<Element>}
+     */
+    this._clipOpenedElements = new Set();
 
     /**
      * Active temporary click/image effect overlays.
@@ -949,9 +957,11 @@ export class OverlayManager {
     // Non-text elements: ensure we remove any lingering hover tint.
     this._clearTextHoverElementStyling();
 
-    // When DOM hover mode is enabled, use element styling instead of overlay elements.
-    // (No overlay rectangles in this mode.)
+    // When DOM hover mode is enabled, style the element directly (fast path).
+    // Clipped contexts use inset rings (negative outline-offset) — not a fixed
+    // overlay — so we keep hover chrome snappy.
     if (this._useDomHoverFocusColors) {
+      try { this.hideFocusOverlay(); } catch { /* ignore */ }
       return this.updateFocusOverlayElementStyling(element, mode);
     }
 
@@ -966,23 +976,159 @@ export class OverlayManager {
     }
   }
 
-  _isProbablyClippedByAncestorOverflow(element) {
+  /**
+   * Find ancestors that would clip an outer focus ring around `element`.
+   *
+   * @param {Element} element
+   * @returns {{
+   *   clippers: Element[],
+   *   tightWrapper: Element|null
+   * }}
+   *   clippers — ancestors that clip the expanded ring box (for temporary open)
+   *   tightWrapper — nearest clipper nearly the same size as the target (prefer
+   *     painting the ring on this node, e.g. X Stories content-visibility row)
+   */
+  _findFocusClipContext(element) {
+    /** @type {Element[]} */
+    const clippers = [];
+    /** @type {Element|null} */
+    let tightWrapper = null;
+
+    if (!element || element.nodeType !== 1) {
+      return { clippers, tightWrapper };
+    }
+
+    let er;
     try {
-      let n = element;
+      er = element.getBoundingClientRect();
+    } catch {
+      return { clippers, tightWrapper };
+    }
+    if (!er || !(er.width > 0) || !(er.height > 0)) {
+      return { clippers, tightWrapper };
+    }
+
+    // Outer ring needs a little space outside the border box.
+    const pad = 8;
+    const needLeft = er.left - pad;
+    const needTop = er.top - pad;
+    const needRight = er.right + pad;
+    const needBottom = er.bottom + pad;
+
+    try {
+      let n = element.parentElement;
       let depth = 0;
-      // Small walk up the tree is enough to catch line-clamp containers.
-      while (n && n.nodeType === 1 && depth++ < 10) {
+      while (n && n.nodeType === 1 && depth++ < 12) {
+        if (n === document.documentElement || n === document.body) {
+          n = n.parentElement;
+          continue;
+        }
+
         const cs = window.getComputedStyle(n);
-        const ox = cs && cs.overflowX;
-        const oy = cs && cs.overflowY;
-        // overflow: clip/hidden/scroll/auto all clip descendant visuals.
-        const clipsX = ox && ox !== 'visible';
-        const clipsY = oy && oy !== 'visible';
-        if (clipsX || clipsY) return true;
+        if (!cs) {
+          n = n.parentElement;
+          continue;
+        }
+
+        const ox = cs.overflowX;
+        const oy = cs.overflowY;
+        const clipsOverflow =
+          (ox && ox !== 'visible') || (oy && oy !== 'visible');
+
+        let cvClip = false;
+        try {
+          const cv = cs.contentVisibility || cs.getPropertyValue('content-visibility');
+          cvClip = cv === 'auto' || cv === 'hidden';
+        } catch { /* ignore */ }
+
+        let containClip = false;
+        try {
+          const contain = String(cs.contain || '');
+          containClip =
+            contain.includes('paint') ||
+            contain.includes('strict') ||
+            contain === 'content' ||
+            contain.split(/\s+/).includes('content');
+        } catch { /* ignore */ }
+
+        if (clipsOverflow || cvClip || containClip) {
+          let ar;
+          try {
+            ar = n.getBoundingClientRect();
+          } catch {
+            clippers.push(n);
+            n = n.parentElement;
+            continue;
+          }
+
+          const clipsRing =
+            ar.left > needLeft + 0.5 ||
+            ar.top > needTop + 0.5 ||
+            ar.right < needRight - 0.5 ||
+            ar.bottom < needBottom - 0.5;
+
+          const similarSize =
+            Math.abs(ar.width - er.width) < 20 &&
+            Math.abs(ar.height - er.height) < 20;
+
+          if (clipsRing || (cvClip && similarSize)) {
+            clippers.push(n);
+            if (!tightWrapper && similarSize) {
+              tightWrapper = n;
+            }
+          }
+        }
+
         n = n.parentElement;
       }
     } catch { /* ignore */ }
-    return false;
+
+    return { clippers, tightWrapper };
+  }
+
+  /**
+   * True when an ancestor is likely to clip *outer* focus chrome.
+   * @param {Element} element
+   * @returns {boolean}
+   */
+  _isProbablyClippedByAncestorOverflow(element) {
+    try {
+      const ctx = this._findFocusClipContext(element);
+      return !!(ctx.clippers && ctx.clippers.length);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Undo temporary overflow/containment opens on clip ancestors.
+   */
+  _clearClipOpenedElements() {
+    const set = this._clipOpenedElements;
+    if (!set || !set.size) return;
+    for (const el of set) {
+      try {
+        el.classList.remove('keypilot-clip-open');
+      } catch { /* ignore */ }
+    }
+    set.clear();
+  }
+
+  /**
+   * Temporarily neutralize clip/containment on ancestors so a ring painted on
+   * the hover target (or a tight wrapper) is not cut off.
+   * @param {Element[]} clippers
+   */
+  _openClipAncestors(clippers) {
+    if (!Array.isArray(clippers) || !clippers.length) return;
+    if (!this._clipOpenedElements) this._clipOpenedElements = new Set();
+    for (const el of clippers) {
+      if (!el || el.nodeType !== 1) continue;
+      try {
+        el.classList.add('keypilot-clip-open');
+        this._clipOpenedElements.add(el);
+      } catch { /* ignore */ }
+    }
   }
 
   /**
@@ -1009,8 +1155,29 @@ export class OverlayManager {
     // which causes the anchor to be split into multiple inline fragments. Outline/box-shadow
     // then renders as disjoint pieces (often thin strips). When we detect this, we style a
     // better single-rect descendant (usually the anchor's wrapper) instead of the anchor.
-    const stylingTarget = this._resolveElementForFocusStyling(element) || element;
-    const useInset = this._isProbablyClippedByAncestorOverflow(stylingTarget);
+    let stylingTarget = this._resolveElementForFocusStyling(element) || element;
+
+    // Clip-aware paint strategy (keeps the fast in-element path; no fixed overlay):
+    // 1) Find ancestors that would clip an outer ring.
+    // 2) If a clipper is nearly the same size as the target (Stories row wrapper,
+    //    content-visibility box), paint the ring ON that wrapper.
+    // 3) Temporarily open overflow/containment on clip ancestors so the ring is
+    //    not cut off (X "What's happening", profile tab strip, etc.).
+    const clipCtx = this._findFocusClipContext(stylingTarget);
+    if (clipCtx.tightWrapper && clipCtx.tightWrapper.nodeType === 1) {
+      stylingTarget = clipCtx.tightWrapper;
+    }
+    // Open remaining clippers (skip the node we are about to ring, if any).
+    const toOpen = (clipCtx.clippers || []).filter((c) => c && c !== stylingTarget);
+    this._openClipAncestors(toOpen);
+
+    // With clip ancestors opened (or ring on the tight wrapper), prefer outer ring.
+    // Fall back to inset only if we still look clipped and opened nothing useful.
+    const stillClipped =
+      !toOpen.length &&
+      !clipCtx.tightWrapper &&
+      this._isProbablyClippedByAncestorOverflow(stylingTarget);
+    const useInset = stillClipped;
 
     // Don't style modal/popover iframes
     try {
@@ -1024,8 +1191,11 @@ export class OverlayManager {
     } catch { /* ignore */ }
 
     // Determine styling based on element type and mode
-    const isTextInput = stylingTarget.matches && stylingTarget.matches(SELECTORS.FOCUSABLE_TEXT);
-    const suppressFill = this.shouldSuppressFocusFill(stylingTarget);
+    // Category/fill decisions stay on the original hover target when we promoted
+    // the ring to a tight wrapper.
+    const categorySource = element;
+    const isTextInput = categorySource.matches && categorySource.matches(SELECTORS.FOCUSABLE_TEXT);
+    const suppressFill = this.shouldSuppressFocusFill(categorySource);
 
     // Set CSS custom properties for styling
     const ringColor = isTextInput ? COLORS.ORANGE : COLORS.FOCUS_BLUE; // Blue for DOM hover mode
@@ -1038,6 +1208,10 @@ export class OverlayManager {
 
     // Shadow DOM: document CSS does not pierce; inject into this root on first use.
     this._ensureStylesForElement(stylingTarget);
+    // Also ensure styles reach clip-opened ancestors (same document usually).
+    for (const c of toOpen) {
+      try { this._ensureStylesForElement(c); } catch { /* ignore */ }
+    }
 
     // Apply styling using CSS custom properties
     stylingTarget.style.setProperty('--keypilot-focus-ring-color', ringColor);
@@ -1045,8 +1219,14 @@ export class OverlayManager {
     stylingTarget.style.setProperty('--keypilot-focus-shadow-color', shadowColor);
     stylingTarget.style.setProperty('--keypilot-focus-ring-bg-color', ringBgColor);
 
-    // Add the styling class (+ inset fallback when overflow clipping would hide the ring)
+    // Class + data attributes. Prefer data-kp-focus for paint (CSS): SPAs often
+    // strip unknown classes on re-render but leave data-* alone.
     stylingTarget.classList.add('keypilot-focus-element');
+    try {
+      stylingTarget.setAttribute('data-kp-focus', '1');
+      if (useInset) stylingTarget.setAttribute('data-kp-focus-inset', '1');
+      else stylingTarget.removeAttribute('data-kp-focus-inset');
+    } catch { /* ignore */ }
     if (useInset) stylingTarget.classList.add('keypilot-focus-element--inset');
     else stylingTarget.classList.remove('keypilot-focus-element--inset');
 
@@ -1059,6 +1239,8 @@ export class OverlayManager {
         originalTagName: element?.tagName,
         styledDifferentElement: stylingTarget !== element,
         useInset: useInset,
+        clippersOpened: toOpen.length,
+        tightWrapper: !!clipCtx.tightWrapper,
         ringColor: ringColor,
         isTextInput: isTextInput
       });
@@ -1166,6 +1348,10 @@ export class OverlayManager {
     try {
       el.classList.remove('keypilot-focus-element');
       el.classList.remove('keypilot-focus-element--inset');
+      try {
+        el.removeAttribute('data-kp-focus');
+        el.removeAttribute('data-kp-focus-inset');
+      } catch { /* ignore */ }
       el.style.removeProperty('--keypilot-focus-ring-color');
       el.style.removeProperty('--keypilot-focus-ring-width');
       el.style.removeProperty('--keypilot-focus-shadow-color');
@@ -1185,6 +1371,7 @@ export class OverlayManager {
     this._currentStyledElement = null;
 
     this._stripFocusStylingFromElement(primary);
+    this._clearClipOpenedElements();
 
     // Sweep the last styled tree scope for any stranded focus rings.
     let root = null;
@@ -1202,10 +1389,11 @@ export class OverlayManager {
     for (const r of roots) {
       try {
         const stranded = r.querySelectorAll(
-          '.keypilot-focus-element, .keypilot-focus-element--inset'
+          '.keypilot-focus-element, .keypilot-focus-element--inset, [data-kp-focus], .keypilot-clip-open'
         );
         for (const el of stranded) {
           this._stripFocusStylingFromElement(el);
+          try { el.classList.remove('keypilot-clip-open'); } catch { /* ignore */ }
         }
       } catch { /* ignore */ }
     }
@@ -3210,6 +3398,67 @@ export class OverlayManager {
   }
 
   /**
+   * Focus the popover iframe so in-frame KeyPilot receives keys without a user click.
+   * @param {HTMLIFrameElement|null|undefined} iframe
+   */
+  _focusPopoverIframe(iframe) {
+    if (!iframe) return;
+    try { iframe.focus(); } catch { /* ignore */ }
+    try { iframe.contentWindow?.focus?.(); } catch { /* ignore */ }
+  }
+
+  /**
+   * Hybrid focus: keys drive the iframe page when the pointer is over content;
+   * when the pointer is over chrome (titlebar / actions / close), focus returns
+   * to the parent so Esc/E/P and chrome controls stay reliable.
+   *
+   * @param {{
+   *   iframe: HTMLIFrameElement,
+   *   chromeEls?: Array<HTMLElement|null|undefined>,
+   *   focusChromeEl?: HTMLElement|null
+   * }} opts
+   */
+  _installPopoverHybridFocus({ iframe, chromeEls, focusChromeEl } = {}) {
+    try { this._popoverHybridFocusCleanup?.(); } catch { /* ignore */ }
+    this._popoverHybridFocusCleanup = null;
+
+    if (!iframe) return;
+
+    const chrome = (Array.isArray(chromeEls) ? chromeEls : []).filter(Boolean);
+    /** @type {'iframe'|'chrome'|null} */
+    let zone = null;
+
+    const focusChrome = () => {
+      const el = focusChromeEl || chrome[0] || this.popoverContainer;
+      try { el?.focus?.(); } catch { /* ignore */ }
+    };
+
+    const focusIframe = () => this._focusPopoverIframe(iframe);
+
+    const setZone = (next) => {
+      if (next === zone) return;
+      zone = next;
+      if (next === 'iframe') focusIframe();
+      else if (next === 'chrome') focusChrome();
+    };
+
+    const onChromeEnter = () => setZone('chrome');
+    const onIframeEnter = () => setZone('iframe');
+
+    for (const el of chrome) {
+      try { el.addEventListener('pointerenter', onChromeEnter, true); } catch { /* ignore */ }
+    }
+    try { iframe.addEventListener('pointerenter', onIframeEnter, true); } catch { /* ignore */ }
+
+    this._popoverHybridFocusCleanup = () => {
+      for (const el of chrome) {
+        try { el.removeEventListener('pointerenter', onChromeEnter, true); } catch { /* ignore */ }
+      }
+      try { iframe.removeEventListener('pointerenter', onIframeEnter, true); } catch { /* ignore */ }
+    };
+  }
+
+  /**
    * Show popover with iframe containing the linked page.
    * Uses the shared {@link createPopoverTitlebar} chrome: single titlebar with
    * title, optional close-key hint, and uniform × close when enabled.
@@ -3335,7 +3584,8 @@ export class OverlayManager {
       className: 'kpv2-popover-titlebar'
     });
     const header = titlebarApi.titlebar;
-    this.popoverCloseButton = titlebarApi.closeButton;
+    const closeButton = titlebarApi.closeButton;
+    this.popoverCloseButton = closeButton;
     ensureTopMouseTracking();
 
     // Create error message container (initially hidden)
@@ -3422,18 +3672,17 @@ export class OverlayManager {
     // Initialize the iframe bridge (content script running inside the iframe).
     // We retry a few times because content scripts in the frame may not be ready immediately,
     // and some pages navigate/redirect after initial load.
+    // Pass closeKeys so Esc/P work inside the focused iframe without a host click.
     const sendBridgeInit = () => {
       try {
-        iframe.contentWindow?.postMessage({ type: 'KP_POPOVER_BRIDGE_INIT' }, '*');
+        iframe.contentWindow?.postMessage({
+          type: 'KP_POPOVER_BRIDGE_INIT',
+          closeKeys
+        }, '*');
       } catch {
         // Ignore
       }
     };
-
-    // Important: Do NOT auto-focus the iframe.
-    // Key events inside an iframe do not propagate to the parent document, so
-    // auto-focusing it breaks Escape-to-close and other KeyPilot shortcuts.
-    // Users can still interact with the iframe via mouse; focusing it is optional.
 
     // Detect iframe load errors
     // Note: We can't reliably detect X-Frame-Options blocking for cross-origin iframes
@@ -3533,13 +3782,14 @@ export class OverlayManager {
 
       if (data.type === 'KP_POPOVER_BRIDGE_READY') {
         this.popoverBridgeReady = true;
-        // Auto-focus the iframe once we know the bridge is active, so Esc/P + scroll still work.
-        try {
-          iframeRef?.focus();
-        } catch (_e) { }
-        try {
-          iframeRef?.contentWindow?.focus?.();
-        } catch (_e2) { }
+        // Auto-focus iframe so full KeyPilot works inside without a user click.
+        // Close keys (Esc/P) are handled by the iframe bridge → parent.
+        this._focusPopoverIframe(iframeRef);
+        this._installPopoverHybridFocus({
+          iframe: iframeRef,
+          chromeEls: [header, closeButton].filter(Boolean),
+          focusChromeEl: closeButton || header
+        });
         return;
       }
 
@@ -3559,11 +3809,9 @@ export class OverlayManager {
     };
     window.addEventListener('message', this.popoverMessageHandler, true);
 
-    // Default focus: keep focus in the parent (close button) until the iframe bridge acks ready.
-    // Once ready, we will auto-focus the iframe so keyboard interaction begins immediately.
+    // Until the bridge is ready, keep focus on chrome (then hybrid focus takes over).
     try {
-      // Prefer focusing the close button so it’s obvious where focus is.
-      closeButton.focus();
+      (closeButton || header)?.focus?.();
     } catch (_e) {
       try {
         this.popoverContainer.focus();
@@ -3642,6 +3890,14 @@ export class OverlayManager {
         this._popoverResizeDispose();
       } catch { /* ignore */ }
       this._popoverResizeDispose = null;
+    }
+
+    // Tear down hybrid chrome/iframe focus routing
+    if (this._popoverHybridFocusCleanup) {
+      try {
+        this._popoverHybridFocusCleanup();
+      } catch { /* ignore */ }
+      this._popoverHybridFocusCleanup = null;
     }
 
     if (this.popoverContainer) {
@@ -4105,10 +4361,13 @@ export class OverlayManager {
     this.popoverIframeElement = iframe;
     this.popoverIframeWindow = iframe.contentWindow || null;
 
-    // Initialize the iframe bridge
+    // Initialize the iframe bridge; pass closeKeys so Esc/E close from inside the frame.
     const sendBridgeInit = () => {
       try {
-        iframe.contentWindow?.postMessage({ type: 'KP_POPOVER_BRIDGE_INIT' }, '*');
+        iframe.contentWindow?.postMessage({
+          type: 'KP_POPOVER_BRIDGE_INIT',
+          closeKeys
+        }, '*');
       } catch {
         // Ignore
       }
@@ -4184,14 +4443,18 @@ export class OverlayManager {
 
     // Don't prevent body scroll for preview popover - page should remain interactive
 
-    // Add keyboard event listeners
-    // Note: E/W toggle is handled by KeyPilot's handlePreviewLinkPopover
-    // This handler only needs to handle Escape
+    // Parent-side close while focus is on chrome (titlebar / buttons).
+    // When focus is in the iframe, Esc/E are handled by the bridge → REQUEST_CLOSE.
     const handlePopoverKeyDown = (e) => {
       console.log('[KeyPilot] Preview popover key event:', e.key);
 
-      // Escape always closes
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' || closeKeys.includes(String(e.key))) {
+        // Only handle here if focus is still in the parent document.
+        // (If focus is in the iframe, the bridge already owns these keys.)
+        const ae = document.activeElement;
+        const focusInIframe = ae === iframeRef || ae === iframe;
+        if (focusInIframe) return;
+
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
@@ -4213,16 +4476,14 @@ export class OverlayManager {
 
       if (data.type === 'KP_POPOVER_BRIDGE_READY') {
         this.popoverBridgeReady = true;
-        // For preview popovers, DON'T auto-focus the iframe
-        // This allows E/W keys to reach the parent document for toggle behavior
-        if (!this._isPreviewPopover) {
-          try {
-            iframeRef?.focus();
-          } catch (_e) { }
-          try {
-            iframeRef?.contentWindow?.focus?.();
-          } catch (_e2) { }
-        }
+        // Auto-focus iframe so full KeyPilot works on the preview page without a click.
+        // Esc/E close via bridge → parent; hybrid focus returns to chrome on titlebar hover.
+        this._focusPopoverIframe(iframeRef);
+        this._installPopoverHybridFocus({
+          iframe: iframeRef,
+          chromeEls: [header, closeButton, previewOpenActions].filter(Boolean),
+          focusChromeEl: closeButton || header
+        });
         return;
       }
 
@@ -4239,8 +4500,9 @@ export class OverlayManager {
     };
     window.addEventListener('message', this.popoverMessageHandler, true);
 
+    // Until bridge ready, park focus on chrome.
     try {
-      closeButton.focus();
+      (closeButton || header)?.focus?.();
     } catch (_e) {
       try {
         this.popoverContainer.focus();

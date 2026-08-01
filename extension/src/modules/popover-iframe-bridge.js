@@ -43,6 +43,9 @@ export function installPopoverIframeBridge(options = {}) {
     let keyPilotStarted = false;
     let mouseInsideFrame = true;
     let lastMouse = { x: null, y: null };
+    // Close keys from parent INIT (defaults cover open-popover P + link-preview E).
+    /** @type {Set<string>} */
+    let closeKeySet = new Set(['Escape', 'e', 'E', 'p', 'P']);
 
     const scrollByY = (deltaY, behavior = 'smooth') => {
       try {
@@ -116,6 +119,19 @@ export function installPopoverIframeBridge(options = {}) {
 
       if (data.type === MSG.POPOVER_BRIDGE_INIT) {
         bridgeActive = true;
+        // Parent can pass layout-aware close keys (e.g. E for preview, P for open-popover).
+        try {
+          if (Array.isArray(data.closeKeys) && data.closeKeys.length) {
+            closeKeySet = new Set(data.closeKeys.map(String));
+            // Always allow Escape even if omitted.
+            closeKeySet.add('Escape');
+          }
+        } catch { /* ignore */ }
+        // Expose for in-frame KeyPilot (may register keydown after us and win capture order).
+        try {
+          window.__KP_POPOVER_IFRAME = true;
+          window.__KP_POPOVER_CLOSE_KEYS = Array.from(closeKeySet);
+        } catch { /* ignore */ }
         try {
           window.parent.postMessage({ type: MSG.POPOVER_BRIDGE_READY }, '*');
         } catch {
@@ -180,9 +196,10 @@ export function installPopoverIframeBridge(options = {}) {
         return;
       }
 
-      // Close keys (P toggles open-popover on right-handed layout).
+      // Close keys from parent (Esc + open/preview toggle keys). Capture-phase so
+      // in-frame KeyPilot does not steal E/P for nested actions before we close.
+      if (!typing && closeKeySet.has(key)) return requestClose();
       if (key === 'Escape') return requestClose();
-      if (!typing && (key === 'p' || key === 'P')) return requestClose();
       if (closeOnQuote && !typing && key === "'") return requestClose();
 
       // Pre-KeyPilot F: click link under cursor inside the iframe.

@@ -1575,6 +1575,33 @@ export class KeyPilot extends EventManager {
       return;
     }
 
+    // Inside a KeyPilot popover iframe: parent auto-focuses us so F/hover work, but
+    // close keys (Esc / E / P) must still request parent close. In-frame KeyPilot can
+    // register after the bridge and win capture order, so we own these here too.
+    try {
+      if (window !== window.top && window.__KP_POPOVER_IFRAME) {
+        const closeKeys = Array.isArray(window.__KP_POPOVER_CLOSE_KEYS) && window.__KP_POPOVER_CLOSE_KEYS.length
+          ? window.__KP_POPOVER_CLOSE_KEYS
+          : ['Escape', 'e', 'E', 'p', 'P'];
+        const k = e.key;
+        const isEsc = k === 'Escape' || k === 'Esc';
+        if (isEsc || closeKeys.includes(k)) {
+          // Never trap letter close keys while typing in the iframe page.
+          if (!isEsc && this._isUnsafeToRunActionKey?.(e)) {
+            /* fall through to normal typing */
+          } else {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            try {
+              window.parent.postMessage({ type: 'KP_POPOVER_REQUEST_CLOSE', key: k }, '*');
+            } catch { /* ignore */ }
+            return;
+          }
+        }
+      }
+    } catch { /* ignore */ }
+
     const currentState = this.state.getState();
     const KB = this.keybindings || {};
 
