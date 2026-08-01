@@ -96,13 +96,6 @@ export class OverlayManager {
     this._lastFocusRect = null;
 
     /**
-     * Ancestors we temporarily opened (overflow/content-visibility) so the focus
-     * ring on the hover target is not clipped. Cleared with focus styling.
-     * @type {Set<Element>}
-     */
-    this._clipOpenedElements = new Set();
-
-    /**
      * Active temporary click/image effect overlays.
      * Fixed-position ghosts must be torn down when the source leaves view or the
      * page navigates — otherwise they animate alone over the next screen.
@@ -1101,37 +1094,6 @@ export class OverlayManager {
   }
 
   /**
-   * Undo temporary overflow/containment opens on clip ancestors.
-   */
-  _clearClipOpenedElements() {
-    const set = this._clipOpenedElements;
-    if (!set || !set.size) return;
-    for (const el of set) {
-      try {
-        el.classList.remove('keypilot-clip-open');
-      } catch { /* ignore */ }
-    }
-    set.clear();
-  }
-
-  /**
-   * Temporarily neutralize clip/containment on ancestors so a ring painted on
-   * the hover target (or a tight wrapper) is not cut off.
-   * @param {Element[]} clippers
-   */
-  _openClipAncestors(clippers) {
-    if (!Array.isArray(clippers) || !clippers.length) return;
-    if (!this._clipOpenedElements) this._clipOpenedElements = new Set();
-    for (const el of clippers) {
-      if (!el || el.nodeType !== 1) continue;
-      try {
-        el.classList.add('keypilot-clip-open');
-        this._clipOpenedElements.add(el);
-      } catch { /* ignore */ }
-    }
-  }
-
-  /**
    * Update focus overlay using element styling (for DOM hover mode)
    * Styles the element directly instead of creating overlay elements
    */
@@ -1157,27 +1119,17 @@ export class OverlayManager {
     // better single-rect descendant (usually the anchor's wrapper) instead of the anchor.
     let stylingTarget = this._resolveElementForFocusStyling(element) || element;
 
-    // Clip-aware paint strategy (keeps the fast in-element path; no fixed overlay):
-    // 1) Find ancestors that would clip an outer ring.
-    // 2) If a clipper is nearly the same size as the target (Stories row wrapper,
-    //    content-visibility box), paint the ring ON that wrapper.
-    // 3) Temporarily open overflow/containment on clip ancestors so the ring is
-    //    not cut off (X "What's happening", profile tab strip, etc.).
+    // Clip-aware paint (never mutate page overflow — that breaks carousels like IMDb):
+    // - If a near-same-size wrapper owns content-visibility/clip, paint the ring there.
+    // - If any tight ancestor would clip an *outer* ring, use inset outline instead.
+    // Do NOT force overflow:visible on ancestors (reveals off-screen carousel slides).
     const clipCtx = this._findFocusClipContext(stylingTarget);
     if (clipCtx.tightWrapper && clipCtx.tightWrapper.nodeType === 1) {
       stylingTarget = clipCtx.tightWrapper;
     }
-    // Open remaining clippers (skip the node we are about to ring, if any).
-    const toOpen = (clipCtx.clippers || []).filter((c) => c && c !== stylingTarget);
-    this._openClipAncestors(toOpen);
-
-    // With clip ancestors opened (or ring on the tight wrapper), prefer outer ring.
-    // Fall back to inset only if we still look clipped and opened nothing useful.
-    const stillClipped =
-      !toOpen.length &&
-      !clipCtx.tightWrapper &&
+    const useInset =
+      !!(clipCtx.clippers && clipCtx.clippers.length) ||
       this._isProbablyClippedByAncestorOverflow(stylingTarget);
-    const useInset = stillClipped;
 
     // Don't style modal/popover iframes
     try {
@@ -1208,10 +1160,6 @@ export class OverlayManager {
 
     // Shadow DOM: document CSS does not pierce; inject into this root on first use.
     this._ensureStylesForElement(stylingTarget);
-    // Also ensure styles reach clip-opened ancestors (same document usually).
-    for (const c of toOpen) {
-      try { this._ensureStylesForElement(c); } catch { /* ignore */ }
-    }
 
     // Apply styling using CSS custom properties
     stylingTarget.style.setProperty('--keypilot-focus-ring-color', ringColor);
@@ -1239,7 +1187,6 @@ export class OverlayManager {
         originalTagName: element?.tagName,
         styledDifferentElement: stylingTarget !== element,
         useInset: useInset,
-        clippersOpened: toOpen.length,
         tightWrapper: !!clipCtx.tightWrapper,
         ringColor: ringColor,
         isTextInput: isTextInput
@@ -1371,7 +1318,6 @@ export class OverlayManager {
     this._currentStyledElement = null;
 
     this._stripFocusStylingFromElement(primary);
-    this._clearClipOpenedElements();
 
     // Sweep the last styled tree scope for any stranded focus rings.
     let root = null;
@@ -1389,11 +1335,10 @@ export class OverlayManager {
     for (const r of roots) {
       try {
         const stranded = r.querySelectorAll(
-          '.keypilot-focus-element, .keypilot-focus-element--inset, [data-kp-focus], .keypilot-clip-open'
+          '.keypilot-focus-element, .keypilot-focus-element--inset, [data-kp-focus]'
         );
         for (const el of stranded) {
           this._stripFocusStylingFromElement(el);
-          try { el.classList.remove('keypilot-clip-open'); } catch { /* ignore */ }
         }
       } catch { /* ignore */ }
     }

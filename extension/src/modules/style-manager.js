@@ -673,20 +673,6 @@ export class StyleManager {
         filter: none !important;
       }
 
-      /*
-       * Temporarily neutralize ancestor clip/containment so the focus ring on the
-       * hover target (or a tight wrapper we promote to) can paint fully.
-       * Applied only while that target is focused; removed on clear.
-       */
-      .keypilot-clip-open {
-        overflow: visible !important;
-        overflow-x: visible !important;
-        overflow-y: visible !important;
-        content-visibility: visible !important;
-        contain: none !important;
-        clip-path: none !important;
-        -webkit-clip-path: none !important;
-      }
     `;
   }
 
@@ -787,16 +773,6 @@ export class StyleManager {
         box-shadow: none !important;
         background: var(--keypilot-focus-ring-bg-color, transparent) !important;
         filter: none !important;
-      }
-
-      .keypilot-clip-open {
-        overflow: visible !important;
-        overflow-x: visible !important;
-        overflow-y: visible !important;
-        content-visibility: visible !important;
-        contain: none !important;
-        clip-path: none !important;
-        -webkit-clip-path: none !important;
       }
 
     `;
