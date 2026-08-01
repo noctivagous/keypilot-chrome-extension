@@ -80,6 +80,7 @@ const modules = [
   'src/ui/keybindings-ui.js',
   'src/ui/popup-theme-vars.js',
   'src/ui/preview-open-actions.js',
+  'src/ui/segmented-control.js',
   'src/ui/popover-titlebar.js',
   'src/ui/floating-keyboard-help.js',
   'src/ui/control-strip.js',

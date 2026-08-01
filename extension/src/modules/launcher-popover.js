@@ -849,8 +849,12 @@ export class LauncherPopover {
       right: 8px;
       top: 50%;
       transform: translateY(-50%);
+      margin: 0;
+      appearance: none;
+      -webkit-appearance: none;
       background: transparent;
       border: none;
+      box-shadow: none;
       color: #888;
       font-size: 20px;
       cursor: pointer;
@@ -1022,8 +1026,13 @@ export class LauncherPopover {
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      margin: 0;
+      appearance: none;
+      -webkit-appearance: none;
+      box-sizing: border-box;
       background: transparent;
       border: 1px solid transparent;
+      box-shadow: none;
       color: #888;
       cursor: pointer;
       padding: 0;
@@ -1130,9 +1139,14 @@ export class LauncherPopover {
 
     const openInTabButton = doc.createElement('button');
     openInTabButton.style.cssText = `
+      margin: 0;
+      appearance: none;
+      -webkit-appearance: none;
+      box-sizing: border-box;
       background: #4CAF50;
       color: white;
       border: none;
+      box-shadow: none;
       padding: 8px 16px;
       border-radius: 4px;
       cursor: pointer;

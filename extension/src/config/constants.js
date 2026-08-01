@@ -183,6 +183,14 @@ export const CURSOR_MODE = Object.freeze({
   CUSTOM_CURSORS: 'CUSTOM-CURSORS'
 });
 
+/**
+ * System UI font for KeyPilot chrome injected into host pages.
+ * Pin this on popovers/titlebars so site body fonts (e.g. freight-text-pro) cannot leak in.
+ * Single declaration — the content bundle is one IIFE scope (no per-module consts of the same name).
+ */
+export const KP_UI_FONT =
+  "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+
 export const COLORS = {
   // Primary cursor colors
   FOCUS_GREEN: 'rgba(0,180,0,0.95)',

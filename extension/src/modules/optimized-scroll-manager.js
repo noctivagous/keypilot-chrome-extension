@@ -294,9 +294,10 @@ export class OptimizedScrollManager {
   }
 
   cleanupScrollObservers() {
-    // Remove observers for elements that are no longer in the DOM
+    // Remove observers for elements that are no longer in the DOM.
+    // Use isConnected (not document.contains) so open-shadow nodes are kept.
     for (const element of this.scrollSensitiveElements) {
-      if (!document.contains(element)) {
+      if (!element || !element.isConnected) {
         this.unobserveElementForScroll(element);
       }
     }

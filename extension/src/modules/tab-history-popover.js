@@ -196,6 +196,10 @@ export class TabHistoryPopover {
       }
 
       .kpv2-tab-history-panel .kpv2-history-close {
+        margin: 0;
+        appearance: none;
+        -webkit-appearance: none;
+        box-sizing: border-box;
         width: 34px;
         height: 34px;
         border-radius: 10px;
@@ -206,6 +210,9 @@ export class TabHistoryPopover {
         line-height: 1;
         cursor: pointer;
         flex: 0 0 auto;
+        box-shadow: none;
+        text-shadow: none;
+        padding: 0;
       }
 
       .kpv2-tab-history-panel .kpv2-history-body {

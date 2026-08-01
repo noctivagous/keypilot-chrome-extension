@@ -63,29 +63,35 @@ export class ShadowDOMManager {
   }
 
   /**
-   * Shallow pre-warm only: light-DOM hosts with open shadow roots.
-   * Nested roots (e.g. archive.org app-root → … → media-button) are handled
-   * lazily via StyleManager.ensureStylesForNode when those elements are focused.
+   * Pre-warm open shadow roots already in the tree, including nested roots
+   * (archive.org: app-root → ia-topnav → primary-nav → media-button → …).
+   * Lazy ensureStylesForNode remains the wipe-resistant correctness path.
    */
   processExistingShadowRoots() {
-    const walker = document.createTreeWalker(
-      document.documentElement,
-      NodeFilter.SHOW_ELEMENT,
-      null,
-      false
-    );
+    const injectTree = (root) => {
+      if (!root) return;
+      const walker = document.createTreeWalker(
+        root,
+        NodeFilter.SHOW_ELEMENT,
+        null,
+        false
+      );
 
-    let node;
-    while ((node = walker.nextNode())) {
-      if (node.shadowRoot) {
+      let node;
+      while ((node = walker.nextNode())) {
+        if (!node.shadowRoot) continue;
         try {
           this.styleManager.injectIntoShadowRoot(node.shadowRoot);
           this.trackShadowRoot(node.shadowRoot);
+          // Recurse into this open root so nested hosts get CSS before first hover.
+          injectTree(node.shadowRoot);
         } catch (error) {
           console.warn('[KeyPilot] Failed to inject styles into existing shadow root:', error);
         }
       }
-    }
+    };
+
+    injectTree(document.documentElement);
   }
 
   cleanup() {

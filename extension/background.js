@@ -16,6 +16,85 @@ const ONBOARDING_ACTIVE_STORAGE_KEY = 'keypilot_onboarding_active';
 const ONBOARDING_PROGRESS_STORAGE_KEY = 'keypilot_onboarding_progress';
 const TRANSIENT_ACTION_STORAGE_KEY = 'keypilot_transient_action';
 
+// Session DNR rule: spoof mobile UA for sub_frame loads while Link Preview is in Mobile mode.
+// Static rules.json uses id 1; keep session ids well clear of that range.
+const PREVIEW_MOBILE_UA_RULE_ID = 9101;
+/** @type {Set<number>} tabs that currently want mobile preview UA */
+const previewMobileUaTabIds = new Set();
+
+// Pixel 7 / Chrome Android — close enough for sites that branch on UA + client hints.
+const PREVIEW_MOBILE_USER_AGENT =
+  'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36';
+const PREVIEW_MOBILE_SEC_CH_UA =
+  '"Chromium";v="131", "Google Chrome";v="131", "Not_A Brand";v="24"';
+
+/**
+ * Sync session DNR rules so sub_frame requests on opted-in tabs use a mobile UA.
+ * Scoped to sub_frame only (not main_frame) so the host page itself is unaffected.
+ */
+async function syncPreviewMobileUaRules() {
+  const removeRuleIds = [PREVIEW_MOBILE_UA_RULE_ID];
+  /** @type {chrome.declarativeNetRequest.Rule[]} */
+  const addRules = [];
+
+  if (previewMobileUaTabIds.size > 0) {
+    addRules.push({
+      id: PREVIEW_MOBILE_UA_RULE_ID,
+      priority: 100,
+      action: {
+        type: 'modifyHeaders',
+        requestHeaders: [
+          { header: 'User-Agent', operation: 'set', value: PREVIEW_MOBILE_USER_AGENT },
+          { header: 'Sec-CH-UA', operation: 'set', value: PREVIEW_MOBILE_SEC_CH_UA },
+          { header: 'Sec-CH-UA-Mobile', operation: 'set', value: '?1' },
+          { header: 'Sec-CH-UA-Platform', operation: 'set', value: '"Android"' },
+          { header: 'Sec-CH-UA-Platform-Version', operation: 'set', value: '"14.0.0"' },
+          { header: 'Sec-CH-UA-Model', operation: 'set', value: '"Pixel 7"' },
+          { header: 'Sec-CH-UA-Full-Version-List', operation: 'set', value: PREVIEW_MOBILE_SEC_CH_UA }
+        ]
+      },
+      condition: {
+        tabIds: Array.from(previewMobileUaTabIds),
+        // Document navigations inside the preview iframe (and other iframes on the tab).
+        resourceTypes: ['sub_frame']
+      }
+    });
+  }
+
+  try {
+    await chrome.declarativeNetRequest.updateSessionRules({ removeRuleIds, addRules });
+  } catch (e) {
+    console.warn('[KeyPilot] Failed to sync preview mobile UA rules:', e?.message || e);
+    throw e;
+  }
+}
+
+/**
+ * @param {number} tabId
+ * @param {boolean} enabled
+ */
+async function setPreviewMobileUaForTab(tabId, enabled) {
+  if (typeof tabId !== 'number') {
+    throw new Error('Invalid tab id for preview mobile UA');
+  }
+  if (enabled) {
+    previewMobileUaTabIds.add(tabId);
+  } else {
+    previewMobileUaTabIds.delete(tabId);
+  }
+  await syncPreviewMobileUaRules();
+}
+
+try {
+  chrome.tabs.onRemoved.addListener((tabId) => {
+    if (!previewMobileUaTabIds.has(tabId)) return;
+    previewMobileUaTabIds.delete(tabId);
+    void syncPreviewMobileUaRules().catch(() => { /* ignore */ });
+  });
+} catch {
+  // ignore
+}
+
 async function ensureDefaultKeyboardHelpVisible() {
   // Only set a default if the user has never set a preference.
   const existing = await storageGetValue(KEYBOARD_HELP_STORAGE_KEY, undefined);
@@ -1423,6 +1502,27 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             sendResponse({
               type: MSG.ERROR,
               error: error?.message || 'Failed to open UI in tab'
+            });
+          }
+          break;
+        }
+
+        case MSG.SET_PREVIEW_MOBILE_UA: {
+          // Content script: enable/disable mobile User-Agent for iframe previews on this tab.
+          const tabId = sender?.tab?.id;
+          if (typeof tabId !== 'number') {
+            sendResponse({ type: MSG.ERROR, error: 'No sender tab id' });
+            break;
+          }
+          const enabled = message.enabled === true;
+          try {
+            await setPreviewMobileUaForTab(tabId, enabled);
+            sendResponse({ type: MSG.SUCCESS, enabled, tabId });
+          } catch (e) {
+            console.warn('[KeyPilot] SET_PREVIEW_MOBILE_UA failed:', e?.message || e);
+            sendResponse({
+              type: MSG.ERROR,
+              error: e?.message || 'Failed to update preview mobile UA'
             });
           }
           break;

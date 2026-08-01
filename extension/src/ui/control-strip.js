@@ -43,6 +43,7 @@ export class ControlStrip {
     this._closeBtn = null;
 
     this._enabled = true;
+    this._textMode = false;
     this._collapsed = false;
     this._keyboardActive = false;
     this._desiredVisible = true;
@@ -140,6 +141,23 @@ export class ControlStrip {
    */
   setEnabledState(enabled) {
     this._enabled = !!enabled;
+    // Text mode only applies while KeyPilot is on.
+    if (!this._enabled) this._textMode = false;
+    this._renderStatus();
+  }
+
+  /**
+   * Reflect text-field focus (text mode) on the On/Off status segment.
+   * When active, the green ON indicator turns orange.
+   * @param {boolean} active
+   */
+  setTextModeActive(active) {
+    const next = !!active && !!this._enabled;
+    if (this._textMode === next) {
+      this._renderStatus();
+      return;
+    }
+    this._textMode = next;
     this._renderStatus();
   }
 
@@ -556,21 +574,41 @@ export class ControlStrip {
   _renderStatus() {
     if (!this._statusLabel || !this._statusDot) return;
     const on = !!this._enabled;
+    const textMode = on && !!this._textMode;
     this._statusLabel.textContent = on ? 'ON' : 'OFF';
-    this._statusDot.style.background = on
-      ? 'rgba(16, 185, 129, 0.95)'
-      : 'rgba(148, 163, 184, 0.85)';
-    this._statusDot.style.boxShadow = on
-      ? '0 0 0 2px rgba(16, 185, 129, 0.2)'
-      : '0 0 0 2px rgba(148, 163, 184, 0.15)';
-    this._statusLabel.style.color = on
-      ? 'rgba(167, 243, 208, 0.95)'
-      : 'rgba(148, 163, 184, 0.95)';
+
+    // Green when on; orange while a text field has focus (text mode); gray when off.
+    let dotBg;
+    let dotShadow;
+    let labelColor;
+    if (!on) {
+      dotBg = 'rgba(148, 163, 184, 0.85)';
+      dotShadow = '0 0 0 2px rgba(148, 163, 184, 0.15)';
+      labelColor = 'rgba(148, 163, 184, 0.95)';
+    } else if (textMode) {
+      // Matches KeyPilot text-mode orange (#ff8c00 / COLORS.ORANGE).
+      dotBg = 'rgba(255, 140, 0, 0.95)';
+      dotShadow = '0 0 0 2px rgba(255, 140, 0, 0.25)';
+      labelColor = 'rgba(253, 186, 116, 0.98)';
+    } else {
+      dotBg = 'rgba(16, 185, 129, 0.95)';
+      dotShadow = '0 0 0 2px rgba(16, 185, 129, 0.2)';
+      labelColor = 'rgba(167, 243, 208, 0.95)';
+    }
+
+    this._statusDot.style.background = dotBg;
+    this._statusDot.style.boxShadow = dotShadow;
+    this._statusLabel.style.color = labelColor;
     if (this._statusBtn) {
       this._statusBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
-      this._statusBtn.title = on
-        ? 'KeyPilot is on — click to turn off (Alt+K)'
-        : 'KeyPilot is off — click to turn on (Alt+K)';
+      try {
+        this._statusBtn.setAttribute('data-kp-text-mode', textMode ? 'true' : 'false');
+      } catch { /* ignore */ }
+      this._statusBtn.title = !on
+        ? 'KeyPilot is off — click to turn on (Alt+K)'
+        : textMode
+          ? 'KeyPilot is on (text mode) — click to turn off (Alt+K)'
+          : 'KeyPilot is on — click to turn off (Alt+K)';
     }
   }
 

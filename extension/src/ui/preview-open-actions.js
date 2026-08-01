@@ -3,6 +3,8 @@
  * (Link Preview titlebar, Launcher preview bar, etc.).
  */
 
+import { KP_UI_FONT } from '../config/constants.js';
+
 /**
  * @param {Document} doc
  * @param {Array<{ tag?: string, attrs: Record<string, string> }>} paths
@@ -32,22 +34,39 @@ export function createOutlineIcon(doc, paths) {
   return svg;
 }
 
+// Explicit chrome styles so host-page bare `button` rules cannot restyle layout.
+// Slashdot (classic.ssl.css) ships `button { margin: 0 0 40px 0; margin-right: 10%; ... }`
+// which otherwise inflates the Link Preview titlebar (~76px instead of ~34px).
 const TITLEBAR_BTN_STYLE = `
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
   background: transparent;
   border: 1px solid #4a4a4a;
   color: #e0e0e0;
   font-size: 11px;
   font-weight: 500;
-  font-family: inherit;
+  font-family: ${KP_UI_FONT};
   line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  text-shadow: none;
+  box-shadow: none;
   padding: 4px 8px;
   border-radius: 5px;
   cursor: pointer;
   flex-shrink: 0;
   white-space: nowrap;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  width: auto;
+  position: relative;
   transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 `;
 

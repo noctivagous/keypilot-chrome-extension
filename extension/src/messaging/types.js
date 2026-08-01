@@ -55,6 +55,9 @@ export const MSG = Object.freeze({
   SUCCESS: 'KP_SUCCESS',
   ERROR: 'KP_ERROR',
 
+  // --- Link Preview mobile User-Agent (SW declarativeNetRequest session rules) ---
+  SET_PREVIEW_MOBILE_UA: 'KP_SET_PREVIEW_MOBILE_UA',
+
   // --- Parent ↔ popover iframe (window.postMessage) ---
   POPOVER_BRIDGE_INIT: 'KP_POPOVER_BRIDGE_INIT',
   POPOVER_BRIDGE_READY: 'KP_POPOVER_BRIDGE_READY',

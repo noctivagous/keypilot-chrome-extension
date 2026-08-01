@@ -1,16 +1,36 @@
 /**
  * Visual overlay management for focus and delete indicators
  */
-import { CSS_CLASSES, Z_INDEX, SELECTORS, MODES, COLORS, FEATURE_FLAGS, CLICKABLE_CATEGORY } from '../config/constants.js';
+import { CSS_CLASSES, Z_INDEX, SELECTORS, MODES, COLORS, FEATURE_FLAGS, CLICKABLE_CATEGORY, KP_UI_FONT } from '../config/constants.js';
+import { MSG } from '../messaging/types.js';
 import { HighlightManager } from './highlight-manager.js';
 import { PopupManager } from './popup-manager.js';
 import { DEFAULT_SETTINGS } from './settings-manager.js';
+import { storageGetValue, storageSetValue } from '../utils/storage.js';
 import { makePopoverResizable } from '../utils/popover-resize.js';
 import { createPreviewOpenActionButtons } from '../ui/preview-open-actions.js';
 import {
   createPopoverTitlebar,
   createTitlebarCloseHint
 } from '../ui/popover-titlebar.js';
+import { createSegmentedControl } from '../ui/segmented-control.js';
+
+/** Per-host Link Preview viewport mode: { [hostname]: 'mobile' }. Missing/default = desktop. */
+const PREVIEW_VIEWPORT_BY_HOST_KEY = 'kp_link_preview_viewport_by_host';
+
+/**
+ * @param {string} url
+ * @returns {string} normalized hostname (lowercase, no leading www.)
+ */
+function previewHostFromUrl(url) {
+  try {
+    let host = new URL(String(url || '')).hostname.toLowerCase();
+    if (host.startsWith('www.')) host = host.slice(4);
+    return host;
+  } catch {
+    return '';
+  }
+}
 
 export class OverlayManager {
   constructor() {
@@ -47,6 +67,7 @@ export class OverlayManager {
     this._previewPopoverDragCleanup = null; // teardown titlebar drag listeners
     this._popoverResizeDispose = null; // teardown generic resize handles
     this._popoverHybridFocusCleanup = null; // teardown chrome↔iframe focus routing
+    this._previewMobileUaActive = false; // SW session rule: mobile UA for preview iframe
 
     // Central popup stack + blurred backdrop (kept below click overlays).
     // Note: Panel change callback will be set by KeyPilot after initialization
@@ -956,7 +977,10 @@ export class OverlayManager {
     // Clipped contexts use inset rings (negative outline-offset) — not a fixed
     // overlay — so we keep hover chrome snappy.
     if (this._useDomHoverFocusColors) {
-      try { this.hideFocusOverlay(); } catch { /* ignore */ }
+      // Hide any fixed-position backends so we never double-paint with canvas.
+      try { this.hideFocusOverlayCanvas(); } catch { /* ignore */ }
+      try { this.hideFocusOverlayCSSCustomProps(); } catch { /* ignore */ }
+      try { this.hideFocusOverlayDOM(); } catch { /* ignore */ }
       return this.updateFocusOverlayElementStyling(element, mode);
     }
 
@@ -1013,18 +1037,34 @@ export class OverlayManager {
     const needRight = er.right + pad;
     const needBottom = er.bottom + pad;
 
+    // Walk composed ancestors (parentElement + open shadow host hops).
+    // archive.org nests clickables inside media-button → … → NAV[overflow:hidden];
+    // a parentElement-only walk stops at the shadow root and misses clippers.
+    const composedParent = (node) => {
+      if (!node || node.nodeType !== 1) return null;
+      if (node.parentElement) return node.parentElement;
+      try {
+        const root = typeof node.getRootNode === 'function' ? node.getRootNode() : null;
+        if (root && typeof ShadowRoot !== 'undefined' && root instanceof ShadowRoot) {
+          return root.host || null;
+        }
+      } catch { /* ignore */ }
+      return null;
+    };
+
     try {
-      let n = element.parentElement;
+      let n = composedParent(element);
       let depth = 0;
-      while (n && n.nodeType === 1 && depth++ < 12) {
+      // Nested open shadows (archive.org tiles/nav) often need more than 12 hops.
+      while (n && n.nodeType === 1 && depth++ < 24) {
         if (n === document.documentElement || n === document.body) {
-          n = n.parentElement;
+          n = composedParent(n);
           continue;
         }
 
         const cs = window.getComputedStyle(n);
         if (!cs) {
-          n = n.parentElement;
+          n = composedParent(n);
           continue;
         }
 
@@ -1055,7 +1095,7 @@ export class OverlayManager {
             ar = n.getBoundingClientRect();
           } catch {
             clippers.push(n);
-            n = n.parentElement;
+            n = composedParent(n);
             continue;
           }
 
@@ -1077,7 +1117,7 @@ export class OverlayManager {
           }
         }
 
-        n = n.parentElement;
+        n = composedParent(n);
       }
     } catch { /* ignore */ }
 
@@ -1334,8 +1374,12 @@ export class OverlayManager {
    * Also sweeps the owning open ShadowRoot (and document) for leftovers —
    * Lit re-renders / resolve-target swaps can strand the class on a node we
    * no longer hold in `_currentStyledElement`, which looks like "stuck" hover.
+   *
+   * @param {{ deep?: boolean }} [opts] - deep: walk all open shadow roots
+   *   (used on full hide / mode switch to kill ghost rings on archive.org).
    */
-  clearElementFocusStyling() {
+  clearElementFocusStyling(opts = {}) {
+    const deep = !!(opts && opts.deep);
     const primary = this._currentStyledElement;
     this._currentStyledElement = null;
 
@@ -1364,6 +1408,47 @@ export class OverlayManager {
         }
       } catch { /* ignore */ }
     }
+
+    if (deep) {
+      try { this._deepStripFocusMarkers(document); } catch { /* ignore */ }
+    }
+  }
+
+  /**
+   * Walk open shadow trees and strip any leftover hover-ring markers.
+   * @param {Document|ShadowRoot|Element} root
+   * @param {number} [depth]
+   */
+  _deepStripFocusMarkers(root, depth = 0) {
+    if (!root || depth > 24) return;
+
+    try {
+      if (typeof root.querySelectorAll === 'function') {
+        const stranded = root.querySelectorAll(
+          '.keypilot-focus-element, .keypilot-focus-element--inset, [data-kp-focus]'
+        );
+        for (const el of stranded) {
+          this._stripFocusStylingFromElement(el);
+        }
+      }
+    } catch { /* ignore */ }
+
+    try {
+      const base = (root.nodeType === 9) ? root.documentElement : root;
+      if (!base) return;
+
+      if (base.nodeType === 1 && base.shadowRoot) {
+        this._deepStripFocusMarkers(base.shadowRoot, depth + 1);
+      }
+
+      const w = document.createTreeWalker(base, NodeFilter.SHOW_ELEMENT, null);
+      let n;
+      while ((n = w.nextNode())) {
+        if (n.shadowRoot) {
+          this._deepStripFocusMarkers(n.shadowRoot, depth + 1);
+        }
+      }
+    } catch { /* ignore */ }
   }
 
   updateFocusOverlayDOM(element, mode = MODES.NONE, rectOverride = null) {
@@ -1517,9 +1602,9 @@ export class OverlayManager {
 
   // Unified hide interface that switches between rendering modes
   hideFocusOverlay() {
-    // When DOM hover mode is enabled, clear element styling
+    // When DOM hover mode is enabled, clear element styling only (no canvas ring).
     if (this._useDomHoverFocusColors) {
-      this.clearElementFocusStyling();
+      this.clearElementFocusStyling({ deep: false });
       return;
     }
 
@@ -3523,6 +3608,10 @@ export class OverlayManager {
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        font-family: ${KP_UI_FONT};
+        font-size: 14px;
+        line-height: 1.3;
+        letter-spacing: normal;
       `
     });
 
@@ -3791,7 +3880,90 @@ export class OverlayManager {
   /**
    * Hide the popover
    */
+  /**
+   * Remembered viewport mode for a host. Default is desktop; only mobile is stored.
+   * @param {string} hostname
+   * @returns {Promise<'mobile'|'desktop'>}
+   */
+  async _getPreviewViewportModeForHost(hostname) {
+    const host = String(hostname || '').toLowerCase();
+    if (!host) return 'desktop';
+    try {
+      const map = await storageGetValue(PREVIEW_VIEWPORT_BY_HOST_KEY, {});
+      if (map && typeof map === 'object' && map[host] === 'mobile') {
+        return 'mobile';
+      }
+    } catch (e) {
+      console.warn('[KeyPilot] Failed to read preview viewport prefs:', e?.message || e);
+    }
+    return 'desktop';
+  }
+
+  /**
+   * Persist viewport mode for a host. Desktop clears the override (default).
+   * @param {string} hostname
+   * @param {'mobile'|'desktop'} mode
+   * @returns {Promise<void>}
+   */
+  async _setPreviewViewportModeForHost(hostname, mode) {
+    const host = String(hostname || '').toLowerCase();
+    if (!host) return;
+    try {
+      const prev = await storageGetValue(PREVIEW_VIEWPORT_BY_HOST_KEY, {});
+      const map = (prev && typeof prev === 'object' && !Array.isArray(prev))
+        ? { ...prev }
+        : {};
+      if (mode === 'mobile') {
+        map[host] = 'mobile';
+      } else {
+        delete map[host];
+      }
+      await storageSetValue(PREVIEW_VIEWPORT_BY_HOST_KEY, map);
+    } catch (e) {
+      console.warn('[KeyPilot] Failed to save preview viewport prefs:', e?.message || e);
+    }
+  }
+
+  /**
+   * Ask the service worker to enable/disable mobile User-Agent for this tab's
+   * sub_frame requests (Link Preview Mobile mode).
+   * @param {boolean} enabled
+   * @returns {Promise<boolean>}
+   */
+  async _setPreviewMobileUa(enabled) {
+    const next = !!enabled;
+    try {
+      if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) {
+        this._previewMobileUaActive = false;
+        return false;
+      }
+      const res = await chrome.runtime.sendMessage({
+        type: MSG.SET_PREVIEW_MOBILE_UA,
+        enabled: next
+      });
+      if (res?.type === MSG.ERROR) {
+        console.warn('[KeyPilot] Preview mobile UA not applied:', res.error || res);
+        this._previewMobileUaActive = false;
+        return false;
+      }
+      this._previewMobileUaActive = next;
+      return true;
+    } catch (e) {
+      console.warn('[KeyPilot] Preview mobile UA message failed:', e?.message || e);
+      this._previewMobileUaActive = false;
+      return false;
+    }
+  }
+
   hidePopover() {
+    // Drop mobile UA session rule so host-page iframes are not affected after close.
+    if (this._previewMobileUaActive) {
+      this._previewMobileUaActive = false;
+      try {
+        void this._setPreviewMobileUa(false);
+      } catch { /* ignore */ }
+    }
+
     // Stop bridge init retries
     if (this.popoverInitTimer) {
       try {
@@ -3950,8 +4122,9 @@ export class OverlayManager {
    * Show a preview popover near the cursor (picture-in-picture style)
    * @param {string} url - URL to load in iframe
    * @param {Object} opts - Options including mouseX, mouseY for positioning
+   * @param {'mobile'|'desktop'} [opts.viewportMode] - Override mode; otherwise host preference or desktop default
    */
-  showPreviewPopover(url, opts = {}) {
+  async showPreviewPopover(url, opts = {}) {
     // Remove existing popover if any
     this.hidePopover();
 
@@ -3959,6 +4132,7 @@ export class OverlayManager {
     const popoverWidth = 600;
     const arrowSize = 10; // Kept for drag cleanup / style vars if user resizes later
     const margin = 20; // Margin from viewport edges
+    const previewHost = previewHostFromUrl(url);
 
     // Full viewport height with the existing edge margins (top + bottom).
     const popoverHeight = Math.max(200, window.innerHeight - margin * 2);
@@ -3975,6 +4149,19 @@ export class OverlayManager {
     const closeKeys = Array.isArray(opts?.closeKeys) && opts.closeKeys.length
       ? opts.closeKeys.map(String)
       : ['Escape', 'e', 'E'];
+
+    // Default desktop; restore per-host Mobile if the user chose it before.
+    /** @type {'mobile'|'desktop'} */
+    let viewportMode = 'desktop';
+    if (opts.viewportMode === 'mobile' || opts.viewportMode === 'desktop') {
+      viewportMode = opts.viewportMode;
+    } else {
+      try {
+        viewportMode = await this._getPreviewViewportModeForHost(previewHost);
+      } catch {
+        viewportMode = 'desktop';
+      }
+    }
 
     // Centralized close request
     const requestClosePopover = () => {
@@ -4045,6 +4232,10 @@ export class OverlayManager {
         overflow: hidden;
         --arrow-left: ${arrowLeft}px;
         z-index: ${Z_INDEX.POPUP_PANEL_BASE};
+        font-family: ${KP_UI_FONT};
+        font-size: 12px;
+        line-height: 1.3;
+        letter-spacing: normal;
       `
     });
 
@@ -4095,6 +4286,20 @@ export class OverlayManager {
     let iframeRef = null;
     this.popoverBridgeReady = false;
 
+    // Full-bleed viewport shell (mobile and desktop both fill the popover width).
+    const iframeViewport = this.createElement('div', {
+      className: 'kpv2-preview-popover-viewport',
+      style: `
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        align-items: stretch;
+        justify-content: stretch;
+        overflow: hidden;
+        background: #0a0a0a;
+      `
+    });
+
     // Shared outline Open / Open in New Tab controls (also used by Launcher preview).
     const { actions: previewOpenActions } = createPreviewOpenActionButtons({
       getUrl: () => url,
@@ -4102,7 +4307,92 @@ export class OverlayManager {
       afterOpenNewTab: () => requestClosePopover()
     });
 
-    // Single standard titlebar (drag handle): title + hint + actions + uniform × close.
+    /**
+     * Mobile = mobile User-Agent + client hints (true mobile pages).
+     * Desktop = normal desktop UA.
+     * Both modes fill the popover width; reload is required for UA to take effect.
+     * @param {'mobile'|'desktop'} mode
+     * @param {{ reload?: boolean }} [opts]
+     */
+    const applyViewportMode = async (mode, opts = {}) => {
+      const next = mode === 'desktop' ? 'desktop' : 'mobile';
+      const prev = viewportMode;
+      const shouldReload = opts.reload !== false && prev !== next && !!iframeRef;
+      viewportMode = next;
+      try {
+        this.popoverContainer?.setAttribute('data-kp-preview-viewport', viewportMode);
+      } catch { /* ignore */ }
+
+      // Full-width frame in both modes (no side letterboxing).
+      if (iframeRef) {
+        iframeRef.style.width = '100%';
+        iframeRef.style.maxWidth = 'none';
+        iframeRef.style.flex = '1 1 auto';
+        iframeRef.style.alignSelf = 'stretch';
+        iframeRef.style.height = '100%';
+      }
+      iframeViewport.style.justifyContent = 'stretch';
+
+      // Install / clear mobile UA before any navigation so the document request sees it.
+      if (viewportMode === 'mobile') {
+        await this._setPreviewMobileUa(true);
+      } else {
+        await this._setPreviewMobileUa(false);
+      }
+
+      if (shouldReload && iframeRef) {
+        try {
+          // Reset load error UI if we were showing it.
+          iframeViewport.style.display = '';
+          errorContainer.style.display = 'none';
+        } catch { /* ignore */ }
+        try {
+          armLoadTimeout();
+        } catch { /* ignore — armLoadTimeout defined later; first apply never reloads */ }
+        try {
+          // Force a real navigation with the new UA (same-url assignment can be a no-op).
+          iframeRef.src = 'about:blank';
+          iframeRef.src = url;
+          this.popoverIframeWindow = iframeRef.contentWindow || null;
+        } catch {
+          try {
+            iframeRef.src = url;
+            this.popoverIframeWindow = iframeRef.contentWindow || null;
+          } catch { /* ignore */ }
+        }
+      }
+    };
+
+    const viewportModeControl = createSegmentedControl({
+      value: viewportMode,
+      ariaLabel: 'Preview viewport mode',
+      className: 'kpv2-preview-viewport-mode',
+      options: [
+        {
+          value: 'mobile',
+          label: 'Mobile',
+          title: 'Mobile site (mobile User-Agent). Remembered for this website.',
+          ariaLabel: 'Mobile preview'
+        },
+        {
+          value: 'desktop',
+          label: 'Desktop',
+          title: 'Desktop site (default). Remembered for this website.',
+          ariaLabel: 'Desktop preview'
+        }
+      ],
+      onChange: (value) => {
+        void (async () => {
+          await applyViewportMode(value, { reload: true });
+          // Persist per website so future Link Previews open in the same mode.
+          try {
+            await this._setPreviewViewportModeForHost(previewHost, value === 'mobile' ? 'mobile' : 'desktop');
+          } catch { /* ignore */ }
+        })();
+      }
+    });
+
+    // Single standard titlebar (drag handle): title + hint + mode + actions + uniform × close.
     const titlebarApi = createPopoverTitlebar({
       title: titleText,
       variant: 'preview',
@@ -4112,7 +4402,7 @@ export class OverlayManager {
       onClose: requestClosePopover,
       closeTitle: 'Close (Esc)',
       hint: 'Press Esc / E to hide',
-      actions: previewOpenActions,
+      actions: [viewportModeControl.root, previewOpenActions],
       className: 'kpv2-preview-popover-titlebar'
     });
     const header = titlebarApi.titlebar;
@@ -4313,15 +4603,17 @@ export class OverlayManager {
     };
     errorContainer.appendChild(openInTabButton);
 
-    // Create iframe
+    // Create iframe full-bleed; src is set only after mobile UA is installed (when needed).
     const iframe = this.createElement('iframe', {
-      src: url,
       tabindex: '0',
       style: `
-        flex: 1;
         border: none;
         width: 100%;
+        max-width: none;
         height: 100%;
+        flex: 1 1 auto;
+        align-self: stretch;
+        background: #fff;
       `
     });
     iframeRef = iframe;
@@ -4340,27 +4632,48 @@ export class OverlayManager {
       }
     };
 
-    // Detect iframe load errors
+    // Detect iframe load errors / hangs
+    /** @type {ReturnType<typeof setTimeout>|null} */
+    let loadTimeout = null;
+    const armLoadTimeout = () => {
+      if (loadTimeout) {
+        try { clearTimeout(loadTimeout); } catch { /* ignore */ }
+      }
+      loadTimeout = setTimeout(() => {
+        console.log('[KeyPilot] Iframe load timeout - showing error as fallback');
+        iframeViewport.style.display = 'none';
+        errorContainer.style.display = 'flex';
+      }, 30000);
+    };
+    const clearLoadTimeout = () => {
+      if (!loadTimeout) return;
+      try { clearTimeout(loadTimeout); } catch { /* ignore */ }
+      loadTimeout = null;
+    };
+
     iframe.onerror = () => {
       console.log('[KeyPilot] Iframe load error detected');
-      iframe.style.display = 'none';
+      clearLoadTimeout();
+      iframeViewport.style.display = 'none';
       errorContainer.style.display = 'flex';
     };
 
-    const loadTimeout = setTimeout(() => {
-      console.log('[KeyPilot] Iframe load timeout - showing error as fallback');
-      iframe.style.display = 'none';
-      errorContainer.style.display = 'flex';
-    }, 30000);
-
     iframe.onload = () => {
-      clearTimeout(loadTimeout);
+      // Ignore the intermediate about:blank used when switching UA modes.
+      try {
+        const srcAttr = iframe.getAttribute('src') || '';
+        if (srcAttr === 'about:blank' || iframe.src === 'about:blank') {
+          return;
+        }
+      } catch { /* ignore */ }
+      clearLoadTimeout();
       console.log('[KeyPilot] Iframe loaded successfully');
       sendBridgeInit();
     };
 
+    iframeViewport.appendChild(iframe);
     this.popoverContainer.appendChild(header);
-    this.popoverContainer.appendChild(iframe);
+    this.popoverContainer.appendChild(iframeViewport);
     this.popoverContainer.appendChild(errorContainer);
 
     // Mark this as a preview popover (for cleanup logic)
@@ -4374,6 +4687,26 @@ export class OverlayManager {
       this._isPreviewPopover = false;
       return;
     }
+
+    // Apply UA for remembered/default mode before first navigation (desktop = no spoof).
+    void (async () => {
+      try {
+        // First apply: set UA without reload; then assign src once.
+        await applyViewportMode(viewportMode, { reload: false });
+      } catch (e) {
+        console.warn('[KeyPilot] Failed to prepare preview viewport mode:', e?.message || e);
+      }
+      try {
+        armLoadTimeout();
+        iframe.src = url;
+        this.popoverIframeWindow = iframe.contentWindow || null;
+      } catch (e) {
+        console.error('[KeyPilot] Failed to load preview URL:', e?.message || e);
+        clearLoadTimeout();
+        iframeViewport.style.display = 'none';
+        errorContainer.style.display = 'flex';
+      }
+    })();
 
     // Add click-outside-to-close handler for preview popover
     this._popoverClickOutsideHandler = (e) => {
@@ -4448,7 +4781,12 @@ export class OverlayManager {
         this._focusPopoverIframe(iframeRef);
         this._installPopoverHybridFocus({
           iframe: iframeRef,
-          chromeEls: [header, closeButton, previewOpenActions].filter(Boolean),
+          chromeEls: [
+            header,
+            closeButton,
+            viewportModeControl.root,
+            previewOpenActions
+          ].filter(Boolean),
           focusChromeEl: closeButton || header
         });
         return;

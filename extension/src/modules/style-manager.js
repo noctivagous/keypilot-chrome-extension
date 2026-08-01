@@ -1042,7 +1042,11 @@ export class StyleManager {
 
   /**
    * Inject KeyPilot shadow CSS + blue-tint filter into an open shadow root.
-   * Idempotent. Used by:
+   * Idempotent and wipe-resistant: Lit/SPA re-renders often replace shadow
+   * children and drop our <style>. We always re-check the DOM (not only our
+   * session Set) so archive.org-style nested open roots keep focus outlines.
+   *
+   * Used by:
    * - attachShadow pre-warm (ShadowDOMManager)
    * - lazy ensureStylesForNode on first hover/focus styling
    *
@@ -1052,45 +1056,19 @@ export class StyleManager {
   injectIntoShadowRoot(shadowRoot) {
     if (!shadowRoot || !this.isEnabled) return false;
 
-    // Fast path: already tracked this session.
-    if (this.injectedStyles.has(shadowRoot)) {
-      // Re-ensure filter node in case the host wiped it.
-      try { this._ensureBlueTintFilterInShadowRoot(shadowRoot); } catch { /* ignore */ }
-      // Keep text-input hint vars available on the host for CSS var resolution.
-      try {
-        const host = shadowRoot.host;
-        if (host?.style) {
-          host.style.setProperty('--kpv2-text-hover-hint-image', this._textHoverHintUri || 'none');
-          host.style.setProperty('--kpv2-text-focus-hint-image', this._textFocusHintUri || 'none');
-        }
-      } catch { /* ignore */ }
-      return true;
-    }
-
     try {
-      // Another path may have injected (or leftover from prior enable).
-      const existing = typeof shadowRoot.querySelector === 'function'
+      // Prefer live DOM over injectedStyles Set — hosts may wipe our nodes.
+      let style = typeof shadowRoot.querySelector === 'function'
         ? shadowRoot.querySelector('#keypilot-shadow-styles')
         : null;
-      if (existing) {
-        this.injectedStyles.add(shadowRoot);
-        this.shadowRootStyles.set(shadowRoot, existing);
-        this._ensureBlueTintFilterInShadowRoot(shadowRoot);
-        try {
-          const host = shadowRoot.host;
-          if (host?.style) {
-            host.style.setProperty('--kpv2-text-hover-hint-image', this._textHoverHintUri || 'none');
-            host.style.setProperty('--kpv2-text-focus-hint-image', this._textFocusHintUri || 'none');
-          }
-        } catch { /* ignore */ }
-        return true;
-      }
 
-      const css = this._buildShadowCSS();
-      const style = document.createElement('style');
-      style.id = 'keypilot-shadow-styles';
-      style.textContent = css;
-      shadowRoot.appendChild(style);
+      if (!style) {
+        const css = this._buildShadowCSS();
+        style = document.createElement('style');
+        style.id = 'keypilot-shadow-styles';
+        style.textContent = css;
+        shadowRoot.appendChild(style);
+      }
 
       // Filter must live in this shadow tree for url(#...) resolution on focus rings.
       this._ensureBlueTintFilterInShadowRoot(shadowRoot);
@@ -1098,6 +1076,7 @@ export class StyleManager {
       this.injectedStyles.add(shadowRoot);
       this.shadowRootStyles.set(shadowRoot, style);
 
+      // Keep text-input hint vars available on the host for CSS var resolution.
       try {
         const host = shadowRoot.host;
         if (host?.style) {

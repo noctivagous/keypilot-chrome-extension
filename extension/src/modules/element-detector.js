@@ -69,6 +69,45 @@ export class ElementDetector {
     return this.clickHandlerElements.has(el);
   }
 
+  /**
+   * Like Node.contains, but crosses open shadow boundaries via host hops.
+   * archive.org tiles: clickable <a> in tile-dispatcher wraps <collection-tile>
+   * whose internals live in a nested shadow — plain contains() is always false
+   * for those descendants, which breaks sticky hover and nested-chrome checks.
+   *
+   * @param {Node|null|undefined} host
+   * @param {Node|null|undefined} node
+   * @returns {boolean}
+   */
+  composedContains(host, node) {
+    if (!host || !node || host.nodeType !== 1) return false;
+    if (host === node) return true;
+    try {
+      if (host.contains(node)) return true;
+    } catch { /* ignore */ }
+
+    let n = node;
+    let depth = 0;
+    while (n && depth++ < 32) {
+      if (n === host) return true;
+      try {
+        if (n.parentElement) {
+          n = n.parentElement;
+          continue;
+        }
+        const root = typeof n.getRootNode === 'function' ? n.getRootNode() : null;
+        if (root && typeof ShadowRoot !== 'undefined' && root instanceof ShadowRoot) {
+          n = root.host || null;
+          continue;
+        }
+      } catch {
+        break;
+      }
+      break;
+    }
+    return false;
+  }
+
   deepElementFromPoint(x, y) {
     let el = document.elementFromPoint(x, y);
     let guard = 0;
@@ -521,7 +560,7 @@ export class ElementDetector {
   _isNestedHoverChrome(el, host) {
     if (!el || !host || el === host || el.nodeType !== 1 || host.nodeType !== 1) return false;
     try {
-      if (!host.contains(el)) return false;
+      if (!this.composedContains(host, el)) return false;
     } catch {
       return false;
     }
@@ -577,10 +616,10 @@ export class ElementDetector {
     }
 
     // Tabs: always prefer the tab host over an inner label/button.
-    if (hostTab && (leaf === hostTab || hostTab.contains(leaf))) return hostTab;
+    if (hostTab && (leaf === hostTab || this.composedContains(hostTab, leaf))) return hostTab;
 
     // Link rows/cards: promote nested chrome up to the host row.
-    if (hostLink && hostLink.contains(leaf) && leaf !== hostLink) {
+    if (hostLink && this.composedContains(hostLink, leaf) && leaf !== hostLink) {
       if (this._isNestedHoverChrome(leaf, hostLink)) return hostLink;
     }
     return null;
@@ -603,9 +642,11 @@ export class ElementDetector {
 
     // Sticky: pointer still inside previous host → keep it when leaf is missing
     // or is nested chrome (avoids thrash / clear between children).
+    // Use composedContains so open-shadow tile content (archive.org collection-tile
+    // inside tile-dispatcher <a>) still counts as "inside" the focused link.
     if (prev && under) {
       try {
-        if (prev.contains(under)) {
+        if (this.composedContains(prev, under)) {
           const leafInside = this.findClickable(under);
           if (!leafInside || leafInside === prev || this._isNestedHoverChrome(leafInside, prev)) {
             return prev;

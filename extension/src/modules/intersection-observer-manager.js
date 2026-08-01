@@ -33,6 +33,20 @@ export class IntersectionObserverManager {
     this._domHoverDelegationAttached = false;
     this._domHoverAttachedElements = new Set(); // legacy per-element mode
     this._domHoverMetrics = { attached: 0, skipped: 0, delegated: 0 };
+    // rAF-coalesced re-paint when SPA/Lit strips hover markers while pointer stays put.
+    this._domHoverRehealRAF = 0;
+    this._boundDocPointerMoveReheal = () => {
+      try {
+        if (!this._domHoverEnabled || !this._domHoveredElement) return;
+        if (this._domHoverRehealRAF) return;
+        this._domHoverRehealRAF = requestAnimationFrame(() => {
+          this._domHoverRehealRAF = 0;
+          try {
+            this._rehealDomHoverFocusStyling(this._domHoveredElement);
+          } catch { /* ignore */ }
+        });
+      } catch { /* ignore */ }
+    };
 
     this._boundDomHoverEnter = (e) => {
       try {
@@ -120,26 +134,25 @@ export class IntersectionObserverManager {
           clickable = this._findParentContainerForClickable(clickable);
         }
 
-        // Log when hovering over clickable elements in shadow DOM
-        if (clickable && clickable.getRootNode() instanceof ShadowRoot) {
-          console.log('[KeyPilot] Hovering over clickable element in shadow DOM:', {
-            element: clickable,
-            tagName: clickable.tagName,
-            href: clickable.href || 'N/A',
-            shadowRoot: clickable.getRootNode(),
-            hostElement: clickable.getRootNode().host
-          });
-        }
-
         let next = (clickable && clickable.nodeType === 1) ? /** @type {HTMLElement} */ (clickable) : null;
         // html/body are never useful targets; treat as clear so hover chrome does not stick.
         try {
           if (next && (next.tagName === 'HTML' || next.tagName === 'BODY')) next = null;
         } catch { /* ignore */ }
 
+        // Drop a disconnected previous target (Lit can replace the <a> node;
+        // the old reference must not stick).
+        if (this._domHoveredElement && !this._domHoveredElement.isConnected) {
+          this._domHoveredElement = null;
+        }
+
         // Sticky host targeting (resolveHoverFocusTarget) already keeps focus while
         // the pointer moves across nested children — no clear-debounce needed.
-        if (next === this._domHoveredElement) return;
+        if (next === this._domHoveredElement) {
+          // Same target: re-ensure CSS + markers (Lit may wipe while pointer stays put).
+          this._rehealDomHoverFocusStyling(next);
+          return;
+        }
         this._setDomHoveredElement(next);
       } catch { /* ignore */ }
     };
@@ -543,6 +556,42 @@ export class IntersectionObserverManager {
   }
 
   /**
+   * Re-ensure shadow CSS and re-apply focus ring markers if a SPA wiped them
+   * while the pointer stayed on the same clickable (archive.org tiles, etc.).
+   * Cheap no-op when markers are already present.
+   * @param {Element|null|undefined} el
+   */
+  _rehealDomHoverFocusStyling(el) {
+    if (!el || el.nodeType !== 1 || !el.isConnected) return;
+
+    try {
+      window.keyPilot?.styleManager?.ensureStylesForNode?.(el);
+    } catch { /* ignore */ }
+
+    let missingFocus = false;
+    try {
+      missingFocus =
+        !el.hasAttribute?.('data-kp-focus') &&
+        !(el.classList && el.classList.contains('keypilot-focus-element'));
+    } catch {
+      missingFocus = true;
+    }
+    if (!missingFocus) return;
+
+    try {
+      const om = window.keyPilot?.overlayManager;
+      if (om && typeof om.updateFocusOverlayElementStyling === 'function') {
+        om.updateFocusOverlayElementStyling(el);
+        return;
+      }
+    } catch { /* ignore */ }
+
+    try {
+      window.keyPilot?.state?.setState?.({ _overlayUpdateTrigger: Date.now() });
+    } catch { /* ignore */ }
+  }
+
+  /**
    * Enable/disable DOM hover listener mode.
    * @param {boolean} enabled
    * @param {(el: HTMLElement|null) => void} [onChange]
@@ -696,6 +745,9 @@ export class IntersectionObserverManager {
       window.addEventListener('pointerout', this._boundDocPointerOut, true);
       window.addEventListener('mouseover', this._boundDocPointerOver, true);
       window.addEventListener('mouseout', this._boundDocPointerOut, true);
+      // pointermove: re-heal focus markers after SPA wipes without a new pointerover
+      // (common on archive.org collection tiles while the pointer rests on a card).
+      window.addEventListener('pointermove', this._boundDocPointerMoveReheal, true);
       window.addEventListener('blur', this._boundWindowBlur, true);
       this._domHoverDelegationAttached = true;
       this._domHoverMetrics.delegated++;
@@ -709,8 +761,13 @@ export class IntersectionObserverManager {
       window.removeEventListener('pointerout', this._boundDocPointerOut, true);
       window.removeEventListener('mouseover', this._boundDocPointerOver, true);
       window.removeEventListener('mouseout', this._boundDocPointerOut, true);
+      window.removeEventListener('pointermove', this._boundDocPointerMoveReheal, true);
       window.removeEventListener('blur', this._boundWindowBlur, true);
     } catch { /* ignore */ }
+    if (this._domHoverRehealRAF) {
+      try { cancelAnimationFrame(this._domHoverRehealRAF); } catch { /* ignore */ }
+      this._domHoverRehealRAF = 0;
+    }
     this._domHoverDelegationAttached = false;
   }
 

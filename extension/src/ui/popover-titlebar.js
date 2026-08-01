@@ -8,6 +8,11 @@
  *   [ title  · optional hint ]     [ actions… ]  [ × close ]
  */
 
+import { KP_UI_FONT } from '../config/constants.js';
+
+// Pin UI font (KP_UI_FONT) so host pages cannot leak typography into chrome.
+// Preview popovers mount in the light DOM under body and inherit page fonts otherwise.
+
 const VARIANT_STYLES = {
   modal: {
     titlebar: `
@@ -21,8 +26,17 @@ const VARIANT_STYLES = {
       flex-shrink: 0;
       min-height: 40px;
       box-sizing: border-box;
+      font-family: ${KP_UI_FONT};
+      font-size: 14px;
+      font-weight: 400;
+      font-style: normal;
+      line-height: 1.3;
+      letter-spacing: normal;
+      text-transform: none;
+      -webkit-font-smoothing: antialiased;
     `,
     title: `
+      font-family: inherit;
       font-size: 14px;
       font-weight: 500;
       color: #e8e8e8;
@@ -33,6 +47,7 @@ const VARIANT_STYLES = {
       flex: 0 1 auto;
     `,
     hint: `
+      font-family: inherit;
       color: #999;
       font-weight: normal;
       font-size: 12px;
@@ -40,15 +55,33 @@ const VARIANT_STYLES = {
       flex-shrink: 0;
     `,
     close: `
+      /* Host pages often style bare \`button\` (e.g. Slashdot margin-bottom:40px). */
+      margin: 0;
+      appearance: none;
+      -webkit-appearance: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      font-family: inherit;
       background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
       border: 1px solid #3a3a3a;
       font-size: 18px;
+      font-weight: 400;
       cursor: pointer;
       color: #e8e8e8;
       padding: 2px 8px;
       line-height: 1;
       border-radius: 4px;
       flex-shrink: 0;
+      min-width: 0;
+      min-height: 0;
+      height: auto;
+      width: auto;
+      text-align: center;
+      text-shadow: none;
+      box-shadow: none;
+      position: relative;
     `
   },
   preview: {
@@ -66,8 +99,17 @@ const VARIANT_STYLES = {
       user-select: none;
       -webkit-user-select: none;
       touch-action: none;
+      font-family: ${KP_UI_FONT};
+      font-size: 12px;
+      font-weight: 400;
+      font-style: normal;
+      line-height: 1.3;
+      letter-spacing: normal;
+      text-transform: none;
+      -webkit-font-smoothing: antialiased;
     `,
     title: `
+      font-family: inherit;
       font-size: 12px;
       font-weight: 500;
       color: #e8e8e8;
@@ -78,6 +120,7 @@ const VARIANT_STYLES = {
       flex: 0 1 auto;
     `,
     hint: `
+      font-family: inherit;
       color: #999;
       font-weight: normal;
       font-size: 12px;
@@ -85,15 +128,33 @@ const VARIANT_STYLES = {
       flex-shrink: 0;
     `,
     close: `
+      /* Host pages often style bare \`button\` (e.g. Slashdot margin-bottom:40px). */
+      margin: 0;
+      appearance: none;
+      -webkit-appearance: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      font-family: inherit;
       background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
       border: 1px solid #3a3a3a;
       font-size: 16px;
+      font-weight: 400;
       cursor: pointer;
       color: #e8e8e8;
       padding: 2px 6px;
       line-height: 1;
       border-radius: 4px;
       flex-shrink: 0;
+      min-width: 0;
+      min-height: 0;
+      height: auto;
+      width: auto;
+      text-align: center;
+      text-shadow: none;
+      box-shadow: none;
+      position: relative;
     `
   }
 };

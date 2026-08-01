@@ -677,6 +677,14 @@ export class KeyPilot extends EventManager {
   /**
    * Prefer toggle-handler state (global source of truth), then KeyPilot.enabled.
    */
+  _syncControlStripTextModeFromState() {
+    if (!this.controlStrip || typeof this.controlStrip.setTextModeActive !== 'function') return;
+    try {
+      const mode = this.state?.getState?.()?.mode;
+      this.controlStrip.setTextModeActive(mode === MODES.TEXT_FOCUS);
+    } catch { /* ignore */ }
+  }
+
   _syncControlStripEnabledFromRuntime() {
     if (!this.controlStrip) return;
     let on = !!this.enabled;
@@ -691,6 +699,7 @@ export class KeyPilot extends EventManager {
     try {
       this.controlStrip.setEnabledState(on);
     } catch { /* ignore */ }
+    this._syncControlStripTextModeFromState();
   }
 
   _wireControlStripHandlers() {
@@ -735,6 +744,7 @@ export class KeyPilot extends EventManager {
 
     this._syncControlStripEnabledFromRuntime();
     this.controlStrip.setKeyboardHelpActive(!!this._keyboardHelpVisible);
+    this._syncControlStripTextModeFromState();
     // Avoid re-notifying storage when applying remote settings.
     this.controlStrip.setCollapsed(collapsed, { notify: false });
     this.controlStrip.setVisible(visible);
@@ -1340,6 +1350,13 @@ export class KeyPilot extends EventManager {
     // If we leave text focus mode, cancel any pending hover-click countdown.
     if (prevState.mode === MODES.TEXT_FOCUS && newState.mode !== MODES.TEXT_FOCUS) {
       this._disarmTextModeClick();
+    }
+
+    // Control strip: green ON → orange while a text field has focus.
+    if (newState.mode !== prevState.mode) {
+      try {
+        this.controlStrip?.setTextModeActive?.(newState.mode === MODES.TEXT_FOCUS);
+      } catch { /* ignore */ }
     }
 
     // Update cursor mode
@@ -4722,6 +4739,7 @@ export class KeyPilot extends EventManager {
     try {
       this.controlStrip?.setEnabledState?.(true);
       this.controlStrip?.setKeyboardHelpActive?.(!!this._keyboardHelpVisible);
+      this._syncControlStripTextModeFromState();
     } catch { /* ignore */ }
     
     console.log('[KeyPilot] Extension enabled');
