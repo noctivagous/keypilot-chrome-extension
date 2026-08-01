@@ -45,10 +45,14 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  * }} ClickCursorSettings
  */
 
+/** @typedef {'blue'|'green'} FocusColor */
+
 /**
  * @typedef {{
  *   cursor: ClickCursorSettings,
+ *   focusColor: FocusColor,
  *   overlayFillEnabled: boolean,
+ *   overlayShadowEnabled: boolean,
  *   rectangleThickness: number,
  *   clickEffect: ClickEffect
  * }} ClickModeSettings
@@ -111,8 +115,12 @@ export const DEFAULT_SETTINGS = Object.freeze({
       // Gap between center and crosshair bars in pixels. 0 = intersecting lines, >0 = separate bars.
       gap: 6
     }),
-    // When true, the green focus rectangle can include a translucent fill (where applicable).
-    overlayFillEnabled: true,
+    // Hover focus ring color (DOM-hover mode default is blue).
+    focusColor: 'blue',
+    // When true, the focus rectangle can include a translucent fill (where applicable).
+    overlayFillEnabled: false,
+    // When true, draw a soft outer glow/shadow on the focus rectangle.
+    overlayShadowEnabled: false,
     // Focus rectangle border thickness in px.
     rectangleThickness: 3,
     // F-key activation feedback on link-style targets (flash is the default).
@@ -205,6 +213,15 @@ function normalizeTextCursorType(raw) {
 
 /**
  * @param {any} raw
+ * @returns {FocusColor}
+ */
+export function normalizeFocusColor(raw) {
+  if (raw === 'blue' || raw === 'green') return raw;
+  return DEFAULT_SETTINGS.clickMode.focusColor;
+}
+
+/**
+ * @param {any} raw
  * @returns {ClickModeSettings}
  */
 function normalizeClickMode(raw) {
@@ -232,9 +249,14 @@ function normalizeClickMode(raw) {
         20
       )
     },
+    focusColor: normalizeFocusColor(stored.focusColor),
     overlayFillEnabled: normalizeBoolean(
       stored.overlayFillEnabled,
       DEFAULT_SETTINGS.clickMode.overlayFillEnabled
+    ),
+    overlayShadowEnabled: normalizeBoolean(
+      stored.overlayShadowEnabled,
+      DEFAULT_SETTINGS.clickMode.overlayShadowEnabled
     ),
     rectangleThickness: normalizeNumber(
       stored.rectangleThickness,

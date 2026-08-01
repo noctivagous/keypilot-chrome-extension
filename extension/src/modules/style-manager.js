@@ -766,18 +766,18 @@ export class StyleManager {
        */
       .keypilot-focus-element,
       [data-kp-focus="1"] {
-        outline: 3px solid var(--keypilot-focus-ring-color, #2196f3) !important;
+        outline: var(--keypilot-focus-ring-width, 3px) solid var(--keypilot-focus-ring-color, #2196f3) !important;
         outline-offset: 2px !important;
-        box-shadow: none !important;
+        box-shadow: var(--keypilot-focus-box-shadow, none) !important;
         background: var(--keypilot-focus-ring-bg-color, transparent) !important;
         filter: none !important;
       }
 
       .keypilot-focus-element.keypilot-focus-element--inset,
       [data-kp-focus="1"][data-kp-focus-inset="1"] {
-        outline: 3px solid var(--keypilot-focus-ring-color, #2196f3) !important;
-        outline-offset: -3px !important;
-        box-shadow: none !important;
+        outline: var(--keypilot-focus-ring-width, 3px) solid var(--keypilot-focus-ring-color, #2196f3) !important;
+        outline-offset: calc(-1 * var(--keypilot-focus-ring-width, 3px)) !important;
+        box-shadow: var(--keypilot-focus-box-shadow, none) !important;
         background: var(--keypilot-focus-ring-bg-color, transparent) !important;
         filter: none !important;
       }
@@ -866,21 +866,21 @@ export class StyleManager {
         text-shadow: var(--kpv2-text-input-text-shadow, 1px 1px 0 rgba(255, 255, 255, 0.85)) !important;
       }
 
-      /* Element styling for DOM hover mode in shadow DOM (outline-first). */
+      /* Element styling for DOM hover mode in shadow DOM (settings-driven ring). */
       .keypilot-focus-element,
       [data-kp-focus="1"] {
-        outline: 3px solid var(--keypilot-focus-ring-color, #2196f3) !important;
+        outline: var(--keypilot-focus-ring-width, 3px) solid var(--keypilot-focus-ring-color, #2196f3) !important;
         outline-offset: 2px !important;
-        box-shadow: none !important;
+        box-shadow: var(--keypilot-focus-box-shadow, none) !important;
         background: var(--keypilot-focus-ring-bg-color, transparent) !important;
         filter: none !important;
       }
 
       .keypilot-focus-element.keypilot-focus-element--inset,
       [data-kp-focus="1"][data-kp-focus-inset="1"] {
-        outline: 3px solid var(--keypilot-focus-ring-color, #2196f3) !important;
-        outline-offset: -3px !important;
-        box-shadow: none !important;
+        outline: var(--keypilot-focus-ring-width, 3px) solid var(--keypilot-focus-ring-color, #2196f3) !important;
+        outline-offset: calc(-1 * var(--keypilot-focus-ring-width, 3px)) !important;
+        box-shadow: var(--keypilot-focus-box-shadow, none) !important;
         background: var(--keypilot-focus-ring-bg-color, transparent) !important;
         filter: none !important;
       }

@@ -1,7 +1,7 @@
 import { CURSOR_MODE } from '../src/config/constants.js';
 import { normalizeKeyboardLayoutId } from '../src/config/keyboard-layouts.js';
 import { SEARCH_ENGINE_META } from '../src/config/search-engines.js';
-import { CLICK_EFFECT_IDS, DEFAULT_SETTINGS, getSettings, normalizeCursorMode, normalizeSearchEngine, setSettings, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
+import { CLICK_EFFECT_IDS, DEFAULT_SETTINGS, getSettings, normalizeCursorMode, normalizeFocusColor, normalizeSearchEngine, setSettings, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
 import { GENERIC_FAVICON_DATA_URL, getExtensionFaviconUrl } from '../src/ui/url-listing.js';
 import { startKeyPilotOnPage } from './keypilot-page-init.js';
 import { CursorManager } from '../src/modules/cursor.js';
@@ -255,7 +255,9 @@ async function render() {
   const clickCursorGapRange = /** @type {HTMLInputElement|null} */ (document.getElementById('click-cursor-gap-range'));
   const clickCursorGapNumber = /** @type {HTMLInputElement|null} */ (document.getElementById('click-cursor-gap-number'));
   const clickCursorPreview = document.getElementById('click-cursor-preview');
+  const clickFocusColor = /** @type {HTMLSelectElement|null} */ (document.getElementById('click-focus-color'));
   const clickOverlayFill = /** @type {HTMLInputElement|null} */ (document.getElementById('click-overlay-fill'));
+  const clickOverlayShadow = /** @type {HTMLInputElement|null} */ (document.getElementById('click-overlay-shadow'));
   const clickRectThicknessRange = /** @type {HTMLInputElement|null} */ (document.getElementById('click-rect-thickness-range'));
   const clickRectThicknessNumber = /** @type {HTMLInputElement|null} */ (document.getElementById('click-rect-thickness-number'));
   const clickEffectRadios = /** @type {HTMLInputElement[]} */ (Array.from(document.querySelectorAll('input[name="click-effect"]')));
@@ -350,7 +352,16 @@ async function render() {
     setInputValue(clickCursorSizeNumber, cm?.cursor?.sizePixels ?? DEFAULT_SETTINGS.clickMode.cursor.sizePixels);
     setInputValue(clickCursorGapRange, cm?.cursor?.gap ?? DEFAULT_SETTINGS.clickMode.cursor.gap);
     setInputValue(clickCursorGapNumber, cm?.cursor?.gap ?? DEFAULT_SETTINGS.clickMode.cursor.gap);
-    if (clickOverlayFill) clickOverlayFill.checked = !!cm?.overlayFillEnabled;
+    setInputValue(
+      clickFocusColor,
+      normalizeFocusColor(cm?.focusColor ?? DEFAULT_SETTINGS.clickMode.focusColor)
+    );
+    if (clickOverlayFill) {
+      clickOverlayFill.checked = cm?.overlayFillEnabled === true;
+    }
+    if (clickOverlayShadow) {
+      clickOverlayShadow.checked = cm?.overlayShadowEnabled === true;
+    }
     setInputValue(clickRectThicknessRange, cm?.rectangleThickness ?? DEFAULT_SETTINGS.clickMode.rectangleThickness);
     setInputValue(clickRectThicknessNumber, cm?.rectangleThickness ?? DEFAULT_SETTINGS.clickMode.rectangleThickness);
 
@@ -499,8 +510,23 @@ async function render() {
   clickCursorGapRange?.addEventListener('input', async () => commitClickGap(clickCursorGapRange.value), true);
   clickCursorGapNumber?.addEventListener('input', async () => commitClickGap(clickCursorGapNumber.value), true);
 
+  clickFocusColor?.addEventListener('change', async () => {
+    const color = normalizeFocusColor(clickFocusColor.value);
+    await setSettings({ clickMode: { focusColor: color } });
+    const s = await getSettings();
+    applyClickMode(s.clickMode);
+  }, true);
+
   clickOverlayFill?.addEventListener('change', async () => {
     await setSettings({ clickMode: { overlayFillEnabled: !!clickOverlayFill.checked } });
+    const s = await getSettings();
+    applyClickMode(s.clickMode);
+  }, true);
+
+  clickOverlayShadow?.addEventListener('change', async () => {
+    await setSettings({ clickMode: { overlayShadowEnabled: !!clickOverlayShadow.checked } });
+    const s = await getSettings();
+    applyClickMode(s.clickMode);
   }, true);
 
   const commitClickRectThickness = async (v) => {
@@ -508,6 +534,8 @@ async function render() {
     setInputValue(clickRectThicknessRange, n);
     setInputValue(clickRectThicknessNumber, n);
     await setSettings({ clickMode: { rectangleThickness: n } });
+    const s = await getSettings();
+    applyClickMode(s.clickMode);
   };
 
   clickRectThicknessRange?.addEventListener('input', async () => commitClickRectThickness(clickRectThicknessRange.value), true);
@@ -599,10 +627,10 @@ async function render() {
     applyScroll(s.scroll);
   }, true);
 
-  // Sync when other tabs update.
+  // Sync when other tabs / this page update (sync preferred; local is fallback).
   try {
     chrome.storage.onChanged.addListener((changes, area) => {
-      if (area !== 'sync') return;
+      if (area !== 'sync' && area !== 'local') return;
       const entry = changes && changes[SETTINGS_STORAGE_KEY];
       if (!entry || !entry.newValue) return;
       applyEngine(entry.newValue.searchEngine);

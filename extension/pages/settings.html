@@ -263,7 +263,7 @@
           >
             <header class="panel-header">
               <h2>Click Mode</h2>
-              <p class="panel-lead">Cursor + green focus rectangle behavior.</p>
+              <p class="panel-lead">Cursor + hover focus rectangle behavior.</p>
             </header>
 
             <div class="stack">
@@ -323,12 +323,32 @@
               </div>
 
               <h3 class="subhead">Focus rectangle</h3>
+              <p class="field-hint" style="margin-top: 0;">
+                Live hover outline on clickable targets. Changes apply immediately (including in this Settings window).
+              </p>
+
+              <div class="field">
+                <div class="field-label">Color</div>
+                <select id="click-focus-color" class="select">
+                  <option value="blue">Blue</option>
+                  <option value="green">Green</option>
+                </select>
+                <div class="field-hint">Outline color for the focus rectangle.</div>
+              </div>
 
               <label class="toggle" for="click-overlay-fill">
                 <input id="click-overlay-fill" type="checkbox" />
                 <div class="toggle-text">
                   <div class="toggle-title">Show transparent overlay</div>
-                  <div class="toggle-sub">Adds a translucent fill inside the green focus rectangle.</div>
+                  <div class="toggle-sub">Adds a translucent fill inside the focus rectangle.</div>
+                </div>
+              </label>
+
+              <label class="toggle" for="click-overlay-shadow">
+                <input id="click-overlay-shadow" type="checkbox" />
+                <div class="toggle-text">
+                  <div class="toggle-title">Show shadow / glow</div>
+                  <div class="toggle-sub">Soft outer glow around the focus rectangle.</div>
                 </div>
               </label>
 
@@ -338,7 +358,7 @@
                   <input id="click-rect-thickness-range" type="range" min="1" max="16" step="1" />
                   <input id="click-rect-thickness-number" class="number" type="number" min="1" max="16" step="1" />
                 </div>
-                <div class="field-hint">Border thickness for the green focus rectangle (1–16px).</div>
+                <div class="field-hint">Border thickness for the focus rectangle (1–16px).</div>
               </div>
 
               <div class="divider"></div>

@@ -144,26 +144,28 @@ export class OverlayManager {
     }
   }
 
-  _getNonTextFocusPalette() {
-    if (this._useDomHoverFocusColors) {
-      if (window.KEYPILOT_DEBUG) {
-        console.log('[KeyPilot Debug] Using blue focus colors for DOM hover mode');
-      }
+  /**
+   * Focus ring palette from click-mode settings (blue | green).
+   * Falls back to blue when DOM-hover element styling is active and no setting is loaded.
+   * @param {'blue'|'green'|string|null|undefined} [focusColor]
+   */
+  _getNonTextFocusPalette(focusColor) {
+    const color = focusColor === 'green' || focusColor === 'blue'
+      ? focusColor
+      : (this._getClickModeSettings().focusColor || 'blue');
+    if (color === 'green') {
       return {
-        borderColor: COLORS.FOCUS_BLUE,
-        shadowColor: COLORS.BLUE_SHADOW,
-        shadowBrightColor: COLORS.BLUE_SHADOW_BRIGHT,
-        backgroundColor: COLORS.FOCUS_BLUE_BG_T2
+        borderColor: COLORS.FOCUS_GREEN,
+        shadowColor: COLORS.GREEN_SHADOW,
+        shadowBrightColor: COLORS.GREEN_SHADOW_BRIGHT,
+        backgroundColor: COLORS.FOCUS_GREEN_BG_T2
       };
     }
-    if (window.KEYPILOT_DEBUG) {
-      console.log('[KeyPilot Debug] Using green focus colors for normal mode');
-    }
     return {
-      borderColor: COLORS.FOCUS_GREEN,
-      shadowColor: COLORS.GREEN_SHADOW,
-      shadowBrightColor: COLORS.GREEN_SHADOW_BRIGHT,
-      backgroundColor: COLORS.FOCUS_GREEN_BG_T2
+      borderColor: COLORS.FOCUS_BLUE,
+      shadowColor: COLORS.BLUE_SHADOW,
+      shadowBrightColor: COLORS.BLUE_SHADOW_BRIGHT,
+      backgroundColor: COLORS.FOCUS_BLUE_BG_T2
     };
   }
 
@@ -304,13 +306,14 @@ export class OverlayManager {
     const suppressFill = this.shouldSuppressFocusFill(element);
     const isVeryLarge = rect.width > 512 && rect.height > 512;
 
+    const clickSettings = this._getClickModeSettings();
     let borderColor, shadowColor, backgroundColor;
     if (isTextInput) {
       borderColor = COLORS.ORANGE;
       shadowColor = COLORS.ORANGE_SHADOW;
       backgroundColor = 'transparent';
     } else {
-      const p = this._getNonTextFocusPalette();
+      const p = this._getNonTextFocusPalette(clickSettings.focusColor);
       borderColor = p.borderColor;
       shadowColor = p.shadowColor;
       // Fill for thumbnails/links; suppress for scrubbers and players that have a seek bar.
@@ -318,7 +321,7 @@ export class OverlayManager {
     }
 
     // Settings-driven behavior
-    const { rectangleThickness, overlayFillEnabled } = this._getClickModeSettings();
+    const { rectangleThickness, overlayFillEnabled, overlayShadowEnabled } = clickSettings;
     if (!isTextInput && !suppressFill && !isVeryLarge && overlayFillEnabled === false) {
       backgroundColor = 'transparent';
     }
@@ -337,11 +340,13 @@ export class OverlayManager {
     this.canvasContext.lineWidth = rectangleThickness;
     this.canvasContext.strokeRect(rect.left, rect.top, rect.width, rect.height);
 
-    // Draw shadow effect (simplified)
-    this.canvasContext.shadowColor = shadowColor;
-    this.canvasContext.shadowBlur = 4;
-    this.canvasContext.strokeRect(rect.left, rect.top, rect.width, rect.height);
-    this.canvasContext.shadowBlur = 0; // Reset shadow
+    // Optional soft outer glow
+    if (overlayShadowEnabled !== false) {
+      this.canvasContext.shadowColor = shadowColor;
+      this.canvasContext.shadowBlur = 4;
+      this.canvasContext.strokeRect(rect.left, rect.top, rect.width, rect.height);
+      this.canvasContext.shadowBlur = 0;
+    }
 
     if (window.KEYPILOT_DEBUG) {
       console.log('[KeyPilot Debug] Canvas focus overlay updated:', {
@@ -434,6 +439,7 @@ export class OverlayManager {
     const suppressFill = this.shouldSuppressFocusFill(element);
     const isVeryLarge = rect.width > 512 && rect.height > 512;
 
+    const clickSettings = this._getClickModeSettings();
     let borderColor, shadowColor, backgroundColor, shadowBrightColor;
     if (isTextInput) {
       borderColor = COLORS.ORANGE;
@@ -441,7 +447,7 @@ export class OverlayManager {
       shadowBrightColor = COLORS.ORANGE_SHADOW;
       backgroundColor = 'transparent';
     } else {
-      const p = this._getNonTextFocusPalette();
+      const p = this._getNonTextFocusPalette(clickSettings.focusColor);
       borderColor = p.borderColor;
       shadowColor = p.shadowColor;
       shadowBrightColor = p.shadowBrightColor;
@@ -450,7 +456,7 @@ export class OverlayManager {
     }
 
     // Settings-driven behavior
-    const { rectangleThickness, overlayFillEnabled } = this._getClickModeSettings();
+    const { rectangleThickness, overlayFillEnabled, overlayShadowEnabled } = clickSettings;
     if (!isTextInput && !suppressFill && !isVeryLarge && overlayFillEnabled === false) {
       backgroundColor = 'transparent';
     }
@@ -466,6 +472,12 @@ export class OverlayManager {
     overlay.style.setProperty('--rect-shadow-color', shadowColor);
     overlay.style.setProperty('--rect-shadow-bright-color', shadowBrightColor);
     overlay.style.setProperty('--rect-border-thickness', rectangleThickness + 'px');
+    if (overlayShadowEnabled === false) {
+      overlay.style.boxShadow = 'none';
+    } else {
+      overlay.style.boxShadow =
+        '0 0 0 2px var(--rect-shadow-color), 0 0 10px 2px var(--rect-shadow-bright-color)';
+    }
 
     overlay.style.display = 'block';
     overlay.style.visibility = 'visible';
@@ -509,9 +521,15 @@ export class OverlayManager {
     const cm = this._modeSettings?.clickMode && typeof this._modeSettings.clickMode === 'object'
       ? this._modeSettings.clickMode
       : {};
+    const def = DEFAULT_SETTINGS.clickMode || {};
     const rectangleThickness = Number(cm.rectangleThickness);
-    const thickness = Number.isFinite(rectangleThickness) ? Math.min(Math.max(rectangleThickness, 1), 16) : 3;
-    const overlayFillEnabled = cm.overlayFillEnabled === false ? false : true;
+    const thickness = Number.isFinite(rectangleThickness)
+      ? Math.min(Math.max(rectangleThickness, 1), 16)
+      : (Number(def.rectangleThickness) || 3);
+    // Defaults: outline only (no fill / no glow) unless explicitly enabled.
+    const overlayFillEnabled = cm.overlayFillEnabled === true;
+    const overlayShadowEnabled = cm.overlayShadowEnabled === true;
+    const focusColor = cm.focusColor === 'green' ? 'green' : 'blue';
     const rawEffect = cm.clickEffect;
     const clickEffect =
       rawEffect === 'flash' ||
@@ -520,8 +538,14 @@ export class OverlayManager {
       rawEffect === 'scale' ||
       rawEffect === 'none'
         ? rawEffect
-        : (DEFAULT_SETTINGS.clickMode?.clickEffect || 'flash');
-    return { rectangleThickness: thickness, overlayFillEnabled, clickEffect };
+        : (def.clickEffect || 'flash');
+    return {
+      rectangleThickness: thickness,
+      overlayFillEnabled,
+      overlayShadowEnabled,
+      focusColor,
+      clickEffect
+    };
   }
 
   _getTextModeSettings() {
@@ -1209,14 +1233,29 @@ export class OverlayManager {
     const isTextInput = categorySource.matches && categorySource.matches(SELECTORS.FOCUSABLE_TEXT);
     const suppressFill = this.shouldSuppressFocusFill(categorySource);
 
-    // Set CSS custom properties for styling
-    const ringColor = isTextInput ? COLORS.ORANGE : COLORS.FOCUS_BLUE; // Blue for DOM hover mode
-    const ringWidth = '3px';
-    const shadowColor = isTextInput ? COLORS.ORANGE_SHADOW : COLORS.BLUE_SHADOW;
-    // Blue wash for thumbnails/links; none for scrubbers / players with a seek bar.
-    const ringBgColor = suppressFill
-      ? 'transparent'
-      : (isTextInput ? 'rgba(255,140,0,0.2)' : 'rgba(33,150,243,0.08)');
+    // Settings-driven focus chrome (color / thickness / fill / shadow).
+    const {
+      rectangleThickness,
+      overlayFillEnabled,
+      overlayShadowEnabled,
+      focusColor
+    } = this._getClickModeSettings();
+    const palette = this._getNonTextFocusPalette(focusColor);
+    const ringColor = isTextInput ? COLORS.ORANGE : palette.borderColor;
+    const ringWidthPx = Math.min(Math.max(Number(rectangleThickness) || 3, 1), 16);
+    const ringWidth = `${ringWidthPx}px`;
+    const shadowColor = isTextInput ? COLORS.ORANGE_SHADOW : palette.shadowColor;
+    const shadowBright = isTextInput ? COLORS.ORANGE_SHADOW : palette.shadowBrightColor;
+    // Translucent wash for thumbnails/links; none for scrubbers / when fill disabled.
+    let ringBgColor = 'transparent';
+    if (!suppressFill && overlayFillEnabled !== false) {
+      ringBgColor = isTextInput
+        ? 'rgba(255,140,0,0.2)'
+        : (palette.backgroundColor || 'rgba(33,150,243,0.25)');
+    }
+    const boxShadow = overlayShadowEnabled === false
+      ? 'none'
+      : `0 0 0 2px ${shadowColor}, 0 0 10px 2px ${shadowBright}`;
 
     // Shadow DOM: document CSS does not pierce; inject into this root on first use.
     this._ensureStylesForElement(stylingTarget);
@@ -1226,6 +1265,7 @@ export class OverlayManager {
     stylingTarget.style.setProperty('--keypilot-focus-ring-width', ringWidth);
     stylingTarget.style.setProperty('--keypilot-focus-shadow-color', shadowColor);
     stylingTarget.style.setProperty('--keypilot-focus-ring-bg-color', ringBgColor);
+    stylingTarget.style.setProperty('--keypilot-focus-box-shadow', boxShadow);
 
     // Class + data attributes. Prefer data-kp-focus for paint (CSS): SPAs often
     // strip unknown classes on re-render but leave data-* alone.
@@ -1365,6 +1405,7 @@ export class OverlayManager {
       el.style.removeProperty('--keypilot-focus-ring-width');
       el.style.removeProperty('--keypilot-focus-shadow-color');
       el.style.removeProperty('--keypilot-focus-ring-bg-color');
+      el.style.removeProperty('--keypilot-focus-box-shadow');
       el.style.removeProperty('filter');
     } catch { /* ignore */ }
   }
@@ -1507,9 +1548,23 @@ export class OverlayManager {
     }
 
     // Settings-driven behavior for Click Mode focus rectangle.
-    const { rectangleThickness, overlayFillEnabled } = this._getClickModeSettings();
+    const {
+      rectangleThickness,
+      overlayFillEnabled,
+      overlayShadowEnabled,
+      focusColor
+    } = this._getClickModeSettings();
     if (!isTextInput && !suppressFill && !isVeryLarge && overlayFillEnabled === false) {
       backgroundColor = 'transparent';
+    }
+    // Re-resolve palette colors when settings focusColor is available (non-text).
+    if (!isTextInput) {
+      const p = this._getNonTextFocusPalette(focusColor);
+      borderColor = p.borderColor;
+      shadowColor = p.shadowColor;
+      if (overlayFillEnabled !== false && !suppressFill && !isVeryLarge) {
+        backgroundColor = p.backgroundColor;
+      }
     }
 
     // Debug logging
@@ -1562,10 +1617,14 @@ export class OverlayManager {
     this.focusOverlay.style.opacity = '1';
     this.focusOverlay.style.border = `${rectangleThickness}px solid ${borderColor}`;
     this.focusOverlay.style.background = backgroundColor;
-    const brightShadowColor = isTextInput
-      ? COLORS.ORANGE_SHADOW
-      : (this._useDomHoverFocusColors ? COLORS.BLUE_SHADOW_BRIGHT : COLORS.GREEN_SHADOW_BRIGHT);
-    this.focusOverlay.style.boxShadow = `0 0 0 2px ${shadowColor}, 0 0 10px 2px ${brightShadowColor}`;
+    if (overlayShadowEnabled === false) {
+      this.focusOverlay.style.boxShadow = 'none';
+    } else {
+      const brightShadowColor = isTextInput
+        ? COLORS.ORANGE_SHADOW
+        : this._getNonTextFocusPalette(focusColor).shadowBrightColor;
+      this.focusOverlay.style.boxShadow = `0 0 0 2px ${shadowColor}, 0 0 10px 2px ${brightShadowColor}`;
+    }
     
     // Debug logging for positioning
     if (window.KEYPILOT_DEBUG) {

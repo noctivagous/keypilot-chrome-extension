@@ -1,17 +1,18 @@
 /**
- * Thin cross-origin iframe click agent.
+ * Thin cross-origin iframe click + hover agent.
  *
- * Runs only in non-top frames. Stays idle (no overlays, no observers): stores
- * last pointer position and handles:
- *  1. postMessage KP_FRAME_ACTIVATE from the parent (primary path — top-frame F)
- *  2. Activate keybinds when this frame has focus (parent never sees those keys)
+ * Runs only in non-top frames. Stays light (no full KeyPilot):
+ *  1. postMessage / runtime KP_FRAME_ACTIVATE from the parent (top-frame F/B/G)
+ *  2. Activate keybinds when this frame has focus
+ *  3. Blue hover outline on clickable targets under the pointer (rAF-throttled;
+ *     matches top-frame DOM-hover focus palette)
  *
  * Full KeyPilot still initializes only in the top frame. When full KP is also
- * running in this frame (KeyPilot popover), local key handling is skipped so we
- * do not double-activate.
+ * running in this frame (KeyPilot popover), local key + hover handling is skipped.
  */
 
 import { MSG } from '../messaging/types.js';
+import { COLORS, Z_INDEX } from '../config/constants.js';
 import { isTypingContext, hasModifierKeys } from '../utils/dom-context.js';
 import {
   buildKeybindingsForLayout,
@@ -23,6 +24,9 @@ import { getSettings, SETTINGS_STORAGE_KEY } from './settings-manager.js';
 /**
  * @typedef {{ openInNewTab?: boolean, background?: boolean }} FrameActivateOptions
  */
+
+const CLICKABLE_SEL =
+  'a[href], button, [role="button"], [role="link"], [role="menuitem"], [role="option"], [role="tab"], [role="checkbox"], [role="radio"], [role="switch"], summary, [onclick], input, select, textarea, label';
 
 /**
  * Shadow-DOM–aware elementFromPoint (no iframe piercing — that is recursive via postMessage).
@@ -40,6 +44,35 @@ function deepElementFromPoint(x, y) {
       el = nested;
     }
     return el || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * @param {Element|null} el
+ * @returns {Element|null}
+ */
+function resolveClickable(el) {
+  if (!el || el.nodeType !== 1) return null;
+  try {
+    if (el.tagName === 'IFRAME') return el;
+    if (el.id === 'kpv2-frame-hover' || el.closest?.('#kpv2-frame-hover')) return null;
+    const specific = typeof el.closest === 'function' ? el.closest(CLICKABLE_SEL) : null;
+    if (specific) return specific;
+    // cursor:pointer on this node only (not inherited from body)
+    try {
+      if (el !== document.body && el !== document.documentElement) {
+        const cs = window.getComputedStyle(el);
+        if (cs.cursor === 'pointer' && cs.pointerEvents !== 'none') {
+          const parent = el.parentElement;
+          if (!parent || window.getComputedStyle(parent).cursor !== 'pointer') {
+            return el;
+          }
+        }
+      }
+    } catch { /* ignore */ }
+    return null;
   } catch {
     return null;
   }
@@ -154,6 +187,53 @@ export function installFrameClickAgent() {
     /** @type {ReturnType<typeof buildKeybindingsForLayout>} */
     let keybindings = buildKeybindingsForLayout(DEFAULT_KEYBOARD_LAYOUT_ID);
 
+    /** @type {HTMLElement|null} */
+    let hoverEl = null;
+    /** @type {Element|null} */
+    let hoverTarget = null;
+    /** @type {number} */
+    let hoverRaf = 0;
+    /** @type {boolean} */
+    let pointerInside = false;
+    /** @type {{ focusColor: string, overlayFillEnabled: boolean, overlayShadowEnabled: boolean, rectangleThickness: number }} */
+    let focusChrome = {
+      focusColor: 'blue',
+      overlayFillEnabled: false,
+      overlayShadowEnabled: false,
+      rectangleThickness: 3
+    };
+
+    const paletteFor = (color) => {
+      if (color === 'green') {
+        return {
+          border: COLORS.FOCUS_GREEN || 'rgba(0,180,0,0.95)',
+          shadow: COLORS.GREEN_SHADOW || 'rgba(0,180,0,0.45)',
+          shadowBright: COLORS.GREEN_SHADOW_BRIGHT || 'rgba(0,180,0,0.5)',
+          fill: COLORS.FOCUS_GREEN_BG_T2 || 'rgba(46, 204, 113, 0.4)'
+        };
+      }
+      return {
+        border: COLORS.FOCUS_BLUE || 'rgba(33,150,243,0.95)',
+        shadow: COLORS.BLUE_SHADOW || 'rgba(33,150,243,0.35)',
+        shadowBright: COLORS.BLUE_SHADOW_BRIGHT || 'rgba(33,150,243,0.45)',
+        fill: COLORS.FOCUS_BLUE_BG_T2 || 'rgba(33,150,243,0.25)'
+      };
+    };
+
+    const applyFocusChromeToHoverEl = () => {
+      if (!hoverEl) return;
+      const p = paletteFor(focusChrome.focusColor);
+      const thickness = Math.min(Math.max(Number(focusChrome.rectangleThickness) || 3, 1), 16);
+      try {
+        hoverEl.style.border = `${thickness}px solid ${p.border}`;
+        hoverEl.style.background =
+          focusChrome.overlayFillEnabled === false ? 'transparent' : p.fill;
+        hoverEl.style.boxShadow = focusChrome.overlayShadowEnabled === false
+          ? 'none'
+          : `0 0 0 1px ${p.shadow}, 0 0 8px ${p.shadowBright}`;
+      } catch { /* ignore */ }
+    };
+
     const keyIn = (assignment, key) => {
       try {
         const keys = assignment?.keys;
@@ -168,9 +248,23 @@ export function installFrameClickAgent() {
         const settings = await getSettings();
         const layoutId = normalizeKeyboardLayoutId(settings?.keyboardLayoutId);
         keybindings = buildKeybindingsForLayout(layoutId);
+        const cm = settings?.clickMode || {};
+        focusChrome = {
+          focusColor: cm.focusColor === 'green' ? 'green' : 'blue',
+          overlayFillEnabled: cm.overlayFillEnabled === true,
+          overlayShadowEnabled: cm.overlayShadowEnabled === true,
+          rectangleThickness: Number(cm.rectangleThickness) || 3
+        };
+        applyFocusChromeToHoverEl();
+        if (pointerInside && enabled) scheduleHoverUpdate();
       } catch {
         // keep previous / default
       }
+    };
+
+    const setEnabled = (next) => {
+      enabled = !!next;
+      if (!enabled) hideHover();
     };
 
     const syncEnabledFromRuntime = async () => {
@@ -178,12 +272,129 @@ export function installFrameClickAgent() {
         if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) return;
         const response = await chrome.runtime.sendMessage({ type: MSG.GET_STATE });
         if (response && typeof response.enabled === 'boolean') {
-          enabled = response.enabled;
+          setEnabled(response.enabled);
         }
       } catch {
         // Default enabled on communication failure (matches toggle handler).
-        enabled = true;
+        setEnabled(true);
       }
+    };
+
+    const ensureHoverEl = () => {
+      if (hoverEl && hoverEl.isConnected) return hoverEl;
+      try {
+        const el = document.createElement('div');
+        el.id = 'kpv2-frame-hover';
+        el.setAttribute('aria-hidden', 'true');
+        el.style.cssText = [
+          'position:fixed',
+          'left:0',
+          'top:0',
+          'width:0',
+          'height:0',
+          'margin:0',
+          'padding:0',
+          'box-sizing:border-box',
+          'pointer-events:none',
+          `z-index:${typeof Z_INDEX?.OVERLAYS === 'number' ? Z_INDEX.OVERLAYS : 2147483020}`,
+          'border-radius:2px',
+          'display:none',
+          'opacity:1'
+        ].join(';');
+        (document.documentElement || document.body)?.appendChild(el);
+        hoverEl = el;
+        applyFocusChromeToHoverEl();
+        return el;
+      } catch {
+        return null;
+      }
+    };
+
+    const hideHover = () => {
+      hoverTarget = null;
+      if (hoverRaf) {
+        try { cancelAnimationFrame(hoverRaf); } catch { /* ignore */ }
+        hoverRaf = 0;
+      }
+      if (hoverEl) {
+        try {
+          hoverEl.style.display = 'none';
+          hoverEl.style.width = '0px';
+          hoverEl.style.height = '0px';
+        } catch { /* ignore */ }
+      }
+    };
+
+    /**
+     * @param {Element|null} target
+     */
+    const paintHover = (target) => {
+      if (!target || !(target instanceof Element)) {
+        hideHover();
+        return;
+      }
+      // Don't outline nested iframes (child agent / shell only).
+      if (target.tagName === 'IFRAME') {
+        hideHover();
+        return;
+      }
+      let rect;
+      try {
+        rect = target.getBoundingClientRect();
+      } catch {
+        hideHover();
+        return;
+      }
+      if (!rect || rect.width <= 0 || rect.height <= 0) {
+        hideHover();
+        return;
+      }
+      // Skip absurd full-viewport fills (often body/html mistaken for clickable).
+      try {
+        if (rect.width >= window.innerWidth * 0.95 && rect.height >= window.innerHeight * 0.95) {
+          hideHover();
+          return;
+        }
+      } catch { /* ignore */ }
+
+      const el = ensureHoverEl();
+      if (!el) return;
+      hoverTarget = target;
+      try {
+        el.style.display = 'block';
+        el.style.transform = `translate(${Math.round(rect.left)}px, ${Math.round(rect.top)}px)`;
+        el.style.width = `${Math.round(rect.width)}px`;
+        el.style.height = `${Math.round(rect.height)}px`;
+      } catch { /* ignore */ }
+    };
+
+    const scheduleHoverUpdate = () => {
+      if (hoverRaf) return;
+      hoverRaf = requestAnimationFrame(() => {
+        hoverRaf = 0;
+        try {
+          if (!enabled || !pointerInside || hasFullKeyPilot()) {
+            hideHover();
+            return;
+          }
+          const x = lastMouse.x;
+          const y = lastMouse.y;
+          if (typeof x !== 'number' || typeof y !== 'number') {
+            hideHover();
+            return;
+          }
+          const under = deepElementFromPoint(x, y);
+          const clickable = resolveClickable(under);
+          if (clickable === hoverTarget && hoverEl && hoverEl.style.display === 'block') {
+            // Same target — refresh rect in case of scroll/layout shift.
+            paintHover(clickable);
+            return;
+          }
+          paintHover(clickable);
+        } catch {
+          hideHover();
+        }
+      });
     };
 
     /** Prevent double-activate when parent uses both postMessage and SW fan-out. */
@@ -257,14 +468,7 @@ export function installFrameClickAgent() {
         }
       }
 
-      // Prefer a semantic activator (button / link / role) when the hit target is a child.
-      let activator = el;
-      try {
-        const specific = el.closest?.(
-          'a[href], button, [role="button"], [role="link"], [role="menuitem"], [role="option"], [role="tab"], summary, [onclick]'
-        );
-        if (specific) activator = specific;
-      } catch { /* ignore */ }
+      const activator = resolveClickable(el) || el;
 
       // Same-window link: programmatic click preserves site handlers better than location assign.
       if (activator.tagName === 'A' && /** @type {HTMLAnchorElement} */ (activator).href && !openInNewTab && !background) {
@@ -340,9 +544,20 @@ export function installFrameClickAgent() {
       try {
         if (typeof e.clientX === 'number') lastMouse.x = e.clientX;
         if (typeof e.clientY === 'number') lastMouse.y = e.clientY;
+        pointerInside = true;
+        if (enabled && !hasFullKeyPilot()) scheduleHoverUpdate();
       } catch {
         // ignore
       }
+    };
+
+    const onPointerLeave = () => {
+      pointerInside = false;
+      hideHover();
+    };
+
+    const onScroll = () => {
+      if (pointerInside && enabled) scheduleHoverUpdate();
     };
 
     /** @param {KeyboardEvent} e */
@@ -391,7 +606,7 @@ export function installFrameClickAgent() {
       try {
         if (message?.type === MSG.TOGGLE_STATE || message?.type === MSG.UPDATE_STATE) {
           if (typeof message.enabled === 'boolean') {
-            enabled = message.enabled;
+            setEnabled(message.enabled);
           }
           return false;
         }
@@ -420,7 +635,7 @@ export function installFrameClickAgent() {
       try {
         if (area !== 'sync' && area !== 'local') return;
         if (changes?.keypilot_enabled && typeof changes.keypilot_enabled.newValue === 'boolean') {
-          enabled = changes.keypilot_enabled.newValue;
+          setEnabled(changes.keypilot_enabled.newValue);
         }
         if (changes && Object.prototype.hasOwnProperty.call(changes, SETTINGS_STORAGE_KEY)) {
           void refreshKeybindings();
@@ -433,6 +648,9 @@ export function installFrameClickAgent() {
     window.addEventListener('message', onMessage, true);
     document.addEventListener('mousemove', onPointer, { capture: true, passive: true });
     document.addEventListener('pointermove', onPointer, { capture: true, passive: true });
+    document.addEventListener('mouseleave', onPointerLeave, true);
+    document.addEventListener('scroll', onScroll, { capture: true, passive: true });
+    window.addEventListener('scroll', onScroll, { capture: true, passive: true });
     document.addEventListener('keydown', onKeyDown, true);
 
     try {
@@ -452,10 +670,18 @@ export function installFrameClickAgent() {
 
     return {
       dispose() {
+        hideHover();
+        try {
+          if (hoverEl) hoverEl.remove();
+        } catch { /* ignore */ }
+        hoverEl = null;
         try {
           window.removeEventListener('message', onMessage, true);
           document.removeEventListener('mousemove', onPointer, true);
           document.removeEventListener('pointermove', onPointer, true);
+          document.removeEventListener('mouseleave', onPointerLeave, true);
+          document.removeEventListener('scroll', onScroll, true);
+          window.removeEventListener('scroll', onScroll, true);
           document.removeEventListener('keydown', onKeyDown, true);
         } catch { /* ignore */ }
         try {

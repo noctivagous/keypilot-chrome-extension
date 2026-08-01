@@ -821,7 +821,8 @@ export class KeyPilot extends EventManager {
     if (this._settingsStorageListener) return;
     try {
       this._settingsStorageListener = (changes, area) => {
-        if (area !== 'sync') return;
+        // Prefer sync; also accept local (storage helper falls back when sync fails).
+        if (area !== 'sync' && area !== 'local') return;
         if (!changes || !changes[SETTINGS_STORAGE_KEY]) return;
         this.refreshSettingsFromStorage();
       };
