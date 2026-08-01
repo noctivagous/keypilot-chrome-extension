@@ -63,7 +63,12 @@ export const MSG = Object.freeze({
   POPOVER_BRIDGE_READY: 'KP_POPOVER_BRIDGE_READY',
   POPOVER_REQUEST_CLOSE: 'KP_POPOVER_REQUEST_CLOSE',
   POPOVER_BRIDGE_KEYDOWN: 'KP_POPOVER_BRIDGE_KEYDOWN',
-  POPOVER_SCROLL: 'KP_POPOVER_SCROLL'
+  POPOVER_SCROLL: 'KP_POPOVER_SCROLL',
+
+  // --- Parent → child frame activate (window.postMessage; third-party iframes) ---
+  // Top-frame KeyPilot posts this when F/B/G lands on a cross-origin <iframe>.
+  // Child frame-click-agent performs elementFromPoint + click in its own document.
+  FRAME_ACTIVATE: 'KP_FRAME_ACTIVATE'
 });
 
 /**

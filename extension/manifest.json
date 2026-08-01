@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "KeyPilot",
     "version": "0.3.4",
-    "description": "Aug-1-2026-8:57AM Keyboard-first navigation: F click link under cursor; D back; R forward; ESC cancel.",
+    "description": "Aug-1-2026-9:30AM Keyboard-first navigation: F click link under cursor; D back; R forward; ESC cancel.",
     "action": {
         "default_title": "KeyPilot Minimal",
         "default_popup": "popup.html"
@@ -55,6 +55,7 @@
             ],
             "all_frames": true,
             "match_about_blank": true,
+            "match_origin_as_fallback": true,
             "run_at": "document_idle"
         }
     ],

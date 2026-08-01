@@ -3,6 +3,7 @@ import { KeyPilot } from '../src/keypilot.js';
 import { KeyPilotToggleHandler } from '../src/modules/keypilot-toggle-handler.js';
 import { OnboardingManager } from '../src/modules/onboarding-manager.js';
 import { getExtensionFaviconUrl, renderUrlListing } from '../src/ui/url-listing.js';
+import { createPopoverTitlebar, createTitlebarCloseHint } from '../src/ui/popover-titlebar.js';
 import { storageGetValue } from '../src/utils/storage.js';
 
 let currentEngine = 'brave';
@@ -122,34 +123,33 @@ function createModal({ title, hintKeyLabel, closeKeys, url, width, height }) {
   if (width) container.style.width = width;
   if (height) container.style.height = height;
 
-  const hint = document.createElement('div');
-  hint.className = 'modal-hint';
-  hint.textContent = `Press ${hintKeyLabel} / Esc to close. Use Z/X/C/V/B/N to scroll.`;
-
-  const header = document.createElement('div');
-  header.className = 'modal-header';
-
-  const titleEl = document.createElement('div');
-  titleEl.className = 'modal-title';
-  titleEl.textContent = title;
-
-  const closeBtn = document.createElement('button');
-  closeBtn.className = 'modal-close';
-  closeBtn.type = 'button';
-  closeBtn.title = 'Close (Esc)';
-  closeBtn.textContent = '×';
-
-  const iframe = document.createElement('iframe');
-  iframe.className = 'modal-iframe';
-  iframe.src = url;
-  iframe.tabIndex = 0;
-
+  // Match overlay-manager.showPopover chrome: single shared titlebar (title +
+  // close-key hint + ×). Avoids a separate modal-hint strip above the header.
   const requestClose = () => {
     root.hidden = true;
     root.textContent = '';
     document.removeEventListener('keydown', onKeyDown, true);
     window.removeEventListener('message', onMessage, true);
   };
+
+  const titlebarHint = createTitlebarCloseHint({
+    keys: [hintKeyLabel, 'Esc'],
+    suffix: 'Use the same keyboard navigation controls.'
+  });
+  const titlebarApi = createPopoverTitlebar({
+    title,
+    variant: 'modal',
+    showClose: true,
+    onClose: requestClose,
+    closeTitle: 'Close (Esc)',
+    hint: titlebarHint,
+    className: 'kpv2-popover-titlebar'
+  });
+
+  const iframe = document.createElement('iframe');
+  iframe.className = 'modal-iframe';
+  iframe.src = url;
+  iframe.tabIndex = 0;
 
   const onKeyDown = (e) => {
     if (e.key === 'Escape') {
@@ -175,15 +175,11 @@ function createModal({ title, hintKeyLabel, closeKeys, url, width, height }) {
     }
   };
 
-  closeBtn.addEventListener('click', requestClose, true);
   backdrop.addEventListener('click', requestClose, true);
   document.addEventListener('keydown', onKeyDown, true);
   window.addEventListener('message', onMessage, true);
 
-  header.appendChild(titleEl);
-  header.appendChild(closeBtn);
-  container.appendChild(hint);
-  container.appendChild(header);
+  container.appendChild(titlebarApi.titlebar);
   container.appendChild(iframe);
   root.appendChild(backdrop);
   root.appendChild(container);
@@ -877,10 +873,9 @@ async function init() {
   }, true);
 
   document.getElementById('btn-settings')?.addEventListener('click', () => {
-    // Calculate settings container dimensions + 10pt padding
-    // The settings container has max-width: 920px and padding: 18px on each side
-    const settingsContainerWidth = Math.min(920, window.innerWidth - 36) + 20; // 920px max + 10pt padding each side
-    const settingsContainerHeight = Math.min(window.innerHeight * 0.8, window.innerHeight - 100) + 20; // Use 80vh max + 10pt padding each side
+    // Match KeyPilot handleOpenSettingsPopover sizing (master–detail layout).
+    const settingsContainerWidth = Math.min(980, window.innerWidth - 36) + 20;
+    const settingsContainerHeight = Math.min(window.innerHeight * 0.82, window.innerHeight - 80) + 20;
 
     createModal({
       title: 'KeyPilot Settings',

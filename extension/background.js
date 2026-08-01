@@ -1528,6 +1528,48 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
+        case MSG.FRAME_ACTIVATE: {
+          // Top-frame KeyPilot: fan-out activate to subframe content scripts.
+          // Fire-and-forget per frame — never await sendMessage (missing agents hang).
+          const tabId = sender?.tab?.id;
+          if (typeof tabId !== 'number') {
+            sendResponse({ type: MSG.ERROR, error: 'No sender tab id' });
+            break;
+          }
+          const payload = {
+            type: MSG.FRAME_ACTIVATE,
+            clientX: message.clientX,
+            clientY: message.clientY,
+            openInNewTab: !!message.openInNewTab,
+            background: !!message.background,
+            frameName: typeof message.frameName === 'string' ? message.frameName : ''
+          };
+          try {
+            let frames = [];
+            try {
+              frames = await chrome.webNavigation.getAllFrames({ tabId }) || [];
+            } catch (e) {
+              console.warn('[KeyPilot] getAllFrames failed:', e?.message || e);
+              frames = [];
+            }
+            for (const frame of frames) {
+              if (!frame || frame.frameId === 0) continue;
+              try {
+                chrome.tabs.sendMessage(tabId, payload, { frameId: frame.frameId }).catch(() => {});
+              } catch {
+                // ignore
+              }
+            }
+            sendResponse({ type: MSG.SUCCESS });
+          } catch (e) {
+            sendResponse({
+              type: MSG.ERROR,
+              error: e?.message || 'Failed to relay frame activate'
+            });
+          }
+          break;
+        }
+
         case 'KP_GET_STATE':
           // Content script or popup requesting current state
           const currentState = await extensionToggleManager.getState();

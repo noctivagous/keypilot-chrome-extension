@@ -5,20 +5,28 @@ import { KeyPilot } from './keypilot.js';
 import { KeyPilotToggleHandler } from './modules/keypilot-toggle-handler.js';
 import { OnboardingManager } from './modules/onboarding-manager.js';
 import { installPopoverIframeBridge } from './modules/popover-iframe-bridge.js';
+import { installFrameClickAgent } from './modules/frame-click-agent.js';
 
 /**
  * When running inside an iframe, we normally avoid initializing full KeyPilot.
  * For KeyPilot popover iframes, we use a bridge handshake from the parent to:
  * - keep Esc/P close working via postMessage
  * - optionally initialize full KeyPilot inside the iframe for the full cursor/overlay experience
+ *
+ * Separately, a thin frame-click-agent always runs in child frames so top-frame
+ * F-activate can click through cross-origin iframes (e.g. Google account switcher).
  */
-function setupPopoverIframeBridge() {
+function setupIframeAgents() {
   try {
     // Only install in iframes
     if (window === window.top) return;
 
+    // Thin idle agent: postMessage activate + F when this frame has focus.
+    installFrameClickAgent();
+
     installPopoverIframeBridge({
-      enableFClickBeforeKeyPilot: true,
+      // Frame-click-agent owns pre-KP activate keys; avoid double-clicking links.
+      enableFClickBeforeKeyPilot: false,
       onBridgeInit: () => {
         // Marker for debugging / future conditional behavior.
         try { window.__KP_POPOVER_IFRAME = true; } catch { /* ignore */ }
@@ -34,7 +42,7 @@ function setupPopoverIframeBridge() {
       }
     });
   } catch (error) {
-    console.warn('[KeyPilot] Failed to install popover iframe bridge:', error);
+    console.warn('[KeyPilot] Failed to install iframe agents:', error);
   }
 }
 
@@ -71,8 +79,8 @@ async function initializeKeyPilot() {
   }
 }
 
-// If inside an iframe, install the bridge and exit.
-setupPopoverIframeBridge();
+// If inside an iframe, install thin agents (no full KeyPilot unless popover INIT).
+setupIframeAgents();
 
 // Initialize KeyPilot only in the top frame.
 if (window === window.top) {

@@ -19,26 +19,20 @@
         </div>
       </header>
 
+      <!-- Always visible (including iframe embed when .header is hidden). -->
+      <p class="layout-banner" aria-live="polite">
+        <span id="layout-label" class="layout-label" hidden></span>
+      </p>
+
       <section class="card">
         <h2>Core keys</h2>
-        <ul class="list">
-          <li><kbd>F</kbd> click element under the KeyPilot cursor</li>
-          <li><kbd>D</kbd> / <kbd>S</kbd> back</li>
-          <li><kbd>R</kbd> forward</li>
-          <li><kbd>Q</kbd> / <kbd>W</kbd> tab left/right</li>
-          <li><kbd>Alt</kbd> + <kbd>L</kbd> omnibox</li>
-          <li><kbd>Esc</kbd> cancel / exit</li>
-        </ul>
+        <!-- Filled by guide.js from the active keyboard layout. -->
+        <ul id="guide-core-list" class="list" aria-live="polite"></ul>
       </section>
 
       <section class="card">
         <h2>Popover</h2>
-        <ul class="list">
-          <li><kbd>P</kbd> open link-under-cursor in popover</li>
-          <li><kbd>'</kbd> open Settings popover</li>
-          <li><kbd>Z</kbd>/<kbd>X</kbd>/<kbd>C</kbd>/<kbd>V</kbd>/<kbd>B</kbd>/<kbd>N</kbd> scroll</li>
-          <li><kbd>Esc</kbd> close</li>
-        </ul>
+        <ul id="guide-popover-list" class="list" aria-live="polite"></ul>
       </section>
 
       <section class="card">
@@ -46,6 +40,9 @@
         <p class="p">
           KeyPilot runs as a content script on normal web pages. It’s unavailable on browser-internal pages
           like <code>chrome://</code> and the Chrome Web Store.
+        </p>
+        <p class="p p-follow">
+          Keys above follow your selected keyboard layout in Settings (right-handed or left-handed).
         </p>
       </section>
     </main>

@@ -69,6 +69,8 @@ const modules = [
   'src/modules/popover-iframe-bridge.js',
   'src/modules/keypilot-toggle-handler.js',
   'src/modules/settings-manager.js',
+  // After settings-manager / keyboard-layouts: thin iframe activate agent.
+  'src/modules/frame-click-agent.js',
   'src/modules/omnibox-manager.js',
   'src/modules/tab-history-popover.js',
   'src/modules/launcher-popover.js',

@@ -3879,8 +3879,153 @@ export class KeyPilot extends EventManager {
     }
   }
 
+  /**
+   * When the pointer is over a cross-origin (or any) iframe, top-frame hit-testing
+   * only sees the <iframe> shell. Forward activate to the child frame-click-agent
+   * with coordinates local to the iframe viewport.
+   *
+   * @param {number} clientX
+   * @param {number} clientY
+   * @param {{ openInNewTab?: boolean, background?: boolean }} [opts]
+   * @returns {boolean} true if a message was posted to an iframe under the cursor
+   */
+  _tryActivateIframeUnderCursor(clientX, clientY, opts = {}) {
+    if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return false;
+
+    let under = null;
+    try {
+      under = this.detector.deepElementFromPoint(clientX, clientY);
+    } catch {
+      under = null;
+    }
+    if (!under || under.tagName !== 'IFRAME') return false;
+
+    // Popover mode is modal: only interact with iframes inside the popover UI.
+    try {
+      const mode = this.state.getState()?.mode;
+      if (mode === MODES.POPOVER && !this._isElementInPopover(under)) {
+        return false;
+      }
+    } catch { /* ignore */ }
+
+    // Ignore KeyPilot UI chrome (not page iframes).
+    try {
+      if (this._isKeyPilotUiElement?.(under)) return false;
+    } catch { /* ignore */ }
+
+    const iframe = /** @type {HTMLIFrameElement} */ (under);
+    let rect;
+    try {
+      rect = iframe.getBoundingClientRect();
+    } catch {
+      return false;
+    }
+    if (!rect || rect.width <= 0 || rect.height <= 0) return false;
+
+    const localX = clientX - rect.left;
+    const localY = clientY - rect.top;
+    if (localX < 0 || localY < 0 || localX > rect.width || localY > rect.height) {
+      return false;
+    }
+
+    const payload = {
+      type: MSG.FRAME_ACTIVATE,
+      clientX: localX,
+      clientY: localY,
+      openInNewTab: !!opts.openInNewTab,
+      background: !!opts.background,
+      // Child agent filters on window.name when set (e.g. Google name="account").
+      frameName: typeof iframe.name === 'string' ? iframe.name : ''
+    };
+
+    // Same-origin fast path: click directly inside the child document (no agent needed).
+    try {
+      const doc = iframe.contentDocument;
+      const view = iframe.contentWindow;
+      if (doc && view) {
+        let el = doc.elementFromPoint(localX, localY);
+        let guard = 0;
+        while (el && el.shadowRoot && guard++ < 10) {
+          const nested = el.shadowRoot.elementFromPoint(localX, localY);
+          if (!nested || nested === el) break;
+          el = nested;
+        }
+        if (el) {
+          // Nested iframe inside a same-origin frame: recurse via postMessage to that child.
+          if (el.tagName === 'IFRAME') {
+            try {
+              const nested = /** @type {HTMLIFrameElement} */ (el);
+              const nr = nested.getBoundingClientRect();
+              nested.contentWindow?.postMessage({
+                ...payload,
+                clientX: localX - nr.left,
+                clientY: localY - nr.top,
+                frameName: typeof nested.name === 'string' ? nested.name : ''
+              }, '*');
+            } catch { /* ignore */ }
+          } else {
+            const common = {
+              bubbles: true,
+              cancelable: true,
+              composed: true,
+              view,
+              clientX: localX,
+              clientY: localY,
+              button: 0,
+              buttons: 0
+            };
+            try { el.dispatchEvent(new view.MouseEvent('mousedown', { ...common, buttons: 1 })); } catch { /* ignore */ }
+            try { el.dispatchEvent(new view.MouseEvent('mouseup', common)); } catch { /* ignore */ }
+            try { el.dispatchEvent(new view.MouseEvent('click', common)); } catch { /* ignore */ }
+            try {
+              const clickable = typeof el.closest === 'function'
+                ? el.closest('a[href], button, [role="button"], [role="link"], [role="menuitem"]')
+                : null;
+              if (clickable && clickable !== el) {
+                try { /** @type {HTMLElement} */ (clickable).click(); } catch { /* ignore */ }
+              } else if (typeof /** @type {any} */ (el).click === 'function') {
+                try { /** @type {any} */ (el).click(); } catch { /* ignore */ }
+              }
+            } catch { /* ignore */ }
+          }
+          return true;
+        }
+      }
+    } catch {
+      // Cross-origin — fall through to postMessage / runtime relay.
+    }
+
+    let posted = false;
+    try {
+      const win = iframe.contentWindow;
+      if (win) {
+        win.postMessage(payload, '*');
+        posted = true;
+      }
+    } catch { /* ignore */ }
+
+    // Backup: SW fans out to subframes; agent matches frameName / activates at local coords.
+    // Fire-and-forget so we never block the key handler.
+    try {
+      this._sendRuntimeMessage(payload, { silent: true });
+      posted = true;
+    } catch { /* ignore */ }
+
+    return posted;
+  }
+
   handleActivateKey() {
     const currentState = this.state.getState();
+    const x = currentState.lastMouse.x;
+    const y = currentState.lastMouse.y;
+
+    // Cross-origin iframes (Google account switcher, etc.): forward into the frame.
+    if (this._tryActivateIframeUnderCursor(x, y, {})) {
+      this.showRipple(x, y);
+      this.emitAction('activate', { viaIframe: true });
+      return;
+    }
+
     const target = this._getValidatedActivationTarget(currentState);
 
     if (!target || target === document.documentElement || target === document.body) {
@@ -3928,6 +4073,15 @@ export class KeyPilot extends EventManager {
 
   handleActivateNewTabKey() {
     const currentState = this.state.getState();
+    const x = currentState.lastMouse.x;
+    const y = currentState.lastMouse.y;
+
+    if (this._tryActivateIframeUnderCursor(x, y, { openInNewTab: true })) {
+      this.showRipple(x, y);
+      this.emitAction('activateNewTab', { viaIframe: true });
+      return;
+    }
+
     const target = this._getValidatedActivationTarget(currentState);
 
     if (!target || target === document.documentElement || target === document.body) {
@@ -4019,6 +4173,15 @@ export class KeyPilot extends EventManager {
 
   handleActivateNewTabBackgroundKey() {
     const currentState = this.state.getState();
+    const x = currentState.lastMouse.x;
+    const y = currentState.lastMouse.y;
+
+    if (this._tryActivateIframeUnderCursor(x, y, { background: true, openInNewTab: true })) {
+      this.showRipple(x, y);
+      this.emitAction('activateNewTabBackground', { viaIframe: true });
+      return;
+    }
+
     const target = this._getValidatedActivationTarget(currentState);
 
     if (!target || target === document.documentElement || target === document.body) {
