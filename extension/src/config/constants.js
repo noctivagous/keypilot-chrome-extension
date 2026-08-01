@@ -492,6 +492,24 @@ export const FEATURE_FLAGS = {
   // elementFromPoint if nothing is hovered.
   ENABLE_DOM_HOVER_LISTENERS: true,
 
+  // ---- Focus-ring paint experiments (DOM-hover element styling) ----
+  //
+  // Tentative purpose of ENABLE_FOCUS_CLIP_INSET:
+  //   When an ancestor overflow/content-visibility/contain box is tight enough to
+  //   clip a positive outline-offset ring, switch to inset outline (negative
+  //   offset) so the ring paints inside the target. Does NOT mutate page overflow
+  //   (that broke IMDb carousels). Keep as a flag so we can A/B or disable if
+  //   inset misbehaves on some skins.
+  //
+  // Tentative purpose of ENABLE_FOCUS_TIGHT_WRAPPER_PROMOTION:
+  //   When a clip ancestor is nearly the same size as the hover target, paint the
+  //   ring on that ancestor instead of the target (e.g. some content-visibility
+  //   row wrappers). Default OFF: on IMDb, this promotes off <a.ipc-lockup-overlay>
+  //   onto parent .ipc-poster, so the real clickable never shows data-kp-focus and
+  //   the ring can look "missing" on the overlay link the user is inspecting.
+  ENABLE_FOCUS_CLIP_INSET: true,
+  ENABLE_FOCUS_TIGHT_WRAPPER_PROMOTION: false,
+
   // Debug and development flags
   DEBUG_RECTANGLE_SELECTION: false, // Enable detailed logging for rectangle selection
   DEBUG_EDGE_ONLY_PROCESSING: false, // Enable detailed logging for edge-only processing

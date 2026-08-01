@@ -972,14 +972,17 @@ export class OverlayManager {
   /**
    * Find ancestors that would clip an outer focus ring around `element`.
    *
+   * Used only when FEATURE_FLAGS.ENABLE_FOCUS_CLIP_INSET and/or
+   * ENABLE_FOCUS_TIGHT_WRAPPER_PROMOTION are on (see constants.js for tentative
+   * purpose). Never opens page overflow — that broke carousels (IMDb).
+   *
    * @param {Element} element
    * @returns {{
    *   clippers: Element[],
    *   tightWrapper: Element|null
    * }}
-   *   clippers — ancestors that clip the expanded ring box (for temporary open)
-   *   tightWrapper — nearest clipper nearly the same size as the target (prefer
-   *     painting the ring on this node, e.g. X Stories content-visibility row)
+   *   clippers — ancestors that would clip a positive outline-offset ring
+   *   tightWrapper — nearest clipper nearly the same size as the target
    */
   _findFocusClipContext(element) {
     /** @type {Element[]} */
@@ -1119,17 +1122,32 @@ export class OverlayManager {
     // better single-rect descendant (usually the anchor's wrapper) instead of the anchor.
     let stylingTarget = this._resolveElementForFocusStyling(element) || element;
 
-    // Clip-aware paint (never mutate page overflow — that breaks carousels like IMDb):
-    // - If a near-same-size wrapper owns content-visibility/clip, paint the ring there.
-    // - If any tight ancestor would clip an *outer* ring, use inset outline instead.
-    // Do NOT force overflow:visible on ancestors (reveals off-screen carousel slides).
-    const clipCtx = this._findFocusClipContext(stylingTarget);
-    if (clipCtx.tightWrapper && clipCtx.tightWrapper.nodeType === 1) {
-      stylingTarget = clipCtx.tightWrapper;
+    // Optional clip-aware paint (flags in FEATURE_FLAGS — see constants.js).
+    // Never mutate page overflow (broke IMDb carousels). Prefer painting on the
+    // real hover target so data-kp-focus lands on the clickable <a>, not a parent.
+    let useInset = false;
+    let clipCtx = { clippers: [], tightWrapper: null };
+    const clipInsetOn = !!(FEATURE_FLAGS && FEATURE_FLAGS.ENABLE_FOCUS_CLIP_INSET);
+    const tightPromoteOn = !!(FEATURE_FLAGS && FEATURE_FLAGS.ENABLE_FOCUS_TIGHT_WRAPPER_PROMOTION);
+    if (clipInsetOn || tightPromoteOn) {
+      try {
+        clipCtx = this._findFocusClipContext(stylingTarget);
+      } catch {
+        clipCtx = { clippers: [], tightWrapper: null };
+      }
+      if (
+        tightPromoteOn &&
+        clipCtx.tightWrapper &&
+        clipCtx.tightWrapper.nodeType === 1
+      ) {
+        stylingTarget = clipCtx.tightWrapper;
+      }
+      if (clipInsetOn) {
+        useInset =
+          !!(clipCtx.clippers && clipCtx.clippers.length) ||
+          this._isProbablyClippedByAncestorOverflow(stylingTarget);
+      }
     }
-    const useInset =
-      !!(clipCtx.clippers && clipCtx.clippers.length) ||
-      this._isProbablyClippedByAncestorOverflow(stylingTarget);
 
     // Don't style modal/popover iframes
     try {
@@ -1187,7 +1205,9 @@ export class OverlayManager {
         originalTagName: element?.tagName,
         styledDifferentElement: stylingTarget !== element,
         useInset: useInset,
-        tightWrapper: !!clipCtx.tightWrapper,
+        clipInsetFlag: clipInsetOn,
+        tightPromoteFlag: tightPromoteOn,
+        tightWrapper: !!(clipCtx && clipCtx.tightWrapper),
         ringColor: ringColor,
         isTextInput: isTextInput
       });
