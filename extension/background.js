@@ -1704,7 +1704,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               } else if (tabs.length > 1) {
                 targetIndex = tabs.length - 1; // Wrap around to last tab
               } else {
-                throw new Error('No valid tabs to switch to');
+                // Soft failure: only one usable tab — content script shows flash UI, no console noise.
+                sendResponse({
+                  type: 'KP_ERROR',
+                  error: 'No valid tabs to switch to'
+                });
+                break;
               }
               
               await chrome.tabs.update(tabs[targetIndex].id, { active: true });
@@ -1735,7 +1740,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               } else if (tabs.length > 1) {
                 targetIndex = 0; // Wrap around to first tab
               } else {
-                throw new Error('No valid tabs to switch to');
+                // Soft failure: only one usable tab — content script shows flash UI, no console noise.
+                sendResponse({
+                  type: 'KP_ERROR',
+                  error: 'No valid tabs to switch to'
+                });
+                break;
               }
               
               await chrome.tabs.update(tabs[targetIndex].id, { active: true });

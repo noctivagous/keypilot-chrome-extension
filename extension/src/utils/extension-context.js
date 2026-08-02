@@ -66,7 +66,11 @@ export function noteExtensionContextError(error) {
 /**
  * Fire-and-forget runtime message with invalidated-context handling.
  * @param {object} message
- * @param {{ onInvalidated?: () => void, onError?: (error: unknown) => void }} [opts]
+ * @param {{
+ *   onInvalidated?: () => void,
+ *   onError?: (error: unknown) => void,
+ *   onResponse?: (response: unknown) => void
+ * }} [opts]
  * @returns {boolean} False if the message could not be sent (invalid context or sync throw).
  */
 export function safeRuntimeSendMessage(message, opts = {}) {
@@ -79,7 +83,9 @@ export function safeRuntimeSendMessage(message, opts = {}) {
     const result = chrome.runtime.sendMessage(message);
     // MV3 returns a Promise; swallow invalidated rejections so they don't surface as unhandled.
     if (result && typeof result.then === 'function') {
-      result.catch((error) => {
+      result.then((response) => {
+        try { opts.onResponse?.(response); } catch { /* ignore */ }
+      }).catch((error) => {
         if (noteExtensionContextError(error)) {
           try { opts.onInvalidated?.(); } catch { /* ignore */ }
           return;

@@ -1468,7 +1468,7 @@ export class KeyPilot extends EventManager {
    * Send a message to the service worker, handling "Extension context invalidated"
    * (content script orphaned after extension reload/update).
    * @param {object} message
-   * @param {{ silent?: boolean }} [opts]
+   * @param {{ silent?: boolean, onResponse?: (response: unknown) => void }} [opts]
    * @returns {boolean}
    */
   _sendRuntimeMessage(message, opts = {}) {
@@ -1479,7 +1479,8 @@ export class KeyPilot extends EventManager {
         if (window.KEYPILOT_DEBUG) {
           console.warn('[KeyPilot] runtime.sendMessage failed:', error);
         }
-      }
+      },
+      onResponse: typeof opts.onResponse === 'function' ? opts.onResponse : undefined
     });
   }
 
@@ -2594,7 +2595,9 @@ export class KeyPilot extends EventManager {
     // Emit + record transient action BEFORE switching tabs so onboarding can persist/recover reliably.
     this.emitAction('tabLeft');
     this._sendRuntimeMessage({ type: MSG.TRANSIENT_ACTION, action: 'tabLeft', timestamp: Date.now() }, { silent: true });
-    if (!this._sendRuntimeMessage({ type: MSG.TAB_LEFT })) {
+    if (!this._sendRuntimeMessage({ type: MSG.TAB_LEFT }, {
+      onResponse: (response) => this._notifyTabSwitchFailure(response)
+    })) {
       // Context invalidated — user already notified once via _handleExtensionContextInvalidated
     }
   }
@@ -2605,9 +2608,28 @@ export class KeyPilot extends EventManager {
     // Emit + record transient action BEFORE switching tabs so onboarding can persist/recover reliably.
     this.emitAction('tabRight');
     this._sendRuntimeMessage({ type: MSG.TRANSIENT_ACTION, action: 'tabRight', timestamp: Date.now() }, { silent: true });
-    if (!this._sendRuntimeMessage({ type: MSG.TAB_RIGHT })) {
+    if (!this._sendRuntimeMessage({ type: MSG.TAB_RIGHT }, {
+      onResponse: (response) => this._notifyTabSwitchFailure(response)
+    })) {
       // Context invalidated — user already notified once via _handleExtensionContextInvalidated
     }
+  }
+
+  /**
+   * Show the top-center flash alert when left/right tab switch has nowhere to go
+   * (or otherwise fails in the background).
+   * @param {unknown} response
+   */
+  _notifyTabSwitchFailure(response) {
+    if (!response || typeof response !== 'object') return;
+    if (/** @type {{ type?: string }} */ (response).type !== 'KP_ERROR') return;
+
+    const error = String(/** @type {{ error?: unknown }} */ (response).error || '');
+    const message = /no valid tabs to switch to/i.test(error)
+      ? 'No other tabs to switch to'
+      : (error ? error.replace(/^Failed to switch tab:\s*/i, '') : 'Failed to switch tab');
+
+    this.showFlashNotification(message, COLORS.NOTIFICATION_INFO);
   }
 
   handleDeleteKey(e) {
