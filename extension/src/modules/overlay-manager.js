@@ -5138,10 +5138,12 @@ export class OverlayManager {
       reasons.push('Event Listener (click)');
     }
 
-    // Check cursor style (always check, not just when no other reasons found)
+    // Check cursor style (always check, not just when no other reasons found).
+    // Use ElementDetector so CUSTOM_CURSORS mode still reports real page pointers.
     try {
-      const computedStyle = window.getComputedStyle && window.getComputedStyle(element);
-      const hasCursor = computedStyle && computedStyle.cursor === 'pointer';
+      const hasCursor = elementDetector && typeof elementDetector.hasExplicitCursorPointer === 'function'
+        ? elementDetector.hasExplicitCursorPointer(element)
+        : !!(window.getComputedStyle && window.getComputedStyle(element).cursor === 'pointer');
       if (hasCursor) {
         reasons.push('CSS cursor: pointer');
       }

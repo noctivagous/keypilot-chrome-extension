@@ -1,7 +1,7 @@
 /**
  * Element detection and interaction utilities
  */
-import { CLICKABLE_CATEGORY } from '../config/constants.js';
+import { CLICKABLE_CATEGORY, CSS_CLASSES } from '../config/constants.js';
 
 export class ElementDetector {
   constructor() {
@@ -21,8 +21,76 @@ export class ElementDetector {
     // Track elements with addEventListener click handlers
     this.clickHandlerElements = new WeakSet();
 
+    // Depth for nested _withNativePageCursors calls (one suspend/restore pair).
+    this._nativeCursorSuspendDepth = 0;
+    this._nativeCursorWasHidden = false;
+
     // Wrap addEventListener to track click handlers
     this.setupEventListenerTracking();
+  }
+
+  /**
+   * Run `fn` with KeyPilot's custom-cursor override temporarily disabled so
+   * getComputedStyle(...).cursor reflects the page's real cursor (e.g. pointer).
+   *
+   * When CUSTOM_CURSORS is on, style-manager forces:
+   *   html.kpv2-cursor-hidden * { cursor: var(--kpv2-cursor) !important; }
+   * which makes every element report the crosshair (or other custom cursor) and
+   * hides CSS cursor:pointer signals used to find non-semantic clickables.
+   *
+   * Suspend/restore is synchronous and re-entrant — no paint should occur mid-task.
+   * @template T
+   * @param {() => T} fn
+   * @returns {T}
+   */
+  _withNativePageCursors(fn) {
+    let html = null;
+    try { html = document.documentElement; } catch { /* ignore */ }
+
+    if (!html || !html.classList) {
+      return fn();
+    }
+
+    if (this._nativeCursorSuspendDepth > 0) {
+      this._nativeCursorSuspendDepth++;
+      try {
+        return fn();
+      } finally {
+        this._nativeCursorSuspendDepth--;
+      }
+    }
+
+    const hadHidden = html.classList.contains(CSS_CLASSES.CURSOR_HIDDEN);
+    this._nativeCursorWasHidden = hadHidden;
+    if (hadHidden) {
+      try { html.classList.remove(CSS_CLASSES.CURSOR_HIDDEN); } catch { /* ignore */ }
+    }
+    this._nativeCursorSuspendDepth = 1;
+    try {
+      return fn();
+    } finally {
+      this._nativeCursorSuspendDepth = 0;
+      if (hadHidden) {
+        try { html.classList.add(CSS_CLASSES.CURSOR_HIDDEN); } catch { /* ignore */ }
+      }
+      this._nativeCursorWasHidden = false;
+    }
+  }
+
+  /**
+   * Computed cursor with custom-cursor override suspended.
+   * @param {Element} el
+   * @returns {string}
+   */
+  _getPageComputedCursor(el) {
+    if (!el || !window.getComputedStyle) return '';
+    return this._withNativePageCursors(() => {
+      try {
+        return window.getComputedStyle(el).cursor || '';
+      } catch {
+        return '';
+      }
+    });
   }
 
   /**
@@ -123,6 +191,10 @@ export class ElementDetector {
    * True when this element itself sets cursor:pointer (not merely inheriting it).
    * Sites like suno.com put `cursor-pointer` on <body>, which would otherwise make
    * every node look interactive via getComputedStyle().cursor.
+   *
+   * When KeyPilot custom cursors are enabled, page cursor styles are overridden
+   * with !important — this method suspends that override before reading computed
+   * styles so cursor:pointer-only clickables still get hover outlines.
    */
   hasExplicitCursorPointer(el) {
     if (!el || el.nodeType !== 1) return false;
@@ -146,13 +218,16 @@ export class ElementDetector {
     } catch { /* ignore */ }
 
     // Local CSS rule: computed pointer while parent is not pointer.
+    // Must read with custom-cursor override suspended (see _withNativePageCursors).
     try {
       if (!window.getComputedStyle) return false;
-      const own = window.getComputedStyle(el).cursor;
-      if (own !== 'pointer') return false;
-      const parent = el.parentElement;
-      if (!parent) return false;
-      return window.getComputedStyle(parent).cursor !== 'pointer';
+      return this._withNativePageCursors(() => {
+        const own = window.getComputedStyle(el).cursor;
+        if (own !== 'pointer') return false;
+        const parent = el.parentElement;
+        if (!parent) return false;
+        return window.getComputedStyle(parent).cursor !== 'pointer';
+      });
     } catch {
       return false;
     }
@@ -273,8 +348,8 @@ export class ElementDetector {
       }
 
       // Rumble-style: cursor may be set on a parent chrome node via inline style.
-      let cursor = '';
-      try { cursor = window.getComputedStyle(el).cursor; } catch { /* ignore */ }
+      // Read with custom-cursor override suspended so CUSTOM_CURSORS mode still works.
+      const cursor = this._getPageComputedCursor(el);
       if (cursor !== 'pointer') return false;
       let p = el.parentElement;
       let d = 0;
@@ -505,6 +580,12 @@ export class ElementDetector {
   }
 
   findClickable(el) {
+    // Batch cursor-override suspension for the whole ancestor walk so we don't
+    // toggle html.kpv2-cursor-hidden once per node when probing cursor:pointer.
+    return this._withNativePageCursors(() => this._findClickableUnsuspended(el));
+  }
+
+  _findClickableUnsuspended(el) {
     // Standard interactive walk only — no scrubber "proximity" remapping of hover focus.
     // F-activation still resolves scrubbers from the hit target in ActivationHandler.
     let n = el;
@@ -537,7 +618,7 @@ export class ElementDetector {
       n = n.parentElement || (n.getRootNode() instanceof ShadowRoot ? n.getRootNode().host : null);
       depth++;
     }
-    
+
     const finalResult = cursorOnlyCandidate || (el && this.isLikelyInteractive(el) ? el : null);
     if (window.KEYPILOT_DEBUG && !finalResult && el) {
       console.log('[KeyPilot Debug] findClickable found nothing for:', {
@@ -546,7 +627,7 @@ export class ElementDetector {
         className: el.className
       });
     }
-    
+
     return finalResult;
   }
 

@@ -12,7 +12,7 @@
  */
 
 import { MSG } from '../messaging/types.js';
-import { COLORS, Z_INDEX } from '../config/constants.js';
+import { COLORS, CSS_CLASSES, Z_INDEX } from '../config/constants.js';
 import { isTypingContext, hasModifierKeys } from '../utils/dom-context.js';
 import {
   buildKeybindingsForLayout,
@@ -50,6 +50,30 @@ function deepElementFromPoint(x, y) {
 }
 
 /**
+ * Read computed styles with KeyPilot custom-cursor override suspended so
+ * cursor:pointer on the page is still visible when CUSTOM_CURSORS is on.
+ * @template T
+ * @param {() => T} fn
+ * @returns {T}
+ */
+function withNativePageCursors(fn) {
+  let html = null;
+  try { html = document.documentElement; } catch { /* ignore */ }
+  if (!html || !html.classList) return fn();
+  const hadHidden = html.classList.contains(CSS_CLASSES.CURSOR_HIDDEN);
+  if (hadHidden) {
+    try { html.classList.remove(CSS_CLASSES.CURSOR_HIDDEN); } catch { /* ignore */ }
+  }
+  try {
+    return fn();
+  } finally {
+    if (hadHidden) {
+      try { html.classList.add(CSS_CLASSES.CURSOR_HIDDEN); } catch { /* ignore */ }
+    }
+  }
+}
+
+/**
  * @param {Element|null} el
  * @returns {Element|null}
  */
@@ -60,16 +84,21 @@ function resolveClickable(el) {
     if (el.id === 'kpv2-frame-hover' || el.closest?.('#kpv2-frame-hover')) return null;
     const specific = typeof el.closest === 'function' ? el.closest(CLICKABLE_SEL) : null;
     if (specific) return specific;
-    // cursor:pointer on this node only (not inherited from body)
+    // cursor:pointer on this node only (not inherited from body).
+    // Suspend custom-cursor override — otherwise getComputedStyle always reports
+    // the KeyPilot crosshair and pointer-only targets never outline.
     try {
       if (el !== document.body && el !== document.documentElement) {
-        const cs = window.getComputedStyle(el);
-        if (cs.cursor === 'pointer' && cs.pointerEvents !== 'none') {
-          const parent = el.parentElement;
-          if (!parent || window.getComputedStyle(parent).cursor !== 'pointer') {
-            return el;
+        return withNativePageCursors(() => {
+          const cs = window.getComputedStyle(el);
+          if (cs.cursor === 'pointer' && cs.pointerEvents !== 'none') {
+            const parent = el.parentElement;
+            if (!parent || window.getComputedStyle(parent).cursor !== 'pointer') {
+              return el;
+            }
           }
-        }
+          return null;
+        });
       }
     } catch { /* ignore */ }
     return null;

@@ -393,11 +393,16 @@ export class IntersectionObserverManager {
                                    element.getAttribute('onclick') ||
                                    this.elementDetector?.hasTrackedClickHandler(element));
 
-      // Check for cursor pointer (only if other conditions don't apply)
+      // Check for cursor pointer (only if other conditions don't apply).
+      // Prefer ElementDetector so custom-cursor mode still sees real page pointers.
       if (!profile.href && !profile.role && !profile.hasClickHandler) {
         try {
-          profile.hasCursorPointer = !!(window.getComputedStyle &&
-                                       window.getComputedStyle(element).cursor === 'pointer');
+          if (this.elementDetector && typeof this.elementDetector.hasExplicitCursorPointer === 'function') {
+            profile.hasCursorPointer = !!this.elementDetector.hasExplicitCursorPointer(element);
+          } else {
+            profile.hasCursorPointer = !!(window.getComputedStyle &&
+                                         window.getComputedStyle(element).cursor === 'pointer');
+          }
         } catch {
           profile.hasCursorPointer = false;
         }
