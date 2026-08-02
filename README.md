@@ -2,16 +2,17 @@
 
 **Keyboard-first navigation for the web with instant visual feedback**
 
-KeyPilot transforms your browsing experience by setting up keyboard keys 
-to perform navigation work.  To click a link, you hover over it as usual
+KeyPilot transforms your browsing experience. Key presses 
+perform navigation work in place of mouse button clicks.  
+For instance, to click a link, you hover over it as usual
 and press the F key.  The F key replaces the mouse button click for 
 navigation to links.  The G key will open the link in a new tab but stay
 on the current page. KeyPilot refers to this as a key-click and it is the basis of the
-Chrome extension.  Many other key-click actions have been placed 
-on the keyboard and they are located in specific places to make 
-web navigation quick.
+Chrome extension.  Many other key-click actions have been arranged
+on the keyboard in specific places to make web navigation quick.
 
 [keyboard ref window]
+
 
 ## 📦 Installation
 
@@ -79,6 +80,7 @@ web navigation quick.
 | `Esc` | Exit Focus |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
 
 
 

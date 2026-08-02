@@ -1297,14 +1297,59 @@ export class OverlayManager {
   }
 
   /**
+   * Largest in-tree descendant with a positive box (for collapsed anchors that
+   * only wrap position:absolute media — e.g. Breitbart video carousel thumbs).
+   * @param {HTMLElement} element
+   * @returns {HTMLElement|null}
+   */
+  _findLargestVisibleDescendant(element) {
+    if (!element || element.nodeType !== 1) return null;
+    let best = null;
+    let bestArea = 0;
+    let visited = 0;
+    const maxNodes = 48;
+    const queue = [element];
+    while (queue.length && visited < maxNodes) {
+      const cur = queue.shift();
+      if (!cur || cur.nodeType !== 1) continue;
+      visited++;
+      if (cur !== element) {
+        let r = null;
+        try { r = cur.getBoundingClientRect(); } catch { r = null; }
+        if (r && r.width >= 8 && r.height >= 8) {
+          const area = r.width * r.height;
+          if (area > bestArea) {
+            bestArea = area;
+            best = /** @type {HTMLElement} */ (cur);
+          }
+        }
+      }
+      try {
+        const kids = cur.children;
+        if (kids) {
+          for (let i = 0; i < kids.length; i++) {
+            if (kids[i]?.nodeType === 1) queue.push(kids[i]);
+          }
+        }
+      } catch { /* ignore */ }
+    }
+    return best;
+  }
+
+  /**
    * Choose the best element to apply the focus ring styling to.
    *
-   * Problem: inline elements that contain block children can be split into multiple inline
-   * fragments, causing outline/box-shadow to render as disjoint pieces.
+   * Problems:
+   * 1) Inline anchors that wrap only position:absolute media collapse to 0×0
+   *    (Breitbart video thumbs) — outline on the <a> is invisible.
+   * 2) Inline elements that contain block children can be split into multiple
+   *    inline fragments, causing outline/box-shadow to render as disjoint pieces.
    *
    * Strategy:
-   * - If `element.getClientRects()` indicates fragmentation (2+ rects) and element is inline-ish,
-   *   find the largest descendant within a small depth that has exactly 1 client rect.
+   * - If the element has no usable box, style the largest visible descendant
+   *   (or a sized parent that wraps abspos content).
+   * - If `element.getClientRects()` indicates fragmentation (2+ rects) and
+   *   element is inline-ish, find the largest single-rect descendant.
    * - Otherwise, return `element`.
    *
    * @param {HTMLElement} element
@@ -1313,11 +1358,36 @@ export class OverlayManager {
   _resolveElementForFocusStyling(element) {
     if (!element || element.nodeType !== 1) return element;
 
+    // Collapsed clickable (0×0) with visible abspos children — paint on media.
+    let br = null;
+    try { br = element.getBoundingClientRect(); } catch { br = null; }
+    if (!br || br.width < 2 || br.height < 2) {
+      const descendant = this._findLargestVisibleDescendant(element);
+      if (descendant) return descendant;
+
+      // No sized descendant: try parent that actually boxes the abspos content
+      // (e.g. .video-image { position: relative } wrapping the collapsed <a>).
+      try {
+        let p = element.parentElement;
+        let hops = 0;
+        while (p && p.nodeType === 1 && hops++ < 4) {
+          if (p === document.body || p === document.documentElement) break;
+          let pr = null;
+          try { pr = p.getBoundingClientRect(); } catch { pr = null; }
+          if (pr && pr.width >= 8 && pr.height >= 8) {
+            return /** @type {HTMLElement} */ (p);
+          }
+          p = p.parentElement;
+        }
+      } catch { /* ignore */ }
+      return element;
+    }
+
     let rects = null;
     try { rects = element.getClientRects(); } catch { rects = null; }
     if (!rects || rects.length < 2) return element;
 
-    // Only apply this heuristic for inline-ish elements to avoid surprising results.
+    // Only apply fragmentation heuristic for inline-ish elements.
     let display = '';
     try { display = String(window.getComputedStyle(element)?.display || ''); } catch { display = ''; }
     const inlineish = display.startsWith('inline');
