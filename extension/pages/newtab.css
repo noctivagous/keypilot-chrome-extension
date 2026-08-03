@@ -68,7 +68,7 @@ body.kp-unfocused::before {
   inset: 0;
   background-image: url("focus-hint-bg.svg");
   background-repeat: no-repeat;
-  background-position: center top;
+  background-position: center calc(0% - 100px);
   background-size: min(1100px, 92vw) auto;
   opacity: 0.95;
   pointer-events: none;
@@ -807,6 +807,7 @@ h2 {
 .history-outline-summary::before {
   content: "▸";
   display: inline-block;
+  font-size: 1.5em;
   margin-right: 2px;
   transition: transform 120ms ease;
   color: rgba(255,140,0,0.85);

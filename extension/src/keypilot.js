@@ -3675,7 +3675,7 @@ export class KeyPilot extends EventManager {
     }
 
     try {
-      this.overlayManager.hideHighlightRectangleOverlay();
+      this.overlayManager.removeHighlightRectangleOverlay();
     } catch (error) {
       console.warn('[KeyPilot] Error clearing highlight rectangle overlay:', error);
     }
@@ -3694,7 +3694,7 @@ export class KeyPilot extends EventManager {
     // Sweep any orphaned selection / instruction overlays left in the DOM
     try {
       document.querySelectorAll(
-        '.kpv2-highlight-selection-overlay, .kpv2-highlight-selection, .kpv2-highlight-rectangle-overlay, .kpv2-highlight-mode-indicator'
+        '.kpv2-highlight-selection-overlay, .kpv2-highlight-selection, .kpv2-highlight-mode-indicator'
       ).forEach((el) => {
         try { el.remove(); } catch { /* ignore */ }
       });

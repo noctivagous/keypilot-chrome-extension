@@ -509,6 +509,29 @@ export class HighlightManager extends EventManager {
   }
 
   /**
+   * Remove the highlight rectangle overlay from the DOM and drop the element
+   * reference, so the next rectangle session starts with a fresh element.
+   * (Hiding alone leaves a detached node that a later session would restyle
+   * without re-adding it to the DOM — invisible.)
+   */
+  removeHighlightRectangleOverlay() {
+    if (this.highlightRectangleOverlay) {
+      if (this.overlayObserver) {
+        try { this.overlayObserver.unobserve(this.highlightRectangleOverlay); } catch { /* ignore */ }
+      }
+      try { this.highlightRectangleOverlay.remove(); } catch { /* ignore */ }
+      this.highlightRectangleOverlay = null;
+
+      if (window.KEYPILOT_DEBUG) {
+        console.log('[KeyPilot Debug] Highlight rectangle overlay removed');
+      }
+    }
+
+    // Reset rectangle selection state
+    this.resetRectangleSelection();
+  }
+
+  /**
    * Get current selection from edge-only processing
    * @returns {Selection|null} - Browser selection object or null
    */

@@ -1941,6 +1941,11 @@ export class OverlayManager {
   }
 
   // SELECTION RECTANGLE FUNCTIONALITY ONLY
+  removeHighlightRectangleOverlay() {
+    return this.highlightManager.removeHighlightRectangleOverlay();
+  }
+
+  // SELECTION RECTANGLE FUNCTIONALITY ONLY
   updateHighlightSelectionOverlays(selection) {
     return this.highlightManager.updateHighlightSelectionOverlays(selection);
   }
