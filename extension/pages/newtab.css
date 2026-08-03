@@ -443,6 +443,22 @@ h2 {
   font-size: 15px;
 }
 
+/* Section headers as full-width bars, separated from their lists */
+.top-sites-section > h2,
+.toolbar-section > h2,
+.history-section > h2 {
+  margin: -14px -14px 12px;
+  padding: 12px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: rgba(255, 200, 130, 0.95);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.30) 100%);
+  border-bottom: 1px solid rgba(255, 140, 0, 0.22);
+  border-radius: 12px 12px 0 0;
+}
+
 .toolbar {
   display: grid;
   gap: 8px;
