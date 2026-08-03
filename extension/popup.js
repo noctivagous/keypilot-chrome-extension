@@ -137,6 +137,14 @@ class PopupToggleController {
                 return;
             }
 
+            const currentUrl = tab.url;
+
+            // KeyPilot's custom New Tab (and chrome://newtab while overridden) is usable.
+            if (await isKeyPilotNewTabPage(currentUrl)) {
+                this.isUnavailable = false;
+                return;
+            }
+
             // Check for restricted URLs where content scripts can't run
             const restrictedPatterns = [
                 /^chrome:\/\//,
@@ -149,7 +157,7 @@ class PopupToggleController {
                 /^javascript:/
             ];
 
-            this.isUnavailable = restrictedPatterns.some(pattern => pattern.test(tab.url));
+            this.isUnavailable = restrictedPatterns.some(pattern => pattern.test(currentUrl));
 
         } catch (error) {
             console.error('Failed to check availability:', error);
@@ -267,6 +275,18 @@ function setStatus(mode, extensionEnabled = true) {
 async function queryActiveTab() {
 const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 return tab;
+}
+
+async function isKeyPilotNewTabPage(url) {
+    try {
+        const mod = await import(chrome.runtime.getURL('src/config/url-policy.js'));
+        if (mod && typeof mod.isKeyPilotNewTabUrl === 'function') {
+            return mod.isKeyPilotNewTabUrl(url);
+        }
+    } catch (e) {
+        // fall through to inline checks
+    }
+    return /^chrome:\/\/newtab\/?/i.test(url) || /^chrome:\/\/new-tab-page\/?/i.test(url);
 }
 
 

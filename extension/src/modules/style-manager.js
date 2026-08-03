@@ -769,7 +769,6 @@ export class StyleManager {
         outline: var(--keypilot-focus-ring-width, 3px) solid var(--keypilot-focus-ring-color, #2196f3) !important;
         outline-offset: 2px !important;
         box-shadow: var(--keypilot-focus-box-shadow, none) !important;
-        background: var(--keypilot-focus-ring-bg-color, transparent) !important;
         filter: none !important;
       }
 
@@ -778,8 +777,13 @@ export class StyleManager {
         outline: var(--keypilot-focus-ring-width, 3px) solid var(--keypilot-focus-ring-color, #2196f3) !important;
         outline-offset: calc(-1 * var(--keypilot-focus-ring-width, 3px)) !important;
         box-shadow: var(--keypilot-focus-box-shadow, none) !important;
-        background: var(--keypilot-focus-ring-bg-color, transparent) !important;
         filter: none !important;
+      }
+
+      /* Translucent fill wash (thumbnails/links) only when a fill color is set.
+         Base ring rules never override the element's own background on hover. */
+      .keypilot-focus-element--fill {
+        background: var(--keypilot-focus-ring-bg-color, transparent) !important;
       }
 
       ${buildKeyPilotPrintCss()}
@@ -872,7 +876,6 @@ export class StyleManager {
         outline: var(--keypilot-focus-ring-width, 3px) solid var(--keypilot-focus-ring-color, #2196f3) !important;
         outline-offset: 2px !important;
         box-shadow: var(--keypilot-focus-box-shadow, none) !important;
-        background: var(--keypilot-focus-ring-bg-color, transparent) !important;
         filter: none !important;
       }
 
@@ -881,8 +884,13 @@ export class StyleManager {
         outline: var(--keypilot-focus-ring-width, 3px) solid var(--keypilot-focus-ring-color, #2196f3) !important;
         outline-offset: calc(-1 * var(--keypilot-focus-ring-width, 3px)) !important;
         box-shadow: var(--keypilot-focus-box-shadow, none) !important;
-        background: var(--keypilot-focus-ring-bg-color, transparent) !important;
         filter: none !important;
+      }
+
+      /* Translucent fill wash (thumbnails/links) only when a fill color is set.
+         Base ring rules never override the element's own background on hover. */
+      .keypilot-focus-element--fill {
+        background: var(--keypilot-focus-ring-bg-color, transparent) !important;
       }
 
       ${buildKeyPilotPrintCss()}

@@ -1270,6 +1270,13 @@ export class OverlayManager {
     // Class + data attributes. Prefer data-kp-focus for paint (CSS): SPAs often
     // strip unknown classes on re-render but leave data-* alone.
     stylingTarget.classList.add('keypilot-focus-element');
+    // Only wash the background when a fill color is actually set — never wipe the
+    // element's own background with transparent on hover.
+    if (ringBgColor !== 'transparent') {
+      stylingTarget.classList.add('keypilot-focus-element--fill');
+    } else {
+      stylingTarget.classList.remove('keypilot-focus-element--fill');
+    }
     try {
       stylingTarget.setAttribute('data-kp-focus', '1');
       if (useInset) stylingTarget.setAttribute('data-kp-focus-inset', '1');
@@ -1467,6 +1474,7 @@ export class OverlayManager {
     try {
       el.classList.remove('keypilot-focus-element');
       el.classList.remove('keypilot-focus-element--inset');
+      el.classList.remove('keypilot-focus-element--fill');
       try {
         el.removeAttribute('data-kp-focus');
         el.removeAttribute('data-kp-focus-inset');
