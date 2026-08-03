@@ -526,6 +526,157 @@ h2 {
   margin: 8px 0;
 }
 
+/* Tabbed bookmarks card */
+.tabbar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.10);
+}
+
+.tabbar-tab {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255,255,255,0.70);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.tabbar-tab:hover {
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.95);
+}
+
+.tabbar-tab:focus-visible {
+  outline: 2px solid rgba(255,140,0,0.65);
+  outline-offset: 1px;
+}
+
+.tabbar-tab[aria-selected="true"] {
+  background: rgba(255,140,0,0.14);
+  border-color: rgba(255,140,0,0.45);
+  color: rgba(255,255,255,0.98);
+}
+
+.bookmarks-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.bookmarks-header h2 {
+  margin: 0;
+}
+
+/* Shared card (grid) view for URL listings */
+.kp-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  min-width: 0;
+}
+
+.bookmarks.kp-card-grid {
+  list-style: none;
+  padding-left: 0;
+}
+
+.kp-card-grid .kp-url-row {
+  margin: 0;
+  min-height: 92px;
+}
+
+.kp-card-grid .kp-url-content {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.kp-card-grid .kp-url-text {
+  width: 100%;
+}
+
+.kp-card-grid .kp-url-favicon {
+  width: 24px;
+  height: 24px;
+}
+
+/* Toolbar bookmarks render as two fixed columns of cards */
+.toolbar.kp-card-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* All bookmarks tree */
+.bm-tree {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.bm-folder {
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.15);
+  padding: 8px 10px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.bm-folder-summary {
+  cursor: pointer;
+  list-style: none;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bm-folder-summary::-webkit-details-marker {
+  display: none;
+}
+
+.bm-folder-summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: 6px;
+  transition: transform 120ms ease;
+  color: rgba(255,140,0,0.85);
+}
+
+.bm-folder[open] > .bm-folder-summary::before {
+  transform: rotate(90deg);
+}
+
+.bm-folder-children {
+  margin-top: 8px;
+  padding-left: 14px;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.bm-folder-children > .kp-card-grid {
+  min-width: 0;
+}
+
+.bm-folder-children .bm-folder {
+  padding: 6px 8px;
+}
+
+.bm-leaf {
+  margin: 0;
+}
+
 .empty {
   font-size: 13px;
   color: rgba(255,255,255,0.68);
@@ -628,20 +779,96 @@ h2 {
   margin: 0;
 }
 
+/* Recent history grouped by website in outline containers */
+.history-outline {
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.15);
+  padding: 6px 8px;
+  min-width: 0;
+}
+
+.history-outline-summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 2px 2px;
+  font-weight: 700;
+}
+
+.history-outline-summary::-webkit-details-marker {
+  display: none;
+}
+
+.history-outline-summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: 2px;
+  transition: transform 120ms ease;
+  color: rgba(255,140,0,0.85);
+}
+
+.history-outline[open] > .history-outline-summary::before {
+  transform: rotate(90deg);
+}
+
+.history-outline-favicon {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.08);
+  flex: 0 0 auto;
+}
+
+.history-outline-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.history-outline-count {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.60);
+  background: rgba(255,255,255,0.08);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.history-outline-children {
+  margin-top: 6px;
+  padding-left: 12px;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.history-outline-children .kp-url-row {
+  margin: 0;
+}
+
 /* History uses .kp-url-row hover/focus styles + the shared three-line renderer. */
 
 /* Top sites horizontal list */
 .top-sites-horizontal {
   display: flex;
   gap: 16px;
-  overflow-x: auto;
+  overflow-x: scroll;
+  overflow-y: hidden;
   padding: 8px 0;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,140,0,0.30) rgba(255,255,255,0.05);
+  min-width: 0;
 }
 
 .top-sites-horizontal::-webkit-scrollbar {
-  height: 4px;
+  height: 8px;
 }
 
 .top-sites-horizontal::-webkit-scrollbar-track {

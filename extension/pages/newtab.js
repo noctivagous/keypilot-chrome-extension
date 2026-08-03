@@ -2,13 +2,15 @@ import { buildSearchUrl, getEngineHomeUrl, getSettings, normalizeSearchEngine, S
 import { KeyPilot } from '../src/keypilot.js';
 import { KeyPilotToggleHandler } from '../src/modules/keypilot-toggle-handler.js';
 import { OnboardingManager } from '../src/modules/onboarding-manager.js';
-import { getExtensionFaviconUrl, renderUrlListing } from '../src/ui/url-listing.js';
+import { GENERIC_FAVICON_DATA_URL, getExtensionFaviconUrl, renderUrlListing, extractDomain } from '../src/ui/url-listing.js';
 import { createPopoverTitlebar, createTitlebarCloseHint } from '../src/ui/popover-titlebar.js';
+import { createSegmentedControl } from '../src/ui/segmented-control.js';
 import { storageGetValue } from '../src/utils/storage.js';
 
 let currentEngine = 'brave';
 const KP_ENABLED_STORAGE_KEY = 'keypilot_enabled';
 const KP_KEYBOARD_HELP_STORAGE_KEY = 'keypilot_keyboard_help_visible';
+const BOOKMARKS_VIEW_STORAGE_KEY = 'kp_newtab_bookmarks_view';
 
 function parseUrlForThreeLineDisplay(rawUrl) {
   const input = String(rawUrl || '').trim();
@@ -384,7 +386,7 @@ function createSuggestionsController({ inputEl, rootEl }) {
   return { hide };
 }
 
-async function renderBookmarks() {
+async function renderBookmarks(view = 'grid') {
   const list = document.getElementById('bookmark-list');
   const empty = document.getElementById('bookmark-empty');
   if (!list || !empty) return;
@@ -408,10 +410,13 @@ async function renderBookmarks() {
   }
   empty.hidden = true;
 
+  list.classList.toggle('kp-card-grid', view === 'grid');
+  list.classList.toggle('kp-row-list', view === 'list');
+
   renderUrlListing({
     container: list,
     items: bookmarks,
-    view: 'list',
+    view: view === 'grid' ? 'grid' : 'list',
     useInlineStyles: false,
     rowTag: 'li',
     classNames: {
@@ -434,6 +439,132 @@ async function renderBookmarks() {
       navigate(item.url);
     }
   });
+}
+
+/**
+ * Recursively render a bookmark tree node. Bookmarks render as card tiles
+ * (grid), grouped per folder; folders render as collapsible outline containers.
+ * @param {chrome.bookmarks.BookmarkTreeNode} node
+ * @param {{ expanded?: boolean }} [opts]
+ * @returns {HTMLElement}
+ */
+function renderBookmarkNode(node, { expanded = false } = {}) {
+  if (node?.url) {
+    const grid = document.createElement('div');
+    grid.className = 'kp-card-grid';
+    renderUrlListing({
+      container: grid,
+      items: [node],
+      view: 'grid',
+      useInlineStyles: false,
+      classNames: {
+        row: 'kp-url-row bm-leaf',
+        content: 'kp-url-content',
+        text: 'kp-url-text',
+        title: 'kp-url-domain',
+        meta: 'kp-url-title',
+        url: 'kp-url-path',
+        favicon: 'kp-url-favicon'
+      },
+      getTitle: (b) => b.title || b.url,
+      getUrl: (b) => b.url,
+      showFavicon: true,
+      showMetaLine: true,
+      showUrlLine: true,
+      decorateRow: ({ item, parts }) => renderThreeLineUrlListingEntry({ item, parts }),
+      onRowClick: ({ item, event }) => {
+        event.preventDefault();
+        navigate(item.url);
+      }
+    });
+    return grid;
+  }
+
+  const details = document.createElement('details');
+  details.className = 'bm-folder';
+  if (expanded) details.open = true;
+
+  const summary = document.createElement('summary');
+  summary.className = 'bm-folder-summary';
+  summary.textContent = node?.title || 'Untitled folder';
+  summary.title = node?.title || 'Untitled folder';
+
+  const leafNodes = (node?.children || []).filter((n) => n?.url);
+  const folderNodes = (node?.children || []).filter((n) => n && !n.url);
+
+  const children = document.createElement('div');
+  children.className = 'bm-folder-children';
+
+  if (leafNodes.length) {
+    const grid = document.createElement('div');
+    grid.className = 'kp-card-grid';
+    renderUrlListing({
+      container: grid,
+      items: leafNodes,
+      view: 'grid',
+      useInlineStyles: false,
+      classNames: {
+        row: 'kp-url-row bm-leaf',
+        content: 'kp-url-content',
+        text: 'kp-url-text',
+        title: 'kp-url-domain',
+        meta: 'kp-url-title',
+        url: 'kp-url-path',
+        favicon: 'kp-url-favicon'
+      },
+      getTitle: (b) => b.title || b.url,
+      getUrl: (b) => b.url,
+      showFavicon: true,
+      showMetaLine: true,
+      showUrlLine: true,
+      decorateRow: ({ item, parts }) => renderThreeLineUrlListingEntry({ item, parts }),
+      onRowClick: ({ item, event }) => {
+        event.preventDefault();
+        navigate(item.url);
+      }
+    });
+    children.appendChild(grid);
+  }
+
+  for (const folderNode of folderNodes) {
+    children.appendChild(renderBookmarkNode(folderNode));
+  }
+
+  details.appendChild(summary);
+  details.appendChild(children);
+  return details;
+}
+
+async function renderAllBookmarks() {
+  const root = document.getElementById('all-bookmarks');
+  const empty = document.getElementById('all-bookmarks-empty');
+  if (!root || !empty) return;
+
+  root.textContent = '';
+
+  /** @type {Array<chrome.bookmarks.BookmarkTreeNode>} */
+  let tree = [];
+  try {
+    if (chrome.bookmarks?.getTree) {
+      tree = await chrome.bookmarks.getTree();
+    }
+  } catch {
+    tree = [];
+  }
+
+  const hasBookmarks = (nodes) => (nodes || []).some((n) => Boolean(n.url) || (n.children && hasBookmarks(n.children)));
+  if (!hasBookmarks(tree)) {
+    empty.hidden = false;
+    return;
+  }
+  empty.hidden = true;
+
+  // Top-level roots (Bookmarks bar, Other bookmarks, Mobile bookmarks) are
+  // expanded so users can browse; nested folders stay collapsed.
+  const rootNodes = (tree[0]?.children || []).filter((n) => n);
+  for (const node of rootNodes) {
+    root.appendChild(renderBookmarkNode(node, { expanded: true }));
+  }
 }
 
 async function renderToolbarBookmarks() {
@@ -467,7 +598,7 @@ async function renderToolbarBookmarks() {
   renderUrlListing({
     container: root,
     items: bookmarks,
-    view: 'list',
+    view: 'grid',
     useInlineStyles: false,
     classNames: {
       row: 'kp-url-row',
@@ -528,31 +659,87 @@ async function renderRecentHistory() {
     lastVisitTime: item.lastVisitTime
   }));
 
-  renderUrlListing({
-    container,
-    items: formattedItems,
-    view: 'list',
-    useInlineStyles: false,
-    classNames: {
-      row: 'kp-url-row',
-      content: 'kp-url-content',
-      text: 'kp-url-text',
-      title: 'kp-url-domain',
-      meta: 'kp-url-title',
-      url: 'kp-url-path',
-      favicon: 'kp-url-favicon'
-    },
-    getTitle: (h) => h.title || h.url,
-    getUrl: (h) => h.url,
-    showFavicon: true,
-    showMetaLine: true,
-    showUrlLine: true,
-    decorateRow: ({ item, parts }) => renderThreeLineUrlListingEntry({ item, parts }),
-    onRowClick: ({ item, event }) => {
-      event.preventDefault();
-      navigate(item.url);
+  // Group visits to the same website into outline containers.
+  const groups = new Map();
+  for (const item of formattedItems) {
+    const domain = extractDomain(item.url) || item.url;
+    let group = groups.get(domain);
+    if (!group) {
+      group = { domain, items: [] };
+      groups.set(domain, group);
     }
+    group.items.push(item);
+  }
+
+  const sortedGroups = Array.from(groups.values()).sort((a, b) => {
+    const aTime = Math.max(...a.items.map((i) => i.lastVisitTime || 0));
+    const bTime = Math.max(...b.items.map((i) => i.lastVisitTime || 0));
+    return bTime - aTime;
   });
+
+  for (const group of sortedGroups) {
+    group.items.sort((a, b) => (b.lastVisitTime || 0) - (a.lastVisitTime || 0));
+
+    const details = document.createElement('details');
+    details.className = 'history-outline';
+
+    const summary = document.createElement('summary');
+    summary.className = 'history-outline-summary';
+
+    const favicon = document.createElement('img');
+    favicon.className = 'history-outline-favicon';
+    favicon.alt = '';
+    favicon.referrerPolicy = 'no-referrer';
+    favicon.src = getExtensionFaviconUrl(group.items[0].url, 32);
+    favicon.onerror = () => {
+      favicon.src = GENERIC_FAVICON_DATA_URL;
+    };
+
+    const label = document.createElement('span');
+    label.className = 'history-outline-label';
+    label.textContent = group.domain;
+
+    const count = document.createElement('span');
+    count.className = 'history-outline-count';
+    count.textContent = String(group.items.length);
+
+    summary.appendChild(favicon);
+    summary.appendChild(label);
+    summary.appendChild(count);
+
+    const children = document.createElement('div');
+    children.className = 'history-outline-children';
+
+    renderUrlListing({
+      container: children,
+      items: group.items,
+      view: 'list',
+      useInlineStyles: false,
+      classNames: {
+        row: 'kp-url-row',
+        content: 'kp-url-content',
+        text: 'kp-url-text',
+        title: 'kp-url-domain',
+        meta: 'kp-url-title',
+        url: 'kp-url-path',
+        favicon: 'kp-url-favicon'
+      },
+      getTitle: (h) => h.title || h.url,
+      getUrl: (h) => h.url,
+      showFavicon: true,
+      showMetaLine: true,
+      showUrlLine: true,
+      decorateRow: ({ item, parts }) => renderThreeLineUrlListingEntry({ item, parts }),
+      onRowClick: ({ item, event }) => {
+        event.preventDefault();
+        navigate(item.url);
+      }
+    });
+
+    details.appendChild(summary);
+    details.appendChild(children);
+    container.appendChild(details);
+  }
 }
 
 async function renderTopSites() {
@@ -567,8 +754,8 @@ async function renderTopSites() {
     if (chrome.topSites?.get) {
       // Get the most frequently visited sites from Chrome's top sites
       topSites = await chrome.topSites.get();
-      // Limit to top 7
-      topSites = topSites.slice(0, 8);
+      // Limit to top 20; a visible horizontal scrollbar appears at the bottom.
+      topSites = topSites.slice(0, 20);
     }
   } catch {
     topSites = [];
@@ -790,6 +977,102 @@ function initKeyboardHelpSwitch() {
   }, { capture: true });
 }
 
+function initBookmarkTabs() {
+  const tabs = Array.from(document.querySelectorAll('.tabbar-tab[data-panel]'));
+  const panels = {
+    recent: document.getElementById('panel-recent'),
+    all: document.getElementById('panel-all')
+  };
+  if (!tabs.length || !panels.recent || !panels.all) return;
+
+  let allLoaded = false;
+
+  const select = async (panel) => {
+    for (const tab of tabs) {
+      const selected = tab.dataset.panel === panel;
+      tab.setAttribute('aria-selected', selected ? 'true' : 'false');
+      tab.tabIndex = selected ? 0 : -1;
+    }
+    // Render the tree before swapping panels on first load. Rendering while the
+    // tall "Recent" panel is still visible keeps the page height stable, so the
+    // document scroll position doesn't get clamped to the top.
+    if (panel === 'all' && !allLoaded) {
+      allLoaded = true;
+      await renderAllBookmarks();
+    }
+    panels.recent.hidden = panel !== 'recent';
+    panels.all.hidden = panel !== 'all';
+  };
+
+  for (const tab of tabs) {
+    tab.addEventListener('click', () => select(tab.dataset.panel), true);
+  }
+
+  // Arrow-key navigation within the horizontal tablist (ARIA tabs pattern).
+  const tabbar = tabs[0].parentElement;
+  tabbar?.addEventListener('keydown', (e) => {
+    if (!e) return;
+    const key = e.key;
+    if (key !== 'ArrowRight' && key !== 'ArrowLeft' && key !== 'Home' && key !== 'End') return;
+    const currentIndex = tabs.findIndex((t) => t.getAttribute('aria-selected') === 'true');
+    if (currentIndex < 0) return;
+
+    let nextIndex = currentIndex;
+    if (key === 'ArrowRight') nextIndex = Math.min(tabs.length - 1, currentIndex + 1);
+    if (key === 'ArrowLeft') nextIndex = Math.max(0, currentIndex - 1);
+    if (key === 'Home') nextIndex = 0;
+    if (key === 'End') nextIndex = tabs.length - 1;
+    if (nextIndex === currentIndex) return;
+
+    e.preventDefault();
+    select(tabs[nextIndex].dataset.panel);
+    try {
+      tabs[nextIndex].focus();
+    } catch {
+      // ignore
+    }
+  });
+
+  select('recent');
+}
+
+async function initBookmarkViewToggle() {
+  const root = document.getElementById('bookmark-view-toggle');
+  if (!root) return;
+
+  let view = 'grid'; // Cards by default.
+  try {
+    const stored = await chrome.storage.local.get([BOOKMARKS_VIEW_STORAGE_KEY]);
+    const value = stored?.[BOOKMARKS_VIEW_STORAGE_KEY];
+    if (value === 'list' || value === 'grid') view = value;
+  } catch {
+    // ignore
+  }
+
+  const control = createSegmentedControl({
+    value: view,
+    ariaLabel: 'Bookmark view',
+    options: [
+      { value: 'list', label: 'List' },
+      { value: 'grid', label: 'Cards' }
+    ],
+    onChange: (next) => {
+      view = next;
+      try {
+        chrome.storage.local.set({ [BOOKMARKS_VIEW_STORAGE_KEY]: view });
+      } catch {
+        // ignore
+      }
+      renderBookmarks(view);
+    }
+  });
+
+  control.root.classList.add('view-toggle-control');
+  root.appendChild(control.root);
+
+  renderBookmarks(view);
+}
+
 async function init() {
   // Initialize KeyPilot with toggle functionality (same as content script)
   try {
@@ -920,7 +1203,8 @@ async function init() {
   initEnabledSwitch();
   initKeyboardHelpSwitch();
 
-  renderBookmarks();
+  initBookmarkTabs();
+  initBookmarkViewToggle();
   if (input && suggestionsRoot) {
     createSuggestionsController({ inputEl: input, rootEl: suggestionsRoot });
   }

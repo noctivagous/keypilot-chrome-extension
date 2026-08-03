@@ -62,7 +62,7 @@
       <div class="toolbar-history-container">
         <section id="toolbar-bookmarks-section" class="card toolbar-section" aria-label="Toolbar bookmarks">
           <h2>Toolbar bookmarks</h2>
-          <div id="toolbar-bookmarks" class="toolbar"></div>
+          <div id="toolbar-bookmarks" class="toolbar kp-card-grid"></div>
           <div id="toolbar-empty" class="empty" hidden>No toolbar bookmarks found.</div>
         </section>
 
@@ -72,10 +72,44 @@
         </section>
       </div>
 
-      <section class="card" aria-label="Recent bookmarks">
-        <h2>Recent bookmarks</h2>
-        <ol id="bookmark-list" class="bookmarks"></ol>
-        <div id="bookmark-empty" class="empty" hidden>No bookmarks found.</div>
+      <section class="card bookmarks-card" aria-label="Bookmarks">
+        <div class="tabbar" role="tablist" aria-label="Bookmarks views">
+          <button
+            id="tab-recent"
+            class="tabbar-tab"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            aria-controls="panel-recent"
+            data-panel="recent"
+          >Recent</button>
+          <button
+            id="tab-all"
+            class="tabbar-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-all"
+            data-panel="all"
+          >All bookmarks</button>
+        </div>
+
+        <div id="panel-recent" role="tabpanel" aria-labelledby="tab-recent">
+          <div class="bookmarks-header">
+            <h2>Recent bookmarks</h2>
+            <div id="bookmark-view-toggle" class="view-toggle" role="group" aria-label="Bookmark view"></div>
+          </div>
+          <ol id="bookmark-list" class="bookmarks kp-card-grid"></ol>
+          <div id="bookmark-empty" class="empty" hidden>No bookmarks found.</div>
+        </div>
+
+        <div id="panel-all" role="tabpanel" aria-labelledby="tab-all" hidden>
+          <div class="bookmarks-header">
+            <h2>All bookmarks</h2>
+          </div>
+          <div id="all-bookmarks" class="bm-tree"></div>
+          <div id="all-bookmarks-empty" class="empty" hidden>No bookmarks found.</div>
+        </div>
       </section>
     </main>
 
