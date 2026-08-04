@@ -50,6 +50,7 @@ const modules = [
   'src/utils/storage.js',
   'src/utils/image-utils.js',
   'src/utils/popover-resize.js',
+  'src/utils/panel-position.js',
   'src/utils/scroll-at-point.js',
   // Shared UI helpers used by multiple modules (must be defined before import-stripped consumers).
   'src/ui/url-listing.js',

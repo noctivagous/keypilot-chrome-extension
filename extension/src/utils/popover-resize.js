@@ -176,13 +176,13 @@ export function makePopoverResizable(panel, options = {}) {
     s.position = 'fixed';
     s.transform = 'none';
     try { s.webkitTransform = 'none'; } catch { /* ignore */ }
+    // Do not set the `inset` shorthand after left/top — it resets all four sides.
+    s.right = 'auto';
+    s.bottom = 'auto';
     s.left = `${rect.left}px`;
     s.top = `${rect.top}px`;
     s.width = `${rect.width}px`;
     s.height = `${rect.height}px`;
-    s.right = 'auto';
-    s.bottom = 'auto';
-    s.inset = 'auto';
     s.margin = '0';
     s.maxWidth = 'none';
     s.maxHeight = 'none';

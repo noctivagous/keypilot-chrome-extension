@@ -91,12 +91,31 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  */
 
 /**
+ * Saved fixed-panel dock / free position (see utils/panel-position.js).
+ * Prefer `anchor` when set so layout adapts across viewport sizes.
+ * @typedef {{
+ *   left?: number,
+ *   top?: number,
+ *   anchor?: string|null
+ * }} PanelPositionSettings
+ */
+
+/**
+ * Named panel slots that share the generalized positioning system.
+ * @typedef {{
+ *   keyboardReference: PanelPositionSettings,
+ *   controlStrip: PanelPositionSettings
+ * }} PanelPositionsSettings
+ */
+
+/**
  * @typedef {{
  *   searchEngine: SearchEngine,
  *   cursorMode: CursorMode,
  *   keyboardLayoutId: string,
  *   keyboardReferenceKeyFeedback: boolean,
  *   controlStrip: ControlStripSettings,
+ *   panelPositions: PanelPositionsSettings,
  *   clickMode: ClickModeSettings,
  *   textMode: TextModeSettings,
  *   scroll: ScrollSettings
@@ -114,6 +133,12 @@ export const DEFAULT_SETTINGS = Object.freeze({
   controlStrip: Object.freeze({
     visible: true,
     collapsed: true
+  }),
+  // Dock / free positions for movable chrome (keyboard reference, control strip, …).
+  // Anchors re-resolve on resize; free left/top reclamps inside the viewport margin.
+  panelPositions: Object.freeze({
+    keyboardReference: Object.freeze({ anchor: 'bottom-left' }),
+    controlStrip: Object.freeze({ anchor: 'top-left' })
   }),
   clickMode: Object.freeze({
     cursor: Object.freeze({
@@ -365,6 +390,73 @@ function normalizeControlStrip(raw) {
   };
 }
 
+const PANEL_ANCHOR_IDS = new Set([
+  'top-left',
+  'top-center',
+  'top-right',
+  'middle-left',
+  'middle-right',
+  'bottom-left',
+  'bottom-center',
+  'bottom-right'
+]);
+
+/**
+ * @param {any} raw
+ * @param {PanelPositionSettings} fallback
+ * @returns {PanelPositionSettings}
+ */
+function normalizePanelPositionEntry(raw, fallback) {
+  const fb = fallback && typeof fallback === 'object' ? fallback : {};
+  if (!raw || typeof raw !== 'object') {
+    return {
+      left: Number.isFinite(fb.left) ? fb.left : undefined,
+      top: Number.isFinite(fb.top) ? fb.top : undefined,
+      anchor: typeof fb.anchor === 'string' ? fb.anchor : (fb.anchor === null ? null : undefined)
+    };
+  }
+  /** @type {PanelPositionSettings} */
+  const out = {};
+  const left = typeof raw.left === 'number' ? raw.left : (typeof raw.left === 'string' ? Number(raw.left) : NaN);
+  const top = typeof raw.top === 'number' ? raw.top : (typeof raw.top === 'string' ? Number(raw.top) : NaN);
+  if (Number.isFinite(left)) out.left = left;
+  if (Number.isFinite(top)) out.top = top;
+  if (raw.anchor === null) {
+    out.anchor = null;
+  } else if (typeof raw.anchor === 'string' && PANEL_ANCHOR_IDS.has(raw.anchor.trim())) {
+    out.anchor = raw.anchor.trim();
+  } else if (typeof fb.anchor === 'string' && !Number.isFinite(left) && !Number.isFinite(top)) {
+    out.anchor = fb.anchor;
+  }
+  // If nothing useful, fall back to default entry.
+  if (out.left === undefined && out.top === undefined && out.anchor === undefined) {
+    return {
+      left: Number.isFinite(fb.left) ? fb.left : undefined,
+      top: Number.isFinite(fb.top) ? fb.top : undefined,
+      anchor: typeof fb.anchor === 'string' ? fb.anchor : (fb.anchor === null ? null : undefined)
+    };
+  }
+  return out;
+}
+
+/**
+ * @param {any} raw
+ * @returns {PanelPositionsSettings}
+ */
+function normalizePanelPositions(raw) {
+  const stored = raw && typeof raw === 'object' ? raw : {};
+  return {
+    keyboardReference: normalizePanelPositionEntry(
+      stored.keyboardReference,
+      DEFAULT_SETTINGS.panelPositions.keyboardReference
+    ),
+    controlStrip: normalizePanelPositionEntry(
+      stored.controlStrip,
+      DEFAULT_SETTINGS.panelPositions.controlStrip
+    )
+  };
+}
+
 /**
  * Map Settings scroll speed to ScrollOptions.behavior.
  * @param {ScrollSpeed|string|undefined|null} speed
@@ -392,6 +484,7 @@ export async function getSettings() {
         DEFAULT_SETTINGS.keyboardReferenceKeyFeedback
       ),
       controlStrip: normalizeControlStrip(stored?.controlStrip),
+      panelPositions: normalizePanelPositions(stored?.panelPositions),
       clickMode: normalizeClickMode(stored?.clickMode),
       textMode: normalizeTextMode(stored?.textMode),
       scroll: normalizeScroll(stored?.scroll)
@@ -400,6 +493,10 @@ export async function getSettings() {
     return {
       ...DEFAULT_SETTINGS,
       controlStrip: { ...DEFAULT_SETTINGS.controlStrip },
+      panelPositions: {
+        keyboardReference: { ...DEFAULT_SETTINGS.panelPositions.keyboardReference },
+        controlStrip: { ...DEFAULT_SETTINGS.panelPositions.controlStrip }
+      },
       clickMode: { ...DEFAULT_SETTINGS.clickMode, cursor: { ...DEFAULT_SETTINGS.clickMode.cursor } },
       textMode: { ...DEFAULT_SETTINGS.textMode },
       scroll: { ...DEFAULT_SETTINGS.scroll }
@@ -416,6 +513,8 @@ export async function setSettings(partial) {
   const p = partial && typeof partial === 'object' ? partial : {};
 
   // Shallow merge for top-level, plus deep merge for known nested settings.
+  const pPositions = p.panelPositions && typeof p.panelPositions === 'object' ? p.panelPositions : null;
+
   /** @type {KeyPilotSettings} */
   const next = {
     ...current,
@@ -423,6 +522,20 @@ export async function setSettings(partial) {
     controlStrip: {
       ...current.controlStrip,
       ...(p.controlStrip && typeof p.controlStrip === 'object' ? p.controlStrip : {})
+    },
+    panelPositions: {
+      keyboardReference: {
+        ...current.panelPositions.keyboardReference,
+        ...(pPositions?.keyboardReference && typeof pPositions.keyboardReference === 'object'
+          ? pPositions.keyboardReference
+          : {})
+      },
+      controlStrip: {
+        ...current.panelPositions.controlStrip,
+        ...(pPositions?.controlStrip && typeof pPositions.controlStrip === 'object'
+          ? pPositions.controlStrip
+          : {})
+      }
     },
     clickMode: {
       ...current.clickMode,
@@ -451,6 +564,7 @@ export async function setSettings(partial) {
     DEFAULT_SETTINGS.keyboardReferenceKeyFeedback
   );
   next.controlStrip = normalizeControlStrip(next.controlStrip);
+  next.panelPositions = normalizePanelPositions(next.panelPositions);
   next.clickMode = normalizeClickMode(next.clickMode);
   next.textMode = normalizeTextMode(next.textMode);
   next.scroll = normalizeScroll(next.scroll);

@@ -2031,16 +2031,33 @@
   }
 }
 
-/* Popover (tooltip) — matches the hovered key material via CSS vars */
+/* Popover (tooltip) — matches the hovered key material via CSS vars.
+ * Uses the HTML Popover API (top layer) so it can escape the keyboard panel's
+ * overflow:hidden and sit above/below keys outside the panel bounds.
+ *
+ * Do NOT set inset with !important: that locks left/top longhands and beats
+ * JS style.left/top, pinning every tooltip at the viewport origin. Override UA
+ * popover defaults with non-important longhands + margin:0 instead. */
 .kp-keybindings-popover {
   --kp-key-face: #3d4454;
   --kp-key-mid: #343a48;
   --kp-key-deep: #2c313e;
   --kp-key-icon: #1a1e28;
 
-  position: absolute;
+  position: fixed !important;
+  /* Kill UA popover centering (inset 0 / margin auto) without locking longhands. */
+  margin: 0 !important;
+  top: auto;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  width: max-content;
+  height: fit-content;
+  overflow: visible;
+  box-sizing: border-box;
+
   z-index: 2147483046;
-  max-width: 300px;
+  max-width: min(300px, calc(100vw - 20px));
   min-width: 160px;
   color: rgba(248, 250, 252, 0.95);
   border-radius: 8px;
@@ -2069,7 +2086,20 @@
     inset 0 -1px 0 rgba(0, 0, 0, 0.18);
 }
 
-.kp-keybindings-popover[hidden] { display: none; }
+/* Closed: both attribute + Popover API states */
+.kp-keybindings-popover:not(:popover-open):not([data-kp-popover-open="true"]),
+.kp-keybindings-popover[hidden] {
+  display: none !important;
+}
+
+/* Open via Popover API or legacy fallback flag */
+.kp-keybindings-popover:popover-open,
+.kp-keybindings-popover[data-kp-popover-open="true"] {
+  display: block;
+  /* Re-assert after :popover-open (UA may reapply margin/inset). */
+  margin: 0 !important;
+  position: fixed !important;
+}
 
 .kp-keybindings-popover .kp-popover-head {
   display: flex;
@@ -4318,11 +4348,9 @@
   }
 
   function syncEarlyControlStripOnboardingOffset() {
-    // Strip stays pinned at the top-left; walkthrough sits below it.
+    // Walkthrough sits relative to the strip; do not force strip back to top-left
+    // (user position is restored from settings when available).
     if (!controlStripRoot || !controlStripRoot.isConnected) return;
-    try {
-      controlStripRoot.style.top = `${CONTROL_STRIP_DEFAULT_TOP_PX}px`;
-    } catch { /* ignore */ }
     try {
       const panel = document.querySelector('.kp-onboarding-panel');
       if (!panel || !panel.isConnected) return;
@@ -4346,6 +4374,184 @@
       );
       panel.style.top = `${top}px`;
     } catch { /* ignore */ }
+  }
+
+  /**
+   * Lightweight dock helpers (mirrors utils/panel-position.js for document_start).
+   * Full drag/snap lives in the bundled content script.
+   */
+  const EARLY_PANEL_MARGIN_PX = 16;
+  const EARLY_STRIP_MARGIN_PX = 16;
+
+  function earlyViewportSize() {
+    try {
+      const de = document.documentElement;
+      // client* can be 0 at document_start — prefer the larger of client/inner.
+      return {
+        width: Math.max(0, de?.clientWidth || 0, window.innerWidth || 0),
+        height: Math.max(0, de?.clientHeight || 0, window.innerHeight || 0)
+      };
+    } catch {
+      return {
+        width: Math.max(0, window.innerWidth || 0),
+        height: Math.max(0, window.innerHeight || 0)
+      };
+    }
+  }
+
+  function earlyReapplyKeyboardPosition() {
+    if (isMainExtensionLoaded) return;
+    if (!keyboardHelpRoot || !keyboardHelpRoot.isConnected) return;
+    try {
+      earlyApplyPanelPosition(keyboardHelpRoot, earlyPanelPositions && earlyPanelPositions.keyboardReference, {
+        margin: EARLY_PANEL_MARGIN_PX,
+        defaultAnchor: 'bottom-left',
+        defaultWidth: 760,
+        defaultHeight: 200
+      });
+    } catch { /* ignore */ }
+  }
+
+  // Reclamp after first layout / resize so early positions aren't stuck at vh=0 defaults.
+  try {
+    window.addEventListener('resize', earlyReapplyKeyboardPosition, true);
+    window.addEventListener('load', earlyReapplyKeyboardPosition, true);
+  } catch { /* ignore */ }
+
+  function earlyClampPanelPosition(left, top, width, height, margin) {
+    const m = Math.max(0, Number(margin) || 0);
+    const vp = earlyViewportSize();
+    const vw = vp.width;
+    const vh = vp.height;
+    const w = Math.max(0, Number(width) || 0);
+    const h = Math.max(0, Number(height) || 0);
+    const maxLeft = Math.max(m, vw - w - m);
+    const maxTop = Math.max(m, vh - h - m);
+    return {
+      left: Math.max(m, Math.min(Number(left) || m, maxLeft)),
+      top: Math.max(m, Math.min(Number(top) || m, maxTop))
+    };
+  }
+
+  function earlyPositionForAnchor(anchor, width, height, margin) {
+    const m = Math.max(0, Number(margin) || 0);
+    const vp = earlyViewportSize();
+    const vw = vp.width;
+    const vh = vp.height;
+    const w = Math.max(0, Number(width) || 0);
+    const h = Math.max(0, Number(height) || 0);
+    const leftMin = m;
+    const topMin = m;
+    const leftMax = Math.max(m, vw - w - m);
+    const topMax = Math.max(m, vh - h - m);
+    const leftCenter = Math.round((vw - w) / 2);
+    const topCenter = Math.round((vh - h) / 2);
+    let left = leftMin;
+    let top = topMin;
+    switch (String(anchor || '')) {
+      case 'top-left': left = leftMin; top = topMin; break;
+      case 'top-center': left = leftCenter; top = topMin; break;
+      case 'top-right': left = leftMax; top = topMin; break;
+      case 'middle-left': left = leftMin; top = topCenter; break;
+      case 'middle-right': left = leftMax; top = topCenter; break;
+      case 'bottom-left': left = leftMin; top = topMax; break;
+      case 'bottom-center': left = leftCenter; top = topMax; break;
+      case 'bottom-right': left = leftMax; top = topMax; break;
+      default: left = leftMin; top = topMin; break;
+    }
+    return earlyClampPanelPosition(left, top, w, h, m);
+  }
+
+  /**
+   * @param {HTMLElement|null} el
+   * @param {{ left?: number, top?: number, anchor?: string|null }|null|undefined} stored
+   * @param {{ margin?: number, defaultAnchor?: string, defaultWidth?: number, defaultHeight?: number }} opts
+   */
+  function earlyApplyPanelPosition(el, stored, opts) {
+    if (!el || !el.style) return;
+    const margin = opts && Number.isFinite(opts.margin) ? opts.margin : EARLY_PANEL_MARGIN_PX;
+    const defaultAnchor = (opts && opts.defaultAnchor) || 'top-left';
+    const rect = el.getBoundingClientRect();
+    // Never clamp with 0 height — that docks free tops at vh−margin; content then grows off-screen.
+    let width = (rect && rect.width) || (opts && opts.defaultWidth) || 0;
+    let height = (rect && rect.height) || (opts && opts.defaultHeight) || 0;
+    if (width < 32) width = (opts && opts.defaultWidth) || 760;
+    if (height < 32) height = (opts && opts.defaultHeight) || 200;
+    const state = stored && typeof stored === 'object' ? stored : null;
+    let next;
+    if (state && typeof state.anchor === 'string' && state.anchor) {
+      next = earlyPositionForAnchor(state.anchor, width, height, margin);
+    } else if (state && Number.isFinite(Number(state.left)) && Number.isFinite(Number(state.top))) {
+      next = earlyClampPanelPosition(Number(state.left), Number(state.top), width, height, margin);
+    } else {
+      next = earlyPositionForAnchor(defaultAnchor, width, height, margin);
+    }
+    try {
+      el.style.position = 'fixed';
+      el.style.right = 'auto';
+      el.style.bottom = 'auto';
+      el.style.left = `${Math.round(next.left)}px`;
+      el.style.top = `${Math.round(next.top)}px`;
+      el.style.margin = '0';
+    } catch { /* ignore */ }
+
+    // Remeasure after paint-sized content and reclamp (keyboard often sizes after shell create).
+    try {
+      const live = el.getBoundingClientRect();
+      const lw = live.width || width;
+      const lh = live.height || height;
+      if (lw >= 32 && lh >= 32) {
+        let next2;
+        if (state && typeof state.anchor === 'string' && state.anchor) {
+          next2 = earlyPositionForAnchor(state.anchor, lw, lh, margin);
+        } else if (state && Number.isFinite(Number(state.left)) && Number.isFinite(Number(state.top))) {
+          next2 = earlyClampPanelPosition(Number(state.left), Number(state.top), lw, lh, margin);
+        } else {
+          next2 = earlyPositionForAnchor(defaultAnchor, lw, lh, margin);
+        }
+        // Also pin if painted box still spills the viewport.
+        const spills =
+          live.bottom > earlyViewportSize().height - margin + 1 ||
+          live.top < margin - 1 ||
+          live.right > earlyViewportSize().width - margin + 1 ||
+          live.left < margin - 1;
+        if (spills) {
+          next2 = earlyClampPanelPosition(live.left, live.top, lw, lh, margin);
+        } else if (
+          Math.abs(next2.left - next.left) > 0.5 ||
+          Math.abs(next2.top - next.top) > 0.5
+        ) {
+          // use next2
+        } else {
+          next2 = next;
+        }
+        el.style.left = `${Math.round(next2.left)}px`;
+        el.style.top = `${Math.round(next2.top)}px`;
+      }
+    } catch { /* ignore */ }
+  }
+
+  /** Cached panelPositions from kp_settings_v1 (best-effort at document_start). */
+  let earlyPanelPositions = null;
+
+  function readEarlyPanelPositionsFromSettingsObj(settingsObj) {
+    try {
+      const pp = settingsObj && typeof settingsObj === 'object' && settingsObj.panelPositions
+        && typeof settingsObj.panelPositions === 'object'
+        ? settingsObj.panelPositions
+        : null;
+      if (!pp) return null;
+      return {
+        keyboardReference: pp.keyboardReference && typeof pp.keyboardReference === 'object'
+          ? pp.keyboardReference
+          : null,
+        controlStrip: pp.controlStrip && typeof pp.controlStrip === 'object'
+          ? pp.controlStrip
+          : null
+      };
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -4408,6 +4614,13 @@
         WebkitUserSelect: 'none'
       });
       try { applyPopupThemeVars(root); } catch { /* ignore */ }
+      try {
+        earlyApplyPanelPosition(root, earlyPanelPositions && earlyPanelPositions.controlStrip, {
+          margin: EARLY_STRIP_MARGIN_PX,
+          defaultAnchor: 'top-left',
+          defaultHeight: CONTROL_STRIP_HEIGHT_PX
+        });
+      } catch { /* ignore */ }
 
       const statusBtn = createEarlyControlStripSegmentButton({
         ariaLabel: 'Toggle KeyPilot on or off',
@@ -4591,7 +4804,30 @@
     const parsed = parseControlStripFromSettings(settingsObj);
     controlStripDesiredVisible = parsed.visible;
     controlStripCollapsed = parsed.collapsed;
+    try {
+      earlyPanelPositions = readEarlyPanelPositionsFromSettingsObj(settingsObj) || earlyPanelPositions;
+    } catch { /* ignore */ }
     applyEarlyControlStripVisibility();
+    // Re-apply dock positions when settings arrive (shells may already exist).
+    try {
+      if (controlStripRoot && controlStripRoot.isConnected) {
+        earlyApplyPanelPosition(controlStripRoot, earlyPanelPositions && earlyPanelPositions.controlStrip, {
+          margin: EARLY_STRIP_MARGIN_PX,
+          defaultAnchor: 'top-left',
+          defaultHeight: CONTROL_STRIP_HEIGHT_PX
+        });
+      }
+    } catch { /* ignore */ }
+    try {
+      if (keyboardHelpRoot && keyboardHelpRoot.isConnected) {
+        earlyApplyPanelPosition(keyboardHelpRoot, earlyPanelPositions && earlyPanelPositions.keyboardReference, {
+          margin: EARLY_PANEL_MARGIN_PX,
+          defaultAnchor: 'bottom-left',
+          defaultWidth: 760,
+          defaultHeight: 200
+        });
+      }
+    } catch { /* ignore */ }
   }
 
   function setupControlStripStorageListener() {
@@ -4632,8 +4868,9 @@
       left: '16px',
       bottom: '16px',
       width: '760px',
-      maxWidth: 'calc(100vw - 24px)',
-      maxHeight: 'calc(100vh - 24px)',
+      // Symmetric with EARLY_PANEL_MARGIN_PX (16) on every edge — not 24 (asymmetric right/bottom).
+      maxWidth: 'calc(100vw - 32px)',
+      maxHeight: 'calc(100vh - 32px)',
       overflow: 'auto',
       zIndex: String(Z_FLOATING_KEYBOARD_HELP),
       background: 'rgba(10, 11, 14, 0.98)',
@@ -4646,6 +4883,15 @@
     });
     // Match popup.html theme tokens so the early-rendered keyboard matches the popup.
     try { applyPopupThemeVars(root); } catch { /* ignore */ }
+    // Restore saved dock / free position (default bottom-left).
+    try {
+      earlyApplyPanelPosition(root, earlyPanelPositions && earlyPanelPositions.keyboardReference, {
+        margin: EARLY_PANEL_MARGIN_PX,
+        defaultAnchor: 'bottom-left',
+        defaultWidth: 760,
+        defaultHeight: 200
+      });
+    } catch { /* ignore */ }
 
     const header = doc.createElement('div');
     header.setAttribute('data-kp-floating-keyboard-titlebar', 'true');
@@ -4781,6 +5027,27 @@
 
     // Pre-render the keyboard immediately so the panel doesn't start as only a titlebar.
     renderEarlyKeyboard(keyboardContainer, { layoutId: keyboardLayoutId });
+    // Reclamp after content has a real height (avoids free tops saved with h=0 going off-screen).
+    try {
+      earlyApplyPanelPosition(root, earlyPanelPositions && earlyPanelPositions.keyboardReference, {
+        margin: EARLY_PANEL_MARGIN_PX,
+        defaultAnchor: 'bottom-left',
+        defaultWidth: 760,
+        defaultHeight: 200
+      });
+    } catch { /* ignore */ }
+    try {
+      requestAnimationFrame(() => {
+        try {
+          earlyApplyPanelPosition(root, earlyPanelPositions && earlyPanelPositions.keyboardReference, {
+            margin: EARLY_PANEL_MARGIN_PX,
+            defaultAnchor: 'bottom-left',
+            defaultWidth: 760,
+            defaultHeight: 200
+          });
+        } catch { /* ignore */ }
+      });
+    } catch { /* ignore */ }
   }
 
   function updateKeyboardHelpHintForLayout(layoutId) {
@@ -4928,6 +5195,7 @@
           const st = result && result[SETTINGS_STORAGE_KEY] && typeof result[SETTINGS_STORAGE_KEY] === 'object' ? result[SETTINGS_STORAGE_KEY] : null;
           settingsObj = st;
           keyboardLayoutId = normalizeKeyboardLayoutId(st && st.keyboardLayoutId);
+          earlyPanelPositions = readEarlyPanelPositionsFromSettingsObj(st);
         } catch {
           keyboardLayoutId = normalizeKeyboardLayoutId(keyboardLayoutId);
         }
@@ -4973,6 +5241,7 @@
             : null;
           if (settingsObj) {
             keyboardLayoutId = normalizeKeyboardLayoutId(settingsObj.keyboardLayoutId);
+            earlyPanelPositions = readEarlyPanelPositionsFromSettingsObj(settingsObj);
           }
         } catch { /* ignore */ }
       }

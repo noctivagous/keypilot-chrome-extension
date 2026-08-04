@@ -963,16 +963,33 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
   }
 }
 
-/* Popover (tooltip) — matches the hovered key material via CSS vars */
+/* Popover (tooltip) — matches the hovered key material via CSS vars.
+ * Uses the HTML Popover API (top layer) so it can escape the keyboard panel's
+ * overflow:hidden and sit above/below keys outside the panel bounds.
+ *
+ * Do NOT set inset with !important: that locks left/top longhands and beats
+ * JS style.left/top, pinning every tooltip at the viewport origin. Override UA
+ * popover defaults with non-important longhands + margin:0 instead. */
 .kp-keybindings-popover {
   --kp-key-face: #3d4454;
   --kp-key-mid: #343a48;
   --kp-key-deep: #2c313e;
   --kp-key-icon: #1a1e28;
 
-  position: absolute;
+  position: fixed !important;
+  /* Kill UA popover centering (inset 0 / margin auto) without locking longhands. */
+  margin: 0 !important;
+  top: auto;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  width: max-content;
+  height: fit-content;
+  overflow: visible;
+  box-sizing: border-box;
+
   z-index: ${zIndex};
-  max-width: 300px;
+  max-width: min(300px, calc(100vw - 20px));
   min-width: 160px;
   color: rgba(248, 250, 252, 0.95);
   border-radius: 8px;
@@ -1001,7 +1018,20 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
     inset 0 -1px 0 rgba(0, 0, 0, 0.18);
 }
 
-.kp-keybindings-popover[hidden] { display: none; }
+/* Closed: both attribute + Popover API states */
+.kp-keybindings-popover:not(:popover-open):not([data-kp-popover-open="true"]),
+.kp-keybindings-popover[hidden] {
+  display: none !important;
+}
+
+/* Open via Popover API or legacy fallback flag */
+.kp-keybindings-popover:popover-open,
+.kp-keybindings-popover[data-kp-popover-open="true"] {
+  display: block;
+  /* Re-assert after :popover-open (UA may reapply margin/inset). */
+  margin: 0 !important;
+  position: fixed !important;
+}
 
 .kp-keybindings-popover .kp-popover-head {
   display: flex;

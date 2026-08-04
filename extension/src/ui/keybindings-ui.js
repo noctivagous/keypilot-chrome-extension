@@ -257,24 +257,50 @@ export function renderKeybindingsKeyboard({ container, keybindings, keyboardLayo
   });
 }
 
-function ensurePopover(doc, container) {
-  ensureStylesInjected(doc);
-  // Try to find existing popover in the container first
-  let pop = container && container.querySelector('.kp-keybindings-popover');
-  // Fallback to body search for backwards compatibility
-  if (!pop && doc.body) {
-    pop = doc.body.querySelector('.kp-keybindings-popover');
-    // If found in body, move it to container
-    if (pop && container) {
-      pop.remove();
-      container.appendChild(pop);
-    }
+/**
+ * Whether the HTML Popover API is available on this element/document.
+ * @param {HTMLElement|null} el
+ * @returns {boolean}
+ */
+function supportsPopoverApi(el) {
+  try {
+    return !!(el && typeof el.showPopover === 'function' && typeof HTMLElement !== 'undefined'
+      && 'popover' in HTMLElement.prototype);
+  } catch {
+    return false;
   }
-  // Create new popover if not found
-  if (!pop && container) {
+}
+
+/**
+ * Ensure the shared key-info popover exists on document.body and is wired for
+ * the Popover API (top layer — escapes keyboard panel overflow).
+ * @param {Document} doc
+ * @param {HTMLElement|null} [_container] ignored; kept for call-site compatibility
+ * @returns {HTMLElement|null}
+ */
+function ensurePopover(doc, _container) {
+  ensureStylesInjected(doc);
+  if (!doc || !doc.body) return null;
+
+  // Prefer a single shared popover on body (top-layer / fixed), not inside the panel.
+  let pop = doc.body.querySelector('.kp-keybindings-popover[data-kp-key-info-popover="true"]')
+    || doc.body.querySelector('.kp-keybindings-popover');
+
+  // Migrate any legacy popover that still lives inside the floating keyboard panel.
+  if (!pop) {
+    try {
+      const legacy = doc.querySelector('.kp-floating-keyboard-help .kp-keybindings-popover');
+      if (legacy) {
+        pop = legacy;
+        doc.body.appendChild(pop);
+      }
+    } catch { /* ignore */ }
+  }
+
+  if (!pop) {
     pop = doc.createElement('div');
     pop.className = 'kp-keybindings-popover';
-    pop.hidden = true;
+    pop.setAttribute('data-kp-key-info-popover', 'true');
     pop.setAttribute('data-placement', 'top');
     pop.setAttribute('role', 'tooltip');
     pop.innerHTML = `
@@ -287,29 +313,62 @@ function ensurePopover(doc, container) {
       </div>
       <p class="kp-popover-desc"></p>
     `;
-    container.appendChild(pop);
-  } else if (pop && !pop.querySelector('.kp-popover-icon')) {
-    // Upgrade legacy popover markup (from older sessions / early inject).
-    try {
-      pop.setAttribute('role', 'tooltip');
-      pop.innerHTML = `
-        <div class="kp-popover-head">
-          <div class="kp-popover-icon" aria-hidden="true"></div>
-          <div class="kp-popover-title-wrap">
-            <div class="kp-popover-title"></div>
-            <div class="kp-popover-keys"></div>
+    doc.body.appendChild(pop);
+  } else {
+    try { pop.setAttribute('data-kp-key-info-popover', 'true'); } catch { /* ignore */ }
+    if (pop.parentElement !== doc.body) {
+      try { doc.body.appendChild(pop); } catch { /* ignore */ }
+    }
+    if (!pop.querySelector('.kp-popover-icon')) {
+      // Upgrade legacy popover markup (from older sessions / early inject).
+      try {
+        pop.setAttribute('role', 'tooltip');
+        pop.innerHTML = `
+          <div class="kp-popover-head">
+            <div class="kp-popover-icon" aria-hidden="true"></div>
+            <div class="kp-popover-title-wrap">
+              <div class="kp-popover-title"></div>
+              <div class="kp-popover-keys"></div>
+            </div>
           </div>
-        </div>
-        <p class="kp-popover-desc"></p>
-      `;
-    } catch { /* ignore */ }
+          <p class="kp-popover-desc"></p>
+        `;
+      } catch { /* ignore */ }
+    }
   }
+
+  // HTML Popover API: manual mode so hover lifecycle owns show/hide (not light dismiss).
+  try {
+    if (supportsPopoverApi(pop)) {
+      pop.popover = 'manual';
+    }
+  } catch {
+    try { pop.setAttribute('popover', 'manual'); } catch { /* ignore */ }
+  }
+
+  // Start closed.
+  try { pop.hidden = true; } catch { /* ignore */ }
+  try { pop.removeAttribute('data-kp-popover-open'); } catch { /* ignore */ }
+
   return pop;
 }
 
+/**
+ * @param {HTMLElement|null} pop
+ */
 function hidePopover(pop) {
   if (!pop) return;
-  pop.hidden = true;
+  try {
+    if (supportsPopoverApi(pop) && typeof pop.hidePopover === 'function') {
+      try {
+        if (pop.matches?.(':popover-open')) pop.hidePopover();
+      } catch {
+        try { pop.hidePopover(); } catch { /* ignore */ }
+      }
+    }
+  } catch { /* ignore */ }
+  try { pop.hidden = true; } catch { /* ignore */ }
+  try { pop.removeAttribute('data-kp-popover-open'); } catch { /* ignore */ }
   try {
     const iconEl = pop.querySelector('.kp-popover-icon');
     if (iconEl) {
@@ -324,6 +383,23 @@ function hidePopover(pop) {
       try { pop.style.removeProperty(prop); } catch { /* ignore */ }
     });
   } catch { /* ignore */ }
+}
+
+/**
+ * Open the popover element (Popover API preferred; legacy display fallback).
+ * @param {HTMLElement} pop
+ */
+function openPopoverElement(pop) {
+  if (!pop) return;
+  try { pop.hidden = false; } catch { /* ignore */ }
+  try { pop.setAttribute('data-kp-popover-open', 'true'); } catch { /* ignore */ }
+  if (supportsPopoverApi(pop) && typeof pop.showPopover === 'function') {
+    try {
+      if (!pop.matches?.(':popover-open')) pop.showPopover();
+    } catch {
+      try { pop.showPopover(); } catch { /* ignore */ }
+    }
+  }
 }
 
 function clamp(n, min, max) {
@@ -352,7 +428,21 @@ function applyKeyMaterialToPopover(pop, targetEl) {
   } catch { /* ignore */ }
 }
 
-function showPopoverForTarget({ doc, pop, targetEl, binding, actionId, container }) {
+/**
+ * Fill content and position the key-info popover against the *viewport*
+ * (not the keyboard panel). Top-row keys can open above the panel; bottom-row
+ * keys can open below it.
+ *
+ * @param {{
+ *   doc: Document,
+ *   pop: HTMLElement,
+ *   targetEl: HTMLElement,
+ *   binding: any,
+ *   actionId: string,
+ *   container?: HTMLElement|null
+ * }} args
+ */
+function showPopoverForTarget({ doc, pop, targetEl, binding, actionId }) {
   if (!doc || !pop || !targetEl) return;
 
   const titleEl = pop.querySelector('.kp-popover-title');
@@ -394,60 +484,94 @@ function showPopoverForTarget({ doc, pop, targetEl, binding, actionId, container
     }
   }
 
-  pop.hidden = false;
-
-  // Measure and position.
-  const margin = 10;
-  const gap = 10; // distance between target and popover box (arrow included)
+  // Capture key geometry *before* open (stable, independent of popover layer).
   const targetRect = targetEl.getBoundingClientRect();
 
-  // Get container rect for relative positioning
-  const containerRect = container ? container.getBoundingClientRect() : { left: 0, top: 0, width: 0, height: 0 };
-  
-  // Calculate target position relative to container
-  const targetRelativeTop = targetRect.top - containerRect.top;
-  const targetRelativeLeft = targetRect.left - containerRect.left;
-  const targetRelativeBottom = targetRect.bottom - containerRect.top;
-  const targetRelativeRight = targetRect.right - containerRect.left;
+  // Open first so layout/measurement works (top layer via Popover API).
+  openPopoverElement(pop);
 
-  // Temporarily move offscreen to measure without jitter.
-  pop.style.left = '-9999px';
-  pop.style.top = '-9999px';
-  pop.style.maxWidth = '280px';
+  /**
+   * Write fixed coords so UA [popover] inset/margin cannot win the cascade.
+   * Prefer setProperty with important for left/top (survives inset conflicts).
+   *
+   * Never call removeProperty('inset') *after* setting left/top: Chrome often
+   * serializes left/top as the inset shorthand, so removing inset wipes them
+   * and the tooltip jumps to the viewport origin.
+   *
+   * @param {number} leftPx
+   * @param {number} topPx
+   */
+  const placeAt = (leftPx, topPx) => {
+    try {
+      // Drop any prior inset shorthand *first*, then set longhands.
+      try { pop.style.removeProperty('inset'); } catch { /* ignore */ }
+      pop.style.setProperty('position', 'fixed', 'important');
+      pop.style.setProperty('margin', '0', 'important');
+      pop.style.setProperty('right', 'auto', 'important');
+      pop.style.setProperty('bottom', 'auto', 'important');
+      pop.style.setProperty('left', `${Math.round(leftPx)}px`, 'important');
+      pop.style.setProperty('top', `${Math.round(topPx)}px`, 'important');
+    } catch {
+      try { pop.style.removeProperty('inset'); } catch { /* ignore */ }
+      pop.style.position = 'fixed';
+      pop.style.margin = '0';
+      pop.style.right = 'auto';
+      pop.style.bottom = 'auto';
+      pop.style.left = `${Math.round(leftPx)}px`;
+      pop.style.top = `${Math.round(topPx)}px`;
+    }
+  };
+
+  // Viewport-relative fixed positioning (escapes panel overflow).
+  const margin = 10;
+  const gap = 10; // distance between target and popover box (arrow included)
+
+  // Measure while open; park off-screen first to avoid one-frame flicker at 0,0.
+  placeAt(-9999, -9999);
 
   const popRect = pop.getBoundingClientRect();
-  
-  // Use container dimensions for bounds checking
-  const containerWidth = containerRect.width || (container ? container.clientWidth : 0);
-  const containerHeight = containerRect.height || (container ? container.clientHeight : 0);
-  const vw = container ? containerWidth : Math.max(doc.documentElement.clientWidth || 0, window.innerWidth || 0);
-  const vh = container ? containerHeight : Math.max(doc.documentElement.clientHeight || 0, window.innerHeight || 0);
+  const popW = popRect.width || pop.offsetWidth || 160;
+  const popH = popRect.height || pop.offsetHeight || 80;
+  const vw = Math.max(
+    doc.documentElement?.clientWidth || 0,
+    (typeof window !== 'undefined' ? window.innerWidth : 0) || 0
+  );
+  const vh = Math.max(
+    doc.documentElement?.clientHeight || 0,
+    (typeof window !== 'undefined' ? window.innerHeight : 0) || 0
+  );
 
-  const spaceAbove = targetRelativeTop;
-  const spaceBelow = vh - targetRelativeBottom;
-  const placeAbove = spaceAbove >= popRect.height + gap + margin || spaceAbove >= spaceBelow;
+  // Prefer above the key when there is room in the *viewport* (not the panel).
+  // Top-row keys can therefore render above the keyboard reference window.
+  const spaceAbove = targetRect.top;
+  const spaceBelow = vh - targetRect.bottom;
+  const needs = popH + gap + margin;
+  const placeAbove = spaceAbove >= needs || (spaceAbove >= spaceBelow && spaceAbove >= gap + 24);
   const placement = placeAbove ? 'top' : 'bottom';
   pop.setAttribute('data-placement', placement);
 
-  const targetCenterX = targetRelativeLeft + targetRect.width / 2;
+  const targetCenterX = targetRect.left + targetRect.width / 2;
 
-  let left = targetCenterX - popRect.width / 2;
-  left = clamp(left, margin, vw - margin - popRect.width);
+  let left = targetCenterX - popW / 2;
+  const maxLeft = Math.max(margin, vw - margin - popW);
+  left = clamp(left, margin, maxLeft);
 
   let top;
   if (placement === 'top') {
-    top = targetRelativeTop - gap - popRect.height;
-    top = Math.max(margin, top);
+    top = targetRect.top - gap - popH;
+    // Soft clamp: keep fully on-screen when possible, but never force bottom
+    // placement just because the panel is short — we already chose above.
+    if (top < margin) top = margin;
   } else {
-    top = targetRelativeBottom + gap;
-    top = Math.min(vh - margin - popRect.height, top);
+    top = targetRect.bottom + gap;
+    const maxTop = Math.max(margin, vh - margin - popH);
+    if (top > maxTop) top = maxTop;
   }
 
-  pop.style.left = `${Math.round(left)}px`;
-  pop.style.top = `${Math.round(top)}px`;
+  placeAt(left, top);
 
   // Arrow alignment: set CSS variable relative to popover box.
-  const arrowLeft = clamp(targetCenterX - left - 9, 12, popRect.width - 24);
+  const arrowLeft = clamp(targetCenterX - left - 9, 12, Math.max(12, popW - 24));
   pop.style.setProperty('--kp-arrow-left', `${Math.round(arrowLeft)}px`);
 }
 
@@ -480,16 +604,9 @@ function emitKeyboardHelpKeyHover(detail = {}) {
 function attachKeyPopoverBehavior({ root, keybindings }) {
   if (!root) return;
   const doc = root.ownerDocument || document;
-  
-  // Find the floating keyboard reference container (parent of the keyboard container)
-  // This is the container that will hold the popover for absolute positioning
-  let floatingContainer = root.closest('.kp-floating-keyboard-help');
-  // Fallback: if not found, use root's parent or body
-  if (!floatingContainer) {
-    floatingContainer = root.parentElement || doc.body;
-  }
-  
-  const pop = ensurePopover(doc, floatingContainer);
+
+  // Popover lives on document.body + Popover API top layer (not clipped by panel).
+  const pop = ensurePopover(doc, null);
   if (!pop) return;
 
   // Store handlers on the root to avoid duplicate attachments
@@ -530,7 +647,7 @@ function attachKeyPopoverBehavior({ root, keybindings }) {
     const binding = keybindings && keybindings[actionId];
     if (!binding) return;
     clearHideTimer();
-    showPopoverForTarget({ doc, pop, targetEl: keyEl, binding, actionId, container: floatingContainer });
+    showPopoverForTarget({ doc, pop, targetEl: keyEl, binding, actionId });
     // Onboarding / other listeners: user hovered a Keyboard Reference key and saw its info.
     emitKeyboardHelpKeyHover({ actionId, keyEl });
   };

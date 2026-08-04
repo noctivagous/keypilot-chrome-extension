@@ -10,8 +10,19 @@ import { renderKeybindingsKeyboard } from './keybindings-ui.js';
 import { setKeyPressedState } from './keybindings-ui-shared.js';
 import { Z_INDEX } from '../config/constants.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
-import { getSettings, SETTINGS_STORAGE_KEY } from '../modules/settings-manager.js';
+import { getSettings, setSettings, SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS } from '../modules/settings-manager.js';
 import { makePopoverResizable } from '../utils/popover-resize.js';
+import {
+  PANEL_POSITION_MARGIN_PX,
+  applyPanelPosition,
+  makePanelDraggable,
+  normalizePanelPositionState
+} from '../utils/panel-position.js';
+
+/** Match legacy keyboard dock inset (left/bottom 16px) while still using shared snap/clamp. */
+const KEYBOARD_POSITION_MARGIN_PX = Math.max(PANEL_POSITION_MARGIN_PX, 16);
+/** Keep max size in sync with margin on every edge (was 24 → asymmetric right/bottom gaps). */
+const KEYBOARD_MAX_VIEWPORT_INSET_PX = KEYBOARD_POSITION_MARGIN_PX * 2;
 
 export class FloatingKeyboardHelp {
   /**
@@ -56,12 +67,20 @@ export class FloatingKeyboardHelp {
     this._settingsBound = false;
     this._onStorageChanged = this._onStorageChanged.bind(this);
 
-    // Titlebar drag + edge/corner resize
+    // Titlebar drag + edge/corner resize (via shared panel-position system)
     this._windowChromeBound = false;
     /** @type {(() => void)|null} */
     this._resizeDispose = null;
     /** @type {(() => void)|null} */
     this._dragDispose = null;
+
+    /** @type {import('../modules/settings-manager.js').PanelPositionSettings|null} */
+    this._panelPosition = {
+      ...DEFAULT_SETTINGS.panelPositions.keyboardReference
+    };
+    this._positionApplyScheduled = false;
+    this._onWinResizePosition = this._onWinResizePosition.bind(this);
+    this._suppressPositionPersist = false;
   }
 
   setKeybindings(keybindings) {
@@ -117,6 +136,9 @@ export class FloatingKeyboardHelp {
     this._render();
     this._bindSettingsSync();
     this._refreshKeyFeedbackSetting(); // async; best-effort
+    this._refreshPanelPosition(); // async; applies default until storage returns
+    // Apply after render + after layout so free coords never sit below the fold.
+    this._schedulePanelPositionAfterLayout();
     this._bindKeydownFeedback();
     // Sync text-mode filter (panel may open while a field already has focus).
     try {
@@ -148,6 +170,8 @@ export class FloatingKeyboardHelp {
     this._unbindWindowChrome();
     this._unbindKeydownFeedback();
     this._unbindSettingsSync();
+    try { this._posResizeObserver?.disconnect?.(); } catch { /* ignore */ }
+    this._posResizeObserver = null;
     try {
       if (this.root && this.root.parentNode) this.root.parentNode.removeChild(this.root);
     } catch { /* ignore */ }
@@ -159,7 +183,8 @@ export class FloatingKeyboardHelp {
 
   /**
    * Panel shell chrome shared by create + early-inject adopt paths.
-   * Default docks bottom-left; titlebar drag can move it to any corner.
+   * Position is applied separately via the shared panel-position system
+   * (default anchor: bottom-left).
    * @param {HTMLElement} root
    */
   _applyProPanelChrome(root) {
@@ -172,13 +197,10 @@ export class FloatingKeyboardHelp {
     } catch { /* ignore */ }
     Object.assign(root.style, {
       position: 'fixed',
-      left: '16px',
-      bottom: '16px',
-      top: 'auto',
-      right: 'auto',
       width: '760px',
-      maxWidth: 'calc(100vw - 24px)',
-      maxHeight: 'calc(100vh - 24px)',
+      // Symmetric inset on all sides (matches KEYBOARD_POSITION_MARGIN_PX).
+      maxWidth: `calc(100vw - ${KEYBOARD_MAX_VIEWPORT_INSET_PX}px)`,
+      maxHeight: `calc(100vh - ${KEYBOARD_MAX_VIEWPORT_INSET_PX}px)`,
       // Flex column when visible (titlebar + body).
       display,
       flexDirection: 'column',
@@ -194,6 +216,147 @@ export class FloatingKeyboardHelp {
       pointerEvents: 'auto'
     });
     applyPopupThemeVars(root);
+  }
+
+  /**
+   * Apply current in-memory panel position to the root element.
+   * Re-reads live size so free positions cannot stay below the fold after keyboard paint.
+   */
+  _applyPanelPositionNow() {
+    if (!this.root) return;
+    try {
+      const resolved = applyPanelPosition(this.root, this._panelPosition, {
+        margin: KEYBOARD_POSITION_MARGIN_PX,
+        defaultAnchor: 'bottom-left',
+        // Used when the panel has not laid out yet (height 0) so free tops
+        // cannot pin to vh−margin and then grow off the bottom of the screen.
+        fallbackWidth: 760,
+        fallbackHeight: 200
+      });
+      // Keep in-memory free coords in sync with what was actually painted (clamped).
+      if (resolved && !resolved.anchor) {
+        this._panelPosition = {
+          left: resolved.left,
+          top: resolved.top,
+          anchor: null
+        };
+      } else if (resolved?.anchor) {
+        this._panelPosition = {
+          left: resolved.left,
+          top: resolved.top,
+          anchor: resolved.anchor
+        };
+      }
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Re-apply after layout (keyboard rows often size one frame after show).
+   */
+  _schedulePanelPositionAfterLayout() {
+    this._applyPanelPositionNow();
+    try {
+      requestAnimationFrame(() => {
+        this._applyPanelPositionNow();
+        requestAnimationFrame(() => this._applyPanelPositionNow());
+      });
+    } catch {
+      this._applyPanelPositionNow();
+    }
+    // One-shot ResizeObserver: reclamp when content height appears / changes.
+    try {
+      if (typeof ResizeObserver === 'undefined' || !this.root) return;
+      try { this._posResizeObserver?.disconnect?.(); } catch { /* ignore */ }
+      let fires = 0;
+      this._posResizeObserver = new ResizeObserver(() => {
+        this._applyPanelPositionNow();
+        if (++fires >= 4) {
+          try { this._posResizeObserver?.disconnect?.(); } catch { /* ignore */ }
+          this._posResizeObserver = null;
+        }
+      });
+      this._posResizeObserver.observe(this.root);
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * @param {import('../modules/settings-manager.js').PanelPositionSettings|null|undefined} next
+   * @param {{ persist?: boolean }} [opts]
+   */
+  _setPanelPosition(next, opts = {}) {
+    const normalized = normalizePanelPositionState(
+      next,
+      DEFAULT_SETTINGS.panelPositions.keyboardReference
+    ) || { ...DEFAULT_SETTINGS.panelPositions.keyboardReference };
+    this._panelPosition = {
+      left: normalized.left,
+      top: normalized.top,
+      anchor: normalized.anchor === undefined ? null : normalized.anchor
+    };
+    this._applyPanelPositionNow();
+    if (opts.persist && !this._suppressPositionPersist) {
+      this._persistPanelPosition(this._panelPosition);
+    }
+  }
+
+  async _refreshPanelPosition() {
+    try {
+      const settings = await getSettings();
+      const stored = settings?.panelPositions?.keyboardReference;
+      this._suppressPositionPersist = true;
+      this._setPanelPosition(stored, { persist: false });
+      this._suppressPositionPersist = false;
+      // Storage often arrives after first paint — reclamp once size is known.
+      this._schedulePanelPositionAfterLayout();
+      // If a free position was saved while height was 0, rewrite the clamped coords.
+      try {
+        const pos = this._panelPosition;
+        if (pos && pos.anchor == null && Number.isFinite(pos.left) && Number.isFinite(pos.top)) {
+          const before = stored && typeof stored === 'object' ? stored : null;
+          const moved =
+            !before ||
+            Math.round(Number(before.top)) !== Math.round(pos.top) ||
+            Math.round(Number(before.left)) !== Math.round(pos.left);
+          if (moved) {
+            void this._persistPanelPosition(pos);
+          }
+        }
+      } catch { /* ignore */ }
+    } catch {
+      this._suppressPositionPersist = false;
+    }
+  }
+
+  /**
+   * @param {import('../modules/settings-manager.js').PanelPositionSettings} position
+   */
+  async _persistPanelPosition(position) {
+    try {
+      await setSettings({
+        panelPositions: {
+          keyboardReference: {
+            left: position.left,
+            top: position.top,
+            anchor: position.anchor === undefined ? null : position.anchor
+          }
+        }
+      });
+    } catch { /* ignore */ }
+  }
+
+  _onWinResizePosition() {
+    if (!this.root || !this.isVisible()) return;
+    if (this._positionApplyScheduled) return;
+    this._positionApplyScheduled = true;
+    try {
+      requestAnimationFrame(() => {
+        this._positionApplyScheduled = false;
+        this._applyPanelPositionNow();
+      });
+    } catch {
+      this._positionApplyScheduled = false;
+      this._applyPanelPositionNow();
+    }
   }
 
   /**
@@ -319,39 +482,8 @@ export class FloatingKeyboardHelp {
   }
 
   /**
-   * Convert bottom/right/centered layout into an explicit fixed top/left box
-   * so free drag + resize can pin the panel anywhere (including all four corners).
-   * @param {HTMLElement} panel
-   * @returns {{ left: number, top: number, width: number, height: number }}
-   */
-  _pinPanelGeometry(panel) {
-    const rect = panel.getBoundingClientRect();
-    const s = panel.style;
-    s.position = 'fixed';
-    s.transform = 'none';
-    try { s.webkitTransform = 'none'; } catch { /* ignore */ }
-    s.left = `${rect.left}px`;
-    s.top = `${rect.top}px`;
-    s.width = `${rect.width}px`;
-    s.height = `${rect.height}px`;
-    s.right = 'auto';
-    s.bottom = 'auto';
-    s.inset = 'auto';
-    s.margin = '0';
-    s.maxWidth = 'none';
-    s.maxHeight = 'none';
-    s.boxSizing = 'border-box';
-    return {
-      left: rect.left,
-      top: rect.top,
-      width: rect.width,
-      height: rect.height
-    };
-  }
-
-  /**
-   * Titlebar drag (free move, clamped to viewport so all four corners are reachable)
-   * + shared edge/corner resize with SE grip.
+   * Titlebar drag (shared panel-position: margin clamp + corner/edge snap)
+   * + shared edge/corner resize with SE grip (resize currently suspended).
    */
   _bindWindowChrome() {
     if (this._windowChromeBound || !this.root) return;
@@ -364,100 +496,32 @@ export class FloatingKeyboardHelp {
     this._titlebar = header;
     this._windowChromeBound = true;
 
-    const margin = 8;
-    const DRAG_MOVE_THRESHOLD_PX = 3;
-    /** @type {{ startX: number, startY: number, originLeft: number, originTop: number, pointerId: number, moved: boolean }|null} */
-    let dragState = null;
-
-    const clampPosition = (leftPx, topPx) => {
-      const w = panel.offsetWidth || panel.getBoundingClientRect().width;
-      const h = panel.offsetHeight || panel.getBoundingClientRect().height;
-      const maxLeft = Math.max(margin, window.innerWidth - w - margin);
-      const maxTop = Math.max(margin, window.innerHeight - h - margin);
-      return {
-        left: Math.max(margin, Math.min(leftPx, maxLeft)),
-        top: Math.max(margin, Math.min(topPx, maxTop))
-      };
-    };
-
-    const onDragPointerMove = (e) => {
-      if (!dragState || !this.root) return;
-      const dx = e.clientX - dragState.startX;
-      const dy = e.clientY - dragState.startY;
-      if (!dragState.moved) {
-        if (Math.abs(dx) < DRAG_MOVE_THRESHOLD_PX && Math.abs(dy) < DRAG_MOVE_THRESHOLD_PX) {
-          return;
+    try {
+      const api = makePanelDraggable(panel, header, {
+        margin: KEYBOARD_POSITION_MARGIN_PX,
+        excludeSelector:
+          'button[data-kp-floating-keyboard-close="true"], button[aria-label="Close keyboard reference"], .kpv2-popover-resize-handle',
+        onMoveEnd: (state) => {
+          if (!state?.moved) return;
+          this._setPanelPosition(
+            {
+              left: state.left,
+              top: state.top,
+              anchor: state.anchor
+            },
+            { persist: true }
+          );
         }
-        dragState.moved = true;
-        try { header.style.cursor = 'grabbing'; } catch { /* ignore */ }
-      }
-      const next = clampPosition(dragState.originLeft + dx, dragState.originTop + dy);
-      panel.style.left = `${next.left}px`;
-      panel.style.top = `${next.top}px`;
-    };
+      });
+      this._dragDispose = api?.dispose || null;
+    } catch (err) {
+      console.warn('[KeyPilot] Failed to make keyboard reference draggable:', err?.message || err);
+      this._dragDispose = null;
+    }
 
-    const endDrag = (e) => {
-      if (!dragState) return;
-      const pointerId = dragState.pointerId;
-      dragState = null;
-      try { header.style.cursor = 'grab'; } catch { /* ignore */ }
-      try {
-        if (e && typeof e.pointerId === 'number') header.releasePointerCapture(e.pointerId);
-        else if (typeof pointerId === 'number') header.releasePointerCapture(pointerId);
-      } catch { /* ignore */ }
-      document.removeEventListener('pointermove', onDragPointerMove, true);
-      document.removeEventListener('pointerup', endDrag, true);
-      document.removeEventListener('pointercancel', endDrag, true);
-    };
-
-    const onTitlebarPointerDown = (e) => {
-      // Close button (and any future action controls) keep their own click behavior.
-      // Match by attribute too in case this.closeBtn wasn't wired (early-inject adopt).
-      try {
-        const t = /** @type {Element|null} */ (e.target instanceof Element ? e.target : e.target?.parentElement);
-        if (t?.closest?.('button[data-kp-floating-keyboard-close="true"], button[aria-label="Close keyboard reference"]')) {
-          return;
-        }
-      } catch { /* ignore */ }
-      const closeBtn = this.closeBtn;
-      if (closeBtn && (e.target === closeBtn || (closeBtn.contains && closeBtn.contains(/** @type {Node} */ (e.target))))) {
-        return;
-      }
-      // Don't start a drag from resize handles if they ever land in the header.
-      try {
-        if (e.target && /** @type {Element} */ (e.target).closest?.('.kpv2-popover-resize-handle')) {
-          return;
-        }
-      } catch { /* ignore */ }
-      if (e.pointerType === 'mouse' && e.button !== 0) return;
-      if (!this.root) return;
-
-      // Only preventDefault for actual drag starts — don't block focus/clicks on chrome.
-      e.preventDefault();
-      e.stopPropagation();
-
-      // Pin geometry so bottom-docked default becomes free top/left positioning.
-      const origin = this._pinPanelGeometry(panel);
-      dragState = {
-        startX: e.clientX,
-        startY: e.clientY,
-        originLeft: origin.left,
-        originTop: origin.top,
-        pointerId: e.pointerId,
-        moved: false
-      };
-
-      try { header.setPointerCapture(e.pointerId); } catch { /* ignore */ }
-      document.addEventListener('pointermove', onDragPointerMove, true);
-      document.addEventListener('pointerup', endDrag, true);
-      document.addEventListener('pointercancel', endDrag, true);
-    };
-
-    header.addEventListener('pointerdown', onTitlebarPointerDown);
-    this._dragDispose = () => {
-      endDrag();
-      try { header.removeEventListener('pointerdown', onTitlebarPointerDown); } catch { /* ignore */ }
-    };
+    try {
+      window.addEventListener('resize', this._onWinResizePosition, true);
+    } catch { /* ignore */ }
 
     // TEMP suspended: resize + aspect lock (return when key flex-scaling is ready).
     // See keybindings-ui-shared.js floating-keyboard flex rules (also suspended).
@@ -468,10 +532,10 @@ export class FloatingKeyboardHelp {
     //   const api = makePopoverResizable(panel, {
     //     minWidth: 360,
     //     minHeight: 160,
-    //     margin,
+    //     margin: PANEL_POSITION_MARGIN_PX,
     //     aspectRatio: true,
     //     onResizeStart: () => {
-    //       this._pinPanelGeometry(panel);
+    //       pinPanelGeometry(panel);
     //     }
     //   });
     //   this._resizeDispose = api?.dispose || null;
@@ -480,6 +544,9 @@ export class FloatingKeyboardHelp {
     //   this._resizeDispose = null;
     // }
     this._resizeDispose = null;
+
+    // Apply saved / default dock once chrome is ready.
+    this._applyPanelPositionNow();
   }
 
   _unbindWindowChrome() {
@@ -487,6 +554,7 @@ export class FloatingKeyboardHelp {
     this._dragDispose = null;
     try { this._resizeDispose?.(); } catch { /* ignore */ }
     this._resizeDispose = null;
+    try { window.removeEventListener('resize', this._onWinResizePosition, true); } catch { /* ignore */ }
     this._windowChromeBound = false;
   }
 
@@ -718,10 +786,17 @@ export class FloatingKeyboardHelp {
 
   _onStorageChanged(changes, area) {
     try {
-      if (area !== 'sync') return;
+      if (area !== 'sync' && area !== 'local') return;
       const entry = changes && changes[SETTINGS_STORAGE_KEY];
       if (!entry || !entry.newValue) return;
       this._setKeyFeedbackEnabled(!!entry.newValue.keyboardReferenceKeyFeedback);
+      // Cross-tab / cross-page position sync (and re-apply after navigation restore).
+      const nextPos = entry.newValue.panelPositions?.keyboardReference;
+      if (nextPos && typeof nextPos === 'object') {
+        this._suppressPositionPersist = true;
+        this._setPanelPosition(nextPos, { persist: false });
+        this._suppressPositionPersist = false;
+      }
     } catch { /* ignore */ }
   }
 

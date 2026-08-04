@@ -1,21 +1,31 @@
 /**
  * macOS 7–style Control Strip (content-script friendly).
  *
- * Compact fixed strip in the upper-left. Dark GUI Pro chrome matches the
- * floating keyboard reference panel. Segments: On/Off, Keyboard, Settings,
- * collapse, and close.
+ * Compact fixed strip (default upper-left). Dark GUI Pro chrome matches the
+ * floating keyboard reference panel. Segments: On/Off, move (expanded),
+ * Keyboard, Settings, collapse, and close.
  *
+ * Position uses the shared panel-position system (snap + margin + persist).
  * Light DOM + inline styles so the strip survives hostile page CSS.
  */
 import { Z_INDEX } from '../config/constants.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
 import { getActionIconDataUri } from './keybindings-ui-shared.js';
 import { positionOnboardingBelowControlStrip } from './onboarding-shared.js';
+import { getSettings, setSettings, DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY } from '../modules/settings-manager.js';
+import {
+  PANEL_POSITION_MARGIN_PX,
+  applyPanelPosition,
+  makePanelDraggable,
+  normalizePanelPositionState
+} from '../utils/panel-position.js';
 
 const ROOT_CLASS = 'kp-control-strip';
 const DEFAULT_TOP_PX = 16;
 const DEFAULT_LEFT_PX = 16;
 const STRIP_HEIGHT_PX = 28;
+/** Prefer a slightly larger dock margin for the strip (matches legacy 16px perch). */
+const STRIP_POSITION_MARGIN_PX = Math.max(PANEL_POSITION_MARGIN_PX, 16);
 
 /**
  * @typedef {{
@@ -37,6 +47,7 @@ export class ControlStrip {
     this._statusBtn = null;
     this._statusDot = null;
     this._statusLabel = null;
+    this._moveBtn = null;
     this._keyboardBtn = null;
     this._settingsBtn = null;
     this._collapseBtn = null;
@@ -47,6 +58,15 @@ export class ControlStrip {
     this._collapsed = false;
     this._keyboardActive = false;
     this._desiredVisible = true;
+
+    /** @type {import('../modules/settings-manager.js').PanelPositionSettings} */
+    this._panelPosition = { ...DEFAULT_SETTINGS.panelPositions.controlStrip };
+    this._suppressPositionPersist = false;
+    /** @type {(() => void)|null} */
+    this._dragDispose = null;
+    this._dragBound = false;
+    this._settingsBound = false;
+    this._onStorageChanged = this._onStorageChanged.bind(this);
 
     /** @type {ControlStripHandlers} */
     this._handlers = {
@@ -96,6 +116,10 @@ export class ControlStrip {
     this.root.style.display = 'flex';
     this.root.style.pointerEvents = 'auto';
     this._applyCollapsedLayout();
+    this._bindDrag();
+    this._bindSettingsSync();
+    this._refreshPanelPosition(); // async
+    this._applyPanelPositionNow();
     this._syncOnboardingOffset();
     this._bindOnboardingWatch();
   }
@@ -127,10 +151,15 @@ export class ControlStrip {
     const next = !!collapsed;
     if (this._collapsed === next) {
       this._applyCollapsedLayout();
+      this._bindDrag();
       return;
     }
     this._collapsed = next;
     this._applyCollapsedLayout();
+    this._bindDrag();
+    // Width changes when expanding/collapsing — reclamp so margin stays valid.
+    this._applyPanelPositionNow();
+    this._syncOnboardingOffset();
     if (opts.notify !== false && this._handlers.onCollapseChange) {
       try { this._handlers.onCollapseChange(this._collapsed); } catch { /* ignore */ }
     }
@@ -171,6 +200,8 @@ export class ControlStrip {
 
   cleanup() {
     this._unbindOnboardingWatch();
+    this._unbindDrag();
+    this._unbindSettingsSync();
     try {
       if (this._statusBtn) this._statusBtn.removeEventListener('click', this._onStatusClick);
       if (this._keyboardBtn) this._keyboardBtn.removeEventListener('click', this._onKeyboardClick);
@@ -186,6 +217,7 @@ export class ControlStrip {
     this._statusBtn = null;
     this._statusDot = null;
     this._statusLabel = null;
+    this._moveBtn = null;
     this._keyboardBtn = null;
     this._settingsBtn = null;
     this._collapseBtn = null;
@@ -193,7 +225,11 @@ export class ControlStrip {
   }
 
   _ensure() {
-    if (this.root && this.root.isConnected) return;
+    if (this.root && this.root.isConnected) {
+      this._ensureMoveHandle();
+      this._bindDrag();
+      return;
+    }
 
     // If early-inject created the shell at document_start, adopt it to avoid flicker.
     try {
@@ -223,10 +259,13 @@ export class ControlStrip {
           this._collapseBtn = collapseBtn;
           this._closeBtn = closeBtn;
 
+          this._ensureMoveHandle();
           this._bindButtonHandlers();
           this._renderStatus();
           this._renderKeyboard();
           this._applyCollapsedLayout();
+          this._bindDrag();
+          this._applyPanelPositionNow();
           return;
         }
       }
@@ -316,6 +355,8 @@ export class ControlStrip {
       flex: '0 0 auto'
     });
 
+    const moveBtn = this._createMoveHandleButton();
+
     const keyboardBtn = this._createSegmentButton({
       ariaLabel: 'Toggle keyboard reference',
       title: 'Keyboard reference',
@@ -332,6 +373,7 @@ export class ControlStrip {
     });
     settingsBtn.setAttribute('data-kp-control-strip-settings', 'true');
 
+    modules.appendChild(moveBtn);
     modules.appendChild(keyboardBtn);
     modules.appendChild(settingsBtn);
 
@@ -366,6 +408,7 @@ export class ControlStrip {
     this._statusBtn = statusBtn;
     this._statusDot = statusDot;
     this._statusLabel = statusLabel;
+    this._moveBtn = moveBtn;
     this._keyboardBtn = keyboardBtn;
     this._settingsBtn = settingsBtn;
     this._collapseBtn = collapseBtn;
@@ -375,6 +418,185 @@ export class ControlStrip {
     this._renderStatus();
     this._renderKeyboard();
     this._applyCollapsedLayout();
+    this._bindDrag();
+    this._applyPanelPositionNow();
+  }
+
+  /**
+   * Drag grip shown only when the strip is expanded.
+   * @returns {HTMLElement}
+   */
+  _createMoveHandleButton() {
+    const btn = this._createSegmentButton({
+      ariaLabel: 'Move control strip',
+      title: 'Drag to move',
+      text: '⠿',
+      compact: true
+    });
+    btn.setAttribute('data-kp-control-strip-move', 'true');
+    try {
+      btn.style.cursor = 'grab';
+      btn.style.touchAction = 'none';
+      btn.style.letterSpacing = '0';
+      btn.style.fontSize = '12px';
+      btn.style.opacity = '0.85';
+    } catch { /* ignore */ }
+    // Prevent accidental click activation — drag handle only.
+    btn.addEventListener('click', (e) => {
+      try { e.preventDefault(); e.stopPropagation(); } catch { /* ignore */ }
+    });
+    return btn;
+  }
+
+  /**
+   * Ensure early-inject shells gain a move handle without rebuilding the strip.
+   */
+  _ensureMoveHandle() {
+    if (!this.root || !this._modulesEl) return;
+    let moveBtn = this.root.querySelector('[data-kp-control-strip-move="true"]');
+    if (!moveBtn) {
+      moveBtn = this._createMoveHandleButton();
+      try {
+        this._modulesEl.insertBefore(moveBtn, this._modulesEl.firstChild);
+      } catch {
+        try { this._modulesEl.appendChild(moveBtn); } catch { /* ignore */ }
+      }
+    }
+    this._moveBtn = moveBtn;
+  }
+
+  _applyPanelPositionNow() {
+    if (!this.root) return;
+    try {
+      applyPanelPosition(this.root, this._panelPosition, {
+        margin: STRIP_POSITION_MARGIN_PX,
+        defaultAnchor: 'top-left'
+      });
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * @param {import('../modules/settings-manager.js').PanelPositionSettings|null|undefined} next
+   * @param {{ persist?: boolean }} [opts]
+   */
+  _setPanelPosition(next, opts = {}) {
+    const normalized = normalizePanelPositionState(
+      next,
+      DEFAULT_SETTINGS.panelPositions.controlStrip
+    ) || { ...DEFAULT_SETTINGS.panelPositions.controlStrip };
+    this._panelPosition = {
+      left: normalized.left,
+      top: normalized.top,
+      anchor: normalized.anchor === undefined ? null : normalized.anchor
+    };
+    this._applyPanelPositionNow();
+    this._syncOnboardingOffset();
+    if (opts.persist && !this._suppressPositionPersist) {
+      this._persistPanelPosition(this._panelPosition);
+    }
+  }
+
+  async _refreshPanelPosition() {
+    try {
+      const settings = await getSettings();
+      const stored = settings?.panelPositions?.controlStrip;
+      this._suppressPositionPersist = true;
+      this._setPanelPosition(stored, { persist: false });
+      this._suppressPositionPersist = false;
+    } catch {
+      this._suppressPositionPersist = false;
+    }
+  }
+
+  /**
+   * @param {import('../modules/settings-manager.js').PanelPositionSettings} position
+   */
+  async _persistPanelPosition(position) {
+    try {
+      await setSettings({
+        panelPositions: {
+          controlStrip: {
+            left: position.left,
+            top: position.top,
+            anchor: position.anchor === undefined ? null : position.anchor
+          }
+        }
+      });
+    } catch { /* ignore */ }
+  }
+
+  _bindDrag() {
+    if (!this.root || !this._moveBtn) return;
+    // Only draggable while expanded (move icon visible).
+    if (this._collapsed) {
+      this._unbindDrag();
+      return;
+    }
+    if (this._dragBound) return;
+    try {
+      const api = makePanelDraggable(this.root, this._moveBtn, {
+        margin: STRIP_POSITION_MARGIN_PX,
+        // Keep width/height content-driven so expand/collapse still works.
+        pinWidth: false,
+        pinHeight: false,
+        onMove: () => {
+          this._syncOnboardingOffset();
+        },
+        onMoveEnd: (state) => {
+          if (!state?.moved) return;
+          this._setPanelPosition(
+            {
+              left: state.left,
+              top: state.top,
+              anchor: state.anchor
+            },
+            { persist: true }
+          );
+        }
+      });
+      this._dragDispose = api?.dispose || null;
+      this._dragBound = true;
+    } catch (err) {
+      console.warn('[KeyPilot] Failed to make control strip draggable:', err?.message || err);
+      this._dragDispose = null;
+      this._dragBound = false;
+    }
+  }
+
+  _unbindDrag() {
+    try { this._dragDispose?.(); } catch { /* ignore */ }
+    this._dragDispose = null;
+    this._dragBound = false;
+  }
+
+  _bindSettingsSync() {
+    if (this._settingsBound) return;
+    try {
+      if (chrome?.storage?.onChanged?.addListener) {
+        chrome.storage.onChanged.addListener(this._onStorageChanged);
+        this._settingsBound = true;
+      }
+    } catch { /* ignore */ }
+  }
+
+  _unbindSettingsSync() {
+    if (!this._settingsBound) return;
+    try { chrome?.storage?.onChanged?.removeListener?.(this._onStorageChanged); } catch { /* ignore */ }
+    this._settingsBound = false;
+  }
+
+  _onStorageChanged(changes, area) {
+    try {
+      if (area !== 'sync' && area !== 'local') return;
+      const entry = changes && changes[SETTINGS_STORAGE_KEY];
+      if (!entry || !entry.newValue) return;
+      const nextPos = entry.newValue.panelPositions?.controlStrip;
+      if (nextPos && typeof nextPos === 'object') {
+        this._suppressPositionPersist = true;
+        this._setPanelPosition(nextPos, { persist: false });
+        this._suppressPositionPersist = false;
+      }
+    } catch { /* ignore */ }
   }
 
   /**
@@ -549,6 +771,9 @@ export class ControlStrip {
     if (this._modulesEl) {
       this._modulesEl.style.display = collapsed ? 'none' : 'flex';
     }
+    if (this._moveBtn) {
+      this._moveBtn.style.display = collapsed ? 'none' : 'inline-flex';
+    }
     if (this._closeBtn) {
       this._closeBtn.style.display = collapsed ? 'none' : 'inline-flex';
     }
@@ -662,15 +887,11 @@ export class ControlStrip {
   }
 
   /**
-   * Keep the control strip pinned at the top-left.
-   * The walkthrough panel positions itself *below* the strip (not the reverse).
+   * Reposition the walkthrough relative to the strip.
+   * Does not force the strip back to the default top-left — user position is preserved.
    */
   _syncOnboardingOffset() {
     if (!this.root) return;
-    try {
-      this.root.style.top = `${DEFAULT_TOP_PX}px`;
-    } catch { /* ignore */ }
-    // Reposition walkthrough under this strip so both stay usable.
     try {
       const panel = document.querySelector('.kp-onboarding-panel');
       if (panel && panel.isConnected) {
@@ -722,6 +943,8 @@ export class ControlStrip {
   }
 
   _onWinResize() {
+    // Re-resolve anchors / reclamp free positions when the viewport changes.
+    this._applyPanelPositionNow();
     this._syncOnboardingOffset();
   }
 }
