@@ -367,6 +367,151 @@ export class ActivationHandler {
   }
 
   /**
+   * Closest slider / range host for a hit target (time scrubber, volume, etc.).
+   * Used to scope synthetic drag-end events to one control.
+   * @param {EventTarget|null|undefined} originTarget
+   * @returns {Element|null}
+   */
+  resolveSliderRoot(originTarget) {
+    try {
+      const el = /** @type {Element|null} */ (
+        originTarget && /** @type {any} */ (originTarget).nodeType === 1
+          ? originTarget
+          : null
+      );
+      if (!el) return null;
+      if (typeof el.closest === 'function') {
+        const root = el.closest(
+          '[role="slider"], input[type="range"], [data-media-time-slider], .vds-slider, .vds-time-slider'
+        );
+        if (root) return root;
+      }
+      return el;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * True when this control is a volume / non-timeline slider.
+   * Volume must not trigger media.currentTime seeks or full-page drag teardown.
+   * @param {Element|null|undefined} el
+   * @returns {boolean}
+   */
+  isVolumeOrNonSeekSlider(el) {
+    if (!el || el.nodeType !== 1) return false;
+    try {
+      const label = `${el.getAttribute('aria-label') || ''} ${el.getAttribute('aria-valuetext') || ''}`.toLowerCase();
+      if (/\b(volume|mute|sound|loudness|gain)\b/.test(label)) return true;
+      // data-media-volume-slider / class tokens used by Vidstack and common players
+      try {
+        if (el.hasAttribute('data-media-volume-slider')) return true;
+      } catch { /* ignore */ }
+      const cls = String(/** @type {any} */ (el).className || '').toLowerCase();
+      if (/\b(volume|mute)[-_]?slider\b|\bvolume-?control\b|\bvds-volume\b/.test(cls)) return true;
+      // Nested under a mute/volume control chrome
+      if (typeof el.closest === 'function') {
+        const host = el.closest(
+          '[aria-label*="volume" i], [aria-label*="mute" i], [data-media-volume-slider], .vds-volume-slider'
+        );
+        if (host) return true;
+      }
+    } catch { /* ignore */ }
+    return false;
+  }
+
+  /**
+   * Force-end a synthetic pointer drag on ONE slider tree only.
+   *
+   * Media scrubbers (Vidstack/vds-slider, custom React players like Suno) call
+   * `setPointerCapture` on pointerdown and keep seeking until the captured
+   * pointerup. Synthetic events cannot capture a real pointer id
+   * (`NotFoundError: No active pointer…`), so the initial element-level up in
+   * `dispatchClickSequence` often leaves `data-dragging` / isSeeking true and
+   * the knob sticks to the real mouse.
+   *
+   * We re-fire pointerup/mouseup/pointercancel on the activated slider subtree
+   * after React commits drag-start. We intentionally do NOT dispatch on
+   * document/window — that can end (or drive) other sliders in the same player
+   * (e.g. volume drag affecting the time scrubber).
+   *
+   * @param {number} clientX
+   * @param {number} clientY
+   * @param {number} [pointerId=1] Must match the id used in dispatchClickSequence.
+   * @param {EventTarget|null} [originTarget] Element that received the down.
+   */
+  endSyntheticPointerDrag(clientX, clientY, pointerId = 1, originTarget = null) {
+    const x = Number.isFinite(clientX) ? clientX : 0;
+    const y = Number.isFinite(clientY) ? clientY : 0;
+    const id = Number.isFinite(pointerId) ? pointerId : 1;
+    const sliderRoot = this.resolveSliderRoot(originTarget);
+
+    const upCommon = {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      view: window,
+      clientX: x,
+      clientY: y,
+      button: 0,
+      buttons: 0
+    };
+    const pUp = {
+      ...upCommon,
+      pointerId: id,
+      pointerType: 'mouse',
+      isPrimary: true
+    };
+
+    const hasPointer = typeof window.PointerEvent === 'function';
+    /** @type {Set<EventTarget>} */
+    const targets = new Set();
+
+    // Hit target + ancestors up through the slider root (only this control).
+    try {
+      let n = originTarget && /** @type {any} */ (originTarget).nodeType === 1
+        ? /** @type {Element} */ (originTarget)
+        : null;
+      let depth = 0;
+      while (n && n.nodeType === 1 && depth < 12) {
+        targets.add(n);
+        if (sliderRoot && n === sliderRoot) break;
+        // Stop before leaving the slider into shared player chrome.
+        if (!sliderRoot && (n.parentElement === document.body || n === document.documentElement)) break;
+        n = n.parentElement;
+        depth++;
+      }
+    } catch { /* ignore */ }
+
+    if (sliderRoot) targets.add(sliderRoot);
+    if (originTarget) targets.add(originTarget);
+
+    for (const t of targets) {
+      if (!t || typeof t.dispatchEvent !== 'function') continue;
+      if (hasPointer) {
+        try { t.dispatchEvent(new PointerEvent('pointerup', pUp)); } catch { /* ignore */ }
+        try { t.dispatchEvent(new PointerEvent('pointercancel', pUp)); } catch { /* ignore */ }
+      } else {
+        try { t.dispatchEvent(new MouseEvent('pointerup', upCommon)); } catch { /* ignore */ }
+        try { t.dispatchEvent(new MouseEvent('pointercancel', upCommon)); } catch { /* ignore */ }
+      }
+      try { t.dispatchEvent(new MouseEvent('mouseup', upCommon)); } catch { /* ignore */ }
+    }
+
+    // Best-effort release only inside this slider tree.
+    try {
+      for (const t of targets) {
+        if (!t || typeof /** @type {any} */ (t).hasPointerCapture !== 'function') continue;
+        try {
+          if (/** @type {any} */ (t).hasPointerCapture(id)) {
+            /** @type {any} */ (t).releasePointerCapture(id);
+          }
+        } catch { /* ignore */ }
+      }
+    } catch { /* ignore */ }
+  }
+
+  /**
    * Pointer/mouse down+up at coordinates.
    * Custom media scrubbers listen for this (not for programmatic range.value).
    * mouseup is required on some players to commit the seek.
@@ -383,6 +528,28 @@ export class ActivationHandler {
     })();
     // Full pointer+mouse sequence including mouseup (commit) at the seek point.
     this.dispatchClickSequence(target, clientX, clientYSafe);
+
+    // Force drag-end on THIS slider AFTER the player's drag-start state commits.
+    //
+    // Why deferred:
+    // - Synthetic pointerdown cannot setPointerCapture (no real OS pointer id).
+    // - Players often arm `data-dragging` via React state that flushes after the
+    //   event handler returns; a synchronous up races that commit and loses.
+    // Microtask + macrotask cover React batching and setTimeout-armed handlers.
+    // Events stay scoped to the slider tree (not document) so volume/time stay independent.
+    const endDrag = () => {
+      try {
+        this.endSyntheticPointerDrag(clientX, clientYSafe, 1, target);
+      } catch { /* ignore */ }
+    };
+    try {
+      queueMicrotask(endDrag);
+    } catch {
+      endDrag();
+    }
+    try {
+      setTimeout(endDrag, 0);
+    } catch { /* ignore */ }
   }
 
   /**
@@ -501,16 +668,28 @@ export class ActivationHandler {
   /**
    * Soft fallback: set media.currentTime from cursor position along the track.
    * Used after pointer seek for custom players that update the knob but not media.
+   * Never runs for volume / non-timeline sliders (would scrub the video when adjusting volume).
    */
   maybeSeekAssociatedMedia(trackEl, clientX, clientY, rangeEl = null) {
     try {
       if (!trackEl || !Number.isFinite(clientX)) return;
+      if (this.isVolumeOrNonSeekSlider(trackEl) || this.isVolumeOrNonSeekSlider(rangeEl)) return;
+      // Also ignore when the resolved slider root is clearly volume chrome.
+      try {
+        const root = this.resolveSliderRoot(trackEl);
+        if (root && this.isVolumeOrNonSeekSlider(root)) return;
+      } catch { /* ignore */ }
+
       const media = this.findAssociatedMedia(trackEl, rangeEl);
       if (!media || !Number.isFinite(media.duration) || media.duration <= 0) return;
 
       const metricsEl = this.getSeekContainmentRoot(trackEl) || trackEl;
       const rect = metricsEl.getBoundingClientRect();
       if (!rect || rect.width <= 0) return;
+
+      // Volume/popover sliders are short; timeline scrubbers span most of the player width.
+      // Guard against mapping a narrow control's X onto media duration.
+      if (rect.width < 120) return;
 
       const pct = this.clamp((clientX - rect.left) / rect.width, 0, 1);
       const targetTime = pct * media.duration;
@@ -529,7 +708,7 @@ export class ActivationHandler {
     if (!track) return false;
     const pointTarget = this.resolveSeekPointTarget(track, clientX, clientY);
     this.dispatchPointerSeek(pointTarget, clientX, clientY);
-    // Soft media sync after pointer commit (custom React players).
+    // Soft media sync after pointer commit (timeline scrubbers only).
     this.maybeSeekAssociatedMedia(track, clientX, clientY, rangeEl);
     return true;
   }
@@ -614,8 +793,13 @@ export class ActivationHandler {
 
     const seekRoot = trackHint && trackHint !== target ? trackHint : target;
     const pointTarget = this.resolveSeekPointTarget(seekRoot, clientX, clientY);
-    this.dispatchPointerSeek(pointTarget, clientX, clientY);
-    this.maybeSeekAssociatedMedia(seekRoot, clientX, clientY, null);
+    // Prefer the semantic slider root so drag-end stays on this control (volume vs time).
+    const sequenceTarget = pointTarget || target;
+    this.dispatchPointerSeek(sequenceTarget, clientX, clientY);
+    // Timeline only — never map volume X onto video.currentTime.
+    if (!this.isVolumeOrNonSeekSlider(target) && !this.isVolumeOrNonSeekSlider(seekRoot)) {
+      this.maybeSeekAssociatedMedia(seekRoot, clientX, clientY, null);
+    }
     return true;
   }
 
