@@ -1,7 +1,7 @@
 import { CURSOR_MODE } from '../src/config/constants.js';
 import { normalizeKeyboardLayoutId } from '../src/config/keyboard-layouts.js';
 import { SEARCH_ENGINE_META } from '../src/config/search-engines.js';
-import { CLICK_EFFECT_IDS, DEFAULT_SETTINGS, getSettings, normalizeCursorMode, normalizeFocusColor, normalizeSearchEngine, setSettings, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
+import { CLICK_EFFECT_IDS, DEFAULT_SETTINGS, getSettings, normalizeCursorMode, normalizeFocusColor, normalizeSearchEngine, normalizeTextFocusStyle, setSettings, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
 import { GENERIC_FAVICON_DATA_URL, getExtensionFaviconUrl } from '../src/ui/url-listing.js';
 import { startKeyPilotOnPage } from './keypilot-page-init.js';
 import { CursorManager } from '../src/modules/cursor.js';
@@ -267,6 +267,7 @@ async function render() {
   const textCursorType = /** @type {HTMLSelectElement|null} */ (document.getElementById('text-cursor-type'));
   const textCursorPreview = document.getElementById('text-cursor-preview');
   const textCursorResetBtn = document.getElementById('text-cursor-reset');
+  const textFocusStyleRadios = /** @type {HTMLInputElement[]} */ (Array.from(document.querySelectorAll('input[name="text-focus-style"]')));
   const textLabelsEnabled = /** @type {HTMLInputElement|null} */ (document.getElementById('text-labels-enabled'));
   const textStrokeThicknessRange = /** @type {HTMLInputElement|null} */ (document.getElementById('text-stroke-thickness-range'));
   const textStrokeThicknessNumber = /** @type {HTMLInputElement|null} */ (document.getElementById('text-stroke-thickness-number'));
@@ -392,6 +393,11 @@ async function render() {
     if (textLabelsEnabled) textLabelsEnabled.checked = !!tm?.labelsEnabled;
     setInputValue(textStrokeThicknessRange, tm?.strokeThickness ?? DEFAULT_SETTINGS.textMode.strokeThickness);
     setInputValue(textStrokeThicknessNumber, tm?.strokeThickness ?? DEFAULT_SETTINGS.textMode.strokeThickness);
+
+    const focusStyle = normalizeTextFocusStyle(tm?.focusStyle ?? DEFAULT_SETTINGS.textMode.focusStyle);
+    textFocusStyleRadios.forEach((r) => {
+      r.checked = r.value === focusStyle;
+    });
 
     const type = tm?.cursorType ?? DEFAULT_SETTINGS.textMode.cursorType;
     if (type === 'crosshair') {
@@ -586,6 +592,16 @@ async function render() {
   textLabelsEnabled?.addEventListener('change', async () => {
     await setSettings({ textMode: { labelsEnabled: !!textLabelsEnabled.checked } });
   }, true);
+
+  textFocusStyleRadios.forEach((r) => {
+    r.addEventListener('change', async () => {
+      if (!r.checked) return;
+      const focusStyle = normalizeTextFocusStyle(r.value);
+      await setSettings({ textMode: { focusStyle } });
+      const s = await getSettings();
+      applyTextMode(s.textMode);
+    }, true);
+  });
 
   const commitTextStrokeThickness = async (v) => {
     const n = clampNumber(v, 1, 16);

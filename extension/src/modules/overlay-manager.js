@@ -32,6 +32,20 @@ function previewHostFromUrl(url) {
   }
 }
 
+/**
+ * Link Preview iframes generally require HTTPS. Prefer https when the URL is plain http.
+ * @param {string} url
+ * @returns {string}
+ */
+function preferHttpsForPreview(url) {
+  const s = String(url || '').trim();
+  if (!s) return s;
+  if (/^http:\/\//i.test(s)) {
+    return `https://${s.slice('http://'.length)}`;
+  }
+  return s;
+}
+
 export class OverlayManager {
   constructor() {
     // Rendering mode configuration: 'dom' | 'canvas' | 'css-custom-props'
@@ -107,8 +121,10 @@ export class OverlayManager {
     // Text focus styling (we style the focused input + nearby wrapper parents directly).
     this._textFocusCurrentElement = null;
     this._textFocusStyledElements = new Set();
+    /** @type {'left_edge'|'background_tint'|null} */
+    this._textFocusAppliedStyle = null;
 
-    // Text input hover styling (we tint hovered inputs instead of drawing orange frames).
+    // Text input hover styling (SVG "Press F…" hint on hovered fields; outline is separate).
     this._textHoverCurrentElement = null;
     this._textHoverStyledElements = new Set();
 
@@ -515,6 +531,15 @@ export class OverlayManager {
       clickMode: s.clickMode && typeof s.clickMode === 'object' ? s.clickMode : null,
       textMode: s.textMode && typeof s.textMode === 'object' ? s.textMode : null
     };
+
+    // If a text field is currently styled, re-apply so focusStyle changes take effect live.
+    try {
+      const focused = this._textFocusCurrentElement;
+      if (focused && focused.isConnected) {
+        this._textFocusCurrentElement = null;
+        this._applyTextFocusElementStyling(focused);
+      }
+    } catch { /* ignore */ }
   }
 
   _getClickModeSettings() {
@@ -554,7 +579,12 @@ export class OverlayManager {
       : DEFAULT_SETTINGS.textMode;
     const strokeThickness = Number(tm.strokeThickness);
     const thickness = Number.isFinite(strokeThickness) ? Math.min(Math.max(strokeThickness, 1), 16) : 3;
-    return { strokeThickness: thickness, labelsEnabled: tm.labelsEnabled };
+    const focusStyle = tm.focusStyle === 'background_tint' ? 'background_tint' : 'left_edge';
+    return {
+      strokeThickness: thickness,
+      labelsEnabled: tm.labelsEnabled,
+      focusStyle
+    };
   }
 
   setHoverClickLabelText(text) {
@@ -690,6 +720,7 @@ export class OverlayManager {
   _clearTextFocusElementStyling() {
     if (!this._textFocusStyledElements || this._textFocusStyledElements.size === 0) {
       this._textFocusCurrentElement = null;
+      this._textFocusAppliedStyle = null;
       return;
     }
     try {
@@ -698,11 +729,13 @@ export class OverlayManager {
         try {
           el.classList.remove(CSS_CLASSES.TEXT_FOCUS_INPUT);
           el.classList.remove(CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT);
+          el.classList.remove(CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE);
         } catch { /* ignore */ }
       }
     } finally {
       this._textFocusStyledElements.clear();
       this._textFocusCurrentElement = null;
+      this._textFocusAppliedStyle = null;
     }
   }
 
@@ -777,28 +810,44 @@ export class OverlayManager {
       return;
     }
 
-    // Avoid thrashing the DOM on RAF-driven overlay refreshes.
-    if (this._textFocusCurrentElement === inputEl && this._textFocusStyledElements.size > 0) {
-      try { inputEl.classList.add(CSS_CLASSES.TEXT_FOCUS_INPUT); } catch { /* ignore */ }
+    const { focusStyle } = this._getTextModeSettings();
+    const useLeftEdge = focusStyle !== 'background_tint';
+
+    // Avoid thrashing the DOM on RAF-driven overlay refreshes when style is unchanged.
+    if (
+      this._textFocusCurrentElement === inputEl &&
+      this._textFocusStyledElements.size > 0 &&
+      this._textFocusAppliedStyle === focusStyle
+    ) {
+      try {
+        inputEl.classList.add(CSS_CLASSES.TEXT_FOCUS_INPUT);
+        if (useLeftEdge) inputEl.classList.add(CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE);
+        else inputEl.classList.remove(CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE);
+      } catch { /* ignore */ }
       return;
     }
 
     this._clearTextFocusElementStyling();
     this._textFocusCurrentElement = inputEl;
+    this._textFocusAppliedStyle = focusStyle;
 
     try {
       this._ensureStylesForElement(inputEl);
       inputEl.classList.add(CSS_CLASSES.TEXT_FOCUS_INPUT);
+      if (useLeftEdge) inputEl.classList.add(CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE);
       this._textFocusStyledElements.add(inputEl);
     } catch { /* ignore */ }
 
-    const parents = this._getNearbyInputWrappers(inputEl);
-    for (const p of parents) {
-      try {
-        this._ensureStylesForElement(p);
-        p.classList.add(CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT);
-        this._textFocusStyledElements.add(p);
-      } catch { /* ignore */ }
+    // Background-tint style can wash nearby rounded wrappers; left-edge only paints the field.
+    if (!useLeftEdge) {
+      const parents = this._getNearbyInputWrappers(inputEl);
+      for (const p of parents) {
+        try {
+          this._ensureStylesForElement(p);
+          p.classList.add(CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT);
+          this._textFocusStyledElements.add(p);
+        } catch { /* ignore */ }
+      }
     }
   }
 
@@ -982,20 +1031,19 @@ export class OverlayManager {
       this._lastFocusRect = null;
     }
 
-    // Text inputs should NOT get a ring/frame on hover. Instead, tint background.
-    // This applies regardless of rendering mode (canvas/dom/css-props) and also in DOM-hover styling mode.
+    // Text inputs: show orange outline AND paint the SVG "Press F to select…" hint.
+    // (Do not return early — fall through so the focus rectangle still draws.)
     try {
       const isTextInput = element && element.matches && element.matches(SELECTORS.FOCUSABLE_TEXT);
       if (isTextInput) {
-        // Clear any previous non-text focus visuals (rectangles / rings).
-        try { this.hideFocusOverlay(); } catch { /* ignore */ }
         this._applyTextHoverElementStyling(element);
-        return;
+      } else {
+        // Non-text elements: ensure we remove any lingering hover hint styling.
+        this._clearTextHoverElementStyling();
       }
-    } catch { /* ignore */ }
-
-    // Non-text elements: ensure we remove any lingering hover tint.
-    this._clearTextHoverElementStyling();
+    } catch {
+      try { this._clearTextHoverElementStyling(); } catch { /* ignore */ }
+    }
 
     // When DOM hover mode is enabled, style the element directly (fast path).
     // Clipped contexts use inset rings (negative outline-offset) — not a fixed
@@ -4097,6 +4145,45 @@ export class OverlayManager {
     }
   }
 
+  /**
+   * Move focus out of the popover (esp. its iframe) before the node is removed.
+   * Otherwise Chrome often hands focus to the browser omnibox, which steals keys
+   * from the page (notably on New Tab after a second E closes Link Preview).
+   */
+  _restoreFocusFromPopover() {
+    const iframe = this.popoverIframeElement;
+    const container = this.popoverContainer;
+    if (!iframe && !container) return;
+
+    let active = null;
+    try { active = document.activeElement; } catch { /* ignore */ }
+
+    const focusInPopover =
+      !!(iframe && active === iframe) ||
+      !!(container && active instanceof Node && container.contains(active));
+
+    // Always try to leave the iframe before removal; focus-in-iframe is the
+    // main omnibox-steal case even when activeElement reporting is odd.
+    try { iframe?.blur?.(); } catch { /* ignore */ }
+    if (focusInPopover) {
+      try { active?.blur?.(); } catch { /* ignore */ }
+    }
+
+    try { window.focus(); } catch { /* ignore */ }
+
+    // Park focus on a surviving element. Prefer body (make it programmatically
+    // focusable) so the page keeps keyboard ownership after teardown.
+    try {
+      const body = document.body;
+      if (body) {
+        if (!body.hasAttribute('tabindex')) {
+          body.setAttribute('tabindex', '-1');
+        }
+        body.focus({ preventScroll: true });
+      }
+    } catch { /* ignore */ }
+  }
+
   hidePopover() {
     // Drop mobile UA session rule so host-page iframes are not affected after close.
     if (this._previewMobileUaActive) {
@@ -4105,6 +4192,9 @@ export class OverlayManager {
         void this._setPreviewMobileUa(false);
       } catch { /* ignore */ }
     }
+
+    // Capture focus back onto the page *before* removing a focused iframe.
+    try { this._restoreFocusFromPopover(); } catch { /* ignore */ }
 
     // Stop bridge init retries
     if (this.popoverInitTimer) {
@@ -4202,6 +4292,14 @@ export class OverlayManager {
 
     this._isPreviewPopover = false;
 
+    // After DOM teardown, re-assert page focus (container may have held it).
+    try {
+      window.focus();
+      if (document.body && document.activeElement !== document.body) {
+        document.body.focus({ preventScroll: true });
+      }
+    } catch { /* ignore */ }
+
     // Restore body scroll (only needed for regular popover, but doesn't hurt)
     document.body.style.overflow = '';
   }
@@ -4269,6 +4367,9 @@ export class OverlayManager {
   async showPreviewPopover(url, opts = {}) {
     // Remove existing popover if any
     this.hidePopover();
+
+    // Prefer HTTPS for preview embeds (many sites refuse insecure framing / mixed content).
+    url = preferHttpsForPreview(url);
 
     const mouseX = opts.mouseX ?? window.innerWidth / 2;
     const popoverWidth = 600;

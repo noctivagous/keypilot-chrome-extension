@@ -683,6 +683,20 @@ async function renderRecentHistory() {
     const details = document.createElement('details');
     details.className = 'history-outline';
 
+    // Root domain URL for Link Preview (E) when the group is collapsed.
+    // Prefer https so preview iframes can load; derive host from the label domain.
+    let rootUrl = `https://${group.domain}/`;
+    try {
+      const first = group.items[0]?.url;
+      if (first) {
+        const u = new URL(first);
+        const host = (u.hostname || group.domain).replace(/^www\./i, '') || group.domain;
+        const port = u.port ? `:${u.port}` : '';
+        rootUrl = `https://${host}${port}/`;
+      }
+    } catch { /* keep https://domain/ fallback */ }
+    details.dataset.kpRootUrl = rootUrl;
+
     const summary = document.createElement('summary');
     summary.className = 'history-outline-summary';
 

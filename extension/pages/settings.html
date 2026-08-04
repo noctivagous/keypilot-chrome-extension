@@ -422,7 +422,7 @@
           >
             <header class="panel-header">
               <h2>Text Mode</h2>
-              <p class="panel-lead">Cursor + labels + orange text-field outlines.</p>
+              <p class="panel-lead">Cursor + focus style + labels for text fields.</p>
             </header>
 
             <div class="stack">
@@ -450,6 +450,31 @@
 
                 <div class="divider"></div>
               </div>
+
+              <h3 class="subhead">Focused text field style</h3>
+              <p class="field-hint" style="margin-top: 0;">
+                How the active text field looks while typing (text mode). Hover still shows an orange outline
+                and “Press F to select text field”.
+              </p>
+
+              <div class="radio-group" role="radiogroup" aria-label="Text field focus style">
+                <label class="radio">
+                  <input type="radio" name="text-focus-style" value="left_edge" />
+                  <span>
+                    <span class="radio-title">Left edge pulse</span>
+                    <span class="radio-sub">10px orange bar on the left, pulsing (default). “press Esc to exit” stays on the field.</span>
+                  </span>
+                </label>
+                <label class="radio">
+                  <input type="radio" name="text-focus-style" value="background_tint" />
+                  <span>
+                    <span class="radio-title">Background tint</span>
+                    <span class="radio-sub">Full orange wash over the field (previous style), plus the Esc hint.</span>
+                  </span>
+                </label>
+              </div>
+
+              <div class="divider"></div>
 
               <h3 class="subhead">Labels &amp; outlines</h3>
 

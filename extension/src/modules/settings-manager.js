@@ -23,9 +23,16 @@ export { SEARCH_ENGINE_META, DEFAULT_SEARCH_ENGINE_ID, getSearchEngineMeta };
 
 /** @typedef {'crosshair'|'native_arrow'|'native_pointer'} ClickCursorType */
 /** @typedef {'t_square'|'crosshair'} TextCursorType */
+/** @typedef {'left_edge'|'background_tint'} TextFocusStyle */
 /** @typedef {typeof CURSOR_MODE[keyof typeof CURSOR_MODE]} CursorMode */
 /** @typedef {'smooth'|'instant'} ScrollSpeed */
 /** @typedef {'flash'|'dash'|'marquee'|'scale'|'none'} ClickEffect */
+
+/** Valid text-mode focus field styles (order is settings UI preference). */
+export const TEXT_FOCUS_STYLE_IDS = Object.freeze(/** @type {const} */ ([
+  'left_edge',
+  'background_tint'
+]));
 
 /** Valid F-key click activation effects (order is settings UI preference). */
 export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
@@ -62,7 +69,8 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  * @typedef {{
  *   cursorType: TextCursorType,
  *   labelsEnabled: boolean,
- *   strokeThickness: number
+ *   strokeThickness: number,
+ *   focusStyle: TextFocusStyle
  * }} TextModeSettings
  */
 
@@ -131,7 +139,11 @@ export const DEFAULT_SETTINGS = Object.freeze({
     // When true, show both labels: "Active text field" + "Press ESC to close".
     labelsEnabled: false,
     // Stroke thickness in px for orange text-mode rectangles.
-    strokeThickness: 3
+    strokeThickness: 3,
+    // How the focused text field is styled while in text mode.
+    // left_edge: 10px pulsating orange bar on the left inset edge (default).
+    // background_tint: full-field orange wash (legacy).
+    focusStyle: 'left_edge'
   }),
   scroll: Object.freeze({
     // C / V scroll distance in pixels (default = prior 400 × 1.25).
@@ -213,6 +225,15 @@ function normalizeTextCursorType(raw) {
 
 /**
  * @param {any} raw
+ * @returns {TextFocusStyle}
+ */
+export function normalizeTextFocusStyle(raw) {
+  if (raw === 'left_edge' || raw === 'background_tint') return raw;
+  return DEFAULT_SETTINGS.textMode.focusStyle;
+}
+
+/**
+ * @param {any} raw
  * @returns {FocusColor}
  */
 export function normalizeFocusColor(raw) {
@@ -282,7 +303,8 @@ function normalizeTextMode(raw) {
       DEFAULT_SETTINGS.textMode.strokeThickness,
       1,
       16
-    )
+    ),
+    focusStyle: normalizeTextFocusStyle(stored.focusStyle)
   };
 }
 

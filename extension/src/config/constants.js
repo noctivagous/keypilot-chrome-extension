@@ -74,6 +74,8 @@ export const CSS_CLASSES = {
   ESC_EXIT_LABEL: 'kpv2-esc-exit-label',
   TEXT_FOCUS_INPUT: 'kpv2-text-focus-input',
   TEXT_FOCUS_INPUT_PARENT: 'kpv2-text-focus-input-parent',
+  /** Modifier: focused text field uses left-edge 10px pulsating bar (default style). */
+  TEXT_FOCUS_LEFT_EDGE: 'kpv2-text-focus-left-edge',
   TEXT_HOVER_INPUT: 'kpv2-text-hover-input',
   TEXT_HOVER_INPUT_PARENT: 'kpv2-text-hover-input-parent',
 

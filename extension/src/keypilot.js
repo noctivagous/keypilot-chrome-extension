@@ -797,7 +797,7 @@ export class KeyPilot extends EventManager {
   }
 
   /**
-   * Paint layout-aware "click with F to enter" / "press Esc to exit" SVG
+   * Paint layout-aware "Press F to select text field" / "press Esc to exit" SVG
    * background-images onto hovered/focused text inputs (via StyleManager CSS vars).
    */
   _applyTextInputHintLabels() {
@@ -812,7 +812,7 @@ export class KeyPilot extends EventManager {
       KB.CANCEL?.displayKey ||
       'Esc';
     this.styleManager?.setTextInputHintLabels?.({
-      hover: `click with ${activate} to enter`,
+      hover: `Press ${activate} to select text field`,
       focus: `press ${cancel} to exit`
     });
   }
@@ -4385,10 +4385,16 @@ export class KeyPilot extends EventManager {
     const { lastMouse } = currentState;
 
     // Prefer DOM-hover focusEl; fall back to elementFromPoint when nothing is hovered.
+    // Keep the raw under-cursor node so collapsed history groups (not always "clickable")
+    // can still resolve a root-domain preview URL.
+    let under = null;
+    try {
+      under = this.detector.deepElementFromPoint(lastMouse.x, lastMouse.y);
+    } catch { /* ignore */ }
+
     let target = currentState.focusEl;
     if (!target) {
-      const under = this.detector.deepElementFromPoint(lastMouse.x, lastMouse.y);
-      target = this.detector.findClickable(under);
+      target = this.detector.findClickable(under) || under;
     }
 
     // Resolve to the closest anchor (including within shadow DOM)
@@ -4450,6 +4456,24 @@ export class KeyPilot extends EventManager {
         link = hostRoleLink;
         break;
       }
+    }
+
+    // Collapsed Recent History group boxes (New Tab): no child row is hit-testable,
+    // so preview the root domain shown as the group label.
+    if (!url) {
+      try {
+        const start =
+          (under instanceof Element ? under : null) ||
+          (target instanceof Element ? target : null);
+        const outline = start?.closest?.('details.history-outline') || null;
+        if (outline && !outline.open) {
+          const rootUrl = String(outline.dataset?.kpRootUrl || '').trim();
+          if (rootUrl) {
+            url = rootUrl;
+            link = outline;
+          }
+        }
+      } catch { /* ignore */ }
     }
 
     if (!url) {

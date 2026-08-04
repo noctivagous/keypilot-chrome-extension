@@ -155,7 +155,7 @@ export class StyleManager {
     this.cursorOverridesEnabled = false;
 
     // SVG background-image hints for orange text inputs (hover / focus).
-    this._textHoverHintLabel = 'click with F to enter';
+    this._textHoverHintLabel = 'Press F to select text field';
     this._textFocusHintLabel = 'press Esc to exit';
     this._textHoverHintUri = buildTextInputHintDataUri(this._textHoverHintLabel);
     this._textFocusHintUri = buildTextInputHintDataUri(this._textFocusHintLabel);
@@ -645,6 +645,16 @@ export class StyleManager {
         50% { opacity: 1; }
         100% { opacity: 0.7; }
       }
+
+      /* Text-mode focus: 10px inset left-edge bar pulse (default focus style). */
+      @keyframes kpv2-text-left-edge-pulse {
+        0%, 100% {
+          box-shadow: inset 10px 0 0 0 ${COLORS.ORANGE_SHADOW};
+        }
+        50% {
+          box-shadow: inset 10px 0 0 0 ${COLORS.ORANGE};
+        }
+      }
       
       .${CSS_CLASSES.ACTIVE_TEXT_INPUT_FRAME} {
         position: fixed;
@@ -706,10 +716,10 @@ export class StyleManager {
         padding-left: 5pt !important;
       }
 
-      /* Text inputs: tint background instead of drawing hover/focus frames.
-         - Hover: lighter background
-         - Focused (text mode): darker background
-         Also apply a consistent text treatment: dark gray text + 1px white shadow (no blur).
+      /* Text inputs: hover / focus treatment + SVG hint labels.
+         - Hover: orange outline (via focus overlay) + SVG "Press F to select…"
+         - Focus background_tint: full orange wash + SVG "press Esc to exit"
+         - Focus left_edge (default): 10px pulsating left inset bar + Esc SVG
          Hint copy is an SVG background-image (upper-left) — not a DOM overlay. */
       .${CSS_CLASSES.TEXT_HOVER_INPUT},
       .${CSS_CLASSES.TEXT_HOVER_INPUT_PARENT},
@@ -719,30 +729,44 @@ export class StyleManager {
         text-shadow: var(--kpv2-text-input-text-shadow, 1px 1px 0 rgba(255, 255, 255, 0.95)) !important;
       }
 
-      /* Wrapper parents: color tint only (no hint image — avoid double labels). */
+      /* Wrapper parents: light hover tint only (no hint image — avoid double labels).
+         Background-tint focus parents get a stronger wash; left-edge parents stay clean. */
       .${CSS_CLASSES.TEXT_HOVER_INPUT_PARENT} {
-        background-color: var(--kpv2-text-input-hover-bg, rgba(255, 140, 0, 0.18)) !important;
+        background-color: var(--kpv2-text-input-hover-bg, rgba(255, 140, 0, 0.12)) !important;
       }
 
-      .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT} {
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT}:not(.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE}) {
         background-color: var(--kpv2-text-input-focus-bg, rgba(255, 140, 0, 0.42)) !important;
       }
 
-      /* The actual input/textarea/contenteditable: tint + SVG hint in upper-left. */
+      /* Hover: SVG hint only (outline comes from the orange focus rectangle). */
       .${CSS_CLASSES.TEXT_HOVER_INPUT} {
-        background-color: var(--kpv2-text-input-hover-bg, rgba(255, 140, 0, 0.18)) !important;
         background-image: var(--kpv2-text-hover-hint-image, none) !important;
         background-repeat: no-repeat !important;
         background-position: left 6px top 3px !important;
         background-size: auto 12px !important;
       }
 
-      .${CSS_CLASSES.TEXT_FOCUS_INPUT} {
+      /* Focus (background tint style): wash + Esc SVG. */
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT}:not(.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE}) {
         background-color: var(--kpv2-text-input-focus-bg, rgba(255, 140, 0, 0.42)) !important;
         background-image: var(--kpv2-text-focus-hint-image, none) !important;
         background-repeat: no-repeat !important;
         background-position: left 6px top 3px !important;
         background-size: auto 12px !important;
+      }
+
+      /* Focus (default left-edge style): 10px inset orange bar that pulses + Esc SVG. */
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT}.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE} {
+        padding-left: 14px !important;
+        background-color: transparent !important;
+        background-image: var(--kpv2-text-focus-hint-image, none) !important;
+        background-repeat: no-repeat !important;
+        background-position: left 16px top 3px !important;
+        background-size: auto 12px !important;
+        box-shadow: inset 10px 0 0 0 ${COLORS.ORANGE} !important;
+        animation: kpv2-text-left-edge-pulse 1.5s ease-in-out infinite !important;
+        will-change: box-shadow;
       }
 
       .${CSS_CLASSES.TEXT_HOVER_INPUT},
@@ -786,6 +810,13 @@ export class StyleManager {
         background: var(--keypilot-focus-ring-bg-color, transparent) !important;
       }
 
+      /* Keep left-edge pulse when DOM-hover also puts a ring on the focused field. */
+      .keypilot-focus-element.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE},
+      [data-kp-focus="1"].${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE} {
+        box-shadow: inset 10px 0 0 0 ${COLORS.ORANGE} !important;
+        animation: kpv2-text-left-edge-pulse 1.5s ease-in-out infinite !important;
+      }
+
       ${buildKeyPilotPrintCss()}
     `;
   }
@@ -826,7 +857,16 @@ export class StyleManager {
         padding-left: 5pt !important;
       }
 
-      /* Text inputs: same tint + SVG hint treatment inside shadow DOM */
+      @keyframes kpv2-text-left-edge-pulse {
+        0%, 100% {
+          box-shadow: inset 10px 0 0 0 ${COLORS.ORANGE_SHADOW};
+        }
+        50% {
+          box-shadow: inset 10px 0 0 0 ${COLORS.ORANGE};
+        }
+      }
+
+      /* Text inputs: same hover/focus + SVG hint treatment inside shadow DOM */
       .${CSS_CLASSES.TEXT_HOVER_INPUT},
       .${CSS_CLASSES.TEXT_HOVER_INPUT_PARENT},
       .${CSS_CLASSES.TEXT_FOCUS_INPUT},
@@ -836,27 +876,38 @@ export class StyleManager {
       }
 
       .${CSS_CLASSES.TEXT_HOVER_INPUT_PARENT} {
-        background-color: var(--kpv2-text-input-hover-bg, rgba(255, 140, 0, 0.18)) !important;
+        background-color: var(--kpv2-text-input-hover-bg, rgba(255, 140, 0, 0.12)) !important;
       }
 
-      .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT} {
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT}:not(.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE}) {
         background-color: var(--kpv2-text-input-focus-bg, rgba(255, 140, 0, 0.42)) !important;
       }
 
       .${CSS_CLASSES.TEXT_HOVER_INPUT} {
-        background-color: var(--kpv2-text-input-hover-bg, rgba(255, 140, 0, 0.18)) !important;
         background-image: var(--kpv2-text-hover-hint-image, none) !important;
         background-repeat: no-repeat !important;
         background-position: left 6px top 3px !important;
         background-size: auto 12px !important;
       }
 
-      .${CSS_CLASSES.TEXT_FOCUS_INPUT} {
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT}:not(.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE}) {
         background-color: var(--kpv2-text-input-focus-bg, rgba(255, 140, 0, 0.42)) !important;
         background-image: var(--kpv2-text-focus-hint-image, none) !important;
         background-repeat: no-repeat !important;
         background-position: left 6px top 3px !important;
         background-size: auto 12px !important;
+      }
+
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT}.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE} {
+        padding-left: 14px !important;
+        background-color: transparent !important;
+        background-image: var(--kpv2-text-focus-hint-image, none) !important;
+        background-repeat: no-repeat !important;
+        background-position: left 16px top 3px !important;
+        background-size: auto 12px !important;
+        box-shadow: inset 10px 0 0 0 ${COLORS.ORANGE} !important;
+        animation: kpv2-text-left-edge-pulse 1.5s ease-in-out infinite !important;
+        will-change: box-shadow;
       }
 
       .${CSS_CLASSES.TEXT_HOVER_INPUT},
@@ -891,6 +942,13 @@ export class StyleManager {
          Base ring rules never override the element's own background on hover. */
       .keypilot-focus-element--fill {
         background: var(--keypilot-focus-ring-bg-color, transparent) !important;
+      }
+
+      /* Keep left-edge pulse when DOM-hover also puts a ring on the focused field. */
+      .keypilot-focus-element.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE},
+      [data-kp-focus="1"].${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE} {
+        box-shadow: inset 10px 0 0 0 ${COLORS.ORANGE} !important;
+        animation: kpv2-text-left-edge-pulse 1.5s ease-in-out infinite !important;
       }
 
       ${buildKeyPilotPrintCss()}
@@ -1185,6 +1243,7 @@ export class StyleManager {
       CSS_CLASSES.HIGHLIGHT_SELECTION,
       CSS_CLASSES.TEXT_FOCUS_INPUT,
       CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT,
+      CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE,
       CSS_CLASSES.TEXT_HOVER_INPUT,
       CSS_CLASSES.TEXT_HOVER_INPUT_PARENT
     ];
