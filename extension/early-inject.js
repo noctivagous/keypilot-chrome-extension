@@ -1225,17 +1225,6 @@
           }
         },
         {
-          "id": "toggle_extension",
-          "label": "Press `Alt` + `K` to turn KeyPilot completely off. Press `Alt` + `K` again to turn it back on.",
-          "when": {
-            "type": "action",
-            "action": "toggleExtension",
-            "target": "",
-            "mode": "",
-            "change": ""
-          }
-        },
-        {
           "id": "toggle_extension_off",
           "label": "Notice the control strip above that says `ON`. Click it to turn KeyPilot completely off.",
           "when": {
@@ -1244,17 +1233,6 @@
             "target": "",
             "mode": "",
             "change": "off"
-          }
-        },
-        {
-          "id": "toggle_extension_on",
-          "label": "Click the control strip again to turn KeyPilot back on.",
-          "when": {
-            "type": "action",
-            "action": "toggleExtension",
-            "target": "",
-            "mode": "",
-            "change": "on"
           }
         }
       ],
@@ -1277,7 +1255,7 @@
         },
         {
           "id": "exit_text_mode",
-          "label": "Press `Escape` to resume normal clicking.",
+          "label": "Press `Escape` to exit the text box.",
           "when": {
             "type": "mode",
             "action": "",
@@ -1985,6 +1963,30 @@
  */
 .kp-keybindings-ui .key.kp-key-pressed {
   outline: none;
+}
+
+/*
+ * Text mode: all keys grayed out by default. Click Element (ACTIVATE / F)
+ * lights up only while the hover-click countdown is armed on a clickable.
+ */
+.kp-keybindings-ui.kp-text-mode-filter .key.kp-key-text-mode-disabled {
+  opacity: 0.34;
+  filter: grayscale(0.85) brightness(0.78);
+  pointer-events: none;
+  cursor: default;
+}
+.kp-keybindings-ui.kp-text-mode-filter .key.kp-key-text-mode-active {
+  opacity: 1;
+  filter: none;
+  z-index: 2;
+  outline: none;
+  pointer-events: auto;
+  cursor: pointer;
+  border-color: rgba(255, 140, 0, 0.75) !important;
+  box-shadow:
+    0 0 0 2px rgba(255, 140, 0, 0.35),
+    0 0 12px 2px rgba(255, 140, 0, 0.28),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14) !important;
 }
 
 /*
@@ -2848,7 +2850,37 @@
 
   // ── Slide content ───────────────────────────────────────────────────────────
 
-  function applyTaskRowVisual(row, task, done) {
+  function applyTaskRowInteractive(row, { uncheckable, onTaskRowClick }) {
+    if (!row) return;
+    try {
+      if (uncheckable) {
+        row.setAttribute('data-kp-onboarding-uncheckable', 'true');
+        row.style.cursor = 'pointer';
+        row.title = 'Click to uncheck (undo last completed step)';
+        row.setAttribute('role', 'button');
+        row.tabIndex = 0;
+      } else {
+        row.removeAttribute('data-kp-onboarding-uncheckable');
+        row.style.cursor = '';
+        row.removeAttribute('title');
+        row.removeAttribute('role');
+        row.removeAttribute('tabindex');
+      }
+    } catch { /* ignore */ }
+
+    try {
+      if (row._kpOnboardingTaskClick) {
+        row.removeEventListener('click', row._kpOnboardingTaskClick);
+        row._kpOnboardingTaskClick = null;
+      }
+    } catch { /* ignore */ }
+    if (uncheckable && typeof onTaskRowClick === 'function') {
+      row._kpOnboardingTaskClick = onTaskRowClick;
+      try { row.addEventListener('click', onTaskRowClick); } catch { /* ignore */ }
+    }
+  }
+
+  function applyTaskRowVisual(row, task, done, opts = {}) {
     if (!row) return;
     assignStyle(row, {
       background: done ? 'rgba(46, 204, 113, 0.10)' : 'rgba(255,255,255,0.04)'
@@ -2900,9 +2932,14 @@
         });
       } catch { /* ignore */ }
     }
+
+    applyTaskRowInteractive(row, {
+      uncheckable: !!(done && opts.uncheckable),
+      onTaskRowClick: opts.onTaskRowClick
+    });
   }
 
-  function createTaskRow(doc, task, done) {
+  function createTaskRow(doc, task, done, opts = {}) {
     const row = doc.createElement('div');
     row.setAttribute('data-kp-onboarding-task-id', task.id);
     assignStyle(row, {
@@ -2956,6 +2993,10 @@
 
     row.appendChild(box);
     row.appendChild(text);
+    applyTaskRowInteractive(row, {
+      uncheckable: !!(done && opts.uncheckable),
+      onTaskRowClick: opts.onTaskRowClick
+    });
     return row;
   }
 
@@ -2966,6 +3007,8 @@
    * @param {Object} params
    * @param {Array<{id:string, label?:string}>} [params.tasks]
    * @param {Set<string>|string[]} [params.completedTaskIds]
+   * @param {string|null} [params.lastCompletedTaskId]
+   * @param {(e:Event)=>void} [params.onTaskRowClick]
    * @param {string} [params.bodyText]
    * @param {boolean} [params.forceRebuild]
    * @param {boolean} [params.showTip]
@@ -2978,6 +3021,8 @@
     const completedSet = params.completedTaskIds instanceof Set
       ? params.completedTaskIds
       : new Set(Array.isArray(params.completedTaskIds) ? params.completedTaskIds.map(String) : []);
+    const lastCompletedTaskId = params.lastCompletedTaskId != null ? String(params.lastCompletedTaskId) : '';
+    const onTaskRowClick = typeof params.onTaskRowClick === 'function' ? params.onTaskRowClick : null;
     const bodyTextStr = String(params.bodyText || '').trim();
     const forceRebuild = !!params.forceRebuild;
     const showTip = params.showTip !== false;
@@ -3015,7 +3060,11 @@
 
     if (canUpdateInPlace) {
       tasks.forEach((task, i) => {
-        applyTaskRowVisual(existingRows[i], task, completedSet.has(task.id));
+        const done = completedSet.has(task.id);
+        applyTaskRowVisual(existingRows[i], task, done, {
+          uncheckable: done && task.id === lastCompletedTaskId,
+          onTaskRowClick
+        });
       });
       return;
     }
@@ -3051,7 +3100,11 @@
     });
 
     for (const task of tasks) {
-      list.appendChild(createTaskRow(doc, task, completedSet.has(task.id)));
+      const done = completedSet.has(task.id);
+      list.appendChild(createTaskRow(doc, task, done, {
+        uncheckable: done && task.id === lastCompletedTaskId,
+        onTaskRowClick
+      }));
     }
     surface.appendChild(list);
 

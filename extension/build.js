@@ -421,7 +421,8 @@ const EARLY_UI_MARKER_START = '// KP_EARLY_INJECT_UI_START';
 const EARLY_UI_MARKER_END = '// KP_EARLY_INJECT_UI_END';
 
 function parseOnboardingXmlForEarlyInject(xmlText) {
-  const xml = String(xmlText || '');
+  // Strip comments so commented-out <task> examples are not stamped into early-inject.
+  const xml = String(xmlText || '').replace(/<!--[\s\S]*?-->/g, '');
   const slides = [];
 
   // Extremely small/controlled XML file in this repo; keep parsing dependency-free.

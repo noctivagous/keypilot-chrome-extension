@@ -227,7 +227,8 @@ export class OnboardingManager {
       onRequestClose: () => this.setActive(false),
       onRequestPrev: () => this.goPrevSlide(),
       onRequestNext: () => this.goNextSlide(),
-      onRequestReset: () => this.resetTutorial()
+      onRequestReset: () => this.resetTutorial(),
+      onRequestUncheckTask: (taskId) => this.uncheckLastTask(taskId)
     });
 
     this.practicePanel = new PracticePopoverPanel({
@@ -332,6 +333,25 @@ export class OnboardingManager {
    * Clear all walkthrough progress and return to the first slide.
    * Safe to call while other task-completion persists are in flight.
    */
+  /**
+   * Undo only the most recently completed task (user clicked that checklist row).
+   * @param {string} taskId
+   */
+  uncheckLastTask(taskId) {
+    if (!this._isKeyPilotEnabled() || !this.active || this.progress.completed) return;
+    const id = String(taskId || '');
+    if (!id) return;
+    const ids = Array.isArray(this.progress.completedTaskIds)
+      ? this.progress.completedTaskIds.map(String)
+      : [];
+    if (!ids.length || ids[ids.length - 1] !== id) return;
+    this.progress.completedTaskIds = ids.slice(0, -1);
+    // Allow onEnter effects (overlay/marquee) to re-fire if undoing back into a prior slide context
+    // is not needed; only uncheck the task.
+    this._persist();
+    this._render({ reason: 'uncheck', forceRebuild: true });
+  }
+
   async resetTutorial() {
     if (!this._isKeyPilotEnabled()) return;
 
@@ -804,15 +824,18 @@ export class OnboardingManager {
     }
     if (this.active === next) {
       // Even if state hasn't changed, ensure UI is in sync (e.g., if panel visibility got out of sync)
-      this._render();
-      // If closing (next === false), ensure we persist this so other factors don't re-show it
-      if (!next) {
+      if (next) this._render();
+      else {
+        this.hideReEnableTip();
+        this.panel.hide();
+        this.practicePanel.hide();
         await this._persist();
       }
       return;
     }
     this.active = next;
     this._isTransitioning = false;
+    if (!next) this.hideReEnableTip();
     await this._persist();
     this._render();
   }
@@ -895,6 +918,12 @@ export class OnboardingManager {
       label: this._resolveTaskLabel(t)
     }));
 
+    const completedList = Array.isArray(this.progress.completedTaskIds)
+      ? this.progress.completedTaskIds.map(String)
+      : [];
+    // Only the most recently completed task may be unchecked by clicking it.
+    const lastCompletedTaskId = completedList.length ? completedList[completedList.length - 1] : null;
+
     const renderPromise = this.panel.render({
       title: slide.title || 'Welcome to KeyPilot',
       bodyText: slide.bodyText || '',
@@ -902,7 +931,10 @@ export class OnboardingManager {
       slideIndex: index,
       slideCount: total,
       tasks: tasksForUi,
-      completedTaskIds: new Set(this.progress.completedTaskIds),
+      completedTaskIds: new Set(completedList),
+      lastCompletedTaskId,
+      // Hide the Alt+/ tip on the text-box practice slide (less noise next to the practice panel).
+      showTip: slide.id !== 'text_box_mode',
       transition,
       forceRebuild
     });
@@ -981,6 +1013,7 @@ export class OnboardingManager {
         const message = String(entry.message || entry.text || '').trim();
         const primaryText = String(entry.primaryText || entry.primary || 'Got it').trim();
         const secondaryText = String(entry.secondaryText || entry.secondary || '').trim();
+        const effect = String(entry.effect || '').trim().toLowerCase();
         try {
           this.panel.showOverlay({
             title,
@@ -989,6 +1022,10 @@ export class OnboardingManager {
             secondaryText
           });
           this._emit('overlayShown', { slideId: slide?.id || null, title, message });
+          // Celebration: marquee/flash around the walkthrough chrome (e.g. "Nice — KeyPilot is back on").
+          if (effect === 'marquee' || effect === 'flash' || effect === 'dash' || effect === 'scale') {
+            try { this.panel.playBorderEffect?.(effect); } catch { /* ignore */ }
+          }
         } catch {
           // ignore
         }
@@ -1107,18 +1144,32 @@ export class OnboardingManager {
 
     const slide = this._getCurrentSlide();
     if (!slide) {
-      // Still honor hide-when-disabled even if there is no current slide.
       if (action === 'toggleExtension' && detail.enabled === false) {
         this.panel.hide();
         this.practicePanel.hide();
       }
+      if (action === 'toggleExtension' && detail.enabled === true) {
+        this.hideReEnableTip();
+        this._render({ reason: 'toggleOn' });
+      }
       return;
     }
+
+    const completedBefore = new Set(this.progress.completedTaskIds);
+    const offTaskWasOpen = (slide.tasks || []).some((t) => {
+      if (!t?.id || completedBefore.has(t.id)) return false;
+      const when = t.when || {};
+      return (
+        String(when.type || '') === 'action' &&
+        String(when.action || '') === 'toggleExtension' &&
+        String(when.change || '') === 'off'
+      );
+    });
 
     let changed = false;
     const completed = new Set(this.progress.completedTaskIds);
 
-    // Coming back from a disabled state: any pending "turn off" step is already satisfied.
+    // Coming back from disabled: any pending "turn off" step is already satisfied.
     if (action === 'toggleExtension' && detail.enabled === true) {
       for (const task of slide.tasks || []) {
         if (!task?.id || completed.has(task.id)) continue;
@@ -1147,12 +1198,28 @@ export class OnboardingManager {
       this._persist(); // best-effort
     }
 
-    // After matching "turn off", hide walkthrough chrome while KeyPilot is disabled.
-    // Task completion is recorded first so the off-step is not lost.
+    // Turned off: hide walkthrough, keep active, optional tip on the control strip.
     if (action === 'toggleExtension' && detail.enabled === false) {
       this.panel.hide();
       this.practicePanel.hide();
-      // Do not auto-advance while disabled; the "turn back on" step needs the strip click.
+      if (offTaskWasOpen) {
+        this.showReEnableTip();
+      }
+      return;
+    }
+
+    // Turned back on: drop tip and restore walkthrough (active was preserved).
+    if (action === 'toggleExtension' && detail.enabled === true) {
+      this.hideReEnableTip();
+      this._render({ reason: 'toggleOn' });
+      const slideComplete = this._isSlideComplete(slide, new Set(this.progress.completedTaskIds));
+      if (slideComplete) {
+        this._handleSlideCompleted(slide, {
+          cause: action,
+          completedTaskIds: Array.from(this.progress.completedTaskIds)
+        });
+        this._advanceSlide({ cause: action });
+      }
       return;
     }
 
@@ -1163,13 +1230,23 @@ export class OnboardingManager {
         this._handleSlideCompleted(slide, { cause: action, completedTaskIds: Array.from(completed) });
         this._advanceSlide({ cause: action });
       }
-      return;
     }
+  }
 
-    // Toggle on with no new task progress: still re-show the panel.
-    if (action === 'toggleExtension' && detail.enabled === true) {
-      this._render({ reason: 'toggleOn' });
-    }
+  showReEnableTip() {
+    try {
+      const anchor =
+        document.querySelector('.kp-control-strip [data-kp-control-strip-status="true"]') ||
+        document.querySelector('.kp-control-strip');
+      this.panel?.showReEnableTip?.({
+        anchorEl: anchor,
+        message: 'Click it again to turn KeyPilot back on.'
+      });
+    } catch { /* ignore */ }
+  }
+
+  hideReEnableTip() {
+    try { this.panel?.hideReEnableTip?.(); } catch { /* ignore */ }
   }
 
   _isSlideComplete(slide, completedTaskIdsSet) {
@@ -1278,15 +1355,10 @@ export class OnboardingManager {
 
     if (id === 'toggle_extension_off') {
       if (!enabled) {
-        return 'KeyPilot is already off (control strip shows `OFF`). This step will check off automatically — then click the strip to turn KeyPilot back on.';
+        // Panel is usually hidden while off; tip bubble carries the "click again" copy.
+        return 'KeyPilot is already off (control strip shows `OFF`). Click the strip to turn it back on — a tip points at the control if you need it.';
       }
       return base || 'Notice the control strip above that says `ON`. Click it to turn KeyPilot completely off.';
-    }
-    if (id === 'toggle_extension_on') {
-      if (!enabled) {
-        return 'Notice the control strip above that says `OFF`. Click it to turn KeyPilot back on.';
-      }
-      return base || 'Click the control strip again to turn KeyPilot back on.';
     }
     return base;
   }

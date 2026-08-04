@@ -525,7 +525,37 @@ export function setOnboardingPanelVisible(root, visible) {
 
 // ── Slide content ───────────────────────────────────────────────────────────
 
-function applyTaskRowVisual(row, task, done) {
+function applyTaskRowInteractive(row, { uncheckable, onTaskRowClick }) {
+  if (!row) return;
+  try {
+    if (uncheckable) {
+      row.setAttribute('data-kp-onboarding-uncheckable', 'true');
+      row.style.cursor = 'pointer';
+      row.title = 'Click to uncheck (undo last completed step)';
+      row.setAttribute('role', 'button');
+      row.tabIndex = 0;
+    } else {
+      row.removeAttribute('data-kp-onboarding-uncheckable');
+      row.style.cursor = '';
+      row.removeAttribute('title');
+      row.removeAttribute('role');
+      row.removeAttribute('tabindex');
+    }
+  } catch { /* ignore */ }
+
+  try {
+    if (row._kpOnboardingTaskClick) {
+      row.removeEventListener('click', row._kpOnboardingTaskClick);
+      row._kpOnboardingTaskClick = null;
+    }
+  } catch { /* ignore */ }
+  if (uncheckable && typeof onTaskRowClick === 'function') {
+    row._kpOnboardingTaskClick = onTaskRowClick;
+    try { row.addEventListener('click', onTaskRowClick); } catch { /* ignore */ }
+  }
+}
+
+function applyTaskRowVisual(row, task, done, opts = {}) {
   if (!row) return;
   assignStyle(row, {
     background: done ? 'rgba(46, 204, 113, 0.10)' : 'rgba(255,255,255,0.04)'
@@ -577,9 +607,14 @@ function applyTaskRowVisual(row, task, done) {
       });
     } catch { /* ignore */ }
   }
+
+  applyTaskRowInteractive(row, {
+    uncheckable: !!(done && opts.uncheckable),
+    onTaskRowClick: opts.onTaskRowClick
+  });
 }
 
-function createTaskRow(doc, task, done) {
+function createTaskRow(doc, task, done, opts = {}) {
   const row = doc.createElement('div');
   row.setAttribute('data-kp-onboarding-task-id', task.id);
   assignStyle(row, {
@@ -633,6 +668,10 @@ function createTaskRow(doc, task, done) {
 
   row.appendChild(box);
   row.appendChild(text);
+  applyTaskRowInteractive(row, {
+    uncheckable: !!(done && opts.uncheckable),
+    onTaskRowClick: opts.onTaskRowClick
+  });
   return row;
 }
 
@@ -643,6 +682,8 @@ function createTaskRow(doc, task, done) {
  * @param {Object} params
  * @param {Array<{id:string, label?:string}>} [params.tasks]
  * @param {Set<string>|string[]} [params.completedTaskIds]
+ * @param {string|null} [params.lastCompletedTaskId]
+ * @param {(e:Event)=>void} [params.onTaskRowClick]
  * @param {string} [params.bodyText]
  * @param {boolean} [params.forceRebuild]
  * @param {boolean} [params.showTip]
@@ -655,6 +696,8 @@ export function renderOnboardingSlideSurface(surface, params = {}) {
   const completedSet = params.completedTaskIds instanceof Set
     ? params.completedTaskIds
     : new Set(Array.isArray(params.completedTaskIds) ? params.completedTaskIds.map(String) : []);
+  const lastCompletedTaskId = params.lastCompletedTaskId != null ? String(params.lastCompletedTaskId) : '';
+  const onTaskRowClick = typeof params.onTaskRowClick === 'function' ? params.onTaskRowClick : null;
   const bodyTextStr = String(params.bodyText || '').trim();
   const forceRebuild = !!params.forceRebuild;
   const showTip = params.showTip !== false;
@@ -692,7 +735,11 @@ export function renderOnboardingSlideSurface(surface, params = {}) {
 
   if (canUpdateInPlace) {
     tasks.forEach((task, i) => {
-      applyTaskRowVisual(existingRows[i], task, completedSet.has(task.id));
+      const done = completedSet.has(task.id);
+      applyTaskRowVisual(existingRows[i], task, done, {
+        uncheckable: done && task.id === lastCompletedTaskId,
+        onTaskRowClick
+      });
     });
     return;
   }
@@ -728,7 +775,11 @@ export function renderOnboardingSlideSurface(surface, params = {}) {
   });
 
   for (const task of tasks) {
-    list.appendChild(createTaskRow(doc, task, completedSet.has(task.id)));
+    const done = completedSet.has(task.id);
+    list.appendChild(createTaskRow(doc, task, done, {
+      uncheckable: done && task.id === lastCompletedTaskId,
+      onTaskRowClick
+    }));
   }
   surface.appendChild(list);
 

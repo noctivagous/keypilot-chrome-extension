@@ -47,6 +47,11 @@ export class FloatingKeyboardHelp {
     /** @type {Set<string>} */
     this._linkHoverHintActionIds = new Set();
 
+    // Text-focus mode: all keys grayed out; ACTIVATE only lights up while the
+    // hover-click countdown is armed on a clickable under the cursor.
+    this._textModeFilterActive = false;
+    this._textModeActivateArmed = false;
+
     this._keyFeedbackEnabled = true;
     this._settingsBound = false;
     this._onStorageChanged = this._onStorageChanged.bind(this);
@@ -113,11 +118,20 @@ export class FloatingKeyboardHelp {
     this._bindSettingsSync();
     this._refreshKeyFeedbackSetting(); // async; best-effort
     this._bindKeydownFeedback();
+    // Sync text-mode filter (panel may open while a field already has focus).
+    try {
+      const mode = window.__KeyPilotInstance?.state?.getState?.()?.mode;
+      const inText = String(mode || '') === 'text_focus';
+      this.setTextModeFilter(inText || this._textModeFilterActive);
+    } catch {
+      if (this._textModeFilterActive) this._applyTextModeFilterClasses(true);
+    }
   }
 
   hide() {
     this._setRootVisible(false);
     this.setLinkHoverHints(false);
+    this.setTextModeFilter(false);
     this._unbindKeydownFeedback();
     this._unbindSettingsSync();
   }
@@ -903,6 +917,96 @@ export class FloatingKeyboardHelp {
     if (this._linkHoverHintActive) {
       this._applyLinkHoverHintClasses(true);
     }
+
+    // Re-apply text-mode filter after re-render.
+    if (this._textModeFilterActive) {
+      this._applyTextModeFilterClasses(true);
+    }
+  }
+
+  /**
+   * While a text field has focus, gray out every key.
+   * Click Element (ACTIVATE) is re-enabled only while the hover countdown is armed
+   * via setTextModeActivateArmed(true).
+   * @param {boolean} active
+   */
+  setTextModeFilter(active) {
+    const next = Boolean(active);
+    if (!next) {
+      this._textModeActivateArmed = false;
+    }
+    if (this._textModeFilterActive === next) {
+      // Still re-apply if DOM was rebuilt while state was already true.
+      if (next && this.isVisible()) this._applyTextModeFilterClasses(true);
+      return;
+    }
+
+    this._applyTextModeFilterClasses(false);
+    this._textModeFilterActive = next;
+    if (!next) this._textModeActivateArmed = false;
+
+    try {
+      const kbRoot = this.root?.querySelector?.('.kp-keybindings-ui') || this.keyboardContainer;
+      if (kbRoot) {
+        if (next) kbRoot.classList.add('kp-text-mode-filter');
+        else kbRoot.classList.remove('kp-text-mode-filter');
+      }
+    } catch { /* ignore */ }
+
+    if (next && this.isVisible()) {
+      this._applyTextModeFilterClasses(true);
+    }
+  }
+
+  /**
+   * During text mode, light up Click Element only while a clickable is under the
+   * cursor and the hover-click countdown is running.
+   * @param {boolean} armed
+   */
+  setTextModeActivateArmed(armed) {
+    const next = Boolean(armed);
+    if (!this._textModeFilterActive) {
+      this._textModeActivateArmed = false;
+      return;
+    }
+    if (this._textModeActivateArmed === next) {
+      if (next && this.isVisible()) this._applyTextModeFilterClasses(true);
+      return;
+    }
+    this._textModeActivateArmed = next;
+    if (this.isVisible()) this._applyTextModeFilterClasses(true);
+  }
+
+  /**
+   * @param {boolean} on
+   */
+  _applyTextModeFilterClasses(on) {
+    try {
+      const root = this.root;
+      if (!root) return;
+      const activateArmed = !!(on && this._textModeActivateArmed);
+      const keys = root.querySelectorAll('.key');
+      for (const el of keys) {
+        if (!el) continue;
+        el.classList.remove('kp-key-text-mode-disabled');
+        el.classList.remove('kp-key-text-mode-active');
+        if (!on) continue;
+        const actionId = el.getAttribute('data-kp-action-id') || '';
+        if (actionId === 'ACTIVATE' && activateArmed) {
+          // Hover countdown armed: Click Element is the only live key.
+          el.classList.add('kp-key-text-mode-active');
+        } else {
+          // Default text-mode look: everything grayed out, including ACTIVATE.
+          el.classList.add('kp-key-text-mode-disabled');
+        }
+      }
+
+      const kbRoot = root.querySelector?.('.kp-keybindings-ui') || this.keyboardContainer;
+      if (kbRoot) {
+        if (on) kbRoot.classList.add('kp-text-mode-filter');
+        else kbRoot.classList.remove('kp-text-mode-filter');
+      }
+    } catch { /* ignore */ }
   }
 
   /**

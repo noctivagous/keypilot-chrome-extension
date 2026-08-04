@@ -65,8 +65,8 @@ export class PracticePopoverPanel {
 
       // Default size is set in CSS below; read computed width/height for clamping.
       const rect = this.root.getBoundingClientRect();
-      const panelW = rect.width || 720;
-      const panelH = rect.height || 520;
+      const panelW = rect.width || 420;
+      const panelH = rect.height || 280;
 
       const canFitRight = desiredLeft + panelW <= w - margin;
 
@@ -342,9 +342,10 @@ export class PracticePopoverPanel {
       position: 'fixed',
       left: '392px', // will be repositioned next to onboarding
       top: '16px',
-      width: '720px', // ~2x onboarding width (360px)
+      width: '420px',
       maxWidth: 'calc(100vw - 24px)',
-      height: '520px', // ~2x a typical onboarding panel height
+      // Fit content — do not force a tall frame around the Text Boxes card.
+      height: 'auto',
       maxHeight: 'calc(100vh - 24px)',
       overflow: 'auto',
       zIndex: String((Z_INDEX.ONBOARDING_PANEL || 2147483045) - 1),

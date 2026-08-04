@@ -14,29 +14,23 @@
     <task id="keyboard_key_info" label="Notice the Keyboard Reference window below. Hover over one of its keys to see what it does.">
       <when type="action" action="hover" target="keyboardHelpKey" />
     </task>
-    <!--
-    Previous (keyboard):
-    <task id="toggle_extension" label="Press `Alt` + `K` to turn KeyPilot completely off. Press `Alt` + `K` again to turn it back on.">
-      <when type="action" action="toggleExtension" />
-    </task>
-    -->
-    <!-- Off step: auto-completes if KeyPilot is already off when this task is current. -->
+    <!-- Turn-off step: after OFF, a tip bubble points at the control strip ("click again to turn on").
+         (Former Alt+K step removed; re-enable is guided by the tip bubble, not a separate task.) -->
     <task id="toggle_extension_off" label="Notice the control strip above that says `ON`. Click it to turn KeyPilot completely off.">
       <when type="action" action="toggleExtension" change="off" />
-    </task>
-    <task id="toggle_extension_on" label="Click the control strip again to turn KeyPilot back on.">
-      <when type="action" action="toggleExtension" change="on" />
     </task>
   </slide>
 
   <slide id="text_box_mode" title="Text box mode">
     <onEnter type="overlay"
              title="Nice — KeyPilot is back on"
-             message="Next up: text boxes." />
+             message="Next up: text boxes."
+             primaryText="OK"
+             effect="marquee" />
     <task id="enter_text_mode" label="Click a text field with F and it will receive typing.">
       <when type="mode" mode="text_focus" change="enter" />
     </task>
-    <task id="exit_text_mode" label="Press `Escape` to resume normal clicking.">
+    <task id="exit_text_mode" label="Press `Escape` to exit the text box.">
       <when type="mode" mode="text_focus" change="exit" />
     </task>
   </slide>

@@ -898,6 +898,30 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
 }
 
 /*
+ * Text mode: all keys grayed out by default. Click Element (ACTIVATE / F)
+ * lights up only while the hover-click countdown is armed on a clickable.
+ */
+.${KEYBINDINGS_UI_ROOT_CLASS}.kp-text-mode-filter .key.kp-key-text-mode-disabled {
+  opacity: 0.34;
+  filter: grayscale(0.85) brightness(0.78);
+  pointer-events: none;
+  cursor: default;
+}
+.${KEYBINDINGS_UI_ROOT_CLASS}.kp-text-mode-filter .key.kp-key-text-mode-active {
+  opacity: 1;
+  filter: none;
+  z-index: 2;
+  outline: none;
+  pointer-events: auto;
+  cursor: pointer;
+  border-color: rgba(255, 140, 0, 0.75) !important;
+  box-shadow:
+    0 0 0 2px rgba(255, 140, 0, 0.35),
+    0 0 12px 2px rgba(255, 140, 0, 0.28),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14) !important;
+}
+
+/*
  * Link-hover hint: when the page pointer is over a link and the keyboard
  * reference is open, highlight the keys that activate / open that link.
  */

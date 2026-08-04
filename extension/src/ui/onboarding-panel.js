@@ -2,7 +2,7 @@
  * Floating KeyPilot onboarding walkthrough panel (content-script friendly).
  * Shell + checklist DOM live in onboarding-shared.js (shared with early-inject).
  */
-import { Z_INDEX } from '../config/constants.js';
+import { CSS_CLASSES, Z_INDEX } from '../config/constants.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
 import {
   ONBOARDING_DEFAULT_TITLE,
@@ -35,8 +35,9 @@ export class OnboardingPanel {
    * @param {() => void} [params.onRequestPrev]
    * @param {() => void} [params.onRequestNext]
    * @param {() => void} [params.onRequestReset]
+   * @param {(taskId: string) => void} [params.onRequestUncheckTask]
    */
-  constructor({ onRequestClose, onRequestPrev, onRequestNext, onRequestReset } = {}) {
+  constructor({ onRequestClose, onRequestPrev, onRequestNext, onRequestReset, onRequestUncheckTask } = {}) {
     this.root = null;
     this.body = null;
     this.slideSurface = null;
@@ -59,12 +60,23 @@ export class OnboardingPanel {
     this._onRequestPrev = typeof onRequestPrev === 'function' ? onRequestPrev : null;
     this._onRequestNext = typeof onRequestNext === 'function' ? onRequestNext : null;
     this._onRequestReset = typeof onRequestReset === 'function' ? onRequestReset : null;
+    this._onRequestUncheckTask = typeof onRequestUncheckTask === 'function' ? onRequestUncheckTask : null;
     this._onCloseClick = this._onCloseClick.bind(this);
     this._onPrevClick = this._onPrevClick.bind(this);
     this._onNextClick = this._onNextClick.bind(this);
     this._onResetClick = this._onResetClick.bind(this);
     this._onOverlayPrimary = this._onOverlayPrimary.bind(this);
     this._onOverlaySecondary = this._onOverlaySecondary.bind(this);
+    this._onTaskRowClick = this._onTaskRowClick.bind(this);
+
+    // Tip bubble under the control-strip On/Off segment (shown while KP is off
+    // after the walkthrough "turn off" step).
+    this._reEnableTipEl = null;
+    this._reEnableTipArrow = null;
+    this._reEnableTipMsg = null;
+    this._onReEnableTipOutside = this._onReEnableTipOutside.bind(this);
+    this._onReEnableTipResize = this._onReEnableTipResize.bind(this);
+    this._reEnableTipAnchor = null;
   }
 
   isVisible() {
@@ -79,6 +91,164 @@ export class OnboardingPanel {
 
   hide() {
     setOnboardingPanelVisible(this.root, false);
+  }
+
+  /**
+   * Small speech-bubble under the control strip status control.
+   * Click outside dismisses it (interrupted); status click is ignored as outside.
+   *
+   * @param {Object} [opts]
+   * @param {Element|null} [opts.anchorEl]
+   * @param {string} [opts.message]
+   */
+  showReEnableTip({
+    anchorEl = null,
+    message = 'Click the control strip again to turn KeyPilot back on.'
+  } = {}) {
+    if (window !== window.top) return;
+    this.hideReEnableTip();
+
+    const anchor =
+      anchorEl ||
+      document.querySelector('.kp-control-strip [data-kp-control-strip-status="true"]') ||
+      document.querySelector('.kp-control-strip');
+    if (!anchor || !anchor.isConnected) return;
+
+    const tip = document.createElement('div');
+    tip.setAttribute('data-kp-onboarding-reenable-tip', 'true');
+    tip.setAttribute('role', 'status');
+    Object.assign(tip.style, {
+      position: 'fixed',
+      zIndex: String((Z_INDEX.ONBOARDING_PANEL || ONBOARDING_PANEL_Z_FALLBACK) + 2),
+      maxWidth: '260px',
+      padding: '10px 12px',
+      borderRadius: '12px',
+      border: '1px solid rgba(255,255,255,0.16)',
+      background: 'rgba(18, 18, 18, 0.96)',
+      color: 'rgba(255,255,255,0.95)',
+      boxShadow: '0 10px 28px rgba(0,0,0,0.45)',
+      fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
+      fontSize: '13px',
+      fontWeight: '600',
+      lineHeight: '1.35',
+      pointerEvents: 'auto'
+    });
+
+    const arrow = document.createElement('div');
+    arrow.setAttribute('data-kp-onboarding-reenable-tip-arrow', 'true');
+    Object.assign(arrow.style, {
+      position: 'absolute',
+      width: '0',
+      height: '0',
+      borderLeft: '8px solid transparent',
+      borderRight: '8px solid transparent',
+      borderBottom: '8px solid rgba(18, 18, 18, 0.96)',
+      top: '-8px',
+      left: '20px',
+      filter: 'drop-shadow(0 -1px 0 rgba(255,255,255,0.16))'
+    });
+
+    const msg = document.createElement('div');
+    msg.textContent = String(message || '');
+    tip.appendChild(arrow);
+    tip.appendChild(msg);
+
+    try { applyPopupThemeVars(tip); } catch { /* ignore */ }
+
+    (document.body || document.documentElement).appendChild(tip);
+    this._reEnableTipEl = tip;
+    this._reEnableTipArrow = arrow;
+    this._reEnableTipMsg = msg;
+    this._reEnableTipAnchor = anchor;
+
+    this._positionReEnableTip();
+
+    // Outside click: capture phase so we see it before other handlers; skip tip + status btn.
+    try {
+      document.addEventListener('pointerdown', this._onReEnableTipOutside, true);
+      window.addEventListener('resize', this._onReEnableTipResize, true);
+      window.addEventListener('scroll', this._onReEnableTipResize, true);
+    } catch { /* ignore */ }
+  }
+
+  hideReEnableTip() {
+    try {
+      document.removeEventListener('pointerdown', this._onReEnableTipOutside, true);
+      window.removeEventListener('resize', this._onReEnableTipResize, true);
+      window.removeEventListener('scroll', this._onReEnableTipResize, true);
+    } catch { /* ignore */ }
+    try {
+      if (this._reEnableTipEl && this._reEnableTipEl.parentNode) {
+        this._reEnableTipEl.parentNode.removeChild(this._reEnableTipEl);
+      }
+    } catch { /* ignore */ }
+    this._reEnableTipEl = null;
+    this._reEnableTipArrow = null;
+    this._reEnableTipMsg = null;
+    this._reEnableTipAnchor = null;
+  }
+
+  isReEnableTipVisible() {
+    return !!(this._reEnableTipEl && this._reEnableTipEl.isConnected);
+  }
+
+  _positionReEnableTip() {
+    const tip = this._reEnableTipEl;
+    const anchor = this._reEnableTipAnchor;
+    if (!tip || !anchor || !anchor.isConnected) return;
+    try {
+      const rect = anchor.getBoundingClientRect();
+      const tipRect = tip.getBoundingClientRect();
+      const gap = 10;
+      let left = Math.round(rect.left + rect.width / 2 - Math.min(tipRect.width, 260) / 2);
+      left = Math.max(8, Math.min(left, window.innerWidth - tipRect.width - 8));
+      let top = Math.round(rect.bottom + gap);
+      // Prefer below the strip; if off-screen, flip above.
+      if (top + tipRect.height > window.innerHeight - 8) {
+        top = Math.max(8, Math.round(rect.top - tipRect.height - gap));
+        if (this._reEnableTipArrow) {
+          Object.assign(this._reEnableTipArrow.style, {
+            top: 'auto',
+            bottom: '-8px',
+            borderBottom: 'none',
+            borderTop: '8px solid rgba(18, 18, 18, 0.96)'
+          });
+        }
+      } else if (this._reEnableTipArrow) {
+        Object.assign(this._reEnableTipArrow.style, {
+          top: '-8px',
+          bottom: 'auto',
+          borderTop: 'none',
+          borderBottom: '8px solid rgba(18, 18, 18, 0.96)'
+        });
+      }
+      tip.style.left = `${left}px`;
+      tip.style.top = `${top}px`;
+
+      // Point the arrow toward the anchor center.
+      if (this._reEnableTipArrow) {
+        const arrowLeft = Math.round(rect.left + rect.width / 2 - left - 8);
+        this._reEnableTipArrow.style.left = `${Math.max(12, Math.min(arrowLeft, tipRect.width - 24))}px`;
+      }
+    } catch { /* ignore */ }
+  }
+
+  _onReEnableTipOutside(e) {
+    try {
+      const t = e?.target;
+      if (!t || !this._reEnableTipEl) return;
+      if (this._reEnableTipEl.contains(t)) return;
+      // Clicks on the status control are intentional (toggle back on) — keep tip until ON.
+      if (typeof t.closest === 'function') {
+        if (t.closest('[data-kp-control-strip-status="true"]')) return;
+        if (t.closest('[data-kp-onboarding-reenable-tip="true"]')) return;
+      }
+      this.hideReEnableTip();
+    } catch { /* ignore */ }
+  }
+
+  _onReEnableTipResize() {
+    this._positionReEnableTip();
   }
 
   /**
@@ -102,6 +272,8 @@ export class OnboardingPanel {
     slideCount,
     tasks,
     completedTaskIds,
+    lastCompletedTaskId = null,
+    showTip = true,
     transition = null,
     forceRebuild = false
   }) {
@@ -127,9 +299,11 @@ export class OnboardingPanel {
         renderOnboardingSlideSurface(targetSurface, {
           tasks,
           completedTaskIds,
+          lastCompletedTaskId,
           bodyText,
           forceRebuild,
-          showTip: true
+          showTip: showTip !== false,
+          onTaskRowClick: this._onTaskRowClick
         });
       };
 
@@ -402,6 +576,66 @@ export class OnboardingPanel {
       }
     } catch (err) {
       console.warn('[KeyPilot Onboarding] reset handler error:', err);
+    }
+  }
+
+  _onTaskRowClick(e) {
+    try {
+      e.preventDefault();
+      e.stopPropagation();
+    } catch { /* ignore */ }
+    try {
+      const row = e?.currentTarget || e?.target?.closest?.('[data-kp-onboarding-task-id]');
+      if (!row) return;
+      if (row.getAttribute('data-kp-onboarding-uncheckable') !== 'true') return;
+      const taskId = row.getAttribute('data-kp-onboarding-task-id');
+      if (!taskId || !this._onRequestUncheckTask) return;
+      this._onRequestUncheckTask(String(taskId));
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Play the F-key click border effect around the walkthrough panel (marquee/flash/etc).
+   * Uses the same CSS classes as OverlayManager so it matches user settings visuals.
+   * @param {'marquee'|'flash'|'dash'|'scale'} [effect]
+   */
+  playBorderEffect(effect = 'marquee') {
+    try {
+      this._ensure();
+      const host = this.root;
+      if (!host || !host.isConnected) return;
+      const rect = host.getBoundingClientRect();
+      if (!rect || rect.width < 2 || rect.height < 2) return;
+
+      const map = {
+        marquee: { className: CSS_CLASSES.FOCUS_MARQUEE || 'kpv2-focus-marquee', ms: 1200 },
+        flash: { className: CSS_CLASSES.FOCUS_FLASH || 'kpv2-focus-flash', ms: 500 },
+        scale: { className: CSS_CLASSES.FOCUS_PULSE || 'kpv2-focus-pulse', ms: 800 },
+        dash: { className: CSS_CLASSES.FOCUS_DASH || 'kpv2-focus-dash', ms: 1100 }
+      };
+      const kind = map[String(effect || 'marquee')] || map.marquee;
+
+      const pulse = document.createElement('div');
+      pulse.className = kind.className;
+      pulse.setAttribute('aria-hidden', 'true');
+      pulse.setAttribute('data-kp-onboarding-border-effect', String(effect || 'marquee'));
+      Object.assign(pulse.style, {
+        left: `${rect.left}px`,
+        top: `${rect.top}px`,
+        width: `${rect.width}px`,
+        height: `${rect.height}px`,
+        borderRadius: '14px',
+        zIndex: String((Z_INDEX.ONBOARDING_PANEL || ONBOARDING_PANEL_Z_FALLBACK) + 5),
+        pointerEvents: 'none'
+      });
+      (document.body || document.documentElement).appendChild(pulse);
+      window.setTimeout(() => {
+        try {
+          if (pulse.parentNode) pulse.parentNode.removeChild(pulse);
+        } catch { /* ignore */ }
+      }, kind.ms + 80);
+    } catch {
+      // ignore
     }
   }
 }

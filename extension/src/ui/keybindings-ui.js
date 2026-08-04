@@ -522,6 +522,10 @@ function attachKeyPopoverBehavior({ root, keybindings }) {
 
   const showForKeyEl = (keyEl) => {
     if (!keyEl || !keyEl.dataset?.kpActionId) return;
+    // Text mode: only Click Element stays interactive on the keyboard reference.
+    try {
+      if (keyEl.classList?.contains('kp-key-text-mode-disabled')) return;
+    } catch { /* ignore */ }
     const actionId = keyEl.dataset.kpActionId;
     const binding = keybindings && keybindings[actionId];
     if (!binding) return;

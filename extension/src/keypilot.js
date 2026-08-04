@@ -399,6 +399,8 @@ export class KeyPilot extends EventManager {
     this._textModeClickArmed = false;
     this._textModeClickArmedTarget = null;
     try { this.overlayManager?.setHoverClickLabelText?.('F clicks'); } catch { /* ignore */ }
+    // Keyboard reference: gray Click Element again until the next armed hover.
+    try { this.floatingKeyboardHelp?.setTextModeActivateArmed?.(false); } catch { /* ignore */ }
   }
 
   _armTextModeClick(target) {
@@ -408,6 +410,8 @@ export class KeyPilot extends EventManager {
 
     let remaining = 3;
     try { this.overlayManager?.setHoverClickLabelText?.(`F clicks ${remaining}`); } catch { /* ignore */ }
+    // Keyboard reference: enable Click Element for the countdown window only.
+    try { this.floatingKeyboardHelp?.setTextModeActivateArmed?.(true); } catch { /* ignore */ }
 
     this._textModeClickInterval = setInterval(() => {
       remaining -= 1;
@@ -1399,9 +1403,14 @@ export class KeyPilot extends EventManager {
     }
 
     // Control strip: green ON → orange while a text field has focus.
+    // Keyboard reference: only Click Element stays active; other keys gray out.
     if (newState.mode !== prevState.mode) {
+      const inText = newState.mode === MODES.TEXT_FOCUS;
       try {
-        this.controlStrip?.setTextModeActive?.(newState.mode === MODES.TEXT_FOCUS);
+        this.controlStrip?.setTextModeActive?.(inText);
+      } catch { /* ignore */ }
+      try {
+        this.floatingKeyboardHelp?.setTextModeFilter?.(inText);
       } catch { /* ignore */ }
     }
 
@@ -5318,15 +5327,14 @@ export class KeyPilot extends EventManager {
       this.overlayManager?.hideFocusedTextOverlay?.();
     } catch { /* ignore */ }
 
-    // Onboarding / practice panels
+    // Onboarding / practice panels: hide only — do NOT setActive(false).
+    // Toggle-off during an incomplete walkthrough must keep progress so re-enable
+    // can restore the panel. Do not dismiss the re-enable tip here — onboarding
+    // shows it right before disable runs (same toggleExtension event).
     try {
       const ob = window.__KeyPilotOnboarding;
-      if (ob && typeof ob.setActive === 'function') {
-        void ob.setActive(false);
-      } else {
-        try { ob?.panel?.hide?.(); } catch { /* ignore */ }
-        try { ob?.practicePanel?.hide?.(); } catch { /* ignore */ }
-      }
+      try { ob?.panel?.hide?.(); } catch { /* ignore */ }
+      try { ob?.practicePanel?.hide?.(); } catch { /* ignore */ }
     } catch { /* ignore */ }
 
     // Ephemeral toasts left on the page
