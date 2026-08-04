@@ -49,11 +49,13 @@ const modules = [
   'src/utils/extension-context.js',
   'src/utils/storage.js',
   'src/utils/image-utils.js',
+  'src/utils/youtube-thumb.js',
   'src/utils/popover-resize.js',
   'src/utils/panel-position.js',
   'src/utils/scroll-at-point.js',
   // Shared UI helpers used by multiple modules (must be defined before import-stripped consumers).
   'src/ui/url-listing.js',
+  'src/ui/page-thumb-ui.js',
   'src/modules/state-manager.js',
   'src/modules/event-manager.js',
   'src/modules/cursor.js',

@@ -85,7 +85,7 @@ export class KeyPilotToggleHandler extends EventManager {
           return;
         }
 
-        // Alt+J: show control strip (works while KeyPilot is disabled).
+        // Alt+J: toggle control strip (works while KeyPilot is disabled).
         if (e && e.altKey && (e.key === 'j' || e.key === 'J' || e.code === 'KeyJ')) {
           if (e.__kpControlStripHandled) return;
           e.__kpControlStripHandled = true;
@@ -93,7 +93,12 @@ export class KeyPilotToggleHandler extends EventManager {
           e.stopPropagation();
           e.stopImmediatePropagation();
           try {
-            this.keyPilot?.showControlStripFromHotkey?.();
+            const kp = this.keyPilot;
+            if (typeof kp?.toggleControlStripFromHotkey === 'function') {
+              kp.toggleControlStripFromHotkey();
+            } else {
+              kp?.showControlStripFromHotkey?.();
+            }
           } catch {
             // Ignore
           }

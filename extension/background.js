@@ -10,6 +10,14 @@ import {
   storageSetValue,
   storageSetObject
 } from './src/utils/storage.js';
+import { pageThumbService } from './src/utils/page-thumb-service.js';
+
+// Opportunistic page screenshots for Launcher / New Tab card backgrounds.
+try {
+  pageThumbService.install();
+} catch (e) {
+  console.warn('[KeyPilot] Page thumb service install failed:', e?.message || e);
+}
 
 const KEYBOARD_HELP_STORAGE_KEY = 'keypilot_keyboard_help_visible';
 const ONBOARDING_ACTIVE_STORAGE_KEY = 'keypilot_onboarding_active';
@@ -1259,6 +1267,32 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               history: [],
               success: false,
               error: error.message
+            });
+          }
+          break;
+        }
+
+        case 'KP_GET_PAGE_THUMB': {
+          // Low-res page screenshot from IndexedDB (captured on visit).
+          const pageUrl = typeof message.pageUrl === 'string' ? message.pageUrl.trim() : '';
+          try {
+            const result = await pageThumbService.getThumbForUrl(pageUrl);
+            sendResponse({
+              type: 'KP_PAGE_THUMB_RESPONSE',
+              success: Boolean(result?.success),
+              dataUrl: result?.dataUrl || null,
+              mime: result?.mime || null,
+              width: result?.width || 0,
+              height: result?.height || 0,
+              cached: Boolean(result?.cached),
+              error: result?.error || null
+            });
+          } catch (error) {
+            console.error('KP_GET_PAGE_THUMB failed:', error);
+            sendResponse({
+              type: 'KP_PAGE_THUMB_RESPONSE',
+              success: false,
+              error: error?.message || 'Unknown error'
             });
           }
           break;

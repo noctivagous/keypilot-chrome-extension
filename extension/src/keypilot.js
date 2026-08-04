@@ -789,24 +789,46 @@ export class KeyPilot extends EventManager {
   }
 
   /**
-   * Show the control strip (Alt+J). Persists visible=true and expands for discoverability.
+   * Toggle the control strip (Alt+J).
+   * When showing: persists visible=true and keeps the existing collapsed state.
+   * When hiding: persists visible=false (same as the strip close button).
    */
-  async showControlStripFromHotkey() {
+  async toggleControlStripFromHotkey() {
     if (window !== window.top) return;
     this.setupControlStrip();
+
+    // Prefer live DOM visibility; fall back to settings when the strip is not mounted yet.
+    let currentlyVisible = false;
     try {
-      await setSettings({ controlStrip: { visible: true, collapsed: false } });
+      if (this.controlStrip && typeof this.controlStrip.isVisible === 'function') {
+        currentlyVisible = !!this.controlStrip.isVisible();
+      } else {
+        currentlyVisible = this._settings?.controlStrip?.visible !== false;
+      }
+    } catch {
+      currentlyVisible = this._settings?.controlStrip?.visible !== false;
+    }
+
+    // Only flip visibility — preserve collapsed/expanded as last set by the user.
+    const patch = { visible: !currentlyVisible };
+
+    try {
+      await setSettings({ controlStrip: patch });
     } catch { /* ignore */ }
     try {
       if (this._settings) {
         this._settings.controlStrip = {
           ...(this._settings.controlStrip || DEFAULT_SETTINGS.controlStrip),
-          visible: true,
-          collapsed: false
+          ...patch
         };
       }
     } catch { /* ignore */ }
     this.applyControlStripFromSettings();
+  }
+
+  /** @deprecated Use toggleControlStripFromHotkey — kept for older call sites. */
+  async showControlStripFromHotkey() {
+    return this.toggleControlStripFromHotkey();
   }
 
   _applyKeyboardLayoutFromSettings() {
@@ -998,12 +1020,23 @@ export class KeyPilot extends EventManager {
 
     try {
       const kb = this.keybindings || buildKeybindingsForLayout(DEFAULT_KEYBOARD_LAYOUT_ID);
+      // Only seed when settings are loaded. If _settings is null, leave position
+      // unhydrated so show() waits for storage instead of painting bottom-left first.
+      const settingsReady = !!this._settings;
+      const knownPosition = settingsReady
+        ? (this._settings.panelPositions?.keyboardReference
+          || DEFAULT_SETTINGS.panelPositions?.keyboardReference
+          || null)
+        : null;
+
       if (!this.floatingKeyboardHelp) {
         const FloatingKeyboardHelpClass = FloatingKeyboardHelp || window.FloatingKeyboardHelp;
         this.floatingKeyboardHelp = new FloatingKeyboardHelpClass({
           keybindings: kb,
           keyboardLayout: this._keyboardUiLayout,
-          layoutId: this._keyboardLayoutId
+          layoutId: this._keyboardLayoutId,
+          // Seed saved dock/free coords so the first paint is not bottom-left then jump.
+          panelPosition: knownPosition || undefined
         });
       } else {
         // Keep bindings current (in case they were updated).
@@ -1013,6 +1046,10 @@ export class KeyPilot extends EventManager {
             keyboardLayout: this._keyboardUiLayout,
             layoutId: this._keyboardLayoutId
           });
+        }
+        // Re-seed from settings before show (handles multi-tab move while hidden).
+        if (settingsReady && typeof this.floatingKeyboardHelp.setPanelPositionFromSettings === 'function') {
+          this.floatingKeyboardHelp.setPanelPositionFromSettings(knownPosition);
         }
       }
 
@@ -1602,7 +1639,7 @@ export class KeyPilot extends EventManager {
       return;
     }
 
-    // Alt+J: show control strip (works even when closed; persists visible).
+    // Alt+J: toggle control strip (works even when closed; persists visibility).
     // Also handled by KeyPilotToggleHandler's always-on listener when disabled.
     if ((e.altKey || e.code === 'AltRight') && (e.key === 'j' || e.key === 'J' || e.code === 'KeyJ')) {
       if (e.__kpControlStripHandled) return;
@@ -1610,7 +1647,7 @@ export class KeyPilot extends EventManager {
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
-      void this.showControlStripFromHotkey();
+      void this.toggleControlStripFromHotkey();
       return;
     }
 

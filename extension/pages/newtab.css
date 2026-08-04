@@ -888,12 +888,66 @@ html[data-theme="cyberforward"] .title {
   max-width: 100%;
   overflow: hidden;
   box-sizing: border-box;
+  position: relative;
 }
 
 .kp-url-row:hover {
-  background: var(--nt-row-bg-hover);
+  background-color: var(--nt-row-bg-hover);
   box-shadow: var(--nt-row-shadow-hover);
   transform: translateY(-1px);
+}
+
+/*
+ * Page thumbs paint via ::before so the media layer is full-bleed under the
+ * 1px border (avoids subpixel / border-box gaps on top-bottom or left-right).
+ */
+.kp-url-row.kp-has-page-thumb {
+  /* Solid underlay; image lives on the pseudo */
+  background-color: #0a0a0a;
+  background-image: none;
+  border-color: rgba(255, 255, 255, 0.1);
+  isolation: isolate;
+}
+
+.kp-url-row.kp-has-page-thumb::before {
+  content: "";
+  position: absolute;
+  /* Bleed 1px under the border so AA / subpixel never leaves a seam */
+  inset: -1px;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background-color: #0a0a0a;
+  background-image:
+    /* Idle = former hover darkness; hover lifts further so the photo reads more */
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.78) 100%),
+    var(--kp-page-thumb);
+  /* Gradient always fills; photo covers */
+  background-size: 100% 100%, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+}
+
+.kp-url-row.kp-has-page-thumb:hover {
+  background-color: #0a0a0a;
+  background-image: none;
+}
+
+.kp-url-row.kp-has-page-thumb:hover::before {
+  background-image:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.32) 0%, rgba(0, 0, 0, 0.52) 100%),
+    var(--kp-page-thumb);
+}
+
+.kp-url-row.kp-has-page-thumb > * {
+  position: relative;
+  z-index: 1;
+}
+
+.kp-card-grid .kp-url-row.kp-has-page-thumb .kp-url-domain,
+.kp-card-grid .kp-url-row.kp-has-page-thumb .kp-url-title,
+.kp-card-grid .kp-url-row.kp-has-page-thumb .kp-url-path {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
 }
 
 .kp-url-row:focus-visible {
@@ -1413,6 +1467,18 @@ h2 {
   min-width: 0;
 }
 
+/*
+ * Page preview lives on the summary header only (collapsed face).
+ * Do not put overflow:hidden / absolute full-bleed on the <details> itself —
+ * that clipped the 1.5em caret + label and made rows look too short.
+ */
+.history-outline.kp-has-page-thumb {
+  /* Edge-to-edge header: outer pad moves onto summary / children */
+  padding: 0;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: var(--nt-folder-bg);
+}
+
 .history-outline-summary {
   cursor: pointer;
   list-style: none;
@@ -1423,6 +1489,69 @@ h2 {
   padding: 2px 2px;
   font-weight: 700;
   font-family: var(--nt-font-heading);
+  position: relative;
+}
+
+.history-outline.kp-has-page-thumb > .history-outline-summary {
+  /* Replaces the 6×8 container pad so text/caret have full room */
+  padding: 8px 10px;
+  border-radius: 10px;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 2.25rem;
+  box-sizing: border-box;
+}
+
+.history-outline.kp-has-page-thumb[open] > .history-outline-summary {
+  border-radius: 10px 10px 0 0;
+}
+
+/* Thumb on ::after — summary ::before is the ▸ caret */
+.history-outline.kp-has-page-thumb > .history-outline-summary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background-color: #0a0a0a;
+  background-image:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.78) 100%),
+    var(--kp-page-thumb);
+  background-size: 100% 100%, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+}
+
+.history-outline.kp-has-page-thumb > .history-outline-summary:hover::after {
+  background-image:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.32) 0%, rgba(0, 0, 0, 0.52) 100%),
+    var(--kp-page-thumb);
+}
+
+.history-outline.kp-has-page-thumb > .history-outline-summary::before,
+.history-outline.kp-has-page-thumb > .history-outline-summary > * {
+  position: relative;
+  z-index: 1;
+}
+
+.history-outline.kp-has-page-thumb > .history-outline-summary .history-outline-label {
+  color: var(--nt-fg-92);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+}
+
+.history-outline.kp-has-page-thumb > .history-outline-summary .history-outline-count {
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--nt-fg-92);
+}
+
+.history-outline.kp-has-page-thumb > .history-outline-summary::before {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+}
+
+.history-outline.kp-has-page-thumb > .history-outline-children {
+  padding: 6px 8px 8px;
+  margin-top: 0;
 }
 
 .history-outline-summary::-webkit-details-marker {
@@ -1433,9 +1562,11 @@ h2 {
   content: "▸";
   display: inline-block;
   font-size: 1.5em;
+  line-height: 1;
   margin-right: 2px;
   transition: transform 120ms ease;
   color: var(--nt-caret);
+  flex: 0 0 auto;
 }
 
 .history-outline[open] > .history-outline-summary::before {
@@ -1572,13 +1703,55 @@ h2 {
   border: 1px solid var(--nt-top-site-border);
   box-sizing: border-box;
   overflow: hidden;
+  isolation: isolate;
   transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
 }
 
-.top-site-card:hover .top-site-tile {
+.top-site-tile.kp-has-page-thumb {
+  background-color: #0a0a0a;
+  background-image: none;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.top-site-tile.kp-has-page-thumb::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background-color: #0a0a0a;
+  background-image:
+    /* Idle = former hover; hover lifts further */
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.68) 100%),
+    var(--kp-page-thumb);
+  background-size: 100% 100%, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+}
+
+.top-site-tile.kp-has-page-thumb > * {
+  position: relative;
+  z-index: 1;
+}
+
+.top-site-card:hover .top-site-tile:not(.kp-has-page-thumb) {
   background: var(--nt-top-site-hover-bg);
   border-color: var(--nt-top-site-hover-border);
   box-shadow: var(--nt-top-site-hover-shadow);
+}
+
+.top-site-card:hover .top-site-tile.kp-has-page-thumb {
+  background-color: #0a0a0a;
+  background-image: none;
+  border-color: var(--nt-top-site-hover-border);
+  box-shadow: var(--nt-top-site-hover-shadow);
+}
+
+.top-site-card:hover .top-site-tile.kp-has-page-thumb::before {
+  background-image:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.22) 0%, rgba(0, 0, 0, 0.42) 100%),
+    var(--kp-page-thumb);
 }
 
 .top-site-favicon {

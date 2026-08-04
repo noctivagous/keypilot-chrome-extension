@@ -30,8 +30,11 @@ export class FloatingKeyboardHelp {
    * @param {Record<string, any>} params.keybindings
    * @param {any[]} [params.keyboardLayout]
    * @param {string} [params.layoutId]
+   * @param {import('../modules/settings-manager.js').PanelPositionSettings|null} [params.panelPosition]
+   *   Optional known dock/free position (from KeyPilot settings). When provided,
+   *   the first show paints at this location instead of flashing the default corner.
    */
-  constructor({ keybindings, keyboardLayout, layoutId } = {}) {
+  constructor({ keybindings, keyboardLayout, layoutId, panelPosition } = {}) {
     this.keybindings = keybindings || {};
     this.keyboardLayout = keyboardLayout || null;
     this.layoutId = typeof layoutId === 'string' ? layoutId : '';
@@ -78,9 +81,68 @@ export class FloatingKeyboardHelp {
     this._panelPosition = {
       ...DEFAULT_SETTINGS.panelPositions.keyboardReference
     };
+    /** True once position has been seeded from settings/DOM or loaded from storage. */
+    this._positionHydrated = false;
+    /** Monotonic token so delayed first-show reveals don't race with hide/cleanup. */
+    this._showGeneration = 0;
     this._positionApplyScheduled = false;
     this._onWinResizePosition = this._onWinResizePosition.bind(this);
     this._suppressPositionPersist = false;
+
+    if (panelPosition && typeof panelPosition === 'object') {
+      this._seedPanelPosition(panelPosition, { hydrated: true });
+    }
+  }
+
+  /**
+   * Update in-memory dock/free position (does not paint unless root exists).
+   * @param {import('../modules/settings-manager.js').PanelPositionSettings|null|undefined} next
+   * @param {{ hydrated?: boolean }} [opts]
+   */
+  _seedPanelPosition(next, opts = {}) {
+    const normalized = normalizePanelPositionState(
+      next,
+      DEFAULT_SETTINGS.panelPositions.keyboardReference
+    ) || { ...DEFAULT_SETTINGS.panelPositions.keyboardReference };
+    this._panelPosition = {
+      left: normalized.left,
+      top: normalized.top,
+      anchor: normalized.anchor === undefined ? null : normalized.anchor
+    };
+    if (opts.hydrated) this._positionHydrated = true;
+  }
+
+  /**
+   * Public: seed position from already-loaded KeyPilot settings before show().
+   * @param {import('../modules/settings-manager.js').PanelPositionSettings|null|undefined} next
+   */
+  setPanelPositionFromSettings(next) {
+    if (!next || typeof next !== 'object') return;
+    this._seedPanelPosition(next, { hydrated: true });
+    if (this.root) this._applyPanelPositionNow();
+  }
+
+  /**
+   * Read left/top (and optional anchor attr) already painted on a shell element.
+   * @param {HTMLElement|null} el
+   * @returns {import('../modules/settings-manager.js').PanelPositionSettings|null}
+   */
+  _readPositionFromDom(el) {
+    if (!el || !el.style) return null;
+    try {
+      const left = parseFloat(el.style.left);
+      const top = parseFloat(el.style.top);
+      if (!Number.isFinite(left) || !Number.isFinite(top)) return null;
+      let anchor = null;
+      try {
+        const attr = el.getAttribute('data-kp-panel-anchor');
+        if (attr) anchor = attr;
+      } catch { /* ignore */ }
+      // Free positions use left/top with no anchor (or explicit null).
+      return { left, top, anchor: anchor || null };
+    } catch {
+      return null;
+    }
   }
 
   setKeybindings(keybindings) {
@@ -131,26 +193,52 @@ export class FloatingKeyboardHelp {
   show() {
     // Never show inside iframes (avoids duplicating the panel in popover iframes).
     if (window !== window.top) return;
+    const gen = ++this._showGeneration;
     this._ensure();
-    this._setRootVisible(true);
-    this._render();
     this._bindSettingsSync();
     this._refreshKeyFeedbackSetting(); // async; best-effort
-    this._refreshPanelPosition(); // async; applies default until storage returns
-    // Apply after render + after layout so free coords never sit below the fold.
-    this._schedulePanelPositionAfterLayout();
-    this._bindKeydownFeedback();
-    // Sync text-mode filter (panel may open while a field already has focus).
-    try {
-      const mode = window.__KeyPilotInstance?.state?.getState?.()?.mode;
-      const inText = String(mode || '') === 'text_focus';
-      this.setTextModeFilter(inText || this._textModeFilterActive);
-    } catch {
-      if (this._textModeFilterActive) this._applyTextModeFilterClasses(true);
+
+    // Always paint the best-known position before the panel becomes visible so a
+    // saved free/dock location never flashes at the default bottom-left corner.
+    this._applyPanelPositionNow();
+
+    const reveal = () => {
+      if (gen !== this._showGeneration) return;
+      if (!this.root || !this.root.isConnected) return;
+      this._applyPanelPositionNow();
+      this._setRootVisible(true);
+      this._render();
+      // Reclamp after keyboard rows size (free tops can shift once height is known).
+      this._schedulePanelPositionAfterLayout();
+      this._bindKeydownFeedback();
+      try {
+        const mode = window.__KeyPilotInstance?.state?.getState?.()?.mode;
+        const inText = String(mode || '') === 'text_focus';
+        this.setTextModeFilter(inText || this._textModeFilterActive);
+      } catch {
+        if (this._textModeFilterActive) this._applyTextModeFilterClasses(true);
+      }
+    };
+
+    if (this._positionHydrated) {
+      reveal();
+      // Background refresh keeps multi-tab moves in sync without a default-corner flash.
+      void this._refreshPanelPosition();
+      return;
     }
+
+    // First show without a seeded position: stay hidden until storage returns.
+    // (Root remains hidden from _ensure; do not call _setRootVisible(true) yet.)
+    void this._refreshPanelPosition().finally(() => {
+      if (gen !== this._showGeneration) return;
+      this._positionHydrated = true;
+      reveal();
+    });
   }
 
   hide() {
+    // Invalidate any in-flight first-show reveal so a late storage resolve cannot re-open.
+    this._showGeneration += 1;
     this._setRootVisible(false);
     this.setLinkHoverHints(false);
     this.setTextModeFilter(false);
@@ -164,6 +252,7 @@ export class FloatingKeyboardHelp {
   }
 
   cleanup() {
+    this._showGeneration += 1;
     try {
       if (this.closeBtn) this.closeBtn.removeEventListener('click', this._onCloseClick);
     } catch { /* ignore */ }
@@ -284,15 +373,7 @@ export class FloatingKeyboardHelp {
    * @param {{ persist?: boolean }} [opts]
    */
   _setPanelPosition(next, opts = {}) {
-    const normalized = normalizePanelPositionState(
-      next,
-      DEFAULT_SETTINGS.panelPositions.keyboardReference
-    ) || { ...DEFAULT_SETTINGS.panelPositions.keyboardReference };
-    this._panelPosition = {
-      left: normalized.left,
-      top: normalized.top,
-      anchor: normalized.anchor === undefined ? null : normalized.anchor
-    };
+    this._seedPanelPosition(next, { hydrated: true });
     this._applyPanelPositionNow();
     if (opts.persist && !this._suppressPositionPersist) {
       this._persistPanelPosition(this._panelPosition);
@@ -306,8 +387,13 @@ export class FloatingKeyboardHelp {
       this._suppressPositionPersist = true;
       this._setPanelPosition(stored, { persist: false });
       this._suppressPositionPersist = false;
-      // Storage often arrives after first paint — reclamp once size is known.
-      this._schedulePanelPositionAfterLayout();
+      this._positionHydrated = true;
+      // Reclamp once size is known (no-op while hidden; safe after reveal).
+      if (this.isVisible()) {
+        this._schedulePanelPositionAfterLayout();
+      } else {
+        this._applyPanelPositionNow();
+      }
       // If a free position was saved while height was 0, rewrite the clamped coords.
       try {
         const pos = this._panelPosition;
@@ -317,13 +403,17 @@ export class FloatingKeyboardHelp {
             !before ||
             Math.round(Number(before.top)) !== Math.round(pos.top) ||
             Math.round(Number(before.left)) !== Math.round(pos.left);
-          if (moved) {
+          // Only rewrite storage when the panel is actually visible + laid out;
+          // otherwise a pre-show clamp with estimated height can corrupt the saved top.
+          if (moved && this.isVisible()) {
             void this._persistPanelPosition(pos);
           }
         }
       } catch { /* ignore */ }
     } catch {
       this._suppressPositionPersist = false;
+      // Fall back to whatever we already have (default or seeded).
+      this._positionHydrated = true;
     }
   }
 
@@ -580,6 +670,12 @@ export class FloatingKeyboardHelp {
         const hintEl = existing.querySelector('[data-kp-floating-keyboard-hint="true"]');
         const titleEl = existing.querySelector('[data-kp-floating-keyboard-title="true"]')
           || (header ? header.querySelector('div:not([data-kp-floating-keyboard-hint])') : null);
+
+        // Prefer early shell's already-applied position when we were not seeded.
+        if (!this._positionHydrated) {
+          const fromDom = this._readPositionFromDom(existing);
+          if (fromDom) this._seedPanelPosition(fromDom, { hydrated: true });
+        }
 
         try {
           this._applyProPanelChrome(existing);

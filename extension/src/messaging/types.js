@@ -46,6 +46,11 @@ export const MSG = Object.freeze({
   GET_HISTORY_FOR_DOMAINS: 'KP_GET_HISTORY_FOR_DOMAINS',
   GET_FAVICON: 'KP_GET_FAVICON',
 
+  // --- Page preview screenshots for card backgrounds ---
+  GET_PAGE_THUMB: 'KP_GET_PAGE_THUMB',
+  PAGE_THUMB_RESPONSE: 'KP_PAGE_THUMB_RESPONSE',
+  PAGE_THUMB_UPDATED: 'KP_PAGE_THUMB_UPDATED',
+
   // --- Per-tab navigation graph ---
   NAVGRAPH_GET: 'KP_NAVGRAPH_GET',
   NAVGRAPH_JUMP: 'KP_NAVGRAPH_JUMP',

@@ -9,6 +9,7 @@ import {
   extractDomain,
   parseUrlForThreeLineDisplay
 } from '../src/ui/url-listing.js';
+import { applyCardBackground, requestPageThumb } from '../src/ui/page-thumb-ui.js';
 import { createPopoverTitlebar, createTitlebarCloseHint } from '../src/ui/popover-titlebar.js';
 import { createSegmentedControl } from '../src/ui/segmented-control.js';
 import {
@@ -35,6 +36,31 @@ let currentEngine = 'brave';
 const KP_ENABLED_STORAGE_KEY = 'keypilot_enabled';
 const KP_KEYBOARD_HELP_STORAGE_KEY = 'keypilot_keyboard_help_visible';
 const BOOKMARKS_VIEW_STORAGE_KEY = 'kp_newtab_bookmarks_view';
+
+/**
+ * Darkened page-preview background on New Tab card rows (grid only).
+ * List rows keep the solid chrome.
+ * @param {HTMLElement} row
+ * @param {{ url?: string }|string} itemOrUrl
+ * @param {boolean} [isGrid]
+ */
+function attachPageThumbToCardRow(row, itemOrUrl, isGrid = true) {
+  if (!row || !isGrid) return;
+  const url =
+    typeof itemOrUrl === 'string'
+      ? itemOrUrl
+      : (itemOrUrl && typeof itemOrUrl.url === 'string' ? itemOrUrl.url : '');
+  if (!url) return;
+  applyCardBackground(row, url, {
+    fallbackSolid: '',
+    hoverSolid: '',
+    manageHover: false,
+    youtubePrefer: true,
+    useCssVar: true,
+    cssVarName: '--kp-page-thumb',
+    readyClass: 'kp-has-page-thumb'
+  });
+}
 
 /**
  * Persist display settings and apply them to the page.
@@ -585,7 +611,10 @@ async function renderBookmarks(view = 'grid') {
     showFavicon: true,
     showMetaLine: true,
     showUrlLine: true,
-    decorateRow: ({ item, parts }) => renderThreeLineUrlListingEntry({ item, parts }),
+    decorateRow: ({ row, item, parts }) => {
+      renderThreeLineUrlListingEntry({ item, parts });
+      attachPageThumbToCardRow(row, item, view === 'grid');
+    },
     onRowClick: ({ item, event }) => {
       event.preventDefault();
       navigate(item.url);
@@ -623,7 +652,10 @@ function renderBookmarkNode(node, { expanded = false } = {}) {
       showFavicon: true,
       showMetaLine: true,
       showUrlLine: true,
-      decorateRow: ({ item, parts }) => renderThreeLineUrlListingEntry({ item, parts }),
+      decorateRow: ({ row, item, parts }) => {
+        renderThreeLineUrlListingEntry({ item, parts });
+        attachPageThumbToCardRow(row, item, true);
+      },
       onRowClick: ({ item, event }) => {
         event.preventDefault();
         navigate(item.url);
@@ -669,7 +701,10 @@ function renderBookmarkNode(node, { expanded = false } = {}) {
       showFavicon: true,
       showMetaLine: true,
       showUrlLine: true,
-      decorateRow: ({ item, parts }) => renderThreeLineUrlListingEntry({ item, parts }),
+      decorateRow: ({ row, item, parts }) => {
+        renderThreeLineUrlListingEntry({ item, parts });
+        attachPageThumbToCardRow(row, item, true);
+      },
       onRowClick: ({ item, event }) => {
         event.preventDefault();
         navigate(item.url);
@@ -766,7 +801,10 @@ async function renderToolbarBookmarks() {
     showFavicon: true,
     showMetaLine: true,
     showUrlLine: true,
-    decorateRow: ({ item, parts }) => renderThreeLineUrlListingEntry({ item, parts }),
+    decorateRow: ({ row, item, parts }) => {
+      renderThreeLineUrlListingEntry({ item, parts });
+      attachPageThumbToCardRow(row, item, true);
+    },
     onRowClick: ({ item, event }) => {
       event.preventDefault();
       navigate(item.url);
@@ -873,6 +911,35 @@ async function renderRecentHistory() {
     summary.appendChild(favicon);
     summary.appendChild(label);
     summary.appendChild(count);
+
+    // Page preview on the collapsed header. Class goes on <details> so CSS can
+    // adjust padding; --kp-page-thumb is painted on the summary ::after layer.
+    const primaryThumbUrl = group.items[0]?.url || rootUrl;
+    applyCardBackground(details, primaryThumbUrl, {
+      youtubePrefer: true,
+      useCssVar: true,
+      cssVarName: '--kp-page-thumb',
+      readyClass: 'kp-has-page-thumb'
+    });
+    if (primaryThumbUrl !== rootUrl) {
+      void (async () => {
+        const primary = await requestPageThumb(primaryThumbUrl);
+        if (primary || !details.isConnected) return;
+        if (details.classList.contains('kp-has-page-thumb')) return;
+        const rootData = await requestPageThumb(rootUrl);
+        if (!rootData || !details.isConnected) return;
+        if (details.classList.contains('kp-has-page-thumb')) return;
+        try {
+          const safe = String(rootData).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+          details.style.setProperty('--kp-page-thumb', `url("${safe}")`);
+          details.classList.add('kp-has-page-thumb');
+          details.dataset.kpThumbSource = 'capture';
+          details.dataset.kpThumbReady = '1';
+        } catch {
+          // ignore
+        }
+      })();
+    }
 
     const children = document.createElement('div');
     children.className = 'history-outline-children';
@@ -985,6 +1052,14 @@ async function renderTopSites() {
     link.appendChild(tile);
     item.appendChild(link);
     list.appendChild(item);
+
+    // Page screenshot / YouTube thumb as darkened tile background.
+    applyCardBackground(tile, site.url, {
+      youtubePrefer: true,
+      useCssVar: true,
+      cssVarName: '--kp-page-thumb',
+      readyClass: 'kp-has-page-thumb'
+    });
   }
 
   container.appendChild(list);
