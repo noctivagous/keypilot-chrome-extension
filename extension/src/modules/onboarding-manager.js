@@ -933,8 +933,11 @@ export class OnboardingManager {
       tasks: tasksForUi,
       completedTaskIds: new Set(completedList),
       lastCompletedTaskId,
-      // Hide the Alt+/ tip on the text-box practice slide (less noise next to the practice panel).
-      showTip: slide.id !== 'text_box_mode',
+      // Hide the Alt+/ tip on practice, scrolling, tabs, and completion slides.
+      showTip: slide.id !== 'text_box_mode' &&
+        slide.id !== 'scrolling' &&
+        slide.id !== 'tabs' &&
+        slide.id !== 'completion',
       transition,
       forceRebuild
     });

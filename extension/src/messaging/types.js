@@ -37,6 +37,8 @@ export const MSG = Object.freeze({
   OPEN_SETTINGS_POPOVER: 'KP_OPEN_SETTINGS_POPOVER',
   OPEN_GUIDE_POPOVER: 'KP_OPEN_GUIDE_POPOVER',
   OPEN_ONBOARDING: 'KP_OPEN_ONBOARDING',
+  /** Reset walkthrough progress and open it (e.g. Guide "Launch Walkthrough"). */
+  LAUNCH_WALKTHROUGH: 'KP_LAUNCH_WALKTHROUGH',
 
   // --- History / bookmarks / favicon (SW APIs for content scripts) ---
   OMNIBOX_SUGGEST: 'KP_OMNIBOX_SUGGEST',
@@ -69,6 +71,8 @@ export const MSG = Object.freeze({
   POPOVER_REQUEST_CLOSE: 'KP_POPOVER_REQUEST_CLOSE',
   POPOVER_BRIDGE_KEYDOWN: 'KP_POPOVER_BRIDGE_KEYDOWN',
   POPOVER_SCROLL: 'KP_POPOVER_SCROLL',
+  /** Guide iframe → parent: close guide and open walkthrough from a reset state. */
+  POPOVER_LAUNCH_WALKTHROUGH: 'KP_POPOVER_LAUNCH_WALKTHROUGH',
 
   // --- Parent → child frame activate (window.postMessage; third-party iframes) ---
   // Top-frame KeyPilot posts this when F/B/G lands on a cross-origin <iframe>.
@@ -89,5 +93,6 @@ export const MSG = Object.freeze({
 export const TAB_UI_FORWARD_TYPES = Object.freeze([
   MSG.OPEN_SETTINGS_POPOVER,
   MSG.OPEN_GUIDE_POPOVER,
-  MSG.OPEN_ONBOARDING
+  MSG.OPEN_ONBOARDING,
+  MSG.LAUNCH_WALKTHROUGH
 ]);

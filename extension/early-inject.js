@@ -1294,22 +1294,22 @@
           }
         },
         {
-          "id": "scroll_top",
-          "label": "Go to the top of the page with `Z`.",
+          "id": "scroll_bottom",
+          "label": "Go to the bottom of the page with `X`.",
           "when": {
             "type": "action",
-            "action": "scrollTop",
+            "action": "scrollBottom",
             "target": "",
             "mode": "",
             "change": ""
           }
         },
         {
-          "id": "scroll_bottom",
-          "label": "Go to the bottom of the page with `X`.",
+          "id": "scroll_top",
+          "label": "Go to the top of the page with `Z`.",
           "when": {
             "type": "action",
-            "action": "scrollBottom",
+            "action": "scrollTop",
             "target": "",
             "mode": "",
             "change": ""
@@ -1323,22 +1323,22 @@
       "title": "Tabs",
       "tasks": [
         {
-          "id": "open_link_new_tab",
-          "label": "Click a link into a new tab (`B`).",
+          "id": "open_link_background_tab",
+          "label": "Click a link into a new tab but don't open it (`G`).",
           "when": {
             "type": "action",
-            "action": "activateNewTab",
+            "action": "activateNewTabBackground",
             "target": "link",
             "mode": "",
             "change": ""
           }
         },
         {
-          "id": "open_link_background_tab",
-          "label": "Click a link into a new tab but don't open it (`G`).",
+          "id": "open_link_new_tab",
+          "label": "Click a link into a new tab (`B`).",
           "when": {
             "type": "action",
-            "action": "activateNewTabBackground",
+            "action": "activateNewTab",
             "target": "link",
             "mode": "",
             "change": ""
@@ -3639,7 +3639,11 @@
         completedTaskIds: completed,
         bodyText: slide.bodyText || '',
         forceRebuild: true,
-        showTip: true
+        // Match bundled onboarding-manager: hide tip on practice/scrolling/tabs/completion.
+        showTip: slide.id !== 'text_box_mode' &&
+          slide.id !== 'scrolling' &&
+          slide.id !== 'tabs' &&
+          slide.id !== 'completion'
       });
     }
   }

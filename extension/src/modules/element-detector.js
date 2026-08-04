@@ -15,8 +15,10 @@ export class ElementDetector {
       'toolbar', 'group', 'navigation', 'list', 'directory', 'rowgroup', 'table'
     ];
 
-    this.CLICKABLE_SEL = 'a[href], button, input, select, textarea, video, audio';
-    this.FOCUSABLE_SEL = 'a[href], button, input, select, textarea, video, audio, [contenteditable="true"], [role="button"], [role="link"], [role="checkbox"], [role="radio"], [role="tab"], [data-action], [data-toggle], [data-click], [data-href], [data-link], [vue-click], [ng-click]';
+    this.CLICKABLE_SEL = 'a[href], button, input, select, textarea, video, audio, summary';
+    // Include <summary> so details/summary groups (e.g. New Tab recent-history outlines)
+    // are semantic hover/F targets for the full header, not only cursor:pointer leaves.
+    this.FOCUSABLE_SEL = 'a[href], button, input, select, textarea, video, audio, summary, [contenteditable="true"], [role="button"], [role="link"], [role="checkbox"], [role="radio"], [role="tab"], [data-action], [data-toggle], [data-click], [data-href], [data-link], [vue-click], [ng-click]';
 
     // Track elements with addEventListener click handlers
     this.clickHandlerElements = new WeakSet();
@@ -801,8 +803,10 @@ export class ElementDetector {
         }
       } catch { /* ignore */ }
 
-      // 3) Button — findClickable returns the button host itself when hovering children
-      if (el.tagName === 'BUTTON' || role === 'button') return CLICKABLE_CATEGORY.BUTTON;
+      // 3) Button / disclosure summary — findClickable returns the host when hovering children
+      if (el.tagName === 'BUTTON' || role === 'button' || el.tagName === 'SUMMARY') {
+        return CLICKABLE_CATEGORY.BUTTON;
+      }
       try {
         if (typeof el.matches === 'function' && el.matches('[role="button"]')) {
           return CLICKABLE_CATEGORY.BUTTON;

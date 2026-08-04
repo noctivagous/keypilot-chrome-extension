@@ -15,6 +15,46 @@ function postCloseRequest() {
 }
 
 /**
+ * Close the Guide popover (if embedded) and open the walkthrough in a reset state.
+ * Prefer parent postMessage when embedded; fall back to runtime/local APIs standalone.
+ */
+function launchWalkthrough() {
+  const embedded = (() => {
+    try {
+      return !!(window.parent && window.parent !== window);
+    } catch {
+      return false;
+    }
+  })();
+
+  if (embedded) {
+    try {
+      window.parent.postMessage({ type: 'KP_POPOVER_LAUNCH_WALKTHROUGH' }, '*');
+      return;
+    } catch {
+      // fall through
+    }
+  }
+
+  // Standalone guide tab (or postMessage failed): reset/open locally if possible.
+  try {
+    const ob = window.__KeyPilotOnboarding;
+    if (ob && typeof ob.resetTutorial === 'function') {
+      void ob.resetTutorial();
+      return;
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    void chrome.runtime.sendMessage({ type: 'KP_LAUNCH_WALKTHROUGH' });
+  } catch {
+    // ignore
+  }
+}
+
+/**
  * When Guide is embedded in the KeyPilot iframe popover, the outer chrome
  * already provides a standard titlebar + × close. Hide the in-page header so
  * we don't stack two header bars.
@@ -193,6 +233,7 @@ async function init() {
 
   const openSettingsBtn = document.getElementById('open-settings');
   const closeBtn = document.getElementById('close');
+  const launchWalkthroughBtn = document.getElementById('launch-walkthrough');
 
   openSettingsBtn?.addEventListener('click', async () => {
     try {
@@ -203,6 +244,7 @@ async function init() {
   }, true);
 
   closeBtn?.addEventListener('click', () => postCloseRequest(), true);
+  launchWalkthroughBtn?.addEventListener('click', () => launchWalkthrough(), true);
 }
 
 init();

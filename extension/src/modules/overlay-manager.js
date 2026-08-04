@@ -4177,6 +4177,20 @@ export class OverlayManager {
         if (closeKeys.includes(String(data.key))) requestClosePopover();
       }
 
+      if (data.type === 'KP_POPOVER_LAUNCH_WALKTHROUGH') {
+        // Guide "Launch Walkthrough": close this popover, then open tutorial from reset.
+        requestClosePopover();
+        try {
+          const ob = window.__KeyPilotOnboarding;
+          if (ob && typeof ob.resetTutorial === 'function') {
+            void ob.resetTutorial();
+          }
+        } catch {
+          // ignore
+        }
+        return;
+      }
+
       if (data.type === 'KP_POPOVER_BRIDGE_KEYDOWN') {
         const k = String(data.key || '');
         if (k === 'f' || k === 'F') {
@@ -5170,6 +5184,19 @@ export class OverlayManager {
 
       if (data.type === 'KP_POPOVER_REQUEST_CLOSE') {
         if (closeKeys.includes(String(data.key))) requestClosePopover();
+      }
+
+      if (data.type === 'KP_POPOVER_LAUNCH_WALKTHROUGH') {
+        requestClosePopover();
+        try {
+          const ob = window.__KeyPilotOnboarding;
+          if (ob && typeof ob.resetTutorial === 'function') {
+            void ob.resetTutorial();
+          }
+        } catch {
+          // ignore
+        }
+        return;
       }
 
       if (data.type === 'KP_POPOVER_BRIDGE_KEYDOWN') {

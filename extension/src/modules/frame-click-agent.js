@@ -571,6 +571,23 @@ export function installFrameClickAgent() {
         } catch { /* fall through to event sequence */ }
       }
 
+      // <summary> toggles <details> only via activation behavior (HTMLElement.click() /
+      // trusted click). Synthetic events alone do not open/close the accordion.
+      try {
+        let summary = null;
+        if (activator && activator.tagName === 'SUMMARY') summary = activator;
+        else if (el && typeof el.closest === 'function') {
+          const s = el.closest('summary');
+          if (s && s.tagName === 'SUMMARY') summary = s;
+        } else if (activator && activator.tagName === 'DETAILS') {
+          summary = activator.querySelector(':scope > summary');
+        }
+        if (summary && typeof summary.click === 'function') {
+          summary.click();
+          return true;
+        }
+      } catch { /* fall through */ }
+
       dispatchClickSequence(el, clientX, clientY);
       try {
         if (

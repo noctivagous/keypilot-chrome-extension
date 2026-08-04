@@ -1624,7 +1624,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         case MSG.OPEN_SETTINGS_POPOVER:
         case MSG.OPEN_GUIDE_POPOVER:
-        case MSG.OPEN_ONBOARDING: {
+        case MSG.OPEN_ONBOARDING:
+        case MSG.LAUNCH_WALKTHROUGH: {
           // Extension pages (guide/settings iframes) call chrome.runtime.sendMessage.
           // Content scripts own these handlers, so the service worker must forward
           // to the originating tab (or the active tab as fallback).

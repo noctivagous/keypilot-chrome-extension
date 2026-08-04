@@ -371,7 +371,7 @@ body.kp-unfocused::before {
   mix-blend-mode: lighten;
 }
 
-/* Top message + full-page SVG background for unfocused state */
+/* Full-page omnibox focus cue (shown when the page loses focus to Chrome UI) */
 .focus-hint {
   position: fixed;
   inset: 0;
@@ -380,16 +380,32 @@ body.kp-unfocused::before {
   filter: none; /* Ensure focus hint stays sharp even when page is blurred */
 }
 
-/* SVG watermark layer: address-bar cue + upward chevrons + copy */
-.focus-hint-bg {
+/* Dim page content so the watermark stays readable on busy new-tab layouts */
+.focus-hint-scrim {
   position: absolute;
   inset: 0;
-  background-image: url("focus-hint-bg.svg");
-  background-repeat: no-repeat;
-  background-position: center calc(0% - 100px);
-  background-size: min(1100px, 92vw) auto;
-  opacity: 0.95;
+  background: rgba(2, 6, 18, 0.42);
   pointer-events: none;
+}
+
+/* SVG watermark layer: address-bar cue + upward chevrons + copy.
+   Use a real <img> (not CSS background-image) so the graphic paints reliably. */
+.focus-hint-bg {
+  position: absolute;
+  left: 50%;
+  top: -48px;
+  width: min(1100px, 92vw);
+  height: auto;
+  transform: translateX(-50%);
+  opacity: 1;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Cyberforward: shift the earth-orange SVG toward the theme accent */
+html[data-theme="cyberforward"] .focus-hint-bg {
+  filter: hue-rotate(165deg) saturate(1.15) brightness(1.08);
 }
 
 .focus-hint-message {

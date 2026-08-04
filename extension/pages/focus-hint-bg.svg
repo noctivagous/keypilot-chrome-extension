@@ -1,20 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" fill="none" role="img" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" width="1200" height="900" fill="none" role="img" aria-hidden="true">
   <defs>
     <linearGradient id="glow" x1="600" y1="0" x2="600" y2="420" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="rgb(255,140,0)" stop-opacity="0.28"/>
-      <stop offset="55%" stop-color="rgb(255,140,0)" stop-opacity="0.08"/>
+      <stop offset="0%" stop-color="rgb(255,140,0)" stop-opacity="0.55"/>
+      <stop offset="50%" stop-color="rgb(255,140,0)" stop-opacity="0.18"/>
       <stop offset="100%" stop-color="rgb(255,140,0)" stop-opacity="0"/>
     </linearGradient>
     <linearGradient id="textFill" x1="600" y1="180" x2="600" y2="320" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="rgb(255,240,220)" stop-opacity="0.42"/>
-      <stop offset="100%" stop-color="rgb(255,180,80)" stop-opacity="0.22"/>
+      <stop offset="0%" stop-color="rgb(255,245,230)" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="rgb(255,190,90)" stop-opacity="0.88"/>
     </linearGradient>
-    <filter id="softGlow" x="-20%" y="-40%" width="140%" height="200%">
-      <feGaussianBlur stdDeviation="10" result="blur"/>
+    <filter id="softGlow" x="-30%" y="-50%" width="160%" height="220%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
+    </filter>
+    <filter id="textShadow" x="-10%" y="-30%" width="120%" height="160%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="rgb(0,0,0)" flood-opacity="0.75"/>
     </filter>
   </defs>
 
@@ -22,31 +25,31 @@
   <rect x="0" y="0" width="1200" height="420" fill="url(#glow)"/>
 
   <!-- Address-bar silhouette (chrome-style omnibox cue) -->
-  <g opacity="0.34" filter="url(#softGlow)">
-    <rect x="220" y="36" width="760" height="52" rx="26" fill="rgba(0,0,0,0.55)" stroke="rgba(255,140,0,0.55)" stroke-width="2"/>
-    <circle cx="252" cy="62" r="10" fill="rgba(255,140,0,0.35)"/>
-    <rect x="276" y="52" width="420" height="20" rx="6" fill="rgba(255,255,255,0.12)"/>
+  <g opacity="0.92" filter="url(#softGlow)">
+    <rect x="220" y="36" width="760" height="52" rx="26" fill="rgba(0,0,0,0.72)" stroke="rgba(255,160,40,0.95)" stroke-width="2.5"/>
+    <circle cx="252" cy="62" r="10" fill="rgba(255,160,40,0.75)"/>
+    <rect x="276" y="52" width="420" height="20" rx="6" fill="rgba(255,255,255,0.22)"/>
   </g>
 
   <!-- Upward chevrons under the bar -->
-  <g transform="translate(600, 140)" opacity="0.55" filter="url(#softGlow)">
-    <path d="M-36 28 L0 0 L36 28" stroke="rgb(255,140,0)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M-28 52 L0 28 L28 52" stroke="rgb(255,140,0)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
-    <path d="M-20 74 L0 54 L20 74" stroke="rgb(255,140,0)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+  <g transform="translate(600, 140)" opacity="0.95" filter="url(#softGlow)">
+    <path d="M-36 28 L0 0 L36 28" stroke="rgb(255,160,40)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M-28 52 L0 28 L28 52" stroke="rgb(255,160,40)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+    <path d="M-20 74 L0 54 L20 74" stroke="rgb(255,160,40)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
   </g>
 
   <!-- Primary watermark copy -->
-  <g text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif">
-    <text x="600" y="250" fill="url(#textFill)" font-size="42" font-weight="700" letter-spacing="0.6">
+  <g text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif" filter="url(#textShadow)">
+    <text x="600" y="250" fill="url(#textFill)" font-size="44" font-weight="700" letter-spacing="0.6">
       Address bar above has focus
     </text>
-    <text x="600" y="300" fill="rgba(255,240,220,0.28)" font-size="28" font-weight="600" letter-spacing="0.3">
+    <text x="600" y="300" fill="rgba(255,245,230,0.82)" font-size="28" font-weight="600" letter-spacing="0.3">
       Press Tab or click to focus page
     </text>
   </g>
 
   <!-- Subtle dotted guide lines from center toward the bar -->
-  <g stroke="rgba(255,140,0,0.18)" stroke-width="2" stroke-dasharray="4 10" opacity="0.8">
+  <g stroke="rgba(255,160,40,0.45)" stroke-width="2" stroke-dasharray="4 10" opacity="0.9">
     <line x1="600" y1="320" x2="600" y2="112"/>
   </g>
 </svg>

@@ -353,6 +353,18 @@ function createModal({ title, hintKeyLabel, closeKeys, url, width, height }) {
     if (data.type === 'KP_POPOVER_REQUEST_CLOSE') {
       if (closeKeys.includes(String(data.key))) requestClose();
     }
+
+    if (data.type === 'KP_POPOVER_LAUNCH_WALKTHROUGH') {
+      requestClose();
+      try {
+        const ob = window.__KeyPilotOnboarding;
+        if (ob && typeof ob.resetTutorial === 'function') {
+          void ob.resetTutorial();
+        }
+      } catch {
+        // ignore
+      }
+    }
   };
 
   backdrop.addEventListener('click', requestClose, true);
@@ -1454,31 +1466,147 @@ async function init() {
     console.warn('[KeyPilot] Failed to initialize onboarding on newtab:', e);
   }
 
-  const focusHint = document.getElementById('focus-hint');
+  /*
+   * ---------------------------------------------------------------------------
+   * New Tab "address bar has focus" hint (#focus-hint / focus-hint-bg.svg)
+   * STATUS: DISABLED (FOCUS_HINT_ENABLED = false). DOM/CSS remain in place.
+   * ---------------------------------------------------------------------------
+   *
+   * Intent
+   *   When Chrome's omnibox (address bar) has focus, dim the page and show the
+   *   SVG watermark so keyboard users know why KeyPilot keys are not reaching
+   *   the page. Clear the hint when the page regains focus (click, Tab, etc.).
+   *
+   * Permissions
+   *   No special extension permission exists for "omnibox focused". This is
+   *   pure page DOM (hasFocus / blur / focusin). Manifest changes won't help.
+   *
+   * Chrome quirk (extension NTP / chrome_url_overrides newtab)
+   *   After a cold load, the address bar often already owns keyboard input
+   *   while document.hasFocus() still returns true. Clicking the omnibox is
+   *   then a no-op for hasFocus/window.blur — the hint never appears if you
+   *   only poll !document.hasFocus().
+   *
+   *   Opening DevTools (or any real blur) "repairs" the focus graph; after
+   *   that, omnibox click correctly flips hasFocus. Same repair happens once
+   *   the user has engaged the page with a real focus transition.
+   *
+   *   mouseleave toward the top of the viewport can detect moving into the
+   *   toolbar, but false-triggers whenever the cursor merely exits into
+   *   browser chrome (tabs, bookmarks) without focusing the omnibox — do not
+   *   use that as the sole show signal.
+   *
+   * Working multi-signal approach (when re-enabling)
+   *   - pageOwnsFocus starts false → show hint (NTP omnibox-first).
+   *   - Hide on: focusin (Tab from omnibox into page), pointerdown, page keydown.
+   *   - Show on: window blur, !document.hasFocus(), Cmd/Ctrl+L.
+   *   - Do not claim page ownership on cold-load window.focus alone (hasFocus lies).
+   *   - After sawBrowserBlur, window.focus + hasFocus may mark page ownership.
+   *   - Optional debug HUD was used during diagnosis; keep it off in production.
+   *
+   * Markup / styles (still in newtab.html + newtab.css)
+   *   #focus-hint, .focus-hint-scrim, img.focus-hint-bg, body.kp-unfocused
+   * ---------------------------------------------------------------------------
+   */
+  const FOCUS_HINT_ENABLED = false;
 
-  const refreshFocusHint = () => {
-    // Best-effort heuristic: on the New Tab page, focusing the omnibox typically blurs the page
-    // while the document remains visible. We avoid showing the hint when the tab isn't visible.
-    const shouldShow = document.visibilityState === 'visible' && !document.hasFocus();
-    try {
-      document.body?.classList?.toggle('kp-unfocused', shouldShow);
-    } catch {
-      // ignore
-    }
-    if (focusHint) {
-      focusHint.hidden = !shouldShow;
-    }
-  };
-  window.addEventListener('focus', refreshFocusHint, true);
-  window.addEventListener('blur', refreshFocusHint, true);
-  document.addEventListener('visibilitychange', refreshFocusHint, true);
-  // Chrome doesn't always emit blur/focus events when the omnibox steals focus; poll cheaply.
-  const focusHintPoll = setInterval(() => {
-    if (document.visibilityState !== 'visible') return;
+  const focusHint = document.getElementById('focus-hint');
+  // Force off while disabled (also clears any leftover unfocused styling).
+  try {
+    document.body?.classList?.remove('kp-unfocused');
+    if (focusHint) focusHint.hidden = true;
+  } catch {
+    // ignore
+  }
+  try {
+    document.getElementById('kp-focus-debug-hud')?.remove();
+  } catch {
+    // ignore
+  }
+
+  if (FOCUS_HINT_ENABLED) {
+    let pageOwnsFocus = false;
+    /** True after we've observed a real window blur (browser chrome took focus). */
+    let sawBrowserBlur = false;
+
+    const refreshFocusHint = () => {
+      let hasFocus = true;
+      try { hasFocus = document.hasFocus(); } catch { hasFocus = true; }
+
+      if (!hasFocus) {
+        pageOwnsFocus = false;
+      }
+
+      const shouldShow = document.visibilityState === 'visible' && !pageOwnsFocus;
+      try {
+        document.body?.classList?.toggle('kp-unfocused', shouldShow);
+      } catch {
+        // ignore
+      }
+      if (focusHint) {
+        focusHint.hidden = !shouldShow;
+      }
+    };
+
+    const markPageOwnsFocus = () => {
+      pageOwnsFocus = true;
+      refreshFocusHint();
+    };
+
+    const markBrowserOwnsFocus = () => {
+      sawBrowserBlur = true;
+      pageOwnsFocus = false;
+      refreshFocusHint();
+    };
+
+    window.addEventListener('focus', () => {
+      // After a real blur to browser chrome, window focus means the page is active again.
+      // Do not claim ownership on cold-load focus (hasFocus can lie before any blur).
+      try {
+        if (document.hasFocus() && (sawBrowserBlur || pageOwnsFocus)) {
+          markPageOwnsFocus();
+          return;
+        }
+      } catch { /* ignore */ }
+      refreshFocusHint();
+    }, true);
+
+    window.addEventListener('blur', () => markBrowserOwnsFocus(), true);
+
+    document.addEventListener('visibilitychange', () => refreshFocusHint(), true);
+
+    // Tab from the omnibox lands focus on a page control → focusin clears the hint.
+    document.addEventListener('focusin', () => markPageOwnsFocus(), true);
+
+    document.addEventListener('pointerdown', (e) => {
+      if (e && typeof e.button === 'number' && e.button !== 0) return;
+      markPageOwnsFocus();
+    }, true);
+
+    document.addEventListener('keydown', (e) => {
+      if (!e) return;
+      if (e.key === 'Meta' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Shift') return;
+      if ((e.metaKey || e.ctrlKey) && String(e.key || '').toLowerCase() === 'l') {
+        markBrowserOwnsFocus();
+        return;
+      }
+      if (e.key === 'Tab') {
+        markPageOwnsFocus();
+        return;
+      }
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      markPageOwnsFocus();
+    }, true);
+
+    const focusHintPoll = setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
+      refreshFocusHint();
+    }, 250);
+    window.addEventListener('pagehide', () => clearInterval(focusHintPoll), { capture: true, once: true });
+
+    pageOwnsFocus = false;
     refreshFocusHint();
-  }, 250);
-  window.addEventListener('pagehide', () => clearInterval(focusHintPoll), { capture: true, once: true });
-  refreshFocusHint();
+  }
 
   const form = document.getElementById('search-form');
   const input = document.getElementById('search-input');

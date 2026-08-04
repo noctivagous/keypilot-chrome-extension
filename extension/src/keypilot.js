@@ -1435,6 +1435,29 @@ export class KeyPilot extends EventManager {
         } catch (e) {
           console.warn('[KeyPilot] Failed to open onboarding via message:', e);
         }
+      } else if (msg.type === MSG.LAUNCH_WALKTHROUGH) {
+        try {
+          // Tab-local: close guide/settings popover, reset + open walkthrough.
+          if (window !== window.top) return;
+          try {
+            const th = window.__KeyPilotToggleHandler;
+            if (th && typeof th.enabled === 'boolean' && th.enabled === false) return;
+          } catch { /* ignore */ }
+          try {
+            const st = this.state?.getState?.();
+            if (st?.mode === MODES.POPOVER) {
+              this.handleClosePopover();
+            }
+          } catch { /* ignore */ }
+          const ob = window.__KeyPilotOnboarding;
+          if (ob && typeof ob.resetTutorial === 'function') {
+            void ob.resetTutorial();
+          } else if (ob && typeof ob.setActive === 'function') {
+            ob.setActive(true);
+          }
+        } catch (e) {
+          console.warn('[KeyPilot] Failed to launch walkthrough via message:', e);
+        }
       }
     });
   }
