@@ -1,10 +1,34 @@
-import { buildSearchUrl, getEngineHomeUrl, getSettings, normalizeSearchEngine, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
+import { buildSearchUrl, getEngineHomeUrl, getSettings, setSettings, normalizeSearchEngine, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
 import { KeyPilot } from '../src/keypilot.js';
 import { KeyPilotToggleHandler } from '../src/modules/keypilot-toggle-handler.js';
 import { OnboardingManager } from '../src/modules/onboarding-manager.js';
-import { GENERIC_FAVICON_DATA_URL, getExtensionFaviconUrl, renderUrlListing, extractDomain } from '../src/ui/url-listing.js';
+import {
+  GENERIC_FAVICON_DATA_URL,
+  attachFaviconWithUpgrade,
+  renderUrlListing,
+  extractDomain,
+  parseUrlForThreeLineDisplay
+} from '../src/ui/url-listing.js';
 import { createPopoverTitlebar, createTitlebarCloseHint } from '../src/ui/popover-titlebar.js';
 import { createSegmentedControl } from '../src/ui/segmented-control.js';
+import {
+  NEWTAB_THEME_STORAGE_KEY,
+  NEWTAB_FONT_SIZE_STORAGE_KEY,
+  NEWTAB_UI_SCALE_STORAGE_KEY,
+  NEWTAB_CONTENT_WIDTH_STORAGE_KEY,
+  NEWTAB_FONT_SCALE_STORAGE_KEY,
+  DEFAULT_NEWTAB_THEME,
+  DEFAULT_NEWTAB_FONT_SIZE_PX,
+  DEFAULT_NEWTAB_UI_SCALE,
+  DEFAULT_NEWTAB_CONTENT_WIDTH,
+  normalizeNewtabTheme,
+  normalizeNewtabFontSizePx,
+  normalizeNewtabUiScale,
+  normalizeNewtabContentWidth,
+  fontScaleToPx,
+  applyNewtabDisplaySettings,
+  createNewtabDisplayPopover
+} from '../src/ui/newtab-display-popover.js';
 import { storageGetValue } from '../src/utils/storage.js';
 
 let currentEngine = 'brave';
@@ -12,34 +36,162 @@ const KP_ENABLED_STORAGE_KEY = 'keypilot_enabled';
 const KP_KEYBOARD_HELP_STORAGE_KEY = 'keypilot_keyboard_help_visible';
 const BOOKMARKS_VIEW_STORAGE_KEY = 'kp_newtab_bookmarks_view';
 
-function parseUrlForThreeLineDisplay(rawUrl) {
-  const input = String(rawUrl || '').trim();
-  if (!input) return { domain: '', path: '' };
+/**
+ * Persist display settings and apply them to the page.
+ * @param {{ theme?: unknown, fontSizePx?: unknown, uiScale?: unknown, contentWidth?: unknown }} partial
+ * @param {{ theme: 'cyberforward'|'earth', fontSizePx: number, uiScale: number, contentWidth: import('../src/ui/newtab-display-popover.js').NewtabContentWidth }} current
+ */
+function commitNewtabDisplaySettings(partial, current) {
+  const next = applyNewtabDisplaySettings({
+    theme: partial.theme != null ? partial.theme : current.theme,
+    fontSizePx: partial.fontSizePx != null ? partial.fontSizePx : current.fontSizePx,
+    uiScale: partial.uiScale != null ? partial.uiScale : current.uiScale,
+    contentWidth: partial.contentWidth != null ? partial.contentWidth : current.contentWidth
+  });
+  try {
+    chrome.storage.local.set({
+      [NEWTAB_THEME_STORAGE_KEY]: next.theme,
+      [NEWTAB_FONT_SIZE_STORAGE_KEY]: next.fontSizePx,
+      [NEWTAB_UI_SCALE_STORAGE_KEY]: next.uiScale,
+      [NEWTAB_CONTENT_WIDTH_STORAGE_KEY]: next.contentWidth
+    });
+  } catch {
+    // ignore
+  }
+  return next;
+}
+
+async function initNewtabDisplay() {
+  /** @type {{ theme: 'cyberforward'|'earth', fontSizePx: number, uiScale: number, contentWidth: number|'full' }} */
+  let settings = {
+    theme: DEFAULT_NEWTAB_THEME,
+    fontSizePx: DEFAULT_NEWTAB_FONT_SIZE_PX,
+    uiScale: DEFAULT_NEWTAB_UI_SCALE,
+    contentWidth: DEFAULT_NEWTAB_CONTENT_WIDTH
+  };
 
   try {
-    const u = new URL(input, 'https://example.invalid');
-    const scheme = (u.protocol || '').replace(/:$/, '');
-    const host = (u.hostname || '') + (u.port ? `:${u.port}` : '');
-
-    // Domain line: prefer host if present; otherwise fall back to scheme.
-    const domain = host || scheme || input;
-
-    // Path line: everything after the domain: pathname + search + hash.
-    // Keep '/' for empty paths so the third line isn't blank for homepages.
-    const pathname = u.pathname || '';
-    const rest = `${pathname || ''}${u.search || ''}${u.hash || ''}`;
-    const path = rest || (host ? '/' : '');
-
-    return { domain, path };
+    const stored = await chrome.storage.local.get([
+      NEWTAB_THEME_STORAGE_KEY,
+      NEWTAB_FONT_SIZE_STORAGE_KEY,
+      NEWTAB_UI_SCALE_STORAGE_KEY,
+      NEWTAB_CONTENT_WIDTH_STORAGE_KEY,
+      NEWTAB_FONT_SCALE_STORAGE_KEY
+    ]);
+    const migratedFont =
+      stored?.[NEWTAB_FONT_SIZE_STORAGE_KEY] != null
+        ? normalizeNewtabFontSizePx(stored[NEWTAB_FONT_SIZE_STORAGE_KEY])
+        : (fontScaleToPx(stored?.[NEWTAB_FONT_SCALE_STORAGE_KEY]) ?? DEFAULT_NEWTAB_FONT_SIZE_PX);
+    settings = {
+      theme: normalizeNewtabTheme(stored?.[NEWTAB_THEME_STORAGE_KEY]),
+      fontSizePx: migratedFont,
+      uiScale: normalizeNewtabUiScale(
+        stored?.[NEWTAB_UI_SCALE_STORAGE_KEY] ?? DEFAULT_NEWTAB_UI_SCALE
+      ),
+      contentWidth: normalizeNewtabContentWidth(
+        stored?.[NEWTAB_CONTENT_WIDTH_STORAGE_KEY] ?? DEFAULT_NEWTAB_CONTENT_WIDTH
+      )
+    };
   } catch {
-    // Very defensive fallback: attempt split on first slash after scheme.
-    const m = input.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\/([^\/?#]+)([^\s]*)?$/);
-    if (m) {
-      const domain = m[1] || input;
-      const path = m[2] || '/';
-      return { domain, path };
+    try {
+      const lsFont = localStorage.getItem(NEWTAB_FONT_SIZE_STORAGE_KEY);
+      const lsScaleLegacy = localStorage.getItem(NEWTAB_FONT_SCALE_STORAGE_KEY);
+      settings = {
+        theme: normalizeNewtabTheme(localStorage.getItem(NEWTAB_THEME_STORAGE_KEY)),
+        fontSizePx:
+          lsFont != null
+            ? normalizeNewtabFontSizePx(lsFont)
+            : (fontScaleToPx(lsScaleLegacy) ?? DEFAULT_NEWTAB_FONT_SIZE_PX),
+        uiScale: normalizeNewtabUiScale(
+          localStorage.getItem(NEWTAB_UI_SCALE_STORAGE_KEY) ?? DEFAULT_NEWTAB_UI_SCALE
+        ),
+        contentWidth: normalizeNewtabContentWidth(
+          localStorage.getItem(NEWTAB_CONTENT_WIDTH_STORAGE_KEY) ?? DEFAULT_NEWTAB_CONTENT_WIDTH
+        )
+      };
+    } catch {
+      // ignore
     }
-    return { domain: input, path: '' };
+  }
+
+  settings = applyNewtabDisplaySettings(settings);
+
+  const anchor = document.getElementById('btn-display');
+  if (!anchor) return;
+
+  const popover = createNewtabDisplayPopover({
+    anchorButton: anchor,
+    theme: settings.theme,
+    fontSizePx: settings.fontSizePx,
+    uiScale: settings.uiScale,
+    contentWidth: settings.contentWidth,
+    onThemeChange: (theme) => {
+      settings = commitNewtabDisplaySettings({ theme }, settings);
+    },
+    onFontSizeChange: (fontSizePx) => {
+      settings = commitNewtabDisplaySettings({ fontSizePx }, settings);
+    },
+    onUiScaleChange: (uiScale) => {
+      settings = commitNewtabDisplaySettings({ uiScale }, settings);
+    },
+    onContentWidthChange: (contentWidth) => {
+      settings = commitNewtabDisplaySettings({ contentWidth }, settings);
+    },
+    onResetToDefaults: (defaults) => {
+      settings = commitNewtabDisplaySettings(
+        {
+          theme: defaults.theme,
+          fontSizePx: defaults.fontSizePx,
+          uiScale: defaults.uiScale,
+          contentWidth: defaults.contentWidth
+        },
+        settings
+      );
+    }
+  });
+
+  try {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== 'local') return;
+      if (!changes) return;
+
+      let nextTheme = settings.theme;
+      let nextFont = settings.fontSizePx;
+      let nextScale = settings.uiScale;
+      let nextWidth = settings.contentWidth;
+      let changed = false;
+
+      if (changes[NEWTAB_THEME_STORAGE_KEY]) {
+        nextTheme = normalizeNewtabTheme(changes[NEWTAB_THEME_STORAGE_KEY].newValue);
+        changed = true;
+      }
+      if (changes[NEWTAB_FONT_SIZE_STORAGE_KEY]) {
+        nextFont = normalizeNewtabFontSizePx(changes[NEWTAB_FONT_SIZE_STORAGE_KEY].newValue);
+        changed = true;
+      }
+      if (changes[NEWTAB_UI_SCALE_STORAGE_KEY]) {
+        nextScale = normalizeNewtabUiScale(changes[NEWTAB_UI_SCALE_STORAGE_KEY].newValue);
+        changed = true;
+      }
+      if (changes[NEWTAB_CONTENT_WIDTH_STORAGE_KEY]) {
+        nextWidth = normalizeNewtabContentWidth(changes[NEWTAB_CONTENT_WIDTH_STORAGE_KEY].newValue);
+        changed = true;
+      }
+      if (!changed) return;
+
+      settings = applyNewtabDisplaySettings({
+        theme: nextTheme,
+        fontSizePx: nextFont,
+        uiScale: nextScale,
+        contentWidth: nextWidth
+      });
+      popover.setTheme(settings.theme, { silent: true });
+      popover.setFontSizePx(settings.fontSizePx, { silent: true });
+      popover.setUiScale(settings.uiScale, { silent: true });
+      popover.setContentWidth(settings.contentWidth, { silent: true });
+    });
+  } catch {
+    // ignore
   }
 }
 
@@ -703,11 +855,12 @@ async function renderRecentHistory() {
     const favicon = document.createElement('img');
     favicon.className = 'history-outline-favicon';
     favicon.alt = '';
-    favicon.referrerPolicy = 'no-referrer';
-    favicon.src = getExtensionFaviconUrl(group.items[0].url, 32);
-    favicon.onerror = () => {
-      favicon.src = GENERIC_FAVICON_DATA_URL;
-    };
+    attachFaviconWithUpgrade(favicon, group.items[0].url, {
+      displaySize: 32,
+      requestSize: 64,
+      fallbackUrl: GENERIC_FAVICON_DATA_URL,
+      highRes: true
+    });
 
     const label = document.createElement('span');
     label.className = 'history-outline-label';
@@ -793,29 +946,43 @@ async function renderTopSites() {
 
     const link = document.createElement('a');
     link.href = site.url;
-    link.className = 'top-site-link';
-    link.title = site.title || site.url;
+    // Compact tile: high-res favicon; page title top + URL bottom (both clip on overflow).
+    link.className = 'top-site-link top-site-card';
+    const { domain } = parseUrlForThreeLineDisplay(site.url);
+    const pageTitle = String(site.title || '').trim();
+    const urlLabel = domain || site.url;
+    link.title = pageTitle ? `${pageTitle}\n${urlLabel}` : urlLabel;
     link.addEventListener('click', (e) => {
       e.preventDefault();
       navigate(site.url);
     });
 
+    const tile = document.createElement('div');
+    tile.className = 'top-site-tile';
+
+    const titleEl = document.createElement('div');
+    titleEl.className = 'top-site-page-title';
+    titleEl.textContent = pageTitle || urlLabel;
+
+    const urlEl = document.createElement('div');
+    urlEl.className = 'top-site-url';
+    urlEl.textContent = urlLabel;
+
     const favicon = document.createElement('img');
     favicon.className = 'top-site-favicon';
-    // Use the shared MV3 helper (handles runtime.getURL correctly + falls back when unavailable).
-    favicon.src = getExtensionFaviconUrl(site.url, 32);
-    favicon.onerror = () => {
-      // Fallback to default favicon if loading fails
-      favicon.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjA4KSIvPgo8L3N2Zz4=';
-    };
+    favicon.alt = '';
+    // Quick Chrome favicon, then upgrade via SW multi-source high-res probe.
+    attachFaviconWithUpgrade(favicon, site.url, {
+      displaySize: 48,
+      requestSize: 128,
+      fallbackUrl: GENERIC_FAVICON_DATA_URL,
+      highRes: true
+    });
 
-    const title = document.createElement('div');
-    title.className = 'top-site-title';
-    const { domain } = parseUrlForThreeLineDisplay(site.url);
-    title.textContent = domain || site.url;
-
-    link.appendChild(favicon);
-    link.appendChild(title);
+    tile.appendChild(titleEl);
+    tile.appendChild(favicon);
+    tile.appendChild(urlEl);
+    link.appendChild(tile);
     item.appendChild(link);
     list.appendChild(item);
   }
@@ -985,6 +1152,86 @@ function initKeyboardHelpSwitch() {
       setUi(actual);
     } catch {
       setUi(await queryKeyboardHelpVisible());
+    } finally {
+      toggle.disabled = false;
+    }
+  }, { capture: true });
+}
+
+async function queryControlStripVisible() {
+  try {
+    const settings = await getSettings();
+    return settings?.controlStrip?.visible !== false;
+  } catch {
+    return true;
+  }
+}
+
+async function setControlStripVisible(visible) {
+  const desired = Boolean(visible);
+  await setSettings({ controlStrip: { visible: desired } });
+
+  // Prefer live KeyPilot so the strip updates immediately on this page.
+  try {
+    const kp = window.keyPilot || window.__KeyPilotInstance;
+    if (kp) {
+      if (kp._settings) {
+        kp._settings.controlStrip = {
+          ...(kp._settings.controlStrip || {}),
+          visible: desired
+        };
+      }
+      if (typeof kp.applyControlStripFromSettings === 'function') {
+        kp.applyControlStripFromSettings();
+      }
+    }
+  } catch {
+    // storage listener will still apply
+  }
+
+  return desired;
+}
+
+function initControlStripSwitch() {
+  /** @type {HTMLInputElement | null} */
+  const toggle = /** @type {any} */ (document.getElementById('kp-control-strip-toggle'));
+  if (!toggle) return;
+  const stateText = document.getElementById('kp-control-strip-text');
+
+  const setUi = (visible) => {
+    const on = Boolean(visible);
+    toggle.checked = on;
+    if (stateText) {
+      stateText.textContent = on ? 'ON' : 'OFF';
+      stateText.setAttribute('data-state', on ? 'on' : 'off');
+    }
+  };
+
+  queryControlStripVisible().then(setUi).catch(() => setUi(true));
+
+  try {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== 'sync' && area !== 'local') return;
+      const entry = changes?.[SETTINGS_STORAGE_KEY];
+      if (!entry) return;
+      const next = entry.newValue;
+      if (!next || typeof next !== 'object') return;
+      if (next.controlStrip && typeof next.controlStrip.visible === 'boolean') {
+        setUi(next.controlStrip.visible);
+      }
+    });
+  } catch {
+    // ignore
+  }
+
+  toggle.addEventListener('change', async () => {
+    const desired = toggle.checked;
+    toggle.disabled = true;
+    try {
+      const actual = await setControlStripVisible(desired);
+      setUi(actual);
+    } catch {
+      setUi(await queryControlStripVisible());
     } finally {
       toggle.disabled = false;
     }
@@ -1215,7 +1462,9 @@ async function init() {
   }
 
   initEnabledSwitch();
+  initControlStripSwitch();
   initKeyboardHelpSwitch();
+  initNewtabDisplay();
 
   initBookmarkTabs();
   initBookmarkViewToggle();

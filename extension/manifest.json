@@ -18,7 +18,7 @@
         "type": "module"
     },
     "content_security_policy": {
-        "extension_pages": "frame-src *; style-src 'self' 'unsafe-inline'; img-src 'self' https://img.youtube.com https://www.google.com https://icons.duckduckgo.com data:; default-src 'self'"
+        "extension_pages": "default-src 'self'; script-src 'self'; object-src 'none'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https: chrome:; connect-src 'self' https: http:; frame-src *"
     },
     "permissions": [
         "storage",

@@ -60,24 +60,30 @@ export function getChromeFavicon2Url(url, size = 32) {
 }
 
 /**
- * Extracts and formats a URL for display: removes protocol and makes domain bold.
+ * Strip a leading "www." from a host (or host+port / host+path fragment) for display.
+ * @param {string} hostOrUrlPart
+ * @returns {string}
+ */
+export function stripWwwPrefix(hostOrUrlPart) {
+  return String(hostOrUrlPart || '').replace(/^www\./i, '');
+}
+
+/**
+ * Extracts and formats a URL for display: removes protocol and leading www.
  * @param {string} url
- * @returns {string} HTML string with domain bolded
+ * @returns {string} cleaned URL string (no protocol / no leading www.)
  */
 export function formatUrlForDisplay(url) {
   const u = String(url || '').trim();
   if (!u) return '';
 
   try {
-    // Remove protocol (http://, https://, etc.)
-    let cleanUrl = u.replace(/^https?:\/\//i, '');
-
-    // For display, we'll just return the cleaned URL
-    // The bold formatting will be handled in the calling code
+    // Remove protocol (http://, https://, etc.), then leading www.
+    let cleanUrl = u.replace(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//, '');
+    cleanUrl = stripWwwPrefix(cleanUrl);
     return cleanUrl;
   } catch {
-    // Fallback for invalid URLs
-    return u.replace(/^https?:\/\//i, '');
+    return stripWwwPrefix(u.replace(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//, ''));
   }
 }
 
@@ -89,9 +95,48 @@ export function formatUrlForDisplay(url) {
 export function extractDomain(url) {
   try {
     const hostname = new URL(String(url || '').trim()).hostname || '';
-    return hostname.replace(/^www\./i, '');
+    return stripWwwPrefix(hostname);
   } catch {
     return '';
+  }
+}
+
+/**
+ * Parse a URL into domain + path lines for three-line listings.
+ * Domain never includes a leading "www.".
+ *
+ * @param {string} rawUrl
+ * @returns {{ domain: string, path: string }}
+ */
+export function parseUrlForThreeLineDisplay(rawUrl) {
+  const input = String(rawUrl || '').trim();
+  if (!input) return { domain: '', path: '' };
+
+  try {
+    const u = new URL(input, 'https://example.invalid');
+    const scheme = (u.protocol || '').replace(/:$/, '');
+    const hostOnly = stripWwwPrefix(u.hostname || '');
+    const host = hostOnly + (u.port ? `:${u.port}` : '');
+
+    // Domain line: prefer host if present; otherwise fall back to scheme.
+    const domain = host || scheme || stripWwwPrefix(input);
+
+    // Path line: everything after the domain: pathname + search + hash.
+    // Keep '/' for empty paths so the third line isn't blank for homepages.
+    const pathname = u.pathname || '';
+    const rest = `${pathname || ''}${u.search || ''}${u.hash || ''}`;
+    const path = rest || (host ? '/' : '');
+
+    return { domain, path };
+  } catch {
+    // Very defensive fallback: attempt split on first slash after scheme.
+    const m = input.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\/([^\/?#]+)([^\s]*)?$/);
+    if (m) {
+      const domain = stripWwwPrefix(m[1] || input);
+      const path = m[2] || '/';
+      return { domain, path };
+    }
+    return { domain: stripWwwPrefix(input), path: '' };
   }
 }
 
@@ -139,12 +184,34 @@ export function getExtensionFaviconUrl(pageUrl, size = 32) {
 }
 
 /**
- * Request favicon from service worker via message passing
+ * Google's public favicon service — loadable as <img src> (img-src https:) without fetch/connect-src.
+ * Often higher-res than Chrome's cached tab favicon when sz is large.
+ *
+ * @param {string} pageUrl
+ * @param {number} [size]
+ * @returns {string}
+ */
+export function getGoogleS2FaviconUrl(pageUrl, size = 128) {
+  const s = Math.max(16, Math.min(256, Number(size) || 128));
+  try {
+    const u = new URL(String(pageUrl || '').trim());
+    const domain = (u.hostname || '').replace(/^www\./i, '');
+    if (!domain) return '';
+    return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=${s}`;
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Request favicon from service worker (multi-source high-res probe + cache).
+ * Requires extension_pages CSP connect-src to allow https: fetches in the SW.
+ *
  * @param {string} pageUrl
  * @param {number} [size]
  * @returns {Promise<string|null>} Data URL or null if failed
  */
-async function requestFaviconFromServiceWorker(pageUrl, size = 32) {
+export async function requestFaviconFromServiceWorker(pageUrl, size = 32) {
   try {
     if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) {
       return null;
@@ -166,14 +233,134 @@ async function requestFaviconFromServiceWorker(pageUrl, size = 32) {
 }
 
 /**
+ * Paint a quick Chrome favicon, then upgrade to a higher-res asset when available.
+ *
+ * Upgrade order (CSP-safe):
+ * 1. Chrome `/_favicon/` (instant, often low-res)
+ * 2. Google s2 as direct <img src> (no fetch; uses img-src)
+ * 3. Service-worker multi-source probe → data: URL (needs connect-src https:)
+ *
+ * @param {HTMLImageElement} img
+ * @param {string} pageUrl
+ * @param {object} [opts]
+ * @param {number} [opts.displaySize] CSS/display box size
+ * @param {number} [opts.requestSize] preferred source size (default max(display, 128))
+ * @param {string} [opts.fallbackUrl]
+ * @param {boolean} [opts.highRes=true]
+ */
+export function attachFaviconWithUpgrade(img, pageUrl, opts = {}) {
+  if (!img) return;
+  const url = String(pageUrl || '').trim();
+  const displaySize = Math.max(12, Number(opts.displaySize) || 32);
+  const requestSize = Math.max(
+    displaySize,
+    Number(opts.requestSize) || Math.max(128, displaySize * 2)
+  );
+  const fallback =
+    typeof opts.fallbackUrl === 'string' && opts.fallbackUrl
+      ? opts.fallbackUrl
+      : GENERIC_FAVICON_DATA_URL;
+  const highRes = opts.highRes !== false;
+
+  try {
+    img.alt = img.alt || '';
+    img.referrerPolicy = 'no-referrer';
+    img.decoding = 'async';
+    img.loading = img.loading || 'lazy';
+  } catch {
+    // ignore
+  }
+
+  /** @type {'chrome' | 'google' | 'sw' | 'fallback' | ''} */
+  let stage = '';
+
+  const setSrc = (src, nextStage) => {
+    try {
+      stage = nextStage;
+      img.src = src;
+    } catch {
+      // ignore
+    }
+  };
+
+  const chromeUrl = getExtensionFaviconUrl(url, Math.min(128, Math.max(32, displaySize * 2)));
+  const googleUrl = getGoogleS2FaviconUrl(url, requestSize);
+
+  // 1) Instant paint from Chrome's favicon cache.
+  setSrc(chromeUrl, 'chrome');
+
+  img.addEventListener('error', () => {
+    // Do not downgrade a successful SW data: URL.
+    if (stage === 'sw' || stage === 'fallback') return;
+    if (stage === 'chrome' && googleUrl) {
+      setSrc(googleUrl, 'google');
+      try {
+        img.dataset.kpFaviconHires = 'google';
+      } catch {
+        // ignore
+      }
+      return;
+    }
+    if (stage === 'google' || stage === 'chrome') {
+      setSrc(fallback, 'fallback');
+      try {
+        img.dataset.kpFaviconFallback = 'true';
+      } catch {
+        // ignore
+      }
+    }
+  });
+
+  if (!highRes || !url) return;
+
+  // 2) Google s2 upgrade via <img src> (uses img-src, not connect-src / fetch).
+  const tryGoogleUpgrade = () => {
+    if (!googleUrl || !img.isConnected) return;
+    if (stage === 'sw' || stage === 'fallback') return;
+    if (stage !== 'chrome') return;
+    setSrc(googleUrl, 'google');
+    try {
+      img.dataset.kpFaviconHires = 'google';
+    } catch {
+      // ignore
+    }
+  };
+
+  try {
+    requestAnimationFrame(() => {
+      setTimeout(tryGoogleUpgrade, 0);
+    });
+  } catch {
+    tryGoogleUpgrade();
+  }
+
+  // 3) SW multi-source probe → cached data: URL (needs CSP connect-src https: + host_permissions).
+  requestFaviconFromServiceWorker(url, requestSize)
+    .then((dataUrl) => {
+      if (!dataUrl || !img.isConnected) return;
+      try {
+        img.src = dataUrl;
+        img.dataset.kpFaviconHires = 'sw';
+        stage = 'sw';
+      } catch {
+        // ignore
+      }
+    })
+    .catch(() => {
+      // Chrome / Google path remains.
+    });
+}
+
+/**
  * @param {Document} doc
  * @param {string} url
  * @param {object} [opts]
  * @param {number} [opts.size]
  * @param {string} [opts.faviconUrl]
  * @param {string} [opts.fallbackUrl]
+ * @param {boolean} [opts.highRes]
  */
-export function createFaviconImg(doc, url, { size = 18, faviconUrl, fallbackUrl } = {}) {
+export function createFaviconImg(doc, url, { size = 18, faviconUrl, fallbackUrl, highRes = true } = {}) {
   const d = doc || document;
   const img = /** @type {HTMLImageElement} */ (d.createElement('img'));
   img.alt = '';
@@ -183,34 +370,37 @@ export function createFaviconImg(doc, url, { size = 18, faviconUrl, fallbackUrl 
   img.width = size;
   img.height = size;
   const fallback = typeof fallbackUrl === 'string' && fallbackUrl ? fallbackUrl : GENERIC_FAVICON_DATA_URL;
-  const primary = typeof faviconUrl === 'string' && faviconUrl ? faviconUrl : getExtensionFaviconUrl(url, 32);
-  img.src = primary;
 
-  // If favicon fetch fails (no favicon, permission issue, blocked scheme, etc), try service worker, then fall back to generic icon.
-  img.addEventListener('error', async () => {
-    try {
-      img.removeAttribute('srcset');
-      
-      // Try fetching via service worker message passing
-      const dataUrl = await requestFaviconFromServiceWorker(url, size);
-      if (dataUrl) {
-        img.src = dataUrl;
-        return;
-      }
-      
-      // Final fallback to generic icon
-      img.src = fallback;
-      img.dataset.kpFaviconFallback = 'true';
-    } catch {
-      // If all else fails, use fallback
-      try {
-        img.src = fallback;
-        img.dataset.kpFaviconFallback = 'true';
-      } catch {
-        // ignore
-      }
+  if (typeof faviconUrl === 'string' && faviconUrl) {
+    img.src = faviconUrl;
+    img.addEventListener(
+      'error',
+      () => {
+        attachFaviconWithUpgrade(img, url, {
+          displaySize: size,
+          fallbackUrl: fallback,
+          highRes
+        });
+      },
+      { once: true }
+    );
+    if (highRes) {
+      // Still try to upgrade custom URL if SW finds something sharper.
+      requestFaviconFromServiceWorker(url, Math.max(size, 128)).then((dataUrl) => {
+        if (dataUrl && img.isConnected) {
+          img.src = dataUrl;
+          img.dataset.kpFaviconHires = 'true';
+        }
+      }).catch(() => {});
     }
-  }, { once: true });
+    return img;
+  }
+
+  attachFaviconWithUpgrade(img, url, {
+    displaySize: size,
+    fallbackUrl: fallback,
+    highRes
+  });
 
   return img;
 }

@@ -1265,9 +1265,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
 
         case 'KP_GET_FAVICON': {
-          // Fetch favicon for a website URL, with caching
+          // High-res favicon fetch with multi-source probe + local cache.
+          // Prefer large icons (Google sz=, apple-touch-icon, manifest-style paths)
+          // over Chrome's small tab favicon when possible.
           const pageUrl = typeof message.pageUrl === 'string' ? message.pageUrl.trim() : '';
           const size = Math.max(16, Math.min(256, Number(message.size) || 32));
+          // Bucket cache so 64/96/128 requests share a high-res entry when possible.
+          const cacheSize = size >= 96 ? 128 : size >= 48 ? 64 : size;
 
           if (!pageUrl) {
             sendResponse({
@@ -1279,7 +1283,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           }
 
           try {
-            // Parse URL to get domain
             let urlObj;
             try {
               urlObj = new URL(pageUrl);
@@ -1292,8 +1295,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               break;
             }
 
-            const domain = urlObj.hostname.replace(/^www\./, '');
-            const cacheKey = `kp_favicon_${domain}_${size}`;
+            const domain = urlObj.hostname.replace(/^www\./i, '');
+            const origin = urlObj.origin;
+            const cacheKey = `kp_favicon_v2_${domain}_${cacheSize}`;
             const CACHE_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
             // Check cache first
@@ -1307,6 +1311,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     type: 'KP_FAVICON_RESPONSE',
                     success: true,
                     dataUrl: cachedData.dataUrl,
+                    width: cachedData.width || 0,
+                    height: cachedData.height || 0,
                     cached: true
                   });
                   break;
@@ -1316,75 +1322,186 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               // Cache read failed, continue to fetch
             }
 
-            // Try Chrome's built-in favicon API first (for visited sites)
-            try {
-              const chromeFaviconUrl = `chrome://favicon2/?size=${size}&pageUrl=${encodeURIComponent(pageUrl)}`;
-              // We can't directly test if this works, so we'll try fetching it
-              // But actually, we can't fetch chrome:// URLs. Let's try the extension favicon API instead.
-            } catch (e) {
-              // Ignore
+            const blobToDataUrl = (blob) =>
+              new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+              });
+
+            const measureBlob = async (blob) => {
+              try {
+                if (typeof createImageBitmap === 'function') {
+                  const bmp = await createImageBitmap(blob);
+                  const dims = { width: bmp.width || 0, height: bmp.height || 0 };
+                  try {
+                    bmp.close();
+                  } catch {
+                    // ignore
+                  }
+                  return dims;
+                }
+              } catch {
+                // fall through
+              }
+              return { width: 0, height: 0 };
+            };
+
+            /** @type {{ url: string, priority: number }[]} */
+            const candidates = [];
+
+            // 1) Google favicon service — often returns real high-res icons when sz is large.
+            const googleSz = Math.max(cacheSize, 128);
+            candidates.push({
+              url: `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=${googleSz}`,
+              priority: 100
+            });
+            candidates.push({
+              url: `https://www.google.com/s2/favicons?sz=${googleSz}&domain_url=${encodeURIComponent(origin)}`,
+              priority: 95
+            });
+
+            // 2) Common high-res origin icons (touch / PWA).
+            const hiResPaths = [
+              '/apple-touch-icon.png',
+              '/apple-touch-icon-precomposed.png',
+              '/apple-touch-icon-180x180.png',
+              '/apple-touch-icon-152x152.png',
+              '/android-chrome-192x192.png',
+              '/android-chrome-512x512.png',
+              '/favicon-196x196.png',
+              '/favicon-192x192.png',
+              '/favicon-128x128.png',
+              '/favicon-96x96.png',
+              '/favicon-32x32.png',
+              '/favicon.png',
+              '/favicon.ico'
+            ];
+            for (let i = 0; i < hiResPaths.length; i++) {
+              candidates.push({
+                url: `${origin}${hiResPaths[i]}`,
+                priority: 80 - i
+              });
             }
 
-            // Try common favicon locations
-            // Order: Google's favicon service (most reliable), then DuckDuckGo, then direct site paths
-            const faviconUrls = [
-              `https://www.google.com/s2/favicons?domain=${domain}&sz=${size}`,
-              `https://icons.duckduckgo.com/ip3/${domain}.ico`,
-              `${urlObj.origin}/favicon.ico`,
-              `${urlObj.origin}/favicon.png`,
-              `${urlObj.origin}/apple-touch-icon.png`
-            ];
+            // 3) DuckDuckGo icons
+            candidates.push({
+              url: `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+              priority: 40
+            });
 
-            let faviconDataUrl = null;
+            // 4) Chrome extension favicon API (visited-site cache; often only 16/32).
+            //    Fetch is same-origin to the extension and always allowed by CSP.
+            try {
+              const extFav = new URL(chrome.runtime.getURL('/_favicon/'));
+              extFav.searchParams.set('pageUrl', pageUrl);
+              extFav.searchParams.set('size', String(Math.min(128, Math.max(32, cacheSize))));
+              candidates.push({ url: extFav.toString(), priority: 20 });
+            } catch {
+              // ignore
+            }
 
-            for (const faviconUrl of faviconUrls) {
+            /** @type {{ dataUrl: string, width: number, height: number, priority: number, bytes: number } | null} */
+            let best = null;
+
+            /**
+             * Fetch one candidate. External hosts require host_permissions + CSP connect-src.
+             * Failures are expected for sites that block CORS or return non-images.
+             */
+            const fetchCandidate = async (c) => {
               try {
-                const response = await fetch(faviconUrl, {
+                const response = await fetch(c.url, {
                   method: 'GET',
+                  // Prefer cors; fall back is automatic for extension-origin _favicon/.
                   mode: 'cors',
                   credentials: 'omit',
                   referrerPolicy: 'no-referrer',
-                  cache: 'default'
+                  cache: 'force-cache'
                 });
-
-                if (response.ok) {
-                  const blob = await response.blob();
-                  if (blob.size > 0 && blob.type.startsWith('image/')) {
-                    // Convert blob to data URL
-                    const reader = new FileReader();
-                    faviconDataUrl = await new Promise((resolve, reject) => {
-                      reader.onload = () => resolve(reader.result);
-                      reader.onerror = reject;
-                      reader.readAsDataURL(blob);
-                    });
-
-                    if (faviconDataUrl) {
-                      // Cache the result
-                      try {
-                        await chrome.storage.local.set({
-                          [cacheKey]: {
-                            dataUrl: faviconDataUrl,
-                            timestamp: Date.now()
-                          }
-                        });
-                      } catch (e) {
-                        // Cache write failed, but we still have the favicon
-                      }
-                      break;
-                    }
-                  }
+                if (!response.ok) return null;
+                const blob = await response.blob();
+                if (!blob || blob.size <= 0) return null;
+                const type = String(blob.type || '').toLowerCase();
+                // Accept images, ico octet-streams, and empty type (some servers omit Content-Type).
+                if (
+                  type &&
+                  !type.startsWith('image/') &&
+                  type !== 'application/octet-stream' &&
+                  type !== 'application/ico' &&
+                  type !== 'text/plain'
+                ) {
+                  // text/plain sometimes mislabeled ico — still try to measure.
+                  if (blob.size < 32) return null;
                 }
-              } catch (e) {
-                // Try next URL
-                continue;
+                const dims = await measureBlob(blob);
+                // Reject 1x1 tracking pixels / empty placeholders.
+                if (dims.width > 0 && dims.height > 0 && dims.width <= 2 && dims.height <= 2) {
+                  return null;
+                }
+                const dataUrl = await blobToDataUrl(blob);
+                if (!dataUrl || typeof dataUrl !== 'string') return null;
+                return {
+                  dataUrl,
+                  width: dims.width,
+                  height: dims.height,
+                  priority: c.priority,
+                  bytes: blob.size
+                };
+              } catch {
+                return null;
+              }
+            };
+
+            // Probe in small parallel batches to balance speed vs. load.
+            const batchSize = 4;
+            for (let i = 0; i < candidates.length; i += batchSize) {
+              const batch = candidates.slice(i, i + batchSize);
+              const results = await Promise.all(batch.map((c) => fetchCandidate(c)));
+
+              for (const r of results) {
+                if (!r) continue;
+                if (!best) {
+                  best = r;
+                  continue;
+                }
+                const bestArea = (best.width || 0) * (best.height || 0);
+                const rArea = (r.width || 0) * (r.height || 0);
+                // Prefer larger pixel area; break ties with priority then bytes.
+                if (
+                  rArea > bestArea ||
+                  (rArea === bestArea && r.priority > best.priority) ||
+                  (rArea === bestArea && r.priority === best.priority && r.bytes > best.bytes)
+                ) {
+                  best = r;
+                }
+              }
+
+              // Early exit if we already have a solid high-res hit.
+              if (best && Math.min(best.width || 0, best.height || 0) >= Math.max(cacheSize, 96)) {
+                break;
               }
             }
 
-            if (faviconDataUrl) {
+            if (best?.dataUrl) {
+              try {
+                await chrome.storage.local.set({
+                  [cacheKey]: {
+                    dataUrl: best.dataUrl,
+                    width: best.width || 0,
+                    height: best.height || 0,
+                    timestamp: Date.now()
+                  }
+                });
+              } catch (e) {
+                // Cache write failed, but we still have the favicon
+              }
               sendResponse({
                 type: 'KP_FAVICON_RESPONSE',
                 success: true,
-                dataUrl: faviconDataUrl,
+                dataUrl: best.dataUrl,
+                width: best.width || 0,
+                height: best.height || 0,
                 cached: false
               });
             } else {

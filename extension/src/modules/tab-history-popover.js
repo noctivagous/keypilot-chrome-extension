@@ -4,38 +4,11 @@
  * - Full-width panel with two stacked horizontal card rails (Tab + Browser).
  * - Uses PopupManager to keep z-index below click overlays and to enable View Transitions.
  */
-import { createUrlListingContainer, renderUrlListing } from '../ui/url-listing.js';
-
-function parseUrlForThreeLineDisplay(rawUrl) {
-  const input = String(rawUrl || '').trim();
-  if (!input) return { domain: '', path: '' };
-
-  try {
-    const u = new URL(input, 'https://example.invalid');
-    const scheme = (u.protocol || '').replace(/:$/, '');
-    const host = (u.hostname || '') + (u.port ? `:${u.port}` : '');
-
-    // Domain line: prefer host if present; otherwise fall back to scheme.
-    const domain = host || scheme || input;
-
-    // Path line: everything after the domain: pathname + search + hash.
-    // Keep '/' for empty paths so the third line isn't blank for homepages.
-    const pathname = u.pathname || '';
-    const rest = `${pathname || ''}${u.search || ''}${u.hash || ''}`;
-    const path = rest || (host ? '/' : '');
-
-    return { domain, path };
-  } catch {
-    // Very defensive fallback: attempt split on first slash after scheme.
-    const m = input.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\/([^\/?#]+)([^\s]*)?$/);
-    if (m) {
-      const domain = m[1] || input;
-      const path = m[2] || '/';
-      return { domain, path };
-    }
-    return { domain: input, path: '' };
-  }
-}
+import {
+  createUrlListingContainer,
+  renderUrlListing,
+  parseUrlForThreeLineDisplay
+} from '../ui/url-listing.js';
 
 function renderThreeLineUrlListingEntry({ item, parts }) {
   const url = String(item?.url || '').trim();
