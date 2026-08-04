@@ -22,6 +22,8 @@ import { CSS_CLASSES, COLORS, INSPECTOR_KIND } from '../config/constants.js';
  *   shadowColor: string,
  *   shadowBrightColor: string,
  *   allowHtmlBody?: boolean,
+ *   actionId?: string,
+ *   instructionTemplate?: string,
  * }} InspectorDef
  */
 
@@ -41,7 +43,9 @@ export const INSPECTOR_DEFS = Object.freeze({
     borderColor: COLORS.DELETE_RED,
     shadowColor: COLORS.DELETE_SHADOW,
     shadowBrightColor: COLORS.DELETE_SHADOW_BRIGHT,
-    allowHtmlBody: false
+    allowHtmlBody: false,
+    actionId: 'DELETE',
+    instructionTemplate: 'Press {key} again to delete · Esc cancels'
   }),
   [INSPECTOR_KIND.COLS]: Object.freeze({
     kind: INSPECTOR_KIND.COLS,
@@ -52,9 +56,24 @@ export const INSPECTOR_DEFS = Object.freeze({
     borderColor: COLORS.COLS_PURPLE,
     shadowColor: COLORS.COLS_SHADOW,
     shadowBrightColor: COLORS.COLS_SHADOW_BRIGHT,
-    allowHtmlBody: true
+    allowHtmlBody: true,
+    actionId: 'COLS_TOGGLE',
+    instructionTemplate: 'Hover an element · Press {key} again to columnize · Esc cancels'
   })
 });
+
+/**
+ * Build the top-right instruction string for an inspector kind.
+ * @param {string|null|undefined} kind
+ * @param {string} [confirmKey]
+ * @returns {string}
+ */
+export function getInspectorInstructionText(kind, confirmKey) {
+  const def = getInspectorDef(kind);
+  const key = String(confirmKey || (kind === INSPECTOR_KIND.COLS ? '.' : 'Backspace') || '').trim() || '?';
+  const template = def?.instructionTemplate || 'Press {key} again · Esc cancels';
+  return template.replace(/\{key\}/g, key);
+}
 
 /**
  * @param {string|null|undefined} kind

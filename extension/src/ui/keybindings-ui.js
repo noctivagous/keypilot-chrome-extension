@@ -451,6 +451,32 @@ function showPopoverForTarget({ doc, pop, targetEl, binding, actionId, container
   pop.style.setProperty('--kp-arrow-left', `${Math.round(arrowLeft)}px`);
 }
 
+/**
+ * Notify listeners that a Keyboard Reference key info popover was shown via hover/focus.
+ * Uses the same keypilot:action channel as F-key activations so onboarding can complete
+ * tasks like "hover a key to see what it does".
+ * @param {{ actionId?: string, keyEl?: Element|null }} [detail]
+ */
+function emitKeyboardHelpKeyHover(detail = {}) {
+  try {
+    // Debounce rapid pointerenter chatter across adjacent keys so onboarding only needs one real hover.
+    const now = Date.now();
+    if (emitKeyboardHelpKeyHover._lastAt && now - emitKeyboardHelpKeyHover._lastAt < 120) return;
+    emitKeyboardHelpKeyHover._lastAt = now;
+
+    document.dispatchEvent(new CustomEvent('keypilot:action', {
+      detail: {
+        action: 'hover',
+        isKeyboardHelpKey: true,
+        actionId: detail.actionId ? String(detail.actionId) : null,
+        timestamp: now
+      }
+    }));
+  } catch {
+    // ignore
+  }
+}
+
 function attachKeyPopoverBehavior({ root, keybindings }) {
   if (!root) return;
   const doc = root.ownerDocument || document;
@@ -501,6 +527,8 @@ function attachKeyPopoverBehavior({ root, keybindings }) {
     if (!binding) return;
     clearHideTimer();
     showPopoverForTarget({ doc, pop, targetEl: keyEl, binding, actionId, container: floatingContainer });
+    // Onboarding / other listeners: user hovered a Keyboard Reference key and saw its info.
+    emitKeyboardHelpKeyHover({ actionId, keyEl });
   };
 
   // Remove existing handlers if re-attaching

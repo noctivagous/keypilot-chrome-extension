@@ -30,6 +30,7 @@ export function buildKeyPilotPrintCss() {
     `.${CSS_CLASSES.FOCUS_OVERLAY}`,
     `.${CSS_CLASSES.DELETE_OVERLAY}`,
     `.${CSS_CLASSES.INSPECTOR_OVERLAY}`,
+    `.${CSS_CLASSES.INSPECTOR_MODE_INDICATOR}`,
     `.${CSS_CLASSES.COLS_OVERLAY}`,
     `.${CSS_CLASSES.COLS_SLIP_BAR}`,
     `.${CSS_CLASSES.HIGHLIGHT_OVERLAY}`,
@@ -581,6 +582,34 @@ export class StyleManager {
         overflow-x: auto !important;
         overflow-y: hidden !important;
         box-sizing: border-box !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        scrollbar-width: none !important;
+      }
+      .${CSS_CLASSES.COLS_ACTIVE}::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+      }
+
+      /* Column widget shell (outline + integrated slip bar) */
+      .${CSS_CLASSES.COLS_SHELL} {
+        box-sizing: border-box;
+      }
+      .${CSS_CLASSES.COLS_BODY} {
+        min-width: 0;
+        min-height: 0;
+      }
+      .${CSS_CLASSES.COLS_SLIP_BAR} {
+        box-sizing: border-box;
+      }
+      .${CSS_CLASSES.COLS_SLIP_BAR}[data-kp-slip-empty="1"] .${CSS_CLASSES.COLS_SLIP_TRACK} {
+        opacity: 0.45;
+      }
+      .${CSS_CLASSES.COLS_EXPAND_BTN}:focus-visible,
+      .${CSS_CLASSES.COLS_CLOSE_BTN}:focus-visible {
+        outline: 2px solid ${COLORS.COLS_PURPLE_BRIGHT};
+        outline-offset: 1px;
       }
 
       /* Page-mode markers (html/body): critical layout is set inline by ColumnLayoutManager. */

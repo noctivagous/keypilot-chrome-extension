@@ -2,7 +2,11 @@
  * Visual overlay management for focus and delete indicators
  */
 import { CSS_CLASSES, Z_INDEX, SELECTORS, MODES, COLORS, FEATURE_FLAGS, CLICKABLE_CATEGORY, KP_UI_FONT } from '../config/constants.js';
-import { getAllInspectorHostClasses, getInspectorDef } from './inspector-mode.js';
+import {
+  getAllInspectorHostClasses,
+  getInspectorDef,
+  getInspectorInstructionText
+} from './inspector-mode.js';
 import { MSG } from '../messaging/types.js';
 import { HighlightManager } from './highlight-manager.js';
 import { PopupManager } from './popup-manager.js';
@@ -64,6 +68,10 @@ export class OverlayManager {
     this.inspectorOverlay = null;
     /** @type {string|null} last applied inspector kind for restyle */
     this._inspectorOverlayKind = null;
+    /** Top-right companion instruction (like Text Select mode indicator) */
+    this.inspectorModeIndicator = null;
+    /** @type {{ kind?: string|null, confirmKey?: string }|null} */
+    this._inspectorIndicatorOpts = null;
     // Legacy aliases — kept so any lingering callers don't throw during transition
     this.deleteOverlay = null;
     this.colsOverlay = null;
@@ -1011,8 +1019,11 @@ export class OverlayManager {
       const kind = inspectorKind
         || (mode === 'delete' ? 'delete' : mode === 'cols' ? 'cols' : null);
       this.updateInspectorOverlay(inspectorEl, kind);
+      // Keep top-right instruction visible while pick is active
+      this.showInspectorModeIndicator({ kind });
     } else {
       this.hideInspectorOverlay();
+      this.hideInspectorModeIndicator();
     }
     
     // Show highlight chrome in highlight mode (instruction + optional focus ring)
@@ -1973,6 +1984,91 @@ export class OverlayManager {
     if (this.inspectorOverlay) {
       this.inspectorOverlay.style.display = 'none';
     }
+  }
+
+  /**
+   * Remember confirm-key / kind for the top-right instruction chip.
+   * Call when entering inspector so updateOverlays can keep the chip visible.
+   * @param {{ kind?: string|null, confirmKey?: string }} opts
+   */
+  setInspectorModeIndicatorOpts(opts = {}) {
+    this._inspectorIndicatorOpts = {
+      kind: opts.kind || null,
+      confirmKey: opts.confirmKey || ''
+    };
+  }
+
+  /**
+   * Top-right companion instruction while inspector pick is active
+   * (same pattern as Text Select "Press H again to finish selection").
+   * @param {{ kind?: string|null, confirmKey?: string, message?: string }} [opts]
+   */
+  showInspectorModeIndicator(opts = {}) {
+    const prev = this._inspectorIndicatorOpts || {};
+    const kind = opts.kind || prev.kind || null;
+    const confirmKey = opts.confirmKey || prev.confirmKey || '';
+    if (opts.kind || opts.confirmKey) {
+      this._inspectorIndicatorOpts = { kind, confirmKey };
+    }
+
+    const def = getInspectorDef(kind);
+    const modeText = (opts.message && String(opts.message).trim())
+      || getInspectorInstructionText(kind, confirmKey);
+
+    const bg = def?.borderColor || COLORS.COLS_PURPLE;
+    const shadow = def?.shadowColor || COLORS.COLS_SHADOW;
+
+    if (this.inspectorModeIndicator) {
+      this.inspectorModeIndicator.textContent = modeText;
+      this.inspectorModeIndicator.style.display = 'block';
+      this.inspectorModeIndicator.style.background = bg;
+      this.inspectorModeIndicator.style.boxShadow = `0 2px 10px ${shadow}`;
+      try {
+        if (kind) this.inspectorModeIndicator.setAttribute('data-kp-inspector-kind', kind);
+      } catch { /* ignore */ }
+      return;
+    }
+
+    this.inspectorModeIndicator = this.createElement('div', {
+      className: CSS_CLASSES.INSPECTOR_MODE_INDICATOR || 'kpv2-inspector-mode-indicator',
+      style: `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${bg};
+        color: white;
+        padding: 10px 14px;
+        font-size: 14px;
+        font-weight: bold;
+        font-family: ${KP_UI_FONT};
+        border-radius: 6px;
+        box-shadow: 0 2px 10px ${shadow};
+        z-index: ${Z_INDEX.MESSAGE_BOX};
+        pointer-events: none;
+        max-width: min(360px, calc(100vw - 40px));
+        line-height: 1.35;
+        will-change: transform, opacity;
+        animation: kpv2-pulse 1.5s ease-in-out infinite;
+        letter-spacing: 0.01em;
+      `
+    });
+    try {
+      if (kind) this.inspectorModeIndicator.setAttribute('data-kp-inspector-kind', kind);
+    } catch { /* ignore */ }
+    this.inspectorModeIndicator.textContent = modeText;
+    try {
+      document.body.appendChild(this.inspectorModeIndicator);
+    } catch {
+      try { document.documentElement.appendChild(this.inspectorModeIndicator); } catch { /* ignore */ }
+    }
+  }
+
+  hideInspectorModeIndicator() {
+    if (this.inspectorModeIndicator) {
+      try { this.inspectorModeIndicator.remove(); } catch { /* ignore */ }
+      this.inspectorModeIndicator = null;
+    }
+    this._inspectorIndicatorOpts = null;
   }
 
   /** @deprecated use updateInspectorOverlay(el, kind) */
@@ -3619,6 +3715,7 @@ export class OverlayManager {
     this.deleteOverlay = null;
     this.colsOverlay = null;
     this._inspectorOverlayKind = null;
+    this.hideInspectorModeIndicator();
     // Clean up highlight manager
     if (this.highlightManager) {
       this.highlightManager.cleanup();

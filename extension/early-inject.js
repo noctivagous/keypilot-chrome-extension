@@ -14,9 +14,9 @@
   const ONBOARDING_ACTIVE_STORAGE_KEY = 'keypilot_onboarding_active';
   const ONBOARDING_PROGRESS_STORAGE_KEY = 'keypilot_onboarding_progress';
   const SETTINGS_STORAGE_KEY = 'kp_settings_v1';
-  const Z_ONBOARDING_PANEL = 2147483017;
-  // Keep in sync with Z_INDEX.CONTROL_STRIP in src/config/constants.js
+  // Keep in sync with Z_INDEX in src/config/constants.js
   const Z_CONTROL_STRIP = 2147483025;
+  const Z_ONBOARDING_PANEL = 2147483026;
   const CONTROL_STRIP_DEFAULT_TOP_PX = 16;
   const CONTROL_STRIP_DEFAULT_LEFT_PX = 16;
   const CONTROL_STRIP_HEIGHT_PX = 28;
@@ -35,6 +35,7 @@
   // - `extension/src/config/keyboard-layouts.js` (built-in layout data)
   // - `extension/src/ui/keybindings-ui-shared.js` (CSS + layout + style attr)
   // - `extension/pages/onboarding.xml` (early onboarding model)
+  // - `extension/src/ui/onboarding-shared.js` (shell / progress / checklist DOM)
   // Do not edit by hand.
   const Z_FLOATING_KEYBOARD_HELP = 2147483045;
   const Z_KEYBINDINGS_POPOVER = 2147483046;
@@ -1214,10 +1215,10 @@
         },
         {
           "id": "keyboard_key_info",
-          "label": "Notice the Keyboard Reference window below. While hovering over one of its keys, press the `F` key  \n    to find out what it does.",
+          "label": "Notice the Keyboard Reference window below. Hover over one of its keys to see what it does.",
           "when": {
             "type": "action",
-            "action": "activate",
+            "action": "hover",
             "target": "keyboardHelpKey",
             "mode": "",
             "change": ""
@@ -1232,6 +1233,28 @@
             "target": "",
             "mode": "",
             "change": ""
+          }
+        },
+        {
+          "id": "toggle_extension_off",
+          "label": "Notice the control strip above that says `ON`. Click it to turn KeyPilot completely off.",
+          "when": {
+            "type": "action",
+            "action": "toggleExtension",
+            "target": "",
+            "mode": "",
+            "change": "off"
+          }
+        },
+        {
+          "id": "toggle_extension_on",
+          "label": "Click the control strip again to turn KeyPilot back on.",
+          "when": {
+            "type": "action",
+            "action": "toggleExtension",
+            "target": "",
+            "mode": "",
+            "change": "on"
           }
         }
       ],
@@ -2296,6 +2319,928 @@
  * }
  */
 `;
+
+  // --- begin stamped onboarding-shared.js ---
+  /**
+   * Shared onboarding walkthrough primitives.
+   *
+   * Zero imports so this file can be:
+   * - imported by ESM modules (panel / manager)
+   * - stamped into early-inject.js by build.js (export keywords stripped)
+   *
+   * Keep DOM construction and progress shape here so early-inject and the
+   * bundled content script cannot drift.
+   */
+
+  // ── Storage / progress ──────────────────────────────────────────────────────
+
+  const ONBOARDING_STORAGE_KEYS = {
+    ACTIVE: 'keypilot_onboarding_active',
+    PROGRESS: 'keypilot_onboarding_progress'
+  };
+
+  const ONBOARDING_FIRST_SLIDE_ID = 'basic_navigation';
+  const ONBOARDING_PANEL_CLASS = 'kp-onboarding-panel';
+  const ONBOARDING_DEFAULT_TITLE = 'Welcome to KeyPilot';
+  const ONBOARDING_REOPEN_TIP = 'Tip: Press Alt + / to re-open this walkthrough later.';
+
+  /** Default z-index fallback if caller does not pass Z_INDEX.ONBOARDING_PANEL. */
+  const ONBOARDING_PANEL_Z_FALLBACK = 2147483026;
+
+  /** Layout: control strip stays at top; walkthrough sits just below it. */
+  const ONBOARDING_DEFAULT_LEFT_PX = 16;
+  const ONBOARDING_DEFAULT_TOP_PX = 16;
+  /** Prefixed names avoid clashing with early-inject locals when this file is stamped. */
+  const ONBOARDING_STRIP_TOP_PX = 16;
+  const ONBOARDING_STRIP_HEIGHT_PX = 28;
+  const ONBOARDING_BELOW_STRIP_GAP_PX = 8;
+
+  /**
+   * Preferred top offset for the walkthrough so the control strip stays visible above it.
+   * @returns {number}
+   */
+  function getOnboardingTopBelowControlStrip() {
+    try {
+      const strip = document.querySelector('.kp-control-strip');
+      if (strip && strip.isConnected) {
+        const cs = typeof window.getComputedStyle === 'function' ? window.getComputedStyle(strip) : null;
+        const hidden =
+          strip.hidden === true ||
+          strip.getAttribute('hidden') !== null ||
+          (strip.style && strip.style.display === 'none') ||
+          (cs && (cs.display === 'none' || cs.visibility === 'hidden'));
+        if (!hidden) {
+          const rect = strip.getBoundingClientRect();
+          if (rect && rect.height > 0) {
+            return Math.max(
+              ONBOARDING_DEFAULT_TOP_PX,
+              Math.round(rect.bottom + ONBOARDING_BELOW_STRIP_GAP_PX)
+            );
+          }
+        }
+      }
+    } catch { /* ignore */ }
+    // Fallback assuming strip is at its default top-left perch.
+    return ONBOARDING_STRIP_TOP_PX + ONBOARDING_STRIP_HEIGHT_PX + ONBOARDING_BELOW_STRIP_GAP_PX;
+  }
+
+  /**
+   * @param {HTMLElement|null} root
+   */
+  function positionOnboardingBelowControlStrip(root) {
+    if (!root) return;
+    try {
+      root.style.top = `${getOnboardingTopBelowControlStrip()}px`;
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * @typedef {Object} OnboardingProgress
+   * @property {string|null} slideId
+   * @property {string[]} completedTaskIds
+   * @property {string[]} onEnterDoneSlideIds
+   * @property {boolean} completed
+   * @property {number} timestamp
+   */
+
+  /**
+   * @param {string|null} [slideId]
+   * @returns {OnboardingProgress}
+   */
+  function createEmptyProgress(slideId = null) {
+    return {
+      slideId: slideId || null,
+      completedTaskIds: [],
+      onEnterDoneSlideIds: [],
+      completed: false,
+      timestamp: Date.now()
+    };
+  }
+
+  /**
+   * @param {any} progress
+   * @returns {OnboardingProgress}
+   */
+  function cloneProgress(progress) {
+    const p = progress && typeof progress === 'object' ? progress : {};
+    return {
+      slideId: typeof p.slideId === 'string' ? p.slideId : null,
+      completedTaskIds: Array.isArray(p.completedTaskIds) ? p.completedTaskIds.map(String) : [],
+      onEnterDoneSlideIds: Array.isArray(p.onEnterDoneSlideIds) ? p.onEnterDoneSlideIds.map(String) : [],
+      completed: !!p.completed,
+      timestamp: typeof p.timestamp === 'number' ? p.timestamp : Date.now()
+    };
+  }
+
+  /**
+   * @param {string[]} a
+   * @param {string[]} b
+   */
+  function arraysEqualString(a, b) {
+    const aa = Array.isArray(a) ? a : [];
+    const bb = Array.isArray(b) ? b : [];
+    if (aa.length !== bb.length) return false;
+    for (let i = 0; i < aa.length; i++) {
+      if (String(aa[i]) !== String(bb[i])) return false;
+    }
+    return true;
+  }
+
+  /**
+   * @param {OnboardingProgress|any} a
+   * @param {OnboardingProgress|any} b
+   */
+  function progressEqual(a, b) {
+    const aa = cloneProgress(a);
+    const bb = cloneProgress(b);
+    return (
+      aa.slideId === bb.slideId &&
+      aa.completed === bb.completed &&
+      aa.timestamp === bb.timestamp &&
+      arraysEqualString(aa.completedTaskIds, bb.completedTaskIds) &&
+      arraysEqualString(aa.onEnterDoneSlideIds, bb.onEnterDoneSlideIds)
+    );
+  }
+
+  /**
+   * @param {{tasks?: Array<{id?: string}>}|null|undefined} slide
+   * @param {Set<string>|string[]} completedTaskIds
+   */
+  function isSlideComplete(slide, completedTaskIds) {
+    const tasks = slide?.tasks || [];
+    if (!tasks.length) return true;
+    const set = completedTaskIds instanceof Set
+      ? completedTaskIds
+      : new Set(Array.isArray(completedTaskIds) ? completedTaskIds.map(String) : []);
+    for (const t of tasks) {
+      if (!t?.id) continue;
+      if (!set.has(String(t.id))) return false;
+    }
+    return true;
+  }
+
+  // ── Text helpers ────────────────────────────────────────────────────────────
+
+  /**
+   * Convert backtick-wrapped segments into <kbd> nodes (no innerHTML).
+   * Safer on hostile pages than parsing HTML strings.
+   * @param {ParentNode} el
+   * @param {string} text
+   */
+  function renderKeyboardKeysInto(el, text) {
+    if (!el) return;
+    try { el.textContent = ''; } catch { /* ignore */ }
+    const parts = String(text || '').split(/`/);
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      if (!part) continue;
+      if (i % 2 === 1) {
+        const k = document.createElement('kbd');
+        k.textContent = part;
+        el.appendChild(k);
+      } else {
+        el.appendChild(document.createTextNode(part));
+      }
+    }
+  }
+
+  /**
+   * @param {string} text
+   * @returns {string} HTML with <kbd> (for callers that intentionally use innerHTML)
+   */
+  function formatKeyboardKeysHtml(text) {
+    return String(text || '').replace(/`([^`]+)`/g, '<kbd>$1</kbd>');
+  }
+
+  // ── CSS ─────────────────────────────────────────────────────────────────────
+
+  /**
+   * @param {{includeViewTransitions?: boolean}} [opts]
+   * @returns {string}
+   */
+  function getOnboardingPanelCss(opts = {}) {
+    const includeVt = opts.includeViewTransitions !== false;
+    let css =
+      `.${ONBOARDING_PANEL_CLASS} kbd {
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+          font-size: 11px;
+          padding: 1px 6px;
+          border: 1px solid #3a3a3a;
+          border-bottom-color: #2a2a2a;
+          border-radius: 4px;
+          background: linear-gradient(180deg, #2b2b2b 0%, #1a1a1a 100%);
+          color: #f1f1f1;
+        }`;
+    if (includeVt) {
+      css += `
+        @keyframes kpOnboardingSlideOut {
+          to { transform: translateX(calc(var(--kp-onboarding-slide-dir, 1) * -100%)); opacity: 0.0; }
+        }
+        @keyframes kpOnboardingSlideIn {
+          from { transform: translateX(calc(var(--kp-onboarding-slide-dir, 1) * 100%)); opacity: 0.0; }
+          to { transform: translateX(0%); opacity: 1.0; }
+        }
+        ::view-transition-old(kp-onboarding-slide-surface) {
+          animation: kpOnboardingSlideOut 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        }
+        ::view-transition-new(kp-onboarding-slide-surface) {
+          animation: kpOnboardingSlideIn 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        }`;
+    }
+    return css;
+  }
+
+  // ── Shell DOM ───────────────────────────────────────────────────────────────
+
+  function assignStyle(el, styles) {
+    if (!el || !styles) return;
+    try { Object.assign(el.style, styles); } catch { /* ignore */ }
+  }
+
+  function mkIconBtn(doc, label, dataAttr, aria) {
+    const b = doc.createElement('button');
+    b.type = 'button';
+    b.textContent = label;
+    b.setAttribute(dataAttr, 'true');
+    if (aria) b.setAttribute('aria-label', aria);
+    assignStyle(b, {
+      width: '28px',
+      height: '28px',
+      borderRadius: '10px',
+      border: '1px solid rgba(255,255,255,0.18)',
+      background: 'rgba(255,255,255,0.06)',
+      color: 'rgba(255,255,255,0.95)',
+      cursor: 'pointer',
+      fontSize: '14px',
+      lineHeight: '26px',
+      padding: '0',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    });
+    return b;
+  }
+
+  /**
+   * Build the floating walkthrough panel shell (header / body / footer).
+   * Does not attach event listeners — callers wire close/prev/next/reset.
+   *
+   * @param {Document} doc
+   * @param {Object} [opts]
+   * @param {number|string} [opts.zIndex]
+   * @param {boolean} [opts.early] Mark as early-inject shell for adoption
+   * @param {boolean} [opts.initiallyHidden]
+   * @param {boolean} [opts.includeViewTransitions]
+   * @param {(el: HTMLElement) => void} [opts.applyTheme]
+   * @param {string} [opts.title]
+   * @param {string} [opts.stepText]
+   * @param {boolean} [opts.navDisabled] Disable prev/next (early shell until wired)
+   * @returns {{
+   *   root: HTMLElement,
+   *   body: HTMLElement,
+   *   slideSurface: HTMLElement,
+   *   titleEl: HTMLElement,
+   *   stepEl: HTMLElement,
+   *   prevBtn: HTMLButtonElement,
+   *   nextBtn: HTMLButtonElement,
+   *   resetBtn: HTMLButtonElement,
+   *   closeBtn: HTMLButtonElement
+   * }}
+   */
+  function createOnboardingShell(doc, opts = {}) {
+    const zIndex = opts.zIndex != null ? opts.zIndex : ONBOARDING_PANEL_Z_FALLBACK;
+    const initiallyHidden = opts.initiallyHidden !== false;
+    const includeVt = opts.includeViewTransitions !== false;
+
+    const root = doc.createElement('div');
+    root.className = ONBOARDING_PANEL_CLASS;
+    root.hidden = initiallyHidden;
+    if (opts.early) root.dataset.kpEarlyOnboarding = 'true';
+    root.setAttribute('role', 'dialog');
+    root.setAttribute('aria-label', 'KeyPilot onboarding walkthrough');
+
+    // When initially hidden, use display:none + pointer-events:none.
+    // Some pages override [hidden]; never put display:flex on a hidden shell.
+    assignStyle(root, {
+      position: 'fixed',
+      left: `${ONBOARDING_DEFAULT_LEFT_PX}px`,
+      // Prefer sitting below the control strip so the strip is not pushed down.
+      top: `${getOnboardingTopBelowControlStrip()}px`,
+      width: '360px',
+      maxWidth: 'calc(100vw - 24px)',
+      maxHeight: 'calc(100vh - 24px)',
+      display: initiallyHidden ? 'none' : 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      zIndex: String(zIndex),
+      background: 'rgba(18, 18, 18, 0.94)',
+      color: 'rgba(255,255,255,0.95)',
+      border: '1px solid rgba(255,255,255,0.12)',
+      borderRadius: '14px',
+      boxShadow: '0 12px 34px rgba(0,0,0,0.45)',
+      fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
+      pointerEvents: initiallyHidden ? 'none' : 'auto'
+    });
+
+    try { opts.applyTheme?.(root); } catch { /* ignore */ }
+
+    const style = doc.createElement('style');
+    style.textContent = getOnboardingPanelCss({ includeViewTransitions: includeVt });
+    root.appendChild(style);
+
+    const header = doc.createElement('div');
+    assignStyle(header, {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: '10px',
+      padding: '10px 12px',
+      borderBottom: '1px solid rgba(255,255,255,0.10)'
+    });
+
+    const titleWrap = doc.createElement('div');
+    assignStyle(titleWrap, {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '2px',
+      minWidth: '0'
+    });
+
+    const titleEl = doc.createElement('div');
+    titleEl.textContent = String(opts.title || ONBOARDING_DEFAULT_TITLE);
+    titleEl.setAttribute('data-kp-onboarding-title', 'true');
+    assignStyle(titleEl, {
+      fontSize: '13px',
+      fontWeight: '800',
+      letterSpacing: '0.2px',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis'
+    });
+
+    const stepEl = doc.createElement('div');
+    stepEl.textContent = String(opts.stepText || '1 / 1');
+    stepEl.setAttribute('data-kp-onboarding-step', 'true');
+    assignStyle(stepEl, {
+      fontSize: '12px',
+      fontWeight: '600',
+      opacity: '0.75'
+    });
+
+    // Title wrap only gets the title; step lives in the footer stepWrap
+    // (appendChild moves nodes — keep a single step element).
+    titleWrap.appendChild(titleEl);
+
+    const navWrap = doc.createElement('div');
+    assignStyle(navWrap, {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '8px',
+      flex: '0 0 auto'
+    });
+
+    const stepWrap = doc.createElement('div');
+    assignStyle(stepWrap, {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '6px'
+    });
+
+    const prevBtn = mkIconBtn(doc, '←', 'data-kp-onboarding-prev', 'Previous slide');
+    const nextBtn = mkIconBtn(doc, '→', 'data-kp-onboarding-next', 'Next slide');
+    if (opts.navDisabled) {
+      prevBtn.disabled = true;
+      nextBtn.disabled = true;
+    }
+
+    stepWrap.appendChild(prevBtn);
+    stepWrap.appendChild(stepEl);
+    stepWrap.appendChild(nextBtn);
+
+    const resetBtn = doc.createElement('button');
+    resetBtn.type = 'button';
+    resetBtn.textContent = 'Reset';
+    resetBtn.setAttribute('data-kp-onboarding-reset', 'true');
+    assignStyle(resetBtn, {
+      height: '28px',
+      borderRadius: '999px',
+      border: '1px solid rgba(255,255,255,0.18)',
+      background: 'rgba(255,255,255,0.06)',
+      color: 'rgba(255,255,255,0.92)',
+      cursor: 'pointer',
+      fontSize: '12px',
+      fontWeight: '700',
+      padding: '0 10px',
+      lineHeight: '26px'
+    });
+
+    const closeBtn = doc.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.textContent = '×';
+    closeBtn.setAttribute('aria-label', 'Close onboarding walkthrough');
+    closeBtn.setAttribute('data-kp-onboarding-close', 'true');
+    assignStyle(closeBtn, {
+      width: '30px',
+      height: '30px',
+      borderRadius: '10px',
+      border: '1px solid rgba(255,255,255,0.18)',
+      background: 'rgba(255,255,255,0.06)',
+      color: 'rgba(255,255,255,0.95)',
+      cursor: 'pointer',
+      fontSize: '18px',
+      lineHeight: '28px',
+      padding: '0',
+      flex: '0 0 auto'
+    });
+
+    navWrap.appendChild(closeBtn);
+    header.appendChild(titleWrap);
+    header.appendChild(navWrap);
+
+    const body = doc.createElement('div');
+    body.setAttribute('data-kp-onboarding-body', 'true');
+    assignStyle(body, {
+      flex: '1',
+      overflowY: 'auto',
+      minHeight: '0',
+      position: 'relative'
+    });
+
+    const slideSurface = doc.createElement('div');
+    slideSurface.setAttribute('data-kp-onboarding-slide-surface', 'true');
+    assignStyle(slideSurface, { padding: '12px' });
+    body.appendChild(slideSurface);
+
+    const footer = doc.createElement('div');
+    assignStyle(footer, {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: '10px',
+      padding: '10px 12px',
+      borderTop: '1px solid rgba(255,255,255,0.10)'
+    });
+    footer.appendChild(stepWrap);
+    footer.appendChild(resetBtn);
+
+    root.appendChild(header);
+    root.appendChild(body);
+    root.appendChild(footer);
+
+    return {
+      root,
+      body,
+      slideSurface,
+      titleEl,
+      stepEl,
+      prevBtn,
+      nextBtn,
+      resetBtn,
+      closeBtn
+    };
+  }
+
+  /**
+   * Query shell refs from an existing panel root (early-inject adoption).
+   * @param {Element|null} root
+   */
+  function queryOnboardingShellRefs(root) {
+    if (!root) return null;
+    const body =
+      root.querySelector('[data-kp-onboarding-body="true"]') ||
+      root.querySelector(':scope > div[data-kp-onboarding-body]');
+    if (!body) return null;
+    let slideSurface = body.querySelector('[data-kp-onboarding-slide-surface="true"]');
+    if (!slideSurface) {
+      slideSurface = document.createElement('div');
+      slideSurface.setAttribute('data-kp-onboarding-slide-surface', 'true');
+      assignStyle(slideSurface, { padding: '12px' });
+      try { body.appendChild(slideSurface); } catch { /* ignore */ }
+    }
+    return {
+      root,
+      body,
+      slideSurface,
+      titleEl: root.querySelector('[data-kp-onboarding-title="true"]'),
+      stepEl: root.querySelector('[data-kp-onboarding-step="true"]'),
+      prevBtn: root.querySelector('button[data-kp-onboarding-prev="true"]'),
+      nextBtn: root.querySelector('button[data-kp-onboarding-next="true"]'),
+      resetBtn: root.querySelector('button[data-kp-onboarding-reset="true"]'),
+      closeBtn: root.querySelector('button[data-kp-onboarding-close="true"]')
+    };
+  }
+
+  /**
+   * Show/hide panel in a way that survives hostile [hidden] CSS overrides.
+   * @param {HTMLElement|null} root
+   * @param {boolean} visible
+   */
+  function setOnboardingPanelVisible(root, visible) {
+    if (!root) return;
+    const show = !!visible;
+    try {
+      root.hidden = !show;
+      root.style.display = show ? 'flex' : 'none';
+      root.style.pointerEvents = show ? 'auto' : 'none';
+      if (show) positionOnboardingBelowControlStrip(root);
+    } catch { /* ignore */ }
+  }
+
+  // ── Slide content ───────────────────────────────────────────────────────────
+
+  function applyTaskRowVisual(row, task, done) {
+    if (!row) return;
+    assignStyle(row, {
+      background: done ? 'rgba(46, 204, 113, 0.10)' : 'rgba(255,255,255,0.04)'
+    });
+
+    const box =
+      row.querySelector(':scope > div[aria-hidden="true"]') ||
+      row.firstElementChild;
+    const textEl =
+      (box && box.nextElementSibling) ||
+      row.querySelector(':scope > div:last-child');
+
+    if (box) {
+      assignStyle(box, {
+        border: done ? '1px solid rgba(46, 204, 113, 0.9)' : '1px solid rgba(255,255,255,0.22)',
+        background: done ? 'rgba(46, 204, 113, 0.85)' : 'transparent',
+        boxShadow: done ? '0 0 0 2px rgba(46, 204, 113, 0.18)' : 'none'
+      });
+      try {
+        const existingCheck = box.querySelector(':scope > div');
+        if (done) {
+          if (!existingCheck) {
+            const check = document.createElement('div');
+            check.textContent = '✓';
+            assignStyle(check, {
+              position: 'absolute',
+              inset: '0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '13px',
+              fontWeight: '800',
+              color: '#0b1410'
+            });
+            box.appendChild(check);
+          }
+        } else if (existingCheck) {
+          box.removeChild(existingCheck);
+        }
+      } catch { /* ignore */ }
+    }
+
+    if (textEl) {
+      try {
+        renderKeyboardKeysInto(textEl, task.label || task.id);
+        assignStyle(textEl, {
+          color: done ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.88)',
+          opacity: done ? '0.95' : '1'
+        });
+      } catch { /* ignore */ }
+    }
+  }
+
+  function createTaskRow(doc, task, done) {
+    const row = doc.createElement('div');
+    row.setAttribute('data-kp-onboarding-task-id', task.id);
+    assignStyle(row, {
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: '10px',
+      padding: '8px 10px',
+      borderRadius: '10px',
+      border: '1px solid rgba(255,255,255,0.10)',
+      background: done ? 'rgba(46, 204, 113, 0.10)' : 'rgba(255,255,255,0.04)'
+    });
+
+    const box = doc.createElement('div');
+    box.setAttribute('aria-hidden', 'true');
+    assignStyle(box, {
+      width: '18px',
+      height: '18px',
+      borderRadius: '6px',
+      border: done ? '1px solid rgba(46, 204, 113, 0.9)' : '1px solid rgba(255,255,255,0.22)',
+      background: done ? 'rgba(46, 204, 113, 0.85)' : 'transparent',
+      boxShadow: done ? '0 0 0 2px rgba(46, 204, 113, 0.18)' : 'none',
+      flex: '0 0 auto',
+      marginTop: '1px',
+      position: 'relative'
+    });
+
+    if (done) {
+      const check = doc.createElement('div');
+      check.textContent = '✓';
+      assignStyle(check, {
+        position: 'absolute',
+        inset: '0',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '13px',
+        fontWeight: '800',
+        color: '#0b1410'
+      });
+      box.appendChild(check);
+    }
+
+    const text = doc.createElement('div');
+    renderKeyboardKeysInto(text, task.label || task.id);
+    assignStyle(text, {
+      fontSize: '13px',
+      lineHeight: '1.35',
+      color: done ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.88)',
+      opacity: done ? '0.95' : '1'
+    });
+
+    row.appendChild(box);
+    row.appendChild(text);
+    return row;
+  }
+
+  /**
+   * Render or update slide checklist into the slide surface.
+   *
+   * @param {HTMLElement} surface
+   * @param {Object} params
+   * @param {Array<{id:string, label?:string}>} [params.tasks]
+   * @param {Set<string>|string[]} [params.completedTaskIds]
+   * @param {string} [params.bodyText]
+   * @param {boolean} [params.forceRebuild]
+   * @param {boolean} [params.showTip]
+   * @param {Document} [params.doc]
+   */
+  function renderOnboardingSlideSurface(surface, params = {}) {
+    if (!surface) return;
+    const doc = params.doc || surface.ownerDocument || document;
+    const tasks = (params.tasks || []).filter((t) => t && t.id);
+    const completedSet = params.completedTaskIds instanceof Set
+      ? params.completedTaskIds
+      : new Set(Array.isArray(params.completedTaskIds) ? params.completedTaskIds.map(String) : []);
+    const bodyTextStr = String(params.bodyText || '').trim();
+    const forceRebuild = !!params.forceRebuild;
+    const showTip = params.showTip !== false;
+
+    const existingRows = surface.querySelectorAll('[data-kp-onboarding-task-id]');
+    const existingBody = surface.querySelector('[data-kp-onboarding-body-text="true"]');
+
+    const canUpdateInPlace =
+      !forceRebuild &&
+      existingRows.length === tasks.length &&
+      tasks.every((t, i) => existingRows[i]?.getAttribute('data-kp-onboarding-task-id') === t.id);
+
+    // Body text (independent of task update mode when possible)
+    try {
+      if (bodyTextStr) {
+        if (existingBody && canUpdateInPlace) {
+          existingBody.textContent = '';
+          // Preserve line breaks without full HTML parse
+          const lines = bodyTextStr.split('\n');
+          lines.forEach((line, i) => {
+            if (i > 0) existingBody.appendChild(doc.createElement('br'));
+            renderKeyboardKeysInto(
+              (() => { const s = doc.createElement('span'); existingBody.appendChild(s); return s; })(),
+              line
+            );
+          });
+          existingBody.style.display = 'block';
+          existingBody.style.marginBottom = tasks.length ? '12px' : '0px';
+        }
+      } else if (existingBody && canUpdateInPlace) {
+        existingBody.style.display = 'none';
+        existingBody.textContent = '';
+      }
+    } catch { /* ignore */ }
+
+    if (canUpdateInPlace) {
+      tasks.forEach((task, i) => {
+        applyTaskRowVisual(existingRows[i], task, completedSet.has(task.id));
+      });
+      return;
+    }
+
+    // Full rebuild
+    while (surface.firstChild) surface.removeChild(surface.firstChild);
+
+    if (bodyTextStr) {
+      const body = doc.createElement('div');
+      body.setAttribute('data-kp-onboarding-body-text', 'true');
+      const lines = bodyTextStr.split('\n');
+      lines.forEach((line, i) => {
+        if (i > 0) body.appendChild(doc.createElement('br'));
+        const span = doc.createElement('span');
+        renderKeyboardKeysInto(span, line);
+        body.appendChild(span);
+      });
+      assignStyle(body, {
+        fontSize: '13px',
+        lineHeight: '1.45',
+        color: 'rgba(255,255,255,0.90)',
+        marginBottom: tasks.length ? '12px' : '0px',
+        opacity: '0.95'
+      });
+      surface.appendChild(body);
+    }
+
+    const list = doc.createElement('div');
+    assignStyle(list, {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px'
+    });
+
+    for (const task of tasks) {
+      list.appendChild(createTaskRow(doc, task, completedSet.has(task.id)));
+    }
+    surface.appendChild(list);
+
+    if (showTip) {
+      const tip = doc.createElement('div');
+      tip.setAttribute('data-kp-onboarding-tip', 'true');
+      tip.textContent = ONBOARDING_REOPEN_TIP;
+      assignStyle(tip, {
+        marginTop: '10px',
+        fontSize: '12px',
+        opacity: '0.78',
+        lineHeight: '1.35',
+        color: 'rgba(255,255,255,0.85)'
+      });
+      surface.appendChild(tip);
+    }
+  }
+
+  /**
+   * Update chrome (title, step counter, nav disabled state).
+   * @param {Object} refs
+   * @param {Object} params
+   */
+  function updateOnboardingChrome(refs, params = {}) {
+    if (!refs) return;
+    const idx = Number(params.slideIndex) || 0;
+    const total = Math.max(1, Number(params.slideCount) || 1);
+    try {
+      if (refs.titleEl) refs.titleEl.textContent = String(params.title || ONBOARDING_DEFAULT_TITLE);
+    } catch { /* ignore */ }
+    try {
+      if (refs.stepEl) refs.stepEl.textContent = `${idx + 1} / ${total}`;
+    } catch { /* ignore */ }
+    try {
+      if (refs.root && params.slideId != null) {
+        refs.root.dataset.kpOnboardingSlideId = String(params.slideId || '');
+      }
+    } catch { /* ignore */ }
+    try {
+      if (refs.prevBtn) refs.prevBtn.disabled = idx <= 0;
+    } catch { /* ignore */ }
+    try {
+      if (refs.nextBtn) refs.nextBtn.disabled = idx >= total - 1;
+    } catch { /* ignore */ }
+  }
+
+  // ── Overlay ─────────────────────────────────────────────────────────────────
+
+  /**
+   * Ensure modal overlay exists inside the scrollable body host.
+   * @param {HTMLElement} bodyHost
+   * @param {Document} [doc]
+   * @returns {{
+   *   overlayEl: HTMLElement,
+   *   titleEl: HTMLElement,
+   *   msgEl: HTMLElement,
+   *   primaryBtn: HTMLButtonElement,
+   *   secondaryBtn: HTMLButtonElement
+   * }|null}
+   */
+  function ensureOnboardingOverlay(bodyHost, doc) {
+    if (!bodyHost) return null;
+    const d = doc || bodyHost.ownerDocument || document;
+
+    const existing = bodyHost.querySelector('[data-kp-onboarding-overlay="true"]');
+    if (existing) {
+      return {
+        overlayEl: existing,
+        titleEl: existing.querySelector('[data-kp-onboarding-overlay-title="true"]'),
+        msgEl: existing.querySelector('[data-kp-onboarding-overlay-message="true"]'),
+        primaryBtn: existing.querySelector('button[data-kp-onboarding-overlay-primary="true"]'),
+        secondaryBtn: existing.querySelector('button[data-kp-onboarding-overlay-secondary="true"]')
+      };
+    }
+
+    const overlay = d.createElement('div');
+    overlay.setAttribute('data-kp-onboarding-overlay', 'true');
+    overlay.hidden = true;
+    assignStyle(overlay, {
+      position: 'absolute',
+      inset: '0',
+      padding: '14px',
+      display: 'none',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'rgba(0,0,0,0.42)',
+      backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)',
+      zIndex: '5',
+      pointerEvents: 'none'
+    });
+
+    const card = d.createElement('div');
+    assignStyle(card, {
+      width: '100%',
+      maxWidth: '320px',
+      borderRadius: '14px',
+      border: '1px solid rgba(255,255,255,0.16)',
+      background: 'rgba(18, 18, 18, 0.78)',
+      boxShadow: '0 16px 44px rgba(0,0,0,0.55)',
+      padding: '14px 14px 12px 14px'
+    });
+
+    const titleEl = d.createElement('div');
+    titleEl.setAttribute('data-kp-onboarding-overlay-title', 'true');
+    titleEl.textContent = 'Nice!';
+    assignStyle(titleEl, {
+      fontSize: '14px',
+      fontWeight: '900',
+      letterSpacing: '0.2px',
+      marginBottom: '8px'
+    });
+
+    const msgEl = d.createElement('div');
+    msgEl.setAttribute('data-kp-onboarding-overlay-message', 'true');
+    msgEl.textContent = '';
+    assignStyle(msgEl, {
+      fontSize: '13px',
+      lineHeight: '1.35',
+      color: 'rgba(255,255,255,0.90)',
+      whiteSpace: 'pre-wrap'
+    });
+
+    const btnRow = d.createElement('div');
+    assignStyle(btnRow, {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      gap: '8px',
+      marginTop: '12px'
+    });
+
+    const mkBtn = (variant) => {
+      const b = d.createElement('button');
+      b.type = 'button';
+      assignStyle(b, {
+        height: '30px',
+        borderRadius: '999px',
+        border: variant === 'primary' ? '1px solid rgba(46, 204, 113, 0.55)' : '1px solid rgba(255,255,255,0.20)',
+        background: variant === 'primary' ? 'rgba(46, 204, 113, 0.18)' : 'rgba(255,255,255,0.06)',
+        color: 'rgba(255,255,255,0.92)',
+        cursor: 'pointer',
+        fontSize: '12px',
+        fontWeight: '800',
+        padding: '0 12px',
+        lineHeight: '28px'
+      });
+      return b;
+    };
+
+    const secondaryBtn = mkBtn('secondary');
+    secondaryBtn.hidden = true;
+    secondaryBtn.textContent = '';
+    secondaryBtn.setAttribute('data-kp-onboarding-overlay-secondary', 'true');
+
+    const primaryBtn = mkBtn('primary');
+    primaryBtn.textContent = 'OK';
+    primaryBtn.setAttribute('data-kp-onboarding-overlay-primary', 'true');
+
+    btnRow.appendChild(secondaryBtn);
+    btnRow.appendChild(primaryBtn);
+    card.appendChild(titleEl);
+    card.appendChild(msgEl);
+    card.appendChild(btnRow);
+    overlay.appendChild(card);
+    bodyHost.appendChild(overlay);
+
+    return { overlayEl: overlay, titleEl, msgEl, primaryBtn, secondaryBtn };
+  }
+
+  /**
+   * @param {HTMLElement|null} overlayEl
+   * @param {boolean} open
+   * @param {HTMLElement|null} [root]
+   */
+  function setOnboardingOverlayOpen(overlayEl, open, root = null) {
+    if (!overlayEl) return;
+    try {
+      overlayEl.hidden = !open;
+      overlayEl.style.display = open ? 'flex' : 'none';
+      overlayEl.style.pointerEvents = open ? 'auto' : 'none';
+      if (root) {
+        if (open) root.dataset.kpOnboardingOverlayOpen = 'true';
+        else delete root.dataset.kpOnboardingOverlayOpen;
+      }
+    } catch { /* ignore */ }
+  }
+
+  // --- end stamped onboarding-shared.js ---
 // KP_EARLY_INJECT_UI_END
 
   // Essential CSS for early injection - no longer needed for cursor element
@@ -2427,47 +3372,9 @@
   }
 
   /**
-   * Convert backtick-wrapped text to <kbd> tags for keyboard key styling
-   * @param {string} text
-   * @returns {string}
+   * Build (or adopt) the early walkthrough shell.
+   * Shell DOM comes from stamped onboarding-shared.js (createOnboardingShell).
    */
-  function formatKeyboardKeys(text) {
-    return String(text || '').replace(/`([^`]+)`/g, '<kbd>$1</kbd>');
-  }
-
-  /**
-   * Render backtick-wrapped key names as real <kbd> nodes without using innerHTML.
-   * This avoids Chromium parser warnings (and potential HTML injection) if task text contains
-   * markup like <link>, <meta>, etc.
-   *
-   * @param {HTMLElement} el
-   * @param {string} text
-   */
-  function renderKeyboardKeysInto(el, text) {
-    if (!el) return;
-    const s = String(text || '');
-    try {
-      while (el.firstChild) el.removeChild(el.firstChild);
-    } catch {
-      // Fallback for unusual nodes
-      try { el.textContent = ''; } catch { /* ignore */ }
-    }
-
-    // Split on backtick-wrapped segments: even indices are plain text, odd indices are key names.
-    const parts = s.split(/`([^`]+)`/g);
-    for (let i = 0; i < parts.length; i += 1) {
-      const part = parts[i];
-      if (!part) continue;
-      if (i % 2 === 1) {
-        const k = document.createElement('kbd');
-        k.textContent = part;
-        el.appendChild(k);
-      } else {
-        el.appendChild(document.createTextNode(part));
-      }
-    }
-  }
-
   function ensureOnboardingShell() {
     try {
       if (window !== window.top) return null;
@@ -2479,256 +3386,105 @@
         return onboardingRoot;
       }
 
-      const root = document.createElement('div');
-      root.className = 'kp-onboarding-panel';
-      root.hidden = true;
-      root.dataset.kpEarlyOnboarding = 'true';
-      root.setAttribute('role', 'dialog');
-      root.setAttribute('aria-label', 'KeyPilot onboarding walkthrough');
+      if (typeof createOnboardingShell !== 'function') return null;
 
-      Object.assign(root.style, {
-        position: 'fixed',
-        left: '16px',
-        top: '16px',
-        width: '360px',
-        maxWidth: 'calc(100vw - 24px)',
-        maxHeight: 'calc(100vh - 24px)',
-        // IMPORTANT: keep the shell truly hidden until refreshEarlyOnboardingVisibility()
-        // computes `shouldShow`. Some pages override `[hidden]{display:none}` and inline
-        // `display:flex` can cause a flash at page load.
-        display: 'none',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        zIndex: String(Z_ONBOARDING_PANEL),
-        background: 'rgba(18, 18, 18, 0.94)',
-        color: 'rgba(255,255,255,0.95)',
-        border: '1px solid rgba(255,255,255,0.12)',
-        borderRadius: '14px',
-        boxShadow: '0 12px 34px rgba(0,0,0,0.45)',
-        fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
-        pointerEvents: 'none'
+      const shell = createOnboardingShell(document, {
+        zIndex: Z_ONBOARDING_PANEL,
+        early: true,
+        initiallyHidden: true,
+        includeViewTransitions: false,
+        applyTheme: typeof applyPopupThemeVars === 'function' ? applyPopupThemeVars : null,
+        stepText: '…',
+        navDisabled: true
       });
 
-      try { applyPopupThemeVars(root); } catch { /* ignore */ }
+      const { root, slideSurface, titleEl, stepEl, resetBtn, closeBtn } = shell;
 
-      // Add kbd styling for keyboard keys
-      const style = document.createElement('style');
-      style.textContent = `
-        .kp-onboarding-panel kbd {
-          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-          font-size: 11px;
-          padding: 1px 6px;
-          border: 1px solid #3a3a3a;
-          border-bottom-color: #2a2a2a;
-          border-radius: 4px;
-          background: linear-gradient(180deg, #2b2b2b 0%, #1a1a1a 100%);
-          color: #f1f1f1;
-        }
-      `;
-      root.appendChild(style);
-
-      const header = document.createElement('div');
-      Object.assign(header.style, {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '10px',
-        padding: '10px 12px',
-        borderBottom: '1px solid rgba(255,255,255,0.10)'
-      });
-
-      const titleWrap = document.createElement('div');
-      Object.assign(titleWrap.style, {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '2px',
-        minWidth: '0'
-      });
-
-      const title = document.createElement('div');
-      title.textContent = 'Welcome to KeyPilot';
-      title.setAttribute('data-kp-onboarding-title', 'true');
-      Object.assign(title.style, {
-        fontSize: '13px',
-        fontWeight: '800',
-        letterSpacing: '0.2px',
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis'
-      });
-
-      const step = document.createElement('div');
-      step.textContent = '…';
-      step.setAttribute('data-kp-onboarding-step', 'true');
-      Object.assign(step.style, {
-        fontSize: '12px',
-        fontWeight: '600',
-        opacity: '0.75'
-      });
-
-      titleWrap.appendChild(title);
-
-      const navWrap = document.createElement('div');
-      Object.assign(navWrap.style, {
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '8px',
-        flex: '0 0 auto'
-      });
-
-      const stepWrap = document.createElement('div');
-      Object.assign(stepWrap.style, {
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '6px'
-      });
-
-      const mkIconBtn = (label, attrName, aria) => {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.textContent = label;
-        b.setAttribute(attrName, 'true');
-        if (aria) b.setAttribute('aria-label', aria);
-        Object.assign(b.style, {
-          width: '28px',
-          height: '28px',
-          borderRadius: '10px',
-          border: '1px solid rgba(255,255,255,0.18)',
-          background: 'rgba(255,255,255,0.06)',
-          color: 'rgba(255,255,255,0.95)',
-          cursor: 'pointer',
-          fontSize: '14px',
-          lineHeight: '26px',
-          padding: '0',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        });
-        return b;
-      };
-
-      const prevBtn = mkIconBtn('←', 'data-kp-onboarding-prev', 'Previous slide');
-      prevBtn.disabled = true;
-
-      const nextBtn = mkIconBtn('→', 'data-kp-onboarding-next', 'Next slide');
-      nextBtn.disabled = true;
-
-      stepWrap.appendChild(prevBtn);
-      stepWrap.appendChild(step);
-      stepWrap.appendChild(nextBtn);
-
-      const resetBtn = document.createElement('button');
-      resetBtn.type = 'button';
-      resetBtn.textContent = 'Reset';
-      resetBtn.setAttribute('data-kp-onboarding-reset', 'true');
-      Object.assign(resetBtn.style, {
-        height: '28px',
-        borderRadius: '999px',
-        border: '1px solid rgba(255,255,255,0.18)',
-        background: 'rgba(255,255,255,0.06)',
-        color: 'rgba(255,255,255,0.92)',
-        cursor: 'pointer',
-        fontSize: '12px',
-        fontWeight: '700',
-        padding: '0 10px',
-        lineHeight: '26px'
-      });
-
-      // Early-inject reset: clear progress + re-enable onboarding.
+      // Early-inject reset: clear progress + re-enable onboarding (dual-write).
       resetBtn.addEventListener('click', () => {
         try {
-          const progress = {
-            slideId: 'basic_navigation',
-            completedTaskIds: [],
-            onEnterDoneSlideIds: [],
-            completed: false,
-            timestamp: Date.now()
-          };
+          const firstId =
+            (typeof ONBOARDING_FIRST_SLIDE_ID === 'string' && ONBOARDING_FIRST_SLIDE_ID) ||
+            'basic_navigation';
+          const progress =
+            typeof createEmptyProgress === 'function'
+              ? createEmptyProgress(firstId)
+              : {
+                  slideId: firstId,
+                  completedTaskIds: [],
+                  onEnterDoneSlideIds: [],
+                  completed: false,
+                  timestamp: Date.now()
+                };
+          const activeKey =
+            (typeof ONBOARDING_STORAGE_KEYS !== 'undefined' && ONBOARDING_STORAGE_KEYS.ACTIVE) ||
+            ONBOARDING_ACTIVE_STORAGE_KEY;
+          const progressKey =
+            (typeof ONBOARDING_STORAGE_KEYS !== 'undefined' && ONBOARDING_STORAGE_KEYS.PROGRESS) ||
+            ONBOARDING_PROGRESS_STORAGE_KEY;
           const payload = {
-            [ONBOARDING_ACTIVE_STORAGE_KEY]: true,
-            [ONBOARDING_PROGRESS_STORAGE_KEY]: progress
+            [activeKey]: true,
+            [progressKey]: progress
           };
-          chrome.storage.sync.set(payload).catch(() => chrome.storage.local.set(payload).catch(() => {}));
+          const writeBoth = async () => {
+            try { await chrome.storage.sync.set(payload); } catch { /* ignore */ }
+            try { await chrome.storage.local.set(payload); } catch { /* ignore */ }
+          };
+          writeBoth()
+            .then(() => {
+              if (isMainExtensionLoaded) return;
+              try {
+                if (typeof setOnboardingPanelVisible === 'function') {
+                  setOnboardingPanelVisible(root, true);
+                } else {
+                  root.hidden = false;
+                  root.style.display = 'flex';
+                  root.style.pointerEvents = 'auto';
+                }
+                renderEarlyOnboardingContent(
+                  { body: slideSurface, titleEl, stepEl },
+                  progress
+                );
+              } catch { /* ignore */ }
+            })
+            .catch(() => {});
         } catch { /* ignore */ }
       });
 
-      const closeBtn = document.createElement('button');
-      closeBtn.type = 'button';
-      closeBtn.textContent = '×';
-      closeBtn.setAttribute('aria-label', 'Close onboarding walkthrough');
-      closeBtn.setAttribute('data-kp-onboarding-close', 'true');
-      Object.assign(closeBtn.style, {
-        width: '30px',
-        height: '30px',
-        borderRadius: '10px',
-        border: '1px solid rgba(255,255,255,0.18)',
-        background: 'rgba(255,255,255,0.06)',
-        color: 'rgba(255,255,255,0.95)',
-        cursor: 'pointer',
-        fontSize: '18px',
-        lineHeight: '28px',
-        padding: '0',
-        flex: '0 0 auto'
-      });
-
-      // Closing in early-inject should persist, so the panel doesn't come back on the next page.
+      // Closing in early-inject should persist so the panel doesn't return on next page.
       closeBtn.addEventListener('click', () => {
         try {
-          root.hidden = true;
-          // Do not rely on [hidden] alone; some pages override it.
-          root.style.display = 'none';
-          root.style.pointerEvents = 'none';
+          if (typeof setOnboardingPanelVisible === 'function') {
+            setOnboardingPanelVisible(root, false);
+          } else {
+            root.hidden = true;
+            root.style.display = 'none';
+            root.style.pointerEvents = 'none';
+          }
         } catch { /* ignore */ }
         try {
-          const payload = { [ONBOARDING_ACTIVE_STORAGE_KEY]: false, timestamp: Date.now() };
-          chrome.storage.sync.set(payload).catch(() => chrome.storage.local.set(payload).catch(() => {}));
+          const activeKey =
+            (typeof ONBOARDING_STORAGE_KEYS !== 'undefined' && ONBOARDING_STORAGE_KEYS.ACTIVE) ||
+            ONBOARDING_ACTIVE_STORAGE_KEY;
+          const payload = { [activeKey]: false, timestamp: Date.now() };
+          const writeBoth = async () => {
+            try { await chrome.storage.sync.set(payload); } catch { /* ignore */ }
+            try { await chrome.storage.local.set(payload); } catch { /* ignore */ }
+          };
+          writeBoth().catch(() => {});
         } catch { /* ignore */ }
       });
 
-      navWrap.appendChild(closeBtn);
-
-      header.appendChild(titleWrap);
-      header.appendChild(navWrap);
-
-      const body = document.createElement('div');
-      body.setAttribute('data-kp-onboarding-body', 'true');
-      Object.assign(body.style, {
-        flex: '1',
-        overflowY: 'auto',
-        minHeight: '0',
-        position: 'relative'
-      });
-
-      // Create a slide surface for content
-      const slideSurface = document.createElement('div');
-      slideSurface.setAttribute('data-kp-onboarding-slide-surface', 'true');
-      Object.assign(slideSurface.style, {
-        padding: '12px'
-      });
-      body.appendChild(slideSurface);
-
-      // Avoid a visible "Loading…" flash: render a best-effort initial checklist immediately.
-      // The storage-backed render below will update this as soon as we can read progress.
+      // Best-effort initial checklist (storage-backed render updates shortly after).
       try {
-        renderEarlyOnboardingContent({ body: slideSurface, titleEl: title, stepEl: step }, { slideId: 'basic_navigation', completedTaskIds: [] });
+        const firstId =
+          (typeof ONBOARDING_FIRST_SLIDE_ID === 'string' && ONBOARDING_FIRST_SLIDE_ID) ||
+          'basic_navigation';
+        renderEarlyOnboardingContent(
+          { body: slideSurface, titleEl, stepEl },
+          { slideId: firstId, completedTaskIds: [] }
+        );
       } catch { /* ignore */ }
-
-      const footer = document.createElement('div');
-      Object.assign(footer.style, {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '10px',
-        padding: '10px 12px',
-        borderTop: '1px solid rgba(255,255,255,0.10)'
-      });
-
-      footer.appendChild(stepWrap);
-      footer.appendChild(resetBtn);
-
-      root.appendChild(header);
-      root.appendChild(body);
-      root.appendChild(footer);
 
       (document.body || document.documentElement).appendChild(root);
       onboardingRoot = root;
@@ -2758,141 +3514,96 @@
   }
 
   function renderEarlyOnboardingContent(refs, progress) {
-    // refs: { body, titleEl, stepEl } (optional) or inferred from onboardingRoot
+    // Thin wrapper over stamped onboarding-shared helpers so early checklist
+    // DOM matches the bundled OnboardingPanel (seamless adoption).
     const model = getEarlyOnboardingModel();
     const slide = findEarlySlide(model, progress && progress.slideId);
     if (!slide) return;
 
-    const completed = new Set(Array.isArray(progress?.completedTaskIds) ? progress.completedTaskIds.map(String) : []);
     const slides = model.slides || [];
     const slideIndex = Math.max(0, slides.findIndex((s) => s && s.id === slide.id));
     const slideCount = Math.max(1, slides.length || 1);
+    const completed = Array.isArray(progress?.completedTaskIds)
+      ? progress.completedTaskIds.map(String)
+      : [];
 
-    // Look for slide surface first, then body as fallback
-    const body = refs?.body || 
+    const surface =
+      refs?.body ||
       onboardingRoot?.querySelector?.('[data-kp-onboarding-slide-surface="true"]') ||
       onboardingRoot?.querySelector?.('[data-kp-onboarding-body="true"]');
     const titleEl = refs?.titleEl || onboardingRoot?.querySelector?.('[data-kp-onboarding-title="true"]');
     const stepEl = refs?.stepEl || onboardingRoot?.querySelector?.('[data-kp-onboarding-step="true"]');
-    if (!body) return;
+    if (!surface) return;
 
-    try {
-      if (titleEl) titleEl.textContent = String(slide.title || 'Welcome to KeyPilot');
-      if (stepEl) stepEl.textContent = `${slideIndex + 1} / ${slideCount}`;
-    } catch { /* ignore */ }
-
-    // Build a stable checklist DOM similar to the bundled OnboardingPanel so takeover doesn't blink.
-    try {
-      body.textContent = '';
-
-      const list = document.createElement('div');
-      Object.assign(list.style, {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px'
+    const chromeRefs = { root: onboardingRoot, titleEl, stepEl };
+    if (typeof updateOnboardingChrome === 'function') {
+      updateOnboardingChrome(chromeRefs, {
+        title: slide.title || (typeof ONBOARDING_DEFAULT_TITLE === 'string' ? ONBOARDING_DEFAULT_TITLE : 'Welcome to KeyPilot'),
+        slideId: slide.id,
+        slideIndex,
+        slideCount
       });
+    } else {
+      try {
+        if (titleEl) titleEl.textContent = String(slide.title || 'Welcome to KeyPilot');
+        if (stepEl) stepEl.textContent = `${slideIndex + 1} / ${slideCount}`;
+      } catch { /* ignore */ }
+    }
 
-      for (const task of slide.tasks || []) {
-        if (!task || !task.id) continue;
-        const done = completed.has(task.id);
-
-        const row = document.createElement('div');
-        row.setAttribute('data-kp-onboarding-task-id', task.id);
-        Object.assign(row.style, {
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '10px',
-          padding: '8px 10px',
-          borderRadius: '10px',
-          border: '1px solid rgba(255,255,255,0.10)',
-          background: done ? 'rgba(46, 204, 113, 0.10)' : 'rgba(255,255,255,0.04)'
-        });
-
-        const box = document.createElement('div');
-        box.setAttribute('aria-hidden', 'true');
-        Object.assign(box.style, {
-          width: '18px',
-          height: '18px',
-          borderRadius: '6px',
-          border: done ? '1px solid rgba(46, 204, 113, 0.9)' : '1px solid rgba(255,255,255,0.22)',
-          background: done ? 'rgba(46, 204, 113, 0.85)' : 'transparent',
-          boxShadow: done ? '0 0 0 2px rgba(46, 204, 113, 0.18)' : 'none',
-          flex: '0 0 auto',
-          marginTop: '1px',
-          position: 'relative'
-        });
-
-        if (done) {
-          const check = document.createElement('div');
-          check.textContent = '✓';
-          Object.assign(check.style, {
-            position: 'absolute',
-            inset: '0',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '13px',
-            fontWeight: '800',
-            color: '#0b1410'
-          });
-          box.appendChild(check);
-        }
-
-        const text = document.createElement('div');
-        // Avoid innerHTML parsing (can emit warnings on some sites if content contains head-only tags)
-        renderKeyboardKeysInto(text, task.label || task.id);
-        Object.assign(text.style, {
-          fontSize: '13px',
-          lineHeight: '1.35',
-          color: done ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.88)',
-          opacity: done ? '0.95' : '1'
-        });
-
-        row.appendChild(box);
-        row.appendChild(text);
-        list.appendChild(row);
-      }
-
-      const footer = document.createElement('div');
-      Object.assign(footer.style, {
-        marginTop: '10px',
-        fontSize: '12px',
-        opacity: '0.78',
-        lineHeight: '1.35',
-        color: 'rgba(255,255,255,0.85)'
+    if (typeof renderOnboardingSlideSurface === 'function') {
+      renderOnboardingSlideSurface(surface, {
+        tasks: slide.tasks || [],
+        completedTaskIds: completed,
+        bodyText: slide.bodyText || '',
+        forceRebuild: true,
+        showTip: true
       });
-      footer.textContent = 'Tip: Press Alt + / to re-open this walkthrough later.';
-
-      body.appendChild(list);
-      body.appendChild(footer);
-    } catch { /* ignore */ }
+    }
   }
 
   async function readOnboardingState() {
     // returns: { active: boolean|null, completed: boolean|null, slideId: string|null, completedTaskIds: string[] }
+    // Merge sync + local per-key (prefer newer progress by timestamp, else sync).
     const result = { active: null, completed: null, slideId: null, completedTaskIds: [] };
-    const parse = (obj) => {
-      try {
-        if (!obj || typeof obj !== 'object') return;
-        if (typeof obj[ONBOARDING_ACTIVE_STORAGE_KEY] === 'boolean') result.active = obj[ONBOARDING_ACTIVE_STORAGE_KEY];
-        const prog = obj[ONBOARDING_PROGRESS_STORAGE_KEY];
-        if (prog && typeof prog === 'object') {
-          if (typeof prog.completed === 'boolean') result.completed = prog.completed;
-          if (typeof prog.slideId === 'string') result.slideId = prog.slideId;
-          if (Array.isArray(prog.completedTaskIds)) result.completedTaskIds = prog.completedTaskIds.map(String);
-        }
-      } catch { /* ignore */ }
-    };
+    let syncObj = null;
+    let localObj = null;
 
     try {
-      const sync = await chrome.storage.sync.get([ONBOARDING_ACTIVE_STORAGE_KEY, ONBOARDING_PROGRESS_STORAGE_KEY]);
-      parse(sync);
-      if (result.active !== null) return result;
+      syncObj = await chrome.storage.sync.get([ONBOARDING_ACTIVE_STORAGE_KEY, ONBOARDING_PROGRESS_STORAGE_KEY]);
+    } catch { /* ignore */ }
+    try {
+      localObj = await chrome.storage.local.get([ONBOARDING_ACTIVE_STORAGE_KEY, ONBOARDING_PROGRESS_STORAGE_KEY]);
     } catch { /* ignore */ }
 
     try {
-      const local = await chrome.storage.local.get([ONBOARDING_ACTIVE_STORAGE_KEY, ONBOARDING_PROGRESS_STORAGE_KEY]);
-      parse(local);
+      const syncActive = syncObj && typeof syncObj[ONBOARDING_ACTIVE_STORAGE_KEY] === 'boolean'
+        ? syncObj[ONBOARDING_ACTIVE_STORAGE_KEY]
+        : null;
+      const localActive = localObj && typeof localObj[ONBOARDING_ACTIVE_STORAGE_KEY] === 'boolean'
+        ? localObj[ONBOARDING_ACTIVE_STORAGE_KEY]
+        : null;
+      if (syncActive !== null) result.active = syncActive;
+      else if (localActive !== null) result.active = localActive;
+
+      const syncProg = syncObj && syncObj[ONBOARDING_PROGRESS_STORAGE_KEY];
+      const localProg = localObj && localObj[ONBOARDING_PROGRESS_STORAGE_KEY];
+      const syncTs = syncProg && typeof syncProg === 'object' && typeof syncProg.timestamp === 'number' ? syncProg.timestamp : 0;
+      const localTs = localProg && typeof localProg === 'object' && typeof localProg.timestamp === 'number' ? localProg.timestamp : 0;
+
+      let prog = null;
+      if (syncProg && typeof syncProg === 'object' && localProg && typeof localProg === 'object') {
+        prog = localTs > syncTs ? localProg : syncProg;
+      } else if (syncProg && typeof syncProg === 'object') {
+        prog = syncProg;
+      } else if (localProg && typeof localProg === 'object') {
+        prog = localProg;
+      }
+
+      if (prog) {
+        if (typeof prog.completed === 'boolean') result.completed = prog.completed;
+        if (typeof prog.slideId === 'string') result.slideId = prog.slideId;
+        if (Array.isArray(prog.completedTaskIds)) result.completedTaskIds = prog.completedTaskIds.map(String);
+      }
     } catch { /* ignore */ }
 
     return result;
@@ -2936,10 +3647,13 @@
       // This matches the bundled onboarding behavior and prevents load-time flashes.
       const isEnabled = enabledState.enabled === true;
       const shouldShow = isEnabled && state.active === true && state.completed !== true;
-      root.hidden = !shouldShow;
-      // Do not rely on [hidden] alone; some pages override it.
-      root.style.display = shouldShow ? 'flex' : 'none';
-      root.style.pointerEvents = shouldShow ? 'auto' : 'none';
+      if (typeof setOnboardingPanelVisible === 'function') {
+        setOnboardingPanelVisible(root, shouldShow);
+      } else {
+        root.hidden = !shouldShow;
+        root.style.display = shouldShow ? 'flex' : 'none';
+        root.style.pointerEvents = shouldShow ? 'auto' : 'none';
+      }
       if (shouldShow) {
         // Keep the early checklist in sync so the main bundled UI can adopt without a visual "pop".
         try { renderEarlyOnboardingContent(null, state); } catch { /* ignore */ }
@@ -3551,32 +4265,33 @@
   }
 
   function syncEarlyControlStripOnboardingOffset() {
+    // Strip stays pinned at the top-left; walkthrough sits below it.
     if (!controlStripRoot || !controlStripRoot.isConnected) return;
-    let top = CONTROL_STRIP_DEFAULT_TOP_PX;
     try {
-      const panel = document.querySelector('.kp-onboarding-panel');
-      if (panel && panel.isConnected) {
-        const hidden = panel.hidden === true
-          || panel.getAttribute('hidden') !== null
-          || panel.style.display === 'none'
-          || (window.getComputedStyle
-            && (window.getComputedStyle(panel).display === 'none'
-              || window.getComputedStyle(panel).visibility === 'hidden'));
-        if (!hidden) {
-          const rect = panel.getBoundingClientRect();
-          if (rect && rect.height > 0 && rect.bottom > 0) {
-            if (rect.left < 400 && rect.top < 120) {
-              top = Math.max(
-                CONTROL_STRIP_DEFAULT_TOP_PX,
-                Math.round(rect.bottom + CONTROL_STRIP_ONBOARDING_GAP_PX)
-              );
-            }
-          }
-        }
-      }
+      controlStripRoot.style.top = `${CONTROL_STRIP_DEFAULT_TOP_PX}px`;
     } catch { /* ignore */ }
     try {
-      controlStripRoot.style.top = `${top}px`;
+      const panel = document.querySelector('.kp-onboarding-panel');
+      if (!panel || !panel.isConnected) return;
+      const hidden = panel.hidden === true
+        || panel.getAttribute('hidden') !== null
+        || panel.style.display === 'none'
+        || (window.getComputedStyle
+          && (window.getComputedStyle(panel).display === 'none'
+            || window.getComputedStyle(panel).visibility === 'hidden'));
+      if (hidden) return;
+      if (typeof positionOnboardingBelowControlStrip === 'function') {
+        positionOnboardingBelowControlStrip(panel);
+        return;
+      }
+      // Fallback before shared helpers are stamped/available.
+      const rect = controlStripRoot.getBoundingClientRect();
+      const top = Math.max(
+        CONTROL_STRIP_DEFAULT_TOP_PX,
+        Math.round((rect && rect.bottom ? rect.bottom : (CONTROL_STRIP_DEFAULT_TOP_PX + CONTROL_STRIP_HEIGHT_PX))
+          + CONTROL_STRIP_ONBOARDING_GAP_PX)
+      );
+      panel.style.top = `${top}px`;
     } catch { /* ignore */ }
   }
 

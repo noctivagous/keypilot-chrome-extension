@@ -18,7 +18,8 @@ import { ColumnLayoutManager } from './modules/column-layout-manager.js';
 import {
   InspectorModeController,
   getInspectorCursorMode,
-  getInspectorStatusMode
+  getInspectorStatusMode,
+  getInspectorDef
 } from './modules/inspector-mode.js';
 import { MODES, INSPECTOR_KIND, CURSOR_MODE, CSS_CLASSES, COLORS, Z_INDEX, RECTANGLE_SELECTION, EDGE_ONLY_SELECTION, FEATURE_FLAGS, SCROLL, CLICKABLE_CATEGORY } from './config/constants.js';
 import { MSG } from './messaging/types.js';
@@ -2654,6 +2655,8 @@ export class KeyPilot extends EventManager {
    * Silent hops (common SPA / in-page patterns that feel like "D did nothing"):
    * - Only cleared a `#hash` fragment
    * - URL is unchanged after a same-document `pushState` entry
+   * - Only the query string changed on the same path (e.g. openrouter.ai/activity
+   *   pushes `?from=&to=&date_preset=` after load — first back only strips filters)
    * In those cases, take one automatic extra step so one keypress matches user intent.
    *
    * @param {-1|1} direction
@@ -2692,7 +2695,10 @@ export class KeyPilot extends EventManager {
     }
 
     const beforeHref = location.href;
-    const beforePath = `${location.pathname}${location.search}`;
+    const beforeOrigin = location.origin;
+    const beforePathname = location.pathname;
+    const beforeSearch = location.search || '';
+    const beforePath = `${beforePathname}${beforeSearch}`;
     const beforeHash = location.hash || '';
 
     // Cancel any previous skip watcher (rapid D presses).
@@ -2725,14 +2731,20 @@ export class KeyPilot extends EventManager {
         const path = `${location.pathname}${location.search}`;
         const hash = location.hash || '';
         const href = location.href;
+        const search = location.search || '';
 
         // Invisible hop patterns:
         // 1) Full URL unchanged after back (same-document pushState with no URL change)
         // 2) Only a hash fragment was cleared (page#section → page)
+        // 3) Same origin+pathname, only query string changed (SPA filters / date presets)
         const urlUnchanged = href === beforeHref;
         const onlyClearedHash = !!beforeHash && !hash && path === beforePath;
+        const samePath =
+          location.origin === beforeOrigin &&
+          location.pathname === beforePathname;
+        const onlyQueryChanged = samePath && search !== beforeSearch;
 
-        if (urlUnchanged || onlyClearedHash) {
+        if (urlUnchanged || onlyClearedHash || onlyQueryChanged) {
           extraHopsUsed += 1;
           step();
           // Keep listening briefly for the extra hop's popstate; timeout cleans up.
@@ -2745,7 +2757,8 @@ export class KeyPilot extends EventManager {
     let timer = 0;
     try {
       window.addEventListener('popstate', popListener);
-      timer = window.setTimeout(cleanup, 500);
+      // SPA query-param hops can settle a bit after popstate; keep watcher briefly.
+      timer = window.setTimeout(cleanup, 700);
       this._historySkipCleanup = cleanup;
     } catch {
       popListener = null;
@@ -2826,8 +2839,45 @@ export class KeyPilot extends EventManager {
     }
 
     console.log('[KeyPilot] Entering inspector mode:', kind);
+    this._prepareInspectorModeIndicator(kind);
     this.inspector.enter(kind);
     return true;
+  }
+
+  /**
+   * Layout-aware confirm key label for inspector instruction chip.
+   * @param {string} kind
+   * @returns {string}
+   */
+  _confirmKeyLabelForInspectorKind(kind) {
+    const def = getInspectorDef(kind);
+    const actionId = def?.actionId;
+    const binding = actionId ? this.keybindings?.[actionId] : null;
+    if (binding?.displayKey) return String(binding.displayKey);
+    if (Array.isArray(binding?.keys) && binding.keys.length) {
+      // Prefer a single printable character over code names when possible.
+      const ch = binding.keys.find((k) => typeof k === 'string' && k.length === 1);
+      if (ch) return ch === ' ' ? 'Space' : ch;
+      const first = String(binding.keys[0] || '');
+      if (first === 'Backspace') return 'Backspace';
+      if (first === 'Escape') return 'Esc';
+      return first || '?';
+    }
+    if (kind === INSPECTOR_KIND.COLS) return '.';
+    if (kind === INSPECTOR_KIND.DELETE) return 'Backspace';
+    return '?';
+  }
+
+  /**
+   * Seed top-right instruction chip (Text Select style) before/while pick is active.
+   * @param {string} kind
+   */
+  _prepareInspectorModeIndicator(kind) {
+    try {
+      const confirmKey = this._confirmKeyLabelForInspectorKind(kind);
+      this.overlayManager?.setInspectorModeIndicatorOpts?.({ kind, confirmKey });
+      this.overlayManager?.showInspectorModeIndicator?.({ kind, confirmKey });
+    } catch { /* ignore */ }
   }
 
   handleDeleteKey(e) {
@@ -4923,6 +4973,7 @@ export class KeyPilot extends EventManager {
         currentState.mode === MODES.DELETE ||
         currentState.mode === MODES.COLS) {
       this.inspector.exit();
+      try { this.overlayManager?.hideInspectorModeIndicator?.(); } catch { /* ignore */ }
       return;
     }
     

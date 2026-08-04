@@ -10,12 +10,12 @@
 import { Z_INDEX } from '../config/constants.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
 import { getActionIconDataUri } from './keybindings-ui-shared.js';
+import { positionOnboardingBelowControlStrip } from './onboarding-shared.js';
 
 const ROOT_CLASS = 'kp-control-strip';
 const DEFAULT_TOP_PX = 16;
 const DEFAULT_LEFT_PX = 16;
 const STRIP_HEIGHT_PX = 28;
-const ONBOARDING_GAP_PX = 8;
 
 /**
  * @typedef {{
@@ -662,32 +662,23 @@ export class ControlStrip {
   }
 
   /**
-   * Push the strip below the onboarding walkthrough when it occupies the top-left.
+   * Keep the control strip pinned at the top-left.
+   * The walkthrough panel positions itself *below* the strip (not the reverse).
    */
   _syncOnboardingOffset() {
     if (!this.root) return;
-    let top = DEFAULT_TOP_PX;
+    try {
+      this.root.style.top = `${DEFAULT_TOP_PX}px`;
+    } catch { /* ignore */ }
+    // Reposition walkthrough under this strip so both stay usable.
     try {
       const panel = document.querySelector('.kp-onboarding-panel');
       if (panel && panel.isConnected) {
         const hidden = panel.hidden === true
           || panel.getAttribute('hidden') !== null
-          || panel.style.display === 'none'
-          || window.getComputedStyle(panel).display === 'none'
-          || window.getComputedStyle(panel).visibility === 'hidden';
-        if (!hidden) {
-          const rect = panel.getBoundingClientRect();
-          if (rect && rect.height > 0 && rect.bottom > 0) {
-            // Only offset when onboarding is in the top-left region.
-            if (rect.left < 400 && rect.top < 120) {
-              top = Math.max(DEFAULT_TOP_PX, Math.round(rect.bottom + ONBOARDING_GAP_PX));
-            }
-          }
-        }
+          || panel.style.display === 'none';
+        if (!hidden) positionOnboardingBelowControlStrip(panel);
       }
-    } catch { /* ignore */ }
-    try {
-      this.root.style.top = `${top}px`;
     } catch { /* ignore */ }
   }
 

@@ -640,6 +640,50 @@ h2 {
   min-width: 0;
 }
 
+/*
+ * Recent + All bookmarks: show at most 4 rows of card tiles, then scroll.
+ * Card row height matches .kp-card-grid .kp-url-row min-height (92px) and gap (10px).
+ */
+:root {
+  --kp-bookmark-max-rows: 4;
+  --kp-bookmark-card-row-height: 92px;
+  --kp-bookmark-grid-gap: 10px;
+}
+
+#bookmark-list,
+#all-bookmarks {
+  max-height: calc(
+    var(--kp-bookmark-max-rows) * var(--kp-bookmark-card-row-height)
+    + (var(--kp-bookmark-max-rows) - 1) * var(--kp-bookmark-grid-gap)
+  );
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px; /* keep content clear of the scrollbar */
+  align-content: start;
+}
+
+#bookmark-list::-webkit-scrollbar,
+#all-bookmarks::-webkit-scrollbar {
+  width: 8px;
+}
+
+#bookmark-list::-webkit-scrollbar-track,
+#all-bookmarks::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
+}
+
+#bookmark-list::-webkit-scrollbar-thumb,
+#all-bookmarks::-webkit-scrollbar-thumb {
+  background: rgba(255,140,0,0.30);
+  border-radius: 4px;
+}
+
+#bookmark-list::-webkit-scrollbar-thumb:hover,
+#all-bookmarks::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,140,0,0.50);
+}
+
 .bm-folder {
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 10px;

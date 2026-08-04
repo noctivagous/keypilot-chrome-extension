@@ -72,6 +72,8 @@ export const CSS_CLASSES = {
    */
   INSPECTOR: 'kpv2-inspector',
   INSPECTOR_OVERLAY: 'kpv2-inspector-overlay',
+  /** Top-right companion instruction while inspector pick is active (like highlight mode) */
+  INSPECTOR_MODE_INDICATOR: 'kpv2-inspector-mode-indicator',
   /** @deprecated prefer INSPECTOR + kind; kept for style/compat during transition */
   COLS: 'kpv2-cols',
   COLS_OVERLAY: 'kpv2-cols-overlay',
@@ -79,11 +81,21 @@ export const CSS_CLASSES = {
   COLS_ACTIVE: 'kpv2-cols-active',
   /** Page-mode markers on html/body while whole-page columns are active */
   COLS_PAGE: 'kpv2-cols-page',
+  /** Widget shell wrapping a columnized target (outline + slip chrome) */
+  COLS_SHELL: 'kpv2-cols-shell',
+  /** Content region inside the shell that holds the target */
+  COLS_BODY: 'kpv2-cols-body',
+  /** Placeholder left in flow when shell is promoted to a popover */
+  COLS_PLACEHOLDER: 'kpv2-cols-placeholder',
   /** Slip-edit chrome (NLE-style content window scrubber) */
   COLS_SLIP_BAR: 'kpv2-cols-slip-bar',
   COLS_SLIP_TRACK: 'kpv2-cols-slip-track',
   COLS_SLIP_KNOB: 'kpv2-cols-slip-knob',
   COLS_SLIP_LABEL: 'kpv2-cols-slip-label',
+  /** Slip-bar action: promote columns widget to floating popover */
+  COLS_EXPAND_BTN: 'kpv2-cols-expand-btn',
+  /** Slip-bar action: clear columns / restore element */
+  COLS_CLOSE_BTN: 'kpv2-cols-close-btn',
   HIGHLIGHT_OVERLAY: 'kpv2-highlight-overlay',
   HIGHLIGHT_SELECTION: 'kpv2-highlight-selection',
   TEXT_FIELD_GLOW: 'kpv2-text-field-glow',
@@ -146,12 +158,13 @@ export const Z_INDEX = {
   OVERLAYS: 2147483020,
   OVERLAYS_ABOVE: 2147483021,
 
-  // Onboarding walkthrough panel (top-left)
-  // Keep BELOW the green hover/click overlays so rectangles + countdown label stay visible.
-  ONBOARDING_PANEL: 2147483017,
-
-  // macOS-style control strip (upper-left; above onboarding when stacked, below keyboard help)
+  // macOS-style control strip (upper-left; stays at top; below walkthrough in z-order)
   CONTROL_STRIP: 2147483025,
+
+  // Onboarding walkthrough (top-left, stacked below the control strip on screen).
+  // z-index above the strip so if they ever overlap the panel wins; still below
+  // green hover/click overlays and floating keyboard help.
+  ONBOARDING_PANEL: 2147483026,
 
   // Cols Toggle slip-edit bar (bottom of viewport; below keyboard help / cursor)
   COLS_SLIP_BAR: 2147483030,

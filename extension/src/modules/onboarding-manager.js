@@ -7,12 +7,17 @@
 import { MODES } from '../config/constants.js';
 import { OnboardingPanel } from '../ui/onboarding-panel.js';
 import { PracticePopoverPanel } from '../ui/practice-popover-panel.js';
-import { storageGetKeys, storageSetObject } from '../utils/storage.js';
+import {
+  ONBOARDING_STORAGE_KEYS,
+  cloneProgress,
+  createEmptyProgress,
+  isSlideComplete,
+  progressEqual
+} from '../ui/onboarding-shared.js';
+import { storageSetObject } from '../utils/storage.js';
 
-const STORAGE_KEYS = {
-  ACTIVE: 'keypilot_onboarding_active',
-  PROGRESS: 'keypilot_onboarding_progress'
-};
+// NOTE: Do not `import { X as Y }` — build.js strips imports and aliases are lost.
+// Use ONBOARDING_STORAGE_KEYS by name (defined in onboarding-shared.js).
 
 const TRANSIENT_KEYS = {
   LAST_ACTION: 'keypilot_transient_action'
@@ -22,8 +27,55 @@ function safeBool(v) {
   return typeof v === 'boolean' ? v : null;
 }
 
+/**
+ * Read onboarding keys from sync + local.
+ * For PROGRESS, prefer the newer timestamp when both areas have a value so a
+ * successful local-only reset cannot be masked by stale sync data (and vice versa).
+ * @param {string[]} keys
+ */
 async function storageGet(keys) {
-  return storageGetKeys(keys);
+  const list = Array.isArray(keys) ? keys.filter((k) => typeof k === 'string' && k) : [];
+  if (!list.length) return {};
+
+  /** @type {Record<string, any>} */
+  let sync = {};
+  /** @type {Record<string, any>} */
+  let local = {};
+
+  try {
+    if (chrome?.storage?.sync?.get) {
+      sync = (await chrome.storage.sync.get(list)) || {};
+    }
+  } catch {
+    sync = {};
+  }
+  try {
+    if (chrome?.storage?.local?.get) {
+      local = (await chrome.storage.local.get(list)) || {};
+    }
+  } catch {
+    local = {};
+  }
+
+  /** @type {Record<string, any>} */
+  const out = {};
+  for (const key of list) {
+    const hasSync = Object.prototype.hasOwnProperty.call(sync, key) && sync[key] !== undefined;
+    const hasLocal = Object.prototype.hasOwnProperty.call(local, key) && local[key] !== undefined;
+
+    if (key === ONBOARDING_STORAGE_KEYS.PROGRESS && hasSync && hasLocal) {
+      const s = sync[key];
+      const l = local[key];
+      const sTs = s && typeof s === 'object' && typeof s.timestamp === 'number' ? s.timestamp : 0;
+      const lTs = l && typeof l === 'object' && typeof l.timestamp === 'number' ? l.timestamp : 0;
+      out[key] = lTs > sTs ? l : s;
+      continue;
+    }
+
+    if (hasSync) out[key] = sync[key];
+    else if (hasLocal) out[key] = local[key];
+  }
+  return out;
 }
 
 async function storageGetTransient() {
@@ -60,8 +112,36 @@ async function storageRemoveTransient() {
   }
 }
 
+/**
+ * Write onboarding keys to both sync and local.
+ * Preferring sync-only caused reset/progress races: a failed or partial sync write left
+ * local with a newer snapshot that later reads could miss (or vice versa).
+ * @param {Record<string, any>} obj
+ */
 async function storageSet(obj) {
-  await storageSetObject(obj);
+  if (!obj || typeof obj !== 'object') return false;
+  let ok = false;
+  try {
+    if (chrome?.storage?.sync?.set) {
+      await chrome.storage.sync.set(obj);
+      ok = true;
+    }
+  } catch {
+    // continue; still try local so both areas can converge
+  }
+  try {
+    if (chrome?.storage?.local?.set) {
+      await chrome.storage.local.set(obj);
+      ok = true;
+    }
+  } catch {
+    // ignore
+  }
+  // Fallback to shared helper if neither area accepted the direct write.
+  if (!ok) {
+    ok = await storageSetObject(obj);
+  }
+  return ok;
 }
 
 function withViewTransition(updateDomFn) {
@@ -158,13 +238,7 @@ export class OnboardingManager {
     });
 
     this.model = { slides: [] };
-    this.progress = {
-      slideId: null,
-      completedTaskIds: [],
-      onEnterDoneSlideIds: [],
-      completed: false,
-      timestamp: Date.now()
-    };
+    this.progress = createEmptyProgress(null);
 
     this.active = false;
     this._bound = false;
@@ -188,6 +262,14 @@ export class OnboardingManager {
     this._lastRenderedSlideIndex = null;
     this._lastAction = null;
     this._isTransitioning = false;
+
+    // Coalesced persistence: rapid task updates + Reset must not race.
+    // Fire-and-forget _persist() used to capture a live progress object that a later
+    // resetTutorial() replaced — the late write then restored stale completed tasks.
+    this._persistDirty = false;
+    this._persistChain = null;
+    this._persistEpoch = 0;
+    this._applyingRemoteProgress = false;
 
     // Cross-tab progress sync + transient recovery when tab becomes visible.
     this._storageListenerBound = false;
@@ -246,23 +328,41 @@ export class OnboardingManager {
     } catch { /* ignore */ }
   }
 
+  /**
+   * Clear all walkthrough progress and return to the first slide.
+   * Safe to call while other task-completion persists are in flight.
+   */
   async resetTutorial() {
     if (!this._isKeyPilotEnabled()) return;
 
     const firstSlideId = this.model.slides[0]?.id || null;
-    this.progress = {
-      slideId: firstSlideId,
-      completedTaskIds: [],
-      onEnterDoneSlideIds: [],
-      completed: false,
-      timestamp: Date.now()
-    };
+    // Bump epoch first so any in-flight remote apply / stale persist is ignored.
+    this._persistEpoch += 1;
+    this.progress = createEmptyProgress(firstSlideId);
     this.active = true;
     this._practiceDismissed = false;
     this._practiceLastSlideId = null;
+    this._lastRenderedSlideId = null;
+    this._lastRenderedSlideIndex = null;
+    this._isTransitioning = false;
+    this._lastAction = null;
+
+    try { this.panel.hideOverlay(); } catch { /* ignore */ }
+    try { this.practicePanel.hide(); } catch { /* ignore */ }
+
     await this._persist();
     this._isTransitioning = true;
-    this._render({ transition: { type: 'slide', dir: 1 }, reason: 'reset' });
+    // forceRebuild: always rebuild checklist rows so completed checkmarks cannot stick
+    // via in-place DOM update when remaining on the same slide.
+    this._render({
+      transition: { type: 'slide', dir: -1 },
+      reason: 'reset',
+      forceRebuild: true
+    });
+    this._emit('tutorialReset', {
+      slideId: firstSlideId,
+      timestamp: this.progress.timestamp
+    });
   }
 
   async goPrevSlide() {
@@ -282,7 +382,6 @@ export class OnboardingManager {
     const idx = this._currentSlideIndex();
     const next = this.model.slides[idx + 1];
     if (!next) return;
-    console.log('[KeyPilot Onboarding] goNextSlide: moving from', this.model.slides[idx]?.id, 'to', next.id);
     this.progress.slideId = next.id;
     await this._persist();
     this._isTransitioning = true;
@@ -517,16 +616,26 @@ export class OnboardingManager {
     try {
       if (!changes || typeof changes !== 'object') return;
       if (!areaName || (areaName !== 'sync' && areaName !== 'local' && areaName !== 'session')) return;
+      // Ignore echo from our own coalesced persist loop.
+      if (this._applyingRemoteProgress) return;
+      if (this._persistDirty || this._persistChain) return;
+
       const relevant =
-        Object.prototype.hasOwnProperty.call(changes, STORAGE_KEYS.ACTIVE) ||
-        Object.prototype.hasOwnProperty.call(changes, STORAGE_KEYS.PROGRESS);
+        Object.prototype.hasOwnProperty.call(changes, ONBOARDING_STORAGE_KEYS.ACTIVE) ||
+        Object.prototype.hasOwnProperty.call(changes, ONBOARDING_STORAGE_KEYS.PROGRESS);
       if (!relevant) return;
 
-      // Debounce: multiple writes can come in quick bursts.
+      // Debounce: multiple writes can come in quick bursts (sync + local dual-write).
       try { if (this._storageChangeTimer) clearTimeout(this._storageChangeTimer); } catch { /* ignore */ }
+      const epochAtSchedule = this._persistEpoch;
       this._storageChangeTimer = setTimeout(() => {
-        this._loadProgress()
-          .then(() => {
+        // A local reset/navigation happened after this event was scheduled.
+        if (epochAtSchedule !== this._persistEpoch) return;
+        if (this._persistDirty || this._persistChain) return;
+        this._loadProgress({ preferRemote: true })
+          .then((changed) => {
+            if (epochAtSchedule !== this._persistEpoch) return;
+            if (changed === false) return;
             withViewTransition(() => this._render({ reason: 'storageChanged' }));
           })
           .catch(() => {});
@@ -598,48 +707,102 @@ export class OnboardingManager {
     this.model = parseOnboardingXml(text);
   }
 
-  async _loadProgress() {
-    const data = await storageGet([STORAGE_KEYS.ACTIVE, STORAGE_KEYS.PROGRESS]);
+  /**
+   * Load active flag + progress from storage.
+   * @param {{preferRemote?: boolean}} [opts]
+   * @returns {Promise<boolean>} true when in-memory state was updated
+   */
+  async _loadProgress(opts = {}) {
+    const preferRemote = opts.preferRemote === true;
+    const data = await storageGet([ONBOARDING_STORAGE_KEYS.ACTIVE, ONBOARDING_STORAGE_KEYS.PROGRESS]);
 
-    const active = safeBool(data[STORAGE_KEYS.ACTIVE]);
-    this.active = active === null ? false : active;
+    const active = safeBool(data[ONBOARDING_STORAGE_KEYS.ACTIVE]);
+    let changed = false;
 
-    const p = data[STORAGE_KEYS.PROGRESS];
-    if (p && typeof p === 'object') {
-      this.progress.slideId = typeof p.slideId === 'string' ? p.slideId : this.progress.slideId;
-      this.progress.completed = !!p.completed;
-      this.progress.timestamp = typeof p.timestamp === 'number' ? p.timestamp : this.progress.timestamp;
-
-      if (Array.isArray(p.completedTaskIds)) {
-        this.progress.completedTaskIds = p.completedTaskIds.map(String);
+    if (active !== null && active !== this.active) {
+      this.active = active;
+      changed = true;
+    } else if (active === null && !preferRemote) {
+      // First load: default inactive when unset.
+      if (this.active !== false) {
+        this.active = false;
+        changed = true;
       }
-      if (Array.isArray(p.onEnterDoneSlideIds)) {
-        this.progress.onEnterDoneSlideIds = p.onEnterDoneSlideIds.map(String);
+    }
+
+    const p = data[ONBOARDING_STORAGE_KEYS.PROGRESS];
+    if (p && typeof p === 'object') {
+      const remote = cloneProgress(p);
+      const localTs = typeof this.progress?.timestamp === 'number' ? this.progress.timestamp : 0;
+      const remoteTs = remote.timestamp || 0;
+
+      // Drop strictly older snapshots (stale dual-area / late writes).
+      // Equal timestamps still apply so a cold load can hydrate.
+      if (preferRemote && remoteTs && localTs && remoteTs < localTs) {
+        return changed;
+      }
+
+      if (!progressEqual(this.progress, remote)) {
+        this.progress = remote;
+        changed = true;
+      }
+    }
+    return changed;
+  }
+
+  /**
+   * Persist active + progress. Coalesces concurrent callers so the last
+   * in-memory state always wins (critical for Reset vs task-complete races).
+   * @returns {Promise<void>}
+   */
+  async _persist() {
+    this._persistDirty = true;
+    if (!this._persistChain) {
+      this._persistChain = this._drainPersistQueue().finally(() => {
+        this._persistChain = null;
+      });
+    }
+    await this._persistChain;
+  }
+
+  async _drainPersistQueue() {
+    while (this._persistDirty) {
+      this._persistDirty = false;
+      // Snapshot at write time (not at schedule time) so superseded states are skipped.
+      const payload = {
+        [ONBOARDING_STORAGE_KEYS.ACTIVE]: this.active,
+        [ONBOARDING_STORAGE_KEYS.PROGRESS]: cloneProgress({
+          ...this.progress,
+          timestamp: Date.now()
+        })
+      };
+      this.progress.timestamp = payload[ONBOARDING_STORAGE_KEYS.PROGRESS].timestamp;
+      this._applyingRemoteProgress = true;
+      try {
+        await storageSet(payload);
+      } finally {
+        // Allow storage echo handlers after a tick so dual-area onChanged can settle.
+        try {
+          setTimeout(() => {
+            this._applyingRemoteProgress = false;
+          }, 0);
+        } catch {
+          this._applyingRemoteProgress = false;
+        }
       }
     }
   }
 
-  async _persist() {
-    this.progress.timestamp = Date.now();
-    await storageSet({
-      [STORAGE_KEYS.ACTIVE]: this.active,
-      [STORAGE_KEYS.PROGRESS]: this.progress
-    });
-  }
-
   async setActive(active) {
     const next = !!active;
-    console.log('[KeyPilot Onboarding] setActive called:', { current: this.active, next });
     // Don't allow Alt+/ (or other triggers) to reopen onboarding while KeyPilot is disabled.
     if (next && !this._isKeyPilotEnabled()) {
-      console.log('[KeyPilot Onboarding] KeyPilot disabled, hiding panel');
       this.panel.hide();
       this.practicePanel.hide();
       this._isTransitioning = false;
       return;
     }
     if (this.active === next) {
-      console.log('[KeyPilot Onboarding] Active state unchanged, ensuring render state is correct');
       // Even if state hasn't changed, ensure UI is in sync (e.g., if panel visibility got out of sync)
       this._render();
       // If closing (next === false), ensure we persist this so other factors don't re-show it
@@ -648,7 +811,6 @@ export class OnboardingManager {
       }
       return;
     }
-    console.log('[KeyPilot Onboarding] Changing active state and persisting');
     this.active = next;
     this._isTransitioning = false;
     await this._persist();
@@ -669,13 +831,12 @@ export class OnboardingManager {
    * @param {Object} [opts]
    * @param {{type:'slide', dir:1|-1}|null} [opts.transition]
    * @param {string} [opts.reason]
+   * @param {boolean} [opts.forceRebuild] Force checklist DOM rebuild (e.g. after Reset)
    */
   _render(opts = {}) {
     const slide = this._getCurrentSlide();
     const total = this.model.slides.length;
     const index = this._currentSlideIndex();
-
-    console.log('[KeyPilot Onboarding] _render called:', { active: this.active, completed: this.progress.completed, slide: slide?.id });
 
     // Never show onboarding UI while KeyPilot is disabled.
     if (!this._isKeyPilotEnabled()) {
@@ -685,11 +846,14 @@ export class OnboardingManager {
     }
 
     if (!this.active || this.progress.completed || !slide) {
-      console.log('[KeyPilot Onboarding] Hiding panels (not active, completed, or no slide)');
       this.panel.hide();
       this.practicePanel.hide();
       return;
     }
+
+    // If the off-step is still open while KeyPilot is already disabled, complete it
+    // so the user can focus on turning KeyPilot back on.
+    try { this._autoCompleteToggleOffIfAlreadyDisabled(); } catch { /* ignore */ }
 
     this.panel.show();
     // Determine whether this render is a slide transition (for animation + hooks).
@@ -704,12 +868,16 @@ export class OnboardingManager {
         : (isSlideChange ? { type: 'slide', dir: index > (this._lastRenderedSlideIndex || 0) ? 1 : -1 } : null);
 
     const reason = opts && opts.reason ? String(opts.reason) : 'render';
+    const forceRebuild = !!(opts && opts.forceRebuild) || reason === 'reset';
 
     const fromSlideId = this._lastRenderedSlideId;
 
     // If an overlay was shown on the prior slide (e.g. via onEnter), ensure it doesn't
-    // persist into the next slide when the user manually navigates.
-    if (transition && transition.type === 'slide' && fromSlideId !== null && String(fromSlideId) !== String(slide.id)) {
+    // persist into the next slide when the user manually navigates or resets.
+    if (
+      reason === 'reset' ||
+      (transition && transition.type === 'slide' && fromSlideId !== null && String(fromSlideId) !== String(slide.id))
+    ) {
       try { this.panel.hideOverlay(); } catch { /* ignore */ }
     }
 
@@ -722,15 +890,21 @@ export class OnboardingManager {
       });
     }
 
+    const tasksForUi = (slide.tasks || []).map((t) => ({
+      ...t,
+      label: this._resolveTaskLabel(t)
+    }));
+
     const renderPromise = this.panel.render({
       title: slide.title || 'Welcome to KeyPilot',
       bodyText: slide.bodyText || '',
       slideId: slide.id,
       slideIndex: index,
       slideCount: total,
-      tasks: slide.tasks,
+      tasks: tasksForUi,
       completedTaskIds: new Set(this.progress.completedTaskIds),
-      transition
+      transition,
+      forceRebuild
     });
 
     // Transition end hook (best-effort).
@@ -755,10 +929,6 @@ export class OnboardingManager {
 
     this._lastRenderedSlideId = slide.id;
     this._lastRenderedSlideIndex = index;
-
-    // Check if this slide is already complete (which would trigger auto-advance)
-    const isComplete = this._isSlideComplete(slide, new Set(this.progress.completedTaskIds));
-    console.log('[KeyPilot Onboarding] Rendered slide:', slide.id, 'complete:', isComplete, 'completed tasks:', this.progress.completedTaskIds);
 
     // Reset practice dismissal when entering a new slide.
     if (this._practiceLastSlideId !== slide.id) {
@@ -922,38 +1092,47 @@ export class OnboardingManager {
 
   _onActionEvent(ev) {
     if (!this.active || this.progress.completed) return;
-    // If KeyPilot toggles off/on, update UI and listeners accordingly.
-    try {
-      const a = ev?.detail?.action;
-      if (a === 'toggleExtension') {
-        const enabled = ev?.detail?.enabled;
-        if (typeof enabled === 'boolean') {
-          this._enabledCache = enabled === true;
-          this._enabledCacheTs = Date.now();
-          this._setAltSlashListenerEnabled(enabled);
-          if (!enabled) {
-            console.log('[KeyPilot Onboarding] Extension toggled off, hiding panel');
-            this.panel.hide();
-            this.practicePanel.hide();
-            return;
-          } else {
-            console.log('[KeyPilot Onboarding] Extension toggled on, re-rendering onboarding');
-            // Re-render to ensure the panel is in the correct state
-            this._render();
-          }
-        }
-      }
-    } catch { /* ignore */ }
-    const slide = this._getCurrentSlide();
-    if (!slide) return;
 
     const detail = ev?.detail || {};
     const action = typeof detail.action === 'string' ? detail.action : '';
     if (!action) return;
     this._lastAction = action;
 
+    // Keep enabled cache in sync for toggle actions (before task matching / UI hide).
+    if (action === 'toggleExtension' && typeof detail.enabled === 'boolean') {
+      this._enabledCache = detail.enabled === true;
+      this._enabledCacheTs = Date.now();
+      this._setAltSlashListenerEnabled(detail.enabled);
+    }
+
+    const slide = this._getCurrentSlide();
+    if (!slide) {
+      // Still honor hide-when-disabled even if there is no current slide.
+      if (action === 'toggleExtension' && detail.enabled === false) {
+        this.panel.hide();
+        this.practicePanel.hide();
+      }
+      return;
+    }
+
     let changed = false;
     const completed = new Set(this.progress.completedTaskIds);
+
+    // Coming back from a disabled state: any pending "turn off" step is already satisfied.
+    if (action === 'toggleExtension' && detail.enabled === true) {
+      for (const task of slide.tasks || []) {
+        if (!task?.id || completed.has(task.id)) continue;
+        const when = task.when || {};
+        if (
+          String(when.type || '') === 'action' &&
+          String(when.action || '') === 'toggleExtension' &&
+          String(when.change || '') === 'off'
+        ) {
+          completed.add(task.id);
+          changed = true;
+        }
+      }
+    }
 
     for (const task of slide.tasks || []) {
       if (!task || !task.id || completed.has(task.id)) continue;
@@ -963,30 +1142,38 @@ export class OnboardingManager {
       }
     }
 
-    if (!changed) return;
+    if (changed) {
+      this.progress.completedTaskIds = Array.from(completed);
+      this._persist(); // best-effort
+    }
 
-    this.progress.completedTaskIds = Array.from(completed);
-    this._persist(); // best-effort
+    // After matching "turn off", hide walkthrough chrome while KeyPilot is disabled.
+    // Task completion is recorded first so the off-step is not lost.
+    if (action === 'toggleExtension' && detail.enabled === false) {
+      this.panel.hide();
+      this.practicePanel.hide();
+      // Do not auto-advance while disabled; the "turn back on" step needs the strip click.
+      return;
+    }
 
-    this._render({ reason: 'taskUpdate' });
+    if (changed) {
+      this._render({ reason: 'taskUpdate' });
+      const slideComplete = this._isSlideComplete(slide, completed);
+      if (slideComplete) {
+        this._handleSlideCompleted(slide, { cause: action, completedTaskIds: Array.from(completed) });
+        this._advanceSlide({ cause: action });
+      }
+      return;
+    }
 
-    // If slide is complete, advance.
-    const slideComplete = this._isSlideComplete(slide, completed);
-    console.log('[KeyPilot Onboarding] After action', action, 'slide', slide.id, 'complete:', slideComplete);
-    if (slideComplete) {
-      this._handleSlideCompleted(slide, { cause: action, completedTaskIds: Array.from(completed) });
-      this._advanceSlide({ cause: action });
+    // Toggle on with no new task progress: still re-show the panel.
+    if (action === 'toggleExtension' && detail.enabled === true) {
+      this._render({ reason: 'toggleOn' });
     }
   }
 
   _isSlideComplete(slide, completedTaskIdsSet) {
-    const tasks = slide?.tasks || [];
-    if (!tasks.length) return true;
-    for (const t of tasks) {
-      if (!t?.id) continue;
-      if (!completedTaskIdsSet.has(t.id)) return false;
-    }
-    return true;
+    return isSlideComplete(slide, completedTaskIdsSet);
   }
 
   _handleSlideCompleted(slide, { cause = '', completedTaskIds = null } = {}) {
@@ -1016,7 +1203,6 @@ export class OnboardingManager {
   }
 
   async _advanceSlide({ cause = '' } = {}) {
-    console.log('[KeyPilot Onboarding] _advanceSlide called, cause:', cause, 'isTransitioning:', this._isTransitioning);
     if (this._isTransitioning) return;
 
     const idx = this._currentSlideIndex();
@@ -1024,7 +1210,6 @@ export class OnboardingManager {
 
     if (!next) {
       // Completed all slides.
-      console.log('[KeyPilot Onboarding] No next slide, completing onboarding');
       this.progress.completed = true;
       this.active = false;
       await this._persist();
@@ -1038,7 +1223,6 @@ export class OnboardingManager {
       return;
     }
 
-    console.log('[KeyPilot Onboarding] Auto-advancing from slide', this.model.slides[idx]?.id, 'to', next.id);
     this.progress.slideId = next.id;
     await this._persist();
     this._isTransitioning = true;
@@ -1052,6 +1236,14 @@ export class OnboardingManager {
 
     if (type === 'action' && ctx.type === 'action') {
       if (when.action && when.action !== ctx.action) return false;
+
+      // Optional polarity for toggles: change="off" | "on"
+      const change = String(when.change || '').trim();
+      if (change === 'off') {
+        if (ctx.detail?.enabled !== false) return false;
+      } else if (change === 'on') {
+        if (ctx.detail?.enabled !== true) return false;
+      }
 
       const target = String(when.target || '').trim();
       if (!target) return true;
@@ -1072,6 +1264,62 @@ export class OnboardingManager {
     }
 
     return false;
+  }
+
+  /**
+   * Labels that depend on whether KeyPilot is currently ON or OFF.
+   * @param {{id?: string, label?: string}} task
+   * @returns {string}
+   */
+  _resolveTaskLabel(task) {
+    const base = String(task?.label || task?.id || '');
+    const id = String(task?.id || '');
+    const enabled = this._isKeyPilotEnabled();
+
+    if (id === 'toggle_extension_off') {
+      if (!enabled) {
+        return 'KeyPilot is already off (control strip shows `OFF`). This step will check off automatically — then click the strip to turn KeyPilot back on.';
+      }
+      return base || 'Notice the control strip above that says `ON`. Click it to turn KeyPilot completely off.';
+    }
+    if (id === 'toggle_extension_on') {
+      if (!enabled) {
+        return 'Notice the control strip above that says `OFF`. Click it to turn KeyPilot back on.';
+      }
+      return base || 'Click the control strip again to turn KeyPilot back on.';
+    }
+    return base;
+  }
+
+  /**
+   * If the "turn off" step is still open and KeyPilot is already disabled, complete it.
+   * @returns {boolean} whether progress changed
+   */
+  _autoCompleteToggleOffIfAlreadyDisabled() {
+    if (!this.active || this.progress.completed) return false;
+    if (this._isKeyPilotEnabled()) return false;
+
+    const slide = this._getCurrentSlide();
+    if (!slide) return false;
+
+    const completed = new Set(this.progress.completedTaskIds);
+    let changed = false;
+    for (const task of slide.tasks || []) {
+      if (!task?.id || completed.has(task.id)) continue;
+      const when = task.when || {};
+      if (
+        String(when.type || '') === 'action' &&
+        String(when.action || '') === 'toggleExtension' &&
+        String(when.change || '') === 'off'
+      ) {
+        completed.add(task.id);
+        changed = true;
+      }
+    }
+    if (!changed) return false;
+    this.progress.completedTaskIds = Array.from(completed);
+    this._persist();
+    return true;
   }
 
   _attachToKeyPilotStateSoon() {
@@ -1117,7 +1365,6 @@ export class OnboardingManager {
           this._render({ reason: 'modeTaskUpdate' });
 
           const slideComplete = this._isSlideComplete(slide, completed);
-          console.log('[KeyPilot Onboarding] After mode change, slide', slide.id, 'complete:', slideComplete);
           if (slideComplete) {
             this._handleSlideCompleted(slide, { cause: 'modeChange', completedTaskIds: Array.from(completed) });
             this._advanceSlide({ cause: 'modeChange' });
