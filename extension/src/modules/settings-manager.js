@@ -61,7 +61,8 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  *   overlayFillEnabled: boolean,
  *   overlayShadowEnabled: boolean,
  *   rectangleThickness: number,
- *   clickEffect: ClickEffect
+ *   clickEffect: ClickEffect,
+ *   keyboardLinkHoverHints: boolean
  * }} ClickModeSettings
  */
 
@@ -133,7 +134,10 @@ export const DEFAULT_SETTINGS = Object.freeze({
     // Focus rectangle border thickness in px.
     rectangleThickness: 3,
     // F-key activation feedback on link-style targets (flash is the default).
-    clickEffect: 'flash'
+    clickEffect: 'flash',
+    // When true, hovering a link glows matching green keys on the Keyboard Reference.
+    // Off by default (opt-in via Settings → Click Mode).
+    keyboardLinkHoverHints: false
   }),
   textMode: Object.freeze({
     cursorType: 't_square',
@@ -288,7 +292,11 @@ function normalizeClickMode(raw) {
       1,
       16
     ),
-    clickEffect: normalizeClickEffect(stored.clickEffect)
+    clickEffect: normalizeClickEffect(stored.clickEffect),
+    keyboardLinkHoverHints: normalizeBoolean(
+      stored.keyboardLinkHoverHints,
+      DEFAULT_SETTINGS.clickMode.keyboardLinkHoverHints
+    )
   };
 }
 

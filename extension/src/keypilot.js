@@ -680,6 +680,12 @@ export class KeyPilot extends EventManager {
     try {
       this.applyControlStripFromSettings();
     } catch { /* ignore */ }
+
+    // Keyboard link-hover glow may have been toggled in Settings → Click Mode.
+    try {
+      this._linkHoverHintLastApplied = null;
+      this._flushKeyboardLinkHoverHints();
+    } catch { /* ignore */ }
   }
 
   /**
@@ -1484,8 +1490,13 @@ export class KeyPilot extends EventManager {
       const help = this.floatingKeyboardHelp;
       if (!help || typeof help.setLinkHoverHints !== 'function') return;
 
+      // Settings → Click Mode → "Glow keys when hovering a link" (default off).
+      const hintsEnabled =
+        this._settings?.clickMode?.keyboardLinkHoverHints === true ||
+        (this._settings == null && DEFAULT_SETTINGS.clickMode.keyboardLinkHoverHints === true);
+
       let isLink = false;
-      if (this._keyboardHelpVisible && this.enabled && help.isVisible?.()) {
+      if (hintsEnabled && this._keyboardHelpVisible && this.enabled && help.isVisible?.()) {
         const st = this._linkHoverHintPendingState || this.state?.getState?.();
         // Don't suggest page link actions while modal modes own the pointer.
         if (!(st?.mode === MODES.POPOVER || st?.mode === MODES.INSPECTOR ||

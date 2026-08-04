@@ -261,6 +261,7 @@ async function render() {
   const clickRectThicknessRange = /** @type {HTMLInputElement|null} */ (document.getElementById('click-rect-thickness-range'));
   const clickRectThicknessNumber = /** @type {HTMLInputElement|null} */ (document.getElementById('click-rect-thickness-number'));
   const clickEffectRadios = /** @type {HTMLInputElement[]} */ (Array.from(document.querySelectorAll('input[name="click-effect"]')));
+  const clickKeyboardLinkHints = /** @type {HTMLInputElement|null} */ (document.getElementById('click-keyboard-link-hints'));
   const clickCursorResetBtn = document.getElementById('click-cursor-reset');
   const clickModeResetBtn = document.getElementById('click-mode-reset');
 
@@ -373,6 +374,10 @@ async function render() {
     clickEffectRadios.forEach((r) => {
       r.checked = r.value === effect;
     });
+
+    if (clickKeyboardLinkHints) {
+      clickKeyboardLinkHints.checked = cm?.keyboardLinkHoverHints === true;
+    }
 
     const type = cm?.cursor?.type ?? DEFAULT_SETTINGS.clickMode.cursor.type;
     if (type === 'native_arrow' || type === 'native_pointer') {
@@ -552,6 +557,12 @@ async function render() {
 
   clickRectThicknessRange?.addEventListener('input', async () => commitClickRectThickness(clickRectThicknessRange.value), true);
   clickRectThicknessNumber?.addEventListener('input', async () => commitClickRectThickness(clickRectThicknessNumber.value), true);
+
+  clickKeyboardLinkHints?.addEventListener('change', async () => {
+    await setSettings({ clickMode: { keyboardLinkHoverHints: !!clickKeyboardLinkHints.checked } });
+    const s = await getSettings();
+    applyClickMode(s.clickMode);
+  });
 
   clickEffectRadios.forEach((radio) => {
     radio.addEventListener('change', async () => {
