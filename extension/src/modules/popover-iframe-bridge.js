@@ -12,6 +12,7 @@
 import { SCROLL } from '../config/constants.js';
 import { MSG } from '../messaging/types.js';
 import { isTypingContext, hasModifierKeys } from '../utils/dom-context.js';
+import { scrollAtPoint } from '../utils/scroll-at-point.js';
 
 /**
  * @typedef {object} PopoverIframeBridgeOptions
@@ -242,12 +243,17 @@ export function installPopoverIframeBridge(options = {}) {
       } else if (key === 'x' || key === 'X') {
         e.preventDefault();
         scrollByY(pagePx, behavior);
-      } else if (key === 'c' || key === 'C') {
+      } else if (key === 'c' || key === 'C' || key === 'v' || key === 'V') {
+        // Nested overflow under the cursor first; page fallback (same as top-frame C/V).
         e.preventDefault();
-        scrollByY(-halfPx, behavior);
-      } else if (key === 'v' || key === 'V') {
-        e.preventDefault();
-        scrollByY(halfPx, behavior);
+        let mx = lastMouse.x;
+        let my = lastMouse.y;
+        if (typeof mx !== 'number' || typeof my !== 'number') {
+          mx = Math.floor(window.innerWidth / 2);
+          my = Math.floor(window.innerHeight / 2);
+        }
+        const sign = (key === 'c' || key === 'C') ? -1 : 1;
+        scrollAtPoint(mx, my, sign, halfPx, behavior);
       } else if (key === 'b' || key === 'B') {
         e.preventDefault();
         scrollToY(0, behavior);

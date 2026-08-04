@@ -9,7 +9,13 @@ export class StateManager {
       mode: MODES.NONE,
       lastMouse: { x: 0, y: 0 },
       focusEl: null,
-      deleteEl: null,
+      /**
+       * Shared inspector hover target (Delete, Cols, future pick tools).
+       * Only meaningful while mode === MODES.INSPECTOR.
+       */
+      inspectorEl: null,
+      /** @type {string|null} INSPECTOR_KIND value while in inspector mode */
+      inspectorKind: null,
       highlightEl: null,
       highlightStartPosition: null,
       currentSelection: null,
@@ -65,8 +71,33 @@ export class StateManager {
     this.setState({ focusEl: element });
   }
 
-  setDeleteElement(element) {
-    this.setState({ deleteEl: element });
+  setInspectorElement(element) {
+    this.setState({ inspectorEl: element });
+  }
+
+  /**
+   * Enter shared inspector pick mode for a tool kind.
+   * @param {string} kind INSPECTOR_KIND value
+   */
+  enterInspector(kind) {
+    this.setState({
+      mode: MODES.INSPECTOR,
+      inspectorKind: kind || null,
+      inspectorEl: null,
+      // Clear normal focus hover so green click chrome doesn't fight inspector outline
+      focusEl: null
+    });
+  }
+
+  /**
+   * Exit inspector pick mode without clearing sticky page effects.
+   */
+  exitInspector() {
+    this.setState({
+      mode: MODES.NONE,
+      inspectorKind: null,
+      inspectorEl: null
+    });
   }
 
   setHighlightElement(element) {
@@ -86,10 +117,11 @@ export class StateManager {
       this.setState({ 
         mode: MODES.POPOVER,  // Set mode when opening
         // Popovers are modal: stop tracking/clicking background page elements.
-        // Clearing focus/delete immediately also hides the green rectangle until the
+        // Clearing focus/inspector immediately also hides hover chrome until the
         // user moves the mouse over popover UI.
         focusEl: null,
-        deleteEl: null,
+        inspectorEl: null,
+        inspectorKind: null,
         popoverOpen: isOpen, 
         popoverUrl: url 
       });
@@ -105,15 +137,33 @@ export class StateManager {
   clearElements() {
     this.setState({ 
       focusEl: null, 
-      deleteEl: null,
+      inspectorEl: null,
       highlightEl: null,
       highlightStartPosition: null,
       currentSelection: null
     });
   }
 
+  isInspectorMode() {
+    return this.state.mode === MODES.INSPECTOR;
+  }
+
+  /**
+   * @param {string} kind
+   * @returns {boolean}
+   */
+  isInspectorKind(kind) {
+    return this.state.mode === MODES.INSPECTOR && this.state.inspectorKind === kind;
+  }
+
+  /** @deprecated prefer isInspectorKind(INSPECTOR_KIND.DELETE) */
   isDeleteMode() {
-    return this.state.mode === MODES.DELETE;
+    return this.isInspectorKind('delete') || this.state.mode === MODES.DELETE;
+  }
+
+  /** @deprecated prefer isInspectorKind(INSPECTOR_KIND.COLS) */
+  isColsMode() {
+    return this.isInspectorKind('cols') || this.state.mode === MODES.COLS;
   }
 
   isHighlightMode() {
@@ -132,7 +182,8 @@ export class StateManager {
     this.setState({
       mode: MODES.NONE,
       focusEl: null,
-      deleteEl: null,
+      inspectorEl: null,
+      inspectorKind: null,
       highlightEl: null,
       highlightStartPosition: null,
       currentSelection: null,

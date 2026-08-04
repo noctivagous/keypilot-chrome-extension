@@ -462,7 +462,7 @@
                   <input type="radio" name="text-focus-style" value="left_edge" />
                   <span>
                     <span class="radio-title">Left edge pulse</span>
-                    <span class="radio-sub">10px orange bar on the left, pulsing (default). “press Esc to exit” stays on the field.</span>
+                    <span class="radio-sub">Orange bar on the left edge, pulsing (default). “press Esc to exit” stays on the field.</span>
                   </span>
                 </label>
                 <label class="radio">
@@ -472,6 +472,15 @@
                     <span class="radio-sub">Full orange wash over the field (previous style), plus the Esc hint.</span>
                   </span>
                 </label>
+              </div>
+
+              <div id="text-left-edge-width-field" class="field">
+                <div class="field-label">Left edge bar width</div>
+                <div class="range-row">
+                  <input id="text-left-edge-width-range" type="range" min="1" max="24" step="1" />
+                  <input id="text-left-edge-width-number" class="number" type="number" min="1" max="24" step="1" />
+                </div>
+                <div class="field-hint">Width of the pulsating left-edge bar (1–24px). Default 5px.</div>
               </div>
 
               <div class="divider"></div>

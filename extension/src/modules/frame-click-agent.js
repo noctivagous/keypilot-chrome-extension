@@ -6,20 +6,23 @@
  *  2. Activate keybinds when this frame has focus
  *  3. Blue hover outline on clickable targets under the pointer (rAF-throttled;
  *     matches top-frame DOM-hover focus palette)
+ *  4. postMessage / runtime KP_FRAME_SCROLL from parent (C/V under this iframe)
+ *     plus local C/V when this frame has focus — nested overflow first
  *
  * Full KeyPilot still initializes only in the top frame. When full KP is also
  * running in this frame (KeyPilot popover), local key + hover handling is skipped.
  */
 
 import { MSG } from '../messaging/types.js';
-import { COLORS, CSS_CLASSES, Z_INDEX } from '../config/constants.js';
+import { COLORS, CSS_CLASSES, Z_INDEX, SCROLL } from '../config/constants.js';
 import { isTypingContext, hasModifierKeys } from '../utils/dom-context.js';
 import {
   buildKeybindingsForLayout,
   DEFAULT_KEYBOARD_LAYOUT_ID,
   normalizeKeyboardLayoutId
 } from '../config/keyboard-layouts.js';
-import { getSettings, SETTINGS_STORAGE_KEY } from './settings-manager.js';
+import { getSettings, SETTINGS_STORAGE_KEY, scrollBehaviorFromSpeed, DEFAULT_SETTINGS } from './settings-manager.js';
+import { scrollAtPoint } from '../utils/scroll-at-point.js';
 
 /**
  * @typedef {{ openInNewTab?: boolean, background?: boolean }} FrameActivateOptions
@@ -215,6 +218,10 @@ export function installFrameClickAgent() {
     let lastMouse = { x: null, y: null };
     /** @type {ReturnType<typeof buildKeybindingsForLayout>} */
     let keybindings = buildKeybindingsForLayout(DEFAULT_KEYBOARD_LAYOUT_ID);
+    /** @type {number} */
+    let halfPagePx = SCROLL.HALF_PAGE_PX;
+    /** @type {'smooth'|'auto'} */
+    let scrollBehavior = SCROLL.BEHAVIOR === 'smooth' ? 'smooth' : 'auto';
 
     /** @type {HTMLElement|null} */
     let hoverEl = null;
@@ -284,11 +291,68 @@ export function installFrameClickAgent() {
           overlayShadowEnabled: cm.overlayShadowEnabled === true,
           rectangleThickness: Number(cm.rectangleThickness) || 3
         };
+        const half = Number(settings?.scroll?.halfPagePx);
+        if (Number.isFinite(half) && half > 0) halfPagePx = half;
+        else halfPagePx = SCROLL.HALF_PAGE_PX;
+        try {
+          scrollBehavior = scrollBehaviorFromSpeed(
+            settings?.scroll?.speed ?? DEFAULT_SETTINGS.scroll.speed
+          );
+        } catch {
+          scrollBehavior = SCROLL.BEHAVIOR === 'smooth' ? 'smooth' : 'auto';
+        }
         applyFocusChromeToHoverEl();
         if (pointerInside && enabled) scheduleHoverUpdate();
       } catch {
         // keep previous / default
       }
+    };
+
+    /**
+     * C / V scroll under the pointer (or given coords): nested overflow first.
+     * @param {number} clientX
+     * @param {number} clientY
+     * @param {number} sign  -1 up/left, +1 down/right
+     * @param {number} [deltaPx]
+     * @param {ScrollBehavior} [behavior]
+     * @returns {boolean}
+     */
+    const scrollAt = (clientX, clientY, sign, deltaPx, behavior) => {
+      if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return false;
+      const amount = Math.abs(Number(deltaPx));
+      const delta = Number.isFinite(amount) && amount > 0 ? amount : halfPagePx;
+      const s = sign < 0 ? -1 : 1;
+      const beh = behavior === 'auto' || behavior === 'instant' ? 'auto' : (behavior || scrollBehavior);
+
+      // Nested iframe under point: re-forward into child agent.
+      try {
+        const under = deepElementFromPoint(clientX, clientY);
+        if (under && under.tagName === 'IFRAME') {
+          const iframe = /** @type {HTMLIFrameElement} */ (under);
+          const rect = iframe.getBoundingClientRect();
+          const localX = clientX - rect.left;
+          const localY = clientY - rect.top;
+          if (
+            localX >= 0 && localY >= 0 &&
+            localX <= rect.width && localY <= rect.height &&
+            iframe.contentWindow
+          ) {
+            iframe.contentWindow.postMessage({
+              type: MSG.FRAME_SCROLL,
+              clientX: localX,
+              clientY: localY,
+              sign: s,
+              deltaPx: delta,
+              behavior: beh,
+              frameName: typeof iframe.name === 'string' ? iframe.name : ''
+            }, '*');
+            return true;
+          }
+        }
+      } catch { /* fall through */ }
+
+      const result = scrollAtPoint(clientX, clientY, s, delta, beh);
+      return !!result?.scrolled;
     };
 
     const setEnabled = (next) => {
@@ -522,16 +586,18 @@ export function installFrameClickAgent() {
     };
 
     /**
-     * postMessage source checks are unreliable across content-script isolated worlds
-     * (`event.source === window.parent` often fails even for real parent posts).
-     * Accept KP_FRAME_ACTIVATE only when we are framed and the payload is well-formed;
-     * optional frameName targets a specific iframe (e.g. Google name="account").
+     * Shared gate for parent → child frame messages (activate + scroll).
+     * postMessage source checks are unreliable across content-script isolated
+     * worlds (`event.source === window.parent` often fails). Accept only when
+     * framed and payload is well-formed; optional frameName targets a specific
+     * iframe (e.g. Google name="account").
      * @param {MessageEvent|null} event
      * @param {any} data
+     * @param {string} type
      * @returns {boolean}
      */
-    const acceptActivatePayload = (event, data) => {
-      if (!data || data.type !== MSG.FRAME_ACTIVATE) return false;
+    const acceptFramePayload = (event, data, type) => {
+      if (!data || data.type !== type) return false;
       if (!enabled) return false;
       // Must be embedded (not top-level).
       try {
@@ -551,18 +617,45 @@ export function installFrameClickAgent() {
       return Number.isFinite(Number(data.clientX)) && Number.isFinite(Number(data.clientY));
     };
 
+    /**
+     * @param {MessageEvent|null} event
+     * @param {any} data
+     * @returns {boolean}
+     */
+    const acceptActivatePayload = (event, data) =>
+      acceptFramePayload(event, data, MSG.FRAME_ACTIVATE);
+
+    /**
+     * @param {MessageEvent|null} event
+     * @param {any} data
+     * @returns {boolean}
+     */
+    const acceptScrollPayload = (event, data) =>
+      acceptFramePayload(event, data, MSG.FRAME_SCROLL);
+
     /** @param {MessageEvent} event */
     const onMessage = (event) => {
       try {
         const data = event?.data;
-        if (!acceptActivatePayload(event, data)) return;
-
-        const x = Number(data.clientX);
-        const y = Number(data.clientY);
-        activateAt(x, y, {
-          openInNewTab: !!data.openInNewTab,
-          background: !!data.background
-        });
+        if (acceptActivatePayload(event, data)) {
+          const x = Number(data.clientX);
+          const y = Number(data.clientY);
+          activateAt(x, y, {
+            openInNewTab: !!data.openInNewTab,
+            background: !!data.background
+          });
+          return;
+        }
+        if (acceptScrollPayload(event, data)) {
+          const x = Number(data.clientX);
+          const y = Number(data.clientY);
+          const sign = Number(data.sign) < 0 ? -1 : 1;
+          const delta = Number(data.deltaPx);
+          const beh = data.behavior === 'auto' || data.behavior === 'instant'
+            ? 'auto'
+            : (data.behavior || scrollBehavior);
+          scrollAt(x, y, sign, delta, beh);
+        }
       } catch {
         // ignore
       }
@@ -593,7 +686,7 @@ export function installFrameClickAgent() {
     const onKeyDown = (e) => {
       try {
         if (!enabled) return;
-        // Full KeyPilot in this frame owns activate keys.
+        // Full KeyPilot in this frame owns activate / scroll keys.
         if (hasFullKeyPilot()) return;
         if (hasModifierKeys(e)) return;
         if (isTypingContext(e.target)) return;
@@ -601,9 +694,13 @@ export function installFrameClickAgent() {
         const key = e.key;
         const kb = keybindings || {};
         let mode = null;
+        /** @type {number|null} */
+        let scrollSign = null;
         if (keyIn(kb.ACTIVATE, key)) mode = 'activate';
         else if (keyIn(kb.ACTIVATE_NEW_TAB, key)) mode = 'newTab';
         else if (keyIn(kb.ACTIVATE_NEW_TAB_BACKGROUND, key)) mode = 'background';
+        else if (keyIn(kb.PAGE_UP_INSTANT, key)) scrollSign = -1;
+        else if (keyIn(kb.PAGE_DOWN_INSTANT, key)) scrollSign = 1;
         else return;
 
         let x = lastMouse.x;
@@ -616,6 +713,11 @@ export function installFrameClickAgent() {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
+
+        if (scrollSign !== null) {
+          scrollAt(x, y, scrollSign, halfPagePx, scrollBehavior);
+          return;
+        }
 
         activateAt(x, y, {
           openInNewTab: mode === 'newTab',
@@ -640,7 +742,8 @@ export function installFrameClickAgent() {
           return false;
         }
 
-        // Backup path: SW can fan-out FRAME_ACTIVATE to subframes (postMessage is primary).
+        // Backup path: SW can fan-out FRAME_ACTIVATE / FRAME_SCROLL to subframes
+        // (postMessage is primary).
         if (message?.type === MSG.FRAME_ACTIVATE) {
           if (!acceptActivatePayload(null, message)) {
             try { sendResponse({ ok: false }); } catch { /* ignore */ }
@@ -650,6 +753,23 @@ export function installFrameClickAgent() {
             openInNewTab: !!message.openInNewTab,
             background: !!message.background
           });
+          try { sendResponse({ ok: !!ok, href: String(location.href || '').slice(0, 120) }); } catch { /* ignore */ }
+          return true;
+        }
+
+        if (message?.type === MSG.FRAME_SCROLL) {
+          if (!acceptScrollPayload(null, message)) {
+            try { sendResponse({ ok: false }); } catch { /* ignore */ }
+            return true;
+          }
+          const sign = Number(message.sign) < 0 ? -1 : 1;
+          const ok = scrollAt(
+            Number(message.clientX),
+            Number(message.clientY),
+            sign,
+            Number(message.deltaPx),
+            message.behavior
+          );
           try { sendResponse({ ok: !!ok, href: String(location.href || '').slice(0, 120) }); } catch { /* ignore */ }
           return true;
         }

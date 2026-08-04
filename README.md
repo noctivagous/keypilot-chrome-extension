@@ -48,6 +48,7 @@ on the keyboard in specific places to make web navigation quick.
 | `L` | Open Omnibox (Address Bar Overlay) |
 | `P` | Open Link in Popover |
 | `S` | Go Back (History) |
+| `.` | Columnize element under cursor (multi-column layout) |
 | `'` | Open KeyPilot Settings |
 | `1` | Go to Site Root |
 
@@ -80,6 +81,18 @@ on the keyboard in specific places to make web navigation quick.
 | `Esc` | Exit Focus |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -29,6 +29,9 @@ export function buildKeyPilotPrintCss() {
     `.${CSS_CLASSES.CSS_PROPS_OVERLAY}`,
     `.${CSS_CLASSES.FOCUS_OVERLAY}`,
     `.${CSS_CLASSES.DELETE_OVERLAY}`,
+    `.${CSS_CLASSES.INSPECTOR_OVERLAY}`,
+    `.${CSS_CLASSES.COLS_OVERLAY}`,
+    `.${CSS_CLASSES.COLS_SLIP_BAR}`,
     `.${CSS_CLASSES.HIGHLIGHT_OVERLAY}`,
     `.${CSS_CLASSES.HIGHLIGHT_SELECTION}`,
     `.${CSS_CLASSES.FOCUSED_TEXT_OVERLAY}`,
@@ -80,6 +83,8 @@ export function buildKeyPilotPrintCss() {
         [data-kp-focus],
         .${CSS_CLASSES.FOCUS},
         .${CSS_CLASSES.DELETE},
+        .${CSS_CLASSES.COLS},
+        .${CSS_CLASSES.INSPECTOR},
         .${CSS_CLASSES.HIGHLIGHT} {
           outline: none !important;
           outline-offset: 0 !important;
@@ -274,6 +279,10 @@ export class StyleManager {
       
       .${CSS_CLASSES.DELETE} { 
         filter: brightness(0.8) contrast(1.2) !important; 
+      }
+
+      .${CSS_CLASSES.COLS} {
+        filter: brightness(1.05) saturate(1.15) !important;
       }
       
       .${CSS_CLASSES.HIDDEN} { 
@@ -547,6 +556,34 @@ export class StyleManager {
         box-shadow: 0 0 0 2px ${COLORS.DELETE_SHADOW}, 0 0 12px 2px ${COLORS.DELETE_SHADOW_BRIGHT}; 
         background: transparent; 
       }
+
+      .${CSS_CLASSES.COLS_OVERLAY},
+      .${CSS_CLASSES.INSPECTOR_OVERLAY} {
+        position: fixed;
+        pointer-events: none;
+        z-index: ${Z_INDEX.OVERLAYS};
+        border: 3px solid ${COLORS.COLS_PURPLE};
+        box-shadow: 0 0 0 2px ${COLORS.COLS_SHADOW}, 0 0 12px 2px ${COLORS.COLS_SHADOW_BRIGHT};
+        background: transparent;
+      }
+
+      .${CSS_CLASSES.INSPECTOR} {
+        filter: brightness(1.05) saturate(1.1) !important;
+      }
+
+      /* Applied multicol target — variables set by ColumnLayoutManager */
+      .${CSS_CLASSES.COLS_ACTIVE} {
+        column-width: var(--kpv2-cols-width, 40ch) !important;
+        column-gap: var(--kpv2-cols-gap, 1.5rem) !important;
+        column-fill: auto !important;
+        height: var(--kpv2-cols-height, 100vh) !important;
+        max-height: var(--kpv2-cols-height, 100vh) !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        box-sizing: border-box !important;
+      }
+
+      /* Page-mode markers (html/body): critical layout is set inline by ColumnLayoutManager. */
       
       .${CSS_CLASSES.HIGHLIGHT_OVERLAY} { 
         position: fixed; 
@@ -646,13 +683,13 @@ export class StyleManager {
         100% { opacity: 0.7; }
       }
 
-      /* Text-mode focus: 10px inset left-edge bar pulse (default focus style). */
+      /* Text-mode focus: inset left-edge bar pulse (width via --kpv2-text-left-edge-width). */
       @keyframes kpv2-text-left-edge-pulse {
         0%, 100% {
-          box-shadow: inset 10px 0 0 0 ${COLORS.ORANGE_SHADOW};
+          box-shadow: inset var(--kpv2-text-left-edge-width, 5px) 0 0 0 ${COLORS.ORANGE_SHADOW};
         }
         50% {
-          box-shadow: inset 10px 0 0 0 ${COLORS.ORANGE};
+          box-shadow: inset var(--kpv2-text-left-edge-width, 5px) 0 0 0 ${COLORS.ORANGE};
         }
       }
       
@@ -717,29 +754,22 @@ export class StyleManager {
       }
 
       /* Text inputs: hover / focus treatment + SVG hint labels.
-         - Hover: orange outline (via focus overlay) + SVG "Press F to select…"
+         - Hover: orange outline only + SVG "Press F to select…" (no background wash)
          - Focus background_tint: full orange wash + SVG "press Esc to exit"
-         - Focus left_edge (default): 10px pulsating left inset bar + Esc SVG
+         - Focus left_edge (default): pulsating left inset bar + Esc SVG
          Hint copy is an SVG background-image (upper-left) — not a DOM overlay. */
-      .${CSS_CLASSES.TEXT_HOVER_INPUT},
-      .${CSS_CLASSES.TEXT_HOVER_INPUT_PARENT},
       .${CSS_CLASSES.TEXT_FOCUS_INPUT},
       .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT} {
         color: var(--kpv2-text-input-color, rgba(55, 55, 55, 0.96)) !important;
         text-shadow: var(--kpv2-text-input-text-shadow, 1px 1px 0 rgba(255, 255, 255, 0.95)) !important;
       }
 
-      /* Wrapper parents: light hover tint only (no hint image — avoid double labels).
-         Background-tint focus parents get a stronger wash; left-edge parents stay clean. */
-      .${CSS_CLASSES.TEXT_HOVER_INPUT_PARENT} {
-        background-color: var(--kpv2-text-input-hover-bg, rgba(255, 140, 0, 0.12)) !important;
-      }
-
+      /* Background-tint focus parents get a wash; left-edge parents stay clean. */
       .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT}:not(.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE}) {
         background-color: var(--kpv2-text-input-focus-bg, rgba(255, 140, 0, 0.42)) !important;
       }
 
-      /* Hover: SVG hint only (outline comes from the orange focus rectangle). */
+      /* Hover: SVG hint only — no background wash (outline is separate). */
       .${CSS_CLASSES.TEXT_HOVER_INPUT} {
         background-image: var(--kpv2-text-hover-hint-image, none) !important;
         background-repeat: no-repeat !important;
@@ -756,26 +786,24 @@ export class StyleManager {
         background-size: auto 12px !important;
       }
 
-      /* Focus (default left-edge style): 10px inset orange bar that pulses + Esc SVG. */
+      /* Focus (default left-edge style): inset orange bar that pulses + Esc SVG. */
       .${CSS_CLASSES.TEXT_FOCUS_INPUT}.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE} {
-        padding-left: 14px !important;
+        padding-left: calc(var(--kpv2-text-left-edge-width, 5px) + 4px) !important;
         background-color: transparent !important;
         background-image: var(--kpv2-text-focus-hint-image, none) !important;
         background-repeat: no-repeat !important;
-        background-position: left 16px top 3px !important;
+        background-position: left calc(var(--kpv2-text-left-edge-width, 5px) + 6px) top 3px !important;
         background-size: auto 12px !important;
-        box-shadow: inset 10px 0 0 0 ${COLORS.ORANGE} !important;
+        box-shadow: inset var(--kpv2-text-left-edge-width, 5px) 0 0 0 ${COLORS.ORANGE} !important;
         animation: kpv2-text-left-edge-pulse 1.5s ease-in-out infinite !important;
         will-change: box-shadow;
       }
 
-      .${CSS_CLASSES.TEXT_HOVER_INPUT},
       .${CSS_CLASSES.TEXT_FOCUS_INPUT} {
         caret-color: var(--kpv2-text-input-color, rgba(55, 55, 55, 0.96)) !important;
       }
 
-      /* Keep placeholders readable when we force text color. */
-      .${CSS_CLASSES.TEXT_HOVER_INPUT}::placeholder,
+      /* Keep placeholders readable when we force text color on focus wash. */
       .${CSS_CLASSES.TEXT_FOCUS_INPUT}::placeholder {
         color: var(--kpv2-text-input-placeholder-color, rgba(55, 55, 55, 0.62)) !important;
         text-shadow: var(--kpv2-text-input-text-shadow, 1px 1px 0 rgba(255, 255, 255, 0.85)) !important;
@@ -813,7 +841,7 @@ export class StyleManager {
       /* Keep left-edge pulse when DOM-hover also puts a ring on the focused field. */
       .keypilot-focus-element.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE},
       [data-kp-focus="1"].${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE} {
-        box-shadow: inset 10px 0 0 0 ${COLORS.ORANGE} !important;
+        box-shadow: inset var(--kpv2-text-left-edge-width, 5px) 0 0 0 ${COLORS.ORANGE} !important;
         animation: kpv2-text-left-edge-pulse 1.5s ease-in-out infinite !important;
       }
 
@@ -844,6 +872,10 @@ export class StyleManager {
       .${CSS_CLASSES.DELETE} { 
         filter: brightness(0.8) contrast(1.2) !important; 
       }
+
+      .${CSS_CLASSES.COLS} {
+        filter: brightness(1.05) saturate(1.15) !important;
+      }
       
       .${CSS_CLASSES.HIDDEN} { 
         display: none !important; 
@@ -859,24 +891,18 @@ export class StyleManager {
 
       @keyframes kpv2-text-left-edge-pulse {
         0%, 100% {
-          box-shadow: inset 10px 0 0 0 ${COLORS.ORANGE_SHADOW};
+          box-shadow: inset var(--kpv2-text-left-edge-width, 5px) 0 0 0 ${COLORS.ORANGE_SHADOW};
         }
         50% {
-          box-shadow: inset 10px 0 0 0 ${COLORS.ORANGE};
+          box-shadow: inset var(--kpv2-text-left-edge-width, 5px) 0 0 0 ${COLORS.ORANGE};
         }
       }
 
       /* Text inputs: same hover/focus + SVG hint treatment inside shadow DOM */
-      .${CSS_CLASSES.TEXT_HOVER_INPUT},
-      .${CSS_CLASSES.TEXT_HOVER_INPUT_PARENT},
       .${CSS_CLASSES.TEXT_FOCUS_INPUT},
       .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT} {
         color: var(--kpv2-text-input-color, rgba(55, 55, 55, 0.96)) !important;
         text-shadow: var(--kpv2-text-input-text-shadow, 1px 1px 0 rgba(255, 255, 255, 0.95)) !important;
-      }
-
-      .${CSS_CLASSES.TEXT_HOVER_INPUT_PARENT} {
-        background-color: var(--kpv2-text-input-hover-bg, rgba(255, 140, 0, 0.12)) !important;
       }
 
       .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT}:not(.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE}) {
@@ -899,23 +925,21 @@ export class StyleManager {
       }
 
       .${CSS_CLASSES.TEXT_FOCUS_INPUT}.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE} {
-        padding-left: 14px !important;
+        padding-left: calc(var(--kpv2-text-left-edge-width, 5px) + 4px) !important;
         background-color: transparent !important;
         background-image: var(--kpv2-text-focus-hint-image, none) !important;
         background-repeat: no-repeat !important;
-        background-position: left 16px top 3px !important;
+        background-position: left calc(var(--kpv2-text-left-edge-width, 5px) + 6px) top 3px !important;
         background-size: auto 12px !important;
-        box-shadow: inset 10px 0 0 0 ${COLORS.ORANGE} !important;
+        box-shadow: inset var(--kpv2-text-left-edge-width, 5px) 0 0 0 ${COLORS.ORANGE} !important;
         animation: kpv2-text-left-edge-pulse 1.5s ease-in-out infinite !important;
         will-change: box-shadow;
       }
 
-      .${CSS_CLASSES.TEXT_HOVER_INPUT},
       .${CSS_CLASSES.TEXT_FOCUS_INPUT} {
         caret-color: var(--kpv2-text-input-color, rgba(55, 55, 55, 0.96)) !important;
       }
 
-      .${CSS_CLASSES.TEXT_HOVER_INPUT}::placeholder,
       .${CSS_CLASSES.TEXT_FOCUS_INPUT}::placeholder {
         color: var(--kpv2-text-input-placeholder-color, rgba(55, 55, 55, 0.62)) !important;
         text-shadow: var(--kpv2-text-input-text-shadow, 1px 1px 0 rgba(255, 255, 255, 0.85)) !important;
@@ -947,7 +971,7 @@ export class StyleManager {
       /* Keep left-edge pulse when DOM-hover also puts a ring on the focused field. */
       .keypilot-focus-element.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE},
       [data-kp-focus="1"].${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE} {
-        box-shadow: inset 10px 0 0 0 ${COLORS.ORANGE} !important;
+        box-shadow: inset var(--kpv2-text-left-edge-width, 5px) 0 0 0 ${COLORS.ORANGE} !important;
         animation: kpv2-text-left-edge-pulse 1.5s ease-in-out infinite !important;
       }
 
@@ -1233,6 +1257,10 @@ export class StyleManager {
     const classesToRemove = [
       CSS_CLASSES.FOCUS,
       CSS_CLASSES.DELETE,
+      CSS_CLASSES.COLS,
+      CSS_CLASSES.INSPECTOR,
+      CSS_CLASSES.COLS_ACTIVE,
+      CSS_CLASSES.COLS_PAGE,
       CSS_CLASSES.HIGHLIGHT,
       CSS_CLASSES.HIDDEN,
       CSS_CLASSES.RIPPLE,

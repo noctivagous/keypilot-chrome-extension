@@ -1570,6 +1570,48 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
+        case MSG.FRAME_SCROLL: {
+          // Top-frame KeyPilot: fan-out C/V scroll to subframe content scripts.
+          const tabId = sender?.tab?.id;
+          if (typeof tabId !== 'number') {
+            sendResponse({ type: MSG.ERROR, error: 'No sender tab id' });
+            break;
+          }
+          const scrollPayload = {
+            type: MSG.FRAME_SCROLL,
+            clientX: message.clientX,
+            clientY: message.clientY,
+            sign: Number(message.sign) < 0 ? -1 : 1,
+            deltaPx: Number(message.deltaPx),
+            behavior: message.behavior === 'auto' || message.behavior === 'instant' ? 'auto' : 'smooth',
+            frameName: typeof message.frameName === 'string' ? message.frameName : ''
+          };
+          try {
+            let frames = [];
+            try {
+              frames = await chrome.webNavigation.getAllFrames({ tabId }) || [];
+            } catch (e) {
+              console.warn('[KeyPilot] getAllFrames failed (scroll):', e?.message || e);
+              frames = [];
+            }
+            for (const frame of frames) {
+              if (!frame || frame.frameId === 0) continue;
+              try {
+                chrome.tabs.sendMessage(tabId, scrollPayload, { frameId: frame.frameId }).catch(() => {});
+              } catch {
+                // ignore
+              }
+            }
+            sendResponse({ type: MSG.SUCCESS });
+          } catch (e) {
+            sendResponse({
+              type: MSG.ERROR,
+              error: e?.message || 'Failed to relay frame scroll'
+            });
+          }
+          break;
+        }
+
         case 'KP_GET_STATE':
           // Content script or popup requesting current state
           const currentState = await extensionToggleManager.getState();

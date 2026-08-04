@@ -50,6 +50,7 @@ const modules = [
   'src/utils/storage.js',
   'src/utils/image-utils.js',
   'src/utils/popover-resize.js',
+  'src/utils/scroll-at-point.js',
   // Shared UI helpers used by multiple modules (must be defined before import-stripped consumers).
   'src/ui/url-listing.js',
   'src/modules/state-manager.js',
@@ -61,8 +62,11 @@ const modules = [
   'src/modules/mouse-coordinate-manager.js',
   'src/modules/highlight-manager.js',
   'src/modules/popup-manager.js',
+  // Inspector registry must precede overlay-manager (import-stripped IIFE).
+  'src/modules/inspector-mode.js',
   'src/modules/overlay-manager.js',
   'src/modules/style-manager.js',
+  'src/modules/column-layout-manager.js',
   'src/modules/shadow-dom-manager.js',
   'src/modules/intersection-observer-manager.js',
   'src/modules/optimized-scroll-manager.js',

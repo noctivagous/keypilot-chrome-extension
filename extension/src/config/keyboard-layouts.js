@@ -130,6 +130,13 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: 'key-delete',
     row: 2
   }),
+  COLS_TOGGLE: Object.freeze({
+    handler: 'handleColsToggleKey',
+    label: 'Cols Toggle',
+    description: 'Columnize element under cursor (multi-column layout)',
+    keyboardClass: 'key-cols',
+    row: 3
+  }),
   TAB_LEFT: Object.freeze({
     handler: 'handleTabLeftKey',
     label: 'Tab Left',
@@ -394,6 +401,7 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
 
   ROOT: Object.freeze({ keys: ['1', '!'], displayKey: '1', keyLabel: '1' }),
   DELETE: Object.freeze({ keys: ['Backspace'], displayKey: 'Backspace', keyLabel: 'Backspace' }),
+  COLS_TOGGLE: Object.freeze({ keys: ['.', '>'], displayKey: '.', keyLabel: '.' }),
   CANCEL: Object.freeze({ keys: ['Escape'], displayKey: 'Esc', keyLabel: 'Esc' })
 });
 
@@ -434,11 +442,13 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   OPEN_SETTINGS_POPOVER: Object.freeze({ keys: ["'", 'Quote'], matchOn: ['key', 'code'], displayKey: "'" }),
 
   // Bottom row cluster: Z X C V B  ->  / . , M N (mirrored)
+  // Period reserved for COLS_TOGGLE (same muscle memory as right-handed).
   PAGE_TOP: Object.freeze({ keys: ['/', '?'], displayKey: '/', keyLabel: '/' }),
-  PAGE_BOTTOM: Object.freeze({ keys: ['.', '>'], displayKey: '.', keyLabel: '.' }),
+  PAGE_BOTTOM: Object.freeze({ keys: ['b', 'B'] }),
   PAGE_UP_INSTANT: Object.freeze({ keys: [',', '<'], displayKey: ',', keyLabel: ',' }),
   PAGE_DOWN_INSTANT: Object.freeze({ keys: ['m', 'M'] }),
   ACTIVATE_NEW_TAB: Object.freeze({ keys: ['n', 'N'] }),
+  COLS_TOGGLE: Object.freeze({ keys: ['.', '>'], displayKey: '.', keyLabel: '.' }),
   // I is OPEN_POPOVER on left-handed; E is free.
   COPY_HOVERED_IMAGE: Object.freeze({ keys: ['e', 'E'] }),
 
@@ -493,7 +503,7 @@ const KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: 'key', text: 'N' },
     { type: 'key', text: 'M' },
     { type: 'key', text: ',' },
-    { type: 'key', text: '.' },
+    { type: 'action', id: 'COLS_TOGGLE', fallbackText: 'Cols Toggle' },
     { type: 'key', text: '/' },
     { type: 'special', text: 'Shift', className: 'key key-shift' }
   ]
@@ -539,11 +549,11 @@ const KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
     { type: 'key', text: 'X' },
     { type: 'key', text: 'C' },
     { type: 'key', text: 'V' },
-    { type: 'key', text: 'B' },
+    { type: 'action', id: 'PAGE_BOTTOM', fallbackText: 'Scroll To Bottom' }, // B
     { type: 'action', id: 'ACTIVATE_NEW_TAB', fallbackText: 'Click New Tab' }, // N
     { type: 'action', id: 'PAGE_DOWN_INSTANT', fallbackText: 'Page Down Fast' }, // M
     { type: 'action', id: 'PAGE_UP_INSTANT', fallbackText: 'Page Up Fast' }, // ,
-    { type: 'action', id: 'PAGE_BOTTOM', fallbackText: 'Scroll To Bottom' }, // .
+    { type: 'action', id: 'COLS_TOGGLE', fallbackText: 'Cols Toggle' }, // .
     { type: 'action', id: 'PAGE_TOP', fallbackText: 'Scroll To Top' }, // /
     { type: 'special', text: 'Shift', className: 'key key-shift' }
   ]

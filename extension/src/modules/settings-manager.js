@@ -70,7 +70,8 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  *   cursorType: TextCursorType,
  *   labelsEnabled: boolean,
  *   strokeThickness: number,
- *   focusStyle: TextFocusStyle
+ *   focusStyle: TextFocusStyle,
+ *   leftEdgeWidth: number
  * }} TextModeSettings
  */
 
@@ -141,9 +142,11 @@ export const DEFAULT_SETTINGS = Object.freeze({
     // Stroke thickness in px for orange text-mode rectangles.
     strokeThickness: 3,
     // How the focused text field is styled while in text mode.
-    // left_edge: 10px pulsating orange bar on the left inset edge (default).
+    // left_edge: pulsating orange bar on the left inset edge (default).
     // background_tint: full-field orange wash (legacy).
-    focusStyle: 'left_edge'
+    focusStyle: 'left_edge',
+    // Width of the left-edge pulse bar in px (when focusStyle is left_edge).
+    leftEdgeWidth: 5
   }),
   scroll: Object.freeze({
     // C / V scroll distance in pixels (default = prior 400 × 1.25).
@@ -304,7 +307,13 @@ function normalizeTextMode(raw) {
       1,
       16
     ),
-    focusStyle: normalizeTextFocusStyle(stored.focusStyle)
+    focusStyle: normalizeTextFocusStyle(stored.focusStyle),
+    leftEdgeWidth: normalizeNumber(
+      stored.leftEdgeWidth,
+      DEFAULT_SETTINGS.textMode.leftEdgeWidth,
+      1,
+      24
+    )
   };
 }
 

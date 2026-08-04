@@ -200,6 +200,19 @@ export class CursorManager {
         <line x1="12" y1="12" x2="48" y2="48" stroke="${COLORS.DELETE_RED}" stroke-width="5" stroke-linecap="round"/>
         <line x1="48" y1="12" x2="12" y2="48" stroke="${COLORS.DELETE_RED}" stroke-width="5" stroke-linecap="round"/>
       </svg>`;
+    } else if (mode === 'cols') {
+      // Purple column-grid cursor (two vertical columns)
+      const color = COLORS.COLS_PURPLE || 'rgba(156,39,176,0.95)';
+      svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" width="60" height="60">
+        <rect x="10" y="12" width="16" height="36" rx="1" fill="none" stroke="${color}" stroke-width="3"/>
+        <rect x="34" y="12" width="16" height="36" rx="1" fill="none" stroke="${color}" stroke-width="3"/>
+        <line x1="13" y1="20" x2="23" y2="20" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+        <line x1="13" y1="28" x2="23" y2="28" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+        <line x1="13" y1="36" x2="23" y2="36" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+        <line x1="37" y1="20" x2="47" y2="20" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+        <line x1="37" y1="28" x2="47" y2="28" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+        <line x1="37" y1="36" x2="47" y2="36" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+      </svg>`;
     } else if (mode === 'highlight') {
       // Blue crosshair
       const color = COLORS.HIGHLIGHT_BLUE;

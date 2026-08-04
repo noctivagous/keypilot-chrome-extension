@@ -2,6 +2,7 @@
  * Visual overlay management for focus and delete indicators
  */
 import { CSS_CLASSES, Z_INDEX, SELECTORS, MODES, COLORS, FEATURE_FLAGS, CLICKABLE_CATEGORY, KP_UI_FONT } from '../config/constants.js';
+import { getAllInspectorHostClasses, getInspectorDef } from './inspector-mode.js';
 import { MSG } from '../messaging/types.js';
 import { HighlightManager } from './highlight-manager.js';
 import { PopupManager } from './popup-manager.js';
@@ -59,7 +60,13 @@ export class OverlayManager {
     this.cssCustomPropsOverlay = null;
 
     this.focusOverlay = null;
+    /** Shared inspector pick outline (Delete, Cols, future kinds) */
+    this.inspectorOverlay = null;
+    /** @type {string|null} last applied inspector kind for restyle */
+    this._inspectorOverlayKind = null;
+    // Legacy aliases — kept so any lingering callers don't throw during transition
     this.deleteOverlay = null;
+    this.colsOverlay = null;
     this.focusedTextOverlay = null; // New overlay for focused text fields
     this.viewportModalFrame = null; // Viewport modal frame for text focus mode
     this.activeTextInputFrame = null; // Pulsing frame for active text inputs
@@ -579,11 +586,16 @@ export class OverlayManager {
       : DEFAULT_SETTINGS.textMode;
     const strokeThickness = Number(tm.strokeThickness);
     const thickness = Number.isFinite(strokeThickness) ? Math.min(Math.max(strokeThickness, 1), 16) : 3;
+    const leftEdgeRaw = Number(tm.leftEdgeWidth);
+    const leftEdgeWidth = Number.isFinite(leftEdgeRaw)
+      ? Math.min(Math.max(leftEdgeRaw, 1), 24)
+      : (Number(DEFAULT_SETTINGS.textMode.leftEdgeWidth) || 5);
     const focusStyle = tm.focusStyle === 'background_tint' ? 'background_tint' : 'left_edge';
     return {
       strokeThickness: thickness,
       labelsEnabled: tm.labelsEnabled,
-      focusStyle
+      focusStyle,
+      leftEdgeWidth
     };
   }
 
@@ -891,14 +903,7 @@ export class OverlayManager {
       this._textHoverStyledElements.add(inputEl);
     } catch { /* ignore */ }
 
-    const parents = this._getNearbyInputWrappers(inputEl);
-    for (const p of parents) {
-      try {
-        this._ensureStylesForElement(p);
-        p.classList.add(CSS_CLASSES.TEXT_HOVER_INPUT_PARENT);
-        this._textHoverStyledElements.add(p);
-      } catch { /* ignore */ }
-    }
+    // Hover is outline + SVG hint only — do not tint wrapper parents.
   }
 
   setupOverlayObserver() {
@@ -918,7 +923,7 @@ export class OverlayManager {
             } else {
               overlay.style.visibility = 'visible';
             }
-          } else if (overlay === this.deleteOverlay) {
+          } else if (overlay === this.inspectorOverlay || overlay === this.deleteOverlay) {
             this.overlayVisibility.delete = isVisible;
             overlay.style.visibility = isVisible ? 'visible' : 'hidden';
           } else if (overlay === this.focusedTextOverlay) {
@@ -943,7 +948,15 @@ export class OverlayManager {
     );
   }
 
-  updateOverlays(focusEl, deleteEl, mode, focusedTextElement = null, focusRectOverride = null) {
+  /**
+   * @param {Element|null} focusEl
+   * @param {Element|null} inspectorEl shared pick target (Delete/Cols/…)
+   * @param {string} mode
+   * @param {Element|null} [focusedTextElement]
+   * @param {DOMRect|object|null} [focusRectOverride]
+   * @param {string|null} [inspectorKind] INSPECTOR_KIND when mode is inspector
+   */
+  updateOverlays(focusEl, inspectorEl, mode, focusedTextElement = null, focusRectOverride = null, inspectorKind = null) {
     // Debug logging when debug mode is enabled
     if (window.KEYPILOT_DEBUG && focusEl) {
       console.log('[KeyPilot Debug] Updating overlays:', {
@@ -957,6 +970,7 @@ export class OverlayManager {
     // Show focus overlay in normal mode, text focus mode, highlight mode, AND popover mode.
     // Popovers are modal but still need the green rectangle so the user can F-click UI
     // affordances like the close (×) button.
+    // Hide green focus rect while in shared inspector pick mode.
     if (mode === 'none' || mode === 'text_focus' || mode === 'highlight' || mode === 'popover') {
       this.updateFocusOverlay(focusEl, mode, focusRectOverride);
       
@@ -991,11 +1005,14 @@ export class OverlayManager {
     // Show viewport modal frame when in text focus mode (controlled by flag)
     this.updateViewportModalFrame(mode === 'text_focus' && FEATURE_FLAGS.SHOW_WINDOW_OUTLINE);
     
-    // Only show delete overlay in delete mode
-    if (mode === 'delete') {
-      this.updateDeleteOverlay(deleteEl);
+    // Shared inspector pick overlay (Delete, Cols, future kinds)
+    const inInspector = mode === MODES.INSPECTOR || mode === 'delete' || mode === 'cols';
+    if (inInspector) {
+      const kind = inspectorKind
+        || (mode === 'delete' ? 'delete' : mode === 'cols' ? 'cols' : null);
+      this.updateInspectorOverlay(inspectorEl, kind);
     } else {
-      this.hideDeleteOverlay();
+      this.hideInspectorOverlay();
     }
     
     // Show highlight chrome in highlight mode (instruction + optional focus ring)
@@ -1891,91 +1908,91 @@ export class OverlayManager {
     }
   }
 
-  updateDeleteOverlay(element) {
+  /**
+   * Shared inspector outline for any pick tool kind.
+   * @param {Element|null|undefined} element
+   * @param {string|null|undefined} kind
+   */
+  updateInspectorOverlay(element, kind = null) {
     if (!element) {
-      if (window.KEYPILOT_DEBUG) {
-        console.log('[KeyPilot Debug] updateDeleteOverlay: no element provided');
-      }
-      this.hideDeleteOverlay();
+      this.hideInspectorOverlay();
       return;
     }
 
-    if (window.KEYPILOT_DEBUG) {
-      console.log('[KeyPilot Debug] updateDeleteOverlay called for:', {
-        tagName: element.tagName,
-        className: element.className,
-        id: element.id
-      });
-    }
+    const def = getInspectorDef(kind);
+    const border = def?.borderColor || COLORS.DELETE_RED;
+    const shadow = def?.shadowColor || COLORS.DELETE_SHADOW;
+    const shadowBright = def?.shadowBrightColor || COLORS.DELETE_SHADOW_BRIGHT;
 
-    if (!this.deleteOverlay) {
-      this.deleteOverlay = this.createElement('div', {
-        className: CSS_CLASSES.DELETE_OVERLAY,
+    if (!this.inspectorOverlay) {
+      this.inspectorOverlay = this.createElement('div', {
+        className: CSS_CLASSES.INSPECTOR_OVERLAY || CSS_CLASSES.DELETE_OVERLAY,
         style: `
           position: fixed;
           pointer-events: none;
           z-index: ${Z_INDEX.OVERLAYS};
-          border: 3px solid ${COLORS.DELETE_RED};
-          box-shadow: 0 0 0 2px ${COLORS.DELETE_SHADOW}, 0 0 12px 2px ${COLORS.DELETE_SHADOW_BRIGHT};
+          border: 3px solid ${border};
+          box-shadow: 0 0 0 2px ${shadow}, 0 0 12px 2px ${shadowBright};
           background: transparent;
           will-change: transform;
         `
       });
-      document.body.appendChild(this.deleteOverlay);
-      
-      if (window.KEYPILOT_DEBUG) {
-        console.log('[KeyPilot Debug] Delete overlay created and added to DOM:', {
-          element: this.deleteOverlay,
-          className: this.deleteOverlay.className,
-          parent: this.deleteOverlay.parentElement?.tagName
-        });
-      }
-      
-      // Start observing the overlay for visibility optimization
+      document.body.appendChild(this.inspectorOverlay);
+      // Back-compat alias
+      this.deleteOverlay = this.inspectorOverlay;
       if (this.overlayObserver) {
-        this.overlayObserver.observe(this.deleteOverlay);
+        this.overlayObserver.observe(this.inspectorOverlay);
       }
+    }
+
+    // Restyle when kind changes
+    if (kind && kind !== this._inspectorOverlayKind) {
+      this._inspectorOverlayKind = kind;
+      this.inspectorOverlay.style.border = `3px solid ${border}`;
+      this.inspectorOverlay.style.boxShadow =
+        `0 0 0 2px ${shadow}, 0 0 12px 2px ${shadowBright}`;
+      try {
+        this.inspectorOverlay.setAttribute('data-kp-inspector-kind', kind);
+      } catch { /* ignore */ }
     }
 
     const rect = this.getBestRect(element);
-    
-    if (window.KEYPILOT_DEBUG) {
-      console.log('[KeyPilot Debug] Delete overlay positioning:', {
-        rect: rect,
-        overlayExists: !!this.deleteOverlay,
-        overlayVisibility: this.overlayVisibility.delete
-      });
-    }
-    
     if (rect.width > 0 && rect.height > 0) {
-      // Use left/top positioning instead of transform for consistency with focus overlay
-      this.deleteOverlay.style.left = `${rect.left}px`;
-      this.deleteOverlay.style.top = `${rect.top}px`;
-      this.deleteOverlay.style.width = `${rect.width}px`;
-      this.deleteOverlay.style.height = `${rect.height}px`;
-      this.deleteOverlay.style.display = 'block';
-      this.deleteOverlay.style.visibility = 'visible';
-      
-      if (window.KEYPILOT_DEBUG) {
-        console.log('[KeyPilot Debug] Delete overlay positioned at:', {
-          left: rect.left,
-          top: rect.top,
-          width: rect.width,
-          height: rect.height
-        });
-      }
+      this.inspectorOverlay.style.left = `${rect.left}px`;
+      this.inspectorOverlay.style.top = `${rect.top}px`;
+      this.inspectorOverlay.style.width = `${rect.width}px`;
+      this.inspectorOverlay.style.height = `${rect.height}px`;
+      this.inspectorOverlay.style.display = 'block';
+      this.inspectorOverlay.style.visibility = 'visible';
     } else {
-      if (window.KEYPILOT_DEBUG) {
-        console.log('[KeyPilot Debug] Delete overlay hidden - invalid rect:', rect);
-      }
-      this.hideDeleteOverlay();
+      this.hideInspectorOverlay();
     }
   }
 
-  hideDeleteOverlay() {
-    if (this.deleteOverlay) {
-      this.deleteOverlay.style.display = 'none';
+  hideInspectorOverlay() {
+    if (this.inspectorOverlay) {
+      this.inspectorOverlay.style.display = 'none';
     }
+  }
+
+  /** @deprecated use updateInspectorOverlay(el, kind) */
+  updateDeleteOverlay(element) {
+    this.updateInspectorOverlay(element, 'delete');
+  }
+
+  /** @deprecated use hideInspectorOverlay() */
+  hideDeleteOverlay() {
+    this.hideInspectorOverlay();
+  }
+
+  /** @deprecated use updateInspectorOverlay(el, 'cols') */
+  updateColsOverlay(element) {
+    this.updateInspectorOverlay(element, 'cols');
+  }
+
+  /** @deprecated use hideInspectorOverlay() */
+  hideColsOverlay() {
+    this.hideInspectorOverlay();
   }
 
   // SELECTION RECTANGLE FUNCTIONALITY ONLY
@@ -2581,13 +2598,25 @@ export class OverlayManager {
     this.hideEscExitLabelHover();
   }
 
-  updateElementClasses(focusEl, deleteEl, prevFocusEl, prevDeleteEl) {
+  /**
+   * Host-element class paint for focus + inspector hover.
+   * @param {Element|null} focusEl
+   * @param {Element|null} inspectorEl
+   * @param {Element|null} prevFocusEl
+   * @param {Element|null} prevInspectorEl
+   * @param {string|null} [inspectorKind]
+   */
+  updateElementClasses(focusEl, inspectorEl, prevFocusEl, prevInspectorEl, inspectorKind = null) {
+    const hostClasses = getAllInspectorHostClasses();
+
     // Remove previous classes
     if (prevFocusEl && prevFocusEl !== focusEl) {
       prevFocusEl.classList.remove(CSS_CLASSES.FOCUS);
     }
-    if (prevDeleteEl && prevDeleteEl !== deleteEl) {
-      prevDeleteEl.classList.remove(CSS_CLASSES.DELETE);
+    if (prevInspectorEl && prevInspectorEl !== inspectorEl) {
+      for (const c of hostClasses) {
+        try { prevInspectorEl.classList.remove(c); } catch { /* ignore */ }
+      }
     }
 
     // Add new classes (ensure shadow styles first so brightness filter applies in open roots)
@@ -2595,9 +2624,13 @@ export class OverlayManager {
       this._ensureStylesForElement(focusEl);
       focusEl.classList.add(CSS_CLASSES.FOCUS);
     }
-    if (deleteEl) {
-      this._ensureStylesForElement(deleteEl);
-      deleteEl.classList.add(CSS_CLASSES.DELETE);
+    if (inspectorEl) {
+      this._ensureStylesForElement(inspectorEl);
+      const def = getInspectorDef(inspectorKind);
+      try { inspectorEl.classList.add(CSS_CLASSES.INSPECTOR); } catch { /* ignore */ }
+      if (def?.hostClass) {
+        try { inspectorEl.classList.add(def.hostClass); } catch { /* ignore */ }
+      }
     }
   }
 
@@ -3579,10 +3612,13 @@ export class OverlayManager {
       this.focusOverlay.remove();
       this.focusOverlay = null;
     }
-    if (this.deleteOverlay) {
-      this.deleteOverlay.remove();
-      this.deleteOverlay = null;
+    if (this.inspectorOverlay) {
+      this.inspectorOverlay.remove();
+      this.inspectorOverlay = null;
     }
+    this.deleteOverlay = null;
+    this.colsOverlay = null;
+    this._inspectorOverlayKind = null;
     // Clean up highlight manager
     if (this.highlightManager) {
       this.highlightManager.cleanup();

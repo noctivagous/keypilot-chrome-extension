@@ -14,7 +14,13 @@ import { IntersectionObserverManager } from './modules/intersection-observer-man
 import { OptimizedScrollManager } from './modules/optimized-scroll-manager.js';
 import { RectangleIntersectionObserver } from './modules/rectangle-intersection-observer.js';
 import { MouseCoordinateManager } from './modules/mouse-coordinate-manager.js';
-import { MODES, CURSOR_MODE, CSS_CLASSES, COLORS, Z_INDEX, RECTANGLE_SELECTION, EDGE_ONLY_SELECTION, FEATURE_FLAGS, SCROLL, CLICKABLE_CATEGORY } from './config/constants.js';
+import { ColumnLayoutManager } from './modules/column-layout-manager.js';
+import {
+  InspectorModeController,
+  getInspectorCursorMode,
+  getInspectorStatusMode
+} from './modules/inspector-mode.js';
+import { MODES, INSPECTOR_KIND, CURSOR_MODE, CSS_CLASSES, COLORS, Z_INDEX, RECTANGLE_SELECTION, EDGE_ONLY_SELECTION, FEATURE_FLAGS, SCROLL, CLICKABLE_CATEGORY } from './config/constants.js';
 import { MSG } from './messaging/types.js';
 import { buildKeybindingsForLayout, DEFAULT_KEYBOARD_LAYOUT_ID, getKeyboardUiLayoutForLayout, normalizeKeyboardLayoutId } from './config/keyboard-layouts.js';
 import { FloatingKeyboardHelp } from './ui/floating-keyboard-help.js';
@@ -30,6 +36,7 @@ import {
 } from './utils/extension-context.js';
 import { storageGetValue, storageSetValue } from './utils/storage.js';
 import { getHoveredImage } from './utils/image-utils.js';
+import { scrollAtPoint, elementFromPointDeep } from './utils/scroll-at-point.js';
 
 export class KeyPilot extends EventManager {
   constructor() {
@@ -55,6 +62,17 @@ export class KeyPilot extends EventManager {
     this.focusDetector = new FocusDetector(this.state, this.mouseCoordinateManager);
     this.overlayManager = new OverlayManager();
     this.styleManager = new StyleManager();
+    this.columnLayoutManager = new ColumnLayoutManager();
+    this.inspector = new InspectorModeController({
+      state: this.state,
+      deepElementFromPoint: (x, y) => this.detector.deepElementFromPoint(x, y),
+      onBeforeEnter: () => {
+        // Cancel competing select modes when entering any inspector kind
+        try {
+          if (this.state.isHighlightMode()) this.cancelHighlightMode();
+        } catch { /* ignore */ }
+      }
+    });
     this.shadowDOMManager = new ShadowDOMManager(this.styleManager);
     this.floatingKeyboardHelp = null;
     this.controlStrip = null;
@@ -539,8 +557,8 @@ export class KeyPilot extends EventManager {
         // (if present) by avoiding a default overwrite in CursorManager.ensure().
         try {
           const st = this.state?.getState?.() || {};
-          const mode = st.mode || MODES.NONE;
-          this.cursor.setMode(mode, this._buildCursorOptionsForState({ ...st, mode }));
+          const mode = this._cursorModeForState(st);
+          this.cursor.setMode(mode, this._buildCursorOptionsForState({ ...st, mode: st.mode }));
         } catch { /* ignore */ }
       } else {
         // Ensure we do not leave any cursor overrides behind.
@@ -602,13 +620,22 @@ export class KeyPilot extends EventManager {
       this.overlayManager?.setModeSettings?.(this._settings);
     } catch { /* ignore */ }
 
-    // Active text input frame stroke thickness (CSS-driven).
+    // Active text input frame stroke thickness + left-edge bar width (CSS-driven).
     try {
       const px = Number(this._settings?.textMode?.strokeThickness);
       if (Number.isFinite(px)) {
         document.documentElement.style.setProperty('--kpv2-text-stroke-width', `${px}px`);
       } else {
         document.documentElement.style.removeProperty('--kpv2-text-stroke-width');
+      }
+    } catch { /* ignore */ }
+
+    try {
+      const edgePx = Number(this._settings?.textMode?.leftEdgeWidth);
+      if (Number.isFinite(edgePx)) {
+        document.documentElement.style.setProperty('--kpv2-text-left-edge-width', `${edgePx}px`);
+      } else {
+        document.documentElement.style.removeProperty('--kpv2-text-left-edge-width');
       }
     } catch { /* ignore */ }
 
@@ -624,7 +651,7 @@ export class KeyPilot extends EventManager {
         this.cursor.currentModeKey = null;
         const st = this.state?.getState?.();
         if (st && st.mode) {
-          this.cursor.setMode(st.mode, this._buildCursorOptionsForState(st));
+          this.cursor.setMode(this._cursorModeForState(st), this._buildCursorOptionsForState(st));
         }
       } catch { /* ignore */ }
     } else {
@@ -830,6 +857,23 @@ export class KeyPilot extends EventManager {
     } catch {
       // ignore
     }
+  }
+
+  /**
+   * Resolve cursor glyph mode from state.
+   * Inspector uses kind-specific cursors (delete / cols / …).
+   * @param {any} state
+   * @returns {string}
+   */
+  _cursorModeForState(state) {
+    const mode = state?.mode;
+    if (mode === MODES.INSPECTOR) {
+      return getInspectorCursorMode(state?.inspectorKind);
+    }
+    // Legacy status/mode strings still map to the same glyphs
+    if (mode === MODES.DELETE || mode === 'delete') return 'delete';
+    if (mode === MODES.COLS || mode === 'cols') return 'cols';
+    return mode || MODES.NONE;
   }
 
   _buildCursorOptionsForState(state) {
@@ -1360,25 +1404,27 @@ export class KeyPilot extends EventManager {
       } catch { /* ignore */ }
     }
 
-    // Update cursor mode
+    // Update cursor mode (inspector kinds switch glyph without leaving INSPECTOR mode)
     if (newState.mode !== prevState.mode ||
+        newState.inspectorKind !== prevState.inspectorKind ||
         (newState.mode === MODES.TEXT_FOCUS && newState.focusEl !== prevState.focusEl) ||
         (newState.mode === MODES.NONE && newState.focusEl !== prevState.focusEl)) {
       if (this._isCustomCursorModeEnabled()) {
         const options = this._buildCursorOptionsForState(newState);
-        this.cursor.setMode(newState.mode, options);
+        this.cursor.setMode(this._cursorModeForState(newState), options);
       }
-      this.updatePopupStatus(newState.mode);
+      this.updatePopupStatus(newState.mode, newState.inspectorKind);
     }
 
-    // Update overlays when focus/delete targets change, mode changes (e.g. enter
+    // Update overlays when focus/inspector targets change, mode changes (e.g. enter
     // highlight → companion "Press H again…" instruction), or an explicit trigger fires.
     if (newState.focusedTextElement !== prevState.focusedTextElement ||
         newState._overlayUpdateTrigger !== prevState._overlayUpdateTrigger ||
         newState.focusEl !== prevState.focusEl ||
-        newState.deleteEl !== prevState.deleteEl ||
+        newState.inspectorEl !== prevState.inspectorEl ||
+        newState.inspectorKind !== prevState.inspectorKind ||
         newState.mode !== prevState.mode) {
-      this.updateOverlays(newState.focusEl, newState.deleteEl);
+      this.updateOverlays(newState.focusEl, newState.inspectorEl, newState.inspectorKind);
     }
 
     // Keyboard reference: glow keys that activate the currently hovered link.
@@ -1432,7 +1478,8 @@ export class KeyPilot extends EventManager {
       if (this._keyboardHelpVisible && this.enabled && help.isVisible?.()) {
         const st = this._linkHoverHintPendingState || this.state?.getState?.();
         // Don't suggest page link actions while modal modes own the pointer.
-        if (!(st?.mode === MODES.POPOVER || st?.mode === MODES.DELETE ||
+        if (!(st?.mode === MODES.POPOVER || st?.mode === MODES.INSPECTOR ||
+              st?.mode === MODES.DELETE || st?.mode === MODES.COLS ||
               st?.mode === MODES.HIGHLIGHT || st?.mode === MODES.OMNIBOX)) {
           const focusEl = st?.focusEl;
           // Category-based: only true navigational links (not sliders / media chrome).
@@ -1452,13 +1499,21 @@ export class KeyPilot extends EventManager {
     return mode === CURSOR_MODE.CUSTOM_CURSORS;
   }
 
-  updatePopupStatus(mode) {
+  /**
+   * @param {string} mode
+   * @param {string|null} [inspectorKind]
+   */
+  updatePopupStatus(mode, inspectorKind = null) {
     try {
       // Only the top frame should push status updates to the extension popup.
       // If we run KeyPilot inside a popover iframe, sending KP_STATUS from that frame
       // would overwrite the popup UI with the iframe's mode.
       if (window !== window.top) return;
-      this._sendRuntimeMessage({ type: MSG.STATUS, mode }, { silent: true });
+      // Map shared inspector mode → kind-specific status labels (DELETE / COLS).
+      const statusMode = mode === MODES.INSPECTOR
+        ? getInspectorStatusMode(inspectorKind || this.state.getState()?.inspectorKind)
+        : mode;
+      this._sendRuntimeMessage({ type: MSG.STATUS, mode: statusMode }, { silent: true });
     } catch (error) {
       // Popup might not be open / extension context may be invalidated
     }
@@ -2295,8 +2350,8 @@ export class KeyPilot extends EventManager {
         try { this.overlayManager?.setHoverClickLabelText?.('F clicks'); } catch { /* ignore */ }
       }
 
-      // Clear delete element when not in delete mode
-      if (currentState.deleteEl) this.state.setDeleteElement(null);
+      // Clear inspector hover target when not in inspector mode
+      if (currentState.inspectorEl) this.state.setInspectorElement(null);
       return;
     }
     
@@ -2331,24 +2386,8 @@ export class KeyPilot extends EventManager {
       }
     }
 
-    if (this.state.isDeleteMode()) {
-      // For delete mode, we need the exact element under cursor, not just clickable
-      if (window.KEYPILOT_DEBUG) {
-        console.log('[KeyPilot Debug] Delete mode - setting delete element:', {
-          tagName: under?.tagName,
-          className: under?.className,
-          id: under?.id
-        });
-      }
-      if (under !== currentState.deleteEl) {
-        this.state.setDeleteElement(under);
-      }
-    } else {
-      // Clear delete element when not in delete mode
-      if (currentState.deleteEl) {
-        this.state.setDeleteElement(null);
-      }
-    }
+    // Shared inspector pick mode: track any element under cursor (not just clickables).
+    this.inspector.updateHover(under);
 
     // Update text selection in highlight mode
     if (this.state.isHighlightMode()) {
@@ -2402,20 +2441,146 @@ export class KeyPilot extends EventManager {
 
   handleInstantPageUp(e) {
     if (!this._allowActionKey('handleInstantPageUp', e)) return;
-    window.scrollBy({
-      top: -this._getHalfPageScrollPx(),
-      behavior: this._getScrollBehavior()
-    });
+    this._scrollHalfPageAtCursor(-1);
     this.emitAction('scrollUp');
   }
 
   handleInstantPageDown(e) {
     if (!this._allowActionKey('handleInstantPageDown', e)) return;
-    window.scrollBy({
-      top: this._getHalfPageScrollPx(),
-      behavior: this._getScrollBehavior()
-    });
+    this._scrollHalfPageAtCursor(1);
     this.emitAction('scrollDown');
+  }
+
+  /**
+   * C / V: scroll the overflow container under the cursor first (vertical, or
+   * horizontal when that container only/can scroll on X). Falls back to the
+   * page when nothing nested can move. Forwards into iframes via the light
+   * frame-click-agent (FRAME_SCROLL).
+   *
+   * @param {number} sign  -1 = C (up/left), +1 = V (down/right)
+   */
+  _scrollHalfPageAtCursor(sign) {
+    const delta = this._getHalfPageScrollPx();
+    const behavior = this._getScrollBehavior();
+    const s = sign < 0 ? -1 : 1;
+    const st = this.state.getState();
+    let x = Number(st?.lastMouse?.x);
+    let y = Number(st?.lastMouse?.y);
+    if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0) {
+      x = Math.floor(window.innerWidth / 2);
+      y = Math.floor(window.innerHeight / 2);
+    }
+
+    // Iframe under cursor: top hit-testing only sees the shell.
+    if (this._tryScrollIframeUnderCursor(x, y, s, delta, behavior)) {
+      return;
+    }
+
+    scrollAtPoint(x, y, s, delta, behavior);
+  }
+
+  /**
+   * When the pointer is over an iframe, scroll inside that frame at local
+   * coordinates (same-origin directly; cross-origin via FRAME_SCROLL agent).
+   *
+   * @param {number} clientX
+   * @param {number} clientY
+   * @param {number} sign
+   * @param {number} deltaPx
+   * @param {ScrollBehavior} behavior
+   * @returns {boolean} true if an iframe under the cursor was targeted
+   */
+  _tryScrollIframeUnderCursor(clientX, clientY, sign, deltaPx, behavior) {
+    if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return false;
+
+    let under = null;
+    try {
+      under = this.detector?.deepElementFromPoint?.(clientX, clientY)
+        || elementFromPointDeep(clientX, clientY);
+    } catch {
+      under = null;
+    }
+    if (!under || (under.tagName !== 'IFRAME' && under.tagName !== 'FRAME')) {
+      return false;
+    }
+
+    try {
+      if (this._isKeyPilotUiElement?.(under)) return false;
+    } catch { /* ignore */ }
+
+    const iframe = /** @type {HTMLIFrameElement} */ (under);
+    let rect;
+    try {
+      rect = iframe.getBoundingClientRect();
+    } catch {
+      return false;
+    }
+    if (!rect || rect.width <= 0 || rect.height <= 0) return false;
+
+    const localX = clientX - rect.left;
+    const localY = clientY - rect.top;
+    if (localX < 0 || localY < 0 || localX > rect.width || localY > rect.height) {
+      return false;
+    }
+
+    const payload = {
+      type: MSG.FRAME_SCROLL,
+      clientX: localX,
+      clientY: localY,
+      sign: sign < 0 ? -1 : 1,
+      deltaPx: Math.abs(Number(deltaPx)) || 0,
+      behavior: behavior === 'auto' || behavior === 'instant' ? 'auto' : 'smooth',
+      frameName: typeof iframe.name === 'string' ? iframe.name : ''
+    };
+
+    // Same-origin: scroll nested overflow inside the child document directly.
+    try {
+      const doc = iframe.contentDocument;
+      const view = iframe.contentWindow;
+      if (doc && view) {
+        // Nested iframe: re-forward with coordinates local to the nested frame.
+        let el = null;
+        try {
+          el = elementFromPointDeep(localX, localY, doc);
+        } catch { el = null; }
+        if (el && (el.tagName === 'IFRAME' || el.tagName === 'FRAME')) {
+          try {
+            const nested = /** @type {HTMLIFrameElement} */ (el);
+            const nr = nested.getBoundingClientRect();
+            nested.contentWindow?.postMessage({
+              ...payload,
+              clientX: localX - nr.left,
+              clientY: localY - nr.top,
+              frameName: typeof nested.name === 'string' ? nested.name : ''
+            }, '*');
+            return true;
+          } catch { /* fall through to scroll this frame */ }
+        }
+        scrollAtPoint(localX, localY, payload.sign, payload.deltaPx, payload.behavior, {
+          doc,
+          win: view
+        });
+        return true;
+      }
+    } catch {
+      // Cross-origin — postMessage / runtime relay.
+    }
+
+    let posted = false;
+    try {
+      const win = iframe.contentWindow;
+      if (win) {
+        win.postMessage(payload, '*');
+        posted = true;
+      }
+    } catch { /* ignore */ }
+
+    try {
+      this._sendRuntimeMessage(payload, { silent: true });
+      posted = true;
+    } catch { /* ignore */ }
+
+    return posted;
   }
 
   handlePageTop(e) {
@@ -2632,21 +2797,102 @@ export class KeyPilot extends EventManager {
     this.showFlashNotification(message, COLORS.NOTIFICATION_INFO);
   }
 
-  handleDeleteKey(e) {
-    if (!this._allowActionKey('handleDeleteKey', e)) return;
+  /**
+   * Shared path: enter inspector kind, or confirm if already that kind.
+   * @param {string} kind INSPECTOR_KIND
+   * @param {(el: Element|null) => void} onConfirm
+   * @param {{ ignoreTextFocus?: boolean, ignoreModal?: boolean }} [opts]
+   * @returns {boolean} true if enter/confirm was handled (false if blocked)
+   */
+  _toggleInspectorKind(kind, onConfirm, opts = {}) {
     const currentState = this.state.getState();
 
-    if (!this.state.isDeleteMode()) {
-      console.log('[KeyPilot] Entering delete mode');
-      this.state.setMode(MODES.DELETE);
-    } else {
-      const victim = currentState.deleteEl ||
-        this.detector.deepElementFromPoint(currentState.lastMouse.x, currentState.lastMouse.y);
-
-      console.log('[KeyPilot] Deleting element:', victim);
-      this.cancelModes();
-      this.deleteElement(victim);
+    if (!opts.ignoreTextFocus && currentState.mode === MODES.TEXT_FOCUS) {
+      return false;
     }
+    if (!opts.ignoreModal &&
+        (currentState.mode === MODES.POPOVER || currentState.mode === MODES.OMNIBOX)) {
+      return false;
+    }
+
+    if (this.inspector.isKind(kind)) {
+      const target = this.inspector.confirmAndExit();
+      try {
+        onConfirm(target);
+      } catch (err) {
+        console.warn('[KeyPilot] Inspector confirm failed:', kind, err);
+      }
+      return true;
+    }
+
+    console.log('[KeyPilot] Entering inspector mode:', kind);
+    this.inspector.enter(kind);
+    return true;
+  }
+
+  handleDeleteKey(e) {
+    if (!this._allowActionKey('handleDeleteKey', e)) return;
+
+    this._toggleInspectorKind(INSPECTOR_KIND.DELETE, (victim) => {
+      console.log('[KeyPilot] Deleting element:', victim);
+      this.deleteElement(victim);
+    }, { ignoreTextFocus: true, ignoreModal: true });
+  }
+
+  /**
+   * Cols Toggle (period): shared inspector pick → apply multicol,
+   * or clear sticky columns if already applied. Esc exits pick only.
+   */
+  handleColsToggleKey(e) {
+    if (!this._allowActionKey('handleColsToggleKey', e)) return;
+    const currentState = this.state.getState();
+
+    if (currentState.mode === MODES.TEXT_FOCUS) {
+      console.log('[KeyPilot] Cols toggle ignored — text focus mode');
+      return;
+    }
+    if (currentState.mode === MODES.POPOVER || currentState.mode === MODES.OMNIBOX) {
+      console.log('[KeyPilot] Cols toggle ignored — modal mode');
+      return;
+    }
+
+    // Sticky columns already on → period toggles them off (any target / any mode).
+    if (this.columnLayoutManager?.isActive?.()) {
+      console.log('[KeyPilot] Clearing column layout');
+      try { this.columnLayoutManager.clear(); } catch (err) {
+        console.warn('[KeyPilot] Failed to clear columns:', err);
+      }
+      if (this.inspector.isKind(INSPECTOR_KIND.COLS)) {
+        this.inspector.exit();
+      }
+      try {
+        this.showFlashNotification('Columns off', COLORS.NOTIFICATION_INFO);
+      } catch { /* ignore */ }
+      return;
+    }
+
+    this._toggleInspectorKind(INSPECTOR_KIND.COLS, (target) => {
+      if (!target) {
+        try {
+          this.showFlashNotification('Nothing to columnize', COLORS.NOTIFICATION_INFO);
+        } catch { /* ignore */ }
+        return;
+      }
+      console.log('[KeyPilot] Applying columns to:', target?.tagName, target?.id || target?.className);
+      const ok = this.columnLayoutManager.apply(target);
+      if (ok) {
+        try {
+          this.showFlashNotification(
+            this.columnLayoutManager.isPageMode?.() ? 'Page columns on' : 'Columns on',
+            COLORS.NOTIFICATION_SUCCESS
+          );
+        } catch { /* ignore */ }
+      } else {
+        try {
+          this.showFlashNotification('Could not columnize element', COLORS.NOTIFICATION_ERROR);
+        } catch { /* ignore */ }
+      }
+    });
   }
 
   handleHighlightKey(e) {
@@ -2662,9 +2908,10 @@ export class KeyPilot extends EventManager {
     if (!this.state.isHighlightMode()) {
       console.log('[KeyPilot] Entering highlight mode');
       
-      // Cancel delete mode if active
-      if (this.state.isDeleteMode()) {
-        console.log('[KeyPilot] Canceling delete mode to enter highlight mode');
+      // Cancel shared inspector pick if active
+      if (this.state.isInspectorMode()) {
+        console.log('[KeyPilot] Canceling inspector mode to enter highlight mode');
+        this.inspector.exit();
       }
       
       // Enter highlight mode and start highlighting at current cursor position
@@ -2697,9 +2944,10 @@ export class KeyPilot extends EventManager {
     if (!this.state.isHighlightMode()) {
       console.log('[KeyPilot] Entering rectangle highlight mode');
       
-      // Cancel delete mode if active
-      if (this.state.isDeleteMode()) {
-        console.log('[KeyPilot] Canceling delete mode to enter rectangle highlight mode');
+      // Cancel shared inspector pick if active
+      if (this.state.isInspectorMode()) {
+        console.log('[KeyPilot] Canceling inspector mode to enter rectangle highlight mode');
+        this.inspector.exit();
       }
 
       // Lazy-init edge-only stack only when explicitly enabled (off by default).
@@ -4668,6 +4916,15 @@ export class KeyPilot extends EventManager {
       this.handleCloseOmnibox();
       return;
     }
+
+    // Shared inspector pick: Esc exits pick mode only — leave sticky effects
+    // (e.g. applied columns + slip bar) intact.
+    if (currentState.mode === MODES.INSPECTOR ||
+        currentState.mode === MODES.DELETE ||
+        currentState.mode === MODES.COLS) {
+      this.inspector.exit();
+      return;
+    }
     
     // Don't reset if we're in text focus mode - that should only be cleared by ESC or blur
     if (currentState.mode !== MODES.TEXT_FOCUS) {
@@ -4816,13 +5073,19 @@ export class KeyPilot extends EventManager {
     }
   }
 
-  updateOverlays(focusEl, deleteEl) {
+  updateOverlays(focusEl, inspectorEl = null, inspectorKind = null) {
     // Don't update overlays if extension is disabled
     if (!this.enabled) {
       return;
     }
 
     const currentState = this.state.getState();
+    const inspEl = inspectorEl !== undefined && inspectorEl !== null
+      ? inspectorEl
+      : currentState.inspectorEl;
+    const kind = inspectorKind != null
+      ? inspectorKind
+      : currentState.inspectorKind;
 
     // Display-only coalescing: for same-destination link clusters, draw a single unioned rect
     // to reduce flicker while preserving correct element selection for clicks.
@@ -4837,10 +5100,11 @@ export class KeyPilot extends EventManager {
 
     this.overlayManager.updateOverlays(
       focusEl,
-      deleteEl,
+      inspEl,
       currentState.mode,
       currentState.focusedTextElement,
-      focusRectOverride
+      focusRectOverride,
+      kind
     );
   }
 
@@ -5038,6 +5302,9 @@ export class KeyPilot extends EventManager {
     // Always dismiss popovers/launcher/omnibox even if init is incomplete.
     this.dismissActiveUI();
 
+    // Clear sticky column layout + slip bar so the page is not left altered.
+    try { this.columnLayoutManager?.clear?.(); } catch { /* ignore */ }
+
     try {
       this.controlStrip?.setEnabledState?.(false);
       this.controlStrip?.setKeyboardHelpActive?.(false);
@@ -5113,6 +5380,7 @@ export class KeyPilot extends EventManager {
 
   cleanup() {
     try { this.dismissActiveUI(); } catch { /* ignore */ }
+    try { this.columnLayoutManager?.clear?.(); } catch { /* ignore */ }
     try {
       if (this.controlStrip) {
         this.controlStrip.cleanup();

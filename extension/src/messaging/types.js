@@ -68,7 +68,13 @@ export const MSG = Object.freeze({
   // --- Parent → child frame activate (window.postMessage; third-party iframes) ---
   // Top-frame KeyPilot posts this when F/B/G lands on a cross-origin <iframe>.
   // Child frame-click-agent performs elementFromPoint + click in its own document.
-  FRAME_ACTIVATE: 'KP_FRAME_ACTIVATE'
+  FRAME_ACTIVATE: 'KP_FRAME_ACTIVATE',
+
+  // --- Parent → child frame scroll (window.postMessage; C/V under an iframe) ---
+  // Top-frame KeyPilot posts this when C/V lands on an <iframe> shell. Child
+  // frame-click-agent runs scroll-at-point at local coordinates (nested overflow
+  // first, then the frame document).
+  FRAME_SCROLL: 'KP_FRAME_SCROLL'
 });
 
 /**

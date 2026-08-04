@@ -260,6 +260,11 @@ function setStatus(mode, extensionEnabled = true) {
         statusEl.textContent = 'DELETE';
         statusEl.classList.remove('ok', 'warn', 'unavailable');
         statusEl.classList.add('err');
+    } else if (mode === 'cols' || mode === 'inspector') {
+        // Shared inspector pick mode — COLS is the common status; generic "INSPECT" fallback
+        statusEl.textContent = mode === 'cols' ? 'COLS' : 'INSPECT';
+        statusEl.classList.remove('ok', 'err', 'unavailable');
+        statusEl.classList.add('warn');
     } else if (mode === 'text_focus') {
         statusEl.textContent = 'TEXT';
         statusEl.classList.remove('ok', 'err', 'unavailable');

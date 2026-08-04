@@ -54,7 +54,7 @@ export class OptimizedScrollManager {
     if (!currentState) return;
 
     this.observeElementForScroll(currentState.focusEl);
-    this.observeElementForScroll(currentState.deleteEl);
+    this.observeElementForScroll(currentState.inspectorEl || currentState.deleteEl);
     this.observeElementForScroll(currentState.focusedTextElement);
   }
 
@@ -113,12 +113,15 @@ export class OptimizedScrollManager {
         }
       }
       
-      if (newState.deleteEl !== prevState.deleteEl) {
-        if (prevState.deleteEl) {
-          this.unobserveElementForScroll(prevState.deleteEl);
+      // Shared inspector pick target (Delete / Cols / future kinds)
+      const prevInsp = prevState.inspectorEl || prevState.deleteEl || prevState.colsEl;
+      const nextInsp = newState.inspectorEl || newState.deleteEl || newState.colsEl;
+      if (nextInsp !== prevInsp) {
+        if (prevInsp) {
+          this.unobserveElementForScroll(prevInsp);
         }
-        if (newState.deleteEl) {
-          this.observeElementForScroll(newState.deleteEl);
+        if (nextInsp) {
+          this.observeElementForScroll(nextInsp);
         }
       }
       
@@ -172,8 +175,9 @@ export class OptimizedScrollManager {
       this.updateOverlayPosition(currentState.focusEl, 'focus');
     }
 
-    if (currentState.deleteEl && currentState.deleteEl.isConnected) {
-      this.updateOverlayPosition(currentState.deleteEl, 'delete');
+    const inspectorEl = currentState.inspectorEl || currentState.deleteEl || currentState.colsEl;
+    if (inspectorEl && inspectorEl.isConnected) {
+      this.updateOverlayPosition(inspectorEl, 'inspector');
     }
 
     // Update focused text element overlays (both focused text overlay and active text input frame)
@@ -210,8 +214,9 @@ export class OptimizedScrollManager {
       this.observeElementForScroll(currentState.focusEl);
     }
     
-    if (currentState.deleteEl) {
-      this.observeElementForScroll(currentState.deleteEl);
+    const inspectorEl = currentState.inspectorEl || currentState.deleteEl || currentState.colsEl;
+    if (inspectorEl) {
+      this.observeElementForScroll(inspectorEl);
     }
     
     if (currentState.focusedTextElement) {
@@ -239,8 +244,14 @@ export class OptimizedScrollManager {
     // Animation removed - update overlays immediately
     if (type === 'focus') {
       this.overlayManager.updateFocusOverlay(element);
-    } else if (type === 'delete') {
-      this.overlayManager.updateDeleteOverlay(element);
+    } else if (type === 'inspector' || type === 'delete' || type === 'cols') {
+      const kind = this.stateManager.getState()?.inspectorKind
+        || (type === 'cols' ? 'cols' : type === 'delete' ? 'delete' : null);
+      if (typeof this.overlayManager.updateInspectorOverlay === 'function') {
+        this.overlayManager.updateInspectorOverlay(element, kind);
+      } else {
+        this.overlayManager.updateDeleteOverlay?.(element);
+      }
     } else if (type === 'focusedText') {
       // Update both the focused text overlay and active text input frame
       this.overlayManager.updateFocusedTextOverlay(element);
@@ -255,9 +266,14 @@ export class OptimizedScrollManager {
     if (currentState.focusEl === element) {
       this.overlayManager.hideFocusOverlay();
     }
-    
-    if (currentState.deleteEl === element) {
-      this.overlayManager.hideDeleteOverlay();
+
+    const inspectorEl = currentState.inspectorEl || currentState.deleteEl || currentState.colsEl;
+    if (inspectorEl === element) {
+      if (typeof this.overlayManager.hideInspectorOverlay === 'function') {
+        this.overlayManager.hideInspectorOverlay();
+      } else {
+        this.overlayManager.hideDeleteOverlay?.();
+      }
     }
     
     if (currentState.focusedTextElement === element) {

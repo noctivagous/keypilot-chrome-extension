@@ -268,6 +268,9 @@ async function render() {
   const textCursorPreview = document.getElementById('text-cursor-preview');
   const textCursorResetBtn = document.getElementById('text-cursor-reset');
   const textFocusStyleRadios = /** @type {HTMLInputElement[]} */ (Array.from(document.querySelectorAll('input[name="text-focus-style"]')));
+  const textLeftEdgeWidthField = document.getElementById('text-left-edge-width-field');
+  const textLeftEdgeWidthRange = /** @type {HTMLInputElement|null} */ (document.getElementById('text-left-edge-width-range'));
+  const textLeftEdgeWidthNumber = /** @type {HTMLInputElement|null} */ (document.getElementById('text-left-edge-width-number'));
   const textLabelsEnabled = /** @type {HTMLInputElement|null} */ (document.getElementById('text-labels-enabled'));
   const textStrokeThicknessRange = /** @type {HTMLInputElement|null} */ (document.getElementById('text-stroke-thickness-range'));
   const textStrokeThicknessNumber = /** @type {HTMLInputElement|null} */ (document.getElementById('text-stroke-thickness-number'));
@@ -393,11 +396,14 @@ async function render() {
     if (textLabelsEnabled) textLabelsEnabled.checked = !!tm?.labelsEnabled;
     setInputValue(textStrokeThicknessRange, tm?.strokeThickness ?? DEFAULT_SETTINGS.textMode.strokeThickness);
     setInputValue(textStrokeThicknessNumber, tm?.strokeThickness ?? DEFAULT_SETTINGS.textMode.strokeThickness);
+    setInputValue(textLeftEdgeWidthRange, tm?.leftEdgeWidth ?? DEFAULT_SETTINGS.textMode.leftEdgeWidth);
+    setInputValue(textLeftEdgeWidthNumber, tm?.leftEdgeWidth ?? DEFAULT_SETTINGS.textMode.leftEdgeWidth);
 
     const focusStyle = normalizeTextFocusStyle(tm?.focusStyle ?? DEFAULT_SETTINGS.textMode.focusStyle);
     textFocusStyleRadios.forEach((r) => {
       r.checked = r.value === focusStyle;
     });
+    applyVisibility(textLeftEdgeWidthField, focusStyle === 'left_edge');
 
     const type = tm?.cursorType ?? DEFAULT_SETTINGS.textMode.cursorType;
     if (type === 'crosshair') {
@@ -602,6 +608,16 @@ async function render() {
       applyTextMode(s.textMode);
     }, true);
   });
+
+  const commitTextLeftEdgeWidth = async (v) => {
+    const n = clampNumber(v, 1, 24);
+    setInputValue(textLeftEdgeWidthRange, n);
+    setInputValue(textLeftEdgeWidthNumber, n);
+    await setSettings({ textMode: { leftEdgeWidth: n } });
+  };
+
+  textLeftEdgeWidthRange?.addEventListener('input', async () => commitTextLeftEdgeWidth(textLeftEdgeWidthRange.value), true);
+  textLeftEdgeWidthNumber?.addEventListener('input', async () => commitTextLeftEdgeWidth(textLeftEdgeWidthNumber.value), true);
 
   const commitTextStrokeThickness = async (v) => {
     const n = clampNumber(v, 1, 16);

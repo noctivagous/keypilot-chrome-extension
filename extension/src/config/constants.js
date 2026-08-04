@@ -66,6 +66,24 @@ export const CSS_CLASSES = {
   /** Temporary frame that scales (pop then shrink) when copying an image under cursor */
   IMAGE_COPY_PULSE: 'kpv2-image-copy-pulse',
   DELETE_OVERLAY: 'kpv2-delete-overlay',
+  /**
+   * Shared inspector-mode hover chrome (Delete, Cols, future pick tools).
+   * Kind-specific colors applied via CSS vars / inline styles.
+   */
+  INSPECTOR: 'kpv2-inspector',
+  INSPECTOR_OVERLAY: 'kpv2-inspector-overlay',
+  /** @deprecated prefer INSPECTOR + kind; kept for style/compat during transition */
+  COLS: 'kpv2-cols',
+  COLS_OVERLAY: 'kpv2-cols-overlay',
+  /** Applied multicol layout on the chosen target */
+  COLS_ACTIVE: 'kpv2-cols-active',
+  /** Page-mode markers on html/body while whole-page columns are active */
+  COLS_PAGE: 'kpv2-cols-page',
+  /** Slip-edit chrome (NLE-style content window scrubber) */
+  COLS_SLIP_BAR: 'kpv2-cols-slip-bar',
+  COLS_SLIP_TRACK: 'kpv2-cols-slip-track',
+  COLS_SLIP_KNOB: 'kpv2-cols-slip-knob',
+  COLS_SLIP_LABEL: 'kpv2-cols-slip-label',
   HIGHLIGHT_OVERLAY: 'kpv2-highlight-overlay',
   HIGHLIGHT_SELECTION: 'kpv2-highlight-selection',
   TEXT_FIELD_GLOW: 'kpv2-text-field-glow',
@@ -135,6 +153,9 @@ export const Z_INDEX = {
   // macOS-style control strip (upper-left; above onboarding when stacked, below keyboard help)
   CONTROL_STRIP: 2147483025,
 
+  // Cols Toggle slip-edit bar (bottom of viewport; below keyboard help / cursor)
+  COLS_SLIP_BAR: 2147483030,
+
   // Iframe-based popover modal (Open Popover)
   POPOVER_IFRAME_MODAL: 2147483035,
 
@@ -158,6 +179,11 @@ export const Z_INDEX = {
  * Scroll distances / behavior for page / popover keyboard scrolling (defaults).
  * Runtime values can be overridden via Settings (`kp_settings_v1.scroll`).
  * Used by key handlers and popover iframe bridges.
+ *
+ * C / V (half-page) use cursor-aware scrolling (`scroll-at-point.js`):
+ * nested overflow under the pointer first (vertical, or horizontal when that
+ * container scrolls on X), then the document. Iframes are forwarded via the
+ * light frame-click-agent (KP_FRAME_SCROLL).
  */
 export const SCROLL = Object.freeze({
   /** Z / X (and popover equivalents): large page step */
@@ -170,12 +196,35 @@ export const SCROLL = Object.freeze({
 
 export const MODES = {
   NONE: 'none',
+  /**
+   * Shared element-pick inspector (DOM inspector style).
+   * Concrete tool is state.inspectorKind (see INSPECTOR_KIND).
+   * Used by Delete Mode, Cols Toggle, and future pick tools.
+   */
+  INSPECTOR: 'inspector',
+  /**
+   * @deprecated Use MODES.INSPECTOR + INSPECTOR_KIND.DELETE.
+   * Kept so older status strings / comparisons still resolve if needed.
+   */
   DELETE: 'delete',
+  /**
+   * @deprecated Use MODES.INSPECTOR + INSPECTOR_KIND.COLS.
+   */
+  COLS: 'cols',
   TEXT_FOCUS: 'text_focus',
   HIGHLIGHT: 'highlight',
   POPOVER: 'popover',
   OMNIBOX: 'omnibox'
 };
+
+/**
+ * Inspector tool kinds while mode === MODES.INSPECTOR.
+ * Register visuals/behavior in modules/inspector-mode.js.
+ */
+export const INSPECTOR_KIND = Object.freeze({
+  DELETE: 'delete',
+  COLS: 'cols'
+});
 
 // Cursor behavior mode:
 // - NO_CUSTOM_CURSORS: KeyPilot does not override the page cursor at all.
@@ -198,6 +247,9 @@ export const COLORS = {
   FOCUS_GREEN: 'rgba(0,180,0,0.95)',
   FOCUS_GREEN_BRIGHT: 'rgba(0,128,0,0.95)',
   DELETE_RED: 'rgba(220,0,0,0.95)',
+  /** Cols Toggle accent (purple, distinct from delete red / highlight blue) */
+  COLS_PURPLE: 'rgba(156,39,176,0.95)',
+  COLS_PURPLE_BRIGHT: 'rgba(186,104,200,0.95)',
   HIGHLIGHT_BLUE: 'rgba(0,120,255,0.95)',
   ORANGE: '#ff8c00',
   // Focus overlay (alternate) colors (used to visually distinguish DOM-hover targeting mode)
@@ -223,6 +275,8 @@ export const COLORS = {
   BLUE_SHADOW_BRIGHT: 'rgba(33,150,243,0.45)',
   DELETE_SHADOW: 'rgba(220,0,0,0.35)',
   DELETE_SHADOW_BRIGHT: 'rgba(220,0,0,0.45)',
+  COLS_SHADOW: 'rgba(156,39,176,0.35)',
+  COLS_SHADOW_BRIGHT: 'rgba(156,39,176,0.5)',
   HIGHLIGHT_SHADOW: 'rgba(0,120,255,0.35)',
   HIGHLIGHT_SHADOW_BRIGHT: 'rgba(0,120,255,0.45)',
   BLACK_SHADOW: 'rgba(40, 40, 40, 0.7)',

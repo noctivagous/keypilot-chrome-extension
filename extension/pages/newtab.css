@@ -463,6 +463,8 @@ h2 {
   display: grid;
   gap: 8px;
   min-width: 0;
+  align-content: start;
+  padding-right: 4px; /* Prevent content from touching scrollbar */
 }
 
 .toolbar .kp-url-row {
@@ -753,34 +755,54 @@ h2 {
   grid-template-columns: 1fr;
 }
 
-/* Fixed height cards with scrolling */
+/* Fixed height cards: header stays put, list scrolls beneath */
 .toolbar-section,
 .history-section {
   height: 400px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.toolbar-section > h2,
+.history-section > h2 {
+  flex: 0 0 auto;
+}
+
+/* Scrollable list region under the section header */
+.toolbar-section > .toolbar,
+.toolbar-section > .empty,
+.history-section > .history {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
 }
 
-/* Custom scrollbar styling */
-.toolbar-section::-webkit-scrollbar,
-.history-section::-webkit-scrollbar {
+/* Custom scrollbar styling (list containers only) */
+.toolbar-section > .toolbar::-webkit-scrollbar,
+.toolbar-section > .empty::-webkit-scrollbar,
+.history-section > .history::-webkit-scrollbar {
   width: 8px;
 }
 
-.toolbar-section::-webkit-scrollbar-track,
-.history-section::-webkit-scrollbar-track {
+.toolbar-section > .toolbar::-webkit-scrollbar-track,
+.toolbar-section > .empty::-webkit-scrollbar-track,
+.history-section > .history::-webkit-scrollbar-track {
   background: rgba(255,255,255,0.05);
   border-radius: 4px;
 }
 
-.toolbar-section::-webkit-scrollbar-thumb,
-.history-section::-webkit-scrollbar-thumb {
+.toolbar-section > .toolbar::-webkit-scrollbar-thumb,
+.toolbar-section > .empty::-webkit-scrollbar-thumb,
+.history-section > .history::-webkit-scrollbar-thumb {
   background: rgba(255,140,0,0.30);
   border-radius: 4px;
 }
 
-.toolbar-section::-webkit-scrollbar-thumb:hover,
-.history-section::-webkit-scrollbar-thumb:hover {
+.toolbar-section > .toolbar::-webkit-scrollbar-thumb:hover,
+.toolbar-section > .empty::-webkit-scrollbar-thumb:hover,
+.history-section > .history::-webkit-scrollbar-thumb:hover {
   background: rgba(255,140,0,0.50);
 }
 
@@ -789,6 +811,7 @@ h2 {
   gap: 8px;
   min-width: 0;
   padding-right: 4px; /* Prevent content from touching scrollbar */
+  align-content: start;
 }
 
 .history .kp-url-row {

@@ -41,7 +41,7 @@
       Address bar above has focus
     </text>
     <text x="600" y="300" fill="rgba(255,240,220,0.28)" font-size="28" font-weight="600" letter-spacing="0.3">
-      Click to focus page
+      Press Tab or click to focus page
     </text>
   </g>
 

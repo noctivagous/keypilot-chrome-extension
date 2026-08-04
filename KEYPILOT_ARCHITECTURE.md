@@ -192,10 +192,22 @@ KeyPilot is a Chrome extension that transforms web browsing into a keyboard-firs
 - ESC key exits focus mode
 - Only ESC intercepted in this mode
 
-#### Delete Mode
-- Red X cursor
-- Backspace key deletes elements
-- Click elements to remove them
+#### Inspector Mode (shared element pick)
+- Generic DOM-inspector-style pick mode used by multiple tools
+- State: `mode = inspector` + `inspectorKind` (`delete` | `cols` | future)
+- Shared hover target `inspectorEl`, cursor/outline styled per kind
+- Esc exits pick only (does not reverse sticky tool effects)
+- Registry: `modules/inspector-mode.js` (`INSPECTOR_DEFS`)
+
+##### Delete (kind: delete)
+- Red X cursor; Backspace enters/confirm
+- Confirm removes the hovered element
+
+##### Cols Toggle (kind: cols)
+- Purple column-grid cursor; period (`.`) enters/confirm
+- Confirm applies CSS multi-column reflow (body/html → whole-page columns)
+- Sticky after apply: period again clears columns
+- Slip slider (~20pt, rectangular knob) shifts content through the fixed column frame (NLE-style)
 
 #### Omnibox Mode
 - Address bar overlay with search suggestions
