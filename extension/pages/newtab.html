@@ -1,5 +1,5 @@
 <!doctype html>
-<html data-theme="cyberforward">
+<html data-theme="earth">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -9,12 +9,14 @@
   </head>
   <body>
     <header class="topbar">
-      <div class="brand">
-        <img class="logo" src="../icons/icon76.png" width="38" height="38" alt="KeyPilot" />
+      <!-- Zone 1: identity + master power -->
+      <div class="topbar-zone topbar-zone--identity">
         <div class="brand-lockup">
-          <div class="title">KeyPilot</div>
+          <div class="brand-heading">
+            <div class="title">KeyPilot</div>
+            <span class="kp-switch-shortcut" title="Toggle KeyPilot on/off">Alt+K</span>
+          </div>
           <label class="kp-switch kp-switch--brand" for="kp-enabled-toggle" title="Toggle KeyPilot on/off (global)">
-            <span class="kp-switch-shortcut">(Alt+K)</span>
             <input id="kp-enabled-toggle" class="kp-switch-input" type="checkbox" role="switch" aria-label="KeyPilot enabled" />
             <span class="kp-switch-track" aria-hidden="true">
               <span class="kp-switch-thumb" aria-hidden="true"></span>
@@ -22,56 +24,80 @@
             <span id="kp-enabled-text" class="kp-switch-state" aria-hidden="true">…</span>
           </label>
         </div>
-        <div class="kp-switches" role="group" aria-label="KeyPilot toggles">
-          <label class="kp-switch" for="kp-control-strip-toggle" title="Show/hide control strip (Alt+J to toggle)">
-            <span class="kp-switch-label">Control Strip</span>
-            <span class="kp-switch-shortcut">(Alt+J)</span>
-            <input id="kp-control-strip-toggle" class="kp-switch-input" type="checkbox" role="switch" aria-label="Control strip visible" />
-            <span class="kp-switch-track" aria-hidden="true">
-              <span class="kp-switch-thumb" aria-hidden="true"></span>
+      </div>
+
+      <!-- Zone 2: overlay / UI visibility toggles -->
+      <div class="topbar-zone topbar-zone--toggles" role="group" aria-label="Overlay toggles">
+        <span class="topbar-zone-label">Overlays</span>
+        <div class="topbar-zone-body">
+          <label class="kp-switch kp-switch--cell" for="kp-control-strip-toggle" title="Show/hide control strip (Alt+J to toggle)">
+            <span class="kp-switch-meta">
+              <span class="kp-switch-label">Ctrl Strip</span>
+              <span class="kp-switch-shortcut">Alt+J</span>
             </span>
-            <span id="kp-control-strip-text" class="kp-switch-state" aria-hidden="true">…</span>
+            <span class="kp-switch-control">
+              <input id="kp-control-strip-toggle" class="kp-switch-input" type="checkbox" role="switch" aria-label="Control strip visible" />
+              <span class="kp-switch-track" aria-hidden="true">
+                <span class="kp-switch-thumb" aria-hidden="true"></span>
+              </span>
+              <span id="kp-control-strip-text" class="kp-switch-state" aria-hidden="true">…</span>
+            </span>
           </label>
 
-          <label class="kp-switch" for="kp-keyboard-toggle" title="Show/hide floating keyboard reference">
-            <span class="kp-switch-label">Keyboard Window</span>
-            <span class="kp-switch-shortcut">(K)</span>
-            <input id="kp-keyboard-toggle" class="kp-switch-input" type="checkbox" role="switch" aria-label="Keyboard reference visible" />
-            <span class="kp-switch-track" aria-hidden="true">
-              <span class="kp-switch-thumb" aria-hidden="true"></span>
+          <label class="kp-switch kp-switch--cell" for="kp-keyboard-toggle" title="Show/hide floating keyboard reference">
+            <span class="kp-switch-meta">
+              <span class="kp-switch-label">Keyboard</span>
+              <span class="kp-switch-shortcut">K</span>
             </span>
-            <span id="kp-keyboard-text" class="kp-switch-state" aria-hidden="true">…</span>
+            <span class="kp-switch-control">
+              <input id="kp-keyboard-toggle" class="kp-switch-input" type="checkbox" role="switch" aria-label="Keyboard reference visible" />
+              <span class="kp-switch-track" aria-hidden="true">
+                <span class="kp-switch-thumb" aria-hidden="true"></span>
+              </span>
+              <span id="kp-keyboard-text" class="kp-switch-state" aria-hidden="true">…</span>
+            </span>
           </label>
         </div>
       </div>
-      <div class="actions">
-        <button
-          id="btn-display"
-          class="btn btn-secondary btn-display"
-          type="button"
-          aria-haspopup="dialog"
-          aria-expanded="false"
-          aria-controls="nt-display-popover"
-          title="Theme options"
-        >
-          <span class="btn-display-label">Theme</span>
-          <span id="btn-display-summary" class="btn-display-summary">Cyberforward · 24px · 100% · 980px</span>
-          <span class="btn-display-caret" aria-hidden="true">▾</span>
-        </button>
-        <button id="btn-settings" class="btn btn-secondary btn-with-icon" type="button">
-          <!-- Font Awesome Free solid "gear" -->
-          <svg class="btn-fa-icon" viewBox="0 0 512 512" width="14" height="14" aria-hidden="true" focusable="false">
-            <path fill="currentColor" d="M495.9 166.1c3.3 12.7 .9 26.3-7.1 36.1l-37.3 45.7c2.1 11.1 3.2 22.6 3.2 34.3s-1.1 23.2-3.2 34.3l37.3 45.7c8 9.8 10.4 23.4 7.1 36.1c-6.3 24.2-17.7 46.6-33.1 66.3c-8.1 10.3-21.2 14.9-33.9 12.1l-57.5-12.7c-17.9 15.3-38.4 27.3-60.7 35.4l-13.7 57.5c-2.9 12.1-12.9 21.1-25.4 22.4c-24.2 2.6-49.1 2.6-73.3 0c-12.5-1.3-22.5-10.3-25.4-22.4l-13.7-57.5c-22.3-8.1-42.8-20.1-60.7-35.4L71.6 436.6c-12.7 2.8-25.8-1.8-33.9-12.1C22.3 404.8 10.9 382.4 4.6 358.2c-3.3-12.7-.9-26.3 7.1-36.1l37.3-45.7c-2.1-11.1-3.2-22.6-3.2-34.3s1.1-23.2 3.2-34.3L11.7 161.9c-8-9.8-10.4-23.4-7.1-36.1C10.9 101.6 22.3 79.2 37.7 59.5c8.1-10.3 21.2-14.9 33.9-12.1l57.5 12.7c17.9-15.3 38.4-27.3 60.7-35.4L203.5 17.2c2.9-12.1 12.9-21.1 25.4-22.4c24.2-2.6 49.1-2.6 73.3 0c12.5 1.3 22.5 10.3 25.4 22.4l13.7 57.5c22.3 8.1 42.8 20.1 60.7 35.4l57.5-12.7c12.7-2.8 25.8 1.8 33.9 12.1c15.4 19.7 26.8 42.1 33.1 66.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z"/>
-          </svg>
-          <span>Settings</span>
-        </button>
-        <button id="btn-guide" class="btn btn-with-icon" type="button">
-          <!-- Font Awesome Free solid "book" -->
-          <svg class="btn-fa-icon" viewBox="0 0 448 512" width="14" height="14" aria-hidden="true" focusable="false">
-            <path fill="currentColor" d="M96 0C43 0 0 43 0 96V416c0 53 43 96 96 96H384h32c17.7 0 32-14.3 32-32s-14.3-32-32-32V384c17.7 0 32-14.3 32-32V32c0-17.7-14.3-32-32-32H384 96zm0 384H352v64H96c-17.7 0-32-14.3-32-32s14.3-32 32-32zm32-240c0-8.8 7.2-16 16-16H336c8.8 0 16 7.2 16 16s-7.2 16-16 16H144c-8.8 0-16-7.2-16-16zm0 64c0-8.8 7.2-16 16-16H336c8.8 0 16 7.2 16 16s-7.2 16-16 16H144c-8.8 0-16-7.2-16-16zm0 64c0-8.8 7.2-16 16-16H336c8.8 0 16 7.2 16 16s-7.2 16-16 16H144c-8.8 0-16-7.2-16-16z"/>
-          </svg>
-          <span>Guide</span>
-        </button>
+
+      <!-- Zone 3: display / theme -->
+      <div class="topbar-zone topbar-zone--display">
+        <span class="topbar-zone-label">Display</span>
+        <div class="topbar-zone-body">
+          <button
+            id="btn-display"
+            class="btn btn-secondary btn-display"
+            type="button"
+            aria-haspopup="dialog"
+            aria-expanded="false"
+            aria-controls="nt-display-popover"
+            title="Theme options"
+          >
+            <span id="btn-display-summary" class="btn-display-summary">Theme: Earth</span>
+            <span class="btn-display-caret" aria-hidden="true">▾</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Zone 4: navigation -->
+      <div class="topbar-zone topbar-zone--nav" role="group" aria-label="Pages">
+        <span class="topbar-zone-label">Pages</span>
+        <div class="topbar-zone-body topbar-zone-body--nav">
+          <button id="btn-settings" class="btn btn-secondary btn-with-icon" type="button">
+            <!-- Font Awesome Free solid "gear" -->
+            <svg class="btn-fa-icon" viewBox="0 0 512 512" width="14" height="14" aria-hidden="true" focusable="false">
+              <path fill="currentColor" d="M495.9 166.1c3.3 12.7 .9 26.3-7.1 36.1l-37.3 45.7c2.1 11.1 3.2 22.6 3.2 34.3s-1.1 23.2-3.2 34.3l37.3 45.7c8 9.8 10.4 23.4 7.1 36.1c-6.3 24.2-17.7 46.6-33.1 66.3c-8.1 10.3-21.2 14.9-33.9 12.1l-57.5-12.7c-17.9 15.3-38.4 27.3-60.7 35.4l-13.7 57.5c-2.9 12.1-12.9 21.1-25.4 22.4c-24.2 2.6-49.1 2.6-73.3 0c-12.5-1.3-22.5-10.3-25.4-22.4l-13.7-57.5c-22.3-8.1-42.8-20.1-60.7-35.4L71.6 436.6c-12.7 2.8-25.8-1.8-33.9-12.1C22.3 404.8 10.9 382.4 4.6 358.2c-3.3-12.7-.9-26.3 7.1-36.1l37.3-45.7c-2.1-11.1-3.2-22.6-3.2-34.3s1.1-23.2 3.2-34.3L11.7 161.9c-8-9.8-10.4-23.4-7.1-36.1C10.9 101.6 22.3 79.2 37.7 59.5c8.1-10.3 21.2-14.9 33.9-12.1l57.5 12.7c17.9-15.3 38.4-27.3 60.7-35.4L203.5 17.2c2.9-12.1 12.9-21.1 25.4-22.4c24.2-2.6 49.1-2.6 73.3 0c12.5 1.3 22.5 10.3 25.4 22.4l13.7 57.5c22.3 8.1 42.8 20.1 60.7 35.4l57.5-12.7c12.7-2.8 25.8 1.8 33.9 12.1c15.4 19.7 26.8 42.1 33.1 66.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z"/>
+            </svg>
+            <span>Settings</span>
+          </button>
+          <button id="btn-guide" class="btn btn-with-icon" type="button">
+            <!-- Font Awesome Free solid "book" -->
+            <svg class="btn-fa-icon" viewBox="0 0 448 512" width="14" height="14" aria-hidden="true" focusable="false">
+              <path fill="currentColor" d="M96 0C43 0 0 43 0 96V416c0 53 43 96 96 96H384h32c17.7 0 32-14.3 32-32s-14.3-32-32-32V384c17.7 0 32-14.3 32-32V32c0-17.7-14.3-32-32-32H384 96zm0 384H352v64H96c-17.7 0-32-14.3-32-32s14.3-32 32-32zm32-240c0-8.8 7.2-16 16-16H336c8.8 0 16 7.2 16 16s-7.2 16-16 16H144c-8.8 0-16-7.2-16-16zm0 64c0-8.8 7.2-16 16-16H336c8.8 0 16 7.2 16 16s-7.2 16-16 16H144c-8.8 0-16-7.2-16-16zm0 64c0-8.8 7.2-16 16-16H336c8.8 0 16 7.2 16 16s-7.2 16-16 16H144c-8.8 0-16-7.2-16-16z"/>
+            </svg>
+            <span>Guide</span>
+          </button>
+        </div>
       </div>
     </header>
 

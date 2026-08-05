@@ -41,8 +41,8 @@
 
 /*
  * New Tab themes
- * - cyberforward (default): popup/website slate-cyan direction + noctivagous fonts
- * - earth: original orange/black newtab look
+ * - earth (default): original orange/black newtab look
+ * - cyberforward: popup/website slate-cyan direction + noctivagous fonts
  *
  * Switch via html[data-theme="…"] (persisted in chrome.storage + localStorage).
  */
@@ -53,11 +53,11 @@ html[data-theme="cyberforward"] {
 
   /*
    * Display tokens (overridden by JS / localStorage):
-   * - --nt-font-size-px: root type size in CSS px (default 24 = 1.5× original 16px root)
+   * - --nt-font-size-px: root type size in CSS px (default 18)
    * - --nt-ui-scale: layout zoom (default 1 = 100%)
    * - --nt-content-max-width: header + main column cap (default 980px; use none for full)
    */
-  --nt-font-size-px: 24;
+  --nt-font-size-px: 18;
   --nt-ui-scale: 1;
   --nt-content-max-width: 980px;
   --nt-card-pad: 14px;
@@ -316,11 +316,11 @@ html, body {
 }
 
 /*
- * Root font-size drives rem-based type (default 24px = 1.5× original 16px root).
+ * Root font-size drives rem-based type (default 18px).
  * UI scale zooms the whole surface (layout + chrome) independently of type size.
  */
 html {
-  font-size: calc(var(--nt-font-size-px, 24) * 1px);
+  font-size: calc(var(--nt-font-size-px, 18) * 1px);
   zoom: var(--nt-ui-scale, 1);
 }
 
@@ -339,17 +339,113 @@ body {
 }
 
 .topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 18px 18px 10px;
+  /* Compact control grid: identity | overlays | display | pages */
+  display: grid;
+  grid-template-columns:
+    minmax(8.5rem, auto)
+    minmax(13.5rem, 1.4fr)
+    minmax(7.5rem, auto)
+    minmax(9.5rem, auto);
+  align-items: end;
+  gap: 8px 10px;
+  padding: 12px 18px 10px;
   /* width: 100% + max-width: shrinks with the window below the chosen content width */
   width: 100%;
   max-width: var(--nt-content-max-width, 980px);
   margin: 0 auto;
-  gap: 12px;
-  flex-wrap: wrap;
   box-sizing: border-box;
+}
+
+/* Labeled control zones inside the topbar grid */
+.topbar-zone {
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 5px;
+  min-width: 0;
+  align-content: end;
+}
+
+.topbar-zone-label {
+  font-family: var(--nt-font-heading);
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--nt-fg-50);
+  line-height: 1;
+  padding-left: 2px;
+  user-select: none;
+}
+
+.topbar-zone-body {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  min-width: 0;
+  min-height: 2.75rem;
+}
+
+.topbar-zone-body--nav {
+  gap: 6px;
+}
+
+.topbar-zone--identity {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  grid-template-rows: none;
+}
+
+.topbar-zone--identity .topbar-zone-label {
+  display: none;
+}
+
+.topbar-zone--display .topbar-zone-body,
+.topbar-zone--nav .topbar-zone-body {
+  align-items: stretch;
+}
+
+.topbar-zone--display .btn-display {
+  flex: 0 1 auto;
+  width: auto;
+  max-width: none;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  min-height: 2.75rem;
+  padding: 8px 10px;
+  white-space: nowrap;
+}
+
+.topbar-zone--nav .btn {
+  flex: 1 1 0;
+  min-height: 2.75rem;
+  justify-content: center;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+/* Collapse to 2×2 then stacked as the content column narrows */
+@media (max-width: 860px) {
+  .topbar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .topbar-zone--identity {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 520px) {
+  .topbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .topbar-zone--identity {
+    grid-column: auto;
+  }
 }
 
 /* Unfocused state: blur the page content and add tint */
@@ -429,44 +525,36 @@ html[data-theme="cyberforward"] .focus-hint-bg {
   opacity: 0.92;
 }
 
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  flex-wrap: wrap;
-}
-
 /* Title + extension toggle as one chrome group */
 .brand-lockup {
   display: inline-flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
   min-width: 0;
-  padding: 6px 10px 6px 12px;
+  flex: 1 1 auto;
+  padding: 6px 10px 7px 11px;
   border-radius: 8px;
   border: 1px solid var(--nt-switch-border);
   background: var(--nt-switch-bg);
+  min-height: 2.75rem;
+  box-sizing: border-box;
 }
 
 .brand-lockup:hover {
   border-color: var(--nt-switch-border-hover);
 }
 
-.kp-switches {
-  display: inline-flex;
-  align-items: center;
+.brand-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
   gap: 8px;
-  flex-wrap: wrap;
+  min-width: 0;
 }
 
-.kp-switch-label {
-  font-size: 0.6875rem;
-  font-weight: 800;
-  letter-spacing: 0.4px;
-  color: var(--nt-fg-78);
-  text-transform: uppercase;
-  font-family: var(--nt-font-heading);
+.brand-heading .kp-switch-shortcut {
+  flex-shrink: 0;
 }
 
 .logo {
@@ -482,7 +570,7 @@ html[data-theme="cyberforward"] .focus-hint-bg {
 }
 
 .title {
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 700;
   font-family: var(--nt-font-display);
   color: var(--nt-fg);
@@ -497,13 +585,6 @@ html[data-theme="cyberforward"] .title {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-}
-
-.actions {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
 }
 
 .btn-with-icon {
@@ -523,30 +604,24 @@ html[data-theme="cyberforward"] .title {
 .btn-display {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  max-width: min(320px, 46vw);
-}
-
-.btn-display-label {
-  font-weight: 700;
-  letter-spacing: 0.2px;
+  gap: 6px;
+  max-width: none;
 }
 
 .btn-display-summary {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  color: var(--nt-fg-66);
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.15px;
+  color: var(--nt-fg-92);
   white-space: nowrap;
-  max-width: 160px;
-  font-family: var(--nt-font-mono);
+  line-height: 1.2;
 }
 
 .btn-display-caret {
   font-size: 0.6875rem;
   opacity: 0.75;
-  margin-left: 2px;
+  flex-shrink: 0;
+  line-height: 1;
 }
 
 .btn-display[aria-expanded="true"] {
@@ -677,10 +752,82 @@ html[data-theme="cyberforward"] .title {
   border: none;
   background: transparent;
   border-radius: 0;
+  gap: 6px;
+  width: 100%;
+  justify-content: flex-start;
 }
 
 .kp-switch--brand:hover {
   border-color: transparent;
+}
+
+/* Compact cell: label stack above control row — fills a grid slot */
+.kp-switch--cell {
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 5px;
+  padding: 6px 8px 7px;
+  min-height: 2.75rem;
+  box-sizing: border-box;
+}
+
+.kp-switch--cell .kp-switch-track {
+  width: 36px;
+  height: 18px;
+}
+
+.kp-switch--cell .kp-switch-thumb {
+  width: 12px;
+  height: 12px;
+}
+
+.kp-switch--cell .kp-switch-input:checked + .kp-switch-track .kp-switch-thumb {
+  transform: translateX(18px);
+}
+
+.kp-switch--brand .kp-switch-track {
+  width: 36px;
+  height: 18px;
+}
+
+.kp-switch--brand .kp-switch-thumb {
+  width: 12px;
+  height: 12px;
+}
+
+.kp-switch--brand .kp-switch-input:checked + .kp-switch-track .kp-switch-thumb {
+  transform: translateX(18px);
+}
+
+.kp-switch-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+}
+
+.kp-switch-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.kp-switch-label {
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.35px;
+  color: var(--nt-fg-78);
+  text-transform: uppercase;
+  font-family: var(--nt-font-heading);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .kp-switch-hint {
@@ -698,18 +845,20 @@ html[data-theme="cyberforward"] .title {
 }
 
 .kp-switch-shortcut {
-  font-size: 0.625rem;
-  font-weight: 400;
+  font-size: 0.5625rem;
+  font-weight: 500;
   color: var(--nt-fg-50);
-  letter-spacing: 0.1px;
+  letter-spacing: 0.04em;
   font-family: var(--nt-font-mono);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .kp-switch-state {
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 800;
   letter-spacing: 0.4px;
-  min-width: 28px; /* keeps width stable between ON/OFF */
+  min-width: 1.5rem; /* keeps width stable between ON/OFF */
   text-align: right;
   font-family: var(--nt-font-mono);
 }

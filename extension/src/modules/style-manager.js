@@ -856,6 +856,18 @@ export class StyleManager {
         animation: kpv2-text-left-edge-pulse 1.5s ease-in-out infinite !important;
       }
 
+      /*
+       * Floating keyboard reference: host pages (e.g. Zapier) can override UA
+       * [hidden]{display:none} with author display rules. Keep closed panels
+       * invisible without relying on the attribute alone. Match early-inject.
+       */
+      .kp-floating-keyboard-help[hidden],
+      .kp-floating-keyboard-help.${CSS_CLASSES.HIDDEN},
+      .kp-floating-keyboard-help[aria-hidden="true"] {
+        display: none !important;
+        pointer-events: none !important;
+      }
+
       ${buildKeyPilotPrintCss()}
     `;
   }

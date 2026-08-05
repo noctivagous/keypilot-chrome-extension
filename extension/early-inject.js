@@ -3363,6 +3363,18 @@
         visibility: hidden !important;
       }
     }
+
+    /*
+     * Hostile host pages (e.g. Zapier) override UA [hidden]{display:none}.
+     * Keep closed keyboard shells invisible even when only the attribute is set.
+     * Shown state still uses inline display:flex !important from JS.
+     */
+    .kp-floating-keyboard-help[hidden],
+    .kp-floating-keyboard-help.kpv2-hidden,
+    .kp-floating-keyboard-help[aria-hidden="true"] {
+      display: none !important;
+      pointer-events: none !important;
+    }
   `;
 
   // Early cursor state
@@ -4867,6 +4879,8 @@
     root.setAttribute('data-kp-early-floating-keyboard', 'true');
 
     // Compact dark window chrome (inline so host pages can't override it).
+    // Start fully hidden: never rely on the `hidden` attribute alone (Zapier etc.
+    // override UA [hidden]{display:none} with author display rules).
     Object.assign(root.style, {
       position: 'fixed',
       left: '16px',
@@ -4883,8 +4897,13 @@
       borderRadius: '4px',
       boxShadow: '0 16px 40px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35)',
       fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
-      pointerEvents: 'auto'
+      // Flex when shown (titlebar + body); explicit none until visibility is applied.
+      display: 'none',
+      flexDirection: 'column',
+      pointerEvents: 'none'
     });
+    try { root.setAttribute('aria-hidden', 'true'); } catch { /* ignore */ }
+    try { root.classList.add('kpv2-hidden'); } catch { /* ignore */ }
     // Match popup.html theme tokens so the early-rendered keyboard matches the popup.
     try { applyPopupThemeVars(root); } catch { /* ignore */ }
     // Restore saved dock / free position (default bottom-left).
@@ -5094,6 +5113,31 @@
     } catch { /* ignore */ }
   }
 
+  /**
+   * Show/hide keyboard reference in a way that survives hostile host CSS.
+   * Zapier (and other apps) override UA `[hidden]{display:none}` with author
+   * `display` rules, so the `hidden` attribute alone is not enough — same
+   * lesson as onboarding (`setOnboardingPanelVisible`) and key popovers.
+   * @param {HTMLElement|null} root
+   * @param {boolean} visible
+   */
+  function setEarlyKeyboardHelpRootVisible(root, visible) {
+    if (!root) return;
+    const show = !!visible;
+    try {
+      root.hidden = !show;
+      root.setAttribute('aria-hidden', show ? 'false' : 'true');
+      // Prefer !important so host author sheets cannot re-show a closed panel.
+      root.style.setProperty('display', show ? 'flex' : 'none', 'important');
+      root.style.setProperty('pointer-events', show ? 'auto' : 'none', 'important');
+      if (!show) {
+        try { root.classList.add('kpv2-hidden'); } catch { /* ignore */ }
+      } else {
+        try { root.classList.remove('kpv2-hidden'); } catch { /* ignore */ }
+      }
+    } catch { /* ignore */ }
+  }
+
   function applyEarlyKeyboardHelpVisibility(visible) {
     if (isMainExtensionLoaded) return;
     keyboardHelpVisible = Boolean(visible);
@@ -5101,7 +5145,10 @@
     // If extension is disabled, keep it hidden but remember desired state.
     ensureEarlyFloatingKeyboardHelpShell();
     if (!keyboardHelpRoot) return;
-    keyboardHelpRoot.hidden = !(isExtensionEnabled && keyboardHelpVisible);
+    setEarlyKeyboardHelpRootVisible(
+      keyboardHelpRoot,
+      !!(isExtensionEnabled && keyboardHelpVisible)
+    );
     try { renderEarlyControlStripKeyboard(); } catch { /* ignore */ }
   }
 

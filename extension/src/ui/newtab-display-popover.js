@@ -21,7 +21,7 @@ export const NEWTAB_FONT_SCALE_STORAGE_KEY = 'kp_newtab_font_scale';
 /** @typedef {'cyberforward' | 'earth'} NewtabThemeId */
 
 export const NEWTAB_THEMES = /** @type {const} */ (['cyberforward', 'earth']);
-export const DEFAULT_NEWTAB_THEME = 'cyberforward';
+export const DEFAULT_NEWTAB_THEME = 'earth';
 
 /** User-facing labels for theme ids. */
 export const NEWTAB_THEME_LABELS = /** @type {const} */ ({
@@ -31,9 +31,12 @@ export const NEWTAB_THEME_LABELS = /** @type {const} */ ({
 
 /**
  * Root font-size in CSS px. Design type is rem-based against this root.
- * Default 24px = 1.5× the original 16px root.
+ * Default 18px.
  */
-export const DEFAULT_NEWTAB_FONT_SIZE_PX = 24;
+export const DEFAULT_NEWTAB_FONT_SIZE_PX = 18;
+
+/** Historical base for legacy `kp_newtab_font_scale` (1 = 24px root). */
+const LEGACY_FONT_SCALE_BASE_PX = 24;
 export const NEWTAB_FONT_SIZE_PX_OPTIONS = /** @type {const} */ ([16, 18, 20, 22, 24, 28, 32]);
 
 /** Layout scale (CSS zoom). 1 = 100% of layout size. */
@@ -147,7 +150,7 @@ export function contentWidthLabel(width) {
 export function fontScaleToPx(scale) {
   const n = typeof scale === 'number' ? scale : parseFloat(String(scale ?? ''));
   if (!Number.isFinite(n) || n <= 0) return null;
-  return normalizeNewtabFontSizePx(n * DEFAULT_NEWTAB_FONT_SIZE_PX);
+  return normalizeNewtabFontSizePx(n * LEGACY_FONT_SCALE_BASE_PX);
 }
 
 /**
@@ -503,7 +506,7 @@ export function createNewtabDisplayPopover(config = {}) {
       anchor.setAttribute('aria-expanded', isOpen() ? 'true' : 'false');
       const summary = document.getElementById('btn-display-summary');
       if (summary) {
-        summary.textContent = `${themeLabel} · ${fontLabel} · ${scaleLabel} · ${widthLabel}`;
+        summary.textContent = `Theme: ${themeLabel}`;
       }
       anchor.title = `Theme: ${themeLabel}, font ${fontLabel}, UI ${scaleLabel}, width ${widthLabel}`;
     } catch {

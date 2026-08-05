@@ -3,8 +3,14 @@
  *
  * Shows KeyPilot's keyboard visualization in a small, fixed-position panel.
  *
- * Note: This is intentionally implemented in light DOM (no shadow root) because
- * `renderKeybindingsKeyboard()` injects its CSS into `document.head`.
+ * Visibility must not rely on the `hidden` attribute alone: hostile host CSS
+ * (e.g. Zapier) can override UA `[hidden]{display:none}`. Always pair
+ * hidden/aria-hidden/kpv2-hidden with `display:none !important`.
+ *
+ * Still light DOM today so `renderKeybindingsKeyboard()` can inject CSS into
+ * `document.head`. For full paint isolation, migrate to an open shadow root and
+ * inject styles into that root (see ensureStylesInjected rootNode work); open
+ * mode keeps elementFromPoint / composedPath piercing used by KeyPilot.
  */
 import { renderKeybindingsKeyboard } from './keybindings-ui.js';
 import { setKeyPressedState } from './keybindings-ui-shared.js';
@@ -163,6 +169,12 @@ export class FloatingKeyboardHelp {
   isVisible() {
     if (!this.root || !this.root.isConnected) return false;
     if (this.root.hidden) return false;
+    try {
+      if (this.root.getAttribute('aria-hidden') === 'true') return false;
+    } catch { /* ignore */ }
+    try {
+      if (this.root.classList?.contains('kpv2-hidden')) return false;
+    } catch { /* ignore */ }
     // Inline display:flex (panel chrome) can override [hidden] on some host pages;
     // treat explicit none as hidden as well.
     try {
@@ -174,18 +186,31 @@ export class FloatingKeyboardHelp {
   /**
    * Show/hide must set both the `hidden` attribute and inline display.
    * Our panel chrome uses display:flex; without clearing it, hide() can fail on
-   * pages that weaken or override [hidden]{display:none}.
+   * pages that weaken or override [hidden]{display:none} (Zapier author CSS does
+   * this). Use !important + kpv2-hidden so host sheets cannot re-show the panel.
    * @param {boolean} visible
    */
   _setRootVisible(visible) {
     if (!this.root) return;
     if (visible) {
       try { this.root.hidden = false; } catch { /* ignore */ }
-      try { this.root.style.display = 'flex'; } catch { /* ignore */ }
+      try { this.root.classList.remove('kpv2-hidden'); } catch { /* ignore */ }
+      try {
+        this.root.style.setProperty('display', 'flex', 'important');
+        this.root.style.setProperty('pointer-events', 'auto', 'important');
+      } catch {
+        try { this.root.style.display = 'flex'; } catch { /* ignore */ }
+      }
       try { this.root.setAttribute('aria-hidden', 'false'); } catch { /* ignore */ }
     } else {
       try { this.root.hidden = true; } catch { /* ignore */ }
-      try { this.root.style.display = 'none'; } catch { /* ignore */ }
+      try { this.root.classList.add('kpv2-hidden'); } catch { /* ignore */ }
+      try {
+        this.root.style.setProperty('display', 'none', 'important');
+        this.root.style.setProperty('pointer-events', 'none', 'important');
+      } catch {
+        try { this.root.style.display = 'none'; } catch { /* ignore */ }
+      }
       try { this.root.setAttribute('aria-hidden', 'true'); } catch { /* ignore */ }
     }
   }
@@ -278,11 +303,19 @@ export class FloatingKeyboardHelp {
    */
   _applyProPanelChrome(root) {
     if (!root || !root.style) return;
-    // Preserve intentional hide (display:none) — chrome must not force flex on a
-    // hidden panel (that broke K-toggle / close after we added flex layout).
-    let display = 'flex';
+    // Preserve intentional hide (display:none / hidden / kpv2-hidden) — chrome
+    // must not force flex on a hidden panel (that broke K-toggle / close after
+    // we added flex layout). Zapier-class hosts need !important on display.
+    let show = true;
     try {
-      if (root.hidden || root.style.display === 'none') display = 'none';
+      if (
+        root.hidden ||
+        root.getAttribute('aria-hidden') === 'true' ||
+        root.classList?.contains('kpv2-hidden') ||
+        root.style.display === 'none'
+      ) {
+        show = false;
+      }
     } catch { /* ignore */ }
     Object.assign(root.style, {
       position: 'fixed',
@@ -290,8 +323,6 @@ export class FloatingKeyboardHelp {
       // Symmetric inset on all sides (matches KEYBOARD_POSITION_MARGIN_PX).
       maxWidth: `calc(100vw - ${KEYBOARD_MAX_VIEWPORT_INSET_PX}px)`,
       maxHeight: `calc(100vh - ${KEYBOARD_MAX_VIEWPORT_INSET_PX}px)`,
-      // Flex column when visible (titlebar + body).
-      display,
       flexDirection: 'column',
       overflow: 'hidden',
       boxSizing: 'border-box',
@@ -301,9 +332,17 @@ export class FloatingKeyboardHelp {
       border: '1px solid rgba(255, 255, 255, 0.08)',
       borderRadius: '4px',
       boxShadow: '0 16px 40px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35)',
-      fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
-      pointerEvents: 'auto'
+      fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif'
     });
+    try {
+      root.style.setProperty('display', show ? 'flex' : 'none', 'important');
+      root.style.setProperty('pointer-events', show ? 'auto' : 'none', 'important');
+    } catch {
+      try {
+        root.style.display = show ? 'flex' : 'none';
+        root.style.pointerEvents = show ? 'auto' : 'none';
+      } catch { /* ignore */ }
+    }
     applyPopupThemeVars(root);
   }
 

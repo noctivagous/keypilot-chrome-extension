@@ -6,11 +6,11 @@
   try {
     var t = localStorage.getItem('kp_newtab_theme');
     // Current ids + legacy names from earlier iterations.
-    // Default (no stored preference) is cyberforward.
-    if (t === 'earth' || t === 'classic') {
-      document.documentElement.setAttribute('data-theme', 'earth');
-    } else {
+    // Default (no stored preference) is earth.
+    if (t === 'cyberforward' || t === 'noctivagous') {
       document.documentElement.setAttribute('data-theme', 'cyberforward');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'earth');
     }
   } catch (e) {
     // ignore
