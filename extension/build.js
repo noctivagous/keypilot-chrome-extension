@@ -73,11 +73,9 @@ const modules = [
   'src/modules/shadow-dom-manager.js',
   'src/modules/intersection-observer-manager.js',
   'src/modules/optimized-scroll-manager.js',
-  'src/modules/popover-iframe-bridge.js',
   'src/modules/keypilot-toggle-handler.js',
   'src/modules/settings-manager.js',
-  // After settings-manager / keyboard-layouts: thin iframe activate agent.
-  'src/modules/frame-click-agent.js',
+  // Frame-click / popover bridge live in frame-agent-bundled.js (child frames only).
   'src/modules/omnibox-manager.js',
   'src/modules/tab-history-popover.js',
   'src/modules/launcher-popover.js',
@@ -102,18 +100,30 @@ const modules = [
   'src/content-script.js'
 ];
 
-// Validate all source files exist before bundling
-console.log('Validating source files...');
-for (const modulePath of modules) {
-  if (!fs.existsSync(modulePath)) {
-    console.error(`ERROR: Source file not found: ${modulePath}`);
-    process.exit(1);
-  }
-}
-console.log('All source files validated successfully.');
+/** Child-frame thin agent (no full KeyPilot). Keep deps minimal. */
+const frameAgentModules = [
+  'src/config/keyboard-layouts.js',
+  'src/config/constants.js',
+  // settings-manager re-exports / uses search engine catalog at module load.
+  'src/config/search-engines.js',
+  'src/messaging/types.js',
+  'src/utils/dom-context.js',
+  'src/utils/storage.js',
+  'src/utils/scroll-at-point.js',
+  'src/modules/settings-manager.js',
+  'src/modules/frame-click-agent.js',
+  'src/modules/popover-iframe-bridge.js',
+  'src/frame-agent-entry.js'
+];
 
-let bundledContent = `/**
- * KeyPilot Chrome Extension - Bundled Version
+/**
+ * @param {string[]} moduleList
+ * @param {string} label
+ * @returns {string}
+ */
+function bundleModules(moduleList, label) {
+  let out = `/**
+ * KeyPilot Chrome Extension - ${label}
  * Generated on ${new Date().toISOString()}
  */
 
@@ -122,37 +132,54 @@ let bundledContent = `/**
 
 `;
 
-for (const modulePath of modules) {
-  console.log(`Processing ${modulePath}...`);
-  let moduleContent = fs.readFileSync(modulePath, 'utf8');
-  
-  // Remove imports and exports
-  moduleContent = moduleContent
-    // Remove ESM imports (single-line and multi-line) because we bundle into one IIFE.
-    // IMPORTANT: Anchor to line-start so we don't accidentally match the word "import" inside comments/strings.
-    .replace(/^\s*import\s+[\s\S]*?\bfrom\s+['"][^'"]*['"]\s*;?\s*$/gm, '')
-    // Remove side-effect imports: `import './x.js';` (also anchored to line-start)
-    .replace(/^\s*import\s+['"][^'"]*['"]\s*;?\s*$/gm, '')
-    .replace(/^export\s+(class|function|const|let|var)\s+/gm, '$1 ')
-    // Handle re-export syntax: `export { X } from './mod.js';`
-    .replace(/^\s*export\s*\{[^}]*\}\s*from\s+['"][^'"]*['"]\s*;?\s*$/gm, '')
-    .replace(/^\s*export\s*\{[^}]*\}\s*;?\s*$/gm, '')
-    .replace(/^export\s+/gm, '');
-  
-  bundledContent += `
+  for (const modulePath of moduleList) {
+    console.log(`Processing ${modulePath}...`);
+    if (!fs.existsSync(modulePath)) {
+      console.error(`ERROR: Source file not found: ${modulePath}`);
+      process.exit(1);
+    }
+    let moduleContent = fs.readFileSync(modulePath, 'utf8');
+
+    moduleContent = moduleContent
+      .replace(/^\s*import\s+[\s\S]*?\bfrom\s+['"][^'"]*['"]\s*;?\s*$/gm, '')
+      .replace(/^\s*import\s+['"][^'"]*['"]\s*;?\s*$/gm, '')
+      .replace(/^export\s+(class|function|const|let|var)\s+/gm, '$1 ')
+      .replace(/^\s*export\s*\{[^}]*\}\s*from\s+['"][^'"]*['"]\s*;?\s*$/gm, '')
+      .replace(/^\s*export\s*\{[^}]*\}\s*;?\s*$/gm, '')
+      .replace(/^export\s+/gm, '');
+
+    out += `
   // Module: ${modulePath}
 ${moduleContent}
 
 `;
-}
+  }
 
-bundledContent += `
+  out += `
 })();
 `;
+  return out;
+}
 
-// Generate content-bundled.js in extension directory
+// Validate all source files exist before bundling
+console.log('Validating source files...');
+for (const modulePath of [...modules, ...frameAgentModules]) {
+  if (!fs.existsSync(modulePath)) {
+    console.error(`ERROR: Source file not found: ${modulePath}`);
+    process.exit(1);
+  }
+}
+console.log('All source files validated successfully.');
+
+const bundledContent = bundleModules(modules, 'Bundled Version (top frame)');
 fs.writeFileSync('content-bundled.js', bundledContent);
 console.log('Generated content-bundled.js in extension directory');
+
+const frameAgentContent = bundleModules(frameAgentModules, 'Frame Agent Bundle (child frames)');
+fs.writeFileSync('frame-agent-bundled.js', frameAgentContent);
+const frameKb = (frameAgentContent.length / 1024).toFixed(1);
+const mainKb = (bundledContent.length / 1024).toFixed(1);
+console.log(`Generated frame-agent-bundled.js (${frameKb}KB; main content-bundled.js ${mainKb}KB)`);
 
 // Check for minification flag
 const shouldMinify = process.argv.includes('--minify') || process.argv.includes('-m');

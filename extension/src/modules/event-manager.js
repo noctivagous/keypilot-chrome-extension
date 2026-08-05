@@ -23,20 +23,19 @@ export class EventManager {
 
   start() {
     if (this.isActive) return;
-    
+
     this.addListener(document, 'keydown', this.handleKeyDown.bind(this), { capture: true });
-    
-    // Multiple mouse move listeners to catch events that might be captured
-    this.addListener(document, 'mousemove', this.handleMouseMove.bind(this));
-    this.addListener(document, 'mousemove', this.handleMouseMove.bind(this), { capture: true });
-    this.addListener(window, 'mousemove', this.handleMouseMove.bind(this));
-    
-    // Additional mouse events for better tracking
-    this.addListener(document, 'mouseenter', this.handleMouseMove.bind(this));
-    this.addListener(document, 'mouseover', this.handleMouseMove.bind(this));
-    
-    this.addListener(document, 'scroll', this.handleScroll.bind(this), { passive: true });
-    
+
+    // Single capture pointer/mouse move is enough for cursor coords + non-DOM-hover modes.
+    // (Legacy triple mousemove + mouseover/enter amplified work on every pixel.)
+    // Scroll is owned by OptimizedScrollManager — do not register a no-op scroll here.
+    const moveOpts = { capture: true, passive: true };
+    if (typeof PointerEvent !== 'undefined') {
+      this.addListener(document, 'pointermove', this.handleMouseMove.bind(this), moveOpts);
+    } else {
+      this.addListener(document, 'mousemove', this.handleMouseMove.bind(this), moveOpts);
+    }
+
     this.isActive = true;
   }
 

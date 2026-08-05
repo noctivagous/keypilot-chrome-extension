@@ -496,6 +496,14 @@ function createSuggestionsController({ inputEl, rootEl }) {
     debounceTimer = setTimeout(async () => {
       debounceTimer = null;
       const q = (inputEl.value || '').trim();
+      // Match omnibox typing behavior: no suggestion menu until the user types.
+      // (Empty-query "recent" suggestions only make sense when the omnibox overlay
+      // is intentionally opened; the new-tab field is always visible.)
+      if (!q) {
+        lastQuery = '';
+        hide();
+        return;
+      }
       lastQuery = q;
       const next = await fetchSuggestions(q);
       // stale guard
@@ -540,8 +548,12 @@ function createSuggestionsController({ inputEl, rootEl }) {
     navigate(toUrlOrSearch(target));
   };
 
+  // Only fetch on typing — do not open the menu on focus/click with an empty box.
   inputEl.addEventListener('input', () => schedule(), { capture: true });
-  inputEl.addEventListener('focus', () => schedule(), { capture: true });
+  inputEl.addEventListener('focus', () => {
+    // Restore suggestions only if the field already has a query (e.g. refocus after blur).
+    if ((inputEl.value || '').trim()) schedule();
+  }, { capture: true });
   inputEl.addEventListener('blur', () => {
     // Give click handlers a chance.
     setTimeout(() => hide(), 120);

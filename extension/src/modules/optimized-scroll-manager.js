@@ -1,6 +1,23 @@
 /**
- * Optimized scroll management using Intersection Observer
- * Reduces expensive operations during scroll events
+ * OptimizedScrollManager — scroll lifecycle for KeyPilot chrome.
+ *
+ * ## Current primary path (DOM-hover element rings + element-styled text mode)
+ * Focus/text chrome is painted *on* the target element, so it scrolls with the
+ * page. This manager no longer:
+ *   - clears element focus styling on scroll start (that caused ring flicker)
+ *   - re-paints focus overlays every frame for element-styled focus
+ *   - revives legacy fixed orange text-field frame overlays
+ *
+ * What it still does:
+ *   1. Track `isScrolling` so mouse hit-testing can pause mid-scroll
+ *   2. Fire `keypilot:scroll-end` so under-cursor targeting re-queries
+ *   3. Live-refresh highlight selection overlays (fixed dashed rects / carets)
+ *   4. Reposition fixed chrome still in use: inspector outlines, text-mode labels
+ *
+ * ## Future / alternate backends (canvas or DOM fixed focus rings, RBush hit-test)
+ * When `overlayManager.usesElementFocusStyling()` is false, fixed focus overlays
+ * are repositioned (~60fps) during scroll again. IntersectionObserver can hide
+ * those fixed layers when their targets leave the viewport.
  */
 export class OptimizedScrollManager {
   /**
@@ -12,26 +29,24 @@ export class OptimizedScrollManager {
     this.overlayManager = overlayManager;
     this.stateManager = stateManager;
     this.onScrollFrame = typeof hooks?.onScrollFrame === 'function' ? hooks.onScrollFrame : null;
-    
-    // Scroll state tracking
+
+    /** @type {boolean} */
     this.isScrolling = false;
     this.scrollTimeout = null;
     this.scrollStartTime = 0;
-    
-    // Intersection observer for scroll-sensitive elements
-    this.scrollObserver = null;
-    
-    // Elements that need position updates during scroll
-    this.scrollSensitiveElements = new Set();
-    
-    // Throttled scroll handler
-    this.throttledScrollHandler = this.throttle(this.handleScrollThrottled.bind(this), 16); // ~60fps
-    
-    // Bound event handlers (so cleanup can reliably remove listeners)
-    this.boundScrollHandler = null;
-    this.boundWheelHandler = null;
 
-    // Performance tracking
+    /** @type {IntersectionObserver|null} */
+    this.scrollObserver = null;
+
+    /** Elements observed for fixed-overlay viewport exit (inspector / fixed focus). */
+    this.scrollSensitiveElements = new Set();
+
+    // ~60fps throttle for work that must track scroll (highlight, fixed overlays)
+    this.throttledScrollHandler = this.throttle(this.handleScrollThrottled.bind(this), 16);
+
+    this.boundScrollHandler = null;
+    this.stateUnsubscribe = null;
+
     this.scrollMetrics = {
       scrollEvents: 0,
       overlayUpdates: 0,
@@ -47,330 +62,332 @@ export class OptimizedScrollManager {
     this.observeCurrentStateElements();
   }
 
+  /**
+   * True when focus chrome is CSS on the element (scrolls with the page).
+   * False when a fixed canvas/DOM overlay must be repositioned on scroll.
+   * @returns {boolean}
+   */
+  _usesElementFocusStyling() {
+    try {
+      if (typeof this.overlayManager?.usesElementFocusStyling === 'function') {
+        return !!this.overlayManager.usesElementFocusStyling();
+      }
+      // Fallback if OverlayManager is an older build
+      return !!this.overlayManager?._useDomHoverFocusColors;
+    } catch {
+      return true;
+    }
+  }
+
   observeCurrentStateElements() {
-    // Ensure we start tracking the currently focused elements even if state was
-    // already populated before OptimizedScrollManager initialized.
     const currentState = this.stateManager?.getState?.();
     if (!currentState) return;
 
-    this.observeElementForScroll(currentState.focusEl);
-    this.observeElementForScroll(currentState.inspectorEl || currentState.deleteEl);
-    this.observeElementForScroll(currentState.focusedTextElement);
+    // Only observe targets that drive *fixed* overlays (or fixed focus backend).
+    if (!this._usesElementFocusStyling()) {
+      this.observeElementForScroll(currentState.focusEl);
+    }
+    this.observeElementForScroll(
+      currentState.inspectorEl || currentState.deleteEl || currentState.colsEl
+    );
   }
 
   setupScrollObserver() {
-    // Observer to track when elements move in/out of view during scroll
+    // Hide fixed overlays when their target leaves the viewport. Element-styled
+    // focus rings must not be cleared here — they leave with the element.
     this.scrollObserver = new IntersectionObserver(
       (entries) => {
-        entries.forEach(entry => {
+        for (const entry of entries) {
           const element = entry.target;
-          
           if (entry.isIntersecting) {
-            // Element is visible, may need overlay updates
             this.scrollSensitiveElements.add(element);
           } else {
-            // Element is out of view, can skip overlay updates
             this.scrollSensitiveElements.delete(element);
-            
-            // Hide any overlays for out-of-view elements
-            this.hideOverlaysForElement(element);
+            this.hideFixedOverlaysForElement(element);
           }
-        });
+        }
       },
       {
-        rootMargin: '20px', // Small margin to catch elements just entering/leaving
+        rootMargin: '20px',
         threshold: [0, 1.0]
       }
     );
   }
 
   setupScrollListeners() {
-    // Use passive listener for better performance
     this.boundScrollHandler = this.handleScroll.bind(this);
-    this.boundWheelHandler = this.handleWheel.bind(this);
-
-    document.addEventListener('scroll', this.boundScrollHandler, { 
+    // Capture: nested overflow scrollers (chat panes, etc.) bubble poorly
+    document.addEventListener('scroll', this.boundScrollHandler, {
       passive: true,
-      capture: true 
-    });
-    
-    // Also listen for wheel events to predict scroll direction
-    document.addEventListener('wheel', this.boundWheelHandler, { 
-      passive: true 
+      capture: true
     });
   }
 
   setupStateSubscription() {
-    // Subscribe to state changes to track new elements
     this.stateUnsubscribe = this.stateManager.subscribe((newState, prevState) => {
-      // Start observing new elements
+      const elementFocus = this._usesElementFocusStyling();
+
       if (newState.focusEl !== prevState.focusEl) {
-        if (prevState.focusEl) {
-          this.unobserveElementForScroll(prevState.focusEl);
-        }
-        if (newState.focusEl) {
+        if (prevState.focusEl) this.unobserveElementForScroll(prevState.focusEl);
+        // Element-styled focus does not need IO tracking for overlay hide/show.
+        if (!elementFocus && newState.focusEl) {
           this.observeElementForScroll(newState.focusEl);
         }
       }
-      
-      // Shared inspector pick target (Delete / Cols / future kinds)
+
       const prevInsp = prevState.inspectorEl || prevState.deleteEl || prevState.colsEl;
       const nextInsp = newState.inspectorEl || newState.deleteEl || newState.colsEl;
       if (nextInsp !== prevInsp) {
-        if (prevInsp) {
-          this.unobserveElementForScroll(prevInsp);
-        }
-        if (nextInsp) {
-          this.observeElementForScroll(nextInsp);
-        }
-      }
-      
-      if (newState.focusedTextElement !== prevState.focusedTextElement) {
-        if (prevState.focusedTextElement) {
-          this.unobserveElementForScroll(prevState.focusedTextElement);
-        }
-        if (newState.focusedTextElement) {
-          this.observeElementForScroll(newState.focusedTextElement);
-        }
+        if (prevInsp) this.unobserveElementForScroll(prevInsp);
+        if (nextInsp) this.observeElementForScroll(nextInsp);
       }
     });
   }
 
-  handleScroll(event) {
+  handleScroll(_event) {
     this.scrollMetrics.scrollEvents++;
 
-    // Mark scroll start
     if (!this.isScrolling) {
       this.isScrolling = true;
       this.scrollStartTime = performance.now();
 
-      // Hide focus overlay immediately when scrolling starts (for R-Tree mode)
-      // This prevents the green rectangle from staying visible during scroll
-      this.overlayManager?.hideFocusOverlay?.();
+      // Fixed focus backends only: drop a stuck ring until the throttled path
+      // repositions it. Never call hideFocusOverlay in element-styling mode —
+      // that clears data-kp-focus / outline mid-scroll and causes flicker.
+      if (!this._usesElementFocusStyling()) {
+        try {
+          this.overlayManager?.hideFocusOverlay?.();
+        } catch { /* ignore */ }
+      }
     }
 
-    // Use throttled handler for performance
-    this.throttledScrollHandler(event);
+    this.throttledScrollHandler();
 
-    // Clear existing timeout and set new one
     if (this.scrollTimeout) {
       clearTimeout(this.scrollTimeout);
     }
-
-    // Detect scroll end
     this.scrollTimeout = setTimeout(() => {
       this.handleScrollEnd();
     }, 100);
   }
 
-  handleScrollThrottled(event) {
+  handleScrollThrottled() {
     this.scrollMetrics.throttledCalls++;
-    
-    const currentState = this.stateManager.getState();
-    
-    // Always update overlay positions during scroll so they track the page movement,
-    // even if IntersectionObserver tracking hasn't been established for the element yet.
-    // (This fixes the "hover/click rectangle sticks during scroll" issue.)
-    if (currentState.focusEl && currentState.focusEl.isConnected) {
-      this.updateOverlayPosition(currentState.focusEl, 'focus');
-    }
 
-    const inspectorEl = currentState.inspectorEl || currentState.deleteEl || currentState.colsEl;
-    if (inspectorEl && inspectorEl.isConnected) {
-      this.updateOverlayPosition(inspectorEl, 'inspector');
+    let currentState;
+    try {
+      currentState = this.stateManager.getState();
+    } catch {
+      return;
     }
+    if (!currentState) return;
 
-    // Update focused text element overlays (both focused text overlay and active text input frame)
-    if (currentState.focusedTextElement && currentState.focusedTextElement.isConnected) {
-      this.updateOverlayPosition(currentState.focusedTextElement, 'focusedText');
-    }
+    const mode = currentState.mode;
+    let didOverlayWork = false;
 
-    // Text / rectangle select: keep dashed selection rect + carets live with scroll
-    // (document-anchored origin). Without this, overlays only jumped on scroll-end.
-    if (currentState.mode === 'highlight' && this.onScrollFrame) {
+    // Highlight: dashed selection rect + carets are document-anchored fixed layers.
+    if (mode === 'highlight' && this.onScrollFrame) {
       try {
         this.onScrollFrame();
-      } catch (e) {
-        // Non-fatal — selection refresh should never break scroll handling
+        didOverlayWork = true;
+      } catch {
+        // Non-fatal — selection refresh must never break scroll handling
       }
     }
-    
-    this.scrollMetrics.overlayUpdates++;
+
+    // Inspector pick (Delete / Cols / …): fixed outline around the target.
+    const inspectorEl =
+      currentState.inspectorEl || currentState.deleteEl || currentState.colsEl;
+    if (inspectorEl && inspectorEl.isConnected) {
+      this._updateInspectorOverlay(inspectorEl);
+      didOverlayWork = true;
+    }
+
+    // Text mode: labels are fixed-position; field chrome is on the element itself.
+    if (
+      mode === 'text_focus' &&
+      currentState.focusedTextElement &&
+      currentState.focusedTextElement.isConnected
+    ) {
+      try {
+        this.overlayManager?.updateTextModeLabels?.(currentState.focusedTextElement);
+        didOverlayWork = true;
+      } catch { /* ignore */ }
+    }
+
+    // Fixed focus overlay backend (canvas / DOM rect) — not used on the primary path.
+    if (
+      !this._usesElementFocusStyling() &&
+      currentState.focusEl &&
+      currentState.focusEl.isConnected
+    ) {
+      try {
+        this.overlayManager?.updateFocusOverlay?.(currentState.focusEl);
+        didOverlayWork = true;
+      } catch { /* ignore */ }
+    }
+
+    if (didOverlayWork) {
+      this.scrollMetrics.overlayUpdates++;
+    }
   }
 
-  handleWheel(event) {
-    // Predict scroll direction and prepare for smooth updates
-    const direction = event.deltaY > 0 ? 'down' : 'up';
-    
-    // Pre-emptively update overlay positions based on predicted scroll
-    this.prepareForScroll(direction);
-  }
-
-  prepareForScroll(direction) {
-    // Pre-calculate positions for smooth scrolling
-    const currentState = this.stateManager.getState();
-    
-    if (currentState.focusEl) {
-      this.observeElementForScroll(currentState.focusEl);
-    }
-    
-    const inspectorEl = currentState.inspectorEl || currentState.deleteEl || currentState.colsEl;
-    if (inspectorEl) {
-      this.observeElementForScroll(inspectorEl);
-    }
-    
-    if (currentState.focusedTextElement) {
-      this.observeElementForScroll(currentState.focusedTextElement);
+  _updateInspectorOverlay(element) {
+    const kind =
+      this.stateManager.getState()?.inspectorKind ||
+      null;
+    if (typeof this.overlayManager?.updateInspectorOverlay === 'function') {
+      this.overlayManager.updateInspectorOverlay(element, kind);
+    } else {
+      this.overlayManager?.updateDeleteOverlay?.(element);
     }
   }
 
   observeElementForScroll(element) {
     if (element && this.scrollObserver) {
-      this.scrollObserver.observe(element);
+      try {
+        this.scrollObserver.observe(element);
+      } catch { /* ignore */ }
       this.scrollSensitiveElements.add(element);
     }
   }
 
   unobserveElementForScroll(element) {
     if (element && this.scrollObserver) {
-      this.scrollObserver.unobserve(element);
+      try {
+        this.scrollObserver.unobserve(element);
+      } catch { /* ignore */ }
       this.scrollSensitiveElements.delete(element);
     }
   }
 
-  updateOverlayPosition(element, type) {
-    if (!element) return;
-    
-    // Animation removed - update overlays immediately
-    if (type === 'focus') {
-      this.overlayManager.updateFocusOverlay(element);
-    } else if (type === 'inspector' || type === 'delete' || type === 'cols') {
-      const kind = this.stateManager.getState()?.inspectorKind
-        || (type === 'cols' ? 'cols' : type === 'delete' ? 'delete' : null);
-      if (typeof this.overlayManager.updateInspectorOverlay === 'function') {
-        this.overlayManager.updateInspectorOverlay(element, kind);
-      } else {
-        this.overlayManager.updateDeleteOverlay?.(element);
-      }
-    } else if (type === 'focusedText') {
-      // Update both the focused text overlay and active text input frame
-      this.overlayManager.updateFocusedTextOverlay(element);
-      this.overlayManager.updateActiveTextInputFrame(element);
-    }
-  }
-
-  hideOverlaysForElement(element) {
+  /**
+   * Hide fixed-position overlays for a target that left the viewport.
+   * Does not clear element-styled focus rings.
+   * @param {Element} element
+   */
+  hideFixedOverlaysForElement(element) {
     const currentState = this.stateManager.getState();
-    
-    // Hide overlays if they're for elements that are out of view
-    if (currentState.focusEl === element) {
-      this.overlayManager.hideFocusOverlay();
+    if (!currentState) return;
+
+    if (!this._usesElementFocusStyling() && currentState.focusEl === element) {
+      try {
+        this.overlayManager?.hideFocusOverlay?.();
+      } catch { /* ignore */ }
     }
 
-    const inspectorEl = currentState.inspectorEl || currentState.deleteEl || currentState.colsEl;
+    const inspectorEl =
+      currentState.inspectorEl || currentState.deleteEl || currentState.colsEl;
     if (inspectorEl === element) {
-      if (typeof this.overlayManager.hideInspectorOverlay === 'function') {
-        this.overlayManager.hideInspectorOverlay();
-      } else {
-        this.overlayManager.hideDeleteOverlay?.();
-      }
-    }
-    
-    if (currentState.focusedTextElement === element) {
-      this.overlayManager.hideFocusedTextOverlay();
-      this.overlayManager.hideActiveTextInputFrame();
+      try {
+        if (typeof this.overlayManager?.hideInspectorOverlay === 'function') {
+          this.overlayManager.hideInspectorOverlay();
+        } else {
+          this.overlayManager?.hideDeleteOverlay?.();
+        }
+      } catch { /* ignore */ }
     }
   }
 
   handleScrollEnd() {
     const scrollDuration = performance.now() - this.scrollStartTime;
-    
-    // Update average scroll duration
-    this.scrollMetrics.averageScrollDuration = 
+    this.scrollMetrics.averageScrollDuration =
       (this.scrollMetrics.averageScrollDuration + scrollDuration) / 2;
-    
+
     this.isScrolling = false;
-    
-    // Force a complete overlay update after scroll ends
-    const currentState = this.stateManager.getState();
-    
-    // Re-query elements at current mouse position for accuracy
-    if (currentState.lastMouse.x >= 0 && currentState.lastMouse.y >= 0) {
-      // Dispatch a custom event to trigger element re-query
-      document.dispatchEvent(new CustomEvent('keypilot:scroll-end', {
-        detail: {
-          mouseX: currentState.lastMouse.x,
-          mouseY: currentState.lastMouse.y
-        }
-      }));
+
+    let currentState;
+    try {
+      currentState = this.stateManager.getState();
+    } catch {
+      currentState = null;
     }
-    
-    // Clean up observers for elements that are no longer relevant
+
+    // Re-query under-cursor target after the viewport moved (mouse often still).
+    if (
+      currentState?.lastMouse &&
+      currentState.lastMouse.x >= 0 &&
+      currentState.lastMouse.y >= 0
+    ) {
+      try {
+        document.dispatchEvent(
+          new CustomEvent('keypilot:scroll-end', {
+            detail: {
+              mouseX: currentState.lastMouse.x,
+              mouseY: currentState.lastMouse.y
+            }
+          })
+        );
+      } catch { /* ignore */ }
+    }
+
     this.cleanupScrollObservers();
   }
 
   cleanupScrollObservers() {
-    // Remove observers for elements that are no longer in the DOM.
-    // Use isConnected (not document.contains) so open-shadow nodes are kept.
-    for (const element of this.scrollSensitiveElements) {
+    // Drop observers for disconnected nodes (isConnected works for open shadow).
+    for (const element of [...this.scrollSensitiveElements]) {
       if (!element || !element.isConnected) {
         this.unobserveElementForScroll(element);
       }
     }
   }
 
-  // Throttle utility function
   throttle(func, limit) {
-    let inThrottle;
-    return function(...args) {
-      if (!inThrottle) {
-        func.apply(this, args);
-        inThrottle = true;
-        setTimeout(() => inThrottle = false, limit);
-      }
+    let inThrottle = false;
+    return (...args) => {
+      if (inThrottle) return;
+      func.apply(this, args);
+      inThrottle = true;
+      setTimeout(() => {
+        inThrottle = false;
+      }, limit);
     };
   }
 
-  // Get scroll performance metrics
   getScrollMetrics() {
-    const throttleRatio = this.scrollMetrics.scrollEvents > 0 ? 
-      (this.scrollMetrics.throttledCalls / this.scrollMetrics.scrollEvents * 100).toFixed(1) : 0;
-    
+    const throttleRatio =
+      this.scrollMetrics.scrollEvents > 0
+        ? (
+            (this.scrollMetrics.throttledCalls / this.scrollMetrics.scrollEvents) *
+            100
+          ).toFixed(1)
+        : 0;
+
     return {
       ...this.scrollMetrics,
       throttleRatio: `${throttleRatio}%`,
       activeSensitiveElements: this.scrollSensitiveElements.size,
-      isCurrentlyScrolling: this.isScrolling
+      isCurrentlyScrolling: this.isScrolling,
+      elementFocusStyling: this._usesElementFocusStyling()
     };
   }
 
-  // Cleanup method
   cleanup() {
     if (this.scrollObserver) {
-      this.scrollObserver.disconnect();
+      try {
+        this.scrollObserver.disconnect();
+      } catch { /* ignore */ }
       this.scrollObserver = null;
     }
-    
+
     if (this.scrollTimeout) {
       clearTimeout(this.scrollTimeout);
       this.scrollTimeout = null;
     }
-    
+
     if (this.stateUnsubscribe) {
-      this.stateUnsubscribe();
+      try {
+        this.stateUnsubscribe();
+      } catch { /* ignore */ }
       this.stateUnsubscribe = null;
     }
-    
+
     this.scrollSensitiveElements.clear();
-    
-    // Remove event listeners
+
     if (this.boundScrollHandler) {
       document.removeEventListener('scroll', this.boundScrollHandler, { capture: true });
       this.boundScrollHandler = null;
-    }
-    if (this.boundWheelHandler) {
-      document.removeEventListener('wheel', this.boundWheelHandler);
-      this.boundWheelHandler = null;
     }
   }
 }

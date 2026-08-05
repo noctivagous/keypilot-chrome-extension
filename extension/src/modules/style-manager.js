@@ -35,7 +35,6 @@ export function buildKeyPilotPrintCss() {
     `.${CSS_CLASSES.COLS_SLIP_BAR}`,
     `.${CSS_CLASSES.HIGHLIGHT_OVERLAY}`,
     `.${CSS_CLASSES.HIGHLIGHT_SELECTION}`,
-    `.${CSS_CLASSES.FOCUSED_TEXT_OVERLAY}`,
     `.${CSS_CLASSES.RIPPLE}`,
     `.${CSS_CLASSES.FOCUS_PULSE}`,
     `.${CSS_CLASSES.FOCUS_FLASH}`,
@@ -43,7 +42,6 @@ export function buildKeyPilotPrintCss() {
     `.${CSS_CLASSES.FOCUS_MARQUEE}`,
     `.${CSS_CLASSES.IMAGE_COPY_PULSE}`,
     `.${CSS_CLASSES.VIEWPORT_MODAL_FRAME}`,
-    `.${CSS_CLASSES.ACTIVE_TEXT_INPUT_FRAME}`,
     `.${CSS_CLASSES.ESC_EXIT_LABEL}`,
     // Omnibox + modal chrome
     `.${CSS_CLASSES.OMNIBOX_BACKDROP}`,
@@ -722,22 +720,6 @@ export class StyleManager {
         }
       }
       
-      .${CSS_CLASSES.ACTIVE_TEXT_INPUT_FRAME} {
-        position: fixed;
-        pointer-events: none;
-        z-index: ${Z_INDEX.OVERLAYS_ABOVE};
-        border: var(--kpv2-text-stroke-width, 3px) solid ${COLORS.ORANGE};
-        box-shadow: 0 0 0 2px ${COLORS.ORANGE_SHADOW}, 0 0 10px 2px ${COLORS.ORANGE_SHADOW_DARK};
-        background: transparent;
-        animation: kpv2-pulse 1.5s ease-in-out infinite;
-        will-change: transform, opacity;
-      }
-      
-      .${CSS_CLASSES.ACTIVE_TEXT_INPUT_FRAME}::before {
-        content: "";
-        display: none;
-      }
-      
       .${CSS_CLASSES.ESC_EXIT_LABEL} {
         position: fixed;
         pointer-events: none;
@@ -1294,7 +1276,6 @@ export class StyleManager {
       CSS_CLASSES.HIDDEN,
       CSS_CLASSES.RIPPLE,
       CSS_CLASSES.VIEWPORT_MODAL_FRAME,
-      CSS_CLASSES.ACTIVE_TEXT_INPUT_FRAME,
       CSS_CLASSES.ESC_EXIT_LABEL,
       CSS_CLASSES.HIGHLIGHT_OVERLAY,
       CSS_CLASSES.HIGHLIGHT_SELECTION,

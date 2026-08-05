@@ -195,6 +195,10 @@ export function getGoogleS2FaviconUrl(pageUrl, size = 128) {
   const s = Math.max(16, Math.min(256, Number(size) || 128));
   try {
     const u = new URL(String(pageUrl || '').trim());
+    // Only real web pages — chrome://newtab etc. have hostnames like "newtab"
+    // that are not domains and should not hit Google's favicon CDN.
+    const scheme = String(u.protocol || '').toLowerCase();
+    if (scheme !== 'http:' && scheme !== 'https:') return '';
     const domain = (u.hostname || '').replace(/^www\./i, '');
     if (!domain) return '';
     return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=${s}`;

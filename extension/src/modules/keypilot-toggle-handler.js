@@ -325,9 +325,9 @@ export class KeyPilotToggleHandler extends EventManager {
           if (this.keyPilot.overlayManager.highlightManager) {
             this.keyPilot.overlayManager.highlightManager.initialize(this.keyPilot.overlayManager.overlayObserver);
           }
-          // Re-init the active renderer (canvas overlay element, CSS custom props, etc.)
-          this.keyPilot.overlayManager.initRenderingMode();
-          // DOM-hover mode styles elements directly (blue focus ring) — re-apply after cleanup.
+          // Element-styled focus (DOM-hover): keep 'dom' backend — do not allocate canvas.
+          try { this.keyPilot.overlayManager.setRenderingMode?.('dom'); } catch { /* ignore */ }
+          // DOM-hover mode styles elements directly — re-apply after cleanup.
           if (typeof this.keyPilot.overlayManager.setDomHoverFocusColorsEnabled === 'function') {
             this.keyPilot.overlayManager.setDomHoverFocusColorsEnabled(true);
           }

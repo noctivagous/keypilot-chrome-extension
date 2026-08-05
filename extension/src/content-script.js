@@ -1,89 +1,66 @@
 /**
- * Content script entry point
+ * Content script entry point (top frame — full KeyPilot).
+ *
+ * Child frames load `frame-agent-bundled.js` instead (see manifest).
+ * When the service worker injects this bundle into a popover iframe, we still
+ * initialize full KeyPilot there.
  */
 import { KeyPilot } from './keypilot.js';
 import { KeyPilotToggleHandler } from './modules/keypilot-toggle-handler.js';
 import { OnboardingManager } from './modules/onboarding-manager.js';
-import { installPopoverIframeBridge } from './modules/popover-iframe-bridge.js';
-import { installFrameClickAgent } from './modules/frame-click-agent.js';
 
 /**
- * When running inside an iframe, we normally avoid initializing full KeyPilot.
- * For KeyPilot popover iframes, we use a bridge handshake from the parent to:
- * - keep Esc/P close working via postMessage
- * - optionally initialize full KeyPilot inside the iframe for the full cursor/overlay experience
- *
- * Separately, a thin frame-click-agent always runs in child frames so top-frame
- * F-activate can click through cross-origin iframes (e.g. Google account switcher).
+ * Initialize KeyPilot with toggle functionality.
+ * Guarded against double-injection (e.g. popover re-INIT).
  */
-function setupIframeAgents() {
-  try {
-    // Only install in iframes
-    if (window === window.top) return;
-
-    // Thin idle agent: postMessage activate + F when this frame has focus.
-    installFrameClickAgent();
-
-    installPopoverIframeBridge({
-      // Frame-click-agent owns pre-KP activate keys; avoid double-clicking links.
-      enableFClickBeforeKeyPilot: false,
-      onBridgeInit: () => {
-        // Marker for debugging / future conditional behavior.
-        try { window.__KP_POPOVER_IFRAME = true; } catch { /* ignore */ }
-        try {
-          // Fire-and-forget; toggle handler will sync enabled state.
-          initializeKeyPilot();
-        } catch {
-          // ignore
-        }
-      },
-      onError: (error) => {
-        console.warn('[KeyPilot] Failed to install popover iframe bridge:', error);
-      }
-    });
-  } catch (error) {
-    console.warn('[KeyPilot] Failed to install iframe agents:', error);
-  }
-}
-
-// Initialize KeyPilot with toggle functionality
 async function initializeKeyPilot() {
   try {
-    // Create KeyPilot instance
+    if (window.__KeyPilotToggleHandler || window.keyPilot) {
+      return;
+    }
+
     const keyPilot = new KeyPilot();
 
     // Store reference globally for debugging/metrics panels (used by OverlayManager debug panel)
     // Note: this is within the content-script isolated world; it is intended for KeyPilot internals.
     window.keyPilot = keyPilot;
-    
-    // Create toggle handler and wrap KeyPilot instance
+
     const toggleHandler = new KeyPilotToggleHandler(keyPilot);
-    
-    // Initialize toggle handler (queries service worker for state)
     await toggleHandler.initialize();
-    
-    // Store reference globally for debugging
     window.__KeyPilotToggleHandler = toggleHandler;
-    
   } catch (error) {
     console.error('[KeyPilot] Failed to initialize with toggle functionality:', error);
-    
+
     // Fallback: initialize KeyPilot without toggle functionality
     try {
-      const keyPilot = new KeyPilot();
-      window.keyPilot = keyPilot;
-      console.warn('[KeyPilot] Initialized without toggle functionality as fallback');
+      if (!window.keyPilot) {
+        const keyPilot = new KeyPilot();
+        window.keyPilot = keyPilot;
+        console.warn('[KeyPilot] Initialized without toggle functionality as fallback');
+      }
     } catch (fallbackError) {
       console.error('[KeyPilot] Complete initialization failure:', fallbackError);
     }
   }
 }
 
-// If inside an iframe, install thin agents (no full KeyPilot unless popover INIT).
-setupIframeAgents();
+const isTop = (() => {
+  try {
+    return window === window.top;
+  } catch {
+    return false;
+  }
+})();
 
-// Initialize KeyPilot only in the top frame.
-if (window === window.top) {
+const forceFullInFrame = (() => {
+  try {
+    return !!(window.__KP_POPOVER_IFRAME || window.__KP_FORCE_FULL_KEYPILOT);
+  } catch {
+    return false;
+  }
+})();
+
+if (isTop) {
   (async () => {
     // Ensure we query the service worker toggle state before onboarding decides whether it can show.
     // This prevents the onboarding walkthrough from briefly appearing on new tabs when KeyPilot is OFF.
@@ -98,4 +75,7 @@ if (window === window.top) {
       console.warn('[KeyPilot] Failed to initialize onboarding:', e);
     }
   })();
+} else if (forceFullInFrame) {
+  // Injected into a popover (or explicit force) child frame.
+  void initializeKeyPilot();
 }

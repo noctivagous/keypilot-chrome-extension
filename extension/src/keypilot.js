@@ -108,6 +108,9 @@ export class KeyPilot extends EventManager {
     
     // Intersection Observer optimizations
     this.intersectionManager = new IntersectionObserverManager(this.detector);
+    // Scroll lifecycle: isScrolling + scroll-end re-query, highlight live-refresh,
+    // fixed inspector/labels. Element-styled focus/text chrome is not repainted per frame
+    // (see OptimizedScrollManager). Fixed canvas/RBush path can re-enable later.
     this.scrollManager = new OptimizedScrollManager(this.overlayManager, this.state, {
       // Live-refresh text/rectangle selection overlays every scroll frame (~60fps).
       onScrollFrame: () => this.refreshHighlightDuringScroll()
@@ -583,7 +586,9 @@ export class KeyPilot extends EventManager {
 
     this.setupPopupCommunication();
     this.setupOptimizedEventListeners();
-   this.setupContinuousCursorSync();
+    // Perpetual rAF cursor sync removed — cursor tracks via pointermove only.
+    // (Legacy setupContinuousCursorSync woke the main thread at ~60Hz on every page.)
+    this._signalEarlyInjectHandoff();
 
     // Keep floating keyboard reference visibility synced across tabs.
     await this.setupKeyboardHelpSync();
@@ -1106,8 +1111,11 @@ export class KeyPilot extends EventManager {
    * Initialize KeyPilot in enabled state
    */
   async initializeEnabledState() {
-    // Set rendering mode for focus overlays (can be 'dom', 'canvas', 'css-custom-props')
-    this.overlayManager.setRenderingMode('canvas');
+    // Primary path: element-styled focus rings (DOM-hover). Do not allocate a
+    // full-viewport canvas/DOM fixed overlay backend — that was for RBush-era
+    // fixed rings and is unused while usesElementFocusStyling() is true.
+    // Canvas remains available via setRenderingMode('canvas') for experiments.
+    this.overlayManager.setRenderingMode('dom');
 
     // Initialize debug panel if enabled
     this.overlayManager.initDebugPanel();
@@ -1132,7 +1140,7 @@ export class KeyPilot extends EventManager {
 
     await this.intersectionManager.init();
 
-    // Visual indicator: blue focus rectangles for DOM-hover targeting mode.
+    // Element focus chrome (styles the hovered node; scrolls with the page).
     try {
       if (this.overlayManager && typeof this.overlayManager.setDomHoverFocusColorsEnabled === 'function') {
         this.overlayManager.setDomHoverFocusColorsEnabled(true);
@@ -1170,24 +1178,38 @@ export class KeyPilot extends EventManager {
       this._boundScrollEndHandler = (event) => {
         const { mouseX, mouseY } = event.detail || {};
         if (typeof mouseX !== 'number' || typeof mouseY !== 'number') return;
-        // After scrolling, the viewport changes: re-seed incremental interactive discovery
-        // so locality-first discovery stays warm without a full-document scan.
-        try { this.intersectionManager?.resetDiscoveryAndSchedule?.(); } catch { /* ignore */ }
+        // Only re-seed discovery when the interactive-discovery stack is active
+        // (RBush-era; off by default under DOM-hover).
+        if (FEATURE_FLAGS.ENABLE_INTERACTIVE_DISCOVERY) {
+          try { this.intersectionManager?.resetDiscoveryAndSchedule?.(); } catch { /* ignore */ }
+        }
         // Prefer a cached event-derived "under element" hint to avoid a DOM hit-test on scroll-end.
         this.updateElementsUnderCursor(mouseX, mouseY, false, this._pendingMouse?.underHint || null);
       };
     }
     document.addEventListener('keypilot:scroll-end', this._boundScrollEndHandler);
-    
-    // Periodic performance metrics logging
-    // Enable by setting window.KEYPILOT_DEBUG = true in console
-    setInterval(() => {
-      if (window.KEYPILOT_DEBUG) {
-        this.logPerformanceMetrics();
-      }
-    }, 10000); // Log every 10 seconds when debug enabled
 
-    // Performance monitoring removed
+    // Metrics interval only while debugging (no forever timer in production).
+    if (window.KEYPILOT_DEBUG && !this._debugMetricsInterval) {
+      this._debugMetricsInterval = setInterval(() => {
+        if (window.KEYPILOT_DEBUG) this.logPerformanceMetrics();
+      }, 10000);
+    }
+  }
+
+  /**
+   * Always hand off from early-inject (stop its MO/mouse/key handlers), even when
+   * custom cursors are off and CursorManager.ensure() never runs.
+   */
+  _signalEarlyInjectHandoff() {
+    try {
+      if (window.__KP_EARLY_HANDOFF_DONE) return;
+      if (!window.KEYPILOT_EARLY) return;
+      window.__KP_EARLY_HANDOFF_DONE = true;
+      try {
+        window.dispatchEvent(new CustomEvent('keypilot-main-loaded'));
+      } catch { /* ignore */ }
+    } catch { /* ignore */ }
   }
 
   /**
@@ -1346,28 +1368,13 @@ export class KeyPilot extends EventManager {
     }
   }
 
+  /**
+   * @deprecated Perpetual rAF cursor sync removed (perf audit).
+   * Cursor position is updated from pointermove in handleMouseMove.
+   * Kept as a no-op so any external callers do not throw.
+   */
   setupContinuousCursorSync() {
-    // Fallback cursor sync for problematic sites
-    let lastSyncTime = 0;
-    const syncCursor = () => {
-      const now = Date.now();
-      
-      // Only sync every 16ms (60fps) to avoid performance issues
-      if (now - lastSyncTime > 16) {
-        const currentState = this.state.getState();
-        if (currentState.lastMouse.x !== -1 && currentState.lastMouse.y !== -1) {
-          // Force cursor position update
-          this.cursor.updatePosition(currentState.lastMouse.x, currentState.lastMouse.y);
-        }
-        lastSyncTime = now;
-      }
-      
-      // Continue syncing
-      requestAnimationFrame(syncCursor);
-    };
-    
-    // Start the sync loop
-    requestAnimationFrame(syncCursor);
+    // no-op
   }
 
   setupStyles() {
@@ -1722,8 +1729,9 @@ export class KeyPilot extends EventManager {
     // (EventManager registers its capture handler first).
     this._reflectKeyOnKeyboardHelp(e, 'down');
 
-    // Debug key presses
-    console.log('[KeyPilot] Key pressed:', e.key, 'Code:', e.code);
+    if (window.KEYPILOT_DEBUG) {
+      console.log('[KeyPilot] Key pressed:', e.key, 'Code:', e.code);
+    }
 
     // Don't interfere with modifier key combinations (Cmd+C, Ctrl+V, etc.)
     if (this.hasModifierKeys(e)) {
@@ -5394,8 +5402,6 @@ export class KeyPilot extends EventManager {
       this.overlayManager?.hideFocusOverlay?.();
       this.overlayManager?.hideDeleteOverlay?.();
       this.overlayManager?.hideEscExitLabel?.();
-      this.overlayManager?.hideActiveTextInputFrame?.();
-      this.overlayManager?.hideFocusedTextOverlay?.();
     } catch { /* ignore */ }
 
     // Onboarding / practice panels: hide only — do NOT setActive(false).

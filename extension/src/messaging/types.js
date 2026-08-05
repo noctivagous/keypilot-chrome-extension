@@ -83,7 +83,12 @@ export const MSG = Object.freeze({
   // Top-frame KeyPilot posts this when C/V lands on an <iframe> shell. Child
   // frame-click-agent runs scroll-at-point at local coordinates (nested overflow
   // first, then the frame document).
-  FRAME_SCROLL: 'KP_FRAME_SCROLL'
+  FRAME_SCROLL: 'KP_FRAME_SCROLL',
+
+  // --- Child frame-agent → SW: inject full content-bundled.js into this frame ---
+  // Used when a KeyPilot popover iframe needs full KeyPilot (cursor/overlays).
+  // Thin frame-agent-bundled.js does not include the full app.
+  INJECT_FULL_KEYPILOT_IN_FRAME: 'KP_INJECT_FULL_KEYPILOT_IN_FRAME'
 });
 
 /**

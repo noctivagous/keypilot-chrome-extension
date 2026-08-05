@@ -1,7 +1,7 @@
 /**
  * Element detection and interaction utilities
  */
-import { CLICKABLE_CATEGORY, CSS_CLASSES } from '../config/constants.js';
+import { CLICKABLE_CATEGORY, CSS_CLASSES, FEATURE_FLAGS } from '../config/constants.js';
 
 export class ElementDetector {
   constructor() {
@@ -27,8 +27,10 @@ export class ElementDetector {
     this._nativeCursorSuspendDepth = 0;
     this._nativeCursorWasHidden = false;
 
-    // Wrap addEventListener to track click handlers
-    this.setupEventListenerTracking();
+    // Optional: wrap addEventListener to track click handlers (JS-only clickables).
+    if (FEATURE_FLAGS.ENABLE_CLICK_LISTENER_TRACKING !== false) {
+      this.setupEventListenerTracking();
+    }
   }
 
   /**
@@ -728,8 +730,30 @@ export class ElementDetector {
     // Use composedContains so open-shadow tile content (archive.org collection-tile
     // inside tile-dispatcher <a>) still counts as "inside" the focused link.
     if (prev && under) {
+      // Fast path: still on the same node.
+      if (under === prev) return prev;
+
       try {
         if (this.composedContains(prev, under)) {
+          // Fast path: non-interactive descendant of prev (text/span/icon) —
+          // avoid full findClickable + getComputedStyle walks.
+          try {
+            const isPrimary =
+              (typeof under.matches === 'function' &&
+                (under.matches(this.CLICKABLE_SEL) || under.matches(this.FOCUSABLE_SEL))) ||
+              (typeof under.getAttribute === 'function' &&
+                this.CLICKABLE_ROLES.includes((under.getAttribute('role') || '').trim().toLowerCase()));
+            if (!isPrimary) {
+              const closestPrimary =
+                typeof under.closest === 'function'
+                  ? under.closest(`${this.CLICKABLE_SEL}, ${this.FOCUSABLE_SEL}, [role]`)
+                  : null;
+              if (!closestPrimary || closestPrimary === prev) {
+                return prev;
+              }
+            }
+          } catch { /* fall through to full resolve */ }
+
           const leafInside = this.findClickable(under);
           if (!leafInside || leafInside === prev || this._isNestedHoverChrome(leafInside, prev)) {
             return prev;

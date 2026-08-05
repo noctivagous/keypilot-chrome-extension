@@ -1329,9 +1329,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               break;
             }
 
-            const domain = urlObj.hostname.replace(/^www\./i, '');
+            const scheme = String(urlObj.protocol || '').toLowerCase();
+            // Origin path probes and third-party icon CDNs only work for real web pages.
+            // chrome://, chrome-extension://, edge://, about:, etc. are blocked by CSP
+            // (connect-src is 'self' https: http:) and produce noisy console errors.
+            const isHttpOrigin = scheme === 'http:' || scheme === 'https:';
+            const domain = (urlObj.hostname || '').replace(/^www\./i, '');
             const origin = urlObj.origin;
-            const cacheKey = `kp_favicon_v2_${domain}_${cacheSize}`;
+            const cacheIdentity = isHttpOrigin
+              ? (domain || origin || 'unknown')
+              : `${scheme.replace(/:$/, '')}_${domain || 'local'}`;
+            const cacheKey = `kp_favicon_v2_${cacheIdentity}_${cacheSize}`;
             const CACHE_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
             // Check cache first
@@ -1382,56 +1390,69 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               return { width: 0, height: 0 };
             };
 
+            /**
+             * Candidate tiers (probed in order). CDNs first so we can skip origin path
+             * spam when Google already returns a solid high-res icon — many hosts (e.g.
+             * chrome.google.com) block origin favicon fetches via CORS and fill the console.
+             *
+             * @type {{ url: string, priority: number }[]}
+             */
+            const primaryCandidates = [];
             /** @type {{ url: string, priority: number }[]} */
-            const candidates = [];
+            const originPathCandidates = [];
 
-            // 1) Google favicon service — often returns real high-res icons when sz is large.
-            const googleSz = Math.max(cacheSize, 128);
-            candidates.push({
-              url: `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=${googleSz}`,
-              priority: 100
-            });
-            candidates.push({
-              url: `https://www.google.com/s2/favicons?sz=${googleSz}&domain_url=${encodeURIComponent(origin)}`,
-              priority: 95
-            });
-
-            // 2) Common high-res origin icons (touch / PWA).
-            const hiResPaths = [
-              '/apple-touch-icon.png',
-              '/apple-touch-icon-precomposed.png',
-              '/apple-touch-icon-180x180.png',
-              '/apple-touch-icon-152x152.png',
-              '/android-chrome-192x192.png',
-              '/android-chrome-512x512.png',
-              '/favicon-196x196.png',
-              '/favicon-192x192.png',
-              '/favicon-128x128.png',
-              '/favicon-96x96.png',
-              '/favicon-32x32.png',
-              '/favicon.png',
-              '/favicon.ico'
-            ];
-            for (let i = 0; i < hiResPaths.length; i++) {
-              candidates.push({
-                url: `${origin}${hiResPaths[i]}`,
-                priority: 80 - i
+            if (isHttpOrigin && domain) {
+              // 1) Google favicon service — often returns real high-res icons when sz is large.
+              const googleSz = Math.max(cacheSize, 128);
+              primaryCandidates.push({
+                url: `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=${googleSz}`,
+                priority: 100
               });
-            }
+              primaryCandidates.push({
+                url: `https://www.google.com/s2/favicons?sz=${googleSz}&domain_url=${encodeURIComponent(origin)}`,
+                priority: 95
+              });
 
-            // 3) DuckDuckGo icons
-            candidates.push({
-              url: `https://icons.duckduckgo.com/ip3/${domain}.ico`,
-              priority: 40
-            });
+              // 2) DuckDuckGo icons
+              primaryCandidates.push({
+                url: `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+                priority: 40
+              });
+
+              // 3) Common high-res origin icons (touch / PWA) — only if CDNs fall short.
+              //    Never do this for chrome:// / chrome-extension:// — CSP connect-src blocks
+              //    chrome: and those fetches spam the SW console (e.g. chrome://newtab/...).
+              const hiResPaths = [
+                '/apple-touch-icon.png',
+                '/apple-touch-icon-precomposed.png',
+                '/apple-touch-icon-180x180.png',
+                '/apple-touch-icon-152x152.png',
+                '/android-chrome-192x192.png',
+                '/android-chrome-512x512.png',
+                '/favicon-196x196.png',
+                '/favicon-192x192.png',
+                '/favicon-128x128.png',
+                '/favicon-96x96.png',
+                '/favicon-32x32.png',
+                '/favicon.png',
+                '/favicon.ico'
+              ];
+              for (let i = 0; i < hiResPaths.length; i++) {
+                originPathCandidates.push({
+                  url: `${origin}${hiResPaths[i]}`,
+                  priority: 80 - i
+                });
+              }
+            }
 
             // 4) Chrome extension favicon API (visited-site cache; often only 16/32).
             //    Fetch is same-origin to the extension and always allowed by CSP.
+            //    This is the only viable source for chrome:// and other non-http(s) URLs.
             try {
               const extFav = new URL(chrome.runtime.getURL('/_favicon/'));
               extFav.searchParams.set('pageUrl', pageUrl);
               extFav.searchParams.set('size', String(Math.min(128, Math.max(32, cacheSize))));
-              candidates.push({ url: extFav.toString(), priority: 20 });
+              primaryCandidates.push({ url: extFav.toString(), priority: 20 });
             } catch {
               // ignore
             }
@@ -1487,34 +1508,43 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               }
             };
 
+            const minGoodEdge = Math.max(cacheSize, 96);
+            const isGoodEnough = (r) =>
+              Boolean(r && Math.min(r.width || 0, r.height || 0) >= minGoodEdge);
+
+            const considerResult = (r) => {
+              if (!r) return;
+              if (!best) {
+                best = r;
+                return;
+              }
+              const bestArea = (best.width || 0) * (best.height || 0);
+              const rArea = (r.width || 0) * (r.height || 0);
+              // Prefer larger pixel area; break ties with priority then bytes.
+              if (
+                rArea > bestArea ||
+                (rArea === bestArea && r.priority > best.priority) ||
+                (rArea === bestArea && r.priority === best.priority && r.bytes > best.bytes)
+              ) {
+                best = r;
+              }
+            };
+
             // Probe in small parallel batches to balance speed vs. load.
-            const batchSize = 4;
-            for (let i = 0; i < candidates.length; i += batchSize) {
-              const batch = candidates.slice(i, i + batchSize);
-              const results = await Promise.all(batch.map((c) => fetchCandidate(c)));
-
-              for (const r of results) {
-                if (!r) continue;
-                if (!best) {
-                  best = r;
-                  continue;
-                }
-                const bestArea = (best.width || 0) * (best.height || 0);
-                const rArea = (r.width || 0) * (r.height || 0);
-                // Prefer larger pixel area; break ties with priority then bytes.
-                if (
-                  rArea > bestArea ||
-                  (rArea === bestArea && r.priority > best.priority) ||
-                  (rArea === bestArea && r.priority === best.priority && r.bytes > best.bytes)
-                ) {
-                  best = r;
-                }
+            const probeBatches = async (list) => {
+              const batchSize = 4;
+              for (let i = 0; i < list.length; i += batchSize) {
+                const batch = list.slice(i, i + batchSize);
+                const results = await Promise.all(batch.map((c) => fetchCandidate(c)));
+                for (const r of results) considerResult(r);
+                if (isGoodEnough(best)) return;
               }
+            };
 
-              // Early exit if we already have a solid high-res hit.
-              if (best && Math.min(best.width || 0, best.height || 0) >= Math.max(cacheSize, 96)) {
-                break;
-              }
+            await probeBatches(primaryCandidates);
+            // Only hit origin paths when CDNs / _favicon did not yield a solid high-res icon.
+            if (!isGoodEnough(best) && originPathCandidates.length) {
+              await probeBatches(originPathCandidates);
             }
 
             if (best?.dataUrl) {
@@ -1759,6 +1789,39 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             sendResponse({
               type: MSG.ERROR,
               error: e?.message || 'Failed to relay frame scroll'
+            });
+          }
+          break;
+        }
+
+        case MSG.INJECT_FULL_KEYPILOT_IN_FRAME: {
+          // Thin frame-agent requests full KeyPilot (popover iframe after BRIDGE_INIT).
+          const tabId = sender?.tab?.id;
+          const frameId = sender?.frameId;
+          if (typeof tabId !== 'number' || typeof frameId !== 'number') {
+            sendResponse({ type: MSG.ERROR, error: 'Missing tab/frame id for inject' });
+            break;
+          }
+          // Top frame already has content-bundled via manifest.
+          if (frameId === 0) {
+            sendResponse({ type: MSG.SUCCESS, skipped: true, reason: 'top_frame' });
+            break;
+          }
+          try {
+            if (!chrome.scripting?.executeScript) {
+              sendResponse({ type: MSG.ERROR, error: 'chrome.scripting unavailable' });
+              break;
+            }
+            await chrome.scripting.executeScript({
+              target: { tabId, frameIds: [frameId] },
+              files: ['content-bundled.js']
+            });
+            sendResponse({ type: MSG.SUCCESS });
+          } catch (e) {
+            console.warn('[KeyPilot] Inject full KeyPilot into frame failed:', e?.message || e);
+            sendResponse({
+              type: MSG.ERROR,
+              error: e?.message || 'Failed to inject full KeyPilot into frame'
             });
           }
           break;

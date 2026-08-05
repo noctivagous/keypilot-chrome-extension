@@ -34,11 +34,20 @@ export class IntersectionObserverManager {
     this._domHoverAttachedElements = new Set(); // legacy per-element mode
     this._domHoverMetrics = { attached: 0, skipped: 0, delegated: 0 };
     // rAF-coalesced re-paint when SPA/Lit strips hover markers while pointer stays put.
+    // Only schedule when the marker is actually missing — not on every pointermove.
     this._domHoverRehealRAF = 0;
     this._boundDocPointerMoveReheal = () => {
       try {
         if (!this._domHoverEnabled || !this._domHoveredElement) return;
         if (this._domHoverRehealRAF) return;
+        const el = this._domHoveredElement;
+        let hasMarker = false;
+        try {
+          hasMarker =
+            (typeof el.hasAttribute === 'function' && el.hasAttribute('data-kp-focus')) ||
+            !!(el.classList && el.classList.contains('keypilot-focus-element'));
+        } catch { /* ignore */ }
+        if (hasMarker) return;
         this._domHoverRehealRAF = requestAnimationFrame(() => {
           this._domHoverRehealRAF = 0;
           try {
@@ -743,17 +752,23 @@ export class IntersectionObserverManager {
     if (!this._domHoverEnabled) return;
     if (this._domHoverDelegationAttached) return;
     try {
-      // Attach to `window` in capture phase so we're earlier than document-level capture listeners
-      // that might call stopImmediatePropagation(). Also attach mouseover/mouseout as a fallback
-      // for environments where PointerEvents are unavailable or suppressed.
-      window.addEventListener('pointerover', this._boundDocPointerOver, true);
-      window.addEventListener('pointerout', this._boundDocPointerOut, true);
-      window.addEventListener('mouseover', this._boundDocPointerOver, true);
-      window.addEventListener('mouseout', this._boundDocPointerOut, true);
-      // pointermove: re-heal focus markers after SPA wipes without a new pointerover
-      // (common on archive.org collection tiles while the pointer rests on a card).
-      window.addEventListener('pointermove', this._boundDocPointerMoveReheal, true);
+      // Capture on `window` so we run before document-level stopImmediatePropagation.
+      // Prefer PointerEvents; fall back to mouse* only when PointerEvent is missing
+      // (avoids double-firing the same hover resolve on every node cross).
+      const hasPointer = typeof PointerEvent !== 'undefined';
+      if (hasPointer) {
+        window.addEventListener('pointerover', this._boundDocPointerOver, true);
+        window.addEventListener('pointerout', this._boundDocPointerOut, true);
+        // Re-heal focus markers after SPA wipes without a new pointerover
+        // (e.g. archive.org collection tiles while the pointer rests on a card).
+        window.addEventListener('pointermove', this._boundDocPointerMoveReheal, { capture: true, passive: true });
+      } else {
+        window.addEventListener('mouseover', this._boundDocPointerOver, true);
+        window.addEventListener('mouseout', this._boundDocPointerOut, true);
+        window.addEventListener('mousemove', this._boundDocPointerMoveReheal, { capture: true, passive: true });
+      }
       window.addEventListener('blur', this._boundWindowBlur, true);
+      this._domHoverUsesPointer = hasPointer;
       this._domHoverDelegationAttached = true;
       this._domHoverMetrics.delegated++;
     } catch { /* ignore */ }
@@ -762,11 +777,17 @@ export class IntersectionObserverManager {
   _domHoverDetachDelegated() {
     if (!this._domHoverDelegationAttached) return;
     try {
-      window.removeEventListener('pointerover', this._boundDocPointerOver, true);
-      window.removeEventListener('pointerout', this._boundDocPointerOut, true);
-      window.removeEventListener('mouseover', this._boundDocPointerOver, true);
-      window.removeEventListener('mouseout', this._boundDocPointerOut, true);
-      window.removeEventListener('pointermove', this._boundDocPointerMoveReheal, true);
+      if (this._domHoverUsesPointer !== false) {
+        window.removeEventListener('pointerover', this._boundDocPointerOver, true);
+        window.removeEventListener('pointerout', this._boundDocPointerOut, true);
+        window.removeEventListener('pointermove', this._boundDocPointerMoveReheal, { capture: true, passive: true });
+      }
+      if (this._domHoverUsesPointer !== true) {
+        // Detach mouse fallbacks if they were used (or if attach path was mixed).
+        window.removeEventListener('mouseover', this._boundDocPointerOver, true);
+        window.removeEventListener('mouseout', this._boundDocPointerOut, true);
+        window.removeEventListener('mousemove', this._boundDocPointerMoveReheal, { capture: true, passive: true });
+      }
       window.removeEventListener('blur', this._boundWindowBlur, true);
     } catch { /* ignore */ }
     if (this._domHoverRehealRAF) {
@@ -1174,23 +1195,26 @@ export class IntersectionObserverManager {
   }
 
   async init() {
-    // Setup spatial index and ensure it's ready before callers rely on RBush queries.
-    // KeyPilot.enable() awaits init(); without awaiting here, the extension can re-enable
-    // with RBush still uninitialized, causing hover selection to temporarily fail.
+    // RBush spatial index is retired; stub stays for API compatibility.
     await this.setupSpatialIndex();
 
-    this.setupInteractiveElementObserver();
+    // Overlay visibility observer is cheap and still used by fixed chrome (highlight, inspector).
     this.setupOverlayObserver();
-    this.setupMutationObserver();
 
-    // Only start periodic updates after observers are set up
-    if (this.interactiveObserver && this.overlayObserver) {
-      this.startPeriodicCacheUpdate();
+    // Interactive discovery (TreeWalker + MO + IO + spatial culling) fed the old RBush
+    // hit-test path. With DOM-hover, skip unless explicitly re-enabled for experiments.
+    if (FEATURE_FLAGS.ENABLE_INTERACTIVE_DISCOVERY) {
+      this.setupInteractiveElementObserver();
+      this.setupMutationObserver();
 
-      // Start spatial culling for complex pages
-      if (this.isComplexPage()) {
-        this.startSpatialCulling();
+      if (this.interactiveObserver) {
+        this.startPeriodicCacheUpdate();
+        if (this.isComplexPage()) {
+          this.startSpatialCulling();
+        }
       }
+    } else if (window.KEYPILOT_DEBUG) {
+      console.log('[KeyPilot Debug] Interactive discovery skipped (DOM-hover path)');
     }
   }
 

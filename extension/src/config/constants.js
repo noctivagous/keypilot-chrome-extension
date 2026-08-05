@@ -100,7 +100,6 @@ export const CSS_CLASSES = {
   HIGHLIGHT_SELECTION: 'kpv2-highlight-selection',
   TEXT_FIELD_GLOW: 'kpv2-text-field-glow',
   VIEWPORT_MODAL_FRAME: 'kpv2-viewport-modal-frame',
-  ACTIVE_TEXT_INPUT_FRAME: 'kpv2-active-text-input-frame',
   ESC_EXIT_LABEL: 'kpv2-esc-exit-label',
   TEXT_FOCUS_INPUT: 'kpv2-text-focus-input',
   TEXT_FOCUS_INPUT_PARENT: 'kpv2-text-focus-input-parent',
@@ -113,8 +112,6 @@ export const CSS_CLASSES = {
   CANVAS_OVERLAY: 'kpv2-canvas-overlay',
   /** CSS custom-properties focus/delete overlay host (OverlayManager) */
   CSS_PROPS_OVERLAY: 'kpv2-css-props-overlay',
-  /** Focused text-field overlay (OverlayManager) */
-  FOCUSED_TEXT_OVERLAY: 'kpv2-focused-text-overlay',
 
   // Omnibox overlay UI
   OMNIBOX_BACKDROP: 'kpv2-omnibox-backdrop',
@@ -575,6 +572,18 @@ export const FEATURE_FLAGS = {
   // residual index code is no-op / isolated). Activation (F) still falls back to
   // elementFromPoint if nothing is hovered.
   ENABLE_DOM_HOVER_LISTENERS: true,
+
+  // Interactive element discovery (TreeWalker + MutationObserver + IntersectionObserver +
+  // spatial culling) was built to feed RBush hit-testing. With DOM-hover as the primary
+  // path it is unnecessary idle/main-thread work on every page. Keep false unless
+  // re-enabling a spatial index / fixed-overlay hit-test backend.
+  ENABLE_INTERACTIVE_DISCOVERY: false,
+
+  // Wrap EventTarget.prototype.addEventListener to track click handlers for
+  // non-semantic "JS-only" clickables. Costs a small tax on every listener
+  // registration in the content-script world. Default on to preserve hover of
+  // onclick-less delegated widgets; set false if profiling shows it matters.
+  ENABLE_CLICK_LISTENER_TRACKING: true,
 
   // ---- Focus-ring paint experiments (DOM-hover element styling) ----
   //

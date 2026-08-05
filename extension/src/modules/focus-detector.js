@@ -24,12 +24,11 @@ export class FocusDetector {
   }
 
   start() {
-    console.log('[KeyPilot] FocusDetector starting...');
+    if (window.KEYPILOT_DEBUG) console.log('[KeyPilot] FocusDetector starting...');
 
     // Listen for focus/blur events
     document.addEventListener('focusin', this._onFocusIn, true);
     document.addEventListener('focusout', this._onFocusOut, true);
-    console.log('[KeyPilot] Focus event listeners added');
 
     // Set up MutationObserver for document to catch programmatic focus changes
     this.setupDocumentObserver();
@@ -41,7 +40,7 @@ export class FocusDetector {
     // Follow-up checks for late autofocus / SPA replacements of the search field.
     setTimeout(() => {
       this.checkCurrentFocus();
-      console.log('[KeyPilot] Initial focus check completed');
+      if (window.KEYPILOT_DEBUG) console.log('[KeyPilot] Initial focus check completed');
     }, 100);
     setTimeout(() => this.checkCurrentFocus(), 500);
 
@@ -89,19 +88,21 @@ export class FocusDetector {
       ? composed
       : (this.isTextInput(deep) ? deep : null);
 
-    console.log(
-      '[KeyPilot] FocusIn event:',
-      candidate?.tagName || e.target?.tagName,
-      candidate?.type || e.target?.type || 'N/A',
-      'id:',
-      candidate?.id || e.target?.id || 'none'
-    );
+    if (window.KEYPILOT_DEBUG) {
+      console.log(
+        '[KeyPilot] FocusIn event:',
+        candidate?.tagName || e.target?.tagName,
+        candidate?.type || e.target?.type || 'N/A',
+        'id:',
+        candidate?.id || e.target?.id || 'none'
+      );
+    }
 
     if (candidate) {
-      console.log('[KeyPilot] Text input focused - setting text mode:', candidate.tagName, candidate.type || 'N/A');
+      if (window.KEYPILOT_DEBUG) {
+        console.log('[KeyPilot] Text input focused - setting text mode:', candidate.tagName, candidate.type || 'N/A');
+      }
       this.setTextFocus(candidate);
-    } else {
-      console.log('[KeyPilot] Non-text element focused - ignoring');
     }
   }
 
@@ -147,55 +148,18 @@ export class FocusDetector {
     }
   }
 
+  /**
+   * Text-mode field chrome is element-styled; fixed labels track via
+   * OptimizedScrollManager + ResizeObserver/input/mutation observers.
+   * Perpetual rAF getBoundingClientRect loops are no longer needed.
+   */
   startPositionTracking() {
-    if (this.rafId) {
-      cancelAnimationFrame(this.rafId);
-    }
-
-    // Store initial position for comparison
+    this.stopPositionTracking();
     if (this.currentFocusedElement) {
-      this.lastKnownRect = this.currentFocusedElement.getBoundingClientRect();
+      try {
+        this.lastKnownRect = this.currentFocusedElement.getBoundingClientRect();
+      } catch { /* ignore */ }
     }
-
-    const checkPosition = () => {
-      if (this.currentFocusedElement && this.state.getState().mode === 'text_focus') {
-        const currentRect = this.currentFocusedElement.getBoundingClientRect();
-
-        // Check if position OR size changed (comprehensive tracking)
-        if (this.lastKnownRect.left !== currentRect.left ||
-          this.lastKnownRect.top !== currentRect.top ||
-          this.lastKnownRect.width !== currentRect.width ||
-          this.lastKnownRect.height !== currentRect.height) {
-
-          if (window.KEYPILOT_DEBUG) {
-            console.debug('RAF position tracking detected element change:', {
-              oldRect: {
-                left: this.lastKnownRect.left,
-                top: this.lastKnownRect.top,
-                width: this.lastKnownRect.width,
-                height: this.lastKnownRect.height
-              },
-              newRect: {
-                left: currentRect.left,
-                top: currentRect.top,
-                width: currentRect.width,
-                height: currentRect.height
-              }
-            });
-          }
-
-          this.lastKnownRect = currentRect;
-          this.triggerOverlayUpdate();
-        }
-
-        // Continue the loop
-        this.rafId = requestAnimationFrame(checkPosition);
-      }
-    };
-
-    // Start the animation frame loop
-    this.rafId = requestAnimationFrame(checkPosition);
-    console.debug('Position tracking started with requestAnimationFrame');
   }
 
   stopPositionTracking() {
@@ -280,7 +244,9 @@ export class FocusDetector {
   }
 
   setTextFocus(element) {
-    console.log('[KeyPilot] Setting text focus for element:', element.tagName, element.type || 'N/A');
+    if (window.KEYPILOT_DEBUG) {
+      console.log('[KeyPilot] Setting text focus for element:', element.tagName, element.type || 'N/A');
+    }
 
     // Update current focused element reference
     this.currentFocusedElement = element;
@@ -291,18 +257,15 @@ export class FocusDetector {
     // Position cursor appropriately for text focus mode
     this.positionCursorForTextFocus(element);
 
-    // Start requestAnimationFrame loop for position tracking
+    // Snapshot rect; continuous rAF tracking removed (see startPositionTracking).
     this.startPositionTracking();
 
-    console.log('[KeyPilot] Setting state to text_focus mode');
     // Set mode and focused element in a single state update to ensure proper cursor initialization
     this.state.setState({
       mode: 'text_focus',
       focusedTextElement: element,
       focusEl: null // Clear to ensure hasClickableElement starts as false
     });
-
-    console.log('[KeyPilot] Text focus mode set successfully');
   }
 
   /**

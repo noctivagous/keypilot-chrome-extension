@@ -54,7 +54,9 @@ function preferHttpsForPreview(url) {
 export class OverlayManager {
   constructor() {
     // Rendering mode configuration: 'dom' | 'canvas' | 'css-custom-props'
-    this.renderingMode = 'canvas'; // Default to current DOM-based rendering
+    // Default: no full-viewport canvas. DOM-hover uses element styling; fixed
+    // backends are opt-in via setRenderingMode('canvas'|'css-custom-props').
+    this.renderingMode = 'dom';
 
     // Canvas rendering backend
     this.canvasOverlay = null;
@@ -75,9 +77,7 @@ export class OverlayManager {
     // Legacy aliases — kept so any lingering callers don't throw during transition
     this.deleteOverlay = null;
     this.colsOverlay = null;
-    this.focusedTextOverlay = null; // New overlay for focused text fields
     this.viewportModalFrame = null; // Viewport modal frame for text focus mode
-    this.activeTextInputFrame = null; // Pulsing frame for active text inputs
     this.escExitLabelText = null; // ESC label for text fields
     this.escExitLabelHover = null; // ESC label for hovered elements
     this.hoverClickLabelText = 'F clicks'; // Hover label for click arming in text focus mode
@@ -114,8 +114,6 @@ export class OverlayManager {
     this.overlayVisibility = {
       focus: true,
       delete: true,
-      focusedText: true,
-      activeTextInput: true,
       escExitLabel: true
     };
 
@@ -148,6 +146,18 @@ export class OverlayManager {
     this._lastFocusRect = null;
 
     /**
+     * Cache for `_findFocusClipContext` — avoids repeated getComputedStyle ancestor
+     * walks on hover thrash. Keyed by element; invalidated on resize / scroll-end TTL.
+     * @type {WeakMap<Element, { clippers: Element[], tightWrapper: Element|null, ts: number, left: number, top: number, width: number, height: number }>}
+     */
+    this._focusClipContextCache = new WeakMap();
+    /** @type {number} ms */
+    this._focusClipContextTtlMs = 500;
+    /** @type {(() => void)|null} */
+    this._focusClipInvalidateBound = null;
+    this._installFocusClipCacheInvalidation();
+
+    /**
      * Active temporary click/image effect overlays.
      * Fixed-position ghosts must be torn down when the source leaves view or the
      * page navigates — otherwise they animate alone over the next screen.
@@ -173,6 +183,16 @@ export class OverlayManager {
     if (window.KEYPILOT_DEBUG) {
       console.log('[KeyPilot Debug] DOM hover focus colors enabled:', this._useDomHoverFocusColors);
     }
+  }
+
+  /**
+   * True when focus chrome is painted on the target element (DOM-hover path)
+   * and therefore scrolls with the page. False when a fixed canvas/DOM overlay
+   * backend is responsible for the focus ring (needs scroll repositioning).
+   * @returns {boolean}
+   */
+  usesElementFocusStyling() {
+    return !!this._useDomHoverFocusColors;
   }
 
   /**
@@ -934,12 +954,6 @@ export class OverlayManager {
           } else if (overlay === this.inspectorOverlay || overlay === this.deleteOverlay) {
             this.overlayVisibility.delete = isVisible;
             overlay.style.visibility = isVisible ? 'visible' : 'hidden';
-          } else if (overlay === this.focusedTextOverlay) {
-            this.overlayVisibility.focusedText = isVisible;
-            overlay.style.visibility = isVisible ? 'visible' : 'hidden';
-          } else if (overlay === this.activeTextInputFrame) {
-            this.overlayVisibility.activeTextInput = isVisible;
-            overlay.style.visibility = isVisible ? 'visible' : 'hidden';
           } else if (overlay === this.escExitLabelText) {
             this.overlayVisibility.escExitLabel = isVisible;
             overlay.style.visibility = isVisible ? 'visible' : 'hidden';
@@ -1006,10 +1020,6 @@ export class OverlayManager {
       this._clearTextFocusElementStyling();
     }
 
-    // Always suppress the legacy orange text-focus frame overlays (we now style the element itself).
-    this.hideFocusedTextOverlay();
-    this.hideActiveTextInputFrame();
-    
     // Show viewport modal frame when in text focus mode (controlled by flag)
     this.updateViewportModalFrame(mode === 'text_focus' && FEATURE_FLAGS.SHOW_WINDOW_OUTLINE);
     
@@ -1095,12 +1105,31 @@ export class OverlayManager {
     }
   }
 
+  _installFocusClipCacheInvalidation() {
+    if (this._focusClipInvalidateBound) return;
+    this._focusClipInvalidateBound = () => {
+      try {
+        // WeakMap cannot be cleared; replace instance so entries are GC'd with elements.
+        this._focusClipContextCache = new WeakMap();
+      } catch { /* ignore */ }
+    };
+    try {
+      window.addEventListener('resize', this._focusClipInvalidateBound, { passive: true });
+    } catch { /* ignore */ }
+    try {
+      document.addEventListener('keypilot:scroll-end', this._focusClipInvalidateBound, { passive: true });
+    } catch { /* ignore */ }
+  }
+
   /**
    * Find ancestors that would clip an outer focus ring around `element`.
    *
    * Used only when FEATURE_FLAGS.ENABLE_FOCUS_CLIP_INSET and/or
    * ENABLE_FOCUS_TIGHT_WRAPPER_PROMOTION are on (see constants.js for tentative
    * purpose). Never opens page overflow — that broke carousels (IMDb).
+   *
+   * Results are cached briefly (WeakMap + TTL + geometry fingerprint) so hover
+   * thrash does not re-walk getComputedStyle ancestors every paint.
    *
    * @param {Element} element
    * @returns {{
@@ -1112,23 +1141,44 @@ export class OverlayManager {
    */
   _findFocusClipContext(element) {
     /** @type {Element[]} */
-    const clippers = [];
+    const emptyClippers = [];
     /** @type {Element|null} */
-    let tightWrapper = null;
+    const emptyTight = null;
 
     if (!element || element.nodeType !== 1) {
-      return { clippers, tightWrapper };
+      return { clippers: emptyClippers, tightWrapper: emptyTight };
     }
 
     let er;
     try {
       er = element.getBoundingClientRect();
     } catch {
-      return { clippers, tightWrapper };
+      return { clippers: emptyClippers, tightWrapper: emptyTight };
     }
     if (!er || !(er.width > 0) || !(er.height > 0)) {
-      return { clippers, tightWrapper };
+      return { clippers: emptyClippers, tightWrapper: emptyTight };
     }
+
+    // Cache hit: same element, recent, geometry nearly unchanged.
+    try {
+      const cached = this._focusClipContextCache?.get?.(element);
+      if (cached) {
+        const age = Date.now() - (cached.ts || 0);
+        const geoClose =
+          Math.abs(cached.left - er.left) < 1 &&
+          Math.abs(cached.top - er.top) < 1 &&
+          Math.abs(cached.width - er.width) < 1 &&
+          Math.abs(cached.height - er.height) < 1;
+        if (age < (this._focusClipContextTtlMs || 500) && geoClose) {
+          return { clippers: cached.clippers, tightWrapper: cached.tightWrapper };
+        }
+      }
+    } catch { /* ignore */ }
+
+    /** @type {Element[]} */
+    const clippers = [];
+    /** @type {Element|null} */
+    let tightWrapper = null;
 
     // Outer ring needs a little space outside the border box.
     const pad = 8;
@@ -1219,6 +1269,18 @@ export class OverlayManager {
 
         n = composedParent(n);
       }
+    } catch { /* ignore */ }
+
+    try {
+      this._focusClipContextCache?.set?.(element, {
+        clippers,
+        tightWrapper,
+        ts: Date.now(),
+        left: er.left,
+        top: er.top,
+        width: er.width,
+        height: er.height
+      });
     } catch { /* ignore */ }
 
     return { clippers, tightWrapper };
@@ -2359,190 +2421,6 @@ export class OverlayManager {
   createSelectionOverlaysForRange(range) {
     // Delegate to the shadow DOM-aware method
     this.createSelectionOverlaysForRangeWithShadowSupport(range);
-  }
-
-
-
-  updateFocusedTextOverlay(element) {
-    console.log('[KeyPilot] updateFocusedTextOverlay called with element:', element?.tagName, element?.type);
-
-    if (!element) {
-      console.log('[KeyPilot] No element provided, hiding overlay');
-      this.hideFocusedTextOverlay();
-      return;
-    }
-
-    console.log('[KeyPilot] Creating focused text overlay');
-    if (window.KEYPILOT_DEBUG) {
-      console.log('[KeyPilot Debug] updateFocusedTextOverlay called for:', {
-        tagName: element.tagName,
-        className: element.className,
-        id: element.id
-      });
-    }
-
-    if (!this.focusedTextOverlay) {
-      this.focusedTextOverlay = this.createElement('div', {
-        className: CSS_CLASSES.FOCUSED_TEXT_OVERLAY || 'kpv2-focused-text-overlay',
-        style: `
-          position: fixed;
-          pointer-events: none;
-          z-index: ${Z_INDEX.OVERLAYS_BELOW};
-          background: transparent;
-          will-change: transform;
-        `
-      });
-      document.body.appendChild(this.focusedTextOverlay);
-      
-      if (window.KEYPILOT_DEBUG) {
-        console.log('[KeyPilot Debug] Focused text overlay created and added to DOM:', {
-          element: this.focusedTextOverlay,
-          className: this.focusedTextOverlay.className,
-          parent: this.focusedTextOverlay.parentElement?.tagName
-        });
-      }
-      
-      // Start observing the overlay for visibility optimization
-      if (this.overlayObserver) {
-        this.overlayObserver.observe(this.focusedTextOverlay);
-      }
-    }
-
-    // Darkened orange color for focused text fields
-    const borderColor = COLORS.ORANGE_SHADOW_DARK; // Slightly more opaque
-    const shadowColor = COLORS.ORANGE_SHADOW_LIGHT; // Darker shadow
-    
-    const { strokeThickness } = this._getTextModeSettings();
-    this.focusedTextOverlay.style.border = `${strokeThickness}px solid ${borderColor}`;
-    this.focusedTextOverlay.style.boxShadow = `0 0 0 2px ${shadowColor}, 0 0 10px 2px ${COLORS.ORANGE_BORDER}`;
-
-    // Always get fresh rect to handle dynamic position/size changes
-    const rect = this.getBestRect(element);
-    
-    if (window.KEYPILOT_DEBUG) {
-      console.log('[KeyPilot Debug] Focused text overlay positioning:', {
-        rect: rect,
-        overlayExists: !!this.focusedTextOverlay,
-        overlayVisibility: this.overlayVisibility.focusedText,
-        timestamp: Date.now()
-      });
-    }
-    
-    if (rect.width > 0 && rect.height > 0) {
-      // Position the overlay with fresh coordinates
-      this.focusedTextOverlay.style.left = `${rect.left}px`;
-      this.focusedTextOverlay.style.top = `${rect.top}px`;
-      this.focusedTextOverlay.style.width = `${rect.width}px`;
-      this.focusedTextOverlay.style.height = `${rect.height}px`;
-      this.focusedTextOverlay.style.display = 'block';
-      this.focusedTextOverlay.style.visibility = 'visible';
-      
-      if (window.KEYPILOT_DEBUG) {
-        console.log('[KeyPilot Debug] Focused text overlay positioned at:', {
-          left: rect.left,
-          top: rect.top,
-          width: rect.width,
-          height: rect.height,
-          timestamp: Date.now()
-        });
-      }
-    } else {
-      if (window.KEYPILOT_DEBUG) {
-        console.log('[KeyPilot Debug] Focused text overlay hidden - invalid rect:', rect);
-      }
-      this.hideFocusedTextOverlay();
-    }
-  }
-
-  hideFocusedTextOverlay() {
-    if (this.focusedTextOverlay) {
-      this.focusedTextOverlay.style.display = 'none';
-    }
-  }
-
-  updateActiveTextInputFrame(element) {
-    if (!element) {
-      this.hideActiveTextInputFrame();
-      return;
-    }
-
-    if (window.KEYPILOT_DEBUG) {
-      console.log('[KeyPilot Debug] updateActiveTextInputFrame called for:', {
-        tagName: element.tagName,
-        className: element.className,
-        id: element.id
-      });
-    }
-
-    if (!this.activeTextInputFrame) {
-      this.activeTextInputFrame = this.createElement('div', {
-        className: CSS_CLASSES.ACTIVE_TEXT_INPUT_FRAME,
-        style: `
-          position: fixed;
-          pointer-events: none;
-          z-index: ${Z_INDEX.OVERLAYS_ABOVE};
-          background: transparent;
-          will-change: transform, opacity;
-        `
-      });
-      document.body.appendChild(this.activeTextInputFrame);
-      
-      if (window.KEYPILOT_DEBUG) {
-        console.log('[KeyPilot Debug] Active text input frame created and added to DOM:', {
-          element: this.activeTextInputFrame,
-          className: this.activeTextInputFrame.className,
-          parent: this.activeTextInputFrame.parentElement?.tagName
-        });
-      }
-      
-      // Start observing the overlay for visibility optimization
-      if (this.overlayObserver) {
-        this.overlayObserver.observe(this.activeTextInputFrame);
-      }
-    }
-
-    // Always get fresh rect to handle dynamic position/size changes
-    const rect = this.getBestRect(element);
-    
-    if (window.KEYPILOT_DEBUG) {
-      console.log('[KeyPilot Debug] Active text input frame positioning:', {
-        rect: rect,
-        overlayExists: !!this.activeTextInputFrame,
-        overlayVisibility: this.overlayVisibility.activeTextInput,
-        timestamp: Date.now()
-      });
-    }
-    
-    if (rect.width > 0 && rect.height > 0) {
-      // Position the pulsing frame with fresh coordinates
-      this.activeTextInputFrame.style.left = `${rect.left}px`;
-      this.activeTextInputFrame.style.top = `${rect.top}px`;
-      this.activeTextInputFrame.style.width = `${rect.width}px`;
-      this.activeTextInputFrame.style.height = `${rect.height}px`;
-      this.activeTextInputFrame.style.display = 'block';
-      this.activeTextInputFrame.style.visibility = 'visible';
-      
-      if (window.KEYPILOT_DEBUG) {
-        console.log('[KeyPilot Debug] Active text input frame positioned at:', {
-          left: rect.left,
-          top: rect.top,
-          width: rect.width,
-          height: rect.height,
-          timestamp: Date.now()
-        });
-      }
-    } else {
-      if (window.KEYPILOT_DEBUG) {
-        console.log('[KeyPilot Debug] Active text input frame hidden - invalid rect:', rect);
-      }
-      this.hideActiveTextInputFrame();
-    }
-  }
-
-  hideActiveTextInputFrame() {
-    if (this.activeTextInputFrame) {
-      this.activeTextInputFrame.style.display = 'none';
-    }
   }
 
   calculateLabelPosition(elementRect, labelHeight) {
@@ -3720,17 +3598,9 @@ export class OverlayManager {
     if (this.highlightManager) {
       this.highlightManager.cleanup();
     }
-    if (this.focusedTextOverlay) {
-      this.focusedTextOverlay.remove();
-      this.focusedTextOverlay = null;
-    }
     if (this.viewportModalFrame) {
       this.viewportModalFrame.remove();
       this.viewportModalFrame = null;
-    }
-    if (this.activeTextInputFrame) {
-      this.activeTextInputFrame.remove();
-      this.activeTextInputFrame = null;
     }
     if (this.escExitLabelText) {
       this.escExitLabelText.remove();
