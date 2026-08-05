@@ -131,6 +131,14 @@ export class OverlayManager {
     // visually obvious we're using browser-native hover targeting (vs RBush-driven hit-testing).
     this._useDomHoverFocusColors = false;
 
+    /**
+     * When true, the current hover focus ring is a fixed-position DOM overlay
+     * (escape hatch for overflow-clipped targets). Scroll must reposition it;
+     * `usesElementFocusStyling()` reports false in this mode.
+     * @type {boolean}
+     */
+    this._focusPaintUsesFixedOverlay = false;
+
     // Text focus styling (we style the focused input + nearby wrapper parents directly).
     this._textFocusCurrentElement = null;
     this._textFocusStyledElements = new Set();
@@ -192,7 +200,9 @@ export class OverlayManager {
    * @returns {boolean}
    */
   usesElementFocusStyling() {
-    return !!this._useDomHoverFocusColors;
+    // DOM-hover defaults to element styling, but clipped media cards fall back
+    // to a fixed overlay — report false so scroll repositions that overlay.
+    return !!this._useDomHoverFocusColors && !this._focusPaintUsesFixedOverlay;
   }
 
   /**
@@ -1083,13 +1093,33 @@ export class OverlayManager {
       try { this._clearTextHoverElementStyling(); } catch { /* ignore */ }
     }
 
-    // When DOM hover mode is enabled, style the element directly (fast path).
-    // Clipped contexts use inset rings (negative outline-offset) — not a fixed
-    // overlay — so we keep hover chrome snappy.
+    // DOM-hover paint: outline-first; fixed overlay only when element paint fails.
+    // See extension/reference-info/focus-ring-paint.md
     if (this._useDomHoverFocusColors) {
-      // Hide any fixed-position backends so we never double-paint with canvas.
       try { this.hideFocusOverlayCanvas(); } catch { /* ignore */ }
       try { this.hideFocusOverlayCSSCustomProps(); } catch { /* ignore */ }
+
+      if (!element) {
+        this._focusPaintUsesFixedOverlay = false;
+        try { this.clearElementFocusStyling(); } catch { /* ignore */ }
+        try { this.hideFocusOverlayDOM(); } catch { /* ignore */ }
+        return;
+      }
+
+      let useFixed = false;
+      try {
+        useFixed = this._shouldUseFixedFocusOverlay(element);
+      } catch {
+        useFixed = false;
+      }
+
+      if (useFixed) {
+        this._focusPaintUsesFixedOverlay = true;
+        try { this.clearElementFocusStyling(); } catch { /* ignore */ }
+        return this.updateFocusOverlayDOM(element, mode, rectOverride);
+      }
+
+      this._focusPaintUsesFixedOverlay = false;
       try { this.hideFocusOverlayDOM(); } catch { /* ignore */ }
       return this.updateFocusOverlayElementStyling(element, mode);
     }
@@ -1298,6 +1328,187 @@ export class OverlayManager {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Rect-based check: would a positive outline-offset ring around the hover
+   * target be clipped (or sit flush with zero room) inside a clipping parent?
+   *
+   * Compares `getBoundingClientRect()` of the paint target to each overflow/
+   * contain clip ancestor. If the target box is inset-or-flush with a clipper
+   * such that outline-offset > 0 has nowhere to paint, return true.
+   *
+   * This alone does **not** mean we should use a fixed overlay — inset element
+   * outlines often still work (control strip segments, toolbar buttons).
+   * See `_shouldUseFixedFocusOverlay`.
+   *
+   * @param {Element} element - hover focus target (clickable)
+   * @returns {boolean}
+   */
+  _outerFocusRingWouldBeClipped(element) {
+    if (!element || element.nodeType !== 1) return false;
+
+    let paintEl = element;
+    try {
+      paintEl = this._resolveElementForFocusStyling(element) || element;
+    } catch {
+      paintEl = element;
+    }
+
+    let er = null;
+    try {
+      er = paintEl.getBoundingClientRect();
+    } catch {
+      return false;
+    }
+    if (!er || !(er.width > 0) || !(er.height > 0)) return false;
+
+    // How much room we need outside the border box for a visible outer ring.
+    // Matches _findFocusClipContext pad; outline-offset is typically 2px plus
+    // a few px of border thickness from settings.
+    const pad = 8;
+
+    let ctx = { clippers: [], tightWrapper: null };
+    try {
+      ctx = this._findFocusClipContext(paintEl);
+    } catch {
+      ctx = { clippers: [], tightWrapper: null };
+    }
+
+    const clippers = (ctx && ctx.clippers) || [];
+    if (!clippers.length) return false;
+
+    // Ancestor rect check: any clipper whose box does not fully contain
+    // (target ± pad) means the outer ring would be cut off.
+    for (let i = 0; i < clippers.length; i++) {
+      const c = clippers[i];
+      if (!c || c.nodeType !== 1) continue;
+      let ar = null;
+      try { ar = c.getBoundingClientRect(); } catch { ar = null; }
+      if (!ar) continue;
+
+      const roomLeft = er.left - ar.left;
+      const roomTop = er.top - ar.top;
+      const roomRight = ar.right - er.right;
+      const roomBottom = ar.bottom - er.bottom;
+
+      // Flush or inset (room < pad on any side) → outer outline clipped.
+      if (
+        roomLeft < pad - 0.5 ||
+        roomTop < pad - 0.5 ||
+        roomRight < pad - 0.5 ||
+        roomBottom < pad - 0.5
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * True when **element-level** focus paint cannot show a visible ring, so we
+   * must use the fixed DOM overlay escape hatch.
+   *
+   * Policy (outline-first):
+   * - Outer outline clipped by a parent alone → still use **element inset**
+   *   outline (ENABLE_FOCUS_CLIP_INSET). Example: control-strip / keyboard
+   *   chrome buttons inside `overflow:hidden` shells. Fixed overlay would also
+   *   sit under high z-index KP chrome (strip z > OVERLAYS) and stay invisible.
+   * - Target clips itself **and** is covered by full-bleed media/pseudos →
+   *   inset outline is under the cover; use fixed overlay (TNW cards, etc.).
+   *
+   * @param {Element} element
+   * @returns {boolean}
+   */
+  _shouldUseFixedFocusOverlay(element) {
+    if (!element || element.nodeType !== 1) return false;
+
+    let paintEl = element;
+    try {
+      paintEl = this._resolveElementForFocusStyling(element) || element;
+    } catch {
+      paintEl = element;
+    }
+
+    let er = null;
+    try {
+      er = paintEl.getBoundingClientRect();
+    } catch {
+      return false;
+    }
+    if (!er || !(er.width > 0) || !(er.height > 0)) return false;
+
+    let selfClips = false;
+    try {
+      const cs = window.getComputedStyle(paintEl);
+      selfClips =
+        !!(cs && (
+          (cs.overflow && cs.overflow !== 'visible') ||
+          (cs.overflowX && cs.overflowX !== 'visible') ||
+          (cs.overflowY && cs.overflowY !== 'visible')
+        ));
+    } catch { /* ignore */ }
+
+    // Inset outline on the element is invisible only when the element itself
+    // clips and is painted over by full-bleed content.
+    if (selfClips && this._hasFullBleedCoveringContent(paintEl, er)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * True when absolute/fixed children or full-size pseudos cover most of `el`,
+   * so an inset outline paints under (or is obscured by) that content.
+   * @param {Element} el
+   * @param {DOMRect|ClientRect} [er]
+   * @returns {boolean}
+   */
+  _hasFullBleedCoveringContent(el, er) {
+    if (!el || el.nodeType !== 1) return false;
+    let box = er;
+    try {
+      if (!box) box = el.getBoundingClientRect();
+    } catch {
+      return false;
+    }
+    if (!box || !(box.width > 0) || !(box.height > 0)) return false;
+
+    const nearlyFills = (w, h) =>
+      w >= box.width * 0.85 && h >= box.height * 0.85;
+
+    try {
+      for (const pseudo of [':before', ':after']) {
+        const pcs = window.getComputedStyle(el, pseudo);
+        if (!pcs || !pcs.content || pcs.content === 'none') continue;
+        if (pcs.position !== 'absolute' && pcs.position !== 'fixed') continue;
+        const w = parseFloat(pcs.width);
+        const h = parseFloat(pcs.height);
+        if (Number.isFinite(w) && Number.isFinite(h) && nearlyFills(w, h)) {
+          return true;
+        }
+      }
+    } catch { /* ignore */ }
+
+    try {
+      const kids = el.children;
+      if (!kids) return false;
+      for (let i = 0; i < kids.length; i++) {
+        const child = kids[i];
+        if (!child || child.nodeType !== 1) continue;
+        let cs = null;
+        try { cs = window.getComputedStyle(child); } catch { cs = null; }
+        if (!cs) continue;
+        if (cs.position !== 'absolute' && cs.position !== 'fixed') continue;
+        let cr = null;
+        try { cr = child.getBoundingClientRect(); } catch { cr = null; }
+        if (cr && nearlyFills(cr.width, cr.height)) return true;
+      }
+    } catch { /* ignore */ }
+
+    return false;
   }
 
   /**
@@ -1877,9 +2088,13 @@ export class OverlayManager {
 
   // Unified hide interface that switches between rendering modes
   hideFocusOverlay() {
-    // When DOM hover mode is enabled, clear element styling only (no canvas ring).
+    // DOM-hover: clear element markers and any fixed overlay fallback used for
+    // overflow-clipped targets (media cards). Always wipe both so hybrid paint
+    // never leaves a ghost ring.
     if (this._useDomHoverFocusColors) {
+      this._focusPaintUsesFixedOverlay = false;
       this.clearElementFocusStyling({ deep: false });
+      this.hideFocusOverlayDOM();
       return;
     }
 

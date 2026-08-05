@@ -711,6 +711,101 @@ export class ElementDetector {
   }
 
   /**
+   * Large clickable sibling under non-interactive overlay chrome.
+   *
+   * Pattern (thenextweb.com visual cards, many news grids):
+   *   .card
+   *     a.card__image   ← full-bleed media link
+   *     header          ← absolute overlay (topic + title); not itself clickable
+   *       h2 > a        ← headline (separate primary target)
+   *       span.topic
+   *
+   * Ancestor-only findClickable(header|topic) returns null even though the
+   * media <a> sits under the pointer in the paint stack. Prefer that underlay
+   * so the large rectangle gets the hover ring unless the user is on the
+   * headline (or other real nested control).
+   *
+   * @param {Element} under - deepest hit node (not interactive)
+   * @returns {Element|null}
+   */
+  _findSiblingUnderlayClickable(under) {
+    if (!under || under.nodeType !== 1) return null;
+
+    let n = under;
+    let depth = 0;
+    while (n && n !== document.body && n.nodeType === 1 && depth++ < 10) {
+      const parent = n.parentElement ||
+        (typeof n.getRootNode === 'function' && n.getRootNode() instanceof ShadowRoot
+          ? n.getRootNode().host
+          : null);
+      if (!parent || parent.nodeType !== 1) break;
+      if (parent === document.body || parent === document.documentElement) break;
+
+      // Do not promote out of composite containers (nav/tablist/menu…) —
+      // those hosts often have many large interactive children.
+      try {
+        if (this.isCompositeClickContainer(parent)) {
+          n = parent;
+          continue;
+        }
+      } catch { /* ignore */ }
+
+      let underRect = null;
+      try { underRect = n.getBoundingClientRect(); } catch { underRect = null; }
+
+      try {
+        const kids = parent.children;
+        if (!kids || !kids.length) {
+          n = parent;
+          continue;
+        }
+
+        /** @type {Element|null} */
+        let best = null;
+        let bestArea = 0;
+
+        for (let i = 0; i < kids.length; i++) {
+          const sib = kids[i];
+          if (!sib || sib === n || sib.nodeType !== 1) continue;
+          // Must be a real interactive target (not cursor:pointer alone on chrome).
+          if (!this.isLikelyInteractive(sib, { allowCursor: false })) continue;
+
+          let sr = null;
+          try { sr = sib.getBoundingClientRect(); } catch { sr = null; }
+          if (!sr || sr.width < 80 || sr.height < 40) continue;
+
+          // Sibling must substantially cover the overlay chrome we hit (media
+          // underlay), not merely sit beside it in a row/column layout.
+          if (underRect) {
+            const overlapW =
+              Math.max(0, Math.min(sr.right, underRect.right) - Math.max(sr.left, underRect.left));
+            const overlapH =
+              Math.max(0, Math.min(sr.bottom, underRect.bottom) - Math.max(sr.top, underRect.top));
+            const underArea = Math.max(1, underRect.width * underRect.height);
+            const overlapArea = overlapW * overlapH;
+            // Require most of the overlay box to sit over the sibling.
+            if (overlapArea < underArea * 0.55) continue;
+            // Sibling should be at least as large as the overlay (card media).
+            if (sr.width * sr.height < underArea * 0.85) continue;
+          }
+
+          const area = sr.width * sr.height;
+          if (area > bestArea) {
+            bestArea = area;
+            best = sib;
+          }
+        }
+
+        if (best) return best;
+      } catch { /* ignore */ }
+
+      n = parent;
+    }
+
+    return null;
+  }
+
+  /**
    * Resolve the element that should receive hover focus chrome / F-activate.
    * Stabilizes against nested controls and brief nulls while still inside the
    * previous host (generic fix for list rows, tabs, cards — not site-specific).
@@ -766,12 +861,30 @@ export class ElementDetector {
           return leafInside;
         }
       } catch { /* ignore */ }
+
+      // Sticky for underlay media: previous focus is a large sibling under the
+      // non-interactive overlay the pointer is on (header/topic over card image).
+      // composedContains(prev, under) is false for siblings, so the block above
+      // does not apply — still keep the card rectangle unless a new leaf target
+      // (headline link) is under the pointer.
+      try {
+        if (!this.findClickable(under)) {
+          const underlay = this._findSiblingUnderlayClickable(under);
+          if (underlay === prev) return prev;
+        }
+      } catch { /* ignore */ }
     }
 
     if (!under) return null;
 
     const leaf = this.findClickable(under);
-    if (!leaf) return null;
+    if (!leaf) {
+      // Non-interactive overlay on top of full-bleed media/link (TNW cards, etc.).
+      const underlay = this._findSiblingUnderlayClickable(under);
+      if (!underlay) return null;
+      const underlayHost = this._findPreferableHoverHost(underlay);
+      return underlayHost || underlay;
+    }
 
     const host = this._findPreferableHoverHost(leaf);
     return host || leaf;

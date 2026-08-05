@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension - Frame Agent Bundle (child frames)
- * Generated on 2026-08-05T16:24:19.989Z
+ * Generated on 2026-08-05T19:32:36.379Z
  */
 
 (() => {
@@ -1198,21 +1198,20 @@ const FEATURE_FLAGS = {
   // onclick-less delegated widgets; set false if profiling shows it matters.
   ENABLE_CLICK_LISTENER_TRACKING: true,
 
-  // ---- Focus-ring paint experiments (DOM-hover element styling) ----
+  // ---- Focus-ring paint (DOM-hover) ----
+  // Policy: outline-first (style the clickable) for performance; fixed overlay
+  // only when geometry says the outer ring would be clipped/invisible.
+  // Full notes: extension/reference-info/focus-ring-paint.md
   //
-  // Tentative purpose of ENABLE_FOCUS_CLIP_INSET:
-  //   When an ancestor overflow/content-visibility/contain box is tight enough to
-  //   clip a positive outline-offset ring, switch to inset outline (negative
-  //   offset) so the ring paints inside the target. Does NOT mutate page overflow
-  //   (that broke IMDb carousels). Keep as a flag so we can A/B or disable if
-  //   inset misbehaves on some skins.
+  // ENABLE_FOCUS_CLIP_INSET: when still painting on the element, use negative
+  //   outline-offset if an ancestor would clip a positive outer ring. Does not
+  //   mutate page overflow (that broke IMDb carousels). Does not replace the
+  //   fixed-overlay escape hatch for full-bleed overflow:hidden media.
   //
-  // Tentative purpose of ENABLE_FOCUS_TIGHT_WRAPPER_PROMOTION:
-  //   When a clip ancestor is nearly the same size as the hover target, paint the
-  //   ring on that ancestor instead of the target (e.g. some content-visibility
-  //   row wrappers). Default OFF: on IMDb, this promotes off <a.ipc-lockup-overlay>
-  //   onto parent .ipc-poster, so the real clickable never shows data-kp-focus and
-  //   the ring can look "missing" on the overlay link the user is inspecting.
+  // ENABLE_FOCUS_TIGHT_WRAPPER_PROMOTION: paint on a same-size clip ancestor
+  //   instead of the target. Default OFF: on IMDb this promotes off
+  //   <a.ipc-lockup-overlay> onto .ipc-poster so the real clickable never shows
+  //   data-kp-focus.
   ENABLE_FOCUS_CLIP_INSET: true,
   ENABLE_FOCUS_TIGHT_WRAPPER_PROMOTION: false,
 

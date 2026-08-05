@@ -47,6 +47,7 @@ export class IntersectionObserverManager {
             (typeof el.hasAttribute === 'function' && el.hasAttribute('data-kp-focus')) ||
             !!(el.classList && el.classList.contains('keypilot-focus-element'));
         } catch { /* ignore */ }
+        // Fixed-overlay path intentionally has no data-kp-focus; reheal checks that.
         if (hasMarker) return;
         this._domHoverRehealRAF = requestAnimationFrame(() => {
           this._domHoverRehealRAF = 0;
@@ -570,9 +571,18 @@ export class IntersectionObserverManager {
   }
 
   /**
-   * Re-ensure shadow CSS and re-apply focus ring markers if a SPA wiped them
-   * while the pointer stayed on the same clickable (archive.org tiles, etc.).
+   * Re-ensure CSS and re-apply focus ring markers if a SPA wiped them
+   * while the pointer stayed on the same clickable.
    * Cheap no-op when markers are already present.
+   *
+   * Important: when hover paint uses the fixed DOM overlay escape hatch
+   * (overflow-clipped media cards — see extension/reference-info/focus-ring-paint.md),
+   * `data-kp-focus` is intentionally absent on the clickable. Do NOT treat that
+   * as a wipe and force `updateFocusOverlayElementStyling` — that fights the
+   * fixed ring, applies inset outlines under full-bleed content, and on sites
+   * with `transition: all` on the card makes the outline appear then vanish
+   * under the site's own :hover scrim.
+   *
    * @param {Element|null|undefined} el
    */
   _rehealDomHoverFocusStyling(el) {
@@ -581,6 +591,25 @@ export class IntersectionObserverManager {
     try {
       window.keyPilot?.styleManager?.ensureStylesForNode?.(el);
     } catch { /* ignore */ }
+
+    const om = window.keyPilot?.overlayManager || null;
+
+    // Fixed-overlay paint path: element markers are not used. Only re-show the
+    // fixed ring if it was torn down while the pointer stayed put.
+    try {
+      if (om && om._focusPaintUsesFixedOverlay) {
+        const fo = om.focusOverlay;
+        const hidden =
+          !fo ||
+          fo.style.display === 'none' ||
+          fo.style.visibility === 'hidden' ||
+          fo.style.opacity === '0';
+        if (hidden && typeof om.updateFocusOverlay === 'function') {
+          om.updateFocusOverlay(el);
+        }
+        return;
+      }
+    } catch { /* fall through to element reheal */ }
 
     let missingFocus = false;
     try {
@@ -592,8 +621,13 @@ export class IntersectionObserverManager {
     }
     if (!missingFocus) return;
 
+    // Prefer the full paint entrypoint so clip → fixed-overlay is re-evaluated
+    // instead of always forcing element outlines.
     try {
-      const om = window.keyPilot?.overlayManager;
+      if (om && typeof om.updateFocusOverlay === 'function') {
+        om.updateFocusOverlay(el);
+        return;
+      }
       if (om && typeof om.updateFocusOverlayElementStyling === 'function') {
         om.updateFocusOverlayElementStyling(el);
         return;

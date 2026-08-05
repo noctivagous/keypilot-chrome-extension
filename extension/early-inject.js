@@ -3402,7 +3402,7 @@
   let controlStripDesiredVisible = true;
   let controlStripCollapsed = true;
   let controlStripStorageListener = null;
-  let controlStripRefs = null; // { statusBtn, statusDot, statusLabel, modules, keyboardBtn, settingsBtn, collapseBtn, closeBtn }
+  let controlStripRefs = null; // { statusBtn, statusDot, statusLabel, modules, moveBtn, keyboardBtn, settingsBtn, collapseBtn, closeBtn }
   let mainLoadedListenerInstalled = false;
 
   function setupMainLoadedHandoffListener() {
@@ -4583,11 +4583,37 @@
       const existing = document.querySelector('.kp-control-strip[data-kp-early-control-strip="true"]');
       if (existing && existing.isConnected) {
         controlStripRoot = existing;
+        const modulesEl = existing.querySelector('[data-kp-control-strip-modules="true"]');
+        let moveBtn = existing.querySelector('[data-kp-control-strip-move="true"]');
+        // Older early shells (or a race before this segment existed) may lack move.
+        if (modulesEl && !moveBtn) {
+          try {
+            moveBtn = createEarlyControlStripSegmentButton({
+              ariaLabel: 'Move control strip',
+              title: 'Drag to move',
+              text: '⠿',
+              compact: true
+            });
+            moveBtn.setAttribute('data-kp-control-strip-move', 'true');
+            try {
+              moveBtn.style.cursor = 'grab';
+              moveBtn.style.touchAction = 'none';
+              moveBtn.style.letterSpacing = '0';
+              moveBtn.style.fontSize = '12px';
+              moveBtn.style.opacity = '0.85';
+            } catch { /* ignore */ }
+            moveBtn.addEventListener('click', (e) => {
+              try { e.preventDefault(); e.stopPropagation(); } catch { /* ignore */ }
+            });
+            modulesEl.insertBefore(moveBtn, modulesEl.firstChild);
+          } catch { /* ignore */ }
+        }
         controlStripRefs = {
           statusBtn: existing.querySelector('[data-kp-control-strip-status="true"]'),
           statusDot: existing.querySelector('[data-kp-control-strip-status-dot="true"]'),
           statusLabel: existing.querySelector('[data-kp-control-strip-status-label="true"]'),
-          modules: existing.querySelector('[data-kp-control-strip-modules="true"]'),
+          modules: modulesEl,
+          moveBtn: existing.querySelector('[data-kp-control-strip-move="true"]'),
           keyboardBtn: existing.querySelector('[data-kp-control-strip-keyboard="true"]'),
           settingsBtn: existing.querySelector('[data-kp-control-strip-settings="true"]'),
           collapseBtn: existing.querySelector('[data-kp-control-strip-collapse="true"]'),
@@ -4689,6 +4715,26 @@
         flex: '0 0 auto'
       });
 
+      // Drag grip (expanded only). Full drag/snap is bound by the main ControlStrip
+      // after handoff; include the segment here so the shell matches post-handoff layout.
+      const moveBtn = createEarlyControlStripSegmentButton({
+        ariaLabel: 'Move control strip',
+        title: 'Drag to move',
+        text: '⠿',
+        compact: true
+      });
+      moveBtn.setAttribute('data-kp-control-strip-move', 'true');
+      try {
+        moveBtn.style.cursor = 'grab';
+        moveBtn.style.touchAction = 'none';
+        moveBtn.style.letterSpacing = '0';
+        moveBtn.style.fontSize = '12px';
+        moveBtn.style.opacity = '0.85';
+      } catch { /* ignore */ }
+      moveBtn.addEventListener('click', (e) => {
+        try { e.preventDefault(); e.stopPropagation(); } catch { /* ignore */ }
+      });
+
       const keyboardBtn = createEarlyControlStripSegmentButton({
         ariaLabel: 'Toggle keyboard reference',
         title: 'Keyboard reference',
@@ -4703,6 +4749,7 @@
       });
       settingsBtn.setAttribute('data-kp-control-strip-settings', 'true');
 
+      modules.appendChild(moveBtn);
       modules.appendChild(keyboardBtn);
       modules.appendChild(settingsBtn);
 
@@ -4783,6 +4830,7 @@
         statusDot,
         statusLabel,
         modules,
+        moveBtn,
         keyboardBtn,
         settingsBtn,
         collapseBtn,
