@@ -2,7 +2,7 @@
  * Floating KeyPilot onboarding walkthrough panel (content-script friendly).
  * Shell + checklist DOM live in onboarding-shared.js (shared with early-inject).
  */
-import { CSS_CLASSES, Z_INDEX } from '../config/constants.js';
+import { COLORS, CSS_CLASSES, Z_INDEX } from '../config/constants.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
 import {
   ONBOARDING_DEFAULT_TITLE,
@@ -17,6 +17,11 @@ import {
   updateOnboardingChrome
 } from './onboarding-shared.js';
 
+const TOGGLE_OFF_ARROW_STYLE_ID = 'kp-onboarding-toggle-off-arrow-style-v3';
+const TOGGLE_OFF_ARROW_SCALE = 1.5;
+/** Extra left nudge from the default “just past segment edge” placement (px). */
+const TOGGLE_OFF_ARROW_LEFT_NUDGE_PX = 5;
+
 function stripListeners(btn) {
   try {
     if (!btn || !btn.parentNode) return btn;
@@ -26,6 +31,106 @@ function stripListeners(btn) {
   } catch {
     return btn;
   }
+}
+
+/**
+ * Resolve the non-text click-focus accent used for hover chrome.
+ * @returns {string}
+ */
+function resolveClickFocusColor() {
+  try {
+    const kp = window.__KeyPilotInstance;
+    const focusColor = kp?._settings?.clickMode?.focusColor;
+    // Match non-text focus overlay accents (overlay-manager palette).
+    if (focusColor === 'green') {
+      return 'rgba(0,180,0,0.95)';
+    }
+  } catch { /* ignore */ }
+  return COLORS.FOCUS_BLUE || 'rgba(33,150,243,0.95)';
+}
+
+/**
+ * Soft outer glow tint derived from the solid focus accent.
+ * @param {string} accent
+ * @returns {string}
+ */
+function resolveClickFocusGlow(accent) {
+  const c = String(accent || '');
+  if (c.includes('0,180,0') || c.includes('0, 180, 0') || /green/i.test(c)) {
+    return 'rgba(80,255,120,0.95)';
+  }
+  // Default / blue focus
+  return 'rgba(120,210,255,0.95)';
+}
+
+function ensureToggleOffArrowStyles() {
+  try {
+    if (document.getElementById(TOGGLE_OFF_ARROW_STYLE_ID)) return;
+    const style = document.createElement('style');
+    style.id = TOGGLE_OFF_ARROW_STYLE_ID;
+    style.textContent = `
+@keyframes kp-onboarding-toggle-off-arrow-osc {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(6px); }
+}
+@keyframes kp-onboarding-toggle-off-arrow-glow {
+  0%, 100% {
+    filter:
+      drop-shadow(0 0 2px #fff)
+      drop-shadow(0 0 6px var(--kp-arrow-accent, currentColor))
+      drop-shadow(0 0 14px var(--kp-arrow-glow, currentColor))
+      drop-shadow(0 0 22px var(--kp-arrow-glow, currentColor))
+      drop-shadow(0 1px 2px rgba(0,0,0,0.45));
+  }
+  50% {
+    filter:
+      drop-shadow(0 0 3px #fff)
+      drop-shadow(0 0 10px var(--kp-arrow-accent, currentColor))
+      drop-shadow(0 0 20px var(--kp-arrow-glow, currentColor))
+      drop-shadow(0 0 32px var(--kp-arrow-glow, currentColor))
+      drop-shadow(0 1px 2px rgba(0,0,0,0.45));
+  }
+}
+[data-kp-onboarding-toggle-off-arrow="true"] {
+  animation:
+    kp-onboarding-toggle-off-arrow-osc 1.15s ease-in-out infinite,
+    kp-onboarding-toggle-off-arrow-glow 1.5s ease-in-out infinite;
+  will-change: transform, filter;
+}
+[data-kp-onboarding-toggle-off-arrow="true"] svg {
+  display: block;
+  overflow: visible;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-kp-onboarding-toggle-off-arrow="true"] {
+    animation: none;
+    filter:
+      drop-shadow(0 0 2px #fff)
+      drop-shadow(0 0 8px var(--kp-arrow-accent, currentColor))
+      drop-shadow(0 0 16px var(--kp-arrow-glow, currentColor))
+      drop-shadow(0 1px 2px rgba(0,0,0,0.45));
+  }
+}
+`;
+    (document.head || document.documentElement).appendChild(style);
+  } catch { /* ignore */ }
+}
+
+/**
+ * Apply accent + glow CSS vars on the arrow host.
+ * @param {HTMLElement} el
+ * @param {string} accent
+ */
+function applyToggleOffArrowColor(el, accent) {
+  if (!el) return;
+  const color = String(accent || resolveClickFocusColor());
+  const glow = resolveClickFocusGlow(color);
+  try {
+    el.style.color = color;
+    el.style.fill = color;
+    el.style.setProperty('--kp-arrow-accent', color);
+    el.style.setProperty('--kp-arrow-glow', glow);
+  } catch { /* ignore */ }
 }
 
 export class OnboardingPanel {
@@ -77,6 +182,13 @@ export class OnboardingPanel {
     this._onReEnableTipOutside = this._onReEnableTipOutside.bind(this);
     this._onReEnableTipResize = this._onReEnableTipResize.bind(this);
     this._reEnableTipAnchor = null;
+
+    // Large focus-colored arrow pointing at the control strip while the
+    // "turn KeyPilot completely off" task is the next incomplete step.
+    this._toggleOffArrowEl = null;
+    this._toggleOffArrowAnchor = null;
+    this._toggleOffArrowRaf = 0;
+    this._onToggleOffArrowReposition = this._onToggleOffArrowReposition.bind(this);
   }
 
   isVisible() {
@@ -90,6 +202,7 @@ export class OnboardingPanel {
   }
 
   hide() {
+    this.hideToggleOffArrow();
     setOnboardingPanelVisible(this.root, false);
   }
 
@@ -249,6 +362,151 @@ export class OnboardingPanel {
 
   _onReEnableTipResize() {
     this._positionReEnableTip();
+  }
+
+  /**
+   * Large arrow to the right of the control strip (points left at the strip’s
+   * right edge). Only for the toggle-off onboarding step; call hide when the
+   * step completes or changes.
+   *
+   * @param {Object} [opts]
+   * @param {Element|null} [opts.anchorEl] ON/OFF segment (preferred) or strip root
+   * @param {string} [opts.color] CSS color; defaults to click-focus accent
+   */
+  showToggleOffArrow({ anchorEl = null, color = '' } = {}) {
+    if (window !== window.top) return;
+
+    const anchor =
+      anchorEl ||
+      document.querySelector('.kp-control-strip [data-kp-control-strip-status="true"]') ||
+      document.querySelector('[data-kp-control-strip-status="true"]') ||
+      document.querySelector('.kp-control-strip') ||
+      document.querySelector('[data-kp-control-strip="true"]');
+    if (!anchor || !anchor.isConnected) {
+      this.hideToggleOffArrow();
+      return;
+    }
+
+    // Already showing for the same anchor — refresh color/position only.
+    if (this._toggleOffArrowEl && this._toggleOffArrowEl.isConnected && this._toggleOffArrowAnchor === anchor) {
+      applyToggleOffArrowColor(this._toggleOffArrowEl, color || resolveClickFocusColor());
+      this._positionToggleOffArrow();
+      return;
+    }
+
+    this.hideToggleOffArrow();
+    ensureToggleOffArrowStyles();
+
+    const accent = String(color || resolveClickFocusColor());
+    const el = document.createElement('div');
+    el.setAttribute('data-kp-onboarding-toggle-off-arrow', 'true');
+    el.setAttribute('aria-hidden', 'true');
+    Object.assign(el.style, {
+      position: 'fixed',
+      zIndex: String((Z_INDEX.ONBOARDING_PANEL || ONBOARDING_PANEL_Z_FALLBACK) + 3),
+      width: '28px',
+      height: '28px',
+      margin: '0',
+      padding: '0',
+      pointerEvents: 'none',
+      lineHeight: '0'
+    });
+    applyToggleOffArrowColor(el, accent);
+
+    // Left-pointing solid arrow (currentColor = click-focus accent). Glow via CSS filter.
+    el.innerHTML =
+      '<svg viewBox="0 0 32 28" width="100%" height="100%" focusable="false" aria-hidden="true">' +
+      '<path d="M14 2 L2 14 L14 26 L14 19 L30 19 L30 9 L14 9 Z" fill="currentColor"/>' +
+      '</svg>';
+
+    (document.body || document.documentElement).appendChild(el);
+    this._toggleOffArrowEl = el;
+    this._toggleOffArrowAnchor = anchor;
+    this._positionToggleOffArrow();
+    this._bindToggleOffArrowWatch();
+  }
+
+  hideToggleOffArrow() {
+    this._unbindToggleOffArrowWatch();
+    try {
+      if (this._toggleOffArrowEl && this._toggleOffArrowEl.parentNode) {
+        this._toggleOffArrowEl.parentNode.removeChild(this._toggleOffArrowEl);
+      }
+    } catch { /* ignore */ }
+    this._toggleOffArrowEl = null;
+    this._toggleOffArrowAnchor = null;
+  }
+
+  isToggleOffArrowVisible() {
+    return !!(this._toggleOffArrowEl && this._toggleOffArrowEl.isConnected);
+  }
+
+  _bindToggleOffArrowWatch() {
+    this._unbindToggleOffArrowWatch();
+    try {
+      window.addEventListener('resize', this._onToggleOffArrowReposition, true);
+      window.addEventListener('scroll', this._onToggleOffArrowReposition, true);
+    } catch { /* ignore */ }
+    // Strip can be dragged/collapsed without firing window resize — keep aligned.
+    const tick = () => {
+      this._positionToggleOffArrow();
+      if (this._toggleOffArrowEl && this._toggleOffArrowEl.isConnected) {
+        this._toggleOffArrowRaf = window.requestAnimationFrame(tick);
+      } else {
+        this._toggleOffArrowRaf = 0;
+      }
+    };
+    try {
+      this._toggleOffArrowRaf = window.requestAnimationFrame(tick);
+    } catch {
+      this._toggleOffArrowRaf = 0;
+    }
+  }
+
+  _unbindToggleOffArrowWatch() {
+    try {
+      window.removeEventListener('resize', this._onToggleOffArrowReposition, true);
+      window.removeEventListener('scroll', this._onToggleOffArrowReposition, true);
+    } catch { /* ignore */ }
+    if (this._toggleOffArrowRaf) {
+      try { window.cancelAnimationFrame(this._toggleOffArrowRaf); } catch { /* ignore */ }
+      this._toggleOffArrowRaf = 0;
+    }
+  }
+
+  _onToggleOffArrowReposition() {
+    this._positionToggleOffArrow();
+  }
+
+  _positionToggleOffArrow() {
+    const el = this._toggleOffArrowEl;
+    const anchor = this._toggleOffArrowAnchor;
+    if (!el || !anchor || !anchor.isConnected) {
+      if (el && (!anchor || !anchor.isConnected)) this.hideToggleOffArrow();
+      return;
+    }
+    try {
+      if (anchor.hidden || (anchor.style && anchor.style.display === 'none')) {
+        el.style.visibility = 'hidden';
+        return;
+      }
+      const rect = anchor.getBoundingClientRect();
+      if (!rect || rect.width < 2 || rect.height < 2) {
+        el.style.visibility = 'hidden';
+        return;
+      }
+      el.style.visibility = 'visible';
+      // Base size matches segment height, then scale up for visibility.
+      const baseH = Math.max(24, Math.round(rect.height || 28));
+      const h = Math.round(baseH * TOGGLE_OFF_ARROW_SCALE);
+      const w = Math.round(baseH * 1.15 * TOGGLE_OFF_ARROW_SCALE);
+      const gap = 4;
+      el.style.height = `${h}px`;
+      el.style.width = `${w}px`;
+      el.style.top = `${Math.round(rect.top + rect.height / 2 - h / 2)}px`;
+      // Sit just past the ON/OFF segment’s right edge; nudge left 5px.
+      el.style.left = `${Math.round(rect.right + gap - TOGGLE_OFF_ARROW_LEFT_NUDGE_PX)}px`;
+    } catch { /* ignore */ }
   }
 
   /**

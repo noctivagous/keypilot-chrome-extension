@@ -4619,7 +4619,8 @@
         zIndex: String(Z_CONTROL_STRIP),
         background: 'rgba(10, 11, 14, 0.98)',
         color: 'rgba(248, 250, 252, 0.95)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
+        // Match onboarding panel rim (light gray outline).
+        border: '1px solid rgba(255,255,255,0.12)',
         borderRadius: '4px',
         boxShadow: '0 8px 24px rgba(0,0,0,0.5), 0 1px 4px rgba(0,0,0,0.35)',
         fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
@@ -4893,7 +4894,8 @@
       zIndex: String(Z_FLOATING_KEYBOARD_HELP),
       background: 'rgba(10, 11, 14, 0.98)',
       color: 'rgba(248, 250, 252, 0.95)',
-      border: '1px solid rgba(255, 255, 255, 0.08)',
+      // Match onboarding panel rim (light gray outline).
+      border: '1px solid rgba(255,255,255,0.12)',
       borderRadius: '4px',
       boxShadow: '0 16px 40px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35)',
       fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',

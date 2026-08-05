@@ -259,6 +259,11 @@ export class ControlStrip {
           this._collapseBtn = collapseBtn;
           this._closeBtn = closeBtn;
 
+          // Keep shell rim in sync with current chrome (early inject may be older).
+          try {
+            this.root.style.border = '1px solid rgba(255,255,255,0.12)';
+          } catch { /* ignore */ }
+
           this._ensureMoveHandle();
           this._bindButtonHandlers();
           this._renderStatus();
@@ -291,7 +296,8 @@ export class ControlStrip {
       zIndex: String(Z_INDEX.CONTROL_STRIP || 2147483025),
       background: 'rgba(10, 11, 14, 0.98)',
       color: 'rgba(248, 250, 252, 0.95)',
-      border: '1px solid rgba(255, 255, 255, 0.08)',
+      // Match onboarding panel rim (light gray outline).
+      border: '1px solid rgba(255,255,255,0.12)',
       borderRadius: '4px',
       boxShadow: '0 8px 24px rgba(0,0,0,0.5), 0 1px 4px rgba(0,0,0,0.35)',
       fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',

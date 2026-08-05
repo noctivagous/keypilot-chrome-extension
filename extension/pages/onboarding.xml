@@ -3,7 +3,8 @@
   <slide id="basic_navigation" title="Welcome to KeyPilot">
    <onEnter type="overlay"
              title="Welcome to KeyPilot"
-             message="We'll show you how to use KeyPilot one step at a time." />
+             message="We'll show you how to use KeyPilot one step at a time."
+             primaryText="OK" />
    
     <task id="click_link" label="Hover over a link and press the `F` key to click it.">
       <when type="action" action="activate" target="link" />
@@ -14,7 +15,8 @@
     <task id="keyboard_key_info" label="Notice the Keyboard Reference window below. Hover over one of its keys to see what it does.">
       <when type="action" action="hover" target="keyboardHelpKey" />
     </task>
-    <!-- Turn-off step: after OFF, a tip bubble points at the control strip ("click again to turn on").
+    <!-- Turn-off step: while this is the next task, a large focus-colored arrow points at the
+         ON/OFF segment's right edge. After OFF, a tip bubble points at the strip ("click again to turn on").
          (Former Alt+K step removed; re-enable is guided by the tip bubble, not a separate task.) -->
     <task id="toggle_extension_off" label="Notice the control strip above that says `ON`. Click it to turn KeyPilot completely off.">
       <when type="action" action="toggleExtension" change="off" />

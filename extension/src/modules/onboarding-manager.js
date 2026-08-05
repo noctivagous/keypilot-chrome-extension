@@ -827,6 +827,7 @@ export class OnboardingManager {
       if (next) this._render();
       else {
         this.hideReEnableTip();
+        this.hideToggleOffArrow();
         this.panel.hide();
         this.practicePanel.hide();
         await this._persist();
@@ -835,7 +836,10 @@ export class OnboardingManager {
     }
     this.active = next;
     this._isTransitioning = false;
-    if (!next) this.hideReEnableTip();
+    if (!next) {
+      this.hideReEnableTip();
+      this.hideToggleOffArrow();
+    }
     await this._persist();
     this._render();
   }
@@ -863,12 +867,14 @@ export class OnboardingManager {
 
     // Never show onboarding UI while KeyPilot is disabled.
     if (!this._isKeyPilotEnabled()) {
+      this.hideToggleOffArrow();
       this.panel.hide();
       this.practicePanel.hide();
       return;
     }
 
     if (!this.active || this.progress.completed || !slide) {
+      this.hideToggleOffArrow();
       this.panel.hide();
       this.practicePanel.hide();
       return;
@@ -996,6 +1002,9 @@ export class OnboardingManager {
       this.practicePanel.hide();
     }
 
+    // Control-strip arrow only for the next incomplete "turn off" task.
+    this._syncToggleOffArrow();
+
     // Fire onEnter actions once per slide.
     if (!this.progress.onEnterDoneSlideIds.includes(slide.id)) {
       this.progress.onEnterDoneSlideIds.push(slide.id);
@@ -1014,7 +1023,7 @@ export class OnboardingManager {
       if (entry.type === 'overlay') {
         const title = String(entry.title || 'Nice!').trim();
         const message = String(entry.message || entry.text || '').trim();
-        const primaryText = String(entry.primaryText || entry.primary || 'Got it').trim();
+        const primaryText = String(entry.primaryText || entry.primary || 'OK').trim();
         const secondaryText = String(entry.secondaryText || entry.secondary || '').trim();
         const effect = String(entry.effect || '').trim().toLowerCase();
         try {
@@ -1148,6 +1157,7 @@ export class OnboardingManager {
     const slide = this._getCurrentSlide();
     if (!slide) {
       if (action === 'toggleExtension' && detail.enabled === false) {
+        this.hideToggleOffArrow();
         this.panel.hide();
         this.practicePanel.hide();
       }
@@ -1201,8 +1211,9 @@ export class OnboardingManager {
       this._persist(); // best-effort
     }
 
-    // Turned off: hide walkthrough, keep active, optional tip on the control strip.
+    // Turned off: hide walkthrough + turn-off arrow, keep active, optional tip on the strip.
     if (action === 'toggleExtension' && detail.enabled === false) {
+      this.hideToggleOffArrow();
       this.panel.hide();
       this.practicePanel.hide();
       if (offTaskWasOpen) {
@@ -1238,6 +1249,8 @@ export class OnboardingManager {
 
   showReEnableTip() {
     try {
+      // Turn-off arrow is only for the ON step; never stack it with the re-enable tip.
+      this.hideToggleOffArrow();
       const anchor =
         document.querySelector('.kp-control-strip [data-kp-control-strip-status="true"]') ||
         document.querySelector('.kp-control-strip');
@@ -1250,6 +1263,53 @@ export class OnboardingManager {
 
   hideReEnableTip() {
     try { this.panel?.hideReEnableTip?.(); } catch { /* ignore */ }
+  }
+
+  showToggleOffArrow() {
+    try {
+      // Prefer the ON/OFF segment so the arrow sits just past that control, not the whole strip.
+      const anchor =
+        document.querySelector('.kp-control-strip [data-kp-control-strip-status="true"]') ||
+        document.querySelector('[data-kp-control-strip-status="true"]') ||
+        document.querySelector('.kp-control-strip') ||
+        document.querySelector('[data-kp-control-strip="true"]');
+      this.panel?.showToggleOffArrow?.({ anchorEl: anchor });
+    } catch { /* ignore */ }
+  }
+
+  hideToggleOffArrow() {
+    try { this.panel?.hideToggleOffArrow?.(); } catch { /* ignore */ }
+  }
+
+  /**
+   * Arrow only while the next incomplete task is "click strip to turn off".
+   * Hidden on click (task complete / KP off), step change, or panel hide.
+   */
+  _syncToggleOffArrow() {
+    try {
+      if (!this.active || this.progress.completed || !this._isKeyPilotEnabled()) {
+        this.hideToggleOffArrow();
+        return;
+      }
+      const slide = this._getCurrentSlide();
+      if (!slide) {
+        this.hideToggleOffArrow();
+        return;
+      }
+      const completed = new Set(
+        Array.isArray(this.progress.completedTaskIds)
+          ? this.progress.completedTaskIds.map(String)
+          : []
+      );
+      const nextTask = (slide.tasks || []).find((t) => t?.id && !completed.has(String(t.id)));
+      if (nextTask && String(nextTask.id) === 'toggle_extension_off') {
+        this.showToggleOffArrow();
+      } else {
+        this.hideToggleOffArrow();
+      }
+    } catch {
+      try { this.hideToggleOffArrow(); } catch { /* ignore */ }
+    }
   }
 
   _isSlideComplete(slide, completedTaskIdsSet) {
