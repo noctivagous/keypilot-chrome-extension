@@ -159,6 +159,8 @@ export class OnboardingPanel {
     this._overlaySecondaryBtn = null;
     this._overlayOnPrimary = null;
     this._overlayOnSecondary = null;
+    /** True while the modal overlay (e.g. welcome) is open and not yet accepted. */
+    this._overlayOpen = false;
     this._lastRenderedSlideId = null;
     this._lastRenderedSlideIndex = null;
     this._onRequestClose = typeof onRequestClose === 'function' ? onRequestClose : null;
@@ -193,6 +195,22 @@ export class OnboardingPanel {
 
   isVisible() {
     return !!(this.root && this.root.isConnected && this.root.hidden === false);
+  }
+
+  /**
+   * Whether the modal slide overlay is currently open (user has not accepted it yet).
+   * While true, checklist tasks must not be checked off.
+   * @returns {boolean}
+   */
+  isOverlayOpen() {
+    if (this._overlayOpen) return true;
+    try {
+      if (this.root?.dataset?.kpOnboardingOverlayOpen === 'true') return true;
+      if (this._overlayEl && this._overlayEl.hidden === false && this._overlayEl.style?.display !== 'none') {
+        return true;
+      }
+    } catch { /* ignore */ }
+    return false;
   }
 
   show() {
@@ -650,10 +668,12 @@ export class OnboardingPanel {
       this._overlaySecondaryBtn.hidden = !showSecondary;
     } catch { /* ignore */ }
 
+    this._overlayOpen = true;
     setOnboardingOverlayOpen(this._overlayEl, true, this.root);
   }
 
   hideOverlay() {
+    this._overlayOpen = false;
     if (!this._overlayEl) return;
     setOnboardingOverlayOpen(this._overlayEl, false, this.root);
     this._overlayOnPrimary = null;
@@ -759,6 +779,7 @@ export class OnboardingPanel {
       // Normalize visibility if overlay already existed (hostile pages may override [hidden]).
       try {
         const isHidden = this._overlayEl.hidden === true || this._overlayEl.hasAttribute('hidden');
+        this._overlayOpen = !isHidden;
         setOnboardingOverlayOpen(this._overlayEl, !isHidden, this.root);
       } catch { /* ignore */ }
     } catch {
@@ -843,6 +864,8 @@ export class OnboardingPanel {
       e.stopPropagation();
     } catch { /* ignore */ }
     try {
+      // Block checklist interaction until the modal overlay has been accepted.
+      if (this.isOverlayOpen()) return;
       const row = e?.currentTarget || e?.target?.closest?.('[data-kp-onboarding-task-id]');
       if (!row) return;
       if (row.getAttribute('data-kp-onboarding-uncheckable') !== 'true') return;

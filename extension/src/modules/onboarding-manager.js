@@ -565,6 +565,8 @@ export class OnboardingManager {
   async _applyTransientActionHeuristicIfNeeded() {
     try {
       if (!this.active || this.progress.completed) return;
+      // Don't apply recovered completions under an unaccepted intro overlay.
+      if (this._isOverlayBlockingTasks()) return;
 
       const data = await storageGetTransient();
       const rec = data && data[TRANSIENT_KEYS.LAST_ACTION];
@@ -683,6 +685,7 @@ export class OnboardingManager {
     try {
       // Only relevant for onboarding being active/incomplete.
       if (!this.active || this.progress.completed) return;
+      if (this._isOverlayBlockingTasks()) return;
 
       const navEntries = (typeof performance !== 'undefined' && performance.getEntriesByType)
         ? performance.getEntriesByType('navigation')
@@ -1139,6 +1142,19 @@ export class OnboardingManager {
     }
   }
 
+  /**
+   * True while the panel's modal overlay is up (welcome / slide intro).
+   * Checklist tasks must not be checked off until the user accepts it.
+   * @returns {boolean}
+   */
+  _isOverlayBlockingTasks() {
+    try {
+      return !!this.panel?.isOverlayOpen?.();
+    } catch {
+      return false;
+    }
+  }
+
   _onActionEvent(ev) {
     if (!this.active || this.progress.completed) return;
 
@@ -1156,6 +1172,21 @@ export class OnboardingManager {
 
     const slide = this._getCurrentSlide();
     if (!slide) {
+      if (action === 'toggleExtension' && detail.enabled === false) {
+        this.hideToggleOffArrow();
+        this.panel.hide();
+        this.practicePanel.hide();
+      }
+      if (action === 'toggleExtension' && detail.enabled === true) {
+        this.hideReEnableTip();
+        this._render({ reason: 'toggleOn' });
+      }
+      return;
+    }
+
+    // Do not check off tasks while the welcome / intro overlay is still open.
+    if (this._isOverlayBlockingTasks()) {
+      // Still handle toggleExtension UI (hide panel when KP turns off) without completing tasks.
       if (action === 'toggleExtension' && detail.enabled === false) {
         this.hideToggleOffArrow();
         this.panel.hide();
@@ -1433,6 +1464,7 @@ export class OnboardingManager {
   _autoCompleteToggleOffIfAlreadyDisabled() {
     if (!this.active || this.progress.completed) return false;
     if (this._isKeyPilotEnabled()) return false;
+    if (this._isOverlayBlockingTasks()) return false;
 
     const slide = this._getCurrentSlide();
     if (!slide) return false;
@@ -1482,6 +1514,9 @@ export class OnboardingManager {
           const prevMode = prevState?.mode || this._prevMode || null;
           const nextMode = nextState?.mode || null;
           this._prevMode = nextMode;
+
+          // Block mode-based task completion until the intro overlay is accepted.
+          if (this._isOverlayBlockingTasks()) return;
 
           let changed = false;
           const completed = new Set(this.progress.completedTaskIds);
