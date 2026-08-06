@@ -55,6 +55,12 @@ export const CSS_CLASSES = {
   HIDDEN: 'kpv2-hidden',
   RIPPLE: 'kpv2-ripple',
   FOCUS_OVERLAY: 'kpv2-focus-overlay',
+  /**
+   * In-target absolute focus ring (DOM-hover escape hatch): mounted as last
+   * child of the clickable/host with local max z-index + 1. Co-located paint —
+   * scrolls with the element; no body-level fixed overlay.
+   */
+  FOCUS_RING_INTARGET: 'kpv2-focus-ring-intarget',
   /** Temporary outline that scales up on F-click activation */
   FOCUS_PULSE: 'kpv2-focus-pulse',
   /** Temporary outline with a marquee/chaser light traveling the perimeter on F-click */
@@ -586,21 +592,28 @@ export const FEATURE_FLAGS = {
   ENABLE_CLICK_LISTENER_TRACKING: true,
 
   // ---- Focus-ring paint (DOM-hover) ----
-  // Policy: outline-first (style the clickable) for performance; fixed overlay
-  // only when geometry says the outer ring would be clipped/invisible.
+  // Policy: outline-first (style the clickable) for performance; when geometry
+  // says the outline would be invisible under full-bleed media, prefer an
+  // in-target absolute ring (local max z-index + 1), then body fixed overlay.
   // Full notes: extension/reference-info/focus-ring-paint.md
   //
   // ENABLE_FOCUS_CLIP_INSET: when still painting on the element, use negative
   //   outline-offset if an ancestor would clip a positive outer ring. Does not
   //   mutate page overflow (that broke IMDb carousels). Does not replace the
-  //   fixed-overlay escape hatch for full-bleed overflow:hidden media.
+  //   escape hatches for full-bleed overflow:hidden media.
   //
   // ENABLE_FOCUS_TIGHT_WRAPPER_PROMOTION: paint on a same-size clip ancestor
   //   instead of the target. Default OFF: on IMDb this promotes off
   //   <a.ipc-lockup-overlay> onto .ipc-poster so the real clickable never shows
   //   data-kp-focus.
+  //
+  // ENABLE_IN_TARGET_FOCUS_RING: when outline cannot show a ring, inject a
+  //   position:absolute ring as last child of the host (z-index maxLocal+1,
+  //   border-radius from host). Falls back to body fixed overlay if the host
+  //   cannot accept children (replaced elements, etc.).
   ENABLE_FOCUS_CLIP_INSET: true,
   ENABLE_FOCUS_TIGHT_WRAPPER_PROMOTION: false,
+  ENABLE_IN_TARGET_FOCUS_RING: true,
 
   // Debug and development flags
   DEBUG_RECTANGLE_SELECTION: false, // Enable detailed logging for rectangle selection

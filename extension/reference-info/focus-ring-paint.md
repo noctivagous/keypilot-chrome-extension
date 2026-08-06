@@ -8,8 +8,9 @@ The browser applies that far more cheaply than allocating and repositioning a fi
 
 | Path | When | Cost |
 |------|------|------|
-| **Element outline** (default) | Normal clickables; ring not blocked by full-bleed cover | Fast: CSS on the node; scrolls with the page |
-| **Fixed DOM overlay** (escape hatch) | Element outline cannot show a ring | Higher: fixed rect, must track scroll |
+| **A. Element outline** (default) | Normal clickables; ring not blocked by full-bleed cover | Fast: CSS on the node; scrolls with the page |
+| **C. In-target absolute ring** | Outline would sit under full-bleed media; host can accept a child | Cheap: last child of host, local `maxZ+1`; scrolls free; `border-radius` from host |
+| **B. Body fixed DOM overlay** | Escape hatch when C cannot mount (replaced elements, etc.) | Higher: fixed rect, must track scroll; global z-index |
 
 F-key activation effects (`kpv2-focus-flash`, pulse, marquee) are separate: they are short-lived fixed overlays by design. That path is not a model for steady hover chrome.
 
@@ -18,12 +19,15 @@ F-key activation effects (`kpv2-focus-flash`, pulse, marquee) are separate: they
 Implemented in `OverlayManager.updateFocusOverlay` when `_useDomHoverFocusColors` is on:
 
 1. Resolve paint target (`_resolveElementForFocusStyling`).
-2. **`_shouldUseFixedFocusOverlay(element)`** — only when **element** paint cannot show a ring:
+2. **`_shouldUseFixedFocusOverlay(element)`** — true when **element outline** cannot show a ring:
    - Target has non-visible `overflow` **and** full-bleed covering content (`img` / absolute fill / full-size `::before`/`::after`).
+   - **Or** a full-size **child** is the visual media surface that would paint over an inset parent outline (e.g. `a.top-site-card` → `.top-site-tile` with `isolation: isolate` + `overflow: hidden` + page-thumb `::before`). Detected via `_hasObscuringFullBleedChild`.
    - Parent-only clip (outer ring tight in a toolbar shell) is **not** enough → keep element outline with inset (`ENABLE_FOCUS_CLIP_INSET`).
-3. If fixed is needed → `updateFocusOverlayDOM`. Clear element focus markers. Set `_focusPaintUsesFixedOverlay`.
-4. Else → `updateFocusOverlayElementStyling` (outer or inset outline on the node). Hide any fixed focus overlay.
-5. Never use a fixed overlay “just in case.” If the check throws or is inconclusive, stay on element styling.
+3. If escape hatch needed:
+   - **C** (`ENABLE_IN_TARGET_FOCUS_RING`): `updateFocusOverlayInTarget` — inject `.kpv2-focus-ring-intarget` as last child of host, `z-index: maxLocal+1`, `border-radius` via `_resolveElementBorderRadius` (host, then element / large descendant). Set `_focusPaintUsesInTargetRing`. Still counts as element-associated for scroll (`usesElementFocusStyling()` true).
+   - **B** if C fails: `updateFocusOverlayDOM`. Set `_focusPaintUsesFixedOverlay`. Also copies border-radius.
+4. Else → **A** `updateFocusOverlayElementStyling`. Hide in-target ring + fixed overlay.
+5. Never use B/C “just in case.” If the check throws or is inconclusive, stay on element styling.
 
 `_outerFocusRingWouldBeClipped` remains a rect helper for inset decisions / diagnostics; it does **not** alone switch paint backends.
 
@@ -81,13 +85,15 @@ call full `updateFocusOverlay` so the clip decision is preserved.
 
 ### Case study: full-bleed media cards
 
-Pattern (common on marketing/news grids):
+Pattern (common on marketing/news grids and KeyPilot newtab top sites):
 
 ```
-a.card-media-link          /* overflow:hidden */
-  img                      /* full-bleed */
+a.card-media-link          /* overflow:hidden  OR  overflow:visible wrapper */
+  .tile / img              /* full-bleed; often isolation:isolate + overflow:hidden */
   .hover-scrim / overlay
 ```
+
+When the **clickable** is an `overflow:visible` wrapper and the **child** is the clipped media surface, inset outline on the wrapper paints under the child stacking context. Fixed overlay must win for that geometry (not just when the clickable itself clips).
 
 Site CSS often uses `transition: all` on the card and a hover scrim that darkens the media.
 

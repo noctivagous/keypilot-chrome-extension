@@ -139,6 +139,23 @@ export class OverlayManager {
      */
     this._focusPaintUsesFixedOverlay = false;
 
+    /**
+     * When true, hover focus is an absolute ring injected inside the target host
+     * (in-target path C). Co-located with the element → scrolls free; not fixed.
+     * @type {boolean}
+     */
+    this._focusPaintUsesInTargetRing = false;
+
+    /** @type {HTMLElement|null} singleton in-target ring node */
+    this._inTargetRing = null;
+    /** @type {Element|null} host currently holding the in-target ring */
+    this._inTargetHost = null;
+    /**
+     * If we set position:relative on a static host, restore on detach.
+     * @type {{ host: Element, prev: string }|null}
+     */
+    this._inTargetHostPosRestore = null;
+
     // Text focus styling (we style the focused input + nearby wrapper parents directly).
     this._textFocusCurrentElement = null;
     this._textFocusStyledElements = new Set();
@@ -194,14 +211,14 @@ export class OverlayManager {
   }
 
   /**
-   * True when focus chrome is painted on the target element (DOM-hover path)
-   * and therefore scrolls with the page. False when a fixed canvas/DOM overlay
-   * backend is responsible for the focus ring (needs scroll repositioning).
+   * True when focus chrome is painted on/with the target element (DOM-hover
+   * outline or in-target absolute ring) and therefore scrolls with the page.
+   * False when a body-level fixed canvas/DOM overlay must be repositioned.
    * @returns {boolean}
    */
   usesElementFocusStyling() {
-    // DOM-hover defaults to element styling, but clipped media cards fall back
-    // to a fixed overlay — report false so scroll repositions that overlay.
+    // Outline (A) and in-target ring (C) co-locate with the element.
+    // Body fixed (B) needs scroll reposition — only that reports false.
     return !!this._useDomHoverFocusColors && !this._focusPaintUsesFixedOverlay;
   }
 
@@ -538,6 +555,14 @@ export class OverlayManager {
     } else {
       overlay.style.boxShadow =
         '0 0 0 2px var(--rect-shadow-color), 0 0 10px 2px var(--rect-shadow-bright-color)';
+    }
+
+    try {
+      const radius = this._resolveElementBorderRadius(element);
+      overlay.style.borderRadius = radius || '0';
+      overlay.style.boxSizing = 'border-box';
+    } catch {
+      overlay.style.borderRadius = '0';
     }
 
     overlay.style.display = 'block';
@@ -1093,7 +1118,8 @@ export class OverlayManager {
       try { this._clearTextHoverElementStyling(); } catch { /* ignore */ }
     }
 
-    // DOM-hover paint: outline-first; fixed overlay only when element paint fails.
+    // DOM-hover paint: outline-first (A); in-target absolute ring (C) when
+    // outline would be under full-bleed media; body fixed (B) as last resort.
     // See extension/reference-info/focus-ring-paint.md
     if (this._useDomHoverFocusColors) {
       try { this.hideFocusOverlayCanvas(); } catch { /* ignore */ }
@@ -1101,25 +1127,48 @@ export class OverlayManager {
 
       if (!element) {
         this._focusPaintUsesFixedOverlay = false;
+        this._focusPaintUsesInTargetRing = false;
         try { this.clearElementFocusStyling(); } catch { /* ignore */ }
+        try { this.hideInTargetFocusRing(); } catch { /* ignore */ }
         try { this.hideFocusOverlayDOM(); } catch { /* ignore */ }
         return;
       }
 
-      let useFixed = false;
+      let needsEscapeHatch = false;
       try {
-        useFixed = this._shouldUseFixedFocusOverlay(element);
+        needsEscapeHatch = this._shouldUseFixedFocusOverlay(element);
       } catch {
-        useFixed = false;
+        needsEscapeHatch = false;
       }
 
-      if (useFixed) {
-        this._focusPaintUsesFixedOverlay = true;
+      if (needsEscapeHatch) {
         try { this.clearElementFocusStyling(); } catch { /* ignore */ }
+
+        // Path C: co-located absolute ring (local max z + 1, host border-radius).
+        let usedInTarget = false;
+        try {
+          usedInTarget = this.updateFocusOverlayInTarget(element, mode);
+        } catch {
+          usedInTarget = false;
+        }
+        if (usedInTarget) {
+          this._focusPaintUsesInTargetRing = true;
+          this._focusPaintUsesFixedOverlay = false;
+          try { this.hideFocusOverlayDOM(); } catch { /* ignore */ }
+          return;
+        }
+
+        // Path B: body fixed overlay.
+        this._focusPaintUsesInTargetRing = false;
+        try { this.hideInTargetFocusRing(); } catch { /* ignore */ }
+        this._focusPaintUsesFixedOverlay = true;
         return this.updateFocusOverlayDOM(element, mode, rectOverride);
       }
 
+      // Path A: element outline.
       this._focusPaintUsesFixedOverlay = false;
+      this._focusPaintUsesInTargetRing = false;
+      try { this.hideInTargetFocusRing(); } catch { /* ignore */ }
       try { this.hideFocusOverlayDOM(); } catch { /* ignore */ }
       return this.updateFocusOverlayElementStyling(element, mode);
     }
@@ -1407,6 +1456,19 @@ export class OverlayManager {
   }
 
   /**
+   * True when computed overflow would clip descendants / outer decorations.
+   * @param {CSSStyleDeclaration|null|undefined} cs
+   * @returns {boolean}
+   */
+  _styleClipsOverflow(cs) {
+    return !!(cs && (
+      (cs.overflow && cs.overflow !== 'visible') ||
+      (cs.overflowX && cs.overflowX !== 'visible') ||
+      (cs.overflowY && cs.overflowY !== 'visible')
+    ));
+  }
+
+  /**
    * True when **element-level** focus paint cannot show a visible ring, so we
    * must use the fixed DOM overlay escape hatch.
    *
@@ -1417,6 +1479,9 @@ export class OverlayManager {
    *   sit under high z-index KP chrome (strip z > OVERLAYS) and stay invisible.
    * - Target clips itself **and** is covered by full-bleed media/pseudos →
    *   inset outline is under the cover; use fixed overlay (TNW cards, etc.).
+   * - Target does not clip, but a full-size child stacking surface does
+   *   (e.g. `a.top-site-card` > `.top-site-tile` with isolation + page thumb)
+   *   → inset outline on the parent paints under the child; use fixed overlay.
    *
    * @param {Element} element
    * @returns {boolean}
@@ -1441,18 +1506,19 @@ export class OverlayManager {
 
     let selfClips = false;
     try {
-      const cs = window.getComputedStyle(paintEl);
-      selfClips =
-        !!(cs && (
-          (cs.overflow && cs.overflow !== 'visible') ||
-          (cs.overflowX && cs.overflowX !== 'visible') ||
-          (cs.overflowY && cs.overflowY !== 'visible')
-        ));
+      selfClips = this._styleClipsOverflow(window.getComputedStyle(paintEl));
     } catch { /* ignore */ }
 
     // Inset outline on the element is invisible only when the element itself
     // clips and is painted over by full-bleed content.
     if (selfClips && this._hasFullBleedCoveringContent(paintEl, er)) {
+      return true;
+    }
+
+    // Parent clickable is overflow:visible but a full-bleed media child paints a
+    // stacking layer over any inset outline on the parent (newtab top sites,
+    // card wrappers around overflow:hidden tiles, etc.).
+    if (this._hasObscuringFullBleedChild(paintEl, er)) {
       return true;
     }
 
@@ -1486,8 +1552,22 @@ export class OverlayManager {
         if (pcs.position !== 'absolute' && pcs.position !== 'fixed') continue;
         const w = parseFloat(pcs.width);
         const h = parseFloat(pcs.height);
+        // inset:-1px bleed (common on page thumbs) may not set usable width/height;
+        // treat any absolute pseudo with non-none content as covering when the
+        // host itself is the clipped media surface (caller checks overflow).
         if (Number.isFinite(w) && Number.isFinite(h) && nearlyFills(w, h)) {
           return true;
+        }
+        // Fallback: absolute pseudo with empty-string content and inset fill.
+        if (pcs.content === '""' || pcs.content === "''") {
+          const top = parseFloat(pcs.top);
+          const left = parseFloat(pcs.left);
+          const right = parseFloat(pcs.right);
+          const bottom = parseFloat(pcs.bottom);
+          const hasInset =
+            (Number.isFinite(top) || Number.isFinite(bottom)) &&
+            (Number.isFinite(left) || Number.isFinite(right));
+          if (hasInset) return true;
         }
       }
     } catch { /* ignore */ }
@@ -1509,6 +1589,395 @@ export class OverlayManager {
     } catch { /* ignore */ }
 
     return false;
+  }
+
+  /**
+   * True when a direct child fills most of `el` and would paint over an inset
+   * outline applied to `el` (stacking-context / clipped media surface).
+   *
+   * Pattern: clickable wrapper (overflow:visible) > visual tile
+   * (overflow:hidden, isolation:isolate, full-bleed ::before / img).
+   *
+   * @param {Element} el
+   * @param {DOMRect|ClientRect} [er]
+   * @returns {boolean}
+   */
+  _hasObscuringFullBleedChild(el, er) {
+    if (!el || el.nodeType !== 1) return false;
+    let box = er;
+    try {
+      if (!box) box = el.getBoundingClientRect();
+    } catch {
+      return false;
+    }
+    if (!box || !(box.width > 0) || !(box.height > 0)) return false;
+
+    const nearlyFills = (w, h) =>
+      w >= box.width * 0.85 && h >= box.height * 0.85;
+
+    try {
+      const kids = el.children;
+      if (!kids || !kids.length) return false;
+      for (let i = 0; i < kids.length; i++) {
+        const child = kids[i];
+        if (!child || child.nodeType !== 1) continue;
+
+        let cr = null;
+        try { cr = child.getBoundingClientRect(); } catch { cr = null; }
+        if (!cr || !nearlyFills(cr.width, cr.height)) continue;
+
+        let cs = null;
+        try { cs = window.getComputedStyle(child); } catch { cs = null; }
+        if (!cs) continue;
+
+        const childClips = this._styleClipsOverflow(cs);
+        const stacks =
+          cs.isolation === 'isolate' ||
+          (cs.transform && cs.transform !== 'none') ||
+          (cs.filter && cs.filter !== 'none') ||
+          (cs.opacity !== '' && Number(cs.opacity) < 1) ||
+          (cs.position !== 'static' && cs.zIndex !== 'auto') ||
+          (typeof cs.willChange === 'string' &&
+            /(?:^|,\s*)(transform|opacity|filter|isolation)(?:\s*,|$)/i.test(cs.willChange));
+
+        // Absolute/fixed full-bleed child always covers inset parent outline.
+        if (cs.position === 'absolute' || cs.position === 'fixed') {
+          return true;
+        }
+
+        // Clipped media tile: child is the visual surface that hides inset rings.
+        if (childClips && this._hasFullBleedCoveringContent(child, cr)) {
+          return true;
+        }
+
+        // Stacking-context child that fills the host paints above parent outline
+        // even without its own overflow clip (isolation + painted descendants).
+        if (stacks && (childClips || this._hasFullBleedCoveringContent(child, cr))) {
+          return true;
+        }
+      }
+    } catch { /* ignore */ }
+
+    return false;
+  }
+
+  /**
+   * Tags that cannot accept element children (replaced / void). In-target ring
+   * cannot mount inside these — fall back to body fixed overlay.
+   * @param {Element|null|undefined} el
+   * @returns {boolean}
+   */
+  _isReplacedOrVoidElement(el) {
+    if (!el || el.nodeType !== 1) return true;
+    const tag = (el.tagName || '').toUpperCase();
+    return (
+      tag === 'IMG' ||
+      tag === 'VIDEO' ||
+      tag === 'AUDIO' ||
+      tag === 'CANVAS' ||
+      tag === 'IFRAME' ||
+      tag === 'EMBED' ||
+      tag === 'OBJECT' ||
+      tag === 'INPUT' ||
+      tag === 'TEXTAREA' ||
+      tag === 'SELECT' ||
+      tag === 'OPTION' ||
+      tag === 'BR' ||
+      tag === 'HR' ||
+      tag === 'SOURCE' ||
+      tag === 'TRACK' ||
+      tag === 'AREA' ||
+      tag === 'COL' ||
+      tag === 'SVG' || // prefer not to inject under SVG unless needed
+      tag === 'MATH'
+    );
+  }
+
+  /**
+   * Host for an in-target absolute ring: paint-resolved clickable that can
+   * accept a last-child ring (sibling above full-bleed media tiles).
+   * @param {Element} element
+   * @returns {Element|null}
+   */
+  _resolveInTargetHost(element) {
+    if (!element || element.nodeType !== 1) return null;
+
+    let paintEl = element;
+    try {
+      paintEl = this._resolveElementForFocusStyling(element) || element;
+    } catch {
+      paintEl = element;
+    }
+    if (!paintEl || paintEl.nodeType !== 1) return null;
+    try {
+      if (!paintEl.isConnected) return null;
+    } catch {
+      return null;
+    }
+
+    if (this._isReplacedOrVoidElement(paintEl)) return null;
+
+    // Must support appendChild (Element).
+    if (typeof paintEl.appendChild !== 'function') return null;
+
+    return paintEl;
+  }
+
+  /**
+   * Max numeric z-index among host pseudos and element children (excluding ring).
+   * @param {Element} host
+   * @returns {number}
+   */
+  _maxLocalZIndex(host) {
+    let max = 0;
+    const consider = (z) => {
+      if (z == null || z === '' || z === 'auto') return;
+      const n = parseInt(String(z), 10);
+      if (Number.isFinite(n)) max = Math.max(max, n);
+    };
+
+    try {
+      for (const pseudo of [':before', ':after']) {
+        const ps = window.getComputedStyle(host, pseudo);
+        if (ps) consider(ps.zIndex);
+      }
+    } catch { /* ignore */ }
+
+    try {
+      const kids = host.children;
+      if (!kids) return max;
+      const ringClass = CSS_CLASSES.FOCUS_RING_INTARGET || 'kpv2-focus-ring-intarget';
+      for (let i = 0; i < kids.length; i++) {
+        const child = kids[i];
+        if (!child || child.nodeType !== 1) continue;
+        if (child === this._inTargetRing) continue;
+        try {
+          if (child.classList && child.classList.contains(ringClass)) continue;
+        } catch { /* ignore */ }
+        let cs = null;
+        try { cs = window.getComputedStyle(child); } catch { cs = null; }
+        if (!cs) continue;
+        // Only positioned / z-indexed children participate as explicit layers.
+        if (cs.zIndex !== 'auto') consider(cs.zIndex);
+      }
+    } catch { /* ignore */ }
+
+    return max;
+  }
+
+  /**
+   * Ensure singleton in-target ring element exists.
+   * @returns {HTMLElement}
+   */
+  _ensureInTargetRingEl() {
+    if (this._inTargetRing && this._inTargetRing.nodeType === 1) {
+      return this._inTargetRing;
+    }
+    const ringClass = CSS_CLASSES.FOCUS_RING_INTARGET || 'kpv2-focus-ring-intarget';
+    this._inTargetRing = this.createElement('div', {
+      className: ringClass,
+      style: `
+        position: absolute !important;
+        inset: 0 !important;
+        box-sizing: border-box !important;
+        pointer-events: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border-style: solid !important;
+        background: transparent !important;
+        display: none;
+      `
+    });
+    try {
+      this._inTargetRing.setAttribute('data-kp-focus-ring', '1');
+      this._inTargetRing.setAttribute('aria-hidden', 'true');
+    } catch { /* ignore */ }
+    return this._inTargetRing;
+  }
+
+  /**
+   * Restore position mutation on a previous in-target host, if any.
+   */
+  _restoreInTargetHostPosition() {
+    const restore = this._inTargetHostPosRestore;
+    this._inTargetHostPosRestore = null;
+    if (!restore || !restore.host) return;
+    try {
+      if (restore.prev == null || restore.prev === '') {
+        restore.host.style.removeProperty('position');
+      } else {
+        restore.host.style.position = restore.prev;
+      }
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Detach / hide the in-target absolute focus ring and restore host position.
+   */
+  hideInTargetFocusRing() {
+    this._focusPaintUsesInTargetRing = false;
+    const ring = this._inTargetRing;
+    if (ring) {
+      try { ring.style.display = 'none'; } catch { /* ignore */ }
+      try {
+        if (ring.parentNode) ring.parentNode.removeChild(ring);
+      } catch { /* ignore */ }
+    }
+    this._restoreInTargetHostPosition();
+    this._inTargetHost = null;
+  }
+
+  /**
+   * Path C: mount an absolute focus ring as last child of the host with
+   * z-index = max(local siblings)+1 and border-radius from the visual host.
+   *
+   * @param {Element} element
+   * @param {string} [mode]
+   * @returns {boolean} true if ring was mounted
+   */
+  updateFocusOverlayInTarget(element, mode = MODES.NONE) {
+    if (!(FEATURE_FLAGS && FEATURE_FLAGS.ENABLE_IN_TARGET_FOCUS_RING)) {
+      return false;
+    }
+    if (!element || element.nodeType !== 1) return false;
+
+    const host = this._resolveInTargetHost(element);
+    if (!host) return false;
+
+    // Modal/popover iframes: never decorate.
+    try {
+      if (host.tagName === 'IFRAME') {
+        const isPopoverIframe = this.popoverIframeElement && host === this.popoverIframeElement;
+        const isModalIframe = !!(host.classList && host.classList.contains('modal-iframe'));
+        if (isPopoverIframe || isModalIframe) return false;
+      }
+    } catch { /* ignore */ }
+
+    const ring = this._ensureInTargetRingEl();
+
+    // Leaving a previous host — restore its position if we mutated it.
+    if (this._inTargetHost && this._inTargetHost !== host) {
+      this._restoreInTargetHostPosition();
+    }
+
+    // Containing block: static hosts need position:relative.
+    try {
+      const cs = window.getComputedStyle(host);
+      if (cs && cs.position === 'static') {
+        if (!this._inTargetHostPosRestore || this._inTargetHostPosRestore.host !== host) {
+          this._inTargetHostPosRestore = {
+            host,
+            prev: host.style.position || ''
+          };
+          host.style.position = 'relative';
+        }
+      } else if (this._inTargetHostPosRestore && this._inTargetHostPosRestore.host === host) {
+        // Host is no longer static (site style changed) — drop restore record carefully.
+        // Keep relative we set only if we set it; if site now positions it, clear restore.
+        if (cs && cs.position !== 'static' && host.style.position === 'relative') {
+          // still our relative is fine
+        }
+      }
+    } catch { /* ignore */ }
+
+    // Ensure last child so we paint above earlier stacking siblings.
+    try {
+      if (ring.parentNode !== host || host.lastElementChild !== ring) {
+        host.appendChild(ring);
+      }
+    } catch {
+      this.hideInTargetFocusRing();
+      return false;
+    }
+
+    this._inTargetHost = host;
+
+    // Colors / thickness from click-mode settings (same as other backends).
+    const isTextInput = element.matches && element.matches(SELECTORS.FOCUSABLE_TEXT);
+    const suppressFill = this.shouldSuppressFocusFill(element);
+    const {
+      rectangleThickness,
+      overlayFillEnabled,
+      overlayShadowEnabled,
+      focusColor
+    } = this._getClickModeSettings();
+    const ringWidthPx = Math.min(Math.max(Number(rectangleThickness) || 3, 1), 16);
+
+    let borderColor;
+    let shadowColor;
+    let shadowBright;
+    let backgroundColor = 'transparent';
+    if (isTextInput) {
+      borderColor = COLORS.ORANGE;
+      shadowColor = COLORS.ORANGE_SHADOW;
+      shadowBright = COLORS.ORANGE_SHADOW;
+    } else {
+      const p = this._getNonTextFocusPalette(focusColor);
+      borderColor = p.borderColor;
+      shadowColor = p.shadowColor;
+      shadowBright = p.shadowBrightColor;
+      // Fill is opt-in (same default as other backends).
+      if (!suppressFill && overlayFillEnabled === true) {
+        backgroundColor = p.backgroundColor || 'transparent';
+      }
+    }
+
+    // Border radius: host first, else large rounded descendant (tile / media).
+    let radius = '0';
+    try {
+      radius = this._resolveElementBorderRadius(host) ||
+        this._resolveElementBorderRadius(element) ||
+        '0';
+    } catch {
+      radius = '0';
+    }
+
+    const z = this._maxLocalZIndex(host) + 1;
+
+    try {
+      ring.style.setProperty('position', 'absolute', 'important');
+      ring.style.setProperty('inset', '0', 'important');
+      ring.style.setProperty('box-sizing', 'border-box', 'important');
+      ring.style.setProperty('pointer-events', 'none', 'important');
+      ring.style.setProperty('margin', '0', 'important');
+      ring.style.setProperty('padding', '0', 'important');
+      ring.style.setProperty('width', 'auto', 'important');
+      ring.style.setProperty('height', 'auto', 'important');
+      ring.style.setProperty('z-index', String(z), 'important');
+      ring.style.setProperty('border-width', `${ringWidthPx}px`, 'important');
+      ring.style.setProperty('border-style', 'solid', 'important');
+      ring.style.setProperty('border-color', borderColor, 'important');
+      ring.style.setProperty('border-radius', radius, 'important');
+      ring.style.setProperty('background', backgroundColor, 'important');
+      if (overlayShadowEnabled === false) {
+        ring.style.setProperty('box-shadow', 'none', 'important');
+      } else {
+        ring.style.setProperty(
+          'box-shadow',
+          `0 0 0 2px ${shadowColor}, 0 0 10px 2px ${shadowBright}`,
+          'important'
+        );
+      }
+      ring.style.setProperty('display', 'block', 'important');
+      ring.style.setProperty('visibility', 'visible', 'important');
+      ring.style.setProperty('opacity', '1', 'important');
+    } catch {
+      this.hideInTargetFocusRing();
+      return false;
+    }
+
+    if (window.KEYPILOT_DEBUG) {
+      console.log('[KeyPilot Debug] In-target focus ring mounted:', {
+        host: host.tagName,
+        hostClass: (host.className || '').toString().slice(0, 60),
+        zIndex: z,
+        borderRadius: radius,
+        borderColor,
+        mode
+      });
+    }
+
+    return true;
   }
 
   /**
@@ -2044,6 +2513,15 @@ export class OverlayManager {
     this.focusOverlay.style.opacity = '1';
     this.focusOverlay.style.border = `${rectangleThickness}px solid ${borderColor}`;
     this.focusOverlay.style.background = backgroundColor;
+    this.focusOverlay.style.boxSizing = 'border-box';
+    // Match the target's corner radius (DOM outline inherits it; fixed overlay does not).
+    // Prefer the element itself, else a large rounded descendant (card tile / media).
+    try {
+      const radius = this._resolveElementBorderRadius(element);
+      this.focusOverlay.style.borderRadius = radius || '0';
+    } catch {
+      this.focusOverlay.style.borderRadius = '0';
+    }
     if (overlayShadowEnabled === false) {
       this.focusOverlay.style.boxShadow = 'none';
     } else {
@@ -2088,12 +2566,13 @@ export class OverlayManager {
 
   // Unified hide interface that switches between rendering modes
   hideFocusOverlay() {
-    // DOM-hover: clear element markers and any fixed overlay fallback used for
-    // overflow-clipped targets (media cards). Always wipe both so hybrid paint
-    // never leaves a ghost ring.
+    // DOM-hover: clear element markers, in-target ring, and fixed overlay so
+    // hybrid paint never leaves a ghost ring.
     if (this._useDomHoverFocusColors) {
       this._focusPaintUsesFixedOverlay = false;
+      this._focusPaintUsesInTargetRing = false;
       this.clearElementFocusStyling({ deep: false });
+      this.hideInTargetFocusRing();
       this.hideFocusOverlayDOM();
       return;
     }

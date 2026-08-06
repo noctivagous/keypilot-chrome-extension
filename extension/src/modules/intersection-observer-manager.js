@@ -575,13 +575,14 @@ export class IntersectionObserverManager {
    * while the pointer stayed on the same clickable.
    * Cheap no-op when markers are already present.
    *
-   * Important: when hover paint uses the fixed DOM overlay escape hatch
-   * (overflow-clipped media cards — see extension/reference-info/focus-ring-paint.md),
-   * `data-kp-focus` is intentionally absent on the clickable. Do NOT treat that
-   * as a wipe and force `updateFocusOverlayElementStyling` — that fights the
-   * fixed ring, applies inset outlines under full-bleed content, and on sites
-   * with `transition: all` on the card makes the outline appear then vanish
-   * under the site's own :hover scrim.
+   * Important: when hover paint uses the fixed DOM overlay or in-target absolute
+   * ring escape hatch (overflow-clipped media cards — see
+   * extension/reference-info/focus-ring-paint.md), `data-kp-focus` is
+   * intentionally absent on the clickable. Do NOT treat that as a wipe and
+   * force `updateFocusOverlayElementStyling` — that fights the ring, applies
+   * inset outlines under full-bleed content, and on sites with `transition: all`
+   * on the card makes the outline appear then vanish under the site's :hover
+   * scrim.
    *
    * @param {Element|null|undefined} el
    */
@@ -609,6 +610,25 @@ export class IntersectionObserverManager {
         }
         return;
       }
+    } catch { /* fall through */ }
+
+    // In-target absolute ring: not data-kp-focus. Re-mount if SPA removed the node.
+    try {
+      if (om && om._focusPaintUsesInTargetRing) {
+        const ring = om._inTargetRing;
+        const host = om._inTargetHost;
+        const missing =
+          !ring ||
+          !ring.isConnected ||
+          !host ||
+          !host.isConnected ||
+          ring.parentNode !== host ||
+          ring.style.display === 'none';
+        if (missing && typeof om.updateFocusOverlay === 'function') {
+          om.updateFocusOverlay(el);
+        }
+        return;
+      }
     } catch { /* fall through to element reheal */ }
 
     let missingFocus = false;
@@ -621,7 +641,7 @@ export class IntersectionObserverManager {
     }
     if (!missingFocus) return;
 
-    // Prefer the full paint entrypoint so clip → fixed-overlay is re-evaluated
+    // Prefer the full paint entrypoint so clip → C/B escape hatches re-evaluate
     // instead of always forcing element outlines.
     try {
       if (om && typeof om.updateFocusOverlay === 'function') {
