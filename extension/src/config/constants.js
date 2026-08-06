@@ -56,9 +56,9 @@ export const CSS_CLASSES = {
   RIPPLE: 'kpv2-ripple',
   FOCUS_OVERLAY: 'kpv2-focus-overlay',
   /**
-   * In-target absolute focus ring (DOM-hover escape hatch): mounted as last
-   * child of the clickable/host with local max z-index + 1. Co-located paint —
-   * scrolls with the element; no body-level fixed overlay.
+   * Strategy B: in-target absolute focus ring — mounted as last child of the
+   * clickable/host with local max z-index + 1. Co-located paint; scrolls with
+   * the element. Preference order: A DOM outline → B this ring → C body fixed.
    */
   FOCUS_RING_INTARGET: 'kpv2-focus-ring-intarget',
   /** Temporary outline that scales up on F-click activation */
@@ -592,25 +592,25 @@ export const FEATURE_FLAGS = {
   ENABLE_CLICK_LISTENER_TRACKING: true,
 
   // ---- Focus-ring paint (DOM-hover) ----
-  // Policy: outline-first (style the clickable) for performance; when geometry
-  // says the outline would be invisible under full-bleed media, prefer an
-  // in-target absolute ring (local max z-index + 1), then body fixed overlay.
-  // Full notes: extension/reference-info/focus-ring-paint.md
+  // Preference order (see extension/reference-info/focus-ring-paint.md):
+  //   A = DOM outline on the paint target (default; cheapest)
+  //   B = in-target absolute ring (local max z-index + 1) when A cannot show
+  //   C = body fixed overlay when B cannot mount (replaced elements, etc.)
   //
-  // ENABLE_FOCUS_CLIP_INSET: when still painting on the element, use negative
-  //   outline-offset if an ancestor would clip a positive outer ring. Does not
-  //   mutate page overflow (that broke IMDb carousels). Does not replace the
-  //   escape hatches for full-bleed overflow:hidden media.
+  // ENABLE_FOCUS_CLIP_INSET: while still on A, grade outline-offset from
+  //   clip-ancestor free room: offset = clamp(minRoom - stroke, -stroke, +2).
+  //   Mild bleed → mild inset (e.g. 1px room, 3px stroke → -2), not a jump
+  //   to B/C. Does not mutate page overflow (that broke IMDb carousels).
   //
   // ENABLE_FOCUS_TIGHT_WRAPPER_PROMOTION: paint on a same-size clip ancestor
   //   instead of the target. Default OFF: on IMDb this promotes off
   //   <a.ipc-lockup-overlay> onto .ipc-poster so the real clickable never shows
   //   data-kp-focus.
   //
-  // ENABLE_IN_TARGET_FOCUS_RING: when outline cannot show a ring, inject a
-  //   position:absolute ring as last child of the host (z-index maxLocal+1,
-  //   border-radius from host). Falls back to body fixed overlay if the host
-  //   cannot accept children (replaced elements, etc.).
+  // ENABLE_IN_TARGET_FOCUS_RING: allow strategy B when A cannot show a ring —
+  //   inject position:absolute ring as last child of host (z-index maxLocal+1,
+  //   border-radius from host). Falls back to strategy C if the host cannot
+  //   accept children (replaced elements, etc.).
   ENABLE_FOCUS_CLIP_INSET: true,
   ENABLE_FOCUS_TIGHT_WRAPPER_PROMOTION: false,
   ENABLE_IN_TARGET_FOCUS_RING: true,

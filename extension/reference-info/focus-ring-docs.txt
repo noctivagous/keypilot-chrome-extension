@@ -1,0 +1,171 @@
+
+
+In normal browsing, KeyPilot does not re-hit-test every mousemove. 
+DOM-hover mode lets the browser resolve occlusion/clipping; 
+KeyPilot only maps the hit node to a stable clickable 
+that owns the ring and F-activate.
+
+There are really two layers:
+
+1. Hover target — which element is focusEl (activation + “what we’re aiming at”)
+2. Paint target — which node gets outline / in-target ring (can differ slightly)
+
+---------
+
+For rendering the actual outline
+there is no Chrome API that allow for: “Draw
+a focus-like rectangle around this
+element, always visible above its
+descendants, without moving focus,
+without injecting nodes, without fixed
+overlay, and auto-updating on scroll.”
+
+--───
+
+Pipeline (hover target)
+
+pointerover (document, capture/delegate)
+    │
+    ├─ deepest element from event.composedPath()
+    │     (skip KeyPilot UI chrome)
+    │
+    ├─ ElementDetector.resolveHoverFocusTarget(under, prevFocus)
+    │     sticky host + findClickable + underlay + preferred host
+    │
+    ├─ (shadow fallback) queryInteractiveAtPoint if still null in open shadow
+    │
+    ├─ IntersectionObserverManager._findParentContainerForClickable(clickable)
+    │     optional same-box parent promote
+    │
+    ├─ reject html/body
+    │
+    └─ _setDomHoveredElement(next)  →  state.focusEl  →  updateFocusOverlay
+
+If next === prev, it only reheals paint markers (SPA class wipes); it does not retarget.
+
+───
+
+Building blocks
+
+1. Hit node
+
+From pointerover: first element on composedPath(), else event.target. That is the leaf under the pointer, including open shadow when the path includes it.
+
+2. “Is this interactive?” — isLikelyInteractive
+
+Used when walking ancestors. Roughly true if any of:
+
+• Matches semantic selectors (a[href], button, inputs, summary, media, roles, data-action / click-ish attrs, etc.)
+• Has a relevant ARIA role
+• Has onclick / tracked click listener
+• Optionally cursor: pointer only (fallback; not preferred over semantics)
+
+3. Ancestor walk — findClickable(el)
+
+Walk up from the hit node (parentElement + open shadow host hops, depth ≤ 20):
+
+1. Prefer first semantic interactive (allowCursor: false)
+2. Else remember first cursor-only candidate
+3. Return semantic if found, else cursor-only
+
+So hovering an <img> inside an <a> usually returns the <a>, not the image.
+
+4. Main resolver — resolveHoverFocusTarget(under, prev)
+
+This is the sticky, card-aware brain.
+
+A. Sticky previous host
+
+If there was a previous focus and the pointer is still “on” it:
+
+• Same node → keep prev
+• under is inside prev (including open shadow via composedContains):
+  • Non-interactive leaf (text/span/icon) → keep prev
+  • Nested chrome (More button, small sub-link < 35% of host area, aria-haspopup) → keep prev
+  • Distinct large nested primary → may switch; still prefer host tab/link if applicable
+• Non-interactive overlay over media: if sibling underlay equals prev → keep prev (TNW-style header over image)
+
+Goal: don’t thrash the ring while moving across title chrome, icons, or brief nulls.
+
+B. Fresh resolve when not sticky
+
+1. leaf = findClickable(under)
+2. If no leaf: _findSiblingUnderlayClickable(under) — large semantic sibling that covers most of the non-interactive overlay (media under topic/header chrome)
+3. Else: _findPreferableHoverHost(leaf) or leaf
+
+C. Preferred host — _findPreferableHoverHost
+
+Walk ancestors:
+
+• Prefer role="tab" host over inner label/button
+• Prefer large role="link" host (≥100×32) when leaf is nested chrome inside it
+
+Plain <a href> without role="link" is not promoted this way.
+
+D. Sibling underlay — _findSiblingUnderlayClickable
+
+When the hit is non-interactive overlay chrome, look at parent’s other children for a real interactive sibling that:
+
+• is large enough
+• overlaps the overlay strongly (≥55%)
+• is at least ~as big as the overlay
+
+Used so the media link gets the ring even when the pointer is on an absolute header that isn’t itself a link (unless you’re on a real nested control like the headline).
+
+5. Parent container promote — _findParentContainerForClickable
+
+After the above, optional promote to immediate parent only if:
+
+• parent is interactive
+• not a composite container (tablist/nav/menu, etc.)
+• geometry: parent not meaningfully larger than child (blocks thumb → full card)
+• clickability profiles similar, with tightened rules:
+  • two <a>s: same href only
+  • click-handler-only match: same tag only (no thumb <a> ≈ card DIV)
+
+This is the piece that used to expand ganjingworld thumbs into outer cards; size + profile guards are meant to stop that.
+
+───
+
+What the result is used for
+
+┌─────────────────┬───────────────────────────────────────────────────────────────┐
+│ Consumer        │ Uses                                                          │
+├─────────────────┼───────────────────────────────────────────────────────────────┤
+│ Hover ring (A/  │ focusEl from this pipeline                                    │
+│ C/B)            │                                                               │
+├─────────────────┼───────────────────────────────────────────────────────────────┤
+│ F activate      │ Usually focusEl, with a validation pass if DOM moved under a  │
+│                 │ still pointer                                                 │
+├─────────────────┼───────────────────────────────────────────────────────────────┤
+│ Reheal          │ Same focusEl; may re-run paint if markers/ring missing        │
+└─────────────────┴───────────────────────────────────────────────────────────────┘
+
+In MODES.NONE + DOM-hover, mousemove does not re-run full hit-testing; target updates come from hover events.
+
+───
+
+Paint target (after resolution)
+
+Separate from “which clickable”:
+
+_resolveElementForFocusStyling(focusEl) may paint outline on:
+
+• largest visible descendant if clickable is ~0×0
+• a single-rect wrapper if inline <a> is fragmented
+
+That can change which node has data-kp-focus without changing activation’s conceptual target (activation still uses the hover clickable).
+
+───
+
+Mental model
+
+Browser: “what’s under the pointer?”     → leaf (img, span, header…)
+findClickable: “nearest real control”    → <a>, button, …
+resolveHoverFocusTarget: “stable card/tab intent + underlay media”
+parent promote: “same-box wrapper only”  → rarely, same size
+paint resolve: “where outline draws cleanly”
+
+Intent: one stable, F-meaningful control per card/row/tab — prefer media/primary host over nested More/labels, don’t thrash on child moves, don’t fatten a tight thumb into a whole content block.
+
+Not in this layer: A vs C paint choice (_shouldUseFixedFocusOverlay). That runs after target resolution, on the chosen element.

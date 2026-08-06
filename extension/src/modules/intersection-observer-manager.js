@@ -306,6 +306,12 @@ export class IntersectionObserverManager {
    * Check if a parent container should be focused instead of an individual clickable element.
    * If the hovered element is clickable and its parent has similar clickable properties,
    * and all children of the parent have similar properties, focus the parent instead.
+   *
+   * Important (ganjingworld / video cards): do **not** promote a tight media
+   * thumbnail link up into a larger card shell that also has onclick and wraps
+   * title/meta. That makes a good thumb outline jump to an outer box a moment
+   * later when the card handler hydrates.
+   *
    * @param {HTMLElement} element
    * @returns {HTMLElement}
    */
@@ -327,6 +333,24 @@ export class IntersectionObserverManager {
 
       // Check if parent is also clickable
       if (!this.elementDetector.isLikelyInteractive(parent)) return element;
+
+      // Geometry guard: parent must be roughly the same box as the child.
+      // Expanding a 16:9 thumb into a taller card (title + meta) is never wanted.
+      try {
+        const er = element.getBoundingClientRect();
+        const pr = parent.getBoundingClientRect();
+        if (er.width > 0 && er.height > 0 && pr.width > 0 && pr.height > 0) {
+          const eArea = er.width * er.height;
+          const pArea = pr.width * pr.height;
+          if (
+            pArea > eArea * 1.18 ||
+            pr.height > er.height * 1.12 ||
+            pr.width > er.width * 1.12
+          ) {
+            return element;
+          }
+        }
+      } catch { /* ignore and continue */ }
 
       // Get the clickability profiles for comparison
       const elementProfile = this._getClickabilityProfile(element);
@@ -442,16 +466,31 @@ export class IntersectionObserverManager {
    * @returns {boolean}
    */
   _profilesAreSimilar(profile1, profile2) {
-    // Same tag name (button, input, etc.)
+    if (!profile1 || !profile2) return false;
+
+    // Anchors: only similar when they share a destination. Treating every <a>
+    // as similar promoted video thumbs into card shells that also wrap title
+    // and channel links (different hrefs) — outer-box outline on ganjingworld.
+    const a1 = profile1.tagName === 'A';
+    const a2 = profile2.tagName === 'A';
+    if (a1 || a2) {
+      if (a1 && a2) {
+        return !!(profile1.href && profile1.href === profile2.href);
+      }
+      // <a> vs non-<a>: only if same explicit role or identical href-like role=link later
+      if (profile1.role && profile1.role === profile2.role) {
+        return true;
+      }
+      return false;
+    }
+
+    // Same tag name (button, div wrappers, etc.)
     if (profile1.tagName === profile2.tagName) {
       // For inputs, same type
-      if (profile1.tagName === 'INPUT' && profile1.inputType === profile2.inputType) {
-        return true;
+      if (profile1.tagName === 'INPUT') {
+        return profile1.inputType === profile2.inputType;
       }
-      // For other matching tags
-      if (profile1.tagName !== 'INPUT') {
-        return true;
-      }
+      return true;
     }
 
     // Same role attribute
@@ -459,13 +498,18 @@ export class IntersectionObserverManager {
       return true;
     }
 
-    // Same href (for links)
+    // Same href (for links — handled above for A; keep for role=link custom elements)
     if (profile1.href && profile1.href === profile2.href) {
       return true;
     }
 
-    // Both have click handlers (similar interaction pattern)
-    if (profile1.hasClickHandler && profile2.hasClickHandler) {
+    // Both have click handlers — only when same tag. Matching any onclick on a
+    // card DIV to a child <a> was promoting thumbs into full contentBlock boxes.
+    if (
+      profile1.hasClickHandler &&
+      profile2.hasClickHandler &&
+      profile1.tagName === profile2.tagName
+    ) {
       return true;
     }
 
@@ -575,14 +619,14 @@ export class IntersectionObserverManager {
    * while the pointer stayed on the same clickable.
    * Cheap no-op when markers are already present.
    *
-   * Important: when hover paint uses the fixed DOM overlay or in-target absolute
-   * ring escape hatch (overflow-clipped media cards — see
-   * extension/reference-info/focus-ring-paint.md), `data-kp-focus` is
+   * Important: when hover paint uses strategy B (in-target ring) or C (body
+   * fixed overlay) for overflow-clipped media cards — see
+   * extension/reference-info/focus-ring-paint.md — `data-kp-focus` is
    * intentionally absent on the clickable. Do NOT treat that as a wipe and
-   * force `updateFocusOverlayElementStyling` — that fights the ring, applies
-   * inset outlines under full-bleed content, and on sites with `transition: all`
-   * on the card makes the outline appear then vanish under the site's :hover
-   * scrim.
+   * force `updateFocusOverlayElementStyling` (A only) — that fights the ring,
+   * applies inset outlines under full-bleed content, and on sites with
+   * `transition: all` on the card makes the outline appear then vanish under
+   * the site's :hover scrim.
    *
    * @param {Element|null|undefined} el
    */
@@ -641,8 +685,8 @@ export class IntersectionObserverManager {
     }
     if (!missingFocus) return;
 
-    // Prefer the full paint entrypoint so clip → C/B escape hatches re-evaluate
-    // instead of always forcing element outlines.
+    // Prefer the full paint entrypoint so clip → B/C escape hatches re-evaluate
+    // instead of always forcing element outlines (A).
     try {
       if (om && typeof om.updateFocusOverlay === 'function') {
         om.updateFocusOverlay(el);

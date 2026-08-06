@@ -830,15 +830,17 @@ export class StyleManager {
       .keypilot-focus-element,
       [data-kp-focus="1"] {
         outline: var(--keypilot-focus-ring-width, 3px) solid var(--keypilot-focus-ring-color, #2196f3) !important;
-        outline-offset: 2px !important;
+        /* Graded by OverlayManager: +2 outer default → mild shrink → full inset */
+        outline-offset: var(--keypilot-focus-outline-offset, 2px) !important;
         box-shadow: var(--keypilot-focus-box-shadow, none) !important;
         filter: none !important;
       }
 
+      /* --inset kept for diagnostics; offset always comes from the graded var */
       .keypilot-focus-element.keypilot-focus-element--inset,
       [data-kp-focus="1"][data-kp-focus-inset="1"] {
         outline: var(--keypilot-focus-ring-width, 3px) solid var(--keypilot-focus-ring-color, #2196f3) !important;
-        outline-offset: calc(-1 * var(--keypilot-focus-ring-width, 3px)) !important;
+        outline-offset: var(--keypilot-focus-outline-offset, calc(-1 * var(--keypilot-focus-ring-width, 3px))) !important;
         box-shadow: var(--keypilot-focus-box-shadow, none) !important;
         filter: none !important;
       }
@@ -972,15 +974,17 @@ export class StyleManager {
       .keypilot-focus-element,
       [data-kp-focus="1"] {
         outline: var(--keypilot-focus-ring-width, 3px) solid var(--keypilot-focus-ring-color, #2196f3) !important;
-        outline-offset: 2px !important;
+        /* Graded by OverlayManager: +2 outer default → mild shrink → full inset */
+        outline-offset: var(--keypilot-focus-outline-offset, 2px) !important;
         box-shadow: var(--keypilot-focus-box-shadow, none) !important;
         filter: none !important;
       }
 
+      /* --inset kept for diagnostics; offset always comes from the graded var */
       .keypilot-focus-element.keypilot-focus-element--inset,
       [data-kp-focus="1"][data-kp-focus-inset="1"] {
         outline: var(--keypilot-focus-ring-width, 3px) solid var(--keypilot-focus-ring-color, #2196f3) !important;
-        outline-offset: calc(-1 * var(--keypilot-focus-ring-width, 3px)) !important;
+        outline-offset: var(--keypilot-focus-outline-offset, calc(-1 * var(--keypilot-focus-ring-width, 3px))) !important;
         box-shadow: var(--keypilot-focus-box-shadow, none) !important;
         filter: none !important;
       }

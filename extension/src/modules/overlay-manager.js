@@ -132,16 +132,16 @@ export class OverlayManager {
     this._useDomHoverFocusColors = false;
 
     /**
-     * When true, the current hover focus ring is a fixed-position DOM overlay
-     * (escape hatch for overflow-clipped targets). Scroll must reposition it;
-     * `usesElementFocusStyling()` reports false in this mode.
+     * When true, hover focus uses strategy C: body-level fixed DOM overlay.
+     * Scroll must reposition it; `usesElementFocusStyling()` reports false.
+     * Preference: A DOM outline → B in-target ring → C this path.
      * @type {boolean}
      */
     this._focusPaintUsesFixedOverlay = false;
 
     /**
-     * When true, hover focus is an absolute ring injected inside the target host
-     * (in-target path C). Co-located with the element → scrolls free; not fixed.
+     * When true, hover focus uses strategy B: absolute ring inside the host
+     * (local max z-index + 1). Co-located with the element → scrolls free.
      * @type {boolean}
      */
     this._focusPaintUsesInTargetRing = false;
@@ -211,14 +211,14 @@ export class OverlayManager {
   }
 
   /**
-   * True when focus chrome is painted on/with the target element (DOM-hover
-   * outline or in-target absolute ring) and therefore scrolls with the page.
-   * False when a body-level fixed canvas/DOM overlay must be repositioned.
+   * True when focus chrome is painted on/with the target element (strategies
+   * A or B) and therefore scrolls with the page. False when strategy C
+   * (body-level fixed overlay) must be repositioned on scroll.
    * @returns {boolean}
    */
   usesElementFocusStyling() {
-    // Outline (A) and in-target ring (C) co-locate with the element.
-    // Body fixed (B) needs scroll reposition — only that reports false.
+    // A (DOM outline) and B (in-target ring) co-locate with the element.
+    // C (body fixed) needs scroll reposition — only that reports false.
     return !!this._useDomHoverFocusColors && !this._focusPaintUsesFixedOverlay;
   }
 
@@ -1118,9 +1118,8 @@ export class OverlayManager {
       try { this._clearTextHoverElementStyling(); } catch { /* ignore */ }
     }
 
-    // DOM-hover paint: outline-first (A); in-target absolute ring (C) when
-    // outline would be under full-bleed media; body fixed (B) as last resort.
-    // See extension/reference-info/focus-ring-paint.md
+    // DOM-hover paint preference (see focus-ring-paint.md):
+    //   A = DOM outline; B = in-target ring (maxZ+1); C = body fixed overlay.
     if (this._useDomHoverFocusColors) {
       try { this.hideFocusOverlayCanvas(); } catch { /* ignore */ }
       try { this.hideFocusOverlayCSSCustomProps(); } catch { /* ignore */ }
@@ -1144,7 +1143,7 @@ export class OverlayManager {
       if (needsEscapeHatch) {
         try { this.clearElementFocusStyling(); } catch { /* ignore */ }
 
-        // Path C: co-located absolute ring (local max z + 1, host border-radius).
+        // Strategy B: co-located absolute ring (local max z + 1, host border-radius).
         let usedInTarget = false;
         try {
           usedInTarget = this.updateFocusOverlayInTarget(element, mode);
@@ -1158,14 +1157,14 @@ export class OverlayManager {
           return;
         }
 
-        // Path B: body fixed overlay.
+        // Strategy C: body fixed overlay (when B cannot mount).
         this._focusPaintUsesInTargetRing = false;
         try { this.hideInTargetFocusRing(); } catch { /* ignore */ }
         this._focusPaintUsesFixedOverlay = true;
         return this.updateFocusOverlayDOM(element, mode, rectOverride);
       }
 
-      // Path A: element outline.
+      // Strategy A: element outline.
       this._focusPaintUsesFixedOverlay = false;
       this._focusPaintUsesInTargetRing = false;
       try { this.hideInTargetFocusRing(); } catch { /* ignore */ }
@@ -1469,19 +1468,149 @@ export class OverlayManager {
   }
 
   /**
-   * True when **element-level** focus paint cannot show a visible ring, so we
-   * must use the fixed DOM overlay escape hatch.
+   * Preferred outer outline-offset (px) when clip ancestors leave enough room.
+   * Matches the historical path-A default.
+   */
+  _preferredFocusOutlineOffsetPx() {
+    return 2;
+  }
+
+  /**
+   * Minimum free space outside the border box across clipping ancestors.
+   * Infinity when there are no clippers (outer ring unconstrained).
    *
-   * Policy (outline-first):
-   * - Outer outline clipped by a parent alone → still use **element inset**
-   *   outline (ENABLE_FOCUS_CLIP_INSET). Example: control-strip / keyboard
-   *   chrome buttons inside `overflow:hidden` shells. Fixed overlay would also
-   *   sit under high z-index KP chrome (strip z > OVERLAYS) and stay invisible.
+   * @param {Element} paintEl
+   * @returns {number}
+   */
+  _minFocusOutlineRoomPx(paintEl) {
+    if (!paintEl || paintEl.nodeType !== 1) return Infinity;
+
+    let er = null;
+    try {
+      er = paintEl.getBoundingClientRect();
+    } catch {
+      return Infinity;
+    }
+    if (!er || !(er.width > 0) || !(er.height > 0)) return Infinity;
+
+    let clippers = [];
+    try {
+      const ctx = this._findFocusClipContext(paintEl);
+      clippers = (ctx && ctx.clippers) || [];
+    } catch {
+      clippers = [];
+    }
+    if (!clippers.length) {
+      // Fallback: treat "probably clipped" ancestors as zero-room flush case
+      // only when the dedicated walk found nothing but the heuristic disagrees.
+      try {
+        if (this._isProbablyClippedByAncestorOverflow(paintEl) && clippers.length === 0) {
+          // Heuristic without enumerated clippers — don't invent a number;
+          // graded path will still use preferred outer unless clippers exist.
+        }
+      } catch { /* ignore */ }
+      return Infinity;
+    }
+
+    let minRoom = Infinity;
+    for (let i = 0; i < clippers.length; i++) {
+      const c = clippers[i];
+      if (!c || c.nodeType !== 1) continue;
+      let ar = null;
+      try { ar = c.getBoundingClientRect(); } catch { ar = null; }
+      if (!ar) continue;
+      const roomLeft = er.left - ar.left;
+      const roomTop = er.top - ar.top;
+      const roomRight = ar.right - er.right;
+      const roomBottom = ar.bottom - er.bottom;
+      minRoom = Math.min(minRoom, roomLeft, roomTop, roomRight, roomBottom);
+    }
+    return Number.isFinite(minRoom) ? minRoom : Infinity;
+  }
+
+  /**
+   * Graded outline-offset (px) for path A.
+   *
+   * Outer ring needs roughly (offset + stroke) outside the border box.
+   * Given free room R outside the box to the nearest clip edge:
+   *   offset = clamp(R - stroke, -stroke, preferredOuter)
+   *
+   * Examples (stroke 3, preferred outer 2):
+   *   R ≥ 5  → +2 (full outer)
+   *   R = 4  → +1
+   *   R = 1  → -2 (mild inset; 1px bleed does not force full -3)
+   *   R ≤ 0  → -3 (full inset)
+   *
+   * @param {Element} paintEl
+   * @param {number} [ringWidthPx]
+   * @returns {number}
+   */
+  _computeGradedFocusOutlineOffset(paintEl, ringWidthPx = 3) {
+    const preferred = this._preferredFocusOutlineOffsetPx();
+    const stroke = Math.min(Math.max(Number(ringWidthPx) || 3, 1), 16);
+
+    if (!(FEATURE_FLAGS && FEATURE_FLAGS.ENABLE_FOCUS_CLIP_INSET)) {
+      return preferred;
+    }
+    if (!paintEl || paintEl.nodeType !== 1) return preferred;
+
+    const room = this._minFocusOutlineRoomPx(paintEl);
+    if (!Number.isFinite(room) || room === Infinity) {
+      return preferred;
+    }
+
+    // Subpixel slack so 0.4px room does not look like free outer space.
+    const available = room - 0.5;
+    let offset = available - stroke;
+    if (offset > preferred) offset = preferred;
+    if (offset < -stroke) offset = -stroke;
+
+    // Snap near-integers for stable CSS (avoid 1.999999px thrash).
+    const rounded = Math.round(offset * 100) / 100;
+    return rounded;
+  }
+
+  /**
+   * True when graded path-A offset paints **inside** the border box (negative
+   * offset). Outer/zero offset is not covered by full-bleed children; negative
+   * inset can be. Used to gate escape hatch B/C.
+   *
+   * @param {Element} paintEl
+   * @param {number} [ringWidthPx]
+   * @returns {boolean}
+   */
+  _wouldUseInsetFocusOutline(paintEl, ringWidthPx) {
+    if (!paintEl || paintEl.nodeType !== 1) return false;
+    if (!(FEATURE_FLAGS && FEATURE_FLAGS.ENABLE_FOCUS_CLIP_INSET)) {
+      return false;
+    }
+    let stroke = ringWidthPx;
+    if (stroke == null || !Number.isFinite(Number(stroke))) {
+      try {
+        stroke = this._getClickModeSettings().rectangleThickness;
+      } catch {
+        stroke = 3;
+      }
+    }
+    const offset = this._computeGradedFocusOutlineOffset(paintEl, stroke);
+    return offset < -0.25;
+  }
+
+  /**
+   * True when **element-level** focus paint (strategy A) cannot show a visible
+   * ring, so we must use an escape hatch (strategy B in-target, else C body fixed).
+   *
+   * Policy (outline-first = A preferred):
+   * - Outer outline clipped by a parent alone → still use **graded element
+   *   inset** on A (ENABLE_FOCUS_CLIP_INSET). Example: control-strip buttons
+   *   inside `overflow:hidden` shells. Body fixed (C) would also sit under high
+   *   z-index KP chrome (strip z > OVERLAYS) and stay invisible.
    * - Target clips itself **and** is covered by full-bleed media/pseudos →
-   *   inset outline is under the cover; use fixed overlay (TNW cards, etc.).
-   * - Target does not clip, but a full-size child stacking surface does
-   *   (e.g. `a.top-site-card` > `.top-site-tile` with isolation + page thumb)
-   *   → inset outline on the parent paints under the child; use fixed overlay.
+   *   inset outline is under the cover; use B/C (TNW cards, etc.).
+   * - Target does not clip, but a full-size child stacking surface would cover
+   *   an **inset** outline (e.g. newtab top-site tiles inside a scroller that
+   *   forces inset). If outer outline still has room, stay on A — do not
+   *   treat "has media child" alone as failure (ganjingworld thumbnails).
    *
    * @param {Element} element
    * @returns {boolean}
@@ -1515,11 +1644,13 @@ export class OverlayManager {
       return true;
     }
 
-    // Parent clickable is overflow:visible but a full-bleed media child paints a
-    // stacking layer over any inset outline on the parent (newtab top sites,
-    // card wrappers around overflow:hidden tiles, etc.).
+    // Full-bleed stacking child only defeats **inset** outline. Outer outline
+    // paints outside the border box and remains visible (ganjingworld, many
+    // video grids). Only escape when path A would be forced to inset.
     if (this._hasObscuringFullBleedChild(paintEl, er)) {
-      return true;
+      if (this._wouldUseInsetFocusOutline(paintEl)) {
+        return true;
+      }
     }
 
     return false;
@@ -1662,8 +1793,8 @@ export class OverlayManager {
   }
 
   /**
-   * Tags that cannot accept element children (replaced / void). In-target ring
-   * cannot mount inside these — fall back to body fixed overlay.
+   * Tags that cannot accept element children (replaced / void). Strategy B
+   * (in-target ring) cannot mount inside these — fall back to strategy C.
    * @param {Element|null|undefined} el
    * @returns {boolean}
    */
@@ -1828,7 +1959,7 @@ export class OverlayManager {
   }
 
   /**
-   * Path C: mount an absolute focus ring as last child of the host with
+   * Strategy B: mount an absolute focus ring as last child of the host with
    * z-index = max(local siblings)+1 and border-radius from the visual host.
    *
    * @param {Element} element
@@ -2009,7 +2140,6 @@ export class OverlayManager {
     // Optional clip-aware paint (flags in FEATURE_FLAGS — see constants.js).
     // Never mutate page overflow (broke IMDb carousels). Prefer painting on the
     // real hover target so data-kp-focus lands on the clickable <a>, not a parent.
-    let useInset = false;
     let clipCtx = { clippers: [], tightWrapper: null };
     const clipInsetOn = !!(FEATURE_FLAGS && FEATURE_FLAGS.ENABLE_FOCUS_CLIP_INSET);
     const tightPromoteOn = !!(FEATURE_FLAGS && FEATURE_FLAGS.ENABLE_FOCUS_TIGHT_WRAPPER_PROMOTION);
@@ -2025,11 +2155,6 @@ export class OverlayManager {
         clipCtx.tightWrapper.nodeType === 1
       ) {
         stylingTarget = clipCtx.tightWrapper;
-      }
-      if (clipInsetOn) {
-        useInset =
-          !!(clipCtx.clippers && clipCtx.clippers.length) ||
-          this._isProbablyClippedByAncestorOverflow(stylingTarget);
       }
     }
 
@@ -2075,15 +2200,37 @@ export class OverlayManager {
       ? 'none'
       : `0 0 0 2px ${shadowColor}, 0 0 10px 2px ${shadowBright}`;
 
+    // Graded outline-offset from clip-ancestor room (not binary outer vs full inset).
+    const outlineOffsetPx = clipInsetOn
+      ? this._computeGradedFocusOutlineOffset(stylingTarget, ringWidthPx)
+      : this._preferredFocusOutlineOffsetPx();
+    const useInset = outlineOffsetPx < -0.25;
+
     // Shadow DOM: document CSS does not pierce; inject into this root on first use.
     this._ensureStylesForElement(stylingTarget);
 
     // Apply styling using CSS custom properties
     stylingTarget.style.setProperty('--keypilot-focus-ring-color', ringColor);
     stylingTarget.style.setProperty('--keypilot-focus-ring-width', ringWidth);
+    stylingTarget.style.setProperty('--keypilot-focus-outline-offset', `${outlineOffsetPx}px`);
     stylingTarget.style.setProperty('--keypilot-focus-shadow-color', shadowColor);
     stylingTarget.style.setProperty('--keypilot-focus-ring-bg-color', ringBgColor);
     stylingTarget.style.setProperty('--keypilot-focus-box-shadow', boxShadow);
+
+    // Outline follows the element's own border-radius. Many video thumbs put
+    // radius on img / wrapper (12px) while the clickable <a> is square (0) —
+    // without this the ring looks like a hard outer box around rounded media.
+    // Only inject radius when the paint target itself has none.
+    try {
+      const ownRadius = this._readNonZeroBorderRadius(stylingTarget);
+      if (!ownRadius) {
+        const visualRadius = this._resolveElementBorderRadius(stylingTarget);
+        if (visualRadius) {
+          stylingTarget.style.setProperty('border-radius', visualRadius, 'important');
+          stylingTarget.setAttribute('data-kp-focus-radius-set', '1');
+        }
+      }
+    } catch { /* ignore */ }
 
     // Class + data attributes. Prefer data-kp-focus for paint (CSS): SPAs often
     // strip unknown classes on re-render but leave data-* alone.
@@ -2111,10 +2258,12 @@ export class OverlayManager {
         tagName: stylingTarget.tagName,
         originalTagName: element?.tagName,
         styledDifferentElement: stylingTarget !== element,
+        outlineOffsetPx,
         useInset: useInset,
         clipInsetFlag: clipInsetOn,
         tightPromoteFlag: tightPromoteOn,
         tightWrapper: !!(clipCtx && clipCtx.tightWrapper),
+        minRoom: this._minFocusOutlineRoomPx(stylingTarget),
         ringColor: ringColor,
         isTextInput: isTextInput
       });
@@ -2296,6 +2445,17 @@ export class OverlayManager {
       try {
         el.removeAttribute('data-kp-focus');
         el.removeAttribute('data-kp-focus-inset');
+        el.style.removeProperty('--keypilot-focus-outline-offset');
+        el.style.removeProperty('--keypilot-focus-ring-color');
+        el.style.removeProperty('--keypilot-focus-ring-width');
+        el.style.removeProperty('--keypilot-focus-shadow-color');
+        el.style.removeProperty('--keypilot-focus-ring-bg-color');
+        el.style.removeProperty('--keypilot-focus-box-shadow');
+        // Undo radius we injected so outline could match visual media corners.
+        if (el.getAttribute('data-kp-focus-radius-set') === '1') {
+          el.style.removeProperty('border-radius');
+          el.removeAttribute('data-kp-focus-radius-set');
+        }
       } catch { /* ignore */ }
       el.style.removeProperty('--keypilot-focus-ring-color');
       el.style.removeProperty('--keypilot-focus-ring-width');
@@ -2514,7 +2674,7 @@ export class OverlayManager {
     this.focusOverlay.style.border = `${rectangleThickness}px solid ${borderColor}`;
     this.focusOverlay.style.background = backgroundColor;
     this.focusOverlay.style.boxSizing = 'border-box';
-    // Match the target's corner radius (DOM outline inherits it; fixed overlay does not).
+    // Strategy C: match target corner radius (A inherits it; fixed layer does not).
     // Prefer the element itself, else a large rounded descendant (card tile / media).
     try {
       const radius = this._resolveElementBorderRadius(element);
@@ -2566,7 +2726,7 @@ export class OverlayManager {
 
   // Unified hide interface that switches between rendering modes
   hideFocusOverlay() {
-    // DOM-hover: clear element markers, in-target ring, and fixed overlay so
+    // DOM-hover: clear A markers, B in-target ring, and C fixed overlay so
     // hybrid paint never leaves a ghost ring.
     if (this._useDomHoverFocusColors) {
       this._focusPaintUsesFixedOverlay = false;
