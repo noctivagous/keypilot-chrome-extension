@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension - Frame Agent Bundle (child frames)
- * Generated on 2026-08-07T20:52:43.371Z
+ * Generated on 2026-08-07T21:04:19.788Z
  */
 
 (() => {
@@ -3104,18 +3104,14 @@ function installFrameClickAgent() {
 
     /**
      * Ask parent to take keyboard focus back (top KeyPilot owns keys).
+     * Only postMessage — do not call parent.focus() or blur here. Focusing the
+     * parent dismisses Google account / similar iframes that close on blur.
      */
     const requestFocusReclaim = () => {
+      if (!enabled) return;
       try {
         window.parent.postMessage({ type: MSG.FRAME_FOCUS_RECLAIM }, '*');
       } catch { /* ignore */ }
-      try {
-        const active = document.activeElement;
-        if (active && active !== document.body && active !== document.documentElement) {
-          active.blur();
-        }
-      } catch { /* ignore */ }
-      try { window.parent.focus(); } catch { /* ignore */ }
     };
 
     /**
@@ -3124,6 +3120,9 @@ function installFrameClickAgent() {
      * @param {number} [clientY]
      */
     const postPointerToParent = (inside, clientX, clientY) => {
+      // Never talk to the parent while KeyPilot is off — leave posts were
+      // dismissing Google account menus on toggle-off.
+      if (!enabled) return;
       // Popover full-KP path owns pointer/focus; don't fight hybrid focus.
       if (hasFullKeyPilot()) return;
       try {
@@ -3179,6 +3178,7 @@ function installFrameClickAgent() {
      */
     const bubbleChildPointer = (event, data) => {
       if (!data || data.type !== MSG.FRAME_POINTER) return false;
+      if (!enabled) return true; // swallow while off — do not re-bubble
       try {
         if (event.source === window) return false;
       } catch { /* ignore */ }
@@ -3338,10 +3338,15 @@ function installFrameClickAgent() {
       enabled = !!next;
       if (!enabled) {
         hideHover();
-        if (pointerInside) {
-          pointerInside = false;
-          postPointerToParent(false);
+        pointerInside = false;
+        lastPointerPostedX = NaN;
+        lastPointerPostedY = NaN;
+        if (pointerSyncRaf) {
+          try { cancelAnimationFrame(pointerSyncRaf); } catch { /* ignore */ }
+          pointerSyncRaf = 0;
         }
+        // Do NOT post FRAME_POINTER leave / reclaim. Toggle-off while a Google
+        // account (or similar) iframe is focused would blur it and dismiss the menu.
       }
     };
 
@@ -3668,10 +3673,11 @@ function installFrameClickAgent() {
     /** @param {MouseEvent|PointerEvent} e */
     const onPointer = (e) => {
       try {
+        if (!enabled) return;
         if (typeof e.clientX === 'number') lastMouse.x = e.clientX;
         if (typeof e.clientY === 'number') lastMouse.y = e.clientY;
         pointerInside = true;
-        if (enabled && !hasFullKeyPilot()) {
+        if (!hasFullKeyPilot()) {
           schedulePointerSync();
           scheduleHoverUpdate();
         }
@@ -3682,6 +3688,13 @@ function installFrameClickAgent() {
 
     /** @param {MouseEvent} [e] */
     const onPointerLeave = (e) => {
+      // Fully idle while KeyPilot is off — no parent messages.
+      if (!enabled) {
+        pointerInside = false;
+        hideHover();
+        return;
+      }
+
       // Moving into a nested <iframe> still fires mouseleave on this document.
       // Don't treat that as leaving the embed tree — the nested agent takes over.
       try {
@@ -3695,12 +3708,9 @@ function installFrameClickAgent() {
 
       pointerInside = false;
       hideHover();
-      // Leaving the embed: sync leave + reclaim keyboard so top can activate
-      // parent chrome without a manual blur click.
+      // Leaving the embed: sync leave so parent can reclaim keys. Do not blur or
+      // parent.focus() here — that dismisses Google account iframes on open.
       postPointerToParent(false);
-      if (frameHasKeyboardFocus()) {
-        requestFocusReclaim();
-      }
     };
 
     const onScroll = () => {

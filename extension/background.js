@@ -218,7 +218,9 @@ class ExtensionToggleManager {
   }
 
   /**
-   * Notify all tabs about state change
+   * Notify all frames in all tabs about state change.
+   * chrome.tabs.sendMessage without frameId only reaches the top frame — the
+   * light frame-click-agent in embeds must get the same toggle.
    * @param {boolean} enabled - New enabled state
    */
   async notifyAllTabs(enabled) {
@@ -230,13 +232,11 @@ class ExtensionToggleManager {
         timestamp: Date.now()
       };
 
-      // Send message to all tabs
       const notifications = tabs.map(async (tab) => {
+        if (typeof tab?.id !== 'number') return;
         try {
-          await chrome.tabs.sendMessage(tab.id, message);
+          await sendMessageToAllFramesInTab(tab.id, message);
         } catch (error) {
-          // Ignore errors for tabs that don't have content scripts
-          // (chrome:// pages, extension pages, etc.)
           console.debug('Could not notify tab', tab.id, ':', error.message);
         }
       });
@@ -248,6 +248,41 @@ class ExtensionToggleManager {
     }
   }
 
+}
+
+/**
+ * Send a runtime message to every frame in a tab (top + iframes).
+ * Plain tabs.sendMessage(tabId, msg) only reaches frameId 0.
+ * @param {number} tabId
+ * @param {object} message
+ * @returns {Promise<void>}
+ */
+async function sendMessageToAllFramesInTab(tabId, message) {
+  if (typeof tabId !== 'number') return;
+  let frames = [];
+  try {
+    frames = await chrome.webNavigation.getAllFrames({ tabId }) || [];
+  } catch {
+    frames = [];
+  }
+  if (!frames.length) {
+    try {
+      await chrome.tabs.sendMessage(tabId, message);
+    } catch {
+      // no receiver
+    }
+    return;
+  }
+  await Promise.allSettled(
+    frames.map(async (frame) => {
+      if (!frame || typeof frame.frameId !== 'number') return;
+      try {
+        await chrome.tabs.sendMessage(tabId, message, { frameId: frame.frameId });
+      } catch {
+        // Frame may lack a content script (chrome://, sandboxed, etc.)
+      }
+    })
+  );
 }
 
 // -----------------------------
@@ -718,7 +753,7 @@ class ContentScriptManager {
   async updateContentScriptState(enabled) {
     this.extensionEnabled = enabled;
 
-    // Notify all tabs about the state change
+    // Notify all frames in all tabs about the state change
     // The content scripts will handle enabling/disabling based on this state
     try {
       const tabs = await chrome.tabs.query({});
@@ -728,13 +763,12 @@ class ContentScriptManager {
         timestamp: Date.now()
       };
 
-      // Send message to all tabs
       const notifications = tabs.map(async (tab) => {
+        if (typeof tab?.id !== 'number') return;
         try {
-          await chrome.tabs.sendMessage(tab.id, message);
-        } catch (error) {
+          await sendMessageToAllFramesInTab(tab.id, message);
+        } catch {
           // Ignore errors for tabs that don't have content scripts
-          // (chrome:// pages, extension pages, etc.)
         }
       });
 

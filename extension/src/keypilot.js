@@ -4401,6 +4401,11 @@ export class KeyPilot extends EventManager {
   /**
    * Blur a focused page <iframe> so top-frame KeyPilot receives keydown again.
    * Skips KeyPilot popover iframes (their hybrid focus path owns focus routing).
+   *
+   * Important: Google account / profile menus focus their iframe on open and
+   * dismiss when that iframe blurs. Only call this after the pointer has been
+   * inside a page iframe and then left (or on explicit Esc), never merely
+   * because an iframe holds focus.
    */
   _reclaimKeyboardFocusFromPageIframes() {
     try {
@@ -4420,11 +4425,15 @@ export class KeyPilot extends EventManager {
   }
 
   /**
-   * Parent document received a pointer move — if an embed still holds focus, take it back.
+   * Parent document received a pointer move. Reclaim keys only if we were
+   * actively tracking the pointer inside a page iframe (KP_FRAME_POINTER) —
+   * meaning the pointer has left the embed. Do not reclaim just because an
+   * iframe is focused (Google account menu focuses its iframe on open).
    */
   _maybeReclaimFocusAfterParentPointerMove() {
     try {
       if (window !== window.top) return;
+      if (!this._framePointerInside) return;
       this._framePointerInside = false;
       this._framePointerIframe = null;
       this._reclaimKeyboardFocusFromPageIframes();
@@ -4440,6 +4449,9 @@ export class KeyPilot extends EventManager {
     if (!data || typeof data !== 'object') return;
 
     if (data.type === MSG.FRAME_FOCUS_RECLAIM) {
+      // Explicit Esc / stuck-focus recovery from the frame agent.
+      this._framePointerInside = false;
+      this._framePointerIframe = null;
       this._reclaimKeyboardFocusFromPageIframes();
       return;
     }
@@ -4457,9 +4469,14 @@ export class KeyPilot extends EventManager {
     if (this._isKeyPilotManagedIframe(iframe)) return;
 
     if (data.inside === false) {
+      const wasInside = this._framePointerInside;
       this._framePointerInside = false;
       this._framePointerIframe = null;
-      this._reclaimKeyboardFocusFromPageIframes();
+      // Only blur after we had been tracking pointer inside — avoids dismissing
+      // Google account menus that focus the iframe before the pointer enters.
+      if (wasInside) {
+        this._reclaimKeyboardFocusFromPageIframes();
+      }
       return;
     }
 
@@ -4567,29 +4584,44 @@ export class KeyPilot extends EventManager {
               }, '*');
             } catch { /* ignore */ }
           } else {
-            const common = {
-              bubbles: true,
-              cancelable: true,
-              composed: true,
-              view,
-              clientX: localX,
-              clientY: localY,
-              button: 0,
-              buttons: 0
-            };
-            try { el.dispatchEvent(new view.MouseEvent('mousedown', { ...common, buttons: 1 })); } catch { /* ignore */ }
-            try { el.dispatchEvent(new view.MouseEvent('mouseup', common)); } catch { /* ignore */ }
-            try { el.dispatchEvent(new view.MouseEvent('click', common)); } catch { /* ignore */ }
-            try {
-              const clickable = typeof el.closest === 'function'
-                ? el.closest('a[href], button, [role="button"], [role="link"], [role="menuitem"]')
-                : null;
-              if (clickable && clickable !== el) {
-                try { /** @type {HTMLElement} */ (clickable).click(); } catch { /* ignore */ }
-              } else if (typeof /** @type {any} */ (el).click === 'function') {
-                try { /** @type {any} */ (el).click(); } catch { /* ignore */ }
+            // Single activation only. Previously we dispatched a click sequence AND
+            // called HTMLElement.click(), which double-fired Issuu toggles (Search /
+            // Share open+close) and page-turn controls.
+            const clickable = typeof el.closest === 'function'
+              ? el.closest(
+                'a[href], button, [role="button"], [role="link"], [role="menuitem"], summary, input, select, textarea, label'
+              )
+              : null;
+            const target = clickable || el;
+            if (clickable && typeof /** @type {any} */ (clickable).click === 'function') {
+              try {
+                /** @type {any} */ (clickable).click();
+              } catch { /* fall through to event sequence */ }
+            } else {
+              const common = {
+                bubbles: true,
+                cancelable: true,
+                composed: true,
+                view,
+                clientX: localX,
+                clientY: localY,
+                button: 0,
+                buttons: 1
+              };
+              const hasPointer = typeof view.PointerEvent === 'function';
+              if (hasPointer) {
+                const pCommon = { ...common, pointerId: 1, pointerType: 'mouse', isPrimary: true };
+                try { target.dispatchEvent(new view.PointerEvent('pointerdown', pCommon)); } catch { /* ignore */ }
               }
-            } catch { /* ignore */ }
+              try { target.dispatchEvent(new view.MouseEvent('mousedown', common)); } catch { /* ignore */ }
+              const commonUp = { ...common, buttons: 0 };
+              if (hasPointer) {
+                const pUp = { ...commonUp, pointerId: 1, pointerType: 'mouse', isPrimary: true };
+                try { target.dispatchEvent(new view.PointerEvent('pointerup', pUp)); } catch { /* ignore */ }
+              }
+              try { target.dispatchEvent(new view.MouseEvent('mouseup', commonUp)); } catch { /* ignore */ }
+              try { target.dispatchEvent(new view.MouseEvent('click', commonUp)); } catch { /* ignore */ }
+            }
           }
           return true;
         }
@@ -5265,8 +5297,14 @@ export class KeyPilot extends EventManager {
     }
 
     // Esc in normal mode: also return keyboard ownership from page embeds (Issuu, etc.).
+    // Only when we were pointer-tracking inside — never blur a freshly focused Google
+    // account iframe that the user has not entered with the pointer.
     try {
-      this._reclaimKeyboardFocusFromPageIframes();
+      if (this._framePointerInside) {
+        this._framePointerInside = false;
+        this._framePointerIframe = null;
+        this._reclaimKeyboardFocusFromPageIframes();
+      }
     } catch { /* ignore */ }
   }
 
@@ -5636,6 +5674,11 @@ export class KeyPilot extends EventManager {
     
     this.enabled = false;
 
+    // Clear iframe pointer-tracking state without reclaiming focus. Blurring a
+    // focused page iframe here would dismiss Google account / similar menus
+    // when the user turns KeyPilot off.
+    this._framePointerInside = false;
+    this._framePointerIframe = null;
     this._uninstallFrameBridgeListener();
 
     // Always dismiss popovers/launcher/omnibox even if init is incomplete.
