@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension - Frame Agent Bundle (child frames)
- * Generated on 2026-08-07T20:24:34.059Z
+ * Generated on 2026-08-07T20:52:43.371Z
  */
 
 (() => {
@@ -813,6 +813,10 @@ const Z_INDEX = {
  * (`scroll-at-point.js`): nested overflow under the pointer first (vertical,
  * or horizontal when that container scrolls on X), then the document. Iframes
  * are forwarded via the light frame-click-agent (KP_FRAME_SCROLL).
+ *
+ * Cross-frame pointer/focus: child agents post KP_FRAME_POINTER so top lastMouse
+ * stays accurate over iframes; KP_FRAME_FOCUS_RECLAIM returns keyboard ownership
+ * to the top frame after a manual click into an embed (e.g. Issuu reader).
  */
 const SCROLL = Object.freeze({
   /** Legacy large page step (popover parent→iframe PAGE_UP/DOWN path) */
@@ -1402,6 +1406,18 @@ const MSG = Object.freeze({
   // frame-click-agent runs scroll-at-point (delta or edge) at local coordinates
   // (nested overflow first, then the frame document).
   FRAME_SCROLL: 'KP_FRAME_SCROLL',
+
+  // --- Child → parent pointer sync (window.postMessage) ---
+  // Frame agent reports local client coords so top KeyPilot can keep lastMouse fresh
+  // while the pointer is over a cross-origin (or any) iframe — parent documents do
+  // not receive mousemove inside iframes. Nested agents re-bubble with translated coords.
+  // Payload: { type, inside: boolean, clientX?: number, clientY?: number }
+  FRAME_POINTER: 'KP_FRAME_POINTER',
+
+  // --- Child → parent: return keyboard focus to the top frame ---
+  // Sent on Esc / pointer leave when the iframe had document focus (manual click).
+  // Top blurs the focused <iframe> so KeyPilot keybinds work on the parent again.
+  FRAME_FOCUS_RECLAIM: 'KP_FRAME_FOCUS_RECLAIM',
 
   // --- Child frame-agent → SW: inject full content-bundled.js into this frame ---
   // Used when a KeyPilot popover iframe needs full KeyPilot (cursor/overlays).
@@ -2813,14 +2829,18 @@ function getEngineHomeUrl(engine) {
  *
  * Runs only in non-top frames. Stays light (no full KeyPilot):
  *  1. postMessage / runtime KP_FRAME_ACTIVATE from the parent (top-frame F/B/G)
- *  2. Activate keybinds when this frame has focus
+ *  2. KP_FRAME_POINTER up to parent so top lastMouse stays fresh over iframes
+ *     (parent documents do not receive mousemove inside embeds)
  *  3. Blue hover outline on clickable targets under the pointer (rAF-throttled;
  *     matches top-frame DOM-hover focus palette)
  *  4. postMessage / runtime KP_FRAME_SCROLL from parent (C/V/Z/X under this iframe)
- *     plus local C/V/Z/X when this frame has focus — nested overflow first
+ *  5. Fallback activate/scroll keybinds only while this frame has document focus
+ *     (after a manual click); Esc / pointer-leave posts KP_FRAME_FOCUS_RECLAIM
+ *     so top KeyPilot regains keyboard ownership for elements outside the iframe
  *
  * Full KeyPilot still initializes only in the top frame. When full KP is also
- * running in this frame (KeyPilot popover), local key + hover handling is skipped.
+ * running in this frame (KeyPilot popover), local key + hover + pointer sync
+ * are skipped (popover hybrid focus owns that path).
  */
 
 
@@ -3009,6 +3029,39 @@ function hasFullKeyPilot() {
 }
 
 /**
+ * Find an iframe/frame element whose contentWindow is `win`.
+ * Window reference equality works across origins.
+ * @param {Window|null|undefined} win
+ * @returns {HTMLIFrameElement|HTMLFrameElement|null}
+ */
+function findIframeByContentWindow(win) {
+  if (!win) return null;
+  try {
+    const nodes = document.querySelectorAll('iframe, frame');
+    for (let i = 0; i < nodes.length; i++) {
+      const el = nodes[i];
+      try {
+        if (el && el.contentWindow === win) {
+          return /** @type {HTMLIFrameElement|HTMLFrameElement} */ (el);
+        }
+      } catch { /* ignore */ }
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
+/**
+ * True when this frame's document currently owns keyboard focus.
+ * @returns {boolean}
+ */
+function frameHasKeyboardFocus() {
+  try {
+    if (typeof document.hasFocus === 'function' && document.hasFocus()) return true;
+  } catch { /* ignore */ }
+  return false;
+}
+
+/**
  * Install the frame click agent in a child frame.
  * @returns {{ dispose: () => void }|null}
  */
@@ -3035,12 +3088,127 @@ function installFrameClickAgent() {
     let hoverRaf = 0;
     /** @type {boolean} */
     let pointerInside = false;
+    /** @type {number} */
+    let pointerSyncRaf = 0;
+    /** @type {number} */
+    let lastPointerPostedX = NaN;
+    /** @type {number} */
+    let lastPointerPostedY = NaN;
     /** @type {{ focusColor: string, overlayFillEnabled: boolean, overlayShadowEnabled: boolean, rectangleThickness: number }} */
     let focusChrome = {
       focusColor: 'blue',
       overlayFillEnabled: false,
       overlayShadowEnabled: false,
       rectangleThickness: 3
+    };
+
+    /**
+     * Ask parent to take keyboard focus back (top KeyPilot owns keys).
+     */
+    const requestFocusReclaim = () => {
+      try {
+        window.parent.postMessage({ type: MSG.FRAME_FOCUS_RECLAIM }, '*');
+      } catch { /* ignore */ }
+      try {
+        const active = document.activeElement;
+        if (active && active !== document.body && active !== document.documentElement) {
+          active.blur();
+        }
+      } catch { /* ignore */ }
+      try { window.parent.focus(); } catch { /* ignore */ }
+    };
+
+    /**
+     * @param {boolean} inside
+     * @param {number} [clientX]
+     * @param {number} [clientY]
+     */
+    const postPointerToParent = (inside, clientX, clientY) => {
+      // Popover full-KP path owns pointer/focus; don't fight hybrid focus.
+      if (hasFullKeyPilot()) return;
+      try {
+        if (inside) {
+          const x = Number(clientX);
+          const y = Number(clientY);
+          if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+          // Skip no-op posts (sub-pixel noise).
+          if (
+            Math.abs(x - lastPointerPostedX) < 0.5 &&
+            Math.abs(y - lastPointerPostedY) < 0.5
+          ) {
+            return;
+          }
+          lastPointerPostedX = x;
+          lastPointerPostedY = y;
+          window.parent.postMessage({
+            type: MSG.FRAME_POINTER,
+            inside: true,
+            clientX: x,
+            clientY: y
+          }, '*');
+        } else {
+          lastPointerPostedX = NaN;
+          lastPointerPostedY = NaN;
+          window.parent.postMessage({
+            type: MSG.FRAME_POINTER,
+            inside: false
+          }, '*');
+        }
+      } catch { /* ignore */ }
+    };
+
+    const schedulePointerSync = () => {
+      if (pointerSyncRaf) return;
+      pointerSyncRaf = requestAnimationFrame(() => {
+        pointerSyncRaf = 0;
+        try {
+          if (!enabled || !pointerInside || hasFullKeyPilot()) return;
+          const x = lastMouse.x;
+          const y = lastMouse.y;
+          if (typeof x !== 'number' || typeof y !== 'number') return;
+          postPointerToParent(true, x, y);
+        } catch { /* ignore */ }
+      });
+    };
+
+    /**
+     * Re-bubble a child frame's pointer report with coords local to this frame.
+     * @param {MessageEvent} event
+     * @param {any} data
+     * @returns {boolean}
+     */
+    const bubbleChildPointer = (event, data) => {
+      if (!data || data.type !== MSG.FRAME_POINTER) return false;
+      try {
+        if (event.source === window) return false;
+      } catch { /* ignore */ }
+      if (hasFullKeyPilot()) return true;
+
+      if (data.inside === false) {
+        // Nested child left; if the pointer is still in *this* frame, keep reporting.
+        if (pointerInside && typeof lastMouse.x === 'number' && typeof lastMouse.y === 'number') {
+          lastPointerPostedX = NaN;
+          lastPointerPostedY = NaN;
+          postPointerToParent(true, lastMouse.x, lastMouse.y);
+        } else {
+          postPointerToParent(false);
+        }
+        return true;
+      }
+
+      const childFrame = findIframeByContentWindow(/** @type {Window} */ (event.source));
+      if (!childFrame) return false;
+      let rect;
+      try {
+        rect = childFrame.getBoundingClientRect();
+      } catch {
+        return false;
+      }
+      const x = rect.left + Number(data.clientX);
+      const y = rect.top + Number(data.clientY);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return false;
+      postPointerToParent(true, x, y);
+      return true;
     };
 
     const paletteFor = (color) => {
@@ -3168,7 +3336,13 @@ function installFrameClickAgent() {
 
     const setEnabled = (next) => {
       enabled = !!next;
-      if (!enabled) hideHover();
+      if (!enabled) {
+        hideHover();
+        if (pointerInside) {
+          pointerInside = false;
+          postPointerToParent(false);
+        }
+      }
     };
 
     const syncEnabledFromRuntime = async () => {
@@ -3465,6 +3639,7 @@ function installFrameClickAgent() {
     const onMessage = (event) => {
       try {
         const data = event?.data;
+        if (bubbleChildPointer(event, data)) return;
         if (acceptActivatePayload(event, data)) {
           const x = Number(data.clientX);
           const y = Number(data.clientY);
@@ -3496,19 +3671,43 @@ function installFrameClickAgent() {
         if (typeof e.clientX === 'number') lastMouse.x = e.clientX;
         if (typeof e.clientY === 'number') lastMouse.y = e.clientY;
         pointerInside = true;
-        if (enabled && !hasFullKeyPilot()) scheduleHoverUpdate();
+        if (enabled && !hasFullKeyPilot()) {
+          schedulePointerSync();
+          scheduleHoverUpdate();
+        }
       } catch {
         // ignore
       }
     };
 
-    const onPointerLeave = () => {
+    /** @param {MouseEvent} [e] */
+    const onPointerLeave = (e) => {
+      // Moving into a nested <iframe> still fires mouseleave on this document.
+      // Don't treat that as leaving the embed tree — the nested agent takes over.
+      try {
+        const rt = e?.relatedTarget;
+        if (rt && (rt.tagName === 'IFRAME' || rt.tagName === 'FRAME')) {
+          pointerInside = false;
+          hideHover();
+          return;
+        }
+      } catch { /* ignore */ }
+
       pointerInside = false;
       hideHover();
+      // Leaving the embed: sync leave + reclaim keyboard so top can activate
+      // parent chrome without a manual blur click.
+      postPointerToParent(false);
+      if (frameHasKeyboardFocus()) {
+        requestFocusReclaim();
+      }
     };
 
     const onScroll = () => {
-      if (pointerInside && enabled) scheduleHoverUpdate();
+      if (pointerInside && enabled) {
+        schedulePointerSync();
+        scheduleHoverUpdate();
+      }
     };
 
     /** @param {KeyboardEvent} e */
@@ -3520,8 +3719,23 @@ function installFrameClickAgent() {
         if (hasModifierKeys(e)) return;
         if (isTypingContext(e.target)) return;
 
+        // Fallback path only: top KeyPilot is the primary keyboard owner via
+        // KP_FRAME_ACTIVATE / KP_FRAME_SCROLL. Local keys run only while this
+        // document has focus (after a real click into the iframe).
+        if (!frameHasKeyboardFocus()) return;
+
         const key = e.key;
         const kb = keybindings || {};
+
+        // Esc / cancel: return keyboard ownership to the top frame.
+        if (keyIn(kb.CANCEL, key) || key === 'Escape' || key === 'Esc') {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          requestFocusReclaim();
+          return;
+        }
+
         let mode = null;
         /** @type {number|null} */
         let scrollSign = null;
@@ -3539,6 +3753,16 @@ function installFrameClickAgent() {
           scrollSign = 1;
           scrollMode = 'edge';
         } else return;
+
+        // Pointer left this frame but focus stuck: reclaim instead of activating
+        // at stale in-frame coords (lets top handle the next key on parent UI).
+        if (!pointerInside) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          requestFocusReclaim();
+          return;
+        }
 
         let x = lastMouse.x;
         let y = lastMouse.y;
@@ -3637,6 +3861,7 @@ function installFrameClickAgent() {
     document.addEventListener('mousemove', onPointer, { capture: true, passive: true });
     document.addEventListener('pointermove', onPointer, { capture: true, passive: true });
     document.addEventListener('mouseleave', onPointerLeave, true);
+    document.addEventListener('pointerleave', onPointerLeave, true);
     document.addEventListener('scroll', onScroll, { capture: true, passive: true });
     window.addEventListener('scroll', onScroll, { capture: true, passive: true });
     document.addEventListener('keydown', onKeyDown, true);
@@ -3659,6 +3884,10 @@ function installFrameClickAgent() {
     return {
       dispose() {
         hideHover();
+        if (pointerSyncRaf) {
+          try { cancelAnimationFrame(pointerSyncRaf); } catch { /* ignore */ }
+          pointerSyncRaf = 0;
+        }
         try {
           if (hoverEl) hoverEl.remove();
         } catch { /* ignore */ }
@@ -3668,6 +3897,7 @@ function installFrameClickAgent() {
           document.removeEventListener('mousemove', onPointer, true);
           document.removeEventListener('pointermove', onPointer, true);
           document.removeEventListener('mouseleave', onPointerLeave, true);
+          document.removeEventListener('pointerleave', onPointerLeave, true);
           document.removeEventListener('scroll', onScroll, true);
           window.removeEventListener('scroll', onScroll, true);
           document.removeEventListener('keydown', onKeyDown, true);

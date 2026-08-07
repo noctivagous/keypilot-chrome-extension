@@ -85,6 +85,18 @@ export const MSG = Object.freeze({
   // (nested overflow first, then the frame document).
   FRAME_SCROLL: 'KP_FRAME_SCROLL',
 
+  // --- Child → parent pointer sync (window.postMessage) ---
+  // Frame agent reports local client coords so top KeyPilot can keep lastMouse fresh
+  // while the pointer is over a cross-origin (or any) iframe — parent documents do
+  // not receive mousemove inside iframes. Nested agents re-bubble with translated coords.
+  // Payload: { type, inside: boolean, clientX?: number, clientY?: number }
+  FRAME_POINTER: 'KP_FRAME_POINTER',
+
+  // --- Child → parent: return keyboard focus to the top frame ---
+  // Sent on Esc / pointer leave when the iframe had document focus (manual click).
+  // Top blurs the focused <iframe> so KeyPilot keybinds work on the parent again.
+  FRAME_FOCUS_RECLAIM: 'KP_FRAME_FOCUS_RECLAIM',
+
   // --- Child frame-agent → SW: inject full content-bundled.js into this frame ---
   // Used when a KeyPilot popover iframe needs full KeyPilot (cursor/overlays).
   // Thin frame-agent-bundled.js does not include the full app.

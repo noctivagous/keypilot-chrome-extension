@@ -200,6 +200,10 @@ export const Z_INDEX = {
  * (`scroll-at-point.js`): nested overflow under the pointer first (vertical,
  * or horizontal when that container scrolls on X), then the document. Iframes
  * are forwarded via the light frame-click-agent (KP_FRAME_SCROLL).
+ *
+ * Cross-frame pointer/focus: child agents post KP_FRAME_POINTER so top lastMouse
+ * stays accurate over iframes; KP_FRAME_FOCUS_RECLAIM returns keyboard ownership
+ * to the top frame after a manual click into an embed (e.g. Issuu reader).
  */
 export const SCROLL = Object.freeze({
   /** Legacy large page step (popover parent→iframe PAGE_UP/DOWN path) */

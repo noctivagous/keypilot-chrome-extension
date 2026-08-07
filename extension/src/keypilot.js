@@ -142,6 +142,14 @@ export class KeyPilot extends EventManager {
     this._mouseMoveRAF = 0;
     this._pendingMouse = { x: -1, y: -1, underHint: null };
 
+    // Child-frame pointer sync (KP_FRAME_POINTER) + keyboard reclaim from embeds.
+    /** @type {((event: MessageEvent) => void)|null} */
+    this._boundFrameBridgeMessage = null;
+    /** @type {boolean} */
+    this._framePointerInside = false;
+    /** @type {HTMLIFrameElement|HTMLFrameElement|null} */
+    this._framePointerIframe = null;
+
     // Post-click refresh: after UI-mutating clicks, re-query under cursor once the DOM settles.
     this._postClickRefreshToken = 0;
     this._postClickRefreshTimer = null;
@@ -1152,6 +1160,7 @@ export class KeyPilot extends EventManager {
     // highlight session — avoid ~startup DOM discovery when only browsing.
     this.start();
     this.cursor.show();
+    this._installFrameBridgeListener();
   }
 
   /**
@@ -2321,6 +2330,9 @@ export class KeyPilot extends EventManager {
 
     // Update current mouse position in coordinate manager for beforeunload storage
     this.mouseCoordinateManager.updateCurrentMousePosition(x, y);
+
+    // Pointer is on the parent document again — reclaim keys from a focused page iframe.
+    this._maybeReclaimFocusAfterParentPointerMove();
 
     // Coalesce hover detection to once-per-frame to avoid doing hit-testing at high mouse Hz.
     // Also extract an "under element" hint from the event path so we can skip elementFromPoint.
@@ -4317,6 +4329,160 @@ export class KeyPilot extends EventManager {
   }
 
   /**
+   * Listen for KP_FRAME_POINTER / KP_FRAME_FOCUS_RECLAIM from child frame agents.
+   * Top frame only — keeps lastMouse fresh over embeds and reclaims keyboard focus.
+   */
+  _installFrameBridgeListener() {
+    try {
+      if (window !== window.top) return;
+    } catch {
+      return;
+    }
+    if (this._boundFrameBridgeMessage) return;
+    this._boundFrameBridgeMessage = (event) => {
+      try {
+        this._onFrameBridgeMessage(event);
+      } catch { /* ignore */ }
+    };
+    try {
+      window.addEventListener('message', this._boundFrameBridgeMessage, true);
+    } catch { /* ignore */ }
+  }
+
+  _uninstallFrameBridgeListener() {
+    if (!this._boundFrameBridgeMessage) return;
+    try {
+      window.removeEventListener('message', this._boundFrameBridgeMessage, true);
+    } catch { /* ignore */ }
+    this._boundFrameBridgeMessage = null;
+    this._framePointerInside = false;
+    this._framePointerIframe = null;
+  }
+
+  /**
+   * @param {Window|null|undefined} win
+   * @returns {HTMLIFrameElement|HTMLFrameElement|null}
+   */
+  _findIframeByContentWindow(win) {
+    if (!win) return null;
+    try {
+      const nodes = document.querySelectorAll('iframe, frame');
+      for (let i = 0; i < nodes.length; i++) {
+        const el = nodes[i];
+        try {
+          if (el && el.contentWindow === win) {
+            return /** @type {HTMLIFrameElement|HTMLFrameElement} */ (el);
+          }
+        } catch { /* ignore */ }
+      }
+    } catch { /* ignore */ }
+    return null;
+  }
+
+  /**
+   * True when this iframe is KeyPilot UI (popover) — hybrid focus owns it.
+   * @param {Element|null|undefined} iframe
+   * @returns {boolean}
+   */
+  _isKeyPilotManagedIframe(iframe) {
+    if (!iframe || !(iframe instanceof Element)) return false;
+    try {
+      if (iframe.classList?.contains?.('modal-iframe')) return true;
+    } catch { /* ignore */ }
+    try {
+      if (this._isElementInPopover(iframe)) return true;
+    } catch { /* ignore */ }
+    try {
+      if (this.overlayManager?.popoverIframeElement === iframe) return true;
+    } catch { /* ignore */ }
+    return false;
+  }
+
+  /**
+   * Blur a focused page <iframe> so top-frame KeyPilot receives keydown again.
+   * Skips KeyPilot popover iframes (their hybrid focus path owns focus routing).
+   */
+  _reclaimKeyboardFocusFromPageIframes() {
+    try {
+      if (window !== window.top) return;
+    } catch {
+      return;
+    }
+    try {
+      const active = document.activeElement;
+      if (!active || (active.tagName !== 'IFRAME' && active.tagName !== 'FRAME')) {
+        return;
+      }
+      if (this._isKeyPilotManagedIframe(active)) return;
+      try { active.blur(); } catch { /* ignore */ }
+      try { window.focus(); } catch { /* ignore */ }
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Parent document received a pointer move — if an embed still holds focus, take it back.
+   */
+  _maybeReclaimFocusAfterParentPointerMove() {
+    try {
+      if (window !== window.top) return;
+      this._framePointerInside = false;
+      this._framePointerIframe = null;
+      this._reclaimKeyboardFocusFromPageIframes();
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * @param {MessageEvent} event
+   */
+  _onFrameBridgeMessage(event) {
+    if (!this.enabled) return;
+    const data = event?.data;
+    if (!data || typeof data !== 'object') return;
+
+    if (data.type === MSG.FRAME_FOCUS_RECLAIM) {
+      this._reclaimKeyboardFocusFromPageIframes();
+      return;
+    }
+
+    if (data.type !== MSG.FRAME_POINTER) return;
+
+    try {
+      if (event.source === window) return;
+    } catch { /* ignore */ }
+
+    const iframe = this._findIframeByContentWindow(/** @type {Window} */ (event.source));
+    if (!iframe) return;
+
+    // Popover hybrid focus owns KP popover iframes.
+    if (this._isKeyPilotManagedIframe(iframe)) return;
+
+    if (data.inside === false) {
+      this._framePointerInside = false;
+      this._framePointerIframe = null;
+      this._reclaimKeyboardFocusFromPageIframes();
+      return;
+    }
+
+    let rect;
+    try {
+      rect = iframe.getBoundingClientRect();
+    } catch {
+      return;
+    }
+    const x = rect.left + Number(data.clientX);
+    const y = rect.top + Number(data.clientY);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+
+    this._framePointerInside = true;
+    this._framePointerIframe = iframe;
+
+    // Keep lastMouse + cursor aligned while parent mousemove is silent over the iframe.
+    try { this.state.setMousePosition(x, y); } catch { /* ignore */ }
+    try { this.cursor.updatePosition(x, y); } catch { /* ignore */ }
+    try { this.mouseCoordinateManager.updateCurrentMousePosition(x, y); } catch { /* ignore */ }
+  }
+
+  /**
    * When the pointer is over a cross-origin (or any) iframe, top-frame hit-testing
    * only sees the <iframe> shell. Forward activate to the child frame-click-agent
    * with coordinates local to the iframe viewport.
@@ -5097,6 +5263,11 @@ export class KeyPilot extends EventManager {
     if (currentState.mode !== MODES.TEXT_FOCUS) {
       this.state.reset();
     }
+
+    // Esc in normal mode: also return keyboard ownership from page embeds (Issuu, etc.).
+    try {
+      this._reclaimKeyboardFocusFromPageIframes();
+    } catch { /* ignore */ }
   }
 
   handleOpenOmnibox() {
@@ -5371,6 +5542,8 @@ export class KeyPilot extends EventManager {
       } catch { /* ignore */ }
     }
 
+    this._installFrameBridgeListener();
+
     // Restore keyboard reference UI based on persisted state.
     // Fire-and-forget: we don't want to block enable() on storage.
     try {
@@ -5462,6 +5635,8 @@ export class KeyPilot extends EventManager {
     if (!this.enabled) return;
     
     this.enabled = false;
+
+    this._uninstallFrameBridgeListener();
 
     // Always dismiss popovers/launcher/omnibox even if init is incomplete.
     this.dismissActiveUI();
