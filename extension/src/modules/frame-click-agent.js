@@ -180,6 +180,92 @@ function closestLink(el) {
 }
 
 /**
+ * Find a <video>/<audio> under or near the hit target.
+ * X/Twitter center play overlays sit ABOVE the <video> in paint order, so
+ * elementFromPoint returns the button — walk ancestors AND elementsFromPoint
+ * (stack under the cursor) to find the media underneath.
+ * @param {Element|null} el
+ * @param {number} [clientX]
+ * @param {number} [clientY]
+ * @returns {HTMLMediaElement|null}
+ */
+function findMediaNear(el, clientX, clientY) {
+  const asMedia = (node) => {
+    try {
+      if (!node || node.nodeType !== 1) return null;
+      const tag = node.tagName;
+      if (tag === 'VIDEO' || tag === 'AUDIO') return /** @type {HTMLMediaElement} */ (node);
+    } catch { /* ignore */ }
+    return null;
+  };
+
+  let found = asMedia(el);
+  if (found) return found;
+
+  try {
+    const close = el && typeof el.closest === 'function' ? el.closest('video, audio') : null;
+    if (close) return /** @type {HTMLMediaElement} */ (close);
+  } catch { /* ignore */ }
+
+  try {
+    let p = el?.parentElement;
+    for (let i = 0; i < 8 && p; i++) {
+      const v = p.querySelector?.('video, audio');
+      if (v) return /** @type {HTMLMediaElement} */ (v);
+      p = p.parentElement;
+    }
+  } catch { /* ignore */ }
+
+  // Paint stack under the cursor (play button on top, <video> below).
+  if (Number.isFinite(clientX) && Number.isFinite(clientY)) {
+    try {
+      const stack = typeof document.elementsFromPoint === 'function'
+        ? document.elementsFromPoint(clientX, clientY)
+        : [];
+      for (let i = 0; i < stack.length; i++) {
+        const m = asMedia(stack[i]);
+        if (m) return m;
+        try {
+          const nested = stack[i]?.querySelector?.('video, audio');
+          if (nested) return /** @type {HTMLMediaElement} */ (nested);
+        } catch { /* ignore */ }
+      }
+    } catch { /* ignore */ }
+  }
+
+  return null;
+}
+
+/**
+ * @param {HTMLMediaElement} media
+ * @returns {boolean}
+ */
+function toggleMediaPlayback(media) {
+  if (!media) return false;
+  try {
+    if (media.paused) {
+      const p = media.play();
+      if (p && typeof p.then === 'function') {
+        p.catch(() => {
+          // Cross-frame activate arrives via postMessage and often lacks a user
+          // gesture; muted play is usually allowed (X embeds are muted by default).
+          try {
+            media.muted = true;
+            const p2 = media.play();
+            if (p2 && typeof p2.catch === 'function') p2.catch(() => { /* ignore */ });
+          } catch { /* ignore */ }
+        });
+      }
+    } else {
+      media.pause();
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * @param {string} url
  * @param {{ background?: boolean }} opts
  * @returns {boolean}
@@ -708,6 +794,18 @@ export function installFrameClickAgent() {
       const openInNewTab = !!opts.openInNewTab;
       const background = !!opts.background;
       const link = closestLink(el);
+      const activator = resolveClickable(el) || el;
+      // Use click coords so a center play overlay still resolves the <video> beneath it.
+      const mediaEl = findMediaNear(el, clientX, clientY);
+
+      // X/Twitter embeds: the large center play control paints above <video>.
+      // Clicking the video surface already works via media.play(); clicking the
+      // overlay must do the same — do NOT HTMLElement.click() the overlay (that
+      // path no-ops / follows a wrapping link and never starts playback).
+      if (mediaEl && !openInNewTab && !background) {
+        toggleMediaPlayback(mediaEl);
+        return true;
+      }
 
       if (link && (openInNewTab || background)) {
         const url = link.href;
@@ -731,15 +829,27 @@ export function installFrameClickAgent() {
         }
       }
 
-      const activator = resolveClickable(el) || el;
-
       // Same-window link: programmatic click preserves site handlers better than location assign.
+      // Skip when we already handled paused media above.
       if (activator.tagName === 'A' && /** @type {HTMLAnchorElement} */ (activator).href && !openInNewTab && !background) {
         try {
           /** @type {HTMLAnchorElement} */ (activator).click();
           return true;
         } catch { /* fall through to event sequence */ }
       }
+
+      // Buttons: prefer trusted HTMLElement.click() (media play overlays, X embeds).
+      try {
+        if (
+          activator &&
+          (activator.tagName === 'BUTTON' ||
+            (activator.getAttribute?.('role') || '').toLowerCase() === 'button') &&
+          typeof /** @type {any} */ (activator).click === 'function'
+        ) {
+          /** @type {any} */ (activator).click();
+          return true;
+        }
+      } catch { /* fall through */ }
 
       // <summary> toggles <details> only via activation behavior (HTMLElement.click() /
       // trusted click). Synthetic events alone do not open/close the accordion.
