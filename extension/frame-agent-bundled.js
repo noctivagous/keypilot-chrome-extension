@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension - Frame Agent Bundle (child frames)
- * Generated on 2026-08-07T21:24:06.720Z
+ * Generated on 2026-08-07T21:29:23.146Z
  */
 
 (() => {
@@ -3000,16 +3000,15 @@ function closestLink(el) {
 }
 
 /**
- * Find a <video>/<audio> under or near the hit target.
- * X/Twitter center play overlays sit ABOVE the <video> in paint order, so
- * elementFromPoint returns the button — walk ancestors AND elementsFromPoint
- * (stack under the cursor) to find the media underneath.
+ * Find a <video>/<audio> at the hit target or in the paint stack under the cursor.
+ * X/Twitter center play overlays sit ABOVE the <video> — elementsFromPoint finds
+ * media underneath. Do not search distant ancestors (that steals every embed click).
  * @param {Element|null} el
  * @param {number} [clientX]
  * @param {number} [clientY]
  * @returns {HTMLMediaElement|null}
  */
-function findMediaNear(el, clientX, clientY) {
+function findMediaAtPoint(el, clientX, clientY) {
   const asMedia = (node) => {
     try {
       if (!node || node.nodeType !== 1) return null;
@@ -3027,16 +3026,6 @@ function findMediaNear(el, clientX, clientY) {
     if (close) return /** @type {HTMLMediaElement} */ (close);
   } catch { /* ignore */ }
 
-  try {
-    let p = el?.parentElement;
-    for (let i = 0; i < 8 && p; i++) {
-      const v = p.querySelector?.('video, audio');
-      if (v) return /** @type {HTMLMediaElement} */ (v);
-      p = p.parentElement;
-    }
-  } catch { /* ignore */ }
-
-  // Paint stack under the cursor (play button on top, <video> below).
   if (Number.isFinite(clientX) && Number.isFinite(clientY)) {
     try {
       const stack = typeof document.elementsFromPoint === 'function'
@@ -3045,15 +3034,72 @@ function findMediaNear(el, clientX, clientY) {
       for (let i = 0; i < stack.length; i++) {
         const m = asMedia(stack[i]);
         if (m) return m;
-        try {
-          const nested = stack[i]?.querySelector?.('video, audio');
-          if (nested) return /** @type {HTMLMediaElement} */ (nested);
-        } catch { /* ignore */ }
       }
     } catch { /* ignore */ }
   }
 
   return null;
+}
+
+/**
+ * @param {Element|null} el
+ * @param {HTMLMediaElement|null} media
+ * @returns {boolean}
+ */
+function isDirectMediaHit(el, media) {
+  if (!el || !media) return false;
+  try {
+    if (el === media) return true;
+    if (el.tagName === 'VIDEO' || el.tagName === 'AUDIO') return true;
+    if (typeof media.contains === 'function' && media.contains(el)) return true;
+  } catch { /* ignore */ }
+  return false;
+}
+
+/**
+ * Center play/pause overlay — not tweet links or social action buttons.
+ * @param {Element|null} el
+ * @param {Element|null} activator
+ * @returns {boolean}
+ */
+function isPlayOverlayControl(el, activator) {
+  /** @type {Element[]} */
+  const nodes = [];
+  if (activator && activator.nodeType === 1) nodes.push(activator);
+  if (el && el.nodeType === 1) nodes.push(el);
+  try {
+    const b = el && typeof el.closest === 'function'
+      ? el.closest('button, [role="button"]')
+      : null;
+    if (b) nodes.push(b);
+  } catch { /* ignore */ }
+
+  for (const c of nodes) {
+    if (!c || c.nodeType !== 1) continue;
+    try {
+      if (c.tagName === 'A' && /** @type {HTMLAnchorElement} */ (c).href) continue;
+    } catch { /* ignore */ }
+
+    let label = '';
+    try {
+      label = `${c.getAttribute?.('aria-label') || ''} ${c.getAttribute?.('title') || ''} ${c.getAttribute?.('data-testid') || ''}`.toLowerCase();
+    } catch { /* ignore */ }
+
+    if (/like|reply|repost|retweet|share|follow|bookmark|menu|more|comment|profile/.test(label)) {
+      continue;
+    }
+    if (/play|pause|replay|watch/.test(label)) return true;
+
+    try {
+      const tag = c.tagName;
+      const role = (c.getAttribute?.('role') || '').toLowerCase();
+      if (tag !== 'BUTTON' && role !== 'button') continue;
+      if (c === el || c === activator || (typeof c.contains === 'function' && el && c.contains(el))) {
+        return true;
+      }
+    } catch { /* ignore */ }
+  }
+  return false;
 }
 
 /**
@@ -3615,14 +3661,18 @@ function installFrameClickAgent() {
       const background = !!opts.background;
       const link = closestLink(el);
       const activator = resolveClickable(el) || el;
-      // Use click coords so a center play overlay still resolves the <video> beneath it.
-      const mediaEl = findMediaNear(el, clientX, clientY);
+      const mediaEl = findMediaAtPoint(el, clientX, clientY);
+      const directMedia = isDirectMediaHit(el, mediaEl);
+      const playOverlay = isPlayOverlayControl(el, activator);
 
-      // X/Twitter embeds: the large center play control paints above <video>.
-      // Clicking the video surface already works via media.play(); clicking the
-      // overlay must do the same — do NOT HTMLElement.click() the overlay (that
-      // path no-ops / follows a wrapping link and never starts playback).
-      if (mediaEl && !openInNewTab && !background) {
+      // Only toggle media for a direct video hit or the center play overlay.
+      // Finding any nearby <video> must not swallow link / control clicks in the embed.
+      if (
+        mediaEl &&
+        !openInNewTab &&
+        !background &&
+        (directMedia || playOverlay)
+      ) {
         toggleMediaPlayback(mediaEl);
         return true;
       }
