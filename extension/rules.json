@@ -11,7 +11,15 @@
                 },
                 {
                     "operation": "remove",
+                    "header": "Frame-Options"
+                },
+                {
+                    "operation": "remove",
                     "header": "Content-Security-Policy"
+                },
+                {
+                    "operation": "remove",
+                    "header": "Content-Security-Policy-Report-Only"
                 }
             ]
         },
@@ -20,5 +28,3 @@
         }
     }
 ]
-
-
