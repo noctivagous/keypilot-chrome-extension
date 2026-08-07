@@ -1,10 +1,10 @@
 /**
  * Cursor-aware keyboard scrolling.
  *
- * C / V (and callers that reuse this helper) should scroll the nearest overflow
- * container under the pointer first; only if nothing nested can scroll do we
- * fall back to the document / window. Horizontal-only overflow maps C→left and
- * V→right; mixed or vertical-only overflow uses up/down.
+ * C / V (delta) and Z / X (edge) should scroll the nearest overflow container
+ * under the pointer first; only if nothing nested can scroll do we fall back
+ * to the document / window. Horizontal-only overflow maps up/left and
+ * down/right; mixed or vertical-only overflow uses up/down.
  */
 
 /** Pixels of slack when testing whether an edge still has room to scroll. */
@@ -366,5 +366,101 @@ export function scrollAtPoint(clientX, clientY, sign, deltaPx, behavior = 'smoot
   const dx = axis === 'x' ? s * amount : 0;
   const dy = axis === 'y' ? s * amount : 0;
   const ok = scrollElementBy(el, dx, dy, behavior, doc, win);
+  return { scrolled: ok, axis, el };
+}
+
+/**
+ * Jump an element (or window for document roots) to the start/end of an axis.
+ * @param {Element} el
+ * @param {'y'|'x'} axis
+ * @param {number} sign  -1 = top/left, +1 = bottom/right
+ * @param {ScrollBehavior} [behavior]
+ * @param {Document} [doc]
+ * @param {Window} [win]
+ * @returns {boolean}
+ */
+export function scrollElementToEdge(el, axis, sign, behavior = 'smooth', doc = document, win = window) {
+  if (!el || (axis !== 'y' && axis !== 'x')) return false;
+  const s = sign < 0 ? -1 : 1;
+
+  let left = 0;
+  let top = 0;
+  try {
+    if (axis === 'y') {
+      left = el.scrollLeft || 0;
+      top = s < 0 ? 0 : Math.max(0, (el.scrollHeight || 0) - (el.clientHeight || 0));
+    } else {
+      top = el.scrollTop || 0;
+      left = s < 0 ? 0 : Math.max(0, (el.scrollWidth || 0) - (el.clientWidth || 0));
+    }
+  } catch {
+    return false;
+  }
+
+  const opts = { left, top, behavior };
+
+  try {
+    if (typeof el.scrollTo === 'function') {
+      el.scrollTo(opts);
+      return true;
+    }
+  } catch { /* fall through */ }
+
+  try {
+    if (axis === 'y') el.scrollTop = top;
+    else el.scrollLeft = left;
+    return true;
+  } catch { /* ignore */ }
+
+  if (isDocumentScrollRoot(el, doc) && win && typeof win.scrollTo === 'function') {
+    try {
+      win.scrollTo(opts);
+      return true;
+    } catch {
+      try {
+        if (axis === 'y') win.scrollTo(win.pageXOffset || 0, top);
+        else win.scrollTo(left, win.pageYOffset || 0);
+        return true;
+      } catch { /* ignore */ }
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Scroll under the cursor to the edge: nested overflow first, then the page.
+ * Same targeting as {@link scrollAtPoint} (C/V); Z jumps to start, X to end.
+ *
+ * @param {number} clientX
+ * @param {number} clientY
+ * @param {number} sign  -1 = Z (top/left), +1 = X (bottom/right)
+ * @param {ScrollBehavior} [behavior]
+ * @param {{ doc?: Document, win?: Window }} [ctx]
+ * @returns {{ scrolled: boolean, axis: 'y'|'x'|null, el: Element|null }}
+ */
+export function scrollToEdgeAtPoint(clientX, clientY, sign, behavior = 'smooth', ctx = {}) {
+  const doc = ctx.doc || document;
+  const win = ctx.win || (doc.defaultView || window);
+  const s = sign < 0 ? -1 : 1;
+
+  const target = findScrollTargetAtPoint(clientX, clientY, s, { doc, win });
+  if (!target) {
+    // Absolute last resort: window scroll on Y (preserves old Z/X page behavior).
+    try {
+      if (win && typeof win.scrollTo === 'function') {
+        const se = doc.scrollingElement || doc.documentElement || doc.body;
+        const top = s < 0
+          ? 0
+          : Math.max(0, (se?.scrollHeight || doc.body?.scrollHeight || 0) - (win.innerHeight || 0));
+        win.scrollTo({ top, left: win.pageXOffset || 0, behavior });
+        return { scrolled: true, axis: 'y', el: se || null };
+      }
+    } catch { /* ignore */ }
+    return { scrolled: false, axis: null, el: null };
+  }
+
+  const { el, axis } = target;
+  const ok = scrollElementToEdge(el, axis, s, behavior, doc, win);
   return { scrolled: ok, axis, el };
 }

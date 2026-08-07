@@ -37,7 +37,7 @@ import {
 } from './utils/extension-context.js';
 import { storageGetValue, storageSetValue } from './utils/storage.js';
 import { getHoveredImage } from './utils/image-utils.js';
-import { scrollAtPoint, elementFromPointDeep } from './utils/scroll-at-point.js';
+import { scrollAtPoint, scrollToEdgeAtPoint, elementFromPointDeep } from './utils/scroll-at-point.js';
 
 export class KeyPilot extends EventManager {
   constructor() {
@@ -2495,7 +2495,8 @@ export class KeyPilot extends EventManager {
   }
 
   /**
-   * Z / X scroll distance (px). Currently uses the constant; not yet a setting.
+   * Legacy page-step scroll distance (px). Used by popover parent→iframe
+   * PAGE_UP / PAGE_DOWN; Z / X are cursor-aware edge jumps instead.
    * @returns {number}
    */
   _getPageScrollPx() {
@@ -2541,6 +2542,21 @@ export class KeyPilot extends EventManager {
   }
 
   /**
+   * Last known cursor point, or viewport center when unknown.
+   * @returns {{ x: number, y: number }}
+   */
+  _getScrollCursorPoint() {
+    const st = this.state.getState();
+    let x = Number(st?.lastMouse?.x);
+    let y = Number(st?.lastMouse?.y);
+    if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0) {
+      x = Math.floor(window.innerWidth / 2);
+      y = Math.floor(window.innerHeight / 2);
+    }
+    return { x, y };
+  }
+
+  /**
    * C / V: scroll the overflow container under the cursor first (vertical, or
    * horizontal when that container only/can scroll on X). Falls back to the
    * page when nothing nested can move. Forwards into iframes via the light
@@ -2552,20 +2568,31 @@ export class KeyPilot extends EventManager {
     const delta = this._getHalfPageScrollPx();
     const behavior = this._getScrollBehavior();
     const s = sign < 0 ? -1 : 1;
-    const st = this.state.getState();
-    let x = Number(st?.lastMouse?.x);
-    let y = Number(st?.lastMouse?.y);
-    if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0) {
-      x = Math.floor(window.innerWidth / 2);
-      y = Math.floor(window.innerHeight / 2);
-    }
+    const { x, y } = this._getScrollCursorPoint();
 
     // Iframe under cursor: top hit-testing only sees the shell.
-    if (this._tryScrollIframeUnderCursor(x, y, s, delta, behavior)) {
+    if (this._tryScrollIframeUnderCursor(x, y, s, behavior, { mode: 'delta', deltaPx: delta })) {
       return;
     }
 
     scrollAtPoint(x, y, s, delta, behavior);
+  }
+
+  /**
+   * Z / X: same cursor targeting as C / V, but jump to the start/end edge.
+   *
+   * @param {number} sign  -1 = Z (top/left), +1 = X (bottom/right)
+   */
+  _scrollToEdgeAtCursor(sign) {
+    const behavior = this._getScrollBehavior();
+    const s = sign < 0 ? -1 : 1;
+    const { x, y } = this._getScrollCursorPoint();
+
+    if (this._tryScrollIframeUnderCursor(x, y, s, behavior, { mode: 'edge' })) {
+      return;
+    }
+
+    scrollToEdgeAtPoint(x, y, s, behavior);
   }
 
   /**
@@ -2575,11 +2602,11 @@ export class KeyPilot extends EventManager {
    * @param {number} clientX
    * @param {number} clientY
    * @param {number} sign
-   * @param {number} deltaPx
    * @param {ScrollBehavior} behavior
+   * @param {{ mode?: 'delta'|'edge', deltaPx?: number }} [opts]
    * @returns {boolean} true if an iframe under the cursor was targeted
    */
-  _tryScrollIframeUnderCursor(clientX, clientY, sign, deltaPx, behavior) {
+  _tryScrollIframeUnderCursor(clientX, clientY, sign, behavior, opts = {}) {
     if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return false;
 
     let under = null;
@@ -2612,12 +2639,14 @@ export class KeyPilot extends EventManager {
       return false;
     }
 
+    const mode = opts.mode === 'edge' ? 'edge' : 'delta';
     const payload = {
       type: MSG.FRAME_SCROLL,
       clientX: localX,
       clientY: localY,
       sign: sign < 0 ? -1 : 1,
-      deltaPx: Math.abs(Number(deltaPx)) || 0,
+      mode,
+      deltaPx: mode === 'edge' ? 0 : (Math.abs(Number(opts.deltaPx)) || 0),
       behavior: behavior === 'auto' || behavior === 'instant' ? 'auto' : 'smooth',
       frameName: typeof iframe.name === 'string' ? iframe.name : ''
     };
@@ -2645,10 +2674,17 @@ export class KeyPilot extends EventManager {
             return true;
           } catch { /* fall through to scroll this frame */ }
         }
-        scrollAtPoint(localX, localY, payload.sign, payload.deltaPx, payload.behavior, {
-          doc,
-          win: view
-        });
+        if (mode === 'edge') {
+          scrollToEdgeAtPoint(localX, localY, payload.sign, payload.behavior, {
+            doc,
+            win: view
+          });
+        } else {
+          scrollAtPoint(localX, localY, payload.sign, payload.deltaPx, payload.behavior, {
+            doc,
+            win: view
+          });
+        }
         return true;
       }
     } catch {
@@ -2674,21 +2710,13 @@ export class KeyPilot extends EventManager {
 
   handlePageTop(e) {
     if (!this._allowActionKey('handlePageTop', e)) return;
-    // Scroll to top of page (Home key equivalent)
-    window.scrollTo({
-      top: 0,
-      behavior: this._getScrollBehavior()
-    });
+    this._scrollToEdgeAtCursor(-1);
     this.emitAction('scrollTop');
   }
 
   handlePageBottom(e) {
     if (!this._allowActionKey('handlePageBottom', e)) return;
-    // Scroll to bottom of page (End key equivalent)
-    window.scrollTo({
-      top: document.documentElement.scrollHeight,
-      behavior: this._getScrollBehavior()
-    });
+    this._scrollToEdgeAtCursor(1);
     this.emitAction('scrollBottom');
   }
 

@@ -6,8 +6,8 @@
  *  2. Activate keybinds when this frame has focus
  *  3. Blue hover outline on clickable targets under the pointer (rAF-throttled;
  *     matches top-frame DOM-hover focus palette)
- *  4. postMessage / runtime KP_FRAME_SCROLL from parent (C/V under this iframe)
- *     plus local C/V when this frame has focus — nested overflow first
+ *  4. postMessage / runtime KP_FRAME_SCROLL from parent (C/V/Z/X under this iframe)
+ *     plus local C/V/Z/X when this frame has focus — nested overflow first
  *
  * Full KeyPilot still initializes only in the top frame. When full KP is also
  * running in this frame (KeyPilot popover), local key + hover handling is skipped.
@@ -22,7 +22,7 @@ import {
   normalizeKeyboardLayoutId
 } from '../config/keyboard-layouts.js';
 import { getSettings, SETTINGS_STORAGE_KEY, scrollBehaviorFromSpeed, DEFAULT_SETTINGS } from './settings-manager.js';
-import { scrollAtPoint } from '../utils/scroll-at-point.js';
+import { scrollAtPoint, scrollToEdgeAtPoint } from '../utils/scroll-at-point.js';
 
 /**
  * @typedef {{ openInNewTab?: boolean, background?: boolean }} FrameActivateOptions
@@ -309,16 +309,18 @@ export function installFrameClickAgent() {
     };
 
     /**
-     * C / V scroll under the pointer (or given coords): nested overflow first.
+     * C / V (delta) or Z / X (edge) scroll under the pointer.
      * @param {number} clientX
      * @param {number} clientY
      * @param {number} sign  -1 up/left, +1 down/right
      * @param {number} [deltaPx]
      * @param {ScrollBehavior} [behavior]
+     * @param {'delta'|'edge'} [mode='delta']
      * @returns {boolean}
      */
-    const scrollAt = (clientX, clientY, sign, deltaPx, behavior) => {
+    const scrollAt = (clientX, clientY, sign, deltaPx, behavior, mode = 'delta') => {
       if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return false;
+      const edge = mode === 'edge';
       const amount = Math.abs(Number(deltaPx));
       const delta = Number.isFinite(amount) && amount > 0 ? amount : halfPagePx;
       const s = sign < 0 ? -1 : 1;
@@ -342,7 +344,8 @@ export function installFrameClickAgent() {
               clientX: localX,
               clientY: localY,
               sign: s,
-              deltaPx: delta,
+              mode: edge ? 'edge' : 'delta',
+              deltaPx: edge ? 0 : delta,
               behavior: beh,
               frameName: typeof iframe.name === 'string' ? iframe.name : ''
             }, '*');
@@ -351,6 +354,10 @@ export function installFrameClickAgent() {
         }
       } catch { /* fall through */ }
 
+      if (edge) {
+        const result = scrollToEdgeAtPoint(clientX, clientY, s, beh);
+        return !!result?.scrolled;
+      }
       const result = scrollAtPoint(clientX, clientY, s, delta, beh);
       return !!result?.scrolled;
     };
@@ -671,7 +678,8 @@ export function installFrameClickAgent() {
           const beh = data.behavior === 'auto' || data.behavior === 'instant'
             ? 'auto'
             : (data.behavior || scrollBehavior);
-          scrollAt(x, y, sign, delta, beh);
+          const mode = data.mode === 'edge' ? 'edge' : 'delta';
+          scrollAt(x, y, sign, delta, beh, mode);
         }
       } catch {
         // ignore
@@ -713,12 +721,20 @@ export function installFrameClickAgent() {
         let mode = null;
         /** @type {number|null} */
         let scrollSign = null;
+        /** @type {'delta'|'edge'} */
+        let scrollMode = 'delta';
         if (keyIn(kb.ACTIVATE, key)) mode = 'activate';
         else if (keyIn(kb.ACTIVATE_NEW_TAB, key)) mode = 'newTab';
         else if (keyIn(kb.ACTIVATE_NEW_TAB_BACKGROUND, key)) mode = 'background';
         else if (keyIn(kb.PAGE_UP_INSTANT, key)) scrollSign = -1;
         else if (keyIn(kb.PAGE_DOWN_INSTANT, key)) scrollSign = 1;
-        else return;
+        else if (keyIn(kb.PAGE_TOP, key)) {
+          scrollSign = -1;
+          scrollMode = 'edge';
+        } else if (keyIn(kb.PAGE_BOTTOM, key)) {
+          scrollSign = 1;
+          scrollMode = 'edge';
+        } else return;
 
         let x = lastMouse.x;
         let y = lastMouse.y;
@@ -732,7 +748,7 @@ export function installFrameClickAgent() {
         e.stopImmediatePropagation();
 
         if (scrollSign !== null) {
-          scrollAt(x, y, scrollSign, halfPagePx, scrollBehavior);
+          scrollAt(x, y, scrollSign, halfPagePx, scrollBehavior, scrollMode);
           return;
         }
 
@@ -780,12 +796,14 @@ export function installFrameClickAgent() {
             return true;
           }
           const sign = Number(message.sign) < 0 ? -1 : 1;
+          const mode = message.mode === 'edge' ? 'edge' : 'delta';
           const ok = scrollAt(
             Number(message.clientX),
             Number(message.clientY),
             sign,
             Number(message.deltaPx),
-            message.behavior
+            message.behavior,
+            mode
           );
           try { sendResponse({ ok: !!ok, href: String(location.href || '').slice(0, 120) }); } catch { /* ignore */ }
           return true;

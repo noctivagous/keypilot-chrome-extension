@@ -196,13 +196,13 @@ export const Z_INDEX = {
  * Runtime values can be overridden via Settings (`kp_settings_v1.scroll`).
  * Used by key handlers and popover iframe bridges.
  *
- * C / V (half-page) use cursor-aware scrolling (`scroll-at-point.js`):
- * nested overflow under the pointer first (vertical, or horizontal when that
- * container scrolls on X), then the document. Iframes are forwarded via the
- * light frame-click-agent (KP_FRAME_SCROLL).
+ * C / V (half-page) and Z / X (to edge) use cursor-aware scrolling
+ * (`scroll-at-point.js`): nested overflow under the pointer first (vertical,
+ * or horizontal when that container scrolls on X), then the document. Iframes
+ * are forwarded via the light frame-click-agent (KP_FRAME_SCROLL).
  */
 export const SCROLL = Object.freeze({
-  /** Z / X (and popover equivalents): large page step */
+  /** Legacy large page step (popover parent→iframe PAGE_UP/DOWN path) */
   PAGE_PX: 800,
   /** C / V: smaller step (default = prior 400px × 1.25) */
   HALF_PAGE_PX: 500,

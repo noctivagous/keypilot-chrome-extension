@@ -12,7 +12,7 @@
 import { SCROLL } from '../config/constants.js';
 import { MSG } from '../messaging/types.js';
 import { isTypingContext, hasModifierKeys } from '../utils/dom-context.js';
-import { scrollAtPoint } from '../utils/scroll-at-point.js';
+import { scrollAtPoint, scrollToEdgeAtPoint } from '../utils/scroll-at-point.js';
 
 /**
  * @typedef {object} PopoverIframeBridgeOptions
@@ -234,17 +234,11 @@ export function installPopoverIframeBridge(options = {}) {
 
       if (typing) return;
 
-      const { pagePx, halfPx, behavior } = resolveScrollParams();
+      const { halfPx, behavior } = resolveScrollParams();
 
-      // Historical bridge mapping (Z/X page, C/V half, B/N top/bottom).
-      if (key === 'z' || key === 'Z') {
-        e.preventDefault();
-        scrollByY(-pagePx, behavior);
-      } else if (key === 'x' || key === 'X') {
-        e.preventDefault();
-        scrollByY(pagePx, behavior);
-      } else if (key === 'c' || key === 'C' || key === 'v' || key === 'V') {
-        // Nested overflow under the cursor first; page fallback (same as top-frame C/V).
+      // C / V: half-page delta under cursor. Z / X: jump to edge under cursor.
+      // B / N: document top/bottom (legacy bridge keys).
+      if (key === 'c' || key === 'C' || key === 'v' || key === 'V') {
         e.preventDefault();
         let mx = lastMouse.x;
         let my = lastMouse.y;
@@ -254,6 +248,16 @@ export function installPopoverIframeBridge(options = {}) {
         }
         const sign = (key === 'c' || key === 'C') ? -1 : 1;
         scrollAtPoint(mx, my, sign, halfPx, behavior);
+      } else if (key === 'z' || key === 'Z' || key === 'x' || key === 'X') {
+        e.preventDefault();
+        let mx = lastMouse.x;
+        let my = lastMouse.y;
+        if (typeof mx !== 'number' || typeof my !== 'number') {
+          mx = Math.floor(window.innerWidth / 2);
+          my = Math.floor(window.innerHeight / 2);
+        }
+        const sign = (key === 'z' || key === 'Z') ? -1 : 1;
+        scrollToEdgeAtPoint(mx, my, sign, behavior);
       } else if (key === 'b' || key === 'B') {
         e.preventDefault();
         scrollToY(0, behavior);

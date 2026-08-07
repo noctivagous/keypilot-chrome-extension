@@ -79,10 +79,10 @@ export const MSG = Object.freeze({
   // Child frame-click-agent performs elementFromPoint + click in its own document.
   FRAME_ACTIVATE: 'KP_FRAME_ACTIVATE',
 
-  // --- Parent → child frame scroll (window.postMessage; C/V under an iframe) ---
-  // Top-frame KeyPilot posts this when C/V lands on an <iframe> shell. Child
-  // frame-click-agent runs scroll-at-point at local coordinates (nested overflow
-  // first, then the frame document).
+  // --- Parent → child frame scroll (window.postMessage; C/V/Z/X under an iframe) ---
+  // Top-frame KeyPilot posts this when scroll keys land on an <iframe> shell. Child
+  // frame-click-agent runs scroll-at-point (delta or edge) at local coordinates
+  // (nested overflow first, then the frame document).
   FRAME_SCROLL: 'KP_FRAME_SCROLL',
 
   // --- Child frame-agent → SW: inject full content-bundled.js into this frame ---

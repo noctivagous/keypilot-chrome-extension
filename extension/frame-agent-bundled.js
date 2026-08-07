@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension - Frame Agent Bundle (child frames)
- * Generated on 2026-08-06T10:57:21.905Z
+ * Generated on 2026-08-07T20:24:34.059Z
  */
 
 (() => {
@@ -809,13 +809,13 @@ const Z_INDEX = {
  * Runtime values can be overridden via Settings (`kp_settings_v1.scroll`).
  * Used by key handlers and popover iframe bridges.
  *
- * C / V (half-page) use cursor-aware scrolling (`scroll-at-point.js`):
- * nested overflow under the pointer first (vertical, or horizontal when that
- * container scrolls on X), then the document. Iframes are forwarded via the
- * light frame-click-agent (KP_FRAME_SCROLL).
+ * C / V (half-page) and Z / X (to edge) use cursor-aware scrolling
+ * (`scroll-at-point.js`): nested overflow under the pointer first (vertical,
+ * or horizontal when that container scrolls on X), then the document. Iframes
+ * are forwarded via the light frame-click-agent (KP_FRAME_SCROLL).
  */
 const SCROLL = Object.freeze({
-  /** Z / X (and popover equivalents): large page step */
+  /** Legacy large page step (popover parent→iframe PAGE_UP/DOWN path) */
   PAGE_PX: 800,
   /** C / V: smaller step (default = prior 400px × 1.25) */
   HALF_PAGE_PX: 500,
@@ -1397,10 +1397,10 @@ const MSG = Object.freeze({
   // Child frame-click-agent performs elementFromPoint + click in its own document.
   FRAME_ACTIVATE: 'KP_FRAME_ACTIVATE',
 
-  // --- Parent → child frame scroll (window.postMessage; C/V under an iframe) ---
-  // Top-frame KeyPilot posts this when C/V lands on an <iframe> shell. Child
-  // frame-click-agent runs scroll-at-point at local coordinates (nested overflow
-  // first, then the frame document).
+  // --- Parent → child frame scroll (window.postMessage; C/V/Z/X under an iframe) ---
+  // Top-frame KeyPilot posts this when scroll keys land on an <iframe> shell. Child
+  // frame-click-agent runs scroll-at-point (delta or edge) at local coordinates
+  // (nested overflow first, then the frame document).
   FRAME_SCROLL: 'KP_FRAME_SCROLL',
 
   // --- Child frame-agent → SW: inject full content-bundled.js into this frame ---
@@ -1753,10 +1753,10 @@ async function storageSetObject(obj) {
 /**
  * Cursor-aware keyboard scrolling.
  *
- * C / V (and callers that reuse this helper) should scroll the nearest overflow
- * container under the pointer first; only if nothing nested can scroll do we
- * fall back to the document / window. Horizontal-only overflow maps C→left and
- * V→right; mixed or vertical-only overflow uses up/down.
+ * C / V (delta) and Z / X (edge) should scroll the nearest overflow container
+ * under the pointer first; only if nothing nested can scroll do we fall back
+ * to the document / window. Horizontal-only overflow maps up/left and
+ * down/right; mixed or vertical-only overflow uses up/down.
  */
 
 /** Pixels of slack when testing whether an edge still has room to scroll. */
@@ -2118,6 +2118,102 @@ function scrollAtPoint(clientX, clientY, sign, deltaPx, behavior = 'smooth', ctx
   const dx = axis === 'x' ? s * amount : 0;
   const dy = axis === 'y' ? s * amount : 0;
   const ok = scrollElementBy(el, dx, dy, behavior, doc, win);
+  return { scrolled: ok, axis, el };
+}
+
+/**
+ * Jump an element (or window for document roots) to the start/end of an axis.
+ * @param {Element} el
+ * @param {'y'|'x'} axis
+ * @param {number} sign  -1 = top/left, +1 = bottom/right
+ * @param {ScrollBehavior} [behavior]
+ * @param {Document} [doc]
+ * @param {Window} [win]
+ * @returns {boolean}
+ */
+function scrollElementToEdge(el, axis, sign, behavior = 'smooth', doc = document, win = window) {
+  if (!el || (axis !== 'y' && axis !== 'x')) return false;
+  const s = sign < 0 ? -1 : 1;
+
+  let left = 0;
+  let top = 0;
+  try {
+    if (axis === 'y') {
+      left = el.scrollLeft || 0;
+      top = s < 0 ? 0 : Math.max(0, (el.scrollHeight || 0) - (el.clientHeight || 0));
+    } else {
+      top = el.scrollTop || 0;
+      left = s < 0 ? 0 : Math.max(0, (el.scrollWidth || 0) - (el.clientWidth || 0));
+    }
+  } catch {
+    return false;
+  }
+
+  const opts = { left, top, behavior };
+
+  try {
+    if (typeof el.scrollTo === 'function') {
+      el.scrollTo(opts);
+      return true;
+    }
+  } catch { /* fall through */ }
+
+  try {
+    if (axis === 'y') el.scrollTop = top;
+    else el.scrollLeft = left;
+    return true;
+  } catch { /* ignore */ }
+
+  if (isDocumentScrollRoot(el, doc) && win && typeof win.scrollTo === 'function') {
+    try {
+      win.scrollTo(opts);
+      return true;
+    } catch {
+      try {
+        if (axis === 'y') win.scrollTo(win.pageXOffset || 0, top);
+        else win.scrollTo(left, win.pageYOffset || 0);
+        return true;
+      } catch { /* ignore */ }
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Scroll under the cursor to the edge: nested overflow first, then the page.
+ * Same targeting as {@link scrollAtPoint} (C/V); Z jumps to start, X to end.
+ *
+ * @param {number} clientX
+ * @param {number} clientY
+ * @param {number} sign  -1 = Z (top/left), +1 = X (bottom/right)
+ * @param {ScrollBehavior} [behavior]
+ * @param {{ doc?: Document, win?: Window }} [ctx]
+ * @returns {{ scrolled: boolean, axis: 'y'|'x'|null, el: Element|null }}
+ */
+function scrollToEdgeAtPoint(clientX, clientY, sign, behavior = 'smooth', ctx = {}) {
+  const doc = ctx.doc || document;
+  const win = ctx.win || (doc.defaultView || window);
+  const s = sign < 0 ? -1 : 1;
+
+  const target = findScrollTargetAtPoint(clientX, clientY, s, { doc, win });
+  if (!target) {
+    // Absolute last resort: window scroll on Y (preserves old Z/X page behavior).
+    try {
+      if (win && typeof win.scrollTo === 'function') {
+        const se = doc.scrollingElement || doc.documentElement || doc.body;
+        const top = s < 0
+          ? 0
+          : Math.max(0, (se?.scrollHeight || doc.body?.scrollHeight || 0) - (win.innerHeight || 0));
+        win.scrollTo({ top, left: win.pageXOffset || 0, behavior });
+        return { scrolled: true, axis: 'y', el: se || null };
+      }
+    } catch { /* ignore */ }
+    return { scrolled: false, axis: null, el: null };
+  }
+
+  const { el, axis } = target;
+  const ok = scrollElementToEdge(el, axis, s, behavior, doc, win);
   return { scrolled: ok, axis, el };
 }
 
@@ -2720,8 +2816,8 @@ function getEngineHomeUrl(engine) {
  *  2. Activate keybinds when this frame has focus
  *  3. Blue hover outline on clickable targets under the pointer (rAF-throttled;
  *     matches top-frame DOM-hover focus palette)
- *  4. postMessage / runtime KP_FRAME_SCROLL from parent (C/V under this iframe)
- *     plus local C/V when this frame has focus — nested overflow first
+ *  4. postMessage / runtime KP_FRAME_SCROLL from parent (C/V/Z/X under this iframe)
+ *     plus local C/V/Z/X when this frame has focus — nested overflow first
  *
  * Full KeyPilot still initializes only in the top frame. When full KP is also
  * running in this frame (KeyPilot popover), local key + hover handling is skipped.
@@ -3017,16 +3113,18 @@ function installFrameClickAgent() {
     };
 
     /**
-     * C / V scroll under the pointer (or given coords): nested overflow first.
+     * C / V (delta) or Z / X (edge) scroll under the pointer.
      * @param {number} clientX
      * @param {number} clientY
      * @param {number} sign  -1 up/left, +1 down/right
      * @param {number} [deltaPx]
      * @param {ScrollBehavior} [behavior]
+     * @param {'delta'|'edge'} [mode='delta']
      * @returns {boolean}
      */
-    const scrollAt = (clientX, clientY, sign, deltaPx, behavior) => {
+    const scrollAt = (clientX, clientY, sign, deltaPx, behavior, mode = 'delta') => {
       if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return false;
+      const edge = mode === 'edge';
       const amount = Math.abs(Number(deltaPx));
       const delta = Number.isFinite(amount) && amount > 0 ? amount : halfPagePx;
       const s = sign < 0 ? -1 : 1;
@@ -3050,7 +3148,8 @@ function installFrameClickAgent() {
               clientX: localX,
               clientY: localY,
               sign: s,
-              deltaPx: delta,
+              mode: edge ? 'edge' : 'delta',
+              deltaPx: edge ? 0 : delta,
               behavior: beh,
               frameName: typeof iframe.name === 'string' ? iframe.name : ''
             }, '*');
@@ -3059,6 +3158,10 @@ function installFrameClickAgent() {
         }
       } catch { /* fall through */ }
 
+      if (edge) {
+        const result = scrollToEdgeAtPoint(clientX, clientY, s, beh);
+        return !!result?.scrolled;
+      }
       const result = scrollAtPoint(clientX, clientY, s, delta, beh);
       return !!result?.scrolled;
     };
@@ -3379,7 +3482,8 @@ function installFrameClickAgent() {
           const beh = data.behavior === 'auto' || data.behavior === 'instant'
             ? 'auto'
             : (data.behavior || scrollBehavior);
-          scrollAt(x, y, sign, delta, beh);
+          const mode = data.mode === 'edge' ? 'edge' : 'delta';
+          scrollAt(x, y, sign, delta, beh, mode);
         }
       } catch {
         // ignore
@@ -3421,12 +3525,20 @@ function installFrameClickAgent() {
         let mode = null;
         /** @type {number|null} */
         let scrollSign = null;
+        /** @type {'delta'|'edge'} */
+        let scrollMode = 'delta';
         if (keyIn(kb.ACTIVATE, key)) mode = 'activate';
         else if (keyIn(kb.ACTIVATE_NEW_TAB, key)) mode = 'newTab';
         else if (keyIn(kb.ACTIVATE_NEW_TAB_BACKGROUND, key)) mode = 'background';
         else if (keyIn(kb.PAGE_UP_INSTANT, key)) scrollSign = -1;
         else if (keyIn(kb.PAGE_DOWN_INSTANT, key)) scrollSign = 1;
-        else return;
+        else if (keyIn(kb.PAGE_TOP, key)) {
+          scrollSign = -1;
+          scrollMode = 'edge';
+        } else if (keyIn(kb.PAGE_BOTTOM, key)) {
+          scrollSign = 1;
+          scrollMode = 'edge';
+        } else return;
 
         let x = lastMouse.x;
         let y = lastMouse.y;
@@ -3440,7 +3552,7 @@ function installFrameClickAgent() {
         e.stopImmediatePropagation();
 
         if (scrollSign !== null) {
-          scrollAt(x, y, scrollSign, halfPagePx, scrollBehavior);
+          scrollAt(x, y, scrollSign, halfPagePx, scrollBehavior, scrollMode);
           return;
         }
 
@@ -3488,12 +3600,14 @@ function installFrameClickAgent() {
             return true;
           }
           const sign = Number(message.sign) < 0 ? -1 : 1;
+          const mode = message.mode === 'edge' ? 'edge' : 'delta';
           const ok = scrollAt(
             Number(message.clientX),
             Number(message.clientY),
             sign,
             Number(message.deltaPx),
-            message.behavior
+            message.behavior,
+            mode
           );
           try { sendResponse({ ok: !!ok, href: String(location.href || '').slice(0, 120) }); } catch { /* ignore */ }
           return true;
@@ -3813,17 +3927,11 @@ function installPopoverIframeBridge(options = {}) {
 
       if (typing) return;
 
-      const { pagePx, halfPx, behavior } = resolveScrollParams();
+      const { halfPx, behavior } = resolveScrollParams();
 
-      // Historical bridge mapping (Z/X page, C/V half, B/N top/bottom).
-      if (key === 'z' || key === 'Z') {
-        e.preventDefault();
-        scrollByY(-pagePx, behavior);
-      } else if (key === 'x' || key === 'X') {
-        e.preventDefault();
-        scrollByY(pagePx, behavior);
-      } else if (key === 'c' || key === 'C' || key === 'v' || key === 'V') {
-        // Nested overflow under the cursor first; page fallback (same as top-frame C/V).
+      // C / V: half-page delta under cursor. Z / X: jump to edge under cursor.
+      // B / N: document top/bottom (legacy bridge keys).
+      if (key === 'c' || key === 'C' || key === 'v' || key === 'V') {
         e.preventDefault();
         let mx = lastMouse.x;
         let my = lastMouse.y;
@@ -3833,6 +3941,16 @@ function installPopoverIframeBridge(options = {}) {
         }
         const sign = (key === 'c' || key === 'C') ? -1 : 1;
         scrollAtPoint(mx, my, sign, halfPx, behavior);
+      } else if (key === 'z' || key === 'Z' || key === 'x' || key === 'X') {
+        e.preventDefault();
+        let mx = lastMouse.x;
+        let my = lastMouse.y;
+        if (typeof mx !== 'number' || typeof my !== 'number') {
+          mx = Math.floor(window.innerWidth / 2);
+          my = Math.floor(window.innerHeight / 2);
+        }
+        const sign = (key === 'z' || key === 'Z') ? -1 : 1;
+        scrollToEdgeAtPoint(mx, my, sign, behavior);
       } else if (key === 'b' || key === 'B') {
         e.preventDefault();
         scrollToY(0, behavior);
