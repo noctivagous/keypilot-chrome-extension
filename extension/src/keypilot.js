@@ -5508,9 +5508,15 @@ export class KeyPilot extends EventManager {
    * Enable KeyPilot functionality
    */
   async enable() {
-    if (this.enabled) return;
-    
+    const wasEnabled = !!this.enabled;
     this.enabled = true;
+
+    // Always ensure the iframe pointer bridge is listening (toggle-handler enable
+    // sets enabled=true without calling this method when the page loaded disabled).
+    this._installFrameBridgeListener();
+
+    // Already running — bridge install above is enough.
+    if (wasEnabled) return;
     
     // Only initialize if initialization is complete
     if (this.initializationComplete) {
@@ -5579,8 +5585,6 @@ export class KeyPilot extends EventManager {
         }
       } catch { /* ignore */ }
     }
-
-    this._installFrameBridgeListener();
 
     // Restore keyboard reference UI based on persisted state.
     // Fire-and-forget: we don't want to block enable() on storage.

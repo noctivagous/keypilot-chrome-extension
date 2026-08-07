@@ -351,6 +351,15 @@ export class KeyPilotToggleHandler extends EventManager {
         }
       } catch { /* ignore */ }
 
+      // Frame pointer sync / focus reclaim — not installed when the page loaded with
+      // KeyPilot off (initializeDisabledState). enable() is skipped here because we
+      // set keyPilot.enabled = true above, so install the bridge explicitly.
+      try {
+        this.keyPilot._framePointerInside = false;
+        this.keyPilot._framePointerIframe = null;
+        this.keyPilot._installFrameBridgeListener?.();
+      } catch { /* ignore */ }
+
       // Restore floating keyboard reference (state is persisted in storage)
       try {
         this.keyPilot.refreshKeyboardHelpVisibilityFromStorage?.();
@@ -387,6 +396,14 @@ export class KeyPilotToggleHandler extends EventManager {
 
       // Keep KeyPilot's own enabled flag in sync even when only this path runs.
       try { this.keyPilot.enabled = false; } catch { /* ignore */ }
+
+      // Drop iframe pointer bridge without reclaiming focus (avoids dismissing
+      // Google account menus when toggling KeyPilot off).
+      try {
+        this.keyPilot._framePointerInside = false;
+        this.keyPilot._framePointerIframe = null;
+        this.keyPilot._uninstallFrameBridgeListener?.();
+      } catch { /* ignore */ }
 
       // Stop event listeners first
       this.keyPilot.stop();
