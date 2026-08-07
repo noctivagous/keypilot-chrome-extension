@@ -1,7 +1,7 @@
 /**
  * Search engine catalog (single source of truth).
  * - SEARCH_ENGINE_META: engines selectable as KeyPilot default (settings / omnibox / newtab)
- * - LAUNCHER_SEARCH_SITES: full list shown in Launcher → Searches favorites
+ * - LAUNCHER_SEARCH_SITES: full list shown in Launcher → Searches Sites
  */
 
 /** @typedef {'brave'|'google'|'duckduckgo'} SearchEngineId */
@@ -40,7 +40,7 @@ export const SEARCH_ENGINE_META = Object.freeze({
 export const DEFAULT_SEARCH_ENGINE_ID = /** @type {SearchEngineId} */ ('brave');
 
 /**
- * Launcher favorites for the Searches category.
+ * Launcher Sites for the Searches category.
  * Includes settings engines plus additional common search homes.
  * @type {ReadonlyArray<{ title: string, url: string, isDefault: true }>}
  */

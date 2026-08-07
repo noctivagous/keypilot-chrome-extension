@@ -9,6 +9,7 @@ import {
   renderUrlListing,
   parseUrlForThreeLineDisplay
 } from '../ui/url-listing.js';
+import { applyCardBackground } from '../ui/page-thumb-ui.js';
 
 function renderThreeLineUrlListingEntry({ item, parts }) {
   const url = String(item?.url || '').trim();
@@ -22,6 +23,25 @@ function renderThreeLineUrlListingEntry({ item, parts }) {
   parts.titleEl.textContent = domain || url || '';
   parts.metaEl.textContent = title;
   parts.urlEl.textContent = path;
+}
+
+/**
+ * Darkened page-preview background on history cards (same pattern as New Tab grid).
+ * @param {HTMLElement} row
+ * @param {string} url
+ */
+function attachPageThumbToHistoryCard(row, url) {
+  const pageUrl = String(url || '').trim();
+  if (!row || !pageUrl) return;
+  applyCardBackground(row, pageUrl, {
+    fallbackSolid: '',
+    hoverSolid: '',
+    manageHover: false,
+    youtubePrefer: true,
+    useCssVar: true,
+    cssVarName: '--kp-page-thumb',
+    readyClass: 'kp-has-page-thumb'
+  });
 }
 
 /** Shared classNames for horizontal history card rails. */
@@ -300,6 +320,67 @@ export class TabHistoryPopover {
 
       .kpv2-tab-history-panel .kp-url-row--selected:hover {
         background: linear-gradient(180deg, rgba(255,140,0,0.28) 0%, rgba(255,140,0,0.12) 100%);
+      }
+
+      /*
+       * Page thumbs paint via ::before so the media layer is full-bleed under the
+       * 1px border (same pattern as New Tab cards).
+       */
+      .kpv2-tab-history-panel .kp-url-row.kp-has-page-thumb {
+        background-color: #0a0a0a;
+        background-image: none;
+        border-color: rgba(255, 255, 255, 0.1);
+        isolation: isolate;
+      }
+
+      .kpv2-tab-history-panel .kp-url-row.kp-has-page-thumb::before {
+        content: "";
+        position: absolute;
+        inset: -1px;
+        z-index: 0;
+        pointer-events: none;
+        border-radius: inherit;
+        background-color: #0a0a0a;
+        background-image:
+          linear-gradient(to bottom, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.78) 100%),
+          var(--kp-page-thumb);
+        background-size: 100% 100%, cover;
+        background-position: center, center;
+        background-repeat: no-repeat, no-repeat;
+      }
+
+      .kpv2-tab-history-panel .kp-url-row.kp-has-page-thumb:hover {
+        background-color: #0a0a0a;
+        background-image: none;
+      }
+
+      .kpv2-tab-history-panel .kp-url-row.kp-has-page-thumb:hover::before {
+        background-image:
+          linear-gradient(to bottom, rgba(0, 0, 0, 0.32) 0%, rgba(0, 0, 0, 0.52) 100%),
+          var(--kp-page-thumb);
+      }
+
+      .kpv2-tab-history-panel .kp-url-row.kp-has-page-thumb.kp-url-row--selected::before {
+        background-image:
+          linear-gradient(to bottom, rgba(255, 140, 0, 0.35) 0%, rgba(0, 0, 0, 0.72) 100%),
+          var(--kp-page-thumb);
+      }
+
+      .kpv2-tab-history-panel .kp-url-row.kp-has-page-thumb.kp-url-row--selected:hover::before {
+        background-image:
+          linear-gradient(to bottom, rgba(255, 140, 0, 0.28) 0%, rgba(0, 0, 0, 0.55) 100%),
+          var(--kp-page-thumb);
+      }
+
+      .kpv2-tab-history-panel .kp-url-row.kp-has-page-thumb > * {
+        position: relative;
+        z-index: 1;
+      }
+
+      .kpv2-tab-history-panel .kp-url-row.kp-has-page-thumb .kp-url-domain,
+      .kpv2-tab-history-panel .kp-url-row.kp-has-page-thumb .kp-url-title,
+      .kpv2-tab-history-panel .kp-url-row.kp-has-page-thumb .kp-url-path {
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
       }
 
       .kpv2-tab-history-panel .kp-url-content {
@@ -705,6 +786,7 @@ export class TabHistoryPopover {
 
           // Use three-line layout like newtab
           renderThreeLineUrlListingEntry({ item: { url: item.node?.url, title: item.node?.title }, parts });
+          attachPageThumbToHistoryCard(row, item.node?.url);
 
           // Branch badge (+N) — corner of card
           if (item.branchCount > 1) {
@@ -790,6 +872,7 @@ export class TabHistoryPopover {
         decorateRow: ({ row, item, parts }) => {
           row.setAttribute('role', 'listitem');
           renderThreeLineUrlListingEntry({ item, parts });
+          attachPageThumbToHistoryCard(row, item.url);
         }
       });
 

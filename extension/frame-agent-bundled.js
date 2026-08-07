@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension - Frame Agent Bundle (child frames)
- * Generated on 2026-08-07T21:29:23.146Z
+ * Generated on 2026-08-07T22:10:27.305Z
  */
 
 (() => {
@@ -1245,7 +1245,7 @@ const FEATURE_FLAGS = {
 /**
  * Search engine catalog (single source of truth).
  * - SEARCH_ENGINE_META: engines selectable as KeyPilot default (settings / omnibox / newtab)
- * - LAUNCHER_SEARCH_SITES: full list shown in Launcher → Searches favorites
+ * - LAUNCHER_SEARCH_SITES: full list shown in Launcher → Searches Sites
  */
 
 /** @typedef {'brave'|'google'|'duckduckgo'} SearchEngineId */
@@ -1284,7 +1284,7 @@ const SEARCH_ENGINE_META = Object.freeze({
 const DEFAULT_SEARCH_ENGINE_ID = /** @type {SearchEngineId} */ ('brave');
 
 /**
- * Launcher favorites for the Searches category.
+ * Launcher Sites for the Searches category.
  * Includes settings engines plus additional common search homes.
  * @type {ReadonlyArray<{ title: string, url: string, isDefault: true }>}
  */
@@ -1368,12 +1368,15 @@ const MSG = Object.freeze({
   BROWSER_HISTORY_GET: 'KP_BROWSER_HISTORY_GET',
   GET_TOP_SITES: 'KP_GET_TOP_SITES',
   GET_HISTORY_FOR_DOMAINS: 'KP_GET_HISTORY_FOR_DOMAINS',
+  GET_RECENT_HISTORY: 'KP_GET_RECENT_HISTORY',
   GET_FAVICON: 'KP_GET_FAVICON',
 
   // --- Page preview screenshots for card backgrounds ---
   GET_PAGE_THUMB: 'KP_GET_PAGE_THUMB',
   PAGE_THUMB_RESPONSE: 'KP_PAGE_THUMB_RESPONSE',
   PAGE_THUMB_UPDATED: 'KP_PAGE_THUMB_UPDATED',
+  GET_VIDEO_THUMB: 'KP_GET_VIDEO_THUMB',
+  VIDEO_THUMB_RESPONSE: 'KP_VIDEO_THUMB_RESPONSE',
 
   // --- Per-tab navigation graph ---
   NAVGRAPH_GET: 'KP_NAVGRAPH_GET',

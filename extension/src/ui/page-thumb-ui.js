@@ -1,20 +1,35 @@
 /**
  * Client helpers for page-preview card backgrounds.
  *
- * Prefer official YouTube thumbnails for video URLs; otherwise request a
- * stored capture from the service worker (IndexedDB).
+ * Prefer official video thumbnails (YouTube, Dailymotion, Rumble/Odysee/Vimeo
+ * via SW oEmbed) for video URLs; otherwise request a stored capture from the
+ * service worker (IndexedDB).
+ *
+ * Loads are rate-limited, session-cached, and (optionally) deferred until the
+ * card is near the scroll viewport so grids stay filled without a stampede.
  */
 
 import {
   extractYouTubeVideoId,
   getYouTubeThumbnailUrl,
-  getYouTubeThumbnailUrlForPage
+  getYouTubeThumbnailUrlForPage,
+  getSyncVideoThumbnailUrlForPage,
+  isVideoSiteUrl
 } from '../utils/youtube-thumb.js';
+import {
+  getCachedCardThumb,
+  observeThumbVisibility,
+  preloadThumbImage,
+  resolveCardThumbQueued,
+  setCachedCardThumb
+} from '../utils/thumb-load-queue.js';
 
 export {
   extractYouTubeVideoId,
   getYouTubeThumbnailUrl,
-  getYouTubeThumbnailUrlForPage
+  getYouTubeThumbnailUrlForPage,
+  getSyncVideoThumbnailUrlForPage,
+  isVideoSiteUrl
 };
 
 /**
@@ -70,21 +85,60 @@ export async function requestPageThumb(pageUrl) {
 }
 
 /**
+ * Request an official video thumbnail (oEmbed / sync) via the service worker.
+ * @param {string} pageUrl
+ * @returns {Promise<{ url: string, source: string }|null>}
+ */
+export async function requestVideoThumb(pageUrl) {
+  const url = String(pageUrl || '').trim();
+  if (!url || !isVideoSiteUrl(url)) return null;
+
+  // Sync patterns (YouTube / Dailymotion) — no round-trip needed.
+  const sync = getSyncVideoThumbnailUrlForPage(url, 'hqdefault');
+  if (sync) {
+    const source = extractYouTubeVideoId(url) ? 'youtube' : 'dailymotion';
+    return { url: sync, source };
+  }
+
+  try {
+    if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) {
+      return null;
+    }
+    const response = await chrome.runtime.sendMessage({
+      type: 'KP_GET_VIDEO_THUMB',
+      pageUrl: url
+    });
+    if (
+      response &&
+      response.type === 'KP_VIDEO_THUMB_RESPONSE' &&
+      response.success &&
+      typeof response.thumbUrl === 'string' &&
+      response.thumbUrl
+    ) {
+      return {
+        url: response.thumbUrl,
+        source: typeof response.source === 'string' ? response.source : 'video'
+      };
+    }
+  } catch {
+    // SW unavailable or no thumb.
+  }
+  return null;
+}
+
+/**
  * Resolve the best available card background image URL for a page.
- * YouTube video → official thumb; else stored capture.
+ * Video URL → official thumb; else stored capture.
  *
  * @param {string} pageUrl
- * @param {{ youtubePrefer?: boolean, youtubeQuality?: string }} [opts]
- * @returns {Promise<{ url: string, source: 'youtube'|'capture' }|null>}
+ * @param {{ youtubePrefer?: boolean, videoPrefer?: boolean, youtubeQuality?: string }} [opts]
+ * @returns {Promise<{ url: string, source: string }|null>}
  */
 export async function resolveCardBackgroundImage(pageUrl, opts = {}) {
-  const youtubePrefer = opts.youtubePrefer !== false;
-  if (youtubePrefer) {
-    const yt = getYouTubeThumbnailUrlForPage(
-      pageUrl,
-      /** @type {any} */ (opts.youtubeQuality || 'hqdefault')
-    );
-    if (yt) return { url: yt, source: 'youtube' };
+  const videoPrefer = opts.videoPrefer !== false && opts.youtubePrefer !== false;
+  if (videoPrefer) {
+    const video = await requestVideoThumb(pageUrl);
+    if (video?.url) return video;
   }
 
   const dataUrl = await requestPageThumb(pageUrl);
@@ -93,7 +147,7 @@ export async function resolveCardBackgroundImage(pageUrl, opts = {}) {
 }
 
 /**
- * Apply a darkened page-preview (or YouTube) background to a card element.
+ * Apply a darkened page-preview (or video) background to a card element.
  * Falls back to solid colors until a thumb is available.
  *
  * @param {HTMLElement} el
@@ -103,6 +157,11 @@ export async function resolveCardBackgroundImage(pageUrl, opts = {}) {
  * @param {string} [opts.hoverSolid='#333']
  * @param {boolean} [opts.manageHover=false] wire mouseenter/leave for darken lift
  * @param {boolean} [opts.youtubePrefer=true]
+ * @param {boolean} [opts.videoPrefer=true]
+ * @param {boolean} [opts.lazy=false] defer resolve until near viewport
+ * @param {Element|null} [opts.lazyRoot=null] IntersectionObserver root (scroll container)
+ * @param {string} [opts.lazyRootMargin] default ~100% → visible + ~2× buffer
+ * @param {number} [opts.priority=0] queue priority (higher first)
  * @param {number} [opts.idleTop=0.7]
  * @param {number} [opts.idleBottom=0.85]
  * @param {number} [opts.hoverTop=0.5]
@@ -120,7 +179,11 @@ export function applyCardBackground(el, pageUrl, opts = {}) {
   const fallbackSolid = opts.fallbackSolid || '#2a2a2a';
   const hoverSolid = opts.hoverSolid || '#333';
   const manageHover = opts.manageHover === true;
-  const youtubePrefer = opts.youtubePrefer !== false;
+  const videoPrefer = opts.videoPrefer !== false && opts.youtubePrefer !== false;
+  const lazy = opts.lazy === true;
+  const lazyRoot = opts.lazyRoot === undefined ? null : opts.lazyRoot;
+  const lazyRootMargin = opts.lazyRootMargin || '100% 100% 100% 100%';
+  const priority = Number(opts.priority) || 0;
   // Idle uses the previous hover darkness; hover lifts further for more photo.
   const idleTop = opts.idleTop != null ? opts.idleTop : 0.55;
   const idleBottom = opts.idleBottom != null ? opts.idleBottom : 0.78;
@@ -134,6 +197,10 @@ export function applyCardBackground(el, pageUrl, opts = {}) {
   let hovering = false;
   /** @type {string|null} */
   let thumbUrl = null;
+  /** @type {string|null} */
+  let thumbSource = null;
+  /** @type {(() => void)|null} */
+  let unobserve = null;
 
   const paintSolid = (hover) => {
     if (useCssVar) {
@@ -187,49 +254,92 @@ export function applyCardBackground(el, pageUrl, opts = {}) {
     el.addEventListener('mouseleave', onLeave);
   }
 
-  // Immediate solid / optional sync YouTube paint.
-  paintSolid(false);
-  if (youtubePrefer) {
-    const yt = getYouTubeThumbnailUrlForPage(pageUrl, 'hqdefault');
-    if (yt) {
-      thumbUrl = yt;
-      try {
-        el.dataset.kpThumbSource = 'youtube';
-        el.dataset.kpThumbUrl = yt;
-        el.dataset.kpThumbReady = '1';
-      } catch {
-        // ignore
-      }
-      paint();
-    }
-  }
-
-  const refresh = async () => {
-    if (disposed) return;
-    // Already have YouTube official — do not replace with capture.
-    if (thumbUrl && el.dataset?.kpThumbSource === 'youtube') return;
-
-    const resolved = await resolveCardBackgroundImage(pageUrl, { youtubePrefer });
-    if (disposed || !el.isConnected) return;
-    if (!resolved?.url) return;
-
-    // Prefer keeping youtube if resolve returned youtube.
-    thumbUrl = resolved.url;
+  const setThumb = (url, source) => {
+    thumbUrl = url;
+    thumbSource = source;
     try {
-      el.dataset.kpThumbSource = resolved.source;
-      el.dataset.kpThumbUrl = resolved.url;
-      el.dataset.kpThumbReady = '1';
+      el.dataset.kpThumbSource = source || '';
+      el.dataset.kpThumbUrl = url || '';
+      el.dataset.kpThumbReady = url ? '1' : '0';
     } catch {
       // ignore
     }
     paint();
   };
 
-  // Async capture lookup (no-op if YouTube already painted and we skip).
-  void refresh();
+  /**
+   * Paint only after the image has decoded (avoids blank CSS backgrounds).
+   * @param {string} url
+   * @param {string} source
+   */
+  const setThumbWhenReady = async (url, source) => {
+    if (disposed || !url) return;
+    const ok = await preloadThumbImage(url);
+    if (disposed || !el.isConnected) return;
+    if (!ok) return;
+    setThumb(url, source);
+  };
+
+  // Immediate solid fallback. Cached / sync thumbs paint after decode,
+  // and (when lazy) only once the card is near the scroll viewport.
+  paintSolid(false);
+
+  const applyKnownThumb = async () => {
+    if (disposed) return;
+    const cached = getCachedCardThumb(pageUrl);
+    if (cached?.url) {
+      await setThumbWhenReady(cached.url, cached.source);
+      return;
+    }
+    if (!videoPrefer) return;
+    const sync = getSyncVideoThumbnailUrlForPage(pageUrl, 'hqdefault');
+    if (!sync) return;
+    const source = extractYouTubeVideoId(pageUrl) ? 'youtube' : 'dailymotion';
+    setCachedCardThumb(pageUrl, { url: sync, source });
+    await setThumbWhenReady(sync, source);
+  };
+
+  const refresh = async () => {
+    if (disposed) return;
+    // Already have an official video thumb — do not replace with capture.
+    if (thumbUrl && thumbSource && thumbSource !== 'capture') return;
+
+    const resolved = await resolveCardThumbQueued(
+      pageUrl,
+      (url) => resolveCardBackgroundImage(url, { videoPrefer }),
+      { priority, preload: true }
+    );
+    if (disposed || !el.isConnected) return;
+    if (!resolved?.url) return;
+
+    // Queued path already preloaded; paint immediately.
+    setThumb(resolved.url, resolved.source);
+  };
+
+  const startLoad = () => {
+    if (disposed) return;
+    void (async () => {
+      await applyKnownThumb();
+      if (disposed) return;
+      // Sync/cached official thumbs don't need capture/oEmbed follow-up.
+      if (thumbUrl && thumbSource && thumbSource !== 'capture') return;
+      await refresh();
+    })();
+  };
+
+  if (lazy) {
+    unobserve = observeThumbVisibility(el, startLoad, {
+      root: lazyRoot,
+      rootMargin: lazyRootMargin
+    });
+  } else {
+    startLoad();
+  }
 
   const dispose = () => {
     disposed = true;
+    try { unobserve?.(); } catch { /* ignore */ }
+    unobserve = null;
     if (manageHover) {
       el.removeEventListener('mouseenter', onEnter);
       el.removeEventListener('mouseleave', onLeave);

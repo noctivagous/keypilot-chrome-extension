@@ -1,6 +1,6 @@
 /**
- * YouTube video ID + official thumbnail URL helpers.
- * Shared by Launcher, New Tab, and page-thumb UI (prefer API thumbs over captures).
+ * Video thumbnail helpers (YouTube + other video hosts).
+ * Shared by Launcher, New Tab, and page-thumb UI (prefer official thumbs over captures).
  */
 
 /**
@@ -78,4 +78,157 @@ export function getYouTubeThumbnailUrlForPage(pageUrl, quality = 'hqdefault') {
   const id = extractYouTubeVideoId(pageUrl);
   if (!id) return null;
   return getYouTubeThumbnailUrl(id, quality);
+}
+
+/**
+ * @param {string|null|undefined} url
+ * @returns {string|null}
+ */
+export function extractDailymotionVideoId(url) {
+  if (!url || typeof url !== 'string') return null;
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname.replace(/^www\./, '').toLowerCase();
+    if (!hostname.includes('dailymotion.com') && !hostname.includes('dai.ly')) {
+      return null;
+    }
+    if (hostname === 'dai.ly' || hostname.endsWith('.dai.ly')) {
+      const id = urlObj.pathname.slice(1).split('/')[0];
+      return id || null;
+    }
+    const videoMatch = urlObj.pathname.match(/^\/video\/([a-zA-Z0-9]+)/);
+    if (videoMatch) return videoMatch[1];
+    const embedMatch = urlObj.pathname.match(/^\/embed\/video\/([a-zA-Z0-9]+)/);
+    if (embedMatch) return embedMatch[1];
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * @param {string} videoId
+ * @returns {string|null}
+ */
+export function getDailymotionThumbnailUrl(videoId) {
+  if (!videoId || typeof videoId !== 'string') return null;
+  return `https://www.dailymotion.com/thumbnail/video/${encodeURIComponent(videoId)}`;
+}
+
+/**
+ * Hosts where we prefer official / oEmbed video thumbs over page captures.
+ * @param {string|null|undefined} pageUrl
+ * @returns {boolean}
+ */
+export function isVideoSiteUrl(pageUrl) {
+  if (!pageUrl || typeof pageUrl !== 'string') return false;
+  try {
+    const host = new URL(pageUrl).hostname.replace(/^www\./, '').toLowerCase();
+    return (
+      host.includes('youtube.com') ||
+      host.includes('youtu.be') ||
+      host.includes('rumble.com') ||
+      host.includes('odysee.com') ||
+      host.includes('vimeo.com') ||
+      host.includes('dailymotion.com') ||
+      host.includes('dai.ly') ||
+      host.includes('twitch.tv') ||
+      host.includes('bitchute.com') ||
+      host.includes('kick.com')
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Synchronous official thumbs (no network). YouTube + Dailymotion.
+ * @param {string|null|undefined} pageUrl
+ * @param {'default'|'mqdefault'|'hqdefault'|'sddefault'|'maxresdefault'} [youtubeQuality]
+ * @returns {string|null}
+ */
+export function getSyncVideoThumbnailUrlForPage(pageUrl, youtubeQuality = 'hqdefault') {
+  const yt = getYouTubeThumbnailUrlForPage(pageUrl, youtubeQuality);
+  if (yt) return yt;
+  const dmId = extractDailymotionVideoId(pageUrl);
+  if (dmId) return getDailymotionThumbnailUrl(dmId);
+  return null;
+}
+
+/**
+ * oEmbed endpoints for video hosts that need a network lookup.
+ * @param {string|null|undefined} pageUrl
+ * @returns {{ provider: string, oembedUrl: string }|null}
+ */
+export function getVideoOEmbedRequest(pageUrl) {
+  if (!pageUrl || typeof pageUrl !== 'string') return null;
+  try {
+    const urlObj = new URL(pageUrl);
+    const host = urlObj.hostname.replace(/^www\./, '').toLowerCase();
+    const encoded = encodeURIComponent(pageUrl);
+
+    if (host.includes('rumble.com')) {
+      // Only video watch pages benefit from oEmbed (not the homepage).
+      if (!/^\/v[a-zA-Z0-9]/.test(urlObj.pathname) && !urlObj.pathname.includes('/embed/')) {
+        return null;
+      }
+      return {
+        provider: 'rumble',
+        oembedUrl: `https://rumble.com/api/Media/oembed.json?url=${encoded}`
+      };
+    }
+    if (host.includes('odysee.com')) {
+      if (urlObj.pathname === '/' || urlObj.pathname === '') return null;
+      return {
+        provider: 'odysee',
+        oembedUrl: `https://odysee.com/$/oembed?url=${encoded}&format=json`
+      };
+    }
+    if (host.includes('vimeo.com')) {
+      if (!/\/\d+/.test(urlObj.pathname) && !urlObj.pathname.includes('/video/')) {
+        return null;
+      }
+      return {
+        provider: 'vimeo',
+        oembedUrl: `https://vimeo.com/api/oembed.json?url=${encoded}`
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Resolve a video thumbnail URL: sync patterns first, then optional oEmbed fetch.
+ * Intended for service-worker use (network allowed).
+ *
+ * @param {string|null|undefined} pageUrl
+ * @param {{ fetchJson?: (url: string) => Promise<any>, youtubeQuality?: string }} [opts]
+ * @returns {Promise<{ url: string, source: string }|null>}
+ */
+export async function resolveVideoThumbnailUrl(pageUrl, opts = {}) {
+  const sync = getSyncVideoThumbnailUrlForPage(
+    pageUrl,
+    /** @type {any} */ (opts.youtubeQuality || 'hqdefault')
+  );
+  if (sync) {
+    const source = extractYouTubeVideoId(pageUrl) ? 'youtube' : 'dailymotion';
+    return { url: sync, source };
+  }
+
+  const req = getVideoOEmbedRequest(pageUrl);
+  if (!req || typeof opts.fetchJson !== 'function') return null;
+
+  try {
+    const data = await opts.fetchJson(req.oembedUrl);
+    const thumb =
+      (typeof data?.thumbnail_url === 'string' && data.thumbnail_url) ||
+      (typeof data?.thumbnailUrl === 'string' && data.thumbnailUrl) ||
+      null;
+    if (thumb) return { url: thumb, source: req.provider };
+  } catch {
+    // oEmbed unavailable
+  }
+  return null;
 }

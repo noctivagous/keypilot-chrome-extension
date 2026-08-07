@@ -11,6 +11,11 @@ import {
   storageSetObject
 } from './src/utils/storage.js';
 import { pageThumbService } from './src/utils/page-thumb-service.js';
+import { resolveVideoThumbnailUrl } from './src/utils/youtube-thumb.js';
+
+/** @type {Map<string, { url: string, source: string, ts: number }>} */
+const videoThumbCache = new Map();
+const VIDEO_THUMB_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 
 // Opportunistic page screenshots for Launcher / New Tab card backgrounds.
 try {
@@ -1268,7 +1273,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                       allResults.push({
                         title: item.title || itemDomain,
                         url: item.url,
-                        visitCount: item.visitCount || 0
+                        visitCount: item.visitCount || 0,
+                        lastVisitTime: Number(item.lastVisitTime) || 0
                       });
                       seenUrls.add(item.url);
                     }
@@ -1278,8 +1284,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 }
               }
 
-              // Sort by visit count (most visited first)
-              const sortedResults = allResults.sort((a, b) => b.visitCount - a.visitCount);
+              // Prefer most recently visited, then visit count.
+              const sortedResults = allResults.sort((a, b) => {
+                const t = (Number(b.lastVisitTime) || 0) - (Number(a.lastVisitTime) || 0);
+                if (t !== 0) return t;
+                return (Number(b.visitCount) || 0) - (Number(a.visitCount) || 0);
+              });
 
               sendResponse({
                 type: 'KP_HISTORY_FOR_DOMAINS_RESPONSE',
@@ -1301,6 +1311,124 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               history: [],
               success: false,
               error: error.message
+            });
+          }
+          break;
+        }
+
+        case MSG.GET_RECENT_HISTORY:
+        case 'KP_GET_RECENT_HISTORY': {
+          const maxResults = Math.max(1, Math.min(2000, Number(message.maxResults) || 500));
+          const days = Math.max(1, Math.min(90, Number(message.days) || 30));
+          const startTime = Date.now() - days * 24 * 60 * 60 * 1000;
+
+          try {
+            if (chrome.history && typeof chrome.history.search === 'function') {
+              const historyItems = await chrome.history.search({
+                text: '',
+                maxResults,
+                startTime
+              });
+              const items = (historyItems || [])
+                .filter((item) => item?.url)
+                .map((item) => ({
+                  title: item.title || '',
+                  url: item.url,
+                  visitCount: Number(item.visitCount) || 0,
+                  lastVisitTime: Number(item.lastVisitTime) || 0
+                }))
+                .sort((a, b) => (b.lastVisitTime || 0) - (a.lastVisitTime || 0));
+
+              sendResponse({
+                type: 'KP_RECENT_HISTORY_RESPONSE',
+                items,
+                success: true
+              });
+            } else {
+              sendResponse({
+                type: 'KP_RECENT_HISTORY_RESPONSE',
+                items: [],
+                success: false,
+                error: 'History API not available'
+              });
+            }
+          } catch (error) {
+            console.error('KP_GET_RECENT_HISTORY failed:', error);
+            sendResponse({
+              type: 'KP_RECENT_HISTORY_RESPONSE',
+              items: [],
+              success: false,
+              error: error.message
+            });
+          }
+          break;
+        }
+
+        case MSG.GET_VIDEO_THUMB:
+        case 'KP_GET_VIDEO_THUMB': {
+          const pageUrl = typeof message.pageUrl === 'string' ? message.pageUrl.trim() : '';
+          try {
+            if (!pageUrl) {
+              sendResponse({
+                type: MSG.VIDEO_THUMB_RESPONSE,
+                success: false,
+                thumbUrl: null,
+                source: null,
+                error: 'Missing pageUrl'
+              });
+              break;
+            }
+
+            const cached = videoThumbCache.get(pageUrl);
+            if (cached && Date.now() - cached.ts < VIDEO_THUMB_CACHE_TTL_MS) {
+              sendResponse({
+                type: MSG.VIDEO_THUMB_RESPONSE,
+                success: true,
+                thumbUrl: cached.url,
+                source: cached.source,
+                cached: true
+              });
+              break;
+            }
+
+            const resolved = await resolveVideoThumbnailUrl(pageUrl, {
+              fetchJson: async (oembedUrl) => {
+                const res = await fetch(oembedUrl, { credentials: 'omit' });
+                if (!res.ok) throw new Error(`oEmbed HTTP ${res.status}`);
+                return res.json();
+              }
+            });
+
+            if (resolved?.url) {
+              videoThumbCache.set(pageUrl, {
+                url: resolved.url,
+                source: resolved.source,
+                ts: Date.now()
+              });
+              sendResponse({
+                type: MSG.VIDEO_THUMB_RESPONSE,
+                success: true,
+                thumbUrl: resolved.url,
+                source: resolved.source,
+                cached: false
+              });
+            } else {
+              sendResponse({
+                type: MSG.VIDEO_THUMB_RESPONSE,
+                success: false,
+                thumbUrl: null,
+                source: null,
+                error: 'No video thumbnail'
+              });
+            }
+          } catch (error) {
+            console.error('KP_GET_VIDEO_THUMB failed:', error);
+            sendResponse({
+              type: MSG.VIDEO_THUMB_RESPONSE,
+              success: false,
+              thumbUrl: null,
+              source: null,
+              error: error?.message || 'Video thumb failed'
             });
           }
           break;

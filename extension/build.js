@@ -50,6 +50,7 @@ const modules = [
   'src/utils/storage.js',
   'src/utils/image-utils.js',
   'src/utils/youtube-thumb.js',
+  'src/utils/thumb-load-queue.js',
   'src/utils/popover-resize.js',
   'src/utils/panel-position.js',
   'src/utils/scroll-at-point.js',

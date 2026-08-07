@@ -4399,15 +4399,37 @@ export class KeyPilot extends EventManager {
   }
 
   /**
-   * Blur a focused page <iframe> so top-frame KeyPilot receives keydown again.
-   * Skips KeyPilot popover iframes (their hybrid focus path owns focus routing).
-   *
-   * Important: Google account / profile menus focus their iframe on open and
-   * dismiss when that iframe blurs. Only call this after the pointer has been
-   * inside a page iframe and then left (or on explicit Esc), never merely
-   * because an iframe holds focus.
+   * True when this iframe is Google's account / profile switcher (or similar).
+   * Those menus focus the iframe on open and dismiss on blur — never steal focus
+   * from them except via explicit Esc handling inside the frame.
+   * @param {Element|null|undefined} iframe
+   * @returns {boolean}
    */
-  _reclaimKeyboardFocusFromPageIframes() {
+  _isGoogleAccountIframe(iframe) {
+    if (!iframe || !(iframe instanceof Element)) return false;
+    try {
+      const name = typeof /** @type {any} */ (iframe).name === 'string'
+        ? /** @type {any} */ (iframe).name
+        : '';
+      if (name === 'account' || name === 'oauth2' || /account/i.test(name)) return true;
+    } catch { /* ignore */ }
+    try {
+      const src = String(/** @type {any} */ (iframe).src || '');
+      if (/accounts\.google\.com|ogs\.google\.com|myaccount\.google\.com/i.test(src)) {
+        return true;
+      }
+    } catch { /* ignore */ }
+    return false;
+  }
+
+  /**
+   * Blur a focused page <iframe> so top-frame KeyPilot receives keydown again.
+   * Skips KeyPilot popover iframes. Google account menus are skipped unless
+   * `allowGoogleAccount` (explicit Esc) — blur on mouse leave dismisses them.
+   * @param {{ allowGoogleAccount?: boolean }} [opts]
+   */
+  _reclaimKeyboardFocusFromPageIframes(opts = {}) {
+    const allowGoogleAccount = opts.allowGoogleAccount === true;
     try {
       if (window !== window.top) return;
     } catch {
@@ -4419,16 +4441,16 @@ export class KeyPilot extends EventManager {
         return;
       }
       if (this._isKeyPilotManagedIframe(active)) return;
+      if (!allowGoogleAccount && this._isGoogleAccountIframe(active)) return;
       try { active.blur(); } catch { /* ignore */ }
       try { window.focus(); } catch { /* ignore */ }
     } catch { /* ignore */ }
   }
 
   /**
-   * Parent document received a pointer move. Reclaim keys only if we were
-   * actively tracking the pointer inside a page iframe (KP_FRAME_POINTER) —
-   * meaning the pointer has left the embed. Do not reclaim just because an
-   * iframe is focused (Google account menu focuses its iframe on open).
+   * Parent document received a pointer move after we were tracking inside an
+   * embed. Clear tracking only — do NOT blur the iframe (Google account menus
+   * dismiss on blur; gaps between avatar and menu fire parent mousemove).
    */
   _maybeReclaimFocusAfterParentPointerMove() {
     try {
@@ -4436,7 +4458,7 @@ export class KeyPilot extends EventManager {
       if (!this._framePointerInside) return;
       this._framePointerInside = false;
       this._framePointerIframe = null;
-      this._reclaimKeyboardFocusFromPageIframes();
+      // Intentionally no _reclaimKeyboardFocusFromPageIframes() here.
     } catch { /* ignore */ }
   }
 
@@ -4452,7 +4474,7 @@ export class KeyPilot extends EventManager {
       // Explicit Esc / stuck-focus recovery from the frame agent.
       this._framePointerInside = false;
       this._framePointerIframe = null;
-      this._reclaimKeyboardFocusFromPageIframes();
+      this._reclaimKeyboardFocusFromPageIframes({ allowGoogleAccount: true });
       return;
     }
 
@@ -4468,15 +4490,27 @@ export class KeyPilot extends EventManager {
     // Popover hybrid focus owns KP popover iframes.
     if (this._isKeyPilotManagedIframe(iframe)) return;
 
+    // Ignore pointer traffic from Google account iframes for reclaim tracking.
+    // Entering them briefly then crossing parent chrome must not arm a blur.
+    if (this._isGoogleAccountIframe(iframe)) {
+      // Still update lastMouse so F/B/G work inside the menu.
+      if (data.inside !== false) {
+        let rect;
+        try { rect = iframe.getBoundingClientRect(); } catch { return; }
+        const x = rect.left + Number(data.clientX);
+        const y = rect.top + Number(data.clientY);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+        try { this.state.setMousePosition(x, y); } catch { /* ignore */ }
+        try { this.cursor.updatePosition(x, y); } catch { /* ignore */ }
+        try { this.mouseCoordinateManager.updateCurrentMousePosition(x, y); } catch { /* ignore */ }
+      }
+      return;
+    }
+
     if (data.inside === false) {
-      const wasInside = this._framePointerInside;
       this._framePointerInside = false;
       this._framePointerIframe = null;
-      // Only blur after we had been tracking pointer inside — avoids dismissing
-      // Google account menus that focus the iframe before the pointer enters.
-      if (wasInside) {
-        this._reclaimKeyboardFocusFromPageIframes();
-      }
+      // Clear tracking only — do not blur (see _maybeReclaimFocusAfterParentPointerMove).
       return;
     }
 

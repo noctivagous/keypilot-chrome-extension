@@ -34,28 +34,32 @@ export class LauncherPopover {
     this._openGen = 0;
     this._searchQuery = '';
     this._categoryOrder = ['favorites', 'bookmarks', 'history', 'social', 'news', 'productivity', 'videos', 'entertainment', 'shopping', 'ai', 'archive', 'searches'];
-    this._showDefaultSites = true; // Checkbox state for showing default sites (only affects favorites tab)
+    this._showDefaultSites = true; // Checkbox: show curated launcher Sites (not Favorites)
     /** Categories whose domain history has been fetched this open session. */
     this._historyLoaded = Object.create(null);
     /** Shared recent history rows (top sites + search extraction). */
     this._cachedTopSites = null;
+    /** @type {Array<{title?: string, url?: string, dateAdded?: number, id?: string}>|null} */
+    this._cachedBookmarks = null;
+    /** @type {Array<{title?: string, url?: string, lastVisitTime?: number, visitCount?: number}>|null} */
+    this._cachedRecentHistory = null;
     this._boundContainerKeyDown = null;
 
     // Define available sub-tabs for each category (extensible for future types)
-    // Order matters: first in array is the default if history is empty
+    // Order matters: Sites (launcher-only defaults) precede Favorites and History.
     this._categorySubTabConfig = {
       favorites: ['favorites', 'history'],
       bookmarks: ['favorites', 'history'],
       history: ['favorites', 'history'],
-      social: ['favorites', 'history'],
-      news: ['favorites', 'history'],
-      productivity: ['favorites', 'history'],
-      videos: ['favorites', 'history'],
-      entertainment: ['favorites', 'history'],
-      shopping: ['favorites', 'history'],
-      ai: ['favorites', 'history'],
-      archive: ['favorites', 'history'],
-      searches: ['favorites', 'history']
+      social: ['sites', 'favorites', 'history'],
+      news: ['sites', 'favorites', 'history'],
+      productivity: ['sites', 'favorites', 'history'],
+      videos: ['sites', 'favorites', 'history'],
+      entertainment: ['sites', 'favorites', 'history'],
+      shopping: ['sites', 'favorites', 'history'],
+      ai: ['sites', 'favorites', 'history'],
+      archive: ['sites', 'favorites', 'history'],
+      searches: ['sites', 'favorites', 'history']
     };
     // Preview-related properties
     this._previewError = null;
@@ -148,6 +152,8 @@ export class LauncherPopover {
     const gen = ++this._openGen;
     this._historyLoaded = Object.create(null);
     this._cachedTopSites = null;
+    this._cachedBookmarks = null;
+    this._cachedRecentHistory = null;
 
     // Paint shell with default sites first (no network / history APIs).
     this._initCategoriesWithDefaults();
@@ -223,6 +229,8 @@ export class LauncherPopover {
     this._searchQuery = '';
     this._historyLoaded = Object.create(null);
     this._cachedTopSites = null;
+    this._cachedBookmarks = null;
+    this._cachedRecentHistory = null;
   }
 
   /** @param {number} gen */
@@ -250,84 +258,93 @@ export class LauncherPopover {
   /**
    * Immediate category shell using default sites only (no Chrome history APIs).
    * Domain-history tabs start empty and fill in when first selected.
+   * `sites` = launcher-only curated defaults; `favorites` = bookmarks; `history` = visits.
    */
   _initCategoriesWithDefaults() {
     const defaults = (key) => (this._showDefaultSites && this._defaultSites[key]
       ? [...this._defaultSites[key]]
       : []);
 
+    const emptyLists = () => ({ sites: [], history: [], favorites: [] });
+
     this._categories = {
       favorites: {
         label: 'Favorites',
         icon: '⭐',
-        history: [],
-        favorites: []
+        ...emptyLists()
       },
       bookmarks: {
         label: 'Bookmarks',
         icon: '📑',
-        history: [],
-        favorites: []
+        ...emptyLists()
       },
       history: {
         label: 'Recent',
         icon: '🕐',
-        history: [],
-        favorites: []
+        ...emptyLists()
       },
       social: {
         label: 'Social Media',
         icon: '💬',
+        sites: defaults('social'),
         history: [],
-        favorites: defaults('social')
+        favorites: []
       },
       news: {
         label: 'News',
         icon: '📰',
+        sites: defaults('news'),
         history: [],
-        favorites: defaults('news')
+        favorites: []
       },
       productivity: {
         label: 'Productivity',
         icon: '⚡',
+        sites: defaults('productivity'),
         history: [],
-        favorites: defaults('productivity')
+        favorites: []
       },
       videos: {
         label: 'Videos',
         icon: '📹',
+        sites: defaults('videos'),
         history: [],
-        favorites: defaults('videos')
+        favorites: []
       },
       entertainment: {
         label: 'Entertainment',
         icon: '🎬',
+        sites: defaults('entertainment'),
         history: [],
-        favorites: defaults('entertainment')
+        favorites: []
       },
       shopping: {
         label: 'Shopping',
         icon: '🛒',
+        sites: defaults('shopping'),
         history: [],
-        favorites: defaults('shopping')
+        favorites: []
       },
       ai: {
         label: 'AI',
         icon: '🤖',
+        sites: defaults('ai'),
         history: [],
-        favorites: defaults('ai')
+        favorites: []
       },
       archive: {
         label: 'Internet Archive',
         icon: '📚',
+        sites: defaults('archive'),
         history: [],
-        favorites: defaults('archive')
+        favorites: []
       },
       searches: {
         label: 'Searches',
         icon: '🔍',
+        sites: defaults('searches'),
         history: [],
-        favorites: defaults('searches')
+        favorites: []
       }
     };
 
@@ -336,6 +353,7 @@ export class LauncherPopover {
 
   /**
    * Pick default sub-tab per category from current item counts.
+   * Prefers Sites → Favorites → History when present.
    * @param {{ force?: boolean, onlyKeys?: string[] }} [opts]
    */
   _initDefaultSubTabs(opts = {}) {
@@ -347,13 +365,16 @@ export class LauncherPopover {
       if (!force && this._categorySubTabs[categoryKey]) continue;
 
       const subTabConfig = this._categorySubTabConfig[categoryKey] || ['favorites', 'history'];
+      const sitesCount = this._categories[categoryKey].sites?.length || 0;
       const historyCount = this._categories[categoryKey].history?.length || 0;
       const favoritesCount = this._categories[categoryKey].favorites?.length || 0;
 
-      if (favoritesCount > 0) {
-        this._categorySubTabs[categoryKey] = subTabConfig[0];
-      } else if (historyCount > 0) {
-        this._categorySubTabs[categoryKey] = subTabConfig[1] || subTabConfig[0];
+      if (sitesCount > 0 && subTabConfig.includes('sites')) {
+        this._categorySubTabs[categoryKey] = 'sites';
+      } else if (favoritesCount > 0 && subTabConfig.includes('favorites')) {
+        this._categorySubTabs[categoryKey] = 'favorites';
+      } else if (historyCount > 0 && subTabConfig.includes('history')) {
+        this._categorySubTabs[categoryKey] = 'history';
       } else {
         // Prefer history for data-backed tabs while empty so progressive load
         // lands on the list that is about to fill (bookmarks/top sites).
@@ -365,27 +386,55 @@ export class LauncherPopover {
   }
 
   /**
-   * Load bookmarks + top sites once (parallel). Domain history is lazy per category.
+   * Load bookmarks + top sites + recent history once (parallel).
+   * Domain history is lazy per category.
    * @param {number} gen
    */
   async _loadSharedData(gen) {
     try {
-      const [bookmarks, topSites] = await Promise.all([
+      const [bookmarks, topSites, recentHistory] = await Promise.all([
         this._getBookmarks(),
-        this._getTopSites()
+        this._getTopSites(),
+        this._getRecentHistory()
       ]);
       if (!this._stillOpen(gen) || !this._categories) return;
 
+      this._cachedBookmarks = bookmarks;
       this._cachedTopSites = topSites;
+      this._cachedRecentHistory = recentHistory;
       const recentSearches = this._extractRecentSearches(topSites);
+      const visitedBookmarks = this._bookmarkedRecentHistory(bookmarks, recentHistory);
 
-      this._categories.favorites.history = [
-        ...bookmarks.slice(0, 10),
-        ...topSites.slice(0, 10)
-      ];
-      this._categories.bookmarks.history = bookmarks;
+      // Top-level Favorites: bookmarked sites + recent visits (not launcher defaults).
+      this._categories.favorites.sites = [];
+      this._categories.favorites.favorites = bookmarks;
+      this._categories.favorites.history = topSites;
+
+      // Bookmarks: all bookmarks under Favorites; recently visited bookmarks under History.
+      this._categories.bookmarks.sites = [];
+      this._categories.bookmarks.favorites = bookmarks;
+      this._categories.bookmarks.history = visitedBookmarks;
+
+      // Recent: top visited domains.
+      this._categories.history.sites = [];
+      this._categories.history.favorites = [];
       this._categories.history.history = topSites;
+
+      // Searches: launcher engines stay in Sites; bookmarked engines in Favorites.
+      const searchDomains = this._getDefaultDomains('searches');
+      this._categories.searches.favorites = this._filterByDomains(bookmarks, searchDomains);
       this._categories.searches.history = recentSearches;
+
+      // Theme categories: bookmarks matching curated domains → Favorites.
+      const themeKeys = [
+        'social', 'news', 'productivity', 'videos',
+        'entertainment', 'shopping', 'ai', 'archive'
+      ];
+      for (const key of themeKeys) {
+        if (!this._categories[key]) continue;
+        const domains = this._getDefaultDomains(key);
+        this._categories[key].favorites = this._filterByDomains(bookmarks, domains);
+      }
 
       // Shared lists don't need domain history fetches.
       this._historyLoaded.favorites = true;
@@ -394,12 +443,14 @@ export class LauncherPopover {
       this._historyLoaded.searches = true;
 
       // Re-pick defaults for shared categories now that history rows exist.
+      // Theme categories keep Sites as default when present; only refresh favorites lists.
       this._initDefaultSubTabs({
         force: true,
         onlyKeys: ['favorites', 'bookmarks', 'history', 'searches']
       });
       try { this._updateSubTabsUI?.(); } catch { /* ignore */ }
       try { this._updateSubTabStyles?.(); } catch { /* ignore */ }
+      try { this._updateTabCounts?.(); } catch { /* ignore */ }
 
       if (this._gridContainer) {
         this._renderCategory(this._currentCategory);
@@ -439,15 +490,26 @@ export class LauncherPopover {
       if (!this._stillOpen(gen) || !this._categories?.[categoryKey]) return;
 
       this._categories[categoryKey].history = history;
+      // Keep Favorites = matching bookmarks (may already be set in shared load).
+      if (Array.isArray(this._cachedBookmarks)) {
+        this._categories[categoryKey].favorites = this._filterByDomains(
+          this._cachedBookmarks,
+          domains
+        );
+      }
       this._historyLoaded[categoryKey] = true;
 
+      const sitesCount = this._categories[categoryKey].sites?.length || 0;
       const favoritesCount = this._categories[categoryKey].favorites?.length || 0;
-      if (history.length > 0 && favoritesCount === 0) {
+      if (history.length > 0 && sitesCount === 0 && favoritesCount === 0) {
         const subTabConfig = this._categorySubTabConfig[categoryKey] || ['favorites', 'history'];
-        this._categorySubTabs[categoryKey] = subTabConfig[1] || subTabConfig[0];
+        this._categorySubTabs[categoryKey] = subTabConfig.includes('history')
+          ? 'history'
+          : subTabConfig[0];
         try { this._updateSubTabsUI?.(); } catch { /* ignore */ }
         try { this._updateSubTabStyles?.(); } catch { /* ignore */ }
       }
+      try { this._updateTabCounts?.(); } catch { /* ignore */ }
 
       if (this._currentCategory === categoryKey && this._gridContainer) {
         this._renderCategory(categoryKey);
@@ -459,17 +521,78 @@ export class LauncherPopover {
   }
 
   /**
-   * Reload favorites lists when "Show default sites" toggles (no full history re-fetch).
+   * Reload Sites lists when "Show default sites" toggles (no full history re-fetch).
    */
   _applyDefaultSitesVisibility() {
     if (!this._categories) return;
     const keys = ['social', 'news', 'productivity', 'videos', 'entertainment', 'shopping', 'ai', 'archive', 'searches'];
     for (const key of keys) {
       if (!this._categories[key]) continue;
-      this._categories[key].favorites = this._showDefaultSites && this._defaultSites[key]
+      this._categories[key].sites = this._showDefaultSites && this._defaultSites[key]
         ? [...this._defaultSites[key]]
         : [];
     }
+  }
+
+  /**
+   * Normalize a URL for bookmark ↔ history matching.
+   * @param {string|null|undefined} url
+   * @returns {string}
+   */
+  _normalizeUrlKey(url) {
+    if (!url || typeof url !== 'string') return '';
+    try {
+      const u = new URL(url);
+      u.hash = '';
+      // Drop trailing slash on pathname (except root).
+      if (u.pathname.length > 1 && u.pathname.endsWith('/')) {
+        u.pathname = u.pathname.slice(0, -1);
+      }
+      return u.href;
+    } catch {
+      return String(url).trim();
+    }
+  }
+
+  /**
+   * Bookmarks that appear in recent visit history, ordered by most recent visit.
+   * @param {Array<{title?: string, url?: string}>} bookmarks
+   * @param {Array<{title?: string, url?: string, lastVisitTime?: number, visitCount?: number}>} recentHistory
+   */
+  _bookmarkedRecentHistory(bookmarks, recentHistory) {
+    if (!Array.isArray(bookmarks) || !Array.isArray(recentHistory)) return [];
+
+    /** @type {Map<string, any>} */
+    const bookmarkByKey = new Map();
+    for (const b of bookmarks) {
+      const key = this._normalizeUrlKey(b?.url);
+      if (!key || bookmarkByKey.has(key)) continue;
+      bookmarkByKey.set(key, b);
+    }
+
+    /** @type {Map<string, any>} */
+    const best = new Map();
+    for (const h of recentHistory) {
+      const key = this._normalizeUrlKey(h?.url);
+      if (!key) continue;
+      const bookmark = bookmarkByKey.get(key);
+      if (!bookmark) continue;
+      const prev = best.get(key);
+      const t = Number(h.lastVisitTime) || 0;
+      if (!prev || t > (Number(prev.lastVisitTime) || 0)) {
+        best.set(key, {
+          ...bookmark,
+          title: bookmark.title || h.title || '',
+          url: bookmark.url || h.url,
+          lastVisitTime: t,
+          visitCount: Number(h.visitCount) || 0
+        });
+      }
+    }
+
+    return Array.from(best.values()).sort(
+      (a, b) => (Number(b.lastVisitTime) || 0) - (Number(a.lastVisitTime) || 0)
+    );
   }
 
   /**
@@ -511,6 +634,28 @@ export class LauncherPopover {
       return [];
     } catch (error) {
       console.error('[LauncherPopover] Error getting top sites:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Recent browser history rows (for bookmark ↔ visit intersection).
+   */
+  async _getRecentHistory() {
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: 'KP_GET_RECENT_HISTORY',
+        maxResults: 1000,
+        days: 30
+      });
+
+      if (response && response.success && Array.isArray(response.items)) {
+        return response.items;
+      }
+      console.warn('[LauncherPopover] Failed to get recent history:', response?.error);
+      return [];
+    } catch (error) {
+      console.error('[LauncherPopover] Error getting recent history:', error);
       return [];
     }
   }
@@ -738,6 +883,20 @@ export class LauncherPopover {
     checkbox.addEventListener('change', (e) => {
       this._showDefaultSites = e.target.checked;
       this._applyDefaultSitesVisibility();
+      // If Sites was selected but is now empty, fall back to Favorites/History.
+      const cat = this._currentCategory;
+      const active = this._categorySubTabs[cat];
+      if (active === 'sites' && (this._categories?.[cat]?.sites?.length || 0) === 0) {
+        const cfg = this._categorySubTabConfig[cat] || ['favorites', 'history'];
+        const fav = this._categories?.[cat]?.favorites?.length || 0;
+        const hist = this._categories?.[cat]?.history?.length || 0;
+        if (fav > 0 && cfg.includes('favorites')) this._categorySubTabs[cat] = 'favorites';
+        else if (hist > 0 && cfg.includes('history')) this._categorySubTabs[cat] = 'history';
+        else this._categorySubTabs[cat] = cfg.find((t) => t !== 'sites') || cfg[0];
+      }
+      this._updateTabCounts();
+      this._updateSubTabsUI();
+      this._updateSubTabStyles();
       this._renderCategory(this._currentCategory);
     });
 
@@ -1061,11 +1220,7 @@ export class LauncherPopover {
     previewCloseBtn.appendChild(collapseIcon);
 
     previewCloseBtn.addEventListener('click', () => {
-      previewArea.style.width = '0';
-      this._currentPreviewUrl = null;
-      if (this._previewIframe) {
-        this._previewIframe.src = 'about:blank';
-      }
+      this._hidePreview();
     });
 
     previewCloseBtn.addEventListener('mouseenter', () => {
@@ -1177,6 +1332,56 @@ export class LauncherPopover {
   }
 
   /**
+   * Count items across a category's configured sub-tabs.
+   * @param {string} categoryKey
+   * @returns {number}
+   */
+  _categoryItemCount(categoryKey) {
+    const category = this._categories?.[categoryKey];
+    if (!category) return 0;
+    const subTabConfig = this._categorySubTabConfig[categoryKey] || ['favorites', 'history'];
+    let total = 0;
+    for (const key of subTabConfig) {
+      total += Array.isArray(category[key]) ? category[key].length : 0;
+    }
+    return total;
+  }
+
+  /**
+   * Count for a single sub-tab list.
+   * @param {string} categoryKey
+   * @param {string} subTabType
+   * @returns {number}
+   */
+  _subTabItemCount(categoryKey, subTabType) {
+    const list = this._categories?.[categoryKey]?.[subTabType];
+    return Array.isArray(list) ? list.length : 0;
+  }
+
+  /**
+   * Create a right-aligned count badge for tab labels.
+   * @param {Document} doc
+   * @param {number} count
+   * @param {{ muted?: boolean }} [opts]
+   */
+  _createCountBadge(doc, count, opts = {}) {
+    const badge = doc.createElement('span');
+    badge.className = 'kp-launcher-tab-count';
+    badge.textContent = String(count);
+    badge.style.cssText = `
+      margin-left: auto;
+      flex-shrink: 0;
+      font-size: 12px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: ${opts.muted ? '#666' : '#888'};
+      min-width: 1.25em;
+      text-align: right;
+    `;
+    return badge;
+  }
+
+  /**
    * Create a tab button
    */
   _createTab(categoryKey, category) {
@@ -1201,6 +1406,8 @@ export class LauncherPopover {
       cursor: pointer;
       transition: all 0.2s;
       text-align: left;
+      width: calc(100% - 16px);
+      box-sizing: border-box;
     `;
 
     const icon = doc.createElement('span');
@@ -1208,10 +1415,22 @@ export class LauncherPopover {
     icon.style.fontSize = '18px';
 
     const label = doc.createElement('span');
+    label.className = 'kp-launcher-tab-label';
     label.textContent = category.label;
+    label.style.cssText = `
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    `;
+
+    const count = this._createCountBadge(doc, this._categoryItemCount(categoryKey));
+    count.dataset.role = 'count';
 
     tab.appendChild(icon);
     tab.appendChild(label);
+    tab.appendChild(count);
 
     tab.addEventListener('click', () => {
       this._currentCategory = categoryKey;
@@ -1241,7 +1460,7 @@ export class LauncherPopover {
   }
 
   /**
-   * Create a sub-tab button for history/favorites
+   * Create a sub-tab button for sites/favorites/history
    */
   _createSubTab(type, label) {
     const doc = document;
@@ -1251,7 +1470,11 @@ export class LauncherPopover {
 
     const currentSubTab = this._categorySubTabs[this._currentCategory] || 'history';
     const isActive = type === currentSubTab;
+    const count = this._subTabItemCount(this._currentCategory, type);
     subTab.style.cssText = `
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
       padding: 10px 20px;
       background: ${isActive ? '#2a2a2a' : 'transparent'};
       border: none;
@@ -1261,9 +1484,19 @@ export class LauncherPopover {
       font-weight: 500;
       cursor: pointer;
       transition: all 0.2s;
+      min-width: 120px;
     `;
 
-    subTab.textContent = label;
+    const labelEl = doc.createElement('span');
+    labelEl.className = 'kp-launcher-subtab-label';
+    labelEl.textContent = label;
+    labelEl.style.cssText = 'flex: 1; text-align: left;';
+
+    const countEl = this._createCountBadge(doc, count, { muted: !isActive });
+    countEl.dataset.role = 'count';
+
+    subTab.appendChild(labelEl);
+    subTab.appendChild(countEl);
 
     subTab.addEventListener('click', () => {
       this._categorySubTabs[this._currentCategory] = type;
@@ -1273,15 +1506,15 @@ export class LauncherPopover {
     });
 
     subTab.addEventListener('mouseenter', () => {
-      const currentSubTab = this._categorySubTabs[this._currentCategory] || 'history';
-      if (type !== currentSubTab) {
+      const active = this._categorySubTabs[this._currentCategory] || 'history';
+      if (type !== active) {
         subTab.style.color = '#fff';
       }
     });
 
     subTab.addEventListener('mouseleave', () => {
-      const currentSubTab = this._categorySubTabs[this._currentCategory] || 'history';
-      if (type !== currentSubTab) {
+      const active = this._categorySubTabs[this._currentCategory] || 'history';
+      if (type !== active) {
         subTab.style.color = '#888';
       }
     });
@@ -1293,6 +1526,7 @@ export class LauncherPopover {
    * Update sub-tab styles to reflect active sub-tab
    */
   _updateSubTabStyles() {
+    if (!this._subTabContainer) return;
     const subTabs = this._subTabContainer.querySelectorAll('.kp-launcher-subtab');
     const currentSubTab = this._categorySubTabs[this._currentCategory] || 'favorites';
     subTabs.forEach(subTab => {
@@ -1300,7 +1534,37 @@ export class LauncherPopover {
       subTab.style.background = isActive ? '#2a2a2a' : 'transparent';
       subTab.style.borderBottomColor = isActive ? '#4CAF50' : 'transparent';
       subTab.style.color = isActive ? '#fff' : '#888';
+      const countEl = subTab.querySelector('[data-role="count"]');
+      if (countEl) {
+        countEl.style.color = isActive ? '#888' : '#666';
+      }
     });
+  }
+
+  /**
+   * Refresh count badges on sidebar tabs and current sub-tabs.
+   */
+  _updateTabCounts() {
+    if (this._tabListContainer) {
+      const tabs = this._tabListContainer.querySelectorAll('.kp-launcher-tab');
+      tabs.forEach((tab) => {
+        const key = tab.dataset.category;
+        const countEl = tab.querySelector('[data-role="count"]');
+        if (countEl && key) {
+          countEl.textContent = String(this._categoryItemCount(key));
+        }
+      });
+    }
+    if (this._subTabContainer) {
+      const subTabs = this._subTabContainer.querySelectorAll('.kp-launcher-subtab');
+      subTabs.forEach((subTab) => {
+        const type = subTab.dataset.type;
+        const countEl = subTab.querySelector('[data-role="count"]');
+        if (countEl && type) {
+          countEl.textContent = String(this._subTabItemCount(this._currentCategory, type));
+        }
+      });
+    }
   }
 
   /**
@@ -1317,9 +1581,9 @@ export class LauncherPopover {
 
     // Create sub-tabs based on configuration
     const subTabLabels = {
+      'sites': 'Sites',
       'favorites': 'Favorites',
       'history': 'History'
-      // Future sub-tab types can be added here
     };
 
     subTabConfig.forEach(subTabType => {
@@ -1452,6 +1716,7 @@ export class LauncherPopover {
     }
 
     this._gridContainer.appendChild(grid);
+    try { this._updateTabCounts?.(); } catch { /* ignore */ }
   }
 
   /**
@@ -1478,12 +1743,18 @@ export class LauncherPopover {
       position: relative;
     `;
 
-    // Darkened YouTube / page-screenshot background (async when capture exists).
+    // Darkened video / page-screenshot background.
+    // Lazy: load when near the grid viewport (~visible + 2× buffer), rate-limited + cached.
     applyCardBackground(container, item.url, {
       fallbackSolid: isDefault ? '#3a3a3a' : '#2a2a2a',
       hoverSolid: isDefault ? '#444' : '#333',
       manageHover: true,
-      youtubePrefer: true
+      videoPrefer: true,
+      youtubePrefer: true,
+      lazy: true,
+      lazyRoot: this._gridContainer,
+      lazyRootMargin: '100% 100% 100% 100%',
+      priority: 1
     });
 
     // Main link area (3/4 width) - add min-width: 0 to allow shrinking
@@ -1576,7 +1847,7 @@ export class LauncherPopover {
       transition: all 0.2s;
     `;
     previewBtn.innerHTML = '👁';
-    previewBtn.title = 'Preview in iframe';
+    previewBtn.title = 'Preview / close preview';
 
     previewBtn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -1619,10 +1890,45 @@ export class LauncherPopover {
   }
 
   /**
-   * Show preview iframe with URL using advanced bridge system
+   * Collapse the preview pane and clear the loaded URL.
+   */
+  _hidePreview() {
+    if (this._previewBridgeTimer) {
+      clearInterval(this._previewBridgeTimer);
+      this._previewBridgeTimer = null;
+    }
+    if (this._previewArea) {
+      this._previewArea.style.width = '0';
+    }
+    this._currentPreviewUrl = null;
+    if (this._previewIframe) {
+      this._previewIframe.src = 'about:blank';
+      this._previewIframe.onload = null;
+      this._previewIframe.onerror = null;
+    }
+    if (this._previewError) {
+      this._previewError.style.display = 'none';
+    }
+  }
+
+  /**
+   * Show preview iframe with URL using advanced bridge system.
+   * Clicking preview again for the same URL collapses the pane.
    */
   _showPreview(url) {
     if (!this._previewArea || !this._previewIframe) return;
+
+    // Toggle closed when the same URL is already loaded in the preview pane.
+    if (
+      url &&
+      this._currentPreviewUrl === url &&
+      this._previewArea.style.width &&
+      this._previewArea.style.width !== '0' &&
+      this._previewArea.style.width !== '0px'
+    ) {
+      this._hidePreview();
+      return;
+    }
 
     // Prevent CSP violation by blocking file:// URLs
     if (url && url.startsWith('file://')) {
