@@ -21,7 +21,7 @@ export const NEWTAB_FONT_SCALE_STORAGE_KEY = 'kp_newtab_font_scale';
 /** @typedef {'cyberforward' | 'earth'} NewtabThemeId */
 
 export const NEWTAB_THEMES = /** @type {const} */ (['cyberforward', 'earth']);
-export const DEFAULT_NEWTAB_THEME = 'earth';
+export const DEFAULT_NEWTAB_THEME = 'cyberforward';
 
 /** User-facing labels for theme ids. */
 export const NEWTAB_THEME_LABELS = /** @type {const} */ ({
@@ -31,9 +31,9 @@ export const NEWTAB_THEME_LABELS = /** @type {const} */ ({
 
 /**
  * Root font-size in CSS px. Design type is rem-based against this root.
- * Default 18px.
+ * Default 22px.
  */
-export const DEFAULT_NEWTAB_FONT_SIZE_PX = 18;
+export const DEFAULT_NEWTAB_FONT_SIZE_PX = 22;
 
 /** Historical base for legacy `kp_newtab_font_scale` (1 = 24px root). */
 const LEGACY_FONT_SCALE_BASE_PX = 24;
@@ -44,11 +44,11 @@ export const DEFAULT_NEWTAB_UI_SCALE = 1;
 export const NEWTAB_UI_SCALE_OPTIONS = /** @type {const} */ ([1, 1.25, 1.5, 1.75, 2]);
 
 /**
- * Content column max-width for `.topbar` + `.main` (original design: 980px).
+ * Content column max-width for `.topbar` + `.main` (default: 1200px).
  * `'full'` removes the cap so the column can use the full viewport (still shrinks with the window).
  * @typedef {980 | 1200 | 1400 | 1600 | 1920 | 'full'} NewtabContentWidth
  */
-export const DEFAULT_NEWTAB_CONTENT_WIDTH = 980;
+export const DEFAULT_NEWTAB_CONTENT_WIDTH = 1200;
 export const NEWTAB_CONTENT_WIDTH_STORAGE_KEY = 'kp_newtab_content_width';
 export const NEWTAB_CONTENT_WIDTH_OPTIONS = /** @type {const} */ ([980, 1200, 1400, 1600, 1920, 'full']);
 

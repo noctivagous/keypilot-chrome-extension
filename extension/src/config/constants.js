@@ -187,8 +187,10 @@ export const Z_INDEX = {
   FLOATING_KEYBOARD_HELP: 2147483045,
   KEYBINDINGS_POPOVER: 2147483046,
 
-  // Cursor should remain above everything else.
-  CURSOR: 2147483050
+  // Cursor sits above chrome; click ripple is above even that so the
+  // expanding circles always remain visible.
+  CURSOR: 2147483050,
+  RIPPLE: 2147483051
 };
 
 /**

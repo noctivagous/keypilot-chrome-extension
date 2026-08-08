@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension - Frame Agent Bundle (child frames)
- * Generated on 2026-08-07T22:59:18.342Z
+ * Generated on 2026-08-08T02:17:07.183Z
  */
 
 (() => {
@@ -800,8 +800,10 @@ const Z_INDEX = {
   FLOATING_KEYBOARD_HELP: 2147483045,
   KEYBINDINGS_POPOVER: 2147483046,
 
-  // Cursor should remain above everything else.
-  CURSOR: 2147483050
+  // Cursor sits above chrome; click ripple is above even that so the
+  // expanding circles always remain visible.
+  CURSOR: 2147483050,
+  RIPPLE: 2147483051
 };
 
 /**

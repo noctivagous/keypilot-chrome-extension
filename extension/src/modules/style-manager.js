@@ -412,7 +412,7 @@ export class StyleManager {
         position: fixed; 
         left: 0; 
         top: 0; 
-        z-index: ${Z_INDEX.OVERLAYS}; 
+        z-index: ${Z_INDEX.RIPPLE}; 
         pointer-events: none; 
         width: 46px; 
         height: 46px; 

@@ -41,8 +41,8 @@
 
 /*
  * New Tab themes
- * - earth (default): original orange/black newtab look
- * - cyberforward: popup/website slate-cyan direction + noctivagous fonts
+ * - cyberforward (default): popup/website slate-cyan direction + noctivagous fonts
+ * - earth: original orange/black newtab look
  *
  * Switch via html[data-theme="…"] (persisted in chrome.storage + localStorage).
  */
@@ -53,13 +53,13 @@ html[data-theme="cyberforward"] {
 
   /*
    * Display tokens (overridden by JS / localStorage):
-   * - --nt-font-size-px: root type size in CSS px (default 18)
+   * - --nt-font-size-px: root type size in CSS px (default 22)
    * - --nt-ui-scale: layout zoom (default 1 = 100%)
-   * - --nt-content-max-width: header + main column cap (default 980px; use none for full)
+   * - --nt-content-max-width: header + main column cap (default 1200px; use none for full)
    */
-  --nt-font-size-px: 18;
+  --nt-font-size-px: 22;
   --nt-ui-scale: 1;
-  --nt-content-max-width: 980px;
+  --nt-content-max-width: 1200px;
   --nt-card-pad: 14px;
   /* Gap between scroll content and the scrollbar track (not the card edge). */
   --nt-scrollbar-content-gap: 6px;
@@ -316,11 +316,11 @@ html, body {
 }
 
 /*
- * Root font-size drives rem-based type (default 18px).
+ * Root font-size drives rem-based type (default 22px).
  * UI scale zooms the whole surface (layout + chrome) independently of type size.
  */
 html {
-  font-size: calc(var(--nt-font-size-px, 18) * 1px);
+  font-size: calc(var(--nt-font-size-px, 22) * 1px);
   zoom: var(--nt-ui-scale, 1);
 }
 
@@ -351,7 +351,7 @@ body {
   padding: 12px 18px 10px;
   /* width: 100% + max-width: shrinks with the window below the chosen content width */
   width: 100%;
-  max-width: var(--nt-content-max-width, 980px);
+  max-width: var(--nt-content-max-width, 1200px);
   margin: 0 auto;
   box-sizing: border-box;
 }
@@ -926,7 +926,7 @@ html[data-theme="cyberforward"] .title {
 .main {
   /* Same content column as .topbar; shrinks when the viewport is narrower than max-width */
   width: 100%;
-  max-width: var(--nt-content-max-width, 980px);
+  max-width: var(--nt-content-max-width, 1200px);
   margin: 0 auto;
   padding: 0 18px 40px;
   display: grid;
