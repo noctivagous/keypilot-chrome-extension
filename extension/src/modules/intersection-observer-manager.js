@@ -981,15 +981,41 @@ export class IntersectionObserverManager {
 
   _isKeyPilotUiElement(el) {
     try {
+      if (!el || el === document.documentElement || el === document.body) return false;
+
       let n = el;
       let guard = 0;
       while (n && n.nodeType === 1 && guard++ < 12) {
+        // Stop before <html>/<body>: html.kpv2-cursor-hidden is a page-wide
+        // cursor-mode flag, not chrome. Matching it would skip hover on nearly
+        // every element whenever Crosshair cursor mode is enabled.
+        if (n === document.documentElement || n === document.body) break;
+
         const id = typeof n.id === 'string' ? n.id : '';
         if (id && id.startsWith('kpv2-')) return true;
+
         const cl = n.classList;
         if (cl && cl.length) {
           for (const c of cl) {
-            if (typeof c === 'string' && c.startsWith('kpv2-')) return true;
+            if (typeof c !== 'string' || !c.startsWith('kpv2-')) continue;
+            // Markers painted onto real page nodes — not KeyPilot chrome.
+            if (
+              c === 'kpv2-cursor-hidden' ||
+              c === 'kpv2-focus' ||
+              c === 'kpv2-delete' ||
+              c === 'kpv2-highlight' ||
+              c === 'kpv2-hidden' ||
+              c === 'kpv2-cols' ||
+              c === 'kpv2-cols-active' ||
+              c === 'kpv2-cols-page' ||
+              c === 'kpv2-inspector' ||
+              c === 'kpv2-inspector-picked' ||
+              c.startsWith('kpv2-text-') ||
+              (c.startsWith('kpv2-focus-') && !c.includes('overlay'))
+            ) {
+              continue;
+            }
+            return true;
           }
         }
         n = n.parentElement;

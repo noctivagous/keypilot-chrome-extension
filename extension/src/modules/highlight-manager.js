@@ -1078,7 +1078,9 @@ export class HighlightManager extends EventManager {
   _isKeyPilotChromeElement(el) {
     try {
       if (!(el instanceof Element)) return false;
-      if (el.closest?.('.kpv2-cursor-hidden, .kp-floating-keyboard-help, .kp-control-strip, .kp-keybindings-popover, .kp-action-config-panel')) {
+      // Do NOT include .kpv2-cursor-hidden — that class lives on <html> whenever
+      // Crosshair cursor mode is on, so closest() would match every page node.
+      if (el.closest?.('.kp-floating-keyboard-help, .kp-control-strip, .kp-keybindings-popover, .kp-action-config-panel')) {
         return true;
       }
       const cls = typeof el.className === 'string' ? el.className : '';

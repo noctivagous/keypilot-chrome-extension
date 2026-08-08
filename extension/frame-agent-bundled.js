@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension - Frame Agent Bundle (child frames)
- * Generated on 2026-08-08T21:43:44.344Z
+ * Generated on 2026-08-08T22:06:00.681Z
  */
 
 (() => {
@@ -881,9 +881,9 @@ const ELEMENT_SELECT_TAGS = Object.freeze([
   'td', 'th', 'dt', 'dd', 'caption', 'summary', 'label'
 ]);
 
-// Cursor behavior mode:
+// Cursor behavior mode (Settings label for CUSTOM_CURSORS is "Crosshair"):
 // - NO_CUSTOM_CURSORS: KeyPilot does not override the page cursor at all.
-// - CUSTOM_CURSORS: KeyPilot applies its cursor styling/overrides (current legacy behavior).
+// - CUSTOM_CURSORS: KeyPilot applies its crosshair (or other) cursor overrides.
 const CURSOR_MODE = Object.freeze({
   NO_CUSTOM_CURSORS: 'NO-CUSTOM-CURSORS',
   CUSTOM_CURSORS: 'CUSTOM-CURSORS'

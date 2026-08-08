@@ -8,6 +8,7 @@
  * - <img> (including src pointing at .svg)
  * - CSS background-image url(...)
  * - Inline <svg> (hit on svg or any descendant path/g/etc.)
+ * - <video> poster (when never played) or current/paused frame
  */
 
 /** Max ancestor walk when searching for img / svg / background-image. */
@@ -20,7 +21,7 @@ const MATERIALIZE_TIMEOUT_MS = 8000;
 const MAX_SVG_RASTER_EDGE = 4096;
 
 /**
- * @typedef {'img'|'background'|'svg'} HoveredImageKind
+ * @typedef {'img'|'background'|'svg'|'video'} HoveredImageKind
  *
  * @typedef {{
  *   kind: HoveredImageKind,
@@ -90,6 +91,67 @@ function isKeyPilotChrome(el) {
  */
 function isHtmlImage(el) {
   return !!(el && el.nodeType === 1 && el.tagName === 'IMG');
+}
+
+/**
+ * @param {Element|null|undefined} el
+ * @returns {el is HTMLVideoElement}
+ */
+function isHtmlVideo(el) {
+  return !!(el && el.nodeType === 1 && String(el.tagName || '').toUpperCase() === 'VIDEO');
+}
+
+/**
+ * Resolved poster URL for a <video>, or ''.
+ * @param {HTMLVideoElement} video
+ * @returns {string}
+ */
+function getVideoPosterUrl(video) {
+  if (!video) return '';
+  try {
+    const poster = (typeof video.poster === 'string' && video.poster) ? video.poster.trim() : '';
+    if (isUsableImageUrl(poster)) return resolveUrl(poster, video);
+  } catch { /* ignore */ }
+  try {
+    const attr = (video.getAttribute && video.getAttribute('poster')) || '';
+    const trimmed = String(attr || '').trim();
+    if (isUsableImageUrl(trimmed)) return resolveUrl(trimmed, video);
+  } catch { /* ignore */ }
+  return '';
+}
+
+/**
+ * True when the video has a decoded frame we can draw to canvas.
+ * @param {HTMLVideoElement} video
+ * @returns {boolean}
+ */
+function videoHasDrawableFrame(video) {
+  if (!video) return false;
+  try {
+    // HAVE_CURRENT_DATA === 2
+    const ready = typeof video.readyState === 'number' ? video.readyState : 0;
+    const w = Number(video.videoWidth) || 0;
+    const h = Number(video.videoHeight) || 0;
+    return ready >= 2 && w > 0 && h > 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Prefer poster when the element still shows the pre-playback thumbnail.
+ * @param {HTMLVideoElement} video
+ * @returns {boolean}
+ */
+function videoLikelyShowingPoster(video) {
+  if (!video || !getVideoPosterUrl(video)) return false;
+  try {
+    // Never started playback → browser typically paints poster, not a frame.
+    const played = video.played;
+    const neverPlayed = !played || played.length === 0;
+    if (neverPlayed && video.paused && !video.ended) return true;
+  } catch { /* ignore */ }
+  return !videoHasDrawableFrame(video);
 }
 
 /**
@@ -271,6 +333,19 @@ function sourceFromSelf(el) {
     }
   }
 
+  if (isHtmlVideo(el)) {
+    const video = /** @type {HTMLVideoElement} */ (el);
+    const poster = getVideoPosterUrl(video);
+    // Accept videos with a poster and/or a drawable frame (paused / loaded).
+    if (poster || videoHasDrawableFrame(video)) {
+      return {
+        kind: 'video',
+        element: el,
+        url: poster || (typeof video.currentSrc === 'string' ? video.currentSrc : null)
+      };
+    }
+  }
+
   if (isSvgRoot(el)) {
     return { kind: 'svg', element: el, url: null };
   }
@@ -367,6 +442,18 @@ function findImageInSubtree(root, x, y) {
       if (elementContainsPoint(svg, x, y)) {
         return { kind: 'svg', element: svg, url: null };
       }
+    }
+  } catch { /* ignore */ }
+
+  // <video> under the point (poster or paused frame)
+  try {
+    const videos = root.querySelectorAll('video');
+    for (let i = 0; i < videos.length; i++) {
+      const video = /** @type {HTMLVideoElement} */ (videos[i]);
+      if (isKeyPilotChrome(video)) continue;
+      if (!elementContainsPoint(video, x, y)) continue;
+      const fromVideo = sourceFromSelf(video);
+      if (fromVideo) return fromVideo;
     }
   } catch { /* ignore */ }
 
@@ -794,6 +881,65 @@ export async function materializeInlineSvg(svg) {
 }
 
 /**
+ * Capture the current decoded video frame as a PNG Blob.
+ * Fails (null) for cross-origin tainted canvases or when no frame is ready.
+ *
+ * @param {HTMLVideoElement} video
+ * @returns {Promise<{ blob: Blob, mimeType: string }|null>}
+ */
+async function captureVideoFrameBlob(video) {
+  if (!videoHasDrawableFrame(video)) return null;
+
+  try {
+    const width = Math.max(1, video.videoWidth || 0);
+    const height = Math.max(1, video.videoHeight || 0);
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.drawImage(video, 0, 0, width, height);
+    const png = await canvasToPngBlob(canvas);
+    if (!png || png.size === 0) return null;
+    return { blob: png, mimeType: 'image/png' };
+  } catch (err) {
+    console.warn('[KeyPilot] Video frame capture failed:', err?.message || err);
+    return null;
+  }
+}
+
+/**
+ * Materialize a <video> to a PNG Blob: poster when still the pre-play thumbnail,
+ * otherwise the current/paused frame; falls back across both paths.
+ *
+ * @param {HTMLVideoElement} video
+ * @returns {Promise<{ blob: Blob, mimeType: string }|null>}
+ */
+export async function materializeVideoElement(video) {
+  if (!isHtmlVideo(video)) return null;
+
+  const posterUrl = getVideoPosterUrl(video);
+  const preferPoster = videoLikelyShowingPoster(video);
+
+  if (preferPoster && posterUrl) {
+    const fromPoster = await materializeImageBlob(posterUrl, {});
+    if (fromPoster) return fromPoster;
+    const frameFallback = await captureVideoFrameBlob(video);
+    if (frameFallback) return frameFallback;
+    return null;
+  }
+
+  const fromFrame = await captureVideoFrameBlob(video);
+  if (fromFrame) return fromFrame;
+
+  if (posterUrl) {
+    return materializeImageBlob(posterUrl, {});
+  }
+
+  return null;
+}
+
+/**
  * Materialize a source URL into a clipboard-friendly PNG Blob when possible.
  * Falls back to the original image/* blob type if PNG conversion fails.
  *
@@ -857,6 +1003,8 @@ export async function getHoveredImage(clientX, clientY, options = {}) {
   let materialized = null;
   if (source.kind === 'svg') {
     materialized = await materializeInlineSvg(source.element);
+  } else if (source.kind === 'video') {
+    materialized = await materializeVideoElement(/** @type {HTMLVideoElement} */ (source.element));
   } else {
     materialized = await materializeImageBlob(source.url || '', { element: source.element });
   }

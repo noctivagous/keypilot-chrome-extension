@@ -34,6 +34,19 @@ export class ElementDetector {
   }
 
   /**
+   * True when Crosshair mode is forcing `--kpv2-cursor` on the page via
+   * `html.kpv2-cursor-hidden`.
+   * @returns {boolean}
+   */
+  _isCursorOverrideActive() {
+    try {
+      return !!document.documentElement?.classList?.contains(CSS_CLASSES.CURSOR_HIDDEN);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Run `fn` with KeyPilot's custom-cursor override temporarily disabled so
    * getComputedStyle(...).cursor reflects the page's real cursor (e.g. pointer).
    *
@@ -41,6 +54,10 @@ export class ElementDetector {
    *   html.kpv2-cursor-hidden * { cursor: var(--kpv2-cursor) !important; }
    * which makes every element report the crosshair (or other custom cursor) and
    * hides CSS cursor:pointer signals used to find non-semantic clickables.
+   *
+   * IMPORTANT: Toggling that class invalidates styles for the whole document.
+   * Only call this when a cursor:pointer probe is actually required — never on
+   * the semantic-clickable hot path (see findClickable).
    *
    * Suspend/restore is synchronous and re-entrant — no paint should occur mid-task.
    * @template T
@@ -65,18 +82,19 @@ export class ElementDetector {
     }
 
     const hadHidden = html.classList.contains(CSS_CLASSES.CURSOR_HIDDEN);
-    this._nativeCursorWasHidden = hadHidden;
-    if (hadHidden) {
-      try { html.classList.remove(CSS_CLASSES.CURSOR_HIDDEN); } catch { /* ignore */ }
+    // Fast path: No-custom-cursor mode — nothing to suspend.
+    if (!hadHidden) {
+      return fn();
     }
+
+    this._nativeCursorWasHidden = true;
+    try { html.classList.remove(CSS_CLASSES.CURSOR_HIDDEN); } catch { /* ignore */ }
     this._nativeCursorSuspendDepth = 1;
     try {
       return fn();
     } finally {
       this._nativeCursorSuspendDepth = 0;
-      if (hadHidden) {
-        try { html.classList.add(CSS_CLASSES.CURSOR_HIDDEN); } catch { /* ignore */ }
-      }
+      try { html.classList.add(CSS_CLASSES.CURSOR_HIDDEN); } catch { /* ignore */ }
       this._nativeCursorWasHidden = false;
     }
   }
@@ -223,15 +241,28 @@ export class ElementDetector {
 
     // Local CSS rule: computed pointer while parent is not pointer.
     // Must read with custom-cursor override suspended (see _withNativePageCursors).
+    // Shadow-root children have parentElement === null; compare against the host.
     try {
       if (!window.getComputedStyle) return false;
-      return this._withNativePageCursors(() => {
+      const probe = () => {
         const own = window.getComputedStyle(el).cursor;
         if (own !== 'pointer') return false;
-        const parent = el.parentElement;
-        if (!parent) return false;
+        let parent = el.parentElement;
+        if (!parent) {
+          try {
+            const root = typeof el.getRootNode === 'function' ? el.getRootNode() : null;
+            if (root && typeof ShadowRoot !== 'undefined' && root instanceof ShadowRoot) {
+              parent = root.host || null;
+            }
+          } catch { /* ignore */ }
+        }
+        if (!parent || parent === document.body || parent === document.documentElement) {
+          return true;
+        }
         return window.getComputedStyle(parent).cursor !== 'pointer';
-      });
+      };
+      // Avoid class thrash when Crosshair override is off.
+      return this._isCursorOverrideActive() ? this._withNativePageCursors(probe) : probe();
     } catch {
       return false;
     }
@@ -583,15 +614,14 @@ export class ElementDetector {
     return /** @type {HTMLElement} */ (control);
   }
 
-  findClickable(el) {
-    // Batch cursor-override suspension for the whole ancestor walk so we don't
-    // toggle html.kpv2-cursor-hidden once per node when probing cursor:pointer.
-    return this._withNativePageCursors(() => this._findClickableUnsuspended(el));
-  }
-
-  _findClickableUnsuspended(el) {
-    // Standard interactive walk only — no scrubber "proximity" remapping of hover focus.
-    // F-activation still resolves scrubbers from the hit target in ActivationHandler.
+  /**
+   * Walk ancestors for an interactive target.
+   * @param {Element|null|undefined} el
+   * @param {{ allowCursor?: boolean }} [opts]
+   * @returns {Element|null}
+   */
+  _findClickableWalk(el, opts = {}) {
+    const allowCursor = opts.allowCursor !== false;
     let n = el;
     let depth = 0;
     let cursorOnlyCandidate = null;
@@ -615,13 +645,15 @@ export class ElementDetector {
 
       // Cursor-pointer-only fallback: store the first cursor candidate but keep walking up.
       // If we later find a semantic interactive ancestor, we'll return that instead.
-      if (!cursorOnlyCandidate && this.isLikelyInteractive(n, { allowCursor: true })) {
+      if (allowCursor && !cursorOnlyCandidate && this.isLikelyInteractive(n, { allowCursor: true })) {
         cursorOnlyCandidate = n;
       }
 
       n = n.parentElement || (n.getRootNode() instanceof ShadowRoot ? n.getRootNode().host : null);
       depth++;
     }
+
+    if (!allowCursor) return null;
 
     const finalResult = cursorOnlyCandidate || (el && this.isLikelyInteractive(el) ? el : null);
     if (window.KEYPILOT_DEBUG && !finalResult && el) {
@@ -633,6 +665,28 @@ export class ElementDetector {
     }
 
     return finalResult;
+  }
+
+  findClickable(el) {
+    // Standard interactive walk only — no scrubber "proximity" remapping of hover focus.
+    // F-activation still resolves scrubbers from the hit target in ActivationHandler.
+    //
+    // Two-pass on purpose (see focus-ring-paint.md performance notes):
+    // 1) Semantic-only walk — never toggles html.kpv2-cursor-hidden. This is the
+    //    common case (links/buttons) and must stay as cheap as No-custom-cursor.
+    // 2) Cursor:pointer fallback — suspend the Crosshair override once for the
+    //    whole walk. Eager suspend-on-every-findClickable was invalidating styles
+    //    for the entire document on each pointerover and made Crosshair feel like
+    //    a slower / different outline path even though paint is still A→B→C.
+    const semantic = this._findClickableWalk(el, { allowCursor: false });
+    if (semantic) return semantic;
+
+    if (this._isCursorOverrideActive()) {
+      return this._withNativePageCursors(() =>
+        this._findClickableWalk(el, { allowCursor: true })
+      );
+    }
+    return this._findClickableWalk(el, { allowCursor: true });
   }
 
   /**

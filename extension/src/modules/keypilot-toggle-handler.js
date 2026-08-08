@@ -484,7 +484,7 @@ export class KeyPilotToggleHandler extends EventManager {
       fontWeight: '500',
       fontFamily: 'system-ui, -apple-system, sans-serif',
       zIndex: String(Z_INDEX.NOTIFICATION),
-      boxShadow: `0 4px 12px ${COLORS.NOTIFICATION_SHADOW}`,
+      boxShadow: '0 6px 20px rgba(0, 0, 0, 0.35)',
       opacity: '0',
       transition: 'opacity 0.3s ease-in-out',
       pointerEvents: 'none'

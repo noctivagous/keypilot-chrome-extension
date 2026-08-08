@@ -236,15 +236,41 @@ export class KeyPilot extends EventManager {
 
   _isKeyPilotUiElement(el) {
     try {
+      if (!el || el === document.documentElement || el === document.body) return false;
+
       let n = el;
       let guard = 0;
       while (n && n.nodeType === 1 && guard++ < 12) {
+        // Stop before <html>/<body>: html.kpv2-cursor-hidden is a page-wide
+        // cursor-mode flag, not chrome. Matching it would skip hover on nearly
+        // every element whenever Crosshair cursor mode is enabled.
+        if (n === document.documentElement || n === document.body) break;
+
         const id = typeof n.id === 'string' ? n.id : '';
         if (id && id.startsWith('kpv2-')) return true;
+
         const cl = n.classList;
         if (cl && cl.length) {
           for (const c of cl) {
-            if (typeof c === 'string' && c.startsWith('kpv2-')) return true;
+            if (typeof c !== 'string' || !c.startsWith('kpv2-')) continue;
+            // Markers painted onto real page nodes — not KeyPilot chrome.
+            if (
+              c === 'kpv2-cursor-hidden' ||
+              c === 'kpv2-focus' ||
+              c === 'kpv2-delete' ||
+              c === 'kpv2-highlight' ||
+              c === 'kpv2-hidden' ||
+              c === 'kpv2-cols' ||
+              c === 'kpv2-cols-active' ||
+              c === 'kpv2-cols-page' ||
+              c === 'kpv2-inspector' ||
+              c === 'kpv2-inspector-picked' ||
+              c.startsWith('kpv2-text-') ||
+              (c.startsWith('kpv2-focus-') && !c.includes('overlay'))
+            ) {
+              continue;
+            }
+            return true;
           }
         }
         n = n.parentElement;
@@ -4200,8 +4226,13 @@ export class KeyPilot extends EventManager {
         const label =
           result.kind === 'background' ? 'Background image'
             : result.kind === 'svg' ? 'SVG'
-              : 'Image';
-        this.showFlashNotification(`${label} copied to clipboard`, COLORS.NOTIFICATION_SUCCESS);
+              : result.kind === 'video' ? 'Video thumbnail'
+                : 'Image';
+        this.showFlashNotification(
+          `${label} copied to clipboard`,
+          COLORS.NOTIFICATION_SUCCESS,
+          result.blob
+        );
         this.emitAction('copy_hovered_image', {
           kind: result.kind,
           url: result.url ? String(result.url).slice(0, 200) : ''
@@ -5600,7 +5631,15 @@ export class KeyPilot extends EventManager {
     ripple.addEventListener('animationend', () => ripple.remove(), { once: true });
   }
 
-  showFlashNotification(message, backgroundColor = COLORS.NOTIFICATION_SUCCESS) {
+  /**
+   * Top-center flash toast. Optional thumbnailBlob (e.g. after Copy Image)
+   * renders a max 150×150 preview to the right of the message.
+   *
+   * @param {string} message
+   * @param {string} [backgroundColor]
+   * @param {Blob|null} [thumbnailBlob]
+   */
+  showFlashNotification(message, backgroundColor = COLORS.NOTIFICATION_SUCCESS, thumbnailBlob = null) {
     try {
       // Validate input parameters
       if (!message || typeof message !== 'string') {
@@ -5632,7 +5671,49 @@ export class KeyPilot extends EventManager {
       }
       
       notification.className = 'kpv2-flash-notification';
-      notification.textContent = message;
+
+      const hasThumbnail = thumbnailBlob instanceof Blob && thumbnailBlob.size > 0;
+      let objectUrl = null;
+
+      const messageEl = document.createElement('span');
+      messageEl.textContent = message;
+      notification.appendChild(messageEl);
+
+      if (hasThumbnail) {
+        try {
+          objectUrl = URL.createObjectURL(thumbnailBlob);
+          const thumbBox = document.createElement('div');
+          Object.assign(thumbBox.style, {
+            flex: '0 0 auto',
+            maxWidth: '150px',
+            maxHeight: '150px',
+            borderRadius: '4px',
+            overflow: 'hidden',
+            backgroundColor: '#fff',
+            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.45)',
+            lineHeight: '0'
+          });
+          const img = document.createElement('img');
+          img.src = objectUrl;
+          img.alt = '';
+          Object.assign(img.style, {
+            display: 'block',
+            maxWidth: '150px',
+            maxHeight: '150px',
+            width: 'auto',
+            height: 'auto',
+            objectFit: 'contain'
+          });
+          thumbBox.appendChild(img);
+          notification.appendChild(thumbBox);
+        } catch (thumbError) {
+          console.warn('[KeyPilot] Failed to render flash thumbnail:', thumbError);
+          if (objectUrl) {
+            try { URL.revokeObjectURL(objectUrl); } catch { /* ignore */ }
+            objectUrl = null;
+          }
+        }
+      }
       
       // Style the notification with error handling
       try {
@@ -5643,19 +5724,22 @@ export class KeyPilot extends EventManager {
           transform: 'translateX(-50%)',
           backgroundColor: backgroundColor,
           color: 'white',
-          padding: '12px 24px',
+          padding: hasThumbnail ? '10px 14px 10px 20px' : '12px 24px',
           borderRadius: '6px',
           fontSize: '14px',
           fontWeight: '500',
           fontFamily: 'system-ui, -apple-system, sans-serif',
           zIndex: String(Z_INDEX.NOTIFICATION),
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          boxShadow: '0 6px 20px rgba(0, 0, 0, 0.35)',
           opacity: '0',
           transition: 'opacity 0.3s ease-in-out',
           pointerEvents: 'none',
-          maxWidth: '400px',
+          maxWidth: hasThumbnail ? '560px' : '400px',
           wordWrap: 'break-word',
-          textAlign: 'center'
+          textAlign: hasThumbnail ? 'left' : 'center',
+          display: 'flex',
+          alignItems: 'center',
+          gap: hasThumbnail ? '14px' : '0'
         });
       } catch (styleError) {
         console.error('[KeyPilot] Error styling notification:', styleError);
@@ -5667,6 +5751,7 @@ export class KeyPilot extends EventManager {
         notification.style.color = 'white';
         notification.style.padding = '12px 24px';
         notification.style.zIndex = String(Z_INDEX.NOTIFICATION);
+        notification.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.35)';
       }
 
       // Add to document with error handling
@@ -5674,6 +5759,9 @@ export class KeyPilot extends EventManager {
         document.body.appendChild(notification);
       } catch (appendError) {
         console.error('[KeyPilot] Error appending notification to document:', appendError);
+        if (objectUrl) {
+          try { URL.revokeObjectURL(objectUrl); } catch { /* ignore */ }
+        }
         return;
       }
 
@@ -5685,6 +5773,9 @@ export class KeyPilot extends EventManager {
       
       setTimeout(() => {
         try {
+          if (objectUrl) {
+            try { URL.revokeObjectURL(objectUrl); } catch { /* ignore */ }
+          }
           if (notification && notification.parentNode) {
             notification.parentNode.removeChild(notification);
           }

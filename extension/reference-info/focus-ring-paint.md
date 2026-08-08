@@ -44,6 +44,8 @@ Hover chrome is optimized to **style the clickable itself** with CSS `outline` /
 
 The browser applies that far more cheaply than allocating and repositioning a fixed-position overlay on every hover change. Prefer element styling unless geometry proves the ring would not be visible.
 
+**Crosshair cursor mode does not change A→B→C.** Paint strategy is chosen only from geometry/clipping (and shadow). What *did* make Crosshair feel slower was `findClickable` eagerly toggling `html.kpv2-cursor-hidden` on every hover resolve (full-document style invalidation) just to probe `cursor:pointer`. Semantic targets now skip that suspend; only the cursor-only fallback pays for it.
+
 | Path | When | Cost |
 |------|------|------|
 | **A. DOM outline** (default) | Normal clickables; ring not blocked by full-bleed cover | Fast: CSS on the node; scrolls with the page. **Graded** `outline-offset = clamp(minRoom − stroke, −stroke, +2)` when `ENABLE_FOCUS_CLIP_INSET` — mild clip → mild inset, not a jump to B/C |
