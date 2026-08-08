@@ -4,6 +4,7 @@
  */
 
 import { isSkippableTab, isSkippableUrl } from './src/config/url-policy.js';
+import { FEATURE_FLAGS } from './src/config/constants.js';
 import { MSG, TAB_UI_FORWARD_TYPES } from './src/messaging/types.js';
 import {
   storageGetValue,
@@ -2238,14 +2239,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
 
         case 'KP_NEW_TAB':
-          // Open a new tab
+          // Open a new tab (Chrome default NTP, or KeyPilot page when flagged on).
           try {
-            const url = chrome.runtime.getURL('pages/newtab.html');
             /** @type {chrome.tabs.CreateProperties} */
             const createProps = {
-              url,
               active: true
             };
+            if (FEATURE_FLAGS.USE_CUSTOM_NEWTAB_PAGE) {
+              createProps.url = chrome.runtime.getURL('pages/newtab.html');
+            }
 
             // Keep tab ordering consistent with other "open in new tab" actions:
             // open right after the current tab, in the same window, preserving opener relationship.

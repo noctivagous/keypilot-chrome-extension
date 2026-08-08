@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension - Frame Agent Bundle (child frames)
- * Generated on 2026-08-08T12:45:02.274Z
+ * Generated on 2026-08-08T13:52:50.167Z
  */
 
 (() => {
@@ -1190,6 +1190,11 @@ const FEATURE_FLAGS = {
 
   // UI feature flags
   SHOW_WINDOW_OUTLINE: false, // Show window outline during text mode
+
+  // When true, KP_NEW_TAB opens pages/newtab.html. When false, opens Chrome's
+  // default new tab (omit url → chrome://newtab). Custom NTP page stays in the
+  // repo for later / Firefox; chrome_url_overrides is not declared in manifest.
+  USE_CUSTOM_NEWTAB_PAGE: false,
 
   // Hover/click targeting strategy (product decision: DOM-hover only)
   // Permanent primary path: attach DOM hover listeners and drive `state.focusEl` from

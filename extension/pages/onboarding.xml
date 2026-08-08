@@ -18,7 +18,7 @@
     <!-- Turn-off step: while this is the next task, a large focus-colored arrow points at the
          ON/OFF segment's right edge. After OFF, a tip bubble points at the strip ("click again to turn on").
          (Former Alt+K step removed; re-enable is guided by the tip bubble, not a separate task.) -->
-    <task id="toggle_extension_off" label="Notice the control strip above that says `ON`. Click it to turn KeyPilot completely off.">
+    <task id="toggle_extension_off" label="There is a control strip above that says `ON`. Click it to turn KeyPilot completely off.">
       <when type="action" action="toggleExtension" change="off" />
     </task>
   </slide>

@@ -460,12 +460,16 @@ function parseOnboardingXmlForEarlyInject(xmlText) {
   const slideRe = /<slide\b([^>]*)>([\s\S]*?)<\/slide>/g;
   const taskRe = /<task\b([^>]*)>([\s\S]*?)<\/task>/g;
   const whenRe = /<when\b([^\/>]*)\/>/g;
+  // Self-closing onEnter (may span lines): <onEnter type="overlay" ... />
+  const onEnterRe = /<onEnter\b([\s\S]*?)\/>/g;
+  const bodyRe = /<body\b[^>]*>([\s\S]*?)<\/body>/i;
   const attrRe = /(\w+)\s*=\s*"([^"]*)"/g;
 
   const readAttrs = (raw) => {
     const attrs = {};
     if (!raw) return attrs;
     let m;
+    attrRe.lastIndex = 0;
     while ((m = attrRe.exec(raw))) {
       const k = m[1];
       const v = m[2];
@@ -483,8 +487,31 @@ function parseOnboardingXmlForEarlyInject(xmlText) {
 
     const title = String(slideAttrs.title || '').trim();
     const tasks = [];
+    const onEnter = [];
+
+    let bodyText = '';
+    const bodyMatch = bodyRe.exec(slideBody);
+    if (bodyMatch) {
+      bodyText = String(bodyMatch[1] || '').trim();
+    }
+    bodyRe.lastIndex = 0;
+
+    let onEnterMatch;
+    onEnterRe.lastIndex = 0;
+    while ((onEnterMatch = onEnterRe.exec(slideBody))) {
+      const oeAttrs = readAttrs(onEnterMatch[1]);
+      const type = String(oeAttrs.type || '').trim();
+      if (!type) continue;
+      const entry = { type };
+      for (const [k, v] of Object.entries(oeAttrs)) {
+        if (k === 'type') continue;
+        entry[k] = v;
+      }
+      onEnter.push(entry);
+    }
 
     let taskMatch;
+    taskRe.lastIndex = 0;
     while ((taskMatch = taskRe.exec(slideBody))) {
       const taskAttrs = readAttrs(taskMatch[1]);
       const taskBody = taskMatch[2] || '';
@@ -495,6 +522,7 @@ function parseOnboardingXmlForEarlyInject(xmlText) {
 
       // Take the first <when .../> inside the task (the authoring format here uses one).
       let when = { type: '' };
+      whenRe.lastIndex = 0;
       const whenMatch = whenRe.exec(taskBody);
       if (whenMatch) {
         const wAttrs = readAttrs(whenMatch[1]);
@@ -506,13 +534,11 @@ function parseOnboardingXmlForEarlyInject(xmlText) {
           change: String(wAttrs.change || '').trim()
         };
       }
-      // Reset stateful regex for next task.
-      whenRe.lastIndex = 0;
 
       tasks.push({ id: taskId, label, when });
     }
 
-    slides.push({ id, title, tasks, onEnter: [] });
+    slides.push({ id, title, tasks, onEnter, bodyText });
   }
 
   return { slides };

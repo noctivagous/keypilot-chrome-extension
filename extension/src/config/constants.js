@@ -578,6 +578,11 @@ export const FEATURE_FLAGS = {
   // UI feature flags
   SHOW_WINDOW_OUTLINE: false, // Show window outline during text mode
 
+  // When true, KP_NEW_TAB opens pages/newtab.html. When false, opens Chrome's
+  // default new tab (omit url → chrome://newtab). Custom NTP page stays in the
+  // repo for later / Firefox; chrome_url_overrides is not declared in manifest.
+  USE_CUSTOM_NEWTAB_PAGE: false,
+
   // Hover/click targeting strategy (product decision: DOM-hover only)
   // Permanent primary path: attach DOM hover listeners and drive `state.focusEl` from
   // browser-native hover targeting. RBush spatial indexing is retired (vendor removed;

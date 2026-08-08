@@ -144,18 +144,21 @@ async function storageSet(obj) {
   return ok;
 }
 
+/**
+ * Run a DOM update for onboarding.
+ *
+ * Intentionally does NOT use document.startViewTransition here.
+ * Chrome's page-level View Transitions can swallow the first onEnter overlay
+ * paint on install (Brave often falls back / differs). Slide transitions are
+ * already handled inside OnboardingPanel.render().
+ * @param {() => void} updateDomFn
+ */
 function withViewTransition(updateDomFn) {
   try {
-    if (document && typeof document.startViewTransition === 'function') {
-      document.startViewTransition(() => {
-        updateDomFn();
-      });
-      return;
-    }
+    updateDomFn();
   } catch {
-    // ignore, fall back
+    // ignore
   }
-  updateDomFn();
 }
 
 function parseOnboardingXml(xmlText) {
@@ -263,6 +266,8 @@ export class OnboardingManager {
     this._lastRenderedSlideIndex = null;
     this._lastAction = null;
     this._isTransitioning = false;
+    /** @type {string|null} */
+    this._onEnterOverlayPendingSlideId = null;
 
     // Coalesced persistence: rapid task updates + Reset must not race.
     // Fire-and-forget _persist() used to capture a live progress object that a later
@@ -716,10 +721,23 @@ export class OnboardingManager {
   }
 
   async _loadModel() {
-    const url = chrome.runtime.getURL('pages/onboarding.xml');
-    const res = await fetch(url);
-    const text = await res.text();
-    this.model = parseOnboardingXml(text);
+    try {
+      const url = chrome.runtime.getURL('pages/onboarding.xml');
+      const res = await fetch(url);
+      const text = await res.text();
+      this.model = parseOnboardingXml(text);
+      if (this.model?.slides?.length) return;
+    } catch {
+      // fall through to early-inject stamped model
+    }
+    try {
+      const early = window.KEYPILOT_EARLY?.getOnboardingModel?.();
+      if (early && Array.isArray(early.slides) && early.slides.length) {
+        this.model = early;
+      }
+    } catch {
+      // ignore
+    }
   }
 
   /**
@@ -998,41 +1016,143 @@ export class OnboardingManager {
     // Control-strip arrow only for the next incomplete "turn off" task.
     this._syncToggleOffArrow();
 
-    // Fire onEnter actions once per slide.
+    // Fire onEnter actions once per slide. Overlay onEnter is marked done only
+    // after the modal is actually open (see _runOnEnter) so a failed first paint
+    // on Chrome can retry on the next render.
     if (!this.progress.onEnterDoneSlideIds.includes(slide.id)) {
-      this.progress.onEnterDoneSlideIds.push(slide.id);
-      this._persist(); // best-effort; don't block UI
       this._runOnEnter(slide);
     }
 
   }
 
+  /**
+   * Persist that onEnter for this slide has finished (so it won't re-fire).
+   * @param {string|null|undefined} slideId
+   */
+  _markOnEnterDone(slideId) {
+    const id = String(slideId || '');
+    if (!id) return;
+    if (this.progress.onEnterDoneSlideIds.includes(id)) return;
+    this.progress.onEnterDoneSlideIds.push(id);
+    this._persist(); // best-effort; don't block UI
+  }
+
   _runOnEnter(slide) {
     const entries = Array.isArray(slide?.onEnter) ? slide.onEnter : [];
+    const slideId = slide?.id || null;
+    let hasOverlay = false;
+
     for (const entry of entries) {
       if (!entry || !entry.type) continue;
 
       // overlay: show a modal overlay on top of the onboarding panel, blurring the slide behind it.
       if (entry.type === 'overlay') {
+        hasOverlay = true;
         const title = String(entry.title || 'Nice!').trim();
         const message = String(entry.message || entry.text || '').trim();
         const primaryText = String(entry.primaryText || entry.primary || 'OK').trim();
         const secondaryText = String(entry.secondaryText || entry.secondary || '').trim();
         const effect = String(entry.effect || '').trim().toLowerCase();
-        try {
-          this.panel.showOverlay({
-            title,
-            message,
-            primaryText,
-            secondaryText
-          });
-          this._emit('overlayShown', { slideId: slide?.id || null, title, message });
-          // Celebration: marquee/flash around the walkthrough chrome (e.g. "Nice — KeyPilot is back on").
-          if (effect === 'marquee' || effect === 'flash' || effect === 'dash' || effect === 'scale') {
-            try { this.panel.playBorderEffect?.(effect); } catch { /* ignore */ }
+        const shouldPlayEffect =
+          effect === 'marquee' || effect === 'flash' || effect === 'dash' || effect === 'scale';
+
+        /** Run border celebration only after the overlay is visible on screen. */
+        const scheduleBorderEffect = () => {
+          if (!shouldPlayEffect) return;
+          const play = () => {
+            try {
+              if (!this.panel.isOverlayOpen?.()) return;
+              this.panel.playBorderEffect?.(effect);
+            } catch { /* ignore */ }
+          };
+          try {
+            // Wait for overlay layout/paint, then a short beat so the card reads first.
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                try {
+                  setTimeout(play, 160);
+                } catch {
+                  play();
+                }
+              });
+            });
+          } catch {
+            try { setTimeout(play, 200); } catch { play(); }
           }
+        };
+
+        // Avoid stacking multiple deferred attempts for the same slide.
+        if (this._onEnterOverlayPendingSlideId === slideId) continue;
+        this._onEnterOverlayPendingSlideId = slideId;
+
+        // Early-inject may already have the welcome modal open — adopt it.
+        try {
+          if (this.panel.isOverlayOpen?.()) {
+            this._onEnterOverlayPendingSlideId = null;
+            this._markOnEnterDone(slideId);
+            scheduleBorderEffect();
+            continue;
+          }
+        } catch { /* ignore */ }
+
+        const tryShow = () => {
+          try {
+            this.panel.showOverlay({
+              title,
+              message,
+              primaryText,
+              secondaryText
+            });
+            this._emit('overlayShown', { slideId, title, message });
+          } catch {
+            // ignore
+          }
+          try {
+            return !!this.panel.isOverlayOpen?.();
+          } catch {
+            return false;
+          }
+        };
+
+        const finish = (shown) => {
+          if (this._onEnterOverlayPendingSlideId === slideId) {
+            this._onEnterOverlayPendingSlideId = null;
+          }
+          // Only mark done once the overlay is actually visible. If show failed,
+          // leave unmarked so a later _render (e.g. storage sync) can retry.
+          if (shown) {
+            this._markOnEnterDone(slideId);
+            // Marquee/flash after the overlay is up (not during slide transition).
+            scheduleBorderEffect();
+          }
+        };
+
+        // Immediate attempt, then double-rAF retry for Chrome first-paint / layout
+        // races (panel body height / early-shell adoption).
+        if (tryShow()) {
+          finish(true);
+          continue;
+        }
+        try {
+          requestAnimationFrame(() => {
+            if (slideId && this.progress.onEnterDoneSlideIds.includes(String(slideId))) {
+              this._onEnterOverlayPendingSlideId = null;
+              return;
+            }
+            if (tryShow()) {
+              finish(true);
+              return;
+            }
+            requestAnimationFrame(() => {
+              if (slideId && this.progress.onEnterDoneSlideIds.includes(String(slideId))) {
+                this._onEnterOverlayPendingSlideId = null;
+                return;
+              }
+              finish(tryShow());
+            });
+          });
         } catch {
-          // ignore
+          finish(tryShow());
         }
         continue;
       }
@@ -1081,6 +1201,12 @@ export class OnboardingManager {
           // ignore
         }
       }
+    }
+
+    // Non-overlay onEnter (openTab / openPopover): mark done immediately.
+    // Overlay-only slides wait until the modal is confirmed open.
+    if (!hasOverlay) {
+      this._markOnEnterDone(slideId);
     }
   }
 
@@ -1439,7 +1565,11 @@ export class OnboardingManager {
       const target = String(when.target || '').trim();
       if (!target) return true;
 
-      if (target === 'link') return !!ctx.detail?.isLink;
+      if (target === 'link') {
+        // Link category OR a successful F-click on the hovered focus-outline target
+        // (buttons/JS widgets that look clickable but don't navigate).
+        return !!(ctx.detail?.isLink || ctx.detail?.hadFocusOutline);
+      }
       if (target === 'keyboardHelpKey') return !!ctx.detail?.isKeyboardHelpKey;
       return false;
     }
@@ -1472,7 +1602,7 @@ export class OnboardingManager {
         // Panel is usually hidden while off; tip bubble carries the "click again" copy.
         return 'KeyPilot is already off (control strip shows `OFF`). Click the strip to turn it back on — a tip points at the control if you need it.';
       }
-      return base || 'Notice the control strip above that says `ON`. Click it to turn KeyPilot completely off.';
+      return base || 'There is a control strip above that says `ON`. Click it to turn KeyPilot completely off.';
     }
     return base;
   }

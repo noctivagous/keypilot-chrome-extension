@@ -227,8 +227,44 @@ export function getOnboardingPanelCss(opts = {}) {
         animation: kp-onboarding-next-task-glow 1.5s ease-in-out infinite;
         will-change: box-shadow;
       }
+      /* Brief flash + check pop when a checklist step completes. */
+      @keyframes kp-onboarding-check-flash {
+        0% {
+          transform: scale(0.55);
+          filter: brightness(2);
+          box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.95);
+        }
+        45% {
+          transform: scale(1.28);
+          filter: brightness(1.45);
+          box-shadow:
+            0 0 0 5px rgba(46, 204, 113, 0.40),
+            0 0 16px rgba(46, 204, 113, 0.75);
+        }
+        100% {
+          transform: scale(1);
+          filter: brightness(1);
+          box-shadow: 0 0 0 2px rgba(46, 204, 113, 0.18);
+        }
+      }
+      @keyframes kp-onboarding-check-pop {
+        0% { opacity: 0; transform: scale(0.15); }
+        55% { opacity: 1; transform: scale(1.2); }
+        100% { opacity: 1; transform: scale(1); }
+      }
+      .${ONBOARDING_PANEL_CLASS} .kp-onboarding-check-flash {
+        animation: kp-onboarding-check-flash 420ms cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
+        will-change: transform, box-shadow, filter;
+      }
+      .${ONBOARDING_PANEL_CLASS} .kp-onboarding-check-flash > div {
+        animation: kp-onboarding-check-pop 380ms cubic-bezier(0.2, 0.9, 0.25, 1.1) both;
+      }
       @media (prefers-reduced-motion: reduce) {
         .${ONBOARDING_PANEL_CLASS} [data-kp-onboarding-task-next="true"] {
+          animation: none;
+        }
+        .${ONBOARDING_PANEL_CLASS} .kp-onboarding-check-flash,
+        .${ONBOARDING_PANEL_CLASS} .kp-onboarding-check-flash > div {
           animation: none;
         }
       }`;
@@ -585,12 +621,34 @@ const NEXT_TASK_BG = 'rgba(33, 150, 243, 0.14)';
 const NEXT_TASK_GLOW =
   '0 0 0 1px rgba(33, 150, 243, 0.45), 0 0 12px rgba(120, 210, 255, 0.55), 0 0 24px rgba(120, 210, 255, 0.35)';
 
+/**
+ * Restart the checkbox complete flash on a checklist box.
+ * @param {HTMLElement|null} box
+ */
+function playCheckboxCompleteFlash(box) {
+  if (!box) return;
+  try {
+    box.classList.remove('kp-onboarding-check-flash');
+    // Force reflow so re-adding the class retriggers the animation.
+    void box.offsetWidth;
+    box.classList.add('kp-onboarding-check-flash');
+  } catch { /* ignore */ }
+}
+
 function applyTaskRowVisual(row, task, done, opts = {}) {
   if (!row) return;
   const isNext = !!(!done && opts.isNext);
+  let wasDone = false;
+  try {
+    wasDone = row.getAttribute('data-kp-onboarding-task-done') === 'true';
+  } catch { /* ignore */ }
   try {
     if (isNext) row.setAttribute('data-kp-onboarding-task-next', 'true');
     else row.removeAttribute('data-kp-onboarding-task-next');
+  } catch { /* ignore */ }
+  try {
+    if (done) row.setAttribute('data-kp-onboarding-task-done', 'true');
+    else row.removeAttribute('data-kp-onboarding-task-done');
   } catch { /* ignore */ }
 
   assignStyle(row, {
@@ -607,6 +665,7 @@ function applyTaskRowVisual(row, task, done, opts = {}) {
     row.querySelector(':scope > div:last-child');
 
   if (box) {
+    try { box.classList.remove('kp-onboarding-check-flash'); } catch { /* ignore */ }
     assignStyle(box, {
       border: done
         ? '1px solid rgba(46, 204, 113, 0.9)'
@@ -638,6 +697,11 @@ function applyTaskRowVisual(row, task, done, opts = {}) {
         box.removeChild(existingCheck);
       }
     } catch { /* ignore */ }
+
+    // Flash only on the incomplete → complete transition (not on every re-render).
+    if (done && !wasDone) {
+      playCheckboxCompleteFlash(box);
+    }
   }
 
   if (textEl) {
@@ -659,6 +723,9 @@ function applyTaskRowVisual(row, task, done, opts = {}) {
 function createTaskRow(doc, task, done, opts = {}) {
   const row = doc.createElement('div');
   row.setAttribute('data-kp-onboarding-task-id', task.id);
+  if (done) {
+    try { row.setAttribute('data-kp-onboarding-task-done', 'true'); } catch { /* ignore */ }
+  }
   const isNext = !!(!done && opts.isNext);
   if (isNext) {
     try { row.setAttribute('data-kp-onboarding-task-next', 'true'); } catch { /* ignore */ }
@@ -706,6 +773,14 @@ function createTaskRow(doc, task, done, opts = {}) {
       color: '#0b1410'
     });
     box.appendChild(check);
+    // Animate when this row was just completed (e.g. rebuild right after a step).
+    if (opts.animateComplete) {
+      try {
+        requestAnimationFrame(() => playCheckboxCompleteFlash(box));
+      } catch {
+        playCheckboxCompleteFlash(box);
+      }
+    }
   }
 
   const text = doc.createElement('div');
@@ -843,6 +918,7 @@ export function renderOnboardingSlideSurface(surface, params = {}) {
     list.appendChild(createTaskRow(doc, task, done, {
       isNext: !!(nextTaskId && task.id === nextTaskId),
       uncheckable: done && task.id === lastCompletedTaskId,
+      animateComplete: !!(done && lastCompletedTaskId && task.id === lastCompletedTaskId),
       onTaskRowClick
     }));
   }
@@ -955,8 +1031,10 @@ export function updateOnboardingChrome(refs, params = {}) {
 // ── Overlay ─────────────────────────────────────────────────────────────────
 
 /**
- * Ensure modal overlay exists inside the scrollable body host.
- * @param {HTMLElement} bodyHost
+ * Ensure modal overlay exists on the onboarding panel root.
+ * Attaches to the panel root (not the scrollable body) so a flex body with
+ * min-height:0 cannot collapse the overlay to zero height on Chrome.
+ * @param {HTMLElement} host Panel root or any descendant inside it
  * @param {Document} [doc]
  * @returns {{
  *   overlayEl: HTMLElement,
@@ -966,12 +1044,25 @@ export function updateOnboardingChrome(refs, params = {}) {
  *   secondaryBtn: HTMLButtonElement
  * }|null}
  */
-export function ensureOnboardingOverlay(bodyHost, doc) {
-  if (!bodyHost) return null;
-  const d = doc || bodyHost.ownerDocument || document;
+export function ensureOnboardingOverlay(host, doc) {
+  if (!host) return null;
+  const d = doc || host.ownerDocument || document;
 
-  const existing = bodyHost.querySelector('[data-kp-onboarding-overlay="true"]');
+  let root = host;
+  try {
+    if (!host.classList?.contains?.(ONBOARDING_PANEL_CLASS)) {
+      root = host.closest?.(`.${ONBOARDING_PANEL_CLASS}`) || host;
+    }
+  } catch {
+    root = host;
+  }
+
+  const existing = root.querySelector('[data-kp-onboarding-overlay="true"]');
   if (existing) {
+    // Migrate legacy overlays that lived inside the scrollable body.
+    try {
+      if (existing.parentElement !== root) root.appendChild(existing);
+    } catch { /* ignore */ }
     return {
       overlayEl: existing,
       titleEl: existing.querySelector('[data-kp-onboarding-overlay-title="true"]'),
@@ -994,8 +1085,9 @@ export function ensureOnboardingOverlay(bodyHost, doc) {
     background: 'rgba(0,0,0,0.42)',
     backdropFilter: 'blur(10px)',
     WebkitBackdropFilter: 'blur(10px)',
-    zIndex: '5',
-    pointerEvents: 'none'
+    zIndex: '20',
+    pointerEvents: 'none',
+    boxSizing: 'border-box'
   });
 
   const card = d.createElement('div');
@@ -1071,7 +1163,7 @@ export function ensureOnboardingOverlay(bodyHost, doc) {
   card.appendChild(msgEl);
   card.appendChild(btnRow);
   overlay.appendChild(card);
-  bodyHost.appendChild(overlay);
+  root.appendChild(overlay);
 
   return { overlayEl: overlay, titleEl, msgEl, primaryBtn, secondaryBtn };
 }
@@ -1085,8 +1177,18 @@ export function setOnboardingOverlayOpen(overlayEl, open, root = null) {
   if (!overlayEl) return;
   try {
     overlayEl.hidden = !open;
-    overlayEl.style.display = open ? 'flex' : 'none';
-    overlayEl.style.pointerEvents = open ? 'auto' : 'none';
+    if (open) {
+      // Hostile pages sometimes override [hidden]/display; reinforce when opening.
+      overlayEl.style.setProperty('display', 'flex', 'important');
+      overlayEl.style.setProperty('pointer-events', 'auto', 'important');
+    } else {
+      overlayEl.style.removeProperty('display');
+      overlayEl.style.removeProperty('pointer-events');
+      overlayEl.style.display = 'none';
+      overlayEl.style.pointerEvents = 'none';
+    }
+  } catch { /* ignore */ }
+  try {
     if (root) {
       if (open) root.dataset.kpOnboardingOverlayOpen = 'true';
       else delete root.dataset.kpOnboardingOverlayOpen;

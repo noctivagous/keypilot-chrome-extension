@@ -338,6 +338,8 @@ export class KeyPilot extends EventManager {
       isLink: false,
       href: null,
       isKeyboardHelpKey: false,
+      /** True when F activated the element that had the blue/green focus outline. */
+      hadFocusOutline: false,
       category: CLICKABLE_CATEGORY.NONE
     };
 
@@ -4718,6 +4720,18 @@ export class KeyPilot extends EventManager {
     });
 
     const activationDetail = this._buildActivationDetail(target);
+    // Onboarding "click a link" also accepts a successful F on the blue focus-outline
+    // target — many clickables look like links but don't navigate (or aren't <a>).
+    try {
+      const focus = currentState.focusEl;
+      if (
+        focus instanceof Element &&
+        target instanceof Element &&
+        (focus === target || focus.contains(target) || target.contains(focus))
+      ) {
+        activationDetail.hadFocusOutline = true;
+      }
+    } catch { /* ignore */ }
 
     // Store coordinates if this is a link click
     if (target.tagName === 'A' && target.href) {

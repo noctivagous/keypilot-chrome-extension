@@ -684,7 +684,13 @@ export class OnboardingPanel {
   }
 
   _ensure() {
-    if (this.root && this.root.isConnected) return;
+    // Root already adopted — still ensure the modal overlay exists.
+    // (Earlier show() paths can bind the shell before overlay creation; Chrome
+    // first-paint races made showOverlay() exit early when _overlayEl was null.)
+    if (this.root && this.root.isConnected) {
+      this._ensureOverlay(this.root);
+      return;
+    }
 
     // Adopt early-inject shell when present (avoids flicker).
     try {
@@ -760,12 +766,7 @@ export class OnboardingPanel {
     try {
       if (this._overlayEl && this._overlayEl.isConnected) return;
 
-      const bodyHost =
-        rootEl?.querySelector?.('[data-kp-onboarding-body="true"]') ||
-        rootEl?.querySelector?.(':scope > div[data-kp-onboarding-body]') ||
-        null;
-      const host = bodyHost || rootEl;
-      const overlayRefs = ensureOnboardingOverlay(host);
+      const overlayRefs = ensureOnboardingOverlay(rootEl || this.root);
       if (!overlayRefs) return;
 
       this._overlayEl = overlayRefs.overlayEl;
@@ -782,8 +783,10 @@ export class OnboardingPanel {
       // Normalize visibility if overlay already existed (hostile pages may override [hidden]).
       try {
         const isHidden = this._overlayEl.hidden === true || this._overlayEl.hasAttribute('hidden');
-        this._overlayOpen = !isHidden;
-        setOnboardingOverlayOpen(this._overlayEl, !isHidden, this.root);
+        const displayNone = String(this._overlayEl.style?.display || '') === 'none';
+        const open = !isHidden && !displayNone;
+        this._overlayOpen = open;
+        setOnboardingOverlayOpen(this._overlayEl, open, this.root);
       } catch { /* ignore */ }
     } catch {
       // ignore

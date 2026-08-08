@@ -1237,7 +1237,7 @@
         },
         {
           "id": "toggle_extension_off",
-          "label": "Notice the control strip above that says `ON`. Click it to turn KeyPilot completely off.",
+          "label": "There is a control strip above that says `ON`. Click it to turn KeyPilot completely off.",
           "when": {
             "type": "action",
             "action": "toggleExtension",
@@ -1247,7 +1247,15 @@
           }
         }
       ],
-      "onEnter": []
+      "onEnter": [
+        {
+          "type": "overlay",
+          "title": "Welcome to KeyPilot",
+          "message": "We'll show you how to use KeyPilot one step at a time.",
+          "primaryText": "OK"
+        }
+      ],
+      "bodyText": ""
     },
     {
       "id": "text_box_mode",
@@ -1276,7 +1284,16 @@
           }
         }
       ],
-      "onEnter": []
+      "onEnter": [
+        {
+          "type": "overlay",
+          "title": "Nice — KeyPilot is back on",
+          "message": "Next up: text boxes.",
+          "primaryText": "OK",
+          "effect": "marquee"
+        }
+      ],
+      "bodyText": ""
     },
     {
       "id": "scrolling",
@@ -1327,7 +1344,8 @@
           }
         }
       ],
-      "onEnter": []
+      "onEnter": [],
+      "bodyText": ""
     },
     {
       "id": "tabs",
@@ -1389,13 +1407,15 @@
           }
         }
       ],
-      "onEnter": []
+      "onEnter": [],
+      "bodyText": ""
     },
     {
       "id": "completion",
       "title": "Tutorial complete",
       "tasks": [],
-      "onEnter": []
+      "onEnter": [],
+      "bodyText": "You finished the tutorial and are ready to use KeyPilot."
     }
   ]
 };
@@ -2593,8 +2613,44 @@
           animation: kp-onboarding-next-task-glow 1.5s ease-in-out infinite;
           will-change: box-shadow;
         }
+        /* Brief flash + check pop when a checklist step completes. */
+        @keyframes kp-onboarding-check-flash {
+          0% {
+            transform: scale(0.55);
+            filter: brightness(2);
+            box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.95);
+          }
+          45% {
+            transform: scale(1.28);
+            filter: brightness(1.45);
+            box-shadow:
+              0 0 0 5px rgba(46, 204, 113, 0.40),
+              0 0 16px rgba(46, 204, 113, 0.75);
+          }
+          100% {
+            transform: scale(1);
+            filter: brightness(1);
+            box-shadow: 0 0 0 2px rgba(46, 204, 113, 0.18);
+          }
+        }
+        @keyframes kp-onboarding-check-pop {
+          0% { opacity: 0; transform: scale(0.15); }
+          55% { opacity: 1; transform: scale(1.2); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        .${ONBOARDING_PANEL_CLASS} .kp-onboarding-check-flash {
+          animation: kp-onboarding-check-flash 420ms cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
+          will-change: transform, box-shadow, filter;
+        }
+        .${ONBOARDING_PANEL_CLASS} .kp-onboarding-check-flash > div {
+          animation: kp-onboarding-check-pop 380ms cubic-bezier(0.2, 0.9, 0.25, 1.1) both;
+        }
         @media (prefers-reduced-motion: reduce) {
           .${ONBOARDING_PANEL_CLASS} [data-kp-onboarding-task-next="true"] {
+            animation: none;
+          }
+          .${ONBOARDING_PANEL_CLASS} .kp-onboarding-check-flash,
+          .${ONBOARDING_PANEL_CLASS} .kp-onboarding-check-flash > div {
             animation: none;
           }
         }`;
@@ -2951,12 +3007,34 @@
   const NEXT_TASK_GLOW =
     '0 0 0 1px rgba(33, 150, 243, 0.45), 0 0 12px rgba(120, 210, 255, 0.55), 0 0 24px rgba(120, 210, 255, 0.35)';
 
+  /**
+   * Restart the checkbox complete flash on a checklist box.
+   * @param {HTMLElement|null} box
+   */
+  function playCheckboxCompleteFlash(box) {
+    if (!box) return;
+    try {
+      box.classList.remove('kp-onboarding-check-flash');
+      // Force reflow so re-adding the class retriggers the animation.
+      void box.offsetWidth;
+      box.classList.add('kp-onboarding-check-flash');
+    } catch { /* ignore */ }
+  }
+
   function applyTaskRowVisual(row, task, done, opts = {}) {
     if (!row) return;
     const isNext = !!(!done && opts.isNext);
+    let wasDone = false;
+    try {
+      wasDone = row.getAttribute('data-kp-onboarding-task-done') === 'true';
+    } catch { /* ignore */ }
     try {
       if (isNext) row.setAttribute('data-kp-onboarding-task-next', 'true');
       else row.removeAttribute('data-kp-onboarding-task-next');
+    } catch { /* ignore */ }
+    try {
+      if (done) row.setAttribute('data-kp-onboarding-task-done', 'true');
+      else row.removeAttribute('data-kp-onboarding-task-done');
     } catch { /* ignore */ }
 
     assignStyle(row, {
@@ -2973,6 +3051,7 @@
       row.querySelector(':scope > div:last-child');
 
     if (box) {
+      try { box.classList.remove('kp-onboarding-check-flash'); } catch { /* ignore */ }
       assignStyle(box, {
         border: done
           ? '1px solid rgba(46, 204, 113, 0.9)'
@@ -3004,6 +3083,11 @@
           box.removeChild(existingCheck);
         }
       } catch { /* ignore */ }
+
+      // Flash only on the incomplete → complete transition (not on every re-render).
+      if (done && !wasDone) {
+        playCheckboxCompleteFlash(box);
+      }
     }
 
     if (textEl) {
@@ -3025,6 +3109,9 @@
   function createTaskRow(doc, task, done, opts = {}) {
     const row = doc.createElement('div');
     row.setAttribute('data-kp-onboarding-task-id', task.id);
+    if (done) {
+      try { row.setAttribute('data-kp-onboarding-task-done', 'true'); } catch { /* ignore */ }
+    }
     const isNext = !!(!done && opts.isNext);
     if (isNext) {
       try { row.setAttribute('data-kp-onboarding-task-next', 'true'); } catch { /* ignore */ }
@@ -3072,6 +3159,14 @@
         color: '#0b1410'
       });
       box.appendChild(check);
+      // Animate when this row was just completed (e.g. rebuild right after a step).
+      if (opts.animateComplete) {
+        try {
+          requestAnimationFrame(() => playCheckboxCompleteFlash(box));
+        } catch {
+          playCheckboxCompleteFlash(box);
+        }
+      }
     }
 
     const text = doc.createElement('div');
@@ -3209,6 +3304,7 @@
       list.appendChild(createTaskRow(doc, task, done, {
         isNext: !!(nextTaskId && task.id === nextTaskId),
         uncheckable: done && task.id === lastCompletedTaskId,
+        animateComplete: !!(done && lastCompletedTaskId && task.id === lastCompletedTaskId),
         onTaskRowClick
       }));
     }
@@ -3321,8 +3417,10 @@
   // ── Overlay ─────────────────────────────────────────────────────────────────
 
   /**
-   * Ensure modal overlay exists inside the scrollable body host.
-   * @param {HTMLElement} bodyHost
+   * Ensure modal overlay exists on the onboarding panel root.
+   * Attaches to the panel root (not the scrollable body) so a flex body with
+   * min-height:0 cannot collapse the overlay to zero height on Chrome.
+   * @param {HTMLElement} host Panel root or any descendant inside it
    * @param {Document} [doc]
    * @returns {{
    *   overlayEl: HTMLElement,
@@ -3332,12 +3430,25 @@
    *   secondaryBtn: HTMLButtonElement
    * }|null}
    */
-  function ensureOnboardingOverlay(bodyHost, doc) {
-    if (!bodyHost) return null;
-    const d = doc || bodyHost.ownerDocument || document;
+  function ensureOnboardingOverlay(host, doc) {
+    if (!host) return null;
+    const d = doc || host.ownerDocument || document;
 
-    const existing = bodyHost.querySelector('[data-kp-onboarding-overlay="true"]');
+    let root = host;
+    try {
+      if (!host.classList?.contains?.(ONBOARDING_PANEL_CLASS)) {
+        root = host.closest?.(`.${ONBOARDING_PANEL_CLASS}`) || host;
+      }
+    } catch {
+      root = host;
+    }
+
+    const existing = root.querySelector('[data-kp-onboarding-overlay="true"]');
     if (existing) {
+      // Migrate legacy overlays that lived inside the scrollable body.
+      try {
+        if (existing.parentElement !== root) root.appendChild(existing);
+      } catch { /* ignore */ }
       return {
         overlayEl: existing,
         titleEl: existing.querySelector('[data-kp-onboarding-overlay-title="true"]'),
@@ -3360,8 +3471,9 @@
       background: 'rgba(0,0,0,0.42)',
       backdropFilter: 'blur(10px)',
       WebkitBackdropFilter: 'blur(10px)',
-      zIndex: '5',
-      pointerEvents: 'none'
+      zIndex: '20',
+      pointerEvents: 'none',
+      boxSizing: 'border-box'
     });
 
     const card = d.createElement('div');
@@ -3437,7 +3549,7 @@
     card.appendChild(msgEl);
     card.appendChild(btnRow);
     overlay.appendChild(card);
-    bodyHost.appendChild(overlay);
+    root.appendChild(overlay);
 
     return { overlayEl: overlay, titleEl, msgEl, primaryBtn, secondaryBtn };
   }
@@ -3451,8 +3563,18 @@
     if (!overlayEl) return;
     try {
       overlayEl.hidden = !open;
-      overlayEl.style.display = open ? 'flex' : 'none';
-      overlayEl.style.pointerEvents = open ? 'auto' : 'none';
+      if (open) {
+        // Hostile pages sometimes override [hidden]/display; reinforce when opening.
+        overlayEl.style.setProperty('display', 'flex', 'important');
+        overlayEl.style.setProperty('pointer-events', 'auto', 'important');
+      } else {
+        overlayEl.style.removeProperty('display');
+        overlayEl.style.removeProperty('pointer-events');
+        overlayEl.style.display = 'none';
+        overlayEl.style.pointerEvents = 'none';
+      }
+    } catch { /* ignore */ }
+    try {
       if (root) {
         if (open) root.dataset.kpOnboardingOverlayOpen = 'true';
         else delete root.dataset.kpOnboardingOverlayOpen;
@@ -3822,12 +3944,147 @@
         }
       });
     }
+
+    // Show slide onEnter overlay immediately (before content-bundled loads).
+    // Chrome often paints the early shell first; waiting for the manager missed the welcome modal.
+    try { syncEarlyOnEnterOverlay(slide, progress); } catch { /* ignore */ }
+  }
+
+  /**
+   * Show / hide the welcome (onEnter) modal on the early shell.
+   * @param {any} slide
+   * @param {any} progress
+   */
+  function syncEarlyOnEnterOverlay(slide, progress) {
+    if (!onboardingRoot || isMainExtensionLoaded) return;
+    if (typeof ensureOnboardingOverlay !== 'function' || typeof setOnboardingOverlayOpen !== 'function') {
+      return;
+    }
+
+    const overlayRefs = ensureOnboardingOverlay(onboardingRoot);
+    if (!overlayRefs || !overlayRefs.overlayEl) return;
+
+    const done = Array.isArray(progress?.onEnterDoneSlideIds)
+      ? progress.onEnterDoneSlideIds.map(String)
+      : [];
+    const entries = Array.isArray(slide?.onEnter) ? slide.onEnter : [];
+    const overlayEntry = entries.find((e) => e && String(e.type || '') === 'overlay');
+    const slideId = slide?.id != null ? String(slide.id) : '';
+    const shouldShow = !!(overlayEntry && slideId && !done.includes(slideId));
+
+    if (!shouldShow) {
+      try { setOnboardingOverlayOpen(overlayRefs.overlayEl, false, onboardingRoot); } catch { /* ignore */ }
+      return;
+    }
+
+    try {
+      if (overlayRefs.titleEl) {
+        overlayRefs.titleEl.textContent = String(overlayEntry.title || 'Welcome to KeyPilot');
+      }
+    } catch { /* ignore */ }
+    try {
+      if (overlayRefs.msgEl) {
+        overlayRefs.msgEl.textContent = String(overlayEntry.message || overlayEntry.text || '');
+      }
+    } catch { /* ignore */ }
+    try {
+      if (overlayRefs.primaryBtn) {
+        overlayRefs.primaryBtn.textContent = String(overlayEntry.primaryText || overlayEntry.primary || 'OK');
+        overlayRefs.primaryBtn.hidden = false;
+      }
+    } catch { /* ignore */ }
+    try {
+      if (overlayRefs.secondaryBtn) {
+        const secondary = String(overlayEntry.secondaryText || overlayEntry.secondary || '').trim();
+        overlayRefs.secondaryBtn.textContent = secondary;
+        overlayRefs.secondaryBtn.hidden = !secondary;
+      }
+    } catch { /* ignore */ }
+
+    // Wire OK once; persists onEnterDone so the bundled manager does not re-show forever.
+    try {
+      const btn = overlayRefs.primaryBtn;
+      if (btn && !btn._kpEarlyOverlayPrimaryBound) {
+        btn._kpEarlyOverlayPrimaryBound = true;
+        btn.addEventListener('click', (e) => {
+          try {
+            e.preventDefault();
+            e.stopPropagation();
+          } catch { /* ignore */ }
+          try { setOnboardingOverlayOpen(overlayRefs.overlayEl, false, onboardingRoot); } catch { /* ignore */ }
+          try { markEarlyOnEnterDone(slideId); } catch { /* ignore */ }
+        });
+      }
+    } catch { /* ignore */ }
+
+    try { setOnboardingOverlayOpen(overlayRefs.overlayEl, true, onboardingRoot); } catch { /* ignore */ }
+  }
+
+  /**
+   * Merge slideId into progress.onEnterDoneSlideIds (dual-write sync+local).
+   * @param {string} slideId
+   */
+  function markEarlyOnEnterDone(slideId) {
+    const id = String(slideId || '').trim();
+    if (!id) return;
+    const progressKey =
+      (typeof ONBOARDING_STORAGE_KEYS !== 'undefined' && ONBOARDING_STORAGE_KEYS.PROGRESS) ||
+      ONBOARDING_PROGRESS_STORAGE_KEY;
+    const firstId =
+      (typeof ONBOARDING_FIRST_SLIDE_ID === 'string' && ONBOARDING_FIRST_SLIDE_ID) ||
+      'basic_navigation';
+
+    const writeBoth = async () => {
+      /** @type {any} */
+      let prog = null;
+      try {
+        const sync = await chrome.storage.sync.get([progressKey]);
+        if (sync && sync[progressKey] && typeof sync[progressKey] === 'object') prog = sync[progressKey];
+      } catch { /* ignore */ }
+      if (!prog) {
+        try {
+          const local = await chrome.storage.local.get([progressKey]);
+          if (local && local[progressKey] && typeof local[progressKey] === 'object') prog = local[progressKey];
+        } catch { /* ignore */ }
+      }
+      if (!prog || typeof prog !== 'object') {
+        prog =
+          typeof createEmptyProgress === 'function'
+            ? createEmptyProgress(firstId)
+            : {
+                slideId: firstId,
+                completedTaskIds: [],
+                onEnterDoneSlideIds: [],
+                completed: false,
+                timestamp: Date.now()
+              };
+      }
+      const done = Array.isArray(prog.onEnterDoneSlideIds)
+        ? prog.onEnterDoneSlideIds.map(String)
+        : [];
+      if (!done.includes(id)) done.push(id);
+      const next = {
+        ...prog,
+        onEnterDoneSlideIds: done,
+        timestamp: Date.now()
+      };
+      const payload = { [progressKey]: next };
+      try { await chrome.storage.sync.set(payload); } catch { /* ignore */ }
+      try { await chrome.storage.local.set(payload); } catch { /* ignore */ }
+    };
+    writeBoth().catch(() => {});
   }
 
   async function readOnboardingState() {
-    // returns: { active: boolean|null, completed: boolean|null, slideId: string|null, completedTaskIds: string[] }
+    // returns: { active, completed, slideId, completedTaskIds, onEnterDoneSlideIds }
     // Merge sync + local per-key (prefer newer progress by timestamp, else sync).
-    const result = { active: null, completed: null, slideId: null, completedTaskIds: [] };
+    const result = {
+      active: null,
+      completed: null,
+      slideId: null,
+      completedTaskIds: [],
+      onEnterDoneSlideIds: []
+    };
     let syncObj = null;
     let localObj = null;
 
@@ -3866,6 +4123,7 @@
         if (typeof prog.completed === 'boolean') result.completed = prog.completed;
         if (typeof prog.slideId === 'string') result.slideId = prog.slideId;
         if (Array.isArray(prog.completedTaskIds)) result.completedTaskIds = prog.completedTaskIds.map(String);
+        if (Array.isArray(prog.onEnterDoneSlideIds)) result.onEnterDoneSlideIds = prog.onEnterDoneSlideIds.map(String);
       }
     } catch { /* ignore */ }
 
@@ -5755,6 +6013,14 @@
     getPendingKeyEvents: () => [...pendingKeyEvents],
     clearPendingKeyEvents: () => { pendingKeyEvents = []; },
     updatePosition: updateCursorPosition,
+    /** Stamped walkthrough model (includes onEnter) for main-script fallback. */
+    getOnboardingModel: () => {
+      try {
+        return typeof EARLY_ONBOARDING_MODEL === 'object' ? EARLY_ONBOARDING_MODEL : { slides: [] };
+      } catch {
+        return { slides: [] };
+      }
+    },
     setEnabled: (enabled) => {
       isExtensionEnabled = enabled;
       updateCursorVisibility();
