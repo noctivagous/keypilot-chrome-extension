@@ -711,6 +711,130 @@ export class ElementDetector {
   }
 
   /**
+   * CSS "stretched link" metrics: `a::after { position:absolute; inset:0 }` (etc.)
+   * expands the hit region to a card while getBoundingClientRect stays on the label.
+   * Pattern used by msn.com `cs-responsive-card` headlines (and many card grids).
+   *
+   * @param {Element} el
+   * @returns {{ w: number, h: number, pseudo: string, contentRect: DOMRect }|null}
+   */
+  _getStretchedLinkMetrics(el) {
+    if (!el || el.nodeType !== 1) return null;
+    const tag = el.tagName;
+    const role = ((el.getAttribute && el.getAttribute('role')) || '').trim().toLowerCase();
+    if (tag !== 'A' && role !== 'link') return null;
+
+    let er = null;
+    try { er = el.getBoundingClientRect(); } catch { er = null; }
+    if (!er || !(er.width > 0) || !(er.height > 0)) return null;
+    const contentArea = er.width * er.height;
+
+    for (const pseudo of ['::after', '::before']) {
+      let cs = null;
+      try { cs = window.getComputedStyle(el, pseudo); } catch { cs = null; }
+      if (!cs) continue;
+      const content = cs.content;
+      if (!content || content === 'none' || content === 'normal') continue;
+      if (cs.position !== 'absolute' && cs.position !== 'fixed') continue;
+      if (cs.pointerEvents === 'none') continue;
+
+      const w = parseFloat(cs.width);
+      const h = parseFloat(cs.height);
+      if (!Number.isFinite(w) || !Number.isFinite(h) || w < 40 || h < 40) continue;
+
+      const overlayArea = w * h;
+      // Must meaningfully expand beyond the label box (card vs title line).
+      if (overlayArea < contentArea * 1.6) continue;
+      if (w < er.width * 1.05 && h < er.height * 1.25) continue;
+
+      return { w, h, pseudo, contentRect: er };
+    }
+    return null;
+  }
+
+  /**
+   * Closest ancestor (incl. open-shadow hosts) whose box matches the stretched
+   * pseudo size — typically the card shell (`.root` / `cs-responsive-card`).
+   * Prefers a same-size semantic host (article / href-bearing custom element).
+   *
+   * @param {Element} el
+   * @param {{ w: number, h: number }} stretch
+   * @returns {Element|null}
+   */
+  _findStretchedLinkCoverHost(el, stretch) {
+    if (!el || !stretch) return null;
+
+    let n = el.parentElement ||
+      (typeof el.getRootNode === 'function' && el.getRootNode() instanceof ShadowRoot
+        ? el.getRootNode().host
+        : null);
+    let depth = 0;
+    /** @type {Element|null} */
+    let best = null;
+
+    while (n && n !== document.body && n.nodeType === 1 && depth++ < 12) {
+      if (n === document.documentElement) break;
+
+      let r = null;
+      try { r = n.getBoundingClientRect(); } catch { r = null; }
+      if (r && r.width > 0 && r.height > 0) {
+        const dw = Math.abs(r.width - stretch.w);
+        const dh = Math.abs(r.height - stretch.h);
+        if (dw <= 6 && dh <= 6) {
+          best = n;
+          const role = ((n.getAttribute && n.getAttribute('role')) || '').trim().toLowerCase();
+          const href = typeof /** @type {any} */ (n).href === 'string'
+            ? /** @type {any} */ (n).href
+            : (n.getAttribute && n.getAttribute('href'));
+          const semantic = !!(href) ||
+            role === 'link' || role === 'article' || role === 'listitem' ||
+            n.tagName === 'A' || n.tagName === 'ARTICLE';
+          if (semantic) return n;
+        } else if (best) {
+          // Left the matching-size band — return last geometric match.
+          break;
+        }
+        // Don't climb into huge feed / page shells.
+        if (r.width * r.height > stretch.w * stretch.h * 4) break;
+      }
+
+      n = n.parentElement ||
+        (typeof n.getRootNode === 'function' && n.getRootNode() instanceof ShadowRoot
+          ? n.getRootNode().host
+          : null);
+    }
+    return best;
+  }
+
+  /**
+   * Stretched-link hover: outline the card shell when the pointer is only on the
+   * ::before/::after hit expansion (media / chrome); keep the link when the
+   * pointer is on the visible label (headline text).
+   *
+   * @param {Element} leaf - semantic link from findClickable
+   * @param {number|null|undefined} clientX
+   * @param {number|null|undefined} clientY
+   * @returns {Element|null} leaf, cover host, or null if not a stretched link
+   */
+  _resolveStretchedLinkHoverTarget(leaf, clientX = null, clientY = null) {
+    const stretch = this._getStretchedLinkMetrics(leaf);
+    if (!stretch) return null;
+
+    const hasPoint = Number.isFinite(clientX) && Number.isFinite(clientY);
+    // On the visible label → headline ring (TNW-style title target).
+    if (hasPoint && this.pointInElementUnionBox(leaf, clientX, clientY, 1)) {
+      return leaf;
+    }
+
+    const cover = this._findStretchedLinkCoverHost(leaf, stretch);
+    if (!cover) return null;
+    if (hasPoint && !this.pointInElementUnionBox(cover, clientX, clientY, 2)) {
+      return null;
+    }
+    return cover;
+  }
+
+  /**
    * Large clickable sibling under non-interactive overlay chrome.
    *
    * Pattern (thenextweb.com visual cards, many news grids):
@@ -806,19 +930,47 @@ export class ElementDetector {
   }
 
   /**
+   * True when (clientX, clientY) lies inside the element's union bounding box
+   * (getBoundingClientRect), optionally padded. Used for multi-line link gaps:
+   * hit-testing skips space between line boxes, but the union rect still covers them.
+   * @param {Element} el
+   * @param {number} clientX
+   * @param {number} clientY
+   * @param {number} [padPx]
+   * @returns {boolean}
+   */
+  pointInElementUnionBox(el, clientX, clientY, padPx = 2) {
+    if (!el || el.nodeType !== 1) return false;
+    if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return false;
+    let r = null;
+    try { r = el.getBoundingClientRect(); } catch { r = null; }
+    if (!r || !(r.width > 0) || !(r.height > 0)) return false;
+    const pad = Number.isFinite(padPx) ? padPx : 2;
+    return (
+      clientX >= r.left - pad &&
+      clientX <= r.right + pad &&
+      clientY >= r.top - pad &&
+      clientY <= r.bottom + pad
+    );
+  }
+
+  /**
    * Resolve the element that should receive hover focus chrome / F-activate.
    * Stabilizes against nested controls and brief nulls while still inside the
    * previous host (generic fix for list rows, tabs, cards — not site-specific).
    *
    * @param {Element|null|undefined} underEl - Deepest node under the pointer
    * @param {Element|null|undefined} prevFocus - Previous hover focus element
+   * @param {number|null|undefined} [clientX] - pointer x (for multi-line gap sticky)
+   * @param {number|null|undefined} [clientY] - pointer y
    * @returns {Element|null}
    */
-  resolveHoverFocusTarget(underEl, prevFocus = null) {
+  resolveHoverFocusTarget(underEl, prevFocus = null, clientX = null, clientY = null) {
     const under = underEl && underEl.nodeType === 1 ? underEl : null;
     const prev = prevFocus && prevFocus.nodeType === 1 && prevFocus.isConnected
       ? prevFocus
       : null;
+    const hasPoint = Number.isFinite(clientX) && Number.isFinite(clientY);
 
     // Sticky: pointer still inside previous host → keep it when leaf is missing
     // or is nested chrome (avoids thrash / clear between children).
@@ -837,6 +989,17 @@ export class ElementDetector {
           // still compose-contain under the same host. findClickable walks
           // parentElement + shadow host hops and is the source of truth.
           const leafInside = this.findClickable(under);
+          // Stretched link (msn.com card ::after): switch between card shell and
+          // headline label by geometry — must run before nested-chrome sticky, or
+          // the small title <a> is treated as chrome inside the card forever.
+          if (leafInside) {
+            try {
+              const stretchTarget = this._resolveStretchedLinkHoverTarget(
+                leafInside, clientX, clientY
+              );
+              if (stretchTarget) return stretchTarget;
+            } catch { /* ignore */ }
+          }
           if (!leafInside || leafInside === prev || this._isNestedHoverChrome(leafInside, prev)) {
             return prev;
           }
@@ -862,6 +1025,42 @@ export class ElementDetector {
       } catch { /* ignore */ }
     }
 
+    // Multi-line / wrapped clickable text: gaps between line boxes are not part
+    // of the element's hit region, so `under` jumps to a parent/sibling and
+    // focus would clear (outline flicker on A/B/C). If the pointer is still
+    // inside prev's union bounding rect, keep prev unless a different primary
+    // clickable actually owns the point.
+    if (prev && hasPoint && this.pointInElementUnionBox(prev, clientX, clientY, 3)) {
+      let leafAtPoint = null;
+      try {
+        leafAtPoint = under ? this.findClickable(under) : null;
+      } catch {
+        leafAtPoint = null;
+      }
+      // Stretched link inside a card-sized prev: allow media↔headline retarget.
+      if (leafAtPoint) {
+        try {
+          const stretchTarget = this._resolveStretchedLinkHoverTarget(
+            leafAtPoint, clientX, clientY
+          );
+          if (stretchTarget) return stretchTarget;
+        } catch { /* ignore */ }
+      }
+      if (!leafAtPoint || leafAtPoint === prev || this._isNestedHoverChrome(leafAtPoint, prev)) {
+        return prev;
+      }
+      try {
+        if (
+          !this.composedContains(prev, leafAtPoint) &&
+          this.pointInElementUnionBox(leafAtPoint, clientX, clientY, 1)
+        ) {
+          const host = this._findPreferableHoverHost(leafAtPoint);
+          return host || leafAtPoint;
+        }
+      } catch { /* keep prev */ }
+      return prev;
+    }
+
     if (!under) return null;
 
     const leaf = this.findClickable(under);
@@ -872,6 +1071,12 @@ export class ElementDetector {
       const underlayHost = this._findPreferableHoverHost(underlay);
       return underlayHost || underlay;
     }
+
+    // msn.com-style stretched headline: card shell on media/chrome, link on title.
+    try {
+      const stretchTarget = this._resolveStretchedLinkHoverTarget(leaf, clientX, clientY);
+      if (stretchTarget) return stretchTarget;
+    } catch { /* ignore */ }
 
     const host = this._findPreferableHoverHost(leaf);
     return host || leaf;

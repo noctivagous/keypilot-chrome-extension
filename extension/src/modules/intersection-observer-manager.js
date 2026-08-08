@@ -609,7 +609,9 @@ export class IntersectionObserverManager {
       if (this.elementDetector?.resolveHoverFocusTarget) {
         clickable = this.elementDetector.resolveHoverFocusTarget(
           el,
-          this._domHoveredElement
+          this._domHoveredElement,
+          clientX,
+          clientY
         );
       } else if (this.elementDetector?.findClickable) {
         clickable = this.elementDetector.findClickable(el);
@@ -630,7 +632,12 @@ export class IntersectionObserverManager {
           if (shadowElements.length > 0) {
             const shadowLeaf = shadowElements[0];
             clickable = this.elementDetector?.resolveHoverFocusTarget
-              ? this.elementDetector.resolveHoverFocusTarget(shadowLeaf, this._domHoveredElement)
+              ? this.elementDetector.resolveHoverFocusTarget(
+                shadowLeaf,
+                this._domHoveredElement,
+                clientX,
+                clientY
+              )
               : shadowLeaf;
           }
         } catch (error) {
@@ -639,6 +646,22 @@ export class IntersectionObserverManager {
           }
         }
       }
+    }
+
+    // Multi-line text gaps: resolve may still return null if coords were missing
+    // on an earlier path; keep previous focus while the pointer is in its union box.
+    if (!clickable && this._domHoveredElement &&
+        Number.isFinite(clientX) && Number.isFinite(clientY)) {
+      try {
+        if (this.elementDetector?.pointInElementUnionBox?.(
+          this._domHoveredElement,
+          clientX,
+          clientY,
+          3
+        )) {
+          clickable = this._domHoveredElement;
+        }
+      } catch { /* ignore */ }
     }
 
     if (clickable) {
@@ -666,6 +689,9 @@ export class IntersectionObserverManager {
    * Track deepest composedPath leaf on pointermove. When the leaf changes inside
    * an open shadow tree, re-resolve focusEl (pointerover alone was insufficient
    * after the closest()-sticky bug, and some Lit trees are noisy on over/out).
+   * Also re-resolves while hovering CSS stretched links (`a::after { inset:0 }`)
+   * even when the leaf is unchanged — the hit node stays the headline across the
+   * whole card (msn.com), so media vs title is geometry-only.
    * Also refreshes the shadow debug HUD leaf line.
    * @param {Event|null|undefined} e
    */
@@ -685,29 +711,52 @@ export class IntersectionObserverManager {
       if (this._isKeyPilotUiElement(raw)) return;
 
       const leafChanged = this._setDomHoverLeaf(raw);
-      if (!leafChanged) return;
+      const x = (typeof e.clientX === 'number') ? e.clientX : null;
+      const y = (typeof e.clientY === 'number') ? e.clientY : null;
 
-      let inShadow = false;
-      try { inShadow = raw.getRootNode() instanceof ShadowRoot; } catch { inShadow = false; }
-
-      const hudOn = !!window.keyPilot?.overlayManager?.isShadowRootDebugHudEnabled?.();
-      // Re-resolve focus for open-shadow leaf changes; HUD-only leaf refresh otherwise.
-      if (inShadow || hudOn) {
-        if (this._shadowDebugLeafRAF) return;
-        const x = (typeof e.clientX === 'number') ? e.clientX : null;
-        const y = (typeof e.clientY === 'number') ? e.clientY : null;
-        const leaf = raw;
-        this._shadowDebugLeafRAF = requestAnimationFrame(() => {
-          this._shadowDebugLeafRAF = 0;
-          try {
-            if (inShadow) {
-              this._resolveAndPublishDomHover(leaf, x, y, { leafChanged: true });
-            } else if (hudOn) {
-              this._notifyShadowDebugHudLeafChanged();
-            }
-          } catch { /* ignore */ }
-        });
+      // Re-resolve on leaf change (multi-line gaps, shadow retarget) OR while the
+      // active clickable is a stretched link whose label box ≠ hit region.
+      let needsResolve = leafChanged;
+      if (!needsResolve && Number.isFinite(x) && Number.isFinite(y) && this.elementDetector) {
+        try {
+          const clickable = this.elementDetector.findClickable
+            ? this.elementDetector.findClickable(raw)
+            : null;
+          if (
+            clickable &&
+            typeof this.elementDetector._getStretchedLinkMetrics === 'function' &&
+            this.elementDetector._getStretchedLinkMetrics(clickable)
+          ) {
+            needsResolve = true;
+          }
+        } catch { /* ignore */ }
       }
+      if (!needsResolve) return;
+
+      // Keep latest pointer sample if several moves land before the rAF runs.
+      this._pendingDomHoverResolve = {
+        leaf: raw,
+        x,
+        y,
+        leafChanged: !!leafChanged
+      };
+      if (this._shadowDebugLeafRAF) return;
+      const hudOn = !!window.keyPilot?.overlayManager?.isShadowRootDebugHudEnabled?.();
+      this._shadowDebugLeafRAF = requestAnimationFrame(() => {
+        this._shadowDebugLeafRAF = 0;
+        const pending = this._pendingDomHoverResolve;
+        this._pendingDomHoverResolve = null;
+        if (!pending?.leaf) return;
+        try {
+          this._resolveAndPublishDomHover(
+            pending.leaf,
+            pending.x,
+            pending.y,
+            { leafChanged: !!pending.leafChanged }
+          );
+          if (hudOn) this._notifyShadowDebugHudLeafChanged();
+        } catch { /* ignore */ }
+      });
     } catch { /* ignore */ }
   }
 
@@ -1028,11 +1077,16 @@ export class IntersectionObserverManager {
         // Find the clickable element (stable host preferred)
         let clickable = null;
         try {
-          clickable = this.elementDetector?.resolveHoverFocusTarget
-            ? this.elementDetector.resolveHoverFocusTarget(elementAtPoint, this._domHoveredElement)
-            : (this.elementDetector?.findClickable
-              ? this.elementDetector.findClickable(elementAtPoint)
-              : elementAtPoint);
+            clickable = this.elementDetector?.resolveHoverFocusTarget
+              ? this.elementDetector.resolveHoverFocusTarget(
+                elementAtPoint,
+                this._domHoveredElement,
+                mouseX,
+                mouseY
+              )
+              : (this.elementDetector?.findClickable
+                ? this.elementDetector.findClickable(elementAtPoint)
+                : elementAtPoint);
         } catch {
           clickable = elementAtPoint;
         }
@@ -1047,7 +1101,12 @@ export class IntersectionObserverManager {
             if (shadowElements.length > 0) {
               const leaf = shadowElements[0];
               clickable = this.elementDetector?.resolveHoverFocusTarget
-                ? this.elementDetector.resolveHoverFocusTarget(leaf, this._domHoveredElement)
+                ? this.elementDetector.resolveHoverFocusTarget(
+                  leaf,
+                  this._domHoveredElement,
+                  mouseX,
+                  mouseY
+                )
                 : leaf;
             }
           } catch (error) {

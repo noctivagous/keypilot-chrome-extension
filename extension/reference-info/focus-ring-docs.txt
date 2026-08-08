@@ -29,8 +29,8 @@ pointerover (document, capture/delegate)
     ├─ deepest element from event.composedPath()
     │     (skip KeyPilot UI chrome)
     │
-    ├─ ElementDetector.resolveHoverFocusTarget(under, prevFocus)
-    │     sticky host + findClickable + underlay + preferred host
+├─ ElementDetector.resolveHoverFocusTarget(under, prevFocus, x, y)
+│     sticky host + findClickable + underlay + stretched-link + preferred host
     │
     ├─ (shadow fallback) queryInteractiveAtPoint if still null in open shadow
     │
@@ -91,6 +91,10 @@ If there was a previous focus and the pointer is still “on” it:
     open-shadow leaves looked like “no primary” and focusEl stuck on the previous host
     while moving across archive.org / msn.com shadow trees.
 • Non-interactive overlay over media: if sibling underlay equals prev → keep prev (TNW-style header over image)
+• Multi-line / wrapped text links: gaps between line boxes are not hittable, so under
+  jumps to a parent and would clear focus (outline flicker). If the pointer is still
+  inside prev’s union getBoundingClientRect(), keep prev unless a different clickable’s
+  own union box owns the point.
 
 Goal: don’t thrash the ring while moving across title chrome, icons, or brief nulls.
 
@@ -118,6 +122,23 @@ When the hit is non-interactive overlay chrome, look at parent’s other childre
 • is at least ~as big as the overlay
 
 Used so the media link gets the ring even when the pointer is on an absolute header that isn’t itself a link (unless you’re on a real nested control like the headline).
+
+E. Stretched link — _resolveStretchedLinkHoverTarget
+
+CSS pattern (msn.com `cs-responsive-card` headlines, many card grids):
+
+  a.heading::after { position: absolute; inset: 0; }  /* hit = full card */
+  /* getBoundingClientRect(a) stays on the title text only */
+
+Hit-testing always returns the <a>, so sibling-underlay never runs. Instead:
+
+• Detect absolute ::before/::after whose used size meaningfully exceeds the label box
+• Find the closest ancestor (incl. open-shadow hosts) matching that size (card shell)
+• Pointer on the label content box → focusEl = the <a> (headline ring)
+• Pointer only on the stretch region (media / chrome) → focusEl = card shell
+
+pointermove must re-resolve by coordinates while this pattern is active: the composedPath
+leaf does not change between media and title (same <a>).
 
 5. Parent container promote — _findParentContainerForClickable
 

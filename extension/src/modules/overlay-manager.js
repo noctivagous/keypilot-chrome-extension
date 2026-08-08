@@ -1166,11 +1166,15 @@ export class OverlayManager {
         paintEl = element;
       }
 
-      // Auto strategy mirrors light DOM for open-shadow targets too:
-      //   A (element outline) → B (in-target ring) → C (body fixed).
-      // See focus-ring-paint.md. Debug HUD can still force A/B/C.
+      // Auto strategy (see focus-ring-paint.md):
+      //   Light DOM: A → B → C (escape hatch only when A cannot show).
+      //   Shadow targets (in a ShadowRoot, or open-shadow host): skip A,
+      //   default B (in-target), else C. Debug HUD can still force A/B/C.
       let inShadow = false;
       try { inShadow = this._isInShadowTree(element); } catch { inShadow = false; }
+      let isShadowHost = false;
+      try { isShadowHost = !!this._getOpenShadowRoot(element); } catch { isShadowHost = false; }
+      const shadowPaint = inShadow || isShadowHost;
 
       let needsEscapeHatch = false;
       try {
@@ -1180,7 +1184,7 @@ export class OverlayManager {
       }
 
       let autoStrategy = 'A';
-      if (needsEscapeHatch) {
+      if (shadowPaint || needsEscapeHatch) {
         let canB = false;
         try {
           canB = !!(FEATURE_FLAGS && FEATURE_FLAGS.ENABLE_IN_TARGET_FOCUS_RING) &&
@@ -1555,6 +1559,38 @@ export class OverlayManager {
   }
 
   /**
+   * True when CSS containment clips paint/ink (including outer outlines) to the
+   * padding edge. `contain: content` implies paint containment — common on
+   * msn.com card shells (`div.root { contain: content }`).
+   * @param {CSSStyleDeclaration|null|undefined} cs
+   * @returns {boolean}
+   */
+  _styleClipsPaintContain(cs) {
+    if (!cs) return false;
+    try {
+      const contain = String(cs.contain || '');
+      if (!contain || contain === 'none') return false;
+      return (
+        contain.includes('paint') ||
+        contain.includes('strict') ||
+        contain === 'content' ||
+        contain.split(/\s+/).includes('content')
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Overflow or paint-containment clip (self / wrapper).
+   * @param {CSSStyleDeclaration|null|undefined} cs
+   * @returns {boolean}
+   */
+  _styleClipsSelf(cs) {
+    return this._styleClipsOverflow(cs) || this._styleClipsPaintContain(cs);
+  }
+
+  /**
    * Parent across open shadow boundaries (parentElement, else ShadowRoot.host).
    * @param {Node|null|undefined} node
    * @returns {Element|null}
@@ -1610,7 +1646,8 @@ export class OverlayManager {
 
       let wcs = null;
       try { wcs = window.getComputedStyle(w); } catch { wcs = null; }
-      if (!this._styleClipsOverflow(wcs)) continue;
+      // Overflow *or* paint containment (msn.com `div.root { contain: content }`).
+      if (!this._styleClipsSelf(wcs)) continue;
 
       let war = null;
       try { war = w.getBoundingClientRect(); } catch { war = null; }
@@ -1659,7 +1696,7 @@ export class OverlayManager {
       if ((w.tagName || '').toUpperCase() === 'STYLE') continue;
       let wcs = null;
       try { wcs = window.getComputedStyle(w); } catch { wcs = null; }
-      if (this._styleClipsOverflow(wcs)) return true;
+      if (this._styleClipsSelf(wcs)) return true;
     }
     return false;
   }
@@ -1948,6 +1985,8 @@ export class OverlayManager {
    *   z-index KP chrome (strip z > OVERLAYS) and stay invisible.
    * - Target clips itself **and** is covered by full-bleed media/pseudos →
    *   inset outline is under the cover; use B/C (TNW cards, etc.).
+   * - Same when cover is only an **edge media strip** (msn.com card image on the
+   *   top half): inset outline shows on the text half and vanishes under media.
    * - Target does not clip, but a full-size child stacking surface would cover
    *   an **inset** outline (e.g. newtab top-site tiles inside a scroller that
    *   forces inset). If outer outline still has room, stay on A — do not
@@ -1976,33 +2015,143 @@ export class OverlayManager {
 
     let selfClips = false;
     try {
-      selfClips = this._styleClipsOverflow(window.getComputedStyle(paintEl));
+      selfClips = this._styleClipsSelf(window.getComputedStyle(paintEl));
     } catch { /* ignore */ }
     // Shadow host whose *own* light-DOM style is non-clipping but whose
-    // internal shadow wrapper clips (msn.com cs-responsive-card pattern).
+    // internal shadow wrapper clips (msn.com cs-responsive-card pattern:
+    // overflow:hidden and/or contain:content on div.root).
     if (!selfClips) {
       try {
         selfClips = this._hostClipsViaInternalShadowWrapper(paintEl);
       } catch { /* ignore */ }
     }
 
-    // Inset outline on the element is invisible only when the element itself
-    // clips and is painted over by full-bleed content.
-    if (selfClips && this._hasFullBleedCoveringContent(paintEl, er)) {
+    // Inset outline on the element is invisible when the element itself clips
+    // and is painted over by full-bleed *or* edge-flush media (top-image cards).
+    if (
+      selfClips &&
+      (this._hasFullBleedCoveringContent(paintEl, er) ||
+        this._hasEdgeFlushMediaCover(paintEl, er))
+    ) {
       return true;
     }
 
-    // Full-bleed stacking child only defeats **inset** outline. Outer outline
-    // paints outside the border box and remains visible (ganjingworld, many
-    // video grids). Only escape when path A would be forced to inset.
-    if (this._hasObscuringFullBleedChild(paintEl, er)) {
+    // Full-bleed / edge-strip stacking child only defeats **inset** outline.
+    // Outer outline paints outside the border box and remains visible
+    // (ganjingworld, many video grids). Only escape when path A would inset.
+    if (
+      this._hasObscuringFullBleedChild(paintEl, er) ||
+      this._hasEdgeFlushMediaCover(paintEl, er)
+    ) {
       if (this._wouldUseInsetFocusOutline(paintEl)) {
         return true;
       }
     }
 
-    // Open-shadow targets use the same geometry gates as light DOM (A first).
-    // Do not force an escape hatch merely because paintEl lives in a ShadowRoot.
+    // Shadow skip-A → B is decided in updateFocusOverlay (not here). This
+    // helper only answers whether light-DOM geometry needs an escape hatch.
+
+    return false;
+  }
+
+  /**
+   * Media-like node that can paint over an inset focus outline.
+   * @param {Element} el
+   * @returns {boolean}
+   */
+  _isMediaLikeCoverElement(el) {
+    if (!el || el.nodeType !== 1) return false;
+    const tag = (el.tagName || '').toUpperCase();
+    if (
+      tag === 'IMG' ||
+      tag === 'VIDEO' ||
+      tag === 'PICTURE' ||
+      tag === 'CANVAS' ||
+      tag === 'SVG'
+    ) {
+      return true;
+    }
+    try {
+      const cs = window.getComputedStyle(el);
+      const bg = cs && cs.backgroundImage;
+      if (bg && bg !== 'none') return true;
+    } catch { /* ignore */ }
+    return false;
+  }
+
+  /**
+   * True when a media surface covers a substantial edge strip of `el` (e.g.
+   * card hero image on the top ~half). Full-bleed (85%×85%) is handled by
+   * `_hasFullBleedCoveringContent`; this catches the common "media header"
+   * layout where strategy A inset outlines only survive on the text half.
+   *
+   * Walks direct shadow-piercing children plus one level into near-full
+   * wrappers (card → `.root` → `img.media`). Does **not** alone force B/C —
+   * callers still require self-clip or graded inset.
+   *
+   * @param {Element} el
+   * @param {DOMRect|ClientRect} [er]
+   * @returns {boolean}
+   */
+  _hasEdgeFlushMediaCover(el, er) {
+    if (!el || el.nodeType !== 1) return false;
+    let box = er;
+    try {
+      if (!box) box = el.getBoundingClientRect();
+    } catch {
+      return false;
+    }
+    if (!box || !(box.width > 0) || !(box.height > 0)) return false;
+
+    /** @type {Element[]} */
+    const candidates = [];
+    try {
+      this._enqueueShadowPiercingChildren(el, candidates);
+      const nDirect = candidates.length;
+      for (let i = 0; i < nDirect && i < 12; i++) {
+        const wrap = candidates[i];
+        if (!wrap || wrap.nodeType !== 1) continue;
+        let wr = null;
+        try { wr = wrap.getBoundingClientRect(); } catch { wr = null; }
+        if (!wr || !(wr.width > 0) || !(wr.height > 0)) continue;
+        // Near-full card shell — look one level deeper for the media strip.
+        if (wr.width >= box.width * 0.85 && wr.height >= box.height * 0.85) {
+          this._enqueueShadowPiercingChildren(wrap, candidates);
+        }
+      }
+    } catch { /* ignore */ }
+
+    const edgeTol = 3;
+    for (let i = 0; i < candidates.length && i < 36; i++) {
+      const child = candidates[i];
+      if (!child || child.nodeType !== 1) continue;
+      if (!this._isMediaLikeCoverElement(child)) continue;
+
+      let cr = null;
+      try { cr = child.getBoundingClientRect(); } catch { cr = null; }
+      if (!cr || !(cr.width > 8) || !(cr.height > 8)) continue;
+
+      const fracW = cr.width / box.width;
+      const fracH = cr.height / box.height;
+      // Major axis nearly spans the host; minor axis is a real strip (≥28%),
+      // not a tiny icon — and not already handled as full-bleed (both ≥85%).
+      const majorSpan = fracW >= 0.85 || fracH >= 0.85;
+      const stripDepth = fracW >= 0.28 && fracH >= 0.28;
+      if (!majorSpan || !stripDepth) continue;
+      if (fracW >= 0.85 && fracH >= 0.85) continue; // full-bleed path owns this
+
+      const flushTop = Math.abs(cr.top - box.top) <= edgeTol;
+      const flushBottom = Math.abs(cr.bottom - box.bottom) <= edgeTol;
+      const flushLeft = Math.abs(cr.left - box.left) <= edgeTol;
+      const flushRight = Math.abs(cr.right - box.right) <= edgeTol;
+      // Require a flush "cap": one end edge + both sides (top/bottom media bar)
+      // or one side edge + both ends (left/right media rail).
+      const topCap = flushTop && flushLeft && flushRight;
+      const bottomCap = flushBottom && flushLeft && flushRight;
+      const leftRail = flushLeft && flushTop && flushBottom;
+      const rightRail = flushRight && flushTop && flushBottom;
+      if (topCap || bottomCap || leftRail || rightRail) return true;
+    }
 
     return false;
   }
@@ -2058,16 +2207,32 @@ export class OverlayManager {
       /** @type {Element[]} */
       const kids = [];
       this._enqueueShadowPiercingChildren(el, kids);
-      for (let i = 0; i < kids.length; i++) {
+      // Also one level into near-full wrappers (card host → .root → img).
+      const nDirect = kids.length;
+      for (let i = 0; i < nDirect && i < 12; i++) {
+        const wrap = kids[i];
+        if (!wrap || wrap.nodeType !== 1) continue;
+        let wr = null;
+        try { wr = wrap.getBoundingClientRect(); } catch { wr = null; }
+        if (wr && nearlyFills(wr.width, wr.height)) {
+          this._enqueueShadowPiercingChildren(wrap, kids);
+        }
+      }
+      for (let i = 0; i < kids.length && i < 36; i++) {
         const child = kids[i];
         if (!child || child.nodeType !== 1) continue;
+        let cr = null;
+        try { cr = child.getBoundingClientRect(); } catch { cr = null; }
+        if (!cr || !nearlyFills(cr.width, cr.height)) continue;
+
         let cs = null;
         try { cs = window.getComputedStyle(child); } catch { cs = null; }
         if (!cs) continue;
-        if (cs.position !== 'absolute' && cs.position !== 'fixed') continue;
-        let cr = null;
-        try { cr = child.getBoundingClientRect(); } catch { cr = null; }
-        if (cr && nearlyFills(cr.width, cr.height)) return true;
+
+        // Absolute/fixed full-bleed layer.
+        if (cs.position === 'absolute' || cs.position === 'fixed') return true;
+        // Static/relative media (msn.com hero img sized to the card).
+        if (this._isMediaLikeCoverElement(child)) return true;
       }
     } catch { /* ignore */ }
 
@@ -2118,7 +2283,7 @@ export class OverlayManager {
         try { cs = window.getComputedStyle(child); } catch { cs = null; }
         if (!cs) continue;
 
-        const childClips = this._styleClipsOverflow(cs);
+        const childClips = this._styleClipsSelf(cs);
         const stacks =
           cs.isolation === 'isolate' ||
           (cs.transform && cs.transform !== 'none') ||
@@ -2133,8 +2298,13 @@ export class OverlayManager {
           return true;
         }
 
-        // Clipped media tile: child is the visual surface that hides inset rings.
+        // Clipped / paint-contained media tile hides inset rings.
         if (childClips && this._hasFullBleedCoveringContent(child, cr)) {
+          return true;
+        }
+
+        // Near-full media child (static img sized to the tile).
+        if (this._isMediaLikeCoverElement(child)) {
           return true;
         }
 
@@ -2252,13 +2422,37 @@ export class OverlayManager {
   }
 
   /**
+   * True when candidate rect is not much larger than the focus target rect.
+   * Prevents strategy B from mounting on a whole list/panel shadow host when
+   * focusEl is a small row link (archive.org "Archive News").
+   * @param {DOMRect|ClientRect|null|undefined} candidate
+   * @param {DOMRect|ClientRect|null|undefined} focusRect
+   * @returns {boolean}
+   */
+  _inTargetHostSizeOk(candidate, focusRect) {
+    if (!candidate || !(candidate.width > 0) || !(candidate.height > 0)) return false;
+    if (!focusRect || !(focusRect.width > 0) || !(focusRect.height > 0)) return true;
+    const fArea = focusRect.width * focusRect.height;
+    const cArea = candidate.width * candidate.height;
+    if (fArea < 1) return true;
+    // Allow modest padding around the focus box; reject container >> link.
+    return (
+      cArea <= fArea * 1.4 &&
+      candidate.width <= focusRect.width * 1.3 + 8 &&
+      candidate.height <= focusRect.height * 1.3 + 8
+    );
+  }
+
+  /**
    * Host for an in-target absolute ring: paint-resolved clickable that can
    * accept a last-child ring (sibling above full-bleed media tiles).
    *
-   * For open-shadow targets, prefer a dedicated last-child layer on the owning
-   * ShadowRoot so the ring stacks above Lit/Fluent content (strategy B).
+   * Ring box must track focusEl geometry. For open-shadow targets, mount on the
+   * sized clickable when possible; only use a full ShadowRoot layer when the
+   * shadow host itself is roughly the focus box (card tiles). Never fall back
+   * to "largest node in the shadow" — that selects list containers.
    *
-   * @param {Element} element
+   * @param {Element} element - hover focusEl
    * @returns {Element|null}
    */
   _resolveInTargetHost(element) {
@@ -2277,66 +2471,142 @@ export class OverlayManager {
       return null;
     }
 
-    // Shadow Strategy B: dedicated layer on the owning open ShadowRoot first.
-    // Covers the host box and wins stacking over nested custom elements.
+    /** @type {DOMRect|ClientRect|null} */
+    let focusRect = null;
+    try { focusRect = element.getBoundingClientRect(); } catch { focusRect = null; }
+    if (!focusRect || !(focusRect.width > 1) || !(focusRect.height > 1)) {
+      try { focusRect = paintEl.getBoundingClientRect(); } catch { focusRect = null; }
+    }
+
+    // Open-shadow: size the ring to the clickable, not the owning custom element
+    // (news lists share one large shadow host for many small links).
     try {
       const root = typeof paintEl.getRootNode === 'function' ? paintEl.getRootNode() : null;
       if (root && typeof ShadowRoot !== 'undefined' && root instanceof ShadowRoot) {
-        // Prefer sizing to the clickable when it can accept a visible child and
-        // roughly matches the intended target box; else use shadow-root layer.
-        let usePaint = false;
         if (this._canMountVisibleChildOnHost(paintEl)) {
           let pr = null;
-          let hr = null;
           try { pr = paintEl.getBoundingClientRect(); } catch { pr = null; }
-          try { hr = root.host?.getBoundingClientRect?.(); } catch { hr = null; }
           if (pr && pr.width >= 8 && pr.height >= 8) {
-            // Use paintEl when it is a substantial fraction of the host (card link),
-            // or when host is collapsed (media-button).
-            const hostArea = (hr && hr.width > 0 && hr.height > 0) ? (hr.width * hr.height) : 0;
-            const paintArea = pr.width * pr.height;
-            if (!hostArea || paintArea >= hostArea * 0.5 || (hr && hr.height < 2)) {
-              usePaint = true;
-            }
+            return paintEl;
           }
         }
-        if (usePaint) return paintEl;
 
-        const layer = this._ensureShadowRootRingHost(root);
-        if (layer) return layer;
-
-        // Fallback: any mountable node inside this shadow.
-        if (root.host) {
-          const inner = this._findInShadowInTargetMount(root.host);
-          if (inner) return inner;
+        // Climb within this shadow only for a mountable ancestor ≈ focus size.
+        let n = this._composedParent(paintEl);
+        let depth = 0;
+        while (n && n.nodeType === 1 && n !== root.host && depth++ < 8) {
+          try {
+            if (typeof n.getRootNode === 'function' && n.getRootNode() !== root) break;
+          } catch { break; }
+          if (this._canMountVisibleChildOnHost(n)) {
+            let nr = null;
+            try { nr = n.getBoundingClientRect(); } catch { nr = null; }
+            if (nr && nr.width >= 8 && nr.height >= 8 && this._inTargetHostSizeOk(nr, focusRect)) {
+              return n;
+            }
+          }
+          n = this._composedParent(n);
         }
+
+        // Full shadow-root layer only when the host box ≈ the focus target
+        // (archive.org collection tiles: host/link same card rect). Collapsed
+        // hosts (media-button ~0 height) also qualify — layer sizes to host.
+        let hr = null;
+        try { hr = root.host?.getBoundingClientRect?.(); } catch { hr = null; }
+        const hostCollapsed = !!(hr && hr.width > 0 && hr.height < 2);
+        if (hostCollapsed || this._inTargetHostSizeOk(hr, focusRect)) {
+          const layer = this._ensureShadowRootRingHost(root);
+          if (layer) return layer;
+        }
+
+        // Do not call _findInShadowInTargetMount(root.host) here — largest
+        // visible box in a list shadow is the list container.
       }
     } catch { /* fall through */ }
 
     if (this._canMountVisibleChildOnHost(paintEl)) {
-      return paintEl;
+      let pr = null;
+      try { pr = paintEl.getBoundingClientRect(); } catch { pr = null; }
+      if (pr && pr.width >= 8 && pr.height >= 8) return paintEl;
     }
 
-    // Slotless open-shadow host or replaced node: find a mount inside shadow.
+    // Slotless open-shadow host: mount inside, preferring a box ≈ focus size.
     if (this._getOpenShadowRoot(paintEl)) {
-      const inner = this._findInShadowInTargetMount(paintEl);
+      const inner = this._findInShadowInTargetMountNear(paintEl, focusRect);
       if (inner) return inner;
     }
 
-    // Replaced paint target (img/video): climb composed ancestors for a mount.
+    // Replaced paint target (img/video): climb composed ancestors for a mount
+    // that still matches focus geometry (never promote to a huge list shell).
     let n = this._composedParent(paintEl);
     let depth = 0;
     while (n && n.nodeType === 1 && depth++ < 8) {
       if (n === document.body || n === document.documentElement) break;
-      if (this._canMountVisibleChildOnHost(n)) return n;
+      if (this._canMountVisibleChildOnHost(n)) {
+        let nr = null;
+        try { nr = n.getBoundingClientRect(); } catch { nr = null; }
+        if (nr && nr.width >= 8 && nr.height >= 8 && this._inTargetHostSizeOk(nr, focusRect)) {
+          return n;
+        }
+      }
       if (this._getOpenShadowRoot(n)) {
-        const inner = this._findInShadowInTargetMount(n);
+        const inner = this._findInShadowInTargetMountNear(n, focusRect);
         if (inner) return inner;
       }
       n = this._composedParent(n);
     }
 
     return null;
+  }
+
+  /**
+   * Like `_findInShadowInTargetMount`, but rejects nodes much larger than
+   * `focusRect` so list/panel wrappers lose to the row link box.
+   * @param {Element} host
+   * @param {DOMRect|ClientRect|null|undefined} focusRect
+   * @returns {Element|null}
+   */
+  _findInShadowInTargetMountNear(host, focusRect) {
+    const sr = this._getOpenShadowRoot(host);
+    if (!sr) return null;
+
+    let best = null;
+    let bestScore = -1;
+    let visited = 0;
+    const maxNodes = 48;
+    /** @type {Element[]} */
+    const queue = [];
+    this._enqueueShadowPiercingChildren(host, queue);
+
+    const focusArea = (focusRect && focusRect.width > 0 && focusRect.height > 0)
+      ? (focusRect.width * focusRect.height)
+      : 0;
+
+    while (queue.length && visited < maxNodes) {
+      const cur = queue.shift();
+      if (!cur || cur.nodeType !== 1) continue;
+      visited++;
+
+      if (!this._isReplacedOrVoidElement(cur) && this._canMountVisibleChildOnHost(cur)) {
+        let r = null;
+        try { r = cur.getBoundingClientRect(); } catch { r = null; }
+        if (r && r.width >= 8 && r.height >= 8 && this._inTargetHostSizeOk(r, focusRect)) {
+          const area = r.width * r.height;
+          // Prefer the box closest in area to the focus target (not merely largest).
+          const score = focusArea > 0
+            ? -Math.abs(area - focusArea)
+            : area;
+          if (score > bestScore) {
+            bestScore = score;
+            best = cur;
+          }
+        }
+      }
+
+      this._enqueueShadowPiercingChildren(cur, queue);
+    }
+
+    return best;
   }
 
   /**
@@ -2444,6 +2714,27 @@ export class OverlayManager {
   }
 
   /**
+   * Multi-line / wrapped inline clickables fragment into several line boxes.
+   * Absolute `inset:0` on an inline host sizes to one fragment (often first line
+   * width only) — fall through to strategy C for the union rect instead.
+   * @param {Element|null|undefined} el
+   * @returns {boolean}
+   */
+  _isFragmentedInlineFocusTarget(el) {
+    if (!el || el.nodeType !== 1) return false;
+    try {
+      const rects = el.getClientRects();
+      if (rects && rects.length >= 2) return true;
+    } catch { /* ignore */ }
+    try {
+      const display = String(window.getComputedStyle(el)?.display || '');
+      // Bare `inline` abspos containing blocks are fragment-sized in Blink.
+      if (display === 'inline') return true;
+    } catch { /* ignore */ }
+    return false;
+  }
+
+  /**
    * Strategy B: mount an absolute focus ring as last child of the host with
    * z-index = max(local siblings)+1 and border-radius from the visual host.
    *
@@ -2457,8 +2748,17 @@ export class OverlayManager {
     }
     if (!element || element.nodeType !== 1) return false;
 
+    // Wrapped text links: B's inset:0 ring only covers one line fragment.
+    // Let Auto fall through to C (body fixed union box) for full width.
+    if (this._isFragmentedInlineFocusTarget(element)) {
+      return false;
+    }
+
     const host = this._resolveInTargetHost(element);
     if (!host) return false;
+    if (this._isFragmentedInlineFocusTarget(host)) {
+      return false;
+    }
 
     // Modal/popover iframes: never decorate.
     try {
@@ -2587,9 +2887,16 @@ export class OverlayManager {
 
     // Slotless shadow hosts accept appendChild but never layout the ring.
     // Require a positive box before claiming success — else fall through to C.
+    // Also reject rings much narrower than the focus union (inline fragment CB).
     try {
       const rr = ring.getBoundingClientRect();
       if (!rr || !(rr.width > 1) || !(rr.height > 1)) {
+        this.hideInTargetFocusRing();
+        return false;
+      }
+      let fr = null;
+      try { fr = element.getBoundingClientRect(); } catch { fr = null; }
+      if (fr && fr.width > 16 && rr.width < fr.width * 0.85) {
         this.hideInTargetFocusRing();
         return false;
       }
