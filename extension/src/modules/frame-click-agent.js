@@ -29,7 +29,7 @@ import { getSettings, SETTINGS_STORAGE_KEY, scrollBehaviorFromSpeed, DEFAULT_SET
 import { scrollAtPoint, scrollToEdgeAtPoint } from '../utils/scroll-at-point.js';
 
 /**
- * @typedef {{ openInNewTab?: boolean, background?: boolean }} FrameActivateOptions
+ * @typedef {{ openInNewTab?: boolean, background?: boolean, topOrigin?: string }} FrameActivateOptions
  */
 
 const CLICKABLE_SEL =
@@ -329,6 +329,93 @@ function openUrlViaRuntime(url, opts = {}) {
 }
 
 /**
+ * Same-tab navigation via the service worker (bypasses iframe sandbox top-nav
+ * user-activation restrictions that block synthetic link.click()).
+ * @param {string} url
+ * @returns {boolean}
+ */
+function navigateSameTabViaRuntime(url) {
+  if (!url) return false;
+  try {
+    if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) return false;
+    chrome.runtime.sendMessage({ type: MSG.NAVIGATE_SAME_TAB, url }).catch(() => { /* ignore */ });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Absolute http(s) href for a link, or null.
+ * @param {HTMLAnchorElement|Element|null|undefined} link
+ * @returns {string|null}
+ */
+function resolveHttpHref(link) {
+  if (!link) return null;
+  try {
+    const href = /** @type {HTMLAnchorElement} */ (link).href;
+    if (!href) return null;
+    const u = new URL(href, location.href);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+    return u.href;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * @param {HTMLAnchorElement|Element} link
+ * @returns {string}
+ */
+function getLinkBrowsingContextTarget(link) {
+  try {
+    return String(link.getAttribute?.('target') || '').trim().toLowerCase();
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * In a child frame, prefer extension navigation when synthetic click cannot
+ * perform the intended browsing-context change:
+ * - target=_top / _parent (sandbox often requires a real user gesture)
+ * - href origin differs from this frame (don't trap foreign sites inside the embed)
+ *
+ * Same-origin path navigations stay on link.click() so in-frame SPAs keep working.
+ * `topOrigin` is threaded from the parent for future use; not applied as a path rewrite.
+ *
+ * @param {HTMLAnchorElement} link
+ * @param {{ topOrigin?: string }} [ctx]
+ * @returns {string|null} absolute URL to navigate via SW, or null to use link.click()
+ */
+function runtimeNavigateUrlForFrameLink(link, ctx = {}) {
+  try {
+    if (window === window.top) return null;
+  } catch {
+    // Access to top can throw — treat as framed.
+  }
+
+  const url = resolveHttpHref(link);
+  if (!url) return null;
+
+  const target = getLinkBrowsingContextTarget(link);
+  if (target === '_top' || target === '_parent') {
+    return url;
+  }
+
+  try {
+    if (new URL(url).origin !== location.origin) {
+      return url;
+    }
+  } catch {
+    return null;
+  }
+
+  void ctx.topOrigin;
+  return null;
+}
+
+/**
  * True when full KeyPilot is running in this frame (e.g. KP popover iframe).
  * @returns {boolean}
  */
@@ -413,6 +500,9 @@ export function installFrameClickAgent() {
       overlayShadowEnabled: false,
       rectangleThickness: 3
     };
+    /** Parent tab origin from KP_FRAME_ACTIVATE (for future link aliasing). */
+    /** @type {string} */
+    let lastTopOrigin = '';
 
     /**
      * Ask parent to take keyboard focus back (top KeyPilot owns keys).
@@ -828,7 +918,8 @@ export function installFrameClickAgent() {
               clientX: localX,
               clientY: localY,
               openInNewTab: !!opts.openInNewTab,
-              background: !!opts.background
+              background: !!opts.background,
+              topOrigin: typeof opts.topOrigin === 'string' ? opts.topOrigin : lastTopOrigin
             }, '*');
             return true;
           }
@@ -858,7 +949,7 @@ export function installFrameClickAgent() {
       }
 
       if (link && (openInNewTab || background)) {
-        const url = link.href;
+        const url = resolveHttpHref(link) || link.href;
         if (openUrlViaRuntime(url, { background })) return true;
         try {
           if (background) {
@@ -881,11 +972,25 @@ export function installFrameClickAgent() {
 
       // Same-window link: programmatic click preserves site handlers better than location assign.
       // Skip when we already handled paused media above.
-      if (activator.tagName === 'A' && /** @type {HTMLAnchorElement} */ (activator).href && !openInNewTab && !background) {
-        try {
-          /** @type {HTMLAnchorElement} */ (activator).click();
-          return true;
-        } catch { /* fall through to event sequence */ }
+      {
+        const sameLink =
+          (activator && activator.tagName === 'A' && /** @type {HTMLAnchorElement} */ (activator).href)
+            ? /** @type {HTMLAnchorElement} */ (activator)
+            : link;
+        if (sameLink && sameLink.href && !openInNewTab && !background) {
+          const topOrigin = typeof opts.topOrigin === 'string' && opts.topOrigin
+            ? opts.topOrigin
+            : lastTopOrigin;
+          const runtimeUrl = runtimeNavigateUrlForFrameLink(
+            /** @type {HTMLAnchorElement} */ (sameLink),
+            { topOrigin }
+          );
+          if (runtimeUrl && navigateSameTabViaRuntime(runtimeUrl)) return true;
+          try {
+            sameLink.click();
+            return true;
+          } catch { /* fall through to event sequence */ }
+        }
       }
 
       // Buttons: prefer trusted HTMLElement.click() (media play overlays, X embeds).
@@ -988,9 +1093,13 @@ export function installFrameClickAgent() {
         if (acceptActivatePayload(event, data)) {
           const x = Number(data.clientX);
           const y = Number(data.clientY);
+          if (typeof data.topOrigin === 'string' && data.topOrigin) {
+            lastTopOrigin = data.topOrigin;
+          }
           activateAt(x, y, {
             openInNewTab: !!data.openInNewTab,
-            background: !!data.background
+            background: !!data.background,
+            topOrigin: typeof data.topOrigin === 'string' ? data.topOrigin : lastTopOrigin
           });
           return;
         }
@@ -1132,7 +1241,8 @@ export function installFrameClickAgent() {
 
         activateAt(x, y, {
           openInNewTab: mode === 'newTab',
-          background: mode === 'background'
+          background: mode === 'background',
+          topOrigin: lastTopOrigin
         });
       } catch {
         // ignore
@@ -1160,9 +1270,13 @@ export function installFrameClickAgent() {
             try { sendResponse({ ok: false }); } catch { /* ignore */ }
             return true;
           }
+          if (typeof message.topOrigin === 'string' && message.topOrigin) {
+            lastTopOrigin = message.topOrigin;
+          }
           const ok = activateAt(Number(message.clientX), Number(message.clientY), {
             openInNewTab: !!message.openInNewTab,
-            background: !!message.background
+            background: !!message.background,
+            topOrigin: typeof message.topOrigin === 'string' ? message.topOrigin : lastTopOrigin
           });
           try { sendResponse({ ok: !!ok, href: String(location.href || '').slice(0, 120) }); } catch { /* ignore */ }
           return true;

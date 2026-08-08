@@ -32,6 +32,8 @@ export const MSG = Object.freeze({
   GO_FORWARD: 'KP_GO_FORWARD',
   OPEN_URL_BACKGROUND: 'KP_OPEN_URL_BACKGROUND',
   OPEN_URL_FOREGROUND: 'KP_OPEN_URL_FOREGROUND',
+  /** Same-tab navigate (chrome.tabs.update). Used when sandboxed iframes cannot top-navigate without a real user gesture. */
+  NAVIGATE_SAME_TAB: 'KP_NAVIGATE_SAME_TAB',
 
   // --- UI open (content-script handlers; SW may forward) ---
   OPEN_SETTINGS_POPOVER: 'KP_OPEN_SETTINGS_POPOVER',
@@ -80,6 +82,7 @@ export const MSG = Object.freeze({
   // --- Parent → child frame activate (window.postMessage; third-party iframes) ---
   // Top-frame KeyPilot posts this when F/B/G lands on a cross-origin <iframe>.
   // Child frame-click-agent performs elementFromPoint + click in its own document.
+  // Optional topOrigin: parent tab origin for link routing (no hardcoded domains).
   FRAME_ACTIVATE: 'KP_FRAME_ACTIVATE',
 
   // --- Parent → child frame scroll (window.postMessage; C/V/Z/X under an iframe) ---

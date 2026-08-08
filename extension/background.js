@@ -1942,7 +1942,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             clientY: message.clientY,
             openInNewTab: !!message.openInNewTab,
             background: !!message.background,
-            frameName: typeof message.frameName === 'string' ? message.frameName : ''
+            frameName: typeof message.frameName === 'string' ? message.frameName : '',
+            topOrigin: typeof message.topOrigin === 'string' ? message.topOrigin : ''
           };
           try {
             let frames = [];
@@ -2353,6 +2354,32 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             });
           }
           break;
+
+        case 'KP_NAVIGATE_SAME_TAB': {
+          // Same-tab navigate — used by frame-click-agent when a sandboxed iframe
+          // cannot top-navigate without a real user gesture (e.g. Observable gallery).
+          const tabId = sender?.tab?.id;
+          const url = typeof message.url === 'string' ? message.url.trim() : '';
+          if (typeof tabId !== 'number') {
+            sendResponse({ type: 'KP_ERROR', error: 'No sender tab id' });
+            break;
+          }
+          if (!url) {
+            sendResponse({ type: 'KP_ERROR', error: 'Invalid url' });
+            break;
+          }
+          try {
+            await chrome.tabs.update(tabId, { url });
+            sendResponse({ type: 'KP_SUCCESS', tabId });
+          } catch (error) {
+            console.error('Failed to navigate same tab:', error);
+            sendResponse({
+              type: 'KP_ERROR',
+              error: 'Failed to navigate: ' + (error?.message || error)
+            });
+          }
+          break;
+        }
 
         case 'KP_STATUS':
           // Status updates are broadcast to update the popup UI.

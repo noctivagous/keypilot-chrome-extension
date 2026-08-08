@@ -4589,7 +4589,9 @@ export class KeyPilot extends EventManager {
       openInNewTab: !!opts.openInNewTab,
       background: !!opts.background,
       // Child agent filters on window.name when set (e.g. Google name="account").
-      frameName: typeof iframe.name === 'string' ? iframe.name : ''
+      frameName: typeof iframe.name === 'string' ? iframe.name : '',
+      // Parent origin for frame-agent link routing (no domain hardcoding in the child).
+      topOrigin: (() => { try { return String(location.origin || ''); } catch { return ''; } })()
     };
 
     // Same-origin fast path: click directly inside the child document (no agent needed).
