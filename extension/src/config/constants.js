@@ -104,6 +104,10 @@ export const CSS_CLASSES = {
   COLS_CLOSE_BTN: 'kpv2-cols-close-btn',
   HIGHLIGHT_OVERLAY: 'kpv2-highlight-overlay',
   HIGHLIGHT_SELECTION: 'kpv2-highlight-selection',
+  /** Persistent outline for elements added in cumulative inspector pick */
+  INSPECTOR_PICKED: 'kpv2-inspector-picked',
+  INSPECTOR_PICKED_OVERLAY: 'kpv2-inspector-picked-overlay',
+  INSPECTOR_UNION_OVERLAY: 'kpv2-inspector-union-overlay',
   TEXT_FIELD_GLOW: 'kpv2-text-field-glow',
   VIEWPORT_MODAL_FRAME: 'kpv2-viewport-modal-frame',
   ESC_EXIT_LABEL: 'kpv2-esc-exit-label',
@@ -186,6 +190,8 @@ export const Z_INDEX = {
   // Floating keyboard reference + key-click tooltip (above page UI, below cursor)
   FLOATING_KEYBOARD_HELP: 2147483045,
   KEYBINDINGS_POPOVER: 2147483046,
+  // Per-key floating config panel (above sticky key popover, below cursor)
+  KEY_ACTION_CONFIG: 2147483047,
 
   // Cursor sits above chrome; click ripple is above even that so the
   // expanding circles always remain visible.
@@ -245,8 +251,22 @@ export const MODES = {
  */
 export const INSPECTOR_KIND = Object.freeze({
   DELETE: 'delete',
-  COLS: 'cols'
+  COLS: 'cols',
+  /** Cumulative element pick for Rectangle Select (Y) alternate mode */
+  RECTANGLE_PICK: 'rectangle_pick'
 });
+
+/**
+ * Semantic HTML tags used as selection granularity for Y element-rectangle mode.
+ * Deepest intersecting match wins when both ancestor and descendant qualify.
+ */
+export const ELEMENT_SELECT_TAGS = Object.freeze([
+  'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+  'p', 'li', 'blockquote', 'pre', 'code',
+  'article', 'section', 'aside', 'header', 'footer', 'main', 'nav',
+  'a', 'img', 'figure', 'figcaption', 'picture', 'video', 'audio', 'svg',
+  'td', 'th', 'dt', 'dd', 'caption', 'summary', 'label'
+]);
 
 // Cursor behavior mode:
 // - NO_CUSTOM_CURSORS: KeyPilot does not override the page cursor at all.
@@ -631,5 +651,9 @@ export const FEATURE_FLAGS = {
   DEBUG_EDGE_ONLY_PROCESSING: false, // Enable detailed logging for edge-only processing
   SHOW_SELECTION_METHOD_IN_UI: false, // Show which selection method was used in notifications
   DEBUG_RECTANGLE_HUD: false, // Show live rectangle debugging HUD with coordinates and calls
-  ENABLE_DEBUG_PANEL: false // Enable upper-right debug panel showing performance metrics
+  ENABLE_DEBUG_PANEL: false, // Enable upper-right debug panel showing performance metrics
+  // Interactive HUD for shadow-DOM hover paint (msn.com / archive.org).
+  // Shows leaf under pointer, resolved hover/paint targets, auto A/B/C choice,
+  // and lets you force A / B / C. Toggle: Alt+/ (or keyPilot.setShadowRootDebugHud).
+  DEBUG_SHADOW_ROOT_HUD: false
 };

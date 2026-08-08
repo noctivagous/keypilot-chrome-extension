@@ -1,5 +1,5 @@
 import { EventManager } from './event-manager.js';
-import { COLORS, Z_INDEX, CSS_CLASSES, FEATURE_FLAGS, RECTANGLE_SELECTION } from '../config/constants.js';
+import { COLORS, Z_INDEX, CSS_CLASSES, FEATURE_FLAGS, RECTANGLE_SELECTION, ELEMENT_SELECT_TAGS } from '../config/constants.js';
 
 /**
  * HighlightManager - Manages all highlighting functionality including overlays and selection
@@ -15,7 +15,7 @@ export class HighlightManager extends EventManager {
     this.highlightModeIndicator = null; // Visual indicator for highlight mode
 
     // Selection mode state
-    this.selectionMode = 'character'; // 'character' or 'rectangle'
+    this.selectionMode = 'character'; // 'character' | 'rectangle' | 'element'
     
     // Character selection state
     this.characterSelectionActive = false;
@@ -29,7 +29,10 @@ export class HighlightManager extends EventManager {
     // Rectangle mode start caret (node+offset) — document-anchored; do not re-resolve from frozen viewport
     this.rectangleStartCaret = null;
 
-
+    // Element-rectangle selection (semantic HTML granularity)
+    /** @type {Element[]} */
+    this.elementMatchedElements = [];
+    this._elementSelectSelector = ELEMENT_SELECT_TAGS.map((t) => String(t)).join(',');
 
     // Debug HUD
     this.debugHUD = null; // Debug HUD overlay for live rectangle debugging
@@ -54,10 +57,10 @@ export class HighlightManager extends EventManager {
 
   /**
    * Set the selection mode
-   * @param {string} mode - 'character' or 'rectangle'
+   * @param {string} mode - 'character' | 'rectangle' | 'element'
    */
   setSelectionMode(mode) {
-    if (mode === 'character' || mode === 'rectangle') {
+    if (mode === 'character' || mode === 'rectangle' || mode === 'element') {
       this.selectionMode = mode;
       
       if (window.KEYPILOT_DEBUG) {
@@ -894,6 +897,266 @@ export class HighlightManager extends EventManager {
   }
 
   /**
+   * Element-granularity rectangle selection: find semantic HTML elements that
+   * intersect the drag rect; deepest match wins when both ancestor+descendant hit.
+   * @param {Object} startPosition - {x, y} viewport (seed)
+   * @param {Object} currentPosition - {x, y} viewport (live)
+   * @returns {Element[]}
+   */
+  updateElementRectangleSelection(startPosition, currentPosition) {
+    if (!currentPosition) {
+      this.elementMatchedElements = [];
+      this.clearHighlightSelectionOverlays();
+      return [];
+    }
+
+    try {
+      if (startPosition) {
+        this.ensureRectOriginDocumentPoint(startPosition);
+      }
+      this.updateHighlightRectangleOverlay(startPosition, currentPosition);
+
+      const rect = this.computeViewportRectFromOriginAndCursor(currentPosition);
+      if (!rect || rect.width < (RECTANGLE_SELECTION.MIN_WIDTH || 3)
+          || rect.height < (RECTANGLE_SELECTION.MIN_HEIGHT || 3)) {
+        this.elementMatchedElements = [];
+        this.clearHighlightSelectionOverlays();
+        return [];
+      }
+
+      const matched = this.findSemanticElementsIntersectingRect(rect);
+      this.elementMatchedElements = matched;
+      this.paintElementSelectionOverlays(matched);
+      return matched;
+    } catch (error) {
+      console.warn('[KeyPilot] Error updating element rectangle selection:', error);
+      this.elementMatchedElements = [];
+      return [];
+    }
+  }
+
+  /**
+   * Current dashed-rect bounds in viewport coordinates (from document-anchored origin).
+   * @returns {{ left: number, top: number, width: number, height: number, right: number, bottom: number }|null}
+   */
+  getCurrentHighlightRectangleViewportBounds() {
+    if (!this.rectOriginDocumentPoint) return null;
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft || 0;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+    const originVp = {
+      x: this.rectOriginDocumentPoint.x - scrollX,
+      y: this.rectOriginDocumentPoint.y - scrollY
+    };
+
+    // Free end: last mouse is applied via overlay; derive from overlay DOM if present.
+    let freeX = originVp.x;
+    let freeY = originVp.y;
+    if (this.highlightRectangleOverlay && this.highlightRectangleOverlay.style.display !== 'none') {
+      try {
+        const r = this.highlightRectangleOverlay.getBoundingClientRect();
+        if (r.width > 0 || r.height > 0) {
+          return {
+            left: r.left,
+            top: r.top,
+            width: r.width,
+            height: r.height,
+            right: r.right,
+            bottom: r.bottom
+          };
+        }
+      } catch { /* fall through */ }
+    }
+
+    // Fallback: use stored rectOriginPoint vs nothing useful
+    if (this.rectOriginPoint) {
+      freeX = this.rectOriginPoint.x;
+      freeY = this.rectOriginPoint.y;
+    }
+    const left = Math.min(originVp.x, freeX);
+    const top = Math.min(originVp.y, freeY);
+    const right = Math.max(originVp.x, freeX);
+    const bottom = Math.max(originVp.y, freeY);
+    return {
+      left,
+      top,
+      width: right - left,
+      height: bottom - top,
+      right,
+      bottom
+    };
+  }
+
+  /**
+   * @param {{ left: number, top: number, right: number, bottom: number, width: number, height: number }} rect
+   * @param {Object} currentPosition - live cursor for free end if overlay unavailable
+   * @returns {{ left: number, top: number, right: number, bottom: number, width: number, height: number }|null}
+   */
+  computeViewportRectFromOriginAndCursor(currentPosition) {
+    if (!this.rectOriginDocumentPoint || !currentPosition) return null;
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft || 0;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+    const ox = this.rectOriginDocumentPoint.x - scrollX;
+    const oy = this.rectOriginDocumentPoint.y - scrollY;
+    const left = Math.min(ox, currentPosition.x);
+    const top = Math.min(oy, currentPosition.y);
+    const right = Math.max(ox, currentPosition.x);
+    const bottom = Math.max(oy, currentPosition.y);
+    return {
+      left,
+      top,
+      right,
+      bottom,
+      width: right - left,
+      height: bottom - top
+    };
+  }
+
+  /**
+   * @param {{ left: number, top: number, right: number, bottom: number }} rect
+   * @returns {Element[]}
+   */
+  findSemanticElementsIntersectingRect(rect) {
+    if (!rect || !this._elementSelectSelector) return [];
+
+    let candidates = [];
+    try {
+      candidates = Array.from(document.querySelectorAll(this._elementSelectSelector));
+    } catch {
+      return [];
+    }
+
+    const hits = [];
+    for (const el of candidates) {
+      if (!el || el.nodeType !== 1) continue;
+      if (this._isKeyPilotChromeElement(el)) continue;
+      let r;
+      try {
+        r = el.getBoundingClientRect();
+      } catch {
+        continue;
+      }
+      if (!r || (r.width <= 0 && r.height <= 0)) continue;
+      if (!this._rectsIntersect(rect, r)) continue;
+      hits.push(el);
+    }
+
+    return this._deepestWins(hits);
+  }
+
+  /**
+   * Prefer deepest elements: drop any hit that contains another hit.
+   * @param {Element[]} elements
+   * @returns {Element[]}
+   */
+  _deepestWins(elements) {
+    if (!elements || elements.length <= 1) return elements || [];
+    const set = new Set(elements);
+    return elements.filter((el) => {
+      for (const other of set) {
+        if (other === el) continue;
+        try {
+          if (el.contains(other)) return false;
+        } catch { /* ignore */ }
+      }
+      return true;
+    });
+  }
+
+  /**
+   * @param {{ left: number, top: number, right: number, bottom: number }} a
+   * @param {DOMRect|{ left: number, top: number, right: number, bottom: number }} b
+   */
+  _rectsIntersect(a, b) {
+    return !(
+      a.right < b.left ||
+      a.left > b.right ||
+      a.bottom < b.top ||
+      a.top > b.bottom
+    );
+  }
+
+  _isKeyPilotChromeElement(el) {
+    try {
+      if (!(el instanceof Element)) return false;
+      if (el.closest?.('.kpv2-cursor-hidden, .kp-floating-keyboard-help, .kp-control-strip, .kp-keybindings-popover, .kp-action-config-panel')) {
+        return true;
+      }
+      const cls = typeof el.className === 'string' ? el.className : '';
+      if (cls.includes('kpv2-') || cls.includes('kp-')) {
+        // Allow selecting page content that happens to use kp-; only skip our overlays.
+        if (el.classList?.contains?.('kpv2-highlight-rectangle-overlay')
+          || el.classList?.contains?.('kpv2-highlight-selection-overlay')
+          || el.classList?.contains?.('kpv2-inspector-overlay')
+          || el.classList?.contains?.('kpv2-inspector-picked-overlay')
+          || el.classList?.contains?.('kpv2-inspector-union-overlay')) {
+          return true;
+        }
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Paint blue selection overlays for matched elements (not caret Selection).
+   * @param {Element[]} elements
+   */
+  paintElementSelectionOverlays(elements) {
+    this.clearHighlightSelectionOverlays();
+    const list = Array.isArray(elements) ? elements : [];
+    let created = 0;
+    const MAX = 80;
+    for (const el of list) {
+      if (created >= MAX) break;
+      if (!el?.isConnected) continue;
+      let rect;
+      try {
+        rect = el.getBoundingClientRect();
+      } catch {
+        continue;
+      }
+      if (!rect || rect.width <= 0 || rect.height <= 0) continue;
+      const overlay = this.createElement('div', {
+        className: 'kpv2-highlight-selection-overlay',
+        style: `
+          position: fixed;
+          left: ${rect.left}px;
+          top: ${rect.top}px;
+          width: ${rect.width}px;
+          height: ${rect.height}px;
+          background: ${COLORS.HIGHLIGHT_SELECTION_BG};
+          border: 1px solid ${COLORS.HIGHLIGHT_SELECTION_BORDER};
+          pointer-events: none;
+          z-index: ${Z_INDEX.HIGHLIGHT_SELECTION};
+          box-sizing: border-box;
+        `
+      });
+      try {
+        document.body.appendChild(overlay);
+        this.highlightSelectionOverlays.push(overlay);
+        if (this.overlayObserver) this.overlayObserver.observe(overlay);
+        created += 1;
+      } catch { /* ignore */ }
+    }
+  }
+
+  /**
+   * @returns {Element[]}
+   */
+  getMatchedElements() {
+    return (this.elementMatchedElements || []).filter((el) => el && el.isConnected);
+  }
+
+  /**
+   * Clear element-match state (does not clear dashed rect unless caller does).
+   */
+  clearElementSelection() {
+    this.elementMatchedElements = [];
+    this.clearHighlightSelectionOverlays();
+  }
+
+  /**
    * Reposition highlight rectangle + selection overlays after scroll without a mouse move.
    * Origin stays document-anchored; free end uses last known viewport mouse.
    * @param {Object} currentViewportMouse - {x,y}
@@ -921,6 +1184,13 @@ export class HighlightManager extends EventManager {
         this.getOriginViewportPoint(),
         findTextNodeAtPosition,
         getTextOffsetAtPosition
+      );
+    }
+
+    if (this.selectionMode === 'element') {
+      return this.updateElementRectangleSelection(
+        this.getOriginViewportPoint(),
+        currentViewportMouse
       );
     }
 
@@ -1348,6 +1618,7 @@ export class HighlightManager extends EventManager {
     this.rectOriginPoint = null;
     this.rectOriginDocumentPoint = null;
     this.rectangleStartCaret = null;
+    this.elementMatchedElements = [];
     this.debugUpdateCount = 0;
 
     if (window.KEYPILOT_DEBUG) {

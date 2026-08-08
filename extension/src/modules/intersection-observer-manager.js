@@ -4,6 +4,7 @@ import { FEATURE_FLAGS } from '../config/constants.js';
  * Intersection Observer-based performance optimization manager
  * Tracks element visibility and reduces expensive DOM queries
  */
+
 export class IntersectionObserverManager {
   constructor(elementDetector) {
     this.elementDetector = elementDetector;
@@ -28,6 +29,8 @@ export class IntersectionObserverManager {
     // don't need to constantly attach/detach listeners as the page mutates.
     this._domHoverEnabled = false;
     this._domHoveredElement = null;
+    /** @type {HTMLElement|null} deepest composedPath element under pointer (debug HUD) */
+    this._domHoverLeaf = null;
     this._domHoverOnChange = null; // (HTMLElement|null) => void
     this._domHoverUseDelegation = true;
     this._domHoverDelegationAttached = false;
@@ -36,8 +39,14 @@ export class IntersectionObserverManager {
     // rAF-coalesced re-paint when SPA/Lit strips hover markers while pointer stays put.
     // Only schedule when the marker is actually missing — not on every pointermove.
     this._domHoverRehealRAF = 0;
-    this._boundDocPointerMoveReheal = () => {
+    /** @type {number} rAF id for shadow-debug HUD leaf refresh */
+    this._shadowDebugLeafRAF = 0;
+    this._boundDocPointerMoveReheal = (e) => {
       try {
+        // While shadow debug HUD is open, track deepest composedPath leaf continuously
+        // (HUD otherwise only refreshes when focusEl changes / paint runs).
+        this._maybeTrackShadowDebugLeaf(e);
+
         if (!this._domHoverEnabled || !this._domHoveredElement) return;
         if (this._domHoverRehealRAF) return;
         const el = this._domHoveredElement;
@@ -102,68 +111,11 @@ export class IntersectionObserverManager {
         const el = /** @type {HTMLElement} */ (raw);
         if (this._isKeyPilotUiElement(el)) return;
 
-        // Stable hover target: prefer host row/tab over nested More/sub-links,
-        // and stick while the pointer stays inside the previous host.
-        let clickable = null;
-        try {
-          if (this.elementDetector?.resolveHoverFocusTarget) {
-            clickable = this.elementDetector.resolveHoverFocusTarget(
-              el,
-              this._domHoveredElement
-            );
-          } else if (this.elementDetector?.findClickable) {
-            clickable = this.elementDetector.findClickable(el);
-          } else {
-            clickable = el;
-          }
-        } catch {
-          clickable = el;
-        }
-
-        // If no clickable found and we're in a shadow DOM context, try shadow-piercing query
-        if (!clickable && el.getRootNode() instanceof ShadowRoot) {
-          try {
-            // Search for interactive elements near the cursor position using shadow-piercing
-            const shadowElements = this.queryInteractiveAtPoint(e.clientX, e.clientY, 20);
-            if (shadowElements.length > 0) {
-              const shadowLeaf = shadowElements[0];
-              clickable = this.elementDetector?.resolveHoverFocusTarget
-                ? this.elementDetector.resolveHoverFocusTarget(shadowLeaf, this._domHoveredElement)
-                : shadowLeaf;
-            }
-          } catch (error) {
-            // Shadow query failed, continue with null clickable
-            if (window.KEYPILOT_DEBUG) {
-              console.warn('[KeyPilot] Shadow-piercing query failed:', error);
-            }
-          }
-        }
-
-        // Optional composite promotion (after host stabilization).
-        if (clickable) {
-          clickable = this._findParentContainerForClickable(clickable);
-        }
-
-        let next = (clickable && clickable.nodeType === 1) ? /** @type {HTMLElement} */ (clickable) : null;
-        // html/body are never useful targets; treat as clear so hover chrome does not stick.
-        try {
-          if (next && (next.tagName === 'HTML' || next.tagName === 'BODY')) next = null;
-        } catch { /* ignore */ }
-
-        // Drop a disconnected previous target (Lit can replace the <a> node;
-        // the old reference must not stick).
-        if (this._domHoveredElement && !this._domHoveredElement.isConnected) {
-          this._domHoveredElement = null;
-        }
-
-        // Sticky host targeting (resolveHoverFocusTarget) already keeps focus while
-        // the pointer moves across nested children — no clear-debounce needed.
-        if (next === this._domHoveredElement) {
-          // Same target: re-ensure CSS + markers (Lit may wipe while pointer stays put).
-          this._rehealDomHoverFocusStyling(next);
-          return;
-        }
-        this._setDomHoveredElement(next);
+        // Leaf under pointer (composedPath deepest element) — debug HUD + diagnostics.
+        const leafChanged = this._setDomHoverLeaf(el);
+        const x = (typeof e.clientX === 'number') ? e.clientX : null;
+        const y = (typeof e.clientY === 'number') ? e.clientY : null;
+        this._resolveAndPublishDomHover(el, x, y, { leafChanged });
       } catch { /* ignore */ }
     };
 
@@ -608,10 +560,161 @@ export class IntersectionObserverManager {
   _setDomHoveredElement(next) {
     const el = next && next.nodeType === 1 ? /** @type {HTMLElement} */ (next) : null;
     this._domHoveredElement = el;
+    if (!el) {
+      this._setDomHoverLeaf(null);
+    }
     try { window.__KP_HOVERED_INTERACTIVE_EL = el; } catch { /* ignore */ }
     if (typeof this._domHoverOnChange === 'function') {
       try { this._domHoverOnChange(el); } catch { /* ignore */ }
     }
+  }
+
+  /**
+   * @param {Element|null|undefined} el
+   * @returns {boolean} true when the stored leaf reference changed
+   */
+  _setDomHoverLeaf(el) {
+    const next = el && el.nodeType === 1 ? /** @type {HTMLElement} */ (el) : null;
+    if (this._domHoverLeaf === next) return false;
+    this._domHoverLeaf = next;
+    try { window.__KP_HOVER_LEAF = next; } catch { /* ignore */ }
+    return true;
+  }
+
+  /**
+   * Deepest element under the pointer from the last pointerover (composedPath).
+   * @returns {HTMLElement|null}
+   */
+  getDomHoverLeaf() {
+    return (this._domHoverLeaf && this._domHoverLeaf.nodeType === 1)
+      ? /** @type {HTMLElement} */ (this._domHoverLeaf)
+      : null;
+  }
+
+  /**
+   * Resolve focusEl from a leaf under the pointer and publish via _setDomHoveredElement.
+   * Shared by pointerover and (for open-shadow leaves) pointermove re-resolve.
+   *
+   * @param {Element} el - deepest leaf
+   * @param {number|null|undefined} clientX
+   * @param {number|null|undefined} clientY
+   * @param {{ leafChanged?: boolean }} [opts]
+   */
+  _resolveAndPublishDomHover(el, clientX, clientY, opts = {}) {
+    if (!el || el.nodeType !== 1) return;
+    const leafChanged = !!opts.leafChanged;
+
+    let clickable = null;
+    try {
+      if (this.elementDetector?.resolveHoverFocusTarget) {
+        clickable = this.elementDetector.resolveHoverFocusTarget(
+          el,
+          this._domHoveredElement
+        );
+      } else if (this.elementDetector?.findClickable) {
+        clickable = this.elementDetector.findClickable(el);
+      } else {
+        clickable = el;
+      }
+    } catch {
+      clickable = el;
+    }
+
+    // Open-shadow leaf with no ancestor clickable: try point query fallback.
+    if (!clickable) {
+      let inShadow = false;
+      try { inShadow = el.getRootNode() instanceof ShadowRoot; } catch { inShadow = false; }
+      if (inShadow && Number.isFinite(clientX) && Number.isFinite(clientY)) {
+        try {
+          const shadowElements = this.queryInteractiveAtPoint(clientX, clientY, 20);
+          if (shadowElements.length > 0) {
+            const shadowLeaf = shadowElements[0];
+            clickable = this.elementDetector?.resolveHoverFocusTarget
+              ? this.elementDetector.resolveHoverFocusTarget(shadowLeaf, this._domHoveredElement)
+              : shadowLeaf;
+          }
+        } catch (error) {
+          if (window.KEYPILOT_DEBUG) {
+            console.warn('[KeyPilot] Shadow-piercing query failed:', error);
+          }
+        }
+      }
+    }
+
+    if (clickable) {
+      clickable = this._findParentContainerForClickable(clickable);
+    }
+
+    let next = (clickable && clickable.nodeType === 1) ? /** @type {HTMLElement} */ (clickable) : null;
+    try {
+      if (next && (next.tagName === 'HTML' || next.tagName === 'BODY')) next = null;
+    } catch { /* ignore */ }
+
+    if (this._domHoveredElement && !this._domHoveredElement.isConnected) {
+      this._domHoveredElement = null;
+    }
+
+    if (next === this._domHoveredElement) {
+      this._rehealDomHoverFocusStyling(next);
+      if (leafChanged) this._notifyShadowDebugHudLeafChanged();
+      return;
+    }
+    this._setDomHoveredElement(next);
+  }
+
+  /**
+   * Track deepest composedPath leaf on pointermove. When the leaf changes inside
+   * an open shadow tree, re-resolve focusEl (pointerover alone was insufficient
+   * after the closest()-sticky bug, and some Lit trees are noisy on over/out).
+   * Also refreshes the shadow debug HUD leaf line.
+   * @param {Event|null|undefined} e
+   */
+  _maybeTrackShadowDebugLeaf(e) {
+    try {
+      if (!e) return;
+
+      const path = (typeof e.composedPath === 'function') ? e.composedPath() : null;
+      let raw = null;
+      if (Array.isArray(path)) {
+        for (const n of path) {
+          if (n && n.nodeType === 1) { raw = n; break; }
+        }
+      }
+      if (!raw && e.target && e.target.nodeType === 1) raw = e.target;
+      if (!raw || raw.nodeType !== 1) return;
+      if (this._isKeyPilotUiElement(raw)) return;
+
+      const leafChanged = this._setDomHoverLeaf(raw);
+      if (!leafChanged) return;
+
+      let inShadow = false;
+      try { inShadow = raw.getRootNode() instanceof ShadowRoot; } catch { inShadow = false; }
+
+      const hudOn = !!window.keyPilot?.overlayManager?.isShadowRootDebugHudEnabled?.();
+      // Re-resolve focus for open-shadow leaf changes; HUD-only leaf refresh otherwise.
+      if (inShadow || hudOn) {
+        if (this._shadowDebugLeafRAF) return;
+        const x = (typeof e.clientX === 'number') ? e.clientX : null;
+        const y = (typeof e.clientY === 'number') ? e.clientY : null;
+        const leaf = raw;
+        this._shadowDebugLeafRAF = requestAnimationFrame(() => {
+          this._shadowDebugLeafRAF = 0;
+          try {
+            if (inShadow) {
+              this._resolveAndPublishDomHover(leaf, x, y, { leafChanged: true });
+            } else if (hudOn) {
+              this._notifyShadowDebugHudLeafChanged();
+            }
+          } catch { /* ignore */ }
+        });
+      }
+    } catch { /* ignore */ }
+  }
+
+  _notifyShadowDebugHudLeafChanged() {
+    try {
+      window.keyPilot?.overlayManager?.refreshShadowRootDebugHudLeaf?.();
+    } catch { /* ignore */ }
   }
 
   /**

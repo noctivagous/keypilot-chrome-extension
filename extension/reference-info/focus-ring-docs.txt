@@ -70,6 +70,11 @@ Walk up from the hit node (parentElement + open shadow host hops, depth ≤ 20):
 
 So hovering an <img> inside an <a> usually returns the <a>, not the image.
 
+Paint (overlay-manager) is separate: open-shadow hover targets use the same
+A → B → C preference as light DOM (outline first; in-target ring when A cannot
+show; body fixed last). Paint resolve still pierces open shadow for collapsed /
+slotless hosts when choosing the paint node. See focus-ring-paint.md “Shadow DOM”.
+
 4. Main resolver — resolveHoverFocusTarget(under, prev)
 
 This is the sticky, card-aware brain.
@@ -80,9 +85,11 @@ If there was a previous focus and the pointer is still “on” it:
 
 • Same node → keep prev
 • under is inside prev (including open shadow via composedContains):
-  • Non-interactive leaf (text/span/icon) → keep prev
-  • Nested chrome (More button, small sub-link < 35% of host area, aria-haspopup) → keep prev
+  • findClickable(under) null / same as prev / nested chrome → keep prev
   • Distinct large nested primary → may switch; still prefer host tab/link if applicable
+  • NEVER use Element.closest() for this check — closest() stops at shadow roots, so
+    open-shadow leaves looked like “no primary” and focusEl stuck on the previous host
+    while moving across archive.org / msn.com shadow trees.
 • Non-interactive overlay over media: if sibling underlay equals prev → keep prev (TNW-style header over image)
 
 Goal: don’t thrash the ring while moving across title chrome, icons, or brief nulls.
@@ -165,6 +172,7 @@ findClickable: “nearest real control”    → <a>, button, …
 resolveHoverFocusTarget: “stable card/tab intent + underlay media”
 parent promote: “same-box wrapper only”  → rarely, same size
 paint resolve: “where outline draws cleanly”
+             (pierces open shadow when host is collapsed / slotless)
 
 Intent: one stable, F-meaningful control per card/row/tab — prefer media/primary host over nested More/labels, don’t thrash on child moves, don’t fatten a tight thumb into a whole content block.
 

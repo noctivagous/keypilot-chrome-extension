@@ -118,7 +118,8 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  *   panelPositions: PanelPositionsSettings,
  *   clickMode: ClickModeSettings,
  *   textMode: TextModeSettings,
- *   scroll: ScrollSettings
+ *   scroll: ScrollSettings,
+ *   actionSettings: Record<string, { mode?: string, parameters?: Record<string, any> }>
  * }} KeyPilotSettings
  */
 
@@ -139,6 +140,13 @@ export const DEFAULT_SETTINGS = Object.freeze({
   panelPositions: Object.freeze({
     keyboardReference: Object.freeze({ anchor: 'bottom-left' }),
     controlStrip: Object.freeze({ anchor: 'top-left' })
+  }),
+  // Per-key action settings (Keyboard Reference mode switches / config params).
+  actionSettings: Object.freeze({
+    RECTANGLE_HIGHLIGHT: Object.freeze({
+      mode: 'element',
+      parameters: Object.freeze({})
+    })
   }),
   clickMode: Object.freeze({
     cursor: Object.freeze({
@@ -467,6 +475,32 @@ export function scrollBehaviorFromSpeed(speed) {
 }
 
 /**
+ * @param {any} raw
+ * @returns {Record<string, { mode?: string, parameters?: Record<string, any> }>}
+ */
+export function normalizeActionSettings(raw) {
+  const defaults = DEFAULT_SETTINGS.actionSettings || {};
+  const stored = raw && typeof raw === 'object' ? raw : {};
+  /** @type {Record<string, { mode?: string, parameters?: Record<string, any> }>} */
+  const out = {};
+
+  const keys = new Set([...Object.keys(defaults), ...Object.keys(stored)]);
+  for (const actionId of keys) {
+    const fb = defaults[actionId] && typeof defaults[actionId] === 'object' ? defaults[actionId] : {};
+    const entry = stored[actionId] && typeof stored[actionId] === 'object' ? stored[actionId] : {};
+    const mode = typeof entry.mode === 'string' && entry.mode
+      ? entry.mode
+      : (typeof fb.mode === 'string' ? fb.mode : undefined);
+    const parameters = {
+      ...(fb.parameters && typeof fb.parameters === 'object' ? fb.parameters : {}),
+      ...(entry.parameters && typeof entry.parameters === 'object' ? entry.parameters : {})
+    };
+    out[actionId] = { mode, parameters };
+  }
+  return out;
+}
+
+/**
  * @returns {Promise<KeyPilotSettings>}
  */
 export async function getSettings() {
@@ -485,6 +519,7 @@ export async function getSettings() {
       ),
       controlStrip: normalizeControlStrip(stored?.controlStrip),
       panelPositions: normalizePanelPositions(stored?.panelPositions),
+      actionSettings: normalizeActionSettings(stored?.actionSettings),
       clickMode: normalizeClickMode(stored?.clickMode),
       textMode: normalizeTextMode(stored?.textMode),
       scroll: normalizeScroll(stored?.scroll)
@@ -497,6 +532,7 @@ export async function getSettings() {
         keyboardReference: { ...DEFAULT_SETTINGS.panelPositions.keyboardReference },
         controlStrip: { ...DEFAULT_SETTINGS.panelPositions.controlStrip }
       },
+      actionSettings: normalizeActionSettings(null),
       clickMode: { ...DEFAULT_SETTINGS.clickMode, cursor: { ...DEFAULT_SETTINGS.clickMode.cursor } },
       textMode: { ...DEFAULT_SETTINGS.textMode },
       scroll: { ...DEFAULT_SETTINGS.scroll }
@@ -554,7 +590,24 @@ export async function setSettings(partial) {
     scroll: {
       ...current.scroll,
       ...(p.scroll && typeof p.scroll === 'object' ? p.scroll : {})
-    }
+    },
+    actionSettings: (() => {
+      const merged = { ...(current.actionSettings || {}) };
+      const patch = p.actionSettings && typeof p.actionSettings === 'object' ? p.actionSettings : {};
+      for (const [id, entry] of Object.entries(patch)) {
+        const prev = merged[id] && typeof merged[id] === 'object' ? merged[id] : {};
+        const next = entry && typeof entry === 'object' ? entry : {};
+        merged[id] = {
+          ...prev,
+          ...next,
+          parameters: {
+            ...(prev.parameters && typeof prev.parameters === 'object' ? prev.parameters : {}),
+            ...(next.parameters && typeof next.parameters === 'object' ? next.parameters : {})
+          }
+        };
+      }
+      return normalizeActionSettings(merged);
+    })()
   };
   next.searchEngine = normalizeSearchEngine(next.searchEngine);
   next.cursorMode = normalizeCursorMode(next.cursorMode);
@@ -565,6 +618,7 @@ export async function setSettings(partial) {
   );
   next.controlStrip = normalizeControlStrip(next.controlStrip);
   next.panelPositions = normalizePanelPositions(next.panelPositions);
+  next.actionSettings = normalizeActionSettings(next.actionSettings);
   next.clickMode = normalizeClickMode(next.clickMode);
   next.textMode = normalizeTextMode(next.textMode);
   next.scroll = normalizeScroll(next.scroll);

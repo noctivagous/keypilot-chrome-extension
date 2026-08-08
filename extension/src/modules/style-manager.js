@@ -54,6 +54,8 @@ export function buildKeyPilotPrintCss() {
     '.kpv2-popover-container',
     '.kpv2-preview-popover-container',
     '#kpv2-debug-panel',
+    '#kpv2-shadow-debug-hud',
+    '.kpv2-shadow-debug-hud',
     '#kpv2-rectangle-intersection-root',
     // Light-DOM UI roots (kp-*)
     '.kp-control-strip',

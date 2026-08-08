@@ -51,6 +51,7 @@ function preferHttpsForPreview(url) {
   return s;
 }
 
+
 export class OverlayManager {
   constructor() {
     // Rendering mode configuration: 'dom' | 'canvas' | 'css-custom-props'
@@ -126,6 +127,21 @@ export class OverlayManager {
     // Debug panel for performance metrics
     this.debugPanel = null;
     this.debugPanelUpdateInterval = null;
+
+    /**
+     * Shadow-root debug HUD (msn.com / archive.org paint experiments).
+     * @type {HTMLElement|null}
+     */
+    this._shadowDebugHud = null;
+    /** @type {boolean} */
+    this._shadowDebugHudEnabled = !!(FEATURE_FLAGS && FEATURE_FLAGS.DEBUG_SHADOW_ROOT_HUD);
+    /**
+     * Forced paint strategy while HUD is open: 'A' | 'B' | 'C' | null (auto).
+     * @type {'A'|'B'|'C'|null}
+     */
+    this._shadowDebugPaintOverride = null;
+    /** @type {{ leaf: Element|null, focus: Element|null, paint: Element|null, auto: string, applied: string, inShadow: boolean }|null} */
+    this._shadowDebugLastInfo = null;
 
     // When DOM-hover listener mode is enabled, render non-text focus rectangles in blue so it's
     // visually obvious we're using browser-native hover targeting (vs RBush-driven hit-testing).
@@ -1069,6 +1085,7 @@ export class OverlayManager {
     } else {
       this.hideInspectorOverlay();
       this.hideInspectorModeIndicator();
+      this.clearInspectorPickedOverlays();
     }
     
     // Show highlight chrome in highlight mode (instruction + optional focus ring)
@@ -1130,8 +1147,30 @@ export class OverlayManager {
         try { this.clearElementFocusStyling(); } catch { /* ignore */ }
         try { this.hideInTargetFocusRing(); } catch { /* ignore */ }
         try { this.hideFocusOverlayDOM(); } catch { /* ignore */ }
+        try {
+          this._updateShadowRootDebugHud(null, null, {
+            inShadow: false,
+            autoStrategy: '—',
+            appliedStrategy: '—',
+            override: this._shadowDebugPaintOverride
+          });
+        } catch { /* ignore */ }
         return;
       }
+
+      // Resolve paint node once (pierces open shadow for collapsed hosts).
+      let paintEl = element;
+      try {
+        paintEl = this._resolveElementForFocusStyling(element) || element;
+      } catch {
+        paintEl = element;
+      }
+
+      // Auto strategy mirrors light DOM for open-shadow targets too:
+      //   A (element outline) → B (in-target ring) → C (body fixed).
+      // See focus-ring-paint.md. Debug HUD can still force A/B/C.
+      let inShadow = false;
+      try { inShadow = this._isInShadowTree(element); } catch { inShadow = false; }
 
       let needsEscapeHatch = false;
       try {
@@ -1140,10 +1179,44 @@ export class OverlayManager {
         needsEscapeHatch = false;
       }
 
+      let autoStrategy = 'A';
       if (needsEscapeHatch) {
-        try { this.clearElementFocusStyling(); } catch { /* ignore */ }
+        let canB = false;
+        try {
+          canB = !!(FEATURE_FLAGS && FEATURE_FLAGS.ENABLE_IN_TARGET_FOCUS_RING) &&
+            !!this._resolveInTargetHost(element);
+        } catch { canB = false; }
+        autoStrategy = canB ? 'B' : 'C';
+      }
 
-        // Strategy B: co-located absolute ring (local max z + 1, host border-radius).
+      // Debug HUD can force A / B / C regardless of auto (for shadow experiments).
+      const override = this._shadowDebugHudEnabled
+        ? this._shadowDebugPaintOverride
+        : null;
+      const strategy = (override === 'A' || override === 'B' || override === 'C')
+        ? override
+        : autoStrategy;
+
+      try {
+        this._updateShadowRootDebugHud(element, paintEl, {
+          inShadow,
+          autoStrategy,
+          appliedStrategy: strategy,
+          override
+        });
+      } catch { /* ignore */ }
+
+      if (strategy === 'A') {
+        this._focusPaintUsesFixedOverlay = false;
+        this._focusPaintUsesInTargetRing = false;
+        try { this.hideInTargetFocusRing(); } catch { /* ignore */ }
+        try { this.hideFocusOverlayDOM(); } catch { /* ignore */ }
+        return this.updateFocusOverlayElementStyling(element, mode);
+      }
+
+      try { this.clearElementFocusStyling(); } catch { /* ignore */ }
+
+      if (strategy === 'B') {
         let usedInTarget = false;
         try {
           usedInTarget = this.updateFocusOverlayInTarget(element, mode);
@@ -1154,22 +1227,34 @@ export class OverlayManager {
           this._focusPaintUsesInTargetRing = true;
           this._focusPaintUsesFixedOverlay = false;
           try { this.hideFocusOverlayDOM(); } catch { /* ignore */ }
+          try {
+            this._updateShadowRootDebugHud(element, paintEl, {
+              inShadow,
+              autoStrategy,
+              appliedStrategy: 'B',
+              override
+            });
+          } catch { /* ignore */ }
           return;
         }
-
-        // Strategy C: body fixed overlay (when B cannot mount).
-        this._focusPaintUsesInTargetRing = false;
-        try { this.hideInTargetFocusRing(); } catch { /* ignore */ }
-        this._focusPaintUsesFixedOverlay = true;
-        return this.updateFocusOverlayDOM(element, mode, rectOverride);
+        // B failed to mount — fall through to C.
       }
 
-      // Strategy A: element outline.
-      this._focusPaintUsesFixedOverlay = false;
+      // Strategy C: body fixed overlay.
       this._focusPaintUsesInTargetRing = false;
       try { this.hideInTargetFocusRing(); } catch { /* ignore */ }
-      try { this.hideFocusOverlayDOM(); } catch { /* ignore */ }
-      return this.updateFocusOverlayElementStyling(element, mode);
+      this._focusPaintUsesFixedOverlay = true;
+      const paintForC = rectOverride ? element : paintEl;
+      const cResult = this.updateFocusOverlayDOM(paintForC, mode, rectOverride);
+      try {
+        this._updateShadowRootDebugHud(element, paintEl, {
+          inShadow,
+          autoStrategy,
+          appliedStrategy: 'C',
+          override
+        });
+      } catch { /* ignore */ }
+      return cResult;
     }
 
     switch (this.renderingMode) {
@@ -1268,31 +1353,19 @@ export class OverlayManager {
     // Walk composed ancestors (parentElement + open shadow host hops).
     // archive.org nests clickables inside media-button → … → NAV[overflow:hidden];
     // a parentElement-only walk stops at the shadow root and misses clippers.
-    const composedParent = (node) => {
-      if (!node || node.nodeType !== 1) return null;
-      if (node.parentElement) return node.parentElement;
-      try {
-        const root = typeof node.getRootNode === 'function' ? node.getRootNode() : null;
-        if (root && typeof ShadowRoot !== 'undefined' && root instanceof ShadowRoot) {
-          return root.host || null;
-        }
-      } catch { /* ignore */ }
-      return null;
-    };
-
     try {
-      let n = composedParent(element);
+      let n = this._composedParent(element);
       let depth = 0;
       // Nested open shadows (archive.org tiles/nav) often need more than 12 hops.
       while (n && n.nodeType === 1 && depth++ < 24) {
         if (n === document.documentElement || n === document.body) {
-          n = composedParent(n);
+          n = this._composedParent(n);
           continue;
         }
 
         const cs = window.getComputedStyle(n);
         if (!cs) {
-          n = composedParent(n);
+          n = this._composedParent(n);
           continue;
         }
 
@@ -1323,7 +1396,7 @@ export class OverlayManager {
             ar = n.getBoundingClientRect();
           } catch {
             clippers.push(n);
-            n = composedParent(n);
+            n = this._composedParent(n);
             continue;
           }
 
@@ -1345,7 +1418,21 @@ export class OverlayManager {
           }
         }
 
-        n = composedParent(n);
+        // Slotted shadow hosts (msn.com `cs-responsive-card`: shadow is just
+        // `div.root > slot`) clip via an *internal* wrapper, not the host's own
+        // light-DOM-facing style — getComputedStyle(n) above never sees it.
+        // Check the shadow root's own top-level children too.
+        try {
+          const extra = this._shadowInternalClipWrappers(n, er, needLeft, needTop, needRight, needBottom);
+          for (let wi = 0; wi < extra.clippers.length; wi++) {
+            clippers.push(extra.clippers[wi]);
+          }
+          if (!tightWrapper && extra.tightWrapper) {
+            tightWrapper = extra.tightWrapper;
+          }
+        } catch { /* ignore */ }
+
+        n = this._composedParent(n);
       }
     } catch { /* ignore */ }
 
@@ -1465,6 +1552,260 @@ export class OverlayManager {
       (cs.overflowX && cs.overflowX !== 'visible') ||
       (cs.overflowY && cs.overflowY !== 'visible')
     ));
+  }
+
+  /**
+   * Parent across open shadow boundaries (parentElement, else ShadowRoot.host).
+   * @param {Node|null|undefined} node
+   * @returns {Element|null}
+   */
+  _composedParent(node) {
+    if (!node || node.nodeType !== 1) return null;
+    if (node.parentElement) return node.parentElement;
+    try {
+      const root = typeof node.getRootNode === 'function' ? node.getRootNode() : null;
+      if (root && typeof ShadowRoot !== 'undefined' && root instanceof ShadowRoot) {
+        return root.host || null;
+      }
+    } catch { /* ignore */ }
+    return null;
+  }
+
+  /**
+   * Detect clip ancestors hiding *inside* an open shadow host's own root —
+   * e.g. msn.com `cs-responsive-card` shadow is `div.root{overflow:hidden} > slot`.
+   * The slotted (light-DOM) content is a child of the *host* in the light tree,
+   * so `getComputedStyle(host)` never sees the wrapper's `overflow`/`contain`,
+   * even though it visually clips the slotted content in the composed tree.
+   *
+   * Only checks the shadow root's direct children (the common single-wrapper
+   * pattern) — not a full recursive walk — to stay cheap on hover.
+   *
+   * @param {Element} host - composed ancestor being visited by _findFocusClipContext
+   * @param {DOMRect} er - target element's rect
+   * @param {number} needLeft
+   * @param {number} needTop
+   * @param {number} needRight
+   * @param {number} needBottom
+   * @returns {{ clippers: Element[], tightWrapper: Element|null }}
+   */
+  _shadowInternalClipWrappers(host, er, needLeft, needTop, needRight, needBottom) {
+    const clippers = [];
+    let tightWrapper = null;
+    const sr = this._getOpenShadowRoot(host);
+    if (!sr) return { clippers, tightWrapper };
+
+    let kids;
+    try {
+      kids = sr.children;
+    } catch {
+      return { clippers, tightWrapper };
+    }
+    if (!kids) return { clippers, tightWrapper };
+
+    for (let i = 0; i < kids.length && i < 6; i++) {
+      const w = kids[i];
+      if (!w || w.nodeType !== 1) continue;
+      if ((w.tagName || '').toUpperCase() === 'STYLE') continue;
+
+      let wcs = null;
+      try { wcs = window.getComputedStyle(w); } catch { wcs = null; }
+      if (!this._styleClipsOverflow(wcs)) continue;
+
+      let war = null;
+      try { war = w.getBoundingClientRect(); } catch { war = null; }
+      if (!war) continue;
+
+      const clipsRing =
+        war.left > needLeft + 0.5 ||
+        war.top > needTop + 0.5 ||
+        war.right < needRight - 0.5 ||
+        war.bottom < needBottom - 0.5;
+      const similarSize =
+        Math.abs(war.width - er.width) < 20 &&
+        Math.abs(war.height - er.height) < 20;
+
+      if (clipsRing) {
+        clippers.push(w);
+        if (!tightWrapper && similarSize) tightWrapper = w;
+      }
+    }
+
+    return { clippers, tightWrapper };
+  }
+
+  /**
+   * True when `el` is itself an open-shadow host whose top-level shadow
+   * wrapper clips (`overflow`/`contain`), even though `el`'s own light-DOM-
+   * facing computed style does not. Boolean sibling of
+   * `_shadowInternalClipWrappers` for callers that only need presence, not
+   * outline-room rect math (e.g. `_shouldUseFixedFocusOverlay`'s selfClips).
+   * @param {Element} el
+   * @returns {boolean}
+   */
+  _hostClipsViaInternalShadowWrapper(el) {
+    const sr = this._getOpenShadowRoot(el);
+    if (!sr) return false;
+    let kids;
+    try {
+      kids = sr.children;
+    } catch {
+      return false;
+    }
+    if (!kids) return false;
+    for (let i = 0; i < kids.length && i < 6; i++) {
+      const w = kids[i];
+      if (!w || w.nodeType !== 1) continue;
+      if ((w.tagName || '').toUpperCase() === 'STYLE') continue;
+      let wcs = null;
+      try { wcs = window.getComputedStyle(w); } catch { wcs = null; }
+      if (this._styleClipsOverflow(wcs)) return true;
+    }
+    return false;
+  }
+
+  /**
+   * True when `el` lives under a ShadowRoot (open or closed).
+   * @param {Node|null|undefined} el
+   * @returns {boolean}
+   */
+  _isInShadowTree(el) {
+    if (!el || typeof el.getRootNode !== 'function') return false;
+    try {
+      const root = el.getRootNode();
+      return !!(typeof ShadowRoot !== 'undefined' && root instanceof ShadowRoot);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Open shadow root on `el`, if any.
+   * @param {Element|null|undefined} el
+   * @returns {ShadowRoot|null}
+   */
+  _getOpenShadowRoot(el) {
+    if (!el || el.nodeType !== 1) return null;
+    try {
+      return el.shadowRoot || null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * True when an open shadow has a default (unnamed) slot that can project
+   * light-DOM children. Slotless Lit hosts (archive.org media-button /
+   * collection-tile) render light children with 0×0 — strategy B must not
+   * mount there.
+   * @param {ShadowRoot|null|undefined} shadowRoot
+   * @returns {boolean}
+   */
+  _shadowHasDefaultSlot(shadowRoot) {
+    if (!shadowRoot || typeof shadowRoot.querySelectorAll !== 'function') return false;
+    try {
+      const slots = shadowRoot.querySelectorAll('slot');
+      for (let i = 0; i < slots.length; i++) {
+        const slot = slots[i];
+        if (!slot) continue;
+        const name = (slot.getAttribute && slot.getAttribute('name')) || '';
+        if (!name) return true;
+      }
+    } catch { /* ignore */ }
+    return false;
+  }
+
+  /**
+   * True when appending a child to `host` will participate in layout/paint.
+   * Light DOM elements: yes. Open shadow hosts: only with a default slot.
+   * @param {Element|null|undefined} host
+   * @returns {boolean}
+   */
+  _canMountVisibleChildOnHost(host) {
+    if (!host || host.nodeType !== 1) return false;
+    if (this._isReplacedOrVoidElement(host)) return false;
+    if (typeof host.appendChild !== 'function') return false;
+    const sr = this._getOpenShadowRoot(host);
+    if (!sr) return true;
+    return this._shadowHasDefaultSlot(sr);
+  }
+
+  /**
+   * Push light children and (for open shadow hosts) top-level shadow children
+   * onto `queue`, skipping KeyPilot injected style nodes.
+   * @param {Element} el
+   * @param {Element[]} queue
+   */
+  _enqueueShadowPiercingChildren(el, queue) {
+    if (!el || el.nodeType !== 1 || !queue) return;
+    try {
+      const kids = el.children;
+      if (kids) {
+        for (let i = 0; i < kids.length; i++) {
+          if (kids[i]?.nodeType === 1) queue.push(kids[i]);
+        }
+      }
+    } catch { /* ignore */ }
+
+    const sr = this._getOpenShadowRoot(el);
+    if (!sr) return;
+    try {
+      const skids = sr.children;
+      if (!skids) return;
+      for (let i = 0; i < skids.length; i++) {
+        const k = skids[i];
+        if (!k || k.nodeType !== 1) continue;
+        try {
+          if (k.id === 'keypilot-shadow-styles' || k.id === 'kp-probe-style') continue;
+          if ((k.tagName || '').toUpperCase() === 'STYLE' &&
+              typeof k.id === 'string' && k.id.startsWith('keypilot')) {
+            continue;
+          }
+        } catch { /* ignore */ }
+        queue.push(k);
+      }
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Inside an open-shadow host, find a non-replaced element that can hold the
+   * in-target ring (strategy B). Prefers the largest visible box.
+   * @param {Element} host
+   * @returns {Element|null}
+   */
+  _findInShadowInTargetMount(host) {
+    const sr = this._getOpenShadowRoot(host);
+    if (!sr) return null;
+
+    let best = null;
+    let bestArea = 0;
+    let visited = 0;
+    const maxNodes = 48;
+    /** @type {Element[]} */
+    const queue = [];
+    this._enqueueShadowPiercingChildren(host, queue);
+
+    while (queue.length && visited < maxNodes) {
+      const cur = queue.shift();
+      if (!cur || cur.nodeType !== 1) continue;
+      visited++;
+
+      if (!this._isReplacedOrVoidElement(cur) && this._canMountVisibleChildOnHost(cur)) {
+        let r = null;
+        try { r = cur.getBoundingClientRect(); } catch { r = null; }
+        if (r && r.width >= 8 && r.height >= 8) {
+          const area = r.width * r.height;
+          if (area > bestArea) {
+            bestArea = area;
+            best = cur;
+          }
+        }
+      }
+
+      this._enqueueShadowPiercingChildren(cur, queue);
+    }
+
+    return best;
   }
 
   /**
@@ -1637,6 +1978,13 @@ export class OverlayManager {
     try {
       selfClips = this._styleClipsOverflow(window.getComputedStyle(paintEl));
     } catch { /* ignore */ }
+    // Shadow host whose *own* light-DOM style is non-clipping but whose
+    // internal shadow wrapper clips (msn.com cs-responsive-card pattern).
+    if (!selfClips) {
+      try {
+        selfClips = this._hostClipsViaInternalShadowWrapper(paintEl);
+      } catch { /* ignore */ }
+    }
 
     // Inset outline on the element is invisible only when the element itself
     // clips and is painted over by full-bleed content.
@@ -1652,6 +2000,9 @@ export class OverlayManager {
         return true;
       }
     }
+
+    // Open-shadow targets use the same geometry gates as light DOM (A first).
+    // Do not force an escape hatch merely because paintEl lives in a ShadowRoot.
 
     return false;
   }
@@ -1704,8 +2055,9 @@ export class OverlayManager {
     } catch { /* ignore */ }
 
     try {
-      const kids = el.children;
-      if (!kids) return false;
+      /** @type {Element[]} */
+      const kids = [];
+      this._enqueueShadowPiercingChildren(el, kids);
       for (let i = 0; i < kids.length; i++) {
         const child = kids[i];
         if (!child || child.nodeType !== 1) continue;
@@ -1729,6 +2081,9 @@ export class OverlayManager {
    * Pattern: clickable wrapper (overflow:visible) > visual tile
    * (overflow:hidden, isolation:isolate, full-bleed ::before / img).
    *
+   * Also considers top-level open-shadow children (archive.org / MSN hosts
+   * often have empty light DOM with the visual tree only in shadow).
+   *
    * @param {Element} el
    * @param {DOMRect|ClientRect} [er]
    * @returns {boolean}
@@ -1747,8 +2102,10 @@ export class OverlayManager {
       w >= box.width * 0.85 && h >= box.height * 0.85;
 
     try {
-      const kids = el.children;
-      if (!kids || !kids.length) return false;
+      /** @type {Element[]} */
+      const kids = [];
+      this._enqueueShadowPiercingChildren(el, kids);
+      if (!kids.length) return false;
       for (let i = 0; i < kids.length; i++) {
         const child = kids[i];
         if (!child || child.nodeType !== 1) continue;
@@ -1825,8 +2182,82 @@ export class OverlayManager {
   }
 
   /**
+   * Dedicated full-bleed mount layer as last child of an open ShadowRoot.
+   * Sized to the shadow host; ring paints above all shadow content.
+   * @param {ShadowRoot} shadowRoot
+   * @returns {Element|null}
+   */
+  _ensureShadowRootRingHost(shadowRoot) {
+    if (!shadowRoot || typeof shadowRoot.appendChild !== 'function') return null;
+    const ceHost = shadowRoot.host;
+    if (!ceHost || ceHost.nodeType !== 1) return null;
+
+    // Shadow host must be a containing block for absolute inset:0 layer.
+    try {
+      const cs = window.getComputedStyle(ceHost);
+      if (cs && cs.position === 'static') {
+        if (!this._inTargetHostPosRestore || this._inTargetHostPosRestore.host !== ceHost) {
+          this._inTargetHostPosRestore = {
+            host: ceHost,
+            prev: ceHost.style.position || ''
+          };
+          ceHost.style.position = 'relative';
+        }
+      }
+    } catch { /* ignore */ }
+
+    let mount = null;
+    try {
+      const kids = shadowRoot.children;
+      if (kids) {
+        for (let i = 0; i < kids.length; i++) {
+          const k = kids[i];
+          if (k && k.nodeType === 1 && k.getAttribute?.('data-kp-shadow-b-host') === '1') {
+            mount = k;
+            break;
+          }
+        }
+      }
+    } catch { /* ignore */ }
+
+    if (!mount) {
+      try {
+        mount = document.createElement('div');
+        mount.setAttribute('data-kp-shadow-b-host', '1');
+        mount.setAttribute('aria-hidden', 'true');
+        mount.style.setProperty('position', 'absolute', 'important');
+        mount.style.setProperty('inset', '0', 'important');
+        mount.style.setProperty('box-sizing', 'border-box', 'important');
+        mount.style.setProperty('pointer-events', 'none', 'important');
+        mount.style.setProperty('margin', '0', 'important');
+        mount.style.setProperty('padding', '0', 'important');
+        mount.style.setProperty('border', '0', 'important');
+        mount.style.setProperty('background', 'transparent', 'important');
+        mount.style.setProperty('overflow', 'visible', 'important');
+        mount.style.setProperty('z-index', '2147483000', 'important');
+      } catch {
+        return null;
+      }
+    }
+
+    try {
+      if (mount.parentNode !== shadowRoot || shadowRoot.lastElementChild !== mount) {
+        shadowRoot.appendChild(mount);
+      }
+    } catch {
+      return null;
+    }
+
+    return mount;
+  }
+
+  /**
    * Host for an in-target absolute ring: paint-resolved clickable that can
    * accept a last-child ring (sibling above full-bleed media tiles).
+   *
+   * For open-shadow targets, prefer a dedicated last-child layer on the owning
+   * ShadowRoot so the ring stacks above Lit/Fluent content (strategy B).
+   *
    * @param {Element} element
    * @returns {Element|null}
    */
@@ -1846,12 +2277,66 @@ export class OverlayManager {
       return null;
     }
 
-    if (this._isReplacedOrVoidElement(paintEl)) return null;
+    // Shadow Strategy B: dedicated layer on the owning open ShadowRoot first.
+    // Covers the host box and wins stacking over nested custom elements.
+    try {
+      const root = typeof paintEl.getRootNode === 'function' ? paintEl.getRootNode() : null;
+      if (root && typeof ShadowRoot !== 'undefined' && root instanceof ShadowRoot) {
+        // Prefer sizing to the clickable when it can accept a visible child and
+        // roughly matches the intended target box; else use shadow-root layer.
+        let usePaint = false;
+        if (this._canMountVisibleChildOnHost(paintEl)) {
+          let pr = null;
+          let hr = null;
+          try { pr = paintEl.getBoundingClientRect(); } catch { pr = null; }
+          try { hr = root.host?.getBoundingClientRect?.(); } catch { hr = null; }
+          if (pr && pr.width >= 8 && pr.height >= 8) {
+            // Use paintEl when it is a substantial fraction of the host (card link),
+            // or when host is collapsed (media-button).
+            const hostArea = (hr && hr.width > 0 && hr.height > 0) ? (hr.width * hr.height) : 0;
+            const paintArea = pr.width * pr.height;
+            if (!hostArea || paintArea >= hostArea * 0.5 || (hr && hr.height < 2)) {
+              usePaint = true;
+            }
+          }
+        }
+        if (usePaint) return paintEl;
 
-    // Must support appendChild (Element).
-    if (typeof paintEl.appendChild !== 'function') return null;
+        const layer = this._ensureShadowRootRingHost(root);
+        if (layer) return layer;
 
-    return paintEl;
+        // Fallback: any mountable node inside this shadow.
+        if (root.host) {
+          const inner = this._findInShadowInTargetMount(root.host);
+          if (inner) return inner;
+        }
+      }
+    } catch { /* fall through */ }
+
+    if (this._canMountVisibleChildOnHost(paintEl)) {
+      return paintEl;
+    }
+
+    // Slotless open-shadow host or replaced node: find a mount inside shadow.
+    if (this._getOpenShadowRoot(paintEl)) {
+      const inner = this._findInShadowInTargetMount(paintEl);
+      if (inner) return inner;
+    }
+
+    // Replaced paint target (img/video): climb composed ancestors for a mount.
+    let n = this._composedParent(paintEl);
+    let depth = 0;
+    while (n && n.nodeType === 1 && depth++ < 8) {
+      if (n === document.body || n === document.documentElement) break;
+      if (this._canMountVisibleChildOnHost(n)) return n;
+      if (this._getOpenShadowRoot(n)) {
+        const inner = this._findInShadowInTargetMount(n);
+        if (inner) return inner;
+      }
+      n = this._composedParent(n);
+    }
+
+    return null;
   }
 
   /**
@@ -2063,7 +2548,10 @@ export class OverlayManager {
       radius = '0';
     }
 
-    const z = this._maxLocalZIndex(host) + 1;
+    const zLocal = this._maxLocalZIndex(host) + 1;
+    // Shadow trees often nest stacking contexts (collection-tile inside tile-link).
+    // Use a high floor so the ring stays above Lit/Fluent content.
+    const z = this._isInShadowTree(host) ? Math.max(zLocal, 2147483000) : zLocal;
 
     try {
       ring.style.setProperty('position', 'absolute', 'important');
@@ -2092,6 +2580,19 @@ export class OverlayManager {
       ring.style.setProperty('display', 'block', 'important');
       ring.style.setProperty('visibility', 'visible', 'important');
       ring.style.setProperty('opacity', '1', 'important');
+    } catch {
+      this.hideInTargetFocusRing();
+      return false;
+    }
+
+    // Slotless shadow hosts accept appendChild but never layout the ring.
+    // Require a positive box before claiming success — else fall through to C.
+    try {
+      const rr = ring.getBoundingClientRect();
+      if (!rr || !(rr.width > 1) || !(rr.height > 1)) {
+        this.hideInTargetFocusRing();
+        return false;
+      }
     } catch {
       this.hideInTargetFocusRing();
       return false;
@@ -2250,6 +2751,26 @@ export class OverlayManager {
     if (useInset) stylingTarget.classList.add('keypilot-focus-element--inset');
     else stylingTarget.classList.remove('keypilot-focus-element--inset');
 
+    // Shadow trees: also paint outline inline. Injected <style> can be wiped by
+    // Lit re-renders, and closed-shadow nodes from composedPath cannot receive
+    // stylesheet injection — inline outline is the reliable source of truth.
+    if (this._isInShadowTree(stylingTarget)) {
+      try {
+        stylingTarget.setAttribute('data-kp-focus-inline', '1');
+        stylingTarget.style.setProperty(
+          'outline',
+          `${ringWidth} solid ${ringColor}`,
+          'important'
+        );
+        stylingTarget.style.setProperty(
+          'outline-offset',
+          `${outlineOffsetPx}px`,
+          'important'
+        );
+        stylingTarget.style.setProperty('box-shadow', boxShadow, 'important');
+      } catch { /* ignore */ }
+    }
+
     // Store reference for cleanup
     this._currentStyledElement = stylingTarget;
 
@@ -2273,6 +2794,8 @@ export class OverlayManager {
   /**
    * Largest in-tree descendant with a positive box (for collapsed anchors that
    * only wrap position:absolute media — e.g. Breitbart video carousel thumbs).
+   * Pierces open shadow roots (archive.org media-button / collection-tile hosts
+   * often have empty light DOM with the visual tree only in shadow).
    * @param {HTMLElement} element
    * @returns {HTMLElement|null}
    */
@@ -2282,30 +2805,23 @@ export class OverlayManager {
     let bestArea = 0;
     let visited = 0;
     const maxNodes = 48;
-    const queue = [element];
+    /** @type {Element[]} */
+    const queue = [];
+    this._enqueueShadowPiercingChildren(element, queue);
     while (queue.length && visited < maxNodes) {
       const cur = queue.shift();
       if (!cur || cur.nodeType !== 1) continue;
       visited++;
-      if (cur !== element) {
-        let r = null;
-        try { r = cur.getBoundingClientRect(); } catch { r = null; }
-        if (r && r.width >= 8 && r.height >= 8) {
-          const area = r.width * r.height;
-          if (area > bestArea) {
-            bestArea = area;
-            best = /** @type {HTMLElement} */ (cur);
-          }
+      let r = null;
+      try { r = cur.getBoundingClientRect(); } catch { r = null; }
+      if (r && r.width >= 8 && r.height >= 8) {
+        const area = r.width * r.height;
+        if (area > bestArea) {
+          bestArea = area;
+          best = /** @type {HTMLElement} */ (cur);
         }
       }
-      try {
-        const kids = cur.children;
-        if (kids) {
-          for (let i = 0; i < kids.length; i++) {
-            if (kids[i]?.nodeType === 1) queue.push(kids[i]);
-          }
-        }
-      } catch { /* ignore */ }
+      this._enqueueShadowPiercingChildren(cur, queue);
     }
     return best;
   }
@@ -2318,10 +2834,12 @@ export class OverlayManager {
    *    (Breitbart video thumbs) — outline on the <a> is invisible.
    * 2) Inline elements that contain block children can be split into multiple
    *    inline fragments, causing outline/box-shadow to render as disjoint pieces.
+   * 3) Open-shadow custom-element hosts can be collapsed (archive.org
+   *    media-button ~79×0) while the real clickable lives inside the shadow.
    *
    * Strategy:
    * - If the element has no usable box, style the largest visible descendant
-   *   (or a sized parent that wraps abspos content).
+   *   (piercing open shadows) or a sized composed parent that wraps abspos content.
    * - If `element.getClientRects()` indicates fragmentation (2+ rects) and
    *   element is inline-ish, find the largest single-rect descendant.
    * - Otherwise, return `element`.
@@ -2332,17 +2850,17 @@ export class OverlayManager {
   _resolveElementForFocusStyling(element) {
     if (!element || element.nodeType !== 1) return element;
 
-    // Collapsed clickable (0×0) with visible abspos children — paint on media.
+    // Collapsed clickable (0×0) with visible abspos / shadow children — paint on media.
     let br = null;
     try { br = element.getBoundingClientRect(); } catch { br = null; }
     if (!br || br.width < 2 || br.height < 2) {
       const descendant = this._findLargestVisibleDescendant(element);
       if (descendant) return descendant;
 
-      // No sized descendant: try parent that actually boxes the abspos content
+      // No sized descendant: try composed parent that actually boxes the abspos content
       // (e.g. .video-image { position: relative } wrapping the collapsed <a>).
       try {
-        let p = element.parentElement;
+        let p = this._composedParent(element);
         let hops = 0;
         while (p && p.nodeType === 1 && hops++ < 4) {
           if (p === document.body || p === document.documentElement) break;
@@ -2351,7 +2869,7 @@ export class OverlayManager {
           if (pr && pr.width >= 8 && pr.height >= 8) {
             return /** @type {HTMLElement} */ (p);
           }
-          p = p.parentElement;
+          p = this._composedParent(p);
         }
       } catch { /* ignore */ }
       return element;
@@ -2418,13 +2936,13 @@ export class OverlayManager {
 
       if (d >= maxDepth) continue;
       try {
-        const kids = curEl.children;
-        if (kids && kids.length) {
-          for (let i = 0; i < kids.length; i++) {
-            const k = kids[i];
-            if (k && k.nodeType === 1) queue.push({ el: /** @type {HTMLElement} */ (k), depth: d + 1 });
-            if (queue.length > maxNodes) break;
-          }
+        /** @type {Element[]} */
+        const childList = [];
+        this._enqueueShadowPiercingChildren(curEl, childList);
+        for (let i = 0; i < childList.length; i++) {
+          const k = childList[i];
+          if (k && k.nodeType === 1) queue.push({ el: /** @type {HTMLElement} */ (k), depth: d + 1 });
+          if (queue.length > maxNodes) break;
         }
       } catch { /* ignore */ }
     }
@@ -2455,6 +2973,13 @@ export class OverlayManager {
         if (el.getAttribute('data-kp-focus-radius-set') === '1') {
           el.style.removeProperty('border-radius');
           el.removeAttribute('data-kp-focus-radius-set');
+        }
+        // Undo inline outline used for shadow-tree paint reliability.
+        if (el.getAttribute('data-kp-focus-inline') === '1') {
+          el.style.removeProperty('outline');
+          el.style.removeProperty('outline-offset');
+          el.style.removeProperty('box-shadow');
+          el.removeAttribute('data-kp-focus-inline');
         }
       } catch { /* ignore */ }
       el.style.removeProperty('--keypilot-focus-ring-color');
@@ -2498,7 +3023,7 @@ export class OverlayManager {
     for (const r of roots) {
       try {
         const stranded = r.querySelectorAll(
-          '.keypilot-focus-element, .keypilot-focus-element--inset, [data-kp-focus]'
+          '.keypilot-focus-element, .keypilot-focus-element--inset, [data-kp-focus], [data-kp-focus-inline]'
         );
         for (const el of stranded) {
           this._stripFocusStylingFromElement(el);
@@ -2522,7 +3047,7 @@ export class OverlayManager {
     try {
       if (typeof root.querySelectorAll === 'function') {
         const stranded = root.querySelectorAll(
-          '.keypilot-focus-element, .keypilot-focus-element--inset, [data-kp-focus]'
+          '.keypilot-focus-element, .keypilot-focus-element--inset, [data-kp-focus], [data-kp-focus-inline]'
         );
         for (const el of stranded) {
           this._stripFocusStylingFromElement(el);
@@ -2903,6 +3428,90 @@ export class OverlayManager {
   }
 
   /**
+   * Paint persistent outlines for cumulatively picked elements + union rect.
+   * @param {Element[]} elements
+   * @param {{ left: number, top: number, width: number, height: number }|null} unionRect
+   * @param {string|null|undefined} kind
+   */
+  updateInspectorPickedOverlays(elements, unionRect, kind = null) {
+    const def = getInspectorDef(kind);
+    const border = def?.borderColor || COLORS.HIGHLIGHT_BLUE;
+    const fill = COLORS.HIGHLIGHT_SELECTION_BG || 'rgba(0,120,255,0.3)';
+
+    if (!this._inspectorPickedOverlays) this._inspectorPickedOverlays = [];
+
+    // Clear previous per-element overlays
+    for (const ov of this._inspectorPickedOverlays) {
+      try { ov.remove(); } catch { /* ignore */ }
+    }
+    this._inspectorPickedOverlays = [];
+
+    const list = Array.isArray(elements) ? elements : [];
+    for (const el of list) {
+      if (!el || !el.isConnected) continue;
+      const rect = this.getBestRect(el);
+      if (rect.width <= 0 || rect.height <= 0) continue;
+      const ov = this.createElement('div', {
+        className: CSS_CLASSES.INSPECTOR_PICKED_OVERLAY || 'kpv2-inspector-picked-overlay',
+        style: `
+          position: fixed;
+          pointer-events: none;
+          z-index: ${Z_INDEX.OVERLAYS_BELOW};
+          left: ${rect.left}px;
+          top: ${rect.top}px;
+          width: ${rect.width}px;
+          height: ${rect.height}px;
+          border: 2px solid ${border};
+          background: ${fill};
+          box-sizing: border-box;
+        `
+      });
+      try { document.body.appendChild(ov); } catch { /* ignore */ }
+      this._inspectorPickedOverlays.push(ov);
+    }
+
+    // Union rect overlay
+    if (!this._inspectorUnionOverlay) {
+      this._inspectorUnionOverlay = this.createElement('div', {
+        className: CSS_CLASSES.INSPECTOR_UNION_OVERLAY || 'kpv2-inspector-union-overlay',
+        style: `
+          position: fixed;
+          pointer-events: none;
+          z-index: ${Z_INDEX.OVERLAYS_BELOW_2};
+          border: 2px dashed ${border};
+          background: transparent;
+          box-sizing: border-box;
+          display: none;
+        `
+      });
+      try { document.body.appendChild(this._inspectorUnionOverlay); } catch { /* ignore */ }
+    }
+
+    if (unionRect && unionRect.width > 0 && unionRect.height > 0) {
+      this._inspectorUnionOverlay.style.left = `${unionRect.left}px`;
+      this._inspectorUnionOverlay.style.top = `${unionRect.top}px`;
+      this._inspectorUnionOverlay.style.width = `${unionRect.width}px`;
+      this._inspectorUnionOverlay.style.height = `${unionRect.height}px`;
+      this._inspectorUnionOverlay.style.border = `2px dashed ${border}`;
+      this._inspectorUnionOverlay.style.display = 'block';
+    } else {
+      this._inspectorUnionOverlay.style.display = 'none';
+    }
+  }
+
+  clearInspectorPickedOverlays() {
+    if (this._inspectorPickedOverlays) {
+      for (const ov of this._inspectorPickedOverlays) {
+        try { ov.remove(); } catch { /* ignore */ }
+      }
+      this._inspectorPickedOverlays = [];
+    }
+    if (this._inspectorUnionOverlay) {
+      this._inspectorUnionOverlay.style.display = 'none';
+    }
+  }
+
+  /**
    * Remember confirm-key / kind for the top-right instruction chip.
    * Call when entering inspector so updateOverlays can keep the chip visible.
    * @param {{ kind?: string|null, confirmKey?: string }} opts
@@ -3060,6 +3669,18 @@ export class OverlayManager {
       findTextNodeAtPosition,
       getTextOffsetAtPosition
     );
+  }
+
+  updateElementRectangleSelection(startPosition, currentPosition) {
+    return this.highlightManager.updateElementRectangleSelection(startPosition, currentPosition);
+  }
+
+  getMatchedElements() {
+    return this.highlightManager.getMatchedElements?.() || [];
+  }
+
+  clearElementSelection() {
+    return this.highlightManager.clearElementSelection?.();
   }
 
   /**
@@ -4465,8 +5086,9 @@ export class OverlayManager {
       this.escExitLabelHover = null;
     }
 
-    // Clean up debug panel
+    // Clean up debug panel / shadow HUD
     this.cleanupDebugPanel();
+    this.cleanupShadowRootDebugHud();
   }
 
   createElement(tag, props = {}) {
@@ -6239,5 +6861,346 @@ Observer Updates: ${data.observerUpdates.toLocaleString()}
       this.debugPanel.remove();
       this.debugPanel = null;
     }
+  }
+
+  // =============================================================================
+  // SHADOW ROOT DEBUG HUD — leaf / focus / paint + force A|B|C
+  // =============================================================================
+
+  /**
+   * Enable or disable the interactive shadow-root paint debug HUD.
+   * Runtime: `keyPilot.setShadowRootDebugHud(true)`
+   * @param {boolean} enabled
+   */
+  setShadowRootDebugHud(enabled) {
+    this._shadowDebugHudEnabled = !!enabled;
+    try {
+      if (FEATURE_FLAGS) FEATURE_FLAGS.DEBUG_SHADOW_ROOT_HUD = !!enabled;
+    } catch { /* ignore */ }
+
+    if (this._shadowDebugHudEnabled) {
+      this._ensureShadowRootDebugHud();
+      // Re-paint current focus with current override (if any).
+      try {
+        const focusEl = window.keyPilot?.state?.getState?.()?.focusEl ||
+          window.keyPilot?.intersectionManager?.getDomHoveredElement?.() ||
+          null;
+        if (focusEl) this.updateFocusOverlay(focusEl);
+        else this._updateShadowRootDebugHud(null, null, {
+          inShadow: false,
+          autoStrategy: '—',
+          appliedStrategy: '—',
+          override: this._shadowDebugPaintOverride
+        });
+      } catch { /* ignore */ }
+    } else {
+      this._shadowDebugPaintOverride = null;
+      this.cleanupShadowRootDebugHud();
+      // Restore auto paint for current focus.
+      try {
+        const focusEl = window.keyPilot?.state?.getState?.()?.focusEl || null;
+        if (focusEl) this.updateFocusOverlay(focusEl);
+      } catch { /* ignore */ }
+    }
+  }
+
+  /**
+   * Force paint strategy while the HUD is open.
+   * @param {'A'|'B'|'C'|null|string} strategy - null / 'auto' clears override
+   */
+  setShadowDebugPaintStrategy(strategy) {
+    const s = strategy == null ? null : String(strategy).toUpperCase();
+    if (s === 'A' || s === 'B' || s === 'C') {
+      this._shadowDebugPaintOverride = s;
+    } else {
+      this._shadowDebugPaintOverride = null;
+    }
+    this._refreshShadowDebugHudButtons();
+    try {
+      const focusEl = window.keyPilot?.state?.getState?.()?.focusEl ||
+        window.keyPilot?.intersectionManager?.getDomHoveredElement?.() ||
+        null;
+      if (focusEl) this.updateFocusOverlay(focusEl);
+    } catch { /* ignore */ }
+  }
+
+  /** @returns {boolean} */
+  isShadowRootDebugHudEnabled() {
+    return !!this._shadowDebugHudEnabled;
+  }
+
+  cleanupShadowRootDebugHud() {
+    if (this._shadowDebugHud) {
+      try { this._shadowDebugHud.remove(); } catch { /* ignore */ }
+      this._shadowDebugHud = null;
+    }
+  }
+
+  /**
+   * Compact element description for the HUD.
+   * @param {Element|null|undefined} el
+   * @returns {{ line: string, detail: string }}
+   */
+  _describeElForShadowDebug(el) {
+    if (!el || el.nodeType !== 1) {
+      return { line: '(none)', detail: '' };
+    }
+    const tag = el.tagName || '?';
+    const id = el.id ? `#${el.id}` : '';
+    let cls = '';
+    try {
+      const cn = typeof el.className === 'string'
+        ? el.className
+        : (el.className && el.className.baseVal) || '';
+      const parts = String(cn).trim().split(/\s+/).filter(Boolean).slice(0, 2);
+      cls = parts.length ? '.' + parts.join('.') : '';
+    } catch { /* ignore */ }
+
+    let wh = '?×?';
+    try {
+      const r = el.getBoundingClientRect();
+      wh = `${Math.round(r.width)}×${Math.round(r.height)}`;
+    } catch { /* ignore */ }
+
+    let inShadow = false;
+    const hosts = [];
+    try {
+      inShadow = this._isInShadowTree(el);
+      let n = el;
+      let depth = 0;
+      while (n && depth++ < 8) {
+        const root = typeof n.getRootNode === 'function' ? n.getRootNode() : null;
+        if (root && typeof ShadowRoot !== 'undefined' && root instanceof ShadowRoot) {
+          hosts.push(root.host?.tagName || 'HOST');
+          n = root.host;
+        } else {
+          break;
+        }
+      }
+    } catch { /* ignore */ }
+
+    let href = '';
+    try {
+      if (el.href) href = String(el.href).slice(0, 56);
+    } catch { /* ignore */ }
+
+    const line = `${tag}${id}${cls}`.slice(0, 72);
+    const detailParts = [
+      wh,
+      inShadow ? `shadow:${hosts.join('←') || '?'}` : 'light',
+      href ? href : null
+    ].filter(Boolean);
+    return { line, detail: detailParts.join(' · ') };
+  }
+
+  _ensureShadowRootDebugHud() {
+    if (this._shadowDebugHud && this._shadowDebugHud.isConnected) {
+      this._shadowDebugHud.style.display = 'block';
+      this._refreshShadowDebugHudButtons();
+      return this._shadowDebugHud;
+    }
+
+    const hud = document.createElement('div');
+    hud.id = 'kpv2-shadow-debug-hud';
+    hud.className = 'kpv2-shadow-debug-hud';
+    hud.setAttribute('data-kp-ui', '1');
+    hud.setAttribute('aria-label', 'KeyPilot shadow root debug HUD');
+    hud.style.cssText = `
+      position: fixed;
+      bottom: 12px;
+      left: 12px;
+      z-index: ${Z_INDEX.DEBUG_HUD};
+      width: min(420px, calc(100vw - 24px));
+      max-height: min(50vh, 420px);
+      overflow: auto;
+      background: rgba(12, 16, 22, 0.94);
+      color: #d7ffe8;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px;
+      line-height: 1.35;
+      padding: 10px 12px 12px;
+      border-radius: 8px;
+      border: 1px solid #3d8f6a;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.45);
+      pointer-events: auto;
+      user-select: text;
+    `;
+
+    hud.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">
+        <strong style="color:#7CFFB2;letter-spacing:0.02em;">Shadow Root Debug</strong>
+        <button type="button" data-kp-shadow-dbg="close"
+          style="background:#243028;color:#cfe;border:1px solid #3d8f6a;border-radius:4px;padding:2px 8px;cursor:pointer;font:inherit;">×</button>
+      </div>
+      <div data-kp-shadow-dbg-body style="white-space:pre-wrap;margin-bottom:10px;color:#b8eccf;"></div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+        <span style="color:#8ab89a;">Paint:</span>
+        <button type="button" data-kp-shadow-dbg-strategy="auto">Auto</button>
+        <button type="button" data-kp-shadow-dbg-strategy="A">A outline</button>
+        <button type="button" data-kp-shadow-dbg-strategy="B">B in-target</button>
+        <button type="button" data-kp-shadow-dbg-strategy="C">C fixed</button>
+      </div>
+      <div style="margin-top:8px;color:#6f9a80;font-size:10px;">
+        A = element outline · B = absolute ring in host · C = body fixed overlay
+      </div>
+    `;
+
+    // Shared button chrome; active state set in _refreshShadowDebugHudButtons.
+    try {
+      hud.querySelectorAll('button[data-kp-shadow-dbg-strategy]').forEach((btn) => {
+        btn.style.cssText = `
+          background:#1a2820;color:#cfe;border:1px solid #3d5a48;border-radius:4px;
+          padding:4px 8px;cursor:pointer;font:inherit;
+        `;
+      });
+    } catch { /* ignore */ }
+
+    const stop = (e) => {
+      try { e.stopPropagation(); } catch { /* ignore */ }
+      try { e.stopImmediatePropagation?.(); } catch { /* ignore */ }
+    };
+    hud.addEventListener('pointerdown', stop, true);
+    hud.addEventListener('pointerup', stop, true);
+    hud.addEventListener('click', (e) => {
+      stop(e);
+      const t = e.target;
+      if (!(t instanceof Element)) return;
+      if (t.getAttribute('data-kp-shadow-dbg') === 'close') {
+        this.setShadowRootDebugHud(false);
+        return;
+      }
+      const strat = t.getAttribute('data-kp-shadow-dbg-strategy');
+      if (strat === 'auto') this.setShadowDebugPaintStrategy(null);
+      else if (strat === 'A' || strat === 'B' || strat === 'C') {
+        this.setShadowDebugPaintStrategy(strat);
+      }
+    }, true);
+
+    document.body.appendChild(hud);
+    this._shadowDebugHud = hud;
+    this._refreshShadowDebugHudButtons();
+    return hud;
+  }
+
+  _refreshShadowDebugHudButtons() {
+    const hud = this._shadowDebugHud;
+    if (!hud) return;
+    const active = this._shadowDebugPaintOverride; // null = auto
+    try {
+      hud.querySelectorAll('button[data-kp-shadow-dbg-strategy]').forEach((btn) => {
+        const key = btn.getAttribute('data-kp-shadow-dbg-strategy');
+        const isOn =
+          (key === 'auto' && !active) ||
+          (key === active);
+        btn.style.background = isOn ? '#2f6b4a' : '#1a2820';
+        btn.style.borderColor = isOn ? '#7CFFB2' : '#3d5a48';
+        btn.style.color = isOn ? '#eafff2' : '#cfe';
+        btn.style.fontWeight = isOn ? '700' : '400';
+      });
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Refresh leaf line after sticky-host pointer moves (focusEl/paint unchanged).
+   * Called from IntersectionObserverManager — does not re-run A/B/C paint.
+   */
+  refreshShadowRootDebugHudLeaf() {
+    if (!this._shadowDebugHudEnabled) return;
+    const last = this._shadowDebugLastInfo;
+    let focusEl = last?.focus || null;
+    try {
+      if (!focusEl || !focusEl.isConnected) {
+        focusEl = window.keyPilot?.state?.getState?.()?.focusEl ||
+          window.keyPilot?.intersectionManager?.getDomHoveredElement?.() ||
+          null;
+      }
+    } catch { focusEl = last?.focus || null; }
+
+    let paintEl = last?.paint || null;
+    if (focusEl && (!paintEl || !paintEl.isConnected)) {
+      try {
+        paintEl = this._resolveElementForFocusStyling(focusEl) || focusEl;
+      } catch {
+        paintEl = focusEl;
+      }
+    }
+
+    let inShadow = !!last?.inShadow;
+    try {
+      if (focusEl) inShadow = this._isInShadowTree(focusEl);
+    } catch { /* ignore */ }
+
+    this._updateShadowRootDebugHud(focusEl, paintEl, {
+      inShadow,
+      autoStrategy: last?.auto || '—',
+      appliedStrategy: last?.applied || '—',
+      override: this._shadowDebugPaintOverride
+    });
+  }
+
+  /**
+   * Refresh HUD text from current hover / paint decision.
+   * @param {Element|null} focusEl
+   * @param {Element|null} paintEl
+   * @param {{ inShadow: boolean, autoStrategy: string, appliedStrategy: string, override: string|null }} meta
+   */
+  _updateShadowRootDebugHud(focusEl, paintEl, meta) {
+    if (!this._shadowDebugHudEnabled) return;
+    const hud = this._ensureShadowRootDebugHud();
+    if (!hud) return;
+
+    let leaf = null;
+    try {
+      leaf = window.keyPilot?.intersectionManager?.getDomHoverLeaf?.() ||
+        window.__KP_HOVER_LEAF ||
+        null;
+    } catch { leaf = null; }
+
+    const leafDesc = this._describeElForShadowDebug(leaf);
+    const focusDesc = this._describeElForShadowDebug(focusEl);
+    const paintDesc = this._describeElForShadowDebug(paintEl);
+
+    const override = meta?.override || null;
+    const autoStrategy = meta?.autoStrategy || '—';
+    const applied = meta?.appliedStrategy || '—';
+    const inShadow = !!meta?.inShadow;
+
+    this._shadowDebugLastInfo = {
+      leaf,
+      focus: focusEl,
+      paint: paintEl,
+      auto: autoStrategy,
+      applied,
+      inShadow
+    };
+
+    const body = hud.querySelector('[data-kp-shadow-dbg-body]');
+    if (!body) return;
+
+    const paintSame =
+      focusEl && paintEl && focusEl === paintEl
+        ? 'same as focus'
+        : (paintEl ? 'resolved (may pierce shadow)' : '—');
+
+    body.textContent =
+`Leaf (under pointer)
+  ${leafDesc.line}
+  ${leafDesc.detail || '—'}
+
+Hover target (focusEl / F-activate)
+  ${focusDesc.line}
+  ${focusDesc.detail || '—'}
+
+Paint target (outline box)
+  ${paintDesc.line}
+  ${paintDesc.detail || '—'}
+  (${paintSame})
+
+Strategy
+  focus in shadow: ${inShadow ? 'YES' : 'no'}
+  auto would use:  ${autoStrategy}
+  applied now:     ${applied}${override ? `  (forced ${override})` : '  (auto)'}`;
+
+    this._refreshShadowDebugHudButtons();
   }
 }

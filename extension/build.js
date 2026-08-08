@@ -85,6 +85,7 @@ const modules = [
   'src/modules/rectangle-intersection-observer.js',
   // UI modules used by the content script (must appear before keypilot.js so symbols exist after imports are stripped)
   'src/ui/keybindings-ui-shared.js',
+  'src/ui/key-action-settings.js',
   'src/ui/keybindings-ui.js',
   'src/ui/popup-theme-vars.js',
   'src/ui/preview-open-actions.js',

@@ -13,6 +13,22 @@ import {
   getActionIconDataUri,
   getKeybindingsUiCss
 } from './keybindings-ui-shared.js';
+import {
+  actionHasModes,
+  actionHasParameters,
+  getActionMode,
+  getActionSettingsDef,
+  getSharedKeyActionConfigPanel,
+  setActionMode
+} from './key-action-settings.js';
+import { getSettings } from '../modules/settings-manager.js';
+
+/** @type {{ root: HTMLElement, keybindings: Record<string, any> }|null} */
+let _activePopoverContext = null;
+/** @type {string|null} */
+let _pinnedActionId = null;
+/** @type {HTMLElement|null} */
+let _pinnedKeyEl = null;
 
 function getRuntimeFontUrls() {
   try {
@@ -312,6 +328,7 @@ function ensurePopover(doc, _container) {
         </div>
       </div>
       <p class="kp-popover-desc"></p>
+      <div class="kp-popover-settings" hidden></div>
     `;
     doc.body.appendChild(pop);
   } else {
@@ -332,7 +349,16 @@ function ensurePopover(doc, _container) {
             </div>
           </div>
           <p class="kp-popover-desc"></p>
+          <div class="kp-popover-settings" hidden></div>
         `;
+      } catch { /* ignore */ }
+    }
+    if (!pop.querySelector('.kp-popover-settings')) {
+      try {
+        const settingsHost = doc.createElement('div');
+        settingsHost.className = 'kp-popover-settings';
+        settingsHost.hidden = true;
+        pop.appendChild(settingsHost);
       } catch { /* ignore */ }
     }
   }
@@ -355,9 +381,16 @@ function ensurePopover(doc, _container) {
 
 /**
  * @param {HTMLElement|null} pop
+ * @param {{ clearPinned?: boolean }} [opts]
  */
-function hidePopover(pop) {
+function hidePopover(pop, opts = {}) {
   if (!pop) return;
+  if (opts.clearPinned !== false) {
+    _pinnedActionId = null;
+    _pinnedKeyEl = null;
+    try { pop.removeAttribute('data-kp-popover-pinned'); } catch { /* ignore */ }
+    try { pop.style.pointerEvents = ''; } catch { /* ignore */ }
+  }
   try {
     if (supportsPopoverApi(pop) && typeof pop.hidePopover === 'function') {
       try {
@@ -382,6 +415,11 @@ function hidePopover(pop) {
     ['--kp-key-face', '--kp-key-mid', '--kp-key-deep', '--kp-key-icon'].forEach((prop) => {
       try { pop.style.removeProperty(prop); } catch { /* ignore */ }
     });
+    const settingsHost = pop.querySelector('.kp-popover-settings');
+    if (settingsHost) {
+      settingsHost.hidden = true;
+      settingsHost.replaceChildren();
+    }
   } catch { /* ignore */ }
 }
 
@@ -439,10 +477,11 @@ function applyKeyMaterialToPopover(pop, targetEl) {
  *   targetEl: HTMLElement,
  *   binding: any,
  *   actionId: string,
+ *   pinned?: boolean,
  *   container?: HTMLElement|null
  * }} args
  */
-function showPopoverForTarget({ doc, pop, targetEl, binding, actionId }) {
+function showPopoverForTarget({ doc, pop, targetEl, binding, actionId, pinned = false }) {
   if (!doc || !pop || !targetEl) return;
 
   const titleEl = pop.querySelector('.kp-popover-title');
@@ -453,10 +492,8 @@ function showPopoverForTarget({ doc, pop, targetEl, binding, actionId }) {
   const title = (binding && binding.label) || actionId;
   const keys = (binding && (binding.displayKey || binding.keyLabel)) || '';
   const desc = (binding && (binding.description || binding.label)) || '';
-  // Black SVG for mask (same approach as key glyphs).
   const iconMaskUri = getActionIconDataUri(actionId, { fill: 'black' });
 
-  // Match popover surface to this key's material tokens.
   applyKeyMaterialToPopover(pop, targetEl);
 
   if (titleEl) titleEl.textContent = title;
@@ -484,26 +521,27 @@ function showPopoverForTarget({ doc, pop, targetEl, binding, actionId }) {
     }
   }
 
-  // Capture key geometry *before* open (stable, independent of popover layer).
-  const targetRect = targetEl.getBoundingClientRect();
+  try {
+    if (pinned) {
+      pop.setAttribute('data-kp-popover-pinned', 'true');
+      pop.style.pointerEvents = 'auto';
+      void renderPopoverSettings({ doc, pop, targetEl, binding, actionId });
+    } else {
+      pop.removeAttribute('data-kp-popover-pinned');
+      pop.style.pointerEvents = '';
+      const settingsHost = pop.querySelector('.kp-popover-settings');
+      if (settingsHost) {
+        settingsHost.hidden = true;
+        settingsHost.replaceChildren();
+      }
+    }
+  } catch { /* ignore */ }
 
-  // Open first so layout/measurement works (top layer via Popover API).
+  const targetRect = targetEl.getBoundingClientRect();
   openPopoverElement(pop);
 
-  /**
-   * Write fixed coords so UA [popover] inset/margin cannot win the cascade.
-   * Prefer setProperty with important for left/top (survives inset conflicts).
-   *
-   * Never call removeProperty('inset') *after* setting left/top: Chrome often
-   * serializes left/top as the inset shorthand, so removing inset wipes them
-   * and the tooltip jumps to the viewport origin.
-   *
-   * @param {number} leftPx
-   * @param {number} topPx
-   */
   const placeAt = (leftPx, topPx) => {
     try {
-      // Drop any prior inset shorthand *first*, then set longhands.
       try { pop.style.removeProperty('inset'); } catch { /* ignore */ }
       pop.style.setProperty('position', 'fixed', 'important');
       pop.style.setProperty('margin', '0', 'important');
@@ -522,11 +560,8 @@ function showPopoverForTarget({ doc, pop, targetEl, binding, actionId }) {
     }
   };
 
-  // Viewport-relative fixed positioning (escapes panel overflow).
   const margin = 10;
-  const gap = 10; // distance between target and popover box (arrow included)
-
-  // Measure while open; park off-screen first to avoid one-frame flicker at 0,0.
+  const gap = 10;
   placeAt(-9999, -9999);
 
   const popRect = pop.getBoundingClientRect();
@@ -541,8 +576,6 @@ function showPopoverForTarget({ doc, pop, targetEl, binding, actionId }) {
     (typeof window !== 'undefined' ? window.innerHeight : 0) || 0
   );
 
-  // Prefer above the key when there is room in the *viewport* (not the panel).
-  // Top-row keys can therefore render above the keyboard reference window.
   const spaceAbove = targetRect.top;
   const spaceBelow = vh - targetRect.bottom;
   const needs = popH + gap + margin;
@@ -551,7 +584,6 @@ function showPopoverForTarget({ doc, pop, targetEl, binding, actionId }) {
   pop.setAttribute('data-placement', placement);
 
   const targetCenterX = targetRect.left + targetRect.width / 2;
-
   let left = targetCenterX - popW / 2;
   const maxLeft = Math.max(margin, vw - margin - popW);
   left = clamp(left, margin, maxLeft);
@@ -559,8 +591,6 @@ function showPopoverForTarget({ doc, pop, targetEl, binding, actionId }) {
   let top;
   if (placement === 'top') {
     top = targetRect.top - gap - popH;
-    // Soft clamp: keep fully on-screen when possible, but never force bottom
-    // placement just because the panel is short — we already chose above.
     if (top < margin) top = margin;
   } else {
     top = targetRect.bottom + gap;
@@ -569,21 +599,100 @@ function showPopoverForTarget({ doc, pop, targetEl, binding, actionId }) {
   }
 
   placeAt(left, top);
-
-  // Arrow alignment: set CSS variable relative to popover box.
   const arrowLeft = clamp(targetCenterX - left - 9, 12, Math.max(12, popW - 24));
   pop.style.setProperty('--kp-arrow-left', `${Math.round(arrowLeft)}px`);
 }
 
 /**
+ * Render mode switch / Config controls into the sticky popover.
+ * @param {{ doc: Document, pop: HTMLElement, targetEl: HTMLElement, binding: any, actionId: string }} args
+ */
+async function renderPopoverSettings({ doc, pop, targetEl, binding, actionId }) {
+  const host = pop.querySelector('.kp-popover-settings');
+  if (!host) return;
+
+  const hasModes = actionHasModes(actionId);
+  const hasParams = actionHasParameters(actionId);
+  if (!hasModes && !hasParams) {
+    host.hidden = true;
+    host.replaceChildren();
+    return;
+  }
+
+  host.hidden = false;
+  host.replaceChildren();
+
+  let settings = null;
+  try { settings = await getSettings(); } catch { settings = null; }
+
+  if (hasModes) {
+    const def = getActionSettingsDef(actionId);
+    const currentMode = getActionMode(settings?.actionSettings, actionId);
+    const modeWrap = doc.createElement('div');
+    modeWrap.className = 'kp-popover-mode-switch';
+    modeWrap.setAttribute('role', 'group');
+    modeWrap.setAttribute('aria-label', 'Selection mode');
+
+    for (const mode of def.modes) {
+      const btn = doc.createElement('button');
+      btn.type = 'button';
+      btn.className = 'kp-popover-mode-btn';
+      btn.dataset.modeId = mode.id;
+      btn.textContent = mode.label;
+      btn.setAttribute('aria-pressed', mode.id === currentMode ? 'true' : 'false');
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+          const next = await setActionMode(actionId, mode.id);
+          try {
+            document.dispatchEvent(new CustomEvent('keypilot:action-settings-changed', {
+              detail: { actionId, settings: next }
+            }));
+          } catch { /* ignore */ }
+          modeWrap.querySelectorAll('.kp-popover-mode-btn').forEach((el) => {
+            el.setAttribute('aria-pressed', el.dataset.modeId === mode.id ? 'true' : 'false');
+          });
+        } catch (err) {
+          console.warn('[KeyPilot] Failed to set action mode:', err);
+        }
+      });
+      modeWrap.appendChild(btn);
+    }
+    host.appendChild(modeWrap);
+  }
+
+  if (hasParams) {
+    const configBtn = doc.createElement('button');
+    configBtn.type = 'button';
+    configBtn.className = 'kp-popover-config-btn';
+    configBtn.textContent = 'Config';
+    configBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const panel = getSharedKeyActionConfigPanel();
+      panel.onSettingsChanged = (next) => {
+        try {
+          document.dispatchEvent(new CustomEvent('keypilot:action-settings-changed', {
+            detail: { actionId, settings: next }
+          }));
+        } catch { /* ignore */ }
+      };
+      await panel.open(actionId, {
+        title: (binding && binding.label) || actionId,
+        anchorRect: targetEl.getBoundingClientRect()
+      });
+    });
+    host.appendChild(configBtn);
+  }
+}
+
+/**
  * Notify listeners that a Keyboard Reference key info popover was shown via hover/focus.
- * Uses the same keypilot:action channel as F-key activations so onboarding can complete
- * tasks like "hover a key to see what it does".
  * @param {{ actionId?: string, keyEl?: Element|null }} [detail]
  */
 function emitKeyboardHelpKeyHover(detail = {}) {
   try {
-    // Debounce rapid pointerenter chatter across adjacent keys so onboarding only needs one real hover.
     const now = Date.now();
     if (emitKeyboardHelpKeyHover._lastAt && now - emitKeyboardHelpKeyHover._lastAt < 120) return;
     emitKeyboardHelpKeyHover._lastAt = now;
@@ -601,22 +710,77 @@ function emitKeyboardHelpKeyHover(detail = {}) {
   }
 }
 
+/**
+ * Pin (or show sticky) the key-info popover for an action id.
+ * Used by click on the key and by F-activate of a Keyboard Reference key.
+ * @param {string} actionId
+ * @param {{ keyEl?: HTMLElement|null, keybindings?: Record<string, any>|null }} [opts]
+ * @returns {boolean}
+ */
+export function pinKeyPopover(actionId, opts = {}) {
+  if (!actionId) return false;
+  const ctx = _activePopoverContext;
+  const root = ctx?.root;
+  const keybindings = opts.keybindings || ctx?.keybindings;
+  if (!root || !keybindings) return false;
+
+  const doc = root.ownerDocument || document;
+  const pop = ensurePopover(doc, null);
+  if (!pop) return false;
+
+  let keyEl = opts.keyEl || null;
+  if (!keyEl) {
+    try {
+      keyEl = root.querySelector(`[data-kp-action-id="${CSS.escape(actionId)}"]`);
+    } catch {
+      keyEl = root.querySelector(`[data-kp-action-id="${actionId}"]`);
+    }
+  }
+  if (!keyEl) return false;
+
+  const binding = keybindings[actionId];
+  if (!binding) return false;
+
+  _pinnedActionId = actionId;
+  _pinnedKeyEl = keyEl;
+  if (root._kpKeyHandlers) {
+    try { clearTimeout(root._kpKeyHandlers.hideTimer); } catch { /* ignore */ }
+    root._kpKeyHandlers.hideTimer = null;
+  }
+
+  showPopoverForTarget({ doc, pop, targetEl: keyEl, binding, actionId, pinned: true });
+  emitKeyboardHelpKeyHover({ actionId, keyEl });
+  return true;
+}
+
+/**
+ * Unpin / hide the sticky key popover if open.
+ */
+export function unpinKeyPopover() {
+  const doc = document;
+  const pop = doc.body?.querySelector?.('.kp-keybindings-popover[data-kp-key-info-popover="true"]')
+    || doc.body?.querySelector?.('.kp-keybindings-popover');
+  hidePopover(pop);
+}
+
 function attachKeyPopoverBehavior({ root, keybindings }) {
   if (!root) return;
   const doc = root.ownerDocument || document;
 
-  // Popover lives on document.body + Popover API top layer (not clipped by panel).
   const pop = ensurePopover(doc, null);
   if (!pop) return;
 
-  // Store handlers on the root to avoid duplicate attachments
+  _activePopoverContext = { root, keybindings };
+
   if (!root._kpKeyHandlers) {
     root._kpKeyHandlers = {
       enter: null,
       leave: null,
       focusin: null,
       focusout: null,
+      click: null,
       docKeydown: null,
+      docPointerDown: null,
       resize: null,
       hideTimer: null
     };
@@ -630,16 +794,17 @@ function attachKeyPopoverBehavior({ root, keybindings }) {
   };
 
   const scheduleHide = () => {
+    if (_pinnedActionId) return;
     clearHideTimer();
     root._kpKeyHandlers.hideTimer = setTimeout(() => {
+      if (_pinnedActionId) return;
       hidePopover(pop);
       root._kpKeyHandlers.hideTimer = null;
     }, 60);
   };
 
-  const showForKeyEl = (keyEl) => {
+  const showForKeyEl = (keyEl, { pinned = false } = {}) => {
     if (!keyEl || !keyEl.dataset?.kpActionId) return;
-    // Text mode: only Click Element stays interactive on the keyboard reference.
     try {
       if (keyEl.classList?.contains('kp-key-text-mode-disabled')) return;
     } catch { /* ignore */ }
@@ -647,12 +812,21 @@ function attachKeyPopoverBehavior({ root, keybindings }) {
     const binding = keybindings && keybindings[actionId];
     if (!binding) return;
     clearHideTimer();
-    showPopoverForTarget({ doc, pop, targetEl: keyEl, binding, actionId });
-    // Onboarding / other listeners: user hovered a Keyboard Reference key and saw its info.
+    if (pinned) {
+      _pinnedActionId = actionId;
+      _pinnedKeyEl = keyEl;
+    }
+    showPopoverForTarget({
+      doc,
+      pop,
+      targetEl: keyEl,
+      binding,
+      actionId,
+      pinned: pinned || (_pinnedActionId === actionId)
+    });
     emitKeyboardHelpKeyHover({ actionId, keyEl });
   };
 
-  // Remove existing handlers if re-attaching
   const keyElements = root.querySelectorAll('[data-kp-action-id]');
   if (root._kpKeyHandlers.enter) {
     keyElements.forEach((keyEl) => {
@@ -661,12 +835,15 @@ function attachKeyPopoverBehavior({ root, keybindings }) {
         if (root._kpKeyHandlers.leave) keyEl.removeEventListener('pointerleave', root._kpKeyHandlers.leave);
         if (root._kpKeyHandlers.focusin) keyEl.removeEventListener('focusin', root._kpKeyHandlers.focusin);
         if (root._kpKeyHandlers.focusout) keyEl.removeEventListener('focusout', root._kpKeyHandlers.focusout);
+        if (root._kpKeyHandlers.click) keyEl.removeEventListener('click', root._kpKeyHandlers.click);
       } catch { /* ignore */ }
     });
   }
 
   function handleKeyEnter(e) {
-    showForKeyEl(e.currentTarget);
+    const keyEl = e.currentTarget;
+    if (_pinnedActionId && keyEl?.dataset?.kpActionId !== _pinnedActionId) return;
+    showForKeyEl(keyEl, { pinned: false });
   }
 
   function handleKeyLeave() {
@@ -674,46 +851,64 @@ function attachKeyPopoverBehavior({ root, keybindings }) {
   }
 
   function handleKeyFocusIn(e) {
-    showForKeyEl(e.currentTarget);
+    showForKeyEl(e.currentTarget, { pinned: false });
   }
 
   function handleKeyFocusOut() {
     scheduleHide();
   }
 
-  // Store handlers for cleanup / re-attach
+  function handleKeyClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    showForKeyEl(e.currentTarget, { pinned: true });
+  }
+
   root._kpKeyHandlers.enter = handleKeyEnter;
   root._kpKeyHandlers.leave = handleKeyLeave;
   root._kpKeyHandlers.focusin = handleKeyFocusIn;
   root._kpKeyHandlers.focusout = handleKeyFocusOut;
+  root._kpKeyHandlers.click = handleKeyClick;
 
   if (keyElements.length === 0) {
     console.warn('[KeyPilot] No key elements found for popover behavior in:', root);
   }
 
   keyElements.forEach((keyEl) => {
-    // Hover (pointer) — primary interaction
     keyEl.addEventListener('pointerenter', handleKeyEnter);
     keyEl.addEventListener('pointerleave', handleKeyLeave);
-    // Keyboard focus for accessibility
     keyEl.addEventListener('focusin', handleKeyFocusIn);
     keyEl.addEventListener('focusout', handleKeyFocusOut);
+    keyEl.addEventListener('click', handleKeyClick);
   });
 
-  // Escape / resize hide (only attach once per root)
   if (!root._kpKeyHandlers.docKeydown) {
     function handleDocKeydown(e) {
       if (e.key === 'Escape') hidePopover(pop);
     }
-    
+
+    function handleDocPointerDown(e) {
+      if (!_pinnedActionId) return;
+      const t = e.target;
+      if (!(t instanceof Element)) return;
+      if (pop.contains(t)) return;
+      if (_pinnedKeyEl && (_pinnedKeyEl === t || _pinnedKeyEl.contains(t))) return;
+      try {
+        if (t.closest?.('.kp-action-config-panel')) return;
+      } catch { /* ignore */ }
+      hidePopover(pop);
+    }
+
     function handleResize() {
       hidePopover(pop);
     }
 
     root._kpKeyHandlers.docKeydown = handleDocKeydown;
+    root._kpKeyHandlers.docPointerDown = handleDocPointerDown;
     root._kpKeyHandlers.resize = handleResize;
 
     doc.addEventListener('keydown', handleDocKeydown, true);
+    doc.addEventListener('pointerdown', handleDocPointerDown, true);
     window.addEventListener('resize', handleResize);
   }
 }

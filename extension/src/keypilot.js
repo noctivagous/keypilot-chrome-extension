@@ -26,6 +26,8 @@ import { MSG } from './messaging/types.js';
 import { buildKeybindingsForLayout, DEFAULT_KEYBOARD_LAYOUT_ID, getKeyboardUiLayoutForLayout, normalizeKeyboardLayoutId } from './config/keyboard-layouts.js';
 import { FloatingKeyboardHelp } from './ui/floating-keyboard-help.js';
 import { ControlStrip } from './ui/control-strip.js';
+import { pinKeyPopover } from './ui/keybindings-ui.js';
+import { getActionMode } from './ui/key-action-settings.js';
 import { OmniboxManager } from './modules/omnibox-manager.js';
 import { TabHistoryPopover } from './modules/tab-history-popover.js';
 import { LauncherPopover } from './modules/launcher-popover.js';
@@ -71,6 +73,12 @@ export class KeyPilot extends EventManager {
         // Cancel competing select modes when entering any inspector kind
         try {
           if (this.state.isHighlightMode()) this.cancelHighlightMode();
+        } catch { /* ignore */ }
+      },
+      onPicksChanged: (picks, unionRect) => {
+        try {
+          const kind = this.inspector.getKind();
+          this.overlayManager?.updateInspectorPickedOverlays?.(picks, unionRect, kind);
         } catch { /* ignore */ }
       }
     });
@@ -1130,6 +1138,14 @@ export class KeyPilot extends EventManager {
     // Initialize debug panel if enabled
     this.overlayManager.initDebugPanel();
 
+    // Shadow-root paint debug HUD (FEATURE_FLAGS.DEBUG_SHADOW_ROOT_HUD or
+    // keyPilot.setShadowRootDebugHud(true) at runtime).
+    try {
+      if (FEATURE_FLAGS.DEBUG_SHADOW_ROOT_HUD) {
+        this.overlayManager.setShadowRootDebugHud(true);
+      }
+    } catch { /* ignore */ }
+
     // Sync with early injection cursor state
     if (window.KEYPILOT_EARLY) {
       window.KEYPILOT_EARLY.setEnabled(true);
@@ -1729,6 +1745,20 @@ export class KeyPilot extends EventManager {
       return;
     }
 
+    // Alt+/: toggle shadow-root paint debug HUD (leaf / focus / paint + A|B|C).
+    if ((e.altKey || e.code === 'AltRight') && (e.key === '/' || e.key === '?' || e.code === 'Slash')) {
+      if (window !== window.top) return;
+      if (!this.enabled) return;
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      try {
+        const on = !!this.overlayManager?.isShadowRootDebugHudEnabled?.();
+        this.setShadowRootDebugHud(!on);
+      } catch { /* ignore */ }
+      return;
+    }
+
     // Don't handle keys if extension is disabled
     if (!this.enabled) {
       return;
@@ -1996,6 +2026,21 @@ export class KeyPilot extends EventManager {
       if (typingGate.handled) return;
       // Swallow KeyPilot shortcuts; let the character type into the field.
       return;
+    }
+
+    // Special handling for cumulative inspector pick — Enter finalizes.
+    if (this.inspector?.isCumulative?.()) {
+      if (e.key === 'Enter' || e.key === 'Return' || e.code === 'Enter' || e.code === 'NumpadEnter') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        void this._finalizeCumulativeSelection().catch((err) => {
+          console.error('[KeyPilot] Cumulative finalize failed:', err);
+          try { this.inspector.exit(); } catch { /* ignore */ }
+          try { this.overlayManager?.clearInspectorPickedOverlays?.(); } catch { /* ignore */ }
+        });
+        return;
+      }
     }
 
     // Special handling for highlight mode — complete with H/Y (layout-bound), cancel with Esc
@@ -3121,31 +3166,55 @@ export class KeyPilot extends EventManager {
       return;
     }
 
+    const yMode = getActionMode(this._settings?.actionSettings, 'RECTANGLE_HIGHLIGHT');
+
+    // Alternate mode: cumulative inspector pick (Y adds, Enter finishes).
+    if (yMode === 'cumulative') {
+      if (this.inspector.isKind(INSPECTOR_KIND.RECTANGLE_PICK) && this.inspector.isCumulative()) {
+        const added = this.inspector.confirmAdd();
+        if (!added) {
+          try {
+            this.showFlashNotification('Hover an element to add', COLORS.NOTIFICATION_INFO);
+          } catch { /* ignore */ }
+        }
+        return;
+      }
+
+      if (this.state.isHighlightMode()) {
+        this.cancelHighlightMode();
+      }
+      // Replace any other inspector kind
+      if (this.state.isInspectorMode() && !this.inspector.isKind(INSPECTOR_KIND.RECTANGLE_PICK)) {
+        this.inspector.exit();
+        try { this.overlayManager?.clearInspectorPickedOverlays?.(); } catch { /* ignore */ }
+      }
+
+      console.log('[KeyPilot] Entering cumulative element pick mode');
+      this._prepareInspectorModeIndicator(INSPECTOR_KIND.RECTANGLE_PICK);
+      this.inspector.enter(INSPECTOR_KIND.RECTANGLE_PICK, { selectionMode: 'cumulative' });
+      return;
+    }
+
+    // Default: element-granularity rectangle highlight
     if (!this.state.isHighlightMode()) {
-      console.log('[KeyPilot] Entering rectangle highlight mode');
-      
-      // Cancel shared inspector pick if active
+      console.log('[KeyPilot] Entering element rectangle highlight mode');
+
       if (this.state.isInspectorMode()) {
         console.log('[KeyPilot] Canceling inspector mode to enter rectangle highlight mode');
         this.inspector.exit();
+        try { this.overlayManager?.clearInspectorPickedOverlays?.(); } catch { /* ignore */ }
       }
 
-      // Lazy-init edge-only stack only when explicitly enabled (off by default).
       if (FEATURE_FLAGS.USE_EDGE_ONLY_SELECTION && FEATURE_FLAGS.ENABLE_EDGE_ONLY_PROCESSING) {
         try { this.ensureEdgeOnlyProcessingForRectangle(); } catch { /* ignore */ }
       }
-      
-      // Enter highlight mode and start rectangle highlighting at current cursor position
+
       this.state.setMode(MODES.HIGHLIGHT);
       this._lastHighlightUpdatePos = { x: -1, y: -1 };
-      
-      // Set selection mode to rectangle
-      this.overlayManager.setSelectionMode('rectangle');
-      
+      this.overlayManager.setSelectionMode('element');
       this.startHighlighting();
     } else {
-      // Second press completes (and always exits) current highlight session.
-      console.log('[KeyPilot] Completing rectangle highlight selection');
+      console.log('[KeyPilot] Completing element rectangle highlight selection');
       void this.completeSelection().catch((err) => {
         console.error('[KeyPilot] completeSelection failed:', err);
         try { this.cancelHighlightMode(); } catch { /* ignore */ }
@@ -3160,10 +3229,12 @@ export class KeyPilot extends EventManager {
     // Companion instruction: "Press H again to finish selection" (layout-aware key).
     try {
       const KB = this.keybindings || {};
-      const binding = selectionMode === 'rectangle' ? KB.RECTANGLE_HIGHLIGHT : KB.HIGHLIGHT;
+      const binding = (selectionMode === 'rectangle' || selectionMode === 'element')
+        ? KB.RECTANGLE_HIGHLIGHT
+        : KB.HIGHLIGHT;
       const finishKey = Array.isArray(binding?.keys) && binding.keys.length
         ? binding.keys.find((k) => k && k.length === 1) || binding.keys[0]
-        : (selectionMode === 'rectangle' ? 'Y' : 'H');
+        : ((selectionMode === 'rectangle' || selectionMode === 'element') ? 'Y' : 'H');
       this.overlayManager.highlightManager?.showHighlightModeIndicator?.({ finishKey });
     } catch {
       try {
@@ -3201,7 +3272,24 @@ export class KeyPilot extends EventManager {
       return;
     }
 
-    // Rectangle selection mode — seed caret at origin if possible (updates use dual-caret).
+    if (selectionMode === 'element') {
+      try {
+        const viewportStart = {
+          x: currentState.lastMouse.x,
+          y: currentState.lastMouse.y
+        };
+        const matched = this.overlayManager.updateElementRectangleSelection(
+          viewportStart,
+          viewportStart
+        );
+        console.log('[KeyPilot] Element rectangle selection seeded;', Array.isArray(matched) ? matched.length : 0, 'hits');
+      } catch (error) {
+        console.warn('[KeyPilot] Error seeding element rectangle selection:', error);
+      }
+      return;
+    }
+
+    // Legacy caret rectangle selection mode — seed caret at origin if possible.
     try {
       const viewportStart = {
         x: currentState.lastMouse.x,
@@ -3275,6 +3363,15 @@ export class KeyPilot extends EventManager {
       return;
     }
 
+    if (selectionMode === 'element') {
+      try {
+        this.overlayManager.updateElementRectangleSelection(originVp, currentPos);
+      } catch (error) {
+        console.warn('[KeyPilot] Error updating element rectangle selection:', error);
+      }
+      return;
+    }
+
     // Rectangle: caret-based only on the mousemove/scroll path (no TreeWalker).
     try {
       const caretSelection = this.overlayManager.updateRectangleSelectionFromCarets(
@@ -3309,6 +3406,89 @@ export class KeyPilot extends EventManager {
     }
   }
 
+  /**
+   * Build clipboard payload from a list of DOM elements (plain + rich HTML).
+   * Used by element-rectangle complete and cumulative pick finalize.
+   * @param {Element[]} elements
+   * @returns {{ plainText: string, htmlContent: string, hasRichContent: boolean }}
+   */
+  buildElementsClipboardContent(elements) {
+    const list = Array.isArray(elements) ? elements : [];
+    const plainParts = [];
+    const htmlParts = [];
+
+    for (const el of list) {
+      if (!el || el.nodeType !== 1 || !el.isConnected) continue;
+      const tag = String(el.tagName || '').toUpperCase();
+      try {
+        if (tag === 'IMG') {
+          const alt = (el.getAttribute?.('alt') || '').trim();
+          const src = el.currentSrc || el.src || el.getAttribute?.('src') || '';
+          plainParts.push(alt || src || '');
+          htmlParts.push(el.outerHTML || '');
+        } else if (tag === 'VIDEO' || tag === 'AUDIO' || tag === 'PICTURE' || tag === 'SVG') {
+          plainParts.push((el.getAttribute?.('aria-label') || el.getAttribute?.('title') || tag).trim());
+          htmlParts.push(el.outerHTML || '');
+        } else {
+          const text = (el.innerText || el.textContent || '').replace(/\s+\n/g, '\n').trim();
+          if (text) plainParts.push(text);
+          htmlParts.push(el.outerHTML || '');
+        }
+      } catch { /* ignore one element */ }
+    }
+
+    let htmlContent = htmlParts.filter(Boolean).join('');
+    try {
+      if (htmlContent) htmlContent = this.sanitizeHtmlContent(htmlContent);
+    } catch { /* keep raw */ }
+
+    const plainText = plainParts.filter(Boolean).join('\n\n');
+    return {
+      plainText,
+      htmlContent,
+      hasRichContent: !!(FEATURE_FLAGS.ENABLE_RICH_TEXT_CLIPBOARD && htmlContent && htmlContent !== plainText)
+    };
+  }
+
+  /**
+   * Finalize cumulative inspector pick: copy picked elements and exit.
+   */
+  async _finalizeCumulativeSelection() {
+    if (!this.inspector?.isCumulative?.()) return;
+    const { elements } = this.inspector.finalizeAndExit();
+    try { this.overlayManager?.hideInspectorModeIndicator?.(); } catch { /* ignore */ }
+    try { this.overlayManager?.clearInspectorPickedOverlays?.(); } catch { /* ignore */ }
+
+    const content = this.buildElementsClipboardContent(elements);
+    if (!content.plainText || !String(content.plainText).trim()) {
+      // Allow image-only selections with empty plain text but HTML
+      if (!(content.htmlContent && content.hasRichContent)) {
+        this.showFlashNotification('No elements selected', COLORS.NOTIFICATION_INFO);
+        return;
+      }
+    }
+
+    const payload = content.plainText?.trim()
+      ? content
+      : { ...content, plainText: content.plainText || ' ' };
+
+    let copySuccess = false;
+    try {
+      copySuccess = await this.copyToClipboard(payload);
+    } catch (error) {
+      console.error('[KeyPilot] Cumulative clipboard failed:', error);
+      copySuccess = false;
+    }
+
+    if (copySuccess) {
+      const notificationCopyType = content.hasRichContent ? 'Rich text' : 'Text';
+      this.showFlashNotification(`${notificationCopyType} copied to clipboard`, COLORS.NOTIFICATION_SUCCESS);
+      try { this.overlayManager.flashFocusOverlay(); } catch { /* ignore */ }
+    } else {
+      this.showFlashNotification('Failed to copy selection', COLORS.NOTIFICATION_ERROR);
+    }
+  }
+
   async completeSelection() {
     // Ignore re-entrant completes (double H / concurrent awaits) — those left mode
     // stuck mid-copy and thrashing updateSelection, which froze pages on later uses.
@@ -3339,6 +3519,15 @@ export class KeyPilot extends EventManager {
       // Do not reset session state until after we have the string.
       if (selectionMode === 'character') {
         selectedText = this.overlayManager.peekCharacterSelectedText() || '';
+      } else if (selectionMode === 'element') {
+        try {
+          const matched = this.overlayManager.getMatchedElements?.() || [];
+          contentToClipboard = this.buildElementsClipboardContent(matched);
+          selectedText = contentToClipboard.plainText || '';
+        } catch (extractError) {
+          console.warn('[KeyPilot] Error extracting element selection content:', extractError);
+          selectedText = '';
+        }
       } else {
         try {
           const selection = this.getCurrentSelectionWithShadowSupport();
@@ -4103,6 +4292,12 @@ export class KeyPilot extends EventManager {
     }
 
     try {
+      this.overlayManager.clearElementSelection?.();
+    } catch (error) {
+      console.warn('[KeyPilot] Error clearing element selection:', error);
+    }
+
+    try {
       this.overlayManager.removeHighlightRectangleOverlay();
     } catch (error) {
       console.warn('[KeyPilot] Error clearing highlight rectangle overlay:', error);
@@ -4744,6 +4939,12 @@ export class KeyPilot extends EventManager {
       this.overlayManager.flashFocusOverlay(target);
       this.postClickRefresh(target, currentState.lastMouse.x, currentState.lastMouse.y);
       this.emitAction('activate', activationDetail);
+      if (activationDetail.isKeyboardHelpKey) {
+        try {
+          const actionId = target.closest?.('[data-kp-action-id]')?.dataset?.kpActionId;
+          if (actionId) pinKeyPopover(actionId, { keybindings: this.keybindings });
+        } catch { /* ignore */ }
+      }
       return;
     }
 
@@ -4754,6 +4955,12 @@ export class KeyPilot extends EventManager {
     this.overlayManager.flashFocusOverlay(target);
     this.postClickRefresh(target, currentState.lastMouse.x, currentState.lastMouse.y);
     this.emitAction('activate', activationDetail);
+    if (activationDetail.isKeyboardHelpKey) {
+      try {
+        const actionId = target.closest?.('[data-kp-action-id]')?.dataset?.kpActionId;
+        if (actionId) pinKeyPopover(actionId, { keybindings: this.keybindings });
+      } catch { /* ignore */ }
+    }
   }
 
   handleActivateNewTabKey() {
@@ -5338,6 +5545,7 @@ export class KeyPilot extends EventManager {
         currentState.mode === MODES.COLS) {
       this.inspector.exit();
       try { this.overlayManager?.hideInspectorModeIndicator?.(); } catch { /* ignore */ }
+      try { this.overlayManager?.clearInspectorPickedOverlays?.(); } catch { /* ignore */ }
       return;
     }
     
@@ -5812,6 +6020,31 @@ export class KeyPilot extends EventManager {
    */
   isEnabled() {
     return this.enabled;
+  }
+
+  /**
+   * Show/hide the shadow-root paint debug HUD (leaf, focusEl, paint target, A/B/C).
+   * Console: `keyPilot.setShadowRootDebugHud(true)`
+   * @param {boolean} enabled
+   */
+  setShadowRootDebugHud(enabled) {
+    try {
+      this.overlayManager?.setShadowRootDebugHud?.(!!enabled);
+    } catch (e) {
+      console.warn('[KeyPilot] setShadowRootDebugHud failed:', e);
+    }
+  }
+
+  /**
+   * Force hover paint strategy while the shadow debug HUD is open.
+   * @param {'A'|'B'|'C'|null|string} strategy - null/'auto' restores automatic choice
+   */
+  setShadowDebugPaintStrategy(strategy) {
+    try {
+      this.overlayManager?.setShadowDebugPaintStrategy?.(strategy);
+    } catch (e) {
+      console.warn('[KeyPilot] setShadowDebugPaintStrategy failed:', e);
+    }
   }
 
   cleanup() {

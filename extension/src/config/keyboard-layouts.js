@@ -267,8 +267,8 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
   // Rectangle region select (Y on right-handed; R free on left-handed).
   RECTANGLE_HIGHLIGHT: Object.freeze({
     handler: 'handleRectangleHighlightKey',
-    label: 'Rectangle Select',
-    description: 'Select text in a rectangle',
+    label: 'Element Select',
+    description: 'Select intersecting HTML elements in a rectangle (or pick cumulative)',
     keyboardClass: 'key-rect-highlight',
     row: 1
   }),

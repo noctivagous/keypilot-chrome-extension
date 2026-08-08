@@ -203,6 +203,21 @@ export class OptimizedScrollManager {
       didOverlayWork = true;
     }
 
+    // Cumulative pick: refresh union / picked overlays after scroll (viewport rects move).
+    try {
+      const kp = typeof window !== 'undefined' ? window.__KeyPilotInstance : null;
+      if (kp?.inspector?.isCumulative?.()) {
+        const union = kp.inspector.refreshUnionRect?.();
+        const picks = kp.inspector.getPickedElements?.() || [];
+        kp.overlayManager?.updateInspectorPickedOverlays?.(
+          picks,
+          union,
+          kp.inspector.getKind?.()
+        );
+        didOverlayWork = true;
+      }
+    } catch { /* ignore */ }
+
     // Text mode: labels are fixed-position; field chrome is on the element itself.
     if (
       mode === 'text_focus' &&

@@ -830,25 +830,12 @@ export class ElementDetector {
 
       try {
         if (this.composedContains(prev, under)) {
-          // Fast path: non-interactive descendant of prev (text/span/icon) —
-          // avoid full findClickable + getComputedStyle walks.
-          try {
-            const isPrimary =
-              (typeof under.matches === 'function' &&
-                (under.matches(this.CLICKABLE_SEL) || under.matches(this.FOCUSABLE_SEL))) ||
-              (typeof under.getAttribute === 'function' &&
-                this.CLICKABLE_ROLES.includes((under.getAttribute('role') || '').trim().toLowerCase()));
-            if (!isPrimary) {
-              const closestPrimary =
-                typeof under.closest === 'function'
-                  ? under.closest(`${this.CLICKABLE_SEL}, ${this.FOCUSABLE_SEL}, [role]`)
-                  : null;
-              if (!closestPrimary || closestPrimary === prev) {
-                return prev;
-              }
-            }
-          } catch { /* fall through to full resolve */ }
-
+          // IMPORTANT: do NOT use Element.closest() here. closest() stops at
+          // shadow roots, so open-shadow leaves (archive.org tiles, MSN Fluent)
+          // always look like "no primary ancestor" and we'd keep `prev` forever
+          // while the pointer moves across different shadow interactives that
+          // still compose-contain under the same host. findClickable walks
+          // parentElement + shadow host hops and is the source of truth.
           const leafInside = this.findClickable(under);
           if (!leafInside || leafInside === prev || this._isNestedHoverChrome(leafInside, prev)) {
             return prev;

@@ -47,8 +47,8 @@ The browser applies that far more cheaply than allocating and repositioning a fi
 | Path | When | Cost |
 |------|------|------|
 | **A. DOM outline** (default) | Normal clickables; ring not blocked by full-bleed cover | Fast: CSS on the node; scrolls with the page. **Graded** `outline-offset = clamp(minRoom − stroke, −stroke, +2)` when `ENABLE_FOCUS_CLIP_INSET` — mild clip → mild inset, not a jump to B/C |
-| **B. In-target absolute ring** | Outline would sit under full-bleed media; host can accept a child | Cheap: last child of host, local `maxZ+1`; scrolls free; `border-radius` from host |
-| **C. Body fixed DOM overlay** | Escape hatch when **B** cannot mount (replaced elements, etc.) | Higher: fixed rect, must track scroll; global z-index |
+| **B. In-target absolute ring** | Outline would sit under full-bleed media; host can accept a child (including open-shadow mounts) | Cheap: last child of host, local `maxZ+1`; scrolls free; `border-radius` from host |
+| **C. Body fixed DOM overlay** | Escape hatch when **B** cannot mount (replaced elements, slotless shadow host, etc.) | Higher: fixed rect, must track scroll; global z-index |
 
 F-key activation effects (`kpv2-focus-flash`, pulse, marquee) are separate: they are short-lived fixed overlays by design. That path is not a model for steady hover chrome.
 
@@ -56,17 +56,18 @@ F-key activation effects (`kpv2-focus-flash`, pulse, marquee) are separate: they
 
 Implemented in `OverlayManager.updateFocusOverlay` when `_useDomHoverFocusColors` is on:
 
-1. Resolve paint target (`_resolveElementForFocusStyling`).
-2. **`_shouldUseFixedFocusOverlay(element)`** — true when **element outline (A)** cannot show a ring:
+1. **`_shouldUseFixedFocusOverlay(element)`** — true when **element outline (A)** cannot show a ring (same gates for light DOM and open-shadow targets):
    - Target has non-visible `overflow` **and** full-bleed covering content (`img` / absolute fill / full-size `::before`/`::after`).
    - **Or** a full-size **child** would paint over an **inset** parent outline **and** path A would be forced to inset (`_wouldUseInsetFocusOutline` — graded offset negative). Example: newtab `a.top-site-card` → `.top-site-tile` inside `.top-sites-horizontal`. Detected via `_hasObscuringFullBleedChild` **gated by** inset necessity.
    - **Not** merely “has a full-bleed media child” when **outer** outline still has room — outer outline sits outside the border box and is not covered by children (e.g. ganjingworld video thumbnails must stay on path A).
    - Parent-only clip (outer ring tight in a toolbar shell) is **not** enough for escape hatch → keep element outline with graded inset (`ENABLE_FOCUS_CLIP_INSET`).
-3. If escape hatch needed:
-   - **B** (`ENABLE_IN_TARGET_FOCUS_RING`): `updateFocusOverlayInTarget` — inject `.kpv2-focus-ring-intarget` as last child of host, `z-index: maxLocal+1`, `border-radius` via `_resolveElementBorderRadius` (host, then element / large descendant). Set `_focusPaintUsesInTargetRing`. Still counts as element-associated for scroll (`usesElementFocusStyling()` true).
-   - **C** if B fails: `updateFocusOverlayDOM`. Set `_focusPaintUsesFixedOverlay`. Also copies border-radius.
-4. Else → **A** `updateFocusOverlayElementStyling`. Hide in-target ring + fixed overlay.
-5. Never use B/C “just in case.” If the check throws or is inconclusive, stay on element styling (**A**).
+   - Merely living in a `ShadowRoot` is **not** an escape hatch.
+2. If escape hatch needed:
+   - **B** (`ENABLE_IN_TARGET_FOCUS_RING`): `updateFocusOverlayInTarget` — inject `.kpv2-focus-ring-intarget` as last child of host (shadow-aware mount), `z-index: maxLocal+1`, `border-radius` via `_resolveElementBorderRadius`. Set `_focusPaintUsesInTargetRing`. Still counts as element-associated for scroll (`usesElementFocusStyling()` true).
+   - **C** if B fails: `updateFocusOverlayDOM`, called with the paint-resolved element so `getBestRect` doesn't collapse to 0×0 on slotless shadow hosts. Set `_focusPaintUsesFixedOverlay`. Also copies border-radius.
+3. Else → **A** `updateFocusOverlayElementStyling`. Hide in-target ring + fixed overlay.
+4. Never use B/C “just in case.” If the check throws or is inconclusive, stay on element styling (**A**).
+5. Shadow debug HUD (`Alt+/`) can force A/B/C regardless of auto.
 
 `_outerFocusRingWouldBeClipped` remains a rect helper for inset decisions / diagnostics; it does **not** alone switch paint backends.
 
@@ -89,6 +90,60 @@ Rough idea:
 Example: [thenextweb.com](https://thenextweb.com/) visual cards — `a.c-card__image` and parent `.c-card` are both `overflow: hidden` and same size; full-bleed `<img>` + gradient `::after`. Element outline is applied but not seen; F-click fixed green ring is. Hover should use **B** (or **C** if B cannot mount) only for that geometry.
 
 Headline links on the same card are not flush-clipped the same way; they keep **A** (element outlines).
+
+## Shadow DOM (msn.com, archive.org)
+
+Document stylesheets do not pierce shadow boundaries. Both sites are Lit/Fluent
+open-shadow component trees:
+
+- **archive.org**: slotless hosts (`media-button`, `collection-tile`, …) — light-DOM
+  children are not rendered. Hosts may also be collapsed (e.g. `media-button` ~0 height)
+  while the real clickable lives inside the shadow.
+- **msn.com**: slotted cards (`cs-content-card`) — default slot can project a ring;
+  many controls still live deep in nested open shadows.
+
+Paint rule for shadow trees: **same A → B → C preference as light DOM.** Being inside
+an open `ShadowRoot` is not by itself an escape hatch. Use Alt+/ (shadow debug HUD) to
+compare Auto vs forced A/B/C on msn.com / archive.org.
+
+1. **Paint resolve** pierces open `shadowRoot` when choosing the styling / B-mount /
+   C-rect node (`_findLargestVisibleDescendant`, `_resolveElementForFocusStyling`) —
+   needed because `getBestRect`'s 0-height fallback only walks *light-DOM* `.children`,
+   which is empty on collapsed slotless hosts (archive.org `media-button`).
+2. **Strategy A** injects CSS into the owning open root and applies **inline**
+   `outline` / `outline-offset` / `box-shadow` (`data-kp-focus-inline`) so Lit style
+   wipes and closed-shadow nodes from `composedPath` still show a ring.
+3. **Strategy B** must not mount on slotless shadow hosts. Mount inside the open shadow
+   on a sized non-replaced node (or dedicated shadow-root layer); after mount, require a
+   positive `getBoundingClientRect()` or fall through to **C**.
+4. Full-bleed / obscuring-child checks consider top-level open-shadow children, not only
+   light-DOM `.children`.
+
+Targeting (`composedPath` / `composedContains` / sticky host) is unchanged; this layer
+only makes paint follow the resolved clickable into the shadow.
+
+### Slotted shadow wrappers (light-DOM content, shadow-internal clip)
+
+Not every shadow component is slotless. msn.com's Fluent cards (`cs-responsive-card`,
+`cs-watch-carousel-card`, …) have a shadow root that is just an internal wrapper plus a
+default `<slot>` (e.g. `div.root{overflow:hidden} > slot`); the real card content is a
+**light-DOM child**, projected through that slot. `getRootNode()` on that content returns
+`document`, not a `ShadowRoot` — it is *not* "in a shadow tree" — so it stays on the
+normal Strategy A path (`forceShadowB` is false) rather than being routed to B.
+
+The gap: `getComputedStyle(hostElement)` (the custom element itself, e.g.
+`cs-responsive-card`) never reflects the `overflow`/`contain` set on its *internal* shadow
+wrapper (`div.root`). The ancestor clip walk (`_findFocusClipContext`) and the self-clip
+check in `_shouldUseFixedFocusOverlay` both only inspected the host's own style, so a
+clipping wrapper hiding one level inside the host's shadow was invisible to both checks —
+Strategy A would paint a normal outside-the-box outline that then silently vanished under
+the real (undetected) clip, or a graded inset that never fired.
+
+Fixed via `_shadowInternalClipWrappers` (ancestor walk) and
+`_hostClipsViaInternalShadowWrapper` (self-clip check): when a composed ancestor — or the
+paint target itself — is an open-shadow host, also check its shadow root's direct
+children (the common single-wrapper pattern) for clipping, not just the host's own
+light-DOM-facing computed style.
 
 ## Related flags (`src/config/constants.js`)
 
@@ -151,3 +206,7 @@ Erratic “outline flashes then disappears” came from:
 - [ ] Scroll while body fixed (**C**) is active keeps the ring aligned.
 - [ ] Headline / small links next to media cards still use element outline (**A**) when not full-bleed self-clip.
 - [ ] F-activation flash still works (independent ephemeral overlays).
+- [ ] archive.org `media-button` / `collection-tile`: visible ring (A inline or B inside shadow — never silent 0×0 light-DOM B).
+- [ ] msn.com `cs-content-card` / fluent controls in open shadow: stable hover outline.
+- [ ] msn.com slotted cards (`cs-responsive-card` / `cs-watch-carousel-card`, real content light-DOM via `<slot>`): clip-context walk sees the shadow-internal wrapper's `overflow`, not just the host's own style.
+- [ ] Shadow debug HUD (`keyPilot.setShadowRootDebugHud(true)`): shows leaf / focusEl / paint target and can force A, B, or C.

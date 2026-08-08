@@ -1,11 +1,13 @@
 /**
  * Shared inspector (element-pick) mode for KeyPilot.
  *
- * Delete Mode, Cols Toggle, and future tools share one lifecycle:
+ * Delete Mode, Cols Toggle, Rectangle cumulative pick, and future tools share one lifecycle:
  *   1. Enter inspector with a kind → special cursor + hover outline on any element
  *   2. Move pointer to choose a target (inspectorEl)
  *   3. Confirm (same key again) → kind-specific action on target
- *   4. Esc → exit pick mode only (sticky side-effects like columns stay)
+ *      - single: exit after confirm
+ *      - cumulative: add to pick set, grow union rect, stay active; Enter finalizes
+ *   4. Esc → exit pick mode only (sticky effects like columns stay)
  *
  * Register new tools by adding an entry to INSPECTOR_DEFS + INSPECTOR_KIND.
  */
@@ -24,6 +26,7 @@ import { CSS_CLASSES, COLORS, INSPECTOR_KIND } from '../config/constants.js';
  *   allowHtmlBody?: boolean,
  *   actionId?: string,
  *   instructionTemplate?: string,
+ *   selectionMode?: 'single'|'cumulative',
  * }} InspectorDef
  */
 
@@ -45,6 +48,7 @@ export const INSPECTOR_DEFS = Object.freeze({
     shadowBrightColor: COLORS.DELETE_SHADOW_BRIGHT,
     allowHtmlBody: false,
     actionId: 'DELETE',
+    selectionMode: 'single',
     instructionTemplate: 'Press {key} again to delete · Esc cancels'
   }),
   [INSPECTOR_KIND.COLS]: Object.freeze({
@@ -58,7 +62,22 @@ export const INSPECTOR_DEFS = Object.freeze({
     shadowBrightColor: COLORS.COLS_SHADOW_BRIGHT,
     allowHtmlBody: true,
     actionId: 'COLS_TOGGLE',
+    selectionMode: 'single',
     instructionTemplate: 'Hover an element · Press {key} again to columnize · Esc cancels'
+  }),
+  [INSPECTOR_KIND.RECTANGLE_PICK]: Object.freeze({
+    kind: INSPECTOR_KIND.RECTANGLE_PICK,
+    label: 'Select',
+    statusMode: 'highlight',
+    cursorMode: 'highlight',
+    hostClass: CSS_CLASSES.HIGHLIGHT,
+    borderColor: COLORS.HIGHLIGHT_BLUE,
+    shadowColor: COLORS.HIGHLIGHT_SHADOW,
+    shadowBrightColor: COLORS.HIGHLIGHT_SHADOW_BRIGHT,
+    allowHtmlBody: false,
+    actionId: 'RECTANGLE_HIGHLIGHT',
+    selectionMode: 'cumulative',
+    instructionTemplate: 'Press {key} to add · Enter to finish · Esc cancels'
   })
 });
 
@@ -113,11 +132,49 @@ export function getAllInspectorHostClasses() {
     if (def.hostClass) set.add(def.hostClass);
   }
   set.add(CSS_CLASSES.INSPECTOR);
+  set.add(CSS_CLASSES.INSPECTOR_PICKED);
   return [...set];
 }
 
 /**
- * Coordinates inspector enter / exit / hover / resolve-target.
+ * Union AABB of element bounding client rects (viewport coords).
+ * @param {Element[]} elements
+ * @returns {{ left: number, top: number, width: number, height: number }|null}
+ */
+export function unionElementRects(elements) {
+  let left = Infinity;
+  let top = Infinity;
+  let right = -Infinity;
+  let bottom = -Infinity;
+  let any = false;
+
+  for (const el of elements || []) {
+    if (!el || el.nodeType !== 1 || !el.isConnected) continue;
+    let rect;
+    try {
+      rect = el.getBoundingClientRect();
+    } catch {
+      continue;
+    }
+    if (!rect || (rect.width <= 0 && rect.height <= 0)) continue;
+    any = true;
+    left = Math.min(left, rect.left);
+    top = Math.min(top, rect.top);
+    right = Math.max(right, rect.right);
+    bottom = Math.max(bottom, rect.bottom);
+  }
+
+  if (!any || !Number.isFinite(left)) return null;
+  return {
+    left,
+    top,
+    width: Math.max(0, right - left),
+    height: Math.max(0, bottom - top)
+  };
+}
+
+/**
+ * Coordinates inspector enter / exit / hover / resolve-target / cumulative picks.
  * Does not own confirm actions — callers run kind-specific effects.
  */
 export class InspectorModeController {
@@ -126,12 +183,21 @@ export class InspectorModeController {
    *   state: import('./state-manager.js').StateManager,
    *   deepElementFromPoint: (x: number, y: number) => Element|null,
    *   onBeforeEnter?: (kind: string) => void,
+   *   onPicksChanged?: (picks: Element[], unionRect: {left:number,top:number,width:number,height:number}|null) => void,
    * }} deps
    */
   constructor(deps) {
     this.state = deps.state;
     this.deepElementFromPoint = deps.deepElementFromPoint;
     this.onBeforeEnter = typeof deps.onBeforeEnter === 'function' ? deps.onBeforeEnter : null;
+    this.onPicksChanged = typeof deps.onPicksChanged === 'function' ? deps.onPicksChanged : null;
+
+    /** @type {'single'|'cumulative'} */
+    this._selectionMode = 'single';
+    /** @type {Element[]} */
+    this._picked = [];
+    /** @type {{ left: number, top: number, width: number, height: number }|null} */
+    this._unionRect = null;
   }
 
   isActive() {
@@ -162,10 +228,42 @@ export class InspectorModeController {
   }
 
   /**
+   * @returns {boolean}
+   */
+  isCumulative() {
+    return this.isActive() && this._selectionMode === 'cumulative';
+  }
+
+  getSelectionMode() {
+    return this._selectionMode;
+  }
+
+  /**
+   * @returns {Element[]}
+   */
+  getPickedElements() {
+    return this._picked.slice();
+  }
+
+  /**
+   * @returns {{ left: number, top: number, width: number, height: number }|null}
+   */
+  getUnionRect() {
+    return this._unionRect ? { ...this._unionRect } : null;
+  }
+
+  clearPicks() {
+    this._picked = [];
+    this._unionRect = null;
+    try { this.onPicksChanged?.([], null); } catch { /* ignore */ }
+  }
+
+  /**
    * Enter (or switch to) an inspector kind. Replaces any other inspector kind.
    * @param {string} kind
+   * @param {{ selectionMode?: 'single'|'cumulative' }} [opts]
    */
-  enter(kind) {
+  enter(kind, opts = {}) {
     if (!getInspectorDef(kind)) {
       console.warn('[KeyPilot] Unknown inspector kind:', kind);
       return;
@@ -175,13 +273,26 @@ export class InspectorModeController {
     } catch (e) {
       console.warn('[KeyPilot] inspector onBeforeEnter failed:', e);
     }
+
+    this.clearPicks();
+    const def = getInspectorDef(kind);
+    const requested = opts.selectionMode;
+    if (requested === 'cumulative' || requested === 'single') {
+      this._selectionMode = requested;
+    } else {
+      this._selectionMode = def?.selectionMode === 'cumulative' ? 'cumulative' : 'single';
+    }
+
     this.state.enterInspector(kind);
   }
 
   /**
-   * Exit pick mode; clear hover target. Does not reverse sticky effects (e.g. columns).
+   * Exit pick mode; clear hover target and cumulative picks.
+   * Does not reverse sticky effects (e.g. columns).
    */
   exit() {
+    this.clearPicks();
+    this._selectionMode = 'single';
     this.state.exitInspector();
   }
 
@@ -220,11 +331,68 @@ export class InspectorModeController {
 
   /**
    * Resolve target and exit pick mode (caller applies the action).
+   * Single-shot tools (Delete, Cols).
    * @returns {Element|null}
    */
   confirmAndExit() {
     const target = this.resolveTarget();
     this.exit();
     return target;
+  }
+
+  /**
+   * Cumulative: add hovered target to the pick set and stay in mode.
+   * Recomputes the union bounding rect of all picks.
+   * @returns {Element|null} added (or already-present) target
+   */
+  confirmAdd() {
+    if (!this.isCumulative()) {
+      return this.confirmAndExit();
+    }
+
+    const target = this.resolveTarget();
+    if (!target || target.nodeType !== 1) return null;
+
+    const def = this.getDef();
+    if (!def?.allowHtmlBody) {
+      if (target === document.documentElement || target === document.body) {
+        return null;
+      }
+    }
+
+    if (!this._picked.includes(target)) {
+      this._picked.push(target);
+    }
+
+    // Drop disconnected nodes
+    this._picked = this._picked.filter((el) => el && el.isConnected);
+    this._unionRect = unionElementRects(this._picked);
+    try { this.onPicksChanged?.(this.getPickedElements(), this.getUnionRect()); } catch { /* ignore */ }
+    return target;
+  }
+
+  /**
+   * Cumulative: return picked elements and exit (caller copies / applies).
+   * @returns {{ elements: Element[], unionRect: {left:number,top:number,width:number,height:number}|null }}
+   */
+  finalizeAndExit() {
+    const elements = this.getPickedElements().filter((el) => el && el.isConnected);
+    const unionRect = this.getUnionRect();
+    this.exit();
+    return { elements, unionRect };
+  }
+
+  /**
+   * Recompute union rect after scroll (viewport coords change).
+   */
+  refreshUnionRect() {
+    if (!this.isCumulative() || this._picked.length === 0) {
+      this._unionRect = null;
+      return this._unionRect;
+    }
+    this._picked = this._picked.filter((el) => el && el.isConnected);
+    this._unionRect = unionElementRects(this._picked);
+    try { this.onPicksChanged?.(this.getPickedElements(), this.getUnionRect()); } catch { /* ignore */ }
+    return this._unionRect;
   }
 }

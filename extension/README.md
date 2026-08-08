@@ -57,13 +57,39 @@ for common web interactions, eliminating the need for mouse navigation.
 
 | Keys | Action |
 | --- | --- |
-| `Y` | Select text in a rectangle |
+| `Y` | Select intersecting HTML elements in a rectangle (or pick cumulative) |
 | `Backspace` | Delete Mode |
 | `H` | Select text (character level) |
 | `K` | Show/Hide the floating KeyPilot keyboard reference |
 | `Esc` | Exit Focus |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

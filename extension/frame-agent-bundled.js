@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension - Frame Agent Bundle (child frames)
- * Generated on 2026-08-08T13:52:50.167Z
+ * Generated on 2026-08-08T21:04:37.307Z
  */
 
 (() => {
@@ -277,8 +277,8 @@ const KEYBINDING_ACTION_DEFS = Object.freeze({
   // Rectangle region select (Y on right-handed; R free on left-handed).
   RECTANGLE_HIGHLIGHT: Object.freeze({
     handler: 'handleRectangleHighlightKey',
-    label: 'Rectangle Select',
-    description: 'Select text in a rectangle',
+    label: 'Element Select',
+    description: 'Select intersecting HTML elements in a rectangle (or pick cumulative)',
     keyboardClass: 'key-rect-highlight',
     row: 1
   }),
@@ -717,6 +717,10 @@ const CSS_CLASSES = {
   COLS_CLOSE_BTN: 'kpv2-cols-close-btn',
   HIGHLIGHT_OVERLAY: 'kpv2-highlight-overlay',
   HIGHLIGHT_SELECTION: 'kpv2-highlight-selection',
+  /** Persistent outline for elements added in cumulative inspector pick */
+  INSPECTOR_PICKED: 'kpv2-inspector-picked',
+  INSPECTOR_PICKED_OVERLAY: 'kpv2-inspector-picked-overlay',
+  INSPECTOR_UNION_OVERLAY: 'kpv2-inspector-union-overlay',
   TEXT_FIELD_GLOW: 'kpv2-text-field-glow',
   VIEWPORT_MODAL_FRAME: 'kpv2-viewport-modal-frame',
   ESC_EXIT_LABEL: 'kpv2-esc-exit-label',
@@ -799,6 +803,8 @@ const Z_INDEX = {
   // Floating keyboard reference + key-click tooltip (above page UI, below cursor)
   FLOATING_KEYBOARD_HELP: 2147483045,
   KEYBINDINGS_POPOVER: 2147483046,
+  // Per-key floating config panel (above sticky key popover, below cursor)
+  KEY_ACTION_CONFIG: 2147483047,
 
   // Cursor sits above chrome; click ripple is above even that so the
   // expanding circles always remain visible.
@@ -858,8 +864,22 @@ const MODES = {
  */
 const INSPECTOR_KIND = Object.freeze({
   DELETE: 'delete',
-  COLS: 'cols'
+  COLS: 'cols',
+  /** Cumulative element pick for Rectangle Select (Y) alternate mode */
+  RECTANGLE_PICK: 'rectangle_pick'
 });
+
+/**
+ * Semantic HTML tags used as selection granularity for Y element-rectangle mode.
+ * Deepest intersecting match wins when both ancestor and descendant qualify.
+ */
+const ELEMENT_SELECT_TAGS = Object.freeze([
+  'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+  'p', 'li', 'blockquote', 'pre', 'code',
+  'article', 'section', 'aside', 'header', 'footer', 'main', 'nav',
+  'a', 'img', 'figure', 'figcaption', 'picture', 'video', 'audio', 'svg',
+  'td', 'th', 'dt', 'dd', 'caption', 'summary', 'label'
+]);
 
 // Cursor behavior mode:
 // - NO_CUSTOM_CURSORS: KeyPilot does not override the page cursor at all.
@@ -1244,7 +1264,11 @@ const FEATURE_FLAGS = {
   DEBUG_EDGE_ONLY_PROCESSING: false, // Enable detailed logging for edge-only processing
   SHOW_SELECTION_METHOD_IN_UI: false, // Show which selection method was used in notifications
   DEBUG_RECTANGLE_HUD: false, // Show live rectangle debugging HUD with coordinates and calls
-  ENABLE_DEBUG_PANEL: false // Enable upper-right debug panel showing performance metrics
+  ENABLE_DEBUG_PANEL: false, // Enable upper-right debug panel showing performance metrics
+  // Interactive HUD for shadow-DOM hover paint (msn.com / archive.org).
+  // Shows leaf under pointer, resolved hover/paint targets, auto A/B/C choice,
+  // and lets you force A / B / C. Toggle: Alt+/ (or keyPilot.setShadowRootDebugHud).
+  DEBUG_SHADOW_ROOT_HUD: false
 };
 
 
@@ -2361,7 +2385,8 @@ const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  *   panelPositions: PanelPositionsSettings,
  *   clickMode: ClickModeSettings,
  *   textMode: TextModeSettings,
- *   scroll: ScrollSettings
+ *   scroll: ScrollSettings,
+ *   actionSettings: Record<string, { mode?: string, parameters?: Record<string, any> }>
  * }} KeyPilotSettings
  */
 
@@ -2382,6 +2407,13 @@ const DEFAULT_SETTINGS = Object.freeze({
   panelPositions: Object.freeze({
     keyboardReference: Object.freeze({ anchor: 'bottom-left' }),
     controlStrip: Object.freeze({ anchor: 'top-left' })
+  }),
+  // Per-key action settings (Keyboard Reference mode switches / config params).
+  actionSettings: Object.freeze({
+    RECTANGLE_HIGHLIGHT: Object.freeze({
+      mode: 'element',
+      parameters: Object.freeze({})
+    })
   }),
   clickMode: Object.freeze({
     cursor: Object.freeze({
@@ -2710,6 +2742,32 @@ function scrollBehaviorFromSpeed(speed) {
 }
 
 /**
+ * @param {any} raw
+ * @returns {Record<string, { mode?: string, parameters?: Record<string, any> }>}
+ */
+function normalizeActionSettings(raw) {
+  const defaults = DEFAULT_SETTINGS.actionSettings || {};
+  const stored = raw && typeof raw === 'object' ? raw : {};
+  /** @type {Record<string, { mode?: string, parameters?: Record<string, any> }>} */
+  const out = {};
+
+  const keys = new Set([...Object.keys(defaults), ...Object.keys(stored)]);
+  for (const actionId of keys) {
+    const fb = defaults[actionId] && typeof defaults[actionId] === 'object' ? defaults[actionId] : {};
+    const entry = stored[actionId] && typeof stored[actionId] === 'object' ? stored[actionId] : {};
+    const mode = typeof entry.mode === 'string' && entry.mode
+      ? entry.mode
+      : (typeof fb.mode === 'string' ? fb.mode : undefined);
+    const parameters = {
+      ...(fb.parameters && typeof fb.parameters === 'object' ? fb.parameters : {}),
+      ...(entry.parameters && typeof entry.parameters === 'object' ? entry.parameters : {})
+    };
+    out[actionId] = { mode, parameters };
+  }
+  return out;
+}
+
+/**
  * @returns {Promise<KeyPilotSettings>}
  */
 async function getSettings() {
@@ -2728,6 +2786,7 @@ async function getSettings() {
       ),
       controlStrip: normalizeControlStrip(stored?.controlStrip),
       panelPositions: normalizePanelPositions(stored?.panelPositions),
+      actionSettings: normalizeActionSettings(stored?.actionSettings),
       clickMode: normalizeClickMode(stored?.clickMode),
       textMode: normalizeTextMode(stored?.textMode),
       scroll: normalizeScroll(stored?.scroll)
@@ -2740,6 +2799,7 @@ async function getSettings() {
         keyboardReference: { ...DEFAULT_SETTINGS.panelPositions.keyboardReference },
         controlStrip: { ...DEFAULT_SETTINGS.panelPositions.controlStrip }
       },
+      actionSettings: normalizeActionSettings(null),
       clickMode: { ...DEFAULT_SETTINGS.clickMode, cursor: { ...DEFAULT_SETTINGS.clickMode.cursor } },
       textMode: { ...DEFAULT_SETTINGS.textMode },
       scroll: { ...DEFAULT_SETTINGS.scroll }
@@ -2797,7 +2857,24 @@ async function setSettings(partial) {
     scroll: {
       ...current.scroll,
       ...(p.scroll && typeof p.scroll === 'object' ? p.scroll : {})
-    }
+    },
+    actionSettings: (() => {
+      const merged = { ...(current.actionSettings || {}) };
+      const patch = p.actionSettings && typeof p.actionSettings === 'object' ? p.actionSettings : {};
+      for (const [id, entry] of Object.entries(patch)) {
+        const prev = merged[id] && typeof merged[id] === 'object' ? merged[id] : {};
+        const next = entry && typeof entry === 'object' ? entry : {};
+        merged[id] = {
+          ...prev,
+          ...next,
+          parameters: {
+            ...(prev.parameters && typeof prev.parameters === 'object' ? prev.parameters : {}),
+            ...(next.parameters && typeof next.parameters === 'object' ? next.parameters : {})
+          }
+        };
+      }
+      return normalizeActionSettings(merged);
+    })()
   };
   next.searchEngine = normalizeSearchEngine(next.searchEngine);
   next.cursorMode = normalizeCursorMode(next.cursorMode);
@@ -2808,6 +2885,7 @@ async function setSettings(partial) {
   );
   next.controlStrip = normalizeControlStrip(next.controlStrip);
   next.panelPositions = normalizePanelPositions(next.panelPositions);
+  next.actionSettings = normalizeActionSettings(next.actionSettings);
   next.clickMode = normalizeClickMode(next.clickMode);
   next.textMode = normalizeTextMode(next.textMode);
   next.scroll = normalizeScroll(next.scroll);

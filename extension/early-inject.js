@@ -484,8 +484,8 @@
       "keyboardClass": "key-gray"
     },
     "RECTANGLE_HIGHLIGHT": {
-      "label": "Rectangle Select",
-      "description": "Select text in a rectangle",
+      "label": "Element Select",
+      "description": "Select intersecting HTML elements in a rectangle (or pick cumulative)",
       "keyLabel": "Y",
       "displayKey": "Y",
       "keyboardClass": "key-rect-highlight"
@@ -668,8 +668,8 @@
       "keyboardClass": "key-gray"
     },
     "RECTANGLE_HIGHLIGHT": {
-      "label": "Rectangle Select",
-      "description": "Select text in a rectangle",
+      "label": "Element Select",
+      "description": "Select intersecting HTML elements in a rectangle (or pick cumulative)",
       "keyLabel": "R",
       "displayKey": "R",
       "keyboardClass": "key-rect-highlight"
@@ -1049,8 +1049,8 @@
     "keyboardClass": "key-gray"
   },
   "RECTANGLE_HIGHLIGHT": {
-    "label": "Rectangle Select",
-    "description": "Select text in a rectangle",
+    "label": "Element Select",
+    "description": "Select intersecting HTML elements in a rectangle (or pick cumulative)",
     "keyLabel": "Y",
     "displayKey": "Y",
     "keyboardClass": "key-rect-highlight"
@@ -2193,6 +2193,62 @@
   opacity: 0.95;
   font-size: 11.5px;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+}
+
+.kp-keybindings-popover[data-kp-popover-pinned="true"] {
+  pointer-events: auto;
+  max-width: min(340px, calc(100vw - 20px));
+}
+
+.kp-keybindings-popover .kp-popover-settings {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kp-keybindings-popover .kp-popover-settings[hidden] {
+  display: none !important;
+}
+
+.kp-popover-mode-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.kp-popover-mode-btn {
+  appearance: none;
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font: inherit;
+  font-size: 11px;
+  color: rgba(248, 250, 252, 0.92);
+  background: rgba(0, 0, 0, 0.22);
+  cursor: pointer;
+}
+
+.kp-popover-mode-btn[aria-pressed="true"] {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.kp-popover-config-btn {
+  appearance: none;
+  align-self: flex-start;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font: inherit;
+  font-size: 11px;
+  color: inherit;
+  background: rgba(0, 0, 0, 0.28);
+  cursor: pointer;
 }
 
 .kp-keybindings-popover::before {
