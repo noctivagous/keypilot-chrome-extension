@@ -16,6 +16,9 @@ import {
 import { applyCardBackground } from '../ui/page-thumb-ui.js';
 import { LAUNCHER_SEARCH_SITES } from '../config/search-engines.js';
 import { createPreviewOpenActionButtons } from '../ui/preview-open-actions.js';
+import { storageGetValue, storageSetValue } from '../utils/storage.js';
+
+const HIDDEN_LAUNCH_DECK_STORAGE_KEY = 'kpLauncherHiddenLaunchDeck';
 
 export class LauncherPopover {
   constructor(keypilot) {
@@ -37,6 +40,8 @@ export class LauncherPopover {
     this._searchQuery = '';
     this._categoryOrder = ['bookmarks', 'history', 'social', 'news', 'productivity', 'videos', 'entertainment', 'shopping', 'ai', 'archive', 'searches'];
     this._showDefaultSites = true; // Checkbox: show curated launcher Sites (not Favorites)
+    /** @type {Set<string>} Normalized Launch Deck URLs the user has hidden. */
+    this._hiddenLaunchDeckUrls = new Set();
     /** Categories whose domain history has been fetched this open session. */
     this._historyLoaded = Object.create(null);
     /** Shared recent history rows (top sites + search extraction). */
@@ -64,9 +69,9 @@ export class LauncherPopover {
     this._pageResultsLoadTimeout = null;
 
     // Define available sub-tabs for each category (extensible for future types)
-    // Order matters: Sites → Favorites → History → Search (virtual results tab).
+    // Order matters: Launch Deck → Favorites → History → Search (virtual results tab).
     this._categorySubTabConfig = {
-      bookmarks: ['favorites', 'history', 'search'],
+      bookmarks: ['sites', 'favorites', 'history', 'search'],
       history: ['favorites', 'history', 'search'],
       social: ['sites', 'favorites', 'history', 'search'],
       news: ['sites', 'favorites', 'history', 'search'],
@@ -225,7 +230,9 @@ export class LauncherPopover {
     this._cachedBookmarks = null;
     this._cachedRecentHistory = null;
 
-    // Paint shell with default sites first (no network / history APIs).
+    // Load hidden Launch Deck URLs, then paint shell with defaults.
+    await this._loadHiddenLaunchDeckUrls();
+    if (!this._stillOpen(gen)) return;
     this._initCategoriesWithDefaults();
     this._buildUI();
     if (!this._stillOpen(gen)) return;
@@ -329,13 +336,59 @@ export class LauncherPopover {
   }
 
   /**
-   * Extract domains from default site list for a category
+   * Extract unique domains from default site list for a category
    */
   _getDefaultDomains(categoryKey) {
     if (!this._defaultSites[categoryKey]) return [];
-    return this._defaultSites[categoryKey]
-      .map((site) => extractDomain(site.url))
-      .filter((domain) => domain !== '');
+    const seen = new Set();
+    const domains = [];
+    for (const site of this._defaultSites[categoryKey]) {
+      const domain = extractDomain(site.url);
+      if (!domain || seen.has(domain)) continue;
+      seen.add(domain);
+      domains.push(domain);
+    }
+    return domains;
+  }
+
+  /**
+   * Pathname without trailing slash (empty for `/`).
+   * @param {string} url
+   * @returns {string}
+   */
+  _sitePathPrefix(url) {
+    try {
+      const path = new URL(String(url || '').trim()).pathname || '';
+      if (!path || path === '/') return '';
+      return path.replace(/\/+$/, '');
+    } catch {
+      return '';
+    }
+  }
+
+  /**
+   * Extra history search strings for Sites that include a path
+   * (e.g. archive.org/details/texts) so collection visits aren't missed.
+   * @param {string} categoryKey
+   * @returns {string[]}
+   */
+  _getHistorySearchQueries(categoryKey) {
+    const sites = this._defaultSites[categoryKey];
+    if (!Array.isArray(sites)) return [];
+    const queries = [];
+    const seen = new Set();
+    for (const site of sites) {
+      const path = this._sitePathPrefix(site?.url);
+      if (!path) continue;
+      const domain = extractDomain(site.url);
+      if (!domain) continue;
+      const q = `${domain}${path}`;
+      if (seen.has(q)) continue;
+      seen.add(q);
+      queries.push(q);
+      queries.push(`https://${q}`);
+    }
+    return queries;
   }
 
   /**
@@ -345,7 +398,7 @@ export class LauncherPopover {
    */
   _initCategoriesWithDefaults() {
     const defaults = (key) => (this._showDefaultSites && this._defaultSites[key]
-      ? [...this._defaultSites[key]]
+      ? this._filterLaunchDeckItems([...this._defaultSites[key]])
       : []);
 
     const emptyLists = () => ({ sites: [], history: [], favorites: [] });
@@ -493,8 +546,11 @@ export class LauncherPopover {
       this._cachedTopSites = topSites;
       this._cachedRecentHistory = recentHistory;
 
-      // Bookmarks (former Favorites query): all bookmarks + top sites / recent visits.
-      this._categories.bookmarks.sites = [];
+      // Bookmarks: Launch Deck = top 50 most-visited bookmarks; Favorites = all;
+      // History = top sites / recent visits.
+      this._categories.bookmarks.sites = this._filterLaunchDeckItems(
+        this._buildMostVisitedBookmarkedSites(bookmarks, recentHistory, 50)
+      );
       this._categories.bookmarks.favorites = bookmarks;
       this._categories.bookmarks.history = topSites;
 
@@ -563,7 +619,11 @@ export class LauncherPopover {
     // Mark in-flight so rapid tab switches don't double-fetch.
     this._historyLoaded[categoryKey] = 'pending';
     try {
-      const history = await this._getHistoryForDomains(domains);
+      const history = await this._getHistoryForDomains(domains, {
+        queries: this._getHistorySearchQueries(categoryKey),
+        maxResults: 300,
+        days: 30
+      });
 
       if (!this._stillOpen(gen) || !this._categories?.[categoryKey]) return;
 
@@ -608,8 +668,89 @@ export class LauncherPopover {
     for (const key of keys) {
       if (!this._categories[key]) continue;
       this._categories[key].sites = this._showDefaultSites && this._defaultSites[key]
-        ? [...this._defaultSites[key]]
+        ? this._filterLaunchDeckItems([...this._defaultSites[key]])
         : [];
+    }
+  }
+
+  /**
+   * @returns {Promise<void>}
+   */
+  async _loadHiddenLaunchDeckUrls() {
+    try {
+      const raw = await storageGetValue(HIDDEN_LAUNCH_DECK_STORAGE_KEY, []);
+      const list = Array.isArray(raw) ? raw : [];
+      this._hiddenLaunchDeckUrls = new Set(
+        list
+          .map((u) => this._normalizeVisitUrl(String(u || '')))
+          .filter(Boolean)
+      );
+    } catch (err) {
+      console.warn('[LauncherPopover] Failed to load hidden Launch Deck URLs:', err);
+      this._hiddenLaunchDeckUrls = new Set();
+    }
+  }
+
+  /**
+   * @returns {Promise<void>}
+   */
+  async _persistHiddenLaunchDeckUrls() {
+    try {
+      await storageSetValue(
+        HIDDEN_LAUNCH_DECK_STORAGE_KEY,
+        Array.from(this._hiddenLaunchDeckUrls)
+      );
+    } catch (err) {
+      console.warn('[LauncherPopover] Failed to persist hidden Launch Deck URLs:', err);
+    }
+  }
+
+  /**
+   * @param {string} url
+   * @returns {boolean}
+   */
+  _isLaunchDeckHidden(url) {
+    if (!url || !this._hiddenLaunchDeckUrls?.size) return false;
+    return this._hiddenLaunchDeckUrls.has(this._normalizeVisitUrl(url));
+  }
+
+  /**
+   * @template {{ url?: string }} T
+   * @param {T[]} items
+   * @returns {T[]}
+   */
+  _filterLaunchDeckItems(items) {
+    if (!Array.isArray(items) || !items.length) return [];
+    if (!this._hiddenLaunchDeckUrls?.size) return items;
+    return items.filter((item) => !this._isLaunchDeckHidden(item?.url));
+  }
+
+  /**
+   * Hide a Launch Deck card permanently (until storage is cleared).
+   * @param {string} url
+   */
+  async _hideLaunchDeckItem(url) {
+    const key = this._normalizeVisitUrl(url);
+    if (!key) return;
+    this._hiddenLaunchDeckUrls.add(key);
+    void this._persistHiddenLaunchDeckUrls();
+
+    // Drop from every category's Launch Deck list immediately.
+    if (this._categories) {
+      for (const cat of Object.values(this._categories)) {
+        if (!Array.isArray(cat?.sites)) continue;
+        cat.sites = cat.sites.filter((item) => !this._isLaunchDeckHidden(item?.url));
+      }
+    }
+
+    if (this._currentPreviewUrl && this._normalizeVisitUrl(this._currentPreviewUrl) === key) {
+      try { this._hidePreview(); } catch { /* ignore */ }
+    }
+
+    try { this._updateTabCounts?.(); } catch { /* ignore */ }
+    try { this._updateSubTabsUI?.(); } catch { /* ignore */ }
+    if (this._gridContainer) {
+      this._renderCategory(this._currentCategory);
     }
   }
 
@@ -679,14 +820,123 @@ export class LauncherPopover {
   }
 
   /**
-   * Get history for specific domains via message passing
+   * Normalize a URL for bookmark ↔ history matching.
+   * @param {string} url
+   * @returns {string}
    */
-  async _getHistoryForDomains(domains) {
+  _normalizeVisitUrl(url) {
+    try {
+      const u = new URL(String(url || '').trim());
+      const host = (u.hostname || '').toLowerCase();
+      const path = (u.pathname || '').replace(/\/+$/, '');
+      return `${u.protocol}//${host}${path}${u.search || ''}`;
+    } catch {
+      return String(url || '').trim().toLowerCase();
+    }
+  }
+
+  /**
+   * Bookmarks Launch Deck: up to `limit` bookmarked URLs ranked by visit frequency.
+   * Exact history URL match preferred; otherwise host-level visit totals.
+   * @param {Array<{title?: string, url?: string, dateAdded?: number}>} bookmarks
+   * @param {Array<{url?: string, visitCount?: number, lastVisitTime?: number}>} historyItems
+   * @param {number} [limit]
+   * @returns {Array<{title: string, url: string, dateAdded?: number, visitCount: number, lastVisitTime: number, isDefault: boolean}>}
+   */
+  _buildMostVisitedBookmarkedSites(bookmarks, historyItems, limit = 50) {
+    if (!Array.isArray(bookmarks) || !bookmarks.length) return [];
+    const history = Array.isArray(historyItems) ? historyItems : [];
+    const cap = Math.max(1, Math.min(100, Number(limit) || 50));
+
+    /** @type {Map<string, number>} */
+    const visitsByUrl = new Map();
+    /** @type {Map<string, number>} */
+    const lastByUrl = new Map();
+    /** @type {Map<string, number>} */
+    const visitsByHost = new Map();
+    /** @type {Map<string, number>} */
+    const lastByHost = new Map();
+
+    for (const item of history) {
+      if (!item?.url) continue;
+      const key = this._normalizeVisitUrl(item.url);
+      const vc = Number(item.visitCount) || 0;
+      const lt = Number(item.lastVisitTime) || 0;
+      if (vc > 0) {
+        visitsByUrl.set(key, Math.max(visitsByUrl.get(key) || 0, vc));
+      }
+      if (lt > 0) {
+        lastByUrl.set(key, Math.max(lastByUrl.get(key) || 0, lt));
+      }
+      try {
+        const host = new URL(item.url).hostname.toLowerCase().replace(/^www\./, '');
+        if (!host) continue;
+        visitsByHost.set(host, (visitsByHost.get(host) || 0) + Math.max(vc, 0));
+        lastByHost.set(host, Math.max(lastByHost.get(host) || 0, lt));
+      } catch {
+        /* ignore */
+      }
+    }
+
+    /** @type {Map<string, {title: string, url: string, dateAdded?: number, visitCount: number, lastVisitTime: number, isDefault: boolean}>} */
+    const bestByUrl = new Map();
+
+    for (const bm of bookmarks) {
+      if (!bm?.url) continue;
+      const key = this._normalizeVisitUrl(bm.url);
+      let visitCount = visitsByUrl.get(key) || 0;
+      let lastVisitTime = lastByUrl.get(key) || 0;
+
+      if (visitCount <= 0) {
+        try {
+          const host = new URL(bm.url).hostname.toLowerCase().replace(/^www\./, '');
+          visitCount = visitsByHost.get(host) || 0;
+          lastVisitTime = lastByHost.get(host) || 0;
+        } catch {
+          /* ignore */
+        }
+      }
+      if (visitCount <= 0) continue;
+
+      const prev = bestByUrl.get(key);
+      if (
+        !prev ||
+        visitCount > prev.visitCount ||
+        (visitCount === prev.visitCount && lastVisitTime > prev.lastVisitTime)
+      ) {
+        bestByUrl.set(key, {
+          title: bm.title || extractDomain(bm.url) || 'Untitled',
+          url: bm.url,
+          dateAdded: bm.dateAdded,
+          visitCount,
+          lastVisitTime,
+          isDefault: true
+        });
+      }
+    }
+
+    return Array.from(bestByUrl.values())
+      .sort((a, b) => {
+        const scoreDiff = b.visitCount - a.visitCount;
+        if (scoreDiff !== 0) return scoreDiff;
+        return (b.lastVisitTime || 0) - (a.lastVisitTime || 0);
+      })
+      .slice(0, cap);
+  }
+
+  /**
+   * Get history for specific domains via message passing
+   * @param {string[]} domains
+   * @param {{ queries?: string[], maxResults?: number, days?: number }} [opts]
+   */
+  async _getHistoryForDomains(domains, opts = {}) {
     try {
       const response = await chrome.runtime.sendMessage({
         type: 'KP_GET_HISTORY_FOR_DOMAINS',
         domains: domains,
-        days: 30
+        queries: Array.isArray(opts.queries) ? opts.queries : [],
+        days: opts.days || 30,
+        maxResults: opts.maxResults || 300
       });
 
       if (response && response.success && response.history) {
@@ -754,52 +1004,144 @@ export class LauncherPopover {
 
   /**
    * Whether an item URL belongs to a Sites entry.
+   * Path-aware: `/details/texts` only matches that collection prefix.
+   * Host-aware: `web.archive.org` is not claimed by parent `archive.org`.
+   * Root sites exclude URLs claimed by more-specific sibling path sites.
    * @param {string} itemUrl
-   * @param {{ url?: string }} site
+   * @param {{ url?: string, title?: string }} site
+   * @param {Array<{ url?: string, title?: string }>} [siblings]
    */
-  _itemMatchesSite(itemUrl, site) {
+  _itemMatchesSite(itemUrl, site, siblings = null) {
     const siteDomain = extractDomain(site?.url);
     const itemDomain = extractDomain(itemUrl);
     if (!siteDomain || !itemDomain) return false;
-    return itemDomain === siteDomain || itemDomain.endsWith('.' + siteDomain);
+
+    const sibs = Array.isArray(siblings)
+      ? siblings
+      : [];
+
+    // Prefer an exact-host sibling over a parent-domain match
+    // (web.archive.org vs archive.org).
+    if (itemDomain !== siteDomain) {
+      const exactHostSibling = sibs.find((s) => {
+        if (!s?.url || s.url === site.url) return false;
+        return extractDomain(s.url) === itemDomain;
+      });
+      if (exactHostSibling) return false;
+      if (!itemDomain.endsWith('.' + siteDomain)) return false;
+    }
+
+    const sitePath = this._sitePathPrefix(site.url);
+    let itemPath = '';
+    try {
+      itemPath = (new URL(String(itemUrl || '').trim()).pathname || '').replace(/\/+$/, '');
+      if (itemPath === '/') itemPath = '';
+    } catch {
+      return false;
+    }
+
+    if (sitePath) {
+      return itemPath === sitePath || itemPath.startsWith(`${sitePath}/`);
+    }
+
+    // Domain-root site: exclude URLs that belong to a path-specific sibling
+    // on the same host (or a matching host).
+    for (const sib of sibs) {
+      if (!sib?.url || sib.url === site.url) continue;
+      const sibDomain = extractDomain(sib.url);
+      const sibPath = this._sitePathPrefix(sib.url);
+      if (!sibPath || !sibDomain) continue;
+      const hostOk =
+        itemDomain === sibDomain || itemDomain.endsWith('.' + sibDomain);
+      if (!hostOk) continue;
+      if (itemPath === sibPath || itemPath.startsWith(`${sibPath}/`)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   /**
-   * Curated Sites entries that have at least one History visit in this category.
-   * Used for the Favorites/History site-filter subtabs.
+   * Sum of Chrome history visitCounts for URLs belonging to a Launch Deck site.
+   * @param {{ url?: string }} site
+   * @param {Array<{url?: string, visitCount?: number}>} history
+   * @param {Array<{url?: string}>} siblings
+   * @returns {number}
+   */
+  _siteVisitScore(site, history, siblings) {
+    if (!Array.isArray(history) || !history.length) return 0;
+    let score = 0;
+    for (const item of history) {
+      if (!this._itemMatchesSite(item?.url, site, siblings)) continue;
+      const n = Number(item.visitCount);
+      score += Number.isFinite(n) && n > 0 ? n : 1;
+    }
+    return score;
+  }
+
+  /**
+   * Most recent lastVisitTime among history rows for a Launch Deck site.
+   * @param {{ url?: string }} site
+   * @param {Array<{url?: string, lastVisitTime?: number}>} history
+   * @param {Array<{url?: string}>} siblings
+   * @returns {number}
+   */
+  _siteLastVisitTime(site, history, siblings) {
+    if (!Array.isArray(history) || !history.length) return 0;
+    let latest = 0;
+    for (const item of history) {
+      if (!this._itemMatchesSite(item?.url, site, siblings)) continue;
+      const t = Number(item.lastVisitTime) || 0;
+      if (t > latest) latest = t;
+    }
+    return latest;
+  }
+
+  /**
+   * Curated Sites with ≥1 matching item in the given list (favorites or history).
+   * Site-filter subtabs never show a 0-count entry.
    * @param {string} categoryKey
+   * @param {'favorites'|'history'} listKey
    * @returns {Array<{title: string, url: string}>}
    */
-  _getSitesWithHistoryVisits(categoryKey) {
+  _getSitesWithPrimaryItems(categoryKey, listKey) {
     const sites = this._defaultSites[categoryKey];
-    const history = this._categories?.[categoryKey]?.history;
-    if (!Array.isArray(sites) || !sites.length || !Array.isArray(history) || !history.length) {
+    const items = this._categories?.[categoryKey]?.[listKey];
+    if (!Array.isArray(sites) || !sites.length || !Array.isArray(items) || !items.length) {
       return [];
     }
     return sites.filter((site) =>
-      history.some((item) => this._itemMatchesSite(item?.url, site))
+      items.some((item) => this._itemMatchesSite(item?.url, site, sites))
     );
   }
 
   /**
    * Keep the category's site filter valid for Favorites/History.
+   * Filter set depends on the active primary sub-tab (bookmarks vs visits).
    * @param {string} categoryKey
    */
   _ensureValidSiteFilter(categoryKey) {
-    const sitesWithVisits = this._getSitesWithHistoryVisits(categoryKey);
-    const current = this._categorySiteFilters[categoryKey];
-    if (!sitesWithVisits.length) {
+    const primary = this._categorySubTabs[categoryKey] || 'history';
+    if (primary !== 'favorites' && primary !== 'history') {
       this._categorySiteFilters[categoryKey] = null;
       return;
     }
-    const stillValid = sitesWithVisits.some((s) => s.url === current);
+    const sitesWithItems = this._getSitesWithPrimaryItems(categoryKey, primary);
+    const current = this._categorySiteFilters[categoryKey];
+    if (!sitesWithItems.length) {
+      this._categorySiteFilters[categoryKey] = null;
+      return;
+    }
+    const stillValid = sitesWithItems.some((s) => s.url === current);
     if (!stillValid) {
-      this._categorySiteFilters[categoryKey] = sitesWithVisits[0].url;
+      this._categorySiteFilters[categoryKey] = sitesWithItems[0].url;
     }
   }
 
   /**
-   * Items for the active primary sub-tab, optionally filtered by Sites domain.
+   * Items for the active primary sub-tab, optionally filtered by Sites domain/path.
+   * Launch Deck is sorted by visit frequency (most visited first).
    * @param {string} categoryKey
    * @returns {Array}
    */
@@ -812,16 +1154,62 @@ export class LauncherPopover {
     }
 
     let items = category[currentSubTab] || [];
+
+    if (currentSubTab === 'sites') {
+      const sites = this._defaultSites[categoryKey] || [];
+      const history = category.history || [];
+      const visible = this._filterLaunchDeckItems(items);
+      return [...visible].sort((a, b) => {
+        const scoreA =
+          Number(a?.visitCount) > 0
+            ? Number(a.visitCount)
+            : this._siteVisitScore(a, history, sites);
+        const scoreB =
+          Number(b?.visitCount) > 0
+            ? Number(b.visitCount)
+            : this._siteVisitScore(b, history, sites);
+        if (scoreB !== scoreA) return scoreB - scoreA;
+        const lastA =
+          Number(a?.lastVisitTime) > 0
+            ? Number(a.lastVisitTime)
+            : this._siteLastVisitTime(a, history, sites);
+        const lastB =
+          Number(b?.lastVisitTime) > 0
+            ? Number(b.lastVisitTime)
+            : this._siteLastVisitTime(b, history, sites);
+        return lastB - lastA;
+      });
+    }
+
     if (currentSubTab === 'favorites' || currentSubTab === 'history') {
       const siteUrl = this._categorySiteFilters[categoryKey];
       if (siteUrl) {
-        const site = (this._defaultSites[categoryKey] || []).find((s) => s.url === siteUrl);
+        const sites = this._defaultSites[categoryKey] || [];
+        const site = sites.find((s) => s.url === siteUrl);
         if (site) {
-          items = items.filter((item) => this._itemMatchesSite(item?.url, site));
+          items = items.filter((item) => this._itemMatchesSite(item?.url, site, sites));
         }
       }
     }
     return items;
+  }
+
+  /**
+   * @param {number|string|null|undefined} dateAdded
+   * @returns {string|null}
+   */
+  _formatBookmarkAddedDate(dateAdded) {
+    const n = Number(dateAdded);
+    if (!Number.isFinite(n) || n <= 0) return null;
+    try {
+      return new Date(n).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -967,12 +1355,27 @@ export class LauncherPopover {
       overflow-y: auto;
     `;
 
-    // Render tabs
+    // Render tabs with dividers between each entry
     if (this._categories) {
-      Object.keys(this._categories).forEach(categoryKey => {
+      const categoryKeys = Object.keys(this._categories);
+      categoryKeys.forEach((categoryKey, index) => {
         const category = this._categories[categoryKey];
         const tab = this._createTab(categoryKey, category);
         this._tabListContainer.appendChild(tab);
+
+        if (index < categoryKeys.length - 1) {
+          const divider = doc.createElement('div');
+          divider.className = 'kp-launcher-tab-divider';
+          divider.setAttribute('aria-hidden', 'true');
+          divider.style.cssText = `
+            height: 1px;
+            margin: 2px 16px;
+            background: #2a2a2a;
+            flex-shrink: 0;
+            pointer-events: none;
+          `;
+          this._tabListContainer.appendChild(divider);
+        }
       });
     }
 
@@ -1024,7 +1427,7 @@ export class LauncherPopover {
     });
 
     const checkboxText = doc.createElement('span');
-    checkboxText.textContent = 'Show default sites';
+    checkboxText.textContent = 'Show Launch Deck';
 
     checkboxLabel.appendChild(checkbox);
     checkboxLabel.appendChild(checkboxText);
@@ -1096,7 +1499,7 @@ export class LauncherPopover {
     header.appendChild(titleBlock);
     header.appendChild(this._headerSearchSlot);
 
-    // Sub-tabs: primary row (Sites/Favorites/History/Search) + optional site-filter row
+    // Sub-tabs: primary row (Launch Deck/Favorites/History/Search) + optional site-filter row
     this._subTabContainer = doc.createElement('div');
     this._subTabContainer.className = 'kp-launcher-subtabs';
     this._subTabContainer.style.cssText = `
@@ -1723,7 +2126,7 @@ export class LauncherPopover {
 
     // Create sub-tabs based on configuration
     const subTabLabels = {
-      sites: 'Sites',
+      sites: 'Launch Deck',
       favorites: 'Favorites',
       history: 'History',
       search: 'Search'
@@ -1753,7 +2156,8 @@ export class LauncherPopover {
 
   /**
    * Second-row site filters under Favorites / History.
-   * Only Sites with ≥1 History visit appear; wraps to multiple rows as needed.
+   * Favorites: only Sites with ≥1 bookmark. History: only Sites with ≥1 visit.
+   * Never renders a 0-count site pill.
    */
   _updateSiteFilterTabsUI() {
     if (!this._siteFilterRow) return;
@@ -1761,11 +2165,14 @@ export class LauncherPopover {
     const categoryKey = this._currentCategory;
     const primary = this._categorySubTabs[categoryKey] || 'history';
     const showFilters = primary === 'favorites' || primary === 'history';
-    const sitesWithVisits = showFilters ? this._getSitesWithHistoryVisits(categoryKey) : [];
+    const allSites = this._defaultSites[categoryKey] || [];
+    const sitesWithItems = showFilters
+      ? this._getSitesWithPrimaryItems(categoryKey, primary)
+      : [];
 
     this._siteFilterRow.innerHTML = '';
 
-    if (!showFilters || !sitesWithVisits.length) {
+    if (!showFilters || !sitesWithItems.length) {
       this._siteFilterRow.style.display = 'none';
       return;
     }
@@ -1773,13 +2180,15 @@ export class LauncherPopover {
     this._ensureValidSiteFilter(categoryKey);
     const activeSiteUrl = this._categorySiteFilters[categoryKey];
     this._siteFilterRow.style.display = 'flex';
+    const primaryItems = this._categories?.[categoryKey]?.[primary] || [];
 
-    for (const site of sitesWithVisits) {
-      const isActive = site.url === activeSiteUrl;
-      const count = this._filterByDomains(
-        this._categories?.[categoryKey]?.[primary] || [],
-        [extractDomain(site.url)].filter(Boolean)
+    for (const site of sitesWithItems) {
+      const count = primaryItems.filter((item) =>
+        this._itemMatchesSite(item?.url, site, allSites)
       ).length;
+      if (count <= 0) continue;
+
+      const isActive = site.url === activeSiteUrl;
 
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -1885,9 +2294,9 @@ export class LauncherPopover {
 
     const input = doc.createElement('input');
     input.type = 'search';
-    input.placeholder = 'Search sites...';
+    input.placeholder = 'Filter results...';
     input.className = 'kp-launcher-search-input';
-    input.setAttribute('aria-label', 'Search sites');
+    input.setAttribute('aria-label', 'Filter results');
     input.autocomplete = 'off';
     input.spellcheck = false;
     input.value = this._searchQuery || '';
@@ -2130,9 +2539,13 @@ export class LauncherPopover {
       flex: 1;
     `;
 
-    // Render items
+    // Launch Deck cards use a distinct tile style vs Favorites / History listings.
+    const cardVariant = currentSubTab === 'sites' ? 'launch' : 'listing';
     sheetItems.forEach((item) => {
-      const card = this._createGridCard(item);
+      const card = this._createGridCard(item, {
+        variant: cardVariant,
+        showAddedOn: currentSubTab === 'favorites'
+      });
       grid.appendChild(card);
     });
 
@@ -2340,7 +2753,7 @@ export class LauncherPopover {
 
     const backBtn = doc.createElement('button');
     backBtn.type = 'button';
-    backBtn.textContent = '← Sites';
+    backBtn.textContent = '← Launch Deck';
     backBtn.style.cssText = `
       margin: 0;
       appearance: none;
@@ -2821,32 +3234,56 @@ export class LauncherPopover {
   /**
    * Create a grid card for a website
    */
-  _createGridCard(item) {
-    const doc = document;
-    // Shared URL helpers (same as omnibox / history listings)
-    const domain = extractDomain(item.url) || String(item.url || '');
-    const path = extractPath(item.url);
-    const isDefault = item.isDefault === true;
+  /**
+   * @param {{ title?: string, url?: string, isDefault?: boolean, dateAdded?: number }} item
+   * @param {{ variant?: 'launch' | 'listing', showAddedOn?: boolean }} [opts]
+   */
+  _createGridCard(item, opts = {}) {
+    const isLaunch = opts.variant === 'launch';
+    return isLaunch
+      ? this._createLaunchDeckCard(item)
+      : this._createListingCard(item, { showAddedOn: !!opts.showAddedOn });
+  }
 
-    // Container — solid fallback until YouTube/official or captured page thumb loads.
+  /**
+   * Launch Deck tiles — destination launchers, not history/bookmark listings.
+   * @param {{ title?: string, url?: string }} item
+   */
+  _createLaunchDeckCard(item) {
+    const doc = document;
+    const domain = extractDomain(item.url) || String(item.url || '');
+
     const container = doc.createElement('div');
-    container.className = 'kp-launcher-card-container';
+    container.className = 'kp-launcher-card-container kp-launcher-launch-card';
     container.style.cssText = `
       display: flex;
-      background: ${isDefault ? '#3a3a3a' : '#2a2a2a'};
-      border: 1px solid ${isDefault ? '#444' : '#333'};
-      border-radius: 8px;
+      flex-direction: column;
+      background: linear-gradient(165deg, #2c3238 0%, #1a1e22 100%);
+      border: 1px solid #3d4a55;
+      border-radius: 12px;
       overflow: hidden;
-      min-height: 100px;
-      transition: all 0.2s;
+      min-height: 148px;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
       position: relative;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
     `;
 
-    // Darkened video / page-screenshot background.
-    // Lazy: load when near the grid viewport (~visible + 2× buffer), rate-limited + cached.
+    const accent = doc.createElement('div');
+    accent.setAttribute('aria-hidden', 'true');
+    accent.style.cssText = `
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #5a9e6f 0%, #3d7a52 55%, transparent 100%);
+      z-index: 2;
+      pointer-events: none;
+    `;
+
     applyCardBackground(container, item.url, {
-      fallbackSolid: isDefault ? '#3a3a3a' : '#2a2a2a',
-      hoverSolid: isDefault ? '#444' : '#333',
+      fallbackSolid: '#1a1e22',
+      hoverSolid: '#242a30',
       manageHover: true,
       videoPrefer: true,
       youtubePrefer: true,
@@ -2856,7 +3293,249 @@ export class LauncherPopover {
       priority: 1
     });
 
-    // Main link area (3/4 width) - add min-width: 0 to allow shrinking
+    const mainLink = doc.createElement('a');
+    mainLink.href = item.url;
+    mainLink.target = '_blank';
+    mainLink.rel = 'noopener noreferrer';
+    mainLink.className = 'kp-launcher-card-main';
+    mainLink.style.cssText = `
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 28px 20px 18px;
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+      overflow: hidden;
+      position: relative;
+      z-index: 1;
+      gap: 10px;
+    `;
+
+    const iconWell = doc.createElement('div');
+    iconWell.style.cssText = `
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    `;
+
+    const favicon = createFaviconImg(doc, item.url, { size: 36 });
+    favicon.style.cssText = `
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      flex-shrink: 0;
+    `;
+    iconWell.appendChild(favicon);
+
+    const title = doc.createElement('div');
+    title.textContent = item.title || domain;
+    title.style.cssText = `
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      color: #f2f2f2;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+    `;
+
+    const domainEl = doc.createElement('div');
+    domainEl.textContent = domain;
+    domainEl.style.cssText = `
+      font-size: 11px;
+      color: #8a939c;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+    `;
+
+    const launchHint = doc.createElement('div');
+    launchHint.textContent = 'Launch →';
+    launchHint.style.cssText = `
+      margin-top: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #7cbc8e;
+      opacity: 0.85;
+    `;
+
+    mainLink.appendChild(iconWell);
+    mainLink.appendChild(title);
+    mainLink.appendChild(domainEl);
+    mainLink.appendChild(launchHint);
+
+    const footer = doc.createElement('div');
+    footer.style.cssText = `
+      display: flex;
+      align-items: stretch;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      position: relative;
+      z-index: 1;
+      flex-shrink: 0;
+    `;
+
+    const previewBtn = doc.createElement('button');
+    previewBtn.type = 'button';
+    previewBtn.className = 'kp-launcher-card-preview';
+    previewBtn.style.cssText = `
+      flex: 1;
+      padding: 10px 12px;
+      background: rgba(0, 0, 0, 0.25);
+      border: none;
+      color: #9aa3ab;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      transition: background 0.15s, color 0.15s;
+    `;
+    previewBtn.innerHTML = '<span aria-hidden="true">👁</span><span>Preview</span>';
+    previewBtn.title = 'Preview / close preview';
+
+    previewBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this._showPreview(item.url);
+    });
+    previewBtn.addEventListener('mouseenter', () => {
+      previewBtn.style.background = 'rgba(0, 0, 0, 0.4)';
+      previewBtn.style.color = '#fff';
+    });
+    previewBtn.addEventListener('mouseleave', () => {
+      previewBtn.style.background = 'rgba(0, 0, 0, 0.25)';
+      previewBtn.style.color = '#9aa3ab';
+    });
+
+    const hideBtn = doc.createElement('button');
+    hideBtn.type = 'button';
+    hideBtn.className = 'kp-launcher-card-hide';
+    hideBtn.title = 'Hide from Launch Deck';
+    hideBtn.setAttribute('aria-label', 'Hide from Launch Deck');
+    hideBtn.style.cssText = `
+      width: 52px;
+      flex-shrink: 0;
+      padding: 10px 8px;
+      background: rgba(0, 0, 0, 0.25);
+      border: none;
+      border-left: 1px solid rgba(255, 255, 255, 0.08);
+      color: #9aa3ab;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, color 0.15s;
+    `;
+    hideBtn.innerHTML = `
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+        <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+        <line x1="1" y1="1" x2="23" y2="23"/>
+      </svg>
+    `.trim();
+
+    hideBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      void this._hideLaunchDeckItem(item.url);
+    });
+    hideBtn.addEventListener('mouseenter', () => {
+      hideBtn.style.background = 'rgba(0, 0, 0, 0.4)';
+      hideBtn.style.color = '#ffb4b4';
+    });
+    hideBtn.addEventListener('mouseleave', () => {
+      hideBtn.style.background = 'rgba(0, 0, 0, 0.25)';
+      hideBtn.style.color = '#9aa3ab';
+    });
+
+    footer.appendChild(previewBtn);
+    footer.appendChild(hideBtn);
+    container.appendChild(accent);
+    container.appendChild(mainLink);
+    container.appendChild(footer);
+
+    container.addEventListener('mouseenter', () => {
+      container.style.borderColor = '#5a7a68';
+      container.style.transform = 'translateY(-3px)';
+      container.style.boxShadow =
+        'inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 10px 28px rgba(0, 0, 0, 0.35)';
+      launchHint.style.opacity = '1';
+      launchHint.style.color = '#9fd4ae';
+    });
+    container.addEventListener('mouseleave', () => {
+      container.style.borderColor = '#3d4a55';
+      container.style.transform = 'translateY(0)';
+      container.style.boxShadow = 'inset 0 1px 0 rgba(255, 255, 255, 0.06)';
+      launchHint.style.opacity = '0.85';
+      launchHint.style.color = '#7cbc8e';
+    });
+
+    mainLink.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.hide();
+    });
+
+    return container;
+  }
+
+  /**
+   * Favorites / History / Search listing cards.
+   * @param {{ title?: string, url?: string, isDefault?: boolean, dateAdded?: number }} item
+   * @param {{ showAddedOn?: boolean }} [opts]
+   */
+  _createListingCard(item, opts = {}) {
+    const doc = document;
+    const domain = extractDomain(item.url) || String(item.url || '');
+    const path = extractPath(item.url);
+    const addedLabel = opts.showAddedOn
+      ? this._formatBookmarkAddedDate(item.dateAdded)
+      : null;
+
+    const container = doc.createElement('div');
+    container.className = 'kp-launcher-card-container kp-launcher-listing-card';
+    container.style.cssText = `
+      display: flex;
+      background: #2a2a2a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      overflow: hidden;
+      min-height: 100px;
+      transition: all 0.2s;
+      position: relative;
+    `;
+
+    applyCardBackground(container, item.url, {
+      fallbackSolid: '#2a2a2a',
+      hoverSolid: '#333',
+      manageHover: true,
+      videoPrefer: true,
+      youtubePrefer: true,
+      lazy: true,
+      lazyRoot: this._gridContainer,
+      lazyRootMargin: '100% 100% 100% 100%',
+      priority: 1
+    });
+
     const mainLink = doc.createElement('a');
     mainLink.href = item.url;
     mainLink.target = '_blank';
@@ -2868,6 +3547,7 @@ export class LauncherPopover {
       display: flex;
       flex-direction: column;
       padding: 20px;
+      padding-bottom: ${addedLabel ? '36px' : '20px'};
       text-decoration: none;
       color: inherit;
       cursor: pointer;
@@ -2876,7 +3556,6 @@ export class LauncherPopover {
       z-index: 1;
     `;
 
-    // Favicon via shared url-listing helper (SW fallback + generic icon)
     const favicon = createFaviconImg(doc, item.url, { size: 32 });
     favicon.style.cssText = `
       width: 32px;
@@ -2886,7 +3565,6 @@ export class LauncherPopover {
       flex-shrink: 0;
     `;
 
-    // Title
     const title = doc.createElement('div');
     title.textContent = item.title || domain;
     title.style.cssText = `
@@ -2899,7 +3577,6 @@ export class LauncherPopover {
       white-space: nowrap;
     `;
 
-    // Domain
     const domainEl = doc.createElement('div');
     domainEl.textContent = domain;
     domainEl.style.cssText = `
@@ -2910,7 +3587,6 @@ export class LauncherPopover {
       white-space: nowrap;
     `;
 
-    // Path
     const pathEl = doc.createElement('div');
     pathEl.textContent = path;
     pathEl.style.cssText = `
@@ -2928,7 +3604,31 @@ export class LauncherPopover {
     mainLink.appendChild(domainEl);
     mainLink.appendChild(pathEl);
 
-    // Preview button (fixed width instead of flex)
+    if (addedLabel) {
+      const addedOverlay = doc.createElement('div');
+      addedOverlay.className = 'kp-launcher-card-added-on';
+      addedOverlay.textContent = `Added on ${addedLabel}`;
+      addedOverlay.style.cssText = `
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 6px 12px;
+        background: rgba(0, 0, 0, 0.72);
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        color: #c8c8c8;
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        pointer-events: none;
+        z-index: 2;
+      `;
+      mainLink.appendChild(addedOverlay);
+    }
+
     const previewBtn = doc.createElement('button');
     previewBtn.className = 'kp-launcher-card-preview';
     previewBtn.style.cssText = `
@@ -2953,33 +3653,27 @@ export class LauncherPopover {
       e.stopPropagation();
       this._showPreview(item.url);
     });
-
     previewBtn.addEventListener('mouseenter', () => {
       previewBtn.style.background = '#2a2a2a';
       previewBtn.style.color = '#fff';
     });
-
     previewBtn.addEventListener('mouseleave', () => {
       previewBtn.style.background = '#1f1f1f';
       previewBtn.style.color = '#888';
     });
 
-    // Assemble container
     container.appendChild(mainLink);
     container.appendChild(previewBtn);
 
-    // Lift + border on hover (background handled by applyCardBackground)
     container.addEventListener('mouseenter', () => {
-      container.style.borderColor = isDefault ? '#555' : '#444';
+      container.style.borderColor = '#444';
       container.style.transform = 'translateY(-2px)';
     });
-
     container.addEventListener('mouseleave', () => {
-      container.style.borderColor = isDefault ? '#444' : '#333';
+      container.style.borderColor = '#333';
       container.style.transform = 'translateY(0)';
     });
 
-    // Main link click closes launcher
     mainLink.addEventListener('click', (e) => {
       e.stopPropagation();
       this.hide();

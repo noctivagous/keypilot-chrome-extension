@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension - Frame Agent Bundle (child frames)
- * Generated on 2026-08-08T03:50:00.332Z
+ * Generated on 2026-08-08T11:00:58.152Z
  */
 
 (() => {

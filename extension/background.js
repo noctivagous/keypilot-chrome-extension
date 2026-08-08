@@ -944,9 +944,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             else if (source === 'bookmark') score += isToolbar ? 3200 : 2800;
             else if (source === 'history') score += 2000;
 
-            // Within-tier heuristics.
-            score += Math.min(800, Math.max(0, Number(historyVisitCount) || 0) * 8);
-            score += Math.min(400, Math.max(0, Number(historyTypedCount) || 0) * 20);
+            // Strongly prioritize frequently visited URLs (across all sources).
+            // e.g. 25 visits => 500, 50 => 1000, 100+ => 2000 (cap).
+            const visits = Math.max(0, Number(historyVisitCount) || 0);
+            score += Math.min(2000, visits * 20);
+            score += Math.min(600, Math.max(0, Number(historyTypedCount) || 0) * 30);
             score += Math.min(500, Math.max(0, Math.floor(((Number(historyLastVisitTime) || 0) - (Date.now() - 30 * 24 * 60 * 60 * 1000)) / (24 * 60 * 60 * 1000))) * 5);
 
             const host = safeUrlHost(url);
@@ -964,31 +966,63 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             return score;
           };
 
+          const sourceTier = (source, isToolbar) => {
+            if (source === 'topSites') return 4;
+            if (source === 'bookmark') return isToolbar ? 3 : 2;
+            if (source === 'history') return 1;
+            return 0;
+          };
+
           const addCandidate = ({ title, url, source, isToolbar = false, historyVisitCount = 0, historyTypedCount = 0, historyLastVisitTime = 0 }) => {
             const normalizedUrl = normalizeUrl(url);
             if (!normalizedUrl) return;
 
+            const prev = bestByUrl.get(normalizedUrl);
+
+            // Merge history visit stats across sources so bookmarks/topSites
+            // still benefit from frequency when the same URL appears in history.
+            const mergedVisitCount = Math.max(
+              Number(prev?.historyVisitCount) || 0,
+              Number(historyVisitCount) || 0
+            );
+            const mergedTypedCount = Math.max(
+              Number(prev?.historyTypedCount) || 0,
+              Number(historyTypedCount) || 0
+            );
+            const mergedLastVisitTime = Math.max(
+              Number(prev?.historyLastVisitTime) || 0,
+              Number(historyLastVisitTime) || 0
+            );
+
+            // Keep the highest-tier source; prefer a non-empty title.
+            const preferIncomingSource =
+              !prev || sourceTier(source, isToolbar) > sourceTier(prev.source, prev.isToolbar);
+            const nextSource = preferIncomingSource ? source : prev.source;
+            const nextIsToolbar = preferIncomingSource ? Boolean(isToolbar) : Boolean(prev.isToolbar);
+            const incomingTitle = typeof title === 'string' ? title : '';
+            const nextTitle = incomingTitle || (typeof prev?.title === 'string' ? prev.title : '');
+
             const entry = {
-              title: typeof title === 'string' ? title : '',
+              title: nextTitle,
               url: normalizedUrl,
-              source,
-              isToolbar: Boolean(isToolbar),
+              source: nextSource,
+              isToolbar: nextIsToolbar,
               host: safeUrlHost(normalizedUrl),
+              historyVisitCount: mergedVisitCount,
+              historyTypedCount: mergedTypedCount,
+              historyLastVisitTime: mergedLastVisitTime,
               score: computeBaseScore({
-                source,
-                isToolbar,
+                source: nextSource,
+                isToolbar: nextIsToolbar,
                 url: normalizedUrl,
-                title,
-                historyVisitCount,
-                historyTypedCount,
-                historyLastVisitTime
+                title: nextTitle,
+                historyVisitCount: mergedVisitCount,
+                historyTypedCount: mergedTypedCount,
+                historyLastVisitTime: mergedLastVisitTime
               })
             };
 
-            const prev = bestByUrl.get(normalizedUrl);
-            if (!prev || entry.score > prev.score) {
-              bestByUrl.set(normalizedUrl, entry);
-            }
+            bestByUrl.set(normalizedUrl, entry);
           };
 
           // 0) Most visited / top sites
@@ -1026,12 +1060,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             console.warn('KP_OMNIBOX_SUGGEST: bookmark search failed:', e?.message || e);
           }
 
-          // 2) History
+          // 2) History (fetch extra so visit counts can enrich bookmarks/topSites)
           try {
             if (chrome.history && typeof chrome.history.search === 'function') {
               const historyItems = await chrome.history.search({
                 text: query,
-                maxResults: Math.max(maxResults, 12),
+                maxResults: Math.max(maxResults * 4, 50),
                 startTime: 0
               });
               for (const item of historyItems || []) {
@@ -1051,8 +1085,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
           candidates.push(...bestByUrl.values());
 
-          // Sort by score descending.
-          candidates.sort((a, b) => (Number(b?.score) || 0) - (Number(a?.score) || 0));
+          // Sort by score, then by visit frequency (most visited first).
+          candidates.sort((a, b) => {
+            const scoreDiff = (Number(b?.score) || 0) - (Number(a?.score) || 0);
+            if (scoreDiff !== 0) return scoreDiff;
+            return (Number(b?.historyVisitCount) || 0) - (Number(a?.historyVisitCount) || 0);
+          });
 
           // Compute "closest domain" row.
           // Only when query is domain-ish: no spaces, at least 2 chars.
@@ -1238,46 +1276,64 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
 
         case 'KP_GET_HISTORY_FOR_DOMAINS': {
-          // Search history for specific domains (parallel per-domain searches).
-          const domains = Array.isArray(message.domains) ? message.domains : [];
+          // Search history for specific domains (parallel queries).
+          // Prefer https://domain text queries so URL hits aren't crowded out by
+          // off-site pages that merely mention the domain in their title.
+          const rawDomains = Array.isArray(message.domains) ? message.domains : [];
+          const domains = [...new Set(
+            rawDomains
+              .map((d) => String(d || '').trim().replace(/^www\./i, ''))
+              .filter(Boolean)
+          )];
+          const extraQueries = Array.isArray(message.queries)
+            ? message.queries.map((q) => String(q || '').trim()).filter(Boolean)
+            : [];
           const days = Math.max(1, Math.min(90, Number(message.days) || 30));
           const startTime = Date.now() - days * 24 * 60 * 60 * 1000;
+          const maxResults = Math.max(50, Math.min(1000, Number(message.maxResults) || 300));
 
           try {
             if (chrome.history && typeof chrome.history.search === 'function') {
               const seenUrls = new Set();
               const allResults = [];
 
-              // Parallel domain searches — sequential awaits were a major launcher lag source.
-              const perDomain = await Promise.all(domains.map(async (domain) => {
+              const queries = [...new Set([
+                ...domains.map((d) => `https://${d}`),
+                ...domains,
+                ...extraQueries
+              ])];
+
+              const perQuery = await Promise.all(queries.map(async (text) => {
                 try {
                   return await chrome.history.search({
-                    text: domain,
-                    maxResults: 50,
-                    startTime: startTime
+                    text,
+                    maxResults,
+                    startTime
                   });
                 } catch (error) {
-                  console.warn(`KP_GET_HISTORY_FOR_DOMAINS: error searching for domain ${domain}:`, error);
+                  console.warn(`KP_GET_HISTORY_FOR_DOMAINS: error searching for "${text}":`, error);
                   return [];
                 }
               }));
 
-              for (let i = 0; i < domains.length; i++) {
-                const domain = domains[i];
-                const historyItems = perDomain[i] || [];
-                for (const item of historyItems) {
+              const domainMatches = (hostname, domain) => {
+                const host = String(hostname || '').replace(/^www\./i, '');
+                return host === domain || host.endsWith('.' + domain);
+              };
+
+              for (const historyItems of perQuery) {
+                for (const item of historyItems || []) {
                   if (!item.url || seenUrls.has(item.url)) continue;
                   try {
-                    const itemDomain = new URL(item.url).hostname.replace('www.', '');
-                    if (itemDomain === domain || itemDomain.endsWith('.' + domain)) {
-                      allResults.push({
-                        title: item.title || itemDomain,
-                        url: item.url,
-                        visitCount: item.visitCount || 0,
-                        lastVisitTime: Number(item.lastVisitTime) || 0
-                      });
-                      seenUrls.add(item.url);
-                    }
+                    const itemDomain = new URL(item.url).hostname.replace(/^www\./i, '');
+                    if (!domains.some((domain) => domainMatches(itemDomain, domain))) continue;
+                    allResults.push({
+                      title: item.title || itemDomain,
+                      url: item.url,
+                      visitCount: item.visitCount || 0,
+                      lastVisitTime: Number(item.lastVisitTime) || 0
+                    });
+                    seenUrls.add(item.url);
                   } catch {
                     // Skip invalid URLs
                   }
