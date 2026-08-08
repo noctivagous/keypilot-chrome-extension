@@ -1439,8 +1439,7 @@ async function init() {
     // Create KeyPilot instance
     const keyPilot = new KeyPilot();
 
-    // Store reference globally for debugging/metrics panels (used by OverlayManager debug panel)
-    // Note: this is within the content-script isolated world; it is intended for KeyPilot internals.
+    // Store reference globally for debugging/metrics panels (used by OverlayManager debug panel).
     window.keyPilot = keyPilot;
 
     // Create toggle handler and wrap KeyPilot instance
@@ -1466,8 +1465,9 @@ async function init() {
   }
 
   // Also run onboarding on the custom New Tab page.
-  // Content scripts don't run on extension pages, so we bootstrap it here to keep the
-  // onboarding + practice popover persistent across normal sites and the New Tab override.
+  // Content scripts don't run on extension pages; early-inject.js is loaded from
+  // newtab.html for the walkthrough + control-strip shells, and we hydrate
+  // OnboardingManager here so behavior stays consistent with normal sites.
   try {
     if (!window.__KeyPilotOnboarding) {
       const onboarding = new OnboardingManager();

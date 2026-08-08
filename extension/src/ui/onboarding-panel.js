@@ -549,7 +549,8 @@ export class OnboardingPanel {
     tasks,
     completedTaskIds,
     lastCompletedTaskId = null,
-    showTip = true,
+    showTip = false,
+    showCloseButton = false,
     transition = null,
     forceRebuild = false
   }) {
@@ -578,7 +579,9 @@ export class OnboardingPanel {
           lastCompletedTaskId,
           bodyText,
           forceRebuild,
-          showTip: showTip !== false,
+          showTip: showTip === true,
+          showCloseButton: showCloseButton === true,
+          onCloseClick: this._onCloseClick,
           onTaskRowClick: this._onTaskRowClick
         });
       };

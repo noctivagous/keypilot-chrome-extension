@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>KeyPilot New Tab</title>
     <script src="newtab-display-boot.js"></script>
+    <!--
+      Content scripts do not run on extension pages (chrome_url_overrides newtab).
+      Load early-inject here so the onboarding popover + control strip shells appear
+      before the ES module bundle (same flicker-free path as regular web pages).
+    -->
+    <script src="../early-inject.js"></script>
     <link rel="stylesheet" href="newtab.css" />
   </head>
   <body>

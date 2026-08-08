@@ -207,6 +207,30 @@ export function getOnboardingPanelCss(opts = {}) {
         border-radius: 4px;
         background: linear-gradient(180deg, #2b2b2b 0%, #1a1a1a 100%);
         color: #f1f1f1;
+      }
+      /* Next incomplete checklist row — same light-blue glow language as the toggle-off arrow. */
+      @keyframes kp-onboarding-next-task-glow {
+        0%, 100% {
+          box-shadow:
+            0 0 0 1px rgba(33, 150, 243, 0.40),
+            0 0 10px rgba(120, 210, 255, 0.45),
+            0 0 18px rgba(120, 210, 255, 0.25);
+        }
+        50% {
+          box-shadow:
+            0 0 0 1px rgba(33, 150, 243, 0.70),
+            0 0 16px rgba(120, 210, 255, 0.75),
+            0 0 32px rgba(120, 210, 255, 0.45);
+        }
+      }
+      .${ONBOARDING_PANEL_CLASS} [data-kp-onboarding-task-next="true"] {
+        animation: kp-onboarding-next-task-glow 1.5s ease-in-out infinite;
+        will-change: box-shadow;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .${ONBOARDING_PANEL_CLASS} [data-kp-onboarding-task-next="true"] {
+          animation: none;
+        }
       }`;
   if (includeVt) {
     css += `
@@ -555,10 +579,24 @@ function applyTaskRowInteractive(row, { uncheckable, onTaskRowClick }) {
   }
 }
 
+/** Light-blue next-step outline (matches toggle-off arrow glow). */
+const NEXT_TASK_BORDER = '1px solid rgba(120, 210, 255, 0.65)';
+const NEXT_TASK_BG = 'rgba(33, 150, 243, 0.14)';
+const NEXT_TASK_GLOW =
+  '0 0 0 1px rgba(33, 150, 243, 0.45), 0 0 12px rgba(120, 210, 255, 0.55), 0 0 24px rgba(120, 210, 255, 0.35)';
+
 function applyTaskRowVisual(row, task, done, opts = {}) {
   if (!row) return;
+  const isNext = !!(!done && opts.isNext);
+  try {
+    if (isNext) row.setAttribute('data-kp-onboarding-task-next', 'true');
+    else row.removeAttribute('data-kp-onboarding-task-next');
+  } catch { /* ignore */ }
+
   assignStyle(row, {
-    background: done ? 'rgba(46, 204, 113, 0.10)' : 'rgba(255,255,255,0.04)'
+    background: done ? 'rgba(46, 204, 113, 0.10)' : (isNext ? NEXT_TASK_BG : 'rgba(255,255,255,0.04)'),
+    border: isNext ? NEXT_TASK_BORDER : '1px solid rgba(255,255,255,0.10)',
+    boxShadow: isNext ? NEXT_TASK_GLOW : 'none'
   });
 
   const box =
@@ -570,9 +608,13 @@ function applyTaskRowVisual(row, task, done, opts = {}) {
 
   if (box) {
     assignStyle(box, {
-      border: done ? '1px solid rgba(46, 204, 113, 0.9)' : '1px solid rgba(255,255,255,0.22)',
+      border: done
+        ? '1px solid rgba(46, 204, 113, 0.9)'
+        : (isNext ? '1px solid rgba(120, 210, 255, 0.75)' : '1px solid rgba(255,255,255,0.22)'),
       background: done ? 'rgba(46, 204, 113, 0.85)' : 'transparent',
-      boxShadow: done ? '0 0 0 2px rgba(46, 204, 113, 0.18)' : 'none'
+      boxShadow: done
+        ? '0 0 0 2px rgba(46, 204, 113, 0.18)'
+        : (isNext ? '0 0 0 2px rgba(33, 150, 243, 0.28)' : 'none')
     });
     try {
       const existingCheck = box.querySelector(':scope > div');
@@ -617,14 +659,19 @@ function applyTaskRowVisual(row, task, done, opts = {}) {
 function createTaskRow(doc, task, done, opts = {}) {
   const row = doc.createElement('div');
   row.setAttribute('data-kp-onboarding-task-id', task.id);
+  const isNext = !!(!done && opts.isNext);
+  if (isNext) {
+    try { row.setAttribute('data-kp-onboarding-task-next', 'true'); } catch { /* ignore */ }
+  }
   assignStyle(row, {
     display: 'flex',
     alignItems: 'flex-start',
     gap: '10px',
     padding: '8px 10px',
     borderRadius: '10px',
-    border: '1px solid rgba(255,255,255,0.10)',
-    background: done ? 'rgba(46, 204, 113, 0.10)' : 'rgba(255,255,255,0.04)'
+    border: isNext ? NEXT_TASK_BORDER : '1px solid rgba(255,255,255,0.10)',
+    background: done ? 'rgba(46, 204, 113, 0.10)' : (isNext ? NEXT_TASK_BG : 'rgba(255,255,255,0.04)'),
+    boxShadow: isNext ? NEXT_TASK_GLOW : 'none'
   });
 
   const box = doc.createElement('div');
@@ -633,9 +680,13 @@ function createTaskRow(doc, task, done, opts = {}) {
     width: '18px',
     height: '18px',
     borderRadius: '6px',
-    border: done ? '1px solid rgba(46, 204, 113, 0.9)' : '1px solid rgba(255,255,255,0.22)',
+    border: done
+      ? '1px solid rgba(46, 204, 113, 0.9)'
+      : (isNext ? '1px solid rgba(120, 210, 255, 0.75)' : '1px solid rgba(255,255,255,0.22)'),
     background: done ? 'rgba(46, 204, 113, 0.85)' : 'transparent',
-    boxShadow: done ? '0 0 0 2px rgba(46, 204, 113, 0.18)' : 'none',
+    boxShadow: done
+      ? '0 0 0 2px rgba(46, 204, 113, 0.18)'
+      : (isNext ? '0 0 0 2px rgba(33, 150, 243, 0.28)' : 'none'),
     flex: '0 0 auto',
     marginTop: '1px',
     position: 'relative'
@@ -686,7 +737,9 @@ function createTaskRow(doc, task, done, opts = {}) {
  * @param {(e:Event)=>void} [params.onTaskRowClick]
  * @param {string} [params.bodyText]
  * @param {boolean} [params.forceRebuild]
- * @param {boolean} [params.showTip]
+ * @param {boolean} [params.showTip] Opt-in reopen tip (off by default)
+ * @param {boolean} [params.showCloseButton] Show a "Close Tutorial" button (completion slide)
+ * @param {(e: Event) => void} [params.onCloseClick]
  * @param {Document} [params.doc]
  */
 export function renderOnboardingSlideSurface(surface, params = {}) {
@@ -698,9 +751,13 @@ export function renderOnboardingSlideSurface(surface, params = {}) {
     : new Set(Array.isArray(params.completedTaskIds) ? params.completedTaskIds.map(String) : []);
   const lastCompletedTaskId = params.lastCompletedTaskId != null ? String(params.lastCompletedTaskId) : '';
   const onTaskRowClick = typeof params.onTaskRowClick === 'function' ? params.onTaskRowClick : null;
+  const onCloseClick = typeof params.onCloseClick === 'function' ? params.onCloseClick : null;
   const bodyTextStr = String(params.bodyText || '').trim();
   const forceRebuild = !!params.forceRebuild;
-  const showTip = params.showTip !== false;
+  const showTip = params.showTip === true;
+  const showCloseButton = params.showCloseButton === true;
+  // First incomplete task in slide order is the "next" recommended step.
+  const nextTaskId = (tasks.find((t) => !completedSet.has(t.id)) || null)?.id || null;
 
   const existingRows = surface.querySelectorAll('[data-kp-onboarding-task-id]');
   const existingBody = surface.querySelector('[data-kp-onboarding-body-text="true"]');
@@ -725,7 +782,7 @@ export function renderOnboardingSlideSurface(surface, params = {}) {
           );
         });
         existingBody.style.display = 'block';
-        existingBody.style.marginBottom = tasks.length ? '12px' : '0px';
+        existingBody.style.marginBottom = (tasks.length || showCloseButton) ? '12px' : '0px';
       }
     } else if (existingBody && canUpdateInPlace) {
       existingBody.style.display = 'none';
@@ -737,10 +794,17 @@ export function renderOnboardingSlideSurface(surface, params = {}) {
     tasks.forEach((task, i) => {
       const done = completedSet.has(task.id);
       applyTaskRowVisual(existingRows[i], task, done, {
+        isNext: !!(nextTaskId && task.id === nextTaskId),
         uncheckable: done && task.id === lastCompletedTaskId,
         onTaskRowClick
       });
     });
+    // Tip is opt-in; drop any leftover tip from older builds / slides.
+    try {
+      const existingTip = surface.querySelector('[data-kp-onboarding-tip="true"]');
+      if (!showTip && existingTip) existingTip.remove();
+    } catch { /* ignore */ }
+    syncCloseTutorialButton(surface, { show: showCloseButton, onClick: onCloseClick, doc });
     return;
   }
 
@@ -761,7 +825,7 @@ export function renderOnboardingSlideSurface(surface, params = {}) {
       fontSize: '13px',
       lineHeight: '1.45',
       color: 'rgba(255,255,255,0.90)',
-      marginBottom: tasks.length ? '12px' : '0px',
+      marginBottom: (tasks.length || showCloseButton) ? '12px' : '0px',
       opacity: '0.95'
     });
     surface.appendChild(body);
@@ -777,6 +841,7 @@ export function renderOnboardingSlideSurface(surface, params = {}) {
   for (const task of tasks) {
     const done = completedSet.has(task.id);
     list.appendChild(createTaskRow(doc, task, done, {
+      isNext: !!(nextTaskId && task.id === nextTaskId),
       uncheckable: done && task.id === lastCompletedTaskId,
       onTaskRowClick
     }));
@@ -795,6 +860,67 @@ export function renderOnboardingSlideSurface(surface, params = {}) {
       color: 'rgba(255,255,255,0.85)'
     });
     surface.appendChild(tip);
+  }
+
+  syncCloseTutorialButton(surface, { show: showCloseButton, onClick: onCloseClick, doc });
+}
+
+/**
+ * Add / update / remove the completion-slide "Close Tutorial" button.
+ * @param {HTMLElement} surface
+ * @param {{ show?: boolean, onClick?: ((e: Event) => void)|null, doc?: Document }} opts
+ */
+function syncCloseTutorialButton(surface, opts = {}) {
+  if (!surface) return;
+  const doc = opts.doc || surface.ownerDocument || document;
+  const show = opts.show === true;
+  const onClick = typeof opts.onClick === 'function' ? opts.onClick : null;
+  let btn = null;
+  try {
+    btn = surface.querySelector('button[data-kp-onboarding-close-tutorial="true"]');
+  } catch { /* ignore */ }
+
+  if (!show) {
+    try {
+      if (btn) btn.remove();
+    } catch { /* ignore */ }
+    return;
+  }
+
+  if (!btn) {
+    btn = doc.createElement('button');
+    btn.type = 'button';
+    btn.setAttribute('data-kp-onboarding-close-tutorial', 'true');
+    btn.textContent = 'Close Tutorial';
+    assignStyle(btn, {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      alignSelf: 'flex-start',
+      height: '32px',
+      borderRadius: '999px',
+      border: '1px solid rgba(46, 204, 113, 0.55)',
+      background: 'rgba(46, 204, 113, 0.18)',
+      color: 'rgba(255,255,255,0.92)',
+      cursor: 'pointer',
+      fontSize: '12px',
+      fontWeight: '800',
+      padding: '0 14px',
+      lineHeight: '30px',
+      fontFamily: 'inherit'
+    });
+    surface.appendChild(btn);
+  }
+
+  try {
+    if (btn._kpOnboardingCloseClick) {
+      btn.removeEventListener('click', btn._kpOnboardingCloseClick);
+      btn._kpOnboardingCloseClick = null;
+    }
+  } catch { /* ignore */ }
+  if (onClick) {
+    btn._kpOnboardingCloseClick = onClick;
+    try { btn.addEventListener('click', onClick); } catch { /* ignore */ }
   }
 }
 

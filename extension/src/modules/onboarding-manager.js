@@ -595,15 +595,11 @@ export class OnboardingManager {
       if (!slide) return;
 
       const completed = new Set(this.progress.completedTaskIds);
-      let changed = false;
-
-      for (const task of slide.tasks || []) {
-        if (!task || !task.id || completed.has(task.id)) continue;
-        if (this._taskMatches(task, { type: 'action', action, detail: {} })) {
-          completed.add(task.id);
-          changed = true;
-        }
-      }
+      const changed = this._tryCompleteNextMatchingTask(slide, completed, {
+        type: 'action',
+        action,
+        detail: {}
+      });
 
       // Consume it regardless; we only want it to apply once.
       await storageRemoveTransient();
@@ -698,15 +694,11 @@ export class OnboardingManager {
       if (!slide) return;
 
       const completed = new Set(this.progress.completedTaskIds);
-      let changed = false;
-
-      for (const task of slide.tasks || []) {
-        if (!task || !task.id || completed.has(task.id)) continue;
-        if (this._taskMatches(task, { type: 'action', action: 'back', detail: {} })) {
-          completed.add(task.id);
-          changed = true;
-        }
-      }
+      const changed = this._tryCompleteNextMatchingTask(slide, completed, {
+        type: 'action',
+        action: 'back',
+        detail: {}
+      });
 
       if (!changed) return;
       this.progress.completedTaskIds = Array.from(completed);
@@ -942,11 +934,9 @@ export class OnboardingManager {
       tasks: tasksForUi,
       completedTaskIds: new Set(completedList),
       lastCompletedTaskId,
-      // Hide the Alt+/ tip on practice, scrolling, tabs, and completion slides.
-      showTip: slide.id !== 'text_box_mode' &&
-        slide.id !== 'scrolling' &&
-        slide.id !== 'tabs' &&
-        slide.id !== 'completion',
+      // Reopen tip removed from walkthrough slides (kept available via showTip API).
+      showTip: false,
+      showCloseButton: slide.id === 'completion',
       transition,
       forceRebuild
     });
@@ -1200,41 +1190,24 @@ export class OnboardingManager {
     }
 
     const completedBefore = new Set(this.progress.completedTaskIds);
-    const offTaskWasOpen = (slide.tasks || []).some((t) => {
-      if (!t?.id || completedBefore.has(t.id)) return false;
-      const when = t.when || {};
-      return (
-        String(when.type || '') === 'action' &&
-        String(when.action || '') === 'toggleExtension' &&
-        String(when.change || '') === 'off'
-      );
-    });
+    const nextBefore = this._nextIncompleteTask(slide, completedBefore);
+    const offTaskWasOpen = this._isToggleExtensionOffTask(nextBefore);
 
     let changed = false;
     const completed = new Set(this.progress.completedTaskIds);
 
-    // Coming back from disabled: any pending "turn off" step is already satisfied.
+    // Coming back from disabled: complete pending "turn off" only if it is the next step.
     if (action === 'toggleExtension' && detail.enabled === true) {
-      for (const task of slide.tasks || []) {
-        if (!task?.id || completed.has(task.id)) continue;
-        const when = task.when || {};
-        if (
-          String(when.type || '') === 'action' &&
-          String(when.action || '') === 'toggleExtension' &&
-          String(when.change || '') === 'off'
-        ) {
-          completed.add(task.id);
-          changed = true;
-        }
+      const next = this._nextIncompleteTask(slide, completed);
+      if (this._isToggleExtensionOffTask(next)) {
+        completed.add(next.id);
+        changed = true;
       }
     }
 
-    for (const task of slide.tasks || []) {
-      if (!task || !task.id || completed.has(task.id)) continue;
-      if (this._taskMatches(task, { type: 'action', action, detail })) {
-        completed.add(task.id);
-        changed = true;
-      }
+    // Strict order: only the next incomplete task may be checked off.
+    if (this._tryCompleteNextMatchingTask(slide, completed, { type: 'action', action, detail })) {
+      changed = true;
     }
 
     if (changed) {
@@ -1332,7 +1305,7 @@ export class OnboardingManager {
           ? this.progress.completedTaskIds.map(String)
           : []
       );
-      const nextTask = (slide.tasks || []).find((t) => t?.id && !completed.has(String(t.id)));
+      const nextTask = this._nextIncompleteTask(slide, completed);
       if (nextTask && String(nextTask.id) === 'toggle_extension_off') {
         this.showToggleOffArrow();
       } else {
@@ -1345,6 +1318,53 @@ export class OnboardingManager {
 
   _isSlideComplete(slide, completedTaskIdsSet) {
     return isSlideComplete(slide, completedTaskIdsSet);
+  }
+
+  /**
+   * First incomplete task in slide order (the only step detection may check off).
+   * @param {{tasks?: Array<{id?: string}>}|null|undefined} slide
+   * @param {Set<string>|string[]|null|undefined} completedSet
+   * @returns {{id: string, when?: Object, label?: string}|null}
+   */
+  _nextIncompleteTask(slide, completedSet) {
+    const set = completedSet instanceof Set
+      ? completedSet
+      : new Set(Array.isArray(completedSet) ? completedSet.map(String) : []);
+    for (const task of slide?.tasks || []) {
+      if (!task?.id) continue;
+      if (!set.has(String(task.id))) return task;
+    }
+    return null;
+  }
+
+  /**
+   * @param {{when?: Object}|null|undefined} task
+   * @returns {boolean}
+   */
+  _isToggleExtensionOffTask(task) {
+    if (!task?.id) return false;
+    const when = task.when || {};
+    return (
+      String(when.type || '') === 'action' &&
+      String(when.action || '') === 'toggleExtension' &&
+      String(when.change || '') === 'off'
+    );
+  }
+
+  /**
+   * Complete at most the next incomplete task when it matches ctx.
+   * Later tasks are ignored even if the same action would match them.
+   * @param {{tasks?: Array}|null|undefined} slide
+   * @param {Set<string>} completed
+   * @param {Object} ctx
+   * @returns {boolean}
+   */
+  _tryCompleteNextMatchingTask(slide, completed, ctx) {
+    const next = this._nextIncompleteTask(slide, completed);
+    if (!next?.id) return false;
+    if (!this._taskMatches(next, ctx)) return false;
+    completed.add(String(next.id));
+    return true;
   }
 
   _handleSlideCompleted(slide, { cause = '', completedTaskIds = null } = {}) {
@@ -1470,20 +1490,10 @@ export class OnboardingManager {
     if (!slide) return false;
 
     const completed = new Set(this.progress.completedTaskIds);
-    let changed = false;
-    for (const task of slide.tasks || []) {
-      if (!task?.id || completed.has(task.id)) continue;
-      const when = task.when || {};
-      if (
-        String(when.type || '') === 'action' &&
-        String(when.action || '') === 'toggleExtension' &&
-        String(when.change || '') === 'off'
-      ) {
-        completed.add(task.id);
-        changed = true;
-      }
-    }
-    if (!changed) return false;
+    const next = this._nextIncompleteTask(slide, completed);
+    if (!this._isToggleExtensionOffTask(next)) return false;
+
+    completed.add(String(next.id));
     this.progress.completedTaskIds = Array.from(completed);
     this._persist();
     return true;
@@ -1521,12 +1531,12 @@ export class OnboardingManager {
           let changed = false;
           const completed = new Set(this.progress.completedTaskIds);
 
-          for (const task of slide.tasks || []) {
-            if (!task || !task.id || completed.has(task.id)) continue;
-            if (this._taskMatches(task, { type: 'mode', prevMode, nextMode })) {
-              completed.add(task.id);
-              changed = true;
-            }
+          if (this._tryCompleteNextMatchingTask(slide, completed, {
+            type: 'mode',
+            prevMode,
+            nextMode
+          })) {
+            changed = true;
           }
 
           if (!changed) return;
