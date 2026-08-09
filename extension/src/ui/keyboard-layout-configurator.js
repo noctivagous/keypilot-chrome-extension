@@ -7,7 +7,6 @@
 
 import { KeyboardLayoutConfigPanel } from './keyboard-layout-config-panel.js';
 import { unpinKeyPopover } from './keybindings-ui.js';
-import { getSharedFunctionLibraryPanel } from './function-library-panel.js';
 
 /** @type {KeyboardLayoutConfigPanel|null} */
 let _configPanel = null;
@@ -32,9 +31,6 @@ export function isKeyboardLayoutEditMode(kp) {
 export function exitKeyboardLayoutEditMode(kp) {
   try {
     if (_configPanel) _configPanel.hide();
-  } catch { /* ignore */ }
-  try {
-    getSharedFunctionLibraryPanel().hide();
   } catch { /* ignore */ }
   try {
     kp?.floatingKeyboardHelp?.setEditMode?.(false);
@@ -106,10 +102,6 @@ export function toggleKeyboardLayoutConfigurator(kp) {
         kp.floatingKeyboardHelp?.setEditLayout?.(_configPanel.getState());
       } catch { /* ignore */ }
     });
-
-    // Function Library browser — additive alongside the drag-drop palette above.
-    // See KEY_ACTION_ARCHITECTURE.md "Migration mapping" for why this is a separate panel today.
-    void getSharedFunctionLibraryPanel().show(kp);
   } catch {
     // ignore
   }

@@ -226,8 +226,9 @@
         "text": "N"
       },
       {
-        "type": "key",
-        "text": "M"
+        "type": "action",
+        "id": "OPEN_MEDIA_LIBRARY",
+        "fallbackText": "Media Library"
       },
       {
         "type": "key",
@@ -1325,6 +1326,13 @@
       "displayKey": "B",
       "keyboardClass": "key-activate-new"
     },
+    "OPEN_MEDIA_LIBRARY": {
+      "label": "Media Library",
+      "description": "Open the Media Library (coming soon).",
+      "keyLabel": "M",
+      "displayKey": "M",
+      "keyboardClass": null
+    },
     "COLS_TOGGLE": {
       "label": "Cols Toggle",
       "description": "Columnize element under cursor (multi-column layout)",
@@ -1881,8 +1889,9 @@
       "text": "N"
     },
     {
-      "type": "key",
-      "text": "M"
+      "type": "action",
+      "id": "OPEN_MEDIA_LIBRARY",
+      "fallbackText": "Media Library"
     },
     {
       "type": "key",
@@ -2065,6 +2074,13 @@
     "keyLabel": "B",
     "displayKey": "B",
     "keyboardClass": "key-activate-new"
+  },
+  "OPEN_MEDIA_LIBRARY": {
+    "label": "Media Library",
+    "description": "Open the Media Library (coming soon).",
+    "keyLabel": "M",
+    "displayKey": "M",
+    "keyboardClass": null
   },
   "COLS_TOGGLE": {
     "label": "Cols Toggle",

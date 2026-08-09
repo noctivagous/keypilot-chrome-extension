@@ -37,6 +37,7 @@ on the keyboard in specific places to make web navigation quick.
 | Keys | Action |
 | --- | --- |
 | `I` | Copy image under cursor to clipboard |
+| `M` | Open the Media Library (coming soon). |
 | `R` | Go Forward (History) |
 | `;` | Open Launcher (Quick Access to Sites) |
 | `B` | Open Link in New Tab (Foreground) |
@@ -81,6 +82,9 @@ on the keyboard in specific places to make web navigation quick.
 | `Esc` | Exit Focus |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
+
+
 
 
 

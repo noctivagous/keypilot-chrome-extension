@@ -110,7 +110,6 @@ const modules = [
   'src/ui/floating-keyboard-help.js',
   'src/ui/macro-key-editor.js',
   'src/ui/keyboard-layout-config-panel.js',
-  'src/ui/function-library-panel.js',
   'src/ui/keyboard-layout-configurator.js',
   // Shared walkthrough primitives must precede control-strip + panel + manager (import-stripped IIFE).
   'src/ui/onboarding-shared.js',

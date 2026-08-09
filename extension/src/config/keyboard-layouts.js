@@ -424,6 +424,18 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: null,
     row: 1
   }),
+  // Media Library entry point (M on right-handed only — M is PAGE_DOWN_INSTANT on left-handed,
+  // so this doesn't get a default binding there yet). Media Library itself isn't built yet;
+  // the handler just shows a "coming soon" notification — see `handleMediaLibraryNotAvailableKey`
+  // and the `ADD_URL_TO_MEDIA_LIBRARY`/`FETCH_URL_FOR_MEDIA_LIBRARY` Functions in
+  // function-library.js.
+  OPEN_MEDIA_LIBRARY: Object.freeze({
+    handler: 'handleMediaLibraryNotAvailableKey',
+    label: 'Media Library',
+    description: 'Open the Media Library (coming soon).',
+    keyboardClass: null,
+    row: 1
+  }),
   // Clipboard commands (Functions palette — Clipboard category).
   CLIPBOARD_COPY: Object.freeze({
     handler: 'handleClipboardCopyKey',
@@ -490,6 +502,7 @@ export const KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
   DELETE: 'Select',
   COLS_TOGGLE: 'Select',
   COPY_HOVERED_IMAGE: 'Select',
+  OPEN_MEDIA_LIBRARY: 'Media Library',
   CLIPBOARD_COPY: 'Clipboard',
   CLIPBOARD_CUT: 'Clipboard',
   CLIPBOARD_PASTE: 'Clipboard',
@@ -511,6 +524,7 @@ export const KEYBINDING_ACTION_CATEGORY_ORDER = Object.freeze([
   'Navigate',
   'Scroll',
   'Select',
+  'Media Library',
   'Clipboard',
   'AI',
   'Tools',
@@ -659,6 +673,8 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   ACTIVATE_NEW_TAB: Object.freeze({ keys: ['b', 'B'] }),
   RECTANGLE_HIGHLIGHT: Object.freeze({ keys: ['y', 'Y'] }),
   COPY_HOVERED_IMAGE: Object.freeze({ keys: ['i', 'I'] }),
+  // M is otherwise unused on the right-handed layout (it's PAGE_DOWN_INSTANT on left-handed).
+  OPEN_MEDIA_LIBRARY: Object.freeze({ keys: ['m', 'M'] }),
 
   ROOT: Object.freeze({ keys: ['1', '!'], displayKey: '1', keyLabel: '1' }),
   DELETE: Object.freeze({ keys: ['Backspace'], displayKey: 'Backspace', keyLabel: 'Backspace' }),
@@ -935,7 +951,7 @@ const KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: 'action', id: 'PAGE_DOWN_INSTANT', fallbackText: 'Page Down Fast' },
     { type: 'action', id: 'ACTIVATE_NEW_TAB', fallbackText: 'Click New Tab' },
     { type: 'key', text: 'N' },
-    { type: 'key', text: 'M' },
+    { type: 'action', id: 'OPEN_MEDIA_LIBRARY', fallbackText: 'Media Library' },
     { type: 'key', text: ',' },
     { type: 'action', id: 'COLS_TOGGLE', fallbackText: 'Cols Toggle' },
     { type: 'key', text: '/' },

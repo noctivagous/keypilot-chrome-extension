@@ -5,6 +5,12 @@
  * while it is in edit mode. Click a function/macro, then click a Reference slot
  * to place it (SVG arrow follows the cursor). Built-in layouts auto-duplicate
  * on first place as "{Family} N (user)".
+ *
+ * This is the single Function Library surface (browsing, per-instance parameter editing,
+ * macro step editing, and modifier-chord binding for `worksWhileTyping` Functions all live
+ * here) — there used to be a second, additive `function-library-panel.js` floating window for
+ * this; it was folded in here so editing a layout only ever involves one panel. See
+ * KEY_ACTION_ARCHITECTURE.md "Migration mapping".
  */
 
 import { Z_INDEX } from '../config/constants.js';
@@ -12,35 +18,50 @@ import {
   buildKeybindingsForLayout,
   BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META,
   DEFAULT_KEYBOARD_LAYOUT_ID,
-  getKeybindingActionCategory,
-  KEYBINDING_ACTION_CATEGORY_ORDER,
   KEYBINDING_ACTION_DEFS,
   nextUserCopyLayoutLabel,
   normalizeKeyboardLayoutFamilyId
 } from '../config/keyboard-layouts.js';
 import { DEFAULT_SETTINGS, getSettings, setSettings } from '../modules/settings-manager.js';
 import {
+  addUserMacroStep,
   createUserAction,
   createUserMacro,
   createEmptyUserKeyboardLayout,
   deleteUserAction,
   deleteUserKeyboardLayout,
+  deleteUserMacro,
   duplicateBuiltinLayoutToUserLayout,
   exportUserKeyboardLayout,
   importUserKeyboardLayout,
   listUserActions,
   listUserKeyboardLayouts,
   listUserMacros,
+  moveUserMacroStep,
+  removeUserMacroStep,
+  setUserKeyboardLayoutSlot,
   upsertUserAction,
   upsertUserKeyboardLayout
 } from '../modules/keyboard-layout-store.js';
 import { MACRO_KEY_KIND_DEFS, macroKeyKeyboardClass, summarizeMacroKey } from '../config/macro-keys.js';
-import { FUNCTION_ID_BY_MACRO_KEY_KIND, macroKeyKindFromFunctionId } from '../config/function-library.js';
+import {
+  FIXED_KEY_FUNCTION_IDS,
+  FUNCTION_CATEGORY_ORDER,
+  FUNCTION_ID_BY_MACRO_KEY_KIND,
+  getFunctionCategory,
+  getFunctionDef,
+  isFunctionInstantiable,
+  listFunctionDefs,
+  macroKeyKindFromFunctionId,
+  summarizeFunctionParameters,
+  validateFunctionSlotKey
+} from '../config/function-library.js';
 import { KEYBINDINGS_UI_ROOT_CLASS, KEYBINDINGS_UI_STYLE_ATTR, getKeybindingsUiCss } from './keybindings-ui-shared.js';
 import { inspectKeyActionFromAnchor } from './keybindings-ui.js';
 import { actionHasParameters, getSharedKeyActionConfigPanel } from './key-action-settings.js';
 import { createMacroKeyEditor } from './macro-key-editor.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
+import { buildChordSlotKey, formatChordSlotKeyLabel } from '../utils/key-chord.js';
 import {
   PANEL_POSITION_MARGIN_PX,
   applyPanelPosition,
@@ -119,6 +140,8 @@ export class KeyboardLayoutConfigPanel {
     this._positionHydrated = false;
     /** @type {any|null} draft while editing a macro key */
     this._macroKeyDraft = null;
+    /** Live keydown capture cleanup for the "Bind chord…" control (worksWhileTyping Functions). */
+    this._chordCaptureCleanup = null;
     /** Place mode: click palette → arrow to cursor → click Reference slot */
     this._placeItem = null;
     /** @type {HTMLElement|null} */
@@ -186,11 +209,13 @@ export class KeyboardLayoutConfigPanel {
 
   hide() {
     this._cancelPlaceMode();
+    this._stopChordCapture();
     this._setVisible(false);
   }
 
   cleanup() {
     this._cancelPlaceMode();
+    this._stopChordCapture();
     try { this._dragDispose?.(); } catch { /* ignore */ }
     this._dragDispose = null;
     try {
@@ -498,6 +523,28 @@ export class KeyboardLayoutConfigPanel {
   background: rgba(91,226,241,0.18);
   border-color: rgba(91,226,241,0.45);
 }
+.kp-cfg-btn[data-capturing="true"] {
+  background: #ffb020;
+  color: #221a05;
+  border-color: #ffb020;
+}
+.kp-cfg-btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 3px;
+}
+.kp-cfg-badge {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: rgba(255,166,87,0.22);
+  color: #ffcf9e;
+  white-space: nowrap;
+  align-self: flex-start;
+}
 .kp-layout-place-arrow {
   position: fixed;
   inset: 0;
@@ -702,7 +749,8 @@ export class KeyboardLayoutConfigPanel {
     btnRow.appendChild(importFile);
 
     const hint = doc.createElement('div');
-    hint.textContent = 'Click a function, macro, or macro key below, then click a Keyboard Reference key to place it.';
+    hint.textContent = 'Click a function, macro, or macro key below, then click a Keyboard Reference key to place it. ' +
+      'Functions marked "Needs modifier" must use "Bind chord…" instead — they run while a text field is focused.';
     Object.assign(hint.style, { fontSize: '11px', opacity: '0.75', lineHeight: '1.35' });
 
     // Number row
@@ -994,9 +1042,10 @@ export class KeyboardLayoutConfigPanel {
 
     newMacroBtn.addEventListener('click', async () => {
       try {
-        await createUserMacro({ label: 'New Macro' });
+        const created = await createUserMacro({ label: `Macro ${(this._st.macros || []).length + 1}` });
         this._st.macros = await listUserMacros();
         this._renderRightList();
+        if (created) this._openMacroStepsEditor(created);
         this._emitChange();
       } catch {
         this._notify('Failed to create macro.', 'error');
@@ -1110,6 +1159,10 @@ export class KeyboardLayoutConfigPanel {
     }
   }
 
+  /**
+   * Close whichever inline editor is currently open in the shared host — Macro Key config,
+   * generic Action Instance parameters, or Macro steps. Only one can be open at a time.
+   */
   _closeMacroKeyEditor() {
     this._macroKeyDraft = null;
     const host = this._macroKeyEditorHost;
@@ -1161,6 +1214,306 @@ export class KeyboardLayoutConfigPanel {
       }
     });
     host.appendChild(editor);
+  }
+
+  /**
+   * Generic parameter editor for any instantiable Function's Action Instance (e.g. Type
+   * Characters) that is *not* a `legacyMacroKeyKind` (those use {@link _openMacroKeyEditor})
+   * and not one of the two fixed-physical-key Functions (those keep the `key-action-settings.js`
+   * "Config" popover — see `FIXED_KEY_FUNCTION_IDS`). Values apply live per-field, matching
+   * `key-action-settings.js`'s `KeyActionConfigPanel`.
+   * @param {import('../config/function-library.js').FunctionDef} def
+   * @param {import('../modules/keyboard-layout-store.js').UserAction} instance
+   */
+  _openActionParamsEditor(def, instance) {
+    const host = this._macroKeyEditorHost;
+    if (!host || !def || !instance) return;
+    this._closeMacroKeyEditor();
+    host.hidden = false;
+
+    const draft = { ...instance, parameters: { ...(instance.parameters || {}) } };
+
+    const wrap = document.createElement('div');
+    wrap.className = 'kp-mk-editor';
+
+    const title = document.createElement('div');
+    title.className = 'kp-mk-editor-title';
+    title.textContent = `${def.label} settings`;
+    wrap.appendChild(title);
+
+    for (const param of def.parameters || []) {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
+
+      const label = document.createElement('div');
+      label.className = 'kp-mk-field-label';
+      label.textContent = param.label || param.id;
+      row.appendChild(label);
+
+      const currentVal = draft.parameters[param.id] !== undefined ? draft.parameters[param.id] : param.defaultValue;
+      let control;
+      if (param.type === 'boolean') {
+        control = document.createElement('input');
+        control.type = 'checkbox';
+        control.checked = !!currentVal;
+        control.addEventListener('change', () => { draft.parameters[param.id] = !!control.checked; }, true);
+      } else if (param.type === 'enum' && Array.isArray(param.options)) {
+        control = document.createElement('select');
+        control.className = 'kp-cfg-field';
+        for (const opt of param.options) {
+          const o = document.createElement('option');
+          o.value = opt.id;
+          o.textContent = opt.label;
+          if (opt.id === currentVal) o.selected = true;
+          control.appendChild(o);
+        }
+        control.addEventListener('change', () => { draft.parameters[param.id] = control.value; }, true);
+      } else if (param.type === 'number') {
+        control = document.createElement('input');
+        control.type = 'number';
+        control.className = 'kp-cfg-field';
+        if (param.min != null) control.min = String(param.min);
+        if (param.max != null) control.max = String(param.max);
+        if (param.step != null) control.step = String(param.step);
+        control.value = currentVal != null ? String(currentVal) : '';
+        control.addEventListener('change', () => {
+          const n = Number(control.value);
+          draft.parameters[param.id] = Number.isFinite(n) ? n : param.defaultValue;
+        }, true);
+      } else if (param.multiline) {
+        control = document.createElement('textarea');
+        control.className = 'kp-cfg-field';
+        control.rows = 3;
+        if (param.placeholder) control.placeholder = String(param.placeholder);
+        control.value = currentVal != null ? String(currentVal) : '';
+        control.addEventListener('input', () => { draft.parameters[param.id] = control.value; }, true);
+      } else {
+        control = document.createElement('input');
+        control.type = 'text';
+        control.className = 'kp-cfg-field';
+        if (param.placeholder) control.placeholder = String(param.placeholder);
+        control.value = currentVal != null ? String(currentVal) : '';
+        control.addEventListener('input', () => { draft.parameters[param.id] = control.value; }, true);
+      }
+      row.appendChild(control);
+      wrap.appendChild(row);
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'kp-mk-editor-actions';
+
+    const saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.className = 'kp-cfg-btn';
+    saveBtn.textContent = 'Save';
+    saveBtn.addEventListener('click', async () => {
+      try {
+        const saved = await upsertUserAction(draft);
+        await this._reloadActions();
+        try {
+          if (this._st.userLayout) {
+            await this._kp?.applyLiveUserLayout?.(this._st.userLayout, { actions: this._st.actions });
+          }
+        } catch { /* ignore */ }
+        this._closeMacroKeyEditor();
+        this._renderRightList();
+        this._notify(saved ? 'Saved.' : 'Failed to save.', saved ? 'success' : 'error');
+      } catch {
+        this._notify('Failed to save.', 'error');
+      }
+    }, true);
+    actions.appendChild(saveBtn);
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'kp-cfg-btn';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', () => this._closeMacroKeyEditor(), true);
+    actions.appendChild(cancelBtn);
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'kp-cfg-btn';
+    deleteBtn.textContent = 'Delete instance';
+    deleteBtn.addEventListener('click', async () => {
+      try {
+        await deleteUserAction(instance.id);
+        await this._reloadActions();
+        this._closeMacroKeyEditor();
+        this._renderRightList();
+        this._notify('Deleted.', 'success');
+      } catch {
+        this._notify('Failed to delete.', 'error');
+      }
+    }, true);
+    actions.appendChild(deleteBtn);
+
+    wrap.appendChild(actions);
+    host.appendChild(wrap);
+  }
+
+  /**
+   * Inline steps editor for a Macro — port of `function-library-panel.js`'s macro-step UI into
+   * the shared inline-editor host, so Macro authoring lives in the same single palette as
+   * everything else.
+   * @param {import('../modules/keyboard-layout-store.js').UserMacro} macro
+   */
+  _openMacroStepsEditor(macro) {
+    const host = this._macroKeyEditorHost;
+    if (!host || !macro) return;
+    this._closeMacroKeyEditor();
+    host.hidden = false;
+    this._renderMacroStepsEditorInto(host, macro);
+  }
+
+  /**
+   * @param {HTMLElement} host
+   * @param {import('../modules/keyboard-layout-store.js').UserMacro} macro
+   */
+  _renderMacroStepsEditorInto(host, macro) {
+    host.replaceChildren();
+    const wrap = document.createElement('div');
+    wrap.className = 'kp-mk-editor';
+
+    const title = document.createElement('div');
+    title.className = 'kp-mk-editor-title';
+    title.textContent = `${macro.label || 'Macro'} — steps`;
+    wrap.appendChild(title);
+
+    const steps = Array.isArray(macro.steps) ? macro.steps : [];
+    if (!steps.length) {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'font-size:11px;opacity:0.7;';
+      empty.textContent = 'No steps yet — add one below.';
+      wrap.appendChild(empty);
+    } else {
+      const mkStepBtn = (text, title2, disabled, onClick) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'kp-cfg-btn';
+        b.style.padding = '3px 6px';
+        b.textContent = text;
+        b.title = title2;
+        b.disabled = !!disabled;
+        b.addEventListener('click', onClick, true);
+        return b;
+      };
+
+      steps.forEach((step, index) => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,0.14);' +
+          'border-radius:6px;padding:5px 6px;margin-bottom:4px;';
+
+        const idx = document.createElement('div');
+        idx.style.cssText = 'opacity:0.5;font-size:10px;min-width:14px;';
+        idx.textContent = String(index + 1);
+        row.appendChild(idx);
+
+        const def = getFunctionDef(step.functionId);
+        const body = document.createElement('div');
+        body.style.cssText = 'flex:1;min-width:0;';
+        const label = document.createElement('div');
+        label.style.cssText = 'font-weight:600;font-size:11px;';
+        label.textContent = def?.label || step.functionId;
+        body.appendChild(label);
+        const summaryText = summarizeFunctionParameters(step.functionId, step.parameters);
+        if (summaryText) {
+          const summary = document.createElement('div');
+          summary.style.cssText = 'opacity:0.7;font-size:10px;';
+          summary.textContent = summaryText;
+          body.appendChild(summary);
+        }
+        row.appendChild(body);
+
+        row.appendChild(mkStepBtn('\u2191', 'Move up', index === 0, async () => {
+          const updated = await moveUserMacroStep(macro.id, index, index - 1);
+          if (updated) { Object.assign(macro, updated); this._renderMacroStepsEditorInto(host, macro); this._syncMacroInState(updated); }
+        }));
+        row.appendChild(mkStepBtn('\u2193', 'Move down', index === steps.length - 1, async () => {
+          const updated = await moveUserMacroStep(macro.id, index, index + 1);
+          if (updated) { Object.assign(macro, updated); this._renderMacroStepsEditorInto(host, macro); this._syncMacroInState(updated); }
+        }));
+        row.appendChild(mkStepBtn('\u00d7', 'Remove step', false, async () => {
+          const updated = await removeUserMacroStep(macro.id, index);
+          if (updated) { Object.assign(macro, updated); this._renderMacroStepsEditorInto(host, macro); this._syncMacroInState(updated); }
+        }));
+
+        wrap.appendChild(row);
+      });
+    }
+
+    const addRow = document.createElement('div');
+    addRow.style.cssText = 'display:flex;gap:6px;align-items:center;margin-top:4px;';
+    const select = document.createElement('select');
+    select.className = 'kp-cfg-field';
+    for (const def of listFunctionDefs()) {
+      const opt = document.createElement('option');
+      opt.value = def.id;
+      opt.textContent = def.label;
+      select.appendChild(opt);
+    }
+    addRow.appendChild(select);
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'kp-cfg-btn';
+    addBtn.textContent = '+ Add step';
+    addBtn.addEventListener('click', async () => {
+      const updated = await addUserMacroStep(macro.id, { functionId: select.value });
+      if (updated) { Object.assign(macro, updated); this._renderMacroStepsEditorInto(host, macro); this._syncMacroInState(updated); }
+    }, true);
+    addRow.appendChild(addBtn);
+    wrap.appendChild(addRow);
+
+    const actions = document.createElement('div');
+    actions.className = 'kp-mk-editor-actions';
+
+    const runBtn = document.createElement('button');
+    runBtn.type = 'button';
+    runBtn.className = 'kp-cfg-btn';
+    runBtn.textContent = 'Run now';
+    runBtn.title = 'Run this macro\u2019s steps immediately, for testing.';
+    runBtn.addEventListener('click', async () => {
+      try { await this._kp?._runMacroById?.(macro.id); } catch { /* ignore */ }
+    }, true);
+    actions.appendChild(runBtn);
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'kp-cfg-btn';
+    deleteBtn.textContent = 'Delete macro';
+    deleteBtn.addEventListener('click', async () => {
+      try {
+        await deleteUserMacro(macro.id);
+        this._st.macros = (this._st.macros || []).filter((m) => m && m.id !== macro.id);
+        this._closeMacroKeyEditor();
+        this._renderRightList();
+        this._notify('Macro deleted.', 'success');
+      } catch {
+        this._notify('Failed to delete macro.', 'error');
+      }
+    }, true);
+    actions.appendChild(deleteBtn);
+
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'kp-cfg-btn';
+    closeBtn.textContent = 'Close';
+    closeBtn.addEventListener('click', () => this._closeMacroKeyEditor(), true);
+    actions.appendChild(closeBtn);
+
+    wrap.appendChild(actions);
+    host.appendChild(wrap);
+  }
+
+  /**
+   * @param {import('../modules/keyboard-layout-store.js').UserMacro} updated
+   */
+  _syncMacroInState(updated) {
+    try {
+      const idx = (this._st.macros || []).findIndex((m) => m && m.id === updated.id);
+      if (idx >= 0) this._st.macros[idx] = updated;
+    } catch { /* ignore */ }
+    try { this._renderRightList(); } catch { /* ignore */ }
   }
 
   _renderLayoutSelect() {
@@ -1268,12 +1621,13 @@ export class KeyboardLayoutConfigPanel {
 
     if (item.type === 'macro') {
       const macro = (this._st.macros || []).find((m) => m && m.id === item.id) || null;
+      if (macro) this._openMacroStepsEditor(macro);
       const stepCount = Array.isArray(macro?.steps) ? macro.steps.length : 0;
       const binding = {
         label: String(macro?.label || 'Macro'),
         description: stepCount > 0
-          ? `Runs ${stepCount} step${stepCount === 1 ? '' : 's'} in order. Edit steps from the Function Library panel (Alt+C).`
-          : 'No steps yet — add some from the Function Library panel (Alt+C).',
+          ? `Runs ${stepCount} step${stepCount === 1 ? '' : 's'} in order. Edit steps below.`
+          : 'No steps yet — add some below.',
         displayKey: '',
         keyLabel: ''
       };
@@ -1282,13 +1636,26 @@ export class KeyboardLayoutConfigPanel {
     }
 
     if (item.type === 'function' && String(item.id).startsWith('action:')) {
-      // A configured Action Instance — Macro Keys (hotkey/burst/…) are the only kind this
-      // palette currently instantiates, so this is a macro-key-shaped inspect/edit.
       const mk = (this._st.macroKeys || []).find((m) => m && m.id === item.id) || null;
-      if (mk) this._openMacroKeyEditor(mk);
+      if (mk) {
+        // A configured Macro Key (hotkey/burst/…) — its `{ id, kind, label, config }` shape.
+        this._openMacroKeyEditor(mk);
+        const binding = {
+          label: String(mk.label || 'Macro Key'),
+          description: summarizeMacroKey(mk),
+          displayKey: '',
+          keyLabel: ''
+        };
+        inspectKeyActionFromAnchor(item.id, { anchorEl, binding });
+        return;
+      }
+      // Any other Action Instance (e.g. a Type Characters instance) — generic parameter editor.
+      const inst = (this._st.actions || []).find((a) => a && a.id === item.id) || null;
+      const def = inst ? getFunctionDef(inst.functionId) : null;
+      if (inst && def) this._openActionParamsEditor(def, inst);
       const binding = {
-        label: String(mk?.label || 'Macro Key'),
-        description: mk ? summarizeMacroKey(mk) : 'Configured built-in macro key.',
+        label: String(def?.label || inst?.label || 'Action'),
+        description: inst ? (summarizeFunctionParameters(inst.functionId, inst.parameters) || def?.description || '') : 'Configured Action Instance.',
         displayKey: '',
         keyLabel: ''
       };
@@ -1416,13 +1783,32 @@ export class KeyboardLayoutConfigPanel {
         grid.className = 'kp-cfg-key-grid';
         for (const m of macroItems) {
           if (!m || !m.id) continue;
-          grid.appendChild(appendKeyItem({
+          const itemEl = appendKeyItem({
             type: 'macro',
             id: m.id,
             label: String(m.label || 'Macro'),
             keyboardClass: 'key-purple',
             infoKey: `macro:${m.id}`
-          }));
+          });
+          const edit = document.createElement('button');
+          edit.type = 'button';
+          edit.className = 'kp-cfg-inspect';
+          edit.textContent = 'Edit steps';
+          edit.title = `Edit steps for ${m.label || 'Macro'}`;
+          edit.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this._openMacroStepsEditor(m);
+          }, true);
+          edit.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
+          try {
+            const oldInspect = itemEl.querySelector('.kp-cfg-inspect');
+            if (oldInspect) oldInspect.replaceWith(edit);
+            else itemEl.appendChild(edit);
+          } catch {
+            itemEl.appendChild(edit);
+          }
+          grid.appendChild(itemEl);
         }
         section.appendChild(grid);
       } else {
@@ -1495,26 +1881,27 @@ export class KeyboardLayoutConfigPanel {
       list.appendChild(section);
     }
 
-    const all = Object.entries(KEYBINDING_ACTION_DEFS || {}).map(([actionId, def]) => ({
-      actionId: String(actionId),
-      label: String(def?.label || actionId),
-      description: String(def?.description || ''),
-      category: getKeybindingActionCategory(actionId),
-      keyboardClass: def?.keyboardClass || ''
-    }));
-    const filtered = q
-      ? all.filter((a) => (a.actionId + ' ' + a.label + ' ' + a.description + ' ' + a.category).toLowerCase().includes(q))
-      : all;
+    // Every Function in the unified Function Library (function-library.js) is browsable and
+    // placeable here — built-ins, keystroke primitives (surfaced above as "Configured Macro
+    // Keys" instead, so they're excluded below), Type Characters, and the Data/Lookup/
+    // Translate/Display/Media Library Functions all render as sections of this same list. This
+    // is what used to require a second, additive `function-library-panel.js` window.
+    const allDefs = listFunctionDefs().filter((d) => d && !d.legacyMacroKeyKind);
+    const filteredDefs = q
+      ? allDefs.filter((d) => (
+        `${d.id} ${d.label} ${d.description || ''} ${getFunctionCategory(d.id)}`
+      ).toLowerCase().includes(q))
+      : allDefs;
 
-    /** @type {Map<string, typeof filtered>} */
+    /** @type {Map<string, typeof filteredDefs>} */
     const byCat = new Map();
-    for (const a of filtered) {
-      const cat = a.category || 'Other';
+    for (const d of filteredDefs) {
+      const cat = getFunctionCategory(d.id) || 'Other';
       if (!byCat.has(cat)) byCat.set(cat, []);
-      byCat.get(cat).push(a);
+      byCat.get(cat).push(d);
     }
 
-    const order = Array.isArray(KEYBINDING_ACTION_CATEGORY_ORDER) ? KEYBINDING_ACTION_CATEGORY_ORDER : [];
+    const order = Array.isArray(FUNCTION_CATEGORY_ORDER) ? FUNCTION_CATEGORY_ORDER : [];
     const cats = [
       ...order.filter((c) => byCat.has(c)),
       ...[...byCat.keys()].filter((c) => !order.includes(c)).sort()
@@ -1531,20 +1918,84 @@ export class KeyboardLayoutConfigPanel {
       section.appendChild(title);
       const grid = document.createElement('div');
       grid.className = 'kp-cfg-key-grid';
-      for (const a of items) {
+
+      for (const def of items) {
+        // The two Functions still bound to a fixed physical key (SEND_TEXT_TO_AI,
+        // RECTANGLE_HIGHLIGHT) keep their existing single-item + "Config" popover path rather
+        // than the per-instance treatment below — see FIXED_KEY_FUNCTION_IDS.
+        const isFixedKey = FIXED_KEY_FUNCTION_IDS.includes(def.id);
+
+        if (!isFixedKey && isFunctionInstantiable(def.id)) {
+          const instances = (this._st.actions || []).filter((a) => a && a.functionId === def.id);
+          instances.forEach((inst, index) => {
+            const itemEl = appendKeyItem({
+              type: 'function',
+              id: inst.id,
+              label: instances.length > 1 ? `${def.label} #${index + 1}` : def.label,
+              keyboardClass: def.keyboardClass || '',
+              infoKey: `function:${inst.id}`
+            });
+            const edit = document.createElement('button');
+            edit.type = 'button';
+            edit.className = 'kp-cfg-inspect';
+            edit.textContent = 'Edit';
+            edit.title = `Configure ${def.label}`;
+            edit.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              this._openActionParamsEditor(def, inst);
+            }, true);
+            edit.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
+            try {
+              const oldInspect = itemEl.querySelector('.kp-cfg-inspect');
+              if (oldInspect) oldInspect.replaceWith(edit);
+              else itemEl.appendChild(edit);
+            } catch {
+              itemEl.appendChild(edit);
+            }
+            if (def.worksWhileTyping) {
+              itemEl.style.flexWrap = 'wrap';
+              itemEl.appendChild(this._renderBindChordButton({ type: 'function', id: inst.id }, def));
+            }
+            grid.appendChild(itemEl);
+          });
+
+          const addBtn = document.createElement('button');
+          addBtn.type = 'button';
+          addBtn.className = 'kp-cfg-btn';
+          addBtn.style.cssText = 'align-self:flex-start;';
+          addBtn.textContent = `+ New ${def.label}`;
+          addBtn.title = def.description || '';
+          addBtn.addEventListener('click', async () => {
+            try {
+              const created = await createUserAction({ functionId: def.id });
+              if (created) {
+                await this._reloadActions();
+                this._renderRightList();
+                this._openActionParamsEditor(def, created);
+              }
+            } catch {
+              this._notify('Failed to create instance.', 'error');
+            }
+          }, true);
+          grid.appendChild(addBtn);
+          continue;
+        }
+
         const itemEl = appendKeyItem({
           type: 'function',
-          id: a.actionId,
-          label: a.label,
-          keyboardClass: a.keyboardClass,
-          infoKey: `function:${a.actionId}`
+          id: def.id,
+          label: def.label,
+          keyboardClass: def.keyboardClass || '',
+          infoKey: `function:${def.id}`
         });
-        if (actionHasParameters(a.actionId)) {
+
+        if (isFixedKey && actionHasParameters(def.id)) {
           const conf = document.createElement('button');
           conf.type = 'button';
           conf.className = 'kp-cfg-inspect';
           conf.textContent = 'Config';
-          conf.title = `Configure ${a.label}`;
+          conf.title = `Configure ${def.label}`;
           conf.addEventListener('click', async (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -1553,8 +2004,8 @@ export class KeyboardLayoutConfigPanel {
               // setActionParameter() (called by the panel's own controls) already notifies live
               // KeyPilot instances via a DOM event — no onSettingsChanged hook needed here.
               const panel = getSharedKeyActionConfigPanel();
-              await panel.open(a.actionId, {
-                title: a.label,
+              await panel.open(def.id, {
+                title: def.label,
                 anchorRect: itemEl.getBoundingClientRect()
               });
             } catch { /* ignore */ }
@@ -1562,21 +2013,59 @@ export class KeyboardLayoutConfigPanel {
           conf.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
           try {
             const oldInspect = itemEl.querySelector('.kp-cfg-inspect');
-            if (oldInspect) {
-              // Keep Inspect; add Config beside it.
-              oldInspect.insertAdjacentElement('afterend', conf);
-            } else {
-              itemEl.appendChild(conf);
-            }
+            if (oldInspect) oldInspect.insertAdjacentElement('afterend', conf);
+            else itemEl.appendChild(conf);
           } catch {
             itemEl.appendChild(conf);
           }
         }
+
+        if (def.worksWhileTyping) {
+          itemEl.style.flexWrap = 'wrap';
+          itemEl.appendChild(this._renderBindChordButton({ type: 'function', id: def.id }, def));
+        }
+
         grid.appendChild(itemEl);
       }
       section.appendChild(grid);
       list.appendChild(section);
     }
+  }
+
+  /**
+   * A "Needs modifier" badge + "Bind chord…" button, appended to a placeable item for any
+   * `worksWhileTyping` Function/instance — see {@link _captureAndAssignChord}.
+   * @param {{ type: string, id: string }} item
+   * @param {import('../config/function-library.js').FunctionDef} def
+   */
+  _renderBindChordButton(item, def) {
+    const row = document.createElement('div');
+    row.className = 'kp-cfg-btn-row';
+    // The `.kp-cfg-item` grid cell is a single-row flexbox (key + Inspect/Edit/Config); wrap
+    // this badge+button row onto its own full-width line below that pair instead of squeezing
+    // in beside them.
+    row.style.flexBasis = '100%';
+
+    const badge = document.createElement('span');
+    badge.className = 'kp-cfg-badge';
+    badge.textContent = 'Needs modifier';
+    badge.title = 'Must be bound to a modifier-key combination so it can run while a text field is focused.';
+    row.appendChild(badge);
+
+    const bindBtn = document.createElement('button');
+    bindBtn.type = 'button';
+    bindBtn.className = 'kp-cfg-btn';
+    bindBtn.style.padding = '3px 6px';
+    bindBtn.textContent = 'Bind chord…';
+    bindBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this._captureAndAssignChord(item, def.id, bindBtn);
+    }, true);
+    bindBtn.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
+    row.appendChild(bindBtn);
+
+    return row;
   }
 
   _familyBaseLabel() {
@@ -1779,9 +2268,25 @@ export class KeyboardLayoutConfigPanel {
    * @param {string} slotLabel
    */
   async _placeOnSlot(slotLabel) {
-    const item = this._placeItem;
     const slot = String(slotLabel || '').trim().toUpperCase();
-    if (!item || !slot) return;
+    if (this._placeItem && slot) {
+      await this._assignSlotKey(slot, this._placeItem);
+    }
+    this._cancelPlaceMode();
+  }
+
+  /**
+   * Ensure a user layout is active (auto-dup from built-in if needed), then assign `item` to
+   * `slotKey` — a bare key label ("Q") or a modifier-chord slot key ("CHORD:CTRL+ALT+Q", see
+   * utils/key-chord.js). Goes through {@link setUserKeyboardLayoutSlot} so the
+   * `worksWhileTyping` chord-vs-bare-key rule is enforced here exactly like everywhere else that
+   * writes a slot, instead of mutating `layout.slots` directly.
+   * @param {string} slotKey
+   * @param {{ type: string, id: string }} item
+   */
+  async _assignSlotKey(slotKey, item) {
+    const slot = String(slotKey || '').trim();
+    if (!item || !item.type || !item.id || !slot) return;
 
     try {
       let becameCurrent = false;
@@ -1802,10 +2307,13 @@ export class KeyboardLayoutConfigPanel {
         becameCurrent = true;
       }
 
-      if (!this._st.userLayout || typeof this._st.userLayout.slots !== 'object') return;
-      this._st.userLayout.slots[slot] = { type: item.type, id: item.id };
-      // Persist the slot first, then mark current — avoids racing an empty layout into KeyPilot.
-      this._st.userLayout = await upsertUserKeyboardLayout(this._st.userLayout);
+      if (!this._st.userLayout || !this._st.userLayout.id) return;
+      const result = await setUserKeyboardLayoutSlot(this._st.userLayout.id, slot, { type: item.type, id: item.id });
+      if (!result.ok) {
+        this._notify(result.reason || 'Could not bind key.', 'error');
+        return;
+      }
+      this._st.userLayout = result.layout;
       this.syncUserLayout(this._st.userLayout);
       this._emitChange();
 
@@ -1817,9 +2325,72 @@ export class KeyboardLayoutConfigPanel {
         });
       } catch { /* ignore */ }
     } catch {
-      this._notify('Failed to place on key.', 'error');
-    } finally {
-      this._cancelPlaceMode();
+      this._notify('Failed to bind key.', 'error');
     }
+  }
+
+  _stopChordCapture() {
+    if (this._chordCaptureCleanup) {
+      try { this._chordCaptureCleanup(); } catch { /* ignore */ }
+      this._chordCaptureCleanup = null;
+    }
+    try {
+      for (const btn of this.root?.querySelectorAll?.('[data-capturing="true"]') || []) {
+        delete btn.dataset.capturing;
+        if (btn.dataset.kpBindLabel) btn.textContent = btn.dataset.kpBindLabel;
+      }
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Listen for the next keydown and, if it has a modifier held, bind `item` to the resulting
+   * chord slot key — the only way a `worksWhileTyping` Function (e.g. Type Characters,
+   * Clipboard Copy/Cut/Paste) can be bound, since the Keyboard Reference's click-to-place flow
+   * only ever targets bare physical keys. See utils/key-chord.js.
+   * @param {{ type: string, id: string }} item
+   * @param {string} functionId Used only for the `validateFunctionSlotKey` check.
+   * @param {HTMLButtonElement} btn
+   */
+  _captureAndAssignChord(item, functionId, btn) {
+    if (!item || !btn) return;
+    this._cancelPlaceMode();
+    this._stopChordCapture();
+    btn.dataset.kpBindLabel = btn.textContent;
+    btn.dataset.capturing = 'true';
+    btn.textContent = 'Press keys… (Esc)';
+
+    const onKeyDown = async (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      try { ev.stopImmediatePropagation(); } catch { /* ignore */ }
+      this._stopChordCapture();
+
+      if (ev.key === 'Escape') return;
+      const hasMods = !!(ev.ctrlKey || ev.altKey || ev.shiftKey || ev.metaKey);
+      if (!hasMods) {
+        this._notify('Hold a modifier key (Ctrl/Alt/Shift) while pressing the key.', 'error');
+        return;
+      }
+      const slotKey = buildChordSlotKey({
+        key: ev.key,
+        ctrl: ev.ctrlKey,
+        alt: ev.altKey,
+        shift: ev.shiftKey,
+        meta: ev.metaKey
+      });
+      if (!slotKey) return;
+      const check = validateFunctionSlotKey(functionId, slotKey);
+      if (!check.ok) {
+        this._notify(check.reason, 'error');
+        return;
+      }
+      await this._assignSlotKey(slotKey, item);
+      this._notify(`Bound to ${formatChordSlotKeyLabel(slotKey)}.`, 'success');
+    };
+
+    document.addEventListener('keydown', onKeyDown, { capture: true, once: true });
+    this._chordCaptureCleanup = () => {
+      try { document.removeEventListener('keydown', onKeyDown, { capture: true }); } catch { /* ignore */ }
+    };
   }
 }

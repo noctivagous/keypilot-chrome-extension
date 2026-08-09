@@ -107,6 +107,7 @@ const TEXT_ACTIVE_BUILTIN_FUNCTION_IDS = new Set([
  */
 const BUILTIN_FUNCTION_DATA_TAGS = Object.freeze({
   COPY_HOVERED_IMAGE: Object.freeze({ dataSource: 'underCursor', dataKind: 'media' }),
+  OPEN_MEDIA_LIBRARY: Object.freeze({ dataSource: 'none' }),
   SEND_TEXT_TO_AI: Object.freeze({
     dataSource: 'textRange',
     dataKind: 'text',
@@ -121,6 +122,19 @@ const BUILTIN_FUNCTION_DATA_TAGS = Object.freeze({
   CLIPBOARD_PASTE: Object.freeze({ dataSource: 'none' }),
   CLIPBOARD_SELECT_ALL: Object.freeze({ dataSource: 'none' })
 });
+
+/**
+ * Function ids whose canonical Action Instance is a single deterministic
+ * `action:builtin:<functionId>` (see `getOrCreateBuiltinFunctionUserAction` in
+ * keyboard-layout-store.js), because they're still dispatched via a fixed physical key in
+ * `KEYBINDING_ACTION_DEFS`/the built-in layouts rather than a user-assignable
+ * `UserKeyboardLayout` slot. Both the KeyPilot hot-key param cache (`BUILTIN_FUNCTION_ACTION_IDS`
+ * in keypilot.js) and the Keyboard Layout Config palette (to avoid double-rendering these as
+ * freely-placeable Action Instances alongside truly slot-assignable ones like TYPE_CHARACTERS)
+ * key off this same list.
+ * @type {ReadonlyArray<string>}
+ */
+export const FIXED_KEY_FUNCTION_IDS = Object.freeze(['SEND_TEXT_TO_AI', 'RECTANGLE_HIGHLIGHT']);
 
 /**
  * Parameter schema for built-in Functions that used to declare their schema only in

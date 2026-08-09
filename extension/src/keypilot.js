@@ -50,7 +50,7 @@ import { LauncherPopover } from './modules/launcher-popover.js';
 import { DEFAULT_SETTINGS, getSettings, setSettings, SETTINGS_STORAGE_KEY, scrollBehaviorFromSpeed } from './modules/settings-manager.js';
 import { getOrCreateBuiltinFunctionUserAction, getUserKeyboardLayoutById, getUserActionById, getUserMacroById, listUserActions, listUserMacros } from './modules/keyboard-layout-store.js';
 import { runLegacyMacroKeyFunction } from './modules/macro-key-runtime.js';
-import { getFunctionDef, functionWorksWhileTyping } from './config/function-library.js';
+import { getFunctionDef, functionWorksWhileTyping, FIXED_KEY_FUNCTION_IDS } from './config/function-library.js';
 import { chordSlotKeyFromEvent } from './utils/key-chord.js';
 import { getTextAtPoint } from './utils/text-at-point.js';
 import { toggleKeyboardLayoutConfigurator } from './ui/keyboard-layout-configurator.js';
@@ -965,7 +965,7 @@ export class KeyPilot extends EventManager {
 
   /** Built-in Function ids read via {@link _getBuiltinFunctionActionParams} in hot key handlers. */
   static get BUILTIN_FUNCTION_ACTION_IDS() {
-    return ['SEND_TEXT_TO_AI', 'RECTANGLE_HIGHLIGHT'];
+    return FIXED_KEY_FUNCTION_IDS;
   }
 
   /**
