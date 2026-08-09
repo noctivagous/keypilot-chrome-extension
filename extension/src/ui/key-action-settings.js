@@ -1,31 +1,31 @@
 /**
- * Per-action settings registry + floating config panel for Keyboard Reference keys.
+ * Per-action settings + floating config panel for Keyboard Reference keys bound to a fixed
+ * physical key (e.g. `SEND_TEXT_TO_AI`, `RECTANGLE_HIGHLIGHT`) rather than a user-assignable
+ * `UserKeyboardLayout` slot.
  *
- * Keys declare optional modes / parameters here. The sticky key popover reads the
- * registry to render mode switches and a Config button that opens a draggable panel.
+ * Parameter *schema* for these ids now lives on `FunctionDef.parameters` in
+ * `function-library.js` (single source of truth, shared with the Function Library
+ * browser/instance system) — this module just derives the legacy `ActionSettingsDef` shape
+ * (mode-switch + Config-button UI) from it. Parameter *values* live on each Function's
+ * canonical Action Instance (`getOrCreateBuiltinFunctionUserAction` in
+ * `keyboard-layout-store.js`), not in global `settings.actionSettings[actionId]` anymore — see
+ * KEY_ACTION_ARCHITECTURE.md, "Migration mapping".
  *
- * Shared result destinations (clipboard / popover / both) live in
- * `action-result-delivery.js` and are reused by AI and future procedures.
+ * Shared result destinations (clipboard / popover / both / …) live in
+ * `action-result-delivery.js` and are reused here and by AI and future procedures.
  */
 import { Z_INDEX, KP_UI_FONT } from '../config/constants.js';
-import { getSettings, setSettings } from '../modules/settings-manager.js';
 import { makePanelDraggable } from '../utils/panel-position.js';
 import { RESULT_DESTINATION_PARAMETER } from '../modules/action-result-delivery.js';
+import { getFunctionDef } from '../config/function-library.js';
+import {
+  getOrCreateBuiltinFunctionUserAction,
+  setBuiltinFunctionUserActionParameter
+} from '../modules/keyboard-layout-store.js';
 
 /**
  * @typedef {{ id: string, label: string }} ActionModeOption
- * @typedef {{
- *   id: string,
- *   label: string,
- *   type: 'boolean'|'number'|'string'|'enum',
- *   defaultValue?: any,
- *   options?: Array<{ id: string, label: string }>,
- *   min?: number,
- *   max?: number,
- *   step?: number,
- *   multiline?: boolean,
- *   placeholder?: string
- * }} ActionParameterDef
+ * @typedef {import('../config/function-library.js').FunctionParameterDef} ActionParameterDef
  * @typedef {{
  *   modes?: ActionModeOption[],
  *   defaultMode?: string,
@@ -36,38 +36,29 @@ import { RESULT_DESTINATION_PARAMETER } from '../modules/action-result-delivery.
 /** Re-export for callers that configure procedure destinations. */
 export { RESULT_DESTINATION_PARAMETER };
 
-/** @type {Readonly<Record<string, ActionSettingsDef>>} */
-export const ACTION_SETTINGS_REGISTRY = Object.freeze({
-  RECTANGLE_HIGHLIGHT: Object.freeze({
-    modes: Object.freeze([
-      Object.freeze({ id: 'element', label: 'Element rectangle' }),
-      Object.freeze({ id: 'cumulative', label: 'Pick cumulative' })
-    ]),
-    defaultMode: 'element',
-    parameters: Object.freeze([])
-  }),
-  SEND_TEXT_TO_AI: Object.freeze({
-    parameters: Object.freeze([
-      Object.freeze({
-        id: 'prompt',
-        label: 'Instruction',
-        type: 'string',
-        multiline: true,
-        defaultValue: 'Translate to English',
-        placeholder: 'e.g. Translate to English'
-      }),
-      RESULT_DESTINATION_PARAMETER
-    ])
-  })
-});
+/**
+ * A Function parameter literally named `mode` of type `enum` is additionally surfaced as
+ * `modes`/`defaultMode` for backward compat with the sticky popover's button-group mode switch
+ * (e.g. `RECTANGLE_HIGHLIGHT`'s "Element rectangle" / "Pick cumulative"). Everything else is a
+ * regular parameter rendered by {@link KeyActionConfigPanel}.
+ */
+const MODE_PARAMETER_ID = 'mode';
 
 /**
+ * Derive an {@link ActionSettingsDef} from the Function Library. Returns null for Functions with
+ * no parameter schema (nothing to configure) or that don't exist.
  * @param {string} actionId
  * @returns {ActionSettingsDef|null}
  */
 export function getActionSettingsDef(actionId) {
-  if (!actionId) return null;
-  return ACTION_SETTINGS_REGISTRY[actionId] || null;
+  const def = getFunctionDef(actionId);
+  if (!def || !def.parameters || def.parameters.length === 0) return null;
+  const modeParam = def.parameters.find((p) => p && p.id === MODE_PARAMETER_ID && p.type === 'enum');
+  return {
+    modes: modeParam ? modeParam.options : undefined,
+    defaultMode: modeParam ? modeParam.defaultValue : undefined,
+    parameters: def.parameters
+  };
 }
 
 /**
@@ -80,23 +71,35 @@ export function actionHasModes(actionId) {
 }
 
 /**
+ * Non-`mode` parameters — i.e. parameters the Config panel actually needs to render, excluding
+ * the one already covered by the mode-switch button group (see {@link actionHasModes}).
+ * @param {string} actionId
+ * @returns {ActionParameterDef[]}
+ */
+function nonModeParameters(actionId) {
+  const def = getActionSettingsDef(actionId);
+  return (def?.parameters || []).filter((p) => p && p.id !== MODE_PARAMETER_ID);
+}
+
+/**
  * @param {string} actionId
  * @returns {boolean}
  */
 export function actionHasParameters(actionId) {
-  const def = getActionSettingsDef(actionId);
-  return !!(def?.parameters && def.parameters.length > 0);
+  return nonModeParameters(actionId).length > 0;
 }
 
 /**
- * @param {Record<string, any>|null|undefined} actionSettings
+ * @param {Record<string, any>|null|undefined} parameters Action Instance's bound `parameters`
+ *   (e.g. `(await getOrCreateBuiltinFunctionUserAction(actionId)).parameters`) — NOT the old
+ *   global `settings.actionSettings` blob.
  * @param {string} actionId
  * @returns {string}
  */
-export function getActionMode(actionSettings, actionId) {
+export function getActionMode(parameters, actionId) {
   const def = getActionSettingsDef(actionId);
   const fallback = def?.defaultMode || (def?.modes?.[0]?.id) || 'element';
-  const stored = actionSettings?.[actionId]?.mode;
+  const stored = parameters?.[MODE_PARAMETER_ID];
   if (typeof stored === 'string' && def?.modes?.some((m) => m.id === stored)) {
     return stored;
   }
@@ -104,68 +107,61 @@ export function getActionMode(actionSettings, actionId) {
 }
 
 /**
- * Read a stored parameter with registry default fallback.
- * @param {Record<string, any>|null|undefined} actionSettings
+ * Read a bound parameter value with schema-default fallback.
+ * @param {Record<string, any>|null|undefined} parameters see {@link getActionMode}
  * @param {string} actionId
  * @param {string} paramId
  * @returns {any}
  */
-export function getActionParameter(actionSettings, actionId, paramId) {
+export function getActionParameter(parameters, actionId, paramId) {
   const def = getActionSettingsDef(actionId);
   const paramDef = def?.parameters?.find((p) => p && p.id === paramId) || null;
-  const stored = actionSettings?.[actionId]?.parameters?.[paramId];
+  const stored = parameters?.[paramId];
   if (stored !== undefined) return stored;
   return paramDef ? paramDef.defaultValue : undefined;
 }
 
 /**
- * Persist a mode for an action id.
+ * Persist a mode for a built-in Function id, on its canonical Action Instance.
  * @param {string} actionId
  * @param {string} modeId
- * @returns {Promise<import('../modules/settings-manager.js').KeyPilotSettings>}
+ * @returns {Promise<import('../modules/keyboard-layout-store.js').UserAction|null>}
  */
 export async function setActionMode(actionId, modeId) {
   const def = getActionSettingsDef(actionId);
   if (!def?.modes?.some((m) => m.id === modeId)) {
     throw new Error(`Unknown mode ${modeId} for action ${actionId}`);
   }
-  const current = await getSettings();
-  const prevAction = (current.actionSettings && current.actionSettings[actionId]) || {};
-  return setSettings({
-    actionSettings: {
-      ...(current.actionSettings || {}),
-      [actionId]: {
-        ...prevAction,
-        mode: modeId
-      }
-    }
-  });
+  const action = await setBuiltinFunctionUserActionParameter(actionId, MODE_PARAMETER_ID, modeId);
+  notifyActionSettingsChanged(actionId, action);
+  return action;
 }
 
 /**
- * Persist a single parameter value for an action.
+ * Persist a single parameter value for a built-in Function id, on its canonical Action Instance.
  * @param {string} actionId
  * @param {string} paramId
  * @param {any} value
+ * @returns {Promise<import('../modules/keyboard-layout-store.js').UserAction|null>}
  */
 export async function setActionParameter(actionId, paramId, value) {
-  const current = await getSettings();
-  const prevAction = (current.actionSettings && current.actionSettings[actionId]) || {};
-  const prevParams = (prevAction.parameters && typeof prevAction.parameters === 'object')
-    ? prevAction.parameters
-    : {};
-  return setSettings({
-    actionSettings: {
-      ...(current.actionSettings || {}),
-      [actionId]: {
-        ...prevAction,
-        parameters: {
-          ...prevParams,
-          [paramId]: value
-        }
-      }
-    }
-  });
+  const action = await setBuiltinFunctionUserActionParameter(actionId, paramId, value);
+  notifyActionSettingsChanged(actionId, action);
+  return action;
+}
+
+/**
+ * Broadcast a value change so any live KeyPilot instance can update its own read cache
+ * immediately (storage round-trips are too slow for "type a character, see it reflected").
+ * @param {string} actionId
+ * @param {import('../modules/keyboard-layout-store.js').UserAction|null} action
+ */
+function notifyActionSettingsChanged(actionId, action) {
+  try {
+    document.dispatchEvent(new CustomEvent('keypilot:action-settings-changed', {
+      detail: { actionId, action }
+    }));
+  } catch { /* ignore */ }
 }
 
 const CONFIG_PANEL_STYLE_ATTR = 'data-kp-action-config-style';
@@ -358,9 +354,9 @@ export class KeyActionConfigPanel {
     if (!body) return;
     body.replaceChildren();
 
-    const settings = await getSettings();
-    const storedParams = settings?.actionSettings?.[actionId]?.parameters || {};
-    const params = Array.isArray(def.parameters) ? def.parameters : [];
+    const action = await getOrCreateBuiltinFunctionUserAction(actionId);
+    const storedParams = action?.parameters || {};
+    const params = nonModeParameters(actionId);
 
     if (params.length === 0) {
       const empty = document.createElement('div');

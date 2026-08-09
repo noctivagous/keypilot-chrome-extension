@@ -2,10 +2,13 @@
 
 ## Status
 
-**Design proposal — not yet implemented.** This document defines the target vocabulary and data
-model for the Keyboard Layout Config system (functions, key actions, action instances, macros).
-It is written against the *current* code (see "Current state" below) so the migration path is
-concrete, but no refactor has happened yet.
+**In progress.** The Function Library, Action Instance store, runtime dispatch, and data model
+(`SlotAssignment`, `UserAction`, `UserMacro`/`MacroStep`) described below are implemented — the old
+`'action'`/`'macroKey'` `SlotItem` types and the standalone `UserMacroKey`/`ACTION_SETTINGS_REGISTRY`
+storage have been fully retired, not just wrapped. What's left is UI consolidation: folding the
+`functions`/`macros`/`macroKeys` palette tabs and the additive Function Library panel into one
+place, and the Data Acquisition / Result Destination items below. See the checklist in "Migration
+mapping" below for exact status per item.
 
 ## Problem this solves
 
@@ -74,6 +77,10 @@ id — they live with the *instance*, so per-key customization can never collide
 ## Data model
 
 ```ts
+// Where a Function's produced data can be routed. See "Data Acquisition & Result Destinations".
+// 'clipboard' | 'popover' implemented today (action-result-delivery.js); the rest are proposed.
+type ResultDestination = 'clipboard' | 'popover' | 'modifyPage' | 'mediaLibrary' | 'scrapbook';
+
 // Function Library — the catalog. Stable across all users/installs.
 type FunctionParameterDef = {
   id: string;                 // e.g. "text"
@@ -93,6 +100,11 @@ type FunctionDef = {
   parameters?: FunctionParameterDef[];   // omitted/empty => parameterless
   keyboardClass?: string;     // rendering hint for the keycap
   category?: string;          // grouping in the Functions browser
+  worksWhileTyping?: boolean; // see "Text-active Functions" below
+  // See "Data Acquisition & Result Destinations" below.
+  dataSource?: 'underCursor' | 'textRange' | 'urlFetch' | 'none';
+  dataKind?: 'text' | 'media' | 'file';
+  destinations?: ResultDestination[];   // which destinations this Function's data may be routed to
 };
 
 // Action Instance — a configured, independently-assignable reference to a Function.
@@ -152,15 +164,204 @@ drag source (the Function Library) instead of needing separate "functions" vs "m
 
 ## Migration mapping (current code → target)
 
-| Current | Target |
-|---|---|
-| `KEYBINDING_ACTION_DEFS` (`keyboard-layouts.js`) | Entries become `FunctionDef`s in the unified **Function Library**. `handler` field carries over unchanged. |
-| `MACRO_KEY_KIND_DEFS` (`hotkey`, `burst`, `roundRobin`, `continuous`, `mouse`, `key`) | Become ordinary `FunctionDef`s with real parameter schemas instead of bespoke `config` blobs, e.g. `SEND_HOTKEY { stroke }`, `SEND_BURST { steps[], gapMs }`, `CYCLE_ROUND_ROBIN { items[] }`, `HOLD_CONTINUOUS { stroke, intervalMs }`, `CLICK_MOUSE_BUTTON { button }`, `REMAP_KEY { stroke }`. The standalone "macro key kind" concept goes away — it was already 90% of the way to being Action Instances. |
-| `UserMacroKey` (`macroKey:<id>`, `{ kind, config }`) | Generalized to `UserAction` (`action:<id>`, `{ functionId, parameters }`). Same storage module, generalized shape; existing kind-specific `normalize*/default*/summarize*` helpers move to per-`FunctionDef` parameter validators. |
-| `ACTION_SETTINGS_REGISTRY` + `settings.actionSettings[actionId]` (global values) | Parameter **schema** (`ActionParameterDef`) moves onto `FunctionDef.parameters`. Parameter **values** move out of global settings and into per-slot `UserAction.parameters`. Global settings are no longer a valid place to store per-key-assignable values. |
-| `UserMacro.actions: any[]` | Becomes `UserMacro.steps: MacroStep[]`, composed from the same Function Library — unifies "macro script composition" with single-key Actions under one vocabulary instead of a second ad hoc one. |
-| `SlotItem { type: 'action'|'macro', id }` | Renamed `SlotAssignment` for clarity (see data model above); `'action'` splits into bare-Function vs Function+instance as described. |
-| Config panel tabs: `functions` / `macros` / `macroKeys` | Collapses to two: **Functions** (browse the library; dragging a parameterized Function onto a slot auto-creates a default `UserAction`) and **Macros** (the script builder). "macroKeys" stops being a separate tab/concept. |
+Status legend: ✅ done · 🚧 in progress / partially done · ⬜ not started.
+
+| Status | Current | Target |
+|---|---|---|
+| ✅ | `KEYBINDING_ACTION_DEFS` (`keyboard-layouts.js`) | Entries become `FunctionDef`s in the unified **Function Library** (`src/config/function-library.js`). `handler` field carries over unchanged. `KEYBINDING_ACTION_DEFS` itself is untouched (wrapped, not replaced) so existing consumers keep working. |
+| ✅ | `MACRO_KEY_KIND_DEFS` (`hotkey`, `burst`, `roundRobin`, `continuous`, `mouse`, `key`) | Generalized to `FunctionDef`s (`SEND_HOTKEY`, `SEND_BURST`, `CYCLE_ROUND_ROBIN`, `HOLD_CONTINUOUS`, `CLICK_MOUSE_BUTTON`, `REMAP_KEY`) in the Function Library, tagged `legacyMacroKeyKind` so kind-specific config/summary logic in `macro-keys.js` is reused, not duplicated. Per-field parameter schemas (vs. the current opaque `config` blob) are **not yet** broken out — see open item below. |
+| ✅ | `UserMacroKey` (`macroKey:<id>`, `{ kind, config }`) | Fully retired. `UserMacroKey`'s standalone storage/CRUD (`createUserMacroKey`, `upsertUserMacroKey`, `deleteUserMacroKey`, `listUserMacroKeys`, `getUserMacroKeyById`) is deleted from `keyboard-layout-store.js`; a "configured Macro Key" is now just a `UserAction` (`action:<uuid>`) whose `functionId` is the kind's Function id (`FUNCTION_ID_BY_MACRO_KEY_KIND` in `function-library.js`) and whose `parameters` is `{ config }`. `macro-key-editor.js`'s kind-specific editing UI (stroke pickers, burst/round-robin lists, …) is unchanged — it's UI-only and works against a `{ id, kind, label, config }` view adapted from a `UserAction` (`macroKeyLikeFromUserAction()` in `keyboard-layout-config-panel.js`). `runMacroKeyById()` (the `UserMacroKey`-keyed executor) is deleted from `macro-key-runtime.js`; only `runLegacyMacroKeyFunction()` (Function id + parameters) remains, since this extension has no shipped users/persisted data to preserve a compatibility path for. |
+| ✅ | Runtime dispatch only knew `'action'` / `'macro'` / `'macroKey'` slot types | `keypilot.js` now also dispatches `type: 'function'` slot assignments (`_dispatchFunctionSlot`), resolving either a bare Function id or an `action:<id>` instance and calling the handler with `(event, parameters, { functionId, instanceId })`. Old types are unchanged. |
+| ✅ | No concept of "must run while a text field is focused" | Added `worksWhileTyping` on `FunctionDef` + a **modifier-chord slot** convention (`CHORD:CTRL+ALT+Q`-style keys in the same `slots` map) that bypasses the typing-safety gate. See "Text-active Functions" below — this was called out explicitly because `TYPE_CHARACTERS` (and the pre-existing `CLIPBOARD_*` Functions) are meaningless unless they can fire while typing. |
+| ✅ | `ACTION_SETTINGS_REGISTRY` + `settings.actionSettings[actionId]` (global values, e.g. `SEND_TEXT_TO_AI`'s `prompt`) | `ACTION_SETTINGS_REGISTRY` is removed; parameter **schema** for `SEND_TEXT_TO_AI` (`prompt`, `destination`) and `RECTANGLE_HIGHLIGHT` (`mode`, modeled as a plain `enum` parameter) now lives on `FunctionDef.parameters` (`function-library.js`). Parameter **values** live on a per-Function canonical `UserAction` (`action:builtin:<functionId>`, see `getOrCreateBuiltinFunctionUserAction()` in `keyboard-layout-store.js`) instead of `settings.actionSettings` — there is exactly one meaningful instance per Function id today since neither is yet assignable to an arbitrary slot (that's the "Config panel tabs" item below). `key-action-settings.js` is now a thin bridge deriving its legacy `ActionSettingsDef`/mode-switch UI shape from the Function Library rather than duplicating schema. |
+| ✅ | `UserMacro.actions: any[]` | `UserMacro.steps: MacroStep[]` (`{ functionId, parameters, delayMsBefore? }`), with full CRUD (`getUserMacroById`, `upsertUserMacro`, `deleteUserMacro`, `addUserMacroStep`, `updateUserMacroStep`, `removeUserMacroStep`, `moveUserMacroStep`) in `keyboard-layout-store.js`. `_runMacroById()` in `keypilot.js` — previously a "not implemented yet" notification stub — now actually runs each Step's Function handler in order (honoring `delayMsBefore`), exactly per "Runtime resolution" above. The Function Library panel gained a **Macros** section (create/delete a macro, add/remove/reorder Steps by picking any Function from the library, bind the macro to a key, "Run now" for testing) since there was previously no UI at all for editing a macro's contents. |
+| ✅ | `SlotItem { type: 'action'|'macro'|'macroKey', id }` | Renamed to `SlotAssignment`, and the type union is now just `'function' | 'macro'` — `'action'` and `'macroKey'` are fully retired (this extension has no shipped users/persisted data, so old-shape read support was deleted outright rather than kept for compatibility; see `keyboard-layout-store.js` module doc). Every writer now emits `{ type: 'function', id }`: `duplicateBuiltinLayoutToUserLayout()`, `keyboard-layout-config-panel.js`'s built-in-action palette and Macro Keys tab, `setUserKeyboardLayoutSlot()`. Every reader (`keypilot.js` dispatch, `floating-keyboard-help.js`'s `renderSlot`/`applyDropToSlot`/`resolveFunctionSlot`, `keyboard-layout-config-panel.js`'s badge/inspector logic) only ever branches on `'function'`/`'macro'` now — the old `builtinActionItemKey()` normalizer and `functionOrInstanceLabel`/`functionOrInstanceKeyboardClass` module-level stand-ins were deleted since there's no longer a second type to normalize against, and `floating-keyboard-help.js` now resolves any `action:<uuid>` Action Instance (Macro Key or otherwise) to a real label/`keyboardClass` via a live `UserAction[]` lookup instead of a generic "Configured Function" fallback. |
+| ⬜ | Config panel tabs: `functions` / `macros` / `macroKeys` (in `keyboard-layout-config-panel.js`) | The **Macro Keys** tab now creates/edits `UserAction`s (see the `UserMacroKey` row above) instead of a separate storage type, but it, `functions`, and `macros` remain three separate tabs in the drag-drop palette rather than one unified Function Library view — folding them together, and/or replacing this palette with the additive **Function Library panel** (`function-library-panel.js`, which already browses `FUNCTION_LIBRARY` and creates/edits `UserAction`s generically, including modifier-chord capture for `worksWhileTyping` Functions), is still open. |
+| ⬜ | `RESULT_DESTINATION_PARAMETER` (`action-result-delivery.js`) — one frozen `clipboard`\|`popover`\|`both` enum reused as-is | Design specified, not implemented: generalize to a `buildResultDestinationParameter(applicableDestinations)` factory; add `modifyPage` destination + delivery branch; stub `mediaLibrary`/`scrapbook` as future, not-yet-built sinks. See "Data Acquisition & Result Destinations" below. |
+| ⬜ | No `dataSource`/`dataKind` concept on `FunctionDef` | Design specified, not implemented: add the fields to the data model, plus `GET_TEXT_AT_CURSOR` / `GET_TEXT_RANGE` / `GET_MEDIA_AT_CURSOR` primitive Functions and the `LOOKUP_WORD` / `TRANSLATE` / `SHOW_POPOVER` example Functions. Also specified: a `urlFetch` `dataSource` + `file` `dataKind`, and the `FETCH_URL_FOR_MEDIA_LIBRARY` (fetches the resource a link points to) vs. `ADD_URL_TO_MEDIA_LIBRARY` (stores the link itself) distinction. See "Data Acquisition & Result Destinations" below. |
+
+## Text-active Functions & modifier-chord assignment
+
+**Why this matters:** KeyPilot's normal single-key dispatch is fail-closed around typing for two
+independent reasons found in `keypilot.js`:
+
+1. `handleKeyDown` returns immediately for **any** event with `ctrlKey`/`altKey`/`shiftKey`/`metaKey`
+   set (`hasModifierKeys(e)`), *before* layout-slot dispatch ever runs — today, modifier combos are
+   never routed to a Key Action at all; they always pass through untouched.
+2. Bare-key layout-slot dispatch (`_maybeHandleCurrentLayoutBinding`) and the built-in layout loop
+   both fail-closed via `_isUnsafeToRunActionKey`: if a text-entry element is focused, plain letter
+   keys are suppressed so normal typing is never hijacked.
+
+A Function like `TYPE_CHARACTERS` is only useful if it fires *while a text field is focused* (it
+types into that very field) — the same is true of the pre-existing `CLIPBOARD_COPY` / `CLIPBOARD_CUT`
+/ `CLIPBOARD_PASTE` / `CLIPBOARD_SELECT_ALL` Functions, which were previously assignable to a bare
+key slot but would have silently never fired while typing, defeating their purpose. Assigning such
+a Function to a bare key slot is not just suboptimal, it's a bug.
+
+**Resolution:**
+
+- `FunctionDef` gains an optional `worksWhileTyping: true` flag (see `function-library.js`). Set on
+  `TYPE_CHARACTERS`, `CLIPBOARD_COPY`, `CLIPBOARD_CUT`, `CLIPBOARD_PASTE`, `CLIPBOARD_SELECT_ALL`.
+- A Function flagged `worksWhileTyping` **must** be bound to a modifier chord (e.g. `Ctrl+Alt+Q`),
+  never a bare key — enforced by `assertFunctionSlotKeyIsValid()` (`function-library.js`) and by the
+  Function Library panel's placement UI (it captures a chord instead of a bare keypress for these
+  Functions).
+- Chorded slots reuse the *same* `UserKeyboardLayout.slots` map as bare-key slots — no schema/version
+  bump needed. The slot key is just a different string shape, built by `src/utils/key-chord.js`:
+  `CHORD:CTRL+ALT+Q` instead of `Q`. (`CHORD:` prefix makes the two unambiguous at a glance and in code.)
+- `keypilot.js` checks chorded slots in a **new** `_maybeHandleTextActiveFunctionSlot(e)` step, called
+  *before* the blanket `hasModifierKeys(e)` bail-out — i.e. before KeyPilot decides "this is a
+  modifier combo, ignore it" it first asks "is this exact chord bound to a text-active Function in
+  the current user layout?". This path intentionally does **not** call `_isUnsafeToRunActionKey` —
+  running while typing is the entire point.
+- Everything else about modifier combos is unchanged: any chord not bound to a `worksWhileTyping`
+  Function in the current user layout still falls through untouched, exactly as before.
+
+**Still open:** the existing drag-and-drop palette (`keyboard-layout-config-panel.js`) places items
+by clicking a bare-key cell on the visual keyboard reference; it has no chord-capture affordance yet,
+so `worksWhileTyping` Functions can currently only be bound via the new Function Library panel, not
+by dragging onto the reference keyboard. Folding chord-capture into the main palette is tracked
+alongside the "Config panel tabs" migration item above.
+
+## Data Acquisition & Result Destinations
+
+**Framing:** KeyPilot's core value is *rapidly isolating and retrieving data from the page* through
+several different UI workflows (hover-and-press, highlight-then-press, rectangle-select-then-press),
+and then *doing something with that data*. Those are two independent, orthogonal concerns, and the
+Function Library should model them as two separate dimensions on a `FunctionDef` rather than baking
+one destination into each Function's handler:
+
+1. **Data Acquisition** — *what data does this Function operate on, and when is it captured?*
+2. **Result Destination** — *where does that data go once captured?*
+
+This split is already half-real in the code (`action-result-delivery.js`'s `clipboard`/`popover`/
+`both` destinations, reused by `SEND_TEXT_TO_AI`) — this section generalizes it to cover the new
+cases: dictionary lookup, translation, and future Media Library / Scrapbook destinations for
+`COPY_HOVERED_IMAGE` and selection-based Functions.
+
+### Data Acquisition: `dataSource` + `dataKind`
+
+| `dataSource` | When it's captured | Existing precedent |
+|---|---|---|
+| `underCursor` | Immediately at keydown, from the pointer position already tracked in `state.lastMouse` — no setup required. | `COPY_HOVERED_IMAGE` (`getHoveredImage(x, y)`), `ACTIVATE`'s click-under-cursor. |
+| `textRange` | From a range the user set up *before* pressing the key — an active `window.getSelection()`, or KeyPilot's own Highlight / Rectangle-Select modes. | `SEND_TEXT_TO_AI` (`getSelectedPlainText()`), `HIGHLIGHT` / `RECTANGLE_HIGHLIGHT` modes. |
+| `urlFetch` | Two-stage: first resolve a URL from `underCursor`/`textRange` (typically a hyperlink's `href`), then issue a **network fetch** of that URL to obtain the resource it points to. Async and can fail (404, CORS, timeout) in ways a DOM read never does — treat it as its own `dataSource`, not a flavor of `underCursor`. | None yet — see "Fetching vs. linking a URL" below (`FETCH_URL_FOR_MEDIA_LIBRARY`, design-only). |
+| `none` | The Function doesn't read page data at all. | `NEW_TAB`, `CLOSE_TAB`. |
+
+`dataKind` says *what shape* the acquired data is, independent of `dataSource`:
+
+- `text`, with a granularity: `word` | `sentence` | `paragraph` | `hyperlink`. A `textRange`
+  Function typically takes whatever range the user already selected; an `underCursor` text
+  Function needs a granularity to know how much to grab around the pointer (e.g. "the word under
+  the cursor" vs. "the sentence under the cursor").
+- `media`, with a kind: `image` | `video` | `audio`. Media is effectively `underCursor`-only for
+  now — there is no "select a video as a range" concept in the browser the way there is for text.
+- `file` — an arbitrary downloaded document (PDF, `.mp3`, `.mp4`, archive, …), acquired by fetching
+  a URL rather than reading something already rendered on the page. See "Fetching vs. linking a
+  URL" below — this is *not* the same thing as `media`, which is read directly off an existing page
+  element (`<img>`/`<video>`), not fetched over the network.
+
+These two dimensions compose. Reusable, low-level **data-getter Functions** (the actual page-reading
+primitives, callable standalone in a future macro script, or internally by a stock Function) fall
+out naturally:
+
+- `GET_TEXT_AT_CURSOR` — params: `{ granularity: word|sentence|paragraph|hyperlink }`, `dataSource: 'underCursor'`.
+- `GET_TEXT_RANGE` — no params, `dataSource: 'textRange'` (reads the current selection/highlight).
+- `GET_MEDIA_AT_CURSOR` — params: `{ kind: image|video|audio }`, `dataSource: 'underCursor'`.
+
+A stock Function like `LOOKUP_WORD` or `COPY_HOVERED_IMAGE` is (conceptually) "one of the getters
+above, piped into a destination" — expressed today as a single Function with both a `dataSource`/
+`dataKind` and a `destinations` list, but decomposable into two Macro `Step`s (a getter + a
+destination-writer, see `SHOW_POPOVER` below) once the macro builder exists. This is the same
+"one Function now, N Steps later" relationship `TYPE_CHARACTERS` already has to a future macro
+script — see "Problem this solves" above.
+
+### Result Destinations: generalizing `RESULT_DESTINATION_PARAMETER`
+
+`action-result-delivery.js` already has the right shape (`ActionResultDestination`: `clipboard` |
+`popover` | `both`, delivered via `deliverActionResult`) — it just needs two changes to generalize:
+
+1. **More destination values**, added incrementally as their sinks are built:
+   - `clipboard` — existing, and the default for most stock Functions (convenient out of the box).
+   - `popover` — existing (`showProcedureResultPopover`); the default for `LOOKUP_WORD`.
+   - `modifyPage` — **new**. Writes the result back into the page's DOM in place of the source
+     range (e.g. `TRANSLATE` replacing selected text with its translation). Needs a new delivery
+     branch in `deliverActionResult` (or a sibling `deliverActionResultToPage`) that mutates the
+     original DOM range/node rather than routing to clipboard or a popover.
+   - `mediaLibrary` — **future**, not yet built. Sink for `media`- and `file`-kind data (e.g.
+     `COPY_HOVERED_IMAGE` configured to save to the Media Library instead of the clipboard). Not
+     image-only — per the "Fetching vs. linking a URL" note below, the Media Library is meant to
+     store arbitrary document types (PDF, audio, video, …), not just images.
+   - `scrapbook` — **future**, not yet built. Sink for `text`-kind data users want to accumulate
+     across many keypresses instead of overwriting the clipboard each time (e.g. Rectangle Select
+     configured to append to the Scrapbook instead of copying).
+2. **Per-Function applicability.** Not every destination makes sense for every Function (e.g.
+   `modifyPage` is meaningless for `media`-kind data; `mediaLibrary` is meaningless for `text`-kind
+   data). Rather than one universal frozen `RESULT_DESTINATION_PARAMETER` constant, generalize it to
+   a small factory, e.g. `buildResultDestinationParameter(applicableDestinations: ResultDestination[])`,
+   so each `FunctionDef.parameters` only ever offers destinations that are valid for its `dataKind`.
+   `FunctionDef.destinations` (in the data model above) is the declarative list a Function's factory
+   call is built from — also usable by the Functions browser UI to show/hide destination-specific
+   controls without inspecting the parameter schema.
+
+Stock Functions still ship with one sensible default destination pre-selected (`clipboard` for
+`COPY_HOVERED_IMAGE`/`CLIPBOARD_COPY`, `popover` for `LOOKUP_WORD`) so nothing needs configuring to
+be useful immediately — swapping the destination (e.g. to the future Media Library) is discovered
+by advanced users, not required by casual ones. This is the general design principle this whole
+Function/Action Instance split exists to serve: **convenient by default, configurable for advanced
+use**, applied consistently to acquisition targets and destinations, not just to things like
+`TYPE_CHARACTERS`'s `text` parameter.
+
+### `SHOW_POPOVER` as a composable primitive, not just a destination
+
+`deliverActionResult`'s `popover` branch already calls `showProcedureResultPopover` internally —
+that's a **destination behavior** baked into the delivery helper, not an addressable Function. For
+the future macro builder, formalize the same behavior as an explicit, standalone Function:
+
+- `SHOW_POPOVER` — category `Display`; params: `{ content }` (text/html to render). Takes whatever
+  the previous Macro Step produced and renders it in a popover.
+
+This is the concrete instance of the Automator/Shortcuts decomposition promised in "Problem this
+solves": a casual user presses one key bound to the stock `LOOKUP_WORD` Function (data source +
+destination bundled, zero setup); an advanced user, in the future macro builder, could instead chain
+`GET_TEXT_AT_CURSOR { granularity: word }` → `DICTIONARY_LOOKUP` → `SHOW_POPOVER` as three explicit
+Steps to build the same behavior with more control (e.g. inserting a translation step in between).
+
+### New example Functions specified
+
+| Function id | `dataSource` / `dataKind` | `destinations` | Notes |
+|---|---|---|---|
+| `LOOKUP_WORD` | `underCursor`, `text` (`word`) | `popover` (default) | Dictionary definition popover. Category `Lookup`. |
+| `TRANSLATE` | `textRange` if an active selection exists, else `underCursor` (`word`\|`sentence`\|`paragraph`, user-configurable granularity) | `modifyPage`, `popover` | No `clipboard`/`mediaLibrary` — translating "to clipboard" isn't a meaningful default. Category `Translate`. |
+| `GET_TEXT_AT_CURSOR` / `GET_TEXT_RANGE` / `GET_MEDIA_AT_CURSOR` | see above | n/a (pipe into a destination-writer Step) | Low-level primitives for the future macro builder; not directly key-assignable stock Functions on their own. |
+| `ADD_URL_TO_MEDIA_LIBRARY` | `underCursor`, `text` (`hyperlink`) | `mediaLibrary`, `clipboard`, `scrapbook` | Stores the link itself (`href` text), not its content. Category `Media Library`. See "Fetching vs. linking a URL" below. |
+| `FETCH_URL_FOR_MEDIA_LIBRARY` | `urlFetch`, `file` | `mediaLibrary` | Fetches and stores the resource the link points to (e.g. a `.pdf`/`.mp3`/`.mp4`). Category `Media Library`. See "Fetching vs. linking a URL" below. |
+
+`COPY_HOVERED_IMAGE` and `RECTANGLE_HIGHLIGHT` (existing Functions) should eventually gain a
+`destinations` list (`clipboard` today; `mediaLibrary`/`scrapbook` once those sinks exist) rather
+than being hardcoded to the clipboard — tracked as a follow-up, not done in this pass.
+
+### Fetching vs. linking a URL — `FETCH_URL_FOR_MEDIA_LIBRARY` vs. `ADD_URL_TO_MEDIA_LIBRARY`
+
+Design note surfaced while thinking through the Media Library: "the hyperlink under the cursor" is
+not one Function's worth of behavior — it splits into two meaningfully different operations that
+must not be conflated into a single Function, because they acquire *and* store fundamentally
+different data:
+
+| Function id | What it acquires | `dataSource` / `dataKind` | `destinations` |
+|---|---|---|---|
+| `ADD_URL_TO_MEDIA_LIBRARY` | The link itself — the `href` string under the cursor (or from a text range), stored as an `href`-tagged text record. Nothing is downloaded. | `underCursor` (or `textRange`), `text` (`hyperlink` granularity) | `mediaLibrary` (bookmark-style entry), `clipboard`, `scrapbook` |
+| `FETCH_URL_FOR_MEDIA_LIBRARY` | The **resource the link points to** — resolves the same `href`, then performs an actual network fetch of it (e.g. the `.pdf`/`.mp3`/`.mp4` file at that URL), storing the fetched bytes. | `urlFetch`, `file` | `mediaLibrary` only — there is no sensible `clipboard`/`popover` behavior for an arbitrary fetched file today |
+
+The distinction matters architecturally, not just semantically: `ADD_URL_TO_MEDIA_LIBRARY` is a
+synchronous, always-succeeds DOM read (same shape as every other `underCursor` Function already in
+the library) that produces a small text record; `FETCH_URL_FOR_MEDIA_LIBRARY` is an async network
+operation with real failure modes (404, CORS, timeout, non-file content-type) and produces
+arbitrary-size binary data. This is exactly why `urlFetch` is called out as its own `dataSource`
+above rather than folded into `underCursor` — the two Functions look similar ("do something with
+the link under the cursor") but have almost nothing in common at the implementation level once you
+get past "resolve an `href` string." Both are design-only for now; neither the Media Library sink
+nor a `urlFetch`-capable handler exists in code yet.
 
 ## Naming conventions
 
@@ -188,6 +389,9 @@ drag source (the Function Library) instead of needing separate "functions" vs "m
 - **Conditional/branching steps** (`gate` in today's `MACRO_BUILDER_STEP_TYPES`): left as a future
   `MacroStep` variant; no schema decision made yet.
 - **Versioning/migration of stored data**: existing stores already carry a `version` field
-  (`kp_keyboard_layout_store_v1`); a real migration (rewriting `macroKey:` → `action:`,
-  `kind`/`config` → `functionId`/`parameters`) will be a one-time `version: 2` bump when this is
-  implemented, not covered here.
+  (`kp_keyboard_layout_store_v1`), still at `1`. The `macroKey:` → `action:`,
+  `kind`/`config` → `functionId`/`parameters` rewrite described in earlier drafts of this doc
+  turned out not to need a `version` bump or migration logic at all: this extension has no
+  shipped users, so the old shape was deleted outright (see the `SlotAssignment`/`UserMacroKey`
+  migration rows above) instead of migrated. A real `version: 2` bump is deferred until there is
+  actual persisted user data that would otherwise be lost.

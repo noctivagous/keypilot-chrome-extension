@@ -10,11 +10,11 @@
 import { Z_INDEX } from '../config/constants.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
 
-function clearElement(el) {
+function clearPracticePanelElement(el) {
   while (el && el.firstChild) el.removeChild(el.firstChild);
 }
 
-function clamp(n, min, max) {
+function clampPracticePanelValue(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
 
@@ -79,8 +79,8 @@ export class PracticePopoverPanel {
         top = Math.round(ob.bottom + gap);
       }
 
-      left = clamp(left, margin, Math.max(margin, w - panelW - margin));
-      top = clamp(top, margin, Math.max(margin, h - panelH - margin));
+      left = clampPracticePanelValue(left, margin, Math.max(margin, w - panelW - margin));
+      top = clampPracticePanelValue(top, margin, Math.max(margin, h - panelH - margin));
 
       this.root.style.left = `${left}px`;
       this.root.style.top = `${top}px`;
@@ -104,7 +104,7 @@ export class PracticePopoverPanel {
       // ignore
     }
 
-    clearElement(this.body);
+    clearPracticePanelElement(this.body);
 
     const wrap = document.createElement('div');
     wrap.dataset.kpPracticeBuilt = 'true';

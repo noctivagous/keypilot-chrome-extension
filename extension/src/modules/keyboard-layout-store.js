@@ -1,56 +1,62 @@
 /**
  * KeyboardLayoutStore
- * Persistent store for user-created keyboard layouts, macros, and macro keys.
+ * Persistent store for user-created keyboard layouts, macros, and Action Instances.
  *
  * Notes:
  * - Built-in layouts remain defined in `src/config/keyboard-layouts.js`.
- * - Built-in macro-key *kinds* are defined in `src/config/macro-keys.js`;
- *   user-configured instances live here under `macroKeys`.
+ * - Built-in macro-key *kinds* are defined in `src/config/macro-keys.js` and generalized into
+ *   `FunctionDef`s in `function-library.js` (`legacyMacroKeyKind`); a *configured* macro key is
+ *   just a `UserAction` for one of those Function ids — see `createUserAction` below. There is no
+ *   separate `UserMacroKey` storage/CRUD; this extension has no shipped users yet, so that legacy
+ *   shape was retired outright rather than kept around for compatibility (see
+ *   KEY_ACTION_ARCHITECTURE.md, "SlotAssignment" migration row).
  * - User layouts are stored separately and can be edited (built-ins must be duplicated first).
  * - This module is content-script safe (uses chrome.storage.sync).
  */
 
 import { buildKeybindingsForLayout, getKeyboardUiLayoutForLayout } from '../config/keyboard-layouts.js';
 import {
-  defaultMacroKeyConfig,
-  defaultMacroKeyLabel,
-  normalizeMacroKeyConfig,
-  normalizeMacroKeyKind
-} from '../config/macro-keys.js';
-import {
   defaultFunctionParameters,
+  functionWorksWhileTyping,
   getFunctionDef,
-  normalizeFunctionParameters
+  normalizeFunctionParameters,
+  validateFunctionSlotKey
 } from '../config/function-library.js';
 
 export const KEYBOARD_LAYOUT_STORE_KEY = 'kp_keyboard_layout_store_v1';
 
 /**
- * @typedef {'action'|'macro'|'macroKey'|'function'} SlotItemType
+ * @typedef {'macro'|'function'} SlotAssignmentType
  *
- * @typedef {{ type: SlotItemType, id: string }} SlotItem
+ * @typedef {{ type: SlotAssignmentType, id: string }} SlotAssignment
  *
  * @typedef {{
  *   id: string,
  *   label: string,
  *   // Base built-in layoutId this was duplicated from (for future diffing/migrations)
  *   baseBuiltinLayoutId?: string,
- *   // Mapping from "slot label" (e.g. "Q", ";", "[") to assigned item (action/macro/macroKey/function)
- *   slots: Record<string, SlotItem|null>,
+ *   // Mapping from "slot label" (e.g. "Q", ";", "[") to assigned item (function/macro)
+ *   slots: Record<string, SlotAssignment|null>,
  *   createdAt: number,
  *   updatedAt: number
  * }} UserKeyboardLayout
  *
  * @typedef {{
+ *   functionId: string,
+ *   parameters: Record<string, any>,
+ *   delayMsBefore?: number
+ * }} MacroStep
+ *
+ * @typedef {{
  *   id: string,
  *   label: string,
  *   icon?: string,
- *   actions: any[],
+ *   // Ordered list of Function calls — see KEY_ACTION_ARCHITECTURE.md "Data model".
+ *   // Replaces the old, always-empty `actions: any[]` placeholder field.
+ *   steps: MacroStep[],
  *   createdAt: number,
  *   updatedAt: number
  * }} UserMacro
- *
- * @typedef {import('../config/macro-keys.js').UserMacroKey} UserMacroKey
  *
  * @typedef {{
  *   id: string,
@@ -65,7 +71,6 @@ export const KEYBOARD_LAYOUT_STORE_KEY = 'kp_keyboard_layout_store_v1';
  *   version: 1,
  *   layouts: Record<string, UserKeyboardLayout>,
  *   macros: Record<string, UserMacro>,
- *   macroKeys: Record<string, UserMacroKey>,
  *   actions: Record<string, UserAction>
  * }} KeyboardLayoutStoreState
  */
@@ -78,7 +83,6 @@ export function getEmptyKeyboardLayoutStore() {
     version: 1,
     layouts: {},
     macros: {},
-    macroKeys: {},
     actions: {}
   };
 }
@@ -125,6 +129,52 @@ function slotLabelFromBinding(binding) {
 }
 
 /**
+ * @param {any} step
+ * @returns {MacroStep|null} null if `step.functionId` isn't a known Function.
+ */
+function normalizeMacroStep(step) {
+  const functionId = String(step?.functionId || '');
+  const def = getFunctionDef(functionId);
+  if (!def) return null;
+  /** @type {MacroStep} */
+  const out = {
+    functionId: def.id,
+    parameters: normalizeFunctionParameters(def.id, step?.parameters)
+  };
+  const delay = Number(step?.delayMsBefore);
+  if (Number.isFinite(delay) && delay > 0) out.delayMsBefore = delay;
+  return out;
+}
+
+/**
+ * One-time read-time migration: older stored macros used an always-empty `actions: any[]`
+ * placeholder field (nothing ever wrote to it) instead of `steps: MacroStep[]`. Backfill `steps`
+ * from `actions` if present (best-effort — `actions` entries were never in the `MacroStep` shape
+ * since nothing wrote real data there, so anything that doesn't resolve to a known Function is
+ * dropped) and drop the legacy field.
+ * @param {Record<string, any>} rawMacros
+ * @returns {Record<string, UserMacro>}
+ */
+function normalizeStoredMacros(rawMacros) {
+  const src = rawMacros && typeof rawMacros === 'object' ? rawMacros : {};
+  /** @type {Record<string, UserMacro>} */
+  const out = {};
+  for (const [id, m] of Object.entries(src)) {
+    if (!m || typeof m !== 'object') continue;
+    const rawSteps = Array.isArray(m.steps) ? m.steps : (Array.isArray(m.actions) ? m.actions : []);
+    out[id] = {
+      id: String(m.id || id),
+      label: String(m.label || 'Macro'),
+      icon: m.icon,
+      steps: rawSteps.map(normalizeMacroStep).filter(Boolean),
+      createdAt: Number.isFinite(m.createdAt) ? m.createdAt : nowMs(),
+      updatedAt: Number.isFinite(m.updatedAt) ? m.updatedAt : nowMs()
+    };
+  }
+  return out;
+}
+
+/**
  * @returns {Promise<KeyboardLayoutStoreState>}
  */
 export async function getKeyboardLayoutStore() {
@@ -135,8 +185,7 @@ export async function getKeyboardLayoutStore() {
       return {
         version: 1,
         layouts: stored.layouts && typeof stored.layouts === 'object' ? stored.layouts : {},
-        macros: stored.macros && typeof stored.macros === 'object' ? stored.macros : {},
-        macroKeys: stored.macroKeys && typeof stored.macroKeys === 'object' ? stored.macroKeys : {},
+        macros: normalizeStoredMacros(stored.macros),
         actions: stored.actions && typeof stored.actions === 'object' ? stored.actions : {}
       };
     }
@@ -194,7 +243,7 @@ export async function listUserMacros() {
 export async function createEmptyUserKeyboardLayout({ baseBuiltinLayoutId, label, includeNumberRow } = {}) {
   const baseId = String(baseBuiltinLayoutId || '');
   const uiLayout = getKeyboardUiLayoutForLayout(baseId, { includeNumberRow: !!includeNumberRow });
-  /** @type {Record<string, SlotItem|null>} */
+  /** @type {Record<string, SlotAssignment|null>} */
   const slots = {};
   for (const row of uiLayout || []) {
     for (const item of row || []) {
@@ -281,7 +330,7 @@ export function exportUserKeyboardLayout(layout) {
 }
 
 /**
- * Create a placeholder macro.
+ * Create a new, empty macro (no steps yet — add some with {@link addUserMacroStep}).
  * @param {{ label?: string }} [params]
  * @returns {Promise<UserMacro>}
  */
@@ -293,7 +342,7 @@ export async function createUserMacro({ label } = {}) {
     id,
     label: String(label || 'New Macro'),
     icon: 'placeholder',
-    actions: [],
+    steps: [],
     createdAt: t,
     updatedAt: t
   };
@@ -303,92 +352,123 @@ export async function createUserMacro({ label } = {}) {
 }
 
 /**
- * @returns {Promise<UserMacroKey[]>}
- */
-export async function listUserMacroKeys() {
-  const st = await getKeyboardLayoutStore();
-  return Object.values(st.macroKeys || {}).filter(Boolean);
-}
-
-/**
  * @param {string} id
- * @returns {Promise<UserMacroKey|null>}
+ * @returns {Promise<UserMacro|null>}
  */
-export async function getUserMacroKeyById(id) {
+export async function getUserMacroById(id) {
   const st = await getKeyboardLayoutStore();
   const key = String(id || '');
-  const mk = st.macroKeys && st.macroKeys[key] ? st.macroKeys[key] : null;
-  return mk || null;
+  const m = st.macros && st.macros[key] ? st.macros[key] : null;
+  return m || null;
 }
 
 /**
- * Create a configured built-in macro key instance.
- * @param {{ kind: string, label?: string, config?: Record<string, any> }} params
- * @returns {Promise<UserMacroKey|null>}
+ * @param {UserMacro} macro
+ * @returns {Promise<UserMacro|null>}
  */
-export async function createUserMacroKey({ kind, label, config } = {}) {
-  const k = normalizeMacroKeyKind(kind);
-  if (!k) return null;
-  const st = await getKeyboardLayoutStore();
-  const id = genId('macroKey:');
-  const t = nowMs();
-  /** @type {UserMacroKey} */
-  const mk = {
-    id,
-    kind: k,
-    label: String(label || defaultMacroKeyLabel(k)),
-    config: normalizeMacroKeyConfig(k, config || defaultMacroKeyConfig(k)),
-    createdAt: t,
-    updatedAt: t
-  };
-  if (!st.macroKeys || typeof st.macroKeys !== 'object') st.macroKeys = {};
-  st.macroKeys[id] = mk;
-  await setKeyboardLayoutStore(st);
-  return mk;
-}
-
-/**
- * @param {UserMacroKey} macroKey
- * @returns {Promise<UserMacroKey|null>}
- */
-export async function upsertUserMacroKey(macroKey) {
-  const kind = normalizeMacroKeyKind(macroKey?.kind);
-  if (!kind || !macroKey?.id) return null;
+export async function upsertUserMacro(macro) {
+  if (!macro?.id) return null;
   const st = await getKeyboardLayoutStore();
   const t = nowMs();
-  const prev = st.macroKeys && st.macroKeys[macroKey.id] ? st.macroKeys[macroKey.id] : null;
-  /** @type {UserMacroKey} */
-  const mk = {
-    id: String(macroKey.id),
-    kind,
-    label: String(macroKey.label || defaultMacroKeyLabel(kind)),
-    config: normalizeMacroKeyConfig(kind, macroKey.config),
-    createdAt: Number.isFinite(prev?.createdAt) ? prev.createdAt : (Number.isFinite(macroKey.createdAt) ? macroKey.createdAt : t),
+  const prev = st.macros && st.macros[macro.id] ? st.macros[macro.id] : null;
+  /** @type {UserMacro} */
+  const m = {
+    id: String(macro.id),
+    label: String(macro.label || prev?.label || 'Macro'),
+    icon: macro.icon ?? prev?.icon,
+    steps: (Array.isArray(macro.steps) ? macro.steps : (prev?.steps || [])).map(normalizeMacroStep).filter(Boolean),
+    createdAt: Number.isFinite(prev?.createdAt) ? prev.createdAt : (Number.isFinite(macro.createdAt) ? macro.createdAt : t),
     updatedAt: t
   };
-  if (!st.macroKeys || typeof st.macroKeys !== 'object') st.macroKeys = {};
-  st.macroKeys[mk.id] = mk;
+  if (!st.macros || typeof st.macros !== 'object') st.macros = {};
+  st.macros[m.id] = m;
   await setKeyboardLayoutStore(st);
-  return mk;
+  return m;
 }
 
 /**
  * @param {string} id
  */
-export async function deleteUserMacroKey(id) {
+export async function deleteUserMacro(id) {
   const st = await getKeyboardLayoutStore();
   const key = String(id || '');
-  if (!key || !st.macroKeys) return;
+  if (!key || !st.macros) return;
   try {
-    delete st.macroKeys[key];
+    delete st.macros[key];
   } catch { /* ignore */ }
   await setKeyboardLayoutStore(st);
 }
 
 /**
+ * Append a Step (a Function call) to a Macro.
+ * @param {string} macroId
+ * @param {{ functionId: string, parameters?: Record<string, any>, delayMsBefore?: number }} step
+ * @returns {Promise<UserMacro|null>} null if the macro or Function id is unknown.
+ */
+export async function addUserMacroStep(macroId, step) {
+  const macro = await getUserMacroById(macroId);
+  if (!macro) return null;
+  const normalized = normalizeMacroStep({
+    functionId: step?.functionId,
+    parameters: step?.parameters ?? defaultFunctionParameters(step?.functionId),
+    delayMsBefore: step?.delayMsBefore
+  });
+  if (!normalized) return null;
+  return await upsertUserMacro({ ...macro, steps: [...(macro.steps || []), normalized] });
+}
+
+/**
+ * Patch one Step in place (e.g. update its bound parameters).
+ * @param {string} macroId
+ * @param {number} index
+ * @param {{ functionId?: string, parameters?: Record<string, any>, delayMsBefore?: number }} patch
+ * @returns {Promise<UserMacro|null>}
+ */
+export async function updateUserMacroStep(macroId, index, patch = {}) {
+  const macro = await getUserMacroById(macroId);
+  if (!macro || !Array.isArray(macro.steps) || !macro.steps[index]) return null;
+  const merged = { ...macro.steps[index], ...patch };
+  const steps = macro.steps.slice();
+  steps[index] = merged;
+  return await upsertUserMacro({ ...macro, steps });
+}
+
+/**
+ * @param {string} macroId
+ * @param {number} index
+ * @returns {Promise<UserMacro|null>}
+ */
+export async function removeUserMacroStep(macroId, index) {
+  const macro = await getUserMacroById(macroId);
+  if (!macro || !Array.isArray(macro.steps)) return null;
+  const steps = macro.steps.filter((_, i) => i !== index);
+  return await upsertUserMacro({ ...macro, steps });
+}
+
+/**
+ * Reorder a Step within its Macro.
+ * @param {string} macroId
+ * @param {number} fromIndex
+ * @param {number} toIndex
+ * @returns {Promise<UserMacro|null>}
+ */
+export async function moveUserMacroStep(macroId, fromIndex, toIndex) {
+  const macro = await getUserMacroById(macroId);
+  if (!macro || !Array.isArray(macro.steps) || !macro.steps[fromIndex]) return null;
+  const steps = macro.steps.slice();
+  const [moved] = steps.splice(fromIndex, 1);
+  const clampedTo = Math.max(0, Math.min(toIndex, steps.length));
+  steps.splice(clampedTo, 0, moved);
+  return await upsertUserMacro({ ...macro, steps });
+}
+
+/**
  * Action Instances — a Function bound to specific parameter values, with its own id,
- * independent of any one key slot. Generalizes `UserMacroKey` to any Function in the
- * Function Library (see function-library.js), not just the legacy macro-key kinds.
+ * independent of any one key slot. This is also how a configured "Macro Key" (built-in
+ * keystroke primitives like hotkey/burst/round-robin — see `legacyMacroKeyKind` in
+ * function-library.js) is represented: `functionId` is the kind's Function id
+ * (`FUNCTION_ID_BY_MACRO_KEY_KIND`) and `parameters` is `{ config }`. There is no separate
+ * "macro key" storage — it's just a `UserAction` like any other instantiable Function.
  *
  * @returns {Promise<UserAction[]>}
  */
@@ -472,6 +552,73 @@ export async function deleteUserAction(id) {
   await setKeyboardLayoutStore(st);
 }
 
+/** Deterministic-id prefix for {@link getOrCreateBuiltinFunctionUserAction}. */
+const BUILTIN_FUNCTION_ACTION_ID_PREFIX = 'action:builtin:';
+
+/**
+ * @param {string} functionId
+ * @returns {string}
+ */
+export function builtinFunctionUserActionId(functionId) {
+  return `${BUILTIN_FUNCTION_ACTION_ID_PREFIX}${String(functionId || '')}`;
+}
+
+/**
+ * Get (creating if needed) the single canonical Action Instance for a built-in Function that is
+ * still dispatched via a fixed physical key in `KEYBINDING_ACTION_DEFS`/the built-in layouts
+ * (e.g. `SEND_TEXT_TO_AI`, `RECTANGLE_HIGHLIGHT`) rather than a user-assignable
+ * `UserKeyboardLayout` slot. There is exactly one meaningful "instance" per such Function id —
+ * the fixed key itself is the only slot it can ever occupy today — so its id is deterministic
+ * rather than a random uuid, and this is the replacement for the old
+ * `settings.actionSettings[actionId]` global-values path (see KEY_ACTION_ARCHITECTURE.md
+ * migration table). If/when one of these Functions becomes properly slot-assignable, this same
+ * instance is the one a slot would reference.
+ *
+ * @param {string} functionId
+ * @returns {Promise<UserAction|null>}
+ */
+export async function getOrCreateBuiltinFunctionUserAction(functionId) {
+  const def = getFunctionDef(functionId);
+  if (!def) return null;
+  const id = builtinFunctionUserActionId(def.id);
+  const st = await getKeyboardLayoutStore();
+  const existing = st.actions && st.actions[id] ? st.actions[id] : null;
+  if (existing) return existing;
+
+  const t = nowMs();
+  /** @type {UserAction} */
+  const action = {
+    id,
+    functionId: def.id,
+    label: def.label,
+    parameters: defaultFunctionParameters(def.id),
+    createdAt: t,
+    updatedAt: t
+  };
+  if (!st.actions || typeof st.actions !== 'object') st.actions = {};
+  st.actions[id] = action;
+  await setKeyboardLayoutStore(st);
+  return action;
+}
+
+/**
+ * Persist a single parameter value on a built-in Function's canonical Action Instance (see
+ * {@link getOrCreateBuiltinFunctionUserAction}).
+ *
+ * @param {string} functionId
+ * @param {string} paramId
+ * @param {any} value
+ * @returns {Promise<UserAction|null>}
+ */
+export async function setBuiltinFunctionUserActionParameter(functionId, paramId, value) {
+  const current = await getOrCreateBuiltinFunctionUserAction(functionId);
+  if (!current) return null;
+  return await upsertUserAction({
+    ...current,
+    parameters: { ...current.parameters, [paramId]: value }
+  });
+}
+
 /**
  * Save a user layout.
  * @param {UserKeyboardLayout} layout
@@ -494,6 +641,45 @@ export async function upsertUserKeyboardLayout(layout) {
 }
 
 /**
+ * Assign (or clear) a single slot on a user layout, with Function/slot-key validation.
+ * Prefer this over mutating `layout.slots` directly + `upsertUserKeyboardLayout` so the
+ * chord-vs-bare-key rule for `worksWhileTyping` Functions (see function-library.js) is always
+ * enforced in one place.
+ *
+ * @param {string} layoutId
+ * @param {string} slotKey Bare key label (e.g. "Q") or chord slot key (e.g. "CHORD:CTRL+ALT+Q").
+ * @param {SlotAssignment|null} item `null` clears the slot.
+ * @returns {Promise<{ ok: boolean, reason?: string, layout?: UserKeyboardLayout }>}
+ */
+export async function setUserKeyboardLayoutSlot(layoutId, slotKey, item) {
+  const key = String(slotKey || '');
+  if (!key) return { ok: false, reason: 'Missing slot key.' };
+
+  if (item && item.type === 'function') {
+    let functionId = String(item.id || '');
+    if (functionId.startsWith('action:')) {
+      const instance = await getUserActionById(functionId);
+      if (!instance) return { ok: false, reason: 'Action instance not found.' };
+      functionId = instance.functionId;
+    }
+    const check = validateFunctionSlotKey(functionId, key);
+    if (!check.ok) return { ok: false, reason: check.reason };
+  }
+
+  const layout = await getUserKeyboardLayoutById(layoutId);
+  if (!layout) return { ok: false, reason: 'Layout not found.' };
+
+  const slots = { ...(layout.slots && typeof layout.slots === 'object' ? layout.slots : {}) };
+  if (item) {
+    slots[key] = { type: item.type, id: String(item.id) };
+  } else {
+    delete slots[key];
+  }
+  const next = await upsertUserKeyboardLayout({ ...layout, slots });
+  return { ok: true, layout: next };
+}
+
+/**
  * Duplicate a built-in layout into an editable user layout.
  *
  * @param {{ builtinLayoutId: string, label?: string }} params
@@ -505,7 +691,7 @@ export async function duplicateBuiltinLayoutToUserLayout({ builtinLayoutId, labe
   const uiLayout = getKeyboardUiLayoutForLayout(baseId, { includeNumberRow: true });
 
   // Seed slots from whatever actions currently appear on the keyboard.
-  /** @type {Record<string, SlotItem|null>} */
+  /** @type {Record<string, SlotAssignment|null>} */
   const slots = {};
   for (const row of uiLayout || []) {
     for (const item of row || []) {
@@ -520,7 +706,15 @@ export async function duplicateBuiltinLayoutToUserLayout({ builtinLayoutId, labe
         const binding = kb && kb[item.id];
         const slot = slotLabelFromBinding(binding);
         if (!slot) continue;
-        slots[slot] = { type: 'action', id: String(item.id) };
+        // `item.type === 'action'` here is the built-in KEYBOARD_UI_LAYOUT cell-type enum
+        // (keyboard-layouts.js) — an unrelated concept from the `SlotAssignment` type this seeds.
+        // Skip (leave the slot empty) for any Function that must run while typing — those may
+        // only ever be bound to a modifier chord, never a bare key like these built-in layout
+        // seeds always are. None of today's built-in layouts contain one, so this never fires;
+        // it's here so a future one fails safe instead of producing an invalid assignment.
+        const functionId = String(item.id);
+        if (functionWorksWhileTyping(functionId)) continue;
+        slots[slot] = { type: 'function', id: functionId };
       }
     }
   }

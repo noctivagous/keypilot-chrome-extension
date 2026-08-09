@@ -20,25 +20,22 @@ import {
 } from '../config/keyboard-layouts.js';
 import { DEFAULT_SETTINGS, getSettings, setSettings } from '../modules/settings-manager.js';
 import {
+  createUserAction,
   createUserMacro,
   createEmptyUserKeyboardLayout,
-  createUserMacroKey,
+  deleteUserAction,
   deleteUserKeyboardLayout,
-  deleteUserMacroKey,
   duplicateBuiltinLayoutToUserLayout,
   exportUserKeyboardLayout,
   importUserKeyboardLayout,
+  listUserActions,
   listUserKeyboardLayouts,
-  listUserMacroKeys,
   listUserMacros,
-  upsertUserKeyboardLayout,
-  upsertUserMacroKey
+  upsertUserAction,
+  upsertUserKeyboardLayout
 } from '../modules/keyboard-layout-store.js';
-import {
-  MACRO_KEY_KIND_DEFS,
-  macroKeyKeyboardClass,
-  summarizeMacroKey
-} from '../config/macro-keys.js';
+import { MACRO_KEY_KIND_DEFS, macroKeyKeyboardClass, summarizeMacroKey } from '../config/macro-keys.js';
+import { FUNCTION_ID_BY_MACRO_KEY_KIND, macroKeyKindFromFunctionId } from '../config/function-library.js';
 import { KEYBINDINGS_UI_ROOT_CLASS, KEYBINDINGS_UI_STYLE_ATTR, getKeybindingsUiCss } from './keybindings-ui-shared.js';
 import { inspectKeyActionFromAnchor } from './keybindings-ui.js';
 import { actionHasParameters, getSharedKeyActionConfigPanel } from './key-action-settings.js';
@@ -51,8 +48,27 @@ import {
   normalizePanelPositionState
 } from '../utils/panel-position.js';
 
-/** Shared drag MIME for layout items (functions/macros/macroKeys/key slots). */
+/** Shared drag MIME for layout items (functions/macros/key slots). */
 export const KP_LAYOUT_ITEM_MIME = 'application/x-kp-layout-item';
+
+/**
+ * Adapt a `UserAction` for one of the legacy keystroke-primitive Functions
+ * (`legacyMacroKeyKind` in function-library.js) into the `{ id, kind, label, config }` shape
+ * `macro-key-editor.js` and `macro-keys.js`'s summary/class helpers expect — this is purely a UI
+ * convenience view; persistence always goes back through `createUserAction`/`upsertUserAction`.
+ * @param {import('../modules/keyboard-layout-store.js').UserAction} action
+ * @returns {{ id: string, kind: string, label: string, config: Record<string, any> }|null}
+ */
+function macroKeyLikeFromUserAction(action) {
+  const kind = macroKeyKindFromFunctionId(action?.functionId);
+  if (!kind) return null;
+  return {
+    id: action.id,
+    kind,
+    label: String(action.label || ''),
+    config: (action.parameters && action.parameters.config) || {}
+  };
+}
 
 const CONFIG_POSITION_MARGIN_PX = Math.max(PANEL_POSITION_MARGIN_PX, 16);
 /** Reference keycap is 50px; Config palette keys are 1.75× for readable labels. */
@@ -69,6 +85,11 @@ const CONFIG_STYLE_VERSION = 'v3';
  *   userLayout: any|null,
  *   userLayouts: any[],
  *   macros: any[],
+ *   // All UserAction Action Instances (see keyboard-layout-store.js) — passed through to
+ *   // `applyLiveUserLayout`/`setEditLayout` so newly bound instances dispatch/render immediately.
+ *   actions: any[],
+ *   // `actions` filtered + adapted to `{ id, kind, label, config }` for the "Macro Keys" tab —
+ *   // see `macroKeyLikeFromUserAction()`. Every entry here is also present in `actions`.
  *   macroKeys: any[],
  *   tab: 'functions'|'macros'|'macroKeys'
  * }} LayoutConfigState
@@ -123,6 +144,7 @@ export class KeyboardLayoutConfigPanel {
       userLayout: null,
       userLayouts: [],
       macros: [],
+      actions: [],
       macroKeys: [],
       tab: 'functions'
     };
@@ -990,7 +1012,7 @@ export class KeyboardLayoutConfigPanel {
             await this._kp?.applyLiveUserLayout?.(this._st.userLayout, {
               setAsCurrent: true,
               macros: this._st.macros,
-              macroKeys: this._st.macroKeys
+              actions: this._st.actions
             });
           } else {
             await this._kp?._refreshCurrentKeyboardLayoutFromSettings?.();
@@ -1031,10 +1053,18 @@ export class KeyboardLayoutConfigPanel {
     } catch { /* ignore */ }
   }
 
+  /** Refresh `_st.actions` from the store and re-derive the Macro Keys tab's filtered view. */
+  async _reloadActions() {
+    try { this._st.actions = await listUserActions(); } catch { this._st.actions = []; }
+    this._st.macroKeys = this._st.actions
+      .map(macroKeyLikeFromUserAction)
+      .filter(Boolean);
+  }
+
   async _reloadStore() {
     try { this._st.userLayouts = await listUserKeyboardLayouts(); } catch { this._st.userLayouts = []; }
     try { this._st.macros = await listUserMacros(); } catch { this._st.macros = []; }
-    try { this._st.macroKeys = await listUserMacroKeys(); } catch { this._st.macroKeys = []; }
+    await this._reloadActions();
     if (this._st.mode === 'user' && this._st.userLayoutId) {
       const missingId = String(this._st.userLayoutId);
       const found = this._st.userLayouts.find((l) => l && l.id === missingId) || null;
@@ -1116,12 +1146,14 @@ export class KeyboardLayoutConfigPanel {
 
   async _createAndEditMacroKey(kind) {
     try {
-      const created = await createUserMacroKey({ kind });
+      const functionId = FUNCTION_ID_BY_MACRO_KEY_KIND[kind];
+      const createdAction = functionId ? await createUserAction({ functionId }) : null;
+      const created = createdAction ? macroKeyLikeFromUserAction(createdAction) : null;
       if (!created) {
         this._notify('Failed to create macro key.', 'error');
         return;
       }
-      this._st.macroKeys = await listUserMacroKeys();
+      await this._reloadActions();
       this._openMacroKeyEditor(created);
       this._renderRightList();
     } catch {
@@ -1148,8 +1180,17 @@ export class KeyboardLayoutConfigPanel {
       onChange: (draft) => { this._macroKeyDraft = draft; },
       onSave: async () => {
         try {
-          const saved = await upsertUserMacroKey(this._macroKeyDraft);
-          this._st.macroKeys = await listUserMacroKeys();
+          const draft = this._macroKeyDraft;
+          const functionId = FUNCTION_ID_BY_MACRO_KEY_KIND[draft.kind];
+          const saved = functionId
+            ? await upsertUserAction({
+              id: draft.id,
+              functionId,
+              label: draft.label,
+              parameters: { config: draft.config }
+            })
+            : null;
+          await this._reloadActions();
           this._closeMacroKeyEditor();
           this._renderRightList();
           this._notify(saved ? 'Macro key saved.' : 'Failed to save macro key.', saved ? 'success' : 'error');
@@ -1160,8 +1201,8 @@ export class KeyboardLayoutConfigPanel {
       onCancel: () => this._closeMacroKeyEditor(),
       onDelete: async () => {
         try {
-          await deleteUserMacroKey(macroKey.id);
-          this._st.macroKeys = await listUserMacroKeys();
+          await deleteUserAction(macroKey.id);
+          await this._reloadActions();
           this._closeMacroKeyEditor();
           this._renderRightList();
           this._notify('Macro key deleted.', 'success');
@@ -1223,7 +1264,7 @@ export class KeyboardLayoutConfigPanel {
     for (const [actionId, binding] of Object.entries(kb || {})) {
       const label = String(binding?.displayKey || binding?.keyLabel || '').trim();
       if (!label || label.length !== 1) continue;
-      map[label.toUpperCase()] = { type: 'action', id: String(actionId) };
+      map[label.toUpperCase()] = { type: 'function', id: String(actionId) };
     }
     return map;
   }
@@ -1278,9 +1319,12 @@ export class KeyboardLayoutConfigPanel {
 
     if (item.type === 'macro') {
       const macro = (this._st.macros || []).find((m) => m && m.id === item.id) || null;
+      const stepCount = Array.isArray(macro?.steps) ? macro.steps.length : 0;
       const binding = {
         label: String(macro?.label || 'Macro'),
-        description: 'User macro (execution stub in this build).',
+        description: stepCount > 0
+          ? `Runs ${stepCount} step${stepCount === 1 ? '' : 's'} in order. Edit steps from the Function Library panel (Alt+C).`
+          : 'No steps yet — add some from the Function Library panel (Alt+C).',
         displayKey: '',
         keyLabel: ''
       };
@@ -1288,7 +1332,9 @@ export class KeyboardLayoutConfigPanel {
       return;
     }
 
-    if (item.type === 'macroKey') {
+    if (item.type === 'function' && String(item.id).startsWith('action:')) {
+      // A configured Action Instance — Macro Keys (hotkey/burst/…) are the only kind this
+      // palette currently instantiates, so this is a macro-key-shaped inspect/edit.
       const mk = (this._st.macroKeys || []).find((m) => m && m.id === item.id) || null;
       if (mk) {
         this._setActiveTab('macroKeys');
@@ -1352,7 +1398,7 @@ export class KeyboardLayoutConfigPanel {
       keyEl.draggable = true;
       keyEl.dataset.kpItemType = type;
       keyEl.dataset.kpItemId = id;
-      if (type === 'action') {
+      if (type === 'function') {
         try { keyEl.setAttribute('data-kp-action-id', String(id)); } catch { /* ignore */ }
       }
       if (this._placeItem && this._placeItem.type === type && this._placeItem.id === id) {
@@ -1459,11 +1505,14 @@ export class KeyboardLayoutConfigPanel {
       for (const m of items) {
         if (!m || !m.id) continue;
         const itemEl = appendKeyItem({
-          type: 'macroKey',
+          // Macro Keys are Action Instances of a `legacyMacroKeyKind` Function (see
+          // function-library.js) — placing one on a slot writes the same `type: 'function'`
+          // SlotAssignment shape as any other Function/Action Instance.
+          type: 'function',
           id: m.id,
           label: String(m.label || m.kind || 'Macro Key'),
           keyboardClass: macroKeyKeyboardClass(m.kind),
-          infoKey: `macroKey:${m.id}`
+          infoKey: `function:${m.id}`
         });
         // Double-duty: Inspect opens editor; also expose Configure via label badge.
         const conf = document.createElement('button');
@@ -1530,11 +1579,11 @@ export class KeyboardLayoutConfigPanel {
       grid.className = 'kp-cfg-key-grid';
       for (const a of items) {
         const itemEl = appendKeyItem({
-          type: 'action',
+          type: 'function',
           id: a.actionId,
           label: a.label,
           keyboardClass: a.keyboardClass,
-          infoKey: `action:${a.actionId}`
+          infoKey: `function:${a.actionId}`
         });
         if (actionHasParameters(a.actionId)) {
           const conf = document.createElement('button');
@@ -1547,12 +1596,9 @@ export class KeyboardLayoutConfigPanel {
             e.stopPropagation();
             try { this._cancelPlaceMode(); } catch { /* ignore */ }
             try {
+              // setActionParameter() (called by the panel's own controls) already notifies live
+              // KeyPilot instances via a DOM event — no onSettingsChanged hook needed here.
               const panel = getSharedKeyActionConfigPanel();
-              panel.onSettingsChanged = (next) => {
-                try {
-                  if (this._kp && next) this._kp._settings = next;
-                } catch { /* ignore */ }
-              };
               await panel.open(a.actionId, {
                 title: a.label,
                 anchorRect: itemEl.getBoundingClientRect()
@@ -1813,7 +1859,7 @@ export class KeyboardLayoutConfigPanel {
         await this._kp?.applyLiveUserLayout?.(this._st.userLayout, {
           setAsCurrent: becameCurrent || String(this._kp?._currentKeyboardLayoutId || '') === `user:${this._st.userLayout.id}`,
           macros: this._st.macros,
-          macroKeys: this._st.macroKeys
+          actions: this._st.actions
         });
       } catch { /* ignore */ }
     } catch {

@@ -39,6 +39,13 @@ const modules = [
   // Keyboard layout architecture must be defined before constants.js once imports are stripped.
   'src/config/keyboard-layouts.js',
   'src/config/macro-keys.js',
+  // action-result-delivery.js must be defined before function-library.js: the latter reads
+  // `ACTION_RESULT_DESTINATIONS` (a real `const`, not hoisted like a function) at module-eval
+  // time to build `BUILTIN_FUNCTION_PARAMETER_OVERRIDES` — see KEY_ACTION_ARCHITECTURE.md. Its
+  // own top-level code needs nothing from constants.js/procedure-result-popover.js until
+  // `deliverActionResult()` is actually called at runtime, well after the whole bundle has
+  // loaded, so it's safe to place ahead of both of those here.
+  'src/modules/action-result-delivery.js',
   // Unified Function Library — wraps keyboard-layouts.js + macro-keys.js catalogs.
   'src/config/function-library.js',
   'src/config/constants.js',
@@ -57,6 +64,7 @@ const modules = [
   'src/utils/popover-resize.js',
   'src/utils/panel-position.js',
   'src/utils/scroll-at-point.js',
+  'src/utils/key-chord.js',
   // Shared UI helpers used by multiple modules (must be defined before import-stripped consumers).
   'src/ui/url-listing.js',
   'src/ui/page-thumb-ui.js',
@@ -92,7 +100,6 @@ const modules = [
   // UI modules used by the content script (must appear before keypilot.js so symbols exist after imports are stripped)
   'src/ui/keybindings-ui-shared.js',
   'src/ui/procedure-result-popover.js',
-  'src/modules/action-result-delivery.js',
   'src/ui/key-action-settings.js',
   'src/ui/keybindings-ui.js',
   'src/ui/popup-theme-vars.js',
@@ -102,6 +109,7 @@ const modules = [
   'src/ui/floating-keyboard-help.js',
   'src/ui/macro-key-editor.js',
   'src/ui/keyboard-layout-config-panel.js',
+  'src/ui/function-library-panel.js',
   'src/ui/keyboard-layout-configurator.js',
   // Shared walkthrough primitives must precede control-strip + panel + manager (import-stripped IIFE).
   'src/ui/onboarding-shared.js',

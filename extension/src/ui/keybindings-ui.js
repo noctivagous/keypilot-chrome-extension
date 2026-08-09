@@ -21,7 +21,7 @@ import {
   getSharedKeyActionConfigPanel,
   setActionMode
 } from './key-action-settings.js';
-import { getSettings } from '../modules/settings-manager.js';
+import { getOrCreateBuiltinFunctionUserAction } from '../modules/keyboard-layout-store.js';
 
 /** @type {{ root: HTMLElement, keybindings: Record<string, any> }|null} */
 let _activePopoverContext = null;
@@ -664,12 +664,12 @@ async function renderPopoverSettings({ doc, pop, targetEl, binding, actionId }) 
   host.hidden = false;
   host.replaceChildren();
 
-  let settings = null;
-  try { settings = await getSettings(); } catch { settings = null; }
+  let builtinAction = null;
+  try { builtinAction = await getOrCreateBuiltinFunctionUserAction(actionId); } catch { builtinAction = null; }
 
   if (hasModes) {
     const def = getActionSettingsDef(actionId);
-    const currentMode = getActionMode(settings?.actionSettings, actionId);
+    const currentMode = getActionMode(builtinAction?.parameters, actionId);
     const modeWrap = doc.createElement('div');
     modeWrap.className = 'kp-popover-mode-switch';
     modeWrap.setAttribute('role', 'group');
@@ -686,12 +686,9 @@ async function renderPopoverSettings({ doc, pop, targetEl, binding, actionId }) 
         e.preventDefault();
         e.stopPropagation();
         try {
-          const next = await setActionMode(actionId, mode.id);
-          try {
-            document.dispatchEvent(new CustomEvent('keypilot:action-settings-changed', {
-              detail: { actionId, settings: next }
-            }));
-          } catch { /* ignore */ }
+          // setActionMode() persists the value AND notifies live KeyPilot instances itself
+          // (see notifyActionSettingsChanged in key-action-settings.js) — no need to redispatch.
+          await setActionMode(actionId, mode.id);
           modeWrap.querySelectorAll('.kp-popover-mode-btn').forEach((el) => {
             el.setAttribute('aria-pressed', el.dataset.modeId === mode.id ? 'true' : 'false');
           });
@@ -712,14 +709,9 @@ async function renderPopoverSettings({ doc, pop, targetEl, binding, actionId }) 
     configBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
+      // setActionParameter() (called by the panel's own controls) already notifies live
+      // KeyPilot instances — no onSettingsChanged hook needed here.
       const panel = getSharedKeyActionConfigPanel();
-      panel.onSettingsChanged = (next) => {
-        try {
-          document.dispatchEvent(new CustomEvent('keypilot:action-settings-changed', {
-            detail: { actionId, settings: next }
-          }));
-        } catch { /* ignore */ }
-      };
       await panel.open(actionId, {
         title: (binding && binding.label) || actionId,
         anchorRect: targetEl.getBoundingClientRect()

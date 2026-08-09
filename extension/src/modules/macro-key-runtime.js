@@ -12,7 +12,6 @@ import {
   summarizeMacroKey
 } from '../config/macro-keys.js';
 import { macroKeyKindFromFunctionId } from '../config/function-library.js';
-import { getUserMacroKeyById } from './keyboard-layout-store.js';
 
 /** @type {Map<string, number>} */
 const _roundRobinIndex = new Map();
@@ -21,7 +20,7 @@ const _roundRobinIndex = new Map();
 const _continuousTimers = new Map();
 
 /**
- * @param {import('../config/macro-keys.js').UserMacroKey} mk
+ * @param {{ kind: import('../config/macro-keys.js').MacroKeyKind, config: any }} mk
  * @returns {string}
  */
 function describe(mk) {
@@ -29,24 +28,9 @@ function describe(mk) {
 }
 
 /**
- * @param {string} macroKeyId
- * @param {{ notify?: (msg: string, type?: string) => void }} [opts]
- * @returns {Promise<{ ok: boolean, message: string }>}
- */
-export async function runMacroKeyById(macroKeyId, opts = {}) {
-  const id = String(macroKeyId || '');
-  if (!id) return { ok: false, message: 'Missing macro key id.' };
-
-  const mk = await getUserMacroKeyById(id);
-  if (!mk) return { ok: false, message: 'Macro key not found.' };
-
-  return runKeystrokeFunction(id, mk.kind, mk.config, opts);
-}
-
-/**
  * Run a keystroke-primitive Function (see `FUNCTION_ID_BY_MACRO_KEY_KIND` in
- * function-library.js) directly from a Function id + bound parameters, i.e. from a
- * `UserAction` Action Instance rather than a legacy `UserMacroKey` record.
+ * function-library.js) from a Function id + bound `UserAction` parameters — a configured
+ * "Macro Key" is just a `UserAction` for one of these Function ids, see keyboard-layout-store.js.
  *
  * @param {string} instanceId Stable id used to key round-robin/continuous state.
  * @param {string} functionId
@@ -61,8 +45,7 @@ export async function runLegacyMacroKeyFunction(instanceId, functionId, paramete
 }
 
 /**
- * Shared execution switch for both legacy `UserMacroKey` records and the unified
- * Function+parameters path.
+ * Shared keystroke-kind execution switch, used by {@link runLegacyMacroKeyFunction}.
  * @param {string} id
  * @param {import('../config/macro-keys.js').MacroKeyKind} kind
  * @param {any} rawConfig

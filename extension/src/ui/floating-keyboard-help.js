@@ -17,13 +17,13 @@ import { setKeyPressedState, KEYBINDINGS_UI_ROOT_CLASS } from './keybindings-ui-
 import { Z_INDEX } from '../config/constants.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
 import { getSettings, setSettings, SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS } from '../modules/settings-manager.js';
-import { getKeyboardUiLayoutForLayout, KEYBINDING_ACTION_DEFS } from '../config/keyboard-layouts.js';
-import { macroKeyKeyboardClass } from '../config/macro-keys.js';
+import { getKeyboardUiLayoutForLayout } from '../config/keyboard-layouts.js';
+import { getFunctionDef } from '../config/function-library.js';
 import {
   listUserKeyboardLayouts,
   getUserKeyboardLayoutById,
   listUserMacros,
-  listUserMacroKeys,
+  listUserActions,
   upsertUserKeyboardLayout
 } from '../modules/keyboard-layout-store.js';
 import { KP_LAYOUT_ITEM_MIME } from './keyboard-layout-config-panel.js';
@@ -114,7 +114,7 @@ export class FloatingKeyboardHelp {
     this._currentUserLayout = null;
     this._currentUserMacros = [];
     /** @type {any[]} */
-    this._currentUserMacroKeys = [];
+    this._currentUserActions = [];
     this._renderToken = 0;
 
     // Layout edit mode (Alt+C): DnD + delete buttons; popovers suppressed.
@@ -209,11 +209,11 @@ export class FloatingKeyboardHelp {
    * @param {any|null} [params.userLayout]
    * @param {any[]} [params.userMacros]
    */
-  setActiveLayoutSelection({ currentKeyboardLayoutId, userLayout, userMacros, userMacroKeys } = {}) {
+  setActiveLayoutSelection({ currentKeyboardLayoutId, userLayout, userMacros, userActions } = {}) {
     this._currentKeyboardLayoutId = typeof currentKeyboardLayoutId === 'string' ? currentKeyboardLayoutId : 'builtin';
     this._currentUserLayout = userLayout || null;
     this._currentUserMacros = Array.isArray(userMacros) ? userMacros : [];
-    this._currentUserMacroKeys = Array.isArray(userMacroKeys) ? userMacroKeys : [];
+    this._currentUserActions = Array.isArray(userActions) ? userActions : [];
     if (this.root && !this.root.hidden) {
       this._render();
     }
@@ -1243,9 +1243,9 @@ export class FloatingKeyboardHelp {
       const macros = (Array.isArray(this._currentUserMacros) && this._currentUserMacros.length)
         ? this._currentUserMacros
         : await listUserMacros();
-      const macroKeys = (Array.isArray(this._currentUserMacroKeys) && this._currentUserMacroKeys.length)
-        ? this._currentUserMacroKeys
-        : await listUserMacroKeys();
+      const actions = (Array.isArray(this._currentUserActions) && this._currentUserActions.length)
+        ? this._currentUserActions
+        : await listUserActions();
       if (token !== this._renderToken) return;
       if (!userLayout) {
         // Orphaned current selection — fall back to built-in instead of a dead-end message.
@@ -1288,7 +1288,7 @@ export class FloatingKeyboardHelp {
         uiLayout,
         slots: userLayout.slots || {},
         macros,
-        macroKeys,
+        actions,
         keybindings: this.keybindings,
         editMode: false
       });
@@ -1317,7 +1317,7 @@ export class FloatingKeyboardHelp {
 
     let slots = {};
     let macros = Array.isArray(st?.macros) ? st.macros : (this._currentUserMacros || []);
-    let macroKeys = Array.isArray(st?.macroKeys) ? st.macroKeys : (this._currentUserMacroKeys || []);
+    let actions = Array.isArray(st?.actions) ? st.actions : (this._currentUserActions || []);
     let baseId = this.layoutId || 'browsing-right';
     let userLayout = null;
 
@@ -1326,11 +1326,14 @@ export class FloatingKeyboardHelp {
       slots = userLayout.slots && typeof userLayout.slots === 'object' ? userLayout.slots : {};
       baseId = String(userLayout.baseBuiltinLayoutId || baseId);
     } else {
-      // Built-in preview slots from current keybindings
+      // Built-in preview slots from current keybindings — transient/derived, never persisted, so
+      // using `type: 'function'` here (rather than the legacy `type: 'action'`) is purely cosmetic
+      // consistency with what a real duplicated layout would contain (see
+      // `duplicateBuiltinLayoutToUserLayout()` in keyboard-layout-store.js).
       for (const [actionId, binding] of Object.entries(this.keybindings || {})) {
         const label = String(binding?.displayKey || binding?.keyLabel || '').trim();
         if (!label || label.length !== 1) continue;
-        slots[label.toUpperCase()] = { type: 'action', id: String(actionId) };
+        slots[label.toUpperCase()] = { type: 'function', id: String(actionId) };
       }
       baseId = String(st?.builtinLayoutId || this.layoutId || 'browsing-right');
     }
@@ -1338,8 +1341,8 @@ export class FloatingKeyboardHelp {
     if (!macros.length) {
       try { macros = await listUserMacros(); } catch { macros = []; }
     }
-    if (!macroKeys.length) {
-      try { macroKeys = await listUserMacroKeys(); } catch { macroKeys = []; }
+    if (!actions.length) {
+      try { actions = await listUserActions(); } catch { actions = []; }
     }
     if (token !== this._renderToken) return;
 
@@ -1350,7 +1353,7 @@ export class FloatingKeyboardHelp {
       uiLayout,
       slots,
       macros,
-      macroKeys,
+      actions,
       keybindings: this.keybindings,
       editMode: true,
       readOnly,
@@ -1360,13 +1363,14 @@ export class FloatingKeyboardHelp {
   }
 
   /**
-   * Render a user layout from physical key slots (actions/macros/macroKeys assigned to keys).
+   * Render a user layout from physical key slots (Functions/Action Instances/macros assigned to
+   * keys).
    * @param {{
    *   container: HTMLElement,
    *   uiLayout: any[],
    *   slots: Record<string, any>,
    *   macros?: any[],
-   *   macroKeys?: any[],
+   *   actions?: any[],
    *   keybindings?: Record<string, any>,
    *   editMode?: boolean,
    *   readOnly?: boolean,
@@ -1378,7 +1382,7 @@ export class FloatingKeyboardHelp {
     uiLayout,
     slots,
     macros,
-    macroKeys,
+    actions,
     keybindings,
     editMode = false,
     readOnly = true,
@@ -1399,16 +1403,34 @@ export class FloatingKeyboardHelp {
       }
     } catch { /* ignore */ }
 
-    const macroKeyLabelById = new Map();
-    const macroKeyKindById = new Map();
+    /** Action Instance ("action:<uuid>") -> UserAction, for resolving a `type: 'function'` slot's
+     * label/keyboardClass through its bound Function (see function-library.js), whether it's a
+     * configured Macro Key (`legacyMacroKeyKind`), TYPE_CHARACTERS, or any other instantiable
+     * Function. Replaces the old macro-key-specific `macroKeyLabelById`/`macroKeyKindById` maps. */
+    const actionById = new Map();
     try {
-      for (const m of macroKeys || []) {
-        if (m && m.id) {
-          macroKeyLabelById.set(String(m.id), String(m.label || m.kind || 'Macro Key'));
-          macroKeyKindById.set(String(m.id), String(m.kind || ''));
-        }
+      for (const a of actions || []) {
+        if (a && a.id) actionById.set(String(a.id), a);
       }
     } catch { /* ignore */ }
+
+    /**
+     * @param {string} id Bare Function id or Action Instance id ("action:<uuid>").
+     * @returns {{ label: string, keyboardClass: string }}
+     */
+    const resolveFunctionSlot = (id) => {
+      const key = String(id || '');
+      if (key.startsWith('action:')) {
+        const instance = actionById.get(key);
+        const def = instance ? getFunctionDef(instance.functionId) : null;
+        return {
+          label: String(instance?.label || def?.label || 'Configured Function'),
+          keyboardClass: String(def?.keyboardClass || '')
+        };
+      }
+      const def = getFunctionDef(key);
+      return { label: String(def?.label || key), keyboardClass: String(def?.keyboardClass || '') };
+    };
 
     const kb = keybindings || this.keybindings || {};
     const actionSlotLabelFromItem = (item) => {
@@ -1442,7 +1464,7 @@ export class FloatingKeyboardHelp {
       const slotMap = userLayout.slots;
       const fromSlot = data.fromSlot ? String(data.fromSlot) : '';
       const nextItem = { type: String(data.type), id: String(data.id) };
-      if (nextItem.type !== 'action' && nextItem.type !== 'macro' && nextItem.type !== 'macroKey') return;
+      if (nextItem.type !== 'function' && nextItem.type !== 'macro') return;
       if (!nextItem.id) return;
 
       const targetPrev = slotMap[slotLabel] || null;
@@ -1472,12 +1494,10 @@ export class FloatingKeyboardHelp {
       const btn = doc.createElement('button');
       btn.type = 'button';
       let keyboardClass = '';
-      if (displayAssigned && displayAssigned.type === 'action') {
-        keyboardClass = KEYBINDING_ACTION_DEFS?.[displayAssigned.id]?.keyboardClass || '';
+      if (displayAssigned && displayAssigned.type === 'function') {
+        keyboardClass = resolveFunctionSlot(displayAssigned.id).keyboardClass;
       } else if (displayAssigned && displayAssigned.type === 'macro') {
         keyboardClass = 'key-purple';
-      } else if (displayAssigned && displayAssigned.type === 'macroKey') {
-        keyboardClass = macroKeyKeyboardClass(macroKeyKindById.get(String(displayAssigned.id)) || '');
       }
       btn.className = `key${keyboardClass ? ' ' + keyboardClass : ''}${previewing ? ' kp-place-preview' : ''}`;
       btn.dataset.kpSlot = slotLabel;
@@ -1491,24 +1511,19 @@ export class FloatingKeyboardHelp {
         btn.disabled = false;
         btn.draggable = !!assigned;
       }
-      if (displayAssigned && displayAssigned.type === 'action') {
+      if (displayAssigned && displayAssigned.type === 'function') {
         try { btn.setAttribute('data-kp-action-id', String(displayAssigned.id)); } catch { /* ignore */ }
       }
       if (displayAssigned && displayAssigned.type === 'macro') {
         try { btn.setAttribute('data-kp-macro-id', String(displayAssigned.id)); } catch { /* ignore */ }
-      }
-      if (displayAssigned && displayAssigned.type === 'macroKey') {
-        try { btn.setAttribute('data-kp-macro-key-id', String(displayAssigned.id)); } catch { /* ignore */ }
       }
 
       const main = doc.createElement('div');
       main.className = 'key-main';
       if (displayAssigned && displayAssigned.type === 'macro') {
         main.textContent = macroLabelById.get(String(displayAssigned.id)) || 'Macro';
-      } else if (displayAssigned && displayAssigned.type === 'macroKey') {
-        main.textContent = macroKeyLabelById.get(String(displayAssigned.id)) || 'Macro Key';
-      } else if (displayAssigned && displayAssigned.type === 'action') {
-        main.textContent = KEYBINDING_ACTION_DEFS?.[displayAssigned.id]?.label || String(displayAssigned.id);
+      } else if (displayAssigned && displayAssigned.type === 'function') {
+        main.textContent = resolveFunctionSlot(displayAssigned.id).label;
       } else {
         main.textContent = '';
       }

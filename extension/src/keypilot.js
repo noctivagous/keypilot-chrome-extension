@@ -30,7 +30,6 @@ import {
   DEFAULT_KEYBOARD_LAYOUT_ID,
   getInstalledKeyboardLayoutFamilyIds,
   getKeyboardUiLayoutForLayout,
-  KEYBINDING_ACTION_DEFS,
   normalizeKeyboardHandedness,
   normalizeKeyboardLayoutFamilyId,
   resolveKeyboardLayoutId
@@ -45,9 +44,10 @@ import { OmniboxManager } from './modules/omnibox-manager.js';
 import { TabHistoryPopover } from './modules/tab-history-popover.js';
 import { LauncherPopover } from './modules/launcher-popover.js';
 import { DEFAULT_SETTINGS, getSettings, setSettings, SETTINGS_STORAGE_KEY, scrollBehaviorFromSpeed } from './modules/settings-manager.js';
-import { getUserKeyboardLayoutById, getUserActionById, listUserActions, listUserMacroKeys, listUserMacros } from './modules/keyboard-layout-store.js';
-import { runMacroKeyById, runLegacyMacroKeyFunction } from './modules/macro-key-runtime.js';
-import { getFunctionDef } from './config/function-library.js';
+import { getOrCreateBuiltinFunctionUserAction, getUserKeyboardLayoutById, getUserActionById, getUserMacroById, listUserActions, listUserMacros } from './modules/keyboard-layout-store.js';
+import { runLegacyMacroKeyFunction } from './modules/macro-key-runtime.js';
+import { getFunctionDef, functionWorksWhileTyping } from './config/function-library.js';
+import { chordSlotKeyFromEvent } from './utils/key-chord.js';
 import { toggleKeyboardLayoutConfigurator } from './ui/keyboard-layout-configurator.js';
 import {
   isExtensionContextValid,
@@ -113,9 +113,14 @@ export class KeyPilot extends EventManager {
     this._currentKeyboardLayoutId = 'builtin';
     this._currentUserLayout = null;
     this._currentUserMacros = [];
-    this._currentUserMacroKeys = [];
     this._currentUserActions = [];
     this._currentKeySlotMap = null;
+    // functionId -> Record<string, any> parameters, for built-in Functions still dispatched via a
+    // fixed physical key (SEND_TEXT_TO_AI, RECTANGLE_HIGHLIGHT) rather than a UserKeyboardLayout
+    // slot. Kept in sync with their canonical Action Instance — see
+    // getOrCreateBuiltinFunctionUserAction() in keyboard-layout-store.js and
+    // KEY_ACTION_ARCHITECTURE.md's migration table (replaces settings.actionSettings).
+    this._builtinFunctionActionParams = new Map();
     this.omniboxManager = new OmniboxManager({
       onClose: () => {
         try {
@@ -696,6 +701,9 @@ export class KeyPilot extends EventManager {
     try {
       void this._refreshCurrentKeyboardLayoutFromSettings();
     } catch { /* ignore */ }
+    try {
+      void this._refreshBuiltinFunctionActionParams();
+    } catch { /* ignore */ }
 
     // Apply cursor-mode behavior immediately.
     const cursorEnabled = this._isCustomCursorModeEnabled();
@@ -950,12 +958,42 @@ export class KeyPilot extends EventManager {
     } catch { /* ignore */ }
   }
 
+  /** Built-in Function ids read via {@link _getBuiltinFunctionActionParams} in hot key handlers. */
+  static get BUILTIN_FUNCTION_ACTION_IDS() {
+    return ['SEND_TEXT_TO_AI', 'RECTANGLE_HIGHLIGHT'];
+  }
+
+  /**
+   * Load/refresh the cached parameters for built-in Functions still bound to a fixed physical
+   * key (see the `_builtinFunctionActionParams` field comment in the constructor). A plain cache
+   * refill rather than a live subscription because chrome.storage reads are async and these
+   * Functions' handlers (`handleRectangleHighlightKey`, `handleSendTextToAiKey`) run synchronously
+   * relative to the keydown event — the cache is what lets them read a value without awaiting.
+   */
+  async _refreshBuiltinFunctionActionParams() {
+    for (const functionId of KeyPilot.BUILTIN_FUNCTION_ACTION_IDS) {
+      try {
+        const action = await getOrCreateBuiltinFunctionUserAction(functionId);
+        this._builtinFunctionActionParams.set(functionId, action?.parameters || {});
+      } catch {
+        this._builtinFunctionActionParams.set(functionId, {});
+      }
+    }
+  }
+
+  /**
+   * @param {string} functionId
+   * @returns {Record<string, any>}
+   */
+  _getBuiltinFunctionActionParams(functionId) {
+    return this._builtinFunctionActionParams.get(functionId) || {};
+  }
+
   async _refreshCurrentKeyboardLayoutFromSettings() {
     let sel = String(this._settings?.currentKeyboardLayoutId || 'builtin');
     this._currentKeyboardLayoutId = sel;
     this._currentUserLayout = null;
     this._currentUserMacros = [];
-    this._currentUserMacroKeys = [];
     this._currentUserActions = [];
     this._currentKeySlotMap = null;
 
@@ -965,7 +1003,6 @@ export class KeyPilot extends EventManager {
       if (layout) {
         this._currentUserLayout = layout;
         try { this._currentUserMacros = await listUserMacros(); } catch { this._currentUserMacros = []; }
-        try { this._currentUserMacroKeys = await listUserMacroKeys(); } catch { this._currentUserMacroKeys = []; }
         try { this._currentUserActions = await listUserActions(); } catch { this._currentUserActions = []; }
         // Slots map: key label -> assigned item
         this._currentKeySlotMap = layout.slots && typeof layout.slots === 'object' ? layout.slots : {};
@@ -987,7 +1024,7 @@ export class KeyPilot extends EventManager {
           currentKeyboardLayoutId: this._currentKeyboardLayoutId,
           userLayout: this._currentUserLayout,
           userMacros: this._currentUserMacros,
-          userMacroKeys: this._currentUserMacroKeys
+          userActions: this._currentUserActions
         });
       }
     } catch { /* ignore */ }
@@ -997,7 +1034,7 @@ export class KeyPilot extends EventManager {
    * Push a just-saved user layout into live dispatch + Keyboard Reference immediately
    * (no page refresh). Used after place / DnD / Config CRUD.
    * @param {any} layout
-   * @param {{ setAsCurrent?: boolean, macros?: any[], macroKeys?: any[], actions?: any[] }} [opts]
+   * @param {{ setAsCurrent?: boolean, macros?: any[], actions?: any[] }} [opts]
    */
   async applyLiveUserLayout(layout, opts = {}) {
     if (!layout || !layout.id) return;
@@ -1018,7 +1055,6 @@ export class KeyPilot extends EventManager {
       this._currentUserLayout = layout;
       this._currentKeySlotMap = layout.slots && typeof layout.slots === 'object' ? layout.slots : {};
       if (Array.isArray(opts.macros)) this._currentUserMacros = opts.macros;
-      if (Array.isArray(opts.macroKeys)) this._currentUserMacroKeys = opts.macroKeys;
       if (Array.isArray(opts.actions)) this._currentUserActions = opts.actions;
     }
 
@@ -1027,7 +1063,7 @@ export class KeyPilot extends EventManager {
         currentKeyboardLayoutId: this._currentKeyboardLayoutId || (isCurrent ? sel : 'builtin'),
         userLayout: this._currentUserLayout,
         userMacros: this._currentUserMacros,
-        userMacroKeys: this._currentUserMacroKeys
+        userActions: this._currentUserActions
       });
     } catch { /* ignore */ }
   }
@@ -1050,36 +1086,7 @@ export class KeyPilot extends EventManager {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
-        this._runMacroById(String(assigned.id));
-        return true;
-      }
-
-      if (assigned.type === 'macroKey') {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        void this._runMacroKeyById(String(assigned.id));
-        return true;
-      }
-
-      if (assigned.type === 'action') {
-        const def = KEYBINDING_ACTION_DEFS?.[assigned.id];
-        const handlerName = def && def.handler ? String(def.handler) : '';
-        const fn = handlerName ? this[handlerName] : null;
-        if (typeof fn !== 'function') return false;
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        try {
-          const ret = fn.call(this, e);
-          if (ret && typeof ret.then === 'function') {
-            void ret.catch((err) => {
-              console.warn('[KeyPilot] Action handler failed:', handlerName, err);
-            });
-          }
-        } catch (err) {
-          console.warn('[KeyPilot] Action handler threw:', handlerName, err);
-        }
+        void this._runMacroById(String(assigned.id), e);
         return true;
       }
 
@@ -1141,6 +1148,72 @@ export class KeyPilot extends EventManager {
   }
 
   /**
+   * Modifier-chord slot dispatch for Functions that must run while a text field is focused
+   * (`worksWhileTyping`, e.g. TYPE_CHARACTERS, CLIPBOARD_*). Deliberately does NOT call
+   * `_isUnsafeToRunActionKey` — running while typing is the entire point of these Functions.
+   * Must be called *before* the blanket `hasModifierKeys(e)` early-return in `handleKeyDown`,
+   * since that early-return would otherwise ignore every modifier combo unconditionally.
+   * See KEY_ACTION_ARCHITECTURE.md "Text-active Functions & modifier-chord assignment".
+   * @param {KeyboardEvent} e
+   * @returns {boolean} true if this chord was claimed and dispatched.
+   */
+  _maybeHandleTextActiveFunctionSlot(e) {
+    try {
+      if (!this.hasModifierKeys(e)) return false;
+      const sel = String(this._currentKeyboardLayoutId || '');
+      if (!sel.startsWith('user:')) return false;
+      const slots = this._currentKeySlotMap;
+      if (!slots || typeof slots !== 'object') return false;
+
+      const chordKey = chordSlotKeyFromEvent(e);
+      if (!chordKey) return false;
+      const assigned = slots[chordKey];
+      if (!assigned || assigned.type !== 'function' || !assigned.id) return false;
+
+      const id = String(assigned.id);
+
+      if (id.startsWith('action:')) {
+        const instance = (this._currentUserActions || []).find((a) => a && a.id === id);
+        if (instance) {
+          if (!functionWorksWhileTyping(instance.functionId)) return false;
+          return this._dispatchFunctionSlot(id, e);
+        }
+        // Not cached yet — resolve async, but confirm worksWhileTyping before dispatching so we
+        // never bypass the typing-safety gate for a Function that doesn't need to.
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        void this._dispatchTextActiveFunctionSlotAsync(id, e);
+        return true;
+      }
+
+      if (!functionWorksWhileTyping(id)) return false;
+      return this._dispatchFunctionSlot(id, e);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Async counterpart of {@link _maybeHandleTextActiveFunctionSlot} for not-yet-cached Action
+   * Instances. Re-checks `worksWhileTyping` after resolving the instance so this never dispatches
+   * (and therefore never bypasses the typing-safety gate for) a non-text-active Function.
+   * @param {string} instanceId
+   * @param {KeyboardEvent} e
+   */
+  async _dispatchTextActiveFunctionSlotAsync(instanceId, e) {
+    try {
+      const instance = await getUserActionById(instanceId);
+      if (!instance || !functionWorksWhileTyping(instance.functionId)) return;
+      const def = getFunctionDef(instance.functionId);
+      const handlerName = def && def.handler ? String(def.handler) : '';
+      const fn = handlerName ? this[handlerName] : null;
+      if (typeof fn !== 'function') return;
+      fn.call(this, e, instance.parameters, { functionId: instance.functionId, instanceId });
+    } catch { /* ignore */ }
+  }
+
+  /**
    * @param {string} instanceId
    * @param {KeyboardEvent} e
    */
@@ -1188,28 +1261,65 @@ export class KeyPilot extends EventManager {
     return false;
   }
 
-  _runMacroById(macroId) {
-    // Placeholder: macro execution pipeline will be implemented later.
+  /**
+   * Run a Macro's Steps in order, each resolved through the same Function Library used by
+   * `type: 'function'` slots — see KEY_ACTION_ARCHITECTURE.md "Runtime resolution". A Step's
+   * handler is called with the *originating* keydown event for every Step (there is only one
+   * real keyboard event per macro run); handlers that don't need it simply ignore it, matching
+   * the existing convention (e.g. `handleSendTextToAiKey` takes no arguments at all).
+   * @param {string} macroId
+   * @param {KeyboardEvent} [e]
+   */
+  async _runMacroById(macroId, e) {
     try {
       const id = String(macroId || '');
       if (!id) return;
-      const label = (this._currentUserMacros || []).find((m) => m && m.id === id)?.label || 'Macro';
-      this.overlayManager?.showNotification?.(`Macro: ${label} (execution not implemented yet)`, 'info');
-    } catch { /* ignore */ }
+      let macro = (this._currentUserMacros || []).find((m) => m && m.id === id) || null;
+      if (!macro) {
+        try { macro = await getUserMacroById(id); } catch { macro = null; }
+      }
+      if (!macro) return;
+
+      const steps = Array.isArray(macro.steps) ? macro.steps : [];
+      if (steps.length === 0) {
+        this.overlayManager?.showNotification?.(`Macro "${macro.label}" has no steps yet — add some via the Function Library panel.`, 'info');
+        return;
+      }
+
+      for (const step of steps) {
+        await this._runMacroStep(step, e, id);
+      }
+    } catch (err) {
+      console.warn('[KeyPilot] Macro execution failed:', err);
+    }
   }
 
   /**
-   * Run a configured built-in Macro Key (hotkey / burst / round-robin / …).
-   * @param {string} macroKeyId
+   * Run a single Macro Step. Failures are logged and swallowed so one bad Step doesn't abort the
+   * rest of the Macro.
+   * @param {import('./modules/keyboard-layout-store.js').MacroStep} step
+   * @param {KeyboardEvent} [e]
+   * @param {string} [macroId]
    */
-  async _runMacroKeyById(macroKeyId) {
+  async _runMacroStep(step, e, macroId) {
+    const functionId = step?.functionId;
+    if (!functionId) return;
+    const def = getFunctionDef(functionId);
+    const handlerName = def && def.handler ? String(def.handler) : '';
+    const fn = handlerName ? this[handlerName] : null;
+    if (typeof fn !== 'function') {
+      console.warn('[KeyPilot] Macro step references unknown Function handler:', functionId);
+      return;
+    }
+    const delay = Number(step?.delayMsBefore);
+    if (Number.isFinite(delay) && delay > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
     try {
-      await runMacroKeyById(macroKeyId, {
-        notify: (msg, type) => {
-          try { this.overlayManager?.showNotification?.(msg, type || 'info'); } catch { /* ignore */ }
-        }
-      });
-    } catch { /* ignore */ }
+      await fn.call(this, e, step.parameters, { functionId, macroId });
+    } catch (err) {
+      console.warn('[KeyPilot] Macro step failed:', functionId, err);
+    }
   }
 
   /**
@@ -1276,13 +1386,17 @@ export class KeyPilot extends EventManager {
     } catch {
       // ignore
     }
-    // Immediate in-page updates from Key Action Config (prompt / destination).
+    // Immediate in-page updates from Key Action Config (prompt / destination / mode) for
+    // built-in Functions bound to a fixed key — see _builtinFunctionActionParams.
     try {
       if (!this._actionSettingsDomListener) {
         this._actionSettingsDomListener = (ev) => {
           try {
-            const next = ev?.detail?.settings;
-            if (next && typeof next === 'object') this._settings = next;
+            const functionId = ev?.detail?.actionId;
+            const action = ev?.detail?.action;
+            if (functionId && action && typeof action === 'object') {
+              this._builtinFunctionActionParams.set(functionId, action.parameters || {});
+            }
           } catch { /* ignore */ }
         };
         document.addEventListener('keypilot:action-settings-changed', this._actionSettingsDomListener);
@@ -1457,7 +1571,7 @@ export class KeyPilot extends EventManager {
             currentKeyboardLayoutId: this._currentKeyboardLayoutId || 'builtin',
             userLayout: this._currentUserLayout,
             userMacros: this._currentUserMacros,
-            userMacroKeys: this._currentUserMacroKeys
+            userActions: this._currentUserActions
           });
         }
       } catch { /* ignore */ }
@@ -2190,6 +2304,12 @@ export class KeyPilot extends EventManager {
     if (window.KEYPILOT_DEBUG) {
       console.log('[KeyPilot] Key pressed:', e.key, 'Code:', e.code);
     }
+
+    // Modifier-chord slots for Functions that must run while typing (TYPE_CHARACTERS,
+    // CLIPBOARD_*) — must be checked BEFORE the blanket "ignore all modifier combos" rule below,
+    // and intentionally bypasses the typing-safety gate. See function-library.js
+    // `worksWhileTyping` + KEY_ACTION_ARCHITECTURE.md "Text-active Functions".
+    if (this._maybeHandleTextActiveFunctionSlot(e)) return;
 
     // Don't interfere with modifier key combinations (Cmd+C, Ctrl+V, etc.)
     if (this.hasModifierKeys(e)) {
@@ -3624,7 +3744,7 @@ export class KeyPilot extends EventManager {
       return;
     }
 
-    const yMode = getActionMode(this._settings?.actionSettings, 'RECTANGLE_HIGHLIGHT');
+    const yMode = getActionMode(this._getBuiltinFunctionActionParams('RECTANGLE_HIGHLIGHT'), 'RECTANGLE_HIGHLIGHT');
 
     // Alternate mode: cumulative inspector pick (Y adds, Enter finishes).
     if (yMode === 'cumulative') {
@@ -4909,10 +5029,10 @@ export class KeyPilot extends EventManager {
       return;
     }
 
-    const actionSettings = this._settings?.actionSettings;
-    const prompt = String(getActionParameter(actionSettings, 'SEND_TEXT_TO_AI', 'prompt') ?? '').trim();
+    const sendToAiParams = this._getBuiltinFunctionActionParams('SEND_TEXT_TO_AI');
+    const prompt = String(getActionParameter(sendToAiParams, 'SEND_TEXT_TO_AI', 'prompt') ?? '').trim();
     const destination = normalizeActionResultDestination(
-      getActionParameter(actionSettings, 'SEND_TEXT_TO_AI', 'destination')
+      getActionParameter(sendToAiParams, 'SEND_TEXT_TO_AI', 'destination')
     );
 
     this.showFlashNotification('Sending to AI…', COLORS.NOTIFICATION_INFO);

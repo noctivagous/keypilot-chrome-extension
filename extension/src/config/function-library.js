@@ -26,6 +26,8 @@ import {
   normalizeMacroKeyConfig,
   summarizeMacroKey
 } from './macro-keys.js';
+import { isChordSlotKey } from '../utils/key-chord.js';
+import { ACTION_RESULT_DESTINATIONS, buildResultDestinationParameter } from '../modules/action-result-delivery.js';
 
 /**
  * @typedef {{
@@ -50,11 +52,112 @@ import {
  *   keyboardClass?: string|null,
  *   // Present (non-empty) iff this Function can/must be bound to per-instance values.
  *   parameters?: FunctionParameterDef[],
- *   // Set when this FunctionDef was generalized from a legacy MacroKeyKind, so the
- *   // Action Store can keep reading/writing old `UserMacroKey` records during migration.
- *   legacyMacroKeyKind?: import('./macro-keys.js').MacroKeyKind
+ *   // Set when this FunctionDef was generalized from a legacy MacroKeyKind (macro-keys.js),
+ *   // so `defaultFunctionParameters`/`normalizeFunctionParameters` below can delegate to that
+ *   // kind's `{ config }` shape instead of the generic per-field FunctionParameterDef schema.
+ *   legacyMacroKeyKind?: import('./macro-keys.js').MacroKeyKind,
+ *   // True iff this Function must be able to fire while a text-entry element is focused
+ *   // (e.g. it types into, or reads/writes the clipboard of, that very field). Functions with
+ *   // this flag may ONLY be bound to a modifier-chord slot (see ../utils/key-chord.js), never
+ *   // a bare key — see KEY_ACTION_ARCHITECTURE.md "Text-active Functions & modifier-chord
+ *   // assignment" for why a bare key would either never fire (typing-safety gate) or hijack
+ *   // normal typing.
+ *   worksWhileTyping?: boolean,
+ *   // What page data this Function reads and when it's captured, and where its result may be
+ *   // routed. See KEY_ACTION_ARCHITECTURE.md "Data Acquisition & Result Destinations". Omitted
+ *   // for Functions that don't read/produce page data (e.g. NEW_TAB) or haven't been classified
+ *   // yet — absence is not meaningful, just "not yet tagged."
+ *   dataSource?: 'underCursor'|'textRange'|'none',
+ *   dataKind?: 'text'|'media',
+ *   destinations?: import('../modules/action-result-delivery.js').ActionResultDestination[]
  * }} FunctionDef
  */
+
+/**
+ * Built-in Function ids that must be able to run while a text field is focused, because that is
+ * the entire point of the Function (type into it / clipboard in-and-out of it). Kept as an
+ * explicit allowlist rather than inferred, since "works while typing" is a safety-relevant
+ * property, not a default.
+ * @type {ReadonlySet<string>}
+ */
+const TEXT_ACTIVE_BUILTIN_FUNCTION_IDS = new Set([
+  'CLIPBOARD_COPY',
+  'CLIPBOARD_CUT',
+  'CLIPBOARD_PASTE',
+  'CLIPBOARD_SELECT_ALL'
+]);
+
+/**
+ * Data acquisition classification for existing built-in Functions that read/produce page data.
+ * Functions not listed here simply omit `dataSource`/`dataKind` ("not yet tagged"), rather than
+ * defaulting to `'none'` — most of `KEYBINDING_ACTION_DEFS` (navigation, tab management, clicks)
+ * genuinely reads no page *data* in the sense this taxonomy cares about.
+ *
+ * `destinations` is left unset here even for `COPY_HOVERED_IMAGE`: the classification is accurate
+ * today, but there is only one working sink (the clipboard) — no `destination` parameter or
+ * Media Library sink exists yet, so listing it would advertise a control that doesn't work.
+ * See KEY_ACTION_ARCHITECTURE.md, "Data Acquisition & Result Destinations".
+ * @type {Readonly<Record<string, Partial<Pick<FunctionDef, 'dataSource'|'dataKind'>>>>}
+ */
+const BUILTIN_FUNCTION_DATA_TAGS = Object.freeze({
+  COPY_HOVERED_IMAGE: Object.freeze({ dataSource: 'underCursor', dataKind: 'media' }),
+  SEND_TEXT_TO_AI: Object.freeze({
+    dataSource: 'textRange',
+    dataKind: 'text',
+    destinations: Object.freeze([
+      ACTION_RESULT_DESTINATIONS.CLIPBOARD,
+      ACTION_RESULT_DESTINATIONS.POPOVER,
+      ACTION_RESULT_DESTINATIONS.BOTH
+    ])
+  }),
+  CLIPBOARD_COPY: Object.freeze({ dataSource: 'none' }),
+  CLIPBOARD_CUT: Object.freeze({ dataSource: 'none' }),
+  CLIPBOARD_PASTE: Object.freeze({ dataSource: 'none' }),
+  CLIPBOARD_SELECT_ALL: Object.freeze({ dataSource: 'none' })
+});
+
+/**
+ * Parameter schema for built-in Functions that used to declare their schema only in
+ * `ACTION_SETTINGS_REGISTRY` (`key-action-settings.js`), with values stored globally per action
+ * id in `settings.actionSettings[actionId]`. Moved here so `FunctionDef.parameters` is the single
+ * schema source; values now live on a canonical `UserAction` per Function id (see
+ * `getOrCreateBuiltinFunctionUserAction` in `keyboard-layout-store.js`) instead of global
+ * settings — see KEY_ACTION_ARCHITECTURE.md migration table.
+ *
+ * `RECTANGLE_HIGHLIGHT`'s old "modes" concept (a button-group switch, not a form field) is
+ * represented as a plain `enum` parameter named `mode` — `key-action-settings.js` special-cases a
+ * parameter literally named `mode` to keep rendering it as the button-group switch it always was.
+ * @type {Readonly<Record<string, FunctionDef['parameters']>>}
+ */
+const BUILTIN_FUNCTION_PARAMETER_OVERRIDES = Object.freeze({
+  RECTANGLE_HIGHLIGHT: Object.freeze([
+    Object.freeze({
+      id: 'mode',
+      label: 'Selection mode',
+      type: 'enum',
+      defaultValue: 'element',
+      options: Object.freeze([
+        Object.freeze({ id: 'element', label: 'Element rectangle' }),
+        Object.freeze({ id: 'cumulative', label: 'Pick cumulative' })
+      ])
+    })
+  ]),
+  SEND_TEXT_TO_AI: Object.freeze([
+    Object.freeze({
+      id: 'prompt',
+      label: 'Instruction',
+      type: 'string',
+      multiline: true,
+      defaultValue: 'Translate to English',
+      placeholder: 'e.g. Translate to English'
+    }),
+    buildResultDestinationParameter([
+      ACTION_RESULT_DESTINATIONS.CLIPBOARD,
+      ACTION_RESULT_DESTINATIONS.POPOVER,
+      ACTION_RESULT_DESTINATIONS.BOTH
+    ])
+  ])
+});
 
 /** Category used for Functions generalized from macro-key kinds. */
 const KEYSTROKE_FUNCTION_CATEGORY = 'Keystrokes';
@@ -120,6 +223,8 @@ const TYPE_CHARACTERS_FUNCTION_DEF = Object.freeze({
   handler: 'handleTypeCharactersKey',
   category: TEXT_FUNCTION_CATEGORY,
   keyboardClass: 'key-purple',
+  worksWhileTyping: true,
+  dataSource: 'none',
   parameters: Object.freeze([
     Object.freeze({
       id: 'text',
@@ -146,10 +251,13 @@ function buildBuiltinActionFunctionDefs() {
       description: def.description,
       handler: def.handler,
       category: KEYBINDING_ACTION_CATEGORY_BY_ID[id] || 'Other',
-      keyboardClass: def.keyboardClass ?? null
-      // No `parameters`: these remain simple/non-instantiable Functions. (SEND_TEXT_TO_AI's
-      // prompt/destination stay on the legacy global ACTION_SETTINGS_REGISTRY path for now —
-      // see KEY_ACTION_ARCHITECTURE.md "Migration mapping" for the follow-up to move it here.)
+      keyboardClass: def.keyboardClass ?? null,
+      // No `parameters` by default: most built-ins remain simple/non-instantiable Functions.
+      // A few (SEND_TEXT_TO_AI, RECTANGLE_HIGHLIGHT) get their schema below from
+      // BUILTIN_FUNCTION_PARAMETER_OVERRIDES — see KEY_ACTION_ARCHITECTURE.md "Migration mapping".
+      ...(TEXT_ACTIVE_BUILTIN_FUNCTION_IDS.has(id) ? { worksWhileTyping: true } : {}),
+      ...(BUILTIN_FUNCTION_DATA_TAGS[id] || {}),
+      ...(BUILTIN_FUNCTION_PARAMETER_OVERRIDES[id] ? { parameters: BUILTIN_FUNCTION_PARAMETER_OVERRIDES[id] } : {})
     });
   }
   return out;
@@ -296,4 +404,56 @@ export function summarizeFunctionParameters(functionId, parameters) {
  */
 export function macroKeyKindFromFunctionId(functionId) {
   return MACRO_KEY_KIND_BY_FUNCTION_ID[String(functionId || '')] || null;
+}
+
+/**
+ * True when this Function must be able to fire while a text-entry element is focused, and
+ * therefore may only be bound to a modifier-chord slot (never a bare key).
+ * @param {string} functionId
+ * @returns {boolean}
+ */
+export function functionWorksWhileTyping(functionId) {
+  return !!getFunctionDef(functionId)?.worksWhileTyping;
+}
+
+/**
+ * @param {string} functionId
+ * @returns {'underCursor'|'textRange'|'none'|null} null when not yet classified.
+ */
+export function getFunctionDataSource(functionId) {
+  return getFunctionDef(functionId)?.dataSource ?? null;
+}
+
+/**
+ * @param {string} functionId
+ * @returns {'text'|'media'|null} null when not yet classified.
+ */
+export function getFunctionDataKind(functionId) {
+  return getFunctionDef(functionId)?.dataKind ?? null;
+}
+
+/**
+ * Validate that a Function is being bound to an appropriate kind of slot key.
+ *
+ * - `worksWhileTyping` Functions MUST go on a chord slot key (`CHORD:CTRL+ALT+Q`), never a bare
+ *   key — a bare key would either be silently swallowed by KeyPilot's typing-safety gate (never
+ *   fires while the field it's meant to act on is focused) or, if that gate were bypassed, would
+ *   hijack normal typing.
+ * - Non-`worksWhileTyping` Functions may go on either (chord slots are optional/allowed, e.g. a
+ *   user may still prefer a chord for a normal navigation action; only the reverse is forbidden).
+ *
+ * @param {string} functionId
+ * @param {string} slotKey
+ * @returns {{ ok: boolean, reason?: string }}
+ */
+export function validateFunctionSlotKey(functionId, slotKey) {
+  const def = getFunctionDef(functionId);
+  if (!def) return { ok: false, reason: `Unknown Function: ${functionId}` };
+  if (def.worksWhileTyping && !isChordSlotKey(slotKey)) {
+    return {
+      ok: false,
+      reason: `"${def.label}" must run while a text field is focused, so it can only be bound to a modifier-key combination (e.g. Ctrl+Alt+…), not a plain key.`
+    };
+  }
+  return { ok: true };
 }

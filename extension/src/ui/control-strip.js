@@ -20,7 +20,7 @@ import {
   normalizePanelPositionState
 } from '../utils/panel-position.js';
 
-const ROOT_CLASS = 'kp-control-strip';
+const CONTROL_STRIP_ROOT_CLASS = 'kp-control-strip';
 const DEFAULT_TOP_PX = 16;
 const DEFAULT_LEFT_PX = 16;
 const STRIP_HEIGHT_PX = 28;
@@ -277,7 +277,7 @@ export class ControlStrip {
     } catch { /* ignore */ }
 
     const root = document.createElement('div');
-    root.className = ROOT_CLASS;
+    root.className = CONTROL_STRIP_ROOT_CLASS;
     root.hidden = true;
     root.setAttribute('role', 'toolbar');
     root.setAttribute('aria-label', 'KeyPilot control strip');
