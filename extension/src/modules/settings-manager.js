@@ -5,7 +5,16 @@
  */
 
 import { CURSOR_MODE, SCROLL } from '../config/constants.js';
-import { DEFAULT_KEYBOARD_LAYOUT_ID, normalizeKeyboardLayoutId } from '../config/keyboard-layouts.js';
+import {
+  DEFAULT_KEYBOARD_HANDEDNESS,
+  DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID,
+  DEFAULT_KEYBOARD_LAYOUT_ID,
+  inferFamilyAndHandednessFromLayoutId,
+  normalizeKeyboardHandedness,
+  normalizeKeyboardLayoutFamilyId,
+  normalizeKeyboardLayoutId,
+  resolveKeyboardLayoutId
+} from '../config/keyboard-layouts.js';
 import {
   SEARCH_ENGINE_META,
   DEFAULT_SEARCH_ENGINE_ID,
@@ -104,7 +113,8 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  * Named panel slots that share the generalized positioning system.
  * @typedef {{
  *   keyboardReference: PanelPositionSettings,
- *   controlStrip: PanelPositionSettings
+ *   controlStrip: PanelPositionSettings,
+ *   keyboardLayoutConfig: PanelPositionSettings
  * }} PanelPositionsSettings
  */
 
@@ -112,8 +122,12 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  * @typedef {{
  *   searchEngine: SearchEngine,
  *   cursorMode: CursorMode,
+ *   keyboardLayoutFamilyId: string,
+ *   keyboardHandedness: 'left'|'right',
  *   keyboardLayoutId: string,
+ *   currentKeyboardLayoutId: string,
  *   keyboardReferenceKeyFeedback: boolean,
+ *   keyboardReferenceShowNumberRow: boolean,
  *   controlStrip: ControlStripSettings,
  *   panelPositions: PanelPositionsSettings,
  *   clickMode: ClickModeSettings,
@@ -127,9 +141,21 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
 export const DEFAULT_SETTINGS = Object.freeze({
   searchEngine: DEFAULT_SEARCH_ENGINE_ID,
   cursorMode: CURSOR_MODE.NO_CUSTOM_CURSORS,
+  // New model:
+  // - keyboardLayoutFamilyId + keyboardHandedness are the user-facing selection.
+  // - keyboardLayoutId is the resolved concrete implementation (kept for back-compat + early-inject).
+  keyboardLayoutFamilyId: DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID,
+  keyboardHandedness: DEFAULT_KEYBOARD_HANDEDNESS,
   keyboardLayoutId: DEFAULT_KEYBOARD_LAYOUT_ID,
+  // Active layout selection for runtime + keyboard reference:
+  // - 'builtin' uses the current built-in family + handedness selection.
+  // - 'user:<layoutId>' uses a stored user layout (created/duplicated in Alt+C).
+  currentKeyboardLayoutId: 'builtin',
   // When true, the floating keyboard reference panel highlights keys on keydown/keyup.
   keyboardReferenceKeyFeedback: true,
+  // When true, the floating keyboard reference panel includes the number row (1–0).
+  // Default is off to keep the panel compact.
+  keyboardReferenceShowNumberRow: false,
   // Floating Control Strip (upper-left): visibility + collapsed (On/Off-only) state.
   controlStrip: Object.freeze({
     visible: true,
@@ -139,7 +165,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
   // Anchors re-resolve on resize; free left/top reclamps inside the viewport margin.
   panelPositions: Object.freeze({
     keyboardReference: Object.freeze({ anchor: 'bottom-left' }),
-    controlStrip: Object.freeze({ anchor: 'top-left' })
+    controlStrip: Object.freeze({ anchor: 'top-left' }),
+    keyboardLayoutConfig: Object.freeze({ anchor: 'middle-right' })
   }),
   // Per-key action settings (Keyboard Reference mode switches / config params).
   actionSettings: Object.freeze({
@@ -219,6 +246,18 @@ function normalizeBoolean(raw, fallback) {
   if (raw === 'true') return true;
   if (raw === 'false') return false;
   return !!fallback;
+}
+
+/**
+ * @param {any} raw
+ * @returns {string}
+ */
+function normalizeCurrentKeyboardLayoutId(raw) {
+  const v = String(raw || '').trim();
+  if (!v) return DEFAULT_SETTINGS.currentKeyboardLayoutId;
+  if (v === 'builtin') return 'builtin';
+  if (v.startsWith('user:') && v.length > 'user:'.length) return v;
+  return DEFAULT_SETTINGS.currentKeyboardLayoutId;
 }
 
 /**
@@ -461,6 +500,10 @@ function normalizePanelPositions(raw) {
     controlStrip: normalizePanelPositionEntry(
       stored.controlStrip,
       DEFAULT_SETTINGS.panelPositions.controlStrip
+    ),
+    keyboardLayoutConfig: normalizePanelPositionEntry(
+      stored.keyboardLayoutConfig,
+      DEFAULT_SETTINGS.panelPositions.keyboardLayoutConfig
     )
   };
 }
@@ -507,15 +550,38 @@ export async function getSettings() {
   try {
     let stored = await storageGetValue(SETTINGS_STORAGE_KEY, null);
     if (!stored || typeof stored !== 'object') stored = {};
+
+    // Normalize keyboard layout selection with backward compatibility:
+    // - Old storage: { keyboardLayoutId: 'browsing-right'|'browsing-left' }
+    // - New storage: { keyboardLayoutFamilyId: 'browsing', keyboardHandedness: 'left'|'right' }
+    let familyId = normalizeKeyboardLayoutFamilyId(stored?.keyboardLayoutFamilyId);
+    let handedness = normalizeKeyboardHandedness(stored?.keyboardHandedness);
+    const hasNewFields =
+      Object.prototype.hasOwnProperty.call(stored || {}, 'keyboardLayoutFamilyId') ||
+      Object.prototype.hasOwnProperty.call(stored || {}, 'keyboardHandedness');
+    if (!hasNewFields) {
+      const inferred = inferFamilyAndHandednessFromLayoutId(stored?.keyboardLayoutId);
+      familyId = normalizeKeyboardLayoutFamilyId(inferred.familyId);
+      handedness = normalizeKeyboardHandedness(inferred.handedness);
+    }
+    const resolvedLayoutId = resolveKeyboardLayoutId({ familyId, handedness });
+
     return {
       ...DEFAULT_SETTINGS,
       ...stored,
       searchEngine: normalizeSearchEngine(stored?.searchEngine),
       cursorMode: normalizeCursorMode(stored?.cursorMode),
-      keyboardLayoutId: normalizeKeyboardLayoutId(stored?.keyboardLayoutId),
+      keyboardLayoutFamilyId: familyId,
+      keyboardHandedness: handedness,
+      keyboardLayoutId: resolvedLayoutId,
+      currentKeyboardLayoutId: normalizeCurrentKeyboardLayoutId(stored?.currentKeyboardLayoutId),
       keyboardReferenceKeyFeedback: normalizeBoolean(
         stored?.keyboardReferenceKeyFeedback,
         DEFAULT_SETTINGS.keyboardReferenceKeyFeedback
+      ),
+      keyboardReferenceShowNumberRow: normalizeBoolean(
+        stored?.keyboardReferenceShowNumberRow,
+        DEFAULT_SETTINGS.keyboardReferenceShowNumberRow
       ),
       controlStrip: normalizeControlStrip(stored?.controlStrip),
       panelPositions: normalizePanelPositions(stored?.panelPositions),
@@ -530,7 +596,8 @@ export async function getSettings() {
       controlStrip: { ...DEFAULT_SETTINGS.controlStrip },
       panelPositions: {
         keyboardReference: { ...DEFAULT_SETTINGS.panelPositions.keyboardReference },
-        controlStrip: { ...DEFAULT_SETTINGS.panelPositions.controlStrip }
+        controlStrip: { ...DEFAULT_SETTINGS.panelPositions.controlStrip },
+        keyboardLayoutConfig: { ...DEFAULT_SETTINGS.panelPositions.keyboardLayoutConfig }
       },
       actionSettings: normalizeActionSettings(null),
       clickMode: { ...DEFAULT_SETTINGS.clickMode, cursor: { ...DEFAULT_SETTINGS.clickMode.cursor } },
@@ -570,6 +637,12 @@ export async function setSettings(partial) {
         ...current.panelPositions.controlStrip,
         ...(pPositions?.controlStrip && typeof pPositions.controlStrip === 'object'
           ? pPositions.controlStrip
+          : {})
+      },
+      keyboardLayoutConfig: {
+        ...(current.panelPositions.keyboardLayoutConfig || DEFAULT_SETTINGS.panelPositions.keyboardLayoutConfig),
+        ...(pPositions?.keyboardLayoutConfig && typeof pPositions.keyboardLayoutConfig === 'object'
+          ? pPositions.keyboardLayoutConfig
           : {})
       }
     },
@@ -611,10 +684,33 @@ export async function setSettings(partial) {
   };
   next.searchEngine = normalizeSearchEngine(next.searchEngine);
   next.cursorMode = normalizeCursorMode(next.cursorMode);
-  next.keyboardLayoutId = normalizeKeyboardLayoutId(next.keyboardLayoutId);
+
+  // Keyboard layout resolution rules:
+  // - If caller set keyboardLayoutId directly (legacy), infer family/handedness from it.
+  // - Otherwise, normalize family/handedness and compute the concrete keyboardLayoutId.
+  const callerSetLayoutId = Object.prototype.hasOwnProperty.call(p, 'keyboardLayoutId');
+  if (callerSetLayoutId) {
+    const inferred = inferFamilyAndHandednessFromLayoutId(p?.keyboardLayoutId);
+    next.keyboardLayoutFamilyId = normalizeKeyboardLayoutFamilyId(inferred.familyId);
+    next.keyboardHandedness = normalizeKeyboardHandedness(inferred.handedness);
+    next.keyboardLayoutId = normalizeKeyboardLayoutId(p?.keyboardLayoutId);
+  } else {
+    next.keyboardLayoutFamilyId = normalizeKeyboardLayoutFamilyId(next.keyboardLayoutFamilyId);
+    next.keyboardHandedness = normalizeKeyboardHandedness(next.keyboardHandedness);
+    next.keyboardLayoutId = resolveKeyboardLayoutId({
+      familyId: next.keyboardLayoutFamilyId,
+      handedness: next.keyboardHandedness
+    });
+  }
+
+  next.currentKeyboardLayoutId = normalizeCurrentKeyboardLayoutId(next.currentKeyboardLayoutId);
   next.keyboardReferenceKeyFeedback = normalizeBoolean(
     next.keyboardReferenceKeyFeedback,
     DEFAULT_SETTINGS.keyboardReferenceKeyFeedback
+  );
+  next.keyboardReferenceShowNumberRow = normalizeBoolean(
+    next.keyboardReferenceShowNumberRow,
+    DEFAULT_SETTINGS.keyboardReferenceShowNumberRow
   );
   next.controlStrip = normalizeControlStrip(next.controlStrip);
   next.panelPositions = normalizePanelPositions(next.panelPositions);

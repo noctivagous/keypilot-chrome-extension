@@ -1,12 +1,11 @@
 /**
  * Application constants and configuration
  */
-import { buildKeybindingsForLayout, DEFAULT_KEYBOARD_LAYOUT_ID } from './keyboard-layouts.js';
+import { buildEffectiveKeybindings, DEFAULT_KEYBOARD_LAYOUT_ID, DEFAULT_KEYBOARD_HANDEDNESS } from './keyboard-layouts.js';
 
 // Legacy export used across the codebase and by `extension/build.js`.
-// This represents the *default* layout. Runtime code should prefer computing
-// keybindings from the active settings/layout when available.
-export const KEYBINDINGS = buildKeybindingsForLayout(DEFAULT_KEYBOARD_LAYOUT_ID);
+// Default layout + system layer. Runtime should recompute from active settings.
+export const KEYBINDINGS = buildEffectiveKeybindings(DEFAULT_KEYBOARD_LAYOUT_ID, DEFAULT_KEYBOARD_HANDEDNESS);
 
 export const SELECTORS = {
   CLICKABLE: 'a[href], button, input, select, textarea',
@@ -192,6 +191,10 @@ export const Z_INDEX = {
   KEYBINDINGS_POPOVER: 2147483046,
   // Per-key floating config panel (above sticky key popover, below cursor)
   KEY_ACTION_CONFIG: 2147483047,
+  // Compact Keyboard Layout Config palette (beside Reference while editing)
+  KEYBOARD_LAYOUT_CONFIG: 2147483048,
+  // Click-to-place arrow (fallback when Popover API unavailable)
+  LAYOUT_PLACE_ARROW: 2147483052,
 
   // Cursor sits above chrome; click ripple is above even that so the
   // expanding circles always remain visible.

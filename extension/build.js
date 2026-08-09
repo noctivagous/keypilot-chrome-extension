@@ -38,6 +38,9 @@ function getBuildTimestamp(now = new Date()) {
 const modules = [
   // Keyboard layout architecture must be defined before constants.js once imports are stripped.
   'src/config/keyboard-layouts.js',
+  'src/config/macro-keys.js',
+  // Unified Function Library — wraps keyboard-layouts.js + macro-keys.js catalogs.
+  'src/config/function-library.js',
   'src/config/constants.js',
   // Shadow-DOM piercing query helper (DOM-hover targeting; RBush vendor retired).
   '../node_modules/query-selector-shadow-dom/dist/querySelectorShadowDom.js',
@@ -76,6 +79,9 @@ const modules = [
   'src/modules/optimized-scroll-manager.js',
   'src/modules/keypilot-toggle-handler.js',
   'src/modules/settings-manager.js',
+  'src/modules/keyboard-layout-store.js',
+  'src/modules/macro-key-runtime.js',
+  'src/modules/ai-text-service.js',
   // Frame-click / popover bridge live in frame-agent-bundled.js (child frames only).
   'src/modules/omnibox-manager.js',
   'src/modules/tab-history-popover.js',
@@ -85,6 +91,8 @@ const modules = [
   'src/modules/rectangle-intersection-observer.js',
   // UI modules used by the content script (must appear before keypilot.js so symbols exist after imports are stripped)
   'src/ui/keybindings-ui-shared.js',
+  'src/ui/procedure-result-popover.js',
+  'src/modules/action-result-delivery.js',
   'src/ui/key-action-settings.js',
   'src/ui/keybindings-ui.js',
   'src/ui/popup-theme-vars.js',
@@ -92,6 +100,9 @@ const modules = [
   'src/ui/segmented-control.js',
   'src/ui/popover-titlebar.js',
   'src/ui/floating-keyboard-help.js',
+  'src/ui/macro-key-editor.js',
+  'src/ui/keyboard-layout-config-panel.js',
+  'src/ui/keyboard-layout-configurator.js',
   // Shared walkthrough primitives must precede control-strip + panel + manager (import-stripped IIFE).
   'src/ui/onboarding-shared.js',
   'src/ui/control-strip.js',

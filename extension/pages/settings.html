@@ -168,12 +168,27 @@
 
             <div class="stack">
               <label class="field">
-                <div class="field-label">Keyboard layout</div>
-                <select id="keyboard-layout" class="select">
-                  <option value="browsing-right">Browsing: right-handed</option>
-                  <option value="browsing-left">Browsing: left-handed</option>
+                <div class="field-label">Keyboard layout family</div>
+                <select id="keyboard-layout-family" class="select">
+                  <!-- Populated from BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META -->
                 </select>
-                <div class="field-hint">Controls which keys trigger KeyPilot actions and how the keyboard reference is labeled.</div>
+                <div class="field-hint">Controls which built-in layout family is active. Handedness is set separately so cycling families never flips left/right.</div>
+              </label>
+
+              <label class="toggle" for="keyboard-left-handed">
+                <input id="keyboard-left-handed" type="checkbox" />
+                <div class="toggle-text">
+                  <div class="toggle-title">Left-handed</div>
+                  <div class="toggle-sub">Use the left-handed variant of the selected layout family (shortcuts primarily on the right side).</div>
+                </div>
+              </label>
+
+              <label class="toggle" for="keyboard-reference-show-number-row">
+                <input id="keyboard-reference-show-number-row" type="checkbox" />
+                <div class="toggle-text">
+                  <div class="toggle-title">Show number row</div>
+                  <div class="toggle-sub">Include the 1–0 row in the floating keyboard reference panel and layout editor.</div>
+                </div>
               </label>
 
               <label class="toggle" for="keyboard-reference-key-feedback">

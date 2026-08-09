@@ -168,8 +168,9 @@ function updateExistingKeyboardDOM({ container, keybindings }) {
  * @param {Record<string, {label?: string, description?: string, displayKey?: string, keyboardClass?: string}>} params.keybindings
  * @param {any[]} [params.keyboardLayout]
  * @param {string} [params.layoutId]
+ * @param {boolean} [params.attachPopovers=true] When false, skip key info popovers (edit mode).
  */
-export function renderKeybindingsKeyboard({ container, keybindings, keyboardLayout, layoutId } = {}) {
+export function renderKeybindingsKeyboard({ container, keybindings, keyboardLayout, layoutId, attachPopovers = true } = {}) {
   if (!container) return;
   const doc = container.ownerDocument || document;
   ensureStylesInjected(doc);
@@ -193,7 +194,11 @@ export function renderKeybindingsKeyboard({ container, keybindings, keyboardLayo
     const canReuse = !layoutKey ? true : (existingLayoutKey === layoutKey);
     if (canReuse) {
       if (updateExistingKeyboardDOM({ container, keybindings })) {
-        attachKeyPopoverBehavior({ root: container, keybindings });
+        if (attachPopovers) {
+          attachKeyPopoverBehavior({ root: container, keybindings });
+        } else {
+          detachKeyPopoverBehavior(container);
+        }
         return;
       }
     }
@@ -267,10 +272,47 @@ export function renderKeybindingsKeyboard({ container, keybindings, keyboardLayo
   }
 
   // Attach popover behavior directly to each key element (reusable, not tied to any page).
-  attachKeyPopoverBehavior({
-    root: container,
-    keybindings
+  if (attachPopovers) {
+    attachKeyPopoverBehavior({
+      root: container,
+      keybindings
+    });
+  } else {
+    detachKeyPopoverBehavior(container);
+  }
+}
+
+/**
+ * Remove key-info popover listeners from a keyboard root (edit mode).
+ * @param {HTMLElement|null} root
+ */
+export function detachKeyPopoverBehavior(root) {
+  if (!root || !root._kpKeyHandlers) return;
+  try {
+    unpinKeyPopover();
+  } catch { /* ignore */ }
+  const keyElements = root.querySelectorAll('[data-kp-action-id]');
+  const h = root._kpKeyHandlers;
+  keyElements.forEach((keyEl) => {
+    try {
+      if (h.enter) keyEl.removeEventListener('pointerenter', h.enter);
+      if (h.leave) keyEl.removeEventListener('pointerleave', h.leave);
+      if (h.focusin) keyEl.removeEventListener('focusin', h.focusin);
+      if (h.focusout) keyEl.removeEventListener('focusout', h.focusout);
+      if (h.click) keyEl.removeEventListener('click', h.click);
+    } catch { /* ignore */ }
   });
+  try {
+    if (h.docKeydown) document.removeEventListener('keydown', h.docKeydown, true);
+    if (h.docPointerDown) document.removeEventListener('pointerdown', h.docPointerDown, true);
+    if (h.resize) window.removeEventListener('resize', h.resize, true);
+  } catch { /* ignore */ }
+  root._kpKeyHandlers = null;
+  try {
+    if (_activePopoverContext && _activePopoverContext.root === root) {
+      _activePopoverContext = null;
+    }
+  } catch { /* ignore */ }
 }
 
 /**
@@ -750,6 +792,36 @@ export function pinKeyPopover(actionId, opts = {}) {
 
   showPopoverForTarget({ doc, pop, targetEl: keyEl, binding, actionId, pinned: true });
   emitKeyboardHelpKeyHover({ actionId, keyEl });
+  return true;
+}
+
+/**
+ * Show the pinned key-info “inspector” popover for an action, anchored to any element
+ * (e.g. Keyboard Layout Config palette). Does not require active Reference popover wiring.
+ *
+ * @param {string} actionId
+ * @param {{
+ *   anchorEl: HTMLElement,
+ *   keybindings?: Record<string, any>|null,
+ *   binding?: any
+ * }} opts
+ * @returns {boolean}
+ */
+export function inspectKeyActionFromAnchor(actionId, opts = {}) {
+  const anchorEl = opts.anchorEl;
+  if (!actionId || !anchorEl) return false;
+  const doc = anchorEl.ownerDocument || document;
+  const pop = ensurePopover(doc, null);
+  if (!pop) return false;
+
+  const keybindings = opts.keybindings || _activePopoverContext?.keybindings || {};
+  const binding = opts.binding || keybindings[actionId] || null;
+  if (!binding) return false;
+
+  _pinnedActionId = actionId;
+  _pinnedKeyEl = anchorEl;
+  showPopoverForTarget({ doc, pop, targetEl: anchorEl, binding, actionId, pinned: true });
+  emitKeyboardHelpKeyHover({ actionId, keyEl: anchorEl });
   return true;
 }
 

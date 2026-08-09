@@ -444,6 +444,722 @@
         "className": "key key-shift"
       }
     ]
+  ],
+  "basic-navigation-right": [
+    [
+      {
+        "type": "special",
+        "text": "Tab",
+        "className": "key key-tab"
+      },
+      {
+        "type": "action",
+        "id": "TAB_LEFT",
+        "fallbackText": "Tab Left"
+      },
+      {
+        "type": "action",
+        "id": "TAB_RIGHT",
+        "fallbackText": "Tab Right"
+      },
+      {
+        "type": "key",
+        "text": "E"
+      },
+      {
+        "type": "action",
+        "id": "FORWARD",
+        "fallbackText": "Go Forward"
+      },
+      {
+        "type": "key",
+        "text": "T"
+      },
+      {
+        "type": "key",
+        "text": "Y"
+      },
+      {
+        "type": "key",
+        "text": "U"
+      },
+      {
+        "type": "key",
+        "text": "I"
+      },
+      {
+        "type": "key",
+        "text": "O"
+      },
+      {
+        "type": "key",
+        "text": "P"
+      },
+      {
+        "type": "key",
+        "text": "["
+      },
+      {
+        "type": "key",
+        "text": "]"
+      },
+      {
+        "type": "special",
+        "text": "Backspace",
+        "className": "key key-backspace"
+      }
+    ],
+    [
+      {
+        "type": "special",
+        "text": "Caps",
+        "className": "key key-caps"
+      },
+      {
+        "type": "key",
+        "text": "A"
+      },
+      {
+        "type": "action",
+        "id": "BACK2",
+        "fallbackText": "Go Back"
+      },
+      {
+        "type": "action",
+        "id": "BACK",
+        "fallbackText": "Go Back"
+      },
+      {
+        "type": "action",
+        "id": "ACTIVATE",
+        "fallbackText": "Click Element"
+      },
+      {
+        "type": "key",
+        "text": "G"
+      },
+      {
+        "type": "key",
+        "text": "H"
+      },
+      {
+        "type": "key",
+        "text": "J"
+      },
+      {
+        "type": "action",
+        "id": "TOGGLE_KEYBOARD_HELP",
+        "fallbackText": "KB Reference"
+      },
+      {
+        "type": "key",
+        "text": "L"
+      },
+      {
+        "type": "key",
+        "text": ";"
+      },
+      {
+        "type": "action",
+        "id": "OPEN_SETTINGS_POPOVER",
+        "fallbackText": "Settings"
+      },
+      {
+        "type": "special",
+        "text": "Enter",
+        "className": "key key-enter"
+      }
+    ],
+    [
+      {
+        "type": "special",
+        "text": "Shift",
+        "className": "key key-shift"
+      },
+      {
+        "type": "action",
+        "id": "PAGE_TOP",
+        "fallbackText": "Scroll To Top"
+      },
+      {
+        "type": "action",
+        "id": "PAGE_BOTTOM",
+        "fallbackText": "Scroll To Bottom"
+      },
+      {
+        "type": "action",
+        "id": "PAGE_UP_INSTANT",
+        "fallbackText": "Page Up Fast"
+      },
+      {
+        "type": "action",
+        "id": "PAGE_DOWN_INSTANT",
+        "fallbackText": "Page Down Fast"
+      },
+      {
+        "type": "key",
+        "text": "B"
+      },
+      {
+        "type": "key",
+        "text": "N"
+      },
+      {
+        "type": "key",
+        "text": "M"
+      },
+      {
+        "type": "key",
+        "text": ","
+      },
+      {
+        "type": "key",
+        "text": "."
+      },
+      {
+        "type": "key",
+        "text": "/"
+      },
+      {
+        "type": "special",
+        "text": "Shift",
+        "className": "key key-shift"
+      }
+    ]
+  ],
+  "basic-navigation-left": [
+    [
+      {
+        "type": "special",
+        "text": "Tab",
+        "className": "key key-tab"
+      },
+      {
+        "type": "key",
+        "text": "Q"
+      },
+      {
+        "type": "key",
+        "text": "W"
+      },
+      {
+        "type": "key",
+        "text": "E"
+      },
+      {
+        "type": "key",
+        "text": "R"
+      },
+      {
+        "type": "key",
+        "text": "T"
+      },
+      {
+        "type": "key",
+        "text": "Y"
+      },
+      {
+        "type": "action",
+        "id": "FORWARD",
+        "fallbackText": "Go Forward"
+      },
+      {
+        "type": "key",
+        "text": "I"
+      },
+      {
+        "type": "action",
+        "id": "TAB_RIGHT",
+        "fallbackText": "Tab Right"
+      },
+      {
+        "type": "action",
+        "id": "TAB_LEFT",
+        "fallbackText": "Tab Left"
+      },
+      {
+        "type": "key",
+        "text": "["
+      },
+      {
+        "type": "key",
+        "text": "]"
+      },
+      {
+        "type": "special",
+        "text": "Backspace",
+        "className": "key key-backspace"
+      }
+    ],
+    [
+      {
+        "type": "special",
+        "text": "Caps",
+        "className": "key key-caps"
+      },
+      {
+        "type": "key",
+        "text": "a/`"
+      },
+      {
+        "type": "key",
+        "text": "S"
+      },
+      {
+        "type": "action",
+        "id": "TOGGLE_KEYBOARD_HELP",
+        "fallbackText": "KB Reference"
+      },
+      {
+        "type": "key",
+        "text": "F"
+      },
+      {
+        "type": "key",
+        "text": "G"
+      },
+      {
+        "type": "key",
+        "text": "H"
+      },
+      {
+        "type": "action",
+        "id": "ACTIVATE",
+        "fallbackText": "Click Element"
+      },
+      {
+        "type": "action",
+        "id": "BACK",
+        "fallbackText": "Go Back"
+      },
+      {
+        "type": "action",
+        "id": "BACK2",
+        "fallbackText": "Go Back"
+      },
+      {
+        "type": "key",
+        "text": ";"
+      },
+      {
+        "type": "action",
+        "id": "OPEN_SETTINGS_POPOVER",
+        "fallbackText": "Settings"
+      },
+      {
+        "type": "special",
+        "text": "Enter",
+        "className": "key key-enter"
+      }
+    ],
+    [
+      {
+        "type": "special",
+        "text": "Shift",
+        "className": "key key-shift"
+      },
+      {
+        "type": "key",
+        "text": "Z"
+      },
+      {
+        "type": "key",
+        "text": "X"
+      },
+      {
+        "type": "key",
+        "text": "C"
+      },
+      {
+        "type": "key",
+        "text": "V"
+      },
+      {
+        "type": "action",
+        "id": "PAGE_BOTTOM",
+        "fallbackText": "Scroll To Bottom"
+      },
+      {
+        "type": "key",
+        "text": "N"
+      },
+      {
+        "type": "action",
+        "id": "PAGE_DOWN_INSTANT",
+        "fallbackText": "Page Down Fast"
+      },
+      {
+        "type": "action",
+        "id": "PAGE_UP_INSTANT",
+        "fallbackText": "Page Up Fast"
+      },
+      {
+        "type": "key",
+        "text": "."
+      },
+      {
+        "type": "action",
+        "id": "PAGE_TOP",
+        "fallbackText": "Scroll To Top"
+      },
+      {
+        "type": "special",
+        "text": "Shift",
+        "className": "key key-shift"
+      }
+    ]
+  ],
+  "click-history-right": [
+    [
+      {
+        "type": "special",
+        "text": "Tab",
+        "className": "key key-tab"
+      },
+      {
+        "type": "key",
+        "text": "Q"
+      },
+      {
+        "type": "key",
+        "text": "W"
+      },
+      {
+        "type": "key",
+        "text": "E"
+      },
+      {
+        "type": "action",
+        "id": "FORWARD",
+        "fallbackText": "Go Forward"
+      },
+      {
+        "type": "key",
+        "text": "T"
+      },
+      {
+        "type": "key",
+        "text": "Y"
+      },
+      {
+        "type": "key",
+        "text": "U"
+      },
+      {
+        "type": "key",
+        "text": "I"
+      },
+      {
+        "type": "key",
+        "text": "O"
+      },
+      {
+        "type": "key",
+        "text": "P"
+      },
+      {
+        "type": "key",
+        "text": "["
+      },
+      {
+        "type": "key",
+        "text": "]"
+      },
+      {
+        "type": "special",
+        "text": "Backspace",
+        "className": "key key-backspace"
+      }
+    ],
+    [
+      {
+        "type": "special",
+        "text": "Caps",
+        "className": "key key-caps"
+      },
+      {
+        "type": "key",
+        "text": "A"
+      },
+      {
+        "type": "action",
+        "id": "BACK2",
+        "fallbackText": "Go Back"
+      },
+      {
+        "type": "action",
+        "id": "BACK",
+        "fallbackText": "Go Back"
+      },
+      {
+        "type": "action",
+        "id": "ACTIVATE",
+        "fallbackText": "Click Element"
+      },
+      {
+        "type": "key",
+        "text": "G"
+      },
+      {
+        "type": "key",
+        "text": "H"
+      },
+      {
+        "type": "key",
+        "text": "J"
+      },
+      {
+        "type": "action",
+        "id": "TOGGLE_KEYBOARD_HELP",
+        "fallbackText": "KB Reference"
+      },
+      {
+        "type": "key",
+        "text": "L"
+      },
+      {
+        "type": "key",
+        "text": ";"
+      },
+      {
+        "type": "action",
+        "id": "OPEN_SETTINGS_POPOVER",
+        "fallbackText": "Settings"
+      },
+      {
+        "type": "special",
+        "text": "Enter",
+        "className": "key key-enter"
+      }
+    ],
+    [
+      {
+        "type": "special",
+        "text": "Shift",
+        "className": "key key-shift"
+      },
+      {
+        "type": "key",
+        "text": "Z"
+      },
+      {
+        "type": "key",
+        "text": "X"
+      },
+      {
+        "type": "key",
+        "text": "C"
+      },
+      {
+        "type": "key",
+        "text": "V"
+      },
+      {
+        "type": "key",
+        "text": "B"
+      },
+      {
+        "type": "key",
+        "text": "N"
+      },
+      {
+        "type": "key",
+        "text": "M"
+      },
+      {
+        "type": "key",
+        "text": ","
+      },
+      {
+        "type": "key",
+        "text": "."
+      },
+      {
+        "type": "key",
+        "text": "/"
+      },
+      {
+        "type": "special",
+        "text": "Shift",
+        "className": "key key-shift"
+      }
+    ]
+  ],
+  "click-history-left": [
+    [
+      {
+        "type": "special",
+        "text": "Tab",
+        "className": "key key-tab"
+      },
+      {
+        "type": "key",
+        "text": "Q"
+      },
+      {
+        "type": "key",
+        "text": "W"
+      },
+      {
+        "type": "key",
+        "text": "E"
+      },
+      {
+        "type": "key",
+        "text": "R"
+      },
+      {
+        "type": "key",
+        "text": "T"
+      },
+      {
+        "type": "key",
+        "text": "Y"
+      },
+      {
+        "type": "action",
+        "id": "FORWARD",
+        "fallbackText": "Go Forward"
+      },
+      {
+        "type": "key",
+        "text": "I"
+      },
+      {
+        "type": "key",
+        "text": "O"
+      },
+      {
+        "type": "key",
+        "text": "P"
+      },
+      {
+        "type": "key",
+        "text": "["
+      },
+      {
+        "type": "key",
+        "text": "]"
+      },
+      {
+        "type": "special",
+        "text": "Backspace",
+        "className": "key key-backspace"
+      }
+    ],
+    [
+      {
+        "type": "special",
+        "text": "Caps",
+        "className": "key key-caps"
+      },
+      {
+        "type": "key",
+        "text": "a/`"
+      },
+      {
+        "type": "key",
+        "text": "S"
+      },
+      {
+        "type": "action",
+        "id": "TOGGLE_KEYBOARD_HELP",
+        "fallbackText": "KB Reference"
+      },
+      {
+        "type": "key",
+        "text": "F"
+      },
+      {
+        "type": "key",
+        "text": "G"
+      },
+      {
+        "type": "key",
+        "text": "H"
+      },
+      {
+        "type": "action",
+        "id": "ACTIVATE",
+        "fallbackText": "Click Element"
+      },
+      {
+        "type": "action",
+        "id": "BACK",
+        "fallbackText": "Go Back"
+      },
+      {
+        "type": "action",
+        "id": "BACK2",
+        "fallbackText": "Go Back"
+      },
+      {
+        "type": "key",
+        "text": ";"
+      },
+      {
+        "type": "action",
+        "id": "OPEN_SETTINGS_POPOVER",
+        "fallbackText": "Settings"
+      },
+      {
+        "type": "special",
+        "text": "Enter",
+        "className": "key key-enter"
+      }
+    ],
+    [
+      {
+        "type": "special",
+        "text": "Shift",
+        "className": "key key-shift"
+      },
+      {
+        "type": "key",
+        "text": "Z"
+      },
+      {
+        "type": "key",
+        "text": "X"
+      },
+      {
+        "type": "key",
+        "text": "C"
+      },
+      {
+        "type": "key",
+        "text": "V"
+      },
+      {
+        "type": "key",
+        "text": "B"
+      },
+      {
+        "type": "key",
+        "text": "N"
+      },
+      {
+        "type": "key",
+        "text": "M"
+      },
+      {
+        "type": "key",
+        "text": ","
+      },
+      {
+        "type": "key",
+        "text": "."
+      },
+      {
+        "type": "key",
+        "text": "/"
+      },
+      {
+        "type": "special",
+        "text": "Shift",
+        "className": "key key-shift"
+      }
+    ]
   ]
 };
   const EARLY_KEYBINDINGS_BY_ID = {
@@ -560,13 +1276,6 @@
       "displayKey": "J",
       "keyboardClass": "key-gray"
     },
-    "TOGGLE_KEYBOARD_HELP": {
-      "label": "KB Reference",
-      "description": "Show/Hide the floating KeyPilot keyboard reference",
-      "keyLabel": "K",
-      "displayKey": "K",
-      "keyboardClass": "key-purple"
-    },
     "OMNIBOX": {
       "label": "Omnibox",
       "description": "Open Omnibox (Address Bar Overlay)",
@@ -580,13 +1289,6 @@
       "keyLabel": ";",
       "displayKey": ";",
       "keyboardClass": "key-launcher-orange"
-    },
-    "OPEN_SETTINGS_POPOVER": {
-      "label": "Settings",
-      "description": "Open KeyPilot Settings",
-      "keyLabel": "'",
-      "displayKey": "'",
-      "keyboardClass": "key-settings-dark"
     },
     "PAGE_TOP": {
       "label": "Scroll To Top",
@@ -744,13 +1446,6 @@
       "displayKey": "F",
       "keyboardClass": "key-gray"
     },
-    "TOGGLE_KEYBOARD_HELP": {
-      "label": "KB Reference",
-      "description": "Show/Hide the floating KeyPilot keyboard reference",
-      "keyLabel": "D",
-      "displayKey": "D",
-      "keyboardClass": "key-purple"
-    },
     "OMNIBOX": {
       "label": "Omnibox",
       "description": "Open Omnibox (Address Bar Overlay)",
@@ -764,13 +1459,6 @@
       "keyLabel": "a/`",
       "displayKey": "a/`",
       "keyboardClass": "key-launcher-orange"
-    },
-    "OPEN_SETTINGS_POPOVER": {
-      "label": "Settings",
-      "description": "Open KeyPilot Settings",
-      "keyLabel": "'",
-      "displayKey": "'",
-      "keyboardClass": "key-settings-dark"
     },
     "PAGE_TOP": {
       "label": "Scroll To Top",
@@ -813,6 +1501,210 @@
       "keyLabel": ".",
       "displayKey": ".",
       "keyboardClass": "key-cols"
+    }
+  },
+  "basic-navigation-right": {
+    "TAB_LEFT": {
+      "label": "Tab Left",
+      "description": "Move To Previous Tab",
+      "keyLabel": "Q",
+      "displayKey": "Q",
+      "keyboardClass": "key-gray"
+    },
+    "TAB_RIGHT": {
+      "label": "Tab Right",
+      "description": "Move To Next Tab",
+      "keyLabel": "W",
+      "displayKey": "W",
+      "keyboardClass": "key-gray"
+    },
+    "FORWARD": {
+      "label": "Go Forward",
+      "description": "Go Forward (History)",
+      "keyLabel": "R",
+      "displayKey": "R",
+      "keyboardClass": "key-forward"
+    },
+    "BACK2": {
+      "label": "Go Back",
+      "description": "Go Back (History)",
+      "keyLabel": "S",
+      "displayKey": "S",
+      "keyboardClass": "key-back"
+    },
+    "BACK": {
+      "label": "Go Back",
+      "description": "Go Back (History)",
+      "keyLabel": "D",
+      "displayKey": "D",
+      "keyboardClass": "key-back"
+    },
+    "ACTIVATE": {
+      "label": "Click Element",
+      "description": "Click Element",
+      "keyLabel": "F",
+      "displayKey": "F",
+      "keyboardClass": "key-activate"
+    },
+    "PAGE_TOP": {
+      "label": "Scroll To Top",
+      "description": "Scroll to Top",
+      "keyLabel": "Z",
+      "displayKey": "Z",
+      "keyboardClass": "key-scroll"
+    },
+    "PAGE_BOTTOM": {
+      "label": "Scroll To Bottom",
+      "description": "Scroll to Bottom",
+      "keyLabel": "X",
+      "displayKey": "X",
+      "keyboardClass": "key-scroll"
+    },
+    "PAGE_UP_INSTANT": {
+      "label": "Page Up Fast",
+      "description": "Page Up (Instant)",
+      "keyLabel": "C",
+      "displayKey": "C",
+      "keyboardClass": "key-scroll"
+    },
+    "PAGE_DOWN_INSTANT": {
+      "label": "Page Down Fast",
+      "description": "Page Down (Instant)",
+      "keyLabel": "V",
+      "displayKey": "V",
+      "keyboardClass": "key-scroll"
+    }
+  },
+  "basic-navigation-left": {
+    "TAB_LEFT": {
+      "label": "Tab Left",
+      "description": "Move To Previous Tab",
+      "keyLabel": "P",
+      "displayKey": "P",
+      "keyboardClass": "key-gray"
+    },
+    "TAB_RIGHT": {
+      "label": "Tab Right",
+      "description": "Move To Next Tab",
+      "keyLabel": "O",
+      "displayKey": "O",
+      "keyboardClass": "key-gray"
+    },
+    "FORWARD": {
+      "label": "Go Forward",
+      "description": "Go Forward (History)",
+      "keyLabel": "U",
+      "displayKey": "U",
+      "keyboardClass": "key-forward"
+    },
+    "BACK2": {
+      "label": "Go Back",
+      "description": "Go Back (History)",
+      "keyLabel": "L",
+      "displayKey": "L",
+      "keyboardClass": "key-back"
+    },
+    "BACK": {
+      "label": "Go Back",
+      "description": "Go Back (History)",
+      "keyLabel": "K",
+      "displayKey": "K",
+      "keyboardClass": "key-back"
+    },
+    "ACTIVATE": {
+      "label": "Click Element",
+      "description": "Click Element",
+      "keyLabel": "J",
+      "displayKey": "J",
+      "keyboardClass": "key-activate"
+    },
+    "PAGE_TOP": {
+      "label": "Scroll To Top",
+      "description": "Scroll to Top",
+      "keyLabel": "/",
+      "displayKey": "/",
+      "keyboardClass": "key-scroll"
+    },
+    "PAGE_BOTTOM": {
+      "label": "Scroll To Bottom",
+      "description": "Scroll to Bottom",
+      "keyLabel": "B",
+      "displayKey": "B",
+      "keyboardClass": "key-scroll"
+    },
+    "PAGE_UP_INSTANT": {
+      "label": "Page Up Fast",
+      "description": "Page Up (Instant)",
+      "keyLabel": ",",
+      "displayKey": ",",
+      "keyboardClass": "key-scroll"
+    },
+    "PAGE_DOWN_INSTANT": {
+      "label": "Page Down Fast",
+      "description": "Page Down (Instant)",
+      "keyLabel": "M",
+      "displayKey": "M",
+      "keyboardClass": "key-scroll"
+    }
+  },
+  "click-history-right": {
+    "FORWARD": {
+      "label": "Go Forward",
+      "description": "Go Forward (History)",
+      "keyLabel": "R",
+      "displayKey": "R",
+      "keyboardClass": "key-forward"
+    },
+    "BACK2": {
+      "label": "Go Back",
+      "description": "Go Back (History)",
+      "keyLabel": "S",
+      "displayKey": "S",
+      "keyboardClass": "key-back"
+    },
+    "BACK": {
+      "label": "Go Back",
+      "description": "Go Back (History)",
+      "keyLabel": "D",
+      "displayKey": "D",
+      "keyboardClass": "key-back"
+    },
+    "ACTIVATE": {
+      "label": "Click Element",
+      "description": "Click Element",
+      "keyLabel": "F",
+      "displayKey": "F",
+      "keyboardClass": "key-activate"
+    }
+  },
+  "click-history-left": {
+    "FORWARD": {
+      "label": "Go Forward",
+      "description": "Go Forward (History)",
+      "keyLabel": "U",
+      "displayKey": "U",
+      "keyboardClass": "key-forward"
+    },
+    "BACK2": {
+      "label": "Go Back",
+      "description": "Go Back (History)",
+      "keyLabel": "L",
+      "displayKey": "L",
+      "keyboardClass": "key-back"
+    },
+    "BACK": {
+      "label": "Go Back",
+      "description": "Go Back (History)",
+      "keyLabel": "K",
+      "displayKey": "K",
+      "keyboardClass": "key-back"
+    },
+    "ACTIVATE": {
+      "label": "Click Element",
+      "description": "Click Element",
+      "keyLabel": "J",
+      "displayKey": "J",
+      "keyboardClass": "key-activate"
     }
   }
 };
@@ -1125,13 +2017,6 @@
     "displayKey": "J",
     "keyboardClass": "key-gray"
   },
-  "TOGGLE_KEYBOARD_HELP": {
-    "label": "KB Reference",
-    "description": "Show/Hide the floating KeyPilot keyboard reference",
-    "keyLabel": "K",
-    "displayKey": "K",
-    "keyboardClass": "key-purple"
-  },
   "OMNIBOX": {
     "label": "Omnibox",
     "description": "Open Omnibox (Address Bar Overlay)",
@@ -1145,13 +2030,6 @@
     "keyLabel": ";",
     "displayKey": ";",
     "keyboardClass": "key-launcher-orange"
-  },
-  "OPEN_SETTINGS_POPOVER": {
-    "label": "Settings",
-    "description": "Open KeyPilot Settings",
-    "keyLabel": "'",
-    "displayKey": "'",
-    "keyboardClass": "key-settings-dark"
   },
   "PAGE_TOP": {
     "label": "Scroll To Top",
@@ -3707,6 +4585,7 @@
   let keyboardLayoutId = (typeof DEFAULT_KEYBOARD_LAYOUT_ID === 'string' && DEFAULT_KEYBOARD_LAYOUT_ID)
     ? DEFAULT_KEYBOARD_LAYOUT_ID
     : 'browsing-right';
+  let keyboardShowNumberRow = false;
   let keyboardHelpRoot = null;
   let keyboardHelpKeyboardContainer = null;
   let keyboardHelpStorageListener = null;
@@ -4323,12 +5202,39 @@
     }
   }
 
-  function renderEarlyKeyboard(container, { layoutId } = {}) {
+  /** Prepend number row (same shape as addNumberRowToKeyboardUiLayout). */
+  function addNumberRowToEarlyKeyboardLayout(layout) {
+    const base = Array.isArray(layout) ? layout : [];
+    try {
+      const first = base[0];
+      if (Array.isArray(first) && first.some((i) => i && i.type === 'key' && String(i.text || '').trim() === '1')) {
+        return base;
+      }
+    } catch { /* ignore */ }
+    const numberRow = [
+      { type: 'key', text: '1' },
+      { type: 'key', text: '2' },
+      { type: 'key', text: '3' },
+      { type: 'key', text: '4' },
+      { type: 'key', text: '5' },
+      { type: 'key', text: '6' },
+      { type: 'key', text: '7' },
+      { type: 'key', text: '8' },
+      { type: 'key', text: '9' },
+      { type: 'key', text: '0' }
+    ];
+    return [numberRow, ...base];
+  }
+
+  function renderEarlyKeyboard(container, { layoutId, includeNumberRow } = {}) {
     if (!container) return;
     const doc = container.ownerDocument || document;
     ensureKeybindingsUiStylesInjected(doc);
 
-    // If already rendered, don't redo work.
+    const desired = normalizeKeyboardLayoutId(layoutId || DEFAULT_KEYBOARD_LAYOUT_ID);
+    const wantNumRow = includeNumberRow === undefined ? !!keyboardShowNumberRow : !!includeNumberRow;
+
+    // If already rendered for the same layout + number-row mode, don't redo work.
     let existing = null;
     try { existing = container.querySelector(':scope > .keyboard-visual'); } catch { /* ignore */ }
     if (!existing) {
@@ -4336,22 +5242,25 @@
     }
     if (existing && existing.dataset && existing.dataset.kpKeyboardBuilt === 'true') {
       const existingLayoutId = String(existing.dataset.kpLayoutId || '');
-      const desired = normalizeKeyboardLayoutId(layoutId || DEFAULT_KEYBOARD_LAYOUT_ID);
-      if (!existingLayoutId || existingLayoutId === desired) return;
-      // Layout changed: re-render so key positions update (prevents right->left mismatch).
+      const existingNum = existing.dataset.kpNumRow === '1';
+      if ((!existingLayoutId || existingLayoutId === desired) && existingNum === wantNumRow) return;
+      // Layout or number-row mode changed: re-render so bounds stay correct on first paint.
     }
 
     container.textContent = '';
     const visual = el(doc, 'div', 'keyboard-visual kp-keybindings-ui');
     visual.dataset.kpKeyboardBuilt = 'true';
     try {
-      const desired = normalizeKeyboardLayoutId(layoutId || DEFAULT_KEYBOARD_LAYOUT_ID);
       visual.dataset.kpLayoutId = desired;
+      visual.dataset.kpNumRow = wantNumRow ? '1' : '0';
     } catch { /* ignore */ }
     container.appendChild(visual);
 
-    const data = getEarlyKeyboardDataForLayout(layoutId || DEFAULT_KEYBOARD_LAYOUT_ID);
-    const layout = data.layout || KEYBINDINGS_KEYBOARD_LAYOUT;
+    const data = getEarlyKeyboardDataForLayout(desired);
+    let layout = data.layout || KEYBINDINGS_KEYBOARD_LAYOUT;
+    if (wantNumRow) {
+      try { layout = addNumberRowToEarlyKeyboardLayout(layout); } catch { /* ignore */ }
+    }
     const bindings = data.bindings || EARLY_KEYBINDINGS;
 
     for (const row of layout) {
@@ -5577,7 +6486,10 @@
     keyboardHelpKeyboardContainer = keyboardContainer;
 
     // Pre-render the keyboard immediately so the panel doesn't start as only a titlebar.
-    renderEarlyKeyboard(keyboardContainer, { layoutId: keyboardLayoutId });
+    renderEarlyKeyboard(keyboardContainer, {
+      layoutId: keyboardLayoutId,
+      includeNumberRow: keyboardShowNumberRow
+    });
     // Reclamp after content has a real height (avoids free tops saved with h=0 going off-screen).
     try {
       earlyApplyPanelPosition(root, earlyPanelPositions && earlyPanelPositions.keyboardReference, {
@@ -5725,10 +6637,19 @@
       try {
         const next = changes[SETTINGS_STORAGE_KEY]?.newValue;
         const nextId = normalizeKeyboardLayoutId(next && typeof next === 'object' ? next.keyboardLayoutId : null);
-        if (nextId && nextId !== keyboardLayoutId) {
-          keyboardLayoutId = nextId;
-          try { renderEarlyKeyboard(keyboardHelpKeyboardContainer, { layoutId: keyboardLayoutId }); } catch { /* ignore */ }
-          updateKeyboardHelpHintForLayout(keyboardLayoutId);
+        const nextNum = !!(next && typeof next === 'object' && next.keyboardReferenceShowNumberRow);
+        const layoutChanged = nextId && nextId !== keyboardLayoutId;
+        const numChanged = nextNum !== keyboardShowNumberRow;
+        if (layoutChanged) keyboardLayoutId = nextId;
+        if (numChanged) keyboardShowNumberRow = nextNum;
+        if (layoutChanged || numChanged) {
+          try {
+            renderEarlyKeyboard(keyboardHelpKeyboardContainer, {
+              layoutId: keyboardLayoutId,
+              includeNumberRow: keyboardShowNumberRow
+            });
+          } catch { /* ignore */ }
+          if (layoutChanged) updateKeyboardHelpHintForLayout(keyboardLayoutId);
         }
       } catch { /* ignore */ }
       
@@ -5774,13 +6695,19 @@
           const st = result && result[SETTINGS_STORAGE_KEY] && typeof result[SETTINGS_STORAGE_KEY] === 'object' ? result[SETTINGS_STORAGE_KEY] : null;
           settingsObj = st;
           keyboardLayoutId = normalizeKeyboardLayoutId(st && st.keyboardLayoutId);
+          keyboardShowNumberRow = !!(st && st.keyboardReferenceShowNumberRow);
           earlyPanelPositions = readEarlyPanelPositionsFromSettingsObj(st);
         } catch {
           keyboardLayoutId = normalizeKeyboardLayoutId(keyboardLayoutId);
         }
         updateCursorVisibility();
         ensureEarlyFloatingKeyboardHelpShell();
-        try { renderEarlyKeyboard(keyboardHelpKeyboardContainer, { layoutId: keyboardLayoutId }); } catch { /* ignore */ }
+        try {
+          renderEarlyKeyboard(keyboardHelpKeyboardContainer, {
+            layoutId: keyboardLayoutId,
+            includeNumberRow: keyboardShowNumberRow
+          });
+        } catch { /* ignore */ }
         updateKeyboardHelpHintForLayout(keyboardLayoutId);
         applyEarlyKeyboardHelpVisibility(keyboardHelpVisible);
         setupKeyboardHelpStorageListener();
@@ -5820,6 +6747,7 @@
             : null;
           if (settingsObj) {
             keyboardLayoutId = normalizeKeyboardLayoutId(settingsObj.keyboardLayoutId);
+            keyboardShowNumberRow = !!settingsObj.keyboardReferenceShowNumberRow;
             earlyPanelPositions = readEarlyPanelPositionsFromSettingsObj(settingsObj);
           }
         } catch { /* ignore */ }

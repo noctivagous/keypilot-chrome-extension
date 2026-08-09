@@ -23,15 +23,32 @@ import {
 } from './modules/inspector-mode.js';
 import { MODES, INSPECTOR_KIND, CURSOR_MODE, CSS_CLASSES, COLORS, Z_INDEX, RECTANGLE_SELECTION, EDGE_ONLY_SELECTION, FEATURE_FLAGS, SCROLL, CLICKABLE_CATEGORY } from './config/constants.js';
 import { MSG } from './messaging/types.js';
-import { buildKeybindingsForLayout, DEFAULT_KEYBOARD_LAYOUT_ID, getKeyboardUiLayoutForLayout, normalizeKeyboardLayoutId } from './config/keyboard-layouts.js';
+import {
+  buildKeybindingsForLayout,
+  buildSystemKeybindings,
+  DEFAULT_KEYBOARD_HANDEDNESS,
+  DEFAULT_KEYBOARD_LAYOUT_ID,
+  getInstalledKeyboardLayoutFamilyIds,
+  getKeyboardUiLayoutForLayout,
+  KEYBINDING_ACTION_DEFS,
+  normalizeKeyboardHandedness,
+  normalizeKeyboardLayoutFamilyId,
+  resolveKeyboardLayoutId
+} from './config/keyboard-layouts.js';
 import { FloatingKeyboardHelp } from './ui/floating-keyboard-help.js';
 import { ControlStrip } from './ui/control-strip.js';
 import { pinKeyPopover } from './ui/keybindings-ui.js';
-import { getActionMode } from './ui/key-action-settings.js';
+import { getActionMode, getActionParameter } from './ui/key-action-settings.js';
+import { deliverActionResult, normalizeActionResultDestination } from './modules/action-result-delivery.js';
+import { sendTextToAi } from './modules/ai-text-service.js';
 import { OmniboxManager } from './modules/omnibox-manager.js';
 import { TabHistoryPopover } from './modules/tab-history-popover.js';
 import { LauncherPopover } from './modules/launcher-popover.js';
 import { DEFAULT_SETTINGS, getSettings, setSettings, SETTINGS_STORAGE_KEY, scrollBehaviorFromSpeed } from './modules/settings-manager.js';
+import { getUserKeyboardLayoutById, getUserActionById, listUserActions, listUserMacroKeys, listUserMacros } from './modules/keyboard-layout-store.js';
+import { runMacroKeyById, runLegacyMacroKeyFunction } from './modules/macro-key-runtime.js';
+import { getFunctionDef } from './config/function-library.js';
+import { toggleKeyboardLayoutConfigurator } from './ui/keyboard-layout-configurator.js';
 import {
   isExtensionContextValid,
   noteExtensionContextError,
@@ -85,9 +102,20 @@ export class KeyPilot extends EventManager {
     this.shadowDOMManager = new ShadowDOMManager(this.styleManager);
     this.floatingKeyboardHelp = null;
     this.controlStrip = null;
-    this.keybindings = buildKeybindingsForLayout(DEFAULT_KEYBOARD_LAYOUT_ID);
+    this._systemKeybindings = buildSystemKeybindings(DEFAULT_KEYBOARD_HANDEDNESS);
+    this._layoutKeybindings = buildKeybindingsForLayout(DEFAULT_KEYBOARD_LAYOUT_ID);
+    this.keybindings = {
+      ...this._layoutKeybindings,
+      ...this._systemKeybindings
+    };
     this._keyboardLayoutId = DEFAULT_KEYBOARD_LAYOUT_ID;
     this._keyboardUiLayout = getKeyboardUiLayoutForLayout(DEFAULT_KEYBOARD_LAYOUT_ID);
+    this._currentKeyboardLayoutId = 'builtin';
+    this._currentUserLayout = null;
+    this._currentUserMacros = [];
+    this._currentUserMacroKeys = [];
+    this._currentUserActions = [];
+    this._currentKeySlotMap = null;
     this.omniboxManager = new OmniboxManager({
       onClose: () => {
         try {
@@ -415,7 +443,10 @@ export class KeyPilot extends EventManager {
           : null;
       const inKeyboardHelp =
         !!(keyEl && keyEl.closest && keyEl.closest('.kp-floating-keyboard-help'));
-      if (keyEl && inKeyboardHelp) detail.isKeyboardHelpKey = true;
+      // In layout edit mode, F should not pin key-info popovers (keys show delete × instead).
+      const editing = !!(this.floatingKeyboardHelp && typeof this.floatingKeyboardHelp.isEditMode === 'function'
+        && this.floatingKeyboardHelp.isEditMode());
+      if (keyEl && inKeyboardHelp && !editing) detail.isKeyboardHelpKey = true;
     } catch {
       // ignore
     }
@@ -662,6 +693,9 @@ export class KeyPilot extends EventManager {
     try {
       this._applyKeyboardLayoutFromSettings();
     } catch { /* ignore */ }
+    try {
+      void this._refreshCurrentKeyboardLayoutFromSettings();
+    } catch { /* ignore */ }
 
     // Apply cursor-mode behavior immediately.
     const cursorEnabled = this._isCustomCursorModeEnabled();
@@ -881,10 +915,21 @@ export class KeyPilot extends EventManager {
   }
 
   _applyKeyboardLayoutFromSettings() {
-    const layoutId = normalizeKeyboardLayoutId(this._settings?.keyboardLayoutId);
+    const handedness = normalizeKeyboardHandedness(this._settings?.keyboardHandedness);
+    const layoutId = resolveKeyboardLayoutId({
+      familyId: this._settings?.keyboardLayoutFamilyId,
+      handedness
+    });
     this._keyboardLayoutId = layoutId;
-    this.keybindings = buildKeybindingsForLayout(layoutId);
-    this._keyboardUiLayout = getKeyboardUiLayoutForLayout(layoutId);
+    // Layout family assignments only — system keys live in a separate always-on layer.
+    this._layoutKeybindings = buildKeybindingsForLayout(layoutId);
+    this._systemKeybindings = buildSystemKeybindings(handedness);
+    this.keybindings = {
+      ...this._layoutKeybindings,
+      ...this._systemKeybindings
+    };
+    const showNumberRow = !!this._settings?.keyboardReferenceShowNumberRow;
+    this._keyboardUiLayout = getKeyboardUiLayoutForLayout(layoutId, { includeNumberRow: showNumberRow });
 
     // Keep text-input SVG background hints in sync with layout-bound keys (F vs J, Esc).
     try {
@@ -903,6 +948,298 @@ export class KeyPilot extends EventManager {
         }
       }
     } catch { /* ignore */ }
+  }
+
+  async _refreshCurrentKeyboardLayoutFromSettings() {
+    let sel = String(this._settings?.currentKeyboardLayoutId || 'builtin');
+    this._currentKeyboardLayoutId = sel;
+    this._currentUserLayout = null;
+    this._currentUserMacros = [];
+    this._currentUserMacroKeys = [];
+    this._currentUserActions = [];
+    this._currentKeySlotMap = null;
+
+    if (sel && sel.startsWith('user:')) {
+      const id = sel.slice('user:'.length);
+      const layout = await getUserKeyboardLayoutById(id);
+      if (layout) {
+        this._currentUserLayout = layout;
+        try { this._currentUserMacros = await listUserMacros(); } catch { this._currentUserMacros = []; }
+        try { this._currentUserMacroKeys = await listUserMacroKeys(); } catch { this._currentUserMacroKeys = []; }
+        try { this._currentUserActions = await listUserActions(); } catch { this._currentUserActions = []; }
+        // Slots map: key label -> assigned item
+        this._currentKeySlotMap = layout.slots && typeof layout.slots === 'object' ? layout.slots : {};
+      } else {
+        // Orphaned selection (layout deleted) — fall back to built-in and heal settings.
+        sel = 'builtin';
+        this._currentKeyboardLayoutId = 'builtin';
+        try {
+          if (this._settings) this._settings.currentKeyboardLayoutId = 'builtin';
+          await setSettings({ currentKeyboardLayoutId: 'builtin' });
+        } catch { /* ignore */ }
+      }
+    }
+
+    // If the floating keyboard reference is active, keep it in sync (including title dropdown).
+    try {
+      if (this.floatingKeyboardHelp && typeof this.floatingKeyboardHelp.setActiveLayoutSelection === 'function') {
+        this.floatingKeyboardHelp.setActiveLayoutSelection({
+          currentKeyboardLayoutId: this._currentKeyboardLayoutId,
+          userLayout: this._currentUserLayout,
+          userMacros: this._currentUserMacros,
+          userMacroKeys: this._currentUserMacroKeys
+        });
+      }
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Push a just-saved user layout into live dispatch + Keyboard Reference immediately
+   * (no page refresh). Used after place / DnD / Config CRUD.
+   * @param {any} layout
+   * @param {{ setAsCurrent?: boolean, macros?: any[], macroKeys?: any[], actions?: any[] }} [opts]
+   */
+  async applyLiveUserLayout(layout, opts = {}) {
+    if (!layout || !layout.id) return;
+    const sel = `user:${layout.id}`;
+    const isCurrent =
+      !!opts.setAsCurrent || String(this._currentKeyboardLayoutId || '') === sel;
+
+    if (opts.setAsCurrent) {
+      this._currentKeyboardLayoutId = sel;
+      if (this._settings) this._settings.currentKeyboardLayoutId = sel;
+      try {
+        await setSettings({ currentKeyboardLayoutId: sel });
+      } catch { /* ignore */ }
+    }
+
+    // Only replace live key dispatch when this layout is (or just became) current.
+    if (isCurrent) {
+      this._currentUserLayout = layout;
+      this._currentKeySlotMap = layout.slots && typeof layout.slots === 'object' ? layout.slots : {};
+      if (Array.isArray(opts.macros)) this._currentUserMacros = opts.macros;
+      if (Array.isArray(opts.macroKeys)) this._currentUserMacroKeys = opts.macroKeys;
+      if (Array.isArray(opts.actions)) this._currentUserActions = opts.actions;
+    }
+
+    try {
+      this.floatingKeyboardHelp?.setActiveLayoutSelection?.({
+        currentKeyboardLayoutId: this._currentKeyboardLayoutId || (isCurrent ? sel : 'builtin'),
+        userLayout: this._currentUserLayout,
+        userMacros: this._currentUserMacros,
+        userMacroKeys: this._currentUserMacroKeys
+      });
+    } catch { /* ignore */ }
+  }
+
+  _maybeHandleCurrentLayoutBinding(e) {
+    try {
+      const sel = String(this._currentKeyboardLayoutId || '');
+      if (!sel || !sel.startsWith('user:')) return false;
+      const slots = this._currentKeySlotMap;
+      if (!slots || typeof slots !== 'object') return false;
+
+      const key = (e && typeof e.key === 'string') ? e.key : '';
+      if (!key || key === ' ') return false;
+      const slot = String(key).trim().toUpperCase();
+      if (!slot) return false;
+      const assigned = slots[slot];
+      if (!assigned || !assigned.type || !assigned.id) return false;
+
+      if (assigned.type === 'macro') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        this._runMacroById(String(assigned.id));
+        return true;
+      }
+
+      if (assigned.type === 'macroKey') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        void this._runMacroKeyById(String(assigned.id));
+        return true;
+      }
+
+      if (assigned.type === 'action') {
+        const def = KEYBINDING_ACTION_DEFS?.[assigned.id];
+        const handlerName = def && def.handler ? String(def.handler) : '';
+        const fn = handlerName ? this[handlerName] : null;
+        if (typeof fn !== 'function') return false;
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        try {
+          const ret = fn.call(this, e);
+          if (ret && typeof ret.then === 'function') {
+            void ret.catch((err) => {
+              console.warn('[KeyPilot] Action handler failed:', handlerName, err);
+            });
+          }
+        } catch (err) {
+          console.warn('[KeyPilot] Action handler threw:', handlerName, err);
+        }
+        return true;
+      }
+
+      // Unified Function Library dispatch (see function-library.js). `assigned.id` is either
+      // a bare Function id (parameterless, e.g. "ACTIVATE") or an Action Instance id
+      // ("action:<uuid>") whose bound parameters live in `_currentUserActions`.
+      if (assigned.type === 'function') {
+        return this._dispatchFunctionSlot(String(assigned.id), e);
+      }
+    } catch {
+      // ignore
+    }
+    return false;
+  }
+
+  /**
+   * @param {string} id Bare Function id or Action Instance id ("action:<uuid>").
+   * @param {KeyboardEvent} e
+   * @returns {boolean}
+   */
+  _dispatchFunctionSlot(id, e) {
+    let functionId = id;
+    let parameters;
+    let instanceId;
+
+    if (id.startsWith('action:')) {
+      const instance = (this._currentUserActions || []).find((a) => a && a.id === id);
+      if (!instance) {
+        // Not cached yet (e.g. instance just created elsewhere) — resolve asynchronously.
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        void this._dispatchFunctionSlotAsync(id, e);
+        return true;
+      }
+      functionId = instance.functionId;
+      parameters = instance.parameters;
+      instanceId = id;
+    }
+
+    const def = getFunctionDef(functionId);
+    const handlerName = def && def.handler ? String(def.handler) : '';
+    const fn = handlerName ? this[handlerName] : null;
+    if (typeof fn !== 'function') return false;
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    try {
+      const ret = fn.call(this, e, parameters, { functionId, instanceId });
+      if (ret && typeof ret.then === 'function') {
+        void ret.catch((err) => {
+          console.warn('[KeyPilot] Function handler failed:', handlerName, err);
+        });
+      }
+    } catch (err) {
+      console.warn('[KeyPilot] Function handler threw:', handlerName, err);
+    }
+    return true;
+  }
+
+  /**
+   * @param {string} instanceId
+   * @param {KeyboardEvent} e
+   */
+  async _dispatchFunctionSlotAsync(instanceId, e) {
+    try {
+      const instance = await getUserActionById(instanceId);
+      if (!instance) return;
+      const def = getFunctionDef(instance.functionId);
+      const handlerName = def && def.handler ? String(def.handler) : '';
+      const fn = handlerName ? this[handlerName] : null;
+      if (typeof fn !== 'function') return;
+      fn.call(this, e, instance.parameters, { functionId: instance.functionId, instanceId });
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Always-on system keybinding layer (Esc, KB Reference, Settings).
+   * Independent of the selected layout family / user layout.
+   * Alt+ chrome hotkeys (Alt+K, Alt+C, …) are handled earlier in handleKeyDown.
+   * @param {KeyboardEvent} e
+   * @returns {boolean}
+   */
+  _maybeHandleSystemLayerBinding(e) {
+    try {
+      const systemKb = this._systemKeybindings && typeof this._systemKeybindings === 'object'
+        ? this._systemKeybindings
+        : buildSystemKeybindings(this._settings?.keyboardHandedness);
+      for (const keybinding of Object.values(systemKb || {})) {
+        if (!keybinding?.handler || !Array.isArray(keybinding.keys)) continue;
+        const matchOn = Array.isArray(keybinding.matchOn) ? keybinding.matchOn : ['key'];
+        const isMatch = matchOn.some((field) => keybinding.keys.includes(e[field]));
+        if (!isMatch) continue;
+        if (this._isUnsafeToRunActionKey(e)) return false;
+        const handlerFn = this[keybinding.handler];
+        if (typeof handlerFn !== 'function') return false;
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        handlerFn.call(this, e);
+        return true;
+      }
+    } catch {
+      // ignore
+    }
+    return false;
+  }
+
+  _runMacroById(macroId) {
+    // Placeholder: macro execution pipeline will be implemented later.
+    try {
+      const id = String(macroId || '');
+      if (!id) return;
+      const label = (this._currentUserMacros || []).find((m) => m && m.id === id)?.label || 'Macro';
+      this.overlayManager?.showNotification?.(`Macro: ${label} (execution not implemented yet)`, 'info');
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Run a configured built-in Macro Key (hotkey / burst / round-robin / …).
+   * @param {string} macroKeyId
+   */
+  async _runMacroKeyById(macroKeyId) {
+    try {
+      await runMacroKeyById(macroKeyId, {
+        notify: (msg, type) => {
+          try { this.overlayManager?.showNotification?.(msg, type || 'info'); } catch { /* ignore */ }
+        }
+      });
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * @param {number} direction -1 for prev, +1 for next
+   */
+  _cycleKeyboardLayoutFamily(direction) {
+    try {
+      const families = getInstalledKeyboardLayoutFamilyIds();
+      if (!Array.isArray(families) || families.length <= 1) return;
+
+      const currentSettings = this._settings || DEFAULT_SETTINGS;
+      const currentFamily = normalizeKeyboardLayoutFamilyId(currentSettings?.keyboardLayoutFamilyId);
+      const idx = families.indexOf(currentFamily);
+      const start = idx >= 0 ? idx : 0;
+      const nextIdx = (start + (direction < 0 ? -1 : 1) + families.length) % families.length;
+      const nextFamily = families[nextIdx];
+
+      // Optimistically apply immediately (so key handling + keyboard reference update without waiting on storage).
+      this._settings = { ...currentSettings, keyboardLayoutFamilyId: nextFamily };
+      this._applyKeyboardLayoutFromSettings();
+
+      // Persist (storage sync will also refresh all tabs).
+      setSettings({ keyboardLayoutFamilyId: nextFamily }).catch(() => { /* ignore */ });
+    } catch {
+      // ignore
+    }
+  }
+
+  _toggleKeyboardLayoutConfigurator() {
+    toggleKeyboardLayoutConfigurator(this);
   }
 
   /**
@@ -939,6 +1276,18 @@ export class KeyPilot extends EventManager {
     } catch {
       // ignore
     }
+    // Immediate in-page updates from Key Action Config (prompt / destination).
+    try {
+      if (!this._actionSettingsDomListener) {
+        this._actionSettingsDomListener = (ev) => {
+          try {
+            const next = ev?.detail?.settings;
+            if (next && typeof next === 'object') this._settings = next;
+          } catch { /* ignore */ }
+        };
+        document.addEventListener('keypilot:action-settings-changed', this._actionSettingsDomListener);
+      }
+    } catch { /* ignore */ }
   }
 
   /**
@@ -1101,6 +1450,17 @@ export class KeyPilot extends EventManager {
           this.floatingKeyboardHelp.setPanelPositionFromSettings(knownPosition);
         }
       }
+
+      try {
+        if (typeof this.floatingKeyboardHelp.setActiveLayoutSelection === 'function') {
+          this.floatingKeyboardHelp.setActiveLayoutSelection({
+            currentKeyboardLayoutId: this._currentKeyboardLayoutId || 'builtin',
+            userLayout: this._currentUserLayout,
+            userMacros: this._currentUserMacros,
+            userMacroKeys: this._currentUserMacroKeys
+          });
+        }
+      } catch { /* ignore */ }
 
       if (next) {
         this.floatingKeyboardHelp.show();
@@ -1785,6 +2145,37 @@ export class KeyPilot extends EventManager {
       return;
     }
 
+    // Alt+[ / Alt+]: cycle through installed keyboard layout families (handedness is a separate setting).
+    if ((e.altKey || e.code === 'AltRight') && (e.code === 'BracketLeft' || e.key === '[')) {
+      if (window !== window.top) return;
+      if (!this.enabled) return;
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      this._cycleKeyboardLayoutFamily(-1);
+      return;
+    }
+    if ((e.altKey || e.code === 'AltRight') && (e.code === 'BracketRight' || e.key === ']')) {
+      if (window !== window.top) return;
+      if (!this.enabled) return;
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      this._cycleKeyboardLayoutFamily(1);
+      return;
+    }
+
+    // Alt+C: keyboard layout configure mode (foundation).
+    if ((e.altKey || e.code === 'AltRight') && (e.key === 'c' || e.key === 'C' || e.code === 'KeyC')) {
+      if (window !== window.top) return;
+      if (!this.enabled) return;
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      this._toggleKeyboardLayoutConfigurator();
+      return;
+    }
+
     // Don't handle keys if extension is disabled
     if (!this.enabled) {
       return;
@@ -1836,12 +2227,24 @@ export class KeyPilot extends EventManager {
     const KB = this.keybindings || {};
 
     // Global default: Escape closes the frontmost "popover-like" UI.
-    // Priority: omnibox → launcher → PopupManager (topmost modal panel).
+    // Priority: layout place-mode → omnibox → launcher → PopupManager (topmost modal panel).
     // Match both e.key and e.code so Escape is reliable across layouts.
     const isCancelKey = KB.CANCEL?.keys?.includes?.(e.key)
       || e.key === 'Escape'
       || e.code === 'Escape';
     if (isCancelKey) {
+      // Click-to-place arrow (layout edit): Escape cancels placement only, not edit mode.
+      try {
+        const help = this.floatingKeyboardHelp;
+        if (help && typeof help.isPlaceTargetingActive === 'function' && help.isPlaceTargetingActive()) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          try { help.cancelPlaceTargeting?.(); } catch { /* ignore */ }
+          return;
+        }
+      } catch { /* ignore */ }
+
       // Omnibox
       try {
         if (currentState.mode === MODES.OMNIBOX || this.omniboxManager?.isOpen?.()) {
@@ -2094,9 +2497,29 @@ export class KeyPilot extends EventManager {
       this.cancelHighlightMode();
     }
 
-    // Handle our keyboard shortcuts (table-driven via KEYBINDINGS.*.handler)
-    for (const keybinding of Object.values(KB)) {
+    // Current keyboard layout handling:
+    // - system layer first (Esc / KB Reference / Settings) — not part of any family
+    // - builtin: layout KEYBINDINGS loop
+    // - user:<id>: exclusive custom slots only (no other built-in layout keys)
+    // Alt+ chrome hotkeys (Alt+K, Alt+C, …) are handled earlier above.
+    if (this._maybeHandleSystemLayerBinding(e)) return;
+
+    const currentSel = String(this._currentKeyboardLayoutId || '');
+    const isUserCurrent = currentSel.startsWith('user:');
+    if (isUserCurrent) {
+      if (this._maybeHandleCurrentLayoutBinding(e)) return;
+      // Exclusive: do not fall back to built-in layout KEYBINDINGS.
+      return;
+    }
+
+    // Handle layout family shortcuts (table-driven via KEYBINDINGS.*.handler).
+    // Skip system-layer ids — already handled above.
+    const layoutKb = this._layoutKeybindings && typeof this._layoutKeybindings === 'object'
+      ? this._layoutKeybindings
+      : KB;
+    for (const keybinding of Object.values(layoutKb)) {
       if (!keybinding?.handler || !Array.isArray(keybinding.keys)) continue;
+      if (keybinding.systemLayer) continue;
 
       const matchOn = Array.isArray(keybinding.matchOn) ? keybinding.matchOn : ['key'];
       const isMatch = matchOn.some((field) => keybinding.keys.includes(e[field]));
@@ -2127,7 +2550,16 @@ export class KeyPilot extends EventManager {
       const handlerFn = this[keybinding.handler];
       if (typeof handlerFn === 'function') {
         // Pass the event so handlers can re-check typing with the real event target.
-        handlerFn.call(this, e);
+        try {
+          const ret = handlerFn.call(this, e);
+          if (ret && typeof ret.then === 'function') {
+            void ret.catch((err) => {
+              console.warn('[KeyPilot] Action handler failed:', keybinding.handler, err);
+            });
+          }
+        } catch (err) {
+          console.warn('[KeyPilot] Action handler threw:', keybinding.handler, err);
+        }
       } else {
         console.warn('[KeyPilot] Missing keybinding handler:', keybinding.handler, keybinding);
       }
@@ -4250,6 +4682,277 @@ export class KeyPilot extends EventManager {
       }
       this.showFlashNotification(message, COLORS.NOTIFICATION_ERROR);
     }
+  }
+
+  /**
+   * Best-effort plain text from KeyPilot highlight selection or native selection.
+   * @returns {string}
+   */
+  getSelectedPlainText() {
+    try {
+      const peeked = this.overlayManager?.peekCharacterSelectedText?.();
+      if (peeked && String(peeked).trim()) return String(peeked);
+    } catch { /* ignore */ }
+
+    try {
+      const sel = typeof window.getSelection === 'function' ? window.getSelection() : null;
+      const t = sel ? String(sel.toString() || '') : '';
+      if (t.trim()) return t;
+    } catch { /* ignore */ }
+
+    try {
+      const el = document.activeElement;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') && typeof el.selectionStart === 'number') {
+        const v = String(el.value || '');
+        const start = el.selectionStart;
+        const end = el.selectionEnd;
+        if (Number.isFinite(start) && Number.isFinite(end) && end > start) {
+          return v.slice(start, end);
+        }
+      }
+      if (el && el.isContentEditable) {
+        const sel = window.getSelection?.();
+        const t = sel ? String(sel.toString() || '') : '';
+        if (t.trim()) return t;
+      }
+    } catch { /* ignore */ }
+
+    try {
+      const shadowSel = this.findSelectionInShadowDOM?.();
+      const t = shadowSel && typeof shadowSel.toString === 'function' ? String(shadowSel.toString() || '') : '';
+      if (t.trim()) return t;
+    } catch { /* ignore */ }
+
+    return '';
+  }
+
+  /** @returns {boolean} */
+  _execDocumentCommand(command) {
+    try {
+      if (typeof document.execCommand !== 'function') return false;
+      return !!document.execCommand(command);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Insert plain text into the focused editable (paste helper when execCommand fails).
+   * @param {string} text
+   * @returns {boolean}
+   */
+  _insertTextAtFocus(text) {
+    const value = String(text ?? '');
+    const el = document.activeElement;
+    if (!el) return false;
+
+    try {
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+        if (el.disabled || el.readOnly) return false;
+        const start = Number.isFinite(el.selectionStart) ? el.selectionStart : String(el.value || '').length;
+        const end = Number.isFinite(el.selectionEnd) ? el.selectionEnd : start;
+        const before = String(el.value || '').slice(0, start);
+        const after = String(el.value || '').slice(end);
+        el.value = before + value + after;
+        const caret = start + value.length;
+        try { el.setSelectionRange(caret, caret); } catch { /* ignore */ }
+        try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch { /* ignore */ }
+        return true;
+      }
+    } catch { /* ignore */ }
+
+    try {
+      if (el.isContentEditable) {
+        if (typeof document.execCommand === 'function') {
+          const ok = document.execCommand('insertText', false, value);
+          if (ok) return true;
+        }
+      }
+    } catch { /* ignore */ }
+
+    return false;
+  }
+
+  async handleClipboardCopyKey() {
+    // Prefer native cut/copy when a real selection exists (preserves rich content).
+    if (this._execDocumentCommand('copy')) {
+      this.showFlashNotification('Copied', COLORS.NOTIFICATION_SUCCESS);
+      this.emitAction('clipboard_copy', { via: 'execCommand' });
+      return;
+    }
+    const text = this.getSelectedPlainText();
+    if (!text.trim()) {
+      this.showFlashNotification('Nothing selected to copy', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+    const ok = await this.copyToClipboard(text);
+    this.showFlashNotification(
+      ok ? 'Copied' : 'Could not copy',
+      ok ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_ERROR
+    );
+    if (ok) this.emitAction('clipboard_copy', { via: 'clipboardApi', length: text.length });
+  }
+
+  async handleClipboardCutKey() {
+    if (this._execDocumentCommand('cut')) {
+      this.showFlashNotification('Cut', COLORS.NOTIFICATION_SUCCESS);
+      this.emitAction('clipboard_cut', { via: 'execCommand' });
+      return;
+    }
+    const text = this.getSelectedPlainText();
+    if (!text.trim()) {
+      this.showFlashNotification('Nothing selected to cut', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+    const ok = await this.copyToClipboard(text);
+    if (ok) {
+      // Best-effort delete selection after copy.
+      try { this._execDocumentCommand('delete'); } catch { /* ignore */ }
+      this.showFlashNotification('Cut', COLORS.NOTIFICATION_SUCCESS);
+      this.emitAction('clipboard_cut', { via: 'clipboardApi', length: text.length });
+    } else {
+      this.showFlashNotification('Could not cut', COLORS.NOTIFICATION_ERROR);
+    }
+  }
+
+  async handleClipboardPasteKey() {
+    if (this._execDocumentCommand('paste')) {
+      this.showFlashNotification('Pasted', COLORS.NOTIFICATION_SUCCESS);
+      this.emitAction('clipboard_paste', { via: 'execCommand' });
+      return;
+    }
+    let text = '';
+    try {
+      if (navigator.clipboard && typeof navigator.clipboard.readText === 'function') {
+        text = await navigator.clipboard.readText();
+      }
+    } catch (e) {
+      console.warn('[KeyPilot] clipboard.readText failed:', e);
+    }
+    if (!String(text || '').length) {
+      this.showFlashNotification('Clipboard is empty or paste blocked', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+    const ok = this._insertTextAtFocus(text);
+    this.showFlashNotification(
+      ok ? 'Pasted' : 'Focus an editable field to paste',
+      ok ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_INFO
+    );
+    if (ok) this.emitAction('clipboard_paste', { via: 'clipboardApi', length: text.length });
+  }
+
+  handleClipboardSelectAllKey() {
+    if (this._execDocumentCommand('selectAll')) {
+      this.emitAction('clipboard_select_all', { via: 'execCommand' });
+      return;
+    }
+    try {
+      const el = document.activeElement;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') && typeof el.select === 'function') {
+        el.select();
+        this.emitAction('clipboard_select_all', { via: 'input.select' });
+        return;
+      }
+    } catch { /* ignore */ }
+    this.showFlashNotification('Could not select all', COLORS.NOTIFICATION_INFO);
+  }
+
+  /**
+   * TYPE_CHARACTERS Function handler — types the Action Instance's configured `text` into
+   * the focused editable each time the key is pressed. Multiple keys can each hold their own
+   * Action Instance of this same Function with different `text`, since the value lives on the
+   * instance (see keyboard-layout-store.js `UserAction`), not on the Function definition.
+   * @param {KeyboardEvent} _e
+   * @param {{ text?: string }} [parameters]
+   */
+  handleTypeCharactersKey(_e, parameters) {
+    const text = String(parameters?.text ?? '');
+    if (!text) {
+      this.showFlashNotification('No text configured for this key', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+    const ok = this._insertTextAtFocus(text);
+    this.showFlashNotification(
+      ok ? 'Typed' : 'Focus an editable field first',
+      ok ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_INFO
+    );
+    if (ok) this.emitAction('type_characters', { length: text.length });
+  }
+
+  /**
+   * Dispatch bridge for the keystroke-primitive Functions generalized from the legacy
+   * `MacroKeyKind` catalog (SEND_HOTKEY, SEND_BURST, CYCLE_ROUND_ROBIN, HOLD_CONTINUOUS,
+   * CLICK_MOUSE_BUTTON, REMAP_KEY — see function-library.js). Delegates to the shared
+   * execution switch in macro-key-runtime.js.
+   * @param {KeyboardEvent} _e
+   * @param {{ config?: any }} [parameters]
+   * @param {{ functionId?: string, instanceId?: string }} [meta]
+   */
+  async handleLegacyMacroKeyFunction(_e, parameters, meta) {
+    const functionId = meta?.functionId;
+    if (!functionId) return;
+    await runLegacyMacroKeyFunction(meta?.instanceId || functionId, functionId, parameters, {
+      notify: (msg, type) => {
+        try { this.overlayManager?.showNotification?.(msg, type || 'info'); } catch { /* ignore */ }
+      }
+    });
+  }
+
+  /**
+   * Send selected text to AI with a configurable instruction (prompt), then route
+   * the response through the shared destination helper (clipboard / popover / both).
+   */
+  async handleSendTextToAiKey() {
+    const text = this.getSelectedPlainText();
+    if (!String(text || '').trim()) {
+      this.showFlashNotification('Select text first', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+
+    const actionSettings = this._settings?.actionSettings;
+    const prompt = String(getActionParameter(actionSettings, 'SEND_TEXT_TO_AI', 'prompt') ?? '').trim();
+    const destination = normalizeActionResultDestination(
+      getActionParameter(actionSettings, 'SEND_TEXT_TO_AI', 'destination')
+    );
+
+    this.showFlashNotification('Sending to AI…', COLORS.NOTIFICATION_INFO);
+
+    let result;
+    try {
+      result = await sendTextToAi({ prompt, text });
+    } catch (e) {
+      console.warn('[KeyPilot] sendTextToAi failed:', e);
+      this.showFlashNotification('AI request failed', COLORS.NOTIFICATION_ERROR);
+      return;
+    }
+
+    if (!result?.ok) {
+      this.showFlashNotification(result?.error || 'AI request failed', COLORS.NOTIFICATION_ERROR);
+      // If the provider is missing, still offer the composed request via destination
+      // so the user can paste it into an external AI chat.
+      if (result?.request && /No AI provider/i.test(String(result.error || ''))) {
+        await deliverActionResult(this, {
+          text: result.request,
+          title: 'AI request (no provider)',
+          destination,
+          successMessage: 'AI request copied — paste into your AI chat'
+        });
+      }
+      return;
+    }
+
+    await deliverActionResult(this, {
+      text: result.text,
+      title: prompt ? `AI — ${prompt}` : 'AI result',
+      destination,
+      successMessage: 'AI result copied'
+    });
+    this.emitAction('send_text_to_ai', {
+      prompt: prompt.slice(0, 80),
+      destination,
+      provider: result.provider || '',
+      length: String(result.text || '').length
+    });
   }
 
   /**

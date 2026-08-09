@@ -1,5 +1,9 @@
 import { CURSOR_MODE } from '../src/config/constants.js';
-import { normalizeKeyboardLayoutId } from '../src/config/keyboard-layouts.js';
+import {
+  BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META,
+  normalizeKeyboardHandedness,
+  normalizeKeyboardLayoutFamilyId
+} from '../src/config/keyboard-layouts.js';
 import { SEARCH_ENGINE_META } from '../src/config/search-engines.js';
 import { CLICK_EFFECT_IDS, DEFAULT_SETTINGS, getSettings, normalizeCursorMode, normalizeFocusColor, normalizeSearchEngine, normalizeTextFocusStyle, setSettings, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
 import { GENERIC_FAVICON_DATA_URL, getExtensionFaviconUrl } from '../src/ui/url-listing.js';
@@ -235,7 +239,9 @@ async function render() {
 
   const radios = Array.from(document.querySelectorAll('input[type="radio"][name="engine"]'));
   const keyFeedbackToggle = /** @type {HTMLInputElement|null} */ (document.getElementById('keyboard-reference-key-feedback'));
-  const keyboardLayoutSelect = /** @type {HTMLSelectElement|null} */ (document.getElementById('keyboard-layout'));
+  const showNumberRowToggle = /** @type {HTMLInputElement|null} */ (document.getElementById('keyboard-reference-show-number-row'));
+  const keyboardLayoutFamilySelect = /** @type {HTMLSelectElement|null} */ (document.getElementById('keyboard-layout-family'));
+  const keyboardLeftHandedToggle = /** @type {HTMLInputElement|null} */ (document.getElementById('keyboard-left-handed'));
   const controlStripVisible = /** @type {HTMLInputElement|null} */ (document.getElementById('control-strip-visible'));
   const controlStripCollapsed = /** @type {HTMLInputElement|null} */ (document.getElementById('control-strip-collapsed'));
   const openGuideBtn = document.getElementById('open-guide');
@@ -327,16 +333,40 @@ async function render() {
     keyFeedbackToggle.checked = !!enabled;
   };
 
+  const applyShowNumberRowToggle = (enabled) => {
+    if (!showNumberRowToggle) return;
+    showNumberRowToggle.checked = !!enabled;
+  };
+
+  const ensureLayoutFamilyOptions = () => {
+    if (!keyboardLayoutFamilySelect) return;
+    keyboardLayoutFamilySelect.innerHTML = '';
+    const items = Array.isArray(BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META) ? BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META : [];
+    for (const m of items) {
+      if (!m || !m.id) continue;
+      const opt = document.createElement('option');
+      opt.value = String(m.id);
+      opt.textContent = String(m.label || m.id);
+      keyboardLayoutFamilySelect.appendChild(opt);
+    }
+  };
+
+  const applyKeyboardLayoutFamily = (familyId) => {
+    if (!keyboardLayoutFamilySelect) return;
+    const v = normalizeKeyboardLayoutFamilyId(familyId);
+    setInputValue(keyboardLayoutFamilySelect, v);
+  };
+
+  const applyKeyboardHandedness = (handedness) => {
+    if (!keyboardLeftHandedToggle) return;
+    const h = normalizeKeyboardHandedness(handedness);
+    keyboardLeftHandedToggle.checked = h === 'left';
+  };
+
   const applyControlStrip = (controlStrip) => {
     const cs = controlStrip || DEFAULT_SETTINGS.controlStrip;
     if (controlStripVisible) controlStripVisible.checked = !!cs?.visible;
     if (controlStripCollapsed) controlStripCollapsed.checked = !!cs?.collapsed;
-  };
-
-  const applyKeyboardLayout = (layoutId) => {
-    if (!keyboardLayoutSelect) return;
-    const v = normalizeKeyboardLayoutId(layoutId);
-    setInputValue(keyboardLayoutSelect, v);
   };
 
   const applyCursorMode = (cursorMode) => {
@@ -431,20 +461,26 @@ async function render() {
 
   // Initial state
   try {
+    ensureLayoutFamilyOptions();
     const settings = await getSettings();
     applyEngine(settings.searchEngine);
     applyCursorMode(settings.cursorMode);
-    applyKeyboardLayout(settings.keyboardLayoutId);
+    applyKeyboardLayoutFamily(settings.keyboardLayoutFamilyId);
+    applyKeyboardHandedness(settings.keyboardHandedness);
     applyKeyFeedbackToggle(settings.keyboardReferenceKeyFeedback);
+    applyShowNumberRowToggle(settings.keyboardReferenceShowNumberRow);
     applyControlStrip(settings.controlStrip);
     applyClickMode(settings.clickMode);
     applyTextMode(settings.textMode);
     applyScroll(settings.scroll);
   } catch {
+    ensureLayoutFamilyOptions();
     applyEngine('brave');
     applyCursorMode(DEFAULT_SETTINGS.cursorMode);
-    applyKeyboardLayout(DEFAULT_SETTINGS.keyboardLayoutId);
+    applyKeyboardLayoutFamily(DEFAULT_SETTINGS.keyboardLayoutFamilyId);
+    applyKeyboardHandedness(DEFAULT_SETTINGS.keyboardHandedness);
     applyKeyFeedbackToggle(true);
+    applyShowNumberRowToggle(DEFAULT_SETTINGS.keyboardReferenceShowNumberRow);
     applyControlStrip(DEFAULT_SETTINGS.controlStrip);
     applyClickMode(DEFAULT_SETTINGS.clickMode);
     applyTextMode(DEFAULT_SETTINGS.textMode);
@@ -463,6 +499,10 @@ async function render() {
     await setSettings({ keyboardReferenceKeyFeedback: !!keyFeedbackToggle.checked });
   }, true);
 
+  showNumberRowToggle?.addEventListener('change', async () => {
+    await setSettings({ keyboardReferenceShowNumberRow: !!showNumberRowToggle.checked });
+  }, true);
+
   controlStripVisible?.addEventListener('change', async () => {
     await setSettings({ controlStrip: { visible: !!controlStripVisible.checked } });
   }, true);
@@ -471,10 +511,16 @@ async function render() {
     await setSettings({ controlStrip: { collapsed: !!controlStripCollapsed.checked } });
   }, true);
 
-  keyboardLayoutSelect?.addEventListener('change', async () => {
-    await setSettings({ keyboardLayoutId: keyboardLayoutSelect.value });
+  keyboardLayoutFamilySelect?.addEventListener('change', async () => {
+    await setSettings({ keyboardLayoutFamilyId: keyboardLayoutFamilySelect.value });
     const s = await getSettings();
-    withOptionalViewTransition(() => applyKeyboardLayout(s.keyboardLayoutId));
+    withOptionalViewTransition(() => applyKeyboardLayoutFamily(s.keyboardLayoutFamilyId));
+  }, true);
+
+  keyboardLeftHandedToggle?.addEventListener('change', async () => {
+    await setSettings({ keyboardHandedness: keyboardLeftHandedToggle.checked ? 'left' : 'right' });
+    const s = await getSettings();
+    withOptionalViewTransition(() => applyKeyboardHandedness(s.keyboardHandedness));
   }, true);
 
   cursorModeSelect?.addEventListener('change', async () => {
@@ -678,6 +724,9 @@ async function render() {
       if (!entry || !entry.newValue) return;
       applyEngine(entry.newValue.searchEngine);
       applyKeyFeedbackToggle(entry.newValue.keyboardReferenceKeyFeedback);
+      applyShowNumberRowToggle(entry.newValue.keyboardReferenceShowNumberRow);
+      applyKeyboardLayoutFamily(entry.newValue.keyboardLayoutFamilyId);
+      applyKeyboardHandedness(entry.newValue.keyboardHandedness);
       applyControlStrip(entry.newValue.controlStrip);
       applyClickMode(entry.newValue.clickMode);
       applyTextMode(entry.newValue.textMode);

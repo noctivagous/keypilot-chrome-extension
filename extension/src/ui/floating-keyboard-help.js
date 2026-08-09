@@ -12,11 +12,21 @@
  * inject styles into that root (see ensureStylesInjected rootNode work); open
  * mode keeps elementFromPoint / composedPath piercing used by KeyPilot.
  */
-import { renderKeybindingsKeyboard } from './keybindings-ui.js';
-import { setKeyPressedState } from './keybindings-ui-shared.js';
+import { renderKeybindingsKeyboard, detachKeyPopoverBehavior, unpinKeyPopover } from './keybindings-ui.js';
+import { setKeyPressedState, KEYBINDINGS_UI_ROOT_CLASS } from './keybindings-ui-shared.js';
 import { Z_INDEX } from '../config/constants.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
 import { getSettings, setSettings, SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS } from '../modules/settings-manager.js';
+import { getKeyboardUiLayoutForLayout, KEYBINDING_ACTION_DEFS } from '../config/keyboard-layouts.js';
+import { macroKeyKeyboardClass } from '../config/macro-keys.js';
+import {
+  listUserKeyboardLayouts,
+  getUserKeyboardLayoutById,
+  listUserMacros,
+  listUserMacroKeys,
+  upsertUserKeyboardLayout
+} from '../modules/keyboard-layout-store.js';
+import { KP_LAYOUT_ITEM_MIME } from './keyboard-layout-config-panel.js';
 import { makePopoverResizable } from '../utils/popover-resize.js';
 import {
   PANEL_POSITION_MARGIN_PX,
@@ -95,6 +105,33 @@ export class FloatingKeyboardHelp {
     this._onWinResizePosition = this._onWinResizePosition.bind(this);
     this._suppressPositionPersist = false;
 
+    // Active layout selection (builtin vs user) for rendering + dropdown.
+    /** @type {HTMLSelectElement|null} */
+    this._layoutSelectEl = null;
+    /** @type {HTMLElement|null} */
+    this._layoutTitleEl = null;
+    this._currentKeyboardLayoutId = 'builtin';
+    this._currentUserLayout = null;
+    this._currentUserMacros = [];
+    /** @type {any[]} */
+    this._currentUserMacroKeys = [];
+    this._renderToken = 0;
+
+    // Layout edit mode (Alt+C): DnD + delete buttons; popovers suppressed.
+    this._editMode = false;
+    /** @type {(() => any)|null} */
+    this._getConfigPanel = null;
+    /** @type {((layout: any) => void)|null} */
+    this._onLayoutPersisted = null;
+    /** @type {any|null} editing layout snapshot from Config panel */
+    this._editLayoutState = null;
+    /** Place-mode hover preview from Config click-to-place */
+    this._placeHoverSlot = null;
+    /** @type {{ type: string, id: string }|null} */
+    this._placeItem = null;
+    /** @type {((slotLabel: string) => void)|null} */
+    this._onPlaceSlot = null;
+
     if (panelPosition && typeof panelPosition === 'object') {
       this._seedPanelPosition(panelPosition, { hydrated: true });
     }
@@ -164,6 +201,138 @@ export class FloatingKeyboardHelp {
     if (this.root && !this.root.hidden) {
       this._render();
     }
+  }
+
+  /**
+   * @param {object} params
+   * @param {string} params.currentKeyboardLayoutId
+   * @param {any|null} [params.userLayout]
+   * @param {any[]} [params.userMacros]
+   */
+  setActiveLayoutSelection({ currentKeyboardLayoutId, userLayout, userMacros, userMacroKeys } = {}) {
+    this._currentKeyboardLayoutId = typeof currentKeyboardLayoutId === 'string' ? currentKeyboardLayoutId : 'builtin';
+    this._currentUserLayout = userLayout || null;
+    this._currentUserMacros = Array.isArray(userMacros) ? userMacros : [];
+    this._currentUserMacroKeys = Array.isArray(userMacroKeys) ? userMacroKeys : [];
+    if (this.root && !this.root.hidden) {
+      this._render();
+    }
+  }
+
+  isEditMode() {
+    return !!this._editMode;
+  }
+
+  /**
+   * @param {boolean} on
+   * @param {{ getConfigPanel?: () => any, onLayoutPersisted?: (layout: any) => void }} [opts]
+   */
+  setEditMode(on, opts = {}) {
+    const next = !!on;
+    this._editMode = next;
+    this._getConfigPanel = next && typeof opts.getConfigPanel === 'function' ? opts.getConfigPanel : null;
+    this._onLayoutPersisted = next && typeof opts.onLayoutPersisted === 'function' ? opts.onLayoutPersisted : null;
+    if (!next) {
+      this._editLayoutState = null;
+      this._placeItem = null;
+      this._placeHoverSlot = null;
+      this._onPlaceSlot = null;
+    }
+
+    try {
+      if (this.root) {
+        if (next) this.root.setAttribute('data-kp-edit-mode', 'true');
+        else this.root.removeAttribute('data-kp-edit-mode');
+      }
+    } catch { /* ignore */ }
+
+    this._ensureEditModeStyles();
+
+    if (next) {
+      try { unpinKeyPopover(); } catch { /* ignore */ }
+      try {
+        if (this.keyboardContainer) detachKeyPopoverBehavior(this.keyboardContainer);
+      } catch { /* ignore */ }
+    }
+
+    // Update titlebar hint
+    try {
+      if (this.hintEl) {
+        if (next) {
+          while (this.hintEl.firstChild) this.hintEl.removeChild(this.hintEl.firstChild);
+          this.hintEl.appendChild(document.createTextNode('Editing — Alt+C to exit'));
+          this.hintEl.setAttribute('aria-label', 'Editing layout — Alt+C to exit');
+        } else {
+          const b = this.keybindings && this.keybindings.TOGGLE_KEYBOARD_HELP;
+          const key = (b && (b.displayKey || b.keyLabel)) ? String(b.displayKey || b.keyLabel) : 'K';
+          this._setToggleHint(this.hintEl, key);
+        }
+      }
+    } catch { /* ignore */ }
+
+    try {
+      if (this._layoutSelectEl) this._layoutSelectEl.disabled = !!next;
+    } catch { /* ignore */ }
+
+    if (this.root && !this.root.hidden) this._render();
+  }
+
+  /**
+   * Sync editing layout from the Config panel.
+   * @param {any} state LayoutConfigState-like
+   */
+  setEditLayout(state) {
+    this._editLayoutState = state || null;
+    if (this._editMode && this.root && !this.root.hidden) {
+      this._render();
+    }
+  }
+
+  /**
+   * Begin/end click-to-place targeting on Reference slots.
+   * @param {{ item?: { type: string, id: string }|null, onPlace?: ((slot: string) => void)|null }} [opts]
+   */
+  setPlaceTargeting({ item = null, onPlace = null } = {}) {
+    this._placeItem = item && item.type && item.id ? { type: String(item.type), id: String(item.id) } : null;
+    this._onPlaceSlot = this._placeItem && typeof onPlace === 'function' ? onPlace : null;
+    this._placeHoverSlot = null;
+    if (this._editMode && this.root && !this.root.hidden) this._render();
+  }
+
+  /**
+   * @param {string|null} slotLabel
+   */
+  setPlaceHoverSlot(slotLabel) {
+    const next = slotLabel ? String(slotLabel) : null;
+    if (this._placeHoverSlot === next) return;
+    this._placeHoverSlot = next;
+    if (this._editMode && this.root && !this.root.hidden) this._render();
+  }
+
+  clearPlaceTargeting() {
+    this.setPlaceTargeting({ item: null, onPlace: null });
+  }
+
+  isPlaceTargetingActive() {
+    return !!(this._placeItem && this._placeItem.type && this._placeItem.id);
+  }
+
+  /**
+   * Cancel click-to-place (Escape / outside click). Prefers the Config panel
+   * so the SVG arrow and palette highlight clear together.
+   * @returns {boolean} true if place mode was active and canceled
+   */
+  cancelPlaceTargeting() {
+    if (!this.isPlaceTargetingActive()) return false;
+    try {
+      const panel = typeof this._getConfigPanel === 'function' ? this._getConfigPanel() : null;
+      if (panel && typeof panel.cancelPlaceMode === 'function') {
+        panel.cancelPlaceMode();
+        return true;
+      }
+    } catch { /* ignore */ }
+    this.clearPlaceTargeting();
+    return true;
   }
 
   isVisible() {
@@ -264,6 +433,14 @@ export class FloatingKeyboardHelp {
   hide() {
     // Invalidate any in-flight first-show reveal so a late storage resolve cannot re-open.
     this._showGeneration += 1;
+    // Closing the Reference also ends layout edit mode.
+    if (this._editMode) {
+      try {
+        const panel = this._getConfigPanel?.();
+        panel?.hide?.();
+      } catch { /* ignore */ }
+      this.setEditMode(false);
+    }
     this._setRootVisible(false);
     this.setLinkHoverHints(false);
     this.setTextModeFilter(false);
@@ -710,6 +887,40 @@ export class FloatingKeyboardHelp {
         const hintEl = existing.querySelector('[data-kp-floating-keyboard-hint="true"]');
         const titleEl = existing.querySelector('[data-kp-floating-keyboard-title="true"]')
           || (header ? header.querySelector('div:not([data-kp-floating-keyboard-hint])') : null);
+        let layoutSelect = existing.querySelector('[data-kp-floating-keyboard-layout-select="true"]');
+        if (!layoutSelect && header) {
+          layoutSelect = document.createElement('select');
+          layoutSelect.setAttribute('aria-label', 'Current keyboard layout');
+          layoutSelect.setAttribute('data-kp-floating-keyboard-layout-select', 'true');
+          Object.assign(layoutSelect.style, {
+            marginLeft: '6px',
+            padding: '2px 6px',
+            borderRadius: '4px',
+            border: '1px solid rgba(255,255,255,0.18)',
+            background: 'rgba(255,255,255,0.06)',
+            color: 'rgba(255,255,255,0.95)',
+            outline: 'none',
+            fontSize: '11px',
+            maxWidth: '160px',
+            height: '22px',
+            cursor: 'pointer'
+          });
+          layoutSelect.addEventListener('change', async () => {
+            try {
+              const v = String(layoutSelect.value || 'builtin');
+              await setSettings({ currentKeyboardLayoutId: v });
+            } catch { /* ignore */ }
+          }, true);
+          layoutSelect.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
+          layoutSelect.addEventListener('mousedown', (e) => e.stopPropagation(), true);
+          try {
+            const hintNode = hintEl || header.querySelector('[data-kp-floating-keyboard-hint="true"]');
+            if (hintNode) header.insertBefore(layoutSelect, hintNode);
+            else header.appendChild(layoutSelect);
+          } catch {
+            try { header.appendChild(layoutSelect); } catch { /* ignore */ }
+          }
+        }
 
         // Prefer early shell's already-applied position when we were not seeded.
         if (!this._positionHydrated) {
@@ -730,6 +941,8 @@ export class FloatingKeyboardHelp {
           this.closeBtn = closeBtn || null;
           this.hintEl = hintEl || null;
           this._titlebar = header || null;
+          this._layoutSelectEl = layoutSelect || null;
+          this._layoutTitleEl = titleEl || null;
           if (this.closeBtn) {
             try {
               this.closeBtn.removeEventListener('click', this._onCloseClick);
@@ -757,6 +970,32 @@ export class FloatingKeyboardHelp {
     title.textContent = 'Keyboard Reference';
     title.setAttribute('data-kp-floating-keyboard-title', 'true');
 
+    const layoutSelect = document.createElement('select');
+    layoutSelect.setAttribute('aria-label', 'Current keyboard layout');
+    layoutSelect.setAttribute('data-kp-floating-keyboard-layout-select', 'true');
+    Object.assign(layoutSelect.style, {
+      marginLeft: '6px',
+      padding: '2px 6px',
+      borderRadius: '4px',
+      border: '1px solid rgba(255,255,255,0.18)',
+      background: 'rgba(255,255,255,0.06)',
+      color: 'rgba(255,255,255,0.95)',
+      outline: 'none',
+      fontSize: '11px',
+      maxWidth: '160px',
+      height: '22px',
+      cursor: 'pointer'
+    });
+    layoutSelect.addEventListener('change', async () => {
+      try {
+        const v = String(layoutSelect.value || 'builtin');
+        await setSettings({ currentKeyboardLayoutId: v });
+      } catch { /* ignore */ }
+    }, true);
+    // Prevent titlebar drag when interacting with the select.
+    layoutSelect.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
+    layoutSelect.addEventListener('mousedown', (e) => e.stopPropagation(), true);
+
     const hint = document.createElement('div');
     hint.setAttribute('data-kp-floating-keyboard-hint', 'true');
     this._setToggleHint(hint, 'K');
@@ -769,6 +1008,7 @@ export class FloatingKeyboardHelp {
     closeBtn.addEventListener('click', this._onCloseClick);
 
     header.appendChild(title);
+    header.appendChild(layoutSelect);
     header.appendChild(hint);
     header.appendChild(closeBtn);
     this._applyCompactTitlebar(header, { titleEl: title, hintEl: hint, closeBtn });
@@ -793,6 +1033,8 @@ export class FloatingKeyboardHelp {
     this.closeBtn = closeBtn;
     this.hintEl = hint;
     this._titlebar = header;
+    this._layoutSelectEl = layoutSelect;
+    this._layoutTitleEl = title;
     this._bindWindowChrome();
   }
 
@@ -838,22 +1080,533 @@ export class FloatingKeyboardHelp {
   _render() {
     if (!this.keyboardContainer) return;
     try {
-      const b = this.keybindings && this.keybindings.TOGGLE_KEYBOARD_HELP;
-      const key = (b && (b.displayKey || b.keyLabel)) ? String(b.displayKey || b.keyLabel) : 'K';
-      this._setToggleHint(this.hintEl, key);
+      if (!this._editMode) {
+        const b = this.keybindings && this.keybindings.TOGGLE_KEYBOARD_HELP;
+        const key = (b && (b.displayKey || b.keyLabel)) ? String(b.displayKey || b.keyLabel) : 'K';
+        this._setToggleHint(this.hintEl, key);
+      }
     } catch { /* ignore */ }
+    void this._renderAsync();
+  }
+
+  _ensureEditModeStyles() {
     try {
-      renderKeybindingsKeyboard({
+      const doc = this.root?.ownerDocument || document;
+      if (!doc?.head) return;
+      if (doc.head.querySelector('style[data-kp-keyboard-edit-mode-style="true"]')) return;
+      const s = doc.createElement('style');
+      s.setAttribute('data-kp-keyboard-edit-mode-style', 'true');
+      s.textContent = `
+.kp-floating-keyboard-help[data-kp-edit-mode="true"] .keyboard-visual.${KEYBINDINGS_UI_ROOT_CLASS} .key {
+  position: relative;
+  cursor: grab;
+}
+.kp-floating-keyboard-help[data-kp-edit-mode="true"] .keyboard-visual.${KEYBINDINGS_UI_ROOT_CLASS} .key[data-kp-edit-readonly="true"] {
+  cursor: default;
+  opacity: 0.9;
+}
+.kp-floating-keyboard-help[data-kp-edit-mode="true"] .keyboard-visual.${KEYBINDINGS_UI_ROOT_CLASS} .key .key-main {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 2px;
+}
+.kp-floating-keyboard-help[data-kp-edit-mode="true"] .kp-key-delete {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 14px;
+  height: 14px;
+  border: none;
+  border-radius: 3px;
+  padding: 0;
+  margin: 0;
+  line-height: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  color: rgba(248,250,252,0.95);
+  background: rgba(220, 50, 50, 0.85);
+  z-index: 2;
+  display: none;
+}
+.kp-floating-keyboard-help[data-kp-edit-mode="true"] .key:hover .kp-key-delete,
+.kp-floating-keyboard-help[data-kp-edit-mode="true"] .key:focus-within .kp-key-delete {
+  display: block;
+}
+.kp-floating-keyboard-help[data-kp-edit-mode="true"] .kp-key-delete:hover {
+  background: rgba(255, 70, 70, 1);
+}
+.kp-floating-keyboard-help[data-kp-edit-mode="true"] .key.kp-drop-target {
+  outline: 2px solid rgba(91,226,241,0.85);
+  outline-offset: -1px;
+}
+.kp-floating-keyboard-help[data-kp-edit-mode="true"] .key.kp-place-preview {
+  outline: 2px solid rgba(91,226,241,0.95);
+  outline-offset: -1px;
+  box-shadow: 0 0 0 1px rgba(91,226,241,0.35);
+}
+      `.trim();
+      doc.head.appendChild(s);
+    } catch { /* ignore */ }
+  }
+
+  async _refreshLayoutSelectOptions() {
+    const selEl = this._layoutSelectEl;
+    if (!selEl) return;
+    try {
+      const layouts = await listUserKeyboardLayouts();
+      selEl.innerHTML = '';
+      const optBuiltin = document.createElement('option');
+      optBuiltin.value = 'builtin';
+      optBuiltin.textContent = 'Built-in';
+      selEl.appendChild(optBuiltin);
+      const known = new Set(['builtin']);
+      for (const l of layouts || []) {
+        if (!l || !l.id) continue;
+        const opt = document.createElement('option');
+        opt.value = `user:${l.id}`;
+        opt.textContent = String(l.label || l.id);
+        selEl.appendChild(opt);
+        known.add(opt.value);
+      }
+      let v = typeof this._currentKeyboardLayoutId === 'string' ? this._currentKeyboardLayoutId : 'builtin';
+      if (!known.has(v)) {
+        v = 'builtin';
+        this._currentKeyboardLayoutId = 'builtin';
+        this._currentUserLayout = null;
+      }
+      selEl.value = v;
+    } catch { /* ignore */ }
+  }
+
+  async _renderAsync() {
+    const token = ++this._renderToken;
+    if (!this.keyboardContainer) return;
+
+    // Refresh selector options (best-effort).
+    await this._refreshLayoutSelectOptions();
+
+    let settings = null;
+    try { settings = await getSettings(); } catch { /* ignore */ }
+    if (token !== this._renderToken) return;
+
+    // Edit mode: always render a slot keyboard driven by the Config panel's selection.
+    if (this._editMode) {
+      await this._renderEditModeKeyboard({ token, settings });
+      return;
+    }
+
+    const selRaw = String((settings && settings.currentKeyboardLayoutId) || this._currentKeyboardLayoutId || 'builtin');
+    let sel = selRaw;
+    this._currentKeyboardLayoutId = sel;
+
+    // Update title to include current layout label.
+    try {
+      if (this._layoutTitleEl) {
+        const label = sel.startsWith('user:') ? 'Custom layout' : 'Built-in';
+        this._layoutTitleEl.textContent = `Keyboard Reference — ${label}`;
+      }
+    } catch { /* ignore */ }
+
+    if (!sel.startsWith('user:')) {
+      // Built-in render — always honor number-row setting (don't rely on a possibly-stale
+      // this.keyboardLayout from before settings hydrated).
+      try {
+        const showNumberRow = !!(settings && settings.keyboardReferenceShowNumberRow);
+        const uiLayout = getKeyboardUiLayoutForLayout(this.layoutId || 'browsing-right', {
+          includeNumberRow: showNumberRow
+        });
+        this.keyboardLayout = uiLayout;
+        renderKeybindingsKeyboard({
+          container: this.keyboardContainer,
+          keybindings: this.keybindings,
+          keyboardLayout: uiLayout,
+          layoutId: this.layoutId || undefined,
+          attachPopovers: true
+        });
+        this._rebuildKeyIndex();
+      } catch (e) {
+        this.keyboardContainer.textContent = 'Unable to render keyboard reference on this page.';
+        console.warn('[KeyPilot] Failed to render floating keyboard reference:', e);
+      }
+      return;
+    }
+
+    // User layout render: slot-based keyboard view.
+    try {
+      const id = sel.slice('user:'.length);
+      const userLayout = this._currentUserLayout && this._currentUserLayout.id === id
+        ? this._currentUserLayout
+        : await getUserKeyboardLayoutById(id);
+      const macros = (Array.isArray(this._currentUserMacros) && this._currentUserMacros.length)
+        ? this._currentUserMacros
+        : await listUserMacros();
+      const macroKeys = (Array.isArray(this._currentUserMacroKeys) && this._currentUserMacroKeys.length)
+        ? this._currentUserMacroKeys
+        : await listUserMacroKeys();
+      if (token !== this._renderToken) return;
+      if (!userLayout) {
+        // Orphaned current selection — fall back to built-in instead of a dead-end message.
+        this._currentKeyboardLayoutId = 'builtin';
+        this._currentUserLayout = null;
+        try {
+          await setSettings({ currentKeyboardLayoutId: 'builtin' });
+        } catch { /* ignore */ }
+        try {
+          if (this._layoutTitleEl) {
+            this._layoutTitleEl.textContent = 'Keyboard Reference — Built-in';
+          }
+        } catch { /* ignore */ }
+        try {
+          const showNumberRow = !!(settings && settings.keyboardReferenceShowNumberRow);
+          const uiLayout = getKeyboardUiLayoutForLayout(this.layoutId || 'browsing-right', {
+            includeNumberRow: showNumberRow
+          });
+          this.keyboardLayout = uiLayout;
+          renderKeybindingsKeyboard({
+            container: this.keyboardContainer,
+            keybindings: this.keybindings,
+            keyboardLayout: uiLayout,
+            layoutId: this.layoutId || undefined,
+            attachPopovers: true
+          });
+          this._rebuildKeyIndex();
+          await this._refreshLayoutSelectOptions();
+        } catch (e) {
+          this.keyboardContainer.textContent = 'Unable to render keyboard reference on this page.';
+          console.warn('[KeyPilot] Failed to render floating keyboard reference after layout fallback:', e);
+        }
+        return;
+      }
+      const baseId = String(userLayout.baseBuiltinLayoutId || this.layoutId || 'browsing-right');
+      const showNumberRow = !!(settings && settings.keyboardReferenceShowNumberRow);
+      const uiLayout = getKeyboardUiLayoutForLayout(baseId, { includeNumberRow: showNumberRow });
+      this._renderSlotKeyboard({
         container: this.keyboardContainer,
+        uiLayout,
+        slots: userLayout.slots || {},
+        macros,
+        macroKeys,
         keybindings: this.keybindings,
-        keyboardLayout: this.keyboardLayout || undefined,
-        layoutId: this.layoutId || undefined
+        editMode: false
       });
       this._rebuildKeyIndex();
     } catch (e) {
-      // In case a page CSP / DOM edge case breaks rendering, fail gracefully.
-      this.keyboardContainer.textContent = 'Unable to render keyboard reference on this page.';
-      console.warn('[KeyPilot] Failed to render floating keyboard reference:', e);
+      this.keyboardContainer.textContent = 'Unable to render custom keyboard layout.';
+      console.warn('[KeyPilot] Failed to render custom keyboard reference:', e);
+    }
+  }
+
+  /**
+   * @param {{ token: number, settings: any }} params
+   */
+  async _renderEditModeKeyboard({ token, settings }) {
+    const st = this._editLayoutState;
+    const mode = st?.mode === 'user' ? 'user' : 'builtin';
+    const readOnly = mode !== 'user';
+
+    try {
+      if (this._layoutTitleEl) {
+        this._layoutTitleEl.textContent = readOnly
+          ? 'Keyboard Reference — Edit (duplicate to edit)'
+          : 'Keyboard Reference — Editing';
+      }
+    } catch { /* ignore */ }
+
+    let slots = {};
+    let macros = Array.isArray(st?.macros) ? st.macros : (this._currentUserMacros || []);
+    let macroKeys = Array.isArray(st?.macroKeys) ? st.macroKeys : (this._currentUserMacroKeys || []);
+    let baseId = this.layoutId || 'browsing-right';
+    let userLayout = null;
+
+    if (mode === 'user' && st?.userLayout) {
+      userLayout = st.userLayout;
+      slots = userLayout.slots && typeof userLayout.slots === 'object' ? userLayout.slots : {};
+      baseId = String(userLayout.baseBuiltinLayoutId || baseId);
+    } else {
+      // Built-in preview slots from current keybindings
+      for (const [actionId, binding] of Object.entries(this.keybindings || {})) {
+        const label = String(binding?.displayKey || binding?.keyLabel || '').trim();
+        if (!label || label.length !== 1) continue;
+        slots[label.toUpperCase()] = { type: 'action', id: String(actionId) };
+      }
+      baseId = String(st?.builtinLayoutId || this.layoutId || 'browsing-right');
+    }
+
+    if (!macros.length) {
+      try { macros = await listUserMacros(); } catch { macros = []; }
+    }
+    if (!macroKeys.length) {
+      try { macroKeys = await listUserMacroKeys(); } catch { macroKeys = []; }
+    }
+    if (token !== this._renderToken) return;
+
+    const showNumberRow = !!(settings && settings.keyboardReferenceShowNumberRow);
+    const uiLayout = getKeyboardUiLayoutForLayout(baseId, { includeNumberRow: showNumberRow });
+    this._renderSlotKeyboard({
+      container: this.keyboardContainer,
+      uiLayout,
+      slots,
+      macros,
+      macroKeys,
+      keybindings: this.keybindings,
+      editMode: true,
+      readOnly,
+      userLayout
+    });
+    this._rebuildKeyIndex();
+  }
+
+  /**
+   * Render a user layout from physical key slots (actions/macros/macroKeys assigned to keys).
+   * @param {{
+   *   container: HTMLElement,
+   *   uiLayout: any[],
+   *   slots: Record<string, any>,
+   *   macros?: any[],
+   *   macroKeys?: any[],
+   *   keybindings?: Record<string, any>,
+   *   editMode?: boolean,
+   *   readOnly?: boolean,
+   *   userLayout?: any|null
+   * }} params
+   */
+  _renderSlotKeyboard({
+    container,
+    uiLayout,
+    slots,
+    macros,
+    macroKeys,
+    keybindings,
+    editMode = false,
+    readOnly = true,
+    userLayout = null
+  } = {}) {
+    if (!container) return;
+    const doc = container.ownerDocument || document;
+    try { detachKeyPopoverBehavior(container); } catch { /* ignore */ }
+    container.innerHTML = '';
+    const visual = doc.createElement('div');
+    visual.className = `keyboard-visual ${KEYBINDINGS_UI_ROOT_CLASS}`;
+    container.appendChild(visual);
+
+    const macroLabelById = new Map();
+    try {
+      for (const m of macros || []) {
+        if (m && m.id) macroLabelById.set(String(m.id), String(m.label || 'Macro'));
+      }
+    } catch { /* ignore */ }
+
+    const macroKeyLabelById = new Map();
+    const macroKeyKindById = new Map();
+    try {
+      for (const m of macroKeys || []) {
+        if (m && m.id) {
+          macroKeyLabelById.set(String(m.id), String(m.label || m.kind || 'Macro Key'));
+          macroKeyKindById.set(String(m.id), String(m.kind || ''));
+        }
+      }
+    } catch { /* ignore */ }
+
+    const kb = keybindings || this.keybindings || {};
+    const actionSlotLabelFromItem = (item) => {
+      const binding = kb && kb[item.id];
+      const label = String(binding?.displayKey || binding?.keyLabel || '').trim();
+      return label && label.length === 1 ? label.toUpperCase() : '';
+    };
+
+    const editable = !!(editMode && !readOnly && userLayout && typeof userLayout.slots === 'object');
+    const placeActive = !!(editMode && this._placeItem && typeof this._onPlaceSlot === 'function');
+    const placeItem = placeActive ? this._placeItem : null;
+    const placeHoverSlot = placeActive ? this._placeHoverSlot : null;
+
+    const persistSlots = async () => {
+      if (!editable || !userLayout) return;
+      try {
+        const saved = await upsertUserKeyboardLayout(userLayout);
+        // Keep edit-state in sync
+        if (this._editLayoutState) {
+          this._editLayoutState.userLayout = saved;
+          this._editLayoutState.mode = 'user';
+          this._editLayoutState.userLayoutId = saved.id;
+        }
+        try { this._onLayoutPersisted?.(saved); } catch { /* ignore */ }
+      } catch { /* ignore */ }
+    };
+
+    const applyDropToSlot = async (slotLabel, data) => {
+      // DnD onto user layouts only; built-in placement goes through Config place mode (auto-dup).
+      if (!editable || !userLayout) return;
+      const slotMap = userLayout.slots;
+      const fromSlot = data.fromSlot ? String(data.fromSlot) : '';
+      const nextItem = { type: String(data.type), id: String(data.id) };
+      if (nextItem.type !== 'action' && nextItem.type !== 'macro' && nextItem.type !== 'macroKey') return;
+      if (!nextItem.id) return;
+
+      const targetPrev = slotMap[slotLabel] || null;
+      if (fromSlot && fromSlot !== slotLabel) {
+        // Dragging from another key: swap/move.
+        slotMap[slotLabel] = nextItem;
+        slotMap[fromSlot] = targetPrev;
+      } else {
+        // From palette: replace.
+        slotMap[slotLabel] = nextItem;
+      }
+      await persistSlots();
+      this._render();
+    };
+
+    const clearSlot = async (slotLabel) => {
+      if (!editable || !userLayout) return;
+      userLayout.slots[slotLabel] = null;
+      await persistSlots();
+      this._render();
+    };
+
+    const renderSlot = (slotLabel, assigned) => {
+      const previewing = !!(placeItem && placeHoverSlot === slotLabel);
+      const displayAssigned = previewing ? placeItem : assigned;
+
+      const btn = doc.createElement('button');
+      btn.type = 'button';
+      let keyboardClass = '';
+      if (displayAssigned && displayAssigned.type === 'action') {
+        keyboardClass = KEYBINDING_ACTION_DEFS?.[displayAssigned.id]?.keyboardClass || '';
+      } else if (displayAssigned && displayAssigned.type === 'macro') {
+        keyboardClass = 'key-purple';
+      } else if (displayAssigned && displayAssigned.type === 'macroKey') {
+        keyboardClass = macroKeyKeyboardClass(macroKeyKindById.get(String(displayAssigned.id)) || '');
+      }
+      btn.className = `key${keyboardClass ? ' ' + keyboardClass : ''}${previewing ? ' kp-place-preview' : ''}`;
+      btn.dataset.kpSlot = slotLabel;
+      if (readOnly && !placeActive) {
+        btn.disabled = true;
+        btn.setAttribute('data-kp-edit-readonly', 'true');
+      } else if (placeActive) {
+        btn.disabled = false;
+        btn.draggable = false;
+      } else {
+        btn.disabled = false;
+        btn.draggable = !!assigned;
+      }
+      if (displayAssigned && displayAssigned.type === 'action') {
+        try { btn.setAttribute('data-kp-action-id', String(displayAssigned.id)); } catch { /* ignore */ }
+      }
+      if (displayAssigned && displayAssigned.type === 'macro') {
+        try { btn.setAttribute('data-kp-macro-id', String(displayAssigned.id)); } catch { /* ignore */ }
+      }
+      if (displayAssigned && displayAssigned.type === 'macroKey') {
+        try { btn.setAttribute('data-kp-macro-key-id', String(displayAssigned.id)); } catch { /* ignore */ }
+      }
+
+      const main = doc.createElement('div');
+      main.className = 'key-main';
+      if (displayAssigned && displayAssigned.type === 'macro') {
+        main.textContent = macroLabelById.get(String(displayAssigned.id)) || 'Macro';
+      } else if (displayAssigned && displayAssigned.type === 'macroKey') {
+        main.textContent = macroKeyLabelById.get(String(displayAssigned.id)) || 'Macro Key';
+      } else if (displayAssigned && displayAssigned.type === 'action') {
+        main.textContent = KEYBINDING_ACTION_DEFS?.[displayAssigned.id]?.label || String(displayAssigned.id);
+      } else {
+        main.textContent = '';
+      }
+
+      const label = doc.createElement('div');
+      label.className = 'key-label';
+      label.textContent = slotLabel;
+
+      btn.appendChild(main);
+      btn.appendChild(label);
+
+      if (editMode && editable && assigned && !placeActive) {
+        const del = doc.createElement('button');
+        del.type = 'button';
+        del.className = 'kp-key-delete';
+        del.textContent = '×';
+        del.setAttribute('aria-label', `Remove action from ${slotLabel}`);
+        del.title = 'Remove';
+        del.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          void clearSlot(slotLabel);
+        }, true);
+        del.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
+        del.addEventListener('mousedown', (e) => e.stopPropagation(), true);
+        btn.appendChild(del);
+      }
+
+      if (placeActive) {
+        btn.addEventListener('pointerenter', () => {
+          this.setPlaceHoverSlot(slotLabel);
+        }, true);
+        btn.addEventListener('pointerleave', () => {
+          if (this._placeHoverSlot === slotLabel) this.setPlaceHoverSlot(null);
+        }, true);
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          try { this._onPlaceSlot?.(slotLabel); } catch { /* ignore */ }
+        }, true);
+      } else if (editMode && editable) {
+        btn.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          btn.classList.add('kp-drop-target');
+        }, true);
+        btn.addEventListener('dragleave', () => {
+          btn.classList.remove('kp-drop-target');
+        }, true);
+        btn.addEventListener('drop', (e) => {
+          e.preventDefault();
+          btn.classList.remove('kp-drop-target');
+          try {
+            const raw = e.dataTransfer?.getData?.(KP_LAYOUT_ITEM_MIME) || '';
+            const data = raw ? JSON.parse(raw) : null;
+            if (!data || !data.type || !data.id) return;
+            void applyDropToSlot(slotLabel, data);
+          } catch { /* ignore */ }
+        }, true);
+        btn.addEventListener('dragstart', (e) => {
+          if (!assigned) return;
+          try {
+            const payload = JSON.stringify({ type: assigned.type, id: assigned.id, fromSlot: slotLabel });
+            e.dataTransfer?.setData?.(KP_LAYOUT_ITEM_MIME, payload);
+            e.dataTransfer.effectAllowed = 'move';
+          } catch { /* ignore */ }
+        }, true);
+      }
+
+      return btn;
+    };
+
+    for (const row of uiLayout || []) {
+      const rowEl = doc.createElement('div');
+      rowEl.className = 'keyboard-row';
+      visual.appendChild(rowEl);
+      for (const item of row || []) {
+        if (!item) continue;
+        if (item.type === 'special') {
+          const sp = doc.createElement('div');
+          sp.className = String(item.className || 'key');
+          sp.textContent = String(item.text || '');
+          rowEl.appendChild(sp);
+          continue;
+        }
+
+        let slotLabel = '';
+        if (item.type === 'key') slotLabel = String(item.text || '').trim().toUpperCase();
+        else if (item.type === 'action') slotLabel = actionSlotLabelFromItem(item);
+        if (!slotLabel) {
+          const empty = doc.createElement('div');
+          empty.className = 'key';
+          empty.style.visibility = 'hidden';
+          rowEl.appendChild(empty);
+          continue;
+        }
+        const assigned = slots && typeof slots === 'object' ? (slots[slotLabel] || null) : null;
+        rowEl.appendChild(renderSlot(slotLabel, assigned));
+      }
     }
   }
 
@@ -933,6 +1686,13 @@ export class FloatingKeyboardHelp {
         this._setPanelPosition(nextPos, { persist: false });
         this._suppressPositionPersist = false;
       }
+      // Layout selection / number-row changes should refresh the keyboard chrome.
+      try {
+        if (typeof entry.newValue.currentKeyboardLayoutId === 'string') {
+          this._currentKeyboardLayoutId = entry.newValue.currentKeyboardLayoutId;
+        }
+        if (this.root && !this.root.hidden) this._render();
+      } catch { /* ignore */ }
     } catch { /* ignore */ }
   }
 

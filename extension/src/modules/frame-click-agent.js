@@ -21,9 +21,11 @@ import { MSG } from '../messaging/types.js';
 import { COLORS, CSS_CLASSES, Z_INDEX, SCROLL } from '../config/constants.js';
 import { isTypingContext, hasModifierKeys } from '../utils/dom-context.js';
 import {
-  buildKeybindingsForLayout,
+  buildEffectiveKeybindings,
+  buildSystemKeybindings,
   DEFAULT_KEYBOARD_LAYOUT_ID,
-  normalizeKeyboardLayoutId
+  normalizeKeyboardLayoutId,
+  resolveKeyboardLayoutId
 } from '../config/keyboard-layouts.js';
 import { getSettings, SETTINGS_STORAGE_KEY, scrollBehaviorFromSpeed, DEFAULT_SETTINGS } from './settings-manager.js';
 import { scrollAtPoint, scrollToEdgeAtPoint } from '../utils/scroll-at-point.js';
@@ -472,8 +474,8 @@ export function installFrameClickAgent() {
     let enabled = true;
     /** @type {{ x: number|null, y: number|null }} */
     let lastMouse = { x: null, y: null };
-    /** @type {ReturnType<typeof buildKeybindingsForLayout>} */
-    let keybindings = buildKeybindingsForLayout(DEFAULT_KEYBOARD_LAYOUT_ID);
+    /** @type {ReturnType<typeof buildEffectiveKeybindings>} */
+    let keybindings = buildEffectiveKeybindings(DEFAULT_KEYBOARD_LAYOUT_ID);
     /** @type {number} */
     let halfPagePx = SCROLL.HALF_PAGE_PX;
     /** @type {'smooth'|'auto'} */
@@ -656,8 +658,18 @@ export function installFrameClickAgent() {
     const refreshKeybindings = async () => {
       try {
         const settings = await getSettings();
-        const layoutId = normalizeKeyboardLayoutId(settings?.keyboardLayoutId);
-        keybindings = buildKeybindingsForLayout(layoutId);
+        // Exclusive user layouts are top-frame only: skip built-in KP key actions in child frames.
+        const currentSel = String(settings?.currentKeyboardLayoutId || 'builtin');
+        if (currentSel.startsWith('user:')) {
+          // Exclusive user layouts: only the always-on system layer in child frames.
+          keybindings = buildSystemKeybindings(settings?.keyboardHandedness);
+        } else {
+          const layoutId = resolveKeyboardLayoutId({
+            familyId: settings?.keyboardLayoutFamilyId,
+            handedness: settings?.keyboardHandedness
+          }) || normalizeKeyboardLayoutId(settings?.keyboardLayoutId);
+          keybindings = buildEffectiveKeybindings(layoutId, settings?.keyboardHandedness);
+        }
         const cm = settings?.clickMode || {};
         focusChrome = {
           focusColor: cm.focusColor === 'green' ? 'green' : 'blue',

@@ -226,7 +226,9 @@ async function initKeybindingsUI() {
             : (ui && ui.KEYBINDINGS ? ui.KEYBINDINGS : {});
 
         const keyboardLayout = layouts && typeof layouts.getKeyboardUiLayoutForLayout === 'function'
-            ? layouts.getKeyboardUiLayoutForLayout(layoutId)
+            ? layouts.getKeyboardUiLayoutForLayout(layoutId, {
+                includeNumberRow: !!(settings && settings.keyboardReferenceShowNumberRow)
+              })
             : undefined;
 
         const extraRows = [

@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension - Frame Agent Bundle (child frames)
- * Generated on 2026-08-08T22:06:00.681Z
+ * Generated on 2026-08-09T00:22:33.473Z
  */
 
 (() => {
@@ -13,7 +13,8 @@
  *
  * Goals:
  * - Separate "what an action does" from "which physical keys trigger it".
- * - Allow multiple built-in layouts today (right/left-handed browsing).
+ * - Allow multiple built-in layout families (Navigation, Basic Navigation, Click + History),
+ *   each with right/left-handed variants.
  * - Provide a single source of truth consumed by:
  *   - runtime keydown mapping (KeyPilot)
  *   - keyboard visualization (popup + floating keyboard reference)
@@ -21,8 +22,17 @@
  */
 
 /**
- * @typedef {'browsing-right'|'browsing-left'} BuiltinKeyboardLayoutId
+ * @typedef {'browsing-right'|'browsing-left'|'basic-navigation-right'|'basic-navigation-left'|'click-history-right'|'click-history-left'} BuiltinKeyboardLayoutId
  * @typedef {BuiltinKeyboardLayoutId|string} KeyboardLayoutId
+ */
+
+/**
+ * Logical (handedness-agnostic) layout selection.
+ * A "family" can have variants per handedness (e.g. Navigation → left/right implementation).
+ *
+ * @typedef {'browsing'|'basic-navigation'|'click-history'} BuiltinKeyboardLayoutFamilyId
+ * @typedef {BuiltinKeyboardLayoutFamilyId|string} KeyboardLayoutFamilyId
+ * @typedef {'right'|'left'} KeyboardHandedness
  */
 
 /**
@@ -40,7 +50,8 @@
  *   label: string,
  *   description: string,
  *   keyboardClass?: string|null,
- *   row?: number|null
+ *   row?: number|null,
+ *   category?: string
  * }} ActionDef
  */
 
@@ -56,18 +67,81 @@
 
 const DEFAULT_KEYBOARD_LAYOUT_ID = /** @type {const} */ ('browsing-right');
 
+const DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID = /** @type {const} */ ('browsing');
+const DEFAULT_KEYBOARD_HANDEDNESS = /** @type {const} */ ('right');
+
 const BUILTIN_KEYBOARD_LAYOUT_META = Object.freeze([
   Object.freeze({
     id: /** @type {const} */ ('browsing-right'),
-    label: 'Browsing: right-handed',
-    description: 'Mouse: right hand. Keyboard shortcuts primarily on the left side.'
+    label: 'Navigation: right-handed',
+    description: 'Full navigation layout. Mouse: right hand. Shortcuts primarily on the left.'
   }),
   Object.freeze({
     id: /** @type {const} */ ('browsing-left'),
-    label: 'Browsing: left-handed',
-    description: 'Mouse: left hand. Keyboard shortcuts primarily on the right side.'
+    label: 'Navigation: left-handed',
+    description: 'Full navigation layout. Mouse: left hand. Shortcuts primarily on the right.'
+  }),
+  Object.freeze({
+    id: /** @type {const} */ ('basic-navigation-right'),
+    label: 'Basic Navigation: right-handed',
+    description: 'Page scroll, click, tab switch, back/forward only.'
+  }),
+  Object.freeze({
+    id: /** @type {const} */ ('basic-navigation-left'),
+    label: 'Basic Navigation: left-handed',
+    description: 'Page scroll, click, tab switch, back/forward only.'
+  }),
+  Object.freeze({
+    id: /** @type {const} */ ('click-history-right'),
+    label: 'Click + History: right-handed',
+    description: 'Click element, go back, and go forward only.'
+  }),
+  Object.freeze({
+    id: /** @type {const} */ ('click-history-left'),
+    label: 'Click + History: left-handed',
+    description: 'Click element, go back, and go forward only.'
   })
 ]);
+
+/**
+ * Built-in layout families shown to users.
+ * IMPORTANT: Alt+[ / Alt+] cycles through these family IDs (not through handedness variants).
+ * Note: family id `browsing` is the stable storage id for "Navigation" (back-compat).
+ */
+const BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META = Object.freeze([
+  Object.freeze({
+    id: /** @type {const} */ ('browsing'),
+    label: 'Navigation',
+    description: 'Full navigation controls (scroll, tabs, click, history, tools).',
+    variants: Object.freeze({
+      right: /** @type {const} */ ('browsing-right'),
+      left: /** @type {const} */ ('browsing-left')
+    })
+  }),
+  Object.freeze({
+    id: /** @type {const} */ ('basic-navigation'),
+    label: 'Basic Navigation',
+    description: 'Page scrolling, click, tab navigation, back, and forward.',
+    variants: Object.freeze({
+      right: /** @type {const} */ ('basic-navigation-right'),
+      left: /** @type {const} */ ('basic-navigation-left')
+    })
+  }),
+  Object.freeze({
+    id: /** @type {const} */ ('click-history'),
+    label: 'Click + History',
+    description: 'Click element, go back, and go forward.',
+    variants: Object.freeze({
+      right: /** @type {const} */ ('click-history-right'),
+      left: /** @type {const} */ ('click-history-left')
+    })
+  })
+]);
+
+/** @type {ReadonlySet<string>} */
+const KNOWN_BUILTIN_LAYOUT_IDS = new Set(
+  BUILTIN_KEYBOARD_LAYOUT_META.map((m) => m && m.id).filter(Boolean)
+);
 
 /**
  * @param {any} raw
@@ -75,8 +149,77 @@ const BUILTIN_KEYBOARD_LAYOUT_META = Object.freeze([
  */
 function normalizeKeyboardLayoutId(raw) {
   const v = String(raw || '').trim();
-  if (v === 'browsing-right' || v === 'browsing-left') return /** @type {BuiltinKeyboardLayoutId} */ (v);
+  if (KNOWN_BUILTIN_LAYOUT_IDS.has(v)) return /** @type {BuiltinKeyboardLayoutId} */ (v);
   return DEFAULT_KEYBOARD_LAYOUT_ID;
+}
+
+/**
+ * @param {any} raw
+ * @returns {KeyboardLayoutFamilyId}
+ */
+function normalizeKeyboardLayoutFamilyId(raw) {
+  const v = String(raw || '').trim();
+  // Back-compat aliases
+  if (v === 'navigation') return 'browsing';
+  if (!v) return DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID;
+  const known = BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META.some((m) => m && m.id === v);
+  return known ? v : DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID;
+}
+
+/**
+ * @param {any} raw
+ * @returns {KeyboardHandedness}
+ */
+function normalizeKeyboardHandedness(raw) {
+  const v = String(raw || '').trim().toLowerCase();
+  if (v === 'left' || v === 'right') return /** @type {KeyboardHandedness} */ (v);
+  return DEFAULT_KEYBOARD_HANDEDNESS;
+}
+
+/**
+ * Resolve a user-facing layout family + handedness into a concrete layout ID.
+ *
+ * @param {{ familyId?: any, handedness?: any }} params
+ * @returns {BuiltinKeyboardLayoutId}
+ */
+function resolveKeyboardLayoutId({ familyId, handedness } = {}) {
+  const fam = normalizeKeyboardLayoutFamilyId(familyId);
+  const hand = normalizeKeyboardHandedness(handedness);
+  const meta = BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META.find((m) => m && m.id === fam);
+  const resolved = meta?.variants?.[hand];
+  return normalizeKeyboardLayoutId(resolved);
+}
+
+/**
+ * Back-compat helper: infer family/handedness for known built-in layout IDs.
+ *
+ * @param {any} rawLayoutId
+ * @returns {{ familyId: KeyboardLayoutFamilyId, handedness: KeyboardHandedness }}
+ */
+function inferFamilyAndHandednessFromLayoutId(rawLayoutId) {
+  const id = normalizeKeyboardLayoutId(rawLayoutId);
+  if (id.endsWith('-left')) {
+    const familyId = id.slice(0, -'-left'.length);
+    return {
+      familyId: normalizeKeyboardLayoutFamilyId(familyId),
+      handedness: 'left'
+    };
+  }
+  if (id.endsWith('-right')) {
+    const familyId = id.slice(0, -'-right'.length);
+    return {
+      familyId: normalizeKeyboardLayoutFamilyId(familyId),
+      handedness: 'right'
+    };
+  }
+  return { familyId: DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID, handedness: DEFAULT_KEYBOARD_HANDEDNESS };
+}
+
+/**
+ * @returns {KeyboardLayoutFamilyId[]}
+ */
+function getInstalledKeyboardLayoutFamilyIds() {
+  return BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META.map((m) => m && m.id).filter(Boolean);
 }
 
 /**
@@ -290,8 +433,129 @@ const KEYBINDING_ACTION_DEFS = Object.freeze({
     // Default key face (no tinted key-gray / family fill).
     keyboardClass: null,
     row: 1
+  }),
+  // Clipboard commands (Functions palette — Clipboard category).
+  CLIPBOARD_COPY: Object.freeze({
+    handler: 'handleClipboardCopyKey',
+    label: 'Copy',
+    description: 'Copy selected text to the clipboard',
+    keyboardClass: null,
+    row: null
+  }),
+  CLIPBOARD_CUT: Object.freeze({
+    handler: 'handleClipboardCutKey',
+    label: 'Cut',
+    description: 'Cut selected text to the clipboard',
+    keyboardClass: null,
+    row: null
+  }),
+  CLIPBOARD_PASTE: Object.freeze({
+    handler: 'handleClipboardPasteKey',
+    label: 'Paste',
+    description: 'Paste clipboard text into the focused field',
+    keyboardClass: null,
+    row: null
+  }),
+  CLIPBOARD_SELECT_ALL: Object.freeze({
+    handler: 'handleClipboardSelectAllKey',
+    label: 'Select All',
+    description: 'Select all text in the focused field or page',
+    keyboardClass: null,
+    row: null
+  }),
+  // AI (Functions palette — AI category).
+  SEND_TEXT_TO_AI: Object.freeze({
+    handler: 'handleSendTextToAiKey',
+    label: 'Send Text To AI',
+    description: 'Send selected text to AI with a configurable instruction; route the result to clipboard and/or popover',
+    keyboardClass: 'key-purple',
+    row: null
   })
 });
+
+/**
+ * Display category for each action (Keyboard Layout Config grouping).
+ * Unknown ids fall back to "Other".
+ * @type {Readonly<Record<string, string>>}
+ */
+const KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
+  ACTIVATE: 'Click',
+  ACTIVATE_NEW_TAB: 'Click',
+  ACTIVATE_NEW_TAB_BACKGROUND: 'Click',
+  TAB_LEFT: 'Tabs',
+  TAB_RIGHT: 'Tabs',
+  NEW_TAB: 'Tabs',
+  CLOSE_TAB: 'Tabs',
+  TAB_HISTORY: 'Tabs',
+  BACK: 'Navigate',
+  BACK2: 'Navigate',
+  FORWARD: 'Navigate',
+  ROOT: 'Navigate',
+  PAGE_UP_INSTANT: 'Scroll',
+  PAGE_DOWN_INSTANT: 'Scroll',
+  PAGE_TOP: 'Scroll',
+  PAGE_BOTTOM: 'Scroll',
+  HIGHLIGHT: 'Select',
+  RECTANGLE_HIGHLIGHT: 'Select',
+  DELETE: 'Select',
+  COLS_TOGGLE: 'Select',
+  COPY_HOVERED_IMAGE: 'Select',
+  CLIPBOARD_COPY: 'Clipboard',
+  CLIPBOARD_CUT: 'Clipboard',
+  CLIPBOARD_PASTE: 'Clipboard',
+  CLIPBOARD_SELECT_ALL: 'Clipboard',
+  SEND_TEXT_TO_AI: 'AI',
+  OPEN_POPOVER: 'Tools',
+  PREVIEW_LINK_POPOVER: 'Tools',
+  LAUNCHER: 'Tools',
+  OMNIBOX: 'Tools',
+  OPEN_SETTINGS_POPOVER: 'System',
+  TOGGLE_KEYBOARD_HELP: 'System',
+  CANCEL: 'System'
+});
+
+/** Stable category order for the Config palette. */
+const KEYBINDING_ACTION_CATEGORY_ORDER = Object.freeze([
+  'Click',
+  'Tabs',
+  'Navigate',
+  'Scroll',
+  'Select',
+  'Clipboard',
+  'AI',
+  'Tools',
+  'System',
+  'Other'
+]);
+
+/**
+ * @param {string} actionId
+ * @returns {string}
+ */
+function getKeybindingActionCategory(actionId) {
+  const id = String(actionId || '');
+  return KEYBINDING_ACTION_CATEGORY_BY_ID[id] || 'Other';
+}
+
+/**
+ * Next auto-copy label for a built-in family, e.g. "Navigation 2 (user)".
+ * @param {string} baseLabel Family or layout base name
+ * @param {{ label?: string }[]} existingLayouts
+ * @returns {string}
+ */
+function nextUserCopyLayoutLabel(baseLabel, existingLayouts = []) {
+  const base = String(baseLabel || 'Layout').trim() || 'Layout';
+  const escaped = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`^${escaped}(?: (\\d+))? \\(user\\)$`, 'i');
+  let maxN = 1;
+  for (const l of existingLayouts || []) {
+    const m = String(l?.label || '').trim().match(re);
+    if (!m) continue;
+    const n = m[1] ? Number(m[1]) : 1;
+    if (Number.isFinite(n) && n > maxN) maxN = n;
+  }
+  return `${base} ${maxN + 1} (user)`;
+}
 
 function upperLetter(s) {
   const ch = String(s || '');
@@ -376,7 +640,7 @@ function cloneAssignments(base) {
 }
 
 /**
- * Right-handed browsing (existing behavior).
+ * Right-handed Navigation (full layout; storage id remains browsing-right).
  * @type {Record<string, KeyAssignment>}
  */
 const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
@@ -395,11 +659,8 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   HIGHLIGHT: Object.freeze({ keys: ['h', 'H'] }),
 
   TAB_HISTORY: Object.freeze({ keys: ['j', 'J'] }),
-  TOGGLE_KEYBOARD_HELP: Object.freeze({ keys: ['k', 'K'] }),
   OMNIBOX: Object.freeze({ keys: ['l', 'L'] }),
   LAUNCHER: Object.freeze({ keys: [';', ':', 'Semicolon', '`', '~', 'Backquote'], matchOn: ['key', 'code'], displayKey: ';', keyLabel: ';' }),
-
-  OPEN_SETTINGS_POPOVER: Object.freeze({ keys: ["'", 'Quote'], matchOn: ['key', 'code'], displayKey: "'" }),
 
   PAGE_TOP: Object.freeze({ keys: ['z', 'Z'] }),
   PAGE_BOTTOM: Object.freeze({ keys: ['x', 'X'] }),
@@ -411,17 +672,11 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
 
   ROOT: Object.freeze({ keys: ['1', '!'], displayKey: '1', keyLabel: '1' }),
   DELETE: Object.freeze({ keys: ['Backspace'], displayKey: 'Backspace', keyLabel: 'Backspace' }),
-  COLS_TOGGLE: Object.freeze({ keys: ['.', '>'], displayKey: '.', keyLabel: '.' }),
-  CANCEL: Object.freeze({ keys: ['Escape'], displayKey: 'Esc', keyLabel: 'Esc' })
+  COLS_TOGGLE: Object.freeze({ keys: ['.', '>'], displayKey: '.', keyLabel: '.' })
 });
 
 /**
- * Left-handed browsing:
- * Move the main left-cluster to the right side to be comfortable for the right hand.
- *
- * Note: A few "UI utility" actions remain on the left side to avoid collisions with
- * primary actions on the right home cluster.
- *
+ * Left-handed Navigation (full layout; storage id remains browsing-left).
  * @type {Record<string, KeyAssignment>}
  */
 const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
@@ -443,13 +698,11 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   HIGHLIGHT: Object.freeze({ keys: ['g', 'G'] }),
   RECTANGLE_HIGHLIGHT: Object.freeze({ keys: ['r', 'R'] }),
 
-  // Utility actions: keep on the left to avoid colliding with J/K/L cluster.
+  // Utility actions on the left avoid colliding with J/K/L cluster.
+  // (KB Reference / Settings / Esc live in the system layer, not layout assignments.)
   TAB_HISTORY: Object.freeze({ keys: ['f', 'F'] }),
-  TOGGLE_KEYBOARD_HELP: Object.freeze({ keys: ['d', 'D'] }),
   OMNIBOX: Object.freeze({ keys: ['s', 'S'] }),
   LAUNCHER: Object.freeze({ keys: ['a', 'A', '`', '~', 'Backquote'], matchOn: ['key', 'code'], displayKey: 'a/`', keyLabel: 'a/`' }),
-
-  OPEN_SETTINGS_POPOVER: Object.freeze({ keys: ["'", 'Quote'], matchOn: ['key', 'code'], displayKey: "'" }),
 
   // Bottom row cluster: Z X C V B  ->  / . , M N (mirrored)
   // Period reserved for COLS_TOGGLE (same muscle memory as right-handed).
@@ -463,9 +716,190 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   COPY_HOVERED_IMAGE: Object.freeze({ keys: ['e', 'E'] }),
 
   ROOT: Object.freeze({ keys: ['1', '!'], displayKey: '1', keyLabel: '1' }),
-  DELETE: Object.freeze({ keys: ['Backspace'], displayKey: 'Backspace', keyLabel: 'Backspace' }),
-  CANCEL: Object.freeze({ keys: ['Escape'], displayKey: 'Esc', keyLabel: 'Esc' })
+  DELETE: Object.freeze({ keys: ['Backspace'], displayKey: 'Backspace', keyLabel: 'Backspace' })
 });
+
+/**
+ * System keybinding layer — separate from layout families.
+ *
+ * Always active on top of whatever layout (built-in or user) is selected.
+ * Alt+ chrome hotkeys (Alt+K toggle KeyPilot, Alt+C layout edit, Alt+[ / ], …)
+ * are handled in KeyPilot itself and are also part of this always-on chrome layer.
+ *
+ * Layout-character system actions live here so families like Basic Navigation
+ * do not need to re-declare them.
+ */
+const SYSTEM_LAYER_ACTION_IDS = Object.freeze([
+  'CANCEL',
+  'TOGGLE_KEYBOARD_HELP',
+  'OPEN_SETTINGS_POPOVER'
+]);
+
+/** @deprecated Use SYSTEM_LAYER_ACTION_IDS */
+const SYSTEM_LAYOUT_ACTION_IDS = SYSTEM_LAYER_ACTION_IDS;
+
+/** Right-handed system-layer physical keys. */
+const SYSTEM_LAYER_ASSIGNMENTS_RIGHT = Object.freeze({
+  CANCEL: Object.freeze({ keys: ['Escape'], displayKey: 'Esc', keyLabel: 'Esc' }),
+  TOGGLE_KEYBOARD_HELP: Object.freeze({ keys: ['k', 'K'] }),
+  OPEN_SETTINGS_POPOVER: Object.freeze({ keys: ["'", 'Quote'], matchOn: ['key', 'code'], displayKey: "'" })
+});
+
+/** Left-handed system-layer physical keys (KB Reference mirrored off the home cluster). */
+const SYSTEM_LAYER_ASSIGNMENTS_LEFT = Object.freeze({
+  CANCEL: Object.freeze({ keys: ['Escape'], displayKey: 'Esc', keyLabel: 'Esc' }),
+  TOGGLE_KEYBOARD_HELP: Object.freeze({ keys: ['d', 'D'] }),
+  OPEN_SETTINGS_POPOVER: Object.freeze({ keys: ["'", 'Quote'], matchOn: ['key', 'code'], displayKey: "'" })
+});
+
+/**
+ * @param {any} handedness
+ * @returns {Record<string, any>}
+ */
+function buildSystemKeybindings(handedness = DEFAULT_KEYBOARD_HANDEDNESS) {
+  const hand = normalizeKeyboardHandedness(handedness);
+  const assignments = hand === 'left' ? SYSTEM_LAYER_ASSIGNMENTS_LEFT : SYSTEM_LAYER_ASSIGNMENTS_RIGHT;
+  /** @type {Record<string, any>} */
+  const out = {};
+  for (const actionId of SYSTEM_LAYER_ACTION_IDS) {
+    const def = KEYBINDING_ACTION_DEFS[actionId];
+    const assign = assignments[actionId];
+    if (!def || !assign || !Array.isArray(assign.keys)) continue;
+    const labels = normalizeAssignmentLabels(assign);
+    out[actionId] = {
+      keys: assign.keys.slice(),
+      ...(Array.isArray(assign.matchOn) ? { matchOn: assign.matchOn.slice() } : {}),
+      handler: def.handler,
+      label: def.label,
+      description: def.description,
+      keyLabel: labels.keyLabel,
+      keyboardClass: def.keyboardClass ?? null,
+      row: def.row ?? null,
+      displayKey: labels.displayKey,
+      systemLayer: true
+    };
+  }
+  return out;
+}
+
+/**
+ * Layout keybindings + system layer (system wins on id collision).
+ * @param {any} layoutId
+ * @param {any} [handedness]
+ * @returns {Record<string, any>}
+ */
+function buildEffectiveKeybindings(layoutId, handedness = DEFAULT_KEYBOARD_HANDEDNESS) {
+  return {
+    ...buildKeybindingsForLayout(layoutId),
+    ...buildSystemKeybindings(handedness)
+  };
+}
+
+/** Actions kept in Basic Navigation (system keys are NOT included — they are a separate layer). */
+const BASIC_NAVIGATION_ACTION_IDS = Object.freeze([
+  'ACTIVATE',
+  'TAB_LEFT',
+  'TAB_RIGHT',
+  'FORWARD',
+  'BACK',
+  'BACK2',
+  'PAGE_TOP',
+  'PAGE_BOTTOM',
+  'PAGE_UP_INSTANT',
+  'PAGE_DOWN_INSTANT'
+]);
+
+/** Actions kept in Click + History (system keys are NOT included — they are a separate layer). */
+const CLICK_HISTORY_ACTION_IDS = Object.freeze([
+  'ACTIVATE',
+  'BACK',
+  'BACK2',
+  'FORWARD'
+]);
+
+/** UI still paints system-layer keys on every family keyboard chrome. */
+const BASIC_NAVIGATION_UI_ACTION_IDS = Object.freeze([
+  ...BASIC_NAVIGATION_ACTION_IDS,
+  ...SYSTEM_LAYER_ACTION_IDS
+]);
+const CLICK_HISTORY_UI_ACTION_IDS = Object.freeze([
+  ...CLICK_HISTORY_ACTION_IDS,
+  ...SYSTEM_LAYER_ACTION_IDS
+]);
+
+/**
+ * @param {Record<string, KeyAssignment>} source
+ * @param {readonly string[]} allowedIds
+ * @returns {Record<string, KeyAssignment>}
+ */
+function pickAssignments(source, allowedIds) {
+  const allowed = new Set(allowedIds);
+  /** @type {Record<string, KeyAssignment>} */
+  const out = {};
+  for (const id of allowedIds) {
+    if (source[id]) out[id] = source[id];
+  }
+  // Also keep any accidental extras that are in allowed set from source iteration order
+  for (const [id, assignment] of Object.entries(source || {})) {
+    if (allowed.has(id) && !out[id]) out[id] = assignment;
+  }
+  return Object.freeze(out);
+}
+
+/**
+ * @param {KeyAssignment|null|undefined} assignment
+ * @returns {string}
+ */
+function letterFromAssignment(assignment) {
+  if (!assignment) return '';
+  if (typeof assignment.displayKey === 'string' && assignment.displayKey) return assignment.displayKey;
+  if (typeof assignment.keyLabel === 'string' && assignment.keyLabel) return assignment.keyLabel;
+  const keys = Array.isArray(assignment.keys) ? assignment.keys : [];
+  for (const k of keys) {
+    const s = String(k || '');
+    if (!s || s === 'Semicolon' || s === 'Quote' || s === 'Backquote') continue;
+    if (s.length === 1) return s.toUpperCase();
+    if (s === 'Backspace' || s === 'Escape') return s;
+  }
+  return '';
+}
+
+/**
+ * Keep Navigation key positions, but blank out actions not in the subset.
+ * @param {any[]} baseLayout
+ * @param {Record<string, KeyAssignment>} fullAssignments
+ * @param {readonly string[]} allowedIds
+ * @returns {any[]}
+ */
+function projectKeyboardUiLayout(baseLayout, fullAssignments, allowedIds) {
+  const allowed = new Set(allowedIds);
+  return Object.freeze(
+    (Array.isArray(baseLayout) ? baseLayout : []).map((row) =>
+      Object.freeze(
+        (Array.isArray(row) ? row : []).map((cell) => {
+          if (!cell || cell.type !== 'action' || !cell.id) return cell;
+          if (allowed.has(cell.id)) return cell;
+          if (cell.id === 'DELETE' || (cell.className && String(cell.className).includes('key-backspace'))) {
+            return Object.freeze({ type: 'special', text: 'Backspace', className: 'key key-backspace' });
+          }
+          const text = letterFromAssignment(fullAssignments[cell.id]);
+          if (!text) return Object.freeze({ type: 'key', text: '' });
+          if (text === 'Backspace') {
+            return Object.freeze({ type: 'special', text: 'Backspace', className: 'key key-backspace' });
+          }
+          // Prefer a short keycap glyph (letter or punctuation).
+          const glyph = text.length <= 3 ? text : text.slice(0, 1).toUpperCase();
+          return Object.freeze({ type: 'key', text: glyph.length === 1 ? glyph.toUpperCase() : glyph });
+        })
+      )
+    )
+  );
+}
+
+const ASSIGNMENTS_BASIC_NAVIGATION_RIGHT = pickAssignments(ASSIGNMENTS_BROWSING_RIGHT, BASIC_NAVIGATION_ACTION_IDS);
+const ASSIGNMENTS_BASIC_NAVIGATION_LEFT = pickAssignments(ASSIGNMENTS_BROWSING_LEFT, BASIC_NAVIGATION_ACTION_IDS);
+const ASSIGNMENTS_CLICK_HISTORY_RIGHT = pickAssignments(ASSIGNMENTS_BROWSING_RIGHT, CLICK_HISTORY_ACTION_IDS);
+const ASSIGNMENTS_CLICK_HISTORY_LEFT = pickAssignments(ASSIGNMENTS_BROWSING_LEFT, CLICK_HISTORY_ACTION_IDS);
 
 /**
  * Keyboard visualization layouts for the keybindings UI.
@@ -573,27 +1007,102 @@ const KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
 const BUILTIN_KEYBOARD_LAYOUTS = Object.freeze({
   'browsing-right': Object.freeze({
     id: 'browsing-right',
-    label: 'Browsing: right-handed',
-    description: 'Mouse: right hand. Keyboard shortcuts primarily on the left side.',
+    label: 'Navigation: right-handed',
+    description: 'Full navigation layout. Mouse: right hand. Shortcuts primarily on the left.',
     assignments: ASSIGNMENTS_BROWSING_RIGHT,
     keyboardLayout: KEYBOARD_UI_LAYOUT_RIGHT
   }),
   'browsing-left': Object.freeze({
     id: 'browsing-left',
-    label: 'Browsing: left-handed',
-    description: 'Mouse: left hand. Keyboard shortcuts primarily on the right side.',
+    label: 'Navigation: left-handed',
+    description: 'Full navigation layout. Mouse: left hand. Shortcuts primarily on the right.',
     assignments: ASSIGNMENTS_BROWSING_LEFT,
     keyboardLayout: KEYBOARD_UI_LAYOUT_LEFT
+  }),
+  'basic-navigation-right': Object.freeze({
+    id: 'basic-navigation-right',
+    label: 'Basic Navigation: right-handed',
+    description: 'Page scroll, click, tab switch, back/forward only.',
+    assignments: ASSIGNMENTS_BASIC_NAVIGATION_RIGHT,
+    keyboardLayout: projectKeyboardUiLayout(
+      KEYBOARD_UI_LAYOUT_RIGHT,
+      { ...ASSIGNMENTS_BROWSING_RIGHT, ...SYSTEM_LAYER_ASSIGNMENTS_RIGHT },
+      BASIC_NAVIGATION_UI_ACTION_IDS
+    )
+  }),
+  'basic-navigation-left': Object.freeze({
+    id: 'basic-navigation-left',
+    label: 'Basic Navigation: left-handed',
+    description: 'Page scroll, click, tab switch, back/forward only.',
+    assignments: ASSIGNMENTS_BASIC_NAVIGATION_LEFT,
+    keyboardLayout: projectKeyboardUiLayout(
+      KEYBOARD_UI_LAYOUT_LEFT,
+      { ...ASSIGNMENTS_BROWSING_LEFT, ...SYSTEM_LAYER_ASSIGNMENTS_LEFT },
+      BASIC_NAVIGATION_UI_ACTION_IDS
+    )
+  }),
+  'click-history-right': Object.freeze({
+    id: 'click-history-right',
+    label: 'Click + History: right-handed',
+    description: 'Click element, go back, and go forward only.',
+    assignments: ASSIGNMENTS_CLICK_HISTORY_RIGHT,
+    keyboardLayout: projectKeyboardUiLayout(
+      KEYBOARD_UI_LAYOUT_RIGHT,
+      { ...ASSIGNMENTS_BROWSING_RIGHT, ...SYSTEM_LAYER_ASSIGNMENTS_RIGHT },
+      CLICK_HISTORY_UI_ACTION_IDS
+    )
+  }),
+  'click-history-left': Object.freeze({
+    id: 'click-history-left',
+    label: 'Click + History: left-handed',
+    description: 'Click element, go back, and go forward only.',
+    assignments: ASSIGNMENTS_CLICK_HISTORY_LEFT,
+    keyboardLayout: projectKeyboardUiLayout(
+      KEYBOARD_UI_LAYOUT_LEFT,
+      { ...ASSIGNMENTS_BROWSING_LEFT, ...SYSTEM_LAYER_ASSIGNMENTS_LEFT },
+      CLICK_HISTORY_UI_ACTION_IDS
+    )
   })
 });
 
 /**
  * @param {BuiltinKeyboardLayoutId} layoutId
+ * @param {{ includeNumberRow?: boolean }} [opts]
  * @returns {any[]}
  */
-function getKeyboardUiLayoutForLayout(layoutId) {
+function getKeyboardUiLayoutForLayout(layoutId, opts = {}) {
   const id = normalizeKeyboardLayoutId(layoutId);
-  return BUILTIN_KEYBOARD_LAYOUTS[id]?.keyboardLayout || BUILTIN_KEYBOARD_LAYOUTS[DEFAULT_KEYBOARD_LAYOUT_ID].keyboardLayout;
+  const base = BUILTIN_KEYBOARD_LAYOUTS[id]?.keyboardLayout || BUILTIN_KEYBOARD_LAYOUTS[DEFAULT_KEYBOARD_LAYOUT_ID].keyboardLayout;
+  const include = !!(opts && opts.includeNumberRow);
+  return include ? addNumberRowToKeyboardUiLayout(base) : base;
+}
+
+/**
+ * @param {any[]} layout
+ * @returns {any[]}
+ */
+function addNumberRowToKeyboardUiLayout(layout) {
+  const base = Array.isArray(layout) ? layout : [];
+  // Avoid double-prepending if caller already did.
+  try {
+    const first = base[0];
+    if (Array.isArray(first) && first.some((i) => i && i.type === 'key' && String(i.text || '').trim() === '1')) {
+      return base;
+    }
+  } catch { /* ignore */ }
+  const numberRow = Object.freeze([
+    { type: 'key', text: '1' },
+    { type: 'key', text: '2' },
+    { type: 'key', text: '3' },
+    { type: 'key', text: '4' },
+    { type: 'key', text: '5' },
+    { type: 'key', text: '6' },
+    { type: 'key', text: '7' },
+    { type: 'key', text: '8' },
+    { type: 'key', text: '9' },
+    { type: 'key', text: '0' }
+  ]);
+  return [numberRow, ...base];
 }
 
 
@@ -617,9 +1126,8 @@ function getKeyboardUiLayoutForLayout(layoutId) {
  */
 
 // Legacy export used across the codebase and by `extension/build.js`.
-// This represents the *default* layout. Runtime code should prefer computing
-// keybindings from the active settings/layout when available.
-const KEYBINDINGS = buildKeybindingsForLayout(DEFAULT_KEYBOARD_LAYOUT_ID);
+// Default layout + system layer. Runtime should recompute from active settings.
+const KEYBINDINGS = buildEffectiveKeybindings(DEFAULT_KEYBOARD_LAYOUT_ID, DEFAULT_KEYBOARD_HANDEDNESS);
 
 const SELECTORS = {
   CLICKABLE: 'a[href], button, input, select, textarea',
@@ -805,6 +1313,10 @@ const Z_INDEX = {
   KEYBINDINGS_POPOVER: 2147483046,
   // Per-key floating config panel (above sticky key popover, below cursor)
   KEY_ACTION_CONFIG: 2147483047,
+  // Compact Keyboard Layout Config palette (beside Reference while editing)
+  KEYBOARD_LAYOUT_CONFIG: 2147483048,
+  // Click-to-place arrow (fallback when Popover API unavailable)
+  LAYOUT_PLACE_ARROW: 2147483052,
 
   // Cursor sits above chrome; click ripple is above even that so the
   // expanding circles always remain visible.
@@ -2371,7 +2883,8 @@ const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  * Named panel slots that share the generalized positioning system.
  * @typedef {{
  *   keyboardReference: PanelPositionSettings,
- *   controlStrip: PanelPositionSettings
+ *   controlStrip: PanelPositionSettings,
+ *   keyboardLayoutConfig: PanelPositionSettings
  * }} PanelPositionsSettings
  */
 
@@ -2379,8 +2892,12 @@ const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  * @typedef {{
  *   searchEngine: SearchEngine,
  *   cursorMode: CursorMode,
+ *   keyboardLayoutFamilyId: string,
+ *   keyboardHandedness: 'left'|'right',
  *   keyboardLayoutId: string,
+ *   currentKeyboardLayoutId: string,
  *   keyboardReferenceKeyFeedback: boolean,
+ *   keyboardReferenceShowNumberRow: boolean,
  *   controlStrip: ControlStripSettings,
  *   panelPositions: PanelPositionsSettings,
  *   clickMode: ClickModeSettings,
@@ -2394,9 +2911,21 @@ const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
 const DEFAULT_SETTINGS = Object.freeze({
   searchEngine: DEFAULT_SEARCH_ENGINE_ID,
   cursorMode: CURSOR_MODE.NO_CUSTOM_CURSORS,
+  // New model:
+  // - keyboardLayoutFamilyId + keyboardHandedness are the user-facing selection.
+  // - keyboardLayoutId is the resolved concrete implementation (kept for back-compat + early-inject).
+  keyboardLayoutFamilyId: DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID,
+  keyboardHandedness: DEFAULT_KEYBOARD_HANDEDNESS,
   keyboardLayoutId: DEFAULT_KEYBOARD_LAYOUT_ID,
+  // Active layout selection for runtime + keyboard reference:
+  // - 'builtin' uses the current built-in family + handedness selection.
+  // - 'user:<layoutId>' uses a stored user layout (created/duplicated in Alt+C).
+  currentKeyboardLayoutId: 'builtin',
   // When true, the floating keyboard reference panel highlights keys on keydown/keyup.
   keyboardReferenceKeyFeedback: true,
+  // When true, the floating keyboard reference panel includes the number row (1–0).
+  // Default is off to keep the panel compact.
+  keyboardReferenceShowNumberRow: false,
   // Floating Control Strip (upper-left): visibility + collapsed (On/Off-only) state.
   controlStrip: Object.freeze({
     visible: true,
@@ -2406,7 +2935,8 @@ const DEFAULT_SETTINGS = Object.freeze({
   // Anchors re-resolve on resize; free left/top reclamps inside the viewport margin.
   panelPositions: Object.freeze({
     keyboardReference: Object.freeze({ anchor: 'bottom-left' }),
-    controlStrip: Object.freeze({ anchor: 'top-left' })
+    controlStrip: Object.freeze({ anchor: 'top-left' }),
+    keyboardLayoutConfig: Object.freeze({ anchor: 'middle-right' })
   }),
   // Per-key action settings (Keyboard Reference mode switches / config params).
   actionSettings: Object.freeze({
@@ -2486,6 +3016,18 @@ function normalizeBoolean(raw, fallback) {
   if (raw === 'true') return true;
   if (raw === 'false') return false;
   return !!fallback;
+}
+
+/**
+ * @param {any} raw
+ * @returns {string}
+ */
+function normalizeCurrentKeyboardLayoutId(raw) {
+  const v = String(raw || '').trim();
+  if (!v) return DEFAULT_SETTINGS.currentKeyboardLayoutId;
+  if (v === 'builtin') return 'builtin';
+  if (v.startsWith('user:') && v.length > 'user:'.length) return v;
+  return DEFAULT_SETTINGS.currentKeyboardLayoutId;
 }
 
 /**
@@ -2728,6 +3270,10 @@ function normalizePanelPositions(raw) {
     controlStrip: normalizePanelPositionEntry(
       stored.controlStrip,
       DEFAULT_SETTINGS.panelPositions.controlStrip
+    ),
+    keyboardLayoutConfig: normalizePanelPositionEntry(
+      stored.keyboardLayoutConfig,
+      DEFAULT_SETTINGS.panelPositions.keyboardLayoutConfig
     )
   };
 }
@@ -2774,15 +3320,38 @@ async function getSettings() {
   try {
     let stored = await storageGetValue(SETTINGS_STORAGE_KEY, null);
     if (!stored || typeof stored !== 'object') stored = {};
+
+    // Normalize keyboard layout selection with backward compatibility:
+    // - Old storage: { keyboardLayoutId: 'browsing-right'|'browsing-left' }
+    // - New storage: { keyboardLayoutFamilyId: 'browsing', keyboardHandedness: 'left'|'right' }
+    let familyId = normalizeKeyboardLayoutFamilyId(stored?.keyboardLayoutFamilyId);
+    let handedness = normalizeKeyboardHandedness(stored?.keyboardHandedness);
+    const hasNewFields =
+      Object.prototype.hasOwnProperty.call(stored || {}, 'keyboardLayoutFamilyId') ||
+      Object.prototype.hasOwnProperty.call(stored || {}, 'keyboardHandedness');
+    if (!hasNewFields) {
+      const inferred = inferFamilyAndHandednessFromLayoutId(stored?.keyboardLayoutId);
+      familyId = normalizeKeyboardLayoutFamilyId(inferred.familyId);
+      handedness = normalizeKeyboardHandedness(inferred.handedness);
+    }
+    const resolvedLayoutId = resolveKeyboardLayoutId({ familyId, handedness });
+
     return {
       ...DEFAULT_SETTINGS,
       ...stored,
       searchEngine: normalizeSearchEngine(stored?.searchEngine),
       cursorMode: normalizeCursorMode(stored?.cursorMode),
-      keyboardLayoutId: normalizeKeyboardLayoutId(stored?.keyboardLayoutId),
+      keyboardLayoutFamilyId: familyId,
+      keyboardHandedness: handedness,
+      keyboardLayoutId: resolvedLayoutId,
+      currentKeyboardLayoutId: normalizeCurrentKeyboardLayoutId(stored?.currentKeyboardLayoutId),
       keyboardReferenceKeyFeedback: normalizeBoolean(
         stored?.keyboardReferenceKeyFeedback,
         DEFAULT_SETTINGS.keyboardReferenceKeyFeedback
+      ),
+      keyboardReferenceShowNumberRow: normalizeBoolean(
+        stored?.keyboardReferenceShowNumberRow,
+        DEFAULT_SETTINGS.keyboardReferenceShowNumberRow
       ),
       controlStrip: normalizeControlStrip(stored?.controlStrip),
       panelPositions: normalizePanelPositions(stored?.panelPositions),
@@ -2797,7 +3366,8 @@ async function getSettings() {
       controlStrip: { ...DEFAULT_SETTINGS.controlStrip },
       panelPositions: {
         keyboardReference: { ...DEFAULT_SETTINGS.panelPositions.keyboardReference },
-        controlStrip: { ...DEFAULT_SETTINGS.panelPositions.controlStrip }
+        controlStrip: { ...DEFAULT_SETTINGS.panelPositions.controlStrip },
+        keyboardLayoutConfig: { ...DEFAULT_SETTINGS.panelPositions.keyboardLayoutConfig }
       },
       actionSettings: normalizeActionSettings(null),
       clickMode: { ...DEFAULT_SETTINGS.clickMode, cursor: { ...DEFAULT_SETTINGS.clickMode.cursor } },
@@ -2837,6 +3407,12 @@ async function setSettings(partial) {
         ...current.panelPositions.controlStrip,
         ...(pPositions?.controlStrip && typeof pPositions.controlStrip === 'object'
           ? pPositions.controlStrip
+          : {})
+      },
+      keyboardLayoutConfig: {
+        ...(current.panelPositions.keyboardLayoutConfig || DEFAULT_SETTINGS.panelPositions.keyboardLayoutConfig),
+        ...(pPositions?.keyboardLayoutConfig && typeof pPositions.keyboardLayoutConfig === 'object'
+          ? pPositions.keyboardLayoutConfig
           : {})
       }
     },
@@ -2878,10 +3454,33 @@ async function setSettings(partial) {
   };
   next.searchEngine = normalizeSearchEngine(next.searchEngine);
   next.cursorMode = normalizeCursorMode(next.cursorMode);
-  next.keyboardLayoutId = normalizeKeyboardLayoutId(next.keyboardLayoutId);
+
+  // Keyboard layout resolution rules:
+  // - If caller set keyboardLayoutId directly (legacy), infer family/handedness from it.
+  // - Otherwise, normalize family/handedness and compute the concrete keyboardLayoutId.
+  const callerSetLayoutId = Object.prototype.hasOwnProperty.call(p, 'keyboardLayoutId');
+  if (callerSetLayoutId) {
+    const inferred = inferFamilyAndHandednessFromLayoutId(p?.keyboardLayoutId);
+    next.keyboardLayoutFamilyId = normalizeKeyboardLayoutFamilyId(inferred.familyId);
+    next.keyboardHandedness = normalizeKeyboardHandedness(inferred.handedness);
+    next.keyboardLayoutId = normalizeKeyboardLayoutId(p?.keyboardLayoutId);
+  } else {
+    next.keyboardLayoutFamilyId = normalizeKeyboardLayoutFamilyId(next.keyboardLayoutFamilyId);
+    next.keyboardHandedness = normalizeKeyboardHandedness(next.keyboardHandedness);
+    next.keyboardLayoutId = resolveKeyboardLayoutId({
+      familyId: next.keyboardLayoutFamilyId,
+      handedness: next.keyboardHandedness
+    });
+  }
+
+  next.currentKeyboardLayoutId = normalizeCurrentKeyboardLayoutId(next.currentKeyboardLayoutId);
   next.keyboardReferenceKeyFeedback = normalizeBoolean(
     next.keyboardReferenceKeyFeedback,
     DEFAULT_SETTINGS.keyboardReferenceKeyFeedback
+  );
+  next.keyboardReferenceShowNumberRow = normalizeBoolean(
+    next.keyboardReferenceShowNumberRow,
+    DEFAULT_SETTINGS.keyboardReferenceShowNumberRow
   );
   next.controlStrip = normalizeControlStrip(next.controlStrip);
   next.panelPositions = normalizePanelPositions(next.panelPositions);
@@ -3383,8 +3982,8 @@ function installFrameClickAgent() {
     let enabled = true;
     /** @type {{ x: number|null, y: number|null }} */
     let lastMouse = { x: null, y: null };
-    /** @type {ReturnType<typeof buildKeybindingsForLayout>} */
-    let keybindings = buildKeybindingsForLayout(DEFAULT_KEYBOARD_LAYOUT_ID);
+    /** @type {ReturnType<typeof buildEffectiveKeybindings>} */
+    let keybindings = buildEffectiveKeybindings(DEFAULT_KEYBOARD_LAYOUT_ID);
     /** @type {number} */
     let halfPagePx = SCROLL.HALF_PAGE_PX;
     /** @type {'smooth'|'auto'} */
@@ -3567,8 +4166,18 @@ function installFrameClickAgent() {
     const refreshKeybindings = async () => {
       try {
         const settings = await getSettings();
-        const layoutId = normalizeKeyboardLayoutId(settings?.keyboardLayoutId);
-        keybindings = buildKeybindingsForLayout(layoutId);
+        // Exclusive user layouts are top-frame only: skip built-in KP key actions in child frames.
+        const currentSel = String(settings?.currentKeyboardLayoutId || 'builtin');
+        if (currentSel.startsWith('user:')) {
+          // Exclusive user layouts: only the always-on system layer in child frames.
+          keybindings = buildSystemKeybindings(settings?.keyboardHandedness);
+        } else {
+          const layoutId = resolveKeyboardLayoutId({
+            familyId: settings?.keyboardLayoutFamilyId,
+            handedness: settings?.keyboardHandedness
+          }) || normalizeKeyboardLayoutId(settings?.keyboardLayoutId);
+          keybindings = buildEffectiveKeybindings(layoutId, settings?.keyboardHandedness);
+        }
         const cm = settings?.clickMode || {};
         focusChrome = {
           focusColor: cm.focusColor === 'green' ? 'green' : 'blue',

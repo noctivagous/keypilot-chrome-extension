@@ -3,10 +3,14 @@
  *
  * Keys declare optional modes / parameters here. The sticky key popover reads the
  * registry to render mode switches and a Config button that opens a draggable panel.
+ *
+ * Shared result destinations (clipboard / popover / both) live in
+ * `action-result-delivery.js` and are reused by AI and future procedures.
  */
 import { Z_INDEX, KP_UI_FONT } from '../config/constants.js';
 import { getSettings, setSettings } from '../modules/settings-manager.js';
 import { makePanelDraggable } from '../utils/panel-position.js';
+import { RESULT_DESTINATION_PARAMETER } from '../modules/action-result-delivery.js';
 
 /**
  * @typedef {{ id: string, label: string }} ActionModeOption
@@ -18,7 +22,9 @@ import { makePanelDraggable } from '../utils/panel-position.js';
  *   options?: Array<{ id: string, label: string }>,
  *   min?: number,
  *   max?: number,
- *   step?: number
+ *   step?: number,
+ *   multiline?: boolean,
+ *   placeholder?: string
  * }} ActionParameterDef
  * @typedef {{
  *   modes?: ActionModeOption[],
@@ -26,6 +32,9 @@ import { makePanelDraggable } from '../utils/panel-position.js';
  *   parameters?: ActionParameterDef[]
  * }} ActionSettingsDef
  */
+
+/** Re-export for callers that configure procedure destinations. */
+export { RESULT_DESTINATION_PARAMETER };
 
 /** @type {Readonly<Record<string, ActionSettingsDef>>} */
 export const ACTION_SETTINGS_REGISTRY = Object.freeze({
@@ -35,8 +44,20 @@ export const ACTION_SETTINGS_REGISTRY = Object.freeze({
       Object.freeze({ id: 'cumulative', label: 'Pick cumulative' })
     ]),
     defaultMode: 'element',
-    // Empty for Y; Config UI is ready for other keys that register parameters.
     parameters: Object.freeze([])
+  }),
+  SEND_TEXT_TO_AI: Object.freeze({
+    parameters: Object.freeze([
+      Object.freeze({
+        id: 'prompt',
+        label: 'Instruction',
+        type: 'string',
+        multiline: true,
+        defaultValue: 'Translate to English',
+        placeholder: 'e.g. Translate to English'
+      }),
+      RESULT_DESTINATION_PARAMETER
+    ])
   })
 });
 
@@ -80,6 +101,21 @@ export function getActionMode(actionSettings, actionId) {
     return stored;
   }
   return fallback;
+}
+
+/**
+ * Read a stored parameter with registry default fallback.
+ * @param {Record<string, any>|null|undefined} actionSettings
+ * @param {string} actionId
+ * @param {string} paramId
+ * @returns {any}
+ */
+export function getActionParameter(actionSettings, actionId, paramId) {
+  const def = getActionSettingsDef(actionId);
+  const paramDef = def?.parameters?.find((p) => p && p.id === paramId) || null;
+  const stored = actionSettings?.[actionId]?.parameters?.[paramId];
+  if (stored !== undefined) return stored;
+  return paramDef ? paramDef.defaultValue : undefined;
 }
 
 /**
@@ -217,6 +253,11 @@ function ensureConfigPanelStyles(doc) {
   color: inherit;
   padding: 6px 8px;
   font: inherit;
+}
+.kp-action-config-panel__control[data-multiline="true"] {
+  min-height: 64px;
+  resize: vertical;
+  line-height: 1.35;
 }
 .kp-action-config-panel__empty {
   opacity: 0.7;
@@ -379,10 +420,22 @@ export class KeyActionConfigPanel {
           const next = await setActionParameter(actionId, param.id, Number.isFinite(n) ? n : param.defaultValue);
           try { this.onSettingsChanged?.(next); } catch { /* ignore */ }
         });
+      } else if (param.multiline) {
+        control = document.createElement('textarea');
+        control.className = 'kp-action-config-panel__control';
+        control.setAttribute('data-multiline', 'true');
+        control.rows = 3;
+        if (param.placeholder) control.placeholder = String(param.placeholder);
+        control.value = currentVal != null ? String(currentVal) : '';
+        control.addEventListener('change', async () => {
+          const next = await setActionParameter(actionId, param.id, control.value);
+          try { this.onSettingsChanged?.(next); } catch { /* ignore */ }
+        });
       } else {
         control = document.createElement('input');
         control.type = 'text';
         control.className = 'kp-action-config-panel__control';
+        if (param.placeholder) control.placeholder = String(param.placeholder);
         control.value = currentVal != null ? String(currentVal) : '';
         control.addEventListener('change', async () => {
           const next = await setActionParameter(actionId, param.id, control.value);
