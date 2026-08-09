@@ -67,8 +67,14 @@ import { ACTION_RESULT_DESTINATIONS, buildResultDestinationParameter } from '../
  *   // routed. See KEY_ACTION_ARCHITECTURE.md "Data Acquisition & Result Destinations". Omitted
  *   // for Functions that don't read/produce page data (e.g. NEW_TAB) or haven't been classified
  *   // yet — absence is not meaningful, just "not yet tagged."
- *   dataSource?: 'underCursor'|'textRange'|'none',
- *   dataKind?: 'text'|'media',
+ *   // `urlFetch` is a two-stage acquisition (resolve a URL, then network-fetch the resource it
+ *   // points to) — see `FETCH_URL_FOR_MEDIA_LIBRARY` and "Fetching vs. linking a URL" in
+ *   // KEY_ACTION_ARCHITECTURE.md for why it's its own `dataSource` rather than a flavor of
+ *   // `underCursor`.
+ *   dataSource?: 'underCursor'|'textRange'|'urlFetch'|'none',
+ *   // `file` (arbitrary fetched document — PDF/mp3/mp4/…) is distinct from `media` (an existing
+ *   // on-page `<img>`/`<video>` read directly, never fetched over the network).
+ *   dataKind?: 'text'|'media'|'file',
  *   destinations?: import('../modules/action-result-delivery.js').ActionResultDestination[]
  * }} FunctionDef
  */
@@ -164,6 +170,21 @@ const KEYSTROKE_FUNCTION_CATEGORY = 'Keystrokes';
 
 /** Category used for new customizable text-entry style Functions. */
 const TEXT_FUNCTION_CATEGORY = 'Type';
+
+/** Category for the low-level data-getter primitives (see "Data Acquisition" below). */
+const DATA_FUNCTION_CATEGORY = 'Data';
+
+/** Category for dictionary/definition lookups. */
+const LOOKUP_FUNCTION_CATEGORY = 'Lookup';
+
+/** Category for language translation Functions. */
+const TRANSLATE_FUNCTION_CATEGORY = 'Translate';
+
+/** Category for Functions whose entire job is rendering something to the user. */
+const DISPLAY_FUNCTION_CATEGORY = 'Display';
+
+/** Category for the (design-only until a real sink exists) Media Library Functions. */
+const MEDIA_LIBRARY_FUNCTION_CATEGORY = 'Media Library';
 
 /**
  * id mapping: legacy MacroKeyKind -> unified Function id.
@@ -264,6 +285,149 @@ function buildBuiltinActionFunctionDefs() {
 }
 
 /**
+ * Data Acquisition + Result Destination example/primitive Functions — see
+ * KEY_ACTION_ARCHITECTURE.md, "Data Acquisition & Result Destinations", for the full design.
+ *
+ * `GET_TEXT_AT_CURSOR` / `GET_TEXT_RANGE` / `GET_MEDIA_AT_CURSOR` are the low-level getters: real,
+ * directly key-assignable (each copies its result to the clipboard so it's independently useful
+ * today), but their real purpose is as a future macro-builder Step feeding a destination-writer
+ * Step — hence the single fixed `clipboard` destination rather than a full `destinations` list.
+ * `LOOKUP_WORD` / `TRANSLATE` / `SHOW_POPOVER` are the composed, stock-ready examples built from
+ * those same getters. `ADD_URL_TO_MEDIA_LIBRARY` / `FETCH_URL_FOR_MEDIA_LIBRARY` are catalog
+ * entries only — their `mediaLibrary` destination has no real sink yet (see
+ * `action-result-delivery.js`), so their handler just says so.
+ * @returns {Record<string, FunctionDef>}
+ */
+function buildDataAcquisitionFunctionDefs() {
+  const granularityOptions = (ids) => ({
+    id: 'granularity',
+    label: 'Granularity',
+    type: 'enum',
+    defaultValue: ids[0],
+    options: ids.map((id) => ({
+      id,
+      label: id === 'word' ? 'Word' : id === 'sentence' ? 'Sentence' : id === 'paragraph' ? 'Paragraph' : 'Hyperlink'
+    }))
+  });
+
+  return {
+    GET_TEXT_AT_CURSOR: Object.freeze({
+      id: 'GET_TEXT_AT_CURSOR',
+      label: 'Get Text At Cursor',
+      description: 'Reads the word, sentence, paragraph, or hyperlink under the cursor and copies it to the clipboard.',
+      handler: 'handleGetTextAtCursorKey',
+      category: DATA_FUNCTION_CATEGORY,
+      dataSource: 'underCursor',
+      dataKind: 'text',
+      destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.CLIPBOARD]),
+      parameters: Object.freeze([Object.freeze(granularityOptions(['word', 'sentence', 'paragraph', 'hyperlink']))])
+    }),
+    GET_TEXT_RANGE: Object.freeze({
+      id: 'GET_TEXT_RANGE',
+      label: 'Get Text Range',
+      description: 'Reads the current highlight/selection (set up beforehand) and copies it to the clipboard.',
+      handler: 'handleGetTextRangeKey',
+      category: DATA_FUNCTION_CATEGORY,
+      dataSource: 'textRange',
+      dataKind: 'text',
+      destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.CLIPBOARD])
+    }),
+    GET_MEDIA_AT_CURSOR: Object.freeze({
+      id: 'GET_MEDIA_AT_CURSOR',
+      label: 'Get Media At Cursor',
+      description: 'Reads the image, video, or audio under the cursor and copies it (or its URL) to the clipboard.',
+      handler: 'handleGetMediaAtCursorKey',
+      category: DATA_FUNCTION_CATEGORY,
+      dataSource: 'underCursor',
+      dataKind: 'media',
+      destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.CLIPBOARD]),
+      parameters: Object.freeze([Object.freeze({
+        id: 'kind',
+        label: 'Media kind',
+        type: 'enum',
+        defaultValue: 'image',
+        options: Object.freeze([
+          Object.freeze({ id: 'image', label: 'Image' }),
+          Object.freeze({ id: 'video', label: 'Video' }),
+          Object.freeze({ id: 'audio', label: 'Audio' })
+        ])
+      })])
+    }),
+    LOOKUP_WORD: Object.freeze({
+      id: 'LOOKUP_WORD',
+      label: 'Lookup Word',
+      description: 'Shows a definition popover for the word under the cursor. No setup required.',
+      handler: 'handleLookupWordKey',
+      category: LOOKUP_FUNCTION_CATEGORY,
+      dataSource: 'underCursor',
+      dataKind: 'text',
+      destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.POPOVER])
+    }),
+    TRANSLATE: Object.freeze({
+      id: 'TRANSLATE',
+      label: 'Translate',
+      description: 'Translates the highlighted text (or the word/sentence/paragraph under the cursor if nothing is highlighted).',
+      handler: 'handleTranslateKey',
+      category: TRANSLATE_FUNCTION_CATEGORY,
+      dataSource: 'underCursor',
+      dataKind: 'text',
+      destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.MODIFY_PAGE, ACTION_RESULT_DESTINATIONS.POPOVER]),
+      parameters: Object.freeze([
+        Object.freeze(granularityOptions(['sentence', 'word', 'paragraph'])),
+        Object.freeze({
+          id: 'targetLanguage',
+          label: 'Target language',
+          type: 'string',
+          defaultValue: 'English',
+          placeholder: 'e.g. English, Spanish, Japanese…'
+        }),
+        buildResultDestinationParameter([
+          ACTION_RESULT_DESTINATIONS.MODIFY_PAGE,
+          ACTION_RESULT_DESTINATIONS.POPOVER
+        ])
+      ])
+    }),
+    SHOW_POPOVER: Object.freeze({
+      id: 'SHOW_POPOVER',
+      label: 'Show Popover',
+      description: 'Shows the configured text in a popover — a display primitive for composing into future macro steps.',
+      handler: 'handleShowPopoverKey',
+      category: DISPLAY_FUNCTION_CATEGORY,
+      dataSource: 'none',
+      destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.POPOVER]),
+      parameters: Object.freeze([Object.freeze({
+        id: 'content',
+        label: 'Content',
+        type: 'string',
+        multiline: true,
+        defaultValue: '',
+        placeholder: 'Text to show in the popover…'
+      })])
+    }),
+    ADD_URL_TO_MEDIA_LIBRARY: Object.freeze({
+      id: 'ADD_URL_TO_MEDIA_LIBRARY',
+      label: 'Add URL to Media Library',
+      description: 'Stores the hyperlink under the cursor itself (its href) — does not download anything. Media Library is not built yet.',
+      handler: 'handleMediaLibraryNotAvailableKey',
+      category: MEDIA_LIBRARY_FUNCTION_CATEGORY,
+      dataSource: 'underCursor',
+      dataKind: 'text',
+      destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY])
+    }),
+    FETCH_URL_FOR_MEDIA_LIBRARY: Object.freeze({
+      id: 'FETCH_URL_FOR_MEDIA_LIBRARY',
+      label: 'Fetch URL for Media Library',
+      description: 'Fetches the resource the hyperlink under the cursor points to (e.g. a .pdf/.mp3/.mp4) to store it. Media Library is not built yet.',
+      handler: 'handleMediaLibraryNotAvailableKey',
+      category: MEDIA_LIBRARY_FUNCTION_CATEGORY,
+      dataSource: 'urlFetch',
+      dataKind: 'file',
+      destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY])
+    })
+  };
+}
+
+/**
  * The unified Function Library: built-in stock Functions + keystroke-primitive Functions +
  * new customizable Functions, keyed by Function id.
  * @type {Readonly<Record<string, FunctionDef>>}
@@ -271,7 +435,8 @@ function buildBuiltinActionFunctionDefs() {
 export const FUNCTION_LIBRARY = Object.freeze({
   ...buildBuiltinActionFunctionDefs(),
   ...buildKeystrokeFunctionDefs(),
-  [TYPE_CHARACTERS_FUNCTION_DEF.id]: TYPE_CHARACTERS_FUNCTION_DEF
+  [TYPE_CHARACTERS_FUNCTION_DEF.id]: TYPE_CHARACTERS_FUNCTION_DEF,
+  ...buildDataAcquisitionFunctionDefs()
 });
 
 /** Stable category display order for the Functions browser. */
@@ -284,6 +449,11 @@ export const FUNCTION_CATEGORY_ORDER = Object.freeze([
   'Clipboard',
   TEXT_FUNCTION_CATEGORY,
   KEYSTROKE_FUNCTION_CATEGORY,
+  DATA_FUNCTION_CATEGORY,
+  LOOKUP_FUNCTION_CATEGORY,
+  TRANSLATE_FUNCTION_CATEGORY,
+  DISPLAY_FUNCTION_CATEGORY,
+  MEDIA_LIBRARY_FUNCTION_CATEGORY,
   'AI',
   'Tools',
   'System',

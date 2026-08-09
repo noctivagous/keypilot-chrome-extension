@@ -88,10 +88,10 @@ const CONFIG_STYLE_VERSION = 'v3';
  *   // All UserAction Action Instances (see keyboard-layout-store.js) — passed through to
  *   // `applyLiveUserLayout`/`setEditLayout` so newly bound instances dispatch/render immediately.
  *   actions: any[],
- *   // `actions` filtered + adapted to `{ id, kind, label, config }` for the "Macro Keys" tab —
- *   // see `macroKeyLikeFromUserAction()`. Every entry here is also present in `actions`.
- *   macroKeys: any[],
- *   tab: 'functions'|'macros'|'macroKeys'
+ *   // `actions` filtered + adapted to `{ id, kind, label, config }` for the "Configured Macro
+ *   // Keys" section — see `macroKeyLikeFromUserAction()`. Every entry here is also present in
+ *   // `actions`.
+ *   macroKeys: any[]
  * }} LayoutConfigState
  */
 
@@ -115,9 +115,6 @@ export class KeyboardLayoutConfigPanel {
     this._macroKeysActionsRow = null;
     this._macroKeyEditorHost = null;
     this._showNumRowToggle = null;
-    this._functionsTab = null;
-    this._macrosTab = null;
-    this._macroKeysTab = null;
     this._dragDispose = null;
     this._positionHydrated = false;
     /** @type {any|null} draft while editing a macro key */
@@ -145,8 +142,7 @@ export class KeyboardLayoutConfigPanel {
       userLayouts: [],
       macros: [],
       actions: [],
-      macroKeys: [],
-      tab: 'functions'
+      macroKeys: []
     };
   }
 
@@ -413,13 +409,6 @@ export class KeyboardLayoutConfigPanel {
   outline: none;
   font-size: 12px;
   box-sizing: border-box;
-}
-.kp-layout-config-panel .kp-cfg-tab[aria-selected="true"] {
-  background: rgba(255,255,255,0.12);
-  opacity: 1;
-}
-.kp-layout-config-panel .kp-cfg-tab[aria-selected="false"] {
-  opacity: 0.65;
 }
 .kp-layout-config-panel .kp-mk-kind-grid {
   display: grid;
@@ -713,7 +702,7 @@ export class KeyboardLayoutConfigPanel {
     btnRow.appendChild(importFile);
 
     const hint = doc.createElement('div');
-    hint.textContent = 'Configure Macro Keys, or click a function/macro/macro-key, then click a Keyboard Reference key to place it.';
+    hint.textContent = 'Click a function, macro, or macro key below, then click a Keyboard Reference key to place it.';
     Object.assign(hint.style, { fontSize: '11px', opacity: '0.75', lineHeight: '1.35' });
 
     // Number row
@@ -726,37 +715,22 @@ export class KeyboardLayoutConfigPanel {
     numRowLabel.appendChild(showNumRowToggle);
     numRowLabel.appendChild(numRowText);
 
-    // Tabs
-    const tabs = doc.createElement('div');
-    Object.assign(tabs.style, { display: 'flex', gap: '6px' });
-    const functionsTab = mkBtn('Functions');
-    functionsTab.classList.add('kp-cfg-tab');
-    functionsTab.setAttribute('aria-selected', 'true');
-    const macrosTab = mkBtn('Macros');
-    macrosTab.classList.add('kp-cfg-tab');
-    macrosTab.setAttribute('aria-selected', 'false');
-    const macroKeysTab = mkBtn('Macro Keys');
-    macroKeysTab.classList.add('kp-cfg-tab');
-    macroKeysTab.setAttribute('aria-selected', 'false');
-    functionsTab.style.flex = '1';
-    macrosTab.style.flex = '1';
-    macroKeysTab.style.flex = '1';
-    tabs.appendChild(functionsTab);
-    tabs.appendChild(macrosTab);
-    tabs.appendChild(macroKeysTab);
-
     const search = doc.createElement('input');
     search.type = 'search';
     search.className = 'kp-cfg-field';
     search.placeholder = 'Search…';
 
+    // Functions, Macros, and Macro Keys are all Function-Library-backed placeable items now
+    // (see KEY_ACTION_ARCHITECTURE.md), so they share a single unified, always-visible list
+    // below instead of separate tabs — these two rows just hold the "create new" controls for
+    // the Macros and Macro Keys sections of that list.
     const macrosActionsRow = doc.createElement('div');
-    Object.assign(macrosActionsRow.style, { display: 'none', gap: '6px' });
+    Object.assign(macrosActionsRow.style, { display: 'flex', gap: '6px' });
     const newMacroBtn = mkBtn('New Macro');
     macrosActionsRow.appendChild(newMacroBtn);
 
     const macroKeysActionsRow = doc.createElement('div');
-    Object.assign(macroKeysActionsRow.style, { display: 'none', flexDirection: 'column', gap: '6px' });
+    Object.assign(macroKeysActionsRow.style, { display: 'flex', flexDirection: 'column', gap: '6px' });
 
     const macroKeyEditorHost = doc.createElement('div');
     macroKeyEditorHost.hidden = true;
@@ -780,7 +754,6 @@ export class KeyboardLayoutConfigPanel {
     body.appendChild(btnRow);
     body.appendChild(hint);
     body.appendChild(numRowLabel);
-    body.appendChild(tabs);
     body.appendChild(search);
     body.appendChild(macrosActionsRow);
     body.appendChild(macroKeysActionsRow);
@@ -800,9 +773,6 @@ export class KeyboardLayoutConfigPanel {
     this._macroKeysActionsRow = macroKeysActionsRow;
     this._macroKeyEditorHost = macroKeyEditorHost;
     this._showNumRowToggle = showNumRowToggle;
-    this._functionsTab = functionsTab;
-    this._macrosTab = macrosTab;
-    this._macroKeysTab = macroKeysTab;
 
     // Drag
     try {
@@ -841,9 +811,6 @@ export class KeyboardLayoutConfigPanel {
     })();
 
     // Wire events
-    functionsTab.addEventListener('click', () => this._setActiveTab('functions'), true);
-    macrosTab.addEventListener('click', () => this._setActiveTab('macros'), true);
-    macroKeysTab.addEventListener('click', () => this._setActiveTab('macroKeys'), true);
     search.addEventListener('input', () => this._renderRightList(), true);
 
     layoutSelect.addEventListener('change', async () => {
@@ -1088,7 +1055,8 @@ export class KeyboardLayoutConfigPanel {
       }
     }
     this._renderLayoutSelect();
-    this._setActiveTab(this._st.tab || 'functions');
+    this._renderMacroKeyKindButtons();
+    this._renderRightList();
   }
 
   _isReadOnly() {
@@ -1100,25 +1068,6 @@ export class KeyboardLayoutConfigPanel {
     try {
       this._st.userLayout = await upsertUserKeyboardLayout(this._st.userLayout);
     } catch { /* ignore */ }
-  }
-
-  _setActiveTab(tab) {
-    const next = tab === 'macros' ? 'macros' : (tab === 'macroKeys' ? 'macroKeys' : 'functions');
-    this._st.tab = next;
-    try {
-      this._functionsTab?.setAttribute('aria-selected', next === 'functions' ? 'true' : 'false');
-      this._macrosTab?.setAttribute('aria-selected', next === 'macros' ? 'true' : 'false');
-      this._macroKeysTab?.setAttribute('aria-selected', next === 'macroKeys' ? 'true' : 'false');
-      if (this._macrosActionsRow) {
-        this._macrosActionsRow.style.display = next === 'macros' ? 'flex' : 'none';
-      }
-      if (this._macroKeysActionsRow) {
-        this._macroKeysActionsRow.style.display = next === 'macroKeys' ? 'flex' : 'none';
-      }
-      if (next !== 'macroKeys') this._closeMacroKeyEditor();
-      else this._renderMacroKeyKindButtons();
-    } catch { /* ignore */ }
-    this._renderRightList();
   }
 
   _renderMacroKeyKindButtons() {
@@ -1336,10 +1285,7 @@ export class KeyboardLayoutConfigPanel {
       // A configured Action Instance — Macro Keys (hotkey/burst/…) are the only kind this
       // palette currently instantiates, so this is a macro-key-shaped inspect/edit.
       const mk = (this._st.macroKeys || []).find((m) => m && m.id === item.id) || null;
-      if (mk) {
-        this._setActiveTab('macroKeys');
-        this._openMacroKeyEditor(mk);
-      }
+      if (mk) this._openMacroKeyEditor(mk);
       const binding = {
         label: String(mk?.label || 'Macro Key'),
         description: mk ? summarizeMacroKey(mk) : 'Configured built-in macro key.',
@@ -1452,93 +1398,101 @@ export class KeyboardLayoutConfigPanel {
       return item;
     };
 
-    if (this._st.tab === 'macros') {
-      const macros = Array.isArray(this._st.macros) ? this._st.macros : [];
-      const items = q ? macros.filter((m) => String(m?.label || '').toLowerCase().includes(q)) : macros;
+    // Macros, configured Macro Keys, and stock Functions are all placeable Function-Library
+    // items now (see KEY_ACTION_ARCHITECTURE.md's "Config panel tabs" row) so they render as
+    // sections of one unified, always-visible list rather than separate tabs.
+
+    const macros = Array.isArray(this._st.macros) ? this._st.macros : [];
+    const macroItems = q ? macros.filter((m) => String(m?.label || '').toLowerCase().includes(q)) : macros;
+    if (macroItems.length || !q) {
       const section = document.createElement('div');
       section.className = 'kp-cfg-category';
       const title = document.createElement('div');
       title.className = 'kp-cfg-category-title';
       title.textContent = 'Macros';
       section.appendChild(title);
-      const grid = document.createElement('div');
-      grid.className = 'kp-cfg-key-grid';
-      for (const m of items) {
-        if (!m || !m.id) continue;
-        grid.appendChild(appendKeyItem({
-          type: 'macro',
-          id: m.id,
-          label: String(m.label || 'Macro'),
-          keyboardClass: 'key-purple',
-          infoKey: `macro:${m.id}`
-        }));
+      if (macroItems.length) {
+        const grid = document.createElement('div');
+        grid.className = 'kp-cfg-key-grid';
+        for (const m of macroItems) {
+          if (!m || !m.id) continue;
+          grid.appendChild(appendKeyItem({
+            type: 'macro',
+            id: m.id,
+            label: String(m.label || 'Macro'),
+            keyboardClass: 'key-purple',
+            infoKey: `macro:${m.id}`
+          }));
+        }
+        section.appendChild(grid);
+      } else {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'font-size:11px;opacity:0.7;padding:4px 2px;';
+        empty.textContent = 'Click "New Macro" above to create one.';
+        section.appendChild(empty);
       }
-      section.appendChild(grid);
       list.appendChild(section);
-      return;
     }
 
-    if (this._st.tab === 'macroKeys') {
-      const keys = Array.isArray(this._st.macroKeys) ? this._st.macroKeys : [];
-      const items = q
-        ? keys.filter((m) => {
-          const hay = `${m?.label || ''} ${m?.kind || ''} ${summarizeMacroKey(m)}`.toLowerCase();
-          return hay.includes(q);
-        })
-        : keys;
+    const macroKeys = Array.isArray(this._st.macroKeys) ? this._st.macroKeys : [];
+    const macroKeyItems = q
+      ? macroKeys.filter((m) => {
+        const hay = `${m?.label || ''} ${m?.kind || ''} ${summarizeMacroKey(m)}`.toLowerCase();
+        return hay.includes(q);
+      })
+      : macroKeys;
+    if (macroKeyItems.length || !q) {
       const section = document.createElement('div');
       section.className = 'kp-cfg-category';
       const title = document.createElement('div');
       title.className = 'kp-cfg-category-title';
       title.textContent = 'Configured Macro Keys';
       section.appendChild(title);
-      if (!items.length) {
+      if (macroKeyItems.length) {
+        const grid = document.createElement('div');
+        grid.className = 'kp-cfg-key-grid';
+        for (const m of macroKeyItems) {
+          if (!m || !m.id) continue;
+          const itemEl = appendKeyItem({
+            // Macro Keys are Action Instances of a `legacyMacroKeyKind` Function (see
+            // function-library.js) — placing one on a slot writes the same `type: 'function'`
+            // SlotAssignment shape as any other Function/Action Instance.
+            type: 'function',
+            id: m.id,
+            label: String(m.label || m.kind || 'Macro Key'),
+            keyboardClass: macroKeyKeyboardClass(m.kind),
+            infoKey: `function:${m.id}`
+          });
+          // Double-duty: Inspect opens editor; also expose Configure via label badge.
+          const conf = document.createElement('button');
+          conf.type = 'button';
+          conf.className = 'kp-cfg-inspect';
+          conf.textContent = 'Edit';
+          conf.title = `Configure ${m.label || m.kind}`;
+          conf.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this._openMacroKeyEditor(m);
+          }, true);
+          conf.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
+          // Replace default Inspect with Edit for macro keys (still place via keycap click).
+          try {
+            const oldInspect = itemEl.querySelector('.kp-cfg-inspect');
+            if (oldInspect) oldInspect.replaceWith(conf);
+            else itemEl.appendChild(conf);
+          } catch {
+            itemEl.appendChild(conf);
+          }
+          grid.appendChild(itemEl);
+        }
+        section.appendChild(grid);
+      } else {
         const empty = document.createElement('div');
         empty.style.cssText = 'font-size:11px;opacity:0.7;padding:4px 2px;';
         empty.textContent = 'Create a kind above, configure it, then click to place on the Keyboard Reference.';
         section.appendChild(empty);
-        list.appendChild(section);
-        return;
       }
-      const grid = document.createElement('div');
-      grid.className = 'kp-cfg-key-grid';
-      for (const m of items) {
-        if (!m || !m.id) continue;
-        const itemEl = appendKeyItem({
-          // Macro Keys are Action Instances of a `legacyMacroKeyKind` Function (see
-          // function-library.js) — placing one on a slot writes the same `type: 'function'`
-          // SlotAssignment shape as any other Function/Action Instance.
-          type: 'function',
-          id: m.id,
-          label: String(m.label || m.kind || 'Macro Key'),
-          keyboardClass: macroKeyKeyboardClass(m.kind),
-          infoKey: `function:${m.id}`
-        });
-        // Double-duty: Inspect opens editor; also expose Configure via label badge.
-        const conf = document.createElement('button');
-        conf.type = 'button';
-        conf.className = 'kp-cfg-inspect';
-        conf.textContent = 'Edit';
-        conf.title = `Configure ${m.label || m.kind}`;
-        conf.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          this._openMacroKeyEditor(m);
-        }, true);
-        conf.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
-        // Replace default Inspect with Edit for macro keys (still place via keycap click).
-        try {
-          const oldInspect = itemEl.querySelector('.kp-cfg-inspect');
-          if (oldInspect) oldInspect.replaceWith(conf);
-          else itemEl.appendChild(conf);
-        } catch {
-          itemEl.appendChild(conf);
-        }
-        grid.appendChild(itemEl);
-      }
-      section.appendChild(grid);
       list.appendChild(section);
-      return;
     }
 
     const all = Object.entries(KEYBINDING_ACTION_DEFS || {}).map(([actionId, def]) => ({

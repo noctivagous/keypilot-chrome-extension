@@ -38,7 +38,11 @@ import { FloatingKeyboardHelp } from './ui/floating-keyboard-help.js';
 import { ControlStrip } from './ui/control-strip.js';
 import { pinKeyPopover } from './ui/keybindings-ui.js';
 import { getActionMode, getActionParameter } from './ui/key-action-settings.js';
-import { deliverActionResult, normalizeActionResultDestination } from './modules/action-result-delivery.js';
+import {
+  ACTION_RESULT_DESTINATIONS,
+  deliverActionResult,
+  normalizeActionResultDestination
+} from './modules/action-result-delivery.js';
 import { sendTextToAi } from './modules/ai-text-service.js';
 import { OmniboxManager } from './modules/omnibox-manager.js';
 import { TabHistoryPopover } from './modules/tab-history-popover.js';
@@ -48,6 +52,7 @@ import { getOrCreateBuiltinFunctionUserAction, getUserKeyboardLayoutById, getUse
 import { runLegacyMacroKeyFunction } from './modules/macro-key-runtime.js';
 import { getFunctionDef, functionWorksWhileTyping } from './config/function-library.js';
 import { chordSlotKeyFromEvent } from './utils/key-chord.js';
+import { getTextAtPoint } from './utils/text-at-point.js';
 import { toggleKeyboardLayoutConfigurator } from './ui/keyboard-layout-configurator.js';
 import {
   isExtensionContextValid,
@@ -4997,6 +5002,278 @@ export class KeyPilot extends EventManager {
       ok ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_INFO
     );
     if (ok) this.emitAction('type_characters', { length: text.length });
+  }
+
+  /**
+   * GET_TEXT_AT_CURSOR Function handler — reads text at the requested granularity from the
+   * point last tracked in `state.lastMouse` and copies it to the clipboard. Low-level data
+   * primitive (see KEY_ACTION_ARCHITECTURE.md "Data Acquisition & Result Destinations") that's
+   * still directly useful/testable on its own, hence the fixed clipboard destination.
+   * @param {KeyboardEvent} _e
+   * @param {{ granularity?: 'word'|'sentence'|'paragraph'|'hyperlink' }} [parameters]
+   */
+  async handleGetTextAtCursorKey(_e, parameters) {
+    const granularity = parameters?.granularity || 'word';
+    const st = this.state.getState();
+    const x = Number(st?.lastMouse?.x);
+    const y = Number(st?.lastMouse?.y);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      this.showFlashNotification('No cursor position available', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+    const { text } = getTextAtPoint(x, y, { granularity });
+    if (!text.trim()) {
+      this.showFlashNotification(`No ${granularity} under cursor`, COLORS.NOTIFICATION_INFO);
+      return;
+    }
+    const ok = await this.copyToClipboard(text);
+    this.showFlashNotification(
+      ok ? 'Copied' : 'Could not copy',
+      ok ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_ERROR
+    );
+    if (ok) this.emitAction('get_text_at_cursor', { granularity, length: text.length });
+  }
+
+  /**
+   * GET_TEXT_RANGE Function handler — reads the current highlight/selection (set up beforehand)
+   * and copies it to the clipboard. Same acquisition as `handleClipboardCopyKey`, but as an
+   * explicit, addressable Function for future macro composition rather than a fixed key.
+   */
+  async handleGetTextRangeKey() {
+    const text = this.getSelectedPlainText();
+    if (!text.trim()) {
+      this.showFlashNotification('Nothing selected — set up a text range first', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+    const ok = await this.copyToClipboard(text);
+    this.showFlashNotification(
+      ok ? 'Copied' : 'Could not copy',
+      ok ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_ERROR
+    );
+    if (ok) this.emitAction('get_text_range', { length: text.length });
+  }
+
+  /**
+   * GET_MEDIA_AT_CURSOR Function handler — reads the image/video/audio under the cursor.
+   * Image/video reuse the same hover-capture as `COPY_HOVERED_IMAGE`; audio has no visual
+   * "hover" target on the page, so it copies the nearest `<audio>` element's source URL as text
+   * instead of a blob.
+   * @param {KeyboardEvent} _e
+   * @param {{ kind?: 'image'|'video'|'audio' }} [parameters]
+   */
+  async handleGetMediaAtCursorKey(_e, parameters) {
+    const kind = parameters?.kind || 'image';
+    const st = this.state.getState();
+    const x = Number(st?.lastMouse?.x);
+    const y = Number(st?.lastMouse?.y);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      this.showFlashNotification('No cursor position available', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+
+    if (kind === 'audio') {
+      let src = '';
+      try {
+        const el = elementFromPointDeep(x, y);
+        const audio = el?.closest?.('audio') || el?.querySelector?.('audio') || null;
+        src = audio ? String(audio.currentSrc || audio.src || '') : '';
+      } catch { /* ignore */ }
+      if (!src) {
+        this.showFlashNotification('No audio under cursor', COLORS.NOTIFICATION_INFO);
+        return;
+      }
+      const ok = await this.copyToClipboard(src);
+      this.showFlashNotification(
+        ok ? 'Audio URL copied' : 'Could not copy',
+        ok ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_ERROR
+      );
+      if (ok) this.emitAction('get_media_at_cursor', { kind, via: 'url' });
+      return;
+    }
+
+    let result = null;
+    try {
+      result = await getHoveredImage(x, y);
+    } catch (error) {
+      console.warn('[KeyPilot] getHoveredImage failed:', error);
+      this.showFlashNotification('Could not copy media', COLORS.NOTIFICATION_ERROR);
+      return;
+    }
+    if (!result?.blob) {
+      this.showFlashNotification(`No ${kind} under cursor`, COLORS.NOTIFICATION_INFO);
+      return;
+    }
+    const ok = await this.copyImageToClipboard(result.blob, result.mimeType);
+    this.showFlashNotification(
+      ok ? 'Copied to clipboard' : 'Could not copy',
+      ok ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_ERROR,
+      ok ? result.blob : undefined
+    );
+    if (ok) this.emitAction('get_media_at_cursor', { kind: result.kind });
+  }
+
+  /**
+   * LOOKUP_WORD Function handler — shows a definition popover for the word under the cursor,
+   * via the same on-device AI provider `SEND_TEXT_TO_AI` uses (`ai-text-service.js`). No setup
+   * required — this is the "stock, zero-configuration" example from KEY_ACTION_ARCHITECTURE.md.
+   */
+  async handleLookupWordKey() {
+    const st = this.state.getState();
+    const x = Number(st?.lastMouse?.x);
+    const y = Number(st?.lastMouse?.y);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      this.showFlashNotification('No cursor position available', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+    const { text: word } = getTextAtPoint(x, y, { granularity: 'word' });
+    if (!word.trim()) {
+      this.showFlashNotification('No word under cursor', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+
+    this.showFlashNotification('Looking up…', COLORS.NOTIFICATION_INFO);
+    let result;
+    try {
+      result = await sendTextToAi({
+        prompt: 'Give a concise dictionary-style definition of this single word or short phrase: ' +
+          'part of speech, a one-sentence definition, and one short example sentence. No preamble.',
+        text: word
+      });
+    } catch (e) {
+      console.warn('[KeyPilot] Lookup failed:', e);
+      this.showFlashNotification('Lookup failed', COLORS.NOTIFICATION_ERROR);
+      return;
+    }
+    if (!result?.ok) {
+      this.showFlashNotification(result?.error || 'Lookup failed', COLORS.NOTIFICATION_ERROR);
+      return;
+    }
+    await deliverActionResult(this, {
+      text: result.text,
+      title: `Definition — ${word}`,
+      destination: ACTION_RESULT_DESTINATIONS.POPOVER
+    });
+    this.emitAction('lookup_word', { word });
+  }
+
+  /**
+   * TRANSLATE Function handler — translates the current highlight/selection, or (if nothing is
+   * highlighted) the word/sentence/paragraph under the cursor, via the same on-device AI
+   * provider `SEND_TEXT_TO_AI` uses. `modifyPage` writes the translation back over the acquired
+   * range when one is available (a live `window.getSelection()` range, or the precise sub-range
+   * `getTextAtPoint` returns for word/sentence) — `deliverActionResult` falls back to `popover`
+   * when no range could be resolved (e.g. `paragraph` granularity, or an `<input>`/`<textarea>`
+   * selection), so the translation is never silently dropped.
+   * @param {KeyboardEvent} _e
+   * @param {{ granularity?: 'word'|'sentence'|'paragraph', targetLanguage?: string, destination?: string }} [parameters]
+   */
+  async handleTranslateKey(_e, parameters) {
+    const granularity = parameters?.granularity || 'sentence';
+    const targetLanguage = String(parameters?.targetLanguage || 'English').trim() || 'English';
+    const destination = normalizeActionResultDestination(
+      parameters?.destination,
+      ACTION_RESULT_DESTINATIONS.POPOVER
+    );
+
+    let text = this.getSelectedPlainText();
+    let modifyRange = null;
+    if (text.trim()) {
+      try {
+        const sel = typeof window.getSelection === 'function' ? window.getSelection() : null;
+        if (sel && sel.rangeCount > 0 && !sel.isCollapsed) modifyRange = sel.getRangeAt(0).cloneRange();
+      } catch { /* ignore */ }
+    } else {
+      const st = this.state.getState();
+      const x = Number(st?.lastMouse?.x);
+      const y = Number(st?.lastMouse?.y);
+      if (Number.isFinite(x) && Number.isFinite(y)) {
+        const at = getTextAtPoint(x, y, { granularity });
+        text = at.text;
+        modifyRange = at.range;
+      }
+    }
+    if (!text.trim()) {
+      this.showFlashNotification('No text to translate', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+
+    this.showFlashNotification('Translating…', COLORS.NOTIFICATION_INFO);
+    let result;
+    try {
+      result = await sendTextToAi({
+        prompt: `Translate the following text to ${targetLanguage}. Respond with only the ` +
+          'translation itself — no notes, no quotation marks.',
+        text
+      });
+    } catch (e) {
+      console.warn('[KeyPilot] Translate failed:', e);
+      this.showFlashNotification('Translation failed', COLORS.NOTIFICATION_ERROR);
+      return;
+    }
+    if (!result?.ok) {
+      this.showFlashNotification(result?.error || 'Translation failed', COLORS.NOTIFICATION_ERROR);
+      return;
+    }
+
+    await deliverActionResult(this, {
+      text: result.text,
+      title: `Translation (${targetLanguage})`,
+      destination,
+      successMessage: 'Translation copied',
+      onModifyPage: modifyRange ? async (translated) => this._replaceRangeText(modifyRange, translated) : undefined
+    });
+    this.emitAction('translate', { granularity, targetLanguage, viaSelection: !!modifyRange });
+  }
+
+  /**
+   * Best-effort in-place page-write for TRANSLATE's `modifyPage` destination. Only works for a
+   * real DOM `Range` (regular text nodes / contentEditable) — `<input>`/`<textarea>` selections
+   * have no `Range` representation, so `handleTranslateKey` never passes one of those here (see
+   * its `onModifyPage` wiring above); `deliverActionResult` falls back to `popover` instead.
+   * @param {Range} range
+   * @param {string} text
+   * @returns {boolean}
+   */
+  _replaceRangeText(range, text) {
+    try {
+      range.deleteContents();
+      range.insertNode(document.createTextNode(String(text ?? '')));
+      return true;
+    } catch (e) {
+      console.warn('[KeyPilot] Failed to write translation back into the page:', e);
+      return false;
+    }
+  }
+
+  /**
+   * SHOW_POPOVER Function handler — shows the Action Instance's configured `content` in a
+   * popover. A display primitive: takes a static configured value today, but formalizes the
+   * same "render a result" behavior `deliverActionResult`'s `popover` branch already has baked
+   * in, so it can become an explicit macro Step once the macro builder passes a previous Step's
+   * output forward — see KEY_ACTION_ARCHITECTURE.md "SHOW_POPOVER as a composable primitive".
+   * @param {KeyboardEvent} _e
+   * @param {{ content?: string }} [parameters]
+   */
+  async handleShowPopoverKey(_e, parameters) {
+    const content = String(parameters?.content ?? '').trim();
+    if (!content) {
+      this.showFlashNotification('No content configured for this key', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+    await deliverActionResult(this, {
+      text: content,
+      title: 'Popover',
+      destination: ACTION_RESULT_DESTINATIONS.POPOVER
+    });
+  }
+
+  /**
+   * Shared handler for `ADD_URL_TO_MEDIA_LIBRARY` / `FETCH_URL_FOR_MEDIA_LIBRARY` — both are
+   * catalog entries only until a real Media Library sink exists (see `action-result-delivery.js`
+   * and KEY_ACTION_ARCHITECTURE.md, "Fetching vs. linking a URL").
+   */
+  handleMediaLibraryNotAvailableKey() {
+    this.showFlashNotification('Media Library is not built yet — coming soon', COLORS.NOTIFICATION_INFO);
   }
 
   /**

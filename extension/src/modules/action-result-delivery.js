@@ -64,18 +64,6 @@ export function buildResultDestinationParameter(applicableDestinations) {
 }
 
 /**
- * Shared ActionSettingsRegistry parameter for result routing, pre-scoped to the three
- * destinations implemented today. Prefer {@link buildResultDestinationParameter} for new
- * Functions so unsupported destinations (e.g. `modifyPage` for a Function that can't support it)
- * are never offered.
- */
-export const RESULT_DESTINATION_PARAMETER = buildResultDestinationParameter([
-  ACTION_RESULT_DESTINATIONS.CLIPBOARD,
-  ACTION_RESULT_DESTINATIONS.POPOVER,
-  ACTION_RESULT_DESTINATIONS.BOTH
-]);
-
-/**
  * @param {unknown} raw
  * @param {ActionResultDestination} [fallback='clipboard']
  * @returns {ActionResultDestination}

@@ -5,10 +5,13 @@
 **In progress.** The Function Library, Action Instance store, runtime dispatch, and data model
 (`SlotAssignment`, `UserAction`, `UserMacro`/`MacroStep`) described below are implemented — the old
 `'action'`/`'macroKey'` `SlotItem` types and the standalone `UserMacroKey`/`ACTION_SETTINGS_REGISTRY`
-storage have been fully retired, not just wrapped. What's left is UI consolidation: folding the
-`functions`/`macros`/`macroKeys` palette tabs and the additive Function Library panel into one
-place, and the Data Acquisition / Result Destination items below. See the checklist in "Migration
-mapping" below for exact status per item.
+storage have been fully retired, not just wrapped. The main config palette's `functions`/`macros`/
+`macroKeys` tabs are also gone, folded into one unified always-visible list. What's left: folding
+the additive Function Library panel (`function-library-panel.js`, still a separate Alt+C surface)
+into the same place as the main palette, chord-capture support in the main palette (see "Still
+open" under "Text-active Functions" below), and a real Media Library sink/`urlFetch` handler for
+`ADD_URL_TO_MEDIA_LIBRARY`/`FETCH_URL_FOR_MEDIA_LIBRARY` (currently a "coming soon" stub). Every
+row in the "Migration mapping" checklist below is otherwise ✅.
 
 ## Problem this solves
 
@@ -176,9 +179,9 @@ Status legend: ✅ done · 🚧 in progress / partially done · ⬜ not started.
 | ✅ | `ACTION_SETTINGS_REGISTRY` + `settings.actionSettings[actionId]` (global values, e.g. `SEND_TEXT_TO_AI`'s `prompt`) | `ACTION_SETTINGS_REGISTRY` is removed; parameter **schema** for `SEND_TEXT_TO_AI` (`prompt`, `destination`) and `RECTANGLE_HIGHLIGHT` (`mode`, modeled as a plain `enum` parameter) now lives on `FunctionDef.parameters` (`function-library.js`). Parameter **values** live on a per-Function canonical `UserAction` (`action:builtin:<functionId>`, see `getOrCreateBuiltinFunctionUserAction()` in `keyboard-layout-store.js`) instead of `settings.actionSettings` — there is exactly one meaningful instance per Function id today since neither is yet assignable to an arbitrary slot (that's the "Config panel tabs" item below). `key-action-settings.js` is now a thin bridge deriving its legacy `ActionSettingsDef`/mode-switch UI shape from the Function Library rather than duplicating schema. |
 | ✅ | `UserMacro.actions: any[]` | `UserMacro.steps: MacroStep[]` (`{ functionId, parameters, delayMsBefore? }`), with full CRUD (`getUserMacroById`, `upsertUserMacro`, `deleteUserMacro`, `addUserMacroStep`, `updateUserMacroStep`, `removeUserMacroStep`, `moveUserMacroStep`) in `keyboard-layout-store.js`. `_runMacroById()` in `keypilot.js` — previously a "not implemented yet" notification stub — now actually runs each Step's Function handler in order (honoring `delayMsBefore`), exactly per "Runtime resolution" above. The Function Library panel gained a **Macros** section (create/delete a macro, add/remove/reorder Steps by picking any Function from the library, bind the macro to a key, "Run now" for testing) since there was previously no UI at all for editing a macro's contents. |
 | ✅ | `SlotItem { type: 'action'|'macro'|'macroKey', id }` | Renamed to `SlotAssignment`, and the type union is now just `'function' | 'macro'` — `'action'` and `'macroKey'` are fully retired (this extension has no shipped users/persisted data, so old-shape read support was deleted outright rather than kept for compatibility; see `keyboard-layout-store.js` module doc). Every writer now emits `{ type: 'function', id }`: `duplicateBuiltinLayoutToUserLayout()`, `keyboard-layout-config-panel.js`'s built-in-action palette and Macro Keys tab, `setUserKeyboardLayoutSlot()`. Every reader (`keypilot.js` dispatch, `floating-keyboard-help.js`'s `renderSlot`/`applyDropToSlot`/`resolveFunctionSlot`, `keyboard-layout-config-panel.js`'s badge/inspector logic) only ever branches on `'function'`/`'macro'` now — the old `builtinActionItemKey()` normalizer and `functionOrInstanceLabel`/`functionOrInstanceKeyboardClass` module-level stand-ins were deleted since there's no longer a second type to normalize against, and `floating-keyboard-help.js` now resolves any `action:<uuid>` Action Instance (Macro Key or otherwise) to a real label/`keyboardClass` via a live `UserAction[]` lookup instead of a generic "Configured Function" fallback. |
-| ⬜ | Config panel tabs: `functions` / `macros` / `macroKeys` (in `keyboard-layout-config-panel.js`) | The **Macro Keys** tab now creates/edits `UserAction`s (see the `UserMacroKey` row above) instead of a separate storage type, but it, `functions`, and `macros` remain three separate tabs in the drag-drop palette rather than one unified Function Library view — folding them together, and/or replacing this palette with the additive **Function Library panel** (`function-library-panel.js`, which already browses `FUNCTION_LIBRARY` and creates/edits `UserAction`s generically, including modifier-chord capture for `worksWhileTyping` Functions), is still open. |
-| ⬜ | `RESULT_DESTINATION_PARAMETER` (`action-result-delivery.js`) — one frozen `clipboard`\|`popover`\|`both` enum reused as-is | Design specified, not implemented: generalize to a `buildResultDestinationParameter(applicableDestinations)` factory; add `modifyPage` destination + delivery branch; stub `mediaLibrary`/`scrapbook` as future, not-yet-built sinks. See "Data Acquisition & Result Destinations" below. |
-| ⬜ | No `dataSource`/`dataKind` concept on `FunctionDef` | Design specified, not implemented: add the fields to the data model, plus `GET_TEXT_AT_CURSOR` / `GET_TEXT_RANGE` / `GET_MEDIA_AT_CURSOR` primitive Functions and the `LOOKUP_WORD` / `TRANSLATE` / `SHOW_POPOVER` example Functions. Also specified: a `urlFetch` `dataSource` + `file` `dataKind`, and the `FETCH_URL_FOR_MEDIA_LIBRARY` (fetches the resource a link points to) vs. `ADD_URL_TO_MEDIA_LIBRARY` (stores the link itself) distinction. See "Data Acquisition & Result Destinations" below. |
+| ✅ | Config panel tabs: `functions` / `macros` / `macroKeys` (in `keyboard-layout-config-panel.js`) | The three tabs (and their tab-scoped "create new" action rows) are gone; `_renderRightList()` now renders one always-visible, always-scrollable list with **Macros**, **Configured Macro Keys**, and the stock **Functions** (by category) as sections in that order, all sharing the same search box and click-to-place flow. The "New Macro" button and the Macro Key kind-creation grid are both always visible above the list (previously shown/hidden per active tab) instead of being tab-gated. `_st.tab` and `_setActiveTab()` are deleted; `_inspectItem()`'s Macro Key branch opens the editor directly instead of switching tabs first. The additive **Function Library panel** (`function-library-panel.js`) is unchanged and still exists as a second, generic entry point (Alt+C) for editing `UserAction`/Macro contents in depth. |
+| ✅ | `RESULT_DESTINATION_PARAMETER` (`action-result-delivery.js`) — one frozen `clipboard`\|`popover`\|`both` enum reused as-is | Generalized to `buildResultDestinationParameter(applicableDestinations)`, a factory each `FunctionDef` calls with only the destinations it actually supports (`SEND_TEXT_TO_AI` still offers `clipboard`/`popover`/`both`; a future `TRANSLATE` would pass `modifyPage`/`popover`). `ACTION_RESULT_DESTINATIONS` gained `MODIFY_PAGE`/`MEDIA_LIBRARY`/`SCRAPBOOK`; `deliverActionResult` has a real `modifyPage` branch (calls a caller-supplied `onModifyPage(text)` hook, since only the caller knows *where* in the page to write back — falls back to `popover` if no hook is wired or it fails, so a result is never silently dropped). `mediaLibrary`/`scrapbook` are reserved ids with `"(coming soon)"` labels and intentionally no delivery branch yet — real future sinks, not implemented. The old frozen `RESULT_DESTINATION_PARAMETER` constant (and its re-export from `key-action-settings.js`) was dead code once every caller switched to the factory, so it was deleted rather than kept alongside it. |
+| ✅ | No `dataSource`/`dataKind` concept on `FunctionDef` | `FunctionDef.dataSource` gained `'urlFetch'`; `dataKind` gained `'file'` (`function-library.js`). New `buildDataAcquisitionFunctionDefs()` adds: `GET_TEXT_AT_CURSOR`/`GET_TEXT_RANGE`/`GET_MEDIA_AT_CURSOR` (low-level getters — real, directly key-assignable, always copy to the clipboard, since their real purpose is feeding a future macro-builder destination Step); `LOOKUP_WORD` (word under cursor → on-device AI definition → popover, zero setup) and `TRANSLATE` (highlighted text, else word/sentence/paragraph under cursor → on-device AI translation → `modifyPage` or `popover`) — both reuse the existing `sendTextToAi`/`ai-text-service.js` provider rather than a new external API; `SHOW_POPOVER` (static configured `content` → popover). New `src/utils/text-at-point.js` acquires word/sentence/paragraph/hyperlink text at a point via `caretRangeFromPoint` + `Intl.Segmenter`, and returns a precise `Range` for word/sentence so `TRANSLATE`'s `modifyPage` can write back in place (falls back to `popover` when no `Range` is available, e.g. `paragraph` granularity or an `<input>`/`<textarea>` selection). `ADD_URL_TO_MEDIA_LIBRARY`/`FETCH_URL_FOR_MEDIA_LIBRARY` are added as catalog entries (with the `urlFetch`/`file` tagging) but share a stub handler that just says the Media Library isn't built yet — consistent with `mediaLibrary` having no real delivery branch (see the `RESULT_DESTINATION_PARAMETER` row above). See "Data Acquisition & Result Destinations" below. |
 
 ## Text-active Functions & modifier-chord assignment
 
@@ -327,15 +330,19 @@ destination bundled, zero setup); an advanced user, in the future macro builder,
 `GET_TEXT_AT_CURSOR { granularity: word }` → `DICTIONARY_LOOKUP` → `SHOW_POPOVER` as three explicit
 Steps to build the same behavior with more control (e.g. inserting a translation step in between).
 
-### New example Functions specified
+### New example Functions
+
+All implemented in `buildDataAcquisitionFunctionDefs()` (`function-library.js`) + handlers in
+`keypilot.js`, except the two Media Library rows, which are catalog entries with a shared
+"not built yet" stub handler (no real sink exists — see below).
 
 | Function id | `dataSource` / `dataKind` | `destinations` | Notes |
 |---|---|---|---|
-| `LOOKUP_WORD` | `underCursor`, `text` (`word`) | `popover` (default) | Dictionary definition popover. Category `Lookup`. |
-| `TRANSLATE` | `textRange` if an active selection exists, else `underCursor` (`word`\|`sentence`\|`paragraph`, user-configurable granularity) | `modifyPage`, `popover` | No `clipboard`/`mediaLibrary` — translating "to clipboard" isn't a meaningful default. Category `Translate`. |
-| `GET_TEXT_AT_CURSOR` / `GET_TEXT_RANGE` / `GET_MEDIA_AT_CURSOR` | see above | n/a (pipe into a destination-writer Step) | Low-level primitives for the future macro builder; not directly key-assignable stock Functions on their own. |
-| `ADD_URL_TO_MEDIA_LIBRARY` | `underCursor`, `text` (`hyperlink`) | `mediaLibrary`, `clipboard`, `scrapbook` | Stores the link itself (`href` text), not its content. Category `Media Library`. See "Fetching vs. linking a URL" below. |
-| `FETCH_URL_FOR_MEDIA_LIBRARY` | `urlFetch`, `file` | `mediaLibrary` | Fetches and stores the resource the link points to (e.g. a `.pdf`/`.mp3`/`.mp4`). Category `Media Library`. See "Fetching vs. linking a URL" below. |
+| `LOOKUP_WORD` | `underCursor`, `text` (`word`) | `popover` (default) | Dictionary definition popover, generated by the same on-device AI provider as `SEND_TEXT_TO_AI` (`ai-text-service.js`) rather than a dictionary API. Category `Lookup`. |
+| `TRANSLATE` | `textRange` if an active selection exists, else `underCursor` (`word`\|`sentence`\|`paragraph`, user-configurable granularity) | `modifyPage`, `popover` | Same on-device AI provider, prompted to translate to a configurable target language. No `clipboard`/`mediaLibrary` — translating "to clipboard" isn't a meaningful default. Category `Translate`. |
+| `GET_TEXT_AT_CURSOR` / `GET_TEXT_RANGE` / `GET_MEDIA_AT_CURSOR` | see above | `clipboard` only | Low-level primitives, real and directly key-assignable (so they're testable today), but their real purpose is feeding a future macro-builder destination Step — hence the single fixed destination rather than a full `destinations` list. |
+| `ADD_URL_TO_MEDIA_LIBRARY` | `underCursor`, `text` (`hyperlink`) | `mediaLibrary` | Stores the link itself (`href` text), not its content. Category `Media Library`. Stub handler — see "Fetching vs. linking a URL" below. |
+| `FETCH_URL_FOR_MEDIA_LIBRARY` | `urlFetch`, `file` | `mediaLibrary` | Fetches and stores the resource the link points to (e.g. a `.pdf`/`.mp3`/`.mp4`). Category `Media Library`. Stub handler — see "Fetching vs. linking a URL" below. |
 
 `COPY_HOVERED_IMAGE` and `RECTANGLE_HIGHLIGHT` (existing Functions) should eventually gain a
 `destinations` list (`clipboard` today; `mediaLibrary`/`scrapbook` once those sinks exist) rather
@@ -350,7 +357,7 @@ different data:
 
 | Function id | What it acquires | `dataSource` / `dataKind` | `destinations` |
 |---|---|---|---|
-| `ADD_URL_TO_MEDIA_LIBRARY` | The link itself — the `href` string under the cursor (or from a text range), stored as an `href`-tagged text record. Nothing is downloaded. | `underCursor` (or `textRange`), `text` (`hyperlink` granularity) | `mediaLibrary` (bookmark-style entry), `clipboard`, `scrapbook` |
+| `ADD_URL_TO_MEDIA_LIBRARY` | The link itself — the `href` string under the cursor (or from a text range), stored as an `href`-tagged text record. Nothing is downloaded. | `underCursor` (or `textRange`), `text` (`hyperlink` granularity) | `mediaLibrary` (bookmark-style entry) |
 | `FETCH_URL_FOR_MEDIA_LIBRARY` | The **resource the link points to** — resolves the same `href`, then performs an actual network fetch of it (e.g. the `.pdf`/`.mp3`/`.mp4` file at that URL), storing the fetched bytes. | `urlFetch`, `file` | `mediaLibrary` only — there is no sensible `clipboard`/`popover` behavior for an arbitrary fetched file today |
 
 The distinction matters architecturally, not just semantically: `ADD_URL_TO_MEDIA_LIBRARY` is a
@@ -360,8 +367,10 @@ operation with real failure modes (404, CORS, timeout, non-file content-type) an
 arbitrary-size binary data. This is exactly why `urlFetch` is called out as its own `dataSource`
 above rather than folded into `underCursor` — the two Functions look similar ("do something with
 the link under the cursor") but have almost nothing in common at the implementation level once you
-get past "resolve an `href` string." Both are design-only for now; neither the Media Library sink
-nor a `urlFetch`-capable handler exists in code yet.
+get past "resolve an `href` string." Both exist as `FunctionDef` catalog entries now (tagged with
+the `dataSource`/`dataKind` split above), but share `handleMediaLibraryNotAvailableKey` — a stub
+that just tells the user the Media Library isn't built yet — since neither the Media Library sink
+nor a real `urlFetch`-capable handler (the actual network fetch + storage) exists in code yet.
 
 ## Naming conventions
 

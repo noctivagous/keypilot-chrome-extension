@@ -16,7 +16,6 @@
  */
 import { Z_INDEX, KP_UI_FONT } from '../config/constants.js';
 import { makePanelDraggable } from '../utils/panel-position.js';
-import { RESULT_DESTINATION_PARAMETER } from '../modules/action-result-delivery.js';
 import { getFunctionDef } from '../config/function-library.js';
 import {
   getOrCreateBuiltinFunctionUserAction,
@@ -32,9 +31,6 @@ import {
  *   parameters?: ActionParameterDef[]
  * }} ActionSettingsDef
  */
-
-/** Re-export for callers that configure procedure destinations. */
-export { RESULT_DESTINATION_PARAMETER };
 
 /**
  * A Function parameter literally named `mode` of type `enum` is additionally surfaced as

@@ -65,6 +65,7 @@ const modules = [
   'src/utils/panel-position.js',
   'src/utils/scroll-at-point.js',
   'src/utils/key-chord.js',
+  'src/utils/text-at-point.js',
   // Shared UI helpers used by multiple modules (must be defined before import-stripped consumers).
   'src/ui/url-listing.js',
   'src/ui/page-thumb-ui.js',
