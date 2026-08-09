@@ -9,6 +9,15 @@
  */
 
 import { KP_UI_FONT } from '../config/constants.js';
+import {
+  NCT_DARK_UI_TITLEBAR_GRADIENT,
+  NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM,
+  NCT_DARK_UI_TITLEBAR_BOX_SHADOW,
+  NCT_DARK_UI_BTN_GRADIENT,
+  NCT_DARK_UI_BTN_BORDER,
+  NCT_DARK_UI_BTN_RADIUS,
+  NCT_DARK_UI_COLORS
+} from './nct-dark-ui.js';
 
 // Pin UI font (KP_UI_FONT) so host pages cannot leak typography into chrome.
 // Preview popovers mount in the light DOM under body and inherit page fonts otherwise.
@@ -17,8 +26,9 @@ const VARIANT_STYLES = {
   modal: {
     titlebar: `
       padding: 10px 14px;
-      background: linear-gradient(180deg, #232323 0%, #151515 100%);
-      border-bottom: 1px solid #2b2b2b;
+      background: ${NCT_DARK_UI_TITLEBAR_GRADIENT};
+      border-bottom: ${NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM};
+      box-shadow: ${NCT_DARK_UI_TITLEBAR_BOX_SHADOW};
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -64,15 +74,15 @@ const VARIANT_STYLES = {
       justify-content: center;
       box-sizing: border-box;
       font-family: inherit;
-      background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
-      border: 1px solid #3a3a3a;
+      background: ${NCT_DARK_UI_BTN_GRADIENT};
+      border: ${NCT_DARK_UI_BTN_BORDER};
       font-size: 18px;
       font-weight: 400;
       cursor: pointer;
-      color: #e8e8e8;
+      color: ${NCT_DARK_UI_COLORS.fg};
       padding: 2px 8px;
       line-height: 1;
-      border-radius: 4px;
+      border-radius: ${NCT_DARK_UI_BTN_RADIUS};
       flex-shrink: 0;
       min-width: 0;
       min-height: 0;
@@ -87,8 +97,9 @@ const VARIANT_STYLES = {
   preview: {
     titlebar: `
       padding: 6px 10px;
-      background: linear-gradient(180deg, #232323 0%, #151515 100%);
-      border-bottom: 1px solid #2b2b2b;
+      background: ${NCT_DARK_UI_TITLEBAR_GRADIENT};
+      border-bottom: ${NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM};
+      box-shadow: ${NCT_DARK_UI_TITLEBAR_BOX_SHADOW};
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -137,15 +148,15 @@ const VARIANT_STYLES = {
       justify-content: center;
       box-sizing: border-box;
       font-family: inherit;
-      background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
-      border: 1px solid #3a3a3a;
+      background: ${NCT_DARK_UI_BTN_GRADIENT};
+      border: ${NCT_DARK_UI_BTN_BORDER};
       font-size: 16px;
       font-weight: 400;
       cursor: pointer;
-      color: #e8e8e8;
+      color: ${NCT_DARK_UI_COLORS.fg};
       padding: 2px 6px;
       line-height: 1;
-      border-radius: 4px;
+      border-radius: ${NCT_DARK_UI_BTN_RADIUS};
       flex-shrink: 0;
       min-width: 0;
       min-height: 0;
@@ -163,11 +174,10 @@ const KBD_STYLE = `
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 11px;
   padding: 1px 6px;
-  border: 1px solid #3a3a3a;
-  border-bottom-color: #2a2a2a;
-  border-radius: 4px;
-  background: linear-gradient(180deg, #2b2b2b 0%, #1a1a1a 100%);
-  color: #f1f1f1;
+  border: ${NCT_DARK_UI_BTN_BORDER};
+  border-radius: ${NCT_DARK_UI_BTN_RADIUS};
+  background: ${NCT_DARK_UI_BTN_GRADIENT};
+  color: ${NCT_DARK_UI_COLORS.fg};
 `;
 
 /**

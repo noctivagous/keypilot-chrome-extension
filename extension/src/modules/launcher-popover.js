@@ -17,6 +17,17 @@ import { applyCardBackground } from '../ui/page-thumb-ui.js';
 import { LAUNCHER_SEARCH_SITES } from '../config/search-engines.js';
 import { createPreviewOpenActionButtons } from '../ui/preview-open-actions.js';
 import { storageGetValue, storageSetValue } from '../utils/storage.js';
+import {
+  NCT_DARK_UI_PANEL_BACKGROUND,
+  NCT_DARK_UI_PANEL_BORDER,
+  NCT_DARK_UI_PANEL_RADIUS,
+  NCT_DARK_UI_PANEL_BOX_SHADOW,
+  NCT_DARK_UI_TITLEBAR_GRADIENT,
+  NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM,
+  NCT_DARK_UI_BTN_RADIUS,
+  NCT_DARK_UI_HOVER_TINT,
+  NCT_DARK_UI_COLORS
+} from '../ui/nct-dark-ui.js';
 
 const HIDDEN_LAUNCH_DECK_STORAGE_KEY = 'kpLauncherHiddenLaunchDeck';
 
@@ -1272,12 +1283,12 @@ export class LauncherPopover {
       transform: translateZ(0);
       width: auto;
       height: auto;
-      background: rgb(26, 26, 26);
-      border: 2px solid #333;
-      border-radius: 12px;
+      background: ${NCT_DARK_UI_PANEL_BACKGROUND};
+      border: ${NCT_DARK_UI_PANEL_BORDER};
+      border-radius: ${NCT_DARK_UI_PANEL_RADIUS};
       display: flex;
       overflow: hidden;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+      box-shadow: ${NCT_DARK_UI_PANEL_BOX_SHADOW};
       isolation: isolate;
       contain: layout style paint;
       will-change: transform;
@@ -1315,7 +1326,8 @@ export class LauncherPopover {
     brand.className = 'kp-launcher-brand';
     brand.style.cssText = `
       padding: 20px 16px 16px;
-      border-bottom: 1px solid #333;
+      background: ${NCT_DARK_UI_TITLEBAR_GRADIENT};
+      border-bottom: ${NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM};
       flex-shrink: 0;
     `;
 
@@ -1609,8 +1621,8 @@ export class LauncherPopover {
     previewHeader.className = 'kp-launcher-preview-header';
     previewHeader.style.cssText = `
       padding: 8px 12px;
-      border-bottom: 1px solid #333;
-      background: #0f0f0f;
+      border-bottom: ${NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM};
+      background: ${NCT_DARK_UI_TITLEBAR_GRADIENT};
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -1660,12 +1672,12 @@ export class LauncherPopover {
       background: transparent;
       border: 1px solid transparent;
       box-shadow: none;
-      color: #888;
+      color: ${NCT_DARK_UI_COLORS.fgMute};
       cursor: pointer;
       padding: 0;
       width: 26px;
       height: 26px;
-      border-radius: 5px;
+      border-radius: ${NCT_DARK_UI_BTN_RADIUS};
       flex-shrink: 0;
       transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
     `;
@@ -1692,12 +1704,12 @@ export class LauncherPopover {
 
     previewCloseBtn.addEventListener('mouseenter', () => {
       previewCloseBtn.style.color = '#fff';
-      previewCloseBtn.style.background = 'rgba(255,255,255,0.06)';
-      previewCloseBtn.style.borderColor = '#3a3a3a';
+      previewCloseBtn.style.background = NCT_DARK_UI_HOVER_TINT;
+      previewCloseBtn.style.borderColor = NCT_DARK_UI_COLORS.panelEdge;
     });
 
     previewCloseBtn.addEventListener('mouseleave', () => {
-      previewCloseBtn.style.color = '#888';
+      previewCloseBtn.style.color = NCT_DARK_UI_COLORS.fgMute;
       previewCloseBtn.style.background = 'transparent';
       previewCloseBtn.style.borderColor = 'transparent';
     });

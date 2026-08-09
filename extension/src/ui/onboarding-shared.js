@@ -202,11 +202,10 @@ export function getOnboardingPanelCss(opts = {}) {
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
         font-size: 11px;
         padding: 1px 6px;
-        border: 1px solid #3a3a3a;
-        border-bottom-color: #2a2a2a;
-        border-radius: 4px;
-        background: linear-gradient(180deg, #2b2b2b 0%, #1a1a1a 100%);
-        color: #f1f1f1;
+        border: 1px solid #111;
+        border-radius: 2px;
+        background: linear-gradient(180deg, #4a4a4a 0%, #343434 50%, #2a2a2a 100%);
+        color: #ddd;
       }
       /* Next incomplete checklist row — same light-blue glow language as the toggle-off arrow. */
       @keyframes kp-onboarding-next-task-glow {
@@ -303,10 +302,10 @@ function mkIconBtn(doc, label, dataAttr, aria) {
   assignStyle(b, {
     width: '28px',
     height: '28px',
-    borderRadius: '10px',
-    border: '1px solid rgba(255,255,255,0.18)',
-    background: 'rgba(255,255,255,0.06)',
-    color: 'rgba(255,255,255,0.95)',
+    borderRadius: '2px',
+    border: '1px solid #111',
+    background: 'linear-gradient(180deg, #4a4a4a 0%, #343434 50%, #2a2a2a 100%)',
+    color: '#ddd',
     cursor: 'pointer',
     fontSize: '14px',
     lineHeight: '26px',
@@ -370,12 +369,12 @@ export function createOnboardingShell(doc, opts = {}) {
     flexDirection: 'column',
     overflow: 'hidden',
     zIndex: String(zIndex),
-    background: 'rgba(18, 18, 18, 0.94)',
-    color: 'rgba(255,255,255,0.95)',
-    border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: '14px',
-    boxShadow: '0 12px 34px rgba(0,0,0,0.45)',
-    fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
+    background: '#232323',
+    color: '#ddd',
+    border: '1px solid #111',
+    borderRadius: '3px',
+    boxShadow: '0 0 0 1px #3a3a3a inset, 0 16px 40px rgba(0,0,0,0.55)',
+    fontFamily: 'Helvetica, Arial, sans-serif',
     pointerEvents: initiallyHidden ? 'none' : 'auto'
   });
 
@@ -392,7 +391,9 @@ export function createOnboardingShell(doc, opts = {}) {
     justifyContent: 'space-between',
     gap: '10px',
     padding: '10px 12px',
-    borderBottom: '1px solid rgba(255,255,255,0.10)'
+    background: 'linear-gradient(180deg, #4c4c4c 0%, #353535 45%, #252525 100%)',
+    borderBottom: '1px solid #111',
+    boxShadow: '0 1px 0 #3a3a3a'
   });
 
   const titleWrap = doc.createElement('div');
@@ -969,10 +970,12 @@ function syncCloseTutorialButton(surface, opts = {}) {
     btn.setAttribute('data-kp-onboarding-close-tutorial', 'true');
     btn.textContent = 'Close Tutorial';
     assignStyle(btn, {
-      display: 'inline-flex',
+      display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      alignSelf: 'flex-start',
+      width: 'fit-content',
+      marginLeft: 'auto',
+      alignSelf: 'flex-end',
       height: '32px',
       borderRadius: '999px',
       border: '1px solid rgba(46, 204, 113, 0.55)',
@@ -986,6 +989,14 @@ function syncCloseTutorialButton(surface, opts = {}) {
       fontFamily: 'inherit'
     });
     surface.appendChild(btn);
+  } else {
+    // Keep alignment current for in-place updates (button may already exist).
+    try {
+      btn.style.marginLeft = 'auto';
+      btn.style.alignSelf = 'flex-end';
+      btn.style.width = 'fit-content';
+      btn.style.display = 'flex';
+    } catch { /* ignore */ }
   }
 
   try {

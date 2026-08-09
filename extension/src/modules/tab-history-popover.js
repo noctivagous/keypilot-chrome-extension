@@ -10,6 +10,14 @@ import {
   parseUrlForThreeLineDisplay
 } from '../ui/url-listing.js';
 import { applyCardBackground } from '../ui/page-thumb-ui.js';
+import {
+  NCT_DARK_UI_PANEL_RADIUS,
+  NCT_DARK_UI_TITLEBAR_GRADIENT,
+  NCT_DARK_UI_BTN_GRADIENT,
+  NCT_DARK_UI_BTN_BORDER,
+  NCT_DARK_UI_BTN_RADIUS,
+  NCT_DARK_UI_COLORS
+} from '../ui/nct-dark-ui.js';
 
 function renderThreeLineUrlListingEntry({ item, parts }) {
   const url = String(item?.url || '').trim();
@@ -149,10 +157,10 @@ export class TabHistoryPopover {
         max-height: 80vh;
         display: flex;
         flex-direction: column;
-        border-radius: 14px;
-        border: 1px solid rgba(255,140,0,0.25);
-        background: rgba(18, 18, 18, 0.92);
-        box-shadow: 0 18px 60px rgba(0,0,0,0.55);
+        border-radius: ${NCT_DARK_UI_PANEL_RADIUS};
+        border: 1px solid ${NCT_DARK_UI_COLORS.panelEdgeDark};
+        background: ${NCT_DARK_UI_COLORS.panel};
+        box-shadow: 0 0 0 1px rgba(255,140,0,0.25) inset, 0 16px 40px rgba(0,0,0,0.55);
         overflow: hidden;
         outline: none;
         font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
@@ -164,7 +172,7 @@ export class TabHistoryPopover {
         justify-content: space-between;
         padding: 12px 16px;
         border-bottom: 1px solid rgba(255,140,0,0.14);
-        background: linear-gradient(180deg, rgba(28,28,28,0.95) 0%, rgba(16,16,16,0.95) 100%);
+        background: ${NCT_DARK_UI_TITLEBAR_GRADIENT};
         flex: 0 0 auto;
       }
 
@@ -195,10 +203,10 @@ export class TabHistoryPopover {
         box-sizing: border-box;
         width: 34px;
         height: 34px;
-        border-radius: 10px;
-        border: 1px solid rgba(255,255,255,0.14);
-        background: rgba(0,0,0,0.25);
-        color: rgba(255,255,255,0.9);
+        border-radius: ${NCT_DARK_UI_BTN_RADIUS};
+        border: ${NCT_DARK_UI_BTN_BORDER};
+        background: ${NCT_DARK_UI_BTN_GRADIENT};
+        color: ${NCT_DARK_UI_COLORS.fg};
         font-size: 22px;
         line-height: 1;
         cursor: pointer;

@@ -4,6 +4,21 @@
  */
 import { Z_INDEX, KP_UI_FONT } from '../config/constants.js';
 import { makePanelDraggable } from '../utils/panel-position.js';
+import {
+  NCT_DARK_UI_PANEL_BACKGROUND,
+  NCT_DARK_UI_PANEL_BORDER,
+  NCT_DARK_UI_PANEL_RADIUS,
+  NCT_DARK_UI_PANEL_BOX_SHADOW,
+  NCT_DARK_UI_TITLEBAR_GRADIENT,
+  NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM,
+  NCT_DARK_UI_BTN_GRADIENT,
+  NCT_DARK_UI_BTN_BORDER,
+  NCT_DARK_UI_BTN_RADIUS,
+  NCT_DARK_UI_BTN_LIT_GRADIENT,
+  NCT_DARK_UI_BTN_LIT_BORDER,
+  NCT_DARK_UI_HOVER_TINT,
+  NCT_DARK_UI_COLORS
+} from './nct-dark-ui.js';
 
 const STYLE_ATTR = 'data-kp-procedure-result-style';
 const ROOT_CLASS = 'kp-procedure-result';
@@ -29,18 +44,14 @@ function ensureStyles(doc) {
   max-height: min(70vh, 520px);
   display: flex;
   flex-direction: column;
-  color: rgba(248, 250, 252, 0.95);
+  color: ${NCT_DARK_UI_COLORS.fg};
   font-family: ${KP_UI_FONT || 'system-ui, sans-serif'};
   font-size: 12px;
   line-height: 1.45;
-  border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.45);
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 40%),
-    linear-gradient(180deg, #3a4150 0%, #2c313e 100%);
-  box-shadow:
-    0 1px 0 rgba(0,0,0,0.4),
-    0 14px 32px rgba(0,0,0,0.45);
+  border-radius: ${NCT_DARK_UI_PANEL_RADIUS};
+  border: ${NCT_DARK_UI_PANEL_BORDER};
+  background: ${NCT_DARK_UI_PANEL_BACKGROUND};
+  box-shadow: ${NCT_DARK_UI_PANEL_BOX_SHADOW};
   box-sizing: border-box;
 }
 .${ROOT_CLASS}[hidden] { display: none !important; }
@@ -52,7 +63,8 @@ function ensureStyles(doc) {
   padding: 8px 10px;
   cursor: grab;
   user-select: none;
-  border-bottom: 1px solid rgba(0,0,0,0.35);
+  background: ${NCT_DARK_UI_TITLEBAR_GRADIENT};
+  border-bottom: ${NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM};
   flex: 0 0 auto;
 }
 .${ROOT_CLASS}__title {
@@ -65,12 +77,12 @@ function ensureStyles(doc) {
 }
 .${ROOT_CLASS}__close {
   appearance: none;
-  border: 0;
-  background: rgba(0,0,0,0.25);
+  background: ${NCT_DARK_UI_BTN_GRADIENT};
+  border: ${NCT_DARK_UI_BTN_BORDER};
   color: inherit;
   width: 22px;
   height: 22px;
-  border-radius: 6px;
+  border-radius: ${NCT_DARK_UI_BTN_RADIUS};
   cursor: pointer;
   font-size: 14px;
   line-height: 1;
@@ -92,20 +104,21 @@ function ensureStyles(doc) {
 }
 .${ROOT_CLASS}__btn {
   appearance: none;
-  border: 1px solid rgba(255,255,255,0.16);
-  background: rgba(0,0,0,0.28);
-  color: inherit;
-  border-radius: 6px;
+  border: ${NCT_DARK_UI_BTN_BORDER};
+  background: ${NCT_DARK_UI_BTN_GRADIENT};
+  color: ${NCT_DARK_UI_COLORS.fg};
+  border-radius: ${NCT_DARK_UI_BTN_RADIUS};
   padding: 5px 10px;
   font: inherit;
   cursor: pointer;
 }
 .${ROOT_CLASS}__btn:hover {
-  background: rgba(255,255,255,0.08);
+  background: ${NCT_DARK_UI_HOVER_TINT};
 }
 .${ROOT_CLASS}__btn[data-primary="true"] {
-  background: rgba(59, 130, 246, 0.35);
-  border-color: rgba(96, 165, 250, 0.45);
+  background: ${NCT_DARK_UI_BTN_LIT_GRADIENT};
+  border: ${NCT_DARK_UI_BTN_LIT_BORDER};
+  color: #e8f0f8;
 }
 `;
 }

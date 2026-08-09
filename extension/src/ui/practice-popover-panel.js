@@ -9,6 +9,18 @@
  */
 import { Z_INDEX } from '../config/constants.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
+import {
+  NCT_DARK_UI_FONT,
+  NCT_DARK_UI_PANEL_BORDER,
+  NCT_DARK_UI_PANEL_RADIUS,
+  NCT_DARK_UI_PANEL_BOX_SHADOW,
+  NCT_DARK_UI_TITLEBAR_GRADIENT,
+  NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM,
+  NCT_DARK_UI_BTN_GRADIENT,
+  NCT_DARK_UI_BTN_BORDER,
+  NCT_DARK_UI_BTN_RADIUS,
+  NCT_DARK_UI_COLORS
+} from './nct-dark-ui.js';
 
 function clearPracticePanelElement(el) {
   while (el && el.firstChild) el.removeChild(el.firstChild);
@@ -349,12 +361,12 @@ export class PracticePopoverPanel {
       maxHeight: 'calc(100vh - 24px)',
       overflow: 'auto',
       zIndex: String((Z_INDEX.ONBOARDING_PANEL || 2147483045) - 1),
-      background: 'rgba(18, 18, 18, 0.94)',
-      color: 'rgba(255,255,255,0.95)',
-      border: '1px solid rgba(255,255,255,0.12)',
-      borderRadius: '14px',
-      boxShadow: '0 12px 34px rgba(0,0,0,0.45)',
-      fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
+      background: NCT_DARK_UI_COLORS.panel,
+      color: NCT_DARK_UI_COLORS.fg,
+      border: NCT_DARK_UI_PANEL_BORDER,
+      borderRadius: NCT_DARK_UI_PANEL_RADIUS,
+      boxShadow: NCT_DARK_UI_PANEL_BOX_SHADOW,
+      fontFamily: NCT_DARK_UI_FONT,
       pointerEvents: 'auto'
     });
 
@@ -367,7 +379,8 @@ export class PracticePopoverPanel {
       justifyContent: 'space-between',
       gap: '10px',
       padding: '10px 12px',
-      borderBottom: '1px solid rgba(255,255,255,0.10)'
+      background: NCT_DARK_UI_TITLEBAR_GRADIENT,
+      borderBottom: NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM
     });
 
     const title = document.createElement('div');
@@ -388,10 +401,10 @@ export class PracticePopoverPanel {
     Object.assign(closeBtn.style, {
       width: '30px',
       height: '30px',
-      borderRadius: '10px',
-      border: '1px solid rgba(255,255,255,0.18)',
-      background: 'rgba(255,255,255,0.06)',
-      color: 'rgba(255,255,255,0.95)',
+      borderRadius: NCT_DARK_UI_BTN_RADIUS,
+      border: NCT_DARK_UI_BTN_BORDER,
+      background: NCT_DARK_UI_BTN_GRADIENT,
+      color: NCT_DARK_UI_COLORS.fg,
       cursor: 'pointer',
       fontSize: '18px',
       lineHeight: '28px',

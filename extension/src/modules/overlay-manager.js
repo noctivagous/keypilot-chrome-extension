@@ -19,6 +19,12 @@ import {
   createTitlebarCloseHint
 } from '../ui/popover-titlebar.js';
 import { createSegmentedControl } from '../ui/segmented-control.js';
+import {
+  NCT_DARK_UI_PANEL_BACKGROUND,
+  NCT_DARK_UI_PANEL_BORDER,
+  NCT_DARK_UI_PANEL_RADIUS,
+  NCT_DARK_UI_PANEL_BOX_SHADOW
+} from '../ui/nct-dark-ui.js';
 
 /** Per-host Link Preview viewport mode: { [hostname]: 'mobile' }. Missing/default = desktop. */
 const PREVIEW_VIEWPORT_BY_HOST_KEY = 'kp_link_preview_viewport_by_host';
@@ -5577,10 +5583,10 @@ export class OverlayManager {
         max-width: 100vw;          /* prevents overflow on very small screens */
         max-height: 100vh;
         margin: auto;              /* this is what centers it perfectly */
-        background: linear-gradient(rgb(18, 18, 18) 0%, rgb(11, 11, 11) 100%);
-        border-radius: 8px;
-        border: 1px solid rgb(43, 43, 43);
-        box-shadow: rgba(0, 0, 0, 0.65) 0px 8px 24px;
+        background: ${NCT_DARK_UI_PANEL_BACKGROUND};
+        border-radius: ${NCT_DARK_UI_PANEL_RADIUS};
+        border: ${NCT_DARK_UI_PANEL_BORDER};
+        box-shadow: ${NCT_DARK_UI_PANEL_BOX_SHADOW};
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -5590,8 +5596,6 @@ export class OverlayManager {
         letter-spacing: normal;
       `
     });
-
-
 
 
     // Store iframe reference for focus management
@@ -6266,10 +6270,10 @@ export class OverlayManager {
         left: ${left}px;
         width: ${popoverWidth}px;
         height: ${popoverHeight}px;
-        background: linear-gradient(rgb(18, 18, 18) 0%, rgb(11, 11, 11) 100%);
-        border-radius: 8px;
-        border: 1px solid rgb(43, 43, 43);
-        box-shadow: rgba(0, 0, 0, 0.65) 0px 8px 24px;
+        background: ${NCT_DARK_UI_PANEL_BACKGROUND};
+        border-radius: ${NCT_DARK_UI_PANEL_RADIUS};
+        border: ${NCT_DARK_UI_PANEL_BORDER};
+        box-shadow: ${NCT_DARK_UI_PANEL_BOX_SHADOW};
         display: flex;
         flex-direction: column;
         overflow: hidden;

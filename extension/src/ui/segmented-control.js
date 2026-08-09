@@ -5,6 +5,13 @@
  */
 
 import { KP_UI_FONT } from '../config/constants.js';
+import {
+  NCT_DARK_UI_COLORS,
+  NCT_DARK_UI_BTN_RADIUS,
+  NCT_DARK_UI_SELECTED_TINT,
+  NCT_DARK_UI_SELECTED_TEXT,
+  NCT_DARK_UI_HOVER_TINT
+} from './nct-dark-ui.js';
 
 /**
  * @typedef {object} SegmentedControlOption
@@ -59,8 +66,8 @@ export function createSegmentedControl(config = {}) {
     display: inline-flex;
     align-items: stretch;
     flex-shrink: 0;
-    border: 1px solid #4a4a4a;
-    border-radius: 5px;
+    border: 1px solid ${NCT_DARK_UI_COLORS.panelEdge};
+    border-radius: ${NCT_DARK_UI_BTN_RADIUS};
     overflow: hidden;
     background: rgba(0, 0, 0, 0.25);
     font-family: ${KP_UI_FONT};
@@ -74,8 +81,8 @@ export function createSegmentedControl(config = {}) {
       const selected = btn.dataset.value === currentValue;
       btn.setAttribute('aria-checked', selected ? 'true' : 'false');
       btn.dataset.selected = selected ? '1' : '0';
-      btn.style.background = selected ? 'rgba(255,255,255,0.12)' : 'transparent';
-      btn.style.color = selected ? '#fff' : '#b8b8b8';
+      btn.style.background = selected ? NCT_DARK_UI_SELECTED_TINT : 'transparent';
+      btn.style.color = selected ? NCT_DARK_UI_SELECTED_TEXT : NCT_DARK_UI_COLORS.fgDim;
       btn.style.fontWeight = selected ? '600' : '500';
     }
   };
@@ -120,10 +127,10 @@ export function createSegmentedControl(config = {}) {
       margin: 0;
       padding: 3px 8px;
       border: none;
-      border-right: ${index < options.length - 1 ? '1px solid #4a4a4a' : 'none'};
+      border-right: ${index < options.length - 1 ? `1px solid ${NCT_DARK_UI_COLORS.panelEdge}` : 'none'};
       border-radius: 0;
       background: transparent;
-      color: #b8b8b8;
+      color: ${NCT_DARK_UI_COLORS.fgDim};
       font-size: 11px;
       font-weight: 500;
       font-family: ${KP_UI_FONT};
@@ -137,8 +144,8 @@ export function createSegmentedControl(config = {}) {
 
     btn.addEventListener('mouseenter', () => {
       if (btn.dataset.selected === '1') return;
-      btn.style.background = 'rgba(255,255,255,0.06)';
-      btn.style.color = '#e0e0e0';
+      btn.style.background = NCT_DARK_UI_HOVER_TINT;
+      btn.style.color = NCT_DARK_UI_COLORS.fg;
     });
     btn.addEventListener('mouseleave', () => {
       applySelectionStyles();

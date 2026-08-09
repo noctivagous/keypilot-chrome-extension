@@ -4,6 +4,13 @@
  */
 
 import { KP_UI_FONT } from '../config/constants.js';
+import {
+  NCT_DARK_UI_BTN_GRADIENT,
+  NCT_DARK_UI_BTN_BORDER,
+  NCT_DARK_UI_BTN_RADIUS,
+  NCT_DARK_UI_HOVER_TINT,
+  NCT_DARK_UI_COLORS
+} from './nct-dark-ui.js';
 
 /**
  * @param {Document} doc
@@ -46,9 +53,9 @@ const TITLEBAR_BTN_STYLE = `
   appearance: none;
   -webkit-appearance: none;
   box-sizing: border-box;
-  background: transparent;
-  border: 1px solid #4a4a4a;
-  color: #e0e0e0;
+  background: ${NCT_DARK_UI_BTN_GRADIENT};
+  border: ${NCT_DARK_UI_BTN_BORDER};
+  color: ${NCT_DARK_UI_COLORS.fg};
   font-size: 11px;
   font-weight: 500;
   font-family: ${KP_UI_FONT};
@@ -58,7 +65,7 @@ const TITLEBAR_BTN_STYLE = `
   text-shadow: none;
   box-shadow: none;
   padding: 4px 8px;
-  border-radius: 5px;
+  border-radius: ${NCT_DARK_UI_BTN_RADIUS};
   cursor: pointer;
   flex-shrink: 0;
   white-space: nowrap;
@@ -75,14 +82,14 @@ const TITLEBAR_BTN_STYLE = `
  */
 function wireTitlebarBtnHover(btn) {
   btn.addEventListener('mouseenter', () => {
-    btn.style.background = 'rgba(255,255,255,0.08)';
-    btn.style.borderColor = '#6a6a6a';
+    btn.style.background = NCT_DARK_UI_HOVER_TINT;
+    btn.style.borderColor = NCT_DARK_UI_COLORS.panelEdge;
     btn.style.color = '#fff';
   });
   btn.addEventListener('mouseleave', () => {
-    btn.style.background = 'transparent';
-    btn.style.borderColor = '#4a4a4a';
-    btn.style.color = '#e0e0e0';
+    btn.style.background = NCT_DARK_UI_BTN_GRADIENT;
+    btn.style.borderColor = NCT_DARK_UI_COLORS.panelEdgeDark;
+    btn.style.color = NCT_DARK_UI_COLORS.fg;
   });
 }
 

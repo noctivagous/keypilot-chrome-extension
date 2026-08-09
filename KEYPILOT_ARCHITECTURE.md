@@ -24,16 +24,15 @@ KeyPilot is a Chrome extension that transforms web browsing into a keyboard-firs
   - Web navigation permissions for enhanced navigation features
 
 ### Build System
-- **Entry Point**: `extension/build.js`
+- **Entry Point**: `extension/build.js` (esbuild)
 - **Source Structure**: ES6 modules in `extension/src/`
-- **Output**: Single bundled file (`content-bundled.js`)
-- **Build Configuration**: `extension/babel.config.cjs` for Node.js transpilation
+- **Outputs**: `content-bundled.js` (top frame), `frame-agent-bundled.js` (child frames)
+- **Side effects**: `extension/build-side-effects.js` (manifest stamp, README/website, early-inject)
+- **Archive**: Manual concat pipeline at `extension/archive/manual-concat-build/` (`npm run build:manual`)
 - **Process**:
-  1. Validates all source files exist
-  2. Concatenates modules into single IIFE
-  3. Strips ES6 imports/exports
-  4. Optional minification with Terser
-  5. Updates manifest with build timestamp
+  1. esbuild bundles entry points as browser IIFEs (real module graph + tree-shaking)
+  2. Optional minified `content-bundled.min.js` via `--minify`
+  3. Updates manifest, README/website stamps, and early-inject UI block
 
 ## Component Hierarchy
 
@@ -345,8 +344,11 @@ extension/
 │   ├── content-script.js  # Entry point
 │   └── keypilot.js        # Main class
 ├── babel.config.cjs       # Babel configuration for build system
-├── build.js              # Build script
-├── content-bundled.js    # Generated bundle
+├── build.js              # esbuild entry (bundles + side effects)
+├── build-side-effects.js # Manifest/README/website/early-inject stamps
+├── archive/manual-concat-build/  # Archived pre-esbuild concat bundler
+├── content-bundled.js    # Generated top-frame bundle
+├── frame-agent-bundled.js # Generated child-frame bundle
 ├── early-inject.js       # Early injection script
 ├── manifest.json         # Extension manifest
 └── pages/                # HTML pages and assets

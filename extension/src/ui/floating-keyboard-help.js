@@ -34,6 +34,17 @@ import {
   makePanelDraggable,
   normalizePanelPositionState
 } from '../utils/panel-position.js';
+import {
+  NCT_DARK_UI_FONT,
+  NCT_DARK_UI_PANEL_BORDER,
+  NCT_DARK_UI_PANEL_RADIUS,
+  NCT_DARK_UI_PANEL_BOX_SHADOW,
+  NCT_DARK_UI_TITLEBAR_GRADIENT,
+  NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM,
+  NCT_DARK_UI_FIELD_BACKGROUND,
+  NCT_DARK_UI_FIELD_BORDER,
+  NCT_DARK_UI_COLORS
+} from './nct-dark-ui.js';
 
 /** Match legacy keyboard dock inset (left/bottom 16px) while still using shared snap/clamp. */
 const KEYBOARD_POSITION_MARGIN_PX = Math.max(PANEL_POSITION_MARGIN_PX, 16);
@@ -504,13 +515,13 @@ export class FloatingKeyboardHelp {
       overflow: 'hidden',
       boxSizing: 'border-box',
       zIndex: String(Z_INDEX.FLOATING_KEYBOARD_HELP),
-      background: 'rgba(10, 11, 14, 0.98)',
-      color: 'rgba(248, 250, 252, 0.95)',
-      // Match onboarding panel rim (light gray outline).
-      border: '1px solid rgba(255,255,255,0.12)',
-      borderRadius: '4px',
-      boxShadow: '0 16px 40px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35)',
-      fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif'
+      background: NCT_DARK_UI_COLORS.panel,
+      color: NCT_DARK_UI_COLORS.fg,
+      // NCT dark UI panel rim (dual-edge inset rim).
+      border: NCT_DARK_UI_PANEL_BORDER,
+      borderRadius: NCT_DARK_UI_PANEL_RADIUS,
+      boxShadow: NCT_DARK_UI_PANEL_BOX_SHADOW,
+      fontFamily: NCT_DARK_UI_FONT
     });
     try {
       root.style.setProperty('display', show ? 'flex' : 'none', 'important');
@@ -684,8 +695,8 @@ export class FloatingKeyboardHelp {
       boxSizing: 'border-box',
       padding: '0 6px 0 10px',
       margin: '0',
-      borderBottom: '1px solid rgba(0,0,0,0.55)',
-      background: 'linear-gradient(180deg, #1a1b1f 0%, #121316 100%)',
+      borderBottom: NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM,
+      background: NCT_DARK_UI_TITLEBAR_GRADIENT,
       flex: '0 0 auto',
       cursor: 'grab',
       userSelect: 'none',
@@ -703,7 +714,7 @@ export class FloatingKeyboardHelp {
         fontWeight: '600',
         letterSpacing: '0.01em',
         textTransform: 'none',
-        color: 'rgba(220, 220, 225, 0.9)',
+        color: NCT_DARK_UI_COLORS.fg,
         lineHeight: '28px',
         whiteSpace: 'nowrap',
         overflow: 'hidden',
@@ -895,10 +906,10 @@ export class FloatingKeyboardHelp {
           Object.assign(layoutSelect.style, {
             marginLeft: '6px',
             padding: '2px 6px',
-            borderRadius: '4px',
-            border: '1px solid rgba(255,255,255,0.18)',
-            background: 'rgba(255,255,255,0.06)',
-            color: 'rgba(255,255,255,0.95)',
+            borderRadius: '2px',
+            border: NCT_DARK_UI_FIELD_BORDER,
+            background: NCT_DARK_UI_FIELD_BACKGROUND,
+            color: NCT_DARK_UI_COLORS.fg,
             outline: 'none',
             fontSize: '11px',
             maxWidth: '160px',
@@ -976,10 +987,10 @@ export class FloatingKeyboardHelp {
     Object.assign(layoutSelect.style, {
       marginLeft: '6px',
       padding: '2px 6px',
-      borderRadius: '4px',
-      border: '1px solid rgba(255,255,255,0.18)',
-      background: 'rgba(255,255,255,0.06)',
-      color: 'rgba(255,255,255,0.95)',
+      borderRadius: '2px',
+      border: NCT_DARK_UI_FIELD_BORDER,
+      background: NCT_DARK_UI_FIELD_BACKGROUND,
+      color: NCT_DARK_UI_COLORS.fg,
       outline: 'none',
       fontSize: '11px',
       maxWidth: '160px',

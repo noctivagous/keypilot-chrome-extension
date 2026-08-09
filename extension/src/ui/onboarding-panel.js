@@ -253,12 +253,12 @@ export class OnboardingPanel {
       zIndex: String((Z_INDEX.ONBOARDING_PANEL || ONBOARDING_PANEL_Z_FALLBACK) + 2),
       maxWidth: '260px',
       padding: '10px 12px',
-      borderRadius: '12px',
-      border: '1px solid rgba(255,255,255,0.16)',
-      background: 'rgba(18, 18, 18, 0.96)',
-      color: 'rgba(255,255,255,0.95)',
-      boxShadow: '0 10px 28px rgba(0,0,0,0.45)',
-      fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
+      borderRadius: '3px',
+      border: '1px solid #111',
+      background: '#232323',
+      color: '#ddd',
+      boxShadow: '0 0 0 1px #3a3a3a inset, 0 16px 40px rgba(0,0,0,0.55)',
+      fontFamily: 'Helvetica, Arial, sans-serif',
       fontSize: '13px',
       fontWeight: '600',
       lineHeight: '1.35',
@@ -273,10 +273,10 @@ export class OnboardingPanel {
       height: '0',
       borderLeft: '8px solid transparent',
       borderRight: '8px solid transparent',
-      borderBottom: '8px solid rgba(18, 18, 18, 0.96)',
+      borderBottom: '8px solid #232323',
       top: '-8px',
       left: '20px',
-      filter: 'drop-shadow(0 -1px 0 rgba(255,255,255,0.16))'
+      filter: 'drop-shadow(0 -1px 0 #3a3a3a)'
     });
 
     const msg = document.createElement('div');
@@ -342,7 +342,7 @@ export class OnboardingPanel {
             top: 'auto',
             bottom: '-8px',
             borderBottom: 'none',
-            borderTop: '8px solid rgba(18, 18, 18, 0.96)'
+            borderTop: '8px solid #232323'
           });
         }
       } else if (this._reEnableTipArrow) {
@@ -350,7 +350,7 @@ export class OnboardingPanel {
           top: '-8px',
           bottom: 'auto',
           borderTop: 'none',
-          borderBottom: '8px solid rgba(18, 18, 18, 0.96)'
+          borderBottom: '8px solid #232323'
         });
       }
       tip.style.left = `${left}px`;
@@ -911,7 +911,7 @@ export class OnboardingPanel {
         top: `${rect.top}px`,
         width: `${rect.width}px`,
         height: `${rect.height}px`,
-        borderRadius: '14px',
+        borderRadius: '3px',
         zIndex: String((Z_INDEX.ONBOARDING_PANEL || ONBOARDING_PANEL_Z_FALLBACK) + 5),
         pointerEvents: 'none'
       });

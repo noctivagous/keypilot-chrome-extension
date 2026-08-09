@@ -18,6 +18,23 @@ import { Z_INDEX, KP_UI_FONT } from '../config/constants.js';
 import { makePanelDraggable } from '../utils/panel-position.js';
 import { getFunctionDef } from '../config/function-library.js';
 import {
+  NCT_DARK_UI_PANEL_BACKGROUND,
+  NCT_DARK_UI_PANEL_BORDER,
+  NCT_DARK_UI_PANEL_RADIUS,
+  NCT_DARK_UI_PANEL_BOX_SHADOW,
+  NCT_DARK_UI_TITLEBAR_GRADIENT,
+  NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM,
+  NCT_DARK_UI_BTN_GRADIENT,
+  NCT_DARK_UI_BTN_BORDER,
+  NCT_DARK_UI_BTN_RADIUS,
+  NCT_DARK_UI_FIELD_BACKGROUND,
+  NCT_DARK_UI_FIELD_BORDER,
+  NCT_DARK_UI_FIELD_BOX_SHADOW,
+  NCT_DARK_UI_FIELD_FOCUS_BORDER,
+  NCT_DARK_UI_FIELD_FOCUS_BOX_SHADOW,
+  NCT_DARK_UI_COLORS
+} from './nct-dark-ui.js';
+import {
   getOrCreateBuiltinFunctionUserAction,
   setBuiltinFunctionUserActionParameter
 } from '../modules/keyboard-layout-store.js';
@@ -176,18 +193,14 @@ function ensureConfigPanelStyles(doc) {
   z-index: ${Z_INDEX.KEY_ACTION_CONFIG || (Z_INDEX.KEYBINDINGS_POPOVER + 1)};
   min-width: 240px;
   max-width: min(360px, calc(100vw - 24px));
-  color: rgba(248, 250, 252, 0.95);
+  color: ${NCT_DARK_UI_COLORS.fg};
   font-family: ${KP_UI_FONT};
   font-size: 12px;
   line-height: 1.4;
-  border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.45);
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 40%),
-    linear-gradient(180deg, #3a4150 0%, #2c313e 100%);
-  box-shadow:
-    0 1px 0 rgba(0,0,0,0.4),
-    0 14px 32px rgba(0,0,0,0.45);
+  border-radius: ${NCT_DARK_UI_PANEL_RADIUS};
+  border: ${NCT_DARK_UI_PANEL_BORDER};
+  background: ${NCT_DARK_UI_PANEL_BACKGROUND};
+  box-shadow: ${NCT_DARK_UI_PANEL_BOX_SHADOW};
   box-sizing: border-box;
 }
 .kp-action-config-panel[hidden] { display: none !important; }
@@ -199,7 +212,8 @@ function ensureConfigPanelStyles(doc) {
   padding: 8px 10px;
   cursor: grab;
   user-select: none;
-  border-bottom: 1px solid rgba(0,0,0,0.35);
+  background: ${NCT_DARK_UI_TITLEBAR_GRADIENT};
+  border-bottom: ${NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM};
 }
 .kp-action-config-panel__title {
   font-weight: 600;
@@ -208,12 +222,12 @@ function ensureConfigPanelStyles(doc) {
 }
 .kp-action-config-panel__close {
   appearance: none;
-  border: 0;
-  background: rgba(0,0,0,0.25);
+  background: ${NCT_DARK_UI_BTN_GRADIENT};
+  border: ${NCT_DARK_UI_BTN_BORDER};
   color: inherit;
   width: 22px;
   height: 22px;
-  border-radius: 6px;
+  border-radius: ${NCT_DARK_UI_BTN_RADIUS};
   cursor: pointer;
   font-size: 14px;
   line-height: 1;
@@ -239,12 +253,18 @@ function ensureConfigPanelStyles(doc) {
   appearance: none;
   width: 100%;
   box-sizing: border-box;
-  border-radius: 6px;
-  border: 1px solid rgba(0,0,0,0.4);
-  background: rgba(0,0,0,0.22);
+  border-radius: ${NCT_DARK_UI_BTN_RADIUS};
+  border: ${NCT_DARK_UI_FIELD_BORDER};
+  background: ${NCT_DARK_UI_FIELD_BACKGROUND};
+  box-shadow: ${NCT_DARK_UI_FIELD_BOX_SHADOW};
   color: inherit;
   padding: 6px 8px;
   font: inherit;
+}
+.kp-action-config-panel__control:focus {
+  outline: none;
+  border-color: ${NCT_DARK_UI_FIELD_FOCUS_BORDER};
+  box-shadow: ${NCT_DARK_UI_FIELD_FOCUS_BOX_SHADOW};
 }
 .kp-action-config-panel__control[data-multiline="true"] {
   min-height: 64px;

@@ -11,6 +11,20 @@
 import { Z_INDEX } from '../config/constants.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
 import { getActionIconDataUri } from './keybindings-ui-shared.js';
+import {
+  NCT_DARK_UI_FONT,
+  NCT_DARK_UI_PANEL_BORDER,
+  NCT_DARK_UI_PANEL_RADIUS,
+  NCT_DARK_UI_PANEL_BOX_SHADOW,
+  NCT_DARK_UI_TITLEBAR_GRADIENT,
+  NCT_DARK_UI_BTN_GRADIENT,
+  NCT_DARK_UI_BTN_LIT_GRADIENT,
+  NCT_DARK_UI_HOVER_TINT,
+  NCT_DARK_UI_SELECTED_TINT,
+  NCT_DARK_UI_SELECTED_TEXT,
+  NCT_DARK_UI_FOCUS_RING,
+  NCT_DARK_UI_COLORS
+} from './nct-dark-ui.js';
 import { positionOnboardingBelowControlStrip } from './onboarding-shared.js';
 import { getSettings, setSettings, DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY } from '../modules/settings-manager.js';
 import {
@@ -261,7 +275,7 @@ export class ControlStrip {
 
           // Keep shell rim in sync with current chrome (early inject may be older).
           try {
-            this.root.style.border = '1px solid rgba(255,255,255,0.12)';
+            this.root.style.border = NCT_DARK_UI_PANEL_BORDER;
           } catch { /* ignore */ }
 
           this._ensureMoveHandle();
@@ -294,13 +308,13 @@ export class ControlStrip {
       flexDirection: 'row',
       alignItems: 'stretch',
       zIndex: String(Z_INDEX.CONTROL_STRIP || 2147483025),
-      background: 'rgba(10, 11, 14, 0.98)',
+      background: NCT_DARK_UI_TITLEBAR_GRADIENT,
       color: 'rgba(248, 250, 252, 0.95)',
-      // Match onboarding panel rim (light gray outline).
-      border: '1px solid rgba(255,255,255,0.12)',
-      borderRadius: '4px',
-      boxShadow: '0 8px 24px rgba(0,0,0,0.5), 0 1px 4px rgba(0,0,0,0.35)',
-      fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
+      // NCT dark UI panel rim (dark outer edge).
+      border: NCT_DARK_UI_PANEL_BORDER,
+      borderRadius: NCT_DARK_UI_PANEL_RADIUS,
+      boxShadow: NCT_DARK_UI_PANEL_BOX_SHADOW,
+      fontFamily: NCT_DARK_UI_FONT,
       pointerEvents: 'auto',
       overflow: 'hidden',
       boxSizing: 'border-box',
@@ -655,7 +669,7 @@ export class ControlStrip {
    * @param {string} [color]
    * @returns {HTMLElement|null}
    */
-  _createActionIcon(actionId, color = 'rgba(220, 220, 225, 0.92)') {
+  _createActionIcon(actionId, color = NCT_DARK_UI_COLORS.fg) {
     try {
       const cssUri = getActionIconDataUri(actionId, { fill: color });
       if (!cssUri) return null;
@@ -725,12 +739,12 @@ export class ControlStrip {
       margin: '0',
       padding: opts.compact ? '0 8px' : '0 10px',
       border: 'none',
-      borderRight: opts.last ? 'none' : '1px solid rgba(255,255,255,0.08)',
+      borderRight: opts.last ? 'none' : `1px solid ${NCT_DARK_UI_COLORS.panelEdgeDark}`,
       borderRadius: '0',
       background: opts.primary
-        ? 'linear-gradient(180deg, #1a1b1f 0%, #121316 100%)'
+        ? NCT_DARK_UI_BTN_LIT_GRADIENT
         : 'transparent',
-      color: 'rgba(220, 220, 225, 0.92)',
+      color: opts.primary ? NCT_DARK_UI_SELECTED_TEXT : NCT_DARK_UI_COLORS.fg,
       fontSize: '11px',
       fontWeight: '600',
       letterSpacing: '0.01em',
@@ -745,23 +759,23 @@ export class ControlStrip {
     btn.addEventListener('mouseenter', () => {
       try {
         btn.style.background = opts.primary
-          ? 'linear-gradient(180deg, #22232a 0%, #18191e 100%)'
-          : 'rgba(255,255,255,0.06)';
+          ? NCT_DARK_UI_BTN_GRADIENT
+          : NCT_DARK_UI_HOVER_TINT;
       } catch { /* ignore */ }
     });
     btn.addEventListener('mouseleave', () => {
       try {
         if (btn === this._keyboardBtn && this._keyboardActive) {
-          btn.style.background = 'rgba(59, 130, 246, 0.18)';
+          btn.style.background = NCT_DARK_UI_SELECTED_TINT;
         } else {
           btn.style.background = opts.primary
-            ? 'linear-gradient(180deg, #1a1b1f 0%, #121316 100%)'
+            ? NCT_DARK_UI_BTN_LIT_GRADIENT
             : 'transparent';
         }
       } catch { /* ignore */ }
     });
     btn.addEventListener('focus', () => {
-      try { btn.style.boxShadow = 'inset 0 0 0 1px rgba(59, 130, 246, 0.55)'; } catch { /* ignore */ }
+      try { btn.style.boxShadow = NCT_DARK_UI_FOCUS_RING; } catch { /* ignore */ }
     });
     btn.addEventListener('blur', () => {
       try { btn.style.boxShadow = 'none'; } catch { /* ignore */ }
@@ -793,7 +807,7 @@ export class ControlStrip {
       // When collapsed, collapse control is last visible segment.
       this._collapseBtn.style.borderRight = 'none';
       if (!collapsed && this._closeBtn) {
-        this._collapseBtn.style.borderRight = '1px solid rgba(255,255,255,0.08)';
+        this._collapseBtn.style.borderRight = `1px solid ${NCT_DARK_UI_COLORS.panelEdgeDark}`;
       }
     }
 
@@ -848,11 +862,11 @@ export class ControlStrip {
     const active = !!this._keyboardActive;
     this._keyboardBtn.setAttribute('aria-pressed', active ? 'true' : 'false');
     this._keyboardBtn.style.background = active
-      ? 'rgba(59, 130, 246, 0.18)'
+      ? NCT_DARK_UI_SELECTED_TINT
       : 'transparent';
     this._keyboardBtn.style.color = active
-      ? 'rgba(191, 219, 254, 0.98)'
-      : 'rgba(220, 220, 225, 0.92)';
+      ? NCT_DARK_UI_SELECTED_TEXT
+      : NCT_DARK_UI_COLORS.fg;
     this._keyboardBtn.title = active
       ? 'Hide keyboard reference'
       : 'Show keyboard reference';
