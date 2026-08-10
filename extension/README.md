@@ -436,6 +436,32 @@ for common web interactions, eliminating the need for mouse navigation.
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ### Control Strip
 
 Upper-left status strip (dark GUI Pro). **ON/OFF**, **KB** (keyboard reference), **Settings**, collapse, and close. Press **`Alt`+`J`** to restore after close. Options: **Settings → Control Strip**.

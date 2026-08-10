@@ -56,6 +56,10 @@ import {
   NCT_DARK_UI_PANEL_BOX_SHADOW,
   NCT_DARK_UI_TITLEBAR_GRADIENT,
   NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM,
+  NCT_DARK_UI_TITLEBAR_TEXT_MODE_BACKGROUND,
+  NCT_DARK_UI_TITLEBAR_TEXT_MODE_BORDER_BOTTOM,
+  NCT_DARK_UI_TITLEBAR_TEXT_MODE_TITLE_COLOR,
+  NCT_DARK_UI_TITLEBAR_TEXT_MODE_HINT_COLOR,
   NCT_DARK_UI_FIELD_BACKGROUND,
   NCT_DARK_UI_FIELD_BORDER,
   NCT_DARK_UI_BTN_LIT_GRADIENT,
@@ -74,6 +78,14 @@ const KEYBOARD_MAX_VIEWPORT_INSET_PX = KEYBOARD_POSITION_MARGIN_PX * 2;
 const LAYOUT_SELECT_EDIT_VALUE = '__edit_layouts__';
 /** Sentinel value for creating a new layout and opening Keyboard Layout Config. */
 const LAYOUT_SELECT_NEW_VALUE = '__new_layout__';
+
+/**
+ * Function / action ids that stay fully styled and interactive on the Keyboard
+ * Reference while Text Mode's hover-click countdown is armed.
+ * Add more ids here as additional countdown-aware Functions ship.
+ * @type {ReadonlySet<string>}
+ */
+export const TEXT_MODE_COUNTDOWN_ACTION_IDS = new Set(['ACTIVATE']);
 
 export class FloatingKeyboardHelp {
   /**
@@ -120,10 +132,12 @@ export class FloatingKeyboardHelp {
     /** @type {Set<string>} */
     this._linkHoverHintActionIds = new Set();
 
-    // Text-focus mode: all keys grayed out; ACTIVATE only lights up while the
-    // hover-click countdown is armed on a clickable under the cursor.
+    // Text / typing mode: plain orange-ring keys; countdown-armed actions from
+    // TEXT_MODE_COUNTDOWN_ACTION_IDS light up with full function chrome.
     this._textModeFilterActive = false;
-    this._textModeActivateArmed = false;
+    this._textModeCountdownArmed = false;
+    /** @type {Set<string>} */
+    this._textModeCountdownActionIds = new Set(TEXT_MODE_COUNTDOWN_ACTION_IDS);
 
     this._keyFeedbackEnabled = true;
     this._settingsBound = false;
@@ -305,6 +319,8 @@ export class FloatingKeyboardHelp {
           while (this.hintEl.firstChild) this.hintEl.removeChild(this.hintEl.firstChild);
           this.hintEl.appendChild(document.createTextNode('Editing — Alt+C to exit'));
           this.hintEl.setAttribute('aria-label', 'Editing layout — Alt+C to exit');
+        } else if (this._textModeFilterActive) {
+          this._setTypingHint(this.hintEl);
         } else {
           const b = this.keybindings && this.keybindings.TOGGLE_KEYBOARD_HELP;
           const key = (b && (b.displayKey || b.keyLabel)) ? String(b.displayKey || b.keyLabel) : 'K';
@@ -540,7 +556,7 @@ export class FloatingKeyboardHelp {
     // saved free/dock location never flashes at the default bottom-left corner.
     this._applyPanelPositionNow();
 
-    const reveal = () => {
+    const reveal = ({ render = true } = {}) => {
       if (gen !== this._showGeneration) return;
       if (!this.root || !this.root.isConnected) return;
       this._applyPanelPositionNow();
@@ -548,7 +564,7 @@ export class FloatingKeyboardHelp {
       // Never inherit a stuck press overlay from early-inject / prior paint.
       this._clearPressed();
       this._scrubPressOverlays();
-      this._render();
+      if (render) this._render();
       // Reclamp after keyboard rows size (free tops can shift once height is known).
       this._schedulePanelPositionAfterLayout();
       this._bindKeydownFeedback();
@@ -561,8 +577,19 @@ export class FloatingKeyboardHelp {
       }
     };
 
-    if (this._positionHydrated) {
+    const revealAfterLayoutReady = () => {
+      // User layouts are read asynchronously. Keep the adopted early shell hidden
+      // until that read replaces its built-in placeholder, preventing a visible
+      // built-in-layout flash after a navigation.
+      if (String(this._currentKeyboardLayoutId || '').startsWith('user:')) {
+        void this._renderAsync().finally(() => reveal({ render: false }));
+        return;
+      }
       reveal();
+    };
+
+    if (this._positionHydrated) {
+      revealAfterLayoutReady();
       // Background refresh keeps multi-tab moves in sync without a default-corner flash.
       void this._refreshPanelPosition();
       return;
@@ -573,7 +600,7 @@ export class FloatingKeyboardHelp {
     void this._refreshPanelPosition().finally(() => {
       if (gen !== this._showGeneration) return;
       this._positionHydrated = true;
-      reveal();
+      revealAfterLayoutReady();
     });
   }
 
@@ -1234,12 +1261,121 @@ export class FloatingKeyboardHelp {
     if (!this.keyboardContainer) return;
     try {
       if (!this._editMode) {
-        const b = this.keybindings && this.keybindings.TOGGLE_KEYBOARD_HELP;
-        const key = (b && (b.displayKey || b.keyLabel)) ? String(b.displayKey || b.keyLabel) : 'K';
-        this._setToggleHint(this.hintEl, key);
+        if (this._textModeFilterActive) {
+          this._setTypingHint(this.hintEl);
+        } else {
+          const b = this.keybindings && this.keybindings.TOGGLE_KEYBOARD_HELP;
+          const key = (b && (b.displayKey || b.keyLabel)) ? String(b.displayKey || b.keyLabel) : 'K';
+          this._setToggleHint(this.hintEl, key);
+        }
       }
     } catch { /* ignore */ }
     void this._renderAsync();
+  }
+
+  /**
+   * Titlebar hint while a text field has focus (typing / text mode).
+   * @param {HTMLElement|null} hintEl
+   */
+  _setTypingHint(hintEl) {
+    if (!hintEl) return;
+    const label = 'Typing — Esc to exit';
+    try {
+      if (
+        hintEl.getAttribute('aria-label') === label
+        && hintEl.textContent === label
+        && !hintEl.querySelector('[data-kp-floating-keyboard-hint-key="true"]')
+      ) {
+        return;
+      }
+    } catch { /* ignore */ }
+    while (hintEl.firstChild) hintEl.removeChild(hintEl.firstChild);
+    hintEl.appendChild(document.createTextNode(label));
+    try {
+      hintEl.setAttribute('aria-label', label);
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Restore the normal layout title after leaving typing / text mode.
+   */
+  _restoreLayoutTitle() {
+    try {
+      if (!this._layoutTitleEl || this._editMode) return;
+      const sel = String(this._currentKeyboardLayoutId || 'builtin');
+      const label = sel.startsWith('user:') ? 'Custom layout' : 'Built-in';
+      this._layoutTitleEl.textContent = `Keyboard Reference — ${label}`;
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Orange-cast titlebar + warm title color while typing (text mode).
+   * Edit-mode hatch styles win when both attributes are present.
+   */
+  _ensureTextModeStyles() {
+    try {
+      const doc = this.root?.ownerDocument || document;
+      if (!doc?.head) return;
+      let s = doc.head.querySelector('style[data-kp-keyboard-text-mode-style="true"]');
+      if (!s) {
+        s = doc.createElement('style');
+        s.setAttribute('data-kp-keyboard-text-mode-style', 'true');
+        doc.head.appendChild(s);
+      }
+      s.textContent = `
+/* Typing / text mode: orange cast over the NCT titlebar bevel (COLORS.ORANGE #ff8c00). */
+.kp-floating-keyboard-help[data-kp-text-mode="true"]:not([data-kp-edit-mode="true"]) [data-kp-floating-keyboard-titlebar="true"] {
+  background: ${NCT_DARK_UI_TITLEBAR_TEXT_MODE_BACKGROUND} !important;
+  border-bottom: ${NCT_DARK_UI_TITLEBAR_TEXT_MODE_BORDER_BOTTOM} !important;
+}
+.kp-floating-keyboard-help[data-kp-text-mode="true"]:not([data-kp-edit-mode="true"]) [data-kp-floating-keyboard-title="true"] {
+  color: ${NCT_DARK_UI_TITLEBAR_TEXT_MODE_TITLE_COLOR} !important;
+}
+.kp-floating-keyboard-help[data-kp-text-mode="true"]:not([data-kp-edit-mode="true"]) [data-kp-floating-keyboard-hint="true"] {
+  color: ${NCT_DARK_UI_TITLEBAR_TEXT_MODE_HINT_COLOR} !important;
+}
+      `.trim();
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Sync root attribute, title, and hint for typing / text mode.
+   * @param {boolean} active
+   */
+  _applyTextModeChrome(active) {
+    const on = Boolean(active);
+    try {
+      if (this.root) {
+        if (on) this.root.setAttribute('data-kp-text-mode', 'true');
+        else this.root.removeAttribute('data-kp-text-mode');
+      }
+    } catch { /* ignore */ }
+
+    this._ensureTextModeStyles();
+
+    if (this._editMode) return;
+
+    try {
+      if (this._layoutTitleEl) {
+        if (on) {
+          this._layoutTitleEl.textContent = 'Keyboard Reference — Typing';
+        } else {
+          this._restoreLayoutTitle();
+        }
+      }
+    } catch { /* ignore */ }
+
+    try {
+      if (this.hintEl) {
+        if (on) {
+          this._setTypingHint(this.hintEl);
+        } else {
+          const b = this.keybindings && this.keybindings.TOGGLE_KEYBOARD_HELP;
+          const key = (b && (b.displayKey || b.keyLabel)) ? String(b.displayKey || b.keyLabel) : 'K';
+          this._setToggleHint(this.hintEl, key);
+        }
+      }
+    } catch { /* ignore */ }
   }
 
   _ensureEditModeStyles() {
@@ -1458,10 +1594,12 @@ export class FloatingKeyboardHelp {
 
     // Update title to include current layout label (skip if already correct — avoids
     // titlebar text flash when adopting the early-inject shell after navigation).
+    // While typing / text mode is active, keep the "Typing" title instead.
     try {
       if (this._layoutTitleEl) {
-        const label = sel.startsWith('user:') ? 'Custom layout' : 'Built-in';
-        const nextTitle = `Keyboard Reference — ${label}`;
+        const nextTitle = (this._textModeFilterActive && !this._editMode)
+          ? 'Keyboard Reference — Typing'
+          : `Keyboard Reference — ${sel.startsWith('user:') ? 'Custom layout' : 'Built-in'}`;
         if (this._layoutTitleEl.textContent !== nextTitle) {
           this._layoutTitleEl.textContent = nextTitle;
         }
@@ -1514,7 +1652,9 @@ export class FloatingKeyboardHelp {
         } catch { /* ignore */ }
         try {
           if (this._layoutTitleEl) {
-            this._layoutTitleEl.textContent = 'Keyboard Reference — Built-in';
+            this._layoutTitleEl.textContent = (this._textModeFilterActive && !this._editMode)
+              ? 'Keyboard Reference — Typing'
+              : 'Keyboard Reference — Built-in';
           }
         } catch { /* ignore */ }
         try {
@@ -1799,8 +1939,8 @@ export class FloatingKeyboardHelp {
         btn.setAttribute('aria-label', macroLabel);
       }
 
-      // Function-bearing keys get the same FA background-icon layer as built-in render.
-      if (displayAssigned && displayAssigned.type === 'function') {
+      // Function/macro keys get the same FA background-icon layer as built-in render.
+      if (displayAssigned && (displayAssigned.type === 'function' || displayAssigned.type === 'macro')) {
         ensureKeyBackgroundIcon(doc, btn);
       }
 
@@ -2228,25 +2368,29 @@ export class FloatingKeyboardHelp {
   }
 
   /**
-   * While a text field has focus, gray out every key.
-   * Click Element (ACTIVATE) is re-enabled only while the hover countdown is armed
-   * via setTextModeActivateArmed(true).
+   * While a text field has focus, switch the Keyboard Reference into typing mode:
+   * plain keycaps (no function chrome) with an orange glow ring, and an orange-cast titlebar.
+   * Countdown-aware actions ({@link TEXT_MODE_COUNTDOWN_ACTION_IDS}) light up with full
+   * function chrome only while the hover countdown is armed via setTextModeActivateArmed(true).
    * @param {boolean} active
    */
   setTextModeFilter(active) {
     const next = Boolean(active);
     if (!next) {
-      this._textModeActivateArmed = false;
+      this._textModeCountdownArmed = false;
     }
     if (this._textModeFilterActive === next) {
       // Still re-apply if DOM was rebuilt while state was already true.
-      if (next && this.isVisible()) this._applyTextModeFilterClasses(true);
+      if (next && this.isVisible()) {
+        this._applyTextModeChrome(true);
+        this._applyTextModeFilterClasses(true);
+      }
       return;
     }
 
     this._applyTextModeFilterClasses(false);
     this._textModeFilterActive = next;
-    if (!next) this._textModeActivateArmed = false;
+    if (!next) this._textModeCountdownArmed = false;
 
     try {
       const kbRoot = this.root?.querySelector?.('.kp-keybindings-ui') || this.keyboardContainer;
@@ -2256,28 +2400,49 @@ export class FloatingKeyboardHelp {
       }
     } catch { /* ignore */ }
 
+    this._applyTextModeChrome(next);
+
     if (next && this.isVisible()) {
       this._applyTextModeFilterClasses(true);
     }
   }
 
   /**
-   * During text mode, light up Click Element only while a clickable is under the
-   * cursor and the hover-click countdown is running.
+   * During text mode, light up countdown-aware actions
+   * ({@link TEXT_MODE_COUNTDOWN_ACTION_IDS}, currently Click Element) only while a
+   * clickable is under the cursor and the hover-click countdown is running.
    * @param {boolean} armed
    */
   setTextModeActivateArmed(armed) {
     const next = Boolean(armed);
     if (!this._textModeFilterActive) {
-      this._textModeActivateArmed = false;
+      this._textModeCountdownArmed = false;
       return;
     }
-    if (this._textModeActivateArmed === next) {
+    if (this._textModeCountdownArmed === next) {
       if (next && this.isVisible()) this._applyTextModeFilterClasses(true);
       return;
     }
-    this._textModeActivateArmed = next;
+    this._textModeCountdownArmed = next;
     if (this.isVisible()) this._applyTextModeFilterClasses(true);
+  }
+
+  /**
+   * Replace the set of action ids that light up when the text-mode countdown is armed.
+   * @param {Iterable<string>} actionIds
+   */
+  setTextModeCountdownActionIds(actionIds) {
+    const next = new Set();
+    try {
+      for (const id of actionIds || []) {
+        const s = String(id || '').trim();
+        if (s) next.add(s);
+      }
+    } catch { /* ignore */ }
+    this._textModeCountdownActionIds = next.size ? next : new Set(TEXT_MODE_COUNTDOWN_ACTION_IDS);
+    if (this._textModeFilterActive && this.isVisible()) {
+      this._applyTextModeFilterClasses(true);
+    }
   }
 
   /**
@@ -2287,7 +2452,10 @@ export class FloatingKeyboardHelp {
     try {
       const root = this.root;
       if (!root) return;
-      const activateArmed = !!(on && this._textModeActivateArmed);
+      const countdownArmed = !!(on && this._textModeCountdownArmed);
+      const liveIds = this._textModeCountdownActionIds instanceof Set
+        ? this._textModeCountdownActionIds
+        : TEXT_MODE_COUNTDOWN_ACTION_IDS;
       const keys = root.querySelectorAll('.key');
       for (const el of keys) {
         if (!el) continue;
@@ -2295,11 +2463,11 @@ export class FloatingKeyboardHelp {
         el.classList.remove('kp-key-text-mode-active');
         if (!on) continue;
         const actionId = el.getAttribute('data-kp-action-id') || '';
-        if (actionId === 'ACTIVATE' && activateArmed) {
-          // Hover countdown armed: Click Element is the only live key.
+        if (countdownArmed && actionId && liveIds.has(actionId)) {
+          // Countdown armed: restore full function chrome for live actions.
           el.classList.add('kp-key-text-mode-active');
         } else {
-          // Default text-mode look: everything grayed out, including ACTIVATE.
+          // Typing mode: plain keys + orange ring (CSS); gate interaction.
           el.classList.add('kp-key-text-mode-disabled');
         }
       }
@@ -2309,6 +2477,8 @@ export class FloatingKeyboardHelp {
         if (on) kbRoot.classList.add('kp-text-mode-filter');
         else kbRoot.classList.remove('kp-text-mode-filter');
       }
+
+      if (on) this._applyTextModeChrome(true);
     } catch { /* ignore */ }
   }
 

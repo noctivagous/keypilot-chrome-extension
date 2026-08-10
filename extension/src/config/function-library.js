@@ -455,9 +455,10 @@ export const FUNCTION_LIBRARY = Object.freeze({
 
 /** Stable category display order for the Functions browser. */
 export const FUNCTION_CATEGORY_ORDER = Object.freeze([
-  'Click',
-  'Tabs',
-  'Navigate',
+  'Navigation',
+  'Tab Control',
+  'Begin URL',
+  'Get Page Data',
   'Scroll',
   'Select',
   'Clipboard',
@@ -469,10 +470,58 @@ export const FUNCTION_CATEGORY_ORDER = Object.freeze([
   DISPLAY_FUNCTION_CATEGORY,
   MEDIA_LIBRARY_FUNCTION_CATEGORY,
   'AI',
+  'KeyPilot',
   'Tools',
   'System',
   'Other'
 ]);
+
+/**
+ * Preferred within-category order for Actions Library cards/table.
+ * Unlisted Function ids sort after these (by label).
+ * @type {Readonly<Record<string, number>>}
+ */
+export const FUNCTION_LIBRARY_ITEM_ORDER = Object.freeze({
+  // Navigation
+  ACTIVATE: 10,
+  ACTIVATE_NEW_TAB: 20,
+  ACTIVATE_NEW_TAB_BACKGROUND: 30,
+  PREVIEW_LINK_POPOVER: 40,
+  OPEN_POPOVER: 50,
+  FORWARD: 60,
+  BACK: 70,
+  BACK2: 80,
+  ROOT: 90,
+  // Tab Control
+  CLOSE_TAB: 110,
+  TAB_LEFT: 120,
+  TAB_RIGHT: 130,
+  NEW_TAB: 140,
+  TAB_HISTORY: 150,
+  // Begin URL
+  LAUNCHER: 160,
+  OMNIBOX: 170,
+  // Get Page Data
+  COPY_HOVERED_IMAGE: 200,
+  RECTANGLE_HIGHLIGHT: 210,
+  HIGHLIGHT: 220,
+  // KeyPilot
+  TOGGLE_KEYBOARD_HELP: 280,
+  OPEN_SETTINGS_POPOVER: 290
+});
+
+/**
+ * @param {FunctionDef[]} defs
+ * @returns {FunctionDef[]}
+ */
+export function sortFunctionDefsForLibrary(defs) {
+  return [...(defs || [])].sort((a, b) => {
+    const oa = FUNCTION_LIBRARY_ITEM_ORDER[a?.id] ?? 10000;
+    const ob = FUNCTION_LIBRARY_ITEM_ORDER[b?.id] ?? 10000;
+    if (oa !== ob) return oa - ob;
+    return String(a?.label || a?.id || '').localeCompare(String(b?.label || b?.id || ''));
+  });
+}
 
 /**
  * @param {string} functionId

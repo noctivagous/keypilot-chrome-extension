@@ -17,6 +17,7 @@ import {
   NCT_DARK_UI_PANEL_RADIUS,
   NCT_DARK_UI_PANEL_BOX_SHADOW,
   NCT_DARK_UI_TITLEBAR_GRADIENT,
+  NCT_DARK_UI_TITLEBAR_TEXT_MODE_BACKGROUND,
   NCT_DARK_UI_BTN_GRADIENT,
   NCT_DARK_UI_BTN_LIT_GRADIENT,
   NCT_DARK_UI_HOVER_TINT,
@@ -190,8 +191,9 @@ export class ControlStrip {
   }
 
   /**
-   * Reflect text-field focus (text mode) on the On/Off status segment.
-   * When active, the green ON indicator turns orange.
+   * Reflect text-field focus (text mode) on the On/Off status segment and strip chrome.
+   * When active, the green ON indicator turns orange and the strip gets the same
+   * orange titlebar cast as the Keyboard Reference window.
    * @param {boolean} active
    */
   setTextModeActive(active) {
@@ -202,6 +204,28 @@ export class ControlStrip {
     }
     this._textMode = next;
     this._renderStatus();
+  }
+
+  /**
+   * Apply / clear the shared text-mode orange cast on the strip root.
+   * Status segment stays transparent so the cast (and titlebar bevel) show through.
+   * @param {boolean} textMode
+   */
+  _applyTextModeChrome(textMode) {
+    if (!this.root || !this.root.style) return;
+    try {
+      if (textMode) this.root.setAttribute('data-kp-text-mode', 'true');
+      else this.root.removeAttribute('data-kp-text-mode');
+    } catch { /* ignore */ }
+    try {
+      this.root.style.background = textMode
+        ? NCT_DARK_UI_TITLEBAR_TEXT_MODE_BACKGROUND
+        : NCT_DARK_UI_TITLEBAR_GRADIENT;
+    } catch { /* ignore */ }
+    // Opaque status fills (legacy primary / early-inject) would mask the cast.
+    try {
+      if (this._statusBtn?.style) this._statusBtn.style.background = 'transparent';
+    } catch { /* ignore */ }
   }
 
   /**
@@ -273,9 +297,19 @@ export class ControlStrip {
           this._collapseBtn = collapseBtn;
           this._closeBtn = closeBtn;
 
-          // Keep shell rim in sync with current chrome (early inject may be older).
+          // Keep shell rim + titlebar bevel in sync with current chrome
+          // (early inject may still have a flat near-black fill / opaque ON segment).
           try {
             this.root.style.border = NCT_DARK_UI_PANEL_BORDER;
+            this.root.style.borderRadius = NCT_DARK_UI_PANEL_RADIUS;
+            this.root.style.boxShadow = NCT_DARK_UI_PANEL_BOX_SHADOW;
+            this.root.style.fontFamily = NCT_DARK_UI_FONT;
+          } catch { /* ignore */ }
+          try {
+            if (statusBtn && statusBtn.style) {
+              statusBtn.style.background = 'transparent';
+              statusBtn.style.color = NCT_DARK_UI_COLORS.fg;
+            }
           } catch { /* ignore */ }
 
           this._ensureMoveHandle();
@@ -323,11 +357,12 @@ export class ControlStrip {
     });
     applyPopupThemeVars(root);
 
-    // Status (On/Off) — always visible
+    // Status (On/Off) — always visible. Transparent like other segments so the
+    // strip titlebar bevel (and text-mode orange cast) shows through; ON/OFF is
+    // signaled by the dot + label color, not an opaque segment fill.
     const statusBtn = this._createSegmentButton({
       ariaLabel: 'Toggle KeyPilot on or off',
-      title: 'Toggle KeyPilot (Alt+K)',
-      primary: true
+      title: 'Toggle KeyPilot (Alt+K)'
     });
     statusBtn.setAttribute('data-kp-control-strip-status', 'true');
 
@@ -844,6 +879,7 @@ export class ControlStrip {
     this._statusDot.style.background = dotBg;
     this._statusDot.style.boxShadow = dotShadow;
     this._statusLabel.style.color = labelColor;
+    this._applyTextModeChrome(textMode);
     if (this._statusBtn) {
       this._statusBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
       try {

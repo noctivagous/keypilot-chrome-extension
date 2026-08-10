@@ -488,7 +488,7 @@ export class KeyPilot extends EventManager {
     this._textModeClickArmed = false;
     this._textModeClickArmedTarget = null;
     try { this.overlayManager?.setHoverClickLabelText?.('F clicks'); } catch { /* ignore */ }
-    // Keyboard reference: gray Click Element again until the next armed hover.
+    // Keyboard reference: restore plain typing keys until the next armed hover.
     try { this.floatingKeyboardHelp?.setTextModeActivateArmed?.(false); } catch { /* ignore */ }
   }
 
@@ -499,7 +499,7 @@ export class KeyPilot extends EventManager {
 
     let remaining = 3;
     try { this.overlayManager?.setHoverClickLabelText?.(`F clicks ${remaining}`); } catch { /* ignore */ }
-    // Keyboard reference: enable Click Element for the countdown window only.
+    // Keyboard reference: light up countdown-aware actions (TEXT_MODE_COUNTDOWN_ACTION_IDS).
     try { this.floatingKeyboardHelp?.setTextModeActivateArmed?.(true); } catch { /* ignore */ }
 
     this._textModeClickInterval = setInterval(() => {
@@ -771,6 +771,13 @@ export class KeyPilot extends EventManager {
     // Force overlay refresh.
     try {
       this.state?.setState?.({ _overlayUpdateTrigger: Date.now() });
+    } catch { /* ignore */ }
+
+    // Hydrate Keyboard Reference visibility before adopting/rendering the
+    // control strip. Otherwise the adopted Keyboard segment briefly loses its
+    // early-inject active state, then receives it again in setupKeyboardHelpSync().
+    try {
+      this._keyboardHelpVisible = await this.getKeyboardHelpVisibleFromStorage();
     } catch { /* ignore */ }
 
     // Control strip visibility / collapsed state.

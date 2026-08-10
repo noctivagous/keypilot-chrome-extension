@@ -2898,15 +2898,76 @@
 }
 
 /*
- * Text mode: all keys grayed out by default. Click Element (ACTIVATE / F)
- * lights up only while the hover-click countdown is armed on a clickable.
+ * Text / typing mode:
+ * - Default keys: plain typing chiclets (no function color/icon/label) + crisp orange outline.
+ * - Countdown-armed actions (.kp-key-text-mode-active): full function chrome restored
+ *   (color fill, FA icon, action label) with the key's own material glow (green for
+ *   Click Element). The live-action set is TEXT_MODE_COUNTDOWN_ACTION_IDS.
  */
+.kp-keybindings-ui.kp-text-mode-filter .key:not(.kp-key-text-mode-active) {
+  /* Orange-cast chiclet face (same family as titlebar / control-strip text mode). */
+  --kp-key-face: #5a4834;
+  --kp-key-mid: #4a3a28;
+  --kp-key-deep: #3a2c1c;
+  --kp-key-icon: #1a1e28;
+  --kp-key-glow: transparent;
+  opacity: 1;
+  filter: none;
+  border-color: rgba(255, 140, 0, 0.85) !important;
+  border-top-color: rgba(255, 170, 70, 0.9) !important;
+  border-bottom-color: rgba(200, 100, 0, 0.9) !important;
+  /* Crisp orange outline — no soft glow bloom. */
+  box-shadow:
+    0 0 0 1px rgba(255, 140, 0, 0.8),
+    0 1px 0 rgba(0, 0, 0, 0.45),
+    0 2px 4px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 200, 120, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18) !important;
+  background:
+    linear-gradient(180deg,
+      rgba(255, 140, 0, 0.18) 0%,
+      rgba(255, 140, 0, 0.06) 28%,
+      transparent 55%),
+    linear-gradient(180deg,
+      rgba(255, 255, 255, 0.07) 0%,
+      rgba(255, 255, 255, 0.02) 18%,
+      transparent 42%),
+    linear-gradient(180deg,
+      var(--kp-key-face) 0%,
+      var(--kp-key-mid) 70%,
+      var(--kp-key-deep) 100%);
+}
+.kp-keybindings-ui.kp-text-mode-filter .key:not(.kp-key-text-mode-active) > .key-bg-icon,
+.kp-keybindings-ui.kp-text-mode-filter .key:not(.kp-key-text-mode-active) > .key-main {
+  display: none !important;
+}
+/* Pattern overlays (hatch / checkerboard / …) — plain face only while typing. */
+.kp-keybindings-ui.kp-text-mode-filter .key:not(.kp-key-text-mode-active)::after {
+  display: none !important;
+}
+/*
+ * Center physical letters on every plain key. !important beats the higher-specificity
+ * unassigned key-text rule (cyan / bottom-pinned) that would otherwise leave empty
+ * keys like U O [ ] N , / looking different from assigned key-label keys.
+ */
+.kp-keybindings-ui.kp-text-mode-filter .key:not(.kp-key-text-mode-active) > .key-label,
+.kp-keybindings-ui.kp-text-mode-filter .key:not(.kp-key-text-mode-active) > .key-text {
+  top: 50% !important;
+  bottom: auto !important;
+  left: 0 !important;
+  right: 0 !important;
+  transform: translateY(-50%) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+  color: rgba(248, 250, 252, 0.94) !important;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45) !important;
+}
 .kp-keybindings-ui.kp-text-mode-filter .key.kp-key-text-mode-disabled {
-  opacity: 0.34;
-  filter: grayscale(0.85) brightness(0.78);
   pointer-events: none;
   cursor: default;
 }
+/* Countdown-live keys: keep assigned color fill / icon / labels; emphasize material glow. */
 .kp-keybindings-ui.kp-text-mode-filter .key.kp-key-text-mode-active {
   opacity: 1;
   filter: none;
@@ -2914,11 +2975,13 @@
   outline: none;
   pointer-events: auto;
   cursor: pointer;
-  border-color: rgba(255, 140, 0, 0.75) !important;
   box-shadow:
-    0 0 0 2px rgba(255, 140, 0, 0.35),
-    0 0 12px 2px rgba(255, 140, 0, 0.28),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.14) !important;
+    0 0 0 2px rgba(34, 197, 94, 0.5),
+    0 0 14px 3px var(--kp-key-glow, rgba(34, 197, 94, 0.35)),
+    0 0 24px 4px rgba(34, 197, 94, 0.22),
+    0 1px 0 rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18) !important;
 }
 
 /*
@@ -3228,8 +3291,8 @@
   opacity: 1;
 }
 
-/* Keys without functions never paint an icon layer */
-.kp-keybindings-ui .key:not([data-kp-action-id]) > .key-bg-icon {
+/* Keys without functions/macros never paint an icon layer */
+.kp-keybindings-ui .key:not([data-kp-action-id]):not([data-kp-macro-id]) > .key-bg-icon {
   display: none;
 }
 
@@ -3283,6 +3346,28 @@
 .kp-keybindings-ui .key[data-kp-action-id="HIGHLIGHT"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M128%2064c0-17.7%2014.3-32%2032-32H352c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H288v128h64c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H288v128h64c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H160c-17.7%200-32-14.3-32-32s14.3-32%2032-32h64V288H160c-17.7%200-32-14.3-32-32s14.3-32%2032-32h64V96H160c-17.7%200-32-14.3-32-32z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M128%2064c0-17.7%2014.3-32%2032-32H352c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H288v128h64c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H288v128h64c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H160c-17.7%200-32-14.3-32-32s14.3-32%2032-32h64V288H160c-17.7%200-32-14.3-32-32s14.3-32%2032-32h64V96H160c-17.7%200-32-14.3-32-32z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="RECTANGLE_HIGHLIGHT"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M32%2032C14.3%2032%200%2046.3%200%2064v64c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V96h64c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H32zM32%20320c-17.7%200-32%2014.3-32%2032v64c0%2017.7%2014.3%2032%2032%2032h64c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H64V352c0-17.7-14.3-32-32-32zM320%2064c0%2017.7%2014.3%2032%2032%2032h64v64c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V64c0-17.7-14.3-32-32-32H352c-17.7%200-32%2014.3-32%2032zM480%20320c-17.7%200-32%2014.3-32%2032v64H384c-17.7%200-32%2014.3-32%2032s14.3%2032%2032%2032h64c17.7%200%2032-14.3%2032-32V352c0-17.7-14.3-32-32-32z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M32%2032C14.3%2032%200%2046.3%200%2064v64c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V96h64c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H32zM32%20320c-17.7%200-32%2014.3-32%2032v64c0%2017.7%2014.3%2032%2032%2032h64c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H64V352c0-17.7-14.3-32-32-32zM320%2064c0%2017.7%2014.3%2032%2032%2032h64v64c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V64c0-17.7-14.3-32-32-32H352c-17.7%200-32%2014.3-32%2032zM480%20320c-17.7%200-32%2014.3-32%2032v64H384c-17.7%200-32%2014.3-32%2032s14.3%2032%2032%2032h64c17.7%200%2032-14.3%2032-32V352c0-17.7-14.3-32-32-32z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="COPY_HOVERED_IMAGE"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="OPEN_MEDIA_LIBRARY"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="CLIPBOARD_COPY"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M192%200c35.3%200%2064%2028.7%2064%2064l0%2032%20112%200c35.3%200%2064%2028.7%2064%2064l0%20288c0%2035.3-28.7%2064-64%2064L64%20512c-35.3%200-64-28.7-64-64L0%20160c0-35.3%2028.7-64%2064-64l112%200%200-32c0-35.3%2028.7-64%2064-64zm0%2064l0%2032%2064%200%200-32c0-17.7-14.3-32-32-32s-32%2014.3-32%2032zM64%20160l0%20288c0%2017.7%2014.3%2032%2032%2032l256%200c17.7%200%2032-14.3%2032-32l0-288c0-17.7-14.3-32-32-32L64%20128c-17.7%200-32%2014.3-32%2032z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M192%200c35.3%200%2064%2028.7%2064%2064l0%2032%20112%200c35.3%200%2064%2028.7%2064%2064l0%20288c0%2035.3-28.7%2064-64%2064L64%20512c-35.3%200-64-28.7-64-64L0%20160c0-35.3%2028.7-64%2064-64l112%200%200-32c0-35.3%2028.7-64%2064-64zm0%2064l0%2032%2064%200%200-32c0-17.7-14.3-32-32-32s-32%2014.3-32%2032zM64%20160l0%20288c0%2017.7%2014.3%2032%2032%2032l256%200c17.7%200%2032-14.3%2032-32l0-288c0-17.7-14.3-32-32-32L64%20128c-17.7%200-32%2014.3-32%2032z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="CLIPBOARD_CUT"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M44.6%2066.2l117.5%20117.5c-4.7%208-7.1%2017-7.1%2026.3c0%2026.5%2021.5%2048%2048%2048s48-21.5%2048-48s-21.5-48-48-48c-4.8%200-9.4%20.7-13.7%202L44.6%2066.2C39.3%2060.9%2030.7%2060.9%2025.4%2066.2S20.1%2080.1%2025.4%2085.4L44.6%2066.2zM203.2%20237.8L85.4%20355.6c-5.3%205.3-5.3%2013.9%200%2019.2s13.9%205.3%2019.2%200l117.8-117.8c4.3%201.3%208.9%202%2013.7%202c26.5%200%2048-21.5%2048-48s-21.5-48-48-48c-9.3%200-18.3%202.4-26.3%207.1zM432%20144c26.5%200%2048-21.5%2048-48s-21.5-48-48-48s-48%2021.5-48%2048s21.5%2048%2048%2048zm0%20256c26.5%200%2048-21.5%2048-48s-21.5-48-48-48s-48%2021.5-48%2048s21.5%2048%2048%2048zM162.6%20466.2c5.3%205.3%2013.9%205.3%2019.2%200L467.4%20180.6c5.3-5.3%205.3-13.9%200-19.2s-13.9-5.3-19.2%200L162.6%20447c-5.3%205.3-5.3%2013.9%200%2019.2z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M44.6%2066.2l117.5%20117.5c-4.7%208-7.1%2017-7.1%2026.3c0%2026.5%2021.5%2048%2048%2048s48-21.5%2048-48s-21.5-48-48-48c-4.8%200-9.4%20.7-13.7%202L44.6%2066.2C39.3%2060.9%2030.7%2060.9%2025.4%2066.2S20.1%2080.1%2025.4%2085.4L44.6%2066.2zM203.2%20237.8L85.4%20355.6c-5.3%205.3-5.3%2013.9%200%2019.2s13.9%205.3%2019.2%200l117.8-117.8c4.3%201.3%208.9%202%2013.7%202c26.5%200%2048-21.5%2048-48s-21.5-48-48-48c-9.3%200-18.3%202.4-26.3%207.1zM432%20144c26.5%200%2048-21.5%2048-48s-21.5-48-48-48s-48%2021.5-48%2048s21.5%2048%2048%2048zm0%20256c26.5%200%2048-21.5%2048-48s-21.5-48-48-48s-48%2021.5-48%2048s21.5%2048%2048%2048zM162.6%20466.2c5.3%205.3%2013.9%205.3%2019.2%200L467.4%20180.6c5.3-5.3%205.3-13.9%200-19.2s-13.9-5.3-19.2%200L162.6%20447c-5.3%205.3-5.3%2013.9%200%2019.2z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="CLIPBOARD_PASTE"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M192%200c35.3%200%2064%2028.7%2064%2064l0%2032%20112%200c35.3%200%2064%2028.7%2064%2064l0%20288c0%2035.3-28.7%2064-64%2064L64%20512c-35.3%200-64-28.7-64-64L0%20160c0-35.3%2028.7-64%2064-64l112%200%200-32c0-35.3%2028.7-64%2064-64zm0%2064l0%2032%2064%200%200-32c0-17.7-14.3-32-32-32s-32%2014.3-32%2032zM64%20160l0%20288c0%2017.7%2014.3%2032%2032%2032l256%200c17.7%200%2032-14.3%2032-32l0-288c0-17.7-14.3-32-32-32L64%20128c-17.7%200-32%2014.3-32%2032z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M192%200c35.3%200%2064%2028.7%2064%2064l0%2032%20112%200c35.3%200%2064%2028.7%2064%2064l0%20288c0%2035.3-28.7%2064-64%2064L64%20512c-35.3%200-64-28.7-64-64L0%20160c0-35.3%2028.7-64%2064-64l112%200%200-32c0-35.3%2028.7-64%2064-64zm0%2064l0%2032%2064%200%200-32c0-17.7-14.3-32-32-32s-32%2014.3-32%2032zM64%20160l0%20288c0%2017.7%2014.3%2032%2032%2032l256%200c17.7%200%2032-14.3%2032-32l0-288c0-17.7-14.3-32-32-32L64%20128c-17.7%200-32%2014.3-32%2032z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="CLIPBOARD_SELECT_ALL"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2032c14.2%200%2027.3%207.5%2034.5%2019.8l216%20368c6.1%2010.4%206.1%2023.3%200%2033.7s-17.4%2016.5-29.9%2016.5H35.4c-12.5%200-23.8-6.6-29.9-16.5s-6.1-23.3%200-33.7l216-368C228.7%2039.5%20241.8%2032%20256%2032zm0%2088.4L96.7%20392h318.6L256%20120.4z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2032c14.2%200%2027.3%207.5%2034.5%2019.8l216%20368c6.1%2010.4%206.1%2023.3%200%2033.7s-17.4%2016.5-29.9%2016.5H35.4c-12.5%200-23.8-6.6-29.9-16.5s-6.1-23.3%200-33.7l216-368C228.7%2039.5%20241.8%2032%20256%2032zm0%2088.4L96.7%20392h318.6L256%20120.4z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="SEND_TEXT_TO_AI"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M32%20160c0-35.3%2028.7-64%2064-64l32%200%200-32c0-17.7%2014.3-32%2032-32s32%2014.3%2032%2032l0%2032%20128%200%200-32c0-17.7%2014.3-32%2032-32s32%2014.3%2032%2032l0%2032%2032%200c35.3%200%2064%2028.7%2064%2064l0%2032%2032%200c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032l-32%200%200%20128c0%2035.3-28.7%2064-64%2064l-16%200%200%2048c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32l0-48-128%200%200%2048c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32l0-48-16%200c-35.3%200-64-28.7-64-64l0-128-32%200c-17.7%200-32-14.3-32-32s14.3-32%2032-32l32%200%200-32zm96%2064a32%2032%200%201%200%200%2064%2032%2032%200%201%200%200-64zm128%2032a32%2032%200%201%200%2064%200%2032%2032%200%201%200-64%200z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M32%20160c0-35.3%2028.7-64%2064-64l32%200%200-32c0-17.7%2014.3-32%2032-32s32%2014.3%2032%2032l0%2032%20128%200%200-32c0-17.7%2014.3-32%2032-32s32%2014.3%2032%2032l0%2032%2032%200c35.3%200%2064%2028.7%2064%2064l0%2032%2032%200c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032l-32%200%200%20128c0%2035.3-28.7%2064-64%2064l-16%200%200%2048c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32l0-48-128%200%200%2048c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32l0-48-16%200c-35.3%200-64-28.7-64-64l0-128-32%200c-17.7%200-32-14.3-32-32s14.3-32%2032-32l32%200%200-32zm96%2064a32%2032%200%201%200%200%2064%2032%2032%200%201%200%200-64zm128%2032a32%2032%200%201%200%2064%200%2032%2032%200%201%200-64%200z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="SEND_HOTKEY"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zm128%2064v32h32V160H128zm64%200v32h32V160H192zm64%200v32h32V160H256zm64%200v32h32V160H320zm64%200v32h32V160H384zM96%20256v32h64V256H96zm96%200v32h32V256H192zm64%200v32h32V256H256zm64%200v32h32V256H320zm64%200v32h32V256H384zm64%200v32h32V256H448zM128%20352v32H384V352H128z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zm128%2064v32h32V160H128zm64%200v32h32V160H192zm64%200v32h32V160H256zm64%200v32h32V160H320zm64%200v32h32V160H384zM96%20256v32h64V256H96zm96%200v32h32V256H192zm64%200v32h32V256H256zm64%200v32h32V256H320zm64%200v32h32V256H384zm64%200v32h32V256H448zM128%20352v32H384V352H128z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="SEND_BURST"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M234.5%205.7c13.9-5%2029.1-.6%2038.2%2010.9l144%20176c9.2%2011.2%2011.2%2027.1%205.1%2040.3s-19.2%2021.1-33.3%2021.1L320%20254V432c0%2026.5-21.5%2048-48%2048H176c-26.5%200-48-21.5-48-48V254H53.5c-14.1%200-27.1-7.9-33.3-21.1s-4.1-29%205.1-40.3l144-176c9.2-11.5%2024.3-15.9%2038.2-10.9z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M234.5%205.7c13.9-5%2029.1-.6%2038.2%2010.9l144%20176c9.2%2011.2%2011.2%2027.1%205.1%2040.3s-19.2%2021.1-33.3%2021.1L320%20254V432c0%2026.5-21.5%2048-48%2048H176c-26.5%200-48-21.5-48-48V254H53.5c-14.1%200-27.1-7.9-33.3-21.1s-4.1-29%205.1-40.3l144-176c9.2-11.5%2024.3-15.9%2038.2-10.9z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="CYCLE_ROUND_ROBIN"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M105.1%20202.6c7.7-21.8%2020.2-42.3%2037.8-59.1c62.5-62.5%20163.8-62.5%20226.3%200L417.3%20192%20384%20192c-17.7%200-32%2014.3-32%2032s14.3%2032%2032%2032l96%200%2016%200c17.7%200%2032-14.3%2032-32l0-96c0-17.7-14.3-32-32-32s-32%2014.3-32%2032l0%2036.7L425.4%2089.9C332.4-3.1%20181.2-3.1%2088.2%2089.9c-29.1%2029.1-48.5%2064.9-56.5%20103.5c-3.8%2018.5%2010.1%2036.9%2029.1%2036.9c14.2%200%2026.8-9.9%2030.3-23.7zM406.9%20309.4c-7.7%2021.8-20.2%2042.3-37.8%2059.1c-62.5%2062.5-163.8%2062.5-226.3%200L94.7%20320l33.3%200c17.7%200%2032-14.3%2032-32s-14.3-32-32-32L32%20256l-16%200C-1.7%20256-16%20270.3-16%20288l0%2096c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32l0-36.7%2033.9%2033.9C186.8%20515.1%20338%20515.1%20431%20422.1c29.1-29.1%2048.5-64.9%2056.5-103.5c3.8-18.5-10.1-36.9-29.1-36.9c-14.2%200-26.8%209.9-30.3%2023.7z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M105.1%20202.6c7.7-21.8%2020.2-42.3%2037.8-59.1c62.5-62.5%20163.8-62.5%20226.3%200L417.3%20192%20384%20192c-17.7%200-32%2014.3-32%2032s14.3%2032%2032%2032l96%200%2016%200c17.7%200%2032-14.3%2032-32l0-96c0-17.7-14.3-32-32-32s-32%2014.3-32%2032l0%2036.7L425.4%2089.9C332.4-3.1%20181.2-3.1%2088.2%2089.9c-29.1%2029.1-48.5%2064.9-56.5%20103.5c-3.8%2018.5%2010.1%2036.9%2029.1%2036.9c14.2%200%2026.8-9.9%2030.3-23.7zM406.9%20309.4c-7.7%2021.8-20.2%2042.3-37.8%2059.1c-62.5%2062.5-163.8%2062.5-226.3%200L94.7%20320l33.3%200c17.7%200%2032-14.3%2032-32s-14.3-32-32-32L32%20256l-16%200C-1.7%20256-16%20270.3-16%20288l0%2096c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32l0-36.7%2033.9%2033.9C186.8%20515.1%20338%20515.1%20431%20422.1c29.1-29.1%2048.5-64.9%2056.5-103.5c3.8-18.5-10.1-36.9-29.1-36.9c-14.2%200-26.8%209.9-30.3%2023.7z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="HOLD_CONTINUOUS"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%20512A256%20256%200%201%200%20256%200a256%20256%200%201%200%200%20512z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%20512A256%20256%200%201%200%20256%200a256%20256%200%201%200%200%20512z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="CLICK_MOUSE_BUTTON"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M320%200c17.7%200%2032%2014.3%2032%2032V176h16c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H352v16c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32V240H272v16c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32V240H192v80c0%2053%2043%2096%2096%2096h32c53%200%2096-43%2096-96V224h32c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H416V32c0-17.7-14.3-32-32-32H320zM192%2096c0-17.7-14.3-32-32-32H128C57.3%2064%200%20121.3%200%20192v96c0%2053%2043%2096%2096%2096h32c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H96c-17.7%200-32-14.3-32-32V192c0-35.3%2028.7-64%2064-64h32c17.7%200%2032-14.3%2032-32z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M320%200c17.7%200%2032%2014.3%2032%2032V176h16c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H352v16c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32V240H272v16c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32V240H192v80c0%2053%2043%2096%2096%2096h32c53%200%2096-43%2096-96V224h32c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H416V32c0-17.7-14.3-32-32-32H320zM192%2096c0-17.7-14.3-32-32-32H128C57.3%2064%200%20121.3%200%20192v96c0%2053%2043%2096%2096%2096h32c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H96c-17.7%200-32-14.3-32-32V192c0-35.3%2028.7-64%2064-64h32c17.7%200%2032-14.3%2032-32z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="REMAP_KEY"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zm128%2064v32h32V160H128zm64%200v32h32V160H192zm64%200v32h32V160H256zm64%200v32h32V160H320zm64%200v32h32V160H384zM96%20256v32h64V256H96zm96%200v32h32V256H192zm64%200v32h32V256H256zm64%200v32h32V256H320zm64%200v32h32V256H384zm64%200v32h32V256H448zM128%20352v32H384V352H128z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zm128%2064v32h32V160H128zm64%200v32h32V160H192zm64%200v32h32V160H256zm64%200v32h32V160H320zm64%200v32h32V160H384zM96%20256v32h64V256H96zm96%200v32h32V256H192zm64%200v32h32V256H256zm64%200v32h32V256H320zm64%200v32h32V256H384zm64%200v32h32V256H448zM128%20352v32H384V352H128z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="TYPE_CHARACTERS"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2032c14.2%200%2027.3%207.5%2034.5%2019.8l216%20368c6.1%2010.4%206.1%2023.3%200%2033.7s-17.4%2016.5-29.9%2016.5H35.4c-12.5%200-23.8-6.6-29.9-16.5s-6.1-23.3%200-33.7l216-368C228.7%2039.5%20241.8%2032%20256%2032zm0%2088.4L96.7%20392h318.6L256%20120.4z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2032c14.2%200%2027.3%207.5%2034.5%2019.8l216%20368c6.1%2010.4%206.1%2023.3%200%2033.7s-17.4%2016.5-29.9%2016.5H35.4c-12.5%200-23.8-6.6-29.9-16.5s-6.1-23.3%200-33.7l216-368C228.7%2039.5%20241.8%2032%20256%2032zm0%2088.4L96.7%20392h318.6L256%20120.4z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="GET_TEXT_AT_CURSOR"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M128%2064c0-17.7%2014.3-32%2032-32H352c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H288v128h64c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H288v128h64c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H160c-17.7%200-32-14.3-32-32s14.3-32%2032-32h64V288H160c-17.7%200-32-14.3-32-32s14.3-32%2032-32h64V96H160c-17.7%200-32-14.3-32-32z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M128%2064c0-17.7%2014.3-32%2032-32H352c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H288v128h64c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H288v128h64c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H160c-17.7%200-32-14.3-32-32s14.3-32%2032-32h64V288H160c-17.7%200-32-14.3-32-32s14.3-32%2032-32h64V96H160c-17.7%200-32-14.3-32-32z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="GET_TEXT_RANGE"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2032c14.2%200%2027.3%207.5%2034.5%2019.8l216%20368c6.1%2010.4%206.1%2023.3%200%2033.7s-17.4%2016.5-29.9%2016.5H35.4c-12.5%200-23.8-6.6-29.9-16.5s-6.1-23.3%200-33.7l216-368C228.7%2039.5%20241.8%2032%20256%2032zm0%2088.4L96.7%20392h318.6L256%20120.4z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2032c14.2%200%2027.3%207.5%2034.5%2019.8l216%20368c6.1%2010.4%206.1%2023.3%200%2033.7s-17.4%2016.5-29.9%2016.5H35.4c-12.5%200-23.8-6.6-29.9-16.5s-6.1-23.3%200-33.7l216-368C228.7%2039.5%20241.8%2032%20256%2032zm0%2088.4L96.7%20392h318.6L256%20120.4z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="GET_MEDIA_AT_CURSOR"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="LOOKUP_WORD"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M96%200C43%200%200%2043%200%2096L0%20416c0%2053%2043%2096%2096%2096l288%200%2032%200c17.7%200%2032-14.3%2032-32s-14.3-32-32-32l0-64c17.7%200%2032-14.3%2032-32l0-320c0-17.7-14.3-32-32-32L384%200%2096%200zM384%20416l0%2032L96%20448c-17.7%200-32-14.3-32-32s14.3-32%2032-32l288%200zM112%2064l160%200c8.8%200%2016%207.2%2016%2016s-7.2%2016-16%2016l-160%200c-8.8%200-16-7.2-16-16s7.2-16%2016-16zm0%2096l160%200c8.8%200%2016%207.2%2016%2016s-7.2%2016-16%2016l-160%200c-8.8%200-16-7.2-16-16s7.2-16%2016-16zm0%2096l96%200c8.8%200%2016%207.2%2016%2016s-7.2%2016-16%2016l-96%200c-8.8%200-16-7.2-16-16s7.2-16%2016-16z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M96%200C43%200%200%2043%200%2096L0%20416c0%2053%2043%2096%2096%2096l288%200%2032%200c17.7%200%2032-14.3%2032-32s-14.3-32-32-32l0-64c17.7%200%2032-14.3%2032-32l0-320c0-17.7-14.3-32-32-32L384%200%2096%200zM384%20416l0%2032L96%20448c-17.7%200-32-14.3-32-32s14.3-32%2032-32l288%200zM112%2064l160%200c8.8%200%2016%207.2%2016%2016s-7.2%2016-16%2016l-160%200c-8.8%200-16-7.2-16-16s7.2-16%2016-16zm0%2096l160%200c8.8%200%2016%207.2%2016%2016s-7.2%2016-16%2016l-160%200c-8.8%200-16-7.2-16-16s7.2-16%2016-16zm0%2096l96%200c8.8%200%2016%207.2%2016%2016s-7.2%2016-16%2016l-96%200c-8.8%200-16-7.2-16-16s7.2-16%2016-16z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="TRANSLATE"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M478.3%2073.8c-5.7-10.7-16.8-17.3-28.7-17.3l-51.1%200c-12.5%200-24.7%204.9-33.7%2013.7L192%20242.7%2096%20146.7c-9-8.8-21.2-13.7-33.7-13.7L11.2%20133C-.7%20133-11.8%20139.6-17.5%20150.3S-24%20174.1-18.5%20185.3L73.1%20352%2018.5%20454.7C13%20465.9%2016.1%20478.9%2024.9%20486.6S47.1%20496%2058.5%20490.5L160%20432.9%20261.5%20490.5c11.4%205.5%2024.9%202.6%2033.7-5.1s11.9-20.7%206.4-32.1L246.9%20352%20338.5%20185.3c5.5-11.2%202.4-24.2-6.4-31.9zM192%20309.3L128%20192l64%20117.3zm192-245.3L480%20192%20384%2064z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M478.3%2073.8c-5.7-10.7-16.8-17.3-28.7-17.3l-51.1%200c-12.5%200-24.7%204.9-33.7%2013.7L192%20242.7%2096%20146.7c-9-8.8-21.2-13.7-33.7-13.7L11.2%20133C-.7%20133-11.8%20139.6-17.5%20150.3S-24%20174.1-18.5%20185.3L73.1%20352%2018.5%20454.7C13%20465.9%2016.1%20478.9%2024.9%20486.6S47.1%20496%2058.5%20490.5L160%20432.9%20261.5%20490.5c11.4%205.5%2024.9%202.6%2033.7-5.1s11.9-20.7%206.4-32.1L246.9%20352%20338.5%20185.3c5.5-11.2%202.4-24.2-6.4-31.9zM192%20309.3L128%20192l64%20117.3zm192-245.3L480%20192%20384%2064z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="SHOW_POPOVER"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M64%2032C28.7%2032%200%2060.7%200%2096V416c0%2035.3%2028.7%2064%2064%2064H448c35.3%200%2064-28.7%2064-64V96c0-35.3-28.7-64-64-64H64zm32%2096H416c17.7%200%2032%2014.3%2032%2032v32H64V160c0-17.7%2014.3-32%2032-32z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M64%2032C28.7%2032%200%2060.7%200%2096V416c0%2035.3%2028.7%2064%2064%2064H448c35.3%200%2064-28.7%2064-64V96c0-35.3-28.7-64-64-64H64zm32%2096H416c17.7%200%2032%2014.3%2032%2032v32H64V160c0-17.7%2014.3-32%2032-32z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="ADD_URL_TO_MEDIA_LIBRARY"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2080c0-17.7-14.3-32-32-32s-32%2014.3-32%2032V224H48c-17.7%200-32%2014.3-32%2032s14.3%2032%2032%2032H192V432c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V288H400c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H256V80z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2080c0-17.7-14.3-32-32-32s-32%2014.3-32%2032V224H48c-17.7%200-32%2014.3-32%2032s14.3%2032%2032%2032H192V432c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V288H400c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H256V80z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="FETCH_URL_FOR_MEDIA_LIBRARY"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M233.4%20406.6c12.5%2012.5%2032.8%2012.5%2045.3%200l192-192c12.5-12.5%2012.5-32.8%200-45.3s-32.8-12.5-45.3%200L256%20338.7%2086.6%20169.4c-12.5-12.5-32.8-12.5-45.3%200s-12.5%2032.8%200%2045.3l192%20192z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M233.4%20406.6c12.5%2012.5%2032.8%2012.5%2045.3%200l192-192c12.5-12.5%2012.5-32.8%200-45.3s-32.8-12.5-45.3%200L256%20338.7%2086.6%20169.4c-12.5-12.5-32.8-12.5-45.3%200s-12.5%2032.8%200%2045.3l192%20192z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-macro-id] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M32%2096l224-80%20224%2080L256%20176%2032%2096zM32%20192l224%2080%20224-80%200%2032L256%20304%2032%20224l0-32zm0%2096l224%2080%20224-80%200%2032L256%20400%2032%20320l0-32z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M32%2096l224-80%20224%2080L256%20176%2032%2096zM32%20192l224%2080%20224-80%200%2032L256%20304%2032%20224l0-32zm0%2096l224%2080%20224-80%200%2032L256%20400%2032%20320l0-32z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 
 /*
  * TEMP suspended: Floating Keyboard Reference flex-scale keys with panel resize.
@@ -4623,6 +4708,10 @@
   let keyboardLayoutId = (typeof DEFAULT_KEYBOARD_LAYOUT_ID === 'string' && DEFAULT_KEYBOARD_LAYOUT_ID)
     ? DEFAULT_KEYBOARD_LAYOUT_ID
     : 'browsing-right';
+  // User layouts are stored separately and cannot be rendered by this lightweight
+  // document_start script. Keep its built-in placeholder hidden until the main
+  // content script has loaded the custom layout.
+  let keyboardUsesCustomLayout = false;
   let keyboardShowNumberRow = false;
   let keyboardHelpRoot = null;
   let keyboardHelpKeyboardContainer = null;
@@ -4633,6 +4722,9 @@
   let controlStripRoot = null;
   let controlStripDesiredVisible = true;
   let controlStripCollapsed = true;
+  // Do not hide the Keyboard/Settings module group based on fallback defaults
+  // before the persisted collapsed state has arrived from extension storage.
+  let controlStripLayoutHydrated = false;
   let controlStripStorageListener = null;
   let controlStripRefs = null; // { statusBtn, statusDot, statusLabel, modules, moveBtn, keyboardBtn, settingsBtn, collapseBtn, closeBtn }
   let mainLoadedListenerInstalled = false;
@@ -5225,6 +5317,10 @@
     return 'browsing-right';
   }
 
+  function isCustomKeyboardLayoutSelection(raw) {
+    return String(raw || '').trim().startsWith('user:');
+  }
+
   function getEarlyKeyboardDataForLayout(layoutId) {
     const id = normalizeKeyboardLayoutId(layoutId);
     try {
@@ -5266,6 +5362,13 @@
 
   function renderEarlyKeyboard(container, { layoutId, includeNumberRow } = {}) {
     if (!container) return;
+    // Custom layouts live in the layout store rather than this document_start
+    // bundle. Do not seed an adopted shell with a built-in approximation; the
+    // main content script will render the real slot layout before revealing it.
+    if (keyboardUsesCustomLayout) {
+      container.textContent = '';
+      return;
+    }
     const doc = container.ownerDocument || document;
     ensureKeybindingsUiStylesInjected(doc);
 
@@ -5690,9 +5793,7 @@
       border: 'none',
       borderRight: opts.last ? 'none' : '1px solid rgba(255,255,255,0.08)',
       borderRadius: '0',
-      background: opts.primary
-        ? 'linear-gradient(180deg, #1a1b1f 0%, #121316 100%)'
-        : 'transparent',
+      background: 'transparent',
       color: 'rgba(220, 220, 225, 0.92)',
       fontSize: '11px',
       fontWeight: '600',
@@ -5710,9 +5811,7 @@
         if (btn === controlStripRefs?.keyboardBtn && keyboardHelpVisible) {
           btn.style.background = 'rgba(59, 130, 246, 0.18)';
         } else {
-          btn.style.background = opts.primary
-            ? 'linear-gradient(180deg, #22232a 0%, #18191e 100%)'
-            : 'rgba(255,255,255,0.06)';
+          btn.style.background = 'rgba(255,255,255,0.06)';
         }
       } catch { /* ignore */ }
     });
@@ -5722,9 +5821,7 @@
         if (btn === controlStripRefs?.keyboardBtn && keyboardHelpVisible) {
           btn.style.background = 'rgba(59, 130, 246, 0.18)';
         } else {
-          btn.style.background = opts.primary
-            ? 'linear-gradient(180deg, #1a1b1f 0%, #121316 100%)'
-            : 'transparent';
+          btn.style.background = 'transparent';
         }
       } catch { /* ignore */ }
     });
@@ -5772,7 +5869,7 @@
   function applyEarlyControlStripCollapsedLayout() {
     const refs = controlStripRefs;
     if (!controlStripRoot || !refs) return;
-    const collapsed = !!controlStripCollapsed;
+    const collapsed = controlStripLayoutHydrated && !!controlStripCollapsed;
     try {
       if (refs.modules) refs.modules.style.display = collapsed ? 'none' : 'flex';
       if (refs.closeBtn) refs.closeBtn.style.display = collapsed ? 'none' : 'inline-flex';
@@ -6071,13 +6168,14 @@
         flexDirection: 'row',
         alignItems: 'stretch',
         zIndex: String(Z_CONTROL_STRIP),
-        background: 'rgba(10, 11, 14, 0.98)',
+        // Match NCT dark titlebar bevel so the ON segment (transparent) shares strip chrome.
+        background: 'linear-gradient(180deg, #4c4c4c 0%, #353535 45%, #252525 100%)',
         color: 'rgba(248, 250, 252, 0.95)',
-        // Match onboarding panel rim (light gray outline).
-        border: '1px solid rgba(255,255,255,0.12)',
-        borderRadius: '4px',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.5), 0 1px 4px rgba(0,0,0,0.35)',
-        fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
+        // NCT dark UI panel rim (dark outer edge).
+        border: '1px solid #111',
+        borderRadius: '3px',
+        boxShadow: '0 0 0 1px #3a3a3a inset, 0 16px 40px rgba(0,0,0,0.55)',
+        fontFamily: 'Helvetica, Arial, sans-serif',
         pointerEvents: 'none',
         overflow: 'hidden',
         boxSizing: 'border-box',
@@ -6095,8 +6193,7 @@
 
       const statusBtn = createEarlyControlStripSegmentButton({
         ariaLabel: 'Toggle KeyPilot on or off',
-        title: 'Toggle KeyPilot (Alt+K)',
-        primary: true
+        title: 'Toggle KeyPilot (Alt+K)'
       });
       statusBtn.setAttribute('data-kp-control-strip-status', 'true');
 
@@ -6297,6 +6394,7 @@
     const parsed = parseControlStripFromSettings(settingsObj);
     controlStripDesiredVisible = parsed.visible;
     controlStripCollapsed = parsed.collapsed;
+    controlStripLayoutHydrated = true;
     try {
       earlyPanelPositions = readEarlyPanelPositionsFromSettingsObj(settingsObj) || earlyPanelPositions;
     } catch { /* ignore */ }
@@ -6659,9 +6757,17 @@
     // If extension is disabled, keep it hidden but remember desired state.
     ensureEarlyFloatingKeyboardHelpShell();
     if (!keyboardHelpRoot) return;
+    try {
+      const title = keyboardHelpRoot.querySelector('[data-kp-floating-keyboard-title="true"]');
+      if (title) {
+        title.textContent = keyboardUsesCustomLayout
+          ? 'Keyboard Reference — Custom layout'
+          : 'Keyboard Reference — Built-in';
+      }
+    } catch { /* ignore */ }
     setEarlyKeyboardHelpRootVisible(
       keyboardHelpRoot,
-      !!(isExtensionEnabled && keyboardHelpVisible)
+      !!(isExtensionEnabled && keyboardHelpVisible && !keyboardUsesCustomLayout)
     );
     try { renderEarlyControlStripKeyboard(); } catch { /* ignore */ }
   }
@@ -6711,12 +6817,17 @@
       try {
         const next = changes[SETTINGS_STORAGE_KEY]?.newValue;
         const nextId = normalizeKeyboardLayoutId(next && typeof next === 'object' ? next.keyboardLayoutId : null);
+        const nextUsesCustomLayout = isCustomKeyboardLayoutSelection(
+          next && typeof next === 'object' ? next.currentKeyboardLayoutId : null
+        );
         const nextNum = !!(next && typeof next === 'object' && next.keyboardReferenceShowNumberRow);
         const layoutChanged = nextId && nextId !== keyboardLayoutId;
+        const customLayoutChanged = nextUsesCustomLayout !== keyboardUsesCustomLayout;
         const numChanged = nextNum !== keyboardShowNumberRow;
         if (layoutChanged) keyboardLayoutId = nextId;
+        if (customLayoutChanged) keyboardUsesCustomLayout = nextUsesCustomLayout;
         if (numChanged) keyboardShowNumberRow = nextNum;
-        if (layoutChanged || numChanged) {
+        if (layoutChanged || numChanged || customLayoutChanged) {
           try {
             renderEarlyKeyboard(keyboardHelpKeyboardContainer, {
               layoutId: keyboardLayoutId,
@@ -6725,6 +6836,7 @@
           } catch { /* ignore */ }
           if (layoutChanged) updateKeyboardHelpHintForLayout(keyboardLayoutId);
         }
+        if (customLayoutChanged) applyEarlyKeyboardHelpVisibility(keyboardHelpVisible);
       } catch { /* ignore */ }
       
       if (isExtensionEnabled) {
@@ -6769,6 +6881,7 @@
           const st = result && result[SETTINGS_STORAGE_KEY] && typeof result[SETTINGS_STORAGE_KEY] === 'object' ? result[SETTINGS_STORAGE_KEY] : null;
           settingsObj = st;
           keyboardLayoutId = normalizeKeyboardLayoutId(st && st.keyboardLayoutId);
+          keyboardUsesCustomLayout = isCustomKeyboardLayoutSelection(st && st.currentKeyboardLayoutId);
           keyboardShowNumberRow = !!(st && st.keyboardReferenceShowNumberRow);
           earlyPanelPositions = readEarlyPanelPositionsFromSettingsObj(st);
         } catch {
@@ -6821,6 +6934,7 @@
             : null;
           if (settingsObj) {
             keyboardLayoutId = normalizeKeyboardLayoutId(settingsObj.keyboardLayoutId);
+            keyboardUsesCustomLayout = isCustomKeyboardLayoutSelection(settingsObj.currentKeyboardLayoutId);
             keyboardShowNumberRow = !!settingsObj.keyboardReferenceShowNumberRow;
             earlyPanelPositions = readEarlyPanelPositionsFromSettingsObj(settingsObj);
           }
@@ -7118,6 +7232,11 @@
     try {
       ensureEarlyControlStripShell();
       applyEarlyControlStripVisibility();
+      // Build the matching Keyboard Reference shell in the same document_start
+      // pass. Storage determines whether it is shown, but shell construction no
+      // longer waits until after the control strip has painted.
+      ensureEarlyFloatingKeyboardHelpShell();
+      applyEarlyKeyboardHelpVisibility(keyboardHelpVisible);
     } catch { /* ignore */ }
     await checkExtensionState();
 

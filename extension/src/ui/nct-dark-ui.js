@@ -48,6 +48,17 @@ export const NCT_DARK_UI_TITLEBAR_GRADIENT =
 export const NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM = `1px solid ${NCT_DARK_UI_COLORS.panelEdgeDark}`;
 export const NCT_DARK_UI_TITLEBAR_BOX_SHADOW = `0 1px 0 ${NCT_DARK_UI_COLORS.panelEdge}`;
 
+/**
+ * Text / typing mode orange cast over the NCT titlebar bevel
+ * (COLORS.ORANGE #ff8c00). Shared by Keyboard Reference titlebar + control strip.
+ */
+export const NCT_DARK_UI_TITLEBAR_TEXT_MODE_BACKGROUND =
+  `linear-gradient(180deg, rgba(255, 140, 0, 0.28) 0%, rgba(255, 140, 0, 0.14) 45%, rgba(255, 120, 0, 0.18) 100%), ` +
+  `linear-gradient(180deg, ${NCT_DARK_UI_COLORS.titleTop} 0%, ${NCT_DARK_UI_COLORS.titleMid} 45%, ${NCT_DARK_UI_COLORS.titleBot} 100%)`;
+export const NCT_DARK_UI_TITLEBAR_TEXT_MODE_BORDER_BOTTOM = '1px solid rgba(120, 70, 20, 0.85)';
+export const NCT_DARK_UI_TITLEBAR_TEXT_MODE_TITLE_COLOR = 'rgba(255, 210, 150, 0.98)';
+export const NCT_DARK_UI_TITLEBAR_TEXT_MODE_HINT_COLOR = 'rgba(253, 186, 116, 0.95)';
+
 /** `.btn` default (gray bevel) gradient + rim. */
 export const NCT_DARK_UI_BTN_GRADIENT =
   `linear-gradient(180deg, ${NCT_DARK_UI_COLORS.btnTop} 0%, ${NCT_DARK_UI_COLORS.btnMid} 50%, ${NCT_DARK_UI_COLORS.btnBot} 100%)`;

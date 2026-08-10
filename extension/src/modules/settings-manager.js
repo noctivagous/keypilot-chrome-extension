@@ -128,6 +128,7 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  *   currentKeyboardLayoutId: string,
  *   keyboardReferenceKeyFeedback: boolean,
  *   keyboardReferenceShowNumberRow: boolean,
+ *   actionsLibraryTableExpanded: string[],
  *   controlStrip: ControlStripSettings,
  *   panelPositions: PanelPositionsSettings,
  *   clickMode: ClickModeSettings,
@@ -156,6 +157,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
   // When true, the floating keyboard reference panel includes the number row (1–0).
   // Default is off to keep the panel compact.
   keyboardReferenceShowNumberRow: false,
+  // Actions Library hierarchical table: expanded group keys (top-level open by default;
+  // nested categories / parents start collapsed until the user opens them).
+  actionsLibraryTableExpanded: Object.freeze(['functions', 'macros', 'macroKeys']),
   // Floating Control Strip (upper-left): visibility + collapsed (On/Off-only) state.
   controlStrip: Object.freeze({
     visible: true,
@@ -509,6 +513,39 @@ function normalizePanelPositions(raw) {
 }
 
 /**
+ * @param {any} raw
+ * @param {readonly string[]} fallback
+ * @returns {string[]}
+ */
+function normalizeStringIdList(raw, fallback) {
+  const fb = Array.isArray(fallback) ? [...fallback] : [];
+  if (!Array.isArray(raw)) return fb;
+  /** @type {string[]} */
+  const out = [];
+  const seen = new Set();
+  for (const v of raw) {
+    if (typeof v !== 'string') continue;
+    const id = v.trim();
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+  }
+  return out;
+}
+
+/**
+ * @param {any} raw
+ * @returns {string[]}
+ */
+export function normalizeActionsLibraryTableExpanded(raw) {
+  // Missing / non-array → defaults. Explicit [] means user collapsed everything.
+  if (!Array.isArray(raw)) {
+    return [...DEFAULT_SETTINGS.actionsLibraryTableExpanded];
+  }
+  return normalizeStringIdList(raw, DEFAULT_SETTINGS.actionsLibraryTableExpanded);
+}
+
+/**
  * Map Settings scroll speed to ScrollOptions.behavior.
  * @param {ScrollSpeed|string|undefined|null} speed
  * @returns {'smooth'|'auto'}
@@ -583,6 +620,9 @@ export async function getSettings() {
         stored?.keyboardReferenceShowNumberRow,
         DEFAULT_SETTINGS.keyboardReferenceShowNumberRow
       ),
+      actionsLibraryTableExpanded: normalizeActionsLibraryTableExpanded(
+        stored?.actionsLibraryTableExpanded
+      ),
       controlStrip: normalizeControlStrip(stored?.controlStrip),
       panelPositions: normalizePanelPositions(stored?.panelPositions),
       actionSettings: normalizeActionSettings(stored?.actionSettings),
@@ -602,7 +642,8 @@ export async function getSettings() {
       actionSettings: normalizeActionSettings(null),
       clickMode: { ...DEFAULT_SETTINGS.clickMode, cursor: { ...DEFAULT_SETTINGS.clickMode.cursor } },
       textMode: { ...DEFAULT_SETTINGS.textMode },
-      scroll: { ...DEFAULT_SETTINGS.scroll }
+      scroll: { ...DEFAULT_SETTINGS.scroll },
+      actionsLibraryTableExpanded: [...DEFAULT_SETTINGS.actionsLibraryTableExpanded]
     };
   }
 }
@@ -711,6 +752,9 @@ export async function setSettings(partial) {
   next.keyboardReferenceShowNumberRow = normalizeBoolean(
     next.keyboardReferenceShowNumberRow,
     DEFAULT_SETTINGS.keyboardReferenceShowNumberRow
+  );
+  next.actionsLibraryTableExpanded = normalizeActionsLibraryTableExpanded(
+    next.actionsLibraryTableExpanded
   );
   next.controlStrip = normalizeControlStrip(next.controlStrip);
   next.panelPositions = normalizePanelPositions(next.panelPositions);

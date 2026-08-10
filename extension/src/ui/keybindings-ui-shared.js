@@ -86,7 +86,17 @@ const FA_SOLID_PATHS = Object.freeze({
   'image': 'M0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zM323.8 202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4 3.9-19.8 10.5l-87 127.6L170.7 297c-4.6-5.7-11.5-9-18.7-9s-14.2 3.3-18.7 9l-64 80c-5.8 7.2-6.9 17.1-2.9 25.4s12.4 13.6 21.6 13.6h96 32H424c8.9 0 17.1-4.9 21.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112 192a48 48 0 1 0 0-96 48 48 0 1 0 0 96z',
 
   // FA Free solid "table-columns" — Cols Toggle multicol layout
-  'table-columns': 'M0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zm64 64V416H224V160H64zm320 0H288V416H448V160z'
+  'table-columns': 'M0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zm64 64V416H224V160H64zm320 0H288V416H448V160z',
+
+  // Library / macro / clipboard / AI (Config card keycaps + Reference parity)
+  'clipboard': 'M192 0c35.3 0 64 28.7 64 64l0 32 112 0c35.3 0 64 28.7 64 64l0 288c0 35.3-28.7 64-64 64L64 512c-35.3 0-64-28.7-64-64L0 160c0-35.3 28.7-64 64-64l112 0 0-32c0-35.3 28.7-64 64-64zm0 64l0 32 64 0 0-32c0-17.7-14.3-32-32-32s-32 14.3-32 32zM64 160l0 288c0 17.7 14.3 32 32 32l256 0c17.7 0 32-14.3 32-32l0-288c0-17.7-14.3-32-32-32L64 128c-17.7 0-32 14.3-32 32z',
+  'scissors': 'M44.6 66.2l117.5 117.5c-4.7 8-7.1 17-7.1 26.3c0 26.5 21.5 48 48 48s48-21.5 48-48s-21.5-48-48-48c-4.8 0-9.4 .7-13.7 2L44.6 66.2C39.3 60.9 30.7 60.9 25.4 66.2S20.1 80.1 25.4 85.4L44.6 66.2zM203.2 237.8L85.4 355.6c-5.3 5.3-5.3 13.9 0 19.2s13.9 5.3 19.2 0l117.8-117.8c4.3 1.3 8.9 2 13.7 2c26.5 0 48-21.5 48-48s-21.5-48-48-48c-9.3 0-18.3 2.4-26.3 7.1zM432 144c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm0 256c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zM162.6 466.2c5.3 5.3 13.9 5.3 19.2 0L467.4 180.6c5.3-5.3 5.3-13.9 0-19.2s-13.9-5.3-19.2 0L162.6 447c-5.3 5.3-5.3 13.9 0 19.2z',
+  'robot': 'M32 160c0-35.3 28.7-64 64-64l32 0 0-32c0-17.7 14.3-32 32-32s32 14.3 32 32l0 32 128 0 0-32c0-17.7 14.3-32 32-32s32 14.3 32 32l0 32 32 0c35.3 0 64 28.7 64 64l0 32 32 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-32 0 0 128c0 35.3-28.7 64-64 64l-16 0 0 48c0 17.7-14.3 32-32 32s-32-14.3-32-32l0-48-128 0 0 48c0 17.7-14.3 32-32 32s-32-14.3-32-32l0-48-16 0c-35.3 0-64-28.7-64-64l0-128-32 0c-17.7 0-32-14.3-32-32s14.3-32 32-32l32 0 0-32zm96 64a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm128 32a32 32 0 1 0 64 0 32 32 0 1 0-64 0z',
+  'book': 'M96 0C43 0 0 43 0 96L0 416c0 53 43 96 96 96l288 0 32 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l0-64c17.7 0 32-14.3 32-32l0-320c0-17.7-14.3-32-32-32L384 0 96 0zM384 416l0 32L96 448c-17.7 0-32-14.3-32-32s14.3-32 32-32l288 0zM112 64l160 0c8.8 0 16 7.2 16 16s-7.2 16-16 16l-160 0c-8.8 0-16-7.2-16-16s7.2-16 16-16zm0 96l160 0c8.8 0 16 7.2 16 16s-7.2 16-16 16l-160 0c-8.8 0-16-7.2-16-16s7.2-16 16-16zm0 96l96 0c8.8 0 16 7.2 16 16s-7.2 16-16 16l-96 0c-8.8 0-16-7.2-16-16s7.2-16 16-16z',
+  'language': 'M478.3 73.8c-5.7-10.7-16.8-17.3-28.7-17.3l-51.1 0c-12.5 0-24.7 4.9-33.7 13.7L192 242.7 96 146.7c-9-8.8-21.2-13.7-33.7-13.7L11.2 133C-.7 133-11.8 139.6-17.5 150.3S-24 174.1-18.5 185.3L73.1 352 18.5 454.7C13 465.9 16.1 478.9 24.9 486.6S47.1 496 58.5 490.5L160 432.9 261.5 490.5c11.4 5.5 24.9 2.6 33.7-5.1s11.9-20.7 6.4-32.1L246.9 352 338.5 185.3c5.5-11.2 2.4-24.2-6.4-31.9zM192 309.3L128 192l64 117.3zm192-245.3L480 192 384 64z',
+  'bolt': 'M234.5 5.7c13.9-5 29.1-.6 38.2 10.9l144 176c9.2 11.2 11.2 27.1 5.1 40.3s-19.2 21.1-33.3 21.1L320 254V432c0 26.5-21.5 48-48 48H176c-26.5 0-48-21.5-48-48V254H53.5c-14.1 0-27.1-7.9-33.3-21.1s-4.1-29 5.1-40.3l144-176c9.2-11.5 24.3-15.9 38.2-10.9z',
+  'arrows-rotate': 'M105.1 202.6c7.7-21.8 20.2-42.3 37.8-59.1c62.5-62.5 163.8-62.5 226.3 0L417.3 192 384 192c-17.7 0-32 14.3-32 32s14.3 32 32 32l96 0 16 0c17.7 0 32-14.3 32-32l0-96c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 36.7L425.4 89.9C332.4-3.1 181.2-3.1 88.2 89.9c-29.1 29.1-48.5 64.9-56.5 103.5c-3.8 18.5 10.1 36.9 29.1 36.9c14.2 0 26.8-9.9 30.3-23.7zM406.9 309.4c-7.7 21.8-20.2 42.3-37.8 59.1c-62.5 62.5-163.8 62.5-226.3 0L94.7 320l33.3 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L32 256l-16 0C-1.7 256-16 270.3-16 288l0 96c0 17.7 14.3 32 32 32s32-14.3 32-32l0-36.7 33.9 33.9C186.8 515.1 338 515.1 431 422.1c29.1-29.1 48.5-64.9 56.5-103.5c3.8-18.5-10.1-36.9-29.1-36.9c-14.2 0-26.8 9.9-30.3 23.7z',
+  'layer-group': 'M32 96l224-80 224 80L256 176 32 96zM32 192l224 80 224-80 0 32L256 304 32 224l0-32zm0 96l224 80 224-80 0 32L256 400 32 320l0-32z'
 });
 
 /**
@@ -122,7 +132,29 @@ export const KEYBOARD_ACTION_ICON_IDS = Object.freeze({
   // Selection tools (recently re-enabled; were missing from the icon map)
   HIGHLIGHT: 'i-cursor',
   RECTANGLE_HIGHLIGHT: 'vector-square',
-  COPY_HOVERED_IMAGE: 'image'
+  COPY_HOVERED_IMAGE: 'image',
+  OPEN_MEDIA_LIBRARY: 'image',
+  // Function Library (Config cards + placeable Actions)
+  CLIPBOARD_COPY: 'clipboard',
+  CLIPBOARD_CUT: 'scissors',
+  CLIPBOARD_PASTE: 'clipboard',
+  CLIPBOARD_SELECT_ALL: 'font',
+  SEND_TEXT_TO_AI: 'robot',
+  SEND_HOTKEY: 'keyboard',
+  SEND_BURST: 'bolt',
+  CYCLE_ROUND_ROBIN: 'arrows-rotate',
+  HOLD_CONTINUOUS: 'circle',
+  CLICK_MOUSE_BUTTON: 'hand-pointer',
+  REMAP_KEY: 'keyboard',
+  TYPE_CHARACTERS: 'font',
+  GET_TEXT_AT_CURSOR: 'i-cursor',
+  GET_TEXT_RANGE: 'font',
+  GET_MEDIA_AT_CURSOR: 'image',
+  LOOKUP_WORD: 'book',
+  TRANSLATE: 'language',
+  SHOW_POPOVER: 'window-maximize',
+  ADD_URL_TO_MEDIA_LIBRARY: 'plus',
+  FETCH_URL_FOR_MEDIA_LIBRARY: 'arrow-down'
 });
 
 /**
@@ -212,8 +244,8 @@ function getKeyboardKeyIconCss() {
   opacity: 1;
 }
 
-/* Keys without functions never paint an icon layer */
-.${KEYBINDINGS_UI_ROOT_CLASS} .key:not([data-kp-action-id]) > .key-bg-icon {
+/* Keys without functions/macros never paint an icon layer */
+.${KEYBINDINGS_UI_ROOT_CLASS} .key:not([data-kp-action-id]):not([data-kp-macro-id]) > .key-bg-icon {
   display: none;
 }
 
@@ -248,6 +280,15 @@ function getKeyboardKeyIconCss() {
     lines.push(
       `.${KEYBINDINGS_UI_ROOT_CLASS} .key[data-kp-action-id="${actionId}"] > .key-bg-icon {` +
       ` -webkit-mask-image: ${uri}; mask-image: ${uri};` +
+      ` background-color: var(--kp-key-icon, #0c1018); }`
+    );
+  }
+
+  // Macros share one glyph (Reference + Config library cards).
+  if (iconUris['layer-group']) {
+    lines.push(
+      `.${KEYBINDINGS_UI_ROOT_CLASS} .key[data-kp-macro-id] > .key-bg-icon {` +
+      ` -webkit-mask-image: ${iconUris['layer-group']}; mask-image: ${iconUris['layer-group']};` +
       ` background-color: var(--kp-key-icon, #0c1018); }`
     );
   }
@@ -913,15 +954,76 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
 }
 
 /*
- * Text mode: all keys grayed out by default. Click Element (ACTIVATE / F)
- * lights up only while the hover-click countdown is armed on a clickable.
+ * Text / typing mode:
+ * - Default keys: plain typing chiclets (no function color/icon/label) + crisp orange outline.
+ * - Countdown-armed actions (.kp-key-text-mode-active): full function chrome restored
+ *   (color fill, FA icon, action label) with the key's own material glow (green for
+ *   Click Element). The live-action set is TEXT_MODE_COUNTDOWN_ACTION_IDS.
  */
+.${KEYBINDINGS_UI_ROOT_CLASS}.kp-text-mode-filter .key:not(.kp-key-text-mode-active) {
+  /* Orange-cast chiclet face (same family as titlebar / control-strip text mode). */
+  --kp-key-face: #5a4834;
+  --kp-key-mid: #4a3a28;
+  --kp-key-deep: #3a2c1c;
+  --kp-key-icon: #1a1e28;
+  --kp-key-glow: transparent;
+  opacity: 1;
+  filter: none;
+  border-color: rgba(255, 140, 0, 0.85) !important;
+  border-top-color: rgba(255, 170, 70, 0.9) !important;
+  border-bottom-color: rgba(200, 100, 0, 0.9) !important;
+  /* Crisp orange outline — no soft glow bloom. */
+  box-shadow:
+    0 0 0 1px rgba(255, 140, 0, 0.8),
+    0 1px 0 rgba(0, 0, 0, 0.45),
+    0 2px 4px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 200, 120, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18) !important;
+  background:
+    linear-gradient(180deg,
+      rgba(255, 140, 0, 0.18) 0%,
+      rgba(255, 140, 0, 0.06) 28%,
+      transparent 55%),
+    linear-gradient(180deg,
+      rgba(255, 255, 255, 0.07) 0%,
+      rgba(255, 255, 255, 0.02) 18%,
+      transparent 42%),
+    linear-gradient(180deg,
+      var(--kp-key-face) 0%,
+      var(--kp-key-mid) 70%,
+      var(--kp-key-deep) 100%);
+}
+.${KEYBINDINGS_UI_ROOT_CLASS}.kp-text-mode-filter .key:not(.kp-key-text-mode-active) > .key-bg-icon,
+.${KEYBINDINGS_UI_ROOT_CLASS}.kp-text-mode-filter .key:not(.kp-key-text-mode-active) > .key-main {
+  display: none !important;
+}
+/* Pattern overlays (hatch / checkerboard / …) — plain face only while typing. */
+.${KEYBINDINGS_UI_ROOT_CLASS}.kp-text-mode-filter .key:not(.kp-key-text-mode-active)::after {
+  display: none !important;
+}
+/*
+ * Center physical letters on every plain key. !important beats the higher-specificity
+ * unassigned key-text rule (cyan / bottom-pinned) that would otherwise leave empty
+ * keys like U O [ ] N , / looking different from assigned key-label keys.
+ */
+.${KEYBINDINGS_UI_ROOT_CLASS}.kp-text-mode-filter .key:not(.kp-key-text-mode-active) > .key-label,
+.${KEYBINDINGS_UI_ROOT_CLASS}.kp-text-mode-filter .key:not(.kp-key-text-mode-active) > .key-text {
+  top: 50% !important;
+  bottom: auto !important;
+  left: 0 !important;
+  right: 0 !important;
+  transform: translateY(-50%) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+  color: rgba(248, 250, 252, 0.94) !important;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45) !important;
+}
 .${KEYBINDINGS_UI_ROOT_CLASS}.kp-text-mode-filter .key.kp-key-text-mode-disabled {
-  opacity: 0.34;
-  filter: grayscale(0.85) brightness(0.78);
   pointer-events: none;
   cursor: default;
 }
+/* Countdown-live keys: keep assigned color fill / icon / labels; emphasize material glow. */
 .${KEYBINDINGS_UI_ROOT_CLASS}.kp-text-mode-filter .key.kp-key-text-mode-active {
   opacity: 1;
   filter: none;
@@ -929,11 +1031,13 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
   outline: none;
   pointer-events: auto;
   cursor: pointer;
-  border-color: rgba(255, 140, 0, 0.75) !important;
   box-shadow:
-    0 0 0 2px rgba(255, 140, 0, 0.35),
-    0 0 12px 2px rgba(255, 140, 0, 0.28),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.14) !important;
+    0 0 0 2px rgba(34, 197, 94, 0.5),
+    0 0 14px 3px var(--kp-key-glow, rgba(34, 197, 94, 0.35)),
+    0 0 24px 4px rgba(34, 197, 94, 0.22),
+    0 1px 0 rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18) !important;
 }
 
 /*

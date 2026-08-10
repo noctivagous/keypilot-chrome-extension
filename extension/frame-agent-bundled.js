@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-10T00:28:41.428Z
+ * Generated on 2026-08-10T20:41:18.019Z
  */
 
 (() => {
@@ -521,50 +521,54 @@
     })
   });
   var KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
-    ACTIVATE: "Click",
-    ACTIVATE_NEW_TAB: "Click",
-    ACTIVATE_NEW_TAB_BACKGROUND: "Click",
-    TAB_LEFT: "Tabs",
-    TAB_RIGHT: "Tabs",
-    NEW_TAB: "Tabs",
-    CLOSE_TAB: "Tabs",
-    TAB_HISTORY: "Tabs",
-    BACK: "Navigate",
-    BACK2: "Navigate",
-    FORWARD: "Navigate",
-    ROOT: "Navigate",
+    // Navigation — click / link preview / history
+    ACTIVATE: "Navigation",
+    ACTIVATE_NEW_TAB: "Navigation",
+    ACTIVATE_NEW_TAB_BACKGROUND: "Navigation",
+    PREVIEW_LINK_POPOVER: "Navigation",
+    OPEN_POPOVER: "Navigation",
+    FORWARD: "Navigation",
+    BACK: "Navigation",
+    BACK2: "Navigation",
+    ROOT: "Navigation",
+    // Tab Control
+    CLOSE_TAB: "Tab Control",
+    TAB_LEFT: "Tab Control",
+    TAB_RIGHT: "Tab Control",
+    NEW_TAB: "Tab Control",
+    TAB_HISTORY: "Tab Control",
     PAGE_UP_INSTANT: "Scroll",
     PAGE_DOWN_INSTANT: "Scroll",
     PAGE_TOP: "Scroll",
     PAGE_BOTTOM: "Scroll",
-    HIGHLIGHT: "Select",
-    RECTANGLE_HIGHLIGHT: "Select",
+    HIGHLIGHT: "Get Page Data",
+    RECTANGLE_HIGHLIGHT: "Get Page Data",
+    COPY_HOVERED_IMAGE: "Get Page Data",
     DELETE: "Select",
     COLS_TOGGLE: "Select",
-    COPY_HOVERED_IMAGE: "Select",
     OPEN_MEDIA_LIBRARY: "Media Library",
     CLIPBOARD_COPY: "Clipboard",
     CLIPBOARD_CUT: "Clipboard",
     CLIPBOARD_PASTE: "Clipboard",
     CLIPBOARD_SELECT_ALL: "Clipboard",
     SEND_TEXT_TO_AI: "AI",
-    OPEN_POPOVER: "Tools",
-    PREVIEW_LINK_POPOVER: "Tools",
-    LAUNCHER: "Tools",
-    OMNIBOX: "Tools",
-    OPEN_SETTINGS_POPOVER: "System",
-    TOGGLE_KEYBOARD_HELP: "System",
+    LAUNCHER: "Begin URL",
+    OMNIBOX: "Begin URL",
+    TOGGLE_KEYBOARD_HELP: "KeyPilot",
+    OPEN_SETTINGS_POPOVER: "KeyPilot",
     CANCEL: "System"
   });
   var KEYBINDING_ACTION_CATEGORY_ORDER = Object.freeze([
-    "Click",
-    "Tabs",
-    "Navigate",
+    "Navigation",
+    "Tab Control",
+    "Begin URL",
+    "Get Page Data",
     "Scroll",
     "Select",
     "Media Library",
     "Clipboard",
     "AI",
+    "KeyPilot",
     "Tools",
     "System",
     "Other"
@@ -1412,6 +1416,9 @@
     // When true, the floating keyboard reference panel includes the number row (1–0).
     // Default is off to keep the panel compact.
     keyboardReferenceShowNumberRow: false,
+    // Actions Library hierarchical table: expanded group keys (top-level open by default;
+    // nested categories / parents start collapsed until the user opens them).
+    actionsLibraryTableExpanded: Object.freeze(["functions", "macros", "macroKeys"]),
     // Floating Control Strip (upper-left): visibility + collapsed (On/Off-only) state.
     controlStrip: Object.freeze({
       visible: true,
@@ -1671,6 +1678,26 @@
       )
     };
   }
+  function normalizeStringIdList(raw, fallback) {
+    const fb = Array.isArray(fallback) ? [...fallback] : [];
+    if (!Array.isArray(raw)) return fb;
+    const out = [];
+    const seen = /* @__PURE__ */ new Set();
+    for (const v of raw) {
+      if (typeof v !== "string") continue;
+      const id = v.trim();
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      out.push(id);
+    }
+    return out;
+  }
+  function normalizeActionsLibraryTableExpanded(raw) {
+    if (!Array.isArray(raw)) {
+      return [...DEFAULT_SETTINGS.actionsLibraryTableExpanded];
+    }
+    return normalizeStringIdList(raw, DEFAULT_SETTINGS.actionsLibraryTableExpanded);
+  }
   function scrollBehaviorFromSpeed(speed) {
     return normalizeScrollSpeed(speed) === "instant" ? "auto" : "smooth";
   }
@@ -1721,6 +1748,9 @@
           stored?.keyboardReferenceShowNumberRow,
           DEFAULT_SETTINGS.keyboardReferenceShowNumberRow
         ),
+        actionsLibraryTableExpanded: normalizeActionsLibraryTableExpanded(
+          stored?.actionsLibraryTableExpanded
+        ),
         controlStrip: normalizeControlStrip(stored?.controlStrip),
         panelPositions: normalizePanelPositions(stored?.panelPositions),
         actionSettings: normalizeActionSettings(stored?.actionSettings),
@@ -1740,7 +1770,8 @@
         actionSettings: normalizeActionSettings(null),
         clickMode: { ...DEFAULT_SETTINGS.clickMode, cursor: { ...DEFAULT_SETTINGS.clickMode.cursor } },
         textMode: { ...DEFAULT_SETTINGS.textMode },
-        scroll: { ...DEFAULT_SETTINGS.scroll }
+        scroll: { ...DEFAULT_SETTINGS.scroll },
+        actionsLibraryTableExpanded: [...DEFAULT_SETTINGS.actionsLibraryTableExpanded]
       };
     }
   }

@@ -54,10 +54,16 @@ import {
   isFunctionInstantiable,
   listFunctionDefs,
   macroKeyKindFromFunctionId,
+  sortFunctionDefsForLibrary,
   summarizeFunctionParameters,
   validateFunctionSlotKey
 } from '../config/function-library.js';
-import { KEYBINDINGS_UI_ROOT_CLASS, KEYBINDINGS_UI_STYLE_ATTR, getKeybindingsUiCss } from './keybindings-ui-shared.js';
+import {
+  KEYBINDINGS_UI_ROOT_CLASS,
+  KEYBINDINGS_UI_STYLE_ATTR,
+  ensureKeyBackgroundIcon,
+  getKeybindingsUiCss
+} from './keybindings-ui-shared.js';
 import { actionHasParameters, getSharedKeyActionConfigPanel } from './key-action-settings.js';
 import { createMacroKeyEditor } from './macro-key-editor.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
@@ -125,7 +131,7 @@ const CONFIG_KEY_SIZE_PX = 46;
 const CONFIG_PANEL_WIDTH_PX = 960;
 const CONFIG_INSPECTOR_WIDTH_PX = 280;
 const CONFIG_STYLE_ATTR = 'data-kp-layout-config-panel-style';
-const CONFIG_STYLE_VERSION = 'v11';
+const CONFIG_STYLE_VERSION = 'v15';
 const CONFIG_ICON_SPRITE_ATTR = 'data-kp-layout-config-icons';
 
 /** NCT monochrome icon sprite — ids are `kp-cfg-i-*` to avoid page collisions. */
@@ -143,12 +149,108 @@ const CONFIG_ICON_SYMBOLS = Object.freeze([
   ['kp-cfg-i-export', 'M7 1h2v7h3l-4 4-4-4h3V1zm-5 11h12v3H2v-3z'],
   ['kp-cfg-i-expand', 'M2 2h5v2H4v3H2V2zm7 0h5v5h-2V4H9V2zM2 9h2v3h3v2H2V9zm10 0h2v5H9v-2h3V9z'],
   ['kp-cfg-i-collapse', 'M5 5H2V3h5v5H5V5zm4 0V3h5v2h-3v3H9V5zM5 9v3H2v2h5V9H5zm4 0h2v3h3v2H9V9z'],
+  ['kp-cfg-i-expand-up', 'M8 2l5 5H9v7H7V7H3l5-5zm-6 11h12v2H2v-2z'],
   ['kp-cfg-i-place', 'M8 1a5 5 0 015 5c0 3.5-5 9-5 9S3 9.5 3 6a5 5 0 015-5zm0 3a2 2 0 100 4 2 2 0 000-4z'],
   ['kp-cfg-i-search', 'M6.5 2a4.5 4.5 0 013.5 7.3L14 13l-1 1-4.2-4A4.5 4.5 0 116.5 2zm0 2a2.5 2.5 0 100 5 2.5 2.5 0 000-5z'],
   ['kp-cfg-i-chord', 'M4 2h3v3H4V2zm5 0h3v3H9V2zM2 7h3v3H2V7zm4.5 0h3v3h-3V7zM11 7h3v3h-3V7zM4 12h3v2H4v-2zm5 0h3v2H9v-2z'],
   ['kp-cfg-i-chevron', 'M3 6l5 5 5-5H3z'],
-  ['kp-cfg-i-more', 'M3 6.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm5 0a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm5 0a1.5 1.5 0 110 3 1.5 1.5 0 010-3z']
+  ['kp-cfg-i-more', 'M3 6.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm5 0a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm5 0a1.5 1.5 0 110 3 1.5 1.5 0 010-3z'],
+  ['kp-cfg-i-all', 'M2 2h5v5H2V2zm7 0h5v5H9V2zM2 9h5v5H2V9zm7 0h5v5H9V9z'],
+  ['kp-cfg-i-macro', 'M3 2h10v2H3V2zm0 4h10v2H3V6zm0 4h6v2H3v-2zm8 0h2v4H8v-2h3v-2z'],
+  ['kp-cfg-i-keycap', 'M3 3h10v10H3V3zm2 2v6h6V5H5z'],
+  ['kp-cfg-i-nav', 'M8 1l5 6H9v8H7V7H3l5-6z'],
+  ['kp-cfg-i-click', 'M7 1v7.2L5.2 6.4 4 7.6 8 12l4-4.4-1.2-1.2L9 8.2V1H7zm-4 11h10v2H3v-2z'],
+  ['kp-cfg-i-scroll', 'M8 1l3 3H9v3H7V4H5l3-3zm0 14l-3-3h2V9h2v3h2l-3 3zM3 7h10v2H3V7z'],
+  ['kp-cfg-i-tabs', 'M1 3h5l1 2h8v9H1V3zm2 4v5h10V7H3z'],
+  ['kp-cfg-i-type', 'M2 3h12v2H9v8H7V5H2V3zm1 10h10v2H3v-2z'],
+  ['kp-cfg-i-ai', 'M8 1l1.5 4H14l-3.5 2.7L12 13 8 10.2 4 13l1.5-5.3L2 5h4.5L8 1z'],
+  ['kp-cfg-i-select', 'M3 3h4v2H5v2H3V3zm6 0h4v4h-2V5H9V3zM3 9h2v2h2v2H3V9zm8 2h2v4H9v-2h2v-2z'],
+  ['kp-cfg-i-image', 'M2 3h12v10H2V3zm2 2v6h8V5H4zm1 1h3v2H5V6zm4 3l2 3H5l1.5-2L8 12l1-1z'],
+  ['kp-cfg-i-data', 'M2 3c0-1.5 2.7-2.5 6-2.5S14 1.5 14 3v10c0 1.5-2.7 2.5-6 2.5S2 14.5 2 13V3zm2 0c0 .4 1.6 1 4 1s4-.6 4-1-1.6-1-4-1-4 .6-4 1z'],
+  ['kp-cfg-i-lookup', 'M7 2a5 5 0 013.9 8.1L14 13l-1 1-3.1-3.1A5 5 0 117 2zm0 2a3 3 0 100 6 3 3 0 000-6z'],
+  ['kp-cfg-i-translate', 'M2 3h5v2H5.2A9 9 0 017 8.5L5.7 9.5A8 8 0 014 5H2V3zm7 0h5v2h-1.5l-.8 2H14v2h-2.8l-.7 2H14v2H9l.6-2H8v-2h1.3L10 5H8V3h1z'],
+  ['kp-cfg-i-display', 'M2 3h12v8H9v1h3v2H4v-2h3v-1H2V3zm2 2v4h8V5H4z'],
+  ['kp-cfg-i-burst', 'M8 1l1 4 4 .5-3 2.8.9 4.2L8 10.5 5.1 12.5 6 8.3 3 5.5 7 5 8 1zm-5 12h10v2H3v-2z'],
+  ['kp-cfg-i-cycle', 'M13 3v4h-4V5h1.3A4 4 0 108 12a4 4 0 003.5-2h2.1A6 6 0 114 4.2V2h2v4H2V2h2v1.3A6 6 0 0113 3z'],
+  ['kp-cfg-i-hold', 'M7 1h2v7H7V1zm-2 8h6l2 2v4H3v-4l2-2zm2 2v2h2v-2H7z'],
+  ['kp-cfg-i-mouse', 'M5 2h6a3 3 0 013 3v6a3 3 0 01-3 3H5a3 3 0 01-3-3V5a3 3 0 013-3zm3 1v4H5.2A2 2 0 015 5V4a1 1 0 011-1h2z'],
+  ['kp-cfg-i-hotkey', 'M2 4h5v2H4v2h3v2H2V4zm7 0h5v8H9V4zm2 2v4h1V6h-1z'],
+  ['kp-cfg-i-back', 'M8 2l-6 6 6 6 1.4-1.4L5.8 9H14V7H5.8l3.6-3.6L8 2z'],
+  ['kp-cfg-i-forward', 'M8 2l6 6-6 6-1.4-1.4L10.2 9H2V7h8.2L6.6 3.4 8 2z']
 ]);
+
+/** Function-id → keycap icon (library cards). */
+const LIBRARY_KEY_ICON_BY_FUNCTION_ID = Object.freeze({
+  HIGHLIGHT: 'kp-cfg-i-select',
+  RECTANGLE_HIGHLIGHT: 'kp-cfg-i-select',
+  CLIPBOARD_COPY: 'kp-cfg-i-copy',
+  OPEN_POPOVER: 'kp-cfg-i-display',
+  PAGE_DOWN_INSTANT: 'kp-cfg-i-scroll',
+  PAGE_UP_INSTANT: 'kp-cfg-i-scroll',
+  TAB_RIGHT: 'kp-cfg-i-tabs',
+  TAB_LEFT: 'kp-cfg-i-tabs',
+  OMNIBOX: 'kp-cfg-i-search',
+  SEND_TEXT_TO_AI: 'kp-cfg-i-ai',
+  TYPE_CHARACTERS: 'kp-cfg-i-type',
+  GET_TEXT_AT_CURSOR: 'kp-cfg-i-data',
+  GET_TEXT_RANGE: 'kp-cfg-i-data',
+  GET_MEDIA_AT_CURSOR: 'kp-cfg-i-image',
+  LOOKUP_WORD: 'kp-cfg-i-lookup',
+  TRANSLATE: 'kp-cfg-i-translate',
+  SHOW_POPOVER: 'kp-cfg-i-display'
+});
+
+/** Category → default keycap icon. */
+const LIBRARY_KEY_ICON_BY_CATEGORY = Object.freeze({
+  Navigation: 'kp-cfg-i-nav',
+  'Tab Control': 'kp-cfg-i-tabs',
+  'Begin URL': 'kp-cfg-i-search',
+  'Get Page Data': 'kp-cfg-i-data',
+  KeyPilot: 'kp-cfg-i-kb',
+  Click: 'kp-cfg-i-click',
+  Tabs: 'kp-cfg-i-tabs',
+  Navigate: 'kp-cfg-i-nav',
+  Scroll: 'kp-cfg-i-scroll',
+  Select: 'kp-cfg-i-select',
+  Clipboard: 'kp-cfg-i-copy',
+  Text: 'kp-cfg-i-type',
+  Tools: 'kp-cfg-i-display',
+  Data: 'kp-cfg-i-data',
+  Lookup: 'kp-cfg-i-lookup',
+  Translate: 'kp-cfg-i-translate',
+  Display: 'kp-cfg-i-display',
+  Media: 'kp-cfg-i-image'
+});
+
+/**
+ * @param {{ type?: string, id?: string, label?: string, variant?: string, functionId?: string, kind?: string }} item
+ * @returns {string} sprite symbol id
+ */
+function libraryKeyIconId(item) {
+  const variant = String(item?.variant || '');
+  const id = String(item?.id || '');
+  const label = String(item?.label || '').toLowerCase();
+  const functionId = String(item?.functionId || (variant.includes('fn') || item?.type === 'function' ? id : '') || '');
+  if (LIBRARY_KEY_ICON_BY_FUNCTION_ID[functionId]) return LIBRARY_KEY_ICON_BY_FUNCTION_ID[functionId];
+  if (variant === 'stock-macro' || variant === 'user-macro' || item?.type === 'macro') {
+    if (/ai/i.test(label)) return 'kp-cfg-i-ai';
+    if (/nav/i.test(label)) return 'kp-cfg-i-nav';
+    if (/clip|copy/i.test(label)) return 'kp-cfg-i-copy';
+    return 'kp-cfg-i-macro';
+  }
+  if (variant === 'macro-key' || item?.kind) {
+    const kind = String(item?.kind || label);
+    if (/burst/i.test(kind)) return 'kp-cfg-i-burst';
+    if (/round|cycle/i.test(kind)) return 'kp-cfg-i-cycle';
+    if (/hold|cont|chord/i.test(kind)) return 'kp-cfg-i-hold';
+    if (/mouse|click/i.test(kind)) return 'kp-cfg-i-mouse';
+    if (/hot/i.test(kind)) return 'kp-cfg-i-hotkey';
+    return 'kp-cfg-i-keycap';
+  }
+  const cat = functionId ? (getFunctionCategory(functionId) || '') : '';
+  if (LIBRARY_KEY_ICON_BY_CATEGORY[cat]) return LIBRARY_KEY_ICON_BY_CATEGORY[cat];
+  return 'kp-cfg-i-keycap';
+}
 
 /**
  * @param {Document} doc
@@ -289,13 +391,19 @@ export class KeyboardLayoutConfigPanel {
     this._createPane = null;
     this._createBody = null;
     this._createToggleBtn = null;
+    this._createExpandUpBtn = null;
     this._createModeSeg = null;
+    this._libraryCreateSplitter = null;
+    this._workspaceInspectorSplitter = null;
     this._scriptPanel = null;
     this._macroKeyPanel = null;
     this._macroNameInput = null;
     this._scriptStepsHost = null;
     this._scriptStockBanner = null;
     this._scriptMetaEl = null;
+    this._placeHintEl = null;
+    this._legendEl = null;
+    this._libViewSegEl = null;
     this._addStepSelect = null;
     this._addStepDelayInput = null;
     this._libTabsEl = null;
@@ -308,8 +416,21 @@ export class KeyboardLayoutConfigPanel {
     /** @type {'all'|'macros'|'macroKeys'|'functions'} */
     this._libPrimaryTab = 'all';
     this._libFunctionCategory = '';
+    /** @type {'cards'|'table'} Actions Library presentation mode (session-local). */
+    this._libViewMode = 'cards';
+    /** Expanded hierarchical table group keys (top-level open by default). */
+    this._tableExpanded = new Set(DEFAULT_SETTINGS.actionsLibraryTableExpanded || [
+      'functions', 'macros', 'macroKeys'
+    ]);
+    this._tableExpandedHydrated = false;
     this._inspectorOpen = true;
     this._createOpen = false;
+    /** When true, User Macros fills the workspace under the library titlebar. */
+    this._createMaximized = false;
+    /** @type {number|null} Height in px before maximize (for Restore). */
+    this._createPrevHeightPx = null;
+    /** Selected Actions Library Function id for toolbar “Add step”. */
+    this._selectedLibraryFunctionId = '';
     /** @type {'script'|'macroKey'} */
     this._createMode = 'script';
     /**
@@ -683,8 +804,8 @@ export class KeyboardLayoutConfigPanel {
 .kp-layout-config-panel .kp-cfg-body {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 8px;
+  gap: 0;
+  padding: 0;
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
@@ -707,8 +828,9 @@ export class KeyboardLayoutConfigPanel {
   flex-direction: column;
   gap: 4px;
   padding: 0;
-  border: 1px solid ${c.panelEdgeDark};
-  border-radius: ${NCT_DARK_UI_PANEL_RADIUS};
+  border: 0;
+  border-bottom: 1px solid #1a2430;
+  border-radius: 0;
   background:
     linear-gradient(180deg, rgba(55, 85, 120, 0.18), rgba(30, 45, 70, 0.08)),
     #1a1e24;
@@ -988,14 +1110,17 @@ export class KeyboardLayoutConfigPanel {
   display: flex;
   flex-direction: row;
   align-items: stretch;
-  gap: 8px;
+  gap: 0;
   flex: 1 1 auto;
   min-height: 0;
+  margin: 6px 8px 8px;
+  --kp-cfg-inspector-width: ${CONFIG_INSPECTOR_WIDTH_PX}px;
+  --kp-cfg-create-height: 46%;
 }
 .kp-layout-config-panel .kp-cfg-workspace {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0;
   flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
@@ -1072,6 +1197,9 @@ export class KeyboardLayoutConfigPanel {
   overflow: hidden;
 }
 .kp-layout-config-panel .kp-cfg-seg-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 0 8px;
   height: 18px;
   border: none;
@@ -1086,6 +1214,11 @@ export class KeyboardLayoutConfigPanel {
   white-space: nowrap;
   font-family: inherit;
 }
+.kp-layout-config-panel .kp-cfg-seg-btn .kp-cfg-ico {
+  width: 10px;
+  height: 10px;
+  opacity: 0.85;
+}
 .kp-layout-config-panel .kp-cfg-seg-btn:last-child {
   border-right: 0;
 }
@@ -1098,14 +1231,34 @@ export class KeyboardLayoutConfigPanel {
   color: ${NCT_DARK_UI_SELECTED_TEXT};
   box-shadow: ${NCT_DARK_UI_FOCUS_RING};
 }
-.kp-layout-config-panel .kp-cfg-search {
-  width: auto;
+.kp-layout-config-panel .kp-cfg-search-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
   flex: 1 1 130px;
   min-width: 110px;
   max-width: 240px;
-  padding: 2px 7px;
+}
+.kp-layout-config-panel .kp-cfg-search-wrap .kp-cfg-ico {
+  position: absolute;
+  left: 6px;
+  width: 10px;
+  height: 10px;
+  opacity: 0.55;
+  pointer-events: none;
+}
+.kp-layout-config-panel .kp-cfg-search {
+  width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: none;
+  padding: 2px 7px 2px 22px;
   height: 18px;
   font-size: 10px;
+  background: #121410;
+  border-color: #0a1008;
+  color: #c8d8b0;
+  box-shadow: inset 0 1px 0 #2a3024;
 }
 .kp-layout-config-panel .kp-cfg-fn-cat {
   width: auto;
@@ -1115,11 +1268,192 @@ export class KeyboardLayoutConfigPanel {
   height: 18px;
   font-size: 9px;
 }
+.kp-layout-config-panel .kp-cfg-lib-viewbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 2px 2px 8px;
+  flex: 0 0 auto;
+}
+.kp-layout-config-panel .kp-cfg-lib-viewbar .kp-cfg-seg {
+  flex: 0 0 auto;
+}
+.kp-layout-config-panel .kp-cfg-legend-mini {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  font-size: 8px;
+  color: #6a7a58;
+  opacity: 0.85;
+}
+.kp-layout-config-panel .kp-cfg-legend-mini span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.kp-layout-config-panel .kp-cfg-legend-mini i {
+  display: inline-block;
+  width: 10px;
+  height: 8px;
+  border-radius: 1px;
+  border: 1px solid #444;
+  box-sizing: border-box;
+}
+.kp-layout-config-panel .kp-cfg-legend-mini .kp-cfg-sw-stock-fn {
+  background: #2a2e32;
+  border-color: #3a4550;
+}
+.kp-layout-config-panel .kp-cfg-legend-mini .kp-cfg-sw-user {
+  background: #2a2e32;
+  border-color: ${accentA(0.45)};
+}
+.kp-layout-config-panel .kp-cfg-legend-mini .kp-cfg-sw-stock-macro {
+  background: #243430;
+  border-left: 3px solid #5a9a8a;
+}
+.kp-layout-config-panel .kp-cfg-legend-mini .kp-cfg-sw-user-macro {
+  background: #2c2434;
+  border-left: 3px solid #9a7ab8;
+}
+.kp-layout-config-panel .kp-cfg-lib-table-wrap {
+  width: 100%;
+  overflow: auto;
+  border: 1px solid rgba(120, 140, 100, 0.12);
+  border-radius: 2px;
+  background: rgba(8, 10, 8, 0.35);
+}
+.kp-layout-config-panel .kp-cfg-lib-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  table-layout: fixed;
+}
+.kp-layout-config-panel .kp-cfg-lib-table th {
+  text-align: left;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8a9a78;
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(120, 140, 100, 0.18);
+  background: #121410;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.kp-layout-config-panel .kp-cfg-lib-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  vertical-align: middle;
+  color: #c8d4e0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kp-layout-config-panel .kp-cfg-lib-table tr.kp-cfg-lib-row-group {
+  background: rgba(255,255,255,0.03);
+  cursor: pointer;
+}
+.kp-layout-config-panel .kp-cfg-lib-table tr.kp-cfg-lib-row-group td {
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #9a8aaa;
+}
+.kp-layout-config-panel .kp-cfg-lib-table tr.kp-cfg-lib-row-leaf:hover {
+  background: rgba(74, 144, 200, 0.12);
+}
+.kp-layout-config-panel .kp-cfg-lib-table tr.kp-cfg-lib-row-inspecting {
+  background: rgba(74, 144, 200, 0.18);
+  outline: 1px solid rgba(74, 144, 200, 0.35);
+}
+.kp-layout-config-panel .kp-cfg-lib-table tr.kp-cfg-lib-row-place {
+  box-shadow: inset 2px 0 0 ${c.accent};
+}
+.kp-layout-config-panel .kp-cfg-lib-twisty {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  margin: 0 4px 0 0;
+  border: 0;
+  background: transparent;
+  color: #9aacbe;
+  cursor: pointer;
+  font-size: 10px;
+  line-height: 18px;
+  flex: 0 0 auto;
+}
+.kp-layout-config-panel .kp-cfg-lib-label-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.kp-layout-config-panel .kp-cfg-lib-label-cell .kp-cfg-ico {
+  width: 12px;
+  height: 12px;
+  opacity: 0.9;
+  flex: 0 0 auto;
+}
+.kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .kp-cfg-lib-table .key.kp-cfg-lib-key {
+  flex: 0 0 auto !important;
+  width: 22px !important;
+  min-width: 22px !important;
+  max-width: 22px !important;
+  height: 22px !important;
+  min-height: 22px !important;
+  max-height: 22px !important;
+  border-radius: 6px !important;
+  cursor: grab;
+  padding: 0 !important;
+  margin: 0;
+  display: block;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .kp-cfg-lib-table .key.kp-cfg-lib-key:active {
+  cursor: grabbing;
+}
+.kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .kp-cfg-lib-table .key.kp-cfg-lib-key > .key-bg-icon {
+  inset: 10%;
+  -webkit-mask-size: 82% 82%;
+  mask-size: 82% 82%;
+  opacity: 0.9;
+}
+.kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .kp-cfg-lib-table .key.kp-cfg-lib-key > .key-main,
+.kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .kp-cfg-lib-table .key.kp-cfg-lib-key > .key-label {
+  display: none !important;
+}
+.kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .kp-cfg-lib-table .key.kp-cfg-lib-key.kp-place-source {
+  outline: 2px solid ${c.accent};
+  outline-offset: 0;
+}
+.kp-layout-config-panel .kp-cfg-lib-label-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kp-layout-config-panel .kp-cfg-lib-table .kp-cfg-card-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+}
+.kp-layout-config-panel .kp-cfg-lib-table col.kp-cfg-col-label { width: 34%; }
+.kp-layout-config-panel .kp-cfg-lib-table col.kp-cfg-col-kind { width: 14%; }
+.kp-layout-config-panel .kp-cfg-lib-table col.kp-cfg-col-summary { width: 22%; }
+.kp-layout-config-panel .kp-cfg-lib-table col.kp-cfg-col-slots { width: 12%; }
+.kp-layout-config-panel .kp-cfg-lib-table col.kp-cfg-col-actions { width: 18%; }
 .kp-layout-config-panel .kp-cfg-legend {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 12px;
-  padding: 2px 2px 6px;
+  padding: 2px 2px 8px;
   flex: 0 0 auto;
   font-size: 9px;
   color: #6a7a58;
@@ -1157,24 +1491,104 @@ export class KeyboardLayoutConfigPanel {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin: 0 0 14px;
+  padding: 10px 8px 8px;
+  border: 1px solid rgba(120, 140, 100, 0.1);
+  border-radius: 2px;
+  background: rgba(8, 10, 8, 0.35);
+  position: relative;
 }
 .kp-layout-config-panel .kp-cfg-category-title {
-  display: flex;
+  position: absolute;
+  top: -6px;
+  left: 8px;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 10px;
+  margin: 0;
+  padding: 0 5px;
+  font-size: 8px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #8a9a78;
-  padding: 2px 2px 0;
+  background: #121410;
+}
+.kp-layout-config-panel .kp-cfg-category[data-kp-section="macros"] {
+  border-color: rgba(154, 122, 184, 0.12);
+  background: rgba(10, 8, 14, 0.35);
+}
+.kp-layout-config-panel .kp-cfg-category[data-kp-section="macros"] .kp-cfg-category-title {
+  color: #9a8aaa;
+}
+.kp-layout-config-panel .kp-cfg-category[data-kp-section="macroKeys"] {
+  border-color: rgba(90, 140, 180, 0.12);
+  background: rgba(8, 10, 14, 0.35);
+}
+.kp-layout-config-panel .kp-cfg-category[data-kp-section="macroKeys"] .kp-cfg-category-title {
+  color: #7a92a8;
+}
+.kp-layout-config-panel .kp-cfg-macro-subgroups {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 2px;
+}
+.kp-layout-config-panel .kp-cfg-macro-fieldset {
+  margin: 0;
+  padding: 10px 8px 8px;
+  min-width: 0;
+  border: 1px solid rgba(154, 122, 184, 0.08);
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.12);
+}
+.kp-layout-config-panel .kp-cfg-macro-fieldset[data-macro-group="stock"] {
+  border-color: rgba(120, 180, 150, 0.1);
+  background: rgba(8, 14, 12, 0.18);
+}
+.kp-layout-config-panel .kp-cfg-macro-fieldset[data-macro-group="user"] {
+  border-color: rgba(170, 130, 210, 0.1);
+  background: rgba(14, 10, 18, 0.18);
+}
+.kp-layout-config-panel .kp-cfg-macro-fieldset > legend {
+  padding: 0 6px;
+  margin-left: 2px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7a6a8a;
+}
+.kp-layout-config-panel .kp-cfg-macro-fieldset[data-macro-group="stock"] > legend {
+  color: #6a9080;
+}
+.kp-layout-config-panel .kp-cfg-macro-fieldset[data-macro-group="user"] > legend {
+  color: #9a88b0;
+}
+.kp-layout-config-panel .kp-cfg-subgroup-empty {
+  margin: 0;
+  padding: 4px 2px;
+  font-size: 10px;
+  color: #6a5a7a;
+  font-style: italic;
 }
 .kp-layout-config-panel .kp-cfg-key-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
   justify-content: stretch;
   width: 100%;
+  margin: 0;
+  padding: 0;
+}
+.kp-layout-config-panel .kp-cfg-main.kp-cfg-inspector-open .kp-cfg-key-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.kp-layout-config-panel .kp-cfg-key-grid.kp-cfg-grid-macros {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.kp-layout-config-panel .kp-cfg-main.kp-cfg-inspector-open .kp-cfg-key-grid.kp-cfg-grid-macros {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .kp-layout-config-panel .kp-cfg-item {
   display: flex;
@@ -1188,6 +1602,39 @@ export class KeyboardLayoutConfigPanel {
   background: linear-gradient(180deg, #2a2e32, #24282c);
   box-shadow: inset 0 1px 0 rgba(140,170,200,0.08);
   box-sizing: border-box;
+  cursor: default;
+}
+.kp-layout-config-panel .kp-cfg-item.kp-cfg-variant-stock-fn,
+.kp-layout-config-panel .kp-cfg-item.kp-cfg-variant-configurable-fn {
+  background: linear-gradient(180deg, #2a2e32, #24282c);
+  border-color: #3a4550;
+}
+.kp-layout-config-panel .kp-cfg-item.kp-cfg-variant-stock-macro {
+  background: linear-gradient(180deg, #243430, #1c2824);
+  border-color: #3a5a50;
+  border-left: 3px solid #5a9a8a;
+}
+.kp-layout-config-panel .kp-cfg-item.kp-cfg-variant-user-macro {
+  background: linear-gradient(180deg, #2c2434, #221c28);
+  border-color: #4a3a5a;
+  border-left: 3px solid #9a7ab8;
+  box-shadow: inset 0 1px 0 rgba(154,122,184,0.15);
+}
+.kp-layout-config-panel .kp-cfg-item.kp-cfg-variant-macro-key {
+  background: #282828;
+  border-color: #3a3a3a;
+}
+.kp-layout-config-panel .kp-cfg-item.kp-cfg-variant-stock-macro .key {
+  background: linear-gradient(180deg, #3a5a50, #2a4038);
+  color: #c8ebe0;
+}
+.kp-layout-config-panel .kp-cfg-item.kp-cfg-variant-user-macro .key {
+  background: linear-gradient(180deg, #5a4a6a, #3a3048);
+  color: #e0d0f0;
+}
+.kp-layout-config-panel .kp-cfg-item.kp-cfg-variant-user-macro .kp-cfg-card-name {
+  color: #d8c8e8;
+  font-style: italic;
 }
 .kp-layout-config-panel .kp-cfg-item:hover {
   border-color: #4a5560;
@@ -1237,11 +1684,17 @@ export class KeyboardLayoutConfigPanel {
   max-height: ${CONFIG_KEY_SIZE_PX}px !important;
   cursor: pointer;
   position: relative;
-  border-radius: 1px !important;
+  border-radius: 7px !important;
 }
 .kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .key.kp-place-source {
   outline: 2px solid ${c.accent};
   outline-offset: -1px;
+}
+.kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .key > .key-bg-icon {
+  inset: 10%;
+  -webkit-mask-size: 78% 78%;
+  mask-size: 78% 78%;
+  opacity: 0.88;
 }
 .kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .key .key-main {
   top: 4px !important;
@@ -1347,10 +1800,15 @@ export class KeyboardLayoutConfigPanel {
 }
 .kp-layout-config-panel .kp-mk-kind-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 6px;
   width: 100%;
   margin-bottom: 8px;
+}
+@media (max-width: 900px) {
+  .kp-layout-config-panel .kp-mk-kind-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 .kp-layout-config-panel .kp-mk-kind-btn {
   text-align: left;
@@ -1465,8 +1923,8 @@ export class KeyboardLayoutConfigPanel {
 }
 .kp-layout-config-panel .kp-cfg-pane-inspector {
   flex: 0 0 auto;
-  width: ${CONFIG_INSPECTOR_WIDTH_PX}px;
-  min-width: ${CONFIG_INSPECTOR_WIDTH_PX}px;
+  width: var(--kp-cfg-inspector-width);
+  min-width: var(--kp-cfg-inspector-width);
   background:
     linear-gradient(180deg, rgba(50, 80, 110, 0.22), rgba(25, 40, 55, 0.12)),
     #161a20;
@@ -1478,8 +1936,8 @@ export class KeyboardLayoutConfigPanel {
     inset 0 0 0 1px rgba(90, 140, 180, 0.18);
 }
 .kp-layout-config-panel .kp-cfg-pane-inspector.kp-cfg-collapsed {
-  width: 26px;
-  min-width: 26px;
+  width: 22px;
+  min-width: 22px;
 }
 .kp-layout-config-panel .kp-cfg-inspector-rail {
   display: none;
@@ -1617,11 +2075,66 @@ export class KeyboardLayoutConfigPanel {
   color: #d8c8e8;
 }
 .kp-layout-config-panel .kp-cfg-pane-create.kp-cfg-open {
-  flex: 1 1 46%;
+  flex: 0 0 var(--kp-cfg-create-height);
   min-height: 210px;
 }
 .kp-layout-config-panel .kp-cfg-pane-create:not(.kp-cfg-open) .kp-cfg-create-body {
   display: none;
+}
+.kp-layout-config-panel .kp-cfg-split {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 8px;
+  padding: 0;
+  border: 0;
+  background: #1a1a1a;
+}
+.kp-layout-config-panel .kp-cfg-split::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+}
+.kp-layout-config-panel .kp-cfg-split::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: #6a6a6a;
+  border-radius: 1px;
+  pointer-events: none;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45);
+}
+.kp-layout-config-panel .kp-cfg-split:hover,
+.kp-layout-config-panel .kp-cfg-split:focus-visible,
+.kp-layout-config-panel .kp-cfg-split.kp-cfg-split-dragging {
+  outline: none;
+  background: #3a5570;
+}
+.kp-layout-config-panel .kp-cfg-split:hover::before,
+.kp-layout-config-panel .kp-cfg-split:focus-visible::before,
+.kp-layout-config-panel .kp-cfg-split.kp-cfg-split-dragging::before {
+  background: #b0d0e8;
+}
+.kp-layout-config-panel .kp-cfg-split-v {
+  cursor: col-resize;
+  border-left: 1px solid #0a0a0a;
+  border-right: 1px solid #3a3a3a;
+  background: linear-gradient(90deg, #2a2a2a, #1c1c1c);
+}
+.kp-layout-config-panel .kp-cfg-split-v::before {
+  width: 2px;
+  height: 36px;
+}
+.kp-layout-config-panel .kp-cfg-split-h {
+  cursor: row-resize;
+  border-top: 1px solid #0a0a0a;
+  border-bottom: 1px solid #3a3a3a;
+  background: linear-gradient(180deg, #2a2a2a, #1c1c1c);
+}
+.kp-layout-config-panel .kp-cfg-split-h::before {
+  width: 36px;
+  height: 2px;
 }
 .kp-layout-config-panel .kp-cfg-script-toolbar {
   display: flex;
@@ -1647,9 +2160,14 @@ export class KeyboardLayoutConfigPanel {
 .kp-layout-config-panel .kp-cfg-script-canvas {
   display: flex;
   flex-direction: row;
-  gap: 8px;
+  gap: 0;
   align-items: stretch;
-  min-height: 0;
+  min-height: 88px;
+  overflow: hidden;
+  border: 1px solid #3a2a4a;
+  border-radius: 2px;
+  background: linear-gradient(180deg, rgba(20, 14, 28, 0.65), rgba(14, 10, 20, 0.9));
+  box-shadow: inset 0 1px 0 rgba(154, 122, 184, 0.08);
 }
 .kp-layout-config-panel .kp-cfg-logic-palette {
   display: flex;
@@ -1657,37 +2175,111 @@ export class KeyboardLayoutConfigPanel {
   gap: 4px;
   flex: 0 0 132px;
   width: 132px;
+  min-width: 120px;
+  max-width: 140px;
+  margin: 6px 0 6px 6px;
+  padding: 10px 6px 6px;
+  border: 1px solid rgba(154, 122, 184, 0.12);
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.22);
+  overflow: auto;
+}
+.kp-layout-config-panel .kp-cfg-logic-palette > legend {
+  padding: 0 5px;
+  margin-left: 2px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9a88b0;
 }
 .kp-layout-config-panel .kp-cfg-logic-chip {
   text-align: left;
-  padding: 5px 7px;
-  border-radius: ${NCT_DARK_UI_BTN_RADIUS};
-  border: 1px solid #4a3a5a;
-  background: linear-gradient(180deg, #2c2434, #221c28);
-  color: #e0d0f0;
+  padding: 5px 6px;
+  border-radius: 2px;
+  border: 1px solid #3a3048;
+  background: linear-gradient(180deg, #2a2234, #221c2c);
+  color: #ddd0e8;
   cursor: pointer;
   line-height: 1.25;
   font-family: inherit;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
 .kp-layout-config-panel .kp-cfg-logic-chip:hover {
   border-color: #9a7ab8;
-  background: linear-gradient(180deg, #342a40, #281e30);
+  color: #f0e8f8;
 }
 .kp-layout-config-panel .kp-cfg-logic-chip strong {
   display: block;
-  font-size: 10px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #e8d8f8;
 }
 .kp-layout-config-panel .kp-cfg-logic-chip span {
   display: block;
-  font-size: 9px;
-  opacity: 0.65;
+  font-size: 7px;
+  color: #8a7a9a;
+  opacity: 1;
 }
 .kp-layout-config-panel .kp-cfg-steps-pane {
   flex: 1 1 auto;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 5px;
+  overflow: auto;
+  padding: 6px;
+}
+.kp-layout-config-panel .kp-cfg-script-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-height: 88px;
+  padding: 12px;
+  text-align: center;
+  color: #7a6a8a;
+  font-size: 10px;
+  line-height: 1.4;
+  box-sizing: border-box;
+}
+.kp-layout-config-panel .kp-cfg-script-empty strong {
+  color: #b8a0d0;
+  font-size: 11px;
+  font-weight: 700;
+}
+.kp-layout-config-panel .kp-cfg-cycle-warn {
+  margin: 6px 0 0;
+  padding: 5px 7px;
+  border-radius: 2px;
+  border: 1px solid rgba(200, 120, 80, 0.45);
+  background: rgba(80, 40, 20, 0.35);
+  color: #f0c090;
+  font-size: 10px;
+  line-height: 1.35;
+}
+.kp-layout-config-panel .kp-cfg-pane-create.kp-cfg-maximized {
+  flex: 1 1 auto !important;
+  min-height: 0;
+}
+.kp-layout-config-panel .kp-cfg-workspace.kp-cfg-create-maximized .kp-cfg-pane-library .kp-cfg-pane-scroll {
+  display: none;
+}
+.kp-layout-config-panel .kp-cfg-workspace.kp-cfg-create-maximized .kp-cfg-pane-library {
+  flex: 0 0 auto;
+}
+.kp-layout-config-panel .kp-cfg-hdr-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 .kp-layout-config-panel .kp-cfg-step {
   display: flex;
@@ -2097,10 +2689,14 @@ export class KeyboardLayoutConfigPanel {
     libraryTitle.appendChild(mkCfgIcon(doc, 'kp-cfg-i-lib'));
     libraryTitle.appendChild(doc.createTextNode('Actions Library'));
 
+    const searchWrap = doc.createElement('div');
+    searchWrap.className = 'kp-cfg-search-wrap';
+    searchWrap.appendChild(mkCfgIcon(doc, 'kp-cfg-i-search'));
     const search = doc.createElement('input');
     search.type = 'search';
     search.className = 'kp-cfg-field kp-cfg-search';
     search.placeholder = 'Search…';
+    searchWrap.appendChild(search);
 
     const libTabs = doc.createElement('div');
     libTabs.className = 'kp-cfg-seg';
@@ -2113,7 +2709,7 @@ export class KeyboardLayoutConfigPanel {
     fnCategorySelect.hidden = true;
 
     libraryHdr.appendChild(libraryTitle);
-    libraryHdr.appendChild(search);
+    libraryHdr.appendChild(searchWrap);
     libraryHdr.appendChild(libTabs);
     libraryHdr.appendChild(fnCategorySelect);
 
@@ -2129,12 +2725,38 @@ export class KeyboardLayoutConfigPanel {
       overflow: 'auto'
     });
 
-    const legend = doc.createElement('div');
-    legend.className = 'kp-cfg-legend';
-    legend.setAttribute('aria-label', 'Actions Library legend');
+    const viewBar = doc.createElement('div');
+    viewBar.className = 'kp-cfg-lib-viewbar';
+    viewBar.setAttribute('aria-label', 'Actions Library view');
+
+    const viewSeg = doc.createElement('div');
+    viewSeg.className = 'kp-cfg-seg';
+    viewSeg.setAttribute('role', 'tablist');
+    viewSeg.setAttribute('aria-label', 'Library layout');
+    for (const mode of [
+      { id: 'cards', label: 'Cards' },
+      { id: 'table', label: 'Table' }
+    ]) {
+      const b = doc.createElement('button');
+      b.type = 'button';
+      b.className = 'kp-cfg-seg-btn';
+      b.setAttribute('role', 'tab');
+      b.dataset.kpLibView = mode.id;
+      b.textContent = mode.label;
+      b.addEventListener('click', () => {
+        this._libViewMode = /** @type {'cards'|'table'} */ (mode.id);
+        this._syncLibViewSeg();
+        this._renderRightList();
+      }, true);
+      viewSeg.appendChild(b);
+    }
+
+    const legendMini = doc.createElement('div');
+    legendMini.className = 'kp-cfg-legend-mini';
+    legendMini.title = 'Card / row color meaning';
     for (const [swClass, text] of [
       ['kp-cfg-sw-stock-fn', 'Stock function'],
-      ['kp-cfg-sw-user', 'User / instance'],
+      ['kp-cfg-sw-user', 'Configurable'],
       ['kp-cfg-sw-stock-macro', 'Stock macro'],
       ['kp-cfg-sw-user-macro', 'User macro']
     ]) {
@@ -2143,12 +2765,15 @@ export class KeyboardLayoutConfigPanel {
       sw.className = swClass;
       span.appendChild(sw);
       span.appendChild(doc.createTextNode(text));
-      legend.appendChild(span);
+      legendMini.appendChild(span);
     }
 
+    viewBar.appendChild(viewSeg);
+    viewBar.appendChild(legendMini);
+
     libraryPane.appendChild(libraryHdr);
-    libraryPane.appendChild(legend);
     libraryPane.appendChild(list);
+    list.appendChild(viewBar);
 
     const createPane = doc.createElement('aside');
     createPane.className = 'kp-cfg-pane kp-cfg-pane-create';
@@ -2180,10 +2805,34 @@ export class KeyboardLayoutConfigPanel {
     createToggleBtn.title = 'Show/hide the User Macros builder';
     createToggleBtn.prepend(mkCfgIcon(doc, 'kp-cfg-i-expand'));
 
+    const expandUpBtn = mkBtn('Expand up', 'expand-create-up');
+    expandUpBtn.classList.add('kp-cfg-btn-expand-up');
+    expandUpBtn.title = 'Expand upward to the Actions Library titlebar';
+    expandUpBtn.hidden = true;
+    expandUpBtn.prepend(mkCfgIcon(doc, 'kp-cfg-i-expand-up'));
+
+    const createHdrActions = doc.createElement('span');
+    createHdrActions.className = 'kp-cfg-hdr-actions';
+    createHdrActions.appendChild(expandUpBtn);
+    createHdrActions.appendChild(createToggleBtn);
+
     createHdr.appendChild(createTitle);
     createHdr.appendChild(createModeSeg);
-    createHdr.appendChild(mkSpacer());
-    createHdr.appendChild(createToggleBtn);
+    createHdr.appendChild(createHdrActions);
+    createHdr.setAttribute('role', 'button');
+    createHdr.tabIndex = 0;
+    createHdr.setAttribute('aria-expanded', 'false');
+    createHdr.title = 'Expand User Macros';
+    createHdr.addEventListener('click', (e) => {
+      if (e.target?.closest?.('button, .kp-cfg-seg, [data-kp-create-mode]')) return;
+      this._setCreateOpen(!this._createOpen);
+    }, true);
+    createHdr.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      if (e.target !== createHdr) return;
+      e.preventDefault();
+      this._setCreateOpen(!this._createOpen);
+    }, true);
 
     const createBody = doc.createElement('div');
     createBody.className = 'kp-cfg-create-body';
@@ -2220,12 +2869,12 @@ export class KeyboardLayoutConfigPanel {
     const scriptCanvas = doc.createElement('div');
     scriptCanvas.className = 'kp-cfg-script-canvas';
 
-    const logicPalette = doc.createElement('div');
+    const logicPalette = doc.createElement('fieldset');
     logicPalette.className = 'kp-cfg-logic-palette';
-    const logicTitle = doc.createElement('div');
-    logicTitle.className = 'kp-cfg-category-title';
-    logicTitle.textContent = 'Logic';
-    logicPalette.appendChild(logicTitle);
+    logicPalette.setAttribute('aria-label', 'Logic steps');
+    const logicLegend = doc.createElement('legend');
+    logicLegend.textContent = 'Logic';
+    logicPalette.appendChild(logicLegend);
     for (const def of MACRO_LOGIC_DEFS) {
       const chip = doc.createElement('button');
       chip.type = 'button';
@@ -2275,15 +2924,21 @@ export class KeyboardLayoutConfigPanel {
     addStepDelayLabel.appendChild(addStepDelayText);
     addStepDelayLabel.appendChild(addStepDelayInput);
     const addStepBtn = mkBtn('+ Add step', 'macro-add-step');
+    addStepBtn.title = 'Append the selected Actions Library Function (or the dropdown pick)';
     addStepRow.appendChild(addStepSelect);
     addStepRow.appendChild(addStepDelayLabel);
     addStepRow.appendChild(addStepBtn);
 
     const scriptFooter = doc.createElement('div');
     scriptFooter.className = 'kp-cfg-strip-row';
+    const placeHint = doc.createElement('span');
+    placeHint.className = 'kp-cfg-hint';
+    placeHint.textContent = 'Add Logic steps or Functions. Save commits the macro to Macros.';
     const scriptMeta = doc.createElement('span');
     scriptMeta.className = 'kp-cfg-hint';
     scriptMeta.textContent = '0 steps';
+    scriptFooter.appendChild(placeHint);
+    scriptFooter.appendChild(mkSpacer());
     scriptFooter.appendChild(scriptMeta);
 
     scriptPanel.appendChild(scriptToolbar);
@@ -2304,7 +2959,15 @@ export class KeyboardLayoutConfigPanel {
     createPane.appendChild(createHdr);
     createPane.appendChild(createBody);
 
+    const libraryCreateSplitter = doc.createElement('div');
+    libraryCreateSplitter.className = 'kp-cfg-split kp-cfg-split-h';
+    libraryCreateSplitter.setAttribute('role', 'separator');
+    libraryCreateSplitter.setAttribute('aria-orientation', 'horizontal');
+    libraryCreateSplitter.setAttribute('aria-label', 'Resize User Macros pane');
+    libraryCreateSplitter.tabIndex = 0;
+
     workspace.appendChild(libraryPane);
+    workspace.appendChild(libraryCreateSplitter);
     workspace.appendChild(createPane);
 
     // ---- Inspector dock -----------------------------------------------------------------
@@ -2345,7 +3008,15 @@ export class KeyboardLayoutConfigPanel {
     inspectorPane.appendChild(inspectorRail);
     inspectorPane.appendChild(inspectorExpanded);
 
+    const workspaceInspectorSplitter = doc.createElement('div');
+    workspaceInspectorSplitter.className = 'kp-cfg-split kp-cfg-split-v';
+    workspaceInspectorSplitter.setAttribute('role', 'separator');
+    workspaceInspectorSplitter.setAttribute('aria-orientation', 'vertical');
+    workspaceInspectorSplitter.setAttribute('aria-label', 'Resize Inspector');
+    workspaceInspectorSplitter.tabIndex = 0;
+
     mainRow.appendChild(workspace);
+    mainRow.appendChild(workspaceInspectorSplitter);
     mainRow.appendChild(inspectorPane);
 
     body.appendChild(strip);
@@ -2375,13 +3046,19 @@ export class KeyboardLayoutConfigPanel {
     this._createPane = createPane;
     this._createBody = createBody;
     this._createToggleBtn = createToggleBtn;
+    this._createExpandUpBtn = expandUpBtn;
     this._createModeSeg = createModeSeg;
+    this._libraryCreateSplitter = libraryCreateSplitter;
+    this._workspaceInspectorSplitter = workspaceInspectorSplitter;
     this._scriptPanel = scriptPanel;
     this._macroKeyPanel = macroKeyPanel;
     this._macroNameInput = macroNameInput;
     this._scriptStepsHost = stepsPane;
     this._scriptStockBanner = stockBanner;
     this._scriptMetaEl = scriptMeta;
+    this._placeHintEl = placeHint;
+    this._legendEl = viewBar;
+    this._libViewSegEl = viewSeg;
     this._addStepSelect = addStepSelect;
     this._addStepDelayInput = addStepDelayInput;
     this._macroKeysActionsRow = macroKeysActionsRow;
@@ -2391,12 +3068,14 @@ export class KeyboardLayoutConfigPanel {
     this._macroKeyEditorHost = inspectorBody;
 
     this._renderLibraryTabs();
+    this._syncLibViewSeg();
     this._renderFunctionCategorySelect();
     this._setInspectorOpen(this._inspectorOpen);
     this._setCreateOpen(this._createOpen);
     this._setCreateMode(this._createMode);
     this._resetMacroDraft();
     this._renderInspector();
+    this._wireSplitters();
 
     // Drag
     try {
@@ -2429,8 +3108,10 @@ export class KeyboardLayoutConfigPanel {
         try {
           showNumRowToggle.checked = !!settings?.keyboardReferenceShowNumberRow;
         } catch { /* ignore */ }
+        this._applyTableExpandedFromSettings(settings?.actionsLibraryTableExpanded);
         this._positionHydrated = true;
         if (this.isOpen()) this._applyPanelPositionNow();
+        try { this._renderRightList(); } catch { /* ignore */ }
       } catch { /* ignore */ }
     })();
 
@@ -2457,7 +3138,14 @@ export class KeyboardLayoutConfigPanel {
       this._syncKeyboardReferenceToggle();
     }, true);
 
-    createToggleBtn.addEventListener('click', () => this._setCreateOpen(!this._createOpen), true);
+    createToggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this._setCreateOpen(!this._createOpen);
+    }, true);
+    expandUpBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this._toggleCreateMaximized();
+    }, true);
 
     macroNameInput.addEventListener('input', () => {
       if (!this._macroDraft || this._macroDraft.stock) return;
@@ -2468,6 +3156,7 @@ export class KeyboardLayoutConfigPanel {
     newMacroBtn.addEventListener('click', () => {
       this._resetMacroDraft(`Macro ${(this._st.macros || []).length + 1}`);
       this._setCreateMode('script', { open: true });
+      this._inspectorSelection = null;
       this._setInspectorOpen(true);
       this._renderInspector();
     }, true);
@@ -2476,8 +3165,11 @@ export class KeyboardLayoutConfigPanel {
     placeMacroBtn.addEventListener('click', () => { void this._placeMacroDraft(); }, true);
     runMacroBtn.addEventListener('click', () => { void this._runMacroDraft(); }, true);
     addStepBtn.addEventListener('click', () => {
+      const fromLib = String(this._selectedLibraryFunctionId || '');
+      const fromSelect = String(addStepSelect.value || '');
+      const functionId = (fromLib && getFunctionDef(fromLib)) ? fromLib : fromSelect;
       const delay = Math.max(0, Math.floor(Number(addStepDelayInput.value) || 0));
-      this._addDraftFunctionStep(String(addStepSelect.value || ''), { delayMsBefore: delay });
+      this._addDraftFunctionStep(functionId, { delayMsBefore: delay });
     }, true);
 
     layoutComboToggle.addEventListener('click', (e) => {
@@ -2853,6 +3545,14 @@ export class KeyboardLayoutConfigPanel {
     if (!host) return;
     host.replaceChildren();
 
+    // The User Macros canvas owns the Inspector while it is open. A macro selected from the
+    // library is copied into `_macroDraft`, and showing the saved source here would make edits
+    // appear to be ignored until Save.
+    if (this._createOpen && this._createMode === 'script' && this._macroDraft) {
+      this._renderMacroDraftInspector(host);
+      return;
+    }
+
     const sel = this._inspectorSelection;
     if (!sel || !sel.id) {
       const draft = this._macroDraft;
@@ -3005,7 +3705,17 @@ export class KeyboardLayoutConfigPanel {
       ['Based on', draft.baseStockMacroId || ''],
       ['Steps', String((draft.steps || []).length)]
     ]));
-    host.appendChild(this._renderStepSummaryList(draft.steps || []));
+    const warn = this._cycleWarningFor(draft.id, draft.steps || []);
+    if (warn) {
+      const p = document.createElement('p');
+      p.className = 'kp-cfg-cycle-warn';
+      p.textContent = warn;
+      host.appendChild(p);
+    }
+    host.appendChild(this._renderStepSummaryList(draft.steps || [], { selectable: true }));
+    if (this._selectedStepIndex >= 0 && draft.steps?.[this._selectedStepIndex]) {
+      host.appendChild(this._renderDraftStepEditor(this._selectedStepIndex));
+    }
     host.appendChild(this._dockActions([
       { label: 'Save', onClick: () => { void this._saveMacroDraft(); } },
       { label: 'Place', onClick: () => { void this._placeMacroDraft(); } },
@@ -3015,9 +3725,10 @@ export class KeyboardLayoutConfigPanel {
 
   /**
    * @param {any[]} steps
+   * @param {{ selectable?: boolean }} [opts]
    * @returns {HTMLElement}
    */
-  _renderStepSummaryList(steps) {
+  _renderStepSummaryList(steps, { selectable = false } = {}) {
     if (!Array.isArray(steps) || !steps.length) {
       const empty = document.createElement('p');
       empty.className = 'kp-cfg-dock-empty';
@@ -3028,6 +3739,23 @@ export class KeyboardLayoutConfigPanel {
     ol.className = 'kp-cfg-dock-steps';
     steps.forEach((step, index) => {
       const li = document.createElement('li');
+      if (selectable) {
+        li.tabIndex = 0;
+        li.title = 'Edit this step';
+        if (this._selectedStepIndex === index) li.classList.add('kp-cfg-step-selected');
+        const select = () => {
+          this._selectedStepIndex = index;
+          this._renderMacroBuilderSteps();
+          this._renderInspector();
+        };
+        li.addEventListener('click', select, true);
+        li.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            select();
+          }
+        }, true);
+      }
       const idx = document.createElement('span');
       idx.className = 'kp-cfg-dock-step-idx';
       idx.textContent = String(index + 1);
@@ -3047,6 +3775,155 @@ export class KeyboardLayoutConfigPanel {
       ol.appendChild(li);
     });
     return ol;
+  }
+
+  /**
+   * Edit the selected draft step in the Inspector. The canvas keeps its compact, ordered view;
+   * detailed Function parameters and Logic controls belong in this dock.
+   * @param {number} index
+   * @returns {HTMLElement}
+   */
+  _renderDraftStepEditor(index) {
+    const step = this._macroDraft?.steps?.[index];
+    const wrap = document.createElement('section');
+    wrap.className = 'kp-mk-editor';
+    if (!step) return wrap;
+
+    const title = document.createElement('div');
+    title.className = 'kp-mk-editor-title';
+    title.textContent = `Edit step ${index + 1}: ${this._stepLabel(step)}`;
+    wrap.appendChild(title);
+
+    const patch = (changes) => {
+      if (!this._macroDraft?.steps?.[index]) return;
+      Object.assign(this._macroDraft.steps[index], changes);
+      this._macroDraft.dirty = true;
+      this._renderMacroBuilder();
+      this._renderInspector();
+    };
+    const field = (labelText, control) => {
+      const row = document.createElement('label');
+      row.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
+      const label = document.createElement('span');
+      label.className = 'kp-mk-field-label';
+      label.textContent = labelText;
+      row.appendChild(label);
+      row.appendChild(control);
+      wrap.appendChild(row);
+    };
+    const numberInput = (label, value, onChange, { step: increment = 10 } = {}) => {
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.min = '0';
+      input.step = String(increment);
+      input.className = 'kp-cfg-field';
+      input.value = String(Math.max(0, Math.floor(Number(value) || 0)));
+      input.addEventListener('change', () => onChange(Math.max(0, Math.floor(Number(input.value) || 0))), true);
+      field(label, input);
+    };
+    const textInput = (label, value, onChange, placeholder = '') => {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'kp-cfg-field';
+      input.value = value == null ? '' : String(value);
+      input.placeholder = placeholder;
+      input.addEventListener('change', () => onChange(input.value), true);
+      field(label, input);
+    };
+
+    const kind = String(step.kind || (step.functionId ? 'function' : ''));
+    if (kind === 'wait') {
+      numberInput('Wait (ms)', step.ms, (ms) => patch({ ms }));
+    } else if (kind === 'gate') {
+      const op = document.createElement('select');
+      op.className = 'kp-cfg-field';
+      for (const name of MACRO_GATE_OPS) {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        option.selected = String(step.op || 'truthy') === name;
+        op.appendChild(option);
+      }
+      op.addEventListener('change', () => patch({ op: op.value }), true);
+      field('Operator', op);
+      textInput('Prior-result key', step.leftKey, (leftKey) => patch({ leftKey }), 'Optional object property');
+      textInput('Compare to', step.right, (right) => patch({ right }), 'Required for eq, neq, gt, lt');
+      numberInput('On fail, skip steps', step.thenSkip, (thenSkip) => patch({ thenSkip }), { step: 1 });
+    } else if (kind === 'runMacro') {
+      const select = document.createElement('select');
+      select.className = 'kp-cfg-field';
+      const none = document.createElement('option');
+      none.value = '';
+      none.textContent = '— pick macro —';
+      select.appendChild(none);
+      for (const macro of this._listSelectableMacros(this._macroDraft?.id || '')) {
+        const option = document.createElement('option');
+        option.value = macro.id;
+        option.textContent = macro.stock ? `${macro.label} (stock)` : macro.label;
+        option.selected = String(step.macroId || '') === macro.id;
+        select.appendChild(option);
+      }
+      select.addEventListener('change', () => patch({ macroId: select.value }), true);
+      field('Macro', select);
+    } else if (kind === 'stop') {
+      const hint = document.createElement('p');
+      hint.className = 'kp-cfg-hint';
+      hint.textContent = 'Stop ends the macro immediately when reached.';
+      wrap.appendChild(hint);
+    } else {
+      numberInput('Delay before (ms)', step.delayMsBefore, (delayMsBefore) => patch({ delayMsBefore }));
+      const def = getFunctionDef(step.functionId);
+      for (const param of def?.parameters || []) {
+        const current = step.parameters?.[param.id] ?? param.defaultValue;
+        let control;
+        if (param.type === 'boolean') {
+          control = document.createElement('input');
+          control.type = 'checkbox';
+          control.checked = !!current;
+          control.addEventListener('change', () => patch({
+            parameters: { ...(step.parameters || {}), [param.id]: control.checked }
+          }), true);
+        } else if (param.type === 'enum' && Array.isArray(param.options)) {
+          control = document.createElement('select');
+          control.className = 'kp-cfg-field';
+          for (const optionDef of param.options) {
+            const option = document.createElement('option');
+            option.value = optionDef.id;
+            option.textContent = optionDef.label;
+            option.selected = optionDef.id === current;
+            control.appendChild(option);
+          }
+          control.addEventListener('change', () => patch({
+            parameters: { ...(step.parameters || {}), [param.id]: control.value }
+          }), true);
+        } else if (param.multiline) {
+          control = document.createElement('textarea');
+          control.className = 'kp-cfg-field';
+          control.rows = 3;
+          control.value = current == null ? '' : String(current);
+          control.addEventListener('change', () => patch({
+            parameters: { ...(step.parameters || {}), [param.id]: control.value }
+          }), true);
+        } else {
+          control = document.createElement('input');
+          control.type = param.type === 'number' ? 'number' : 'text';
+          control.className = 'kp-cfg-field';
+          if (param.type === 'number') {
+            if (param.min != null) control.min = String(param.min);
+            if (param.max != null) control.max = String(param.max);
+            if (param.step != null) control.step = String(param.step);
+          }
+          control.value = current == null ? '' : String(current);
+          control.addEventListener('change', () => {
+            const value = param.type === 'number' ? Number(control.value) : control.value;
+            patch({ parameters: { ...(step.parameters || {}), [param.id]: value } });
+          }, true);
+        }
+        if (param.placeholder) control.placeholder = String(param.placeholder);
+        field(param.label || param.id, control);
+      }
+    }
+    return wrap;
   }
 
   /**
@@ -3285,7 +4162,7 @@ export class KeyboardLayoutConfigPanel {
     this._selectedStepIndex = -1;
     this._setCreateMode('script', { open: true });
     this._renderMacroBuilder();
-    this._inspectorSelection = { type: 'macro', id };
+    this._inspectorSelection = null;
     this._setInspectorOpen(true);
     this._renderInspector();
     try { this._renderRightList(); } catch { /* ignore */ }
@@ -3329,8 +4206,13 @@ export class KeyboardLayoutConfigPanel {
     const steps = Array.isArray(draft?.steps) ? draft.steps : [];
     if (!steps.length) {
       const empty = document.createElement('div');
-      empty.className = 'kp-cfg-hint';
-      empty.textContent = 'Click a Logic chip on the left, or pick a Function below and Add step.';
+      empty.className = 'kp-cfg-script-empty';
+      const strong = document.createElement('strong');
+      strong.textContent = 'Build a macro script';
+      const span = document.createElement('span');
+      span.textContent = 'Click a Logic chip on the left, or select an Actions Library card and Add step.';
+      empty.appendChild(strong);
+      empty.appendChild(span);
       host.appendChild(empty);
       return;
     }
@@ -3355,6 +4237,7 @@ export class KeyboardLayoutConfigPanel {
     row.addEventListener('click', () => {
       this._selectedStepIndex = index;
       this._renderMacroBuilderSteps();
+      this._renderInspector();
     }, false);
 
     const idx = document.createElement('span');
@@ -4006,15 +4889,32 @@ export class KeyboardLayoutConfigPanel {
   _setInspectorOpen(open) {
     this._inspectorOpen = !!open;
     const pane = this._inspectorPane;
-    if (!pane) return;
-    pane.classList.toggle('kp-cfg-collapsed', !this._inspectorOpen);
+    if (pane) pane.classList.toggle('kp-cfg-collapsed', !this._inspectorOpen);
+    try {
+      this._mainRow?.classList.toggle('kp-cfg-inspector-open', this._inspectorOpen);
+    } catch { /* ignore */ }
   }
 
   /** @param {boolean} open */
   _setCreateOpen(open) {
     this._createOpen = !!open;
+    if (!this._createOpen) this._createMaximized = false;
     const pane = this._createPane;
-    if (pane) pane.classList.toggle('kp-cfg-open', this._createOpen);
+    if (pane) {
+      pane.classList.toggle('kp-cfg-open', this._createOpen);
+      pane.classList.toggle('kp-cfg-maximized', this._createOpen && this._createMaximized);
+    }
+    try {
+      this._createPane?.parentElement?.classList.toggle(
+        'kp-cfg-create-maximized',
+        this._createOpen && this._createMaximized
+      );
+    } catch { /* ignore */ }
+    const hdr = this._createPane?.querySelector?.('.kp-cfg-pane-hdr');
+    if (hdr) {
+      hdr.setAttribute('aria-expanded', this._createOpen ? 'true' : 'false');
+      hdr.title = this._createOpen ? 'Collapse User Macros' : 'Expand User Macros';
+    }
     const btn = this._createToggleBtn;
     if (btn) {
       const label = this._createOpen ? 'Collapse' : 'Expand';
@@ -4024,6 +4924,113 @@ export class KeyboardLayoutConfigPanel {
       btn.appendChild(document.createTextNode(label));
       btn.title = this._createOpen ? 'Collapse User Macros' : 'Show/hide the User Macros builder';
     }
+    this._syncCreateExpandUpBtn();
+  }
+
+  _toggleCreateMaximized() {
+    if (!this._createOpen) this._setCreateOpen(true);
+    if (this._createMaximized) {
+      this._createMaximized = false;
+      if (this._createPrevHeightPx != null && this._mainRow) {
+        this._mainRow.style.setProperty('--kp-cfg-create-height', `${this._createPrevHeightPx}px`);
+      }
+    } else {
+      const height = this._createPane?.getBoundingClientRect().height;
+      this._createPrevHeightPx = Number.isFinite(height) ? Math.round(height) : null;
+      this._createMaximized = true;
+    }
+    this._setCreateOpen(true);
+  }
+
+  _syncCreateExpandUpBtn() {
+    const btn = this._createExpandUpBtn;
+    if (!btn) return;
+    const show = this._createOpen;
+    btn.hidden = !show;
+    if (!show) return;
+    const maxed = this._createMaximized;
+    btn.replaceChildren();
+    btn.appendChild(mkCfgIcon(document, maxed ? 'kp-cfg-i-collapse' : 'kp-cfg-i-expand-up'));
+    btn.appendChild(document.createTextNode(maxed ? 'Restore' : 'Expand up'));
+    btn.title = maxed
+      ? 'Restore User Macros height'
+      : 'Expand upward to the Actions Library titlebar';
+  }
+
+  /**
+   * Add mockup-parity resize controls between Workspace/Inspector and Library/User Macros.
+   * Values remain local to this panel session; they are presentation preferences, not layout data.
+   */
+  _wireSplitters() {
+    const vertical = this._workspaceInspectorSplitter;
+    const horizontal = this._libraryCreateSplitter;
+    const row = this._mainRow;
+    const workspace = this._createPane?.parentElement;
+    if (!vertical || !horizontal || !row || !workspace) return;
+
+    const setInspectorWidth = (width) => {
+      const next = Math.max(200, Math.min(480, Math.round(width)));
+      row.style.setProperty('--kp-cfg-inspector-width', `${next}px`);
+      if (!this._inspectorOpen) this._setInspectorOpen(true);
+    };
+    const setCreateHeight = (height) => {
+      const bounds = workspace.getBoundingClientRect();
+      const next = Math.max(210, Math.min(Math.max(210, bounds.height - 160), Math.round(height)));
+      row.style.setProperty('--kp-cfg-create-height', `${next}px`);
+      if (!this._createOpen) this._setCreateOpen(true);
+    };
+    const wireDrag = (el, axis, onMove) => {
+      el.addEventListener('pointerdown', (event) => {
+        if (event.button !== 0) return;
+        event.preventDefault();
+        el.classList.add('kp-cfg-split-dragging');
+        try { el.setPointerCapture(event.pointerId); } catch { /* ignore */ }
+        const move = (e) => onMove(e);
+        const finish = () => {
+          el.classList.remove('kp-cfg-split-dragging');
+          try { el.releasePointerCapture(event.pointerId); } catch { /* ignore */ }
+          el.removeEventListener('pointermove', move);
+          el.removeEventListener('pointerup', finish);
+          el.removeEventListener('pointercancel', finish);
+        };
+        el.addEventListener('pointermove', move);
+        el.addEventListener('pointerup', finish);
+        el.addEventListener('pointercancel', finish);
+      }, true);
+      el.addEventListener('keydown', (event) => {
+        const isDecrease = axis === 'x' ? event.key === 'ArrowLeft' : event.key === 'ArrowDown';
+        const isIncrease = axis === 'x' ? event.key === 'ArrowRight' : event.key === 'ArrowUp';
+        if (!isDecrease && !isIncrease) return;
+        event.preventDefault();
+        const amount = event.shiftKey ? 40 : 10;
+        if (axis === 'x') {
+          const width = this._inspectorPane?.getBoundingClientRect().width || CONFIG_INSPECTOR_WIDTH_PX;
+          setInspectorWidth(width + (isIncrease ? amount : -amount));
+        } else {
+          const height = this._createPane?.getBoundingClientRect().height || 210;
+          setCreateHeight(height + (isIncrease ? amount : -amount));
+        }
+      }, true);
+    };
+
+    wireDrag(vertical, 'x', (event) => {
+      const bounds = row.getBoundingClientRect();
+      const width = bounds.right - event.clientX;
+      if (width <= 40) {
+        this._setInspectorOpen(false);
+        return;
+      }
+      setInspectorWidth(width);
+    });
+    wireDrag(horizontal, 'y', (event) => {
+      const bounds = workspace.getBoundingClientRect();
+      const height = bounds.bottom - event.clientY;
+      if (height <= 36) {
+        this._setCreateOpen(false);
+        return;
+      }
+      setCreateHeight(height);
+    });
   }
 
   /**
@@ -4048,10 +5055,10 @@ export class KeyboardLayoutConfigPanel {
     if (!host) return;
     host.replaceChildren();
     const tabs = [
-      { id: 'all', label: 'All' },
-      { id: 'macros', label: 'Macros' },
-      { id: 'macroKeys', label: 'Macro Keys' },
-      { id: 'functions', label: 'Functions' }
+      { id: 'all', label: 'All', icon: 'kp-cfg-i-all' },
+      { id: 'functions', label: 'Functions', icon: 'kp-cfg-i-lib' },
+      { id: 'macros', label: 'Macros', icon: 'kp-cfg-i-macro' },
+      { id: 'macroKeys', label: 'Macro Keys', icon: 'kp-cfg-i-keycap' }
     ];
     for (const tab of tabs) {
       const btn = document.createElement('button');
@@ -4059,7 +5066,8 @@ export class KeyboardLayoutConfigPanel {
       btn.className = 'kp-cfg-seg-btn';
       btn.setAttribute('role', 'tab');
       btn.dataset.kpLibTab = tab.id;
-      btn.textContent = tab.label;
+      btn.appendChild(mkCfgIcon(document, tab.icon));
+      btn.appendChild(document.createTextNode(` ${tab.label}`));
       btn.setAttribute('aria-selected', this._libPrimaryTab === tab.id ? 'true' : 'false');
       btn.addEventListener('click', () => {
         this._libPrimaryTab = /** @type {any} */ (tab.id);
@@ -4070,6 +5078,54 @@ export class KeyboardLayoutConfigPanel {
     }
     const select = this._fnCategorySelect;
     if (select) select.hidden = this._libPrimaryTab !== 'functions';
+  }
+
+  _syncLibViewSeg() {
+    const host = this._libViewSegEl;
+    if (!host) return;
+    for (const btn of host.querySelectorAll('button[data-kp-lib-view]')) {
+      const on = btn.dataset.kpLibView === this._libViewMode;
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    }
+  }
+
+  /**
+   * @param {string} key
+   * @returns {boolean}
+   */
+  _isTableGroupExpanded(key) {
+    return !!this._tableExpanded?.has(key);
+  }
+
+  /**
+   * @param {string} key
+   */
+  _toggleTableGroup(key) {
+    if (!this._tableExpanded) {
+      this._tableExpanded = new Set(DEFAULT_SETTINGS.actionsLibraryTableExpanded || []);
+    }
+    if (this._tableExpanded.has(key)) this._tableExpanded.delete(key);
+    else this._tableExpanded.add(key);
+    this._renderRightList();
+    void this._persistTableExpanded();
+  }
+
+  async _persistTableExpanded() {
+    try {
+      const keys = [...(this._tableExpanded || [])];
+      await setSettings({ actionsLibraryTableExpanded: keys });
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * @param {string[]|undefined|null} keys
+   */
+  _applyTableExpandedFromSettings(keys) {
+    const list = Array.isArray(keys)
+      ? keys.filter((k) => typeof k === 'string' && k.trim()).map((k) => k.trim())
+      : [...(DEFAULT_SETTINGS.actionsLibraryTableExpanded || [])];
+    this._tableExpanded = new Set(list);
+    this._tableExpandedHydrated = true;
   }
 
   _renderFunctionCategorySelect() {
@@ -4174,7 +5230,8 @@ export class KeyboardLayoutConfigPanel {
     try {
       const id = CSS.escape ? CSS.escape(String(item.id)) : String(item.id);
       sourceEl = this._listEl?.querySelector?.(
-        `.key[data-kp-item-type="${item.type}"][data-kp-item-id="${id}"]`
+        `.key[data-kp-item-type="${item.type}"][data-kp-item-id="${id}"], ` +
+        `tr[data-kp-item-type="${item.type}"][data-kp-item-id="${id}"]`
       ) || null;
     } catch { /* ignore */ }
     this._beginPlaceMode(item, sourceEl);
@@ -4184,7 +5241,10 @@ export class KeyboardLayoutConfigPanel {
     const list = this._listEl;
     if (!list) return;
     const q = String(this._searchInput?.value || '').trim().toLowerCase();
-    list.innerHTML = '';
+    const viewBar = this._legendEl;
+    list.replaceChildren();
+    if (viewBar) list.appendChild(viewBar);
+    this._syncLibViewSeg();
     const slots = this._getEditableSlotMap();
     const assignedInfoByItemKey = new Map();
     try {
@@ -4201,15 +5261,31 @@ export class KeyboardLayoutConfigPanel {
     const showMacroKeys = tab === 'all' || tab === 'macroKeys';
     const showFunctions = tab === 'all' || tab === 'functions';
 
+    if (this._libViewMode === 'table') {
+      this._renderLibraryTable({
+        list,
+        q,
+        tab,
+        showMacros,
+        showMacroKeys,
+        showFunctions,
+        assignedInfoByItemKey
+      });
+      return;
+    }
+
     /**
      * One library card: a compact keycap (click to place, drag to a Reference slot) beside the
      * full label, any badges, and the card's action buttons.
      */
-    const appendKeyItem = ({ type, id, label, sublabel, keyboardClass, infoKey, badge, badgeClass }) => {
+    const appendKeyItem = ({
+      type, id, label, sublabel, keyboardClass, infoKey, badge, badgeClass, variant, functionId, kind
+    }) => {
       const item = document.createElement('div');
-      item.className = 'kp-cfg-item';
+      item.className = `kp-cfg-item${variant ? ` kp-cfg-variant-${variant}` : ''}`;
       item.dataset.kpItemType = type;
       item.dataset.kpItemId = id;
+      item.draggable = true;
       if (this._inspectorSelection
         && this._inspectorSelection.type === type
         && this._inspectorSelection.id === id) {
@@ -4223,8 +5299,16 @@ export class KeyboardLayoutConfigPanel {
       keyEl.title = `${label} — click to place, or drag onto a Keyboard Reference key`;
       keyEl.dataset.kpItemType = type;
       keyEl.dataset.kpItemId = id;
-      if (type === 'function') {
-        try { keyEl.setAttribute('data-kp-action-id', String(id)); } catch { /* ignore */ }
+      // FA background icons key off Function id (same as Keyboard Reference), not Action Instance id.
+      const iconFunctionId = type === 'function'
+        ? String(functionId || id || '')
+        : '';
+      if (type === 'function' && iconFunctionId) {
+        try { keyEl.setAttribute('data-kp-action-id', iconFunctionId); } catch { /* ignore */ }
+        ensureKeyBackgroundIcon(document, keyEl);
+      } else if (type === 'macro') {
+        try { keyEl.setAttribute('data-kp-macro-id', String(id)); } catch { /* ignore */ }
+        ensureKeyBackgroundIcon(document, keyEl);
       }
       if (this._placeItem && this._placeItem.type === type && this._placeItem.id === id) {
         keyEl.classList.add('kp-place-source');
@@ -4246,11 +5330,16 @@ export class KeyboardLayoutConfigPanel {
         keyEl.appendChild(main);
       }
 
-      keyEl.addEventListener('dragstart', (e) => {
+      const setDragData = (e) => {
         try {
           e.dataTransfer?.setData?.(KP_LAYOUT_ITEM_MIME, JSON.stringify({ type, id }));
           e.dataTransfer.effectAllowed = 'copy';
         } catch { /* ignore */ }
+      };
+      keyEl.addEventListener('dragstart', setDragData, true);
+      item.addEventListener('dragstart', (e) => {
+        if (e.target !== item && !(e.target instanceof Node && keyEl.contains(e.target))) return;
+        setDragData(e);
       }, true);
 
       keyEl.addEventListener('click', (e) => {
@@ -4259,13 +5348,21 @@ export class KeyboardLayoutConfigPanel {
         this._beginPlaceMode({ type, id }, keyEl);
       }, true);
 
+      item.addEventListener('click', (e) => {
+        if (e.target?.closest?.('button, a, input, select, textarea')) return;
+        this._inspectItem({ type, id });
+        if (type === 'function' && getFunctionDef(id)) {
+          this._selectedLibraryFunctionId = String(id);
+          if (this._addStepSelect) this._addStepSelect.value = String(id);
+        }
+      }, true);
+
       const meta = document.createElement('div');
       meta.className = 'kp-cfg-card-meta';
 
       const name = document.createElement('div');
       name.className = 'kp-cfg-card-name';
       name.textContent = label;
-      name.addEventListener('click', () => this._inspectItem({ type, id }), true);
       meta.appendChild(name);
 
       if (sublabel) {
@@ -4294,6 +5391,10 @@ export class KeyboardLayoutConfigPanel {
         e.preventDefault();
         e.stopPropagation();
         this._inspectItem({ type, id });
+        if (type === 'function' && getFunctionDef(id)) {
+          this._selectedLibraryFunctionId = String(id);
+          if (this._addStepSelect) this._addStepSelect.value = String(id);
+        }
       }, true);
       inspectBtn.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
       actionsRow.appendChild(inspectBtn);
@@ -4307,156 +5408,13 @@ export class KeyboardLayoutConfigPanel {
     /** @param {HTMLElement} card */
     const cardActions = (card) => card.querySelector('.kp-cfg-card-actions') || card;
 
-    // Macros, configured Macro Keys, and stock Functions are all placeable Function-Library
+    // Functions, Macros, and configured Macro Keys are all placeable Function-Library
     // items now (see KEY_ACTION_ARCHITECTURE.md's "Config panel tabs" row) so they render as
     // sections of one list, filtered by the primary tabs above.
 
-    if (showMacros) {
-      const matchesQuery = (m) => !q || String(m?.label || '').toLowerCase().includes(q);
-      const stockMacros = (this._st.stockMacros || []).filter((m) => m && m.id && matchesQuery(m));
-      const userMacros = (this._st.macros || []).filter((m) => m && m.id && matchesQuery(m));
-
-      /**
-       * @param {string} titleText
-       * @param {any[]} macros
-       * @param {boolean} stock
-       * @param {string} emptyText
-       * @param {HTMLElement|null} titleAction
-       */
-      const renderMacroGroup = (titleText, macros, stock, emptyText, titleAction) => {
-        const section = document.createElement('div');
-        section.className = 'kp-cfg-category';
-        const title = document.createElement('div');
-        title.className = 'kp-cfg-category-title';
-        title.textContent = titleText;
-        if (titleAction) title.appendChild(titleAction);
-        section.appendChild(title);
-
-        if (!macros.length) {
-          const empty = document.createElement('div');
-          empty.className = 'kp-cfg-hint';
-          empty.textContent = emptyText;
-          section.appendChild(empty);
-          list.appendChild(section);
-          return;
-        }
-
-        const grid = document.createElement('div');
-        grid.className = 'kp-cfg-key-grid';
-        for (const m of macros) {
-          const stepCount = Array.isArray(m.steps) ? m.steps.length : 0;
-          const itemEl = appendKeyItem({
-            type: 'macro',
-            id: m.id,
-            label: String(m.label || 'Macro'),
-            sublabel: `${stepCount} step${stepCount === 1 ? '' : 's'}`,
-            keyboardClass: 'key-purple',
-            infoKey: `macro:${m.id}`,
-            badge: stock ? 'Stock' : 'User',
-            badgeClass: stock ? 'kp-cfg-badge-stock' : 'kp-cfg-badge-user'
-          });
-          const edit = document.createElement('button');
-          edit.type = 'button';
-          edit.className = 'kp-cfg-inspect';
-          edit.textContent = stock ? 'Customize' : 'Edit steps';
-          edit.title = stock
-            ? `Open an editable copy of ${m.label || 'Macro'}`
-            : `Edit steps for ${m.label || 'Macro'}`;
-          edit.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this._openMacroStepsEditor(m);
-          }, true);
-          edit.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
-          cardActions(itemEl).appendChild(edit);
-          grid.appendChild(itemEl);
-        }
-        section.appendChild(grid);
-        list.appendChild(section);
-      };
-
-      const newMacroBtn = document.createElement('button');
-      newMacroBtn.type = 'button';
-      newMacroBtn.className = 'kp-cfg-inspect';
-      newMacroBtn.textContent = '+ New Macro';
-      newMacroBtn.title = 'Start an empty macro in the User Macros builder';
-      newMacroBtn.addEventListener('click', () => {
-        this._resetMacroDraft(`Macro ${(this._st.macros || []).length + 1}`);
-        this._setCreateMode('script', { open: true });
-        this._setInspectorOpen(true);
-        this._renderInspector();
-      }, true);
-
-      renderMacroGroup(
-        'Macros — User',
-        userMacros,
-        false,
-        'No user macros yet — click "+ New Macro", or Customize a stock macro below.',
-        newMacroBtn
-      );
-      if (stockMacros.length || !q) {
-        renderMacroGroup('Macros — Stock', stockMacros, true, 'No stock macros match.', null);
-      }
-    }
-
-    const macroKeys = showMacroKeys && Array.isArray(this._st.macroKeys) ? this._st.macroKeys : [];
-    const macroKeyItems = q
-      ? macroKeys.filter((m) => {
-        const hay = `${m?.label || ''} ${m?.kind || ''} ${summarizeMacroKey(m)}`.toLowerCase();
-        return hay.includes(q);
-      })
-      : macroKeys;
-    if (showMacroKeys && (macroKeyItems.length || !q)) {
-      const section = document.createElement('div');
-      section.className = 'kp-cfg-category';
-      const title = document.createElement('div');
-      title.className = 'kp-cfg-category-title';
-      title.textContent = 'Configured Macro Keys';
-      section.appendChild(title);
-      if (macroKeyItems.length) {
-        const grid = document.createElement('div');
-        grid.className = 'kp-cfg-key-grid';
-        for (const m of macroKeyItems) {
-          if (!m || !m.id) continue;
-          const itemEl = appendKeyItem({
-            // Macro Keys are Action Instances of a `legacyMacroKeyKind` Function (see
-            // function-library.js) — placing one on a slot writes the same `type: 'function'`
-            // SlotAssignment shape as any other Function/Action Instance.
-            type: 'function',
-            id: m.id,
-            label: String(m.label || m.kind || 'Macro Key'),
-            sublabel: summarizeMacroKey(m),
-            keyboardClass: macroKeyKeyboardClass(m.kind),
-            infoKey: `function:${m.id}`,
-            badge: String(m.kind || '')
-          });
-          const conf = document.createElement('button');
-          conf.type = 'button';
-          conf.className = 'kp-cfg-inspect';
-          conf.textContent = 'Edit';
-          conf.title = `Configure ${m.label || m.kind}`;
-          conf.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this._openMacroKeyEditor(m);
-          }, true);
-          conf.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
-          cardActions(itemEl).appendChild(conf);
-          grid.appendChild(itemEl);
-        }
-        section.appendChild(grid);
-      } else {
-        const empty = document.createElement('div');
-        empty.className = 'kp-cfg-hint';
-        empty.textContent = 'Create one from User Macros → Macro Key, configure it, then click its keycap to place it.';
-        section.appendChild(empty);
-      }
-      list.appendChild(section);
-    }
-
     // Every Function in the unified Function Library (function-library.js) is browsable and
-    // placeable here — built-ins, keystroke primitives (surfaced above as "Configured Macro
-    // Keys" instead, so they're excluded below), Type Characters, and the Data/Lookup/
+    // placeable here — built-ins, keystroke primitives (surfaced below as "Configured Macro
+    // Keys" instead, so they're excluded here), Type Characters, and the Data/Lookup/
     // Translate/Display/Media Library Functions all render as sections of this same list. This
     // is what used to require a second, additive `function-library-panel.js` window.
     const allDefs = showFunctions
@@ -4468,11 +5426,13 @@ export class KeyboardLayoutConfigPanel {
         return true;
       })
       : [];
-    const filteredDefs = q
-      ? allDefs.filter((d) => (
-        `${d.id} ${d.label} ${d.description || ''} ${getFunctionCategory(d.id)}`
-      ).toLowerCase().includes(q))
-      : allDefs;
+    const filteredDefs = sortFunctionDefsForLibrary(
+      q
+        ? allDefs.filter((d) => (
+          `${d.id} ${d.label} ${d.description || ''} ${getFunctionCategory(d.id)}`
+        ).toLowerCase().includes(q))
+        : allDefs
+    );
 
     /** @type {Map<string, typeof filteredDefs>} */
     const byCat = new Map();
@@ -4493,6 +5453,7 @@ export class KeyboardLayoutConfigPanel {
       if (!items.length) continue;
       const section = document.createElement('div');
       section.className = 'kp-cfg-category';
+      section.dataset.kpSection = `fn-${String(cat).toLowerCase().replace(/\s+/g, '-')}`;
       const title = document.createElement('div');
       title.className = 'kp-cfg-category-title';
       title.textContent = cat;
@@ -4515,7 +5476,9 @@ export class KeyboardLayoutConfigPanel {
               label: instances.length > 1 ? `${def.label} #${index + 1}` : def.label,
               sublabel: summarizeFunctionParameters(inst.functionId, inst.parameters),
               keyboardClass: def.keyboardClass || '',
-              infoKey: `function:${inst.id}`
+              infoKey: `function:${inst.id}`,
+              variant: 'configurable-fn',
+              functionId: def.id
             });
             const edit = document.createElement('button');
             edit.type = 'button';
@@ -4564,7 +5527,9 @@ export class KeyboardLayoutConfigPanel {
           label: def.label,
           sublabel: def.description || '',
           keyboardClass: def.keyboardClass || '',
-          infoKey: `function:${def.id}`
+          infoKey: `function:${def.id}`,
+          variant: isFunctionInstantiable(def.id) ? 'configurable-fn' : 'stock-fn',
+          functionId: def.id
         });
 
         if (isFixedKey && actionHasParameters(def.id)) {
@@ -4601,6 +5566,729 @@ export class KeyboardLayoutConfigPanel {
       section.appendChild(grid);
       list.appendChild(section);
     }
+
+    if (showMacros) {
+      const matchesQuery = (m) => !q || String(m?.label || '').toLowerCase().includes(q);
+      const stockMacros = (this._st.stockMacros || []).filter((m) => m && m.id && matchesQuery(m));
+      const userMacros = (this._st.macros || []).filter((m) => m && m.id && matchesQuery(m));
+
+      const macrosSection = document.createElement('div');
+      macrosSection.className = 'kp-cfg-category';
+      macrosSection.dataset.kpSection = 'macros';
+      const macrosTitle = document.createElement('div');
+      macrosTitle.className = 'kp-cfg-category-title';
+      macrosTitle.textContent = 'Macros';
+      const newMacroBtn = document.createElement('button');
+      newMacroBtn.type = 'button';
+      newMacroBtn.className = 'kp-cfg-inspect';
+      newMacroBtn.textContent = '+ New Macro';
+      newMacroBtn.title = 'Start an empty macro in the User Macros builder';
+      newMacroBtn.addEventListener('click', () => {
+        this._resetMacroDraft(`Macro ${(this._st.macros || []).length + 1}`);
+        this._setCreateMode('script', { open: true });
+        this._inspectorSelection = null;
+        this._setInspectorOpen(true);
+        this._renderInspector();
+      }, true);
+      macrosTitle.appendChild(newMacroBtn);
+      macrosSection.appendChild(macrosTitle);
+
+      const subgroups = document.createElement('div');
+      subgroups.className = 'kp-cfg-macro-subgroups';
+
+      /**
+       * @param {'stock'|'user'} groupId
+       * @param {string} legendText
+       * @param {any[]} macros
+       * @param {boolean} stock
+       * @param {string} emptyText
+       */
+      const renderMacroFieldset = (groupId, legendText, macros, stock, emptyText) => {
+        const fieldset = document.createElement('fieldset');
+        fieldset.className = 'kp-cfg-macro-fieldset';
+        fieldset.dataset.macroGroup = groupId;
+        const legendEl = document.createElement('legend');
+        legendEl.textContent = legendText;
+        fieldset.appendChild(legendEl);
+        if (!macros.length) {
+          const empty = document.createElement('p');
+          empty.className = 'kp-cfg-subgroup-empty';
+          empty.textContent = emptyText;
+          fieldset.appendChild(empty);
+          subgroups.appendChild(fieldset);
+          return;
+        }
+        const grid = document.createElement('div');
+        grid.className = 'kp-cfg-key-grid kp-cfg-grid-macros';
+        for (const m of macros) {
+          const stepCount = Array.isArray(m.steps) ? m.steps.length : 0;
+          const itemEl = appendKeyItem({
+            type: 'macro',
+            id: m.id,
+            label: String(m.label || 'Macro'),
+            sublabel: `${stepCount} step${stepCount === 1 ? '' : 's'}`,
+            keyboardClass: 'key-purple',
+            infoKey: `macro:${m.id}`,
+            badge: stock ? 'Stock' : 'User',
+            badgeClass: stock ? 'kp-cfg-badge-stock' : 'kp-cfg-badge-user',
+            variant: stock ? 'stock-macro' : 'user-macro'
+          });
+          const edit = document.createElement('button');
+          edit.type = 'button';
+          edit.className = 'kp-cfg-inspect';
+          edit.textContent = stock ? 'Customize' : 'Edit steps';
+          edit.title = stock
+            ? `Open an editable copy of ${m.label || 'Macro'}`
+            : `Edit steps for ${m.label || 'Macro'}`;
+          edit.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this._openMacroStepsEditor(m);
+          }, true);
+          edit.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
+          cardActions(itemEl).appendChild(edit);
+          grid.appendChild(itemEl);
+        }
+        fieldset.appendChild(grid);
+        subgroups.appendChild(fieldset);
+      };
+
+      renderMacroFieldset(
+        'user',
+        'User',
+        userMacros,
+        false,
+        'None yet — click "+ New Macro", or Customize a stock macro.'
+      );
+      if (stockMacros.length || !q) {
+        renderMacroFieldset('stock', 'Stock', stockMacros, true, 'None match.');
+      }
+      macrosSection.appendChild(subgroups);
+      list.appendChild(macrosSection);
+    }
+    const macroKeys = showMacroKeys && Array.isArray(this._st.macroKeys) ? this._st.macroKeys : [];
+    const macroKeyItems = q
+      ? macroKeys.filter((m) => {
+        const hay = `${m?.label || ''} ${m?.kind || ''} ${summarizeMacroKey(m)}`.toLowerCase();
+        return hay.includes(q);
+      })
+      : macroKeys;
+    if (showMacroKeys && (macroKeyItems.length || !q)) {
+      const section = document.createElement('div');
+      section.className = 'kp-cfg-category';
+      section.dataset.kpSection = 'macroKeys';
+      const title = document.createElement('div');
+      title.className = 'kp-cfg-category-title';
+      title.textContent = 'Configured Macro Keys';
+      section.appendChild(title);
+      if (macroKeyItems.length) {
+        const grid = document.createElement('div');
+        grid.className = 'kp-cfg-key-grid';
+        for (const m of macroKeyItems) {
+          if (!m || !m.id) continue;
+          const itemEl = appendKeyItem({
+            // Macro Keys are Action Instances of a `legacyMacroKeyKind` Function (see
+            // function-library.js) — placing one on a slot writes the same `type: 'function'`
+            // SlotAssignment shape as any other Function/Action Instance.
+            type: 'function',
+            id: m.id,
+            label: String(m.label || m.kind || 'Macro Key'),
+            sublabel: summarizeMacroKey(m),
+            keyboardClass: macroKeyKeyboardClass(m.kind),
+            infoKey: `function:${m.id}`,
+            badge: String(m.kind || ''),
+            variant: 'macro-key',
+            kind: m.kind,
+            functionId: FUNCTION_ID_BY_MACRO_KEY_KIND[m.kind] || ''
+          });
+          const conf = document.createElement('button');
+          conf.type = 'button';
+          conf.className = 'kp-cfg-inspect';
+          conf.textContent = 'Edit';
+          conf.title = `Configure ${m.label || m.kind}`;
+          conf.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this._openMacroKeyEditor(m);
+          }, true);
+          conf.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
+          cardActions(itemEl).appendChild(conf);
+          grid.appendChild(itemEl);
+        }
+        section.appendChild(grid);
+      } else {
+        const empty = document.createElement('div');
+        empty.className = 'kp-cfg-hint';
+        empty.textContent = 'Create one from User Macros → Macro Key, configure it, then click its keycap to place it.';
+        section.appendChild(empty);
+      }
+      list.appendChild(section);
+    }
+  }
+
+  /**
+   * Hierarchical Actions Library table (Phase 7). Same filters/data as the cards path.
+   * @param {{
+   *   list: HTMLElement,
+   *   q: string,
+   *   tab: string,
+   *   showMacros: boolean,
+   *   showMacroKeys: boolean,
+   *   showFunctions: boolean,
+   *   assignedInfoByItemKey: Map<string, { count: number, first: string }>
+   * }} ctx
+   */
+  _renderLibraryTable(ctx) {
+    const { list, q, tab, showMacros, showMacroKeys, showFunctions, assignedInfoByItemKey } = ctx;
+    const wrap = document.createElement('div');
+    wrap.className = 'kp-cfg-lib-table-wrap';
+    const table = document.createElement('table');
+    table.className = 'kp-cfg-lib-table';
+    table.setAttribute('aria-label', 'Actions Library table');
+
+    const colgroup = document.createElement('colgroup');
+    for (const cls of [
+      'kp-cfg-col-label', 'kp-cfg-col-kind', 'kp-cfg-col-summary',
+      'kp-cfg-col-slots', 'kp-cfg-col-actions'
+    ]) {
+      const col = document.createElement('col');
+      col.className = cls;
+      colgroup.appendChild(col);
+    }
+    table.appendChild(colgroup);
+
+    const thead = document.createElement('thead');
+    const hr = document.createElement('tr');
+    for (const h of ['Label', 'Kind', 'Summary', 'Slots', 'Actions']) {
+      const th = document.createElement('th');
+      th.textContent = h;
+      hr.appendChild(th);
+    }
+    thead.appendChild(hr);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+
+    /**
+     * @param {{
+     *   groupKey: string,
+     *   label: string,
+     *   depth?: number,
+     *   count?: number,
+     *   kind?: string,
+     *   trailing?: HTMLElement|null
+     * }} opts
+     */
+    const appendGroupRow = ({ groupKey, label, depth = 0, count = 0, kind = '', trailing = null }) => {
+      const expanded = this._isTableGroupExpanded(groupKey);
+      const tr = document.createElement('tr');
+      tr.className = 'kp-cfg-lib-row-group';
+      tr.dataset.kpGroupKey = groupKey;
+
+      const tdLabel = document.createElement('td');
+      const cell = document.createElement('div');
+      cell.className = 'kp-cfg-lib-label-cell';
+      cell.style.paddingLeft = `${depth * 14}px`;
+
+      const twisty = document.createElement('button');
+      twisty.type = 'button';
+      twisty.className = 'kp-cfg-lib-twisty';
+      twisty.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      twisty.setAttribute('aria-label', expanded ? `Collapse ${label}` : `Expand ${label}`);
+      twisty.textContent = expanded ? '▾' : '▸';
+      twisty.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this._toggleTableGroup(groupKey);
+      }, true);
+
+      const text = document.createElement('span');
+      text.className = 'kp-cfg-lib-label-text';
+      text.textContent = count > 0 ? `${label} (${count})` : label;
+      cell.appendChild(twisty);
+      cell.appendChild(text);
+      tdLabel.appendChild(cell);
+
+      const tdKind = document.createElement('td');
+      tdKind.textContent = kind || '';
+      const tdSummary = document.createElement('td');
+      tdSummary.textContent = '';
+      const tdSlots = document.createElement('td');
+      tdSlots.textContent = '';
+      const tdActions = document.createElement('td');
+      if (trailing) tdActions.appendChild(trailing);
+
+      tr.appendChild(tdLabel);
+      tr.appendChild(tdKind);
+      tr.appendChild(tdSummary);
+      tr.appendChild(tdSlots);
+      tr.appendChild(tdActions);
+      tr.addEventListener('click', (e) => {
+        if (e.target?.closest?.('button, a, input, select, textarea')) return;
+        this._toggleTableGroup(groupKey);
+      }, true);
+      tbody.appendChild(tr);
+      return expanded;
+    };
+
+    /**
+     * @param {{
+     *   type: string,
+     *   id: string,
+     *   label: string,
+     *   kind: string,
+     *   summary: string,
+     *   depth?: number,
+     *   variant?: string,
+     *   functionId?: string,
+     *   iconKind?: string,
+     *   keyboardClass?: string,
+     *   actions?: Array<{ label: string, title?: string, onClick: (e: Event) => void }>
+     * }} opts
+     */
+    const appendLeafRow = ({
+      type, id, label, kind, summary, depth = 1, variant, functionId, iconKind,
+      keyboardClass = '', actions = []
+    }) => {
+      const tr = document.createElement('tr');
+      tr.className = 'kp-cfg-lib-row-leaf';
+      tr.dataset.kpItemType = type;
+      tr.dataset.kpItemId = id;
+      if (this._inspectorSelection
+        && this._inspectorSelection.type === type
+        && this._inspectorSelection.id === id) {
+        tr.classList.add('kp-cfg-lib-row-inspecting');
+      }
+      if (this._placeItem && this._placeItem.type === type && this._placeItem.id === id) {
+        tr.classList.add('kp-cfg-lib-row-place');
+      }
+
+      const tdLabel = document.createElement('td');
+      const cell = document.createElement('div');
+      cell.className = 'kp-cfg-lib-label-cell';
+      cell.style.paddingLeft = `${depth * 14}px`;
+
+      const keyEl = document.createElement('button');
+      keyEl.type = 'button';
+      keyEl.className = `key kp-cfg-lib-key${keyboardClass ? ` ${keyboardClass}` : ''}`;
+      keyEl.draggable = true;
+      keyEl.title = `${label} — drag onto a Keyboard Reference key, or click to place`;
+      keyEl.dataset.kpItemType = type;
+      keyEl.dataset.kpItemId = id;
+      const iconFunctionId = type === 'function'
+        ? String(functionId || id || '')
+        : '';
+      if (type === 'function' && iconFunctionId) {
+        try { keyEl.setAttribute('data-kp-action-id', iconFunctionId); } catch { /* ignore */ }
+        ensureKeyBackgroundIcon(document, keyEl);
+      } else if (type === 'macro') {
+        try { keyEl.setAttribute('data-kp-macro-id', String(id)); } catch { /* ignore */ }
+        ensureKeyBackgroundIcon(document, keyEl);
+      }
+      if (this._placeItem && this._placeItem.type === type && this._placeItem.id === id) {
+        keyEl.classList.add('kp-place-source');
+      }
+      const setDragData = (e) => {
+        try {
+          e.dataTransfer?.setData?.(KP_LAYOUT_ITEM_MIME, JSON.stringify({ type, id }));
+          e.dataTransfer.effectAllowed = 'copy';
+        } catch { /* ignore */ }
+      };
+      keyEl.addEventListener('dragstart', (e) => {
+        e.stopPropagation();
+        setDragData(e);
+      }, true);
+      keyEl.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this._beginPlaceMode({ type, id }, keyEl);
+      }, true);
+      cell.appendChild(keyEl);
+
+      const text = document.createElement('span');
+      text.className = 'kp-cfg-lib-label-text';
+      text.textContent = label;
+      cell.appendChild(text);
+      tdLabel.appendChild(cell);
+
+      const tdKind = document.createElement('td');
+      tdKind.textContent = kind || '';
+      const tdSummary = document.createElement('td');
+      tdSummary.textContent = summary || '';
+      tdSummary.title = summary || '';
+
+      const info = assignedInfoByItemKey.get(`${type}:${id}`) || null;
+      const tdSlots = document.createElement('td');
+      if (info && info.count > 0) {
+        tdSlots.textContent = info.count > 1 ? `×${info.count}` : String(info.first || '');
+        tdSlots.title = info.count > 1
+          ? `Assigned to ${info.count} slots`
+          : `Assigned to ${info.first}`;
+      } else {
+        tdSlots.textContent = '—';
+      }
+
+      const tdActions = document.createElement('td');
+      const actionsRow = document.createElement('div');
+      actionsRow.className = 'kp-cfg-card-actions';
+
+      const inspectBtn = document.createElement('button');
+      inspectBtn.type = 'button';
+      inspectBtn.className = 'kp-cfg-inspect';
+      inspectBtn.textContent = 'Inspect';
+      inspectBtn.title = `Inspect ${label}`;
+      inspectBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this._inspectItem({ type, id });
+        if (type === 'function' && getFunctionDef(id)) {
+          this._selectedLibraryFunctionId = String(id);
+          if (this._addStepSelect) this._addStepSelect.value = String(id);
+        }
+      }, true);
+      actionsRow.appendChild(inspectBtn);
+
+      const placeBtn = document.createElement('button');
+      placeBtn.type = 'button';
+      placeBtn.className = 'kp-cfg-inspect';
+      placeBtn.textContent = 'Place';
+      placeBtn.title = `Place ${label} on a keyboard slot`;
+      placeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this._beginPlaceMode({ type, id }, keyEl);
+      }, true);
+      actionsRow.appendChild(placeBtn);
+
+      for (const act of actions) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'kp-cfg-inspect';
+        b.textContent = act.label;
+        if (act.title) b.title = act.title;
+        b.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          act.onClick(e);
+        }, true);
+        actionsRow.appendChild(b);
+      }
+
+      tdActions.appendChild(actionsRow);
+
+      tr.addEventListener('click', (e) => {
+        if (e.target?.closest?.('button, a, input, select, textarea')) return;
+        this._inspectItem({ type, id });
+        if (type === 'function' && getFunctionDef(id)) {
+          this._selectedLibraryFunctionId = String(id);
+          if (this._addStepSelect) this._addStepSelect.value = String(id);
+        }
+      }, true);
+
+      tr.appendChild(tdLabel);
+      tr.appendChild(tdKind);
+      tr.appendChild(tdSummary);
+      tr.appendChild(tdSlots);
+      tr.appendChild(tdActions);
+      tbody.appendChild(tr);
+    };
+
+    /** Empty / hint leaf under a group. */
+    const appendHintRow = (text, depth = 1) => {
+      const tr = document.createElement('tr');
+      tr.className = 'kp-cfg-lib-row-leaf';
+      const td = document.createElement('td');
+      td.colSpan = 5;
+      td.style.paddingLeft = `${8 + depth * 14}px`;
+      td.style.color = '#6a7a58';
+      td.style.whiteSpace = 'normal';
+      td.textContent = text;
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+    };
+
+    const allDefs = showFunctions
+      ? listFunctionDefs().filter((d) => {
+        if (!d || d.legacyMacroKeyKind) return false;
+        if (tab === 'functions' && this._libFunctionCategory) {
+          return (getFunctionCategory(d.id) || 'Other') === this._libFunctionCategory;
+        }
+        return true;
+      })
+      : [];
+    const filteredDefs = sortFunctionDefsForLibrary(
+      q
+        ? allDefs.filter((d) => (
+          `${d.id} ${d.label} ${d.description || ''} ${getFunctionCategory(d.id)}`
+        ).toLowerCase().includes(q))
+        : allDefs
+    );
+
+    /** @type {Map<string, typeof filteredDefs>} */
+    const byCat = new Map();
+    for (const d of filteredDefs) {
+      const cat = getFunctionCategory(d.id) || 'Other';
+      if (!byCat.has(cat)) byCat.set(cat, []);
+      byCat.get(cat).push(d);
+    }
+    const order = Array.isArray(FUNCTION_CATEGORY_ORDER) ? FUNCTION_CATEGORY_ORDER : [];
+    const cats = [
+      ...order.filter((c) => byCat.has(c)),
+      ...[...byCat.keys()].filter((c) => !order.includes(c)).sort()
+    ];
+
+    if (showFunctions && cats.length) {
+      if (appendGroupRow({
+        groupKey: 'functions',
+        label: 'Functions',
+        depth: 0,
+        count: filteredDefs.length,
+        kind: 'Group'
+      })) {
+        for (const cat of cats) {
+          const items = byCat.get(cat) || [];
+          if (!items.length) continue;
+          const catKey = `functions:${String(cat).toLowerCase().replace(/\s+/g, '-')}`;
+          if (!appendGroupRow({
+            groupKey: catKey,
+            label: cat,
+            depth: 1,
+            count: items.length,
+            kind: 'Category'
+          })) continue;
+
+          for (const def of items) {
+            const isFixedKey = FIXED_KEY_FUNCTION_IDS.includes(def.id);
+
+            if (!isFixedKey && isFunctionInstantiable(def.id)) {
+              const instances = (this._st.actions || []).filter((a) => a && a.functionId === def.id);
+              const parentKey = `fn:${def.id}`;
+
+              const addBtn = document.createElement('button');
+              addBtn.type = 'button';
+              addBtn.className = 'kp-cfg-inspect';
+              addBtn.textContent = `+ New`;
+              addBtn.title = def.description || `Create a new ${def.label} instance`;
+              addBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                try {
+                  const created = await createUserAction({ functionId: def.id });
+                  if (created) {
+                    await this._reloadActions();
+                    this._renderRightList();
+                    this._openActionParamsEditor(def, created);
+                  }
+                } catch {
+                  this._notify('Failed to create instance.', 'error');
+                }
+              }, true);
+
+              if (appendGroupRow({
+                groupKey: parentKey,
+                label: def.label,
+                depth: 2,
+                count: instances.length,
+                kind: 'Configurable',
+                trailing: addBtn
+              })) {
+                if (!instances.length) {
+                  appendHintRow('No instances yet — click + New.', 3);
+                }
+                instances.forEach((inst, index) => {
+                  appendLeafRow({
+                    type: 'function',
+                    id: inst.id,
+                    label: instances.length > 1 ? `${def.label} #${index + 1}` : def.label,
+                    kind: 'Instance',
+                    summary: summarizeFunctionParameters(inst.functionId, inst.parameters),
+                    depth: 3,
+                    variant: 'configurable-fn',
+                    functionId: def.id,
+                    keyboardClass: def.keyboardClass || '',
+                    actions: [{
+                      label: 'Edit',
+                      title: `Configure ${def.label}`,
+                      onClick: () => this._openActionParamsEditor(def, inst)
+                    }]
+                  });
+                });
+              }
+              continue;
+            }
+
+            const leafActions = [];
+            if (isFixedKey && actionHasParameters(def.id)) {
+              leafActions.push({
+                label: 'Config',
+                title: `Configure ${def.label}`,
+                onClick: async () => {
+                  try { this._cancelPlaceMode(); } catch { /* ignore */ }
+                  try {
+                    const panel = getSharedKeyActionConfigPanel();
+                    await panel.open(def.id, {
+                      title: def.label,
+                      anchorRect: list.getBoundingClientRect()
+                    });
+                  } catch { /* ignore */ }
+                }
+              });
+            }
+            appendLeafRow({
+              type: 'function',
+              id: def.id,
+              label: def.label,
+              kind: isFunctionInstantiable(def.id) ? 'Configurable' : 'Stock function',
+              summary: def.description || '',
+              depth: 2,
+              variant: isFunctionInstantiable(def.id) ? 'configurable-fn' : 'stock-fn',
+              functionId: def.id,
+              keyboardClass: def.keyboardClass || '',
+              actions: leafActions
+            });
+          }
+        }
+      }
+    }
+    if (showMacros) {
+      const matchesQuery = (m) => !q || String(m?.label || '').toLowerCase().includes(q);
+      const stockMacros = (this._st.stockMacros || []).filter((m) => m && m.id && matchesQuery(m));
+      const userMacros = (this._st.macros || []).filter((m) => m && m.id && matchesQuery(m));
+      const macroCount = userMacros.length + stockMacros.length;
+
+      const newMacroBtn = document.createElement('button');
+      newMacroBtn.type = 'button';
+      newMacroBtn.className = 'kp-cfg-inspect';
+      newMacroBtn.textContent = '+ New Macro';
+      newMacroBtn.title = 'Start an empty macro in the User Macros builder';
+      newMacroBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this._resetMacroDraft(`Macro ${(this._st.macros || []).length + 1}`);
+        this._setCreateMode('script', { open: true });
+        this._inspectorSelection = null;
+        this._setInspectorOpen(true);
+        this._renderInspector();
+      }, true);
+
+      if (appendGroupRow({
+        groupKey: 'macros',
+        label: 'Macros',
+        depth: 0,
+        count: macroCount,
+        kind: 'Group',
+        trailing: newMacroBtn
+      })) {
+        if (appendGroupRow({
+          groupKey: 'macros:user',
+          label: 'User',
+          depth: 1,
+          count: userMacros.length,
+          kind: 'User macros'
+        })) {
+          if (!userMacros.length) {
+            appendHintRow('None yet — click "+ New Macro", or Customize a stock macro.', 2);
+          }
+          for (const m of userMacros) {
+            const stepCount = Array.isArray(m.steps) ? m.steps.length : 0;
+            appendLeafRow({
+              type: 'macro',
+              id: m.id,
+              label: String(m.label || 'Macro'),
+              kind: 'User macro',
+              summary: `${stepCount} step${stepCount === 1 ? '' : 's'}`,
+              depth: 2,
+              variant: 'user-macro',
+              keyboardClass: 'key-purple',
+              actions: [{
+                label: 'Edit steps',
+                title: `Edit steps for ${m.label || 'Macro'}`,
+                onClick: () => this._openMacroStepsEditor(m)
+              }]
+            });
+          }
+        }
+
+        if (stockMacros.length || !q) {
+          if (appendGroupRow({
+            groupKey: 'macros:stock',
+            label: 'Stock',
+            depth: 1,
+            count: stockMacros.length,
+            kind: 'Stock macros'
+          })) {
+            if (!stockMacros.length) {
+              appendHintRow('None match.', 2);
+            }
+            for (const m of stockMacros) {
+              const stepCount = Array.isArray(m.steps) ? m.steps.length : 0;
+              appendLeafRow({
+                type: 'macro',
+                id: m.id,
+                label: String(m.label || 'Macro'),
+                kind: 'Stock macro',
+                summary: `${stepCount} step${stepCount === 1 ? '' : 's'}`,
+                depth: 2,
+                variant: 'stock-macro',
+                keyboardClass: 'key-purple',
+                actions: [{
+                  label: 'Customize',
+                  title: `Open an editable copy of ${m.label || 'Macro'}`,
+                  onClick: () => this._openMacroStepsEditor(m)
+                }]
+              });
+            }
+          }
+        }
+      }
+    }
+    const macroKeys = showMacroKeys && Array.isArray(this._st.macroKeys) ? this._st.macroKeys : [];
+    const macroKeyItems = q
+      ? macroKeys.filter((m) => {
+        const hay = `${m?.label || ''} ${m?.kind || ''} ${summarizeMacroKey(m)}`.toLowerCase();
+        return hay.includes(q);
+      })
+      : macroKeys;
+    if (showMacroKeys && (macroKeyItems.length || !q)) {
+      if (appendGroupRow({
+        groupKey: 'macroKeys',
+        label: 'Configured Macro Keys',
+        depth: 0,
+        count: macroKeyItems.length,
+        kind: 'Group'
+      })) {
+        if (!macroKeyItems.length) {
+          appendHintRow(
+            'Create one from User Macros → Macro Key, configure it, then Place it.',
+            1
+          );
+        }
+        for (const m of macroKeyItems) {
+          if (!m || !m.id) continue;
+          appendLeafRow({
+            type: 'function',
+            id: m.id,
+            label: String(m.label || m.kind || 'Macro Key'),
+            kind: String(m.kind || 'Macro Key'),
+            summary: summarizeMacroKey(m),
+            depth: 1,
+            variant: 'macro-key',
+            iconKind: m.kind,
+            functionId: FUNCTION_ID_BY_MACRO_KEY_KIND[m.kind] || '',
+            keyboardClass: macroKeyKeyboardClass(m.kind),
+            actions: [{
+              label: 'Edit',
+              title: `Configure ${m.label || m.kind}`,
+              onClick: () => this._openMacroKeyEditor(m)
+            }]
+          });
+        }
+      }
+    }
+
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    list.appendChild(wrap);
   }
 
   /**
@@ -4668,6 +6356,7 @@ export class KeyboardLayoutConfigPanel {
     this._ensurePlaceArrow();
     this._bindPlacePointer();
     this._renderRightList();
+    this._setPlaceHint('Place mode — click a Keyboard Reference key (Esc to cancel).');
 
     try {
       this._kp?.floatingKeyboardHelp?.setPlaceTargeting?.({
@@ -4700,6 +6389,35 @@ export class KeyboardLayoutConfigPanel {
     this._teardownPlaceArrow();
     try { this._kp?.floatingKeyboardHelp?.clearPlaceTargeting?.(); } catch { /* ignore */ }
     try { this._renderRightList(); } catch { /* ignore */ }
+    this._setPlaceHint('Add Logic steps or Functions. Save commits the macro to Macros.');
+  }
+
+  /** @param {string} text */
+  _setPlaceHint(text) {
+    if (this._placeHintEl) this._placeHintEl.textContent = String(text || '');
+  }
+
+  /**
+   * Lightweight cycle warning for nested Run Macro steps in the current draft.
+   * @param {string|null|undefined} selfId
+   * @param {any[]} steps
+   * @returns {string}
+   */
+  _cycleWarningFor(selfId, steps) {
+    const self = String(selfId || '');
+    const list = Array.isArray(steps) ? steps : [];
+    for (const step of list) {
+      if ((step?.kind || '') !== 'runMacro') continue;
+      const nested = String(step.macroId || '');
+      if (!nested) continue;
+      if (self && nested === self) return 'This macro calls itself — that will be blocked at runtime.';
+      const nestedMacro = this._findMacroById(nested);
+      const nestedSteps = nestedMacro?.steps || [];
+      if (self && nestedSteps.some((s) => s?.kind === 'runMacro' && String(s.macroId || '') === self)) {
+        return `Cycle risk with “${nestedMacro?.label || nested}” — runtime will stop nested loops.`;
+      }
+    }
+    return '';
   }
 
   _bindPlacePointer() {
