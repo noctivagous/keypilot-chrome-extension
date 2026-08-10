@@ -217,7 +217,12 @@ function getKeyboardKeyIconCss() {
   display: none;
 }
 
-/* Solid darken overlay for keydown feedback (more reliable than filter) */
+/*
+ * Solid darken overlay for keydown feedback (more reliable than filter).
+ * No opacity transition: when content-script replaces early-inject CSS (font URLs),
+ * a transitioned opacity:0 rule animates from the UA default (1→0) and every key
+ * briefly looks pressed — most noticeable on colored caps like K (KB Reference).
+ */
 .${KEYBINDINGS_UI_ROOT_CLASS} .key > .key-press-overlay {
   position: absolute;
   inset: 0;
@@ -227,7 +232,6 @@ function getKeyboardKeyIconCss() {
   background: rgba(0, 0, 0, 0.78);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 70ms ease;
 }
 
 .${KEYBINDINGS_UI_ROOT_CLASS} .key.kp-key-pressed > .key-press-overlay,
@@ -290,6 +294,10 @@ export function ensureKeyPressOverlay(doc, keyEl) {
   overlay = doc.createElement('span');
   overlay.className = 'key-press-overlay';
   overlay.setAttribute('aria-hidden', 'true');
+  // Keep the overlay hidden even during the brief stylesheet handoff from
+  // early-inject to the bundled UI stylesheet.
+  overlay.style.opacity = '0';
+  overlay.style.transition = 'none';
   keyEl.appendChild(overlay);
   return overlay;
 }
@@ -507,6 +515,13 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
     rgba(255, 255, 255, 0.02) 60%,
     transparent 100%);
   pointer-events: none;
+}
+
+/* Prevent UA :disabled washout on edit-readonly keycaps (still non-interactive). */
+.${KEYBINDINGS_UI_ROOT_CLASS} .key:disabled {
+  opacity: 1;
+  color: inherit;
+  cursor: default;
 }
 
 .${KEYBINDINGS_UI_ROOT_CLASS} [data-kp-action-id] {

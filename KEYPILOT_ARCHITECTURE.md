@@ -214,6 +214,12 @@ KeyPilot is a Chrome extension that transforms web browsing into a keyboard-firs
 - ESC key closes omnibox
 - Integrates with browser history and bookmarks
 
+#### Launcher (Quick Access to Sites)
+- `;` opens the Launcher modal (not a state.mode; hosted by PopupManager)
+- Launch Deck per theme category: composed from `src/config/launcher-sites.js` seeds, auto-added visited catalog matches (ranked by visit frequency), and user customs
+- Editable Launch Deck (Edit mode): remove / reorder / add from catalog; state in `kpLaunchDeckState_v1` (migrates legacy hide list)
+- Distinct from Omnibox: Launcher browses destinations; Omnibox is freeform URL/search
+
 #### Popover Mode
 - Modal iframe overlay (80vw x 80vh, centered)
 - P key opens link in popover iframe

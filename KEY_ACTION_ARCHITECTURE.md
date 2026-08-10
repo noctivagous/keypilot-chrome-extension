@@ -123,17 +123,33 @@ type UserAction = {
   updatedAt: number;
 };
 
-// Macro — an ordered script of Function calls. Itself assignable to a slot.
-type MacroStep = {
-  functionId: string;
-  parameters: Record<string, any>;
-  delayMsBefore?: number;     // future: sequencing controls
-};
+// Macro — an ordered script of Function calls and Logic steps. Itself assignable to a slot.
+// Stock macros (`stock:*` ids in `src/config/stock-macros.js`) are read-only; saving edits
+// forks a UserMacro with `baseStockMacroId` (same product rule as builtin → user layouts).
+type MacroStep =
+  | {
+      kind: 'function';
+      functionId: string;
+      parameters: Record<string, any>;
+      delayMsBefore?: number;   // pause before this Function step
+    }
+  | { kind: 'wait'; ms: number }
+  | {
+      kind: 'gate';
+      op: string;              // truthy | falsy | eq | neq | gt | lt
+      left: string;            // usually 'prior' (previous Function return)
+      leftKey?: string;
+      right?: any;
+      thenSkip?: number;       // on fail, skip this many following steps
+    }
+  | { kind: 'stop' }
+  | { kind: 'runMacro'; macroId: string };  // nested run; cycle-guarded at runtime
 
 type UserMacro = {
-  id: string;                 // "macro:<uuid>"
+  id: string;                 // "macro:<uuid>" (stock catalog uses "stock:<slug>")
   label: string;
   icon?: string;
+  baseStockMacroId?: string;  // set when forked from a stock macro
   steps: MacroStep[];
   createdAt: number;
   updatedAt: number;
@@ -158,9 +174,13 @@ slot -> SlotAssignment
   type 'function', no instanceId -> look up FunctionDef -> call handler() with no bound params
   type 'function', instanceId    -> look up UserAction -> look up FunctionDef by functionId
                                      -> call handler(parameters)
-  type 'macro'                   -> look up UserMacro -> for each Step, in order:
-                                     look up FunctionDef by functionId -> call handler(parameters)
-                                     (respecting delayMsBefore once sequencing exists)
+  type 'macro'                   -> look up UserMacro or stock catalog -> for each Step, in order:
+                                     kind 'function' -> FunctionDef handler(parameters)
+                                       (honoring delayMsBefore)
+                                     kind 'wait'     -> setTimeout(ms)
+                                     kind 'gate'     -> evaluate op vs prior return; on fail skip thenSkip
+                                     kind 'stop'     -> break
+                                     kind 'runMacro' -> nested _runMacroById (cycle-guarded)
 ```
 
 This is one resolution path regardless of whether the underlying behavior is "simple" or
@@ -179,9 +199,9 @@ Status legend: ✅ done · 🚧 in progress / partially done · ⬜ not started.
 | ✅ | Runtime dispatch only knew `'action'` / `'macro'` / `'macroKey'` slot types | `keypilot.js` now also dispatches `type: 'function'` slot assignments (`_dispatchFunctionSlot`), resolving either a bare Function id or an `action:<id>` instance and calling the handler with `(event, parameters, { functionId, instanceId })`. Old types are unchanged. |
 | ✅ | No concept of "must run while a text field is focused" | Added `worksWhileTyping` on `FunctionDef` + a **modifier-chord slot** convention (`CHORD:CTRL+ALT+Q`-style keys in the same `slots` map) that bypasses the typing-safety gate. See "Text-active Functions" below — this was called out explicitly because `TYPE_CHARACTERS` (and the pre-existing `CLIPBOARD_*` Functions) are meaningless unless they can fire while typing. |
 | ✅ | `ACTION_SETTINGS_REGISTRY` + `settings.actionSettings[actionId]` (global values, e.g. `SEND_TEXT_TO_AI`'s `prompt`) | `ACTION_SETTINGS_REGISTRY` is removed; parameter **schema** for `SEND_TEXT_TO_AI` (`prompt`, `destination`) and `RECTANGLE_HIGHLIGHT` (`mode`, modeled as a plain `enum` parameter) now lives on `FunctionDef.parameters` (`function-library.js`). Parameter **values** live on a per-Function canonical `UserAction` (`action:builtin:<functionId>`, see `getOrCreateBuiltinFunctionUserAction()` in `keyboard-layout-store.js`) instead of `settings.actionSettings` — there is exactly one meaningful instance per Function id today since neither is yet assignable to an arbitrary slot (that's the "Config panel tabs" item below). `key-action-settings.js` is now a thin bridge deriving its legacy `ActionSettingsDef`/mode-switch UI shape from the Function Library rather than duplicating schema. |
-| ✅ | `UserMacro.actions: any[]` | `UserMacro.steps: MacroStep[]` (`{ functionId, parameters, delayMsBefore? }`), with full CRUD (`getUserMacroById`, `upsertUserMacro`, `deleteUserMacro`, `addUserMacroStep`, `updateUserMacroStep`, `removeUserMacroStep`, `moveUserMacroStep`) in `keyboard-layout-store.js`. `_runMacroById()` in `keypilot.js` — previously a "not implemented yet" notification stub — now actually runs each Step's Function handler in order (honoring `delayMsBefore`), exactly per "Runtime resolution" above. The Function Library panel gained a **Macros** section (create/delete a macro, add/remove/reorder Steps by picking any Function from the library, bind the macro to a key, "Run now" for testing) since there was previously no UI at all for editing a macro's contents. |
+| ✅ | `UserMacro.actions: any[]` | `UserMacro.steps: MacroStep[]` — Function steps `{ kind:'function', functionId, parameters, delayMsBefore? }` plus Logic steps `wait` / `gate` / `stop` / `runMacro` (normalized in `keyboard-layout-store.js`). Full CRUD including `forkStockMacroToUser`. `_runMacroById()` in `keypilot.js` runs Function + Logic steps (cycle-guarded nested macros). Alt+C **Keyboard Layout Config** is the Actions Library + Inspector + User Macros builder (draft + Save); stock macros live in `src/config/stock-macros.js`. |
 | ✅ | `SlotItem { type: 'action'|'macro'|'macroKey', id }` | Renamed to `SlotAssignment`, and the type union is now just `'function' | 'macro'` — `'action'` and `'macroKey'` are fully retired (this extension has no shipped users/persisted data, so old-shape read support was deleted outright rather than kept for compatibility; see `keyboard-layout-store.js` module doc). Every writer now emits `{ type: 'function', id }`: `duplicateBuiltinLayoutToUserLayout()`, `keyboard-layout-config-panel.js`'s built-in-action palette and Macro Keys tab, `setUserKeyboardLayoutSlot()`. Every reader (`keypilot.js` dispatch, `floating-keyboard-help.js`'s `renderSlot`/`applyDropToSlot`/`resolveFunctionSlot`, `keyboard-layout-config-panel.js`'s badge/inspector logic) only ever branches on `'function'`/`'macro'` now — the old `builtinActionItemKey()` normalizer and `functionOrInstanceLabel`/`functionOrInstanceKeyboardClass` module-level stand-ins were deleted since there's no longer a second type to normalize against, and `floating-keyboard-help.js` now resolves any `action:<uuid>` Action Instance (Macro Key or otherwise) to a real label/`keyboardClass` via a live `UserAction[]` lookup instead of a generic "Configured Function" fallback. |
-| ✅ | Config panel tabs: `functions` / `macros` / `macroKeys` (in `keyboard-layout-config-panel.js`) | The three tabs (and their tab-scoped "create new" action rows) are gone; `_renderRightList()` now renders one always-visible, always-scrollable list with **Macros**, **Configured Macro Keys**, and the stock **Functions** (by category) as sections in that order, all sharing the same search box and click-to-place flow. The "New Macro" button and the Macro Key kind-creation grid are both always visible above the list (previously shown/hidden per active tab) instead of being tab-gated. `_st.tab` and `_setActiveTab()` are deleted; `_inspectItem()`'s Macro Key branch opens the editor directly instead of switching tabs first. |
+| ✅ | Config panel tabs: `functions` / `macros` / `macroKeys` | Replaced by Actions Library primary tabs (All / Macros / Macro Keys / Functions) + function category select; Stock vs User macro subgroups; Inspector dock + collapsible User Macros builder. Place/DnD still targets the floating Keyboard Reference (`KP_LAYOUT_ITEM_MIME`). |
 | ✅ | UI-surface consolidation: additive `function-library-panel.js` (Alt+C, separate window) | The **Functions** section of `keyboard-layout-config-panel.js` now sources from the full `FUNCTION_LIBRARY` (`listFunctionDefs()`/`getFunctionCategory()`), not just `KEYBINDING_ACTION_DEFS` — every Function (Type Characters, the Data/Lookup/Translate/Display/Media Library Functions, etc.) is browsable and placeable in the one palette. Instantiable Functions (excluding `legacyMacroKeyKind`, handled by "Configured Macro Keys", and `FIXED_KEY_FUNCTION_IDS`, which keep their existing `key-action-settings.js` Config popover) render each existing `UserAction` instance as its own placeable item with an **Edit** button opening a new generic parameter editor (`_openActionParamsEditor()`, reusing the same field-control logic as `KeyActionConfigPanel`) plus a `+ New <Function>` control to create more. Macro items gained an **Edit steps** button (`_openMacroStepsEditor()`, ported from the old panel's step add/reorder/remove/"Run now" UI) into the same shared inline-editor host as the Macro Key editor (`_macroKeyEditorHost` — only one inline editor open at a time). `function-library-panel.js` is deleted; `keyboard-layout-configurator.js` no longer shows a second floating window on Alt+C. |
 | ✅ | Chord-capture support in the main palette | Any `worksWhileTyping` Function/instance in the Functions section now gets a "Needs modifier" badge + **Bind chord…** button (`_captureAndAssignChord()`, ported from the old panel's keydown-capture flow) alongside its normal click-to-place keycap. Slot writes were also refactored to go through `setUserKeyboardLayoutSlot()` (`_assignSlotKey()`, shared by both the bare-key place-mode flow and the new chord-bind flow) instead of mutating `layout.slots` directly, so the chord-vs-bare-key rule (`validateFunctionSlotKey()`) is now enforced for **every** slot write, including plain click-to-place — previously, click-to-place could silently create a bare-key binding for a `worksWhileTyping` Function that would simply never fire. |
 | ✅ | `RESULT_DESTINATION_PARAMETER` (`action-result-delivery.js`) — one frozen `clipboard`\|`popover`\|`both` enum reused as-is | Generalized to `buildResultDestinationParameter(applicableDestinations)`, a factory each `FunctionDef` calls with only the destinations it actually supports (`SEND_TEXT_TO_AI` still offers `clipboard`/`popover`/`both`; a future `TRANSLATE` would pass `modifyPage`/`popover`). `ACTION_RESULT_DESTINATIONS` gained `MODIFY_PAGE`/`MEDIA_LIBRARY`/`SCRAPBOOK`; `deliverActionResult` has a real `modifyPage` branch (calls a caller-supplied `onModifyPage(text)` hook, since only the caller knows *where* in the page to write back — falls back to `popover` if no hook is wired or it fails, so a result is never silently dropped). `mediaLibrary`/`scrapbook` are reserved ids with `"(coming soon)"` labels and intentionally no delivery branch yet — real future sinks, not implemented. The old frozen `RESULT_DESTINATION_PARAMETER` constant (and its re-export from `key-action-settings.js`) was dead code once every caller switched to the factory, so it was deleted rather than kept alongside it. |
@@ -395,15 +415,17 @@ nor a real `urlFetch`-capable handler (the actual network fetch + storage) exist
 
 ## Non-goals / open questions for later
 
-- **Macro-of-macros / nesting**: not addressed here. Recommendation when it comes up: a
-  `MacroStep` may reference `macroId` instead of `functionId` (sub-macro call), with cycle
-  detection at save time — but this is out of scope until the macro builder itself exists.
-- **Conditional/branching steps** (`gate` in today's `MACRO_BUILDER_STEP_TYPES`): left as a future
-  `MacroStep` variant; no schema decision made yet.
+- **Macro-of-macros / nesting**: shipped as `MacroStep.kind === 'runMacro'` with a runtime
+  cycle guard in `_runMacroById` (rejects self / A↔B loops). Save-time cycle validation is still
+  optional polish.
+- **Conditional/branching steps**: shipped as `kind: 'gate'` (simple ops against the prior
+  Function return; on fail skip `thenSkip` steps). Full Automator-style freeform branching /
+  loops remain out of scope.
 - **Versioning/migration of stored data**: existing stores already carry a `version` field
   (`kp_keyboard_layout_store_v1`), still at `1`. The `macroKey:` → `action:`,
   `kind`/`config` → `functionId`/`parameters` rewrite described in earlier drafts of this doc
   turned out not to need a `version` bump or migration logic at all: this extension has no
   shipped users, so the old shape was deleted outright (see the `SlotAssignment`/`UserMacroKey`
   migration rows above) instead of migrated. A real `version: 2` bump is deferred until there is
-  actual persisted user data that would otherwise be lost.
+  actual persisted user data that would otherwise be lost. Logic step kinds are additive on
+  read (`normalizeMacroStep`); legacy Function-only steps without `kind` still normalize.

@@ -19,6 +19,48 @@ import {
   NCT_DARK_UI_COLORS
 } from '../ui/nct-dark-ui.js';
 
+/**
+ * Visit stamp for history cards: time only when today; date + time otherwise.
+ * @param {number|string|null|undefined} timestamp
+ * @returns {string|null}
+ */
+function formatVisitDateTime(timestamp) {
+  const n = Number(timestamp);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  try {
+    const d = new Date(n);
+    const now = new Date();
+    const isToday =
+      d.getFullYear() === now.getFullYear() &&
+      d.getMonth() === now.getMonth() &&
+      d.getDate() === now.getDate();
+    const time = d.toLocaleTimeString(undefined, {
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+    if (isToday) return time;
+    const sameYear = d.getFullYear() === now.getFullYear();
+    const date = d.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      ...(sameYear ? {} : { year: 'numeric' })
+    });
+    return `${date}, ${time}`;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * @param {{ url?: string, title?: string, lastVisitTime?: number }} item
+ * @param {{
+ *   titleEl: HTMLElement,
+ *   metaEl: HTMLElement,
+ *   urlEl: HTMLElement,
+ *   text?: HTMLElement,
+ *   visitedEl?: HTMLElement|null
+ * }} parts
+ */
 function renderThreeLineUrlListingEntry({ item, parts }) {
   const url = String(item?.url || '').trim();
   const title = String(item?.title || '').trim();
@@ -28,9 +70,31 @@ function renderThreeLineUrlListingEntry({ item, parts }) {
   // 1) domain
   // 2) page title
   // 3) path
+  // 4) visit date/time (pinned to card bottom)
   parts.titleEl.textContent = domain || url || '';
   parts.metaEl.textContent = title;
   parts.urlEl.textContent = path;
+
+  const visitedLabel = formatVisitDateTime(item?.lastVisitTime);
+  let visitedEl = parts.visitedEl;
+  if (!visitedEl && parts.text) {
+    const doc = parts.text.ownerDocument || document;
+    visitedEl = doc.createElement('div');
+    visitedEl.className = 'kp-url-visited';
+    parts.text.appendChild(visitedEl);
+    parts.visitedEl = visitedEl;
+  }
+  if (visitedEl) {
+    if (visitedLabel) {
+      visitedEl.textContent = visitedLabel;
+      visitedEl.hidden = false;
+      visitedEl.removeAttribute('aria-hidden');
+    } else {
+      visitedEl.textContent = '';
+      visitedEl.hidden = true;
+      visitedEl.setAttribute('aria-hidden', 'true');
+    }
+  }
 }
 
 /**
@@ -387,7 +451,8 @@ export class TabHistoryPopover {
 
       .kpv2-tab-history-panel .kp-url-row.kp-has-page-thumb .kp-url-domain,
       .kpv2-tab-history-panel .kp-url-row.kp-has-page-thumb .kp-url-title,
-      .kpv2-tab-history-panel .kp-url-row.kp-has-page-thumb .kp-url-path {
+      .kpv2-tab-history-panel .kp-url-row.kp-has-page-thumb .kp-url-path,
+      .kpv2-tab-history-panel .kp-url-row.kp-has-page-thumb .kp-url-visited {
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
       }
 
@@ -451,7 +516,19 @@ export class TabHistoryPopover {
         text-overflow: ellipsis;
         white-space: nowrap;
         max-width: 100%;
+      }
+
+      .kpv2-tab-history-panel .kp-url-visited {
+        font-size: 10px;
+        font-weight: 550;
+        color: rgba(255,255,255,0.62);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
         margin-top: auto;
+        padding-top: 4px;
+        letter-spacing: 0.01em;
       }
 
       .kpv2-tab-history-panel .kp-url-branch-badge {
@@ -793,7 +870,18 @@ export class TabHistoryPopover {
           row.setAttribute('role', 'listitem');
 
           // Use three-line layout like newtab
-          renderThreeLineUrlListingEntry({ item: { url: item.node?.url, title: item.node?.title }, parts });
+          const visitTs =
+            Number(item.node?.tsLastSeen) ||
+            Number(item.node?.tsCreated) ||
+            0;
+          renderThreeLineUrlListingEntry({
+            item: {
+              url: item.node?.url,
+              title: item.node?.title,
+              lastVisitTime: visitTs
+            },
+            parts
+          });
           attachPageThumbToHistoryCard(row, item.node?.url);
 
           // Branch badge (+N) — corner of card

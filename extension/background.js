@@ -1236,8 +1236,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 if (item.url && item.visitCount) {
                   try {
                     const domain = new URL(item.url).hostname;
-                    const existing = domainCounts.get(domain) || { count: 0, title: item.title, url: item.url };
+                    const lastVisitTime = Number(item.lastVisitTime) || 0;
+                    const existing = domainCounts.get(domain) || {
+                      count: 0,
+                      title: item.title,
+                      url: item.url,
+                      lastVisitTime: 0
+                    };
                     existing.count += item.visitCount;
+                    if (lastVisitTime > (existing.lastVisitTime || 0)) {
+                      existing.lastVisitTime = lastVisitTime;
+                      existing.title = item.title || existing.title;
+                      existing.url = item.url || existing.url;
+                    }
                     domainCounts.set(domain, existing);
                   } catch (e) {
                     // Skip invalid URLs
@@ -1249,7 +1260,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               const topSites = Array.from(domainCounts.values())
                 .sort((a, b) => b.count - a.count)
                 .slice(0, 100)
-                .map(item => ({ title: item.title, url: item.url }));
+                .map(item => ({
+                  title: item.title,
+                  url: item.url,
+                  lastVisitTime: item.lastVisitTime || 0,
+                  visitCount: item.count || 0
+                }));
 
               sendResponse({
                 type: 'KP_TOP_SITES_RESPONSE',

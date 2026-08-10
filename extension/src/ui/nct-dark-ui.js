@@ -3,12 +3,9 @@
  * defined in `/gui-mockups` (keyboard-layout-config-A-toolbar.svg /
  * keyboard-layout-config-B-two-pane.*).
  *
- * Gray bevel chrome, tight radii, steel-blue accent. Used by the control strip
- * and popover chrome (titlebars, close/segmented/action buttons, fields).
- *
- * NOTE: The Keyboard Layout Config panel/configurator intentionally keeps its
- * own separate (cyan-accent, softer-radius) styling and does not use these
- * tokens.
+ * Gray bevel chrome, tight radii, steel-blue accent. Used by the control strip,
+ * Keyboard Reference / Keyboard Layout Config panels, and popover chrome
+ * (titlebars, close/segmented/action buttons, fields).
  */
 
 export const NCT_DARK_UI_FONT = 'Helvetica, Arial, sans-serif';

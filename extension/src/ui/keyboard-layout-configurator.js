@@ -42,16 +42,23 @@ export function exitKeyboardLayoutEditMode(kp) {
 }
 
 /**
- * Toggle layout edit mode: Keyboard Reference becomes the edit surface;
- * Keyboard Layout Config supplies functions/macros.
+ * Open layout edit mode (idempotent — if already open, ensures the Config panel is shown).
  * @param {any} kp KeyPilot instance
+ * @param {{ createNew?: boolean }} [opts]
  */
-export function toggleKeyboardLayoutConfigurator(kp) {
+export function openKeyboardLayoutConfigurator(kp, opts = {}) {
   if (!kp) return;
+  const createNew = !!opts.createNew;
 
   try {
     if (isKeyboardLayoutEditMode(kp)) {
-      exitKeyboardLayoutEditMode(kp);
+      try {
+        void _configPanel?.show?.(kp).then(async () => {
+          if (createNew) {
+            try { await _configPanel?.createNewLayout?.(); } catch { /* ignore */ }
+          }
+        });
+      } catch { /* ignore */ }
       return;
     }
 
@@ -97,12 +104,29 @@ export function toggleKeyboardLayoutConfigurator(kp) {
       });
     }
 
-    void _configPanel.show(kp).then(() => {
+    void _configPanel.show(kp).then(async () => {
       try {
         kp.floatingKeyboardHelp?.setEditLayout?.(_configPanel.getState());
       } catch { /* ignore */ }
+      if (createNew) {
+        try { await _configPanel.createNewLayout(); } catch { /* ignore */ }
+      }
     });
   } catch {
     // ignore
   }
+}
+
+/**
+ * Toggle layout edit mode: Keyboard Reference becomes the edit surface;
+ * Keyboard Layout Config supplies functions/macros.
+ * @param {any} kp KeyPilot instance
+ */
+export function toggleKeyboardLayoutConfigurator(kp) {
+  if (!kp) return;
+  if (isKeyboardLayoutEditMode(kp)) {
+    exitKeyboardLayoutEditMode(kp);
+    return;
+  }
+  openKeyboardLayoutConfigurator(kp);
 }

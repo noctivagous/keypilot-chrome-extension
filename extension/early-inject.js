@@ -2502,6 +2502,13 @@
   pointer-events: none;
 }
 
+/* Prevent UA :disabled washout on edit-readonly keycaps (still non-interactive). */
+.kp-keybindings-ui .key:disabled {
+  opacity: 1;
+  color: inherit;
+  cursor: default;
+}
+
 .kp-keybindings-ui [data-kp-action-id] {
   cursor: pointer;
 }
@@ -3226,7 +3233,12 @@
   display: none;
 }
 
-/* Solid darken overlay for keydown feedback (more reliable than filter) */
+/*
+ * Solid darken overlay for keydown feedback (more reliable than filter).
+ * No opacity transition: when content-script replaces early-inject CSS (font URLs),
+ * a transitioned opacity:0 rule animates from the UA default (1→0) and every key
+ * briefly looks pressed — most noticeable on colored caps like K (KB Reference).
+ */
 .kp-keybindings-ui .key > .key-press-overlay {
   position: absolute;
   inset: 0;
@@ -3236,7 +3248,6 @@
   background: rgba(0, 0, 0, 0.78);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 70ms ease;
 }
 
 .kp-keybindings-ui .key.kp-key-pressed > .key-press-overlay,
@@ -5316,6 +5327,9 @@
           const overlay = doc.createElement('span');
           overlay.className = 'key-press-overlay';
           overlay.setAttribute('aria-hidden', 'true');
+          // Keep the overlay hidden during the handoff to the bundled stylesheet.
+          overlay.style.opacity = '0';
+          overlay.style.transition = 'none';
           keyEl.appendChild(overlay);
         };
 
@@ -6328,6 +6342,9 @@
   /**
    * Ensure the floating keyboard reference shell exists early (document_start).
    * The bundled extension will "adopt" this element later to avoid flicker.
+   *
+   * Titlebar DOM must match FloatingKeyboardHelp: title | layout select | hint | close.
+   * Chrome must match NCT dark UI so adopt doesn't visibly restyle after navigation.
    */
   function ensureEarlyFloatingKeyboardHelpShell() {
     if (isMainExtensionLoaded) return;
@@ -6341,36 +6358,30 @@
     root.setAttribute('aria-label', 'KeyPilot keyboard reference');
     root.setAttribute('data-kp-early-floating-keyboard', 'true');
 
-    // Compact dark window chrome (inline so host pages can't override it).
-    // Start fully hidden: never rely on the `hidden` attribute alone (Zapier etc.
-    // override UA [hidden]{display:none} with author display rules).
+    // NCT dark UI panel chrome (matches floating-keyboard-help.js `_applyProPanelChrome`).
     Object.assign(root.style, {
       position: 'fixed',
       left: '16px',
       bottom: '16px',
       width: '760px',
-      // Symmetric with EARLY_PANEL_MARGIN_PX (16) on every edge — not 24 (asymmetric right/bottom).
       maxWidth: 'calc(100vw - 32px)',
       maxHeight: 'calc(100vh - 32px)',
-      overflow: 'auto',
+      overflow: 'hidden',
+      boxSizing: 'border-box',
       zIndex: String(Z_FLOATING_KEYBOARD_HELP),
-      background: 'rgba(10, 11, 14, 0.98)',
-      color: 'rgba(248, 250, 252, 0.95)',
-      // Match onboarding panel rim (light gray outline).
-      border: '1px solid rgba(255,255,255,0.12)',
-      borderRadius: '4px',
-      boxShadow: '0 16px 40px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35)',
-      fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
-      // Flex when shown (titlebar + body); explicit none until visibility is applied.
+      background: '#232323',
+      color: '#ddd',
+      border: '1px solid #111',
+      borderRadius: '3px',
+      boxShadow: '0 0 0 1px #3a3a3a inset, 0 16px 40px rgba(0,0,0,0.55)',
+      fontFamily: 'Helvetica, Arial, sans-serif',
       display: 'none',
       flexDirection: 'column',
       pointerEvents: 'none'
     });
     try { root.setAttribute('aria-hidden', 'true'); } catch { /* ignore */ }
     try { root.classList.add('kpv2-hidden'); } catch { /* ignore */ }
-    // Match popup.html theme tokens so the early-rendered keyboard matches the popup.
     try { applyPopupThemeVars(root); } catch { /* ignore */ }
-    // Restore saved dock / free position (default bottom-left).
     try {
       earlyApplyPanelPosition(root, earlyPanelPositions && earlyPanelPositions.keyboardReference, {
         margin: EARLY_PANEL_MARGIN_PX,
@@ -6393,20 +6404,26 @@
       boxSizing: 'border-box',
       padding: '0 6px 0 10px',
       margin: '0',
-      borderBottom: '1px solid rgba(0,0,0,0.55)',
-      background: 'linear-gradient(180deg, #1a1b1f 0%, #121316 100%)',
-      flex: '0 0 auto'
+      borderBottom: '1px solid #111',
+      boxShadow: '0 1px 0 #3a3a3a',
+      background: 'linear-gradient(180deg, #4c4c4c 0%, #353535 45%, #252525 100%)',
+      flex: '0 0 auto',
+      cursor: 'grab',
+      userSelect: 'none',
+      WebkitUserSelect: 'none',
+      touchAction: 'none'
     });
 
     const title = doc.createElement('div');
-    title.textContent = 'Keyboard Reference';
+    // Match post-adopt title so content-script render doesn't rewrite title text.
+    title.textContent = 'Keyboard Reference — Built-in';
     title.setAttribute('data-kp-floating-keyboard-title', 'true');
     Object.assign(title.style, {
       fontSize: '11px',
       fontWeight: '600',
       letterSpacing: '0.01em',
       textTransform: 'none',
-      color: 'rgba(220, 220, 225, 0.9)',
+      color: '#ddd',
       lineHeight: '28px',
       whiteSpace: 'nowrap',
       overflow: 'hidden',
@@ -6414,6 +6431,32 @@
       margin: '0',
       padding: '0'
     });
+
+    // Layout select must exist in the early shell — otherwise adopt inserts it and the
+    // titlebar visibly rebuilds on every navigation.
+    const layoutSelect = doc.createElement('select');
+    layoutSelect.setAttribute('aria-label', 'Current keyboard layout');
+    layoutSelect.setAttribute('data-kp-floating-keyboard-layout-select', 'true');
+    Object.assign(layoutSelect.style, {
+      marginLeft: '6px',
+      padding: '2px 6px',
+      borderRadius: '2px',
+      border: '1px solid #0a0a0a',
+      background: '#141414',
+      color: '#ddd',
+      outline: 'none',
+      fontSize: '11px',
+      maxWidth: '180px',
+      height: '22px',
+      cursor: 'pointer',
+      fontFamily: 'Helvetica, Arial, sans-serif'
+    });
+    try {
+      const optBuiltin = doc.createElement('option');
+      optBuiltin.value = 'builtin';
+      optBuiltin.textContent = 'Built-in';
+      layoutSelect.appendChild(optBuiltin);
+    } catch { /* ignore */ }
 
     const hint = doc.createElement('div');
     hint.setAttribute('data-kp-floating-keyboard-hint', 'true');
@@ -6433,7 +6476,6 @@
       lineHeight: '28px',
       whiteSpace: 'nowrap'
     });
-    // "Press <kbd>K</kbd> to toggle" — key chip matches main extension titlebar.
     hint.appendChild(doc.createTextNode('Press '));
     const hintKbd = doc.createElement('kbd');
     hintKbd.setAttribute('data-kp-floating-keyboard-hint-key', 'true');
@@ -6480,12 +6522,12 @@
       boxShadow: 'none'
     });
     closeBtn.addEventListener('click', (e) => {
-      // Match main extension behavior: hide without persisting.
       try { e.preventDefault(); e.stopPropagation(); } catch {}
       if (root) root.hidden = true;
     });
 
     header.appendChild(title);
+    header.appendChild(layoutSelect);
     header.appendChild(hint);
     header.appendChild(closeBtn);
 
@@ -6506,18 +6548,15 @@
     root.appendChild(header);
     root.appendChild(body);
 
-    // Attach to DOM (body may not exist at document_start).
     (doc.body || doc.documentElement).appendChild(root);
 
     keyboardHelpRoot = root;
     keyboardHelpKeyboardContainer = keyboardContainer;
 
-    // Pre-render the keyboard immediately so the panel doesn't start as only a titlebar.
     renderEarlyKeyboard(keyboardContainer, {
       layoutId: keyboardLayoutId,
       includeNumberRow: keyboardShowNumberRow
     });
-    // Reclamp after content has a real height (avoids free tops saved with h=0 going off-screen).
     try {
       earlyApplyPanelPosition(root, earlyPanelPositions && earlyPanelPositions.keyboardReference, {
         margin: EARLY_PANEL_MARGIN_PX,
@@ -6548,6 +6587,14 @@
       const data = getEarlyKeyboardDataForLayout(layoutId || keyboardLayoutId);
       const binding = data?.bindings?.TOGGLE_KEYBOARD_HELP;
       const key = binding && (binding.displayKey || binding.keyLabel) ? String(binding.displayKey || binding.keyLabel) : 'K';
+
+      // Idempotent — rebuilding the <kbd> every settings sync / layout paint flashes the chip.
+      try {
+        const existing = hint.querySelector('[data-kp-floating-keyboard-hint-key="true"]');
+        if (existing && existing.textContent === key && hint.getAttribute('aria-label') === `Press ${key} to toggle`) {
+          return;
+        }
+      } catch { /* ignore */ }
 
       while (hint.firstChild) hint.removeChild(hint.firstChild);
       hint.appendChild(document.createTextNode('Press '));

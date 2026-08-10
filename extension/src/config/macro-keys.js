@@ -2,8 +2,8 @@
  * Built-in Macro Keys — configurable keystroke primitives for Keyboard Layout Config.
  *
  * These are NOT layout-family actions. Users create configured instances, then assign
- * them to layout slots. The same instances are intended as reusable steps in the
- * future macro builder (alongside sleep, gates, etc.).
+ * them to layout slots. The same instances are reusable as Function steps in the
+ * User Macros builder (alongside Wait / Gate / Stop / Run Macro Logic steps).
  *
  * Kinds:
  *  1. hotkey      — modifier + key (Ctrl+C, Win+R, Ctrl+Shift+Esc)
@@ -38,24 +38,8 @@
  *   updatedAt: number
  * }} UserMacroKey
  *
- * Future macro-builder step shapes (convention only; builder UI not implemented yet):
- * @typedef {{
- *   type: 'macroKey',
- *   macroKeyId: string
- * } | {
- *   type: 'sleep',
- *   seconds: number
- * } | {
- *   type: 'stroke',
- *   stroke: KeyStroke
- * } | {
- *   type: 'mouse',
- *   button: 'left'|'middle'|'right'
- * } | {
- *   type: 'gate',
- *   op: string,
- *   params?: Record<string, any>
- * }} MacroBuilderStep
+ * Macro builder step shapes live on `MacroStep` in `keyboard-layout-store.js`
+ * (`function` | `wait` | `gate` | `stop` | `runMacro`). See KEY_ACTION_ARCHITECTURE.md.
  */
 
 /** Stable id prefix for user-configured macro keys. */
@@ -295,13 +279,15 @@ export function macroKeyKeyboardClass(kind) {
 }
 
 /**
- * Future macro-builder: step type ids that may reference macro keys or primitives.
- * Kept here so the builder and executor share one convention.
+ * Macro-builder Logic / step-type catalog (UI convention). The persisted schema is
+ * `MacroStep` in `keyboard-layout-store.js` (`function` | `wait` | `gate` | `stop` | `runMacro`).
+ * Configured Macro Keys are added as Function steps whose `functionId` is a
+ * `legacyMacroKeyKind` Function — not a separate step kind.
  */
 export const MACRO_BUILDER_STEP_TYPES = Object.freeze([
-  Object.freeze({ id: 'macroKey', label: 'Macro Key', description: 'Run a configured built-in macro key.' }),
-  Object.freeze({ id: 'stroke', label: 'Key Stroke', description: 'Send one key or chord.' }),
-  Object.freeze({ id: 'mouse', label: 'Mouse Click', description: 'Synthetic mouse button.' }),
-  Object.freeze({ id: 'sleep', label: 'Sleep', description: 'Wait N seconds before the next step.' }),
-  Object.freeze({ id: 'gate', label: 'Logic Gate', description: 'Conditional / branching step (future).' })
+  Object.freeze({ id: 'function', label: 'Function', description: 'Run a Function Library entry (including Macro Keys).' }),
+  Object.freeze({ id: 'wait', label: 'Wait', description: 'Pause for N milliseconds.' }),
+  Object.freeze({ id: 'gate', label: 'Gate', description: 'If condition fails, skip following steps.' }),
+  Object.freeze({ id: 'stop', label: 'Stop', description: 'End the macro immediately.' }),
+  Object.freeze({ id: 'runMacro', label: 'Run Macro', description: 'Call another macro (cycle-guarded).' })
 ]);

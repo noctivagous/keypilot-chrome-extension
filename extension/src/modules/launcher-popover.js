@@ -14,9 +14,21 @@ import {
   extractPath
 } from '../ui/url-listing.js';
 import { applyCardBackground } from '../ui/page-thumb-ui.js';
-import { LAUNCHER_SEARCH_SITES } from '../config/search-engines.js';
+import {
+  LAUNCHER_CATALOG_CATEGORY_KEYS,
+  LAUNCHER_SITE_CATALOG
+} from '../config/launcher-sites.js';
 import { createPreviewOpenActionButtons } from '../ui/preview-open-actions.js';
-import { storageGetValue, storageSetValue } from '../utils/storage.js';
+import {
+  addToLaunchDeck,
+  composeLaunchDeck,
+  getAddableCatalogSites,
+  loadLaunchDeckState,
+  normalizeLaunchDeckUrl,
+  persistLaunchDeckState,
+  removeFromLaunchDeck,
+  setLaunchDeckOrder
+} from '../utils/launch-deck.js';
 import {
   NCT_DARK_UI_PANEL_BACKGROUND,
   NCT_DARK_UI_PANEL_BORDER,
@@ -28,8 +40,6 @@ import {
   NCT_DARK_UI_HOVER_TINT,
   NCT_DARK_UI_COLORS
 } from '../ui/nct-dark-ui.js';
-
-const HIDDEN_LAUNCH_DECK_STORAGE_KEY = 'kpLauncherHiddenLaunchDeck';
 
 export class LauncherPopover {
   constructor(keypilot) {
@@ -50,9 +60,28 @@ export class LauncherPopover {
     this._openGen = 0;
     this._searchQuery = '';
     this._categoryOrder = ['bookmarks', 'history', 'social', 'news', 'productivity', 'videos', 'entertainment', 'shopping', 'ai', 'archive', 'searches'];
-    this._showDefaultSites = true; // Checkbox: show curated launcher Sites (not Favorites)
-    /** @type {Set<string>} Normalized Launch Deck URLs the user has hidden. */
-    this._hiddenLaunchDeckUrls = new Set();
+    this._showDefaultSites = true; // Checkbox: show Launch Deck
+    /** @type {import('../utils/launch-deck.js').LaunchDeckState} */
+    this._launchDeckState = Object.create(null);
+    /** Edit mode for Launch Deck (remove / reorder / add). */
+    this._launchDeckEditMode = false;
+    /** @type {HTMLElement|null} */
+    this._launchDeckEditBar = null;
+    /** @type {HTMLElement|null} */
+    this._addSitePicker = null;
+    /** Catalog used for domain history + site filters (full lists, not composed deck). */
+    this._defaultSites = Object.fromEntries(
+      Object.entries(LAUNCHER_SITE_CATALOG).map(([key, list]) => [
+        key,
+        list.map((s) => ({
+          title: s.title,
+          url: s.url,
+          isDefault: !!s.seed,
+          seed: !!s.seed,
+          searchUrlPrefix: s.searchUrlPrefix
+        }))
+      ])
+    );
     /** Categories whose domain history has been fetched this open session. */
     this._historyLoaded = Object.create(null);
     /** Shared recent history rows (top sites + search extraction). */
@@ -97,8 +126,6 @@ export class LauncherPopover {
 
     /**
      * Optional per-category page templates for non-card chrome.
-     * - renderHeaderSearch: search box to the right of the active tab title/description
-     * - renderBeforeCards: extra chrome above the card grid
      * @type {Record<string, {
      *   renderHeaderSearch?: (doc: Document) => (HTMLElement|null),
      *   renderBeforeCards?: (doc: Document) => (HTMLElement|null)
@@ -118,113 +145,6 @@ export class LauncherPopover {
     this._errorMessage = null;
     this._currentPreviewUrl = null;
     this._previewBridgeTimer = null;
-    // Default sites per category
-    this._defaultSites = {
-      social: [
-        { title: 'Instagram', url: 'https://instagram.com', isDefault: true },
-        { title: 'Facebook', url: 'https://facebook.com', isDefault: true },
-        { title: 'X (Twitter)', url: 'https://x.com', isDefault: true },
-        { title: 'Reddit', url: 'https://reddit.com', isDefault: true },
-        { title: 'Bluesky', url: 'https://bsky.app', isDefault: true },
-        { title: 'LinkedIn', url: 'https://linkedin.com', isDefault: true },
-        { title: 'Threads', url: 'https://threads.net', isDefault: true },
-        { title: 'Mastodon', url: 'https://mastodon.social', isDefault: true }
-      ],
-      videos: [
-        {
-          title: 'YouTube',
-          url: 'https://youtube.com',
-          searchUrlPrefix: 'https://www.youtube.com/results?search_query=',
-          isDefault: true
-        },
-        {
-          title: 'Rumble',
-          url: 'https://rumble.com',
-          searchUrlPrefix: 'https://rumble.com/search/all?q=',
-          isDefault: true
-        },
-        {
-          title: 'Twitch',
-          url: 'https://twitch.tv',
-          searchUrlPrefix: 'https://www.twitch.tv/search?term=',
-          isDefault: true
-        },
-        {
-          title: 'Vimeo',
-          url: 'https://vimeo.com',
-          searchUrlPrefix: 'https://vimeo.com/search?q=',
-          isDefault: true
-        },
-        {
-          title: 'Dailymotion',
-          url: 'https://dailymotion.com',
-          searchUrlPrefix: 'https://www.dailymotion.com/search/',
-          isDefault: true
-        },
-        {
-          title: 'Odysee',
-          url: 'https://odysee.com',
-          searchUrlPrefix: 'https://odysee.com/$/search?q=',
-          isDefault: true
-        }
-      ],
-      entertainment: [
-        { title: 'Netflix', url: 'https://netflix.com', isDefault: true },
-        { title: 'Disney+', url: 'https://disneyplus.com', isDefault: true },
-        { title: 'Hulu', url: 'https://hulu.com', isDefault: true },
-        { title: 'YouTube', url: 'https://youtube.com', isDefault: true },
-        { title: 'HBO Max', url: 'https://max.com', isDefault: true },
-        { title: 'Prime Video', url: 'https://primevideo.com', isDefault: true },
-        { title: 'Paramount+', url: 'https://paramountplus.com', isDefault: true },
-        { title: 'Peacock', url: 'https://peacocktv.com', isDefault: true }
-      ],
-      news: [
-        { title: 'CNN', url: 'https://cnn.com', isDefault: true },
-        { title: 'BBC News', url: 'https://bbc.com/news', isDefault: true },
-        { title: 'NY Times', url: 'https://nytimes.com', isDefault: true },
-        { title: 'Reuters', url: 'https://reuters.com', isDefault: true },
-        { title: 'The Guardian', url: 'https://theguardian.com', isDefault: true },
-        { title: 'AP News', url: 'https://apnews.com', isDefault: true }
-      ],
-      productivity: [
-        { title: 'Gmail', url: 'https://gmail.com', isDefault: true },
-        { title: 'Google Calendar', url: 'https://calendar.google.com', isDefault: true },
-        { title: 'Google Drive', url: 'https://drive.google.com', isDefault: true },
-        { title: 'Google Docs', url: 'https://docs.google.com', isDefault: true },
-        { title: 'Notion', url: 'https://notion.so', isDefault: true },
-        { title: 'Slack', url: 'https://slack.com', isDefault: true },
-        { title: 'Trello', url: 'https://trello.com', isDefault: true }
-      ],
-      shopping: [
-        { title: 'Amazon', url: 'https://amazon.com', isDefault: true },
-        { title: 'eBay', url: 'https://ebay.com', isDefault: true },
-        { title: 'Walmart', url: 'https://walmart.com', isDefault: true },
-        { title: 'Target', url: 'https://target.com', isDefault: true },
-        { title: 'Etsy', url: 'https://etsy.com', isDefault: true }
-      ],
-      archive: [
-        { title: 'Internet Archive', url: 'https://archive.org', isDefault: true },
-        { title: 'Web', url: 'https://web.archive.org', isDefault: true },
-        { title: 'Texts', url: 'https://archive.org/details/texts', isDefault: true },
-        { title: 'Video', url: 'https://archive.org/details/movies', isDefault: true },
-        { title: 'Audio', url: 'https://archive.org/details/audio', isDefault: true },
-        { title: 'Software', url: 'https://archive.org/details/software', isDefault: true },
-        { title: 'Images', url: 'https://archive.org/details/image', isDefault: true }
-      ],
-      ai: [
-        { title: 'ChatGPT', url: 'https://chat.openai.com', isDefault: true },
-        { title: 'Claude', url: 'https://claude.ai', isDefault: true },
-        { title: 'Grok', url: 'https://grok.com', isDefault: true },
-        { title: 'Gemini', url: 'https://gemini.google.com', isDefault: true },
-        { title: 'Copilot', url: 'https://copilot.microsoft.com', isDefault: true },
-        { title: 'Perplexity', url: 'https://perplexity.ai', isDefault: true },
-        { title: 'Poe', url: 'https://poe.com', isDefault: true },
-        { title: 'Character.AI', url: 'https://character.ai', isDefault: true },
-        { title: 'Hugging Face', url: 'https://huggingface.co/chat', isDefault: true }
-      ],
-      // SSOT: search-engines.js (shared with settings default-engine catalog)
-      searches: LAUNCHER_SEARCH_SITES.map((s) => ({ ...s }))
-    };
   }
 
   /**
@@ -240,9 +160,10 @@ export class LauncherPopover {
     this._cachedTopSites = null;
     this._cachedBookmarks = null;
     this._cachedRecentHistory = null;
+    this._launchDeckEditMode = false;
 
-    // Load hidden Launch Deck URLs, then paint shell with defaults.
-    await this._loadHiddenLaunchDeckUrls();
+    // Load Launch Deck state (migrates legacy hide list), then paint shell.
+    await this._loadLaunchDeckState();
     if (!this._stillOpen(gen)) return;
     this._initCategoriesWithDefaults();
     this._buildUI();
@@ -284,6 +205,8 @@ export class LauncherPopover {
     this._isOpen = false;
     // Invalidate any in-flight show() / history loads.
     this._openGen++;
+    this._launchDeckEditMode = false;
+    this._closeAddSitePicker();
 
     // Clear any pending bridge initialization
     if (this._previewBridgeTimer) {
@@ -403,15 +326,11 @@ export class LauncherPopover {
   }
 
   /**
-   * Immediate category shell using default sites only (no Chrome history APIs).
+   * Immediate category shell using composed Launch Decks (seeds only until history loads).
    * Domain-history tabs start empty and fill in when first selected.
-   * `sites` = launcher-only curated defaults; `favorites` = bookmarks; `history` = visits.
+   * `sites` = Launch Deck; `favorites` = bookmarks; `history` = visits.
    */
   _initCategoriesWithDefaults() {
-    const defaults = (key) => (this._showDefaultSites && this._defaultSites[key]
-      ? this._filterLaunchDeckItems([...this._defaultSites[key]])
-      : []);
-
     const emptyLists = () => ({ sites: [], history: [], favorites: [] });
 
     this._categories = {
@@ -431,7 +350,7 @@ export class LauncherPopover {
         label: 'Social Media',
         description: 'Stay connected across social networks',
         icon: '💬',
-        sites: defaults('social'),
+        sites: [],
         history: [],
         favorites: []
       },
@@ -439,7 +358,7 @@ export class LauncherPopover {
         label: 'News',
         description: 'Headlines and reporting from major outlets',
         icon: '📰',
-        sites: defaults('news'),
+        sites: [],
         history: [],
         favorites: []
       },
@@ -447,7 +366,7 @@ export class LauncherPopover {
         label: 'Productivity',
         description: 'Mail, docs, calendars, and work tools',
         icon: '⚡',
-        sites: defaults('productivity'),
+        sites: [],
         history: [],
         favorites: []
       },
@@ -455,7 +374,7 @@ export class LauncherPopover {
         label: 'Videos',
         description: 'Watch and search video sites',
         icon: '📹',
-        sites: defaults('videos'),
+        sites: [],
         history: [],
         favorites: []
       },
@@ -463,7 +382,7 @@ export class LauncherPopover {
         label: 'Entertainment',
         description: 'Streaming and entertainment destinations',
         icon: '🎬',
-        sites: defaults('entertainment'),
+        sites: [],
         history: [],
         favorites: []
       },
@@ -471,7 +390,7 @@ export class LauncherPopover {
         label: 'Shopping',
         description: 'Stores and marketplaces',
         icon: '🛒',
-        sites: defaults('shopping'),
+        sites: [],
         history: [],
         favorites: []
       },
@@ -479,7 +398,7 @@ export class LauncherPopover {
         label: 'AI',
         description: 'Chatbots and AI assistants',
         icon: '🤖',
-        sites: defaults('ai'),
+        sites: [],
         history: [],
         favorites: []
       },
@@ -487,7 +406,7 @@ export class LauncherPopover {
         label: 'Internet Archive',
         description: 'Search and browse the Internet Archive library',
         icon: '📚',
-        sites: defaults('archive'),
+        sites: [],
         history: [],
         favorites: []
       },
@@ -495,13 +414,40 @@ export class LauncherPopover {
         label: 'Searches',
         description: 'Search engines and recent web searches',
         icon: '🔍',
-        sites: defaults('searches'),
+        sites: [],
         history: [],
         favorites: []
       }
     };
 
+    this._recomposeCatalogDecks();
     this._initDefaultSubTabs();
+  }
+
+  /**
+   * Rebuild composed Launch Decks for all catalog categories.
+   * @param {string[]} [onlyKeys]
+   */
+  _recomposeCatalogDecks(onlyKeys = null) {
+    if (!this._categories) return;
+    const keys = onlyKeys || LAUNCHER_CATALOG_CATEGORY_KEYS;
+    for (const key of keys) {
+      if (!this._categories[key]) continue;
+      if (!LAUNCHER_CATALOG_CATEGORY_KEYS.includes(key)) continue;
+      const history = this._categories[key].history || [];
+      this._categories[key].sites = composeLaunchDeck(key, {
+        state: this._launchDeckState,
+        history,
+        showDeck: this._showDefaultSites
+      });
+    }
+  }
+
+  /**
+   * @returns {boolean}
+   */
+  _isCatalogCategory(categoryKey = this._currentCategory) {
+    return LAUNCHER_CATALOG_CATEGORY_KEYS.includes(categoryKey);
   }
 
   /**
@@ -559,9 +505,9 @@ export class LauncherPopover {
 
       // Bookmarks: Launch Deck = top 50 most-visited bookmarks; Favorites = all;
       // History = top sites / recent visits.
-      this._categories.bookmarks.sites = this._filterLaunchDeckItems(
-        this._buildMostVisitedBookmarkedSites(bookmarks, recentHistory, 50)
-      );
+      this._categories.bookmarks.sites = this._showDefaultSites
+        ? this._buildMostVisitedBookmarkedSites(bookmarks, recentHistory, 50)
+        : [];
       this._categories.bookmarks.favorites = bookmarks;
       this._categories.bookmarks.history = topSites;
 
@@ -646,6 +592,10 @@ export class LauncherPopover {
           domains
         );
       }
+      // Recompose Launch Deck now that visit data is available (auto-add).
+      if (this._isCatalogCategory(categoryKey)) {
+        this._recomposeCatalogDecks([categoryKey]);
+      }
       this._historyLoaded[categoryKey] = true;
       this._ensureValidSiteFilter(categoryKey);
 
@@ -671,98 +621,176 @@ export class LauncherPopover {
   }
 
   /**
-   * Reload Sites lists when "Show default sites" toggles (no full history re-fetch).
+   * Apply "Show Launch Deck" checkbox: recompose or clear catalog decks.
    */
   _applyDefaultSitesVisibility() {
     if (!this._categories) return;
-    const keys = ['social', 'news', 'productivity', 'videos', 'entertainment', 'shopping', 'ai', 'archive', 'searches'];
-    for (const key of keys) {
-      if (!this._categories[key]) continue;
-      this._categories[key].sites = this._showDefaultSites && this._defaultSites[key]
-        ? this._filterLaunchDeckItems([...this._defaultSites[key]])
-        : [];
+    if (!this._showDefaultSites) {
+      this._launchDeckEditMode = false;
+      this._closeAddSitePicker();
+    }
+    this._recomposeCatalogDecks();
+    if (!this._showDefaultSites && this._categories.bookmarks) {
+      this._categories.bookmarks.sites = [];
+    } else if (this._showDefaultSites && this._cachedBookmarks && this._cachedRecentHistory) {
+      this._categories.bookmarks.sites = this._buildMostVisitedBookmarkedSites(
+        this._cachedBookmarks,
+        this._cachedRecentHistory,
+        50
+      );
     }
   }
 
   /**
    * @returns {Promise<void>}
    */
-  async _loadHiddenLaunchDeckUrls() {
+  async _loadLaunchDeckState() {
     try {
-      const raw = await storageGetValue(HIDDEN_LAUNCH_DECK_STORAGE_KEY, []);
-      const list = Array.isArray(raw) ? raw : [];
-      this._hiddenLaunchDeckUrls = new Set(
-        list
-          .map((u) => this._normalizeVisitUrl(String(u || '')))
-          .filter(Boolean)
-      );
+      this._launchDeckState = await loadLaunchDeckState();
     } catch (err) {
-      console.warn('[LauncherPopover] Failed to load hidden Launch Deck URLs:', err);
-      this._hiddenLaunchDeckUrls = new Set();
+      console.warn('[LauncherPopover] Failed to load Launch Deck state:', err);
+      this._launchDeckState = Object.create(null);
     }
   }
 
   /**
    * @returns {Promise<void>}
    */
-  async _persistHiddenLaunchDeckUrls() {
+  async _persistLaunchDeckState() {
     try {
-      await storageSetValue(
-        HIDDEN_LAUNCH_DECK_STORAGE_KEY,
-        Array.from(this._hiddenLaunchDeckUrls)
-      );
+      await persistLaunchDeckState(this._launchDeckState);
     } catch (err) {
-      console.warn('[LauncherPopover] Failed to persist hidden Launch Deck URLs:', err);
+      console.warn('[LauncherPopover] Failed to persist Launch Deck state:', err);
     }
   }
 
   /**
-   * @param {string} url
-   * @returns {boolean}
-   */
-  _isLaunchDeckHidden(url) {
-    if (!url || !this._hiddenLaunchDeckUrls?.size) return false;
-    return this._hiddenLaunchDeckUrls.has(this._normalizeVisitUrl(url));
-  }
-
-  /**
-   * @template {{ url?: string }} T
-   * @param {T[]} items
-   * @returns {T[]}
-   */
-  _filterLaunchDeckItems(items) {
-    if (!Array.isArray(items) || !items.length) return [];
-    if (!this._hiddenLaunchDeckUrls?.size) return items;
-    return items.filter((item) => !this._isLaunchDeckHidden(item?.url));
-  }
-
-  /**
-   * Hide a Launch Deck card permanently (until storage is cleared).
+   * Remove a Launch Deck card for the active catalog category.
    * @param {string} url
    */
   async _hideLaunchDeckItem(url) {
-    const key = this._normalizeVisitUrl(url);
-    if (!key) return;
-    this._hiddenLaunchDeckUrls.add(key);
-    void this._persistHiddenLaunchDeckUrls();
+    const categoryKey = this._currentCategory;
+    if (!this._isCatalogCategory(categoryKey)) return;
 
-    // Drop from every category's Launch Deck list immediately.
-    if (this._categories) {
-      for (const cat of Object.values(this._categories)) {
-        if (!Array.isArray(cat?.sites)) continue;
-        cat.sites = cat.sites.filter((item) => !this._isLaunchDeckHidden(item?.url));
-      }
-    }
+    this._launchDeckState = removeFromLaunchDeck(
+      this._launchDeckState,
+      categoryKey,
+      url
+    );
+    void this._persistLaunchDeckState();
+    this._recomposeCatalogDecks([categoryKey]);
 
-    if (this._currentPreviewUrl && this._normalizeVisitUrl(this._currentPreviewUrl) === key) {
+    const key = normalizeLaunchDeckUrl(url);
+    if (this._currentPreviewUrl && normalizeLaunchDeckUrl(this._currentPreviewUrl) === key) {
       try { this._hidePreview(); } catch { /* ignore */ }
     }
 
     try { this._updateTabCounts?.(); } catch { /* ignore */ }
     try { this._updateSubTabsUI?.(); } catch { /* ignore */ }
+    try { this._updateLaunchDeckEditBar?.(); } catch { /* ignore */ }
     if (this._gridContainer) {
       this._renderCategory(this._currentCategory);
     }
+  }
+
+  /**
+   * Persist current composed deck order for a category.
+   * @param {string} categoryKey
+   */
+  async _persistCurrentDeckOrder(categoryKey) {
+    if (!this._isCatalogCategory(categoryKey)) return;
+    const urls = (this._categories?.[categoryKey]?.sites || [])
+      .map((s) => s?.url)
+      .filter(Boolean);
+    this._launchDeckState = setLaunchDeckOrder(
+      this._launchDeckState,
+      categoryKey,
+      urls
+    );
+    await this._persistLaunchDeckState();
+  }
+
+  /**
+   * Move a Launch Deck card up/down while editing.
+   * @param {string} url
+   * @param {-1|1} delta
+   */
+  async _moveLaunchDeckItem(url, delta) {
+    const categoryKey = this._currentCategory;
+    if (!this._isCatalogCategory(categoryKey) || !this._launchDeckEditMode) return;
+    const sites = this._categories?.[categoryKey]?.sites;
+    if (!Array.isArray(sites) || !sites.length) return;
+
+    const key = normalizeLaunchDeckUrl(url);
+    const idx = sites.findIndex((s) => normalizeLaunchDeckUrl(s.url) === key);
+    if (idx < 0) return;
+    const nextIdx = idx + delta;
+    if (nextIdx < 0 || nextIdx >= sites.length) return;
+
+    const next = sites.slice();
+    const [item] = next.splice(idx, 1);
+    next.splice(nextIdx, 0, item);
+    this._categories[categoryKey].sites = next;
+    await this._persistCurrentDeckOrder(categoryKey);
+    this._renderCategory(categoryKey);
+  }
+
+  /**
+   * Add a site to the current Launch Deck (from picker or custom URL).
+   * @param {{ title: string, url: string, fromCatalog?: boolean }} site
+   */
+  async _addLaunchDeckSite(site) {
+    const categoryKey = this._currentCategory;
+    if (!this._isCatalogCategory(categoryKey)) return;
+
+    // If the user has never reordered, lock in the current composed order first
+    // so Add appends instead of collapsing order to the new URL only.
+    const catBefore = this._launchDeckState?.[categoryKey];
+    if (!catBefore?.order?.length) {
+      const existing = (this._categories?.[categoryKey]?.sites || [])
+        .map((s) => s.url)
+        .filter(Boolean);
+      if (existing.length) {
+        this._launchDeckState = setLaunchDeckOrder(
+          this._launchDeckState,
+          categoryKey,
+          existing
+        );
+      }
+    }
+
+    this._launchDeckState = addToLaunchDeck(
+      this._launchDeckState,
+      categoryKey,
+      site
+    );
+    await this._persistLaunchDeckState();
+    this._recomposeCatalogDecks([categoryKey]);
+    this._closeAddSitePicker();
+    try { this._updateTabCounts?.(); } catch { /* ignore */ }
+    try { this._updateSubTabsUI?.(); } catch { /* ignore */ }
+    this._renderCategory(categoryKey);
+  }
+
+  /**
+   * @param {boolean} enabled
+   */
+  _setLaunchDeckEditMode(enabled) {
+    if (!this._isCatalogCategory()) {
+      this._launchDeckEditMode = false;
+    } else {
+      this._launchDeckEditMode = !!enabled;
+    }
+    if (!this._launchDeckEditMode) this._closeAddSitePicker();
+    this._updateLaunchDeckEditBar();
+    this._renderCategory(this._currentCategory);
+  }
+
+  _closeAddSitePicker() {
+    if (this._addSitePicker?.parentNode) {
+      try { this._addSitePicker.remove(); } catch { /* ignore */ }
+    }
+    this._addSitePicker = null;
   }
 
   /**
@@ -836,14 +864,7 @@ export class LauncherPopover {
    * @returns {string}
    */
   _normalizeVisitUrl(url) {
-    try {
-      const u = new URL(String(url || '').trim());
-      const host = (u.hostname || '').toLowerCase();
-      const path = (u.pathname || '').replace(/\/+$/, '');
-      return `${u.protocol}//${host}${path}${u.search || ''}`;
-    } catch {
-      return String(url || '').trim().toLowerCase();
-    }
+    return normalizeLaunchDeckUrl(url);
   }
 
   /**
@@ -1167,28 +1188,19 @@ export class LauncherPopover {
     let items = category[currentSubTab] || [];
 
     if (currentSubTab === 'sites') {
+      // Catalog decks are already composed (order + visits + removed).
+      if (this._isCatalogCategory(categoryKey)) {
+        return items;
+      }
+      // Bookmarks Launch Deck: enrich visit timestamps for card footers.
       const sites = this._defaultSites[categoryKey] || [];
       const history = category.history || [];
-      const visible = this._filterLaunchDeckItems(items);
-      return [...visible].sort((a, b) => {
-        const scoreA =
-          Number(a?.visitCount) > 0
-            ? Number(a.visitCount)
-            : this._siteVisitScore(a, history, sites);
-        const scoreB =
-          Number(b?.visitCount) > 0
-            ? Number(b.visitCount)
-            : this._siteVisitScore(b, history, sites);
-        if (scoreB !== scoreA) return scoreB - scoreA;
-        const lastA =
-          Number(a?.lastVisitTime) > 0
-            ? Number(a.lastVisitTime)
-            : this._siteLastVisitTime(a, history, sites);
-        const lastB =
-          Number(b?.lastVisitTime) > 0
-            ? Number(b.lastVisitTime)
-            : this._siteLastVisitTime(b, history, sites);
-        return lastB - lastA;
+      return [...items].map((item) => {
+        const lastVisitTime =
+          Number(item?.lastVisitTime) > 0
+            ? Number(item.lastVisitTime)
+            : this._siteLastVisitTime(item, history, sites);
+        return lastVisitTime > 0 ? { ...item, lastVisitTime } : item;
       });
     }
 
@@ -1206,11 +1218,11 @@ export class LauncherPopover {
   }
 
   /**
-   * @param {number|string|null|undefined} dateAdded
+   * @param {number|string|null|undefined} timestamp
    * @returns {string|null}
    */
-  _formatBookmarkAddedDate(dateAdded) {
-    const n = Number(dateAdded);
+  _formatCardDate(timestamp) {
+    const n = Number(timestamp);
     if (!Number.isFinite(n) || n <= 0) return null;
     try {
       return new Date(n).toLocaleDateString(undefined, {
@@ -1221,6 +1233,46 @@ export class LauncherPopover {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * @param {number|string|null|undefined} dateAdded
+   * @returns {string|null}
+   */
+  _formatBookmarkAddedDate(dateAdded) {
+    return this._formatCardDate(dateAdded);
+  }
+
+  /**
+   * Absolute bottom date strip used on Launch Deck / URL listing cards.
+   * @param {Document} doc
+   * @param {string} text
+   * @param {string} [className]
+   * @returns {HTMLElement}
+   */
+  _createCardDateOverlay(doc, text, className = 'kp-launcher-card-visited-on') {
+    const overlay = doc.createElement('div');
+    overlay.className = className;
+    overlay.textContent = text;
+    overlay.style.cssText = `
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 6px 12px;
+      background: rgba(0, 0, 0, 0.72);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      color: #c8c8c8;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      pointer-events: none;
+      z-index: 2;
+    `;
+    return overlay;
   }
 
   /**
@@ -1305,6 +1357,10 @@ export class LauncherPopover {
         e.preventDefault();
         e.stopPropagation();
         try { e.stopImmediatePropagation(); } catch { /* ignore */ }
+        if (this._launchDeckEditMode) {
+          this._setLaunchDeckEditMode(false);
+          return;
+        }
         this.hide();
       }
     };
@@ -1562,7 +1618,7 @@ export class LauncherPopover {
       min-height: 0;
     `;
 
-    // Footer with navigation controls
+    // Footer with keyboard hints, Launch Deck edit controls, and sheet nav
     const footer = doc.createElement('div');
     footer.className = 'kp-launcher-footer';
     footer.style.cssText = `
@@ -1572,11 +1628,37 @@ export class LauncherPopover {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    `;
+
+    const footerLeft = doc.createElement('div');
+    footerLeft.className = 'kp-launcher-footer-left';
+    footerLeft.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      min-width: 0;
+      flex: 1 1 auto;
     `;
 
     const hint = doc.createElement('div');
+    hint.className = 'kp-launcher-footer-hint';
     hint.style.cssText = 'color: #888; font-size: 13px;';
     hint.innerHTML = 'Press <strong>↑↓</strong> for tabs • <strong>/</strong> to search • <strong>F</strong> to open • <strong>Esc</strong> to close';
+
+    this._launchDeckEditBar = doc.createElement('div');
+    this._launchDeckEditBar.className = 'kp-launcher-edit-bar';
+    this._launchDeckEditBar.style.cssText = `
+      display: none;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    `;
+
+    footerLeft.appendChild(hint);
+    footerLeft.appendChild(this._launchDeckEditBar);
 
     const navControls = doc.createElement('div');
     navControls.className = 'kp-launcher-nav-controls';
@@ -1584,6 +1666,7 @@ export class LauncherPopover {
       display: flex;
       gap: 12px;
       align-items: center;
+      flex-shrink: 0;
     `;
 
     // Up button
@@ -1594,8 +1677,9 @@ export class LauncherPopover {
     const downBtn = this._createNavButton('↓', 'V', () => this._scrollDown());
     navControls.appendChild(downBtn);
 
-    footer.appendChild(hint);
+    footer.appendChild(footerLeft);
     footer.appendChild(navControls);
+    this._updateLaunchDeckEditBar();
 
     // Assemble content area
     contentArea.appendChild(header);
@@ -2036,10 +2120,15 @@ export class LauncherPopover {
       this._clearCategoryPageResults(this._currentCategory, { render: false });
       this._categorySubTabs[this._currentCategory] = type;
       this._currentSheet = 0;
+      if (type !== 'sites' && this._launchDeckEditMode) {
+        this._launchDeckEditMode = false;
+        this._closeAddSitePicker();
+      }
       if (type === 'favorites' || type === 'history') {
         this._ensureValidSiteFilter(this._currentCategory);
       }
       this._updateSiteFilterTabsUI();
+      this._updateLaunchDeckEditBar();
       this._renderCategory(this._currentCategory);
       this._updateSubTabStyles();
     });
@@ -2156,6 +2245,7 @@ export class LauncherPopover {
 
     this._ensureValidSiteFilter(this._currentCategory);
     this._updateSiteFilterTabsUI();
+    this._updateLaunchDeckEditBar();
 
     if (hadSearchFocus && this._searchInput) {
       try {
@@ -2164,6 +2254,292 @@ export class LauncherPopover {
         this._searchInput.setSelectionRange(pos, pos);
       } catch { /* ignore */ }
     }
+  }
+
+  /**
+   * Edit / Done / Add controls in the footer (next to the keyboard hint).
+   */
+  _updateLaunchDeckEditBar() {
+    const bar = this._launchDeckEditBar;
+    if (!bar) return;
+
+    const onSites =
+      (this._categorySubTabs[this._currentCategory] || 'history') === 'sites';
+    const canEdit =
+      this._isCatalogCategory() && this._showDefaultSites && onSites;
+
+    if (!canEdit) {
+      if (this._launchDeckEditMode) this._launchDeckEditMode = false;
+      this._closeAddSitePicker();
+      bar.style.display = 'none';
+      bar.innerHTML = '';
+      return;
+    }
+
+    const doc = document;
+    bar.style.display = 'inline-flex';
+    bar.innerHTML = '';
+
+    const editing = !!this._launchDeckEditMode;
+
+    const toggleBtn = doc.createElement('button');
+    toggleBtn.type = 'button';
+    toggleBtn.textContent = editing ? 'Done' : 'Edit Launch Deck';
+    toggleBtn.style.cssText = `
+      padding: 5px 10px;
+      border-radius: 6px;
+      border: 1px solid ${editing ? '#5a9e6f' : '#444'};
+      background: ${editing ? '#1e3a28' : '#1a1a1a'};
+      color: ${editing ? '#9fd4ae' : '#ccc'};
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    `;
+    toggleBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this._setLaunchDeckEditMode(!this._launchDeckEditMode);
+    });
+    bar.appendChild(toggleBtn);
+
+    if (!editing) return;
+
+    const editHint = doc.createElement('span');
+    editHint.textContent = 'Reorder, remove, or add • Esc exits edit';
+    editHint.style.cssText = 'color: #777; font-size: 12px; white-space: nowrap;';
+    bar.appendChild(editHint);
+
+    const addBtn = doc.createElement('button');
+    addBtn.type = 'button';
+    addBtn.textContent = 'Add site…';
+    addBtn.style.cssText = `
+      padding: 5px 10px;
+      border-radius: 6px;
+      border: 1px solid #444;
+      background: #1a1a1a;
+      color: #ccc;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    `;
+    addBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this._openAddSitePicker();
+    });
+    bar.appendChild(addBtn);
+  }
+
+  /**
+   * Filterable catalog picker + custom URL field.
+   */
+  _openAddSitePicker() {
+    this._closeAddSitePicker();
+    if (!this._isCatalogCategory() || !this._launchDeckEditMode) return;
+
+    const doc = document;
+    const categoryKey = this._currentCategory;
+    const currentDeck = this._categories?.[categoryKey]?.sites || [];
+    const addable = getAddableCatalogSites(categoryKey, currentDeck);
+
+    const overlay = doc.createElement('div');
+    overlay.className = 'kp-launcher-add-picker';
+    overlay.style.cssText = `
+      position: absolute;
+      inset: 0;
+      z-index: 40;
+      background: rgba(0, 0, 0, 0.55);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 48px 24px;
+    `;
+
+    const panel = doc.createElement('div');
+    panel.style.cssText = `
+      width: min(480px, 100%);
+      max-height: min(70vh, 560px);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      background: #1a1a1a;
+      border: 1px solid #444;
+      border-radius: 10px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    `;
+
+    const header = doc.createElement('div');
+    header.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 14px;
+      border-bottom: 1px solid #333;
+    `;
+    const title = doc.createElement('div');
+    title.textContent = 'Add to Launch Deck';
+    title.style.cssText = 'flex: 1; color: #fff; font-weight: 600; font-size: 14px;';
+    const closeBtn = doc.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.textContent = '✕';
+    closeBtn.style.cssText = `
+      border: none; background: transparent; color: #888; cursor: pointer; font-size: 16px;
+    `;
+    closeBtn.addEventListener('click', () => this._closeAddSitePicker());
+    header.appendChild(title);
+    header.appendChild(closeBtn);
+
+    const filter = doc.createElement('input');
+    filter.type = 'text';
+    filter.placeholder = 'Filter catalog…';
+    filter.style.cssText = `
+      margin: 10px 14px 0;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #444;
+      background: #111;
+      color: #eee;
+      font-size: 13px;
+    `;
+
+    const list = doc.createElement('div');
+    list.style.cssText = `
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-height: 120px;
+    `;
+
+    const renderList = (q = '') => {
+      list.innerHTML = '';
+      const needle = String(q || '').toLowerCase().trim();
+      const rows = addable.filter((s) => {
+        if (!needle) return true;
+        return (
+          s.title.toLowerCase().includes(needle) ||
+          s.url.toLowerCase().includes(needle)
+        );
+      });
+      if (!rows.length) {
+        const empty = doc.createElement('div');
+        empty.textContent = needle ? 'No matching sites' : 'All catalog sites are already on your deck';
+        empty.style.cssText = 'color: #666; font-size: 13px; padding: 16px 8px;';
+        list.appendChild(empty);
+        return;
+      }
+      for (const site of rows) {
+        const row = doc.createElement('button');
+        row.type = 'button';
+        row.style.cssText = `
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 2px;
+          padding: 8px 10px;
+          border: 1px solid #333;
+          border-radius: 6px;
+          background: #222;
+          color: #eee;
+          cursor: pointer;
+          text-align: left;
+        `;
+        const t = doc.createElement('div');
+        t.textContent = site.title;
+        t.style.cssText = 'font-size: 13px; font-weight: 600;';
+        const u = doc.createElement('div');
+        u.textContent = site.url;
+        u.style.cssText = 'font-size: 11px; color: #888;';
+        row.appendChild(t);
+        row.appendChild(u);
+        row.addEventListener('click', () => {
+          void this._addLaunchDeckSite({
+            title: site.title,
+            url: site.url,
+            fromCatalog: true
+          });
+        });
+        list.appendChild(row);
+      }
+    };
+
+    filter.addEventListener('input', () => renderList(filter.value));
+
+    const customRow = doc.createElement('div');
+    customRow.style.cssText = `
+      display: flex;
+      gap: 8px;
+      padding: 10px 14px 14px;
+      border-top: 1px solid #333;
+    `;
+    const customInput = doc.createElement('input');
+    customInput.type = 'url';
+    customInput.placeholder = 'https://example.com';
+    customInput.style.cssText = `
+      flex: 1;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #444;
+      background: #111;
+      color: #eee;
+      font-size: 13px;
+    `;
+    const customBtn = doc.createElement('button');
+    customBtn.type = 'button';
+    customBtn.textContent = 'Add URL';
+    customBtn.style.cssText = `
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #5a9e6f;
+      background: #1e3a28;
+      color: #9fd4ae;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    `;
+    const submitCustom = () => {
+      let raw = String(customInput.value || '').trim();
+      if (!raw) return;
+      if (!/^https?:\/\//i.test(raw)) raw = `https://${raw}`;
+      try {
+        const u = new URL(raw);
+        void this._addLaunchDeckSite({
+          title: u.hostname.replace(/^www\./, ''),
+          url: u.href,
+          fromCatalog: false
+        });
+      } catch {
+        customInput.style.borderColor = '#c44';
+      }
+    };
+    customBtn.addEventListener('click', submitCustom);
+    customInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submitCustom();
+      }
+    });
+    customRow.appendChild(customInput);
+    customRow.appendChild(customBtn);
+
+    panel.appendChild(header);
+    panel.appendChild(filter);
+    panel.appendChild(list);
+    panel.appendChild(customRow);
+    overlay.appendChild(panel);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) this._closeAddSitePicker();
+    });
+
+    const host = this._container || doc.body;
+    host.appendChild(overlay);
+    this._addSitePicker = overlay;
+    renderList();
+    try { filter.focus(); } catch { /* ignore */ }
   }
 
   /**
@@ -3259,11 +3635,12 @@ export class LauncherPopover {
 
   /**
    * Launch Deck tiles — destination launchers, not history/bookmark listings.
-   * @param {{ title?: string, url?: string }} item
+   * @param {{ title?: string, url?: string, lastVisitTime?: number }} item
    */
   _createLaunchDeckCard(item) {
     const doc = document;
     const domain = extractDomain(item.url) || String(item.url || '');
+    const visitedLabel = this._formatCardDate(item.lastVisitTime);
 
     const container = doc.createElement('div');
     container.className = 'kp-launcher-card-container kp-launcher-launch-card';
@@ -3318,7 +3695,7 @@ export class LauncherPopover {
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 28px 20px 18px;
+      padding: 28px 20px ${visitedLabel ? '36px' : '18px'};
       text-decoration: none;
       color: inherit;
       cursor: pointer;
@@ -3387,10 +3764,31 @@ export class LauncherPopover {
       opacity: 0.85;
     `;
 
+    const editing =
+      this._launchDeckEditMode && this._isCatalogCategory(this._currentCategory);
+
+    if (editing) {
+      launchHint.textContent = 'Editing';
+      launchHint.style.color = '#c9a86c';
+      mainLink.href = '#';
+      mainLink.removeAttribute('target');
+      mainLink.style.cursor = 'default';
+      mainLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      });
+    }
+
     mainLink.appendChild(iconWell);
     mainLink.appendChild(title);
     mainLink.appendChild(domainEl);
     mainLink.appendChild(launchHint);
+
+    if (visitedLabel) {
+      mainLink.appendChild(
+        this._createCardDateOverlay(doc, `Visited on ${visitedLabel}`)
+      );
+    }
 
     const footer = doc.createElement('div');
     footer.style.cssText = `
@@ -3401,6 +3799,101 @@ export class LauncherPopover {
       z-index: 1;
       flex-shrink: 0;
     `;
+
+    if (editing) {
+      const mkEditBtn = (label, titleText, onClick) => {
+        const btn = doc.createElement('button');
+        btn.type = 'button';
+        btn.textContent = label;
+        btn.title = titleText;
+        btn.style.cssText = `
+          flex: 1;
+          padding: 10px 8px;
+          background: rgba(0, 0, 0, 0.25);
+          border: none;
+          border-left: 1px solid rgba(255, 255, 255, 0.08);
+          color: #9aa3ab;
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 600;
+          transition: background 0.15s, color 0.15s;
+        `;
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onClick();
+        });
+        btn.addEventListener('mouseenter', () => {
+          btn.style.background = 'rgba(0, 0, 0, 0.4)';
+          btn.style.color = '#fff';
+        });
+        btn.addEventListener('mouseleave', () => {
+          btn.style.background = 'rgba(0, 0, 0, 0.25)';
+          btn.style.color = '#9aa3ab';
+        });
+        return btn;
+      };
+
+      const upBtn = mkEditBtn('↑', 'Move up', () => {
+        void this._moveLaunchDeckItem(item.url, -1);
+      });
+      upBtn.style.borderLeft = 'none';
+      const downBtn = mkEditBtn('↓', 'Move down', () => {
+        void this._moveLaunchDeckItem(item.url, 1);
+      });
+      const removeBtn = mkEditBtn('✕', 'Remove from Launch Deck', () => {
+        void this._hideLaunchDeckItem(item.url);
+      });
+      removeBtn.addEventListener('mouseenter', () => {
+        removeBtn.style.color = '#ffb4b4';
+      });
+
+      // Simple HTML5 drag reorder
+      container.draggable = true;
+      container.addEventListener('dragstart', (e) => {
+        e.dataTransfer?.setData('text/plain', item.url || '');
+        container.style.opacity = '0.6';
+      });
+      container.addEventListener('dragend', () => {
+        container.style.opacity = '1';
+      });
+      container.addEventListener('dragover', (e) => {
+        e.preventDefault();
+      });
+      container.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const fromUrl = e.dataTransfer?.getData('text/plain');
+        const toUrl = item.url;
+        if (!fromUrl || !toUrl || fromUrl === toUrl) return;
+        const sites = this._categories?.[this._currentCategory]?.sites;
+        if (!Array.isArray(sites)) return;
+        const fromKey = normalizeLaunchDeckUrl(fromUrl);
+        const toKey = normalizeLaunchDeckUrl(toUrl);
+        const fromIdx = sites.findIndex(
+          (s) => normalizeLaunchDeckUrl(s.url) === fromKey
+        );
+        const toIdx = sites.findIndex(
+          (s) => normalizeLaunchDeckUrl(s.url) === toKey
+        );
+        if (fromIdx < 0 || toIdx < 0) return;
+        const next = sites.slice();
+        const [moved] = next.splice(fromIdx, 1);
+        next.splice(toIdx, 0, moved);
+        this._categories[this._currentCategory].sites = next;
+        void this._persistCurrentDeckOrder(this._currentCategory).then(() => {
+          this._renderCategory(this._currentCategory);
+        });
+      });
+
+      footer.appendChild(upBtn);
+      footer.appendChild(downBtn);
+      footer.appendChild(removeBtn);
+      container.appendChild(accent);
+      container.appendChild(mainLink);
+      container.appendChild(footer);
+      return container;
+    }
 
     const previewBtn = doc.createElement('button');
     previewBtn.type = 'button';
@@ -3437,51 +3930,7 @@ export class LauncherPopover {
       previewBtn.style.color = '#9aa3ab';
     });
 
-    const hideBtn = doc.createElement('button');
-    hideBtn.type = 'button';
-    hideBtn.className = 'kp-launcher-card-hide';
-    hideBtn.title = 'Hide from Launch Deck';
-    hideBtn.setAttribute('aria-label', 'Hide from Launch Deck');
-    hideBtn.style.cssText = `
-      width: 52px;
-      flex-shrink: 0;
-      padding: 10px 8px;
-      background: rgba(0, 0, 0, 0.25);
-      border: none;
-      border-left: 1px solid rgba(255, 255, 255, 0.08);
-      color: #9aa3ab;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.15s, color 0.15s;
-    `;
-    hideBtn.innerHTML = `
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"
-        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-        <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
-        <line x1="1" y1="1" x2="23" y2="23"/>
-      </svg>
-    `.trim();
-
-    hideBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      void this._hideLaunchDeckItem(item.url);
-    });
-    hideBtn.addEventListener('mouseenter', () => {
-      hideBtn.style.background = 'rgba(0, 0, 0, 0.4)';
-      hideBtn.style.color = '#ffb4b4';
-    });
-    hideBtn.addEventListener('mouseleave', () => {
-      hideBtn.style.background = 'rgba(0, 0, 0, 0.25)';
-      hideBtn.style.color = '#9aa3ab';
-    });
-
     footer.appendChild(previewBtn);
-    footer.appendChild(hideBtn);
     container.appendChild(accent);
     container.appendChild(mainLink);
     container.appendChild(footer);
@@ -3512,16 +3961,20 @@ export class LauncherPopover {
 
   /**
    * Favorites / History / Search listing cards.
-   * @param {{ title?: string, url?: string, isDefault?: boolean, dateAdded?: number }} item
+   * @param {{ title?: string, url?: string, isDefault?: boolean, dateAdded?: number, lastVisitTime?: number }} item
    * @param {{ showAddedOn?: boolean }} [opts]
    */
   _createListingCard(item, opts = {}) {
     const doc = document;
     const domain = extractDomain(item.url) || String(item.url || '');
     const path = extractPath(item.url);
-    const addedLabel = opts.showAddedOn
+    const visitedLabel = this._formatCardDate(item.lastVisitTime);
+    const addedLabel = !visitedLabel && opts.showAddedOn
       ? this._formatBookmarkAddedDate(item.dateAdded)
       : null;
+    const dateOverlayText = visitedLabel
+      ? `Visited on ${visitedLabel}`
+      : (addedLabel ? `Added on ${addedLabel}` : null);
 
     const container = doc.createElement('div');
     container.className = 'kp-launcher-card-container kp-launcher-listing-card';
@@ -3559,7 +4012,7 @@ export class LauncherPopover {
       display: flex;
       flex-direction: column;
       padding: 20px;
-      padding-bottom: ${addedLabel ? '36px' : '20px'};
+      padding-bottom: ${dateOverlayText ? '36px' : '20px'};
       text-decoration: none;
       color: inherit;
       cursor: pointer;
@@ -3616,29 +4069,14 @@ export class LauncherPopover {
     mainLink.appendChild(domainEl);
     mainLink.appendChild(pathEl);
 
-    if (addedLabel) {
-      const addedOverlay = doc.createElement('div');
-      addedOverlay.className = 'kp-launcher-card-added-on';
-      addedOverlay.textContent = `Added on ${addedLabel}`;
-      addedOverlay.style.cssText = `
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        padding: 6px 12px;
-        background: rgba(0, 0, 0, 0.72);
-        border-top: 1px solid rgba(255, 255, 255, 0.08);
-        color: #c8c8c8;
-        font-size: 11px;
-        font-weight: 500;
-        letter-spacing: 0.01em;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        pointer-events: none;
-        z-index: 2;
-      `;
-      mainLink.appendChild(addedOverlay);
+    if (dateOverlayText) {
+      mainLink.appendChild(
+        this._createCardDateOverlay(
+          doc,
+          dateOverlayText,
+          visitedLabel ? 'kp-launcher-card-visited-on' : 'kp-launcher-card-added-on'
+        )
+      );
     }
 
     const previewBtn = doc.createElement('button');
@@ -3896,10 +4334,14 @@ export class LauncherPopover {
 
     const key = e.key.toLowerCase();
 
-    // Always allow Escape to close
+    // Always allow Escape to close (or exit Launch Deck edit mode first)
     if (key === 'escape') {
       e.preventDefault();
       e.stopPropagation();
+      if (this._launchDeckEditMode) {
+        this._setLaunchDeckEditMode(false);
+        return true;
+      }
       this.hide();
       return true;
     }

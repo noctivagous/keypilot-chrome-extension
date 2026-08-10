@@ -51,6 +51,7 @@ import { DEFAULT_SETTINGS, getSettings, setSettings, SETTINGS_STORAGE_KEY, scrol
 import { getOrCreateBuiltinFunctionUserAction, getUserKeyboardLayoutById, getUserActionById, getUserMacroById, listUserActions, listUserMacros } from './modules/keyboard-layout-store.js';
 import { runLegacyMacroKeyFunction } from './modules/macro-key-runtime.js';
 import { getFunctionDef, functionWorksWhileTyping, FIXED_KEY_FUNCTION_IDS } from './config/function-library.js';
+import { getStockMacroById, resolveMacroById } from './config/stock-macros.js';
 import { chordSlotKeyFromEvent } from './utils/key-chord.js';
 import { getTextAtPoint } from './utils/text-at-point.js';
 import { toggleKeyboardLayoutConfigurator } from './ui/keyboard-layout-configurator.js';
@@ -1267,32 +1268,83 @@ export class KeyPilot extends EventManager {
   }
 
   /**
-   * Run a Macro's Steps in order, each resolved through the same Function Library used by
-   * `type: 'function'` slots — see KEY_ACTION_ARCHITECTURE.md "Runtime resolution". A Step's
-   * handler is called with the *originating* keydown event for every Step (there is only one
-   * real keyboard event per macro run); handlers that don't need it simply ignore it, matching
-   * the existing convention (e.g. `handleSendTextToAiKey` takes no arguments at all).
+   * Run a Macro's Steps in order. Function steps resolve through the Function Library;
+   * Logic steps (wait / gate / stop / runMacro) are handled here — see KEY_ACTION_ARCHITECTURE.md.
+   * A Function Step's handler is called with the *originating* keydown event for every Step
+   * (there is only one real keyboard event per macro run).
    * @param {string} macroId
    * @param {KeyboardEvent} [e]
+   * @param {string[]} [_callStack] Nested-run cycle guard (internal).
    */
-  async _runMacroById(macroId, e) {
+  async _runMacroById(macroId, e, _callStack = []) {
     try {
       const id = String(macroId || '');
       if (!id) return;
-      let macro = (this._currentUserMacros || []).find((m) => m && m.id === id) || null;
+      if (Array.isArray(_callStack) && _callStack.includes(id)) {
+        console.warn('[KeyPilot] Macro cycle detected:', [..._callStack, id].join(' → '));
+        this.overlayManager?.showNotification?.('Macro cycle detected — stopped.', 'error');
+        return;
+      }
+
+      let macro = resolveMacroById(id, this._currentUserMacros);
       if (!macro) {
-        try { macro = await getUserMacroById(id); } catch { macro = null; }
+        try {
+          const user = await getUserMacroById(id);
+          if (user) {
+            macro = { id: user.id, label: String(user.label || 'Macro'), steps: user.steps || [], stock: false };
+          } else {
+            const stock = getStockMacroById(id);
+            if (stock) {
+              macro = { id: stock.id, label: stock.label, steps: stock.steps.map((s) => ({ ...s })), stock: true };
+            }
+          }
+        } catch {
+          macro = null;
+        }
       }
       if (!macro) return;
 
       const steps = Array.isArray(macro.steps) ? macro.steps : [];
       if (steps.length === 0) {
-        this.overlayManager?.showNotification?.(`Macro "${macro.label}" has no steps yet — add some via the Function Library panel.`, 'info');
+        this.overlayManager?.showNotification?.(
+          `Macro "${macro.label}" has no steps yet — add some via Keyboard Layout Config.`,
+          'info'
+        );
         return;
       }
 
-      for (const step of steps) {
-        await this._runMacroStep(step, e, id);
+      const stack = [...(Array.isArray(_callStack) ? _callStack : []), id];
+      let priorResult = undefined;
+      let i = 0;
+      while (i < steps.length) {
+        const step = steps[i];
+        const kind = step?.kind || (step?.functionId ? 'function' : '');
+
+        if (kind === 'wait') {
+          const ms = Math.max(0, Number(step.ms) || 0);
+          if (ms > 0) await new Promise((resolve) => setTimeout(resolve, ms));
+          i += 1;
+          continue;
+        }
+        if (kind === 'stop') break;
+        if (kind === 'gate') {
+          const ok = this._evalMacroGate(step, priorResult);
+          if (!ok) {
+            i += 1 + Math.max(0, Math.floor(Number(step.thenSkip) || 0));
+            continue;
+          }
+          i += 1;
+          continue;
+        }
+        if (kind === 'runMacro') {
+          const nestedId = String(step.macroId || '');
+          if (nestedId) await this._runMacroById(nestedId, e, stack);
+          i += 1;
+          continue;
+        }
+
+        priorResult = await this._runMacroStep(step, e, id);
+        i += 1;
       }
     } catch (err) {
       console.warn('[KeyPilot] Macro execution failed:', err);
@@ -1300,30 +1352,62 @@ export class KeyPilot extends EventManager {
   }
 
   /**
-   * Run a single Macro Step. Failures are logged and swallowed so one bad Step doesn't abort the
-   * rest of the Macro.
+   * Evaluate a Gate Logic step against the prior Function step's return value.
+   * @param {{ op?: string, left?: string, leftKey?: string, right?: any }} step
+   * @param {any} priorResult
+   * @returns {boolean}
+   */
+  _evalMacroGate(step, priorResult) {
+    const op = String(step?.op || 'truthy');
+    let left = priorResult;
+    const leftSrc = String(step?.left || 'prior');
+    if (leftSrc === 'prior') {
+      left = priorResult;
+      if (step?.leftKey && priorResult && typeof priorResult === 'object') {
+        left = priorResult[String(step.leftKey)];
+      }
+    } else {
+      left = leftSrc;
+    }
+    const right = step?.right;
+    switch (op) {
+      case 'falsy': return !left;
+      case 'eq': return left == right; // eslint-disable-line eqeqeq
+      case 'neq': return left != right; // eslint-disable-line eqeqeq
+      case 'gt': return Number(left) > Number(right);
+      case 'lt': return Number(left) < Number(right);
+      case 'truthy':
+      default: return !!left;
+    }
+  }
+
+  /**
+   * Run a single Function Macro Step. Failures are logged and swallowed so one bad Step
+   * doesn't abort the rest of the Macro. Returns the handler result (for Gate steps).
    * @param {import('./modules/keyboard-layout-store.js').MacroStep} step
    * @param {KeyboardEvent} [e]
    * @param {string} [macroId]
+   * @returns {Promise<any>}
    */
   async _runMacroStep(step, e, macroId) {
     const functionId = step?.functionId;
-    if (!functionId) return;
+    if (!functionId) return undefined;
     const def = getFunctionDef(functionId);
     const handlerName = def && def.handler ? String(def.handler) : '';
     const fn = handlerName ? this[handlerName] : null;
     if (typeof fn !== 'function') {
       console.warn('[KeyPilot] Macro step references unknown Function handler:', functionId);
-      return;
+      return undefined;
     }
     const delay = Number(step?.delayMsBefore);
     if (Number.isFinite(delay) && delay > 0) {
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
     try {
-      await fn.call(this, e, step.parameters, { functionId, macroId });
+      return await fn.call(this, e, step.parameters, { functionId, macroId });
     } catch (err) {
       console.warn('[KeyPilot] Macro step failed:', functionId, err);
+      return undefined;
     }
   }
 
@@ -1553,9 +1637,13 @@ export class KeyPilot extends EventManager {
           keyboardLayout: this._keyboardUiLayout,
           layoutId: this._keyboardLayoutId,
           // Seed saved dock/free coords so the first paint is not bottom-left then jump.
-          panelPosition: knownPosition || undefined
+          panelPosition: knownPosition || undefined,
+          getKeyPilot: () => this
         });
       } else {
+        try {
+          this.floatingKeyboardHelp.setKeyPilotAccessor?.(() => this);
+        } catch { /* ignore */ }
         // Keep bindings current (in case they were updated).
         this.floatingKeyboardHelp.setKeybindings(kb);
         if (typeof this.floatingKeyboardHelp.setKeyboardLayout === 'function') {
@@ -2690,6 +2778,12 @@ export class KeyPilot extends EventManager {
       }
       return;
     }
+  }
+
+  handleKeyUp(e) {
+    // KeyPilot may have stopped the matching keydown before the floating
+    // keyboard's listener could observe it, so mirror releases as well.
+    this._reflectKeyOnKeyboardHelp(e, 'up');
   }
 
   /**

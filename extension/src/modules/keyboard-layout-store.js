@@ -22,6 +22,7 @@ import {
   normalizeFunctionParameters,
   validateFunctionSlotKey
 } from '../config/function-library.js';
+import { getStockMacroById, isStockMacroId } from '../config/stock-macros.js';
 
 export const KEYBOARD_LAYOUT_STORE_KEY = 'kp_keyboard_layout_store_v1';
 
@@ -42,16 +43,34 @@ export const KEYBOARD_LAYOUT_STORE_KEY = 'kp_keyboard_layout_store_v1';
  * }} UserKeyboardLayout
  *
  * @typedef {{
+ *   kind: 'function',
  *   functionId: string,
  *   parameters: Record<string, any>,
  *   delayMsBefore?: number
+ * } | {
+ *   kind: 'wait',
+ *   ms: number
+ * } | {
+ *   kind: 'gate',
+ *   op: string,
+ *   left: string,
+ *   leftKey?: string,
+ *   right?: any,
+ *   thenSkip?: number
+ * } | {
+ *   kind: 'stop'
+ * } | {
+ *   kind: 'runMacro',
+ *   macroId: string
  * }} MacroStep
  *
  * @typedef {{
  *   id: string,
  *   label: string,
  *   icon?: string,
- *   // Ordered list of Function calls — see KEY_ACTION_ARCHITECTURE.md "Data model".
+ *   // When forked from a stock macro, the stock id (same product rule as builtin → user layouts).
+ *   baseStockMacroId?: string,
+ *   // Ordered list of Function / Logic steps — see KEY_ACTION_ARCHITECTURE.md "Data model".
  *   // Replaces the old, always-empty `actions: any[]` placeholder field.
  *   steps: MacroStep[],
  *   createdAt: number,
@@ -130,20 +149,55 @@ function slotLabelFromBinding(binding) {
 
 /**
  * @param {any} step
- * @returns {MacroStep|null} null if `step.functionId` isn't a known Function.
+ * @returns {MacroStep|null} null if the step cannot be normalized.
  */
-function normalizeMacroStep(step) {
-  const functionId = String(step?.functionId || '');
-  const def = getFunctionDef(functionId);
-  if (!def) return null;
-  /** @type {MacroStep} */
-  const out = {
-    functionId: def.id,
-    parameters: normalizeFunctionParameters(def.id, step?.parameters)
-  };
-  const delay = Number(step?.delayMsBefore);
-  if (Number.isFinite(delay) && delay > 0) out.delayMsBefore = delay;
-  return out;
+export function normalizeMacroStep(step) {
+  if (!step || typeof step !== 'object') return null;
+  const rawKind = String(step.kind || (step.functionId ? 'function' : '')).trim();
+  const kind = rawKind === 'run_macro' ? 'runMacro' : rawKind;
+
+  if (kind === 'wait') {
+    const ms = Math.max(0, Math.floor(Number(step.ms) || 0));
+    return { kind: 'wait', ms };
+  }
+  if (kind === 'stop') {
+    return { kind: 'stop' };
+  }
+  if (kind === 'runMacro') {
+    const macroId = String(step.macroId || '').trim();
+    if (!macroId) return null;
+    return { kind: 'runMacro', macroId };
+  }
+  if (kind === 'gate') {
+    const thenSkip = Math.max(0, Math.floor(Number(step.thenSkip) || 0));
+    /** @type {MacroStep} */
+    const out = {
+      kind: 'gate',
+      op: String(step.op || 'truthy'),
+      left: String(step.left || 'prior')
+    };
+    if (step.leftKey != null && String(step.leftKey)) out.leftKey = String(step.leftKey);
+    if (step.right !== undefined) out.right = step.right;
+    if (thenSkip > 0) out.thenSkip = thenSkip;
+    return out;
+  }
+
+  // Function step (explicit kind, or legacy `{ functionId, parameters }` without kind).
+  if (kind === 'function' || step.functionId) {
+    const functionId = String(step.functionId || '');
+    const def = getFunctionDef(functionId);
+    if (!def) return null;
+    /** @type {MacroStep} */
+    const out = {
+      kind: 'function',
+      functionId: def.id,
+      parameters: normalizeFunctionParameters(def.id, step?.parameters)
+    };
+    const delay = Number(step?.delayMsBefore);
+    if (Number.isFinite(delay) && delay > 0) out.delayMsBefore = delay;
+    return out;
+  }
+  return null;
 }
 
 /**
@@ -162,7 +216,8 @@ function normalizeStoredMacros(rawMacros) {
   for (const [id, m] of Object.entries(src)) {
     if (!m || typeof m !== 'object') continue;
     const rawSteps = Array.isArray(m.steps) ? m.steps : (Array.isArray(m.actions) ? m.actions : []);
-    out[id] = {
+    /** @type {UserMacro} */
+    const macro = {
       id: String(m.id || id),
       label: String(m.label || 'Macro'),
       icon: m.icon,
@@ -170,6 +225,8 @@ function normalizeStoredMacros(rawMacros) {
       createdAt: Number.isFinite(m.createdAt) ? m.createdAt : nowMs(),
       updatedAt: Number.isFinite(m.updatedAt) ? m.updatedAt : nowMs()
     };
+    if (m.baseStockMacroId) macro.baseStockMacroId = String(m.baseStockMacroId);
+    out[id] = macro;
   }
   return out;
 }
@@ -380,10 +437,42 @@ export async function upsertUserMacro(macro) {
     createdAt: Number.isFinite(prev?.createdAt) ? prev.createdAt : (Number.isFinite(macro.createdAt) ? macro.createdAt : t),
     updatedAt: t
   };
+  const baseStock = macro.baseStockMacroId ?? prev?.baseStockMacroId;
+  if (baseStock) m.baseStockMacroId = String(baseStock);
   if (!st.macros || typeof st.macros !== 'object') st.macros = {};
   st.macros[m.id] = m;
   await setKeyboardLayoutStore(st);
   return m;
+}
+
+/**
+ * Fork a stock macro into an editable user macro (`baseStockMacroId` preserved).
+ * @param {string} stockMacroId
+ * @param {{ label?: string }} [params]
+ * @returns {Promise<UserMacro|null>}
+ */
+export async function forkStockMacroToUser(stockMacroId, { label } = {}) {
+  const stockId = String(stockMacroId || '');
+  if (!isStockMacroId(stockId)) return null;
+  const stock = getStockMacroById(stockId);
+  if (!stock) return null;
+  const st = await getKeyboardLayoutStore();
+  const id = genId('macro:');
+  const t = nowMs();
+  /** @type {UserMacro} */
+  const macro = {
+    id,
+    label: String(label || `${stock.label} (user)`),
+    icon: stock.icon || 'placeholder',
+    baseStockMacroId: stock.id,
+    steps: (stock.steps || []).map((s) => normalizeMacroStep({ ...s })).filter(Boolean),
+    createdAt: t,
+    updatedAt: t
+  };
+  if (!st.macros || typeof st.macros !== 'object') st.macros = {};
+  st.macros[id] = macro;
+  await setKeyboardLayoutStore(st);
+  return macro;
 }
 
 /**
@@ -400,36 +489,38 @@ export async function deleteUserMacro(id) {
 }
 
 /**
- * Append a Step (a Function call) to a Macro.
+ * Append a Step to a Macro (Function or Logic).
  * @param {string} macroId
- * @param {{ functionId: string, parameters?: Record<string, any>, delayMsBefore?: number }} step
- * @returns {Promise<UserMacro|null>} null if the macro or Function id is unknown.
+ * @param {Partial<MacroStep> & { functionId?: string, parameters?: Record<string, any>, delayMsBefore?: number }} step
+ * @returns {Promise<UserMacro|null>} null if the macro is unknown or the step is invalid.
  */
 export async function addUserMacroStep(macroId, step) {
   const macro = await getUserMacroById(macroId);
   if (!macro) return null;
-  const normalized = normalizeMacroStep({
-    functionId: step?.functionId,
-    parameters: step?.parameters ?? defaultFunctionParameters(step?.functionId),
-    delayMsBefore: step?.delayMsBefore
-  });
+  const raw = step && typeof step === 'object' ? { ...step } : {};
+  if ((!raw.kind || raw.kind === 'function') && raw.functionId && raw.parameters === undefined) {
+    raw.parameters = defaultFunctionParameters(raw.functionId);
+  }
+  const normalized = normalizeMacroStep(raw);
   if (!normalized) return null;
   return await upsertUserMacro({ ...macro, steps: [...(macro.steps || []), normalized] });
 }
 
 /**
- * Patch one Step in place (e.g. update its bound parameters).
+ * Patch one Step in place (e.g. update its bound parameters or Logic fields).
  * @param {string} macroId
  * @param {number} index
- * @param {{ functionId?: string, parameters?: Record<string, any>, delayMsBefore?: number }} patch
+ * @param {Record<string, any>} patch
  * @returns {Promise<UserMacro|null>}
  */
 export async function updateUserMacroStep(macroId, index, patch = {}) {
   const macro = await getUserMacroById(macroId);
   if (!macro || !Array.isArray(macro.steps) || !macro.steps[index]) return null;
   const merged = { ...macro.steps[index], ...patch };
+  const normalized = normalizeMacroStep(merged);
+  if (!normalized) return null;
   const steps = macro.steps.slice();
-  steps[index] = merged;
+  steps[index] = normalized;
   return await upsertUserMacro({ ...macro, steps });
 }
 

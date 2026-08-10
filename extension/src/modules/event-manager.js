@@ -25,6 +25,7 @@ export class EventManager {
     if (this.isActive) return;
 
     this.addListener(document, 'keydown', this.handleKeyDown.bind(this), { capture: true });
+    this.addListener(document, 'keyup', this.handleKeyUp.bind(this), { capture: true });
 
     // Single capture pointer/mouse move is enough for cursor coords + non-DOM-hover modes.
     // (Legacy triple mousemove + mouseover/enter amplified work on every pixel.)
@@ -90,6 +91,10 @@ export class EventManager {
   }
 
   handleKeyDown(_e) {
+    // Override in implementation
+  }
+
+  handleKeyUp(_e) {
     // Override in implementation
   }
 

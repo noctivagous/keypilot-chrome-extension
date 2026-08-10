@@ -55,7 +55,8 @@ function getStyleCss() {
   });
 }
 
-function ensureStylesInjected(doc = document) {
+/** Ensure KeyPilot keyboard visualization CSS is present on the document. */
+export function ensureStylesInjected(doc = document) {
   if (!doc || !doc.head) return;
   const css = getStyleCss();
   let style = null;
@@ -76,15 +77,14 @@ function ensureStylesInjected(doc = document) {
       }
     } catch { /* ignore */ }
   }
+  const attrName = (typeof KEYBINDINGS_UI_STYLE_ATTR === 'string' && KEYBINDINGS_UI_STYLE_ATTR)
+    ? KEYBINDINGS_UI_STYLE_ATTR
+    : 'data-kp-keybindings-ui-style';
+
   if (!style) {
     style = doc.createElement('style');
     try {
-      style.setAttribute(
-        (typeof KEYBINDINGS_UI_STYLE_ATTR === 'string' && KEYBINDINGS_UI_STYLE_ATTR)
-          ? KEYBINDINGS_UI_STYLE_ATTR
-          : 'data-kp-keybindings-ui-style',
-        'true'
-      );
+      style.setAttribute(attrName, 'true');
     } catch {
       // ignore
     }
@@ -93,8 +93,24 @@ function ensureStylesInjected(doc = document) {
     return;
   }
   // Keep styles up-to-date (also replaces any build-time font URL placeholders).
+  // Insert the new sheet before removing the old one so keys never briefly lose
+  // `opacity: 0` on `.key-press-overlay` (that looked like a pressed-key flash).
   if (style.textContent !== css) {
-    style.textContent = css;
+    const next = doc.createElement('style');
+    try {
+      next.setAttribute(attrName, 'true');
+    } catch { /* ignore */ }
+    next.textContent = css;
+    try {
+      if (style.parentNode) {
+        style.parentNode.insertBefore(next, style.nextSibling);
+        style.parentNode.removeChild(style);
+      } else {
+        doc.head.appendChild(next);
+      }
+    } catch {
+      try { style.textContent = css; } catch { /* ignore */ }
+    }
   }
 }
 
@@ -827,7 +843,7 @@ export function unpinKeyPopover() {
   hidePopover(pop);
 }
 
-function attachKeyPopoverBehavior({ root, keybindings }) {
+export function attachKeyPopoverBehavior({ root, keybindings }) {
   if (!root) return;
   const doc = root.ownerDocument || document;
 
