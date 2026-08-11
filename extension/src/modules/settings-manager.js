@@ -128,6 +128,7 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  *   currentKeyboardLayoutId: string,
  *   keyboardReferenceKeyFeedback: boolean,
  *   keyboardReferenceShowNumberRow: boolean,
+ *   keyboardReferenceCollapsed: boolean,
  *   actionsLibraryTableExpanded: string[],
  *   controlStrip: ControlStripSettings,
  *   panelPositions: PanelPositionsSettings,
@@ -157,6 +158,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
   // When true, the floating keyboard reference panel includes the number row (1–0).
   // Default is off to keep the panel compact.
   keyboardReferenceShowNumberRow: false,
+  // When true, the floating keyboard reference panel is titlebar-only (body hidden).
+  keyboardReferenceCollapsed: false,
   // Actions Library hierarchical table: expanded group keys (top-level open by default;
   // nested categories / parents start collapsed until the user opens them).
   actionsLibraryTableExpanded: Object.freeze(['functions', 'macros', 'macroKeys']),
@@ -620,6 +623,10 @@ export async function getSettings() {
         stored?.keyboardReferenceShowNumberRow,
         DEFAULT_SETTINGS.keyboardReferenceShowNumberRow
       ),
+      keyboardReferenceCollapsed: normalizeBoolean(
+        stored?.keyboardReferenceCollapsed,
+        DEFAULT_SETTINGS.keyboardReferenceCollapsed
+      ),
       actionsLibraryTableExpanded: normalizeActionsLibraryTableExpanded(
         stored?.actionsLibraryTableExpanded
       ),
@@ -752,6 +759,10 @@ export async function setSettings(partial) {
   next.keyboardReferenceShowNumberRow = normalizeBoolean(
     next.keyboardReferenceShowNumberRow,
     DEFAULT_SETTINGS.keyboardReferenceShowNumberRow
+  );
+  next.keyboardReferenceCollapsed = normalizeBoolean(
+    next.keyboardReferenceCollapsed,
+    DEFAULT_SETTINGS.keyboardReferenceCollapsed
   );
   next.actionsLibraryTableExpanded = normalizeActionsLibraryTableExpanded(
     next.actionsLibraryTableExpanded

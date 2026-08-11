@@ -557,6 +557,7 @@ export class FloatingKeyboardHelp {
     this._ensure();
     this._bindSettingsSync();
     this._refreshKeyFeedbackSetting(); // async; best-effort
+    this._hydrateCollapsedFromSettings(); // async; best-effort
 
     // Always paint the best-known position before the panel becomes visible so a
     // saved free/dock location never flashes at the default bottom-left corner.
@@ -1132,6 +1133,10 @@ export class FloatingKeyboardHelp {
           this._layoutSelectEl = layoutSelect || null;
           this._layoutTitleEl = titleEl || null;
           this._collapseBtn = collapseBtn || null;
+          // Prefer early shell collapsed attribute so we don't expand a titlebar-only paint.
+          try {
+            if (existing.getAttribute('data-kp-collapsed') === 'true') this._collapsed = true;
+          } catch { /* ignore */ }
           if (this.closeBtn) {
             try {
               this.closeBtn.removeEventListener('click', this._onCloseClick);
@@ -1273,10 +1278,36 @@ export class FloatingKeyboardHelp {
     } catch { /* ignore */ }
   }
 
+  /**
+   * Collapse / expand the keyboard body (titlebar stays).
+   * @param {boolean} collapsed
+   * @param {{ persist?: boolean }} [opts]
+   */
+  setCollapsed(collapsed, { persist = false } = {}) {
+    const next = !!collapsed;
+    if (this._collapsed === next) {
+      this._applyCollapsedLayout();
+      return;
+    }
+    this._collapsed = next;
+    this._applyCollapsedLayout();
+    if (persist) {
+      try {
+        void setSettings({ keyboardReferenceCollapsed: next });
+      } catch { /* ignore */ }
+    }
+  }
+
   _onCollapseClick(e) {
     try { e?.preventDefault?.(); e?.stopPropagation?.(); } catch { /* ignore */ }
-    this._collapsed = !this._collapsed;
-    this._applyCollapsedLayout();
+    this.setCollapsed(!this._collapsed, { persist: true });
+  }
+
+  async _hydrateCollapsedFromSettings() {
+    try {
+      const settings = await getSettings();
+      this.setCollapsed(!!settings?.keyboardReferenceCollapsed, { persist: false });
+    } catch { /* ignore */ }
   }
 
   /**
@@ -2221,6 +2252,10 @@ export class FloatingKeyboardHelp {
       const entry = changes && changes[SETTINGS_STORAGE_KEY];
       if (!entry || !entry.newValue) return;
       this._setKeyFeedbackEnabled(!!entry.newValue.keyboardReferenceKeyFeedback);
+      // Cross-tab collapse sync (titlebar-only vs full keyboard).
+      if (Object.prototype.hasOwnProperty.call(entry.newValue, 'keyboardReferenceCollapsed')) {
+        this.setCollapsed(!!entry.newValue.keyboardReferenceCollapsed, { persist: false });
+      }
       // Cross-tab / cross-page position sync (and re-apply after navigation restore).
       const nextPos = entry.newValue.panelPositions?.keyboardReference;
       if (nextPos && typeof nextPos === 'object') {

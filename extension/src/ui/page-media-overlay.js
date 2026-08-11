@@ -31,14 +31,20 @@ import {
 } from '../utils/page-media-utils.js';
 import { Z_INDEX } from '../config/constants.js';
 import { storageGetValue, storageSetValue } from '../utils/storage.js';
+import { createSegmentedControl } from './segmented-control.js';
 
 const OVERLAY_ID = 'kpv2-page-media-overlay';
 const STYLE_ID = 'kpv2-page-media-styles';
-/** Slider 1 = current size; 2.5 = 2.5×. Persisted as the CSS scale factor. */
+/** Slider 1–2.5; default 1.5×. Persisted as the CSS scale factor. */
 const IMAGE_SCALE_STORAGE_KEY = 'kp_page_media_image_scale';
 const IMAGE_SCALE_SLIDER_MIN = 1;
 const IMAGE_SCALE_SLIDER_MAX = 2.5;
 const IMAGE_SCALE_SLIDER_STEP = 0.25;
+const IMAGE_SCALE_DEFAULT = 1.5;
+/** Image-tab card frame: square crop vs natural aspect. */
+const IMAGE_ASPECT_STORAGE_KEY = 'kp_page_media_image_aspect';
+/** @typedef {'square'|'original'} ImageAspectMode */
+const IMAGE_ASPECT_DEFAULT = /** @type {ImageAspectMode} */ ('square');
 
 /** @type {HTMLElement|null} */
 let _overlay = null;
@@ -64,8 +70,12 @@ let _imageFlatList = [];
 let _notify = () => {};
 /** @type {(item: import('../utils/page-media-utils.js').PageMediaItem) => void|Promise<void>} */
 let _onSendToMediaLibrary = async () => {};
-/** Slider position 0…2.5 (0 = current size). */
-let _imageScaleSlider = IMAGE_SCALE_SLIDER_MIN;
+/** Slider position 1…2.5 (default 1.5×). */
+let _imageScaleSlider = IMAGE_SCALE_DEFAULT;
+/** @type {ImageAspectMode} */
+let _imageAspectMode = IMAGE_ASPECT_DEFAULT;
+/** @type {ReturnType<typeof createSegmentedControl>|null} */
+let _aspectControl = null;
 
 /**
  * @returns {boolean}
@@ -118,7 +128,9 @@ export function closePageMediaOverlay() {
   _enrichGen += 1;
   _notify = () => {};
   _onSendToMediaLibrary = async () => {};
-  _imageScaleSlider = IMAGE_SCALE_SLIDER_MIN;
+  _imageScaleSlider = IMAGE_SCALE_DEFAULT;
+  _imageAspectMode = IMAGE_ASPECT_DEFAULT;
+  _aspectControl = null;
   if (typeof cb === 'function') {
     try { cb(); } catch { /* ignore */ }
   }
@@ -132,7 +144,7 @@ export function closePageMediaOverlay() {
  */
 function normalizeImageScaleSlider(raw) {
   let n = Number(raw);
-  if (!Number.isFinite(n)) return IMAGE_SCALE_SLIDER_MIN;
+  if (!Number.isFinite(n)) return IMAGE_SCALE_DEFAULT;
   // Legacy: 0…2.5 slider mapped to CSS 1…2.5 via lerp.
   if (n >= 0 && n < IMAGE_SCALE_SLIDER_MIN) {
     n = 1 + (n / IMAGE_SCALE_SLIDER_MAX) * (IMAGE_SCALE_SLIDER_MAX - 1);
@@ -157,11 +169,108 @@ function formatImageScaleReadout(slider) {
 
 async function loadImageScalePreference() {
   try {
-    const stored = await storageGetValue(IMAGE_SCALE_STORAGE_KEY, IMAGE_SCALE_SLIDER_MIN);
-    _imageScaleSlider = normalizeImageScaleSlider(stored);
+    const stored = await storageGetValue(IMAGE_SCALE_STORAGE_KEY, IMAGE_SCALE_DEFAULT);
+    _imageScaleSlider = normalizeImageScaleSlider(
+      stored === undefined || stored === null ? IMAGE_SCALE_DEFAULT : stored
+    );
   } catch {
-    _imageScaleSlider = IMAGE_SCALE_SLIDER_MIN;
+    _imageScaleSlider = IMAGE_SCALE_DEFAULT;
   }
+}
+
+/**
+ * @param {unknown} raw
+ * @returns {ImageAspectMode}
+ */
+function normalizeImageAspectMode(raw) {
+  return raw === 'original' ? 'original' : 'square';
+}
+
+async function loadImageAspectPreference() {
+  try {
+    const stored = await storageGetValue(IMAGE_ASPECT_STORAGE_KEY, IMAGE_ASPECT_DEFAULT);
+    _imageAspectMode = normalizeImageAspectMode(stored);
+  } catch {
+    _imageAspectMode = IMAGE_ASPECT_DEFAULT;
+  }
+}
+
+/**
+ * @param {ImageAspectMode} mode
+ */
+function persistImageAspectPreference(mode) {
+  _imageAspectMode = normalizeImageAspectMode(mode);
+  try {
+    void storageSetValue(IMAGE_ASPECT_STORAGE_KEY, _imageAspectMode);
+  } catch { /* ignore */ }
+}
+
+/**
+ * Apply aspect mode class + refresh all image thumbs.
+ * @param {ImageAspectMode} [mode]
+ */
+function applyImageAspectMode(mode = _imageAspectMode) {
+  _imageAspectMode = normalizeImageAspectMode(mode);
+  if (!_overlay) return;
+  const content = _overlay.querySelector('.kpv2-page-media-content');
+  if (content instanceof HTMLElement) {
+    content.classList.toggle('is-aspect-square', _imageAspectMode === 'square');
+    content.classList.toggle('is-aspect-original', _imageAspectMode === 'original');
+  }
+  if (_aspectControl) {
+    _aspectControl.setValue(_imageAspectMode, { silent: true });
+  }
+  requestAnimationFrame(() => {
+    if (!_overlay) return;
+    const thumbs = _overlay.querySelectorAll('.kpv2-page-media-card-image .kpv2-page-media-thumb');
+    for (const thumb of thumbs) {
+      if (!(thumb instanceof HTMLImageElement)) continue;
+      const wrap = thumb.closest('.kpv2-page-media-thumb-wrap');
+      if (wrap instanceof HTMLElement) applyThumbFitMode(thumb, wrap);
+    }
+  });
+}
+
+function updateAspectToolbarVisibility() {
+  if (!_overlay) return;
+  const bar = _overlay.querySelector('.kpv2-page-media-aspect-bar');
+  if (!(bar instanceof HTMLElement)) return;
+  const show = _activeTab === 'image';
+  bar.hidden = !show;
+  bar.setAttribute('aria-hidden', show ? 'false' : 'true');
+}
+
+/**
+ * @returns {HTMLElement}
+ */
+function buildImageAspectToolbar() {
+  const bar = document.createElement('div');
+  bar.className = 'kpv2-page-media-aspect-bar';
+  bar.hidden = _activeTab !== 'image';
+  bar.setAttribute('aria-hidden', _activeTab === 'image' ? 'false' : 'true');
+
+  const label = document.createElement('span');
+  label.className = 'kpv2-page-media-aspect-label';
+  label.textContent = 'Card Aspect Ratio:';
+
+  _aspectControl = createSegmentedControl({
+    className: 'kpv2-page-media-aspect-seg',
+    ariaLabel: 'Card aspect ratio',
+    value: _imageAspectMode,
+    options: [
+      { value: 'square', label: 'Square Crop', title: 'Square crop thumbnails' },
+      { value: 'original', label: 'Img Original', title: 'Keep each image’s original aspect ratio' }
+    ],
+    onChange: (value) => {
+      const mode = normalizeImageAspectMode(value);
+      persistImageAspectPreference(mode);
+      applyImageAspectMode(mode);
+    }
+  });
+
+  bar.appendChild(label);
+  bar.appendChild(_aspectControl.root);
+  return bar;
 }
 
 /**
@@ -176,7 +285,7 @@ function persistImageScalePreference(slider) {
 }
 
 /**
- * Apply --kpv2-pm-image-scale on the overlay content and refresh thumb fit.
+ * Apply --kpv2-pm-image-scale on overlay content (all tabs) and refresh thumb fit.
  * @param {number} [slider]
  */
 function applyImageScale(slider = _imageScaleSlider) {
@@ -195,7 +304,7 @@ function applyImageScale(slider = _imageScaleSlider) {
   // Re-measure native/cover fit after cell size changes.
   requestAnimationFrame(() => {
     if (!_overlay) return;
-    const thumbs = _overlay.querySelectorAll('.kpv2-page-media-card-image .kpv2-page-media-thumb');
+    const thumbs = _overlay.querySelectorAll('.kpv2-page-media-thumb');
     for (const thumb of thumbs) {
       if (!(thumb instanceof HTMLImageElement)) continue;
       const wrap = thumb.closest('.kpv2-page-media-thumb-wrap');
@@ -210,7 +319,7 @@ function applyImageScale(slider = _imageScaleSlider) {
 function buildImageScaleControl() {
   const wrap = document.createElement('div');
   wrap.className = 'kpv2-page-media-scale';
-  wrap.title = 'Image thumbnail scale (1×–2.5×)';
+  wrap.title = 'Overlay content scale (1×–2.5×, all tabs)';
 
   const label = document.createElement('span');
   label.className = 'kpv2-page-media-scale-label';
@@ -227,7 +336,7 @@ function buildImageScaleControl() {
   range.max = String(IMAGE_SCALE_SLIDER_MAX);
   range.step = String(IMAGE_SCALE_SLIDER_STEP);
   range.value = String(_imageScaleSlider);
-  range.setAttribute('aria-label', 'Image thumbnail scale');
+  range.setAttribute('aria-label', 'Page Media content scale');
 
   const maxTag = document.createElement('span');
   maxTag.className = 'kpv2-page-media-scale-edge';
@@ -273,6 +382,7 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
     : async () => { _notify('Media Library is not built yet — coming soon', 'info'); };
 
   await loadImageScalePreference();
+  await loadImageAspectPreference();
 
   const groups = groupPageMediaByCategory(_items);
   if (groups.image.length) _activeTab = 'image';
@@ -406,6 +516,7 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
   fullView.addEventListener('click', () => closeFullView(), true);
 
   overlay.appendChild(header);
+  overlay.appendChild(buildImageAspectToolbar());
   overlay.appendChild(content);
   overlay.appendChild(fullView);
 
@@ -419,6 +530,8 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
   document.documentElement.appendChild(overlay);
   _overlay = overlay;
   applyImageScale(_imageScaleSlider);
+  applyImageAspectMode(_imageAspectMode);
+  updateAspectToolbarVisibility();
 
   try {
     _prevOverflow = document.body.style.overflow || '';
@@ -462,6 +575,8 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
 
   renderGrid();
   if (_activeTab === 'image') startImageEnrichment();
+  applyImageAspectMode(_imageAspectMode);
+  updateAspectToolbarVisibility();
 }
 
 /**
@@ -480,6 +595,9 @@ function setActiveTab(tab) {
   }
   renderGrid();
   if (tab === 'image') startImageEnrichment();
+  applyImageScale(_imageScaleSlider);
+  applyImageAspectMode(_imageAspectMode);
+  updateAspectToolbarVisibility();
 }
 
 function startImageEnrichment() {
@@ -726,6 +844,7 @@ function renderImageGrid(opts = {}) {
   if (opts.preserveScroll) {
     try { content.scrollTop = scrollTop; } catch { /* ignore */ }
   }
+  applyImageAspectMode(_imageAspectMode);
 }
 
 /**
@@ -960,11 +1079,6 @@ function formatPageTextKind(item) {
 /**
  * @param {import('../utils/page-media-utils.js').PageMediaItem} item
  * @param {() => void} onActivate
- * @returns {HTMLElement}
- */
-/**
- * @param {import('../utils/page-media-utils.js').PageMediaItem} item
- * @param {() => void} onActivate
  * @param {{ displayUrl?: string }} [opts]
  * @returns {HTMLElement}
  */
@@ -978,9 +1092,24 @@ function buildUrlRow(item, onActivate, opts = {}) {
   const main = document.createElement('div');
   main.className = 'kpv2-page-media-url-main';
 
+  const displayUrl = opts.displayUrl || item.url;
+  const linkTitle = String(item.label || '').trim();
+  const showTitle = !!(
+    linkTitle &&
+    linkTitle !== item.url &&
+    linkTitle !== displayUrl
+  );
+
+  if (showTitle) {
+    const titleEl = document.createElement('div');
+    titleEl.className = 'kpv2-page-media-url-title';
+    titleEl.textContent = linkTitle;
+    main.appendChild(titleEl);
+  }
+
   const urlEl = document.createElement('div');
   urlEl.className = 'kpv2-page-media-url-text';
-  urlEl.textContent = opts.displayUrl || item.url;
+  urlEl.textContent = displayUrl;
 
   const meta = document.createElement('div');
   meta.className = 'kpv2-page-media-url-meta';
@@ -1332,8 +1461,8 @@ function scheduleImageRegroup() {
 }
 
 /**
- * Cover-crop when the image is larger than the frame; otherwise keep native
- * size centered (never scale up).
+ * Cover-crop in square mode when larger than the frame; otherwise keep native
+ * size centered (never scale up). In original mode, preserve image aspect.
  * @param {HTMLImageElement} thumb
  * @param {HTMLElement} wrap
  */
@@ -1342,6 +1471,16 @@ function applyThumbFitMode(thumb, wrap) {
   const nw = Number(thumb.naturalWidth) || 0;
   const nh = Number(thumb.naturalHeight) || 0;
   if (!(nw > 0 && nh > 0)) return;
+
+  if (_imageAspectMode === 'original') {
+    wrap.style.aspectRatio = `${nw} / ${nh}`;
+    thumb.classList.remove('is-cover');
+    thumb.classList.add('is-native', 'is-original');
+    return;
+  }
+
+  wrap.style.aspectRatio = '';
+  thumb.classList.remove('is-original');
 
   let cw = Number(wrap.clientWidth) || 0;
   let ch = Number(wrap.clientHeight) || 0;
@@ -1574,6 +1713,30 @@ function ensureStyles() {
   border-bottom: ${NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM};
   flex-shrink: 0;
 }
+.kpv2-page-media-aspect-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  padding: 8px 14px;
+  background: ${c.panel};
+  border-bottom: 1px solid ${c.panelEdgeDark};
+  box-shadow: 0 1px 0 ${c.panelEdge} inset;
+}
+.kpv2-page-media-aspect-bar[hidden] {
+  display: none !important;
+}
+.kpv2-page-media-aspect-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: ${c.fgDim};
+  letter-spacing: 0.02em;
+  user-select: none;
+  white-space: nowrap;
+}
+.kpv2-page-media-aspect-seg {
+  font-size: 11px;
+}
 .kpv2-page-media-title-wrap {
   display: flex;
   align-items: center;
@@ -1717,58 +1880,129 @@ function ensureStyles() {
   overflow: auto;
   padding: 16px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 12px;
+  --kpv2-pm-image-scale: 1.5;
+  grid-template-columns: repeat(auto-fill, minmax(calc(180px * var(--kpv2-pm-image-scale, 1.5)), 1fr));
+  gap: calc(12px * var(--kpv2-pm-image-scale, 1.5));
   align-content: flex-start;
 }
 .kpv2-page-media-content.is-image-tab,
 .kpv2-page-media-content.is-video-tab {
   display: block;
   padding: 12px 16px 24px;
-  --kpv2-pm-image-scale: 1;
 }
-.kpv2-page-media-content.is-image-tab .kpv2-page-media-size-grid {
-  grid-template-columns: repeat(auto-fill, minmax(calc(140px * var(--kpv2-pm-image-scale, 1)), 1fr));
-  gap: calc(12px * var(--kpv2-pm-image-scale, 1));
+.kpv2-page-media-content .kpv2-page-media-size-grid {
+  grid-template-columns: repeat(auto-fill, minmax(calc(140px * var(--kpv2-pm-image-scale, 1.5)), 1fr));
+  gap: calc(12px * var(--kpv2-pm-image-scale, 1.5));
 }
-.kpv2-page-media-content.is-image-tab .kpv2-page-media-meta-row {
-  min-height: calc(22px * var(--kpv2-pm-image-scale, 1));
-  padding: calc(5px * var(--kpv2-pm-image-scale, 1)) calc(8px * var(--kpv2-pm-image-scale, 1));
-  gap: calc(8px * var(--kpv2-pm-image-scale, 1));
+.kpv2-page-media-content .kpv2-page-media-meta-row {
+  min-height: calc(22px * var(--kpv2-pm-image-scale, 1.5));
+  padding: calc(5px * var(--kpv2-pm-image-scale, 1.5)) calc(8px * var(--kpv2-pm-image-scale, 1.5));
+  gap: calc(8px * var(--kpv2-pm-image-scale, 1.5));
 }
-.kpv2-page-media-content.is-image-tab .kpv2-page-media-badge {
-  font-size: calc(10px * var(--kpv2-pm-image-scale, 1));
+.kpv2-page-media-content .kpv2-page-media-badge {
+  font-size: calc(10px * var(--kpv2-pm-image-scale, 1.5));
 }
-.kpv2-page-media-content.is-image-tab .kpv2-page-media-info {
-  padding: calc(8px * var(--kpv2-pm-image-scale, 1)) calc(10px * var(--kpv2-pm-image-scale, 1));
+.kpv2-page-media-content .kpv2-page-media-info {
+  padding: calc(8px * var(--kpv2-pm-image-scale, 1.5)) calc(10px * var(--kpv2-pm-image-scale, 1.5));
 }
-.kpv2-page-media-content.is-image-tab .kpv2-page-media-name {
-  font-size: calc(11px * var(--kpv2-pm-image-scale, 1));
+.kpv2-page-media-content .kpv2-page-media-name {
+  font-size: calc(11px * var(--kpv2-pm-image-scale, 1.5));
 }
-.kpv2-page-media-content.is-image-tab .kpv2-page-media-meta {
-  margin-top: calc(4px * var(--kpv2-pm-image-scale, 1));
-  font-size: calc(10px * var(--kpv2-pm-image-scale, 1));
+.kpv2-page-media-content .kpv2-page-media-meta {
+  margin-top: calc(4px * var(--kpv2-pm-image-scale, 1.5));
+  font-size: calc(10px * var(--kpv2-pm-image-scale, 1.5));
 }
-.kpv2-page-media-content.is-image-tab .kpv2-page-media-size-heading {
-  font-size: calc(12px * var(--kpv2-pm-image-scale, 1));
-  margin-bottom: calc(10px * var(--kpv2-pm-image-scale, 1));
+.kpv2-page-media-content .kpv2-page-media-size-heading {
+  font-size: calc(12px * var(--kpv2-pm-image-scale, 1.5));
+  margin-bottom: calc(10px * var(--kpv2-pm-image-scale, 1.5));
 }
-.kpv2-page-media-content.is-image-tab .kpv2-page-media-size-count {
-  font-size: calc(11px * var(--kpv2-pm-image-scale, 1));
+.kpv2-page-media-content .kpv2-page-media-size-count {
+  font-size: calc(11px * var(--kpv2-pm-image-scale, 1.5));
+}
+.kpv2-page-media-content .kpv2-page-media-action {
+  font-size: calc(10px * var(--kpv2-pm-image-scale, 1.5));
+  padding: calc(5px * var(--kpv2-pm-image-scale, 1.5)) calc(4px * var(--kpv2-pm-image-scale, 1.5));
+}
+.kpv2-page-media-content .kpv2-page-media-glyph {
+  font-size: calc(18px * var(--kpv2-pm-image-scale, 1.5));
+}
+.kpv2-page-media-content .kpv2-page-media-empty {
+  font-size: calc(13px * var(--kpv2-pm-image-scale, 1.5));
+  padding: calc(48px * var(--kpv2-pm-image-scale, 1.5)) calc(16px * var(--kpv2-pm-image-scale, 1.5));
+}
+/* Text tab */
+.kpv2-page-media-content .kpv2-page-media-text-list {
+  gap: calc(6px * var(--kpv2-pm-image-scale, 1.5));
+}
+.kpv2-page-media-content .kpv2-page-media-text-row {
+  gap: calc(10px * var(--kpv2-pm-image-scale, 1.5));
+  padding: calc(10px * var(--kpv2-pm-image-scale, 1.5)) calc(12px * var(--kpv2-pm-image-scale, 1.5));
+}
+.kpv2-page-media-content .kpv2-page-media-text-kind {
+  font-size: calc(10px * var(--kpv2-pm-image-scale, 1.5));
+  margin-bottom: calc(4px * var(--kpv2-pm-image-scale, 1.5));
+}
+.kpv2-page-media-content .kpv2-page-media-text-body {
+  font-size: calc(12px * var(--kpv2-pm-image-scale, 1.5));
+}
+.kpv2-page-media-content .kpv2-page-media-text-meta {
+  margin-top: calc(6px * var(--kpv2-pm-image-scale, 1.5));
+  font-size: calc(10px * var(--kpv2-pm-image-scale, 1.5));
+}
+/* URLs tab */
+.kpv2-page-media-content .kpv2-page-media-url-list {
+  gap: calc(14px * var(--kpv2-pm-image-scale, 1.5));
+}
+.kpv2-page-media-content .kpv2-page-media-url-group {
+  padding: calc(10px * var(--kpv2-pm-image-scale, 1.5)) calc(12px * var(--kpv2-pm-image-scale, 1.5));
+}
+.kpv2-page-media-content .kpv2-page-media-url-domain {
+  font-size: calc(12px * var(--kpv2-pm-image-scale, 1.5));
+  margin-bottom: calc(10px * var(--kpv2-pm-image-scale, 1.5));
+}
+.kpv2-page-media-content .kpv2-page-media-url-group-rows {
+  gap: calc(8px * var(--kpv2-pm-image-scale, 1.5));
+}
+.kpv2-page-media-content .kpv2-page-media-url-subpath {
+  gap: calc(6px * var(--kpv2-pm-image-scale, 1.5));
+  padding: calc(8px * var(--kpv2-pm-image-scale, 1.5));
+  flex-basis: calc(280px * var(--kpv2-pm-image-scale, 1.5));
+}
+.kpv2-page-media-content .kpv2-page-media-url-subpath-heading {
+  font-size: calc(11px * var(--kpv2-pm-image-scale, 1.5));
+}
+.kpv2-page-media-content .kpv2-page-media-url-subpath-rows {
+  gap: calc(6px * var(--kpv2-pm-image-scale, 1.5));
+}
+.kpv2-page-media-content .kpv2-page-media-url-row {
+  flex-basis: calc(180px * var(--kpv2-pm-image-scale, 1.5));
+  max-width: calc(320px * var(--kpv2-pm-image-scale, 1.5));
+  min-width: calc(140px * var(--kpv2-pm-image-scale, 1.5));
+  gap: calc(6px * var(--kpv2-pm-image-scale, 1.5));
+  padding: calc(8px * var(--kpv2-pm-image-scale, 1.5)) calc(10px * var(--kpv2-pm-image-scale, 1.5));
+}
+.kpv2-page-media-content .kpv2-page-media-url-title {
+  font-size: calc(12px * var(--kpv2-pm-image-scale, 1.5));
+}
+.kpv2-page-media-content .kpv2-page-media-url-text {
+  font-size: calc(11px * var(--kpv2-pm-image-scale, 1.5));
+}
+.kpv2-page-media-content .kpv2-page-media-url-meta {
+  font-size: calc(10px * var(--kpv2-pm-image-scale, 1.5));
 }
 .kpv2-page-media-content.is-url-tab {
   display: block;
   padding: 8px 12px 24px;
 }
 .kpv2-page-media-url-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 14px 16px;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: stretch;
 }
 .kpv2-page-media-url-group {
   margin-bottom: 0;
-  padding: 10px 10px 8px;
+  padding: 10px 12px 10px;
   border: 1px solid ${c.panelEdgeDark};
   border-radius: 3px;
   background: ${c.panel};
@@ -1780,7 +2014,7 @@ function ensureStyles() {
   background: linear-gradient(180deg, rgba(74,144,200,0.10) 0%, ${c.panel} 36%);
 }
 .kpv2-page-media-url-domain {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
   padding: 0 2px;
   color: ${c.accent};
   text-transform: none;
@@ -1791,23 +2025,28 @@ function ensureStyles() {
 }
 .kpv2-page-media-url-group-rows {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: stretch;
 }
 .kpv2-page-media-url-subpath {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 6px 6px 4px;
+  gap: 6px;
+  padding: 8px;
   border: 1px solid ${c.panelEdgeDark};
   border-radius: 2px;
   background: rgba(0, 0, 0, 0.18);
+  min-width: min(100%, 220px);
+  flex: 1 1 280px;
+  max-width: 100%;
 }
 .kpv2-page-media-url-subpath-heading {
   display: flex;
   align-items: baseline;
   gap: 8px;
-  margin: 0 0 2px;
+  margin: 0;
   padding: 0 2px;
   font-size: 11px;
   font-weight: 600;
@@ -1816,11 +2055,16 @@ function ensureStyles() {
 }
 .kpv2-page-media-url-subpath-rows {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: stretch;
 }
 .kpv2-page-media-url-group .kpv2-page-media-url-row {
   margin-bottom: 0;
+  flex: 1 1 180px;
+  max-width: 320px;
+  min-width: 140px;
 }
 .kpv2-page-media-content.is-page-text-tab {
   display: block;
@@ -1898,8 +2142,9 @@ function ensureStyles() {
 }
 .kpv2-page-media-url-row {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
   padding: 8px 10px;
   border: 1px solid ${c.panelEdgeDark};
   border-radius: 3px;
@@ -1919,10 +2164,20 @@ function ensureStyles() {
 .kpv2-page-media-url-main {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.kpv2-page-media-url-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: ${c.fg};
+  line-height: 1.35;
+  word-break: break-word;
 }
 .kpv2-page-media-url-text {
-  font-size: 12px;
-  color: ${c.fg};
+  font-size: 11px;
+  color: ${c.fgDim};
   word-break: break-all;
   line-height: 1.35;
 }
@@ -2103,6 +2358,18 @@ function ensureStyles() {
   object-fit: none;
   object-position: center;
 }
+.kpv2-page-media-content.is-aspect-original .kpv2-page-media-card-image .kpv2-page-media-thumb-wrap {
+  aspect-ratio: auto;
+  min-height: 72px;
+}
+.kpv2-page-media-content.is-aspect-original .kpv2-page-media-card-image .kpv2-page-media-thumb.is-original {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  max-height: none;
+  object-fit: contain;
+  object-position: center;
+}
 .kpv2-page-media-glyph {
   width: 100%;
   aspect-ratio: 1 / 1;
@@ -2205,26 +2472,19 @@ function ensureStyles() {
 }
 @media (max-width: 640px) {
   .kpv2-page-media-content {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(calc(140px * var(--kpv2-pm-image-scale, 1.5)), 1fr));
     padding: 10px;
-    gap: 8px;
+    gap: calc(8px * var(--kpv2-pm-image-scale, 1.5));
   }
   .kpv2-page-media-size-grid {
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 8px;
-  }
-  .kpv2-page-media-content.is-image-tab .kpv2-page-media-size-grid {
-    grid-template-columns: repeat(auto-fill, minmax(calc(110px * var(--kpv2-pm-image-scale, 1)), 1fr));
-    gap: calc(8px * var(--kpv2-pm-image-scale, 1));
+    grid-template-columns: repeat(auto-fill, minmax(calc(110px * var(--kpv2-pm-image-scale, 1.5)), 1fr));
+    gap: calc(8px * var(--kpv2-pm-image-scale, 1.5));
   }
   .kpv2-page-media-header {
     flex-wrap: wrap;
   }
   .kpv2-page-media-scale-range {
     width: 72px;
-  }
-  .kpv2-page-media-url-list {
-    grid-template-columns: 1fr;
   }
 }
 `;

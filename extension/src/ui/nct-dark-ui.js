@@ -86,3 +86,81 @@ export const NCT_DARK_UI_FOCUS_RING = `inset 0 0 0 1px rgba(74,144,200,0.55)`;
 export const NCT_DARK_UI_SELECTED_TINT = 'rgba(74,144,200,0.22)';
 export const NCT_DARK_UI_SELECTED_TEXT = '#e8f0f8';
 export const NCT_DARK_UI_HOVER_TINT = 'rgba(255,255,255,0.06)';
+
+/**
+ * NCT pro-app chrome for top-center flash / toggle toasts.
+ * Keeps the caller's accent color as the fill; adds bevel rim + specular sheen.
+ *
+ * @param {HTMLElement|null} el
+ * @param {{
+ *   backgroundColor?: string,
+ *   hasThumbnail?: boolean,
+ *   zIndex?: number|string
+ * }} [opts]
+ */
+export function applyFlashNotificationStyle(el, opts = {}) {
+  if (!el) return;
+  const color = String(opts.backgroundColor || '#4CAF50');
+  const hasThumbnail = !!opts.hasThumbnail;
+  const zIndex = opts.zIndex != null ? String(opts.zIndex) : '';
+  try {
+    Object.assign(el.style, {
+      position: 'fixed',
+      top: '16px',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      // Specular bevel over the solid accent (color stays dominant).
+      background:
+        `linear-gradient(180deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.07) 34%, rgba(0,0,0,0.14) 100%), ${color}`,
+      backgroundColor: color,
+      color: '#fff',
+      padding: hasThumbnail ? '8px 12px 8px 14px' : '8px 16px',
+      borderRadius: '2px',
+      border: '1px solid rgba(0,0,0,0.55)',
+      fontSize: '12px',
+      fontWeight: '700',
+      letterSpacing: '0.02em',
+      fontFamily: NCT_DARK_UI_FONT,
+      lineHeight: '1.35',
+      textShadow: '0 1px 0 rgba(0,0,0,0.35)',
+      zIndex,
+      boxShadow:
+        '0 0 0 1px rgba(255,255,255,0.22) inset, ' +
+        '0 1px 0 rgba(255,255,255,0.16) inset, ' +
+        '0 10px 28px rgba(0,0,0,0.50)',
+      opacity: '0',
+      transition: 'opacity 0.18s ease-out',
+      pointerEvents: 'none',
+      maxWidth: hasThumbnail ? '560px' : '420px',
+      wordWrap: 'break-word',
+      textAlign: hasThumbnail ? 'left' : 'center',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: hasThumbnail ? 'flex-start' : 'center',
+      gap: hasThumbnail ? '12px' : '0',
+      boxSizing: 'border-box'
+    });
+  } catch { /* ignore */ }
+}
+
+/**
+ * Thumbnail frame chrome for flash toasts that include a preview image.
+ * @param {HTMLElement|null} el
+ */
+export function applyFlashNotificationThumbnailStyle(el) {
+  if (!el) return;
+  try {
+    Object.assign(el.style, {
+      flex: '0 0 auto',
+      maxWidth: '150px',
+      maxHeight: '150px',
+      borderRadius: '2px',
+      overflow: 'hidden',
+      backgroundColor: '#141414',
+      border: '1px solid rgba(0,0,0,0.55)',
+      boxShadow:
+        '0 0 0 1px rgba(255,255,255,0.18) inset, 0 6px 16px rgba(0,0,0,0.45)',
+      lineHeight: '0'
+    });
+  } catch { /* ignore */ }
+}

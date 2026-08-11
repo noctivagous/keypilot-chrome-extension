@@ -36,6 +36,10 @@ import {
 } from './config/keyboard-layouts.js';
 import { FloatingKeyboardHelp } from './ui/floating-keyboard-help.js';
 import { ControlStrip } from './ui/control-strip.js';
+import {
+  applyFlashNotificationStyle,
+  applyFlashNotificationThumbnailStyle
+} from './ui/nct-dark-ui.js';
 import { pinKeyPopover } from './ui/keybindings-ui.js';
 import { getActionMode, getActionParameter } from './ui/key-action-settings.js';
 import {
@@ -790,6 +794,14 @@ export class KeyPilot extends EventManager {
     // Control strip visibility / collapsed state.
     try {
       this.applyControlStripFromSettings();
+    } catch { /* ignore */ }
+
+    // Keyboard Reference collapse (cross-tab / settings reload).
+    try {
+      this.floatingKeyboardHelp?.setCollapsed?.(
+        !!this._settings?.keyboardReferenceCollapsed,
+        { persist: false }
+      );
     } catch { /* ignore */ }
 
     // Keyboard link-hover glow may have been toggled in Settings → Click Mode.
@@ -6962,16 +6974,7 @@ export class KeyPilot extends EventManager {
         try {
           objectUrl = URL.createObjectURL(thumbnailBlob);
           const thumbBox = document.createElement('div');
-          Object.assign(thumbBox.style, {
-            flex: '0 0 auto',
-            maxWidth: '150px',
-            maxHeight: '150px',
-            borderRadius: '4px',
-            overflow: 'hidden',
-            backgroundColor: '#fff',
-            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.45)',
-            lineHeight: '0'
-          });
+          applyFlashNotificationThumbnailStyle(thumbBox);
           const img = document.createElement('img');
           img.src = objectUrl;
           img.alt = '';
@@ -6993,44 +6996,25 @@ export class KeyPilot extends EventManager {
           }
         }
       }
-      
+
       // Style the notification with error handling
       try {
-        Object.assign(notification.style, {
-          position: 'fixed',
-          top: '20px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          backgroundColor: backgroundColor,
-          color: 'white',
-          padding: hasThumbnail ? '10px 14px 10px 20px' : '12px 24px',
-          borderRadius: '6px',
-          fontSize: '14px',
-          fontWeight: '500',
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          zIndex: String(Z_INDEX.NOTIFICATION),
-          boxShadow: '0 6px 20px rgba(0, 0, 0, 0.35)',
-          opacity: '0',
-          transition: 'opacity 0.3s ease-in-out',
-          pointerEvents: 'none',
-          maxWidth: hasThumbnail ? '560px' : '400px',
-          wordWrap: 'break-word',
-          textAlign: hasThumbnail ? 'left' : 'center',
-          display: 'flex',
-          alignItems: 'center',
-          gap: hasThumbnail ? '14px' : '0'
+        applyFlashNotificationStyle(notification, {
+          backgroundColor,
+          hasThumbnail: !!objectUrl,
+          zIndex: Z_INDEX.NOTIFICATION
         });
       } catch (styleError) {
         console.error('[KeyPilot] Error styling notification:', styleError);
         // Continue with basic styling
         notification.style.position = 'fixed';
-        notification.style.top = '20px';
+        notification.style.top = '16px';
         notification.style.left = '50%';
         notification.style.backgroundColor = backgroundColor;
         notification.style.color = 'white';
-        notification.style.padding = '12px 24px';
+        notification.style.padding = '8px 16px';
         notification.style.zIndex = String(Z_INDEX.NOTIFICATION);
-        notification.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.35)';
+        notification.style.boxShadow = '0 10px 28px rgba(0, 0, 0, 0.50)';
       }
 
       // Add to document with error handling

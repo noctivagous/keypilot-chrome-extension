@@ -539,6 +539,35 @@ function walkElements(root, visit, shadowDepth = 0) {
 }
 
 /**
+ * Best-effort visible title for a link / resource element.
+ * @param {Element|null|undefined} el
+ * @returns {string}
+ */
+function linkTitleFromElement(el) {
+  if (!el || el.nodeType !== 1) return '';
+  try {
+    const aria = el.getAttribute?.('aria-label');
+    if (aria && String(aria).trim()) return String(aria).replace(/\s+/g, ' ').trim();
+    const title = el.getAttribute?.('title');
+    if (title && String(title).trim()) return String(title).replace(/\s+/g, ' ').trim();
+    const alt = el.getAttribute?.('alt');
+    if (alt && String(alt).trim()) return String(alt).replace(/\s+/g, ' ').trim();
+    let text = '';
+    try {
+      text = String(/** @type {any} */ (el).innerText || el.textContent || '');
+    } catch {
+      text = String(el.textContent || '');
+    }
+    text = text.replace(/\s+/g, ' ').trim();
+    if (!text) return '';
+    if (text.length > 120) return `${text.slice(0, 119)}…`;
+    return text;
+  } catch {
+    return '';
+  }
+}
+
+/**
  * Collect page media into Image / Video / Text buckets, plus every unique
  * page URL for the URLs tab (no repeats within that tab).
  * @param {Document|Element} [root]
@@ -563,15 +592,25 @@ export function collectPageMedia(root = document) {
     const resolved = resolveUrl(trimmed, el);
     if (!isUsableUrl(resolved)) return;
     if (/^(javascript|mailto|tel|data):/i.test(resolved)) return;
-    if (allPageUrls.has(resolved)) return;
     const ext = extensionFromUrl(resolved);
     if (shouldExcludeFromUrlTab(resolved, ext, el)) return;
+
+    const linkTitle = linkTitleFromElement(el);
+    if (allPageUrls.has(resolved)) {
+      const existing = allPageUrls.get(resolved);
+      if (existing && linkTitle && (!existing.label || existing.label === resolved)) {
+        existing.label = linkTitle;
+        if (!existing.element && el) existing.element = el;
+      }
+      return;
+    }
+
     allPageUrls.set(resolved, {
       category: 'url',
       kind: kind || 'url',
       url: resolved,
       element: el,
-      label: resolved,
+      label: linkTitle || filenameFromUrl(resolved) || resolved,
       ext,
       urlGroup: urlTabGroupForUrl(resolved, ext)
     });

@@ -4,6 +4,7 @@
  */
 import { EventManager } from './event-manager.js';
 import { COLORS, Z_INDEX } from '../config/constants.js';
+import { applyFlashNotificationStyle } from '../ui/nct-dark-ui.js';
 
 export class KeyPilotToggleHandler extends EventManager {
   constructor(keyPilotInstance) {
@@ -469,25 +470,10 @@ export class KeyPilotToggleHandler extends EventManager {
     const notification = document.createElement('div');
     notification.className = 'kpv2-toggle-notification';
     notification.textContent = enabled ? 'KeyPilot Enabled' : 'KeyPilot Disabled';
-    
-    // Style the notification
-    Object.assign(notification.style, {
-      position: 'fixed',
-      top: '20px',
-      left: '50%',
-      transform: 'translateX(-50%)',
+
+    applyFlashNotificationStyle(notification, {
       backgroundColor: enabled ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_ERROR,
-      color: 'white',
-      padding: '12px 24px',
-      borderRadius: '6px',
-      fontSize: '14px',
-      fontWeight: '500',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      zIndex: String(Z_INDEX.NOTIFICATION),
-      boxShadow: '0 6px 20px rgba(0, 0, 0, 0.35)',
-      opacity: '0',
-      transition: 'opacity 0.3s ease-in-out',
-      pointerEvents: 'none'
+      zIndex: Z_INDEX.NOTIFICATION
     });
 
     // Add to document

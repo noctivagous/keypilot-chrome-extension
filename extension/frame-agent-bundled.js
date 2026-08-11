@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-11T00:02:38.927Z
+ * Generated on 2026-08-11T00:32:35.097Z
  */
 
 (() => {
@@ -1426,6 +1426,8 @@
     // When true, the floating keyboard reference panel includes the number row (1–0).
     // Default is off to keep the panel compact.
     keyboardReferenceShowNumberRow: false,
+    // When true, the floating keyboard reference panel is titlebar-only (body hidden).
+    keyboardReferenceCollapsed: false,
     // Actions Library hierarchical table: expanded group keys (top-level open by default;
     // nested categories / parents start collapsed until the user opens them).
     actionsLibraryTableExpanded: Object.freeze(["functions", "macros", "macroKeys"]),
@@ -1757,6 +1759,10 @@
         keyboardReferenceShowNumberRow: normalizeBoolean(
           stored?.keyboardReferenceShowNumberRow,
           DEFAULT_SETTINGS.keyboardReferenceShowNumberRow
+        ),
+        keyboardReferenceCollapsed: normalizeBoolean(
+          stored?.keyboardReferenceCollapsed,
+          DEFAULT_SETTINGS.keyboardReferenceCollapsed
         ),
         actionsLibraryTableExpanded: normalizeActionsLibraryTableExpanded(
           stored?.actionsLibraryTableExpanded

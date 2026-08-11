@@ -19,7 +19,7 @@ export const ONBOARDING_STORAGE_KEYS = {
 export const ONBOARDING_FIRST_SLIDE_ID = 'basic_navigation';
 export const ONBOARDING_PANEL_CLASS = 'kp-onboarding-panel';
 export const ONBOARDING_DEFAULT_TITLE = 'Welcome to KeyPilot';
-export const ONBOARDING_REOPEN_TIP = 'Tip: Press Alt + / to re-open this walkthrough later.';
+export const ONBOARDING_REOPEN_TIP = 'Tip: Press Alt + T to re-open this walkthrough later.';
 
 /** Default z-index fallback if caller does not pass Z_INDEX.ONBOARDING_PANEL. */
 export const ONBOARDING_PANEL_Z_FALLBACK = 2147483026;
@@ -27,6 +27,40 @@ export const ONBOARDING_PANEL_Z_FALLBACK = 2147483026;
 /** Layout: control strip stays at top; walkthrough sits just below it. */
 export const ONBOARDING_DEFAULT_LEFT_PX = 16;
 export const ONBOARDING_DEFAULT_TOP_PX = 16;
+
+/**
+ * Lighter metal chrome for the walkthrough panel
+ * (cool mid-gray bevel — lighter than NCT dark panels; no grain texture).
+ */
+const ONBOARDING_METAL_SPECULAR =
+  'linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.08) 28%, transparent 55%)';
+export const ONBOARDING_METAL = {
+  fg: '#1c1c1c',
+  fgDim: 'rgba(28,28,28,0.72)',
+  fgMute: 'rgba(28,28,28,0.55)',
+  panelBg:
+    `${ONBOARDING_METAL_SPECULAR}, ` +
+    'linear-gradient(180deg, #9a9a9a 0%, #838383 48%, #707070 100%)',
+  titlebarBg:
+    `${ONBOARDING_METAL_SPECULAR}, ` +
+    'linear-gradient(180deg, #b0b0b0 0%, #929292 45%, #787878 100%)',
+  footerBg: 'linear-gradient(180deg, #8a8a8a 0%, #767676 100%)',
+  btnBg: 'linear-gradient(180deg, #c2c2c2 0%, #9e9e9e 50%, #868686 100%)',
+  panelBorder: '1px solid #4a4a4a',
+  panelShadow: '0 0 0 1px rgba(255,255,255,0.28) inset, 0 16px 40px rgba(0,0,0,0.45)',
+  titlebarBorder: '1px solid #4a4a4a',
+  titlebarShadow: '0 1px 0 rgba(255,255,255,0.35)',
+  footerBorder: '1px solid rgba(0,0,0,0.28)',
+  btnBorder: '1px solid #4a4a4a',
+  btnShadow: '0 1px 0 rgba(255,255,255,0.40) inset, 0 -1px 0 rgba(0,0,0,0.18) inset',
+  rowBg: 'rgba(255,255,255,0.18)',
+  rowBorder: '1px solid rgba(0,0,0,0.18)',
+  rowDoneBg: 'rgba(46, 204, 113, 0.22)',
+  checkBorder: '1px solid rgba(0,0,0,0.35)',
+  kbdBg: 'linear-gradient(180deg, #d0d0d0 0%, #a8a8a8 50%, #909090 100%)',
+  kbdBorder: '1px solid #4a4a4a',
+  kbdColor: '#1c1c1c'
+};
 /** Prefixed names avoid clashing with early-inject locals when this file is stamped. */
 export const ONBOARDING_STRIP_TOP_PX = 16;
 export const ONBOARDING_STRIP_HEIGHT_PX = 28;
@@ -202,10 +236,14 @@ export function getOnboardingPanelCss(opts = {}) {
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
         font-size: 11px;
         padding: 1px 6px;
-        border: 1px solid #111;
+        border: ${ONBOARDING_METAL.kbdBorder};
         border-radius: 2px;
-        background: linear-gradient(180deg, #4a4a4a 0%, #343434 50%, #2a2a2a 100%);
-        color: #ddd;
+        background: ${ONBOARDING_METAL.kbdBg};
+        color: ${ONBOARDING_METAL.kbdColor};
+        box-shadow: 0 1px 0 rgba(255,255,255,0.45) inset, 0 -1px 0 rgba(0,0,0,0.18) inset;
+      }
+      .${ONBOARDING_PANEL_CLASS} [data-kp-onboarding-overlay-title="true"] {
+        color: #ffffff;
       }
       /* Next incomplete checklist row — same light-blue glow language as the toggle-off arrow. */
       @keyframes kp-onboarding-next-task-glow {
@@ -303,11 +341,13 @@ function mkIconBtn(doc, label, dataAttr, aria) {
     width: '28px',
     height: '28px',
     borderRadius: '2px',
-    border: '1px solid #111',
-    background: 'linear-gradient(180deg, #4a4a4a 0%, #343434 50%, #2a2a2a 100%)',
-    color: '#ddd',
+    border: ONBOARDING_METAL.btnBorder,
+    background: ONBOARDING_METAL.btnBg,
+    boxShadow: ONBOARDING_METAL.btnShadow,
+    color: ONBOARDING_METAL.fg,
     cursor: 'pointer',
     fontSize: '14px',
+    fontWeight: '700',
     lineHeight: '26px',
     padding: '0',
     display: 'inline-flex',
@@ -369,11 +409,11 @@ export function createOnboardingShell(doc, opts = {}) {
     flexDirection: 'column',
     overflow: 'hidden',
     zIndex: String(zIndex),
-    background: '#232323',
-    color: '#ddd',
-    border: '1px solid #111',
+    background: ONBOARDING_METAL.panelBg,
+    color: ONBOARDING_METAL.fg,
+    border: ONBOARDING_METAL.panelBorder,
     borderRadius: '3px',
-    boxShadow: '0 0 0 1px #3a3a3a inset, 0 16px 40px rgba(0,0,0,0.55)',
+    boxShadow: ONBOARDING_METAL.panelShadow,
     fontFamily: 'Helvetica, Arial, sans-serif',
     pointerEvents: initiallyHidden ? 'none' : 'auto'
   });
@@ -391,9 +431,9 @@ export function createOnboardingShell(doc, opts = {}) {
     justifyContent: 'space-between',
     gap: '10px',
     padding: '10px 12px',
-    background: 'linear-gradient(180deg, #4c4c4c 0%, #353535 45%, #252525 100%)',
-    borderBottom: '1px solid #111',
-    boxShadow: '0 1px 0 #3a3a3a'
+    background: ONBOARDING_METAL.titlebarBg,
+    borderBottom: ONBOARDING_METAL.titlebarBorder,
+    boxShadow: ONBOARDING_METAL.titlebarShadow
   });
 
   const titleWrap = doc.createElement('div');
@@ -411,6 +451,7 @@ export function createOnboardingShell(doc, opts = {}) {
     fontSize: '13px',
     fontWeight: '800',
     letterSpacing: '0.2px',
+    color: ONBOARDING_METAL.fg,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis'
@@ -422,7 +463,7 @@ export function createOnboardingShell(doc, opts = {}) {
   assignStyle(stepEl, {
     fontSize: '12px',
     fontWeight: '600',
-    opacity: '0.75'
+    color: ONBOARDING_METAL.fgDim
   });
 
   // Title wrap only gets the title; step lives in the footer stepWrap
@@ -461,10 +502,11 @@ export function createOnboardingShell(doc, opts = {}) {
   resetBtn.setAttribute('data-kp-onboarding-reset', 'true');
   assignStyle(resetBtn, {
     height: '28px',
-    borderRadius: '999px',
-    border: '1px solid rgba(255,255,255,0.18)',
-    background: 'rgba(255,255,255,0.06)',
-    color: 'rgba(255,255,255,0.92)',
+    borderRadius: '2px',
+    border: ONBOARDING_METAL.btnBorder,
+    background: ONBOARDING_METAL.btnBg,
+    boxShadow: ONBOARDING_METAL.btnShadow,
+    color: ONBOARDING_METAL.fg,
     cursor: 'pointer',
     fontSize: '12px',
     fontWeight: '700',
@@ -478,15 +520,17 @@ export function createOnboardingShell(doc, opts = {}) {
   closeBtn.setAttribute('aria-label', 'Close onboarding walkthrough');
   closeBtn.setAttribute('data-kp-onboarding-close', 'true');
   assignStyle(closeBtn, {
-    width: '30px',
-    height: '30px',
-    borderRadius: '10px',
-    border: '1px solid rgba(255,255,255,0.18)',
-    background: 'rgba(255,255,255,0.06)',
-    color: 'rgba(255,255,255,0.95)',
+    width: '28px',
+    height: '28px',
+    borderRadius: '2px',
+    border: ONBOARDING_METAL.btnBorder,
+    background: ONBOARDING_METAL.btnBg,
+    boxShadow: ONBOARDING_METAL.btnShadow,
+    color: ONBOARDING_METAL.fg,
     cursor: 'pointer',
     fontSize: '18px',
-    lineHeight: '28px',
+    fontWeight: '700',
+    lineHeight: '26px',
     padding: '0',
     flex: '0 0 auto'
   });
@@ -516,7 +560,8 @@ export function createOnboardingShell(doc, opts = {}) {
     justifyContent: 'space-between',
     gap: '10px',
     padding: '10px 12px',
-    borderTop: '1px solid rgba(255,255,255,0.10)'
+    background: ONBOARDING_METAL.footerBg,
+    borderTop: ONBOARDING_METAL.footerBorder
   });
   footer.appendChild(stepWrap);
   footer.appendChild(resetBtn);
@@ -653,8 +698,8 @@ function applyTaskRowVisual(row, task, done, opts = {}) {
   } catch { /* ignore */ }
 
   assignStyle(row, {
-    background: done ? 'rgba(46, 204, 113, 0.10)' : (isNext ? NEXT_TASK_BG : 'rgba(255,255,255,0.04)'),
-    border: isNext ? NEXT_TASK_BORDER : '1px solid rgba(255,255,255,0.10)',
+    background: done ? ONBOARDING_METAL.rowDoneBg : (isNext ? NEXT_TASK_BG : ONBOARDING_METAL.rowBg),
+    border: isNext ? NEXT_TASK_BORDER : ONBOARDING_METAL.rowBorder,
     boxShadow: isNext ? NEXT_TASK_GLOW : 'none'
   });
 
@@ -670,8 +715,8 @@ function applyTaskRowVisual(row, task, done, opts = {}) {
     assignStyle(box, {
       border: done
         ? '1px solid rgba(46, 204, 113, 0.9)'
-        : (isNext ? '1px solid rgba(120, 210, 255, 0.75)' : '1px solid rgba(255,255,255,0.22)'),
-      background: done ? 'rgba(46, 204, 113, 0.85)' : 'transparent',
+        : (isNext ? '1px solid rgba(120, 210, 255, 0.75)' : ONBOARDING_METAL.checkBorder),
+      background: done ? 'rgba(46, 204, 113, 0.85)' : 'rgba(255,255,255,0.25)',
       boxShadow: done
         ? '0 0 0 2px rgba(46, 204, 113, 0.18)'
         : (isNext ? '0 0 0 2px rgba(33, 150, 243, 0.28)' : 'none')
@@ -709,7 +754,7 @@ function applyTaskRowVisual(row, task, done, opts = {}) {
     try {
       renderKeyboardKeysInto(textEl, task.label || task.id);
       assignStyle(textEl, {
-        color: done ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.88)',
+        color: done ? ONBOARDING_METAL.fgDim : ONBOARDING_METAL.fg,
         opacity: done ? '0.95' : '1'
       });
     } catch { /* ignore */ }
@@ -736,9 +781,9 @@ function createTaskRow(doc, task, done, opts = {}) {
     alignItems: 'flex-start',
     gap: '10px',
     padding: '8px 10px',
-    borderRadius: '10px',
-    border: isNext ? NEXT_TASK_BORDER : '1px solid rgba(255,255,255,0.10)',
-    background: done ? 'rgba(46, 204, 113, 0.10)' : (isNext ? NEXT_TASK_BG : 'rgba(255,255,255,0.04)'),
+    borderRadius: '3px',
+    border: isNext ? NEXT_TASK_BORDER : ONBOARDING_METAL.rowBorder,
+    background: done ? ONBOARDING_METAL.rowDoneBg : (isNext ? NEXT_TASK_BG : ONBOARDING_METAL.rowBg),
     boxShadow: isNext ? NEXT_TASK_GLOW : 'none'
   });
 
@@ -747,11 +792,11 @@ function createTaskRow(doc, task, done, opts = {}) {
   assignStyle(box, {
     width: '18px',
     height: '18px',
-    borderRadius: '6px',
+    borderRadius: '2px',
     border: done
       ? '1px solid rgba(46, 204, 113, 0.9)'
-      : (isNext ? '1px solid rgba(120, 210, 255, 0.75)' : '1px solid rgba(255,255,255,0.22)'),
-    background: done ? 'rgba(46, 204, 113, 0.85)' : 'transparent',
+      : (isNext ? '1px solid rgba(120, 210, 255, 0.75)' : ONBOARDING_METAL.checkBorder),
+    background: done ? 'rgba(46, 204, 113, 0.85)' : 'rgba(255,255,255,0.25)',
     boxShadow: done
       ? '0 0 0 2px rgba(46, 204, 113, 0.18)'
       : (isNext ? '0 0 0 2px rgba(33, 150, 243, 0.28)' : 'none'),
@@ -789,7 +834,7 @@ function createTaskRow(doc, task, done, opts = {}) {
   assignStyle(text, {
     fontSize: '13px',
     lineHeight: '1.35',
-    color: done ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.88)',
+    color: done ? ONBOARDING_METAL.fgDim : ONBOARDING_METAL.fg,
     opacity: done ? '0.95' : '1'
   });
 
@@ -900,7 +945,7 @@ export function renderOnboardingSlideSurface(surface, params = {}) {
     assignStyle(body, {
       fontSize: '13px',
       lineHeight: '1.45',
-      color: 'rgba(255,255,255,0.90)',
+      color: ONBOARDING_METAL.fg,
       marginBottom: (tasks.length || showCloseButton) ? '12px' : '0px',
       opacity: '0.95'
     });
@@ -932,9 +977,8 @@ export function renderOnboardingSlideSurface(surface, params = {}) {
     assignStyle(tip, {
       marginTop: '10px',
       fontSize: '12px',
-      opacity: '0.78',
       lineHeight: '1.35',
-      color: 'rgba(255,255,255,0.85)'
+      color: ONBOARDING_METAL.fgMute
     });
     surface.appendChild(tip);
   }
@@ -977,10 +1021,13 @@ function syncCloseTutorialButton(surface, opts = {}) {
       marginLeft: 'auto',
       alignSelf: 'flex-end',
       height: '32px',
-      borderRadius: '999px',
-      border: '1px solid rgba(46, 204, 113, 0.55)',
-      background: 'rgba(46, 204, 113, 0.18)',
-      color: 'rgba(255,255,255,0.92)',
+      borderRadius: '2px',
+      border: '1px solid rgba(30, 120, 70, 0.75)',
+      background:
+        'linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.06) 35%, transparent 60%), ' +
+        'linear-gradient(180deg, #7dcf9a 0%, #4caf72 50%, #3a8f5a 100%)',
+      boxShadow: '0 1px 0 rgba(255,255,255,0.35) inset, 0 -1px 0 rgba(0,0,0,0.18) inset',
+      color: '#0b1410',
       cursor: 'pointer',
       fontSize: '12px',
       fontWeight: '800',
@@ -1074,6 +1121,10 @@ export function ensureOnboardingOverlay(host, doc) {
     try {
       if (existing.parentElement !== root) root.appendChild(existing);
     } catch { /* ignore */ }
+    try {
+      const titleEl = existing.querySelector('[data-kp-onboarding-overlay-title="true"]');
+      if (titleEl) titleEl.style.color = '#ffffff';
+    } catch { /* ignore */ }
     return {
       overlayEl: existing,
       titleEl: existing.querySelector('[data-kp-onboarding-overlay-title="true"]'),
@@ -1119,7 +1170,8 @@ export function ensureOnboardingOverlay(host, doc) {
     fontSize: '14px',
     fontWeight: '900',
     letterSpacing: '0.2px',
-    marginBottom: '8px'
+    marginBottom: '8px',
+    color: '#ffffff'
   });
 
   const msgEl = d.createElement('div');
@@ -1135,6 +1187,7 @@ export function ensureOnboardingOverlay(host, doc) {
   const btnRow = d.createElement('div');
   assignStyle(btnRow, {
     display: 'flex',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'flex-end',
     gap: '8px',
@@ -1145,7 +1198,8 @@ export function ensureOnboardingOverlay(host, doc) {
     const b = d.createElement('button');
     b.type = 'button';
     assignStyle(b, {
-      height: '30px',
+      minHeight: '30px',
+      height: 'auto',
       borderRadius: '999px',
       border: variant === 'primary' ? '1px solid rgba(46, 204, 113, 0.55)' : '1px solid rgba(255,255,255,0.20)',
       background: variant === 'primary' ? 'rgba(46, 204, 113, 0.18)' : 'rgba(255,255,255,0.06)',
@@ -1153,8 +1207,10 @@ export function ensureOnboardingOverlay(host, doc) {
       cursor: 'pointer',
       fontSize: '12px',
       fontWeight: '800',
-      padding: '0 12px',
-      lineHeight: '28px'
+      padding: '4px 12px',
+      lineHeight: '20px',
+      whiteSpace: 'normal',
+      textAlign: 'center'
     });
     return b;
   };

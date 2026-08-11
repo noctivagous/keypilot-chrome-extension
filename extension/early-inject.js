@@ -2254,7 +2254,18 @@
           }
         }
       ],
-      "onEnter": [],
+      "onEnter": [
+        {
+          "type": "overlay",
+          "title": "That's all you need to browse the web with KeyPilot.",
+          "message": "Do you want to try out more keys?",
+          "primaryText": "Yes, Continue",
+          "secondaryText": "No, I'll Do It Later",
+          "secondaryAction": "later",
+          "laterTitle": "Return to this Tutorial with Alt+T",
+          "laterPrimaryText": "OK, Close"
+        }
+      ],
       "bodyText": ""
     },
     {
@@ -3468,7 +3479,7 @@
   const ONBOARDING_FIRST_SLIDE_ID = 'basic_navigation';
   const ONBOARDING_PANEL_CLASS = 'kp-onboarding-panel';
   const ONBOARDING_DEFAULT_TITLE = 'Welcome to KeyPilot';
-  const ONBOARDING_REOPEN_TIP = 'Tip: Press Alt + / to re-open this walkthrough later.';
+  const ONBOARDING_REOPEN_TIP = 'Tip: Press Alt + T to re-open this walkthrough later.';
 
   /** Default z-index fallback if caller does not pass Z_INDEX.ONBOARDING_PANEL. */
   const ONBOARDING_PANEL_Z_FALLBACK = 2147483026;
@@ -3476,6 +3487,40 @@
   /** Layout: control strip stays at top; walkthrough sits just below it. */
   const ONBOARDING_DEFAULT_LEFT_PX = 16;
   const ONBOARDING_DEFAULT_TOP_PX = 16;
+
+  /**
+   * Lighter metal chrome for the walkthrough panel
+   * (cool mid-gray bevel — lighter than NCT dark panels; no grain texture).
+   */
+  const ONBOARDING_METAL_SPECULAR =
+    'linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.08) 28%, transparent 55%)';
+  const ONBOARDING_METAL = {
+    fg: '#1c1c1c',
+    fgDim: 'rgba(28,28,28,0.72)',
+    fgMute: 'rgba(28,28,28,0.55)',
+    panelBg:
+      `${ONBOARDING_METAL_SPECULAR}, ` +
+      'linear-gradient(180deg, #9a9a9a 0%, #838383 48%, #707070 100%)',
+    titlebarBg:
+      `${ONBOARDING_METAL_SPECULAR}, ` +
+      'linear-gradient(180deg, #b0b0b0 0%, #929292 45%, #787878 100%)',
+    footerBg: 'linear-gradient(180deg, #8a8a8a 0%, #767676 100%)',
+    btnBg: 'linear-gradient(180deg, #c2c2c2 0%, #9e9e9e 50%, #868686 100%)',
+    panelBorder: '1px solid #4a4a4a',
+    panelShadow: '0 0 0 1px rgba(255,255,255,0.28) inset, 0 16px 40px rgba(0,0,0,0.45)',
+    titlebarBorder: '1px solid #4a4a4a',
+    titlebarShadow: '0 1px 0 rgba(255,255,255,0.35)',
+    footerBorder: '1px solid rgba(0,0,0,0.28)',
+    btnBorder: '1px solid #4a4a4a',
+    btnShadow: '0 1px 0 rgba(255,255,255,0.40) inset, 0 -1px 0 rgba(0,0,0,0.18) inset',
+    rowBg: 'rgba(255,255,255,0.18)',
+    rowBorder: '1px solid rgba(0,0,0,0.18)',
+    rowDoneBg: 'rgba(46, 204, 113, 0.22)',
+    checkBorder: '1px solid rgba(0,0,0,0.35)',
+    kbdBg: 'linear-gradient(180deg, #d0d0d0 0%, #a8a8a8 50%, #909090 100%)',
+    kbdBorder: '1px solid #4a4a4a',
+    kbdColor: '#1c1c1c'
+  };
   /** Prefixed names avoid clashing with early-inject locals when this file is stamped. */
   const ONBOARDING_STRIP_TOP_PX = 16;
   const ONBOARDING_STRIP_HEIGHT_PX = 28;
@@ -3651,10 +3696,14 @@
           font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
           font-size: 11px;
           padding: 1px 6px;
-          border: 1px solid #111;
+          border: ${ONBOARDING_METAL.kbdBorder};
           border-radius: 2px;
-          background: linear-gradient(180deg, #4a4a4a 0%, #343434 50%, #2a2a2a 100%);
-          color: #ddd;
+          background: ${ONBOARDING_METAL.kbdBg};
+          color: ${ONBOARDING_METAL.kbdColor};
+          box-shadow: 0 1px 0 rgba(255,255,255,0.45) inset, 0 -1px 0 rgba(0,0,0,0.18) inset;
+        }
+        .${ONBOARDING_PANEL_CLASS} [data-kp-onboarding-overlay-title="true"] {
+          color: #ffffff;
         }
         /* Next incomplete checklist row — same light-blue glow language as the toggle-off arrow. */
         @keyframes kp-onboarding-next-task-glow {
@@ -3752,11 +3801,13 @@
       width: '28px',
       height: '28px',
       borderRadius: '2px',
-      border: '1px solid #111',
-      background: 'linear-gradient(180deg, #4a4a4a 0%, #343434 50%, #2a2a2a 100%)',
-      color: '#ddd',
+      border: ONBOARDING_METAL.btnBorder,
+      background: ONBOARDING_METAL.btnBg,
+      boxShadow: ONBOARDING_METAL.btnShadow,
+      color: ONBOARDING_METAL.fg,
       cursor: 'pointer',
       fontSize: '14px',
+      fontWeight: '700',
       lineHeight: '26px',
       padding: '0',
       display: 'inline-flex',
@@ -3818,11 +3869,11 @@
       flexDirection: 'column',
       overflow: 'hidden',
       zIndex: String(zIndex),
-      background: '#232323',
-      color: '#ddd',
-      border: '1px solid #111',
+      background: ONBOARDING_METAL.panelBg,
+      color: ONBOARDING_METAL.fg,
+      border: ONBOARDING_METAL.panelBorder,
       borderRadius: '3px',
-      boxShadow: '0 0 0 1px #3a3a3a inset, 0 16px 40px rgba(0,0,0,0.55)',
+      boxShadow: ONBOARDING_METAL.panelShadow,
       fontFamily: 'Helvetica, Arial, sans-serif',
       pointerEvents: initiallyHidden ? 'none' : 'auto'
     });
@@ -3840,9 +3891,9 @@
       justifyContent: 'space-between',
       gap: '10px',
       padding: '10px 12px',
-      background: 'linear-gradient(180deg, #4c4c4c 0%, #353535 45%, #252525 100%)',
-      borderBottom: '1px solid #111',
-      boxShadow: '0 1px 0 #3a3a3a'
+      background: ONBOARDING_METAL.titlebarBg,
+      borderBottom: ONBOARDING_METAL.titlebarBorder,
+      boxShadow: ONBOARDING_METAL.titlebarShadow
     });
 
     const titleWrap = doc.createElement('div');
@@ -3860,6 +3911,7 @@
       fontSize: '13px',
       fontWeight: '800',
       letterSpacing: '0.2px',
+      color: ONBOARDING_METAL.fg,
       whiteSpace: 'nowrap',
       overflow: 'hidden',
       textOverflow: 'ellipsis'
@@ -3871,7 +3923,7 @@
     assignStyle(stepEl, {
       fontSize: '12px',
       fontWeight: '600',
-      opacity: '0.75'
+      color: ONBOARDING_METAL.fgDim
     });
 
     // Title wrap only gets the title; step lives in the footer stepWrap
@@ -3910,10 +3962,11 @@
     resetBtn.setAttribute('data-kp-onboarding-reset', 'true');
     assignStyle(resetBtn, {
       height: '28px',
-      borderRadius: '999px',
-      border: '1px solid rgba(255,255,255,0.18)',
-      background: 'rgba(255,255,255,0.06)',
-      color: 'rgba(255,255,255,0.92)',
+      borderRadius: '2px',
+      border: ONBOARDING_METAL.btnBorder,
+      background: ONBOARDING_METAL.btnBg,
+      boxShadow: ONBOARDING_METAL.btnShadow,
+      color: ONBOARDING_METAL.fg,
       cursor: 'pointer',
       fontSize: '12px',
       fontWeight: '700',
@@ -3927,15 +3980,17 @@
     closeBtn.setAttribute('aria-label', 'Close onboarding walkthrough');
     closeBtn.setAttribute('data-kp-onboarding-close', 'true');
     assignStyle(closeBtn, {
-      width: '30px',
-      height: '30px',
-      borderRadius: '10px',
-      border: '1px solid rgba(255,255,255,0.18)',
-      background: 'rgba(255,255,255,0.06)',
-      color: 'rgba(255,255,255,0.95)',
+      width: '28px',
+      height: '28px',
+      borderRadius: '2px',
+      border: ONBOARDING_METAL.btnBorder,
+      background: ONBOARDING_METAL.btnBg,
+      boxShadow: ONBOARDING_METAL.btnShadow,
+      color: ONBOARDING_METAL.fg,
       cursor: 'pointer',
       fontSize: '18px',
-      lineHeight: '28px',
+      fontWeight: '700',
+      lineHeight: '26px',
       padding: '0',
       flex: '0 0 auto'
     });
@@ -3965,7 +4020,8 @@
       justifyContent: 'space-between',
       gap: '10px',
       padding: '10px 12px',
-      borderTop: '1px solid rgba(255,255,255,0.10)'
+      background: ONBOARDING_METAL.footerBg,
+      borderTop: ONBOARDING_METAL.footerBorder
     });
     footer.appendChild(stepWrap);
     footer.appendChild(resetBtn);
@@ -4102,8 +4158,8 @@
     } catch { /* ignore */ }
 
     assignStyle(row, {
-      background: done ? 'rgba(46, 204, 113, 0.10)' : (isNext ? NEXT_TASK_BG : 'rgba(255,255,255,0.04)'),
-      border: isNext ? NEXT_TASK_BORDER : '1px solid rgba(255,255,255,0.10)',
+      background: done ? ONBOARDING_METAL.rowDoneBg : (isNext ? NEXT_TASK_BG : ONBOARDING_METAL.rowBg),
+      border: isNext ? NEXT_TASK_BORDER : ONBOARDING_METAL.rowBorder,
       boxShadow: isNext ? NEXT_TASK_GLOW : 'none'
     });
 
@@ -4119,8 +4175,8 @@
       assignStyle(box, {
         border: done
           ? '1px solid rgba(46, 204, 113, 0.9)'
-          : (isNext ? '1px solid rgba(120, 210, 255, 0.75)' : '1px solid rgba(255,255,255,0.22)'),
-        background: done ? 'rgba(46, 204, 113, 0.85)' : 'transparent',
+          : (isNext ? '1px solid rgba(120, 210, 255, 0.75)' : ONBOARDING_METAL.checkBorder),
+        background: done ? 'rgba(46, 204, 113, 0.85)' : 'rgba(255,255,255,0.25)',
         boxShadow: done
           ? '0 0 0 2px rgba(46, 204, 113, 0.18)'
           : (isNext ? '0 0 0 2px rgba(33, 150, 243, 0.28)' : 'none')
@@ -4158,7 +4214,7 @@
       try {
         renderKeyboardKeysInto(textEl, task.label || task.id);
         assignStyle(textEl, {
-          color: done ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.88)',
+          color: done ? ONBOARDING_METAL.fgDim : ONBOARDING_METAL.fg,
           opacity: done ? '0.95' : '1'
         });
       } catch { /* ignore */ }
@@ -4185,9 +4241,9 @@
       alignItems: 'flex-start',
       gap: '10px',
       padding: '8px 10px',
-      borderRadius: '10px',
-      border: isNext ? NEXT_TASK_BORDER : '1px solid rgba(255,255,255,0.10)',
-      background: done ? 'rgba(46, 204, 113, 0.10)' : (isNext ? NEXT_TASK_BG : 'rgba(255,255,255,0.04)'),
+      borderRadius: '3px',
+      border: isNext ? NEXT_TASK_BORDER : ONBOARDING_METAL.rowBorder,
+      background: done ? ONBOARDING_METAL.rowDoneBg : (isNext ? NEXT_TASK_BG : ONBOARDING_METAL.rowBg),
       boxShadow: isNext ? NEXT_TASK_GLOW : 'none'
     });
 
@@ -4196,11 +4252,11 @@
     assignStyle(box, {
       width: '18px',
       height: '18px',
-      borderRadius: '6px',
+      borderRadius: '2px',
       border: done
         ? '1px solid rgba(46, 204, 113, 0.9)'
-        : (isNext ? '1px solid rgba(120, 210, 255, 0.75)' : '1px solid rgba(255,255,255,0.22)'),
-      background: done ? 'rgba(46, 204, 113, 0.85)' : 'transparent',
+        : (isNext ? '1px solid rgba(120, 210, 255, 0.75)' : ONBOARDING_METAL.checkBorder),
+      background: done ? 'rgba(46, 204, 113, 0.85)' : 'rgba(255,255,255,0.25)',
       boxShadow: done
         ? '0 0 0 2px rgba(46, 204, 113, 0.18)'
         : (isNext ? '0 0 0 2px rgba(33, 150, 243, 0.28)' : 'none'),
@@ -4238,7 +4294,7 @@
     assignStyle(text, {
       fontSize: '13px',
       lineHeight: '1.35',
-      color: done ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.88)',
+      color: done ? ONBOARDING_METAL.fgDim : ONBOARDING_METAL.fg,
       opacity: done ? '0.95' : '1'
     });
 
@@ -4349,7 +4405,7 @@
       assignStyle(body, {
         fontSize: '13px',
         lineHeight: '1.45',
-        color: 'rgba(255,255,255,0.90)',
+        color: ONBOARDING_METAL.fg,
         marginBottom: (tasks.length || showCloseButton) ? '12px' : '0px',
         opacity: '0.95'
       });
@@ -4381,9 +4437,8 @@
       assignStyle(tip, {
         marginTop: '10px',
         fontSize: '12px',
-        opacity: '0.78',
         lineHeight: '1.35',
-        color: 'rgba(255,255,255,0.85)'
+        color: ONBOARDING_METAL.fgMute
       });
       surface.appendChild(tip);
     }
@@ -4426,10 +4481,13 @@
         marginLeft: 'auto',
         alignSelf: 'flex-end',
         height: '32px',
-        borderRadius: '999px',
-        border: '1px solid rgba(46, 204, 113, 0.55)',
-        background: 'rgba(46, 204, 113, 0.18)',
-        color: 'rgba(255,255,255,0.92)',
+        borderRadius: '2px',
+        border: '1px solid rgba(30, 120, 70, 0.75)',
+        background:
+          'linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.06) 35%, transparent 60%), ' +
+          'linear-gradient(180deg, #7dcf9a 0%, #4caf72 50%, #3a8f5a 100%)',
+        boxShadow: '0 1px 0 rgba(255,255,255,0.35) inset, 0 -1px 0 rgba(0,0,0,0.18) inset',
+        color: '#0b1410',
         cursor: 'pointer',
         fontSize: '12px',
         fontWeight: '800',
@@ -4523,6 +4581,10 @@
       try {
         if (existing.parentElement !== root) root.appendChild(existing);
       } catch { /* ignore */ }
+      try {
+        const titleEl = existing.querySelector('[data-kp-onboarding-overlay-title="true"]');
+        if (titleEl) titleEl.style.color = '#ffffff';
+      } catch { /* ignore */ }
       return {
         overlayEl: existing,
         titleEl: existing.querySelector('[data-kp-onboarding-overlay-title="true"]'),
@@ -4568,7 +4630,8 @@
       fontSize: '14px',
       fontWeight: '900',
       letterSpacing: '0.2px',
-      marginBottom: '8px'
+      marginBottom: '8px',
+      color: '#ffffff'
     });
 
     const msgEl = d.createElement('div');
@@ -4584,6 +4647,7 @@
     const btnRow = d.createElement('div');
     assignStyle(btnRow, {
       display: 'flex',
+      flexWrap: 'wrap',
       alignItems: 'center',
       justifyContent: 'flex-end',
       gap: '8px',
@@ -4594,7 +4658,8 @@
       const b = d.createElement('button');
       b.type = 'button';
       assignStyle(b, {
-        height: '30px',
+        minHeight: '30px',
+        height: 'auto',
         borderRadius: '999px',
         border: variant === 'primary' ? '1px solid rgba(46, 204, 113, 0.55)' : '1px solid rgba(255,255,255,0.20)',
         background: variant === 'primary' ? 'rgba(46, 204, 113, 0.18)' : 'rgba(255,255,255,0.06)',
@@ -4602,8 +4667,10 @@
         cursor: 'pointer',
         fontSize: '12px',
         fontWeight: '800',
-        padding: '0 12px',
-        lineHeight: '28px'
+        padding: '4px 12px',
+        lineHeight: '20px',
+        whiteSpace: 'normal',
+        textAlign: 'center'
       });
       return b;
     };
@@ -4730,6 +4797,7 @@
   // content script has loaded the custom layout.
   let keyboardUsesCustomLayout = false;
   let keyboardShowNumberRow = false;
+  let keyboardReferenceCollapsed = false;
   let keyboardHelpRoot = null;
   let keyboardHelpKeyboardContainer = null;
   let keyboardHelpStorageListener = null;
@@ -5080,6 +5148,20 @@
         const secondary = String(overlayEntry.secondaryText || overlayEntry.secondary || '').trim();
         overlayRefs.secondaryBtn.textContent = secondary;
         overlayRefs.secondaryBtn.hidden = !secondary;
+        try {
+          const secondaryAction = String(overlayEntry.secondaryAction || '').trim().toLowerCase();
+          if (secondaryAction) overlayRefs.secondaryBtn.dataset.kpSecondaryAction = secondaryAction;
+          else delete overlayRefs.secondaryBtn.dataset.kpSecondaryAction;
+          const laterTitle = String(overlayEntry.laterTitle || '').trim();
+          const laterMessage = String(overlayEntry.laterMessage || overlayEntry.laterText || '').trim();
+          const laterPrimary = String(overlayEntry.laterPrimaryText || overlayEntry.laterPrimary || 'OK, Close').trim();
+          if (laterTitle) overlayRefs.secondaryBtn.dataset.kpLaterTitle = laterTitle;
+          else delete overlayRefs.secondaryBtn.dataset.kpLaterTitle;
+          if (laterMessage) overlayRefs.secondaryBtn.dataset.kpLaterMessage = laterMessage;
+          else delete overlayRefs.secondaryBtn.dataset.kpLaterMessage;
+          if (laterPrimary) overlayRefs.secondaryBtn.dataset.kpLaterPrimary = laterPrimary;
+          else delete overlayRefs.secondaryBtn.dataset.kpLaterPrimary;
+        } catch { /* ignore */ }
       }
     } catch { /* ignore */ }
 
@@ -5093,10 +5175,117 @@
             e.preventDefault();
             e.stopPropagation();
           } catch { /* ignore */ }
+          const shouldClose = overlayRefs.overlayEl?.dataset?.kpOverlayCloseOnPrimary === 'true';
+          try { delete overlayRefs.overlayEl?.dataset?.kpOverlayCloseOnPrimary; } catch { /* ignore */ }
           try { setOnboardingOverlayOpen(overlayRefs.overlayEl, false, onboardingRoot); } catch { /* ignore */ }
-          try { markEarlyOnEnterDone(slideId); } catch { /* ignore */ }
+          try {
+            const id = String(onboardingRoot?.dataset?.kpEarlyOverlaySlideId || slideId || '');
+            if (id) markEarlyOnEnterDone(id);
+          } catch { /* ignore */ }
+          if (shouldClose) {
+            try {
+              if (typeof setOnboardingPanelVisible === 'function') {
+                setOnboardingPanelVisible(onboardingRoot, false);
+              } else if (onboardingRoot) {
+                onboardingRoot.hidden = true;
+                onboardingRoot.style.display = 'none';
+                onboardingRoot.style.pointerEvents = 'none';
+              }
+            } catch { /* ignore */ }
+            try {
+              const activeKey =
+                (typeof ONBOARDING_STORAGE_KEYS !== 'undefined' && ONBOARDING_STORAGE_KEYS.ACTIVE) ||
+                ONBOARDING_ACTIVE_STORAGE_KEY;
+              const payload = { [activeKey]: false, timestamp: Date.now() };
+              const writeBoth = async () => {
+                try { await chrome.storage.sync.set(payload); } catch { /* ignore */ }
+                try { await chrome.storage.local.set(payload); } catch { /* ignore */ }
+              };
+              writeBoth().catch(() => {});
+            } catch { /* ignore */ }
+          }
         });
       }
+    } catch { /* ignore */ }
+
+    // Secondary — close, or show "return later" reminder then close on OK.
+    try {
+      const btn = overlayRefs.secondaryBtn;
+      if (btn && !btn._kpEarlyOverlaySecondaryBound) {
+        btn._kpEarlyOverlaySecondaryBound = true;
+        btn.addEventListener('click', (e) => {
+          try {
+            e.preventDefault();
+            e.stopPropagation();
+          } catch { /* ignore */ }
+          const id = String(onboardingRoot?.dataset?.kpEarlyOverlaySlideId || '');
+          try { if (id) markEarlyOnEnterDone(id); } catch { /* ignore */ }
+          const secondaryAction = String(btn.dataset?.kpSecondaryAction || '').trim().toLowerCase();
+
+          const closeWalkthrough = () => {
+            try { setOnboardingOverlayOpen(overlayRefs.overlayEl, false, onboardingRoot); } catch { /* ignore */ }
+            try {
+              if (typeof setOnboardingPanelVisible === 'function') {
+                setOnboardingPanelVisible(onboardingRoot, false);
+              } else if (onboardingRoot) {
+                onboardingRoot.hidden = true;
+                onboardingRoot.style.display = 'none';
+                onboardingRoot.style.pointerEvents = 'none';
+              }
+            } catch { /* ignore */ }
+            try {
+              const activeKey =
+                (typeof ONBOARDING_STORAGE_KEYS !== 'undefined' && ONBOARDING_STORAGE_KEYS.ACTIVE) ||
+                ONBOARDING_ACTIVE_STORAGE_KEY;
+              const payload = { [activeKey]: false, timestamp: Date.now() };
+              const writeBoth = async () => {
+                try { await chrome.storage.sync.set(payload); } catch { /* ignore */ }
+                try { await chrome.storage.local.set(payload); } catch { /* ignore */ }
+              };
+              writeBoth().catch(() => {});
+            } catch { /* ignore */ }
+          };
+
+          if (secondaryAction === 'later' || secondaryAction === 'defer' || secondaryAction === 'remind') {
+            try {
+              if (overlayRefs.titleEl) {
+                overlayRefs.titleEl.textContent =
+                  String(btn.dataset?.kpLaterTitle || 'Return to this Tutorial with Alt+T');
+              }
+            } catch { /* ignore */ }
+            try {
+              if (overlayRefs.msgEl) {
+                overlayRefs.msgEl.textContent = String(btn.dataset?.kpLaterMessage || '');
+              }
+            } catch { /* ignore */ }
+            try {
+              if (overlayRefs.primaryBtn) {
+                overlayRefs.primaryBtn.textContent = String(btn.dataset?.kpLaterPrimary || 'OK, Close');
+                overlayRefs.primaryBtn.hidden = false;
+              }
+            } catch { /* ignore */ }
+            try {
+              if (overlayRefs.secondaryBtn) overlayRefs.secondaryBtn.hidden = true;
+            } catch { /* ignore */ }
+            try {
+              if (overlayRefs.overlayEl) overlayRefs.overlayEl.dataset.kpOverlayCloseOnPrimary = 'true';
+            } catch { /* ignore */ }
+            try { setOnboardingOverlayOpen(overlayRefs.overlayEl, true, onboardingRoot); } catch { /* ignore */ }
+            return;
+          }
+
+          if (secondaryAction === 'close' || secondaryAction === 'dismiss') {
+            closeWalkthrough();
+            return;
+          }
+
+          try { setOnboardingOverlayOpen(overlayRefs.overlayEl, false, onboardingRoot); } catch { /* ignore */ }
+        });
+      }
+    } catch { /* ignore */ }
+
+    try {
+      if (onboardingRoot && slideId) onboardingRoot.dataset.kpEarlyOverlaySlideId = slideId;
     } catch { /* ignore */ }
 
     try { setOnboardingOverlayOpen(overlayRefs.overlayEl, true, onboardingRoot); } catch { /* ignore */ }
@@ -5735,6 +5924,68 @@
         }
       } catch {}
     }
+  }
+
+  /**
+   * Merge keyboardReferenceCollapsed into kp_settings_v1 (sync + local mirror).
+   * @param {boolean} collapsed
+   */
+  function persistEarlyKeyboardReferenceCollapsed(collapsed) {
+    try {
+      if (!chrome?.storage) return;
+      const nextCollapsed = !!collapsed;
+      const apply = (area) => {
+        area.get([SETTINGS_STORAGE_KEY], (result) => {
+          try {
+            if (chrome.runtime?.lastError) return;
+            const prev = result && result[SETTINGS_STORAGE_KEY] && typeof result[SETTINGS_STORAGE_KEY] === 'object'
+              ? result[SETTINGS_STORAGE_KEY]
+              : {};
+            if (!!prev.keyboardReferenceCollapsed === nextCollapsed) return;
+            const next = {
+              ...prev,
+              keyboardReferenceCollapsed: nextCollapsed
+            };
+            area.set({ [SETTINGS_STORAGE_KEY]: next }, () => {
+              try { void chrome.runtime?.lastError; } catch { /* ignore */ }
+            });
+          } catch { /* ignore */ }
+        });
+      };
+      apply(chrome.storage.sync);
+      try { apply(chrome.storage.local); } catch { /* ignore */ }
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Apply titlebar-only vs full keyboard on the early shell (no persist).
+   * @param {boolean} collapsed
+   */
+  function applyEarlyKeyboardReferenceCollapsed(collapsed) {
+    keyboardReferenceCollapsed = !!collapsed;
+    const root = keyboardHelpRoot;
+    if (!root || !root.isConnected) return;
+    const body =
+      root.querySelector('[data-kp-floating-keyboard-body="true"]') ||
+      root.querySelector('.kp-floating-keyboard-help__keyboard')?.parentElement ||
+      null;
+    const collapseBtn = root.querySelector('button[data-kp-floating-keyboard-collapse="true"]');
+    try {
+      root.setAttribute('data-kp-collapsed', keyboardReferenceCollapsed ? 'true' : 'false');
+    } catch { /* ignore */ }
+    try {
+      if (body) body.style.display = keyboardReferenceCollapsed ? 'none' : 'block';
+    } catch { /* ignore */ }
+    try {
+      if (collapseBtn) {
+        collapseBtn.textContent = keyboardReferenceCollapsed ? '▸' : '▾';
+        collapseBtn.setAttribute(
+          'aria-label',
+          keyboardReferenceCollapsed ? 'Expand keyboard reference' : 'Collapse keyboard reference'
+        );
+        collapseBtn.title = keyboardReferenceCollapsed ? 'Expand' : 'Collapse';
+      }
+    } catch { /* ignore */ }
   }
 
   /**
@@ -6688,11 +6939,8 @@
       try { e.preventDefault(); e.stopPropagation(); } catch {}
       const collapsed = root.getAttribute('data-kp-collapsed') === 'true';
       const next = !collapsed;
-      root.setAttribute('data-kp-collapsed', next ? 'true' : 'false');
-      body.style.display = next ? 'none' : 'block';
-      collapseBtn.textContent = next ? '▸' : '▾';
-      collapseBtn.setAttribute('aria-label', next ? 'Expand keyboard reference' : 'Collapse keyboard reference');
-      collapseBtn.title = next ? 'Expand' : 'Collapse';
+      applyEarlyKeyboardReferenceCollapsed(next);
+      persistEarlyKeyboardReferenceCollapsed(next);
     });
 
     root.appendChild(header);
@@ -6702,6 +6950,9 @@
 
     keyboardHelpRoot = root;
     keyboardHelpKeyboardContainer = keyboardContainer;
+
+    // Apply stored collapsed state before first paint when visible.
+    try { applyEarlyKeyboardReferenceCollapsed(keyboardReferenceCollapsed); } catch { /* ignore */ }
 
     renderEarlyKeyboard(keyboardContainer, {
       layoutId: keyboardLayoutId,
@@ -6873,12 +7124,17 @@
           next && typeof next === 'object' ? next.currentKeyboardLayoutId : null
         );
         const nextNum = !!(next && typeof next === 'object' && next.keyboardReferenceShowNumberRow);
+        const nextCollapsed = !!(next && typeof next === 'object' && next.keyboardReferenceCollapsed);
         const layoutChanged = nextId && nextId !== keyboardLayoutId;
         const customLayoutChanged = nextUsesCustomLayout !== keyboardUsesCustomLayout;
         const numChanged = nextNum !== keyboardShowNumberRow;
+        const collapsedChanged = nextCollapsed !== keyboardReferenceCollapsed;
         if (layoutChanged) keyboardLayoutId = nextId;
         if (customLayoutChanged) keyboardUsesCustomLayout = nextUsesCustomLayout;
         if (numChanged) keyboardShowNumberRow = nextNum;
+        if (collapsedChanged) {
+          try { applyEarlyKeyboardReferenceCollapsed(nextCollapsed); } catch { /* ignore */ }
+        }
         if (layoutChanged || numChanged || customLayoutChanged) {
           try {
             renderEarlyKeyboard(keyboardHelpKeyboardContainer, {
@@ -6935,6 +7191,7 @@
           keyboardLayoutId = normalizeKeyboardLayoutId(st && st.keyboardLayoutId);
           keyboardUsesCustomLayout = isCustomKeyboardLayoutSelection(st && st.currentKeyboardLayoutId);
           keyboardShowNumberRow = !!(st && st.keyboardReferenceShowNumberRow);
+          keyboardReferenceCollapsed = !!(st && st.keyboardReferenceCollapsed);
           earlyPanelPositions = readEarlyPanelPositionsFromSettingsObj(st);
         } catch {
           keyboardLayoutId = normalizeKeyboardLayoutId(keyboardLayoutId);
@@ -6988,6 +7245,7 @@
             keyboardLayoutId = normalizeKeyboardLayoutId(settingsObj.keyboardLayoutId);
             keyboardUsesCustomLayout = isCustomKeyboardLayoutSelection(settingsObj.currentKeyboardLayoutId);
             keyboardShowNumberRow = !!settingsObj.keyboardReferenceShowNumberRow;
+            keyboardReferenceCollapsed = !!settingsObj.keyboardReferenceCollapsed;
             earlyPanelPositions = readEarlyPanelPositionsFromSettingsObj(settingsObj);
           }
         } catch { /* ignore */ }

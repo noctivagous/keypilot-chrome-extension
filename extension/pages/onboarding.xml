@@ -38,6 +38,14 @@
   </slide>
 
   <slide id="scrolling" title="Scrolling the page">
+    <onEnter type="overlay"
+             title="That's all you need to browse the web with KeyPilot."
+             message="Do you want to try out more keys?"
+             primaryText="Yes, Continue"
+             secondaryText="No, I'll Do It Later"
+             secondaryAction="later"
+             laterTitle="Return to this Tutorial with Alt+T"
+             laterPrimaryText="OK, Close" />
     <task id="scroll_down" label="Scroll down with `V`.">
       <when type="action" action="scrollDown" />
     </task>

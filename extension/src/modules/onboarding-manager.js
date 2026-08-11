@@ -543,7 +543,7 @@ export class OnboardingManager {
     // Prime enabled state from the service worker before we decide whether to show anything.
     await this._syncEnabledFromServiceWorker();
 
-    // Alt + / re-opens onboarding, but ONLY while KeyPilot is enabled.
+    // Alt + T re-opens onboarding, but ONLY while KeyPilot is enabled.
     this._setAltSlashListenerEnabled(this._isKeyPilotEnabled());
 
     // Show/hide based on persisted active flag.
@@ -828,7 +828,7 @@ export class OnboardingManager {
 
   async setActive(active) {
     const next = !!active;
-    // Don't allow Alt+/ (or other triggers) to reopen onboarding while KeyPilot is disabled.
+    // Don't allow Alt+T (or other triggers) to reopen onboarding while KeyPilot is disabled.
     if (next && !this._isKeyPilotEnabled()) {
       this.panel.hide();
       this.practicePanel.hide();
@@ -1052,9 +1052,43 @@ export class OnboardingManager {
         const message = String(entry.message || entry.text || '').trim();
         const primaryText = String(entry.primaryText || entry.primary || 'OK').trim();
         const secondaryText = String(entry.secondaryText || entry.secondary || '').trim();
+        const secondaryAction = String(entry.secondaryAction || '').trim().toLowerCase();
+        const laterTitle = String(entry.laterTitle || '').trim();
+        const laterMessage = String(entry.laterMessage || entry.laterText || '').trim();
+        const laterPrimaryText = String(entry.laterPrimaryText || entry.laterPrimary || 'OK, Close').trim();
         const effect = String(entry.effect || '').trim().toLowerCase();
         const shouldPlayEffect =
           effect === 'marquee' || effect === 'flash' || effect === 'dash' || effect === 'scale';
+
+        const closeWalkthrough = () => {
+          try { this.setActive(false); } catch { /* ignore */ }
+        };
+
+        const showLaterReminder = () => {
+          const reminderTitle =
+            laterTitle ||
+            'Return to this Tutorial with Alt+T';
+          try {
+            this.panel.showOverlay({
+              title: reminderTitle,
+              message: laterMessage,
+              primaryText: laterPrimaryText || 'OK, Close',
+              secondaryText: '',
+              onPrimary: closeWalkthrough
+            });
+          } catch {
+            closeWalkthrough();
+          }
+        };
+
+        let onSecondary = null;
+        if (secondaryText) {
+          if (secondaryAction === 'later' || secondaryAction === 'defer' || secondaryAction === 'remind') {
+            onSecondary = showLaterReminder;
+          } else if (secondaryAction === 'close' || secondaryAction === 'dismiss') {
+            onSecondary = closeWalkthrough;
+          }
+        }
 
         /** Run border celebration only after the overlay is visible on screen. */
         const scheduleBorderEffect = () => {
@@ -1101,7 +1135,8 @@ export class OnboardingManager {
               title,
               message,
               primaryText,
-              secondaryText
+              secondaryText,
+              onSecondary
             });
             this._emit('overlayShown', { slideId, title, message });
           } catch {
@@ -1221,10 +1256,10 @@ export class OnboardingManager {
         if (st?.mode === MODES.TEXT_FOCUS) return;
       } catch { /* ignore */ }
 
-      // Alt + / : open/close onboarding.
+      // Alt + T : open/close onboarding.
       //
       // Notes:
-      // - Prefer `e.code === 'Slash'` because `e.key` varies by layout.
+      // - Prefer `e.code === 'KeyT'` because `e.key` varies by layout.
       // - Support AltGr layouts where the browser may report Ctrl+Alt, and/or AltGraph state.
       const isAltOrAltGraph =
         !!e &&
@@ -1233,17 +1268,17 @@ export class OnboardingManager {
           (typeof e.getModifierState === 'function' && e.getModifierState('AltGraph') === true)
         );
 
-      const isSlashKey =
+      const isTKey =
         !!e &&
         (
-          e.code === 'Slash' ||
-          e.key === '/' ||
-          e.key === '?'
+          e.code === 'KeyT' ||
+          e.key === 't' ||
+          e.key === 'T'
         );
 
-      const isAltSlash = isAltOrAltGraph && isSlashKey;
+      const isAltT = isAltOrAltGraph && isTKey;
 
-      if (!isAltSlash) return;
+      if (!isAltT) return;
 
       e.preventDefault();
       e.stopPropagation();
