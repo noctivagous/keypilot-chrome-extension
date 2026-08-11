@@ -7096,6 +7096,10 @@
     // If extension is disabled, keep it hidden but remember desired state.
     ensureEarlyFloatingKeyboardHelpShell();
     if (!keyboardHelpRoot) return;
+    // The shell is constructed before async storage resolves. Reapply the
+    // persisted titlebar-only state before changing display so a collapsed
+    // reference never gets one expanded paint during navigation.
+    try { applyEarlyKeyboardReferenceCollapsed(keyboardReferenceCollapsed); } catch { /* ignore */ }
     try {
       const title = (keyboardHelpShadowRoot || keyboardHelpRoot).querySelector('[data-kp-floating-keyboard-title="true"]');
       if (title) {
