@@ -2025,31 +2025,6 @@ export class IntersectionObserverManager {
     return { scrollX, scrollY };
   }
 
-  /**
-   * Extract and normalize a destination string for an element.
-   * For now we only use <a href> to keep semantics reliable.
-   * @param {HTMLElement} element
-   * @returns {string} normalized destination or '' if none
-   */
-  _getNormalizedDestination(element) {
-    try {
-      if (!element || element.nodeType !== 1) return '';
-      if (element.tagName !== 'A') return '';
-      const hrefAttr = element.getAttribute && element.getAttribute('href');
-      if (!hrefAttr) return '';
-      // Prefer the fully-resolved absolute href when available (handles base tags).
-      const resolved = element.href || hrefAttr;
-      // Normalize via URL when possible.
-      try {
-        return new URL(resolved, window.location.href).href;
-      } catch {
-        return String(resolved || '');
-      }
-    } catch {
-      return '';
-    }
-  }
-
   _destIndexAdd(element, destination) {
     if (!destination) return;
     let set = this._destIndex.get(destination);

@@ -1867,7 +1867,7 @@ export class RectangleIntersectionObserver {
    * @returns {Object} Comprehensive performance metrics
    */
   getPerformanceMetrics() {
-    return this.getMetrics();
+    return this.getPerformanceMonitorMetrics();
   }
 
   /**
@@ -2311,12 +2311,6 @@ evaluateRecovery() {
    * Get cache hit ratio as numeric value
    * @returns {number} - Cache hit ratio (0-1)
    */
-  getCacheHitRatioNumeric() {
-    const totalCacheAttempts = this.metrics.cacheHits + this.metrics.cacheMisses;
-    if (totalCacheAttempts === 0) return 0;
-    
-    return this.metrics.cacheHits / totalCacheAttempts;
-  }
   
   /**
    * Notify user about performance issues
@@ -2435,49 +2429,6 @@ evaluateRecovery() {
   /**
    * Clean up resources and stop timers
    */
-  cleanup() {
-    // Stop cache management timers
-    if (this.memoryMonitoringTimer) {
-      clearInterval(this.memoryMonitoringTimer);
-      this.memoryMonitoringTimer = null;
-    }
-    
-    if (this.cacheManagementTimer) {
-      clearInterval(this.cacheManagementTimer);
-      this.cacheManagementTimer = null;
-    }
-    
-    // Disconnect observers
-    if (this.textObserver) {
-      this.textObserver.disconnect();
-      this.textObserver = null;
-    }
-    
-    // Clean up DOM elements
-    if (this.rectangleRoot?.parentNode) {
-      this.rectangleRoot.parentNode.removeChild(this.rectangleRoot);
-      this.rectangleRoot = null;
-    }
-    
-    // Clear cache and tracking data
-    this.intersectingTextElements.clear();
-    this.intersectingTextNodes.clear();
-    this.elementStates.clear();
-    // Note: WeakMap doesn't have a clear method, but references will be GC'd
-    // Clear the LRU ordering structures
-    this.lruRefs.clear();
-    this.lruTimestamps.clear();
-    this.cacheSize = 0;
-    
-    // Clear efficiency metrics
-    this.cacheEfficiencyMetrics.hotElements.clear();
-    this.cacheEfficiencyMetrics.coldElements.clear();
-    this.cacheEfficiencyMetrics.evictionHistory = [];
-    
-    if (this.debugLogging) {
-      console.log('[KeyPilot Debug] Rectangle intersection observer cleanup completed');
-    }
-  }
 
   /**
    * Get comprehensive performance metrics with enhanced edge-only processing data
@@ -2767,40 +2718,10 @@ evaluateRecovery() {
   /**
    * Calculate memory pressure score based on cache utilization trends
    */
-  calculateMemoryPressureScore() {
-    if (!this.metrics.utilizationHistory || this.metrics.utilizationHistory.length < 3) {
-      this.metrics.memoryPressureScore = 0;
-      return;
-    }
-    
-    const recent = this.metrics.utilizationHistory.slice(-5); // Last 5 measurements
-    const avgUtilization = recent.reduce((sum, entry) => sum + entry.utilization, 0) / recent.length;
-    const trend = recent[recent.length - 1].utilization - recent[0].utilization;
-    
-    // Calculate pressure score (0-100)
-    let pressureScore = avgUtilization * 0.7; // Base score from utilization
-    pressureScore += Math.max(0, trend) * 0.3; // Add trend component (only positive trends)
-    
-    this.metrics.memoryPressureScore = Math.min(100, Math.max(0, pressureScore));
-  }
 
   /**
    * Calculate adaptive cleanup thresholds based on usage patterns
    */
-  calculateAdaptiveCleanupThresholds() {
-    const baseThreshold = this.cleanupThreshold;
-    const pressureMultiplier = 1 - (this.metrics.memoryPressureScore / 200); // Reduce threshold under pressure
-    const hotElementsRatio = this.cacheEfficiencyMetrics.hotElements.size / Math.max(1, this.cacheSize);
-    
-    return {
-      cleanupThreshold: Math.max(
-        baseThreshold * 0.5, // Never go below 50% of base threshold
-        Math.floor(baseThreshold * pressureMultiplier * (1 - hotElementsRatio * 0.2))
-      ),
-      aggressiveThreshold: Math.floor(this.maxCacheSize * 0.95),
-      emergencyThreshold: this.maxCacheSize
-    };
-  }
 
   /**
    * Evict least recently used cache entries with intelligent prioritization
@@ -2930,27 +2851,6 @@ evaluateRecovery() {
    * Perform targeted eviction to reach a specific cache size
    * @param {number} targetEvictions - Number of entries to evict
    */
-  performTargetedEviction(targetEvictions) {
-    if (targetEvictions <= 0) return;
-    
-    const cacheSizeBefore = this.cacheSize;
-    const originalBatchSize = this.cleanupBatchSize;
-    this.cleanupBatchSize = targetEvictions;
-    
-    this.evictLeastRecentlyUsed();
-    
-    this.cleanupBatchSize = originalBatchSize;
-    
-    if (this.debugLogging) {
-      const actualEvictions = Math.max(0, cacheSizeBefore - this.cacheSize);
-      console.log('[KeyPilot Debug] Targeted cache eviction completed:', {
-        targetEvictions,
-        actualEvictions,
-        finalCacheSize: this.cacheSize,
-        cacheUtilization: ((this.cacheSize / this.maxCacheSize) * 100).toFixed(1) + '%'
-      });
-    }
-  }
 
   /**
    * Implement cache warming strategies for frequently accessed elements
@@ -3077,51 +2977,11 @@ evaluateRecovery() {
    * Update cache efficiency metrics
    * @param {number} textNodesCount - Number of text nodes cached
    */
-  updateCacheEfficiencyMetrics(textNodesCount) {
-    this.cacheEfficiencyMetrics.totalCacheOperations++;
-    
-    // Update cache efficiency patterns
-    const efficiency = this.getCacheEfficiencyMetrics();
-    
-    if (this.debugLogging && this.cacheEfficiencyMetrics.totalCacheOperations % 10 === 0) {
-      console.log('[KeyPilot Debug] Cache efficiency update:', {
-        totalOperations: this.cacheEfficiencyMetrics.totalCacheOperations,
-        hitRatio: efficiency.hitRatio,
-        hotElements: this.cacheEfficiencyMetrics.hotElements.size,
-        coldElements: this.cacheEfficiencyMetrics.coldElements.size,
-        longestHitStreak: this.cacheEfficiencyMetrics.longestHitStreak,
-        longestMissStreak: this.cacheEfficiencyMetrics.longestMissStreak
-      });
-    }
-  }
 
   /**
    * Get comprehensive cache efficiency metrics
    * @returns {Object} Cache efficiency metrics
    */
-  getCacheEfficiencyMetrics() {
-    const totalAttempts = this.metrics.cacheHits + this.metrics.cacheMisses;
-    const hitRatio = totalAttempts > 0 ? ((this.metrics.cacheHits / totalAttempts) * 100).toFixed(1) + '%' : '0%';
-    
-    return {
-      hitRatio,
-      totalOperations: this.cacheEfficiencyMetrics.totalCacheOperations,
-      currentHitStreak: this.cacheEfficiencyMetrics.cacheHitStreak,
-      longestHitStreak: this.cacheEfficiencyMetrics.longestHitStreak,
-      currentMissStreak: this.cacheEfficiencyMetrics.cacheMissStreak,
-      longestMissStreak: this.cacheEfficiencyMetrics.longestMissStreak,
-      averageAccessTime: this.cacheEfficiencyMetrics.averageAccessTime.toFixed(3) + 'ms',
-      hotElements: this.cacheEfficiencyMetrics.hotElements.size,
-      coldElements: this.cacheEfficiencyMetrics.coldElements.size,
-      evictionHistory: this.cacheEfficiencyMetrics.evictionHistory.length,
-      memoryPressureEvents: this.cacheEfficiencyMetrics.memoryPressureEvents,
-      adaptiveCleanupTriggers: this.cacheEfficiencyMetrics.adaptiveCleanupTriggers,
-      cacheSize: this.cacheSize,
-      maxCacheSize: this.maxCacheSize,
-      cacheUtilization: ((this.cacheSize / this.maxCacheSize) * 100).toFixed(1) + '%',
-      memoryPressureScore: this.metrics.memoryPressureScore?.toFixed(1) || '0'
-    };
-  }
 
   /**
    * Monitor memory usage and trigger cleanup if necessary
@@ -5618,7 +5478,7 @@ evaluateRecovery() {
    * Get current performance metrics
    * @returns {Object} Current metrics
    */
-  getMetrics() {
+  getPerformanceMonitorMetrics() {
     if (!this.performanceMonitoringEnabled) {
       return null;
     }
@@ -5752,7 +5612,7 @@ evaluateRecovery() {
     }
     
     return {
-      metrics: this.getMetrics(),
+      metrics: this.getPerformanceMonitorMetrics(),
       history: { ...this.performanceHistory },
       comparison: this.getComparisonStats(),
       trends: this.getTrendAnalysis(),

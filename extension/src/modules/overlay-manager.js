@@ -608,11 +608,6 @@ export class OverlayManager {
     }
   }
 
-  // SELECTION RECTANGLE FUNCTIONALITY ONLY
-  setSelectionMode(mode) {
-    return this.highlightManager.setSelectionMode(mode);
-  }
-
   /**
    * Apply click/text mode settings from chrome.storage (via KeyPilot).
    * @param {object|null|undefined} settings
@@ -4273,7 +4268,7 @@ export class OverlayManager {
           white-space: nowrap;
           background-color: ${COLORS.ORANGE_BG};
           color: ${COLORS.ORANGE_TEXT};
-          border: 1px solid ${COLORS.ORANGE_BORDER};
+          border: 1px solid ${COLORS.ORANGE_BORDER_SOLID};
         `
       });
       this.escExitLabelText.innerHTML = 'Press <kbd>ESC</kbd> to exit';
@@ -4323,7 +4318,7 @@ export class OverlayManager {
           white-space: nowrap;
           background-color: ${COLORS.FOCUS_GREEN_BG};
           color: ${COLORS.FOCUS_GREEN_TEXT};
-          border: 1px solid ${COLORS.FOCUS_GREEN};
+          border: 1px solid ${COLORS.FOCUS_GREEN_SOLID};
         `
       });
       this.escExitLabelHover.innerHTML = this.formatHoverLabelText(this.hoverClickLabelText || 'F clicks');

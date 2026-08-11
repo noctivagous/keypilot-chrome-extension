@@ -357,14 +357,14 @@ export const COLORS = {
   HIGHLIGHT_SELECTION_BG: 'rgba(0,120,255,0.3)',
   HIGHLIGHT_SELECTION_BORDER: 'rgba(0,120,255,0.6)',
 
-  // New colors for ESC exit labels
+  // Solid accents for ESC exit labels (distinct from translucent overlay borders)
   ORANGE_BG: 'rgba(255, 165, 0, 0.9)',
   ORANGE_TEXT: '#fff',
-  ORANGE_BORDER: '#d35400',
+  ORANGE_BORDER_SOLID: '#d35400',
   FOCUS_GREEN_BG: 'rgba(46, 204, 113, 0.9)',
   FOCUS_GREEN_BG_T2: 'rgba(46, 204, 113, 0.4)',
   FOCUS_GREEN_TEXT: '#fff',
-  FOCUS_GREEN: '#27ae60',
+  FOCUS_GREEN_SOLID: '#27ae60',
   FOCUS_BLUE_BG_T2: 'rgba(33,150,243,0.25)'
 };
 
