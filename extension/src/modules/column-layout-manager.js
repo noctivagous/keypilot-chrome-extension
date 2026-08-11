@@ -23,6 +23,7 @@
  */
 import { CSS_CLASSES, COLORS, Z_INDEX, KP_UI_FONT } from '../config/constants.js';
 import { makePopoverResizable } from '../utils/popover-resize.js';
+import { ensureOpenChromeShadow } from '../ui/kp-chrome-shadow.js';
 
 /** Slip bar height (product: ~20pt rectangular track). */
 const SLIP_BAR_HEIGHT = '28px';
@@ -282,6 +283,14 @@ export class ColumnLayoutManager {
   _isKeyPilotNode(el) {
     try {
       if (!el || el.nodeType !== 1) return true;
+      const root = el.getRootNode?.();
+      if (
+        typeof ShadowRoot !== 'undefined' &&
+        root instanceof ShadowRoot &&
+        root.host?.hasAttribute?.('data-kp-ui-shadow')
+      ) {
+        return true;
+      }
       if (el.closest?.('[data-kp-control-strip], [data-kp-early-control-strip], [data-kp-early-floating-keyboard]')) {
         return true;
       }
@@ -1113,6 +1122,7 @@ export class ColumnLayoutManager {
     bar.setAttribute('data-kp-cols-slip', 'true');
     bar.setAttribute('role', 'group');
     bar.setAttribute('aria-label', 'Column slip controls');
+    const barMount = ensureOpenChromeShadow(bar, { id: 'columns-slip-controls' }) || bar;
     Object.assign(bar.style, {
       position: 'relative',
       left: 'auto',
@@ -1215,10 +1225,10 @@ export class ColumnLayoutManager {
       semiTransparent: true
     });
 
-    bar.appendChild(label);
-    bar.appendChild(track);
-    bar.appendChild(expandBtn);
-    bar.appendChild(closeBtn);
+    barMount.appendChild(label);
+    barMount.appendChild(track);
+    barMount.appendChild(expandBtn);
+    barMount.appendChild(closeBtn);
 
     const onPointerDown = (e) => {
       if (e.button != null && e.button !== 0) return;

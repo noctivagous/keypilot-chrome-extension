@@ -4,6 +4,7 @@
  */
 import { COLORS, CSS_CLASSES, Z_INDEX } from '../config/constants.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
+import { ensureOpenChromeShadow, injectChromeStyles } from './kp-chrome-shadow.js';
 import {
   ONBOARDING_DEFAULT_TITLE,
   ONBOARDING_METAL,
@@ -83,12 +84,12 @@ function resolveClickFocusGlow(accent) {
   return 'rgba(120,210,255,0.95)';
 }
 
-function ensureToggleOffArrowStyles() {
+function ensureToggleOffArrowStyles(root) {
   try {
-    if (document.getElementById(TOGGLE_OFF_ARROW_STYLE_ID)) return;
-    const style = document.createElement('style');
-    style.id = TOGGLE_OFF_ARROW_STYLE_ID;
-    style.textContent = `
+    if (!root) return;
+    injectChromeStyles(root, {
+      attr: TOGGLE_OFF_ARROW_STYLE_ID,
+      css: `
 @keyframes kp-onboarding-toggle-off-arrow-osc {
   0%, 100% { transform: translateX(0); }
   50% { transform: translateX(6px); }
@@ -111,18 +112,18 @@ function ensureToggleOffArrowStyles() {
       drop-shadow(0 1px 2px rgba(0,0,0,0.45));
   }
 }
-[data-kp-onboarding-toggle-off-arrow="true"] {
+:host {
   animation:
     kp-onboarding-toggle-off-arrow-osc 1.15s ease-in-out infinite,
     kp-onboarding-toggle-off-arrow-glow 1.5s ease-in-out infinite;
   will-change: transform, filter;
 }
-[data-kp-onboarding-toggle-off-arrow="true"] svg {
+:host svg {
   display: block;
   overflow: visible;
 }
 @media (prefers-reduced-motion: reduce) {
-  [data-kp-onboarding-toggle-off-arrow="true"] {
+  :host {
     animation: none;
     filter:
       drop-shadow(0 0 2px #fff)
@@ -131,8 +132,8 @@ function ensureToggleOffArrowStyles() {
       drop-shadow(0 1px 2px rgba(0,0,0,0.45));
   }
 }
-`;
-    (document.head || document.documentElement).appendChild(style);
+`
+    });
   } catch { /* ignore */ }
 }
 
@@ -267,6 +268,7 @@ export class OnboardingPanel {
     const tip = document.createElement('div');
     tip.setAttribute('data-kp-onboarding-reenable-tip', 'true');
     tip.setAttribute('role', 'status');
+    const tipMount = ensureOpenChromeShadow(tip, { id: 'onboarding-reenable-tip' }) || tip;
     Object.assign(tip.style, {
       position: 'fixed',
       zIndex: String((Z_INDEX.ONBOARDING_PANEL || ONBOARDING_PANEL_Z_FALLBACK) + 2),
@@ -300,8 +302,8 @@ export class OnboardingPanel {
 
     const msg = document.createElement('div');
     msg.textContent = String(message || '');
-    tip.appendChild(arrow);
-    tip.appendChild(msg);
+    tipMount.appendChild(arrow);
+    tipMount.appendChild(msg);
 
     try { applyPopupThemeVars(tip); } catch { /* ignore */ }
 
@@ -431,8 +433,6 @@ export class OnboardingPanel {
     }
 
     this.hideToggleOffArrow();
-    ensureToggleOffArrowStyles();
-
     const accent = String(color || resolveClickFocusColor());
     const el = document.createElement('div');
     el.setAttribute('data-kp-onboarding-toggle-off-arrow', 'true');
@@ -448,9 +448,11 @@ export class OnboardingPanel {
       lineHeight: '0'
     });
     applyToggleOffArrowColor(el, accent);
+    const arrowMount = ensureOpenChromeShadow(el, { id: 'onboarding-toggle-off-arrow' }) || el;
+    ensureToggleOffArrowStyles(arrowMount);
 
     // Left-pointing solid arrow (currentColor = click-focus accent). Glow via CSS filter.
-    el.innerHTML =
+    arrowMount.innerHTML =
       '<svg viewBox="0 0 32 28" width="100%" height="100%" focusable="false" aria-hidden="true">' +
       '<path d="M14 2 L2 14 L14 26 L14 19 L30 19 L30 9 L14 9 Z" fill="currentColor"/>' +
       '</svg>';

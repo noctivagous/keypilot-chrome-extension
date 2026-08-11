@@ -10,6 +10,7 @@
  *   minWidth?: number,
  *   minHeight?: number,
  *   margin?: number,
+ *   mount?: ParentNode|null,
  *   zIndex?: number|string,
  *   aspectRatio?: number|true,
  *     // number = width/height; true = lock to size at resize-start
@@ -30,6 +31,7 @@ export function makePopoverResizable(panel, options = {}) {
   } catch { /* ignore */ }
 
   const doc = panel.ownerDocument || document;
+  const mount = options.mount || panel;
   const minWidth = Math.max(160, Number(options.minWidth) || 280);
   const minHeight = Math.max(120, Number(options.minHeight) || 180);
   const margin = Math.max(0, Number(options.margin) || 8);
@@ -163,7 +165,7 @@ export function makePopoverResizable(panel, options = {}) {
     }
 
     handles.push({ el, dir });
-    panel.appendChild(el);
+    try { mount.appendChild(el); } catch { panel.appendChild(el); }
   }
 
   /**
@@ -199,7 +201,10 @@ export function makePopoverResizable(panel, options = {}) {
   const freezeIframes = () => {
     frozenIframes = [];
     try {
-      const list = panel.querySelectorAll('iframe');
+      const list = [
+        ...panel.querySelectorAll('iframe'),
+        ...(panel.shadowRoot?.querySelectorAll?.('iframe') || [])
+      ];
       list.forEach((iframe) => {
         frozenIframes.push(iframe);
         try {

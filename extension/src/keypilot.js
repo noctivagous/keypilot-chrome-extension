@@ -36,7 +36,7 @@ import {
 } from './config/keyboard-layouts.js';
 import { FloatingKeyboardHelp } from './ui/floating-keyboard-help.js';
 import { ControlStrip } from './ui/control-strip.js';
-import { closestComposed, isKeyPilotChromeElement } from './ui/kp-chrome-shadow.js';
+import { closestComposed, ensureOpenChromeShadow, isKeyPilotChromeElement } from './ui/kp-chrome-shadow.js';
 import {
   applyFlashNotificationStyle,
   applyFlashNotificationThumbnailStyle
@@ -6960,13 +6960,14 @@ export class KeyPilot extends EventManager {
       }
       
       notification.className = 'kpv2-flash-notification';
+      const notificationMount = ensureOpenChromeShadow(notification, { id: 'flash-notification' }) || notification;
 
       const hasThumbnail = thumbnailBlob instanceof Blob && thumbnailBlob.size > 0;
       let objectUrl = null;
 
       const messageEl = document.createElement('span');
       messageEl.textContent = message;
-      notification.appendChild(messageEl);
+      notificationMount.appendChild(messageEl);
 
       if (hasThumbnail) {
         try {
@@ -6985,7 +6986,7 @@ export class KeyPilot extends EventManager {
             objectFit: 'contain'
           });
           thumbBox.appendChild(img);
-          notification.appendChild(thumbBox);
+          notificationMount.appendChild(thumbBox);
         } catch (thumbError) {
           console.warn('[KeyPilot] Failed to render flash thumbnail:', thumbError);
           if (objectUrl) {

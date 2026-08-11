@@ -5,6 +5,7 @@
 import { EventManager } from './event-manager.js';
 import { COLORS, Z_INDEX } from '../config/constants.js';
 import { applyFlashNotificationStyle } from '../ui/nct-dark-ui.js';
+import { ensureOpenChromeShadow } from '../ui/kp-chrome-shadow.js';
 
 export class KeyPilotToggleHandler extends EventManager {
   constructor(keyPilotInstance) {
@@ -469,7 +470,10 @@ export class KeyPilotToggleHandler extends EventManager {
     // Create notification overlay
     const notification = document.createElement('div');
     notification.className = 'kpv2-toggle-notification';
-    notification.textContent = enabled ? 'KeyPilot Enabled' : 'KeyPilot Disabled';
+    const notificationMount = ensureOpenChromeShadow(notification, { id: 'toggle-notification' }) || notification;
+    const message = document.createElement('span');
+    message.textContent = enabled ? 'KeyPilot Enabled' : 'KeyPilot Disabled';
+    notificationMount.appendChild(message);
 
     applyFlashNotificationStyle(notification, {
       backgroundColor: enabled ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_ERROR,

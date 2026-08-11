@@ -5551,7 +5551,8 @@ export class OverlayManager {
         const x = this._popoverLastMouse.x;
         const y = this._popoverLastMouse.y;
         if (typeof x !== 'number' || typeof y !== 'number') return false;
-        const el = document.elementFromPoint(x, y);
+        const el = this.popoverContainer?.shadowRoot?.elementFromPoint?.(x, y)
+          || document.elementFromPoint(x, y);
         const shadowEl = btn.getRootNode?.()?.elementFromPoint?.(x, y);
         if (el === btn || btn.contains(el) || shadowEl === btn || btn.contains(shadowEl)) {
           try { btn.click(); } catch { /* ignore */ }
@@ -6299,6 +6300,8 @@ export class OverlayManager {
         letter-spacing: normal;
       `
     });
+    const previewShadow = ensureOpenChromeShadow(this.popoverContainer, { id: 'link-preview' });
+    const previewMount = previewShadow || this.popoverContainer;
 
     // Inject triangle arrow CSS
     const arrowStyle = this.createElement('style');
@@ -6339,8 +6342,11 @@ export class OverlayManager {
         bottom: -${arrowSize * 2 - 1}px;
         border-top-color: rgb(11, 11, 11);
       }
-    `;
-    document.head.appendChild(arrowStyle);
+    `.replaceAll(
+      '.kpv2-preview-popover-container',
+      previewShadow ? ':host' : '.kpv2-preview-popover-container'
+    );
+    (previewShadow || document.head).appendChild(arrowStyle);
     this._popoverArrowStyle = arrowStyle;
 
     // Store iframe reference for focus management
@@ -6588,6 +6594,7 @@ export class OverlayManager {
         minWidth: 280,
         minHeight: 200,
         margin,
+        mount: previewShadow || undefined,
         onResizeStart: () => {
           hidePreviewArrow();
         }
@@ -6733,9 +6740,9 @@ export class OverlayManager {
     };
 
     iframeViewport.appendChild(iframe);
-    this.popoverContainer.appendChild(header);
-    this.popoverContainer.appendChild(iframeViewport);
-    this.popoverContainer.appendChild(errorContainer);
+    previewMount.appendChild(header);
+    previewMount.appendChild(iframeViewport);
+    previewMount.appendChild(errorContainer);
 
     // Mark this as a preview popover (for cleanup logic)
     this._isPreviewPopover = true;
