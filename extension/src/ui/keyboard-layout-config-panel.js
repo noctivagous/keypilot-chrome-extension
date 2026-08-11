@@ -31,6 +31,7 @@ import {
   deleteUserKeyboardLayout,
   deleteUserMacro,
   duplicateBuiltinLayoutToUserLayout,
+  duplicateUserKeyboardLayout,
   exportUserKeyboardLayout,
   forkStockMacroToUser,
   importUserKeyboardLayout,
@@ -281,6 +282,35 @@ function libraryKeyIconId(item) {
   const cat = functionId ? (getFunctionCategory(functionId) || '') : '';
   if (LIBRARY_KEY_ICON_BY_CATEGORY[cat]) return LIBRARY_KEY_ICON_BY_CATEGORY[cat];
   return 'kp-cfg-i-keycap';
+}
+
+/**
+ * Next label when duplicating a user layout ("User Layout 2", or "Name copy" / "Name copy 2").
+ * @param {string} sourceLabel
+ * @param {{ label?: string }[]} existingLayouts
+ * @returns {string}
+ */
+function nextDuplicateUserLayoutLabel(sourceLabel, existingLayouts = []) {
+  const base = String(sourceLabel || 'Layout').trim() || 'Layout';
+  const userN = base.match(/^User Layout(?: (\d+))?$/i);
+  if (userN) {
+    let maxN = 1;
+    for (const l of existingLayouts || []) {
+      const m = String(l?.label || '').trim().match(/^User Layout(?: (\d+))?$/i);
+      if (!m) continue;
+      const n = m[1] ? Number(m[1]) : 1;
+      if (Number.isFinite(n) && n > maxN) maxN = n;
+    }
+    return `User Layout ${maxN + 1}`;
+  }
+  const labels = new Set(
+    (existingLayouts || []).map((l) => String(l?.label || '').trim()).filter(Boolean)
+  );
+  const copy1 = `${base} copy`;
+  if (!labels.has(copy1)) return copy1;
+  let n = 2;
+  while (labels.has(`${base} copy ${n}`)) n += 1;
+  return `${base} copy ${n}`;
 }
 
 /**
@@ -654,20 +684,37 @@ export class KeyboardLayoutConfigPanel {
   }
 
   /**
-   * Duplicate the built-in layout into a new editable user layout, select it for editing,
-   * and optionally make it current.
+   * Duplicate the currently selected layout into a new editable user layout,
+   * select it for editing, and optionally make it current.
+   * Built-in → seeded copy of Built-in. User layout → deep copy of that layout's slots.
    * @param {{ setCurrent?: boolean, label?: string }} [opts]
    * @returns {Promise<any|null>} created layout or null
    */
   async duplicateLayout({ setCurrent = true, label } = {}) {
     try {
       const layouts = await listUserKeyboardLayouts();
-      const base = this._familyBaseLabel();
-      const nextLabel = String(label || nextUserCopyLayoutLabel(base, layouts) || 'Custom Layout');
-      const created = await duplicateBuiltinLayoutToUserLayout({
-        builtinLayoutId: this._st.builtinLayoutId,
-        label: nextLabel
-      });
+      const sourceUser = (this._st.mode === 'user' && this._st.userLayout)
+        ? this._st.userLayout
+        : null;
+
+      let nextLabel = label ? String(label) : '';
+      if (!nextLabel) {
+        if (sourceUser) {
+          nextLabel = nextDuplicateUserLayoutLabel(
+            sourceUser.label || 'Layout',
+            layouts
+          );
+        } else {
+          nextLabel = nextUserCopyLayoutLabel(this._familyBaseLabel(), layouts) || 'Custom Layout';
+        }
+      }
+
+      const created = sourceUser
+        ? await duplicateUserKeyboardLayout({ source: sourceUser, label: nextLabel })
+        : await duplicateBuiltinLayoutToUserLayout({
+          builtinLayoutId: this._st.builtinLayoutId,
+          label: nextLabel
+        });
       if (!created?.id) {
         this._notify('Failed to duplicate layout.', 'error');
         return null;

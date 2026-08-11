@@ -271,6 +271,32 @@ export async function listUserKeyboardLayouts() {
   return Object.values(st.layouts || {});
 }
 
+/** Stock starter user layout — editable duplicate of Built-in. */
+export const STOCK_USER_LAYOUT_1_LABEL = 'User Layout 1';
+
+/**
+ * Ensure the stock "User Layout 1" exists (a duplicate of the given built-in layout).
+ * Does not change the current layout selection.
+ *
+ * @param {{ builtinLayoutId?: string }} [params]
+ * @returns {Promise<UserKeyboardLayout|null>}
+ */
+export async function ensureStockUserLayout1({ builtinLayoutId } = {}) {
+  try {
+    const layouts = await listUserKeyboardLayouts();
+    const existing = (layouts || []).find(
+      (l) => l && String(l.label || '') === STOCK_USER_LAYOUT_1_LABEL
+    );
+    if (existing) return existing;
+    return await duplicateBuiltinLayoutToUserLayout({
+      builtinLayoutId: String(builtinLayoutId || ''),
+      label: STOCK_USER_LAYOUT_1_LABEL
+    });
+  } catch {
+    return null;
+  }
+}
+
 /**
  * @param {string} id
  * @returns {Promise<UserKeyboardLayout|null>}
@@ -815,6 +841,43 @@ export async function duplicateBuiltinLayoutToUserLayout({ builtinLayoutId, labe
     id: genId('layout:'),
     label: String(label || 'Custom Layout'),
     baseBuiltinLayoutId: baseId,
+    slots,
+    createdAt: t,
+    updatedAt: t
+  };
+  return await upsertUserKeyboardLayout(layout);
+}
+
+/**
+ * Duplicate an existing user layout (new id, copied slots/label base).
+ *
+ * @param {{ source: UserKeyboardLayout, label?: string }} params
+ * @returns {Promise<UserKeyboardLayout>}
+ */
+export async function duplicateUserKeyboardLayout({ source, label } = {}) {
+  if (!source || typeof source !== 'object') {
+    throw new Error('duplicateUserKeyboardLayout requires a source layout');
+  }
+  /** @type {Record<string, SlotAssignment|null>} */
+  const slots = {};
+  try {
+    for (const [key, val] of Object.entries(source.slots || {})) {
+      if (!key) continue;
+      if (val && typeof val === 'object' && val.type && val.id) {
+        slots[key] = { type: String(val.type), id: String(val.id) };
+      } else {
+        slots[key] = null;
+      }
+    }
+  } catch { /* ignore */ }
+
+  const t = nowMs();
+  const layout = {
+    id: genId('layout:'),
+    label: String(label || `${String(source.label || 'Layout').trim() || 'Layout'} copy`),
+    baseBuiltinLayoutId: source.baseBuiltinLayoutId
+      ? String(source.baseBuiltinLayoutId)
+      : undefined,
     slots,
     createdAt: t,
     updatedAt: t

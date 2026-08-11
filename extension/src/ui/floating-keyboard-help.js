@@ -35,7 +35,9 @@ import {
   getUserKeyboardLayoutById,
   listUserMacros,
   listUserActions,
-  upsertUserKeyboardLayout
+  upsertUserKeyboardLayout,
+  ensureStockUserLayout1,
+  STOCK_USER_LAYOUT_1_LABEL
 } from '../modules/keyboard-layout-store.js';
 import { KP_LAYOUT_ITEM_MIME } from './keyboard-layout-config-panel.js';
 import {
@@ -101,7 +103,7 @@ export class FloatingKeyboardHelp {
    *   Optional known dock/free position (from KeyPilot settings). When provided,
    *   the first show paints at this location instead of flashing the default corner.
    * @param {() => any} [params.getKeyPilot] Accessor for the owning KeyPilot instance
-   *   (used by "Edit Keyboard Layouts…" in the layout dropdown).
+   *   (used by "Edit Keyboard Layout…" in the layout dropdown).
    */
   constructor({ keybindings, keyboardLayout, layoutId, panelPosition, getKeyPilot } = {}) {
     this.keybindings = keybindings || {};
@@ -1615,15 +1617,67 @@ export class FloatingKeyboardHelp {
       sel.value = known ? prev : 'builtin';
       try {
         const kp = this._getKeyPilot?.();
-        openKeyboardLayoutConfigurator(kp || null, {
-          createNew: v === LAYOUT_SELECT_NEW_VALUE,
-          createDuplicate: v === LAYOUT_SELECT_DUP_VALUE
-        });
+        if (v === LAYOUT_SELECT_EDIT_VALUE) {
+          await this._prepareEditLayoutFromSelect(kp || null);
+          openKeyboardLayoutConfigurator(kp || null, {});
+        } else {
+          openKeyboardLayoutConfigurator(kp || null, {
+            createNew: v === LAYOUT_SELECT_NEW_VALUE,
+            createDuplicate: v === LAYOUT_SELECT_DUP_VALUE
+          });
+        }
       } catch { /* ignore */ }
       return;
     }
     try {
       await setSettings({ currentKeyboardLayoutId: v });
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * When Edit is chosen while Built-in is current, switch to stock "User Layout 1"
+   * (created as a Built-in duplicate if missing) so editing is always on a user layout.
+   * @param {any} kp
+   */
+  async _prepareEditLayoutFromSelect(kp) {
+    const cur = String(this._currentKeyboardLayoutId || 'builtin');
+    if (cur.startsWith('user:')) return;
+
+    const builtinId = String(
+      this.layoutId
+      || kp?._keyboardLayoutId
+      || 'browsing-right'
+    );
+    let layout = null;
+    try {
+      layout = await ensureStockUserLayout1({ builtinLayoutId: builtinId });
+    } catch { /* ignore */ }
+    if (!layout?.id) return;
+
+    const nextId = `user:${layout.id}`;
+    try {
+      await setSettings({ currentKeyboardLayoutId: nextId });
+    } catch { /* ignore */ }
+
+    this._currentKeyboardLayoutId = nextId;
+    this._currentUserLayout = layout;
+    try {
+      if (kp) {
+        kp._currentKeyboardLayoutId = nextId;
+        kp._currentUserLayout = layout;
+        if (kp._settings) kp._settings.currentKeyboardLayoutId = nextId;
+        if (typeof kp.applyLiveUserLayout === 'function') {
+          await kp.applyLiveUserLayout(layout, {
+            setAsCurrent: true,
+            macros: this._currentUserMacros,
+            actions: this._currentUserActions
+          });
+        }
+      }
+    } catch { /* ignore */ }
+
+    try {
+      await this._refreshLayoutSelectOptions();
     } catch { /* ignore */ }
   }
 
@@ -1646,21 +1700,45 @@ export class FloatingKeyboardHelp {
     const selEl = this._layoutSelectEl;
     if (!selEl) return;
     try {
+      const builtinId = String(
+        this.layoutId
+        || this._getKeyPilot?.()?._keyboardLayoutId
+        || 'browsing-right'
+      );
+      // Stock starter layout — always available under User Layouts.
+      try { await ensureStockUserLayout1({ builtinLayoutId: builtinId }); } catch { /* ignore */ }
+
       const layouts = await listUserKeyboardLayouts();
       selEl.innerHTML = '';
+
       const optBuiltin = document.createElement('option');
       optBuiltin.value = 'builtin';
       optBuiltin.textContent = 'Built-in';
       selEl.appendChild(optBuiltin);
+
+      // Separator, then a non-selectable section label + user layouts.
+      try {
+        selEl.appendChild(document.createElement('hr'));
+      } catch { /* ignore */ }
+
+      const userGroup = document.createElement('optgroup');
+      userGroup.label = 'User Layouts';
       const known = new Set(['builtin']);
-      for (const l of layouts || []) {
+      const sorted = [...(layouts || [])].sort((a, b) => {
+        const aStock = String(a?.label || '') === STOCK_USER_LAYOUT_1_LABEL ? 0 : 1;
+        const bStock = String(b?.label || '') === STOCK_USER_LAYOUT_1_LABEL ? 0 : 1;
+        if (aStock !== bStock) return aStock - bStock;
+        return String(a?.label || a?.id || '').localeCompare(String(b?.label || b?.id || ''));
+      });
+      for (const l of sorted) {
         if (!l || !l.id) continue;
         const opt = document.createElement('option');
         opt.value = `user:${l.id}`;
         opt.textContent = String(l.label || l.id);
-        selEl.appendChild(opt);
+        userGroup.appendChild(opt);
         known.add(opt.value);
       }
+      selEl.appendChild(userGroup);
 
       // Separator + actions (Chrome/Safari/Firefox support <hr> in <select>).
       try {
@@ -1668,7 +1746,7 @@ export class FloatingKeyboardHelp {
       } catch { /* ignore */ }
       const optEdit = document.createElement('option');
       optEdit.value = LAYOUT_SELECT_EDIT_VALUE;
-      optEdit.textContent = 'Edit Keyboard Layouts…';
+      optEdit.textContent = 'Edit Keyboard Layout…';
       selEl.appendChild(optEdit);
       try {
         selEl.appendChild(document.createElement('hr'));
