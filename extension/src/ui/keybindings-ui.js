@@ -22,6 +22,12 @@ import {
   setActionMode
 } from './key-action-settings.js';
 import { getOrCreateBuiltinFunctionUserAction } from '../modules/keyboard-layout-store.js';
+import {
+  closestComposed,
+  containsComposed,
+  getComposedEventElement,
+  injectChromeStyles
+} from './kp-chrome-shadow.js';
 
 /** @type {{ root: HTMLElement, keybindings: Record<string, any> }|null} */
 let _activePopoverContext = null;
@@ -55,63 +61,13 @@ function getStyleCss() {
   });
 }
 
-/** Ensure KeyPilot keyboard visualization CSS is present on the document. */
-export function ensureStylesInjected(doc = document) {
-  if (!doc || !doc.head) return;
+/** Ensure KeyPilot keyboard visualization CSS is present in its owning root. */
+export function ensureStylesInjected(root = document) {
   const css = getStyleCss();
-  let style = null;
-  try {
-    const attr = typeof KEYBINDINGS_UI_STYLE_ATTR === 'string' && KEYBINDINGS_UI_STYLE_ATTR
-      ? KEYBINDINGS_UI_STYLE_ATTR
-      : 'data-kp-keybindings-ui-style';
-    style = doc.head.querySelector(`style[${attr}]`);
-  } catch {
-    // If the selector is invalid for any reason, fall back to "first matching style tag" search.
-    try {
-      const all = doc.head.querySelectorAll('style');
-      for (const s of all) {
-        if (s && s.getAttribute && s.getAttribute('data-kp-keybindings-ui-style') === 'true') {
-          style = s;
-          break;
-        }
-      }
-    } catch { /* ignore */ }
-  }
   const attrName = (typeof KEYBINDINGS_UI_STYLE_ATTR === 'string' && KEYBINDINGS_UI_STYLE_ATTR)
     ? KEYBINDINGS_UI_STYLE_ATTR
     : 'data-kp-keybindings-ui-style';
-
-  if (!style) {
-    style = doc.createElement('style');
-    try {
-      style.setAttribute(attrName, 'true');
-    } catch {
-      // ignore
-    }
-    style.textContent = css;
-    doc.head.appendChild(style);
-    return;
-  }
-  // Keep styles up-to-date (also replaces any build-time font URL placeholders).
-  // Insert the new sheet before removing the old one so keys never briefly lose
-  // `opacity: 0` on `.key-press-overlay` (that looked like a pressed-key flash).
-  if (style.textContent !== css) {
-    const next = doc.createElement('style');
-    try {
-      next.setAttribute(attrName, 'true');
-    } catch { /* ignore */ }
-    next.textContent = css;
-    try {
-      if (style.parentNode) {
-        style.parentNode.insertBefore(next, style.nextSibling);
-        style.parentNode.removeChild(style);
-      } else {
-        doc.head.appendChild(next);
-      }
-    } catch {
-      try { style.textContent = css; } catch { /* ignore */ }
-    }
-  }
+  injectChromeStyles(root, { attr: attrName, css });
 }
 
 function clearElement(el) {
@@ -189,7 +145,7 @@ function updateExistingKeyboardDOM({ container, keybindings }) {
 export function renderKeybindingsKeyboard({ container, keybindings, keyboardLayout, layoutId, attachPopovers = true } = {}) {
   if (!container) return;
   const doc = container.ownerDocument || document;
-  ensureStylesInjected(doc);
+  ensureStylesInjected(container.getRootNode?.() || doc);
 
   const layout = (keyboardLayout && Array.isArray(keyboardLayout)) ? keyboardLayout : KEYBINDINGS_KEYBOARD_LAYOUT;
   const layoutKey = typeof layoutId === 'string' ? layoutId : '';
@@ -974,9 +930,10 @@ export function attachKeyPopoverBehavior({ root, keybindings }) {
       const t = e.target;
       if (!(t instanceof Element)) return;
       if (pop.contains(t)) return;
-      if (_pinnedKeyEl && (_pinnedKeyEl === t || _pinnedKeyEl.contains(t))) return;
+      const keyInPath = getComposedEventElement(e, '.key');
+      if (_pinnedKeyEl && (containsComposed(_pinnedKeyEl, t) || containsComposed(_pinnedKeyEl, keyInPath))) return;
       try {
-        if (t.closest?.('.kp-action-config-panel')) return;
+        if (closestComposed(keyInPath || t, '.kp-action-config-panel')) return;
       } catch { /* ignore */ }
       hidePopover(pop);
     }

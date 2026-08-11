@@ -483,6 +483,12 @@ export async function runPostBundleTasks({ shouldMinify = false } = {}) {
       `      }\n` +
       `    } catch { /* ignore */ }\n` +
       `  }\n` +
+      `  // Shared early-compatible subset of kp-chrome-shadow.js. This script cannot import ESM.\n` +
+      `  function ensureEarlyOpenChromeShadow(host, id) {\n` +
+      `    if (!host) return null;\n` +
+      `    try { host.setAttribute('data-kp-ui-shadow', String(id || 'chrome')); } catch { /* ignore */ }\n` +
+      `    try { return host.shadowRoot || host.attachShadow({ mode: 'open' }); } catch { return host.shadowRoot || null; }\n` +
+      `  }\n` +
       `  const KEYBINDINGS_UI_EARLY_CSS = \`${escapedCss}\`;\n` +
       (onboardingSharedIndented
         ? `\n  // --- begin stamped onboarding-shared.js ---\n${onboardingSharedIndented}\n  // --- end stamped onboarding-shared.js ---\n`

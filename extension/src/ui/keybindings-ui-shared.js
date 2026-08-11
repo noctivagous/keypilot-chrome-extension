@@ -486,28 +486,34 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
   --kp-key-glow: transparent;
 
   position: relative;
-  box-sizing: border-box;
-  margin: 0;
+  /*
+   * This UI lives in the page's light DOM. Some sites apply high-priority
+   * button resets (large min-heights, padding, and white focus rings), which
+   * can briefly win during the early-shell → bundled-style handoff.
+   */
+  box-sizing: border-box !important;
+  margin: 0 !important;
   font-family: inherit;
   font-size: inherit;
   line-height: inherit;
   cursor: default;
-  appearance: none;
-  -webkit-appearance: none;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  outline: none !important;
   color: rgba(248, 250, 252, 0.94);
   text-align: center;
   overflow: hidden;
 
   /* Equal geometry for alphanumeric keys */
-  flex: 1 1 0;
-  min-width: 0;
-  width: 0;
-  height: 50px;
-  min-height: 50px;
-  max-height: 50px;
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  width: 0 !important;
+  height: 50px !important;
+  min-height: 50px !important;
+  max-height: 50px !important;
   /* Block layout: letter/name layers are absolutely positioned (not flex-flow) */
-  display: block;
-  padding: 0;
+  display: block !important;
+  padding: 0 !important;
   border-radius: 7px;
 
   /*

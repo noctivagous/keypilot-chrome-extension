@@ -48,7 +48,7 @@ export class ShadowDOMManager {
 
       // Only open shadow roots are accessible to content scripts.
       try {
-        if (init && init.mode === 'open' && root) {
+        if (init && init.mode === 'open' && root && !this.hasAttribute?.('data-kp-ui-shadow')) {
           // Optional pre-warm: O(1) per attach. Nested roots created after setup
           // get styles without waiting for first hover.
           styleManager.injectIntoShadowRoot(root);
@@ -80,6 +80,7 @@ export class ShadowDOMManager {
       let node;
       while ((node = walker.nextNode())) {
         if (!node.shadowRoot) continue;
+        if (node.hasAttribute?.('data-kp-ui-shadow')) continue;
         try {
           this.styleManager.injectIntoShadowRoot(node.shadowRoot);
           this.trackShadowRoot(node.shadowRoot);

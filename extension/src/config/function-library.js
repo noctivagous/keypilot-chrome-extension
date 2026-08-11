@@ -84,13 +84,13 @@ import { ACTION_RESULT_DESTINATIONS, buildResultDestinationParameter } from '../
  * the entire point of the Function (type into it / clipboard in-and-out of it). Kept as an
  * explicit allowlist rather than inferred, since "works while typing" is a safety-relevant
  * property, not a default.
+ *
+ * Empty for now — none of the current catalog entries require a modifier combo. Add ids here
+ * when a future Function needs the "Needs modifier" / Bind modifier combo flow.
  * @type {ReadonlySet<string>}
  */
 const TEXT_ACTIVE_BUILTIN_FUNCTION_IDS = new Set([
-  'CLIPBOARD_COPY',
-  'CLIPBOARD_CUT',
-  'CLIPBOARD_PASTE',
-  'CLIPBOARD_SELECT_ALL'
+  // e.g. 'CLIPBOARD_COPY', 'TYPE_CHARACTERS'
 ]);
 
 /**
@@ -260,7 +260,6 @@ const TYPE_CHARACTERS_FUNCTION_DEF = Object.freeze({
   handler: 'handleTypeCharactersKey',
   category: TEXT_FUNCTION_CATEGORY,
   keyboardClass: 'key-purple',
-  worksWhileTyping: true,
   dataSource: 'none',
   parameters: Object.freeze([
     Object.freeze({

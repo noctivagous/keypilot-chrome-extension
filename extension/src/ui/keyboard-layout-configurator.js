@@ -44,11 +44,12 @@ export function exitKeyboardLayoutEditMode(kp) {
 /**
  * Open layout edit mode (idempotent — if already open, ensures the Config panel is shown).
  * @param {any} kp KeyPilot instance
- * @param {{ createNew?: boolean }} [opts]
+ * @param {{ createNew?: boolean, createDuplicate?: boolean }} [opts]
  */
 export function openKeyboardLayoutConfigurator(kp, opts = {}) {
   if (!kp) return;
   const createNew = !!opts.createNew;
+  const createDuplicate = !!opts.createDuplicate;
 
   try {
     if (isKeyboardLayoutEditMode(kp)) {
@@ -56,6 +57,8 @@ export function openKeyboardLayoutConfigurator(kp, opts = {}) {
         void _configPanel?.show?.(kp).then(async () => {
           if (createNew) {
             try { await _configPanel?.createNewLayout?.(); } catch { /* ignore */ }
+          } else if (createDuplicate) {
+            try { await _configPanel?.duplicateLayout?.(); } catch { /* ignore */ }
           }
         });
       } catch { /* ignore */ }
@@ -110,6 +113,8 @@ export function openKeyboardLayoutConfigurator(kp, opts = {}) {
       } catch { /* ignore */ }
       if (createNew) {
         try { await _configPanel.createNewLayout(); } catch { /* ignore */ }
+      } else if (createDuplicate) {
+        try { await _configPanel.duplicateLayout(); } catch { /* ignore */ }
       }
     });
   } catch {

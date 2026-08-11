@@ -132,7 +132,7 @@ const CONFIG_KEY_SIZE_PX = 46;
 const CONFIG_PANEL_WIDTH_PX = 960;
 const CONFIG_INSPECTOR_WIDTH_PX = 280;
 const CONFIG_STYLE_ATTR = 'data-kp-layout-config-panel-style';
-const CONFIG_STYLE_VERSION = 'v15';
+const CONFIG_STYLE_VERSION = 'v16';
 const CONFIG_ICON_SPRITE_ATTR = 'data-kp-layout-config-icons';
 
 /** NCT monochrome icon sprite — ids are `kp-cfg-i-*` to avoid page collisions. */
@@ -268,6 +268,21 @@ function mkCfgIcon(doc, symbolId) {
   use.setAttribute('href', `#${symbolId}`);
   svg.appendChild(use);
   return svg;
+}
+
+/**
+ * Set a Config button's visible label, optionally prepending a sprite icon.
+ * @param {HTMLElement} btn
+ * @param {string} label
+ * @param {string} [iconId]
+ */
+function setCfgBtnLabel(btn, label, iconId) {
+  if (!btn) return;
+  const doc = btn.ownerDocument || document;
+  btn.textContent = String(label || '');
+  if (iconId) {
+    try { btn.prepend(mkCfgIcon(doc, iconId)); } catch { /* ignore */ }
+  }
 }
 
 /**
@@ -448,7 +463,7 @@ export class KeyboardLayoutConfigPanel {
     this._inspectorSelection = null;
     /** @type {any|null} draft while editing a macro key */
     this._macroKeyDraft = null;
-    /** Live keydown capture cleanup for the "Bind chord…" control (worksWhileTyping Functions). */
+    /** Live keydown capture cleanup for the "Bind modifier combo" control (worksWhileTyping Functions). */
     this._chordCaptureCleanup = null;
     /** Place mode: click palette → arrow to cursor → click Reference slot */
     this._placeItem = null;
@@ -598,6 +613,64 @@ export class KeyboardLayoutConfigPanel {
       return created;
     } catch {
       this._notify('Failed to create layout.', 'error');
+      return null;
+    }
+  }
+
+  /**
+   * Duplicate the built-in layout into a new editable user layout, select it for editing,
+   * and optionally make it current.
+   * @param {{ setCurrent?: boolean, label?: string }} [opts]
+   * @returns {Promise<any|null>} created layout or null
+   */
+  async duplicateLayout({ setCurrent = true, label } = {}) {
+    try {
+      const layouts = await listUserKeyboardLayouts();
+      const base = this._familyBaseLabel();
+      const nextLabel = String(label || nextUserCopyLayoutLabel(base, layouts) || 'Custom Layout');
+      const created = await duplicateBuiltinLayoutToUserLayout({
+        builtinLayoutId: this._st.builtinLayoutId,
+        label: nextLabel
+      });
+      if (!created?.id) {
+        this._notify('Failed to duplicate layout.', 'error');
+        return null;
+      }
+      this._st.userLayouts = await listUserKeyboardLayouts();
+      this._st.mode = 'user';
+      this._st.userLayoutId = created.id;
+      this._st.userLayout = created;
+      this._renderLayoutSelect();
+      this._renderRightList();
+      this._emitChange();
+
+      if (setCurrent) {
+        const nextId = `user:${created.id}`;
+        try {
+          await setSettings({ currentKeyboardLayoutId: nextId });
+        } catch { /* ignore */ }
+        try {
+          const kp = this._kp;
+          if (kp) {
+            kp._currentKeyboardLayoutId = nextId;
+            kp._currentUserLayout = created;
+            if (kp._settings) kp._settings.currentKeyboardLayoutId = nextId;
+            if (typeof kp.applyLiveUserLayout === 'function') {
+              void kp.applyLiveUserLayout(created, {
+                macros: this._st.macros,
+                actions: this._st.actions
+              });
+            } else if (typeof kp._refreshCurrentKeyboardLayoutFromSettings === 'function') {
+              void kp._refreshCurrentKeyboardLayoutFromSettings();
+            }
+          }
+        } catch { /* ignore */ }
+      }
+
+      this._notify(`Duplicated "${created.label || nextLabel}".`, 'success');
+      return created;
+    } catch {
+      this._notify('Failed to duplicate layout.', 'error');
       return null;
     }
   }
@@ -1742,10 +1815,9 @@ export class KeyboardLayoutConfigPanel {
   font-family: inherit;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
 }
-.kp-layout-config-panel .kp-cfg-inspect:hover {
-  background: linear-gradient(180deg, #545454 0%, #3c3c3c 50%, #323232 100%);
-  border-color: ${c.accent};
-  color: ${NCT_DARK_UI_SELECTED_TEXT};
+.kp-layout-config-panel .kp-cfg-inspect .kp-cfg-ico {
+  width: 10px;
+  height: 10px;
 }
 .kp-layout-config-panel .kp-cfg-btn {
   display: inline-flex;
@@ -2667,7 +2739,7 @@ export class KeyboardLayoutConfigPanel {
     const hint = doc.createElement('div');
     hint.className = 'kp-cfg-hint kp-cfg-strip-hint';
     hint.textContent = 'Click a keycap in the Actions Library, then click a Keyboard Reference key to place it. ' +
-      'Functions marked "Needs modifier" must use "Bind chord…" instead — they run while a text field is focused.';
+      'Functions marked "Needs modifier" must use "Bind modifier combo" instead — they run while a text field is focused.';
 
     strip.appendChild(layoutStrip);
     strip.appendChild(hint);
@@ -3236,21 +3308,7 @@ export class KeyboardLayoutConfigPanel {
     }, true);
 
     duplicateBtn.addEventListener('click', async () => {
-      try {
-        const created = await duplicateBuiltinLayoutToUserLayout({
-          builtinLayoutId: this._st.builtinLayoutId,
-          label: 'Custom Layout'
-        });
-        this._st.userLayouts = await listUserKeyboardLayouts();
-        this._st.mode = 'user';
-        this._st.userLayoutId = created.id;
-        this._st.userLayout = created;
-        this._renderLayoutSelect();
-        this._renderRightList();
-        this._emitChange();
-      } catch {
-        this._notify('Failed to duplicate layout.', 'error');
-      }
+      await this.duplicateLayout();
     }, true);
 
     deleteBtn.addEventListener('click', async () => {
@@ -3520,7 +3578,7 @@ export class KeyboardLayoutConfigPanel {
     return dl;
   }
 
-  /** @param {Array<{ label: string, onClick: () => void, title?: string }>} buttons */
+  /** @param {Array<{ label: string, onClick: () => void, title?: string, icon?: string }>} buttons */
   _dockActions(buttons) {
     const row = document.createElement('div');
     row.className = 'kp-cfg-dock-actions';
@@ -3529,7 +3587,7 @@ export class KeyboardLayoutConfigPanel {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'kp-cfg-btn';
-      btn.textContent = spec.label;
+      setCfgBtnLabel(btn, spec.label, spec.icon);
       if (spec.title) btn.title = spec.title;
       btn.addEventListener('click', spec.onClick, true);
       row.appendChild(btn);
@@ -3616,12 +3674,13 @@ export class KeyboardLayoutConfigPanel {
       ['Category', def ? (getFunctionCategory(def.id) || 'Other') : ''],
       ['Key', String(binding?.displayKey || binding?.keyLabel || '')],
       ['About', String(def?.description || actionDef?.description || binding?.description || '')],
-      [def?.worksWhileTyping ? 'Note' : '', def?.worksWhileTyping ? 'Requires a modifier chord' : '']
+      [def?.worksWhileTyping ? 'Note' : '', def?.worksWhileTyping ? 'Requires a modifier combo' : '']
     ]));
 
-    /** @type {Array<{ label: string, onClick: () => void, title?: string }>} */
+    /** @type {Array<{ label: string, onClick: () => void, title?: string, icon?: string }>} */
     const actions = [{
       label: 'Place on keyboard',
+      icon: 'kp-cfg-i-place',
       title: 'Then click a Keyboard Reference key',
       onClick: () => this._beginPlaceModeFromLibrary({ type: 'function', id: functionId })
     }];
@@ -3669,6 +3728,7 @@ export class KeyboardLayoutConfigPanel {
     host.appendChild(this._dockActions([
       {
         label: 'Place on keyboard',
+        icon: 'kp-cfg-i-place',
         onClick: () => this._beginPlaceModeFromLibrary({ type: 'macro', id: macro.id })
       },
       {
@@ -3720,7 +3780,7 @@ export class KeyboardLayoutConfigPanel {
     }
     host.appendChild(this._dockActions([
       { label: 'Save', onClick: () => { void this._saveMacroDraft(); } },
-      { label: 'Place', onClick: () => { void this._placeMacroDraft(); } },
+      { label: 'Place', icon: 'kp-cfg-i-place', onClick: () => { void this._placeMacroDraft(); } },
       { label: 'Run', onClick: () => { void this._runMacroDraft(); } }
     ]));
   }
@@ -3948,6 +4008,7 @@ export class KeyboardLayoutConfigPanel {
     host.appendChild(this._dockTitle(String(macroKey.label || macroKey.kind || 'Macro Key'), 'Macro Key'));
     host.appendChild(this._dockActions([{
       label: 'Place on keyboard',
+      icon: 'kp-cfg-i-place',
       onClick: () => this._beginPlaceModeFromLibrary({ type: 'function', id: macroKey.id })
     }]));
     const editor = createMacroKeyEditor({
@@ -4020,6 +4081,7 @@ export class KeyboardLayoutConfigPanel {
     ));
     host.appendChild(this._dockActions([{
       label: 'Place on keyboard',
+      icon: 'kp-cfg-i-place',
       onClick: () => this._beginPlaceModeFromLibrary({ type: 'function', id: instance.id })
     }]));
 
@@ -5386,7 +5448,7 @@ export class KeyboardLayoutConfigPanel {
       const inspectBtn = document.createElement('button');
       inspectBtn.type = 'button';
       inspectBtn.className = 'kp-cfg-inspect';
-      inspectBtn.textContent = 'Inspect';
+      setCfgBtnLabel(inspectBtn, 'Inspect', 'kp-cfg-i-eye');
       inspectBtn.title = `Inspect ${label}`;
       inspectBtn.setAttribute('aria-label', `Inspect ${label}`);
       inspectBtn.addEventListener('click', (e) => {
@@ -5937,7 +5999,7 @@ export class KeyboardLayoutConfigPanel {
       const inspectBtn = document.createElement('button');
       inspectBtn.type = 'button';
       inspectBtn.className = 'kp-cfg-inspect';
-      inspectBtn.textContent = 'Inspect';
+      setCfgBtnLabel(inspectBtn, 'Inspect', 'kp-cfg-i-eye');
       inspectBtn.title = `Inspect ${label}`;
       inspectBtn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -5953,7 +6015,7 @@ export class KeyboardLayoutConfigPanel {
       const placeBtn = document.createElement('button');
       placeBtn.type = 'button';
       placeBtn.className = 'kp-cfg-inspect';
-      placeBtn.textContent = 'Place';
+      setCfgBtnLabel(placeBtn, 'Place', 'kp-cfg-i-place');
       placeBtn.title = `Place ${label} on a keyboard slot`;
       placeBtn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -6294,7 +6356,7 @@ export class KeyboardLayoutConfigPanel {
   }
 
   /**
-   * A "Needs modifier" badge + "Bind chord…" button, appended to a placeable item for any
+   * A "Needs modifier" badge + "Bind modifier combo" button, appended to a placeable item for any
    * `worksWhileTyping` Function/instance — see {@link _captureAndAssignChord}.
    * @param {{ type: string, id: string }} item
    * @param {import('../config/function-library.js').FunctionDef} def
@@ -6317,7 +6379,8 @@ export class KeyboardLayoutConfigPanel {
     bindBtn.type = 'button';
     bindBtn.className = 'kp-cfg-btn';
     bindBtn.style.padding = '3px 6px';
-    bindBtn.textContent = 'Bind chord…';
+    setCfgBtnLabel(bindBtn, 'Bind modifier combo', 'kp-cfg-i-chord');
+    bindBtn.dataset.kpBindIcon = 'kp-cfg-i-chord';
     bindBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -6628,16 +6691,19 @@ export class KeyboardLayoutConfigPanel {
     try {
       for (const btn of this.root?.querySelectorAll?.('[data-capturing="true"]') || []) {
         delete btn.dataset.capturing;
-        if (btn.dataset.kpBindLabel) btn.textContent = btn.dataset.kpBindLabel;
+        if (btn.dataset.kpBindLabel) {
+          setCfgBtnLabel(btn, btn.dataset.kpBindLabel, btn.dataset.kpBindIcon || '');
+        }
       }
     } catch { /* ignore */ }
   }
 
   /**
    * Listen for the next keydown and, if it has a modifier held, bind `item` to the resulting
-   * chord slot key — the only way a `worksWhileTyping` Function (e.g. Type Characters,
-   * Clipboard Copy/Cut/Paste) can be bound, since the Keyboard Reference's click-to-place flow
-   * only ever targets bare physical keys. See utils/key-chord.js.
+   * chord slot key — used for `worksWhileTyping` Functions that must run while a text field is
+   * focused. The Keyboard Reference's click-to-place flow only ever targets bare physical keys.
+   * See utils/key-chord.js. (No current catalog entries set `worksWhileTyping`; this remains for
+   * future Functions.)
    * @param {{ type: string, id: string }} item
    * @param {string} functionId Used only for the `validateFunctionSlotKey` check.
    * @param {HTMLButtonElement} btn
@@ -6646,9 +6712,10 @@ export class KeyboardLayoutConfigPanel {
     if (!item || !btn) return;
     this._cancelPlaceMode();
     this._stopChordCapture();
-    btn.dataset.kpBindLabel = btn.textContent;
+    btn.dataset.kpBindLabel = 'Bind modifier combo';
+    btn.dataset.kpBindIcon = btn.dataset.kpBindIcon || 'kp-cfg-i-chord';
     btn.dataset.capturing = 'true';
-    btn.textContent = 'Press keys… (Esc)';
+    setCfgBtnLabel(btn, 'Press keys… (Esc)');
 
     const onKeyDown = async (ev) => {
       ev.preventDefault();

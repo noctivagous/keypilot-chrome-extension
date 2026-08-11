@@ -43,6 +43,7 @@ import {
   openKeyboardLayoutConfigurator
 } from './keyboard-layout-configurator.js';
 import { makePopoverResizable } from '../utils/popover-resize.js';
+import { ensureOpenChromeShadow, injectChromeStyles } from './kp-chrome-shadow.js';
 import {
   PANEL_POSITION_MARGIN_PX,
   applyPanelPosition,
@@ -77,8 +78,10 @@ const KEYBOARD_MAX_VIEWPORT_INSET_PX = KEYBOARD_POSITION_MARGIN_PX * 2;
 
 /** Sentinel value for the layout <select> action that opens Keyboard Layout Config. */
 const LAYOUT_SELECT_EDIT_VALUE = '__edit_layouts__';
-/** Sentinel value for creating a new layout and opening Keyboard Layout Config. */
+/** Sentinel value for creating a blank layout and opening Keyboard Layout Config. */
 const LAYOUT_SELECT_NEW_VALUE = '__new_layout__';
+/** Sentinel value for duplicating the current layout and opening Keyboard Layout Config. */
+const LAYOUT_SELECT_DUP_VALUE = '__duplicate_layout__';
 
 /**
  * Function / action ids that stay fully styled and interactive on the Keyboard
@@ -105,6 +108,7 @@ export class FloatingKeyboardHelp {
     this.keyboardLayout = keyboardLayout || null;
     this.layoutId = typeof layoutId === 'string' ? layoutId : '';
     this.root = null;
+    this.shadowRoot = null;
     this.keyboardContainer = null;
     this._keyboardBody = null;
     this.closeBtn = null;
@@ -155,6 +159,8 @@ export class FloatingKeyboardHelp {
     this._resizeDispose = null;
     /** @type {(() => void)|null} */
     this._dragDispose = null;
+    /** @type {AbortController|null} */
+    this._slotDnDAbort = null;
 
     /** @type {import('../modules/settings-manager.js').PanelPositionSettings|null} */
     this._panelPosition = {
@@ -363,7 +369,7 @@ export class FloatingKeyboardHelp {
   _ensureSaveAndFinishButton() {
     if (this._saveFinishBtn && this._saveFinishBtn.isConnected) return;
     const header = this._titlebar
-      || this.root?.querySelector?.('[data-kp-floating-keyboard-titlebar="true"]')
+      || this.shadowRoot?.querySelector?.('[data-kp-floating-keyboard-titlebar="true"]')
       || null;
     if (!header) return;
 
@@ -636,6 +642,8 @@ export class FloatingKeyboardHelp {
 
   cleanup() {
     this._showGeneration += 1;
+    try { this._slotDnDAbort?.abort?.(); } catch { /* ignore */ }
+    this._slotDnDAbort = null;
     try {
       if (this.closeBtn) this.closeBtn.removeEventListener('click', this._onCloseClick);
     } catch { /* ignore */ }
@@ -656,6 +664,7 @@ export class FloatingKeyboardHelp {
       if (this.root && this.root.parentNode) this.root.parentNode.removeChild(this.root);
     } catch { /* ignore */ }
     this.root = null;
+    this.shadowRoot = null;
     this.keyboardContainer = null;
     this._keyboardBody = null;
     this.closeBtn = null;
@@ -988,7 +997,7 @@ export class FloatingKeyboardHelp {
     if (this._windowChromeBound || !this.root) return;
     const panel = this.root;
     const header = this._titlebar
-      || panel.querySelector('[data-kp-floating-keyboard-titlebar="true"]')
+      || this.shadowRoot?.querySelector?.('[data-kp-floating-keyboard-titlebar="true"]')
       || panel.firstElementChild;
     if (!header) return;
 
@@ -1068,19 +1077,21 @@ export class FloatingKeyboardHelp {
     try {
       const existing = document.querySelector('.kp-floating-keyboard-help[data-kp-early-floating-keyboard="true"]');
       if (existing && existing.isConnected) {
-        const keyboardContainer = existing.querySelector('.kp-floating-keyboard-help__keyboard');
+        const shadowRoot = ensureOpenChromeShadow(existing, { id: 'keyboard-help' });
+        const shell = shadowRoot || existing;
+        const keyboardContainer = shell.querySelector('.kp-floating-keyboard-help__keyboard');
         const closeBtn =
-          existing.querySelector('button[data-kp-floating-keyboard-close="true"]') ||
-          existing.querySelector('button[aria-label="Close keyboard reference"]');
+          shell.querySelector('button[data-kp-floating-keyboard-close="true"]') ||
+          shell.querySelector('button[aria-label="Close keyboard reference"]');
         const header =
-          existing.querySelector('[data-kp-floating-keyboard-titlebar="true"]') ||
-          existing.firstElementChild;
+          shell.querySelector('[data-kp-floating-keyboard-titlebar="true"]') ||
+          shell.firstElementChild;
         const body = keyboardContainer?.parentElement || null;
-        const collapseBtn = existing.querySelector('button[data-kp-floating-keyboard-collapse="true"]');
-        const hintEl = existing.querySelector('[data-kp-floating-keyboard-hint="true"]');
-        const titleEl = existing.querySelector('[data-kp-floating-keyboard-title="true"]')
+        const collapseBtn = shell.querySelector('button[data-kp-floating-keyboard-collapse="true"]');
+        const hintEl = shell.querySelector('[data-kp-floating-keyboard-hint="true"]');
+        const titleEl = shell.querySelector('[data-kp-floating-keyboard-title="true"]')
           || (header ? header.querySelector('div:not([data-kp-floating-keyboard-hint])') : null);
-        let layoutSelect = existing.querySelector('[data-kp-floating-keyboard-layout-select="true"]');
+        let layoutSelect = shell.querySelector('[data-kp-floating-keyboard-layout-select="true"]');
         if (!layoutSelect && header) {
           layoutSelect = document.createElement('select');
           layoutSelect.setAttribute('aria-label', 'Current keyboard layout');
@@ -1125,6 +1136,7 @@ export class FloatingKeyboardHelp {
 
         if (keyboardContainer) {
           this.root = existing;
+          this.shadowRoot = shadowRoot;
           this.keyboardContainer = keyboardContainer;
           this._keyboardBody = body;
           this.closeBtn = closeBtn || null;
@@ -1156,6 +1168,8 @@ export class FloatingKeyboardHelp {
     root.hidden = true;
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-label', 'KeyPilot keyboard reference');
+    const shadowRoot = ensureOpenChromeShadow(root, { id: 'keyboard-help' });
+    const shell = shadowRoot || root;
 
     this._applyProPanelChrome(root);
 
@@ -1210,13 +1224,14 @@ export class FloatingKeyboardHelp {
     this._applyKeyboardHostChrome(keyboardContainer);
     body.appendChild(keyboardContainer);
 
-    root.appendChild(header);
-    root.appendChild(body);
+    shell.appendChild(header);
+    shell.appendChild(body);
 
     // Attach to DOM.
     (document.body || document.documentElement).appendChild(root);
 
     this.root = root;
+    this.shadowRoot = shadowRoot;
     this.keyboardContainer = keyboardContainer;
     this._keyboardBody = body;
     this.closeBtn = closeBtn;
@@ -1231,7 +1246,7 @@ export class FloatingKeyboardHelp {
 
   _ensureCollapseButton() {
     const header = this._titlebar
-      || this.root?.querySelector?.('[data-kp-floating-keyboard-titlebar="true"]')
+      || this.shadowRoot?.querySelector?.('[data-kp-floating-keyboard-titlebar="true"]')
       || null;
     if (!header) return;
     let btn = this._collapseBtn
@@ -1419,27 +1434,21 @@ export class FloatingKeyboardHelp {
    */
   _ensureTextModeStyles() {
     try {
-      const doc = this.root?.ownerDocument || document;
-      if (!doc?.head) return;
-      let s = doc.head.querySelector('style[data-kp-keyboard-text-mode-style="true"]');
-      if (!s) {
-        s = doc.createElement('style');
-        s.setAttribute('data-kp-keyboard-text-mode-style', 'true');
-        doc.head.appendChild(s);
-      }
-      s.textContent = `
+      const root = this.shadowRoot || this.root?.ownerDocument || document;
+      const css = `
 /* Typing / text mode: orange cast over the NCT titlebar bevel (COLORS.ORANGE #ff8c00). */
-.kp-floating-keyboard-help[data-kp-text-mode="true"]:not([data-kp-edit-mode="true"]) [data-kp-floating-keyboard-titlebar="true"] {
+:host([data-kp-text-mode="true"]:not([data-kp-edit-mode="true"])) [data-kp-floating-keyboard-titlebar="true"] {
   background: ${NCT_DARK_UI_TITLEBAR_TEXT_MODE_BACKGROUND} !important;
   border-bottom: ${NCT_DARK_UI_TITLEBAR_TEXT_MODE_BORDER_BOTTOM} !important;
 }
-.kp-floating-keyboard-help[data-kp-text-mode="true"]:not([data-kp-edit-mode="true"]) [data-kp-floating-keyboard-title="true"] {
+:host([data-kp-text-mode="true"]:not([data-kp-edit-mode="true"])) [data-kp-floating-keyboard-title="true"] {
   color: ${NCT_DARK_UI_TITLEBAR_TEXT_MODE_TITLE_COLOR} !important;
 }
-.kp-floating-keyboard-help[data-kp-text-mode="true"]:not([data-kp-edit-mode="true"]) [data-kp-floating-keyboard-hint="true"] {
+:host([data-kp-text-mode="true"]:not([data-kp-edit-mode="true"])) [data-kp-floating-keyboard-hint="true"] {
   color: ${NCT_DARK_UI_TITLEBAR_TEXT_MODE_HINT_COLOR} !important;
 }
       `.trim();
+      injectChromeStyles(root, { attr: 'data-kp-keyboard-text-mode-style', css });
     } catch { /* ignore */ }
   }
 
@@ -1485,16 +1494,8 @@ export class FloatingKeyboardHelp {
 
   _ensureEditModeStyles() {
     try {
-      const doc = this.root?.ownerDocument || document;
-      if (!doc?.head) return;
-      let s = doc.head.querySelector('style[data-kp-keyboard-edit-mode-style="true"]');
-      if (!s) {
-        s = doc.createElement('style');
-        s.setAttribute('data-kp-keyboard-edit-mode-style', 'true');
-        doc.head.appendChild(s);
-      }
-      // Always refresh so style edits land without requiring a full style-tag recreate.
-      s.textContent = `
+      const root = this.shadowRoot || this.root?.ownerDocument || document;
+      const css = `
 /* Edit-mode plate: light hatch layered on the keyboard background image stack
    (NCT dark pro — cool steel lines, low contrast over the tray gradients). */
 .kp-floating-keyboard-help[data-kp-edit-mode="true"] .keyboard-visual.${KEYBINDINGS_UI_ROOT_CLASS} {
@@ -1567,16 +1568,22 @@ export class FloatingKeyboardHelp {
 .kp-floating-keyboard-help[data-kp-edit-mode="true"] .kp-key-delete:hover {
   background: rgba(255, 70, 70, 1);
 }
-.kp-floating-keyboard-help[data-kp-edit-mode="true"] .key.kp-drop-target {
-  outline: 2px solid rgba(91,226,241,0.85);
-  outline-offset: -1px;
-}
+/* Drop / place hover: use border + box-shadow — base .key sets outline:none !important. */
+.kp-floating-keyboard-help[data-kp-edit-mode="true"] .key.kp-drop-target,
 .kp-floating-keyboard-help[data-kp-edit-mode="true"] .key.kp-place-preview {
-  outline: 2px solid rgba(91,226,241,0.95);
-  outline-offset: -1px;
-  box-shadow: 0 0 0 1px rgba(91,226,241,0.35);
+  z-index: 2;
+  border-color: rgba(91, 226, 241, 0.95) !important;
+  border-top-color: rgba(180, 245, 255, 1) !important;
+  border-bottom-color: rgba(40, 180, 200, 0.95) !important;
+  filter: brightness(1.1) saturate(1.1);
+  box-shadow:
+    0 0 0 2px rgba(91, 226, 241, 0.75),
+    0 0 14px 3px rgba(91, 226, 241, 0.45),
+    inset 0 0 0 2px rgba(91, 226, 241, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
 }
-      `.trim();
+      `.trim().replaceAll('.kp-floating-keyboard-help', ':host');
+      injectChromeStyles(root, { attr: 'data-kp-keyboard-edit-mode-style', css });
     } catch { /* ignore */ }
   }
 
@@ -1597,7 +1604,11 @@ export class FloatingKeyboardHelp {
       : this._layoutSelectEl;
     if (!sel) return;
     const v = String(sel.value || 'builtin');
-    if (v === LAYOUT_SELECT_EDIT_VALUE || v === LAYOUT_SELECT_NEW_VALUE) {
+    if (
+      v === LAYOUT_SELECT_EDIT_VALUE
+      || v === LAYOUT_SELECT_NEW_VALUE
+      || v === LAYOUT_SELECT_DUP_VALUE
+    ) {
       // Action item — restore prior layout selection, then open Config.
       const prev = String(this._currentKeyboardLayoutId || 'builtin');
       const known = [...sel.options].some((o) => o && o.value === prev);
@@ -1605,7 +1616,8 @@ export class FloatingKeyboardHelp {
       try {
         const kp = this._getKeyPilot?.();
         openKeyboardLayoutConfigurator(kp || null, {
-          createNew: v === LAYOUT_SELECT_NEW_VALUE
+          createNew: v === LAYOUT_SELECT_NEW_VALUE,
+          createDuplicate: v === LAYOUT_SELECT_DUP_VALUE
         });
       } catch { /* ignore */ }
       return;
@@ -1663,8 +1675,12 @@ export class FloatingKeyboardHelp {
       } catch { /* ignore */ }
       const optNew = document.createElement('option');
       optNew.value = LAYOUT_SELECT_NEW_VALUE;
-      optNew.textContent = 'New Keyboard Layout…';
+      optNew.textContent = 'New Blank Keyboard Layout';
       selEl.appendChild(optNew);
+      const optDup = document.createElement('option');
+      optDup.value = LAYOUT_SELECT_DUP_VALUE;
+      optDup.textContent = 'New Duplicate Keyboard Layout';
+      selEl.appendChild(optDup);
 
       let v = typeof this._currentKeyboardLayoutId === 'string' ? this._currentKeyboardLayoutId : 'builtin';
       if (!known.has(v)) {
@@ -1893,7 +1909,9 @@ export class FloatingKeyboardHelp {
   } = {}) {
     if (!container) return;
     const doc = container.ownerDocument || document;
-    try { ensureStylesInjected(doc); } catch { /* ignore */ }
+    try { this._slotDnDAbort?.abort?.(); } catch { /* ignore */ }
+    this._slotDnDAbort = null;
+    try { ensureStylesInjected(container.getRootNode?.() || doc); } catch { /* ignore */ }
     try { detachKeyPopoverBehavior(container); } catch { /* ignore */ }
     container.innerHTML = '';
     const visual = doc.createElement('div');
@@ -2098,16 +2116,38 @@ export class FloatingKeyboardHelp {
           try { this._onPlaceSlot?.(slotLabel); } catch { /* ignore */ }
         }, true);
       } else if (editMode && editable) {
-        btn.addEventListener('dragover', (e) => {
+        const clearOtherDropTargets = () => {
+          try {
+            visual.querySelectorAll('.key.kp-drop-target').forEach((el) => {
+              if (el !== btn) el.classList.remove('kp-drop-target');
+            });
+          } catch { /* ignore */ }
+        };
+        const markDropTarget = (e) => {
           e.preventDefault();
+          try {
+            const allowed = String(e.dataTransfer?.effectAllowed || '');
+            e.dataTransfer.dropEffect = allowed === 'move' ? 'move' : 'copy';
+          } catch { /* ignore */ }
+          clearOtherDropTargets();
           btn.classList.add('kp-drop-target');
-        }, true);
-        btn.addEventListener('dragleave', () => {
+        };
+        btn.addEventListener('dragenter', markDropTarget, true);
+        btn.addEventListener('dragover', markDropTarget, true);
+        btn.addEventListener('dragleave', (e) => {
+          // Ignore leave events that only move into a child (.key-main / .key-label).
+          const related = e.relatedTarget;
+          if (related instanceof Node && btn.contains(related)) return;
           btn.classList.remove('kp-drop-target');
         }, true);
         btn.addEventListener('drop', (e) => {
           e.preventDefault();
           btn.classList.remove('kp-drop-target');
+          try {
+            visual.querySelectorAll('.key.kp-drop-target').forEach((el) => {
+              el.classList.remove('kp-drop-target');
+            });
+          } catch { /* ignore */ }
           try {
             const raw = e.dataTransfer?.getData?.(KP_LAYOUT_ITEM_MIME) || '';
             const data = raw ? JSON.parse(raw) : null;
@@ -2173,6 +2213,27 @@ export class FloatingKeyboardHelp {
         const assigned = slots && typeof slots === 'object' ? (slots[slotLabel] || null) : null;
         rowEl.appendChild(renderSlot(slotLabel, assigned));
       }
+    }
+
+    // Clear drop-target highlight when a drag ends anywhere (cancel / drop outside).
+    if (editMode && editable) {
+      try {
+        const ac = new AbortController();
+        this._slotDnDAbort = ac;
+        const clearDropTargets = () => {
+          try {
+            visual.querySelectorAll('.key.kp-drop-target').forEach((el) => {
+              el.classList.remove('kp-drop-target');
+            });
+          } catch { /* ignore */ }
+        };
+        doc.addEventListener('dragend', clearDropTargets, { capture: true, signal: ac.signal });
+        visual.addEventListener('dragleave', (e) => {
+          const related = e.relatedTarget;
+          if (related instanceof Node && visual.contains(related)) return;
+          clearDropTargets();
+        }, { capture: true, signal: ac.signal });
+      } catch { /* ignore */ }
     }
 
     // View mode: same key-info popovers as the built-in keyboard reference.
@@ -2503,7 +2564,7 @@ export class FloatingKeyboardHelp {
     if (!next) this._textModeCountdownArmed = false;
 
     try {
-      const kbRoot = this.root?.querySelector?.('.kp-keybindings-ui') || this.keyboardContainer;
+      const kbRoot = this.shadowRoot?.querySelector?.('.kp-keybindings-ui') || this.keyboardContainer;
       if (kbRoot) {
         if (next) kbRoot.classList.add('kp-text-mode-filter');
         else kbRoot.classList.remove('kp-text-mode-filter');
@@ -2560,7 +2621,7 @@ export class FloatingKeyboardHelp {
    */
   _applyTextModeFilterClasses(on) {
     try {
-      const root = this.root;
+      const root = this.shadowRoot || this.keyboardContainer || this.root;
       if (!root) return;
       const countdownArmed = !!(on && this._textModeCountdownArmed);
       const liveIds = this._textModeCountdownActionIds instanceof Set
@@ -2582,7 +2643,7 @@ export class FloatingKeyboardHelp {
         }
       }
 
-      const kbRoot = root.querySelector?.('.kp-keybindings-ui') || this.keyboardContainer;
+      const kbRoot = this.shadowRoot?.querySelector?.('.kp-keybindings-ui') || this.keyboardContainer;
       if (kbRoot) {
         if (on) kbRoot.classList.add('kp-text-mode-filter');
         else kbRoot.classList.remove('kp-text-mode-filter');

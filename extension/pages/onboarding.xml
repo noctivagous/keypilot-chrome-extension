@@ -25,11 +25,11 @@
 
   <slide id="text_box_mode" title="Text box mode">
     <onEnter type="overlay"
-             title="Nice — KeyPilot is back on"
+             title="KeyPilot is back on"
              message="Next up: text boxes."
              primaryText="OK"
              effect="marquee" />
-    <task id="enter_text_mode" label="Click a text field with F and it will receive typing.">
+    <task id="enter_text_mode" label="Click a text field to the right with F and it will receive typing.">
       <when type="mode" mode="text_focus" change="enter" />
     </task>
     <task id="exit_text_mode" label="Press `Escape` to exit the text box.">

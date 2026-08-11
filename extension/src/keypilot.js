@@ -36,6 +36,7 @@ import {
 } from './config/keyboard-layouts.js';
 import { FloatingKeyboardHelp } from './ui/floating-keyboard-help.js';
 import { ControlStrip } from './ui/control-strip.js';
+import { closestComposed, isKeyPilotChromeElement } from './ui/kp-chrome-shadow.js';
 import {
   applyFlashNotificationStyle,
   applyFlashNotificationThumbnailStyle
@@ -287,6 +288,7 @@ export class KeyPilot extends EventManager {
   _isKeyPilotUiElement(el) {
     try {
       if (!el || el === document.documentElement || el === document.body) return false;
+      if (isKeyPilotChromeElement(el)) return true;
 
       let n = el;
       let guard = 0;
@@ -459,12 +461,8 @@ export class KeyPilot extends EventManager {
       // Keys in the floating keyboard reference have `data-kp-action-id`.
       // If the user F-clicks one, it triggers the tooltip popover (key details).
       const el = target instanceof Element ? target : null;
-      const keyEl =
-        el && typeof el.closest === 'function'
-          ? el.closest('[data-kp-action-id]')
-          : null;
-      const inKeyboardHelp =
-        !!(keyEl && keyEl.closest && keyEl.closest('.kp-floating-keyboard-help'));
+      const keyEl = el ? closestComposed(el, '[data-kp-action-id]') : null;
+      const inKeyboardHelp = !!(keyEl && closestComposed(keyEl, '.kp-floating-keyboard-help'));
       // In layout edit mode, F should not pin key-info popovers (keys show delete × instead).
       const editing = !!(this.floatingKeyboardHelp && typeof this.floatingKeyboardHelp.isEditMode === 'function'
         && this.floatingKeyboardHelp.isEditMode());

@@ -2173,7 +2173,7 @@
       "tasks": [
         {
           "id": "enter_text_mode",
-          "label": "Click a text field with F and it will receive typing.",
+          "label": "Click a text field to the right with F and it will receive typing.",
           "when": {
             "type": "mode",
             "action": "",
@@ -2197,7 +2197,7 @@
       "onEnter": [
         {
           "type": "overlay",
-          "title": "Nice — KeyPilot is back on",
+          "title": "KeyPilot is back on",
           "message": "Next up: text boxes.",
           "primaryText": "OK",
           "effect": "marquee"
@@ -2362,6 +2362,12 @@
       }
     } catch { /* ignore */ }
   }
+  // Shared early-compatible subset of kp-chrome-shadow.js. This script cannot import ESM.
+  function ensureEarlyOpenChromeShadow(host, id) {
+    if (!host) return null;
+    try { host.setAttribute('data-kp-ui-shadow', String(id || 'chrome')); } catch { /* ignore */ }
+    try { return host.shadowRoot || host.attachShadow({ mode: 'open' }); } catch { return host.shadowRoot || null; }
+  }
   const KEYBINDINGS_UI_EARLY_CSS = `
 /* KeyPilot Keybindings UI (injected) */
 @font-face {
@@ -2456,28 +2462,34 @@
   --kp-key-glow: transparent;
 
   position: relative;
-  box-sizing: border-box;
-  margin: 0;
+  /*
+   * This UI lives in the page's light DOM. Some sites apply high-priority
+   * button resets (large min-heights, padding, and white focus rings), which
+   * can briefly win during the early-shell → bundled-style handoff.
+   */
+  box-sizing: border-box !important;
+  margin: 0 !important;
   font-family: inherit;
   font-size: inherit;
   line-height: inherit;
   cursor: default;
-  appearance: none;
-  -webkit-appearance: none;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  outline: none !important;
   color: rgba(248, 250, 252, 0.94);
   text-align: center;
   overflow: hidden;
 
   /* Equal geometry for alphanumeric keys */
-  flex: 1 1 0;
-  min-width: 0;
-  width: 0;
-  height: 50px;
-  min-height: 50px;
-  max-height: 50px;
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  width: 0 !important;
+  height: 50px !important;
+  min-height: 50px !important;
+  max-height: 50px !important;
   /* Block layout: letter/name layers are absolutely positioned (not flex-flow) */
-  display: block;
-  padding: 0;
+  display: block !important;
+  padding: 0 !important;
   border-radius: 7px;
 
   /*
@@ -4799,6 +4811,7 @@
   let keyboardShowNumberRow = false;
   let keyboardReferenceCollapsed = false;
   let keyboardHelpRoot = null;
+  let keyboardHelpShadowRoot = null;
   let keyboardHelpKeyboardContainer = null;
   let keyboardHelpStorageListener = null;
   let onboardingRoot = null;
@@ -5482,10 +5495,12 @@
     }
   }
 
-  function ensureKeybindingsUiStylesInjected(doc) {
+  function ensureKeybindingsUiStylesInjected(root) {
     try {
-      if (!doc || !doc.head) return;
-      if (doc.head.querySelector(`style[${KEYBINDINGS_UI_STYLE_ATTR}]`)) return;
+      const doc = root && root.nodeType === 9 ? root : root?.ownerDocument;
+      const mount = root && root.nodeType === 9 ? root.head : root;
+      if (!doc || !mount || !mount.appendChild) return;
+      if (mount.querySelector(`style[${KEYBINDINGS_UI_STYLE_ATTR}]`)) return;
       const style = doc.createElement('style');
       style.setAttribute(KEYBINDINGS_UI_STYLE_ATTR, 'true');
       // Replace build-time font placeholders with runtime extension URLs (required on real web pages).
@@ -5504,7 +5519,7 @@
         // ignore; fallback to placeholders (bundled UI will overwrite later)
       }
       style.textContent = css;
-      doc.head.appendChild(style);
+      mount.appendChild(style);
     } catch {
       // ignore
     }
@@ -5576,7 +5591,7 @@
       return;
     }
     const doc = container.ownerDocument || document;
-    ensureKeybindingsUiStylesInjected(doc);
+    ensureKeybindingsUiStylesInjected(container.getRootNode?.() || doc);
 
     const desired = normalizeKeyboardLayoutId(layoutId || DEFAULT_KEYBOARD_LAYOUT_ID);
     const wantNumRow = includeNumberRow === undefined ? !!keyboardShowNumberRow : !!includeNumberRow;
@@ -5965,11 +5980,12 @@
     keyboardReferenceCollapsed = !!collapsed;
     const root = keyboardHelpRoot;
     if (!root || !root.isConnected) return;
+    const shell = keyboardHelpShadowRoot || root;
     const body =
-      root.querySelector('[data-kp-floating-keyboard-body="true"]') ||
-      root.querySelector('.kp-floating-keyboard-help__keyboard')?.parentElement ||
+      shell.querySelector('[data-kp-floating-keyboard-body="true"]') ||
+      shell.querySelector('.kp-floating-keyboard-help__keyboard')?.parentElement ||
       null;
-    const collapseBtn = root.querySelector('button[data-kp-floating-keyboard-collapse="true"]');
+    const collapseBtn = shell.querySelector('button[data-kp-floating-keyboard-collapse="true"]');
     try {
       root.setAttribute('data-kp-collapsed', keyboardReferenceCollapsed ? 'true' : 'false');
     } catch { /* ignore */ }
@@ -6724,6 +6740,7 @@
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-label', 'KeyPilot keyboard reference');
     root.setAttribute('data-kp-early-floating-keyboard', 'true');
+    const shell = ensureEarlyOpenChromeShadow(root, 'keyboard-help') || root;
 
     // NCT dark UI panel chrome (matches floating-keyboard-help.js `_applyProPanelChrome`).
     Object.assign(root.style, {
@@ -6943,12 +6960,13 @@
       persistEarlyKeyboardReferenceCollapsed(next);
     });
 
-    root.appendChild(header);
-    root.appendChild(body);
+    shell.appendChild(header);
+    shell.appendChild(body);
 
     (doc.body || doc.documentElement).appendChild(root);
 
     keyboardHelpRoot = root;
+    keyboardHelpShadowRoot = root.shadowRoot || null;
     keyboardHelpKeyboardContainer = keyboardContainer;
 
     // Apply stored collapsed state before first paint when visible.
@@ -6983,7 +7001,7 @@
   function updateKeyboardHelpHintForLayout(layoutId) {
     try {
       if (!keyboardHelpRoot) return;
-      const hint = keyboardHelpRoot.querySelector('[data-kp-floating-keyboard-hint="true"]');
+      const hint = (keyboardHelpShadowRoot || keyboardHelpRoot).querySelector('[data-kp-floating-keyboard-hint="true"]');
       if (!hint) return;
       const data = getEarlyKeyboardDataForLayout(layoutId || keyboardLayoutId);
       const binding = data?.bindings?.TOGGLE_KEYBOARD_HELP;
@@ -7061,7 +7079,7 @@
     ensureEarlyFloatingKeyboardHelpShell();
     if (!keyboardHelpRoot) return;
     try {
-      const title = keyboardHelpRoot.querySelector('[data-kp-floating-keyboard-title="true"]');
+      const title = (keyboardHelpShadowRoot || keyboardHelpRoot).querySelector('[data-kp-floating-keyboard-title="true"]');
       if (title) {
         title.textContent = keyboardUsesCustomLayout
           ? 'Keyboard Reference — Custom layout'
