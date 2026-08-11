@@ -36,7 +36,12 @@ import {
 } from './config/keyboard-layouts.js';
 import { FloatingKeyboardHelp } from './ui/floating-keyboard-help.js';
 import { ControlStrip } from './ui/control-strip.js';
-import { closestComposed, ensureOpenChromeShadow, isKeyPilotChromeElement } from './ui/kp-chrome-shadow.js';
+import {
+  closestComposed,
+  containsComposed,
+  ensureOpenChromeShadow,
+  isKeyPilotChromeElement
+} from './ui/kp-chrome-shadow.js';
 import {
   applyFlashNotificationStyle,
   applyFlashNotificationThumbnailStyle
@@ -341,13 +346,16 @@ export class KeyPilot extends EventManager {
 
     // Check iframe popover container
     const iframeContainer = this.overlayManager?.popoverContainer;
-    if (iframeContainer instanceof Element && iframeContainer.contains(el)) {
+    // Use composed containment: Tab History / Launcher / Link Preview chrome
+    // keep interactive nodes in open Shadow DOM, so light-DOM contains() is false
+    // for rows, close buttons, and other clickables that still need hover + F.
+    if (iframeContainer instanceof Element && containsComposed(iframeContainer, el)) {
       return true;
     }
 
     // Check popupManager modal
     const modalPanel = this.overlayManager?.popupManager?.top()?.panel;
-    if (modalPanel instanceof Element && modalPanel.contains(el)) {
+    if (modalPanel instanceof Element && containsComposed(modalPanel, el)) {
       return true;
     }
 
@@ -375,11 +383,14 @@ export class KeyPilot extends EventManager {
 
     try {
       if (under && this._isKeyPilotUiElement(under)) {
-        // Allow activation on KeyPilot UI elements that represent clickable content (e.g. history rows with data-kp-url)
-        if (!(under instanceof Element) ||
-            !(under.getAttribute('role') === 'link' && under.dataset?.kpUrl)) {
-          under = null;
-        }
+        // Allow KeyPilot chrome that is the active popover (Tab History rows/close,
+        // Launcher tiles, etc.) plus explicit history-link markers elsewhere.
+        const allowUi =
+          this._isElementInPopover(under) ||
+          (under instanceof Element &&
+            under.getAttribute('role') === 'link' &&
+            !!under.dataset?.kpUrl);
+        if (!allowUi) under = null;
       }
     } catch { /* ignore */ }
 
@@ -389,7 +400,8 @@ export class KeyPilot extends EventManager {
     // If not, fall back to a fresh under-cursor pick to avoid clicking stale targets.
     try {
       if (this._domHoverListenersEnabled && focus && under && focus instanceof Element && under instanceof Element) {
-        const consistent = focus.contains(under) || under.contains(focus);
+        const consistent =
+          containsComposed(focus, under) || containsComposed(under, focus);
         if (!consistent) {
           // Map under->clickable ancestor for better semantics (e.g. hovering a child inside a button).
           const clickableUnder = this.detector.findClickable(under) || under;
@@ -6242,7 +6254,7 @@ export class KeyPilot extends EventManager {
       if (
         focus instanceof Element &&
         target instanceof Element &&
-        (focus === target || focus.contains(target) || target.contains(focus))
+        (focus === target || containsComposed(focus, target) || containsComposed(target, focus))
       ) {
         activationDetail.hadFocusOutline = true;
       }
