@@ -105,7 +105,9 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  * @typedef {{
  *   left?: number,
  *   top?: number,
- *   anchor?: string|null
+ *   anchor?: string|null,
+ *   width?: number,
+ *   height?: number
  * }} PanelPositionSettings
  */
 
@@ -473,8 +475,12 @@ function normalizePanelPositionEntry(raw, fallback) {
   const out = {};
   const left = typeof raw.left === 'number' ? raw.left : (typeof raw.left === 'string' ? Number(raw.left) : NaN);
   const top = typeof raw.top === 'number' ? raw.top : (typeof raw.top === 'string' ? Number(raw.top) : NaN);
+  const width = typeof raw.width === 'number' ? raw.width : (typeof raw.width === 'string' ? Number(raw.width) : NaN);
+  const height = typeof raw.height === 'number' ? raw.height : (typeof raw.height === 'string' ? Number(raw.height) : NaN);
   if (Number.isFinite(left)) out.left = left;
   if (Number.isFinite(top)) out.top = top;
+  if (Number.isFinite(width) && width > 0) out.width = width;
+  if (Number.isFinite(height) && height > 0) out.height = height;
   if (raw.anchor === null) {
     out.anchor = null;
   } else if (typeof raw.anchor === 'string' && PANEL_ANCHOR_IDS.has(raw.anchor.trim())) {

@@ -36,10 +36,17 @@ export const NCT_DARK_UI_COLORS = {
 /** `.panel` background fill (NCT dark UI panels are flat `--panel`). */
 export const NCT_DARK_UI_PANEL_BACKGROUND = NCT_DARK_UI_COLORS.panel;
 
-/** `.panel` border + rim + drop shadow (dual-edge inset rim). */
+/**
+ * `.panel` border + rim + drop shadow.
+ * The outer neutral rim and restrained glow keep dark Pro windows legible on
+ * near-black web pages without turning every panel into a bright focus state.
+ */
 export const NCT_DARK_UI_PANEL_BORDER = `1px solid ${NCT_DARK_UI_COLORS.panelEdgeDark}`;
 export const NCT_DARK_UI_PANEL_BOX_SHADOW =
-  `0 0 0 1px ${NCT_DARK_UI_COLORS.panelEdge} inset, 0 16px 40px rgba(0,0,0,0.55)`;
+  `0 0 0 1px ${NCT_DARK_UI_COLORS.panelEdge} inset, ` +
+  `0 0 0 1px rgba(190, 190, 190, 0.52), ` +
+  `0 0 10px rgba(255, 255, 255, 0.14), ` +
+  `0 16px 40px rgba(0,0,0,0.55)`;
 export const NCT_DARK_UI_PANEL_RADIUS = '3px';
 
 /** `.titlebar` gradient + rim. */

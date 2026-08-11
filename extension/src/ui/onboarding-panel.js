@@ -6,6 +6,7 @@ import { COLORS, CSS_CLASSES, Z_INDEX } from '../config/constants.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
 import {
   ONBOARDING_DEFAULT_TITLE,
+  ONBOARDING_METAL,
   ONBOARDING_PANEL_CLASS,
   ONBOARDING_PANEL_Z_FALLBACK,
   createOnboardingShell,
@@ -17,10 +18,29 @@ import {
   updateOnboardingChrome
 } from './onboarding-shared.js';
 
+/** Mid metal fill for the tip arrow so it matches the onboarding panel bevel. */
+const REENABLE_TIP_ARROW_TOP = '#9a9a9a';
+const REENABLE_TIP_ARROW_BOTTOM = '#707070';
+
 const TOGGLE_OFF_ARROW_STYLE_ID = 'kp-onboarding-toggle-off-arrow-style-v3';
 const TOGGLE_OFF_ARROW_SCALE = 1.5;
 /** Extra left nudge from the default “just past segment edge” placement (px). */
 const TOGGLE_OFF_ARROW_LEFT_NUDGE_PX = 5;
+
+/**
+ * The Control Strip is shadowed, but onboarding callouts must target the
+ * ON/OFF segment rather than the light host's full width.
+ * @returns {HTMLElement|null}
+ */
+function getControlStripStatusAnchor() {
+  try {
+    const strip = document.querySelector('.kp-control-strip, [data-kp-control-strip="true"]');
+    const status = strip?.shadowRoot?.querySelector?.('[data-kp-control-strip-status="true"]');
+    return status || strip || null;
+  } catch {
+    return null;
+  }
+}
 
 function stripListeners(btn) {
   try {
@@ -241,8 +261,7 @@ export class OnboardingPanel {
 
     const anchor =
       anchorEl ||
-      document.querySelector('.kp-control-strip [data-kp-control-strip-status="true"]') ||
-      document.querySelector('.kp-control-strip');
+      getControlStripStatusAnchor();
     if (!anchor || !anchor.isConnected) return;
 
     const tip = document.createElement('div');
@@ -254,10 +273,10 @@ export class OnboardingPanel {
       maxWidth: '260px',
       padding: '10px 12px',
       borderRadius: '3px',
-      border: '1px solid #111',
-      background: '#232323',
-      color: '#ddd',
-      boxShadow: '0 0 0 1px #3a3a3a inset, 0 16px 40px rgba(0,0,0,0.55)',
+      border: ONBOARDING_METAL.panelBorder,
+      background: ONBOARDING_METAL.panelBg,
+      color: ONBOARDING_METAL.fg,
+      boxShadow: ONBOARDING_METAL.panelShadow,
       fontFamily: 'Helvetica, Arial, sans-serif',
       fontSize: '13px',
       fontWeight: '600',
@@ -273,10 +292,10 @@ export class OnboardingPanel {
       height: '0',
       borderLeft: '8px solid transparent',
       borderRight: '8px solid transparent',
-      borderBottom: '8px solid #232323',
+      borderBottom: `8px solid ${REENABLE_TIP_ARROW_TOP}`,
       top: '-8px',
       left: '20px',
-      filter: 'drop-shadow(0 -1px 0 #3a3a3a)'
+      filter: 'drop-shadow(0 -1px 0 rgba(42,52,62,0.92))'
     });
 
     const msg = document.createElement('div');
@@ -342,7 +361,8 @@ export class OnboardingPanel {
             top: 'auto',
             bottom: '-8px',
             borderBottom: 'none',
-            borderTop: '8px solid #232323'
+            borderTop: `8px solid ${REENABLE_TIP_ARROW_BOTTOM}`,
+            filter: 'drop-shadow(0 1px 0 rgba(42,52,62,0.92))'
           });
         }
       } else if (this._reEnableTipArrow) {
@@ -350,7 +370,8 @@ export class OnboardingPanel {
           top: '-8px',
           bottom: 'auto',
           borderTop: 'none',
-          borderBottom: '8px solid #232323'
+          borderBottom: `8px solid ${REENABLE_TIP_ARROW_TOP}`,
+          filter: 'drop-shadow(0 -1px 0 rgba(42,52,62,0.92))'
         });
       }
       tip.style.left = `${left}px`;
@@ -396,10 +417,7 @@ export class OnboardingPanel {
 
     const anchor =
       anchorEl ||
-      document.querySelector('.kp-control-strip [data-kp-control-strip-status="true"]') ||
-      document.querySelector('[data-kp-control-strip-status="true"]') ||
-      document.querySelector('.kp-control-strip') ||
-      document.querySelector('[data-kp-control-strip="true"]');
+      getControlStripStatusAnchor();
     if (!anchor || !anchor.isConnected) {
       this.hideToggleOffArrow();
       return;

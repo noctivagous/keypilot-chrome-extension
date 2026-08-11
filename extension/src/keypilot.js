@@ -473,7 +473,7 @@ export class KeyPilot extends EventManager {
 
     try {
       const el = target instanceof Element ? target : null;
-      if (el && typeof el.closest === 'function' && el.closest('.kp-control-strip')) {
+      if (el && closestComposed(el, '.kp-control-strip')) {
         detail.isControlStrip = true;
       }
     } catch {
@@ -7226,6 +7226,9 @@ export class KeyPilot extends EventManager {
 
     // Launcher (;)
     try { this.launcherPopover?.hide?.(); } catch { /* ignore */ }
+
+    // Page Media (O)
+    try { closePageMediaOverlay(); } catch { /* ignore */ }
 
     // Omnibox (Alt+L)
     try { this.handleCloseOmnibox?.(); } catch { /* ignore */ }

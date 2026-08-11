@@ -3518,8 +3518,12 @@
       'linear-gradient(180deg, #b0b0b0 0%, #929292 45%, #787878 100%)',
     footerBg: 'linear-gradient(180deg, #8a8a8a 0%, #767676 100%)',
     btnBg: 'linear-gradient(180deg, #c2c2c2 0%, #9e9e9e 50%, #868686 100%)',
-    panelBorder: '1px solid #4a4a4a',
-    panelShadow: '0 0 0 1px rgba(255,255,255,0.28) inset, 0 16px 40px rgba(0,0,0,0.45)',
+    panelBorder: '1px solid rgba(42,52,62,0.92)',
+    panelShadow:
+      '0 0 0 1px rgba(255,255,255,0.28) inset, ' +
+      '0 0 0 1px rgba(190,190,190,0.48), ' +
+      '0 0 10px rgba(255,255,255,0.12), ' +
+      '0 16px 40px rgba(0,0,0,0.45)',
     titlebarBorder: '1px solid #4a4a4a',
     titlebarShadow: '0 1px 0 rgba(255,255,255,0.35)',
     footerBorder: '1px solid rgba(0,0,0,0.28)',
@@ -3866,6 +3870,9 @@
     if (opts.early) root.dataset.kpEarlyOnboarding = 'true';
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-label', 'KeyPilot onboarding walkthrough');
+    try { root.setAttribute('data-kp-ui-shadow', 'onboarding'); } catch { /* ignore */ }
+    let shell = root;
+    try { shell = root.shadowRoot || root.attachShadow({ mode: 'open' }); } catch { /* light fallback */ }
 
     // When initially hidden, use display:none + pointer-events:none.
     // Some pages override [hidden]; never put display:flex on a hidden shell.
@@ -3894,7 +3901,7 @@
 
     const style = doc.createElement('style');
     style.textContent = getOnboardingPanelCss({ includeViewTransitions: includeVt });
-    root.appendChild(style);
+    shell.appendChild(style);
 
     const header = doc.createElement('div');
     assignStyle(header, {
@@ -4038,9 +4045,9 @@
     footer.appendChild(stepWrap);
     footer.appendChild(resetBtn);
 
-    root.appendChild(header);
-    root.appendChild(body);
-    root.appendChild(footer);
+    shell.appendChild(header);
+    shell.appendChild(body);
+    shell.appendChild(footer);
 
     return {
       root,
@@ -4061,9 +4068,10 @@
    */
   function queryOnboardingShellRefs(root) {
     if (!root) return null;
+    const shell = root.shadowRoot || root;
     const body =
-      root.querySelector('[data-kp-onboarding-body="true"]') ||
-      root.querySelector(':scope > div[data-kp-onboarding-body]');
+      shell.querySelector('[data-kp-onboarding-body="true"]') ||
+      shell.querySelector(':scope > div[data-kp-onboarding-body]');
     if (!body) return null;
     let slideSurface = body.querySelector('[data-kp-onboarding-slide-surface="true"]');
     if (!slideSurface) {
@@ -4076,12 +4084,12 @@
       root,
       body,
       slideSurface,
-      titleEl: root.querySelector('[data-kp-onboarding-title="true"]'),
-      stepEl: root.querySelector('[data-kp-onboarding-step="true"]'),
-      prevBtn: root.querySelector('button[data-kp-onboarding-prev="true"]'),
-      nextBtn: root.querySelector('button[data-kp-onboarding-next="true"]'),
-      resetBtn: root.querySelector('button[data-kp-onboarding-reset="true"]'),
-      closeBtn: root.querySelector('button[data-kp-onboarding-close="true"]')
+      titleEl: shell.querySelector('[data-kp-onboarding-title="true"]'),
+      stepEl: shell.querySelector('[data-kp-onboarding-step="true"]'),
+      prevBtn: shell.querySelector('button[data-kp-onboarding-prev="true"]'),
+      nextBtn: shell.querySelector('button[data-kp-onboarding-next="true"]'),
+      resetBtn: shell.querySelector('button[data-kp-onboarding-reset="true"]'),
+      closeBtn: shell.querySelector('button[data-kp-onboarding-close="true"]')
     };
   }
 
@@ -4582,16 +4590,21 @@
     try {
       if (!host.classList?.contains?.(ONBOARDING_PANEL_CLASS)) {
         root = host.closest?.(`.${ONBOARDING_PANEL_CLASS}`) || host;
+        if (!root.classList?.contains?.(ONBOARDING_PANEL_CLASS)) {
+          const shadow = host.getRootNode?.();
+          if (shadow?.host?.classList?.contains?.(ONBOARDING_PANEL_CLASS)) root = shadow.host;
+        }
       }
     } catch {
       root = host;
     }
 
-    const existing = root.querySelector('[data-kp-onboarding-overlay="true"]');
+    const shell = root.shadowRoot || root;
+    const existing = shell.querySelector('[data-kp-onboarding-overlay="true"]');
     if (existing) {
       // Migrate legacy overlays that lived inside the scrollable body.
       try {
-        if (existing.parentElement !== root) root.appendChild(existing);
+        if (existing.parentElement !== shell) shell.appendChild(existing);
       } catch { /* ignore */ }
       try {
         const titleEl = existing.querySelector('[data-kp-onboarding-overlay-title="true"]');
@@ -4702,7 +4715,7 @@
     card.appendChild(msgEl);
     card.appendChild(btnRow);
     overlay.appendChild(card);
-    root.appendChild(overlay);
+    shell.appendChild(overlay);
 
     return { overlayEl: overlay, titleEl, msgEl, primaryBtn, secondaryBtn };
   }
@@ -4818,6 +4831,7 @@
   let onboardingStorageListener = null;
   // Control strip defaults match SettingsManager DEFAULT_SETTINGS.controlStrip
   let controlStripRoot = null;
+  let controlStripShadowRoot = null;
   let controlStripDesiredVisible = true;
   let controlStripCollapsed = true;
   // Do not hide the Keyboard/Settings module group based on fallback defaults
@@ -6391,8 +6405,10 @@
       const existing = document.querySelector('.kp-control-strip[data-kp-early-control-strip="true"]');
       if (existing && existing.isConnected) {
         controlStripRoot = existing;
-        const modulesEl = existing.querySelector('[data-kp-control-strip-modules="true"]');
-        let moveBtn = existing.querySelector('[data-kp-control-strip-move="true"]');
+        controlStripShadowRoot = ensureEarlyOpenChromeShadow(existing, 'control-strip');
+        const shell = controlStripShadowRoot || existing;
+        const modulesEl = shell.querySelector('[data-kp-control-strip-modules="true"]');
+        let moveBtn = shell.querySelector('[data-kp-control-strip-move="true"]');
         // Older early shells (or a race before this segment existed) may lack move.
         if (modulesEl && !moveBtn) {
           try {
@@ -6417,15 +6433,15 @@
           } catch { /* ignore */ }
         }
         controlStripRefs = {
-          statusBtn: existing.querySelector('[data-kp-control-strip-status="true"]'),
-          statusDot: existing.querySelector('[data-kp-control-strip-status-dot="true"]'),
-          statusLabel: existing.querySelector('[data-kp-control-strip-status-label="true"]'),
+          statusBtn: shell.querySelector('[data-kp-control-strip-status="true"]'),
+          statusDot: shell.querySelector('[data-kp-control-strip-status-dot="true"]'),
+          statusLabel: shell.querySelector('[data-kp-control-strip-status-label="true"]'),
           modules: modulesEl,
-          moveBtn: existing.querySelector('[data-kp-control-strip-move="true"]'),
-          keyboardBtn: existing.querySelector('[data-kp-control-strip-keyboard="true"]'),
-          settingsBtn: existing.querySelector('[data-kp-control-strip-settings="true"]'),
-          collapseBtn: existing.querySelector('[data-kp-control-strip-collapse="true"]'),
-          closeBtn: existing.querySelector('[data-kp-control-strip-close="true"]')
+          moveBtn: shell.querySelector('[data-kp-control-strip-move="true"]'),
+          keyboardBtn: shell.querySelector('[data-kp-control-strip-keyboard="true"]'),
+          settingsBtn: shell.querySelector('[data-kp-control-strip-settings="true"]'),
+          collapseBtn: shell.querySelector('[data-kp-control-strip-collapse="true"]'),
+          closeBtn: shell.querySelector('[data-kp-control-strip-close="true"]')
         };
         return controlStripRoot;
       }
@@ -6438,6 +6454,7 @@
       root.setAttribute('data-kp-control-strip', 'true');
       root.setAttribute('data-kp-early-control-strip', 'true');
       root.dataset.kpEarlyControlStrip = 'true';
+      const shell = ensureEarlyOpenChromeShadow(root, 'control-strip') || root;
 
       Object.assign(root.style, {
         position: 'fixed',
@@ -6454,10 +6471,10 @@
         // Match NCT dark titlebar bevel so the ON segment (transparent) shares strip chrome.
         background: 'linear-gradient(180deg, #4c4c4c 0%, #353535 45%, #252525 100%)',
         color: 'rgba(248, 250, 252, 0.95)',
-        // NCT dark UI panel rim (dark outer edge).
+        // NCT dark UI panel rim with a restrained neutral glow.
         border: '1px solid #111',
         borderRadius: '3px',
-        boxShadow: '0 0 0 1px #3a3a3a inset, 0 16px 40px rgba(0,0,0,0.55)',
+        boxShadow: '0 0 0 1px #3a3a3a inset, 0 0 0 1px rgba(190,190,190,0.52), 0 0 10px rgba(255,255,255,0.14), 0 16px 40px rgba(0,0,0,0.55)',
         fontFamily: 'Helvetica, Arial, sans-serif',
         pointerEvents: 'none',
         overflow: 'hidden',
@@ -6627,14 +6644,15 @@
         persistEarlyControlStripSettings({ visible: false });
       });
 
-      root.appendChild(statusBtn);
-      root.appendChild(modules);
-      root.appendChild(collapseBtn);
-      root.appendChild(closeBtn);
+      shell.appendChild(statusBtn);
+      shell.appendChild(modules);
+      shell.appendChild(collapseBtn);
+      shell.appendChild(closeBtn);
 
       (document.body || document.documentElement).appendChild(root);
 
       controlStripRoot = root;
+      controlStripShadowRoot = root.shadowRoot || null;
       controlStripRefs = {
         statusBtn,
         statusDot,
@@ -6757,7 +6775,7 @@
       color: '#ddd',
       border: '1px solid #111',
       borderRadius: '3px',
-      boxShadow: '0 0 0 1px #3a3a3a inset, 0 16px 40px rgba(0,0,0,0.55)',
+      boxShadow: '0 0 0 1px #3a3a3a inset, 0 0 0 1px rgba(190,190,190,0.52), 0 0 10px rgba(255,255,255,0.14), 0 16px 40px rgba(0,0,0,0.55)',
       fontFamily: 'Helvetica, Arial, sans-serif',
       display: 'none',
       flexDirection: 'column',

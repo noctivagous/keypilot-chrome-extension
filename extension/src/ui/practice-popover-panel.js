@@ -3,12 +3,14 @@
  * Floating "practice" panel used by onboarding to let users practice text box mode
  * without navigating away from the current page.
  *
- * IMPORTANT: This panel intentionally renders real <input>/<textarea> elements in the
- * top document so focusing them triggers KeyPilot's real text focus mode (so onboarding
- * can detect enter/exit via KeyPilot state).
+ * IMPORTANT: This panel intentionally renders real <input>/<textarea> elements in its
+ * open shadow root. KeyPilot's shadow-aware focus detector resolves the deep active
+ * element, so focusing them still triggers real text focus mode (and onboarding can
+ * detect enter/exit through KeyPilot state).
  */
 import { Z_INDEX } from '../config/constants.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
+import { ensureOpenChromeShadow, injectChromeStyles } from './kp-chrome-shadow.js';
 import {
   NCT_DARK_UI_FONT,
   NCT_DARK_UI_PANEL_BORDER,
@@ -21,6 +23,63 @@ import {
   NCT_DARK_UI_BTN_RADIUS,
   NCT_DARK_UI_COLORS
 } from './nct-dark-ui.js';
+
+const PRACTICE_PANEL_STYLE_ATTR = 'data-kp-practice-popover-style';
+
+function ensurePracticePanelStyles(root) {
+  injectChromeStyles(root, { attr: PRACTICE_PANEL_STYLE_ATTR, css: `
+:host {
+  position: fixed;
+  left: 392px;
+  top: 16px;
+  width: 420px;
+  max-width: calc(100vw - 24px);
+  height: auto;
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+  z-index: ${String((Z_INDEX.ONBOARDING_PANEL || 2147483045) - 1)};
+  background: ${NCT_DARK_UI_COLORS.panel};
+  color: ${NCT_DARK_UI_COLORS.fg};
+  border: ${NCT_DARK_UI_PANEL_BORDER};
+  border-radius: ${NCT_DARK_UI_PANEL_RADIUS};
+  box-shadow: ${NCT_DARK_UI_PANEL_BOX_SHADOW};
+  font-family: ${NCT_DARK_UI_FONT};
+  pointer-events: auto;
+}
+:host([hidden]) { display: none !important; }
+.kp-practice-popover__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: ${NCT_DARK_UI_TITLEBAR_GRADIENT};
+  border-bottom: ${NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM};
+}
+.kp-practice-popover__title {
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kp-practice-popover__close {
+  width: 30px;
+  height: 30px;
+  border-radius: ${NCT_DARK_UI_BTN_RADIUS};
+  border: ${NCT_DARK_UI_BTN_BORDER};
+  background: ${NCT_DARK_UI_BTN_GRADIENT};
+  color: ${NCT_DARK_UI_COLORS.fg};
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 28px;
+  padding: 0;
+  flex: 0 0 auto;
+}
+.kp-practice-popover__body { padding: 12px; }
+` });
+}
 
 function clearPracticePanelElement(el) {
   while (el && el.firstChild) el.removeChild(el.firstChild);
@@ -37,6 +96,7 @@ export class PracticePopoverPanel {
    */
   constructor({ onRequestClose } = {}) {
     this.root = null;
+    this.shadowRoot = null;
     this.body = null;
     this._onRequestClose = typeof onRequestClose === 'function' ? onRequestClose : null;
     this._onCloseClick = this._onCloseClick.bind(this);
@@ -349,82 +409,38 @@ export class PracticePopoverPanel {
     root.hidden = true;
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-label', 'KeyPilot practice popover');
-
-    Object.assign(root.style, {
-      position: 'fixed',
-      left: '392px', // will be repositioned next to onboarding
-      top: '16px',
-      width: '420px',
-      maxWidth: 'calc(100vw - 24px)',
-      // Fit content — do not force a tall frame around the Text Boxes card.
-      height: 'auto',
-      maxHeight: 'calc(100vh - 24px)',
-      overflow: 'auto',
-      zIndex: String((Z_INDEX.ONBOARDING_PANEL || 2147483045) - 1),
-      background: NCT_DARK_UI_COLORS.panel,
-      color: NCT_DARK_UI_COLORS.fg,
-      border: NCT_DARK_UI_PANEL_BORDER,
-      borderRadius: NCT_DARK_UI_PANEL_RADIUS,
-      boxShadow: NCT_DARK_UI_PANEL_BOX_SHADOW,
-      fontFamily: NCT_DARK_UI_FONT,
-      pointerEvents: 'auto'
-    });
-
     applyPopupThemeVars(root);
+    const shadowRoot = ensureOpenChromeShadow(root, { id: 'practice-popover' });
+    const panelRoot = shadowRoot || root;
+    ensurePracticePanelStyles(panelRoot);
 
     const header = document.createElement('div');
-    Object.assign(header.style, {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: '10px',
-      padding: '10px 12px',
-      background: NCT_DARK_UI_TITLEBAR_GRADIENT,
-      borderBottom: NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM
-    });
+    header.className = 'kp-practice-popover__header';
 
     const title = document.createElement('div');
     title.textContent = 'Entering Text';
-    Object.assign(title.style, {
-      fontSize: '13px',
-      fontWeight: '900',
-      letterSpacing: '0.2px',
-      whiteSpace: 'nowrap',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis'
-    });
+    title.className = 'kp-practice-popover__title';
 
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
     closeBtn.textContent = '×';
     closeBtn.setAttribute('aria-label', 'Hide practice popover');
-    Object.assign(closeBtn.style, {
-      width: '30px',
-      height: '30px',
-      borderRadius: NCT_DARK_UI_BTN_RADIUS,
-      border: NCT_DARK_UI_BTN_BORDER,
-      background: NCT_DARK_UI_BTN_GRADIENT,
-      color: NCT_DARK_UI_COLORS.fg,
-      cursor: 'pointer',
-      fontSize: '18px',
-      lineHeight: '28px',
-      padding: '0',
-      flex: '0 0 auto'
-    });
+    closeBtn.className = 'kp-practice-popover__close';
     closeBtn.addEventListener('click', this._onCloseClick);
 
     header.appendChild(title);
     header.appendChild(closeBtn);
 
     const body = document.createElement('div');
-    Object.assign(body.style, { padding: '12px' });
+    body.className = 'kp-practice-popover__body';
 
-    root.appendChild(header);
-    root.appendChild(body);
+    panelRoot.appendChild(header);
+    panelRoot.appendChild(body);
 
     (document.body || document.documentElement).appendChild(root);
 
     this.root = root;
+    this.shadowRoot = shadowRoot;
     this.body = body;
   }
 

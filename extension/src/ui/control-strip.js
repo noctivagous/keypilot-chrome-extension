@@ -28,6 +28,7 @@ import {
   NCT_DARK_UI_COLORS
 } from './nct-dark-ui.js';
 import { positionOnboardingBelowControlStrip } from './onboarding-shared.js';
+import { ensureOpenChromeShadow } from './kp-chrome-shadow.js';
 import { getSettings, setSettings, DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY } from '../modules/settings-manager.js';
 import {
   PANEL_POSITION_MARGIN_PX,
@@ -59,6 +60,7 @@ export class ControlStrip {
    */
   constructor(handlers = {}) {
     this.root = null;
+    this.shadowRoot = null;
     this._modulesEl = null;
     this._statusBtn = null;
     this._statusDot = null;
@@ -252,6 +254,7 @@ export class ControlStrip {
       if (this.root && this.root.parentNode) this.root.parentNode.removeChild(this.root);
     } catch { /* ignore */ }
     this.root = null;
+    this.shadowRoot = null;
     this._modulesEl = null;
     this._statusBtn = null;
     this._statusDot = null;
@@ -274,14 +277,16 @@ export class ControlStrip {
     try {
       const existing = document.querySelector('.kp-control-strip[data-kp-early-control-strip="true"]');
       if (existing && existing.isConnected) {
-        const statusBtn = existing.querySelector('[data-kp-control-strip-status="true"]');
-        const statusDot = existing.querySelector('[data-kp-control-strip-status-dot="true"]');
-        const statusLabel = existing.querySelector('[data-kp-control-strip-status-label="true"]');
-        const modules = existing.querySelector('[data-kp-control-strip-modules="true"]');
-        const keyboardBtn = existing.querySelector('[data-kp-control-strip-keyboard="true"]');
-        const settingsBtn = existing.querySelector('[data-kp-control-strip-settings="true"]');
-        const collapseBtn = existing.querySelector('[data-kp-control-strip-collapse="true"]');
-        const closeBtn = existing.querySelector('[data-kp-control-strip-close="true"]');
+        const shadowRoot = ensureOpenChromeShadow(existing, { id: 'control-strip' });
+        const shell = shadowRoot || existing;
+        const statusBtn = shell.querySelector('[data-kp-control-strip-status="true"]');
+        const statusDot = shell.querySelector('[data-kp-control-strip-status-dot="true"]');
+        const statusLabel = shell.querySelector('[data-kp-control-strip-status-label="true"]');
+        const modules = shell.querySelector('[data-kp-control-strip-modules="true"]');
+        const keyboardBtn = shell.querySelector('[data-kp-control-strip-keyboard="true"]');
+        const settingsBtn = shell.querySelector('[data-kp-control-strip-settings="true"]');
+        const collapseBtn = shell.querySelector('[data-kp-control-strip-collapse="true"]');
+        const closeBtn = shell.querySelector('[data-kp-control-strip-close="true"]');
 
         if (statusBtn && modules && keyboardBtn && settingsBtn && collapseBtn && closeBtn) {
           // Enrich early shell with icons if it only has text labels.
@@ -289,6 +294,7 @@ export class ControlStrip {
           try { this._ensureSegmentIcon(settingsBtn, 'OPEN_SETTINGS_POPOVER'); } catch { /* ignore */ }
 
           this.root = existing;
+          this.shadowRoot = shadowRoot;
           this._modulesEl = modules;
           this._statusBtn = statusBtn;
           this._statusDot = statusDot;
@@ -331,6 +337,8 @@ export class ControlStrip {
     root.setAttribute('role', 'toolbar');
     root.setAttribute('aria-label', 'KeyPilot control strip');
     root.setAttribute('data-kp-control-strip', 'true');
+    const shadowRoot = ensureOpenChromeShadow(root, { id: 'control-strip' });
+    const shell = shadowRoot || root;
 
     Object.assign(root.style, {
       position: 'fixed',
@@ -452,14 +460,15 @@ export class ControlStrip {
     });
     closeBtn.setAttribute('data-kp-control-strip-close', 'true');
 
-    root.appendChild(statusBtn);
-    root.appendChild(modules);
-    root.appendChild(collapseBtn);
-    root.appendChild(closeBtn);
+    shell.appendChild(statusBtn);
+    shell.appendChild(modules);
+    shell.appendChild(collapseBtn);
+    shell.appendChild(closeBtn);
 
     (document.body || document.documentElement).appendChild(root);
 
     this.root = root;
+    this.shadowRoot = shadowRoot;
     this._modulesEl = modules;
     this._statusBtn = statusBtn;
     this._statusDot = statusDot;
@@ -509,7 +518,7 @@ export class ControlStrip {
    */
   _ensureMoveHandle() {
     if (!this.root || !this._modulesEl) return;
-    let moveBtn = this.root.querySelector('[data-kp-control-strip-move="true"]');
+    let moveBtn = this.shadowRoot?.querySelector('[data-kp-control-strip-move="true"]');
     if (!moveBtn) {
       moveBtn = this._createMoveHandleButton();
       try {

@@ -16,6 +16,7 @@
  */
 import { Z_INDEX, KP_UI_FONT } from '../config/constants.js';
 import { makePanelDraggable } from '../utils/panel-position.js';
+import { ensureOpenChromeShadow, injectChromeStyles } from './kp-chrome-shadow.js';
 import { getFunctionDef } from '../config/function-library.js';
 import {
   NCT_DARK_UI_PANEL_BACKGROUND,
@@ -179,16 +180,9 @@ function notifyActionSettingsChanged(actionId, action) {
 
 const CONFIG_PANEL_STYLE_ATTR = 'data-kp-action-config-style';
 
-function ensureConfigPanelStyles(doc) {
-  if (!doc?.head) return;
-  let style = doc.head.querySelector(`style[${CONFIG_PANEL_STYLE_ATTR}]`);
-  if (!style) {
-    style = doc.createElement('style');
-    style.setAttribute(CONFIG_PANEL_STYLE_ATTR, 'true');
-    doc.head.appendChild(style);
-  }
-  style.textContent = `
-.kp-action-config-panel {
+function ensureConfigPanelStyles(root) {
+  injectChromeStyles(root, { attr: CONFIG_PANEL_STYLE_ATTR, css: `
+:host {
   position: fixed;
   z-index: ${Z_INDEX.KEY_ACTION_CONFIG || (Z_INDEX.KEYBINDINGS_POPOVER + 1)};
   min-width: 240px;
@@ -203,7 +197,7 @@ function ensureConfigPanelStyles(doc) {
   box-shadow: ${NCT_DARK_UI_PANEL_BOX_SHADOW};
   box-sizing: border-box;
 }
-.kp-action-config-panel[hidden] { display: none !important; }
+:host([hidden]) { display: none !important; }
 .kp-action-config-panel__titlebar {
   display: flex;
   align-items: center;
@@ -275,7 +269,7 @@ function ensureConfigPanelStyles(doc) {
   opacity: 0.7;
   font-style: italic;
 }
-`;
+` });
 }
 
 /**
@@ -285,6 +279,8 @@ export class KeyActionConfigPanel {
   constructor() {
     /** @type {HTMLElement|null} */
     this.root = null;
+    /** @type {ShadowRoot|null} */
+    this.shadowRoot = null;
     /** @type {string|null} */
     this.actionId = null;
     /** @type {{ dispose: () => void }|null} */
@@ -302,14 +298,16 @@ export class KeyActionConfigPanel {
     if (!def) return;
 
     const doc = document;
-    ensureConfigPanelStyles(doc);
     this.actionId = actionId;
 
     if (!this.root) {
       this.root = doc.createElement('div');
       this.root.className = 'kp-action-config-panel';
       this.root.setAttribute('role', 'dialog');
-      this.root.innerHTML = `
+      this.shadowRoot = ensureOpenChromeShadow(this.root, { id: 'action-config' });
+      const panelRoot = this.shadowRoot || this.root;
+      ensureConfigPanelStyles(panelRoot);
+      panelRoot.innerHTML = `
         <div class="kp-action-config-panel__titlebar" data-kp-config-drag="true">
           <div class="kp-action-config-panel__title"></div>
           <button type="button" class="kp-action-config-panel__close" aria-label="Close">×</button>
@@ -318,20 +316,22 @@ export class KeyActionConfigPanel {
       `;
       doc.body.appendChild(this.root);
 
-      const closeBtn = this.root.querySelector('.kp-action-config-panel__close');
+      const closeBtn = panelRoot.querySelector('.kp-action-config-panel__close');
       closeBtn?.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
         this.close();
       });
 
-      const handle = this.root.querySelector('[data-kp-config-drag="true"]');
+      const handle = panelRoot.querySelector('[data-kp-config-drag="true"]');
       this._dragApi = makePanelDraggable(this.root, handle, {
         excludeSelector: '.kp-action-config-panel__close'
       });
     }
 
-    const titleEl = this.root.querySelector('.kp-action-config-panel__title');
+    const panelRoot = this.shadowRoot || this.root.shadowRoot || this.root;
+    ensureConfigPanelStyles(panelRoot);
+    const titleEl = panelRoot.querySelector('.kp-action-config-panel__title');
     if (titleEl) titleEl.textContent = opts.title || `${actionId} settings`;
 
     await this._renderBody(actionId, def);
@@ -366,7 +366,8 @@ export class KeyActionConfigPanel {
    * @param {ActionSettingsDef} def
    */
   async _renderBody(actionId, def) {
-    const body = this.root?.querySelector('.kp-action-config-panel__body');
+    const panelRoot = this.shadowRoot || this.root?.shadowRoot || this.root;
+    const body = panelRoot?.querySelector('.kp-action-config-panel__body');
     if (!body) return;
     body.replaceChildren();
 
@@ -465,6 +466,7 @@ export class KeyActionConfigPanel {
     this._dragApi = null;
     try { this.root?.remove(); } catch { /* ignore */ }
     this.root = null;
+    this.shadowRoot = null;
     this.actionId = null;
   }
 }

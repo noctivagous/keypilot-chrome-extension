@@ -128,6 +128,21 @@ export function containsComposed(host, node) {
 export function isKeyPilotChromeElement(element) {
   return !!closestComposed(
     element,
-    '[data-kp-ui-shadow], .kp-floating-keyboard-help, .kp-control-strip, .kp-onboarding-panel, .kp-layout-config-panel, [id^="kpv2-"]'
+    [
+      '[data-kp-ui-shadow]',
+      '.kp-floating-keyboard-help',
+      '.kp-control-strip',
+      '.kp-onboarding-panel',
+      '.kp-layout-config-panel',
+      '.kp-action-config-panel',
+      '.kp-practice-popover',
+      '.kp-procedure-result',
+      '.kpv2-tab-history-panel',
+      '.kp-launcher-container',
+      '.kpv2-popover-container',
+      '.kpv2-omnibox-backdrop',
+      '.kpv2-page-media-overlay',
+      '[id^="kpv2-"]'
+    ].join(', ')
   );
 }

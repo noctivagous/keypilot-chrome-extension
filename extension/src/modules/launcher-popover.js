@@ -40,11 +40,14 @@ import {
   NCT_DARK_UI_HOVER_TINT,
   NCT_DARK_UI_COLORS
 } from '../ui/nct-dark-ui.js';
+import { ensureOpenChromeShadow, injectChromeStyles } from '../ui/kp-chrome-shadow.js';
 
 export class LauncherPopover {
   constructor(keypilot) {
     this._keypilot = keypilot;
     this._container = null;
+    this._shadowRoot = null;
+    this._shell = null;
     this._tabListContainer = null;
     this._gridContainer = null;
     this._searchInput = null;
@@ -231,6 +234,8 @@ export class LauncherPopover {
     }
 
     this._container = null;
+    this._shadowRoot = null;
+    this._shell = null;
     this._tabListContainer = null;
     this._gridContainer = null;
     this._searchInput = null;
@@ -1286,34 +1291,24 @@ export class LauncherPopover {
   }
 
   /**
-   * Inject light-DOM CSS that scopes/resets host-page rules for launcher controls.
+   * Reset launcher controls inside its isolated shadow tree.
    *
-   * Host sites (e.g. firefox.com) style bare `button` / `[role="button"]` with large
-   * border-radius tokens. Because the launcher is mounted in the page document (not a
-   * shadow root), those rules paint our subtabs, clear btn, and card preview buttons
-   * unless we win the cascade. High-specificity selectors beat typical host `button`
-   * rules without !important so intentional inline border-radius values still win.
-   *
-   * @param {Document} doc
-   * @param {HTMLElement} container
+   * @param {ShadowRoot|null} shadowRoot
    */
-  _injectScopedStyles(doc, container) {
-    if (!doc || !container) return;
-    const style = doc.createElement('style');
-    style.setAttribute('data-kp-launcher-scope', 'true');
-    style.textContent = `
-      /* Reset form/control radii so host page button styles cannot leak in.
-         Specificity (html body .kp-launcher-container button) beats bare button /
-         [role=button] host rules; element inline styles still override this. */
-      html body .kp-launcher-container button,
-      html body .kp-launcher-container [role="button"],
-      html body .kp-launcher-container input,
-      html body .kp-launcher-container select,
-      html body .kp-launcher-container textarea {
+  _injectScopedStyles(shadowRoot) {
+    if (!shadowRoot) return;
+    injectChromeStyles(shadowRoot, {
+      attr: 'data-kp-launcher-scope',
+      css: `
+      .kp-launcher-shell button,
+      .kp-launcher-shell [role="button"],
+      .kp-launcher-shell input,
+      .kp-launcher-shell select,
+      .kp-launcher-shell textarea {
         border-radius: 0;
       }
-    `;
-    container.appendChild(style);
+      `
+    });
   }
 
   /**
@@ -1335,12 +1330,6 @@ export class LauncherPopover {
       transform: translateZ(0);
       width: auto;
       height: auto;
-      background: ${NCT_DARK_UI_PANEL_BACKGROUND};
-      border: ${NCT_DARK_UI_PANEL_BORDER};
-      border-radius: ${NCT_DARK_UI_PANEL_RADIUS};
-      display: flex;
-      overflow: hidden;
-      box-shadow: ${NCT_DARK_UI_PANEL_BOX_SHADOW};
       isolation: isolate;
       contain: layout style paint;
       will-change: transform;
@@ -1349,8 +1338,23 @@ export class LauncherPopover {
       -webkit-transform: translateZ(0);
     `;
 
-    // Scope/reset host-page control styles before children mount.
-    this._injectScopedStyles(doc, this._container);
+    this._shadowRoot = ensureOpenChromeShadow(this._container, { id: 'launcher' });
+    const mount = this._shadowRoot || this._container;
+    this._injectScopedStyles(this._shadowRoot);
+    this._shell = doc.createElement('div');
+    this._shell.className = 'kp-launcher-shell';
+    this._shell.style.cssText = `
+      width: 100%;
+      height: 100%;
+      background: ${NCT_DARK_UI_PANEL_BACKGROUND};
+      border: ${NCT_DARK_UI_PANEL_BORDER};
+      border-radius: ${NCT_DARK_UI_PANEL_RADIUS};
+      display: flex;
+      overflow: hidden;
+      box-shadow: ${NCT_DARK_UI_PANEL_BOX_SHADOW};
+      box-sizing: border-box;
+    `;
+    mount.appendChild(this._shell);
 
     this._boundContainerKeyDown = (e) => {
       if (e.key === 'Escape' || e.code === 'Escape') {
@@ -1887,9 +1891,9 @@ export class LauncherPopover {
     this._previewArea = previewArea;
 
     // Assemble container
-    this._container.appendChild(sidebar);
-    this._container.appendChild(contentArea);
-    this._container.appendChild(previewArea);
+    this._shell.appendChild(sidebar);
+    this._shell.appendChild(contentArea);
+    this._shell.appendChild(previewArea);
 
     doc.body.appendChild(this._container);
   }
@@ -2535,7 +2539,7 @@ export class LauncherPopover {
       if (e.target === overlay) this._closeAddSitePicker();
     });
 
-    const host = this._container || doc.body;
+    const host = this._shell || this._container || doc.body;
     host.appendChild(overlay);
     this._addSitePicker = overlay;
     renderList();

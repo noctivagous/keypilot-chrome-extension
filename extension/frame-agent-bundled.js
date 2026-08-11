@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-11T19:30:27.954Z
+ * Generated on 2026-08-11T22:07:20.038Z
  */
 
 (() => {
@@ -1655,8 +1655,12 @@
     const out = {};
     const left = typeof raw.left === "number" ? raw.left : typeof raw.left === "string" ? Number(raw.left) : NaN;
     const top = typeof raw.top === "number" ? raw.top : typeof raw.top === "string" ? Number(raw.top) : NaN;
+    const width = typeof raw.width === "number" ? raw.width : typeof raw.width === "string" ? Number(raw.width) : NaN;
+    const height = typeof raw.height === "number" ? raw.height : typeof raw.height === "string" ? Number(raw.height) : NaN;
     if (Number.isFinite(left)) out.left = left;
     if (Number.isFinite(top)) out.top = top;
+    if (Number.isFinite(width) && width > 0) out.width = width;
+    if (Number.isFinite(height) && height > 0) out.height = height;
     if (raw.anchor === null) {
       out.anchor = null;
     } else if (typeof raw.anchor === "string" && PANEL_ANCHOR_IDS.has(raw.anchor.trim())) {

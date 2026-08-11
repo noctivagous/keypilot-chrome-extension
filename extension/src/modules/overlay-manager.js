@@ -18,6 +18,7 @@ import {
   createPopoverTitlebar,
   createTitlebarCloseHint
 } from '../ui/popover-titlebar.js';
+import { ensureOpenChromeShadow } from '../ui/kp-chrome-shadow.js';
 import { createSegmentedControl } from '../ui/segmented-control.js';
 import {
   NCT_DARK_UI_PANEL_BACKGROUND,
@@ -5551,8 +5552,8 @@ export class OverlayManager {
         const y = this._popoverLastMouse.y;
         if (typeof x !== 'number' || typeof y !== 'number') return false;
         const el = document.elementFromPoint(x, y);
-        if (!el) return false;
-        if (el === btn || btn.contains(el)) {
+        const shadowEl = btn.getRootNode?.()?.elementFromPoint?.(x, y);
+        if (el === btn || btn.contains(el) || shadowEl === btn || btn.contains(shadowEl)) {
           try { btn.click(); } catch { /* ignore */ }
           return true;
         }
@@ -5591,6 +5592,21 @@ export class OverlayManager {
         letter-spacing: normal;
       `
     });
+
+    // Keep the PopupManager panel and iframe in the light DOM: its focus and
+    // resize paths operate on these host-owned nodes. Only KeyPilot-owned
+    // titlebar/error chrome is isolated from page CSS in an open shadow root.
+    const chromeHost = this.createElement('div', {
+      className: 'kpv2-popover-chrome-host',
+      style: `
+        display: flex;
+        flex: 0 0 auto;
+        flex-direction: column;
+        min-height: 0;
+      `
+    });
+    const chromeShadow = ensureOpenChromeShadow(chromeHost, { id: 'iframe-popover' });
+    const chromeMount = chromeShadow || chromeHost;
 
 
     // Store iframe reference for focus management
@@ -5722,6 +5738,7 @@ export class OverlayManager {
     iframe.onerror = () => {
       console.log('[KeyPilot] Iframe load error detected');
       iframe.style.display = 'none';
+      chromeHost.style.flex = '1 1 auto';
       errorContainer.style.display = 'flex';
     };
 
@@ -5732,6 +5749,7 @@ export class OverlayManager {
       // This is a fallback for edge cases
       console.log('[KeyPilot] Iframe load timeout - showing error as fallback');
       iframe.style.display = 'none';
+      chromeHost.style.flex = '1 1 auto';
       errorContainer.style.display = 'flex';
     }, 30000);
 
@@ -5744,9 +5762,10 @@ export class OverlayManager {
       sendBridgeInit();
     };
 
-    this.popoverContainer.appendChild(header);
+    chromeMount.appendChild(header);
+    chromeMount.appendChild(errorContainer);
+    this.popoverContainer.appendChild(chromeHost);
     this.popoverContainer.appendChild(iframe);
-    this.popoverContainer.appendChild(errorContainer);
     // Mount via PopupManager so the backdrop + stacking are consistent across popups.
     // This also keeps the popup in the normal DOM stacking context (no Popover API top-layer),
     // so KeyPilot overlays (green click rectangle) can sit above it by z-index.

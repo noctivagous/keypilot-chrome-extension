@@ -68,6 +68,13 @@ import { actionHasParameters, getSharedKeyActionConfigPanel } from './key-action
 import { createMacroKeyEditor } from './macro-key-editor.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
 import {
+  closestComposed,
+  containsComposed,
+  ensureOpenChromeShadow,
+  getComposedEventElement,
+  injectChromeStyles
+} from './kp-chrome-shadow.js';
+import {
   NCT_DARK_UI_BTN_BORDER,
   NCT_DARK_UI_BTN_GRADIENT,
   NCT_DARK_UI_BTN_LIT_BORDER,
@@ -98,6 +105,7 @@ import {
   PANEL_POSITION_MARGIN_PX,
   applyPanelPosition,
   makePanelDraggable,
+  makePanelResizable,
   normalizePanelPositionState
 } from '../utils/panel-position.js';
 
@@ -134,6 +142,27 @@ const CONFIG_INSPECTOR_WIDTH_PX = 280;
 const CONFIG_STYLE_ATTR = 'data-kp-layout-config-panel-style';
 const CONFIG_STYLE_VERSION = 'v16';
 const CONFIG_ICON_SPRITE_ATTR = 'data-kp-layout-config-icons';
+const CONFIG_PLACE_ARROW_STYLE_ATTR = 'data-kp-layout-place-arrow-style';
+const PLACE_ARROW_CSS = `
+.kp-layout-place-arrow {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  border: none;
+  overflow: hidden;
+  pointer-events: none;
+  background: transparent;
+  z-index: ${Z_INDEX.LAYOUT_PLACE_ARROW};
+}
+.kp-layout-place-arrow svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+`.trim();
 
 /** NCT monochrome icon sprite — ids are `kp-cfg-i-*` to avoid page collisions. */
 const CONFIG_ICON_SYMBOLS = Object.freeze([
@@ -286,15 +315,16 @@ function setCfgBtnLabel(btn, label, iconId) {
 }
 
 /**
- * @param {Document} doc
+ * @param {ShadowRoot} root
  */
-function ensureConfigIconSprite(doc) {
-  if (!doc?.body && !doc?.documentElement) return;
-  const existing = doc.querySelector(`svg[${CONFIG_ICON_SPRITE_ATTR}]`);
+function ensureConfigIconSprite(root) {
+  const doc = root?.ownerDocument;
+  if (!root || !doc) return;
+  const existing = root.querySelector(`svg[${CONFIG_ICON_SPRITE_ATTR}]`);
   if (existing?.getAttribute(CONFIG_ICON_SPRITE_ATTR) === CONFIG_STYLE_VERSION) return;
   try { existing?.remove?.(); } catch { /* ignore */ }
   try {
-    doc.querySelectorAll(`svg[${CONFIG_ICON_SPRITE_ATTR}]`).forEach((el) => el.remove());
+    root.querySelectorAll(`svg[${CONFIG_ICON_SPRITE_ATTR}]`).forEach((el) => el.remove());
   } catch { /* ignore */ }
   const svg = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute(CONFIG_ICON_SPRITE_ATTR, CONFIG_STYLE_VERSION);
@@ -314,7 +344,7 @@ function ensureConfigIconSprite(doc) {
     defs.appendChild(symbol);
   }
   svg.appendChild(defs);
-  (doc.body || doc.documentElement).appendChild(svg);
+  root.appendChild(svg);
 }
 
 /** Logic (non-Function) Macro Step kinds offered by the User Macros builder palette. */
@@ -376,6 +406,8 @@ export class KeyboardLayoutConfigPanel {
     this._onChange = typeof onChange === 'function' ? onChange : null;
     this._onClose = typeof onClose === 'function' ? onClose : null;
     this.root = null;
+    /** @type {ShadowRoot|null} */
+    this.shadowRoot = null;
     this._listEl = null;
     /** @type {HTMLElement|null} */
     this._layoutCombo = null;
@@ -429,6 +461,7 @@ export class KeyboardLayoutConfigPanel {
     this._refToggleBtn = null;
     this._showNumRowToggle = null;
     this._dragDispose = null;
+    this._resizeDispose = null;
     this._positionHydrated = false;
     /** @type {'all'|'macros'|'macroKeys'|'functions'} */
     this._libPrimaryTab = 'all';
@@ -554,10 +587,13 @@ export class KeyboardLayoutConfigPanel {
     this._stopChordCapture();
     try { this._dragDispose?.(); } catch { /* ignore */ }
     this._dragDispose = null;
+    try { this._resizeDispose?.(); } catch { /* ignore */ }
+    this._resizeDispose = null;
     try {
       if (this.root && this.root.parentNode) this.root.parentNode.removeChild(this.root);
     } catch { /* ignore */ }
     this.root = null;
+    this.shadowRoot = null;
     this._listEl = null;
     this._kp = null;
   }
@@ -721,17 +757,15 @@ export class KeyboardLayoutConfigPanel {
     }
   }
 
-  _ensureStylesInjected(doc) {
+  _ensureStylesInjected(doc, shadowRoot) {
     try {
-      if (!doc || !doc.head) return;
-      ensureConfigIconSprite(doc);
+      if (!doc || !shadowRoot) return;
+      try {
+        doc.head?.querySelectorAll(`style[${CONFIG_STYLE_ATTR}]`).forEach((el) => el.remove());
+        doc.querySelectorAll(`svg[${CONFIG_ICON_SPRITE_ATTR}]`).forEach((el) => el.remove());
+      } catch { /* ignore */ }
+      ensureConfigIconSprite(shadowRoot);
       const attr = KEYBINDINGS_UI_STYLE_ATTR || 'data-kp-keybindings-ui-style';
-      let style = doc.head.querySelector(`style[${attr}]`);
-      if (!style) {
-        style = doc.createElement('style');
-        style.setAttribute(attr, 'true');
-        doc.head.appendChild(style);
-      }
       const getURL = (typeof chrome !== 'undefined' && chrome?.runtime?.getURL) ? chrome.runtime.getURL.bind(chrome.runtime) : null;
       const fontUrls = getURL ? {
         robotech: getURL('fonts/ROBOTECHGPRegular.ttf'),
@@ -741,17 +775,9 @@ export class KeyboardLayoutConfigPanel {
         dosis: getURL('fonts/DosisBook.ttf')
       } : undefined;
       const css = getKeybindingsUiCss({ zKeybindingsPopover: Z_INDEX.KEYBINDINGS_POPOVER, fontUrls });
-      if (style.textContent !== css) style.textContent = css;
-
-      if (!doc.head.querySelector(`style[${CONFIG_STYLE_ATTR}="${CONFIG_STYLE_VERSION}"]`)) {
-        try {
-          doc.head.querySelectorAll(`style[${CONFIG_STYLE_ATTR}]`).forEach((el) => el.remove());
-        } catch { /* ignore */ }
-        const s = doc.createElement('style');
-        s.setAttribute(CONFIG_STYLE_ATTR, CONFIG_STYLE_VERSION);
-        s.textContent = this._getPanelCss();
-        doc.head.appendChild(s);
-      }
+      injectChromeStyles(shadowRoot, { attr, css });
+      injectChromeStyles(shadowRoot, { attr: CONFIG_STYLE_ATTR, css: this._getPanelCss() });
+      injectChromeStyles(doc, { attr: CONFIG_PLACE_ARROW_STYLE_ATTR, css: PLACE_ARROW_CSS });
     } catch { /* ignore */ }
   }
 
@@ -2426,32 +2452,17 @@ export class KeyboardLayoutConfigPanel {
   color: ${c.fgMute};
   line-height: 1.35;
 }
-.kp-layout-place-arrow {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  margin: 0;
-  padding: 0;
-  border: none;
-  overflow: hidden;
-  pointer-events: none;
-  background: transparent;
-  z-index: ${Z_INDEX.LAYOUT_PLACE_ARROW};
-}
-.kp-layout-place-arrow svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-`.trim();
+`.trim().replaceAll('.kp-layout-config-panel', ':host');
   }
 
   _applyProChrome(root) {
     if (!root || !root.style) return;
+    const savedWidth = Number(this._panelPosition?.width);
+    const savedHeight = Number(this._panelPosition?.height);
     Object.assign(root.style, {
       position: 'fixed',
-      width: `${CONFIG_PANEL_WIDTH_PX}px`,
+      width: `${Number.isFinite(savedWidth) && savedWidth > 0 ? savedWidth : CONFIG_PANEL_WIDTH_PX}px`,
+      ...(Number.isFinite(savedHeight) && savedHeight > 0 ? { height: `${savedHeight}px` } : {}),
       maxWidth: `calc(100vw - ${CONFIG_POSITION_MARGIN_PX * 2}px)`,
       maxHeight: `calc(100vh - ${CONFIG_POSITION_MARGIN_PX * 2}px)`,
       flexDirection: 'column',
@@ -2478,9 +2489,9 @@ export class KeyboardLayoutConfigPanel {
         fallbackHeight: 520
       });
       if (resolved && !resolved.anchor) {
-        this._panelPosition = { left: resolved.left, top: resolved.top, anchor: null };
+        this._panelPosition = { ...this._panelPosition, left: resolved.left, top: resolved.top, anchor: null };
       } else if (resolved?.anchor) {
-        this._panelPosition = { left: resolved.left, top: resolved.top, anchor: resolved.anchor };
+        this._panelPosition = { ...this._panelPosition, left: resolved.left, top: resolved.top, anchor: resolved.anchor };
       }
     } catch { /* ignore */ }
   }
@@ -2491,9 +2502,12 @@ export class KeyboardLayoutConfigPanel {
       DEFAULT_SETTINGS.panelPositions.keyboardLayoutConfig
     ) || { ...DEFAULT_SETTINGS.panelPositions.keyboardLayoutConfig };
     this._panelPosition = {
+      ...this._panelPosition,
       left: normalized.left,
       top: normalized.top,
-      anchor: normalized.anchor === undefined ? null : normalized.anchor
+      anchor: normalized.anchor === undefined ? null : normalized.anchor,
+      ...(Number.isFinite(Number(next?.width)) && Number(next.width) > 0 ? { width: Number(next.width) } : {}),
+      ...(Number.isFinite(Number(next?.height)) && Number(next.height) > 0 ? { height: Number(next.height) } : {})
     };
     try {
       await setSettings({ panelPositions: { keyboardLayoutConfig: { ...this._panelPosition } } });
@@ -2507,14 +2521,15 @@ export class KeyboardLayoutConfigPanel {
     }
 
     const doc = document;
-    this._ensureStylesInjected(doc);
-
     const root = doc.createElement('div');
     root.className = 'kp-layout-config-panel';
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-label', 'Keyboard layout configuration');
     root.hidden = true;
     this._applyProChrome(root);
+    const shadowRoot = ensureOpenChromeShadow(root, { id: 'keyboard-layout-config' });
+    if (!shadowRoot) return;
+    this._ensureStylesInjected(doc, shadowRoot);
 
     // Titlebar — NCT bevel chrome (classes; no inline cyan/soft styling)
     const header = doc.createElement('div');
@@ -3096,11 +3111,12 @@ export class KeyboardLayoutConfigPanel {
     body.appendChild(strip);
     body.appendChild(mainRow);
 
-    root.appendChild(header);
-    root.appendChild(body);
+    shadowRoot.appendChild(header);
+    shadowRoot.appendChild(body);
     (doc.body || doc.documentElement).appendChild(root);
 
     this.root = root;
+    this.shadowRoot = shadowRoot;
     this._listEl = list;
     this._layoutCombo = layoutCombo;
     this._layoutComboInput = layoutComboInput;
@@ -3168,16 +3184,44 @@ export class KeyboardLayoutConfigPanel {
       this._dragDispose = api?.dispose || null;
     } catch { /* ignore */ }
 
+    // Opt in to the shared window-resize foundation. Other persistent panels
+    // can reuse this helper when their content supports flexible dimensions.
+    try {
+      this._resizeDispose = makePanelResizable(root, {
+        mount: shadowRoot,
+        minWidth: 720,
+        minHeight: 460,
+        margin: CONFIG_POSITION_MARGIN_PX,
+        onResizeEnd: (size) => {
+          void this._persistPosition({
+            ...this._panelPosition,
+            width: size.width,
+            height: size.height
+          });
+        }
+      });
+    } catch { /* ignore */ }
+
     // Seed position from settings
     void (async () => {
       try {
         const settings = await getSettings();
         const pos = settings?.panelPositions?.keyboardLayoutConfig;
         if (pos && typeof pos === 'object') {
-          this._panelPosition = normalizePanelPositionState(
+          const normalized = normalizePanelPositionState(
             pos,
             DEFAULT_SETTINGS.panelPositions.keyboardLayoutConfig
-          ) || this._panelPosition;
+          );
+          this._panelPosition = {
+            ...(normalized || this._panelPosition),
+            ...(Number.isFinite(Number(pos.width)) && Number(pos.width) > 0
+              ? { width: Number(pos.width) }
+              : {}),
+            ...(Number.isFinite(Number(pos.height)) && Number(pos.height) > 0
+              ? { height: Number(pos.height) }
+              : {})
+          };
+          this._applyProChrome(root);
         }
         try {
           showNumRowToggle.checked = !!settings?.keyboardReferenceShowNumberRow;
@@ -3291,9 +3335,9 @@ export class KeyboardLayoutConfigPanel {
     doc.addEventListener('click', (e) => {
       const t = e.target;
       if (!(t instanceof Node)) return;
-      if (layoutCombo.contains(t)) return;
+      if (containsComposed(layoutCombo, t)) return;
       this._setLayoutComboOpen(false);
-      if (optsWrap.contains(t)) return;
+      if (containsComposed(optsWrap, t)) return;
       this._setLayoutOptsOpen(false);
     }, true);
 
@@ -4899,7 +4943,7 @@ export class KeyboardLayoutConfigPanel {
       list.appendChild(li);
     }
 
-    if (document.activeElement !== input) {
+    if (this.shadowRoot?.activeElement !== input) {
       input.value = readOnly
         ? builtinName
         : String(this._st.userLayout?.label || 'Custom Layout');
@@ -4917,7 +4961,7 @@ export class KeyboardLayoutConfigPanel {
     if (this._setCurrentBtn) this._setCurrentBtn.disabled = isCurrent;
 
     try {
-      const root = this.root;
+      const root = this.shadowRoot;
       if (!root) return;
       const byAction = (action) => root.querySelector(`.kp-cfg-btn[data-kp-cfg-action="${action}"]`);
       const dup = byAction('duplicate');
@@ -6530,18 +6574,12 @@ export class KeyboardLayoutConfigPanel {
     if (!this._placeItem) return;
     if (typeof e.button === 'number' && e.button !== 0) return;
     try {
-      const el = e.target instanceof Element
-        ? e.target
-        : (e.target && e.target.parentElement) || null;
-      if (!el) {
-        this._cancelPlaceMode();
-        return;
-      }
       // Placing onto a Keyboard Reference slot — leave for the slot click handler.
-      const slot = el.closest?.('[data-kp-slot]');
-      if (slot && slot.closest?.('.kp-floating-keyboard-help')) return;
+      const slot = getComposedEventElement(e, '[data-kp-slot]');
+      if (closestComposed(slot, '.kp-floating-keyboard-help')) return;
       // Switching/toggling from a Config palette key — leave for that click handler.
-      if (el.closest?.('.kp-layout-config-panel [data-kp-item-type][data-kp-item-id]')) return;
+      const source = getComposedEventElement(e, '[data-kp-item-type][data-kp-item-id]');
+      if (source?.getRootNode?.() === this.shadowRoot) return;
 
       e.preventDefault();
       e.stopPropagation();
@@ -6689,7 +6727,7 @@ export class KeyboardLayoutConfigPanel {
       this._chordCaptureCleanup = null;
     }
     try {
-      for (const btn of this.root?.querySelectorAll?.('[data-capturing="true"]') || []) {
+      for (const btn of this.shadowRoot?.querySelectorAll?.('[data-capturing="true"]') || []) {
         delete btn.dataset.capturing;
         if (btn.dataset.kpBindLabel) {
           setCfgBtnLabel(btn, btn.dataset.kpBindLabel, btn.dataset.kpBindIcon || '');

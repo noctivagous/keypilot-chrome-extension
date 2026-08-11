@@ -11,6 +11,7 @@
 
 import { createPopoverTitlebar } from './popover-titlebar.js';
 import { createSegmentedControl } from './segmented-control.js';
+import { ensureOpenChromeShadow, injectChromeStyles } from './kp-chrome-shadow.js';
 
 export const NEWTAB_THEME_STORAGE_KEY = 'kp_newtab_theme';
 export const NEWTAB_FONT_SIZE_STORAGE_KEY = 'kp_newtab_font_size_px';
@@ -51,6 +52,80 @@ export const NEWTAB_UI_SCALE_OPTIONS = /** @type {const} */ ([1, 1.25, 1.5, 1.75
 export const DEFAULT_NEWTAB_CONTENT_WIDTH = 1200;
 export const NEWTAB_CONTENT_WIDTH_STORAGE_KEY = 'kp_newtab_content_width';
 export const NEWTAB_CONTENT_WIDTH_OPTIONS = /** @type {const} */ ([980, 1200, 1400, 1600, 1920, 'full']);
+
+const NEWTAB_DISPLAY_POPOVER_STYLE_ATTR = 'data-kp-newtab-display-popover-style';
+
+/**
+ * Keep component-local rules with the popover internals. The light-DOM host keeps
+ * its existing new-tab stylesheet rules for Popover API top-layer geometry.
+ *
+ * @param {Document|ShadowRoot} root
+ */
+function ensureNewtabDisplayPopoverStyles(root) {
+  injectChromeStyles(root, {
+    attr: NEWTAB_DISPLAY_POPOVER_STYLE_ATTR,
+    css: `
+.nt-display-popover-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+}
+
+.nt-display-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.nt-display-field-label {
+  font-family: var(--nt-font-heading);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--nt-header-bar-fg);
+}
+
+.nt-display-segmented {
+  width: 100%;
+  justify-content: stretch;
+}
+
+.nt-display-segmented .kp-segmented-control-btn {
+  flex: 1 1 auto;
+}
+
+.nt-display-popover-footer {
+  display: flex;
+  justify-content: stretch;
+  align-items: center;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--nt-card-border);
+}
+
+.nt-display-reset-btn {
+  width: 100%;
+  text-align: center;
+  font-weight: 600;
+  background: var(--nt-btn-bg);
+  border: 1px solid var(--nt-btn-secondary-border);
+  color: var(--nt-fg-92);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.8125rem;
+  font-family: var(--nt-font-heading);
+  cursor: pointer;
+}
+
+.nt-display-reset-btn:hover {
+  border-color: var(--nt-btn-border-hover);
+}
+`
+  });
+}
 
 /**
  * @param {unknown} value
@@ -248,6 +323,9 @@ export function createNewtabDisplayPopover(config = {}) {
   } else {
     root.hidden = true;
   }
+  const shadowRoot = ensureOpenChromeShadow(root, { id: 'newtab-display-popover' });
+  const panelRoot = shadowRoot || root;
+  ensureNewtabDisplayPopoverStyles(panelRoot);
 
   const titlebarApi = createPopoverTitlebar({
     doc,
@@ -431,8 +509,8 @@ export function createNewtabDisplayPopover(config = {}) {
   footer.appendChild(resetBtn);
   body.appendChild(footer);
 
-  root.appendChild(titlebarApi.titlebar);
-  root.appendChild(body);
+  panelRoot.appendChild(titlebarApi.titlebar);
+  panelRoot.appendChild(body);
   doc.body.appendChild(root);
 
   /**

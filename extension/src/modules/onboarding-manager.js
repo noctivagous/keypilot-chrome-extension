@@ -1416,9 +1416,8 @@ export class OnboardingManager {
     try {
       // Turn-off arrow is only for the ON step; never stack it with the re-enable tip.
       this.hideToggleOffArrow();
-      const anchor =
-        document.querySelector('.kp-control-strip [data-kp-control-strip-status="true"]') ||
-        document.querySelector('.kp-control-strip');
+      const strip = document.querySelector('.kp-control-strip, [data-kp-control-strip="true"]');
+      const anchor = strip?.shadowRoot?.querySelector?.('[data-kp-control-strip-status="true"]') || strip;
       this.panel?.showReEnableTip?.({
         anchorEl: anchor,
         message: 'Click it again to turn KeyPilot back on.'
@@ -1433,11 +1432,8 @@ export class OnboardingManager {
   showToggleOffArrow() {
     try {
       // Prefer the ON/OFF segment so the arrow sits just past that control, not the whole strip.
-      const anchor =
-        document.querySelector('.kp-control-strip [data-kp-control-strip-status="true"]') ||
-        document.querySelector('[data-kp-control-strip-status="true"]') ||
-        document.querySelector('.kp-control-strip') ||
-        document.querySelector('[data-kp-control-strip="true"]');
+      const strip = document.querySelector('.kp-control-strip, [data-kp-control-strip="true"]');
+      const anchor = strip?.shadowRoot?.querySelector?.('[data-kp-control-strip-status="true"]') || strip;
       this.panel?.showToggleOffArrow?.({ anchorEl: anchor });
     } catch { /* ignore */ }
   }

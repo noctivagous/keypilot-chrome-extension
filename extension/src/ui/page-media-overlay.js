@@ -32,9 +32,9 @@ import {
 import { Z_INDEX } from '../config/constants.js';
 import { storageGetValue, storageSetValue } from '../utils/storage.js';
 import { createSegmentedControl } from './segmented-control.js';
+import { ensureOpenChromeShadow, injectChromeStyles } from './kp-chrome-shadow.js';
 
 const OVERLAY_ID = 'kpv2-page-media-overlay';
-const STYLE_ID = 'kpv2-page-media-styles';
 /** Slider 1–2.5; default 1.5×. Persisted as the CSS scale factor. */
 const IMAGE_SCALE_STORAGE_KEY = 'kp_page_media_image_scale';
 const IMAGE_SCALE_SLIDER_MIN = 1;
@@ -77,6 +77,10 @@ let _imageAspectMode = IMAGE_ASPECT_DEFAULT;
 /** @type {ReturnType<typeof createSegmentedControl>|null} */
 let _aspectControl = null;
 
+function getOverlayRoot() {
+  return _overlay?.shadowRoot || _overlay;
+}
+
 /**
  * @returns {boolean}
  */
@@ -90,7 +94,7 @@ export function isPageMediaOverlayOpen() {
  */
 export function requestClosePageMediaOverlay() {
   if (!isPageMediaOverlayOpen()) return false;
-  const modal = _overlay?.querySelector('.kpv2-page-media-fullview');
+  const modal = getOverlayRoot()?.querySelector('.kpv2-page-media-fullview');
   if (modal && modal.classList.contains('is-open')) {
     closeFullView();
     return true;
@@ -112,10 +116,6 @@ export function closePageMediaOverlay() {
     try { _overlay.remove(); } catch { /* ignore */ }
     _overlay = null;
   }
-  try {
-    const style = document.getElementById(STYLE_ID);
-    if (style) style.remove();
-  } catch { /* ignore */ }
   if (_prevOverflow != null) {
     try { document.body.style.overflow = _prevOverflow; } catch { /* ignore */ }
     _prevOverflow = null;
@@ -212,7 +212,7 @@ function persistImageAspectPreference(mode) {
 function applyImageAspectMode(mode = _imageAspectMode) {
   _imageAspectMode = normalizeImageAspectMode(mode);
   if (!_overlay) return;
-  const content = _overlay.querySelector('.kpv2-page-media-content');
+  const content = getOverlayRoot()?.querySelector('.kpv2-page-media-content');
   if (content instanceof HTMLElement) {
     content.classList.toggle('is-aspect-square', _imageAspectMode === 'square');
     content.classList.toggle('is-aspect-original', _imageAspectMode === 'original');
@@ -222,7 +222,7 @@ function applyImageAspectMode(mode = _imageAspectMode) {
   }
   requestAnimationFrame(() => {
     if (!_overlay) return;
-    const thumbs = _overlay.querySelectorAll('.kpv2-page-media-card-image .kpv2-page-media-thumb');
+    const thumbs = getOverlayRoot()?.querySelectorAll('.kpv2-page-media-card-image .kpv2-page-media-thumb') || [];
     for (const thumb of thumbs) {
       if (!(thumb instanceof HTMLImageElement)) continue;
       const wrap = thumb.closest('.kpv2-page-media-thumb-wrap');
@@ -233,7 +233,7 @@ function applyImageAspectMode(mode = _imageAspectMode) {
 
 function updateAspectToolbarVisibility() {
   if (!_overlay) return;
-  const bar = _overlay.querySelector('.kpv2-page-media-aspect-bar');
+  const bar = getOverlayRoot()?.querySelector('.kpv2-page-media-aspect-bar');
   if (!(bar instanceof HTMLElement)) return;
   const show = _activeTab === 'image';
   bar.hidden = !show;
@@ -291,20 +291,20 @@ function persistImageScalePreference(slider) {
 function applyImageScale(slider = _imageScaleSlider) {
   _imageScaleSlider = normalizeImageScaleSlider(slider);
   if (!_overlay) return;
-  const content = _overlay.querySelector('.kpv2-page-media-content');
+  const content = getOverlayRoot()?.querySelector('.kpv2-page-media-content');
   if (content instanceof HTMLElement) {
     content.style.setProperty('--kpv2-pm-image-scale', String(_imageScaleSlider));
   }
-  const readout = _overlay.querySelector('.kpv2-page-media-scale-value');
+  const readout = getOverlayRoot()?.querySelector('.kpv2-page-media-scale-value');
   if (readout) readout.textContent = formatImageScaleReadout(_imageScaleSlider);
-  const range = _overlay.querySelector('.kpv2-page-media-scale-range');
+  const range = getOverlayRoot()?.querySelector('.kpv2-page-media-scale-range');
   if (range instanceof HTMLInputElement) {
     range.value = String(_imageScaleSlider);
   }
   // Re-measure native/cover fit after cell size changes.
   requestAnimationFrame(() => {
     if (!_overlay) return;
-    const thumbs = _overlay.querySelectorAll('.kpv2-page-media-thumb');
+    const thumbs = getOverlayRoot()?.querySelectorAll('.kpv2-page-media-thumb') || [];
     for (const thumb of thumbs) {
       if (!(thumb instanceof HTMLImageElement)) continue;
       const wrap = thumb.closest('.kpv2-page-media-thumb-wrap');
@@ -392,13 +392,21 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
   else if (groups.url.length) _activeTab = 'url';
   else _activeTab = 'image';
 
-  ensureStyles();
-
   const overlay = document.createElement('div');
   overlay.id = OVERLAY_ID;
   overlay.className = 'kpv2-page-media-overlay';
   overlay.setAttribute('role', 'dialog');
   overlay.setAttribute('aria-label', 'Page Media');
+  overlay.style.cssText = `
+    position: fixed;
+    inset: 0;
+    z-index: ${Z_INDEX.POPUP_PANEL_MAX + 20};
+  `;
+  const shadowRoot = ensureOpenChromeShadow(overlay, { id: 'page-media' });
+  const mount = shadowRoot || overlay;
+  ensureStyles(mount);
+  const shell = document.createElement('div');
+  shell.className = 'kpv2-page-media-shell';
 
   const header = document.createElement('div');
   header.className = 'kpv2-page-media-header';
@@ -515,10 +523,11 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
   fullView.appendChild(counter);
   fullView.addEventListener('click', () => closeFullView(), true);
 
-  overlay.appendChild(header);
-  overlay.appendChild(buildImageAspectToolbar());
-  overlay.appendChild(content);
-  overlay.appendChild(fullView);
+  shell.appendChild(header);
+  shell.appendChild(buildImageAspectToolbar());
+  shell.appendChild(content);
+  shell.appendChild(fullView);
+  mount.appendChild(shell);
 
   // Store tab button refs for setActiveTab
   /** @type {any} */ (overlay)._tabButtons = tabButtons;
@@ -527,7 +536,7 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
   /** @type {any} */ (overlay)._fullMediaHost = fullMediaHost;
   /** @type {any} */ (overlay)._fullCounter = counter;
 
-  document.documentElement.appendChild(overlay);
+  document.body.appendChild(overlay);
   _overlay = overlay;
   applyImageScale(_imageScaleSlider);
   applyImageAspectMode(_imageAspectMode);
@@ -1688,16 +1697,13 @@ function truncate(s, n) {
   return t.slice(0, Math.max(0, n - 1)) + '…';
 }
 
-function ensureStyles() {
-  if (document.getElementById(STYLE_ID)) return;
+function ensureStyles(root) {
+  if (!root) return;
   const c = NCT_DARK_UI_COLORS;
-  const style = document.createElement('style');
-  style.id = STYLE_ID;
-  style.textContent = `
-#${OVERLAY_ID}.kpv2-page-media-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: ${Z_INDEX.POPUP_PANEL_MAX + 20};
+  const css = `
+.kpv2-page-media-shell {
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   background: rgba(15, 15, 16, 0.92);
@@ -2488,5 +2494,8 @@ function ensureStyles() {
   }
 }
 `;
-  document.documentElement.appendChild(style);
+  injectChromeStyles(root, {
+    attr: 'data-kp-page-media-styles',
+    css
+  });
 }

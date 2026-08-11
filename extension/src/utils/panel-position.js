@@ -22,6 +22,134 @@ export const PANEL_SNAP_THRESHOLD_PX = 56;
 export const PANEL_DRAG_MOVE_THRESHOLD_PX = 3;
 
 /**
+ * Add reusable pointer/keyboard resize affordances to a fixed KeyPilot panel.
+ * Consumers opt in explicitly so compact chrome and transient popovers retain
+ * their intended fixed geometry.
+ *
+ * @param {HTMLElement|null} panel
+ * @param {{
+ *   mount?: ParentNode|null,
+ *   minWidth?: number,
+ *   minHeight?: number,
+ *   margin?: number,
+ *   edges?: Array<'right'|'bottom'|'bottom-right'>,
+ *   onResize?: (size: { width: number, height: number }) => void,
+ *   onResizeEnd?: (size: { width: number, height: number }) => void
+ * }} [opts]
+ * @returns {() => void}
+ */
+export function makePanelResizable(panel, opts = {}) {
+  if (!panel || !panel.style) return () => {};
+  const mount = opts.mount || panel.shadowRoot || panel;
+  if (!mount?.appendChild) return () => {};
+
+  const minWidth = Math.max(1, Number(opts.minWidth) || 320);
+  const minHeight = Math.max(1, Number(opts.minHeight) || 220);
+  const margin = Math.max(0, Number(opts.margin) || PANEL_POSITION_MARGIN_PX);
+  const edges = Array.isArray(opts.edges) && opts.edges.length
+    ? opts.edges
+    : ['right', 'bottom', 'bottom-right'];
+  /** @type {HTMLElement[]} */
+  const handles = [];
+
+  const clampSize = (width, height) => {
+    const rect = panel.getBoundingClientRect();
+    const viewport = getViewportSize();
+    return {
+      width: Math.round(Math.max(minWidth, Math.min(width, Math.max(minWidth, viewport.width - rect.left - margin)))),
+      height: Math.round(Math.max(minHeight, Math.min(height, Math.max(minHeight, viewport.height - rect.top - margin))))
+    };
+  };
+  const applySize = (width, height) => {
+    const size = clampSize(width, height);
+    panel.style.width = `${size.width}px`;
+    panel.style.height = `${size.height}px`;
+    try { opts.onResize?.(size); } catch { /* ignore */ }
+    return size;
+  };
+
+  for (const edge of edges) {
+    if (!['right', 'bottom', 'bottom-right'].includes(edge)) continue;
+    const handle = document.createElement('div');
+    handle.setAttribute('role', 'separator');
+    handle.setAttribute('aria-orientation', edge === 'right' ? 'vertical' : 'horizontal');
+    handle.setAttribute('aria-label', 'Resize window');
+    handle.title = 'Resize window';
+    handle.tabIndex = 0;
+    Object.assign(handle.style, {
+      position: 'absolute',
+      zIndex: '2',
+      userSelect: 'none',
+      WebkitUserSelect: 'none',
+      touchAction: 'none',
+      ...(edge === 'right'
+        ? { top: '8px', right: '0', bottom: '8px', width: '8px', cursor: 'ew-resize' }
+        : edge === 'bottom'
+          ? { right: '8px', bottom: '0', left: '8px', height: '8px', cursor: 'ns-resize' }
+          : {
+              right: '0',
+              bottom: '0',
+              width: '14px',
+              height: '14px',
+              cursor: 'nwse-resize',
+              backgroundImage:
+                'repeating-linear-gradient(135deg, transparent 0 3px, rgba(220,220,220,0.42) 3px 4px, transparent 4px 6px)',
+              backgroundClip: 'content-box',
+              padding: '3px',
+              boxSizing: 'border-box'
+            })
+    });
+    handle.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const start = panel.getBoundingClientRect();
+      const startX = event.clientX;
+      const startY = event.clientY;
+      try { handle.setPointerCapture(event.pointerId); } catch { /* ignore */ }
+      const onMove = (moveEvent) => {
+        const width = start.width + (edge === 'bottom' ? 0 : moveEvent.clientX - startX);
+        const height = start.height + (edge === 'right' ? 0 : moveEvent.clientY - startY);
+        applySize(width, height);
+      };
+      const finish = () => {
+        const rect = panel.getBoundingClientRect();
+        const size = { width: Math.round(rect.width), height: Math.round(rect.height) };
+        try { opts.onResizeEnd?.(size); } catch { /* ignore */ }
+        try { handle.releasePointerCapture(event.pointerId); } catch { /* ignore */ }
+        handle.removeEventListener('pointermove', onMove);
+        handle.removeEventListener('pointerup', finish);
+        handle.removeEventListener('pointercancel', finish);
+      };
+      handle.addEventListener('pointermove', onMove);
+      handle.addEventListener('pointerup', finish);
+      handle.addEventListener('pointercancel', finish);
+    }, true);
+    handle.addEventListener('keydown', (event) => {
+      const horizontal = event.key === 'ArrowLeft' || event.key === 'ArrowRight';
+      const vertical = event.key === 'ArrowUp' || event.key === 'ArrowDown';
+      if (!horizontal && !vertical) return;
+      if ((edge === 'right' && !horizontal) || (edge === 'bottom' && !vertical)) return;
+      event.preventDefault();
+      const step = event.shiftKey ? 40 : 10;
+      const rect = panel.getBoundingClientRect();
+      const size = applySize(
+        rect.width + (event.key === 'ArrowRight' ? step : event.key === 'ArrowLeft' ? -step : 0),
+        rect.height + (event.key === 'ArrowDown' ? step : event.key === 'ArrowUp' ? -step : 0)
+      );
+      try { opts.onResizeEnd?.(size); } catch { /* ignore */ }
+    }, true);
+    mount.appendChild(handle);
+    handles.push(handle);
+  }
+  return () => {
+    for (const handle of handles) {
+      try { handle.remove(); } catch { /* ignore */ }
+    }
+  };
+}
+
+/**
  * Named snap / dock anchors.
  * @typedef {'top-left'|'top-center'|'top-right'|'middle-left'|'middle-right'|'bottom-left'|'bottom-center'|'bottom-right'} PanelAnchor
  */

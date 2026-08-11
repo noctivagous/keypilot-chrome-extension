@@ -4,6 +4,7 @@
  */
 import { Z_INDEX, KP_UI_FONT } from '../config/constants.js';
 import { makePanelDraggable } from '../utils/panel-position.js';
+import { ensureOpenChromeShadow, injectChromeStyles } from './kp-chrome-shadow.js';
 import {
   NCT_DARK_UI_PANEL_BACKGROUND,
   NCT_DARK_UI_PANEL_BORDER,
@@ -28,16 +29,9 @@ let _root = null;
 /** @type {{ dispose: () => void }|null} */
 let _dragApi = null;
 
-function ensureStyles(doc) {
-  if (!doc?.head) return;
-  let style = doc.head.querySelector(`style[${STYLE_ATTR}]`);
-  if (!style) {
-    style = doc.createElement('style');
-    style.setAttribute(STYLE_ATTR, 'true');
-    doc.head.appendChild(style);
-  }
-  style.textContent = `
-.${ROOT_CLASS} {
+function ensureStyles(root) {
+  injectChromeStyles(root, { attr: STYLE_ATTR, css: `
+:host {
   position: fixed;
   z-index: ${Z_INDEX.KEY_ACTION_CONFIG || 2147483047};
   width: min(420px, calc(100vw - 24px));
@@ -54,7 +48,7 @@ function ensureStyles(doc) {
   box-shadow: ${NCT_DARK_UI_PANEL_BOX_SHADOW};
   box-sizing: border-box;
 }
-.${ROOT_CLASS}[hidden] { display: none !important; }
+:host([hidden]) { display: none !important; }
 .${ROOT_CLASS}__titlebar {
   display: flex;
   align-items: center;
@@ -120,7 +114,7 @@ function ensureStyles(doc) {
   border: ${NCT_DARK_UI_BTN_LIT_BORDER};
   color: #e8f0f8;
 }
-`;
+` });
 }
 
 /**
@@ -133,14 +127,16 @@ function ensureStyles(doc) {
  */
 export function showProcedureResultPopover(opts = {}) {
   const doc = document;
-  ensureStyles(doc);
 
   if (!_root) {
     _root = doc.createElement('div');
     _root.className = ROOT_CLASS;
     _root.setAttribute('role', 'dialog');
     _root.setAttribute('aria-label', 'Procedure result');
-    _root.innerHTML = `
+    const shadowRoot = ensureOpenChromeShadow(_root, { id: 'procedure-result' });
+    const panelRoot = shadowRoot || _root;
+    ensureStyles(panelRoot);
+    panelRoot.innerHTML = `
       <div class="${ROOT_CLASS}__titlebar" data-kp-result-drag="true">
         <div class="${ROOT_CLASS}__title"></div>
         <button type="button" class="${ROOT_CLASS}__close" aria-label="Close">×</button>
@@ -153,27 +149,29 @@ export function showProcedureResultPopover(opts = {}) {
     `;
     doc.body.appendChild(_root);
 
-    _root.querySelector(`.${ROOT_CLASS}__close`)?.addEventListener('click', (e) => {
+    panelRoot.querySelector(`.${ROOT_CLASS}__close`)?.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       hideProcedureResultPopover();
     });
-    _root.querySelector('[data-kp-result-close="true"]')?.addEventListener('click', (e) => {
+    panelRoot.querySelector('[data-kp-result-close="true"]')?.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       hideProcedureResultPopover();
     });
 
-    const handle = _root.querySelector('[data-kp-result-drag="true"]');
+    const handle = panelRoot.querySelector('[data-kp-result-drag="true"]');
     _dragApi = makePanelDraggable(_root, handle, {
       excludeSelector: `.${ROOT_CLASS}__close`
     });
   }
 
-  const titleEl = _root.querySelector(`.${ROOT_CLASS}__title`);
+  const panelRoot = _root.shadowRoot || _root;
+  ensureStyles(panelRoot);
+  const titleEl = panelRoot.querySelector(`.${ROOT_CLASS}__title`);
   if (titleEl) titleEl.textContent = String(opts.title || 'Result');
 
-  const body = _root.querySelector(`.${ROOT_CLASS}__body`);
+  const body = panelRoot.querySelector(`.${ROOT_CLASS}__body`);
   if (body) {
     const text = String(opts.text ?? '');
     if (opts.html) {
@@ -185,7 +183,7 @@ export function showProcedureResultPopover(opts = {}) {
     }
   }
 
-  const copyBtn = _root.querySelector('[data-kp-result-copy="true"]');
+  const copyBtn = panelRoot.querySelector('[data-kp-result-copy="true"]');
   if (copyBtn) {
     copyBtn.onclick = async (e) => {
       e.preventDefault();

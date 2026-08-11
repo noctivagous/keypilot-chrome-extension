@@ -12,12 +12,14 @@ import {
 import { applyCardBackground } from '../ui/page-thumb-ui.js';
 import {
   NCT_DARK_UI_PANEL_RADIUS,
+  NCT_DARK_UI_PANEL_BOX_SHADOW,
   NCT_DARK_UI_TITLEBAR_GRADIENT,
   NCT_DARK_UI_BTN_GRADIENT,
   NCT_DARK_UI_BTN_BORDER,
   NCT_DARK_UI_BTN_RADIUS,
   NCT_DARK_UI_COLORS
 } from '../ui/nct-dark-ui.js';
+import { ensureOpenChromeShadow, injectChromeStyles } from '../ui/kp-chrome-shadow.js';
 
 /**
  * Visit stamp for history cards: time only when today; date + time otherwise.
@@ -200,14 +202,7 @@ export class TabHistoryPopover {
   }
 
   _injectStyles() {
-    const styleId = 'kpv2-tab-history-styles';
-    // Always refresh styles so layout redesigns take effect after reloads without a stale cache.
-    const existing = document.getElementById(styleId);
-    if (existing) existing.remove();
-
-    const style = document.createElement('style');
-    style.id = styleId;
-    style.textContent = `
+    const css = `
       .kpv2-tab-history-panel {
         --kp-history-side-margin: 24px;
         --kp-history-card-w: 140px;
@@ -224,7 +219,7 @@ export class TabHistoryPopover {
         border-radius: ${NCT_DARK_UI_PANEL_RADIUS};
         border: 1px solid ${NCT_DARK_UI_COLORS.panelEdgeDark};
         background: ${NCT_DARK_UI_COLORS.panel};
-        box-shadow: 0 0 0 1px rgba(255,140,0,0.25) inset, 0 16px 40px rgba(0,0,0,0.55);
+        box-shadow: ${NCT_DARK_UI_PANEL_BOX_SHADOW};
         overflow: hidden;
         outline: none;
         font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
@@ -562,7 +557,16 @@ export class TabHistoryPopover {
         background: rgba(255, 255, 255, 0.3);
       }
     `;
-    document.head.appendChild(style);
+    const shadowRoot = this._panel?.shadowRoot || null;
+    const localCss = shadowRoot
+      ? css
+        .replace('.kpv2-tab-history-panel {', ':host {')
+        .replaceAll('.kpv2-tab-history-panel ', '')
+      : css;
+    injectChromeStyles(shadowRoot || document, {
+      attr: 'data-kp-tab-history-styles',
+      css: localCss
+    });
   }
 
   _ensureDom() {
@@ -573,6 +577,8 @@ export class TabHistoryPopover {
     panel.className = 'kpv2-tab-history-panel';
     panel.setAttribute('role', 'dialog');
     panel.setAttribute('aria-label', 'History');
+    const shadowRoot = ensureOpenChromeShadow(panel, { id: 'tab-history' });
+    const shell = shadowRoot || panel;
 
     const header = doc.createElement('div');
     header.className = 'kpv2-history-header';
@@ -655,11 +661,11 @@ export class TabHistoryPopover {
     const tabSection = makeSection({ titleText: 'Tab history' });
     const browserSection = makeSection({ titleText: 'Browser history' });
 
-    panel.appendChild(header);
+    shell.appendChild(header);
     // Browser history above Tab history
     body.appendChild(browserSection.section);
     body.appendChild(tabSection.section);
-    panel.appendChild(body);
+    shell.appendChild(body);
 
     this._panel = panel;
     this._tabStatus = tabSection.sectionStatus;
