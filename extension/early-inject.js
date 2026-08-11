@@ -7081,6 +7081,7 @@
       // Prefer !important so host author sheets cannot re-show a closed panel.
       root.style.setProperty('display', show ? 'flex' : 'none', 'important');
       root.style.setProperty('pointer-events', show ? 'auto' : 'none', 'important');
+      root.style.setProperty('visibility', show ? 'visible' : 'hidden', 'important');
       if (!show) {
         try { root.classList.add('kpv2-hidden'); } catch { /* ignore */ }
       } else {
@@ -7108,10 +7109,26 @@
           : 'Keyboard Reference — Built-in';
       }
     } catch { /* ignore */ }
-    setEarlyKeyboardHelpRootVisible(
-      keyboardHelpRoot,
-      !!(isExtensionEnabled && keyboardHelpVisible && !keyboardUsesCustomLayout)
-    );
+    const shouldShow = !!(isExtensionEnabled && keyboardHelpVisible && !keyboardUsesCustomLayout);
+    if (shouldShow) {
+      // Give the collapsed shell a layout box while it is still invisible, then
+      // resolve its anchor from the real titlebar-only height. Otherwise a
+      // bottom/middle anchor initially uses the expanded fallback height and
+      // visibly drops after the body is hidden.
+      try {
+        keyboardHelpRoot.hidden = false;
+        keyboardHelpRoot.style.setProperty('display', 'flex', 'important');
+        keyboardHelpRoot.style.setProperty('pointer-events', 'none', 'important');
+        keyboardHelpRoot.style.setProperty('visibility', 'hidden', 'important');
+        earlyApplyPanelPosition(keyboardHelpRoot, earlyPanelPositions && earlyPanelPositions.keyboardReference, {
+          margin: EARLY_PANEL_MARGIN_PX,
+          defaultAnchor: 'bottom-left',
+          defaultWidth: 760,
+          defaultHeight: 200
+        });
+      } catch { /* ignore */ }
+    }
+    setEarlyKeyboardHelpRootVisible(keyboardHelpRoot, shouldShow);
     try { renderEarlyControlStripKeyboard(); } catch { /* ignore */ }
   }
 
