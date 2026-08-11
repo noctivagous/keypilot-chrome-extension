@@ -16,6 +16,7 @@ import {
   NCT_DARK_UI_BTN_GRADIENT,
   NCT_DARK_UI_BTN_BORDER,
   NCT_DARK_UI_BTN_RADIUS,
+  NCT_DARK_UI_ICON_BUTTON_OUTLINE,
   NCT_DARK_UI_COLORS
 } from './nct-dark-ui.js';
 
@@ -90,7 +91,7 @@ const VARIANT_STYLES = {
       width: auto;
       text-align: center;
       text-shadow: none;
-      box-shadow: none;
+      box-shadow: ${NCT_DARK_UI_ICON_BUTTON_OUTLINE};
       position: relative;
     `
   },
@@ -164,7 +165,7 @@ const VARIANT_STYLES = {
       width: auto;
       text-align: center;
       text-shadow: none;
-      box-shadow: none;
+      box-shadow: ${NCT_DARK_UI_ICON_BUTTON_OUTLINE};
       position: relative;
     `
   }

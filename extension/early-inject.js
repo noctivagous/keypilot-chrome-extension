@@ -100,8 +100,9 @@
         "fallbackText": "Copy Image"
       },
       {
-        "type": "key",
-        "text": "O"
+        "type": "action",
+        "id": "PAGE_MEDIA",
+        "fallbackText": "Page Media"
       },
       {
         "type": "action",
@@ -1214,6 +1215,13 @@
       "displayKey": "I",
       "keyboardClass": null
     },
+    "PAGE_MEDIA": {
+      "label": "Page Media",
+      "description": "Browse images, videos, and documents found on this page",
+      "keyLabel": "O",
+      "displayKey": "O",
+      "keyboardClass": null
+    },
     "OPEN_POPOVER": {
       "label": "Open Popover",
       "description": "Open Link in Popover",
@@ -1763,8 +1771,9 @@
       "fallbackText": "Copy Image"
     },
     {
-      "type": "key",
-      "text": "O"
+      "type": "action",
+      "id": "PAGE_MEDIA",
+      "fallbackText": "Page Media"
     },
     {
       "type": "action",
@@ -1961,6 +1970,13 @@
     "description": "Copy image under cursor to clipboard",
     "keyLabel": "I",
     "displayKey": "I",
+    "keyboardClass": null
+  },
+  "PAGE_MEDIA": {
+    "label": "Page Media",
+    "description": "Browse images, videos, and documents found on this page",
+    "keyLabel": "O",
+    "displayKey": "O",
     "keyboardClass": null
   },
   "OPEN_POPOVER": {
@@ -3346,6 +3362,7 @@
 .kp-keybindings-ui .key[data-kp-action-id="HIGHLIGHT"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M128%2064c0-17.7%2014.3-32%2032-32H352c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H288v128h64c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H288v128h64c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H160c-17.7%200-32-14.3-32-32s14.3-32%2032-32h64V288H160c-17.7%200-32-14.3-32-32s14.3-32%2032-32h64V96H160c-17.7%200-32-14.3-32-32z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M128%2064c0-17.7%2014.3-32%2032-32H352c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H288v128h64c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H288v128h64c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H160c-17.7%200-32-14.3-32-32s14.3-32%2032-32h64V288H160c-17.7%200-32-14.3-32-32s14.3-32%2032-32h64V96H160c-17.7%200-32-14.3-32-32z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="RECTANGLE_HIGHLIGHT"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M32%2032C14.3%2032%200%2046.3%200%2064v64c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V96h64c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H32zM32%20320c-17.7%200-32%2014.3-32%2032v64c0%2017.7%2014.3%2032%2032%2032h64c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H64V352c0-17.7-14.3-32-32-32zM320%2064c0%2017.7%2014.3%2032%2032%2032h64v64c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V64c0-17.7-14.3-32-32-32H352c-17.7%200-32%2014.3-32%2032zM480%20320c-17.7%200-32%2014.3-32%2032v64H384c-17.7%200-32%2014.3-32%2032s14.3%2032%2032%2032h64c17.7%200%2032-14.3%2032-32V352c0-17.7-14.3-32-32-32z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M32%2032C14.3%2032%200%2046.3%200%2064v64c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V96h64c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H32zM32%20320c-17.7%200-32%2014.3-32%2032v64c0%2017.7%2014.3%2032%2032%2032h64c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H64V352c0-17.7-14.3-32-32-32zM320%2064c0%2017.7%2014.3%2032%2032%2032h64v64c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V64c0-17.7-14.3-32-32-32H352c-17.7%200-32%2014.3-32%2032zM480%20320c-17.7%200-32%2014.3-32%2032v64H384c-17.7%200-32%2014.3-32%2032s14.3%2032%2032%2032h64c17.7%200%2032-14.3%2032-32V352c0-17.7-14.3-32-32-32z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="COPY_HOVERED_IMAGE"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="PAGE_MEDIA"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="OPEN_MEDIA_LIBRARY"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="CLIPBOARD_COPY"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M192%200c35.3%200%2064%2028.7%2064%2064l0%2032%20112%200c35.3%200%2064%2028.7%2064%2064l0%20288c0%2035.3-28.7%2064-64%2064L64%20512c-35.3%200-64-28.7-64-64L0%20160c0-35.3%2028.7-64%2064-64l112%200%200-32c0-35.3%2028.7-64%2064-64zm0%2064l0%2032%2064%200%200-32c0-17.7-14.3-32-32-32s-32%2014.3-32%2032zM64%20160l0%20288c0%2017.7%2014.3%2032%2032%2032l256%200c17.7%200%2032-14.3%2032-32l0-288c0-17.7-14.3-32-32-32L64%20128c-17.7%200-32%2014.3-32%2032z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M192%200c35.3%200%2064%2028.7%2064%2064l0%2032%20112%200c35.3%200%2064%2028.7%2064%2064l0%20288c0%2035.3-28.7%2064-64%2064L64%20512c-35.3%200-64-28.7-64-64L0%20160c0-35.3%2028.7-64%2064-64l112%200%200-32c0-35.3%2028.7-64%2064-64zm0%2064l0%2032%2064%200%200-32c0-17.7-14.3-32-32-32s-32%2014.3-32%2032zM64%20160l0%20288c0%2017.7%2014.3%2032%2032%2032l256%200c17.7%200%2032-14.3%2032-32l0-288c0-17.7-14.3-32-32-32L64%20128c-17.7%200-32%2014.3-32%2032z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="CLIPBOARD_CUT"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M44.6%2066.2l117.5%20117.5c-4.7%208-7.1%2017-7.1%2026.3c0%2026.5%2021.5%2048%2048%2048s48-21.5%2048-48s-21.5-48-48-48c-4.8%200-9.4%20.7-13.7%202L44.6%2066.2C39.3%2060.9%2030.7%2060.9%2025.4%2066.2S20.1%2080.1%2025.4%2085.4L44.6%2066.2zM203.2%20237.8L85.4%20355.6c-5.3%205.3-5.3%2013.9%200%2019.2s13.9%205.3%2019.2%200l117.8-117.8c4.3%201.3%208.9%202%2013.7%202c26.5%200%2048-21.5%2048-48s-21.5-48-48-48c-9.3%200-18.3%202.4-26.3%207.1zM432%20144c26.5%200%2048-21.5%2048-48s-21.5-48-48-48s-48%2021.5-48%2048s21.5%2048%2048%2048zm0%20256c26.5%200%2048-21.5%2048-48s-21.5-48-48-48s-48%2021.5-48%2048s21.5%2048%2048%2048zM162.6%20466.2c5.3%205.3%2013.9%205.3%2019.2%200L467.4%20180.6c5.3-5.3%205.3-13.9%200-19.2s-13.9-5.3-19.2%200L162.6%20447c-5.3%205.3-5.3%2013.9%200%2019.2z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M44.6%2066.2l117.5%20117.5c-4.7%208-7.1%2017-7.1%2026.3c0%2026.5%2021.5%2048%2048%2048s48-21.5%2048-48s-21.5-48-48-48c-4.8%200-9.4%20.7-13.7%202L44.6%2066.2C39.3%2060.9%2030.7%2060.9%2025.4%2066.2S20.1%2080.1%2025.4%2085.4L44.6%2066.2zM203.2%20237.8L85.4%20355.6c-5.3%205.3-5.3%2013.9%200%2019.2s13.9%205.3%2019.2%200l117.8-117.8c4.3%201.3%208.9%202%2013.7%202c26.5%200%2048-21.5%2048-48s-21.5-48-48-48c-9.3%200-18.3%202.4-26.3%207.1zM432%20144c26.5%200%2048-21.5%2048-48s-21.5-48-48-48s-48%2021.5-48%2048s21.5%2048%2048%2048zm0%20256c26.5%200%2048-21.5%2048-48s-21.5-48-48-48s-48%2021.5-48%2048s21.5%2048%2048%2048zM162.6%20466.2c5.3%205.3%2013.9%205.3%2019.2%200L467.4%20180.6c5.3-5.3%205.3-13.9%200-19.2s-13.9-5.3-19.2%200L162.6%20447c-5.3%205.3-5.3%2013.9%200%2019.2z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
@@ -5460,7 +5477,6 @@
         keyEl.dataset.kpActionId = item.id;
         keyEl.dataset.kpBaseClass = baseClass;
         keyEl.setAttribute('role', 'button');
-        keyEl.setAttribute('tabindex', '0');
         // Prefer aria-label over title so the browser native tooltip doesn't fight our hover popover.
         try { keyEl.removeAttribute('title'); } catch { /* ignore */ }
         keyEl.setAttribute(
@@ -6285,6 +6301,7 @@
         compact: true
       });
       collapseBtn.setAttribute('data-kp-control-strip-collapse', 'true');
+      collapseBtn.style.boxShadow = 'inset 0 0 0 1px #3a3a3a';
 
       const closeBtn = createEarlyControlStripSegmentButton({
         ariaLabel: 'Close control strip',
@@ -6294,6 +6311,7 @@
         last: true
       });
       closeBtn.setAttribute('data-kp-control-strip-close', 'true');
+      closeBtn.style.boxShadow = 'inset 0 0 0 1px #3a3a3a';
 
       // Early interactions (guarded so main extension owns handlers after handoff).
       statusBtn.addEventListener('click', (e) => {
@@ -6544,7 +6562,7 @@
       color: '#ddd',
       outline: 'none',
       fontSize: '11px',
-      maxWidth: '180px',
+      width: '160px',
       height: '22px',
       cursor: 'pointer',
       fontFamily: 'Helvetica, Arial, sans-serif'
@@ -6617,16 +6635,40 @@
       padding: '0',
       margin: '0',
       flex: '0 0 auto',
-      boxShadow: 'none'
+      boxShadow: 'inset 0 0 0 1px #3a3a3a'
     });
     closeBtn.addEventListener('click', (e) => {
       try { e.preventDefault(); e.stopPropagation(); } catch {}
       if (root) root.hidden = true;
     });
 
+    const collapseBtn = doc.createElement('button');
+    collapseBtn.type = 'button';
+    collapseBtn.textContent = '▾';
+    collapseBtn.setAttribute('aria-label', 'Collapse keyboard reference');
+    collapseBtn.setAttribute('data-kp-floating-keyboard-collapse', 'true');
+    Object.assign(collapseBtn.style, {
+      width: '22px',
+      height: '22px',
+      minWidth: '22px',
+      minHeight: '22px',
+      borderRadius: '4px',
+      border: 'none',
+      background: 'transparent',
+      color: 'rgba(200, 200, 205, 0.9)',
+      cursor: 'pointer',
+      fontSize: '14px',
+      lineHeight: '20px',
+      padding: '0',
+      margin: '0',
+      flex: '0 0 auto',
+      boxShadow: 'inset 0 0 0 1px #3a3a3a'
+    });
+
     header.appendChild(title);
     header.appendChild(layoutSelect);
     header.appendChild(hint);
+    header.appendChild(collapseBtn);
     header.appendChild(closeBtn);
 
     const body = doc.createElement('div');
@@ -6642,6 +6684,16 @@
     keyboardContainer.className = 'kp-floating-keyboard-help__keyboard';
     keyboardContainer.textContent = '';
     body.appendChild(keyboardContainer);
+    collapseBtn.addEventListener('click', (e) => {
+      try { e.preventDefault(); e.stopPropagation(); } catch {}
+      const collapsed = root.getAttribute('data-kp-collapsed') === 'true';
+      const next = !collapsed;
+      root.setAttribute('data-kp-collapsed', next ? 'true' : 'false');
+      body.style.display = next ? 'none' : 'block';
+      collapseBtn.textContent = next ? '▸' : '▾';
+      collapseBtn.setAttribute('aria-label', next ? 'Expand keyboard reference' : 'Collapse keyboard reference');
+      collapseBtn.title = next ? 'Expand' : 'Collapse';
+    });
 
     root.appendChild(header);
     root.appendChild(body);

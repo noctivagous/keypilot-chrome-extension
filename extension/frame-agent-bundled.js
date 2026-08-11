@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-10T20:41:18.019Z
+ * Generated on 2026-08-11T00:02:38.927Z
  */
 
 (() => {
@@ -470,6 +470,14 @@
       keyboardClass: null,
       row: 1
     }),
+    // Page-wide Image / Video / Text gallery (O on right-handed; O is TAB_RIGHT on left-handed).
+    PAGE_MEDIA: Object.freeze({
+      handler: "handlePageMediaKey",
+      label: "Page Media",
+      description: "Browse images, videos, and documents found on this page",
+      keyboardClass: null,
+      row: 1
+    }),
     // Media Library entry point (M on right-handed only — M is PAGE_DOWN_INSTANT on left-handed,
     // so this doesn't get a default binding there yet). Media Library itself isn't built yet;
     // the handler just shows a "coming soon" notification — see `handleMediaLibraryNotAvailableKey`
@@ -544,6 +552,7 @@
     HIGHLIGHT: "Get Page Data",
     RECTANGLE_HIGHLIGHT: "Get Page Data",
     COPY_HOVERED_IMAGE: "Get Page Data",
+    PAGE_MEDIA: "Get Page Data",
     DELETE: "Select",
     COLS_TOGGLE: "Select",
     OPEN_MEDIA_LIBRARY: "Media Library",
@@ -639,6 +648,7 @@
     ACTIVATE_NEW_TAB: Object.freeze({ keys: ["b", "B"] }),
     RECTANGLE_HIGHLIGHT: Object.freeze({ keys: ["y", "Y"] }),
     COPY_HOVERED_IMAGE: Object.freeze({ keys: ["i", "I"] }),
+    PAGE_MEDIA: Object.freeze({ keys: ["o", "O"] }),
     // M is otherwise unused on the right-handed layout (it's PAGE_DOWN_INSTANT on left-handed).
     OPEN_MEDIA_LIBRARY: Object.freeze({ keys: ["m", "M"] }),
     ROOT: Object.freeze({ keys: ["1", "!"], displayKey: "1", keyLabel: "1" }),
@@ -813,7 +823,7 @@
       { type: "action", id: "RECTANGLE_HIGHLIGHT", fallbackText: "Rectangle Select" },
       { type: "key", text: "U" },
       { type: "action", id: "COPY_HOVERED_IMAGE", fallbackText: "Copy Image" },
-      { type: "key", text: "O" },
+      { type: "action", id: "PAGE_MEDIA", fallbackText: "Page Media" },
       { type: "action", id: "OPEN_POPOVER", fallbackText: "Open Popover" },
       { type: "key", text: "[" },
       { type: "key", text: "]" },

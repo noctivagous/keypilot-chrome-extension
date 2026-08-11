@@ -424,6 +424,14 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: null,
     row: 1
   }),
+  // Page-wide Image / Video / Text gallery (O on right-handed; O is TAB_RIGHT on left-handed).
+  PAGE_MEDIA: Object.freeze({
+    handler: 'handlePageMediaKey',
+    label: 'Page Media',
+    description: 'Browse images, videos, and documents found on this page',
+    keyboardClass: null,
+    row: 1
+  }),
   // Media Library entry point (M on right-handed only — M is PAGE_DOWN_INSTANT on left-handed,
   // so this doesn't get a default binding there yet). Media Library itself isn't built yet;
   // the handler just shows a "coming soon" notification — see `handleMediaLibraryNotAvailableKey`
@@ -504,6 +512,7 @@ export const KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
   HIGHLIGHT: 'Get Page Data',
   RECTANGLE_HIGHLIGHT: 'Get Page Data',
   COPY_HOVERED_IMAGE: 'Get Page Data',
+  PAGE_MEDIA: 'Get Page Data',
   DELETE: 'Select',
   COLS_TOGGLE: 'Select',
   OPEN_MEDIA_LIBRARY: 'Media Library',
@@ -677,6 +686,7 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   ACTIVATE_NEW_TAB: Object.freeze({ keys: ['b', 'B'] }),
   RECTANGLE_HIGHLIGHT: Object.freeze({ keys: ['y', 'Y'] }),
   COPY_HOVERED_IMAGE: Object.freeze({ keys: ['i', 'I'] }),
+  PAGE_MEDIA: Object.freeze({ keys: ['o', 'O'] }),
   // M is otherwise unused on the right-handed layout (it's PAGE_DOWN_INSTANT on left-handed).
   OPEN_MEDIA_LIBRARY: Object.freeze({ keys: ['m', 'M'] }),
 
@@ -926,7 +936,7 @@ const KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: 'action', id: 'RECTANGLE_HIGHLIGHT', fallbackText: 'Rectangle Select' },
     { type: 'key', text: 'U' },
     { type: 'action', id: 'COPY_HOVERED_IMAGE', fallbackText: 'Copy Image' },
-    { type: 'key', text: 'O' },
+    { type: 'action', id: 'PAGE_MEDIA', fallbackText: 'Page Media' },
     { type: 'action', id: 'OPEN_POPOVER', fallbackText: 'Open Popover' },
     { type: 'key', text: '[' },
     { type: 'key', text: ']' },

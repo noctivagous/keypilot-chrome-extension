@@ -260,6 +260,8 @@ export function renderKeybindingsKeyboard({ container, keybindings, keyboardLayo
       keyEl.dataset.kpActionId = item.id;
       keyEl.dataset.kpBaseClass = baseClass;
       keyEl.type = 'button'; // Prevent form submission if inside a form
+      // Keyboard Reference keys are pointer targets, not page-tab navigation targets.
+      keyEl.tabIndex = -1;
       // Prefer aria-label over title so the browser native tooltip doesn't fight our hover popover.
       try { keyEl.removeAttribute('title'); } catch { /* ignore */ }
       keyEl.setAttribute(

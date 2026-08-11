@@ -66,6 +66,7 @@ on the keyboard in specific places to make web navigation quick.
 
 | Keys | Action |
 | --- | --- |
+| `O` | Browse images, videos, and documents found on this page |
 | `C` | Page Up (Instant) |
 | `V` | Page Down (Instant) |
 | `X` | Scroll to Bottom |
@@ -82,6 +83,27 @@ on the keyboard in specific places to make web navigation quick.
 | `Esc` | Exit Focus |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

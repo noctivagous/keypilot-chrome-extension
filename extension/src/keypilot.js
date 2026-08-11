@@ -62,6 +62,13 @@ import {
 } from './utils/extension-context.js';
 import { storageGetValue, storageSetValue } from './utils/storage.js';
 import { getHoveredImage } from './utils/image-utils.js';
+import { collectPageMedia } from './utils/page-media-utils.js';
+import {
+  openPageMediaOverlay,
+  closePageMediaOverlay,
+  isPageMediaOverlayOpen,
+  requestClosePageMediaOverlay
+} from './ui/page-media-overlay.js';
 import { scrollAtPoint, scrollToEdgeAtPoint, elementFromPointDeep } from './utils/scroll-at-point.js';
 
 export class KeyPilot extends EventManager {
@@ -2488,6 +2495,17 @@ export class KeyPilot extends EventManager {
         }
       } catch { /* ignore */ }
 
+      // Page Media overlay (O-key gallery)
+      try {
+        if (isPageMediaOverlayOpen()) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          requestClosePageMediaOverlay();
+          return;
+        }
+      } catch { /* ignore */ }
+
       // Popup stack (iframe popovers, settings/guide, etc.)
       try {
         const pm = this.overlayManager?.popupManager;
@@ -4907,6 +4925,66 @@ export class KeyPilot extends EventManager {
         message = 'Clipboard requires HTTPS';
       }
       this.showFlashNotification(message, COLORS.NOTIFICATION_ERROR);
+    }
+  }
+
+  /**
+   * Page Media (O) — scan the page for images, videos, and document links;
+   * open a tabbed overlay gallery. Press O again (or Esc) to close.
+   * @param {KeyboardEvent} [e]
+   */
+  handlePageMediaKey(e) {
+    if (!this._allowActionKey('handlePageMediaKey', e)) return;
+
+    if (isPageMediaOverlayOpen()) {
+      closePageMediaOverlay();
+      return;
+    }
+
+    let items = [];
+    try {
+      items = collectPageMedia(document);
+    } catch (error) {
+      console.warn('[KeyPilot] collectPageMedia failed:', error);
+      this.showFlashNotification('Could not scan page media', COLORS.NOTIFICATION_ERROR);
+      return;
+    }
+
+    if (!items.length) {
+      this.showFlashNotification('No page media found', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+
+    try {
+      void openPageMediaOverlay({
+        items,
+        onNotify: (message, type) => {
+          const color =
+            type === 'error' ? COLORS.NOTIFICATION_ERROR
+              : type === 'success' ? COLORS.NOTIFICATION_SUCCESS
+                : COLORS.NOTIFICATION_INFO;
+          this.showFlashNotification(String(message || ''), color);
+        },
+        onSendToMediaLibrary: (item) => {
+          this.showFlashNotification(
+            'Media Library is not built yet — coming soon',
+            COLORS.NOTIFICATION_INFO
+          );
+          try {
+            this.emitAction('page_media_send_to_library', {
+              category: item?.category || '',
+              url: item?.url ? String(item.url).slice(0, 200) : ''
+            });
+          } catch { /* ignore */ }
+        }
+      }).catch((error) => {
+        console.warn('[KeyPilot] openPageMediaOverlay failed:', error);
+        this.showFlashNotification('Could not open Page Media', COLORS.NOTIFICATION_ERROR);
+      });
+      this.emitAction('page_media', { count: items.length });
+    } catch (error) {
+      console.warn('[KeyPilot] openPageMediaOverlay failed:', error);
+      this.showFlashNotification('Could not open Page Media', COLORS.NOTIFICATION_ERROR);
     }
   }
 

@@ -65,6 +65,7 @@ import {
   NCT_DARK_UI_BTN_LIT_GRADIENT,
   NCT_DARK_UI_BTN_LIT_BORDER,
   NCT_DARK_UI_BTN_RADIUS,
+  NCT_DARK_UI_ICON_BUTTON_OUTLINE,
   NCT_DARK_UI_SELECTED_TEXT,
   NCT_DARK_UI_COLORS
 } from './nct-dark-ui.js';
@@ -105,13 +106,18 @@ export class FloatingKeyboardHelp {
     this.layoutId = typeof layoutId === 'string' ? layoutId : '';
     this.root = null;
     this.keyboardContainer = null;
+    this._keyboardBody = null;
     this.closeBtn = null;
     this.hintEl = null;
     /** @type {HTMLElement|null} */
     this._titlebar = null;
     /** @type {HTMLButtonElement|null} */
     this._saveFinishBtn = null;
+    /** @type {HTMLButtonElement|null} */
+    this._collapseBtn = null;
+    this._collapsed = false;
     this._onCloseClick = this._onCloseClick.bind(this);
+    this._onCollapseClick = this._onCollapseClick.bind(this);
     this._onSaveAndFinishClick = this._onSaveAndFinishClick.bind(this);
     this._onLayoutSelectChange = this._onLayoutSelectChange.bind(this);
     /** @type {(() => any)|null} */
@@ -633,6 +639,9 @@ export class FloatingKeyboardHelp {
       if (this.closeBtn) this.closeBtn.removeEventListener('click', this._onCloseClick);
     } catch { /* ignore */ }
     try {
+      if (this._collapseBtn) this._collapseBtn.removeEventListener('click', this._onCollapseClick);
+    } catch { /* ignore */ }
+    try {
       if (this._saveFinishBtn) {
         this._saveFinishBtn.removeEventListener('click', this._onSaveAndFinishClick);
       }
@@ -647,9 +656,11 @@ export class FloatingKeyboardHelp {
     } catch { /* ignore */ }
     this.root = null;
     this.keyboardContainer = null;
+    this._keyboardBody = null;
     this.closeBtn = null;
     this._titlebar = null;
     this._saveFinishBtn = null;
+    this._collapseBtn = null;
   }
 
   /**
@@ -932,7 +943,7 @@ export class FloatingKeyboardHelp {
         padding: '0',
         margin: '0',
         flex: '0 0 auto',
-        boxShadow: 'none'
+        boxShadow: NCT_DARK_UI_ICON_BUTTON_OUTLINE
       });
     }
   }
@@ -1064,6 +1075,7 @@ export class FloatingKeyboardHelp {
           existing.querySelector('[data-kp-floating-keyboard-titlebar="true"]') ||
           existing.firstElementChild;
         const body = keyboardContainer?.parentElement || null;
+        const collapseBtn = existing.querySelector('button[data-kp-floating-keyboard-collapse="true"]');
         const hintEl = existing.querySelector('[data-kp-floating-keyboard-hint="true"]');
         const titleEl = existing.querySelector('[data-kp-floating-keyboard-title="true"]')
           || (header ? header.querySelector('div:not([data-kp-floating-keyboard-hint])') : null);
@@ -1081,7 +1093,7 @@ export class FloatingKeyboardHelp {
             color: NCT_DARK_UI_COLORS.fg,
             outline: 'none',
             fontSize: '11px',
-            maxWidth: '180px',
+            width: '160px',
             height: '22px',
             cursor: 'pointer'
           });
@@ -1113,17 +1125,21 @@ export class FloatingKeyboardHelp {
         if (keyboardContainer) {
           this.root = existing;
           this.keyboardContainer = keyboardContainer;
+          this._keyboardBody = body;
           this.closeBtn = closeBtn || null;
           this.hintEl = hintEl || null;
           this._titlebar = header || null;
           this._layoutSelectEl = layoutSelect || null;
           this._layoutTitleEl = titleEl || null;
+          this._collapseBtn = collapseBtn || null;
           if (this.closeBtn) {
             try {
               this.closeBtn.removeEventListener('click', this._onCloseClick);
             } catch { /* ignore */ }
             this.closeBtn.addEventListener('click', this._onCloseClick);
           }
+          this._ensureCollapseButton();
+          this._applyCollapsedLayout();
           this._bindWindowChrome();
           return;
         }
@@ -1157,7 +1173,7 @@ export class FloatingKeyboardHelp {
       color: NCT_DARK_UI_COLORS.fg,
       outline: 'none',
       fontSize: '11px',
-      maxWidth: '180px',
+      width: '160px',
       height: '22px',
       cursor: 'pointer'
     });
@@ -1197,12 +1213,70 @@ export class FloatingKeyboardHelp {
 
     this.root = root;
     this.keyboardContainer = keyboardContainer;
+    this._keyboardBody = body;
     this.closeBtn = closeBtn;
     this.hintEl = hint;
     this._titlebar = header;
     this._layoutSelectEl = layoutSelect;
     this._layoutTitleEl = title;
+    this._ensureCollapseButton();
+    this._applyCollapsedLayout();
     this._bindWindowChrome();
+  }
+
+  _ensureCollapseButton() {
+    const header = this._titlebar
+      || this.root?.querySelector?.('[data-kp-floating-keyboard-titlebar="true"]')
+      || null;
+    if (!header) return;
+    let btn = this._collapseBtn
+      || header.querySelector('button[data-kp-floating-keyboard-collapse="true"]');
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.type = 'button';
+      btn.setAttribute('data-kp-floating-keyboard-collapse', 'true');
+      header.insertBefore(btn, this.closeBtn || null);
+    }
+    Object.assign(btn.style, {
+      width: '22px',
+      height: '22px',
+      minWidth: '22px',
+      minHeight: '22px',
+      borderRadius: '4px',
+      border: 'none',
+      background: 'transparent',
+      color: 'rgba(200, 200, 205, 0.9)',
+      cursor: 'pointer',
+      fontSize: '14px',
+      lineHeight: '20px',
+      padding: '0',
+      margin: '0',
+      flex: '0 0 auto',
+      boxShadow: NCT_DARK_UI_ICON_BUTTON_OUTLINE
+    });
+    try { btn.removeEventListener('click', this._onCollapseClick); } catch { /* ignore */ }
+    btn.addEventListener('click', this._onCollapseClick);
+    btn.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
+    this._collapseBtn = btn;
+  }
+
+  _applyCollapsedLayout() {
+    const collapsed = !!this._collapsed;
+    try {
+      if (this._keyboardBody) this._keyboardBody.style.display = collapsed ? 'none' : 'block';
+      if (this.root) this.root.setAttribute('data-kp-collapsed', collapsed ? 'true' : 'false');
+      if (this._collapseBtn) {
+        this._collapseBtn.textContent = collapsed ? '▸' : '▾';
+        this._collapseBtn.setAttribute('aria-label', collapsed ? 'Expand keyboard reference' : 'Collapse keyboard reference');
+        this._collapseBtn.title = collapsed ? 'Expand' : 'Collapse';
+      }
+    } catch { /* ignore */ }
+  }
+
+  _onCollapseClick(e) {
+    try { e?.preventDefault?.(); e?.stopPropagation?.(); } catch { /* ignore */ }
+    this._collapsed = !this._collapsed;
+    this._applyCollapsedLayout();
   }
 
   /**
@@ -1902,6 +1976,7 @@ export class FloatingKeyboardHelp {
 
       const btn = doc.createElement('button');
       btn.type = 'button';
+      btn.tabIndex = -1;
       let keyboardClass = '';
       let resolvedFn = null;
       if (displayAssigned && displayAssigned.type === 'function') {

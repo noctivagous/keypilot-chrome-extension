@@ -133,6 +133,7 @@ export const KEYBOARD_ACTION_ICON_IDS = Object.freeze({
   HIGHLIGHT: 'i-cursor',
   RECTANGLE_HIGHLIGHT: 'vector-square',
   COPY_HOVERED_IMAGE: 'image',
+  PAGE_MEDIA: 'image',
   OPEN_MEDIA_LIBRARY: 'image',
   // Function Library (Config cards + placeable Actions)
   CLIPBOARD_COPY: 'clipboard',

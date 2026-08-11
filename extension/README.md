@@ -49,6 +49,7 @@ for common web interactions, eliminating the need for mouse navigation.
 
 | Keys | Action |
 | --- | --- |
+| `O` | Browse images, videos, and documents found on this page |
 | `C` | Page Up (Instant) |
 | `V` | Page Down (Instant) |
 | `X` | Scroll to Bottom |
@@ -65,6 +66,27 @@ for common web interactions, eliminating the need for mouse navigation.
 | `Esc` | Exit Focus |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

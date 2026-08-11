@@ -107,6 +107,8 @@ const TEXT_ACTIVE_BUILTIN_FUNCTION_IDS = new Set([
  */
 const BUILTIN_FUNCTION_DATA_TAGS = Object.freeze({
   COPY_HOVERED_IMAGE: Object.freeze({ dataSource: 'underCursor', dataKind: 'media' }),
+  // Whole-page scan (not under-cursor); opens a tabbed overlay rather than a sink.
+  PAGE_MEDIA: Object.freeze({ dataSource: 'none', dataKind: 'media' }),
   OPEN_MEDIA_LIBRARY: Object.freeze({ dataSource: 'none' }),
   SEND_TEXT_TO_AI: Object.freeze({
     dataSource: 'textRange',
@@ -503,6 +505,7 @@ export const FUNCTION_LIBRARY_ITEM_ORDER = Object.freeze({
   OMNIBOX: 170,
   // Get Page Data
   COPY_HOVERED_IMAGE: 200,
+  PAGE_MEDIA: 205,
   RECTANGLE_HIGHLIGHT: 210,
   HIGHLIGHT: 220,
   // KeyPilot

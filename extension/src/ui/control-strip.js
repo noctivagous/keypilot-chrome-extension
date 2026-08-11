@@ -24,6 +24,7 @@ import {
   NCT_DARK_UI_SELECTED_TINT,
   NCT_DARK_UI_SELECTED_TEXT,
   NCT_DARK_UI_FOCUS_RING,
+  NCT_DARK_UI_ICON_BUTTON_OUTLINE,
   NCT_DARK_UI_COLORS
 } from './nct-dark-ui.js';
 import { positionOnboardingBelowControlStrip } from './onboarding-shared.js';
@@ -831,6 +832,7 @@ export class ControlStrip {
     }
     if (this._closeBtn) {
       this._closeBtn.style.display = collapsed ? 'none' : 'inline-flex';
+      this._closeBtn.style.boxShadow = NCT_DARK_UI_ICON_BUTTON_OUTLINE;
     }
     if (this._collapseBtn) {
       this._collapseBtn.textContent = collapsed ? '▶' : '◀';
@@ -844,6 +846,7 @@ export class ControlStrip {
       if (!collapsed && this._closeBtn) {
         this._collapseBtn.style.borderRight = `1px solid ${NCT_DARK_UI_COLORS.panelEdgeDark}`;
       }
+      this._collapseBtn.style.boxShadow = NCT_DARK_UI_ICON_BUTTON_OUTLINE;
     }
 
     try {

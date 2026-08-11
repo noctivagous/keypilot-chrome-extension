@@ -65,6 +65,10 @@ export const NCT_DARK_UI_BTN_GRADIENT =
 export const NCT_DARK_UI_BTN_BORDER = `1px solid ${NCT_DARK_UI_COLORS.panelEdgeDark}`;
 export const NCT_DARK_UI_BTN_RADIUS = '2px';
 
+/** Outline ring for compact titlebar controls such as Close and Collapse. */
+export const NCT_DARK_UI_ICON_BUTTON_OUTLINE =
+  `inset 0 0 0 1px ${NCT_DARK_UI_COLORS.panelEdge}`;
+
 /** `.btn.lit` (active / primary steel-blue) gradient + rim. */
 export const NCT_DARK_UI_BTN_LIT_GRADIENT =
   `linear-gradient(180deg, ${NCT_DARK_UI_COLORS.litTop} 0%, ${NCT_DARK_UI_COLORS.litBot} 100%)`;

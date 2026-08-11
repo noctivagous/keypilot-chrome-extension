@@ -73,6 +73,7 @@ import {
   NCT_DARK_UI_BTN_LIT_BORDER,
   NCT_DARK_UI_BTN_LIT_GRADIENT,
   NCT_DARK_UI_BTN_RADIUS,
+  NCT_DARK_UI_ICON_BUTTON_OUTLINE,
   NCT_DARK_UI_COLORS,
   NCT_DARK_UI_FIELD_BACKGROUND,
   NCT_DARK_UI_FIELD_BORDER,
@@ -195,6 +196,7 @@ const LIBRARY_KEY_ICON_BY_FUNCTION_ID = Object.freeze({
   GET_TEXT_AT_CURSOR: 'kp-cfg-i-data',
   GET_TEXT_RANGE: 'kp-cfg-i-data',
   GET_MEDIA_AT_CURSOR: 'kp-cfg-i-image',
+  PAGE_MEDIA: 'kp-cfg-i-image',
   LOOKUP_WORD: 'kp-cfg-i-lookup',
   TRANSLATE: 'kp-cfg-i-translate',
   SHOW_POPOVER: 'kp-cfg-i-display'
@@ -795,7 +797,7 @@ export class KeyboardLayoutConfigPanel {
   padding: 0;
   margin: 0;
   flex: 0 0 auto;
-  box-shadow: none;
+  box-shadow: ${NCT_DARK_UI_ICON_BUTTON_OUTLINE};
 }
 .kp-layout-config-panel .kp-cfg-close:hover {
   color: ${c.fg};
