@@ -4,9 +4,6 @@
  * Bundles content + frame-agent entry points, then runs post-bundle side effects
  * (manifest stamp, README/website sync, early-inject UI block).
  *
- * The previous manual concat pipeline lives at:
- *   archive/manual-concat-build/build.js
- *
  * Usage:
  *   node build.js
  *   node build.js --minify   # also writes content-bundled.min.js

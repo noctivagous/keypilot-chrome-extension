@@ -123,7 +123,7 @@ Check items as you complete them.
 
 ## P3 — Large / long-term
 
-- [x] Replace custom concat build with **esbuild** (tree-shaking, real graph); manual concat archived under `extension/archive/manual-concat-build/`
+- [x] Replace custom concat build with **esbuild** (tree-shaking, real graph); old concat path removed
 - [ ] Tree-shake unused highlight residual code + residual `_rtree*` RBush stubs after DOM-hover decision
 - [x] Single hover/targeting architecture with one primary path (DOM-hover; elementFromPoint fallback for activation/special modes)
 - [ ] Small **storage service** wrapping chrome.storage patterns

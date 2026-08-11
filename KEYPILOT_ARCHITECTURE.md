@@ -28,7 +28,6 @@ KeyPilot is a Chrome extension that transforms web browsing into a keyboard-firs
 - **Source Structure**: ES6 modules in `extension/src/`
 - **Outputs**: `content-bundled.js` (top frame), `frame-agent-bundled.js` (child frames)
 - **Side effects**: `extension/build-side-effects.js` (manifest stamp, README/website, early-inject)
-- **Archive**: Manual concat pipeline at `extension/archive/manual-concat-build/` (`npm run build:manual`)
 - **Process**:
   1. esbuild bundles entry points as browser IIFEs (real module graph + tree-shaking)
   2. Optional minified `content-bundled.min.js` via `--minify`
@@ -352,7 +351,6 @@ extension/
 ├── babel.config.cjs       # Babel configuration for build system
 ├── build.js              # esbuild entry (bundles + side effects)
 ├── build-side-effects.js # Manifest/README/website/early-inject stamps
-├── archive/manual-concat-build/  # Archived pre-esbuild concat bundler
 ├── content-bundled.js    # Generated top-frame bundle
 ├── frame-agent-bundled.js # Generated child-frame bundle
 ├── early-inject.js       # Early injection script
