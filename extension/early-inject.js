@@ -6219,6 +6219,9 @@
    * Full drag/snap lives in the bundled content script.
    */
   const EARLY_PANEL_MARGIN_PX = 16;
+  // Titlebar-only Keyboard Reference is ~28–30px tall. Do not treat that as
+  // "unlaid out" or bottom-left docks against the expanded fallback height.
+  const EARLY_PANEL_MIN_LAID_OUT_PX = 8;
   const EARLY_STRIP_MARGIN_PX = 16;
 
   function earlyViewportSize() {
@@ -6311,10 +6314,11 @@
     const defaultAnchor = (opts && opts.defaultAnchor) || 'top-left';
     const rect = el.getBoundingClientRect();
     // Never clamp with 0 height — that docks free tops at vh−margin; content then grows off-screen.
+    // Collapsed Keyboard Reference is ~28–30px: that is a real laid-out size, not a fallback case.
     let width = (rect && rect.width) || (opts && opts.defaultWidth) || 0;
     let height = (rect && rect.height) || (opts && opts.defaultHeight) || 0;
-    if (width < 32) width = (opts && opts.defaultWidth) || 760;
-    if (height < 32) height = (opts && opts.defaultHeight) || 200;
+    if (width < EARLY_PANEL_MIN_LAID_OUT_PX) width = (opts && opts.defaultWidth) || 760;
+    if (height < EARLY_PANEL_MIN_LAID_OUT_PX) height = (opts && opts.defaultHeight) || 200;
     const state = stored && typeof stored === 'object' ? stored : null;
     let next;
     if (state && typeof state.anchor === 'string' && state.anchor) {
@@ -6338,7 +6342,7 @@
       const live = el.getBoundingClientRect();
       const lw = live.width || width;
       const lh = live.height || height;
-      if (lw >= 32 && lh >= 32) {
+      if (lw >= EARLY_PANEL_MIN_LAID_OUT_PX && lh >= EARLY_PANEL_MIN_LAID_OUT_PX) {
         let next2;
         if (state && typeof state.anchor === 'string' && state.anchor) {
           next2 = earlyPositionForAnchor(state.anchor, lw, lh, margin);
@@ -7124,7 +7128,8 @@
           margin: EARLY_PANEL_MARGIN_PX,
           defaultAnchor: 'bottom-left',
           defaultWidth: 760,
-          defaultHeight: 200
+          // Collapsed titlebar-only shell; expanded keyboard fallback stays 200.
+          defaultHeight: keyboardReferenceCollapsed ? 28 : 200
         });
       } catch { /* ignore */ }
     }

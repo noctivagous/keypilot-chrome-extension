@@ -1304,10 +1304,17 @@ export class FloatingKeyboardHelp {
     const next = !!collapsed;
     if (this._collapsed === next) {
       this._applyCollapsedLayout();
+      // Collapse changes the panel's measured height. Resolve its anchor in
+      // this same task so a bottom/middle-docked panel cannot paint once at
+      // its expanded location before the post-layout position pass runs.
+      this._applyPanelPositionNow();
       return;
     }
     this._collapsed = next;
     this._applyCollapsedLayout();
+    // See the same-state path above: re-anchor immediately after changing the
+    // body display, rather than waiting for a later animation-frame pass.
+    this._applyPanelPositionNow();
     if (persist) {
       try {
         void setSettings({ keyboardReferenceCollapsed: next });
