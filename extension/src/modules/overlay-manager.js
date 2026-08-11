@@ -5551,7 +5551,7 @@ export class OverlayManager {
         const x = this._popoverLastMouse.x;
         const y = this._popoverLastMouse.y;
         if (typeof x !== 'number' || typeof y !== 'number') return false;
-        const el = this.popoverContainer?.shadowRoot?.elementFromPoint?.(x, y)
+        const el = previewChromeHost?.shadowRoot?.elementFromPoint?.(x, y)
           || document.elementFromPoint(x, y);
         const shadowEl = btn.getRootNode?.()?.elementFromPoint?.(x, y);
         if (el === btn || btn.contains(el) || shadowEl === btn || btn.contains(shadowEl)) {
@@ -6300,8 +6300,21 @@ export class OverlayManager {
         letter-spacing: normal;
       `
     });
-    const previewShadow = ensureOpenChromeShadow(this.popoverContainer, { id: 'link-preview' });
-    const previewMount = previewShadow || this.popoverContainer;
+    // Intentionally hybrid:
+    // - The light host owns fixed geometry, the caret pseudo-elements, the
+    //   iframe viewport, and resize handles. The iframe bridge/focus flow
+    //   depends on this host relationship, and the resize utility pins this
+    //   host's box while temporarily disabling iframe pointer events.
+    // - Only KeyPilot-owned interactive chrome is placed in the open shadow
+    //   root, preventing page CSS from restyling the titlebar and controls.
+    // Do not move the iframe or resize handles into this shadow root without
+    // updating their focus, hit-testing, and geometry contracts together.
+    const previewChromeHost = this.createElement('div', {
+      className: 'kpv2-preview-popover-chrome-host',
+      style: 'display:flex; flex:0 0 auto; flex-direction:column; min-height:0;'
+    });
+    const previewChromeShadow = ensureOpenChromeShadow(previewChromeHost, { id: 'link-preview-chrome' });
+    const previewChromeMount = previewChromeShadow || previewChromeHost;
 
     // Inject triangle arrow CSS
     const arrowStyle = this.createElement('style');
@@ -6342,11 +6355,8 @@ export class OverlayManager {
         bottom: -${arrowSize * 2 - 1}px;
         border-top-color: rgb(11, 11, 11);
       }
-    `.replaceAll(
-      '.kpv2-preview-popover-container',
-      previewShadow ? ':host' : '.kpv2-preview-popover-container'
-    );
-    (previewShadow || document.head).appendChild(arrowStyle);
+    `;
+    document.head.appendChild(arrowStyle);
     this._popoverArrowStyle = arrowStyle;
 
     // Store iframe reference for focus management
@@ -6594,7 +6604,6 @@ export class OverlayManager {
         minWidth: 280,
         minHeight: 200,
         margin,
-        mount: previewShadow || undefined,
         onResizeStart: () => {
           hidePreviewArrow();
         }
@@ -6619,6 +6628,14 @@ export class OverlayManager {
         background: #f9f9f9;
       `
     });
+    // `display:contents` preserves the original flex fallback layout while
+    // still giving KeyPilot's error UI its own isolated shadow tree.
+    const previewErrorHost = this.createElement('div', {
+      className: 'kpv2-preview-popover-error-host',
+      style: 'display:contents;'
+    });
+    const previewErrorShadow = ensureOpenChromeShadow(previewErrorHost, { id: 'link-preview-error' });
+    const previewErrorMount = previewErrorShadow || previewErrorHost;
 
     const errorIcon = this.createElement('div', {
       style: `
@@ -6740,9 +6757,11 @@ export class OverlayManager {
     };
 
     iframeViewport.appendChild(iframe);
-    previewMount.appendChild(header);
-    previewMount.appendChild(iframeViewport);
-    previewMount.appendChild(errorContainer);
+    previewChromeMount.appendChild(header);
+    previewErrorMount.appendChild(errorContainer);
+    this.popoverContainer.appendChild(previewChromeHost);
+    this.popoverContainer.appendChild(iframeViewport);
+    this.popoverContainer.appendChild(previewErrorHost);
 
     // Mark this as a preview popover (for cleanup logic)
     this._isPreviewPopover = true;
