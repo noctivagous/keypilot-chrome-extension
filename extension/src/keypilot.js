@@ -2374,8 +2374,8 @@ export class KeyPilot extends EventManager {
       return;
     }
 
-    // Alt+/: toggle shadow-root paint debug HUD (leaf / focus / paint + A|B|C).
-    if ((e.altKey || e.code === 'AltRight') && (e.key === '/' || e.key === '?' || e.code === 'Slash')) {
+    // Alt+D: toggle shadow-root paint debug HUD (leaf / focus / paint + A|B|C).
+    if ((e.altKey || e.code === 'AltRight') && (e.key === 'd' || e.key === 'D' || e.code === 'KeyD')) {
       if (window !== window.top) return;
       if (!this.enabled) return;
       e.preventDefault();

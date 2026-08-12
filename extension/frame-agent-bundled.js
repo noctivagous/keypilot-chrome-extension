@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-11T23:05:54.821Z
+ * Generated on 2026-08-12T21:03:28.977Z
  */
 
 (() => {
@@ -116,16 +116,16 @@
         /** @type {const} */
         "browsing-right"
       ),
-      label: "Navigation: right-handed",
-      description: "Full navigation layout. Mouse: right hand. Shortcuts primarily on the left."
+      label: "Browsing: right-handed",
+      description: "Full browsing layout. Mouse: right hand. Shortcuts primarily on the left."
     }),
     Object.freeze({
       id: (
         /** @type {const} */
         "browsing-left"
       ),
-      label: "Navigation: left-handed",
-      description: "Full navigation layout. Mouse: left hand. Shortcuts primarily on the right."
+      label: "Browsing: left-handed",
+      description: "Full browsing layout. Mouse: left hand. Shortcuts primarily on the right."
     }),
     Object.freeze({
       id: (
@@ -148,7 +148,7 @@
         /** @type {const} */
         "click-history-right"
       ),
-      label: "Click + History: right-handed",
+      label: "Navigation: right-handed",
       description: "Click element, go back, and go forward only."
     }),
     Object.freeze({
@@ -156,7 +156,7 @@
         /** @type {const} */
         "click-history-left"
       ),
-      label: "Click + History: left-handed",
+      label: "Navigation: left-handed",
       description: "Click element, go back, and go forward only."
     })
   ]);
@@ -166,8 +166,9 @@
         /** @type {const} */
         "browsing"
       ),
-      label: "Navigation",
-      description: "Full navigation controls (scroll, tabs, click, history, tools).",
+      label: "Browsing",
+      builtIn: true,
+      description: "Full browsing controls (scroll, tabs, click, history, tools).",
       variants: Object.freeze({
         right: (
           /** @type {const} */
@@ -182,27 +183,10 @@
     Object.freeze({
       id: (
         /** @type {const} */
-        "basic-navigation"
-      ),
-      label: "Basic Navigation",
-      description: "Page scrolling, click, tab navigation, back, and forward.",
-      variants: Object.freeze({
-        right: (
-          /** @type {const} */
-          "basic-navigation-right"
-        ),
-        left: (
-          /** @type {const} */
-          "basic-navigation-left"
-        )
-      })
-    }),
-    Object.freeze({
-      id: (
-        /** @type {const} */
         "click-history"
       ),
-      label: "Click + History",
+      label: "Navigation",
+      builtIn: true,
       description: "Click element, go back, and go forward.",
       variants: Object.freeze({
         right: (
@@ -216,6 +200,18 @@
       })
     })
   ]);
+  var LEGACY_KEYBOARD_LAYOUT_FAMILY_VARIANTS = Object.freeze({
+    "basic-navigation": Object.freeze({
+      right: (
+        /** @type {const} */
+        "basic-navigation-right"
+      ),
+      left: (
+        /** @type {const} */
+        "basic-navigation-left"
+      )
+    })
+  });
   var KNOWN_BUILTIN_LAYOUT_IDS = new Set(
     BUILTIN_KEYBOARD_LAYOUT_META.map((m) => m && m.id).filter(Boolean)
   );
@@ -232,7 +228,14 @@
     if (v === "navigation") return "browsing";
     if (!v) return DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID;
     const known = BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META.some((m) => m && m.id === v);
-    return known ? v : DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID;
+    if (known) return v;
+    if (Object.prototype.hasOwnProperty.call(LEGACY_KEYBOARD_LAYOUT_FAMILY_VARIANTS, v)) {
+      return (
+        /** @type {KeyboardLayoutFamilyId} */
+        v
+      );
+    }
+    return DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID;
   }
   function normalizeKeyboardHandedness(raw) {
     const v = String(raw || "").trim().toLowerCase();
@@ -246,7 +249,8 @@
     const fam = normalizeKeyboardLayoutFamilyId(familyId);
     const hand = normalizeKeyboardHandedness(handedness);
     const meta = BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META.find((m) => m && m.id === fam);
-    const resolved = meta?.variants?.[hand];
+    const legacy = LEGACY_KEYBOARD_LAYOUT_FAMILY_VARIANTS[fam];
+    const resolved = meta?.variants?.[hand] || legacy?.[hand];
     return normalizeKeyboardLayoutId(resolved);
   }
   function inferFamilyAndHandednessFromLayoutId(rawLayoutId) {
@@ -934,15 +938,15 @@
   var BUILTIN_KEYBOARD_LAYOUTS = Object.freeze({
     "browsing-right": Object.freeze({
       id: "browsing-right",
-      label: "Navigation: right-handed",
-      description: "Full navigation layout. Mouse: right hand. Shortcuts primarily on the left.",
+      label: "Browsing: right-handed",
+      description: "Full browsing layout. Mouse: right hand. Shortcuts primarily on the left.",
       assignments: ASSIGNMENTS_BROWSING_RIGHT,
       keyboardLayout: KEYBOARD_UI_LAYOUT_RIGHT
     }),
     "browsing-left": Object.freeze({
       id: "browsing-left",
-      label: "Navigation: left-handed",
-      description: "Full navigation layout. Mouse: left hand. Shortcuts primarily on the right.",
+      label: "Browsing: left-handed",
+      description: "Full browsing layout. Mouse: left hand. Shortcuts primarily on the right.",
       assignments: ASSIGNMENTS_BROWSING_LEFT,
       keyboardLayout: KEYBOARD_UI_LAYOUT_LEFT
     }),
@@ -970,7 +974,7 @@
     }),
     "click-history-right": Object.freeze({
       id: "click-history-right",
-      label: "Click + History: right-handed",
+      label: "Navigation: right-handed",
       description: "Click element, go back, and go forward only.",
       assignments: ASSIGNMENTS_CLICK_HISTORY_RIGHT,
       keyboardLayout: projectKeyboardUiLayout(
@@ -981,7 +985,7 @@
     }),
     "click-history-left": Object.freeze({
       id: "click-history-left",
-      label: "Click + History: left-handed",
+      label: "Navigation: left-handed",
       description: "Click element, go back, and go forward only.",
       assignments: ASSIGNMENTS_CLICK_HISTORY_LEFT,
       keyboardLayout: projectKeyboardUiLayout(

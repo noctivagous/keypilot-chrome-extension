@@ -4,7 +4,7 @@
  * No keyboard chrome here: editing happens on the Keyboard Reference panel
  * while it is in edit mode. Click a function/macro, then click a Reference slot
  * to place it (SVG arrow follows the cursor). Built-in layouts auto-duplicate
- * on first place as "{Family} N (user)".
+ * on first place (and when entering edit on a built-in) as "{Family} Copy N".
  *
  * This is the single Function Library surface (browsing, per-instance parameter editing,
  * macro step editing, and modifier-chord binding for `worksWhileTyping` Functions all live
@@ -17,10 +17,16 @@ import { Z_INDEX } from '../config/constants.js';
 import {
   buildKeybindingsForLayout,
   BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META,
+  builtinFamilySelectValue,
   DEFAULT_KEYBOARD_LAYOUT_ID,
+  formatBuiltinFamilyLabel,
+  inferFamilyAndHandednessFromLayoutId,
   KEYBINDING_ACTION_DEFS,
+  listLayoutPickerGroups,
   nextUserCopyLayoutLabel,
-  normalizeKeyboardLayoutFamilyId
+  normalizeKeyboardLayoutFamilyId,
+  parseBuiltinFamilySelectValue,
+  resolveKeyboardLayoutId
 } from '../config/keyboard-layouts.js';
 import { DEFAULT_SETTINGS, getSettings, setSettings } from '../modules/settings-manager.js';
 import {
@@ -141,7 +147,7 @@ const CONFIG_KEY_SIZE_PX = 46;
 const CONFIG_PANEL_WIDTH_PX = 960;
 const CONFIG_INSPECTOR_WIDTH_PX = 280;
 const CONFIG_STYLE_ATTR = 'data-kp-layout-config-panel-style';
-const CONFIG_STYLE_VERSION = 'v16';
+const CONFIG_STYLE_VERSION = 'v17';
 const CONFIG_ICON_SPRITE_ATTR = 'data-kp-layout-config-icons';
 const CONFIG_PLACE_ARROW_STYLE_ATTR = 'data-kp-layout-place-arrow-style';
 const PLACE_ARROW_CSS = `
@@ -567,8 +573,10 @@ export class KeyboardLayoutConfigPanel {
 
   /**
    * @param {any} kp KeyPilot instance
+   * @param {{ duplicateBuiltin?: boolean }} [opts] When true (default), entering edit on a
+   *   built-in layout creates "{Family} Copy N" and switches to it.
    */
-  async show(kp) {
+  async show(kp, { duplicateBuiltin = true } = {}) {
     this._kp = kp || null;
     if (window !== window.top) return;
     this._ensure();
@@ -576,12 +584,40 @@ export class KeyboardLayoutConfigPanel {
     this._st.builtinLayoutId = builtinId;
 
     // Prefer currently active user layout when entering edit mode.
+    // Editing a built-in always starts from a copy ("Browsing Copy 1", …).
+    let adoptedCopy = null;
     try {
       const sel = String(kp?._currentKeyboardLayoutId || 'builtin');
       if (sel.startsWith('user:')) {
         const id = sel.slice('user:'.length);
         this._st.mode = 'user';
         this._st.userLayoutId = id;
+      } else if (duplicateBuiltin) {
+        const layouts = await listUserKeyboardLayouts();
+        const label = nextUserCopyLayoutLabel(this._familyBaseLabel(), layouts);
+        const created = await duplicateBuiltinLayoutToUserLayout({
+          builtinLayoutId: this._st.builtinLayoutId,
+          label
+        });
+        if (created?.id) {
+          adoptedCopy = created;
+          this._st.mode = 'user';
+          this._st.userLayoutId = created.id;
+          this._st.userLayout = created;
+          const nextId = `user:${created.id}`;
+          try { await setSettings({ currentKeyboardLayoutId: nextId }); } catch { /* ignore */ }
+          try {
+            if (kp) {
+              kp._currentKeyboardLayoutId = nextId;
+              kp._currentUserLayout = created;
+              if (kp._settings) kp._settings.currentKeyboardLayoutId = nextId;
+            }
+          } catch { /* ignore */ }
+        } else {
+          this._st.mode = 'builtin';
+          this._st.userLayoutId = null;
+          this._st.userLayout = null;
+        }
       } else {
         this._st.mode = 'builtin';
         this._st.userLayoutId = null;
@@ -590,6 +626,14 @@ export class KeyboardLayoutConfigPanel {
     } catch { /* ignore */ }
 
     await this._reloadStore();
+    if (adoptedCopy && kp && typeof kp.applyLiveUserLayout === 'function') {
+      try {
+        void kp.applyLiveUserLayout(this._st.userLayout || adoptedCopy, {
+          macros: this._st.macros,
+          actions: this._st.actions
+        });
+      } catch { /* ignore */ }
+    }
     this._syncKeyboardReferenceToggle();
     this._setVisible(true);
     this._emitChange();
@@ -1122,6 +1166,21 @@ export class KeyboardLayoutConfigPanel {
 }
 .kp-layout-config-panel .kp-cfg-combo-list[hidden] {
   display: none !important;
+}
+.kp-layout-config-panel .kp-cfg-combo-group {
+  padding: 5px 8px 2px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(170, 180, 195, 0.72);
+  pointer-events: none;
+  user-select: none;
+}
+.kp-layout-config-panel .kp-cfg-combo-group:not(:first-child) {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 .kp-layout-config-panel .kp-cfg-combo-option {
   display: flex;
@@ -3496,20 +3555,35 @@ export class KeyboardLayoutConfigPanel {
     setCurrentBtn.addEventListener('click', async () => {
       try {
         const v = this._selectedLayoutValue();
-        const next = v.startsWith('user:') ? v : 'builtin';
-        await setSettings({ currentKeyboardLayoutId: next });
-        if (this._kp?._settings) this._kp._settings.currentKeyboardLayoutId = next;
-        try {
-          if (next.startsWith('user:') && this._st.userLayout && `user:${this._st.userLayout.id}` === next) {
-            await this._kp?.applyLiveUserLayout?.(this._st.userLayout, {
-              setAsCurrent: true,
-              macros: this._st.macros,
-              actions: this._st.actions
-            });
-          } else {
-            await this._kp?._refreshCurrentKeyboardLayoutFromSettings?.();
+        if (v.startsWith('user:')) {
+          await setSettings({ currentKeyboardLayoutId: v });
+          if (this._kp?._settings) this._kp._settings.currentKeyboardLayoutId = v;
+          try {
+            if (this._st.userLayout && `user:${this._st.userLayout.id}` === v) {
+              await this._kp?.applyLiveUserLayout?.(this._st.userLayout, {
+                setAsCurrent: true,
+                macros: this._st.macros,
+                actions: this._st.actions
+              });
+            } else {
+              await this._kp?._refreshCurrentKeyboardLayoutFromSettings?.();
+            }
+          } catch { /* ignore */ }
+        } else {
+          const familyId = parseBuiltinFamilySelectValue(v) || 'browsing';
+          await setSettings({
+            currentKeyboardLayoutId: 'builtin',
+            keyboardLayoutFamilyId: familyId
+          });
+          if (this._kp?._settings) {
+            this._kp._settings.currentKeyboardLayoutId = 'builtin';
+            this._kp._settings.keyboardLayoutFamilyId = familyId;
           }
-        } catch { /* ignore */ }
+          try {
+            this._kp?._applyKeyboardLayoutFromSettings?.();
+            await this._kp?._refreshCurrentKeyboardLayoutFromSettings?.();
+          } catch { /* ignore */ }
+        }
         this._notify('Set as current keyboard layout.', 'success');
         this._renderLayoutSelect();
         this._emitChange();
@@ -4847,31 +4921,28 @@ export class KeyboardLayoutConfigPanel {
   }
 
   /**
-   * @returns {string} `user:<id>` or `builtin:<builtinLayoutId>`
+   * @returns {string} `user:<id>` or `builtin:<familyId>`
    */
   _selectedLayoutValue() {
-    return this._st.mode === 'user' && this._st.userLayoutId
-      ? `user:${this._st.userLayoutId}`
-      : `builtin:${this._st.builtinLayoutId}`;
+    if (this._st.mode === 'user' && this._st.userLayoutId) {
+      return `user:${this._st.userLayoutId}`;
+    }
+    const inferred = inferFamilyAndHandednessFromLayoutId(this._st.builtinLayoutId);
+    return builtinFamilySelectValue(inferred.familyId);
   }
 
   /**
    * @returns {string}
    */
   _builtinLayoutDisplayName() {
-    const id = String(this._st.builtinLayoutId || '');
     try {
-      const familyFromId = id.replace(/-(left|right)$/i, '');
+      const inferred = inferFamilyAndHandednessFromLayoutId(this._st.builtinLayoutId);
       const familyId = normalizeKeyboardLayoutFamilyId(
-        this._kp?._settings?.keyboardLayoutFamilyId || familyFromId
+        this._kp?._settings?.keyboardLayoutFamilyId || inferred.familyId
       );
-      const meta = (BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META || []).find((m) => m && m.id === familyId);
-      const hand = /-(left)$/i.test(id) ? 'Left' : /-(right)$/i.test(id) ? 'Right' : '';
-      if (meta?.label) {
-        return hand ? `Built-in · ${meta.label} (${hand})` : `Built-in · ${meta.label}`;
-      }
+      return formatBuiltinFamilyLabel(familyId);
     } catch { /* ignore */ }
-    return id ? `Built-in (${id})` : 'Built-in layout';
+    return 'Built-in: Browsing';
   }
 
   /** @param {boolean} open */
@@ -4893,6 +4964,15 @@ export class KeyboardLayoutConfigPanel {
   }
 
   /**
+   * Select a layout for editing — same behavior as the Layout combo.
+   * Used by the Keyboard Reference titlebar select during edit mode.
+   * @param {string} value
+   */
+  async selectLayoutByValue(value) {
+    await this._selectLayoutByValue(value);
+  }
+
+  /**
    * @param {string} value
    */
   async _selectLayoutByValue(value) {
@@ -4904,9 +4984,14 @@ export class KeyboardLayoutConfigPanel {
       this._st.userLayoutId = id;
       this._st.userLayout = found;
     } else {
+      const familyId = parseBuiltinFamilySelectValue(v) || 'browsing';
+      const handedness = inferFamilyAndHandednessFromLayoutId(
+        this._kp?._keyboardLayoutId || this._st.builtinLayoutId
+      ).handedness;
       this._st.mode = 'builtin';
       this._st.userLayoutId = null;
       this._st.userLayout = null;
+      this._st.builtinLayoutId = resolveKeyboardLayoutId({ familyId, handedness });
     }
     this._renderLayoutSelect();
     this._renderRightList();
@@ -4939,56 +5024,54 @@ export class KeyboardLayoutConfigPanel {
     const current = String(
       this._kp?._currentKeyboardLayoutId || this._kp?._settings?.currentKeyboardLayoutId || 'builtin'
     );
-    const currentKey = current.startsWith('user:') ? current : 'builtin';
-    const selectedKey = selected.startsWith('user:') ? selected : 'builtin';
+    const currentFamily = normalizeKeyboardLayoutFamilyId(
+      this._kp?._settings?.keyboardLayoutFamilyId
+    );
+    const currentKey = current.startsWith('user:')
+      ? current
+      : builtinFamilySelectValue(currentFamily);
+    const selectedKey = selected;
     const isCurrent = currentKey === selectedKey;
     const readOnly = this._isReadOnly();
     const builtinName = this._builtinLayoutDisplayName();
-
-    /** @type {{ value: string, name: string, current: boolean }[]} */
-    const options = [
-      {
-        value: `builtin:${this._st.builtinLayoutId}`,
-        name: builtinName,
-        current: currentKey === 'builtin'
-      }
-    ];
-    for (const l of this._st.userLayouts || []) {
-      if (!l || !l.id) continue;
-      const value = `user:${l.id}`;
-      options.push({
-        value,
-        name: l.label ? String(l.label) : String(l.id),
-        current: current === value
-      });
-    }
+    const groups = listLayoutPickerGroups(this._st.userLayouts || []);
 
     list.replaceChildren();
-    for (const opt of options) {
-      const li = document.createElement('li');
-      li.setAttribute('role', 'none');
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'kp-cfg-combo-option'
-        + (opt.value === selected ? ' is-active' : '')
-        + (opt.current ? ' is-current' : '');
-      btn.setAttribute('role', 'option');
-      btn.setAttribute('data-kp-layout-id', opt.value);
-      btn.setAttribute('aria-selected', opt.value === selected ? 'true' : 'false');
-      const name = document.createElement('span');
-      name.className = 'kp-cfg-combo-option-name';
-      name.textContent = opt.name;
-      btn.appendChild(name);
-      if (opt.current) {
-        const chip = document.createElement('span');
-        chip.className = 'kp-cfg-combo-option-current';
-        chip.appendChild(mkCfgIcon(document, 'kp-cfg-i-check'));
-        chip.appendChild(document.createTextNode('Current'));
-        btn.appendChild(chip);
+    const appendGroup = (heading, items) => {
+      const hdr = document.createElement('li');
+      hdr.className = 'kp-cfg-combo-group';
+      hdr.setAttribute('role', 'presentation');
+      hdr.textContent = heading;
+      list.appendChild(hdr);
+      for (const opt of items || []) {
+        if (!opt?.value) continue;
+        const li = document.createElement('li');
+        li.setAttribute('role', 'none');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'kp-cfg-combo-option'
+          + (opt.value === selected ? ' is-active' : '')
+          + (opt.value === currentKey ? ' is-current' : '');
+        btn.setAttribute('role', 'option');
+        btn.setAttribute('data-kp-layout-id', opt.value);
+        btn.setAttribute('aria-selected', opt.value === selected ? 'true' : 'false');
+        const name = document.createElement('span');
+        name.className = 'kp-cfg-combo-option-name';
+        name.textContent = opt.label;
+        btn.appendChild(name);
+        if (opt.value === currentKey) {
+          const chip = document.createElement('span');
+          chip.className = 'kp-cfg-combo-option-current';
+          chip.appendChild(mkCfgIcon(document, 'kp-cfg-i-check'));
+          chip.appendChild(document.createTextNode('Current'));
+          btn.appendChild(chip);
+        }
+        li.appendChild(btn);
+        list.appendChild(li);
       }
-      li.appendChild(btn);
-      list.appendChild(li);
-    }
+    };
+    appendGroup('Built-In', groups.builtin);
+    appendGroup('Custom', groups.custom);
 
     if (this.shadowRoot?.activeElement !== input) {
       input.value = readOnly
@@ -6485,8 +6568,9 @@ export class KeyboardLayoutConfigPanel {
 
   _familyBaseLabel() {
     try {
+      const inferred = inferFamilyAndHandednessFromLayoutId(this._st.builtinLayoutId);
       const familyId = normalizeKeyboardLayoutFamilyId(
-        this._kp?._settings?.keyboardLayoutFamilyId || 'browsing'
+        this._kp?._settings?.keyboardLayoutFamilyId || inferred.familyId || 'browsing'
       );
       const meta = (BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META || []).find((m) => m && m.id === familyId);
       return String(meta?.label || familyId || 'Layout');

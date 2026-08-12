@@ -54,7 +54,7 @@ export function openKeyboardLayoutConfigurator(kp, opts = {}) {
   try {
     if (isKeyboardLayoutEditMode(kp)) {
       try {
-        void _configPanel?.show?.(kp).then(async () => {
+        void _configPanel?.show?.(kp, { duplicateBuiltin: false }).then(async () => {
           if (createNew) {
             try { await _configPanel?.createNewLayout?.(); } catch { /* ignore */ }
           } else if (createDuplicate) {
@@ -107,7 +107,9 @@ export function openKeyboardLayoutConfigurator(kp, opts = {}) {
       });
     }
 
-    void _configPanel.show(kp).then(async () => {
+    void _configPanel.show(kp, {
+      duplicateBuiltin: !createNew && !createDuplicate
+    }).then(async () => {
       try {
         kp.floatingKeyboardHelp?.setEditLayout?.(_configPanel.getState());
       } catch { /* ignore */ }

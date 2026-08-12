@@ -1285,6 +1285,13 @@
       "displayKey": "J",
       "keyboardClass": "key-gray"
     },
+    "TOGGLE_KEYBOARD_HELP": {
+      "label": "KB Reference",
+      "description": "Show/Hide the floating KeyPilot keyboard reference",
+      "keyLabel": "K",
+      "displayKey": "K",
+      "keyboardClass": "key-purple"
+    },
     "OMNIBOX": {
       "label": "Omnibox",
       "description": "Open Omnibox (Address Bar Overlay)",
@@ -1298,6 +1305,13 @@
       "keyLabel": ";",
       "displayKey": ";",
       "keyboardClass": "key-launcher-orange"
+    },
+    "OPEN_SETTINGS_POPOVER": {
+      "label": "Settings",
+      "description": "Open KeyPilot Settings",
+      "keyLabel": "'",
+      "displayKey": "'",
+      "keyboardClass": "key-settings-dark"
     },
     "PAGE_TOP": {
       "label": "Scroll To Top",
@@ -1347,6 +1361,13 @@
       "keyLabel": ".",
       "displayKey": ".",
       "keyboardClass": "key-cols"
+    },
+    "CANCEL": {
+      "label": "Exit Focus",
+      "description": "Exit Focus",
+      "keyLabel": "Esc",
+      "displayKey": "Esc",
+      "keyboardClass": null
     }
   },
   "browsing-left": {
@@ -1462,6 +1483,13 @@
       "displayKey": "F",
       "keyboardClass": "key-gray"
     },
+    "TOGGLE_KEYBOARD_HELP": {
+      "label": "KB Reference",
+      "description": "Show/Hide the floating KeyPilot keyboard reference",
+      "keyLabel": "D",
+      "displayKey": "D",
+      "keyboardClass": "key-purple"
+    },
     "OMNIBOX": {
       "label": "Omnibox",
       "description": "Open Omnibox (Address Bar Overlay)",
@@ -1475,6 +1503,13 @@
       "keyLabel": "a/`",
       "displayKey": "a/`",
       "keyboardClass": "key-launcher-orange"
+    },
+    "OPEN_SETTINGS_POPOVER": {
+      "label": "Settings",
+      "description": "Open KeyPilot Settings",
+      "keyLabel": "'",
+      "displayKey": "'",
+      "keyboardClass": "key-settings-dark"
     },
     "PAGE_TOP": {
       "label": "Scroll To Top",
@@ -1517,6 +1552,13 @@
       "keyLabel": ".",
       "displayKey": ".",
       "keyboardClass": "key-cols"
+    },
+    "CANCEL": {
+      "label": "Exit Focus",
+      "description": "Exit Focus",
+      "keyLabel": "Esc",
+      "displayKey": "Esc",
+      "keyboardClass": null
     }
   },
   "basic-navigation-right": {
@@ -1562,6 +1604,20 @@
       "displayKey": "F",
       "keyboardClass": "key-activate"
     },
+    "TOGGLE_KEYBOARD_HELP": {
+      "label": "KB Reference",
+      "description": "Show/Hide the floating KeyPilot keyboard reference",
+      "keyLabel": "K",
+      "displayKey": "K",
+      "keyboardClass": "key-purple"
+    },
+    "OPEN_SETTINGS_POPOVER": {
+      "label": "Settings",
+      "description": "Open KeyPilot Settings",
+      "keyLabel": "'",
+      "displayKey": "'",
+      "keyboardClass": "key-settings-dark"
+    },
     "PAGE_TOP": {
       "label": "Scroll To Top",
       "description": "Scroll to Top",
@@ -1589,6 +1645,13 @@
       "keyLabel": "V",
       "displayKey": "V",
       "keyboardClass": "key-scroll"
+    },
+    "CANCEL": {
+      "label": "Exit Focus",
+      "description": "Exit Focus",
+      "keyLabel": "Esc",
+      "displayKey": "Esc",
+      "keyboardClass": null
     }
   },
   "basic-navigation-left": {
@@ -1634,6 +1697,20 @@
       "displayKey": "J",
       "keyboardClass": "key-activate"
     },
+    "TOGGLE_KEYBOARD_HELP": {
+      "label": "KB Reference",
+      "description": "Show/Hide the floating KeyPilot keyboard reference",
+      "keyLabel": "D",
+      "displayKey": "D",
+      "keyboardClass": "key-purple"
+    },
+    "OPEN_SETTINGS_POPOVER": {
+      "label": "Settings",
+      "description": "Open KeyPilot Settings",
+      "keyLabel": "'",
+      "displayKey": "'",
+      "keyboardClass": "key-settings-dark"
+    },
     "PAGE_TOP": {
       "label": "Scroll To Top",
       "description": "Scroll to Top",
@@ -1661,6 +1738,13 @@
       "keyLabel": "M",
       "displayKey": "M",
       "keyboardClass": "key-scroll"
+    },
+    "CANCEL": {
+      "label": "Exit Focus",
+      "description": "Exit Focus",
+      "keyLabel": "Esc",
+      "displayKey": "Esc",
+      "keyboardClass": null
     }
   },
   "click-history-right": {
@@ -1691,6 +1775,27 @@
       "keyLabel": "F",
       "displayKey": "F",
       "keyboardClass": "key-activate"
+    },
+    "TOGGLE_KEYBOARD_HELP": {
+      "label": "KB Reference",
+      "description": "Show/Hide the floating KeyPilot keyboard reference",
+      "keyLabel": "K",
+      "displayKey": "K",
+      "keyboardClass": "key-purple"
+    },
+    "OPEN_SETTINGS_POPOVER": {
+      "label": "Settings",
+      "description": "Open KeyPilot Settings",
+      "keyLabel": "'",
+      "displayKey": "'",
+      "keyboardClass": "key-settings-dark"
+    },
+    "CANCEL": {
+      "label": "Exit Focus",
+      "description": "Exit Focus",
+      "keyLabel": "Esc",
+      "displayKey": "Esc",
+      "keyboardClass": null
     }
   },
   "click-history-left": {
@@ -1721,6 +1826,27 @@
       "keyLabel": "J",
       "displayKey": "J",
       "keyboardClass": "key-activate"
+    },
+    "TOGGLE_KEYBOARD_HELP": {
+      "label": "KB Reference",
+      "description": "Show/Hide the floating KeyPilot keyboard reference",
+      "keyLabel": "D",
+      "displayKey": "D",
+      "keyboardClass": "key-purple"
+    },
+    "OPEN_SETTINGS_POPOVER": {
+      "label": "Settings",
+      "description": "Open KeyPilot Settings",
+      "keyLabel": "'",
+      "displayKey": "'",
+      "keyboardClass": "key-settings-dark"
+    },
+    "CANCEL": {
+      "label": "Exit Focus",
+      "description": "Exit Focus",
+      "keyLabel": "Esc",
+      "displayKey": "Esc",
+      "keyboardClass": null
     }
   }
 };
@@ -2042,6 +2168,13 @@
     "displayKey": "J",
     "keyboardClass": "key-gray"
   },
+  "TOGGLE_KEYBOARD_HELP": {
+    "label": "KB Reference",
+    "description": "Show/Hide the floating KeyPilot keyboard reference",
+    "keyLabel": "K",
+    "displayKey": "K",
+    "keyboardClass": "key-purple"
+  },
   "OMNIBOX": {
     "label": "Omnibox",
     "description": "Open Omnibox (Address Bar Overlay)",
@@ -2055,6 +2188,13 @@
     "keyLabel": ";",
     "displayKey": ";",
     "keyboardClass": "key-launcher-orange"
+  },
+  "OPEN_SETTINGS_POPOVER": {
+    "label": "Settings",
+    "description": "Open KeyPilot Settings",
+    "keyLabel": "'",
+    "displayKey": "'",
+    "keyboardClass": "key-settings-dark"
   },
   "PAGE_TOP": {
     "label": "Scroll To Top",
@@ -2104,6 +2244,13 @@
     "keyLabel": ".",
     "displayKey": ".",
     "keyboardClass": "key-cols"
+  },
+  "CANCEL": {
+    "label": "Exit Focus",
+    "description": "Exit Focus",
+    "keyLabel": "Esc",
+    "displayKey": "Esc",
+    "keyboardClass": null
   }
 };
   const EARLY_ONBOARDING_MODEL = {
@@ -2375,7 +2522,7 @@
   src: url("__KP_FONT_ROBOTECH_URL__") format("truetype");
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 
 @font-face {
@@ -2383,7 +2530,7 @@
   src: url("__KP_FONT_TITILLIUM_URL__") format("opentype");
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 
 @font-face {
@@ -2391,7 +2538,7 @@
   src: url("__KP_FONT_CUBELLAN_URL__") format("truetype");
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 
 @font-face {
@@ -2399,7 +2546,7 @@
   src: url("__KP_FONT_EZARION_URL__") format("truetype");
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 
 @font-face {
@@ -2407,7 +2554,7 @@
   src: url("__KP_FONT_DOSIS_URL__") format("truetype");
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 
 /* Style isolation: all keyboard rules are scoped so host page CSS won't override them */
@@ -2631,6 +2778,56 @@
   font-weight: 700;
   letter-spacing: 0.03em;
   color: var(--kp-accent, #5be2f1);
+}
+
+/* Edit-mode slot delete: pin to the keycap's upper-right, above the FA glyph. */
+.kp-keybindings-ui .key > .kp-key-delete {
+  position: absolute !important;
+  top: 1px !important;
+  right: 1px !important;
+  left: auto !important;
+  bottom: auto !important;
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px !important;
+  min-height: 14px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 3px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  line-height: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  color: rgba(248, 250, 252, 0.95);
+  background: rgba(220, 50, 50, 0.85);
+  z-index: 8;
+  pointer-events: auto;
+}
+.kp-keybindings-ui .key:hover > .kp-key-delete,
+.kp-keybindings-ui .key:focus-within > .kp-key-delete {
+  display: flex !important;
+}
+.kp-keybindings-ui .key > .kp-key-delete:hover {
+  background: rgba(255, 70, 70, 1);
+}
+
+/* Edit-mode plate hatch (same steel lines as Keyboard Layout Config). */
+.keyboard-visual.kp-keybindings-ui.kp-kb-edit-hatch {
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      rgba(180, 200, 220, 0.08) 0px,
+      rgba(180, 200, 220, 0.08) 1px,
+      transparent 1px,
+      transparent 7px
+    ),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, transparent 28%),
+    radial-gradient(120% 80% at 50% 0%, rgba(91, 226, 241, 0.07) 0%, transparent 55%),
+    linear-gradient(180deg, #222833 0%, #1a1f28 45%, #13161e 100%) !important;
 }
 
 /* Special chrome labels (Tab/Caps/…) */
@@ -5509,8 +5706,77 @@
     }
   }
 
+  function resolveKeybindingsFontUrls() {
+    try {
+      const getURL = chrome && chrome.runtime && chrome.runtime.getURL
+        ? chrome.runtime.getURL.bind(chrome.runtime)
+        : null;
+      if (!getURL) return null;
+      return {
+        robotech: getURL('fonts/ROBOTECHGPRegular.ttf'),
+        titillium: getURL('fonts/TitilliumTextRegular.otf'),
+        cubellan: getURL('fonts/CubellanRegular.ttf'),
+        ezarion: getURL('fonts/EzarionRegular.ttf'),
+        dosis: getURL('fonts/DosisBook.ttf')
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Preload Dosis (key labels) at document_start so the first Keyboard Reference
+   * paint does not flash the fallback system font.
+   */
+  function ensureKeybindingsFontsReady() {
+    try {
+      const urls = resolveKeybindingsFontUrls();
+      if (!urls || !urls.dosis) return;
+      const doc = document;
+      const head = doc.head || doc.documentElement;
+      if (!head || !head.appendChild) return;
+
+      const preloadAttr = 'data-kp-keybindings-font-preload';
+      if (!head.querySelector(`link[${preloadAttr}="dosis"]`)) {
+        const link = doc.createElement('link');
+        link.rel = 'preload';
+        link.as = 'font';
+        link.type = 'font/ttf';
+        link.href = urls.dosis;
+        link.crossOrigin = 'anonymous';
+        link.setAttribute(preloadAttr, 'dosis');
+        head.appendChild(link);
+      }
+
+      const fontStyleAttr = 'data-kp-keybindings-fonts';
+      if (!head.querySelector(`style[${fontStyleAttr}]`)) {
+        const style = doc.createElement('style');
+        style.setAttribute(fontStyleAttr, 'true');
+        style.textContent = `
+@font-face {
+  font-family: "Dosis";
+  src: url("${urls.dosis}") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+`.trim();
+        head.appendChild(style);
+      }
+
+      try {
+        if (doc.fonts && typeof doc.fonts.load === 'function') {
+          void doc.fonts.load('10px "Dosis"');
+        }
+      } catch { /* ignore */ }
+    } catch {
+      // ignore
+    }
+  }
+
   function ensureKeybindingsUiStylesInjected(root) {
     try {
+      ensureKeybindingsFontsReady();
       const doc = root && root.nodeType === 9 ? root : root?.ownerDocument;
       const mount = root && root.nodeType === 9 ? root.head : root;
       if (!doc || !mount || !mount.appendChild) return;
@@ -5520,14 +5786,14 @@
       // Replace build-time font placeholders with runtime extension URLs (required on real web pages).
       let css = KEYBINDINGS_UI_EARLY_CSS;
       try {
-        const getURL = chrome && chrome.runtime && chrome.runtime.getURL ? chrome.runtime.getURL.bind(chrome.runtime) : null;
-        if (getURL) {
+        const urls = resolveKeybindingsFontUrls();
+        if (urls) {
           css = css
-            .replaceAll('__KP_FONT_ROBOTECH_URL__', getURL('fonts/ROBOTECHGPRegular.ttf'))
-            .replaceAll('__KP_FONT_TITILLIUM_URL__', getURL('fonts/TitilliumTextRegular.otf'))
-            .replaceAll('__KP_FONT_CUBELLAN_URL__', getURL('fonts/CubellanRegular.ttf'))
-            .replaceAll('__KP_FONT_EZARION_URL__', getURL('fonts/EzarionRegular.ttf'))
-            .replaceAll('__KP_FONT_DOSIS_URL__', getURL('fonts/DosisBook.ttf'));
+            .replaceAll('__KP_FONT_ROBOTECH_URL__', urls.robotech)
+            .replaceAll('__KP_FONT_TITILLIUM_URL__', urls.titillium)
+            .replaceAll('__KP_FONT_CUBELLAN_URL__', urls.cubellan)
+            .replaceAll('__KP_FONT_EZARION_URL__', urls.ezarion)
+            .replaceAll('__KP_FONT_DOSIS_URL__', urls.dosis);
         }
       } catch {
         // ignore; fallback to placeholders (bundled UI will overwrite later)
@@ -6822,7 +7088,7 @@
 
     const title = doc.createElement('div');
     // Match post-adopt title so content-script render doesn't rewrite title text.
-    title.textContent = 'Keyboard Reference — Built-in';
+    title.textContent = 'Keyboard Reference';
     title.setAttribute('data-kp-floating-keyboard-title', 'true');
     Object.assign(title.style, {
       fontSize: '11px',
@@ -6852,16 +7118,32 @@
       color: '#ddd',
       outline: 'none',
       fontSize: '11px',
-      width: '160px',
+      width: '190px',
       height: '22px',
       cursor: 'pointer',
       fontFamily: 'Helvetica, Arial, sans-serif'
     });
     try {
-      const optBuiltin = doc.createElement('option');
-      optBuiltin.value = 'builtin';
-      optBuiltin.textContent = 'Built-in';
-      layoutSelect.appendChild(optBuiltin);
+      const builtinHdr = doc.createElement('option');
+      builtinHdr.disabled = true;
+      builtinHdr.textContent = 'Built-In';
+      layoutSelect.appendChild(builtinHdr);
+      for (const [value, label] of [
+        ['builtin:browsing', 'Browsing'],
+        ['builtin:click-history', 'Navigation']
+      ]) {
+        const opt = doc.createElement('option');
+        opt.value = value;
+        opt.textContent = label;
+        layoutSelect.appendChild(opt);
+      }
+      try {
+        layoutSelect.appendChild(doc.createElement('hr'));
+      } catch { /* ignore */ }
+      const customHdr = doc.createElement('option');
+      customHdr.disabled = true;
+      customHdr.textContent = 'Custom';
+      layoutSelect.appendChild(customHdr);
     } catch { /* ignore */ }
 
     const hint = doc.createElement('div');
@@ -6991,6 +7273,10 @@
     keyboardHelpShadowRoot = root.shadowRoot || null;
     keyboardHelpKeyboardContainer = keyboardContainer;
 
+    // Start Dosis + keyboard CSS in the shadow before the first keycap paint.
+    try { ensureKeybindingsFontsReady(); } catch { /* ignore */ }
+    try { ensureKeybindingsUiStylesInjected(shell); } catch { /* ignore */ }
+
     // Apply stored collapsed state before first paint when visible.
     try { applyEarlyKeyboardReferenceCollapsed(keyboardReferenceCollapsed); } catch { /* ignore */ }
 
@@ -7108,9 +7394,7 @@
     try {
       const title = (keyboardHelpShadowRoot || keyboardHelpRoot).querySelector('[data-kp-floating-keyboard-title="true"]');
       if (title) {
-        title.textContent = keyboardUsesCustomLayout
-          ? 'Keyboard Reference — Custom layout'
-          : 'Keyboard Reference — Built-in';
+        title.textContent = 'Keyboard Reference';
       }
     } catch { /* ignore */ }
     const shouldShow = !!(isExtensionEnabled && keyboardHelpVisible && !keyboardUsesCustomLayout);
@@ -7368,6 +7652,7 @@
       try {
         existing.textContent = EARLY_CSS;
       } catch {}
+      try { ensureKeybindingsFontsReady(); } catch { /* ignore */ }
       return;
     }
     const style = document.createElement('style');
@@ -7379,6 +7664,7 @@
     if (target) {
       target.appendChild(style);
     }
+    try { ensureKeybindingsFontsReady(); } catch { /* ignore */ }
   }
 
   /**

@@ -18,7 +18,10 @@
 
 /**
  * Logical (handedness-agnostic) layout selection.
- * A "family" can have variants per handedness (e.g. Navigation → left/right implementation).
+ * A "family" can have variants per handedness (e.g. Browsing → left/right implementation).
+ *
+ * Shown built-ins: `browsing` ("Built-in: Browsing") and `click-history` ("Built-in: Navigation").
+ * Legacy family id `basic-navigation` still resolves for stored settings.
  *
  * @typedef {'browsing'|'basic-navigation'|'click-history'} BuiltinKeyboardLayoutFamilyId
  * @typedef {BuiltinKeyboardLayoutFamilyId|string} KeyboardLayoutFamilyId
@@ -63,13 +66,13 @@ export const DEFAULT_KEYBOARD_HANDEDNESS = /** @type {const} */ ('right');
 export const BUILTIN_KEYBOARD_LAYOUT_META = Object.freeze([
   Object.freeze({
     id: /** @type {const} */ ('browsing-right'),
-    label: 'Navigation: right-handed',
-    description: 'Full navigation layout. Mouse: right hand. Shortcuts primarily on the left.'
+    label: 'Browsing: right-handed',
+    description: 'Full browsing layout. Mouse: right hand. Shortcuts primarily on the left.'
   }),
   Object.freeze({
     id: /** @type {const} */ ('browsing-left'),
-    label: 'Navigation: left-handed',
-    description: 'Full navigation layout. Mouse: left hand. Shortcuts primarily on the right.'
+    label: 'Browsing: left-handed',
+    description: 'Full browsing layout. Mouse: left hand. Shortcuts primarily on the right.'
   }),
   Object.freeze({
     id: /** @type {const} */ ('basic-navigation-right'),
@@ -83,43 +86,37 @@ export const BUILTIN_KEYBOARD_LAYOUT_META = Object.freeze([
   }),
   Object.freeze({
     id: /** @type {const} */ ('click-history-right'),
-    label: 'Click + History: right-handed',
+    label: 'Navigation: right-handed',
     description: 'Click element, go back, and go forward only.'
   }),
   Object.freeze({
     id: /** @type {const} */ ('click-history-left'),
-    label: 'Click + History: left-handed',
+    label: 'Navigation: left-handed',
     description: 'Click element, go back, and go forward only.'
   })
 ]);
 
 /**
- * Built-in layout families shown to users.
+ * Built-in layout families shown to users (Keyboard Reference + Config pickers).
  * IMPORTANT: Alt+[ / Alt+] cycles through these family IDs (not through handedness variants).
- * Note: family id `browsing` is the stable storage id for "Navigation" (back-compat).
+ * Note: family id `browsing` is the stable storage id for the full layout (back-compat).
+ * Family id `click-history` is labeled "Navigation" (Click Element / Back / Forward).
  */
 export const BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META = Object.freeze([
   Object.freeze({
     id: /** @type {const} */ ('browsing'),
-    label: 'Navigation',
-    description: 'Full navigation controls (scroll, tabs, click, history, tools).',
+    label: 'Browsing',
+    builtIn: true,
+    description: 'Full browsing controls (scroll, tabs, click, history, tools).',
     variants: Object.freeze({
       right: /** @type {const} */ ('browsing-right'),
       left: /** @type {const} */ ('browsing-left')
     })
   }),
   Object.freeze({
-    id: /** @type {const} */ ('basic-navigation'),
-    label: 'Basic Navigation',
-    description: 'Page scrolling, click, tab navigation, back, and forward.',
-    variants: Object.freeze({
-      right: /** @type {const} */ ('basic-navigation-right'),
-      left: /** @type {const} */ ('basic-navigation-left')
-    })
-  }),
-  Object.freeze({
     id: /** @type {const} */ ('click-history'),
-    label: 'Click + History',
+    label: 'Navigation',
+    builtIn: true,
     description: 'Click element, go back, and go forward.',
     variants: Object.freeze({
       right: /** @type {const} */ ('click-history-right'),
@@ -127,6 +124,17 @@ export const BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META = Object.freeze([
     })
   })
 ]);
+
+/**
+ * Legacy families still resolvable from stored settings, but not listed in pickers / Alt cycle.
+ * @type {Readonly<Record<string, { right: BuiltinKeyboardLayoutId, left: BuiltinKeyboardLayoutId }>>}
+ */
+const LEGACY_KEYBOARD_LAYOUT_FAMILY_VARIANTS = Object.freeze({
+  'basic-navigation': Object.freeze({
+    right: /** @type {const} */ ('basic-navigation-right'),
+    left: /** @type {const} */ ('basic-navigation-left')
+  })
+});
 
 /** @type {ReadonlySet<string>} */
 const KNOWN_BUILTIN_LAYOUT_IDS = new Set(
@@ -149,11 +157,52 @@ export function normalizeKeyboardLayoutId(raw) {
  */
 export function normalizeKeyboardLayoutFamilyId(raw) {
   const v = String(raw || '').trim();
-  // Back-compat aliases
+  // Older alias: "navigation" meant the full layout (now labeled Browsing).
   if (v === 'navigation') return 'browsing';
   if (!v) return DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID;
   const known = BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META.some((m) => m && m.id === v);
-  return known ? v : DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID;
+  if (known) return v;
+  // Keep legacy reduced layouts working if still stored.
+  if (Object.prototype.hasOwnProperty.call(LEGACY_KEYBOARD_LAYOUT_FAMILY_VARIANTS, v)) {
+    return /** @type {KeyboardLayoutFamilyId} */ (v);
+  }
+  return DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID;
+}
+
+/**
+ * Select / combo value for a built-in family, e.g. `builtin:browsing`.
+ * @param {any} familyId
+ * @returns {string}
+ */
+export function builtinFamilySelectValue(familyId) {
+  return `builtin:${normalizeKeyboardLayoutFamilyId(familyId)}`;
+}
+
+/**
+ * @param {any} value Select value (`builtin`, `builtin:<familyId>`, or other)
+ * @returns {KeyboardLayoutFamilyId|null} Family id when this is a built-in select value; else null
+ */
+export function parseBuiltinFamilySelectValue(value) {
+  const v = String(value || '').trim();
+  if (!v || v.startsWith('user:')) return null;
+  if (v === 'builtin') return DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID;
+  if (v.startsWith('builtin:')) {
+    return normalizeKeyboardLayoutFamilyId(v.slice('builtin:'.length));
+  }
+  return null;
+}
+
+/**
+ * User-facing built-in label, e.g. "Built-in: Browsing".
+ * @param {any} familyId
+ * @returns {string}
+ */
+export function formatBuiltinFamilyLabel(familyId) {
+  const id = normalizeKeyboardLayoutFamilyId(familyId);
+  const meta = BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META.find((m) => m && m.id === id);
+  if (meta?.label) return `Built-in: ${meta.label}`;
+  if (id === 'basic-navigation') return 'Built-in: Basic Navigation';
+  return 'Built-in: Browsing';
 }
 
 /**
@@ -176,7 +225,8 @@ export function resolveKeyboardLayoutId({ familyId, handedness } = {}) {
   const fam = normalizeKeyboardLayoutFamilyId(familyId);
   const hand = normalizeKeyboardHandedness(handedness);
   const meta = BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META.find((m) => m && m.id === fam);
-  const resolved = meta?.variants?.[hand];
+  const legacy = LEGACY_KEYBOARD_LAYOUT_FAMILY_VARIANTS[fam];
+  const resolved = meta?.variants?.[hand] || legacy?.[hand];
   return normalizeKeyboardLayoutId(resolved);
 }
 
@@ -555,7 +605,7 @@ export function getKeybindingActionCategory(actionId) {
 }
 
 /**
- * Next auto-copy label for a built-in family, e.g. "Navigation 2 (user)".
+ * Next auto-copy label for a built-in family, e.g. "Browsing Copy 1".
  * @param {string} baseLabel Family or layout base name
  * @param {{ label?: string }[]} existingLayouts
  * @returns {string}
@@ -563,15 +613,50 @@ export function getKeybindingActionCategory(actionId) {
 export function nextUserCopyLayoutLabel(baseLabel, existingLayouts = []) {
   const base = String(baseLabel || 'Layout').trim() || 'Layout';
   const escaped = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const re = new RegExp(`^${escaped}(?: (\\d+))? \\(user\\)$`, 'i');
-  let maxN = 1;
+  const re = new RegExp(`^${escaped} Copy (\\d+)$`, 'i');
+  let maxN = 0;
   for (const l of existingLayouts || []) {
     const m = String(l?.label || '').trim().match(re);
     if (!m) continue;
-    const n = m[1] ? Number(m[1]) : 1;
+    const n = Number(m[1]);
     if (Number.isFinite(n) && n > maxN) maxN = n;
   }
-  return `${base} ${maxN + 1} (user)`;
+  return `${base} Copy ${maxN + 1}`;
+}
+
+/**
+ * Grouped options for Keyboard Reference + Config layout pickers.
+ * Built-in families are marked `builtIn: true`; user layouts are `builtIn: false`.
+ *
+ * @param {{ id?: string, label?: string }[]} [userLayouts]
+ * @returns {{
+ *   builtin: { value: string, label: string, builtIn: true }[],
+ *   custom: { value: string, label: string, builtIn: false }[]
+ * }}
+ */
+export function listLayoutPickerGroups(userLayouts = []) {
+  /** @type {{ value: string, label: string, builtIn: true }[]} */
+  const builtin = [];
+  for (const fam of BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META || []) {
+    if (!fam?.id) continue;
+    builtin.push({
+      value: builtinFamilySelectValue(fam.id),
+      label: String(fam.label || fam.id),
+      builtIn: true
+    });
+  }
+  /** @type {{ value: string, label: string, builtIn: false }[]} */
+  const custom = [];
+  for (const l of userLayouts || []) {
+    if (!l?.id) continue;
+    custom.push({
+      value: `user:${l.id}`,
+      label: String(l.label || l.id),
+      builtIn: false
+    });
+  }
+  custom.sort((a, b) => a.label.localeCompare(b.label));
+  return { builtin, custom };
 }
 
 function upperLetter(s) {
@@ -1027,15 +1112,15 @@ const KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
 export const BUILTIN_KEYBOARD_LAYOUTS = Object.freeze({
   'browsing-right': Object.freeze({
     id: 'browsing-right',
-    label: 'Navigation: right-handed',
-    description: 'Full navigation layout. Mouse: right hand. Shortcuts primarily on the left.',
+    label: 'Browsing: right-handed',
+    description: 'Full browsing layout. Mouse: right hand. Shortcuts primarily on the left.',
     assignments: ASSIGNMENTS_BROWSING_RIGHT,
     keyboardLayout: KEYBOARD_UI_LAYOUT_RIGHT
   }),
   'browsing-left': Object.freeze({
     id: 'browsing-left',
-    label: 'Navigation: left-handed',
-    description: 'Full navigation layout. Mouse: left hand. Shortcuts primarily on the right.',
+    label: 'Browsing: left-handed',
+    description: 'Full browsing layout. Mouse: left hand. Shortcuts primarily on the right.',
     assignments: ASSIGNMENTS_BROWSING_LEFT,
     keyboardLayout: KEYBOARD_UI_LAYOUT_LEFT
   }),
@@ -1063,7 +1148,7 @@ export const BUILTIN_KEYBOARD_LAYOUTS = Object.freeze({
   }),
   'click-history-right': Object.freeze({
     id: 'click-history-right',
-    label: 'Click + History: right-handed',
+    label: 'Navigation: right-handed',
     description: 'Click element, go back, and go forward only.',
     assignments: ASSIGNMENTS_CLICK_HISTORY_RIGHT,
     keyboardLayout: projectKeyboardUiLayout(
@@ -1074,7 +1159,7 @@ export const BUILTIN_KEYBOARD_LAYOUTS = Object.freeze({
   }),
   'click-history-left': Object.freeze({
     id: 'click-history-left',
-    label: 'Click + History: left-handed',
+    label: 'Navigation: left-handed',
     description: 'Click element, go back, and go forward only.',
     assignments: ASSIGNMENTS_CLICK_HISTORY_LEFT,
     keyboardLayout: projectKeyboardUiLayout(

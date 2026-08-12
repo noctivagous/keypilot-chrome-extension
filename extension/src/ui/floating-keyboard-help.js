@@ -28,16 +28,21 @@ import {
 import { Z_INDEX } from '../config/constants.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
 import { getSettings, setSettings, SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS } from '../modules/settings-manager.js';
-import { getKeyboardUiLayoutForLayout } from '../config/keyboard-layouts.js';
+import {
+  builtinFamilySelectValue,
+  getKeyboardUiLayoutForLayout,
+  inferFamilyAndHandednessFromLayoutId,
+  listLayoutPickerGroups,
+  normalizeKeyboardLayoutFamilyId,
+  parseBuiltinFamilySelectValue
+} from '../config/keyboard-layouts.js';
 import { getFunctionDef } from '../config/function-library.js';
 import {
   listUserKeyboardLayouts,
   getUserKeyboardLayoutById,
   listUserMacros,
   listUserActions,
-  upsertUserKeyboardLayout,
-  ensureStockUserLayout1,
-  STOCK_USER_LAYOUT_1_LABEL
+  upsertUserKeyboardLayout
 } from '../modules/keyboard-layout-store.js';
 import { KP_LAYOUT_ITEM_MIME } from './keyboard-layout-config-panel.js';
 import {
@@ -344,9 +349,10 @@ export class FloatingKeyboardHelp {
     } catch { /* ignore */ }
 
     try {
-      if (this._layoutSelectEl) this._layoutSelectEl.disabled = !!next;
+      if (this._layoutSelectEl) this._layoutSelectEl.disabled = false;
     } catch { /* ignore */ }
 
+    this._applyEditModeHatch(next);
     this._syncSaveAndFinishButton(next);
 
     if (this.root && !this.root.hidden) this._render();
@@ -958,6 +964,7 @@ export class FloatingKeyboardHelp {
         boxShadow: NCT_DARK_UI_ICON_BUTTON_OUTLINE
       });
     }
+    if (this._editMode) this._applyEditModeHatch(true, header);
   }
 
   /**
@@ -976,6 +983,7 @@ export class FloatingKeyboardHelp {
       // Fixed key sizes for now (resize/flex-scale temporarily suspended).
       overflow: 'auto'
     });
+    if (this._editMode) this._applyEditModeHatch(true, null, body);
   }
 
   /**
@@ -1107,7 +1115,7 @@ export class FloatingKeyboardHelp {
             color: NCT_DARK_UI_COLORS.fg,
             outline: 'none',
             fontSize: '11px',
-            width: '160px',
+            width: '190px',
             height: '22px',
             cursor: 'pointer'
           });
@@ -1160,6 +1168,7 @@ export class FloatingKeyboardHelp {
           this._ensureCollapseButton();
           this._applyCollapsedLayout();
           this._bindWindowChrome();
+          try { ensureStylesInjected(shadowRoot || existing); } catch { /* ignore */ }
           return;
         }
       }
@@ -1194,7 +1203,7 @@ export class FloatingKeyboardHelp {
       color: NCT_DARK_UI_COLORS.fg,
       outline: 'none',
       fontSize: '11px',
-      width: '160px',
+      width: '190px',
       height: '22px',
       cursor: 'pointer'
     });
@@ -1244,6 +1253,7 @@ export class FloatingKeyboardHelp {
     this._ensureCollapseButton();
     this._applyCollapsedLayout();
     this._bindWindowChrome();
+    try { ensureStylesInjected(shadowRoot || root); } catch { /* ignore */ }
   }
 
   _ensureCollapseButton() {
@@ -1431,9 +1441,46 @@ export class FloatingKeyboardHelp {
   _restoreLayoutTitle() {
     try {
       if (!this._layoutTitleEl || this._editMode) return;
-      const sel = String(this._currentKeyboardLayoutId || 'builtin');
-      const label = sel.startsWith('user:') ? 'Custom layout' : 'Built-in';
-      this._layoutTitleEl.textContent = `Keyboard Reference — ${label}`;
+      this._layoutTitleEl.textContent = 'Keyboard Reference';
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Steel hatch on titlebar + body while editing (matches Keyboard Layout Config).
+   * Applied as a class plus inline background so it wins over compact-titlebar inline chrome.
+   * @param {boolean} on
+   * @param {HTMLElement|null} [header]
+   * @param {HTMLElement|null} [body]
+   */
+  _applyEditModeHatch(on, header = null, body = null) {
+    const hatch = 'repeating-linear-gradient(-45deg, rgba(180, 200, 220, 0.08) 0px, rgba(180, 200, 220, 0.08) 1px, transparent 1px, transparent 7px)';
+    const titlebar = header || this._titlebar;
+    const keyboardBody = body || this._keyboardBody;
+    try {
+      titlebar?.classList.toggle('kp-kb-edit-hatch', !!on);
+      keyboardBody?.classList.toggle('kp-kb-edit-hatch', !!on);
+    } catch { /* ignore */ }
+    try {
+      if (titlebar?.style) {
+        if (on) {
+          titlebar.style.backgroundImage =
+            `${hatch}, linear-gradient(180deg, #646464 0%, #4a4a4a 45%, #383838 100%)`;
+        } else {
+          titlebar.style.background = NCT_DARK_UI_TITLEBAR_GRADIENT;
+        }
+      }
+    } catch { /* ignore */ }
+    try {
+      if (keyboardBody?.style) {
+        if (on) {
+          keyboardBody.style.backgroundColor = '#1a1c20';
+          keyboardBody.style.backgroundImage = hatch;
+        } else {
+          keyboardBody.style.background = 'transparent';
+          keyboardBody.style.backgroundImage = '';
+          keyboardBody.style.backgroundColor = '';
+        }
+      }
     } catch { /* ignore */ }
   }
 
@@ -1505,23 +1552,10 @@ export class FloatingKeyboardHelp {
     try {
       const root = this.shadowRoot || this.root?.ownerDocument || document;
       const css = `
-/* Edit-mode plate: light hatch layered on the keyboard background image stack
-   (NCT dark pro — cool steel lines, low contrast over the tray gradients). */
-.kp-floating-keyboard-help[data-kp-edit-mode="true"] .keyboard-visual.${KEYBINDINGS_UI_ROOT_CLASS} {
-  background-image:
-    repeating-linear-gradient(
-      -45deg,
-      rgba(180, 200, 220, 0.08) 0px,
-      rgba(180, 200, 220, 0.08) 1px,
-      transparent 1px,
-      transparent 7px
-    ),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, transparent 28%),
-    radial-gradient(120% 80% at 50% 0%, rgba(91, 226, 241, 0.07) 0%, transparent 55%),
-    linear-gradient(180deg, #222833 0%, #1a1f28 45%, #13161e 100%);
-}
+/* Edit-mode plate hatch is on .keyboard-visual.kp-kb-edit-hatch (keybindings-ui-shared). */
 /* Same hatch over a lightened titlebar bevel (overrides inline background shorthand). */
-.kp-floating-keyboard-help[data-kp-edit-mode="true"] [data-kp-floating-keyboard-titlebar="true"] {
+:host([data-kp-edit-mode="true"]) [data-kp-floating-keyboard-titlebar="true"],
+:host [data-kp-floating-keyboard-titlebar="true"].kp-kb-edit-hatch {
   background-image:
     repeating-linear-gradient(
       -45deg,
@@ -1532,54 +1566,40 @@ export class FloatingKeyboardHelp {
     ),
     linear-gradient(180deg, #646464 0%, #4a4a4a 45%, #383838 100%) !important;
 }
+:host([data-kp-edit-mode="true"]) [data-kp-floating-keyboard-body="true"],
+:host [data-kp-floating-keyboard-body="true"].kp-kb-edit-hatch {
+  background-color: #1a1c20 !important;
+  background-image:
+    repeating-linear-gradient(
+      -45deg,
+      rgba(180, 200, 220, 0.08) 0px,
+      rgba(180, 200, 220, 0.08) 1px,
+      transparent 1px,
+      transparent 7px
+    ) !important;
+}
 /* Lighten the panel chrome fill while editing. */
-.kp-floating-keyboard-help[data-kp-edit-mode="true"] {
+:host([data-kp-edit-mode="true"]) {
   background-color: #2e2e2e !important;
 }
-.kp-floating-keyboard-help[data-kp-edit-mode="true"] .keyboard-visual.${KEYBINDINGS_UI_ROOT_CLASS} .key {
+:host([data-kp-edit-mode="true"]) .keyboard-visual.${KEYBINDINGS_UI_ROOT_CLASS} .key {
   position: relative;
   cursor: grab;
 }
-.kp-floating-keyboard-help[data-kp-edit-mode="true"] .keyboard-visual.${KEYBINDINGS_UI_ROOT_CLASS} .key[data-kp-edit-readonly="true"] {
+:host([data-kp-edit-mode="true"]) .keyboard-visual.${KEYBINDINGS_UI_ROOT_CLASS} .key[data-kp-edit-readonly="true"] {
   cursor: default;
   opacity: 0.9;
 }
-.kp-floating-keyboard-help[data-kp-edit-mode="true"] .keyboard-visual.${KEYBINDINGS_UI_ROOT_CLASS} .key .key-main {
+:host([data-kp-edit-mode="true"]) .keyboard-visual.${KEYBINDINGS_UI_ROOT_CLASS} .key .key-main {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding-right: 2px;
-}
-.kp-floating-keyboard-help[data-kp-edit-mode="true"] .kp-key-delete {
-  position: absolute;
-  top: 1px;
-  right: 1px;
-  width: 14px;
-  height: 14px;
-  border: none;
-  border-radius: 3px;
-  padding: 0;
-  margin: 0;
-  line-height: 12px;
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-  color: rgba(248,250,252,0.95);
-  background: rgba(220, 50, 50, 0.85);
-  z-index: 2;
-  display: none;
-}
-.kp-floating-keyboard-help[data-kp-edit-mode="true"] .key:hover .kp-key-delete,
-.kp-floating-keyboard-help[data-kp-edit-mode="true"] .key:focus-within .kp-key-delete {
-  display: block;
-}
-.kp-floating-keyboard-help[data-kp-edit-mode="true"] .kp-key-delete:hover {
-  background: rgba(255, 70, 70, 1);
+  padding-right: 16px;
 }
 /* Drop / place hover: use border + box-shadow — base .key sets outline:none !important. */
-.kp-floating-keyboard-help[data-kp-edit-mode="true"] .key.kp-drop-target,
-.kp-floating-keyboard-help[data-kp-edit-mode="true"] .key.kp-place-preview {
+:host([data-kp-edit-mode="true"]) .key.kp-drop-target,
+:host([data-kp-edit-mode="true"]) .key.kp-place-preview {
   z-index: 2;
   border-color: rgba(91, 226, 241, 0.95) !important;
   border-top-color: rgba(180, 245, 255, 1) !important;
@@ -1591,7 +1611,7 @@ export class FloatingKeyboardHelp {
     inset 0 0 0 2px rgba(91, 226, 241, 0.55),
     inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
 }
-      `.trim().replaceAll('.kp-floating-keyboard-help', ':host');
+      `.trim();
       injectChromeStyles(root, { attr: 'data-kp-keyboard-edit-mode-style', css });
     } catch { /* ignore */ }
   }
@@ -1605,6 +1625,8 @@ export class FloatingKeyboardHelp {
 
   /**
    * Shared change handler for the titlebar layout <select>.
+   * In edit mode this switches the layout being edited (same as Config's Layout combo).
+   * Outside edit mode it sets the current/active layout.
    * @param {Event} e
    */
   async _onLayoutSelectChange(e) {
@@ -1619,13 +1641,12 @@ export class FloatingKeyboardHelp {
       || v === LAYOUT_SELECT_DUP_VALUE
     ) {
       // Action item — restore prior layout selection, then open Config.
-      const prev = String(this._currentKeyboardLayoutId || 'builtin');
+      const prev = this._layoutSelectValueForCurrent();
       const known = [...sel.options].some((o) => o && o.value === prev);
-      sel.value = known ? prev : 'builtin';
+      sel.value = known ? prev : builtinFamilySelectValue('browsing');
       try {
         const kp = this._getKeyPilot?.();
         if (v === LAYOUT_SELECT_EDIT_VALUE) {
-          await this._prepareEditLayoutFromSelect(kp || null);
           openKeyboardLayoutConfigurator(kp || null, {});
         } else {
           openKeyboardLayoutConfigurator(kp || null, {
@@ -1636,56 +1657,50 @@ export class FloatingKeyboardHelp {
       } catch { /* ignore */ }
       return;
     }
+    if (this._editMode) {
+      try {
+        const panel = typeof this._getConfigPanel === 'function' ? this._getConfigPanel() : null;
+        if (panel && typeof panel.selectLayoutByValue === 'function') {
+          await panel.selectLayoutByValue(v);
+          return;
+        }
+      } catch { /* ignore */ }
+    }
     try {
-      await setSettings({ currentKeyboardLayoutId: v });
+      const familyId = parseBuiltinFamilySelectValue(v);
+      if (familyId) {
+        await setSettings({
+          currentKeyboardLayoutId: 'builtin',
+          keyboardLayoutFamilyId: familyId
+        });
+      } else {
+        await setSettings({ currentKeyboardLayoutId: v });
+      }
     } catch { /* ignore */ }
   }
 
   /**
-   * When Edit is chosen while Built-in is current, switch to stock "User Layout 1"
-   * (created as a Built-in duplicate if missing) so editing is always on a user layout.
-   * @param {any} kp
+   * Current <select> value for the active layout (builtin family or user id).
+   * While editing, follows the Config panel's selection rather than the live current layout.
+   * @returns {string}
    */
-  async _prepareEditLayoutFromSelect(kp) {
-    const cur = String(this._currentKeyboardLayoutId || 'builtin');
-    if (cur.startsWith('user:')) return;
-
-    const builtinId = String(
-      this.layoutId
-      || kp?._keyboardLayoutId
-      || 'browsing-right'
+  _layoutSelectValueForCurrent() {
+    if (this._editMode && this._editLayoutState) {
+      const st = this._editLayoutState;
+      if (st.mode === 'user' && st.userLayoutId) return `user:${st.userLayoutId}`;
+      try {
+        const inferred = inferFamilyAndHandednessFromLayoutId(
+          st.builtinLayoutId || this.layoutId
+        );
+        return builtinFamilySelectValue(inferred.familyId);
+      } catch { /* ignore */ }
+    }
+    const sel = String(this._currentKeyboardLayoutId || 'builtin');
+    if (sel.startsWith('user:')) return sel;
+    const familyId = normalizeKeyboardLayoutFamilyId(
+      this._getKeyPilot?.()?._settings?.keyboardLayoutFamilyId
     );
-    let layout = null;
-    try {
-      layout = await ensureStockUserLayout1({ builtinLayoutId: builtinId });
-    } catch { /* ignore */ }
-    if (!layout?.id) return;
-
-    const nextId = `user:${layout.id}`;
-    try {
-      await setSettings({ currentKeyboardLayoutId: nextId });
-    } catch { /* ignore */ }
-
-    this._currentKeyboardLayoutId = nextId;
-    this._currentUserLayout = layout;
-    try {
-      if (kp) {
-        kp._currentKeyboardLayoutId = nextId;
-        kp._currentUserLayout = layout;
-        if (kp._settings) kp._settings.currentKeyboardLayoutId = nextId;
-        if (typeof kp.applyLiveUserLayout === 'function') {
-          await kp.applyLiveUserLayout(layout, {
-            setAsCurrent: true,
-            macros: this._currentUserMacros,
-            actions: this._currentUserActions
-          });
-        }
-      }
-    } catch { /* ignore */ }
-
-    try {
-      await this._refreshLayoutSelectOptions();
-    } catch { /* ignore */ }
+    return builtinFamilySelectValue(familyId);
   }
 
   /**
@@ -1707,71 +1722,68 @@ export class FloatingKeyboardHelp {
     const selEl = this._layoutSelectEl;
     if (!selEl) return;
     try {
-      const builtinId = String(
-        this.layoutId
-        || this._getKeyPilot?.()?._keyboardLayoutId
-        || 'browsing-right'
-      );
-      // Stock starter layout — always available under User Layouts.
-      try { await ensureStockUserLayout1({ builtinLayoutId: builtinId }); } catch { /* ignore */ }
-
       const layouts = await listUserKeyboardLayouts();
+      const groups = listLayoutPickerGroups(layouts);
       selEl.innerHTML = '';
 
-      const optBuiltin = document.createElement('option');
-      optBuiltin.value = 'builtin';
-      optBuiltin.textContent = 'Built-in';
-      selEl.appendChild(optBuiltin);
-
-      // Separator, then a non-selectable section label + user layouts.
+      const known = new Set();
+      const appendGroup = (heading, items) => {
+        const hdr = document.createElement('option');
+        hdr.disabled = true;
+        hdr.textContent = heading;
+        selEl.appendChild(hdr);
+        for (const item of items || []) {
+          if (!item?.value) continue;
+          const opt = document.createElement('option');
+          opt.value = item.value;
+          opt.textContent = item.label;
+          selEl.appendChild(opt);
+          known.add(opt.value);
+        }
+      };
+      appendGroup('Built-In', groups.builtin);
+      // Legacy single "Built-in" value still resolves via parseBuiltinFamilySelectValue.
+      known.add('builtin');
       try {
         selEl.appendChild(document.createElement('hr'));
       } catch { /* ignore */ }
+      appendGroup('Custom', groups.custom);
 
-      const userGroup = document.createElement('optgroup');
-      userGroup.label = 'User Layouts';
-      const known = new Set(['builtin']);
-      const sorted = [...(layouts || [])].sort((a, b) => {
-        const aStock = String(a?.label || '') === STOCK_USER_LAYOUT_1_LABEL ? 0 : 1;
-        const bStock = String(b?.label || '') === STOCK_USER_LAYOUT_1_LABEL ? 0 : 1;
-        if (aStock !== bStock) return aStock - bStock;
-        return String(a?.label || a?.id || '').localeCompare(String(b?.label || b?.id || ''));
-      });
-      for (const l of sorted) {
-        if (!l || !l.id) continue;
-        const opt = document.createElement('option');
-        opt.value = `user:${l.id}`;
-        opt.textContent = String(l.label || l.id);
-        userGroup.appendChild(opt);
-        known.add(opt.value);
+      // Action items only outside edit mode — while editing, this select matches Config's Layout combo.
+      if (!this._editMode) {
+        try {
+          selEl.appendChild(document.createElement('hr'));
+        } catch { /* ignore */ }
+        const optEdit = document.createElement('option');
+        optEdit.value = LAYOUT_SELECT_EDIT_VALUE;
+        optEdit.textContent = 'Edit Keyboard Layout…';
+        selEl.appendChild(optEdit);
+        try {
+          selEl.appendChild(document.createElement('hr'));
+        } catch { /* ignore */ }
+        const optNew = document.createElement('option');
+        optNew.value = LAYOUT_SELECT_NEW_VALUE;
+        optNew.textContent = 'New Blank Keyboard Layout';
+        selEl.appendChild(optNew);
+        const optDup = document.createElement('option');
+        optDup.value = LAYOUT_SELECT_DUP_VALUE;
+        optDup.textContent = 'New Duplicate Keyboard Layout';
+        selEl.appendChild(optDup);
       }
-      selEl.appendChild(userGroup);
 
-      // Separator + actions (Chrome/Safari/Firefox support <hr> in <select>).
-      try {
-        selEl.appendChild(document.createElement('hr'));
-      } catch { /* ignore */ }
-      const optEdit = document.createElement('option');
-      optEdit.value = LAYOUT_SELECT_EDIT_VALUE;
-      optEdit.textContent = 'Edit Keyboard Layout…';
-      selEl.appendChild(optEdit);
-      try {
-        selEl.appendChild(document.createElement('hr'));
-      } catch { /* ignore */ }
-      const optNew = document.createElement('option');
-      optNew.value = LAYOUT_SELECT_NEW_VALUE;
-      optNew.textContent = 'New Blank Keyboard Layout';
-      selEl.appendChild(optNew);
-      const optDup = document.createElement('option');
-      optDup.value = LAYOUT_SELECT_DUP_VALUE;
-      optDup.textContent = 'New Duplicate Keyboard Layout';
-      selEl.appendChild(optDup);
-
-      let v = typeof this._currentKeyboardLayoutId === 'string' ? this._currentKeyboardLayoutId : 'builtin';
-      if (!known.has(v)) {
-        v = 'builtin';
-        this._currentKeyboardLayoutId = 'builtin';
-        this._currentUserLayout = null;
+      let v = this._layoutSelectValueForCurrent();
+      if (!known.has(v) && !String(v).startsWith('user:')) {
+        v = builtinFamilySelectValue('browsing');
+        if (!this._editMode) {
+          this._currentKeyboardLayoutId = 'builtin';
+          this._currentUserLayout = null;
+        }
+      } else if (String(v).startsWith('user:') && !known.has(v)) {
+        v = builtinFamilySelectValue('browsing');
+        if (!this._editMode) {
+          this._currentKeyboardLayoutId = 'builtin';
+          this._currentUserLayout = null;
+        }
       }
       selEl.value = v;
     } catch { /* ignore */ }
@@ -1798,14 +1810,13 @@ export class FloatingKeyboardHelp {
     let sel = selRaw;
     this._currentKeyboardLayoutId = sel;
 
-    // Update title to include current layout label (skip if already correct — avoids
-    // titlebar text flash when adopting the early-inject shell after navigation).
+    // Title stays "Keyboard Reference" — the layout name lives in the titlebar select.
     // While typing / text mode is active, keep the "Typing" title instead.
     try {
       if (this._layoutTitleEl) {
         const nextTitle = (this._textModeFilterActive && !this._editMode)
           ? 'Keyboard Reference — Typing'
-          : `Keyboard Reference — ${sel.startsWith('user:') ? 'Custom layout' : 'Built-in'}`;
+          : 'Keyboard Reference';
         if (this._layoutTitleEl.textContent !== nextTitle) {
           this._layoutTitleEl.textContent = nextTitle;
         }
@@ -1860,7 +1871,7 @@ export class FloatingKeyboardHelp {
           if (this._layoutTitleEl) {
             this._layoutTitleEl.textContent = (this._textModeFilterActive && !this._editMode)
               ? 'Keyboard Reference — Typing'
-              : 'Keyboard Reference — Built-in';
+              : 'Keyboard Reference';
           }
         } catch { /* ignore */ }
         try {
@@ -1913,9 +1924,7 @@ export class FloatingKeyboardHelp {
 
     try {
       if (this._layoutTitleEl) {
-        this._layoutTitleEl.textContent = readOnly
-          ? 'Keyboard Reference — Edit (duplicate to edit)'
-          : 'Keyboard Reference — Editing';
+        this._layoutTitleEl.textContent = 'Keyboard Reference';
       }
     } catch { /* ignore */ }
 
@@ -2000,7 +2009,7 @@ export class FloatingKeyboardHelp {
     try { detachKeyPopoverBehavior(container); } catch { /* ignore */ }
     container.innerHTML = '';
     const visual = doc.createElement('div');
-    visual.className = `keyboard-visual ${KEYBINDINGS_UI_ROOT_CLASS}`;
+    visual.className = `keyboard-visual ${KEYBINDINGS_UI_ROOT_CLASS}${editMode ? ' kp-kb-edit-hatch' : ''}`;
     container.appendChild(visual);
 
     const macroLabelById = new Map();
@@ -2178,6 +2187,16 @@ export class FloatingKeyboardHelp {
         del.textContent = '×';
         del.setAttribute('aria-label', `Remove action from ${slotLabel}`);
         del.title = 'Remove';
+        Object.assign(del.style, {
+          position: 'absolute',
+          top: '1px',
+          right: '1px',
+          left: 'auto',
+          bottom: 'auto',
+          width: '14px',
+          height: '14px',
+          zIndex: '8'
+        });
         del.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();

@@ -8,10 +8,13 @@ import {
   KEYBINDINGS_KEYBOARD_LAYOUT,
   KEYBINDINGS_UI_ROOT_CLASS,
   KEYBINDINGS_UI_STYLE_ATTR,
+  KEYBINDINGS_UI_FONT_STYLE_ATTR,
   ensureKeyBackgroundIcon,
   ensureKeyPressOverlay,
   getActionIconDataUri,
-  getKeybindingsUiCss
+  getKeybindingsUiCss,
+  getKeybindingsUiFontFaceCss,
+  preloadKeybindingsUiFonts
 } from './keybindings-ui-shared.js';
 import {
   actionHasModes,
@@ -63,11 +66,24 @@ function getStyleCss() {
 
 /** Ensure KeyPilot keyboard visualization CSS is present in its owning root. */
 export function ensureStylesInjected(root = document) {
+  const fontUrls = getRuntimeFontUrls();
   const css = getStyleCss();
   const attrName = (typeof KEYBINDINGS_UI_STYLE_ATTR === 'string' && KEYBINDINGS_UI_STYLE_ATTR)
     ? KEYBINDINGS_UI_STYLE_ATTR
     : 'data-kp-keybindings-ui-style';
   injectChromeStyles(root, { attr: attrName, css });
+  try {
+    const doc = root && root.nodeType === 9 ? root : (root?.ownerDocument || document);
+    preloadKeybindingsUiFonts(doc, fontUrls);
+    // Register @font-face on the document as well as the shadow tree so Dosis
+    // can start loading before the first Keyboard Reference paint.
+    if (doc && fontUrls) {
+      injectChromeStyles(doc, {
+        attr: KEYBINDINGS_UI_FONT_STYLE_ATTR,
+        css: getKeybindingsUiFontFaceCss(fontUrls)
+      });
+    }
+  } catch { /* ignore */ }
 }
 
 function clearElement(el) {

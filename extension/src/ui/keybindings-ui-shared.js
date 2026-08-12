@@ -11,6 +11,9 @@
 
 export const KEYBINDINGS_UI_STYLE_ATTR = 'data-kp-keybindings-ui-style';
 export const KEYBINDINGS_UI_ROOT_CLASS = 'kp-keybindings-ui';
+/** Document-level @font-face sheet so Dosis starts loading before the first keycap paint. */
+export const KEYBINDINGS_UI_FONT_STYLE_ATTR = 'data-kp-keybindings-fonts';
+export const KEYBINDINGS_UI_FONT_PRELOAD_ATTR = 'data-kp-keybindings-font-preload';
 
 // Used in generated CSS when runtime URLs are not available (e.g. build-time stamping into early-inject.js).
 export const KEYBINDINGS_UI_FONT_PLACEHOLDERS = {
@@ -371,6 +374,104 @@ export function setKeyPressedState(keyEl, pressed, doc) {
 }
 
 /**
+ * @font-face rules for keyboard UI fonts.
+ * `font-display: block` avoids a fallback-font flash on key labels (FOUT from `swap`).
+ * Pair with {@link preloadKeybindingsUiFonts} so the block period is typically zero.
+ *
+ * @param {{ robotech?: string, titillium?: string, cubellan?: string, ezarion?: string, dosis?: string }} [fontUrls]
+ * @returns {string}
+ */
+export function getKeybindingsUiFontFaceCss(fontUrls = {}) {
+  const urlRobotech = fontUrls.robotech || KEYBINDINGS_UI_FONT_PLACEHOLDERS.ROBOTECH;
+  const urlTitillium = fontUrls.titillium || KEYBINDINGS_UI_FONT_PLACEHOLDERS.TITILLIUM;
+  const urlCubellan = fontUrls.cubellan || KEYBINDINGS_UI_FONT_PLACEHOLDERS.CUBELLAN;
+  const urlEzarion = fontUrls.ezarion || KEYBINDINGS_UI_FONT_PLACEHOLDERS.EZARION;
+  const urlDosis = fontUrls.dosis || KEYBINDINGS_UI_FONT_PLACEHOLDERS.DOSIS;
+  return `
+@font-face {
+  font-family: "ROBOTECHGPRegular";
+  src: url("${urlRobotech}") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "TitilliumText";
+  src: url("${urlTitillium}") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Cubellan";
+  src: url("${urlCubellan}") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Ezarion";
+  src: url("${urlEzarion}") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Dosis";
+  src: url("${urlDosis}") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+`.trim();
+}
+
+/**
+ * Start fetching keyboard fonts before the first keycap paint.
+ * Dosis is the key-label face; the others are declared in the same @font-face sheet.
+ *
+ * @param {Document|null|undefined} doc
+ * @param {{ robotech?: string, titillium?: string, cubellan?: string, ezarion?: string, dosis?: string }|null|undefined} fontUrls
+ */
+export function preloadKeybindingsUiFonts(doc, fontUrls) {
+  if (!doc || !fontUrls) return;
+  const head = doc.head || doc.documentElement;
+  if (!head?.appendChild) return;
+  const entries = [
+    { id: 'dosis', href: fontUrls.dosis, type: 'font/ttf' },
+    { id: 'robotech', href: fontUrls.robotech, type: 'font/ttf' },
+    { id: 'titillium', href: fontUrls.titillium, type: 'font/otf' },
+    { id: 'cubellan', href: fontUrls.cubellan, type: 'font/ttf' },
+    { id: 'ezarion', href: fontUrls.ezarion, type: 'font/ttf' }
+  ];
+  for (const { id, href, type } of entries) {
+    if (!href || String(href).includes('__KP_FONT_')) continue;
+    try {
+      if (head.querySelector(`link[${KEYBINDINGS_UI_FONT_PRELOAD_ATTR}="${id}"]`)) continue;
+    } catch { /* ignore */ }
+    try {
+      const link = doc.createElement('link');
+      link.rel = 'preload';
+      link.as = 'font';
+      link.type = type;
+      link.href = href;
+      link.crossOrigin = 'anonymous';
+      link.setAttribute(KEYBINDINGS_UI_FONT_PRELOAD_ATTR, id);
+      head.appendChild(link);
+    } catch { /* ignore */ }
+  }
+  try {
+    if (fontUrls.dosis && !String(fontUrls.dosis).includes('__KP_FONT_') && doc.fonts?.load) {
+      void doc.fonts.load('10px "Dosis"');
+    }
+  } catch { /* ignore */ }
+}
+
+/**
  * Generate the injected CSS used by the keyboard UI (both early + bundled).
  *
  * @param {Object} params
@@ -391,48 +492,17 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
   const urlDosis = (fontUrls && fontUrls.dosis) || KEYBINDINGS_UI_FONT_PLACEHOLDERS.DOSIS;
 
   const keyIconCss = getKeyboardKeyIconCss();
+  const fontFaceCss = getKeybindingsUiFontFaceCss({
+    robotech: urlRobotech,
+    titillium: urlTitillium,
+    cubellan: urlCubellan,
+    ezarion: urlEzarion,
+    dosis: urlDosis
+  });
 
   return `
 /* KeyPilot Keybindings UI (injected) */
-@font-face {
-  font-family: "ROBOTECHGPRegular";
-  src: url("${urlRobotech}") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "TitilliumText";
-  src: url("${urlTitillium}") format("opentype");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Cubellan";
-  src: url("${urlCubellan}") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Ezarion";
-  src: url("${urlEzarion}") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Dosis";
-  src: url("${urlDosis}") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
+${fontFaceCss}
 
 /* Style isolation: all keyboard rules are scoped so host page CSS won't override them */
 .${KEYBINDINGS_UI_ROOT_CLASS} {
@@ -655,6 +725,56 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
   font-weight: 700;
   letter-spacing: 0.03em;
   color: var(--kp-accent, #5be2f1);
+}
+
+/* Edit-mode slot delete: pin to the keycap's upper-right, above the FA glyph. */
+.${KEYBINDINGS_UI_ROOT_CLASS} .key > .kp-key-delete {
+  position: absolute !important;
+  top: 1px !important;
+  right: 1px !important;
+  left: auto !important;
+  bottom: auto !important;
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px !important;
+  min-height: 14px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 3px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  line-height: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  color: rgba(248, 250, 252, 0.95);
+  background: rgba(220, 50, 50, 0.85);
+  z-index: 8;
+  pointer-events: auto;
+}
+.${KEYBINDINGS_UI_ROOT_CLASS} .key:hover > .kp-key-delete,
+.${KEYBINDINGS_UI_ROOT_CLASS} .key:focus-within > .kp-key-delete {
+  display: flex !important;
+}
+.${KEYBINDINGS_UI_ROOT_CLASS} .key > .kp-key-delete:hover {
+  background: rgba(255, 70, 70, 1);
+}
+
+/* Edit-mode plate hatch (same steel lines as Keyboard Layout Config). */
+.keyboard-visual.${KEYBINDINGS_UI_ROOT_CLASS}.kp-kb-edit-hatch {
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      rgba(180, 200, 220, 0.08) 0px,
+      rgba(180, 200, 220, 0.08) 1px,
+      transparent 1px,
+      transparent 7px
+    ),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, transparent 28%),
+    radial-gradient(120% 80% at 50% 0%, rgba(91, 226, 241, 0.07) 0%, transparent 55%),
+    linear-gradient(180deg, #222833 0%, #1a1f28 45%, #13161e 100%) !important;
 }
 
 /* Special chrome labels (Tab/Caps/…) */

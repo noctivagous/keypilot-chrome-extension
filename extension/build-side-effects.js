@@ -9,8 +9,10 @@ import { KEYBINDINGS, Z_INDEX } from './src/config/constants.js';
 import {
   BUILTIN_KEYBOARD_LAYOUT_META,
   DEFAULT_KEYBOARD_LAYOUT_ID,
-  buildKeybindingsForLayout,
-  getKeyboardUiLayoutForLayout
+  SYSTEM_LAYER_ACTION_IDS,
+  buildEffectiveKeybindings,
+  getKeyboardUiLayoutForLayout,
+  inferFamilyAndHandednessFromLayoutId
 } from './src/config/keyboard-layouts.js';
 import {
   KEYBINDINGS_KEYBOARD_LAYOUT,
@@ -413,11 +415,13 @@ export async function runPostBundleTasks({ shouldMinify = false } = {}) {
       keyboardLayoutsById[layoutId] = layout;
       for (const id of collectActionIdsFromLayout(layout)) actionIds.add(id);
     }
-    // Keep legacy/non-layout entries too (used elsewhere / future-proofing).
-    actionIds.add('TOGGLE_KEYBOARD_HELP');
+    // System-layer actions (KB Reference, Settings, Cancel) live outside layout
+    // assignments. Stamp them too so early-inject paints class + letter on first frame.
+    for (const id of SYSTEM_LAYER_ACTION_IDS || []) actionIds.add(id);
 
     for (const layoutId of builtinLayoutIds) {
-      const kb = buildKeybindingsForLayout(layoutId);
+      const { handedness } = inferFamilyAndHandednessFromLayoutId(layoutId);
+      const kb = buildEffectiveKeybindings(layoutId, handedness);
       const picked = {};
       for (const id of actionIds) {
         const p = pickEarlyBindingFields(kb[id]);

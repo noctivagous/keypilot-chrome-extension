@@ -657,6 +657,6 @@ export const FEATURE_FLAGS = {
   ENABLE_DEBUG_PANEL: false, // Enable upper-right debug panel showing performance metrics
   // Interactive HUD for shadow-DOM hover paint (msn.com / archive.org).
   // Shows leaf under pointer, resolved hover/paint targets, auto A/B/C choice,
-  // and lets you force A / B / C. Toggle: Alt+/ (or keyPilot.setShadowRootDebugHud).
+  // and lets you force A / B / C. Toggle: Alt+D (or keyPilot.setShadowRootDebugHud).
   DEBUG_SHADOW_ROOT_HUD: false
 };

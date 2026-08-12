@@ -34,6 +34,8 @@ export const KEYBOARD_LAYOUT_STORE_KEY = 'kp_keyboard_layout_store_v1';
  * @typedef {{
  *   id: string,
  *   label: string,
+ *   // User layouts are never built-in; built-in families live in keyboard-layouts.js.
+ *   builtIn: false,
  *   // Base built-in layoutId this was duplicated from (for future diffing/migrations)
  *   baseBuiltinLayoutId?: string,
  *   // Mapping from "slot label" (e.g. "Q", ";", "[") to assigned item (function/macro)
@@ -271,32 +273,6 @@ export async function listUserKeyboardLayouts() {
   return Object.values(st.layouts || {});
 }
 
-/** Stock starter user layout — editable duplicate of Built-in. */
-export const STOCK_USER_LAYOUT_1_LABEL = 'User Layout 1';
-
-/**
- * Ensure the stock "User Layout 1" exists (a duplicate of the given built-in layout).
- * Does not change the current layout selection.
- *
- * @param {{ builtinLayoutId?: string }} [params]
- * @returns {Promise<UserKeyboardLayout|null>}
- */
-export async function ensureStockUserLayout1({ builtinLayoutId } = {}) {
-  try {
-    const layouts = await listUserKeyboardLayouts();
-    const existing = (layouts || []).find(
-      (l) => l && String(l.label || '') === STOCK_USER_LAYOUT_1_LABEL
-    );
-    if (existing) return existing;
-    return await duplicateBuiltinLayoutToUserLayout({
-      builtinLayoutId: String(builtinLayoutId || ''),
-      label: STOCK_USER_LAYOUT_1_LABEL
-    });
-  } catch {
-    return null;
-  }
-}
-
 /**
  * @param {string} id
  * @returns {Promise<UserKeyboardLayout|null>}
@@ -342,6 +318,7 @@ export async function createEmptyUserKeyboardLayout({ baseBuiltinLayoutId, label
   const layout = {
     id: genId('layout:'),
     label: String(label || 'New Layout'),
+    builtIn: false,
     baseBuiltinLayoutId: baseId,
     slots,
     createdAt: t,
@@ -392,6 +369,7 @@ export async function importUserKeyboardLayout(raw) {
   const layout = {
     id: genId('layout:'),
     label: String(payload.label || 'Imported Layout'),
+    builtIn: false,
     baseBuiltinLayoutId: payload.baseBuiltinLayoutId ? String(payload.baseBuiltinLayoutId) : undefined,
     slots,
     createdAt: t,
@@ -748,6 +726,7 @@ export async function upsertUserKeyboardLayout(layout) {
     ...layout,
     id: String(layout?.id || genId('layout:')),
     label: String(layout?.label || 'Custom Layout'),
+    builtIn: false,
     slots: layout && typeof layout.slots === 'object' ? layout.slots : {},
     createdAt: Number.isFinite(layout?.createdAt) ? layout.createdAt : t,
     updatedAt: t
@@ -840,6 +819,7 @@ export async function duplicateBuiltinLayoutToUserLayout({ builtinLayoutId, labe
   const layout = {
     id: genId('layout:'),
     label: String(label || 'Custom Layout'),
+    builtIn: false,
     baseBuiltinLayoutId: baseId,
     slots,
     createdAt: t,
@@ -875,6 +855,7 @@ export async function duplicateUserKeyboardLayout({ source, label } = {}) {
   const layout = {
     id: genId('layout:'),
     label: String(label || `${String(source.label || 'Layout').trim() || 'Layout'} copy`),
+    builtIn: false,
     baseBuiltinLayoutId: source.baseBuiltinLayoutId
       ? String(source.baseBuiltinLayoutId)
       : undefined,
