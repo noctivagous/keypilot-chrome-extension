@@ -856,9 +856,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if (chrome.bookmarks && typeof chrome.bookmarks.getTree === 'function') {
               const bookmarkTree = await chrome.bookmarks.getTree();
 
-              // Flatten bookmark tree into array of bookmark objects
+              // Flatten bookmark tree into array of bookmark objects.
+              // Chrome's Bookmarks bar is folder id "1"; mark its descendants as toolbar.
               const bookmarks = [];
-              const extractBookmarks = (nodes) => {
+              const isToolbarFolder = (node) =>
+                node?.id === '1' ||
+                String(node?.title || '').toLowerCase() === 'bookmarks bar';
+
+              const extractBookmarks = (nodes, isToolbar) => {
                 for (const node of nodes) {
                   if (node.url) {
                     bookmarks.push({
@@ -866,15 +871,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                       url: node.url,
                       dateAdded: node.dateAdded,
                       id: node.id,
-                      parentId: node.parentId
+                      parentId: node.parentId,
+                      isToolbar: !!isToolbar
                     });
                   }
                   if (node.children) {
-                    extractBookmarks(node.children);
+                    extractBookmarks(node.children, isToolbar);
                   }
                 }
               };
-              extractBookmarks(bookmarkTree);
+
+              const topFolders = bookmarkTree[0]?.children || [];
+              if (topFolders.length) {
+                for (const folder of topFolders) {
+                  extractBookmarks(folder.children || [], isToolbarFolder(folder));
+                }
+              } else {
+                extractBookmarks(bookmarkTree, false);
+              }
 
               sendResponse({
                 type: 'KP_BOOKMARKS_RESPONSE',

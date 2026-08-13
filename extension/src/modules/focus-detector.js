@@ -16,6 +16,7 @@ export class FocusDetector {
     this.textElementObserver = null; // MutationObserver for focused text element
     this.textElementResizeObserver = null; // ResizeObserver for focused text element
     this.documentObserver = null; // MutationObserver for document focus changes
+    this._disconnectObserver = null; // MutationObserver: focused field removed from DOM
     this.rafId = null; // requestAnimationFrame ID for position tracking
 
     // Bound handlers so start/stop can add/remove the same function references.
@@ -115,8 +116,10 @@ export class FocusDetector {
 
     if (leftText) {
       console.debug('Text input blurred:', composed?.tagName || e.target?.tagName, composed?.type || e.target?.type || 'N/A');
+      if (this._clearTextFocusIfDisconnected()) return;
       // Longer delay to allow for focus changes and prevent premature clearing during slider interaction
       setTimeout(() => {
+        if (this._clearTextFocusIfDisconnected()) return;
         const currentlyFocused = this.getDeepActiveElement();
         console.debug('Focus check after blur - currently focused:', currentlyFocused?.tagName, currentlyFocused?.type, currentlyFocused?.id);
         if (!this.isTextInput(currentlyFocused)) {
@@ -135,6 +138,7 @@ export class FocusDetector {
   }
 
   checkCurrentFocus() {
+    if (this._clearTextFocusIfDisconnected()) return;
     const activeElement = this.getDeepActiveElement();
 
     if (this.isTextInput(activeElement)) {
@@ -231,6 +235,7 @@ export class FocusDetector {
     if (!element || element.nodeType !== 1) return false;
 
     try {
+      if (element.isConnected === false) return false;
       // KeyPilot omnibox is a text input, but we do NOT want it to trigger text focus mode.
       // Omnibox is its own overlay/mode, and entering text_focus here breaks its keyboard UX.
       if (element.classList?.contains?.(CSS_CLASSES.OMNIBOX_INPUT)) return false;
@@ -338,11 +343,28 @@ export class FocusDetector {
     return this.currentFocusedElement;
   }
 
+  /**
+   * If the field that put us in text mode was removed (inspector rebuild, SPA
+   * replace, etc.), blur/focusout often never fires — especially on macOS where
+   * clicking Save does not move focus off the input. Exit text mode immediately.
+   * @returns {boolean} true when text mode was cleared
+   */
+  _clearTextFocusIfDisconnected() {
+    const el = this.currentFocusedElement;
+    if (!el) return false;
+    let connected = true;
+    try { connected = el.isConnected !== false; } catch { connected = false; }
+    if (connected) return false;
+    this.clearTextFocus();
+    return true;
+  }
+
   setupTextElementObservers(element) {
     if (!element) return;
 
     // Clean up any existing observers first
     this.cleanupTextElementObservers();
+    this._watchFocusedElementDisconnected(element);
 
     // Store initial position for comparison
     this.lastKnownRect = element.getBoundingClientRect();
@@ -454,8 +476,39 @@ export class FocusDetector {
     // Position polling removed
   }
 
+  /**
+   * Watch ancestors of the focused field so removing it from the tree exits text mode.
+   * @param {Element} element
+   */
+  _watchFocusedElementDisconnected(element) {
+    if (!window.MutationObserver || !element) return;
+    if (this._disconnectObserver) {
+      this._disconnectObserver.disconnect();
+      this._disconnectObserver = null;
+    }
+    let root = null;
+    try { root = element.getRootNode?.() || null; } catch { root = null; }
+    const target = (root === document || (typeof Document !== 'undefined' && root instanceof Document))
+      ? document.documentElement
+      : (root || document.documentElement);
+    if (!target || target.nodeType == null) return;
+
+    this._disconnectObserver = new MutationObserver(() => {
+      this._clearTextFocusIfDisconnected();
+    });
+    try {
+      this._disconnectObserver.observe(target, { childList: true, subtree: true });
+    } catch {
+      this._disconnectObserver = null;
+    }
+  }
 
   cleanupTextElementObservers() {
+    if (this._disconnectObserver) {
+      this._disconnectObserver.disconnect();
+      this._disconnectObserver = null;
+    }
+
     if (this.textElementObserver) {
       this.textElementObserver.disconnect();
       this.textElementObserver = null;

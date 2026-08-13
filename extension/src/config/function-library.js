@@ -85,12 +85,12 @@ import { ACTION_RESULT_DESTINATIONS, buildResultDestinationParameter } from '../
  * explicit allowlist rather than inferred, since "works while typing" is a safety-relevant
  * property, not a default.
  *
- * Empty for now — none of the current catalog entries require a modifier combo. Add ids here
- * when a future Function needs the "Needs modifier" / Bind modifier combo flow.
+ * `TYPE_CHARACTERS` is a custom catalog entry (not in `KEYBINDING_ACTION_DEFS`) and reads this
+ * set on its FunctionDef; built-ins are tagged in `buildBuiltinActionFunctionDefs`.
  * @type {ReadonlySet<string>}
  */
 const TEXT_ACTIVE_BUILTIN_FUNCTION_IDS = new Set([
-  // e.g. 'CLIPBOARD_COPY', 'TYPE_CHARACTERS'
+  'TYPE_CHARACTERS'
 ]);
 
 /**
@@ -261,6 +261,7 @@ const TYPE_CHARACTERS_FUNCTION_DEF = Object.freeze({
   category: TEXT_FUNCTION_CATEGORY,
   keyboardClass: 'key-purple',
   dataSource: 'none',
+  worksWhileTyping: TEXT_ACTIVE_BUILTIN_FUNCTION_IDS.has('TYPE_CHARACTERS'),
   parameters: Object.freeze([
     Object.freeze({
       id: 'text',

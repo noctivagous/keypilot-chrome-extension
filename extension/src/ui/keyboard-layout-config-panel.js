@@ -62,6 +62,7 @@ import {
   listFunctionDefs,
   macroKeyKindFromFunctionId,
   sortFunctionDefsForLibrary,
+  functionWorksWhileTyping,
   summarizeFunctionParameters,
   validateFunctionSlotKey
 } from '../config/function-library.js';
@@ -107,7 +108,12 @@ import {
   NCT_DARK_UI_TITLEBAR_BOX_SHADOW,
   NCT_DARK_UI_TITLEBAR_GRADIENT
 } from './nct-dark-ui.js';
-import { buildChordSlotKey, formatChordSlotKeyLabel } from '../utils/key-chord.js';
+import {
+  buildChordSlotKey,
+  formatChordSlotKeyLabel,
+  isChordSlotKey,
+  parseChordSlotKey
+} from '../utils/key-chord.js';
 import {
   PANEL_POSITION_MARGIN_PX,
   applyPanelPosition,
@@ -147,7 +153,7 @@ const CONFIG_KEY_SIZE_PX = 46;
 const CONFIG_PANEL_WIDTH_PX = 960;
 const CONFIG_INSPECTOR_WIDTH_PX = 280;
 const CONFIG_STYLE_ATTR = 'data-kp-layout-config-panel-style';
-const CONFIG_STYLE_VERSION = 'v17';
+const CONFIG_STYLE_VERSION = 'v18';
 const CONFIG_ICON_SPRITE_ATTR = 'data-kp-layout-config-icons';
 const CONFIG_PLACE_ARROW_STYLE_ATTR = 'data-kp-layout-place-arrow-style';
 const PLACE_ARROW_CSS = `
@@ -534,6 +540,8 @@ export class KeyboardLayoutConfigPanel {
     this._macroKeyDraft = null;
     /** Live keydown capture cleanup for the "Bind modifier combo" control (worksWhileTyping Functions). */
     this._chordCaptureCleanup = null;
+    /** Pending chord modifiers keyed by `type:id`, used until a slot is assigned. */
+    this._pendingChordMods = Object.create(null);
     /** Place mode: click palette → arrow to cursor → click Reference slot */
     this._placeItem = null;
     /** @type {HTMLElement|null} */
@@ -2066,11 +2074,21 @@ export class KeyboardLayoutConfigPanel {
 .kp-layout-config-panel .kp-mk-stroke,
 .kp-layout-config-panel .kp-mk-stroke-row,
 .kp-layout-config-panel .kp-mk-mouse-row,
+.kp-layout-config-panel .kp-cfg-mod-toggles,
 .kp-layout-config-panel .kp-mk-editor-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
+}
+.kp-layout-config-panel .kp-cfg-mod-toggles .kp-cfg-btn {
+  min-width: 52px;
+  justify-content: center;
+}
+.kp-layout-config-panel .kp-cfg-mod-hint {
+  font-size: 10px;
+  line-height: 1.35;
+  color: #8aa0b4;
 }
 .kp-layout-config-panel .kp-mk-key-input {
   width: 72px;
@@ -3864,6 +3882,7 @@ export class KeyboardLayoutConfigPanel {
     host.appendChild(this._dockActions(actions));
 
     if (def?.worksWhileTyping) {
+      host.appendChild(this._renderModifierToggles({ type: 'function', id: functionId }, def));
       host.appendChild(this._renderBindChordButton({ type: 'function', id: functionId }, def));
     }
   }
@@ -4258,6 +4277,10 @@ export class KeyboardLayoutConfigPanel {
     title.textContent = `${def.label} settings`;
     wrap.appendChild(title);
 
+    if (def.worksWhileTyping) {
+      wrap.appendChild(this._renderModifierToggles({ type: 'function', id: instance.id }, def));
+    }
+
     for (const param of def.parameters || []) {
       const row = document.createElement('div');
       row.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
@@ -4332,8 +4355,11 @@ export class KeyboardLayoutConfigPanel {
             await this._kp?.applyLiveUserLayout?.(this._st.userLayout, { actions: this._st.actions });
           }
         } catch { /* ignore */ }
-        this._closeMacroKeyEditor();
-        this._renderRightList();
+        if (saved?.id) {
+          this._inspectorSelection = { type: 'function', id: String(saved.id) };
+        }
+        this._renderInspector();
+        try { this._renderRightList(); } catch { /* ignore */ }
         this._notify(saved ? 'Saved.' : 'Failed to save.', saved ? 'success' : 'error');
       } catch {
         this._notify('Failed to save.', 'error');
@@ -6529,6 +6555,312 @@ export class KeyboardLayoutConfigPanel {
     list.appendChild(wrap);
   }
 
+  /** @param {{ type: string, id: string }} item */
+  _itemKey(item) {
+    return `${item?.type || ''}:${item?.id || ''}`;
+  }
+
+  /**
+   * Bare Function id for a library/inspector item (`functionId`, or the item id when it *is* a Function).
+   * @param {{ type: string, id: string }} item
+   * @returns {string}
+   */
+  _functionIdForItem(item) {
+    if (!item || item.type !== 'function') return '';
+    const id = String(item.id || '');
+    if (getFunctionDef(id)) return id;
+    const inst = (this._st.actions || []).find((a) => a && a.id === id);
+    return inst ? String(inst.functionId || '') : '';
+  }
+
+  /** @param {{ ctrl?: boolean, alt?: boolean, shift?: boolean, meta?: boolean }|null|undefined} mods */
+  _hasAnyChordMod(mods) {
+    return !!(mods && (mods.ctrl || mods.alt || mods.shift || mods.meta));
+  }
+
+  /**
+   * @param {{ type: string, id: string }} item
+   * @returns {string[]}
+   */
+  _findSlotKeysForItem(item) {
+    const slots = this._st.userLayout?.slots && typeof this._st.userLayout.slots === 'object'
+      ? this._st.userLayout.slots
+      : {};
+    const type = String(item?.type || '');
+    const id = String(item?.id || '');
+    const out = [];
+    for (const [key, val] of Object.entries(slots)) {
+      if (val && val.type === type && String(val.id) === id) out.push(key);
+    }
+    return out;
+  }
+
+  /**
+   * Current modifier set for an item: bound chord slot first, else pending inspector toggles.
+   * @param {{ type: string, id: string }} item
+   * @returns {{ ctrl: boolean, alt: boolean, shift: boolean, meta: boolean }}
+   */
+  _getChordModsForItem(item) {
+    for (const slot of this._findSlotKeysForItem(item)) {
+      const chord = parseChordSlotKey(slot);
+      if (chord) {
+        return {
+          ctrl: !!chord.ctrl,
+          alt: !!chord.alt,
+          shift: !!chord.shift,
+          meta: !!chord.meta
+        };
+      }
+    }
+    const pending = this._pendingChordMods?.[this._itemKey(item)];
+    if (pending) {
+      return {
+        ctrl: !!pending.ctrl,
+        alt: !!pending.alt,
+        shift: !!pending.shift,
+        meta: !!pending.meta
+      };
+    }
+    return { ctrl: false, alt: false, shift: false, meta: false };
+  }
+
+  /**
+   * @param {{ type: string, id: string }} item
+   * @param {{ ctrl?: boolean, alt?: boolean, shift?: boolean, meta?: boolean }} mods
+   */
+  _setPendingChordMods(item, mods) {
+    if (!this._pendingChordMods) this._pendingChordMods = Object.create(null);
+    this._pendingChordMods[this._itemKey(item)] = {
+      ctrl: !!mods?.ctrl,
+      alt: !!mods?.alt,
+      shift: !!mods?.shift,
+      meta: !!mods?.meta
+    };
+  }
+
+  /**
+   * @param {{ ctrl?: boolean, alt?: boolean, shift?: boolean, meta?: boolean }} mods
+   * @param {string} [keyToken]
+   */
+  _formatModsPreview(mods, keyToken = 'Key') {
+    const slot = buildChordSlotKey({
+      key: keyToken,
+      ctrl: !!mods?.ctrl,
+      alt: !!mods?.alt,
+      shift: !!mods?.shift,
+      meta: !!mods?.meta
+    });
+    return slot ? formatChordSlotKeyLabel(slot) : '';
+  }
+
+  /**
+   * @param {{ type: string, id: string }} item
+   * @param {HTMLElement} hintEl
+   */
+  _syncModifierHint(item, hintEl) {
+    if (!hintEl) return;
+    const slots = this._findSlotKeysForItem(item).filter((s) => isChordSlotKey(s));
+    if (slots.length) {
+      hintEl.textContent = `Bound as ${slots.map((s) => formatChordSlotKeyLabel(s)).join(', ')}`;
+      return;
+    }
+    const preview = this._formatModsPreview(this._getChordModsForItem(item), 'Key');
+    hintEl.textContent = preview
+      ? `Required while typing. Place on a key to bind as ${preview}.`
+      : 'Required while typing. Turn on at least one modifier, then Place on keyboard.';
+  }
+
+  /**
+   * Inspector control: Ctrl / Alt / Shift / Win as pressed-state toggle buttons.
+   * @param {{ type: string, id: string }} item
+   * @param {import('../config/function-library.js').FunctionDef} def
+   */
+  _renderModifierToggles(item, def) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
+
+    const label = document.createElement('div');
+    label.className = 'kp-mk-field-label';
+    label.textContent = 'Modifiers';
+    wrap.appendChild(label);
+
+    const mods = this._getChordModsForItem(item);
+    const row = document.createElement('div');
+    row.className = 'kp-cfg-mod-toggles';
+    row.setAttribute('role', 'group');
+    row.setAttribute('aria-label', 'Modifier keys');
+
+    const spec = [
+      ['ctrl', 'Ctrl'],
+      ['alt', 'Alt'],
+      ['shift', 'Shift'],
+      ['meta', 'Win']
+    ];
+    /** @type {Record<string, HTMLButtonElement>} */
+    const buttons = {};
+    for (const [id, caption] of spec) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'kp-cfg-btn';
+      btn.textContent = caption;
+      btn.setAttribute('aria-pressed', mods[id] ? 'true' : 'false');
+      btn.title = mods[id] ? `${caption} on — click to turn off` : `${caption} off — click to turn on`;
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const next = { ...mods, [id]: !mods[id] };
+        if (!this._hasAnyChordMod(next)) {
+          this._notify('At least one modifier is required so this can run while typing.', 'error');
+          return;
+        }
+        const bound = this._findSlotKeysForItem(item).length > 0;
+        const ok = await this._rewriteItemSlotsWithMods(item, next, def.id);
+        if (!ok && bound) return;
+        mods.ctrl = !!next.ctrl;
+        mods.alt = !!next.alt;
+        mods.shift = !!next.shift;
+        mods.meta = !!next.meta;
+        this._setPendingChordMods(item, mods);
+        for (const [modId, caption2] of spec) {
+          const b = buttons[modId];
+          if (!b) continue;
+          const on = !!mods[modId];
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+          b.title = on ? `${caption2} on — click to turn off` : `${caption2} off — click to turn on`;
+        }
+        this._syncModifierHint(item, hint);
+        try { this._renderRightList(); } catch { /* ignore */ }
+      }, true);
+      buttons[id] = btn;
+      row.appendChild(btn);
+    }
+    wrap.appendChild(row);
+
+    const hint = document.createElement('div');
+    hint.className = 'kp-cfg-mod-hint';
+    this._syncModifierHint(item, hint);
+    wrap.appendChild(hint);
+    return wrap;
+  }
+
+  /**
+   * When placing a `worksWhileTyping` Function, turn a bare Reference key into a chord slot.
+   * @param {{ type: string, id: string }} item
+   * @param {string} slotLabel
+   * @returns {string}
+   */
+  _resolvePlaceSlotKey(item, slotLabel) {
+    const slot = String(slotLabel || '').trim();
+    if (!slot) return '';
+    if (isChordSlotKey(slot)) return slot;
+    const functionId = this._functionIdForItem(item);
+    if (!functionWorksWhileTyping(functionId)) return slot;
+    const mods = this._getChordModsForItem(item);
+    if (!this._hasAnyChordMod(mods)) {
+      this._notify('Turn on at least one modifier in the Inspector, then place the key.', 'error');
+      return '';
+    }
+    const chord = buildChordSlotKey({
+      key: slot,
+      ctrl: mods.ctrl,
+      alt: mods.alt,
+      shift: mods.shift,
+      meta: mods.meta
+    });
+    if (!chord) {
+      this._notify('Turn on at least one modifier in the Inspector, then place the key.', 'error');
+      return '';
+    }
+    const check = validateFunctionSlotKey(functionId, chord);
+    if (!check.ok) {
+      this._notify(check.reason, 'error');
+      return '';
+    }
+    return chord;
+  }
+
+  /**
+   * Rewrite existing layout slots for `item` to use `mods`. No-op (success) when nothing is bound yet.
+   * @param {{ type: string, id: string }} item
+   * @param {{ ctrl?: boolean, alt?: boolean, shift?: boolean, meta?: boolean }} mods
+   * @param {string} functionId
+   * @returns {Promise<boolean>}
+   */
+  async _rewriteItemSlotsWithMods(item, mods, functionId) {
+    if (!this._hasAnyChordMod(mods)) {
+      this._notify('At least one modifier is required so this can run while typing.', 'error');
+      return false;
+    }
+    this._setPendingChordMods(item, mods);
+    const layoutId = this._st.userLayout?.id;
+    const oldKeys = this._findSlotKeysForItem(item);
+    if (!layoutId || !oldKeys.length) return true;
+
+    /** @type {Array<{ oldKey: string, nextKey: string }>} */
+    const moves = [];
+    for (const oldKey of oldKeys) {
+      const parsed = parseChordSlotKey(oldKey);
+      const keyToken = parsed?.key || String(oldKey);
+      const nextKey = buildChordSlotKey({
+        key: keyToken,
+        ctrl: !!mods.ctrl,
+        alt: !!mods.alt,
+        shift: !!mods.shift,
+        meta: !!mods.meta
+      });
+      if (!nextKey) {
+        this._notify('At least one modifier is required so this can run while typing.', 'error');
+        return false;
+      }
+      const check = validateFunctionSlotKey(functionId, nextKey);
+      if (!check.ok) {
+        this._notify(check.reason, 'error');
+        return false;
+      }
+      if (nextKey !== oldKey) moves.push({ oldKey, nextKey });
+    }
+    if (!moves.length) return true;
+
+    const slots = this._st.userLayout?.slots && typeof this._st.userLayout.slots === 'object'
+      ? this._st.userLayout.slots
+      : {};
+    for (const { nextKey } of moves) {
+      const occupant = slots[nextKey];
+      if (occupant && !(occupant.type === item.type && String(occupant.id) === String(item.id))) {
+        this._notify(`Already bound: ${formatChordSlotKeyLabel(nextKey)}.`, 'error');
+        return false;
+      }
+    }
+
+    try {
+      for (const { oldKey, nextKey } of moves) {
+        const assigned = await setUserKeyboardLayoutSlot(layoutId, nextKey, {
+          type: item.type,
+          id: item.id
+        });
+        if (!assigned.ok) {
+          this._notify(assigned.reason || 'Could not bind key.', 'error');
+          return false;
+        }
+        this._st.userLayout = assigned.layout;
+        const cleared = await setUserKeyboardLayoutSlot(layoutId, oldKey, null);
+        if (cleared.ok) this._st.userLayout = cleared.layout;
+      }
+      this.syncUserLayout(this._st.userLayout);
+      this._emitChange();
+      try {
+        await this._kp?.applyLiveUserLayout?.(this._st.userLayout, {
+          macros: this._st.macros,
+          actions: this._st.actions
+        });
+      } catch { /* ignore */ }
+      return true;
+    } catch {
+      this._notify('Failed to update modifiers.', 'error');
+      return false;
+    }
+  }
+
   /**
    * A "Needs modifier" badge + "Bind modifier combo" button, appended to a placeable item for any
    * `worksWhileTyping` Function/instance — see {@link _captureAndAssignChord}.
@@ -6590,13 +6922,31 @@ export class KeyboardLayoutConfigPanel {
       this._cancelPlaceMode();
       return;
     }
+    const functionId = this._functionIdForItem(item);
+    if (functionWorksWhileTyping(functionId)
+      && !this._hasAnyChordMod(this._getChordModsForItem(item))) {
+      const def = getFunctionDef(functionId);
+      this._notify(
+        `"${def?.label || 'This action'}" must use a modifier so it can run while typing. Turn one on in the Inspector.`,
+        'error'
+      );
+      if (!this._inspectorSelection
+        || this._inspectorSelection.type !== item.type
+        || this._inspectorSelection.id !== item.id) {
+        this._inspectItem(item);
+      }
+      return;
+    }
     this._cancelPlaceMode();
     this._placeItem = { type: String(item.type), id: String(item.id) };
     this._placeSourceEl = sourceEl || null;
     this._ensurePlaceArrow();
     this._bindPlacePointer();
     this._renderRightList();
-    this._setPlaceHint('Place mode — click a Keyboard Reference key (Esc to cancel).');
+    const placeHint = functionWorksWhileTyping(functionId)
+      ? `Place mode — click a Keyboard Reference key (binds as ${this._formatModsPreview(this._getChordModsForItem(item), 'Key')}; Esc to cancel).`
+      : 'Place mode — click a Keyboard Reference key (Esc to cancel).';
+    this._setPlaceHint(placeHint);
 
     try {
       this._kp?.floatingKeyboardHelp?.setPlaceTargeting?.({
@@ -6791,8 +7141,10 @@ export class KeyboardLayoutConfigPanel {
    * @param {string} slotLabel
    */
   async _placeOnSlot(slotLabel) {
-    const slot = String(slotLabel || '').trim().toUpperCase();
+    let slot = String(slotLabel || '').trim().toUpperCase();
     if (this._placeItem && slot) {
+      slot = this._resolvePlaceSlotKey(this._placeItem, slot);
+      if (!slot) return;
       await this._assignSlotKey(slot, this._placeItem);
     }
     this._cancelPlaceMode();
@@ -6871,8 +7223,7 @@ export class KeyboardLayoutConfigPanel {
    * Listen for the next keydown and, if it has a modifier held, bind `item` to the resulting
    * chord slot key — used for `worksWhileTyping` Functions that must run while a text field is
    * focused. The Keyboard Reference's click-to-place flow only ever targets bare physical keys.
-   * See utils/key-chord.js. (No current catalog entries set `worksWhileTyping`; this remains for
-   * future Functions.)
+   * See utils/key-chord.js.
    * @param {{ type: string, id: string }} item
    * @param {string} functionId Used only for the `validateFunctionSlotKey` check.
    * @param {HTMLButtonElement} btn
@@ -6911,8 +7262,19 @@ export class KeyboardLayoutConfigPanel {
         this._notify(check.reason, 'error');
         return;
       }
+      this._setPendingChordMods(item, {
+        ctrl: !!ev.ctrlKey,
+        alt: !!ev.altKey,
+        shift: !!ev.shiftKey,
+        meta: !!ev.metaKey
+      });
       await this._assignSlotKey(slotKey, item);
       this._notify(`Bound to ${formatChordSlotKeyLabel(slotKey)}.`, 'success');
+      if (this._inspectorSelection
+        && this._inspectorSelection.type === item.type
+        && this._inspectorSelection.id === item.id) {
+        try { this._renderInspector(); } catch { /* ignore */ }
+      }
     };
 
     document.addEventListener('keydown', onKeyDown, { capture: true, once: true });

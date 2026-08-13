@@ -91,6 +91,10 @@ export function isTypingContext(target, opts = {}) {
   const node = /** @type {HTMLElement} */ (el);
 
   try {
+    if (node.isConnected === false) return false;
+  } catch { /* ignore */ }
+
+  try {
     if (node.isContentEditable) return true;
   } catch { /* ignore */ }
 

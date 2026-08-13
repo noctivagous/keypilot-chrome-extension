@@ -18,7 +18,7 @@ import {
   LAUNCHER_CATALOG_CATEGORY_KEYS,
   LAUNCHER_SITE_CATALOG
 } from '../config/launcher-sites.js';
-import { createPreviewOpenActionButtons } from '../ui/preview-open-actions.js';
+import { createPreviewOpenActionButtons, createOutlineIcon } from '../ui/preview-open-actions.js';
 import {
   addToLaunchDeck,
   composeLaunchDeck,
@@ -41,6 +41,69 @@ import {
   NCT_DARK_UI_COLORS
 } from '../ui/nct-dark-ui.js';
 import { ensureOpenChromeShadow, injectChromeStyles } from '../ui/kp-chrome-shadow.js';
+import { storageGetValue, storageSetValue } from '../utils/storage.js';
+
+const LAUNCHER_NAV_STATE_KEY = 'kpLauncherNavState_v1';
+
+/** 24×24 outline paths for left-rail category tabs (stroke via createOutlineIcon). */
+const LAUNCHER_TAB_ICONS = {
+  launchDeck: [
+    { attrs: { d: 'M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z' } },
+    { attrs: { d: 'M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z' } },
+    { attrs: { d: 'M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0' } },
+    { attrs: { d: 'M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5' } }
+  ],
+  bookmarks: [
+    { attrs: { d: 'M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z' } }
+  ],
+  history: [
+    { tag: 'circle', attrs: { cx: '12', cy: '12', r: '10' } },
+    { attrs: { d: 'M12 6v6l4 2' } }
+  ],
+  social: [
+    { attrs: { d: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2' } },
+    { tag: 'circle', attrs: { cx: '9', cy: '7', r: '4' } },
+    { attrs: { d: 'M22 21v-2a4 4 0 0 0-3-3.87' } },
+    { attrs: { d: 'M16 3.13a4 4 0 0 1 0 7.75' } }
+  ],
+  news: [
+    { attrs: { d: 'M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2' } },
+    { attrs: { d: 'M18 14h-8' } },
+    { attrs: { d: 'M15 18h-5' } },
+    { attrs: { d: 'M10 6h8v4h-8V6z' } }
+  ],
+  productivity: [
+    { attrs: { d: 'M13 2L3 14h9l-1 8 10-12h-9l1-8z' } }
+  ],
+  videos: [
+    { tag: 'rect', attrs: { x: '2', y: '6', width: '14', height: '12', rx: '2' } },
+    { attrs: { d: 'm16 10 6-3v10l-6-3z' } }
+  ],
+  entertainment: [
+    { attrs: { d: 'M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z' } },
+    { attrs: { d: 'm6.2 5.3 3.1 3.9' } },
+    { attrs: { d: 'm12.4 3.4 3.1 4' } },
+    { attrs: { d: 'M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z' } }
+  ],
+  shopping: [
+    { attrs: { d: 'M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z' } },
+    { attrs: { d: 'M3 6h18' } },
+    { attrs: { d: 'M16 10a4 4 0 0 1-8 0' } }
+  ],
+  ai: [
+    { attrs: { d: 'M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z' } },
+    { attrs: { d: 'M19 14l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2z' } }
+  ],
+  archive: [
+    { tag: 'rect', attrs: { x: '2', y: '3', width: '20', height: '5', rx: '1' } },
+    { attrs: { d: 'M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8' } },
+    { attrs: { d: 'M10 12h4' } }
+  ],
+  searches: [
+    { tag: 'circle', attrs: { cx: '11', cy: '11', r: '7' } },
+    { attrs: { d: 'm20 20-3.5-3.5' } }
+  ]
+};
 
 export class LauncherPopover {
   constructor(keypilot) {
@@ -51,7 +114,7 @@ export class LauncherPopover {
     this._tabListContainer = null;
     this._gridContainer = null;
     this._searchInput = null;
-    this._currentCategory = 'bookmarks';
+    this._currentCategory = 'launchDeck';
     this._categorySubTabs = {}; // Store per-category sub-tab selection
     /** @type {Record<string, string|null>} Selected Sites URL filter under Favorites/History. */
     this._categorySiteFilters = Object.create(null);
@@ -62,7 +125,7 @@ export class LauncherPopover {
     /** Bumps on every show/hide so in-flight async loads can abort cleanly. */
     this._openGen = 0;
     this._searchQuery = '';
-    this._categoryOrder = ['bookmarks', 'history', 'social', 'news', 'productivity', 'videos', 'entertainment', 'shopping', 'ai', 'archive', 'searches'];
+    this._categoryOrder = ['launchDeck', 'bookmarks', 'history', 'social', 'news', 'productivity', 'videos', 'entertainment', 'shopping', 'ai', 'archive', 'searches'];
     this._showDefaultSites = true; // Checkbox: show Launch Deck
     /** @type {import('../utils/launch-deck.js').LaunchDeckState} */
     this._launchDeckState = Object.create(null);
@@ -112,9 +175,10 @@ export class LauncherPopover {
     this._pageResultsLoadTimeout = null;
 
     // Define available sub-tabs for each category (extensible for future types)
-    // Order matters: Launch Deck → Favorites → History → Search (virtual results tab).
+    // Order matters: Launch Deck / Favorites → History → Search (virtual results tab).
     this._categorySubTabConfig = {
-      bookmarks: ['sites', 'favorites', 'history', 'search'],
+      launchDeck: ['favorites', 'history', 'search'],
+      bookmarks: ['favorites', 'history', 'search'],
       history: ['favorites', 'history', 'search'],
       social: ['sites', 'favorites', 'history', 'search'],
       news: ['sites', 'favorites', 'history', 'search'],
@@ -165,8 +229,10 @@ export class LauncherPopover {
     this._cachedRecentHistory = null;
     this._launchDeckEditMode = false;
 
-    // Load Launch Deck state (migrates legacy hide list), then paint shell.
+    // Load Launch Deck state (migrates legacy hide list) and last tab/subtab.
     await this._loadLaunchDeckState();
+    if (!this._stillOpen(gen)) return;
+    await this._loadNavState();
     if (!this._stillOpen(gen)) return;
     this._initCategoriesWithDefaults();
     this._buildUI();
@@ -208,6 +274,7 @@ export class LauncherPopover {
     this._isOpen = false;
     // Invalidate any in-flight show() / history loads.
     this._openGen++;
+    void this._persistNavState();
     this._launchDeckEditMode = false;
     this._closeAddSitePicker();
 
@@ -339,22 +406,24 @@ export class LauncherPopover {
     const emptyLists = () => ({ sites: [], history: [], favorites: [] });
 
     this._categories = {
+      launchDeck: {
+        label: 'Launch Deck',
+        description: 'Toolbar bookmarks and your most visited sites',
+        ...emptyLists()
+      },
       bookmarks: {
         label: 'Bookmarks',
         description: 'Your saved bookmarks and frequently visited sites',
-        icon: '📑',
         ...emptyLists()
       },
       history: {
         label: 'Recent',
         description: 'Sites you have visited most recently',
-        icon: '🕐',
         ...emptyLists()
       },
       social: {
         label: 'Social Media',
         description: 'Stay connected across social networks',
-        icon: '💬',
         sites: [],
         history: [],
         favorites: []
@@ -362,7 +431,6 @@ export class LauncherPopover {
       news: {
         label: 'News',
         description: 'Headlines and reporting from major outlets',
-        icon: '📰',
         sites: [],
         history: [],
         favorites: []
@@ -370,7 +438,6 @@ export class LauncherPopover {
       productivity: {
         label: 'Productivity',
         description: 'Mail, docs, calendars, and work tools',
-        icon: '⚡',
         sites: [],
         history: [],
         favorites: []
@@ -378,7 +445,6 @@ export class LauncherPopover {
       videos: {
         label: 'Videos',
         description: 'Watch and search video sites',
-        icon: '📹',
         sites: [],
         history: [],
         favorites: []
@@ -386,7 +452,6 @@ export class LauncherPopover {
       entertainment: {
         label: 'Entertainment',
         description: 'Streaming and entertainment destinations',
-        icon: '🎬',
         sites: [],
         history: [],
         favorites: []
@@ -394,7 +459,6 @@ export class LauncherPopover {
       shopping: {
         label: 'Shopping',
         description: 'Stores and marketplaces',
-        icon: '🛒',
         sites: [],
         history: [],
         favorites: []
@@ -402,7 +466,6 @@ export class LauncherPopover {
       ai: {
         label: 'AI',
         description: 'Chatbots and AI assistants',
-        icon: '🤖',
         sites: [],
         history: [],
         favorites: []
@@ -410,7 +473,6 @@ export class LauncherPopover {
       archive: {
         label: 'Internet Archive',
         description: 'Search and browse the Internet Archive library',
-        icon: '📚',
         sites: [],
         history: [],
         favorites: []
@@ -418,7 +480,6 @@ export class LauncherPopover {
       searches: {
         label: 'Searches',
         description: 'Search engines and recent web searches',
-        icon: '🔍',
         sites: [],
         history: [],
         favorites: []
@@ -466,14 +527,18 @@ export class LauncherPopover {
 
     for (const categoryKey in this._categories) {
       if (onlyKeys && !onlyKeys.has(categoryKey)) continue;
-      if (!force && this._categorySubTabs[categoryKey]) continue;
 
       const subTabConfig = this._categorySubTabConfig[categoryKey] || ['favorites', 'history'];
+      const current = this._categorySubTabs[categoryKey];
+      if (!force && subTabConfig.includes(current)) continue;
+
       const sitesCount = this._categories[categoryKey].sites?.length || 0;
       const historyCount = this._categories[categoryKey].history?.length || 0;
       const favoritesCount = this._categories[categoryKey].favorites?.length || 0;
 
-      if (sitesCount > 0 && subTabConfig.includes('sites')) {
+      if (categoryKey === 'launchDeck' && subTabConfig.includes('favorites')) {
+        this._categorySubTabs[categoryKey] = 'favorites';
+      } else if (sitesCount > 0 && subTabConfig.includes('sites')) {
         this._categorySubTabs[categoryKey] = 'sites';
       } else if (favoritesCount > 0 && subTabConfig.includes('favorites')) {
         this._categorySubTabs[categoryKey] = 'favorites';
@@ -488,6 +553,63 @@ export class LauncherPopover {
           : (subTabConfig.find((t) => t !== 'search') || subTabConfig[0]);
       }
     }
+  }
+
+  /**
+   * Keep the stored sub-tab valid for a category's current config.
+   * @param {string} categoryKey
+   */
+  _ensureValidSubTab(categoryKey) {
+    const cfg = this._categorySubTabConfig[categoryKey] || ['favorites', 'history', 'search'];
+    const current = this._categorySubTabs[categoryKey];
+    if (cfg.includes(current)) return;
+    if (categoryKey === 'launchDeck' && cfg.includes('favorites')) {
+      this._categorySubTabs[categoryKey] = 'favorites';
+      return;
+    }
+    this._categorySubTabs[categoryKey] = cfg.find((t) => t !== 'search') || cfg[0];
+  }
+
+  /**
+   * Restore last selected category + sub-tabs. Launch Deck is the default
+   * until the user has chosen another tab.
+   */
+  async _loadNavState() {
+    try {
+      const raw = await storageGetValue(LAUNCHER_NAV_STATE_KEY, null);
+      const category =
+        raw && typeof raw.category === 'string' && this._categoryOrder.includes(raw.category)
+          ? raw.category
+          : 'launchDeck';
+      this._currentCategory = category;
+
+      if (raw && raw.subTabs && typeof raw.subTabs === 'object') {
+        for (const [key, value] of Object.entries(raw.subTabs)) {
+          const cfg = this._categorySubTabConfig[key];
+          if (cfg && cfg.includes(value)) {
+            this._categorySubTabs[key] = value;
+          }
+        }
+      }
+      this._ensureValidSubTab(this._currentCategory);
+    } catch (err) {
+      console.warn('[LauncherPopover] Failed to load launcher nav state:', err);
+      this._currentCategory = 'launchDeck';
+    }
+  }
+
+  /**
+   * Persist the active category and per-category sub-tab so the next open
+   * returns to the same place.
+   */
+  _persistNavState() {
+    const payload = {
+      category: this._currentCategory,
+      subTabs: { ...this._categorySubTabs }
+    };
+    void storageSetValue(LAUNCHER_NAV_STATE_KEY, payload).catch((err) => {
+      console.warn('[LauncherPopover] Failed to persist launcher nav state:', err);
+    });
   }
 
   /**
@@ -508,11 +630,13 @@ export class LauncherPopover {
       this._cachedTopSites = topSites;
       this._cachedRecentHistory = recentHistory;
 
-      // Bookmarks: Launch Deck = top 50 most-visited bookmarks; Favorites = all;
-      // History = top sites / recent visits.
-      this._categories.bookmarks.sites = this._showDefaultSites
-        ? this._buildMostVisitedBookmarkedSites(bookmarks, recentHistory, 50)
-        : [];
+      // Launch Deck: toolbar bookmarks + most visited sites.
+      this._categories.launchDeck.sites = [];
+      this._categories.launchDeck.favorites = this._filterToolbarBookmarks(bookmarks);
+      this._categories.launchDeck.history = topSites;
+
+      // Bookmarks: Favorites = all; History = top sites / recent visits.
+      this._categories.bookmarks.sites = [];
       this._categories.bookmarks.favorites = bookmarks;
       this._categories.bookmarks.history = topSites;
 
@@ -539,15 +663,15 @@ export class LauncherPopover {
       }
 
       // Shared lists that don't need Sites-domain history fetches.
+      this._historyLoaded.launchDeck = true;
       this._historyLoaded.bookmarks = true;
       this._historyLoaded.history = true;
       // searches + theme categories: history loaded lazily via `_ensureCategoryHistory`
 
-      // Re-pick defaults for shared categories now that history rows exist.
-      // Theme categories keep Sites as default when present; only refresh favorites lists.
+      // Fill missing sub-tab defaults now that shared lists exist.
+      // Do not force — restored / user-chosen tab+subtab must stick.
       this._initDefaultSubTabs({
-        force: true,
-        onlyKeys: ['bookmarks', 'history', 'searches']
+        onlyKeys: ['launchDeck', 'bookmarks', 'history', 'searches']
       });
       try { this._updateSubTabsUI?.(); } catch { /* ignore */ }
       try { this._updateSubTabStyles?.(); } catch { /* ignore */ }
@@ -635,15 +759,6 @@ export class LauncherPopover {
       this._closeAddSitePicker();
     }
     this._recomposeCatalogDecks();
-    if (!this._showDefaultSites && this._categories.bookmarks) {
-      this._categories.bookmarks.sites = [];
-    } else if (this._showDefaultSites && this._cachedBookmarks && this._cachedRecentHistory) {
-      this._categories.bookmarks.sites = this._buildMostVisitedBookmarkedSites(
-        this._cachedBookmarks,
-        this._cachedRecentHistory,
-        50
-      );
-    }
   }
 
   /**
@@ -796,6 +911,19 @@ export class LauncherPopover {
       try { this._addSitePicker.remove(); } catch { /* ignore */ }
     }
     this._addSitePicker = null;
+  }
+
+  /**
+   * Bookmarks that live on Chrome's bookmarks bar (toolbar), including
+   * URLs nested in folders on the bar.
+   * @param {Array<{url?: string, isToolbar?: boolean, parentId?: string}>} bookmarks
+   * @returns {Array}
+   */
+  _filterToolbarBookmarks(bookmarks) {
+    if (!Array.isArray(bookmarks) || !bookmarks.length) return [];
+    return bookmarks.filter((b) =>
+      !!(b?.url && (b.isToolbar === true || b.parentId === '1'))
+    );
   }
 
   /**
@@ -1385,9 +1513,16 @@ export class LauncherPopover {
     const brand = doc.createElement('div');
     brand.className = 'kp-launcher-brand';
     brand.style.cssText = `
-      padding: 20px 16px 16px;
+      box-sizing: border-box;
+      height: 48px;
+      min-height: 48px;
+      max-height: 48px;
+      padding: 6px 16px;
       background: ${NCT_DARK_UI_TITLEBAR_GRADIENT};
       border-bottom: ${NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM};
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
       flex-shrink: 0;
     `;
 
@@ -1396,8 +1531,9 @@ export class LauncherPopover {
     brandTitle.textContent = 'Launcher';
     brandTitle.style.cssText = `
       margin: 0;
-      font-size: 22px;
+      font-size: 14px;
       font-weight: 600;
+      line-height: 1.2;
       color: #fff;
     `;
 
@@ -1405,9 +1541,9 @@ export class LauncherPopover {
     brandSubtitle.className = 'kp-launcher-subtitle';
     brandSubtitle.textContent = 'Quick access to your favorite sites';
     brandSubtitle.style.cssText = `
-      margin: 6px 0 0 0;
-      font-size: 12px;
-      line-height: 1.35;
+      margin: 2px 0 0 0;
+      font-size: 11px;
+      line-height: 1.2;
       color: #888;
     `;
 
@@ -1492,6 +1628,7 @@ export class LauncherPopover {
         else if (hist > 0 && cfg.includes('history')) this._categorySubTabs[cat] = 'history';
         else this._categorySubTabs[cat] = cfg.find((t) => t !== 'sites' && t !== 'search') || 'history';
       }
+      this._persistNavState();
       this._updateTabCounts();
       this._updateSubTabsUI();
       this._updateSubTabStyles();
@@ -1521,12 +1658,17 @@ export class LauncherPopover {
     const header = doc.createElement('div');
     header.className = 'kp-launcher-header';
     header.style.cssText = `
-      padding: 20px 24px;
-      border-bottom: 1px solid #333;
-      background: #0f0f0f;
+      box-sizing: border-box;
+      height: 48px;
+      min-height: 48px;
+      max-height: 48px;
+      padding: 6px 16px;
+      border-bottom: ${NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM};
+      background: ${NCT_DARK_UI_TITLEBAR_GRADIENT};
       display: flex;
       align-items: center;
-      gap: 24px;
+      gap: 16px;
+      flex-shrink: 0;
     `;
 
     const titleBlock = doc.createElement('div');
@@ -1534,22 +1676,27 @@ export class LauncherPopover {
     titleBlock.style.cssText = `
       flex: 0 1 auto;
       min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     `;
 
     this._headerTitle = doc.createElement('h2');
     this._headerTitle.className = 'kp-launcher-category-title';
     this._headerTitle.style.cssText = `
       margin: 0;
-      font-size: 24px;
+      font-size: 14px;
       font-weight: 600;
+      line-height: 1.2;
       color: #fff;
     `;
 
     this._headerDescription = doc.createElement('p');
     this._headerDescription.className = 'kp-launcher-category-description';
     this._headerDescription.style.cssText = `
-      margin: 4px 0 0 0;
-      font-size: 14px;
+      margin: 2px 0 0 0;
+      font-size: 11px;
+      line-height: 1.2;
       color: #888;
     `;
 
@@ -1712,7 +1859,7 @@ export class LauncherPopover {
       border-bottom: ${NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM};
       background: ${NCT_DARK_UI_TITLEBAR_GRADIENT};
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-start;
       align-items: center;
       gap: 8px;
     `;
@@ -1743,12 +1890,12 @@ export class LauncherPopover {
       }
     });
 
-    // Rightward collapse control (preview slides in from the right).
+    // Hide-pane control (preview slides in from the right; this tucks it back).
     const previewCloseBtn = doc.createElement('button');
     previewCloseBtn.type = 'button';
     previewCloseBtn.className = 'kp-launcher-preview-close';
-    previewCloseBtn.title = 'Collapse preview';
-    previewCloseBtn.setAttribute('aria-label', 'Collapse preview');
+    previewCloseBtn.title = 'Hide preview pane';
+    previewCloseBtn.setAttribute('aria-label', 'Hide preview pane');
     previewCloseBtn.style.cssText = `
       display: inline-flex;
       align-items: center;
@@ -1763,27 +1910,38 @@ export class LauncherPopover {
       color: ${NCT_DARK_UI_COLORS.fgMute};
       cursor: pointer;
       padding: 0;
-      width: 26px;
-      height: 26px;
+      width: 28px;
+      height: 28px;
       border-radius: ${NCT_DARK_UI_BTN_RADIUS};
       flex-shrink: 0;
       transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
     `;
-    // Outline chevron pointing right (collapse panel toward the right edge).
+    // Panel with a right rail and an arrow sliding into it.
     const collapseIcon = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
     collapseIcon.setAttribute('viewBox', '0 0 24 24');
-    collapseIcon.setAttribute('width', '16');
-    collapseIcon.setAttribute('height', '16');
+    collapseIcon.setAttribute('width', '18');
+    collapseIcon.setAttribute('height', '18');
     collapseIcon.setAttribute('aria-hidden', 'true');
     collapseIcon.style.cssText = 'display: block; pointer-events: none;';
-    const collapsePath = doc.createElementNS('http://www.w3.org/2000/svg', 'path');
-    collapsePath.setAttribute('d', 'M9 6l6 6-6 6');
-    collapsePath.setAttribute('fill', 'none');
-    collapsePath.setAttribute('stroke', 'currentColor');
-    collapsePath.setAttribute('stroke-width', '2');
-    collapsePath.setAttribute('stroke-linecap', 'round');
-    collapsePath.setAttribute('stroke-linejoin', 'round');
-    collapseIcon.appendChild(collapsePath);
+    const stroke = {
+      fill: 'none',
+      stroke: 'currentColor',
+      'stroke-width': '1.75',
+      'stroke-linecap': 'round',
+      'stroke-linejoin': 'round'
+    };
+    const addSvg = (name, attrs) => {
+      const el = doc.createElementNS('http://www.w3.org/2000/svg', name);
+      for (const [k, v] of Object.entries({ ...stroke, ...attrs })) {
+        el.setAttribute(k, v);
+      }
+      collapseIcon.appendChild(el);
+      return el;
+    };
+    addSvg('rect', { x: '3', y: '4', width: '18', height: '16', rx: '2', 'stroke-width': '1.75' });
+    addSvg('path', { d: 'M16 4v16' });
+    addSvg('path', { d: 'M7 12h6' });
+    addSvg('path', { d: 'M10.5 9L13.5 12 10.5 15' });
     previewCloseBtn.appendChild(collapseIcon);
 
     previewCloseBtn.addEventListener('click', () => {
@@ -1802,9 +1960,9 @@ export class LauncherPopover {
       previewCloseBtn.style.borderColor = 'transparent';
     });
 
+    previewHeader.appendChild(previewCloseBtn);
     previewHeader.appendChild(previewTitle);
     previewHeader.appendChild(previewOpenActions);
-    previewHeader.appendChild(previewCloseBtn);
 
     // Preview iframe
     this._previewIframe = doc.createElement('iframe');
@@ -1973,6 +2131,7 @@ export class LauncherPopover {
     this._updateSubTabStyles();
     this._renderCategory(this._currentCategory);
     this._updateTabCounts();
+    this._persistNavState();
     if (focus && this._searchInput) {
       try { this._searchInput.focus(); } catch { /* ignore */ }
     }
@@ -2030,9 +2189,7 @@ export class LauncherPopover {
       box-sizing: border-box;
     `;
 
-    const icon = doc.createElement('span');
-    icon.textContent = category.icon;
-    icon.style.fontSize = '18px';
+    const icon = this._createTabIcon(doc, categoryKey);
 
     const label = doc.createElement('span');
     label.className = 'kp-launcher-tab-label';
@@ -2053,15 +2210,7 @@ export class LauncherPopover {
     tab.appendChild(count);
 
     tab.addEventListener('click', () => {
-      this._currentCategory = categoryKey;
-      this._currentSheet = 0;
-      this._updateContentHeader(categoryKey);
-      this._updateSubTabsUI(); // Rebuild sub-tabs for new category
-      this._updateHeaderPageSearch(categoryKey);
-      this._renderCategory(categoryKey);
-      this._updateTabStyles();
-      this._updateSubTabStyles();
-      void this._ensureCategoryHistory(categoryKey);
+      this._selectCategory(categoryKey);
     });
 
     tab.addEventListener('mouseenter', () => {
@@ -2079,6 +2228,41 @@ export class LauncherPopover {
     });
 
     return tab;
+  }
+
+  /**
+   * Outline SVG for a left-rail category tab.
+   * @param {Document} doc
+   * @param {string} categoryKey
+   * @returns {SVGElement}
+   */
+  _createTabIcon(doc, categoryKey) {
+    const paths = LAUNCHER_TAB_ICONS[categoryKey] || LAUNCHER_TAB_ICONS.searches;
+    const svg = createOutlineIcon(doc, paths);
+    svg.setAttribute('width', '18');
+    svg.setAttribute('height', '18');
+    svg.classList.add('kp-launcher-tab-icon');
+    svg.style.cssText = 'flex-shrink: 0; display: block; color: inherit;';
+    return svg;
+  }
+
+  /**
+   * Switch the primary category tab and remember it for the next open.
+   * @param {string} categoryKey
+   */
+  _selectCategory(categoryKey) {
+    if (!categoryKey || !this._categories?.[categoryKey]) return;
+    this._currentCategory = categoryKey;
+    this._currentSheet = 0;
+    this._ensureValidSubTab(categoryKey);
+    this._updateContentHeader(categoryKey);
+    this._updateSubTabsUI();
+    this._updateHeaderPageSearch(categoryKey);
+    this._renderCategory(categoryKey);
+    this._updateTabStyles();
+    this._updateSubTabStyles();
+    this._persistNavState();
+    void this._ensureCategoryHistory(categoryKey);
   }
 
   /**
@@ -2135,6 +2319,7 @@ export class LauncherPopover {
       this._updateLaunchDeckEditBar();
       this._renderCategory(this._currentCategory);
       this._updateSubTabStyles();
+      this._persistNavState();
     });
 
     subTab.addEventListener('mouseenter', () => {
@@ -2232,8 +2417,8 @@ export class LauncherPopover {
     // Create sub-tabs based on configuration
     const subTabLabels = {
       sites: 'Launch Deck',
-      favorites: 'Favorites',
-      history: 'History',
+      favorites: this._currentCategory === 'launchDeck' ? 'Toolbar Bookmarks' : 'Favorites',
+      history: this._currentCategory === 'launchDeck' ? 'Top Visited' : 'History',
       search: 'Search'
     };
 
@@ -2740,6 +2925,7 @@ export class LauncherPopover {
       clearBtn.style.display = hasQuery ? 'block' : 'none';
       if (this._categorySubTabs[this._currentCategory] !== 'search') {
         this._categorySubTabs[this._currentCategory] = 'search';
+        this._persistNavState();
       }
       this._updateSubTabStyles();
       this._renderCategory(this._currentCategory);
@@ -2759,6 +2945,7 @@ export class LauncherPopover {
         this._updateSubTabStyles();
         this._renderCategory(this._currentCategory);
         this._updateTabCounts();
+        this._persistNavState();
       }
     });
 
@@ -2955,6 +3142,10 @@ export class LauncherPopover {
         empty.textContent = this._searchQuery.trim()
           ? 'No sites match your search'
           : 'Type to search sites in this category';
+      } else if (categoryKey === 'launchDeck' && currentSubTab === 'favorites') {
+        empty.textContent = 'No toolbar bookmarks';
+      } else if (categoryKey === 'launchDeck' && currentSubTab === 'history') {
+        empty.textContent = 'No top visited sites';
       } else {
         empty.textContent = 'No items in this category';
       }
@@ -3396,8 +3587,9 @@ export class LauncherPopover {
     wrap.className = `kp-launcher-page-header-search ${className || ''}`.trim();
     wrap.style.cssText = `
       display: flex;
-      flex-direction: column;
-      gap: 6px;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
       width: 100%;
       max-width: ${maxWidth};
     `;
@@ -3406,10 +3598,11 @@ export class LauncherPopover {
     label.textContent = labelText;
     label.htmlFor = inputId;
     label.style.cssText = `
-      color: #aaa;
-      font-size: 12px;
-      font-weight: 500;
-      text-align: right;
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
     `;
 
     const row = doc.createElement('div');
@@ -3436,12 +3629,12 @@ export class LauncherPopover {
     input.style.cssText = `
       flex: 1;
       min-width: 0;
-      padding: 10px 12px;
+      padding: 4px 10px;
       background: #2a2a2a;
       border: 1px solid #444;
-      border-radius: 8px;
+      border-radius: 6px;
       color: #fff;
-      font-size: 13px;
+      font-size: 12px;
       outline: none;
       box-sizing: border-box;
     `;
@@ -3451,12 +3644,12 @@ export class LauncherPopover {
     submitBtn.className = 'kp-launcher-page-search-submit';
     submitBtn.textContent = 'Search';
     submitBtn.style.cssText = `
-      padding: 10px 14px;
+      padding: 4px 10px;
       background: #2a2a2a;
       border: 1px solid #444;
-      border-radius: 8px;
+      border-radius: 6px;
       color: #fff;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 500;
       cursor: pointer;
       white-space: nowrap;
@@ -3904,20 +4097,33 @@ export class LauncherPopover {
     previewBtn.className = 'kp-launcher-card-preview';
     previewBtn.style.cssText = `
       flex: 1;
-      padding: 10px 12px;
+      padding: 8px 12px;
       background: rgba(0, 0, 0, 0.25);
       border: none;
       color: #9aa3ab;
       cursor: pointer;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      font-size: 12px;
+      gap: 3px;
+      font-size: 16px;
       font-weight: 500;
       transition: background 0.15s, color 0.15s;
     `;
-    previewBtn.innerHTML = '<span aria-hidden="true">👁</span><span>Preview</span>';
+    const launchEye = doc.createElement('span');
+    launchEye.setAttribute('aria-hidden', 'true');
+    launchEye.textContent = '👁';
+    const launchPreviewLabel = doc.createElement('span');
+    launchPreviewLabel.textContent = 'Preview';
+    launchPreviewLabel.style.cssText = `
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      line-height: 1;
+    `;
+    previewBtn.appendChild(launchEye);
+    previewBtn.appendChild(launchPreviewLabel);
     previewBtn.title = 'Preview / close preview';
 
     previewBtn.addEventListener('click', (e) => {
@@ -4094,12 +4300,26 @@ export class LauncherPopover {
       color: #888;
       cursor: pointer;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      font-size: 24px;
+      gap: 4px;
+      font-size: 22px;
       transition: all 0.2s;
     `;
-    previewBtn.innerHTML = '👁';
+    const listingEye = doc.createElement('span');
+    listingEye.setAttribute('aria-hidden', 'true');
+    listingEye.textContent = '👁';
+    const listingPreviewLabel = doc.createElement('span');
+    listingPreviewLabel.textContent = 'Preview';
+    listingPreviewLabel.style.cssText = `
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      line-height: 1;
+    `;
+    previewBtn.appendChild(listingEye);
+    previewBtn.appendChild(listingPreviewLabel);
     previewBtn.title = 'Preview / close preview';
 
     previewBtn.addEventListener('click', (e) => {
@@ -4298,16 +4518,7 @@ export class LauncherPopover {
   _navigateToPreviousTab() {
     const currentIndex = this._categoryOrder.indexOf(this._currentCategory);
     if (currentIndex > 0) {
-      const newCategory = this._categoryOrder[currentIndex - 1];
-      this._currentCategory = newCategory;
-      this._currentSheet = 0;
-      this._updateContentHeader(newCategory);
-      this._updateSubTabsUI(); // Rebuild sub-tabs for new category
-      this._updateHeaderPageSearch(newCategory);
-      this._renderCategory(newCategory);
-      this._updateTabStyles();
-      this._updateSubTabStyles();
-      void this._ensureCategoryHistory(newCategory);
+      this._selectCategory(this._categoryOrder[currentIndex - 1]);
     }
   }
 
@@ -4317,16 +4528,7 @@ export class LauncherPopover {
   _navigateToNextTab() {
     const currentIndex = this._categoryOrder.indexOf(this._currentCategory);
     if (currentIndex < this._categoryOrder.length - 1) {
-      const newCategory = this._categoryOrder[currentIndex + 1];
-      this._currentCategory = newCategory;
-      this._currentSheet = 0;
-      this._updateContentHeader(newCategory);
-      this._updateSubTabsUI(); // Rebuild sub-tabs for new category
-      this._updateHeaderPageSearch(newCategory);
-      this._renderCategory(newCategory);
-      this._updateTabStyles();
-      this._updateSubTabStyles();
-      void this._ensureCategoryHistory(newCategory);
+      this._selectCategory(this._categoryOrder[currentIndex + 1]);
     }
   }
 

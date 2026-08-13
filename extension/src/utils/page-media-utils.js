@@ -65,11 +65,15 @@ const URL_TAB_EXCLUDE_EXTS = Object.freeze([
   'woff', 'woff2', 'ttf', 'otf', 'eot',
   'wasm', 'json'
 ]);
-const URL_TAB_EXCLUDE_EXT_SET = new Set(URL_TAB_EXCLUDE_EXTS);
+const URL_TAB_EXCLUDE_EXT_SET = new Set([
+  ...URL_TAB_EXCLUDE_EXTS,
+  ...IMAGE_EXTS,
+  ...VIDEO_EXTS
+]);
 
 /** HTML-like / path-with-no-file-ext → "web page" group. */
 const PAGE_URL_EXTS = Object.freeze([
-  'html', 'htm', 'php', 'asp', 'aspx', 'jsp', 'cgi', 'xhtml', 'shtml'
+  'html', 'htm', 'php', 'py', 'asp', 'aspx', 'jsp', 'cgi', 'xhtml', 'shtml', 'phtml'
 ]);
 const PAGE_URL_EXT_SET = new Set(PAGE_URL_EXTS);
 
@@ -164,7 +168,8 @@ export function categoryFromExtension(ext) {
 }
 
 /**
- * URL-tab grouping: pages → documents → images → video → other.
+ * URL-tab grouping: pages → documents → other.
+ * Image and video files are omitted from this tab entirely.
  * @param {string} url
  * @param {string} [ext]
  * @returns {'page'|'document'|'image'|'video'|'other'}
@@ -175,11 +180,12 @@ export function urlTabGroupForUrl(url, ext) {
   if (TEXT_EXT_SET.has(e)) return 'document';
   if (IMAGE_EXT_SET.has(e)) return 'image';
   if (VIDEO_EXT_SET.has(e)) return 'video';
-  // Paths like /about/ or /foo with query — treat as pages.
+  // Paths like /about/, /foo, #section, or ?q= — treat as pages.
   try {
     const u = new URL(url, typeof document !== 'undefined' ? document.baseURI : undefined);
     const last = (u.pathname || '').split('/').pop() || '';
     if (!last || !last.includes('.')) return 'page';
+    if (u.hash || u.search) return 'page';
   } catch { /* ignore */ }
   return 'other';
 }
@@ -342,7 +348,8 @@ function urlTabGroupSortOrder(group) {
 }
 
 /**
- * True when a URL should be omitted from the URLs tab (CSS/JS/fonts/etc.).
+ * True when a URL should be omitted from the URLs tab
+ * (CSS/JS/fonts, images, video, and other non-page assets).
  * @param {string} url
  * @param {string} [ext]
  * @param {Element|null} [el]
@@ -351,20 +358,22 @@ function urlTabGroupSortOrder(group) {
 function shouldExcludeFromUrlTab(url, ext, el = null) {
   if (!url) return true;
   if (/^(chrome-extension|chrome|blob):/i.test(url)) return true;
+  if (/^data:(image|video)\b/i.test(url)) return true;
   const e = String(ext || extensionFromUrl(url) || '').toLowerCase();
   if (e && URL_TAB_EXCLUDE_EXT_SET.has(e)) return true;
 
-  // Skip stylesheet / script element sources even without a clear extension.
+  // Skip stylesheet / script / media element sources even without a clear extension.
   try {
     if (el && el.nodeType === 1) {
       const tag = String(el.tagName || '').toUpperCase();
-      if (tag === 'SCRIPT') return true;
-      if (tag === 'STYLE') return true;
+      if (tag === 'SCRIPT' || tag === 'STYLE') return true;
+      if (tag === 'IMG' || tag === 'VIDEO' || tag === 'PICTURE' || tag === 'SOURCE' || tag === 'TRACK') return true;
+      if (tag === 'INPUT' && String(el.getAttribute('type') || '').toLowerCase() === 'image') return true;
       if (tag === 'LINK') {
         const rel = String(el.getAttribute('rel') || '').toLowerCase();
         if (/\bstylesheet\b|\bpreload\b|\bmodulepreload\b/.test(rel)) return true;
         const as = String(el.getAttribute('as') || '').toLowerCase();
-        if (as === 'script' || as === 'style' || as === 'font') return true;
+        if (as === 'script' || as === 'style' || as === 'font' || as === 'image' || as === 'video') return true;
       }
     }
   } catch { /* ignore */ }
@@ -622,7 +631,9 @@ export function collectPageMedia(root = document) {
   const add = (raw) => {
     const resolved = resolveUrl(raw.url, raw.element || null);
     if (!isUsableUrl(resolved)) return;
-    notePageUrl(resolved, raw.element || null, raw.kind || raw.category);
+    if (raw.category !== 'image' && raw.category !== 'video') {
+      notePageUrl(resolved, raw.element || null, raw.kind || raw.category);
+    }
     if (raw.category === 'url') return;
     if (byUrl.has(resolved)) return;
 
@@ -644,7 +655,6 @@ export function collectPageMedia(root = document) {
     if (raw.mimeType) item.mimeType = String(raw.mimeType);
     if (raw.posterUrl && isUsableUrl(raw.posterUrl)) {
       item.posterUrl = resolveUrl(String(raw.posterUrl), raw.element || null);
-      notePageUrl(item.posterUrl, raw.element || null, 'poster');
     }
     if (raw.thumbUrl && isUsableUrl(raw.thumbUrl)) item.thumbUrl = String(raw.thumbUrl);
     byUrl.set(resolved, item);
@@ -668,10 +678,16 @@ export function collectPageMedia(root = document) {
   walkElements(root, (el) => {
     const tag = String(el.tagName || '').toUpperCase();
 
-    // Skip harvesting URLs from scripts / stylesheets (also filtered in notePageUrl).
+    // Skip harvesting URLs from scripts, stylesheets, and media elements
+    // (also filtered in notePageUrl). Image/video files belong on Image/Video tabs.
     const skipHarvest =
       tag === 'SCRIPT' ||
       tag === 'STYLE' ||
+      tag === 'IMG' ||
+      tag === 'VIDEO' ||
+      tag === 'PICTURE' ||
+      tag === 'SOURCE' ||
+      tag === 'TRACK' ||
       (tag === 'LINK' && /\bstylesheet\b|\bpreload\b|\bmodulepreload\b/i.test(String(el.getAttribute('rel') || '')));
 
     if (!skipHarvest) {
@@ -730,7 +746,6 @@ export function collectPageMedia(root = document) {
         const extracted = extractFirstBackgroundImageUrl(bg);
         if (extracted && isUsableUrl(extracted)) {
           const resolved = resolveUrl(extracted, el);
-          notePageUrl(resolved, el, 'background');
           const ext = extensionFromUrl(resolved);
           if (categoryFromExtension(ext) === 'image' || /^(data:image|blob:)/i.test(resolved) || !ext) {
             if (categoryFromExtension(ext) !== 'video' && categoryFromExtension(ext) !== 'text') {
@@ -976,7 +991,7 @@ export function groupPageMediaByCategory(items) {
     else if (item?.category === 'url') groups.url.push(item);
     else if (item?.category === 'pageText') groups.pageText.push(item);
   }
-  // Sort URLs: web pages → documents → images → video → other; alpha within group.
+  // Sort URLs: web pages → documents → other; alpha within group.
   groups.url.sort((a, b) => {
     const ga = urlTabGroupSortOrder(a.urlGroup || urlTabGroupForUrl(a.url, a.ext));
     const gb = urlTabGroupSortOrder(b.urlGroup || urlTabGroupForUrl(b.url, b.ext));

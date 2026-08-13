@@ -50,6 +50,7 @@ import {
   openKeyboardLayoutConfigurator
 } from './keyboard-layout-configurator.js';
 import { makePopoverResizable } from '../utils/popover-resize.js';
+import { createTitlebarKbd } from './popover-titlebar.js';
 import { ensureOpenChromeShadow, injectChromeStyles, ensureChromeHostMounted } from './kp-chrome-shadow.js';
 import {
   PANEL_POSITION_MARGIN_PX,
@@ -70,6 +71,8 @@ import {
   NCT_DARK_UI_TITLEBAR_TEXT_MODE_HINT_COLOR,
   NCT_DARK_UI_FIELD_BACKGROUND,
   NCT_DARK_UI_FIELD_BORDER,
+  NCT_DARK_UI_BTN_GRADIENT,
+  NCT_DARK_UI_BTN_BORDER,
   NCT_DARK_UI_BTN_LIT_GRADIENT,
   NCT_DARK_UI_BTN_LIT_BORDER,
   NCT_DARK_UI_BTN_RADIUS,
@@ -125,11 +128,14 @@ export class FloatingKeyboardHelp {
     /** @type {HTMLButtonElement|null} */
     this._saveFinishBtn = null;
     /** @type {HTMLButtonElement|null} */
+    this._exitTextModeBtn = null;
+    /** @type {HTMLButtonElement|null} */
     this._collapseBtn = null;
     this._collapsed = false;
     this._onCloseClick = this._onCloseClick.bind(this);
     this._onCollapseClick = this._onCollapseClick.bind(this);
     this._onSaveAndFinishClick = this._onSaveAndFinishClick.bind(this);
+    this._onExitTextModeClick = this._onExitTextModeClick.bind(this);
     this._onLayoutSelectChange = this._onLayoutSelectChange.bind(this);
     /** @type {(() => any)|null} */
     this._getKeyPilot = typeof getKeyPilot === 'function' ? getKeyPilot : null;
@@ -340,8 +346,6 @@ export class FloatingKeyboardHelp {
           while (this.hintEl.firstChild) this.hintEl.removeChild(this.hintEl.firstChild);
           this.hintEl.appendChild(document.createTextNode('Editing — Alt+C to exit'));
           this.hintEl.setAttribute('aria-label', 'Editing layout — Alt+C to exit');
-        } else if (this._textModeFilterActive) {
-          this._setTypingHint(this.hintEl);
         } else {
           const b = this.keybindings && this.keybindings.TOGGLE_KEYBOARD_HELP;
           const key = (b && (b.displayKey || b.keyLabel)) ? String(b.displayKey || b.keyLabel) : 'K';
@@ -356,6 +360,7 @@ export class FloatingKeyboardHelp {
 
     this._applyEditModeHatch(next);
     this._syncSaveAndFinishButton(next);
+    this._syncExitTextModeButton(this._textModeFilterActive && !next);
 
     if (this.root && !this.root.hidden) this._render();
   }
@@ -457,6 +462,106 @@ export class FloatingKeyboardHelp {
       panel?.hide?.();
     } catch { /* ignore */ }
     try { this.setEditMode(false); } catch { /* ignore */ }
+  }
+
+  /**
+   * Titlebar CTA shown only while a text field has focus (text / typing mode).
+   * Placed immediately to the right of the "Typing" title label.
+   * @param {boolean} visible
+   */
+  _syncExitTextModeButton(visible) {
+    try {
+      if (visible) {
+        this._ensureExitTextModeButton();
+        if (this._exitTextModeBtn) this._exitTextModeBtn.hidden = false;
+      } else if (this._exitTextModeBtn) {
+        this._exitTextModeBtn.hidden = true;
+      }
+    } catch { /* ignore */ }
+  }
+
+  _ensureExitTextModeButton() {
+    if (this._exitTextModeBtn && this._exitTextModeBtn.isConnected) return;
+    const header = this._titlebar
+      || this.shadowRoot?.querySelector?.('[data-kp-floating-keyboard-titlebar="true"]')
+      || null;
+    if (!header) return;
+
+    let btn = header.querySelector('button[data-kp-floating-keyboard-exit-text="true"]');
+    if (!btn) {
+      const doc = header.ownerDocument || document;
+      btn = doc.createElement('button');
+      btn.type = 'button';
+      btn.setAttribute('data-kp-floating-keyboard-exit-text', 'true');
+      btn.setAttribute('aria-label', 'Exit text mode (Esc)');
+      btn.title = 'Exit text mode (Esc)';
+      Object.assign(btn.style, {
+        marginLeft: '6px',
+        padding: '0 7px',
+        height: '22px',
+        minHeight: '22px',
+        borderRadius: NCT_DARK_UI_BTN_RADIUS,
+        border: NCT_DARK_UI_BTN_BORDER,
+        background: NCT_DARK_UI_BTN_GRADIENT,
+        color: NCT_DARK_UI_COLORS.fg,
+        outline: 'none',
+        fontSize: '11px',
+        fontWeight: '600',
+        fontFamily: NCT_DARK_UI_FONT,
+        lineHeight: '20px',
+        whiteSpace: 'nowrap',
+        cursor: 'pointer',
+        flex: '0 0 auto',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '5px'
+      });
+      btn.appendChild(doc.createTextNode('Exit'));
+      const kbd = createTitlebarKbd(doc, 'Esc');
+      try { kbd.style.fontSize = '10px'; } catch { /* ignore */ }
+      btn.appendChild(kbd);
+
+      const titleEl = this._layoutTitleEl
+        || header.querySelector('[data-kp-floating-keyboard-title="true"]');
+      const layoutSelect = this._layoutSelectEl
+        || header.querySelector('[data-kp-floating-keyboard-layout-select="true"]');
+      try {
+        if (titleEl && titleEl.nextSibling) {
+          header.insertBefore(btn, titleEl.nextSibling);
+        } else if (layoutSelect) {
+          header.insertBefore(btn, layoutSelect);
+        } else {
+          header.appendChild(btn);
+        }
+      } catch {
+        try { header.appendChild(btn); } catch { /* ignore */ }
+      }
+    }
+
+    try {
+      btn.removeEventListener('click', this._onExitTextModeClick);
+    } catch { /* ignore */ }
+    btn.addEventListener('click', this._onExitTextModeClick);
+    try {
+      btn.addEventListener('pointerdown', (e) => {
+        try { e.stopPropagation(); } catch { /* ignore */ }
+      });
+    } catch { /* ignore */ }
+
+    this._exitTextModeBtn = btn;
+  }
+
+  _onExitTextModeClick(e) {
+    try { e?.preventDefault?.(); e?.stopPropagation?.(); } catch { /* ignore */ }
+    try {
+      const kp = typeof this._getKeyPilot === 'function' ? this._getKeyPilot() : null;
+      if (kp && typeof kp.handleEscapeFromTextFocus === 'function') {
+        const st = typeof kp.state?.getState === 'function' ? kp.state.getState() : null;
+        kp.handleEscapeFromTextFocus(st);
+        return;
+      }
+      kp?.focusDetector?.clearTextFocus?.();
+    } catch { /* ignore */ }
   }
 
   /**
@@ -669,6 +774,11 @@ export class FloatingKeyboardHelp {
         this._saveFinishBtn.removeEventListener('click', this._onSaveAndFinishClick);
       }
     } catch { /* ignore */ }
+    try {
+      if (this._exitTextModeBtn) {
+        this._exitTextModeBtn.removeEventListener('click', this._onExitTextModeClick);
+      }
+    } catch { /* ignore */ }
     this._unbindWindowChrome();
     this._unbindKeydownFeedback();
     this._unbindSettingsSync();
@@ -684,6 +794,7 @@ export class FloatingKeyboardHelp {
     this.closeBtn = null;
     this._titlebar = null;
     this._saveFinishBtn = null;
+    this._exitTextModeBtn = null;
     this._collapseBtn = null;
   }
 
@@ -1435,39 +1546,12 @@ export class FloatingKeyboardHelp {
     if (!this.keyboardContainer) return;
     try {
       if (!this._editMode) {
-        if (this._textModeFilterActive) {
-          this._setTypingHint(this.hintEl);
-        } else {
-          const b = this.keybindings && this.keybindings.TOGGLE_KEYBOARD_HELP;
-          const key = (b && (b.displayKey || b.keyLabel)) ? String(b.displayKey || b.keyLabel) : 'K';
-          this._setToggleHint(this.hintEl, key);
-        }
+        const b = this.keybindings && this.keybindings.TOGGLE_KEYBOARD_HELP;
+        const key = (b && (b.displayKey || b.keyLabel)) ? String(b.displayKey || b.keyLabel) : 'K';
+        this._setToggleHint(this.hintEl, key);
       }
     } catch { /* ignore */ }
     void this._renderAsync();
-  }
-
-  /**
-   * Titlebar hint while a text field has focus (typing / text mode).
-   * @param {HTMLElement|null} hintEl
-   */
-  _setTypingHint(hintEl) {
-    if (!hintEl) return;
-    const label = 'Typing — Esc to exit';
-    try {
-      if (
-        hintEl.getAttribute('aria-label') === label
-        && hintEl.textContent === label
-        && !hintEl.querySelector('[data-kp-floating-keyboard-hint-key="true"]')
-      ) {
-        return;
-      }
-    } catch { /* ignore */ }
-    while (hintEl.firstChild) hintEl.removeChild(hintEl.firstChild);
-    hintEl.appendChild(document.createTextNode(label));
-    try {
-      hintEl.setAttribute('aria-label', label);
-    } catch { /* ignore */ }
   }
 
   /**
@@ -1557,6 +1641,7 @@ export class FloatingKeyboardHelp {
     } catch { /* ignore */ }
 
     this._ensureTextModeStyles();
+    this._syncExitTextModeButton(on && !this._editMode);
 
     if (this._editMode) return;
 
@@ -1571,14 +1656,10 @@ export class FloatingKeyboardHelp {
     } catch { /* ignore */ }
 
     try {
-      if (this.hintEl) {
-        if (on) {
-          this._setTypingHint(this.hintEl);
-        } else {
-          const b = this.keybindings && this.keybindings.TOGGLE_KEYBOARD_HELP;
-          const key = (b && (b.displayKey || b.keyLabel)) ? String(b.displayKey || b.keyLabel) : 'K';
-          this._setToggleHint(this.hintEl, key);
-        }
+      if (this.hintEl && !on) {
+        const b = this.keybindings && this.keybindings.TOGGLE_KEYBOARD_HELP;
+        const key = (b && (b.displayKey || b.keyLabel)) ? String(b.displayKey || b.keyLabel) : 'K';
+        this._setToggleHint(this.hintEl, key);
       }
     } catch { /* ignore */ }
   }
