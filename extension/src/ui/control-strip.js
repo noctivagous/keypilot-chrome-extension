@@ -28,7 +28,7 @@ import {
   NCT_DARK_UI_COLORS
 } from './nct-dark-ui.js';
 import { positionOnboardingBelowControlStrip } from './onboarding-shared.js';
-import { ensureOpenChromeShadow } from './kp-chrome-shadow.js';
+import { ensureOpenChromeShadow, ensureChromeHostMounted } from './kp-chrome-shadow.js';
 import { getSettings, setSettings, DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY } from '../modules/settings-manager.js';
 import {
   PANEL_POSITION_MARGIN_PX,
@@ -105,6 +105,8 @@ export class ControlStrip {
 
     this._observer = null;
     this._observeBound = false;
+    /** @type {MutationObserver|null} */
+    this._hostGuard = null;
   }
 
   /**
@@ -130,6 +132,8 @@ export class ControlStrip {
     if (window !== window.top) return;
     this._desiredVisible = true;
     this._ensure();
+    // Prefer body once available; reattach if React yanked an html-mounted host.
+    try { ensureChromeHostMounted(this.root); } catch { /* ignore */ }
     this.root.hidden = false;
     this.root.style.display = 'flex';
     this.root.style.pointerEvents = 'auto';
@@ -140,10 +144,12 @@ export class ControlStrip {
     this._applyPanelPositionNow();
     this._syncOnboardingOffset();
     this._bindOnboardingWatch();
+    this._bindHostGuard();
   }
 
   hide() {
     this._desiredVisible = false;
+    this._unbindHostGuard();
     if (this.root) {
       this.root.hidden = true;
       this.root.style.display = 'none';
@@ -240,6 +246,7 @@ export class ControlStrip {
   }
 
   cleanup() {
+    this._unbindHostGuard();
     this._unbindOnboardingWatch();
     this._unbindDrag();
     this._unbindSettingsSync();
@@ -466,6 +473,7 @@ export class ControlStrip {
     shell.appendChild(closeBtn);
 
     (document.body || document.documentElement).appendChild(root);
+    try { ensureChromeHostMounted(root); } catch { /* ignore */ }
 
     this.root = root;
     this.shadowRoot = shadowRoot;
@@ -990,6 +998,35 @@ export class ControlStrip {
       window.addEventListener('resize', this._onWinResize, true);
     } catch { /* ignore */ }
     this._observeBound = true;
+  }
+
+  /**
+   * React/Next can remove foreign chrome hosts from <html>/<body>.
+   * Reattach while the strip is still supposed to be visible.
+   */
+  _bindHostGuard() {
+    if (this._hostGuard || typeof MutationObserver === 'undefined') return;
+    const root = this.root;
+    if (!root) return;
+    try {
+      this._hostGuard = new MutationObserver(() => {
+        if (!this._desiredVisible || !this.root || this.root.isConnected) return;
+        try {
+          ensureChromeHostMounted(this.root);
+          this.root.hidden = false;
+          this.root.style.display = 'flex';
+          this.root.style.pointerEvents = 'auto';
+        } catch { /* ignore */ }
+      });
+      this._hostGuard.observe(document.documentElement, { childList: true, subtree: true });
+    } catch {
+      this._hostGuard = null;
+    }
+  }
+
+  _unbindHostGuard() {
+    try { this._hostGuard?.disconnect?.(); } catch { /* ignore */ }
+    this._hostGuard = null;
   }
 
   _unbindOnboardingWatch() {

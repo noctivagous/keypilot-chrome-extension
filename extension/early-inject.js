@@ -5037,6 +5037,87 @@
   let controlStripStorageListener = null;
   let controlStripRefs = null; // { statusBtn, statusDot, statusLabel, modules, moveBtn, keyboardBtn, settingsBtn, collapseBtn, closeBtn }
   let mainLoadedListenerInstalled = false;
+  let earlyControlStripHostGuard = null;
+  let earlyKeyboardHelpHostGuard = null;
+
+  /**
+   * Prefer body once it exists. document_start often mounts under <html>; React/Next
+   * App Router later removes foreign html children (Suno control-strip/keyboard vanish).
+   * Kept outside stamped UI blocks so `npm run build` does not wipe it.
+   */
+  function ensureEarlyChromeHostMounted(host) {
+    if (!host) return null;
+    try {
+      const body = document.body;
+      const html = document.documentElement;
+      if (body && host.parentElement === html) {
+        body.appendChild(host);
+        return body;
+      }
+      const parent = body || html;
+      if (parent && host.parentElement !== parent) parent.appendChild(host);
+      return parent;
+    } catch {
+      return null;
+    }
+  }
+
+  function setupEarlyControlStripHostGuard() {
+    if (earlyControlStripHostGuard || typeof MutationObserver === 'undefined') return;
+    try {
+      earlyControlStripHostGuard = new MutationObserver(() => {
+        if (isMainExtensionLoaded) return;
+        if (!controlStripDesiredVisible || !controlStripRoot || controlStripRoot.isConnected) return;
+        try {
+          ensureEarlyChromeHostMounted(controlStripRoot);
+          applyEarlyControlStripVisibility();
+        } catch { /* ignore */ }
+      });
+      earlyControlStripHostGuard.observe(document.documentElement, { childList: true, subtree: true });
+    } catch {
+      earlyControlStripHostGuard = null;
+    }
+  }
+
+  function setupEarlyKeyboardHelpHostGuard() {
+    if (earlyKeyboardHelpHostGuard || typeof MutationObserver === 'undefined') return;
+    try {
+      earlyKeyboardHelpHostGuard = new MutationObserver(() => {
+        if (isMainExtensionLoaded) return;
+        if (!keyboardHelpVisible || !keyboardHelpRoot || keyboardHelpRoot.isConnected) return;
+        try {
+          ensureEarlyChromeHostMounted(keyboardHelpRoot);
+          applyEarlyKeyboardHelpVisibility(keyboardHelpVisible);
+        } catch { /* ignore */ }
+      });
+      earlyKeyboardHelpHostGuard.observe(document.documentElement, { childList: true, subtree: true });
+    } catch {
+      earlyKeyboardHelpHostGuard = null;
+    }
+  }
+
+  function relocateAllEarlyChromeToBody() {
+    try {
+      ensureEarlyChromeHostMounted(controlStripRoot);
+      ensureEarlyChromeHostMounted(keyboardHelpRoot);
+      ensureEarlyChromeHostMounted(onboardingRoot);
+    } catch { /* ignore */ }
+  }
+
+  // When body appears after document_start, move any html-mounted shells under body.
+  try {
+    if (!document.body) {
+      const bodyWatch = new MutationObserver(() => {
+        if (!document.body) return;
+        try { bodyWatch.disconnect(); } catch { /* ignore */ }
+        relocateAllEarlyChromeToBody();
+      });
+      bodyWatch.observe(document.documentElement, { childList: true });
+    } else {
+      relocateAllEarlyChromeToBody();
+    }
+    document.addEventListener('DOMContentLoaded', relocateAllEarlyChromeToBody, { once: true });
+  } catch { /* ignore */ }
 
   function setupMainLoadedHandoffListener() {
     if (mainLoadedListenerInstalled) return;
@@ -5047,6 +5128,11 @@
     // so we listen unconditionally.)
     window.addEventListener('keypilot-main-loaded', () => {
       isMainExtensionLoaded = true;
+
+      try { earlyControlStripHostGuard?.disconnect?.(); } catch { /* ignore */ }
+      earlyControlStripHostGuard = null;
+      try { earlyKeyboardHelpHostGuard?.disconnect?.(); } catch { /* ignore */ }
+      earlyKeyboardHelpHostGuard = null;
 
       // Stop early mouse tracking (main extension will handle this)
       try { document.removeEventListener('mousemove', handleMouseMove); } catch {}
@@ -5215,6 +5301,7 @@
       } catch { /* ignore */ }
 
       (document.body || document.documentElement).appendChild(root);
+      try { ensureEarlyChromeHostMounted(root); } catch { /* ignore */ }
       onboardingRoot = root;
       return onboardingRoot;
     } catch {
@@ -6920,6 +7007,7 @@
       shell.appendChild(closeBtn);
 
       (document.body || document.documentElement).appendChild(root);
+      try { ensureEarlyChromeHostMounted(root); } catch { /* ignore */ }
 
       controlStripRoot = root;
       controlStripShadowRoot = root.shadowRoot || null;
@@ -6956,6 +7044,8 @@
       controlStripRoot.style.pointerEvents = show ? 'auto' : 'none';
     } catch { /* ignore */ }
     if (show) {
+      try { ensureEarlyChromeHostMounted(controlStripRoot); } catch { /* ignore */ }
+      setupEarlyControlStripHostGuard();
       applyEarlyControlStripCollapsedLayout();
       renderEarlyControlStripStatus();
       renderEarlyControlStripKeyboard();
@@ -7268,6 +7358,7 @@
     shell.appendChild(body);
 
     (doc.body || doc.documentElement).appendChild(root);
+    try { ensureEarlyChromeHostMounted(root); } catch { /* ignore */ }
 
     keyboardHelpRoot = root;
     keyboardHelpShadowRoot = root.shadowRoot || null;
@@ -7398,6 +7489,10 @@
       }
     } catch { /* ignore */ }
     const shouldShow = !!(isExtensionEnabled && keyboardHelpVisible && !keyboardUsesCustomLayout);
+    if (shouldShow) {
+      try { ensureEarlyChromeHostMounted(keyboardHelpRoot); } catch { /* ignore */ }
+      setupEarlyKeyboardHelpHostGuard();
+    }
     if (shouldShow) {
       // Give the collapsed shell a layout box while it is still invisible, then
       // resolve its anchor from the real titlebar-only height. Otherwise a

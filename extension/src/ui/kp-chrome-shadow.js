@@ -6,6 +6,51 @@
  */
 
 /**
+ * Preferred mount parent for floating KP chrome.
+ *
+ * Always prefer `document.body` once it exists. Mounting under `<html>` at
+ * document_start (body missing) is fine temporarily, but React/Next App Router
+ * owns `<html>` and will remove foreign siblings of `<head>`/`<body>` on later
+ * commits — which is exactly how control strip / keyboard help vanish on Suno.
+ *
+ * @param {Document|null|undefined} [doc]
+ * @returns {HTMLElement|null}
+ */
+export function getChromeMountParent(doc = document) {
+  try {
+    return doc?.body || doc?.documentElement || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Ensure a chrome host is attached under the preferred parent.
+ * Relocates html→body when body appears, and reattaches if disconnected.
+ *
+ * @param {HTMLElement|null|undefined} host
+ * @param {Document|null|undefined} [doc]
+ * @returns {HTMLElement|null} mount parent used, or null
+ */
+export function ensureChromeHostMounted(host, doc = document) {
+  if (!host) return null;
+  const parent = getChromeMountParent(doc);
+  if (!parent) return null;
+  try {
+    const current = host.parentElement;
+    // Prefer body over html once body exists (even if already under html).
+    if (doc?.body && current === doc.documentElement) {
+      doc.body.appendChild(host);
+      return doc.body;
+    }
+    if (current !== parent) {
+      parent.appendChild(host);
+    }
+  } catch { /* ignore */ }
+  return parent;
+}
+
+/**
  * @param {HTMLElement|null|undefined} host
  * @param {{ id?: string }} [opts]
  * @returns {ShadowRoot|null}

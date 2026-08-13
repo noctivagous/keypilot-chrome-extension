@@ -50,7 +50,7 @@ import {
   openKeyboardLayoutConfigurator
 } from './keyboard-layout-configurator.js';
 import { makePopoverResizable } from '../utils/popover-resize.js';
-import { ensureOpenChromeShadow, injectChromeStyles } from './kp-chrome-shadow.js';
+import { ensureOpenChromeShadow, injectChromeStyles, ensureChromeHostMounted } from './kp-chrome-shadow.js';
 import {
   PANEL_POSITION_MARGIN_PX,
   applyPanelPosition,
@@ -168,6 +168,8 @@ export class FloatingKeyboardHelp {
     this._dragDispose = null;
     /** @type {AbortController|null} */
     this._slotDnDAbort = null;
+    /** @type {MutationObserver|null} */
+    this._hostGuard = null;
 
     /** @type {import('../modules/settings-manager.js').PanelPositionSettings|null} */
     this._panelPosition = {
@@ -542,6 +544,7 @@ export class FloatingKeyboardHelp {
   _setRootVisible(visible) {
     if (!this.root) return;
     if (visible) {
+      try { ensureChromeHostMounted(this.root); } catch { /* ignore */ }
       try { this.root.hidden = false; } catch { /* ignore */ }
       try { this.root.classList.remove('kpv2-hidden'); } catch { /* ignore */ }
       try {
@@ -551,7 +554,9 @@ export class FloatingKeyboardHelp {
         try { this.root.style.display = 'flex'; } catch { /* ignore */ }
       }
       try { this.root.setAttribute('aria-hidden', 'false'); } catch { /* ignore */ }
+      this._bindHostGuard();
     } else {
+      this._unbindHostGuard();
       try { this.root.hidden = true; } catch { /* ignore */ }
       try { this.root.classList.add('kpv2-hidden'); } catch { /* ignore */ }
       try {
@@ -650,6 +655,7 @@ export class FloatingKeyboardHelp {
 
   cleanup() {
     this._showGeneration += 1;
+    this._unbindHostGuard();
     try { this._slotDnDAbort?.abort?.(); } catch { /* ignore */ }
     this._slotDnDAbort = null;
     try {
@@ -1076,6 +1082,34 @@ export class FloatingKeyboardHelp {
     this._windowChromeBound = false;
   }
 
+  /**
+   * React/Next can remove foreign chrome hosts from <html>/<body>.
+   * Reattach while the keyboard reference is still supposed to be visible.
+   */
+  _bindHostGuard() {
+    if (this._hostGuard || typeof MutationObserver === 'undefined') return;
+    const root = this.root;
+    if (!root) return;
+    try {
+      this._hostGuard = new MutationObserver(() => {
+        if (!this.root || this.root.isConnected || this.root.hidden) return;
+        try {
+          ensureChromeHostMounted(this.root);
+          this.root.style.setProperty('display', 'flex', 'important');
+          this.root.style.setProperty('pointer-events', 'auto', 'important');
+        } catch { /* ignore */ }
+      });
+      this._hostGuard.observe(document.documentElement, { childList: true, subtree: true });
+    } catch {
+      this._hostGuard = null;
+    }
+  }
+
+  _unbindHostGuard() {
+    try { this._hostGuard?.disconnect?.(); } catch { /* ignore */ }
+    this._hostGuard = null;
+  }
+
   _ensure() {
     if (this.root && this.root.isConnected) {
       // Re-bind chrome if the root survived but listeners were torn down.
@@ -1240,6 +1274,7 @@ export class FloatingKeyboardHelp {
 
     // Attach to DOM.
     (document.body || document.documentElement).appendChild(root);
+    try { ensureChromeHostMounted(root); } catch { /* ignore */ }
 
     this.root = root;
     this.shadowRoot = shadowRoot;
