@@ -148,9 +148,9 @@ export class KeyPilot extends EventManager {
     this._currentUserActions = [];
     this._currentKeySlotMap = null;
     // functionId -> Record<string, any> parameters, for built-in Functions still dispatched via a
-    // fixed physical key (SEND_TEXT_TO_AI, RECTANGLE_HIGHLIGHT) rather than a UserKeyboardLayout
-    // slot. Kept in sync with their canonical Action Instance — see
-    // getOrCreateBuiltinFunctionUserAction() in keyboard-layout-store.js and
+    // fixed physical key (SEND_TEXT_TO_AI, RECTANGLE_HIGHLIGHT, COPY_HOVERED_IMAGE,
+    // COPY_HOVERED_URL) rather than a UserKeyboardLayout slot. Kept in sync with their canonical
+    // Action Instance — see getOrCreateBuiltinFunctionUserAction() in keyboard-layout-store.js and
     // KEY_ACTION_ARCHITECTURE.md's migration table (replaces settings.actionSettings).
     this._builtinFunctionActionParams = new Map();
     this.omniboxManager = new OmniboxManager({
@@ -2157,6 +2157,9 @@ export class KeyPilot extends EventManager {
       } catch { /* ignore */ }
       try {
         this.floatingKeyboardHelp?.setTextModeFilter?.(inText);
+      } catch { /* ignore */ }
+      try {
+        this.floatingKeyboardHelp?.syncEscExitButton?.();
       } catch { /* ignore */ }
     }
 
@@ -5135,10 +5138,13 @@ export class KeyPilot extends EventManager {
   }
 
   /**
-   * Copy image under the cursor to the clipboard (I on right-handed layout; E on left).
-   * Uses getHoveredImage utility — discovery is not clipboard-tied.
+   * Copy image under the cursor (I on right-handed layout; E on left).
+   * Destination is clipboard (default) or Media Library (coming soon).
+   * @param {KeyboardEvent} [_e]
+   * @param {{ destination?: string }} [parameters]
    */
-  async handleCopyHoveredImageKey() {
+  async handleCopyHoveredImageKey(_e, parameters) {
+    const destination = this._resolveCopyDestination('COPY_HOVERED_IMAGE', parameters);
     const currentState = this.state.getState();
     const x = Number(currentState?.lastMouse?.x);
     const y = Number(currentState?.lastMouse?.y);
@@ -5159,6 +5165,11 @@ export class KeyPilot extends EventManager {
 
     if (!result?.blob) {
       this.showFlashNotification('No image under cursor', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+
+    if (destination === ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY) {
+      this.handleMediaLibraryNotAvailableKey();
       return;
     }
 
@@ -5197,6 +5208,83 @@ export class KeyPilot extends EventManager {
       }
       this.showFlashNotification(message, COLORS.NOTIFICATION_ERROR);
     }
+  }
+
+  /**
+   * Copy the hyperlink under the cursor (U on right-handed layout).
+   * Destination is clipboard (default) or Media Library (coming soon).
+   * @param {KeyboardEvent} [_e]
+   * @param {{ destination?: string }} [parameters]
+   */
+  async handleCopyHoveredUrlKey(_e, parameters) {
+    const destination = this._resolveCopyDestination('COPY_HOVERED_URL', parameters);
+    const url = this._getHoveredHyperlinkUrl();
+    if (!url) {
+      this.showFlashNotification('No URL under cursor', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+
+    if (destination === ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY) {
+      this.handleMediaLibraryNotAvailableKey();
+      return;
+    }
+
+    const ok = await this.copyToClipboard(url);
+    this.showFlashNotification(
+      ok ? 'URL copied to clipboard' : 'Could not copy URL',
+      ok ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_ERROR
+    );
+    if (ok) this.emitAction('copy_hovered_url', { url: String(url).slice(0, 200) });
+  }
+
+  /**
+   * @param {string} functionId
+   * @param {{ destination?: string }|null|undefined} parameters
+   * @returns {import('./modules/action-result-delivery.js').ActionResultDestination}
+   */
+  _resolveCopyDestination(functionId, parameters) {
+    return normalizeActionResultDestination(
+      parameters?.destination
+        ?? getActionParameter(this._getBuiltinFunctionActionParams(functionId), functionId, 'destination'),
+      ACTION_RESULT_DESTINATIONS.CLIPBOARD
+    );
+  }
+
+  /**
+   * Absolute href of the link under the cursor (including shadow-host walk + data-kp-url rows).
+   * @returns {string}
+   */
+  _getHoveredHyperlinkUrl() {
+    const currentState = this.state.getState();
+    const lastMouse = currentState?.lastMouse;
+    let target = currentState?.focusEl;
+    if (!target && lastMouse) {
+      const under = this.detector.deepElementFromPoint(lastMouse.x, lastMouse.y);
+      target = this.detector.findClickable(under) || under;
+    }
+    if (target instanceof Element) {
+      let probe = target;
+      let guard = 0;
+      while (probe && guard++ < 12) {
+        const a = probe.tagName === 'A' ? probe : probe.closest?.('a[href]');
+        if (a && /** @type {HTMLAnchorElement} */ (a).href) {
+          return String(/** @type {HTMLAnchorElement} */ (a).href);
+        }
+        const roleLink = probe.getAttribute?.('role') === 'link'
+          ? probe
+          : probe.closest?.('[role="link"]');
+        if (roleLink?.dataset?.kpUrl) return String(roleLink.dataset.kpUrl);
+        const root = probe.getRootNode?.();
+        if (!(root instanceof ShadowRoot) || !(root.host instanceof Element)) break;
+        probe = root.host;
+      }
+    }
+    const x = Number(lastMouse?.x);
+    const y = Number(lastMouse?.y);
+    if (Number.isFinite(x) && Number.isFinite(y)) {
+      return String(getTextAtPoint(x, y, { granularity: 'hyperlink' }).text || '').trim();
+    }
+    return '';
   }
 
   /**

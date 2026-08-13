@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-13T03:07:33.406Z
+ * Generated on 2026-08-13T04:36:01.157Z
  */
 
 (() => {
@@ -478,8 +478,16 @@
     COPY_HOVERED_IMAGE: Object.freeze({
       handler: "handleCopyHoveredImageKey",
       label: "Copy Image",
-      description: "Copy image under cursor to clipboard",
+      description: "Copy image under cursor (clipboard, or Media Library later)",
       // Default key face (no tinted key-gray / family fill).
+      keyboardClass: null,
+      row: 1
+    }),
+    // Copy hyperlink under cursor (U on right-handed; no default on left — U is FORWARD there).
+    COPY_HOVERED_URL: Object.freeze({
+      handler: "handleCopyHoveredUrlKey",
+      label: "Copy URL",
+      description: "Copy URL under cursor (clipboard, or Media Library later)",
       keyboardClass: null,
       row: 1
     }),
@@ -566,6 +574,7 @@
     HIGHLIGHT: "Get Page Data",
     RECTANGLE_HIGHLIGHT: "Get Page Data",
     COPY_HOVERED_IMAGE: "Get Page Data",
+    COPY_HOVERED_URL: "Get Page Data",
     PAGE_MEDIA: "Get Page Data",
     DELETE: "Select",
     COLS_TOGGLE: "Select",
@@ -663,6 +672,7 @@
     SCROLL_LINE: Object.freeze({ keys: ["n", "N"] }),
     RECTANGLE_HIGHLIGHT: Object.freeze({ keys: ["y", "Y"] }),
     COPY_HOVERED_IMAGE: Object.freeze({ keys: ["i", "I"] }),
+    COPY_HOVERED_URL: Object.freeze({ keys: ["u", "U"] }),
     PAGE_MEDIA: Object.freeze({ keys: ["o", "O"] }),
     // M is otherwise unused on the right-handed layout (it's PAGE_DOWN_INSTANT on left-handed).
     OPEN_MEDIA_LIBRARY: Object.freeze({ keys: ["m", "M"] }),
@@ -837,7 +847,7 @@
       { type: "action", id: "FORWARD", fallbackText: "Go Forward" },
       { type: "action", id: "NEW_TAB", fallbackText: "New Tab" },
       { type: "action", id: "RECTANGLE_HIGHLIGHT", fallbackText: "Rectangle Select" },
-      { type: "key", text: "U" },
+      { type: "action", id: "COPY_HOVERED_URL", fallbackText: "Copy URL" },
       { type: "action", id: "COPY_HOVERED_IMAGE", fallbackText: "Copy Image" },
       { type: "action", id: "PAGE_MEDIA", fallbackText: "Page Media" },
       { type: "action", id: "OPEN_POPOVER", fallbackText: "Open Popover" },
@@ -1160,7 +1170,7 @@
      * Scroll Line: ease-in power. 1 = linear, 2 = quadratic (gentle near the
      * dot, ramps harder toward the edge of the range).
      */
-    LINE_CURVE_EXPONENT: 1.7,
+    LINE_CURVE_EXPONENT: 1.75,
     /** Scroll Line: offset beyond the dead zone that maps to max speed */
     LINE_CURVE_RANGE_PX: 360,
     /** Scroll Line: cap on each axis */

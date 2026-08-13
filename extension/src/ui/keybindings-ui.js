@@ -17,12 +17,16 @@ import {
   preloadKeybindingsUiFonts
 } from './keybindings-ui-shared.js';
 import {
+  actionHasDestination,
   actionHasModes,
   actionHasParameters,
+  getActionDestinationDef,
   getActionMode,
+  getActionParameter,
   getActionSettingsDef,
   getSharedKeyActionConfigPanel,
-  setActionMode
+  setActionMode,
+  setActionParameter
 } from './key-action-settings.js';
 import { getOrCreateBuiltinFunctionUserAction } from '../modules/keyboard-layout-store.js';
 import {
@@ -644,8 +648,9 @@ async function renderPopoverSettings({ doc, pop, targetEl, binding, actionId }) 
   if (!host) return;
 
   const hasModes = actionHasModes(actionId);
+  const hasDestination = actionHasDestination(actionId);
   const hasParams = actionHasParameters(actionId);
-  if (!hasModes && !hasParams) {
+  if (!hasModes && !hasDestination && !hasParams) {
     host.hidden = true;
     host.replaceChildren();
     return;
@@ -689,6 +694,40 @@ async function renderPopoverSettings({ doc, pop, targetEl, binding, actionId }) 
       modeWrap.appendChild(btn);
     }
     host.appendChild(modeWrap);
+  }
+
+  if (hasDestination) {
+    const destDef = getActionDestinationDef(actionId);
+    if (destDef) {
+      const currentDest = getActionParameter(builtinAction?.parameters, actionId, 'destination');
+      const destWrap = doc.createElement('div');
+      destWrap.className = 'kp-popover-mode-switch';
+      destWrap.setAttribute('role', 'group');
+      destWrap.setAttribute('aria-label', destDef.label || 'Destination');
+
+      for (const opt of destDef.options || []) {
+        const btn = doc.createElement('button');
+        btn.type = 'button';
+        btn.className = 'kp-popover-mode-btn';
+        btn.dataset.destinationId = opt.id;
+        btn.textContent = opt.label;
+        btn.setAttribute('aria-pressed', opt.id === currentDest ? 'true' : 'false');
+        btn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          try {
+            await setActionParameter(actionId, 'destination', opt.id);
+            destWrap.querySelectorAll('.kp-popover-mode-btn').forEach((el) => {
+              el.setAttribute('aria-pressed', el.dataset.destinationId === opt.id ? 'true' : 'false');
+            });
+          } catch (err) {
+            console.warn('[KeyPilot] Failed to set action destination:', err);
+          }
+        });
+        destWrap.appendChild(btn);
+      }
+      host.appendChild(destWrap);
+    }
   }
 
   if (hasParams) {

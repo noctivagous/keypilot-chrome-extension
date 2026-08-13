@@ -482,8 +482,16 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
   COPY_HOVERED_IMAGE: Object.freeze({
     handler: 'handleCopyHoveredImageKey',
     label: 'Copy Image',
-    description: 'Copy image under cursor to clipboard',
+    description: 'Copy image under cursor (clipboard, or Media Library later)',
     // Default key face (no tinted key-gray / family fill).
+    keyboardClass: null,
+    row: 1
+  }),
+  // Copy hyperlink under cursor (U on right-handed; no default on left — U is FORWARD there).
+  COPY_HOVERED_URL: Object.freeze({
+    handler: 'handleCopyHoveredUrlKey',
+    label: 'Copy URL',
+    description: 'Copy URL under cursor (clipboard, or Media Library later)',
     keyboardClass: null,
     row: 1
   }),
@@ -576,6 +584,7 @@ export const KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
   HIGHLIGHT: 'Get Page Data',
   RECTANGLE_HIGHLIGHT: 'Get Page Data',
   COPY_HOVERED_IMAGE: 'Get Page Data',
+  COPY_HOVERED_URL: 'Get Page Data',
   PAGE_MEDIA: 'Get Page Data',
   DELETE: 'Select',
   COLS_TOGGLE: 'Select',
@@ -786,6 +795,7 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   SCROLL_LINE: Object.freeze({ keys: ['n', 'N'] }),
   RECTANGLE_HIGHLIGHT: Object.freeze({ keys: ['y', 'Y'] }),
   COPY_HOVERED_IMAGE: Object.freeze({ keys: ['i', 'I'] }),
+  COPY_HOVERED_URL: Object.freeze({ keys: ['u', 'U'] }),
   PAGE_MEDIA: Object.freeze({ keys: ['o', 'O'] }),
   // M is otherwise unused on the right-handed layout (it's PAGE_DOWN_INSTANT on left-handed).
   OPEN_MEDIA_LIBRARY: Object.freeze({ keys: ['m', 'M'] }),
@@ -1035,7 +1045,7 @@ const KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: 'action', id: 'FORWARD', fallbackText: 'Go Forward' },
     { type: 'action', id: 'NEW_TAB', fallbackText: 'New Tab' },
     { type: 'action', id: 'RECTANGLE_HIGHLIGHT', fallbackText: 'Rectangle Select' },
-    { type: 'key', text: 'U' },
+    { type: 'action', id: 'COPY_HOVERED_URL', fallbackText: 'Copy URL' },
     { type: 'action', id: 'COPY_HOVERED_IMAGE', fallbackText: 'Copy Image' },
     { type: 'action', id: 'PAGE_MEDIA', fallbackText: 'Page Media' },
     { type: 'action', id: 'OPEN_POPOVER', fallbackText: 'Open Popover' },

@@ -53,10 +53,12 @@ import {
 /**
  * A Function parameter literally named `mode` of type `enum` is additionally surfaced as
  * `modes`/`defaultMode` for backward compat with the sticky popover's button-group mode switch
- * (e.g. `RECTANGLE_HIGHLIGHT`'s "Element rectangle" / "Pick cumulative"). Everything else is a
+ * (e.g. `RECTANGLE_HIGHLIGHT`'s "Element rectangle" / "Pick cumulative"). A `destination` enum
+ * is likewise inlined on the key-info popover (Copy Image / Copy URL). Everything else is a
  * regular parameter rendered by {@link KeyActionConfigPanel}.
  */
 const MODE_PARAMETER_ID = 'mode';
+const DESTINATION_PARAMETER_ID = 'destination';
 
 /**
  * Derive an {@link ActionSettingsDef} from the Function Library. Returns null for Functions with
@@ -96,11 +98,38 @@ function nonModeParameters(actionId) {
 }
 
 /**
+ * Parameters that still need the Config panel (not already inlined on the key-info popover).
+ * @param {string} actionId
+ * @returns {ActionParameterDef[]}
+ */
+function configPanelParameters(actionId) {
+  return nonModeParameters(actionId).filter((p) => p && p.id !== DESTINATION_PARAMETER_ID);
+}
+
+/**
+ * @param {string} actionId
+ * @returns {ActionParameterDef|null}
+ */
+export function getActionDestinationDef(actionId) {
+  const def = getActionSettingsDef(actionId);
+  const param = def?.parameters?.find((p) => p && p.id === DESTINATION_PARAMETER_ID && p.type === 'enum');
+  return param || null;
+}
+
+/**
  * @param {string} actionId
  * @returns {boolean}
  */
 export function actionHasParameters(actionId) {
-  return nonModeParameters(actionId).length > 0;
+  return configPanelParameters(actionId).length > 0;
+}
+
+/**
+ * @param {string} actionId
+ * @returns {boolean}
+ */
+export function actionHasDestination(actionId) {
+  return !!getActionDestinationDef(actionId);
 }
 
 /**
@@ -373,7 +402,7 @@ export class KeyActionConfigPanel {
 
     const action = await getOrCreateBuiltinFunctionUserAction(actionId);
     const storedParams = action?.parameters || {};
-    const params = nonModeParameters(actionId);
+    const params = configPanelParameters(actionId);
 
     if (params.length === 0) {
       const empty = document.createElement('div');

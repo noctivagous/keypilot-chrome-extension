@@ -19,9 +19,10 @@ for common web interactions, eliminating the need for mouse navigation.
 
 | Keys | Action |
 | --- | --- |
-| `I` | Copy image under cursor to clipboard |
+| `I` | Copy image under cursor (clipboard, or Media Library later) |
 | `M` | Open the Media Library (coming soon). |
 | `R` | Go Forward (History) |
+| `U` | Copy URL under cursor (clipboard, or Media Library later) |
 | `;` | Open Launcher (Quick Access to Sites) |
 | `B` | Open Link in New Tab (Foreground) |
 | `D` | Go Back (History) |
@@ -67,6 +68,13 @@ for common web interactions, eliminating the need for mouse navigation.
 | `Esc` | Exit Focus |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
+
+
+
+
+
+
 
 
 

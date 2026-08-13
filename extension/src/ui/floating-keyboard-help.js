@@ -25,7 +25,7 @@ import {
   ensureKeyBackgroundIcon,
   ensureKeyPressOverlay
 } from './keybindings-ui-shared.js';
-import { Z_INDEX } from '../config/constants.js';
+import { MODES, Z_INDEX } from '../config/constants.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
 import { getSettings, setSettings, SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS } from '../modules/settings-manager.js';
 import {
@@ -360,7 +360,7 @@ export class FloatingKeyboardHelp {
 
     this._applyEditModeHatch(next);
     this._syncSaveAndFinishButton(next);
-    this._syncExitTextModeButton(this._textModeFilterActive && !next);
+    this._syncEscExitButton();
 
     if (this.root && !this.root.hidden) this._render();
   }
@@ -465,19 +465,52 @@ export class FloatingKeyboardHelp {
   }
 
   /**
-   * Titlebar CTA shown only while a text field has focus (text / typing mode).
-   * Placed immediately to the right of the "Typing" title label.
-   * @param {boolean} visible
+   * Modes where Esc leaves the mode (not normal browsing). The titlebar
+   * "Exit [Esc]" button is shown only for these.
    */
-  _syncExitTextModeButton(visible) {
+  _isEscExitMode(mode) {
+    return mode === MODES.TEXT_FOCUS
+      || mode === MODES.HIGHLIGHT
+      || mode === MODES.INSPECTOR
+      || mode === MODES.DELETE
+      || mode === MODES.COLS
+      || mode === MODES.SCROLL_LINE;
+  }
+
+  _shouldShowEscExitButton() {
+    if (this._editMode) return false;
     try {
-      if (visible) {
-        this._ensureExitTextModeButton();
-        if (this._exitTextModeBtn) this._exitTextModeBtn.hidden = false;
-      } else if (this._exitTextModeBtn) {
-        this._exitTextModeBtn.hidden = true;
-      }
+      const kp = typeof this._getKeyPilot === 'function' ? this._getKeyPilot() : null;
+      const mode = kp?.state?.getState?.()?.mode;
+      if (this._isEscExitMode(mode)) return true;
     } catch { /* ignore */ }
+    return false;
+  }
+
+  /**
+   * Titlebar CTA shown only while a mode that Esc can exit is active
+   * (text / typing mode, Text Select, inspector pick, …).
+   */
+  _syncEscExitButton() {
+    try {
+      const visible = this._shouldShowEscExitButton();
+      if (visible) this._ensureExitTextModeButton();
+      this._setExitBtnShown(this._exitTextModeBtn, visible);
+    } catch { /* ignore */ }
+  }
+
+  /** @param {HTMLElement|null} btn @param {boolean} shown */
+  _setExitBtnShown(btn, shown) {
+    if (!btn) return;
+    btn.hidden = !shown;
+    try { btn.setAttribute('aria-hidden', shown ? 'false' : 'true'); } catch { /* ignore */ }
+    // Do not rely on [hidden] alone — host CSS and our own inline display fight it.
+    btn.style.setProperty('display', shown ? 'inline-flex' : 'none', 'important');
+  }
+
+  /** Public: KeyPilot calls this on mode changes. */
+  syncEscExitButton() {
+    this._syncEscExitButton();
   }
 
   _ensureExitTextModeButton() {
@@ -512,10 +545,13 @@ export class FloatingKeyboardHelp {
         whiteSpace: 'nowrap',
         cursor: 'pointer',
         flex: '0 0 auto',
-        display: 'inline-flex',
+        display: 'none',
         alignItems: 'center',
         gap: '5px'
       });
+      btn.hidden = true;
+      btn.setAttribute('aria-hidden', 'true');
+      btn.style.setProperty('display', 'none', 'important');
       btn.appendChild(doc.createTextNode('Exit'));
       const kbd = createTitlebarKbd(doc, 'Esc');
       try { kbd.style.fontSize = '10px'; } catch { /* ignore */ }
@@ -549,18 +585,24 @@ export class FloatingKeyboardHelp {
     } catch { /* ignore */ }
 
     this._exitTextModeBtn = btn;
+    this._setExitBtnShown(btn, this._shouldShowEscExitButton());
   }
 
   _onExitTextModeClick(e) {
     try { e?.preventDefault?.(); e?.stopPropagation?.(); } catch { /* ignore */ }
     try {
       const kp = typeof this._getKeyPilot === 'function' ? this._getKeyPilot() : null;
-      if (kp && typeof kp.handleEscapeFromTextFocus === 'function') {
-        const st = typeof kp.state?.getState === 'function' ? kp.state.getState() : null;
+      if (!kp) return;
+      const st = typeof kp.state?.getState === 'function' ? kp.state.getState() : null;
+      if (st?.mode === MODES.TEXT_FOCUS && typeof kp.handleEscapeFromTextFocus === 'function') {
         kp.handleEscapeFromTextFocus(st);
         return;
       }
-      kp?.focusDetector?.clearTextFocus?.();
+      if (typeof kp.cancelModes === 'function') {
+        kp.cancelModes();
+        return;
+      }
+      kp.focusDetector?.clearTextFocus?.();
     } catch { /* ignore */ }
   }
 
@@ -1551,6 +1593,7 @@ export class FloatingKeyboardHelp {
         this._setToggleHint(this.hintEl, key);
       }
     } catch { /* ignore */ }
+    this._syncEscExitButton();
     void this._renderAsync();
   }
 
@@ -1641,7 +1684,7 @@ export class FloatingKeyboardHelp {
     } catch { /* ignore */ }
 
     this._ensureTextModeStyles();
-    this._syncExitTextModeButton(on && !this._editMode);
+    this._syncEscExitButton();
 
     if (this._editMode) return;
 
@@ -1778,6 +1821,7 @@ export class FloatingKeyboardHelp {
         const panel = typeof this._getConfigPanel === 'function' ? this._getConfigPanel() : null;
         if (panel && typeof panel.selectLayoutByValue === 'function') {
           await panel.selectLayoutByValue(v);
+          try { sel.value = this._layoutSelectValueForCurrent(); } catch { /* ignore */ }
           return;
         }
       } catch { /* ignore */ }

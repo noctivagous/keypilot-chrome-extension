@@ -231,7 +231,7 @@ export const SCROLL = Object.freeze({
    * Scroll Line: ease-in power. 1 = linear, 2 = quadratic (gentle near the
    * dot, ramps harder toward the edge of the range).
    */
-  LINE_CURVE_EXPONENT: 1.7,
+  LINE_CURVE_EXPONENT: 1.75,
   /** Scroll Line: offset beyond the dead zone that maps to max speed */
   LINE_CURVE_RANGE_PX: 360,
   /** Scroll Line: cap on each axis */

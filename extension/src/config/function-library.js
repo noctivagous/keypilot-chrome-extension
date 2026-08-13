@@ -103,14 +103,28 @@ const TEXT_ACTIVE_BUILTIN_FUNCTION_IDS = new Set([
  * defaulting to `'none'` — most of `KEYBINDING_ACTION_DEFS` (navigation, tab management, clicks)
  * genuinely reads no page *data* in the sense this taxonomy cares about.
  *
- * `destinations` is left unset here even for `COPY_HOVERED_IMAGE`: the classification is accurate
- * today, but there is only one working sink (the clipboard) — no `destination` parameter or
- * Media Library sink exists yet, so listing it would advertise a control that doesn't work.
- * See KEY_ACTION_ARCHITECTURE.md, "Data Acquisition & Result Destinations".
- * @type {Readonly<Record<string, Partial<Pick<FunctionDef, 'dataSource'|'dataKind'>>>>}
+ * `COPY_HOVERED_IMAGE` / `COPY_HOVERED_URL` advertise `clipboard` (working) and `mediaLibrary`
+ * (catalogued; handler shows "coming soon" until that sink exists). See
+ * KEY_ACTION_ARCHITECTURE.md, "Data Acquisition & Result Destinations".
  */
+const CLIPBOARD_OR_MEDIA_LIBRARY_DESTINATIONS = Object.freeze([
+  ACTION_RESULT_DESTINATIONS.CLIPBOARD,
+  ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY
+]);
+
+/** @type {Readonly<Record<string, Partial<Pick<FunctionDef, 'dataSource'|'dataKind'|'destinations'>>>>} */
+
 const BUILTIN_FUNCTION_DATA_TAGS = Object.freeze({
-  COPY_HOVERED_IMAGE: Object.freeze({ dataSource: 'underCursor', dataKind: 'media' }),
+  COPY_HOVERED_IMAGE: Object.freeze({
+    dataSource: 'underCursor',
+    dataKind: 'media',
+    destinations: CLIPBOARD_OR_MEDIA_LIBRARY_DESTINATIONS
+  }),
+  COPY_HOVERED_URL: Object.freeze({
+    dataSource: 'underCursor',
+    dataKind: 'text',
+    destinations: CLIPBOARD_OR_MEDIA_LIBRARY_DESTINATIONS
+  }),
   // Whole-page scan (not under-cursor); opens a tabbed overlay rather than a sink.
   PAGE_MEDIA: Object.freeze({ dataSource: 'none', dataKind: 'media' }),
   OPEN_MEDIA_LIBRARY: Object.freeze({ dataSource: 'none' }),
@@ -140,7 +154,12 @@ const BUILTIN_FUNCTION_DATA_TAGS = Object.freeze({
  * key off this same list.
  * @type {ReadonlyArray<string>}
  */
-export const FIXED_KEY_FUNCTION_IDS = Object.freeze(['SEND_TEXT_TO_AI', 'RECTANGLE_HIGHLIGHT']);
+export const FIXED_KEY_FUNCTION_IDS = Object.freeze([
+  'SEND_TEXT_TO_AI',
+  'RECTANGLE_HIGHLIGHT',
+  'COPY_HOVERED_IMAGE',
+  'COPY_HOVERED_URL'
+]);
 
 /**
  * Parameter schema for built-in Functions that used to declare their schema only in
@@ -182,6 +201,12 @@ const BUILTIN_FUNCTION_PARAMETER_OVERRIDES = Object.freeze({
       ACTION_RESULT_DESTINATIONS.POPOVER,
       ACTION_RESULT_DESTINATIONS.BOTH
     ])
+  ]),
+  COPY_HOVERED_IMAGE: Object.freeze([
+    buildResultDestinationParameter(CLIPBOARD_OR_MEDIA_LIBRARY_DESTINATIONS)
+  ]),
+  COPY_HOVERED_URL: Object.freeze([
+    buildResultDestinationParameter(CLIPBOARD_OR_MEDIA_LIBRARY_DESTINATIONS)
   ])
 });
 
@@ -294,7 +319,8 @@ function buildBuiltinActionFunctionDefs() {
       category: KEYBINDING_ACTION_CATEGORY_BY_ID[id] || 'Other',
       keyboardClass: def.keyboardClass ?? null,
       // No `parameters` by default: most built-ins remain simple/non-instantiable Functions.
-      // A few (SEND_TEXT_TO_AI, RECTANGLE_HIGHLIGHT) get their schema below from
+      // A few (SEND_TEXT_TO_AI, RECTANGLE_HIGHLIGHT, COPY_HOVERED_IMAGE, COPY_HOVERED_URL)
+      // get their schema below from
       // BUILTIN_FUNCTION_PARAMETER_OVERRIDES — see KEY_ACTION_ARCHITECTURE.md "Migration mapping".
       ...(TEXT_ACTIVE_BUILTIN_FUNCTION_IDS.has(id) ? { worksWhileTyping: true } : {}),
       ...(def.mode ? { mode: def.mode } : {}),
@@ -511,6 +537,7 @@ export const FUNCTION_LIBRARY_ITEM_ORDER = Object.freeze({
   OMNIBOX: 170,
   // Get Page Data
   COPY_HOVERED_IMAGE: 200,
+  COPY_HOVERED_URL: 202,
   PAGE_MEDIA: 205,
   RECTANGLE_HIGHLIGHT: 210,
   HIGHLIGHT: 220,

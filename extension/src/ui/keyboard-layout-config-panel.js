@@ -740,13 +740,15 @@ export class KeyboardLayoutConfigPanel {
    * Duplicate the currently selected layout into a new editable user layout,
    * select it for editing, and optionally make it current.
    * Built-in → seeded copy of Built-in. User layout → deep copy of that layout's slots.
-   * @param {{ setCurrent?: boolean, label?: string }} [opts]
+   * @param {{ setCurrent?: boolean, label?: string, builtinLayoutId?: string }} [opts]
+   *   `builtinLayoutId` duplicates that built-in even when a user layout is selected.
    * @returns {Promise<any|null>} created layout or null
    */
-  async duplicateLayout({ setCurrent = true, label } = {}) {
+  async duplicateLayout({ setCurrent = true, label, builtinLayoutId } = {}) {
     try {
       const layouts = await listUserKeyboardLayouts();
-      const sourceUser = (this._st.mode === 'user' && this._st.userLayout)
+      const fromBuiltinId = builtinLayoutId ? String(builtinLayoutId) : '';
+      const sourceUser = (!fromBuiltinId && this._st.mode === 'user' && this._st.userLayout)
         ? this._st.userLayout
         : null;
 
@@ -758,14 +760,15 @@ export class KeyboardLayoutConfigPanel {
             layouts
           );
         } else {
-          nextLabel = nextUserCopyLayoutLabel(this._familyBaseLabel(), layouts) || 'Custom Layout';
+          const seedId = fromBuiltinId || this._st.builtinLayoutId;
+          nextLabel = nextUserCopyLayoutLabel(this._familyBaseLabelFor(seedId), layouts) || 'Custom Layout';
         }
       }
 
       const created = sourceUser
         ? await duplicateUserKeyboardLayout({ source: sourceUser, label: nextLabel })
         : await duplicateBuiltinLayoutToUserLayout({
-          builtinLayoutId: this._st.builtinLayoutId,
+          builtinLayoutId: fromBuiltinId || this._st.builtinLayoutId,
           label: nextLabel
         });
       if (!created?.id) {
@@ -1788,6 +1791,30 @@ export class KeyboardLayoutConfigPanel {
   color: #6a5a7a;
   font-style: italic;
 }
+.kp-layout-config-panel .kp-cfg-instance-fieldset {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 8px 8px;
+  min-width: 0;
+  border: 1px solid #3a4550;
+  border-radius: 2px;
+  background: rgba(8, 12, 16, 0.28);
+}
+.kp-layout-config-panel .kp-cfg-instance-fieldset > legend {
+  padding: 0 6px;
+  margin-left: 2px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a9aaa;
+}
+.kp-layout-config-panel .kp-cfg-instance-new {
+  align-self: flex-start;
+}
 .kp-layout-config-panel .kp-cfg-key-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2269,6 +2296,36 @@ export class KeyboardLayoutConfigPanel {
   flex-wrap: wrap;
   gap: 4px;
   margin-top: 8px;
+}
+.kp-layout-config-panel .kp-cfg-assign {
+  margin: 8px 0;
+}
+.kp-layout-config-panel .kp-cfg-assign-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.kp-layout-config-panel .kp-cfg-assign-table th {
+  text-align: left;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #7a92a8;
+  padding: 2px 4px 4px 0;
+  border-bottom: 1px solid rgba(140, 190, 230, 0.18);
+}
+.kp-layout-config-panel .kp-cfg-assign-table td {
+  padding: 4px 4px 4px 0;
+  color: #d8e4f0;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.kp-layout-config-panel .kp-cfg-assign-table td:last-child {
+  text-align: right;
+  width: 1%;
+  white-space: nowrap;
+  padding-right: 0;
 }
 .kp-layout-config-panel .kp-cfg-create-body {
   display: flex;
@@ -3486,25 +3543,30 @@ export class KeyboardLayoutConfigPanel {
       try {
         await deleteUserKeyboardLayout(deletedId);
         this._st.userLayouts = await listUserKeyboardLayouts();
-        this._st.mode = 'builtin';
-        this._st.userLayoutId = null;
-        this._st.userLayout = null;
-        this._renderLayoutSelect();
-        this._renderRightList();
-        this._emitChange();
+        const remaining = (this._st.userLayouts || []).filter((l) => l && l.id);
+        if (remaining.length) {
+          const next = remaining[0];
+          this._st.mode = 'user';
+          this._st.userLayoutId = next.id;
+          this._st.userLayout = next;
+          this._renderLayoutSelect();
+          this._renderRightList();
+          this._emitChange();
+        } else {
+          await this.duplicateLayout({ setCurrent: true });
+        }
 
         // Keep KeyPilot + Keyboard Reference current selection in sync.
         try {
           const kp = this._kp;
           const cur = String(kp?._currentKeyboardLayoutId || kp?._settings?.currentKeyboardLayoutId || '');
-          if (cur === `user:${deletedId}`) {
-            await setSettings({ currentKeyboardLayoutId: 'builtin' });
+          if (cur === `user:${deletedId}` && this._st.userLayoutId) {
+            const nextId = `user:${this._st.userLayoutId}`;
+            await setSettings({ currentKeyboardLayoutId: nextId });
             if (kp) {
-              kp._currentKeyboardLayoutId = 'builtin';
-              kp._currentUserLayout = null;
-              kp._currentUserMacros = [];
-              kp._currentKeySlotMap = null;
-              if (kp._settings) kp._settings.currentKeyboardLayoutId = 'builtin';
+              kp._currentKeyboardLayoutId = nextId;
+              kp._currentUserLayout = this._st.userLayout;
+              if (kp._settings) kp._settings.currentKeyboardLayoutId = nextId;
             }
           }
           if (typeof kp?._refreshCurrentKeyboardLayoutFromSettings === 'function') {
@@ -3780,6 +3842,70 @@ export class KeyboardLayoutConfigPanel {
   }
 
   /**
+   * Inspector table of keyboard slots this library item is assigned to, with per-row delete.
+   * @param {{ type: string, id: string }} item
+   * @returns {HTMLElement}
+   */
+  _renderAssignmentTable(item) {
+    const wrap = document.createElement('div');
+    wrap.className = 'kp-cfg-assign';
+    const sub = document.createElement('div');
+    sub.className = 'kp-cfg-dock-subtitle';
+    sub.textContent = 'Assigned keys';
+    wrap.appendChild(sub);
+
+    const keys = this._findSlotKeysForItem(item).slice().sort((a, b) => (
+      formatChordSlotKeyLabel(a).localeCompare(formatChordSlotKeyLabel(b))
+    ));
+    if (!keys.length) {
+      const empty = document.createElement('p');
+      empty.className = 'kp-cfg-dock-empty';
+      empty.textContent = 'Not assigned to any key.';
+      wrap.appendChild(empty);
+      return wrap;
+    }
+
+    const table = document.createElement('table');
+    table.className = 'kp-cfg-assign-table';
+    const thead = document.createElement('thead');
+    const hr = document.createElement('tr');
+    const thKey = document.createElement('th');
+    thKey.textContent = 'Key';
+    const thAct = document.createElement('th');
+    thAct.textContent = '';
+    hr.appendChild(thKey);
+    hr.appendChild(thAct);
+    thead.appendChild(hr);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    for (const slot of keys) {
+      const tr = document.createElement('tr');
+      const tdKey = document.createElement('td');
+      tdKey.textContent = formatChordSlotKeyLabel(slot);
+      const tdAct = document.createElement('td');
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'kp-cfg-btn';
+      setCfgBtnLabel(del, 'Delete', 'kp-cfg-i-trash');
+      del.title = `Remove from ${formatChordSlotKeyLabel(slot)}`;
+      del.setAttribute('aria-label', `Remove assignment from ${formatChordSlotKeyLabel(slot)}`);
+      del.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        void this._clearSlotKey(slot);
+      }, true);
+      tdAct.appendChild(del);
+      tr.appendChild(tdKey);
+      tr.appendChild(tdAct);
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    return wrap;
+  }
+
+  /**
    * Render the Inspector dock for the current selection. Every Config-side editor lands here
    * instead of the old inline host + key popover pair, so only one editing surface is ever
    * open. (Keyboard Reference keycaps keep their own popovers.)
@@ -3856,10 +3982,10 @@ export class KeyboardLayoutConfigPanel {
     host.appendChild(this._dockRows([
       ['Id', functionId],
       ['Category', def ? (getFunctionCategory(def.id) || 'Other') : ''],
-      ['Key', String(binding?.displayKey || binding?.keyLabel || '')],
       ['About', String(def?.description || actionDef?.description || binding?.description || '')],
       [def?.worksWhileTyping ? 'Note' : '', def?.worksWhileTyping ? 'Requires a modifier combo' : '']
     ]));
+    host.appendChild(this._renderAssignmentTable({ type: 'function', id: functionId }));
 
     /** @type {Array<{ label: string, onClick: () => void, title?: string, icon?: string }>} */
     const actions = [{
@@ -3909,6 +4035,7 @@ export class KeyboardLayoutConfigPanel {
       ['Based on', macro.baseStockMacroId || ''],
       ['Steps', String(steps.length)]
     ]));
+    host.appendChild(this._renderAssignmentTable({ type: 'macro', id: macro.id }));
     host.appendChild(this._renderStepSummaryList(steps));
     host.appendChild(this._dockActions([
       {
@@ -3952,6 +4079,9 @@ export class KeyboardLayoutConfigPanel {
       ['Based on', draft.baseStockMacroId || ''],
       ['Steps', String((draft.steps || []).length)]
     ]));
+    if (draft.id) {
+      host.appendChild(this._renderAssignmentTable({ type: 'macro', id: draft.id }));
+    }
     const warn = this._cycleWarningFor(draft.id, draft.steps || []);
     if (warn) {
       const p = document.createElement('p');
@@ -4191,6 +4321,7 @@ export class KeyboardLayoutConfigPanel {
   _renderMacroKeyEditorInto(host, macroKey) {
     this._macroKeyDraft = { ...macroKey, config: { ...(macroKey.config || {}) } };
     host.appendChild(this._dockTitle(String(macroKey.label || macroKey.kind || 'Macro Key'), 'Macro Key'));
+    host.appendChild(this._renderAssignmentTable({ type: 'function', id: macroKey.id }));
     host.appendChild(this._dockActions([{
       label: 'Place on keyboard',
       icon: 'kp-cfg-i-place',
@@ -4264,6 +4395,7 @@ export class KeyboardLayoutConfigPanel {
       String(instance.label || def.label),
       summarizeFunctionParameters(instance.functionId, instance.parameters) || 'Configured instance'
     ));
+    host.appendChild(this._renderAssignmentTable({ type: 'function', id: instance.id }));
     host.appendChild(this._dockActions([{
       label: 'Place on keyboard',
       icon: 'kp-cfg-i-place',
@@ -5010,19 +5142,31 @@ export class KeyboardLayoutConfigPanel {
       this._st.mode = 'user';
       this._st.userLayoutId = id;
       this._st.userLayout = found;
-    } else {
-      const familyId = parseBuiltinFamilySelectValue(v) || 'browsing';
-      const handedness = inferFamilyAndHandednessFromLayoutId(
-        this._kp?._keyboardLayoutId || this._st.builtinLayoutId
-      ).handedness;
-      this._st.mode = 'builtin';
-      this._st.userLayoutId = null;
-      this._st.userLayout = null;
-      this._st.builtinLayoutId = resolveKeyboardLayoutId({ familyId, handedness });
+      this._renderLayoutSelect();
+      this._renderRightList();
+      this._emitChange();
+      return;
     }
-    this._renderLayoutSelect();
-    this._renderRightList();
-    this._emitChange();
+
+    // Built-in layouts are immutable — never switch into them while editing.
+    const familyId = parseBuiltinFamilySelectValue(v) || 'browsing';
+    const handedness = inferFamilyAndHandednessFromLayoutId(
+      this._kp?._keyboardLayoutId || this._st.builtinLayoutId
+    ).handedness;
+    const builtinLayoutId = resolveKeyboardLayoutId({ familyId, handedness });
+    const familyName = this._familyBaseLabelFor(builtinLayoutId);
+    const ok = typeof window.confirm === 'function'
+      ? window.confirm(
+        `"${familyName}" is a built-in layout and cannot be edited.\n\nDuplicate it and edit the copy?`
+      )
+      : false;
+    if (!ok) {
+      this._renderLayoutSelect();
+      this._emitChange();
+      return;
+    }
+    this._st.builtinLayoutId = builtinLayoutId;
+    await this.duplicateLayout({ builtinLayoutId });
   }
 
   async _commitLayoutComboRename() {
@@ -5646,24 +5790,6 @@ export class KeyboardLayoutConfigPanel {
         actionsRow.appendChild(chip);
       }
 
-      const inspectBtn = document.createElement('button');
-      inspectBtn.type = 'button';
-      inspectBtn.className = 'kp-cfg-inspect';
-      setCfgBtnLabel(inspectBtn, 'Inspect', 'kp-cfg-i-eye');
-      inspectBtn.title = `Inspect ${label}`;
-      inspectBtn.setAttribute('aria-label', `Inspect ${label}`);
-      inspectBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        this._inspectItem({ type, id });
-        if (type === 'function' && getFunctionDef(id)) {
-          this._selectedLibraryFunctionId = String(id);
-          if (this._addStepSelect) this._addStepSelect.value = String(id);
-        }
-      }, true);
-      inspectBtn.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
-      actionsRow.appendChild(inspectBtn);
-
       meta.appendChild(actionsRow);
       item.appendChild(keyEl);
       item.appendChild(meta);
@@ -5727,50 +5853,27 @@ export class KeyboardLayoutConfigPanel {
       grid.className = 'kp-cfg-key-grid';
 
       for (const def of items) {
-        // The two Functions still bound to a fixed physical key (SEND_TEXT_TO_AI,
-        // RECTANGLE_HIGHLIGHT) keep their existing single-item + "Config" popover path rather
-        // than the per-instance treatment below — see FIXED_KEY_FUNCTION_IDS.
+        // Functions still bound to a fixed physical key (SEND_TEXT_TO_AI, RECTANGLE_HIGHLIGHT,
+        // COPY_HOVERED_IMAGE, COPY_HOVERED_URL) keep their existing single-item + "Config" popover
+        // path rather than the per-instance treatment below — see FIXED_KEY_FUNCTION_IDS.
         const isFixedKey = FIXED_KEY_FUNCTION_IDS.includes(def.id);
 
         if (!isFixedKey && isFunctionInstantiable(def.id)) {
           const instances = (this._st.actions || []).filter((a) => a && a.functionId === def.id);
-          instances.forEach((inst, index) => {
-            const itemEl = appendKeyItem({
-              type: 'function',
-              id: inst.id,
-              label: instances.length > 1 ? `${def.label} #${index + 1}` : def.label,
-              sublabel: summarizeFunctionParameters(inst.functionId, inst.parameters),
-              keyboardClass: def.keyboardClass || '',
-              infoKey: `function:${inst.id}`,
-              variant: 'configurable-fn',
-              functionId: def.id
-            });
-            const edit = document.createElement('button');
-            edit.type = 'button';
-            edit.className = 'kp-cfg-inspect';
-            edit.textContent = 'Edit';
-            edit.title = `Configure ${def.label}`;
-            edit.addEventListener('click', (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              this._openActionParamsEditor(def, inst);
-            }, true);
-            edit.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
-            cardActions(itemEl).appendChild(edit);
-            if (def.worksWhileTyping) {
-              itemEl.style.flexWrap = 'wrap';
-              cardActions(itemEl).appendChild(this._renderBindChordButton({ type: 'function', id: inst.id }, def));
-            }
-            grid.appendChild(itemEl);
-          });
+          const fieldset = document.createElement('fieldset');
+          fieldset.className = 'kp-cfg-instance-fieldset';
+          const legend = document.createElement('legend');
+          legend.textContent = def.label;
+          fieldset.appendChild(legend);
 
           const addBtn = document.createElement('button');
           addBtn.type = 'button';
-          addBtn.className = 'kp-cfg-btn';
-          addBtn.style.cssText = 'align-self:flex-start;';
-          addBtn.textContent = `+ New ${def.label}`;
-          addBtn.title = def.description || '';
-          addBtn.addEventListener('click', async () => {
+          addBtn.className = 'kp-cfg-btn kp-cfg-instance-new';
+          addBtn.textContent = `New ${def.label}`;
+          addBtn.title = def.description || `Create a new ${def.label} instance`;
+          addBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             try {
               const created = await createUserAction({ functionId: def.id });
               if (created) {
@@ -5782,7 +5885,44 @@ export class KeyboardLayoutConfigPanel {
               this._notify('Failed to create instance.', 'error');
             }
           }, true);
-          grid.appendChild(addBtn);
+          fieldset.appendChild(addBtn);
+
+          if (instances.length) {
+            const instGrid = document.createElement('div');
+            instGrid.className = 'kp-cfg-key-grid';
+            instances.forEach((inst, index) => {
+              const itemEl = appendKeyItem({
+                type: 'function',
+                id: inst.id,
+                label: instances.length > 1 ? `${def.label} #${index + 1}` : def.label,
+                sublabel: summarizeFunctionParameters(inst.functionId, inst.parameters),
+                keyboardClass: def.keyboardClass || '',
+                infoKey: `function:${inst.id}`,
+                variant: 'configurable-fn',
+                functionId: def.id
+              });
+              const edit = document.createElement('button');
+              edit.type = 'button';
+              edit.className = 'kp-cfg-inspect';
+              edit.textContent = 'Edit';
+              edit.title = `Configure ${def.label}`;
+              edit.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this._openActionParamsEditor(def, inst);
+              }, true);
+              edit.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
+              cardActions(itemEl).appendChild(edit);
+              if (def.worksWhileTyping) {
+                itemEl.style.flexWrap = 'wrap';
+                cardActions(itemEl).appendChild(this._renderBindChordButton({ type: 'function', id: inst.id }, def));
+              }
+              instGrid.appendChild(itemEl);
+            });
+            fieldset.appendChild(instGrid);
+          }
+
+          grid.appendChild(fieldset);
           continue;
         }
 
@@ -6197,22 +6337,6 @@ export class KeyboardLayoutConfigPanel {
       const actionsRow = document.createElement('div');
       actionsRow.className = 'kp-cfg-card-actions';
 
-      const inspectBtn = document.createElement('button');
-      inspectBtn.type = 'button';
-      inspectBtn.className = 'kp-cfg-inspect';
-      setCfgBtnLabel(inspectBtn, 'Inspect', 'kp-cfg-i-eye');
-      inspectBtn.title = `Inspect ${label}`;
-      inspectBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        this._inspectItem({ type, id });
-        if (type === 'function' && getFunctionDef(id)) {
-          this._selectedLibraryFunctionId = String(id);
-          if (this._addStepSelect) this._addStepSelect.value = String(id);
-        }
-      }, true);
-      actionsRow.appendChild(inspectBtn);
-
       const placeBtn = document.createElement('button');
       placeBtn.type = 'button';
       placeBtn.className = 'kp-cfg-inspect';
@@ -6584,9 +6708,7 @@ export class KeyboardLayoutConfigPanel {
    * @returns {string[]}
    */
   _findSlotKeysForItem(item) {
-    const slots = this._st.userLayout?.slots && typeof this._st.userLayout.slots === 'object'
-      ? this._st.userLayout.slots
-      : {};
+    const slots = this._getEditableSlotMap() || {};
     const type = String(item?.type || '');
     const id = String(item?.id || '');
     const out = [];
@@ -6871,7 +6993,7 @@ export class KeyboardLayoutConfigPanel {
   _renderBindChordButton(item, def) {
     const row = document.createElement('div');
     row.className = 'kp-cfg-btn-row';
-    // The `.kp-cfg-item` grid cell is a single-row flexbox (key + Inspect/Edit/Config); wrap
+    // The `.kp-cfg-item` grid cell is a single-row flexbox (key + Edit/Config); wrap
     // this badge+button row onto its own full-width line below that pair instead of squeezing
     // in beside them.
     row.style.flexBasis = '100%';
@@ -6900,11 +7022,17 @@ export class KeyboardLayoutConfigPanel {
   }
 
   _familyBaseLabel() {
+    return this._familyBaseLabelFor(this._st.builtinLayoutId);
+  }
+
+  /**
+   * Short family name for copy labels ("Browsing"), not the "Built-in: …" picker label.
+   * @param {string} [builtinLayoutId]
+   */
+  _familyBaseLabelFor(builtinLayoutId) {
     try {
-      const inferred = inferFamilyAndHandednessFromLayoutId(this._st.builtinLayoutId);
-      const familyId = normalizeKeyboardLayoutFamilyId(
-        this._kp?._settings?.keyboardLayoutFamilyId || inferred.familyId || 'browsing'
-      );
+      const inferred = inferFamilyAndHandednessFromLayoutId(builtinLayoutId || this._st.builtinLayoutId);
+      const familyId = normalizeKeyboardLayoutFamilyId(inferred.familyId || 'browsing');
       const meta = (BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META || []).find((m) => m && m.id === familyId);
       return String(meta?.label || familyId || 'Layout');
     } catch {
@@ -7152,6 +7280,49 @@ export class KeyboardLayoutConfigPanel {
   }
 
   /**
+   * Ensure a user layout is active (auto-dup from built-in on first edit).
+   * @returns {Promise<{ layout: any, becameCurrent: boolean }|null>}
+   */
+  async _ensureEditableUserLayout() {
+    let becameCurrent = false;
+    if (this._st.mode !== 'user' || !this._st.userLayout) {
+      const base = this._familyBaseLabel();
+      const layouts = await listUserKeyboardLayouts();
+      const label = nextUserCopyLayoutLabel(base, layouts);
+      const created = await duplicateBuiltinLayoutToUserLayout({
+        builtinLayoutId: this._st.builtinLayoutId,
+        label
+      });
+      this._st.userLayouts = await listUserKeyboardLayouts();
+      this._st.mode = 'user';
+      this._st.userLayoutId = created.id;
+      this._st.userLayout = created;
+      this._renderLayoutSelect();
+      becameCurrent = true;
+    }
+    if (!this._st.userLayout || !this._st.userLayout.id) return null;
+    return { layout: this._st.userLayout, becameCurrent };
+  }
+
+  /**
+   * Apply a slot write to live state, Keyboard Reference, and the Inspector.
+   * @param {any} layout
+   * @param {boolean} becameCurrent
+   */
+  async _afterSlotWrite(layout, becameCurrent) {
+    this._st.userLayout = layout;
+    this.syncUserLayout(this._st.userLayout);
+    this._emitChange();
+    try {
+      await this._kp?.applyLiveUserLayout?.(this._st.userLayout, {
+        setAsCurrent: becameCurrent || String(this._kp?._currentKeyboardLayoutId || '') === `user:${this._st.userLayout.id}`,
+        macros: this._st.macros,
+        actions: this._st.actions
+      });
+    } catch { /* ignore */ }
+  }
+
+  /**
    * Ensure a user layout is active (auto-dup from built-in if needed), then assign `item` to
    * `slotKey` — a bare key label ("Q") or a modifier-chord slot key ("CHORD:CTRL+ALT+Q", see
    * utils/key-chord.js). Goes through {@link setUserKeyboardLayoutSlot} so the
@@ -7165,43 +7336,39 @@ export class KeyboardLayoutConfigPanel {
     if (!item || !item.type || !item.id || !slot) return;
 
     try {
-      let becameCurrent = false;
-      // Auto-duplicate built-in on first place.
-      if (this._st.mode !== 'user' || !this._st.userLayout) {
-        const base = this._familyBaseLabel();
-        const layouts = await listUserKeyboardLayouts();
-        const label = nextUserCopyLayoutLabel(base, layouts);
-        const created = await duplicateBuiltinLayoutToUserLayout({
-          builtinLayoutId: this._st.builtinLayoutId,
-          label
-        });
-        this._st.userLayouts = await listUserKeyboardLayouts();
-        this._st.mode = 'user';
-        this._st.userLayoutId = created.id;
-        this._st.userLayout = created;
-        this._renderLayoutSelect();
-        becameCurrent = true;
-      }
-
-      if (!this._st.userLayout || !this._st.userLayout.id) return;
-      const result = await setUserKeyboardLayoutSlot(this._st.userLayout.id, slot, { type: item.type, id: item.id });
+      const ensured = await this._ensureEditableUserLayout();
+      if (!ensured) return;
+      const result = await setUserKeyboardLayoutSlot(ensured.layout.id, slot, { type: item.type, id: item.id });
       if (!result.ok) {
         this._notify(result.reason || 'Could not bind key.', 'error');
         return;
       }
-      this._st.userLayout = result.layout;
-      this.syncUserLayout(this._st.userLayout);
-      this._emitChange();
-
-      try {
-        await this._kp?.applyLiveUserLayout?.(this._st.userLayout, {
-          setAsCurrent: becameCurrent || String(this._kp?._currentKeyboardLayoutId || '') === `user:${this._st.userLayout.id}`,
-          macros: this._st.macros,
-          actions: this._st.actions
-        });
-      } catch { /* ignore */ }
+      await this._afterSlotWrite(result.layout, ensured.becameCurrent);
     } catch {
       this._notify('Failed to bind key.', 'error');
+    }
+  }
+
+  /**
+   * Clear one keyboard slot. Auto-duplicates a built-in layout first, same as placing.
+   * @param {string} slotKey
+   */
+  async _clearSlotKey(slotKey) {
+    const slot = String(slotKey || '').trim();
+    if (!slot) return;
+    try {
+      const ensured = await this._ensureEditableUserLayout();
+      if (!ensured) return;
+      const result = await setUserKeyboardLayoutSlot(ensured.layout.id, slot, null);
+      if (!result.ok) {
+        this._notify(result.reason || 'Could not remove key.', 'error');
+        return;
+      }
+      await this._afterSlotWrite(result.layout, ensured.becameCurrent);
+      try { this._renderInspector(); } catch { /* ignore */ }
+      this._notify(`Removed ${formatChordSlotKeyLabel(slot)}.`, 'success');
+    } catch {
+      this._notify('Failed to remove key.', 'error');
     }
   }
 
