@@ -54,6 +54,8 @@ export const CSS_CLASSES = {
   HIDDEN: 'kpv2-hidden',
   RIPPLE: 'kpv2-ripple',
   FOCUS_OVERLAY: 'kpv2-focus-overlay',
+  /** Scroll Line origin-dot + line (popover / top-layer chrome) */
+  SCROLL_LINE_OVERLAY: 'kpv2-scroll-line',
   /**
    * Strategy B: in-target absolute focus ring — mounted as last child of the
    * clickable/host with local max z-index + 1. Co-located paint; scrolls with
@@ -222,7 +224,18 @@ export const SCROLL = Object.freeze({
   /** C / V: smaller step (default = prior 400px × 1.25) */
   HALF_PAGE_PX: 500,
   /** Default CSS scroll-behavior for keyboard scrolling */
-  BEHAVIOR: 'smooth'
+  BEHAVIOR: 'smooth',
+  /** Scroll Line: no scroll inside this radius from the origin dot */
+  LINE_DEADZONE_PX: 12,
+  /**
+   * Scroll Line: ease-in power. 1 = linear, 2 = quadratic (gentle near the
+   * dot, ramps harder toward the edge of the range).
+   */
+  LINE_CURVE_EXPONENT: 1.7,
+  /** Scroll Line: offset beyond the dead zone that maps to max speed */
+  LINE_CURVE_RANGE_PX: 360,
+  /** Scroll Line: cap on each axis */
+  LINE_MAX_PX_PER_SEC: 2400
 });
 
 export const MODES = {
@@ -244,6 +257,8 @@ export const MODES = {
   COLS: 'cols',
   TEXT_FOCUS: 'text_focus',
   HIGHLIGHT: 'highlight',
+  /** Viewport-fixed origin-dot autoscroll (Scroll Line key) */
+  SCROLL_LINE: 'scroll_line',
   POPOVER: 'popover',
   OMNIBOX: 'omnibox'
 };

@@ -223,8 +223,9 @@
         "fallbackText": "Click New Tab"
       },
       {
-        "type": "key",
-        "text": "N"
+        "type": "action",
+        "id": "SCROLL_LINE",
+        "fallbackText": "Scroll Line"
       },
       {
         "type": "action",
@@ -278,8 +279,9 @@
         "fallbackText": "Rectangle Select"
       },
       {
-        "type": "key",
-        "text": "T"
+        "type": "action",
+        "id": "SCROLL_LINE",
+        "fallbackText": "Scroll Line"
       },
       {
         "type": "action",
@@ -1348,6 +1350,13 @@
       "displayKey": "B",
       "keyboardClass": "key-activate-new"
     },
+    "SCROLL_LINE": {
+      "label": "Scroll Line",
+      "description": "Scroll from a fixed origin: move the mouse away from the dot to scroll faster",
+      "keyLabel": "N",
+      "displayKey": "N",
+      "keyboardClass": "key-scroll"
+    },
     "OPEN_MEDIA_LIBRARY": {
       "label": "Media Library",
       "description": "Open the Media Library (coming soon).",
@@ -1545,6 +1554,13 @@
       "keyLabel": "N",
       "displayKey": "N",
       "keyboardClass": "key-activate-new"
+    },
+    "SCROLL_LINE": {
+      "label": "Scroll Line",
+      "description": "Scroll from a fixed origin: move the mouse away from the dot to scroll faster",
+      "keyLabel": "T",
+      "displayKey": "T",
+      "keyboardClass": "key-scroll"
     },
     "COLS_TOGGLE": {
       "label": "Cols Toggle",
@@ -2020,8 +2036,9 @@
       "fallbackText": "Click New Tab"
     },
     {
-      "type": "key",
-      "text": "N"
+      "type": "action",
+      "id": "SCROLL_LINE",
+      "fallbackText": "Scroll Line"
     },
     {
       "type": "action",
@@ -2230,6 +2247,13 @@
     "keyLabel": "B",
     "displayKey": "B",
     "keyboardClass": "key-activate-new"
+  },
+  "SCROLL_LINE": {
+    "label": "Scroll Line",
+    "description": "Scroll from a fixed origin: move the mouse away from the dot to scroll faster",
+    "keyLabel": "N",
+    "displayKey": "N",
+    "keyboardClass": "key-scroll"
   },
   "OPEN_MEDIA_LIBRARY": {
     "label": "Media Library",
@@ -3572,6 +3596,7 @@
 .kp-keybindings-ui .key[data-kp-action-id="PAGE_DOWN_INSTANT"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M233.4%20406.6c12.5%2012.5%2032.8%2012.5%2045.3%200l192-192c12.5-12.5%2012.5-32.8%200-45.3s-32.8-12.5-45.3%200L256%20338.7%2086.6%20169.4c-12.5-12.5-32.8-12.5-45.3%200s-12.5%2032.8%200%2045.3l192%20192z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M233.4%20406.6c12.5%2012.5%2032.8%2012.5%2045.3%200l192-192c12.5-12.5%2012.5-32.8%200-45.3s-32.8-12.5-45.3%200L256%20338.7%2086.6%20169.4c-12.5-12.5-32.8-12.5-45.3%200s-12.5%2032.8%200%2045.3l192%20192z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="PAGE_TOP"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M233.4%20105.4c12.5-12.5%2032.8-12.5%2045.3%200l96%2096c12.5%2012.5%2012.5%2032.8%200%2045.3s-32.8%2012.5-45.3%200L288%20205.3V384c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32V205.3l-41.4%2041.4c-12.5%2012.5-32.8%2012.5-45.3%200s-12.5-32.8%200-45.3l96-96zM64%20448c0-17.7%2014.3-32%2032-32H416c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H96c-17.7%200-32-14.3-32-32z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M233.4%20105.4c12.5-12.5%2032.8-12.5%2045.3%200l96%2096c12.5%2012.5%2012.5%2032.8%200%2045.3s-32.8%2012.5-45.3%200L288%20205.3V384c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32V205.3l-41.4%2041.4c-12.5%2012.5-32.8%2012.5-45.3%200s-12.5-32.8%200-45.3l96-96zM64%20448c0-17.7%2014.3-32%2032-32H416c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H96c-17.7%200-32-14.3-32-32z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="PAGE_BOTTOM"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M233.4%20406.6c12.5%2012.5%2032.8%2012.5%2045.3%200l96-96c12.5-12.5%2012.5-32.8%200-45.3s-32.8-12.5-45.3%200L288%20306.7V128c0-17.7-14.3-32-32-32s-32%2014.3-32%2032V306.7l-41.4-41.4c-12.5-12.5-32.8-12.5-45.3%200s-12.5%2032.8%200%2045.3l96%2096zM64%2064c0-17.7%2014.3-32%2032-32H416c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H96C78.3%2096%2064%2081.7%2064%2064z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M233.4%20406.6c12.5%2012.5%2032.8%2012.5%2045.3%200l96-96c12.5-12.5%2012.5-32.8%200-45.3s-32.8-12.5-45.3%200L288%20306.7V128c0-17.7-14.3-32-32-32s-32%2014.3-32%2032V306.7l-41.4-41.4c-12.5-12.5-32.8-12.5-45.3%200s-12.5%2032.8%200%2045.3l96%2096zM64%2064c0-17.7%2014.3-32%2032-32H416c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H96C78.3%2096%2064%2081.7%2064%2064z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="SCROLL_LINE"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%20512A256%20256%200%201%200%20256%200a256%20256%200%201%200%200%20512z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%20512A256%20256%200%201%200%20256%200a256%20256%200%201%200%200%20512z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="NEW_TAB"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M64%2032C28.7%2032%200%2060.7%200%2096V416c0%2035.3%2028.7%2064%2064%2064H448c35.3%200%2064-28.7%2064-64V160c0-35.3-28.7-64-64-64H298.5c-17%200-33.3-6.7-45.3-18.7L226.7%2050.7C214.7%2038.7%20198.5%2032%20181.5%2032H64zM232%20248v-48c0-13.3%2010.7-24%2024-24s24%2010.7%2024%2024v48h48c13.3%200%2024%2010.7%2024%2024s-10.7%2024-24%2024H280v48c0%2013.3-10.7%2024-24%2024s-24-10.7-24-24V296H184c-13.3%200-24-10.7-24-24s10.7-24%2024-24h48z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M64%2032C28.7%2032%200%2060.7%200%2096V416c0%2035.3%2028.7%2064%2064%2064H448c35.3%200%2064-28.7%2064-64V160c0-35.3-28.7-64-64-64H298.5c-17%200-33.3-6.7-45.3-18.7L226.7%2050.7C214.7%2038.7%20198.5%2032%20181.5%2032H64zM232%20248v-48c0-13.3%2010.7-24%2024-24s24%2010.7%2024%2024v48h48c13.3%200%2024%2010.7%2024%2024s-10.7%2024-24%2024H280v48c0%2013.3-10.7%2024-24%2024s-24-10.7-24-24V296H184c-13.3%200-24-10.7-24-24s10.7-24%2024-24h48z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="OPEN_POPOVER"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M64%2032C28.7%2032%200%2060.7%200%2096V416c0%2035.3%2028.7%2064%2064%2064H448c35.3%200%2064-28.7%2064-64V96c0-35.3-28.7-64-64-64H64zm32%2096H416c17.7%200%2032%2014.3%2032%2032v32H64V160c0-17.7%2014.3-32%2032-32z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M64%2032C28.7%2032%200%2060.7%200%2096V416c0%2035.3%2028.7%2064%2064%2064H448c35.3%200%2064-28.7%2064-64V96c0-35.3-28.7-64-64-64H64zm32%2096H416c17.7%200%2032%2014.3%2032%2032v32H64V160c0-17.7%2014.3-32%2032-32z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="PREVIEW_LINK_POPOVER"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2096c-89.6%200-168.5%2048.8-212.7%20122.3c-7.3%2012.1-7.3%2027.3%200%2039.4C87.5%20331.2%20166.4%20380%20256%20380s168.5-48.8%20212.7-122.3c7.3-12.1%207.3-27.3%200-39.4C424.5%20144.8%20345.6%2096%20256%2096zm0%20224a96%2096%200%201%201%200-192%2096%2096%200%201%201%200%20192zm0-144a48%2048%200%201%200%200%2096%2048%2048%200%201%200%200-96z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2096c-89.6%200-168.5%2048.8-212.7%20122.3c-7.3%2012.1-7.3%2027.3%200%2039.4C87.5%20331.2%20166.4%20380%20256%20380s168.5-48.8%20212.7-122.3c7.3-12.1%207.3-27.3%200-39.4C424.5%20144.8%20345.6%2096%20256%2096zm0%20224a96%2096%200%201%201%200-192%2096%2096%200%201%201%200%20192zm0-144a48%2048%200%201%200%200%2096%2048%2048%200%201%200%200-96z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }

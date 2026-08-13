@@ -230,6 +230,7 @@ const LIBRARY_KEY_ICON_BY_FUNCTION_ID = Object.freeze({
   OPEN_POPOVER: 'kp-cfg-i-display',
   PAGE_DOWN_INSTANT: 'kp-cfg-i-scroll',
   PAGE_UP_INSTANT: 'kp-cfg-i-scroll',
+  SCROLL_LINE: 'kp-cfg-i-scroll',
   TAB_RIGHT: 'kp-cfg-i-tabs',
   TAB_LEFT: 'kp-cfg-i-tabs',
   OMNIBOX: 'kp-cfg-i-search',

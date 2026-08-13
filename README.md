@@ -50,6 +50,7 @@ on the keyboard in specific places to make web navigation quick.
 | `P` | Open Link in Popover |
 | `S` | Go Back (History) |
 | `.` | Columnize element under cursor (multi-column layout) |
+| `N` | Scroll from a fixed origin: move the mouse away from the dot to scroll faster |
 | `'` | Open KeyPilot Settings |
 | `1` | Go to Site Root |
 
@@ -83,6 +84,13 @@ on the keyboard in specific places to make web navigation quick.
 | `Esc` | Exit Focus |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
+
+
+
+
+
+
 
 
 

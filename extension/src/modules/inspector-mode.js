@@ -27,6 +27,8 @@ import { CSS_CLASSES, COLORS, INSPECTOR_KIND } from '../config/constants.js';
  *   actionId?: string,
  *   instructionTemplate?: string,
  *   selectionMode?: 'single'|'cumulative',
+ *   // Pointerdown dismisses this pick kind via cancelModes (same path as Esc).
+ *   cancelOnPointerDown?: boolean
  * }} InspectorDef
  */
 
@@ -49,7 +51,8 @@ export const INSPECTOR_DEFS = Object.freeze({
     allowHtmlBody: false,
     actionId: 'DELETE',
     selectionMode: 'single',
-    instructionTemplate: 'Press {key} again to delete · Esc cancels'
+    cancelOnPointerDown: true,
+    instructionTemplate: 'Press {key} again to delete · Esc or click cancels'
   }),
   [INSPECTOR_KIND.COLS]: Object.freeze({
     kind: INSPECTOR_KIND.COLS,
@@ -77,7 +80,8 @@ export const INSPECTOR_DEFS = Object.freeze({
     allowHtmlBody: false,
     actionId: 'RECTANGLE_HIGHLIGHT',
     selectionMode: 'cumulative',
-    instructionTemplate: 'Press {key} to add · Enter to finish · Esc cancels'
+    cancelOnPointerDown: true,
+    instructionTemplate: 'Press {key} to add · Enter to finish · Esc or click cancels'
   })
 });
 
@@ -225,6 +229,14 @@ export class InspectorModeController {
 
   getDef() {
     return getInspectorDef(this.getKind());
+  }
+
+  /**
+   * True when the active inspector kind opted into pointerdown dismiss.
+   * @returns {boolean}
+   */
+  cancelsOnPointerDown() {
+    return this.isActive() && !!this.getDef()?.cancelOnPointerDown;
   }
 
   /**

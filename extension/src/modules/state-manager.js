@@ -170,6 +170,10 @@ export class StateManager {
     return this.state.mode === MODES.HIGHLIGHT;
   }
 
+  isScrollLineMode() {
+    return this.state.mode === MODES.SCROLL_LINE;
+  }
+
   isTextFocusMode() {
     return this.state.mode === MODES.TEXT_FOCUS;
   }

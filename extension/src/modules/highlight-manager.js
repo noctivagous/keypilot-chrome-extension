@@ -2,6 +2,15 @@ import { EventManager } from './event-manager.js';
 import { COLORS, Z_INDEX, CSS_CLASSES, FEATURE_FLAGS, RECTANGLE_SELECTION, ELEMENT_SELECT_TAGS } from '../config/constants.js';
 
 /**
+ * Shared highlight / select-element mode (Text Select + Element Select rectangle).
+ * Lifecycle lives here; KeyPilot only toggles MODES.HIGHLIGHT.
+ */
+export const HIGHLIGHT_MODE = Object.freeze({
+  mode: 'highlight',
+  cancelOnPointerDown: true
+});
+
+/**
  * HighlightManager - Manages all highlighting functionality including overlays and selection
  */
 export class HighlightManager extends EventManager {
@@ -46,6 +55,14 @@ export class HighlightManager extends EventManager {
 
     // Intersection observer for performance optimization
     this.overlayObserver = null;
+  }
+
+  /**
+   * True when highlight/select-element mode opted into pointerdown dismiss.
+   * @returns {boolean}
+   */
+  cancelsOnPointerDown() {
+    return !!HIGHLIGHT_MODE.cancelOnPointerDown;
   }
 
   /**

@@ -125,6 +125,7 @@ export const KEYBOARD_ACTION_ICON_IDS = Object.freeze({
   PAGE_DOWN_INSTANT: 'arrow-down',
   PAGE_TOP: 'arrow-up-from-line',
   PAGE_BOTTOM: 'arrow-down-to-line',
+  SCROLL_LINE: 'circle',
   NEW_TAB: 'folder-plus',
   OPEN_POPOVER: 'window-maximize',
   PREVIEW_LINK_POPOVER: 'eye',

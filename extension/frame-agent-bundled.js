@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-13T02:36:36.057Z
+ * Generated on 2026-08-13T03:07:33.406Z
  */
 
 (() => {
@@ -400,6 +400,15 @@
       keyboardClass: "key-scroll",
       row: 3
     }),
+    SCROLL_LINE: Object.freeze({
+      handler: "handleScrollLineKey",
+      label: "Scroll Line",
+      description: "Scroll from a fixed origin: move the mouse away from the dot to scroll faster",
+      keyboardClass: "key-scroll",
+      row: 3,
+      mode: "scroll_line",
+      cancelOnPointerDown: true
+    }),
     NEW_TAB: Object.freeze({
       handler: "handleNewTabKey",
       label: "New Tab",
@@ -553,6 +562,7 @@
     PAGE_DOWN_INSTANT: "Scroll",
     PAGE_TOP: "Scroll",
     PAGE_BOTTOM: "Scroll",
+    SCROLL_LINE: "Scroll",
     HIGHLIGHT: "Get Page Data",
     RECTANGLE_HIGHLIGHT: "Get Page Data",
     COPY_HOVERED_IMAGE: "Get Page Data",
@@ -650,6 +660,7 @@
     PAGE_UP_INSTANT: Object.freeze({ keys: ["c", "C"] }),
     PAGE_DOWN_INSTANT: Object.freeze({ keys: ["v", "V"] }),
     ACTIVATE_NEW_TAB: Object.freeze({ keys: ["b", "B"] }),
+    SCROLL_LINE: Object.freeze({ keys: ["n", "N"] }),
     RECTANGLE_HIGHLIGHT: Object.freeze({ keys: ["y", "Y"] }),
     COPY_HOVERED_IMAGE: Object.freeze({ keys: ["i", "I"] }),
     PAGE_MEDIA: Object.freeze({ keys: ["o", "O"] }),
@@ -667,6 +678,7 @@
     PREVIEW_LINK_POPOVER: Object.freeze({ keys: ["w", "W"] }),
     FORWARD: Object.freeze({ keys: ["u", "U"] }),
     NEW_TAB: Object.freeze({ keys: ["y", "Y"] }),
+    SCROLL_LINE: Object.freeze({ keys: ["t", "T"] }),
     // Home row cluster: A S D F G  ->  ; L K J H (mirrored-ish around center)
     CLOSE_TAB: Object.freeze({ keys: [";", ":"], displayKey: ";", keyLabel: ";" }),
     BACK2: Object.freeze({ keys: ["l", "L"] }),
@@ -855,7 +867,7 @@
       { type: "action", id: "PAGE_UP_INSTANT", fallbackText: "Page Up Fast" },
       { type: "action", id: "PAGE_DOWN_INSTANT", fallbackText: "Page Down Fast" },
       { type: "action", id: "ACTIVATE_NEW_TAB", fallbackText: "Click New Tab" },
-      { type: "key", text: "N" },
+      { type: "action", id: "SCROLL_LINE", fallbackText: "Scroll Line" },
       { type: "action", id: "OPEN_MEDIA_LIBRARY", fallbackText: "Media Library" },
       { type: "key", text: "," },
       { type: "action", id: "COLS_TOGGLE", fallbackText: "Cols Toggle" },
@@ -873,7 +885,8 @@
       // E
       { type: "action", id: "RECTANGLE_HIGHLIGHT", fallbackText: "Rectangle Select" },
       // R
-      { type: "key", text: "T" },
+      { type: "action", id: "SCROLL_LINE", fallbackText: "Scroll Line" },
+      // T
       { type: "action", id: "NEW_TAB", fallbackText: "New Tab" },
       // Y
       { type: "action", id: "FORWARD", fallbackText: "Go Forward" },
@@ -1006,6 +1019,8 @@
     HIDDEN: "kpv2-hidden",
     RIPPLE: "kpv2-ripple",
     FOCUS_OVERLAY: "kpv2-focus-overlay",
+    /** Scroll Line origin-dot + line (popover / top-layer chrome) */
+    SCROLL_LINE_OVERLAY: "kpv2-scroll-line",
     /**
      * Strategy B: in-target absolute focus ring — mounted as last child of the
      * clickable/host with local max z-index + 1. Co-located paint; scrolls with
@@ -1138,7 +1153,18 @@
     /** C / V: smaller step (default = prior 400px × 1.25) */
     HALF_PAGE_PX: 500,
     /** Default CSS scroll-behavior for keyboard scrolling */
-    BEHAVIOR: "smooth"
+    BEHAVIOR: "smooth",
+    /** Scroll Line: no scroll inside this radius from the origin dot */
+    LINE_DEADZONE_PX: 12,
+    /**
+     * Scroll Line: ease-in power. 1 = linear, 2 = quadratic (gentle near the
+     * dot, ramps harder toward the edge of the range).
+     */
+    LINE_CURVE_EXPONENT: 1.7,
+    /** Scroll Line: offset beyond the dead zone that maps to max speed */
+    LINE_CURVE_RANGE_PX: 360,
+    /** Scroll Line: cap on each axis */
+    LINE_MAX_PX_PER_SEC: 2400
   });
   var INSPECTOR_KIND = Object.freeze({
     DELETE: "delete",
@@ -2034,6 +2060,111 @@
     }
     return null;
   }
+  function isKeyPilotScrollChrome(n) {
+    try {
+      const id = n.id || "";
+      if (id === "kpv2-cursor" || id === "kpv2-frame-hover" || typeof id === "string" && id.startsWith("kpv2-")) {
+        return true;
+      }
+      if (n.classList) {
+        let skip = false;
+        n.classList.forEach((c) => {
+          if (typeof c === "string" && c.startsWith("kpv2-")) skip = true;
+        });
+        if (skip) return true;
+      }
+    } catch {
+    }
+    return false;
+  }
+  function findScrollableAtPoint(clientX, clientY, ctx = {}) {
+    const doc = ctx.doc || document;
+    const x = Number(clientX);
+    const y = Number(clientY);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    let start = elementFromPointDeep(x, y, doc);
+    if (!start) {
+      const se = doc.scrollingElement || doc.documentElement || doc.body;
+      if (!se) return null;
+      const cap = getScrollCapacity(se, doc);
+      if (cap.canX || cap.canY) return { el: se, canX: cap.canX, canY: cap.canY };
+      return null;
+    }
+    if (start.nodeType !== 1) {
+      start = start.parentElement || /** @type {Element|null} */
+      composedParent(start);
+    }
+    let n = (
+      /** @type {Element|null} */
+      start
+    );
+    let depth = 0;
+    let seenDocRoot = null;
+    while (n && n.nodeType === 1 && depth++ < 64) {
+      if (n.tagName === "IFRAME" || n.tagName === "FRAME") {
+        return null;
+      }
+      if (isKeyPilotScrollChrome(n)) {
+        n = composedParent(n);
+        continue;
+      }
+      const cap = getScrollCapacity(n, doc);
+      if (cap.canY || cap.canX) {
+        if (isDocumentScrollRoot(n, doc)) {
+          seenDocRoot = n;
+          n = composedParent(n);
+          continue;
+        }
+        return { el: n, canX: cap.canX, canY: cap.canY };
+      }
+      n = composedParent(n);
+    }
+    const candidates = [];
+    try {
+      if (doc.scrollingElement) candidates.push(doc.scrollingElement);
+    } catch {
+    }
+    try {
+      if (doc.documentElement) candidates.push(doc.documentElement);
+    } catch {
+    }
+    try {
+      if (doc.body) candidates.push(doc.body);
+    } catch {
+    }
+    if (seenDocRoot) candidates.push(seenDocRoot);
+    const tried = /* @__PURE__ */ new Set();
+    for (const el of candidates) {
+      if (!el || tried.has(el)) continue;
+      tried.add(el);
+      const cap = getScrollCapacity(el, doc);
+      if (cap.canX || cap.canY) return { el, canX: cap.canX, canY: cap.canY };
+    }
+    return null;
+  }
+  function scrollByAtPoint(clientX, clientY, deltaX, deltaY, behavior = "auto", ctx = {}) {
+    const doc = ctx.doc || document;
+    const win = ctx.win || (doc.defaultView || window);
+    let dx = Number(deltaX) || 0;
+    let dy = Number(deltaY) || 0;
+    if (!dx && !dy) return { scrolled: false, el: null };
+    const target = findScrollableAtPoint(clientX, clientY, { doc, win });
+    if (!target) {
+      try {
+        if (win && typeof win.scrollBy === "function") {
+          win.scrollBy({ left: dx, top: dy, behavior });
+          return { scrolled: true, el: doc.scrollingElement || doc.documentElement || null };
+        }
+      } catch {
+      }
+      return { scrolled: false, el: null };
+    }
+    if (!target.canX) dx = 0;
+    if (!target.canY) dy = 0;
+    if (!dx && !dy) return { scrolled: false, el: target.el };
+    const ok = scrollElementBy(target.el, dx, dy, behavior, doc, win);
+    return { scrolled: ok, el: target.el };
+  }
   function scrollAtPoint(clientX, clientY, sign, deltaPx, behavior = "smooth", ctx = {}) {
     const doc = ctx.doc || document;
     const win = ctx.win || (doc.defaultView || window);
@@ -2676,13 +2807,16 @@
         } catch {
         }
       };
-      const scrollAt = (clientX, clientY, sign, deltaPx, behavior, mode = "delta") => {
+      const scrollAt = (clientX, clientY, sign, deltaPx, behavior, mode = "delta", xy = null) => {
         if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return false;
         const edge = mode === "edge";
+        const xyMode = mode === "xy";
         const amount = Math.abs(Number(deltaPx));
         const delta = Number.isFinite(amount) && amount > 0 ? amount : halfPagePx;
         const s = sign < 0 ? -1 : 1;
-        const beh = behavior === "auto" || behavior === "instant" ? "auto" : behavior || scrollBehavior;
+        const beh = xyMode || behavior === "auto" || behavior === "instant" ? "auto" : behavior || scrollBehavior;
+        const deltaX = Number(xy?.deltaX) || 0;
+        const deltaY = Number(xy?.deltaY) || 0;
         try {
           const under = deepElementFromPoint(clientX, clientY);
           if (under && under.tagName === "IFRAME") {
@@ -2699,8 +2833,10 @@
                 clientX: localX,
                 clientY: localY,
                 sign: s,
-                mode: edge ? "edge" : "delta",
-                deltaPx: edge ? 0 : delta,
+                mode: xyMode ? "xy" : edge ? "edge" : "delta",
+                deltaPx: edge || xyMode ? 0 : delta,
+                deltaX: xyMode ? deltaX : 0,
+                deltaY: xyMode ? deltaY : 0,
                 behavior: beh,
                 frameName: typeof iframe.name === "string" ? iframe.name : ""
               }, "*");
@@ -2708,6 +2844,10 @@
             }
           }
         } catch {
+        }
+        if (xyMode) {
+          const result2 = scrollByAtPoint(clientX, clientY, deltaX, deltaY, beh);
+          return !!result2?.scrolled;
         }
         if (edge) {
           const result2 = scrollToEdgeAtPoint(clientX, clientY, s, beh);
@@ -3018,8 +3158,11 @@
             const sign = Number(data.sign) < 0 ? -1 : 1;
             const delta = Number(data.deltaPx);
             const beh = data.behavior === "auto" || data.behavior === "instant" ? "auto" : data.behavior || scrollBehavior;
-            const mode = data.mode === "edge" ? "edge" : "delta";
-            scrollAt(x, y, sign, delta, beh, mode);
+            const mode = data.mode === "edge" ? "edge" : data.mode === "xy" ? "xy" : "delta";
+            scrollAt(x, y, sign, delta, beh, mode, {
+              deltaX: Number(data.deltaX) || 0,
+              deltaY: Number(data.deltaY) || 0
+            });
           }
         } catch {
         }
@@ -3160,14 +3303,18 @@
               return true;
             }
             const sign = Number(message.sign) < 0 ? -1 : 1;
-            const mode = message.mode === "edge" ? "edge" : "delta";
+            const mode = message.mode === "edge" ? "edge" : message.mode === "xy" ? "xy" : "delta";
             const ok = scrollAt(
               Number(message.clientX),
               Number(message.clientY),
               sign,
               Number(message.deltaPx),
               message.behavior,
-              mode
+              mode,
+              {
+                deltaX: Number(message.deltaX) || 0,
+                deltaY: Number(message.deltaY) || 0
+              }
             );
             try {
               sendResponse({ ok: !!ok, href: String(location.href || "").slice(0, 120) });

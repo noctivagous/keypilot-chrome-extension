@@ -63,6 +63,10 @@ import { ACTION_RESULT_DESTINATIONS, buildResultDestinationParameter } from '../
  *   // assignment" for why a bare key would either never fire (typing-safety gate) or hijack
  *   // normal typing.
  *   worksWhileTyping?: boolean,
+ *   // When set, this Function owns `state.mode` while active (toggle / modal).
+ *   mode?: string,
+ *   // If true, pointerdown dismisses the owned mode through cancelModes (same path as Esc).
+ *   cancelOnPointerDown?: boolean,
  *   // What page data this Function reads and when it's captured, and where its result may be
  *   // routed. See KEY_ACTION_ARCHITECTURE.md "Data Acquisition & Result Destinations". Omitted
  *   // for Functions that don't read/produce page data (e.g. NEW_TAB) or haven't been classified
@@ -293,6 +297,8 @@ function buildBuiltinActionFunctionDefs() {
       // A few (SEND_TEXT_TO_AI, RECTANGLE_HIGHLIGHT) get their schema below from
       // BUILTIN_FUNCTION_PARAMETER_OVERRIDES — see KEY_ACTION_ARCHITECTURE.md "Migration mapping".
       ...(TEXT_ACTIVE_BUILTIN_FUNCTION_IDS.has(id) ? { worksWhileTyping: true } : {}),
+      ...(def.mode ? { mode: def.mode } : {}),
+      ...(def.cancelOnPointerDown ? { cancelOnPointerDown: true } : {}),
       ...(BUILTIN_FUNCTION_DATA_TAGS[id] || {}),
       ...(BUILTIN_FUNCTION_PARAMETER_OVERRIDES[id] ? { parameters: BUILTIN_FUNCTION_PARAMETER_OVERRIDES[id] } : {})
     });
@@ -650,6 +656,20 @@ export function macroKeyKindFromFunctionId(functionId) {
  */
 export function functionWorksWhileTyping(functionId) {
   return !!getFunctionDef(functionId)?.worksWhileTyping;
+}
+
+/**
+ * True when some Function owns this `state.mode` and opted into pointerdown dismiss.
+ * @param {string|null|undefined} mode
+ * @returns {boolean}
+ */
+export function functionCancelsOnPointerDown(mode) {
+  const m = String(mode || '');
+  if (!m || m === 'none') return false;
+  for (const def of Object.values(FUNCTION_LIBRARY)) {
+    if (def?.mode === m && def.cancelOnPointerDown) return true;
+  }
+  return false;
 }
 
 /**

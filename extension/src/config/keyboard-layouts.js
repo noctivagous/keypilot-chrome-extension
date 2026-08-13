@@ -44,7 +44,11 @@
  *   description: string,
  *   keyboardClass?: string|null,
  *   row?: number|null,
- *   category?: string
+ *   category?: string,
+ *   // When set, this Function owns `state.mode` while active (toggle / modal).
+ *   mode?: string,
+ *   // Dismiss the owned mode on pointerdown (any mouse button) via cancelModes.
+ *   cancelOnPointerDown?: boolean
  * }} ActionDef
  */
 
@@ -400,6 +404,15 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: 'key-scroll',
     row: 3
   }),
+  SCROLL_LINE: Object.freeze({
+    handler: 'handleScrollLineKey',
+    label: 'Scroll Line',
+    description: 'Scroll from a fixed origin: move the mouse away from the dot to scroll faster',
+    keyboardClass: 'key-scroll',
+    row: 3,
+    mode: 'scroll_line',
+    cancelOnPointerDown: true
+  }),
   NEW_TAB: Object.freeze({
     handler: 'handleNewTabKey',
     label: 'New Tab',
@@ -559,6 +572,7 @@ export const KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
   PAGE_DOWN_INSTANT: 'Scroll',
   PAGE_TOP: 'Scroll',
   PAGE_BOTTOM: 'Scroll',
+  SCROLL_LINE: 'Scroll',
   HIGHLIGHT: 'Get Page Data',
   RECTANGLE_HIGHLIGHT: 'Get Page Data',
   COPY_HOVERED_IMAGE: 'Get Page Data',
@@ -769,6 +783,7 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   PAGE_UP_INSTANT: Object.freeze({ keys: ['c', 'C'] }),
   PAGE_DOWN_INSTANT: Object.freeze({ keys: ['v', 'V'] }),
   ACTIVATE_NEW_TAB: Object.freeze({ keys: ['b', 'B'] }),
+  SCROLL_LINE: Object.freeze({ keys: ['n', 'N'] }),
   RECTANGLE_HIGHLIGHT: Object.freeze({ keys: ['y', 'Y'] }),
   COPY_HOVERED_IMAGE: Object.freeze({ keys: ['i', 'I'] }),
   PAGE_MEDIA: Object.freeze({ keys: ['o', 'O'] }),
@@ -792,6 +807,7 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   PREVIEW_LINK_POPOVER: Object.freeze({ keys: ['w', 'W'] }),
   FORWARD: Object.freeze({ keys: ['u', 'U'] }),
   NEW_TAB: Object.freeze({ keys: ['y', 'Y'] }),
+  SCROLL_LINE: Object.freeze({ keys: ['t', 'T'] }),
 
   // Home row cluster: A S D F G  ->  ; L K J H (mirrored-ish around center)
   CLOSE_TAB: Object.freeze({ keys: [';', ':'], displayKey: ';', keyLabel: ';' }),
@@ -1049,7 +1065,7 @@ const KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: 'action', id: 'PAGE_UP_INSTANT', fallbackText: 'Page Up Fast' },
     { type: 'action', id: 'PAGE_DOWN_INSTANT', fallbackText: 'Page Down Fast' },
     { type: 'action', id: 'ACTIVATE_NEW_TAB', fallbackText: 'Click New Tab' },
-    { type: 'key', text: 'N' },
+    { type: 'action', id: 'SCROLL_LINE', fallbackText: 'Scroll Line' },
     { type: 'action', id: 'OPEN_MEDIA_LIBRARY', fallbackText: 'Media Library' },
     { type: 'key', text: ',' },
     { type: 'action', id: 'COLS_TOGGLE', fallbackText: 'Cols Toggle' },
@@ -1066,7 +1082,7 @@ const KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
     { type: 'action', id: 'PREVIEW_LINK_POPOVER', fallbackText: 'Preview Link' }, // W
     { type: 'action', id: 'COPY_HOVERED_IMAGE', fallbackText: 'Copy Image' }, // E
     { type: 'action', id: 'RECTANGLE_HIGHLIGHT', fallbackText: 'Rectangle Select' }, // R
-    { type: 'key', text: 'T' },
+    { type: 'action', id: 'SCROLL_LINE', fallbackText: 'Scroll Line' }, // T
     { type: 'action', id: 'NEW_TAB', fallbackText: 'New Tab' }, // Y
     { type: 'action', id: 'FORWARD', fallbackText: 'Go Forward' }, // U
     { type: 'action', id: 'OPEN_POPOVER', fallbackText: 'Open Popover' }, // I

@@ -7,7 +7,7 @@
  *     (parent documents do not receive mousemove inside embeds)
  *  3. Blue hover outline on clickable targets under the pointer (rAF-throttled;
  *     matches top-frame DOM-hover focus palette)
- *  4. postMessage / runtime KP_FRAME_SCROLL from parent (C/V/Z/X under this iframe)
+ *  4. postMessage / runtime KP_FRAME_SCROLL from parent (C/V/Z/X / Scroll Line under this iframe)
  *  5. Fallback activate/scroll keybinds only while this frame has document focus
  *     (after a manual click); Esc / pointer-leave posts KP_FRAME_FOCUS_RECLAIM
  *     so top KeyPilot regains keyboard ownership for elements outside the iframe
@@ -28,7 +28,7 @@ import {
   resolveKeyboardLayoutId
 } from '../config/keyboard-layouts.js';
 import { getSettings, SETTINGS_STORAGE_KEY, scrollBehaviorFromSpeed, DEFAULT_SETTINGS } from './settings-manager.js';
-import { scrollAtPoint, scrollToEdgeAtPoint } from '../utils/scroll-at-point.js';
+import { scrollAtPoint, scrollToEdgeAtPoint, scrollByAtPoint } from '../utils/scroll-at-point.js';
 
 /**
  * @typedef {{ openInNewTab?: boolean, background?: boolean, topOrigin?: string }} FrameActivateOptions
@@ -701,16 +701,22 @@ export function installFrameClickAgent() {
      * @param {number} sign  -1 up/left, +1 down/right
      * @param {number} [deltaPx]
      * @param {ScrollBehavior} [behavior]
-     * @param {'delta'|'edge'} [mode='delta']
+     * @param {'delta'|'edge'|'xy'} [mode='delta']
+     * @param {{ deltaX?: number, deltaY?: number }} [xy]
      * @returns {boolean}
      */
-    const scrollAt = (clientX, clientY, sign, deltaPx, behavior, mode = 'delta') => {
+    const scrollAt = (clientX, clientY, sign, deltaPx, behavior, mode = 'delta', xy = null) => {
       if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return false;
       const edge = mode === 'edge';
+      const xyMode = mode === 'xy';
       const amount = Math.abs(Number(deltaPx));
       const delta = Number.isFinite(amount) && amount > 0 ? amount : halfPagePx;
       const s = sign < 0 ? -1 : 1;
-      const beh = behavior === 'auto' || behavior === 'instant' ? 'auto' : (behavior || scrollBehavior);
+      const beh = xyMode || behavior === 'auto' || behavior === 'instant'
+        ? 'auto'
+        : (behavior || scrollBehavior);
+      const deltaX = Number(xy?.deltaX) || 0;
+      const deltaY = Number(xy?.deltaY) || 0;
 
       // Nested iframe under point: re-forward into child agent.
       try {
@@ -730,8 +736,10 @@ export function installFrameClickAgent() {
               clientX: localX,
               clientY: localY,
               sign: s,
-              mode: edge ? 'edge' : 'delta',
-              deltaPx: edge ? 0 : delta,
+              mode: xyMode ? 'xy' : (edge ? 'edge' : 'delta'),
+              deltaPx: edge || xyMode ? 0 : delta,
+              deltaX: xyMode ? deltaX : 0,
+              deltaY: xyMode ? deltaY : 0,
               behavior: beh,
               frameName: typeof iframe.name === 'string' ? iframe.name : ''
             }, '*');
@@ -740,6 +748,10 @@ export function installFrameClickAgent() {
         }
       } catch { /* fall through */ }
 
+      if (xyMode) {
+        const result = scrollByAtPoint(clientX, clientY, deltaX, deltaY, beh);
+        return !!result?.scrolled;
+      }
       if (edge) {
         const result = scrollToEdgeAtPoint(clientX, clientY, s, beh);
         return !!result?.scrolled;
@@ -1123,8 +1135,11 @@ export function installFrameClickAgent() {
           const beh = data.behavior === 'auto' || data.behavior === 'instant'
             ? 'auto'
             : (data.behavior || scrollBehavior);
-          const mode = data.mode === 'edge' ? 'edge' : 'delta';
-          scrollAt(x, y, sign, delta, beh, mode);
+          const mode = data.mode === 'edge' ? 'edge' : (data.mode === 'xy' ? 'xy' : 'delta');
+          scrollAt(x, y, sign, delta, beh, mode, {
+            deltaX: Number(data.deltaX) || 0,
+            deltaY: Number(data.deltaY) || 0
+          });
         }
       } catch {
         // ignore
@@ -1300,14 +1315,18 @@ export function installFrameClickAgent() {
             return true;
           }
           const sign = Number(message.sign) < 0 ? -1 : 1;
-          const mode = message.mode === 'edge' ? 'edge' : 'delta';
+          const mode = message.mode === 'edge' ? 'edge' : (message.mode === 'xy' ? 'xy' : 'delta');
           const ok = scrollAt(
             Number(message.clientX),
             Number(message.clientY),
             sign,
             Number(message.deltaPx),
             message.behavior,
-            mode
+            mode,
+            {
+              deltaX: Number(message.deltaX) || 0,
+              deltaY: Number(message.deltaY) || 0
+            }
           );
           try { sendResponse({ ok: !!ok, href: String(location.href || '').slice(0, 120) }); } catch { /* ignore */ }
           return true;

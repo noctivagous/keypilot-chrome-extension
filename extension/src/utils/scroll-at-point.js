@@ -330,6 +330,146 @@ export function findScrollTargetAtPoint(clientX, clientY, sign, ctx = {}) {
 }
 
 /**
+ * True when the node is KeyPilot chrome that should not be treated as a scroller.
+ * @param {Element} n
+ * @returns {boolean}
+ */
+function isKeyPilotScrollChrome(n) {
+  try {
+    const id = n.id || '';
+    if (id === 'kpv2-cursor' || id === 'kpv2-frame-hover' || (typeof id === 'string' && id.startsWith('kpv2-'))) {
+      return true;
+    }
+    if (n.classList) {
+      let skip = false;
+      n.classList.forEach((c) => {
+        if (typeof c === 'string' && c.startsWith('kpv2-')) skip = true;
+      });
+      if (skip) return true;
+    }
+  } catch { /* ignore */ }
+  return false;
+}
+
+/**
+ * Nested overflow (any axis) under a viewport point, then the document.
+ * Used by Scroll Line: lock this target at activation. Does not pick a single
+ * axis or require remaining room in a direction.
+ *
+ * @param {number} clientX
+ * @param {number} clientY
+ * @param {{ doc?: Document, win?: Window }} [ctx]
+ * @returns {{ el: Element, canX: boolean, canY: boolean }|null}
+ */
+export function findScrollableAtPoint(clientX, clientY, ctx = {}) {
+  const doc = ctx.doc || document;
+  const x = Number(clientX);
+  const y = Number(clientY);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+
+  let start = elementFromPointDeep(x, y, doc);
+  if (!start) {
+    const se = doc.scrollingElement || doc.documentElement || doc.body;
+    if (!se) return null;
+    const cap = getScrollCapacity(se, doc);
+    if (cap.canX || cap.canY) return { el: se, canX: cap.canX, canY: cap.canY };
+    return null;
+  }
+
+  if (start.nodeType !== 1) {
+    start = start.parentElement || /** @type {Element|null} */ (composedParent(start));
+  }
+
+  /** @type {Element|null} */
+  let n = /** @type {Element|null} */ (start);
+  let depth = 0;
+  /** @type {Element|null} */
+  let seenDocRoot = null;
+
+  while (n && n.nodeType === 1 && depth++ < 64) {
+    if (n.tagName === 'IFRAME' || n.tagName === 'FRAME') {
+      return null;
+    }
+
+    if (isKeyPilotScrollChrome(n)) {
+      n = composedParent(n);
+      continue;
+    }
+
+    const cap = getScrollCapacity(n, doc);
+    if (cap.canY || cap.canX) {
+      if (isDocumentScrollRoot(n, doc)) {
+        seenDocRoot = n;
+        n = composedParent(n);
+        continue;
+      }
+      return { el: n, canX: cap.canX, canY: cap.canY };
+    }
+
+    n = composedParent(n);
+  }
+
+  const candidates = [];
+  try {
+    if (doc.scrollingElement) candidates.push(doc.scrollingElement);
+  } catch { /* ignore */ }
+  try {
+    if (doc.documentElement) candidates.push(doc.documentElement);
+  } catch { /* ignore */ }
+  try {
+    if (doc.body) candidates.push(doc.body);
+  } catch { /* ignore */ }
+  if (seenDocRoot) candidates.push(seenDocRoot);
+
+  const tried = new Set();
+  for (const el of candidates) {
+    if (!el || tried.has(el)) continue;
+    tried.add(el);
+    const cap = getScrollCapacity(el, doc);
+    if (cap.canX || cap.canY) return { el, canX: cap.canX, canY: cap.canY };
+  }
+
+  return null;
+}
+
+/**
+ * Apply independent X/Y deltas to the overflow under a point (Scroll Line).
+ *
+ * @param {number} clientX
+ * @param {number} clientY
+ * @param {number} deltaX
+ * @param {number} deltaY
+ * @param {ScrollBehavior} [behavior]
+ * @param {{ doc?: Document, win?: Window }} [ctx]
+ * @returns {{ scrolled: boolean, el: Element|null }}
+ */
+export function scrollByAtPoint(clientX, clientY, deltaX, deltaY, behavior = 'auto', ctx = {}) {
+  const doc = ctx.doc || document;
+  const win = ctx.win || (doc.defaultView || window);
+  let dx = Number(deltaX) || 0;
+  let dy = Number(deltaY) || 0;
+  if (!dx && !dy) return { scrolled: false, el: null };
+
+  const target = findScrollableAtPoint(clientX, clientY, { doc, win });
+  if (!target) {
+    try {
+      if (win && typeof win.scrollBy === 'function') {
+        win.scrollBy({ left: dx, top: dy, behavior });
+        return { scrolled: true, el: doc.scrollingElement || doc.documentElement || null };
+      }
+    } catch { /* ignore */ }
+    return { scrolled: false, el: null };
+  }
+
+  if (!target.canX) dx = 0;
+  if (!target.canY) dy = 0;
+  if (!dx && !dy) return { scrolled: false, el: target.el };
+
+  const ok = scrollElementBy(target.el, dx, dy, behavior, doc, win);
+  return { scrolled: ok, el: target.el };
+}
+
+/**
  * Scroll under the cursor: nested overflow first, then the page.
  *
  * @param {number} clientX

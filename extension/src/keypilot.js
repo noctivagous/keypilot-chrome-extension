@@ -60,7 +60,7 @@ import { LauncherPopover } from './modules/launcher-popover.js';
 import { DEFAULT_SETTINGS, getSettings, setSettings, SETTINGS_STORAGE_KEY, scrollBehaviorFromSpeed } from './modules/settings-manager.js';
 import { getOrCreateBuiltinFunctionUserAction, getUserKeyboardLayoutById, getUserActionById, getUserMacroById, listUserActions, listUserMacros } from './modules/keyboard-layout-store.js';
 import { runLegacyMacroKeyFunction } from './modules/macro-key-runtime.js';
-import { getFunctionDef, functionWorksWhileTyping, FIXED_KEY_FUNCTION_IDS } from './config/function-library.js';
+import { getFunctionDef, functionWorksWhileTyping, functionCancelsOnPointerDown, FIXED_KEY_FUNCTION_IDS } from './config/function-library.js';
 import { getStockMacroById, resolveMacroById } from './config/stock-macros.js';
 import { chordSlotKeyFromEvent } from './utils/key-chord.js';
 import { getTextAtPoint } from './utils/text-at-point.js';
@@ -79,7 +79,15 @@ import {
   isPageMediaOverlayOpen,
   requestClosePageMediaOverlay
 } from './ui/page-media-overlay.js';
-import { scrollAtPoint, scrollToEdgeAtPoint, elementFromPointDeep } from './utils/scroll-at-point.js';
+import {
+  scrollAtPoint,
+  scrollToEdgeAtPoint,
+  scrollByAtPoint,
+  scrollElementBy,
+  findScrollableAtPoint,
+  elementFromPointDeep
+} from './utils/scroll-at-point.js';
+import { ScrollLineOverlay } from './modules/scroll-line-overlay.js';
 
 export class KeyPilot extends EventManager {
   constructor() {
@@ -114,6 +122,7 @@ export class KeyPilot extends EventManager {
         try {
           if (this.state.isHighlightMode()) this.cancelHighlightMode();
         } catch { /* ignore */ }
+        try { this._exitScrollLineMode(); } catch { /* ignore */ }
       },
       onPicksChanged: (picks, unionRect) => {
         try {
@@ -162,6 +171,13 @@ export class KeyPilot extends EventManager {
     this.KEYBOARD_HELP_STORAGE_KEY = 'keypilot_keyboard_help_visible';
     this._keyboardHelpVisible = false;
     this._keyboardHelpStorageListener = null;
+
+    this._scrollLineOverlay = new ScrollLineOverlay();
+    this._scrollLineRaf = 0;
+    this._scrollLineLastTs = 0;
+    /** @type {null|{ kind: 'element', el: Element, canX: boolean, canY: boolean }|{ kind: 'iframe', iframe: HTMLIFrameElement, localX: number, localY: number }} */
+    this._scrollLineTarget = null;
+    this._scrollLineOrigin = { x: 0, y: 0 };
 
     // Link-hover → keyboard key glow (debounced; video thumbs thrash focusEl).
     this._LINK_HOVER_HINT_DEBOUNCE_MS = 90;
@@ -1543,6 +1559,7 @@ export class KeyPilot extends EventManager {
     // Legacy status/mode strings still map to the same glyphs
     if (mode === MODES.DELETE || mode === 'delete') return 'delete';
     if (mode === MODES.COLS || mode === 'cols') return 'cols';
+    if (mode === MODES.SCROLL_LINE) return MODES.NONE;
     return mode || MODES.NONE;
   }
 
@@ -1561,7 +1578,7 @@ export class KeyPilot extends EventManager {
     }
 
     // Click mode cursor selection (normal + popover).
-    if (mode === MODES.NONE || mode === MODES.POPOVER) {
+    if (mode === MODES.NONE || mode === MODES.POPOVER || mode === MODES.SCROLL_LINE) {
       const type = s?.clickMode?.cursor?.type || DEFAULT_SETTINGS.clickMode.cursor.type;
       if (type === 'native_arrow') return { cursorType: 'native_arrow' };
       if (type === 'native_pointer') return { cursorType: 'native_pointer' };
@@ -3086,6 +3103,38 @@ export class KeyPilot extends EventManager {
     return { blockActions: true, handled: false };
   }
 
+  handlePointerDown(e) {
+    if (!this.enabled) return;
+    if (!this._activeModeCancelsOnPointerDown()) return;
+    try {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+    } catch { /* ignore */ }
+    this.cancelModes();
+  }
+
+  /**
+   * Pointerdown dismiss is declared on the active mode resource
+   * (FunctionDef, inspector kind, or highlight mode) — not hardcoded per key.
+   * @returns {boolean}
+   */
+  _activeModeCancelsOnPointerDown() {
+    let mode = null;
+    try { mode = this.state.getState()?.mode; } catch { /* ignore */ }
+    if (functionCancelsOnPointerDown(mode)) return true;
+    try {
+      if (this.inspector?.cancelsOnPointerDown?.()) return true;
+    } catch { /* ignore */ }
+    try {
+      if (this.state.isHighlightMode() &&
+          this.overlayManager?.highlightManager?.cancelsOnPointerDown?.()) {
+        return true;
+      }
+    } catch { /* ignore */ }
+    return false;
+  }
+
   handleMouseMove(e) {
     // Don't handle mouse events if extension is disabled
     if (!this.enabled) {
@@ -3104,6 +3153,13 @@ export class KeyPilot extends EventManager {
 
     // Pointer is on the parent document again — reclaim keys from a focused page iframe.
     this._maybeReclaimFocusAfterParentPointerMove();
+
+    try {
+      if (this.state.isScrollLineMode()) {
+        this._scrollLineOverlay?.updatePointer(x, y);
+        return;
+      }
+    } catch { /* ignore */ }
 
     // Coalesce hover detection to once-per-frame to avoid doing hit-testing at high mouse Hz.
     // Also extract an "under element" hint from the event path so we can skip elementFromPoint.
@@ -3386,28 +3442,37 @@ export class KeyPilot extends EventManager {
    * @param {number} clientY
    * @param {number} sign
    * @param {ScrollBehavior} behavior
-   * @param {{ mode?: 'delta'|'edge', deltaPx?: number }} [opts]
+   * @param {{ mode?: 'delta'|'edge'|'xy', deltaPx?: number, deltaX?: number, deltaY?: number, iframe?: HTMLIFrameElement, localX?: number, localY?: number }} [opts]
    * @returns {boolean} true if an iframe under the cursor was targeted
    */
   _tryScrollIframeUnderCursor(clientX, clientY, sign, behavior, opts = {}) {
-    if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return false;
+    const lockedIframe = opts.iframe && (opts.iframe.tagName === 'IFRAME' || opts.iframe.tagName === 'FRAME')
+      ? /** @type {HTMLIFrameElement} */ (opts.iframe)
+      : null;
 
-    let under = null;
-    try {
-      under = this.detector?.deepElementFromPoint?.(clientX, clientY)
-        || elementFromPointDeep(clientX, clientY);
-    } catch {
-      under = null;
+    /** @type {HTMLIFrameElement|null} */
+    let iframe = lockedIframe;
+    if (!iframe) {
+      if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return false;
+
+      let under = null;
+      try {
+        under = this.detector?.deepElementFromPoint?.(clientX, clientY)
+          || elementFromPointDeep(clientX, clientY);
+      } catch {
+        under = null;
+      }
+      if (!under || (under.tagName !== 'IFRAME' && under.tagName !== 'FRAME')) {
+        return false;
+      }
+
+      try {
+        if (this._isKeyPilotUiElement?.(under)) return false;
+      } catch { /* ignore */ }
+
+      iframe = /** @type {HTMLIFrameElement} */ (under);
     }
-    if (!under || (under.tagName !== 'IFRAME' && under.tagName !== 'FRAME')) {
-      return false;
-    }
 
-    try {
-      if (this._isKeyPilotUiElement?.(under)) return false;
-    } catch { /* ignore */ }
-
-    const iframe = /** @type {HTMLIFrameElement} */ (under);
     let rect;
     try {
       rect = iframe.getBoundingClientRect();
@@ -3416,21 +3481,27 @@ export class KeyPilot extends EventManager {
     }
     if (!rect || rect.width <= 0 || rect.height <= 0) return false;
 
-    const localX = clientX - rect.left;
-    const localY = clientY - rect.top;
-    if (localX < 0 || localY < 0 || localX > rect.width || localY > rect.height) {
+    const localX = lockedIframe && Number.isFinite(opts.localX)
+      ? Number(opts.localX)
+      : clientX - rect.left;
+    const localY = lockedIframe && Number.isFinite(opts.localY)
+      ? Number(opts.localY)
+      : clientY - rect.top;
+    if (!lockedIframe && (localX < 0 || localY < 0 || localX > rect.width || localY > rect.height)) {
       return false;
     }
 
-    const mode = opts.mode === 'edge' ? 'edge' : 'delta';
+    const mode = opts.mode === 'edge' ? 'edge' : (opts.mode === 'xy' ? 'xy' : 'delta');
     const payload = {
       type: MSG.FRAME_SCROLL,
       clientX: localX,
       clientY: localY,
       sign: sign < 0 ? -1 : 1,
       mode,
-      deltaPx: mode === 'edge' ? 0 : (Math.abs(Number(opts.deltaPx)) || 0),
-      behavior: behavior === 'auto' || behavior === 'instant' ? 'auto' : 'smooth',
+      deltaPx: mode === 'edge' || mode === 'xy' ? 0 : (Math.abs(Number(opts.deltaPx)) || 0),
+      deltaX: mode === 'xy' ? (Number(opts.deltaX) || 0) : 0,
+      deltaY: mode === 'xy' ? (Number(opts.deltaY) || 0) : 0,
+      behavior: mode === 'xy' || behavior === 'auto' || behavior === 'instant' ? 'auto' : 'smooth',
       frameName: typeof iframe.name === 'string' ? iframe.name : ''
     };
 
@@ -3457,7 +3528,12 @@ export class KeyPilot extends EventManager {
             return true;
           } catch { /* fall through to scroll this frame */ }
         }
-        if (mode === 'edge') {
+        if (mode === 'xy') {
+          scrollByAtPoint(localX, localY, payload.deltaX, payload.deltaY, payload.behavior, {
+            doc,
+            win: view
+          });
+        } else if (mode === 'edge') {
           scrollToEdgeAtPoint(localX, localY, payload.sign, payload.behavior, {
             doc,
             win: view
@@ -3501,6 +3577,176 @@ export class KeyPilot extends EventManager {
     if (!this._allowActionKey('handlePageBottom', e)) return;
     this._scrollToEdgeAtCursor(1);
     this.emitAction('scrollBottom');
+  }
+
+  handleScrollLineKey(e) {
+    if (e?.repeat) return;
+    if (!this._allowActionKey('handleScrollLineKey', e)) return;
+    const currentState = this.state.getState();
+    if (currentState.mode === MODES.TEXT_FOCUS) return;
+    if (currentState.mode === MODES.POPOVER || currentState.mode === MODES.OMNIBOX) return;
+
+    if (this.state.isScrollLineMode()) {
+      this._exitScrollLineMode();
+      return;
+    }
+    this._enterScrollLineMode();
+  }
+
+  _enterScrollLineMode() {
+    try {
+      if (this.state.isHighlightMode()) this.cancelHighlightMode();
+    } catch { /* ignore */ }
+    try {
+      if (this.state.isInspectorMode()) this.inspector.exit();
+    } catch { /* ignore */ }
+
+    const { x, y } = this._getScrollCursorPoint();
+    this._scrollLineOrigin = { x, y };
+    this._scrollLineTarget = this._resolveScrollLineTarget(x, y);
+    this.state.setMode(MODES.SCROLL_LINE);
+
+    try {
+      this._scrollLineOverlay?.show(x, y);
+    } catch { /* ignore */ }
+
+    this._scrollLineLastTs = 0;
+    if (this._scrollLineRaf) {
+      try { cancelAnimationFrame(this._scrollLineRaf); } catch { /* ignore */ }
+      this._scrollLineRaf = 0;
+    }
+    const tick = (ts) => {
+      this._scrollLineRaf = 0;
+      if (!this.state.isScrollLineMode()) return;
+      this._tickScrollLine(ts);
+      this._scrollLineRaf = window.requestAnimationFrame(tick);
+    };
+    this._scrollLineRaf = window.requestAnimationFrame(tick);
+    this.emitAction('scrollLine');
+  }
+
+  _exitScrollLineMode() {
+    if (this._scrollLineRaf) {
+      try { cancelAnimationFrame(this._scrollLineRaf); } catch { /* ignore */ }
+      this._scrollLineRaf = 0;
+    }
+    this._scrollLineLastTs = 0;
+    this._scrollLineTarget = null;
+    try { this._scrollLineOverlay?.hide(); } catch { /* ignore */ }
+    try {
+      if (this.state.isScrollLineMode()) this.state.setMode(MODES.NONE);
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Lock the scroller (or iframe) under the origin. Same targeting as C/V.
+   * @param {number} x
+   * @param {number} y
+   */
+  _resolveScrollLineTarget(x, y) {
+    let under = null;
+    try {
+      under = this.detector?.deepElementFromPoint?.(x, y) || elementFromPointDeep(x, y);
+    } catch {
+      under = null;
+    }
+    if (under && (under.tagName === 'IFRAME' || under.tagName === 'FRAME')) {
+      try {
+        if (!this._isKeyPilotUiElement?.(under)) {
+          const iframe = /** @type {HTMLIFrameElement} */ (under);
+          const rect = iframe.getBoundingClientRect();
+          if (rect && rect.width > 0 && rect.height > 0) {
+            return {
+              kind: 'iframe',
+              iframe,
+              localX: x - rect.left,
+              localY: y - rect.top
+            };
+          }
+        }
+      } catch { /* fall through */ }
+    }
+
+    const found = findScrollableAtPoint(x, y);
+    if (found?.el) {
+      return { kind: 'element', el: found.el, canX: !!found.canX, canY: !!found.canY };
+    }
+
+    const se = document.scrollingElement || document.documentElement || document.body;
+    if (se) return { kind: 'element', el: se, canX: true, canY: true };
+    return null;
+  }
+
+  /**
+   * Ease-in curve: small moves stay slow; speed ramps toward the cap as the
+   * pointer approaches LINE_CURVE_RANGE_PX beyond the dead zone.
+   * @param {number} offset
+   * @returns {number} px/s
+   */
+  _scrollLineAxisVelocity(offset) {
+    const mag = Math.abs(Number(offset) || 0);
+    const dead = Number(SCROLL.LINE_DEADZONE_PX) || 12;
+    if (mag <= dead) return 0;
+    const range = Math.max(1, Number(SCROLL.LINE_CURVE_RANGE_PX) || 360);
+    const exp = Number(SCROLL.LINE_CURVE_EXPONENT);
+    const power = Number.isFinite(exp) && exp > 0 ? exp : 2;
+    const cap = Number(SCROLL.LINE_MAX_PX_PER_SEC) || 2400;
+    const t = Math.min(1, (mag - dead) / range);
+    const speed = cap * Math.pow(t, power);
+    return (offset < 0 ? -1 : 1) * speed;
+  }
+
+  /**
+   * @param {number} ts
+   */
+  _tickScrollLine(ts) {
+    const last = this._scrollLineLastTs;
+    this._scrollLineLastTs = ts;
+    if (!last) return;
+
+    const dt = Math.min(0.05, Math.max(0, (ts - last) / 1000));
+    if (!dt) return;
+
+    const mouse = this.state.getState()?.lastMouse || this._scrollLineOrigin;
+    const ox = this._scrollLineOrigin?.x || 0;
+    const oy = this._scrollLineOrigin?.y || 0;
+    const mx = Number(mouse?.x);
+    const my = Number(mouse?.y);
+    const px = Number.isFinite(mx) ? mx : ox;
+    const py = Number.isFinite(my) ? my : oy;
+
+    try { this._scrollLineOverlay?.updatePointer(px, py); } catch { /* ignore */ }
+
+    let vx = this._scrollLineAxisVelocity(px - ox);
+    let vy = this._scrollLineAxisVelocity(py - oy);
+    const dx = vx * dt;
+    const dy = vy * dt;
+    if (!dx && !dy) return;
+
+    const target = this._scrollLineTarget;
+    if (target?.kind === 'iframe' && target.iframe) {
+      this._tryScrollIframeUnderCursor(ox, oy, 0, 'auto', {
+        mode: 'xy',
+        deltaX: dx,
+        deltaY: dy,
+        iframe: target.iframe,
+        localX: target.localX,
+        localY: target.localY
+      });
+      return;
+    }
+
+    if (target?.kind === 'element' && target.el) {
+      let applyX = target.canX ? dx : 0;
+      let applyY = target.canY ? dy : 0;
+      if (!applyX && !applyY) return;
+      scrollElementBy(target.el, applyX, applyY, 'auto');
+      return;
+    }
+
+    try {
+      window.scrollBy({ left: dx, top: dy, behavior: 'auto' });
+    } catch { /* ignore */ }
   }
 
   /**
@@ -3862,6 +4108,7 @@ export class KeyPilot extends EventManager {
         console.log('[KeyPilot] Canceling inspector mode to enter highlight mode');
         this.inspector.exit();
       }
+      try { this._exitScrollLineMode(); } catch { /* ignore */ }
       
       // Enter highlight mode and start highlighting at current cursor position
       this.state.setMode(MODES.HIGHLIGHT);
@@ -3907,6 +4154,7 @@ export class KeyPilot extends EventManager {
       if (this.state.isHighlightMode()) {
         this.cancelHighlightMode();
       }
+      try { this._exitScrollLineMode(); } catch { /* ignore */ }
       // Replace any other inspector kind
       if (this.state.isInspectorMode() && !this.inspector.isKind(INSPECTOR_KIND.RECTANGLE_PICK)) {
         this.inspector.exit();
@@ -3928,6 +4176,7 @@ export class KeyPilot extends EventManager {
         this.inspector.exit();
         try { this.overlayManager?.clearInspectorPickedOverlays?.(); } catch { /* ignore */ }
       }
+      try { this._exitScrollLineMode(); } catch { /* ignore */ }
 
       if (FEATURE_FLAGS.USE_EDGE_ONLY_SELECTION && FEATURE_FLAGS.ENABLE_EDGE_ONLY_PROCESSING) {
         try { this.ensureEdgeOnlyProcessingForRectangle(); } catch { /* ignore */ }
@@ -6857,6 +7106,11 @@ export class KeyPilot extends EventManager {
       this.cancelHighlightMode();
       return;
     }
+
+    if (currentState.mode === MODES.SCROLL_LINE) {
+      this._exitScrollLineMode();
+      return;
+    }
     
     // Handle popover mode cancellation
     if (currentState.mode === MODES.POPOVER) {
@@ -7236,6 +7490,7 @@ export class KeyPilot extends EventManager {
         this.cancelHighlightMode?.();
       }
     } catch { /* ignore */ }
+    try { this._exitScrollLineMode(); } catch { /* ignore */ }
 
     // Launcher (;)
     try { this.launcherPopover?.hide?.(); } catch { /* ignore */ }
@@ -7424,6 +7679,7 @@ export class KeyPilot extends EventManager {
         this.controlStrip = null;
       }
     } catch { /* ignore */ }
+    try { this._scrollLineOverlay?.destroy?.(); } catch { /* ignore */ }
     this.stop();
     // Clean up intersection observer optimizations
     if (this.intersectionManager) {

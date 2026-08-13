@@ -37,6 +37,15 @@ export class EventManager {
       this.addListener(document, 'mousemove', this.handleMouseMove.bind(this), moveOpts);
     }
 
+    // Capture pointerdown so Functions that own a mode can opt into click-to-dismiss
+    // (`cancelOnPointerDown` on the FunctionDef). Not passive: those Functions preventDefault.
+    const downOpts = { capture: true };
+    if (typeof PointerEvent !== 'undefined') {
+      this.addListener(document, 'pointerdown', this.handlePointerDown.bind(this), downOpts);
+    } else {
+      this.addListener(document, 'mousedown', this.handlePointerDown.bind(this), downOpts);
+    }
+
     this.isActive = true;
   }
 
@@ -100,6 +109,10 @@ export class EventManager {
 
   handleMouseMove(_e) {
     // Override in implementation  
+  }
+
+  handlePointerDown(_e) {
+    // Override in implementation
   }
 
   handleScroll(_e) {
