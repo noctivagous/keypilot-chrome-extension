@@ -287,6 +287,7 @@ async function render() {
   const scrollHalfPageRange = /** @type {HTMLInputElement|null} */ (document.getElementById('scroll-half-page-range'));
   const scrollHalfPageNumber = /** @type {HTMLInputElement|null} */ (document.getElementById('scroll-half-page-number'));
   const scrollSpeedSelect = /** @type {HTMLSelectElement|null} */ (document.getElementById('scroll-speed'));
+  const scrollMiddleClickScrollLine = /** @type {HTMLInputElement|null} */ (document.getElementById('scroll-middle-click-scroll-line'));
   const scrollResetBtn = document.getElementById('scroll-reset');
 
   const previewCursor = new CursorManager();
@@ -457,6 +458,9 @@ async function render() {
     setInputValue(scrollHalfPageRange, half);
     setInputValue(scrollHalfPageNumber, half);
     setInputValue(scrollSpeedSelect, speed);
+    if (scrollMiddleClickScrollLine) {
+      scrollMiddleClickScrollLine.checked = !!sc?.middleClickScrollLine;
+    }
   };
 
   // Initial state
@@ -708,6 +712,10 @@ async function render() {
     await setSettings({ scroll: { speed } });
     const s = await getSettings();
     applyScroll(s.scroll);
+  }, true);
+
+  scrollMiddleClickScrollLine?.addEventListener('change', async () => {
+    await setSettings({ scroll: { middleClickScrollLine: !!scrollMiddleClickScrollLine.checked } });
   }, true);
 
   scrollResetBtn?.addEventListener('click', async () => {

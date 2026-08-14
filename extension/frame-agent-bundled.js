@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-13T04:36:01.157Z
+ * Generated on 2026-08-14T03:42:53.437Z
  */
 
 (() => {
@@ -389,25 +389,32 @@
     PAGE_TOP: Object.freeze({
       handler: "handlePageTop",
       label: "Scroll To Top",
-      description: "Scroll to Top",
+      description: "Jump to the top of the scroll target (Fade hides the jump; Scroll animates)",
       keyboardClass: "key-scroll",
       row: 3
     }),
     PAGE_BOTTOM: Object.freeze({
       handler: "handlePageBottom",
       label: "Scroll To Bottom",
-      description: "Scroll to Bottom",
+      description: "Jump to the bottom of the scroll target (Fade hides the jump; Scroll animates)",
       keyboardClass: "key-scroll",
       row: 3
     }),
     SCROLL_LINE: Object.freeze({
       handler: "handleScrollLineKey",
       label: "Scroll Line",
-      description: "Scroll from a fixed origin: move the mouse away from the dot to scroll faster",
+      description: "Scroll from a fixed origin: move the mouse away from the dot to scroll faster. Optional middle-click on empty page area (Settings \u2192 Scrolling).",
       keyboardClass: "key-scroll",
       row: 3,
       mode: "scroll_line",
-      cancelOnPointerDown: true
+      cancelOnPointerDown: true,
+      pointerBinding: Object.freeze({
+        button: "middle",
+        yieldToClickables: true,
+        yieldToTextEntry: true,
+        yieldToModes: Object.freeze(["text_focus", "popover", "omnibox"]),
+        enabledSetting: "scroll.middleClickScrollLine"
+      })
     }),
     NEW_TAB: Object.freeze({
       handler: "handleNewTabKey",
@@ -462,7 +469,7 @@
     HIGHLIGHT: Object.freeze({
       handler: "handleHighlightKey",
       label: "Text Select",
-      description: "Select text (character level)",
+      description: "Select text (character level) and copy as rich text by default",
       keyboardClass: "key-highlight",
       row: 2
     }),
@@ -1085,6 +1092,8 @@
     INSPECTOR_PICKED_OVERLAY: "kpv2-inspector-picked-overlay",
     INSPECTOR_UNION_OVERLAY: "kpv2-inspector-union-overlay",
     TEXT_FIELD_GLOW: "kpv2-text-field-glow",
+    /** Full-viewport veil used to hide instant Scroll-to-Top / Bottom jumps */
+    EDGE_JUMP_FADE: "kpv2-edge-jump-fade",
     VIEWPORT_MODAL_FRAME: "kpv2-viewport-modal-frame",
     ESC_EXIT_LABEL: "kpv2-esc-exit-label",
     TEXT_FOCUS_INPUT: "kpv2-text-focus-input",
@@ -1116,6 +1125,8 @@
     // high-but-safe base avoids accidental collisions and keeps ordering clear.
     _BASE: 2147483e3,
     // Low-ish KeyPilot overlays
+    /** Covers page content during fade edge-jumps; below chrome + cursor */
+    EDGE_JUMP_FADE: 2147483010,
     VIEWPORT_MODAL_FRAME: 2147483010,
     HIGHLIGHT_SELECTION: 2147483015,
     // PopupManager layers (kept BELOW click overlays so the green click rectangle can sit above popups)
@@ -1164,6 +1175,8 @@
     HALF_PAGE_PX: 500,
     /** Default CSS scroll-behavior for keyboard scrolling */
     BEHAVIOR: "smooth",
+    /** Fade-in / fade-out duration for Scroll To Top / Bottom "Fade" jump style */
+    EDGE_JUMP_FADE_MS: 180,
     /** Scroll Line: no scroll inside this radius from the origin dot */
     LINE_DEADZONE_PX: 12,
     /**
@@ -1433,6 +1446,24 @@
     return defaultValue;
   }
 
+  // src/utils/platform.js
+  function isMacPlatform() {
+    try {
+      const uaPlatform = navigator.userAgentData?.platform;
+      if (typeof uaPlatform === "string" && uaPlatform) {
+        return uaPlatform === "macOS";
+      }
+    } catch {
+    }
+    try {
+      const plat = String(navigator.platform || "");
+      const ua = String(navigator.userAgent || "");
+      return /^Mac/i.test(plat) || /Mac OS X/i.test(ua);
+    } catch {
+    }
+    return false;
+  }
+
   // src/modules/settings-manager.js
   var SETTINGS_STORAGE_KEY = "kp_settings_v1";
   var TEXT_FOCUS_STYLE_IDS = Object.freeze(
@@ -1535,7 +1566,9 @@
       // C / V scroll distance in pixels (default = prior 400 × 1.25).
       halfPagePx: SCROLL.HALF_PAGE_PX,
       // Animation speed for keyboard scrolling: smooth (animated) or instant (jump).
-      speed: SCROLL.BEHAVIOR === "smooth" ? "smooth" : "instant"
+      speed: SCROLL.BEHAVIOR === "smooth" ? "smooth" : "instant",
+      // Middle mouse button → Scroll Line Function (empty page only). On by default on Mac.
+      middleClickScrollLine: isMacPlatform()
     })
   });
   function normalizeSearchEngine(raw) {
@@ -1660,6 +1693,7 @@
   }
   function normalizeScroll(raw) {
     const stored = raw && typeof raw === "object" ? raw : {};
+    const middleClickDefault = DEFAULT_SETTINGS.scroll.middleClickScrollLine;
     return {
       halfPagePx: normalizeNumber(
         stored.halfPagePx,
@@ -1667,7 +1701,9 @@
         50,
         2e3
       ),
-      speed: normalizeScrollSpeed(stored.speed)
+      speed: normalizeScrollSpeed(stored.speed),
+      // Missing key → platform default (Mac on, others off). Explicit boolean is honored on any OS.
+      middleClickScrollLine: normalizeBoolean(stored.middleClickScrollLine, middleClickDefault)
     };
   }
   function normalizeControlStrip(raw) {

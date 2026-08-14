@@ -668,7 +668,8 @@ async function renderPopoverSettings({ doc, pop, targetEl, binding, actionId }) 
     const modeWrap = doc.createElement('div');
     modeWrap.className = 'kp-popover-mode-switch';
     modeWrap.setAttribute('role', 'group');
-    modeWrap.setAttribute('aria-label', 'Selection mode');
+    const modeParam = (def?.parameters || []).find((p) => p && p.id === 'mode');
+    modeWrap.setAttribute('aria-label', modeParam?.label || 'Selection mode');
 
     for (const mode of def.modes) {
       const btn = doc.createElement('button');

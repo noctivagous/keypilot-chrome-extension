@@ -22,6 +22,7 @@ import {
   getSearchEngineMeta
 } from '../config/search-engines.js';
 import { storageGetValue, storageSetValue } from '../utils/storage.js';
+import { isMacPlatform } from '../utils/platform.js';
 
 export const SETTINGS_STORAGE_KEY = 'kp_settings_v1';
 
@@ -88,7 +89,8 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
 /**
  * @typedef {{
  *   halfPagePx: number,
- *   speed: ScrollSpeed
+ *   speed: ScrollSpeed,
+ *   middleClickScrollLine: boolean
  * }} ScrollSettings
  */
 
@@ -225,7 +227,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
     // C / V scroll distance in pixels (default = prior 400 × 1.25).
     halfPagePx: SCROLL.HALF_PAGE_PX,
     // Animation speed for keyboard scrolling: smooth (animated) or instant (jump).
-    speed: SCROLL.BEHAVIOR === 'smooth' ? 'smooth' : 'instant'
+    speed: SCROLL.BEHAVIOR === 'smooth' ? 'smooth' : 'instant',
+    // Middle mouse button → Scroll Line Function (empty page only). On by default on Mac.
+    middleClickScrollLine: isMacPlatform()
   })
 });
 
@@ -423,6 +427,7 @@ function normalizeScrollSpeed(raw) {
  */
 function normalizeScroll(raw) {
   const stored = raw && typeof raw === 'object' ? raw : {};
+  const middleClickDefault = DEFAULT_SETTINGS.scroll.middleClickScrollLine;
   return {
     halfPagePx: normalizeNumber(
       stored.halfPagePx,
@@ -430,7 +435,9 @@ function normalizeScroll(raw) {
       50,
       2000
     ),
-    speed: normalizeScrollSpeed(stored.speed)
+    speed: normalizeScrollSpeed(stored.speed),
+    // Missing key → platform default (Mac on, others off). Explicit boolean is honored on any OS.
+    middleClickScrollLine: normalizeBoolean(stored.middleClickScrollLine, middleClickDefault)
   };
 }
 

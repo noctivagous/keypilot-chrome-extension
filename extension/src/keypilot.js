@@ -85,9 +85,11 @@ import {
   scrollByAtPoint,
   scrollElementBy,
   findScrollableAtPoint,
+  findScrollTargetAtPoint,
   elementFromPointDeep
 } from './utils/scroll-at-point.js';
 import { ScrollLineOverlay } from './modules/scroll-line-overlay.js';
+import { matchPointerFunctionDef } from './modules/pointer-function-bindings.js';
 
 export class KeyPilot extends EventManager {
   constructor() {
@@ -148,8 +150,8 @@ export class KeyPilot extends EventManager {
     this._currentUserActions = [];
     this._currentKeySlotMap = null;
     // functionId -> Record<string, any> parameters, for built-in Functions still dispatched via a
-    // fixed physical key (SEND_TEXT_TO_AI, RECTANGLE_HIGHLIGHT, COPY_HOVERED_IMAGE,
-    // COPY_HOVERED_URL) rather than a UserKeyboardLayout slot. Kept in sync with their canonical
+    // fixed physical key (SEND_TEXT_TO_AI, RECTANGLE_HIGHLIGHT, HIGHLIGHT, COPY_HOVERED_IMAGE,
+    // COPY_HOVERED_URL, PAGE_TOP, PAGE_BOTTOM) rather than a UserKeyboardLayout slot. Kept in sync with their canonical
     // Action Instance — see getOrCreateBuiltinFunctionUserAction() in keyboard-layout-store.js and
     // KEY_ACTION_ARCHITECTURE.md's migration table (replaces settings.actionSettings).
     this._builtinFunctionActionParams = new Map();
@@ -178,6 +180,7 @@ export class KeyPilot extends EventManager {
     /** @type {null|{ kind: 'element', el: Element, canX: boolean, canY: boolean }|{ kind: 'iframe', iframe: HTMLIFrameElement, localX: number, localY: number }} */
     this._scrollLineTarget = null;
     this._scrollLineOrigin = { x: 0, y: 0 };
+    this._pointerBindingClaimed = false;
 
     // Link-hover → keyboard key glow (debounced; video thumbs thrash focusEl).
     this._LINK_HOVER_HINT_DEBOUNCE_MS = 90;
@@ -2619,12 +2622,12 @@ export class KeyPilot extends EventManager {
       }
       if (KB.PAGE_TOP?.keys?.includes?.(e.key)) {
         e.preventDefault();
-        this.overlayManager?.scrollPopoverToTop?.(this._getScrollBehavior());
+        this._scrollPopoverToEdge(-1);
         return;
       }
       if (KB.PAGE_BOTTOM?.keys?.includes?.(e.key)) {
         e.preventDefault();
-        this.overlayManager?.scrollPopoverToBottom?.(this._getScrollBehavior());
+        this._scrollPopoverToEdge(1);
         return;
       }
 
@@ -3108,6 +3111,21 @@ export class KeyPilot extends EventManager {
 
   handlePointerDown(e) {
     if (!this.enabled) return;
+
+    const pointerDef = matchPointerFunctionDef(e, this._settings || DEFAULT_SETTINGS);
+    if (pointerDef) {
+      if (this._pointerBindingShouldYield(e, pointerDef)) {
+        try {
+          const mode = pointerDef.mode;
+          if (mode && this.state.getState()?.mode === mode) this.cancelModes();
+        } catch { /* ignore */ }
+        return;
+      }
+      this._claimPointerBinding(e);
+      this._dispatchPointerFunction(pointerDef, e);
+      return;
+    }
+
     if (!this._activeModeCancelsOnPointerDown()) return;
     try {
       e.preventDefault();
@@ -3115,6 +3133,115 @@ export class KeyPilot extends EventManager {
       e.stopImmediatePropagation();
     } catch { /* ignore */ }
     this.cancelModes();
+  }
+
+  handleAuxClick(e) {
+    if (!this.enabled) return;
+    if (!this._pointerBindingClaimed) return;
+    this._pointerBindingClaimed = false;
+    try {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * @param {MouseEvent|PointerEvent} e
+   */
+  _claimPointerBinding(e) {
+    this._pointerBindingClaimed = true;
+    try {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Native middle-click (open-in-new-tab, caret, chrome) wins over a pointer-bound Function.
+   * @param {MouseEvent|PointerEvent} e
+   * @param {import('./config/function-library.js').FunctionDef} def
+   * @returns {boolean}
+   */
+  _pointerBindingShouldYield(e, def) {
+    const binding = def?.pointerBinding;
+    if (!binding) return true;
+
+    try {
+      const mode = this.state.getState()?.mode;
+      const yieldModes = binding.yieldToModes || [];
+      if (mode && yieldModes.includes(mode)) return true;
+    } catch { /* ignore */ }
+
+    let path = [];
+    try {
+      path = typeof e.composedPath === 'function' ? e.composedPath() : [];
+    } catch { path = []; }
+
+    for (const n of path) {
+      if (!n || n.nodeType !== 1) continue;
+      try {
+        if (this._isKeyPilotUiElement(n)) return true;
+      } catch { /* ignore */ }
+      if (binding.yieldToTextEntry) {
+        try {
+          if (this._isTextEntryElement(n)) return true;
+        } catch { /* ignore */ }
+      }
+    }
+
+    if (!binding.yieldToClickables) return false;
+
+    let under = path.find((n) => n && n.nodeType === 1) || null;
+    if (!under) {
+      try {
+        under = this.detector?.deepElementFromPoint?.(e.clientX, e.clientY)
+          || elementFromPointDeep(e.clientX, e.clientY);
+      } catch { under = null; }
+    }
+    if (!under) return false;
+
+    try {
+      if (this.detector?.findClickable?.(under)) return true;
+    } catch { /* ignore */ }
+
+    try {
+      const focus = this.state.getState()?.focusEl;
+      if (focus instanceof Element && under instanceof Element) {
+        if (containsComposed(focus, under) || containsComposed(under, focus)) return true;
+      }
+    } catch { /* ignore */ }
+    return false;
+  }
+
+  /**
+   * @param {import('./config/function-library.js').FunctionDef} def
+   * @param {MouseEvent|PointerEvent} e
+   */
+  _dispatchPointerFunction(def, e) {
+    try {
+      const x = Number(e.clientX);
+      const y = Number(e.clientY);
+      if (Number.isFinite(x) && Number.isFinite(y)) {
+        this.state.setMousePosition(x, y);
+        this.cursor?.updatePosition?.(x, y);
+      }
+    } catch { /* ignore */ }
+
+    const handlerName = def?.handler ? String(def.handler) : '';
+    const fn = handlerName ? this[handlerName] : null;
+    if (typeof fn !== 'function') return;
+    try {
+      const ret = fn.call(this, e);
+      if (ret && typeof ret.then === 'function') {
+        void ret.catch((err) => {
+          console.warn('[KeyPilot] Pointer Function handler failed:', handlerName, err);
+        });
+      }
+    } catch (err) {
+      console.warn('[KeyPilot] Pointer Function handler threw:', handlerName, err);
+    }
   }
 
   /**
@@ -3421,20 +3548,106 @@ export class KeyPilot extends EventManager {
   }
 
   /**
+   * Jump-style for Scroll To Top / Bottom (`mode`: fade | smooth). Fade is the default.
+   * @param {'PAGE_TOP'|'PAGE_BOTTOM'} functionId
+   * @param {{ mode?: string }|null|undefined} [parameters]
+   * @returns {'fade'|'smooth'}
+   */
+  _resolveEdgeJumpStyle(functionId, parameters) {
+    const raw = parameters?.mode
+      ?? getActionMode(this._getBuiltinFunctionActionParams(functionId), functionId);
+    return raw === 'smooth' ? 'smooth' : 'fade';
+  }
+
+  /**
+   * Overflow box under the cursor (iframe shell, nested scroller, or document root).
+   * @param {number} clientX
+   * @param {number} clientY
+   * @param {number} sign
+   * @returns {Element|null}
+   */
+  _resolveEdgeJumpCoverEl(clientX, clientY, sign) {
+    try {
+      const under = this.detector?.deepElementFromPoint?.(clientX, clientY)
+        || elementFromPointDeep(clientX, clientY);
+      if (under && (under.tagName === 'IFRAME' || under.tagName === 'FRAME')) {
+        if (!this._isKeyPilotUiElement?.(under)) return under;
+      }
+    } catch { /* ignore */ }
+    try {
+      const target = findScrollTargetAtPoint(clientX, clientY, sign);
+      if (target?.el) return target.el;
+    } catch { /* ignore */ }
+    try {
+      return document.scrollingElement || document.documentElement || document.body;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Cover the overflow box, then run `fn` (instant jump).
+   * @param {() => void} fn
+   * @param {Element|null} coverEl
+   */
+  _runEdgeJump(fn, coverEl) {
+    const run = () => {
+      try { fn(); } catch { /* ignore */ }
+    };
+    if (this.overlayManager?.runEdgeJumpFade) {
+      void this.overlayManager.runEdgeJumpFade(run, { coverEl: coverEl || null });
+      return;
+    }
+    run();
+  }
+
+  /**
    * Z / X: same cursor targeting as C / V, but jump to the start/end edge.
    *
    * @param {number} sign  -1 = Z (top/left), +1 = X (bottom/right)
+   * @param {{ jumpStyle?: 'fade'|'smooth' }} [opts]
    */
-  _scrollToEdgeAtCursor(sign) {
-    const behavior = this._getScrollBehavior();
+  _scrollToEdgeAtCursor(sign, opts = {}) {
     const s = sign < 0 ? -1 : 1;
     const { x, y } = this._getScrollCursorPoint();
+    const fade = opts.jumpStyle !== 'smooth';
+    const behavior = fade ? 'auto' : this._getScrollBehavior();
 
-    if (this._tryScrollIframeUnderCursor(x, y, s, behavior, { mode: 'edge' })) {
+    const jump = () => {
+      if (this._tryScrollIframeUnderCursor(x, y, s, behavior, { mode: 'edge' })) {
+        return;
+      }
+      scrollToEdgeAtPoint(x, y, s, behavior);
+    };
+
+    if (!fade) {
+      jump();
       return;
     }
 
-    scrollToEdgeAtPoint(x, y, s, behavior);
+    this._runEdgeJump(jump, this._resolveEdgeJumpCoverEl(x, y, s));
+  }
+
+  /**
+   * Popover iframe edge jump, using the same Fade / Scroll setting as the page keys.
+   * @param {number} sign  -1 = top, +1 = bottom
+   */
+  _scrollPopoverToEdge(sign) {
+    const functionId = sign < 0 ? 'PAGE_TOP' : 'PAGE_BOTTOM';
+    const fade = this._resolveEdgeJumpStyle(functionId) === 'fade';
+    const behavior = fade ? 'auto' : this._getScrollBehavior();
+    const jump = () => {
+      if (sign < 0) this.overlayManager?.scrollPopoverToTop?.(behavior);
+      else this.overlayManager?.scrollPopoverToBottom?.(behavior);
+    };
+    if (!fade) {
+      jump();
+      return;
+    }
+    const coverEl = this.overlayManager?.popoverIframeElement
+      || this.overlayManager?.popoverContainer
+      || null;
+    this._runEdgeJump(jump, coverEl);
   }
 
   /**
@@ -3570,21 +3783,22 @@ export class KeyPilot extends EventManager {
     return posted;
   }
 
-  handlePageTop(e) {
+  handlePageTop(e, parameters) {
     if (!this._allowActionKey('handlePageTop', e)) return;
-    this._scrollToEdgeAtCursor(-1);
+    this._scrollToEdgeAtCursor(-1, { jumpStyle: this._resolveEdgeJumpStyle('PAGE_TOP', parameters) });
     this.emitAction('scrollTop');
   }
 
-  handlePageBottom(e) {
+  handlePageBottom(e, parameters) {
     if (!this._allowActionKey('handlePageBottom', e)) return;
-    this._scrollToEdgeAtCursor(1);
+    this._scrollToEdgeAtCursor(1, { jumpStyle: this._resolveEdgeJumpStyle('PAGE_BOTTOM', parameters) });
     this.emitAction('scrollBottom');
   }
 
   handleScrollLineKey(e) {
     if (e?.repeat) return;
-    if (!this._allowActionKey('handleScrollLineKey', e)) return;
+    const fromPointer = !!e && typeof e.button === 'number';
+    if (!fromPointer && !this._allowActionKey('handleScrollLineKey', e)) return;
     const currentState = this.state.getState();
     if (currentState.mode === MODES.TEXT_FOCUS) return;
     if (currentState.mode === MODES.POPOVER || currentState.mode === MODES.OMNIBOX) return;
@@ -3596,6 +3810,39 @@ export class KeyPilot extends EventManager {
     this._enterScrollLineMode();
   }
 
+  /**
+   * Detach delegated pointerover hover targeting so clickable outlines do not
+   * update while Scroll Line owns the pointer. Restore with {@link _restoreClickableHoverTracking}.
+   */
+  _suspendClickableHoverTracking() {
+    try { this.state.setFocusElement(null); } catch { /* ignore */ }
+    try { this.overlayManager?.hideFocusOverlay?.(); } catch { /* ignore */ }
+    if (!this._domHoverListenersEnabled) return;
+    try {
+      this.intersectionManager?.setDomHoverListenersEnabled?.(
+        false,
+        (el) => this._handleDomHoverChange(el)
+      );
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Re-attach pointerover hover targeting after Scroll Line ends.
+   */
+  _restoreClickableHoverTracking() {
+    if (!this.enabled || !this._domHoverListenersEnabled) return;
+    try {
+      this.intersectionManager?.setDomHoverListenersEnabled?.(
+        true,
+        (el) => this._handleDomHoverChange(el)
+      );
+    } catch { /* ignore */ }
+    try {
+      const { x, y } = this._getScrollCursorPoint();
+      this.intersectionManager?.resyncDomHoverAtPoint?.(x, y);
+    } catch { /* ignore */ }
+  }
+
   _enterScrollLineMode() {
     try {
       if (this.state.isHighlightMode()) this.cancelHighlightMode();
@@ -3603,6 +3850,8 @@ export class KeyPilot extends EventManager {
     try {
       if (this.state.isInspectorMode()) this.inspector.exit();
     } catch { /* ignore */ }
+
+    this._suspendClickableHoverTracking();
 
     const { x, y } = this._getScrollCursorPoint();
     this._scrollLineOrigin = { x, y };
@@ -3639,6 +3888,7 @@ export class KeyPilot extends EventManager {
     try {
       if (this.state.isScrollLineMode()) this.state.setMode(MODES.NONE);
     } catch { /* ignore */ }
+    this._restoreClickableHoverTracking();
   }
 
   /**
@@ -4493,9 +4743,7 @@ export class KeyPilot extends EventManager {
 
       // Capture text FIRST while the browser Selection is still intact.
       // Do not reset session state until after we have the string.
-      if (selectionMode === 'character') {
-        selectedText = this.overlayManager.peekCharacterSelectedText() || '';
-      } else if (selectionMode === 'element') {
+      if (selectionMode === 'element') {
         try {
           const matched = this.overlayManager.getMatchedElements?.() || [];
           contentToClipboard = this.buildElementsClipboardContent(matched);
@@ -4505,6 +4753,7 @@ export class KeyPilot extends EventManager {
           selectedText = '';
         }
       } else {
+        // Character (Text Select) and caret rectangle: native Selection, rich HTML by default.
         try {
           const selection = this.getCurrentSelectionWithShadowSupport();
           if (selection && typeof selection.toString === 'function' && selection.rangeCount > 0) {
@@ -4526,11 +4775,25 @@ export class KeyPilot extends EventManager {
 
         if (!selectedText || !selectedText.trim()) {
           try {
+            selectedText = this.overlayManager.peekCharacterSelectedText() || '';
+          } catch { /* ignore */ }
+        }
+
+        if (!selectedText || !selectedText.trim()) {
+          try {
             const stateSelection = currentState.currentSelection;
             if (stateSelection && typeof stateSelection.toString === 'function') {
               selectedText = stateSelection.toString() || '';
             }
           } catch { /* ignore */ }
+        }
+
+        if (selectionMode === 'character') {
+          const copyAs = getActionMode(this._getBuiltinFunctionActionParams('HIGHLIGHT'), 'HIGHLIGHT');
+          if (copyAs === 'plain' && contentToClipboard && typeof contentToClipboard === 'object') {
+            selectedText = contentToClipboard.plainText || selectedText;
+            contentToClipboard = selectedText;
+          }
         }
       }
 

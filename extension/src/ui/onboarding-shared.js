@@ -671,7 +671,7 @@ function applyTaskRowInteractive(row, { uncheckable, onTaskRowClick }) {
 
 /** Light-blue next-step outline (matches toggle-off arrow glow). */
 const NEXT_TASK_BORDER = '1px solid rgba(120, 210, 255, 0.65)';
-const NEXT_TASK_BG = 'rgba(33, 150, 243, 0.14)';
+const NEXT_TASK_BG = 'rgb(231, 231, 231)';
 const NEXT_TASK_GLOW =
   '0 0 0 1px rgba(33, 150, 243, 0.45), 0 0 12px rgba(120, 210, 255, 0.55), 0 0 24px rgba(120, 210, 255, 0.35)';
 

@@ -48,7 +48,15 @@
  *   // When set, this Function owns `state.mode` while active (toggle / modal).
  *   mode?: string,
  *   // Dismiss the owned mode on pointerdown (any mouse button) via cancelModes.
- *   cancelOnPointerDown?: boolean
+ *   cancelOnPointerDown?: boolean,
+ *   // Optional mouse-button assignment for this same Function (see pointer-function-bindings.js).
+ *   pointerBinding?: {
+ *     button: 'left'|'middle'|'right',
+ *     yieldToClickables?: boolean,
+ *     yieldToTextEntry?: boolean,
+ *     yieldToModes?: string[],
+ *     enabledSetting?: string
+ *   }
  * }} ActionDef
  */
 
@@ -393,25 +401,32 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
   PAGE_TOP: Object.freeze({
     handler: 'handlePageTop',
     label: 'Scroll To Top',
-    description: 'Scroll to Top',
+    description: 'Jump to the top of the scroll target (Fade hides the jump; Scroll animates)',
     keyboardClass: 'key-scroll',
     row: 3
   }),
   PAGE_BOTTOM: Object.freeze({
     handler: 'handlePageBottom',
     label: 'Scroll To Bottom',
-    description: 'Scroll to Bottom',
+    description: 'Jump to the bottom of the scroll target (Fade hides the jump; Scroll animates)',
     keyboardClass: 'key-scroll',
     row: 3
   }),
   SCROLL_LINE: Object.freeze({
     handler: 'handleScrollLineKey',
     label: 'Scroll Line',
-    description: 'Scroll from a fixed origin: move the mouse away from the dot to scroll faster',
+    description: 'Scroll from a fixed origin: move the mouse away from the dot to scroll faster. Optional middle-click on empty page area (Settings → Scrolling).',
     keyboardClass: 'key-scroll',
     row: 3,
     mode: 'scroll_line',
-    cancelOnPointerDown: true
+    cancelOnPointerDown: true,
+    pointerBinding: Object.freeze({
+      button: 'middle',
+      yieldToClickables: true,
+      yieldToTextEntry: true,
+      yieldToModes: Object.freeze(['text_focus', 'popover', 'omnibox']),
+      enabledSetting: 'scroll.middleClickScrollLine'
+    })
   }),
   NEW_TAB: Object.freeze({
     handler: 'handleNewTabKey',
@@ -466,7 +481,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
   HIGHLIGHT: Object.freeze({
     handler: 'handleHighlightKey',
     label: 'Text Select',
-    description: 'Select text (character level)',
+    description: 'Select text (character level) and copy as rich text by default',
     keyboardClass: 'key-highlight',
     row: 2
   }),

@@ -45,6 +45,8 @@ export class EventManager {
     } else {
       this.addListener(document, 'mousedown', this.handlePointerDown.bind(this), downOpts);
     }
+    // Swallow leftover auxclick after a pointer-bound Function claimed the button.
+    this.addListener(document, 'auxclick', this.handleAuxClick.bind(this), downOpts);
 
     this.isActive = true;
   }
@@ -112,6 +114,10 @@ export class EventManager {
   }
 
   handlePointerDown(_e) {
+    // Override in implementation
+  }
+
+  handleAuxClick(_e) {
     // Override in implementation
   }
 

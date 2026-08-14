@@ -896,6 +896,35 @@ export class IntersectionObserverManager {
   }
 
   /**
+   * Re-resolve clickable hover at a viewport point (after temporarily detaching listeners).
+   * @param {number} clientX
+   * @param {number} clientY
+   */
+  resyncDomHoverAtPoint(clientX, clientY) {
+    if (!this._domHoverEnabled) return;
+    const x = Number(clientX);
+    const y = Number(clientY);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    let el = null;
+    try {
+      el = this.elementDetector?.deepElementFromPoint
+        ? this.elementDetector.deepElementFromPoint(x, y)
+        : document.elementFromPoint(x, y);
+    } catch { el = null; }
+    if (!el || el.nodeType !== 1) {
+      this._setDomHoveredElement(null);
+      return;
+    }
+    try {
+      if (this._isKeyPilotUiElement(el)) {
+        this._setDomHoveredElement(null);
+        return;
+      }
+    } catch { /* ignore */ }
+    this._resolveAndPublishDomHover(/** @type {Element} */ (el), x, y, { leafChanged: true });
+  }
+
+  /**
    * @returns {HTMLElement|null}
    */
   getDomHoveredElement() {

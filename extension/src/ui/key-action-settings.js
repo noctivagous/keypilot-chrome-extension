@@ -53,7 +53,8 @@ import {
 /**
  * A Function parameter literally named `mode` of type `enum` is additionally surfaced as
  * `modes`/`defaultMode` for backward compat with the sticky popover's button-group mode switch
- * (e.g. `RECTANGLE_HIGHLIGHT`'s "Element rectangle" / "Pick cumulative"). A `destination` enum
+ * (e.g. `RECTANGLE_HIGHLIGHT`'s "Element rectangle" / "Pick cumulative", `HIGHLIGHT`'s
+ * "Rich text" / "Plain text"). A `destination` enum
  * is likewise inlined on the key-info popover (Copy Image / Copy URL). Everything else is a
  * regular parameter rendered by {@link KeyActionConfigPanel}.
  */

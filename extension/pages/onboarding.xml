@@ -29,7 +29,7 @@
              message="Next up: text boxes."
              primaryText="OK"
              effect="marquee" />
-    <task id="enter_text_mode" label="Click a text field to the right with F and it will receive typing.">
+    <task id="enter_text_mode" label="Click a text field to the right with `F` and it will receive typing.">
       <when type="mode" mode="text_focus" change="enter" />
     </task>
     <task id="exit_text_mode" label="Press `Escape` to exit the text box.">
@@ -44,7 +44,7 @@
              primaryText="Yes, Continue"
              secondaryText="No, I'll Do It Later"
              secondaryAction="later"
-             laterTitle="Return to this Tutorial with Alt+T"
+             laterTitle="Return to this Tutorial with `Alt`+`T`"
              laterPrimaryText="OK, Close" />
     <task id="scroll_down" label="Scroll down with `V`.">
       <when type="action" action="scrollDown" />

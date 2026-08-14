@@ -1067,7 +1067,7 @@ export class OnboardingManager {
         const showLaterReminder = () => {
           const reminderTitle =
             laterTitle ||
-            'Return to this Tutorial with Alt+T';
+            'Return to this Tutorial with `Alt`+`T`';
           try {
             this.panel.showOverlay({
               title: reminderTitle,

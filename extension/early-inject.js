@@ -1283,7 +1283,7 @@
     },
     "HIGHLIGHT": {
       "label": "Text Select",
-      "description": "Select text (character level)",
+      "description": "Select text (character level) and copy as rich text by default",
       "keyLabel": "H",
       "displayKey": "H",
       "keyboardClass": "key-highlight"
@@ -1325,14 +1325,14 @@
     },
     "PAGE_TOP": {
       "label": "Scroll To Top",
-      "description": "Scroll to Top",
+      "description": "Jump to the top of the scroll target (Fade hides the jump; Scroll animates)",
       "keyLabel": "Z",
       "displayKey": "Z",
       "keyboardClass": "key-scroll"
     },
     "PAGE_BOTTOM": {
       "label": "Scroll To Bottom",
-      "description": "Scroll to Bottom",
+      "description": "Jump to the bottom of the scroll target (Fade hides the jump; Scroll animates)",
       "keyLabel": "X",
       "displayKey": "X",
       "keyboardClass": "key-scroll"
@@ -1360,7 +1360,7 @@
     },
     "SCROLL_LINE": {
       "label": "Scroll Line",
-      "description": "Scroll from a fixed origin: move the mouse away from the dot to scroll faster",
+      "description": "Scroll from a fixed origin: move the mouse away from the dot to scroll faster. Optional middle-click on empty page area (Settings → Scrolling).",
       "keyLabel": "N",
       "displayKey": "N",
       "keyboardClass": "key-scroll"
@@ -1488,7 +1488,7 @@
     },
     "HIGHLIGHT": {
       "label": "Text Select",
-      "description": "Select text (character level)",
+      "description": "Select text (character level) and copy as rich text by default",
       "keyLabel": "G",
       "displayKey": "G",
       "keyboardClass": "key-highlight"
@@ -1530,14 +1530,14 @@
     },
     "PAGE_TOP": {
       "label": "Scroll To Top",
-      "description": "Scroll to Top",
+      "description": "Jump to the top of the scroll target (Fade hides the jump; Scroll animates)",
       "keyLabel": "/",
       "displayKey": "/",
       "keyboardClass": "key-scroll"
     },
     "PAGE_BOTTOM": {
       "label": "Scroll To Bottom",
-      "description": "Scroll to Bottom",
+      "description": "Jump to the bottom of the scroll target (Fade hides the jump; Scroll animates)",
       "keyLabel": "B",
       "displayKey": "B",
       "keyboardClass": "key-scroll"
@@ -1565,7 +1565,7 @@
     },
     "SCROLL_LINE": {
       "label": "Scroll Line",
-      "description": "Scroll from a fixed origin: move the mouse away from the dot to scroll faster",
+      "description": "Scroll from a fixed origin: move the mouse away from the dot to scroll faster. Optional middle-click on empty page area (Settings → Scrolling).",
       "keyLabel": "T",
       "displayKey": "T",
       "keyboardClass": "key-scroll"
@@ -1644,14 +1644,14 @@
     },
     "PAGE_TOP": {
       "label": "Scroll To Top",
-      "description": "Scroll to Top",
+      "description": "Jump to the top of the scroll target (Fade hides the jump; Scroll animates)",
       "keyLabel": "Z",
       "displayKey": "Z",
       "keyboardClass": "key-scroll"
     },
     "PAGE_BOTTOM": {
       "label": "Scroll To Bottom",
-      "description": "Scroll to Bottom",
+      "description": "Jump to the bottom of the scroll target (Fade hides the jump; Scroll animates)",
       "keyLabel": "X",
       "displayKey": "X",
       "keyboardClass": "key-scroll"
@@ -1737,14 +1737,14 @@
     },
     "PAGE_TOP": {
       "label": "Scroll To Top",
-      "description": "Scroll to Top",
+      "description": "Jump to the top of the scroll target (Fade hides the jump; Scroll animates)",
       "keyLabel": "/",
       "displayKey": "/",
       "keyboardClass": "key-scroll"
     },
     "PAGE_BOTTOM": {
       "label": "Scroll To Bottom",
-      "description": "Scroll to Bottom",
+      "description": "Jump to the bottom of the scroll target (Fade hides the jump; Scroll animates)",
       "keyLabel": "B",
       "displayKey": "B",
       "keyboardClass": "key-scroll"
@@ -2189,7 +2189,7 @@
   },
   "HIGHLIGHT": {
     "label": "Text Select",
-    "description": "Select text (character level)",
+    "description": "Select text (character level) and copy as rich text by default",
     "keyLabel": "H",
     "displayKey": "H",
     "keyboardClass": "key-highlight"
@@ -2231,14 +2231,14 @@
   },
   "PAGE_TOP": {
     "label": "Scroll To Top",
-    "description": "Scroll to Top",
+    "description": "Jump to the top of the scroll target (Fade hides the jump; Scroll animates)",
     "keyLabel": "Z",
     "displayKey": "Z",
     "keyboardClass": "key-scroll"
   },
   "PAGE_BOTTOM": {
     "label": "Scroll To Bottom",
-    "description": "Scroll to Bottom",
+    "description": "Jump to the bottom of the scroll target (Fade hides the jump; Scroll animates)",
     "keyLabel": "X",
     "displayKey": "X",
     "keyboardClass": "key-scroll"
@@ -2266,7 +2266,7 @@
   },
   "SCROLL_LINE": {
     "label": "Scroll Line",
-    "description": "Scroll from a fixed origin: move the mouse away from the dot to scroll faster",
+    "description": "Scroll from a fixed origin: move the mouse away from the dot to scroll faster. Optional middle-click on empty page area (Settings → Scrolling).",
     "keyLabel": "N",
     "displayKey": "N",
     "keyboardClass": "key-scroll"
@@ -2360,7 +2360,7 @@
       "tasks": [
         {
           "id": "enter_text_mode",
-          "label": "Click a text field to the right with F and it will receive typing.",
+          "label": "Click a text field to the right with `F` and it will receive typing.",
           "when": {
             "type": "mode",
             "action": "",
@@ -2449,7 +2449,7 @@
           "primaryText": "Yes, Continue",
           "secondaryText": "No, I'll Do It Later",
           "secondaryAction": "later",
-          "laterTitle": "Return to this Tutorial with Alt+T",
+          "laterTitle": "Return to this Tutorial with `Alt`+`T`",
           "laterPrimaryText": "OK, Close"
         }
       ],
@@ -4382,7 +4382,7 @@
 
   /** Light-blue next-step outline (matches toggle-off arrow glow). */
   const NEXT_TASK_BORDER = '1px solid rgba(120, 210, 255, 0.65)';
-  const NEXT_TASK_BG = 'rgba(33, 150, 243, 0.14)';
+  const NEXT_TASK_BG = 'rgb(231, 231, 231)';
   const NEXT_TASK_GLOW =
     '0 0 0 1px rgba(33, 150, 243, 0.45), 0 0 12px rgba(120, 210, 255, 0.55), 0 0 24px rgba(120, 210, 255, 0.35)';
 
@@ -5482,12 +5482,15 @@
 
     try {
       if (overlayRefs.titleEl) {
-        overlayRefs.titleEl.textContent = String(overlayEntry.title || 'Welcome to KeyPilot');
+        renderKeyboardKeysInto(overlayRefs.titleEl, String(overlayEntry.title || 'Welcome to KeyPilot'));
       }
     } catch { /* ignore */ }
     try {
       if (overlayRefs.msgEl) {
-        overlayRefs.msgEl.textContent = String(overlayEntry.message || overlayEntry.text || '');
+        renderKeyboardKeysInto(
+          overlayRefs.msgEl,
+          String(overlayEntry.message || overlayEntry.text || '')
+        );
       }
     } catch { /* ignore */ }
     try {
@@ -5602,13 +5605,18 @@
           if (secondaryAction === 'later' || secondaryAction === 'defer' || secondaryAction === 'remind') {
             try {
               if (overlayRefs.titleEl) {
-                overlayRefs.titleEl.textContent =
-                  String(btn.dataset?.kpLaterTitle || 'Return to this Tutorial with Alt+T');
+                renderKeyboardKeysInto(
+                  overlayRefs.titleEl,
+                  String(btn.dataset?.kpLaterTitle || 'Return to this Tutorial with `Alt`+`T`')
+                );
               }
             } catch { /* ignore */ }
             try {
               if (overlayRefs.msgEl) {
-                overlayRefs.msgEl.textContent = String(btn.dataset?.kpLaterMessage || '');
+                renderKeyboardKeysInto(
+                  overlayRefs.msgEl,
+                  String(btn.dataset?.kpLaterMessage || '')
+                );
               }
             } catch { /* ignore */ }
             try {

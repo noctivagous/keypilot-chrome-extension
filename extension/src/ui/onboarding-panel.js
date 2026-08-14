@@ -13,6 +13,7 @@ import {
   createOnboardingShell,
   ensureOnboardingOverlay,
   queryOnboardingShellRefs,
+  renderKeyboardKeysInto,
   renderOnboardingSlideSurface,
   setOnboardingOverlayOpen,
   setOnboardingPanelVisible,
@@ -679,8 +680,8 @@ export class OnboardingPanel {
     this._overlayOnPrimary = typeof onPrimary === 'function' ? onPrimary : null;
     this._overlayOnSecondary = typeof onSecondary === 'function' ? onSecondary : null;
 
-    try { this._overlayTitleEl.textContent = String(title || 'Nice!'); } catch { /* ignore */ }
-    try { this._overlayMsgEl.textContent = String(message || ''); } catch { /* ignore */ }
+    try { renderKeyboardKeysInto(this._overlayTitleEl, String(title || 'Nice!')); } catch { /* ignore */ }
+    try { renderKeyboardKeysInto(this._overlayMsgEl, String(message || '')); } catch { /* ignore */ }
     try {
       this._overlayPrimaryBtn.textContent = String(primaryText || 'OK');
       this._overlayPrimaryBtn.hidden = false;

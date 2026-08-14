@@ -65,8 +65,17 @@ import { ACTION_RESULT_DESTINATIONS, buildResultDestinationParameter } from '../
  *   worksWhileTyping?: boolean,
  *   // When set, this Function owns `state.mode` while active (toggle / modal).
  *   mode?: string,
- *   // If true, pointerdown dismisses the owned mode through cancelModes (same path as Esc).
- *   cancelOnPointerDown?: boolean,
+   *   // If true, pointerdown dismisses the owned mode through cancelModes (same path as Esc).
+   *   cancelOnPointerDown?: boolean,
+   *   // Optional mouse-button mapping onto this Function (layouts still own keyboard assignment).
+   *   // Gated by `enabledSetting` (a dotted path on KeyPilot settings, e.g. scroll.middleClickScrollLine).
+   *   pointerBinding?: {
+   *     button: 'left'|'middle'|'right',
+   *     yieldToClickables?: boolean,
+   *     yieldToTextEntry?: boolean,
+   *     yieldToModes?: string[],
+   *     enabledSetting?: string
+   *   },
  *   // What page data this Function reads and when it's captured, and where its result may be
  *   // routed. See KEY_ACTION_ARCHITECTURE.md "Data Acquisition & Result Destinations". Omitted
  *   // for Functions that don't read/produce page data (e.g. NEW_TAB) or haven't been classified
@@ -157,8 +166,11 @@ const BUILTIN_FUNCTION_DATA_TAGS = Object.freeze({
 export const FIXED_KEY_FUNCTION_IDS = Object.freeze([
   'SEND_TEXT_TO_AI',
   'RECTANGLE_HIGHLIGHT',
+  'HIGHLIGHT',
   'COPY_HOVERED_IMAGE',
-  'COPY_HOVERED_URL'
+  'COPY_HOVERED_URL',
+  'PAGE_TOP',
+  'PAGE_BOTTOM'
 ]);
 
 /**
@@ -169,12 +181,41 @@ export const FIXED_KEY_FUNCTION_IDS = Object.freeze([
  * `getOrCreateBuiltinFunctionUserAction` in `keyboard-layout-store.js`) instead of global
  * settings — see KEY_ACTION_ARCHITECTURE.md migration table.
  *
- * `RECTANGLE_HIGHLIGHT`'s old "modes" concept (a button-group switch, not a form field) is
+ * `RECTANGLE_HIGHLIGHT` / `HIGHLIGHT` "modes" (a button-group switch, not a form field) are
  * represented as a plain `enum` parameter named `mode` — `key-action-settings.js` special-cases a
  * parameter literally named `mode` to keep rendering it as the button-group switch it always was.
- * @type {Readonly<Record<string, FunctionDef['parameters']>>}
+ * `PAGE_TOP` / `PAGE_BOTTOM` use the same `mode` switch for Fade vs Scroll.
  */
+/** Shared by Scroll To Top / Scroll To Bottom (inlined as the key-info `mode` switch). */
+const EDGE_SCROLL_PARAMETERS = Object.freeze([
+  Object.freeze({
+    id: 'mode',
+    label: 'Jump style',
+    type: 'enum',
+    defaultValue: 'fade',
+    options: Object.freeze([
+      Object.freeze({ id: 'fade', label: 'Fade' }),
+      Object.freeze({ id: 'smooth', label: 'Scroll' })
+    ])
+  })
+]);
+
+/** @type {Readonly<Record<string, FunctionDef['parameters']>>} */
 const BUILTIN_FUNCTION_PARAMETER_OVERRIDES = Object.freeze({
+  PAGE_TOP: EDGE_SCROLL_PARAMETERS,
+  PAGE_BOTTOM: EDGE_SCROLL_PARAMETERS,
+  HIGHLIGHT: Object.freeze([
+    Object.freeze({
+      id: 'mode',
+      label: 'Copy as',
+      type: 'enum',
+      defaultValue: 'rich',
+      options: Object.freeze([
+        Object.freeze({ id: 'rich', label: 'Rich text' }),
+        Object.freeze({ id: 'plain', label: 'Plain text' })
+      ])
+    })
+  ]),
   RECTANGLE_HIGHLIGHT: Object.freeze([
     Object.freeze({
       id: 'mode',
@@ -319,12 +360,13 @@ function buildBuiltinActionFunctionDefs() {
       category: KEYBINDING_ACTION_CATEGORY_BY_ID[id] || 'Other',
       keyboardClass: def.keyboardClass ?? null,
       // No `parameters` by default: most built-ins remain simple/non-instantiable Functions.
-      // A few (SEND_TEXT_TO_AI, RECTANGLE_HIGHLIGHT, COPY_HOVERED_IMAGE, COPY_HOVERED_URL)
+      // A few (SEND_TEXT_TO_AI, RECTANGLE_HIGHLIGHT, HIGHLIGHT, COPY_HOVERED_IMAGE, COPY_HOVERED_URL)
       // get their schema below from
       // BUILTIN_FUNCTION_PARAMETER_OVERRIDES — see KEY_ACTION_ARCHITECTURE.md "Migration mapping".
       ...(TEXT_ACTIVE_BUILTIN_FUNCTION_IDS.has(id) ? { worksWhileTyping: true } : {}),
       ...(def.mode ? { mode: def.mode } : {}),
       ...(def.cancelOnPointerDown ? { cancelOnPointerDown: true } : {}),
+      ...(def.pointerBinding ? { pointerBinding: def.pointerBinding } : {}),
       ...(BUILTIN_FUNCTION_DATA_TAGS[id] || {}),
       ...(BUILTIN_FUNCTION_PARAMETER_OVERRIDES[id] ? { parameters: BUILTIN_FUNCTION_PARAMETER_OVERRIDES[id] } : {})
     });
@@ -571,6 +613,14 @@ export function getFunctionDef(functionId) {
 /** @returns {FunctionDef[]} */
 export function listFunctionDefs() {
   return Object.values(FUNCTION_LIBRARY);
+}
+
+/**
+ * Functions that can also fire from a mouse button (see `pointerBinding`).
+ * @returns {FunctionDef[]}
+ */
+export function listPointerBoundFunctionDefs() {
+  return listFunctionDefs().filter((d) => d && d.pointerBinding);
 }
 
 /**

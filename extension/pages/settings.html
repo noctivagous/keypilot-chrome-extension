@@ -238,7 +238,7 @@
           >
             <header class="panel-header">
               <h2>Scrolling</h2>
-              <p class="panel-lead">Keyboard page scrolling for C / V (smaller step). Z / X use a larger fixed step.</p>
+              <p class="panel-lead">Keyboard page scrolling for C / V (smaller step). Z / X jump to the edge. Optional middle-click Scroll Line.</p>
             </header>
 
             <div class="stack">
@@ -261,6 +261,16 @@
                   <div class="field-hint">Animation for keyboard scrolling (C/V, Z/X, B/N).</div>
                 </label>
               </div>
+
+              <label class="toggle" for="scroll-middle-click-scroll-line">
+                <input id="scroll-middle-click-scroll-line" type="checkbox" />
+                <div class="toggle-text">
+                  <div class="toggle-title">Middle click starts Scroll Line</div>
+                  <div class="toggle-sub">
+                    On empty page area, the middle mouse button runs the Scroll Line action (same as the bound key). Links, clickables, and text fields keep native middle-click. On by default on Mac.
+                  </div>
+                </div>
+              </label>
 
               <div class="row-actions">
                 <button id="scroll-reset" class="btn btn-secondary btn-small" type="button">Reset scrolling to defaults</button>

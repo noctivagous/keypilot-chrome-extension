@@ -110,6 +110,8 @@ export const CSS_CLASSES = {
   INSPECTOR_PICKED_OVERLAY: 'kpv2-inspector-picked-overlay',
   INSPECTOR_UNION_OVERLAY: 'kpv2-inspector-union-overlay',
   TEXT_FIELD_GLOW: 'kpv2-text-field-glow',
+  /** Full-viewport veil used to hide instant Scroll-to-Top / Bottom jumps */
+  EDGE_JUMP_FADE: 'kpv2-edge-jump-fade',
   VIEWPORT_MODAL_FRAME: 'kpv2-viewport-modal-frame',
   ESC_EXIT_LABEL: 'kpv2-esc-exit-label',
   TEXT_FOCUS_INPUT: 'kpv2-text-focus-input',
@@ -152,6 +154,8 @@ export const Z_INDEX = {
   _BASE: 2147483000,
 
   // Low-ish KeyPilot overlays
+  /** Covers page content during fade edge-jumps; below chrome + cursor */
+  EDGE_JUMP_FADE: 2147483010,
   VIEWPORT_MODAL_FRAME: 2147483010,
   HIGHLIGHT_SELECTION: 2147483015,
 
@@ -213,6 +217,7 @@ export const Z_INDEX = {
  * (`scroll-at-point.js`): nested overflow under the pointer first (vertical,
  * or horizontal when that container scrolls on X), then the document. Iframes
  * are forwarded via the light frame-click-agent (KP_FRAME_SCROLL).
+ * Z / X default to a Fade jump: cover that overflow box, instant-scroll, uncover.
  *
  * Cross-frame pointer/focus: child agents post KP_FRAME_POINTER so top lastMouse
  * stays accurate over iframes; KP_FRAME_FOCUS_RECLAIM returns keyboard ownership
@@ -225,6 +230,8 @@ export const SCROLL = Object.freeze({
   HALF_PAGE_PX: 500,
   /** Default CSS scroll-behavior for keyboard scrolling */
   BEHAVIOR: 'smooth',
+  /** Fade-in / fade-out duration for Scroll To Top / Bottom "Fade" jump style */
+  EDGE_JUMP_FADE_MS: 180,
   /** Scroll Line: no scroll inside this radius from the origin dot */
   LINE_DEADZONE_PX: 12,
   /**

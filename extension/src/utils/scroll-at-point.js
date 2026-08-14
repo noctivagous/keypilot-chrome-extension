@@ -66,7 +66,7 @@ function overflowAllowsScroll(overflow) {
  * @param {Document} doc
  * @returns {boolean}
  */
-function isDocumentScrollRoot(el, doc) {
+export function isDocumentScrollRoot(el, doc) {
   try {
     const se = doc.scrollingElement;
     if (se && el === se) return true;

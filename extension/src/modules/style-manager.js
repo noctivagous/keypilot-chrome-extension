@@ -41,6 +41,7 @@ export function buildKeyPilotPrintCss() {
     `.${CSS_CLASSES.FOCUS_DASH}`,
     `.${CSS_CLASSES.FOCUS_MARQUEE}`,
     `.${CSS_CLASSES.IMAGE_COPY_PULSE}`,
+    `.${CSS_CLASSES.EDGE_JUMP_FADE}`,
     `.${CSS_CLASSES.VIEWPORT_MODAL_FRAME}`,
     `.${CSS_CLASSES.ESC_EXIT_LABEL}`,
     // Omnibox + modal chrome
@@ -289,6 +290,20 @@ export class StyleManager {
       
       .${CSS_CLASSES.HIDDEN} { 
         display: none !important; 
+      }
+
+      .${CSS_CLASSES.EDGE_JUMP_FADE} {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 0;
+        height: 0;
+        box-sizing: border-box;
+        z-index: ${Z_INDEX.EDGE_JUMP_FADE};
+        pointer-events: none;
+        opacity: 0;
+        background: #fff;
+        will-change: opacity, left, top, width, height;
       }
       
       @keyframes kpv2-ripple { 

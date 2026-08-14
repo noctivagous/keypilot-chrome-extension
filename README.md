@@ -51,7 +51,7 @@ on the keyboard in specific places to make web navigation quick.
 | `P` | Open Link in Popover |
 | `S` | Go Back (History) |
 | `.` | Columnize element under cursor (multi-column layout) |
-| `N` | Scroll from a fixed origin: move the mouse away from the dot to scroll faster |
+| `N` | Scroll from a fixed origin: move the mouse away from the dot to scroll faster. Optional middle-click on empty page area (Settings → Scrolling). |
 | `'` | Open KeyPilot Settings |
 | `1` | Go to Site Root |
 
@@ -71,8 +71,8 @@ on the keyboard in specific places to make web navigation quick.
 | `O` | Browse images, videos, and documents found on this page |
 | `C` | Page Up (Instant) |
 | `V` | Page Down (Instant) |
-| `X` | Scroll to Bottom |
-| `Z` | Scroll to Top |
+| `X` | Jump to the bottom of the scroll target (Fade hides the jump; Scroll animates) |
+| `Z` | Jump to the top of the scroll target (Fade hides the jump; Scroll animates) |
 
 #### Modes & UI
 
@@ -80,11 +80,16 @@ on the keyboard in specific places to make web navigation quick.
 | --- | --- |
 | `Y` | Select intersecting HTML elements in a rectangle (or pick cumulative) |
 | `Backspace` | Delete Mode |
-| `H` | Select text (character level) |
+| `H` | Select text (character level) and copy as rich text by default |
 | `K` | Show/Hide the floating KeyPilot keyboard reference |
 | `Esc` | Exit Focus |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
+
+
+
+
 
 
 

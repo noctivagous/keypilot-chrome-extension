@@ -1,7 +1,7 @@
 /**
  * Visual overlay management for focus and delete indicators
  */
-import { CSS_CLASSES, Z_INDEX, SELECTORS, MODES, COLORS, FEATURE_FLAGS, CLICKABLE_CATEGORY, KP_UI_FONT } from '../config/constants.js';
+import { CSS_CLASSES, Z_INDEX, SELECTORS, MODES, COLORS, FEATURE_FLAGS, CLICKABLE_CATEGORY, KP_UI_FONT, SCROLL } from '../config/constants.js';
 import {
   getAllInspectorHostClasses,
   getInspectorDef,
@@ -105,6 +105,9 @@ export class OverlayManager {
     this._popoverResizeDispose = null; // teardown generic resize handles
     this._popoverHybridFocusCleanup = null; // teardown chrome↔iframe focus routing
     this._previewMobileUaActive = false; // SW session rule: mobile UA for preview iframe
+    /** @type {HTMLElement|null} */
+    this._edgeJumpFadeEl = null;
+    this._edgeJumpFadeToken = 0;
 
     // Central popup stack + blurred backdrop (kept below click overlays).
     // Note: Panel change callback will be set by KeyPilot after initialization
@@ -5382,6 +5385,8 @@ export class OverlayManager {
     if (this.highlightManager) {
       this.highlightManager.cleanup();
     }
+    this._removeEdgeJumpFadeEl();
+
     if (this.viewportModalFrame) {
       this.viewportModalFrame.remove();
       this.viewportModalFrame = null;
@@ -6137,6 +6142,160 @@ export class OverlayManager {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Cover the overflow box that will jump, run `onCovered` (instant scroll), then uncover.
+   * Nested scrollers get their client box; the document root gets the viewport.
+   * @param {() => void} onCovered
+   * @param {{ durationMs?: number, coverEl?: Element|null, coverRect?: { left: number, top: number, width: number, height: number }|null }} [opts]
+   * @returns {Promise<void>}
+   */
+  async runEdgeJumpFade(onCovered, opts = {}) {
+    const durationMs = Number.isFinite(Number(opts.durationMs))
+      ? Math.max(80, Number(opts.durationMs))
+      : SCROLL.EDGE_JUMP_FADE_MS;
+
+    let reduced = false;
+    try {
+      reduced = !!window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+    } catch { /* ignore */ }
+    if (reduced) {
+      try { onCovered?.(); } catch { /* ignore */ }
+      return;
+    }
+
+    const token = ++this._edgeJumpFadeToken;
+    const el = this._ensureEdgeJumpFadeEl();
+    this._positionEdgeJumpFadeEl(el, opts.coverEl || null, opts.coverRect || null);
+    el.style.background = this._resolveEdgeJumpFadeColor(opts.coverEl || null);
+    el.style.transition = `opacity ${durationMs}ms ease`;
+    await this._fadeEdgeJumpEl(el, 1, durationMs);
+    try { onCovered?.(); } catch { /* ignore */ }
+    if (token !== this._edgeJumpFadeToken) return;
+    await this._fadeEdgeJumpEl(el, 0, durationMs);
+    if (token === this._edgeJumpFadeToken) this._removeEdgeJumpFadeEl();
+  }
+
+  /**
+   * @returns {HTMLElement}
+   */
+  _ensureEdgeJumpFadeEl() {
+    if (this._edgeJumpFadeEl && this._edgeJumpFadeEl.isConnected) return this._edgeJumpFadeEl;
+    const el = document.createElement('div');
+    el.className = CSS_CLASSES.EDGE_JUMP_FADE;
+    el.setAttribute('aria-hidden', 'true');
+    const host = document.documentElement || document.body;
+    try { host.appendChild(el); } catch { document.body?.appendChild(el); }
+    this._edgeJumpFadeEl = el;
+    return el;
+  }
+
+  /**
+   * Pin the veil to the visible overflow box (or the viewport for the document).
+   * @param {HTMLElement} veil
+   * @param {Element|null} coverEl
+   * @param {{ left: number, top: number, width: number, height: number }|null} coverRect
+   */
+  _positionEdgeJumpFadeEl(veil, coverEl, coverRect) {
+    let left = 0;
+    let top = 0;
+    let width = window.innerWidth || 0;
+    let height = window.innerHeight || 0;
+    if (coverRect && Number.isFinite(coverRect.width) && Number.isFinite(coverRect.height)) {
+      left = coverRect.left;
+      top = coverRect.top;
+      width = coverRect.width;
+      height = coverRect.height;
+    } else if (coverEl) {
+      try {
+        const doc = coverEl.ownerDocument || document;
+        const se = doc.scrollingElement;
+        const isRoot = coverEl === se || coverEl === doc.documentElement || coverEl === doc.body;
+        if (isRoot) {
+          left = 0;
+          top = 0;
+          width = window.innerWidth || 0;
+          height = window.innerHeight || 0;
+        } else {
+          const r = coverEl.getBoundingClientRect();
+          left = r.left;
+          top = r.top;
+          width = r.width;
+          height = r.height;
+        }
+      } catch { /* keep viewport */ }
+    }
+    veil.style.left = `${Math.round(left)}px`;
+    veil.style.top = `${Math.round(top)}px`;
+    veil.style.width = `${Math.max(0, Math.round(width))}px`;
+    veil.style.height = `${Math.max(0, Math.round(height))}px`;
+  }
+
+  /**
+   * @param {Element|null} coverEl
+   * @returns {string}
+   */
+  _resolveEdgeJumpFadeColor(coverEl) {
+    const isTransparent = (c) => {
+      const s = String(c || '').trim().toLowerCase();
+      if (!s || s === 'transparent') return true;
+      const m = s.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+))?\s*\)$/);
+      if (m && m[4] !== undefined && Number(m[4]) === 0) return true;
+      return false;
+    };
+    try {
+      let node = coverEl;
+      let hops = 0;
+      while (node && hops++ < 12) {
+        const c = getComputedStyle(node).backgroundColor;
+        if (!isTransparent(c)) return c;
+        node = node.parentElement;
+      }
+      const html = getComputedStyle(document.documentElement);
+      const body = document.body ? getComputedStyle(document.body) : html;
+      for (const c of [body.backgroundColor, html.backgroundColor]) {
+        if (!isTransparent(c)) return c;
+      }
+    } catch { /* ignore */ }
+    try {
+      if (window.matchMedia?.('(prefers-color-scheme: dark)')?.matches) return '#111';
+    } catch { /* ignore */ }
+    return '#fff';
+  }
+
+  /**
+   * @param {HTMLElement} el
+   * @param {number} opacity
+   * @param {number} ms
+   * @returns {Promise<void>}
+   */
+  _fadeEdgeJumpEl(el, opacity, ms) {
+    return new Promise((resolve) => {
+      let settled = false;
+      const done = () => {
+        if (settled) return;
+        settled = true;
+        el.removeEventListener('transitionend', onEnd);
+        resolve();
+      };
+      const onEnd = (e) => {
+        if (e.target !== el || (e.propertyName && e.propertyName !== 'opacity')) return;
+        done();
+      };
+      el.addEventListener('transitionend', onEnd);
+      const apply = () => { el.style.opacity = String(opacity); };
+      requestAnimationFrame(() => requestAnimationFrame(apply));
+      setTimeout(done, ms + 80);
+    });
+  }
+
+  _removeEdgeJumpFadeEl() {
+    this._edgeJumpFadeToken += 1;
+    const el = this._edgeJumpFadeEl;
+    this._edgeJumpFadeEl = null;
+    if (!el) return;
+    try { el.remove(); } catch { /* ignore */ }
   }
 
   /**
