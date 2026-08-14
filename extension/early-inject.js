@@ -1213,14 +1213,14 @@
     },
     "COPY_HOVERED_URL": {
       "label": "Copy URL",
-      "description": "Copy URL under cursor (clipboard, or Media Library later)",
+      "description": "Copy URL under cursor (clipboard, Media Library, or both)",
       "keyLabel": "U",
       "displayKey": "U",
       "keyboardClass": null
     },
     "COPY_HOVERED_IMAGE": {
       "label": "Copy Image",
-      "description": "Copy image under cursor (clipboard, or Media Library later)",
+      "description": "Copy image under cursor (clipboard, Media Library, or both)",
       "keyLabel": "I",
       "displayKey": "I",
       "keyboardClass": null
@@ -1367,7 +1367,7 @@
     },
     "OPEN_MEDIA_LIBRARY": {
       "label": "Media Library",
-      "description": "Open the Media Library (coming soon).",
+      "description": "Open the Media Library.",
       "keyLabel": "M",
       "displayKey": "M",
       "keyboardClass": null
@@ -1432,7 +1432,7 @@
     },
     "COPY_HOVERED_IMAGE": {
       "label": "Copy Image",
-      "description": "Copy image under cursor (clipboard, or Media Library later)",
+      "description": "Copy image under cursor (clipboard, Media Library, or both)",
       "keyLabel": "E",
       "displayKey": "E",
       "keyboardClass": null
@@ -2119,14 +2119,14 @@
   },
   "COPY_HOVERED_URL": {
     "label": "Copy URL",
-    "description": "Copy URL under cursor (clipboard, or Media Library later)",
+    "description": "Copy URL under cursor (clipboard, Media Library, or both)",
     "keyLabel": "U",
     "displayKey": "U",
     "keyboardClass": null
   },
   "COPY_HOVERED_IMAGE": {
     "label": "Copy Image",
-    "description": "Copy image under cursor (clipboard, or Media Library later)",
+    "description": "Copy image under cursor (clipboard, Media Library, or both)",
     "keyLabel": "I",
     "displayKey": "I",
     "keyboardClass": null
@@ -2273,7 +2273,7 @@
   },
   "OPEN_MEDIA_LIBRARY": {
     "label": "Media Library",
-    "description": "Open the Media Library (coming soon).",
+    "description": "Open the Media Library.",
     "keyLabel": "M",
     "displayKey": "M",
     "keyboardClass": null
@@ -3411,12 +3411,34 @@
   flex: 1 1 auto;
 }
 
+.kp-keybindings-popover .kp-popover-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 3px 0;
+}
+
 .kp-keybindings-popover .kp-popover-title {
   font-weight: 700;
-  margin: 0 0 3px 0;
+  margin: 0;
+  min-width: 0;
   color: rgba(248, 250, 252, 0.96);
   letter-spacing: 0.01em;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+.kp-keybindings-popover .kp-popover-settings-hint {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.58);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.kp-keybindings-popover .kp-popover-settings-hint[hidden] {
+  display: none !important;
 }
 
 .kp-keybindings-popover .kp-popover-keys {
@@ -3624,6 +3646,7 @@
 .kp-keybindings-ui .key[data-kp-action-id="RECTANGLE_HIGHLIGHT"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M32%2032C14.3%2032%200%2046.3%200%2064v64c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V96h64c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H32zM32%20320c-17.7%200-32%2014.3-32%2032v64c0%2017.7%2014.3%2032%2032%2032h64c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H64V352c0-17.7-14.3-32-32-32zM320%2064c0%2017.7%2014.3%2032%2032%2032h64v64c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V64c0-17.7-14.3-32-32-32H352c-17.7%200-32%2014.3-32%2032zM480%20320c-17.7%200-32%2014.3-32%2032v64H384c-17.7%200-32%2014.3-32%2032s14.3%2032%2032%2032h64c17.7%200%2032-14.3%2032-32V352c0-17.7-14.3-32-32-32z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M32%2032C14.3%2032%200%2046.3%200%2064v64c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V96h64c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H32zM32%20320c-17.7%200-32%2014.3-32%2032v64c0%2017.7%2014.3%2032%2032%2032h64c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H64V352c0-17.7-14.3-32-32-32zM320%2064c0%2017.7%2014.3%2032%2032%2032h64v64c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32V64c0-17.7-14.3-32-32-32H352c-17.7%200-32%2014.3-32%2032zM480%20320c-17.7%200-32%2014.3-32%2032v64H384c-17.7%200-32%2014.3-32%2032s14.3%2032%2032%2032h64c17.7%200%2032-14.3%2032-32V352c0-17.7-14.3-32-32-32z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="COPY_HOVERED_IMAGE"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="COPY_HOVERED_URL"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M326.612%20185.391c59.747%2059.809%2058.927%20155.698.36%20214.59-.11.12-.24.25-.36.37l-67.2%2067.2c-59.27%2059.27-155.699%2059.262-214.96%200-59.27-59.26-59.27-155.7%200-214.96l37.106-37.106c9.84-9.84%2026.786-3.3%2027.294%2010.606.648%2017.722%203.826%2035.527%209.69%2052.721%201.986%205.822.567%2012.262-3.783%2016.612l-13.087%2013.087c-28.026%2028.026-28.026%2073.66%200%20101.682%2028.026%2028.026%2073.66%2028.026%20101.682%200l67.2-67.2c28.026-28.026%2028.026-73.66%200-101.682-3.794-3.808-7.368-5.703-10.954-6.817-10.756-3.356-22.666%201.983-27.085%2012.227-5.575%2012.941-17.35%2020.326-30.978%2020.326-12.802%200-22.414-11.312-19.101-23.541%206.027-22.318%209.025-49.922%202.753-73.389-13.415-49.971.392-102.811%2037.393-139.813%2059.17-59.117%20154.849-59.262%20214.096-.31zM213.388%20326.609c-59.747-59.809-58.927-155.698-.36-214.59.11-.12.24-.25.36-.37l67.2-67.2c59.27-59.27%20155.699-59.262%20214.96%200%2059.27%2059.26%2059.27%20155.7%200%20214.96l-37.106%2037.106c-9.84%209.84-26.786%203.3-27.294-10.606-.648-17.722-3.826-35.527-9.69-52.721-1.986-5.822-.567-12.262%203.783-16.612l13.087-13.087c28.026-28.026%2028.026-73.66%200-101.682-28.026-28.026-73.66-28.026-101.682%200l-67.2%2067.2c-28.026%2028.026-28.026%2073.66%200%20101.682%203.794%203.808%207.368%205.703%2010.954%206.817%2010.756%203.356%2022.666-1.983%2027.085-12.227%205.575-12.941%2017.35-20.326%2030.978-20.326%2012.802%200%2022.414%2011.312%2019.101%2023.541-6.027%2022.318-9.025%2049.922-2.753%2073.389%2013.415%2049.971-.392%20102.811-37.393%20139.813-59.17%2059.117-154.849%2059.262-214.096.31z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M326.612%20185.391c59.747%2059.809%2058.927%20155.698.36%20214.59-.11.12-.24.25-.36.37l-67.2%2067.2c-59.27%2059.27-155.699%2059.262-214.96%200-59.27-59.26-59.27-155.7%200-214.96l37.106-37.106c9.84-9.84%2026.786-3.3%2027.294%2010.606.648%2017.722%203.826%2035.527%209.69%2052.721%201.986%205.822.567%2012.262-3.783%2016.612l-13.087%2013.087c-28.026%2028.026-28.026%2073.66%200%20101.682%2028.026%2028.026%2073.66%2028.026%20101.682%200l67.2-67.2c28.026-28.026%2028.026-73.66%200-101.682-3.794-3.808-7.368-5.703-10.954-6.817-10.756-3.356-22.666%201.983-27.085%2012.227-5.575%2012.941-17.35%2020.326-30.978%2020.326-12.802%200-22.414-11.312-19.101-23.541%206.027-22.318%209.025-49.922%202.753-73.389-13.415-49.971.392-102.811%2037.393-139.813%2059.17-59.117%20154.849-59.262%20214.096-.31zM213.388%20326.609c-59.747-59.809-58.927-155.698-.36-214.59.11-.12.24-.25.36-.37l67.2-67.2c59.27-59.27%20155.699-59.262%20214.96%200%2059.27%2059.26%2059.27%20155.7%200%20214.96l-37.106%2037.106c-9.84%209.84-26.786%203.3-27.294-10.606-.648-17.722-3.826-35.527-9.69-52.721-1.986-5.822-.567-12.262%203.783-16.612l13.087-13.087c28.026-28.026%2028.026-73.66%200-101.682-28.026-28.026-73.66-28.026-101.682%200l-67.2%2067.2c-28.026%2028.026-28.026%2073.66%200%20101.682%203.794%203.808%207.368%205.703%2010.954%206.817%2010.756%203.356%2022.666-1.983%2027.085-12.227%205.575-12.941%2017.35-20.326%2030.978-20.326%2012.802%200%2022.414%2011.312%2019.101%2023.541-6.027%2022.318-9.025%2049.922-2.753%2073.389%2013.415%2049.971-.392%20102.811-37.393%20139.813-59.17%2059.117-154.849%2059.262-214.096.31z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="COPY_HOVERED_VIDEO"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%20128C0%2092.7%2028.7%2064%2064%2064H320c35.3%200%2064%2028.7%2064%2064V384c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V128zM559.1%2099.8c10.4%205.6%2016.9%2016.4%2016.9%2028.2V384c0%2011.8-6.5%2022.6-16.9%2028.2s-23%206-32.9%201.3L384%20337.1V174.9l142.2-76.4c9.8-4.7%2022.4-4.3%2032.9%201.3z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%20128C0%2092.7%2028.7%2064%2064%2064H320c35.3%200%2064%2028.7%2064%2064V384c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V128zM559.1%2099.8c10.4%205.6%2016.9%2016.4%2016.9%2028.2V384c0%2011.8-6.5%2022.6-16.9%2028.2s-23%206-32.9%201.3L384%20337.1V174.9l142.2-76.4c9.8-4.7%2022.4-4.3%2032.9%201.3z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="PAGE_MEDIA"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="OPEN_MEDIA_LIBRARY"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="CLIPBOARD_COPY"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M192%200c35.3%200%2064%2028.7%2064%2064l0%2032%20112%200c35.3%200%2064%2028.7%2064%2064l0%20288c0%2035.3-28.7%2064-64%2064L64%20512c-35.3%200-64-28.7-64-64L0%20160c0-35.3%2028.7-64%2064-64l112%200%200-32c0-35.3%2028.7-64%2064-64zm0%2064l0%2032%2064%200%200-32c0-17.7-14.3-32-32-32s-32%2014.3-32%2032zM64%20160l0%20288c0%2017.7%2014.3%2032%2032%2032l256%200c17.7%200%2032-14.3%2032-32l0-288c0-17.7-14.3-32-32-32L64%20128c-17.7%200-32%2014.3-32%2032z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M192%200c35.3%200%2064%2028.7%2064%2064l0%2032%20112%200c35.3%200%2064%2028.7%2064%2064l0%20288c0%2035.3-28.7%2064-64%2064L64%20512c-35.3%200-64-28.7-64-64L0%20160c0-35.3%2028.7-64%2064-64l112%200%200-32c0-35.3%2028.7-64%2064-64zm0%2064l0%2032%2064%200%200-32c0-17.7-14.3-32-32-32s-32%2014.3-32%2032zM64%20160l0%20288c0%2017.7%2014.3%2032%2032%2032l256%200c17.7%200%2032-14.3%2032-32l0-288c0-17.7-14.3-32-32-32L64%20128c-17.7%200-32%2014.3-32%2032z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
@@ -3772,9 +3795,13 @@
     rowBorder: '1px solid rgba(0,0,0,0.18)',
     rowDoneBg: 'rgba(46, 204, 113, 0.22)',
     checkBorder: '1px solid rgba(0,0,0,0.35)',
-    kbdBg: 'linear-gradient(180deg, #d0d0d0 0%, #a8a8a8 50%, #909090 100%)',
-    kbdBorder: '1px solid #4a4a4a',
-    kbdColor: '#1c1c1c'
+    kbdBg: 'linear-gradient(180deg, #e4e4e4 0%, #c8c8c8 45%, #b0b0b0 55%, #9a9a9a 100%)',
+    kbdBorder: '1px solid #3d3d3d',
+    kbdColor: '#141414',
+    kbdShadow:
+      '0 1px 0 rgba(255,255,255,0.72) inset, ' +
+      '0 -1px 0 rgba(0,0,0,0.28) inset, ' +
+      '0 1px 2px rgba(0,0,0,0.32)'
   };
   /** Prefixed names avoid clashing with early-inject locals when this file is stamped. */
   const ONBOARDING_STRIP_TOP_PX = 16;
@@ -3946,18 +3973,28 @@
    */
   function getOnboardingPanelCss(opts = {}) {
     const includeVt = opts.includeViewTransitions !== false;
+    // Styles live in the open shadow root; `:host` matches there.
+    // `.kp-onboarding-panel …` covers the light-DOM fallback when shadow attach fails.
+    const s = (sel) => `:host ${sel}, .${ONBOARDING_PANEL_CLASS} ${sel}`;
     let css =
-      `.${ONBOARDING_PANEL_CLASS} kbd {
+      `${s('kbd')} {
+          display: inline-block;
           font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
           font-size: 11px;
-          padding: 1px 6px;
+          font-weight: 700;
+          line-height: 1.2;
+          letter-spacing: 0.02em;
+          padding: 2px 7px;
+          margin: 0 1px;
           border: ${ONBOARDING_METAL.kbdBorder};
-          border-radius: 2px;
+          border-radius: 4px;
           background: ${ONBOARDING_METAL.kbdBg};
           color: ${ONBOARDING_METAL.kbdColor};
-          box-shadow: 0 1px 0 rgba(255,255,255,0.45) inset, 0 -1px 0 rgba(0,0,0,0.18) inset;
+          box-shadow: ${ONBOARDING_METAL.kbdShadow};
+          vertical-align: baseline;
+          white-space: nowrap;
         }
-        .${ONBOARDING_PANEL_CLASS} [data-kp-onboarding-overlay-title="true"] {
+        ${s('[data-kp-onboarding-overlay-title="true"]')} {
           color: #ffffff;
         }
         /* Next incomplete checklist row — same light-blue glow language as the toggle-off arrow. */
@@ -3975,7 +4012,7 @@
               0 0 32px rgba(120, 210, 255, 0.45);
           }
         }
-        .${ONBOARDING_PANEL_CLASS} [data-kp-onboarding-task-next="true"] {
+        ${s('[data-kp-onboarding-task-next="true"]')} {
           animation: kp-onboarding-next-task-glow 1.5s ease-in-out infinite;
           will-change: box-shadow;
         }
@@ -4004,19 +4041,19 @@
           55% { opacity: 1; transform: scale(1.2); }
           100% { opacity: 1; transform: scale(1); }
         }
-        .${ONBOARDING_PANEL_CLASS} .kp-onboarding-check-flash {
+        ${s('.kp-onboarding-check-flash')} {
           animation: kp-onboarding-check-flash 420ms cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
           will-change: transform, box-shadow, filter;
         }
-        .${ONBOARDING_PANEL_CLASS} .kp-onboarding-check-flash > div {
+        ${s('.kp-onboarding-check-flash > div')} {
           animation: kp-onboarding-check-pop 380ms cubic-bezier(0.2, 0.9, 0.25, 1.1) both;
         }
         @media (prefers-reduced-motion: reduce) {
-          .${ONBOARDING_PANEL_CLASS} [data-kp-onboarding-task-next="true"] {
+          ${s('[data-kp-onboarding-task-next="true"]')} {
             animation: none;
           }
-          .${ONBOARDING_PANEL_CLASS} .kp-onboarding-check-flash,
-          .${ONBOARDING_PANEL_CLASS} .kp-onboarding-check-flash > div {
+          ${s('.kp-onboarding-check-flash')},
+          ${s('.kp-onboarding-check-flash > div')} {
             animation: none;
           }
         }`;

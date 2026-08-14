@@ -497,7 +497,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
   COPY_HOVERED_IMAGE: Object.freeze({
     handler: 'handleCopyHoveredImageKey',
     label: 'Copy Image',
-    description: 'Copy image under cursor (clipboard, or Media Library later)',
+    description: 'Copy image under cursor (clipboard, Media Library, or both)',
     // Default key face (no tinted key-gray / family fill).
     keyboardClass: null,
     row: 1
@@ -506,9 +506,17 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
   COPY_HOVERED_URL: Object.freeze({
     handler: 'handleCopyHoveredUrlKey',
     label: 'Copy URL',
-    description: 'Copy URL under cursor (clipboard, or Media Library later)',
+    description: 'Copy URL under cursor (clipboard, Media Library, or both)',
     keyboardClass: null,
     row: 1
+  }),
+  // Copy video under cursor — Actions Library only (no built-in layout key).
+  COPY_HOVERED_VIDEO: Object.freeze({
+    handler: 'handleCopyHoveredVideoKey',
+    label: 'Copy Video',
+    description: 'Copy video under cursor (clipboard, Media Library, or both)',
+    keyboardClass: null,
+    row: null
   }),
   // Page-wide Image / Video / Text gallery (O on right-handed; O is TAB_RIGHT on left-handed).
   PAGE_MEDIA: Object.freeze({
@@ -519,14 +527,11 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     row: 1
   }),
   // Media Library entry point (M on right-handed only — M is PAGE_DOWN_INSTANT on left-handed,
-  // so this doesn't get a default binding there yet). Media Library itself isn't built yet;
-  // the handler just shows a "coming soon" notification — see `handleMediaLibraryNotAvailableKey`
-  // and the `ADD_URL_TO_MEDIA_LIBRARY`/`FETCH_URL_FOR_MEDIA_LIBRARY` Functions in
-  // function-library.js.
+  // so this doesn't get a default binding there yet).
   OPEN_MEDIA_LIBRARY: Object.freeze({
-    handler: 'handleMediaLibraryNotAvailableKey',
+    handler: 'handleOpenMediaLibraryKey',
     label: 'Media Library',
-    description: 'Open the Media Library (coming soon).',
+    description: 'Open the Media Library.',
     keyboardClass: null,
     row: 1
   }),
@@ -600,6 +605,7 @@ export const KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
   RECTANGLE_HIGHLIGHT: 'Get Page Data',
   COPY_HOVERED_IMAGE: 'Get Page Data',
   COPY_HOVERED_URL: 'Get Page Data',
+  COPY_HOVERED_VIDEO: 'Get Page Data',
   PAGE_MEDIA: 'Get Page Data',
   DELETE: 'Select',
   COLS_TOGGLE: 'Select',

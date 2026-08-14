@@ -112,13 +112,13 @@ const TEXT_ACTIVE_BUILTIN_FUNCTION_IDS = new Set([
  * defaulting to `'none'` — most of `KEYBINDING_ACTION_DEFS` (navigation, tab management, clicks)
  * genuinely reads no page *data* in the sense this taxonomy cares about.
  *
- * `COPY_HOVERED_IMAGE` / `COPY_HOVERED_URL` advertise `clipboard` (working) and `mediaLibrary`
- * (catalogued; handler shows "coming soon" until that sink exists). See
- * KEY_ACTION_ARCHITECTURE.md, "Data Acquisition & Result Destinations".
+ * `COPY_HOVERED_IMAGE` / `COPY_HOVERED_URL` / `COPY_HOVERED_VIDEO` advertise clipboard (default), Media Library,
+ * and Both (clipboard AND Media Library).
  */
 const CLIPBOARD_OR_MEDIA_LIBRARY_DESTINATIONS = Object.freeze([
   ACTION_RESULT_DESTINATIONS.CLIPBOARD,
-  ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY
+  ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY,
+  ACTION_RESULT_DESTINATIONS.CLIPBOARD_AND_MEDIA_LIBRARY
 ]);
 
 /** @type {Readonly<Record<string, Partial<Pick<FunctionDef, 'dataSource'|'dataKind'|'destinations'>>>>} */
@@ -132,6 +132,11 @@ const BUILTIN_FUNCTION_DATA_TAGS = Object.freeze({
   COPY_HOVERED_URL: Object.freeze({
     dataSource: 'underCursor',
     dataKind: 'text',
+    destinations: CLIPBOARD_OR_MEDIA_LIBRARY_DESTINATIONS
+  }),
+  COPY_HOVERED_VIDEO: Object.freeze({
+    dataSource: 'underCursor',
+    dataKind: 'media',
     destinations: CLIPBOARD_OR_MEDIA_LIBRARY_DESTINATIONS
   }),
   // Whole-page scan (not under-cursor); opens a tabbed overlay rather than a sink.
@@ -169,6 +174,7 @@ export const FIXED_KEY_FUNCTION_IDS = Object.freeze([
   'HIGHLIGHT',
   'COPY_HOVERED_IMAGE',
   'COPY_HOVERED_URL',
+  'COPY_HOVERED_VIDEO',
   'PAGE_TOP',
   'PAGE_BOTTOM'
 ]);
@@ -248,6 +254,9 @@ const BUILTIN_FUNCTION_PARAMETER_OVERRIDES = Object.freeze({
   ]),
   COPY_HOVERED_URL: Object.freeze([
     buildResultDestinationParameter(CLIPBOARD_OR_MEDIA_LIBRARY_DESTINATIONS)
+  ]),
+  COPY_HOVERED_VIDEO: Object.freeze([
+    buildResultDestinationParameter(CLIPBOARD_OR_MEDIA_LIBRARY_DESTINATIONS)
   ])
 });
 
@@ -269,7 +278,7 @@ const TRANSLATE_FUNCTION_CATEGORY = 'Translate';
 /** Category for Functions whose entire job is rendering something to the user. */
 const DISPLAY_FUNCTION_CATEGORY = 'Display';
 
-/** Category for the (design-only until a real sink exists) Media Library Functions. */
+/** Category for Media Library Functions (URL/fetch ingest still catalog-only). */
 const MEDIA_LIBRARY_FUNCTION_CATEGORY = 'Media Library';
 
 /**
@@ -360,7 +369,8 @@ function buildBuiltinActionFunctionDefs() {
       category: KEYBINDING_ACTION_CATEGORY_BY_ID[id] || 'Other',
       keyboardClass: def.keyboardClass ?? null,
       // No `parameters` by default: most built-ins remain simple/non-instantiable Functions.
-      // A few (SEND_TEXT_TO_AI, RECTANGLE_HIGHLIGHT, HIGHLIGHT, COPY_HOVERED_IMAGE, COPY_HOVERED_URL)
+      // A few (SEND_TEXT_TO_AI, RECTANGLE_HIGHLIGHT, HIGHLIGHT, COPY_HOVERED_IMAGE,
+      // COPY_HOVERED_URL, COPY_HOVERED_VIDEO)
       // get their schema below from
       // BUILTIN_FUNCTION_PARAMETER_OVERRIDES — see KEY_ACTION_ARCHITECTURE.md "Migration mapping".
       ...(TEXT_ACTIVE_BUILTIN_FUNCTION_IDS.has(id) ? { worksWhileTyping: true } : {}),
@@ -383,9 +393,8 @@ function buildBuiltinActionFunctionDefs() {
  * today), but their real purpose is as a future macro-builder Step feeding a destination-writer
  * Step — hence the single fixed `clipboard` destination rather than a full `destinations` list.
  * `LOOKUP_WORD` / `TRANSLATE` / `SHOW_POPOVER` are the composed, stock-ready examples built from
- * those same getters. `ADD_URL_TO_MEDIA_LIBRARY` / `FETCH_URL_FOR_MEDIA_LIBRARY` are catalog
- * entries only — their `mediaLibrary` destination has no real sink yet (see
- * `action-result-delivery.js`), so their handler just says so.
+ * those same getters. `ADD_URL_TO_MEDIA_LIBRARY` stores the hovered href in Media Library.
+ * `FETCH_URL_FOR_MEDIA_LIBRARY` remains a catalog stub until Documents / Videos ingest exists.
  * @returns {Record<string, FunctionDef>}
  */
 function buildDataAcquisitionFunctionDefs() {
@@ -497,8 +506,8 @@ function buildDataAcquisitionFunctionDefs() {
     ADD_URL_TO_MEDIA_LIBRARY: Object.freeze({
       id: 'ADD_URL_TO_MEDIA_LIBRARY',
       label: 'Add URL to Media Library',
-      description: 'Stores the hyperlink under the cursor itself (its href) — does not download anything. Media Library is not built yet.',
-      handler: 'handleMediaLibraryNotAvailableKey',
+      description: 'Stores the hyperlink under the cursor itself (its href) — does not download anything.',
+      handler: 'handleAddUrlToMediaLibraryKey',
       category: MEDIA_LIBRARY_FUNCTION_CATEGORY,
       dataSource: 'underCursor',
       dataKind: 'text',
@@ -507,7 +516,7 @@ function buildDataAcquisitionFunctionDefs() {
     FETCH_URL_FOR_MEDIA_LIBRARY: Object.freeze({
       id: 'FETCH_URL_FOR_MEDIA_LIBRARY',
       label: 'Fetch URL for Media Library',
-      description: 'Fetches the resource the hyperlink under the cursor points to (e.g. a .pdf/.mp3/.mp4) to store it. Media Library is not built yet.',
+      description: 'Fetches the resource the hyperlink under the cursor points to (e.g. a .pdf/.mp3/.mp4) to store it. Documents and videos are not in Media Library v1 yet.',
       handler: 'handleMediaLibraryNotAvailableKey',
       category: MEDIA_LIBRARY_FUNCTION_CATEGORY,
       dataSource: 'urlFetch',
@@ -579,6 +588,7 @@ export const FUNCTION_LIBRARY_ITEM_ORDER = Object.freeze({
   OMNIBOX: 170,
   // Get Page Data
   COPY_HOVERED_IMAGE: 200,
+  COPY_HOVERED_VIDEO: 201,
   COPY_HOVERED_URL: 202,
   PAGE_MEDIA: 205,
   RECTANGLE_HIGHLIGHT: 210,

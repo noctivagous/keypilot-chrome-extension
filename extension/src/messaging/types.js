@@ -58,6 +58,15 @@ export const MSG = Object.freeze({
   GET_VIDEO_THUMB: 'KP_GET_VIDEO_THUMB',
   VIDEO_THUMB_RESPONSE: 'KP_VIDEO_THUMB_RESPONSE',
 
+  // --- Media Library (IndexedDB at extension origin; SW owns Blobs) ---
+  MEDIA_LIBRARY_ADD: 'KP_MEDIA_LIBRARY_ADD',
+  MEDIA_LIBRARY_LIST: 'KP_MEDIA_LIBRARY_LIST',
+  MEDIA_LIBRARY_GET: 'KP_MEDIA_LIBRARY_GET',
+  MEDIA_LIBRARY_DELETE: 'KP_MEDIA_LIBRARY_DELETE',
+  MEDIA_LIBRARY_ZIP: 'KP_MEDIA_LIBRARY_ZIP',
+  /** SW → tabs: library contents changed (add/delete). Overlay reloads if open. */
+  MEDIA_LIBRARY_CHANGED: 'KP_MEDIA_LIBRARY_CHANGED',
+
   // --- Per-tab navigation graph ---
   NAVGRAPH_GET: 'KP_NAVGRAPH_GET',
   NAVGRAPH_JUMP: 'KP_NAVGRAPH_JUMP',

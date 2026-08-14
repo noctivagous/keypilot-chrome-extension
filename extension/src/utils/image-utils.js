@@ -97,7 +97,7 @@ function isHtmlImage(el) {
  * @param {Element|null|undefined} el
  * @returns {el is HTMLVideoElement}
  */
-function isHtmlVideo(el) {
+export function isHtmlVideo(el) {
   return !!(el && el.nodeType === 1 && String(el.tagName || '').toUpperCase() === 'VIDEO');
 }
 
@@ -106,7 +106,7 @@ function isHtmlVideo(el) {
  * @param {HTMLVideoElement} video
  * @returns {string}
  */
-function getVideoPosterUrl(video) {
+export function getVideoPosterUrl(video) {
   if (!video) return '';
   try {
     const poster = (typeof video.poster === 'string' && video.poster) ? video.poster.trim() : '';
@@ -125,7 +125,7 @@ function getVideoPosterUrl(video) {
  * @param {HTMLVideoElement} video
  * @returns {boolean}
  */
-function videoHasDrawableFrame(video) {
+export function videoHasDrawableFrame(video) {
   if (!video) return false;
   try {
     // HAVE_CURRENT_DATA === 2

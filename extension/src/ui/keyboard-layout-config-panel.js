@@ -5854,7 +5854,7 @@ export class KeyboardLayoutConfigPanel {
 
       for (const def of items) {
         // Functions still bound to a fixed physical key (SEND_TEXT_TO_AI, RECTANGLE_HIGHLIGHT,
-        // HIGHLIGHT, COPY_HOVERED_IMAGE, COPY_HOVERED_URL) keep their existing single-item + "Config" popover
+        // HIGHLIGHT, COPY_HOVERED_IMAGE, COPY_HOVERED_URL, COPY_HOVERED_VIDEO) keep their existing single-item + "Config" popover
         // path rather than the per-instance treatment below — see FIXED_KEY_FUNCTION_IDS.
         const isFixedKey = FIXED_KEY_FUNCTION_IDS.includes(def.id);
 

@@ -379,7 +379,7 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
   _notify = typeof onNotify === 'function' ? onNotify : () => {};
   _onSendToMediaLibrary = typeof onSendToMediaLibrary === 'function'
     ? onSendToMediaLibrary
-    : async () => { _notify('Media Library is not built yet — coming soon', 'info'); };
+    : async () => { _notify('Could not send to Media Library', 'error'); };
 
   await loadImageScalePreference();
   await loadImageAspectPreference();

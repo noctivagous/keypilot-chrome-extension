@@ -61,9 +61,13 @@ export const ONBOARDING_METAL = {
   rowBorder: '1px solid rgba(0,0,0,0.18)',
   rowDoneBg: 'rgba(46, 204, 113, 0.22)',
   checkBorder: '1px solid rgba(0,0,0,0.35)',
-  kbdBg: 'linear-gradient(180deg, #d0d0d0 0%, #a8a8a8 50%, #909090 100%)',
-  kbdBorder: '1px solid #4a4a4a',
-  kbdColor: '#1c1c1c'
+  kbdBg: 'linear-gradient(180deg, #e4e4e4 0%, #c8c8c8 45%, #b0b0b0 55%, #9a9a9a 100%)',
+  kbdBorder: '1px solid #3d3d3d',
+  kbdColor: '#141414',
+  kbdShadow:
+    '0 1px 0 rgba(255,255,255,0.72) inset, ' +
+    '0 -1px 0 rgba(0,0,0,0.28) inset, ' +
+    '0 1px 2px rgba(0,0,0,0.32)'
 };
 /** Prefixed names avoid clashing with early-inject locals when this file is stamped. */
 export const ONBOARDING_STRIP_TOP_PX = 16;
@@ -235,18 +239,28 @@ export function formatKeyboardKeysHtml(text) {
  */
 export function getOnboardingPanelCss(opts = {}) {
   const includeVt = opts.includeViewTransitions !== false;
+  // Styles live in the open shadow root; `:host` matches there.
+  // `.kp-onboarding-panel …` covers the light-DOM fallback when shadow attach fails.
+  const s = (sel) => `:host ${sel}, .${ONBOARDING_PANEL_CLASS} ${sel}`;
   let css =
-    `.${ONBOARDING_PANEL_CLASS} kbd {
+    `${s('kbd')} {
+        display: inline-block;
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
         font-size: 11px;
-        padding: 1px 6px;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0.02em;
+        padding: 2px 7px;
+        margin: 0 1px;
         border: ${ONBOARDING_METAL.kbdBorder};
-        border-radius: 2px;
+        border-radius: 4px;
         background: ${ONBOARDING_METAL.kbdBg};
         color: ${ONBOARDING_METAL.kbdColor};
-        box-shadow: 0 1px 0 rgba(255,255,255,0.45) inset, 0 -1px 0 rgba(0,0,0,0.18) inset;
+        box-shadow: ${ONBOARDING_METAL.kbdShadow};
+        vertical-align: baseline;
+        white-space: nowrap;
       }
-      .${ONBOARDING_PANEL_CLASS} [data-kp-onboarding-overlay-title="true"] {
+      ${s('[data-kp-onboarding-overlay-title="true"]')} {
         color: #ffffff;
       }
       /* Next incomplete checklist row — same light-blue glow language as the toggle-off arrow. */
@@ -264,7 +278,7 @@ export function getOnboardingPanelCss(opts = {}) {
             0 0 32px rgba(120, 210, 255, 0.45);
         }
       }
-      .${ONBOARDING_PANEL_CLASS} [data-kp-onboarding-task-next="true"] {
+      ${s('[data-kp-onboarding-task-next="true"]')} {
         animation: kp-onboarding-next-task-glow 1.5s ease-in-out infinite;
         will-change: box-shadow;
       }
@@ -293,19 +307,19 @@ export function getOnboardingPanelCss(opts = {}) {
         55% { opacity: 1; transform: scale(1.2); }
         100% { opacity: 1; transform: scale(1); }
       }
-      .${ONBOARDING_PANEL_CLASS} .kp-onboarding-check-flash {
+      ${s('.kp-onboarding-check-flash')} {
         animation: kp-onboarding-check-flash 420ms cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
         will-change: transform, box-shadow, filter;
       }
-      .${ONBOARDING_PANEL_CLASS} .kp-onboarding-check-flash > div {
+      ${s('.kp-onboarding-check-flash > div')} {
         animation: kp-onboarding-check-pop 380ms cubic-bezier(0.2, 0.9, 0.25, 1.1) both;
       }
       @media (prefers-reduced-motion: reduce) {
-        .${ONBOARDING_PANEL_CLASS} [data-kp-onboarding-task-next="true"] {
+        ${s('[data-kp-onboarding-task-next="true"]')} {
           animation: none;
         }
-        .${ONBOARDING_PANEL_CLASS} .kp-onboarding-check-flash,
-        .${ONBOARDING_PANEL_CLASS} .kp-onboarding-check-flash > div {
+        ${s('.kp-onboarding-check-flash')},
+        ${s('.kp-onboarding-check-flash > div')} {
           animation: none;
         }
       }`;

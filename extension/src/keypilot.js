@@ -40,7 +40,10 @@ import {
   closestComposed,
   containsComposed,
   ensureOpenChromeShadow,
-  isKeyPilotChromeElement
+  isInteractiveKeyPilotOverlayElement,
+  isInteractiveKeyPilotOverlayClass,
+  isKeyPilotChromeElement,
+  isClickableKeyPilotChromeElement
 } from './ui/kp-chrome-shadow.js';
 import {
   applyFlashNotificationStyle,
@@ -51,6 +54,7 @@ import { getActionMode, getActionParameter } from './ui/key-action-settings.js';
 import {
   ACTION_RESULT_DESTINATIONS,
   deliverActionResult,
+  destinationFlags,
   normalizeActionResultDestination
 } from './modules/action-result-delivery.js';
 import { sendTextToAi } from './modules/ai-text-service.js';
@@ -72,6 +76,7 @@ import {
 } from './utils/extension-context.js';
 import { storageGetValue, storageSetValue } from './utils/storage.js';
 import { getHoveredImage } from './utils/image-utils.js';
+import { getHoveredVideo } from './utils/video-utils.js';
 import { collectPageMedia } from './utils/page-media-utils.js';
 import {
   openPageMediaOverlay,
@@ -79,6 +84,18 @@ import {
   isPageMediaOverlayOpen,
   requestClosePageMediaOverlay
 } from './ui/page-media-overlay.js';
+import {
+  openMediaLibraryOverlay,
+  closeMediaLibraryOverlay,
+  isMediaLibraryOverlayOpen,
+  requestCloseMediaLibraryOverlay
+} from './ui/media-library-overlay.js';
+import {
+  addImageToMediaLibrary,
+  addUrlToMediaLibrary,
+  addVideoToMediaLibrary,
+  fetchMediaBlob
+} from './modules/media-library-client.js';
 import {
   scrollAtPoint,
   scrollToEdgeAtPoint,
@@ -151,7 +168,7 @@ export class KeyPilot extends EventManager {
     this._currentKeySlotMap = null;
     // functionId -> Record<string, any> parameters, for built-in Functions still dispatched via a
     // fixed physical key (SEND_TEXT_TO_AI, RECTANGLE_HIGHLIGHT, HIGHLIGHT, COPY_HOVERED_IMAGE,
-    // COPY_HOVERED_URL, PAGE_TOP, PAGE_BOTTOM) rather than a UserKeyboardLayout slot. Kept in sync with their canonical
+    // COPY_HOVERED_URL, COPY_HOVERED_VIDEO, PAGE_TOP, PAGE_BOTTOM) rather than a UserKeyboardLayout slot. Kept in sync with their canonical
     // Action Instance — see getOrCreateBuiltinFunctionUserAction() in keyboard-layout-store.js and
     // KEY_ACTION_ARCHITECTURE.md's migration table (replaces settings.actionSettings).
     this._builtinFunctionActionParams = new Map();
@@ -312,6 +329,9 @@ export class KeyPilot extends EventManager {
   _isKeyPilotUiElement(el) {
     try {
       if (!el || el === document.documentElement || el === document.body) return false;
+      // Full-viewport galleries are KeyPilot chrome, but Click Element / hover must
+      // still work on their buttons and cards.
+      if (isInteractiveKeyPilotOverlayElement(el)) return false;
       if (isKeyPilotChromeElement(el)) return true;
 
       let n = el;
@@ -323,7 +343,14 @@ export class KeyPilot extends EventManager {
         if (n === document.documentElement || n === document.body) break;
 
         const id = typeof n.id === 'string' ? n.id : '';
-        if (id && id.startsWith('kpv2-')) return true;
+        if (
+          id &&
+          id.startsWith('kpv2-') &&
+          id !== 'kpv2-media-lib-overlay' &&
+          id !== 'kpv2-page-media-overlay'
+        ) {
+          return true;
+        }
 
         const cl = n.classList;
         if (cl && cl.length) {
@@ -331,6 +358,7 @@ export class KeyPilot extends EventManager {
             if (typeof c !== 'string' || !c.startsWith('kpv2-')) continue;
             // Markers painted onto real page nodes — not KeyPilot chrome.
             if (
+              isInteractiveKeyPilotOverlayClass(c) ||
               c === 'kpv2-cursor-hidden' ||
               c === 'kpv2-focus' ||
               c === 'kpv2-delete' ||
@@ -362,6 +390,11 @@ export class KeyPilot extends EventManager {
    */
   _isElementInPopover(el) {
     if (!el || !(el instanceof Element)) return false;
+
+    // Media Library / Page Media are full-viewport galleries: Click Element
+    // must treat their buttons and cards like popover chrome.
+    if (isInteractiveKeyPilotOverlayElement(el)) return true;
+    if (isClickableKeyPilotChromeElement(el)) return true;
 
     // Check iframe popover container
     const iframeContainer = this.overlayManager?.popoverContainer;
@@ -403,9 +436,13 @@ export class KeyPilot extends EventManager {
     try {
       if (under && this._isKeyPilotUiElement(under)) {
         // Allow KeyPilot chrome that is the active popover (Tab History rows/close,
-        // Launcher tiles, etc.) plus explicit history-link markers elsewhere.
+        // Launcher tiles, etc.), Keyboard Reference / settings controls, plus
+        // explicit history-link markers elsewhere. Nulling `under` here would
+        // fall back to a stale page focusEl and make Click Element miss keys
+        // and the titlebar layout <select>.
         const allowUi =
           this._isElementInPopover(under) ||
+          isClickableKeyPilotChromeElement(under) ||
           (under instanceof Element &&
             under.getAttribute('role') === 'link' &&
             !!under.dataset?.kpUrl);
@@ -2563,6 +2600,17 @@ export class KeyPilot extends EventManager {
           e.stopPropagation();
           e.stopImmediatePropagation();
           requestClosePageMediaOverlay();
+          return;
+        }
+      } catch { /* ignore */ }
+
+      // Media Library overlay (M-key gallery)
+      try {
+        if (isMediaLibraryOverlayOpen()) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          requestCloseMediaLibraryOverlay();
           return;
         }
       } catch { /* ignore */ }
@@ -5418,12 +5466,12 @@ export class KeyPilot extends EventManager {
 
   /**
    * Copy image under the cursor (I on right-handed layout; E on left).
-   * Destination is clipboard (default) or Media Library (coming soon).
+   * Destination is clipboard (default), Media Library, or both.
    * @param {KeyboardEvent} [_e]
    * @param {{ destination?: string }} [parameters]
    */
   async handleCopyHoveredImageKey(_e, parameters) {
-    const destination = this._resolveCopyDestination('COPY_HOVERED_IMAGE', parameters);
+    const flags = destinationFlags(this._resolveCopyDestination('COPY_HOVERED_IMAGE', parameters));
     const currentState = this.state.getState();
     const x = Number(currentState?.lastMouse?.x);
     const y = Number(currentState?.lastMouse?.y);
@@ -5447,73 +5495,237 @@ export class KeyPilot extends EventManager {
       return;
     }
 
-    if (destination === ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY) {
-      this.handleMediaLibraryNotAvailableKey();
-      return;
+    const label =
+      result.kind === 'background' ? 'Background image'
+        : result.kind === 'svg' ? 'SVG'
+          : result.kind === 'video' ? 'Video thumbnail'
+            : 'Image';
+
+    let copied = false;
+    let copyError = '';
+    if (flags.clipboard) {
+      try {
+        copied = await this.copyImageToClipboard(result.blob, result.mimeType);
+        if (copied) {
+          try { this.overlayManager?.flashImageCopyPulse?.(result.element); } catch { /* ignore */ }
+        } else {
+          copyError = 'Could not copy image';
+        }
+      } catch (error) {
+        console.warn('[KeyPilot] copyImageToClipboard failed:', error);
+        copyError = 'Could not copy image';
+        if (error?.name === 'NotAllowedError' || /permission/i.test(error?.message || '')) {
+          copyError = 'Clipboard permission denied';
+        } else if (/secure context/i.test(error?.message || '')) {
+          copyError = 'Clipboard requires HTTPS';
+        }
+      }
     }
 
-    try {
-      const ok = await this.copyImageToClipboard(result.blob, result.mimeType);
-      if (ok) {
-        // Distinct scale animation (shutter → pop → shrink), not the green F-click pulse.
-        try {
-          this.overlayManager?.flashImageCopyPulse?.(result.element);
-        } catch { /* ignore visual feedback failures */ }
+    let saved = null;
+    if (flags.mediaLibrary) {
+      saved = await this._persistImageToMediaLibrary({
+        blob: result.blob,
+        mimeType: result.mimeType,
+        url: result.url,
+        kind: result.kind
+      });
+    }
 
-        const label =
-          result.kind === 'background' ? 'Background image'
-            : result.kind === 'svg' ? 'SVG'
-              : result.kind === 'video' ? 'Video thumbnail'
-                : 'Image';
+    if (flags.clipboard && flags.mediaLibrary && copied && (saved?.success || saved?.duplicate)) {
+      this.showFlashNotification(
+        saved?.duplicate
+          ? `${label} copied; already in Media Library`
+          : `${label} copied and saved to Media Library`,
+        saved?.duplicate ? COLORS.NOTIFICATION_INFO : COLORS.NOTIFICATION_SUCCESS,
+        result.blob
+      );
+    } else {
+      if (flags.clipboard) {
         this.showFlashNotification(
-          `${label} copied to clipboard`,
-          COLORS.NOTIFICATION_SUCCESS,
-          result.blob
+          copied ? `${label} copied to clipboard` : (copyError || 'Could not copy image'),
+          copied ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_ERROR,
+          copied ? result.blob : undefined
         );
-        this.emitAction('copy_hovered_image', {
+      }
+      if (flags.mediaLibrary) {
+        this._notifyMediaLibrarySave(saved, {
+          blob: result.blob,
           kind: result.kind,
+          url: result.url
+        });
+      }
+    }
+
+    if (copied) {
+      this.emitAction('copy_hovered_image', {
+        kind: result.kind,
+        url: result.url ? String(result.url).slice(0, 200) : ''
+      });
+    }
+    if (saved?.success && !saved?.duplicate) {
+      try {
+        this.emitAction('media_library_add', {
+          kind: result.kind || 'image',
           url: result.url ? String(result.url).slice(0, 200) : ''
         });
-      } else {
-        this.showFlashNotification('Could not copy image', COLORS.NOTIFICATION_ERROR);
-      }
-    } catch (error) {
-      console.warn('[KeyPilot] copyImageToClipboard failed:', error);
-      let message = 'Could not copy image';
-      if (error?.name === 'NotAllowedError' || /permission/i.test(error?.message || '')) {
-        message = 'Clipboard permission denied';
-      } else if (/secure context/i.test(error?.message || '')) {
-        message = 'Clipboard requires HTTPS';
-      }
-      this.showFlashNotification(message, COLORS.NOTIFICATION_ERROR);
+      } catch { /* ignore */ }
     }
   }
 
   /**
    * Copy the hyperlink under the cursor (U on right-handed layout).
-   * Destination is clipboard (default) or Media Library (coming soon).
+   * Destination is clipboard (default), Media Library, or both.
    * @param {KeyboardEvent} [_e]
    * @param {{ destination?: string }} [parameters]
    */
   async handleCopyHoveredUrlKey(_e, parameters) {
-    const destination = this._resolveCopyDestination('COPY_HOVERED_URL', parameters);
+    const flags = destinationFlags(this._resolveCopyDestination('COPY_HOVERED_URL', parameters));
     const url = this._getHoveredHyperlinkUrl();
     if (!url) {
       this.showFlashNotification('No URL under cursor', COLORS.NOTIFICATION_INFO);
       return;
     }
 
-    if (destination === ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY) {
-      this.handleMediaLibraryNotAvailableKey();
+    let copied = false;
+    if (flags.clipboard) {
+      copied = await this.copyToClipboard(url);
+      if (copied) this.emitAction('copy_hovered_url', { url: String(url).slice(0, 200) });
+    }
+
+    let saved = null;
+    if (flags.mediaLibrary) {
+      saved = await this._persistUrlToMediaLibrary(url);
+    }
+
+    if (flags.clipboard && flags.mediaLibrary && copied && (saved?.success || saved?.duplicate)) {
+      this.showFlashNotification(
+        saved?.duplicate
+          ? 'URL copied; already in Media Library'
+          : 'URL copied and saved to Media Library',
+        saved?.duplicate ? COLORS.NOTIFICATION_INFO : COLORS.NOTIFICATION_SUCCESS
+      );
       return;
     }
 
-    const ok = await this.copyToClipboard(url);
-    this.showFlashNotification(
-      ok ? 'URL copied to clipboard' : 'Could not copy URL',
-      ok ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_ERROR
-    );
-    if (ok) this.emitAction('copy_hovered_url', { url: String(url).slice(0, 200) });
+    if (flags.clipboard) {
+      this.showFlashNotification(
+        copied ? 'URL copied to clipboard' : 'Could not copy URL',
+        copied ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_ERROR
+      );
+    }
+    if (flags.mediaLibrary) {
+      this._notifyUrlLibrarySave(saved);
+    }
+  }
+
+  /**
+   * Copy the <video> under the cursor (Actions Library — not on built-in layouts).
+   * Destination is clipboard (default), Media Library, or both.
+   * @param {KeyboardEvent} [_e]
+   * @param {{ destination?: string }} [parameters]
+   */
+  async handleCopyHoveredVideoKey(_e, parameters) {
+    const flags = destinationFlags(this._resolveCopyDestination('COPY_HOVERED_VIDEO', parameters));
+    const currentState = this.state.getState();
+    const x = Number(currentState?.lastMouse?.x);
+    const y = Number(currentState?.lastMouse?.y);
+
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      this.showFlashNotification('No video under cursor', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+
+    let result = null;
+    try {
+      result = await getHoveredVideo(x, y);
+    } catch (error) {
+      console.warn('[KeyPilot] getHoveredVideo failed:', error);
+      this.showFlashNotification('Could not copy video', COLORS.NOTIFICATION_ERROR);
+      return;
+    }
+
+    if (!result) {
+      this.showFlashNotification('No video under cursor', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+
+    const videoUrl = String(result.currentSrc || '').trim();
+    const thumb = result.thumbBlob instanceof Blob && result.thumbBlob.size > 0
+      ? result.thumbBlob
+      : null;
+
+    let copied = false;
+    let copiedImage = false;
+    let copyError = '';
+    if (flags.clipboard) {
+      if (thumb) {
+        try {
+          copied = await this.copyImageToClipboard(thumb, result.thumbMime || thumb.type || 'image/png');
+          copiedImage = copied;
+          if (copied) {
+            try { this.overlayManager?.flashImageCopyPulse?.(result.element); } catch { /* ignore */ }
+          } else {
+            copyError = 'Could not copy video';
+          }
+        } catch (error) {
+          console.warn('[KeyPilot] copyImageToClipboard failed:', error);
+          copyError = 'Could not copy video';
+          if (error?.name === 'NotAllowedError' || /permission/i.test(error?.message || '')) {
+            copyError = 'Clipboard permission denied';
+          } else if (/secure context/i.test(error?.message || '')) {
+            copyError = 'Clipboard requires HTTPS';
+          }
+        }
+      } else if (videoUrl) {
+        copied = await this.copyToClipboard(videoUrl);
+        if (!copied) copyError = 'Could not copy video URL';
+      } else {
+        copyError = 'No video under cursor';
+      }
+    }
+
+    let saved = null;
+    if (flags.mediaLibrary) {
+      saved = await this._persistVideoToMediaLibrary(result);
+    }
+
+    if (flags.clipboard && flags.mediaLibrary && copied && (saved?.success || saved?.duplicate)) {
+      this.showFlashNotification(
+        saved?.duplicate
+          ? 'Video copied; already in Media Library'
+          : 'Video copied and saved to Media Library',
+        saved?.duplicate ? COLORS.NOTIFICATION_INFO : COLORS.NOTIFICATION_SUCCESS,
+        copiedImage ? thumb : undefined
+      );
+    } else {
+      if (flags.clipboard) {
+        this.showFlashNotification(
+          copied
+            ? (copiedImage ? 'Video copied to clipboard' : 'Video URL copied to clipboard')
+            : (copyError || 'Could not copy video'),
+          copied ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_ERROR,
+          copied && copiedImage ? thumb : undefined
+        );
+      }
+      if (flags.mediaLibrary) {
+        this._notifyVideoLibrarySave(saved, thumb);
+      }
+    }
+
+    if (copied) {
+      this.emitAction('copy_hovered_video', {
+        url: videoUrl ? videoUrl.slice(0, 200) : ''
+      });
+    }
+    if (saved?.success && !saved?.duplicate) {
+      try {
+        this.emitAction('media_library_add', {
+          kind: 'video',
+          url: videoUrl ? videoUrl.slice(0, 200) : ''
+        });
+      } catch { /* ignore */ }
+    }
   }
 
   /**
@@ -5603,17 +5815,41 @@ export class KeyPilot extends EventManager {
                 : COLORS.NOTIFICATION_INFO;
           this.showFlashNotification(String(message || ''), color);
         },
-        onSendToMediaLibrary: (item) => {
-          this.showFlashNotification(
-            'Media Library is not built yet — coming soon',
-            COLORS.NOTIFICATION_INFO
-          );
+        onSendToMediaLibrary: async (item) => {
+          if (item?.category && item.category !== 'image') {
+            this.showFlashNotification(
+              'Media Library currently supports images only',
+              COLORS.NOTIFICATION_INFO
+            );
+            return;
+          }
           try {
-            this.emitAction('page_media_send_to_library', {
-              category: item?.category || '',
-              url: item?.url ? String(item.url).slice(0, 200) : ''
+            let blob = null;
+            if (item?.url) blob = await fetchMediaBlob(item.url);
+            if (!blob || blob.size <= 0) {
+              this.showFlashNotification('Could not send to Media Library', COLORS.NOTIFICATION_ERROR);
+              return;
+            }
+            const mime = (blob.type && blob.type.startsWith('image/'))
+              ? blob.type
+              : (item.mimeType && String(item.mimeType).startsWith('image/')
+                ? String(item.mimeType)
+                : 'image/png');
+            await this._saveImageToMediaLibrary({
+              blob,
+              mimeType: mime,
+              url: item.url
             });
-          } catch { /* ignore */ }
+            try {
+              this.emitAction('page_media_send_to_library', {
+                category: item?.category || '',
+                url: item?.url ? String(item.url).slice(0, 200) : ''
+              });
+            } catch { /* ignore */ }
+          } catch (error) {
+            console.warn('[KeyPilot] send to Media Library failed:', error);
+            this.showFlashNotification('Could not send to Media Library', COLORS.NOTIFICATION_ERROR);
+          }
         }
       }).catch((error) => {
         console.warn('[KeyPilot] openPageMediaOverlay failed:', error);
@@ -6085,12 +6321,243 @@ export class KeyPilot extends EventManager {
   }
 
   /**
-   * Shared handler for `ADD_URL_TO_MEDIA_LIBRARY` / `FETCH_URL_FOR_MEDIA_LIBRARY` — both are
-   * catalog entries only until a real Media Library sink exists (see `action-result-delivery.js`
-   * and KEY_ACTION_ARCHITECTURE.md, "Fetching vs. linking a URL").
+   * Persist a hyperlink in the Media Library (no flash).
+   * @param {string} url
+   * @returns {Promise<{ success: boolean, duplicate: boolean, error?: string }>}
+   */
+  async _persistUrlToMediaLibrary(url) {
+    const sourceUrl = String(url || '').trim();
+    if (!sourceUrl) {
+      return { success: false, duplicate: false, error: 'No URL' };
+    }
+    try {
+      const result = await addUrlToMediaLibrary({
+        sourceUrl,
+        pageUrl: typeof location !== 'undefined' ? String(location.href || '') : ''
+      });
+      if (result?.success && !result?.duplicate) {
+        try {
+          this.emitAction('media_library_add', {
+            kind: 'url',
+            url: sourceUrl.slice(0, 200)
+          });
+        } catch { /* ignore */ }
+      }
+      return {
+        success: !!result?.success,
+        duplicate: !!result?.duplicate,
+        error: result?.error || ''
+      };
+    } catch (error) {
+      console.warn('[KeyPilot] Media Library URL save failed:', error);
+      return { success: false, duplicate: false, error: 'Could not save URL to Media Library' };
+    }
+  }
+
+  /**
+   * @param {{ success?: boolean, duplicate?: boolean, error?: string }|null} result
+   */
+  _notifyUrlLibrarySave(result) {
+    if (result?.duplicate) {
+      this.showFlashNotification('Already in Media Library', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+    if (result?.success) {
+      this.showFlashNotification('URL saved to Media Library', COLORS.NOTIFICATION_SUCCESS);
+      return;
+    }
+    this.showFlashNotification(
+      result?.error || 'Could not save URL to Media Library',
+      COLORS.NOTIFICATION_ERROR
+    );
+  }
+
+  /**
+   * Persist a video record in the Media Library (no flash).
+   * @param {{
+   *   blob?: Blob|null,
+   *   mimeType?: string,
+   *   currentSrc?: string,
+   *   thumbBlob?: Blob|null,
+   *   videoWidth?: number,
+   *   videoHeight?: number
+   * }} result
+   * @returns {Promise<{ success: boolean, duplicate: boolean, error?: string }>}
+   */
+  async _persistVideoToMediaLibrary(result) {
+    const sourceUrl = String(result?.currentSrc || '').trim();
+    const fileBlob = result?.blob instanceof Blob && result.blob.size > 0 ? result.blob : null;
+    const thumbBlob = result?.thumbBlob instanceof Blob && result.thumbBlob.size > 0
+      ? result.thumbBlob
+      : null;
+    if (!fileBlob && !sourceUrl) {
+      return { success: false, duplicate: false, error: 'Could not save video to Media Library' };
+    }
+    try {
+      const saved = await addVideoToMediaLibrary({
+        blob: fileBlob || undefined,
+        mime: result?.mimeType || fileBlob?.type || '',
+        sourceUrl,
+        pageUrl: typeof location !== 'undefined' ? String(location.href || '') : '',
+        thumbBlob: thumbBlob || undefined,
+        width: Number(result?.videoWidth) || 0,
+        height: Number(result?.videoHeight) || 0
+      });
+      return {
+        success: !!saved?.success,
+        duplicate: !!saved?.duplicate,
+        error: saved?.error || ''
+      };
+    } catch (error) {
+      console.warn('[KeyPilot] Media Library video save failed:', error);
+      return { success: false, duplicate: false, error: 'Could not save video to Media Library' };
+    }
+  }
+
+  /**
+   * @param {{ success?: boolean, duplicate?: boolean, error?: string }|null} result
+   * @param {Blob|null} [thumb]
+   */
+  _notifyVideoLibrarySave(result, thumb = null) {
+    if (result?.duplicate) {
+      this.showFlashNotification('Already in Media Library', COLORS.NOTIFICATION_INFO, thumb || undefined);
+      return;
+    }
+    if (result?.success) {
+      this.showFlashNotification('Video saved to Media Library', COLORS.NOTIFICATION_SUCCESS, thumb || undefined);
+      return;
+    }
+    this.showFlashNotification(
+      result?.error || 'Could not save video to Media Library',
+      COLORS.NOTIFICATION_ERROR
+    );
+  }
+
+  /**
+   * Persist an image blob in the Media Library (no flash).
+   * @param {{ blob: Blob, mimeType?: string, url?: string|null, kind?: string }} input
+   * @returns {Promise<{ success: boolean, duplicate: boolean, error?: string }>}
+   */
+  async _persistImageToMediaLibrary(input) {
+    if (!(input?.blob instanceof Blob) || input.blob.size <= 0) {
+      return { success: false, duplicate: false, error: 'Could not save to Media Library' };
+    }
+    try {
+      const result = await addImageToMediaLibrary({
+        blob: input.blob,
+        mime: input.mimeType || input.blob.type || '',
+        sourceUrl: input.url || '',
+        pageUrl: typeof location !== 'undefined' ? String(location.href || '') : ''
+      });
+      return {
+        success: !!result?.success,
+        duplicate: !!result?.duplicate,
+        error: result?.error || ''
+      };
+    } catch (error) {
+      console.warn('[KeyPilot] Media Library save failed:', error);
+      return { success: false, duplicate: false, error: 'Could not save to Media Library' };
+    }
+  }
+
+  /**
+   * @param {{ success?: boolean, duplicate?: boolean, error?: string }|null} result
+   * @param {{ blob?: Blob, kind?: string, url?: string|null }} input
+   */
+  _notifyMediaLibrarySave(result, input = {}) {
+    if (result?.duplicate) {
+      this.showFlashNotification('Already in Media Library', COLORS.NOTIFICATION_INFO, input.blob);
+      return;
+    }
+    if (!result?.success) {
+      this.showFlashNotification(
+        result?.error || 'Could not save to Media Library',
+        COLORS.NOTIFICATION_ERROR
+      );
+      return;
+    }
+    const label = input.kind === 'background' ? 'Background image'
+      : input.kind === 'svg' ? 'SVG'
+        : input.kind === 'video' ? 'Video thumbnail'
+          : 'Image';
+    this.showFlashNotification(
+      `${label} saved to Media Library`,
+      COLORS.NOTIFICATION_SUCCESS,
+      input.blob
+    );
+  }
+
+  /**
+   * Persist an image blob in the Media Library. Flashes on duplicate / success / error.
+   * @param {{ blob: Blob, mimeType?: string, url?: string|null, kind?: string }} input
+   */
+  async _saveImageToMediaLibrary(input) {
+    const result = await this._persistImageToMediaLibrary(input);
+    this._notifyMediaLibrarySave(result, input);
+    if (result?.success && !result?.duplicate) {
+      try {
+        this.emitAction('media_library_add', {
+          kind: input.kind || 'image',
+          url: input.url ? String(input.url).slice(0, 200) : ''
+        });
+      } catch { /* ignore */ }
+    }
+  }
+
+  /**
+   * Open / close the Media Library overlay (M on right-handed layout).
+   * @param {KeyboardEvent} [e]
+   */
+  handleOpenMediaLibraryKey(e) {
+    if (!this._allowActionKey('handleOpenMediaLibraryKey', e)) return;
+
+    if (isMediaLibraryOverlayOpen()) {
+      closeMediaLibraryOverlay();
+      return;
+    }
+
+    try {
+      void openMediaLibraryOverlay({
+        onNotify: (message, type) => {
+          const color =
+            type === 'error' ? COLORS.NOTIFICATION_ERROR
+              : type === 'success' ? COLORS.NOTIFICATION_SUCCESS
+                : COLORS.NOTIFICATION_INFO;
+          this.showFlashNotification(String(message || ''), color);
+        }
+      }).catch((error) => {
+        console.warn('[KeyPilot] openMediaLibraryOverlay failed:', error);
+        this.showFlashNotification('Could not open Media Library', COLORS.NOTIFICATION_ERROR);
+      });
+      this.emitAction('open_media_library', {});
+    } catch (error) {
+      console.warn('[KeyPilot] openMediaLibraryOverlay failed:', error);
+      this.showFlashNotification('Could not open Media Library', COLORS.NOTIFICATION_ERROR);
+    }
+  }
+
+  /**
+   * ADD_URL_TO_MEDIA_LIBRARY — store the hovered hyperlink (href only, no fetch).
+   * @param {KeyboardEvent} [_e]
+   */
+  async handleAddUrlToMediaLibraryKey(_e) {
+    const url = this._getHoveredHyperlinkUrl();
+    if (!url) {
+      this.showFlashNotification('No URL under cursor', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+    const saved = await this._persistUrlToMediaLibrary(url);
+    this._notifyUrlLibrarySave(saved);
+  }
+
+  /**
+   * Shared handler for `FETCH_URL_FOR_MEDIA_LIBRARY` until Documents / Videos ingest exists.
    */
   handleMediaLibraryNotAvailableKey() {
-    this.showFlashNotification('Media Library is not built yet — coming soon', COLORS.NOTIFICATION_INFO);
+    this.showFlashNotification(
+      'Adding files to Media Library is coming soon',
+      COLORS.NOTIFICATION_INFO
+    );
   }
 
   /**
@@ -6889,7 +7356,7 @@ export class KeyPilot extends EventManager {
       this.emitAction('activate', activationDetail);
       if (activationDetail.isKeyboardHelpKey) {
         try {
-          const actionId = target.closest?.('[data-kp-action-id]')?.dataset?.kpActionId;
+          const actionId = closestComposed(target, '[data-kp-action-id]')?.dataset?.kpActionId;
           if (actionId) pinKeyPopover(actionId, { keybindings: this.keybindings });
         } catch { /* ignore */ }
       }
@@ -6905,7 +7372,7 @@ export class KeyPilot extends EventManager {
     this.emitAction('activate', activationDetail);
     if (activationDetail.isKeyboardHelpKey) {
       try {
-        const actionId = target.closest?.('[data-kp-action-id]')?.dataset?.kpActionId;
+        const actionId = closestComposed(target, '[data-kp-action-id]')?.dataset?.kpActionId;
         if (actionId) pinKeyPopover(actionId, { keybindings: this.keybindings });
       } catch { /* ignore */ }
     }

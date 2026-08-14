@@ -42,6 +42,27 @@ let _activePopoverContext = null;
 let _pinnedActionId = null;
 /** @type {HTMLElement|null} */
 let _pinnedKeyEl = null;
+/** Bumps on each settings render so overlapping F-click + pin calls don't double-append. */
+let _settingsRenderGen = 0;
+
+const KEY_INFO_POPOVER_INNER_HTML = `
+      <div class="kp-popover-head">
+        <div class="kp-popover-icon" aria-hidden="true"></div>
+        <div class="kp-popover-title-wrap">
+          <div class="kp-popover-title-row">
+            <div class="kp-popover-title"></div>
+            <div class="kp-popover-settings-hint" hidden>Click to Show Settings</div>
+          </div>
+          <div class="kp-popover-keys"></div>
+        </div>
+      </div>
+      <p class="kp-popover-desc"></p>
+      <div class="kp-popover-settings" hidden></div>
+    `;
+
+function actionHasSettings(actionId) {
+  return actionHasModes(actionId) || actionHasDestination(actionId) || actionHasParameters(actionId);
+}
 
 function getRuntimeFontUrls() {
   try {
@@ -355,18 +376,10 @@ function ensurePopover(doc, _container) {
     pop.setAttribute('data-kp-key-info-popover', 'true');
     pop.setAttribute('data-placement', 'top');
     pop.setAttribute('role', 'tooltip');
-    pop.innerHTML = `
-      <div class="kp-popover-head">
-        <div class="kp-popover-icon" aria-hidden="true"></div>
-        <div class="kp-popover-title-wrap">
-          <div class="kp-popover-title"></div>
-          <div class="kp-popover-keys"></div>
-        </div>
-      </div>
-      <p class="kp-popover-desc"></p>
-      <div class="kp-popover-settings" hidden></div>
-    `;
+    pop.innerHTML = KEY_INFO_POPOVER_INNER_HTML;
     doc.body.appendChild(pop);
+    try { pop.hidden = true; } catch { /* ignore */ }
+    try { pop.removeAttribute('data-kp-popover-open'); } catch { /* ignore */ }
   } else {
     try { pop.setAttribute('data-kp-key-info-popover', 'true'); } catch { /* ignore */ }
     if (pop.parentElement !== doc.body) {
@@ -376,17 +389,7 @@ function ensurePopover(doc, _container) {
       // Upgrade legacy popover markup (from older sessions / early inject).
       try {
         pop.setAttribute('role', 'tooltip');
-        pop.innerHTML = `
-          <div class="kp-popover-head">
-            <div class="kp-popover-icon" aria-hidden="true"></div>
-            <div class="kp-popover-title-wrap">
-              <div class="kp-popover-title"></div>
-              <div class="kp-popover-keys"></div>
-            </div>
-          </div>
-          <p class="kp-popover-desc"></p>
-          <div class="kp-popover-settings" hidden></div>
-        `;
+        pop.innerHTML = KEY_INFO_POPOVER_INNER_HTML;
       } catch { /* ignore */ }
     }
     if (!pop.querySelector('.kp-popover-settings')) {
@@ -397,20 +400,40 @@ function ensurePopover(doc, _container) {
         pop.appendChild(settingsHost);
       } catch { /* ignore */ }
     }
+    if (!pop.querySelector('.kp-popover-settings-hint')) {
+      try {
+        const titleEl = pop.querySelector('.kp-popover-title');
+        const wrap = pop.querySelector('.kp-popover-title-wrap') || titleEl?.parentElement;
+        if (wrap && titleEl) {
+          let row = wrap.querySelector('.kp-popover-title-row');
+          if (!row) {
+            row = doc.createElement('div');
+            row.className = 'kp-popover-title-row';
+            wrap.insertBefore(row, titleEl);
+            row.appendChild(titleEl);
+          }
+          const hint = doc.createElement('div');
+          hint.className = 'kp-popover-settings-hint';
+          hint.hidden = true;
+          hint.textContent = 'Click to Show Settings';
+          row.appendChild(hint);
+        }
+      } catch { /* ignore */ }
+    }
   }
 
   // HTML Popover API: manual mode so hover lifecycle owns show/hide (not light dismiss).
+  // Do not re-assign `popover` on an already-open element — that closes it, which
+  // raced Click Element (synthetic click pins, then pinKeyPopover called ensurePopover).
   try {
-    if (supportsPopoverApi(pop)) {
+    if (supportsPopoverApi(pop) && pop.popover !== 'manual') {
       pop.popover = 'manual';
     }
   } catch {
-    try { pop.setAttribute('popover', 'manual'); } catch { /* ignore */ }
+    try {
+      if (!pop.hasAttribute('popover')) pop.setAttribute('popover', 'manual');
+    } catch { /* ignore */ }
   }
-
-  // Start closed.
-  try { pop.hidden = true; } catch { /* ignore */ }
-  try { pop.removeAttribute('data-kp-popover-open'); } catch { /* ignore */ }
 
   return pop;
 }
@@ -524,6 +547,7 @@ function showPopoverForTarget({ doc, pop, targetEl, binding, actionId, pinned = 
   const keysEl = pop.querySelector('.kp-popover-keys');
   const descEl = pop.querySelector('.kp-popover-desc');
   const iconEl = pop.querySelector('.kp-popover-icon');
+  const hintEl = pop.querySelector('.kp-popover-settings-hint');
 
   const title = (binding && binding.label) || actionId;
   const keys = (binding && (binding.displayKey || binding.keyLabel)) || '';
@@ -535,6 +559,10 @@ function showPopoverForTarget({ doc, pop, targetEl, binding, actionId, pinned = 
   if (titleEl) titleEl.textContent = title;
   if (keysEl) keysEl.textContent = keys ? `Key: ${keys}` : '';
   if (descEl) descEl.textContent = desc;
+  if (hintEl) {
+    const showHint = !pinned && actionHasSettings(actionId);
+    hintEl.hidden = !showHint;
+  }
   if (iconEl) {
     if (iconMaskUri) {
       iconEl.hidden = false;
@@ -643,7 +671,7 @@ function showPopoverForTarget({ doc, pop, targetEl, binding, actionId, pinned = 
  * Render mode switch / Config controls into the sticky popover.
  * @param {{ doc: Document, pop: HTMLElement, targetEl: HTMLElement, binding: any, actionId: string }} args
  */
-async function renderPopoverSettings({ doc, pop, targetEl, binding, actionId }) {
+function paintPopoverSettings({ doc, pop, targetEl, binding, actionId, parameters }) {
   const host = pop.querySelector('.kp-popover-settings');
   if (!host) return;
 
@@ -659,12 +687,9 @@ async function renderPopoverSettings({ doc, pop, targetEl, binding, actionId }) 
   host.hidden = false;
   host.replaceChildren();
 
-  let builtinAction = null;
-  try { builtinAction = await getOrCreateBuiltinFunctionUserAction(actionId); } catch { builtinAction = null; }
-
   if (hasModes) {
     const def = getActionSettingsDef(actionId);
-    const currentMode = getActionMode(builtinAction?.parameters, actionId);
+    const currentMode = getActionMode(parameters, actionId);
     const modeWrap = doc.createElement('div');
     modeWrap.className = 'kp-popover-mode-switch';
     modeWrap.setAttribute('role', 'group');
@@ -682,8 +707,6 @@ async function renderPopoverSettings({ doc, pop, targetEl, binding, actionId }) 
         e.preventDefault();
         e.stopPropagation();
         try {
-          // setActionMode() persists the value AND notifies live KeyPilot instances itself
-          // (see notifyActionSettingsChanged in key-action-settings.js) — no need to redispatch.
           await setActionMode(actionId, mode.id);
           modeWrap.querySelectorAll('.kp-popover-mode-btn').forEach((el) => {
             el.setAttribute('aria-pressed', el.dataset.modeId === mode.id ? 'true' : 'false');
@@ -700,7 +723,7 @@ async function renderPopoverSettings({ doc, pop, targetEl, binding, actionId }) 
   if (hasDestination) {
     const destDef = getActionDestinationDef(actionId);
     if (destDef) {
-      const currentDest = getActionParameter(builtinAction?.parameters, actionId, 'destination');
+      const currentDest = getActionParameter(parameters, actionId, 'destination');
       const destWrap = doc.createElement('div');
       destWrap.className = 'kp-popover-mode-switch';
       destWrap.setAttribute('role', 'group');
@@ -739,8 +762,6 @@ async function renderPopoverSettings({ doc, pop, targetEl, binding, actionId }) 
     configBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      // setActionParameter() (called by the panel's own controls) already notifies live
-      // KeyPilot instances — no onSettingsChanged hook needed here.
       const panel = getSharedKeyActionConfigPanel();
       await panel.open(actionId, {
         title: (binding && binding.label) || actionId,
@@ -749,6 +770,35 @@ async function renderPopoverSettings({ doc, pop, targetEl, binding, actionId }) 
     });
     host.appendChild(configBtn);
   }
+}
+
+/**
+ * Render mode switch / Config controls into the sticky popover.
+ * Paints immediately with schema defaults, then refreshes stored values after IDB.
+ * @param {{ doc: Document, pop: HTMLElement, targetEl: HTMLElement, binding: any, actionId: string }} args
+ */
+async function renderPopoverSettings({ doc, pop, targetEl, binding, actionId }) {
+  const host = pop.querySelector('.kp-popover-settings');
+  if (!host) return;
+
+  const gen = ++_settingsRenderGen;
+  paintPopoverSettings({ doc, pop, targetEl, binding, actionId, parameters: null });
+  if (gen !== _settingsRenderGen) return;
+
+  let builtinAction = null;
+  try { builtinAction = await getOrCreateBuiltinFunctionUserAction(actionId); } catch { builtinAction = null; }
+  // Click Element synthesizes a click (handleKeyClick already painted) then
+  // handleActivateKey calls pinKeyPopover. Drop the stale IDB refresh so rows
+  // are not painted twice.
+  if (gen !== _settingsRenderGen) return;
+  paintPopoverSettings({
+    doc,
+    pop,
+    targetEl,
+    binding,
+    actionId,
+    parameters: builtinAction?.parameters
+  });
 }
 
 /**
@@ -804,6 +854,20 @@ export function pinKeyPopover(actionId, opts = {}) {
 
   const binding = keybindings[actionId];
   if (!binding) return false;
+
+  // F-activate already fired a synthetic click that pinned this key. Re-rendering
+  // would race renderPopoverSettings and duplicate the settings row — but still
+  // keep the popover open (ensurePopover used to hide it on every lookup).
+  if (_pinnedActionId === actionId && _pinnedKeyEl === keyEl) {
+    if (root._kpKeyHandlers) {
+      try { clearTimeout(root._kpKeyHandlers.hideTimer); } catch { /* ignore */ }
+      root._kpKeyHandlers.hideTimer = null;
+    }
+    openPopoverElement(pop);
+    const hintEl = pop.querySelector('.kp-popover-settings-hint');
+    if (hintEl) hintEl.hidden = true;
+    return true;
+  }
 
   _pinnedActionId = actionId;
   _pinnedKeyEl = keyEl;
@@ -985,7 +1049,7 @@ export function attachKeyPopoverBehavior({ root, keybindings }) {
       if (!_pinnedActionId) return;
       const t = e.target;
       if (!(t instanceof Element)) return;
-      if (pop.contains(t)) return;
+      if (containsComposed(pop, t) || getComposedEventElement(e, '.kp-keybindings-popover')) return;
       const keyInPath = getComposedEventElement(e, '.key');
       if (_pinnedKeyEl && (containsComposed(_pinnedKeyEl, t) || containsComposed(_pinnedKeyEl, keyInPath))) return;
       try {

@@ -12,6 +12,8 @@ import {
   storageSetObject
 } from './src/utils/storage.js';
 import { pageThumbService } from './src/utils/page-thumb-service.js';
+import { mediaLibraryService } from './src/utils/media-library-service.js';
+import { blobToDataUrl } from './src/utils/media-library-transfer.js';
 import { resolveVideoThumbnailUrl } from './src/utils/youtube-thumb.js';
 
 /** @type {Map<string, { url: string, source: string, ts: number }>} */
@@ -289,6 +291,34 @@ async function sendMessageToAllFramesInTab(tabId, message) {
       }
     })
   );
+}
+
+/**
+ * Ping every tab so an open Media Library overlay can reload.
+ * Top-frame only — the overlay is never injected into iframes.
+ * @param {{ reason?: string }} [detail]
+ */
+async function notifyMediaLibraryChanged(detail = {}) {
+  const message = {
+    type: MSG.MEDIA_LIBRARY_CHANGED,
+    reason: detail.reason || 'change',
+    timestamp: Date.now()
+  };
+  try {
+    const tabs = await chrome.tabs.query({});
+    await Promise.allSettled(
+      tabs.map(async (tab) => {
+        if (typeof tab?.id !== 'number') return;
+        try {
+          await chrome.tabs.sendMessage(tab.id, message);
+        } catch {
+          // Tab has no content script (chrome://, discarded, etc.)
+        }
+      })
+    );
+  } catch (error) {
+    console.debug('[KeyPilot] Media Library change notify failed:', error?.message || error);
+  }
 }
 
 // -----------------------------
@@ -1542,6 +1572,152 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               type: 'KP_PAGE_THUMB_RESPONSE',
               success: false,
               error: error?.message || 'Unknown error'
+            });
+          }
+          break;
+        }
+
+        case MSG.MEDIA_LIBRARY_ADD: {
+          try {
+            const kind = message.kind === 'url'
+              ? 'url'
+              : message.kind === 'video'
+                ? 'video'
+                : 'image';
+            const result = kind === 'url'
+              ? await mediaLibraryService.addUrl({
+                  sourceUrl: typeof message.sourceUrl === 'string' ? message.sourceUrl : '',
+                  pageUrl: typeof message.pageUrl === 'string' ? message.pageUrl : ''
+                })
+              : kind === 'video'
+                ? await mediaLibraryService.addVideo({
+                    dataUrl: typeof message.dataUrl === 'string' ? message.dataUrl : '',
+                    mime: typeof message.mime === 'string' ? message.mime : '',
+                    sourceUrl: typeof message.sourceUrl === 'string' ? message.sourceUrl : '',
+                    pageUrl: typeof message.pageUrl === 'string' ? message.pageUrl : '',
+                    thumbDataUrl: typeof message.thumbDataUrl === 'string' ? message.thumbDataUrl : '',
+                    width: Number(message.width) || 0,
+                    height: Number(message.height) || 0
+                  })
+              : await mediaLibraryService.addImage({
+                  dataUrl: typeof message.dataUrl === 'string' ? message.dataUrl : '',
+                  mime: typeof message.mime === 'string' ? message.mime : '',
+                  sourceUrl: typeof message.sourceUrl === 'string' ? message.sourceUrl : '',
+                  pageUrl: typeof message.pageUrl === 'string' ? message.pageUrl : '',
+                  kind: 'image'
+                });
+            sendResponse({ type: MSG.MEDIA_LIBRARY_ADD, ...result });
+            if (result?.success && !result?.duplicate) {
+              void notifyMediaLibraryChanged({ reason: 'add' });
+            }
+          } catch (error) {
+            console.error('KP_MEDIA_LIBRARY_ADD failed:', error);
+            sendResponse({
+              type: MSG.MEDIA_LIBRARY_ADD,
+              success: false,
+              duplicate: false,
+              error: error?.message || 'Could not save to Media Library'
+            });
+          }
+          break;
+        }
+
+        case MSG.MEDIA_LIBRARY_LIST: {
+          try {
+            const result = await mediaLibraryService.list({
+              kind: typeof message.kind === 'string' ? message.kind : 'image',
+              domain: typeof message.domain === 'string' ? message.domain : '',
+              includeThumbs: message.includeThumbs !== false
+            });
+            sendResponse({ type: MSG.MEDIA_LIBRARY_LIST, ...result });
+          } catch (error) {
+            console.error('KP_MEDIA_LIBRARY_LIST failed:', error);
+            sendResponse({
+              type: MSG.MEDIA_LIBRARY_LIST,
+              success: false,
+              items: [],
+              counts: { image: 0, video: 0, document: 0, url: 0 },
+              domains: [],
+              error: error?.message || 'Could not list Media Library'
+            });
+          }
+          break;
+        }
+
+        case MSG.MEDIA_LIBRARY_GET: {
+          try {
+            const result = await mediaLibraryService.getOriginal(
+              typeof message.id === 'string' ? message.id : ''
+            );
+            let dataUrl = null;
+            if (result?.blob instanceof Blob && result.blob.size > 0) {
+              dataUrl = await blobToDataUrl(result.blob);
+            }
+            sendResponse({
+              type: MSG.MEDIA_LIBRARY_GET,
+              success: Boolean(result?.success),
+              item: result?.item || null,
+              dataUrl,
+              mime: result?.item?.mime || result?.blob?.type || '',
+              error: result?.error || null
+            });
+          } catch (error) {
+            console.error('KP_MEDIA_LIBRARY_GET failed:', error);
+            sendResponse({
+              type: MSG.MEDIA_LIBRARY_GET,
+              success: false,
+              error: error?.message || 'Could not load item'
+            });
+          }
+          break;
+        }
+
+        case MSG.MEDIA_LIBRARY_DELETE: {
+          try {
+            const result = await mediaLibraryService.deleteIds(
+              Array.isArray(message.ids) ? message.ids : []
+            );
+            sendResponse({ type: MSG.MEDIA_LIBRARY_DELETE, ...result });
+            if (result?.success && Number(result.deleted) > 0) {
+              void notifyMediaLibraryChanged({ reason: 'delete' });
+            }
+          } catch (error) {
+            console.error('KP_MEDIA_LIBRARY_DELETE failed:', error);
+            sendResponse({
+              type: MSG.MEDIA_LIBRARY_DELETE,
+              success: false,
+              deleted: 0,
+              error: error?.message || 'Could not delete'
+            });
+          }
+          break;
+        }
+
+        case MSG.MEDIA_LIBRARY_ZIP: {
+          try {
+            const result = await mediaLibraryService.zip({
+              ids: Array.isArray(message.ids) ? message.ids : null,
+              kind: typeof message.kind === 'string' ? message.kind : 'image',
+              domain: typeof message.domain === 'string' ? message.domain : ''
+            });
+            let dataUrl = null;
+            if (result?.blob instanceof Blob && result.blob.size > 0) {
+              dataUrl = await blobToDataUrl(result.blob);
+            }
+            sendResponse({
+              type: MSG.MEDIA_LIBRARY_ZIP,
+              success: Boolean(result?.success),
+              dataUrl,
+              filename: result?.filename || null,
+              empty: Boolean(result?.empty),
+              error: result?.error || null
+            });
+          } catch (error) {
+            console.error('KP_MEDIA_LIBRARY_ZIP failed:', error);
+            sendResponse({
+              type: MSG.MEDIA_LIBRARY_ZIP,
+              success: false,
+              error: error?.message || 'Could not build zip'
             });
           }
           break;

@@ -170,7 +170,48 @@ export function containsComposed(host, node) {
 }
 
 /** @param {Element|null|undefined} element */
+export function isInteractiveKeyPilotOverlayElement(element) {
+  return !!closestComposed(
+    element,
+    [
+      '#kpv2-media-lib-overlay',
+      '.kpv2-media-lib-overlay',
+      '#kpv2-page-media-overlay',
+      '.kpv2-page-media-overlay'
+    ].join(', ')
+  );
+}
+
+/** Gallery chrome classes that Click Element / hover must treat as page controls. */
+export function isInteractiveKeyPilotOverlayClass(className) {
+  const c = String(className || '');
+  return c.startsWith('kpv2-media-lib-') || c.startsWith('kpv2-page-media-');
+}
+
+/**
+ * KeyPilot chrome that Click Element must activate like a real mouse click
+ * (Keyboard Reference keys / titlebar select, key-info settings, Config, control strip).
+ * These stay "chrome" for overlay skipping and pointer-binding yield, but activation
+ * must not discard the element under the cursor.
+ * @param {Element|null|undefined} element
+ */
+export function isClickableKeyPilotChromeElement(element) {
+  if (isInteractiveKeyPilotOverlayElement(element)) return true;
+  return !!closestComposed(
+    element,
+    [
+      '.kp-floating-keyboard-help',
+      '.kp-keybindings-popover',
+      '.kp-action-config-panel',
+      '.kp-control-strip',
+      '.kp-layout-config-panel'
+    ].join(', ')
+  );
+}
+
+/** @param {Element|null|undefined} element */
 export function isKeyPilotChromeElement(element) {
+  if (isInteractiveKeyPilotOverlayElement(element)) return false;
   return !!closestComposed(
     element,
     [

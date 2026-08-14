@@ -2,7 +2,7 @@
  * Shared result destinations for Keyboard Layout Config procedures.
  *
  * Any Function / Macro Key that produces data can route it through `deliverActionResult` to the
- * clipboard, a result popover, back into the page, or (future) the Media Library / Scrapbook.
+ * clipboard, a result popover, back into the page, the Media Library, or (future) the Scrapbook.
  *
  * See KEY_ACTION_ARCHITECTURE.md, "Data Acquisition & Result Destinations", for the full design
  * writeup — this module is the `ResultDestination` half of that split (the "where does the data
@@ -11,12 +11,13 @@
  */
 import { COLORS } from '../config/constants.js';
 import { showProcedureResultPopover } from '../ui/procedure-result-popover.js';
+import { addImageToMediaLibrary, addUrlToMediaLibrary } from './media-library-client.js';
 
 /**
- * `modifyPage` and `both` are historically/currently supported combinations; `mediaLibrary` and
- * `scrapbook` are reserved ids for sinks that don't exist yet (no delivery branch below handles
- * them — see KEY_ACTION_ARCHITECTURE.md).
- * @typedef {'clipboard'|'popover'|'both'|'modifyPage'|'mediaLibrary'|'scrapbook'} ActionResultDestination
+ * `modifyPage` and `both` (clipboard+popover) are historically/currently supported combinations;
+ * `clipboardAndMediaLibrary` is clipboard plus the Media Library sink. `scrapbook` is reserved
+ * for a sink that does not exist yet. `mediaLibrary` stores image blobs in IndexedDB.
+ * @typedef {'clipboard'|'popover'|'both'|'modifyPage'|'mediaLibrary'|'clipboardAndMediaLibrary'|'scrapbook'} ActionResultDestination
  */
 
 export const ACTION_RESULT_DESTINATIONS = Object.freeze({
@@ -25,6 +26,7 @@ export const ACTION_RESULT_DESTINATIONS = Object.freeze({
   BOTH: 'both',
   MODIFY_PAGE: 'modifyPage',
   MEDIA_LIBRARY: 'mediaLibrary',
+  CLIPBOARD_AND_MEDIA_LIBRARY: 'clipboardAndMediaLibrary',
   SCRAPBOOK: 'scrapbook'
 });
 
@@ -34,7 +36,8 @@ const DESTINATION_LABELS = Object.freeze({
   [ACTION_RESULT_DESTINATIONS.POPOVER]: 'Popover',
   [ACTION_RESULT_DESTINATIONS.BOTH]: 'Clipboard and popover',
   [ACTION_RESULT_DESTINATIONS.MODIFY_PAGE]: 'Replace in page',
-  [ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY]: 'Media Library (coming soon)',
+  [ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY]: 'Media Library',
+  [ACTION_RESULT_DESTINATIONS.CLIPBOARD_AND_MEDIA_LIBRARY]: 'Both',
   [ACTION_RESULT_DESTINATIONS.SCRAPBOOK]: 'Scrapbook (coming soon)'
 });
 
@@ -78,14 +81,17 @@ export function normalizeActionResultDestination(raw, fallback = ACTION_RESULT_D
 
 /**
  * @param {ActionResultDestination} destination
- * @returns {{ clipboard: boolean, popover: boolean, modifyPage: boolean }}
+ * @returns {{ clipboard: boolean, popover: boolean, modifyPage: boolean, mediaLibrary: boolean }}
  */
 export function destinationFlags(destination) {
   const d = normalizeActionResultDestination(destination);
+  const clipboardAndPopover = d === ACTION_RESULT_DESTINATIONS.BOTH;
+  const clipboardAndMedia = d === ACTION_RESULT_DESTINATIONS.CLIPBOARD_AND_MEDIA_LIBRARY;
   return {
-    clipboard: d === ACTION_RESULT_DESTINATIONS.CLIPBOARD || d === ACTION_RESULT_DESTINATIONS.BOTH,
-    popover: d === ACTION_RESULT_DESTINATIONS.POPOVER || d === ACTION_RESULT_DESTINATIONS.BOTH,
-    modifyPage: d === ACTION_RESULT_DESTINATIONS.MODIFY_PAGE
+    clipboard: d === ACTION_RESULT_DESTINATIONS.CLIPBOARD || clipboardAndPopover || clipboardAndMedia,
+    popover: d === ACTION_RESULT_DESTINATIONS.POPOVER || clipboardAndPopover,
+    modifyPage: d === ACTION_RESULT_DESTINATIONS.MODIFY_PAGE,
+    mediaLibrary: d === ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY || clipboardAndMedia
   };
 }
 
@@ -106,14 +112,82 @@ export function destinationFlags(destination) {
  *   title?: string,
  *   destination?: ActionResultDestination|string,
  *   successMessage?: string,
- *   onModifyPage?: (text: string) => (boolean|Promise<boolean>)
+ *   onModifyPage?: (text: string) => (boolean|Promise<boolean>),
+ *   blob?: Blob,
+ *   mime?: string,
+ *   sourceUrl?: string,
+ *   pageUrl?: string
  * }} opts
- * @returns {Promise<{ clipboard: boolean, popover: boolean, modifyPage: boolean }>}
+ * @returns {Promise<{ clipboard: boolean, popover: boolean, modifyPage: boolean, mediaLibrary: boolean }>}
  */
 export async function deliverActionResult(kp, opts = {}) {
-  const text = String(opts.text ?? '');
   const flags = destinationFlags(opts.destination);
-  const out = { clipboard: false, popover: false, modifyPage: false };
+  const out = { clipboard: false, popover: false, modifyPage: false, mediaLibrary: false };
+
+  if (flags.mediaLibrary) {
+    const blob = opts.blob;
+    if (blob instanceof Blob && blob.size > 0) {
+      try {
+        const result = await addImageToMediaLibrary({
+          blob,
+          mime: opts.mime || blob.type || '',
+          sourceUrl: opts.sourceUrl || '',
+          pageUrl: opts.pageUrl || (typeof location !== 'undefined' ? String(location.href || '') : '')
+        });
+        out.mediaLibrary = !!(result?.success || result?.duplicate);
+        if (!flags.clipboard && typeof kp?.showFlashNotification === 'function') {
+          if (result?.duplicate) {
+            kp.showFlashNotification('Already in Media Library', COLORS.NOTIFICATION_INFO, blob);
+          } else if (result?.success) {
+            kp.showFlashNotification(
+              opts.successMessage || 'Saved to Media Library',
+              COLORS.NOTIFICATION_SUCCESS,
+              blob
+            );
+          } else {
+            kp.showFlashNotification(
+              result?.error || 'Could not save to Media Library',
+              COLORS.NOTIFICATION_ERROR
+            );
+          }
+        }
+      } catch {
+        if (!flags.clipboard && typeof kp?.showFlashNotification === 'function') {
+          kp.showFlashNotification('Could not save to Media Library', COLORS.NOTIFICATION_ERROR);
+        }
+      }
+    } else {
+      const href = String(opts.sourceUrl || opts.text || '').trim();
+      try {
+        const result = await addUrlToMediaLibrary({
+          sourceUrl: href,
+          pageUrl: opts.pageUrl || (typeof location !== 'undefined' ? String(location.href || '') : '')
+        });
+        out.mediaLibrary = !!(result?.success || result?.duplicate);
+        if (!flags.clipboard && typeof kp?.showFlashNotification === 'function') {
+          if (result?.duplicate) {
+            kp.showFlashNotification('Already in Media Library', COLORS.NOTIFICATION_INFO);
+          } else if (result?.success) {
+            kp.showFlashNotification(
+              opts.successMessage || 'URL saved to Media Library',
+              COLORS.NOTIFICATION_SUCCESS
+            );
+          } else {
+            kp.showFlashNotification(
+              result?.error || 'Could not save URL to Media Library',
+              COLORS.NOTIFICATION_ERROR
+            );
+          }
+        }
+      } catch {
+        if (!flags.clipboard && typeof kp?.showFlashNotification === 'function') {
+          kp.showFlashNotification('Could not save URL to Media Library', COLORS.NOTIFICATION_ERROR);
+        }
+      }
+    }
+  }
+
+  const text = String(opts.text ?? '');
 
   if (flags.modifyPage) {
     if (typeof opts.onModifyPage === 'function') {
@@ -142,9 +216,14 @@ export async function deliverActionResult(kp, opts = {}) {
     }
     if (out.clipboard && typeof kp?.showFlashNotification === 'function') {
       try {
+        const successMessage = opts.successMessage
+          || (flags.mediaLibrary && out.mediaLibrary
+            ? 'Copied and saved to Media Library'
+            : 'Copied to clipboard');
         kp.showFlashNotification(
-          opts.successMessage || 'Copied to clipboard',
-          COLORS.NOTIFICATION_SUCCESS
+          successMessage,
+          COLORS.NOTIFICATION_SUCCESS,
+          flags.mediaLibrary ? opts.blob : undefined
         );
       } catch { /* ignore */ }
     } else if (flags.clipboard && !out.clipboard && typeof kp?.showFlashNotification === 'function') {

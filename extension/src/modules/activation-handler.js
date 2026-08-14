@@ -31,6 +31,46 @@ export class ActivationHandler {
   }
 
   /**
+   * Native <select> dropdowns ignore untrusted MouseEvents. Click Element must
+   * use showPicker() (or HTMLElement.click()) during the F-key user gesture.
+   * @param {any} el
+   * @returns {HTMLSelectElement|null}
+   */
+  resolveSelectActivator(el) {
+    try {
+      if (!el || el.nodeType !== 1) return null;
+      const element = /** @type {HTMLElement} */ (el);
+      if (element.tagName === 'SELECT') return /** @type {HTMLSelectElement} */ (element);
+      if (typeof element.closest === 'function') {
+        const sel = element.closest('select');
+        if (sel && sel.tagName === 'SELECT') return /** @type {HTMLSelectElement} */ (sel);
+      }
+    } catch { /* ignore */ }
+    return null;
+  }
+
+  /**
+   * @param {HTMLSelectElement} selectEl
+   * @returns {boolean}
+   */
+  handleSelect(selectEl) {
+    if (!selectEl || selectEl.disabled) return false;
+    try {
+      selectEl.focus({ preventScroll: true });
+    } catch {
+      try { selectEl.focus(); } catch { /* ignore */ }
+    }
+    try {
+      if (typeof selectEl.showPicker === 'function') {
+        selectEl.showPicker();
+        return true;
+      }
+    } catch { /* ignore — fall through to click() */ }
+    try { selectEl.click(); } catch { /* ignore */ }
+    return true;
+  }
+
+  /**
    * Dispatch a "realistic" click sequence (pointer + mouse) with coordinates.
    * Many webapps (e.g. Internet Archive BookReader) rely on clientX/clientY to
    * decide behavior (page-turn zones), and `HTMLElement.click()` does not carry
@@ -246,6 +286,11 @@ export class ActivationHandler {
 
     // Handle label elements
     target = this.resolveLabel(target);
+
+    const selectEl = this.resolveSelectActivator(target);
+    if (selectEl) {
+      return this.handleSelect(selectEl);
+    }
 
     // IMPORTANT: Check if video/audio is wrapped in a link first
     // This handles video preview thumbnails on video websites where clicking should navigate

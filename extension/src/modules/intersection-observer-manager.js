@@ -1,4 +1,8 @@
 import { FEATURE_FLAGS } from '../config/constants.js';
+import {
+  isInteractiveKeyPilotOverlayElement,
+  isInteractiveKeyPilotOverlayClass
+} from '../ui/kp-chrome-shadow.js';
 
 /**
  * Intersection Observer-based performance optimization manager
@@ -1011,6 +1015,7 @@ export class IntersectionObserverManager {
   _isKeyPilotUiElement(el) {
     try {
       if (!el || el === document.documentElement || el === document.body) return false;
+      if (isInteractiveKeyPilotOverlayElement(el)) return false;
 
       let n = el;
       let guard = 0;
@@ -1021,7 +1026,14 @@ export class IntersectionObserverManager {
         if (n === document.documentElement || n === document.body) break;
 
         const id = typeof n.id === 'string' ? n.id : '';
-        if (id && id.startsWith('kpv2-')) return true;
+        if (
+          id &&
+          id.startsWith('kpv2-') &&
+          id !== 'kpv2-media-lib-overlay' &&
+          id !== 'kpv2-page-media-overlay'
+        ) {
+          return true;
+        }
 
         const cl = n.classList;
         if (cl && cl.length) {
@@ -1029,6 +1041,7 @@ export class IntersectionObserverManager {
             if (typeof c !== 'string' || !c.startsWith('kpv2-')) continue;
             // Markers painted onto real page nodes — not KeyPilot chrome.
             if (
+              isInteractiveKeyPilotOverlayClass(c) ||
               c === 'kpv2-cursor-hidden' ||
               c === 'kpv2-focus' ||
               c === 'kpv2-delete' ||
