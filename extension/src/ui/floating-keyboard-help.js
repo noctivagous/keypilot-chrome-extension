@@ -101,6 +101,59 @@ const LAYOUT_SELECT_DUP_VALUE = '__duplicate_layout__';
  */
 export const TEXT_MODE_COUNTDOWN_ACTION_IDS = new Set(['ACTIVATE']);
 
+/**
+ * Hostile hosts override UA `[hidden]{display:none}`. early-inject also stamps
+ * `visibility:hidden !important` on a closed shell. Show/hide must keep
+ * hidden, aria-hidden, kpv2-hidden, display, pointer-events, AND visibility
+ * in sync or an adopted shell stays invisible while KeyPilot thinks it is up.
+ * @param {HTMLElement|null|undefined} root
+ * @param {boolean} visible
+ */
+function paintFloatingKeyboardRootVisible(root, visible) {
+  if (!root) return;
+  const show = !!visible;
+  try { root.hidden = !show; } catch { /* ignore */ }
+  try {
+    if (show) root.classList.remove('kpv2-hidden');
+    else root.classList.add('kpv2-hidden');
+  } catch { /* ignore */ }
+  try {
+    root.style.setProperty('display', show ? 'flex' : 'none', 'important');
+    root.style.setProperty('pointer-events', show ? 'auto' : 'none', 'important');
+    root.style.setProperty('visibility', show ? 'visible' : 'hidden', 'important');
+  } catch {
+    try {
+      root.style.display = show ? 'flex' : 'none';
+      root.style.pointerEvents = show ? 'auto' : 'none';
+      root.style.visibility = show ? 'visible' : 'hidden';
+    } catch { /* ignore */ }
+  }
+  try { root.setAttribute('aria-hidden', show ? 'false' : 'true'); } catch { /* ignore */ }
+}
+
+/**
+ * @param {HTMLElement|null|undefined} root
+ * @returns {boolean}
+ */
+function isFloatingKeyboardRootPaintedVisible(root) {
+  if (!root || !root.isConnected) return false;
+  if (root.hidden) return false;
+  try {
+    if (root.getAttribute('aria-hidden') === 'true') return false;
+  } catch { /* ignore */ }
+  try {
+    if (root.classList?.contains('kpv2-hidden')) return false;
+  } catch { /* ignore */ }
+  try {
+    if (root.style && root.style.display === 'none') return false;
+  } catch { /* ignore */ }
+  // early-inject leftover: display:flex with visibility:hidden !important.
+  try {
+    if (root.style && root.style.visibility === 'hidden') return false;
+  } catch { /* ignore */ }
+  return true;
+}
+
 export class FloatingKeyboardHelp {
   /**
    * @param {Object} params
@@ -185,6 +238,8 @@ export class FloatingKeyboardHelp {
     this._positionHydrated = false;
     /** Monotonic token so delayed first-show reveals don't race with hide/cleanup. */
     this._showGeneration = 0;
+    /** True after we have told early-inject to stop owning this shell. */
+    this._earlyAdoptSignaled = false;
     this._positionApplyScheduled = false;
     this._onWinResizePosition = this._onWinResizePosition.bind(this);
     this._suppressPositionPersist = false;
@@ -665,20 +720,7 @@ export class FloatingKeyboardHelp {
   }
 
   isVisible() {
-    if (!this.root || !this.root.isConnected) return false;
-    if (this.root.hidden) return false;
-    try {
-      if (this.root.getAttribute('aria-hidden') === 'true') return false;
-    } catch { /* ignore */ }
-    try {
-      if (this.root.classList?.contains('kpv2-hidden')) return false;
-    } catch { /* ignore */ }
-    // Inline display:flex (panel chrome) can override [hidden] on some host pages;
-    // treat explicit none as hidden as well.
-    try {
-      if (this.root.style && this.root.style.display === 'none') return false;
-    } catch { /* ignore */ }
-    return true;
+    return isFloatingKeyboardRootPaintedVisible(this.root);
   }
 
   /**
@@ -686,34 +728,33 @@ export class FloatingKeyboardHelp {
    * Our panel chrome uses display:flex; without clearing it, hide() can fail on
    * pages that weaken or override [hidden]{display:none} (Zapier author CSS does
    * this). Use !important + kpv2-hidden so host sheets cannot re-show the panel.
+   * Also clear/set `visibility` — early-inject stamps visibility:hidden !important
+   * on a closed shell, and adopting that shell without clearing it leaves the
+   * panel layout-present but invisible.
    * @param {boolean} visible
    */
   _setRootVisible(visible) {
     if (!this.root) return;
     if (visible) {
       try { ensureChromeHostMounted(this.root); } catch { /* ignore */ }
-      try { this.root.hidden = false; } catch { /* ignore */ }
-      try { this.root.classList.remove('kpv2-hidden'); } catch { /* ignore */ }
-      try {
-        this.root.style.setProperty('display', 'flex', 'important');
-        this.root.style.setProperty('pointer-events', 'auto', 'important');
-      } catch {
-        try { this.root.style.display = 'flex'; } catch { /* ignore */ }
-      }
-      try { this.root.setAttribute('aria-hidden', 'false'); } catch { /* ignore */ }
+      paintFloatingKeyboardRootVisible(this.root, true);
       this._bindHostGuard();
     } else {
       this._unbindHostGuard();
-      try { this.root.hidden = true; } catch { /* ignore */ }
-      try { this.root.classList.add('kpv2-hidden'); } catch { /* ignore */ }
-      try {
-        this.root.style.setProperty('display', 'none', 'important');
-        this.root.style.setProperty('pointer-events', 'none', 'important');
-      } catch {
-        try { this.root.style.display = 'none'; } catch { /* ignore */ }
-      }
-      try { this.root.setAttribute('aria-hidden', 'true'); } catch { /* ignore */ }
+      paintFloatingKeyboardRootVisible(this.root, false);
     }
+  }
+
+  /**
+   * early-inject keeps a host-guard until this event. Fire once we own the shell
+   * so SPA remounts do not fight the main panel after adopt.
+   */
+  _signalEarlyKeyboardHelpAdopted() {
+    if (this._earlyAdoptSignaled) return;
+    this._earlyAdoptSignaled = true;
+    try {
+      window.dispatchEvent(new CustomEvent('keypilot-keyboard-help-adopted'));
+    } catch { /* ignore */ }
   }
 
   show() {
@@ -857,7 +898,8 @@ export class FloatingKeyboardHelp {
         root.hidden ||
         root.getAttribute('aria-hidden') === 'true' ||
         root.classList?.contains('kpv2-hidden') ||
-        root.style.display === 'none'
+        root.style.display === 'none' ||
+        root.style.visibility === 'hidden'
       ) {
         show = false;
       }
@@ -880,15 +922,7 @@ export class FloatingKeyboardHelp {
       boxShadow: NCT_DARK_UI_PANEL_BOX_SHADOW,
       fontFamily: NCT_DARK_UI_FONT
     });
-    try {
-      root.style.setProperty('display', show ? 'flex' : 'none', 'important');
-      root.style.setProperty('pointer-events', show ? 'auto' : 'none', 'important');
-    } catch {
-      try {
-        root.style.display = show ? 'flex' : 'none';
-        root.style.pointerEvents = show ? 'auto' : 'none';
-      } catch { /* ignore */ }
-    }
+    paintFloatingKeyboardRootVisible(root, show);
     applyPopupThemeVars(root);
   }
 
@@ -1245,11 +1279,11 @@ export class FloatingKeyboardHelp {
     if (!root) return;
     try {
       this._hostGuard = new MutationObserver(() => {
-        if (!this.root || this.root.isConnected || this.root.hidden) return;
+        if (!this.root || this.root.isConnected) return;
         try {
+          // Remount even while still hidden (user-layout first paint waits on
+          // _renderAsync). Do not force visible — reveal/_setRootVisible owns that.
           ensureChromeHostMounted(this.root);
-          this.root.style.setProperty('display', 'flex', 'important');
-          this.root.style.setProperty('pointer-events', 'auto', 'important');
         } catch { /* ignore */ }
       });
       this._hostGuard.observe(document.documentElement, { childList: true, subtree: true });
@@ -1267,7 +1301,17 @@ export class FloatingKeyboardHelp {
     if (this.root && this.root.isConnected) {
       // Re-bind chrome if the root survived but listeners were torn down.
       this._bindWindowChrome();
+      this._bindHostGuard();
+      this._signalEarlyKeyboardHelpAdopted();
       return;
+    }
+
+    if (this.root && !this.root.isConnected) {
+      try { ensureChromeHostMounted(this.root); } catch { /* ignore */ }
+      this._bindWindowChrome();
+      this._bindHostGuard();
+      this._signalEarlyKeyboardHelpAdopted();
+      if (this.root && this.root.isConnected) return;
     }
 
     // If early-inject created the shell at document_start, adopt it to avoid flicker.
@@ -1356,6 +1400,8 @@ export class FloatingKeyboardHelp {
           this._applyCollapsedLayout();
           this._bindWindowChrome();
           try { ensureStylesInjected(shadowRoot || existing); } catch { /* ignore */ }
+          this._bindHostGuard();
+          this._signalEarlyKeyboardHelpAdopted();
           return;
         }
       }
@@ -1442,6 +1488,8 @@ export class FloatingKeyboardHelp {
     this._applyCollapsedLayout();
     this._bindWindowChrome();
     try { ensureStylesInjected(shadowRoot || root); } catch { /* ignore */ }
+    this._bindHostGuard();
+    this._signalEarlyKeyboardHelpAdopted();
   }
 
   _ensureCollapseButton() {

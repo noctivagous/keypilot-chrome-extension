@@ -885,6 +885,7 @@ export class StyleManager {
       .kp-floating-keyboard-help.${CSS_CLASSES.HIDDEN},
       .kp-floating-keyboard-help[aria-hidden="true"] {
         display: none !important;
+        visibility: hidden !important;
         pointer-events: none !important;
       }
 

@@ -5037,6 +5037,7 @@
     .kp-floating-keyboard-help.kpv2-hidden,
     .kp-floating-keyboard-help[aria-hidden="true"] {
       display: none !important;
+      visibility: hidden !important;
       pointer-events: none !important;
     }
   `;
@@ -5052,6 +5053,7 @@
   let cursorApplied = false; // Track if cursor has been applied to prevent unnecessary updates
   let cursorSettingsChanged = false; // Track if settings changed to force cursor reapplication
   let isMainExtensionLoaded = false; // Track if main extension has taken over
+  let keyboardHelpHandedOff = false; // Keyboard Reference stays early-owned until adopted
   let keyboardHelpVisible = false;
   let keyboardLayoutId = (typeof DEFAULT_KEYBOARD_LAYOUT_ID === 'string' && DEFAULT_KEYBOARD_LAYOUT_ID)
     ? DEFAULT_KEYBOARD_LAYOUT_ID
@@ -5125,7 +5127,7 @@
     if (earlyKeyboardHelpHostGuard || typeof MutationObserver === 'undefined') return;
     try {
       earlyKeyboardHelpHostGuard = new MutationObserver(() => {
-        if (isMainExtensionLoaded) return;
+        if (keyboardHelpHandedOff) return;
         if (!keyboardHelpVisible || !keyboardHelpRoot || keyboardHelpRoot.isConnected) return;
         try {
           ensureEarlyChromeHostMounted(keyboardHelpRoot);
@@ -5161,6 +5163,19 @@
     document.addEventListener('DOMContentLoaded', relocateAllEarlyChromeToBody, { once: true });
   } catch { /* ignore */ }
 
+  function handoffEarlyKeyboardHelp() {
+    if (keyboardHelpHandedOff) return;
+    keyboardHelpHandedOff = true;
+    try { earlyKeyboardHelpHostGuard?.disconnect?.(); } catch { /* ignore */ }
+    earlyKeyboardHelpHostGuard = null;
+    try {
+      if (keyboardHelpStorageListener && chrome?.storage?.onChanged) {
+        chrome.storage.onChanged.removeListener(keyboardHelpStorageListener);
+      }
+    } catch { /* ignore */ }
+    keyboardHelpStorageListener = null;
+  }
+
   function setupMainLoadedHandoffListener() {
     if (mainLoadedListenerInstalled) return;
     mainLoadedListenerInstalled = true;
@@ -5173,8 +5188,10 @@
 
       try { earlyControlStripHostGuard?.disconnect?.(); } catch { /* ignore */ }
       earlyControlStripHostGuard = null;
-      try { earlyKeyboardHelpHostGuard?.disconnect?.(); } catch { /* ignore */ }
-      earlyKeyboardHelpHostGuard = null;
+      // Keep the Keyboard Reference host-guard + storage listener until the
+      // bundled script adopts the shell. cursor.ensure() fires this event
+      // well before setupKeyboardHelpSync(); dropping the guard here lets
+      // SPA body replacement steal a still-hidden early shell.
 
       // Stop early mouse tracking (main extension will handle this)
       try { document.removeEventListener('mousemove', handleMouseMove); } catch {}
@@ -5189,14 +5206,6 @@
           earlyObserver = null;
         }
       } catch {}
-
-      // Stop reacting to storage changes once the main extension is active
-      try {
-        if (keyboardHelpStorageListener && chrome?.storage?.onChanged) {
-          chrome.storage.onChanged.removeListener(keyboardHelpStorageListener);
-        }
-      } catch {}
-      keyboardHelpStorageListener = null;
 
       try {
         if (cursorSettingsListener && chrome?.storage?.onChanged) {
@@ -5224,6 +5233,10 @@
       controlStripStorageListener = null;
 
       console.log('[KeyPilot Early] Handed off to main extension, cursor control yielded');
+    }, { once: true });
+
+    window.addEventListener('keypilot-keyboard-help-adopted', () => {
+      handoffEarlyKeyboardHelp();
     }, { once: true });
   }
 
@@ -7023,9 +7036,8 @@
         applyEarlyKeyboardHelpVisibility(next);
         try {
           const payload = { [KEYBOARD_HELP_STORAGE_KEY]: next };
-          chrome.storage.sync.set(payload).catch(() => {
-            try { chrome.storage.local.set(payload).catch(() => {}); } catch { /* ignore */ }
-          });
+          try { chrome.storage.sync.set(payload).catch(() => {}); } catch { /* ignore */ }
+          try { chrome.storage.local.set(payload).catch(() => {}); } catch { /* ignore */ }
         } catch { /* ignore */ }
         renderEarlyControlStripKeyboard();
       });
@@ -7158,8 +7170,15 @@
    * Chrome must match NCT dark UI so adopt doesn't visibly restyle after navigation.
    */
   function ensureEarlyFloatingKeyboardHelpShell() {
-    if (isMainExtensionLoaded) return;
+    if (keyboardHelpHandedOff) return;
     if (keyboardHelpRoot && keyboardHelpRoot.isConnected) return;
+    if (keyboardHelpRoot && !keyboardHelpRoot.isConnected) {
+      try { ensureEarlyChromeHostMounted(keyboardHelpRoot); } catch { /* ignore */ }
+      if (keyboardHelpRoot.isConnected) return;
+    }
+    // After cursor/main handoff, remount the existing shell but do not build a
+    // second one — the bundled script is about to adopt.
+    if (isMainExtensionLoaded) return;
 
     const doc = document;
     const root = doc.createElement('div');
@@ -7522,7 +7541,7 @@
   }
 
   function applyEarlyKeyboardHelpVisibility(visible) {
-    if (isMainExtensionLoaded) return;
+    if (keyboardHelpHandedOff) return;
     keyboardHelpVisible = Boolean(visible);
 
     // If extension is disabled, keep it hidden but remember desired state.
@@ -7582,11 +7601,12 @@
   function setupKeyboardHelpStorageListener() {
     if (keyboardHelpStorageListener || !chrome?.storage?.onChanged) return;
     keyboardHelpStorageListener = (changes, areaName) => {
-      if (isMainExtensionLoaded) return;
+      if (keyboardHelpHandedOff) return;
       if (!changes || (areaName !== 'sync' && areaName !== 'local')) return;
       if (!Object.prototype.hasOwnProperty.call(changes, KEYBOARD_HELP_STORAGE_KEY)) return;
-      const next = Boolean(changes[KEYBOARD_HELP_STORAGE_KEY]?.newValue);
-      applyEarlyKeyboardHelpVisibility(next);
+      const raw = changes[KEYBOARD_HELP_STORAGE_KEY]?.newValue;
+      if (typeof raw !== 'boolean') return;
+      applyEarlyKeyboardHelpVisibility(raw);
     };
     try {
       chrome.storage.onChanged.addListener(keyboardHelpStorageListener);
@@ -7674,7 +7694,24 @@
           return;
         }
         isExtensionEnabled = result.keypilot_enabled !== false;
-        keyboardHelpVisible = result[KEYBOARD_HELP_STORAGE_KEY] === true;
+        const applyHelpAndStrip = (helpVisible) => {
+          if (keyboardHelpHandedOff) return;
+          keyboardHelpVisible = helpVisible === true;
+          updateCursorVisibility();
+          ensureEarlyFloatingKeyboardHelpShell();
+          try {
+            renderEarlyKeyboard(keyboardHelpKeyboardContainer, {
+              layoutId: keyboardLayoutId,
+              includeNumberRow: keyboardShowNumberRow
+            });
+          } catch { /* ignore */ }
+          updateKeyboardHelpHintForLayout(keyboardLayoutId);
+          applyEarlyKeyboardHelpVisibility(keyboardHelpVisible);
+          setupKeyboardHelpStorageListener();
+          setupCursorSettingsListener();
+          applyEarlyControlStripFromSettingsObject(settingsObj);
+          setupControlStripStorageListener();
+        };
         let settingsObj = null;
         try {
           const st = result && result[SETTINGS_STORAGE_KEY] && typeof result[SETTINGS_STORAGE_KEY] === 'object' ? result[SETTINGS_STORAGE_KEY] : null;
@@ -7687,21 +7724,11 @@
         } catch {
           keyboardLayoutId = normalizeKeyboardLayoutId(keyboardLayoutId);
         }
-        updateCursorVisibility();
-        ensureEarlyFloatingKeyboardHelpShell();
-        try {
-          renderEarlyKeyboard(keyboardHelpKeyboardContainer, {
-            layoutId: keyboardLayoutId,
-            includeNumberRow: keyboardShowNumberRow
-          });
-        } catch { /* ignore */ }
-        updateKeyboardHelpHintForLayout(keyboardLayoutId);
-        applyEarlyKeyboardHelpVisibility(keyboardHelpVisible);
-        setupKeyboardHelpStorageListener();
-        setupCursorSettingsListener();
-        // Control strip early shell (adopted later by main bundle).
-        applyEarlyControlStripFromSettingsObject(settingsObj);
-        setupControlStripStorageListener();
+        if (typeof result[KEYBOARD_HELP_STORAGE_KEY] === 'boolean') {
+          applyHelpAndStrip(result[KEYBOARD_HELP_STORAGE_KEY]);
+        } else {
+          void getKeyboardHelpVisibleFromStorage().then((v) => applyHelpAndStrip(v));
+        }
       });
     } else {
       // No chrome storage available, default to enabled
@@ -7727,7 +7754,7 @@
           SETTINGS_STORAGE_KEY
         ]);
         isExtensionEnabled = result.keypilot_enabled !== false; // Default to true
-        keyboardHelpVisible = result[KEYBOARD_HELP_STORAGE_KEY] === true;
+        keyboardHelpVisible = await getKeyboardHelpVisibleFromStorage();
         try {
           settingsObj = result && result[SETTINGS_STORAGE_KEY] && typeof result[SETTINGS_STORAGE_KEY] === 'object'
             ? result[SETTINGS_STORAGE_KEY]

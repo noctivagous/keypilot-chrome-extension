@@ -900,7 +900,7 @@ export class KeyPilot extends EventManager {
       },
       onToggleKeyboard: () => {
         if (!this.enabled) return;
-        const next = !this._keyboardHelpVisible;
+        const next = !this._isKeyboardHelpPaintedVisible();
         this.applyKeyboardHelpVisibility(next, { persist: true });
       },
       onOpenSettings: () => {
@@ -1608,9 +1608,11 @@ export class KeyPilot extends EventManager {
       if (!changes || (areaName !== 'sync' && areaName !== 'local')) return;
       if (!Object.prototype.hasOwnProperty.call(changes, this.KEYBOARD_HELP_STORAGE_KEY)) return;
 
-      const next = Boolean(changes[this.KEYBOARD_HELP_STORAGE_KEY]?.newValue);
+      const raw = changes[this.KEYBOARD_HELP_STORAGE_KEY]?.newValue;
+      // Ignore key removals / non-booleans so a quota wipe cannot force-hide.
+      if (typeof raw !== 'boolean') return;
       // Apply without persisting again (prevents ping-pong; storage event is already the source of truth).
-      this.applyKeyboardHelpVisibility(next, { persist: false });
+      this.applyKeyboardHelpVisibility(raw, { persist: false });
     };
 
     try {
@@ -1636,8 +1638,22 @@ export class KeyPilot extends EventManager {
   async setKeyboardHelpVisibleInStorage(visible) {
     if (!chrome?.storage) return;
     await storageSetValue(this.KEYBOARD_HELP_STORAGE_KEY, Boolean(visible), {
-      includeTimestamp: true
+      includeTimestamp: true,
+      dualWrite: true
     });
+  }
+
+  /**
+   * Prefer painted DOM over the persisted flag so K / the control strip cannot
+   * persist "hide" when the panel is already invisible (visibility leftover).
+   * @returns {boolean}
+   */
+  _isKeyboardHelpPaintedVisible() {
+    try {
+      const help = this.floatingKeyboardHelp;
+      if (help && typeof help.isVisible === 'function') return !!help.isVisible();
+    } catch { /* ignore */ }
+    return !!this._keyboardHelpVisible;
   }
 
   /**
@@ -7391,7 +7407,7 @@ export class KeyPilot extends EventManager {
 
   handleToggleKeyboardHelp() {
     try {
-      const next = !this._keyboardHelpVisible;
+      const next = !this._isKeyboardHelpPaintedVisible();
       this.applyKeyboardHelpVisibility(next, { persist: true });
       this.emitAction('toggleKeyboardHelp', { visible: next });
     } catch (e) {

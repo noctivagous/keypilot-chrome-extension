@@ -88,9 +88,11 @@ export async function storageGetKeys(keys) {
 
 /**
  * Write a single key: try sync, then local.
+ * When `dualWrite` is true, also write local after a successful sync so a later
+ * sync miss cannot resurrect a stale value.
  * @param {string} key
  * @param {any} value
- * @param {{ includeTimestamp?: boolean }} [opts]
+ * @param {{ includeTimestamp?: boolean, dualWrite?: boolean }} [opts]
  * @returns {Promise<boolean>} true if either area accepted the write
  */
 export async function storageSetValue(key, value, opts = {}) {
@@ -102,10 +104,12 @@ export async function storageSetValue(key, value, opts = {}) {
     payload.timestamp = Date.now();
   }
 
+  let wroteSync = false;
   try {
     if (chrome?.storage?.sync?.set) {
       await chrome.storage.sync.set(payload);
-      return true;
+      wroteSync = true;
+      if (!opts.dualWrite) return true;
     }
   } catch {
     // fall back to local
@@ -120,7 +124,7 @@ export async function storageSetValue(key, value, opts = {}) {
     // ignore
   }
 
-  return false;
+  return wroteSync;
 }
 
 /**

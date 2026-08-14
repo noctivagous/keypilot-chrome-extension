@@ -1201,17 +1201,8 @@ async function setKeyboardHelpVisible(visible) {
   }
 
   const payload = { [KP_KEYBOARD_HELP_STORAGE_KEY]: desired, timestamp: Date.now() };
-  try {
-    await chrome.storage.sync.set(payload);
-    return desired;
-  } catch {
-    // fall through
-  }
-  try {
-    await chrome.storage.local.set(payload);
-  } catch {
-    // ignore
-  }
+  try { await chrome.storage.sync.set(payload); } catch { /* ignore */ }
+  try { await chrome.storage.local.set(payload); } catch { /* ignore */ }
   return desired;
 }
 
