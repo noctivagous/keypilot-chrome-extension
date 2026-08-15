@@ -3,6 +3,7 @@
  */
 import { CLICKABLE_CATEGORY, CSS_CLASSES, FEATURE_FLAGS } from '../config/constants.js';
 import { deepElementFromPoint as pierceElementFromPoint } from '../utils/element-from-point.js';
+import { resolveHoveredLink } from '../utils/resolve-hovered-link.js';
 
 export class ElementDetector {
   constructor() {
@@ -201,6 +202,16 @@ export class ElementDetector {
 
   deepElementFromPoint(x, y) {
     return pierceElementFromPoint(x, y);
+  }
+
+  /**
+   * URL + element for G / B / E / P / Copy URL.
+   * Ancestor <a href> first; then a descendant permalink inside a card.
+   * @param {Element|null|undefined} el
+   * @returns {{ url: string, link: Element }|null}
+   */
+  resolveHoveredLink(el) {
+    return resolveHoveredLink(el);
   }
 
   /**

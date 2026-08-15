@@ -5743,6 +5743,19 @@ export class KeyPilot extends EventManager {
   }
 
   /**
+   * @param {Element|null|undefined} target
+   * @returns {{ url: string, link: Element }|null}
+   */
+  _resolveHoveredLink(target) {
+    try {
+      if (target instanceof Element && this.detector?.resolveHoveredLink) {
+        return this.detector.resolveHoveredLink(target);
+      }
+    } catch { /* ignore */ }
+    return null;
+  }
+
+  /**
    * Absolute href of the link under the cursor (including shadow-host walk + data-kp-url rows).
    * @returns {string}
    */
@@ -5755,21 +5768,8 @@ export class KeyPilot extends EventManager {
       target = this.detector.findClickable(under) || under;
     }
     if (target instanceof Element) {
-      let probe = target;
-      let guard = 0;
-      while (probe && guard++ < 12) {
-        const a = probe.tagName === 'A' ? probe : probe.closest?.('a[href]');
-        if (a && /** @type {HTMLAnchorElement} */ (a).href) {
-          return String(/** @type {HTMLAnchorElement} */ (a).href);
-        }
-        const roleLink = probe.getAttribute?.('role') === 'link'
-          ? probe
-          : probe.closest?.('[role="link"]');
-        if (roleLink?.dataset?.kpUrl) return String(roleLink.dataset.kpUrl);
-        const root = probe.getRootNode?.();
-        if (!(root instanceof ShadowRoot) || !(root.host instanceof Element)) break;
-        probe = root.host;
-      }
+      const resolved = this._resolveHoveredLink(target);
+      if (resolved?.url) return resolved.url;
     }
     const x = Number(lastMouse?.x);
     const y = Number(lastMouse?.y);
@@ -7413,34 +7413,14 @@ export class KeyPilot extends EventManager {
       hasClickHandler: !!(target.onclick || target.getAttribute('onclick'))
     });
 
-    // If we're on/inside a link, open via background script so we can reliably focus the new tab.
-    // Support both:
-    // - traditional <a href="...">
-    // - KeyPilot URL listing rows rendered as `[role="link"][data-kp-url="..."]` (e.g. extension New Tab page)
+    // Ancestor <a href> / data-kp-url, else a descendant permalink on a card
+    // (X/Mastodon feed posts: body is not wrapped in a link).
     let link = target;
     let url = null;
-    try {
-      if (link && link.tagName !== 'A' && typeof link.closest === 'function') {
-        link = link.closest('a[href]');
-      }
-    } catch { }
-
-    if (link && link.tagName === 'A' && link.href) {
-      url = link.href;
-    } else {
-      // `renderUrlListing()` uses role="link" rows with `data-kp-url` instead of <a>.
-      try {
-        let roleLink = target;
-        if (roleLink instanceof Element) {
-          if (roleLink.getAttribute('role') !== 'link') {
-            roleLink = roleLink.closest?.('[role="link"][data-kp-url]') || null;
-          }
-          if (roleLink && roleLink.getAttribute('role') === 'link' && roleLink.dataset?.kpUrl) {
-            url = String(roleLink.dataset.kpUrl || '').trim() || null;
-            link = roleLink;
-          }
-        }
-      } catch { /* ignore */ }
+    const resolvedNewTab = this._resolveHoveredLink(target);
+    if (resolvedNewTab?.url) {
+      url = resolvedNewTab.url;
+      link = resolvedNewTab.link;
     }
 
     if (url) {
@@ -7506,32 +7486,12 @@ export class KeyPilot extends EventManager {
       }
     }
 
-    // Find a URL to open:
-    // - traditional <a href="...">
-    // - KeyPilot URL listing rows rendered as `[role="link"][data-kp-url="..."]`
     let link = target;
     let url = null;
-    try {
-      if (link && link.tagName !== 'A') {
-        link = link.closest?.('a[href]') || link;
-      }
-    } catch { /* ignore */ }
-
-    if (link && link.tagName === 'A' && link.href) {
-      url = link.href;
-    } else {
-      try {
-        let roleLink = target;
-        if (roleLink instanceof Element) {
-          if (roleLink.getAttribute('role') !== 'link') {
-            roleLink = roleLink.closest?.('[role="link"][data-kp-url]') || null;
-          }
-          if (roleLink && roleLink.getAttribute('role') === 'link' && roleLink.dataset?.kpUrl) {
-            url = String(roleLink.dataset.kpUrl || '').trim() || null;
-            link = roleLink;
-          }
-        }
-      } catch { /* ignore */ }
+    const resolvedBg = this._resolveHoveredLink(target);
+    if (resolvedBg?.url) {
+      url = resolvedBg.url;
+      link = resolvedBg.link;
     }
 
     // Only work if we have a URL
@@ -7585,70 +7545,13 @@ export class KeyPilot extends EventManager {
       target = this.detector.findClickable(under);
     }
 
-    // Resolve to the closest anchor (including within shadow DOM).
-    // deepElementFromPoint() often returns a child <div> inside a link (e.g. archive.org
-    // `div#collection-image-title` inside a shadow-root <a href=...>), so requiring
-    // target.tagName === 'A' is too strict.
     if (!target || !(target instanceof Element)) {
       console.log('[KeyPilot] Open popover: not hovering over a link');
       return;
     }
 
-    let probe = target;
-    let link = probe;
-
-    // First try to find a traditional <a> element
-    if (link.tagName !== 'A') {
-      link = link.closest('a[href]');
-    }
-
-    // If no <a> element found, look for role="link" elements with data-kp-url
-    let url = null;
-    if (link && link.tagName === 'A' && link.href) {
-      url = link.href;
-    } else {
-      // Look for role="link" elements (used by renderUrlListing)
-      let roleLink = probe;
-      if (roleLink.getAttribute('role') !== 'link') {
-        roleLink = roleLink.closest('[role="link"]');
-      }
-
-      if (roleLink && roleLink.getAttribute('role') === 'link' && roleLink.dataset.kpUrl) {
-        url = roleLink.dataset.kpUrl;
-        link = roleLink; // Use the role="link" element as the link
-      }
-    }
-
-    // If we're inside a shadow root and closest() didn't find it, walk up to the host and retry.
-    // This allows resolving links that span across shadow boundaries (common with web-components).
-    let guard = 0;
-    while ((!url) && guard++ < 10) {
-      const root = probe.getRootNode?.();
-      if (!(root instanceof ShadowRoot) || !(root.host instanceof Element)) break;
-      probe = root.host;
-
-      // Retry finding links in the host element
-      let hostLink = probe;
-      if (hostLink.tagName !== 'A') {
-        hostLink = hostLink.closest('a[href]');
-      }
-      if (hostLink && hostLink.tagName === 'A' && hostLink.href) {
-        url = hostLink.href;
-        link = hostLink;
-        break;
-      }
-
-      // Also check for role="link" in host
-      let hostRoleLink = probe;
-      if (hostRoleLink.getAttribute('role') !== 'link') {
-        hostRoleLink = hostRoleLink.closest('[role="link"]');
-      }
-      if (hostRoleLink && hostRoleLink.getAttribute('role') === 'link' && hostRoleLink.dataset.kpUrl) {
-        url = hostRoleLink.dataset.kpUrl;
-        link = hostRoleLink;
-        break;
-      }
-    }
+    const resolvedPopover = this._resolveHoveredLink(target);
+    const url = resolvedPopover?.url || null;
 
     if (!url) {
       console.log('[KeyPilot] Open popover: not hovering over a link');
@@ -7685,66 +7588,12 @@ export class KeyPilot extends EventManager {
       target = this.detector.findClickable(under) || under;
     }
 
-    // Resolve to the closest anchor (including within shadow DOM)
     if (!target || !(target instanceof Element)) {
       console.log('[KeyPilot] Preview popover: not hovering over a link');
       return;
     }
 
-    let probe = target;
-    let link = probe;
-
-    // First try to find a traditional <a> element
-    if (link.tagName !== 'A') {
-      link = link.closest('a[href]');
-    }
-
-    // If no <a> element found, look for role="link" elements with data-kp-url
-    let url = null;
-    if (link && link.tagName === 'A' && link.href) {
-      url = link.href;
-    } else {
-      // Look for role="link" elements (used by renderUrlListing)
-      let roleLink = probe;
-      if (roleLink.getAttribute('role') !== 'link') {
-        roleLink = roleLink.closest('[role="link"]');
-      }
-
-      if (roleLink && roleLink.getAttribute('role') === 'link' && roleLink.dataset.kpUrl) {
-        url = roleLink.dataset.kpUrl;
-        link = roleLink;
-      }
-    }
-
-    // If we're inside a shadow root and closest() didn't find it, walk up to the host and retry
-    let guard = 0;
-    while ((!url) && guard++ < 10) {
-      const root = probe.getRootNode?.();
-      if (!(root instanceof ShadowRoot) || !(root.host instanceof Element)) break;
-      probe = root.host;
-
-      // Retry finding links in the host element
-      let hostLink = probe;
-      if (hostLink.tagName !== 'A') {
-        hostLink = hostLink.closest('a[href]');
-      }
-      if (hostLink && hostLink.tagName === 'A' && hostLink.href) {
-        url = hostLink.href;
-        link = hostLink;
-        break;
-      }
-
-      // Also check for role="link" in host
-      let hostRoleLink = probe;
-      if (hostRoleLink.getAttribute('role') !== 'link') {
-        hostRoleLink = hostRoleLink.closest('[role="link"]');
-      }
-      if (hostRoleLink && hostRoleLink.getAttribute('role') === 'link' && hostRoleLink.dataset.kpUrl) {
-        url = hostRoleLink.dataset.kpUrl;
-        link = hostRoleLink;
-        break;
-      }
-    }
+    let url = this._resolveHoveredLink(target)?.url || null;
 
     // Collapsed Recent History group boxes (New Tab): no child row is hit-testable,
     // so preview the root domain shown as the group label.
@@ -7758,7 +7607,6 @@ export class KeyPilot extends EventManager {
           const rootUrl = String(outline.dataset?.kpRootUrl || '').trim();
           if (rootUrl) {
             url = rootUrl;
-            link = outline;
           }
         }
       } catch { /* ignore */ }

@@ -30,6 +30,7 @@ import {
 import { getSettings, SETTINGS_STORAGE_KEY, scrollBehaviorFromSpeed, DEFAULT_SETTINGS } from './settings-manager.js';
 import { scrollAtPoint, scrollToEdgeAtPoint, scrollByAtPoint } from '../utils/scroll-at-point.js';
 import { deepElementFromPoint } from '../utils/element-from-point.js';
+import { resolveHoveredLink } from '../utils/resolve-hovered-link.js';
 import { containsComposed } from '../ui/kp-chrome-shadow.js';
 
 /**
@@ -151,6 +152,10 @@ function dispatchClickSequence(target, clientX, clientY) {
  */
 function closestLink(el) {
   try {
+    const found = resolveHoveredLink(el);
+    if (found?.link && found.link.tagName === 'A') {
+      return /** @type {HTMLAnchorElement} */ (found.link);
+    }
     if (!el || el.nodeType !== 1) return null;
     if (el.tagName === 'A' && /** @type {HTMLAnchorElement} */ (el).href) {
       return /** @type {HTMLAnchorElement} */ (el);
