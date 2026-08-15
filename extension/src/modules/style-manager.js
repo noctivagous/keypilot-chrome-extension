@@ -869,7 +869,16 @@ export class StyleManager {
         background: var(--keypilot-focus-ring-bg-color, transparent) !important;
       }
 
-      /* Keep left-edge pulse when DOM-hover also puts a ring on the focused field. */
+      /* Text-mode focused field: left-edge/wash only — never a hover outline. */
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT}.keypilot-focus-element,
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT}[data-kp-focus="1"],
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT}.keypilot-focus-element,
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT}[data-kp-focus="1"] {
+        outline: none !important;
+        outline-offset: 0 !important;
+      }
+
+      /* If a ring marker still lands on the field, keep the left-edge pulse. */
       .keypilot-focus-element.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE},
       [data-kp-focus="1"].${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE} {
         box-shadow: inset var(--kpv2-text-left-edge-width, 5px) 0 0 0 ${COLORS.ORANGE} !important;
@@ -1014,7 +1023,16 @@ export class StyleManager {
         background: var(--keypilot-focus-ring-bg-color, transparent) !important;
       }
 
-      /* Keep left-edge pulse when DOM-hover also puts a ring on the focused field. */
+      /* Text-mode focused field: left-edge/wash only — never a hover outline. */
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT}.keypilot-focus-element,
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT}[data-kp-focus="1"],
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT}.keypilot-focus-element,
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT}[data-kp-focus="1"] {
+        outline: none !important;
+        outline-offset: 0 !important;
+      }
+
+      /* If a ring marker still lands on the field, keep the left-edge pulse. */
       .keypilot-focus-element.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE},
       [data-kp-focus="1"].${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE} {
         box-shadow: inset var(--kpv2-text-left-edge-width, 5px) 0 0 0 ${COLORS.ORANGE} !important;

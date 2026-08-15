@@ -29,6 +29,7 @@ import {
   removeFromLaunchDeck,
   setLaunchDeckOrder
 } from '../utils/launch-deck.js';
+import { rewriteUrlForIframePreview } from '../utils/preview-url.js';
 import {
   NCT_DARK_UI_PANEL_BACKGROUND,
   NCT_DARK_UI_PANEL_BORDER,
@@ -3522,7 +3523,7 @@ export class LauncherPopover {
       sendBridgeInit();
     };
 
-    iframe.src = results.url;
+    iframe.src = rewriteUrlForIframePreview(results.url);
     sendBridgeInit();
 
     try {
@@ -4444,7 +4445,7 @@ export class LauncherPopover {
     };
 
     // Set the URL to start loading
-    this._previewIframe.src = url;
+    this._previewIframe.src = rewriteUrlForIframePreview(url);
 
     // Send initial bridge init attempt
     sendBridgeInit();

@@ -26,6 +26,7 @@ import {
   NCT_DARK_UI_PANEL_RADIUS,
   NCT_DARK_UI_PANEL_BOX_SHADOW
 } from '../ui/nct-dark-ui.js';
+import { preferHttpsForPreview, rewriteUrlForIframePreview } from '../utils/preview-url.js';
 
 /** Per-host Link Preview viewport mode: { [hostname]: 'mobile' }. Missing/default = desktop. */
 const PREVIEW_VIEWPORT_BY_HOST_KEY = 'kp_link_preview_viewport_by_host';
@@ -44,19 +45,7 @@ function previewHostFromUrl(url) {
   }
 }
 
-/**
- * Link Preview iframes generally require HTTPS. Prefer https when the URL is plain http.
- * @param {string} url
- * @returns {string}
- */
-function preferHttpsForPreview(url) {
-  const s = String(url || '').trim();
-  if (!s) return s;
-  if (/^http:\/\//i.test(s)) {
-    return `https://${s.slice('http://'.length)}`;
-  }
-  return s;
-}
+
 
 
 export class OverlayManager {
@@ -887,6 +876,67 @@ export class OverlayManager {
   }
 
   /**
+   * Whether `wrapper` is the same visual box as `field` (padded chrome, not a
+   * card/section). Used so hover-outline suppression still applies when
+   * findClickable promotes a tight input shell.
+   * @param {Element} wrapper
+   * @param {Element} field
+   * @returns {boolean}
+   */
+  _isTightTextFieldWrapper(wrapper, field) {
+    if (!wrapper || !field || wrapper === field) return false;
+    let wr;
+    let fr;
+    try {
+      wr = wrapper.getBoundingClientRect();
+      fr = this.getBestRect(field);
+    } catch {
+      return false;
+    }
+    if (!wr || !fr || wr.width <= 0 || wr.height <= 0 || fr.width <= 0 || fr.height <= 0) {
+      return false;
+    }
+    const maxPad = 28;
+    const dx = Math.max(Math.abs(wr.left - fr.left), Math.abs(wr.right - fr.right));
+    const dy = Math.max(Math.abs(wr.top - fr.top), Math.abs(wr.bottom - fr.bottom));
+    return dx <= maxPad &&
+      dy <= maxPad &&
+      wr.width <= fr.width + maxPad * 2 &&
+      wr.height <= fr.height + maxPad * 2;
+  }
+
+  /**
+   * Hover/paint target is the text-mode focused field, a child inside it
+   * (contenteditable), or a tight same-box wrapper. Those already show the
+   * left-edge bar (or wash); a full hover outline on the same box flickers.
+   * @param {Element|null|undefined} hoverEl
+   * @param {Element|null|undefined} [activeEl]
+   * @returns {boolean}
+   */
+  _isHoverOnActiveTextField(hoverEl, activeEl = this._textFocusCurrentElement) {
+    if (!hoverEl || hoverEl.nodeType !== 1) return false;
+    const active = (activeEl && activeEl.nodeType === 1) ? activeEl : this._textFocusCurrentElement;
+    if (!active || active.nodeType !== 1) return false;
+    try {
+      if (!active.isConnected) return false;
+    } catch { /* ignore */ }
+
+    if (hoverEl === active) return true;
+    try {
+      if (this._textFocusStyledElements && this._textFocusStyledElements.has(hoverEl)) return true;
+    } catch { /* ignore */ }
+    try {
+      if (typeof active.contains === 'function' && active.contains(hoverEl)) return true;
+    } catch { /* ignore */ }
+    try {
+      if (typeof hoverEl.contains === 'function' && hoverEl.contains(active)) {
+        return this._isTightTextFieldWrapper(hoverEl, active);
+      }
+    } catch { /* ignore */ }
+    return false;
+  }
+
+  /**
    * Lazy-inject KeyPilot CSS into the open ShadowRoot that owns `el` (if any).
    * No-op for light DOM. See StyleManager.ensureStylesForNode.
    * @param {Element|null|undefined} el
@@ -1045,6 +1095,15 @@ export class OverlayManager {
       });
     }
     
+    // Apply text-mode field chrome before hover paint so outline suppression
+    // can see `_textFocusCurrentElement` (including refresh paths that call
+    // updateFocusOverlay without a mode).
+    if (mode === 'text_focus' && focusedTextElement) {
+      this._applyTextFocusElementStyling(focusedTextElement);
+    } else {
+      this._clearTextFocusElementStyling();
+    }
+
     // Show focus overlay in normal mode, text focus mode, highlight mode, AND popover mode.
     // Popovers are modal but still need the green rectangle so the user can F-click UI
     // affordances like the close (×) button.
@@ -1066,14 +1125,6 @@ export class OverlayManager {
     // If there's no focus target at all, ensure we remove any hover tint.
     if (!focusEl) {
       this._clearTextHoverElementStyling();
-    }
-    
-    // Text focus mode styling: tint the actual focused input (and nearby wrapper parents)
-    // instead of drawing an orange frame overlay.
-    if (mode === 'text_focus' && focusedTextElement) {
-      this._applyTextFocusElementStyling(focusedTextElement);
-    } else {
-      this._clearTextFocusElementStyling();
     }
 
     // Show viewport modal frame when in text focus mode (controlled by flag)
@@ -1124,6 +1175,14 @@ export class OverlayManager {
     } catch {
       this._lastFocusElement = element || null;
       this._lastFocusRect = null;
+    }
+
+    // Text mode: the focused field already has a left-edge bar (or wash).
+    // Skip the full hover outline / hover hint on that same box (flicker).
+    if (this._isHoverOnActiveTextField(element)) {
+      try { this._clearTextHoverElementStyling(); } catch { /* ignore */ }
+      this.hideFocusOverlay();
+      return;
     }
 
     // Text inputs: show orange outline AND paint the SVG "Press F to select…" hint.
@@ -6348,6 +6407,9 @@ export class OverlayManager {
 
     // Prefer HTTPS for preview embeds (many sites refuse insecure framing / mixed content).
     url = preferHttpsForPreview(url);
+    // X and similar hosts refuse a full-page iframe even after DNR header
+    // stripping ("refused to connect"). Official embed docs are allowed.
+    const iframeSrc = rewriteUrlForIframePreview(url);
 
     const mouseX = opts.mouseX ?? window.innerWidth / 2;
     const popoverWidth = 600;
@@ -6588,11 +6650,11 @@ export class OverlayManager {
         try {
           // Force a real navigation with the new UA (same-url assignment can be a no-op).
           iframeRef.src = 'about:blank';
-          iframeRef.src = url;
+          iframeRef.src = iframeSrc;
           this.popoverIframeWindow = iframeRef.contentWindow || null;
         } catch {
           try {
-            iframeRef.src = url;
+            iframeRef.src = iframeSrc;
             this.popoverIframeWindow = iframeRef.contentWindow || null;
           } catch { /* ignore */ }
         }
@@ -6944,7 +7006,7 @@ export class OverlayManager {
       }
       try {
         armLoadTimeout();
-        iframe.src = url;
+        iframe.src = iframeSrc;
         this.popoverIframeWindow = iframe.contentWindow || null;
       } catch (e) {
         console.error('[KeyPilot] Failed to load preview URL:', e?.message || e);
