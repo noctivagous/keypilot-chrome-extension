@@ -118,6 +118,8 @@ export const CSS_CLASSES = {
   TEXT_FOCUS_INPUT_PARENT: 'kpv2-text-focus-input-parent',
   /** Modifier: focused text field uses left-edge 10px pulsating bar (default style). */
   TEXT_FOCUS_LEFT_EDGE: 'kpv2-text-focus-left-edge',
+  /** Input chrome is painted on a taller visual shell (Gmail/Google search pill). */
+  TEXT_FOCUS_DELEGATED: 'kpv2-text-focus-delegated',
   TEXT_HOVER_INPUT: 'kpv2-text-hover-input',
   TEXT_HOVER_INPUT_PARENT: 'kpv2-text-hover-input-parent',
 

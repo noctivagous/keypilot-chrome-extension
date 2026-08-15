@@ -824,12 +824,30 @@ export class StyleManager {
       }
 
       /* Focus (background tint style): wash + Esc SVG. */
-      .${CSS_CLASSES.TEXT_FOCUS_INPUT}:not(.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE}) {
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT}:not(.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE}):not(.${CSS_CLASSES.TEXT_FOCUS_DELEGATED}) {
         background-color: var(--kpv2-text-input-focus-bg, rgba(255, 140, 0, 0.42)) !important;
         background-image: var(--kpv2-text-focus-hint-image, none) !important;
         background-repeat: no-repeat !important;
         background-position: left 6px top 3px !important;
         background-size: auto 12px !important;
+      }
+
+      /* Field chrome painted on a taller wrapper — keep the input itself clean. */
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT}.${CSS_CLASSES.TEXT_FOCUS_DELEGATED} {
+        background-color: transparent !important;
+        background-image: var(--kpv2-text-focus-hint-image, none) !important;
+        background-repeat: no-repeat !important;
+        background-position: left 6px top 3px !important;
+        background-size: auto 12px !important;
+        box-shadow: none !important;
+        animation: none !important;
+      }
+
+      /* Left-edge bar on the visual shell (Gmail pill, etc.), not only the <input>. */
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT}.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE} {
+        box-shadow: inset var(--kpv2-text-left-edge-width, 5px) 0 0 0 ${COLORS.ORANGE} !important;
+        animation: kpv2-text-left-edge-pulse 1.5s ease-in-out infinite !important;
+        will-change: box-shadow;
       }
 
       /* Focus (default left-edge style): inset orange bar that pulses + Esc SVG. */
@@ -986,12 +1004,28 @@ export class StyleManager {
         background-size: auto 12px !important;
       }
 
-      .${CSS_CLASSES.TEXT_FOCUS_INPUT}:not(.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE}) {
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT}:not(.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE}):not(.${CSS_CLASSES.TEXT_FOCUS_DELEGATED}) {
         background-color: var(--kpv2-text-input-focus-bg, rgba(255, 140, 0, 0.42)) !important;
         background-image: var(--kpv2-text-focus-hint-image, none) !important;
         background-repeat: no-repeat !important;
         background-position: left 6px top 3px !important;
         background-size: auto 12px !important;
+      }
+
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT}.${CSS_CLASSES.TEXT_FOCUS_DELEGATED} {
+        background-color: transparent !important;
+        background-image: var(--kpv2-text-focus-hint-image, none) !important;
+        background-repeat: no-repeat !important;
+        background-position: left 6px top 3px !important;
+        background-size: auto 12px !important;
+        box-shadow: none !important;
+        animation: none !important;
+      }
+
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT}.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE} {
+        box-shadow: inset var(--kpv2-text-left-edge-width, 5px) 0 0 0 ${COLORS.ORANGE} !important;
+        animation: kpv2-text-left-edge-pulse 1.5s ease-in-out infinite !important;
+        will-change: box-shadow;
       }
 
       .${CSS_CLASSES.TEXT_FOCUS_INPUT}.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE} {
@@ -1390,6 +1424,7 @@ export class StyleManager {
       CSS_CLASSES.TEXT_FOCUS_INPUT,
       CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT,
       CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE,
+      CSS_CLASSES.TEXT_FOCUS_DELEGATED,
       CSS_CLASSES.TEXT_HOVER_INPUT,
       CSS_CLASSES.TEXT_HOVER_INPUT_PARENT
     ];

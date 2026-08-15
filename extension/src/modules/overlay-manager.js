@@ -174,6 +174,8 @@ export class OverlayManager {
     // Text focus styling (we style the focused input + nearby wrapper parents directly).
     this._textFocusCurrentElement = null;
     this._textFocusStyledElements = new Set();
+    /** @type {Element|null} visual box we paint (may be a taller wrapper) */
+    this._textFocusPaintHost = null;
     /** @type {'left_edge'|'background_tint'|null} */
     this._textFocusAppliedStyle = null;
 
@@ -805,6 +807,7 @@ export class OverlayManager {
   _clearTextFocusElementStyling() {
     if (!this._textFocusStyledElements || this._textFocusStyledElements.size === 0) {
       this._textFocusCurrentElement = null;
+      this._textFocusPaintHost = null;
       this._textFocusAppliedStyle = null;
       return;
     }
@@ -815,11 +818,13 @@ export class OverlayManager {
           el.classList.remove(CSS_CLASSES.TEXT_FOCUS_INPUT);
           el.classList.remove(CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT);
           el.classList.remove(CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE);
+          try { el.classList.remove(CSS_CLASSES.TEXT_FOCUS_DELEGATED); } catch { /* ignore */ }
         } catch { /* ignore */ }
       }
     } finally {
       this._textFocusStyledElements.clear();
       this._textFocusCurrentElement = null;
+      this._textFocusPaintHost = null;
       this._textFocusAppliedStyle = null;
     }
   }
@@ -876,6 +881,51 @@ export class OverlayManager {
   }
 
   /**
+   * Visual box for text-mode chrome. Google/Gmail search (and similar) wrap a
+   * short `position:absolute` <input> in a taller pill; the left-edge bar must
+   * span that pill, not the single-line control.
+   * @param {Element} inputEl
+   * @returns {Element}
+   */
+  _resolveTextFocusPaintHost(inputEl) {
+    if (!inputEl || inputEl.nodeType !== 1) return inputEl;
+    let ir;
+    try { ir = inputEl.getBoundingClientRect(); } catch { ir = null; }
+    if (!ir || ir.width < 4 || ir.height < 2) return inputEl;
+
+    let best = inputEl;
+    let bestH = ir.height;
+    let p = inputEl.parentElement;
+    let depth = 0;
+    while (p && depth++ < 14) {
+      if (p === document.body || p === document.documentElement) break;
+      let r;
+      try { r = p.getBoundingClientRect(); } catch { r = null; }
+      if (!r || r.width <= 0 || r.height <= 0) {
+        p = p.parentElement;
+        continue;
+      }
+
+      // Header / page chrome — stop. Allow a modest extra width for leading icons.
+      if (r.width > ir.width + 180) break;
+      if (r.height > 84 && r.height > ir.height * 3.5) break;
+
+      let display = '';
+      try { display = String(getComputedStyle(p).display || ''); } catch { display = ''; }
+      const skipDisplay = display === 'table-row' || display === 'table-row-group';
+
+      const leftDelta = Math.abs(r.left - ir.left);
+      const similarColumn = leftDelta <= 72 && r.width >= ir.width * 0.85;
+      if (similarColumn && !skipDisplay && r.height >= bestH - 0.5 && r.height <= 84) {
+        best = p;
+        bestH = r.height;
+      }
+      p = p.parentElement;
+    }
+    return best;
+  }
+
+  /**
    * Whether `wrapper` is the same visual box as `field` (padded chrome, not a
    * card/section). Used so hover-outline suppression still applies when
    * findClickable promotes a tight input shell.
@@ -896,13 +946,13 @@ export class OverlayManager {
     if (!wr || !fr || wr.width <= 0 || wr.height <= 0 || fr.width <= 0 || fr.height <= 0) {
       return false;
     }
-    const maxPad = 28;
+    const maxPad = 40;
     const dx = Math.max(Math.abs(wr.left - fr.left), Math.abs(wr.right - fr.right));
     const dy = Math.max(Math.abs(wr.top - fr.top), Math.abs(wr.bottom - fr.bottom));
-    return dx <= maxPad &&
-      dy <= maxPad &&
-      wr.width <= fr.width + maxPad * 2 &&
-      wr.height <= fr.height + maxPad * 2;
+    return dx <= Math.max(maxPad, 72) &&
+      dy <= Math.max(maxPad, 40) &&
+      wr.width <= fr.width + 180 &&
+      wr.height <= Math.max(fr.height + maxPad * 2, 84);
   }
 
   /**
@@ -958,33 +1008,55 @@ export class OverlayManager {
 
     const { focusStyle } = this._getTextModeSettings();
     const useLeftEdge = focusStyle !== 'background_tint';
+    const paintHost = useLeftEdge
+      ? (this._resolveTextFocusPaintHost(inputEl) || inputEl)
+      : inputEl;
+    const delegated = useLeftEdge && paintHost !== inputEl;
 
     // Avoid thrashing the DOM on RAF-driven overlay refreshes when style is unchanged.
     if (
       this._textFocusCurrentElement === inputEl &&
+      this._textFocusPaintHost === paintHost &&
       this._textFocusStyledElements.size > 0 &&
       this._textFocusAppliedStyle === focusStyle
     ) {
       try {
         inputEl.classList.add(CSS_CLASSES.TEXT_FOCUS_INPUT);
-        if (useLeftEdge) inputEl.classList.add(CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE);
+        if (useLeftEdge && !delegated) inputEl.classList.add(CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE);
         else inputEl.classList.remove(CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE);
+        if (delegated) inputEl.classList.add(CSS_CLASSES.TEXT_FOCUS_DELEGATED);
+        else inputEl.classList.remove(CSS_CLASSES.TEXT_FOCUS_DELEGATED);
+        if (delegated) {
+          paintHost.classList.add(CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT);
+          paintHost.classList.add(CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE);
+        }
       } catch { /* ignore */ }
       return;
     }
 
     this._clearTextFocusElementStyling();
     this._textFocusCurrentElement = inputEl;
+    this._textFocusPaintHost = paintHost;
     this._textFocusAppliedStyle = focusStyle;
 
     try {
       this._ensureStylesForElement(inputEl);
       inputEl.classList.add(CSS_CLASSES.TEXT_FOCUS_INPUT);
-      if (useLeftEdge) inputEl.classList.add(CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE);
+      if (useLeftEdge && !delegated) inputEl.classList.add(CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE);
+      if (delegated) inputEl.classList.add(CSS_CLASSES.TEXT_FOCUS_DELEGATED);
       this._textFocusStyledElements.add(inputEl);
     } catch { /* ignore */ }
 
-    // Background-tint style can wash nearby rounded wrappers; left-edge only paints the field.
+    if (delegated) {
+      try {
+        this._ensureStylesForElement(paintHost);
+        paintHost.classList.add(CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT);
+        paintHost.classList.add(CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE);
+        this._textFocusStyledElements.add(paintHost);
+      } catch { /* ignore */ }
+    }
+
+    // Background-tint style can wash nearby rounded wrappers.
     if (!useLeftEdge) {
       const parents = this._getNearbyInputWrappers(inputEl);
       for (const p of parents) {
@@ -1187,10 +1259,12 @@ export class OverlayManager {
 
     // Text inputs: show orange outline AND paint the SVG "Press F to select…" hint.
     // (Do not return early — fall through so the focus rectangle still draws.)
+    let textPaintHost = null;
     try {
       const isTextInput = element && element.matches && element.matches(SELECTORS.FOCUSABLE_TEXT);
       if (isTextInput) {
         this._applyTextHoverElementStyling(element);
+        try { textPaintHost = this._resolveTextFocusPaintHost(element); } catch { textPaintHost = null; }
       } else {
         // Non-text elements: ensure we remove any lingering hover hint styling.
         this._clearTextHoverElementStyling();
@@ -1223,9 +1297,12 @@ export class OverlayManager {
       }
 
       // Resolve paint node once (pierces open shadow for collapsed hosts).
+      // Text fields: prefer the visual pill/shell so the ring matches the
+      // left-edge bar (short absolute <input> inside a taller wrapper).
       let paintEl = element;
       try {
-        paintEl = this._resolveElementForFocusStyling(element) || element;
+        if (textPaintHost && textPaintHost !== element) paintEl = textPaintHost;
+        else paintEl = this._resolveElementForFocusStyling(element) || element;
       } catch {
         paintEl = element;
       }
