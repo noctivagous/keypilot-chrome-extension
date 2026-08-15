@@ -206,3 +206,127 @@ export function resolveHoveredLink(el) {
   const card = findPermalinkCardHost(/** @type {Element} */ (el));
   return resolveDescendantPermalink(card);
 }
+
+/**
+ * Normalize a URL to origin + pathname (no query/hash, no trailing slash).
+ * @param {string} href
+ * @returns {string}
+ */
+export function normalizeActivationDest(href) {
+  const raw = String(href || '').trim();
+  if (!raw || raw === '#' || raw.toLowerCase().startsWith('javascript:')) return '';
+  try {
+    const u = new URL(raw, typeof location !== 'undefined' ? location.href : undefined);
+    const path = (u.pathname || '/').replace(/\/+$/, '') || '/';
+    return `${u.origin}${path}`.toLowerCase();
+  } catch {
+    return raw.split(/[?#]/)[0].replace(/\/+$/, '').toLowerCase();
+  }
+}
+
+/**
+ * Href on `el` itself — not an ancestor card link.
+ * @param {Element} el
+ * @returns {string}
+ */
+function ownNavigableHref(el) {
+  if (!el || el.nodeType !== 1) return '';
+  try {
+    if (el.tagName === 'A') {
+      const href = String(/** @type {HTMLAnchorElement} */ (el).href || '').trim();
+      return normalizeActivationDest(href);
+    }
+  } catch { /* ignore */ }
+  try {
+    if ((el.getAttribute('role') || '').trim().toLowerCase() === 'link') {
+      const data = String(el.dataset?.kpUrl || el.getAttribute('href') || '').trim();
+      if (data) return normalizeActivationDest(data);
+    }
+  } catch { /* ignore */ }
+  return '';
+}
+
+/**
+ * @param {Element} el
+ * @returns {boolean}
+ */
+function isOwnActionControl(el) {
+  if (!el || el.nodeType !== 1) return false;
+  const tag = el.tagName;
+  if (tag === 'BUTTON') return true;
+  let role = '';
+  try { role = (el.getAttribute('role') || '').trim().toLowerCase(); } catch { role = ''; }
+  if (role === 'button' || role === 'menuitem' || role === 'tab') return true;
+  try {
+    if (el.getAttribute('aria-haspopup')) return true;
+  } catch { /* ignore */ }
+  if (tag === 'INPUT') {
+    let t = '';
+    try { t = String(/** @type {HTMLInputElement} */ (el).type || '').toLowerCase(); } catch { t = ''; }
+    return t === 'button' || t === 'submit' || t === 'reset' || t === 'checkbox' || t === 'radio';
+  }
+  return false;
+}
+
+/**
+ * @param {Element} el
+ * @returns {boolean}
+ */
+function isImpliedPermalinkHost(el) {
+  if (!el || el.nodeType !== 1) return false;
+  try {
+    const role = (el.getAttribute('role') || '').trim().toLowerCase();
+    if (el.tagName === 'ARTICLE' || role === 'article') return true;
+  } catch { /* ignore */ }
+  return false;
+}
+
+/**
+ * Stable id for what F would do on `el`.
+ * - `nav:` + normalized URL for links and article-style cards (implied permalink)
+ * - `act:` + testid/label for buttons and other actions
+ *
+ * Does not walk up to an ancestor <a> — that would make Like inherit the tweet URL.
+ *
+ * @param {Element|null|undefined} el
+ * @returns {string} empty when unknown
+ */
+export function resolveActivationIdentity(el) {
+  if (!el || el.nodeType !== 1) return '';
+
+  const own = ownNavigableHref(el);
+  if (own) return `nav:${own}`;
+
+  if (isOwnActionControl(el)) {
+    let testid = '';
+    let label = '';
+    let role = '';
+    try { testid = String(el.getAttribute('data-testid') || '').trim(); } catch { /* ignore */ }
+    try { label = String(el.getAttribute('aria-label') || el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 48); } catch { /* ignore */ }
+    try { role = String(el.getAttribute('role') || '').trim().toLowerCase(); } catch { /* ignore */ }
+    const key = testid || label || role || el.tagName;
+    return `act:${String(key).toLowerCase()}`;
+  }
+
+  if (isImpliedPermalinkHost(el)) {
+    const perma = resolveDescendantPermalink(el);
+    if (perma?.url) {
+      const dest = normalizeActivationDest(perma.url);
+      if (dest) return `nav:${dest}`;
+    }
+  }
+
+  return '';
+}
+
+/**
+ * True when F on `leaf` would do the same thing as F on `host`.
+ * @param {Element|null|undefined} leaf
+ * @param {Element|null|undefined} host
+ * @returns {boolean}
+ */
+export function activationIdentitiesMatch(leaf, host) {
+  const a = resolveActivationIdentity(leaf);
+  const b = resolveActivationIdentity(host);
+  return !!(a && b && a === b);
+}

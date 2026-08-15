@@ -3,7 +3,7 @@
  */
 import { CLICKABLE_CATEGORY, CSS_CLASSES, FEATURE_FLAGS } from '../config/constants.js';
 import { deepElementFromPoint as pierceElementFromPoint } from '../utils/element-from-point.js';
-import { resolveHoveredLink } from '../utils/resolve-hovered-link.js';
+import { resolveHoveredLink, activationIdentitiesMatch } from '../utils/resolve-hovered-link.js';
 
 export class ElementDetector {
   constructor() {
@@ -727,12 +727,11 @@ export class ElementDetector {
   }
 
   /**
-   * True when `el` is nested chrome inside `host` (More menu, small sub-links,
-   * icon buttons) rather than the primary hover target for the row/card/tab.
+   * True when `el` is redundant nested chrome of `host`: F on the leaf would
+   * do the same thing as F on the host (same navigation / implied permalink).
    *
-   * Mega-menus (NVIDIA, etc.) nest flyout buttons/links inside a compact
-   * `role="menuitem"` / `aria-haspopup` chip. Those items sit *outside* the
-   * chip's box — they are not "More" chrome of the host.
+   * Different URL or a distinct action (like / reply / Show more) is not chrome.
+   * Flyouts that only share a DOM ancestor still get their own ring.
    * @param {Element} el
    * @param {Element} host
    * @returns {boolean}
@@ -745,13 +744,11 @@ export class ElementDetector {
       return false;
     }
 
-    // Items inside a header/nav shell are the real targets, not "More" chrome.
     try {
       if (this._isFullBleedChromeBar(host)) return false;
     } catch { /* ignore */ }
 
-    // Geometry first: flyout descendants live in the host's DOM tree but
-    // outside its painted chip. Do not swallow those as nested chrome.
+    // Flyout descendants sit outside the host's painted chip (NVIDIA mega-menu).
     try {
       const er = el.getBoundingClientRect();
       const hr = host.getBoundingClientRect();
@@ -759,31 +756,16 @@ export class ElementDetector {
         const overlapW = Math.max(0, Math.min(er.right, hr.right) - Math.max(er.left, hr.left));
         const overlapH = Math.max(0, Math.min(er.bottom, hr.bottom) - Math.max(er.top, hr.top));
         const eArea = er.width * er.height;
-        const hArea = hr.width * hr.height;
         const overlapArea = overlapW * overlapH;
         if (overlapArea < eArea * 0.4) return false;
-        if (eArea >= hArea * 0.8) return false;
       }
-    } catch { /* fall through to type heuristics */ }
+    } catch { /* ignore */ }
 
-    const tag = el.tagName;
-    const role = ((el.getAttribute && el.getAttribute('role')) || '').trim().toLowerCase();
-    if (tag === 'BUTTON' || role === 'button') return true;
-    if (el.getAttribute && el.getAttribute('aria-haspopup')) return true;
-
-    // Small nested links inside a larger row/card (trend "with X", avatars, etc.).
-    if (tag === 'A' || role === 'link') {
-      try {
-        const er = el.getBoundingClientRect();
-        const hr = host.getBoundingClientRect();
-        const eArea = Math.max(1, er.width * er.height);
-        const hArea = Math.max(1, hr.width * hr.height);
-        return eArea < hArea * 0.35;
-      } catch {
-        return true;
-      }
+    try {
+      return activationIdentitiesMatch(el, host);
+    } catch {
+      return false;
     }
-    return false;
   }
 
   /**

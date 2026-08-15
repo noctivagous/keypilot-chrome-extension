@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-15T19:52:07.015Z
+ * Generated on 2026-08-15T20:08:07.674Z
  */
 
 (() => {
