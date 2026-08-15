@@ -9,6 +9,7 @@ import { KEYBINDINGS, Z_INDEX } from './src/config/constants.js';
 import {
   BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META,
   BUILTIN_KEYBOARD_LAYOUT_META,
+  BUILD_EXCLUDED_KEY_ACTIONS,
   DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID,
   DEFAULT_KEYBOARD_LAYOUT_ID,
   SYSTEM_LAYER_ACTION_IDS,
@@ -41,6 +42,9 @@ function getBuildTimestamp(now = new Date()) {
 
 export async function runPostBundleTasks({ shouldMinify = false } = {}) {
   const shouldMinifyFlag = shouldMinify;
+  if (Array.isArray(BUILD_EXCLUDED_KEY_ACTIONS) && BUILD_EXCLUDED_KEY_ACTIONS.length) {
+    console.log(`Build-excluded key actions: ${BUILD_EXCLUDED_KEY_ACTIONS.join(', ')}`);
+  }
   // Validate background.js exists in extension directory
   if (fs.existsSync('background.js')) {
     console.log('background.js found and ready for extension');

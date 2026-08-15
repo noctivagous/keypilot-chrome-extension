@@ -3668,13 +3668,17 @@ export class KeyPilot extends EventManager {
    * Cover the overflow box, then run `fn` (instant jump).
    * @param {() => void} fn
    * @param {Element|null} coverEl
+   * @param {'top'|'bottom'|null} [edge]
    */
-  _runEdgeJump(fn, coverEl) {
+  _runEdgeJump(fn, coverEl, edge = null) {
     const run = () => {
       try { fn(); } catch { /* ignore */ }
     };
     if (this.overlayManager?.runEdgeJumpFade) {
-      void this.overlayManager.runEdgeJumpFade(run, { coverEl: coverEl || null });
+      void this.overlayManager.runEdgeJumpFade(run, {
+        coverEl: coverEl || null,
+        edge: edge === 'bottom' ? 'bottom' : 'top'
+      });
       return;
     }
     run();
@@ -3704,7 +3708,7 @@ export class KeyPilot extends EventManager {
       return;
     }
 
-    this._runEdgeJump(jump, this._resolveEdgeJumpCoverEl(x, y, s));
+    this._runEdgeJump(jump, this._resolveEdgeJumpCoverEl(x, y, s), s < 0 ? 'top' : 'bottom');
   }
 
   /**
@@ -3726,7 +3730,7 @@ export class KeyPilot extends EventManager {
     const coverEl = this.overlayManager?.popoverIframeElement
       || this.overlayManager?.popoverContainer
       || null;
-    this._runEdgeJump(jump, coverEl);
+    this._runEdgeJump(jump, coverEl, sign < 0 ? 'top' : 'bottom');
   }
 
   /**

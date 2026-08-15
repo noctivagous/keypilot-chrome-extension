@@ -33,7 +33,6 @@ for common web interactions, eliminating the need for mouse navigation.
 | `L` | Open Omnibox (Address Bar Overlay) |
 | `P` | Open Link in Popover |
 | `S` | Go Back (History) |
-| `.` | Columnize element under cursor (multi-column layout) |
 | `N` | Scroll from a fixed origin: move the mouse away from the dot to scroll faster. Optional middle-click on empty page area (Settings → Scrolling). |
 | `'` | Open KeyPilot Settings |
 | `1` | Go to Site Root |
@@ -68,6 +67,9 @@ for common web interactions, eliminating the need for mouse navigation.
 | `Esc` | Exit Focus |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
+
+
 
 
 

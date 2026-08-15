@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-15T20:08:07.674Z
+ * Generated on 2026-08-15T20:49:38.817Z
  */
 
 (() => {
@@ -125,6 +125,14 @@
     /** @type {const} */
     "right"
   );
+  var BUILD_EXCLUDED_KEY_ACTIONS = Object.freeze([
+    "COLS_TOGGLE"
+  ]);
+  var BUILD_EXCLUDED_KEY_ACTION_SET = new Set(BUILD_EXCLUDED_KEY_ACTIONS);
+  function isBuildExcludedKeyAction(actionId) {
+    const id = String(actionId || "");
+    return !!id && BUILD_EXCLUDED_KEY_ACTION_SET.has(id);
+  }
   var BUILTIN_KEYBOARD_LAYOUT_META = Object.freeze([
     Object.freeze({
       id: (
@@ -659,6 +667,7 @@
     const layout = BUILTIN_KEYBOARD_LAYOUTS[id];
     const out = {};
     for (const [actionId, def] of Object.entries(KEYBINDING_ACTION_DEFS)) {
+      if (isBuildExcludedKeyAction(actionId)) continue;
       const assign = layout?.assignments?.[actionId];
       if (!assign || !Array.isArray(assign.keys)) continue;
       const labels = normalizeAssignmentLabels(assign);
@@ -679,6 +688,7 @@
   var CATALOG_KEYBINDINGS = (() => {
     const out = {};
     for (const [actionId, def] of Object.entries(KEYBINDING_ACTION_DEFS)) {
+      if (isBuildExcludedKeyAction(actionId)) continue;
       out[actionId] = Object.freeze({
         keys: Object.freeze([]),
         handler: def.handler,
@@ -721,8 +731,8 @@
     // M is otherwise unused on the right-handed layout (it's PAGE_DOWN_INSTANT on left-handed).
     OPEN_MEDIA_LIBRARY: Object.freeze({ keys: ["m", "M"] }),
     ROOT: Object.freeze({ keys: ["1", "!"], displayKey: "1", keyLabel: "1" }),
-    DELETE: Object.freeze({ keys: ["Backspace"], displayKey: "Backspace", keyLabel: "Backspace" }),
-    COLS_TOGGLE: Object.freeze({ keys: [".", ">"], displayKey: ".", keyLabel: "." })
+    DELETE: Object.freeze({ keys: ["Backspace"], displayKey: "Backspace", keyLabel: "Backspace" })
+    // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
   });
   var ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
     // Top row cluster: Q W E R T  ->  P O I U Y (mirrored)
@@ -748,15 +758,14 @@
     OMNIBOX: Object.freeze({ keys: ["s", "S"] }),
     LAUNCHER: Object.freeze({ keys: ["a", "A", "`", "~", "Backquote"], matchOn: ["key", "code"], displayKey: "a/`", keyLabel: "a/`" }),
     // Bottom row cluster: Z X C V B  ->  / . , M N (mirrored)
-    // Period reserved for COLS_TOGGLE (same muscle memory as right-handed).
     PAGE_TOP: Object.freeze({ keys: ["/", "?"], displayKey: "/", keyLabel: "/" }),
     PAGE_BOTTOM: Object.freeze({ keys: ["b", "B"] }),
     PAGE_UP_INSTANT: Object.freeze({ keys: [",", "<"], displayKey: ",", keyLabel: "," }),
     PAGE_DOWN_INSTANT: Object.freeze({ keys: ["m", "M"] }),
     ACTIVATE_NEW_TAB: Object.freeze({ keys: ["n", "N"] }),
-    COLS_TOGGLE: Object.freeze({ keys: [".", ">"], displayKey: ".", keyLabel: "." }),
     // I is OPEN_POPOVER on left-handed; E is free.
     COPY_HOVERED_IMAGE: Object.freeze({ keys: ["e", "E"] }),
+    // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
     ROOT: Object.freeze({ keys: ["1", "!"], displayKey: "1", keyLabel: "1" }),
     DELETE: Object.freeze({ keys: ["Backspace"], displayKey: "Backspace", keyLabel: "Backspace" })
   });
@@ -835,9 +844,11 @@
     const allowed = new Set(allowedIds);
     const out = {};
     for (const id of allowedIds) {
+      if (isBuildExcludedKeyAction(id)) continue;
       if (source[id]) out[id] = source[id];
     }
     for (const [id, assignment] of Object.entries(source || {})) {
+      if (isBuildExcludedKeyAction(id)) continue;
       if (allowed.has(id) && !out[id]) out[id] = assignment;
     }
     return Object.freeze(out);
@@ -862,17 +873,19 @@
         (row) => Object.freeze(
           (Array.isArray(row) ? row : []).map((cell) => {
             if (!cell || cell.type !== "action" || !cell.id) return cell;
-            if (allowed.has(cell.id)) return cell;
-            if (cell.id === "DELETE" || cell.className && String(cell.className).includes("key-backspace")) {
-              return Object.freeze({ type: "special", text: "Backspace", className: "key key-backspace" });
+            if (isBuildExcludedKeyAction(cell.id) || !allowed.has(cell.id)) {
+              if (cell.id === "DELETE" || cell.className && String(cell.className).includes("key-backspace")) {
+                return Object.freeze({ type: "special", text: "Backspace", className: "key key-backspace" });
+              }
+              const text = letterFromAssignment(fullAssignments[cell.id]);
+              if (!text) return Object.freeze({ type: "key", text: "" });
+              if (text === "Backspace") {
+                return Object.freeze({ type: "special", text: "Backspace", className: "key key-backspace" });
+              }
+              const glyph = text.length <= 3 ? text : text.slice(0, 1).toUpperCase();
+              return Object.freeze({ type: "key", text: glyph.length === 1 ? glyph.toUpperCase() : glyph });
             }
-            const text = letterFromAssignment(fullAssignments[cell.id]);
-            if (!text) return Object.freeze({ type: "key", text: "" });
-            if (text === "Backspace") {
-              return Object.freeze({ type: "special", text: "Backspace", className: "key key-backspace" });
-            }
-            const glyph = text.length <= 3 ? text : text.slice(0, 1).toUpperCase();
-            return Object.freeze({ type: "key", text: glyph.length === 1 ? glyph.toUpperCase() : glyph });
+            return cell;
           })
         )
       )
@@ -924,7 +937,7 @@
       { type: "action", id: "SCROLL_LINE", fallbackText: "Scroll Line" },
       { type: "action", id: "OPEN_MEDIA_LIBRARY", fallbackText: "Media Library" },
       { type: "key", text: "," },
-      { type: "action", id: "COLS_TOGGLE", fallbackText: "Cols Toggle" },
+      { type: "key", text: "." },
       { type: "key", text: "/" },
       { type: "special", text: "Shift", className: "key key-shift" }
     ]
@@ -995,8 +1008,7 @@
       // M
       { type: "action", id: "PAGE_UP_INSTANT", fallbackText: "Page Up Fast" },
       // ,
-      { type: "action", id: "COLS_TOGGLE", fallbackText: "Cols Toggle" },
-      // .
+      { type: "key", text: "." },
       { type: "action", id: "PAGE_TOP", fallbackText: "Scroll To Top" },
       // /
       { type: "special", text: "Shift", className: "key key-shift" }
@@ -1131,6 +1143,8 @@
     TEXT_FIELD_GLOW: "kpv2-text-field-glow",
     /** Full-viewport veil used to hide instant Scroll-to-Top / Bottom jumps */
     EDGE_JUMP_FADE: "kpv2-edge-jump-fade",
+    /** Corner glyph on the fade veil (Scroll To Top / Bottom) */
+    EDGE_JUMP_FADE_ICON: "kpv2-edge-jump-fade-icon",
     VIEWPORT_MODAL_FRAME: "kpv2-viewport-modal-frame",
     ESC_EXIT_LABEL: "kpv2-esc-exit-label",
     TEXT_FOCUS_INPUT: "kpv2-text-focus-input",

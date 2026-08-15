@@ -320,7 +320,27 @@ export class StyleManager {
         pointer-events: none;
         opacity: 0;
         background: #fff;
+        overflow: hidden;
         will-change: opacity, left, top, width, height;
+      }
+
+      .${CSS_CLASSES.EDGE_JUMP_FADE_ICON} {
+        position: absolute;
+        right: 18px;
+        width: 56px;
+        height: 56px;
+        pointer-events: none;
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.28));
+      }
+
+      .${CSS_CLASSES.EDGE_JUMP_FADE_ICON}[data-kp-edge="top"] {
+        top: 18px;
+        bottom: auto;
+      }
+
+      .${CSS_CLASSES.EDGE_JUMP_FADE_ICON}[data-kp-edge="bottom"] {
+        bottom: 18px;
+        top: auto;
       }
       
       @keyframes kpv2-ripple { 

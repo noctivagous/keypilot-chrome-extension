@@ -241,9 +241,8 @@
         "text": ","
       },
       {
-        "type": "action",
-        "id": "COLS_TOGGLE",
-        "fallbackText": "Cols Toggle"
+        "type": "key",
+        "text": "."
       },
       {
         "type": "key",
@@ -437,9 +436,8 @@
         "fallbackText": "Page Up Fast"
       },
       {
-        "type": "action",
-        "id": "COLS_TOGGLE",
-        "fallbackText": "Cols Toggle"
+        "type": "key",
+        "text": "."
       },
       {
         "type": "action",
@@ -1375,13 +1373,6 @@
       "displayKey": "M",
       "keyboardClass": null
     },
-    "COLS_TOGGLE": {
-      "label": "Cols Toggle",
-      "description": "Columnize element under cursor (multi-column layout)",
-      "keyLabel": ".",
-      "displayKey": ".",
-      "keyboardClass": "key-cols"
-    },
     "CANCEL": {
       "label": "Exit Focus",
       "description": "Exit Focus",
@@ -1572,13 +1563,6 @@
       "keyLabel": "T",
       "displayKey": "T",
       "keyboardClass": "key-scroll"
-    },
-    "COLS_TOGGLE": {
-      "label": "Cols Toggle",
-      "description": "Columnize element under cursor (multi-column layout)",
-      "keyLabel": ".",
-      "displayKey": ".",
-      "keyboardClass": "key-cols"
     },
     "CANCEL": {
       "label": "Exit Focus",
@@ -2062,9 +2046,8 @@
       "text": ","
     },
     {
-      "type": "action",
-      "id": "COLS_TOGGLE",
-      "fallbackText": "Cols Toggle"
+      "type": "key",
+      "text": "."
     },
     {
       "type": "key",
@@ -2280,13 +2263,6 @@
     "keyLabel": "M",
     "displayKey": "M",
     "keyboardClass": null
-  },
-  "COLS_TOGGLE": {
-    "label": "Cols Toggle",
-    "description": "Columnize element under cursor (multi-column layout)",
-    "keyLabel": ".",
-    "displayKey": ".",
-    "keyboardClass": "key-cols"
   },
   "CANCEL": {
     "label": "Exit Focus",

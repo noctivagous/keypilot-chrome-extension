@@ -83,6 +83,7 @@ import {
   getComposedEventElement,
   injectChromeStyles
 } from './kp-chrome-shadow.js';
+import { createHierarchicalTable, getHierarchicalTableCss } from './hierarchical-table.js';
 import {
   NCT_DARK_UI_BTN_BORDER,
   NCT_DARK_UI_BTN_GRADIENT,
@@ -1536,90 +1537,21 @@ export class KeyboardLayoutConfigPanel {
   background: #2c2434;
   border-left: 3px solid #9a7ab8;
 }
-.kp-layout-config-panel .kp-cfg-lib-table-wrap {
-  width: 100%;
-  overflow: auto;
-  border: 1px solid rgba(120, 140, 100, 0.12);
-  border-radius: 2px;
-  background: rgba(8, 10, 8, 0.35);
-}
-.kp-layout-config-panel .kp-cfg-lib-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 11px;
-  table-layout: fixed;
-}
-.kp-layout-config-panel .kp-cfg-lib-table th {
-  text-align: left;
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #8a9a78;
-  padding: 6px 8px;
-  border-bottom: 1px solid rgba(120, 140, 100, 0.18);
-  background: #121410;
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-.kp-layout-config-panel .kp-cfg-lib-table td {
-  padding: 5px 8px;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-  vertical-align: middle;
-  color: #c8d4e0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.kp-layout-config-panel .kp-cfg-lib-table tr.kp-cfg-lib-row-group {
-  background: rgba(255,255,255,0.03);
-  cursor: pointer;
-}
-.kp-layout-config-panel .kp-cfg-lib-table tr.kp-cfg-lib-row-group td {
-  font-weight: 700;
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: #9a8aaa;
-}
-.kp-layout-config-panel .kp-cfg-lib-table tr.kp-cfg-lib-row-leaf:hover {
-  background: rgba(74, 144, 200, 0.12);
-}
-.kp-layout-config-panel .kp-cfg-lib-table tr.kp-cfg-lib-row-inspecting {
+${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
+.kp-layout-config-panel .kp-hier-table tr.kp-cfg-lib-row-inspecting {
   background: rgba(74, 144, 200, 0.18);
   outline: 1px solid rgba(74, 144, 200, 0.35);
 }
-.kp-layout-config-panel .kp-cfg-lib-table tr.kp-cfg-lib-row-place {
+.kp-layout-config-panel .kp-hier-table tr.kp-cfg-lib-row-place {
   box-shadow: inset 2px 0 0 ${c.accent};
 }
-.kp-layout-config-panel .kp-cfg-lib-twisty {
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  padding: 0;
-  margin: 0 4px 0 0;
-  border: 0;
-  background: transparent;
-  color: #9aacbe;
-  cursor: pointer;
-  font-size: 10px;
-  line-height: 18px;
-  flex: 0 0 auto;
-}
-.kp-layout-config-panel .kp-cfg-lib-label-cell {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-.kp-layout-config-panel .kp-cfg-lib-label-cell .kp-cfg-ico {
+.kp-layout-config-panel .kp-hier-label-cell .kp-cfg-ico {
   width: 12px;
   height: 12px;
   opacity: 0.9;
   flex: 0 0 auto;
 }
-.kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .kp-cfg-lib-table .key.kp-cfg-lib-key {
+.kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .kp-hier-table .key.kp-cfg-lib-key {
   flex: 0 0 auto !important;
   width: 22px !important;
   min-width: 22px !important;
@@ -1636,39 +1568,29 @@ export class KeyboardLayoutConfigPanel {
   overflow: hidden;
   box-sizing: border-box;
 }
-.kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .kp-cfg-lib-table .key.kp-cfg-lib-key:active {
+.kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .kp-hier-table .key.kp-cfg-lib-key:active {
   cursor: grabbing;
 }
-.kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .kp-cfg-lib-table .key.kp-cfg-lib-key > .key-bg-icon {
+.kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .kp-hier-table .key.kp-cfg-lib-key > .key-bg-icon {
   inset: 10%;
   -webkit-mask-size: 82% 82%;
   mask-size: 82% 82%;
   opacity: 0.9;
 }
-.kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .kp-cfg-lib-table .key.kp-cfg-lib-key > .key-main,
-.kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .kp-cfg-lib-table .key.kp-cfg-lib-key > .key-label {
+.kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .kp-hier-table .key.kp-cfg-lib-key > .key-main,
+.kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .kp-hier-table .key.kp-cfg-lib-key > .key-label {
   display: none !important;
 }
-.kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .kp-cfg-lib-table .key.kp-cfg-lib-key.kp-place-source {
+.kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .kp-hier-table .key.kp-cfg-lib-key.kp-place-source {
   outline: 2px solid ${c.accent};
   outline-offset: 0;
 }
-.kp-layout-config-panel .kp-cfg-lib-label-text {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.kp-layout-config-panel .kp-cfg-lib-table .kp-cfg-card-actions {
+.kp-layout-config-panel .kp-hier-table .kp-cfg-card-actions {
   display: inline-flex;
   flex-wrap: wrap;
   gap: 4px;
   justify-content: flex-end;
 }
-.kp-layout-config-panel .kp-cfg-lib-table col.kp-cfg-col-label { width: 34%; }
-.kp-layout-config-panel .kp-cfg-lib-table col.kp-cfg-col-kind { width: 14%; }
-.kp-layout-config-panel .kp-cfg-lib-table col.kp-cfg-col-summary { width: 22%; }
-.kp-layout-config-panel .kp-cfg-lib-table col.kp-cfg-col-slots { width: 12%; }
-.kp-layout-config-panel .kp-cfg-lib-table col.kp-cfg-col-actions { width: 18%; }
 .kp-layout-config-panel .kp-cfg-legend {
   display: flex;
   flex-wrap: wrap;
@@ -6164,34 +6086,18 @@ export class KeyboardLayoutConfigPanel {
    */
   _renderLibraryTable(ctx) {
     const { list, q, tab, showMacros, showMacroKeys, showFunctions, assignedInfoByItemKey } = ctx;
-    const wrap = document.createElement('div');
-    wrap.className = 'kp-cfg-lib-table-wrap';
-    const table = document.createElement('table');
-    table.className = 'kp-cfg-lib-table';
-    table.setAttribute('aria-label', 'Actions Library table');
-
-    const colgroup = document.createElement('colgroup');
-    for (const cls of [
-      'kp-cfg-col-label', 'kp-cfg-col-kind', 'kp-cfg-col-summary',
-      'kp-cfg-col-slots', 'kp-cfg-col-actions'
-    ]) {
-      const col = document.createElement('col');
-      col.className = cls;
-      colgroup.appendChild(col);
-    }
-    table.appendChild(colgroup);
-
-    const thead = document.createElement('thead');
-    const hr = document.createElement('tr');
-    for (const h of ['Label', 'Kind', 'Summary', 'Slots', 'Actions']) {
-      const th = document.createElement('th');
-      th.textContent = h;
-      hr.appendChild(th);
-    }
-    thead.appendChild(hr);
-    table.appendChild(thead);
-
-    const tbody = document.createElement('tbody');
+    const hier = createHierarchicalTable({
+      columns: [
+        { key: 'label', label: 'Label', className: 'kp-cfg-col-label', width: '34%' },
+        { key: 'kind', label: 'Kind', className: 'kp-cfg-col-kind', width: '14%' },
+        { key: 'summary', label: 'Summary', className: 'kp-cfg-col-summary', width: '22%' },
+        { key: 'slots', label: 'Slots', className: 'kp-cfg-col-slots', width: '12%' },
+        { key: 'actions', label: 'Actions', className: 'kp-cfg-col-actions', width: '18%' }
+      ],
+      ariaLabel: 'Actions Library table',
+      isGroupExpanded: (key) => this._isTableGroupExpanded(key),
+      onToggleGroup: (key) => this._toggleTableGroup(key)
+    });
 
     /**
      * @param {{
@@ -6203,57 +6109,16 @@ export class KeyboardLayoutConfigPanel {
      *   trailing?: HTMLElement|null
      * }} opts
      */
-    const appendGroupRow = ({ groupKey, label, depth = 0, count = 0, kind = '', trailing = null }) => {
-      const expanded = this._isTableGroupExpanded(groupKey);
-      const tr = document.createElement('tr');
-      tr.className = 'kp-cfg-lib-row-group';
-      tr.dataset.kpGroupKey = groupKey;
-
-      const tdLabel = document.createElement('td');
-      const cell = document.createElement('div');
-      cell.className = 'kp-cfg-lib-label-cell';
-      cell.style.paddingLeft = `${depth * 14}px`;
-
-      const twisty = document.createElement('button');
-      twisty.type = 'button';
-      twisty.className = 'kp-cfg-lib-twisty';
-      twisty.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-      twisty.setAttribute('aria-label', expanded ? `Collapse ${label}` : `Expand ${label}`);
-      twisty.textContent = expanded ? '▾' : '▸';
-      twisty.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        this._toggleTableGroup(groupKey);
-      }, true);
-
-      const text = document.createElement('span');
-      text.className = 'kp-cfg-lib-label-text';
-      text.textContent = count > 0 ? `${label} (${count})` : label;
-      cell.appendChild(twisty);
-      cell.appendChild(text);
-      tdLabel.appendChild(cell);
-
-      const tdKind = document.createElement('td');
-      tdKind.textContent = kind || '';
-      const tdSummary = document.createElement('td');
-      tdSummary.textContent = '';
-      const tdSlots = document.createElement('td');
-      tdSlots.textContent = '';
-      const tdActions = document.createElement('td');
-      if (trailing) tdActions.appendChild(trailing);
-
-      tr.appendChild(tdLabel);
-      tr.appendChild(tdKind);
-      tr.appendChild(tdSummary);
-      tr.appendChild(tdSlots);
-      tr.appendChild(tdActions);
-      tr.addEventListener('click', (e) => {
-        if (e.target?.closest?.('button, a, input, select, textarea')) return;
-        this._toggleTableGroup(groupKey);
-      }, true);
-      tbody.appendChild(tr);
-      return expanded;
-    };
+    const appendGroupRow = ({ groupKey, label, depth = 0, count = 0, kind = '', trailing = null }) => (
+      hier.appendGroupRow({
+        groupKey,
+        label,
+        depth,
+        count,
+        cells: [kind || '', '', ''],
+        trailing
+      })
+    );
 
     /**
      * @param {{
@@ -6274,24 +6139,6 @@ export class KeyboardLayoutConfigPanel {
       type, id, label, kind, summary, depth = 1, variant, functionId, iconKind,
       keyboardClass = '', actions = []
     }) => {
-      const tr = document.createElement('tr');
-      tr.className = 'kp-cfg-lib-row-leaf';
-      tr.dataset.kpItemType = type;
-      tr.dataset.kpItemId = id;
-      if (this._inspectorSelection
-        && this._inspectorSelection.type === type
-        && this._inspectorSelection.id === id) {
-        tr.classList.add('kp-cfg-lib-row-inspecting');
-      }
-      if (this._placeItem && this._placeItem.type === type && this._placeItem.id === id) {
-        tr.classList.add('kp-cfg-lib-row-place');
-      }
-
-      const tdLabel = document.createElement('td');
-      const cell = document.createElement('div');
-      cell.className = 'kp-cfg-lib-label-cell';
-      cell.style.paddingLeft = `${depth * 14}px`;
-
       const keyEl = document.createElement('button');
       keyEl.type = 'button';
       keyEl.className = `key kp-cfg-lib-key${keyboardClass ? ` ${keyboardClass}` : ''}`;
@@ -6327,32 +6174,23 @@ export class KeyboardLayoutConfigPanel {
         e.stopPropagation();
         this._beginPlaceMode({ type, id }, keyEl);
       }, true);
-      cell.appendChild(keyEl);
 
-      const text = document.createElement('span');
-      text.className = 'kp-cfg-lib-label-text';
-      text.textContent = label;
-      cell.appendChild(text);
-      tdLabel.appendChild(cell);
-
-      const tdKind = document.createElement('td');
-      tdKind.textContent = kind || '';
-      const tdSummary = document.createElement('td');
-      tdSummary.textContent = summary || '';
-      tdSummary.title = summary || '';
+      const labelCell = hier.createLabelCell({
+        depth,
+        leading: keyEl,
+        text: label
+      });
 
       const info = assignedInfoByItemKey.get(`${type}:${id}`) || null;
-      const tdSlots = document.createElement('td');
+      let slotsText = '—';
+      let slotsTitle = '';
       if (info && info.count > 0) {
-        tdSlots.textContent = info.count > 1 ? `×${info.count}` : String(info.first || '');
-        tdSlots.title = info.count > 1
+        slotsText = info.count > 1 ? `×${info.count}` : String(info.first || '');
+        slotsTitle = info.count > 1
           ? `Assigned to ${info.count} slots`
           : `Assigned to ${info.first}`;
-      } else {
-        tdSlots.textContent = '—';
       }
 
-      const tdActions = document.createElement('td');
       const actionsRow = document.createElement('div');
       actionsRow.className = 'kp-cfg-card-actions';
 
@@ -6382,37 +6220,44 @@ export class KeyboardLayoutConfigPanel {
         actionsRow.appendChild(b);
       }
 
-      tdActions.appendChild(actionsRow);
+      const summaryEl = document.createElement('span');
+      summaryEl.textContent = summary || '';
+      if (summary) summaryEl.title = summary;
 
-      tr.addEventListener('click', (e) => {
-        if (e.target?.closest?.('button, a, input, select, textarea')) return;
-        this._inspectItem({ type, id });
-        if (type === 'function' && getFunctionDef(id)) {
-          this._selectedLibraryFunctionId = String(id);
-          if (this._addStepSelect) this._addStepSelect.value = String(id);
+      const slotsEl = document.createElement('span');
+      slotsEl.textContent = slotsText;
+      if (slotsTitle) slotsEl.title = slotsTitle;
+
+      const classNames = [];
+      if (this._inspectorSelection
+        && this._inspectorSelection.type === type
+        && this._inspectorSelection.id === id) {
+        classNames.push('kp-cfg-lib-row-inspecting');
+      }
+      if (this._placeItem && this._placeItem.type === type && this._placeItem.id === id) {
+        classNames.push('kp-cfg-lib-row-place');
+      }
+
+      hier.appendLeafRow({
+        className: classNames.join(' '),
+        dataset: {
+          kpItemType: type,
+          kpItemId: id
+        },
+        cells: [labelCell, kind || '', summaryEl, slotsEl, actionsRow],
+        onClick: () => {
+          this._inspectItem({ type, id });
+          if (type === 'function' && getFunctionDef(id)) {
+            this._selectedLibraryFunctionId = String(id);
+            if (this._addStepSelect) this._addStepSelect.value = String(id);
+          }
         }
-      }, true);
-
-      tr.appendChild(tdLabel);
-      tr.appendChild(tdKind);
-      tr.appendChild(tdSummary);
-      tr.appendChild(tdSlots);
-      tr.appendChild(tdActions);
-      tbody.appendChild(tr);
+      });
     };
 
     /** Empty / hint leaf under a group. */
     const appendHintRow = (text, depth = 1) => {
-      const tr = document.createElement('tr');
-      tr.className = 'kp-cfg-lib-row-leaf';
-      const td = document.createElement('td');
-      td.colSpan = 5;
-      td.style.paddingLeft = `${8 + depth * 14}px`;
-      td.style.color = '#6a7a58';
-      td.style.whiteSpace = 'normal';
-      td.textContent = text;
-      tr.appendChild(td);
-      tbody.appendChild(tr);
+      hier.appendHintRow(text, depth);
     };
 
     const allDefs = showFunctions
@@ -6687,10 +6532,9 @@ export class KeyboardLayoutConfigPanel {
       }
     }
 
-    table.appendChild(tbody);
-    wrap.appendChild(table);
-    list.appendChild(wrap);
+    list.appendChild(hier.root);
   }
+
 
   /** @param {{ type: string, id: string }} item */
   _itemKey(item) {

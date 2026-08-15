@@ -75,6 +75,27 @@ export const DEFAULT_KEYBOARD_LAYOUT_ID = /** @type {const} */ ('browsing-right'
 export const DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID = /** @type {const} */ ('browsing');
 export const DEFAULT_KEYBOARD_HANDEDNESS = /** @type {const} */ ('right');
 
+/**
+ * Key action IDs omitted from shipped builds (builtin layouts, catalogs, Function Library).
+ * Keep defs/handlers in source; remove an id here to re-enable it in the next build.
+ * @type {readonly string[]}
+ */
+export const BUILD_EXCLUDED_KEY_ACTIONS = Object.freeze([
+  'COLS_TOGGLE'
+]);
+
+/** @type {ReadonlySet<string>} */
+const BUILD_EXCLUDED_KEY_ACTION_SET = new Set(BUILD_EXCLUDED_KEY_ACTIONS);
+
+/**
+ * @param {string|null|undefined} actionId
+ * @returns {boolean}
+ */
+export function isBuildExcludedKeyAction(actionId) {
+  const id = String(actionId || '');
+  return !!id && BUILD_EXCLUDED_KEY_ACTION_SET.has(id);
+}
+
 export const BUILTIN_KEYBOARD_LAYOUT_META = Object.freeze([
   Object.freeze({
     id: /** @type {const} */ ('browsing-right'),
@@ -748,6 +769,7 @@ export function buildKeybindingsForLayout(layoutId) {
   const out = {};
 
   for (const [actionId, def] of Object.entries(KEYBINDING_ACTION_DEFS)) {
+    if (isBuildExcludedKeyAction(actionId)) continue;
     const assign = layout?.assignments?.[actionId];
     if (!assign || !Array.isArray(assign.keys)) continue;
     const labels = normalizeAssignmentLabels(assign);
@@ -787,6 +809,7 @@ export const CATALOG_KEYBINDINGS = (() => {
   /** @type {Record<string, any>} */
   const out = {};
   for (const [actionId, def] of Object.entries(KEYBINDING_ACTION_DEFS)) {
+    if (isBuildExcludedKeyAction(actionId)) continue;
     out[actionId] = Object.freeze({
       keys: Object.freeze([]),
       handler: def.handler,
@@ -867,8 +890,8 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   OPEN_MEDIA_LIBRARY: Object.freeze({ keys: ['m', 'M'] }),
 
   ROOT: Object.freeze({ keys: ['1', '!'], displayKey: '1', keyLabel: '1' }),
-  DELETE: Object.freeze({ keys: ['Backspace'], displayKey: 'Backspace', keyLabel: 'Backspace' }),
-  COLS_TOGGLE: Object.freeze({ keys: ['.', '>'], displayKey: '.', keyLabel: '.' })
+  DELETE: Object.freeze({ keys: ['Backspace'], displayKey: 'Backspace', keyLabel: 'Backspace' })
+  // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
 });
 
 /**
@@ -902,15 +925,14 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   LAUNCHER: Object.freeze({ keys: ['a', 'A', '`', '~', 'Backquote'], matchOn: ['key', 'code'], displayKey: 'a/`', keyLabel: 'a/`' }),
 
   // Bottom row cluster: Z X C V B  ->  / . , M N (mirrored)
-  // Period reserved for COLS_TOGGLE (same muscle memory as right-handed).
   PAGE_TOP: Object.freeze({ keys: ['/', '?'], displayKey: '/', keyLabel: '/' }),
   PAGE_BOTTOM: Object.freeze({ keys: ['b', 'B'] }),
   PAGE_UP_INSTANT: Object.freeze({ keys: [',', '<'], displayKey: ',', keyLabel: ',' }),
   PAGE_DOWN_INSTANT: Object.freeze({ keys: ['m', 'M'] }),
   ACTIVATE_NEW_TAB: Object.freeze({ keys: ['n', 'N'] }),
-  COLS_TOGGLE: Object.freeze({ keys: ['.', '>'], displayKey: '.', keyLabel: '.' }),
   // I is OPEN_POPOVER on left-handed; E is free.
   COPY_HOVERED_IMAGE: Object.freeze({ keys: ['e', 'E'] }),
+  // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
 
   ROOT: Object.freeze({ keys: ['1', '!'], displayKey: '1', keyLabel: '1' }),
   DELETE: Object.freeze({ keys: ['Backspace'], displayKey: 'Backspace', keyLabel: 'Backspace' })
@@ -1034,10 +1056,12 @@ function pickAssignments(source, allowedIds) {
   /** @type {Record<string, KeyAssignment>} */
   const out = {};
   for (const id of allowedIds) {
+    if (isBuildExcludedKeyAction(id)) continue;
     if (source[id]) out[id] = source[id];
   }
   // Also keep any accidental extras that are in allowed set from source iteration order
   for (const [id, assignment] of Object.entries(source || {})) {
+    if (isBuildExcludedKeyAction(id)) continue;
     if (allowed.has(id) && !out[id]) out[id] = assignment;
   }
   return Object.freeze(out);
@@ -1075,18 +1099,20 @@ function projectKeyboardUiLayout(baseLayout, fullAssignments, allowedIds) {
       Object.freeze(
         (Array.isArray(row) ? row : []).map((cell) => {
           if (!cell || cell.type !== 'action' || !cell.id) return cell;
-          if (allowed.has(cell.id)) return cell;
-          if (cell.id === 'DELETE' || (cell.className && String(cell.className).includes('key-backspace'))) {
-            return Object.freeze({ type: 'special', text: 'Backspace', className: 'key key-backspace' });
+          if (isBuildExcludedKeyAction(cell.id) || !allowed.has(cell.id)) {
+            if (cell.id === 'DELETE' || (cell.className && String(cell.className).includes('key-backspace'))) {
+              return Object.freeze({ type: 'special', text: 'Backspace', className: 'key key-backspace' });
+            }
+            const text = letterFromAssignment(fullAssignments[cell.id]);
+            if (!text) return Object.freeze({ type: 'key', text: '' });
+            if (text === 'Backspace') {
+              return Object.freeze({ type: 'special', text: 'Backspace', className: 'key key-backspace' });
+            }
+            // Prefer a short keycap glyph (letter or punctuation).
+            const glyph = text.length <= 3 ? text : text.slice(0, 1).toUpperCase();
+            return Object.freeze({ type: 'key', text: glyph.length === 1 ? glyph.toUpperCase() : glyph });
           }
-          const text = letterFromAssignment(fullAssignments[cell.id]);
-          if (!text) return Object.freeze({ type: 'key', text: '' });
-          if (text === 'Backspace') {
-            return Object.freeze({ type: 'special', text: 'Backspace', className: 'key key-backspace' });
-          }
-          // Prefer a short keycap glyph (letter or punctuation).
-          const glyph = text.length <= 3 ? text : text.slice(0, 1).toUpperCase();
-          return Object.freeze({ type: 'key', text: glyph.length === 1 ? glyph.toUpperCase() : glyph });
+          return cell;
         })
       )
     )
@@ -1144,7 +1170,7 @@ const KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: 'action', id: 'SCROLL_LINE', fallbackText: 'Scroll Line' },
     { type: 'action', id: 'OPEN_MEDIA_LIBRARY', fallbackText: 'Media Library' },
     { type: 'key', text: ',' },
-    { type: 'action', id: 'COLS_TOGGLE', fallbackText: 'Cols Toggle' },
+    { type: 'key', text: '.' },
     { type: 'key', text: '/' },
     { type: 'special', text: 'Shift', className: 'key key-shift' }
   ]
@@ -1194,7 +1220,7 @@ const KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
     { type: 'action', id: 'ACTIVATE_NEW_TAB', fallbackText: 'Click New Tab' }, // N
     { type: 'action', id: 'PAGE_DOWN_INSTANT', fallbackText: 'Page Down Fast' }, // M
     { type: 'action', id: 'PAGE_UP_INSTANT', fallbackText: 'Page Up Fast' }, // ,
-    { type: 'action', id: 'COLS_TOGGLE', fallbackText: 'Cols Toggle' }, // .
+    { type: 'key', text: '.' },
     { type: 'action', id: 'PAGE_TOP', fallbackText: 'Scroll To Top' }, // /
     { type: 'special', text: 'Shift', className: 'key key-shift' }
   ]

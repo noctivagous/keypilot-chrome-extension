@@ -112,6 +112,8 @@ export const CSS_CLASSES = {
   TEXT_FIELD_GLOW: 'kpv2-text-field-glow',
   /** Full-viewport veil used to hide instant Scroll-to-Top / Bottom jumps */
   EDGE_JUMP_FADE: 'kpv2-edge-jump-fade',
+  /** Corner glyph on the fade veil (Scroll To Top / Bottom) */
+  EDGE_JUMP_FADE_ICON: 'kpv2-edge-jump-fade-icon',
   VIEWPORT_MODAL_FRAME: 'kpv2-viewport-modal-frame',
   ESC_EXIT_LABEL: 'kpv2-esc-exit-label',
   TEXT_FOCUS_INPUT: 'kpv2-text-focus-input',

@@ -49,6 +49,104 @@ export const NCT_DARK_UI_PANEL_BOX_SHADOW =
   `0 16px 40px rgba(0,0,0,0.55)`;
 export const NCT_DARK_UI_PANEL_RADIUS = '3px';
 
+/**
+ * Full-viewport modal dimmer + page blur (Launcher / PopupManager backdrop).
+ * Keep this on a sibling *behind* the panel so backdrop-filter never blurs chrome.
+ */
+export const NCT_DARK_UI_BACKDROP_CLASS = 'kp-nct-backdrop';
+export const NCT_DARK_UI_BACKDROP_BACKGROUND = 'rgba(0,0,0,0.35)';
+export const NCT_DARK_UI_BACKDROP_BLUR = 'blur(6px)';
+
+/**
+ * Opt-in scrollbar class for NCT dark scroll regions.
+ * Inject {@link getNctDarkUiScrollbarCss} into the same document/shadow tree.
+ */
+export const NCT_DARK_UI_SCROLLBAR_CLASS = 'kp-nct-scroll';
+
+/**
+ * CSS for the shared NCT dark modal backdrop.
+ * @param {{ selector?: string }} [opts]
+ * @returns {string}
+ */
+export function getNctDarkUiBackdropCss(opts = {}) {
+  const selector = typeof opts.selector === 'string' && opts.selector.trim()
+    ? opts.selector.trim()
+    : `.${NCT_DARK_UI_BACKDROP_CLASS}`;
+  return `
+${selector} {
+  position: absolute;
+  inset: 0;
+  background: ${NCT_DARK_UI_BACKDROP_BACKGROUND};
+  backdrop-filter: ${NCT_DARK_UI_BACKDROP_BLUR};
+  -webkit-backdrop-filter: ${NCT_DARK_UI_BACKDROP_BLUR};
+  pointer-events: auto;
+}
+`.trim();
+}
+
+/**
+ * CSS for the shared NCT dark scrollbar.
+ * Styles `.kp-nct-scroll` (and descendants) under an optional host scope.
+ * @param {{
+ *   scopeSelector?: string,
+ *   className?: string
+ * }} [opts]
+ * @returns {string}
+ */
+export function getNctDarkUiScrollbarCss(opts = {}) {
+  const cls = typeof opts.className === 'string' && opts.className.trim()
+    ? opts.className.trim().replace(/^\./, '')
+    : NCT_DARK_UI_SCROLLBAR_CLASS;
+  const scope = typeof opts.scopeSelector === 'string' && opts.scopeSelector.trim()
+    ? `${opts.scopeSelector.trim()} `
+    : '';
+  const root = `${scope}.${cls}`;
+  const thumb = '#4a4a4a';
+  const thumbHover = '#5c5c5c';
+  const thumbActive = NCT_DARK_UI_COLORS.accent;
+  const track = NCT_DARK_UI_COLORS.fieldBg;
+  const edge = NCT_DARK_UI_COLORS.panelEdgeDark;
+  return `
+${root} {
+  scrollbar-width: thin;
+  scrollbar-color: ${thumb} ${track};
+}
+${root}::-webkit-scrollbar,
+${root} ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+${root}::-webkit-scrollbar-corner,
+${root} ::-webkit-scrollbar-corner {
+  background: ${track};
+}
+${root}::-webkit-scrollbar-track,
+${root} ::-webkit-scrollbar-track {
+  background: ${track};
+  border-left: 1px solid ${edge};
+  border-top: 1px solid ${edge};
+}
+${root}::-webkit-scrollbar-thumb,
+${root} ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #555 0%, ${thumb} 45%, #3a3a3a 100%);
+  border: 1px solid ${edge};
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+  min-height: 28px;
+  min-width: 28px;
+}
+${root}::-webkit-scrollbar-thumb:hover,
+${root} ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #666 0%, ${thumbHover} 45%, #444 100%);
+}
+${root}::-webkit-scrollbar-thumb:active,
+${root} ::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, ${thumbActive} 0%, #3a6a94 100%);
+  border-color: ${NCT_DARK_UI_COLORS.litEdge};
+}
+`.trim();
+}
+
 /** `.titlebar` gradient + rim. */
 export const NCT_DARK_UI_TITLEBAR_GRADIENT =
   `linear-gradient(180deg, ${NCT_DARK_UI_COLORS.titleTop} 0%, ${NCT_DARK_UI_COLORS.titleMid} 45%, ${NCT_DARK_UI_COLORS.titleBot} 100%)`;

@@ -12,8 +12,15 @@ import {
   NCT_DARK_UI_BTN_RADIUS,
   NCT_DARK_UI_BTN_LIT_GRADIENT,
   NCT_DARK_UI_BTN_LIT_BORDER,
+  NCT_DARK_UI_PANEL_BORDER,
+  NCT_DARK_UI_PANEL_RADIUS,
+  NCT_DARK_UI_PANEL_BOX_SHADOW,
+  NCT_DARK_UI_BACKDROP_CLASS,
+  NCT_DARK_UI_SCROLLBAR_CLASS,
   NCT_DARK_UI_TITLEBAR_GRADIENT,
-  NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM
+  NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM,
+  getNctDarkUiBackdropCss,
+  getNctDarkUiScrollbarCss
 } from './nct-dark-ui.js';
 import { formatFileSize } from '../utils/page-media-utils.js';
 import { Z_INDEX } from '../config/constants.js';
@@ -167,6 +174,10 @@ export async function openMediaLibraryOverlay(opts = {}) {
   const mount = shadowRoot || overlay;
   ensureStyles(mount);
 
+  const backdrop = document.createElement('div');
+  backdrop.className = NCT_DARK_UI_BACKDROP_CLASS;
+  backdrop.setAttribute('aria-hidden', 'true');
+
   const shell = document.createElement('div');
   shell.className = 'kpv2-media-lib-shell';
 
@@ -213,11 +224,11 @@ export async function openMediaLibraryOverlay(opts = {}) {
   body.className = 'kpv2-media-lib-body';
 
   const sidebar = document.createElement('nav');
-  sidebar.className = 'kpv2-media-lib-sidebar';
+  sidebar.className = `kpv2-media-lib-sidebar ${NCT_DARK_UI_SCROLLBAR_CLASS}`;
   sidebar.setAttribute('aria-label', 'Media types');
 
   const content = document.createElement('div');
-  content.className = 'kpv2-media-lib-content';
+  content.className = `kpv2-media-lib-content ${NCT_DARK_UI_SCROLLBAR_CLASS}`;
   content.id = 'kpv2-media-lib-grid';
 
   const fullView = document.createElement('div');
@@ -263,6 +274,7 @@ export async function openMediaLibraryOverlay(opts = {}) {
   shell.appendChild(header);
   shell.appendChild(body);
   shell.appendChild(fullView);
+  mount.appendChild(backdrop);
   mount.appendChild(shell);
 
   /** @type {any} */ (overlay)._sidebar = sidebar;
@@ -1334,14 +1346,22 @@ function ensureStyles(root) {
   const c = NCT_DARK_UI_COLORS;
   const css = `
 .kpv2-media-lib-shell {
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 10pt;
+  z-index: 1;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   background: ${c.bg};
+  border: ${NCT_DARK_UI_PANEL_BORDER};
+  border-radius: ${NCT_DARK_UI_PANEL_RADIUS};
+  box-shadow: ${NCT_DARK_UI_PANEL_BOX_SHADOW};
   font-family: ${NCT_DARK_UI_FONT};
   color: ${c.fg};
 }
+${getNctDarkUiBackdropCss()}
+${getNctDarkUiScrollbarCss()}
 .kpv2-media-lib-header {
   display: flex;
   align-items: center;
@@ -1742,7 +1762,7 @@ function ensureStyles(root) {
 }
 .kpv2-media-lib-fullview {
   display: none;
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 1;
   background: rgba(0, 0, 0, 0.92);

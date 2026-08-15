@@ -35,6 +35,12 @@ const PREVIEW_VIEWPORT_BY_HOST_KEY = 'kp_link_preview_viewport_by_host';
  * @param {string} url
  * @returns {string} normalized hostname (lowercase, no leading www.)
  */
+/** Font Awesome 6 solid paths (viewBox 0 0 512 512) for PAGE_TOP / PAGE_BOTTOM. */
+const EDGE_JUMP_ICON_PATHS = Object.freeze({
+  top: 'M233.4 105.4c12.5-12.5 32.8-12.5 45.3 0l96 96c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L288 205.3V384c0 17.7-14.3 32-32 32s-32-14.3-32-32V205.3l-41.4 41.4c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l96-96zM64 448c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H96c-17.7 0-32-14.3-32-32z',
+  bottom: 'M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l96-96c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L288 306.7V128c0-17.7-14.3-32-32-32s-32 14.3-32 32V306.7l-41.4-41.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l96 96zM64 64c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H96C78.3 96 64 81.7 64 64z'
+});
+
 function previewHostFromUrl(url) {
   try {
     let host = new URL(String(url || '')).hostname.toLowerCase();
@@ -6316,7 +6322,7 @@ export class OverlayManager {
    * Cover the overflow box that will jump, run `onCovered` (instant scroll), then uncover.
    * Nested scrollers get their client box; the document root gets the viewport.
    * @param {() => void} onCovered
-   * @param {{ durationMs?: number, coverEl?: Element|null, coverRect?: { left: number, top: number, width: number, height: number }|null }} [opts]
+   * @param {{ durationMs?: number, coverEl?: Element|null, coverRect?: { left: number, top: number, width: number, height: number }|null, edge?: 'top'|'bottom'|null }} [opts]
    * @returns {Promise<void>}
    */
   async runEdgeJumpFade(onCovered, opts = {}) {
@@ -6336,7 +6342,9 @@ export class OverlayManager {
     const token = ++this._edgeJumpFadeToken;
     const el = this._ensureEdgeJumpFadeEl();
     this._positionEdgeJumpFadeEl(el, opts.coverEl || null, opts.coverRect || null);
-    el.style.background = this._resolveEdgeJumpFadeColor(opts.coverEl || null);
+    const bg = this._resolveEdgeJumpFadeColor(opts.coverEl || null);
+    el.style.background = bg;
+    this._syncEdgeJumpFadeIcon(el, opts.edge, bg);
     el.style.transition = `opacity ${durationMs}ms ease`;
     await this._fadeEdgeJumpEl(el, 1, durationMs);
     try { onCovered?.(); } catch { /* ignore */ }
@@ -6430,6 +6438,71 @@ export class OverlayManager {
       if (window.matchMedia?.('(prefers-color-scheme: dark)')?.matches) return '#111';
     } catch { /* ignore */ }
     return '#fff';
+  }
+
+  /**
+   * @param {string} color
+   * @returns {string}
+   */
+  _edgeJumpIconFill(color) {
+    const s = String(color || '').trim().toLowerCase();
+    let r = 255;
+    let g = 255;
+    let b = 255;
+    const hex = s.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+    if (hex) {
+      const h = hex[1];
+      if (h.length === 3) {
+        r = parseInt(h[0] + h[0], 16);
+        g = parseInt(h[1] + h[1], 16);
+        b = parseInt(h[2] + h[2], 16);
+      } else {
+        r = parseInt(h.slice(0, 2), 16);
+        g = parseInt(h.slice(2, 4), 16);
+        b = parseInt(h.slice(4, 6), 16);
+      }
+    } else {
+      const m = s.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/);
+      if (m) {
+        r = Number(m[1]);
+        g = Number(m[2]);
+        b = Number(m[3]);
+      }
+    }
+    const y = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+    return y > 0.55 ? 'rgba(28, 28, 28, 0.62)' : 'rgba(255, 255, 255, 0.78)';
+  }
+
+  /**
+   * Corner SVG: top-right for Scroll To Top, bottom-right for Scroll To Bottom.
+   * @param {HTMLElement} veil
+   * @param {'top'|'bottom'|string|null|undefined} edge
+   * @param {string} backgroundColor
+   */
+  _syncEdgeJumpFadeIcon(veil, edge, backgroundColor) {
+    const dir = edge === 'bottom' ? 'bottom' : 'top';
+    const pathD = EDGE_JUMP_ICON_PATHS[dir];
+    let svg = veil.querySelector?.(`.${CSS_CLASSES.EDGE_JUMP_FADE_ICON}`);
+    if (!svg) {
+      svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', CSS_CLASSES.EDGE_JUMP_FADE_ICON);
+      svg.setAttribute('aria-hidden', 'true');
+      svg.setAttribute('viewBox', '0 0 512 512');
+      svg.setAttribute('width', '56');
+      svg.setAttribute('height', '56');
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', pathD);
+      svg.appendChild(path);
+      veil.appendChild(svg);
+    } else {
+      const path = svg.querySelector('path');
+      if (path) path.setAttribute('d', pathD);
+    }
+    svg.setAttribute('data-kp-edge', dir);
+    const fill = this._edgeJumpIconFill(backgroundColor);
+    svg.setAttribute('fill', fill);
+    const path = svg.querySelector('path');
+    if (path) path.setAttribute('fill', fill);
   }
 
   /**

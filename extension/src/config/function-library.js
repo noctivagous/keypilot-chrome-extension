@@ -18,7 +18,8 @@
 
 import {
   KEYBINDING_ACTION_DEFS,
-  KEYBINDING_ACTION_CATEGORY_BY_ID
+  KEYBINDING_ACTION_CATEGORY_BY_ID,
+  isBuildExcludedKeyAction
 } from './keyboard-layouts.js';
 import {
   MACRO_KEY_KIND_DEFS,
@@ -369,6 +370,7 @@ function buildBuiltinActionFunctionDefs() {
   /** @type {Record<string, FunctionDef>} */
   const out = {};
   for (const [id, def] of Object.entries(KEYBINDING_ACTION_DEFS)) {
+    if (isBuildExcludedKeyAction(id)) continue;
     out[id] = Object.freeze({
       id,
       label: def.label,

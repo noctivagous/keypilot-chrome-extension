@@ -11,8 +11,15 @@ import {
   NCT_DARK_UI_BTN_RADIUS,
   NCT_DARK_UI_BTN_LIT_GRADIENT,
   NCT_DARK_UI_BTN_LIT_BORDER,
+  NCT_DARK_UI_PANEL_BORDER,
+  NCT_DARK_UI_PANEL_RADIUS,
+  NCT_DARK_UI_PANEL_BOX_SHADOW,
+  NCT_DARK_UI_BACKDROP_CLASS,
+  NCT_DARK_UI_SCROLLBAR_CLASS,
   NCT_DARK_UI_TITLEBAR_GRADIENT,
-  NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM
+  NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM,
+  getNctDarkUiBackdropCss,
+  getNctDarkUiScrollbarCss
 } from './nct-dark-ui.js';
 import {
   groupPageMediaByCategory,
@@ -32,6 +39,7 @@ import {
 import { Z_INDEX } from '../config/constants.js';
 import { storageGetValue, storageSetValue } from '../utils/storage.js';
 import { createSegmentedControl } from './segmented-control.js';
+import { createHierarchicalTable, getHierarchicalTableCss } from './hierarchical-table.js';
 import { ensureOpenChromeShadow, injectChromeStyles } from './kp-chrome-shadow.js';
 
 const OVERLAY_ID = 'kpv2-page-media-overlay';
@@ -45,6 +53,10 @@ const IMAGE_SCALE_DEFAULT = 1.5;
 const IMAGE_ASPECT_STORAGE_KEY = 'kp_page_media_image_aspect';
 /** @typedef {'square'|'original'} ImageAspectMode */
 const IMAGE_ASPECT_DEFAULT = /** @type {ImageAspectMode} */ ('square');
+/** URLs tab presentation: hierarchical table (default) vs grouped list. */
+const URL_VIEW_STORAGE_KEY = 'kp_page_media_url_view';
+/** @typedef {'table'|'list'} UrlViewMode */
+const URL_VIEW_DEFAULT = /** @type {UrlViewMode} */ ('table');
 
 /** @type {HTMLElement|null} */
 let _overlay = null;
@@ -76,6 +88,18 @@ let _imageScaleSlider = IMAGE_SCALE_DEFAULT;
 let _imageAspectMode = IMAGE_ASPECT_DEFAULT;
 /** @type {ReturnType<typeof createSegmentedControl>|null} */
 let _aspectControl = null;
+/** @type {UrlViewMode} */
+let _urlViewMode = URL_VIEW_DEFAULT;
+/** @type {ReturnType<typeof createSegmentedControl>|null} */
+let _urlViewControl = null;
+/**
+ * Expanded hierarchical URL group keys. Top-level domains open by default;
+ * path subgroups stay collapsed until the user opens them (session-local).
+ * @type {Set<string>}
+ */
+let _urlTableExpanded = new Set();
+/** True after defaults have been seeded (or restored) for this overlay session. */
+let _urlTableExpandedReady = false;
 
 function getOverlayRoot() {
   return _overlay?.shadowRoot || _overlay;
@@ -131,6 +155,9 @@ export function closePageMediaOverlay() {
   _imageScaleSlider = IMAGE_SCALE_DEFAULT;
   _imageAspectMode = IMAGE_ASPECT_DEFAULT;
   _aspectControl = null;
+  _urlViewControl = null;
+  _urlTableExpanded = new Set();
+  _urlTableExpandedReady = false;
   if (typeof cb === 'function') {
     try { cb(); } catch { /* ignore */ }
   }
@@ -238,6 +265,106 @@ function updateAspectToolbarVisibility() {
   const show = _activeTab === 'image';
   bar.hidden = !show;
   bar.setAttribute('aria-hidden', show ? 'false' : 'true');
+}
+
+function updateUrlViewToolbarVisibility() {
+  if (!_overlay) return;
+  const bar = getOverlayRoot()?.querySelector('.kpv2-page-media-url-view-bar');
+  if (!(bar instanceof HTMLElement)) return;
+  const show = _activeTab === 'url';
+  bar.hidden = !show;
+  bar.setAttribute('aria-hidden', show ? 'false' : 'true');
+}
+
+/**
+ * @param {unknown} raw
+ * @returns {UrlViewMode}
+ */
+function normalizeUrlViewMode(raw) {
+  return raw === 'list' ? 'list' : 'table';
+}
+
+async function loadUrlViewPreference() {
+  try {
+    const stored = await storageGetValue(URL_VIEW_STORAGE_KEY, URL_VIEW_DEFAULT);
+    _urlViewMode = normalizeUrlViewMode(stored);
+  } catch {
+    _urlViewMode = URL_VIEW_DEFAULT;
+  }
+}
+
+/**
+ * @param {UrlViewMode} mode
+ */
+function persistUrlViewPreference(mode) {
+  _urlViewMode = normalizeUrlViewMode(mode);
+  try {
+    void storageSetValue(URL_VIEW_STORAGE_KEY, _urlViewMode);
+  } catch { /* ignore */ }
+}
+
+/**
+ * @param {string} key
+ * @returns {boolean}
+ */
+function isUrlTableGroupExpanded(key) {
+  return !!_urlTableExpanded?.has(key);
+}
+
+/**
+ * @param {string} key
+ */
+function toggleUrlTableGroup(key) {
+  if (!_urlTableExpanded) _urlTableExpanded = new Set();
+  if (_urlTableExpanded.has(key)) _urlTableExpanded.delete(key);
+  else _urlTableExpanded.add(key);
+  _urlTableExpandedReady = true;
+  if (_activeTab === 'url') renderGrid();
+}
+
+/**
+ * Seed top-level domain groups as expanded (path subgroups stay collapsed).
+ * @param {string[]} domainKeys
+ */
+function ensureUrlTableExpandedDefaults(domainKeys) {
+  if (_urlTableExpandedReady) return;
+  _urlTableExpanded = new Set(
+    (Array.isArray(domainKeys) ? domainKeys : []).filter((k) => typeof k === 'string' && k)
+  );
+  _urlTableExpandedReady = true;
+}
+
+/**
+ * @returns {HTMLElement}
+ */
+function buildUrlViewToolbar() {
+  const bar = document.createElement('div');
+  bar.className = 'kpv2-page-media-url-view-bar';
+  bar.hidden = _activeTab !== 'url';
+  bar.setAttribute('aria-hidden', _activeTab === 'url' ? 'false' : 'true');
+
+  const label = document.createElement('span');
+  label.className = 'kpv2-page-media-url-view-label';
+  label.textContent = 'URL View:';
+
+  _urlViewControl = createSegmentedControl({
+    className: 'kpv2-page-media-url-view-seg',
+    ariaLabel: 'URL list layout',
+    value: _urlViewMode,
+    options: [
+      { value: 'table', label: 'Table', title: 'Hierarchical table by domain and path' },
+      { value: 'list', label: 'List', title: 'Grouped list by domain and path' }
+    ],
+    onChange: (value) => {
+      const mode = normalizeUrlViewMode(value);
+      persistUrlViewPreference(mode);
+      if (_activeTab === 'url') renderGrid();
+    }
+  });
+
+  bar.appendChild(label);
+  bar.appendChild(_urlViewControl.root);
+  return bar;
 }
 
 /**
@@ -383,6 +510,9 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
 
   await loadImageScalePreference();
   await loadImageAspectPreference();
+  await loadUrlViewPreference();
+  _urlTableExpanded = new Set();
+  _urlTableExpandedReady = false;
 
   const groups = groupPageMediaByCategory(_items);
   if (groups.image.length) _activeTab = 'image';
@@ -405,6 +535,11 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
   const shadowRoot = ensureOpenChromeShadow(overlay, { id: 'page-media' });
   const mount = shadowRoot || overlay;
   ensureStyles(mount);
+
+  const backdrop = document.createElement('div');
+  backdrop.className = NCT_DARK_UI_BACKDROP_CLASS;
+  backdrop.setAttribute('aria-hidden', 'true');
+
   const shell = document.createElement('div');
   shell.className = 'kpv2-page-media-shell';
 
@@ -483,7 +618,7 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
   header.appendChild(closeBtn);
 
   const content = document.createElement('div');
-  content.className = 'kpv2-page-media-content';
+  content.className = `kpv2-page-media-content ${NCT_DARK_UI_SCROLLBAR_CLASS}`;
   content.id = 'kpv2-page-media-grid';
 
   const fullView = document.createElement('div');
@@ -525,8 +660,10 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
 
   shell.appendChild(header);
   shell.appendChild(buildImageAspectToolbar());
+  shell.appendChild(buildUrlViewToolbar());
   shell.appendChild(content);
   shell.appendChild(fullView);
+  mount.appendChild(backdrop);
   mount.appendChild(shell);
 
   // Store tab button refs for setActiveTab
@@ -541,6 +678,10 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
   applyImageScale(_imageScaleSlider);
   applyImageAspectMode(_imageAspectMode);
   updateAspectToolbarVisibility();
+  updateUrlViewToolbarVisibility();
+  if (_urlViewControl) {
+    _urlViewControl.setValue(_urlViewMode, { silent: true });
+  }
 
   try {
     _prevOverflow = document.body.style.overflow || '';
@@ -586,6 +727,7 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
   if (_activeTab === 'image') startImageEnrichment();
   applyImageAspectMode(_imageAspectMode);
   updateAspectToolbarVisibility();
+  updateUrlViewToolbarVisibility();
 }
 
 /**
@@ -607,6 +749,7 @@ function setActiveTab(tab) {
   applyImageScale(_imageScaleSlider);
   applyImageAspectMode(_imageAspectMode);
   updateAspectToolbarVisibility();
+  updateUrlViewToolbarVisibility();
 }
 
 function startImageEnrichment() {
@@ -665,91 +808,11 @@ function renderGrid() {
 
   if (_activeTab === 'url') {
     content.classList.add('is-url-tab');
-    const listEl = document.createElement('div');
-    listEl.className = 'kpv2-page-media-url-list';
-
-    /** @type {Map<string, import('../utils/page-media-utils.js').PageMediaItem[]>} */
-    const byDomain = new Map();
-    for (const item of list) {
-      const domain = domainFromUrl(item.url);
-      if (!byDomain.has(domain)) byDomain.set(domain, []);
-      byDomain.get(domain).push(item);
+    if (_urlViewMode === 'list') {
+      content.appendChild(buildUrlListView(list));
+    } else {
+      content.appendChild(buildUrlTableView(list));
     }
-
-    let pageHost = '';
-    try { pageHost = String(location.hostname || ''); } catch { pageHost = ''; }
-
-    const domains = Array.from(byDomain.keys()).sort((a, b) => {
-      if (pageHost) {
-        if (a === pageHost && b !== pageHost) return -1;
-        if (b === pageHost && a !== pageHost) return 1;
-      }
-      return a.localeCompare(b, undefined, { sensitivity: 'base' });
-    });
-
-    /** @type {import('../utils/page-media-utils.js').PageMediaItem[]} */
-    const flat = [];
-    for (const domain of domains) {
-      const items = byDomain.get(domain) || [];
-      items.sort((a, b) => String(a.url || '').localeCompare(String(b.url || '')));
-
-      const section = document.createElement('section');
-      section.className = 'kpv2-page-media-url-group';
-      if (pageHost && domain === pageHost) section.classList.add('is-current-domain');
-
-      const heading = document.createElement('h3');
-      heading.className = 'kpv2-page-media-size-heading kpv2-page-media-url-domain';
-      const title = document.createElement('span');
-      title.textContent = domain;
-      const count = document.createElement('span');
-      count.className = 'kpv2-page-media-size-count';
-      count.textContent = String(items.length);
-      heading.appendChild(title);
-      heading.appendChild(count);
-      section.appendChild(heading);
-
-      const rows = document.createElement('div');
-      rows.className = 'kpv2-page-media-url-group-rows';
-
-      const pathGroups = groupUrlItemsByPathPrefix(items, 2);
-      for (const { prefix, items: pathItems } of pathGroups) {
-        /** @type {HTMLElement} */
-        let host = rows;
-        if (prefix) {
-          const sub = document.createElement('div');
-          sub.className = 'kpv2-page-media-url-subpath';
-          const subHeading = document.createElement('h4');
-          subHeading.className = 'kpv2-page-media-url-subpath-heading';
-          const subTitle = document.createElement('span');
-          subTitle.textContent = prefix;
-          const subCount = document.createElement('span');
-          subCount.className = 'kpv2-page-media-size-count';
-          subCount.textContent = String(pathItems.length);
-          subHeading.appendChild(subTitle);
-          subHeading.appendChild(subCount);
-          sub.appendChild(subHeading);
-          const subRows = document.createElement('div');
-          subRows.className = 'kpv2-page-media-url-subpath-rows';
-          sub.appendChild(subRows);
-          rows.appendChild(sub);
-          host = subRows;
-        }
-
-        for (const item of pathItems) {
-          const flatIndex = flat.length;
-          flat.push(item);
-          host.appendChild(buildUrlRow(item, () => onItemActivate(flat, flatIndex), {
-            displayUrl: prefix
-              ? urlPathRelativeToPrefix(item.url, prefix)
-              : urlPathDisplay(item.url)
-          }));
-        }
-      }
-      section.appendChild(rows);
-      listEl.appendChild(section);
-    }
-
-    content.appendChild(listEl);
     return;
   }
 
@@ -1083,6 +1146,224 @@ function formatPageTextKind(item) {
   if (k === 'main') return 'Main';
   if (k === 'full-page') return 'Full page';
   return k || 'Text';
+}
+
+/**
+ * @param {import('../utils/page-media-utils.js').PageMediaItem[]} list
+ * @returns {{
+ *   pageHost: string,
+ *   domains: string[],
+ *   byDomain: Map<string, import('../utils/page-media-utils.js').PageMediaItem[]>
+ * }}
+ */
+function groupUrlItemsByDomain(list) {
+  /** @type {Map<string, import('../utils/page-media-utils.js').PageMediaItem[]>} */
+  const byDomain = new Map();
+  for (const item of list) {
+    const domain = domainFromUrl(item.url);
+    if (!byDomain.has(domain)) byDomain.set(domain, []);
+    byDomain.get(domain).push(item);
+  }
+
+  let pageHost = '';
+  try { pageHost = String(location.hostname || ''); } catch { pageHost = ''; }
+
+  const domains = Array.from(byDomain.keys()).sort((a, b) => {
+    if (pageHost) {
+      if (a === pageHost && b !== pageHost) return -1;
+      if (b === pageHost && a !== pageHost) return 1;
+    }
+    return a.localeCompare(b, undefined, { sensitivity: 'base' });
+  });
+
+  return { pageHost, domains, byDomain };
+}
+
+/**
+ * @param {import('../utils/page-media-utils.js').PageMediaItem} item
+ * @returns {string}
+ */
+function urlItemKindLabel(item) {
+  const group = item?.urlGroup || '';
+  if (group === 'page') return 'Page';
+  if (group === 'document') return 'Document';
+  if (group === 'image') return 'Image';
+  if (group === 'video') return 'Video';
+  if (item?.ext) return `.${item.ext}`;
+  if (item?.kind && item.kind !== 'url') return String(item.kind);
+  return 'Link';
+}
+
+/**
+ * Previous grouped-list presentation for the URLs tab.
+ * @param {import('../utils/page-media-utils.js').PageMediaItem[]} list
+ * @returns {HTMLElement}
+ */
+function buildUrlListView(list) {
+  const listEl = document.createElement('div');
+  listEl.className = 'kpv2-page-media-url-list';
+
+  const { pageHost, domains, byDomain } = groupUrlItemsByDomain(list);
+
+  /** @type {import('../utils/page-media-utils.js').PageMediaItem[]} */
+  const flat = [];
+  for (const domain of domains) {
+    const items = byDomain.get(domain) || [];
+    items.sort((a, b) => String(a.url || '').localeCompare(String(b.url || '')));
+
+    const section = document.createElement('section');
+    section.className = 'kpv2-page-media-url-group';
+    if (pageHost && domain === pageHost) section.classList.add('is-current-domain');
+
+    const heading = document.createElement('h3');
+    heading.className = 'kpv2-page-media-size-heading kpv2-page-media-url-domain';
+    const title = document.createElement('span');
+    title.textContent = domain;
+    const count = document.createElement('span');
+    count.className = 'kpv2-page-media-size-count';
+    count.textContent = String(items.length);
+    heading.appendChild(title);
+    heading.appendChild(count);
+    section.appendChild(heading);
+
+    const rows = document.createElement('div');
+    rows.className = 'kpv2-page-media-url-group-rows';
+
+    const pathGroups = groupUrlItemsByPathPrefix(items, 2);
+    for (const { prefix, items: pathItems } of pathGroups) {
+      /** @type {HTMLElement} */
+      let host = rows;
+      if (prefix) {
+        const sub = document.createElement('div');
+        sub.className = 'kpv2-page-media-url-subpath';
+        const subHeading = document.createElement('h4');
+        subHeading.className = 'kpv2-page-media-url-subpath-heading';
+        const subTitle = document.createElement('span');
+        subTitle.textContent = prefix;
+        const subCount = document.createElement('span');
+        subCount.className = 'kpv2-page-media-size-count';
+        subCount.textContent = String(pathItems.length);
+        subHeading.appendChild(subTitle);
+        subHeading.appendChild(subCount);
+        sub.appendChild(subHeading);
+        const subRows = document.createElement('div');
+        subRows.className = 'kpv2-page-media-url-subpath-rows';
+        sub.appendChild(subRows);
+        rows.appendChild(sub);
+        host = subRows;
+      }
+
+      for (const item of pathItems) {
+        const flatIndex = flat.length;
+        flat.push(item);
+        host.appendChild(buildUrlRow(item, () => onItemActivate(flat, flatIndex), {
+          displayUrl: prefix
+            ? urlPathRelativeToPrefix(item.url, prefix)
+            : urlPathDisplay(item.url)
+        }));
+      }
+    }
+    section.appendChild(rows);
+    listEl.appendChild(section);
+  }
+
+  return listEl;
+}
+
+/**
+ * Hierarchical table presentation for the URLs tab (default).
+ * @param {import('../utils/page-media-utils.js').PageMediaItem[]} list
+ * @returns {HTMLElement}
+ */
+function buildUrlTableView(list) {
+  const { pageHost, domains, byDomain } = groupUrlItemsByDomain(list);
+  const domainKeys = domains.map((domain) => `domain:${domain}`);
+  ensureUrlTableExpandedDefaults(domainKeys);
+
+  const hier = createHierarchicalTable({
+    columns: [
+      { key: 'path', label: 'Path / URL', width: '52%' },
+      { key: 'kind', label: 'Kind', width: '12%' },
+      { key: 'title', label: 'Title', width: '20%' },
+      { key: 'actions', label: 'Actions', width: '16%' }
+    ],
+    ariaLabel: 'Page URLs hierarchical table',
+    wrapClassName: 'kpv2-page-media-url-table-wrap',
+    isGroupExpanded: isUrlTableGroupExpanded,
+    onToggleGroup: toggleUrlTableGroup
+  });
+
+  /** @type {import('../utils/page-media-utils.js').PageMediaItem[]} */
+  const flat = [];
+
+  for (const domain of domains) {
+    const items = byDomain.get(domain) || [];
+    items.sort((a, b) => String(a.url || '').localeCompare(String(b.url || '')));
+    const domainKey = `domain:${domain}`;
+    const isCurrent = !!(pageHost && domain === pageHost);
+
+    if (!hier.appendGroupRow({
+      groupKey: domainKey,
+      label: domain,
+      depth: 0,
+      count: items.length,
+      cells: [isCurrent ? 'This page' : 'Domain', ''],
+      className: isCurrent ? 'is-current-domain' : ''
+    })) continue;
+
+    const pathGroups = groupUrlItemsByPathPrefix(items, 2);
+    for (const { prefix, items: pathItems } of pathGroups) {
+      /** @type {import('../utils/page-media-utils.js').PageMediaItem[]} */
+      const leafItems = pathItems;
+      let leafDepth = 1;
+      let pathPrefix = '';
+
+      if (prefix) {
+        const pathKey = `path:${domain}:${prefix}`;
+        if (!hier.appendGroupRow({
+          groupKey: pathKey,
+          label: prefix,
+          depth: 1,
+          count: pathItems.length,
+          cells: ['Path', '']
+        })) continue;
+        leafDepth = 2;
+        pathPrefix = prefix;
+      }
+
+      for (const item of leafItems) {
+        const flatIndex = flat.length;
+        flat.push(item);
+        const displayUrl = pathPrefix
+          ? urlPathRelativeToPrefix(item.url, pathPrefix)
+          : urlPathDisplay(item.url);
+        const linkTitle = String(item.label || '').trim();
+        const titleText = (
+          linkTitle
+          && linkTitle !== item.url
+          && linkTitle !== displayUrl
+        ) ? linkTitle : '';
+
+        const actions = buildHoverActions(item);
+        actions.classList.add('kpv2-page-media-url-actions');
+        actions.classList.add('kpv2-page-media-url-table-actions');
+
+        hier.appendLeafRow({
+          depth: leafDepth,
+          title: item.url,
+          cells: [
+            displayUrl,
+            urlItemKindLabel(item),
+            titleText,
+            actions
+          ],
+          onClick: () => onItemActivate(flat, flatIndex)
+        });
+      }
+    }
+  }
+
+  return hier.root;
 }
 
 /**
@@ -1702,14 +1983,22 @@ function ensureStyles(root) {
   const c = NCT_DARK_UI_COLORS;
   const css = `
 .kpv2-page-media-shell {
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 10pt;
+  z-index: 1;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   background: rgba(15, 15, 16, 0.92);
+  border: ${NCT_DARK_UI_PANEL_BORDER};
+  border-radius: ${NCT_DARK_UI_PANEL_RADIUS};
+  box-shadow: ${NCT_DARK_UI_PANEL_BOX_SHADOW};
   font-family: ${NCT_DARK_UI_FONT};
   color: ${c.fg};
 }
+${getNctDarkUiBackdropCss()}
+${getNctDarkUiScrollbarCss()}
 .kpv2-page-media-header {
   display: flex;
   align-items: center;
@@ -1742,6 +2031,59 @@ function ensureStyles(root) {
 }
 .kpv2-page-media-aspect-seg {
   font-size: 11px;
+}
+.kpv2-page-media-url-view-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  padding: 8px 14px;
+  background: ${c.panel};
+  border-bottom: 1px solid ${c.panelEdgeDark};
+  box-shadow: 0 1px 0 ${c.panelEdge} inset;
+}
+.kpv2-page-media-url-view-bar[hidden] {
+  display: none !important;
+}
+.kpv2-page-media-url-view-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: ${c.fgDim};
+  letter-spacing: 0.02em;
+  user-select: none;
+  white-space: nowrap;
+}
+.kpv2-page-media-url-view-seg {
+  font-size: 11px;
+}
+${getHierarchicalTableCss()}
+.kpv2-page-media-content .kpv2-page-media-url-table-wrap,
+.kpv2-page-media-url-table-wrap {
+  overflow: visible;
+  border: 1px solid rgba(120, 140, 100, 0.12);
+  border-radius: 2px;
+  background: rgba(8, 10, 8, 0.35);
+}
+.kpv2-page-media-url-table-wrap .kp-hier-table tr.kp-hier-row-group.is-current-domain td {
+  color: #b8c4d8;
+}
+.kpv2-page-media-url-table-wrap .kp-hier-table .kpv2-page-media-url-table-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+.kpv2-page-media-url-table-wrap .kp-hier-table tr.kp-hier-row-leaf:hover .kpv2-page-media-url-table-actions,
+.kpv2-page-media-url-table-wrap .kp-hier-table tr.kp-hier-row-leaf:focus-within .kpv2-page-media-url-table-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+.kpv2-page-media-url-table-wrap .kp-hier-table td:last-child {
+  overflow: visible;
+  white-space: normal;
 }
 .kpv2-page-media-title-wrap {
   display: flex;
@@ -2415,7 +2757,7 @@ function ensureStyles(root) {
 }
 .kpv2-page-media-fullview {
   display: none;
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 1;
   background: rgba(0, 0, 0, 0.92);
