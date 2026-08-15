@@ -27,6 +27,7 @@ import {
   NCT_DARK_UI_PANEL_BOX_SHADOW
 } from '../ui/nct-dark-ui.js';
 import { preferHttpsForPreview, rewriteUrlForIframePreview } from '../utils/preview-url.js';
+import { resolveActivationIdentity } from '../utils/resolve-hovered-link.js';
 
 /** Per-host Link Preview viewport mode: { [hostname]: 'mobile' }. Missing/default = desktop. */
 const PREVIEW_VIEWPORT_BY_HOST_KEY = 'kp_link_preview_viewport_by_host';
@@ -1305,9 +1306,14 @@ export class OverlayManager {
       // Resolve paint node once (pierces open shadow for collapsed hosts).
       // Text fields: prefer the visual pill/shell so the ring matches the
       // left-edge bar (short absolute <input> inside a taller wrapper).
+      // Image+text cards: prefer the stacked shell (headline-only / image-only
+      // <a> inside a teaser that also holds the other segment).
       let paintEl = element;
+      let cardShell = null;
+      try { cardShell = this._resolveMediaTextCardShell(element); } catch { cardShell = null; }
       try {
         if (textPaintHost && textPaintHost !== element) paintEl = textPaintHost;
+        else if (cardShell) paintEl = cardShell;
         else paintEl = this._resolveElementForFocusStyling(element) || element;
       } catch {
         paintEl = element;
@@ -1325,9 +1331,9 @@ export class OverlayManager {
 
       let needsEscapeHatch = false;
       try {
-        needsEscapeHatch = this._shouldUseFixedFocusOverlay(element);
+        needsEscapeHatch = !!cardShell || this._shouldUseFixedFocusOverlay(element);
       } catch {
-        needsEscapeHatch = false;
+        needsEscapeHatch = !!cardShell;
       }
 
       let autoStrategy = 'A';
@@ -2001,6 +2007,61 @@ export class OverlayManager {
   }
 
   /**
+   * Absolute/fixed hit-link flush inside an overflow-hidden thumb frame
+   * (Rumble `a.videostream__link` in `.thumbnail__thumb--live`). Graded inset
+   * on the link sits under the frame's border (e.g. live red 2px). Paint the
+   * frame instead so path A can use a normal outer outline around it.
+   * @param {Element|null|undefined} el
+   * @returns {Element|null}
+   */
+  _resolveAbsoluteClipFramePaintHost(el) {
+    if (!el || el.nodeType !== 1) return null;
+
+    let pos = '';
+    try {
+      pos = String(window.getComputedStyle(el).position || '');
+    } catch {
+      return null;
+    }
+    if (pos !== 'absolute' && pos !== 'fixed') return null;
+
+    let ir = null;
+    try { ir = el.getBoundingClientRect(); } catch { ir = null; }
+    if (!ir || ir.width < 16 || ir.height < 16) return null;
+
+    let p = null;
+    try { p = this._composedParent(el); } catch { p = el.parentElement; }
+    let depth = 0;
+    while (p && p.nodeType === 1 && depth++ < 3) {
+      if (p === document.body || p === document.documentElement) break;
+
+      let cs = null;
+      try { cs = window.getComputedStyle(p); } catch { cs = null; }
+      if (!cs || !this._styleClipsSelf(cs)) {
+        try { p = this._composedParent(p); } catch { p = p.parentElement; }
+        continue;
+      }
+
+      let pr = null;
+      try { pr = p.getBoundingClientRect(); } catch { pr = null; }
+      if (!pr || pr.width < 16 || pr.height < 16) {
+        try { p = this._composedParent(p); } catch { p = p.parentElement; }
+        continue;
+      }
+
+      // Frame only modestly larger than the fill-link (border / padding).
+      if (pr.width > ir.width + 24 || pr.height > ir.height + 24) break;
+      if (pr.width + 2 < ir.width || pr.height + 2 < ir.height) {
+        try { p = this._composedParent(p); } catch { p = p.parentElement; }
+        continue;
+      }
+
+      return p;
+    }
+    return null;
+  }
+
+  /**
    * Minimum free space outside the border box across clipping ancestors.
    * Infinity when there are no clippers (outer ring unconstrained).
    *
@@ -2160,6 +2221,14 @@ export class OverlayManager {
     }
     if (!er || !(er.width > 0) || !(er.height > 0)) return false;
 
+    // Image-on-top / media-rail cards: outer outline (A) looks disconnected
+    // from the text block. Prefer B on the visual shell.
+    try {
+      if (this._resolveMediaTextCardShell(paintEl) || this._resolveMediaTextCardShell(element)) {
+        return true;
+      }
+    } catch { /* ignore */ }
+
     let selfClips = false;
     try {
       selfClips = this._styleClipsSelf(window.getComputedStyle(paintEl));
@@ -2199,6 +2268,184 @@ export class OverlayManager {
     // helper only answers whether light-DOM geometry needs an escape hatch.
 
     return false;
+  }
+
+  /**
+   * Card-sized box with a flush media strip (image on top / side rail) and a
+   * complementary text/headline region. Same idea as the text-input pill shell:
+   * the clickable may be only the headline or only the image; the visual card
+   * is the stacked pair (Tom's Hardware article-link, NVIDIA teaser).
+   * @param {Element} el
+   * @returns {boolean}
+   */
+  _isMediaTextSplitCard(el) {
+    if (!el || el.nodeType !== 1) return false;
+    let box = null;
+    try { box = el.getBoundingClientRect(); } catch { box = null; }
+    if (!box || box.width < 160 || box.height < 140) return false;
+    if (box.width > 920 || box.height > 780) return false;
+    try {
+      const vw = window.innerWidth || 0;
+      if (vw > 0 && box.width > vw * 0.72 && box.height > 420) return false;
+    } catch { /* ignore */ }
+
+    let hasStrip = false;
+    try { hasStrip = this._hasEdgeFlushMediaCover(el, box); } catch { hasStrip = false; }
+    if (!hasStrip) {
+      // Backup: measure descendant <img>/<video> even when <picture> is 0×0.
+      try { hasStrip = this._hasDescendantMediaStrip(el, box); } catch { hasStrip = false; }
+    }
+    if (!hasStrip) return false;
+
+    let text = '';
+    try { text = String(el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim(); } catch { text = ''; }
+    return text.length >= 8;
+  }
+
+  /**
+   * True when `shell` contains a navigable/action dest different from `fromEl`.
+   * Rumble video cards: thumbnail+title share the watch URL, but the channel
+   * link is a separate F-target — do not paint the whole card for that hover.
+   * @param {Element} shell
+   * @param {Element} fromEl
+   * @returns {boolean}
+   */
+  _mediaTextShellHasCompetingDest(shell, fromEl) {
+    if (!shell || !fromEl || shell === fromEl) return false;
+    let fromId = '';
+    try { fromId = resolveActivationIdentity(fromEl); } catch { fromId = ''; }
+    if (!fromId) return false;
+
+    /** @type {Element[]} */
+    let links = [];
+    try {
+      links = Array.from(shell.querySelectorAll('a[href], [role="link"]'));
+    } catch {
+      return false;
+    }
+    for (let i = 0; i < links.length && i < 24; i++) {
+      const a = links[i];
+      if (!a || a === fromEl) continue;
+      let id = '';
+      try { id = resolveActivationIdentity(a); } catch { id = ''; }
+      if (id && id !== fromId) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Smallest ancestor (incl. `el`) that is an image+text split card.
+   * Stops when the box balloons into a carousel / multi-card row.
+   * @param {Element|null|undefined} el
+   * @returns {Element|null}
+   */
+  _resolveMediaTextCardShell(el) {
+    if (!el || el.nodeType !== 1) return null;
+    let found = null;
+    try {
+      if (this._isMediaTextSplitCard(el) && !this._mediaTextShellHasCompetingDest(el, el)) {
+        found = el;
+      }
+    } catch { /* ignore */ }
+
+    if (!found) {
+      let ir = null;
+      try { ir = el.getBoundingClientRect(); } catch { ir = null; }
+      if (!ir || ir.width < 4 || ir.height < 4) return null;
+
+      let p = null;
+      try { p = this._composedParent(el); } catch { p = el.parentElement; }
+      let depth = 0;
+      while (p && p.nodeType === 1 && depth++ < 10) {
+        if (p === document.body || p === document.documentElement) break;
+        let r = null;
+        try { r = p.getBoundingClientRect(); } catch { r = null; }
+        if (!r || r.width < 8 || r.height < 8) {
+          try { p = this._composedParent(p); } catch { p = p.parentElement; }
+          continue;
+        }
+        if (r.width > ir.width * 1.4 + 48) break;
+        if (r.height > 780) break;
+        try {
+          if (
+            this._isMediaTextSplitCard(p) &&
+            !this._mediaTextShellHasCompetingDest(p, el)
+          ) {
+            found = p;
+            break;
+          }
+        } catch { /* ignore */ }
+        try { p = this._composedParent(p); } catch { p = p.parentElement; }
+      }
+    }
+
+    return found ? this._liftMediaTextCardPaintHost(found) : null;
+  }
+
+  /**
+   * Block/flex/grid (or inline-block) host that can take an absolute ring.
+   * @param {Element} el
+   * @returns {boolean}
+   */
+  _isBlockishPaintHost(el) {
+    if (!el || el.nodeType !== 1) return false;
+    try {
+      const d = String(window.getComputedStyle(el).display || '');
+      if (!d || d === 'none' || d === 'contents' || d === 'inline') return false;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Inline stacked cards (Tom's Hardware `a.article-link`) fragment into
+   * image + headline boxes. Strategy B needs a same-column block wrapper
+   * (`div.feature-block-item-wrapper`) as the containing block.
+   * @param {Element} shell
+   * @returns {Element}
+   */
+  _liftMediaTextCardPaintHost(shell) {
+    if (!shell || shell.nodeType !== 1) return shell;
+    try {
+      if (
+        this._isBlockishPaintHost(shell) &&
+        !this._isFragmentedInlineFocusTarget(shell) &&
+        this._canMountVisibleChildOnHost(shell)
+      ) {
+        return shell;
+      }
+    } catch { /* lift */ }
+
+    let ir = null;
+    try { ir = shell.getBoundingClientRect(); } catch { ir = null; }
+    if (!ir || ir.width < 8 || ir.height < 8) return shell;
+
+    let p = null;
+    try { p = this._composedParent(shell); } catch { p = shell.parentElement; }
+    let depth = 0;
+    while (p && p.nodeType === 1 && depth++ < 6) {
+      if (p === document.body || p === document.documentElement) break;
+      let r = null;
+      try { r = p.getBoundingClientRect(); } catch { r = null; }
+      if (!r || r.width < 8 || r.height < 8) {
+        try { p = this._composedParent(p); } catch { p = p.parentElement; }
+        continue;
+      }
+      if (r.width > ir.width * 1.12 + 12) break;
+      if (r.height > ir.height * 1.25 + 24) break;
+      try {
+        if (
+          this._isBlockishPaintHost(p) &&
+          !this._isFragmentedInlineFocusTarget(p) &&
+          this._canMountVisibleChildOnHost(p)
+        ) {
+          return p;
+        }
+      } catch { /* ignore */ }
+      try { p = this._composedParent(p); } catch { p = p.parentElement; }
+    }
+    return shell;
   }
 
   /**
@@ -2260,9 +2507,23 @@ export class OverlayManager {
         if (!wrap || wrap.nodeType !== 1) continue;
         let wr = null;
         try { wr = wrap.getBoundingClientRect(); } catch { wr = null; }
-        if (!wr || !(wr.width > 0) || !(wr.height > 0)) continue;
-        // Near-full card shell — look one level deeper for the media strip.
-        if (wr.width >= box.width * 0.85 && wr.height >= box.height * 0.85) {
+        if (!wr || !(wr.width > 0) || !(wr.height > 0)) {
+          // <picture> often reports 0×0; the <img> inside is the real strip.
+          const wrapTag = String(wrap.tagName || '').toUpperCase();
+          if (wrapTag === 'PICTURE' || wrapTag === 'FIGURE') {
+            this._enqueueShadowPiercingChildren(wrap, candidates);
+          }
+          continue;
+        }
+        // Near-full card shell, or the image-segment wrapper (~half the card).
+        if (
+          wr.width >= box.width * 0.85 &&
+          wr.height >= box.height * 0.28
+        ) {
+          this._enqueueShadowPiercingChildren(wrap, candidates);
+        }
+        const wrapTag = String(wrap.tagName || '').toUpperCase();
+        if (wrapTag === 'PICTURE' || wrapTag === 'FIGURE' || wrapTag === 'A') {
           this._enqueueShadowPiercingChildren(wrap, candidates);
         }
       }
@@ -2293,6 +2554,72 @@ export class OverlayManager {
       const flushRight = Math.abs(cr.right - box.right) <= edgeTol;
       // Require a flush "cap": one end edge + both sides (top/bottom media bar)
       // or one side edge + both ends (left/right media rail).
+      const topCap = flushTop && flushLeft && flushRight;
+      const bottomCap = flushBottom && flushLeft && flushRight;
+      const leftRail = flushLeft && flushTop && flushBottom;
+      const rightRail = flushRight && flushTop && flushBottom;
+      if (topCap || bottomCap || leftRail || rightRail) return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Deeper strip detector for stacked cards whose media sits more than one
+   * wrapper below the visual shell (0x0 picture, NVIDIA teaser image
+   * link). Cheap query of replaced media; same flush-cap geometry as
+   * `_hasEdgeFlushMediaCover`.
+   * @param {Element} el
+   * @param {DOMRect|ClientRect} [er]
+   * @returns {boolean}
+   */
+  _hasDescendantMediaStrip(el, er) {
+    if (!el || el.nodeType !== 1) return false;
+    let box = er;
+    try {
+      if (!box) box = el.getBoundingClientRect();
+    } catch {
+      return false;
+    }
+    if (!box || !(box.width > 0) || !(box.height > 0)) return false;
+
+    /** @type {Element[]} */
+    const media = [];
+    try {
+      const nodes = el.querySelectorAll('img, video, canvas, picture');
+      for (let i = 0; i < nodes.length && media.length < 20; i++) {
+        const n = nodes[i];
+        if (!n || n.nodeType !== 1) continue;
+        const tag = String(n.tagName || '').toUpperCase();
+        if (tag === 'PICTURE') {
+          try {
+            const img = n.querySelector('img');
+            if (img) media.push(img);
+          } catch { /* ignore */ }
+          continue;
+        }
+        media.push(n);
+      }
+    } catch { /* ignore */ }
+
+    const edgeTol = 8;
+    for (let i = 0; i < media.length; i++) {
+      const child = media[i];
+      let cr = null;
+      try { cr = child.getBoundingClientRect(); } catch { cr = null; }
+      if (!cr || !(cr.width > 8) || !(cr.height > 8)) continue;
+
+      const fracW = cr.width / box.width;
+      const fracH = cr.height / box.height;
+      const majorSpan = fracW >= 0.82 || fracH >= 0.82;
+      const stripDepth = fracW >= 0.28 && fracH >= 0.28;
+      if (!majorSpan || !stripDepth) continue;
+      if (fracW >= 0.85 && fracH >= 0.85) continue;
+
+      const flushTop = Math.abs(cr.top - box.top) <= edgeTol;
+      const flushBottom = Math.abs(cr.bottom - box.bottom) <= edgeTol;
+      const flushLeft = Math.abs(cr.left - box.left) <= edgeTol;
+      const flushRight = Math.abs(cr.right - box.right) <= edgeTol;
       const topCap = flushTop && flushLeft && flushRight;
       const bottomCap = flushBottom && flushLeft && flushRight;
       const leftRail = flushLeft && flushTop && flushBottom;
@@ -2605,6 +2932,16 @@ export class OverlayManager {
   _resolveInTargetHost(element) {
     if (!element || element.nodeType !== 1) return null;
 
+    // Image+text card shell (may be larger than the hovered headline/image <a>).
+    try {
+      const shell = this._resolveMediaTextCardShell(element);
+      if (shell && this._canMountVisibleChildOnHost(shell)) {
+        let sr = null;
+        try { sr = shell.getBoundingClientRect(); } catch { sr = null; }
+        if (sr && sr.width >= 8 && sr.height >= 8) return shell;
+      }
+    } catch { /* fall through */ }
+
     let paintEl = element;
     try {
       paintEl = this._resolveElementForFocusStyling(element) || element;
@@ -2896,12 +3233,15 @@ export class OverlayManager {
     if (!element || element.nodeType !== 1) return false;
 
     // Wrapped text links: B's inset:0 ring only covers one line fragment.
-    // Let Auto fall through to C (body fixed union box) for full width.
-    if (this._isFragmentedInlineFocusTarget(element)) {
+    // Let Auto fall through to C (body fixed union box) for full width —
+    // except image+text cards, where we lift to a block shell first.
+    let cardHost = null;
+    try { cardHost = this._resolveMediaTextCardShell(element); } catch { cardHost = null; }
+    if (!cardHost && this._isFragmentedInlineFocusTarget(element)) {
       return false;
     }
 
-    const host = this._resolveInTargetHost(element);
+    const host = cardHost || this._resolveInTargetHost(element);
     if (!host) return false;
     if (this._isFragmentedInlineFocusTarget(host)) {
       return false;
@@ -2917,6 +3257,17 @@ export class OverlayManager {
     } catch { /* ignore */ }
 
     const ring = this._ensureInTargetRingEl();
+
+    // Radius from the visual host/clip wrapper — resolve *before* the ring
+    // is a child so a leftover `50%` on the ring cannot feed back.
+    let radius = '0';
+    try {
+      radius = this._resolveElementBorderRadius(host) ||
+        this._resolveElementBorderRadius(element) ||
+        '0';
+    } catch {
+      radius = '0';
+    }
 
     // Leaving a previous host — restore its position if we mutated it.
     if (this._inTargetHost && this._inTargetHost !== host) {
@@ -2983,16 +3334,6 @@ export class OverlayManager {
       if (!suppressFill && overlayFillEnabled === true) {
         backgroundColor = p.backgroundColor || 'transparent';
       }
-    }
-
-    // Border radius: host first, else large rounded descendant (tile / media).
-    let radius = '0';
-    try {
-      radius = this._resolveElementBorderRadius(host) ||
-        this._resolveElementBorderRadius(element) ||
-        '0';
-    } catch {
-      radius = '0';
     }
 
     const zLocal = this._maxLocalZIndex(host) + 1;
@@ -3091,6 +3432,14 @@ export class OverlayManager {
     // then renders as disjoint pieces (often thin strips). When we detect this, we style a
     // better single-rect descendant (usually the anchor's wrapper) instead of the anchor.
     let stylingTarget = this._resolveElementForFocusStyling(element) || element;
+
+    // Absolute fill-link inside a clipping thumb frame: paint the frame so outer
+    // outline wraps site border chrome (Rumble live red thumbs) instead of an
+    // inset ring under that border. Activation focusEl stays the <a>.
+    try {
+      const frame = this._resolveAbsoluteClipFramePaintHost(stylingTarget);
+      if (frame) stylingTarget = frame;
+    } catch { /* ignore */ }
 
     // Optional clip-aware paint (flags in FEATURE_FLAGS — see constants.js).
     // Never mutate page overflow (broke IMDb carousels). Prefer painting on the
@@ -4636,6 +4985,29 @@ export class OverlayManager {
   }
 
   /**
+   * KeyPilot-injected paint nodes. Must not contribute visual metrics
+   * (a leftover in-target ring with `border-radius: 50%` is full-size).
+   * @param {Element|null|undefined} el
+   * @returns {boolean}
+   */
+  _isKeyPilotPaintNode(el) {
+    if (!el || el.nodeType !== 1) return false;
+    try {
+      if (el === this._inTargetRing) return true;
+      if (el.getAttribute?.('data-kp-focus-ring') === '1') return true;
+      if (el.getAttribute?.('data-kp-shadow-b-host') === '1') return true;
+      const cls = el.classList;
+      if (cls && (
+        cls.contains(CSS_CLASSES.FOCUS_RING_INTARGET || 'kpv2-focus-ring-intarget') ||
+        cls.contains('keypilot-focus-element')
+      )) {
+        return true;
+      }
+    } catch { /* ignore */ }
+    return false;
+  }
+
+  /**
    * Read a non-zero computed border-radius from an element.
    * @param {Element|null|undefined} el
    * @returns {string|null}
@@ -4643,6 +5015,7 @@ export class OverlayManager {
   _readNonZeroBorderRadius(el) {
     try {
       if (!el || el.nodeType !== 1) return null;
+      if (this._isKeyPilotPaintNode(el)) return null;
       const cs = window.getComputedStyle(el);
       if (!cs) return null;
 
@@ -4671,6 +5044,59 @@ export class OverlayManager {
   }
 
   /**
+   * Turn percentage corner radii into px using `el`'s box. Raw `50%` on a
+   * circular play button must not be copied onto a tall video (ellipse).
+   * @param {string} radius
+   * @param {Element} el
+   * @returns {string}
+   */
+  _percentRadiusToPx(radius, el) {
+    const raw = String(radius || '').trim();
+    if (!raw || !/%/.test(raw) || !el || el.nodeType !== 1) return raw;
+    let w = 0;
+    let h = 0;
+    try {
+      const r = el.getBoundingClientRect();
+      w = r && r.width ? r.width : 0;
+      h = r && r.height ? r.height : 0;
+    } catch {
+      return raw;
+    }
+    if (!(w > 0) || !(h > 0)) return raw;
+
+    const pctTo = (token, axis) => {
+      const m = String(token).trim().match(/^(-?[\d.]+)%$/);
+      if (!m) return token;
+      const px = (parseFloat(m[1]) / 100) * axis;
+      if (!Number.isFinite(px)) return token;
+      const rounded = Math.round(px * 100) / 100;
+      return `${rounded}px`;
+    };
+    const convertList = (list, axis) =>
+      list.trim().split(/\s+/).filter(Boolean).map((t) => pctTo(t, axis)).join(' ');
+
+    if (raw.includes('/')) {
+      const [xs, ys] = raw.split('/');
+      return `${convertList(xs, w)} / ${convertList(ys, h)}`;
+    }
+    const tokens = raw.split(/\s+/).filter(Boolean);
+    const xStr = tokens.map((t) => pctTo(t, w)).join(' ');
+    const yStr = tokens.map((t) => pctTo(t, h)).join(' ');
+    return xStr === yStr ? xStr : `${xStr} / ${yStr}`;
+  }
+
+  /**
+   * Non-zero radius from `el`, with % resolved against `el`'s own box.
+   * @param {Element|null|undefined} el
+   * @returns {string|null}
+   */
+  _radiusCssFromElement(el) {
+    const raw = this._readNonZeroBorderRadius(el);
+    if (!raw) return null;
+    return this._percentRadiusToPx(raw, el);
+  }
+
+  /**
    * Resolve a CSS border-radius that matches the visual shape of the activation target.
    * Prefer the element itself; if it is not rounded (common for <a> wrapping a card/image),
    * use a large rounded descendant that fills most of the host box.
@@ -4680,15 +5106,17 @@ export class OverlayManager {
    */
   _resolveElementBorderRadius(element) {
     if (!element || element.nodeType !== 1) return null;
+    if (this._isKeyPilotPaintNode(element)) return null;
 
-    const own = this._readNonZeroBorderRadius(element);
+    const own = this._radiusCssFromElement(element);
     if (own) return own;
 
     try {
+      let parentRect = null;
       let parentArea = 0;
       try {
-        const pr = element.getBoundingClientRect();
-        parentArea = Math.max(0, (pr.width || 0) * (pr.height || 0));
+        parentRect = element.getBoundingClientRect();
+        parentArea = Math.max(0, (parentRect.width || 0) * (parentRect.height || 0));
       } catch {
         parentArea = 0;
       }
@@ -4696,7 +5124,9 @@ export class OverlayManager {
       const candidates = [];
       try {
         if (element.children && element.children.length) {
-          for (const child of element.children) candidates.push(child);
+          for (const child of element.children) {
+            if (!this._isKeyPilotPaintNode(child)) candidates.push(child);
+          }
         }
       } catch { /* ignore */ }
 
@@ -4704,14 +5134,16 @@ export class OverlayManager {
       try {
         const media = element.querySelectorAll?.('img, svg, video, picture');
         if (media && media.length) {
-          for (const m of media) candidates.push(m);
+          for (const m of media) {
+            if (!this._isKeyPilotPaintNode(m)) candidates.push(m);
+          }
         }
       } catch { /* ignore */ }
 
       let best = null;
       let bestArea = 0;
       for (const c of candidates) {
-        const radius = this._readNonZeroBorderRadius(c);
+        const radius = this._radiusCssFromElement(c);
         if (!radius) continue;
         let area = 0;
         try {
@@ -4729,6 +5161,32 @@ export class OverlayManager {
       // Avoid picking a tiny decorative rounded icon inside a larger link.
       if (best && (parentArea <= 0 || bestArea >= parentArea * 0.35)) {
         return best;
+      }
+
+      // Same-size ancestor clip wrapper (Firework Quick Takes: 10px on the
+      // overflow:hidden thumb, while the inner video/play stack is square).
+      if (parentRect && parentRect.width >= 8 && parentRect.height >= 8) {
+        let p = null;
+        try { p = this._composedParent(element); } catch { p = element.parentElement; }
+        let depth = 0;
+        while (p && p.nodeType === 1 && depth++ < 6) {
+          if (p === document.body || p === document.documentElement) break;
+          if (this._isKeyPilotPaintNode(p)) {
+            try { p = this._composedParent(p); } catch { p = p.parentElement; }
+            continue;
+          }
+          let r = null;
+          try { r = p.getBoundingClientRect(); } catch { r = null; }
+          if (!r || r.width < 8 || r.height < 8) {
+            try { p = this._composedParent(p); } catch { p = p.parentElement; }
+            continue;
+          }
+          if (r.width > parentRect.width * 1.12 + 12) break;
+          if (r.height > parentRect.height * 1.2 + 16) break;
+          const ar = this._radiusCssFromElement(p);
+          if (ar) return ar;
+          try { p = this._composedParent(p); } catch { p = p.parentElement; }
+        }
       }
     } catch { /* ignore */ }
 
