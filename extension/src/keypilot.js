@@ -7734,12 +7734,30 @@ export class KeyPilot extends EventManager {
     if (!this._allowActionKey('handleOpenPopover', e)) return;
     // Check if popover is already open - if so, close it (toggle behavior)
     if (this.overlayManager.isPopoverOpen()) {
-      this.handleClosePopover();
+      this._closeMapSitePopover();
       return;
     }
 
     const currentState = this.state.getState();
     const { lastMouse } = currentState;
+
+    const mx = Number(lastMouse?.x);
+    const my = Number(lastMouse?.y);
+    const px = Number.isFinite(mx) ? mx : (window.innerWidth || 0) / 2;
+    const py = Number.isFinite(my) ? my : (window.innerHeight || 0) / 2;
+    const onMap = this.isOnMapWebsite() || !!findMapSurfaceAtPoint(px, py);
+    if (onMap) {
+      void this._resolvePoiWebsiteAtPoint(px, py).then((poiUrl) => {
+        if (!poiUrl) {
+          this.showFlashNotification('No website for this place', COLORS.NOTIFICATION_INFO);
+          return;
+        }
+        this._openFullPopover(poiUrl);
+      }).catch(() => {
+        this.showFlashNotification('No website for this place', COLORS.NOTIFICATION_INFO);
+      });
+      return;
+    }
 
     // Prefer DOM-hover focusEl; fall back to elementFromPoint when nothing is hovered.
     let target = currentState.focusEl;
@@ -7820,11 +7838,14 @@ export class KeyPilot extends EventManager {
       y = r.top + r.height / 2;
     } catch { /* ignore */ }
     let clicked = false;
-    try {
-      this.activator?.smartClick?.(btn, x, y);
-      clicked = true;
-    } catch {
-      try { btn.click(); clicked = true; } catch { clicked = false; }
+    // Native click so Google's jsaction (omnibox.clear) runs even if a
+    // KeyPilot popover is covering the search box.
+    try { btn.click(); clicked = true; } catch { clicked = false; }
+    if (!clicked) {
+      try {
+        this.activator?.smartClick?.(btn, x, y);
+        clicked = true;
+      } catch { clicked = false; }
     }
     if (!clicked) return false;
 
@@ -7850,12 +7871,14 @@ export class KeyPilot extends EventManager {
   }
 
   /**
-   * Close Link Preview and clear the Maps place pane so the next E is not
-   * stuck on the previous POI's website.
+   * Close Link Preview / Open Popover and clear the Maps place pane so the
+   * next E or P is not stuck on the previous POI's website.
    */
-  _closeMapLinkPreview() {
-    this.handleClosePopover();
+  _closeMapSitePopover() {
+    // Clear the Maps pane first — the large Open Popover can cover the
+    // search-box Close control; native .click() still reaches it.
     this._dismissMapPlacePanel();
+    this.handleClosePopover();
   }
 
   /**
@@ -7911,10 +7934,21 @@ export class KeyPilot extends EventManager {
     this.state.setPopoverOpen(true, href);
   }
 
+  /**
+   * Open a URL in the large Open Popover (P).
+   * @param {string} url
+   */
+  _openFullPopover(url) {
+    const href = String(url || '').trim();
+    if (!href) return;
+    this.overlayManager.showPopover(href);
+    this.state.setPopoverOpen(true, href);
+  }
+
   async handlePoiWebsiteKey(e) {
     if (!this._allowActionKey('handlePoiWebsiteKey', e)) return;
     if (this.overlayManager.isPopoverOpen()) {
-      this._closeMapLinkPreview();
+      this._closeMapSitePopover();
       return;
     }
 
@@ -7937,7 +7971,7 @@ export class KeyPilot extends EventManager {
     if (!this._allowActionKey('handlePreviewLinkPopover', e)) return;
     // Check if popover is already open - if so, close it (toggle behavior)
     if (this.overlayManager.isPopoverOpen()) {
-      this._closeMapLinkPreview();
+      this._closeMapSitePopover();
       return;
     }
 
