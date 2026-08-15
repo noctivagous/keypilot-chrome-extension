@@ -20,6 +20,7 @@ import {
   actionHasDestination,
   actionHasModes,
   actionHasParameters,
+  getActionInlineEnumDefs,
   getActionDestinationDef,
   getActionMode,
   getActionParameter,
@@ -62,7 +63,10 @@ const KEY_INFO_POPOVER_INNER_HTML = `
     `;
 
 function actionHasSettings(actionId) {
-  return actionHasModes(actionId) || actionHasDestination(actionId) || actionHasParameters(actionId);
+  return actionHasModes(actionId)
+    || actionHasDestination(actionId)
+    || getActionInlineEnumDefs(actionId).length > 0
+    || actionHasParameters(actionId);
 }
 
 function getRuntimeFontUrls() {
@@ -676,10 +680,11 @@ function paintPopoverSettings({ doc, pop, targetEl, binding, actionId, parameter
   const host = pop.querySelector('.kp-popover-settings');
   if (!host) return;
 
+  const inlineEnums = getActionInlineEnumDefs(actionId);
   const hasModes = actionHasModes(actionId);
   const hasDestination = actionHasDestination(actionId);
   const hasParams = actionHasParameters(actionId);
-  if (!hasModes && !hasDestination && !hasParams) {
+  if (!inlineEnums.length && !hasModes && !hasDestination && !hasParams) {
     host.hidden = true;
     host.replaceChildren();
     return;
@@ -688,71 +693,56 @@ function paintPopoverSettings({ doc, pop, targetEl, binding, actionId, parameter
   host.hidden = false;
   host.replaceChildren();
 
-  if (hasModes) {
-    const def = getActionSettingsDef(actionId);
-    const currentMode = getActionMode(parameters, actionId);
-    const modeWrap = doc.createElement('div');
-    modeWrap.className = 'kp-popover-mode-switch';
-    modeWrap.setAttribute('role', 'group');
-    const modeParam = (def?.parameters || []).find((p) => p && p.id === 'mode');
-    modeWrap.setAttribute('aria-label', modeParam?.label || 'Selection mode');
+  const enums = inlineEnums.length
+    ? inlineEnums
+    : [
+      ...(hasModes ? [{ id: 'mode', ...(getActionSettingsDef(actionId) || {}) }] : []),
+      ...(hasDestination ? [getActionDestinationDef(actionId)].filter(Boolean) : [])
+    ];
 
-    for (const mode of def.modes) {
+  for (const param of enums) {
+    if (!param || !param.id) continue;
+    const options = param.options || (param.id === 'mode' ? getActionSettingsDef(actionId)?.modes : null) || [];
+    if (!options.length) continue;
+    const current = param.id === 'mode'
+      ? getActionMode(parameters, actionId)
+      : getActionParameter(parameters, actionId, param.id);
+    const row = doc.createElement('div');
+    row.className = 'kp-popover-setting-row';
+    const label = doc.createElement('div');
+    label.className = 'kp-popover-setting-label';
+    label.textContent = param.label || param.id;
+    row.appendChild(label);
+    const wrap = doc.createElement('div');
+    wrap.className = 'kp-popover-mode-switch';
+    wrap.setAttribute('role', 'group');
+    wrap.setAttribute('aria-label', param.label || param.id);
+    wrap.dataset.paramId = param.id;
+
+    for (const opt of options) {
       const btn = doc.createElement('button');
       btn.type = 'button';
       btn.className = 'kp-popover-mode-btn';
-      btn.dataset.modeId = mode.id;
-      btn.textContent = mode.label;
-      btn.setAttribute('aria-pressed', mode.id === currentMode ? 'true' : 'false');
+      btn.dataset.optionId = opt.id;
+      btn.textContent = opt.label;
+      btn.setAttribute('aria-pressed', opt.id === current ? 'true' : 'false');
       btn.addEventListener('click', async (e) => {
         e.preventDefault();
         e.stopPropagation();
         try {
-          await setActionMode(actionId, mode.id);
-          modeWrap.querySelectorAll('.kp-popover-mode-btn').forEach((el) => {
-            el.setAttribute('aria-pressed', el.dataset.modeId === mode.id ? 'true' : 'false');
+          if (param.id === 'mode') await setActionMode(actionId, opt.id);
+          else await setActionParameter(actionId, param.id, opt.id);
+          wrap.querySelectorAll('.kp-popover-mode-btn').forEach((el) => {
+            el.setAttribute('aria-pressed', el.dataset.optionId === opt.id ? 'true' : 'false');
           });
         } catch (err) {
-          console.warn('[KeyPilot] Failed to set action mode:', err);
+          console.warn('[KeyPilot] Failed to set action parameter:', param.id, err);
         }
       });
-      modeWrap.appendChild(btn);
+      wrap.appendChild(btn);
     }
-    host.appendChild(modeWrap);
-  }
-
-  if (hasDestination) {
-    const destDef = getActionDestinationDef(actionId);
-    if (destDef) {
-      const currentDest = getActionParameter(parameters, actionId, 'destination');
-      const destWrap = doc.createElement('div');
-      destWrap.className = 'kp-popover-mode-switch';
-      destWrap.setAttribute('role', 'group');
-      destWrap.setAttribute('aria-label', destDef.label || 'Destination');
-
-      for (const opt of destDef.options || []) {
-        const btn = doc.createElement('button');
-        btn.type = 'button';
-        btn.className = 'kp-popover-mode-btn';
-        btn.dataset.destinationId = opt.id;
-        btn.textContent = opt.label;
-        btn.setAttribute('aria-pressed', opt.id === currentDest ? 'true' : 'false');
-        btn.addEventListener('click', async (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          try {
-            await setActionParameter(actionId, 'destination', opt.id);
-            destWrap.querySelectorAll('.kp-popover-mode-btn').forEach((el) => {
-              el.setAttribute('aria-pressed', el.dataset.destinationId === opt.id ? 'true' : 'false');
-            });
-          } catch (err) {
-            console.warn('[KeyPilot] Failed to set action destination:', err);
-          }
-        });
-        destWrap.appendChild(btn);
-      }
-      host.appendChild(destWrap);
-    }
+    row.appendChild(wrap);
+    host.appendChild(row);
   }
 
   if (hasParams) {

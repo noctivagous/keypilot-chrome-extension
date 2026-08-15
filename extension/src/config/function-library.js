@@ -147,6 +147,14 @@ const BUILTIN_FUNCTION_DATA_TAGS = Object.freeze({
     dataSource: 'underCursor',
     dataKind: 'text'
   }),
+  POI_ADDRESS: Object.freeze({
+    dataSource: 'underCursor',
+    dataKind: 'text',
+    destinations: Object.freeze([
+      ACTION_RESULT_DESTINATIONS.CLIPBOARD,
+      ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY
+    ])
+  }),
   COPY_HOVERED_VIDEO: Object.freeze({
     dataSource: 'underCursor',
     dataKind: 'media',
@@ -188,6 +196,7 @@ export const FIXED_KEY_FUNCTION_IDS = Object.freeze([
   'COPY_HOVERED_IMAGE',
   'COPY_HOVERED_URL',
   'COPY_HOVERED_VIDEO',
+  'POI_ADDRESS',
   'PAGE_TOP',
   'PAGE_BOTTOM'
 ]);
@@ -270,6 +279,31 @@ const BUILTIN_FUNCTION_PARAMETER_OVERRIDES = Object.freeze({
   ]),
   COPY_HOVERED_VIDEO: Object.freeze([
     buildResultDestinationParameter(VIDEO_COPY_DESTINATIONS)
+  ]),
+  POI_ADDRESS: Object.freeze([
+    Object.freeze({
+      id: 'action',
+      label: 'Action',
+      type: 'enum',
+      defaultValue: 'copy',
+      options: Object.freeze([
+        Object.freeze({ id: 'copy', label: 'Copy address' })
+      ])
+    }),
+    Object.freeze({
+      id: 'format',
+      label: 'Format',
+      type: 'enum',
+      defaultValue: 'txt',
+      options: Object.freeze([
+        Object.freeze({ id: 'txt', label: 'Txt' }),
+        Object.freeze({ id: 'vcard', label: 'vCard' })
+      ])
+    }),
+    buildResultDestinationParameter([
+      ACTION_RESULT_DESTINATIONS.CLIPBOARD,
+      ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY
+    ])
   ])
 });
 
@@ -588,6 +622,7 @@ export const FUNCTION_LIBRARY_ITEM_ORDER = Object.freeze({
   ACTIVATE_NEW_TAB_BACKGROUND: 30,
   PREVIEW_LINK_POPOVER: 40,
   POI_WEBSITE: 45,
+  POI_ADDRESS: 46,
   OPEN_POPOVER: 50,
   FORWARD: 60,
   BACK: 70,

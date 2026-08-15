@@ -477,6 +477,13 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: 'key-preview-popover',
     row: null
   }),
+  POI_ADDRESS: Object.freeze({
+    handler: 'handlePoiAddressKey',
+    label: 'POI Address',
+    description: 'Copy the map place address under the cursor',
+    keyboardClass: null,
+    row: null
+  }),
   OPEN_SETTINGS_POPOVER: Object.freeze({
     handler: 'handleToggleSettingsPopover',
     label: 'Settings',
@@ -614,6 +621,7 @@ export const KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
   ACTIVATE_NEW_TAB_BACKGROUND: 'Navigation',
   PREVIEW_LINK_POPOVER: 'Navigation',
   POI_WEBSITE: 'Maps',
+  POI_ADDRESS: 'Maps',
   OPEN_POPOVER: 'Navigation',
   FORWARD: 'Navigation',
   BACK: 'Navigation',

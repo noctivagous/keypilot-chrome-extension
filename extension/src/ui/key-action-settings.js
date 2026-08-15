@@ -60,6 +60,8 @@ import {
  */
 const MODE_PARAMETER_ID = 'mode';
 const DESTINATION_PARAMETER_ID = 'destination';
+/** Enums painted as button groups on the Keyboard Reference key-info popover. */
+const INLINE_ENUM_PARAMETER_IDS = Object.freeze(['mode', 'action', 'format', 'destination']);
 
 /**
  * Derive an {@link ActionSettingsDef} from the Function Library. Returns null for Functions with
@@ -104,7 +106,19 @@ function nonModeParameters(actionId) {
  * @returns {ActionParameterDef[]}
  */
 function configPanelParameters(actionId) {
-  return nonModeParameters(actionId).filter((p) => p && p.id !== DESTINATION_PARAMETER_ID);
+  return nonModeParameters(actionId).filter((p) => p && !INLINE_ENUM_PARAMETER_IDS.includes(p.id));
+}
+
+/**
+ * Enum parameters shown as button groups on the key-info popover.
+ * @param {string} actionId
+ * @returns {ActionParameterDef[]}
+ */
+export function getActionInlineEnumDefs(actionId) {
+  const def = getActionSettingsDef(actionId);
+  return (def?.parameters || []).filter(
+    (p) => p && p.type === 'enum' && INLINE_ENUM_PARAMETER_IDS.includes(p.id)
+  );
 }
 
 /**

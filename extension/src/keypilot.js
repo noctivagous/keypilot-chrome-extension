@@ -121,8 +121,13 @@ import {
   findPoiWebsiteAtPoint,
   findPoiWebsiteInDocument,
   findMapsPlacePanelCloseButton,
+  findPoiPlaceDetailsAtPoint,
+  findPoiPlaceDetailsInDocument,
+  formatPoiAddressVCard,
   isExternalPoiWebsite,
+  mapsSearchUrlForAddress,
   unwrapMapsRedirect,
+  waitForPoiAddress,
   waitForPoiWebsite
 } from './utils/map-poi.js';
 import { ScrollLineOverlay } from './modules/scroll-line-overlay.js';
@@ -7915,6 +7920,108 @@ export class KeyPilot extends EventManager {
     }
 
     return findPoiWebsiteInDocument();
+  }
+
+  /**
+   * Address (and name/phone/website) of the map place under the cursor.
+   * @param {number} x
+   * @param {number} y
+   * @returns {Promise<{ name: string, address: string, phone: string, website: string }|null>}
+   */
+  async _resolvePoiAddressAtPoint(x, y) {
+    let info = findPoiPlaceDetailsAtPoint(x, y);
+    if (info?.address) return info;
+
+    const overMap = !!findMapSurfaceAtPoint(x, y);
+    const previous = findPoiPlaceDetailsInDocument();
+    if (previous?.address && !overMap) return previous;
+
+    if (this._clickMapPoiAtPoint(x, y)) {
+      info = await waitForPoiAddress({
+        timeoutMs: 2800,
+        ignoreAddress: overMap ? previous?.address : null
+      });
+      if (info?.address) return info;
+    }
+
+    const fallback = findPoiPlaceDetailsInDocument();
+    return fallback?.address ? fallback : null;
+  }
+
+  /**
+   * Copy the map place address under the cursor (txt or vCard).
+   * @param {KeyboardEvent} [e]
+   * @param {{ action?: string, format?: string, destination?: string }} [parameters]
+   */
+  async handlePoiAddressKey(e, parameters) {
+    if (!this._allowActionKey('handlePoiAddressKey', e)) return;
+
+    const currentState = this.state.getState();
+    const { lastMouse } = currentState;
+    const x = Number(lastMouse?.x);
+    const y = Number(lastMouse?.y);
+    const px = Number.isFinite(x) ? x : (window.innerWidth || 0) / 2;
+    const py = Number.isFinite(y) ? y : (window.innerHeight || 0) / 2;
+
+    const info = await this._resolvePoiAddressAtPoint(px, py);
+    if (!info?.address) {
+      this.showFlashNotification('No address for this place', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+
+    const formatRaw = parameters?.format
+      ?? getActionParameter(this._getBuiltinFunctionActionParams('POI_ADDRESS'), 'POI_ADDRESS', 'format');
+    const format = String(formatRaw || 'txt').toLowerCase() === 'vcard' ? 'vcard' : 'txt';
+    const payload = format === 'vcard'
+      ? formatPoiAddressVCard(info)
+      : String(info.address).trim();
+    const dest = this._resolveCopyDestination('POI_ADDRESS', parameters);
+    const flags = destinationFlags(dest);
+
+    let copied = false;
+    if (flags.clipboard) {
+      copied = await this.copyToClipboard(payload);
+    }
+
+    let saved = null;
+    if (flags.mediaLibrary) {
+      const mapsUrl = mapsSearchUrlForAddress(info.address);
+      saved = await this._persistUrlToMediaLibrary(mapsUrl || info.website || '');
+    }
+
+    if (flags.clipboard && flags.mediaLibrary) {
+      if (copied && (saved?.success || saved?.duplicate)) {
+        this.showFlashNotification(
+          saved?.duplicate
+            ? 'Address copied; already in Media Library'
+            : 'Address copied and saved to Media Library',
+          saved?.duplicate ? COLORS.NOTIFICATION_INFO : COLORS.NOTIFICATION_SUCCESS
+        );
+        return;
+      }
+    }
+    if (flags.clipboard) {
+      this.showFlashNotification(
+        copied
+          ? (format === 'vcard' ? 'vCard copied to clipboard' : 'Address copied to clipboard')
+          : 'Could not copy address',
+        copied ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_ERROR
+      );
+    }
+    if (flags.mediaLibrary && !flags.clipboard) {
+      if (saved?.duplicate) {
+        this.showFlashNotification('Already in Media Library', COLORS.NOTIFICATION_INFO);
+      } else if (saved?.success) {
+        this.showFlashNotification('Address saved to Media Library', COLORS.NOTIFICATION_SUCCESS);
+      } else {
+        this.showFlashNotification(saved?.error || 'Could not save address', COLORS.NOTIFICATION_ERROR);
+      }
+    }
+    if (copied) {
+      try {
+        this.emitAction('poi_address', { format, address: String(info.address).slice(0, 200) });
+      } catch { /* ignore */ }
+    }
   }
 
   /**
