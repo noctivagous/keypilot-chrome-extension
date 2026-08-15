@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-15T00:04:34.128Z
+ * Generated on 2026-08-15T00:34:34.402Z
  */
 
 (() => {
@@ -1906,6 +1906,60 @@
     }
   }
 
+  // src/utils/element-from-point.js
+  function deepElementFromPoint(x, y, doc = document) {
+    let el = null;
+    try {
+      el = doc.elementFromPoint(x, y);
+    } catch {
+      return null;
+    }
+    let guard = 0;
+    while (el && el.shadowRoot && guard++ < 10) {
+      let nested = null;
+      try {
+        nested = el.shadowRoot.elementFromPoint(x, y);
+      } catch {
+        break;
+      }
+      if (!nested || nested === el) {
+        nested = deepestShadowElementAtPoint(el.shadowRoot, x, y);
+      }
+      if (!nested || nested === el) break;
+      el = nested;
+    }
+    return el || null;
+  }
+  function deepestShadowElementAtPoint(root, x, y) {
+    if (!root || typeof root.querySelectorAll !== "function") return null;
+    let nodes;
+    try {
+      nodes = root.querySelectorAll("*");
+    } catch {
+      return null;
+    }
+    let best = null;
+    let bestArea = Infinity;
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      if (!n || n.nodeType !== 1) continue;
+      let r;
+      try {
+        r = n.getBoundingClientRect();
+      } catch {
+        continue;
+      }
+      if (!(r.width > 0) || !(r.height > 0)) continue;
+      if (x < r.left || x > r.right || y < r.top || y > r.bottom) continue;
+      const area = r.width * r.height;
+      if (area < bestArea) {
+        bestArea = area;
+        best = n;
+      }
+    }
+    return best;
+  }
+
   // src/utils/scroll-at-point.js
   var EDGE_EPS = 1;
   function composedParent(node) {
@@ -1923,20 +1977,6 @@
     } catch {
     }
     return null;
-  }
-  function elementFromPointDeep(x, y, doc = document) {
-    try {
-      let el = doc.elementFromPoint(x, y);
-      let guard = 0;
-      while (el && el.shadowRoot && guard++ < 10) {
-        const nested = el.shadowRoot.elementFromPoint(x, y);
-        if (!nested || nested === el) break;
-        el = nested;
-      }
-      return el || null;
-    } catch {
-      return null;
-    }
   }
   function overflowAllowsScroll(overflow) {
     const o = String(overflow || "").toLowerCase();
@@ -2333,22 +2373,31 @@
     return { scrolled: ok, axis, el };
   }
 
+  // src/ui/kp-chrome-shadow.js
+  function containsComposed(host, node) {
+    if (!host || !node) return false;
+    if (host === node) return true;
+    try {
+      if (host.contains(node)) return true;
+    } catch {
+    }
+    let current = node;
+    let depth = 0;
+    while (current && depth++ < 32) {
+      if (current === host) return true;
+      const parent = current.parentElement;
+      if (parent) {
+        current = parent;
+        continue;
+      }
+      const root = current.getRootNode?.();
+      current = root && typeof ShadowRoot !== "undefined" && root instanceof ShadowRoot ? root.host : null;
+    }
+    return false;
+  }
+
   // src/modules/frame-click-agent.js
   var CLICKABLE_SEL = 'a[href], button, [role="button"], [role="link"], [role="menuitem"], [role="option"], [role="tab"], [role="checkbox"], [role="radio"], [role="switch"], summary, [onclick], input, select, textarea, label';
-  function deepElementFromPoint(x, y) {
-    try {
-      let el = document.elementFromPoint(x, y);
-      let guard = 0;
-      while (el && el.shadowRoot && guard++ < 10) {
-        const nested = el.shadowRoot.elementFromPoint(x, y);
-        if (!nested || nested === el) break;
-        el = nested;
-      }
-      return el || null;
-    } catch {
-      return null;
-    }
-  }
   function withNativePageCursors(fn) {
     let html = null;
     try {
@@ -3184,7 +3233,8 @@
         }
         dispatchClickSequence(el, clientX, clientY);
         try {
-          if (activator && activator !== el && !(typeof activator.contains === "function" && activator.contains(el))) {
+          const sameControl = !!(activator && el && (containsComposed(activator, el) || containsComposed(el, activator)));
+          if (activator && activator !== el && !sameControl) {
             dispatchClickSequence(activator, clientX, clientY);
           }
         } catch {
@@ -3514,19 +3564,7 @@
         } catch {
         }
       };
-      const deepElementFromPoint2 = (x, y) => {
-        try {
-          let el = document.elementFromPoint(x, y);
-          while (el && el.shadowRoot && typeof el.shadowRoot.elementFromPoint === "function") {
-            const inner = el.shadowRoot.elementFromPoint(x, y);
-            if (!inner || inner === el) break;
-            el = inner;
-          }
-          return el;
-        } catch {
-          return null;
-        }
-      };
+      const deepElementFromPoint2 = (x, y) => deepElementFromPoint(x, y);
       const updateMouse = (e) => {
         try {
           if (!e) return;

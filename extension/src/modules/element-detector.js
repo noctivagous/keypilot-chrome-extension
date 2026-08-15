@@ -2,6 +2,7 @@
  * Element detection and interaction utilities
  */
 import { CLICKABLE_CATEGORY, CSS_CLASSES, FEATURE_FLAGS } from '../config/constants.js';
+import { deepElementFromPoint as pierceElementFromPoint } from '../utils/element-from-point.js';
 
 export class ElementDetector {
   constructor() {
@@ -199,14 +200,7 @@ export class ElementDetector {
   }
 
   deepElementFromPoint(x, y) {
-    let el = document.elementFromPoint(x, y);
-    let guard = 0;
-    while (el && el.shadowRoot && guard++ < 10) {
-      const nested = el.shadowRoot.elementFromPoint(x, y);
-      if (!nested || nested === el) break;
-      el = nested;
-    }
-    return el;
+    return pierceElementFromPoint(x, y);
   }
 
   /**

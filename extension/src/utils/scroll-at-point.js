@@ -28,27 +28,7 @@ function composedParent(node) {
   return null;
 }
 
-/**
- * Shadow-piercing elementFromPoint (does not enter iframes).
- * @param {number} x
- * @param {number} y
- * @param {Document} [doc]
- * @returns {Element|null}
- */
-export function elementFromPointDeep(x, y, doc = document) {
-  try {
-    let el = doc.elementFromPoint(x, y);
-    let guard = 0;
-    while (el && el.shadowRoot && guard++ < 10) {
-      const nested = el.shadowRoot.elementFromPoint(x, y);
-      if (!nested || nested === el) break;
-      el = nested;
-    }
-    return el || null;
-  } catch {
-    return null;
-  }
-}
+export { deepElementFromPoint as elementFromPointDeep } from './element-from-point.js';
 
 /**
  * @param {string|null|undefined} overflow

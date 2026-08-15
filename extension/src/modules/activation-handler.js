@@ -261,15 +261,21 @@ export class ActivationHandler {
     this.dispatchClickSequence(primary, clientX, clientY);
     // If `primary` is already inside the clickable activator (e.g. a <span> inside a <button>),
     // the event will bubble to the activator. Dispatching again on the activator would double-click.
+    // Light-DOM `contains()` is false across a shadow boundary, so a slotted-label host
+    // (point target) plus its inner <button> (hover activator) used to fire two sequences
+    // and toggle dropdowns closed. Treat either composed direction as one control.
     try {
       const primaryNode = /** @type {any} */ (primary);
       const activatorEl = /** @type {any} */ (activator);
-      const activatorContainsPrimary =
-        !!(activatorEl &&
-          primaryNode &&
-          typeof activatorEl.contains === 'function' &&
-          activatorEl.contains(primaryNode));
-      if (activator && activator !== primary && !activatorContainsPrimary) {
+      const sameControl = !!(
+        activatorEl &&
+        primaryNode &&
+        this.detector &&
+        typeof this.detector.composedContains === 'function' &&
+        (this.detector.composedContains(activatorEl, primaryNode) ||
+          this.detector.composedContains(primaryNode, activatorEl))
+      );
+      if (activator && activator !== primary && !sameControl) {
         this.dispatchClickSequence(activator, clientX, clientY);
       }
       // No extra `activator.click()` fallback here; it causes double activation for normal controls

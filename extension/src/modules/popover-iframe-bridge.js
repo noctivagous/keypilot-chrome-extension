@@ -13,6 +13,7 @@ import { SCROLL } from '../config/constants.js';
 import { MSG } from '../messaging/types.js';
 import { isTypingContext, hasModifierKeys } from '../utils/dom-context.js';
 import { scrollAtPoint, scrollToEdgeAtPoint } from '../utils/scroll-at-point.js';
+import { deepElementFromPoint as pierceElementFromPoint } from '../utils/element-from-point.js';
 
 /**
  * @typedef {object} PopoverIframeBridgeOptions
@@ -69,19 +70,7 @@ export function installPopoverIframeBridge(options = {}) {
       }
     };
 
-    const deepElementFromPoint = (x, y) => {
-      try {
-        let el = document.elementFromPoint(x, y);
-        while (el && el.shadowRoot && typeof el.shadowRoot.elementFromPoint === 'function') {
-          const inner = el.shadowRoot.elementFromPoint(x, y);
-          if (!inner || inner === el) break;
-          el = inner;
-        }
-        return el;
-      } catch {
-        return null;
-      }
-    };
+    const deepElementFromPoint = (x, y) => pierceElementFromPoint(x, y);
 
     const updateMouse = (e) => {
       try {

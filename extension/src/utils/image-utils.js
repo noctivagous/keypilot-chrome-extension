@@ -38,32 +38,7 @@ const MAX_SVG_RASTER_EDGE = 4096;
  * }} HoveredImageResult
  */
 
-/**
- * Shadow-DOM–aware elementFromPoint (mirrors ElementDetector.deepElementFromPoint).
- * @param {number} x
- * @param {number} y
- * @returns {Element|null}
- */
-export function deepElementFromPoint(x, y) {
-  let el = null;
-  try {
-    el = document.elementFromPoint(x, y);
-  } catch {
-    return null;
-  }
-  let guard = 0;
-  while (el && el.shadowRoot && guard++ < 10) {
-    let nested = null;
-    try {
-      nested = el.shadowRoot.elementFromPoint(x, y);
-    } catch {
-      break;
-    }
-    if (!nested || nested === el) break;
-    el = nested;
-  }
-  return el;
-}
+export { deepElementFromPoint } from './element-from-point.js';
 
 /**
  * True when a node looks like KeyPilot-injected UI (should not count as page media).

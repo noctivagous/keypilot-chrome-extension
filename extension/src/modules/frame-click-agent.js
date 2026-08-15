@@ -29,6 +29,8 @@ import {
 } from '../config/keyboard-layouts.js';
 import { getSettings, SETTINGS_STORAGE_KEY, scrollBehaviorFromSpeed, DEFAULT_SETTINGS } from './settings-manager.js';
 import { scrollAtPoint, scrollToEdgeAtPoint, scrollByAtPoint } from '../utils/scroll-at-point.js';
+import { deepElementFromPoint } from '../utils/element-from-point.js';
+import { containsComposed } from '../ui/kp-chrome-shadow.js';
 
 /**
  * @typedef {{ openInNewTab?: boolean, background?: boolean, topOrigin?: string }} FrameActivateOptions
@@ -36,27 +38,6 @@ import { scrollAtPoint, scrollToEdgeAtPoint, scrollByAtPoint } from '../utils/sc
 
 const CLICKABLE_SEL =
   'a[href], button, [role="button"], [role="link"], [role="menuitem"], [role="option"], [role="tab"], [role="checkbox"], [role="radio"], [role="switch"], summary, [onclick], input, select, textarea, label';
-
-/**
- * Shadow-DOM–aware elementFromPoint (no iframe piercing — that is recursive via postMessage).
- * @param {number} x
- * @param {number} y
- * @returns {Element|null}
- */
-function deepElementFromPoint(x, y) {
-  try {
-    let el = document.elementFromPoint(x, y);
-    let guard = 0;
-    while (el && el.shadowRoot && guard++ < 10) {
-      const nested = el.shadowRoot.elementFromPoint(x, y);
-      if (!nested || nested === el) break;
-      el = nested;
-    }
-    return el || null;
-  } catch {
-    return null;
-  }
-}
 
 /**
  * Read computed styles with KeyPilot custom-cursor override suspended so
@@ -1049,11 +1030,12 @@ export function installFrameClickAgent() {
 
       dispatchClickSequence(el, clientX, clientY);
       try {
-        if (
+        const sameControl = !!(
           activator &&
-          activator !== el &&
-          !(typeof activator.contains === 'function' && activator.contains(el))
-        ) {
+          el &&
+          (containsComposed(activator, el) || containsComposed(el, activator))
+        );
+        if (activator && activator !== el && !sameControl) {
           dispatchClickSequence(activator, clientX, clientY);
         }
       } catch { /* ignore */ }
