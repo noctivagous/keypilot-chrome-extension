@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-15T21:58:58.247Z
+ * Generated on 2026-08-15T22:16:04.881Z
  */
 
 (() => {
@@ -1087,6 +1087,8 @@
     FOCUS_OVERLAY: "kpv2-focus-overlay",
     /** Scroll Line origin-dot + line (popover / top-layer chrome) */
     SCROLL_LINE_OVERLAY: "kpv2-scroll-line",
+    /** Scroll Line: fixed frame around a nested (in-page) overflow target */
+    SCROLL_LINE_TARGET: "kpv2-scroll-line-target",
     /**
      * Strategy B: in-target absolute focus ring — mounted as last child of the
      * clickable/host with local max z-index + 1. Co-located paint; scrolls with
@@ -1621,7 +1623,9 @@
       // Animation speed for keyboard scrolling: smooth (animated) or instant (jump).
       speed: SCROLL.BEHAVIOR === "smooth" ? "smooth" : "instant",
       // Middle mouse button → Scroll Line Function (empty page only). On by default on Mac.
-      middleClickScrollLine: isMacPlatform()
+      middleClickScrollLine: isMacPlatform(),
+      // Scroll Line: skip wide in-page overflow (carousels); keep square / taller boxes.
+      linePreferPortraitTargets: true
     })
   });
   function normalizeSearchEngine(raw) {
@@ -1756,7 +1760,11 @@
       ),
       speed: normalizeScrollSpeed(stored.speed),
       // Missing key → platform default (Mac on, others off). Explicit boolean is honored on any OS.
-      middleClickScrollLine: normalizeBoolean(stored.middleClickScrollLine, middleClickDefault)
+      middleClickScrollLine: normalizeBoolean(stored.middleClickScrollLine, middleClickDefault),
+      linePreferPortraitTargets: normalizeBoolean(
+        stored.linePreferPortraitTargets,
+        DEFAULT_SETTINGS.scroll.linePreferPortraitTargets
+      )
     };
   }
   function normalizeControlStrip(raw) {
@@ -2216,8 +2224,20 @@
     }
     return false;
   }
+  function isWideOverflowTarget(el) {
+    if (!el || el.nodeType !== 1) return false;
+    let r = null;
+    try {
+      r = el.getBoundingClientRect();
+    } catch {
+      r = null;
+    }
+    if (!r || !(r.width > 1) || !(r.height > 1)) return false;
+    return r.width > r.height + 1;
+  }
   function findScrollableAtPoint(clientX, clientY, ctx = {}) {
     const doc = ctx.doc || document;
+    const skipWide = !!ctx.skipWideTargets;
     const x = Number(clientX);
     const y = Number(clientY);
     if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
@@ -2251,6 +2271,10 @@
       if (cap.canY || cap.canX) {
         if (isDocumentScrollRoot(n, doc)) {
           seenDocRoot = n;
+          n = composedParent(n);
+          continue;
+        }
+        if (skipWide && isWideOverflowTarget(n)) {
           n = composedParent(n);
           continue;
         }

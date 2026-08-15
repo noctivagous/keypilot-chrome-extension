@@ -26,14 +26,16 @@
             type="button"
             class="settings-tab"
             role="tab"
-            id="tab-search"
-            data-panel="search"
-            aria-controls="panel-search"
+            id="tab-overview"
+            data-panel="overview"
+            aria-controls="panel-overview"
             aria-selected="true"
             tabindex="0"
           >
-            Search
+            Overview
           </button>
+
+          <div class="settings-nav-group" aria-hidden="true">Modes</div>
           <button
             type="button"
             class="settings-tab"
@@ -45,30 +47,6 @@
             tabindex="-1"
           >
             Keyboard
-          </button>
-          <button
-            type="button"
-            class="settings-tab"
-            role="tab"
-            id="tab-cursor"
-            data-panel="cursor"
-            aria-controls="panel-cursor"
-            aria-selected="false"
-            tabindex="-1"
-          >
-            Cursor
-          </button>
-          <button
-            type="button"
-            class="settings-tab"
-            role="tab"
-            id="tab-scrolling"
-            data-panel="scrolling"
-            aria-controls="panel-scrolling"
-            aria-selected="false"
-            tabindex="-1"
-          >
-            Scrolling
           </button>
           <button
             type="button"
@@ -98,6 +76,32 @@
             type="button"
             class="settings-tab"
             role="tab"
+            id="tab-scrolling"
+            data-panel="scrolling"
+            aria-controls="panel-scrolling"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            Scrolling
+          </button>
+
+          <div class="settings-nav-group" aria-hidden="true">Interface</div>
+          <button
+            type="button"
+            class="settings-tab"
+            role="tab"
+            id="tab-cursor"
+            data-panel="cursor"
+            aria-controls="panel-cursor"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            Cursor
+          </button>
+          <button
+            type="button"
+            class="settings-tab"
+            role="tab"
             id="tab-control-strip"
             data-panel="control-strip"
             aria-controls="panel-control-strip"
@@ -106,6 +110,20 @@
           >
             Control Strip
           </button>
+          <button
+            type="button"
+            class="settings-tab"
+            role="tab"
+            id="tab-search"
+            data-panel="search"
+            aria-controls="panel-search"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            Search
+          </button>
+
+          <div class="settings-nav-group" aria-hidden="true">Info</div>
           <button
             type="button"
             class="settings-tab"
@@ -124,9 +142,58 @@
           <section
             class="settings-panel is-active"
             role="tabpanel"
+            id="panel-overview"
+            data-panel="overview"
+            aria-labelledby="tab-overview"
+          >
+            <header class="panel-header">
+              <h2>Overview</h2>
+              <p class="panel-lead">Pick a category to change how KeyPilot looks and behaves. Use the list on the left anytime.</p>
+            </header>
+
+            <div class="settings-hub-grid">
+              <button type="button" class="settings-hub-tile" data-goto="keyboard">
+                <span class="settings-hub-title">Keyboard</span>
+                <span class="settings-hub-desc">Layout family, left-handed variant, and floating keyboard reference options.</span>
+              </button>
+              <button type="button" class="settings-hub-tile" data-goto="click-mode">
+                <span class="settings-hub-title">Click Mode</span>
+                <span class="settings-hub-desc">Crosshair look, hover focus rectangle, and click activation effects.</span>
+              </button>
+              <button type="button" class="settings-hub-tile" data-goto="text-mode">
+                <span class="settings-hub-title">Text Mode</span>
+                <span class="settings-hub-desc">Text-field cursor, focus style, labels, and outline thickness.</span>
+              </button>
+              <button type="button" class="settings-hub-tile" data-goto="scrolling">
+                <span class="settings-hub-title">Scrolling</span>
+                <span class="settings-hub-desc">C / V distance, smooth vs instant, Scroll Line targeting, and middle-click.</span>
+              </button>
+              <button type="button" class="settings-hub-tile" data-goto="cursor">
+                <span class="settings-hub-title">Cursor</span>
+                <span class="settings-hub-desc">Whether KeyPilot replaces the page cursor with its own crosshair.</span>
+              </button>
+              <button type="button" class="settings-hub-tile" data-goto="control-strip">
+                <span class="settings-hub-title">Control Strip</span>
+                <span class="settings-hub-desc">Show or hide the status strip, and whether it starts collapsed.</span>
+              </button>
+              <button type="button" class="settings-hub-tile" data-goto="search">
+                <span class="settings-hub-title">Search</span>
+                <span class="settings-hub-desc">Search engine for the New Tab box and KeyPilot’s omnibox (Alt+L).</span>
+              </button>
+              <button type="button" class="settings-hub-tile" data-goto="about">
+                <span class="settings-hub-title">About</span>
+                <span class="settings-hub-desc">Where settings are stored and how they sync across tabs.</span>
+              </button>
+            </div>
+          </section>
+
+          <section
+            class="settings-panel"
+            role="tabpanel"
             id="panel-search"
             data-panel="search"
             aria-labelledby="tab-search"
+            hidden
           >
             <header class="panel-header">
               <h2>Search engine</h2>
@@ -238,7 +305,7 @@
           >
             <header class="panel-header">
               <h2>Scrolling</h2>
-              <p class="panel-lead">Keyboard page scrolling for C / V (smaller step). Z / X jump to the edge. Optional middle-click Scroll Line.</p>
+              <p class="panel-lead">Keyboard page scrolling for C / V (smaller step). Z / X jump to the edge. Scroll Line targeting and optional middle-click.</p>
             </header>
 
             <div class="stack">
@@ -261,6 +328,16 @@
                   <div class="field-hint">Animation for keyboard scrolling (C/V, Z/X, B/N).</div>
                 </label>
               </div>
+
+              <label class="toggle" for="scroll-line-prefer-portrait">
+                <input id="scroll-line-prefer-portrait" type="checkbox" />
+                <div class="toggle-text">
+                  <div class="toggle-title">Scroll Line skips wide in-page scrollers</div>
+                  <div class="toggle-sub">
+                    Prefer square or taller overflow boxes (1:1 or vertical). Wide strips such as carousels are skipped so Scroll Line locks the page or a portrait pane instead.
+                  </div>
+                </div>
+              </label>
 
               <label class="toggle" for="scroll-middle-click-scroll-line">
                 <input id="scroll-middle-click-scroll-line" type="checkbox" />

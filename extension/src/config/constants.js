@@ -56,6 +56,8 @@ export const CSS_CLASSES = {
   FOCUS_OVERLAY: 'kpv2-focus-overlay',
   /** Scroll Line origin-dot + line (popover / top-layer chrome) */
   SCROLL_LINE_OVERLAY: 'kpv2-scroll-line',
+  /** Scroll Line: fixed frame around a nested (in-page) overflow target */
+  SCROLL_LINE_TARGET: 'kpv2-scroll-line-target',
   /**
    * Strategy B: in-target absolute focus ring — mounted as last child of the
    * clickable/host with local max z-index + 1. Co-located paint; scrolls with

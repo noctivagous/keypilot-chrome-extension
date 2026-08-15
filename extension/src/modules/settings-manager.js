@@ -90,7 +90,8 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  * @typedef {{
  *   halfPagePx: number,
  *   speed: ScrollSpeed,
- *   middleClickScrollLine: boolean
+ *   middleClickScrollLine: boolean,
+ *   linePreferPortraitTargets: boolean
  * }} ScrollSettings
  */
 
@@ -229,7 +230,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
     // Animation speed for keyboard scrolling: smooth (animated) or instant (jump).
     speed: SCROLL.BEHAVIOR === 'smooth' ? 'smooth' : 'instant',
     // Middle mouse button → Scroll Line Function (empty page only). On by default on Mac.
-    middleClickScrollLine: isMacPlatform()
+    middleClickScrollLine: isMacPlatform(),
+    // Scroll Line: skip wide in-page overflow (carousels); keep square / taller boxes.
+    linePreferPortraitTargets: true
   })
 });
 
@@ -437,7 +440,11 @@ function normalizeScroll(raw) {
     ),
     speed: normalizeScrollSpeed(stored.speed),
     // Missing key → platform default (Mac on, others off). Explicit boolean is honored on any OS.
-    middleClickScrollLine: normalizeBoolean(stored.middleClickScrollLine, middleClickDefault)
+    middleClickScrollLine: normalizeBoolean(stored.middleClickScrollLine, middleClickDefault),
+    linePreferPortraitTargets: normalizeBoolean(
+      stored.linePreferPortraitTargets,
+      DEFAULT_SETTINGS.scroll.linePreferPortraitTargets
+    )
   };
 }
 

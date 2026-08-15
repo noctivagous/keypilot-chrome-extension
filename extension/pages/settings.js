@@ -61,14 +61,16 @@ function adaptHeaderForPopoverEmbed() {
 }
 
 const SETTINGS_TAB_STORAGE_KEY = 'kp_settings_active_tab';
+const SETTINGS_DEFAULT_PANEL_ID = 'overview';
 const SETTINGS_PANEL_IDS = Object.freeze([
-  'search',
+  'overview',
   'keyboard',
-  'cursor',
-  'scrolling',
   'click-mode',
   'text-mode',
+  'scrolling',
+  'cursor',
   'control-strip',
+  'search',
   'about'
 ]);
 
@@ -78,7 +80,7 @@ const SETTINGS_PANEL_IDS = Object.freeze([
  * @param {{ focusTab?: boolean, persist?: boolean }} [opts]
  */
 function activateSettingsPanel(panelId, opts = {}) {
-  const id = SETTINGS_PANEL_IDS.includes(panelId) ? panelId : 'search';
+  const id = SETTINGS_PANEL_IDS.includes(panelId) ? panelId : SETTINGS_DEFAULT_PANEL_ID;
   const tabs = Array.from(document.querySelectorAll('.settings-tab[data-panel]'));
   const panels = Array.from(document.querySelectorAll('.settings-panel[data-panel]'));
 
@@ -124,7 +126,7 @@ function installSettingsMasterDetailNav() {
   const tabs = Array.from(document.querySelectorAll('.settings-tab[data-panel]'));
   if (!nav || tabs.length === 0) return;
 
-  let initial = 'search';
+  let initial = SETTINGS_DEFAULT_PANEL_ID;
   try {
     const hash = (location.hash || '').replace(/^#/, '');
     if (SETTINGS_PANEL_IDS.includes(hash)) {
@@ -148,6 +150,16 @@ function installSettingsMasterDetailNav() {
       e.preventDefault();
       const panelId = tab.getAttribute('data-panel');
       withOptionalViewTransition(() => activateSettingsPanel(panelId));
+    });
+  });
+
+  // Overview hub tiles jump into a category (same as left-nav tabs).
+  document.querySelectorAll('.settings-hub-tile[data-goto]').forEach((tile) => {
+    tile.addEventListener('click', (e) => {
+      e.preventDefault();
+      const panelId = tile.getAttribute('data-goto');
+      if (!panelId || !SETTINGS_PANEL_IDS.includes(panelId)) return;
+      withOptionalViewTransition(() => activateSettingsPanel(panelId, { focusTab: true }));
     });
   });
 
@@ -288,6 +300,7 @@ async function render() {
   const scrollHalfPageNumber = /** @type {HTMLInputElement|null} */ (document.getElementById('scroll-half-page-number'));
   const scrollSpeedSelect = /** @type {HTMLSelectElement|null} */ (document.getElementById('scroll-speed'));
   const scrollMiddleClickScrollLine = /** @type {HTMLInputElement|null} */ (document.getElementById('scroll-middle-click-scroll-line'));
+  const scrollLinePreferPortrait = /** @type {HTMLInputElement|null} */ (document.getElementById('scroll-line-prefer-portrait'));
   const scrollResetBtn = document.getElementById('scroll-reset');
 
   const previewCursor = new CursorManager();
@@ -460,6 +473,9 @@ async function render() {
     setInputValue(scrollSpeedSelect, speed);
     if (scrollMiddleClickScrollLine) {
       scrollMiddleClickScrollLine.checked = !!sc?.middleClickScrollLine;
+    }
+    if (scrollLinePreferPortrait) {
+      scrollLinePreferPortrait.checked = sc?.linePreferPortraitTargets !== false;
     }
   };
 
@@ -716,6 +732,10 @@ async function render() {
 
   scrollMiddleClickScrollLine?.addEventListener('change', async () => {
     await setSettings({ scroll: { middleClickScrollLine: !!scrollMiddleClickScrollLine.checked } });
+  }, true);
+
+  scrollLinePreferPortrait?.addEventListener('change', async () => {
+    await setSettings({ scroll: { linePreferPortraitTargets: !!scrollLinePreferPortrait.checked } });
   }, true);
 
   scrollResetBtn?.addEventListener('click', async () => {

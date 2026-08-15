@@ -333,17 +333,32 @@ function isKeyPilotScrollChrome(n) {
 }
 
 /**
+ * True when the box is wider than tall (landscape). Scroll Line can skip these
+ * so horizontal carousels lose to a portrait/square ancestor or the page.
+ * @param {Element} el
+ * @returns {boolean}
+ */
+export function isWideOverflowTarget(el) {
+  if (!el || el.nodeType !== 1) return false;
+  let r = null;
+  try { r = el.getBoundingClientRect(); } catch { r = null; }
+  if (!r || !(r.width > 1) || !(r.height > 1)) return false;
+  return r.width > r.height + 1;
+}
+
+/**
  * Nested overflow (any axis) under a viewport point, then the document.
  * Used by Scroll Line: lock this target at activation. Does not pick a single
  * axis or require remaining room in a direction.
  *
  * @param {number} clientX
  * @param {number} clientY
- * @param {{ doc?: Document, win?: Window }} [ctx]
+ * @param {{ doc?: Document, win?: Window, skipWideTargets?: boolean }} [ctx]
  * @returns {{ el: Element, canX: boolean, canY: boolean }|null}
  */
 export function findScrollableAtPoint(clientX, clientY, ctx = {}) {
   const doc = ctx.doc || document;
+  const skipWide = !!ctx.skipWideTargets;
   const x = Number(clientX);
   const y = Number(clientY);
   if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
@@ -381,6 +396,10 @@ export function findScrollableAtPoint(clientX, clientY, ctx = {}) {
     if (cap.canY || cap.canX) {
       if (isDocumentScrollRoot(n, doc)) {
         seenDocRoot = n;
+        n = composedParent(n);
+        continue;
+      }
+      if (skipWide && isWideOverflowTarget(n)) {
         n = composedParent(n);
         continue;
       }

@@ -104,7 +104,8 @@ import {
   scrollElementBy,
   findScrollableAtPoint,
   findScrollTargetAtPoint,
-  elementFromPointDeep
+  elementFromPointDeep,
+  isDocumentScrollRoot
 } from './utils/scroll-at-point.js';
 import { ScrollLineOverlay } from './modules/scroll-line-overlay.js';
 import { matchPointerFunctionDef } from './modules/pointer-function-bindings.js';
@@ -3944,6 +3945,7 @@ export class KeyPilot extends EventManager {
     try {
       this._scrollLineOverlay?.show(x, y);
     } catch { /* ignore */ }
+    try { this._syncScrollLineTargetOverlay(); } catch { /* ignore */ }
 
     this._scrollLineLastTs = 0;
     if (this._scrollLineRaf) {
@@ -3986,12 +3988,15 @@ export class KeyPilot extends EventManager {
     } catch {
       under = null;
     }
+    const skipWide = this._settings?.scroll?.linePreferPortraitTargets !== false;
+
     if (under && (under.tagName === 'IFRAME' || under.tagName === 'FRAME')) {
       try {
         if (!this._isKeyPilotUiElement?.(under)) {
           const iframe = /** @type {HTMLIFrameElement} */ (under);
           const rect = iframe.getBoundingClientRect();
-          if (rect && rect.width > 0 && rect.height > 0) {
+          const wideIframe = skipWide && rect && rect.width > rect.height + 1;
+          if (rect && rect.width > 0 && rect.height > 0 && !wideIframe) {
             return {
               kind: 'iframe',
               iframe,
@@ -4003,7 +4008,7 @@ export class KeyPilot extends EventManager {
       } catch { /* fall through */ }
     }
 
-    const found = findScrollableAtPoint(x, y);
+    const found = findScrollableAtPoint(x, y, { skipWideTargets: skipWide });
     if (found?.el) {
       return { kind: 'element', el: found.el, canX: !!found.canX, canY: !!found.canY };
     }
@@ -4011,6 +4016,64 @@ export class KeyPilot extends EventManager {
     const se = document.scrollingElement || document.documentElement || document.body;
     if (se) return { kind: 'element', el: se, canX: true, canY: true };
     return null;
+  }
+
+  /**
+   * Outline the locked nested scroller (or iframe). Hidden for document /
+   * near-full-viewport roots so page scroll does not draw a screen-sized box.
+   */
+  _syncScrollLineTargetOverlay() {
+    const overlay = this._scrollLineOverlay;
+    if (!overlay || typeof overlay.setTargetBox !== 'function') return;
+
+    const target = this._scrollLineTarget;
+    /** @type {Element|null} */
+    let el = null;
+    if (target?.kind === 'iframe' && target.iframe) {
+      el = target.iframe;
+    } else if (target?.kind === 'element' && target.el) {
+      el = target.el;
+    }
+    if (!el || el.nodeType !== 1) {
+      overlay.setTargetBox(null);
+      return;
+    }
+
+    try {
+      if (isDocumentScrollRoot(el, document)) {
+        overlay.setTargetBox(null);
+        return;
+      }
+    } catch { /* ignore */ }
+
+    let r = null;
+    try { r = el.getBoundingClientRect(); } catch { r = null; }
+    if (!r || !(r.width > 8) || !(r.height > 8)) {
+      overlay.setTargetBox(null);
+      return;
+    }
+
+    try {
+      const vw = window.innerWidth || 0;
+      const vh = window.innerHeight || 0;
+      if (vw > 0 && vh > 0 && r.width >= vw * 0.94 && r.height >= vh * 0.94) {
+        overlay.setTargetBox(null);
+        return;
+      }
+    } catch { /* ignore */ }
+
+    let radius = '0';
+    try {
+      radius = String(window.getComputedStyle(el).borderRadius || '0');
+    } catch { radius = '0'; }
+
+    overlay.setTargetBox({
+      left: r.left,
+      top: r.top,
+      width: r.width,
+      height: r.height,
+      radius
+    });
   }
 
   /**
@@ -4052,6 +4115,7 @@ export class KeyPilot extends EventManager {
     const py = Number.isFinite(my) ? my : oy;
 
     try { this._scrollLineOverlay?.updatePointer(px, py); } catch { /* ignore */ }
+    try { this._syncScrollLineTargetOverlay(); } catch { /* ignore */ }
 
     let vx = this._scrollLineAxisVelocity(px - ox);
     let vy = this._scrollLineAxisVelocity(py - oy);

@@ -14,8 +14,10 @@ export class ScrollLineOverlay {
     this.svg = null;
     this.line = null;
     this.dot = null;
+    this.targetBox = null;
     this.origin = { x: 0, y: 0 };
     this._usingPopover = false;
+    this._lastTargetBox = null;
   }
 
   /**
@@ -62,8 +64,52 @@ export class ScrollLineOverlay {
     } catch { /* ignore */ }
   }
 
+  /**
+   * Viewport-fixed ring around a nested overflow container. Pass null to hide
+   * (document / full-viewport scrollers).
+   * @param {{ left: number, top: number, width: number, height: number, radius?: string }|null} box
+   */
+  setTargetBox(box) {
+    this._ensure();
+    if (!this.targetBox) return;
+
+    if (!box || !(box.width > 4) || !(box.height > 4)) {
+      this._lastTargetBox = null;
+      try { this.targetBox.style.display = 'none'; } catch { /* ignore */ }
+      return;
+    }
+
+    const left = Number(box.left) || 0;
+    const top = Number(box.top) || 0;
+    const width = Number(box.width) || 0;
+    const height = Number(box.height) || 0;
+    const radius = String(box.radius || '0');
+    const prev = this._lastTargetBox;
+    if (
+      prev &&
+      Math.abs(prev.left - left) < 0.5 &&
+      Math.abs(prev.top - top) < 0.5 &&
+      Math.abs(prev.width - width) < 0.5 &&
+      Math.abs(prev.height - height) < 0.5 &&
+      prev.radius === radius
+    ) {
+      return;
+    }
+    this._lastTargetBox = { left, top, width, height, radius };
+
+    const el = this.targetBox;
+    try {
+      el.style.display = 'block';
+      el.style.transform = `translate3d(${left}px, ${top}px, 0)`;
+      el.style.width = `${width}px`;
+      el.style.height = `${height}px`;
+      el.style.borderRadius = radius;
+    } catch { /* ignore */ }
+  }
+
   hide() {
     if (!this.root) return;
+    this.setTargetBox(null);
     if (this._usingPopover) {
       try {
         if (typeof this.root.hidePopover === 'function' && this.root.matches(':popover-open')) {
@@ -81,6 +127,8 @@ export class ScrollLineOverlay {
     this.svg = null;
     this.line = null;
     this.dot = null;
+    this.targetBox = null;
+    this._lastTargetBox = null;
   }
 
   _syncDot() {
@@ -133,6 +181,22 @@ export class ScrollLineOverlay {
       'box-sizing:border-box'
     ].join(';');
 
+    const targetBox = doc.createElement('div');
+    targetBox.className = CSS_CLASSES.SCROLL_LINE_TARGET || 'kpv2-scroll-line-target';
+    targetBox.setAttribute('aria-hidden', 'true');
+    targetBox.style.cssText = [
+      'display:none',
+      'position:absolute',
+      'left:0',
+      'top:0',
+      'box-sizing:border-box',
+      'pointer-events:none',
+      `border:3px solid ${STROKE}`,
+      'background:transparent',
+      `box-shadow:0 0 0 2px ${COLORS.ORANGE_SHADOW}, 0 0 10px 2px ${COLORS.ORANGE_SHADOW_LIGHT}`,
+      'will-change:transform,width,height'
+    ].join(';');
+
     const svg = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('width', '100%');
     svg.setAttribute('height', '100%');
@@ -152,11 +216,13 @@ export class ScrollLineOverlay {
 
     svg.appendChild(line);
     svg.appendChild(dot);
+    root.appendChild(targetBox);
     root.appendChild(svg);
 
     this.root = root;
     this.svg = svg;
     this.line = line;
     this.dot = dot;
+    this.targetBox = targetBox;
   }
 }
