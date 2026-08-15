@@ -38,7 +38,8 @@ const MAX_SVG_RASTER_EDGE = 4096;
  * }} HoveredImageResult
  */
 
-export { deepElementFromPoint } from './element-from-point.js';
+import { deepElementFromPoint } from './element-from-point.js';
+export { deepElementFromPoint };
 
 /**
  * True when a node looks like KeyPilot-injected UI (should not count as page media).

@@ -28,7 +28,8 @@ function composedParent(node) {
   return null;
 }
 
-export { deepElementFromPoint as elementFromPointDeep } from './element-from-point.js';
+import { deepElementFromPoint as elementFromPointDeep } from './element-from-point.js';
+export { elementFromPointDeep };
 
 /**
  * @param {string|null|undefined} overflow

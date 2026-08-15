@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-15T00:42:26.398Z
+ * Generated on 2026-08-15T01:11:25.809Z
  */
 
 (() => {
@@ -2098,7 +2098,7 @@
     const x = Number(clientX);
     const y = Number(clientY);
     if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
-    let start = elementFromPointDeep(x, y, doc);
+    let start = deepElementFromPoint(x, y, doc);
     if (!start) {
       const se = doc.scrollingElement || doc.documentElement || doc.body;
       if (se) {
@@ -2198,7 +2198,7 @@
     const x = Number(clientX);
     const y = Number(clientY);
     if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
-    let start = elementFromPointDeep(x, y, doc);
+    let start = deepElementFromPoint(x, y, doc);
     if (!start) {
       const se = doc.scrollingElement || doc.documentElement || doc.body;
       if (!se) return null;
