@@ -258,6 +258,54 @@ export class OmniboxManager {
       this._commit();
       return;
     }
+
+    // Let the browser insert the character, but isolate this keydown from the
+    // page. Sites like Slashdot bind $(document).keydown and `return false`
+    // (preventDefault + stopPropagation) on bubble — that cancels inserting
+    // "t" (and other firehose keys) into this field.
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+  }
+
+  /**
+   * True when this keydown is already headed at omnibox chrome (open shadow).
+   * @param {Event|null|undefined} e
+   * @returns {boolean}
+   */
+  eventTargetsOmnibox(e) {
+    if (!this._open || !e) return false;
+    try {
+      const path = typeof e.composedPath === 'function' ? e.composedPath() : null;
+      const nodes = [this._input, this._panel, this._list, this._backdrop];
+      if (Array.isArray(path)) {
+        for (const n of path) {
+          if (nodes.includes(n)) return true;
+        }
+      }
+    } catch { /* ignore */ }
+    return false;
+  }
+
+  /**
+   * Reclaim focus and insert a printable key when the page (not the input)
+   * was the event target — document-capture stop would otherwise drop the
+   * character, and leaving it alone lets page shortcuts steal it.
+   * @param {KeyboardEvent} e
+   */
+  focusAndInsertKey(e) {
+    if (!this._open || !this._input) return;
+    try { this._input.focus(); } catch { /* ignore */ }
+    if (!e || e.ctrlKey || e.metaKey || e.altKey) return;
+    const key = e.key;
+    if (!key || key.length !== 1) return;
+    const input = this._input;
+    const value = String(input.value || '');
+    const start = Number.isInteger(input.selectionStart) ? input.selectionStart : value.length;
+    const end = Number.isInteger(input.selectionEnd) ? input.selectionEnd : start;
+    input.value = value.slice(0, start) + key + value.slice(end);
+    const pos = start + key.length;
+    try { input.setSelectionRange(pos, pos); } catch { /* ignore */ }
+    this._onInput();
   }
 
   _moveSelection(delta) {

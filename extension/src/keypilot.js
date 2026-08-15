@@ -2644,14 +2644,24 @@ export class KeyPilot extends EventManager {
       }
     }
 
-    // If omnibox is open, let its input handler do the work.
-    if (currentState.mode === MODES.OMNIBOX) {
-      // Escape should always close omnibox.
-      if (KB.CANCEL?.keys?.includes?.(e.key)) {
+    // If omnibox is open, isolate keydown from the page so site shortcuts
+    // (Slashdot firehose T, etc.) cannot preventDefault the character.
+    if (currentState.mode === MODES.OMNIBOX || this.omniboxManager?.isOpen?.()) {
+      if (KB.CANCEL?.keys?.includes?.(e.key) || e.key === 'Escape' || e.code === 'Escape') {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
         this.handleCloseOmnibox();
+        return;
+      }
+      // When the input already has the event, do not stop here (document
+      // capture): that would keep keydown from reaching the field. The
+      // omnibox input listener stops bubbling without preventDefault.
+      if (!this.omniboxManager?.eventTargetsOmnibox?.(e)) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        this.omniboxManager?.focusAndInsertKey?.(e);
       }
       return;
     }
