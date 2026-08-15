@@ -20,7 +20,7 @@ export class ElementDetector {
     this.CLICKABLE_SEL = 'a[href], button, input, select, textarea, video, audio, summary';
     // Include <summary> so details/summary groups (e.g. New Tab recent-history outlines)
     // are semantic hover/F targets for the full header, not only cursor:pointer leaves.
-    this.FOCUSABLE_SEL = 'a[href], button, input, select, textarea, video, audio, summary, [contenteditable="true"], [role="button"], [role="link"], [role="checkbox"], [role="radio"], [role="tab"], [data-action], [data-toggle], [data-click], [data-href], [data-link], [vue-click], [ng-click]';
+    this.FOCUSABLE_SEL = 'a[href], button, input, select, textarea, video, audio, summary, [contenteditable="true"], [role="button"], [role="link"], [role="checkbox"], [role="radio"], [role="tab"], [role="menuitem"], [data-action], [data-toggle], [data-click], [data-href], [data-link], [vue-click], [ng-click]';
 
     // Track elements with addEventListener click handlers
     this.clickHandlerElements = new WeakSet();
@@ -130,7 +130,36 @@ export class ElementDetector {
     if (r && this.COMPOSITE_CONTAINER_ROLES.includes(r)) return true;
     const tag = el.tagName;
     return tag === 'NAV' || tag === 'UL' || tag === 'OL' || tag === 'MENU' ||
-      tag === 'TABLE' || tag === 'TBODY' || tag === 'THEAD' || tag === 'TFOOT';
+      tag === 'TABLE' || tag === 'TBODY' || tag === 'THEAD' || tag === 'TFOOT' ||
+      tag === 'HEADER';
+  }
+
+  /**
+   * Site chrome bar (full-width header/nav) — not a real F-target.
+   * NVIDIA sets cursor:pointer on `nav.global-nav` / `.nav-header`, which
+   * would otherwise light up the entire top bar and then sticky-trap items.
+   * @param {Element} el
+   * @returns {boolean}
+   */
+  _isFullBleedChromeBar(el) {
+    if (!el || el.nodeType !== 1) return false;
+    try {
+      if (this.isCompositeClickContainer(el)) return true;
+    } catch { /* ignore */ }
+    let role = '';
+    try {
+      role = ((el.getAttribute && el.getAttribute('role')) || '').trim().toLowerCase();
+    } catch { /* ignore */ }
+    if (role === 'banner' || role === 'navigation') return true;
+    try {
+      const r = el.getBoundingClientRect();
+      const vw = window.innerWidth || 0;
+      if (!(r && vw > 0 && r.width > 0 && r.height > 0)) return false;
+      // Short strip spanning most of the viewport, parked at the top.
+      return r.width >= vw * 0.7 && r.height <= 120 && r.top <= 80;
+    } catch {
+      return false;
+    }
   }
 
   setupEventListenerTracking() {
@@ -305,8 +334,11 @@ export class ElementDetector {
 
     // getComputedStyle() is relatively expensive; only use it as a last resort.
     // Ignore inherited cursor:pointer from body/html-wide styles.
+    // Do not promote a full-width header/nav shell just because it sets
+    // cursor:pointer (NVIDIA `.nav-header` / `nav.global-nav`).
     let hasCursor = false;
-    if (allowCursor && !matchesSelector && !hasRole && !hasClickHandler) {
+    if (allowCursor && !matchesSelector && !hasRole && !hasClickHandler &&
+        !this._isFullBleedChromeBar(el)) {
       hasCursor = this.hasExplicitCursorPointer(el);
     }
 
@@ -697,6 +729,10 @@ export class ElementDetector {
   /**
    * True when `el` is nested chrome inside `host` (More menu, small sub-links,
    * icon buttons) rather than the primary hover target for the row/card/tab.
+   *
+   * Mega-menus (NVIDIA, etc.) nest flyout buttons/links inside a compact
+   * `role="menuitem"` / `aria-haspopup` chip. Those items sit *outside* the
+   * chip's box — they are not "More" chrome of the host.
    * @param {Element} el
    * @param {Element} host
    * @returns {boolean}
@@ -708,6 +744,27 @@ export class ElementDetector {
     } catch {
       return false;
     }
+
+    // Items inside a header/nav shell are the real targets, not "More" chrome.
+    try {
+      if (this._isFullBleedChromeBar(host)) return false;
+    } catch { /* ignore */ }
+
+    // Geometry first: flyout descendants live in the host's DOM tree but
+    // outside its painted chip. Do not swallow those as nested chrome.
+    try {
+      const er = el.getBoundingClientRect();
+      const hr = host.getBoundingClientRect();
+      if (er.width > 0 && er.height > 0 && hr.width > 0 && hr.height > 0) {
+        const overlapW = Math.max(0, Math.min(er.right, hr.right) - Math.max(er.left, hr.left));
+        const overlapH = Math.max(0, Math.min(er.bottom, hr.bottom) - Math.max(er.top, hr.top));
+        const eArea = er.width * er.height;
+        const hArea = hr.width * hr.height;
+        const overlapArea = overlapW * overlapH;
+        if (overlapArea < eArea * 0.4) return false;
+        if (eArea >= hArea * 0.8) return false;
+      }
+    } catch { /* fall through to type heuristics */ }
 
     const tag = el.tagName;
     const role = ((el.getAttribute && el.getAttribute('role')) || '').trim().toLowerCase();
@@ -727,6 +784,30 @@ export class ElementDetector {
       }
     }
     return false;
+  }
+
+  /**
+   * Top-bar disclosure chip (NVIDIA Products, etc.): small painted box that
+   * owns a large DOM flyout. Used to avoid sticky-hover on the chip.
+   * @param {Element} el
+   * @returns {boolean}
+   */
+  _isCompactDisclosureHost(el) {
+    if (!el || el.nodeType !== 1) return false;
+    let role = '';
+    let hasPopup = false;
+    try {
+      role = ((el.getAttribute && el.getAttribute('role')) || '').trim().toLowerCase();
+      hasPopup = !!(el.getAttribute && el.getAttribute('aria-haspopup'));
+    } catch { /* ignore */ }
+    if (role !== 'menuitem' && !hasPopup) return false;
+    try {
+      const r = el.getBoundingClientRect();
+      if (!r || r.width <= 0 || r.height <= 0) return false;
+      return r.height <= 72 && r.width <= 280;
+    } catch {
+      return true;
+    }
   }
 
   /**
@@ -1041,33 +1122,42 @@ export class ElementDetector {
 
       try {
         if (this.composedContains(prev, under)) {
-          // IMPORTANT: do NOT use Element.closest() here. closest() stops at
-          // shadow roots, so open-shadow leaves (archive.org tiles, MSN Fluent)
-          // always look like "no primary ancestor" and we'd keep `prev` forever
-          // while the pointer moves across different shadow interactives that
-          // still compose-contain under the same host. findClickable walks
-          // parentElement + shadow host hops and is the source of truth.
-          const leafInside = this.findClickable(under);
-          // Stretched link (msn.com card ::after): switch between card shell and
-          // headline label by geometry — must run before nested-chrome sticky, or
-          // the small title <a> is treated as chrome inside the card forever.
-          if (leafInside) {
-            try {
-              const stretchTarget = this._resolveStretchedLinkHoverTarget(
-                leafInside, clientX, clientY
-              );
-              if (stretchTarget) return stretchTarget;
-            } catch { /* ignore */ }
+          // Compact disclosure (menuitem chip + mega-menu): the flyout is a
+          // DOM child but sits outside the chip box. Do not sticky-keep the
+          // chip while the pointer is in the panel.
+          const flyoutAwayFromChip =
+            hasPoint &&
+            this._isCompactDisclosureHost(prev) &&
+            !this.pointInElementUnionBox(prev, clientX, clientY, 4);
+          if (!flyoutAwayFromChip) {
+            // IMPORTANT: do NOT use Element.closest() here. closest() stops at
+            // shadow roots, so open-shadow leaves (archive.org tiles, MSN Fluent)
+            // always look like "no primary ancestor" and we'd keep `prev` forever
+            // while the pointer moves across different shadow interactives that
+            // still compose-contain under the same host. findClickable walks
+            // parentElement + shadow host hops and is the source of truth.
+            const leafInside = this.findClickable(under);
+            // Stretched link (msn.com card ::after): switch between card shell and
+            // headline label by geometry — must run before nested-chrome sticky, or
+            // the small title <a> is treated as chrome inside the card forever.
+            if (leafInside) {
+              try {
+                const stretchTarget = this._resolveStretchedLinkHoverTarget(
+                  leafInside, clientX, clientY
+                );
+                if (stretchTarget) return stretchTarget;
+              } catch { /* ignore */ }
+            }
+            if (!leafInside || leafInside === prev || this._isNestedHoverChrome(leafInside, prev)) {
+              return prev;
+            }
+            // Leaf is a distinct primary target inside prev (e.g. large nested link):
+            // still prefer host for row-sized role=link / tab.
+            const host = this._findPreferableHoverHost(leafInside);
+            if (host === prev) return prev;
+            if (host) return host;
+            return leafInside;
           }
-          if (!leafInside || leafInside === prev || this._isNestedHoverChrome(leafInside, prev)) {
-            return prev;
-          }
-          // Leaf is a distinct primary target inside prev (e.g. large nested link):
-          // still prefer host for row-sized role=link / tab.
-          const host = this._findPreferableHoverHost(leafInside);
-          if (host === prev) return prev;
-          if (host) return host;
-          return leafInside;
         }
       } catch { /* ignore */ }
 
@@ -1108,6 +1198,13 @@ export class ElementDetector {
       if (!leafAtPoint || leafAtPoint === prev || this._isNestedHoverChrome(leafAtPoint, prev)) {
         return prev;
       }
+      // Full-width header/nav previously hovered: inner menu items must win.
+      try {
+        if (this._isFullBleedChromeBar(prev) && leafAtPoint !== prev) {
+          const host = this._findPreferableHoverHost(leafAtPoint);
+          return host || leafAtPoint;
+        }
+      } catch { /* ignore */ }
       try {
         if (
           !this.composedContains(prev, leafAtPoint) &&

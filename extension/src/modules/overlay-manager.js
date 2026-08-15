@@ -2019,19 +2019,19 @@ export class OverlayManager {
     } catch {
       clippers = [];
     }
-    if (!clippers.length) {
-      // Fallback: treat "probably clipped" ancestors as zero-room flush case
-      // only when the dedicated walk found nothing but the heuristic disagrees.
-      try {
-        if (this._isProbablyClippedByAncestorOverflow(paintEl) && clippers.length === 0) {
-          // Heuristic without enumerated clippers — don't invent a number;
-          // graded path will still use preferred outer unless clippers exist.
-        }
-      } catch { /* ignore */ }
-      return Infinity;
-    }
-
     let minRoom = Infinity;
+    // Viewport is a clip edge (flush top nav chips sit at y≈0).
+    try {
+      const vw = window.innerWidth || 0;
+      const vh = window.innerHeight || 0;
+      if (vw > 0 && vh > 0) {
+        minRoom = Math.min(er.left, er.top, vw - er.right, vh - er.bottom);
+      }
+    } catch { /* ignore */ }
+
+    if (!clippers.length) {
+      return Number.isFinite(minRoom) ? minRoom : Infinity;
+    }
     for (let i = 0; i < clippers.length; i++) {
       const c = clippers[i];
       if (!c || c.nodeType !== 1) continue;
