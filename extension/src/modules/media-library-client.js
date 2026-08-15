@@ -5,6 +5,10 @@
 import { MSG } from '../messaging/types.js';
 import { isExtensionContextValid } from '../utils/extension-context.js';
 import { blobToDataUrl, dataUrlToBlob } from '../utils/media-library-transfer.js';
+import {
+  isServiceWorkerFetchableVideoUrl,
+  MAX_INLINE_VIDEO_BYTES
+} from '../utils/video-url-utils.js';
 
 /**
  * @param {object} message
@@ -96,6 +100,10 @@ export async function addUrlToMediaLibrary(input) {
 
 /**
  * Store a video record (`kind: 'video'`). File bytes optional; thumb is the frame/poster.
+ *
+ * Prefer letting the service worker fetch http(s) progressive URLs (host_permissions).
+ * Only inline page-captured blobs (blob:/data:) under {@link MAX_INLINE_VIDEO_BYTES}.
+ *
  * @param {{
  *   blob?: Blob,
  *   dataUrl?: string,
@@ -111,14 +119,20 @@ export async function addUrlToMediaLibrary(input) {
  */
 export async function addVideoToMediaLibrary(input) {
   const sourceUrl = String(input?.sourceUrl || '').trim();
+  const canSwFetch = isServiceWorkerFetchableVideoUrl(sourceUrl);
+
   let dataUrl = typeof input?.dataUrl === 'string' ? input.dataUrl : '';
-  if (!dataUrl && input?.blob instanceof Blob && input.blob.size > 0) {
+  const fileBlob = input?.blob instanceof Blob && input.blob.size > 0 ? input.blob : null;
+
+  // Inline only when SW cannot fetch the URL (page-local blob:/data:), and size fits messaging.
+  if (!dataUrl && fileBlob && !canSwFetch && fileBlob.size <= MAX_INLINE_VIDEO_BYTES) {
     try {
-      dataUrl = await blobToDataUrl(input.blob);
+      dataUrl = await blobToDataUrl(fileBlob);
     } catch {
       dataUrl = '';
     }
   }
+
   let thumbDataUrl = typeof input?.thumbDataUrl === 'string' ? input.thumbDataUrl : '';
   if (!thumbDataUrl && input?.thumbBlob instanceof Blob && input.thumbBlob.size > 0) {
     try {
@@ -134,12 +148,14 @@ export async function addVideoToMediaLibrary(input) {
     type: MSG.MEDIA_LIBRARY_ADD,
     kind: 'video',
     dataUrl,
-    mime: input?.mime || input?.blob?.type || '',
+    mime: input?.mime || fileBlob?.type || '',
     sourceUrl,
     pageUrl: input?.pageUrl || '',
     thumbDataUrl,
     width: Number(input?.width) || 0,
-    height: Number(input?.height) || 0
+    height: Number(input?.height) || 0,
+    /** Ask SW to fetch http(s) bytes when we did not inline a dataUrl. */
+    fetchSource: canSwFetch && !dataUrl
   });
 }
 

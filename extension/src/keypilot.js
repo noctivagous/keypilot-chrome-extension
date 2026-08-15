@@ -782,7 +782,9 @@ export class KeyPilot extends EventManager {
       this._applyKeyboardLayoutFromSettings();
     } catch { /* ignore */ }
     try {
-      void this._refreshCurrentKeyboardLayoutFromSettings();
+      // Await so the first Keyboard Reference show() already knows user: vs builtin
+      // (constructor default is 'builtin' and would otherwise paint a built-in flash).
+      await this._refreshCurrentKeyboardLayoutFromSettings();
     } catch { /* ignore */ }
     try {
       void this._refreshBuiltinFunctionActionParams();
@@ -1769,8 +1771,14 @@ export class KeyPilot extends EventManager {
 
       try {
         if (typeof this.floatingKeyboardHelp.setActiveLayoutSelection === 'function') {
+          // Prefer persisted settings over the constructor default ('builtin').
+          const layoutSel = String(
+            this._settings?.currentKeyboardLayoutId
+            || this._currentKeyboardLayoutId
+            || 'builtin'
+          );
           this.floatingKeyboardHelp.setActiveLayoutSelection({
-            currentKeyboardLayoutId: this._currentKeyboardLayoutId || 'builtin',
+            currentKeyboardLayoutId: layoutSel,
             userLayout: this._currentUserLayout,
             userMacros: this._currentUserMacros,
             userActions: this._currentUserActions
@@ -5621,7 +5629,7 @@ export class KeyPilot extends EventManager {
 
   /**
    * Copy the <video> under the cursor (Actions Library — not on built-in layouts).
-   * Destination is clipboard (default), Media Library, or both.
+   * Default destination is Media Library (file bytes when fetchable). Clipboard gets the URL.
    * @param {KeyboardEvent} [_e]
    * @param {{ destination?: string }} [parameters]
    */
@@ -5650,38 +5658,19 @@ export class KeyPilot extends EventManager {
       return;
     }
 
-    const videoUrl = String(result.currentSrc || '').trim();
+    const videoUrl = String(result.currentSrc || result.fileUrl || '').trim();
     const thumb = result.thumbBlob instanceof Blob && result.thumbBlob.size > 0
       ? result.thumbBlob
       : null;
 
     let copied = false;
-    let copiedImage = false;
     let copyError = '';
     if (flags.clipboard) {
-      if (thumb) {
-        try {
-          copied = await this.copyImageToClipboard(thumb, result.thumbMime || thumb.type || 'image/png');
-          copiedImage = copied;
-          if (copied) {
-            try { this.overlayManager?.flashImageCopyPulse?.(result.element); } catch { /* ignore */ }
-          } else {
-            copyError = 'Could not copy video';
-          }
-        } catch (error) {
-          console.warn('[KeyPilot] copyImageToClipboard failed:', error);
-          copyError = 'Could not copy video';
-          if (error?.name === 'NotAllowedError' || /permission/i.test(error?.message || '')) {
-            copyError = 'Clipboard permission denied';
-          } else if (/secure context/i.test(error?.message || '')) {
-            copyError = 'Clipboard requires HTTPS';
-          }
-        }
-      } else if (videoUrl) {
+      if (videoUrl) {
         copied = await this.copyToClipboard(videoUrl);
         if (!copied) copyError = 'Could not copy video URL';
       } else {
-        copyError = 'No video under cursor';
+        copyError = 'No video URL under cursor';
       }
     }
 
@@ -5693,19 +5682,18 @@ export class KeyPilot extends EventManager {
     if (flags.clipboard && flags.mediaLibrary && copied && (saved?.success || saved?.duplicate)) {
       this.showFlashNotification(
         saved?.duplicate
-          ? 'Video copied; already in Media Library'
-          : 'Video copied and saved to Media Library',
+          ? 'Video URL copied; already in Media Library'
+          : 'Video URL copied and saved to Media Library',
         saved?.duplicate ? COLORS.NOTIFICATION_INFO : COLORS.NOTIFICATION_SUCCESS,
-        copiedImage ? thumb : undefined
+        thumb || undefined
       );
     } else {
       if (flags.clipboard) {
         this.showFlashNotification(
           copied
-            ? (copiedImage ? 'Video copied to clipboard' : 'Video URL copied to clipboard')
-            : (copyError || 'Could not copy video'),
-          copied ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_ERROR,
-          copied && copiedImage ? thumb : undefined
+            ? 'Video URL copied to clipboard'
+            : (copyError || 'Could not copy video URL'),
+          copied ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_ERROR
         );
       }
       if (flags.mediaLibrary) {
@@ -5734,10 +5722,13 @@ export class KeyPilot extends EventManager {
    * @returns {import('./modules/action-result-delivery.js').ActionResultDestination}
    */
   _resolveCopyDestination(functionId, parameters) {
+    const fallback = functionId === 'COPY_HOVERED_VIDEO'
+      ? ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY
+      : ACTION_RESULT_DESTINATIONS.CLIPBOARD;
     return normalizeActionResultDestination(
       parameters?.destination
         ?? getActionParameter(this._getBuiltinFunctionActionParams(functionId), functionId, 'destination'),
-      ACTION_RESULT_DESTINATIONS.CLIPBOARD
+      fallback
     );
   }
 
@@ -6385,7 +6376,10 @@ export class KeyPilot extends EventManager {
    * @returns {Promise<{ success: boolean, duplicate: boolean, error?: string }>}
    */
   async _persistVideoToMediaLibrary(result) {
-    const sourceUrl = String(result?.currentSrc || '').trim();
+    const fileUrl = String(result?.fileUrl || '').trim();
+    const linkUrl = String(result?.currentSrc || '').trim();
+    // Prefer a progressive http(s) file URL so the service worker can fetch bytes.
+    const sourceUrl = (/^https?:\/\//i.test(fileUrl) ? fileUrl : '') || linkUrl || fileUrl;
     const fileBlob = result?.blob instanceof Blob && result.blob.size > 0 ? result.blob : null;
     const thumbBlob = result?.thumbBlob instanceof Blob && result.thumbBlob.size > 0
       ? result.thumbBlob

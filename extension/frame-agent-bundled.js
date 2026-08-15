@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-14T23:05:24.462Z
+ * Generated on 2026-08-15T00:04:34.128Z
  */
 
 (() => {
@@ -669,6 +669,22 @@
     }
     return out;
   }
+  var CATALOG_KEYBINDINGS = (() => {
+    const out = {};
+    for (const [actionId, def] of Object.entries(KEYBINDING_ACTION_DEFS)) {
+      out[actionId] = Object.freeze({
+        keys: Object.freeze([]),
+        handler: def.handler,
+        label: def.label,
+        description: def.description,
+        keyboardClass: def.keyboardClass ?? null,
+        row: def.row ?? null,
+        displayKey: "",
+        keyLabel: ""
+      });
+    }
+    return Object.freeze(out);
+  })();
   var ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
     TAB_LEFT: Object.freeze({ keys: ["q", "Q"] }),
     TAB_RIGHT: Object.freeze({ keys: ["w", "W"] }),

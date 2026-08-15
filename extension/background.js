@@ -15,6 +15,46 @@ import { pageThumbService } from './src/utils/page-thumb-service.js';
 import { mediaLibraryService } from './src/utils/media-library-service.js';
 import { blobToDataUrl } from './src/utils/media-library-transfer.js';
 import { resolveVideoThumbnailUrl } from './src/utils/youtube-thumb.js';
+import { isServiceWorkerFetchableVideoUrl } from './src/utils/video-url-utils.js';
+
+/**
+ * Fetch progressive video bytes in the service worker (host_permissions bypass CORS).
+ * Rejects HTML error pages and streaming manifests.
+ * @param {string} url
+ * @returns {Promise<{ blob: Blob, mime: string }|null>}
+ */
+async function fetchVideoBytesInServiceWorker(url) {
+  const src = String(url || '').trim();
+  if (!isServiceWorkerFetchableVideoUrl(src)) return null;
+  try {
+    const res = await fetch(src, {
+      credentials: 'omit',
+      redirect: 'follow',
+      cache: 'no-cache'
+    });
+    if (!res.ok) return null;
+    const ct = String(res.headers.get('content-type') || '').toLowerCase();
+    if (
+      ct.includes('text/html')
+      || ct.includes('application/vnd.apple.mpegurl')
+      || ct.includes('application/x-mpegurl')
+      || ct.includes('application/dash+xml')
+    ) {
+      return null;
+    }
+    const blob = await res.blob();
+    if (!(blob instanceof Blob) || blob.size <= 0) return null;
+    // Tiny non-video bodies are usually error pages or stubs.
+    if (blob.size < 2048 && !ct.startsWith('video/') && !/^application\/(octet-stream|mp4)/i.test(ct)) {
+      return null;
+    }
+    const mime = (ct.split(';')[0].trim() || blob.type || 'video/mp4');
+    return { blob, mime };
+  } catch (e) {
+    console.warn('[KeyPilot] SW video fetch failed:', e?.message || e);
+    return null;
+  }
+}
 
 /** @type {Map<string, { url: string, source: string, ts: number }>} */
 const videoThumbCache = new Map();
@@ -1590,15 +1630,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                   pageUrl: typeof message.pageUrl === 'string' ? message.pageUrl : ''
                 })
               : kind === 'video'
-                ? await mediaLibraryService.addVideo({
-                    dataUrl: typeof message.dataUrl === 'string' ? message.dataUrl : '',
-                    mime: typeof message.mime === 'string' ? message.mime : '',
-                    sourceUrl: typeof message.sourceUrl === 'string' ? message.sourceUrl : '',
-                    pageUrl: typeof message.pageUrl === 'string' ? message.pageUrl : '',
-                    thumbDataUrl: typeof message.thumbDataUrl === 'string' ? message.thumbDataUrl : '',
-                    width: Number(message.width) || 0,
-                    height: Number(message.height) || 0
-                  })
+                ? await (async () => {
+                    const sourceUrl = typeof message.sourceUrl === 'string' ? message.sourceUrl : '';
+                    const dataUrl = typeof message.dataUrl === 'string' ? message.dataUrl : '';
+                    let mime = typeof message.mime === 'string' ? message.mime : '';
+                    /** @type {Blob|null} */
+                    let blob = null;
+                    const shouldFetch = message.fetchSource !== false
+                      && !dataUrl
+                      && isServiceWorkerFetchableVideoUrl(sourceUrl);
+                    if (shouldFetch) {
+                      const fetched = await fetchVideoBytesInServiceWorker(sourceUrl);
+                      if (fetched?.blob) {
+                        blob = fetched.blob;
+                        if (!mime) mime = fetched.mime || '';
+                      }
+                    }
+                    return mediaLibraryService.addVideo({
+                      blob: blob || undefined,
+                      dataUrl,
+                      mime,
+                      sourceUrl,
+                      pageUrl: typeof message.pageUrl === 'string' ? message.pageUrl : '',
+                      thumbDataUrl: typeof message.thumbDataUrl === 'string' ? message.thumbDataUrl : '',
+                      width: Number(message.width) || 0,
+                      height: Number(message.height) || 0
+                    });
+                  })()
               : await mediaLibraryService.addImage({
                   dataUrl: typeof message.dataUrl === 'string' ? message.dataUrl : '',
                   mime: typeof message.mime === 'string' ? message.mime : '',

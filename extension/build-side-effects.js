@@ -7,7 +7,9 @@ import fs from 'fs';
 import path from 'path';
 import { KEYBINDINGS, Z_INDEX } from './src/config/constants.js';
 import {
+  BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META,
   BUILTIN_KEYBOARD_LAYOUT_META,
+  DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID,
   DEFAULT_KEYBOARD_LAYOUT_ID,
   SYSTEM_LAYER_ACTION_IDS,
   buildEffectiveKeybindings,
@@ -405,6 +407,10 @@ export async function runPostBundleTasks({ shouldMinify = false } = {}) {
     const builtinLayoutIds = Array.from(new Set((BUILTIN_KEYBOARD_LAYOUT_META || []).map((m) => m && m.id).filter(Boolean)));
     if (builtinLayoutIds.length === 0) builtinLayoutIds.push(DEFAULT_KEYBOARD_LAYOUT_ID);
 
+    const earlyLayoutFamilyOptions = (BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META || [])
+      .filter((m) => m && m.id)
+      .map((m) => [`builtin:${m.id}`, m.label || m.id]);
+
     const keyboardLayoutsById = {};
     const earlyKeybindingsById = {};
 
@@ -473,6 +479,9 @@ export async function runPostBundleTasks({ shouldMinify = false } = {}) {
       `  const Z_KEYBINDINGS_POPOVER = ${Number(Z_INDEX.KEYBINDINGS_POPOVER)};\n` +
       `  const KEYBINDINGS_UI_STYLE_ATTR = ${JSON.stringify(KEYBINDINGS_UI_STYLE_ATTR)};\n` +
       `  const DEFAULT_KEYBOARD_LAYOUT_ID = ${JSON.stringify(DEFAULT_KEYBOARD_LAYOUT_ID)};\n` +
+      `  const DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID = ${JSON.stringify(DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID)};\n` +
+      `  const KNOWN_BUILTIN_LAYOUT_IDS = ${JSON.stringify(builtinLayoutIds)};\n` +
+      `  const EARLY_LAYOUT_FAMILY_OPTIONS = ${JSON.stringify(earlyLayoutFamilyOptions)};\n` +
       `  const KEYBOARD_LAYOUTS_BY_ID = ${JSON.stringify(keyboardLayoutsById, null, 2)};\n` +
       `  const EARLY_KEYBINDINGS_BY_ID = ${JSON.stringify(earlyKeybindingsById, null, 2)};\n` +
       `  const KEYBINDINGS_KEYBOARD_LAYOUT = ${JSON.stringify(layout, null, 2)};\n` +

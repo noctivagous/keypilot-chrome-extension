@@ -52,6 +52,9 @@
   const Z_KEYBINDINGS_POPOVER = 2147483046;
   const KEYBINDINGS_UI_STYLE_ATTR = "data-kp-keybindings-ui-style";
   const DEFAULT_KEYBOARD_LAYOUT_ID = "browsing-right";
+  const DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID = "browsing";
+  const KNOWN_BUILTIN_LAYOUT_IDS = ["browsing-right","browsing-left","basic-navigation-right","basic-navigation-left","click-history-right","click-history-left"];
+  const EARLY_LAYOUT_FAMILY_OPTIONS = [["builtin:browsing","Browsing"],["builtin:click-history","Navigation"]];
   const KEYBOARD_LAYOUTS_BY_ID = {
   "browsing-right": [
     [
@@ -5095,6 +5098,9 @@
   let keyboardLayoutId = (typeof DEFAULT_KEYBOARD_LAYOUT_ID === 'string' && DEFAULT_KEYBOARD_LAYOUT_ID)
     ? DEFAULT_KEYBOARD_LAYOUT_ID
     : 'browsing-right';
+  let keyboardLayoutFamilyId = (typeof DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID === 'string' && DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID)
+    ? DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID
+    : 'browsing';
   // User layouts are stored separately and cannot be rendered by this lightweight
   // document_start script. Keep its built-in placeholder hidden until the main
   // content script has loaded the custom layout.
@@ -5999,14 +6005,82 @@
     return node;
   }
 
+  function knownBuiltinLayoutIds() {
+    try {
+      if (typeof KNOWN_BUILTIN_LAYOUT_IDS !== 'undefined' && Array.isArray(KNOWN_BUILTIN_LAYOUT_IDS) && KNOWN_BUILTIN_LAYOUT_IDS.length) {
+        return KNOWN_BUILTIN_LAYOUT_IDS;
+      }
+    } catch { /* ignore */ }
+    try {
+      if (typeof KEYBOARD_LAYOUTS_BY_ID === 'object' && KEYBOARD_LAYOUTS_BY_ID) {
+        return Object.keys(KEYBOARD_LAYOUTS_BY_ID);
+      }
+    } catch { /* ignore */ }
+    return ['browsing-right', 'browsing-left', 'click-history-right', 'click-history-left', 'basic-navigation-right', 'basic-navigation-left'];
+  }
+
   function normalizeKeyboardLayoutId(raw) {
     const v = String(raw || '').trim();
-    if (v === 'browsing-left') return 'browsing-left';
-    return 'browsing-right';
+    const known = knownBuiltinLayoutIds();
+    if (known.indexOf(v) >= 0) return v;
+    return (typeof DEFAULT_KEYBOARD_LAYOUT_ID === 'string' && DEFAULT_KEYBOARD_LAYOUT_ID) || 'browsing-right';
+  }
+
+  function earlyLayoutFamilyOptions() {
+    try {
+      if (typeof EARLY_LAYOUT_FAMILY_OPTIONS !== 'undefined' && Array.isArray(EARLY_LAYOUT_FAMILY_OPTIONS) && EARLY_LAYOUT_FAMILY_OPTIONS.length) {
+        return EARLY_LAYOUT_FAMILY_OPTIONS;
+      }
+    } catch { /* ignore */ }
+    return [['builtin:browsing', 'Browsing'], ['builtin:click-history', 'Navigation']];
+  }
+
+  function normalizeEarlyKeyboardLayoutFamilyId(raw, layoutId) {
+    const v = String(raw || '').trim();
+    if (v === 'navigation') return 'browsing';
+    const options = earlyLayoutFamilyOptions();
+    if (v && options.some((pair) => pair && pair[0] === `builtin:${v}`)) return v;
+    // Legacy reduced family is still stored, even if it is not in the picker.
+    if (v === 'basic-navigation') return v;
+    const id = normalizeKeyboardLayoutId(layoutId);
+    if (id.endsWith('-left')) return id.slice(0, -'-left'.length);
+    if (id.endsWith('-right')) return id.slice(0, -'-right'.length);
+    return (typeof DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID === 'string' && DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID) || 'browsing';
   }
 
   function isCustomKeyboardLayoutSelection(raw) {
     return String(raw || '').trim().startsWith('user:');
+  }
+
+  function applyEarlyLayoutSelect() {
+    if (keyboardHelpHandedOff || !keyboardHelpRoot) return;
+    try {
+      const sel = (keyboardHelpShadowRoot || keyboardHelpRoot).querySelector('[data-kp-floating-keyboard-layout-select="true"]');
+      if (!sel) return;
+      if (keyboardUsesCustomLayout) return;
+      const value = `builtin:${keyboardLayoutFamilyId}`;
+      const has = Array.prototype.some.call(sel.options || [], (o) => o && o.value === value);
+      if (has && sel.value !== value) sel.value = value;
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Apply built-in layout id + family + custom-layout flag from a settings object.
+   * Does not render; callers re-paint when layoutChanged / customLayoutChanged.
+   */
+  function applyEarlyKeyboardLayoutFromSettingsObj(st) {
+    const obj = st && typeof st === 'object' ? st : null;
+    const nextId = normalizeKeyboardLayoutId(obj ? obj.keyboardLayoutId : null);
+    const nextFamily = normalizeEarlyKeyboardLayoutFamilyId(obj ? obj.keyboardLayoutFamilyId : null, nextId);
+    const nextUsesCustom = isCustomKeyboardLayoutSelection(obj ? obj.currentKeyboardLayoutId : null);
+    const layoutChanged = nextId !== keyboardLayoutId;
+    const familyChanged = nextFamily !== keyboardLayoutFamilyId;
+    const customLayoutChanged = nextUsesCustom !== keyboardUsesCustomLayout;
+    keyboardLayoutId = nextId;
+    keyboardLayoutFamilyId = nextFamily;
+    keyboardUsesCustomLayout = nextUsesCustom;
+    applyEarlyLayoutSelect();
+    return { layoutChanged, familyChanged, customLayoutChanged };
   }
 
   function getEarlyKeyboardDataForLayout(layoutId) {
@@ -7324,10 +7398,7 @@
       builtinHdr.disabled = true;
       builtinHdr.textContent = 'Built-In';
       layoutSelect.appendChild(builtinHdr);
-      for (const [value, label] of [
-        ['builtin:browsing', 'Browsing'],
-        ['builtin:click-history', 'Navigation']
-      ]) {
+      for (const [value, label] of earlyLayoutFamilyOptions()) {
         const opt = doc.createElement('option');
         opt.value = value;
         opt.textContent = label;
@@ -7481,6 +7552,7 @@
       layoutId: keyboardLayoutId,
       includeNumberRow: keyboardShowNumberRow
     });
+    try { applyEarlyLayoutSelect(); } catch { /* ignore */ }
     try {
       earlyApplyPanelPosition(root, earlyPanelPositions && earlyPanelPositions.keyboardReference, {
         margin: EARLY_PANEL_MARGIN_PX,
@@ -7667,18 +7739,12 @@
       // before the bundled content script has taken over).
       try {
         const next = changes[SETTINGS_STORAGE_KEY]?.newValue;
-        const nextId = normalizeKeyboardLayoutId(next && typeof next === 'object' ? next.keyboardLayoutId : null);
-        const nextUsesCustomLayout = isCustomKeyboardLayoutSelection(
-          next && typeof next === 'object' ? next.currentKeyboardLayoutId : null
-        );
-        const nextNum = !!(next && typeof next === 'object' && next.keyboardReferenceShowNumberRow);
-        const nextCollapsed = !!(next && typeof next === 'object' && next.keyboardReferenceCollapsed);
-        const layoutChanged = nextId && nextId !== keyboardLayoutId;
-        const customLayoutChanged = nextUsesCustomLayout !== keyboardUsesCustomLayout;
+        const nextObj = next && typeof next === 'object' ? next : null;
+        const { layoutChanged, customLayoutChanged } = applyEarlyKeyboardLayoutFromSettingsObj(nextObj);
+        const nextNum = !!(nextObj && nextObj.keyboardReferenceShowNumberRow);
+        const nextCollapsed = !!(nextObj && nextObj.keyboardReferenceCollapsed);
         const numChanged = nextNum !== keyboardShowNumberRow;
         const collapsedChanged = nextCollapsed !== keyboardReferenceCollapsed;
-        if (layoutChanged) keyboardLayoutId = nextId;
-        if (customLayoutChanged) keyboardUsesCustomLayout = nextUsesCustomLayout;
         if (numChanged) keyboardShowNumberRow = nextNum;
         if (collapsedChanged) {
           try { applyEarlyKeyboardReferenceCollapsed(nextCollapsed); } catch { /* ignore */ }
@@ -7743,6 +7809,7 @@
             });
           } catch { /* ignore */ }
           updateKeyboardHelpHintForLayout(keyboardLayoutId);
+          try { applyEarlyLayoutSelect(); } catch { /* ignore */ }
           applyEarlyKeyboardHelpVisibility(keyboardHelpVisible);
           setupKeyboardHelpStorageListener();
           setupCursorSettingsListener();
@@ -7753,8 +7820,7 @@
         try {
           const st = result && result[SETTINGS_STORAGE_KEY] && typeof result[SETTINGS_STORAGE_KEY] === 'object' ? result[SETTINGS_STORAGE_KEY] : null;
           settingsObj = st;
-          keyboardLayoutId = normalizeKeyboardLayoutId(st && st.keyboardLayoutId);
-          keyboardUsesCustomLayout = isCustomKeyboardLayoutSelection(st && st.currentKeyboardLayoutId);
+          applyEarlyKeyboardLayoutFromSettingsObj(st);
           keyboardShowNumberRow = !!(st && st.keyboardReferenceShowNumberRow);
           keyboardReferenceCollapsed = !!(st && st.keyboardReferenceCollapsed);
           earlyPanelPositions = readEarlyPanelPositionsFromSettingsObj(st);
@@ -7797,8 +7863,7 @@
             ? result[SETTINGS_STORAGE_KEY]
             : null;
           if (settingsObj) {
-            keyboardLayoutId = normalizeKeyboardLayoutId(settingsObj.keyboardLayoutId);
-            keyboardUsesCustomLayout = isCustomKeyboardLayoutSelection(settingsObj.currentKeyboardLayoutId);
+            applyEarlyKeyboardLayoutFromSettingsObj(settingsObj);
             keyboardShowNumberRow = !!settingsObj.keyboardReferenceShowNumberRow;
             keyboardReferenceCollapsed = !!settingsObj.keyboardReferenceCollapsed;
             earlyPanelPositions = readEarlyPanelPositionsFromSettingsObj(settingsObj);
@@ -7816,6 +7881,14 @@
     }
     updateCursorVisibility();
     ensureEarlyFloatingKeyboardHelpShell();
+    try {
+      renderEarlyKeyboard(keyboardHelpKeyboardContainer, {
+        layoutId: keyboardLayoutId,
+        includeNumberRow: keyboardShowNumberRow
+      });
+    } catch { /* ignore */ }
+    try { updateKeyboardHelpHintForLayout(keyboardLayoutId); } catch { /* ignore */ }
+    try { applyEarlyLayoutSelect(); } catch { /* ignore */ }
     applyEarlyKeyboardHelpVisibility(keyboardHelpVisible);
     setupKeyboardHelpStorageListener();
     setupCursorSettingsListener();

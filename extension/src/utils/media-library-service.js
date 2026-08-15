@@ -163,7 +163,9 @@ async function toMeta(record, opts = {}) {
     ext: record.ext,
     width: record.width,
     height: record.height,
-    byteSize: record.byteSize,
+    byteSize: Number(record.byteSize) > 0
+      ? Number(record.byteSize)
+      : (record.blob instanceof Blob ? record.blob.size : 0),
     dpi: Number(record.dpi) || 0,
     createdAt: record.createdAt
   };

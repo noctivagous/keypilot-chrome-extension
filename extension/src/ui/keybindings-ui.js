@@ -29,6 +29,7 @@ import {
   setActionParameter
 } from './key-action-settings.js';
 import { getOrCreateBuiltinFunctionUserAction } from '../modules/keyboard-layout-store.js';
+import { resolveKeybinding } from '../config/keyboard-layouts.js';
 import {
   closestComposed,
   containsComposed,
@@ -852,7 +853,7 @@ export function pinKeyPopover(actionId, opts = {}) {
   }
   if (!keyEl) return false;
 
-  const binding = keybindings[actionId];
+  const binding = resolveKeybinding(actionId, keybindings);
   if (!binding) return false;
 
   // F-activate already fired a synthetic click that pinned this key. Re-rendering
@@ -901,7 +902,7 @@ export function inspectKeyActionFromAnchor(actionId, opts = {}) {
   if (!pop) return false;
 
   const keybindings = opts.keybindings || _activePopoverContext?.keybindings || {};
-  const binding = opts.binding || keybindings[actionId] || null;
+  const binding = opts.binding || resolveKeybinding(actionId, keybindings);
   if (!binding) return false;
 
   _pinnedActionId = actionId;
@@ -967,7 +968,7 @@ export function attachKeyPopoverBehavior({ root, keybindings }) {
       if (keyEl.classList?.contains('kp-key-text-mode-disabled')) return;
     } catch { /* ignore */ }
     const actionId = keyEl.dataset.kpActionId;
-    const binding = keybindings && keybindings[actionId];
+    const binding = resolveKeybinding(actionId, keybindings);
     if (!binding) return;
     clearHideTimer();
     if (pinned) {

@@ -1,6 +1,13 @@
 /**
  * Video-under-cursor extraction for Copy Video.
  * Image discovery stays in image-utils.js; this module only matches <video>.
+ *
+ * URL / bytes strategy (research-backed):
+ * - Prefer progressive file URLs (mp4/webm/…) from currentSrc + <source src>.
+ * - Skip HLS/DASH manifests (m3u8/mpd) for byte download — they are playlists, not files.
+ * - MediaSource `blob:` URLs are not downloadable as a file; fall back to any http(s) <source>.
+ * - Page-context fetch works for same-origin / blob: Blob URLs; http(s) bytes are fetched in
+ *   the extension service worker (host_permissions bypass CORS).
  */
 
 import {
@@ -11,6 +18,18 @@ import {
   videoHasDrawableFrame
 } from './image-utils.js';
 import { fetchMediaBlob } from '../modules/media-library-client.js';
+import {
+  isProgressiveMediaUrl,
+  isServiceWorkerFetchableVideoUrl,
+  isStreamingManifestUrl
+} from './video-url-utils.js';
+
+export {
+  isProgressiveMediaUrl,
+  isServiceWorkerFetchableVideoUrl,
+  isStreamingManifestUrl,
+  MAX_INLINE_VIDEO_BYTES
+} from './video-url-utils.js';
 
 const MAX_ANCESTOR_DEPTH = 12;
 
@@ -18,6 +37,7 @@ const MAX_ANCESTOR_DEPTH = 12;
  * @typedef {{
  *   element: HTMLVideoElement,
  *   currentSrc: string,
+ *   fileUrl: string,
  *   posterUrl: string,
  *   videoWidth: number,
  *   videoHeight: number,
@@ -25,7 +45,8 @@ const MAX_ANCESTOR_DEPTH = 12;
  *   thumbBlob: Blob|null,
  *   thumbMime: string,
  *   blob: Blob|null,
- *   mimeType: string
+ *   mimeType: string,
+ *   usesMediaSource: boolean
  * }} HoveredVideoResult
  */
 
@@ -82,7 +103,7 @@ function videoFromSelf(el) {
 }
 
 /**
- * @param {Element} start
+ * @param {Element} root
  * @param {number} x
  * @param {number} y
  * @returns {HTMLVideoElement|null}
@@ -156,43 +177,142 @@ function findVideoFromPointStack(x, y) {
 }
 
 /**
- * @param {HTMLVideoElement} video
+ * @param {string} raw
+ * @param {string} [base]
  * @returns {string}
  */
-function videoCurrentSrc(video) {
+function absolutizeUrl(raw, base) {
+  const s = String(raw || '').trim();
+  if (!s) return '';
   try {
-    const cur = typeof video.currentSrc === 'string' ? video.currentSrc.trim() : '';
-    if (cur) return cur;
-  } catch { /* ignore */ }
-  try {
-    const src = typeof video.src === 'string' ? video.src.trim() : '';
-    if (src) return src;
-  } catch { /* ignore */ }
-  try {
-    const source = video.querySelector?.('source[src]');
-    const attr = source?.getAttribute?.('src') || '';
-    if (attr) {
-      try {
-        return new URL(attr, video.ownerDocument?.baseURI || document.baseURI).href;
-      } catch {
-        return String(attr);
-      }
-    }
-  } catch { /* ignore */ }
-  return '';
-}
-
-function looksLikeMediaFileUrl(url) {
-  const s = String(url || '');
-  if (!s) return false;
-  if (/^(blob:|data:)/i.test(s)) return true;
-  if (!/^https?:/i.test(s)) return false;
-  const path = s.split('?')[0].split('#')[0].toLowerCase();
-  return /\.(mp4|webm|ogv|ogg|mov|m4v|mkv)(\/|$)/i.test(path) || /\/video\//i.test(path);
+    return new URL(s, base || (typeof document !== 'undefined' ? document.baseURI : undefined)).href;
+  } catch {
+    return s;
+  }
 }
 
 /**
- * Find the <video> under the cursor and return frame thumb + optional file blob.
+ * @param {HTMLVideoElement} video
+ * @returns {boolean}
+ */
+function videoUsesMediaSource(video) {
+  try {
+    const srcObject = /** @type {any} */ (video).srcObject;
+    if (srcObject && typeof MediaSource !== 'undefined' && srcObject instanceof MediaSource) {
+      return true;
+    }
+  } catch { /* ignore */ }
+  return false;
+}
+
+/**
+ * Collect absolute candidate URLs from the video element (currentSrc, src, <source>).
+ * @param {HTMLVideoElement} video
+ * @returns {string[]}
+ */
+export function collectVideoSourceUrls(video) {
+  /** @type {string[]} */
+  const out = [];
+  const seen = new Set();
+  const base = video?.ownerDocument?.baseURI || (typeof document !== 'undefined' ? document.baseURI : '');
+
+  const push = (raw) => {
+    const href = absolutizeUrl(raw, base);
+    if (!href || seen.has(href)) return;
+    seen.add(href);
+    out.push(href);
+  };
+
+  try {
+    const cur = typeof video.currentSrc === 'string' ? video.currentSrc.trim() : '';
+    if (cur) push(cur);
+  } catch { /* ignore */ }
+  try {
+    const src = typeof video.src === 'string' ? video.src.trim() : '';
+    if (src) push(src);
+  } catch { /* ignore */ }
+  try {
+    const sources = video.querySelectorAll?.('source[src]');
+    if (sources) {
+      for (let i = 0; i < sources.length; i++) {
+        push(sources[i].getAttribute('src') || '');
+      }
+    }
+  } catch { /* ignore */ }
+
+  return out;
+}
+
+/**
+ * Best URL to fetch as a progressive file (page blob: or http progressive).
+ * @param {string[]} urls
+ * @param {{ usesMediaSource?: boolean }} [opts]
+ * @returns {string}
+ */
+export function pickPreferredFileUrl(urls, opts = {}) {
+  const list = Array.isArray(urls) ? urls.filter(Boolean) : [];
+  if (!list.length) return '';
+
+  const progressive = list.filter((u) => isProgressiveMediaUrl(u));
+  // MediaSource blob: is not a real file — prefer any progressive http among <source>.
+  if (opts.usesMediaSource) {
+    const httpProg = progressive.filter((u) => /^https?:/i.test(u));
+    if (httpProg.length) return httpProg[0];
+    const http = list.filter((u) => isServiceWorkerFetchableVideoUrl(u));
+    if (http.length) return http[0];
+    return '';
+  }
+
+  if (progressive.length) {
+    // Prefer http progressive over blob when both exist (SW can fetch http).
+    const httpProg = progressive.filter((u) => /^https?:/i.test(u));
+    if (httpProg.length) return httpProg[0];
+    return progressive[0];
+  }
+
+  const http = list.filter((u) => isServiceWorkerFetchableVideoUrl(u));
+  if (http.length) return http[0];
+  return list[0] || '';
+}
+
+/**
+ * Prefer a durable http(s) URL for clipboard (never a dead blob: when http exists).
+ * @param {string[]} urls
+ * @param {string} [fileUrl]
+ * @returns {string}
+ */
+export function pickClipboardVideoUrl(urls, fileUrl = '') {
+  const list = Array.isArray(urls) ? urls.filter(Boolean) : [];
+  const https = list.filter((u) => /^https?:\/\//i.test(u));
+  if (https.length) {
+    const prog = https.filter((u) => isProgressiveMediaUrl(u) && !isStreamingManifestUrl(u));
+    if (prog.length) return prog[0];
+    const nonManifest = https.filter((u) => !isStreamingManifestUrl(u));
+    return nonManifest[0] || https[0];
+  }
+  if (fileUrl && !/^blob:/i.test(fileUrl)) return fileUrl;
+  return fileUrl || list[0] || '';
+}
+
+/**
+ * Page-context fetch only when the SW cannot (blob:/data:).
+ * @param {string} url
+ * @returns {Promise<Blob|null>}
+ */
+async function fetchPageLocalVideoBlob(url) {
+  const src = String(url || '').trim();
+  if (!src) return null;
+  if (!/^(blob:|data:)/i.test(src)) return null;
+  try {
+    const blob = await fetchMediaBlob(src);
+    return blob && blob.size > 0 ? blob : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Find the <video> under the cursor and return URL candidates + optional local file blob.
  *
  * @param {number} clientX
  * @param {number} clientY
@@ -217,7 +337,10 @@ export async function getHoveredVideo(clientX, clientY, options = {}) {
 
   if (!video) return null;
 
-  const currentSrc = videoCurrentSrc(video);
+  const usesMediaSource = videoUsesMediaSource(video);
+  const candidates = collectVideoSourceUrls(video);
+  const fileUrl = pickPreferredFileUrl(candidates, { usesMediaSource });
+  const currentSrc = pickClipboardVideoUrl(candidates, fileUrl);
   const posterUrl = getVideoPosterUrl(video);
   const videoWidth = Number(video.videoWidth) || 0;
   const videoHeight = Number(video.videoHeight) || 0;
@@ -241,9 +364,10 @@ export async function getHoveredVideo(clientX, clientY, options = {}) {
   /** @type {Blob|null} */
   let blob = null;
   let mimeType = '';
-  if (currentSrc && looksLikeMediaFileUrl(currentSrc)) {
+  // Only fetch in-page blob:/data: here. http(s) is fetched by the service worker.
+  if (fileUrl && /^(blob:|data:)/i.test(fileUrl) && !usesMediaSource) {
     try {
-      blob = await fetchMediaBlob(currentSrc);
+      blob = await fetchPageLocalVideoBlob(fileUrl);
       if (blob && blob.size > 0) {
         mimeType = blob.type || '';
       } else {
@@ -254,11 +378,12 @@ export async function getHoveredVideo(clientX, clientY, options = {}) {
     }
   }
 
-  if (!thumbBlob && !currentSrc && !videoHasDrawableFrame(video)) return null;
+  if (!thumbBlob && !currentSrc && !fileUrl && !videoHasDrawableFrame(video)) return null;
 
   return {
     element: video,
     currentSrc,
+    fileUrl: fileUrl || currentSrc,
     posterUrl,
     videoWidth,
     videoHeight,
@@ -266,6 +391,7 @@ export async function getHoveredVideo(clientX, clientY, options = {}) {
     thumbBlob,
     thumbMime,
     blob,
-    mimeType
+    mimeType,
+    usesMediaSource
   };
 }

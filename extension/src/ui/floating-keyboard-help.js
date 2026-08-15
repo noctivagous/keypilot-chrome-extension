@@ -795,7 +795,12 @@ export class FloatingKeyboardHelp {
       // User layouts are read asynchronously. Keep the adopted early shell hidden
       // until that read replaces its built-in placeholder, preventing a visible
       // built-in-layout flash after a navigation.
-      if (String(this._currentKeyboardLayoutId || '').startsWith('user:')) {
+      const layoutSel = String(
+        this._getKeyPilot?.()?._settings?.currentKeyboardLayoutId
+        || this._currentKeyboardLayoutId
+        || ''
+      );
+      if (layoutSel.startsWith('user:')) {
         void this._renderAsync().finally(() => reveal({ render: false }));
         return;
       }

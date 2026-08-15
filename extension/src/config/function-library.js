@@ -112,13 +112,21 @@ const TEXT_ACTIVE_BUILTIN_FUNCTION_IDS = new Set([
  * defaulting to `'none'` — most of `KEYBINDING_ACTION_DEFS` (navigation, tab management, clicks)
  * genuinely reads no page *data* in the sense this taxonomy cares about.
  *
- * `COPY_HOVERED_IMAGE` / `COPY_HOVERED_URL` / `COPY_HOVERED_VIDEO` advertise clipboard (default), Media Library,
- * and Both (clipboard AND Media Library).
+ * `COPY_HOVERED_IMAGE` / `COPY_HOVERED_URL` advertise clipboard (default), Media Library,
+ * and Both. `COPY_HOVERED_VIDEO` defaults to Media Library (save bytes when fetchable);
+ * clipboard destinations copy the video URL.
  */
 const CLIPBOARD_OR_MEDIA_LIBRARY_DESTINATIONS = Object.freeze([
   ACTION_RESULT_DESTINATIONS.CLIPBOARD,
   ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY,
   ACTION_RESULT_DESTINATIONS.CLIPBOARD_AND_MEDIA_LIBRARY
+]);
+
+/** Copy Video: Media Library first (file bytes when fetchable), then Both, then clipboard URL. */
+const VIDEO_COPY_DESTINATIONS = Object.freeze([
+  ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY,
+  ACTION_RESULT_DESTINATIONS.CLIPBOARD_AND_MEDIA_LIBRARY,
+  ACTION_RESULT_DESTINATIONS.CLIPBOARD
 ]);
 
 /** @type {Readonly<Record<string, Partial<Pick<FunctionDef, 'dataSource'|'dataKind'|'destinations'>>>>} */
@@ -137,7 +145,7 @@ const BUILTIN_FUNCTION_DATA_TAGS = Object.freeze({
   COPY_HOVERED_VIDEO: Object.freeze({
     dataSource: 'underCursor',
     dataKind: 'media',
-    destinations: CLIPBOARD_OR_MEDIA_LIBRARY_DESTINATIONS
+    destinations: VIDEO_COPY_DESTINATIONS
   }),
   // Whole-page scan (not under-cursor); opens a tabbed overlay rather than a sink.
   PAGE_MEDIA: Object.freeze({ dataSource: 'none', dataKind: 'media' }),
@@ -256,7 +264,7 @@ const BUILTIN_FUNCTION_PARAMETER_OVERRIDES = Object.freeze({
     buildResultDestinationParameter(CLIPBOARD_OR_MEDIA_LIBRARY_DESTINATIONS)
   ]),
   COPY_HOVERED_VIDEO: Object.freeze([
-    buildResultDestinationParameter(CLIPBOARD_OR_MEDIA_LIBRARY_DESTINATIONS)
+    buildResultDestinationParameter(VIDEO_COPY_DESTINATIONS)
   ])
 });
 

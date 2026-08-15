@@ -72,7 +72,8 @@ import {
   ensureKeyBackgroundIcon,
   getKeybindingsUiCss
 } from './keybindings-ui-shared.js';
-import { actionHasParameters, getSharedKeyActionConfigPanel } from './key-action-settings.js';
+import { actionHasDestination, actionHasParameters, getSharedKeyActionConfigPanel } from './key-action-settings.js';
+import { inspectKeyActionFromAnchor } from './keybindings-ui.js';
 import { createMacroKeyEditor } from './macro-key-editor.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
 import {
@@ -3994,15 +3995,12 @@ export class KeyboardLayoutConfigPanel {
       title: 'Then click a Keyboard Reference key',
       onClick: () => this._beginPlaceModeFromLibrary({ type: 'function', id: functionId })
     }];
-    if (def && FIXED_KEY_FUNCTION_IDS.includes(def.id) && actionHasParameters(def.id)) {
+    if (def && FIXED_KEY_FUNCTION_IDS.includes(def.id)
+      && (actionHasParameters(def.id) || actionHasDestination(def.id))) {
       actions.push({
         label: 'Config…',
         onClick: async () => {
-          try { this._cancelPlaceMode(); } catch { /* ignore */ }
-          try {
-            const panel = getSharedKeyActionConfigPanel();
-            await panel.open(def.id, { title: def.label, anchorRect: host.getBoundingClientRect() });
-          } catch { /* ignore */ }
+          await this._openFixedKeySettings(def, host);
         }
       });
     }
@@ -4364,6 +4362,36 @@ export class KeyboardLayoutConfigPanel {
       }
     });
     host.appendChild(editor);
+  }
+
+  /**
+   * Destination / extra parameters for Functions still bound via a canonical Action Instance
+   * (`FIXED_KEY_FUNCTION_IDS`). Destination-only Functions (Copy Image / URL / Video) use the
+   * same key-info popover switch as Keyboard Reference; Functions with other fields open Config.
+   * @param {import('../config/function-library.js').FunctionDef} def
+   * @param {HTMLElement|null} [anchorEl]
+   */
+  async _openFixedKeySettings(def, anchorEl) {
+    if (!def?.id) return;
+    try { this._cancelPlaceMode(); } catch { /* ignore */ }
+    if (actionHasParameters(def.id)) {
+      try {
+        const panel = getSharedKeyActionConfigPanel();
+        await panel.open(def.id, {
+          title: def.label,
+          anchorRect: anchorEl?.getBoundingClientRect?.() || null
+        });
+      } catch { /* ignore */ }
+      return;
+    }
+    if (actionHasDestination(def.id) && anchorEl) {
+      try {
+        inspectKeyActionFromAnchor(def.id, {
+          anchorEl,
+          keybindings: this._kp?.keybindings || buildKeybindingsForLayout(this._st.builtinLayoutId)
+        });
+      } catch { /* ignore */ }
+    }
   }
 
   /**
@@ -5937,7 +5965,7 @@ export class KeyboardLayoutConfigPanel {
           functionId: def.id
         });
 
-        if (isFixedKey && actionHasParameters(def.id)) {
+        if (isFixedKey && (actionHasParameters(def.id) || actionHasDestination(def.id))) {
           const conf = document.createElement('button');
           conf.type = 'button';
           conf.className = 'kp-cfg-inspect';
@@ -5946,16 +5974,7 @@ export class KeyboardLayoutConfigPanel {
           conf.addEventListener('click', async (e) => {
             e.preventDefault();
             e.stopPropagation();
-            try { this._cancelPlaceMode(); } catch { /* ignore */ }
-            try {
-              // setActionParameter() (called by the panel's own controls) already notifies live
-              // KeyPilot instances via a DOM event — no onSettingsChanged hook needed here.
-              const panel = getSharedKeyActionConfigPanel();
-              await panel.open(def.id, {
-                title: def.label,
-                anchorRect: itemEl.getBoundingClientRect()
-              });
-            } catch { /* ignore */ }
+            await this._openFixedKeySettings(def, itemEl);
           }, true);
           conf.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
           cardActions(itemEl).appendChild(conf);
@@ -6507,19 +6526,12 @@ export class KeyboardLayoutConfigPanel {
             }
 
             const leafActions = [];
-            if (isFixedKey && actionHasParameters(def.id)) {
+            if (isFixedKey && (actionHasParameters(def.id) || actionHasDestination(def.id))) {
               leafActions.push({
                 label: 'Config',
                 title: `Configure ${def.label}`,
                 onClick: async () => {
-                  try { this._cancelPlaceMode(); } catch { /* ignore */ }
-                  try {
-                    const panel = getSharedKeyActionConfigPanel();
-                    await panel.open(def.id, {
-                      title: def.label,
-                      anchorRect: list.getBoundingClientRect()
-                    });
-                  } catch { /* ignore */ }
+                  await this._openFixedKeySettings(def, list);
                 }
               });
             }

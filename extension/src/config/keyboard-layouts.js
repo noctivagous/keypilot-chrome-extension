@@ -769,6 +769,51 @@ export function buildKeybindingsForLayout(layoutId) {
 }
 
 /**
+ * Catalog metadata for every built-in action, including Actions Library-only ids
+ * that have no layout assignment (e.g. Copy Video). Overlay layout bindings on top
+ * when a key is actually assigned.
+ * @type {Readonly<Record<string, {
+ *   keys: string[],
+ *   handler: string,
+ *   label: string,
+ *   description: string,
+ *   keyboardClass: string|null,
+ *   row: number|null,
+ *   displayKey: string,
+ *   keyLabel: string
+ * }>>}
+ */
+export const CATALOG_KEYBINDINGS = (() => {
+  /** @type {Record<string, any>} */
+  const out = {};
+  for (const [actionId, def] of Object.entries(KEYBINDING_ACTION_DEFS)) {
+    out[actionId] = Object.freeze({
+      keys: Object.freeze([]),
+      handler: def.handler,
+      label: def.label,
+      description: def.description,
+      keyboardClass: def.keyboardClass ?? null,
+      row: def.row ?? null,
+      displayKey: '',
+      keyLabel: ''
+    });
+  }
+  return Object.freeze(out);
+})();
+
+/**
+ * @param {string} actionId
+ * @param {Record<string, any>|null|undefined} [keybindings]
+ * @returns {any|null}
+ */
+export function resolveKeybinding(actionId, keybindings) {
+  const id = String(actionId || '');
+  if (!id) return null;
+  if (keybindings && keybindings[id]) return keybindings[id];
+  return CATALOG_KEYBINDINGS[id] || null;
+}
+
+/**
  * @param {Record<string, KeyAssignment>} base
  * @returns {Record<string, KeyAssignment>}
  */

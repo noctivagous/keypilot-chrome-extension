@@ -687,7 +687,7 @@ function buildCard(item) {
   openBtn.setAttribute('aria-label', isUrl
     ? `Open ${sourceHost || 'URL'}`
     : isVideo
-      ? `Open ${sourceHost || 'video'}`
+      ? `Play ${sourceHost || 'video'}`
       : `Open ${sourceHost || 'image'}`);
   wrap.appendChild(openBtn);
   wrap.appendChild(buildHoverActions(item));
@@ -732,7 +732,7 @@ function buildCard(item) {
   sizeRow.className = 'kpv2-media-lib-size-row';
   const size = document.createElement('span');
   size.className = 'kpv2-media-lib-size';
-  size.textContent = (isUrl || isVideoShortcut(item)) ? 'Saved link' : formatFileSize(item.byteSize);
+  size.textContent = librarySizeLabel(item);
   const dpi = document.createElement('span');
   dpi.className = 'kpv2-media-lib-dpi';
   const dpiVal = Number(item.dpi) || 0;
@@ -740,6 +740,10 @@ function buildCard(item) {
   sizeRow.appendChild(size);
   sizeRow.appendChild(dpi);
   info.appendChild(sizeRow);
+
+  if (isVideo) {
+    void resolveVideoCardFileSize(item, size);
+  }
 
   metaSelect.appendChild(metaRow);
   metaSelect.appendChild(info);
@@ -751,7 +755,7 @@ function buildCard(item) {
   const onOpen = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (item.kind === 'url' || item.kind === 'video') openStoredUrl(item);
+    if (item.kind === 'url') openStoredUrl(item);
     else void openFullView(item.id);
   };
   selectBtn.addEventListener('click', onSelect, true);
@@ -796,7 +800,7 @@ function buildHoverActions(item) {
     : isVideoItem(item)
       ? (item.thumbDataUrl ? 'Copy frame' : 'Copy video URL')
       : 'Copy to pasteboard', () => copyLibraryItem(item)));
-  if (isUrlItem(item) || isVideoItem(item)) {
+  if (isUrlItem(item) || (isVideoItem(item) && isHttpUrl(item.sourceUrl))) {
     bar.appendChild(mk('Open', 'Open in a new tab', async () => openStoredUrl(item)));
   }
   bar.appendChild(mk('Download', (isUrlItem(item) || isVideoShortcut(item))
@@ -819,6 +823,81 @@ function isVideoShortcut(item) {
 }
 
 /**
+ * Size line for gallery cards — same format as Images; link-only rows stay labeled.
+ * @param {import('../utils/media-library-service.js').MediaLibraryItemMeta} item
+ * @returns {string}
+ */
+function librarySizeLabel(item) {
+  if (item?.kind === 'url' || isVideoShortcut(item)) return 'Saved link';
+  return formatFileSize(item?.byteSize);
+}
+
+/**
+ * For Videos, prefer stored byteSize; for http(s) link-only rows, probe Content-Length.
+ * @param {import('../utils/media-library-service.js').MediaLibraryItemMeta} item
+ * @param {HTMLElement} sizeEl
+ */
+async function resolveVideoCardFileSize(item, sizeEl) {
+  if (!item || !sizeEl) return;
+
+  const stored = Number(item.byteSize) || 0;
+  if (!isVideoShortcut(item) && stored > 0) {
+    sizeEl.textContent = formatFileSize(stored);
+    return;
+  }
+
+  const href = String(item.sourceUrl || '').trim();
+  if (!isHttpUrl(href)) return;
+
+  try {
+    const bytes = await probeRemoteFileSize(href);
+    if (!(bytes > 0) || !sizeEl.isConnected) return;
+    item.byteSize = bytes;
+    sizeEl.textContent = formatFileSize(bytes);
+  } catch { /* keep Saved link / — */ }
+}
+
+/**
+ * @param {string} url
+ * @returns {Promise<number>}
+ */
+async function probeRemoteFileSize(url) {
+  try {
+    const head = await fetch(url, { method: 'HEAD', credentials: 'omit', cache: 'force-cache' });
+    if (head.ok) {
+      const len = head.headers.get('content-length');
+      if (len && /^\d+$/.test(len)) return Number(len);
+    }
+  } catch { /* try range GET */ }
+
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      credentials: 'omit',
+      cache: 'force-cache',
+      headers: { Range: 'bytes=0-0' }
+    });
+    if (res.ok || res.status === 206) {
+      const cr = res.headers.get('content-range');
+      const m = cr && cr.match(/\/(\d+)\s*$/);
+      if (m) return Number(m[1]);
+      const len = res.headers.get('content-length');
+      if (len && /^\d+$/.test(len) && res.status !== 206) return Number(len);
+    }
+  } catch { /* ignore */ }
+
+  return 0;
+}
+
+/**
+ * @param {string|null|undefined} href
+ * @returns {boolean}
+ */
+function isHttpUrl(href) {
+  return /^https?:\/\//i.test(String(href || '').trim());
+}
+
+/**
  * @param {import('../utils/media-library-service.js').MediaLibraryItemMeta} item
  */
 function urlCardTitle(item) {
@@ -837,9 +916,13 @@ function urlCardTitle(item) {
  * @param {import('../utils/media-library-service.js').MediaLibraryItemMeta} item
  */
 function openStoredUrl(item) {
-  const href = String(item?.sourceUrl || '');
+  const href = String(item?.sourceUrl || '').trim();
   if (!href) {
     _notify('No URL', 'error');
+    return;
+  }
+  if (!isHttpUrl(href)) {
+    _notify('This link cannot be opened in a new tab', 'error');
     return;
   }
   try {
@@ -1107,22 +1190,33 @@ async function openFullView(id) {
   const counter = /** @type {HTMLElement} */ (/** @type {any} */ (overlay)._fullCounter);
   if (!fullView || !host) return;
 
-  const result = await getMediaLibraryOriginal(id);
-  if (!result?.success || !result.blob) {
-    _notify(result?.error || 'Could not open image', 'error');
-    return;
-  }
+  const listed = _items.find((it) => it.id === id) || null;
+  const isVideo = listed?.kind === 'video' || _kind === 'video';
 
   revokeFullObjectUrl();
-  _fullObjectUrl = URL.createObjectURL(result.blob);
+  host.replaceChildren();
   _fullViewId = id;
 
-  host.replaceChildren();
-  const img = document.createElement('img');
-  img.className = 'kpv2-media-lib-fullimage';
-  img.alt = result.item?.domain || '';
-  img.src = _fullObjectUrl;
-  host.appendChild(img);
+  if (isVideo) {
+    const ok = await mountFullVideo(host, id, listed);
+    if (!ok) {
+      _fullViewId = null;
+      return;
+    }
+  } else {
+    const result = await getMediaLibraryOriginal(id);
+    if (!result?.success || !result.blob) {
+      _notify(result?.error || 'Could not open image', 'error');
+      _fullViewId = null;
+      return;
+    }
+    _fullObjectUrl = URL.createObjectURL(result.blob);
+    const img = document.createElement('img');
+    img.className = 'kpv2-media-lib-fullimage';
+    img.alt = result.item?.domain || listed?.domain || '';
+    img.src = _fullObjectUrl;
+    host.appendChild(img);
+  }
 
   const idx = _items.findIndex((it) => it.id === id);
   if (counter) {
@@ -1133,16 +1227,90 @@ async function openFullView(id) {
   fullView.setAttribute('aria-hidden', 'false');
 }
 
+/**
+ * Mount an in-overlay video player for a Media Library item.
+ * Uses stored file bytes when available; otherwise an http(s) source URL.
+ * @param {HTMLElement} host
+ * @param {string} id
+ * @param {import('../utils/media-library-service.js').MediaLibraryItemMeta|null} listed
+ * @returns {Promise<boolean>}
+ */
+async function mountFullVideo(host, id, listed) {
+  const item = listed || { id, kind: 'video' };
+  let src = '';
+
+  if (isVideoShortcut(item)) {
+    const href = String(item.sourceUrl || '').trim();
+    if (!isHttpUrl(href)) {
+      _notify('This video link is not playable', 'error');
+      return false;
+    }
+    src = href;
+  } else {
+    const result = await getMediaLibraryOriginal(id);
+    const blob = result?.blob;
+    const meta = result?.item || item;
+    if (isVideoShortcut(meta)) {
+      const href = String(meta.sourceUrl || item.sourceUrl || '').trim();
+      if (!isHttpUrl(href)) {
+        _notify('This video link is not playable', 'error');
+        return false;
+      }
+      src = href;
+    } else if (result?.success && blob instanceof Blob && blob.size > 0
+      && !/^text\/uri-list/i.test(blob.type || meta?.mime || '')) {
+      _fullObjectUrl = URL.createObjectURL(blob);
+      src = _fullObjectUrl;
+    } else {
+      const href = String(meta?.sourceUrl || item.sourceUrl || '').trim();
+      if (isHttpUrl(href)) {
+        src = href;
+      } else {
+        _notify(result?.error || 'Could not open video', 'error');
+        return false;
+      }
+    }
+  }
+
+  const video = document.createElement('video');
+  video.className = 'kpv2-media-lib-fullvideo';
+  video.controls = true;
+  video.autoplay = true;
+  video.playsInline = true;
+  video.src = src;
+  host.appendChild(video);
+
+  const href = String((listed || item).sourceUrl || '').trim();
+  if (isHttpUrl(href)) {
+    const openLink = document.createElement('a');
+    openLink.className = 'kpv2-media-lib-openlink';
+    openLink.href = href;
+    openLink.target = '_blank';
+    openLink.rel = 'noopener noreferrer';
+    openLink.textContent = 'Open in new tab';
+    openLink.addEventListener('click', (e) => e.stopPropagation(), true);
+    host.appendChild(openLink);
+  }
+
+  return true;
+}
+
 function closeFullView() {
   const overlay = _overlay;
   if (!overlay) return;
   const fullView = /** @type {HTMLElement} */ (/** @type {any} */ (overlay)._fullView);
   const host = /** @type {HTMLElement} */ (/** @type {any} */ (overlay)._fullMediaHost);
+  if (host) {
+    try {
+      const v = host.querySelector('video');
+      if (v) v.pause();
+    } catch { /* ignore */ }
+    host.replaceChildren();
+  }
   if (fullView) {
     fullView.classList.remove('is-open');
     fullView.setAttribute('aria-hidden', 'true');
   }
-  if (host) host.replaceChildren();
   revokeFullObjectUrl();
   _fullViewId = null;
 }
@@ -1591,6 +1759,7 @@ function ensureStyles(root) {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 10px;
   cursor: default;
 }
 .kpv2-media-lib-fullimage {
@@ -1598,6 +1767,15 @@ function ensureStyles(root) {
   max-height: 85vh;
   object-fit: contain;
   border-radius: 3px;
+}
+.kpv2-media-lib-fullvideo {
+  max-width: 90vw;
+  max-height: 80vh;
+  background: #000;
+}
+.kpv2-media-lib-openlink {
+  color: ${c.accent};
+  font-size: 12px;
 }
 .kpv2-media-lib-nav {
   position: absolute;
