@@ -384,6 +384,14 @@ export class ActivationHandler {
   }
 
   handleRadio(target) {
+    if (target.checked) return true;
+    // Native radios (and wrappers like Square market-radio) update group state
+    // from activation behavior / click, not from assigning `.checked`. These
+    // inner inputs often have no `name`, so a property write also cannot
+    // uncheck siblings — the host only reacts to click().
+    try {
+      if (typeof target.click === 'function') target.click();
+    } catch { /* fall through */ }
     if (!target.checked) {
       target.checked = true;
       this.dispatchInputChange(target);
@@ -392,8 +400,16 @@ export class ActivationHandler {
   }
 
   handleCheckbox(target) {
-    target.checked = !target.checked;
-    this.dispatchInputChange(target);
+    // Same as radios: custom checkbox hosts (market-checkbox, etc.) ignore
+    // property writes and listen for click / activation behavior.
+    const before = !!target.checked;
+    try {
+      if (typeof target.click === 'function') target.click();
+    } catch { /* fall through */ }
+    if (target.checked === before) {
+      target.checked = !target.checked;
+      this.dispatchInputChange(target);
+    }
     return true;
   }
 
