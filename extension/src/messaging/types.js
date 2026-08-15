@@ -123,7 +123,12 @@ export const MSG = Object.freeze({
   // --- Child frame-agent → SW: inject full content-bundled.js into this frame ---
   // Used when a KeyPilot popover iframe needs full KeyPilot (cursor/overlays).
   // Thin frame-agent-bundled.js does not include the full app.
-  INJECT_FULL_KEYPILOT_IN_FRAME: 'KP_INJECT_FULL_KEYPILOT_IN_FRAME'
+  INJECT_FULL_KEYPILOT_IN_FRAME: 'KP_INJECT_FULL_KEYPILOT_IN_FRAME',
+
+  // --- Content → SW: inject MAIN-world map.panBy bridge into the sender frame ---
+  // Scroll Line uses this so isolated content can pan Leaflet/Mapbox/Google via
+  // page globals. Idempotent; bridge listens for CustomEvent __kp_map_pan_v1.
+  ENSURE_MAP_PAN_BRIDGE: 'KP_ENSURE_MAP_PAN_BRIDGE'
 });
 
 /**

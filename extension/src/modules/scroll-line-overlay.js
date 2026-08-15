@@ -1,7 +1,7 @@
 /**
  * Viewport-fixed Scroll Line chrome: origin dot + line to the pointer.
- * Uses the native Popover API (top layer) with pointer-events: none so it
- * sits above the page without blocking hit-testing or F-click.
+ * Fixed + max z-index (no Popover API) — popover open-state fights map
+ * pages and was causing the chrome to flash then vanish.
  */
 import { CSS_CLASSES, COLORS, Z_INDEX } from '../config/constants.js';
 
@@ -16,8 +16,8 @@ export class ScrollLineOverlay {
     this.dot = null;
     this.targetBox = null;
     this.origin = { x: 0, y: 0 };
-    this._usingPopover = false;
     this._lastTargetBox = null;
+    this._visible = false;
   }
 
   /**
@@ -34,19 +34,17 @@ export class ScrollLineOverlay {
 
     try {
       if (!this.root.isConnected) {
-        (document.body || document.documentElement).appendChild(this.root);
+        (document.documentElement || document.body).appendChild(this.root);
       }
     } catch { /* ignore */ }
 
-    if (this._usingPopover) {
-      try {
-        if (typeof this.root.showPopover === 'function' && !this.root.matches(':popover-open')) {
-          this.root.showPopover();
-        }
-      } catch { /* ignore */ }
-    }
-
-    this.root.hidden = false;
+    this._visible = true;
+    try {
+      this.root.hidden = false;
+      this.root.style.display = 'block';
+      this.root.style.visibility = 'visible';
+      this.root.style.opacity = '1';
+    } catch { /* ignore */ }
   }
 
   /**
@@ -109,15 +107,12 @@ export class ScrollLineOverlay {
 
   hide() {
     if (!this.root) return;
+    this._visible = false;
     this.setTargetBox(null);
-    if (this._usingPopover) {
-      try {
-        if (typeof this.root.hidePopover === 'function' && this.root.matches(':popover-open')) {
-          this.root.hidePopover();
-        }
-      } catch { /* ignore */ }
-    }
-    try { this.root.hidden = true; } catch { /* ignore */ }
+    try {
+      this.root.hidden = true;
+      this.root.style.display = 'none';
+    } catch { /* ignore */ }
   }
 
   destroy() {
@@ -153,17 +148,8 @@ export class ScrollLineOverlay {
     root.setAttribute('aria-hidden', 'true');
     root.hidden = true;
 
-    const popoverOk = typeof HTMLElement !== 'undefined'
-      && 'popover' in HTMLElement.prototype
-      && typeof root.showPopover === 'function';
-
-    this._usingPopover = popoverOk;
-    if (popoverOk) {
-      try { root.popover = 'manual'; } catch {
-        try { root.setAttribute('popover', 'manual'); } catch { /* ignore */ }
-      }
-    }
-
+    // No popover attribute — UA `:not(:popover-open){display:none}` was
+    // swallowing the chrome after a brief flash on map pages.
     root.style.cssText = [
       'position:fixed',
       'inset:0',
@@ -178,7 +164,8 @@ export class ScrollLineOverlay {
       'overflow:hidden',
       'pointer-events:none',
       `z-index:${Z_INDEX.CURSOR}`,
-      'box-sizing:border-box'
+      'box-sizing:border-box',
+      'display:none'
     ].join(';');
 
     const targetBox = doc.createElement('div');

@@ -107,6 +107,24 @@ import {
   elementFromPointDeep,
   isDocumentScrollRoot
 } from './utils/scroll-at-point.js';
+import {
+  findMapSurfaceAtPoint,
+  createMapPanSession,
+  mapPanBy,
+  endMapPanSession,
+  ensureMapPanBridge,
+  MAP_PAN_POINTER_ID,
+  SCROLL_LINE_MAP_DRAG_ENABLED,
+  isOnMapWebsite
+} from './utils/map-surface-drag.js';
+import {
+  findPoiWebsiteAtPoint,
+  findPoiWebsiteInDocument,
+  findMapsPlacePanelCloseButton,
+  isExternalPoiWebsite,
+  unwrapMapsRedirect,
+  waitForPoiWebsite
+} from './utils/map-poi.js';
 import { ScrollLineOverlay } from './modules/scroll-line-overlay.js';
 import { matchPointerFunctionDef } from './modules/pointer-function-bindings.js';
 
@@ -120,6 +138,7 @@ export class KeyPilot extends EventManager {
       return;
     }
     window.__KeyPilotV22 = true;
+    try { window.isOnMapWebsite = isOnMapWebsite; } catch { /* ignore */ }
     window.__KeyPilotInstance = this; // Store instance for popover access
 
     // Extension enabled state - default to true, will be updated from service worker
@@ -196,8 +215,9 @@ export class KeyPilot extends EventManager {
     this._scrollLineOverlay = new ScrollLineOverlay();
     this._scrollLineRaf = 0;
     this._scrollLineLastTs = 0;
-    /** @type {null|{ kind: 'element', el: Element, canX: boolean, canY: boolean }|{ kind: 'iframe', iframe: HTMLIFrameElement, localX: number, localY: number }} */
+    /** @type {null|{ kind: 'element', el: Element, canX: boolean, canY: boolean }|{ kind: 'iframe', iframe: HTMLIFrameElement, localX: number, localY: number }|{ kind: 'drag', el: Element }} */
     this._scrollLineTarget = null;
+    this._scrollLineDragSession = null;
     this._scrollLineOrigin = { x: 0, y: 0 };
     this._pointerBindingClaimed = false;
 
@@ -2748,6 +2768,13 @@ export class KeyPilot extends EventManager {
         this.handlePreviewLinkPopover();
         return;
       }
+      if (KB.POI_WEBSITE?.keys?.includes?.(e.key)) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        this.handlePoiWebsiteKey(e);
+        return;
+      }
 
       // Toggle popovers must work on a second press while mode is POPOVER.
       // Tab History / Open Popover set MODES.POPOVER, which used to swallow their
@@ -3351,6 +3378,15 @@ export class KeyPilot extends EventManager {
       return;
     }
 
+    // MAIN-world map pan bridge synthesizes pointer/mouse moves. Those must not
+    // overwrite lastMouse or the Scroll Line aims at the fake drag point.
+    try {
+      if (e && e.isTrusted === false) {
+        if (Number(e.pointerId) === MAP_PAN_POINTER_ID) return;
+        if (Number(e.detail) === 88) return;
+      }
+    } catch { /* ignore */ }
+
     // Store mouse position immediately to prevent sync issues
     const x = e.clientX;
     const y = e.clientY;
@@ -3940,12 +3976,22 @@ export class KeyPilot extends EventManager {
     const { x, y } = this._getScrollCursorPoint();
     this._scrollLineOrigin = { x, y };
     this._scrollLineTarget = this._resolveScrollLineTarget(x, y);
-    this.state.setMode(MODES.SCROLL_LINE);
+    if (SCROLL_LINE_MAP_DRAG_ENABLED && this._scrollLineTarget?.kind === 'drag') {
+      try { ensureMapPanBridge(); } catch { /* ignore */ }
+      try {
+        this._scrollLineDragSession = createMapPanSession(this._scrollLineTarget.el, x, y);
+      } catch {
+        this._scrollLineDragSession = null;
+      }
+    }
 
+    // Show chrome before mode listeners run.
     try {
       this._scrollLineOverlay?.show(x, y);
     } catch { /* ignore */ }
     try { this._syncScrollLineTargetOverlay(); } catch { /* ignore */ }
+
+    this.state.setMode(MODES.SCROLL_LINE);
 
     this._scrollLineLastTs = 0;
     if (this._scrollLineRaf) {
@@ -3969,6 +4015,10 @@ export class KeyPilot extends EventManager {
     }
     this._scrollLineLastTs = 0;
     this._scrollLineTarget = null;
+    if (this._scrollLineDragSession) {
+      try { endMapPanSession(); } catch { /* ignore */ }
+    }
+    this._scrollLineDragSession = null;
     try { this._scrollLineOverlay?.hide(); } catch { /* ignore */ }
     try {
       if (this.state.isScrollLineMode()) this.state.setMode(MODES.NONE);
@@ -3988,6 +4038,13 @@ export class KeyPilot extends EventManager {
     } catch {
       under = null;
     }
+    if (SCROLL_LINE_MAP_DRAG_ENABLED) {
+      try {
+        const mapEl = findMapSurfaceAtPoint(x, y);
+        if (mapEl) return { kind: 'drag', el: mapEl };
+      } catch { /* fall through */ }
+    }
+
     const skipWide = this._settings?.scroll?.linePreferPortraitTargets !== false;
 
     if (under && (under.tagName === 'IFRAME' || under.tagName === 'FRAME')) {
@@ -4031,6 +4088,8 @@ export class KeyPilot extends EventManager {
     let el = null;
     if (target?.kind === 'iframe' && target.iframe) {
       el = target.iframe;
+    } else if (target?.kind === 'drag' && target.el) {
+      el = target.el;
     } else if (target?.kind === 'element' && target.el) {
       el = target.el;
     }
@@ -4124,6 +4183,14 @@ export class KeyPilot extends EventManager {
     if (!dx && !dy) return;
 
     const target = this._scrollLineTarget;
+    if (SCROLL_LINE_MAP_DRAG_ENABLED && target?.kind === 'drag' && target.el) {
+      if (!this._scrollLineDragSession || this._scrollLineDragSession.el !== target.el) {
+        this._scrollLineDragSession = createMapPanSession(target.el, ox, oy);
+      }
+      mapPanBy(this._scrollLineDragSession, dx, dy);
+      return;
+    }
+
     if (target?.kind === 'iframe' && target.iframe) {
       this._tryScrollIframeUnderCursor(ox, oy, 0, 'auto', {
         mode: 'xy',
@@ -7700,16 +7767,200 @@ export class KeyPilot extends EventManager {
     this.state.setPopoverOpen(true, url);
   }
 
-  handlePreviewLinkPopover(e) {
-    if (!this._allowActionKey('handlePreviewLinkPopover', e)) return;
-    // Check if popover is already open - if so, close it (toggle behavior)
+  /**
+   * True on Google / Bing / Brave / OSM / Mapbox map pages.
+   * Also published as `window.isOnMapWebsite`.
+   * @param {string} [hostname]
+   * @param {string} [pathname]
+   * @returns {boolean}
+   */
+  isOnMapWebsite(hostname, pathname) {
+    return isOnMapWebsite(hostname, pathname);
+  }
+
+  /**
+   * Click the map / place card under the cursor so the details pane fills in.
+   * @param {number} x
+   * @param {number} y
+   * @returns {boolean}
+   */
+  _clickMapPoiAtPoint(x, y) {
+    let under = null;
+    try {
+      under = this.detector?.deepElementFromPoint?.(x, y) || elementFromPointDeep(x, y);
+    } catch {
+      under = null;
+    }
+    if (!under || under.nodeType !== 1) return false;
+    try {
+      if (this._isKeyPilotUiElement?.(under)) return false;
+    } catch { /* ignore */ }
+
+    try {
+      this.activator?.smartClick?.(under, x, y);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Dismiss Google Maps' selected-place sliding pane via the search-box Close.
+   * @returns {boolean}
+   */
+  _dismissMapPlacePanel() {
+    if (!this.isOnMapWebsite()) return false;
+    const btn = findMapsPlacePanelCloseButton();
+    if (!btn) return false;
+    let x = 0;
+    let y = 0;
+    try {
+      const r = btn.getBoundingClientRect();
+      x = r.left + r.width / 2;
+      y = r.top + r.height / 2;
+    } catch { /* ignore */ }
+    let clicked = false;
+    try {
+      this.activator?.smartClick?.(btn, x, y);
+      clicked = true;
+    } catch {
+      try { btn.click(); clicked = true; } catch { clicked = false; }
+    }
+    if (!clicked) return false;
+
+    // omnibox.clear focuses the search field — don't leave KeyPilot in text mode.
+    const blurSearch = () => {
+      try {
+        const ae = document.activeElement;
+        if (!ae || ae === document.body || ae === document.documentElement) return;
+        const tag = String(ae.tagName || '').toUpperCase();
+        let role = '';
+        try { role = String(ae.getAttribute('role') || '').toLowerCase(); } catch { role = ''; }
+        const typing = tag === 'INPUT' || tag === 'TEXTAREA' || role === 'combobox' || ae.isContentEditable;
+        if (typing) {
+          try { ae.blur(); } catch { /* ignore */ }
+        }
+      } catch { /* ignore */ }
+      try { this.focusDetector?.clearTextFocus?.(); } catch { /* ignore */ }
+    };
+    blurSearch();
+    try { setTimeout(blurSearch, 0); } catch { /* ignore */ }
+    try { setTimeout(blurSearch, 80); } catch { /* ignore */ }
+    return true;
+  }
+
+  /**
+   * Close Link Preview and clear the Maps place pane so the next E is not
+   * stuck on the previous POI's website.
+   */
+  _closeMapLinkPreview() {
+    this.handleClosePopover();
+    this._dismissMapPlacePanel();
+  }
+
+  /**
+   * Website of the map place under the cursor (or the selected place pane).
+   * Clicks the POI when the pane does not already list a site.
+   * @param {number} x
+   * @param {number} y
+   * @returns {Promise<string|null>}
+   */
+  async _resolvePoiWebsiteAtPoint(x, y) {
+    let url = findPoiWebsiteAtPoint(x, y);
+    if (url) return url;
+
+    try {
+      const state = this.state.getState();
+      const focus = state?.focusEl;
+      if (focus instanceof Element) {
+        const hovered = this._resolveHoveredLink(focus);
+        const href = unwrapMapsRedirect(hovered?.url || '');
+        if (isExternalPoiWebsite(href)) return href;
+      }
+    } catch { /* ignore */ }
+
+    const overMap = !!findMapSurfaceAtPoint(x, y);
+    const previous = findPoiWebsiteInDocument();
+    if (previous && !overMap) return previous;
+
+    if (this._clickMapPoiAtPoint(x, y)) {
+      url = await waitForPoiWebsite({
+        timeoutMs: 2800,
+        ignoreUrl: overMap ? previous : null
+      });
+      if (url) return url;
+    }
+
+    return findPoiWebsiteInDocument();
+  }
+
+  /**
+   * Open a URL in the Link Preview popover (same chrome / color as E).
+   * @param {string} url
+   * @param {number} [mouseX]
+   * @param {number} [mouseY]
+   */
+  _openLinkPreviewPopover(url, mouseX, mouseY) {
+    const href = String(url || '').trim();
+    if (!href) return;
+    this.overlayManager.showPreviewPopover(href, {
+      title: 'Link Preview',
+      mouseX,
+      mouseY
+    });
+    this.state.setPopoverOpen(true, href);
+  }
+
+  async handlePoiWebsiteKey(e) {
+    if (!this._allowActionKey('handlePoiWebsiteKey', e)) return;
     if (this.overlayManager.isPopoverOpen()) {
-      this.handleClosePopover();
+      this._closeMapLinkPreview();
       return;
     }
 
     const currentState = this.state.getState();
     const { lastMouse } = currentState;
+    const x = Number(lastMouse?.x);
+    const y = Number(lastMouse?.y);
+    const px = Number.isFinite(x) ? x : (window.innerWidth || 0) / 2;
+    const py = Number.isFinite(y) ? y : (window.innerHeight || 0) / 2;
+
+    const url = await this._resolvePoiWebsiteAtPoint(px, py);
+    if (!url) {
+      this.showFlashNotification('No website for this place', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+    this._openLinkPreviewPopover(url, px, py);
+  }
+
+  handlePreviewLinkPopover(e) {
+    if (!this._allowActionKey('handlePreviewLinkPopover', e)) return;
+    // Check if popover is already open - if so, close it (toggle behavior)
+    if (this.overlayManager.isPopoverOpen()) {
+      this._closeMapLinkPreview();
+      return;
+    }
+
+    const currentState = this.state.getState();
+    const { lastMouse } = currentState;
+
+    const mx = Number(lastMouse?.x);
+    const my = Number(lastMouse?.y);
+    const px = Number.isFinite(mx) ? mx : (window.innerWidth || 0) / 2;
+    const py = Number.isFinite(my) ? my : (window.innerHeight || 0) / 2;
+    const onMap = this.isOnMapWebsite() || !!findMapSurfaceAtPoint(px, py);
+    if (onMap) {
+      void this._resolvePoiWebsiteAtPoint(px, py).then((poiUrl) => {
+        if (!poiUrl) {
+          this.showFlashNotification('No website for this place', COLORS.NOTIFICATION_INFO);
+          return;
+        }
+        this._openLinkPreviewPopover(poiUrl, px, py);
+      }).catch(() => {
+        this.showFlashNotification('No website for this place', COLORS.NOTIFICATION_INFO);
+      });
+      return;
+    }
 
     // Prefer DOM-hover focusEl; fall back to elementFromPoint when nothing is hovered.
     // Keep the raw under-cursor node so collapsed history groups (not always "clickable")

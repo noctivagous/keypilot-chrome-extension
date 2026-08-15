@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-15T22:16:04.881Z
+ * Generated on 2026-08-15T23:35:15.502Z
  */
 
 (() => {
@@ -103,7 +103,11 @@
     // --- Child frame-agent → SW: inject full content-bundled.js into this frame ---
     // Used when a KeyPilot popover iframe needs full KeyPilot (cursor/overlays).
     // Thin frame-agent-bundled.js does not include the full app.
-    INJECT_FULL_KEYPILOT_IN_FRAME: "KP_INJECT_FULL_KEYPILOT_IN_FRAME"
+    INJECT_FULL_KEYPILOT_IN_FRAME: "KP_INJECT_FULL_KEYPILOT_IN_FRAME",
+    // --- Content → SW: inject MAIN-world map.panBy bridge into the sender frame ---
+    // Scroll Line uses this so isolated content can pan Leaflet/Mapbox/Google via
+    // page globals. Idempotent; bridge listens for CustomEvent __kp_map_pan_v1.
+    ENSURE_MAP_PAN_BRIDGE: "KP_ENSURE_MAP_PAN_BRIDGE"
   });
   var TAB_UI_FORWARD_TYPES = Object.freeze([
     MSG.OPEN_SETTINGS_POPOVER,
@@ -460,6 +464,13 @@
       keyboardClass: "key-preview-popover",
       row: 2
     }),
+    POI_WEBSITE: Object.freeze({
+      handler: "handlePoiWebsiteKey",
+      label: "POI Website",
+      description: "Open the map place website under the cursor in Link Preview",
+      keyboardClass: "key-preview-popover",
+      row: null
+    }),
     OPEN_SETTINGS_POPOVER: Object.freeze({
       handler: "handleToggleSettingsPopover",
       label: "Settings",
@@ -590,6 +601,7 @@
     ACTIVATE_NEW_TAB: "Navigation",
     ACTIVATE_NEW_TAB_BACKGROUND: "Navigation",
     PREVIEW_LINK_POPOVER: "Navigation",
+    POI_WEBSITE: "Maps",
     OPEN_POPOVER: "Navigation",
     FORWARD: "Navigation",
     BACK: "Navigation",
@@ -631,6 +643,7 @@
     "Tab Control",
     "Begin URL",
     "Get Page Data",
+    "Maps",
     "Scroll",
     "Select",
     "Media Library",

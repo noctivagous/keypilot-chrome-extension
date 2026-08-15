@@ -143,6 +143,10 @@ const BUILTIN_FUNCTION_DATA_TAGS = Object.freeze({
     dataKind: 'text',
     destinations: CLIPBOARD_OR_MEDIA_LIBRARY_DESTINATIONS
   }),
+  POI_WEBSITE: Object.freeze({
+    dataSource: 'underCursor',
+    dataKind: 'text'
+  }),
   COPY_HOVERED_VIDEO: Object.freeze({
     dataSource: 'underCursor',
     dataKind: 'media',
@@ -554,6 +558,7 @@ export const FUNCTION_CATEGORY_ORDER = Object.freeze([
   'Tab Control',
   'Begin URL',
   'Get Page Data',
+  'Maps',
   'Scroll',
   'Select',
   'Clipboard',
@@ -582,6 +587,7 @@ export const FUNCTION_LIBRARY_ITEM_ORDER = Object.freeze({
   ACTIVATE_NEW_TAB: 20,
   ACTIVATE_NEW_TAB_BACKGROUND: 30,
   PREVIEW_LINK_POPOVER: 40,
+  POI_WEBSITE: 45,
   OPEN_POPOVER: 50,
   FORWARD: 60,
   BACK: 70,

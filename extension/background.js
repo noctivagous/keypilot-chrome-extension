@@ -2311,6 +2311,36 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
+        case MSG.ENSURE_MAP_PAN_BRIDGE: {
+          // Install page-world map.panBy listener (bypasses page CSP via world: MAIN).
+          const tabId = sender?.tab?.id;
+          const frameId = typeof sender?.frameId === 'number' ? sender.frameId : 0;
+          if (typeof tabId !== 'number') {
+            sendResponse({ type: MSG.ERROR, ok: false, error: 'Missing tab id for map pan bridge' });
+            break;
+          }
+          try {
+            if (!chrome.scripting?.executeScript) {
+              sendResponse({ type: MSG.ERROR, ok: false, error: 'chrome.scripting unavailable' });
+              break;
+            }
+            await chrome.scripting.executeScript({
+              target: { tabId, frameIds: [frameId] },
+              world: 'MAIN',
+              files: ['map-pan-bridge.js']
+            });
+            sendResponse({ type: MSG.SUCCESS, ok: true });
+          } catch (e) {
+            console.warn('[KeyPilot] Map pan bridge inject failed:', e?.message || e);
+            sendResponse({
+              type: MSG.ERROR,
+              ok: false,
+              error: e?.message || 'Failed to inject map pan bridge'
+            });
+          }
+          break;
+        }
+
         case 'KP_GET_STATE':
           // Content script or popup requesting current state
           const currentState = await extensionToggleManager.getState();

@@ -470,6 +470,13 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: 'key-preview-popover',
     row: 2
   }),
+  POI_WEBSITE: Object.freeze({
+    handler: 'handlePoiWebsiteKey',
+    label: 'POI Website',
+    description: 'Open the map place website under the cursor in Link Preview',
+    keyboardClass: 'key-preview-popover',
+    row: null
+  }),
   OPEN_SETTINGS_POPOVER: Object.freeze({
     handler: 'handleToggleSettingsPopover',
     label: 'Settings',
@@ -606,6 +613,7 @@ export const KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
   ACTIVATE_NEW_TAB: 'Navigation',
   ACTIVATE_NEW_TAB_BACKGROUND: 'Navigation',
   PREVIEW_LINK_POPOVER: 'Navigation',
+  POI_WEBSITE: 'Maps',
   OPEN_POPOVER: 'Navigation',
   FORWARD: 'Navigation',
   BACK: 'Navigation',
@@ -649,6 +657,7 @@ export const KEYBINDING_ACTION_CATEGORY_ORDER = Object.freeze([
   'Tab Control',
   'Begin URL',
   'Get Page Data',
+  'Maps',
   'Scroll',
   'Select',
   'Media Library',
