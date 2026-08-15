@@ -109,10 +109,19 @@ export class FocusDetector {
 
   handleFocusOut(e) {
     const composed = kpGetComposedEventTarget(e);
-    const leftText =
+    let leftText =
       this.isTextInput(composed) ||
       this.isTextInput(e.target) ||
       (this.currentFocusedElement && e.target === this.currentFocusedElement);
+
+    // Clicking out of a same-origin editor iframe: the field lives inside the
+    // canvas, but the event target is the <iframe> shell.
+    if (!leftText && this.currentFocusedElement) {
+      try {
+        const tag = String(e.target?.tagName || '').toUpperCase();
+        if (tag === 'IFRAME' || tag === 'FRAME') leftText = true;
+      } catch { /* ignore */ }
+    }
 
     if (leftText) {
       console.debug('Text input blurred:', composed?.tagName || e.target?.tagName, composed?.type || e.target?.type || 'N/A');
@@ -488,9 +497,19 @@ export class FocusDetector {
     }
     let root = null;
     try { root = element.getRootNode?.() || null; } catch { root = null; }
-    const target = (root === document || (typeof Document !== 'undefined' && root instanceof Document))
-      ? document.documentElement
-      : (root || document.documentElement);
+    // Watch the *owning* document (iframe canvas, not the top wp-admin page).
+    let target = null;
+    try {
+      if (root && root.nodeType === 9) {
+        target = /** @type {Document} */ (root).documentElement || root;
+      } else if (root && root !== document) {
+        target = root;
+      } else {
+        target = document.documentElement;
+      }
+    } catch {
+      target = document.documentElement;
+    }
     if (!target || target.nodeType == null) return;
 
     this._disconnectObserver = new MutationObserver(() => {

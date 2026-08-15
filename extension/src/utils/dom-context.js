@@ -22,8 +22,9 @@ export const TEXT_ENTRY_INPUT_TYPES = Object.freeze([
 const TEXT_ENTRY_TYPE_SET = new Set(TEXT_ENTRY_INPUT_TYPES);
 
 /**
- * Walk open shadow roots to find the true focused element.
- * document.activeElement stops at shadow hosts.
+ * Walk open shadow roots and same-origin iframes to find the true focused element.
+ * document.activeElement stops at shadow hosts and at <iframe> shells
+ * (Gutenberg's editor-canvas, etc.).
  *
  * @param {Document|ShadowRoot|null|undefined} [root]
  * @returns {Element|null}
@@ -36,15 +37,34 @@ export function getDeepActiveElement(root = document) {
     active = null;
   }
 
-  while (active) {
+  let guard = 0;
+  while (active && guard++ < 12) {
     let next = null;
     try {
       next = active.shadowRoot?.activeElement || null;
     } catch {
       next = null;
     }
-    if (!next) break;
-    active = next;
+    if (next) {
+      active = next;
+      continue;
+    }
+
+    let tag = '';
+    try { tag = String(active.tagName || '').toUpperCase(); } catch { tag = ''; }
+    if (tag === 'IFRAME' || tag === 'FRAME') {
+      try {
+        const innerDoc = /** @type {HTMLIFrameElement} */ (active).contentDocument;
+        const inner = innerDoc?.activeElement || null;
+        if (inner && inner !== active) {
+          active = inner;
+          continue;
+        }
+      } catch {
+        // Cross-origin: cannot read the child document.
+      }
+    }
+    break;
   }
 
   return active;

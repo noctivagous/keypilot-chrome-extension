@@ -11,6 +11,8 @@
  *  5. Fallback activate/scroll keybinds only while this frame has document focus
  *     (after a manual click); Esc / pointer-leave posts KP_FRAME_FOCUS_RECLAIM
  *     so top KeyPilot regains keyboard ownership for elements outside the iframe
+ *  6. KP_FRAME_TYPING_FOCUS / KP_FRAME_TYPING_BLUR so top KeyPilot can enter
+ *     text mode when a contenteditable lives in this frame (Gutenberg canvas)
  *
  * Full KeyPilot still initializes only in the top frame. When full KP is also
  * running in this frame (KeyPilot popover), local key + hover + pointer sync
@@ -504,6 +506,75 @@ export function installFrameClickAgent() {
       } catch { /* ignore */ }
     };
 
+    /** @type {boolean|null} last typing-focus post (avoid duplicate messages) */
+    let lastTypingPosted = null;
+
+    /**
+     * Tell top-frame FocusDetector that this document's typing focus changed.
+     * Parent peeks same-origin activeElement; we do not send the node.
+     * @param {boolean} typing
+     */
+    const postTypingToParent = (typing) => {
+      if (!enabled) return;
+      if (hasFullKeyPilot()) return;
+      const next = !!typing;
+      // Always re-post FOCUS so the parent can switch fields (title → paragraph).
+      // Only coalesce repeated BLUR.
+      if (!next && lastTypingPosted === false) return;
+      lastTypingPosted = next;
+      try {
+        window.parent.postMessage({
+          type: next ? MSG.FRAME_TYPING_FOCUS : MSG.FRAME_TYPING_BLUR
+        }, '*');
+      } catch { /* ignore */ }
+    };
+
+    const syncTypingFocusToParent = () => {
+      if (!enabled || hasFullKeyPilot()) return;
+      try {
+        postTypingToParent(isTypingContext(document.activeElement));
+      } catch {
+        postTypingToParent(false);
+      }
+    };
+
+    /** @param {FocusEvent} [e] */
+    const onFocusIn = (e) => {
+      try {
+        if (!enabled || hasFullKeyPilot()) return;
+        if (isTypingContext(e?.target) || isTypingContext(document.activeElement)) {
+          postTypingToParent(true);
+        }
+      } catch { /* ignore */ }
+    };
+
+    const onFocusOut = () => {
+      try {
+        if (!enabled || hasFullKeyPilot()) return;
+        setTimeout(syncTypingFocusToParent, 0);
+      } catch { /* ignore */ }
+    };
+
+    /**
+     * Nested agents post to this frame; re-bubble typing notices to the top.
+     * @param {MessageEvent} event
+     * @param {any} data
+     * @returns {boolean}
+     */
+    const bubbleChildTyping = (event, data) => {
+      if (!data || (data.type !== MSG.FRAME_TYPING_FOCUS && data.type !== MSG.FRAME_TYPING_BLUR)) {
+        return false;
+      }
+      try {
+        if (event.source === window) return false;
+      } catch { /* ignore */ }
+      if (!enabled || hasFullKeyPilot()) return true;
+      try {
+        window.parent.postMessage({ type: data.type }, '*');
+      } catch { /* ignore */ }
+      return true;
+    };
+
     /**
      * @param {boolean} inside
      * @param {number} [clientX]
@@ -759,6 +830,10 @@ export function installFrameClickAgent() {
         }
         // Do NOT post FRAME_POINTER leave / reclaim. Toggle-off while a Google
         // account (or similar) iframe is focused would blur it and dismiss the menu.
+        lastTypingPosted = null;
+        try {
+          window.parent.postMessage({ type: MSG.FRAME_TYPING_BLUR }, '*');
+        } catch { /* ignore */ }
       }
     };
 
@@ -1101,6 +1176,7 @@ export function installFrameClickAgent() {
       try {
         const data = event?.data;
         if (bubbleChildPointer(event, data)) return;
+        if (bubbleChildTyping(event, data)) return;
         if (acceptActivatePayload(event, data)) {
           const x = Number(data.clientX);
           const y = Number(data.clientY);
@@ -1190,15 +1266,30 @@ export function installFrameClickAgent() {
         // Full KeyPilot in this frame owns activate / scroll keys.
         if (hasFullKeyPilot()) return;
         if (hasModifierKeys(e)) return;
+
+        const key = e.key;
+        const kb = keybindings || {};
+
+        // Esc while typing: exit KeyPilot text mode (blur field, notify parent).
+        // Do not reclaim the iframe — Gutenberg should keep the canvas focused.
+        if (
+          (keyIn(kb.CANCEL, key) || key === 'Escape' || key === 'Esc') &&
+          isTypingContext(e.target)
+        ) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          try { document.activeElement?.blur?.(); } catch { /* ignore */ }
+          postTypingToParent(false);
+          return;
+        }
+
         if (isTypingContext(e.target)) return;
 
         // Fallback path only: top KeyPilot is the primary keyboard owner via
         // KP_FRAME_ACTIVATE / KP_FRAME_SCROLL. Local keys run only while this
         // document has focus (after a real click into the iframe).
         if (!frameHasKeyboardFocus()) return;
-
-        const key = e.key;
-        const kb = keybindings || {};
 
         // Esc / cancel: return keyboard ownership to the top frame.
         if (keyIn(kb.CANCEL, key) || key === 'Escape' || key === 'Esc') {
@@ -1347,6 +1438,8 @@ export function installFrameClickAgent() {
     document.addEventListener('scroll', onScroll, { capture: true, passive: true });
     window.addEventListener('scroll', onScroll, { capture: true, passive: true });
     document.addEventListener('keydown', onKeyDown, true);
+    document.addEventListener('focusin', onFocusIn, true);
+    document.addEventListener('focusout', onFocusOut, true);
 
     try {
       chrome.runtime?.onMessage?.addListener(onRuntimeMessage);
@@ -1362,6 +1455,7 @@ export function installFrameClickAgent() {
 
     void syncEnabledFromRuntime();
     void refreshKeybindings();
+    try { syncTypingFocusToParent(); } catch { /* ignore */ }
 
     return {
       dispose() {
@@ -1383,6 +1477,8 @@ export function installFrameClickAgent() {
           document.removeEventListener('scroll', onScroll, true);
           window.removeEventListener('scroll', onScroll, true);
           document.removeEventListener('keydown', onKeyDown, true);
+          document.removeEventListener('focusin', onFocusIn, true);
+          document.removeEventListener('focusout', onFocusOut, true);
         } catch { /* ignore */ }
         try {
           chrome.runtime?.onMessage?.removeListener(onRuntimeMessage);

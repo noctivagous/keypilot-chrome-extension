@@ -23,6 +23,7 @@ import {
 } from './modules/inspector-mode.js';
 import { MODES, INSPECTOR_KIND, CURSOR_MODE, CSS_CLASSES, COLORS, Z_INDEX, RECTANGLE_SELECTION, EDGE_ONLY_SELECTION, FEATURE_FLAGS, SCROLL, CLICKABLE_CATEGORY } from './config/constants.js';
 import { MSG } from './messaging/types.js';
+import { kpGetDeepActiveElement } from './utils/dom-context.js';
 import {
   buildKeybindingsForLayout,
   buildSystemKeybindings,
@@ -3044,13 +3045,9 @@ export class KeyPilot extends EventManager {
       if (e?.target) candidates.push(e.target);
     } catch { /* ignore */ }
 
-    // 3) deep activeElement (open shadow)
+    // 3) deep activeElement (open shadow + same-origin iframes)
     try {
-      let active = document.activeElement;
-      let guard = 0;
-      while (active && active.shadowRoot && active.shadowRoot.activeElement && guard++ < 10) {
-        active = active.shadowRoot.activeElement;
-      }
+      const active = kpGetDeepActiveElement();
       if (active) candidates.push(active);
     } catch { /* ignore */ }
 
@@ -6945,8 +6942,8 @@ export class KeyPilot extends EventManager {
   }
 
   /**
-   * Listen for KP_FRAME_POINTER / KP_FRAME_FOCUS_RECLAIM from child frame agents.
-   * Top frame only — keeps lastMouse fresh over embeds and reclaims keyboard focus.
+   * Listen for KP_FRAME_POINTER / KP_FRAME_FOCUS_RECLAIM / KP_FRAME_TYPING_*
+   * from child frame agents. Top frame only.
    */
   _installFrameBridgeListener() {
     try {
@@ -7079,6 +7076,69 @@ export class KeyPilot extends EventManager {
   }
 
   /**
+   * Same-origin typing node inside `iframe`, or null (cross-origin / not typing).
+   * @param {HTMLIFrameElement|HTMLFrameElement|null|undefined} iframe
+   * @returns {Element|null}
+   */
+  _peekSameOriginTypingElement(iframe) {
+    if (!iframe) return null;
+    try {
+      const doc = iframe.contentDocument;
+      if (!doc) return null;
+      const active = kpGetDeepActiveElement(doc);
+      if (!active) return null;
+      if (this.focusDetector?.isTextInput?.(active)) return active;
+      if (this._isTextEntryElement(active)) return active;
+    } catch { /* cross-origin or detached */ }
+    return null;
+  }
+
+  /**
+   * @param {Element|null|undefined} el
+   * @param {HTMLIFrameElement|HTMLFrameElement} iframe
+   * @returns {boolean}
+   */
+  _elementBelongsToIframe(el, iframe) {
+    if (!el || !iframe) return false;
+    try {
+      const doc = iframe.contentDocument;
+      if (doc && el.ownerDocument === doc) return true;
+    } catch { /* ignore */ }
+    try {
+      return iframe.contains(el);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Enter/exit text mode from a child frame-agent typing notice.
+   * @param {Window|null|undefined} win
+   * @param {{ allowClear?: boolean }} [opts]
+   */
+  _syncTextFocusFromFrameWindow(win, opts = {}) {
+    if (!this.enabled || !this.focusDetector) return;
+    const iframe = this._findIframeByContentWindow(win);
+    if (!iframe) return;
+    if (this._isKeyPilotManagedIframe(iframe)) return;
+
+    const el = this._peekSameOriginTypingElement(iframe);
+    if (el) {
+      try { this.focusDetector.setTextFocus(el); } catch { /* ignore */ }
+      return;
+    }
+
+    if (!opts.allowClear) return;
+
+    const cur = this.focusDetector.currentFocusedElement;
+    if (cur && this._elementBelongsToIframe(cur, iframe)) {
+      try { this.focusDetector.clearTextFocus(); } catch { /* ignore */ }
+      return;
+    }
+    try { this.focusDetector.checkCurrentFocus(); } catch { /* ignore */ }
+  }
+
+  /**
    * @param {MessageEvent} event
    */
   _onFrameBridgeMessage(event) {
@@ -7091,6 +7151,14 @@ export class KeyPilot extends EventManager {
       this._framePointerInside = false;
       this._framePointerIframe = null;
       this._reclaimKeyboardFocusFromPageIframes({ allowGoogleAccount: true });
+      return;
+    }
+
+    if (data.type === MSG.FRAME_TYPING_FOCUS || data.type === MSG.FRAME_TYPING_BLUR) {
+      this._syncTextFocusFromFrameWindow(
+        /** @type {Window} */ (event.source),
+        { allowClear: data.type === MSG.FRAME_TYPING_BLUR }
+      );
       return;
     }
 
@@ -7757,12 +7825,21 @@ export class KeyPilot extends EventManager {
     this._disarmTextModeClick();
     try { this.state.setFocusElement(null); } catch { /* ignore */ }
 
-    // Use the simple, proven approach that works in DevTools
-    // Blur the active element and set focus to the body
-    if (document.activeElement) {
-      document.activeElement.blur();
+    const focused = currentState?.focusedTextElement || this.focusDetector?.currentFocusedElement;
+    let inChildDocument = false;
+    try {
+      inChildDocument = !!(focused && focused.ownerDocument && focused.ownerDocument !== document);
+    } catch { inChildDocument = false; }
+
+    if (inChildDocument) {
+      // Leave the editor canvas iframe focused; only drop the inner field.
+      try { focused.blur(); } catch { /* ignore */ }
+    } else {
+      if (document.activeElement) {
+        document.activeElement.blur();
+      }
+      try { document.body.focus(); } catch { /* ignore */ }
     }
-    document.body.focus();
 
     // Clear the text focus state
     this.focusDetector.clearTextFocus();

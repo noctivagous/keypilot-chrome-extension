@@ -4454,10 +4454,42 @@ export class OverlayManager {
     }
   }
 
+  /**
+   * Translate a rect from `element`'s viewport into the top-frame viewport.
+   * Same-origin iframe fields report coordinates local to the canvas.
+   * @param {Element} element
+   * @param {{ left: number, top: number, width: number, height: number }} rect
+   * @returns {{ left: number, top: number, width: number, height: number }}
+   */
+  _rectInTopViewport(element, rect) {
+    if (!rect) return { left: 0, top: 0, width: 0, height: 0 };
+    const out = {
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height
+    };
+    let win = null;
+    try { win = element.ownerDocument?.defaultView || null; } catch { win = null; }
+    let guard = 0;
+    while (win && win !== window && guard++ < 8) {
+      let frameEl = null;
+      try { frameEl = win.frameElement; } catch { frameEl = null; }
+      if (!frameEl) break;
+      let fr = null;
+      try { fr = frameEl.getBoundingClientRect(); } catch { fr = null; }
+      if (!fr) break;
+      out.left += fr.left;
+      out.top += fr.top;
+      try { win = win.parent; } catch { break; }
+    }
+    return out;
+  }
+
   getBestRect(element) {
     if (!element) return { left: 0, top: 0, width: 0, height: 0 };
     
-    let rect = element.getBoundingClientRect();
+    let rect = this._rectInTopViewport(element, element.getBoundingClientRect());
     
     // Debug logging
     if (window.KEYPILOT_DEBUG) {
@@ -4476,7 +4508,7 @@ export class OverlayManager {
     // try to find a child element with height
     if (rect.height === 0 && element.children.length > 0) {
       for (const child of element.children) {
-        const childRect = child.getBoundingClientRect();
+        const childRect = this._rectInTopViewport(child, child.getBoundingClientRect());
         if (childRect.height > 0) {
           // Use the child's rect but keep the parent's left position if it's a link
           if (element.tagName.toLowerCase() === 'a') {

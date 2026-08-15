@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-15T12:07:57.391Z
+ * Generated on 2026-08-15T19:11:10.470Z
  */
 
 (() => {
@@ -93,6 +93,13 @@
     // Sent on Esc / pointer leave when the iframe had document focus (manual click).
     // Top blurs the focused <iframe> so KeyPilot keybinds work on the parent again.
     FRAME_FOCUS_RECLAIM: "KP_FRAME_FOCUS_RECLAIM",
+    // --- Child → parent: typing focus inside a page iframe ---
+    // Frame agent posts these on focusin/focusout of a text field in its document
+    // (Gutenberg editor-canvas, etc.). Top FocusDetector peeks the same-origin
+    // activeElement and enters/exits text_focus. No element is sent.
+    // Payload: { type }
+    FRAME_TYPING_FOCUS: "KP_FRAME_TYPING_FOCUS",
+    FRAME_TYPING_BLUR: "KP_FRAME_TYPING_BLUR",
     // --- Child frame-agent → SW: inject full content-bundled.js into this frame ---
     // Used when a KeyPilot popover iframe needs full KeyPilot (cursor/overlays).
     // Thin frame-agent-bundled.js does not include the full app.
@@ -2982,6 +2989,59 @@
         } catch {
         }
       };
+      let lastTypingPosted = null;
+      const postTypingToParent = (typing) => {
+        if (!enabled) return;
+        if (hasFullKeyPilot()) return;
+        const next = !!typing;
+        if (!next && lastTypingPosted === false) return;
+        lastTypingPosted = next;
+        try {
+          window.parent.postMessage({
+            type: next ? MSG.FRAME_TYPING_FOCUS : MSG.FRAME_TYPING_BLUR
+          }, "*");
+        } catch {
+        }
+      };
+      const syncTypingFocusToParent = () => {
+        if (!enabled || hasFullKeyPilot()) return;
+        try {
+          postTypingToParent(isTypingContext(document.activeElement));
+        } catch {
+          postTypingToParent(false);
+        }
+      };
+      const onFocusIn = (e) => {
+        try {
+          if (!enabled || hasFullKeyPilot()) return;
+          if (isTypingContext(e?.target) || isTypingContext(document.activeElement)) {
+            postTypingToParent(true);
+          }
+        } catch {
+        }
+      };
+      const onFocusOut = () => {
+        try {
+          if (!enabled || hasFullKeyPilot()) return;
+          setTimeout(syncTypingFocusToParent, 0);
+        } catch {
+        }
+      };
+      const bubbleChildTyping = (event, data) => {
+        if (!data || data.type !== MSG.FRAME_TYPING_FOCUS && data.type !== MSG.FRAME_TYPING_BLUR) {
+          return false;
+        }
+        try {
+          if (event.source === window) return false;
+        } catch {
+        }
+        if (!enabled || hasFullKeyPilot()) return true;
+        try {
+          window.parent.postMessage({ type: data.type }, "*");
+        } catch {
+        }
+        return true;
+      };
       const postPointerToParent = (inside, clientX, clientY) => {
         if (!enabled) return;
         if (hasFullKeyPilot()) return;
@@ -3193,6 +3253,11 @@
             } catch {
             }
             pointerSyncRaf = 0;
+          }
+          lastTypingPosted = null;
+          try {
+            window.parent.postMessage({ type: MSG.FRAME_TYPING_BLUR }, "*");
+          } catch {
           }
         }
       };
@@ -3464,6 +3529,7 @@
         try {
           const data = event?.data;
           if (bubbleChildPointer(event, data)) return;
+          if (bubbleChildTyping(event, data)) return;
           if (acceptActivatePayload(event, data)) {
             const x = Number(data.clientX);
             const y = Number(data.clientY);
@@ -3535,10 +3601,21 @@
           if (!enabled) return;
           if (hasFullKeyPilot()) return;
           if (hasModifierKeys(e)) return;
-          if (isTypingContext(e.target)) return;
-          if (!frameHasKeyboardFocus()) return;
           const key = e.key;
           const kb = keybindings || {};
+          if ((keyIn(kb.CANCEL, key) || key === "Escape" || key === "Esc") && isTypingContext(e.target)) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            try {
+              document.activeElement?.blur?.();
+            } catch {
+            }
+            postTypingToParent(false);
+            return;
+          }
+          if (isTypingContext(e.target)) return;
+          if (!frameHasKeyboardFocus()) return;
           if (keyIn(kb.CANCEL, key) || key === "Escape" || key === "Esc") {
             e.preventDefault();
             e.stopPropagation();
@@ -3671,6 +3748,8 @@
       document.addEventListener("scroll", onScroll, { capture: true, passive: true });
       window.addEventListener("scroll", onScroll, { capture: true, passive: true });
       document.addEventListener("keydown", onKeyDown, true);
+      document.addEventListener("focusin", onFocusIn, true);
+      document.addEventListener("focusout", onFocusOut, true);
       try {
         chrome.runtime?.onMessage?.addListener(onRuntimeMessage);
       } catch {
@@ -3685,6 +3764,10 @@
       }
       void syncEnabledFromRuntime();
       void refreshKeybindings();
+      try {
+        syncTypingFocusToParent();
+      } catch {
+      }
       return {
         dispose() {
           hideHover();
@@ -3709,6 +3792,8 @@
             document.removeEventListener("scroll", onScroll, true);
             window.removeEventListener("scroll", onScroll, true);
             document.removeEventListener("keydown", onKeyDown, true);
+            document.removeEventListener("focusin", onFocusIn, true);
+            document.removeEventListener("focusout", onFocusOut, true);
           } catch {
           }
           try {

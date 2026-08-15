@@ -112,6 +112,14 @@ export const MSG = Object.freeze({
   // Top blurs the focused <iframe> so KeyPilot keybinds work on the parent again.
   FRAME_FOCUS_RECLAIM: 'KP_FRAME_FOCUS_RECLAIM',
 
+  // --- Child → parent: typing focus inside a page iframe ---
+  // Frame agent posts these on focusin/focusout of a text field in its document
+  // (Gutenberg editor-canvas, etc.). Top FocusDetector peeks the same-origin
+  // activeElement and enters/exits text_focus. No element is sent.
+  // Payload: { type }
+  FRAME_TYPING_FOCUS: 'KP_FRAME_TYPING_FOCUS',
+  FRAME_TYPING_BLUR: 'KP_FRAME_TYPING_BLUR',
+
   // --- Child frame-agent → SW: inject full content-bundled.js into this frame ---
   // Used when a KeyPilot popover iframe needs full KeyPilot (cursor/overlays).
   // Thin frame-agent-bundled.js does not include the full app.

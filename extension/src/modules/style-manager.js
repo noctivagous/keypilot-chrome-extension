@@ -158,6 +158,8 @@ export class StyleManager {
   constructor() {
     this.injectedStyles = new Set();
     this.shadowRootStyles = new Map(); // Track shadow root styles for cleanup
+    /** @type {Set<Document>} same-origin iframe documents we injected into */
+    this._foreignDocuments = new Set();
     this.isEnabled = true; // Track if styles should be active
     // When false, KeyPilot must not override the page cursor at all.
     this.cursorOverridesEnabled = false;
@@ -194,6 +196,21 @@ export class StyleManager {
     try {
       document.documentElement.style.setProperty('--kpv2-text-hover-hint-image', hoverUri);
       document.documentElement.style.setProperty('--kpv2-text-focus-hint-image', focusUri);
+    } catch { /* ignore */ }
+    try {
+      for (const doc of this._foreignDocuments) {
+        if (!doc || doc === document) continue;
+        let alive = false;
+        try { alive = !!doc.documentElement && doc.defaultView != null; } catch { alive = false; }
+        if (!alive) {
+          this._foreignDocuments.delete(doc);
+          continue;
+        }
+        try {
+          doc.documentElement.style.setProperty('--kpv2-text-hover-hint-image', hoverUri);
+          doc.documentElement.style.setProperty('--kpv2-text-focus-hint-image', focusUri);
+        } catch { /* ignore */ }
+      }
     } catch { /* ignore */ }
 
     // Shadow roots inherit CSS variables from the host in most cases, but
@@ -1174,9 +1191,15 @@ export class StyleManager {
       root = null;
     }
 
-    // Light DOM / document: main stylesheet already covers these nodes.
-    if (!root || root === document || root instanceof Document) {
+    // Top-frame light DOM: main stylesheet already covers these nodes.
+    if (!root || root === document) {
       return true;
+    }
+
+    // Same-origin iframe document (Gutenberg editor-canvas, etc.).
+    // Do not use `instanceof Document` — iframe documents are another realm.
+    if (root.nodeType === 9) {
+      return this.injectIntoForeignDocument(/** @type {Document} */ (root));
     }
 
     if (typeof ShadowRoot !== 'undefined' && root instanceof ShadowRoot) {
@@ -1192,6 +1215,38 @@ export class StyleManager {
 
     // Closed shadow or unknown root: cannot inject.
     return false;
+  }
+
+  /**
+   * Inject text-mode / hover chrome CSS into a same-origin child document.
+   * Parent `document` styles do not apply inside an iframe.
+   * @param {Document} doc
+   * @returns {boolean}
+   */
+  injectIntoForeignDocument(doc) {
+    if (!doc || !this.isEnabled || doc === document) return !!doc;
+    try {
+      const id = ELEMENT_IDS.STYLE || 'kpv2-style';
+      let style = typeof doc.getElementById === 'function' ? doc.getElementById(id) : null;
+      if (!style) {
+        style = doc.createElement('style');
+        style.id = id;
+        style.textContent = this._buildShadowCSS();
+        const head = doc.head || doc.documentElement;
+        if (!head) return false;
+        head.appendChild(style);
+      }
+      this._foreignDocuments.add(doc);
+      try {
+        const hoverUri = this._textHoverHintUri || 'none';
+        const focusUri = this._textFocusHintUri || 'none';
+        doc.documentElement.style.setProperty('--kpv2-text-hover-hint-image', hoverUri);
+        doc.documentElement.style.setProperty('--kpv2-text-focus-hint-image', focusUri);
+      } catch { /* ignore */ }
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   /**
