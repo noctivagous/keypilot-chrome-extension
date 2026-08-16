@@ -3381,6 +3381,8 @@ export class OverlayManager {
         padding: 0 !important;
         border-style: solid !important;
         background: transparent !important;
+        transform: none !important;
+        filter: none !important;
         display: none;
       `
     });
@@ -3582,6 +3584,17 @@ export class OverlayManager {
       ring.style.setProperty('border-color', borderColor, 'important');
       ring.style.setProperty('border-radius', radius, 'important');
       ring.style.setProperty('background', backgroundColor, 'important');
+      // Squarespace social icons (and similar) scale *all* children of the
+      // overflow:hidden wrapper (e.g. `.sqs-svg-icon--wrapper > * { transform:
+      // scale(2) }`). That pushes our border outside the clip and the ring
+      // vanishes while F-flash (body fixed) still works. Lock identity transform.
+      ring.style.setProperty('transform', 'none', 'important');
+      ring.style.setProperty('transform-origin', 'center', 'important');
+      ring.style.setProperty('scale', 'none', 'important');
+      ring.style.setProperty('translate', 'none', 'important');
+      ring.style.setProperty('rotate', 'none', 'important');
+      ring.style.setProperty('filter', 'none', 'important');
+      ring.style.setProperty('mix-blend-mode', 'normal', 'important');
       if (overlayShadowEnabled === false) {
         ring.style.setProperty('box-shadow', 'none', 'important');
       } else {
@@ -3602,6 +3615,9 @@ export class OverlayManager {
     // Slotless shadow hosts accept appendChild but never layout the ring.
     // Require a positive box before claiming success — else fall through to C.
     // Also reject rings much narrower than the focus union (inline fragment CB).
+    // Also reject when host overflow-clips the ring border (self-clip + scaled
+    // children already handled via transform:none; still bail if host box and
+    // ring box diverge badly so C can paint).
     try {
       const rr = ring.getBoundingClientRect();
       if (!rr || !(rr.width > 1) || !(rr.height > 1)) {
@@ -3613,6 +3629,25 @@ export class OverlayManager {
       if (fr && fr.width > 16 && rr.width < fr.width * 0.85) {
         this.hideInTargetFocusRing();
         return false;
+      }
+      // Host clips itself and ring is still much larger than host (site transform
+      // or layout won) → border sits outside the clip; use body fixed instead.
+      let hostBox = null;
+      try { hostBox = host.getBoundingClientRect(); } catch { hostBox = null; }
+      if (
+        hostBox &&
+        hostBox.width > 1 &&
+        hostBox.height > 1 &&
+        (rr.width > hostBox.width * 1.35 + 4 || rr.height > hostBox.height * 1.35 + 4)
+      ) {
+        let hostClips = false;
+        try {
+          hostClips = this._styleClipsSelf(window.getComputedStyle(host));
+        } catch { hostClips = false; }
+        if (hostClips) {
+          this.hideInTargetFocusRing();
+          return false;
+        }
       }
     } catch {
       this.hideInTargetFocusRing();
@@ -3856,19 +3891,105 @@ export class OverlayManager {
   }
 
   /**
+   * Inline host whose border/line box is much smaller than a replaced child
+   * (phoronix.com logo: `a { display:inline }` → line-box ~1em tall, child
+   * `<img>` is the real visual). Outline/flash on the host uses the line box
+   * and misses the image; prefer the replaced child for paint.
+   *
+   * @param {Element} el
+   * @returns {Element|null}
+   */
+  _findDominantReplacedPaintChild(el) {
+    if (!el || el.nodeType !== 1) return null;
+
+    let display = '';
+    try { display = String(window.getComputedStyle(el)?.display || ''); } catch { display = ''; }
+    // Line-box under-measurement is an inline / inline-level issue.
+    if (display && !display.startsWith('inline') && display !== 'contents') {
+      return null;
+    }
+
+    let hostBox = null;
+    try { hostBox = el.getBoundingClientRect(); } catch { hostBox = null; }
+    const hostArea = (hostBox && hostBox.width > 0 && hostBox.height > 0)
+      ? (hostBox.width * hostBox.height)
+      : 0;
+
+    /** @type {Element|null} */
+    let best = null;
+    let bestArea = 0;
+
+    const consider = (node) => {
+      if (!node || node.nodeType !== 1 || node === el) return;
+      if (!this._isMediaLikeCoverElement(node) && !this._isReplacedOrVoidElement(node)) {
+        // Also accept bare IMG/VIDEO even if media-like helper is strict.
+        const tag = String(node.tagName || '').toUpperCase();
+        if (tag !== 'IMG' && tag !== 'VIDEO' && tag !== 'CANVAS' && tag !== 'SVG') return;
+      }
+      let r = null;
+      try { r = node.getBoundingClientRect(); } catch { r = null; }
+      if (!r || !(r.width >= 8) || !(r.height >= 8)) return;
+      const area = r.width * r.height;
+      if (area <= bestArea) return;
+      // Child must be meaningfully larger than the host line box.
+      if (hostArea > 0) {
+        const taller = r.height > hostBox.height * 1.2 + 2;
+        const wider = r.width > hostBox.width * 1.05 + 2;
+        const biggerArea = area > hostArea * 1.35;
+        if (!taller && !wider && !biggerArea) return;
+      }
+      bestArea = area;
+      best = node;
+    };
+
+    try {
+      // Prefer direct structure: a > img (phoronix logo).
+      const kids = el.children;
+      if (kids) {
+        for (let i = 0; i < kids.length; i++) {
+          const k = kids[i];
+          if (!k || k.nodeType !== 1) continue;
+          const tag = String(k.tagName || '').toUpperCase();
+          if (tag === 'PICTURE') {
+            try {
+              const img = k.querySelector('img');
+              if (img) consider(img);
+            } catch { /* ignore */ }
+          } else {
+            consider(k);
+          }
+        }
+      }
+    } catch { /* ignore */ }
+
+    if (!best) {
+      try {
+        const media = el.querySelectorAll('img, video, canvas, svg');
+        for (let i = 0; i < media.length && i < 12; i++) consider(media[i]);
+      } catch { /* ignore */ }
+    }
+
+    return best;
+  }
+
+  /**
    * Choose the best element to apply the focus ring styling to.
    *
    * Problems:
    * 1) Inline anchors that wrap only position:absolute media collapse to 0×0
    *    (Breitbart video thumbs) — outline on the <a> is invisible.
-   * 2) Inline elements that contain block children can be split into multiple
+   * 2) Inline anchors that wrap a larger replaced child (phoronix logo img):
+   *    host getBoundingClientRect is only the line box (~1em); outline on the
+   *    <a> protrudes / mismatches the image. Paint the <img> instead.
+   * 3) Inline elements that contain block children can be split into multiple
    *    inline fragments, causing outline/box-shadow to render as disjoint pieces.
-   * 3) Open-shadow custom-element hosts can be collapsed (archive.org
+   * 4) Open-shadow custom-element hosts can be collapsed (archive.org
    *    media-button ~79×0) while the real clickable lives inside the shadow.
    *
    * Strategy:
    * - If the element has no usable box, style the largest visible descendant
    *   (piercing open shadows) or a sized composed parent that wraps abspos content.
+   * - If inline host is dominated by a larger replaced child, style that child.
    * - If `element.getClientRects()` indicates fragmentation (2+ rects) and
    *   element is inline-ish, find the largest single-rect descendant.
    * - Otherwise, return `element`.
@@ -3903,6 +4024,12 @@ export class OverlayManager {
       } catch { /* ignore */ }
       return element;
     }
+
+    // Inline line-box host with a larger logo/media child (single client rect).
+    try {
+      const replaced = this._findDominantReplacedPaintChild(element);
+      if (replaced) return /** @type {HTMLElement} */ (replaced);
+    } catch { /* ignore */ }
 
     let rects = null;
     try { rects = element.getClientRects(); } catch { rects = null; }
@@ -5659,7 +5786,24 @@ export class OverlayManager {
       ? activationTarget
       : (this._currentStyledElement || this._lastFocusElement);
 
-    let paintEl = this._resolveFocusPaintElement(source) || source || null;
+    // Prefer the live strategy-A paint node (may be the logo <img> after
+    // _resolveElementForFocusStyling) so green flash matches the blue outline.
+    let paintEl = null;
+    try {
+      if (
+        this._useDomHoverFocusColors &&
+        !this._focusPaintUsesFixedOverlay &&
+        !this._focusPaintUsesInTargetRing &&
+        this._currentStyledElement &&
+        this._currentStyledElement.nodeType === 1 &&
+        this._currentStyledElement.isConnected
+      ) {
+        paintEl = this._currentStyledElement;
+      }
+    } catch { /* ignore */ }
+    if (!paintEl) {
+      paintEl = this._resolveFocusPaintElement(source) || source || null;
+    }
 
     try {
       if (
@@ -5688,13 +5832,30 @@ export class OverlayManager {
       }
     } catch { /* fall through */ }
 
-    // Strategy A: inline / multi-line fragments — one ghost per line box.
+    // Inline host still under-measured: promote to dominant replaced child
+    // (same rule as strategy-A paint) before using line-box client rects.
+    try {
+      if (paintEl && paintEl.nodeType === 1) {
+        const replaced = this._findDominantReplacedPaintChild(paintEl);
+        if (replaced) paintEl = replaced;
+      }
+    } catch { /* ignore */ }
+
+    // Strategy A: multi-line text fragments — one ghost per line box.
+    // Skip for replaced media (img/video): a single tight box, not line boxes.
     try {
       if (paintEl && paintEl.nodeType === 1 && paintEl.isConnected) {
+        const isReplaced = this._isReplacedOrVoidElement(paintEl) ||
+          this._isMediaLikeCoverElement(paintEl);
         let clientRects = null;
         try { clientRects = paintEl.getClientRects(); } catch { clientRects = null; }
-        const fragmented = this._isFragmentedInlineFocusTarget(paintEl);
-        if (clientRects && clientRects.length >= 1 && (fragmented || clientRects.length >= 2)) {
+        const fragmented = !isReplaced && this._isFragmentedInlineFocusTarget(paintEl);
+        if (
+          !isReplaced &&
+          clientRects &&
+          clientRects.length >= 1 &&
+          (fragmented || clientRects.length >= 2)
+        ) {
           /** @type {Array<{ left: number, top: number, width: number, height: number }>} */
           const out = [];
           for (let i = 0; i < clientRects.length; i++) {
