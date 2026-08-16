@@ -22,6 +22,14 @@ export class FocusDetector {
     // Bound handlers so start/stop can add/remove the same function references.
     this._onFocusIn = this.handleFocusIn.bind(this);
     this._onFocusOut = this.handleFocusOut.bind(this);
+
+    // Open-shadow fields (onboarding practice popover): focusin/focusout on
+    // `document` are retargeted to the host. Moving focus between two inputs
+    // in the same shadow does not re-fire on document, so we also listen on
+    // the field's ShadowRoot while text mode is active.
+    this._shadowFocusRoot = null;
+    this._onShadowFocusIn = this.handleFocusIn.bind(this);
+    this._onShadowFocusOut = this.handleFocusOut.bind(this);
   }
 
   start() {
@@ -70,6 +78,7 @@ export class FocusDetector {
   stop() {
     document.removeEventListener('focusin', this._onFocusIn, true);
     document.removeEventListener('focusout', this._onFocusOut, true);
+    this._detachShadowFocusBridge();
 
     // Clean up observers
     this.cleanupTextElementObservers();
@@ -257,6 +266,34 @@ export class FocusDetector {
     }
   }
 
+  _detachShadowFocusBridge() {
+    const root = this._shadowFocusRoot;
+    this._shadowFocusRoot = null;
+    if (!root) return;
+    try { root.removeEventListener('focusin', this._onShadowFocusIn, true); } catch { /* ignore */ }
+    try { root.removeEventListener('focusout', this._onShadowFocusOut, true); } catch { /* ignore */ }
+  }
+
+  /**
+   * Listen for focus moves that stay inside an open ShadowRoot (document
+   * listeners never see those — the retargeted target stays the host).
+   * @param {Element} element
+   */
+  _attachShadowFocusBridge(element) {
+    let root = null;
+    try { root = typeof element.getRootNode === 'function' ? element.getRootNode() : null; } catch { root = null; }
+    const isShadow = !!(root && typeof ShadowRoot !== 'undefined' && root instanceof ShadowRoot);
+    if (!isShadow) {
+      this._detachShadowFocusBridge();
+      return;
+    }
+    if (this._shadowFocusRoot === root) return;
+    this._detachShadowFocusBridge();
+    this._shadowFocusRoot = root;
+    try { root.addEventListener('focusin', this._onShadowFocusIn, true); } catch { /* ignore */ }
+    try { root.addEventListener('focusout', this._onShadowFocusOut, true); } catch { /* ignore */ }
+  }
+
   setTextFocus(element) {
     if (window.KEYPILOT_DEBUG) {
       console.log('[KeyPilot] Setting text focus for element:', element.tagName, element.type || 'N/A');
@@ -264,6 +301,8 @@ export class FocusDetector {
 
     // Update current focused element reference
     this.currentFocusedElement = element;
+
+    this._attachShadowFocusBridge(element);
 
     // Set up observers for the focused text element
     this.setupTextElementObservers(element);
@@ -332,6 +371,8 @@ export class FocusDetector {
   clearTextFocus() {
     // Stop position tracking
     this.stopPositionTracking();
+
+    this._detachShadowFocusBridge();
 
     // Clean up observers
     this.cleanupTextElementObservers();
