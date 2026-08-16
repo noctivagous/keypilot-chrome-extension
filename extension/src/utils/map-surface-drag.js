@@ -30,7 +30,11 @@ const SESSION_END = '__kp_map_session_end_v1';
 /** Must match POINTER_ID in map-pan-bridge.js (gMapZoomShortcut uses 10088). */
 export const MAP_PAN_POINTER_ID = 10088;
 
-/** Scroll Line map-drag is suspended — Google / canvas maps do not pan reliably. */
+/**
+ * Scroll Line (N) → map.panBy / synthetic drag is suspended until map sites
+ * pan reliably. Keep the Scroll Line key on normal overflow scroll only.
+ * Flip to true later and re-enable map-pan-bridge inject (manifest or SW).
+ */
 export const SCROLL_LINE_MAP_DRAG_ENABLED = false;
 
 /** @type {Promise<boolean>|null} */
@@ -197,9 +201,11 @@ export function findMapSurfaceAtPoint(clientX, clientY) {
 /**
  * Ensure the MAIN-world pan bridge is installed in this frame.
  * Safe to call repeatedly; only one inject runs.
+ * No-op while Scroll Line map pan is suspended.
  * @returns {Promise<boolean>}
  */
 export function ensureMapPanBridge() {
+  if (!SCROLL_LINE_MAP_DRAG_ENABLED) return Promise.resolve(false);
   if (_bridgePromise) return _bridgePromise;
 
   _bridgePromise = new Promise((resolve) => {
@@ -249,6 +255,7 @@ function dispatchBridgeEvent(type, detail = {}) {
  * @returns {{ el: Element, x: number, y: number }}
  */
 export function createMapPanSession(el, originX, originY) {
+  if (!SCROLL_LINE_MAP_DRAG_ENABLED) return null;
   ensureMapPanBridge();
   const x = Number(originX) || 0;
   const y = Number(originY) || 0;
@@ -260,6 +267,7 @@ export function createMapPanSession(el, originX, originY) {
  * End a map pan/drag session (release held pointer drag on Google Maps).
  */
 export function endMapPanSession() {
+  if (!SCROLL_LINE_MAP_DRAG_ENABLED) return;
   dispatchBridgeEvent(SESSION_END);
 }
 
@@ -272,6 +280,7 @@ export function endMapPanSession() {
  * @param {number} dy
  */
 export function mapPanBy(session, dx, dy) {
+  if (!SCROLL_LINE_MAP_DRAG_ENABLED) return;
   if (!session) return;
   const ax = Number(dx) || 0;
   const ay = Number(dy) || 0;

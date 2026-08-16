@@ -2,9 +2,11 @@
  * Page-world (MAIN) bridge: pan Leaflet / MapLibre / Mapbox / Google Maps
  * via their map.panBy APIs.
  *
- * Loaded at document_start (world: MAIN) so it can hook L.Map / mapboxgl.Map
- * constructors before sites like openstreetmap.org hide the instance in a
- * closure. Also injectable on demand via chrome.scripting.executeScript.
+ * Scroll Line map pan is suspended (see SCROLL_LINE_MAP_DRAG_ENABLED). This
+ * file is not registered as a perpetual content script; inject on demand via
+ * chrome.scripting.executeScript (MSG.ENSURE_MAP_PAN_BRIDGE) when re-enabled.
+ * Prefer document_start inject when re-enabling so L.Map / mapboxgl.Map
+ * constructors can be hooked before sites hide the instance in a closure.
  *
  * Isolated content scripts dispatch CustomEvent `__kp_map_pan_v1` on
  * document.documentElement with detail { dx, dy, clientX, clientY }.

@@ -4029,6 +4029,7 @@ export class KeyPilot extends EventManager {
     const { x, y } = this._getScrollCursorPoint();
     this._scrollLineOrigin = { x, y };
     this._scrollLineTarget = this._resolveScrollLineTarget(x, y);
+    // Map pan for Scroll Line is suspended (SCROLL_LINE_MAP_DRAG_ENABLED).
     if (SCROLL_LINE_MAP_DRAG_ENABLED && this._scrollLineTarget?.kind === 'drag') {
       try { ensureMapPanBridge(); } catch { /* ignore */ }
       try {

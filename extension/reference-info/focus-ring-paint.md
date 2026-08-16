@@ -63,7 +63,8 @@ Implemented in `OverlayManager.updateFocusOverlay` when `_useDomHoverFocusColors
    - Shadow-internal wrappers count for self-clip (msn.com `div.root { contain: content }` even when the host’s own style is `overflow: visible`).
    - **Or** a full-size / edge-strip **child** would paint over an **inset** parent outline **and** path A would be forced to inset (`_wouldUseInsetFocusOutline` — graded offset negative). Example: newtab `a.top-site-card` → `.top-site-tile` inside `.top-sites-horizontal`. Detected via `_hasObscuringFullBleedChild` / `_hasEdgeFlushMediaCover` **gated by** inset necessity.
    - **Not** merely “has a media child” when **outer** outline still has room — outer outline sits outside the border box and is not covered by children (e.g. ganjingworld video thumbnails must stay on path A).
-   - Parent-only clip (outer ring tight in a toolbar shell) is **not** enough for escape hatch → keep element outline with graded inset (`ENABLE_FOCUS_CLIP_INSET`).
+   - Parent-only clip with the target still **inside** the clipper (room ≥ 0) is **not** enough for escape hatch → keep element outline with graded inset (`ENABLE_FOCUS_CLIP_INSET`). Control-strip buttons stay on A.
+   - Parent clip when the target **overflows** the clipper (negative free room, e.g. Ars list headline with negative margin above `overflow-hidden`) → graded inset cannot show that edge → B/C.
    - Living in a `ShadowRoot` (or being an open-shadow host) **skips A** and defaults to **B** (then C).
 2. If escape hatch needed:
    - **B** (`ENABLE_IN_TARGET_FOCUS_RING`): `updateFocusOverlayInTarget` — inject `.kpv2-focus-ring-intarget` as last child of host (shadow-aware mount), `z-index: maxLocal+1`, `border-radius` via `_resolveElementBorderRadius`. Set `_focusPaintUsesInTargetRing`. Still counts as element-associated for scroll (`usesElementFocusStyling()` true).

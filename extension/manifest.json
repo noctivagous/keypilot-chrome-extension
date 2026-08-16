@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "KeyPilot",
     "version": "0.3.4",
-    "description": "Aug-15-2026-10:37PM Keyboard-first navigation: F click link under cursor; D back; R forward; ESC cancel.",
+    "description": "Aug-15-2026-10:43PM Keyboard-first navigation: F click link under cursor; D back; R forward; ESC cancel.",
     "action": {
         "default_title": "KeyPilot Minimal",
         "default_popup": "popup.html",
@@ -55,16 +55,6 @@
                 "early-inject.js"
             ],
             "run_at": "document_start"
-        },
-        {
-            "matches": [
-                "<all_urls>"
-            ],
-            "js": [
-                "map-pan-bridge.js"
-            ],
-            "run_at": "document_start",
-            "world": "MAIN"
         },
         {
             "matches": [

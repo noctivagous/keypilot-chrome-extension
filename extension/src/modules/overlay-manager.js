@@ -2302,10 +2302,13 @@ export class OverlayManager {
    * ring, so we must use an escape hatch (strategy B in-target, else C body fixed).
    *
    * Policy (outline-first = A preferred):
-   * - Outer outline clipped by a parent alone → still use **graded element
-   *   inset** on A (ENABLE_FOCUS_CLIP_INSET). Example: control-strip buttons
-   *   inside `overflow:hidden` shells. Body fixed (C) would also sit under high
-   *   z-index KP chrome (strip z > OVERLAYS) and stay invisible.
+   * - Outer outline clipped by a parent alone, target still fully inside the
+   *   clipper (room ≥ 0) → **graded element inset** on A (ENABLE_FOCUS_CLIP_INSET).
+   *   Example: control-strip buttons inside `overflow:hidden` shells. Body fixed
+   *   (C) would also sit under high z-index KP chrome and stay invisible.
+   * - Target **overflows** a clipping ancestor (negative free room, e.g. Ars
+   *   headline with `-mt-1` above `overflow-hidden` card shell) → graded inset
+   *   cannot expose that edge; use B/C.
    * - Target clips itself **and** is covered by full-bleed media/pseudos →
    *   inset outline is under the cover; use B/C (TNW cards, etc.).
    * - Same when cover is only an **edge media strip** (msn.com card image on the
@@ -2347,6 +2350,17 @@ export class OverlayManager {
     // Nested headline / thumb links do not qualify (see fill check).
     try {
       if (this._resolveMediaTextCardShell(paintEl) || this._resolveMediaTextCardShell(element)) {
+        return true;
+      }
+    } catch { /* ignore */ }
+
+    // Paint target sticks out past a clipping ancestor (negative free room).
+    // Graded inset only paints *inside* the border box — that edge of the box
+    // is already cut off (arstechnica.com list headlines above overflow-hidden).
+    // Flush room (0) still uses A inset (control-strip buttons).
+    try {
+      const room = this._minFocusOutlineRoomPx(paintEl);
+      if (Number.isFinite(room) && room < -0.5) {
         return true;
       }
     } catch { /* ignore */ }
