@@ -5580,9 +5580,76 @@ export class OverlayManager {
   }
 
   /**
-   * Viewport boxes for F-click ghosts. For inline / fragmented paint targets,
-   * returns one clipped rect per getClientRects() line box (matches strategy A
-   * outline fragments). Otherwise a single clipped paint box.
+   * Live viewport box of the painted blue hover ring (strategy B ring or C
+   * body-fixed overlay). Null when hover is strategy A (DOM outline only).
+   * @returns {{ left: number, top: number, width: number, height: number }|null}
+   */
+  _resolveLiveBlueHoverPaintRect() {
+    try {
+      if (
+        this._focusPaintUsesFixedOverlay &&
+        this.focusOverlay &&
+        this.focusOverlay.style.display !== 'none'
+      ) {
+        const r = this._asPositiveViewportRect(this.focusOverlay.getBoundingClientRect());
+        if (r) return r;
+      }
+    } catch { /* ignore */ }
+
+    try {
+      if (
+        this._focusPaintUsesInTargetRing &&
+        this._inTargetRing &&
+        this._inTargetRing.isConnected
+      ) {
+        let shown = true;
+        try {
+          const cs = window.getComputedStyle(this._inTargetRing);
+          shown = !!(cs && cs.display !== 'none' && cs.visibility !== 'hidden');
+        } catch { /* ignore */ }
+        if (shown) {
+          const r = this._asPositiveViewportRect(this._inTargetRing.getBoundingClientRect());
+          if (r) return r;
+        }
+      }
+    } catch { /* ignore */ }
+
+    return null;
+  }
+
+  /**
+   * Expand a content box by strategy-A outline-offset so a fixed green flash
+   * sits where the blue CSS outline sits (outside the border box).
+   * @param {{ left: number, top: number, width: number, height: number }} rect
+   * @param {Element|null|undefined} paintEl
+   * @returns {{ left: number, top: number, width: number, height: number }}
+   */
+  _expandRectForStrategyAOutline(rect, paintEl) {
+    if (!rect) return rect;
+    let offsetPx = 0;
+    try {
+      if (paintEl && paintEl.nodeType === 1) {
+        const fromVar = paintEl.style?.getPropertyValue?.('--keypilot-focus-outline-offset');
+        const raw = (fromVar && String(fromVar).trim()) ||
+          (window.getComputedStyle(paintEl).outlineOffset || '');
+        const n = parseFloat(raw);
+        if (Number.isFinite(n)) offsetPx = n;
+      }
+    } catch { /* ignore */ }
+    // Only expand for positive (outer) offset; inset outlines stay on the box.
+    if (!(offsetPx > 0.25)) return rect;
+    return {
+      left: rect.left - offsetPx,
+      top: rect.top - offsetPx,
+      width: rect.width + 2 * offsetPx,
+      height: rect.height + 2 * offsetPx
+    };
+  }
+
+  /**
+   * Viewport boxes for F-click ghosts. Prefer the live blue paint box (B ring /
+   * C overlay). For strategy A, one clipped rect per getClientRects() line box
+   * (matches outline fragments), expanded by outline-offset.
    *
    * @param {Element|null|undefined} activationTarget
    * @returns {{ paintEl: Element|null, rects: Array<{ left: number, top: number, width: number, height: number }> }}
@@ -5613,7 +5680,15 @@ export class OverlayManager {
       }
     } catch { /* keep paintEl */ }
 
-    // Inline / multi-line fragments: one ghost per line box (not the union AABB).
+    // Prefer the live blue ring geometry (B host ring or C fixed overlay).
+    try {
+      const live = this._resolveLiveBlueHoverPaintRect();
+      if (live) {
+        return { paintEl, rects: [live] };
+      }
+    } catch { /* fall through */ }
+
+    // Strategy A: inline / multi-line fragments — one ghost per line box.
     try {
       if (paintEl && paintEl.nodeType === 1 && paintEl.isConnected) {
         let clientRects = null;
@@ -5623,7 +5698,11 @@ export class OverlayManager {
           /** @type {Array<{ left: number, top: number, width: number, height: number }>} */
           const out = [];
           for (let i = 0; i < clientRects.length; i++) {
-            const clipped = this._clipViewportRectToVisible(paintEl, clientRects[i]);
+            const expanded = this._expandRectForStrategyAOutline(
+              this._asPositiveViewportRect(clientRects[i]),
+              paintEl
+            );
+            const clipped = this._clipViewportRectToVisible(paintEl, expanded);
             if (clipped) out.push(clipped);
           }
           if (out.length) return { paintEl, rects: out };
@@ -5633,13 +5712,15 @@ export class OverlayManager {
 
     const box = this._resolveClickEffectBox(activationTarget);
     if (box && box.rect) {
-      return { paintEl: box.paintEl || paintEl, rects: [box.rect] };
+      const expanded = this._expandRectForStrategyAOutline(box.rect, box.paintEl || paintEl);
+      const clipped = this._clipViewportRectToVisible(box.paintEl || paintEl, expanded) || expanded;
+      return { paintEl: box.paintEl || paintEl, rects: [clipped] };
     }
     return { paintEl, rects: [] };
   }
 
   /**
-   * Viewport box for F-click flash / pulse: always a strategy-C-style imitation of the
+   * Viewport box for F-click flash / pulse: body-fixed imitation of the blue
    * hover paint box (including fragmented / bare-inline union via getBestRect).
    *
    * @param {Element|null|undefined} activationTarget
@@ -5673,18 +5754,26 @@ export class OverlayManager {
       }
     } catch { /* keep paintEl */ }
 
+    // Live blue paint (B ring or C fixed overlay) — exact duplicate of what hover shows.
+    try {
+      const live = this._resolveLiveBlueHoverPaintRect();
+      if (live) return { paintEl, rect: live };
+    } catch { /* fall through */ }
+
     // Live paint-box geometry (getBoundingClientRect union for fragmented inline),
     // then shrink to the visible portion inside overflow / contain clippers.
     try {
       if (paintEl && paintEl.nodeType === 1 && paintEl.isConnected) {
-        const raw = this._asPositiveViewportRect(this.getBestRect(paintEl));
+        const raw = this._expandRectForStrategyAOutline(
+          this._asPositiveViewportRect(this.getBestRect(paintEl)),
+          paintEl
+        );
         const r = this._clipViewportRectToVisible(paintEl, raw);
         if (r) return { paintEl, rect: r };
       }
     } catch { /* fall through */ }
 
     // Visible strategy-C / CSS-props overlay — already a fixed imitation of the paint box.
-    // Prefer its live box when present (it is clip-aware after updateFocusOverlayDOM).
     try {
       if (this.focusOverlay && this.focusOverlay.style.display !== 'none') {
         const r = this._asPositiveViewportRect(this.focusOverlay.getBoundingClientRect());
@@ -6029,13 +6118,14 @@ export class OverlayManager {
   /**
    * F-key activation feedback for link-style targets.
    *
-   * Strategy A (DOM outline): flash the live outline in place so inline /
-   * multi-line line-box outlines match what the user already sees.
-   * Strategy B/C (and non-flash effects): body-fixed ghost(s) — one per
-   * getClientRects() fragment when the paint target is inline/fragmented.
+   * Green flash is always a body-fixed overlay ghost that duplicates the blue
+   * hover paint box. When hover is strategy A or B, that means a fixed green
+   * rectangle (or per-line boxes for multi-line A) matching the blue ring —
+   * never recoloring the live A outline in place. Strategy C already paints
+   * blue as a fixed overlay; the green ghost copies that same box.
    *
    * Effect style comes from settings (clickMode.clickEffect):
-   *   - flash (default): hard strobe on the outline
+   *   - flash (default): hard strobe border + glow
    *   - dash: dashed border chases around the perimeter
    *   - marquee: solid chaser light travels around the perimeter
    *   - scale: outline expands and fades out
@@ -6081,20 +6171,9 @@ export class OverlayManager {
       } catch { /* ignore */ }
     }
 
-    // Strategy A + flash: reuse the live CSS outline (inline fragments included).
-    if (clickEffect === 'flash' && this._isDomOutlineFocusPaint()) {
-      const styled = this._currentStyledElement;
-      try {
-        const related = !el || !styled ||
-          styled === el ||
-          this._lastFocusElement === el ||
-          (typeof styled.contains === 'function' && styled.contains(el)) ||
-          (typeof el.contains === 'function' && el.contains(styled));
-        if (related && this._flashDomOutlineColors(styled, presentation.cleanupMs)) {
-          return;
-        }
-      } catch { /* fall through to fixed ghosts */ }
-    }
+    // Always body-fixed green ghosts that copy the blue hover box (A, B, or C).
+    // Strategy A used to recolor the live CSS outline in place; that diverged
+    // from the fixed flash path and could not match clipped / multi-box cases.
 
     const { paintEl, rects } = this._resolveClickEffectRects(el);
     if (!rects || !rects.length) return;
