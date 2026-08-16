@@ -90,7 +90,6 @@ import {
   NCT_DARK_UI_BTN_LIT_BORDER,
   NCT_DARK_UI_BTN_LIT_GRADIENT,
   NCT_DARK_UI_BTN_RADIUS,
-  NCT_DARK_UI_ICON_BUTTON_OUTLINE,
   NCT_DARK_UI_COLORS,
   NCT_DARK_UI_FIELD_BACKGROUND,
   NCT_DARK_UI_FIELD_BORDER,
@@ -100,16 +99,13 @@ import {
   NCT_DARK_UI_FOCUS_RING,
   NCT_DARK_UI_FONT,
   NCT_DARK_UI_HOVER_TINT,
-  NCT_DARK_UI_PANEL_BACKGROUND,
-  NCT_DARK_UI_PANEL_BORDER,
-  NCT_DARK_UI_PANEL_BOX_SHADOW,
   NCT_DARK_UI_PANEL_RADIUS,
   NCT_DARK_UI_SELECTED_TEXT,
   NCT_DARK_UI_SELECTED_TINT,
-  NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM,
-  NCT_DARK_UI_TITLEBAR_BOX_SHADOW,
-  NCT_DARK_UI_TITLEBAR_GRADIENT
+  NCT_DARK_UI_SCROLLBAR_CLASS,
+  getNctDarkUiScrollbarCss
 } from './nct-dark-ui.js';
+import { ONBOARDING_METAL } from './onboarding-shared.js';
 import {
   buildChordSlotKey,
   formatChordSlotKeyLabel,
@@ -153,11 +149,31 @@ const CONFIG_POSITION_MARGIN_PX = Math.max(PANEL_POSITION_MARGIN_PX, 16);
  */
 const CONFIG_KEY_SIZE_PX = 46;
 const CONFIG_PANEL_WIDTH_PX = 960;
+const CONFIG_PANEL_MIN_HEIGHT_PX = 460;
 const CONFIG_INSPECTOR_WIDTH_PX = 280;
 const CONFIG_STYLE_ATTR = 'data-kp-layout-config-panel-style';
 const CONFIG_STYLE_VERSION = 'v18';
 const CONFIG_ICON_SPRITE_ATTR = 'data-kp-layout-config-icons';
 const CONFIG_PLACE_ARROW_STYLE_ATTR = 'data-kp-layout-place-arrow-style';
+
+/**
+ * Default Config panel height: fill the viewport (minus margin) so library tab
+ * switches scroll inside the pane instead of resizing the window. User resize
+ * persists an explicit height via panelPositions.
+ * @param {number|null|undefined} savedHeight
+ * @returns {number}
+ */
+function resolveConfigPanelHeightPx(savedHeight) {
+  const n = Number(savedHeight);
+  if (Number.isFinite(n) && n > 0) return Math.round(n);
+  try {
+    const vh = window.innerHeight || document.documentElement?.clientHeight || 800;
+    return Math.max(CONFIG_PANEL_MIN_HEIGHT_PX, Math.round(vh - CONFIG_POSITION_MARGIN_PX * 2));
+  } catch {
+    return 520;
+  }
+}
+
 const PLACE_ARROW_CSS = `
 .kp-layout-place-arrow {
   position: fixed;
@@ -898,9 +914,9 @@ export class KeyboardLayoutConfigPanel {
   font-family: ${NCT_DARK_UI_FONT};
   font-size: 12px;
   line-height: 1.35;
-  color: ${c.fg};
-  /* Lightened edit-mode panel chrome (Config only opens while editing). */
-  background-color: #2e2e2e !important;
+  color: ${ONBOARDING_METAL.fg};
+  /* Light gray metal chrome shared with the onboarding walkthrough panel. */
+  background-color: #838383 !important;
 }
 .kp-layout-config-panel .kp-cfg-ico {
   width: 12px;
@@ -921,18 +937,9 @@ export class KeyboardLayoutConfigPanel {
   box-sizing: border-box;
   padding: 0 6px 0 10px;
   margin: 0;
-  border-bottom: ${NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM};
-  box-shadow: ${NCT_DARK_UI_TITLEBAR_BOX_SHADOW};
-  /* Lightened edit-mode titlebar + same steel hatch as Keyboard Reference. */
-  background-image:
-    repeating-linear-gradient(
-      -45deg,
-      rgba(180, 200, 220, 0.08) 0px,
-      rgba(180, 200, 220, 0.08) 1px,
-      transparent 1px,
-      transparent 7px
-    ),
-    linear-gradient(180deg, #646464 0%, #4a4a4a 45%, #383838 100%);
+  border-bottom: ${ONBOARDING_METAL.titlebarBorder};
+  box-shadow: ${ONBOARDING_METAL.titlebarShadow};
+  background: ${ONBOARDING_METAL.titlebarBg};
   flex: 0 0 auto;
   cursor: grab;
   user-select: none;
@@ -953,7 +960,7 @@ export class KeyboardLayoutConfigPanel {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.02em;
-  color: ${c.fg};
+  color: ${ONBOARDING_METAL.fg};
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -996,16 +1003,16 @@ export class KeyboardLayoutConfigPanel {
   border-radius: ${NCT_DARK_UI_BTN_RADIUS};
   border: none;
   background: transparent;
-  color: ${c.fgDim};
+  color: ${ONBOARDING_METAL.fgDim};
   cursor: pointer;
   padding: 0;
   margin: 0;
   flex: 0 0 auto;
-  box-shadow: ${NCT_DARK_UI_ICON_BUTTON_OUTLINE};
+  box-shadow: none;
 }
 .kp-layout-config-panel .kp-cfg-close:hover {
-  color: ${c.fg};
-  background: ${NCT_DARK_UI_HOVER_TINT};
+  color: ${ONBOARDING_METAL.fg};
+  background: rgba(255, 255, 255, 0.28);
 }
 .kp-layout-config-panel .kp-cfg-body {
   display: flex;
@@ -1015,16 +1022,9 @@ export class KeyboardLayoutConfigPanel {
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
-  /* Lightened edit-mode body + same steel hatch as Keyboard Reference plate. */
-  background-color: #1a1c20;
-  background-image:
-    repeating-linear-gradient(
-      -45deg,
-      rgba(180, 200, 220, 0.08) 0px,
-      rgba(180, 200, 220, 0.08) 1px,
-      transparent 1px,
-      transparent 7px
-    );
+  /* Content view uses the same light gray metal as the onboarding panel. */
+  background: ${ONBOARDING_METAL.panelBg};
+  color: ${ONBOARDING_METAL.fg};
 }
 .kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} {
   gap: 12px;
@@ -1035,16 +1035,64 @@ export class KeyboardLayoutConfigPanel {
   gap: 4px;
   padding: 0;
   border: 0;
-  border-bottom: 1px solid #1a2430;
+  border-bottom: ${ONBOARDING_METAL.titlebarBorder};
   border-radius: 0;
-  background:
-    linear-gradient(180deg, rgba(55, 85, 120, 0.18), rgba(30, 45, 70, 0.08)),
-    #1a1e24;
-  box-shadow:
-    0 0 0 1px ${c.panelEdge} inset,
-    inset 0 -1px 0 rgba(90, 130, 170, 0.12);
+  /* Same cool mid-gray metal as onboarding panel chrome. */
+  background: ${ONBOARDING_METAL.panelBg};
+  color: ${ONBOARDING_METAL.fg};
+  box-shadow: ${ONBOARDING_METAL.titlebarShadow};
   flex: 0 0 auto;
   overflow: visible;
+}
+.kp-layout-config-panel .kp-cfg-strip .kp-cfg-strip-label {
+  color: ${ONBOARDING_METAL.fgDim};
+}
+.kp-layout-config-panel .kp-cfg-strip .kp-cfg-hint {
+  color: ${ONBOARDING_METAL.fgMute};
+}
+.kp-layout-config-panel .kp-cfg-strip .kp-cfg-tool-group {
+  border: ${ONBOARDING_METAL.btnBorder};
+  background: ${ONBOARDING_METAL.btnBg};
+  box-shadow: ${ONBOARDING_METAL.btnShadow};
+}
+.kp-layout-config-panel .kp-cfg-strip .kp-cfg-tool-group .kp-cfg-btn {
+  border: none;
+  border-right: 1px solid rgba(0, 0, 0, 0.22);
+  background: transparent;
+  box-shadow: none;
+  color: ${ONBOARDING_METAL.fg};
+}
+.kp-layout-config-panel .kp-cfg-strip .kp-cfg-tool-group .kp-cfg-btn:last-child {
+  border-right: 0;
+}
+.kp-layout-config-panel .kp-cfg-strip .kp-cfg-tool-group .kp-cfg-btn:hover:not(:disabled) {
+  filter: none;
+  background: rgba(255, 255, 255, 0.22);
+}
+.kp-layout-config-panel .kp-cfg-strip .kp-cfg-tool-sep {
+  background: rgba(0, 0, 0, 0.28);
+}
+.kp-layout-config-panel .kp-cfg-strip .kp-cfg-layout-identity .kp-cfg-btn,
+.kp-layout-config-panel .kp-cfg-strip .kp-cfg-layout-primary .kp-cfg-btn:not(.kp-cfg-btn-lit):not([aria-pressed="true"]),
+.kp-layout-config-panel .kp-cfg-strip .kp-cfg-opts-wrap > .kp-cfg-btn {
+  border: ${ONBOARDING_METAL.btnBorder};
+  background: ${ONBOARDING_METAL.btnBg};
+  color: ${ONBOARDING_METAL.fg};
+  box-shadow: ${ONBOARDING_METAL.btnShadow};
+}
+.kp-layout-config-panel .kp-cfg-strip .kp-cfg-layout-identity .kp-cfg-btn:hover:not(:disabled),
+.kp-layout-config-panel .kp-cfg-strip .kp-cfg-layout-primary .kp-cfg-btn:not(.kp-cfg-btn-lit):not([aria-pressed="true"]):hover:not(:disabled),
+.kp-layout-config-panel .kp-cfg-strip .kp-cfg-opts-wrap > .kp-cfg-btn:hover:not(:disabled) {
+  filter: brightness(1.06);
+  background: linear-gradient(180deg, #d0d0d0 0%, #aeaeae 50%, #969696 100%);
+}
+.kp-layout-config-panel .kp-cfg-strip .kp-cfg-btn.kp-cfg-btn-lit,
+.kp-layout-config-panel .kp-cfg-strip .kp-cfg-btn[aria-pressed="true"] {
+  background: ${NCT_DARK_UI_BTN_LIT_GRADIENT};
+  border: ${NCT_DARK_UI_BTN_LIT_BORDER};
+  color: ${NCT_DARK_UI_SELECTED_TEXT};
+  box-shadow: inset 0 1px 0 rgba(200,220,240,0.18);
+  filter: none;
 }
 .kp-layout-config-panel .kp-cfg-strip-row {
   display: flex;
@@ -1075,7 +1123,7 @@ export class KeyboardLayoutConfigPanel {
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #7a92a8;
+  color: ${ONBOARDING_METAL.fgDim};
   white-space: nowrap;
   line-height: 22px;
   margin: 0;
@@ -1350,32 +1398,31 @@ export class KeyboardLayoutConfigPanel {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  border: 1px solid ${c.panelEdgeDark};
+  border: ${ONBOARDING_METAL.panelBorder};
   border-radius: ${NCT_DARK_UI_PANEL_RADIUS};
-  background: #1a1a1a;
+  background: linear-gradient(180deg, #9d9d9d 0%, #8b8b8b 55%, #7d7d7d 100%);
+  color: ${ONBOARDING_METAL.fg};
   overflow: hidden;
-  box-shadow: 0 0 0 1px ${c.panelEdge} inset;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22) inset;
 }
 .kp-layout-config-panel .kp-cfg-pane-library {
   flex: 1 1 auto;
   background:
-    linear-gradient(180deg, rgba(70, 95, 55, 0.14), rgba(40, 55, 35, 0.06)),
-    linear-gradient(180deg, #161814, #1a1c18);
-  border-color: #3a4a30;
+    linear-gradient(180deg, rgba(150, 185, 110, 0.16), rgba(110, 140, 80, 0.08)),
+    linear-gradient(180deg, #9d9d9d 0%, #8b8b8b 55%, #7d7d7d 100%);
+  border-color: rgba(52, 66, 40, 0.92);
   box-shadow:
-    0 0 0 1px rgba(170, 210, 120, 0.28),
-    0 0 14px rgba(120, 170, 80, 0.12),
-    inset 0 1px 0 rgba(210, 240, 160, 0.18),
-    inset 0 0 0 1px rgba(120, 150, 90, 0.16);
+    0 0 0 1px rgba(255, 255, 255, 0.22) inset,
+    0 0 10px rgba(120, 170, 80, 0.14);
 }
 .kp-layout-config-panel .kp-cfg-pane-library .kp-cfg-pane-hdr {
-  background: linear-gradient(180deg, #3a4a34, #2a3426);
-  color: #c8d8b0;
-  border-bottom-color: #141c12;
-  box-shadow: 0 1px 0 rgba(150, 180, 110, 0.12);
+  background: linear-gradient(180deg, #a8b596 0%, #8d9a7c 45%, #7a8669 100%);
+  color: ${ONBOARDING_METAL.fg};
+  border-bottom-color: rgba(52, 66, 40, 0.92);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 .kp-layout-config-panel .kp-cfg-pane-library .kp-cfg-pane-title {
-  color: #c8d8b0;
+  color: ${ONBOARDING_METAL.fg};
 }
 .kp-layout-config-panel .kp-cfg-pane-hdr {
   display: flex;
@@ -1384,8 +1431,9 @@ export class KeyboardLayoutConfigPanel {
   gap: 6px;
   padding: 4px 8px;
   min-height: 22px;
-  border-bottom: 1px solid ${c.panelEdgeDark};
-  background: linear-gradient(180deg, #383838, #2a2a2a);
+  border-bottom: ${ONBOARDING_METAL.titlebarBorder};
+  background: ${ONBOARDING_METAL.titlebarBg};
+  color: ${ONBOARDING_METAL.fg};
   flex: 0 0 auto;
 }
 .kp-layout-config-panel .kp-cfg-pane-title {
@@ -1396,7 +1444,7 @@ export class KeyboardLayoutConfigPanel {
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: ${c.fgDim};
+  color: ${ONBOARDING_METAL.fgDim};
   white-space: nowrap;
 }
 .kp-layout-config-panel .kp-cfg-pane-scroll {
@@ -1404,9 +1452,6 @@ export class KeyboardLayoutConfigPanel {
   min-height: 0;
   overflow: auto;
   padding: 8px;
-}
-.kp-layout-config-panel .kp-cfg-pane-library .kp-cfg-pane-scroll::-webkit-scrollbar-thumb {
-  background: #4a5a40;
 }
 .kp-layout-config-panel .kp-cfg-seg {
   display: inline-flex;
@@ -1476,10 +1521,32 @@ export class KeyboardLayoutConfigPanel {
   padding: 2px 7px 2px 22px;
   height: 18px;
   font-size: 10px;
-  background: #121410;
-  border-color: #0a1008;
-  color: #c8d8b0;
-  box-shadow: inset 0 1px 0 #2a3024;
+  background: #e8e8e8;
+  border-color: #4a4a4a;
+  color: ${ONBOARDING_METAL.fg};
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.28);
+}
+/* Controls that sit on the light metal pane header / library view bar. */
+.kp-layout-config-panel .kp-cfg-pane-hdr .kp-cfg-seg,
+.kp-layout-config-panel .kp-cfg-lib-viewbar .kp-cfg-seg {
+  border: ${ONBOARDING_METAL.btnBorder};
+  background: ${ONBOARDING_METAL.btnBg};
+  box-shadow: ${ONBOARDING_METAL.btnShadow};
+}
+.kp-layout-config-panel .kp-cfg-pane-hdr .kp-cfg-seg-btn,
+.kp-layout-config-panel .kp-cfg-lib-viewbar .kp-cfg-seg-btn {
+  border-right-color: rgba(0, 0, 0, 0.22);
+  color: ${ONBOARDING_METAL.fgDim};
+}
+.kp-layout-config-panel .kp-cfg-pane-hdr .kp-cfg-seg-btn:hover,
+.kp-layout-config-panel .kp-cfg-lib-viewbar .kp-cfg-seg-btn:hover {
+  color: ${ONBOARDING_METAL.fg};
+  background: rgba(255, 255, 255, 0.3);
+}
+.kp-layout-config-panel .kp-cfg-pane-hdr .kp-cfg-fn-cat {
+  background: #e8e8e8;
+  border-color: #4a4a4a;
+  color: ${ONBOARDING_METAL.fg};
 }
 .kp-layout-config-panel .kp-cfg-fn-cat {
   width: auto;
@@ -1505,8 +1572,8 @@ export class KeyboardLayoutConfigPanel {
   flex-wrap: wrap;
   gap: 6px 10px;
   font-size: 8px;
-  color: #6a7a58;
-  opacity: 0.85;
+  color: ${ONBOARDING_METAL.fgMute};
+  opacity: 0.9;
 }
 .kp-layout-config-panel .kp-cfg-legend-mini span {
   display: inline-flex;
@@ -1522,20 +1589,20 @@ export class KeyboardLayoutConfigPanel {
   box-sizing: border-box;
 }
 .kp-layout-config-panel .kp-cfg-legend-mini .kp-cfg-sw-stock-fn {
-  background: #2a2e32;
-  border-color: #3a4550;
+  background: #b0b0b0;
+  border-color: #4a4a4a;
 }
 .kp-layout-config-panel .kp-cfg-legend-mini .kp-cfg-sw-user {
-  background: #2a2e32;
-  border-color: ${accentA(0.45)};
+  background: #b0b0b0;
+  border-color: ${accentA(0.65)};
 }
 .kp-layout-config-panel .kp-cfg-legend-mini .kp-cfg-sw-stock-macro {
-  background: #243430;
-  border-left: 3px solid #5a9a8a;
+  background: #a4b0a6;
+  border-left: 3px solid #3f7a68;
 }
 .kp-layout-config-panel .kp-cfg-legend-mini .kp-cfg-sw-user-macro {
-  background: #2c2434;
-  border-left: 3px solid #9a7ab8;
+  background: #aba1b6;
+  border-left: 3px solid #6d519a;
 }
 ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
 .kp-layout-config-panel .kp-hier-table tr.kp-cfg-lib-row-inspecting {
@@ -1764,31 +1831,30 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
   min-width: 0;
   padding: 5px;
   border-radius: ${NCT_DARK_UI_BTN_RADIUS};
-  border: 1px solid #3a3a3a;
-  background: linear-gradient(180deg, #2a2e32, #24282c);
-  box-shadow: inset 0 1px 0 rgba(140,170,200,0.08);
+  border: ${ONBOARDING_METAL.btnBorder};
+  background: ${ONBOARDING_METAL.btnBg};
+  color: ${ONBOARDING_METAL.fg};
+  box-shadow: ${ONBOARDING_METAL.btnShadow};
   box-sizing: border-box;
   cursor: default;
 }
 .kp-layout-config-panel .kp-cfg-item.kp-cfg-variant-stock-fn,
 .kp-layout-config-panel .kp-cfg-item.kp-cfg-variant-configurable-fn {
-  background: linear-gradient(180deg, #2a2e32, #24282c);
-  border-color: #3a4550;
+  border-color: #4a4a4a;
 }
 .kp-layout-config-panel .kp-cfg-item.kp-cfg-variant-stock-macro {
-  background: linear-gradient(180deg, #243430, #1c2824);
-  border-color: #3a5a50;
-  border-left: 3px solid #5a9a8a;
+  background: linear-gradient(180deg, #c4cfc6 0%, #a4b0a6 50%, #8e9a90 100%);
+  border-color: #3f5a50;
+  border-left: 3px solid #3f7a68;
 }
 .kp-layout-config-panel .kp-cfg-item.kp-cfg-variant-user-macro {
-  background: linear-gradient(180deg, #2c2434, #221c28);
-  border-color: #4a3a5a;
-  border-left: 3px solid #9a7ab8;
-  box-shadow: inset 0 1px 0 rgba(154,122,184,0.15);
+  background: linear-gradient(180deg, #cbc2d4 0%, #aba1b6 50%, #948aa0 100%);
+  border-color: #4f4260;
+  border-left: 3px solid #6d519a;
 }
 .kp-layout-config-panel .kp-cfg-item.kp-cfg-variant-macro-key {
-  background: #282828;
-  border-color: #3a3a3a;
+  background: linear-gradient(180deg, #bdbdbd 0%, #a0a0a0 50%, #8c8c8c 100%);
+  border-color: #4a4a4a;
 }
 .kp-layout-config-panel .kp-cfg-item.kp-cfg-variant-stock-macro .key {
   background: linear-gradient(180deg, #3a5a50, #2a4038);
@@ -1799,12 +1865,11 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
   color: #e0d0f0;
 }
 .kp-layout-config-panel .kp-cfg-item.kp-cfg-variant-user-macro .kp-cfg-card-name {
-  color: #d8c8e8;
+  color: #3a2a4a;
   font-style: italic;
 }
 .kp-layout-config-panel .kp-cfg-item:hover {
-  border-color: #4a5560;
-  background: linear-gradient(180deg, #30363c, #282c32);
+  filter: brightness(1.06);
 }
 .kp-layout-config-panel .kp-cfg-item.kp-place-source-item {
   border-color: ${c.accent};
@@ -1812,7 +1877,7 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
 }
 .kp-layout-config-panel .kp-cfg-item.kp-cfg-item-inspecting {
   border-color: ${c.accent};
-  background: ${NCT_DARK_UI_SELECTED_TINT};
+  background: linear-gradient(180deg, #b6cfe4 0%, #9bb8d0 50%, #869fb6 100%);
 }
 .kp-layout-config-panel .kp-cfg-card-meta {
   display: flex;
@@ -1825,12 +1890,12 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
   font-size: 11px;
   font-weight: 600;
   line-height: 1.25;
-  color: #d8e4f0;
+  color: ${ONBOARDING_METAL.fg};
   word-break: break-word;
 }
 .kp-layout-config-panel .kp-cfg-card-sub {
   font-size: 10px;
-  opacity: 0.65;
+  color: ${ONBOARDING_METAL.fgMute};
   line-height: 1.25;
   word-break: break-word;
 }
@@ -1839,6 +1904,16 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
   flex-wrap: wrap;
   gap: 4px;
   align-items: center;
+}
+.kp-layout-config-panel .kp-cfg-item .kp-cfg-btn {
+  border: ${ONBOARDING_METAL.btnBorder};
+  background: linear-gradient(180deg, #d2d2d2 0%, #b2b2b2 50%, #9a9a9a 100%);
+  color: ${ONBOARDING_METAL.fg};
+  box-shadow: ${ONBOARDING_METAL.btnShadow};
+}
+.kp-layout-config-panel .kp-cfg-item .kp-cfg-btn:hover:not(:disabled) {
+  filter: brightness(1.06);
+  background: linear-gradient(180deg, #dcdcdc 0%, #bcbcbc 50%, #a4a4a4 100%);
 }
 .kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .kp-cfg-item .key {
   flex: 0 0 auto !important;
@@ -2557,28 +2632,29 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
   color: ${c.fgMute};
   line-height: 1.35;
 }
+${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 `.trim().replaceAll('.kp-layout-config-panel', ':host');
   }
 
   _applyProChrome(root) {
     if (!root || !root.style) return;
     const savedWidth = Number(this._panelPosition?.width);
-    const savedHeight = Number(this._panelPosition?.height);
+    const heightPx = resolveConfigPanelHeightPx(this._panelPosition?.height);
     Object.assign(root.style, {
       position: 'fixed',
       width: `${Number.isFinite(savedWidth) && savedWidth > 0 ? savedWidth : CONFIG_PANEL_WIDTH_PX}px`,
-      ...(Number.isFinite(savedHeight) && savedHeight > 0 ? { height: `${savedHeight}px` } : {}),
+      height: `${heightPx}px`,
       maxWidth: `calc(100vw - ${CONFIG_POSITION_MARGIN_PX * 2}px)`,
       maxHeight: `calc(100vh - ${CONFIG_POSITION_MARGIN_PX * 2}px)`,
       flexDirection: 'column',
       overflow: 'hidden',
       boxSizing: 'border-box',
       zIndex: String(Z_INDEX.KEYBOARD_LAYOUT_CONFIG),
-      background: NCT_DARK_UI_PANEL_BACKGROUND,
-      color: NCT_DARK_UI_COLORS.fg,
-      border: NCT_DARK_UI_PANEL_BORDER,
+      background: ONBOARDING_METAL.panelBg,
+      color: ONBOARDING_METAL.fg,
+      border: ONBOARDING_METAL.panelBorder,
       borderRadius: NCT_DARK_UI_PANEL_RADIUS,
-      boxShadow: NCT_DARK_UI_PANEL_BOX_SHADOW,
+      boxShadow: ONBOARDING_METAL.panelShadow,
       fontFamily: NCT_DARK_UI_FONT
     });
     applyPopupThemeVars(root);
@@ -2591,7 +2667,7 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
         margin: CONFIG_POSITION_MARGIN_PX,
         defaultAnchor: 'middle-right',
         fallbackWidth: CONFIG_PANEL_WIDTH_PX,
-        fallbackHeight: 520
+        fallbackHeight: resolveConfigPanelHeightPx(this._panelPosition?.height)
       });
       if (resolved && !resolved.anchor) {
         this._panelPosition = { ...this._panelPosition, left: resolved.left, top: resolved.top, anchor: null };
@@ -2674,7 +2750,6 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
     const titleStart = doc.createElement('div');
     titleStart.className = 'kp-cfg-titlebar-start';
     titleStart.appendChild(title);
-    titleStart.appendChild(saveCloseBtn);
 
     header.appendChild(titleStart);
     header.appendChild(closeBtn);
@@ -2808,6 +2883,7 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
     tools.appendChild(editGroup);
     tools.appendChild(mkSep());
     tools.appendChild(transferGroup);
+    tools.appendChild(saveCloseBtn);
 
     const primary = doc.createElement('div');
     primary.className = 'kp-cfg-layout-primary';
@@ -2909,7 +2985,7 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
 
     const list = doc.createElement('div');
     list.setAttribute('data-kp-layout-list', 'true');
-    list.className = `${KEYBINDINGS_UI_ROOT_CLASS} kp-cfg-pane-scroll`;
+    list.className = `${KEYBINDINGS_UI_ROOT_CLASS} kp-cfg-pane-scroll ${NCT_DARK_UI_SCROLLBAR_CLASS}`;
     Object.assign(list.style, {
       display: 'flex',
       flexDirection: 'column',
@@ -3295,7 +3371,7 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
       this._resizeDispose = makePanelResizable(root, {
         mount: shadowRoot,
         minWidth: 720,
-        minHeight: 460,
+        minHeight: CONFIG_PANEL_MIN_HEIGHT_PX,
         margin: CONFIG_POSITION_MARGIN_PX,
         onResizeEnd: (size) => {
           void this._persistPosition({

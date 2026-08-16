@@ -14,7 +14,11 @@
  * - This module is content-script safe (uses chrome.storage.sync).
  */
 
-import { buildKeybindingsForLayout, getKeyboardUiLayoutForLayout } from '../config/keyboard-layouts.js';
+import {
+  buildEffectiveKeybindings,
+  getKeyboardUiLayoutForLayout,
+  inferFamilyAndHandednessFromLayoutId
+} from '../config/keyboard-layouts.js';
 import {
   defaultFunctionParameters,
   functionWorksWhileTyping,
@@ -783,7 +787,11 @@ export async function setUserKeyboardLayoutSlot(layoutId, slotKey, item) {
  */
 export async function duplicateBuiltinLayoutToUserLayout({ builtinLayoutId, label } = {}) {
   const baseId = String(builtinLayoutId || '');
-  const kb = buildKeybindingsForLayout(baseId);
+  // Include the always-on system layer (KB Reference / Settings) so keycaps that
+  // appear on the built-in Keyboard Reference are seeded into the editable copy.
+  // `buildKeybindingsForLayout` alone omits those and leaves K / ' empty.
+  const { handedness } = inferFamilyAndHandednessFromLayoutId(baseId);
+  const kb = buildEffectiveKeybindings(baseId, handedness);
   const uiLayout = getKeyboardUiLayoutForLayout(baseId, { includeNumberRow: true });
 
   // Seed slots from whatever actions currently appear on the keyboard.

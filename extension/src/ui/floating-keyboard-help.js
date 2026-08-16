@@ -168,7 +168,7 @@ export class FloatingKeyboardHelp {
    *   Optional known dock/free position (from KeyPilot settings). When provided,
    *   the first show paints at this location instead of flashing the default corner.
    * @param {() => any} [params.getKeyPilot] Accessor for the owning KeyPilot instance
-   *   (used by "Edit Keyboard Layout…" in the layout dropdown).
+   *   (used by "Keyboard Layout Config…" in the layout dropdown).
    */
   constructor({ keybindings, keyboardLayout, layoutId, panelPosition, getKeyPilot } = {}) {
     this.keybindings = keybindings || {};
@@ -1986,7 +1986,7 @@ export class FloatingKeyboardHelp {
         } catch { /* ignore */ }
         const optEdit = document.createElement('option');
         optEdit.value = LAYOUT_SELECT_EDIT_VALUE;
-        optEdit.textContent = 'Edit Keyboard Layout…';
+        optEdit.textContent = 'Keyboard Layout Config…';
         selEl.appendChild(optEdit);
         try {
           selEl.appendChild(document.createElement('hr'));
@@ -2007,7 +2007,7 @@ export class FloatingKeyboardHelp {
       } catch { /* ignore */ }
       appendGroup('KeyPilot', [
         { value: LAYOUT_SELECT_ONBOARDING_VALUE, label: 'Onboarding Tutorial' },
-        { value: LAYOUT_SELECT_SETTINGS_VALUE, label: 'Settings' }
+        { value: LAYOUT_SELECT_SETTINGS_VALUE, label: 'KeyPilot Settings' }
       ]);
 
       let v = this._layoutSelectValueForCurrent();
