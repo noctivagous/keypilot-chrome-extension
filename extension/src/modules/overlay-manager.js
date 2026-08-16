@@ -916,6 +916,12 @@ export class OverlayManager {
    * Visual box for text-mode chrome. Google/Gmail search (and similar) wrap a
    * short `position:absolute` <input> in a taller pill; the left-edge bar must
    * span that pill, not the single-line control.
+   *
+   * Do **not** promote to a parent that only stacks a caption/label above the
+   * field (onboarding practice popover: `div > label + input|textarea`) — that
+   * makes the hover ring taller than the control and can paint as a non-text
+   * (blue) box when the paint target is no longer the field.
+   *
    * @param {Element} inputEl
    * @returns {Element}
    */
@@ -941,6 +947,35 @@ export class OverlayManager {
       // Header / page chrome — stop. Allow a modest extra width for leading icons.
       if (r.width > ir.width + 180) break;
       if (r.height > 84 && r.height > ir.height * 3.5) break;
+
+      // Label/caption stacked above the field (not a same-box pill shell).
+      try {
+        const kids = p.children;
+        if (kids && kids.length) {
+          let labelAbove = false;
+          for (let i = 0; i < kids.length; i++) {
+            const child = kids[i];
+            if (!child || child === inputEl || child.nodeType !== 1) continue;
+            if (inputEl.contains(child)) continue;
+            const tag = String(child.tagName || '').toUpperCase();
+            const isLabelish = tag === 'LABEL' || tag === 'SPAN' || tag === 'DIV' || tag === 'P';
+            if (!isLabelish) continue;
+            // Skip wrappers that themselves contain the field.
+            try {
+              if (typeof child.contains === 'function' && child.contains(inputEl)) continue;
+            } catch { /* ignore */ }
+            let cr = null;
+            try { cr = child.getBoundingClientRect(); } catch { cr = null; }
+            if (!cr || !(cr.height > 4) || !(cr.width > 4)) continue;
+            // Distinct block above the field (practice popover labels).
+            if (cr.bottom <= ir.top + 4 && cr.top < ir.top - 2) {
+              labelAbove = true;
+              break;
+            }
+          }
+          if (labelAbove) break;
+        }
+      } catch { /* ignore */ }
 
       let display = '';
       try { display = String(getComputedStyle(p).display || ''); } catch { display = ''; }
@@ -1367,12 +1402,19 @@ export class OverlayManager {
       // Auto strategy (see focus-ring-paint.md):
       //   Light DOM: A → B → C (escape hatch only when A cannot show).
       //   Shadow targets (in a ShadowRoot, or open-shadow host): skip A,
-      //   default B (in-target), else C. Debug HUD can still force A/B/C.
+      //   default B (in-target), else C — except open-shadow text fields, which
+      //   prefer A once styles are injected (inputs cannot host B; parents often
+      //   include labels → taller blue ring). Debug HUD can still force A/B/C.
       let inShadow = false;
       try { inShadow = this._isInShadowTree(element); } catch { inShadow = false; }
       let isShadowHost = false;
       try { isShadowHost = !!this._getOpenShadowRoot(element); } catch { isShadowHost = false; }
       const shadowPaint = inShadow || isShadowHost;
+
+      let isTextInputFocus = false;
+      try {
+        isTextInputFocus = !!(element.matches && element.matches(SELECTORS.FOCUSABLE_TEXT));
+      } catch { isTextInputFocus = false; }
 
       let needsEscapeHatch = false;
       try {
@@ -1383,12 +1425,23 @@ export class OverlayManager {
 
       let autoStrategy = 'A';
       if (shadowPaint || needsEscapeHatch) {
-        let canB = false;
-        try {
-          canB = !!(FEATURE_FLAGS && FEATURE_FLAGS.ENABLE_IN_TARGET_FOCUS_RING) &&
-            !!this._resolveInTargetHost(element);
-        } catch { canB = false; }
-        autoStrategy = canB ? 'B' : 'C';
+        let preferShadowTextA = false;
+        if (isTextInputFocus && inShadow && !isShadowHost) {
+          try {
+            // Lazy-inject KP CSS into this open root so outline vars apply.
+            preferShadowTextA = this._ensureStylesForElement(element) !== false;
+          } catch { preferShadowTextA = false; }
+        }
+        if (preferShadowTextA) {
+          autoStrategy = 'A';
+        } else {
+          let canB = false;
+          try {
+            canB = !!(FEATURE_FLAGS && FEATURE_FLAGS.ENABLE_IN_TARGET_FOCUS_RING) &&
+              !!this._resolveInTargetHost(element);
+          } catch { canB = false; }
+          autoStrategy = canB ? 'B' : 'C';
+        }
       }
 
       // Debug HUD can force A / B / C regardless of auto (for shadow experiments).
@@ -1446,8 +1499,12 @@ export class OverlayManager {
       this._focusPaintUsesInTargetRing = false;
       try { this.hideInTargetFocusRing(); } catch { /* ignore */ }
       this._focusPaintUsesFixedOverlay = true;
+      // Geometry from paintEl; keep semantic focusEl for orange text-field color
+      // when paint was lifted to a wrapper.
       const paintForC = rectOverride ? element : paintEl;
-      const cResult = this.updateFocusOverlayDOM(paintForC, mode, rectOverride);
+      const cResult = this.updateFocusOverlayDOM(paintForC, mode, rectOverride, {
+        colorFrom: element
+      });
       try {
         this._updateShadowRootDebugHud(element, paintEl, {
           inShadow,
@@ -4262,7 +4319,14 @@ export class OverlayManager {
     } catch { /* ignore */ }
   }
 
-  updateFocusOverlayDOM(element, mode = MODES.NONE, rectOverride = null) {
+  /**
+   * @param {Element|null} element - paint / geometry target
+   * @param {string} [mode]
+   * @param {object|null} [rectOverride]
+   * @param {{ colorFrom?: Element|null }} [opts] - semantic source for text→orange
+   *   when geometry was lifted to a wrapper
+   */
+  updateFocusOverlayDOM(element, mode = MODES.NONE, rectOverride = null, opts = null) {
     if (window.KEYPILOT_DEBUG) {
       console.log('[KeyPilot Debug] updateFocusOverlayDOM called with:', {
         element: element?.tagName,
@@ -4291,9 +4355,12 @@ export class OverlayManager {
       }
     } catch { /* ignore */ }
 
-    // Determine if this is a text input element
-    const isTextInput = element.matches && element.matches(SELECTORS.FOCUSABLE_TEXT);
-    const suppressFill = this.shouldSuppressFocusFill(element);
+    // Determine if this is a text input element (prefer semantic focusEl when paint ≠ focus)
+    const colorEl = (opts && opts.colorFrom && opts.colorFrom.nodeType === 1)
+      ? opts.colorFrom
+      : element;
+    const isTextInput = colorEl.matches && colorEl.matches(SELECTORS.FOCUSABLE_TEXT);
+    const suppressFill = this.shouldSuppressFocusFill(colorEl);
 
     // We'll use this rect both for sizing/positioning and for deciding whether to render a fill.
     // Clip to ancestor overflow / viewport — raw GBR ignores overflow:hidden.
@@ -5587,26 +5654,22 @@ export class OverlayManager {
 
   /**
    * Paint node for hover ring / F-click flash — same pipeline as updateFocusOverlay.
-   * Text fields → visual pill; image+text cards → stacked shell; else focus-styling resolve.
+   * Image+text cards → stacked shell; else focus-styling resolve.
+   *
+   * Text fields stay on the control itself for hover outline size/color. The
+   * taller Gmail-style pill host is only used by `_applyTextFocusElementStyling`
+   * for the focused left-edge bar — not for hover (avoids label+field wrappers
+   * in onboarding practice popover).
    * @param {Element|null|undefined} element
    * @returns {Element|null}
    */
   _resolveFocusPaintElement(element) {
     if (!element || element.nodeType !== 1) return null;
 
-    let textPaintHost = null;
-    try {
-      const isTextInput = element.matches && element.matches(SELECTORS.FOCUSABLE_TEXT);
-      if (isTextInput) {
-        textPaintHost = this._resolveTextFocusPaintHost(element);
-      }
-    } catch { textPaintHost = null; }
-
     let cardShell = null;
     try { cardShell = this._resolveMediaTextCardShell(element); } catch { cardShell = null; }
 
     try {
-      if (textPaintHost && textPaintHost !== element) return textPaintHost;
       if (cardShell) return cardShell;
       const styled = this._resolveElementForFocusStyling(element) || element;
       try {
