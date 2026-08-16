@@ -168,7 +168,7 @@ export class FloatingKeyboardHelp {
    *   Optional known dock/free position (from KeyPilot settings). When provided,
    *   the first show paints at this location instead of flashing the default corner.
    * @param {() => any} [params.getKeyPilot] Accessor for the owning KeyPilot instance
-   *   (used by "Keyboard Layout Config…" in the layout dropdown).
+   *   (used by "Edit Keyboard Layout…" in the layout dropdown).
    */
   constructor({ keybindings, keyboardLayout, layoutId, panelPosition, getKeyPilot } = {}) {
     this.keybindings = keybindings || {};
@@ -1984,21 +1984,11 @@ export class FloatingKeyboardHelp {
         try {
           selEl.appendChild(document.createElement('hr'));
         } catch { /* ignore */ }
-        const optEdit = document.createElement('option');
-        optEdit.value = LAYOUT_SELECT_EDIT_VALUE;
-        optEdit.textContent = 'Keyboard Layout Config…';
-        selEl.appendChild(optEdit);
-        try {
-          selEl.appendChild(document.createElement('hr'));
-        } catch { /* ignore */ }
-        const optNew = document.createElement('option');
-        optNew.value = LAYOUT_SELECT_NEW_VALUE;
-        optNew.textContent = 'New Blank Keyboard Layout';
-        selEl.appendChild(optNew);
-        const optDup = document.createElement('option');
-        optDup.value = LAYOUT_SELECT_DUP_VALUE;
-        optDup.textContent = 'New Duplicate Keyboard Layout';
-        selEl.appendChild(optDup);
+        appendGroup('Keyboard Layout Config', [
+          { value: LAYOUT_SELECT_EDIT_VALUE, label: 'Edit Keyboard Layout…' },
+          { value: LAYOUT_SELECT_NEW_VALUE, label: 'New Blank Keyboard Layout' },
+          { value: LAYOUT_SELECT_DUP_VALUE, label: 'New Duplicate Keyboard Layout' }
+        ]);
       }
 
       // KeyPilot app actions (always at the bottom).

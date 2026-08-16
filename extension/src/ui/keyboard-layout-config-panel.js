@@ -519,7 +519,6 @@ export class KeyboardLayoutConfigPanel {
     this._libTabsEl = null;
     this._fnCategorySelect = null;
     this._currentBadge = null;
-    this._refToggleBtn = null;
     this._showNumRowToggle = null;
     this._dragDispose = null;
     this._resizeDispose = null;
@@ -661,7 +660,6 @@ export class KeyboardLayoutConfigPanel {
         });
       } catch { /* ignore */ }
     }
-    this._syncKeyboardReferenceToggle();
     this._setVisible(true);
     this._emitChange();
   }
@@ -672,9 +670,7 @@ export class KeyboardLayoutConfigPanel {
     this._setVisible(false);
   }
 
-  /**
-   * Persist the active user layout (if any), then close Config and exit edit mode.
-   */
+  /** @deprecated Kept for callers that previously used Save and Close; prefer hide(). */
   async _saveAndClose() {
     try {
       await this._persistUserLayout();
@@ -968,29 +964,6 @@ export class KeyboardLayoutConfigPanel {
   padding: 0;
   line-height: 28px;
   min-width: 0;
-}
-.kp-layout-config-panel .kp-cfg-save-close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 22px;
-  min-height: 22px;
-  padding: 0 8px;
-  border-radius: ${NCT_DARK_UI_BTN_RADIUS};
-  border: ${NCT_DARK_UI_BTN_LIT_BORDER};
-  background: ${NCT_DARK_UI_BTN_LIT_GRADIENT};
-  color: ${NCT_DARK_UI_SELECTED_TEXT};
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 600;
-  font-family: inherit;
-  line-height: 20px;
-  white-space: nowrap;
-  flex: 0 0 auto;
-  box-shadow: inset 0 1px 0 rgba(200,220,240,0.18);
-}
-.kp-layout-config-panel .kp-cfg-save-close:hover {
-  filter: brightness(1.08);
 }
 .kp-layout-config-panel .kp-cfg-close {
   width: 22px;
@@ -1408,12 +1381,12 @@ export class KeyboardLayoutConfigPanel {
 .kp-layout-config-panel .kp-cfg-pane-library {
   flex: 1 1 auto;
   background:
-    linear-gradient(180deg, rgba(150, 185, 110, 0.16), rgba(110, 140, 80, 0.08)),
-    linear-gradient(180deg, #9d9d9d 0%, #8b8b8b 55%, #7d7d7d 100%);
+    linear-gradient(180deg, rgba(90, 120, 70, 0.22), rgba(55, 75, 45, 0.14)),
+    linear-gradient(180deg, #6e6e6e 0%, #5a5a5a 55%, #4a4a4a 100%);
   border-color: rgba(52, 66, 40, 0.92);
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.22) inset,
-    0 0 10px rgba(120, 170, 80, 0.14);
+    0 0 0 1px rgba(255, 255, 255, 0.16) inset,
+    0 0 10px rgba(120, 170, 80, 0.1);
 }
 .kp-layout-config-panel .kp-cfg-pane-library .kp-cfg-pane-hdr {
   background: linear-gradient(180deg, #a8b596 0%, #8d9a7c 45%, #7a8669 100%);
@@ -1423,6 +1396,11 @@ export class KeyboardLayoutConfigPanel {
 }
 .kp-layout-config-panel .kp-cfg-pane-library .kp-cfg-pane-title {
   color: ${ONBOARDING_METAL.fg};
+}
+.kp-layout-config-panel .kp-cfg-pane-library .kp-cfg-pane-scroll {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.34)),
+    #454545;
 }
 .kp-layout-config-panel .kp-cfg-pane-hdr {
   display: flex;
@@ -1572,8 +1550,8 @@ export class KeyboardLayoutConfigPanel {
   flex-wrap: wrap;
   gap: 6px 10px;
   font-size: 8px;
-  color: ${ONBOARDING_METAL.fgMute};
-  opacity: 0.9;
+  color: rgba(235, 235, 235, 0.72);
+  opacity: 0.95;
 }
 .kp-layout-config-panel .kp-cfg-legend-mini span {
   display: inline-flex;
@@ -2361,6 +2339,41 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
 .kp-layout-config-panel .kp-cfg-pane-create:not(.kp-cfg-open) .kp-cfg-create-body {
   display: none;
 }
+.kp-layout-config-panel .kp-cfg-pane-create.kp-cfg-maximized {
+  /* Fill remaining workspace under the Actions Library titlebar. */
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  max-height: none;
+}
+.kp-layout-config-panel .kp-cfg-pane-create.kp-cfg-maximized > .kp-cfg-pane-hdr {
+  flex: 0 0 auto;
+  flex-shrink: 0;
+}
+.kp-layout-config-panel .kp-cfg-pane-create.kp-cfg-maximized > .kp-cfg-create-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+.kp-layout-config-panel .kp-cfg-workspace.kp-cfg-create-maximized .kp-cfg-pane-library .kp-cfg-pane-scroll {
+  /* Inline styles on the list set display:flex — must win with !important. */
+  display: none !important;
+  flex: 0 0 0 !important;
+  min-height: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+.kp-layout-config-panel .kp-cfg-workspace.kp-cfg-create-maximized .kp-cfg-pane-library {
+  flex: 0 0 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+.kp-layout-config-panel .kp-cfg-workspace.kp-cfg-create-maximized {
+  overflow: hidden;
+}
+.kp-layout-config-panel .kp-cfg-workspace.kp-cfg-create-maximized .kp-cfg-split-h {
+  display: none;
+}
 .kp-layout-config-panel .kp-cfg-split {
   position: relative;
   z-index: 2;
@@ -2544,16 +2557,6 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
   font-size: 10px;
   line-height: 1.35;
 }
-.kp-layout-config-panel .kp-cfg-pane-create.kp-cfg-maximized {
-  flex: 1 1 auto !important;
-  min-height: 0;
-}
-.kp-layout-config-panel .kp-cfg-workspace.kp-cfg-create-maximized .kp-cfg-pane-library .kp-cfg-pane-scroll {
-  display: none;
-}
-.kp-layout-config-panel .kp-cfg-workspace.kp-cfg-create-maximized .kp-cfg-pane-library {
-  flex: 0 0 auto;
-}
 .kp-layout-config-panel .kp-cfg-hdr-actions {
   display: inline-flex;
   align-items: center;
@@ -2633,6 +2636,362 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
   line-height: 1.35;
 }
 ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
+
+/* -------------------------------------------------------------------------
+ * Light Metal Pro GUI completion layer
+ * Keep semantic keycap / selection colors, but make all surrounding Config
+ * chrome use the same light metal language as onboarding.
+ * ---------------------------------------------------------------------- */
+.kp-layout-config-panel .kp-cfg-layout-combo,
+.kp-layout-config-panel .kp-cfg-field {
+  border: ${ONBOARDING_METAL.kbdBorder};
+  background: #e8e8e8;
+  color: ${ONBOARDING_METAL.fg};
+  box-shadow:
+    inset 0 1px 2px rgba(0,0,0,0.28),
+    0 1px 0 rgba(255,255,255,0.28);
+}
+.kp-layout-config-panel .kp-cfg-layout-combo:focus-within,
+.kp-layout-config-panel .kp-cfg-field:focus {
+  border-color: #355f82;
+  box-shadow:
+    inset 0 1px 2px rgba(0,0,0,0.24),
+    0 0 0 1px rgba(74,144,200,0.55);
+}
+.kp-layout-config-panel .kp-cfg-combo-input,
+.kp-layout-config-panel .kp-cfg-layout-combo.is-builtin .kp-cfg-combo-input {
+  color: ${ONBOARDING_METAL.fg};
+}
+.kp-layout-config-panel .kp-cfg-combo-toggle {
+  border-left-color: rgba(0,0,0,0.3);
+  background: ${ONBOARDING_METAL.btnBg};
+  color: ${ONBOARDING_METAL.fg};
+  box-shadow: ${ONBOARDING_METAL.btnShadow};
+}
+.kp-layout-config-panel .kp-cfg-combo-toggle:hover {
+  color: ${ONBOARDING_METAL.fg};
+  filter: brightness(1.08);
+}
+.kp-layout-config-panel .kp-cfg-combo-current-badge,
+.kp-layout-config-panel .kp-cfg-combo-option-current {
+  background: rgba(74,144,200,0.2);
+  color: #234f73;
+}
+.kp-layout-config-panel .kp-cfg-combo-list,
+.kp-layout-config-panel .kp-cfg-opts-menu {
+  border: ${ONBOARDING_METAL.panelBorder};
+  background: ${ONBOARDING_METAL.panelBg};
+  color: ${ONBOARDING_METAL.fg};
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.28) inset,
+    0 10px 24px rgba(0,0,0,0.42);
+}
+.kp-layout-config-panel .kp-cfg-combo-group {
+  color: ${ONBOARDING_METAL.fgDim};
+}
+.kp-layout-config-panel .kp-cfg-combo-group:not(:first-child) {
+  border-top-color: rgba(0,0,0,0.2);
+}
+.kp-layout-config-panel .kp-cfg-combo-option,
+.kp-layout-config-panel .kp-cfg-opts-menu .kp-cfg-opts-check {
+  color: ${ONBOARDING_METAL.fg};
+}
+.kp-layout-config-panel .kp-cfg-combo-option:hover,
+.kp-layout-config-panel .kp-cfg-combo-option.is-active {
+  background: rgba(255,255,255,0.3);
+  color: ${ONBOARDING_METAL.fg};
+}
+
+.kp-layout-config-panel .kp-cfg-tool-group,
+.kp-layout-config-panel .kp-cfg-seg {
+  border: ${ONBOARDING_METAL.btnBorder};
+  background: ${ONBOARDING_METAL.btnBg};
+  box-shadow: ${ONBOARDING_METAL.btnShadow};
+}
+.kp-layout-config-panel .kp-cfg-tool-group .kp-cfg-btn,
+.kp-layout-config-panel .kp-cfg-seg-btn {
+  border-right-color: rgba(0,0,0,0.22);
+  background: transparent;
+  color: ${ONBOARDING_METAL.fgDim};
+  box-shadow: none;
+}
+.kp-layout-config-panel .kp-cfg-tool-group .kp-cfg-btn:hover:not(:disabled),
+.kp-layout-config-panel .kp-cfg-seg-btn:hover {
+  background: rgba(255,255,255,0.28);
+  color: ${ONBOARDING_METAL.fg};
+}
+.kp-layout-config-panel .kp-cfg-seg-btn[aria-selected="true"] {
+  background: linear-gradient(180deg, #bad3e7 0%, #8fb1cd 100%);
+  color: #17354d;
+  box-shadow: inset 0 0 0 1px rgba(53,95,130,0.55);
+}
+.kp-layout-config-panel .kp-cfg-tool-sep {
+  background: rgba(0,0,0,0.28);
+}
+.kp-layout-config-panel .kp-cfg-btn,
+.kp-layout-config-panel .kp-cfg-inspect {
+  border: ${ONBOARDING_METAL.btnBorder};
+  background: ${ONBOARDING_METAL.btnBg};
+  color: ${ONBOARDING_METAL.fg};
+  box-shadow: ${ONBOARDING_METAL.btnShadow};
+}
+.kp-layout-config-panel .kp-cfg-btn:hover:not(:disabled),
+.kp-layout-config-panel .kp-cfg-inspect:hover {
+  background: linear-gradient(180deg, #d0d0d0 0%, #aeaeae 50%, #969696 100%);
+  color: ${ONBOARDING_METAL.fg};
+}
+.kp-layout-config-panel .kp-cfg-btn.kp-cfg-btn-lit,
+.kp-layout-config-panel .kp-cfg-btn[aria-pressed="true"] {
+  background: ${NCT_DARK_UI_BTN_LIT_GRADIENT};
+  border: ${NCT_DARK_UI_BTN_LIT_BORDER};
+  color: ${NCT_DARK_UI_SELECTED_TEXT};
+  box-shadow: inset 0 1px 0 rgba(200,220,240,0.18);
+}
+.kp-layout-config-panel .kp-cfg-hint,
+.kp-layout-config-panel .kp-mk-field-label,
+.kp-layout-config-panel .kp-cfg-mod-hint {
+  color: ${ONBOARDING_METAL.fgMute};
+}
+
+.kp-layout-config-panel .kp-cfg-legend {
+  color: ${ONBOARDING_METAL.fgMute};
+}
+.kp-layout-config-panel .kp-cfg-legend .kp-cfg-sw-stock-fn {
+  background: #b0b0b0;
+  border-color: #4a4a4a;
+}
+.kp-layout-config-panel .kp-cfg-legend .kp-cfg-sw-user {
+  background: #b0b0b0;
+  border-color: ${accentA(0.65)};
+}
+.kp-layout-config-panel .kp-cfg-legend .kp-cfg-sw-stock-macro {
+  background: #a4b0a6;
+  border-left-color: #3f7a68;
+}
+.kp-layout-config-panel .kp-cfg-legend .kp-cfg-sw-user-macro {
+  background: #aba1b6;
+  border-left-color: #6d519a;
+}
+.kp-layout-config-panel .kp-cfg-category,
+.kp-layout-config-panel .kp-cfg-macro-fieldset,
+.kp-layout-config-panel .kp-cfg-instance-fieldset {
+  border-color: rgba(0,0,0,0.35);
+  background: rgba(0,0,0,0.18);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.kp-layout-config-panel .kp-cfg-category[data-kp-section="macros"],
+.kp-layout-config-panel .kp-cfg-macro-fieldset[data-macro-group="user"] {
+  border-color: rgba(90,55,120,0.4);
+  background: rgba(40, 28, 52, 0.35);
+}
+.kp-layout-config-panel .kp-cfg-category[data-kp-section="macroKeys"],
+.kp-layout-config-panel .kp-cfg-macro-fieldset[data-macro-group="stock"] {
+  border-color: rgba(45,90,75,0.4);
+  background: rgba(28, 42, 34, 0.32);
+}
+.kp-layout-config-panel .kp-cfg-category-title {
+  color: rgba(240,240,240,0.78);
+  background: #4a4a4a;
+}
+.kp-layout-config-panel .kp-cfg-category[data-kp-section="macros"] .kp-cfg-category-title,
+.kp-layout-config-panel .kp-cfg-category[data-kp-section="macroKeys"] .kp-cfg-category-title,
+.kp-layout-config-panel .kp-cfg-macro-fieldset > legend,
+.kp-layout-config-panel .kp-cfg-macro-fieldset[data-macro-group="stock"] > legend,
+.kp-layout-config-panel .kp-cfg-macro-fieldset[data-macro-group="user"] > legend,
+.kp-layout-config-panel .kp-cfg-instance-fieldset > legend {
+  color: rgba(240,240,240,0.72);
+}
+.kp-layout-config-panel .kp-cfg-subgroup-empty {
+  color: rgba(240,240,240,0.55);
+}
+
+.kp-layout-config-panel .kp-mk-kind-btn,
+.kp-layout-config-panel .kp-cfg-logic-chip {
+  border: ${ONBOARDING_METAL.btnBorder};
+  border-left: 3px solid #6d519a;
+  background: ${ONBOARDING_METAL.btnBg};
+  color: ${ONBOARDING_METAL.fg};
+  box-shadow: ${ONBOARDING_METAL.btnShadow};
+}
+.kp-layout-config-panel .kp-mk-kind-btn:hover,
+.kp-layout-config-panel .kp-cfg-logic-chip:hover {
+  border-color: #6d519a;
+  background: linear-gradient(180deg, #d2cad9 0%, #b5aabb 50%, #9f94a5 100%);
+  color: ${ONBOARDING_METAL.fg};
+}
+.kp-layout-config-panel .kp-cfg-logic-chip strong,
+.kp-layout-config-panel .kp-cfg-logic-chip span {
+  color: ${ONBOARDING_METAL.fg};
+}
+.kp-layout-config-panel .kp-cfg-logic-chip span {
+  opacity: 0.62;
+}
+.kp-layout-config-panel .kp-mk-editor {
+  border-color: rgba(35,79,115,0.55);
+  background: rgba(205,222,235,0.34);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.24);
+}
+
+.kp-layout-config-panel .kp-cfg-pane-inspector {
+  background:
+    linear-gradient(180deg, rgba(100,155,200,0.17), rgba(65,110,150,0.08)),
+    linear-gradient(180deg, #9d9d9d 0%, #8b8b8b 55%, #7d7d7d 100%);
+  border-color: #355f82;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.24) inset,
+    0 0 12px rgba(60,115,160,0.18);
+}
+.kp-layout-config-panel .kp-cfg-inspector-rail,
+.kp-layout-config-panel .kp-cfg-pane-inspector .kp-cfg-pane-hdr {
+  background: linear-gradient(180deg, #b3c8d8 0%, #91aabd 48%, #778fa2 100%);
+  color: #18364e;
+  border-bottom-color: #355f82;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+}
+.kp-layout-config-panel .kp-cfg-inspector-rail:hover {
+  background: linear-gradient(180deg, #c1d4e2 0%, #9eb7ca 48%, #849caf 100%);
+  color: #102b40;
+}
+.kp-layout-config-panel .kp-cfg-pane-inspector .kp-cfg-pane-title,
+.kp-layout-config-panel .kp-cfg-dock-title,
+.kp-layout-config-panel .kp-cfg-dock-rows dd {
+  color: ${ONBOARDING_METAL.fg};
+}
+.kp-layout-config-panel .kp-cfg-dock-empty,
+.kp-layout-config-panel .kp-cfg-dock-subtitle,
+.kp-layout-config-panel .kp-cfg-dock-rows dt {
+  color: ${ONBOARDING_METAL.fgMute};
+}
+.kp-layout-config-panel .kp-cfg-dock-steps li {
+  border: ${ONBOARDING_METAL.rowBorder};
+  background: ${ONBOARDING_METAL.rowBg};
+}
+.kp-layout-config-panel .kp-cfg-assign-table th {
+  color: ${ONBOARDING_METAL.fgDim};
+  border-bottom-color: rgba(0,0,0,0.28);
+}
+.kp-layout-config-panel .kp-cfg-assign-table td {
+  color: ${ONBOARDING_METAL.fg};
+  border-bottom-color: rgba(0,0,0,0.15);
+}
+
+.kp-layout-config-panel .kp-cfg-pane-create {
+  background:
+    linear-gradient(180deg, rgba(145,100,180,0.17), rgba(100,70,130,0.08)),
+    linear-gradient(180deg, #9d9d9d 0%, #8b8b8b 55%, #7d7d7d 100%);
+  border-color: #604574;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.24) inset,
+    0 0 12px rgba(105,65,140,0.16);
+}
+.kp-layout-config-panel .kp-cfg-pane-create .kp-cfg-pane-hdr {
+  background: linear-gradient(180deg, #c7b8d2 0%, #aa97b8 48%, #907ca0 100%);
+  color: #30213b;
+  border-bottom-color: #604574;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+}
+.kp-layout-config-panel .kp-cfg-pane-create .kp-cfg-pane-title {
+  color: #30213b;
+}
+.kp-layout-config-panel .kp-cfg-stock-banner {
+  background: rgba(195,205,235,0.55);
+  color: #27355a;
+}
+.kp-layout-config-panel .kp-cfg-script-canvas {
+  border-color: rgba(75,50,95,0.48);
+  background: rgba(255,255,255,0.16);
+  box-shadow:
+    inset 0 1px 2px rgba(0,0,0,0.18),
+    0 1px 0 rgba(255,255,255,0.2);
+}
+.kp-layout-config-panel .kp-cfg-logic-palette {
+  border-color: rgba(90,55,120,0.26);
+  background: rgba(255,255,255,0.14);
+}
+.kp-layout-config-panel .kp-cfg-logic-palette > legend,
+.kp-layout-config-panel .kp-cfg-script-empty,
+.kp-layout-config-panel .kp-cfg-script-empty strong {
+  color: ${ONBOARDING_METAL.fgMute};
+}
+.kp-layout-config-panel .kp-cfg-script-empty strong {
+  color: ${ONBOARDING_METAL.fg};
+}
+.kp-layout-config-panel .kp-cfg-cycle-warn {
+  background: rgba(226,174,105,0.38);
+  color: #512c12;
+}
+.kp-layout-config-panel .kp-cfg-step {
+  border: ${ONBOARDING_METAL.rowBorder};
+  background: ${ONBOARDING_METAL.rowBg};
+  color: ${ONBOARDING_METAL.fg};
+}
+.kp-layout-config-panel .kp-cfg-step.kp-cfg-step-selected {
+  border-color: #355f82;
+  background: rgba(155,190,220,0.55);
+}
+
+.kp-layout-config-panel .kp-cfg-split {
+  background: #737373;
+}
+.kp-layout-config-panel .kp-cfg-split-v {
+  border-left-color: rgba(0,0,0,0.3);
+  border-right-color: rgba(255,255,255,0.32);
+  background: linear-gradient(90deg, #898989, #696969);
+}
+.kp-layout-config-panel .kp-cfg-split-h {
+  border-top-color: rgba(0,0,0,0.3);
+  border-bottom-color: rgba(255,255,255,0.32);
+  background: linear-gradient(180deg, #898989, #696969);
+}
+.kp-layout-config-panel .kp-cfg-split:hover,
+.kp-layout-config-panel .kp-cfg-split:focus-visible,
+.kp-layout-config-panel .kp-cfg-split.kp-cfg-split-dragging {
+  background: #6689a5;
+}
+
+.kp-layout-config-panel .kp-hier-table-wrap {
+  border: ${ONBOARDING_METAL.rowBorder};
+  background: rgba(255,255,255,0.14);
+}
+.kp-layout-config-panel .kp-hier-table th {
+  background: linear-gradient(180deg, #a8a8a8 0%, #909090 100%);
+  color: ${ONBOARDING_METAL.fgDim};
+  border-bottom-color: rgba(0,0,0,0.28);
+}
+.kp-layout-config-panel .kp-hier-table td {
+  color: ${ONBOARDING_METAL.fg};
+  border-bottom-color: rgba(0,0,0,0.14);
+}
+.kp-layout-config-panel .kp-hier-table tr.kp-hier-row-group,
+.kp-layout-config-panel .kp-hier-table tr.kp-hier-row-group td {
+  background: rgba(255,255,255,0.2);
+  color: ${ONBOARDING_METAL.fgDim};
+}
+.kp-layout-config-panel .kp-hier-twisty {
+  color: ${ONBOARDING_METAL.fgDim};
+}
+
+/* Light-metal scrollbar overrides the shared dark scrollbar for this panel. */
+.kp-layout-config-panel .${NCT_DARK_UI_SCROLLBAR_CLASS} {
+  scrollbar-color: #a8a8a8 #747474;
+}
+.kp-layout-config-panel .${NCT_DARK_UI_SCROLLBAR_CLASS}::-webkit-scrollbar-corner,
+.kp-layout-config-panel .${NCT_DARK_UI_SCROLLBAR_CLASS} ::-webkit-scrollbar-corner,
+.kp-layout-config-panel .${NCT_DARK_UI_SCROLLBAR_CLASS}::-webkit-scrollbar-track,
+.kp-layout-config-panel .${NCT_DARK_UI_SCROLLBAR_CLASS} ::-webkit-scrollbar-track {
+  background: #747474;
+  border-color: rgba(0,0,0,0.3);
+}
+.kp-layout-config-panel .${NCT_DARK_UI_SCROLLBAR_CLASS}::-webkit-scrollbar-thumb,
+.kp-layout-config-panel .${NCT_DARK_UI_SCROLLBAR_CLASS} ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #c0c0c0 0%, #a8a8a8 45%, #8d8d8d 100%);
+  border-color: #4a4a4a;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.42);
+}
+.kp-layout-config-panel .${NCT_DARK_UI_SCROLLBAR_CLASS}::-webkit-scrollbar-thumb:hover,
+.kp-layout-config-panel .${NCT_DARK_UI_SCROLLBAR_CLASS} ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #cecece 0%, #b5b5b5 45%, #999 100%);
+}
 `.trim().replaceAll('.kp-layout-config-panel', ':host');
   }
 
@@ -2723,18 +3082,6 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const titleText = doc.createElement('span');
     titleText.textContent = 'Keyboard Layout Config';
     title.appendChild(titleText);
-
-    const saveCloseBtn = doc.createElement('button');
-    saveCloseBtn.type = 'button';
-    saveCloseBtn.className = 'kp-cfg-save-close';
-    saveCloseBtn.setAttribute('data-kp-cfg-save-close', 'true');
-    saveCloseBtn.setAttribute('aria-label', 'Save and close layout config');
-    saveCloseBtn.title = 'Save layout changes and exit edit mode';
-    saveCloseBtn.textContent = 'Save and Close';
-    saveCloseBtn.addEventListener('click', (e) => {
-      try { e?.preventDefault?.(); e?.stopPropagation?.(); } catch { /* ignore */ }
-      void this._saveAndClose();
-    }, true);
 
     const closeBtn = doc.createElement('button');
     closeBtn.type = 'button';
@@ -2883,15 +3230,9 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     tools.appendChild(editGroup);
     tools.appendChild(mkSep());
     tools.appendChild(transferGroup);
-    tools.appendChild(saveCloseBtn);
 
     const primary = doc.createElement('div');
     primary.className = 'kp-cfg-layout-primary';
-
-    const refToggleBtn = mkBtn('Keyboard Reference', 'toggle-reference');
-    refToggleBtn.title = 'Show/hide the Keyboard Reference window (the place/drop target)';
-    refToggleBtn.setAttribute('aria-pressed', 'false');
-    refToggleBtn.prepend(mkCfgIcon(doc, 'kp-cfg-i-kb'));
 
     const optsWrap = doc.createElement('div');
     optsWrap.className = 'kp-cfg-opts-wrap';
@@ -2920,7 +3261,6 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     optsWrap.appendChild(optsBtn);
     optsWrap.appendChild(optsMenu);
 
-    primary.appendChild(refToggleBtn);
     primary.appendChild(optsWrap);
 
     const importFile = doc.createElement('input');
@@ -3309,7 +3649,6 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     this._layoutOptsMenu = optsMenu;
     this._searchInput = search;
     this._currentBadge = currentBadge;
-    this._refToggleBtn = refToggleBtn;
     this._showNumRowToggle = showNumRowToggle;
     this._mainRow = mainRow;
     this._libTabsEl = libTabs;
@@ -3352,7 +3691,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     try {
       const api = makePanelDraggable(root, header, {
         margin: CONFIG_POSITION_MARGIN_PX,
-        excludeSelector: 'button[aria-label="Close layout config"], button[data-kp-cfg-save-close="true"], .kp-cfg-save-close',
+        excludeSelector: 'button[aria-label="Close layout config"], .kp-cfg-close',
         onMoveEnd: (state) => {
           if (!state?.moved) return;
           void this._persistPosition({
@@ -3420,21 +3759,6 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     fnCategorySelect.addEventListener('change', () => {
       this._libFunctionCategory = String(fnCategorySelect.value || '');
       this._renderRightList();
-    }, true);
-
-    refToggleBtn.addEventListener('click', () => {
-      const next = !this._isKeyboardReferenceVisible();
-      try {
-        const kp = this._kp;
-        if (typeof kp?.applyKeyboardHelpVisibility === 'function') {
-          kp.applyKeyboardHelpVisibility(next, { persist: true });
-        } else if (next) {
-          kp?.floatingKeyboardHelp?.show?.();
-        } else {
-          kp?.floatingKeyboardHelp?.hide?.();
-        }
-      } catch { /* ignore */ }
-      this._syncKeyboardReferenceToggle();
     }, true);
 
     createToggleBtn.addEventListener('click', (e) => {
@@ -5310,14 +5634,6 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     } catch {
       return false;
     }
-  }
-
-  _syncKeyboardReferenceToggle() {
-    const btn = this._refToggleBtn;
-    if (!btn) return;
-    const on = this._isKeyboardReferenceVisible();
-    try { btn.setAttribute('aria-pressed', on ? 'true' : 'false'); } catch { /* ignore */ }
-    btn.title = on ? 'Hide the Keyboard Reference window' : 'Show the Keyboard Reference window';
   }
 
   /** @param {boolean} open */
