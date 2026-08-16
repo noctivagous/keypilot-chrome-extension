@@ -76,6 +76,8 @@ const FA_SOLID_PATHS = Object.freeze({
   'arrow-up-from-line': 'M233.4 105.4c12.5-12.5 32.8-12.5 45.3 0l96 96c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L288 205.3V384c0 17.7-14.3 32-32 32s-32-14.3-32-32V205.3l-41.4 41.4c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l96-96zM64 448c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H96c-17.7 0-32-14.3-32-32z',
   'arrow-down-to-line': 'M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l96-96c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L288 306.7V128c0-17.7-14.3-32-32-32s-32 14.3-32 32V306.7l-41.4-41.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l96 96zM64 64c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H96C78.3 96 64 81.7 64 64z',
   'circle': 'M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512z',
+  // FA Free solid "code" — Execute JS
+  'code': 'M318.4 73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L402.7 248 273.1 377.6c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l152-152c12.5-12.5 12.5-32.8 0-45.3l-152-152zm-124.8 0c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-152 152c-12.5 12.5-12.5 32.8 0 45.3l152 152c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 248 193.6 163.7c12.5-12.5 12.5-32.8 0-45.3z',
 
   // Text / rectangle selection
   // FA Free solid "font" (A glyph) — text select
@@ -125,6 +127,7 @@ export const KEYBOARD_ACTION_ICON_IDS = Object.freeze({
   TAB_RIGHT: 'chevron-right',
   ROOT: 'house',
   LAUNCHER: 'rocket',
+  TOP_SITES: 'layer-group',
   CLOSE_TAB: 'xmark',
   CANCEL: 'ban',
   PAGE_UP_INSTANT: 'arrow-up',
@@ -162,6 +165,7 @@ export const KEYBOARD_ACTION_ICON_IDS = Object.freeze({
   CLICK_MOUSE_BUTTON: 'hand-pointer',
   REMAP_KEY: 'keyboard',
   TYPE_CHARACTERS: 'font',
+  EXECUTE_JS: 'code',
   GET_TEXT_AT_CURSOR: 'i-cursor',
   GET_TEXT_RANGE: 'font',
   GET_MEDIA_AT_CURSOR: 'image',

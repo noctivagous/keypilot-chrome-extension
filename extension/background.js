@@ -1201,6 +1201,81 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
+        case 'KP_GET_RECENT_BOOKMARKS': {
+          const maxResults = Math.max(1, Math.min(100, Number(message.maxResults) || 24));
+          try {
+            if (chrome.bookmarks && typeof chrome.bookmarks.getRecent === 'function') {
+              const nodes = await chrome.bookmarks.getRecent(maxResults);
+              const bookmarks = (nodes || [])
+                .filter((n) => n && n.url)
+                .map((n) => ({
+                  title: n.title || 'Untitled',
+                  url: n.url,
+                  dateAdded: n.dateAdded,
+                  id: n.id,
+                  parentId: n.parentId
+                }));
+              sendResponse({
+                type: 'KP_RECENT_BOOKMARKS_RESPONSE',
+                bookmarks,
+                success: true
+              });
+            } else {
+              sendResponse({
+                type: 'KP_RECENT_BOOKMARKS_RESPONSE',
+                bookmarks: [],
+                success: false,
+                error: 'Bookmarks API not available'
+              });
+            }
+          } catch (error) {
+            console.error('KP_GET_RECENT_BOOKMARKS failed:', error);
+            sendResponse({
+              type: 'KP_RECENT_BOOKMARKS_RESPONSE',
+              bookmarks: [],
+              success: false,
+              error: error.message
+            });
+          }
+          break;
+        }
+
+        case 'KP_GET_MOST_VISITED': {
+          try {
+            if (chrome.topSites && typeof chrome.topSites.get === 'function') {
+              const sites = await chrome.topSites.get();
+              const list = (sites || [])
+                .filter((s) => s && s.url)
+                .slice(0, 24)
+                .map((s) => ({
+                  title: s.title || '',
+                  url: s.url
+                }));
+              sendResponse({
+                type: 'KP_MOST_VISITED_RESPONSE',
+                sites: list,
+                success: true
+              });
+            } else {
+              sendResponse({
+                type: 'KP_MOST_VISITED_RESPONSE',
+                sites: [],
+                success: false,
+                error: 'Top Sites API not available'
+              });
+            }
+          } catch (error) {
+            console.error('KP_GET_MOST_VISITED failed:', error);
+            sendResponse({
+              type: 'KP_MOST_VISITED_RESPONSE',
+              sites: [],
+              success: false,
+              error: error.message
+            });
+          }
+          break;
+        }
+
         case 'KP_GET_BOOKMARKS': {
           // Return bookmark tree for launcher popover
           try {

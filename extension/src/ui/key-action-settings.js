@@ -17,7 +17,7 @@
 import { Z_INDEX, KP_UI_FONT } from '../config/constants.js';
 import { makePanelDraggable } from '../utils/panel-position.js';
 import { ensureOpenChromeShadow, injectChromeStyles } from './kp-chrome-shadow.js';
-import { getFunctionDef } from '../config/function-library.js';
+import { getFunctionDef, groupFunctionParameters } from '../config/function-library.js';
 import {
   NCT_DARK_UI_PANEL_BACKGROUND,
   NCT_DARK_UI_PANEL_BORDER,
@@ -427,7 +427,23 @@ export class KeyActionConfigPanel {
       return;
     }
 
-    for (const param of params) {
+    if (actionId === 'EXECUTE_JS') {
+      const hint = document.createElement('div');
+      hint.className = 'kp-action-config-panel__empty';
+      hint.textContent = 'Bindings: kpHoveredClickable, kpHoverLeaf, kpFocusedTextField, kpMode, kpPageUrl, kpSelection, kpPriorResult. Callbacks are functions only when checked.';
+      body.appendChild(hint);
+    }
+
+    for (const { group, params: groupParams } of groupFunctionParameters(params)) {
+      if (group) {
+        const heading = document.createElement('div');
+        heading.className = 'kp-action-config-panel__label';
+        heading.textContent = group;
+        heading.style.fontWeight = '600';
+        heading.style.marginTop = '8px';
+        body.appendChild(heading);
+      }
+      for (const param of groupParams) {
       const row = document.createElement('div');
       row.className = 'kp-action-config-panel__row';
 
@@ -481,7 +497,8 @@ export class KeyActionConfigPanel {
         control = document.createElement('textarea');
         control.className = 'kp-action-config-panel__control';
         control.setAttribute('data-multiline', 'true');
-        control.rows = 3;
+        const rows = Number(param.rows);
+        control.rows = Number.isFinite(rows) && rows > 0 ? rows : 3;
         if (param.placeholder) control.placeholder = String(param.placeholder);
         control.value = currentVal != null ? String(currentVal) : '';
         control.addEventListener('change', async () => {
@@ -502,6 +519,7 @@ export class KeyActionConfigPanel {
 
       row.appendChild(control);
       body.appendChild(row);
+      }
     }
   }
 

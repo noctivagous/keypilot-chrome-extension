@@ -181,8 +181,8 @@
       },
       {
         "type": "action",
-        "id": "LAUNCHER",
-        "fallbackText": "Launcher"
+        "id": "TOP_SITES",
+        "fallbackText": "Top Sites"
       },
       {
         "type": "action",
@@ -334,8 +334,8 @@
       },
       {
         "type": "action",
-        "id": "LAUNCHER",
-        "fallbackText": "Launcher"
+        "id": "TOP_SITES",
+        "fallbackText": "Top Sites"
       },
       {
         "type": "action",
@@ -1310,9 +1310,9 @@
       "displayKey": "L",
       "keyboardClass": "key-orange"
     },
-    "LAUNCHER": {
-      "label": "Launcher",
-      "description": "Open Launcher (Quick Access to Sites)",
+    "TOP_SITES": {
+      "label": "Top Sites",
+      "description": "Open Top Sites (toolbar, most visited, recent bookmarks)",
       "keyLabel": ";",
       "displayKey": ";",
       "keyboardClass": "key-launcher-orange"
@@ -1508,9 +1508,9 @@
       "displayKey": "S",
       "keyboardClass": "key-orange"
     },
-    "LAUNCHER": {
-      "label": "Launcher",
-      "description": "Open Launcher (Quick Access to Sites)",
+    "TOP_SITES": {
+      "label": "Top Sites",
+      "description": "Open Top Sites (toolbar, most visited, recent bookmarks)",
       "keyLabel": "a/`",
       "displayKey": "a/`",
       "keyboardClass": "key-launcher-orange"
@@ -1986,8 +1986,8 @@
     },
     {
       "type": "action",
-      "id": "LAUNCHER",
-      "fallbackText": "Launcher"
+      "id": "TOP_SITES",
+      "fallbackText": "Top Sites"
     },
     {
       "type": "action",
@@ -2201,9 +2201,9 @@
     "displayKey": "L",
     "keyboardClass": "key-orange"
   },
-  "LAUNCHER": {
-    "label": "Launcher",
-    "description": "Open Launcher (Quick Access to Sites)",
+  "TOP_SITES": {
+    "label": "Top Sites",
+    "description": "Open Top Sites (toolbar, most visited, recent bookmarks)",
     "keyLabel": ";",
     "displayKey": ";",
     "keyboardClass": "key-launcher-orange"
@@ -3622,6 +3622,7 @@
 .kp-keybindings-ui .key[data-kp-action-id="TAB_RIGHT"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M470.6%20278.6c12.5-12.5%2012.5-32.8%200-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3%200s-12.5%2032.8%200%2045.3L402.7%20256%20265.4%20393.4c-12.5%2012.5-12.5%2032.8%200%2045.3s32.8%2012.5%2045.3%200l160-160z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M470.6%20278.6c12.5-12.5%2012.5-32.8%200-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3%200s-12.5%2032.8%200%2045.3L402.7%20256%20265.4%20393.4c-12.5%2012.5-12.5%2032.8%200%2045.3s32.8%2012.5%2045.3%200l160-160z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="ROOT"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M575.8%20255.5c0%2018-15%2032.1-32%2032.1h-32l.7%20160.2c.2%2035.5-28.5%2064.3-64%2064.3H392c-22.1%200-40-17.9-40-40V448%20384c0-17.7-14.3-32-32-32H256c-17.7%200-32%2014.3-32%2032v64%2024c0%2022.1-17.9%2040-40%2040H128.1c-35.3%200-64-28.7-64-64V287.6H32c-18%200-32-14-32-32.1c0-9%203-17%2010-24L266.4%208c7-7%2015-8%2022-8s15%202%2021%207L564.8%20231.5c8%207%2012%2015%2011%2024z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M575.8%20255.5c0%2018-15%2032.1-32%2032.1h-32l.7%20160.2c.2%2035.5-28.5%2064.3-64%2064.3H392c-22.1%200-40-17.9-40-40V448%20384c0-17.7-14.3-32-32-32H256c-17.7%200-32%2014.3-32%2032v64%2024c0%2022.1-17.9%2040-40%2040H128.1c-35.3%200-64-28.7-64-64V287.6H32c-18%200-32-14-32-32.1c0-9%203-17%2010-24L266.4%208c7-7%2015-8%2022-8s15%202%2021%207L564.8%20231.5c8%207%2012%2015%2011%2024z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="LAUNCHER"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M156.6%20384.9L125.7%20354c-8.5-8.5-11.5-20.8-7.7-32.2c3-8.9%207-20.5%2011.8-33.8L24%20288c-8.6%200-16.6-4.6-20.9-12.1s-4.2-16.7%20.2-24.1l52.5-88.5c13-21.9%2036.5-35.3%2061.9-35.3h82.3c2.4-4%204.8-7.7%207.2-11.3C289.1-4.1%20411.1-8.1%20483.9%205.3c11.6%202.1%2020.6%2011.2%2022.8%2022.8c13.4%2072.9%209.3%20194.8-111.4%20276.7c-3.5%202.4-7.3%204.8-11.3%207.2v82.3c0%2025.4-13.4%2049-35.3%2061.9l-88.5%2052.5c-7.4%204.4-16.6%204.5-24.1%20.2s-12.1-12.2-12.1-20.9V384.9c-13.3%204.8-24.9%208.8-33.8%2011.8c-11.4%203.7-23.7%20.7-32.2-7.8zM215.3%20237.3c28.3-28.3%2073.1-31.3%20105.4-8.5L200.5%20348.5c-22.8-32.3-19.8-77.1%208.5-105.4l6.3-5.8z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M156.6%20384.9L125.7%20354c-8.5-8.5-11.5-20.8-7.7-32.2c3-8.9%207-20.5%2011.8-33.8L24%20288c-8.6%200-16.6-4.6-20.9-12.1s-4.2-16.7%20.2-24.1l52.5-88.5c13-21.9%2036.5-35.3%2061.9-35.3h82.3c2.4-4%204.8-7.7%207.2-11.3C289.1-4.1%20411.1-8.1%20483.9%205.3c11.6%202.1%2020.6%2011.2%2022.8%2022.8c13.4%2072.9%209.3%20194.8-111.4%20276.7c-3.5%202.4-7.3%204.8-11.3%207.2v82.3c0%2025.4-13.4%2049-35.3%2061.9l-88.5%2052.5c-7.4%204.4-16.6%204.5-24.1%20.2s-12.1-12.2-12.1-20.9V384.9c-13.3%204.8-24.9%208.8-33.8%2011.8c-11.4%203.7-23.7%20.7-32.2-7.8zM215.3%20237.3c28.3-28.3%2073.1-31.3%20105.4-8.5L200.5%20348.5c-22.8-32.3-19.8-77.1%208.5-105.4l6.3-5.8z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="TOP_SITES"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M32%2096l224-80%20224%2080L256%20176%2032%2096zM32%20192l224%2080%20224-80%200%2032L256%20304%2032%20224l0-32zm0%2096l224%2080%20224-80%200%2032L256%20400%2032%20320l0-32z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M32%2096l224-80%20224%2080L256%20176%2032%2096zM32%20192l224%2080%20224-80%200%2032L256%20304%2032%20224l0-32zm0%2096l224%2080%20224-80%200%2032L256%20400%2032%20320l0-32z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="CLOSE_TAB"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2048a208%20208%200%201%201%200%20416%20208%20208%200%201%201%200-416zm0%20464A256%20256%200%201%200%20256%200a256%20256%200%201%200%200%20512zM175%20175c9.4-9.4%2024.6-9.4%2033.9%200l47%2047%2047-47c9.4-9.4%2024.6-9.4%2033.9%200s9.4%2024.6%200%2033.9l-47%2047%2047%2047c9.4%209.4%209.4%2024.6%200%2033.9s-24.6%209.4-33.9%200l-47-47-47%2047c-9.4%209.4-24.6%209.4-33.9%200s-9.4-24.6%200-33.9l47-47-47-47c-9.4-9.4-9.4-24.6%200-33.9z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2048a208%20208%200%201%201%200%20416%20208%20208%200%201%201%200-416zm0%20464A256%20256%200%201%200%20256%200a256%20256%200%201%200%200%20512zM175%20175c9.4-9.4%2024.6-9.4%2033.9%200l47%2047%2047-47c9.4-9.4%2024.6-9.4%2033.9%200s9.4%2024.6%200%2033.9l-47%2047%2047%2047c9.4%209.4%209.4%2024.6%200%2033.9s-24.6%209.4-33.9%200l-47-47-47%2047c-9.4%209.4-24.6%209.4-33.9%200s-9.4-24.6%200-33.9l47-47-47-47c-9.4-9.4-9.4-24.6%200-33.9z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="CANCEL"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%20512A256%20256%200%201%200%20256%200a256%20256%200%201%200%200%20512zM175%20175c9.4-9.4%2024.6-9.4%2033.9%200L368%20334.1c9.4%209.4%209.4%2024.6%200%2033.9s-24.6%209.4-33.9%200L175%20208.9c-9.4-9.4-9.4-24.6%200-33.9z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%20512A256%20256%200%201%200%20256%200a256%20256%200%201%200%200%20512zM175%20175c9.4-9.4%2024.6-9.4%2033.9%200L368%20334.1c9.4%209.4%209.4%2024.6%200%2033.9s-24.6%209.4-33.9%200L175%20208.9c-9.4-9.4-9.4-24.6%200-33.9z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="PAGE_UP_INSTANT"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M233.4%20105.4c12.5-12.5%2032.8-12.5%2045.3%200l192%20192c12.5%2012.5%2012.5%2032.8%200%2045.3s-32.8%2012.5-45.3%200L256%20173.3%2086.6%20342.6c-12.5%2012.5-32.8%2012.5-45.3%200s-12.5-32.8%200-45.3l192-192z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M233.4%20105.4c12.5-12.5%2032.8-12.5%2045.3%200l192%20192c12.5%2012.5%2012.5%2032.8%200%2045.3s-32.8%2012.5-45.3%200L256%20173.3%2086.6%20342.6c-12.5%2012.5-32.8%2012.5-45.3%200s-12.5-32.8%200-45.3l192-192z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }

@@ -64,6 +64,8 @@ import {
   sortFunctionDefsForLibrary,
   functionWorksWhileTyping,
   summarizeFunctionParameters,
+  groupFunctionParameters,
+  defaultFunctionParameters,
   validateFunctionSlotKey
 } from '../config/function-library.js';
 import {
@@ -224,6 +226,7 @@ const CONFIG_ICON_SYMBOLS = Object.freeze([
   ['kp-cfg-i-scroll', 'M8 1l3 3H9v3H7V4H5l3-3zm0 14l-3-3h2V9h2v3h2l-3 3zM3 7h10v2H3V7z'],
   ['kp-cfg-i-tabs', 'M1 3h5l1 2h8v9H1V3zm2 4v5h10V7H3z'],
   ['kp-cfg-i-type', 'M2 3h12v2H9v8H7V5H2V3zm1 10h10v2H3v-2z'],
+  ['kp-cfg-i-code', 'M5 3L1 8l4 5 1.4-1.1L3.5 8 6.4 4.1 5 3zm6 0l-1.4 1.1L12.5 8l-2.9 3.9L11 13l4-5-4-5z'],
   ['kp-cfg-i-ai', 'M8 1l1.5 4H14l-3.5 2.7L12 13 8 10.2 4 13l1.5-5.3L2 5h4.5L8 1z'],
   ['kp-cfg-i-select', 'M3 3h4v2H5v2H3V3zm6 0h4v4h-2V5H9V3zM3 9h2v2h2v2H3V9zm8 2h2v4H9v-2h2v-2z'],
   ['kp-cfg-i-image', 'M2 3h12v10H2V3zm2 2v6h8V5H4zm1 1h3v2H5V6zm4 3l2 3H5l1.5-2L8 12l1-1z'],
@@ -254,6 +257,7 @@ const LIBRARY_KEY_ICON_BY_FUNCTION_ID = Object.freeze({
   OMNIBOX: 'kp-cfg-i-search',
   SEND_TEXT_TO_AI: 'kp-cfg-i-ai',
   TYPE_CHARACTERS: 'kp-cfg-i-type',
+  EXECUTE_JS: 'kp-cfg-i-code',
   GET_TEXT_AT_CURSOR: 'kp-cfg-i-data',
   GET_TEXT_RANGE: 'kp-cfg-i-data',
   GET_MEDIA_AT_CURSOR: 'kp-cfg-i-image',
@@ -278,6 +282,7 @@ const LIBRARY_KEY_ICON_BY_CATEGORY = Object.freeze({
   Clipboard: 'kp-cfg-i-copy',
   Text: 'kp-cfg-i-type',
   Tools: 'kp-cfg-i-display',
+  Script: 'kp-cfg-i-code',
   Data: 'kp-cfg-i-data',
   Lookup: 'kp-cfg-i-lookup',
   Translate: 'kp-cfg-i-translate',
@@ -411,12 +416,63 @@ function ensureConfigIconSprite(root) {
 /** Logic (non-Function) Macro Step kinds offered by the User Macros builder palette. */
 const MACRO_LOGIC_DEFS = Object.freeze([
   Object.freeze({ kind: 'wait', label: 'Wait', description: 'Pause for N ms' }),
-  Object.freeze({ kind: 'gate', label: 'Gate', description: 'If condition, else skip' }),
+  Object.freeze({
+    kind: 'gate',
+    label: 'Gate',
+    description: 'Continue only if the previous step’s result…'
+  }),
   Object.freeze({ kind: 'stop', label: 'Stop', description: 'End the macro now' }),
   Object.freeze({ kind: 'runMacro', label: 'Run Macro', description: 'Call another macro' })
 ]);
 
-const MACRO_GATE_OPS = Object.freeze(['truthy', 'falsy', 'eq', 'neq', 'gt', 'lt']);
+/** Stored `op` values are unchanged; `label` is what the builder shows. */
+const MACRO_GATE_OPS = Object.freeze([
+  Object.freeze({
+    op: 'truthy',
+    label: 'Has a value',
+    hint: 'Has a value — previous step’s result is present or true (truthy)',
+    needsRight: false
+  }),
+  Object.freeze({
+    op: 'falsy',
+    label: 'Is empty',
+    hint: 'Is empty — previous step’s result is missing or false (falsy)',
+    needsRight: false
+  }),
+  Object.freeze({
+    op: 'eq',
+    label: 'Equals',
+    hint: 'Equals (eq) the compare-to value',
+    needsRight: true
+  }),
+  Object.freeze({
+    op: 'neq',
+    label: 'Does not equal',
+    hint: 'Does not equal (neq) the compare-to value',
+    needsRight: true
+  }),
+  Object.freeze({
+    op: 'gt',
+    label: 'Greater than',
+    hint: 'Greater than (gt) the compare-to value',
+    needsRight: true
+  }),
+  Object.freeze({
+    op: 'lt',
+    label: 'Less than',
+    hint: 'Less than (lt) the compare-to value',
+    needsRight: true
+  })
+]);
+
+/**
+ * @param {string} [op]
+ * @returns {{ op: string, label: string, hint: string, needsRight: boolean }}
+ */
+function getMacroGateOpDef(op) {
+  const key = String(op || 'truthy');
+  return MACRO_GATE_OPS.find((d) => d.op === key) || MACRO_GATE_OPS[0];
+}
 
 /**
  * Compact keycap text for a library card — initials for multi-word labels, otherwise a short
@@ -2626,6 +2682,24 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
   font-size: 9px;
   opacity: 0.8;
 }
+.kp-layout-config-panel .kp-cfg-step-summary {
+  font-size: 9px;
+  font-weight: 400;
+  opacity: 0.75;
+  line-height: 1.3;
+  max-width: 280px;
+}
+.kp-layout-config-panel .kp-cfg-gate-advanced {
+  margin-top: 4px;
+}
+.kp-layout-config-panel .kp-cfg-gate-advanced > summary {
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #7a92a8;
+}
 .kp-layout-config-panel .kp-cfg-step-fields .kp-cfg-field {
   width: auto;
   padding: 2px 5px;
@@ -3498,7 +3572,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 
     const logicPalette = doc.createElement('fieldset');
     logicPalette.className = 'kp-cfg-logic-palette';
-    logicPalette.setAttribute('aria-label', 'Logic steps');
+    logicPalette.setAttribute('aria-label', 'Logic and primitive steps');
     const logicLegend = doc.createElement('legend');
     logicLegend.textContent = 'Logic';
     logicPalette.appendChild(logicLegend);
@@ -3516,6 +3590,18 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       chip.addEventListener('click', () => this._addDraftLogicStep(def.kind), true);
       logicPalette.appendChild(chip);
     }
+    const jsChip = doc.createElement('button');
+    jsChip.type = 'button';
+    jsChip.className = 'kp-cfg-logic-chip';
+    jsChip.dataset.kpPrimitiveFunction = 'EXECUTE_JS';
+    const jsStrong = doc.createElement('strong');
+    jsStrong.textContent = 'Execute JS';
+    const jsSpan = doc.createElement('span');
+    jsSpan.textContent = 'Run a pasted script';
+    jsChip.appendChild(jsStrong);
+    jsChip.appendChild(jsSpan);
+    jsChip.addEventListener('click', () => this._addDraftFunctionStep('EXECUTE_JS'), true);
+    logicPalette.appendChild(jsChip);
 
     const stepsPane = doc.createElement('div');
     stepsPane.className = 'kp-cfg-steps-pane';
@@ -3560,7 +3646,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     scriptFooter.className = 'kp-cfg-strip-row';
     const placeHint = doc.createElement('span');
     placeHint.className = 'kp-cfg-hint';
-    placeHint.textContent = 'Add Logic steps or Functions. Save commits the macro to Macros.';
+    placeHint.textContent = 'Click a Logic chip or Execute JS, or pick a Function below and Add step. Save adds it to Macros.';
     const scriptMeta = doc.createElement('span');
     scriptMeta.className = 'kp-cfg-hint';
     scriptMeta.textContent = '0 steps';
@@ -3794,13 +3880,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       this._macroDraft.dirty = true;
     }, true);
 
-    newMacroBtn.addEventListener('click', () => {
-      this._resetMacroDraft(`Macro ${(this._st.macros || []).length + 1}`);
-      this._setCreateMode('script', { open: true });
-      this._inspectorSelection = null;
-      this._setInspectorOpen(true);
-      this._renderInspector();
-    }, true);
+    newMacroBtn.addEventListener('click', () => this._startNewMacroDraft(), true);
 
     saveMacroBtn.addEventListener('click', () => { void this._saveMacroDraft(); }, true);
     placeMacroBtn.addEventListener('click', () => { void this._placeMacroDraft(); }, true);
@@ -4550,20 +4630,60 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     if (kind === 'wait') {
       numberInput('Wait (ms)', step.ms, (ms) => patch({ ms }));
     } else if (kind === 'gate') {
+      const gateHint = document.createElement('p');
+      gateHint.className = 'kp-cfg-hint';
+      gateHint.textContent = 'Uses the previous Function step’s return value.';
+      wrap.appendChild(gateHint);
       const op = document.createElement('select');
       op.className = 'kp-cfg-field';
-      for (const name of MACRO_GATE_OPS) {
+      const currentOp = String(step.op || 'truthy');
+      for (const def of MACRO_GATE_OPS) {
         const option = document.createElement('option');
-        option.value = name;
-        option.textContent = name;
-        option.selected = String(step.op || 'truthy') === name;
+        option.value = def.op;
+        option.textContent = def.label;
+        option.title = def.hint;
+        option.selected = currentOp === def.op;
         op.appendChild(option);
       }
+      const opDef = getMacroGateOpDef(currentOp);
+      op.title = opDef.hint;
       op.addEventListener('change', () => patch({ op: op.value }), true);
-      field('Operator', op);
-      textInput('Prior-result key', step.leftKey, (leftKey) => patch({ leftKey }), 'Optional object property');
-      textInput('Compare to', step.right, (right) => patch({ right }), 'Required for eq, neq, gt, lt');
-      numberInput('On fail, skip steps', step.thenSkip, (thenSkip) => patch({ thenSkip }), { step: 1 });
+      field('Condition', op);
+      if (opDef.needsRight) {
+        textInput('Compare to', step.right, (right) => patch({ right }), 'Value to compare against');
+      }
+      numberInput(
+        'If this fails, skip the next N steps',
+        step.thenSkip,
+        (thenSkip) => patch({ thenSkip }),
+        { step: 1 }
+      );
+      const skipNote = document.createElement('p');
+      skipNote.className = 'kp-cfg-hint';
+      skipNote.textContent = 'N is following steps (not including this Gate). 0 continues at the next step.';
+      wrap.appendChild(skipNote);
+      const advanced = document.createElement('details');
+      advanced.className = 'kp-cfg-gate-advanced';
+      if (step.leftKey) advanced.open = true;
+      const summary = document.createElement('summary');
+      summary.textContent = 'Advanced';
+      advanced.appendChild(summary);
+      const keyRow = document.createElement('label');
+      keyRow.style.cssText = 'display:flex;flex-direction:column;gap:4px;margin-top:6px;';
+      const keyLabel = document.createElement('span');
+      keyLabel.className = 'kp-mk-field-label';
+      keyLabel.textContent = 'Read a field from the previous result';
+      const keyInput = document.createElement('input');
+      keyInput.type = 'text';
+      keyInput.className = 'kp-cfg-field';
+      keyInput.value = step.leftKey == null ? '' : String(step.leftKey);
+      keyInput.placeholder = 'Optional object property (leftKey)';
+      keyInput.title = 'leftKey — when the previous result is an object, read this property';
+      keyInput.addEventListener('change', () => patch({ leftKey: keyInput.value }), true);
+      keyRow.appendChild(keyLabel);
+      keyRow.appendChild(keyInput);
+      advanced.appendChild(keyRow);
+      wrap.appendChild(advanced);
     } else if (kind === 'runMacro') {
       const select = document.createElement('select');
       select.className = 'kp-cfg-field';
@@ -4580,6 +4700,12 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       }
       select.addEventListener('change', () => patch({ macroId: select.value }), true);
       field('Macro', select);
+      if (!String(step.macroId || '').trim()) {
+        const missing = document.createElement('p');
+        missing.className = 'kp-cfg-cycle-warn';
+        missing.textContent = 'Pick a macro. Saving without one removes this step.';
+        wrap.appendChild(missing);
+      }
     } else if (kind === 'stop') {
       const hint = document.createElement('p');
       hint.className = 'kp-cfg-hint';
@@ -4588,16 +4714,54 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     } else {
       numberInput('Delay before (ms)', step.delayMsBefore, (delayMsBefore) => patch({ delayMsBefore }));
       const def = getFunctionDef(step.functionId);
-      for (const param of def?.parameters || []) {
-        const current = step.parameters?.[param.id] ?? param.defaultValue;
+      this._appendFunctionParameterFields(wrap, def, step.parameters || {}, (paramId, value) => {
+        patch({ parameters: { ...(step.parameters || {}), [paramId]: value } });
+      }, { live: false });
+    }
+    return wrap;
+  }
+
+  /**
+   * Shared Function parameter controls (instance editor + macro step inspector).
+   * Renders optional `group` headings (e.g. Callbacks) and taller textareas via `rows`.
+   * @param {HTMLElement} host
+   * @param {{ id?: string, parameters?: any[] }|null|undefined} def
+   * @param {Record<string, any>} values
+   * @param {(paramId: string, value: any) => void} onChange
+   * @param {{ live?: boolean }} [opts] `live: false` uses `change` only (avoids re-render focus loss).
+   */
+  _appendFunctionParameterFields(host, def, values, onChange, { live = true } = {}) {
+    if (!host) return;
+    if (def?.id === 'EXECUTE_JS') {
+      const hint = document.createElement('p');
+      hint.className = 'kp-cfg-hint';
+      hint.textContent = 'Bindings: kpHoveredClickable, kpHoverLeaf, kpFocusedTextField, kpMode, kpPageUrl, kpSelection, kpPriorResult. Callbacks are functions only when checked.';
+      host.appendChild(hint);
+    }
+    for (const { group, params } of groupFunctionParameters(def?.parameters)) {
+      if (group) {
+        const heading = document.createElement('div');
+        heading.className = 'kp-mk-field-label';
+        heading.textContent = group;
+        heading.style.marginTop = '8px';
+        heading.style.fontWeight = '600';
+        host.appendChild(heading);
+      }
+      for (const param of params) {
+        const current = values?.[param.id] !== undefined ? values[param.id] : param.defaultValue;
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
+        const label = document.createElement('div');
+        label.className = 'kp-mk-field-label';
+        label.textContent = param.label || param.id;
+        row.appendChild(label);
+
         let control;
         if (param.type === 'boolean') {
           control = document.createElement('input');
           control.type = 'checkbox';
           control.checked = !!current;
-          control.addEventListener('change', () => patch({
-            parameters: { ...(step.parameters || {}), [param.id]: control.checked }
-          }), true);
+          control.addEventListener('change', () => onChange(param.id, !!control.checked), true);
         } else if (param.type === 'enum' && Array.isArray(param.options)) {
           control = document.createElement('select');
           control.className = 'kp-cfg-field';
@@ -4608,37 +4772,42 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
             option.selected = optionDef.id === current;
             control.appendChild(option);
           }
-          control.addEventListener('change', () => patch({
-            parameters: { ...(step.parameters || {}), [param.id]: control.value }
-          }), true);
+          control.addEventListener('change', () => onChange(param.id, control.value), true);
+        } else if (param.type === 'number') {
+          control = document.createElement('input');
+          control.type = 'number';
+          control.className = 'kp-cfg-field';
+          if (param.min != null) control.min = String(param.min);
+          if (param.max != null) control.max = String(param.max);
+          if (param.step != null) control.step = String(param.step);
+          control.value = current != null ? String(current) : '';
+          control.addEventListener('change', () => {
+            const n = Number(control.value);
+            onChange(param.id, Number.isFinite(n) ? n : param.defaultValue);
+          }, true);
         } else if (param.multiline) {
           control = document.createElement('textarea');
           control.className = 'kp-cfg-field';
-          control.rows = 3;
+          const rows = Number(param.rows);
+          control.rows = Number.isFinite(rows) && rows > 0 ? rows : 3;
           control.value = current == null ? '' : String(current);
-          control.addEventListener('change', () => patch({
-            parameters: { ...(step.parameters || {}), [param.id]: control.value }
-          }), true);
+          const commit = () => onChange(param.id, control.value);
+          control.addEventListener('change', commit, true);
+          if (live) control.addEventListener('input', commit, true);
         } else {
           control = document.createElement('input');
-          control.type = param.type === 'number' ? 'number' : 'text';
+          control.type = 'text';
           control.className = 'kp-cfg-field';
-          if (param.type === 'number') {
-            if (param.min != null) control.min = String(param.min);
-            if (param.max != null) control.max = String(param.max);
-            if (param.step != null) control.step = String(param.step);
-          }
           control.value = current == null ? '' : String(current);
-          control.addEventListener('change', () => {
-            const value = param.type === 'number' ? Number(control.value) : control.value;
-            patch({ parameters: { ...(step.parameters || {}), [param.id]: value } });
-          }, true);
+          const commit = () => onChange(param.id, control.value);
+          control.addEventListener('change', commit, true);
+          if (live) control.addEventListener('input', commit, true);
         }
         if (param.placeholder) control.placeholder = String(param.placeholder);
-        field(param.label || param.id, control);
+        row.appendChild(control);
+        host.appendChild(row);
       }
     }
-    return wrap;
   }
 
   /**
@@ -4782,63 +4951,9 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       wrap.appendChild(this._renderModifierToggles({ type: 'function', id: instance.id }, def));
     }
 
-    for (const param of def.parameters || []) {
-      const row = document.createElement('div');
-      row.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
-
-      const label = document.createElement('div');
-      label.className = 'kp-mk-field-label';
-      label.textContent = param.label || param.id;
-      row.appendChild(label);
-
-      const currentVal = draft.parameters[param.id] !== undefined ? draft.parameters[param.id] : param.defaultValue;
-      let control;
-      if (param.type === 'boolean') {
-        control = document.createElement('input');
-        control.type = 'checkbox';
-        control.checked = !!currentVal;
-        control.addEventListener('change', () => { draft.parameters[param.id] = !!control.checked; }, true);
-      } else if (param.type === 'enum' && Array.isArray(param.options)) {
-        control = document.createElement('select');
-        control.className = 'kp-cfg-field';
-        for (const opt of param.options) {
-          const o = document.createElement('option');
-          o.value = opt.id;
-          o.textContent = opt.label;
-          if (opt.id === currentVal) o.selected = true;
-          control.appendChild(o);
-        }
-        control.addEventListener('change', () => { draft.parameters[param.id] = control.value; }, true);
-      } else if (param.type === 'number') {
-        control = document.createElement('input');
-        control.type = 'number';
-        control.className = 'kp-cfg-field';
-        if (param.min != null) control.min = String(param.min);
-        if (param.max != null) control.max = String(param.max);
-        if (param.step != null) control.step = String(param.step);
-        control.value = currentVal != null ? String(currentVal) : '';
-        control.addEventListener('change', () => {
-          const n = Number(control.value);
-          draft.parameters[param.id] = Number.isFinite(n) ? n : param.defaultValue;
-        }, true);
-      } else if (param.multiline) {
-        control = document.createElement('textarea');
-        control.className = 'kp-cfg-field';
-        control.rows = 3;
-        if (param.placeholder) control.placeholder = String(param.placeholder);
-        control.value = currentVal != null ? String(currentVal) : '';
-        control.addEventListener('input', () => { draft.parameters[param.id] = control.value; }, true);
-      } else {
-        control = document.createElement('input');
-        control.type = 'text';
-        control.className = 'kp-cfg-field';
-        if (param.placeholder) control.placeholder = String(param.placeholder);
-        control.value = currentVal != null ? String(currentVal) : '';
-        control.addEventListener('input', () => { draft.parameters[param.id] = control.value; }, true);
-      }
-      row.appendChild(control);
-      wrap.appendChild(row);
-    }
+    this._appendFunctionParameterFields(wrap, def, draft.parameters || {}, (paramId, value) => {
+      draft.parameters[paramId] = value;
+    });
 
     const actions = document.createElement('div');
     actions.className = 'kp-mk-editor-actions';
@@ -4905,6 +5020,16 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
   _openMacroStepsEditor(macro) {
     if (!macro || !macro.id) return;
     const id = String(macro.id);
+    const current = this._macroDraft;
+    if (current?.dirty && String(current.id || '') === id) {
+      this._setCreateMode('script', { open: true });
+      this._inspectorSelection = null;
+      this._setInspectorOpen(true);
+      this._renderMacroBuilder();
+      this._renderInspector();
+      return;
+    }
+    if (current?.dirty && !this._confirmDiscardDirtyMacroDraft()) return;
     const stock = isStockMacroId(id);
     const source = stock ? (getStockMacroById(id) || macro) : macro;
     this._macroDraft = {
@@ -4922,6 +5047,24 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     this._setInspectorOpen(true);
     this._renderInspector();
     try { this._renderRightList(); } catch { /* ignore */ }
+  }
+
+  /**
+   * @returns {boolean} false when the user cancelled discarding unsaved work.
+   */
+  _confirmDiscardDirtyMacroDraft() {
+    if (!this._macroDraft?.dirty) return true;
+    if (typeof window.confirm !== 'function') return true;
+    return window.confirm('This macro has unsaved changes. Discard them?');
+  }
+
+  _startNewMacroDraft() {
+    if (!this._confirmDiscardDirtyMacroDraft()) return;
+    this._resetMacroDraft(`Macro ${(this._st.macros || []).length + 1}`);
+    this._setCreateMode('script', { open: true });
+    this._inspectorSelection = null;
+    this._setInspectorOpen(true);
+    this._renderInspector();
   }
 
   /** @param {string} [label] */
@@ -4966,7 +5109,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       const strong = document.createElement('strong');
       strong.textContent = 'Build a macro script';
       const span = document.createElement('span');
-      span.textContent = 'Click a Logic chip on the left, or select an Actions Library card and Add step.';
+      span.textContent = 'Click a Logic chip on the left, or pick a Function below and Add step.';
       empty.appendChild(strong);
       empty.appendChild(span);
       host.appendChild(empty);
@@ -5045,43 +5188,14 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       return wrap;
     };
 
-    const mkText = (labelText, value, onChange, placeholder) => {
-      const wrap = document.createElement('label');
-      const text = document.createElement('span');
-      text.textContent = labelText;
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.className = 'kp-cfg-field';
-      input.value = value == null ? '' : String(value);
-      if (placeholder) input.placeholder = placeholder;
-      input.addEventListener('change', () => onChange(input.value), true);
-      wrap.appendChild(text);
-      wrap.appendChild(input);
-      return wrap;
-    };
-
     if (kind === 'wait') {
       fields.appendChild(mkNumber('ms', step.ms, (v) => patch({ ms: v }), 'Pause duration'));
     } else if (kind === 'gate') {
-      const opWrap = document.createElement('label');
-      const opText = document.createElement('span');
-      opText.textContent = 'if';
-      const opSelect = document.createElement('select');
-      opSelect.className = 'kp-cfg-field';
-      for (const op of MACRO_GATE_OPS) {
-        const o = document.createElement('option');
-        o.value = op;
-        o.textContent = op;
-        if (String(step.op || 'truthy') === op) o.selected = true;
-        opSelect.appendChild(o);
-      }
-      opSelect.addEventListener('change', () => patch({ op: opSelect.value }), true);
-      opWrap.appendChild(opText);
-      opWrap.appendChild(opSelect);
-      fields.appendChild(opWrap);
-      fields.appendChild(mkText('key', step.leftKey, (v) => patch({ leftKey: v }), 'prior result key'));
-      fields.appendChild(mkText('value', step.right, (v) => patch({ right: v }), 'compare to'));
-      fields.appendChild(mkNumber('skip', step.thenSkip, (v) => patch({ thenSkip: v }), 'Steps skipped when the gate fails'));
+      const sum = document.createElement('span');
+      sum.className = 'kp-cfg-step-summary';
+      sum.textContent = this._stepSummary(step);
+      sum.title = 'Select this step to edit the condition in the Inspector';
+      fields.appendChild(sum);
     } else if (kind === 'runMacro') {
       const wrap = document.createElement('label');
       const text = document.createElement('span');
@@ -5186,7 +5300,11 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     }
     if (!this._macroDraft) this._resetMacroDraft();
     /** @type {any} */
-    const step = { kind: 'function', functionId: def.id, parameters: parameters ? { ...parameters } : {} };
+    const step = {
+      kind: 'function',
+      functionId: def.id,
+      parameters: parameters ? { ...parameters } : { ...defaultFunctionParameters(def.id) }
+    };
     const delay = Math.max(0, Math.floor(Number(delayMsBefore) || 0));
     if (delay > 0) step.delayMsBefore = delay;
     this._macroDraft.steps.push(step);
@@ -5307,15 +5425,13 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
   async _runMacroDraft() {
     const draft = this._macroDraft;
     if (!draft) return;
-    if (!draft.id) {
-      this._notify('Save the macro before running it.', 'error');
-      return;
-    }
-    if (draft.dirty) {
+    let id = draft.id || null;
+    if (!id || draft.dirty || draft.stock) {
       const saved = await this._saveMacroDraft();
-      if (!saved) return;
+      id = saved?.id || null;
     }
-    try { await this._kp?._runMacroById?.(this._macroDraft.id); } catch { /* ignore */ }
+    if (!id) return;
+    try { await this._kp?._runMacroById?.(id); } catch { /* ignore */ }
   }
 
   /**
@@ -5362,6 +5478,12 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       this._notify('Stock macros cannot be deleted.', 'error');
       return;
     }
+    const found = this._findMacroById(macroId);
+    const label = found?.label || 'this macro';
+    const ok = typeof window.confirm !== 'function'
+      ? true
+      : window.confirm(`Delete "${label}"? This cannot be undone.`);
+    if (!ok) return;
     try {
       await deleteUserMacro(macroId);
       this._st.macros = (this._st.macros || []).filter((m) => m && m.id !== macroId);
@@ -5422,8 +5544,13 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     if (kind === 'wait') return `${Math.max(0, Number(step.ms) || 0)} ms`;
     if (kind === 'stop') return 'end run';
     if (kind === 'gate') {
-      const right = step.right === undefined || step.right === '' ? '' : ` "${step.right}"`;
-      return `${step.op || 'truthy'}${right} · skip ${Math.max(0, Number(step.thenSkip) || 0)}`;
+      const def = getMacroGateOpDef(step.op);
+      const skip = Math.max(0, Number(step.thenSkip) || 0);
+      const key = step.leftKey ? ` · field ${step.leftKey}` : '';
+      const right = def.needsRight && step.right !== undefined && step.right !== ''
+        ? ` "${step.right}"`
+        : '';
+      return `${def.label}${right}${key} · skip next ${skip}`;
     }
     if (kind === 'runMacro') {
       const nested = step.macroId ? this._findMacroById(step.macroId) : null;
@@ -6339,13 +6466,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       newMacroBtn.className = 'kp-cfg-inspect';
       newMacroBtn.textContent = '+ New Macro';
       newMacroBtn.title = 'Start an empty macro in the User Macros builder';
-      newMacroBtn.addEventListener('click', () => {
-        this._resetMacroDraft(`Macro ${(this._st.macros || []).length + 1}`);
-        this._setCreateMode('script', { open: true });
-        this._inspectorSelection = null;
-        this._setInspectorOpen(true);
-        this._renderInspector();
-      }, true);
+      newMacroBtn.addEventListener('click', () => this._startNewMacroDraft(), true);
       macrosTitle.appendChild(newMacroBtn);
       macrosSection.appendChild(macrosTitle);
 
@@ -6820,11 +6941,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       newMacroBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        this._resetMacroDraft(`Macro ${(this._st.macros || []).length + 1}`);
-        this._setCreateMode('script', { open: true });
-        this._inspectorSelection = null;
-        this._setInspectorOpen(true);
-        this._renderInspector();
+        this._startNewMacroDraft();
       }, true);
 
       if (appendGroupRow({

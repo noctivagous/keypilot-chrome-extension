@@ -31,6 +31,7 @@ import {
   createNewtabDisplayPopover
 } from '../src/ui/newtab-display-popover.js';
 import { storageGetValue } from '../src/utils/storage.js';
+import { postPopoverBridgeInit } from '../src/modules/popover-bridge-init.js';
 
 let currentEngine = 'brave';
 const KP_ENABLED_STORAGE_KEY = 'keypilot_enabled';
@@ -378,11 +379,7 @@ function createModal({ title, hintKeyLabel, closeKeys, url, width, height }) {
 
   // Kick off bridge init so Esc/quote etc works when the iframe has focus.
   const sendInit = () => {
-    try {
-      iframe.contentWindow?.postMessage({ type: 'KP_POPOVER_BRIDGE_INIT' }, '*');
-    } catch {
-      // ignore
-    }
+    postPopoverBridgeInit(iframe.contentWindow, { closeKeys });
   };
   sendInit();
   try {

@@ -425,8 +425,7 @@ export class FloatingKeyboardHelp {
       || mode === MODES.HIGHLIGHT
       || mode === MODES.INSPECTOR
       || mode === MODES.DELETE
-      || mode === MODES.COLS
-      || mode === MODES.SCROLL_LINE;
+      || mode === MODES.COLS;
   }
 
   _shouldShowEscExitButton() {
@@ -466,13 +465,14 @@ export class FloatingKeyboardHelp {
   }
 
   _ensureExitTextModeButton() {
-    if (this._exitTextModeBtn && this._exitTextModeBtn.isConnected) return;
     const header = this._titlebar
       || this.shadowRoot?.querySelector?.('[data-kp-floating-keyboard-titlebar="true"]')
       || null;
     if (!header) return;
 
-    let btn = header.querySelector('button[data-kp-floating-keyboard-exit-text="true"]');
+    let btn = (this._exitTextModeBtn && this._exitTextModeBtn.isConnected)
+      ? this._exitTextModeBtn
+      : header.querySelector('button[data-kp-floating-keyboard-exit-text="true"]');
     if (!btn) {
       const doc = header.ownerDocument || document;
       btn = doc.createElement('button');
@@ -508,22 +508,21 @@ export class FloatingKeyboardHelp {
       const kbd = createTitlebarKbd(doc, 'Esc');
       try { kbd.style.fontSize = '10px'; } catch { /* ignore */ }
       btn.appendChild(kbd);
+    }
 
-      const titleEl = this._layoutTitleEl
-        || header.querySelector('[data-kp-floating-keyboard-title="true"]');
-      const layoutSelect = this._layoutSelectEl
-        || header.querySelector('[data-kp-floating-keyboard-layout-select="true"]');
-      try {
-        if (titleEl && titleEl.nextSibling) {
-          header.insertBefore(btn, titleEl.nextSibling);
-        } else if (layoutSelect) {
-          header.insertBefore(btn, layoutSelect);
-        } else {
-          header.appendChild(btn);
+    // Place immediately after the layout <select> (title · select · Exit · …).
+    const layoutSelect = this._layoutSelectEl
+      || header.querySelector('[data-kp-floating-keyboard-layout-select="true"]');
+    try {
+      if (layoutSelect) {
+        if (btn.previousSibling !== layoutSelect) {
+          header.insertBefore(btn, layoutSelect.nextSibling);
         }
-      } catch {
-        try { header.appendChild(btn); } catch { /* ignore */ }
+      } else if (!btn.isConnected) {
+        header.appendChild(btn);
       }
+    } catch {
+      try { if (!btn.isConnected) header.appendChild(btn); } catch { /* ignore */ }
     }
 
     try {

@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-16T06:46:13.459Z
+ * Generated on 2026-08-16T22:36:17.476Z
  */
 
 (() => {
@@ -37,8 +37,10 @@
     // --- History / bookmarks / favicon (SW APIs for content scripts) ---
     OMNIBOX_SUGGEST: "KP_OMNIBOX_SUGGEST",
     GET_BOOKMARKS: "KP_GET_BOOKMARKS",
+    GET_RECENT_BOOKMARKS: "KP_GET_RECENT_BOOKMARKS",
     BROWSER_HISTORY_GET: "KP_BROWSER_HISTORY_GET",
     GET_TOP_SITES: "KP_GET_TOP_SITES",
+    GET_MOST_VISITED: "KP_GET_MOST_VISITED",
     GET_HISTORY_FOR_DOMAINS: "KP_GET_HISTORY_FOR_DOMAINS",
     GET_RECENT_HISTORY: "KP_GET_RECENT_HISTORY",
     GET_FAVICON: "KP_GET_FAVICON",
@@ -91,7 +93,7 @@
     // Child frame-click-agent performs elementFromPoint + click in its own document.
     // Optional topOrigin: parent tab origin for link routing (no hardcoded domains).
     FRAME_ACTIVATE: "KP_FRAME_ACTIVATE",
-    // --- Parent → child frame scroll (window.postMessage; C/V/Z/X under an iframe) ---
+    // --- Parent → child frame scroll (window.postMessage; layout scroll keys under an iframe) ---
     // Top-frame KeyPilot posts this when scroll keys land on an <iframe> shell. Child
     // frame-click-agent runs scroll-at-point (delta or edge) at local coordinates
     // (nested overflow first, then the frame document).
@@ -398,6 +400,13 @@
       keyboardClass: "key-launcher-orange",
       row: 2
     }),
+    TOP_SITES: Object.freeze({
+      handler: "handleTopSitesKey",
+      label: "Top Sites",
+      description: "Open Top Sites (toolbar, most visited, recent bookmarks)",
+      keyboardClass: "key-launcher-orange",
+      row: 2
+    }),
     CLOSE_TAB: Object.freeze({
       handler: "handleCloseTabKey",
       label: "Close Tab",
@@ -654,6 +663,7 @@
     CLIPBOARD_SELECT_ALL: "Clipboard",
     SEND_TEXT_TO_AI: "AI",
     LAUNCHER: "Begin URL",
+    TOP_SITES: "Begin URL",
     OMNIBOX: "Begin URL",
     TOGGLE_KEYBOARD_HELP: "KeyPilot",
     OPEN_SETTINGS_POPOVER: "KeyPilot",
@@ -751,7 +761,7 @@
     HIGHLIGHT: Object.freeze({ keys: ["h", "H"] }),
     TAB_HISTORY: Object.freeze({ keys: ["j", "J"] }),
     OMNIBOX: Object.freeze({ keys: ["l", "L"] }),
-    LAUNCHER: Object.freeze({ keys: [";", ":", "Semicolon", "`", "~", "Backquote"], matchOn: ["key", "code"], displayKey: ";", keyLabel: ";" }),
+    TOP_SITES: Object.freeze({ keys: [";", ":", "Semicolon", "`", "~", "Backquote"], matchOn: ["key", "code"], displayKey: ";", keyLabel: ";" }),
     PAGE_TOP: Object.freeze({ keys: ["z", "Z"] }),
     PAGE_BOTTOM: Object.freeze({ keys: ["x", "X"] }),
     PAGE_UP_INSTANT: Object.freeze({ keys: ["c", "C"] }),
@@ -790,7 +800,7 @@
     // (KB Reference / Settings / Esc live in the system layer, not layout assignments.)
     TAB_HISTORY: Object.freeze({ keys: ["f", "F"] }),
     OMNIBOX: Object.freeze({ keys: ["s", "S"] }),
-    LAUNCHER: Object.freeze({ keys: ["a", "A", "`", "~", "Backquote"], matchOn: ["key", "code"], displayKey: "a/`", keyLabel: "a/`" }),
+    TOP_SITES: Object.freeze({ keys: ["a", "A", "`", "~", "Backquote"], matchOn: ["key", "code"], displayKey: "a/`", keyLabel: "a/`" }),
     // Bottom row cluster: Z X C V B  ->  / . , M N (mirrored)
     PAGE_TOP: Object.freeze({ keys: ["/", "?"], displayKey: "/", keyLabel: "/" }),
     PAGE_BOTTOM: Object.freeze({ keys: ["b", "B"] }),
@@ -957,7 +967,7 @@
       { type: "action", id: "TAB_HISTORY", fallbackText: "History" },
       { type: "action", id: "TOGGLE_KEYBOARD_HELP", fallbackText: "KB Reference" },
       { type: "action", id: "OMNIBOX", fallbackText: "Omnibox" },
-      { type: "action", id: "LAUNCHER", fallbackText: "Launcher" },
+      { type: "action", id: "TOP_SITES", fallbackText: "Top Sites" },
       { type: "action", id: "OPEN_SETTINGS_POPOVER", fallbackText: "Settings" },
       { type: "special", text: "Enter", className: "key key-enter" }
     ],
@@ -1004,7 +1014,7 @@
     ],
     [
       { type: "special", text: "Caps", className: "key key-caps" },
-      { type: "action", id: "LAUNCHER", fallbackText: "Launcher" },
+      { type: "action", id: "TOP_SITES", fallbackText: "Top Sites" },
       // Utility keys on the left (to avoid colliding with right-hand cluster)
       { type: "action", id: "OMNIBOX", fallbackText: "Omnibox" },
       // S
@@ -3892,6 +3902,72 @@
     }
   }
 
+  // src/modules/popover-bridge-init.js
+  var SCROLL_KEY_SLOTS = Object.freeze([
+    "pageUp",
+    "pageDown",
+    "pageUpInstant",
+    "pageDownInstant",
+    "pageTop",
+    "pageBottom"
+  ]);
+  var BINDING_ID_BY_SLOT = Object.freeze({
+    pageUp: "PAGE_UP",
+    pageDown: "PAGE_DOWN",
+    pageUpInstant: "PAGE_UP_INSTANT",
+    pageDownInstant: "PAGE_DOWN_INSTANT",
+    pageTop: "PAGE_TOP",
+    pageBottom: "PAGE_BOTTOM"
+  });
+  var SLOT_BY_FUNCTION_ID = Object.freeze({
+    PAGE_UP: "pageUp",
+    PAGE_DOWN: "pageDown",
+    PAGE_UP_INSTANT: "pageUpInstant",
+    PAGE_DOWN_INSTANT: "pageDownInstant",
+    PAGE_TOP: "pageTop",
+    PAGE_BOTTOM: "pageBottom"
+  });
+  var DEFAULT_POPOVER_SCROLL_KEYS = Object.freeze({
+    pageUp: Object.freeze([]),
+    pageDown: Object.freeze([]),
+    pageUpInstant: Object.freeze(["c", "C"]),
+    pageDownInstant: Object.freeze(["v", "V"]),
+    pageTop: Object.freeze(["z", "Z"]),
+    pageBottom: Object.freeze(["x", "X"])
+  });
+  function uniqueKeys(keys) {
+    const seen = /* @__PURE__ */ new Set();
+    const out = [];
+    for (const raw of keys) {
+      const k = String(raw || "");
+      if (!k || seen.has(k)) continue;
+      seen.add(k);
+      out.push(k);
+    }
+    return out;
+  }
+  function normalizePopoverScrollKeys(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    const out = {};
+    let any = false;
+    for (const slot of SCROLL_KEY_SLOTS) {
+      if (Array.isArray(raw[slot])) {
+        out[slot] = uniqueKeys(raw[slot].map(String));
+        any = true;
+      } else {
+        out[slot] = [];
+      }
+    }
+    return any ? (
+      /** @type {PopoverScrollKeys} */
+      out
+    ) : null;
+  }
+  function popoverScrollKeyMatches(scrollKeys, slot, key) {
+    const list = scrollKeys?.[slot];
+    return Array.isArray(list) && list.includes(key);
+  }
+
   // src/modules/popover-iframe-bridge.js
   function installPopoverIframeBridge(options = {}) {
     const {
@@ -3907,6 +3983,14 @@
       let mouseInsideFrame = true;
       let lastMouse = { x: null, y: null };
       let closeKeySet = /* @__PURE__ */ new Set(["Escape", "e", "E", "p", "P"]);
+      let scrollKeys = DEFAULT_POPOVER_SCROLL_KEYS;
+      const fullKeyPilotPresent = () => {
+        try {
+          return !!(window.keyPilot || window.__KeyPilotInstance || window.__KeyPilotToggleHandler);
+        } catch {
+          return false;
+        }
+      };
       const scrollByY = (deltaY, behavior = "smooth") => {
         try {
           const el = document.scrollingElement || document.documentElement || document.body;
@@ -3954,6 +4038,8 @@
               closeKeySet = new Set(data.closeKeys.map(String));
               closeKeySet.add("Escape");
             }
+            const nextScroll = normalizePopoverScrollKeys(data.scrollKeys);
+            if (nextScroll) scrollKeys = nextScroll;
           } catch {
           }
           try {
@@ -4036,34 +4122,41 @@
           return;
         }
         if (typing) return;
-        const { halfPx, behavior } = resolveScrollParams();
-        if (key === "c" || key === "C" || key === "v" || key === "V") {
-          e.preventDefault();
+        if (fullKeyPilotPresent()) return;
+        const { pagePx, halfPx, behavior } = resolveScrollParams();
+        const cursorPoint = () => {
           let mx = lastMouse.x;
           let my = lastMouse.y;
           if (typeof mx !== "number" || typeof my !== "number") {
             mx = Math.floor(window.innerWidth / 2);
             my = Math.floor(window.innerHeight / 2);
           }
-          const sign = key === "c" || key === "C" ? -1 : 1;
-          scrollAtPoint(mx, my, sign, halfPx, behavior);
-        } else if (key === "z" || key === "Z" || key === "x" || key === "X") {
+          return { mx, my };
+        };
+        if (popoverScrollKeyMatches(scrollKeys, "pageUp", key)) {
           e.preventDefault();
-          let mx = lastMouse.x;
-          let my = lastMouse.y;
-          if (typeof mx !== "number" || typeof my !== "number") {
-            mx = Math.floor(window.innerWidth / 2);
-            my = Math.floor(window.innerHeight / 2);
-          }
-          const sign = key === "z" || key === "Z" ? -1 : 1;
-          scrollToEdgeAtPoint(mx, my, sign, behavior);
-        } else if (key === "b" || key === "B") {
+          const { mx, my } = cursorPoint();
+          scrollAtPoint(mx, my, -1, pagePx, behavior);
+        } else if (popoverScrollKeyMatches(scrollKeys, "pageDown", key)) {
           e.preventDefault();
-          scrollToY(0, behavior);
-        } else if (key === "n" || key === "N") {
+          const { mx, my } = cursorPoint();
+          scrollAtPoint(mx, my, 1, pagePx, behavior);
+        } else if (popoverScrollKeyMatches(scrollKeys, "pageUpInstant", key)) {
           e.preventDefault();
-          const height = document.documentElement?.scrollHeight || document.body?.scrollHeight || 0;
-          scrollToY(height, behavior);
+          const { mx, my } = cursorPoint();
+          scrollAtPoint(mx, my, -1, halfPx, behavior);
+        } else if (popoverScrollKeyMatches(scrollKeys, "pageDownInstant", key)) {
+          e.preventDefault();
+          const { mx, my } = cursorPoint();
+          scrollAtPoint(mx, my, 1, halfPx, behavior);
+        } else if (popoverScrollKeyMatches(scrollKeys, "pageTop", key)) {
+          e.preventDefault();
+          const { mx, my } = cursorPoint();
+          scrollToEdgeAtPoint(mx, my, -1, behavior);
+        } else if (popoverScrollKeyMatches(scrollKeys, "pageBottom", key)) {
+          e.preventDefault();
+          const { mx, my } = cursorPoint();
+          scrollToEdgeAtPoint(mx, my, 1, behavior);
         }
       };
       document.addEventListener("mousemove", updateMouse, true);

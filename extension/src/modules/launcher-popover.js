@@ -30,6 +30,7 @@ import {
   setLaunchDeckOrder
 } from '../utils/launch-deck.js';
 import { rewriteUrlForIframePreview } from '../utils/preview-url.js';
+import { postPopoverBridgeInit } from './popover-bridge-init.js';
 import {
   NCT_DARK_UI_PANEL_BACKGROUND,
   NCT_DARK_UI_PANEL_BORDER,
@@ -3486,9 +3487,7 @@ export class LauncherPopover {
     };
 
     const sendBridgeInit = () => {
-      try {
-        iframe.contentWindow?.postMessage({ type: 'KP_POPOVER_BRIDGE_INIT' }, '*');
-      } catch { /* ignore */ }
+      postPopoverBridgeInit(iframe.contentWindow);
     };
 
     this._teardownPageResultsBridge();
@@ -4423,11 +4422,7 @@ export class LauncherPopover {
     // Initialize the iframe bridge (content script running inside the iframe)
     // We retry a few times because content scripts in the frame may not be ready immediately
     const sendBridgeInit = () => {
-      try {
-        this._previewIframe.contentWindow?.postMessage({ type: 'KP_POPOVER_BRIDGE_INIT' }, '*');
-      } catch {
-        // Ignore
-      }
+      postPopoverBridgeInit(this._previewIframe.contentWindow);
     };
 
     // Handle iframe load errors.

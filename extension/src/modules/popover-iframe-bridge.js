@@ -8,12 +8,21 @@
  * Handshake: POPOVER_BRIDGE_INIT → POPOVER_BRIDGE_READY
  * Parent commands: POPOVER_SCROLL
  * Child → parent: POPOVER_REQUEST_CLOSE, POPOVER_BRIDGE_KEYDOWN
+ *
+ * Scroll keys come from INIT (`scrollKeys`) so custom layouts are honored.
+ * Once full KeyPilot is running in this frame, the bridge does not handle
+ * scroll keys — otherwise C/V would still fire the old Page Down mapping.
  */
 import { SCROLL } from '../config/constants.js';
 import { MSG } from '../messaging/types.js';
 import { isTypingContext, hasModifierKeys } from '../utils/dom-context.js';
 import { scrollAtPoint, scrollToEdgeAtPoint } from '../utils/scroll-at-point.js';
 import { deepElementFromPoint as pierceElementFromPoint } from '../utils/element-from-point.js';
+import {
+  DEFAULT_POPOVER_SCROLL_KEYS,
+  normalizePopoverScrollKeys,
+  popoverScrollKeyMatches
+} from './popover-bridge-init.js';
 
 /**
  * @typedef {object} PopoverIframeBridgeOptions
@@ -48,6 +57,17 @@ export function installPopoverIframeBridge(options = {}) {
     // Close keys from parent INIT (defaults cover open-popover P + link-preview E).
     /** @type {Set<string>} */
     let closeKeySet = new Set(['Escape', 'e', 'E', 'p', 'P']);
+    // Scroll keys from parent INIT (layout / custom slots). Defaults match
+    // right-handed built-in until the first INIT arrives.
+    let scrollKeys = DEFAULT_POPOVER_SCROLL_KEYS;
+
+    const fullKeyPilotPresent = () => {
+      try {
+        return !!(window.keyPilot || window.__KeyPilotInstance || window.__KeyPilotToggleHandler);
+      } catch {
+        return false;
+      }
+    };
 
     const scrollByY = (deltaY, behavior = 'smooth') => {
       try {
@@ -116,6 +136,8 @@ export function installPopoverIframeBridge(options = {}) {
             // Always allow Escape even if omitted.
             closeKeySet.add('Escape');
           }
+          const nextScroll = normalizePopoverScrollKeys(data.scrollKeys);
+          if (nextScroll) scrollKeys = nextScroll;
         } catch { /* ignore */ }
         // Expose for in-frame KeyPilot (may register keydown after us and win capture order).
         try {
@@ -223,37 +245,46 @@ export function installPopoverIframeBridge(options = {}) {
 
       if (typing) return;
 
-      const { halfPx, behavior } = resolveScrollParams();
+      // Full in-frame KeyPilot owns layout-aware scroll + Scroll Line. Handling
+      // keys here as well double-fires the old C/V Page Down mapping.
+      if (fullKeyPilotPresent()) return;
 
-      // C / V: half-page delta under cursor. Z / X: jump to edge under cursor.
-      // B / N: document top/bottom (legacy bridge keys).
-      if (key === 'c' || key === 'C' || key === 'v' || key === 'V') {
-        e.preventDefault();
+      const { pagePx, halfPx, behavior } = resolveScrollParams();
+
+      const cursorPoint = () => {
         let mx = lastMouse.x;
         let my = lastMouse.y;
         if (typeof mx !== 'number' || typeof my !== 'number') {
           mx = Math.floor(window.innerWidth / 2);
           my = Math.floor(window.innerHeight / 2);
         }
-        const sign = (key === 'c' || key === 'C') ? -1 : 1;
-        scrollAtPoint(mx, my, sign, halfPx, behavior);
-      } else if (key === 'z' || key === 'Z' || key === 'x' || key === 'X') {
+        return { mx, my };
+      };
+
+      if (popoverScrollKeyMatches(scrollKeys, 'pageUp', key)) {
         e.preventDefault();
-        let mx = lastMouse.x;
-        let my = lastMouse.y;
-        if (typeof mx !== 'number' || typeof my !== 'number') {
-          mx = Math.floor(window.innerWidth / 2);
-          my = Math.floor(window.innerHeight / 2);
-        }
-        const sign = (key === 'z' || key === 'Z') ? -1 : 1;
-        scrollToEdgeAtPoint(mx, my, sign, behavior);
-      } else if (key === 'b' || key === 'B') {
+        const { mx, my } = cursorPoint();
+        scrollAtPoint(mx, my, -1, pagePx, behavior);
+      } else if (popoverScrollKeyMatches(scrollKeys, 'pageDown', key)) {
         e.preventDefault();
-        scrollToY(0, behavior);
-      } else if (key === 'n' || key === 'N') {
+        const { mx, my } = cursorPoint();
+        scrollAtPoint(mx, my, 1, pagePx, behavior);
+      } else if (popoverScrollKeyMatches(scrollKeys, 'pageUpInstant', key)) {
         e.preventDefault();
-        const height = document.documentElement?.scrollHeight || document.body?.scrollHeight || 0;
-        scrollToY(height, behavior);
+        const { mx, my } = cursorPoint();
+        scrollAtPoint(mx, my, -1, halfPx, behavior);
+      } else if (popoverScrollKeyMatches(scrollKeys, 'pageDownInstant', key)) {
+        e.preventDefault();
+        const { mx, my } = cursorPoint();
+        scrollAtPoint(mx, my, 1, halfPx, behavior);
+      } else if (popoverScrollKeyMatches(scrollKeys, 'pageTop', key)) {
+        e.preventDefault();
+        const { mx, my } = cursorPoint();
+        scrollToEdgeAtPoint(mx, my, -1, behavior);
+      } else if (popoverScrollKeyMatches(scrollKeys, 'pageBottom', key)) {
+        e.preventDefault();
+        const { mx, my } = cursorPoint();
+        scrollToEdgeAtPoint(mx, my, 1, behavior);
       }
     };
 

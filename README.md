@@ -40,7 +40,7 @@ on the keyboard in specific places to make web navigation quick.
 | `M` | Open the Media Library. |
 | `R` | Go Forward (History) |
 | `U` | Copy URL under cursor (clipboard, Media Library, or both) |
-| `;` | Open Launcher (Quick Access to Sites) |
+| `;` | Open Top Sites (toolbar, most visited, recent bookmarks) |
 | `B` | Open Link in New Tab (Foreground) |
 | `D` | Go Back (History) |
 | `E` | Open Link Preview in Popover |
@@ -84,6 +84,10 @@ on the keyboard in specific places to make web navigation quick.
 | `Esc` | Exit Focus |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
+
+
+
 
 
 

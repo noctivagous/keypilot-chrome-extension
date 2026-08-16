@@ -391,6 +391,13 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: 'key-launcher-orange',
     row: 2
   }),
+  TOP_SITES: Object.freeze({
+    handler: 'handleTopSitesKey',
+    label: 'Top Sites',
+    description: 'Open Top Sites (toolbar, most visited, recent bookmarks)',
+    keyboardClass: 'key-launcher-orange',
+    row: 2
+  }),
   CLOSE_TAB: Object.freeze({
     handler: 'handleCloseTabKey',
     label: 'Close Tab',
@@ -653,6 +660,7 @@ export const KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
   CLIPBOARD_SELECT_ALL: 'Clipboard',
   SEND_TEXT_TO_AI: 'AI',
   LAUNCHER: 'Begin URL',
+  TOP_SITES: 'Begin URL',
   OMNIBOX: 'Begin URL',
   TOGGLE_KEYBOARD_HELP: 'KeyPilot',
   OPEN_SETTINGS_POPOVER: 'KeyPilot',
@@ -891,7 +899,7 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
 
   TAB_HISTORY: Object.freeze({ keys: ['j', 'J'] }),
   OMNIBOX: Object.freeze({ keys: ['l', 'L'] }),
-  LAUNCHER: Object.freeze({ keys: [';', ':', 'Semicolon', '`', '~', 'Backquote'], matchOn: ['key', 'code'], displayKey: ';', keyLabel: ';' }),
+  TOP_SITES: Object.freeze({ keys: [';', ':', 'Semicolon', '`', '~', 'Backquote'], matchOn: ['key', 'code'], displayKey: ';', keyLabel: ';' }),
 
   PAGE_TOP: Object.freeze({ keys: ['z', 'Z'] }),
   PAGE_BOTTOM: Object.freeze({ keys: ['x', 'X'] }),
@@ -939,7 +947,7 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   // (KB Reference / Settings / Esc live in the system layer, not layout assignments.)
   TAB_HISTORY: Object.freeze({ keys: ['f', 'F'] }),
   OMNIBOX: Object.freeze({ keys: ['s', 'S'] }),
-  LAUNCHER: Object.freeze({ keys: ['a', 'A', '`', '~', 'Backquote'], matchOn: ['key', 'code'], displayKey: 'a/`', keyLabel: 'a/`' }),
+  TOP_SITES: Object.freeze({ keys: ['a', 'A', '`', '~', 'Backquote'], matchOn: ['key', 'code'], displayKey: 'a/`', keyLabel: 'a/`' }),
 
   // Bottom row cluster: Z X C V B  ->  / . , M N (mirrored)
   PAGE_TOP: Object.freeze({ keys: ['/', '?'], displayKey: '/', keyLabel: '/' }),
@@ -1173,7 +1181,7 @@ const KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: 'action', id: 'TAB_HISTORY', fallbackText: 'History' },
     { type: 'action', id: 'TOGGLE_KEYBOARD_HELP', fallbackText: 'KB Reference' },
     { type: 'action', id: 'OMNIBOX', fallbackText: 'Omnibox' },
-    { type: 'action', id: 'LAUNCHER', fallbackText: 'Launcher' },
+    { type: 'action', id: 'TOP_SITES', fallbackText: 'Top Sites' },
     { type: 'action', id: 'OPEN_SETTINGS_POPOVER', fallbackText: 'Settings' },
     { type: 'special', text: 'Enter', className: 'key key-enter' }
   ],
@@ -1213,7 +1221,7 @@ const KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
   ],
   [
     { type: 'special', text: 'Caps', className: 'key key-caps' },
-    { type: 'action', id: 'LAUNCHER', fallbackText: 'Launcher' },
+    { type: 'action', id: 'TOP_SITES', fallbackText: 'Top Sites' },
     // Utility keys on the left (to avoid colliding with right-hand cluster)
     { type: 'action', id: 'OMNIBOX', fallbackText: 'Omnibox' }, // S
     { type: 'action', id: 'TOGGLE_KEYBOARD_HELP', fallbackText: 'KB Reference' }, // D

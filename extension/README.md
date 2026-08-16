@@ -23,7 +23,7 @@ for common web interactions, eliminating the need for mouse navigation.
 | `M` | Open the Media Library. |
 | `R` | Go Forward (History) |
 | `U` | Copy URL under cursor (clipboard, Media Library, or both) |
-| `;` | Open Launcher (Quick Access to Sites) |
+| `;` | Open Top Sites (toolbar, most visited, recent bookmarks) |
 | `B` | Open Link in New Tab (Foreground) |
 | `D` | Go Back (History) |
 | `E` | Open Link Preview in Popover |
@@ -67,6 +67,10 @@ for common web interactions, eliminating the need for mouse navigation.
 | `Esc` | Exit Focus |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
+
+
+
 
 
 

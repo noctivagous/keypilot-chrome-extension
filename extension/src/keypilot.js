@@ -66,9 +66,11 @@ import { sendTextToAi } from './modules/ai-text-service.js';
 import { OmniboxManager } from './modules/omnibox-manager.js';
 import { TabHistoryPopover } from './modules/tab-history-popover.js';
 import { LauncherPopover } from './modules/launcher-popover.js';
+import { TopSitesPopover } from './modules/top-sites-popover.js';
 import { DEFAULT_SETTINGS, getSettings, setSettings, SETTINGS_STORAGE_KEY, scrollBehaviorFromSpeed } from './modules/settings-manager.js';
 import { getOrCreateBuiltinFunctionUserAction, getUserKeyboardLayoutById, getUserActionById, getUserMacroById, listUserActions, listUserMacros } from './modules/keyboard-layout-store.js';
 import { runLegacyMacroKeyFunction } from './modules/macro-key-runtime.js';
+import { runUserExecuteJs, stringifyExecuteJsValue } from './modules/execute-js-runtime.js';
 import { getFunctionDef, functionWorksWhileTyping, functionCancelsOnPointerDown, FIXED_KEY_FUNCTION_IDS } from './config/function-library.js';
 import { getStockMacroById, resolveMacroById } from './config/stock-macros.js';
 import { chordSlotKeyFromEvent } from './utils/key-chord.js';
@@ -136,6 +138,10 @@ import {
 } from './utils/map-poi.js';
 import { ScrollLineOverlay } from './modules/scroll-line-overlay.js';
 import { matchPointerFunctionDef } from './modules/pointer-function-bindings.js';
+import {
+  collectPopoverScrollKeysFromKeyPilot,
+  popoverScrollKeyMatches
+} from './modules/popover-bridge-init.js';
 
 export class KeyPilot extends EventManager {
   constructor() {
@@ -217,6 +223,9 @@ export class KeyPilot extends EventManager {
       }
     });
     this.launcherPopover = new LauncherPopover(this);
+    this.topSitesPopover = new TopSitesPopover({
+      popupManager: this.overlayManager?.popupManager
+    });
     this.KEYBOARD_HELP_STORAGE_KEY = 'keypilot_keyboard_help_visible';
     this._keyboardHelpVisible = false;
     this._keyboardHelpStorageListener = null;
@@ -1480,7 +1489,7 @@ export class KeyPilot extends EventManager {
           continue;
         }
 
-        priorResult = await this._runMacroStep(step, e, id);
+        priorResult = await this._runMacroStep(step, e, id, priorResult);
         i += 1;
       }
     } catch (err) {
@@ -1524,9 +1533,10 @@ export class KeyPilot extends EventManager {
    * @param {import('./modules/keyboard-layout-store.js').MacroStep} step
    * @param {KeyboardEvent} [e]
    * @param {string} [macroId]
+   * @param {any} [priorResult]
    * @returns {Promise<any>}
    */
-  async _runMacroStep(step, e, macroId) {
+  async _runMacroStep(step, e, macroId, priorResult) {
     const functionId = step?.functionId;
     if (!functionId) return undefined;
     const def = getFunctionDef(functionId);
@@ -1541,7 +1551,7 @@ export class KeyPilot extends EventManager {
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
     try {
-      return await fn.call(this, e, step.parameters, { functionId, macroId });
+      return await fn.call(this, e, step.parameters, { functionId, macroId, priorResult });
     } catch (err) {
       console.warn('[KeyPilot] Macro step failed:', functionId, err);
       return undefined;
@@ -2664,8 +2674,17 @@ export class KeyPilot extends EventManager {
         }
       } catch { /* ignore */ }
 
-      // Launcher (before generic PopupManager so we always clear launcher state,
-      // even if the modal stack entry was lost or show() is still in flight).
+      // Launcher / Top Sites (before generic PopupManager so we always clear
+      // overlay state, even if the modal stack entry was lost or show() is in flight).
+      try {
+        if (this.topSitesPopover?.isOpen?.()) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          this.topSitesPopover.hide();
+          return;
+        }
+      } catch { /* ignore */ }
       try {
         if (this.launcherPopover?.isOpen?.()) {
           e.preventDefault();
@@ -2709,6 +2728,14 @@ export class KeyPilot extends EventManager {
           return;
         }
       } catch { /* ignore */ }
+    }
+
+    // If Top Sites is open, delegate keyboard handling to it
+    if (this.topSitesPopover?.isOpen?.()) {
+      const handled = this.topSitesPopover.handleKeyDown(e);
+      if (handled) {
+        return;
+      }
     }
 
     // If launcher is open, delegate keyboard handling to it
@@ -2757,32 +2784,35 @@ export class KeyPilot extends EventManager {
 
       // Scroll shortcuts should scroll the popover iframe (not the parent page)
       // This path covers cases where focus is still in the parent document.
-      if (KB.PAGE_UP?.keys?.includes?.(e.key)) {
+      // Use the current layout (custom slots or built-in) — this.keybindings stays
+      // the built-in map even when a user layout rebound V away from Page Down.
+      const popoverScrollKeys = collectPopoverScrollKeysFromKeyPilot(this);
+      if (popoverScrollKeyMatches(popoverScrollKeys, 'pageUp', e.key)) {
         e.preventDefault();
         this.overlayManager?.scrollPopoverBy?.(-this._getPageScrollPx(), this._getScrollBehavior());
         return;
       }
-      if (KB.PAGE_DOWN?.keys?.includes?.(e.key)) {
+      if (popoverScrollKeyMatches(popoverScrollKeys, 'pageDown', e.key)) {
         e.preventDefault();
         this.overlayManager?.scrollPopoverBy?.(this._getPageScrollPx(), this._getScrollBehavior());
         return;
       }
-      if (KB.PAGE_UP_INSTANT?.keys?.includes?.(e.key)) {
+      if (popoverScrollKeyMatches(popoverScrollKeys, 'pageUpInstant', e.key)) {
         e.preventDefault();
         this.overlayManager?.scrollPopoverBy?.(-this._getHalfPageScrollPx(), this._getScrollBehavior());
         return;
       }
-      if (KB.PAGE_DOWN_INSTANT?.keys?.includes?.(e.key)) {
+      if (popoverScrollKeyMatches(popoverScrollKeys, 'pageDownInstant', e.key)) {
         e.preventDefault();
         this.overlayManager?.scrollPopoverBy?.(this._getHalfPageScrollPx(), this._getScrollBehavior());
         return;
       }
-      if (KB.PAGE_TOP?.keys?.includes?.(e.key)) {
+      if (popoverScrollKeyMatches(popoverScrollKeys, 'pageTop', e.key)) {
         e.preventDefault();
         this._scrollPopoverToEdge(-1);
         return;
       }
-      if (KB.PAGE_BOTTOM?.keys?.includes?.(e.key)) {
+      if (popoverScrollKeyMatches(popoverScrollKeys, 'pageBottom', e.key)) {
         e.preventDefault();
         this._scrollPopoverToEdge(1);
         return;
@@ -2851,6 +2881,13 @@ export class KeyPilot extends EventManager {
         e.stopPropagation();
         e.stopImmediatePropagation();
         this.handleLauncherKey(e);
+        return;
+      }
+      if (KB.TOP_SITES?.keys?.includes?.(e.key) || KB.TOP_SITES?.keys?.includes?.(e.code)) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        this.handleTopSitesKey(e);
         return;
       }
       if (KB.TOGGLE_KEYBOARD_HELP?.keys?.includes?.(e.key)) {
@@ -6143,7 +6180,7 @@ export class KeyPilot extends EventManager {
     if (this._execDocumentCommand('copy')) {
       this.showFlashNotification('Copied', COLORS.NOTIFICATION_SUCCESS);
       this.emitAction('clipboard_copy', { via: 'execCommand' });
-      return;
+      return true;
     }
     const text = this.getSelectedPlainText();
     if (!text.trim()) {
@@ -6155,14 +6192,17 @@ export class KeyPilot extends EventManager {
       ok ? 'Copied' : 'Could not copy',
       ok ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_ERROR
     );
-    if (ok) this.emitAction('clipboard_copy', { via: 'clipboardApi', length: text.length });
+    if (ok) {
+      this.emitAction('clipboard_copy', { via: 'clipboardApi', length: text.length });
+      return text;
+    }
   }
 
   async handleClipboardCutKey() {
     if (this._execDocumentCommand('cut')) {
       this.showFlashNotification('Cut', COLORS.NOTIFICATION_SUCCESS);
       this.emitAction('clipboard_cut', { via: 'execCommand' });
-      return;
+      return true;
     }
     const text = this.getSelectedPlainText();
     if (!text.trim()) {
@@ -6175,9 +6215,9 @@ export class KeyPilot extends EventManager {
       try { this._execDocumentCommand('delete'); } catch { /* ignore */ }
       this.showFlashNotification('Cut', COLORS.NOTIFICATION_SUCCESS);
       this.emitAction('clipboard_cut', { via: 'clipboardApi', length: text.length });
-    } else {
-      this.showFlashNotification('Could not cut', COLORS.NOTIFICATION_ERROR);
+      return text;
     }
+    this.showFlashNotification('Could not cut', COLORS.NOTIFICATION_ERROR);
   }
 
   async handleClipboardPasteKey() {
@@ -6245,6 +6285,83 @@ export class KeyPilot extends EventManager {
   }
 
   /**
+   * EXECUTE_JS Function handler — runs the Action Instance / Macro step `script` in the
+   * content-script isolated world with hovered-element bindings and optional callbacks.
+   * @param {KeyboardEvent} _e
+   * @param {{
+   *   script?: string,
+   *   cbShowPopover?: boolean,
+   *   cbCopyToClipboard?: boolean,
+   *   cbNotify?: boolean
+   * }} [parameters]
+   * @param {{ priorResult?: any }} [meta]
+   */
+  async handleExecuteJsKey(_e, parameters, meta) {
+    const script = String(parameters?.script ?? '').trim();
+    if (!script) {
+      this.showFlashNotification('No script configured for this key', COLORS.NOTIFICATION_INFO);
+      return undefined;
+    }
+
+    const st = this.state?.getState?.() || {};
+    let hovered = st.focusEl || null;
+    try {
+      if (!hovered) hovered = window.__KP_HOVERED_INTERACTIVE_EL || null;
+    } catch { /* ignore */ }
+    let hoverLeaf = null;
+    try { hoverLeaf = window.__KP_HOVER_LEAF || null; } catch { /* ignore */ }
+    const focusedText = st.focusedTextElement
+      || (this._isTextEntryElement?.(document.activeElement) ? document.activeElement : null);
+
+    const showPopover = parameters?.cbShowPopover
+      ? async (content, title) => {
+        await deliverActionResult(this, {
+          text: stringifyExecuteJsValue(content),
+          title: title == null || title === '' ? 'Execute JS' : String(title),
+          destination: ACTION_RESULT_DESTINATIONS.POPOVER
+        });
+      }
+      : undefined;
+    const copyToClipboard = parameters?.cbCopyToClipboard
+      ? async (content) => {
+        const text = stringifyExecuteJsValue(content);
+        if (!text) return false;
+        return await this.copyToClipboard(text);
+      }
+      : undefined;
+    const notify = parameters?.cbNotify
+      ? (message) => {
+        this.showFlashNotification(stringifyExecuteJsValue(message) || 'Execute JS', COLORS.NOTIFICATION_INFO);
+      }
+      : undefined;
+
+    try {
+      const result = await runUserExecuteJs(script, {
+        kpHoveredClickable: hovered && hovered.nodeType === 1 ? hovered : null,
+        kpHoverLeaf: hoverLeaf || null,
+        kpFocusedTextField: focusedText || null,
+        kpMode: st.mode || null,
+        kpPageUrl: typeof location !== 'undefined' ? String(location.href || '') : '',
+        kpSelection: typeof window !== 'undefined' && typeof window.getSelection === 'function'
+          ? window.getSelection()
+          : null,
+        kpPriorResult: meta && Object.prototype.hasOwnProperty.call(meta, 'priorResult')
+          ? meta.priorResult
+          : undefined,
+        showPopover,
+        copyToClipboard,
+        notify
+      });
+      return result;
+    } catch (err) {
+      const msg = err && err.message ? String(err.message) : 'Execute JS failed';
+      this.showFlashNotification(msg, COLORS.NOTIFICATION_ERROR);
+      console.warn('[KeyPilot] Execute JS failed:', err);
+      return undefined;
+    }
+  }
+
+  /**
    * GET_TEXT_AT_CURSOR Function handler — reads text at the requested granularity from the
    * point last tracked in `state.lastMouse` and copies it to the clipboard. Low-level data
    * primitive (see KEY_ACTION_ARCHITECTURE.md "Data Acquisition & Result Destinations") that's
@@ -6271,7 +6388,10 @@ export class KeyPilot extends EventManager {
       ok ? 'Copied' : 'Could not copy',
       ok ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_ERROR
     );
-    if (ok) this.emitAction('get_text_at_cursor', { granularity, length: text.length });
+    if (ok) {
+      this.emitAction('get_text_at_cursor', { granularity, length: text.length });
+      return text;
+    }
   }
 
   /**
@@ -6290,7 +6410,10 @@ export class KeyPilot extends EventManager {
       ok ? 'Copied' : 'Could not copy',
       ok ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_ERROR
     );
-    if (ok) this.emitAction('get_text_range', { length: text.length });
+    if (ok) {
+      this.emitAction('get_text_range', { length: text.length });
+      return text;
+    }
   }
 
   /**
@@ -7075,7 +7198,18 @@ export class KeyPilot extends EventManager {
     if (this.launcherPopover.isOpen()) {
       this.launcherPopover.hide();
     } else {
+      try { this.topSitesPopover?.hide?.(); } catch { /* ignore */ }
       this.launcherPopover.show();
+    }
+  }
+
+  handleTopSitesKey(e) {
+    if (!this._allowActionKey('handleTopSitesKey', e)) return;
+    if (this.topSitesPopover?.isOpen?.()) {
+      this.topSitesPopover.hide();
+    } else {
+      try { this.launcherPopover?.hide?.(); } catch { /* ignore */ }
+      void this.topSitesPopover?.show?.();
     }
   }
 
@@ -8365,7 +8499,13 @@ export class KeyPilot extends EventManager {
     
     console.log('[KeyPilot] Canceling modes, current mode:', currentState.mode);
 
-    // Launcher is not a state.mode but must still close on Escape/cancel.
+    // Launcher / Top Sites are not state.mode but must still close on Escape/cancel.
+    try {
+      if (this.topSitesPopover?.isOpen?.()) {
+        this.topSitesPopover.hide();
+        return;
+      }
+    } catch { /* ignore */ }
     try {
       if (this.launcherPopover?.isOpen?.()) {
         this.launcherPopover.hide();
@@ -8764,7 +8904,8 @@ export class KeyPilot extends EventManager {
     } catch { /* ignore */ }
     try { this._exitScrollLineMode(); } catch { /* ignore */ }
 
-    // Launcher (;)
+    // Top Sites / Launcher
+    try { this.topSitesPopover?.hide?.(); } catch { /* ignore */ }
     try { this.launcherPopover?.hide?.(); } catch { /* ignore */ }
 
     // Page Media (O)

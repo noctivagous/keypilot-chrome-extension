@@ -19,7 +19,7 @@ export class PopupManager {
 
     /** @type {HTMLDivElement|null} */
     this._backdrop = null;
-    /** @type {Array<{id: string, panel: HTMLElement, onRequestClose?: () => void, resizeDispose?: () => void}>} */
+    /** @type {Array<{id: string, panel: HTMLElement, onRequestClose?: () => void, resizeDispose?: () => void, blur?: boolean}>} */
     this._stack = [];
 
     /** @type {(type: string, data: any) => void|null} */
@@ -105,10 +105,13 @@ export class PopupManager {
    * @param {HTMLElement} params.panel
    * @param {() => void} [params.onRequestClose]
    * @param {boolean} [params.resizable=true] Attach resize handles (default true)
-   * @param {{ minWidth?: number, minHeight?: number, margin?: number }} [params.resizeOptions]
+   * @param {boolean} [params.blur=true] Blur + dim the page behind the panel
+   * @param {{ minWidth?: number, minHeight?: number, margin?: number, aspectRatio?: number|true }} [params.resizeOptions]
    */
-  showModal({ id, panel, onRequestClose, resizable = true, resizeOptions } = {}) {
+  showModal({ id, panel, onRequestClose, resizable = true, resizeOptions, blur = true } = {}) {
     if (!id || !panel) return;
+
+    const wantBlur = blur !== false;
 
     // If already open, bring to front and update close handler.
     const existingIdx = this._stack.findIndex((p) => p.id === id);
@@ -116,6 +119,7 @@ export class PopupManager {
       const existing = this._stack[existingIdx];
       existing.panel = panel;
       existing.onRequestClose = typeof onRequestClose === 'function' ? onRequestClose : existing.onRequestClose;
+      existing.blur = wantBlur;
       this._stack.splice(existingIdx, 1);
       this._stack.push(existing);
       this._ensureMounted();
@@ -124,11 +128,12 @@ export class PopupManager {
       return;
     }
 
-    /** @type {{id: string, panel: HTMLElement, onRequestClose?: () => void, resizeDispose?: () => void}} */
+    /** @type {{id: string, panel: HTMLElement, onRequestClose?: () => void, resizeDispose?: () => void, blur?: boolean}} */
     const entry = {
       id: String(id),
       panel,
-      onRequestClose: typeof onRequestClose === 'function' ? onRequestClose : undefined
+      onRequestClose: typeof onRequestClose === 'function' ? onRequestClose : undefined,
+      blur: wantBlur
     };
     this._stack.push(entry);
 
@@ -213,6 +218,7 @@ export class PopupManager {
     }
 
     this._recomputeZ();
+    this._applyBackdropVisual();
   }
 
   _ensureMounted() {
@@ -225,10 +231,6 @@ export class PopupManager {
       Object.assign(el.style, {
         position: 'fixed',
         inset: '0',
-        background: 'rgba(0,0,0,0.35)',
-        // Blur only the page behind the dimmer — never the panel (sibling above).
-        backdropFilter: 'blur(6px)',
-        WebkitBackdropFilter: 'blur(6px)',
         outline: 'none',
         // zIndex assigned in _recomputeZ() before first paint when possible
         pointerEvents: 'auto',
@@ -242,6 +244,7 @@ export class PopupManager {
     // (panel above backdrop — avoids a frame where the panel is blurred by
     // the backdrop-filter).
     this._recomputeZ();
+    this._applyBackdropVisual();
 
     // Mount backdrop + panels in one synchronous batch. Separate
     // startViewTransition() calls used to cross-fade blurry snapshots of the
@@ -262,6 +265,25 @@ export class PopupManager {
         try { panel.style.viewTransitionName = 'none'; } catch { /* ignore */ }
         try { doc.body.appendChild(panel); } catch { /* ignore */ }
       }
+    }
+  }
+
+  /**
+   * Dim+blur unless every open panel opted out (`blur: false`).
+   * Click-outside still works with a transparent catcher.
+   */
+  _applyBackdropVisual() {
+    const el = this._backdrop;
+    if (!el) return;
+    const wantBlur = this._stack.some((entry) => entry.blur !== false);
+    if (wantBlur) {
+      el.style.background = 'rgba(0,0,0,0.35)';
+      el.style.backdropFilter = 'blur(6px)';
+      el.style.webkitBackdropFilter = 'blur(6px)';
+    } else {
+      el.style.background = 'transparent';
+      el.style.backdropFilter = 'none';
+      el.style.webkitBackdropFilter = 'none';
     }
   }
 

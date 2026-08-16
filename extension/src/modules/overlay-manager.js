@@ -34,6 +34,7 @@ import {
   preparePopoverIframeUrl
 } from '../utils/preview-url.js';
 import { resolveActivationIdentity } from '../utils/resolve-hovered-link.js';
+import { postPopoverBridgeInit } from './popover-bridge-init.js';
 
 /** Per-host Link Preview viewport mode: { [hostname]: 'mobile' }. Missing/default = desktop. */
 const PREVIEW_VIEWPORT_BY_HOST_KEY = 'kp_link_preview_viewport_by_host';
@@ -7429,14 +7430,7 @@ export class OverlayManager {
     // and some pages navigate/redirect after initial load.
     // Pass closeKeys so Esc/P work inside the focused iframe without a host click.
     const sendBridgeInit = () => {
-      try {
-        iframe.contentWindow?.postMessage({
-          type: 'KP_POPOVER_BRIDGE_INIT',
-          closeKeys
-        }, '*');
-      } catch {
-        // Ignore
-      }
+      postPopoverBridgeInit(iframe.contentWindow, { closeKeys });
     };
 
     // Detect iframe load errors
@@ -8694,14 +8688,7 @@ export class OverlayManager {
 
     // Initialize the iframe bridge; pass closeKeys so Esc/E close from inside the frame.
     const sendBridgeInit = () => {
-      try {
-        iframe.contentWindow?.postMessage({
-          type: 'KP_POPOVER_BRIDGE_INIT',
-          closeKeys
-        }, '*');
-      } catch {
-        // Ignore
-      }
+      postPopoverBridgeInit(iframe.contentWindow, { closeKeys });
     };
 
     // Detect iframe load errors / hangs

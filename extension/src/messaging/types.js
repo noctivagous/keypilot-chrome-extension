@@ -45,8 +45,10 @@ export const MSG = Object.freeze({
   // --- History / bookmarks / favicon (SW APIs for content scripts) ---
   OMNIBOX_SUGGEST: 'KP_OMNIBOX_SUGGEST',
   GET_BOOKMARKS: 'KP_GET_BOOKMARKS',
+  GET_RECENT_BOOKMARKS: 'KP_GET_RECENT_BOOKMARKS',
   BROWSER_HISTORY_GET: 'KP_BROWSER_HISTORY_GET',
   GET_TOP_SITES: 'KP_GET_TOP_SITES',
+  GET_MOST_VISITED: 'KP_GET_MOST_VISITED',
   GET_HISTORY_FOR_DOMAINS: 'KP_GET_HISTORY_FOR_DOMAINS',
   GET_RECENT_HISTORY: 'KP_GET_RECENT_HISTORY',
   GET_FAVICON: 'KP_GET_FAVICON',
@@ -108,7 +110,7 @@ export const MSG = Object.freeze({
   // Optional topOrigin: parent tab origin for link routing (no hardcoded domains).
   FRAME_ACTIVATE: 'KP_FRAME_ACTIVATE',
 
-  // --- Parent → child frame scroll (window.postMessage; C/V/Z/X under an iframe) ---
+  // --- Parent → child frame scroll (window.postMessage; layout scroll keys under an iframe) ---
   // Top-frame KeyPilot posts this when scroll keys land on an <iframe> shell. Child
   // frame-click-agent runs scroll-at-point (delta or edge) at local coordinates
   // (nested overflow first, then the frame document).

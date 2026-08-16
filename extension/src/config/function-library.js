@@ -41,7 +41,11 @@ import { ACTION_RESULT_DESTINATIONS, buildResultDestinationParameter } from '../
  *   max?: number,
  *   step?: number,
  *   multiline?: boolean,
- *   placeholder?: string
+ *   placeholder?: string,
+ *   // Optional inspector heading (e.g. "Callbacks") grouping consecutive parameters.
+ *   group?: string,
+ *   // Textarea row count when `multiline` is true.
+ *   rows?: number
  * }} FunctionParameterDef
  *
  * @typedef {{
@@ -325,6 +329,9 @@ const TRANSLATE_FUNCTION_CATEGORY = 'Translate';
 /** Category for Functions whose entire job is rendering something to the user. */
 const DISPLAY_FUNCTION_CATEGORY = 'Display';
 
+/** Category for user-authored script Functions. */
+const SCRIPT_FUNCTION_CATEGORY = 'Script';
+
 /** Category for Media Library Functions (URL/fetch ingest still catalog-only). */
 const MEDIA_LIBRARY_FUNCTION_CATEGORY = 'Media Library';
 
@@ -399,6 +406,75 @@ const TYPE_CHARACTERS_FUNCTION_DEF = Object.freeze({
     })
   ])
 });
+
+const EXECUTE_JS_SCRIPT_PLACEHOLDER =
+  '// Bindings: kpHoveredClickable, kpHoverLeaf, kpFocusedTextField,\n' +
+  '//   kpMode, kpPageUrl, kpSelection, kpPriorResult\n' +
+  '// Callbacks (only if checked below): showPopover, copyToClipboard, notify\n' +
+  '// Example:\n' +
+  '// return kpHoveredClickable && kpHoveredClickable.textContent;';
+
+/** Instantiable Function: user-pasted JS run in the content-script isolated world. */
+const EXECUTE_JS_FUNCTION_DEF = Object.freeze({
+  id: 'EXECUTE_JS',
+  label: 'Execute JS',
+  description: 'Runs a pasted JavaScript snippet with the hovered clickable and other page state. ' +
+    'Optional callbacks (popover, clipboard, notify) are injected only when checked.',
+  handler: 'handleExecuteJsKey',
+  category: SCRIPT_FUNCTION_CATEGORY,
+  keyboardClass: 'key-purple',
+  dataSource: 'underCursor',
+  parameters: Object.freeze([
+    Object.freeze({
+      id: 'script',
+      label: 'Script',
+      type: 'string',
+      multiline: true,
+      rows: 10,
+      defaultValue: '',
+      placeholder: EXECUTE_JS_SCRIPT_PLACEHOLDER
+    }),
+    Object.freeze({
+      id: 'cbShowPopover',
+      label: 'Show result in popover (showPopover)',
+      type: 'boolean',
+      defaultValue: false,
+      group: 'Callbacks'
+    }),
+    Object.freeze({
+      id: 'cbCopyToClipboard',
+      label: 'Copy to clipboard (copyToClipboard)',
+      type: 'boolean',
+      defaultValue: false,
+      group: 'Callbacks'
+    }),
+    Object.freeze({
+      id: 'cbNotify',
+      label: 'Flash notification (notify)',
+      type: 'boolean',
+      defaultValue: false,
+      group: 'Callbacks'
+    })
+  ])
+});
+
+/**
+ * Consecutive Function parameters sharing a `group` label, for inspector headings.
+ * @param {FunctionParameterDef[]|null|undefined} parameters
+ * @returns {Array<{ group: string, params: FunctionParameterDef[] }>}
+ */
+export function groupFunctionParameters(parameters) {
+  /** @type {Array<{ group: string, params: FunctionParameterDef[] }>} */
+  const groups = [];
+  for (const p of parameters || []) {
+    if (!p) continue;
+    const group = String(p.group || '');
+    const last = groups[groups.length - 1];
+    if (last && last.group === group) last.params.push(p);
+    else groups.push({ group, params: [p] });
+  }
+  return groups;
+}
 
 /**
  * Build the Functions generalized from the built-in, historically-parameterless action defs.
@@ -583,6 +659,7 @@ export const FUNCTION_LIBRARY = Object.freeze({
   ...buildBuiltinActionFunctionDefs(),
   ...buildKeystrokeFunctionDefs(),
   [TYPE_CHARACTERS_FUNCTION_DEF.id]: TYPE_CHARACTERS_FUNCTION_DEF,
+  [EXECUTE_JS_FUNCTION_DEF.id]: EXECUTE_JS_FUNCTION_DEF,
   ...buildDataAcquisitionFunctionDefs()
 });
 
@@ -602,6 +679,7 @@ export const FUNCTION_CATEGORY_ORDER = Object.freeze([
   LOOKUP_FUNCTION_CATEGORY,
   TRANSLATE_FUNCTION_CATEGORY,
   DISPLAY_FUNCTION_CATEGORY,
+  SCRIPT_FUNCTION_CATEGORY,
   MEDIA_LIBRARY_FUNCTION_CATEGORY,
   'AI',
   'KeyPilot',
@@ -635,6 +713,7 @@ export const FUNCTION_LIBRARY_ITEM_ORDER = Object.freeze({
   NEW_TAB: 140,
   TAB_HISTORY: 150,
   // Begin URL
+  TOP_SITES: 155,
   LAUNCHER: 160,
   OMNIBOX: 170,
   // Get Page Data
@@ -774,6 +853,15 @@ export function summarizeFunctionParameters(functionId, parameters) {
     const text = String(parameters?.text || '');
     if (!text) return '(empty)';
     return text.length > 24 ? `${text.slice(0, 24)}…` : text;
+  }
+  if (functionId === 'EXECUTE_JS') {
+    const lines = String(parameters?.script || '').split(/\r?\n/);
+    for (const line of lines) {
+      const t = line.trim();
+      if (!t || t.startsWith('//') || t.startsWith('*') || t.startsWith('/*')) continue;
+      return t.length > 32 ? `${t.slice(0, 32)}…` : t;
+    }
+    return String(parameters?.script || '').trim() ? '(script)' : '(empty)';
   }
   return '';
 }
