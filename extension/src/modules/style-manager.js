@@ -885,6 +885,11 @@ export class StyleManager {
         will-change: box-shadow;
       }
 
+      /* Short fields: keep focus chrome, hide the Esc SVG (it clips / overlaps text). */
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT}.${CSS_CLASSES.TEXT_FOCUS_HINT_HIDDEN} {
+        background-image: none !important;
+      }
+
       /*
        * Element styling for DOM hover mode.
        * Prefer [data-kp-focus] over class alone: SPAs (e.g. X) often reconcile
@@ -1044,6 +1049,10 @@ export class StyleManager {
         box-shadow: inset var(--kpv2-text-left-edge-width, 5px) 0 0 0 ${COLORS.ORANGE} !important;
         animation: kpv2-text-left-edge-pulse 1.5s ease-in-out infinite !important;
         will-change: box-shadow;
+      }
+
+      .${CSS_CLASSES.TEXT_FOCUS_INPUT}.${CSS_CLASSES.TEXT_FOCUS_HINT_HIDDEN} {
+        background-image: none !important;
       }
 
       /* Element styling for DOM hover mode in shadow DOM (settings-driven ring). */
@@ -1422,6 +1431,7 @@ export class StyleManager {
       CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT,
       CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE,
       CSS_CLASSES.TEXT_FOCUS_DELEGATED,
+      CSS_CLASSES.TEXT_FOCUS_HINT_HIDDEN,
       CSS_CLASSES.TEXT_HOVER_INPUT,
       CSS_CLASSES.TEXT_HOVER_INPUT_PARENT
     ];

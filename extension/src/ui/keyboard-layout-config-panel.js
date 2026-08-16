@@ -1397,11 +1397,6 @@ export class KeyboardLayoutConfigPanel {
 .kp-layout-config-panel .kp-cfg-pane-library .kp-cfg-pane-title {
   color: ${ONBOARDING_METAL.fg};
 }
-.kp-layout-config-panel .kp-cfg-pane-library .kp-cfg-pane-scroll {
-  background:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.34)),
-    #454545;
-}
 .kp-layout-config-panel .kp-cfg-pane-hdr {
   display: flex;
   align-items: center;
@@ -1694,7 +1689,7 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
   gap: 8px;
   margin: 0;
   padding: 0 5px;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2310,7 +2305,28 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
   flex: 1 1 auto;
   padding: 8px;
   gap: 8px;
+  /* Inner panes own their scrolling so the script footer stays pinned. */
+  overflow: hidden;
+}
+.kp-layout-config-panel .kp-cfg-script-panel,
+.kp-layout-config-panel .kp-cfg-macrokey-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.kp-layout-config-panel .kp-cfg-script-panel[hidden],
+.kp-layout-config-panel .kp-cfg-macrokey-panel[hidden] {
+  display: none;
+}
+.kp-layout-config-panel .kp-cfg-macrokey-panel {
   overflow: auto;
+}
+.kp-layout-config-panel .kp-cfg-script-panel > .kp-cfg-script-toolbar,
+.kp-layout-config-panel .kp-cfg-script-panel > .kp-cfg-stock-banner,
+.kp-layout-config-panel .kp-cfg-script-panel > .kp-cfg-strip-row {
+  flex: 0 0 auto;
 }
 .kp-layout-config-panel .kp-cfg-pane-create {
   flex: 0 0 auto;
@@ -2455,6 +2471,7 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
   flex-direction: row;
   gap: 0;
   align-items: stretch;
+  flex: 1 1 auto;
   min-height: 88px;
   overflow: hidden;
   border: 1px solid #3a2a4a;
@@ -3449,7 +3466,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 
     // Macro Script builder
     const scriptPanel = doc.createElement('div');
-    Object.assign(scriptPanel.style, { display: 'flex', flexDirection: 'column', gap: '8px', minHeight: '0' });
+    scriptPanel.className = 'kp-cfg-script-panel';
 
     const scriptToolbar = doc.createElement('div');
     scriptToolbar.className = 'kp-cfg-script-toolbar';
@@ -3559,6 +3576,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 
     // Macro Key quick-create (built-in keystroke primitives)
     const macroKeyPanel = doc.createElement('div');
+    macroKeyPanel.className = 'kp-cfg-macrokey-panel';
     macroKeyPanel.hidden = true;
     const macroKeysActionsRow = doc.createElement('div');
     Object.assign(macroKeysActionsRow.style, { display: 'flex', flexDirection: 'column', gap: '6px' });

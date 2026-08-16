@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-16T05:54:26.041Z
+ * Generated on 2026-08-16T06:15:52.232Z
  */
 
 (() => {
@@ -1189,6 +1189,8 @@
     TEXT_FOCUS_LEFT_EDGE: "kpv2-text-focus-left-edge",
     /** Input chrome is painted on a taller visual shell (Gmail/Google search pill). */
     TEXT_FOCUS_DELEGATED: "kpv2-text-focus-delegated",
+    /** Focused field is too short for the SVG "press Esc to exit" hint. */
+    TEXT_FOCUS_HINT_HIDDEN: "kpv2-text-focus-hint-hidden",
     TEXT_HOVER_INPUT: "kpv2-text-hover-input",
     TEXT_HOVER_INPUT_PARENT: "kpv2-text-hover-input-parent",
     /** Canvas-based focus/delete overlay host (OverlayManager) */

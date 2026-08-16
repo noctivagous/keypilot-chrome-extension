@@ -124,6 +124,8 @@ export const CSS_CLASSES = {
   TEXT_FOCUS_LEFT_EDGE: 'kpv2-text-focus-left-edge',
   /** Input chrome is painted on a taller visual shell (Gmail/Google search pill). */
   TEXT_FOCUS_DELEGATED: 'kpv2-text-focus-delegated',
+  /** Focused field is too short for the SVG "press Esc to exit" hint. */
+  TEXT_FOCUS_HINT_HIDDEN: 'kpv2-text-focus-hint-hidden',
   TEXT_HOVER_INPUT: 'kpv2-text-hover-input',
   TEXT_HOVER_INPUT_PARENT: 'kpv2-text-hover-input-parent',
 
@@ -143,6 +145,13 @@ export const CSS_CLASSES = {
   // PopupManager (shared backdrop for modals/popups that should blur the page)
   POPUP_BACKDROP: 'kpv2-popup-backdrop'
 };
+
+/**
+ * Minimum focused-field height (px) required to paint the SVG "press Esc to exit"
+ * hint. Shorter fields (e.g. Keyboard Layout Config 18–22px inputs) keep the
+ * left-edge pulse / wash but omit the label.
+ */
+export const TEXT_FOCUS_HINT_MIN_HEIGHT_PX = 28;
 
 export const ELEMENT_IDS = {
   CURSOR: 'kpv2-cursor',

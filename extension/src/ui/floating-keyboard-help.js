@@ -46,7 +46,6 @@ import {
 } from '../modules/keyboard-layout-store.js';
 import { KP_LAYOUT_ITEM_MIME } from './keyboard-layout-config-panel.js';
 import {
-  exitKeyboardLayoutEditMode,
   openKeyboardLayoutConfigurator
 } from './keyboard-layout-configurator.js';
 import { makePopoverResizable } from '../utils/popover-resize.js';
@@ -73,11 +72,8 @@ import {
   NCT_DARK_UI_FIELD_BORDER,
   NCT_DARK_UI_BTN_GRADIENT,
   NCT_DARK_UI_BTN_BORDER,
-  NCT_DARK_UI_BTN_LIT_GRADIENT,
-  NCT_DARK_UI_BTN_LIT_BORDER,
   NCT_DARK_UI_BTN_RADIUS,
   NCT_DARK_UI_ICON_BUTTON_OUTLINE,
-  NCT_DARK_UI_SELECTED_TEXT,
   NCT_DARK_UI_COLORS
 } from './nct-dark-ui.js';
 
@@ -183,15 +179,12 @@ export class FloatingKeyboardHelp {
     /** @type {HTMLElement|null} */
     this._titlebar = null;
     /** @type {HTMLButtonElement|null} */
-    this._saveFinishBtn = null;
-    /** @type {HTMLButtonElement|null} */
     this._exitTextModeBtn = null;
     /** @type {HTMLButtonElement|null} */
     this._collapseBtn = null;
     this._collapsed = false;
     this._onCloseClick = this._onCloseClick.bind(this);
     this._onCollapseClick = this._onCollapseClick.bind(this);
-    this._onSaveAndFinishClick = this._onSaveAndFinishClick.bind(this);
     this._onExitTextModeClick = this._onExitTextModeClick.bind(this);
     this._onLayoutSelectChange = this._onLayoutSelectChange.bind(this);
     /** @type {(() => any)|null} */
@@ -418,109 +411,9 @@ export class FloatingKeyboardHelp {
     } catch { /* ignore */ }
 
     this._applyEditModeHatch(next);
-    this._syncSaveAndFinishButton(next);
     this._syncEscExitButton();
 
     if (this.root && !this.root.hidden) this._render();
-  }
-
-  /**
-   * Titlebar CTA shown only while layout edit mode is active.
-   * Placed immediately to the right of the layout dropdown.
-   * @param {boolean} visible
-   */
-  _syncSaveAndFinishButton(visible) {
-    try {
-      if (visible) {
-        this._ensureSaveAndFinishButton();
-        if (this._saveFinishBtn) this._saveFinishBtn.hidden = false;
-      } else if (this._saveFinishBtn) {
-        this._saveFinishBtn.hidden = true;
-      }
-    } catch { /* ignore */ }
-  }
-
-  _ensureSaveAndFinishButton() {
-    if (this._saveFinishBtn && this._saveFinishBtn.isConnected) return;
-    const header = this._titlebar
-      || this.shadowRoot?.querySelector?.('[data-kp-floating-keyboard-titlebar="true"]')
-      || null;
-    if (!header) return;
-
-    let btn = header.querySelector('button[data-kp-floating-keyboard-save-finish="true"]');
-    if (!btn) {
-      btn = document.createElement('button');
-      btn.type = 'button';
-      btn.textContent = 'Save and Finish';
-      btn.setAttribute('data-kp-floating-keyboard-save-finish', 'true');
-      btn.setAttribute('aria-label', 'Save and finish editing keyboard layout');
-      btn.title = 'Save layout changes and exit edit mode';
-      Object.assign(btn.style, {
-        marginLeft: '6px',
-        padding: '0 8px',
-        height: '22px',
-        minHeight: '22px',
-        borderRadius: NCT_DARK_UI_BTN_RADIUS,
-        border: NCT_DARK_UI_BTN_LIT_BORDER,
-        background: NCT_DARK_UI_BTN_LIT_GRADIENT,
-        color: NCT_DARK_UI_SELECTED_TEXT,
-        outline: 'none',
-        fontSize: '11px',
-        fontWeight: '600',
-        fontFamily: NCT_DARK_UI_FONT,
-        lineHeight: '20px',
-        whiteSpace: 'nowrap',
-        cursor: 'pointer',
-        flex: '0 0 auto',
-        boxShadow: 'inset 0 1px 0 rgba(200,220,240,0.18)'
-      });
-
-      const layoutSelect = this._layoutSelectEl
-        || header.querySelector('[data-kp-floating-keyboard-layout-select="true"]');
-      const hintEl = this.hintEl
-        || header.querySelector('[data-kp-floating-keyboard-hint="true"]');
-      try {
-        if (layoutSelect && layoutSelect.nextSibling) {
-          header.insertBefore(btn, layoutSelect.nextSibling);
-        } else if (hintEl) {
-          header.insertBefore(btn, hintEl);
-        } else {
-          header.appendChild(btn);
-        }
-      } catch {
-        try { header.appendChild(btn); } catch { /* ignore */ }
-      }
-    }
-
-    try {
-      btn.removeEventListener('click', this._onSaveAndFinishClick);
-    } catch { /* ignore */ }
-    btn.addEventListener('click', this._onSaveAndFinishClick);
-    // Prevent titlebar drag when clicking the button.
-    try {
-      btn.addEventListener('pointerdown', (e) => {
-        try { e.stopPropagation(); } catch { /* ignore */ }
-      });
-    } catch { /* ignore */ }
-
-    this._saveFinishBtn = btn;
-  }
-
-  _onSaveAndFinishClick(e) {
-    try { e?.preventDefault?.(); e?.stopPropagation?.(); } catch { /* ignore */ }
-    try {
-      const kp = typeof this._getKeyPilot === 'function' ? this._getKeyPilot() : null;
-      if (kp) {
-        exitKeyboardLayoutEditMode(kp);
-        return;
-      }
-    } catch { /* ignore */ }
-    // Fallback if KeyPilot accessor is unavailable.
-    try {
-      const panel = typeof this._getConfigPanel === 'function' ? this._getConfigPanel() : null;
-      panel?.hide?.();
-    } catch { /* ignore */ }
-    try { this.setEditMode(false); } catch { /* ignore */ }
   }
 
   /**
@@ -862,11 +755,6 @@ export class FloatingKeyboardHelp {
       if (this._collapseBtn) this._collapseBtn.removeEventListener('click', this._onCollapseClick);
     } catch { /* ignore */ }
     try {
-      if (this._saveFinishBtn) {
-        this._saveFinishBtn.removeEventListener('click', this._onSaveAndFinishClick);
-      }
-    } catch { /* ignore */ }
-    try {
       if (this._exitTextModeBtn) {
         this._exitTextModeBtn.removeEventListener('click', this._onExitTextModeClick);
       }
@@ -885,7 +773,6 @@ export class FloatingKeyboardHelp {
     this._keyboardBody = null;
     this.closeBtn = null;
     this._titlebar = null;
-    this._saveFinishBtn = null;
     this._exitTextModeBtn = null;
     this._collapseBtn = null;
   }
@@ -1220,7 +1107,7 @@ export class FloatingKeyboardHelp {
       const api = makePanelDraggable(panel, header, {
         margin: KEYBOARD_POSITION_MARGIN_PX,
         excludeSelector:
-          'button[data-kp-floating-keyboard-close="true"], button[aria-label="Close keyboard reference"], button[data-kp-floating-keyboard-save-finish="true"], .kpv2-popover-resize-handle',
+          'button[data-kp-floating-keyboard-close="true"], button[aria-label="Close keyboard reference"], .kpv2-popover-resize-handle',
         onMoveEnd: (state) => {
           if (!state?.moved) return;
           this._setPanelPosition(

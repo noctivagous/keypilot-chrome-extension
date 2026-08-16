@@ -1,7 +1,7 @@
 /**
  * Visual overlay management for focus and delete indicators
  */
-import { CSS_CLASSES, Z_INDEX, SELECTORS, MODES, COLORS, FEATURE_FLAGS, CLICKABLE_CATEGORY, KP_UI_FONT, SCROLL } from '../config/constants.js';
+import { CSS_CLASSES, Z_INDEX, SELECTORS, MODES, COLORS, FEATURE_FLAGS, CLICKABLE_CATEGORY, KP_UI_FONT, SCROLL, TEXT_FOCUS_HINT_MIN_HEIGHT_PX } from '../config/constants.js';
 import {
   getAllInspectorHostClasses,
   getInspectorDef,
@@ -850,6 +850,7 @@ export class OverlayManager {
           el.classList.remove(CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT);
           el.classList.remove(CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE);
           try { el.classList.remove(CSS_CLASSES.TEXT_FOCUS_DELEGATED); } catch { /* ignore */ }
+          try { el.classList.remove(CSS_CLASSES.TEXT_FOCUS_HINT_HIDDEN); } catch { /* ignore */ }
         } catch { /* ignore */ }
       }
     } finally {
@@ -1043,6 +1044,7 @@ export class OverlayManager {
       ? (this._resolveTextFocusPaintHost(inputEl) || inputEl)
       : inputEl;
     const delegated = useLeftEdge && paintHost !== inputEl;
+    const hideHint = this._shouldHideTextFocusHint(inputEl);
 
     // Avoid thrashing the DOM on RAF-driven overlay refreshes when style is unchanged.
     if (
@@ -1057,6 +1059,7 @@ export class OverlayManager {
         else inputEl.classList.remove(CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE);
         if (delegated) inputEl.classList.add(CSS_CLASSES.TEXT_FOCUS_DELEGATED);
         else inputEl.classList.remove(CSS_CLASSES.TEXT_FOCUS_DELEGATED);
+        this._syncTextFocusHintHidden(inputEl, hideHint);
         if (delegated) {
           paintHost.classList.add(CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT);
           paintHost.classList.add(CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE);
@@ -1075,6 +1078,7 @@ export class OverlayManager {
       inputEl.classList.add(CSS_CLASSES.TEXT_FOCUS_INPUT);
       if (useLeftEdge && !delegated) inputEl.classList.add(CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE);
       if (delegated) inputEl.classList.add(CSS_CLASSES.TEXT_FOCUS_DELEGATED);
+      this._syncTextFocusHintHidden(inputEl, hideHint);
       this._textFocusStyledElements.add(inputEl);
     } catch { /* ignore */ }
 
@@ -1098,6 +1102,35 @@ export class OverlayManager {
         } catch { /* ignore */ }
       }
     }
+  }
+
+  /**
+   * SVG "press Esc to exit" needs vertical room; compact chrome fields (e.g.
+   * Keyboard Layout Config) keep focus chrome without the label.
+   * @param {Element} inputEl
+   * @returns {boolean}
+   */
+  _shouldHideTextFocusHint(inputEl) {
+    try {
+      const rect = typeof inputEl.getBoundingClientRect === 'function'
+        ? inputEl.getBoundingClientRect()
+        : null;
+      const h = Number(rect?.height) || 0;
+      return h > 0 && h < TEXT_FOCUS_HINT_MIN_HEIGHT_PX;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * @param {Element} inputEl
+   * @param {boolean} hide
+   */
+  _syncTextFocusHintHidden(inputEl, hide) {
+    try {
+      if (hide) inputEl.classList.add(CSS_CLASSES.TEXT_FOCUS_HINT_HIDDEN);
+      else inputEl.classList.remove(CSS_CLASSES.TEXT_FOCUS_HINT_HIDDEN);
+    } catch { /* ignore */ }
   }
 
   _clearTextHoverElementStyling() {
