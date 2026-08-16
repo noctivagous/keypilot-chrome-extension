@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-15T23:53:51.180Z
+ * Generated on 2026-08-16T03:37:20.332Z
  */
 
 (() => {
@@ -65,6 +65,19 @@
     ERROR: "KP_ERROR",
     // --- Link Preview mobile User-Agent (SW declarativeNetRequest session rules) ---
     SET_PREVIEW_MOBILE_UA: "KP_SET_PREVIEW_MOBILE_UA",
+    // --- Separate-window popover fallback (chrome.windows popup) ---
+    OPEN_POPOVER_WINDOW: "KP_OPEN_POPOVER_WINDOW",
+    CLOSE_POPOVER_WINDOW: "KP_CLOSE_POPOVER_WINDOW",
+    REGISTER_PREVIEW_IFRAME: "KP_REGISTER_PREVIEW_IFRAME",
+    UNREGISTER_PREVIEW_IFRAME: "KP_UNREGISTER_PREVIEW_IFRAME",
+    /** SW → opener: sub_frame navigation refused after DNR (promote to OS window). */
+    PREVIEW_IFRAME_DENIED: "KP_PREVIEW_IFRAME_DENIED",
+    /** SW → opener: popover window closed (OS ✕ or in-window close). */
+    POPOVER_WINDOW_CLOSED: "KP_POPOVER_WINDOW_CLOSED",
+    /** Popup tab → SW: am I a KeyPilot popover window? */
+    AM_I_POPOVER_WINDOW: "KP_AM_I_POPOVER_WINDOW",
+    /** Reload popover-window tab after Mobile/Desktop UA change. */
+    RELOAD_POPOVER_WINDOW_TAB: "KP_RELOAD_POPOVER_WINDOW_TAB",
     // --- Parent ↔ popover iframe (window.postMessage) ---
     POPOVER_BRIDGE_INIT: "KP_POPOVER_BRIDGE_INIT",
     POPOVER_BRIDGE_READY: "KP_POPOVER_BRIDGE_READY",

@@ -4,9 +4,10 @@
    <onEnter type="overlay"
              title="Welcome to KeyPilot"
              message="We'll show you how to use KeyPilot one step at a time."
-             primaryText="OK" />
-   
-    <task id="click_link" label="Hover over a link and press the `F` key to click it.">
+             primaryText="OK"
+             secondaryText="Close"
+             secondaryAction="close" />
+       <task id="click_link" label="Hover over a link and press the `F` key to click it.">
       <when type="action" action="activate" target="link" />
     </task>
     <task id="go_back" label="To go back (history), press the `D` key.">

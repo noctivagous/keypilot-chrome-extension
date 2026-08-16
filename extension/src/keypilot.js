@@ -23,6 +23,10 @@ import {
 } from './modules/inspector-mode.js';
 import { MODES, INSPECTOR_KIND, CURSOR_MODE, CSS_CLASSES, COLORS, Z_INDEX, RECTANGLE_SELECTION, EDGE_ONLY_SELECTION, FEATURE_FLAGS, SCROLL, CLICKABLE_CATEGORY } from './config/constants.js';
 import { MSG } from './messaging/types.js';
+import {
+  installPopoverWindowChrome,
+  queryPopoverWindowInfo
+} from './modules/popover-window-chrome.js';
 import { kpGetDeepActiveElement } from './utils/dom-context.js';
 import {
   buildKeybindingsForLayout,
@@ -731,6 +735,18 @@ export class KeyPilot extends EventManager {
     // Always set up styles and shadow DOM support
     this.setupStyles();
     this.setupShadowDOMSupport();
+
+    // Separate-window Link Preview / Open Popover: inject titlebar chrome early.
+    try {
+      if (window === window.top) {
+        const popWin = await queryPopoverWindowInfo();
+        if (popWin?.isPopoverWindow) {
+          await installPopoverWindowChrome(popWin);
+        }
+      }
+    } catch (e) {
+      console.warn('[KeyPilot] Popover window chrome install failed:', e?.message || e);
+    }
 
     // Query service worker for current enabled state
     await this.queryInitialState();
@@ -2190,6 +2206,26 @@ export class KeyPilot extends EventManager {
         } catch (e) {
           console.warn('[KeyPilot] Failed to open guide popover via message:', e);
         }
+      } else if (msg.type === MSG.POPOVER_WINDOW_CLOSED) {
+        // OS popup closed (✕ or in-window close) — clear opener popover mode.
+        try {
+          if (window !== window.top) return;
+          // Overlay manager clears its window ids via its own listener; sync mode here.
+          if (this.state?.isPopoverMode?.() || this.state?.getState?.()?.popoverOpen) {
+            this.state.setPopoverOpen(false, null);
+          }
+          // Ensure local tracking is cleared even if overlay listener raced.
+          try {
+            if (this.overlayManager) {
+              this.overlayManager._popoverWindowId = null;
+              this.overlayManager._popoverWindowTabId = null;
+              this.overlayManager._popoverWindowUrl = null;
+              this.overlayManager._popoverWindowKind = null;
+            }
+          } catch { /* ignore */ }
+        } catch (e) {
+          console.warn('[KeyPilot] Failed to handle POPOVER_WINDOW_CLOSED:', e);
+        }
       } else if (msg.type === MSG.OPEN_ONBOARDING) {
         try {
           // Tab-local open (top frame only)
@@ -2559,24 +2595,36 @@ export class KeyPilot extends EventManager {
     // Inside a KeyPilot popover iframe: parent auto-focuses us so F/hover work, but
     // close keys (Esc / E / P) must still request parent close. In-frame KeyPilot can
     // register after the bridge and win capture order, so we own these here too.
+    // Same keys close a separate-window popover (OS popup) via the service worker.
     try {
-      if (window !== window.top && window.__KP_POPOVER_IFRAME) {
+      const inPopoverIframe = window !== window.top && window.__KP_POPOVER_IFRAME;
+      const inPopoverWindow = window === window.top && window.__KP_POPOVER_WINDOW;
+      if (inPopoverIframe || inPopoverWindow) {
         const closeKeys = Array.isArray(window.__KP_POPOVER_CLOSE_KEYS) && window.__KP_POPOVER_CLOSE_KEYS.length
           ? window.__KP_POPOVER_CLOSE_KEYS
           : ['Escape', 'e', 'E', 'p', 'P'];
         const k = e.key;
         const isEsc = k === 'Escape' || k === 'Esc';
         if (isEsc || closeKeys.includes(k)) {
-          // Never trap letter close keys while typing in the iframe page.
+          // Never trap letter close keys while typing in the page.
           if (!isEsc && this._isUnsafeToRunActionKey?.(e)) {
             /* fall through to normal typing */
           } else {
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
-            try {
-              window.parent.postMessage({ type: 'KP_POPOVER_REQUEST_CLOSE', key: k }, '*');
-            } catch { /* ignore */ }
+            if (inPopoverWindow) {
+              try {
+                void chrome.runtime.sendMessage({
+                  type: MSG.CLOSE_POPOVER_WINDOW,
+                  reason: 'close_key'
+                });
+              } catch { /* ignore */ }
+            } else {
+              try {
+                window.parent.postMessage({ type: 'KP_POPOVER_REQUEST_CLOSE', key: k }, '*');
+              } catch { /* ignore */ }
+            }
             return;
           }
         }

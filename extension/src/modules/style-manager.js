@@ -128,12 +128,13 @@ export function buildKeyPilotPrintCss() {
  * hint text painted on text inputs (not a DOM overlay).
  *
  * @param {string} text
- * @param {{ fill?: string, fontSize?: number }} [opts]
+ * @param {{ fill?: string, stroke?: string, fontSize?: number }} [opts]
  * @returns {string}
  */
 export function buildTextInputHintDataUri(text, opts = {}) {
   const raw = String(text || '').trim() || ' ';
   const fill = String(opts.fill || 'rgba(90, 45, 0, 0.78)');
+  const stroke = String(opts.stroke || 'rgba(255,255,255,0.55)');
   const fontSize = Number.isFinite(opts.fontSize) ? opts.fontSize : 11;
   // Escape for XML text content.
   const safe = raw
@@ -149,7 +150,7 @@ export function buildTextInputHintDataUri(text, opts = {}) {
     `<text x="0" y="${fontSize}" ` +
     `font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif" ` +
     `font-size="${fontSize}" font-weight="600" fill="${fill}" ` +
-    `paint-order="stroke" stroke="rgba(255,255,255,0.55)" stroke-width="2.5">${safe}</text>` +
+    `paint-order="stroke" stroke="${stroke}" stroke-width="2.5">${safe}</text>` +
     `</svg>`;
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 }
@@ -168,7 +169,10 @@ export class StyleManager {
     this._textHoverHintLabel = 'Press F to select text field';
     this._textFocusHintLabel = 'press Esc to exit';
     this._textHoverHintUri = buildTextInputHintDataUri(this._textHoverHintLabel);
-    this._textFocusHintUri = buildTextInputHintDataUri(this._textFocusHintLabel);
+    this._textFocusHintUri = buildTextInputHintDataUri(this._textFocusHintLabel, {
+      fill: COLORS.ORANGE,
+      stroke: '#000'
+    });
   }
 
   /**
@@ -182,7 +186,10 @@ export class StyleManager {
     }
     if (typeof labels.focus === 'string' && labels.focus.trim()) {
       this._textFocusHintLabel = labels.focus.trim();
-      this._textFocusHintUri = buildTextInputHintDataUri(this._textFocusHintLabel);
+      this._textFocusHintUri = buildTextInputHintDataUri(this._textFocusHintLabel, {
+        fill: COLORS.ORANGE,
+        stroke: '#000'
+      });
     }
     this._applyTextInputHintCssVars();
   }
@@ -823,13 +830,8 @@ export class StyleManager {
          - Hover: orange outline only + SVG "Press F to select…" (no background wash)
          - Focus background_tint: full orange wash + SVG "press Esc to exit"
          - Focus left_edge (default): pulsating left inset bar + Esc SVG
-         Hint copy is an SVG background-image (upper-left) — not a DOM overlay. */
-      .${CSS_CLASSES.TEXT_FOCUS_INPUT},
-      .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT} {
-        color: var(--kpv2-text-input-color, rgba(55, 55, 55, 0.96)) !important;
-        text-shadow: var(--kpv2-text-input-text-shadow, 1px 1px 0 rgba(255, 255, 255, 0.95)) !important;
-      }
-
+         Hint copy is an SVG background-image (upper-left) — not a DOM overlay.
+         Do not override the field’s own color / text-shadow / caret / placeholder. */
       /* Background-tint focus parents get a wash; left-edge parents stay clean. */
       .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT}:not(.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE}) {
         background-color: var(--kpv2-text-input-focus-bg, rgba(255, 140, 0, 0.42)) !important;
@@ -881,16 +883,6 @@ export class StyleManager {
         box-shadow: inset var(--kpv2-text-left-edge-width, 5px) 0 0 0 ${COLORS.ORANGE} !important;
         animation: kpv2-text-left-edge-pulse 1.5s ease-in-out infinite !important;
         will-change: box-shadow;
-      }
-
-      .${CSS_CLASSES.TEXT_FOCUS_INPUT} {
-        caret-color: var(--kpv2-text-input-color, rgba(55, 55, 55, 0.96)) !important;
-      }
-
-      /* Keep placeholders readable when we force text color on focus wash. */
-      .${CSS_CLASSES.TEXT_FOCUS_INPUT}::placeholder {
-        color: var(--kpv2-text-input-placeholder-color, rgba(55, 55, 55, 0.62)) !important;
-        text-shadow: var(--kpv2-text-input-text-shadow, 1px 1px 0 rgba(255, 255, 255, 0.85)) !important;
       }
 
       /*
@@ -1007,12 +999,6 @@ export class StyleManager {
       }
 
       /* Text inputs: same hover/focus + SVG hint treatment inside shadow DOM */
-      .${CSS_CLASSES.TEXT_FOCUS_INPUT},
-      .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT} {
-        color: var(--kpv2-text-input-color, rgba(55, 55, 55, 0.96)) !important;
-        text-shadow: var(--kpv2-text-input-text-shadow, 1px 1px 0 rgba(255, 255, 255, 0.95)) !important;
-      }
-
       .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT}:not(.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE}) {
         background-color: var(--kpv2-text-input-focus-bg, rgba(255, 140, 0, 0.42)) !important;
       }
@@ -1058,15 +1044,6 @@ export class StyleManager {
         box-shadow: inset var(--kpv2-text-left-edge-width, 5px) 0 0 0 ${COLORS.ORANGE} !important;
         animation: kpv2-text-left-edge-pulse 1.5s ease-in-out infinite !important;
         will-change: box-shadow;
-      }
-
-      .${CSS_CLASSES.TEXT_FOCUS_INPUT} {
-        caret-color: var(--kpv2-text-input-color, rgba(55, 55, 55, 0.96)) !important;
-      }
-
-      .${CSS_CLASSES.TEXT_FOCUS_INPUT}::placeholder {
-        color: var(--kpv2-text-input-placeholder-color, rgba(55, 55, 55, 0.62)) !important;
-        text-shadow: var(--kpv2-text-input-text-shadow, 1px 1px 0 rgba(255, 255, 255, 0.85)) !important;
       }
 
       /* Element styling for DOM hover mode in shadow DOM (settings-driven ring). */

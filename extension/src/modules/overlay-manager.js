@@ -13,10 +13,10 @@ import { PopupManager } from './popup-manager.js';
 import { DEFAULT_SETTINGS } from './settings-manager.js';
 import { storageGetValue, storageSetValue } from '../utils/storage.js';
 import { makePopoverResizable } from '../utils/popover-resize.js';
-import { createPreviewOpenActionButtons } from '../ui/preview-open-actions.js';
 import {
   createPopoverTitlebar,
-  createTitlebarCloseHint
+  createTitlebarCloseHint,
+  createUrlPopoverTitlebar
 } from '../ui/popover-titlebar.js';
 import { ensureOpenChromeShadow } from '../ui/kp-chrome-shadow.js';
 import { createSegmentedControl } from '../ui/segmented-control.js';
@@ -26,7 +26,13 @@ import {
   NCT_DARK_UI_PANEL_RADIUS,
   NCT_DARK_UI_PANEL_BOX_SHADOW
 } from '../ui/nct-dark-ui.js';
-import { preferHttpsForPreview, rewriteUrlForIframePreview } from '../utils/preview-url.js';
+import {
+  assignPopoverIframeSrc,
+  createPopoverIframe,
+  isHttpPopoverUrl,
+  isKnownIframeDenierHost,
+  preparePopoverIframeUrl
+} from '../utils/preview-url.js';
 import { resolveActivationIdentity } from '../utils/resolve-hovered-link.js';
 
 /** Per-host Link Preview viewport mode: { [hostname]: 'mobile' }. Missing/default = desktop. */
@@ -105,6 +111,18 @@ export class OverlayManager {
     this._popoverResizeDispose = null; // teardown generic resize handles
     this._popoverHybridFocusCleanup = null; // teardown chrome↔iframe focus routing
     this._previewMobileUaActive = false; // SW session rule: mobile UA for preview iframe
+    /** @type {number|null} OS popup window id when using separate-window fallback */
+    this._popoverWindowId = null;
+    /** @type {number|null} tab id inside the OS popup window */
+    this._popoverWindowTabId = null;
+    /** @type {string|null} */
+    this._popoverWindowUrl = null;
+    /** @type {'preview'|'modal'|null} */
+    this._popoverWindowKind = null;
+    /** Pending iframe denial watch payload (for promote-on-deny). */
+    this._pendingIframePromote = null;
+    /** @type {((message: any, sender: any, sendResponse: any) => boolean|void)|null} */
+    this._popoverWindowMsgHandler = null;
     /** @type {HTMLElement|null} */
     this._edgeJumpFadeEl = null;
     this._edgeJumpFadeToken = 0;
@@ -399,9 +417,10 @@ export class OverlayManager {
       }
     } catch { /* ignore */ }
 
-    const rect = (rectOverride && typeof rectOverride === 'object')
+    const rawRect = (rectOverride && typeof rectOverride === 'object')
       ? rectOverride
       : this.getBestRect(element);
+    const rect = this._clipViewportRectToVisible(element, rawRect);
     if (!rect || rect.width <= 0 || rect.height <= 0) {
       this.hideFocusOverlayCanvas();
       return;
@@ -532,9 +551,10 @@ export class OverlayManager {
       }
     } catch { /* ignore */ }
 
-    const rect = (rectOverride && typeof rectOverride === 'object')
+    const rawRect = (rectOverride && typeof rectOverride === 'object')
       ? rectOverride
       : this.getBestRect(element);
+    const rect = this._clipViewportRectToVisible(element, rawRect);
     if (!rect || rect.width <= 0 || rect.height <= 0) {
       this.hideFocusOverlayCSSCustomProps();
       return;
@@ -1270,12 +1290,10 @@ export class OverlayManager {
 
     // Text inputs: show orange outline AND paint the SVG "Press F to select…" hint.
     // (Do not return early — fall through so the focus rectangle still draws.)
-    let textPaintHost = null;
     try {
       const isTextInput = element && element.matches && element.matches(SELECTORS.FOCUSABLE_TEXT);
       if (isTextInput) {
         this._applyTextHoverElementStyling(element);
-        try { textPaintHost = this._resolveTextFocusPaintHost(element); } catch { textPaintHost = null; }
       } else {
         // Non-text elements: ensure we remove any lingering hover hint styling.
         this._clearTextHoverElementStyling();
@@ -1308,20 +1326,10 @@ export class OverlayManager {
       }
 
       // Resolve paint node once (pierces open shadow for collapsed hosts).
-      // Text fields: prefer the visual pill/shell so the ring matches the
-      // left-edge bar (short absolute <input> inside a taller wrapper).
-      // Image+text cards: prefer the stacked shell (headline-only / image-only
-      // <a> inside a teaser that also holds the other segment).
-      let paintEl = element;
+      // Text fields / image+text cards / focus-styling — shared with F-click flash.
+      let paintEl = this._resolveFocusPaintElement(element) || element;
       let cardShell = null;
       try { cardShell = this._resolveMediaTextCardShell(element); } catch { cardShell = null; }
-      try {
-        if (textPaintHost && textPaintHost !== element) paintEl = textPaintHost;
-        else if (cardShell) paintEl = cardShell;
-        else paintEl = this._resolveElementForFocusStyling(element) || element;
-      } catch {
-        paintEl = element;
-      }
 
       // Auto strategy (see focus-ring-paint.md):
       //   Light DOM: A → B → C (escape hatch only when A cannot show).
@@ -1443,6 +1451,109 @@ export class OverlayManager {
     try {
       document.addEventListener('keypilot:scroll-end', this._focusClipInvalidateBound, { passive: true });
     } catch { /* ignore */ }
+  }
+
+  /**
+   * Intersect two viewport boxes. Returns null when the result is empty.
+   * @param {{ left: number, top: number, width: number, height: number }} a
+   * @param {{ left: number, top: number, width: number, height: number }} b
+   * @returns {{ left: number, top: number, width: number, height: number }|null}
+   */
+  _intersectViewportRects(a, b) {
+    if (!a || !b) return null;
+    const left = Math.max(a.left, b.left);
+    const top = Math.max(a.top, b.top);
+    const right = Math.min(a.left + a.width, b.left + b.width);
+    const bottom = Math.min(a.top + a.height, b.top + b.height);
+    const width = right - left;
+    const height = bottom - top;
+    if (!(width > 0.5) || !(height > 0.5)) return null;
+    return { left, top, width, height };
+  }
+
+  /**
+   * Shrink a strategy-C / flash viewport box to the portion still visible after
+   * ancestor overflow / paint-containment clipping (and the viewport itself).
+   *
+   * `getBoundingClientRect()` ignores overflow clips, so a body-fixed overlay
+   * sized to the raw box paints into scrolled-away / overflow:hidden regions.
+   * Intersecting with every clipping ancestor matches what the user can see.
+   *
+   * @param {Element|null|undefined} element - paint target (for ancestor walk)
+   * @param {{ left?: number, top?: number, width?: number, height?: number }|null|undefined} rect
+   * @returns {{ left: number, top: number, width: number, height: number }|null}
+   */
+  _clipViewportRectToVisible(element, rect) {
+    let out = this._asPositiveViewportRect(rect);
+    if (!out) return null;
+
+    // Viewport edges (off-screen parts of a tall card, etc.).
+    try {
+      const vw = Number(window.innerWidth) || 0;
+      const vh = Number(window.innerHeight) || 0;
+      if (vw > 0 && vh > 0) {
+        out = this._intersectViewportRects(out, { left: 0, top: 0, width: vw, height: vh });
+        if (!out) return null;
+      }
+    } catch { /* ignore */ }
+
+    if (!element || element.nodeType !== 1) return out;
+
+    const intersectNode = (n) => {
+      if (!n || n.nodeType !== 1) return true;
+      let ar = null;
+      try { ar = n.getBoundingClientRect(); } catch { ar = null; }
+      const cr = this._asPositiveViewportRect(ar);
+      if (!cr) return true;
+      out = this._intersectViewportRects(out, cr);
+      return !!out;
+    };
+
+    try {
+      let n = this._composedParent(element);
+      let depth = 0;
+      while (n && n.nodeType === 1 && depth++ < 24) {
+        if (n === document.documentElement || n === document.body) {
+          n = this._composedParent(n);
+          continue;
+        }
+
+        let cs = null;
+        try { cs = window.getComputedStyle(n); } catch { cs = null; }
+
+        let cvClip = false;
+        try {
+          const cv = cs?.contentVisibility || cs?.getPropertyValue?.('content-visibility');
+          cvClip = cv === 'auto' || cv === 'hidden';
+        } catch { /* ignore */ }
+
+        if (this._styleClipsSelf(cs) || cvClip) {
+          if (!intersectNode(n)) return null;
+        }
+
+        // Slotted content is clipped by shadow-internal wrappers the host style
+        // does not reveal (msn.com div.root { overflow/contain }).
+        try {
+          const sr = this._getOpenShadowRoot(n);
+          const kids = sr && sr.children;
+          if (kids) {
+            for (let i = 0; i < kids.length && i < 6; i++) {
+              const w = kids[i];
+              if (!w || w.nodeType !== 1) continue;
+              if ((w.tagName || '').toUpperCase() === 'STYLE') continue;
+              let wcs = null;
+              try { wcs = window.getComputedStyle(w); } catch { wcs = null; }
+              if (!this._styleClipsSelf(wcs)) continue;
+              if (!intersectNode(w)) return null;
+            }
+          }
+        } catch { /* ignore */ }
+
+        n = this._composedParent(n);
+      }
+    } catch { /* keep current out */ }
+
+    return out;
   }
 
   /**
@@ -2216,6 +2327,12 @@ export class OverlayManager {
     } catch {
       paintEl = element;
     }
+    // Same clip-frame promotion as path A (abspos <img> inside overflow:hidden).
+    // Decision must see the frame, or full-bleed cover is invisible on the <img>.
+    try {
+      const frame = this._resolveAbsoluteClipFramePaintHost(paintEl);
+      if (frame) paintEl = frame;
+    } catch { /* ignore */ }
 
     let er = null;
     try {
@@ -2225,10 +2342,23 @@ export class OverlayManager {
     }
     if (!er || !(er.width > 0) || !(er.height > 0)) return false;
 
-    // Image-on-top / media-rail cards: outer outline (A) looks disconnected
-    // from the text block. Prefer B on the visual shell.
+    // Wrapping image+text clickable (Tom's Hardware): outer outline (A) looks
+    // disconnected from the stacked pair. Prefer B on the visual shell.
+    // Nested headline / thumb links do not qualify (see fill check).
     try {
       if (this._resolveMediaTextCardShell(paintEl) || this._resolveMediaTextCardShell(element)) {
+        return true;
+      }
+    } catch { /* ignore */ }
+
+    // Replaced media as the paint target (0×0 <a> → <img>): no child cover to
+    // detect, and inset A is clipped by the overflow:hidden aspect box.
+    try {
+      if (
+        this._isReplacedOrVoidElement(paintEl) &&
+        this._isMediaLikeCoverElement(paintEl) &&
+        this._wouldUseInsetFocusOutline(paintEl)
+      ) {
         return true;
       }
     } catch { /* ignore */ }
@@ -2276,9 +2406,12 @@ export class OverlayManager {
 
   /**
    * Card-sized box with a flush media strip (image on top / side rail) and a
-   * complementary text/headline region. Same idea as the text-input pill shell:
-   * the clickable may be only the headline or only the image; the visual card
-   * is the stacked pair (Tom's Hardware article-link, NVIDIA teaser).
+   * complementary text/headline region.
+   *
+   * Used only when the hover target itself is (roughly) that card-sized
+   * clickable — e.g. Tom's Hardware `a.article-link` wrapping image+title.
+   * Separate image / headline `<a>`s that share a URL (arstechnica.com cards)
+   * must keep their own paint boxes; see `_focusFillsMediaTextCardShell`.
    * @param {Element} el
    * @returns {boolean}
    */
@@ -2338,8 +2471,37 @@ export class OverlayManager {
   }
 
   /**
-   * Smallest ancestor (incl. `el`) that is an image+text split card.
+   * True when `focusEl` already paints most of `shell` — i.e. a single
+   * card-sized clickable wrapping image+text, not a nested headline/thumb link.
+   * @param {Element} focusEl
+   * @param {Element} shell
+   * @returns {boolean}
+   */
+  _focusFillsMediaTextCardShell(focusEl, shell) {
+    if (!focusEl || !shell || focusEl.nodeType !== 1 || shell.nodeType !== 1) return false;
+    if (focusEl === shell) return true;
+    let fr = null;
+    let sr = null;
+    try { fr = focusEl.getBoundingClientRect(); } catch { fr = null; }
+    try { sr = shell.getBoundingClientRect(); } catch { sr = null; }
+    if (!fr || !sr || !(fr.width > 0) || !(fr.height > 0) || !(sr.width > 0) || !(sr.height > 0)) {
+      return false;
+    }
+    const fArea = fr.width * fr.height;
+    const sArea = sr.width * sr.height;
+    // Require the focus target to cover most of the card shell. Headline-only
+    // and media-strip-only links are typically well under half the card area.
+    if (fArea < sArea * 0.78) return false;
+    if (fr.width < sr.width * 0.82) return false;
+    if (fr.height < sr.height * 0.78) return false;
+    return true;
+  }
+
+  /**
+   * Smallest ancestor (incl. `el`) that is an image+text split card **and** is
+   * essentially the same box as the hover target (wrapping card link).
    * Stops when the box balloons into a carousel / multi-card row.
+   * Does not promote nested headline/image links up to the outer card.
    * @param {Element|null|undefined} el
    * @returns {Element|null}
    */
@@ -2368,7 +2530,10 @@ export class OverlayManager {
           try { p = this._composedParent(p); } catch { p = p.parentElement; }
           continue;
         }
+        // Ancestor much wider than the focus target is not a wrapping card link.
         if (r.width > ir.width * 1.4 + 48) break;
+        // Ancestor much taller (image+title stack) while focus is headline-only.
+        if (r.height > ir.height * 1.55 + 32) break;
         if (r.height > 780) break;
         try {
           if (
@@ -2383,7 +2548,15 @@ export class OverlayManager {
       }
     }
 
-    return found ? this._liftMediaTextCardPaintHost(found) : null;
+    if (!found) return null;
+    const shell = this._liftMediaTextCardPaintHost(found);
+    if (!shell) return null;
+    try {
+      if (!this._focusFillsMediaTextCardShell(el, shell)) return null;
+    } catch {
+      return null;
+    }
+    return shell;
   }
 
   /**
@@ -2685,7 +2858,8 @@ export class OverlayManager {
       /** @type {Element[]} */
       const kids = [];
       this._enqueueShadowPiercingChildren(el, kids);
-      // Also one level into near-full wrappers (card host → .root → img).
+      // Also one level into near-full wrappers (card host → .root → img)
+      // and collapsed abspos wrappers (0×0 <a> around an absolute <img>).
       const nDirect = kids.length;
       for (let i = 0; i < nDirect && i < 12; i++) {
         const wrap = kids[i];
@@ -2693,6 +2867,18 @@ export class OverlayManager {
         let wr = null;
         try { wr = wrap.getBoundingClientRect(); } catch { wr = null; }
         if (wr && nearlyFills(wr.width, wr.height)) {
+          this._enqueueShadowPiercingChildren(wrap, kids);
+          continue;
+        }
+        const wrapTag = String(wrap.tagName || '').toUpperCase();
+        if (
+          wrapTag === 'A' ||
+          wrapTag === 'PICTURE' ||
+          wrapTag === 'FIGURE' ||
+          !wr ||
+          !(wr.width > 2) ||
+          !(wr.height > 2)
+        ) {
           this._enqueueShadowPiercingChildren(wrap, kids);
         }
       }
@@ -2748,6 +2934,24 @@ export class OverlayManager {
       /** @type {Element[]} */
       const kids = [];
       this._enqueueShadowPiercingChildren(el, kids);
+      const nDirect = kids.length;
+      for (let i = 0; i < nDirect && i < 12; i++) {
+        const wrap = kids[i];
+        if (!wrap || wrap.nodeType !== 1) continue;
+        const wrapTag = String(wrap.tagName || '').toUpperCase();
+        let wr = null;
+        try { wr = wrap.getBoundingClientRect(); } catch { wr = null; }
+        if (
+          wrapTag === 'A' ||
+          wrapTag === 'PICTURE' ||
+          wrapTag === 'FIGURE' ||
+          !wr ||
+          !(wr.width > 2) ||
+          !(wr.height > 2)
+        ) {
+          this._enqueueShadowPiercingChildren(wrap, kids);
+        }
+      }
       if (!kids.length) return false;
       for (let i = 0; i < kids.length; i++) {
         const child = kids[i];
@@ -2952,6 +3156,10 @@ export class OverlayManager {
     } catch {
       paintEl = element;
     }
+    try {
+      const frame = this._resolveAbsoluteClipFramePaintHost(paintEl);
+      if (frame) paintEl = frame;
+    } catch { /* ignore */ }
     if (!paintEl || paintEl.nodeType !== 1) return null;
     try {
       if (!paintEl.isConnected) return null;
@@ -3914,9 +4122,15 @@ export class OverlayManager {
     const suppressFill = this.shouldSuppressFocusFill(element);
 
     // We'll use this rect both for sizing/positioning and for deciding whether to render a fill.
-    const rect = (rectOverride && typeof rectOverride === 'object')
+    // Clip to ancestor overflow / viewport — raw GBR ignores overflow:hidden.
+    let rect = (rectOverride && typeof rectOverride === 'object')
       ? rectOverride
       : this.getBestRect(element);
+    rect = this._clipViewportRectToVisible(element, rect);
+    if (!rect || !(rect.width > 0) || !(rect.height > 0)) {
+      this.hideFocusOverlay();
+      return;
+    }
     // If the hover target is extremely large, a filled overlay becomes distracting; keep just the frame.
     const isVeryLarge = rect && rect.width > 512 && rect.height > 512;
     
@@ -5198,45 +5412,296 @@ export class OverlayManager {
   }
 
   /**
-   * Resolve the viewport rect of the current focus outline for activation feedback.
-   * Works across DOM-hover element styling, DOM overlay, CSS-custom-props, and canvas modes.
+   * Paint node for hover ring / F-click flash — same pipeline as updateFocusOverlay.
+   * Text fields → visual pill; image+text cards → stacked shell; else focus-styling resolve.
+   * @param {Element|null|undefined} element
+   * @returns {Element|null}
+   */
+  _resolveFocusPaintElement(element) {
+    if (!element || element.nodeType !== 1) return null;
+
+    let textPaintHost = null;
+    try {
+      const isTextInput = element.matches && element.matches(SELECTORS.FOCUSABLE_TEXT);
+      if (isTextInput) {
+        textPaintHost = this._resolveTextFocusPaintHost(element);
+      }
+    } catch { textPaintHost = null; }
+
+    let cardShell = null;
+    try { cardShell = this._resolveMediaTextCardShell(element); } catch { cardShell = null; }
+
+    try {
+      if (textPaintHost && textPaintHost !== element) return textPaintHost;
+      if (cardShell) return cardShell;
+      const styled = this._resolveElementForFocusStyling(element) || element;
+      try {
+        const frame = this._resolveAbsoluteClipFramePaintHost(styled);
+        if (frame) return frame;
+      } catch { /* ignore */ }
+      return styled;
+    } catch {
+      return element;
+    }
+  }
+
+  /**
+   * Normalize a DOMRect-like into a plain viewport box, or null if degenerate.
+   * @param {{ left?: number, top?: number, width?: number, height?: number }|null|undefined} r
    * @returns {{ left: number, top: number, width: number, height: number }|null}
    */
-  _getFocusPulseRect() {
-    // Prefer live geometry from active visuals.
+  _asPositiveViewportRect(r) {
+    if (!r) return null;
+    const left = Number(r.left);
+    const top = Number(r.top);
+    const width = Number(r.width);
+    const height = Number(r.height);
+    if (!(width > 0) || !(height > 0)) return null;
+    if (!Number.isFinite(left) || !Number.isFinite(top)) return null;
+    return { left, top, width, height };
+  }
+
+  /**
+   * True when hover focus is strategy A (CSS outline on the styled element).
+   * Inline outlines follow line-box fragments — fixed union ghosts do not.
+   * @returns {boolean}
+   */
+  _isDomOutlineFocusPaint() {
+    return !!(
+      this._useDomHoverFocusColors &&
+      !this._focusPaintUsesFixedOverlay &&
+      !this._focusPaintUsesInTargetRing &&
+      this._currentStyledElement &&
+      this._currentStyledElement.nodeType === 1
+    );
+  }
+
+  /**
+   * Flash strategy A's live outline in place (correct for inline / multi-line fragments).
+   * @param {Element} styledEl
+   * @param {number} cleanupMs
+   */
+  _flashDomOutlineColors(styledEl, cleanupMs) {
+    if (!styledEl || styledEl.nodeType !== 1 || !styledEl.isConnected) return false;
+
+    // Cancel a prior in-place outline flash on this node.
+    try {
+      const prevTimer = styledEl._kpOutlineFlashTimer;
+      if (prevTimer) {
+        clearTimeout(prevTimer);
+        styledEl._kpOutlineFlashTimer = 0;
+      }
+    } catch { /* ignore */ }
+
+    const prevColor = styledEl.style.getPropertyValue('--keypilot-focus-ring-color');
+    const prevShadow = styledEl.style.getPropertyValue('--keypilot-focus-box-shadow');
+    let prevInlineOutline = '';
+    let prevInlineOffset = '';
+    let prevInlineShadow = '';
+    const hadInline = styledEl.getAttribute?.('data-kp-focus-inline') === '1';
+    if (hadInline) {
+      try {
+        prevInlineOutline = styledEl.style.getPropertyValue('outline');
+        prevInlineOffset = styledEl.style.getPropertyValue('outline-offset');
+        prevInlineShadow = styledEl.style.getPropertyValue('box-shadow');
+      } catch { /* ignore */ }
+    }
+
+    const ringWidth =
+      styledEl.style.getPropertyValue('--keypilot-focus-ring-width') || '3px';
+    const ringOffset =
+      styledEl.style.getPropertyValue('--keypilot-focus-outline-offset') || '2px';
+    const flashShadow =
+      `0 0 0 2px ${COLORS.FLASH_GREEN_SHADOW}, 0 0 16px 3px ${COLORS.FLASH_GREEN_GLOW}`;
+
+    try {
+      styledEl.style.setProperty('--keypilot-focus-ring-color', COLORS.FLASH_GREEN);
+      styledEl.style.setProperty('--keypilot-focus-box-shadow', flashShadow);
+      if (hadInline) {
+        styledEl.style.setProperty(
+          'outline',
+          `${ringWidth} solid ${COLORS.FLASH_GREEN}`,
+          'important'
+        );
+        styledEl.style.setProperty('outline-offset', ringOffset, 'important');
+        styledEl.style.setProperty('box-shadow', flashShadow, 'important');
+      }
+    } catch {
+      return false;
+    }
+
+    const ms = Math.max(200, Number(cleanupMs) || 500);
+    try {
+      styledEl._kpOutlineFlashTimer = setTimeout(() => {
+        styledEl._kpOutlineFlashTimer = 0;
+        try {
+          // Only restore if this element is still the styled focus target.
+          if (this._currentStyledElement !== styledEl) return;
+          if (prevColor) {
+            styledEl.style.setProperty('--keypilot-focus-ring-color', prevColor);
+          } else {
+            styledEl.style.removeProperty('--keypilot-focus-ring-color');
+          }
+          if (prevShadow) {
+            styledEl.style.setProperty('--keypilot-focus-box-shadow', prevShadow);
+          } else {
+            styledEl.style.removeProperty('--keypilot-focus-box-shadow');
+          }
+          if (hadInline) {
+            if (prevInlineOutline) {
+              styledEl.style.setProperty('outline', prevInlineOutline, 'important');
+            }
+            if (prevInlineOffset) {
+              styledEl.style.setProperty('outline-offset', prevInlineOffset, 'important');
+            }
+            if (prevInlineShadow) {
+              styledEl.style.setProperty('box-shadow', prevInlineShadow, 'important');
+            }
+          }
+        } catch { /* ignore */ }
+      }, ms);
+    } catch { /* ignore */ }
+
+    return true;
+  }
+
+  /**
+   * Viewport boxes for F-click ghosts. For inline / fragmented paint targets,
+   * returns one clipped rect per getClientRects() line box (matches strategy A
+   * outline fragments). Otherwise a single clipped paint box.
+   *
+   * @param {Element|null|undefined} activationTarget
+   * @returns {{ paintEl: Element|null, rects: Array<{ left: number, top: number, width: number, height: number }> }}
+   */
+  _resolveClickEffectRects(activationTarget = null) {
+    const source = (activationTarget && activationTarget.nodeType === 1)
+      ? activationTarget
+      : (this._currentStyledElement || this._lastFocusElement);
+
+    let paintEl = this._resolveFocusPaintElement(source) || source || null;
+
+    try {
+      if (
+        this._focusPaintUsesInTargetRing &&
+        this._inTargetHost &&
+        this._inTargetHost.nodeType === 1 &&
+        this._inTargetHost.isConnected &&
+        source &&
+        (
+          this._lastFocusElement === source ||
+          this._inTargetHost === source ||
+          this._inTargetHost === paintEl ||
+          (typeof this._inTargetHost.contains === 'function' && this._inTargetHost.contains(source)) ||
+          (typeof source.contains === 'function' && source.contains(this._inTargetHost))
+        )
+      ) {
+        paintEl = this._inTargetHost;
+      }
+    } catch { /* keep paintEl */ }
+
+    // Inline / multi-line fragments: one ghost per line box (not the union AABB).
+    try {
+      if (paintEl && paintEl.nodeType === 1 && paintEl.isConnected) {
+        let clientRects = null;
+        try { clientRects = paintEl.getClientRects(); } catch { clientRects = null; }
+        const fragmented = this._isFragmentedInlineFocusTarget(paintEl);
+        if (clientRects && clientRects.length >= 1 && (fragmented || clientRects.length >= 2)) {
+          /** @type {Array<{ left: number, top: number, width: number, height: number }>} */
+          const out = [];
+          for (let i = 0; i < clientRects.length; i++) {
+            const clipped = this._clipViewportRectToVisible(paintEl, clientRects[i]);
+            if (clipped) out.push(clipped);
+          }
+          if (out.length) return { paintEl, rects: out };
+        }
+      }
+    } catch { /* fall through to single box */ }
+
+    const box = this._resolveClickEffectBox(activationTarget);
+    if (box && box.rect) {
+      return { paintEl: box.paintEl || paintEl, rects: [box.rect] };
+    }
+    return { paintEl, rects: [] };
+  }
+
+  /**
+   * Viewport box for F-click flash / pulse: always a strategy-C-style imitation of the
+   * hover paint box (including fragmented / bare-inline union via getBestRect).
+   *
+   * @param {Element|null|undefined} activationTarget
+   * @returns {{ paintEl: Element|null, rect: { left: number, top: number, width: number, height: number } }|null}
+   */
+  _resolveClickEffectBox(activationTarget = null) {
+    const source = (activationTarget && activationTarget.nodeType === 1)
+      ? activationTarget
+      : (this._currentStyledElement || this._lastFocusElement);
+
+    let paintEl = this._resolveFocusPaintElement(source) || source || null;
+
+    // Strategy B: the absolute ring covers the in-target host — match that box
+    // only when it belongs to this activation (not a stale host from a prior hover).
+    try {
+      if (
+        this._focusPaintUsesInTargetRing &&
+        this._inTargetHost &&
+        this._inTargetHost.nodeType === 1 &&
+        this._inTargetHost.isConnected &&
+        source &&
+        (
+          this._lastFocusElement === source ||
+          this._inTargetHost === source ||
+          this._inTargetHost === paintEl ||
+          (typeof this._inTargetHost.contains === 'function' && this._inTargetHost.contains(source)) ||
+          (typeof source.contains === 'function' && source.contains(this._inTargetHost))
+        )
+      ) {
+        paintEl = this._inTargetHost;
+      }
+    } catch { /* keep paintEl */ }
+
+    // Live paint-box geometry (getBoundingClientRect union for fragmented inline),
+    // then shrink to the visible portion inside overflow / contain clippers.
+    try {
+      if (paintEl && paintEl.nodeType === 1 && paintEl.isConnected) {
+        const raw = this._asPositiveViewportRect(this.getBestRect(paintEl));
+        const r = this._clipViewportRectToVisible(paintEl, raw);
+        if (r) return { paintEl, rect: r };
+      }
+    } catch { /* fall through */ }
+
+    // Visible strategy-C / CSS-props overlay — already a fixed imitation of the paint box.
+    // Prefer its live box when present (it is clip-aware after updateFocusOverlayDOM).
     try {
       if (this.focusOverlay && this.focusOverlay.style.display !== 'none') {
-        const r = this.focusOverlay.getBoundingClientRect();
-        if (r && r.width > 0 && r.height > 0) {
-          return { left: r.left, top: r.top, width: r.width, height: r.height };
-        }
+        const r = this._asPositiveViewportRect(this.focusOverlay.getBoundingClientRect());
+        if (r) return { paintEl, rect: r };
       }
     } catch { /* ignore */ }
 
     try {
       if (this.cssCustomPropsOverlay && this.cssCustomPropsOverlay.style.display !== 'none') {
-        const r = this.cssCustomPropsOverlay.getBoundingClientRect();
-        if (r && r.width > 0 && r.height > 0) {
-          return { left: r.left, top: r.top, width: r.width, height: r.height };
-        }
+        const r = this._asPositiveViewportRect(this.cssCustomPropsOverlay.getBoundingClientRect());
+        if (r) return { paintEl, rect: r };
       }
     } catch { /* ignore */ }
 
-    try {
-      const el = this._currentStyledElement || this._lastFocusElement;
-      if (el && el.nodeType === 1 && el.isConnected) {
-        const r = this.getBestRect(el);
-        if (r && r.width > 0 && r.height > 0) {
-          return { left: r.left, top: r.top, width: r.width, height: r.height };
-        }
-      }
-    } catch { /* ignore */ }
+    // Last hover rect (may be slightly stale after scroll) — still clip if we have a paint node.
+    const lastRaw = this._asPositiveViewportRect(this._lastFocusRect);
+    const last = paintEl
+      ? this._clipViewportRectToVisible(paintEl, lastRaw)
+      : lastRaw;
+    if (last) return { paintEl, rect: last };
 
-    // Last known rect from hover tracking (may be slightly stale after scroll).
-    if (this._lastFocusRect && this._lastFocusRect.width > 0 && this._lastFocusRect.height > 0) {
-      return { ...this._lastFocusRect };
-    }
     return null;
+  }
+
+  /**
+   * Resolve the viewport rect of the current focus outline for activation feedback.
+   * @returns {{ left: number, top: number, width: number, height: number }|null}
+   */
+  _getFocusPulseRect() {
+    const box = this._resolveClickEffectBox(null);
+    return box ? box.rect : null;
   }
 
   /**
@@ -5549,8 +6014,11 @@ export class OverlayManager {
 
   /**
    * F-key activation feedback for link-style targets.
-   * Uses a temporary floating rectangle so it works in every render mode
-   * (including DOM-hover element styling, where there is no focusOverlay div).
+   *
+   * Strategy A (DOM outline): flash the live outline in place so inline /
+   * multi-line line-box outlines match what the user already sees.
+   * Strategy B/C (and non-flash effects): body-fixed ghost(s) — one per
+   * getClientRects() fragment when the paint target is inline/fragmented.
    *
    * Effect style comes from settings (clickMode.clickEffect):
    *   - flash (default): hard strobe on the outline
@@ -5590,82 +6058,71 @@ export class OverlayManager {
     const presentation = this._clickEffectPresentation(clickEffect);
     if (!presentation) return;
 
-    const rect = this._getFocusPulseRect();
-    if (!rect) return;
+    // Don't start an effect if the activation target is already gone / not painted.
+    if (el && el.nodeType === 1) {
+      if (!el.isConnected) return;
+      try {
+        const cs = window.getComputedStyle(el);
+        if (cs && (cs.display === 'none' || cs.visibility === 'hidden')) return;
+      } catch { /* ignore */ }
+    }
 
-    // Optional: briefly brighten the persistent DOM overlay if present.
-    try {
-      if (this.focusOverlay && this.focusOverlay.style.display !== 'none') {
-        const originalBorder = this.focusOverlay.style.border;
-        const originalBoxShadow = this.focusOverlay.style.boxShadow;
-        this.focusOverlay.style.border = `3px solid ${COLORS.FLASH_GREEN}`;
-        this.focusOverlay.style.boxShadow =
-          `0 0 0 2px ${COLORS.FLASH_GREEN_SHADOW}, 0 0 20px 4px ${COLORS.FLASH_GREEN_GLOW}`;
-        this.focusOverlay.style.transition = 'border 0.15s ease-out, box-shadow 0.15s ease-out';
-        setTimeout(() => {
-          if (!this.focusOverlay) return;
-          this.focusOverlay.style.border = originalBorder;
-          this.focusOverlay.style.boxShadow = originalBoxShadow;
-          setTimeout(() => {
-            if (this.focusOverlay) this.focusOverlay.style.transition = '';
-          }, 150);
-        }, 150);
-      }
-    } catch { /* ignore */ }
-
-    // Click-effect ghost (link-style categories only).
-    try {
-      // Prefer a live rect from the activation target when available so tracking
-      // compares against the same box we paint.
-      let liveRect = rect;
-      if (el && el.nodeType === 1) {
-        try {
-          const r = el.getBoundingClientRect();
-          if (r && r.width > 0 && r.height > 0) {
-            liveRect = {
-              left: r.left,
-              top: r.top,
-              width: r.width,
-              height: r.height
-            };
-          }
-        } catch { /* keep last-focus rect */ }
-      }
-
-      // Don't start an effect if the target is already gone / not painted.
-      if (el && el.nodeType === 1) {
-        if (!el.isConnected) return;
-        try {
-          const cs = window.getComputedStyle(el);
-          if (cs && (cs.display === 'none' || cs.visibility === 'hidden')) return;
-        } catch { /* ignore */ }
-      }
-
-      const borderRadius = this._resolveElementBorderRadius(el);
-      /** @type {HTMLElement|SVGSVGElement} */
-      let pulse;
-      if (clickEffect === 'dash') {
-        pulse = this._createDashChasePulse(liveRect, borderRadius);
-      } else {
-        pulse = document.createElement('div');
-        pulse.className = presentation.className;
-        pulse.setAttribute('aria-hidden', 'true');
-        pulse.setAttribute('data-kp-ephemeral-effect', clickEffect);
-        // Position via left/top/width/height; CSS animation scales from transform-origin center.
-        pulse.style.left = `${liveRect.left}px`;
-        pulse.style.top = `${liveRect.top}px`;
-        pulse.style.width = `${liveRect.width}px`;
-        pulse.style.height = `${liveRect.height}px`;
-        // Match corners to the clicked element (pill links, rounded cards, circular avatars).
-        if (borderRadius) {
-          pulse.style.borderRadius = borderRadius;
+    // Strategy A + flash: reuse the live CSS outline (inline fragments included).
+    if (clickEffect === 'flash' && this._isDomOutlineFocusPaint()) {
+      const styled = this._currentStyledElement;
+      try {
+        const related = !el || !styled ||
+          styled === el ||
+          this._lastFocusElement === el ||
+          (typeof styled.contains === 'function' && styled.contains(el)) ||
+          (typeof el.contains === 'function' && el.contains(styled));
+        if (related && this._flashDomOutlineColors(styled, presentation.cleanupMs)) {
+          return;
         }
-      }
-      document.body.appendChild(pulse);
-      this._trackEphemeralEffect(pulse, el, liveRect, presentation.cleanupMs);
-    } catch (e) {
-      if (window.KEYPILOT_DEBUG) {
-        console.warn('[KeyPilot] focus pulse failed:', e);
+      } catch { /* fall through to fixed ghosts */ }
+    }
+
+    const { paintEl, rects } = this._resolveClickEffectRects(el);
+    if (!rects || !rects.length) return;
+
+    const radiusSource = (paintEl && paintEl.nodeType === 1) ? paintEl : el;
+    let borderRadius = null;
+    try { borderRadius = this._resolveElementBorderRadius(radiusSource); } catch { borderRadius = null; }
+
+    const trackEl = (paintEl && paintEl.nodeType === 1) ? paintEl : el;
+
+    for (let i = 0; i < rects.length; i++) {
+      const liveRect = rects[i];
+      if (!liveRect) continue;
+      try {
+        /** @type {HTMLElement|SVGSVGElement} */
+        let pulse;
+        if (clickEffect === 'dash') {
+          pulse = this._createDashChasePulse(liveRect, borderRadius);
+        } else {
+          pulse = document.createElement('div');
+          pulse.className = presentation.className;
+          pulse.setAttribute('aria-hidden', 'true');
+          pulse.setAttribute('data-kp-ephemeral-effect', clickEffect);
+          pulse.style.left = `${liveRect.left}px`;
+          pulse.style.top = `${liveRect.top}px`;
+          pulse.style.width = `${liveRect.width}px`;
+          pulse.style.height = `${liveRect.height}px`;
+          if (borderRadius) {
+            pulse.style.borderRadius = borderRadius;
+          }
+        }
+        document.body.appendChild(pulse);
+        this._trackEphemeralEffect(
+          pulse,
+          trackEl,
+          liveRect,
+          presentation.cleanupMs
+        );
+      } catch (e) {
+        if (window.KEYPILOT_DEBUG) {
+          console.warn('[KeyPilot] focus pulse failed:', e);
+        }
       }
     }
   }
@@ -6130,9 +6587,230 @@ export class OverlayManager {
   }
 
   /**
+   * Ensure we listen for SW popover-window / iframe-denial messages once.
+   */
+  _ensurePopoverWindowMessageListener() {
+    if (this._popoverWindowMsgHandler) return;
+    this._popoverWindowMsgHandler = (message) => {
+      try {
+        if (!message || typeof message.type !== 'string') return;
+        if (message.type === MSG.PREVIEW_IFRAME_DENIED) {
+          void this._promoteDeniedIframeToWindow(message);
+          return;
+        }
+        if (message.type === MSG.POPOVER_WINDOW_CLOSED) {
+          // Clear local window tracking; KeyPilot also clears mode state.
+          if (
+            typeof message.windowId === 'number' &&
+            this._popoverWindowId === message.windowId
+          ) {
+            this._popoverWindowId = null;
+            this._popoverWindowTabId = null;
+            this._popoverWindowUrl = null;
+            this._popoverWindowKind = null;
+          }
+        }
+      } catch (e) {
+        console.warn('[KeyPilot] Popover window message handler failed:', e?.message || e);
+      }
+    };
+    try {
+      chrome.runtime.onMessage.addListener(this._popoverWindowMsgHandler);
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * @param {'preview'|'modal'} kind
+   * @param {string} url
+   * @param {{ mouseX?: number }} [opts]
+   * @returns {{ width: number, height: number, left: number, top: number }}
+   */
+  _computePopoverWindowBounds(kind, url, opts = {}) {
+    const availW = Math.max(320, Number(window.screen?.availWidth) || window.innerWidth || 1200);
+    const availH = Math.max(240, Number(window.screen?.availHeight) || window.innerHeight || 800);
+    const screenLeft = Number(window.screen?.availLeft) || 0;
+    const screenTop = Number(window.screen?.availTop) || 0;
+    const margin = 20;
+
+    let width;
+    let height;
+    if (kind === 'modal') {
+      // Match overlay: viewport minus ~40pt margins.
+      const pt = 40 * (96 / 72); // CSS pt → px approximation
+      width = Math.max(480, Math.min(availW - margin * 2, (window.innerWidth || availW) - pt));
+      height = Math.max(360, Math.min(availH - margin * 2, (window.innerHeight || availH) - pt));
+    } else {
+      width = 600;
+      height = Math.max(200, availH - margin * 2);
+    }
+
+    const mouseX = Number.isFinite(opts.mouseX) ? opts.mouseX : (window.innerWidth || availW) / 2;
+    let left = screenLeft + Math.round((window.screenX || 0) + mouseX - width / 2);
+    left = Math.max(screenLeft + margin, Math.min(left, screenLeft + availW - width - margin));
+    const top = screenTop + margin;
+
+    return { width: Math.round(width), height: Math.round(height), left, top };
+  }
+
+  /**
+   * Open a sized OS popup window for Link Preview / Open Popover.
+   * @param {object} opts
+   * @param {string} opts.url
+   * @param {'preview'|'modal'} [opts.kind='preview']
+   * @param {string[]} [opts.closeKeys]
+   * @param {'mobile'|'desktop'} [opts.viewportMode]
+   * @param {number} [opts.mouseX]
+   * @param {number} [opts.width]
+   * @param {number} [opts.height]
+   * @param {number} [opts.left]
+   * @param {number} [opts.top]
+   * @returns {Promise<boolean>}
+   */
+  async _openPopoverWindow(opts = {}) {
+    this._ensurePopoverWindowMessageListener();
+    const url = String(opts.url || '').trim();
+    if (!url) return false;
+    const kind = opts.kind === 'modal' ? 'modal' : 'preview';
+    const closeKeys = Array.isArray(opts.closeKeys) && opts.closeKeys.length
+      ? opts.closeKeys.map(String)
+      : (kind === 'modal' ? ['Escape', 'p', 'P'] : ['Escape', 'e', 'E']);
+
+    let viewportMode = opts.viewportMode === 'mobile' ? 'mobile' : 'desktop';
+    if (opts.viewportMode == null) {
+      try {
+        viewportMode = await this._getPreviewViewportModeForHost(previewHostFromUrl(url));
+      } catch {
+        viewportMode = 'desktop';
+      }
+    }
+
+    const bounds = this._computePopoverWindowBounds(kind, url, { mouseX: opts.mouseX });
+    const width = typeof opts.width === 'number' ? opts.width : bounds.width;
+    const height = typeof opts.height === 'number' ? opts.height : bounds.height;
+    const left = typeof opts.left === 'number' ? opts.left : bounds.left;
+    const top = typeof opts.top === 'number' ? opts.top : bounds.top;
+
+    try {
+      // Clear local tracking; SW replaces any existing window for this opener.
+      this._popoverWindowId = null;
+      this._popoverWindowTabId = null;
+      this._popoverWindowUrl = null;
+      this._popoverWindowKind = null;
+
+      const res = await chrome.runtime.sendMessage({
+        type: MSG.OPEN_POPOVER_WINDOW,
+        url,
+        kind,
+        closeKeys,
+        width,
+        height,
+        left,
+        top,
+        viewportMode
+      });
+      if (res?.type === MSG.ERROR || typeof res?.windowId !== 'number') {
+        console.warn('[KeyPilot] Failed to open popover window:', res?.error || res);
+        try {
+          window.__KeyPilotInstance?.state?.setPopoverOpen?.(false, null);
+        } catch { /* ignore */ }
+        return false;
+      }
+      this._popoverWindowId = res.windowId;
+      this._popoverWindowTabId = typeof res.tabId === 'number' ? res.tabId : null;
+      this._popoverWindowUrl = url;
+      this._popoverWindowKind = kind;
+      this._pendingIframePromote = null;
+      return true;
+    } catch (e) {
+      console.warn('[KeyPilot] OPEN_POPOVER_WINDOW failed:', e?.message || e);
+      try {
+        window.__KeyPilotInstance?.state?.setPopoverOpen?.(false, null);
+      } catch { /* ignore */ }
+      return false;
+    }
+  }
+
+  /**
+   * Register a pending iframe load so the SW can detect framing denial.
+   * @param {object} payload
+   */
+  async _registerPreviewIframeWatch(payload) {
+    this._ensurePopoverWindowMessageListener();
+    this._pendingIframePromote = payload;
+    try {
+      await chrome.runtime.sendMessage({
+        type: MSG.REGISTER_PREVIEW_IFRAME,
+        ...payload
+      });
+    } catch (e) {
+      console.warn('[KeyPilot] REGISTER_PREVIEW_IFRAME failed:', e?.message || e);
+    }
+  }
+
+  async _unregisterPreviewIframeWatch() {
+    this._pendingIframePromote = null;
+    try {
+      await chrome.runtime.sendMessage({ type: MSG.UNREGISTER_PREVIEW_IFRAME });
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * After ERR_BLOCKED_BY_RESPONSE on the preview iframe, promote to OS window.
+   * @param {object} message
+   */
+  async _promoteDeniedIframeToWindow(message) {
+    const url = String(message?.url || this._pendingIframePromote?.url || '').trim();
+    if (!url) return;
+    // Ignore stale denials if we already have a window or a different overlay URL.
+    if (this._popoverWindowId != null) return;
+
+    const kind = message?.kind === 'modal' ? 'modal' : 'preview';
+    const closeKeys = Array.isArray(message?.closeKeys) && message.closeKeys.length
+      ? message.closeKeys.map(String)
+      : (this._pendingIframePromote?.closeKeys || undefined);
+
+    // Tear down overlay DOM only — do not flicker popover mode off.
+    this.hidePopover({ closeWindow: false });
+    await this._unregisterPreviewIframeWatch();
+
+    const ok = await this._openPopoverWindow({
+      url,
+      kind,
+      closeKeys,
+      viewportMode: message?.viewportMode,
+      width: message?.width,
+      height: message?.height,
+      left: message?.left,
+      top: message?.top
+    });
+    if (!ok) {
+      console.warn('[KeyPilot] Promote to popover window failed for', url);
+    }
+  }
+
+  async _closeTrackedPopoverWindow() {
+    const windowId = this._popoverWindowId;
+    this._popoverWindowId = null;
+    this._popoverWindowTabId = null;
+    this._popoverWindowUrl = null;
+    this._popoverWindowKind = null;
+    if (typeof windowId !== 'number') return;
+    try {
+      await chrome.runtime.sendMessage({
+        type: MSG.CLOSE_POPOVER_WINDOW,
+        windowId,
+        // Opener-initiated close: SW still notifies, but we already cleared local ids.
+        notifyOpener: false,
+        reason: 'opener_hide'
+      });
+    } catch { /* ignore */ }
+  }
+
+  /**
    * Show popover with iframe containing the linked page.
-   * Uses the shared {@link createPopoverTitlebar} chrome: single titlebar with
-   * title, optional close-key hint, and uniform × close when enabled.
+   * http(s) Open Popover uses {@link createUrlPopoverTitlebar} (Open / Open in New Tab)
+   * and deferred iframe src after HTTPS prep. Settings/Guide keep {@link createPopoverTitlebar}.
+   * Known iframe deniers (X/FB/IG) open a sized OS popup instead.
    *
    * @param {string} url - The URL to load in the popover
    * @param {object} [opts]
@@ -6141,18 +6819,40 @@ export class OverlayManager {
    * @param {boolean} [opts.showClose=true] - Whether to show the titlebar close button
    * @param {string|Node|null} [opts.titlebarHint] - Override titlebar hint (string or Node)
    * @param {string[]} [opts.closeKeys] - Keys forwarded from iframe that should request close (defaults to ['Escape','p','P'])
-   * @param {string} [opts.width] - Optional fixed width (e.g., '920px', overrides default 80vw)
-   * @param {string} [opts.height] - Optional fixed height (e.g., '600px', overrides default 80vh)
+   * @param {string} [opts.width] - Optional fixed width (e.g., '920px', overrides viewport-minus-20pt)
+   * @param {string} [opts.height] - Optional fixed height (e.g., '600px', overrides viewport-minus-20pt)
    */
   showPopover(url, opts = {}) {
     // Remove existing popover if any
     this.hidePopover();
 
-    const titleText = (opts && typeof opts.title === 'string' && opts.title.trim()) ? opts.title.trim() : String(url || '');
-    const hintKeyLabel = (opts && typeof opts.hintKeyLabel === 'string' && opts.hintKeyLabel.trim()) ? opts.hintKeyLabel.trim() : 'P';
+    const isUrlPopover = isHttpPopoverUrl(url);
+    let originalUrl = String(url || '');
+    let iframeSrc = originalUrl;
+    if (isUrlPopover) {
+      const prepared = preparePopoverIframeUrl(url, { rewriteForEmbed: false });
+      originalUrl = prepared.originalUrl;
+      iframeSrc = prepared.iframeSrc;
+    }
+
     const closeKeys = Array.isArray(opts?.closeKeys) && opts.closeKeys.length
       ? opts.closeKeys.map(String)
       : ['Escape', 'p', 'P'];
+
+    // Eager separate-window path for hosts that refuse iframes.
+    if (isUrlPopover && isKnownIframeDenierHost(originalUrl)) {
+      void this._openPopoverWindow({
+        url: originalUrl,
+        kind: 'modal',
+        closeKeys
+      });
+      return;
+    }
+
+    const titleText = (opts && typeof opts.title === 'string' && opts.title.trim())
+      ? opts.title.trim()
+      : originalUrl;
+    const hintKeyLabel = (opts && typeof opts.hintKeyLabel === 'string' && opts.hintKeyLabel.trim()) ? opts.hintKeyLabel.trim() : 'P';
 
     // Centralized close request:
     // Always prefer going through KeyPilot so state (mode/popoverOpen) is updated.
@@ -6216,10 +6916,10 @@ export class OverlayManager {
       style: `
         position: fixed;
         inset: 0;                  /* top: 0; left: 0; bottom: 0; right: 0; */
-        width: ${opts.width || '80vw'};
-        height: ${opts.height || '80vh'};
-        max-width: 100vw;          /* prevents overflow on very small screens */
-        max-height: 100vh;
+        width: ${opts.width || 'calc(100vw - 40pt)'};
+        height: ${opts.height || 'calc(100vh - 40pt)'};
+        max-width: calc(100vw - 40pt);
+        max-height: calc(100vh - 40pt);
         margin: auto;              /* this is what centers it perfectly */
         background: ${NCT_DARK_UI_PANEL_BACKGROUND};
         border-radius: ${NCT_DARK_UI_PANEL_RADIUS};
@@ -6263,15 +6963,28 @@ export class OverlayManager {
         keys: [hintKeyLabel, 'Esc'],
         suffix: 'Use the same keyboard navigation controls.'
       });
-    const titlebarApi = createPopoverTitlebar({
-      title: titleText,
-      variant: 'modal',
-      showClose,
-      onClose: requestClosePopover,
-      closeTitle: 'Close (Esc)',
-      hint: titlebarHint,
-      className: 'kpv2-popover-titlebar'
-    });
+    const titlebarApi = isUrlPopover
+      ? createUrlPopoverTitlebar({
+        title: titleText,
+        variant: 'modal',
+        showClose,
+        onClose: requestClosePopover,
+        closeTitle: 'Close (Esc)',
+        hint: titlebarHint,
+        className: 'kpv2-popover-titlebar',
+        getUrl: () => originalUrl,
+        afterOpen: requestClosePopover,
+        afterOpenNewTab: requestClosePopover
+      })
+      : createPopoverTitlebar({
+        title: titleText,
+        variant: 'modal',
+        showClose,
+        onClose: requestClosePopover,
+        closeTitle: 'Close (Esc)',
+        hint: titlebarHint,
+        className: 'kpv2-popover-titlebar'
+      });
     const header = titlebarApi.titlebar;
     const closeButton = titlebarApi.closeButton;
     this.popoverCloseButton = closeButton;
@@ -6338,22 +7051,25 @@ export class OverlayManager {
     });
     openInTabButton.textContent = 'Open in New Tab';
     openInTabButton.onclick = () => {
-      window.open(url, '_blank');
+      window.open(originalUrl, '_blank');
       requestClosePopover();
     };
     errorContainer.appendChild(openInTabButton);
 
-    // Create iframe
-    const iframe = this.createElement('iframe', {
-      src: url,
-      tabindex: '0',
-      style: `
+    const iframeStyle = `
         flex: 1;
         border: none;
         width: 100%;
         height: 100%;
-      `
-    });
+      `;
+    // http(s): create without src, then assign after mount. Extension pages load immediately.
+    const iframe = isUrlPopover
+      ? createPopoverIframe({ style: iframeStyle })
+      : this.createElement('iframe', {
+        src: url,
+        tabindex: '0',
+        style: iframeStyle
+      });
     iframeRef = iframe;
     this.popoverIframeElement = iframe;
     this.popoverIframeWindow = iframe.contentWindow || null;
@@ -6377,29 +7093,38 @@ export class OverlayManager {
     // Note: We can't reliably detect X-Frame-Options blocking for cross-origin iframes
     // due to same-origin policy. The declarativeNetRequest rules should handle most cases.
     // Only show error on actual load failure (onerror event).
-    iframe.onerror = () => {
-      console.log('[KeyPilot] Iframe load error detected');
+    const showLoadError = () => {
       iframe.style.display = 'none';
       chromeHost.style.flex = '1 1 auto';
       errorContainer.style.display = 'flex';
     };
 
-    // Optional: Very long timeout as last resort (30 seconds) for cases where
-    // iframe never fires onload/onerror (shouldn't happen with declarativeNetRequest)
-    const loadTimeout = setTimeout(() => {
-      // Only show error if iframe hasn't loaded at all (no onload fired)
-      // This is a fallback for edge cases
-      console.log('[KeyPilot] Iframe load timeout - showing error as fallback');
-      iframe.style.display = 'none';
-      chromeHost.style.flex = '1 1 auto';
-      errorContainer.style.display = 'flex';
-    }, 30000);
+    iframe.onerror = () => {
+      console.log('[KeyPilot] Iframe load error detected');
+      showLoadError();
+    };
+
+    /** @type {ReturnType<typeof setTimeout>|null} */
+    let loadTimeout = null;
+    const armLoadTimeout = () => {
+      if (loadTimeout) {
+        try { clearTimeout(loadTimeout); } catch { /* ignore */ }
+      }
+      loadTimeout = setTimeout(() => {
+        console.log('[KeyPilot] Iframe load timeout - showing error as fallback');
+        showLoadError();
+      }, 30000);
+    };
 
     iframe.onload = () => {
-      clearTimeout(loadTimeout);
-      // Iframe loaded successfully - keep it visible
-      // Note: We can't check contentDocument for cross-origin iframes,
-      // but if onload fired, the iframe should be working
+      try {
+        const srcAttr = iframe.getAttribute('src') || '';
+        if (srcAttr === 'about:blank' || iframe.src === 'about:blank') {
+          return;
+        }
+      } catch { /* ignore */ }
+      try { clearTimeout(loadTimeout); } catch { /* ignore */ }
+      loadTimeout = null;
       console.log('[KeyPilot] Iframe loaded successfully');
       sendBridgeInit();
     };
@@ -6416,6 +7141,39 @@ export class OverlayManager {
       panel: this.popoverContainer,
       onRequestClose: requestClosePopover
     });
+
+    if (isUrlPopover) {
+      void (async () => {
+        try {
+          const bounds = this._computePopoverWindowBounds('modal', originalUrl);
+          await this._registerPreviewIframeWatch({
+            url: originalUrl,
+            kind: 'modal',
+            closeKeys,
+            width: bounds.width,
+            height: bounds.height,
+            left: bounds.left,
+            top: bounds.top,
+            viewportMode: 'desktop'
+          });
+          const win = await assignPopoverIframeSrc(iframe, iframeSrc, {
+            beforeNavigate: () => { armLoadTimeout(); }
+          });
+          this.popoverIframeWindow = win;
+        } catch (e) {
+          console.error('[KeyPilot] Failed to load popover URL:', e?.message || e);
+          try { clearTimeout(loadTimeout); } catch { /* ignore */ }
+          // Prefer OS-window promote over static error UI.
+          void this._promoteDeniedIframeToWindow({
+            url: originalUrl,
+            kind: 'modal',
+            closeKeys
+          });
+        }
+      })();
+    } else {
+      armLoadTimeout();
+    }
     sendBridgeInit();
 
     // Short retry window to cover slow frames / initial about:blank then navigation
@@ -6479,7 +7237,7 @@ export class OverlayManager {
         this._focusPopoverIframe(iframeRef);
         this._installPopoverHybridFocus({
           iframe: iframeRef,
-          chromeEls: [header, closeButton].filter(Boolean),
+          chromeEls: [header, ...titlebarApi.getInteractiveElements()].filter(Boolean),
           focusChromeEl: closeButton || header
         });
         return;
@@ -6644,7 +7402,16 @@ export class OverlayManager {
     } catch { /* ignore */ }
   }
 
-  hidePopover() {
+  hidePopover(opts = {}) {
+    const closeWindow = opts.closeWindow !== false;
+
+    // Drop denial watch so a late error does not reopen a window after close.
+    void this._unregisterPreviewIframeWatch();
+
+    if (closeWindow) {
+      void this._closeTrackedPopoverWindow();
+    }
+
     // Drop mobile UA session rule so host-page iframes are not affected after close.
     if (this._previewMobileUaActive) {
       this._previewMobileUaActive = false;
@@ -7032,11 +7799,11 @@ export class OverlayManager {
   }
 
   /**
-   * Check if popover is currently open
+   * Check if popover is currently open (overlay iframe or OS popup window).
    * @returns {boolean}
    */
   isPopoverOpen() {
-    return this.popoverContainer !== null;
+    return this.popoverContainer !== null || this._popoverWindowId != null;
   }
 
   /**
@@ -7049,13 +7816,26 @@ export class OverlayManager {
     // Remove existing popover if any
     this.hidePopover();
 
-    // Prefer HTTPS for preview embeds (many sites refuse insecure framing / mixed content).
-    url = preferHttpsForPreview(url);
-    // X and similar hosts refuse a full-page iframe even after DNR header
-    // stripping ("refused to connect"). Official embed docs are allowed.
-    const iframeSrc = rewriteUrlForIframePreview(url);
+    const { originalUrl, iframeSrc } = preparePopoverIframeUrl(url, { rewriteForEmbed: true });
+    url = originalUrl;
 
     const mouseX = opts.mouseX ?? window.innerWidth / 2;
+    const closeKeys = Array.isArray(opts?.closeKeys) && opts.closeKeys.length
+      ? opts.closeKeys.map(String)
+      : ['Escape', 'e', 'E'];
+
+    // Eager separate-window path for hosts that refuse iframes.
+    if (isKnownIframeDenierHost(url)) {
+      await this._openPopoverWindow({
+        url,
+        kind: 'preview',
+        closeKeys,
+        mouseX,
+        viewportMode: opts.viewportMode
+      });
+      return;
+    }
+
     const popoverWidth = 600;
     const arrowSize = 10; // Kept for drag cleanup / style vars if user resizes later
     const margin = 20; // Margin from viewport edges
@@ -7073,9 +7853,6 @@ export class OverlayManager {
     const arrowLeft = Math.max(20, Math.min(mouseX - left, popoverWidth - 20));
 
     const titleText = 'Link Preview';
-    const closeKeys = Array.isArray(opts?.closeKeys) && opts.closeKeys.length
-      ? opts.closeKeys.map(String)
-      : ['Escape', 'e', 'E'];
 
     // Default desktop; restore per-host Mobile if the user chose it before.
     /** @type {'mobile'|'desktop'} */
@@ -7242,13 +8019,6 @@ export class OverlayManager {
       `
     });
 
-    // Shared outline Open / Open in New Tab controls (also used by Launcher preview).
-    const { actions: previewOpenActions } = createPreviewOpenActionButtons({
-      getUrl: () => url,
-      afterOpen: () => requestClosePopover(),
-      afterOpenNewTab: () => requestClosePopover()
-    });
-
     /**
      * Mobile = mobile User-Agent + client hints (true mobile pages).
      * Desktop = normal desktop UA.
@@ -7334,8 +8104,8 @@ export class OverlayManager {
       }
     });
 
-    // Single standard titlebar (drag handle): title + hint + mode + actions + uniform × close.
-    const titlebarApi = createPopoverTitlebar({
+    // Shared URL-popover titlebar: Mobile/Desktop extra + Open / Open in New Tab.
+    const titlebarApi = createUrlPopoverTitlebar({
       title: titleText,
       variant: 'preview',
       draggable: true,
@@ -7344,8 +8114,11 @@ export class OverlayManager {
       onClose: requestClosePopover,
       closeTitle: 'Close (Esc)',
       hint: 'Press Esc / E to hide',
-      actions: [viewportModeControl.root, previewOpenActions],
-      className: 'kpv2-preview-popover-titlebar'
+      extraActions: [viewportModeControl.root],
+      className: 'kpv2-preview-popover-titlebar',
+      getUrl: () => url,
+      afterOpen: () => requestClosePopover(),
+      afterOpenNewTab: () => requestClosePopover()
     });
     const header = titlebarApi.titlebar;
     const closeButton = titlebarApi.closeButton;
@@ -7554,8 +8327,7 @@ export class OverlayManager {
     errorContainer.appendChild(openInTabButton);
 
     // Create iframe full-bleed; src is set only after mobile UA is installed (when needed).
-    const iframe = this.createElement('iframe', {
-      tabindex: '0',
+    const iframe = createPopoverIframe({
       style: `
         border: none;
         width: 100%;
@@ -7643,20 +8415,37 @@ export class OverlayManager {
     // Apply UA for remembered/default mode before first navigation (desktop = no spoof).
     void (async () => {
       try {
-        // First apply: set UA without reload; then assign src once.
-        await applyViewportMode(viewportMode, { reload: false });
-      } catch (e) {
-        console.warn('[KeyPilot] Failed to prepare preview viewport mode:', e?.message || e);
-      }
-      try {
-        armLoadTimeout();
-        iframe.src = iframeSrc;
-        this.popoverIframeWindow = iframe.contentWindow || null;
+        const winBounds = this._computePopoverWindowBounds('preview', url, { mouseX });
+        await this._registerPreviewIframeWatch({
+          url,
+          kind: 'preview',
+          closeKeys,
+          width: winBounds.width,
+          height: winBounds.height,
+          left: winBounds.left,
+          top: winBounds.top,
+          viewportMode
+        });
+        const win = await assignPopoverIframeSrc(iframe, iframeSrc, {
+          beforeNavigate: async () => {
+            try {
+              await applyViewportMode(viewportMode, { reload: false });
+            } catch (e) {
+              console.warn('[KeyPilot] Failed to prepare preview viewport mode:', e?.message || e);
+            }
+            armLoadTimeout();
+          }
+        });
+        this.popoverIframeWindow = win;
       } catch (e) {
         console.error('[KeyPilot] Failed to load preview URL:', e?.message || e);
         clearLoadTimeout();
-        iframeViewport.style.display = 'none';
-        errorContainer.style.display = 'flex';
+        void this._promoteDeniedIframeToWindow({
+          url,
+          kind: 'preview',
+          closeKeys,
+          viewportMode
+        });
       }
     })();
 
@@ -7735,9 +8524,7 @@ export class OverlayManager {
           iframe: iframeRef,
           chromeEls: [
             header,
-            closeButton,
-            viewportModeControl.root,
-            previewOpenActions
+            ...titlebarApi.getInteractiveElements()
           ].filter(Boolean),
           focusChromeEl: closeButton || header
         });

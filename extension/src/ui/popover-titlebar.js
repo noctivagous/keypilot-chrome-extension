@@ -1,8 +1,8 @@
 /**
  * Standard KeyPilot popover titlebar chrome.
  *
- * Used by modal iframe popovers (Settings, Guide, Open Popover) and preview
- * popovers so close buttons, title layout, and optional action slots stay uniform.
+ * Used by modal iframe popovers (Settings, Guide) and URL popovers
+ * (Open Popover, Link Preview) via {@link createUrlPopoverTitlebar}.
  *
  * Layout (left → right):
  *   [ title  · optional hint ]     [ actions… ]  [ × close ]
@@ -19,6 +19,7 @@ import {
   NCT_DARK_UI_ICON_BUTTON_OUTLINE,
   NCT_DARK_UI_COLORS
 } from './nct-dark-ui.js';
+import { createPreviewOpenActionButtons } from './preview-open-actions.js';
 
 // Pin UI font (KP_UI_FONT) so host pages cannot leak typography into chrome.
 // Preview popovers mount in the light DOM under body and inherit page fonts otherwise.
@@ -414,4 +415,33 @@ export function createPopoverTitlebar(config = {}) {
     setHint,
     getInteractiveElements
   };
+}
+
+/**
+ * Titlebar for http(s) URL popovers (Link Preview, Open Popover):
+ * standard chrome plus Open / Open in New Tab. Extra actions (e.g. Mobile/Desktop)
+ * are prepended before those buttons.
+ *
+ * @param {PopoverTitlebarConfig & {
+ *   getUrl: () => (string|null|undefined),
+ *   extraActions?: HTMLElement|HTMLElement[]|null,
+ *   afterOpen?: () => void,
+ *   afterOpenNewTab?: () => void
+ * }} [config]
+ */
+export function createUrlPopoverTitlebar(config = {}) {
+  const { getUrl, extraActions, afterOpen, afterOpenNewTab, ...titlebarConfig } = config;
+  const { actions: openActions } = createPreviewOpenActionButtons({
+    doc: titlebarConfig.doc,
+    getUrl,
+    afterOpen,
+    afterOpenNewTab
+  });
+  const extra = Array.isArray(extraActions)
+    ? extraActions.filter(Boolean)
+    : (extraActions ? [extraActions] : []);
+  return createPopoverTitlebar({
+    ...titlebarConfig,
+    actions: [...extra, openActions]
+  });
 }

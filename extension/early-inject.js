@@ -2328,7 +2328,9 @@
           "type": "overlay",
           "title": "Welcome to KeyPilot",
           "message": "We'll show you how to use KeyPilot one step at a time.",
-          "primaryText": "OK"
+          "primaryText": "OK",
+          "secondaryText": "Close",
+          "secondaryAction": "close"
         }
       ],
       "bodyText": ""
@@ -3988,8 +3990,41 @@
           vertical-align: baseline;
           white-space: nowrap;
         }
+        ${s('[data-kp-onboarding-overlay="true"]')} {
+          background: rgba(0, 0, 0, 0.35);
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+        }
+        ${s('[data-kp-onboarding-overlay="true"] > div')} {
+          border-radius: 3px;
+          border: ${ONBOARDING_METAL.panelBorder};
+          background: ${ONBOARDING_METAL.panelBg};
+          box-shadow: ${ONBOARDING_METAL.panelShadow};
+          color: ${ONBOARDING_METAL.fg};
+          font-family: Helvetica, Arial, sans-serif;
+        }
         ${s('[data-kp-onboarding-overlay-title="true"]')} {
-          color: #ffffff;
+          color: ${ONBOARDING_METAL.fg};
+          font-weight: 800;
+        }
+        ${s('[data-kp-onboarding-overlay-message="true"]')} {
+          color: ${ONBOARDING_METAL.fgDim};
+        }
+        ${s('button[data-kp-onboarding-overlay-secondary="true"]')} {
+          border-radius: 2px;
+          border: ${ONBOARDING_METAL.btnBorder};
+          background: ${ONBOARDING_METAL.btnBg};
+          box-shadow: ${ONBOARDING_METAL.btnShadow};
+          color: ${ONBOARDING_METAL.fg};
+          font-weight: 700;
+        }
+        ${s('button[data-kp-onboarding-overlay-primary="true"]')} {
+          border-radius: 2px;
+          border: 1px solid #2a4a66;
+          background: linear-gradient(180deg, #5a7a9a 0%, #3a5570 100%);
+          box-shadow: 0 1px 0 rgba(255,255,255,0.28) inset, 0 -1px 0 rgba(0,0,0,0.28) inset;
+          color: #e8f0f8;
+          font-weight: 700;
         }
         /* Next incomplete checklist row — same light-blue glow language as the toggle-off arrow. */
         @keyframes kp-onboarding-next-task-glow {
@@ -4838,6 +4873,102 @@
 
   // ── Overlay ─────────────────────────────────────────────────────────────────
 
+  /** Steel-blue lit primary — matches NCT pro accent without importing nct-dark-ui. */
+  const ONBOARDING_OVERLAY_PRIMARY_BTN = {
+    border: '1px solid #2a4a66',
+    background: 'linear-gradient(180deg, #5a7a9a 0%, #3a5570 100%)',
+    boxShadow: '0 1px 0 rgba(255,255,255,0.28) inset, 0 -1px 0 rgba(0,0,0,0.28) inset',
+    color: '#e8f0f8'
+  };
+
+  /**
+   * Apply gray pro metal chrome to an onboarding slide overlay (and its card/buttons).
+   * Safe to call on legacy dark-glass overlays so they pick up the current theme.
+   * @param {{
+   *   overlayEl?: HTMLElement|null,
+   *   titleEl?: HTMLElement|null,
+   *   msgEl?: HTMLElement|null,
+   *   primaryBtn?: HTMLButtonElement|null,
+   *   secondaryBtn?: HTMLButtonElement|null
+   * }} refs
+   */
+  function applyOnboardingOverlayChrome(refs) {
+    const overlayEl = refs?.overlayEl || null;
+    if (!overlayEl) return;
+
+    assignStyle(overlayEl, {
+      position: 'absolute',
+      inset: '0',
+      padding: '14px',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'rgba(0,0,0,0.35)',
+      backdropFilter: 'blur(6px)',
+      WebkitBackdropFilter: 'blur(6px)',
+      zIndex: '20',
+      boxSizing: 'border-box'
+    });
+
+    const card = overlayEl.firstElementChild;
+    if (card) {
+      assignStyle(card, {
+        width: '100%',
+        maxWidth: '320px',
+        borderRadius: '3px',
+        border: ONBOARDING_METAL.panelBorder,
+        background: ONBOARDING_METAL.panelBg,
+        boxShadow: ONBOARDING_METAL.panelShadow,
+        padding: '14px 14px 12px 14px',
+        fontFamily: 'Helvetica, Arial, sans-serif',
+        color: ONBOARDING_METAL.fg,
+        boxSizing: 'border-box'
+      });
+    }
+
+    if (refs.titleEl) {
+      assignStyle(refs.titleEl, {
+        fontSize: '14px',
+        fontWeight: '800',
+        letterSpacing: '0.2px',
+        marginBottom: '8px',
+        color: ONBOARDING_METAL.fg
+      });
+    }
+
+    if (refs.msgEl) {
+      assignStyle(refs.msgEl, {
+        fontSize: '13px',
+        lineHeight: '1.35',
+        color: ONBOARDING_METAL.fgDim,
+        whiteSpace: 'pre-wrap'
+      });
+    }
+
+    const styleBtn = (b, variant) => {
+      if (!b) return;
+      const primary = variant === 'primary';
+      assignStyle(b, {
+        minHeight: '28px',
+        height: 'auto',
+        borderRadius: '2px',
+        border: primary ? ONBOARDING_OVERLAY_PRIMARY_BTN.border : ONBOARDING_METAL.btnBorder,
+        background: primary ? ONBOARDING_OVERLAY_PRIMARY_BTN.background : ONBOARDING_METAL.btnBg,
+        boxShadow: primary ? ONBOARDING_OVERLAY_PRIMARY_BTN.boxShadow : ONBOARDING_METAL.btnShadow,
+        color: primary ? ONBOARDING_OVERLAY_PRIMARY_BTN.color : ONBOARDING_METAL.fg,
+        cursor: 'pointer',
+        fontFamily: 'Helvetica, Arial, sans-serif',
+        fontSize: '12px',
+        fontWeight: '700',
+        padding: '4px 12px',
+        lineHeight: '20px',
+        whiteSpace: 'normal',
+        textAlign: 'center'
+      });
+    };
+    styleBtn(refs.secondaryBtn, 'secondary');
+    styleBtn(refs.primaryBtn, 'primary');
+  }
+
   /**
    * Ensure modal overlay exists on the onboarding panel root.
    * Attaches to the panel root (not the scrollable body) so a flex body with
@@ -4876,68 +5007,34 @@
       try {
         if (existing.parentElement !== shell) shell.appendChild(existing);
       } catch { /* ignore */ }
-      try {
-        const titleEl = existing.querySelector('[data-kp-onboarding-overlay-title="true"]');
-        if (titleEl) titleEl.style.color = '#ffffff';
-      } catch { /* ignore */ }
-      return {
+      const refs = {
         overlayEl: existing,
         titleEl: existing.querySelector('[data-kp-onboarding-overlay-title="true"]'),
         msgEl: existing.querySelector('[data-kp-onboarding-overlay-message="true"]'),
         primaryBtn: existing.querySelector('button[data-kp-onboarding-overlay-primary="true"]'),
         secondaryBtn: existing.querySelector('button[data-kp-onboarding-overlay-secondary="true"]')
       };
+      try { applyOnboardingOverlayChrome(refs); } catch { /* ignore */ }
+      return refs;
     }
 
     const overlay = d.createElement('div');
     overlay.setAttribute('data-kp-onboarding-overlay', 'true');
     overlay.hidden = true;
     assignStyle(overlay, {
-      position: 'absolute',
-      inset: '0',
-      padding: '14px',
       display: 'none',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'rgba(0,0,0,0.42)',
-      backdropFilter: 'blur(10px)',
-      WebkitBackdropFilter: 'blur(10px)',
-      zIndex: '20',
-      pointerEvents: 'none',
-      boxSizing: 'border-box'
+      pointerEvents: 'none'
     });
 
     const card = d.createElement('div');
-    assignStyle(card, {
-      width: '100%',
-      maxWidth: '320px',
-      borderRadius: '14px',
-      border: '1px solid rgba(255,255,255,0.16)',
-      background: 'rgba(18, 18, 18, 0.78)',
-      boxShadow: '0 16px 44px rgba(0,0,0,0.55)',
-      padding: '14px 14px 12px 14px'
-    });
 
     const titleEl = d.createElement('div');
     titleEl.setAttribute('data-kp-onboarding-overlay-title', 'true');
     titleEl.textContent = 'Nice!';
-    assignStyle(titleEl, {
-      fontSize: '14px',
-      fontWeight: '900',
-      letterSpacing: '0.2px',
-      marginBottom: '8px',
-      color: '#ffffff'
-    });
 
     const msgEl = d.createElement('div');
     msgEl.setAttribute('data-kp-onboarding-overlay-message', 'true');
     msgEl.textContent = '';
-    assignStyle(msgEl, {
-      fontSize: '13px',
-      lineHeight: '1.35',
-      color: 'rgba(255,255,255,0.90)',
-      whiteSpace: 'pre-wrap'
-    });
 
     const btnRow = d.createElement('div');
     assignStyle(btnRow, {
@@ -4949,33 +5046,14 @@
       marginTop: '12px'
     });
 
-    const mkBtn = (variant) => {
-      const b = d.createElement('button');
-      b.type = 'button';
-      assignStyle(b, {
-        minHeight: '30px',
-        height: 'auto',
-        borderRadius: '999px',
-        border: variant === 'primary' ? '1px solid rgba(46, 204, 113, 0.55)' : '1px solid rgba(255,255,255,0.20)',
-        background: variant === 'primary' ? 'rgba(46, 204, 113, 0.18)' : 'rgba(255,255,255,0.06)',
-        color: 'rgba(255,255,255,0.92)',
-        cursor: 'pointer',
-        fontSize: '12px',
-        fontWeight: '800',
-        padding: '4px 12px',
-        lineHeight: '20px',
-        whiteSpace: 'normal',
-        textAlign: 'center'
-      });
-      return b;
-    };
-
-    const secondaryBtn = mkBtn('secondary');
+    const secondaryBtn = d.createElement('button');
+    secondaryBtn.type = 'button';
     secondaryBtn.hidden = true;
     secondaryBtn.textContent = '';
     secondaryBtn.setAttribute('data-kp-onboarding-overlay-secondary', 'true');
 
-    const primaryBtn = mkBtn('primary');
+    const primaryBtn = d.createElement('button');
+    primaryBtn.type = 'button';
     primaryBtn.textContent = 'OK';
     primaryBtn.setAttribute('data-kp-onboarding-overlay-primary', 'true');
 
@@ -4987,7 +5065,9 @@
     overlay.appendChild(card);
     shell.appendChild(overlay);
 
-    return { overlayEl: overlay, titleEl, msgEl, primaryBtn, secondaryBtn };
+    const refs = { overlayEl: overlay, titleEl, msgEl, primaryBtn, secondaryBtn };
+    applyOnboardingOverlayChrome(refs);
+    return refs;
   }
 
   /**
@@ -5454,6 +5534,10 @@
       } catch { /* ignore */ }
     }
 
+    // Open the onEnter overlay BEFORE painting the checklist so the first frame
+    // does not flash uncovered slide content under the dimmer.
+    try { syncEarlyOnEnterOverlay(slide, progress); } catch { /* ignore */ }
+
     if (typeof renderOnboardingSlideSurface === 'function') {
       renderOnboardingSlideSurface(surface, {
         tasks: slide.tasks || [],
@@ -5494,10 +5578,6 @@
         }
       });
     }
-
-    // Show slide onEnter overlay immediately (before content-bundled loads).
-    // Chrome often paints the early shell first; waiting for the manager missed the welcome modal.
-    try { syncEarlyOnEnterOverlay(slide, progress); } catch { /* ignore */ }
   }
 
   /**
@@ -5622,7 +5702,6 @@
             e.stopPropagation();
           } catch { /* ignore */ }
           const id = String(onboardingRoot?.dataset?.kpEarlyOverlaySlideId || '');
-          try { if (id) markEarlyOnEnterDone(id); } catch { /* ignore */ }
           const secondaryAction = String(btn.dataset?.kpSecondaryAction || '').trim().toLowerCase();
 
           const closeWalkthrough = () => {
@@ -5650,6 +5729,8 @@
           };
 
           if (secondaryAction === 'later' || secondaryAction === 'defer' || secondaryAction === 'remind') {
+            // Accept this slide's intro so it does not re-show on reopen.
+            try { if (id) markEarlyOnEnterDone(id); } catch { /* ignore */ }
             try {
               if (overlayRefs.titleEl) {
                 renderKeyboardKeysInto(
@@ -5683,6 +5764,7 @@
           }
 
           if (secondaryAction === 'close' || secondaryAction === 'dismiss') {
+            // Do not mark onEnter done — reopen should show this overlay again.
             closeWalkthrough();
             return;
           }
@@ -5847,16 +5929,17 @@
       // This matches the bundled onboarding behavior and prevents load-time flashes.
       const isEnabled = enabledState.enabled === true;
       const shouldShow = isEnabled && state.active === true && state.completed !== true;
+      if (shouldShow) {
+        // Paint checklist + onEnter overlay while still hidden, then reveal once.
+        // Showing first used to flash the uncovered slide for a frame.
+        try { renderEarlyOnboardingContent(null, state); } catch { /* ignore */ }
+      }
       if (typeof setOnboardingPanelVisible === 'function') {
         setOnboardingPanelVisible(root, shouldShow);
       } else {
         root.hidden = !shouldShow;
         root.style.display = shouldShow ? 'flex' : 'none';
         root.style.pointerEvents = shouldShow ? 'auto' : 'none';
-      }
-      if (shouldShow) {
-        // Keep the early checklist in sync so the main bundled UI can adopt without a visual "pop".
-        try { renderEarlyOnboardingContent(null, state); } catch { /* ignore */ }
       }
       // Control strip sits below onboarding when both occupy the top-left.
       try { syncEarlyControlStripOnboardingOffset(); } catch { /* ignore */ }

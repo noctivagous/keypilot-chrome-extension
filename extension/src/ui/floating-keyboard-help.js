@@ -92,6 +92,10 @@ const LAYOUT_SELECT_EDIT_VALUE = '__edit_layouts__';
 const LAYOUT_SELECT_NEW_VALUE = '__new_layout__';
 /** Sentinel value for duplicating the current layout and opening Keyboard Layout Config. */
 const LAYOUT_SELECT_DUP_VALUE = '__duplicate_layout__';
+/** Sentinel value for opening the Onboarding Tutorial from the layout <select>. */
+const LAYOUT_SELECT_ONBOARDING_VALUE = '__onboarding_tutorial__';
+/** Sentinel value for opening Settings from the layout <select>. */
+const LAYOUT_SELECT_SETTINGS_VALUE = '__settings__';
 
 /**
  * Function / action ids that stay fully styled and interactive on the Keyboard
@@ -1851,14 +1855,27 @@ export class FloatingKeyboardHelp {
       v === LAYOUT_SELECT_EDIT_VALUE
       || v === LAYOUT_SELECT_NEW_VALUE
       || v === LAYOUT_SELECT_DUP_VALUE
+      || v === LAYOUT_SELECT_ONBOARDING_VALUE
+      || v === LAYOUT_SELECT_SETTINGS_VALUE
     ) {
-      // Action item — restore prior layout selection, then open Config.
+      // Action item — restore prior layout selection, then run the action.
       const prev = this._layoutSelectValueForCurrent();
       const known = [...sel.options].some((o) => o && o.value === prev);
       sel.value = known ? prev : builtinFamilySelectValue('browsing');
       try {
         const kp = this._getKeyPilot?.();
-        if (v === LAYOUT_SELECT_EDIT_VALUE) {
+        if (v === LAYOUT_SELECT_ONBOARDING_VALUE) {
+          const ob = window.__KeyPilotOnboarding;
+          if (ob && typeof ob.resetTutorial === 'function') {
+            void ob.resetTutorial();
+          } else if (ob && typeof ob.setActive === 'function') {
+            ob.setActive(true);
+          }
+        } else if (v === LAYOUT_SELECT_SETTINGS_VALUE) {
+          if (kp && typeof kp.handleOpenSettingsPopover === 'function') {
+            kp.handleOpenSettingsPopover();
+          }
+        } else if (v === LAYOUT_SELECT_EDIT_VALUE) {
           openKeyboardLayoutConfigurator(kp || null, {});
         } else {
           openKeyboardLayoutConfigurator(kp || null, {
@@ -1983,6 +2000,15 @@ export class FloatingKeyboardHelp {
         optDup.textContent = 'New Duplicate Keyboard Layout';
         selEl.appendChild(optDup);
       }
+
+      // KeyPilot app actions (always at the bottom).
+      try {
+        selEl.appendChild(document.createElement('hr'));
+      } catch { /* ignore */ }
+      appendGroup('KeyPilot', [
+        { value: LAYOUT_SELECT_ONBOARDING_VALUE, label: 'Onboarding Tutorial' },
+        { value: LAYOUT_SELECT_SETTINGS_VALUE, label: 'Settings' }
+      ]);
 
       let v = this._layoutSelectValueForCurrent();
       if (!known.has(v) && !String(v).startsWith('user:')) {

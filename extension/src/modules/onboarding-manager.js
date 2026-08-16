@@ -897,8 +897,8 @@ export class OnboardingManager {
     // so the user can focus on turning KeyPilot back on.
     try { this._autoCompleteToggleOffIfAlreadyDisabled(); } catch { /* ignore */ }
 
-    this.panel.show();
-    // Determine whether this render is a slide transition (for animation + hooks).
+    // Determine whether this render is a slide transition (for animation + hooks)
+    // before mutating last-rendered ids / showing the panel.
     const isSlideChange =
       this._lastRenderedSlideId !== null &&
       String(this._lastRenderedSlideId) !== String(slide.id);
@@ -922,6 +922,14 @@ export class OnboardingManager {
     ) {
       try { this.panel.hideOverlay(); } catch { /* ignore */ }
     }
+
+    // Fire onEnter (incl. slide overlay) before revealing the panel / painting the
+    // checklist so the first visible frame includes the dimmer.
+    if (!this.progress.onEnterDoneSlideIds.includes(slide.id)) {
+      this._runOnEnter(slide);
+    }
+
+    this.panel.show();
 
     if (transition && transition.type === 'slide') {
       this._emit('slideTransitionStart', {
@@ -1016,17 +1024,12 @@ export class OnboardingManager {
     // Control-strip arrow only for the next incomplete "turn off" task.
     this._syncToggleOffArrow();
 
-    // Fire onEnter actions once per slide. Overlay onEnter is marked done only
-    // after the modal is actually open (see _runOnEnter) so a failed first paint
-    // on Chrome can retry on the next render.
-    if (!this.progress.onEnterDoneSlideIds.includes(slide.id)) {
-      this._runOnEnter(slide);
-    }
-
   }
 
   /**
    * Persist that onEnter for this slide has finished (so it won't re-fire).
+   * For overlay onEnter, call only after the user accepts the modal (OK / primary) —
+   * not merely when the overlay is shown, and not when they Close/dismiss without accepting.
    * @param {string|null|undefined} slideId
    */
   _markOnEnterDone(slideId) {
@@ -1064,6 +1067,10 @@ export class OnboardingManager {
           try { this.setActive(false); } catch { /* ignore */ }
         };
 
+        const acceptOverlay = () => {
+          this._markOnEnterDone(slideId);
+        };
+
         const showLaterReminder = () => {
           const reminderTitle =
             laterTitle ||
@@ -1084,8 +1091,13 @@ export class OnboardingManager {
         let onSecondary = null;
         if (secondaryText) {
           if (secondaryAction === 'later' || secondaryAction === 'defer' || secondaryAction === 'remind') {
-            onSecondary = showLaterReminder;
+            // Choosing "later" counts as accepting this slide's intro (don't re-show it).
+            onSecondary = () => {
+              acceptOverlay();
+              showLaterReminder();
+            };
           } else if (secondaryAction === 'close' || secondaryAction === 'dismiss') {
+            // Close without accepting — reopen should show this overlay again.
             onSecondary = closeWalkthrough;
           }
         }
@@ -1120,10 +1132,21 @@ export class OnboardingManager {
         this._onEnterOverlayPendingSlideId = slideId;
 
         // Early-inject may already have the welcome modal open — adopt it.
+        // Do not mark onEnter done until the user accepts (OK); Close must leave it pending.
         try {
           if (this.panel.isOverlayOpen?.()) {
             this._onEnterOverlayPendingSlideId = null;
-            this._markOnEnterDone(slideId);
+            // Re-bind accept / close handlers onto the adopted early overlay.
+            try {
+              this.panel.showOverlay({
+                title,
+                message,
+                primaryText,
+                secondaryText,
+                onPrimary: acceptOverlay,
+                onSecondary
+              });
+            } catch { /* ignore */ }
             scheduleBorderEffect();
             continue;
           }
@@ -1136,6 +1159,7 @@ export class OnboardingManager {
               message,
               primaryText,
               secondaryText,
+              onPrimary: acceptOverlay,
               onSecondary
             });
             this._emit('overlayShown', { slideId, title, message });
@@ -1153,11 +1177,9 @@ export class OnboardingManager {
           if (this._onEnterOverlayPendingSlideId === slideId) {
             this._onEnterOverlayPendingSlideId = null;
           }
-          // Only mark done once the overlay is actually visible. If show failed,
-          // leave unmarked so a later _render (e.g. storage sync) can retry.
+          // Leave onEnter unmarked until OK so Close → reopen still shows the overlay.
+          // If show failed, leave pending cleared so a later _render can retry.
           if (shown) {
-            this._markOnEnterDone(slideId);
-            // Marquee/flash after the overlay is up (not during slide transition).
             scheduleBorderEffect();
           }
         };
@@ -1174,6 +1196,10 @@ export class OnboardingManager {
               this._onEnterOverlayPendingSlideId = null;
               return;
             }
+            if (this.panel.isOverlayOpen?.()) {
+              finish(true);
+              return;
+            }
             if (tryShow()) {
               finish(true);
               return;
@@ -1181,6 +1207,10 @@ export class OnboardingManager {
             requestAnimationFrame(() => {
               if (slideId && this.progress.onEnterDoneSlideIds.includes(String(slideId))) {
                 this._onEnterOverlayPendingSlideId = null;
+                return;
+              }
+              if (this.panel.isOverlayOpen?.()) {
+                finish(true);
                 return;
               }
               finish(tryShow());
@@ -1239,7 +1269,7 @@ export class OnboardingManager {
     }
 
     // Non-overlay onEnter (openTab / openPopover): mark done immediately.
-    // Overlay-only slides wait until the modal is confirmed open.
+    // Overlay slides wait until the user accepts the modal (OK / primary).
     if (!hasOverlay) {
       this._markOnEnterDone(slideId);
     }
