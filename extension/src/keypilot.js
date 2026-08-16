@@ -229,6 +229,8 @@ export class KeyPilot extends EventManager {
     this.KEYBOARD_HELP_STORAGE_KEY = 'keypilot_keyboard_help_visible';
     this._keyboardHelpVisible = false;
     this._keyboardHelpStorageListener = null;
+    /** True when this top-level tab is a separate-window Link Preview / Open Popover. */
+    this._isPopoverOsWindow = false;
 
     this._scrollLineOverlay = new ScrollLineOverlay();
     this._scrollLineRaf = 0;
@@ -746,10 +748,12 @@ export class KeyPilot extends EventManager {
     this.setupShadowDOMSupport();
 
     // Separate-window Link Preview / Open Popover: inject titlebar chrome early.
+    // Keyboard Reference stays on the opener tab only — never paint it here.
     try {
       if (window === window.top) {
         const popWin = await queryPopoverWindowInfo();
         if (popWin?.isPopoverWindow) {
+          this._isPopoverOsWindow = true;
           await installPopoverWindowChrome(popWin);
         }
       }
@@ -1768,6 +1772,19 @@ export class KeyPilot extends EventManager {
   }
 
   applyKeyboardHelpVisibility(visible, { persist = false } = {}) {
+    // Separate-window Link Preview / Open Popover: never host Keyboard Reference.
+    // Do not persist — toggles here must not change visibility on the opener tab.
+    if (this._isPopoverOsWindow || window.__KP_POPOVER_WINDOW) {
+      this._keyboardHelpVisible = false;
+      if (this.floatingKeyboardHelp) {
+        try {
+          this.floatingKeyboardHelp.cleanup();
+        } catch { /* ignore */ }
+        this.floatingKeyboardHelp = null;
+      }
+      return;
+    }
+
     const next = Boolean(visible);
     this._keyboardHelpVisible = next;
 
@@ -2573,6 +2590,17 @@ export class KeyPilot extends EventManager {
       e.stopPropagation();
       e.stopImmediatePropagation();
       this._toggleKeyboardLayoutConfigurator();
+      return;
+    }
+
+    // Alt+H: toggle KeyPilot documentation popover.
+    if ((e.altKey || e.code === 'AltRight') && (e.key === 'h' || e.key === 'H' || e.code === 'KeyH')) {
+      if (window !== window.top) return;
+      if (!this.enabled) return;
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      this.handleToggleDocsPopover();
       return;
     }
 
@@ -8354,6 +8382,14 @@ export class KeyPilot extends EventManager {
     }
   }
 
+  getDocsPopoverUrl() {
+    try {
+      return chrome.runtime.getURL('pages/docs.html');
+    } catch {
+      return null;
+    }
+  }
+
   handleOpenSettingsPopover() {
     const url = this.getSettingsPopoverUrl();
     if (!url) return;
@@ -8419,6 +8455,42 @@ export class KeyPilot extends EventManager {
     this.state.setPopoverOpen(true, url);
   }
 
+  handleOpenDocsPopover() {
+    const url = this.getDocsPopoverUrl();
+    if (!url) return;
+
+    const currentState = this.state.getState();
+    if (currentState.mode === MODES.POPOVER) {
+      this.handleClosePopover();
+    }
+
+    const docsContainerWidth = Math.min(980, window.innerWidth - 36) + 20;
+    const docsContainerHeight = Math.min(window.innerHeight * 0.82, window.innerHeight - 80) + 20;
+
+    this.overlayManager.showPopover(url, {
+      title: 'KeyPilot Docs',
+      hintKeyLabel: 'Alt+H',
+      closeKeys: ['Escape'],
+      width: `${docsContainerWidth}px`,
+      height: `${docsContainerHeight}px`
+    });
+    this.state.setPopoverOpen(true, url);
+  }
+
+  handleToggleDocsPopover() {
+    if (window !== window.top) return;
+    const currentState = this.state.getState();
+    const docsUrl = this.getDocsPopoverUrl();
+    if (!docsUrl) return;
+
+    if (currentState.mode === MODES.POPOVER && currentState.popoverUrl === docsUrl) {
+      this.handleClosePopover();
+      return;
+    }
+
+    this.handleOpenDocsPopover();
+  }
+
   handleClosePopover() {
     console.log('[KeyPilot] Closing popover');
     this.overlayManager.hidePopover();
@@ -8436,6 +8508,7 @@ export class KeyPilot extends EventManager {
   }
 
   handleToggleKeyboardHelp() {
+    if (this._isPopoverOsWindow || window.__KP_POPOVER_WINDOW) return;
     try {
       const next = !this._isKeyboardHelpPaintedVisible();
       this.applyKeyboardHelpVisibility(next, { persist: true });

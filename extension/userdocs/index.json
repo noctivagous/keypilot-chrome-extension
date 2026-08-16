@@ -1,0 +1,56 @@
+{
+  "topics": [
+    {
+      "id": "intro",
+      "title": "Introduction",
+      "file": "intro.md"
+    },
+    {
+      "id": "keyboard",
+      "title": "Keyboard",
+      "children": [
+        {
+          "id": "keyboard-layouts",
+          "title": "Layouts",
+          "file": "keyboard-layouts.md",
+          "placeholder": true
+        },
+        {
+          "id": "keyboard-system-keys",
+          "title": "System keys",
+          "file": "keyboard-system-keys.md",
+          "placeholder": true
+        }
+      ]
+    },
+    {
+      "id": "execute-js",
+      "title": "Execute JS",
+      "file": "execute-js.md"
+    },
+    {
+      "id": "settings",
+      "title": "Settings",
+      "file": "settings.md",
+      "placeholder": true
+    },
+    {
+      "id": "macros",
+      "title": "Macros",
+      "children": [
+        {
+          "id": "macros-overview",
+          "title": "Overview",
+          "file": "macros.md",
+          "placeholder": true
+        },
+        {
+          "id": "macro-builder",
+          "title": "Macro Builder",
+          "file": "macro-builder.md",
+          "placeholder": true
+        }
+      ]
+    }
+  ]
+}

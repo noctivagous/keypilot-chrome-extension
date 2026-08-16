@@ -90,6 +90,8 @@ const LAYOUT_SELECT_NEW_VALUE = '__new_layout__';
 const LAYOUT_SELECT_DUP_VALUE = '__duplicate_layout__';
 /** Sentinel value for opening the Onboarding Tutorial from the layout <select>. */
 const LAYOUT_SELECT_ONBOARDING_VALUE = '__onboarding_tutorial__';
+/** Sentinel value for opening Docs / Help from the layout <select>. */
+const LAYOUT_SELECT_DOCS_VALUE = '__docs_help__';
 /** Sentinel value for opening Settings from the layout <select>. */
 const LAYOUT_SELECT_SETTINGS_VALUE = '__settings__';
 
@@ -1742,6 +1744,7 @@ export class FloatingKeyboardHelp {
       || v === LAYOUT_SELECT_NEW_VALUE
       || v === LAYOUT_SELECT_DUP_VALUE
       || v === LAYOUT_SELECT_ONBOARDING_VALUE
+      || v === LAYOUT_SELECT_DOCS_VALUE
       || v === LAYOUT_SELECT_SETTINGS_VALUE
     ) {
       // Action item — restore prior layout selection, then run the action.
@@ -1756,6 +1759,12 @@ export class FloatingKeyboardHelp {
             void ob.resetTutorial();
           } else if (ob && typeof ob.setActive === 'function') {
             ob.setActive(true);
+          }
+        } else if (v === LAYOUT_SELECT_DOCS_VALUE) {
+          if (kp && typeof kp.handleOpenDocsPopover === 'function') {
+            kp.handleOpenDocsPopover();
+          } else if (kp && typeof kp.handleToggleDocsPopover === 'function') {
+            kp.handleToggleDocsPopover();
           }
         } else if (v === LAYOUT_SELECT_SETTINGS_VALUE) {
           if (kp && typeof kp.handleOpenSettingsPopover === 'function') {
@@ -1883,6 +1892,7 @@ export class FloatingKeyboardHelp {
       } catch { /* ignore */ }
       appendGroup('KeyPilot', [
         { value: LAYOUT_SELECT_ONBOARDING_VALUE, label: 'Onboarding Tutorial' },
+        { value: LAYOUT_SELECT_DOCS_VALUE, label: 'KeyPilot Documentation/Help' },
         { value: LAYOUT_SELECT_SETTINGS_VALUE, label: 'KeyPilot Settings' }
       ]);
 

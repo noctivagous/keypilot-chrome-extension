@@ -3658,6 +3658,7 @@
 .kp-keybindings-ui .key[data-kp-action-id="CLICK_MOUSE_BUTTON"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M320%200c17.7%200%2032%2014.3%2032%2032V176h16c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H352v16c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32V240H272v16c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32V240H192v80c0%2053%2043%2096%2096%2096h32c53%200%2096-43%2096-96V224h32c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H416V32c0-17.7-14.3-32-32-32H320zM192%2096c0-17.7-14.3-32-32-32H128C57.3%2064%200%20121.3%200%20192v96c0%2053%2043%2096%2096%2096h32c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H96c-17.7%200-32-14.3-32-32V192c0-35.3%2028.7-64%2064-64h32c17.7%200%2032-14.3%2032-32z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M320%200c17.7%200%2032%2014.3%2032%2032V176h16c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H352v16c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32V240H272v16c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32V240H192v80c0%2053%2043%2096%2096%2096h32c53%200%2096-43%2096-96V224h32c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H416V32c0-17.7-14.3-32-32-32H320zM192%2096c0-17.7-14.3-32-32-32H128C57.3%2064%200%20121.3%200%20192v96c0%2053%2043%2096%2096%2096h32c17.7%200%2032-14.3%2032-32s-14.3-32-32-32H96c-17.7%200-32-14.3-32-32V192c0-35.3%2028.7-64%2064-64h32c17.7%200%2032-14.3%2032-32z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="REMAP_KEY"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zm128%2064v32h32V160H128zm64%200v32h32V160H192zm64%200v32h32V160H256zm64%200v32h32V160H320zm64%200v32h32V160H384zM96%20256v32h64V256H96zm96%200v32h32V256H192zm64%200v32h32V256H256zm64%200v32h32V256H320zm64%200v32h32V256H384zm64%200v32h32V256H448zM128%20352v32H384V352H128z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zm128%2064v32h32V160H128zm64%200v32h32V160H192zm64%200v32h32V160H256zm64%200v32h32V160H320zm64%200v32h32V160H384zM96%20256v32h64V256H96zm96%200v32h32V256H192zm64%200v32h32V256H256zm64%200v32h32V256H320zm64%200v32h32V256H384zm64%200v32h32V256H448zM128%20352v32H384V352H128z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="TYPE_CHARACTERS"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2032c14.2%200%2027.3%207.5%2034.5%2019.8l216%20368c6.1%2010.4%206.1%2023.3%200%2033.7s-17.4%2016.5-29.9%2016.5H35.4c-12.5%200-23.8-6.6-29.9-16.5s-6.1-23.3%200-33.7l216-368C228.7%2039.5%20241.8%2032%20256%2032zm0%2088.4L96.7%20392h318.6L256%20120.4z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2032c14.2%200%2027.3%207.5%2034.5%2019.8l216%20368c6.1%2010.4%206.1%2023.3%200%2033.7s-17.4%2016.5-29.9%2016.5H35.4c-12.5%200-23.8-6.6-29.9-16.5s-6.1-23.3%200-33.7l216-368C228.7%2039.5%20241.8%2032%20256%2032zm0%2088.4L96.7%20392h318.6L256%20120.4z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="EXECUTE_JS"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M318.4%2073.4c-12.5-12.5-32.8-12.5-45.3%200s-12.5%2032.8%200%2045.3L402.7%20248%20273.1%20377.6c-12.5%2012.5-12.5%2032.8%200%2045.3s32.8%2012.5%2045.3%200l152-152c12.5-12.5%2012.5-32.8%200-45.3l-152-152zm-124.8%200c12.5-12.5%2012.5-32.8%200-45.3s-32.8-12.5-45.3%200l-152%20152c-12.5%2012.5-12.5%2032.8%200%2045.3l152%20152c12.5%2012.5%2032.8%2012.5%2045.3%200s12.5-32.8%200-45.3L109.3%20248%20193.6%20163.7c12.5-12.5%2012.5-32.8%200-45.3z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M318.4%2073.4c-12.5-12.5-32.8-12.5-45.3%200s-12.5%2032.8%200%2045.3L402.7%20248%20273.1%20377.6c-12.5%2012.5-12.5%2032.8%200%2045.3s32.8%2012.5%2045.3%200l152-152c12.5-12.5%2012.5-32.8%200-45.3l-152-152zm-124.8%200c12.5-12.5%2012.5-32.8%200-45.3s-32.8-12.5-45.3%200l-152%20152c-12.5%2012.5-12.5%2032.8%200%2045.3l152%20152c12.5%2012.5%2032.8%2012.5%2045.3%200s12.5-32.8%200-45.3L109.3%20248%20193.6%20163.7c12.5-12.5%2012.5-32.8%200-45.3z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="GET_TEXT_AT_CURSOR"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M128%2064c0-17.7%2014.3-32%2032-32H352c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H288v128h64c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H288v128h64c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H160c-17.7%200-32-14.3-32-32s14.3-32%2032-32h64V288H160c-17.7%200-32-14.3-32-32s14.3-32%2032-32h64V96H160c-17.7%200-32-14.3-32-32z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M128%2064c0-17.7%2014.3-32%2032-32H352c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H288v128h64c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H288v128h64c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H160c-17.7%200-32-14.3-32-32s14.3-32%2032-32h64V288H160c-17.7%200-32-14.3-32-32s14.3-32%2032-32h64V96H160c-17.7%200-32-14.3-32-32z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="GET_TEXT_RANGE"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2032c14.2%200%2027.3%207.5%2034.5%2019.8l216%20368c6.1%2010.4%206.1%2023.3%200%2033.7s-17.4%2016.5-29.9%2016.5H35.4c-12.5%200-23.8-6.6-29.9-16.5s-6.1-23.3%200-33.7l216-368C228.7%2039.5%20241.8%2032%20256%2032zm0%2088.4L96.7%20392h318.6L256%20120.4z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2032c14.2%200%2027.3%207.5%2034.5%2019.8l216%20368c6.1%2010.4%206.1%2023.3%200%2033.7s-17.4%2016.5-29.9%2016.5H35.4c-12.5%200-23.8-6.6-29.9-16.5s-6.1-23.3%200-33.7l216-368C228.7%2039.5%20241.8%2032%20256%2032zm0%2088.4L96.7%20392h318.6L256%20120.4z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="GET_MEDIA_AT_CURSOR"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
@@ -5167,6 +5168,8 @@
   let isMainExtensionLoaded = false; // Track if main extension has taken over
   let keyboardHelpHandedOff = false; // Keyboard Reference stays early-owned until adopted
   let keyboardHelpVisible = false;
+  /** True when this tab is a separate-window Link Preview / Open Popover. */
+  let isPopoverOsWindow = false;
   let keyboardLayoutId = (typeof DEFAULT_KEYBOARD_LAYOUT_ID === 'string' && DEFAULT_KEYBOARD_LAYOUT_ID)
     ? DEFAULT_KEYBOARD_LAYOUT_ID
     : 'browsing-right';
@@ -7218,6 +7221,7 @@
         try { e.preventDefault(); e.stopPropagation(); } catch { /* ignore */ }
         if (isMainExtensionLoaded) return;
         if (!isExtensionEnabled) return;
+        if (isPopoverOsWindow) return;
         const next = !keyboardHelpVisible;
         applyEarlyKeyboardHelpVisibility(next);
         try {
@@ -7728,6 +7732,15 @@
     if (keyboardHelpHandedOff) return;
     keyboardHelpVisible = Boolean(visible);
 
+    // Separate-window Link Preview / Open Popover: never paint Keyboard Reference.
+    if (isPopoverOsWindow) {
+      if (keyboardHelpRoot) {
+        setEarlyKeyboardHelpRootVisible(keyboardHelpRoot, false);
+      }
+      try { renderEarlyControlStripKeyboard(); } catch { /* ignore */ }
+      return;
+    }
+
     // If extension is disabled, keep it hidden but remember desired state.
     ensureEarlyFloatingKeyboardHelpShell();
     if (!keyboardHelpRoot) return;
@@ -7767,6 +7780,27 @@
     }
     setEarlyKeyboardHelpRootVisible(keyboardHelpRoot, shouldShow);
     try { renderEarlyControlStripKeyboard(); } catch { /* ignore */ }
+  }
+
+  /**
+   * Ask the SW whether this top-level tab is a KeyPilot popover OS window.
+   * @returns {Promise<boolean>}
+   */
+  function queryAmIPopoverWindow() {
+    return new Promise((resolve) => {
+      try {
+        if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) {
+          resolve(false);
+          return;
+        }
+        chrome.runtime.sendMessage({ type: 'KP_AM_I_POPOVER_WINDOW' }, (res) => {
+          try { void chrome.runtime.lastError; } catch { /* ignore */ }
+          resolve(!!(res && res.isPopoverWindow));
+        });
+      } catch {
+        resolve(false);
+      }
+    });
   }
 
   async function getKeyboardHelpVisibleFromStorage() {
@@ -7865,8 +7899,10 @@
           // Storage not available, will fallback to localStorage
           isExtensionEnabled = true; // Default to enabled
           updateCursorVisibility();
-          ensureEarlyFloatingKeyboardHelpShell();
-          applyEarlyKeyboardHelpVisibility(false);
+          if (!isPopoverOsWindow) {
+            ensureEarlyFloatingKeyboardHelpShell();
+            applyEarlyKeyboardHelpVisibility(false);
+          }
           ensureEarlyControlStripShell();
           applyEarlyControlStripVisibility();
           return;
@@ -7876,15 +7912,17 @@
           if (keyboardHelpHandedOff) return;
           keyboardHelpVisible = helpVisible === true;
           updateCursorVisibility();
-          ensureEarlyFloatingKeyboardHelpShell();
-          try {
-            renderEarlyKeyboard(keyboardHelpKeyboardContainer, {
-              layoutId: keyboardLayoutId,
-              includeNumberRow: keyboardShowNumberRow
-            });
-          } catch { /* ignore */ }
-          updateKeyboardHelpHintForLayout(keyboardLayoutId);
-          try { applyEarlyLayoutSelect(); } catch { /* ignore */ }
+          if (!isPopoverOsWindow) {
+            ensureEarlyFloatingKeyboardHelpShell();
+            try {
+              renderEarlyKeyboard(keyboardHelpKeyboardContainer, {
+                layoutId: keyboardLayoutId,
+                includeNumberRow: keyboardShowNumberRow
+              });
+            } catch { /* ignore */ }
+            updateKeyboardHelpHintForLayout(keyboardLayoutId);
+            try { applyEarlyLayoutSelect(); } catch { /* ignore */ }
+          }
           applyEarlyKeyboardHelpVisibility(keyboardHelpVisible);
           setupKeyboardHelpStorageListener();
           setupCursorSettingsListener();
@@ -7912,8 +7950,10 @@
       // No chrome storage available, default to enabled
       isExtensionEnabled = true;
       updateCursorVisibility();
-      ensureEarlyFloatingKeyboardHelpShell();
-      applyEarlyKeyboardHelpVisibility(false);
+      if (!isPopoverOsWindow) {
+        ensureEarlyFloatingKeyboardHelpShell();
+        applyEarlyKeyboardHelpVisibility(false);
+      }
       ensureEarlyControlStripShell();
       applyEarlyControlStripVisibility();
     }
@@ -7955,15 +7995,17 @@
       }
     }
     updateCursorVisibility();
-    ensureEarlyFloatingKeyboardHelpShell();
-    try {
-      renderEarlyKeyboard(keyboardHelpKeyboardContainer, {
-        layoutId: keyboardLayoutId,
-        includeNumberRow: keyboardShowNumberRow
-      });
-    } catch { /* ignore */ }
-    try { updateKeyboardHelpHintForLayout(keyboardLayoutId); } catch { /* ignore */ }
-    try { applyEarlyLayoutSelect(); } catch { /* ignore */ }
+    if (!isPopoverOsWindow) {
+      ensureEarlyFloatingKeyboardHelpShell();
+      try {
+        renderEarlyKeyboard(keyboardHelpKeyboardContainer, {
+          layoutId: keyboardLayoutId,
+          includeNumberRow: keyboardShowNumberRow
+        });
+      } catch { /* ignore */ }
+      try { updateKeyboardHelpHintForLayout(keyboardLayoutId); } catch { /* ignore */ }
+      try { applyEarlyLayoutSelect(); } catch { /* ignore */ }
+    }
     applyEarlyKeyboardHelpVisibility(keyboardHelpVisible);
     setupKeyboardHelpStorageListener();
     setupCursorSettingsListener();
@@ -8240,6 +8282,14 @@
     // NOTE: The rules are scoped to `html.kpv2-cursor-hidden` so they are inert unless enabled.
     injectEarlyCSS();
 
+    // Resolve before any storage-driven Keyboard Reference paint so separate-window
+    // Link Preview / Open Popover never flashes the panel.
+    try {
+      isPopoverOsWindow = await queryAmIPopoverWindow();
+    } catch {
+      isPopoverOsWindow = false;
+    }
+
     // Onboarding + control strip shells should appear as early as possible to avoid UI pop-in.
     // The bundled content script will adopt this DOM and hydrate it later.
     setupEarlyOnboardingStorageSync();
@@ -8250,8 +8300,10 @@
       // Build the matching Keyboard Reference shell in the same document_start
       // pass. Storage determines whether it is shown, but shell construction no
       // longer waits until after the control strip has painted.
-      ensureEarlyFloatingKeyboardHelpShell();
-      applyEarlyKeyboardHelpVisibility(keyboardHelpVisible);
+      if (!isPopoverOsWindow) {
+        ensureEarlyFloatingKeyboardHelpShell();
+        applyEarlyKeyboardHelpVisibility(keyboardHelpVisible);
+      }
     } catch { /* ignore */ }
     await checkExtensionState();
 

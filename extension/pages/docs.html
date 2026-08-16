@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>KeyPilot Docs</title>
+    <link rel="stylesheet" href="docs.css" />
+  </head>
+  <body>
+    <div class="docs-app">
+      <header class="header">
+        <div class="header-text">
+          <h1>KeyPilot Docs</h1>
+          <p class="sub">How to use KeyPilot — search topics or browse the list.</p>
+        </div>
+        <div class="header-actions">
+          <button id="close" class="btn" type="button">Close</button>
+        </div>
+      </header>
+
+      <div class="docs-shell">
+        <aside class="docs-nav" aria-label="Documentation topics">
+          <label class="search-label" for="docs-search">Search</label>
+          <input
+            id="docs-search"
+            class="docs-search"
+            type="search"
+            placeholder="Search docs…"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <nav id="docs-topic-list" class="topic-list" aria-label="Topics"></nav>
+          <p id="docs-empty" class="docs-empty" hidden>No matching topics.</p>
+        </aside>
+        <main class="docs-main">
+          <article id="docs-article" class="docs-article" aria-live="polite">
+            <p class="muted">Loading documentation…</p>
+          </article>
+        </main>
+      </div>
+    </div>
+
+    <script type="module" src="popover-bridge.js"></script>
+    <script type="module" src="docs.js"></script>
+  </body>
+</html>

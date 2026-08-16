@@ -1,5 +1,6 @@
 import { FEATURE_FLAGS } from '../config/constants.js';
 import {
+  isClickableKeyPilotChromeElement,
   isInteractiveKeyPilotOverlayElement,
   isInteractiveKeyPilotOverlayClass
 } from '../ui/kp-chrome-shadow.js';
@@ -1016,6 +1017,9 @@ export class IntersectionObserverManager {
     try {
       if (!el || el === document.documentElement || el === document.body) return false;
       if (isInteractiveKeyPilotOverlayElement(el)) return false;
+      // Keyboard Reference, control strip, Top Sites, etc. must still get
+      // clickable outlines; skipping every kpv2-* node left those GUIs blank.
+      if (isClickableKeyPilotChromeElement(el)) return false;
 
       let n = el;
       let guard = 0;

@@ -204,7 +204,10 @@ export function isClickableKeyPilotChromeElement(element) {
       '.kp-keybindings-popover',
       '.kp-action-config-panel',
       '.kp-control-strip',
-      '.kp-layout-config-panel'
+      '.kp-layout-config-panel',
+      '.kpv2-top-sites-panel',
+      '.kpv2-tab-history-panel',
+      '.kp-launcher-container'
     ].join(', ')
   );
 }

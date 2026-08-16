@@ -212,6 +212,10 @@ const CONFIG_ICON_SYMBOLS = Object.freeze([
   ['kp-cfg-i-export', 'M7 1h2v7h3l-4 4-4-4h3V1zm-5 11h12v3H2v-3z'],
   ['kp-cfg-i-expand', 'M2 2h5v2H4v3H2V2zm7 0h5v5h-2V4H9V2zM2 9h2v3h3v2H2V9zm10 0h2v5H9v-2h3V9z'],
   ['kp-cfg-i-collapse', 'M5 5H2V3h5v5H5V5zm4 0V3h5v2h-3v3H9V5zM5 9v3H2v2h5V9H5zm4 0h2v3h3v2H9V9z'],
+  /** Collapse Inspector (dock to the right). */
+  ['kp-cfg-i-collapse-right', 'M8 2l6 6-6 6-1.4-1.4L10.2 9H2V7h8.2L6.6 3.4 8 2z'],
+  /** Collapse User Macros (fold downward). */
+  ['kp-cfg-i-collapse-down', 'M2 8l6 6 6-6-1.4-1.4L9 10.2V2H7v8.2L3.4 6.6 2 8z'],
   ['kp-cfg-i-expand-up', 'M8 2l5 5H9v7H7V7H3l5-5zm-6 11h12v2H2v-2z'],
   ['kp-cfg-i-place', 'M8 1a5 5 0 015 5c0 3.5-5 9-5 9S3 9.5 3 6a5 5 0 015-5zm0 3a2 2 0 100 4 2 2 0 000-4z'],
   ['kp-cfg-i-search', 'M6.5 2a4.5 4.5 0 013.5 7.3L14 13l-1 1-4.2-4A4.5 4.5 0 116.5 2zm0 2a2.5 2.5 0 100 5 2.5 2.5 0 000-5z'],
@@ -1436,6 +1440,7 @@ export class KeyboardLayoutConfigPanel {
 }
 .kp-layout-config-panel .kp-cfg-pane-library {
   flex: 1 1 auto;
+  min-height: 0;
   background:
     linear-gradient(180deg, rgba(90, 120, 70, 0.22), rgba(55, 75, 45, 0.14)),
     linear-gradient(180deg, #6e6e6e 0%, #5a5a5a 55%, #4a4a4a 100%);
@@ -1443,6 +1448,13 @@ export class KeyboardLayoutConfigPanel {
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.16) inset,
     0 0 10px rgba(120, 170, 80, 0.1);
+}
+.kp-layout-config-panel .kp-cfg-pane-library .kp-cfg-pane-hdr {
+  flex: 0 0 auto;
+}
+.kp-layout-config-panel .kp-cfg-pane-library .kp-cfg-pane-scroll {
+  /* Keep list shrinkable so the User Macros splitter can reach the titlebar. */
+  min-height: 0;
 }
 .kp-layout-config-panel .kp-cfg-pane-library .kp-cfg-pane-hdr {
   background: linear-gradient(180deg, #a8b596 0%, #8d9a7c 45%, #7a8669 100%);
@@ -2449,7 +2461,7 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
 .kp-layout-config-panel .kp-cfg-split {
   position: relative;
   z-index: 2;
-  flex: 0 0 8px;
+  flex: 0 0 10px;
   padding: 0;
   border: 0;
   background: #1a1a1a;
@@ -2488,8 +2500,8 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
   background: linear-gradient(90deg, #2a2a2a, #1c1c1c);
 }
 .kp-layout-config-panel .kp-cfg-split-v::before {
-  width: 2px;
-  height: 36px;
+  width: 2.5px;
+  height: 45px;
 }
 .kp-layout-config-panel .kp-cfg-split-h {
   cursor: row-resize;
@@ -2498,8 +2510,8 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
   background: linear-gradient(180deg, #2a2a2a, #1c1c1c);
 }
 .kp-layout-config-panel .kp-cfg-split-h::before {
-  width: 36px;
-  height: 2px;
+  width: 45px;
+  height: 2.5px;
 }
 .kp-layout-config-panel .kp-cfg-script-toolbar {
   display: flex;
@@ -3022,17 +3034,17 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 }
 
 .kp-layout-config-panel .kp-cfg-split {
-  background: #737373;
+  background: #454545;
 }
 .kp-layout-config-panel .kp-cfg-split-v {
   border-left-color: rgba(0,0,0,0.3);
-  border-right-color: rgba(255,255,255,0.32);
-  background: linear-gradient(90deg, #898989, #696969);
+  border-right-color: rgba(255,255,255,0.2);
+  background: linear-gradient(90deg, #555, #343434);
 }
 .kp-layout-config-panel .kp-cfg-split-h {
   border-top-color: rgba(0,0,0,0.3);
-  border-bottom-color: rgba(255,255,255,0.32);
-  background: linear-gradient(180deg, #898989, #696969);
+  border-bottom-color: rgba(255,255,255,0.2);
+  background: linear-gradient(180deg, #555, #343434);
 }
 .kp-layout-config-panel .kp-cfg-split:hover,
 .kp-layout-config-panel .kp-cfg-split:focus-visible,
@@ -3082,6 +3094,103 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 .kp-layout-config-panel .${NCT_DARK_UI_SCROLLBAR_CLASS}::-webkit-scrollbar-thumb:hover,
 .kp-layout-config-panel .${NCT_DARK_UI_SCROLLBAR_CLASS} ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #cecece 0%, #b5b5b5 45%, #999 100%);
+}
+
+/* 125% readability pass for Config chrome, controls, and their labels. */
+.kp-layout-config-panel {
+  font-size: 15px;
+}
+.kp-layout-config-panel .kp-cfg-ico {
+  width: 15px;
+  height: 15px;
+}
+.kp-layout-config-panel .kp-cfg-titlebar {
+  height: 35px;
+  min-height: 35px;
+  max-height: 35px;
+  padding: 0 8px 0 13px;
+}
+.kp-layout-config-panel .kp-cfg-title {
+  font-size: 13.75px;
+  line-height: 35px;
+}
+.kp-layout-config-panel .kp-cfg-close {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+}
+.kp-layout-config-panel .kp-cfg-layout-strip {
+  height: 40px;
+  padding: 0 13px;
+}
+.kp-layout-config-panel .kp-cfg-layout-identity,
+.kp-layout-config-panel .kp-cfg-layout-tools,
+.kp-layout-config-panel .kp-cfg-layout-primary,
+.kp-layout-config-panel .kp-cfg-tool-group,
+.kp-layout-config-panel .kp-cfg-layout-combo {
+  height: 28px;
+}
+.kp-layout-config-panel .kp-cfg-strip-label {
+  font-size: 11.25px;
+  line-height: 28px;
+}
+.kp-layout-config-panel .kp-cfg-combo-input {
+  padding: 0 10px !important;
+  font: 13.75px/28px ${NCT_DARK_UI_FONT};
+}
+.kp-layout-config-panel .kp-cfg-combo-toggle {
+  flex-basis: 28px;
+  width: 28px;
+}
+.kp-layout-config-panel .kp-cfg-btn {
+  height: 28px;
+  padding: 5px 10px;
+  font-size: 13.75px;
+}
+.kp-layout-config-panel .kp-cfg-tool-group .kp-cfg-btn {
+  padding: 0 9px;
+}
+.kp-layout-config-panel .kp-cfg-btn.kp-cfg-btn-icon {
+  width: 28px;
+  min-width: 28px;
+}
+.kp-layout-config-panel .kp-cfg-tool-group .kp-cfg-btn.kp-cfg-btn-icon {
+  width: 33px;
+}
+.kp-layout-config-panel .kp-cfg-pane-hdr {
+  gap: 8px;
+  padding: 5px 10px;
+  min-height: 28px;
+}
+.kp-layout-config-panel .kp-cfg-pane-title {
+  font-size: 12.5px;
+}
+.kp-layout-config-panel .kp-cfg-seg-btn {
+  height: 23px;
+  padding: 0 10px;
+  font-size: 11.25px;
+}
+.kp-layout-config-panel .kp-cfg-search,
+.kp-layout-config-panel .kp-cfg-fn-cat,
+.kp-layout-config-panel .kp-cfg-inspect {
+  height: 23px;
+  font-size: 12.5px;
+}
+.kp-layout-config-panel .kp-cfg-field {
+  height: 28px;
+  padding: 5px 10px;
+  font-size: 13.75px;
+}
+.kp-layout-config-panel .kp-cfg-hint,
+.kp-layout-config-panel .kp-cfg-card-sub,
+.kp-layout-config-panel .kp-cfg-dock-rows,
+.kp-layout-config-panel .kp-cfg-dock-steps li {
+  font-size: 12.5px;
+}
+.kp-layout-config-panel .kp-cfg-card-name,
+.kp-layout-config-panel .kp-cfg-dock-title {
+  font-size: 13.75px;
 }
 `.trim().replaceAll('.kp-layout-config-panel', ':host');
   }
@@ -3293,7 +3402,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     layoutCombo.appendChild(layoutComboToggle);
     layoutCombo.appendChild(layoutComboList);
 
-    const setCurrentBtn = mkBtn('Set current', 'set-current');
+    const setCurrentBtn = mkBtn('Set to current', 'set-current');
     setCurrentBtn.title = 'Set as current layout';
 
     identity.appendChild(layoutLabel);
@@ -3422,7 +3531,8 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       flexDirection: 'column',
       gap: '10px',
       flex: '1 1 auto',
-      minHeight: '120px',
+      // Allow shrink-to-titlebar so the User Macros splitter can reach the library header.
+      minHeight: '0',
       overflow: 'auto'
     });
 
@@ -3708,7 +3818,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     inspectorTitle.appendChild(mkCfgIcon(doc, 'kp-cfg-i-eye'));
     inspectorTitle.appendChild(doc.createTextNode('Inspector'));
     const collapseInspectorBtn = mkBtn('Collapse', 'collapse-inspector');
-    collapseInspectorBtn.prepend(mkCfgIcon(doc, 'kp-cfg-i-collapse'));
+    collapseInspectorBtn.prepend(mkCfgIcon(doc, 'kp-cfg-i-collapse-right'));
     collapseInspectorBtn.addEventListener('click', () => this._setInspectorOpen(false), true);
     inspectorHdr.appendChild(inspectorTitle);
     inspectorHdr.appendChild(mkSpacer());
@@ -5814,7 +5924,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const btn = this._createToggleBtn;
     if (btn) {
       const label = this._createOpen ? 'Collapse' : 'Expand';
-      const icoId = this._createOpen ? 'kp-cfg-i-collapse' : 'kp-cfg-i-expand';
+      const icoId = this._createOpen ? 'kp-cfg-i-collapse-down' : 'kp-cfg-i-expand';
       btn.replaceChildren();
       btn.appendChild(mkCfgIcon(document, icoId));
       btn.appendChild(document.createTextNode(label));
@@ -5869,9 +5979,19 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       row.style.setProperty('--kp-cfg-inspector-width', `${next}px`);
       if (!this._inspectorOpen) this._setInspectorOpen(true);
     };
-    const setCreateHeight = (height) => {
+    const libraryHeaderBottom = () => {
+      const libraryHeader = workspace.querySelector('.kp-cfg-pane-library > .kp-cfg-pane-hdr');
+      return libraryHeader?.getBoundingClientRect().bottom
+        ?? workspace.getBoundingClientRect().top;
+    };
+    const maxCreateHeight = () => {
       const bounds = workspace.getBoundingClientRect();
-      const next = Math.max(210, Math.min(Math.max(210, bounds.height - 160), Math.round(height)));
+      const splitterHeight = horizontal.getBoundingClientRect().height || 0;
+      // Stop the splitter at the bottom edge of the Actions Library titlebar.
+      return Math.max(210, Math.round(bounds.bottom - libraryHeaderBottom() - splitterHeight));
+    };
+    const setCreateHeight = (height) => {
+      const next = Math.max(210, Math.min(maxCreateHeight(), Math.round(height)));
       row.style.setProperty('--kp-cfg-create-height', `${next}px`);
       if (!this._createOpen) this._setCreateOpen(true);
     };
@@ -5920,7 +6040,11 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     });
     wireDrag(horizontal, 'y', (event) => {
       const bounds = workspace.getBoundingClientRect();
-      const height = bounds.bottom - event.clientY;
+      const splitterHeight = horizontal.getBoundingClientRect().height || 0;
+      // Pointer is treated as the top of the User Macros pane (below the splitter).
+      const minTop = libraryHeaderBottom() + splitterHeight;
+      const top = Math.max(event.clientY, minTop);
+      const height = bounds.bottom - top;
       if (height <= 36) {
         this._setCreateOpen(false);
         return;

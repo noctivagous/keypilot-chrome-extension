@@ -405,12 +405,14 @@ export class TopSitesPopover {
 
       .kpv2-top-sites-panel .kpv2-ts-grid {
         display: grid !important;
-        grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+        grid-auto-rows: 80px;
         gap: 12px;
         padding: 10px 14px 14px;
         flex: 1 1 auto;
         min-height: 0;
         overflow: auto;
+        align-items: start;
         align-content: start;
       }
 
@@ -427,10 +429,12 @@ export class TopSitesPopover {
         box-sizing: border-box;
         display: block;
         position: relative;
-        aspect-ratio: 1;
+        align-self: start;
         width: 100%;
-        height: auto;
-        padding: 10px 9px;
+        height: 80px;
+        min-height: 80px;
+        max-height: 80px;
+        padding: 8px 9px;
         border-radius: 10px;
         cursor: pointer;
         text-decoration: none;
@@ -471,7 +475,7 @@ export class TopSitesPopover {
         flex-direction: column;
         height: 100%;
         min-height: 0;
-        gap: 6px;
+        gap: 4px;
       }
 
       .kpv2-top-sites-panel .kp-url-favicon {
