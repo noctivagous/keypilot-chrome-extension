@@ -1,8 +1,10 @@
 /**
  * KeyPilot Docs popover page.
- * Loads userdocs/index.json + markdown files; client-side search; subset markdown renderer.
+ * Loads userdocs/index.json + markdown files; client-side search; GFM rendering.
  * Topics may nest via `children` in the catalog.
  */
+
+import MarkdownIt from 'markdown-it';
 
 /**
  * @typedef {{
@@ -10,6 +12,9 @@
  *   title: string,
  *   file?: string,
  *   placeholder?: boolean,
+ *   icon?: string,
+ *   shortcut?: string,
+ *   accent?: string,
  *   children?: TopicMeta[]
  * }} TopicMeta
  */
@@ -25,7 +30,10 @@
  *   childIds: string[],
  *   bodyText: string,
  *   html: string,
- *   selectable: boolean
+ *   selectable: boolean,
+ *   icon: string|null,
+ *   shortcut: string|null,
+ *   accent: string|null
  * }} DocEntry
  */
 
@@ -36,6 +44,9 @@
  *   placeholder: boolean,
  *   depth: number,
  *   selectable: boolean,
+ *   icon: string|null,
+ *   shortcut: string|null,
+ *   accent: string|null,
  *   children: NavNode[]
  * }} NavNode
  */
@@ -50,14 +61,69 @@ let topicTree = [];
 /** @type {string|null} */
 let activeId = null;
 
-const topicListEl = document.getElementById('docs-topic-list');
-const emptyEl = document.getElementById('docs-empty');
-const articleEl = document.getElementById('docs-article');
-const searchEl = document.getElementById('docs-search');
-const closeBtn = document.getElementById('close');
+/** @type {ParentNode|null} */
+let docsRoot = null;
+/** @type {HTMLElement|null} */
+let topicListEl = null;
+/** @type {HTMLElement|null} */
+let emptyEl = null;
+/** @type {HTMLElement|null} */
+let articleEl = null;
+/** @type {HTMLInputElement|null} */
+let searchEl = null;
+/** @type {HTMLElement|null} */
+let closeBtn = null;
+/** @type {HTMLElement|null} */
+let docsAppEl = null;
+
+function bindDocsElements(root) {
+  const scope = root && root.querySelector ? root : document;
+  topicListEl = scope.querySelector('#docs-topic-list');
+  emptyEl = scope.querySelector('#docs-empty');
+  articleEl = scope.querySelector('#docs-article');
+  searchEl = scope.querySelector('#docs-search');
+  closeBtn = scope.querySelector('#close');
+  docsAppEl = scope.querySelector('.docs-app');
+}
+
+function docsAppMarkup() {
+  return `
+    <div class="docs-app">
+      <header class="header">
+        <div class="header-text">
+          <h1>KeyPilot Docs</h1>
+          <p class="sub">How to use KeyPilot — search topics or browse the list.</p>
+        </div>
+        <div class="header-actions">
+          <button id="close" class="btn" type="button">Close</button>
+        </div>
+      </header>
+      <div class="docs-shell">
+        <aside class="docs-nav" aria-label="Documentation topics">
+          <label class="search-label" for="docs-search">Search</label>
+          <input
+            id="docs-search"
+            class="docs-search"
+            type="search"
+            placeholder="Search docs…"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <nav id="docs-topic-list" class="topic-list" aria-label="Topics"></nav>
+          <p id="docs-empty" class="docs-empty" hidden>No matching topics.</p>
+        </aside>
+        <main class="docs-main">
+          <article id="docs-article" class="docs-article" aria-live="polite">
+            <p class="muted">Loading documentation…</p>
+          </article>
+        </main>
+      </div>
+    </div>
+  `.trim();
+}
 
 // ---------------------------------------------------------------------------
-// Minimal markdown subset → HTML
+// Markdown → HTML
 // ---------------------------------------------------------------------------
 
 function escapeHtml(s) {
@@ -68,103 +134,67 @@ function escapeHtml(s) {
     .replace(/"/g, '&quot;');
 }
 
-function renderInline(text) {
-  let s = escapeHtml(text);
-  // Links: [label](url)
-  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_m, label, href) => {
-    const safeHref = String(href).replace(/"/g, '');
-    if (!/^(https?:|chrome-extension:|mailto:|#)/i.test(safeHref)) {
-      return escapeHtml(`[${label}](${href})`);
-    }
-    return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer">${label}</a>`;
-  });
-  // Inline code
-  s = s.replace(/`([^`]+)`/g, (_m, code) => `<code>${code}</code>`);
-  // Bold then italic
-  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  s = s.replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>');
-  return s;
-}
+const markdown = new MarkdownIt({
+  html: true,
+  linkify: true,
+  typographer: true
+});
+
+markdown.validateLink = (url) =>
+  /^(https?:|chrome-extension:|mailto:|#)/i.test(String(url || '').trim());
+
+const defaultLinkOpen =
+  markdown.renderer.rules.link_open ||
+  ((tokens, idx, options, _env, renderer) =>
+    renderer.renderToken(tokens, idx, options));
+
+markdown.renderer.rules.link_open = (tokens, idx, options, env, renderer) => {
+  const href = tokens[idx].attrGet('href') || '';
+  if (!href.startsWith('#')) {
+    tokens[idx].attrSet('target', '_blank');
+    tokens[idx].attrSet('rel', 'noopener noreferrer');
+  }
+  return defaultLinkOpen(tokens, idx, options, env, renderer);
+};
+
+markdown.renderer.rules.table_open = () => '<div class="table-scroll"><table>\n';
+markdown.renderer.rules.table_close = () => '</table></div>\n';
 
 /**
- * Very small markdown renderer: headings, paragraphs, ul/ol, inline styles.
  * @param {string} md
  * @returns {string}
  */
 function renderMarkdown(md) {
-  const lines = String(md || '').replace(/\r\n/g, '\n').split('\n');
-  const out = [];
-  let i = 0;
-  let listType = null; // 'ul' | 'ol' | null
-
-  const closeList = () => {
-    if (listType) {
-      out.push(listType === 'ol' ? '</ol>' : '</ul>');
-      listType = null;
-    }
-  };
-
-  while (i < lines.length) {
-    const line = lines[i];
-    const trimmed = line.trim();
-
-    if (!trimmed) {
-      closeList();
-      i += 1;
-      continue;
-    }
-
-    const heading = /^(#{1,3})\s+(.+)$/.exec(trimmed);
-    if (heading) {
-      closeList();
-      const level = heading[1].length;
-      out.push(`<h${level}>${renderInline(heading[2])}</h${level}>`);
-      i += 1;
-      continue;
-    }
-
-    const ul = /^[-*]\s+(.+)$/.exec(trimmed);
-    if (ul) {
-      if (listType !== 'ul') {
-        closeList();
-        out.push('<ul>');
-        listType = 'ul';
-      }
-      out.push(`<li>${renderInline(ul[1])}</li>`);
-      i += 1;
-      continue;
-    }
-
-    const ol = /^(\d+)\.\s+(.+)$/.exec(trimmed);
-    if (ol) {
-      if (listType !== 'ol') {
-        closeList();
-        out.push('<ol>');
-        listType = 'ol';
-      }
-      out.push(`<li>${renderInline(ol[2])}</li>`);
-      i += 1;
-      continue;
-    }
-
-    closeList();
-    // Paragraph: gather consecutive non-blank, non-special lines
-    const para = [trimmed];
-    i += 1;
-    while (i < lines.length) {
-      const next = lines[i].trim();
-      if (!next || /^(#{1,3})\s+/.test(next) || /^[-*]\s+/.test(next) || /^\d+\.\s+/.test(next)) {
-        break;
-      }
-      para.push(next);
-      i += 1;
-    }
-    out.push(`<p>${renderInline(para.join(' '))}</p>`);
-  }
-
-  closeList();
-  return out.join('\n');
+  return markdown.render(String(md || ''));
 }
+
+const NAV_ACCENTS = new Set(['green', 'blue', 'amber', 'indigo', 'rose', 'cyan', 'violet']);
+
+/** Allow-listed, Lucide-style paths rendered locally with currentColor. */
+const NAV_ICON_PATHS = Object.freeze({
+  book: ['M4 19.5A2.5 2.5 0 0 1 6.5 17H20', 'M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z'],
+  pointer: ['m9 9 5 12 2.2-5.2L21 14Z', 'M7.2 2.2 9 9l-6.8-1.8Z'],
+  tabs: ['M8 6h13v13H8z', 'M3 5V3h13v3', 'M5 8H3v8h5'],
+  scroll: ['M8 2h8a4 4 0 0 1 4 4v12a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V6a4 4 0 0 1 4-4Z', 'M12 6v12', 'm9 9 3-3 3 3', 'm9 15 3 3 3-3'],
+  select: ['M3 3h6v2H5v4H3Z', 'M15 3h6v6h-2V5h-4Z', 'M3 15h2v4h4v2H3Z', 'M19 15h2v6h-6v-2h4Z'],
+  layers: ['m12 2 9 5-9 5-9-5Z', 'm3 12 9 5 9-5', 'm3 17 9 5 9-5'],
+  keyboard: ['M3 5h18v14H3z', 'M7 9h.01M11 9h.01M15 9h.01M19 9h.01M7 13h.01M11 13h.01M15 13h.01M19 13h.01M8 17h8'],
+  shield: ['M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z', 'm9 12 2 2 4-4'],
+  settings: ['M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z', 'M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.12 2.12-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1 1.55V20h-3v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06-2.12-2.12.06-.06A1.7 1.7 0 0 0 7 15a1.7 1.7 0 0 0-1.55-1H5v-3h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.12-2.12.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1-1.55V4h3v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.12 2.12-.06.06A1.7 1.7 0 0 0 19 9.3a1.7 1.7 0 0 0 1.55 1H21v3h-.09a1.7 1.7 0 0 0-1.51 1.7Z'],
+  search: ['m21 21-4.35-4.35', 'M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z'],
+  rocket: ['M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2', 'm9 15-3-3s3.5-7.5 9-9c3 0 6 0 6 0s0 3 0 6c-1.5 5.5-9 9-9 9Z', 'M9 15H4s.55-3.03 2-4.5M12 18v5s3.03-.55 4.5-2'],
+  grid: ['M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z'],
+  history: ['M3 12a9 9 0 1 0 3-6.7L3 8', 'M3 3v5h5', 'M12 7v5l3 2'],
+  controls: ['M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3', 'M1 14h6M9 8h6M17 16h6'],
+  preview: ['M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z', 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z'],
+  image: ['M3 3h18v18H3z', 'm3 16 5-5 4 4 2-2 7 7', 'M16 8h.01'],
+  library: ['M4 19.5A2.5 2.5 0 0 1 6.5 17H20', 'M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z', 'M8 7h8M8 11h8'],
+  copy: ['M8 8h13v13H8z', 'M16 8V3H3v13h5'],
+  layout: ['M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3z', 'M14 17h7M17.5 13.5v7'],
+  functions: ['M18 16.98h-5.99c-1.1 0-1.93-.94-1.73-2.02l1.44-7.92A2.5 2.5 0 0 1 14.18 5H16', 'M7 9h8'],
+  macros: ['M8 6h13M8 12h13M8 18h13', 'm3 6 1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2'],
+  code: ['m8 9-3 3 3 3M16 9l3 3-3 3', 'm14 5-4 14']
+});
 
 // ---------------------------------------------------------------------------
 // Tree helpers
@@ -176,7 +206,7 @@ function renderMarkdown(md) {
  * @param {TopicMeta[]} topics
  * @param {number} [depth]
  * @param {string|null} [parentId]
- * @returns {Array<{ id: string, title: string, file: string|null, placeholder: boolean, depth: number, parentId: string|null, childIds: string[] }>}
+ * @returns {Array<{ id: string, title: string, file: string|null, placeholder: boolean, depth: number, parentId: string|null, childIds: string[], icon: string|null, shortcut: string|null, accent: string|null }>}
  */
 function flattenTopics(topics, depth = 0, parentId = null) {
   /** @type {ReturnType<typeof flattenTopics>} */
@@ -188,6 +218,13 @@ function flattenTopics(topics, depth = 0, parentId = null) {
       .filter((c) => c && typeof c.id === 'string')
       .map((c) => c.id);
     const file = typeof topic.file === 'string' && topic.file.trim() ? topic.file.trim() : null;
+    const icon = typeof topic.icon === 'string' && NAV_ICON_PATHS[topic.icon] ? topic.icon : null;
+    const shortcut = typeof topic.shortcut === 'string' && topic.shortcut.trim()
+      ? topic.shortcut.trim().slice(0, 12)
+      : null;
+    const accent = typeof topic.accent === 'string' && NAV_ACCENTS.has(topic.accent)
+      ? topic.accent
+      : null;
     out.push({
       id: topic.id,
       title: topic.title,
@@ -195,7 +232,10 @@ function flattenTopics(topics, depth = 0, parentId = null) {
       placeholder: !!topic.placeholder,
       depth,
       parentId,
-      childIds
+      childIds,
+      icon,
+      shortcut,
+      accent
     });
     if (children.length) {
       out.push(...flattenTopics(children, depth + 1, topic.id));
@@ -237,7 +277,10 @@ async function loadDocs(flat) {
         childIds: topic.childIds,
         bodyText,
         html,
-        selectable
+        selectable,
+        icon: topic.icon,
+        shortcut: topic.shortcut,
+        accent: topic.accent
       };
     })
   );
@@ -280,6 +323,9 @@ function buildNavTree(topics, query, depth = 0) {
       placeholder: doc.placeholder,
       depth,
       selectable: doc.selectable,
+      icon: doc.icon,
+      shortcut: doc.shortcut,
+      accent: doc.accent,
       children
     });
   }
@@ -313,6 +359,32 @@ function resolveSelectableId(id) {
 // ---------------------------------------------------------------------------
 
 /**
+ * @param {string} iconName
+ * @returns {SVGSVGElement|null}
+ */
+function createNavIcon(iconName) {
+  const paths = NAV_ICON_PATHS[iconName];
+  if (!paths) return null;
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.classList.add('topic-icon-svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '1.8');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  for (const pathData of paths) {
+    const path = document.createElementNS(ns, 'path');
+    path.setAttribute('d', pathData);
+    svg.appendChild(path);
+  }
+  return svg;
+}
+
+/**
  * @param {NavNode} node
  * @param {HTMLElement} parentEl
  */
@@ -320,18 +392,41 @@ function appendNavNode(node, parentEl) {
   const row = document.createElement(node.selectable ? 'button' : 'div');
   if (node.selectable) {
     /** @type {HTMLButtonElement} */ (row).type = 'button';
+  } else {
+    row.setAttribute('role', 'button');
+    row.tabIndex = 0;
   }
   row.className = node.selectable ? 'topic-btn' : 'topic-group';
   row.dataset.id = node.id;
   row.style.setProperty('--topic-depth', String(node.depth));
+  if (node.accent) row.dataset.accent = node.accent;
   if (node.selectable && node.id === activeId) {
     row.setAttribute('aria-current', 'page');
+  }
+
+  const labelWrap = document.createElement('span');
+  labelWrap.className = 'topic-label';
+
+  if (node.shortcut) {
+    const shortcut = document.createElement('kbd');
+    shortcut.className = 'topic-visual topic-shortcut';
+    shortcut.textContent = node.shortcut;
+    shortcut.setAttribute('aria-hidden', 'true');
+    labelWrap.appendChild(shortcut);
+  } else if (node.icon) {
+    const iconWrap = document.createElement('span');
+    iconWrap.className = 'topic-visual topic-icon';
+    iconWrap.setAttribute('aria-hidden', 'true');
+    const icon = createNavIcon(node.icon);
+    if (icon) iconWrap.appendChild(icon);
+    labelWrap.appendChild(iconWrap);
   }
 
   const titleSpan = document.createElement('span');
   titleSpan.className = 'topic-title';
   titleSpan.textContent = node.title;
-  row.appendChild(titleSpan);
+  labelWrap.appendChild(titleSpan);
+  row.appendChild(labelWrap);
 
   if (node.placeholder) {
     const badge = document.createElement('span');
@@ -396,38 +491,74 @@ function selectDoc(id) {
   renderNav();
 }
 
-function requestClose() {
-  try {
-    window.parent.postMessage({ type: 'KP_POPOVER_REQUEST_CLOSE', key: 'Escape' }, '*');
-  } catch {
-    /* ignore */
+function applyFontScale(scale) {
+  const n = Number(scale);
+  if (!Number.isFinite(n) || n < 0.8 || n > 1.75) return;
+  const value = String(n);
+  if (docsAppEl) docsAppEl.style.setProperty('--docs-font-scale', value);
+  if (docsRoot instanceof ShadowRoot && docsRoot.host) {
+    docsRoot.host.style.setProperty('--docs-font-scale', value);
+  }
+  if (docsRoot?.nodeType === 9) {
+    try { document.documentElement.style.setProperty('--docs-font-scale', value); } catch { /* ignore */ }
   }
 }
 
 /**
- * When Docs is embedded in the KeyPilot iframe popover, the outer chrome
- * already provides a standard titlebar + × close. Hide the in-page header.
+ * Mount the docs UI into a document or open ShadowRoot.
+ * @param {Document|ShadowRoot|Element} root
+ * @param {{
+ *   embedded?: boolean,
+ *   onClose?: () => void,
+ *   fontScale?: number
+ * }} [options]
+ * @returns {() => void}
  */
-function adaptHeaderForPopoverEmbed() {
-  try {
-    const embedded = window.parent && window.parent !== window;
-    if (!embedded) return;
-    document.documentElement.classList.add('kp-popover-embed');
-    document.body?.classList?.add('kp-popover-embed');
-    const header = document.querySelector('.docs-app > .header, .header');
+export function mountDocsApp(root, options = {}) {
+  const embedded = options.embedded === true;
+  const onClose = typeof options.onClose === 'function' ? options.onClose : null;
+  docsRoot = root;
+
+  const mountNode = root.nodeType === 9
+    ? /** @type {Document} */ (root).body
+    : root;
+  if (!mountNode) return () => {};
+
+  if (!mountNode.querySelector?.('.docs-app')) {
+    const holder = document.createElement('div');
+    holder.innerHTML = docsAppMarkup();
+    const app = holder.firstElementChild;
+    if (app) mountNode.appendChild(app);
+  }
+
+  bindDocsElements(mountNode);
+
+  if (embedded && docsAppEl) {
+    docsAppEl.classList.add('kp-popover-embed');
+    const header = docsAppEl.querySelector('.header');
     if (header) {
       header.hidden = true;
       header.setAttribute('aria-hidden', 'true');
     }
-  } catch {
-    // ignore
   }
-}
 
-async function init() {
-  adaptHeaderForPopoverEmbed();
-  closeBtn?.addEventListener('click', requestClose);
-  searchEl?.addEventListener('input', () => {
+  if (Number.isFinite(Number(options.fontScale))) {
+    applyFontScale(options.fontScale);
+  }
+
+  const requestClose = () => {
+    if (onClose) {
+      onClose();
+      return;
+    }
+    try {
+      window.parent.postMessage({ type: 'KP_POPOVER_REQUEST_CLOSE', key: 'Escape' }, '*');
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const onSearchInput = () => {
     renderNav();
     const visible = filteredSelectableDocs();
     if (!visible.length) {
@@ -442,32 +573,53 @@ async function init() {
     } else {
       renderNav();
     }
-  });
+  };
 
-  try {
-    const res = await fetch(INDEX_URL());
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const index = await res.json();
-    topicTree = Array.isArray(index?.topics) ? index.topics : [];
-    const flat = flattenTopics(topicTree);
-    allDocs = await loadDocs(flat);
-    const firstSelectable = allDocs.find((d) => d.selectable);
-    if (!firstSelectable) {
-      if (articleEl) {
-        articleEl.innerHTML = '<p class="error">No documentation topics found.</p>';
+  closeBtn?.addEventListener('click', requestClose);
+  searchEl?.addEventListener('input', onSearchInput);
+
+  void (async () => {
+    try {
+      const res = await fetch(INDEX_URL());
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const index = await res.json();
+      topicTree = Array.isArray(index?.topics) ? index.topics : [];
+      const flat = flattenTopics(topicTree);
+      allDocs = await loadDocs(flat);
+      const firstSelectable = allDocs.find((d) => d.selectable);
+      if (!firstSelectable) {
+        if (articleEl) {
+          articleEl.innerHTML = '<p class="error">No documentation topics found.</p>';
+        }
+        renderNav();
+        return;
       }
-      renderNav();
-      return;
+      selectDoc(firstSelectable.id);
+      // Standalone page: land in the search box. Embedded popover: wait for F-click
+      // so KeyPilot stays in browse mode (hover outlines / topic activation).
+      if (!embedded) searchEl?.focus();
+    } catch (err) {
+      console.warn('[KeyPilot Docs] Failed to load index:', err);
+      if (articleEl) {
+        articleEl.innerHTML =
+          '<p class="error">Could not load documentation catalog.</p>';
+      }
     }
-    selectDoc(firstSelectable.id);
-    searchEl?.focus();
-  } catch (err) {
-    console.warn('[KeyPilot Docs] Failed to load index:', err);
-    if (articleEl) {
-      articleEl.innerHTML =
-        '<p class="error">Could not load documentation catalog.</p>';
-    }
-  }
+  })();
+
+  return () => {
+    closeBtn?.removeEventListener('click', requestClose);
+    searchEl?.removeEventListener('input', onSearchInput);
+    topicListEl = null;
+    emptyEl = null;
+    articleEl = null;
+    searchEl = null;
+    closeBtn = null;
+    docsAppEl = null;
+    docsRoot = null;
+  };
 }
 
-init();
+if (typeof document !== 'undefined' && document.documentElement?.hasAttribute('data-kp-docs-page')) {
+  mountDocsApp(document, { embedded: false });
+}

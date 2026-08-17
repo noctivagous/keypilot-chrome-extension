@@ -7,6 +7,8 @@ yarn-error.log*
 # Build outputs (generated files)
 extension/content-bundled.js
 extension/content-bundled.min.js
+extension/content-bundled.esbuild.js
+extension/frame-agent-bundled.esbuild.js
 
 # macOS
 .DS_Store

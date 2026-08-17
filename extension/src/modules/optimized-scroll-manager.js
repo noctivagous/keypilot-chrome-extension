@@ -226,9 +226,18 @@ export class OptimizedScrollManager {
     ) {
       try {
         this.overlayManager?.updateTextModeLabels?.(currentState.focusedTextElement);
+        this.overlayManager?.updateTextFocusEscHint?.(currentState.focusedTextElement);
         didOverlayWork = true;
       } catch { /* ignore */ }
     }
+
+    // Hover “F to select” sidecar tracks the field while scrolling.
+    try {
+      if (this.overlayManager?.refreshTextHoverActivateHint) {
+        this.overlayManager.refreshTextHoverActivateHint();
+        didOverlayWork = true;
+      }
+    } catch { /* ignore */ }
 
     // Fixed focus overlay backend (canvas / DOM rect) — not used on the primary path.
     if (

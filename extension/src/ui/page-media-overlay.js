@@ -19,7 +19,9 @@ import {
   NCT_DARK_UI_TITLEBAR_GRADIENT,
   NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM,
   getNctDarkUiBackdropCss,
-  getNctDarkUiScrollbarCss
+  getNctDarkUiScrollbarCss,
+  getNctDarkUiScaleSliderCss,
+  createNctDarkUiScaleSlider
 } from './nct-dark-ui.js';
 import {
   groupPageMediaByCategory,
@@ -444,49 +446,30 @@ function applyImageScale(slider = _imageScaleSlider) {
  * @returns {HTMLElement}
  */
 function buildImageScaleControl() {
-  const wrap = document.createElement('div');
-  wrap.className = 'kpv2-page-media-scale';
-  wrap.title = 'Overlay content scale (1×–2.5×, all tabs)';
-
-  const label = document.createElement('span');
-  label.className = 'kpv2-page-media-scale-label';
-  label.textContent = 'Scale';
-
-  const minTag = document.createElement('span');
-  minTag.className = 'kpv2-page-media-scale-edge';
-  minTag.textContent = '1×';
-
-  const range = document.createElement('input');
-  range.type = 'range';
-  range.className = 'kpv2-page-media-scale-range';
-  range.min = String(IMAGE_SCALE_SLIDER_MIN);
-  range.max = String(IMAGE_SCALE_SLIDER_MAX);
-  range.step = String(IMAGE_SCALE_SLIDER_STEP);
-  range.value = String(_imageScaleSlider);
-  range.setAttribute('aria-label', 'Page Media content scale');
-
-  const maxTag = document.createElement('span');
-  maxTag.className = 'kpv2-page-media-scale-edge';
-  maxTag.textContent = '2.5×';
-
-  const value = document.createElement('span');
-  value.className = 'kpv2-page-media-scale-value';
-  value.textContent = formatImageScaleReadout(_imageScaleSlider);
-
-  const onSlide = () => {
-    const next = normalizeImageScaleSlider(range.value);
-    applyImageScale(next);
-    persistImageScalePreference(next);
-  };
-  range.addEventListener('input', onSlide, true);
-  range.addEventListener('change', onSlide, true);
-
-  wrap.appendChild(label);
-  wrap.appendChild(minTag);
-  wrap.appendChild(range);
-  wrap.appendChild(maxTag);
-  wrap.appendChild(value);
-  return wrap;
+  const { root } = createNctDarkUiScaleSlider({
+    label: 'Scale',
+    title: 'Overlay content scale (1×–2.5×, all tabs)',
+    ariaLabel: 'Page Media content scale',
+    min: IMAGE_SCALE_SLIDER_MIN,
+    max: IMAGE_SCALE_SLIDER_MAX,
+    step: IMAGE_SCALE_SLIDER_STEP,
+    value: _imageScaleSlider,
+    minLabel: '1×',
+    maxLabel: '2.5×',
+    formatValue: formatImageScaleReadout,
+    rangeWidth: '88px',
+    // Styles come from the overlay stylesheet via getNctDarkUiScaleSliderCss().
+    embedStyles: false,
+    onInput: (next) => {
+      applyImageScale(next);
+      persistImageScalePreference(next);
+    }
+  });
+  // Keep legacy selectors used by applyImageScale / responsive CSS.
+  root.classList.add('kpv2-page-media-scale');
+  root.querySelector('.kp-nct-scale-range')?.classList.add('kpv2-page-media-scale-range');
+  root.querySelector('.kp-nct-scale-value')?.classList.add('kpv2-page-media-scale-value');
+  return root;
 }
 
 /**
@@ -2092,76 +2075,9 @@ ${getHierarchicalTableCss()}
   min-width: 120px;
   flex-shrink: 0;
 }
-.kpv2-page-media-scale {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-  padding: 3px 8px;
-  border: 1px solid ${c.panelEdgeDark};
-  border-radius: ${NCT_DARK_UI_BTN_RADIUS};
-  background: ${c.fieldBg};
-  box-shadow: 0 0 0 1px ${c.panelEdge} inset;
-}
-.kpv2-page-media-scale-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: ${c.fgMute};
-  user-select: none;
-}
-.kpv2-page-media-scale-edge {
-  font-size: 10px;
-  color: ${c.fgDim};
-  font-variant-numeric: tabular-nums;
-  user-select: none;
-}
-.kpv2-page-media-scale-value {
-  min-width: 2.6em;
-  font-size: 11px;
-  font-weight: 600;
-  color: ${c.fg};
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-  user-select: none;
-}
-.kpv2-page-media-scale-range {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 88px;
-  height: 4px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, ${c.panelEdgeDark} 0%, ${c.accent} 100%);
-  outline: none;
-  cursor: pointer;
-  margin: 0;
-  vertical-align: middle;
-}
-.kpv2-page-media-scale-range::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
-  background: ${NCT_DARK_UI_BTN_LIT_GRADIENT};
-  border: ${NCT_DARK_UI_BTN_LIT_BORDER};
-  box-shadow: 0 1px 3px rgba(0,0,0,0.55);
-  cursor: pointer;
-}
-.kpv2-page-media-scale-range::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
-  background: #3a5f7a;
-  border: ${NCT_DARK_UI_BTN_LIT_BORDER};
-  box-shadow: 0 1px 3px rgba(0,0,0,0.55);
-  cursor: pointer;
-}
-.kpv2-page-media-scale-range::-moz-range-track {
-  height: 4px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, ${c.panelEdgeDark} 0%, ${c.accent} 100%);
+${getNctDarkUiScaleSliderCss({ rangeWidth: '88px' })}
+.kpv2-page-media-scale.kp-nct-scale {
+  display: inline-flex;
 }
 .kpv2-page-media-title {
   margin: 0;
@@ -2831,7 +2747,8 @@ ${getHierarchicalTableCss()}
   .kpv2-page-media-header {
     flex-wrap: wrap;
   }
-  .kpv2-page-media-scale-range {
+  .kpv2-page-media-scale-range,
+  .kp-nct-scale-range {
     width: 72px;
   }
 }

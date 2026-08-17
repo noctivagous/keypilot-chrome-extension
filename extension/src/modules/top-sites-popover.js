@@ -1,16 +1,20 @@
 /**
  * TopSitesPopover
- * Centered 16:9 overlay of common sites: Toolbar, Most Visited, Recent Bookmarks.
+ * Overlay of common sites: Toolbar, Most Visited, Recent Bookmarks.
+ * Default host is a transient PopupManager modal; optional persistent mode
+ * remounts across pages like Keyboard Reference.
  */
 import { MSG } from '../messaging/types.js';
+import { Z_INDEX } from '../config/constants.js';
 import {
   createUrlListingContainer,
   parseUrlForThreeLineDisplay,
   renderUrlListing
 } from '../ui/url-listing.js';
 import { applyCardBackground } from '../ui/page-thumb-ui.js';
+import { createPopoverTitlebar } from '../ui/popover-titlebar.js';
+import { getActionIconDataUri } from '../ui/keybindings-ui-shared.js';
 import {
-  NCT_DARK_UI_BTN_BORDER,
   NCT_DARK_UI_BTN_GRADIENT,
   NCT_DARK_UI_BTN_RADIUS,
   NCT_DARK_UI_COLORS,
@@ -20,17 +24,36 @@ import {
   NCT_DARK_UI_PANEL_BOX_SHADOW,
   NCT_DARK_UI_PANEL_RADIUS,
   NCT_DARK_UI_SCROLLBAR_CLASS,
-  NCT_DARK_UI_TITLEBAR_GRADIENT,
   getNctDarkUiScrollbarCss
 } from '../ui/nct-dark-ui.js';
-import { ensureOpenChromeShadow, injectChromeStyles } from '../ui/kp-chrome-shadow.js';
+import {
+  ensureChromeHostMounted,
+  ensureOpenChromeShadow,
+  injectChromeStyles
+} from '../ui/kp-chrome-shadow.js';
+import {
+  DEFAULT_SETTINGS,
+  SETTINGS_STORAGE_KEY,
+  getSettings,
+  setSettings
+} from './settings-manager.js';
+import {
+  applyPanelPosition,
+  getViewportSize,
+  makePanelDraggable,
+  makePanelResizable,
+  normalizePanelPositionState,
+  PANEL_POSITION_MARGIN_PX
+} from '../utils/panel-position.js';
 import { storageGetValue, storageSetValue } from '../utils/storage.js';
 
 const TAB_STATE_KEY = 'kpTopSitesSelectedTab_v1';
 const POPUP_ID = 'kpv2-top-sites-popover';
 const DEFAULT_WIDTH_PX = 600;
-const ASPECT_RATIO = 16 / 9;
-const DEFAULT_HEIGHT_PX = Math.round(DEFAULT_WIDTH_PX / ASPECT_RATIO);
+const DEFAULT_HEIGHT_PX = 338;
+const MIN_WIDTH_PX = 480;
+const MIN_HEIGHT_PX = 270;
+const POSITION_MARGIN_PX = PANEL_POSITION_MARGIN_PX;
 
 /** @typedef {'toolbar'|'mostVisited'|'recentBookmarks'} TopSitesTabId */
 
@@ -56,6 +79,8 @@ const CARD_CLASS_NAMES = {
   url: 'kp-url-path',
   favicon: 'kp-url-favicon'
 };
+
+const GEAR_PATH = 'M495.9 166.1c3.3 12.7 .9 26.3-7.1 36.1l-37.3 45.7c2.1 11.1 3.2 22.6 3.2 34.3s-1.1 23.2-3.2 34.3l37.3 45.7c8 9.8 10.4 23.4 7.1 36.1c-6.3 24.2-17.7 46.6-33.1 66.3c-8.1 10.3-21.2 14.9-33.9 12.1l-57.5-12.7c-17.9 15.3-38.4 27.3-60.7 35.4l-13.7 57.5c-2.9 12.1-12.9 21.1-25.4 22.4c-24.2 2.6-49.1 2.6-73.3 0c-12.5-1.3-22.5-10.3-25.4-22.4l-13.7-57.5c-22.3-8.1-42.8-20.1-60.7-35.4L71.6 436.6c-12.7 2.8-25.8-1.8-33.9-12.1C22.3 404.8 10.9 382.4 4.6 358.2c-3.3-12.7-.9-26.3 7.1-36.1l37.3-45.7C46.9 265.2 45.8 253.7 45.8 242s1.1-23.2-3.2-34.3L11.7 161.9c-8-9.8-10.4-23.4-7.1-36.1C10.9 101.6 22.3 79.2 37.7 59.5c8.1-10.3 21.2-14.9 33.9-12.1l57.5 12.7c17.9-15.3 38.4-27.3 60.7-35.4L203.5-32.8c2.9-12.1 12.9-21.1-25.4-22.4c24.2-2.6 49.1-2.6 73.3 0c12.5 1.3 22.5 10.3 25.4 22.4l13.7 57.5c22.3 8.1 42.8 20.1 60.7 35.4l57.5-12.7c12.7-2.8 25.8 1.8 33.9 12.1c15.4 19.7 26.8 42.1 33.1 66.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z';
 
 /**
  * @param {{ url?: string, title?: string }} item
@@ -88,33 +113,67 @@ function attachPageThumb(row, url) {
   });
 }
 
+function hasStoredPosition(pos) {
+  if (!pos || typeof pos !== 'object') return false;
+  return Number.isFinite(Number(pos.left))
+    || Number.isFinite(Number(pos.top))
+    || (typeof pos.anchor === 'string' && pos.anchor);
+}
+
 export class TopSitesPopover {
   /**
    * @param {object} opts
    * @param {import('./popup-manager.js').PopupManager} opts.popupManager
+   * @param {(visible: boolean) => void} [opts.onVisibilityChange]
    */
-  constructor({ popupManager } = {}) {
+  constructor({ popupManager, onVisibilityChange } = {}) {
     this.popupManager = popupManager || null;
+    this._onVisibilityChange = typeof onVisibilityChange === 'function' ? onVisibilityChange : null;
     /** @type {HTMLElement|null} */
     this._panel = null;
+    /** @type {HTMLElement|null} */
+    this._titlebar = null;
     /** @type {HTMLElement|null} */
     this._tabList = null;
     /** @type {HTMLElement|null} */
     this._grid = null;
     /** @type {HTMLElement|null} */
     this._status = null;
+    /** @type {HTMLButtonElement|null} */
+    this._gearBtn = null;
+    /** @type {HTMLElement|null} */
+    this._menu = null;
     this._open = false;
     this._openGen = 0;
+    this._persistent = false;
+    this._hostedInPopupManager = false;
+    this._suppressPositionPersist = false;
+    /** @type {import('./settings-manager.js').PanelPositionSettings} */
+    this._panelPosition = { ...DEFAULT_SETTINGS.panelPositions.topSites };
+    /** @type {(() => void)|null} */
+    this._dragDispose = null;
+    /** @type {(() => void)|null} */
+    this._resizeDispose = null;
+    this._docClickBound = false;
+    this._storageBound = false;
+    this._onDocClick = this._onDocClick.bind(this);
+    this._onStorageChanged = this._onStorageChanged.bind(this);
+    this._onWinResize = this._onWinResize.bind(this);
     /** @type {TopSitesTabId} */
     this._tab = 'toolbar';
     /** @type {number} */
     this._selectedIndex = 0;
     /** @type {Array<{title?: string, url?: string}>} */
     this._items = [];
+    this._bindSettingsSync();
   }
 
   isOpen() {
     return this._open;
+  }
+
+  isPersistent() {
+    return !!this._persistent;
   }
 
   toggle() {
@@ -122,31 +181,25 @@ export class TopSitesPopover {
     else void this.show();
   }
 
+  /**
+   * @param {{ persistClosed?: boolean }} [opts]
+   */
   async show() {
-    if (!this.popupManager) return;
     if (this._open) return;
     this._open = true;
     const gen = ++this._openGen;
 
     await this._loadTabState();
+    await this._hydrateFromSettings();
     if (!this._stillOpen(gen)) return;
 
     this._ensureDom();
     this._injectStyles();
     this._syncTabButtons();
-
-    this.popupManager.showModal({
-      id: POPUP_ID,
-      panel: this._panel,
-      onRequestClose: () => this.hide(),
-      resizable: true,
-      blur: false,
-      resizeOptions: {
-        minWidth: 480,
-        minHeight: 270,
-        aspectRatio: ASPECT_RATIO
-      }
-    });
+    this._syncPersistMenu();
+    this._applySizeAndPosition();
+    this._applyHost();
+    this._attachMoveResize();
 
     try {
       this._panel?.focus?.({ preventScroll: true });
@@ -155,23 +208,37 @@ export class TopSitesPopover {
     await this._loadAndRender(gen);
   }
 
-  hide() {
+  /**
+   * @param {{ persistClosed?: boolean }} [opts]
+   */
+  hide(opts = {}) {
     if (!this._open && !this._panel) return;
+    const persistClosed = opts.persistClosed !== false;
     this._open = false;
     this._openGen += 1;
     void this._persistTabState();
+    this._disposeChrome();
+    this._closeMenu();
 
     try {
       this.popupManager?.hideModal?.(POPUP_ID);
     } catch { /* ignore */ }
+    this._hostedInPopupManager = false;
 
     try { this._panel?.remove?.(); } catch { /* ignore */ }
     this._panel = null;
+    this._titlebar = null;
     this._tabList = null;
     this._grid = null;
     this._status = null;
+    this._gearBtn = null;
+    this._menu = null;
     this._items = [];
     this._selectedIndex = 0;
+
+    if (persistClosed && this._persistent) {
+      try { this._onVisibilityChange?.(false); } catch { /* ignore */ }
+    }
   }
 
   /**
@@ -184,6 +251,13 @@ export class TopSitesPopover {
     const code = e.code;
 
     if (key === 'Escape' || code === 'Escape') {
+      if (this._menu && !this._menu.hidden) {
+        e.preventDefault();
+        e.stopPropagation();
+        try { e.stopImmediatePropagation(); } catch { /* ignore */ }
+        this._closeMenu();
+        return true;
+      }
       e.preventDefault();
       e.stopPropagation();
       try { e.stopImmediatePropagation(); } catch { /* ignore */ }
@@ -289,6 +363,355 @@ export class TopSitesPopover {
     return storageSetValue(TAB_STATE_KEY, this._tab).catch(() => {});
   }
 
+  async _hydrateFromSettings() {
+    try {
+      const settings = await getSettings();
+      this._persistent = !!settings?.topSitesPersistent;
+      const stored = settings?.panelPositions?.topSites;
+      const normalized = normalizePanelPositionState(
+        stored,
+        DEFAULT_SETTINGS.panelPositions.topSites
+      );
+      this._panelPosition = {
+        ...(normalized || {}),
+        ...(Number.isFinite(Number(stored?.width)) && Number(stored.width) > 0
+          ? { width: Number(stored.width) }
+          : {}),
+        ...(Number.isFinite(Number(stored?.height)) && Number(stored.height) > 0
+          ? { height: Number(stored.height) }
+          : {})
+      };
+    } catch {
+      this._persistent = false;
+    }
+  }
+
+  _bindSettingsSync() {
+    if (this._storageBound) return;
+    try {
+      if (chrome?.storage?.onChanged?.addListener) {
+        chrome.storage.onChanged.addListener(this._onStorageChanged);
+        this._storageBound = true;
+      }
+    } catch { /* ignore */ }
+  }
+
+  _onStorageChanged(changes, area) {
+    try {
+      if (area !== 'sync' && area !== 'local') return;
+      const entry = changes && changes[SETTINGS_STORAGE_KEY];
+      if (!entry || !entry.newValue) return;
+      const next = entry.newValue;
+      if (Object.prototype.hasOwnProperty.call(next, 'topSitesPersistent')) {
+        const persistent = !!next.topSitesPersistent;
+        if (persistent !== this._persistent) {
+          this._persistent = persistent;
+          this._syncPersistMenu();
+          if (this._open) this._applyHost();
+        }
+      }
+      const nextPos = next.panelPositions?.topSites;
+      if (nextPos && typeof nextPos === 'object' && this._open && this._panel) {
+        this._suppressPositionPersist = true;
+        const normalized = normalizePanelPositionState(
+          nextPos,
+          DEFAULT_SETTINGS.panelPositions.topSites
+        );
+        this._panelPosition = {
+          ...(normalized || this._panelPosition),
+          ...(Number.isFinite(Number(nextPos.width)) && Number(nextPos.width) > 0
+            ? { width: Number(nextPos.width) }
+            : {}),
+          ...(Number.isFinite(Number(nextPos.height)) && Number(nextPos.height) > 0
+            ? { height: Number(nextPos.height) }
+            : {})
+        };
+        this._applySizeAndPosition();
+        this._suppressPositionPersist = false;
+      }
+    } catch {
+      this._suppressPositionPersist = false;
+    }
+  }
+
+  _applyHost() {
+    if (!this._panel) return;
+    if (this._persistent) {
+      if (this._hostedInPopupManager) {
+        try { this.popupManager?.hideModal?.(POPUP_ID); } catch { /* ignore */ }
+        this._hostedInPopupManager = false;
+      }
+      try { this._panel.style.zIndex = String(Z_INDEX.POPUP_PANEL_BASE); } catch { /* ignore */ }
+      try { ensureChromeHostMounted(this._panel); } catch { /* ignore */ }
+      return;
+    }
+    if (!this.popupManager) {
+      try { ensureChromeHostMounted(this._panel); } catch { /* ignore */ }
+      return;
+    }
+    this.popupManager.showModal({
+      id: POPUP_ID,
+      panel: this._panel,
+      onRequestClose: () => this.hide(),
+      resizable: false,
+      blur: false
+    });
+    this._hostedInPopupManager = true;
+  }
+
+  _panelSize() {
+    const w = Number(this._panelPosition?.width);
+    const h = Number(this._panelPosition?.height);
+    return {
+      width: Number.isFinite(w) && w > 0 ? w : DEFAULT_WIDTH_PX,
+      height: Number.isFinite(h) && h > 0 ? h : DEFAULT_HEIGHT_PX
+    };
+  }
+
+  _applySizeAndPosition() {
+    const panel = this._panel;
+    if (!panel) return;
+    const size = this._panelSize();
+    try {
+      panel.style.width = `${size.width}px`;
+      panel.style.height = `${size.height}px`;
+      panel.style.maxWidth = '';
+      panel.style.maxHeight = '';
+      panel.style.transform = 'none';
+    } catch { /* ignore */ }
+
+    const pos = this._panelPosition;
+    if (hasStoredPosition(pos)) {
+      try {
+        const resolved = applyPanelPosition(panel, pos, {
+          margin: POSITION_MARGIN_PX,
+          fallbackWidth: size.width,
+          fallbackHeight: size.height,
+          width: size.width,
+          height: size.height,
+          pinSize: true
+        });
+        if (resolved) {
+          this._panelPosition = {
+            ...this._panelPosition,
+            left: resolved.left,
+            top: resolved.top,
+            anchor: resolved.anchor === undefined ? null : resolved.anchor
+          };
+        }
+      } catch { /* ignore */ }
+      return;
+    }
+
+    const vp = getViewportSize();
+    const left = Math.round(Math.max(POSITION_MARGIN_PX, (vp.width - size.width) / 2));
+    const top = Math.round(Math.max(POSITION_MARGIN_PX, (vp.height - size.height) / 2));
+    try {
+      applyPanelPosition(panel, { left, top, anchor: null }, {
+        margin: POSITION_MARGIN_PX,
+        fallbackWidth: size.width,
+        fallbackHeight: size.height,
+        width: size.width,
+        height: size.height,
+        pinSize: true
+      });
+    } catch { /* ignore */ }
+    this._panelPosition = { ...this._panelPosition, left, top, anchor: null };
+  }
+
+  _attachMoveResize() {
+    this._disposeChrome();
+    const panel = this._panel;
+    const handle = this._titlebar;
+    if (!panel || !handle) return;
+    const shadowRoot = panel.shadowRoot || panel;
+
+    try {
+      const api = makePanelDraggable(panel, handle, {
+        margin: POSITION_MARGIN_PX,
+        excludeSelector: 'button, .kpv2-ts-menu, .kpv2-popover-titlebar-actions, .kpv2-popover-titlebar-close',
+        onMoveEnd: (state) => {
+          if (!state?.moved) return;
+          void this._persistPosition({
+            left: state.left,
+            top: state.top,
+            anchor: state.anchor,
+            width: this._panelPosition.width,
+            height: this._panelPosition.height
+          });
+        }
+      });
+      this._dragDispose = api?.dispose || null;
+    } catch { /* ignore */ }
+
+    try {
+      this._resizeDispose = makePanelResizable(panel, {
+        mount: shadowRoot,
+        minWidth: MIN_WIDTH_PX,
+        minHeight: MIN_HEIGHT_PX,
+        margin: POSITION_MARGIN_PX,
+        onResizeEnd: (size) => {
+          void this._persistPosition({
+            ...this._panelPosition,
+            width: size.width,
+            height: size.height
+          });
+        }
+      });
+    } catch { /* ignore */ }
+
+    try {
+      window.addEventListener('resize', this._onWinResize);
+    } catch { /* ignore */ }
+  }
+
+  _disposeChrome() {
+    try { this._dragDispose?.(); } catch { /* ignore */ }
+    try { this._resizeDispose?.(); } catch { /* ignore */ }
+    this._dragDispose = null;
+    this._resizeDispose = null;
+    try { window.removeEventListener('resize', this._onWinResize); } catch { /* ignore */ }
+  }
+
+  _onWinResize() {
+    if (!this._open || !this._panel) return;
+    this._applySizeAndPosition();
+  }
+
+  async _persistPosition(next) {
+    if (this._suppressPositionPersist) return;
+    const normalized = normalizePanelPositionState(
+      next,
+      DEFAULT_SETTINGS.panelPositions.topSites
+    ) || {};
+    this._panelPosition = {
+      ...this._panelPosition,
+      left: normalized.left,
+      top: normalized.top,
+      anchor: normalized.anchor === undefined ? null : normalized.anchor,
+      ...(Number.isFinite(Number(next?.width)) && Number(next.width) > 0
+        ? { width: Number(next.width) }
+        : {}),
+      ...(Number.isFinite(Number(next?.height)) && Number(next.height) > 0
+        ? { height: Number(next.height) }
+        : {})
+    };
+    try {
+      await setSettings({ panelPositions: { topSites: { ...this._panelPosition } } });
+    } catch { /* ignore */ }
+  }
+
+  async _setPersistent(next) {
+    const persistent = !!next;
+    this._persistent = persistent;
+    this._syncPersistMenu();
+    try {
+      await setSettings({ topSitesPersistent: persistent });
+    } catch { /* ignore */ }
+    if (this._open) this._applyHost();
+    try {
+      // Persist visibility without toggling this tab's UI (host already switched).
+      this._onVisibilityChange?.(persistent && this._open, { applyUi: false });
+    } catch { /* ignore */ }
+  }
+
+  _syncPersistMenu() {
+    const item = this._menu?.querySelector?.('[data-kp-ts-persist]');
+    if (!item) return;
+    item.setAttribute('aria-checked', this._persistent ? 'true' : 'false');
+  }
+
+  _toggleMenu() {
+    if (!this._menu) return;
+    const open = this._menu.hidden;
+    if (open) this._openMenu();
+    else this._closeMenu();
+  }
+
+  _openMenu() {
+    if (!this._menu) return;
+    this._menu.hidden = false;
+    this._gearBtn?.setAttribute('aria-expanded', 'true');
+    if (!this._docClickBound) {
+      try {
+        document.addEventListener('pointerdown', this._onDocClick, true);
+        this._docClickBound = true;
+      } catch { /* ignore */ }
+    }
+  }
+
+  _closeMenu() {
+    if (this._menu) this._menu.hidden = true;
+    this._gearBtn?.setAttribute('aria-expanded', 'false');
+    if (this._docClickBound) {
+      try { document.removeEventListener('pointerdown', this._onDocClick, true); } catch { /* ignore */ }
+      this._docClickBound = false;
+    }
+  }
+
+  _onDocClick(e) {
+    const t = e.target;
+    if (!(t instanceof Node)) return;
+    if (this._gearBtn?.contains?.(t) || this._menu?.contains?.(t)) return;
+    const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
+    if (path.includes(this._gearBtn) || path.includes(this._menu)) return;
+    this._closeMenu();
+  }
+
+  _createGearButton(doc) {
+    const btn = doc.createElement('button');
+    btn.type = 'button';
+    btn.className = 'kpv2-ts-gear';
+    btn.title = 'Top Sites options';
+    btn.setAttribute('aria-label', 'Top Sites options');
+    btn.setAttribute('aria-haspopup', 'menu');
+    btn.setAttribute('aria-expanded', 'false');
+
+    const img = doc.createElement('img');
+    img.alt = '';
+    img.setAttribute('aria-hidden', 'true');
+    const cssUri = getActionIconDataUri('OPEN_SETTINGS_POPOVER', { fill: 'rgba(200,200,205,0.95)' });
+    const match = String(cssUri || '').match(/^url\("(.+)"\)$/);
+    if (match) {
+      img.src = match[1];
+    } else {
+      img.src = `data:image/svg+xml,${encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="rgba(200,200,205,0.95)"><path d="${GEAR_PATH}"/></svg>`
+      )}`;
+    }
+    btn.appendChild(img);
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this._toggleMenu();
+    }, true);
+    return btn;
+  }
+
+  _createPersistMenu(doc) {
+    const menu = doc.createElement('div');
+    menu.className = 'kpv2-ts-menu';
+    menu.setAttribute('role', 'menu');
+    menu.hidden = true;
+
+    const item = doc.createElement('button');
+    item.type = 'button';
+    item.className = 'kpv2-ts-menu-item';
+    item.setAttribute('role', 'menuitemcheckbox');
+    item.dataset.kpTsPersist = 'true';
+    item.setAttribute('aria-checked', 'false');
+    item.textContent = 'Keep open across pages';
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      void this._setPersistent(!this._persistent);
+      this._closeMenu();
+    }, true);
+
+    menu.appendChild(item);
+    return menu;
+  }
+
   _injectStyles() {
     const c = NCT_DARK_UI_COLORS;
     const css = `
@@ -297,12 +720,8 @@ export class TopSitesPopover {
         position: fixed;
         left: 50%;
         top: 50%;
-        transform: translate(-50%, -50%);
         width: ${DEFAULT_WIDTH_PX}px;
         height: ${DEFAULT_HEIGHT_PX}px;
-        aspect-ratio: 16 / 9;
-        max-width: calc(100vw - 32px);
-        max-height: calc(100vh - 32px);
         display: flex;
         flex-direction: column;
         border-radius: ${NCT_DARK_UI_PANEL_RADIUS};
@@ -313,18 +732,108 @@ export class TopSitesPopover {
         outline: none;
         font-family: ${NCT_DARK_UI_FONT};
         color: ${c.fg};
+        z-index: ${Z_INDEX.POPUP_PANEL_BASE};
+      }
+
+      .kpv2-top-sites-panel .kpv2-ts-gear {
+        margin: 0;
+        appearance: none;
+        -webkit-appearance: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        width: 22px;
+        height: 22px;
+        min-width: 22px;
+        min-height: 22px;
+        padding: 0;
+        border: none;
+        border-radius: 4px;
+        background: transparent;
+        color: rgba(200, 200, 205, 0.9);
+        cursor: pointer;
+      }
+
+      .kpv2-top-sites-panel .kpv2-ts-gear img {
+        width: 13px;
+        height: 13px;
+        display: block;
+        pointer-events: none;
+        opacity: 0.92;
+      }
+
+      .kpv2-top-sites-panel .kpv2-ts-gear:hover,
+      .kpv2-top-sites-panel .kpv2-ts-gear[aria-expanded="true"] {
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .kpv2-top-sites-panel .kpv2-ts-menu {
+        position: absolute;
+        top: 28px;
+        right: 28px;
+        z-index: 8;
+        min-width: 220px;
+        padding: 4px;
+        border-radius: ${NCT_DARK_UI_BTN_RADIUS};
+        border: ${NCT_DARK_UI_BTN_BORDER};
+        background: ${NCT_DARK_UI_PANEL_BACKGROUND};
+        box-shadow: ${NCT_DARK_UI_PANEL_BOX_SHADOW};
+      }
+
+      .kpv2-top-sites-panel .kpv2-ts-menu[hidden] {
+        display: none !important;
+      }
+
+      .kpv2-top-sites-panel .kpv2-ts-menu-item {
+        appearance: none;
+        -webkit-appearance: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        margin: 0;
+        padding: 8px 10px;
+        border: none;
+        border-radius: 6px;
+        background: transparent;
+        color: ${c.fg};
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .kpv2-top-sites-panel .kpv2-ts-menu-item::before {
+        content: "";
+        width: 12px;
+        height: 12px;
+        flex: 0 0 auto;
+        border-radius: 3px;
+        border: 1px solid ${c.panelEdgeDark};
+        background: transparent;
+        box-sizing: border-box;
+      }
+
+      .kpv2-top-sites-panel .kpv2-ts-menu-item[aria-checked="true"]::before {
+        background: ${c.litEdge};
+        border-color: ${c.litEdge};
+      }
+
+      .kpv2-top-sites-panel .kpv2-ts-menu-item:hover {
+        background: rgba(255, 255, 255, 0.08);
       }
 
       .kpv2-top-sites-panel .kpv2-ts-tabstrip {
         display: flex;
         align-items: flex-end;
         gap: 4px;
-        padding: 10px 14px 0 12px;
-        min-height: 48px;
+        padding: 8px 12px 0;
+        min-height: 36px;
         flex: 0 0 auto;
-        background: ${NCT_DARK_UI_TITLEBAR_GRADIENT};
+        background: ${NCT_DARK_UI_PANEL_BACKGROUND};
         border-bottom: 1px solid ${c.panelEdgeDark};
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.10);
       }
 
       .kpv2-top-sites-panel .kpv2-ts-tab {
@@ -332,14 +841,14 @@ export class TopSitesPopover {
         -webkit-appearance: none;
         position: relative;
         margin: 0 0 -1px;
-        padding: 11px 18px 13px;
+        padding: 8px 14px 10px;
         border: 1px solid ${c.panelEdgeDark};
         border-bottom: none;
         border-radius: 9px 9px 0 0;
-        background: linear-gradient(180deg, ${c.btnTop} 0%, ${c.btnMid} 55%, ${c.btnBot} 100%);
+        background: ${NCT_DARK_UI_BTN_GRADIENT};
         color: ${c.fgDim};
         font-family: inherit;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 700;
         letter-spacing: 0.01em;
         line-height: 1.15;
@@ -357,8 +866,8 @@ export class TopSitesPopover {
         color: ${c.fg};
         background: ${NCT_DARK_UI_PANEL_BACKGROUND};
         z-index: 1;
-        padding-top: 13px;
-        padding-bottom: 15px;
+        padding-top: 10px;
+        padding-bottom: 12px;
         box-shadow:
           inset 0 1px 0 rgba(255,255,255,0.16),
           0 0 0 1px ${c.litEdge};
@@ -367,24 +876,6 @@ export class TopSitesPopover {
       .kpv2-top-sites-panel .kpv2-ts-tab:focus-visible {
         outline: none;
         box-shadow: inset 0 0 0 1px rgba(74,144,200,0.65);
-      }
-
-      .kpv2-top-sites-panel .kpv2-ts-close {
-        margin: 0 0 8px auto;
-        appearance: none;
-        -webkit-appearance: none;
-        box-sizing: border-box;
-        width: 32px;
-        height: 32px;
-        border-radius: ${NCT_DARK_UI_BTN_RADIUS};
-        border: ${NCT_DARK_UI_BTN_BORDER};
-        background: ${NCT_DARK_UI_BTN_GRADIENT};
-        color: ${c.fg};
-        font-size: 20px;
-        line-height: 1;
-        cursor: pointer;
-        flex: 0 0 auto;
-        align-self: center;
       }
 
       .kpv2-top-sites-panel .kpv2-ts-body {
@@ -579,6 +1070,21 @@ export class TopSitesPopover {
     const shadowRoot = ensureOpenChromeShadow(panel, { id: 'top-sites' });
     const shell = shadowRoot || panel;
 
+    this._gearBtn = this._createGearButton(doc);
+    this._menu = this._createPersistMenu(doc);
+
+    const titlebarApi = createPopoverTitlebar({
+      doc,
+      title: 'Top Sites',
+      variant: 'panel',
+      draggable: true,
+      closeTitle: 'Close',
+      onClose: () => this.hide(),
+      actions: [this._gearBtn],
+      className: 'kpv2-popover-titlebar kpv2-ts-titlebar'
+    });
+    this._titlebar = titlebarApi.titlebar;
+
     const tabstrip = doc.createElement('div');
     tabstrip.className = 'kpv2-ts-tabstrip';
     tabstrip.setAttribute('role', 'tablist');
@@ -600,18 +1106,6 @@ export class TopSitesPopover {
       tabstrip.appendChild(btn);
     }
 
-    const closeBtn = doc.createElement('button');
-    closeBtn.type = 'button';
-    closeBtn.className = 'kpv2-ts-close';
-    closeBtn.textContent = '×';
-    closeBtn.setAttribute('aria-label', 'Close');
-    closeBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      this.hide();
-    }, true);
-    tabstrip.appendChild(closeBtn);
-
     const body = doc.createElement('div');
     body.className = 'kpv2-ts-body';
 
@@ -631,6 +1125,8 @@ export class TopSitesPopover {
 
     body.appendChild(status);
     body.appendChild(grid);
+    shell.appendChild(this._titlebar);
+    shell.appendChild(this._menu);
     shell.appendChild(tabstrip);
     shell.appendChild(body);
 
@@ -827,7 +1323,8 @@ export class TopSitesPopover {
   async _openUrl(url) {
     const href = String(url || '').trim();
     if (!href) return;
-    this.hide();
+    // Persistent: leave visibility true so the panel remounts on the next page.
+    this.hide({ persistClosed: !this._persistent });
     try {
       await chrome.runtime.sendMessage({ type: MSG.NAVIGATE_SAME_TAB, url: href });
     } catch {

@@ -1,5 +1,5 @@
 <!doctype html>
-<html>
+<html data-kp-settings-page>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -8,15 +8,22 @@
     <link rel="stylesheet" href="settings.css" />
   </head>
   <body>
+    <svg class="settings-icon-sprite" aria-hidden="true">
+      <symbol id="settings-icon-overview" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" /></symbol>
+      <symbol id="settings-icon-keyboard" viewBox="0 0 24 24"><path d="M3 5h18v14H3z" /><path d="M7 9h.01M11 9h.01M15 9h.01M19 9h.01M7 13h.01M11 13h.01M15 13h.01M19 13h.01M8 17h8" /></symbol>
+      <symbol id="settings-icon-click" viewBox="0 0 24 24"><path d="m9 9 5 12 2.2-5.2L21 14Z" /><path d="M7.2 2.2 9 9l-6.8-1.8Z" /></symbol>
+      <symbol id="settings-icon-text" viewBox="0 0 24 24"><path d="M5 4h14M12 4v16M8 20h8" /></symbol>
+      <symbol id="settings-icon-scroll" viewBox="0 0 24 24"><path d="M8 2h8a4 4 0 0 1 4 4v12a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V6a4 4 0 0 1 4-4Z" /><path d="M12 6v12m-3-9 3-3 3 3m-6 6 3 3 3-3" /></symbol>
+      <symbol id="settings-icon-cursor" viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M2 12h4M18 12h4" /><circle cx="12" cy="12" r="4" /></symbol>
+      <symbol id="settings-icon-controls" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" /></symbol>
+      <symbol id="settings-icon-search" viewBox="0 0 24 24"><path d="m21 21-4.35-4.35" /><circle cx="11" cy="11" r="8" /></symbol>
+      <symbol id="settings-icon-about" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 10v6M12 7h.01" /></symbol>
+    </svg>
     <main class="settings-app">
       <header class="header">
         <div class="header-text">
           <h1>KeyPilot Settings</h1>
           <p class="sub">Changes sync across tabs automatically.</p>
-        </div>
-        <div class="header-actions">
-          <!--<button id="open-guide" class="btn btn-secondary" type="button">Open Guide</button>-->
-          <button id="close" class="btn" type="button">Close</button>
         </div>
       </header>
 
@@ -32,6 +39,7 @@
             aria-selected="true"
             tabindex="0"
           >
+            <span class="settings-category-visual" data-accent="blue" aria-hidden="true"><svg class="settings-category-icon-svg"><use href="#settings-icon-overview" /></svg></span>
             Overview
           </button>
 
@@ -46,6 +54,7 @@
             aria-selected="false"
             tabindex="-1"
           >
+            <span class="settings-category-visual" data-accent="cyan" aria-hidden="true"><svg class="settings-category-icon-svg"><use href="#settings-icon-keyboard" /></svg></span>
             Keyboard
           </button>
           <button
@@ -58,6 +67,7 @@
             aria-selected="false"
             tabindex="-1"
           >
+            <span class="settings-category-visual" data-accent="green" aria-hidden="true"><svg class="settings-category-icon-svg"><use href="#settings-icon-click" /></svg></span>
             Click Mode
           </button>
           <button
@@ -70,6 +80,7 @@
             aria-selected="false"
             tabindex="-1"
           >
+            <span class="settings-category-visual" data-accent="violet" aria-hidden="true"><svg class="settings-category-icon-svg"><use href="#settings-icon-text" /></svg></span>
             Text Mode
           </button>
           <button
@@ -82,6 +93,7 @@
             aria-selected="false"
             tabindex="-1"
           >
+            <span class="settings-category-visual" data-accent="amber" aria-hidden="true"><svg class="settings-category-icon-svg"><use href="#settings-icon-scroll" /></svg></span>
             Scrolling
           </button>
 
@@ -96,6 +108,7 @@
             aria-selected="false"
             tabindex="-1"
           >
+            <span class="settings-category-visual" data-accent="rose" aria-hidden="true"><svg class="settings-category-icon-svg"><use href="#settings-icon-cursor" /></svg></span>
             Cursor
           </button>
           <button
@@ -108,6 +121,7 @@
             aria-selected="false"
             tabindex="-1"
           >
+            <span class="settings-category-visual" data-accent="cyan" aria-hidden="true"><svg class="settings-category-icon-svg"><use href="#settings-icon-controls" /></svg></span>
             Control Strip
           </button>
           <button
@@ -120,6 +134,7 @@
             aria-selected="false"
             tabindex="-1"
           >
+            <span class="settings-category-visual" data-accent="green" aria-hidden="true"><svg class="settings-category-icon-svg"><use href="#settings-icon-search" /></svg></span>
             Search
           </button>
 
@@ -134,6 +149,7 @@
             aria-selected="false"
             tabindex="-1"
           >
+            <span class="settings-category-visual" data-accent="indigo" aria-hidden="true"><svg class="settings-category-icon-svg"><use href="#settings-icon-about" /></svg></span>
             About
           </button>
         </nav>
@@ -153,35 +169,59 @@
 
             <div class="settings-hub-grid">
               <button type="button" class="settings-hub-tile" data-goto="keyboard">
-                <span class="settings-hub-title">Keyboard</span>
+                <span class="settings-hub-heading">
+                  <span class="settings-category-visual" data-accent="cyan" aria-hidden="true"><svg class="settings-category-icon-svg"><use href="#settings-icon-keyboard" /></svg></span>
+                  <span class="settings-hub-title">Keyboard</span>
+                </span>
                 <span class="settings-hub-desc">Layout family, left-handed variant, and floating keyboard reference options.</span>
               </button>
               <button type="button" class="settings-hub-tile" data-goto="click-mode">
-                <span class="settings-hub-title">Click Mode</span>
+                <span class="settings-hub-heading">
+                  <span class="settings-category-visual" data-accent="green" aria-hidden="true"><svg class="settings-category-icon-svg"><use href="#settings-icon-click" /></svg></span>
+                  <span class="settings-hub-title">Click Mode</span>
+                </span>
                 <span class="settings-hub-desc">Crosshair look, hover focus rectangle, and click activation effects.</span>
               </button>
               <button type="button" class="settings-hub-tile" data-goto="text-mode">
-                <span class="settings-hub-title">Text Mode</span>
+                <span class="settings-hub-heading">
+                  <span class="settings-category-visual" data-accent="violet" aria-hidden="true"><svg class="settings-category-icon-svg"><use href="#settings-icon-text" /></svg></span>
+                  <span class="settings-hub-title">Text Mode</span>
+                </span>
                 <span class="settings-hub-desc">Text-field cursor, focus style, labels, and outline thickness.</span>
               </button>
               <button type="button" class="settings-hub-tile" data-goto="scrolling">
-                <span class="settings-hub-title">Scrolling</span>
+                <span class="settings-hub-heading">
+                  <span class="settings-category-visual" data-accent="amber" aria-hidden="true"><svg class="settings-category-icon-svg"><use href="#settings-icon-scroll" /></svg></span>
+                  <span class="settings-hub-title">Scrolling</span>
+                </span>
                 <span class="settings-hub-desc">C / V distance, smooth vs instant, Scroll Line targeting, and middle-click.</span>
               </button>
               <button type="button" class="settings-hub-tile" data-goto="cursor">
-                <span class="settings-hub-title">Cursor</span>
+                <span class="settings-hub-heading">
+                  <span class="settings-category-visual" data-accent="rose" aria-hidden="true"><svg class="settings-category-icon-svg"><use href="#settings-icon-cursor" /></svg></span>
+                  <span class="settings-hub-title">Cursor</span>
+                </span>
                 <span class="settings-hub-desc">Whether KeyPilot replaces the page cursor with its own crosshair.</span>
               </button>
               <button type="button" class="settings-hub-tile" data-goto="control-strip">
-                <span class="settings-hub-title">Control Strip</span>
+                <span class="settings-hub-heading">
+                  <span class="settings-category-visual" data-accent="cyan" aria-hidden="true"><svg class="settings-category-icon-svg"><use href="#settings-icon-controls" /></svg></span>
+                  <span class="settings-hub-title">Control Strip</span>
+                </span>
                 <span class="settings-hub-desc">Show or hide the status strip, and whether it starts collapsed.</span>
               </button>
               <button type="button" class="settings-hub-tile" data-goto="search">
-                <span class="settings-hub-title">Search</span>
+                <span class="settings-hub-heading">
+                  <span class="settings-category-visual" data-accent="green" aria-hidden="true"><svg class="settings-category-icon-svg"><use href="#settings-icon-search" /></svg></span>
+                  <span class="settings-hub-title">Search</span>
+                </span>
                 <span class="settings-hub-desc">Search engine for the New Tab box and KeyPilot’s omnibox (Alt+L).</span>
               </button>
               <button type="button" class="settings-hub-tile" data-goto="about">
-                <span class="settings-hub-title">About</span>
+                <span class="settings-hub-heading">
+                  <span class="settings-category-visual" data-accent="indigo" aria-hidden="true"><svg class="settings-category-icon-svg"><use href="#settings-icon-about" /></svg></span>
+                  <span class="settings-hub-title">About</span>
+                </span>
                 <span class="settings-hub-desc">Where settings are stored and how they sync across tabs.</span>
               </button>
             </div>
@@ -569,7 +609,7 @@
               <h3 class="subhead">Focused text field style</h3>
               <p class="field-hint" style="margin-top: 0;">
                 How the active text field looks while typing (text mode). Hover still shows an orange outline
-                and “Press F to select text field”.
+                and “F to select” to the left of the field.
               </p>
 
               <div class="radio-group" role="radiogroup" aria-label="Text field focus style">
@@ -577,7 +617,7 @@
                   <input type="radio" name="text-focus-style" value="left_edge" />
                   <span>
                     <span class="radio-title">Left edge pulse</span>
-                    <span class="radio-sub">Orange bar on the left edge, pulsing (default). “press Esc to exit” stays on the field.</span>
+                    <span class="radio-sub">Orange bar on the left edge, pulsing (default). “Esc to exit” sits to the left of the bar.</span>
                   </span>
                 </label>
                 <label class="radio">
@@ -684,7 +724,6 @@
       </div>
     </main>
 
-    <script type="module" src="popover-bridge.js"></script>
-    <script type="module" src="settings.js"></script>
+    <script type="module" src="settings-page.js"></script>
   </body>
 </html>

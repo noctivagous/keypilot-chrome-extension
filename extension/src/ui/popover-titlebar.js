@@ -1,11 +1,17 @@
 /**
  * Standard KeyPilot popover titlebar chrome.
  *
- * Used by modal iframe popovers (Settings, Guide) and URL popovers
- * (Open Popover, Link Preview) via {@link createUrlPopoverTitlebar}.
+ * Used by modal iframe popovers (Settings, Guide), URL popovers
+ * (Open Popover, Link Preview) via {@link createUrlPopoverTitlebar},
+ * and dockable floating panels via {@link createPopoverTitlebar} `variant: 'panel'`.
  *
  * Layout (left → right):
  *   [ title  · optional hint ]     [ actions… ]  [ × close ]
+ *
+ * Variants:
+ *   - modal   — 40px iframe / settings chrome
+ *   - preview — 34px URL popover chrome
+ *   - panel   — 28px compact titlebar for dockable/floating panels (drag handle)
  */
 
 import { KP_UI_FONT } from '../config/constants.js';
@@ -169,6 +175,85 @@ const VARIANT_STYLES = {
       box-shadow: ${NCT_DARK_UI_ICON_BUTTON_OUTLINE};
       position: relative;
     `
+  },
+  panel: {
+    titlebar: `
+      padding: 0 6px 0 10px;
+      background: ${NCT_DARK_UI_TITLEBAR_GRADIENT};
+      border-bottom: ${NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM};
+      box-shadow: ${NCT_DARK_UI_TITLEBAR_BOX_SHADOW};
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+      height: 28px;
+      min-height: 28px;
+      max-height: 28px;
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      cursor: grab;
+      font-family: ${KP_UI_FONT};
+      font-size: 11px;
+      font-weight: 400;
+      font-style: normal;
+      line-height: 1.3;
+      letter-spacing: normal;
+      text-transform: none;
+      -webkit-font-smoothing: antialiased;
+    `,
+    title: `
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      color: ${NCT_DARK_UI_COLORS.fg};
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+      flex: 0 1 auto;
+      line-height: 28px;
+    `,
+    hint: `
+      font-family: inherit;
+      color: rgba(140, 145, 155, 0.95);
+      font-weight: 500;
+      font-size: 10px;
+      margin-left: 8px;
+      flex-shrink: 0;
+      line-height: 28px;
+    `,
+    close: `
+      margin: 0;
+      appearance: none;
+      -webkit-appearance: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      font-family: inherit;
+      background: transparent;
+      border: none;
+      font-size: 15px;
+      font-weight: 400;
+      cursor: pointer;
+      color: rgba(200, 200, 205, 0.9);
+      padding: 0;
+      line-height: 20px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      min-width: 22px;
+      min-height: 22px;
+      height: 22px;
+      width: 22px;
+      text-align: center;
+      text-shadow: none;
+      box-shadow: ${NCT_DARK_UI_ICON_BUTTON_OUTLINE};
+      position: relative;
+    `
   }
 };
 
@@ -243,7 +328,7 @@ export function createTitlebarCloseHint({
  * @property {string} [closeTitle='Close (Esc)']
  * @property {string} [closeLabel='×']
  * @property {HTMLElement|HTMLElement[]|null} [actions] - nodes placed before the close button
- * @property {'modal'|'preview'} [variant='modal']
+ * @property {'modal'|'preview'|'panel'} [variant='modal']
  * @property {boolean} [draggable=false]
  * @property {string} [className='kpv2-popover-titlebar']
  * @property {string} [ariaLabel]
@@ -268,9 +353,12 @@ export function createTitlebarCloseHint({
  */
 export function createPopoverTitlebar(config = {}) {
   const doc = config.doc || document;
-  const variant = config.variant === 'preview' ? 'preview' : 'modal';
+  const variant = (config.variant === 'preview' || config.variant === 'panel')
+    ? config.variant
+    : 'modal';
   const styles = VARIANT_STYLES[variant];
   const showClose = config.showClose !== false;
+  const draggable = config.draggable === true || variant === 'panel';
   const className = typeof config.className === 'string' && config.className.trim()
     ? config.className.trim()
     : 'kpv2-popover-titlebar';
@@ -281,11 +369,13 @@ export function createPopoverTitlebar(config = {}) {
   titlebar.setAttribute('data-kp-titlebar-variant', variant);
   titlebar.style.cssText = styles.titlebar;
 
-  if (config.draggable) {
+  if (draggable) {
     titlebar.style.cursor = 'grab';
   }
   if (config.titleAttr) {
     titlebar.title = config.titleAttr;
+  } else if (draggable) {
+    titlebar.title = 'Drag to move';
   }
   if (config.ariaLabel) {
     titlebar.setAttribute('aria-label', config.ariaLabel);
@@ -302,7 +392,7 @@ export function createPopoverTitlebar(config = {}) {
     flex: 1;
     min-width: 0;
     margin-right: 4px;
-    ${config.draggable ? 'pointer-events: none;' : ''}
+    ${draggable ? 'pointer-events: none;' : ''}
   `;
 
   const titleEl = doc.createElement('span');

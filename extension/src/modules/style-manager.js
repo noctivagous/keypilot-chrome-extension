@@ -44,6 +44,8 @@ export function buildKeyPilotPrintCss() {
     `.${CSS_CLASSES.EDGE_JUMP_FADE}`,
     `.${CSS_CLASSES.VIEWPORT_MODAL_FRAME}`,
     `.${CSS_CLASSES.ESC_EXIT_LABEL}`,
+    `.${CSS_CLASSES.TEXT_FOCUS_ESC_HINT}`,
+    `.${CSS_CLASSES.TEXT_HOVER_ACTIVATE_HINT}`,
     // Omnibox + modal chrome
     `.${CSS_CLASSES.OMNIBOX_BACKDROP}`,
     `.${CSS_CLASSES.OMNIBOX_PANEL}`,
@@ -62,6 +64,7 @@ export function buildKeyPilotPrintCss() {
     // Light-DOM UI roots (kp-*)
     '.kp-control-strip',
     '.kp-floating-keyboard-help',
+    '.kpv2-top-sites-panel',
     '.kp-onboarding-panel',
     '.kp-launcher-container',
     '.kp-keybindings-popover',
@@ -166,7 +169,7 @@ export class StyleManager {
     this.cursorOverridesEnabled = false;
 
     // SVG background-image hints for orange text inputs (hover / focus).
-    this._textHoverHintLabel = 'Press F to select text field';
+    this._textHoverHintLabel = 'F to select';
     this._textFocusHintLabel = 'press Esc to exit';
     this._textHoverHintUri = buildTextInputHintDataUri(this._textHoverHintLabel);
     this._textFocusHintUri = buildTextInputHintDataUri(this._textFocusHintLabel, {
@@ -491,7 +494,7 @@ export class StyleManager {
         z-index: ${Z_INDEX.OVERLAYS_ABOVE};
         box-sizing: border-box;
         border: 3px solid ${COLORS.FLASH_GREEN};
-        border-radius: 3px;
+        border-radius: 0;
         box-shadow:
           0 0 0 2px ${COLORS.FLASH_GREEN_SHADOW},
           0 0 18px 4px ${COLORS.FLASH_GREEN_GLOW};
@@ -510,7 +513,7 @@ export class StyleManager {
         z-index: ${Z_INDEX.OVERLAYS_ABOVE};
         box-sizing: border-box;
         border: 3px solid ${COLORS.FLASH_GREEN};
-        border-radius: 3px;
+        border-radius: 0;
         background: transparent;
         will-change: opacity, box-shadow, border-color;
         animation: kpv2-focus-flash 320ms ease-out forwards;
@@ -543,7 +546,7 @@ export class StyleManager {
         pointer-events: none;
         z-index: ${Z_INDEX.OVERLAYS_ABOVE};
         box-sizing: border-box;
-        border-radius: 3px;
+        border-radius: 0;
         overflow: hidden;
         padding: 3px;
         background: transparent;
@@ -809,6 +812,48 @@ export class StyleManager {
         color: white;
       }
 
+      .${CSS_CLASSES.TEXT_FOCUS_ESC_HINT},
+      .${CSS_CLASSES.TEXT_HOVER_ACTIVATE_HINT} {
+        position: fixed;
+        pointer-events: none;
+        z-index: ${Z_INDEX.OVERLAYS_ABOVE};
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 1px;
+        margin: 0;
+        padding: 0;
+        background: none;
+        border: none;
+        color: ${COLORS.ORANGE};
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 10px;
+        font-weight: 600;
+        line-height: 1.15;
+        letter-spacing: 0.02em;
+        text-align: right;
+        text-shadow: 0 0 3px #000, 0 1px 1px #000;
+        white-space: nowrap;
+        will-change: transform;
+      }
+
+      .${CSS_CLASSES.TEXT_FOCUS_ESC_HINT} kbd,
+      .${CSS_CLASSES.TEXT_HOVER_ACTIVATE_HINT} kbd {
+        display: inline-block;
+        background: rgba(0, 0, 0, 0.62);
+        border: 1px solid ${COLORS.ORANGE};
+        border-bottom-width: 2px;
+        border-radius: 3px;
+        padding: 0 3px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1.3;
+        color: ${COLORS.ORANGE};
+        text-shadow: none;
+      }
+
       .${CSS_CLASSES.ESC_EXIT_LABEL} .countdown-number {
         background: rgba(0, 0, 0, 0.8);
         color: white;
@@ -826,41 +871,31 @@ export class StyleManager {
         padding-left: 5pt !important;
       }
 
-      /* Text inputs: hover / focus treatment + SVG hint labels.
-         - Hover: orange outline only + SVG "Press F to select…" (no background wash)
-         - Focus background_tint: full orange wash + SVG "press Esc to exit"
-         - Focus left_edge (default): pulsating left inset bar + Esc SVG
-         Hint copy is an SVG background-image (upper-left) — not a DOM overlay.
+      /* Text inputs: hover / focus treatment + hint labels.
+         - Hover: orange outline only + vertical “F / to / select” sidecar
+         - Focus background_tint: full orange wash
+         - Focus left_edge (default): pulsating left inset bar
+         - Text mode: vertical “Esc / to / exit” overlay sits left of the orange bar
          Do not override the field’s own color / text-shadow / caret / placeholder. */
       /* Background-tint focus parents get a wash; left-edge parents stay clean. */
       .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT}:not(.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE}) {
         background-color: var(--kpv2-text-input-focus-bg, rgba(255, 140, 0, 0.42)) !important;
       }
 
-      /* Hover: SVG hint only — no background wash (outline is separate). */
+      /* Hover: marker class only — hint is a sidecar overlay (no in-field SVG). */
       .${CSS_CLASSES.TEXT_HOVER_INPUT} {
-        background-image: var(--kpv2-text-hover-hint-image, none) !important;
-        background-repeat: no-repeat !important;
-        background-position: left 6px top 3px !important;
-        background-size: auto 12px !important;
+        background-image: none !important;
       }
 
-      /* Focus (background tint style): wash + Esc SVG. */
+      /* Focus (background tint style): wash only — Esc hint is a sidecar overlay. */
       .${CSS_CLASSES.TEXT_FOCUS_INPUT}:not(.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE}):not(.${CSS_CLASSES.TEXT_FOCUS_DELEGATED}) {
         background-color: var(--kpv2-text-input-focus-bg, rgba(255, 140, 0, 0.42)) !important;
-        background-image: var(--kpv2-text-focus-hint-image, none) !important;
-        background-repeat: no-repeat !important;
-        background-position: left 6px top 3px !important;
-        background-size: auto 12px !important;
       }
 
       /* Field chrome painted on a taller wrapper — keep the input itself clean. */
       .${CSS_CLASSES.TEXT_FOCUS_INPUT}.${CSS_CLASSES.TEXT_FOCUS_DELEGATED} {
         background-color: transparent !important;
-        background-image: var(--kpv2-text-focus-hint-image, none) !important;
-        background-repeat: no-repeat !important;
-        background-position: left 6px top 3px !important;
-        background-size: auto 12px !important;
+        background-image: none !important;
         box-shadow: none !important;
         animation: none !important;
       }
@@ -872,14 +907,11 @@ export class StyleManager {
         will-change: box-shadow;
       }
 
-      /* Focus (default left-edge style): inset orange bar that pulses + Esc SVG. */
+      /* Focus (default left-edge style): inset orange bar that pulses. */
       .${CSS_CLASSES.TEXT_FOCUS_INPUT}.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE} {
         padding-left: calc(var(--kpv2-text-left-edge-width, 5px) + 4px) !important;
         background-color: transparent !important;
-        background-image: var(--kpv2-text-focus-hint-image, none) !important;
-        background-repeat: no-repeat !important;
-        background-position: left calc(var(--kpv2-text-left-edge-width, 5px) + 6px) top 3px !important;
-        background-size: auto 12px !important;
+        background-image: none !important;
         box-shadow: inset var(--kpv2-text-left-edge-width, 5px) 0 0 0 ${COLORS.ORANGE} !important;
         animation: kpv2-text-left-edge-pulse 1.5s ease-in-out infinite !important;
         will-change: box-shadow;
@@ -1003,32 +1035,22 @@ export class StyleManager {
         }
       }
 
-      /* Text inputs: same hover/focus + SVG hint treatment inside shadow DOM */
+      /* Text inputs: same hover/focus treatment inside shadow DOM */
       .${CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT}:not(.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE}) {
         background-color: var(--kpv2-text-input-focus-bg, rgba(255, 140, 0, 0.42)) !important;
       }
 
       .${CSS_CLASSES.TEXT_HOVER_INPUT} {
-        background-image: var(--kpv2-text-hover-hint-image, none) !important;
-        background-repeat: no-repeat !important;
-        background-position: left 6px top 3px !important;
-        background-size: auto 12px !important;
+        background-image: none !important;
       }
 
       .${CSS_CLASSES.TEXT_FOCUS_INPUT}:not(.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE}):not(.${CSS_CLASSES.TEXT_FOCUS_DELEGATED}) {
         background-color: var(--kpv2-text-input-focus-bg, rgba(255, 140, 0, 0.42)) !important;
-        background-image: var(--kpv2-text-focus-hint-image, none) !important;
-        background-repeat: no-repeat !important;
-        background-position: left 6px top 3px !important;
-        background-size: auto 12px !important;
       }
 
       .${CSS_CLASSES.TEXT_FOCUS_INPUT}.${CSS_CLASSES.TEXT_FOCUS_DELEGATED} {
         background-color: transparent !important;
-        background-image: var(--kpv2-text-focus-hint-image, none) !important;
-        background-repeat: no-repeat !important;
-        background-position: left 6px top 3px !important;
-        background-size: auto 12px !important;
+        background-image: none !important;
         box-shadow: none !important;
         animation: none !important;
       }
@@ -1042,10 +1064,7 @@ export class StyleManager {
       .${CSS_CLASSES.TEXT_FOCUS_INPUT}.${CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE} {
         padding-left: calc(var(--kpv2-text-left-edge-width, 5px) + 4px) !important;
         background-color: transparent !important;
-        background-image: var(--kpv2-text-focus-hint-image, none) !important;
-        background-repeat: no-repeat !important;
-        background-position: left calc(var(--kpv2-text-left-edge-width, 5px) + 6px) top 3px !important;
-        background-size: auto 12px !important;
+        background-image: none !important;
         box-shadow: inset var(--kpv2-text-left-edge-width, 5px) 0 0 0 ${COLORS.ORANGE} !important;
         animation: kpv2-text-left-edge-pulse 1.5s ease-in-out infinite !important;
         will-change: box-shadow;
@@ -1425,6 +1444,8 @@ export class StyleManager {
       CSS_CLASSES.RIPPLE,
       CSS_CLASSES.VIEWPORT_MODAL_FRAME,
       CSS_CLASSES.ESC_EXIT_LABEL,
+      CSS_CLASSES.TEXT_FOCUS_ESC_HINT,
+      CSS_CLASSES.TEXT_HOVER_ACTIVATE_HINT,
       CSS_CLASSES.HIGHLIGHT_OVERLAY,
       CSS_CLASSES.HIGHLIGHT_SELECTION,
       CSS_CLASSES.TEXT_FOCUS_INPUT,

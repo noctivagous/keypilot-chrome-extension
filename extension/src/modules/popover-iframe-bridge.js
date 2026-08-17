@@ -54,6 +54,9 @@ export function installPopoverIframeBridge(options = {}) {
     let keyPilotStarted = false;
     let mouseInsideFrame = true;
     let lastMouse = { x: null, y: null };
+    let lastPointerPostedX = NaN;
+    let lastPointerPostedY = NaN;
+    let pointerSyncRaf = 0;
     // Close keys from parent INIT (defaults cover open-popover P + link-preview E).
     /** @type {Set<string>} */
     let closeKeySet = new Set(['Escape', 'e', 'E', 'p', 'P']);
@@ -103,7 +106,66 @@ export function installPopoverIframeBridge(options = {}) {
     };
 
     const setInside = (v) => {
-      mouseInsideFrame = !!v;
+      const next = !!v;
+      if (mouseInsideFrame && !next) postPointerToParent(false);
+      mouseInsideFrame = next;
+    };
+
+    /**
+     * Keep top-frame lastMouse fresh. Extension pages have no frame-agent /
+     * content-script KeyPilot, so parent mousemove is silent over this iframe.
+     * @param {boolean} inside
+     * @param {number} [clientX]
+     * @param {number} [clientY]
+     */
+    const postPointerToParent = (inside, clientX, clientY) => {
+      if (fullKeyPilotPresent()) return;
+      try {
+        if (inside) {
+          const x = Number(clientX);
+          const y = Number(clientY);
+          if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+          if (
+            Math.abs(x - lastPointerPostedX) < 0.5 &&
+            Math.abs(y - lastPointerPostedY) < 0.5
+          ) {
+            return;
+          }
+          lastPointerPostedX = x;
+          lastPointerPostedY = y;
+          window.parent.postMessage({
+            type: MSG.FRAME_POINTER,
+            inside: true,
+            clientX: x,
+            clientY: y
+          }, '*');
+        } else {
+          lastPointerPostedX = NaN;
+          lastPointerPostedY = NaN;
+          window.parent.postMessage({
+            type: MSG.FRAME_POINTER,
+            inside: false
+          }, '*');
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    const schedulePointerSync = () => {
+      if (pointerSyncRaf) return;
+      pointerSyncRaf = requestAnimationFrame(() => {
+        pointerSyncRaf = 0;
+        try {
+          if (!mouseInsideFrame || fullKeyPilotPresent()) return;
+          const x = lastMouse.x;
+          const y = lastMouse.y;
+          if (typeof x !== 'number' || typeof y !== 'number') return;
+          postPointerToParent(true, x, y);
+        } catch {
+          // ignore
+        }
+      });
     };
 
     const typingAt = (target) =>
@@ -195,23 +257,27 @@ export function installPopoverIframeBridge(options = {}) {
         }
       };
 
-      // F outside iframe → parent (e.g. close button on chrome).
-      if (!typing && !mouseInsideFrame && (key === 'f' || key === 'F')) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        try {
-          window.parent.postMessage({ type: MSG.POPOVER_BRIDGE_KEYDOWN, key }, '*');
-        } catch {
-          // ignore
+      // F: parent KeyPilot activates (titlebar ×, or same-origin iframe chrome
+      // such as Settings/Docs tabs). Skip when full in-frame KeyPilot owns F.
+      if (!typing && (key === 'f' || key === 'F')) {
+        const forwardToParent = !mouseInsideFrame || !fullKeyPilotPresent();
+        if (forwardToParent) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          try {
+            window.parent.postMessage({ type: MSG.POPOVER_BRIDGE_KEYDOWN, key }, '*');
+          } catch {
+            // ignore
+          }
+          return;
         }
-        return;
       }
 
       // Close keys from parent (Esc + open/preview toggle keys). Capture-phase so
       // in-frame KeyPilot does not steal E/P for nested actions before we close.
       if (!typing && closeKeySet.has(key)) return requestClose();
-      if (key === 'Escape') return requestClose();
+      if (!typing && key === 'Escape') return requestClose();
       if (closeOnQuote && !typing && key === "'") return requestClose();
 
       // Pre-KeyPilot F: click link under cursor inside the iframe.
@@ -288,9 +354,14 @@ export function installPopoverIframeBridge(options = {}) {
       }
     };
 
+    const onMouseMove = (e) => {
+      updateMouse(e);
+      schedulePointerSync();
+    };
+
     // Mouse tracking (needed for F-click before KP and inside/outside detection).
-    document.addEventListener('mousemove', updateMouse, true);
-    document.addEventListener('pointermove', updateMouse, true);
+    document.addEventListener('mousemove', onMouseMove, true);
+    document.addEventListener('pointermove', onMouseMove, true);
     document.addEventListener('mouseenter', () => setInside(true), true);
     document.addEventListener('mouseleave', () => setInside(false), true);
     try {
@@ -310,8 +381,8 @@ export function installPopoverIframeBridge(options = {}) {
         try {
           window.removeEventListener('message', onMessage, true);
           document.removeEventListener('keydown', onKeyDown, true);
-          document.removeEventListener('mousemove', updateMouse, true);
-          document.removeEventListener('pointermove', updateMouse, true);
+          document.removeEventListener('mousemove', onMouseMove, true);
+          document.removeEventListener('pointermove', onMouseMove, true);
         } catch {
           // ignore
         }

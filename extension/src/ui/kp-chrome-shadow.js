@@ -223,6 +223,7 @@ export function isKeyPilotChromeElement(element) {
       '.kp-control-strip',
       '.kp-onboarding-panel',
       '.kp-layout-config-panel',
+      '.kpv2-top-sites-panel',
       '.kp-action-config-panel',
       '.kp-practice-popover',
       '.kp-procedure-result',

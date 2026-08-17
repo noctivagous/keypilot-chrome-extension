@@ -1,4 +1,4 @@
-:root {
+:host, :root {
   color-scheme: dark;
   --docs-nav-width: 220px;
   --docs-header-border: rgba(255, 255, 255, 0.10);
@@ -8,6 +8,7 @@
   --docs-tab-active-border: rgba(120, 180, 255, 0.45);
   --docs-tab-active-accent: rgba(120, 180, 255, 0.95);
   --docs-tab-focus-ring: rgba(120, 180, 255, 0.75);
+  --docs-font-scale: 1.25;
 }
 
 html, body {
@@ -22,12 +23,25 @@ body {
   color: rgba(255, 255, 255, 0.92);
 }
 
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  color: rgba(255, 255, 255, 0.92);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
 .docs-app {
   box-sizing: border-box;
   height: 100%;
   min-height: 0;
   display: flex;
   flex-direction: column;
+}
+
+.docs-app.kp-popover-embed {
+  background: transparent;
 }
 
 .header {
@@ -42,6 +56,7 @@ body {
 }
 
 /* Outer KeyPilot popover titlebar owns title + close when embedded. */
+.docs-app.kp-popover-embed > .header,
 .kp-popover-embed .docs-app > .header,
 .header[hidden] {
   display: none !important;
@@ -97,6 +112,8 @@ h1 {
   padding: 12px 10px;
   background: var(--docs-nav-bg);
   border-right: 1px solid var(--docs-header-border);
+  scrollbar-width: thin;
+  scrollbar-color: #4a4a4a #141414;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -127,8 +144,8 @@ h1 {
 }
 
 .docs-search:focus {
-  border-color: var(--docs-tab-focus-ring);
-  box-shadow: 0 0 0 2px rgba(120, 180, 255, 0.2);
+  border-color: #ff8c00;
+  box-shadow: 0 0 0 2px rgba(255, 140, 0, 0.35);
 }
 
 .docs-search::placeholder {
@@ -191,6 +208,54 @@ h1 {
   white-space: nowrap;
 }
 
+.topic-label {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topic-visual {
+  --topic-accent: 120, 180, 255;
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  min-width: 24px;
+  height: 24px;
+  border: 1px solid rgba(var(--topic-accent), 0.32);
+  border-radius: 6px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent),
+    rgba(var(--topic-accent), 0.14);
+  color: rgba(var(--topic-accent), 0.98);
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.25);
+}
+
+.topic-btn[data-accent="green"] .topic-visual { --topic-accent: 74, 222, 128; }
+.topic-btn[data-accent="blue"] .topic-visual { --topic-accent: 96, 190, 255; }
+.topic-btn[data-accent="amber"] .topic-visual { --topic-accent: 245, 171, 74; }
+.topic-btn[data-accent="indigo"] .topic-visual { --topic-accent: 137, 147, 255; }
+.topic-btn[data-accent="rose"] .topic-visual { --topic-accent: 255, 117, 140; }
+.topic-btn[data-accent="cyan"] .topic-visual { --topic-accent: 91, 226, 241; }
+.topic-btn[data-accent="violet"] .topic-visual { --topic-accent: 194, 130, 255; }
+
+.topic-shortcut {
+  width: auto;
+  max-width: 48px;
+  padding: 0 5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 9px;
+  font-weight: 750;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.topic-icon-svg {
+  width: 14px;
+  height: 14px;
+}
+
 .topic-btn:hover {
   background: var(--docs-tab-hover-bg);
 }
@@ -202,9 +267,11 @@ h1 {
   color: rgba(255, 255, 255, 0.96);
 }
 
-.topic-btn:focus-visible {
-  outline: 2px solid var(--docs-tab-focus-ring);
-  outline-offset: 1px;
+.topic-btn:focus,
+.topic-btn:focus-visible,
+.topic-group:focus,
+.topic-group:focus-visible {
+  outline: none;
 }
 
 .topic-placeholder {
@@ -229,36 +296,38 @@ h1 {
   min-height: 0;
   overflow: auto;
   padding: 16px 20px 28px;
+  scrollbar-width: thin;
+  scrollbar-color: #4a4a4a #141414;
 }
 
 .docs-article {
-  max-width: 720px;
+  max-width: 760px;
 }
 
 .docs-article .muted {
   color: rgba(255, 255, 255, 0.6);
-  font-size: 13px;
+  font-size: calc(13px * var(--docs-font-scale));
 }
 
 .docs-article h1 {
-  font-size: 22px;
+  font-size: calc(22px * var(--docs-font-scale));
   margin: 0 0 12px;
 }
 
 .docs-article h2 {
-  font-size: 16px;
+  font-size: calc(16px * var(--docs-font-scale));
   margin: 22px 0 8px;
   letter-spacing: 0.2px;
 }
 
 .docs-article h3 {
-  font-size: 14px;
+  font-size: calc(14px * var(--docs-font-scale));
   margin: 18px 0 6px;
 }
 
 .docs-article p,
 .docs-article li {
-  font-size: 13px;
+  font-size: calc(13px * var(--docs-font-scale));
   line-height: 1.55;
   color: rgba(255, 255, 255, 0.88);
 }
@@ -289,11 +358,101 @@ h1 {
 
 .docs-article code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 12px;
+  font-size: calc(12px * var(--docs-font-scale));
   padding: 1px 5px;
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.docs-article kbd {
+  display: inline-block;
+  box-sizing: border-box;
+  min-width: 1.7em;
+  margin: 0 1px;
+  padding: 1px 5px 2px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+  border-radius: 5px;
+  background: linear-gradient(180deg, #343434 0%, #1c1c1c 100%);
+  color: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.84em;
+  font-weight: 650;
+  line-height: 1.25;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.docs-article .table-scroll {
+  width: 100%;
+  margin: 0 0 16px;
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.docs-article table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: calc(12px * var(--docs-font-scale));
+  line-height: 1.45;
+}
+
+.docs-article th,
+.docs-article td {
+  padding: 8px 10px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+  vertical-align: top;
+}
+
+.docs-article th:last-child,
+.docs-article td:last-child {
+  border-right: 0;
+}
+
+.docs-article tr:last-child td {
+  border-bottom: 0;
+}
+
+.docs-article th {
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.96);
+  font-size: calc(11px * var(--docs-font-scale));
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.docs-article tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.docs-article td {
+  color: rgba(255, 255, 255, 0.84);
+}
+
+.docs-article .article-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 12px 0 18px;
+}
+
+.docs-article .article-column {
+  min-width: 0;
+  padding: 0 14px 4px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.docs-article .article-column > h2:first-child,
+.docs-article .article-column > h3:first-child {
+  margin-top: 14px;
 }
 
 .docs-article a {
@@ -307,4 +466,60 @@ h1 {
 
 .docs-article .error {
   color: rgba(255, 150, 150, 0.95);
+}
+
+@media (max-width: 720px) {
+  :root {
+    --docs-nav-width: 190px;
+  }
+
+  .docs-main {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .docs-article .article-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* NCT dark pro scrollbars (nav + article). */
+.docs-nav::-webkit-scrollbar,
+.docs-main::-webkit-scrollbar,
+.docs-article .table-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.docs-nav::-webkit-scrollbar-corner,
+.docs-main::-webkit-scrollbar-corner,
+.docs-article .table-scroll::-webkit-scrollbar-corner {
+  background: #141414;
+}
+.docs-nav::-webkit-scrollbar-track,
+.docs-main::-webkit-scrollbar-track,
+.docs-article .table-scroll::-webkit-scrollbar-track {
+  background: #141414;
+  border-left: 1px solid #111;
+  border-top: 1px solid #111;
+}
+.docs-nav::-webkit-scrollbar-thumb,
+.docs-main::-webkit-scrollbar-thumb,
+.docs-article .table-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #555 0%, #4a4a4a 45%, #3a3a3a 100%);
+  border: 1px solid #111;
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  min-height: 28px;
+  min-width: 28px;
+}
+.docs-nav::-webkit-scrollbar-thumb:hover,
+.docs-main::-webkit-scrollbar-thumb:hover,
+.docs-article .table-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #666 0%, #5c5c5c 45%, #444 100%);
+}
+.docs-nav::-webkit-scrollbar-thumb:active,
+.docs-main::-webkit-scrollbar-thumb:active,
+.docs-article .table-scroll::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, #4a90c8 0%, #3a6a94 100%);
+  border-color: #2a4a66;
 }

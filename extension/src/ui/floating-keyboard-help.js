@@ -1292,6 +1292,7 @@ export class FloatingKeyboardHelp {
               this.closeBtn.removeEventListener('click', this._onCloseClick);
             } catch { /* ignore */ }
             this.closeBtn.addEventListener('click', this._onCloseClick);
+            this.closeBtn.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
           }
           this._ensureCollapseButton();
           this._applyCollapsedLayout();
@@ -1349,6 +1350,7 @@ export class FloatingKeyboardHelp {
     closeBtn.setAttribute('aria-label', 'Close keyboard reference');
     closeBtn.setAttribute('data-kp-floating-keyboard-close', 'true');
     closeBtn.addEventListener('click', this._onCloseClick);
+    closeBtn.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
 
     header.appendChild(title);
     header.appendChild(layoutSelect);

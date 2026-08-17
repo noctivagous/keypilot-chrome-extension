@@ -638,6 +638,8 @@ export class ActivationHandler {
       const cr = control.getBoundingClientRect();
       const tr = track.getBoundingClientRect();
       if (!cr || !tr || cr.width <= 0 || tr.width <= 0) return false;
+      // Usable native range track (NCT titlebar scale, settings sliders) — not a 12px thumb.
+      if (this.detector?.isNativeType?.(control, 'range') && cr.width >= 40) return false;
       return tr.width >= cr.width * 2.5;
     } catch {
       return false;

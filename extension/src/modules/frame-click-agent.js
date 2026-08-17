@@ -20,7 +20,7 @@
  */
 
 import { MSG } from '../messaging/types.js';
-import { COLORS, CSS_CLASSES, Z_INDEX, SCROLL } from '../config/constants.js';
+import { COLORS, CSS_CLASSES, SELECTORS, Z_INDEX, SCROLL } from '../config/constants.js';
 import { isTypingContext, hasModifierKeys } from '../utils/dom-context.js';
 import {
   buildEffectiveKeybindings,
@@ -689,14 +689,28 @@ export function installFrameClickAgent() {
       };
     };
 
-    const applyFocusChromeToHoverEl = () => {
+    const applyFocusChromeToHoverEl = (target = hoverTarget) => {
       if (!hoverEl) return;
-      const p = paletteFor(focusChrome.focusColor);
+      let isText = false;
+      try {
+        isText = !!(target && target.matches && target.matches(SELECTORS.FOCUSABLE_TEXT));
+      } catch {
+        isText = false;
+      }
+      const p = isText
+        ? {
+            border: COLORS.ORANGE,
+            shadow: COLORS.ORANGE_SHADOW,
+            shadowBright: COLORS.ORANGE_SHADOW,
+            fill: 'transparent'
+          }
+        : paletteFor(focusChrome.focusColor);
       const thickness = Math.min(Math.max(Number(focusChrome.rectangleThickness) || 3, 1), 16);
       try {
         hoverEl.style.border = `${thickness}px solid ${p.border}`;
-        hoverEl.style.background =
-          focusChrome.overlayFillEnabled === false ? 'transparent' : p.fill;
+        hoverEl.style.background = isText || focusChrome.overlayFillEnabled === false
+          ? 'transparent'
+          : p.fill;
         hoverEl.style.boxShadow = focusChrome.overlayShadowEnabled === false
           ? 'none'
           : `0 0 0 1px ${p.shadow}, 0 0 8px ${p.shadowBright}`;
@@ -930,6 +944,7 @@ export function installFrameClickAgent() {
       const el = ensureHoverEl();
       if (!el) return;
       hoverTarget = target;
+      applyFocusChromeToHoverEl(target);
       try {
         el.style.display = 'block';
         el.style.transform = `translate(${Math.round(rect.left)}px, ${Math.round(rect.top)}px)`;

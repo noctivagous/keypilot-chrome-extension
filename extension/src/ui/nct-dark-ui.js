@@ -193,6 +193,248 @@ export const NCT_DARK_UI_SELECTED_TEXT = '#e8f0f8';
 export const NCT_DARK_UI_HOVER_TINT = 'rgba(255,255,255,0.06)';
 
 /**
+ * Compact NCT dark scale / range control (titlebars, overlay toolbars).
+ * Inject {@link getNctDarkUiScaleSliderCss} into the same document/shadow tree,
+ * or let {@link createNctDarkUiScaleSlider} embed the stylesheet.
+ */
+export const NCT_DARK_UI_SCALE_CLASS = 'kp-nct-scale';
+export const NCT_DARK_UI_SCALE_STYLE_ATTR = 'data-kp-nct-scale-styles';
+
+/**
+ * CSS for the shared NCT dark scale slider.
+ * @param {{
+ *   className?: string,
+ *   rangeWidth?: string
+ * }} [opts]
+ * @returns {string}
+ */
+export function getNctDarkUiScaleSliderCss(opts = {}) {
+  const cls = typeof opts.className === 'string' && opts.className.trim()
+    ? opts.className.trim().replace(/^\./, '')
+    : NCT_DARK_UI_SCALE_CLASS;
+  const rangeWidth = typeof opts.rangeWidth === 'string' && opts.rangeWidth.trim()
+    ? opts.rangeWidth.trim()
+    : '82px';
+  const c = NCT_DARK_UI_COLORS;
+  return `
+.${cls} {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border: 1px solid ${c.panelEdgeDark};
+  border-radius: ${NCT_DARK_UI_BTN_RADIUS};
+  background: ${c.fieldBg};
+  box-shadow: 0 0 0 1px ${c.panelEdge} inset;
+  color: ${c.fg};
+  font-family: ${NCT_DARK_UI_FONT};
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+.${cls}-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: ${c.fgMute};
+  user-select: none;
+}
+.${cls}-edge {
+  font-size: 10px;
+  color: ${c.fgDim};
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+.${cls}-value {
+  min-width: 2.6em;
+  font-size: 11px;
+  font-weight: 600;
+  color: ${c.fg};
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  user-select: none;
+}
+.${cls}-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: ${rangeWidth};
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, ${c.panelEdgeDark} 0%, ${c.accent} 100%);
+  outline: none;
+  cursor: pointer;
+  margin: 0;
+  vertical-align: middle;
+}
+.${cls}-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: ${NCT_DARK_UI_BTN_LIT_GRADIENT};
+  border: ${NCT_DARK_UI_BTN_LIT_BORDER};
+  box-shadow: 0 1px 3px rgba(0,0,0,0.55);
+  cursor: pointer;
+}
+.${cls}-range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: #3a5f7a;
+  border: ${NCT_DARK_UI_BTN_LIT_BORDER};
+  box-shadow: 0 1px 3px rgba(0,0,0,0.55);
+  cursor: pointer;
+}
+.${cls}-range::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, ${c.panelEdgeDark} 0%, ${c.accent} 100%);
+}
+.${cls}-range:focus-visible {
+  outline: none;
+  box-shadow: ${NCT_DARK_UI_FOCUS_RING};
+}
+`.trim();
+}
+
+/**
+ * Build a compact NCT dark scale slider.
+ *
+ * @param {{
+ *   doc?: Document,
+ *   label?: string,
+ *   title?: string,
+ *   ariaLabel?: string,
+ *   min?: number,
+ *   max?: number,
+ *   step?: number,
+ *   value?: number,
+ *   minLabel?: string|null,
+ *   maxLabel?: string|null,
+ *   formatValue?: (value: number) => string,
+ *   onInput?: (value: number, event: Event) => void,
+ *   className?: string,
+ *   rangeWidth?: string,
+ *   embedStyles?: boolean
+ * }} [opts]
+ * @returns {{
+ *   root: HTMLElement,
+ *   range: HTMLInputElement,
+ *   valueEl: HTMLElement,
+ *   getValue: () => number,
+ *   setValue: (value: number, opts?: { silent?: boolean }) => void
+ * }}
+ */
+export function createNctDarkUiScaleSlider(opts = {}) {
+  const doc = opts.doc || document;
+  const cls = typeof opts.className === 'string' && opts.className.trim()
+    ? opts.className.trim().replace(/^\./, '')
+    : NCT_DARK_UI_SCALE_CLASS;
+  const min = Number.isFinite(Number(opts.min)) ? Number(opts.min) : 0.8;
+  const max = Number.isFinite(Number(opts.max)) ? Number(opts.max) : 1.75;
+  const step = Number.isFinite(Number(opts.step)) ? Number(opts.step) : 0.05;
+  const initial = Number.isFinite(Number(opts.value)) ? Number(opts.value) : min;
+  const formatValue = typeof opts.formatValue === 'function'
+    ? opts.formatValue
+    : (value) => {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return '';
+      return `${n.toFixed(2).replace(/\.?0+$/, '')}×`;
+    };
+
+  const root = doc.createElement('label');
+  root.className = cls;
+  if (opts.title) root.title = String(opts.title);
+
+  if (opts.embedStyles !== false) {
+    const style = doc.createElement('style');
+    style.setAttribute(NCT_DARK_UI_SCALE_STYLE_ATTR, 'true');
+    style.textContent = getNctDarkUiScaleSliderCss({
+      className: cls,
+      rangeWidth: opts.rangeWidth
+    });
+    root.appendChild(style);
+  }
+
+  if (opts.label) {
+    const label = doc.createElement('span');
+    label.className = `${cls}-label`;
+    label.textContent = String(opts.label);
+    root.appendChild(label);
+  }
+
+  if (opts.minLabel != null && opts.minLabel !== '') {
+    const minTag = doc.createElement('span');
+    minTag.className = `${cls}-edge`;
+    minTag.textContent = String(opts.minLabel);
+    root.appendChild(minTag);
+  }
+
+  const range = doc.createElement('input');
+  range.type = 'range';
+  range.className = `${cls}-range`;
+  range.min = String(min);
+  range.max = String(max);
+  range.step = String(step);
+  range.value = String(initial);
+  range.setAttribute(
+    'aria-label',
+    String(opts.ariaLabel || opts.title || opts.label || 'Scale')
+  );
+  root.appendChild(range);
+
+  if (opts.maxLabel != null && opts.maxLabel !== '') {
+    const maxTag = doc.createElement('span');
+    maxTag.className = `${cls}-edge`;
+    maxTag.textContent = String(opts.maxLabel);
+    root.appendChild(maxTag);
+  }
+
+  const valueEl = doc.createElement('output');
+  valueEl.className = `${cls}-value`;
+  valueEl.textContent = formatValue(initial);
+  root.appendChild(valueEl);
+
+  const readValue = () => {
+    const n = Number(range.value);
+    return Number.isFinite(n) ? n : min;
+  };
+
+  const setValue = (value, setOpts = {}) => {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return;
+    const clamped = Math.min(max, Math.max(min, n));
+    range.value = String(clamped);
+    valueEl.textContent = formatValue(clamped);
+    valueEl.value = formatValue(clamped);
+    if (!setOpts.silent && typeof opts.onInput === 'function') {
+      try { opts.onInput(clamped, null); } catch { /* ignore */ }
+    }
+  };
+
+  const onSlide = (event) => {
+    const next = readValue();
+    valueEl.textContent = formatValue(next);
+    valueEl.value = formatValue(next);
+    if (typeof opts.onInput === 'function') {
+      try { opts.onInput(next, event); } catch { /* ignore */ }
+    }
+  };
+  range.addEventListener('input', onSlide);
+  range.addEventListener('change', onSlide);
+
+  return {
+    root,
+    range,
+    valueEl,
+    getValue: readValue,
+    setValue
+  };
+}
+
+/**
  * NCT pro-app chrome for top-center flash / toggle toasts.
  * Keeps the caller's accent color as the fill; adds bevel rim + specular sheen.
  *

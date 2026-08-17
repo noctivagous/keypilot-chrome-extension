@@ -11,6 +11,7 @@ import {
 } from '../src/ui/url-listing.js';
 import { applyCardBackground, requestPageThumb } from '../src/ui/page-thumb-ui.js';
 import { createPopoverTitlebar, createTitlebarCloseHint } from '../src/ui/popover-titlebar.js';
+import { createTitlebarActionButton } from '../src/ui/preview-open-actions.js';
 import { createSegmentedControl } from '../src/ui/segmented-control.js';
 import {
   NEWTAB_THEME_STORAGE_KEY,
@@ -287,7 +288,7 @@ function isTypingTarget(target) {
   return type === 'text' || type === 'search' || type === 'url' || type === 'email' || type === 'tel' || type === 'password' || type === 'number';
 }
 
-function createModal({ title, hintKeyLabel, closeKeys, url, width, height }) {
+function createModal({ title, hintKeyLabel, closeKeys, url, width, height, actions }) {
   const root = document.getElementById('modal-root');
   if (!root) return null;
 
@@ -324,7 +325,8 @@ function createModal({ title, hintKeyLabel, closeKeys, url, width, height }) {
     onClose: requestClose,
     closeTitle: 'Close (Esc)',
     hint: titlebarHint,
-    className: 'kpv2-popover-titlebar'
+    className: 'kpv2-popover-titlebar',
+    actions: actions || null
   });
 
   const iframe = document.createElement('iframe');
@@ -1630,7 +1632,28 @@ async function init() {
       closeKeys: ['Escape', "'", '"'],
       url: 'settings.html',
       width: `${settingsContainerWidth}px`,
-      height: `${settingsContainerHeight}px`
+      height: `${settingsContainerHeight}px`,
+      actions: createTitlebarActionButton({
+        label: 'Help/Documentation',
+        title: 'Help/Documentation',
+        className: 'kpv2-popover-titlebar-docs',
+        iconPaths: [
+          { attrs: { d: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20' } },
+          { attrs: { d: 'M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z' } }
+        ],
+        onClick: () => {
+          const docsContainerWidth = Math.min(980, window.innerWidth - 36) + 20;
+          const docsContainerHeight = Math.min(window.innerHeight * 0.82, window.innerHeight - 80) + 20;
+          createModal({
+            title: 'KeyPilot Docs',
+            hintKeyLabel: 'Alt+H',
+            closeKeys: ['Escape'],
+            url: 'docs.html',
+            width: `${docsContainerWidth}px`,
+            height: `${docsContainerHeight}px`
+          });
+        }
+      })
     });
   }, true);
 

@@ -94,6 +94,54 @@ function wireTitlebarBtnHover(btn) {
 }
 
 /**
+ * Compact labeled titlebar action (same chrome as Open / Open in New Tab).
+ *
+ * @param {object} opts
+ * @param {Document} [opts.doc]
+ * @param {string} opts.label
+ * @param {string} [opts.title]
+ * @param {string} [opts.className]
+ * @param {Array<{ tag?: string, attrs: Record<string, string> }>} [opts.iconPaths]
+ * @param {(e: MouseEvent) => void} [opts.onClick]
+ * @returns {HTMLButtonElement}
+ */
+export function createTitlebarActionButton({
+  doc = document,
+  label,
+  title,
+  className,
+  iconPaths,
+  onClick
+} = {}) {
+  const btn = doc.createElement('button');
+  btn.type = 'button';
+  btn.className = className || 'kpv2-popover-titlebar-action';
+  btn.style.cssText = TITLEBAR_BTN_STYLE;
+  const text = String(label || '').trim();
+  if (Array.isArray(iconPaths) && iconPaths.length) {
+    btn.appendChild(createOutlineIcon(doc, iconPaths));
+  }
+  if (text) {
+    const span = doc.createElement('span');
+    span.textContent = text;
+    btn.appendChild(span);
+  }
+  const tip = title || text;
+  if (tip) {
+    btn.title = tip;
+    btn.setAttribute('aria-label', tip);
+  }
+  if (typeof onClick === 'function') {
+    btn.addEventListener('click', (e) => {
+      try { e.preventDefault(); e.stopPropagation(); } catch { /* ignore */ }
+      try { onClick(e); } catch { /* ignore */ }
+    });
+  }
+  wireTitlebarBtnHover(btn);
+  return btn;
+}
+
+/**
  * Build outline "Open" + "Open in New Tab" buttons.
  *
  * @param {object} opts

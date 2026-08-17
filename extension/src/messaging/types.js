@@ -136,6 +136,9 @@ export const MSG = Object.freeze({
   FRAME_TYPING_FOCUS: 'KP_FRAME_TYPING_FOCUS',
   FRAME_TYPING_BLUR: 'KP_FRAME_TYPING_BLUR',
 
+  // --- Parent → child: blur the typing field (Esc from top-frame text mode) ---
+  FRAME_BLUR_TYPING: 'KP_FRAME_BLUR_TYPING',
+
   // --- Child frame-agent → SW: inject full content-bundled.js into this frame ---
   // Used when a KeyPilot popover iframe needs full KeyPilot (cursor/overlays).
   // Thin frame-agent-bundled.js does not include the full app.

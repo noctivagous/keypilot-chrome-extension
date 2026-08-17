@@ -52,7 +52,11 @@ The browser applies that far more cheaply than allocating and repositioning a fi
 | **B. In-target absolute ring** | Outline would sit under full-bleed media; host can accept a child (including open-shadow mounts). **Not used** for fragmented multi-line / bare-`inline` text links (`inset:0` only covers one line box → fall through to C) | Cheap: last child of host, local `maxZ+1`; scrolls free; `border-radius` from host |
 | **C. Body fixed DOM overlay** | Escape hatch when **B** cannot mount (replaced elements, slotless shadow host, etc.) | Higher: fixed rect, must track scroll; global z-index |
 
-F-key activation effects (`kpv2-focus-flash`, pulse, marquee) are separate: they are short-lived fixed overlays by design. That path is not a model for steady hover chrome.
+F-key activation effects (`kpv2-focus-flash`, pulse, marquee): when hover paint is
+already **B**, flash mounts as an ephemeral in-target sibling (same host, local
+max z+1) so lightbox portals cover it. Otherwise body-fixed (**C**-style) with
+`elementsFromPoint` occlusion cleanup so fixed ghosts do not linger over modals.
+That path is not a model for steady hover chrome.
 
 ## Decision flow (DOM-hover)
 
@@ -71,7 +75,7 @@ Implemented in `OverlayManager.updateFocusOverlay` when `_useDomHoverFocusColors
    - **C** if B fails: `updateFocusOverlayDOM`, called with the paint-resolved element so `getBestRect` doesn't collapse to 0×0 on slotless shadow hosts. Set `_focusPaintUsesFixedOverlay`. Also copies border-radius.
 3. Else → **A** `updateFocusOverlayElementStyling`. Hide in-target ring + fixed overlay.
 4. Never use B/C “just in case.” If the check throws or is inconclusive, stay on element styling (**A**).
-5. Shadow debug HUD (`Alt+/`) can force A/B/C regardless of auto.
+5. Shadow debug HUD (`Alt+D`) can force Auto / Auto B→C / A / B / C regardless of auto.
 
 `_outerFocusRingWouldBeClipped` remains a rect helper for inset decisions / diagnostics; it does **not** alone switch paint backends.
 
@@ -109,7 +113,7 @@ open-shadow component trees:
 Paint rule for shadow trees: **skip A; default B → C.** If the focus target lives in a
 `ShadowRoot` or is an open-shadow host, Auto starts at in-target ring (**B**), falling
 through to body fixed (**C**) when B cannot mount. Light DOM keeps A → B → C. Use Alt+/
-(shadow debug HUD) to force A/B/C on msn.com / archive.org.
+(shadow debug HUD) to force Auto / Auto B→C / A / B / C on msn.com / archive.org.
 
 1. **Paint resolve** pierces open `shadowRoot` when choosing the styling / B-mount /
    C-rect node (`_findLargestVisibleDescendant`, `_resolveElementForFocusStyling`) —
@@ -212,9 +216,9 @@ Erratic “outline flashes then disappears” came from:
 - [ ] Clipped full-bleed media cards: **B** (or **C** if B cannot mount); stable across child pointerovers.
 - [ ] Scroll while body fixed (**C**) is active keeps the ring aligned.
 - [ ] Headline / small links next to media cards still use element outline (**A**) when not full-bleed self-clip.
-- [ ] F-activation flash still works (independent ephemeral overlays).
+- [ ] F-activation flash: B hover → in-target green sibling; A/C → fixed + occlusion cleanup (no linger over lightbox).
 - [ ] archive.org `media-button` / `collection-tile`: visible ring (A inline or B inside shadow — never silent 0×0 light-DOM B).
 - [ ] msn.com `cs-content-card` / fluent controls in open shadow: stable hover outline.
 - [ ] msn.com slotted cards (`cs-responsive-card` / `cs-watch-carousel-card`, real content light-DOM via `<slot>`): clip-context walk sees the shadow-internal wrapper's `overflow` / `contain: content`, not just the host's own style.
 - [ ] msn.com top-image cards (media ~half height, flush top/sides): Auto chooses **B** (or **C**), not A with a ring only on the text half.
-- [ ] Shadow debug HUD (`keyPilot.setShadowRootDebugHud(true)`): shows leaf / focusEl / paint target and can force A, B, or C.
+- [ ] Shadow debug HUD (`keyPilot.setShadowRootDebugHud(true)` / Alt+D): shows leaf / focusEl / paint target and can force Auto, Auto B→C, A, B, or C.

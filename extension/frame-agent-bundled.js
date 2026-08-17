@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-16T23:42:37.348Z
+ * Generated on 2026-08-17T04:59:34.941Z
  */
 
 (() => {
@@ -115,6 +115,8 @@
     // Payload: { type }
     FRAME_TYPING_FOCUS: "KP_FRAME_TYPING_FOCUS",
     FRAME_TYPING_BLUR: "KP_FRAME_TYPING_BLUR",
+    // --- Parent → child: blur the typing field (Esc from top-frame text mode) ---
+    FRAME_BLUR_TYPING: "KP_FRAME_BLUR_TYPING",
     // --- Child frame-agent → SW: inject full content-bundled.js into this frame ---
     // Used when a KeyPilot popover iframe needs full KeyPilot (cursor/overlays).
     // Thin frame-agent-bundled.js does not include the full app.
@@ -1121,6 +1123,13 @@
 
   // src/config/constants.js
   var KEYBINDINGS = buildEffectiveKeybindings(DEFAULT_KEYBOARD_LAYOUT_ID, DEFAULT_KEYBOARD_HANDEDNESS);
+  var SELECTORS = {
+    CLICKABLE: "a[href], button, input, select, textarea",
+    // Prefer IDL-backed checks via isTypingContext() when possible. These selectors
+    // are best-effort for matches()/querySelector (note: bare <input> has no type attr).
+    TEXT_INPUTS: 'input:not([type]), input[type="text"], input[type="search"], input[type="url"], input[type="email"], input[type="tel"], input[type="password"], input[type="number"], input[type="date"], input[type="datetime-local"], input[type="month"], input[type="week"], input[type="time"], textarea',
+    FOCUSABLE_TEXT: 'input:not([type]), input[type="text"], input[type="search"], input[type="url"], input[type="email"], input[type="tel"], input[type="password"], input[type="number"], input[type="date"], input[type="datetime-local"], input[type="month"], input[type="week"], input[type="time"], textarea, [contenteditable="true"], [contenteditable=""], [contenteditable="plaintext-only"]'
+  };
   var CSS_CLASSES = {
     CURSOR_HIDDEN: "kpv2-cursor-hidden",
     FOCUS: "kpv2-focus",
@@ -1193,6 +1202,10 @@
     EDGE_JUMP_FADE_ICON: "kpv2-edge-jump-fade-icon",
     VIEWPORT_MODAL_FRAME: "kpv2-viewport-modal-frame",
     ESC_EXIT_LABEL: "kpv2-esc-exit-label",
+    /** Vertical “Esc / to / exit” sidecar left of the text-mode orange bar. */
+    TEXT_FOCUS_ESC_HINT: "kpv2-text-focus-esc-hint",
+    /** Vertical “F / to / select” sidecar left of a hovered text field. */
+    TEXT_HOVER_ACTIVATE_HINT: "kpv2-text-hover-activate-hint",
     TEXT_FOCUS_INPUT: "kpv2-text-focus-input",
     TEXT_FOCUS_INPUT_PARENT: "kpv2-text-focus-input-parent",
     /** Modifier: focused text field uses left-edge 10px pulsating bar (default style). */
@@ -1604,6 +1617,8 @@
     keyboardReferenceShowNumberRow: false,
     // When true, the floating keyboard reference panel is titlebar-only (body hidden).
     keyboardReferenceCollapsed: false,
+    // When true, Top Sites remounts on each page while left open (Keyboard Reference-style).
+    topSitesPersistent: false,
     // Actions Library hierarchical table: expanded group keys (top-level open by default;
     // nested categories / parents start collapsed until the user opens them).
     actionsLibraryTableExpanded: Object.freeze(["functions", "macros", "macroKeys"]),
@@ -1617,7 +1632,9 @@
     panelPositions: Object.freeze({
       keyboardReference: Object.freeze({ anchor: "bottom-left" }),
       controlStrip: Object.freeze({ anchor: "top-left" }),
-      keyboardLayoutConfig: Object.freeze({ anchor: "middle-right" })
+      keyboardLayoutConfig: Object.freeze({ anchor: "middle-right" }),
+      // Empty: first open stays viewport-centered until the user moves/resizes.
+      topSites: Object.freeze({})
     }),
     // Per-key action settings (Keyboard Reference mode switches / config params).
     actionSettings: Object.freeze({
@@ -1878,6 +1895,10 @@
       keyboardLayoutConfig: normalizePanelPositionEntry(
         stored.keyboardLayoutConfig,
         DEFAULT_SETTINGS.panelPositions.keyboardLayoutConfig
+      ),
+      topSites: normalizePanelPositionEntry(
+        stored.topSites,
+        DEFAULT_SETTINGS.panelPositions.topSites
       )
     };
   }
@@ -1955,6 +1976,10 @@
           stored?.keyboardReferenceCollapsed,
           DEFAULT_SETTINGS.keyboardReferenceCollapsed
         ),
+        topSitesPersistent: normalizeBoolean(
+          stored?.topSitesPersistent,
+          DEFAULT_SETTINGS.topSitesPersistent
+        ),
         actionsLibraryTableExpanded: normalizeActionsLibraryTableExpanded(
           stored?.actionsLibraryTableExpanded
         ),
@@ -1972,7 +1997,8 @@
         panelPositions: {
           keyboardReference: { ...DEFAULT_SETTINGS.panelPositions.keyboardReference },
           controlStrip: { ...DEFAULT_SETTINGS.panelPositions.controlStrip },
-          keyboardLayoutConfig: { ...DEFAULT_SETTINGS.panelPositions.keyboardLayoutConfig }
+          keyboardLayoutConfig: { ...DEFAULT_SETTINGS.panelPositions.keyboardLayoutConfig },
+          topSites: { ...DEFAULT_SETTINGS.panelPositions.topSites }
         },
         actionSettings: normalizeActionSettings(null),
         clickMode: { ...DEFAULT_SETTINGS.clickMode, cursor: { ...DEFAULT_SETTINGS.clickMode.cursor } },
@@ -3223,13 +3249,24 @@
           fill: COLORS.FOCUS_BLUE_BG_T2 || "rgba(33,150,243,0.25)"
         };
       };
-      const applyFocusChromeToHoverEl = () => {
+      const applyFocusChromeToHoverEl = (target = hoverTarget) => {
         if (!hoverEl) return;
-        const p = paletteFor(focusChrome.focusColor);
+        let isText = false;
+        try {
+          isText = !!(target && target.matches && target.matches(SELECTORS.FOCUSABLE_TEXT));
+        } catch {
+          isText = false;
+        }
+        const p = isText ? {
+          border: COLORS.ORANGE,
+          shadow: COLORS.ORANGE_SHADOW,
+          shadowBright: COLORS.ORANGE_SHADOW,
+          fill: "transparent"
+        } : paletteFor(focusChrome.focusColor);
         const thickness = Math.min(Math.max(Number(focusChrome.rectangleThickness) || 3, 1), 16);
         try {
           hoverEl.style.border = `${thickness}px solid ${p.border}`;
-          hoverEl.style.background = focusChrome.overlayFillEnabled === false ? "transparent" : p.fill;
+          hoverEl.style.background = isText || focusChrome.overlayFillEnabled === false ? "transparent" : p.fill;
           hoverEl.style.boxShadow = focusChrome.overlayShadowEnabled === false ? "none" : `0 0 0 1px ${p.shadow}, 0 0 8px ${p.shadowBright}`;
         } catch {
         }
@@ -3435,6 +3472,7 @@
         const el = ensureHoverEl();
         if (!el) return;
         hoverTarget = target;
+        applyFocusChromeToHoverEl(target);
         try {
           el.style.display = "block";
           el.style.transform = `translate(${Math.round(rect.left)}px, ${Math.round(rect.top)}px)`;
@@ -3982,6 +4020,9 @@
       let keyPilotStarted = false;
       let mouseInsideFrame = true;
       let lastMouse = { x: null, y: null };
+      let lastPointerPostedX = NaN;
+      let lastPointerPostedY = NaN;
+      let pointerSyncRaf = 0;
       let closeKeySet = /* @__PURE__ */ new Set(["Escape", "e", "E", "p", "P"]);
       let scrollKeys = DEFAULT_POPOVER_SCROLL_KEYS;
       const fullKeyPilotPresent = () => {
@@ -4018,7 +4059,52 @@
         }
       };
       const setInside = (v) => {
-        mouseInsideFrame = !!v;
+        const next = !!v;
+        if (mouseInsideFrame && !next) postPointerToParent(false);
+        mouseInsideFrame = next;
+      };
+      const postPointerToParent = (inside, clientX, clientY) => {
+        if (fullKeyPilotPresent()) return;
+        try {
+          if (inside) {
+            const x = Number(clientX);
+            const y = Number(clientY);
+            if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+            if (Math.abs(x - lastPointerPostedX) < 0.5 && Math.abs(y - lastPointerPostedY) < 0.5) {
+              return;
+            }
+            lastPointerPostedX = x;
+            lastPointerPostedY = y;
+            window.parent.postMessage({
+              type: MSG.FRAME_POINTER,
+              inside: true,
+              clientX: x,
+              clientY: y
+            }, "*");
+          } else {
+            lastPointerPostedX = NaN;
+            lastPointerPostedY = NaN;
+            window.parent.postMessage({
+              type: MSG.FRAME_POINTER,
+              inside: false
+            }, "*");
+          }
+        } catch {
+        }
+      };
+      const schedulePointerSync = () => {
+        if (pointerSyncRaf) return;
+        pointerSyncRaf = requestAnimationFrame(() => {
+          pointerSyncRaf = 0;
+          try {
+            if (!mouseInsideFrame || fullKeyPilotPresent()) return;
+            const x = lastMouse.x;
+            const y = lastMouse.y;
+            if (typeof x !== "number" || typeof y !== "number") return;
+            postPointerToParent(true, x, y);
+          } catch {
+          }
+        });
       };
       const typingAt = (target) => isTypingContext(target, treatSelectAsTyping ? { treatSelectAsTyping: true } : void 0);
       const resolveScrollParams = () => {
@@ -4088,18 +4174,21 @@
           } catch {
           }
         };
-        if (!typing && !mouseInsideFrame && (key === "f" || key === "F")) {
-          e.preventDefault();
-          e.stopPropagation();
-          e.stopImmediatePropagation();
-          try {
-            window.parent.postMessage({ type: MSG.POPOVER_BRIDGE_KEYDOWN, key }, "*");
-          } catch {
+        if (!typing && (key === "f" || key === "F")) {
+          const forwardToParent = !mouseInsideFrame || !fullKeyPilotPresent();
+          if (forwardToParent) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            try {
+              window.parent.postMessage({ type: MSG.POPOVER_BRIDGE_KEYDOWN, key }, "*");
+            } catch {
+            }
+            return;
           }
-          return;
         }
         if (!typing && closeKeySet.has(key)) return requestClose();
-        if (key === "Escape") return requestClose();
+        if (!typing && key === "Escape") return requestClose();
         if (closeOnQuote && !typing && key === "'") return requestClose();
         if (enableFClickBeforeKeyPilot && !keyPilotStarted && !typing && (key === "f" || key === "F")) {
           let x = lastMouse.x;
@@ -4159,8 +4248,12 @@
           scrollToEdgeAtPoint(mx, my, 1, behavior);
         }
       };
-      document.addEventListener("mousemove", updateMouse, true);
-      document.addEventListener("pointermove", updateMouse, true);
+      const onMouseMove = (e) => {
+        updateMouse(e);
+        schedulePointerSync();
+      };
+      document.addEventListener("mousemove", onMouseMove, true);
+      document.addEventListener("pointermove", onMouseMove, true);
       document.addEventListener("mouseenter", () => setInside(true), true);
       document.addEventListener("mouseleave", () => setInside(false), true);
       try {
@@ -4177,8 +4270,8 @@
           try {
             window.removeEventListener("message", onMessage, true);
             document.removeEventListener("keydown", onKeyDown, true);
-            document.removeEventListener("mousemove", updateMouse, true);
-            document.removeEventListener("pointermove", updateMouse, true);
+            document.removeEventListener("mousemove", onMouseMove, true);
+            document.removeEventListener("pointermove", onMouseMove, true);
           } catch {
           }
         }

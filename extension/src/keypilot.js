@@ -52,7 +52,8 @@ import {
 } from './ui/kp-chrome-shadow.js';
 import {
   applyFlashNotificationStyle,
-  applyFlashNotificationThumbnailStyle
+  applyFlashNotificationThumbnailStyle,
+  createNctDarkUiScaleSlider
 } from './ui/nct-dark-ui.js';
 import { pinKeyPopover } from './ui/keybindings-ui.js';
 import { getActionMode, getActionParameter } from './ui/key-action-settings.js';
@@ -76,6 +77,7 @@ import { getStockMacroById, resolveMacroById } from './config/stock-macros.js';
 import { chordSlotKeyFromEvent } from './utils/key-chord.js';
 import { getTextAtPoint } from './utils/text-at-point.js';
 import { toggleKeyboardLayoutConfigurator } from './ui/keyboard-layout-configurator.js';
+import { createTitlebarActionButton } from './ui/preview-open-actions.js';
 import {
   isExtensionContextValid,
   noteExtensionContextError,
@@ -204,7 +206,8 @@ export class KeyPilot extends EventManager {
     this._currentKeySlotMap = null;
     // functionId -> Record<string, any> parameters, for built-in Functions still dispatched via a
     // fixed physical key (SEND_TEXT_TO_AI, RECTANGLE_HIGHLIGHT, HIGHLIGHT, COPY_HOVERED_IMAGE,
-    // COPY_HOVERED_URL, COPY_HOVERED_VIDEO, PAGE_TOP, PAGE_BOTTOM) rather than a UserKeyboardLayout slot. Kept in sync with their canonical
+    // COPY_HOVERED_URL, COPY_HOVERED_VIDEO, PAGE_TOP, PAGE_BOTTOM, PREVIEW_LINK_POPOVER, OPEN_POPOVER)
+    // rather than a UserKeyboardLayout slot. Kept in sync with their canonical
     // Action Instance — see getOrCreateBuiltinFunctionUserAction() in keyboard-layout-store.js and
     // KEY_ACTION_ARCHITECTURE.md's migration table (replaces settings.actionSettings).
     this._builtinFunctionActionParams = new Map();
@@ -224,11 +227,20 @@ export class KeyPilot extends EventManager {
     });
     this.launcherPopover = new LauncherPopover(this);
     this.topSitesPopover = new TopSitesPopover({
-      popupManager: this.overlayManager?.popupManager
+      popupManager: this.overlayManager?.popupManager,
+      onVisibilityChange: (visible, opts) => {
+        this.applyTopSitesVisibility(visible, {
+          persist: true,
+          applyUi: opts?.applyUi !== false
+        });
+      }
     });
     this.KEYBOARD_HELP_STORAGE_KEY = 'keypilot_keyboard_help_visible';
     this._keyboardHelpVisible = false;
     this._keyboardHelpStorageListener = null;
+    this.TOP_SITES_STORAGE_KEY = 'keypilot_top_sites_visible';
+    this._topSitesVisible = false;
+    this._topSitesStorageListener = null;
     /** True when this top-level tab is a separate-window Link Preview / Open Popover. */
     this._isPopoverOsWindow = false;
 
@@ -431,7 +443,8 @@ export class KeyPilot extends EventManager {
    * @returns {boolean}
    */
   _isElementInPopover(el) {
-    if (!el || !(el instanceof Element)) return false;
+    // Iframe-document nodes fail `instanceof Element` (different realm).
+    if (!el || el.nodeType !== 1) return false;
 
     // Media Library / Page Media are full-viewport galleries: Click Element
     // must treat their buttons and cards like popover chrome.
@@ -447,6 +460,14 @@ export class KeyPilot extends EventManager {
       return true;
     }
 
+    // Same-origin iframe document (Settings / Docs / Guide): nodes live in the
+    // child document, so parent contains() is false.
+    try {
+      const iframe = this.overlayManager?.popoverIframeElement;
+      const childDoc = iframe?.contentDocument;
+      if (childDoc && el.ownerDocument === childDoc) return true;
+    } catch { /* ignore */ }
+
     // Check popupManager modal
     const modalPanel = this.overlayManager?.popupManager?.top()?.panel;
     if (modalPanel instanceof Element && containsComposed(modalPanel, el)) {
@@ -454,6 +475,52 @@ export class KeyPilot extends EventManager {
     }
 
     return false;
+  }
+
+  /**
+   * Same-origin hit inside the modal popover iframe (Settings / Docs / Guide).
+   * Parent hit-testing only sees the <iframe> shell; inner KeyPilot does not run
+   * on chrome-extension pages.
+   * @param {number} clientX
+   * @param {number} clientY
+   * @returns {{ el: Element, clickable: Element|null }|null}
+   */
+  _piercePopoverIframeAt(clientX, clientY) {
+    const iframe = this.overlayManager?.popoverIframeElement;
+    if (!iframe || !Number.isFinite(clientX) || !Number.isFinite(clientY)) return null;
+    let rect;
+    try {
+      rect = iframe.getBoundingClientRect();
+    } catch {
+      return null;
+    }
+    if (!rect || rect.width <= 0 || rect.height <= 0) return null;
+    const localX = clientX - rect.left;
+    const localY = clientY - rect.top;
+    if (localX < 0 || localY < 0 || localX > rect.width || localY > rect.height) {
+      return null;
+    }
+    let doc = null;
+    try {
+      doc = iframe.contentDocument;
+    } catch {
+      doc = null;
+    }
+    if (!doc) return null;
+    let el = null;
+    try {
+      el = elementFromPointDeep(localX, localY, doc);
+    } catch {
+      el = null;
+    }
+    if (!el || el.nodeType !== 1) return null;
+    let clickable = null;
+    try {
+      clickable = this.detector.findClickable(el);
+    } catch {
+      clickable = null;
+    }
+    return { el, clickable };
   }
 
   /**
@@ -472,6 +539,8 @@ export class KeyPilot extends EventManager {
     try {
       if (typeof x === 'number' && typeof y === 'number') {
         under = this.detector.deepElementFromPoint(x, y);
+        const pierced = this._piercePopoverIframeAt(x, y);
+        if (pierced) under = pierced.clickable || pierced.el || under;
       }
     } catch { /* ignore */ }
 
@@ -811,6 +880,7 @@ export class KeyPilot extends EventManager {
 
     // Keep floating keyboard reference visibility synced across tabs.
     await this.setupKeyboardHelpSync();
+    await this.setupTopSitesSync();
 
     // Control strip (upper-left): survives disable so On/Off remains available.
     this.setupControlStrip();
@@ -932,6 +1002,10 @@ export class KeyPilot extends EventManager {
     try {
       this._linkHoverHintLastApplied = null;
       this._flushKeyboardLinkHoverHints();
+    } catch { /* ignore */ }
+
+    try {
+      void this.refreshTopSitesVisibilityFromStorage();
     } catch { /* ignore */ }
   }
 
@@ -1593,8 +1667,8 @@ export class KeyPilot extends EventManager {
   }
 
   /**
-   * Paint layout-aware "Press F to select text field" / "press Esc to exit" SVG
-   * background-images onto hovered/focused text inputs (via StyleManager CSS vars).
+   * Paint layout-aware "F to select" / "Esc to exit" labels
+   * (vertical sidecars left of text fields).
    */
   _applyTextInputHintLabels() {
     const KB = this.keybindings || {};
@@ -1608,9 +1682,11 @@ export class KeyPilot extends EventManager {
       KB.CANCEL?.displayKey ||
       'Esc';
     this.styleManager?.setTextInputHintLabels?.({
-      hover: `Press ${activate} to select text field`,
+      hover: `${activate} to select`,
       focus: `press ${cancel} to exit`
     });
+    this.overlayManager?.setTextFocusEscKeyLabel?.(cancel);
+    this.overlayManager?.setTextHoverActivateKeyLabel?.(activate);
   }
 
   installSettingsSync() {
@@ -1719,6 +1795,72 @@ export class KeyPilot extends EventManager {
 
     const initial = await this.getKeyboardHelpVisibleFromStorage();
     this.applyKeyboardHelpVisibility(initial, { persist: false });
+  }
+
+  async setupTopSitesSync() {
+    if (this._topSitesStorageListener) return;
+    if (!chrome?.storage) return;
+
+    this._topSitesStorageListener = (changes, areaName) => {
+      if (!changes || (areaName !== 'sync' && areaName !== 'local')) return;
+      if (!Object.prototype.hasOwnProperty.call(changes, this.TOP_SITES_STORAGE_KEY)) return;
+      const raw = changes[this.TOP_SITES_STORAGE_KEY]?.newValue;
+      if (typeof raw !== 'boolean') return;
+      if (!this._settings?.topSitesPersistent && !this.topSitesPopover?.isPersistent?.()) return;
+      this.applyTopSitesVisibility(raw, { persist: false });
+    };
+
+    try {
+      chrome.storage.onChanged.addListener(this._topSitesStorageListener);
+    } catch { /* ignore */ }
+
+    await this.refreshTopSitesVisibilityFromStorage();
+  }
+
+  async refreshTopSitesVisibilityFromStorage() {
+    const persistent = !!(this._settings?.topSitesPersistent || this.topSitesPopover?.isPersistent?.());
+    if (!persistent) return;
+    const visible = await this.getTopSitesVisibleFromStorage();
+    if (visible) this.applyTopSitesVisibility(true, { persist: false });
+  }
+
+  async getTopSitesVisibleFromStorage() {
+    const value = await storageGetValue(this.TOP_SITES_STORAGE_KEY, false);
+    return typeof value === 'boolean' ? value : false;
+  }
+
+  async setTopSitesVisibleInStorage(visible) {
+    if (!chrome?.storage) return;
+    await storageSetValue(this.TOP_SITES_STORAGE_KEY, Boolean(visible), {
+      includeTimestamp: true,
+      dualWrite: true
+    });
+  }
+
+  applyTopSitesVisibility(visible, { persist = false, applyUi = true } = {}) {
+    if (this._isPopoverOsWindow || window.__KP_POPOVER_WINDOW) {
+      this._topSitesVisible = false;
+      return;
+    }
+
+    const next = Boolean(visible);
+    this._topSitesVisible = next;
+    if (persist) {
+      void this.setTopSitesVisibleInStorage(next);
+    }
+    if (!applyUi) return;
+
+    if (!this.enabled) {
+      try { this.topSitesPopover?.hide?.({ persistClosed: false }); } catch { /* ignore */ }
+      return;
+    }
+
+    if (next) {
+      try { this.launcherPopover?.hide?.(); } catch { /* ignore */ }
+      void this.topSitesPopover?.show?.();
+    } else {
+      try { this.topSitesPopover?.hide?.({ persistClosed: false }); } catch { /* ignore */ }
+    }
   }
 
   async refreshKeyboardHelpVisibilityFromStorage() {
@@ -2548,7 +2690,7 @@ export class KeyPilot extends EventManager {
       return;
     }
 
-    // Alt+D: toggle shadow-root paint debug HUD (leaf / focus / paint + A|B|C).
+    // Alt+D: toggle shadow-root paint debug HUD (leaf / focus / paint + Auto|B→C|A|B|C).
     if ((e.altKey || e.code === 'AltRight') && (e.key === 'd' || e.key === 'D' || e.code === 'KeyD')) {
       if (window !== window.top) return;
       if (!this.enabled) return;
@@ -2706,11 +2848,8 @@ export class KeyPilot extends EventManager {
       // overlay state, even if the modal stack entry was lost or show() is in flight).
       try {
         if (this.topSitesPopover?.isOpen?.()) {
-          e.preventDefault();
-          e.stopPropagation();
-          e.stopImmediatePropagation();
-          this.topSitesPopover.hide();
-          return;
+          const handled = this.topSitesPopover.handleKeyDown(e);
+          if (handled) return;
         }
       } catch { /* ignore */ }
       try {
@@ -3612,18 +3751,24 @@ export class KeyPilot extends EventManager {
     // Popover mode is modal: only track elements inside the popover UI.
     // This prevents the green rectangle from following the background page.
     if (currentState.mode === MODES.POPOVER) {
-      const isInsidePopover = (el) => this._isElementInPopover(el);
+      const pierced = this._piercePopoverIframeAt(x, y);
+      if (pierced) {
+        under = pierced.el;
+        clickable = pierced.clickable;
+      } else {
+        const isInsidePopover = (el) => this._isElementInPopover(el);
 
-      if (!isInsidePopover(under)) clickable = null;
-      else if (clickable && !isInsidePopover(clickable)) clickable = null;
+        if (!isInsidePopover(under)) clickable = null;
+        else if (clickable && !isInsidePopover(clickable)) clickable = null;
 
-      // When the pointer is over the popover iframe, the top document can only "see" the <iframe>,
-      // not the elements inside it. Highlighting the iframe border is distracting and misleading
-      // (actual interaction happens inside the iframe document), so suppress hover focus on iframes.
-      try {
-        if (under && under.tagName === 'IFRAME') clickable = null;
-        if (clickable && clickable.tagName === 'IFRAME') clickable = null;
-      } catch { /* ignore */ }
+        // When the pointer is over the popover iframe, the top document can only "see" the <iframe>,
+        // not the elements inside it. Highlighting the iframe border is distracting and misleading
+        // (actual interaction happens inside the iframe document), so suppress hover focus on iframes.
+        try {
+          if (under && under.tagName === 'IFRAME') clickable = null;
+          if (clickable && clickable.tagName === 'IFRAME') clickable = null;
+        } catch { /* ignore */ }
+      }
     }
     
     // In text focus mode, exclude the currently focused text element from being considered clickable
@@ -7226,13 +7371,21 @@ export class KeyPilot extends EventManager {
     if (this.launcherPopover.isOpen()) {
       this.launcherPopover.hide();
     } else {
-      try { this.topSitesPopover?.hide?.(); } catch { /* ignore */ }
+      if (!this.topSitesPopover?.isPersistent?.()) {
+        try { this.topSitesPopover?.hide?.(); } catch { /* ignore */ }
+      }
       this.launcherPopover.show();
     }
   }
 
   handleTopSitesKey(e) {
     if (!this._allowActionKey('handleTopSitesKey', e)) return;
+    const persistent = !!(this._settings?.topSitesPersistent || this.topSitesPopover?.isPersistent?.());
+    if (persistent) {
+      const open = !!this.topSitesPopover?.isOpen?.();
+      this.applyTopSitesVisibility(!open, { persist: true });
+      return;
+    }
     if (this.topSitesPopover?.isOpen?.()) {
       this.topSitesPopover.hide();
     } else {
@@ -7329,6 +7482,12 @@ export class KeyPilot extends EventManager {
    */
   _findIframeByContentWindow(win) {
     if (!win) return null;
+    try {
+      const popoverIframe = this.overlayManager?.popoverIframeElement;
+      if (popoverIframe && popoverIframe.contentWindow === win) {
+        return popoverIframe;
+      }
+    } catch { /* ignore */ }
     try {
       const nodes = document.querySelectorAll('iframe, frame');
       for (let i = 0; i < nodes.length; i++) {
@@ -7522,8 +7681,7 @@ export class KeyPilot extends EventManager {
     const iframe = this._findIframeByContentWindow(/** @type {Window} */ (event.source));
     if (!iframe) return;
 
-    // Popover hybrid focus owns KP popover iframes.
-    if (this._isKeyPilotManagedIframe(iframe)) return;
+    const managed = this._isKeyPilotManagedIframe(iframe);
 
     // Ignore pointer traffic from Google account iframes for reclaim tracking.
     // Entering them briefly then crossing parent chrome must not arm a blur.
@@ -7566,6 +7724,11 @@ export class KeyPilot extends EventManager {
     try { this.state.setMousePosition(x, y); } catch { /* ignore */ }
     try { this.cursor.updatePosition(x, y); } catch { /* ignore */ }
     try { this.mouseCoordinateManager.updateCurrentMousePosition(x, y); } catch { /* ignore */ }
+
+    // Extension popovers have no in-frame KeyPilot; parent must hover-pierce.
+    if (managed) {
+      try { this.updateElementsUnderCursor(x, y, true); } catch { /* ignore */ }
+    }
   }
 
   /**
@@ -7587,6 +7750,34 @@ export class KeyPilot extends EventManager {
     } catch {
       under = null;
     }
+
+    // Custom cursor / overlay nodes can sit above the popover iframe in hit-testing.
+    try {
+      const popoverIframe = this.overlayManager?.popoverIframeElement;
+      if (popoverIframe) {
+        const r = popoverIframe.getBoundingClientRect();
+        if (
+          r &&
+          r.width > 0 &&
+          r.height > 0 &&
+          clientX >= r.left &&
+          clientX <= r.right &&
+          clientY >= r.top &&
+          clientY <= r.bottom
+        ) {
+          const hit = under;
+          const steal =
+            !hit ||
+            hit === popoverIframe ||
+            hit.tagName === 'IFRAME' ||
+            (!this._isKeyPilotUiElement?.(hit) && !this._isElementInPopover?.(hit));
+          // Keyboard Reference / control strip sit above the iframe; don't
+          // forward F into the embed when those are the real hit.
+          if (steal) under = popoverIframe;
+        }
+      }
+    } catch { /* ignore */ }
+
     if (!under || under.tagName !== 'IFRAME') return false;
 
     // Popover mode is modal: only interact with iframes inside the popover UI.
@@ -7597,9 +7788,12 @@ export class KeyPilot extends EventManager {
       }
     } catch { /* ignore */ }
 
-    // Ignore KeyPilot UI chrome (not page iframes).
+    // Ignore KeyPilot UI chrome (not page iframes). The modal popover iframe
+    // is chrome, but F must still activate same-origin tabs/buttons inside it.
     try {
-      if (this._isKeyPilotUiElement?.(under)) return false;
+      if (this._isKeyPilotUiElement?.(under) && !this._isKeyPilotManagedIframe(under)) {
+        return false;
+      }
     } catch { /* ignore */ }
 
     const iframe = /** @type {HTMLIFrameElement} */ (under);
@@ -7997,7 +8191,9 @@ export class KeyPilot extends EventManager {
     console.log('[KeyPilot] Opening popover for link:', url);
 
     // Show popover
-    this.overlayManager.showPopover(url);
+    this.overlayManager.showPopover(url, {
+      forceWindow: this._linkPopoverAlwaysNewWindow('OPEN_POPOVER')
+    });
     this.state.setPopoverOpen(true, url);
   }
 
@@ -8236,18 +8432,28 @@ export class KeyPilot extends EventManager {
   }
 
   /**
-   * Open a URL in the Link Preview popover (same chrome / color as E).
-   * @param {string} url
-   * @param {number} [mouseX]
-   * @param {number} [mouseY]
+   * Link Preview / Open Popover: when true, skip the in-page iframe and always
+   * open a Chrome popup window. Default is on.
+   * @param {'PREVIEW_LINK_POPOVER'|'OPEN_POPOVER'} functionId
+   * @returns {boolean}
    */
+  _linkPopoverAlwaysNewWindow(functionId) {
+    const v = getActionParameter(
+      this._getBuiltinFunctionActionParams(functionId),
+      functionId,
+      'alwaysNewWindow'
+    );
+    return v !== false;
+  }
+
   _openLinkPreviewPopover(url, mouseX, mouseY) {
     const href = String(url || '').trim();
     if (!href) return;
     this.overlayManager.showPreviewPopover(href, {
       title: 'Link Preview',
       mouseX,
-      mouseY
+      mouseY,
+      forceWindow: this._linkPopoverAlwaysNewWindow('PREVIEW_LINK_POPOVER')
     });
     this.state.setPopoverOpen(true, href);
   }
@@ -8259,7 +8465,9 @@ export class KeyPilot extends EventManager {
   _openFullPopover(url) {
     const href = String(url || '').trim();
     if (!href) return;
-    this.overlayManager.showPopover(href);
+    this.overlayManager.showPopover(href, {
+      forceWindow: this._linkPopoverAlwaysNewWindow('OPEN_POPOVER')
+    });
     this.state.setPopoverOpen(true, href);
   }
 
@@ -8361,7 +8569,8 @@ export class KeyPilot extends EventManager {
     this.overlayManager.showPreviewPopover(url, {
       title: 'Link Preview',
       mouseX: lastMouse.x,
-      mouseY: lastMouse.y
+      mouseY: lastMouse.y,
+      forceWindow: this._linkPopoverAlwaysNewWindow('PREVIEW_LINK_POPOVER')
     });
     this.state.setPopoverOpen(true, url);
   }
@@ -8405,14 +8614,53 @@ export class KeyPilot extends EventManager {
     const settingsContainerWidth = Math.min(980, window.innerWidth - 36) + 20;
     const settingsContainerHeight = Math.min(window.innerHeight * 0.82, window.innerHeight - 80) + 20;
 
-    this.overlayManager.showPopover(url, {
+    void this.overlayManager.showInPageSettingsPopover({
       title: 'KeyPilot Settings',
       hintKeyLabel: "'",
-      closeKeys: ['Escape', "'", '"'],
       width: `${settingsContainerWidth}px`,
-      height: `${settingsContainerHeight}px`
+      height: `${settingsContainerHeight}px`,
+      actions: this._createSettingsDocsTitlebarButton()
     });
     this.state.setPopoverOpen(true, url);
+  }
+
+  /**
+   * Settings titlebar control: open Docs immediately left of ×.
+   * @returns {HTMLButtonElement}
+   */
+  _createSettingsDocsTitlebarButton() {
+    return createTitlebarActionButton({
+      label: 'Help/Documentation',
+      title: 'Help/Documentation',
+      className: 'kpv2-popover-titlebar-docs',
+      iconPaths: [
+        { attrs: { d: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20' } },
+        { attrs: { d: 'M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z' } }
+      ],
+      onClick: () => this.handleOpenDocsPopover()
+    });
+  }
+
+  /**
+   * Documentation titlebar control for article text size.
+   * Uses the shared NCT dark scale slider; docs iframe defaults to 1.25×.
+   * @returns {HTMLElement}
+   */
+  _createDocsFontScaleControl() {
+    const { root } = createNctDarkUiScaleSlider({
+      label: 'Text',
+      title: 'Documentation text size',
+      ariaLabel: 'Documentation text size',
+      min: 0.8,
+      max: 1.75,
+      step: 0.05,
+      value: 1.25,
+      formatValue: (scale) => `${Number(scale).toFixed(2).replace(/0$/, '')}×`,
+      onInput: (scale) => {
+        try { this.overlayManager?.setDocsFontScale?.(scale); } catch { /* ignore */ }
+      }
+    });
+    return root;
   }
 
   handleToggleSettingsPopover() {
@@ -8467,12 +8715,12 @@ export class KeyPilot extends EventManager {
     const docsContainerWidth = Math.min(980, window.innerWidth - 36) + 20;
     const docsContainerHeight = Math.min(window.innerHeight * 0.82, window.innerHeight - 80) + 20;
 
-    this.overlayManager.showPopover(url, {
+    this.overlayManager.showInPageDocsPopover({
       title: 'KeyPilot Docs',
       hintKeyLabel: 'Alt+H',
-      closeKeys: ['Escape'],
       width: `${docsContainerWidth}px`,
-      height: `${docsContainerHeight}px`
+      height: `${docsContainerHeight}px`,
+      actions: this._createDocsFontScaleControl()
     });
     this.state.setPopoverOpen(true, url);
   }
@@ -8955,6 +9203,10 @@ export class KeyPilot extends EventManager {
     } catch { /* ignore */ }
 
     try {
+      void this.refreshTopSitesVisibilityFromStorage();
+    } catch { /* ignore */ }
+
+    try {
       this.controlStrip?.setEnabledState?.(true);
       this.controlStrip?.setKeyboardHelpActive?.(!!this._keyboardHelpVisible);
       this._syncControlStripTextModeFromState();
@@ -8978,7 +9230,7 @@ export class KeyPilot extends EventManager {
     try { this._exitScrollLineMode(); } catch { /* ignore */ }
 
     // Top Sites / Launcher
-    try { this.topSitesPopover?.hide?.(); } catch { /* ignore */ }
+    try { this.topSitesPopover?.hide?.({ persistClosed: false }); } catch { /* ignore */ }
     try { this.launcherPopover?.hide?.(); } catch { /* ignore */ }
 
     // Page Media (O)
@@ -9132,7 +9384,7 @@ export class KeyPilot extends EventManager {
   }
 
   /**
-   * Show/hide the shadow-root paint debug HUD (leaf, focusEl, paint target, A/B/C).
+   * Show/hide the shadow-root paint debug HUD (leaf, focusEl, paint target, Auto / B→C / A/B/C).
    * Console: `keyPilot.setShadowRootDebugHud(true)`
    * @param {boolean} enabled
    */
@@ -9146,7 +9398,9 @@ export class KeyPilot extends EventManager {
 
   /**
    * Force hover paint strategy while the shadow debug HUD is open.
-   * @param {'A'|'B'|'C'|null|string} strategy - null/'auto' restores automatic choice
+   * @param {'A'|'B'|'C'|'BC'|null|string} strategy
+   *   null/'auto' restores full automatic choice (A→B→C).
+   *   'BC' / 'B→C' = Auto B→C (skip A; try in-target then fixed).
    */
   setShadowDebugPaintStrategy(strategy) {
     try {

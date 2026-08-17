@@ -325,6 +325,18 @@ export class PopupManager {
 
   _backdropClickHandler(e) {
     try {
+      const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
+      for (const n of path) {
+        if (!n || n.nodeType !== 1) continue;
+        const cls = n.classList;
+        if (
+          cls?.contains('kp-floating-keyboard-help') ||
+          cls?.contains('kp-control-strip') ||
+          cls?.contains('kp-layout-config-panel')
+        ) {
+          return;
+        }
+      }
       e.preventDefault();
       e.stopPropagation();
       const top = this.top();

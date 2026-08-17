@@ -1,4 +1,4 @@
-:root {
+:host, :root {
   color-scheme: dark;
   --settings-nav-width: 168px;
   --settings-header-border: rgba(255, 255, 255, 0.10);
@@ -23,13 +23,33 @@ body {
   color: rgba(255, 255, 255, 0.92);
 }
 
-/* Full-height master–detail shell (popover iframe + standalone) */
+.settings-icon-sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  color: rgba(255, 255, 255, 0.92);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+/* Full-height master–detail shell (in-page popover + standalone) */
 .settings-app {
   box-sizing: border-box;
   height: 100%;
   min-height: 0;
   display: flex;
   flex-direction: column;
+}
+
+.settings-app.kp-popover-embed {
+  background: transparent;
 }
 
 .header {
@@ -44,6 +64,7 @@ body {
 }
 
 /* Outer KeyPilot popover titlebar owns title + close when embedded. */
+.settings-app.kp-popover-embed > .header,
 .kp-popover-embed .settings-app > .header,
 .header[hidden] {
   display: none !important;
@@ -88,11 +109,16 @@ h1 {
   overflow-y: auto;
   border-right: 1px solid var(--settings-header-border);
   background: var(--settings-nav-bg);
+  scrollbar-width: thin;
+  scrollbar-color: #4a4a4a #141414;
 }
 
 .settings-tab {
   appearance: none;
   box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   width: 100%;
   margin: 0;
   border: 1px solid transparent;
@@ -107,6 +133,41 @@ h1 {
   padding: 9px 10px;
   cursor: pointer;
   transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.settings-category-visual {
+  --settings-category-accent: 120, 180, 255;
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba(var(--settings-category-accent), 0.32);
+  border-radius: 6px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent),
+    rgba(var(--settings-category-accent), 0.14);
+  color: rgba(var(--settings-category-accent), 0.98);
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.25);
+}
+
+.settings-category-visual[data-accent="green"] { --settings-category-accent: 74, 222, 128; }
+.settings-category-visual[data-accent="blue"] { --settings-category-accent: 96, 190, 255; }
+.settings-category-visual[data-accent="amber"] { --settings-category-accent: 245, 171, 74; }
+.settings-category-visual[data-accent="indigo"] { --settings-category-accent: 137, 147, 255; }
+.settings-category-visual[data-accent="rose"] { --settings-category-accent: 255, 117, 140; }
+.settings-category-visual[data-accent="cyan"] { --settings-category-accent: 91, 226, 241; }
+.settings-category-visual[data-accent="violet"] { --settings-category-accent: 194, 130, 255; }
+
+.settings-category-icon-svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .settings-tab:hover {
@@ -151,6 +212,8 @@ h1 {
   min-height: 0;
   overflow-y: auto;
   padding: 16px 18px 28px;
+  scrollbar-width: thin;
+  scrollbar-color: #4a4a4a #141414;
 }
 
 .settings-panel {
@@ -209,6 +272,22 @@ h1 {
   font-weight: 600;
   letter-spacing: 0.1px;
   color: rgba(255, 255, 255, 0.95);
+}
+
+.settings-hub-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-hub-heading .settings-category-visual {
+  width: 28px;
+  height: 28px;
+}
+
+.settings-hub-heading .settings-category-icon-svg {
+  width: 16px;
+  height: 16px;
 }
 
 .settings-hub-desc {
@@ -518,4 +597,38 @@ code {
   .settings-nav-group {
     display: none;
   }
+}
+
+.settings-nav::-webkit-scrollbar,
+.settings-detail::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.settings-nav::-webkit-scrollbar-corner,
+.settings-detail::-webkit-scrollbar-corner {
+  background: #141414;
+}
+.settings-nav::-webkit-scrollbar-track,
+.settings-detail::-webkit-scrollbar-track {
+  background: #141414;
+  border-left: 1px solid #111;
+  border-top: 1px solid #111;
+}
+.settings-nav::-webkit-scrollbar-thumb,
+.settings-detail::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #555 0%, #4a4a4a 45%, #3a3a3a 100%);
+  border: 1px solid #111;
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  min-height: 28px;
+  min-width: 28px;
+}
+.settings-nav::-webkit-scrollbar-thumb:hover,
+.settings-detail::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #666 0%, #5c5c5c 45%, #444 100%);
+}
+.settings-nav::-webkit-scrollbar-thumb:active,
+.settings-detail::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, #4a90c8 0%, #3a6a94 100%);
+  border-color: #2a4a66;
 }

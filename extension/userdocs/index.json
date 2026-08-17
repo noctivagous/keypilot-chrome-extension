@@ -3,7 +3,57 @@
     {
       "id": "intro",
       "title": "Introduction",
-      "file": "intro.md"
+      "file": "intro.md",
+      "icon": "book",
+      "accent": "cyan"
+    },
+    {
+      "id": "getting-started",
+      "title": "Getting started",
+      "file": "getting-started.md",
+      "icon": "rocket",
+      "accent": "green"
+    },
+    {
+      "id": "browsing",
+      "title": "Browsing",
+      "children": [
+        {
+          "id": "browsing-click",
+          "title": "Clicking & links",
+          "file": "browsing-click.md",
+          "shortcut": "F",
+          "accent": "green"
+        },
+        {
+          "id": "browsing-tabs",
+          "title": "Tabs & history",
+          "file": "browsing-tabs.md",
+          "icon": "tabs",
+          "accent": "blue"
+        },
+        {
+          "id": "browsing-scroll",
+          "title": "Scrolling",
+          "file": "browsing-scroll.md",
+          "icon": "scroll",
+          "accent": "amber"
+        },
+        {
+          "id": "browsing-select",
+          "title": "Selection",
+          "file": "browsing-select.md",
+          "icon": "select",
+          "accent": "indigo"
+        },
+        {
+          "id": "browsing-modes",
+          "title": "Modes",
+          "file": "browsing-modes.md",
+          "icon": "layers",
+          "accent": "violet"
+        }
+      ]
     },
     {
       "id": "keyboard",
@@ -11,44 +61,147 @@
       "children": [
         {
           "id": "keyboard-layouts",
-          "title": "Layouts",
+          "title": "Layouts & handedness",
           "file": "keyboard-layouts.md",
-          "placeholder": true
+          "icon": "layout",
+          "accent": "cyan"
         },
         {
           "id": "keyboard-system-keys",
-          "title": "System keys",
+          "title": "System keys & Alt chrome",
           "file": "keyboard-system-keys.md",
-          "placeholder": true
+          "icon": "shield",
+          "accent": "amber"
+        },
+        {
+          "id": "keyboard-reference",
+          "title": "Keyboard Reference",
+          "file": "keyboard-reference.md",
+          "shortcut": "K",
+          "accent": "green"
         }
       ]
-    },
-    {
-      "id": "execute-js",
-      "title": "Execute JS",
-      "file": "execute-js.md"
     },
     {
       "id": "settings",
       "title": "Settings",
       "file": "settings.md",
-      "placeholder": true
+      "shortcut": "'",
+      "accent": "blue"
     },
     {
-      "id": "macros",
-      "title": "Macros",
+      "id": "tools",
+      "title": "Tools",
       "children": [
         {
+          "id": "tools-omnibox",
+          "title": "Omnibox",
+          "file": "tools-omnibox.md",
+          "shortcut": "L",
+          "accent": "green"
+        },
+        {
+          "id": "tools-launcher",
+          "title": "Launcher",
+          "file": "tools-launcher.md",
+          "shortcut": "Alt+;",
+          "accent": "amber"
+        },
+        {
+          "id": "tools-top-sites",
+          "title": "Top Sites",
+          "file": "tools-top-sites.md",
+          "shortcut": ";",
+          "accent": "amber"
+        },
+        {
+          "id": "tools-tab-history",
+          "title": "Tab History",
+          "file": "tools-tab-history.md",
+          "shortcut": "J",
+          "accent": "blue"
+        },
+        {
+          "id": "tools-control-strip",
+          "title": "Control Strip",
+          "file": "tools-control-strip.md",
+          "shortcut": "Alt+J",
+          "accent": "cyan"
+        },
+        {
+          "id": "tools-previews",
+          "title": "Link Preview & Popover",
+          "file": "tools-previews.md",
+          "icon": "preview",
+          "accent": "green"
+        }
+      ]
+    },
+    {
+      "id": "media",
+      "title": "Media",
+      "children": [
+        {
+          "id": "media-page",
+          "title": "Page Media",
+          "file": "media-page.md",
+          "shortcut": "O",
+          "accent": "indigo"
+        },
+        {
+          "id": "media-library",
+          "title": "Media Library",
+          "file": "media-library.md",
+          "shortcut": "M",
+          "accent": "violet"
+        },
+        {
+          "id": "media-copy",
+          "title": "Copy under cursor",
+          "file": "media-copy.md",
+          "shortcut": "I/U",
+          "accent": "cyan"
+        }
+      ]
+    },
+    {
+      "id": "customize",
+      "title": "Customize",
+      "children": [
+        {
+          "id": "layout-config",
+          "title": "Keyboard Layout Config",
+          "file": "layout-config.md",
+          "icon": "layout",
+          "accent": "cyan"
+        },
+        {
+          "id": "functions",
+          "title": "Functions & Actions",
+          "file": "functions.md",
+          "icon": "functions",
+          "accent": "green"
+        },
+        {
           "id": "macros-overview",
-          "title": "Overview",
+          "title": "Macros",
           "file": "macros.md",
-          "placeholder": true
+          "icon": "macros",
+          "accent": "violet"
         },
         {
           "id": "macro-builder",
           "title": "Macro Builder",
           "file": "macro-builder.md",
-          "placeholder": true
+          "icon": "controls",
+          "accent": "amber"
+        },
+        {
+          "id": "execute-js",
+          "title": "Execute JS",
+          "file": "execute-js.md",
+          "icon": "code",
+          "accent": "rose"
         }
       ]
     }

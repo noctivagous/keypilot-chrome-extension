@@ -45,6 +45,12 @@ const entries = [
     outfile: path.join(__dirname, 'frame-agent-bundled.js'),
     label: 'frame-agent (child frames)',
   },
+  {
+    infile: path.join(__dirname, 'pages/docs.js'),
+    outfile: path.join(__dirname, 'pages/docs-bundled.js'),
+    label: 'documentation popover',
+    format: 'esm',
+  },
 ];
 
 /**
@@ -54,6 +60,7 @@ const entries = [
 async function buildOne(entry, opts = {}) {
   const result = await esbuild.build({
     ...shared,
+    format: entry.format || shared.format,
     entryPoints: [entry.infile],
     outfile: entry.outfile,
     minify: !!opts.minify,

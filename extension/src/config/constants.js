@@ -118,6 +118,10 @@ export const CSS_CLASSES = {
   EDGE_JUMP_FADE_ICON: 'kpv2-edge-jump-fade-icon',
   VIEWPORT_MODAL_FRAME: 'kpv2-viewport-modal-frame',
   ESC_EXIT_LABEL: 'kpv2-esc-exit-label',
+  /** Vertical “Esc / to / exit” sidecar left of the text-mode orange bar. */
+  TEXT_FOCUS_ESC_HINT: 'kpv2-text-focus-esc-hint',
+  /** Vertical “F / to / select” sidecar left of a hovered text field. */
+  TEXT_HOVER_ACTIVATE_HINT: 'kpv2-text-hover-activate-hint',
   TEXT_FOCUS_INPUT: 'kpv2-text-focus-input',
   TEXT_FOCUS_INPUT_PARENT: 'kpv2-text-focus-input-parent',
   /** Modifier: focused text field uses left-edge 10px pulsating bar (default style). */
@@ -694,6 +698,7 @@ export const FEATURE_FLAGS = {
   ENABLE_DEBUG_PANEL: false, // Enable upper-right debug panel showing performance metrics
   // Interactive HUD for shadow-DOM hover paint (msn.com / archive.org).
   // Shows leaf under pointer, resolved hover/paint targets, auto A/B/C choice,
-  // and lets you force A / B / C. Toggle: Alt+D (or keyPilot.setShadowRootDebugHud).
+  // and lets you force Auto / Auto B→C / A / B / C. Toggle: Alt+D
+  // (or keyPilot.setShadowRootDebugHud).
   DEBUG_SHADOW_ROOT_HUD: false
 };

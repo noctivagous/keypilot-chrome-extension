@@ -7,15 +7,44 @@ import {
 import { SEARCH_ENGINE_META } from '../src/config/search-engines.js';
 import { CLICK_EFFECT_IDS, DEFAULT_SETTINGS, getSettings, normalizeCursorMode, normalizeFocusColor, normalizeSearchEngine, normalizeTextFocusStyle, setSettings, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
 import { GENERIC_FAVICON_DATA_URL, getExtensionFaviconUrl } from '../src/ui/url-listing.js';
-import { startKeyPilotOnPage } from './keypilot-page-init.js';
 import { CursorManager } from '../src/modules/cursor.js';
+
+/** Document or open ShadowRoot the settings UI is mounted in. */
+let settingsScope = document;
+
+function settingsEl(id) {
+  try {
+    if (settingsScope && typeof settingsScope.getElementById === 'function') {
+      return settingsScope.getElementById(id);
+    }
+    return settingsScope?.querySelector?.(`#${CSS.escape(id)}`) || null;
+  } catch {
+    return null;
+  }
+}
+
+function settingsOne(sel) {
+  try {
+    return settingsScope?.querySelector?.(sel) || null;
+  } catch {
+    return null;
+  }
+}
+
+function settingsAll(sel) {
+  try {
+    return settingsScope?.querySelectorAll?.(sel) || [];
+  } catch {
+    return [];
+  }
+}
 
 /**
  * Use Chrome's extension favicon endpoint (img-src 'self') instead of
  * google.com/s2/favicons, which redirects to t2.gstatic.com and is CSP-blocked.
  */
 function applySearchEngineIcons() {
-  const icons = document.querySelectorAll('img.radio-icon[data-favicon-for]');
+  const icons = settingsAll('img.radio-icon[data-favicon-for]');
   icons.forEach((img) => {
     const id = img.getAttribute('data-favicon-for');
     const meta = id && SEARCH_ENGINE_META[id] ? SEARCH_ENGINE_META[id] : null;
@@ -31,26 +60,20 @@ function applySearchEngineIcons() {
   });
 }
 
-function postCloseRequest() {
-  try {
-    window.parent.postMessage({ type: 'KP_POPOVER_REQUEST_CLOSE', key: 'Escape' }, '*');
-  } catch {
-    // ignore
-  }
-}
-
 /**
  * When Settings is embedded in the KeyPilot iframe popover, the outer chrome
  * already provides a standard titlebar + × close. Hide the in-page header so
  * we don't stack two header bars.
  */
-function adaptHeaderForPopoverEmbed() {
+function adaptHeaderForPopoverEmbed(embedded = false) {
   try {
-    const embedded = window.parent && window.parent !== window;
+    if (!embedded) {
+      try { embedded = !!(window.parent && window.parent !== window); } catch { embedded = false; }
+    }
     if (!embedded) return;
-    document.documentElement.classList.add('kp-popover-embed');
-    document.body?.classList?.add('kp-popover-embed');
-    const header = document.querySelector('.settings-app > .header');
+    const app = settingsOne('.settings-app');
+    app?.classList?.add('kp-popover-embed');
+    const header = settingsOne('.settings-app > .header');
     if (header) {
       header.hidden = true;
       header.setAttribute('aria-hidden', 'true');
@@ -81,8 +104,8 @@ const SETTINGS_PANEL_IDS = Object.freeze([
  */
 function activateSettingsPanel(panelId, opts = {}) {
   const id = SETTINGS_PANEL_IDS.includes(panelId) ? panelId : SETTINGS_DEFAULT_PANEL_ID;
-  const tabs = Array.from(document.querySelectorAll('.settings-tab[data-panel]'));
-  const panels = Array.from(document.querySelectorAll('.settings-panel[data-panel]'));
+  const tabs = Array.from(settingsAll('.settings-tab[data-panel]'));
+  const panels = Array.from(settingsAll('.settings-panel[data-panel]'));
 
   tabs.forEach((tab) => {
     const selected = tab.getAttribute('data-panel') === id;
@@ -114,7 +137,7 @@ function activateSettingsPanel(panelId, opts = {}) {
 
   // Scroll detail pane to top when switching sections.
   try {
-    const detail = document.querySelector('.settings-detail');
+    const detail = settingsOne('.settings-detail');
     if (detail) detail.scrollTop = 0;
   } catch {
     // ignore
@@ -122,8 +145,8 @@ function activateSettingsPanel(panelId, opts = {}) {
 }
 
 function installSettingsMasterDetailNav() {
-  const nav = document.querySelector('.settings-nav');
-  const tabs = Array.from(document.querySelectorAll('.settings-tab[data-panel]'));
+  const nav = settingsOne('.settings-nav');
+  const tabs = Array.from(settingsAll('.settings-tab[data-panel]'));
   if (!nav || tabs.length === 0) return;
 
   let initial = SETTINGS_DEFAULT_PANEL_ID;
@@ -154,7 +177,7 @@ function installSettingsMasterDetailNav() {
   });
 
   // Overview hub tiles jump into a category (same as left-nav tabs).
-  document.querySelectorAll('.settings-hub-tile[data-goto]').forEach((tile) => {
+  settingsAll('.settings-hub-tile[data-goto]').forEach((tile) => {
     tile.addEventListener('click', (e) => {
       e.preventDefault();
       const panelId = tile.getAttribute('data-goto');
@@ -241,67 +264,60 @@ function withOptionalViewTransition(fn) {
 }
 
 async function render() {
-  adaptHeaderForPopoverEmbed();
   applySearchEngineIcons();
-
-  // Start KeyPilot inside the Settings page (this page is often loaded in an iframe popover).
-  await startKeyPilotOnPage({ allowInIframe: true });
 
   installSettingsMasterDetailNav();
 
-  const radios = Array.from(document.querySelectorAll('input[type="radio"][name="engine"]'));
-  const keyFeedbackToggle = /** @type {HTMLInputElement|null} */ (document.getElementById('keyboard-reference-key-feedback'));
-  const showNumberRowToggle = /** @type {HTMLInputElement|null} */ (document.getElementById('keyboard-reference-show-number-row'));
-  const keyboardLayoutFamilySelect = /** @type {HTMLSelectElement|null} */ (document.getElementById('keyboard-layout-family'));
-  const keyboardLeftHandedToggle = /** @type {HTMLInputElement|null} */ (document.getElementById('keyboard-left-handed'));
-  const controlStripVisible = /** @type {HTMLInputElement|null} */ (document.getElementById('control-strip-visible'));
-  const controlStripCollapsed = /** @type {HTMLInputElement|null} */ (document.getElementById('control-strip-collapsed'));
-  const openGuideBtn = document.getElementById('open-guide');
-  const closeBtn = document.getElementById('close');
-
+  const radios = Array.from(settingsAll('input[type="radio"][name="engine"]'));
+  const keyFeedbackToggle = /** @type {HTMLInputElement|null} */ (settingsEl('keyboard-reference-key-feedback'));
+  const showNumberRowToggle = /** @type {HTMLInputElement|null} */ (settingsEl('keyboard-reference-show-number-row'));
+  const keyboardLayoutFamilySelect = /** @type {HTMLSelectElement|null} */ (settingsEl('keyboard-layout-family'));
+  const keyboardLeftHandedToggle = /** @type {HTMLInputElement|null} */ (settingsEl('keyboard-left-handed'));
+  const controlStripVisible = /** @type {HTMLInputElement|null} */ (settingsEl('control-strip-visible'));
+  const controlStripCollapsed = /** @type {HTMLInputElement|null} */ (settingsEl('control-strip-collapsed'));
   // Cursor mode controls
-  const cursorModeSelect = /** @type {HTMLSelectElement|null} */ (document.getElementById('cursor-mode'));
-  const cursorSettingsClick = document.getElementById('cursor-settings-click');
-  const cursorSettingsText = document.getElementById('cursor-settings-text');
+  const cursorModeSelect = /** @type {HTMLSelectElement|null} */ (settingsEl('cursor-mode'));
+  const cursorSettingsClick = settingsEl('cursor-settings-click');
+  const cursorSettingsText = settingsEl('cursor-settings-text');
 
   // Mode Settings controls
-  const clickCursorType = /** @type {HTMLSelectElement|null} */ (document.getElementById('click-cursor-type'));
-  const clickCursorLineWidthRange = /** @type {HTMLInputElement|null} */ (document.getElementById('click-cursor-linewidth-range'));
-  const clickCursorLineWidthNumber = /** @type {HTMLInputElement|null} */ (document.getElementById('click-cursor-linewidth-number'));
-  const clickCursorSizeRange = /** @type {HTMLInputElement|null} */ (document.getElementById('click-cursor-size-range'));
-  const clickCursorSizeNumber = /** @type {HTMLInputElement|null} */ (document.getElementById('click-cursor-size-number'));
-  const clickCursorGapRange = /** @type {HTMLInputElement|null} */ (document.getElementById('click-cursor-gap-range'));
-  const clickCursorGapNumber = /** @type {HTMLInputElement|null} */ (document.getElementById('click-cursor-gap-number'));
-  const clickCursorPreview = document.getElementById('click-cursor-preview');
-  const clickFocusColor = /** @type {HTMLSelectElement|null} */ (document.getElementById('click-focus-color'));
-  const clickOverlayFill = /** @type {HTMLInputElement|null} */ (document.getElementById('click-overlay-fill'));
-  const clickOverlayShadow = /** @type {HTMLInputElement|null} */ (document.getElementById('click-overlay-shadow'));
-  const clickRectThicknessRange = /** @type {HTMLInputElement|null} */ (document.getElementById('click-rect-thickness-range'));
-  const clickRectThicknessNumber = /** @type {HTMLInputElement|null} */ (document.getElementById('click-rect-thickness-number'));
-  const clickEffectRadios = /** @type {HTMLInputElement[]} */ (Array.from(document.querySelectorAll('input[name="click-effect"]')));
-  const clickKeyboardLinkHints = /** @type {HTMLInputElement|null} */ (document.getElementById('click-keyboard-link-hints'));
-  const clickCursorResetBtn = document.getElementById('click-cursor-reset');
-  const clickModeResetBtn = document.getElementById('click-mode-reset');
+  const clickCursorType = /** @type {HTMLSelectElement|null} */ (settingsEl('click-cursor-type'));
+  const clickCursorLineWidthRange = /** @type {HTMLInputElement|null} */ (settingsEl('click-cursor-linewidth-range'));
+  const clickCursorLineWidthNumber = /** @type {HTMLInputElement|null} */ (settingsEl('click-cursor-linewidth-number'));
+  const clickCursorSizeRange = /** @type {HTMLInputElement|null} */ (settingsEl('click-cursor-size-range'));
+  const clickCursorSizeNumber = /** @type {HTMLInputElement|null} */ (settingsEl('click-cursor-size-number'));
+  const clickCursorGapRange = /** @type {HTMLInputElement|null} */ (settingsEl('click-cursor-gap-range'));
+  const clickCursorGapNumber = /** @type {HTMLInputElement|null} */ (settingsEl('click-cursor-gap-number'));
+  const clickCursorPreview = settingsEl('click-cursor-preview');
+  const clickFocusColor = /** @type {HTMLSelectElement|null} */ (settingsEl('click-focus-color'));
+  const clickOverlayFill = /** @type {HTMLInputElement|null} */ (settingsEl('click-overlay-fill'));
+  const clickOverlayShadow = /** @type {HTMLInputElement|null} */ (settingsEl('click-overlay-shadow'));
+  const clickRectThicknessRange = /** @type {HTMLInputElement|null} */ (settingsEl('click-rect-thickness-range'));
+  const clickRectThicknessNumber = /** @type {HTMLInputElement|null} */ (settingsEl('click-rect-thickness-number'));
+  const clickEffectRadios = /** @type {HTMLInputElement[]} */ (Array.from(settingsAll('input[name="click-effect"]')));
+  const clickKeyboardLinkHints = /** @type {HTMLInputElement|null} */ (settingsEl('click-keyboard-link-hints'));
+  const clickCursorResetBtn = settingsEl('click-cursor-reset');
+  const clickModeResetBtn = settingsEl('click-mode-reset');
 
-  const textCursorType = /** @type {HTMLSelectElement|null} */ (document.getElementById('text-cursor-type'));
-  const textCursorPreview = document.getElementById('text-cursor-preview');
-  const textCursorResetBtn = document.getElementById('text-cursor-reset');
-  const textFocusStyleRadios = /** @type {HTMLInputElement[]} */ (Array.from(document.querySelectorAll('input[name="text-focus-style"]')));
-  const textLeftEdgeWidthField = document.getElementById('text-left-edge-width-field');
-  const textLeftEdgeWidthRange = /** @type {HTMLInputElement|null} */ (document.getElementById('text-left-edge-width-range'));
-  const textLeftEdgeWidthNumber = /** @type {HTMLInputElement|null} */ (document.getElementById('text-left-edge-width-number'));
-  const textLabelsEnabled = /** @type {HTMLInputElement|null} */ (document.getElementById('text-labels-enabled'));
-  const textStrokeThicknessRange = /** @type {HTMLInputElement|null} */ (document.getElementById('text-stroke-thickness-range'));
-  const textStrokeThicknessNumber = /** @type {HTMLInputElement|null} */ (document.getElementById('text-stroke-thickness-number'));
-  const textModeResetBtn = document.getElementById('text-mode-reset');
+  const textCursorType = /** @type {HTMLSelectElement|null} */ (settingsEl('text-cursor-type'));
+  const textCursorPreview = settingsEl('text-cursor-preview');
+  const textCursorResetBtn = settingsEl('text-cursor-reset');
+  const textFocusStyleRadios = /** @type {HTMLInputElement[]} */ (Array.from(settingsAll('input[name="text-focus-style"]')));
+  const textLeftEdgeWidthField = settingsEl('text-left-edge-width-field');
+  const textLeftEdgeWidthRange = /** @type {HTMLInputElement|null} */ (settingsEl('text-left-edge-width-range'));
+  const textLeftEdgeWidthNumber = /** @type {HTMLInputElement|null} */ (settingsEl('text-left-edge-width-number'));
+  const textLabelsEnabled = /** @type {HTMLInputElement|null} */ (settingsEl('text-labels-enabled'));
+  const textStrokeThicknessRange = /** @type {HTMLInputElement|null} */ (settingsEl('text-stroke-thickness-range'));
+  const textStrokeThicknessNumber = /** @type {HTMLInputElement|null} */ (settingsEl('text-stroke-thickness-number'));
+  const textModeResetBtn = settingsEl('text-mode-reset');
 
   // Scrolling controls (C / V distance + animation speed)
-  const scrollHalfPageRange = /** @type {HTMLInputElement|null} */ (document.getElementById('scroll-half-page-range'));
-  const scrollHalfPageNumber = /** @type {HTMLInputElement|null} */ (document.getElementById('scroll-half-page-number'));
-  const scrollSpeedSelect = /** @type {HTMLSelectElement|null} */ (document.getElementById('scroll-speed'));
-  const scrollMiddleClickScrollLine = /** @type {HTMLInputElement|null} */ (document.getElementById('scroll-middle-click-scroll-line'));
-  const scrollLinePreferPortrait = /** @type {HTMLInputElement|null} */ (document.getElementById('scroll-line-prefer-portrait'));
-  const scrollResetBtn = document.getElementById('scroll-reset');
+  const scrollHalfPageRange = /** @type {HTMLInputElement|null} */ (settingsEl('scroll-half-page-range'));
+  const scrollHalfPageNumber = /** @type {HTMLInputElement|null} */ (settingsEl('scroll-half-page-number'));
+  const scrollSpeedSelect = /** @type {HTMLSelectElement|null} */ (settingsEl('scroll-speed'));
+  const scrollMiddleClickScrollLine = /** @type {HTMLInputElement|null} */ (settingsEl('scroll-middle-click-scroll-line'));
+  const scrollLinePreferPortrait = /** @type {HTMLInputElement|null} */ (settingsEl('scroll-line-prefer-portrait'));
+  const scrollResetBtn = settingsEl('scroll-reset');
 
   const previewCursor = new CursorManager();
 
@@ -763,18 +779,50 @@ async function render() {
   } catch {
     // ignore
   }
-
-  openGuideBtn?.addEventListener('click', async () => {
-    try {
-      await chrome.runtime.sendMessage({ type: 'KP_OPEN_GUIDE_POPOVER' });
-    } catch {
-      // ignore
-    }
-  }, true);
-
-  closeBtn?.addEventListener('click', () => postCloseRequest(), true);
 }
 
-render();
+/**
+ * Inject standalone settings.html fragments into an open ShadowRoot.
+ * @param {ShadowRoot} root
+ */
+async function injectSettingsDom(root) {
+  if (root.querySelector?.('.settings-app')) return;
+  const url = chrome.runtime.getURL('pages/settings.html');
+  const html = await fetch(url).then((res) => res.text());
+  const parsed = new DOMParser().parseFromString(html, 'text/html');
+  for (const href of ['pages/ui-standards.css', 'pages/settings.css']) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = chrome.runtime.getURL(href);
+    root.appendChild(link);
+  }
+  const sprite = parsed.querySelector('.settings-icon-sprite');
+  const app = parsed.querySelector('.settings-app');
+  if (sprite) root.appendChild(document.importNode(sprite, true));
+  if (app) root.appendChild(document.importNode(app, true));
+}
+
+/**
+ * Mount Settings UI into a document or open ShadowRoot.
+ * Does not start KeyPilot — the host page already has it when embedded.
+ * @param {Document|ShadowRoot} root
+ * @param {{ embedded?: boolean }} [options]
+ */
+export async function mountSettingsApp(root, options = {}) {
+  const embedded = options.embedded === true;
+  if (root && root.nodeType !== 9) {
+    await injectSettingsDom(root);
+    settingsScope = root;
+  } else {
+    settingsScope = document;
+  }
+  adaptHeaderForPopoverEmbed(embedded);
+  await render();
+  return () => {
+    settingsScope = document;
+  };
+}
+
+
 
 

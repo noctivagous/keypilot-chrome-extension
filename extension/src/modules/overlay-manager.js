@@ -18,7 +18,7 @@ import {
   createTitlebarCloseHint,
   createUrlPopoverTitlebar
 } from '../ui/popover-titlebar.js';
-import { ensureOpenChromeShadow } from '../ui/kp-chrome-shadow.js';
+import { containsComposed, ensureOpenChromeShadow } from '../ui/kp-chrome-shadow.js';
 import { createSegmentedControl } from '../ui/segmented-control.js';
 import {
   NCT_DARK_UI_PANEL_BACKGROUND,
@@ -35,6 +35,8 @@ import {
 } from '../utils/preview-url.js';
 import { resolveActivationIdentity } from '../utils/resolve-hovered-link.js';
 import { postPopoverBridgeInit } from './popover-bridge-init.js';
+import { mountDocsApp } from '../../pages/docs.js';
+import { mountSettingsApp } from '../../pages/settings.js';
 
 /** Per-host Link Preview viewport mode: { [hostname]: 'mobile' }. Missing/default = desktop. */
 const PREVIEW_VIEWPORT_BY_HOST_KEY = 'kp_link_preview_viewport_by_host';
@@ -95,6 +97,10 @@ export class OverlayManager {
     this.viewportModalFrame = null; // Viewport modal frame for text focus mode
     this.escExitLabelText = null; // ESC label for text fields
     this.escExitLabelHover = null; // ESC label for hovered elements
+    this.textFocusEscHint = null; // Vertical “Esc to exit” sidecar left of the orange bar
+    this._textFocusEscKeyLabel = 'Esc';
+    this.textHoverActivateHint = null; // Vertical “F / to / select” sidecar left of hover field
+    this._textHoverActivateKeyLabel = 'F';
     this.hoverClickLabelText = 'F clicks'; // Hover label for click arming in text focus mode
     this.popoverContainer = null; // Container for popover iframe
     this.popoverIframeElement = null; // iframe element (for focus management)
@@ -111,6 +117,11 @@ export class OverlayManager {
     this._previewPopoverDragCleanup = null; // teardown titlebar drag listeners
     this._popoverResizeDispose = null; // teardown generic resize handles
     this._popoverHybridFocusCleanup = null; // teardown chrome↔iframe focus routing
+    /** @type {HTMLElement|null} in-page Docs shadow host */
+    this._docsHost = null;
+    /** @type {(() => void)|null} */
+    this._docsUnmount = null;
+    this._docsFontScale = 1.25;
     this._previewMobileUaActive = false; // SW session rule: mobile UA for preview iframe
     /** @type {number|null} OS popup window id when using separate-window fallback */
     this._popoverWindowId = null;
@@ -165,8 +176,9 @@ export class OverlayManager {
     /** @type {boolean} */
     this._shadowDebugHudEnabled = !!(FEATURE_FLAGS && FEATURE_FLAGS.DEBUG_SHADOW_ROOT_HUD);
     /**
-     * Forced paint strategy while HUD is open: 'A' | 'B' | 'C' | null (auto).
-     * @type {'A'|'B'|'C'|null}
+     * Forced paint strategy while HUD is open:
+     * 'A' | 'B' | 'C' | 'BC' (Auto B→C) | null (full auto).
+     * @type {'A'|'B'|'C'|'BC'|null}
      */
     this._shadowDebugPaintOverride = null;
     /** @type {{ leaf: Element|null, focus: Element|null, paint: Element|null, auto: string, applied: string, inShadow: boolean }|null} */
@@ -209,7 +221,7 @@ export class OverlayManager {
     /** @type {'left_edge'|'background_tint'|null} */
     this._textFocusAppliedStyle = null;
 
-    // Text input hover styling (SVG "Press F…" hint on hovered fields; outline is separate).
+    // Text input hover styling (left “F to select” sidecar; outline is separate).
     this._textHoverCurrentElement = null;
     this._textHoverStyledElements = new Set();
 
@@ -231,9 +243,10 @@ export class OverlayManager {
 
     /**
      * Active temporary click/image effect overlays.
-     * Fixed-position ghosts must be torn down when the source leaves view or the
-     * page navigates — otherwise they animate alone over the next screen.
-     * @type {Set<{ pulse: Element, sourceEl: Element|null, originRect: DOMRect|null, rafId: number, timeoutId: number, io: IntersectionObserver|null, teardown: () => void }>}
+     * Fixed-position ghosts must be torn down when the source leaves view,
+     * is z-occluded (lightbox), or the page navigates — otherwise they animate
+     * alone over the next screen. In-target (B) flashes skip occlusion checks.
+     * @type {Set<{ pulse: Element, sourceEl: Element|null, originRect: DOMRect|null, checkOcclusion?: boolean, rafId: number, timeoutId: number, io: IntersectionObserver|null, teardown: () => void }>}
      */
     this._activeEphemeralEffects = new Set();
     this._ephemeralEffectLifecycleInstalled = false;
@@ -836,11 +849,168 @@ export class OverlayManager {
     if (this.escExitLabelHover) this.escExitLabelHover.style.display = 'none';
   }
 
+  /**
+   * Layout-aware cancel key shown in the vertical text-mode sidecar.
+   * @param {string} label
+   */
+  setTextFocusEscKeyLabel(label) {
+    const next = String(label || '').trim() || 'Esc';
+    if (next === this._textFocusEscKeyLabel) return;
+    this._textFocusEscKeyLabel = next;
+    if (this.textFocusEscHint) this._renderTextFocusEscHint();
+  }
+
+  /**
+   * Layout-aware activate key shown in the vertical text-hover sidecar.
+   * @param {string} label
+   */
+  setTextHoverActivateKeyLabel(label) {
+    const next = String(label || '').trim() || 'F';
+    if (next === this._textHoverActivateKeyLabel) return;
+    this._textHoverActivateKeyLabel = next;
+    if (this.textHoverActivateHint) this._renderTextHoverActivateHint();
+  }
+
+  _escapeHintText(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  _renderTextFocusEscHint() {
+    if (!this.textFocusEscHint) return;
+    const key = this._escapeHintText(this._textFocusEscKeyLabel || 'Esc');
+    this.textFocusEscHint.innerHTML =
+      `<kbd>${key}</kbd><span>to</span><span>exit</span>`;
+  }
+
+  _renderTextHoverActivateHint() {
+    if (!this.textHoverActivateHint) return;
+    const key = this._escapeHintText(this._textHoverActivateKeyLabel || 'F');
+    this.textHoverActivateHint.innerHTML =
+      `<kbd>${key}</kbd><span>to</span><span>select</span>`;
+  }
+
+  ensureTextFocusEscHint() {
+    if (this.textFocusEscHint) return this.textFocusEscHint;
+    this.textFocusEscHint = this.createElement('div', {
+      className: CSS_CLASSES.TEXT_FOCUS_ESC_HINT,
+      style: `
+        position: fixed;
+        pointer-events: none;
+        z-index: ${Z_INDEX.OVERLAYS_ABOVE};
+      `
+    });
+    this._renderTextFocusEscHint();
+    document.body.appendChild(this.textFocusEscHint);
+    return this.textFocusEscHint;
+  }
+
+  ensureTextHoverActivateHint() {
+    if (this.textHoverActivateHint) return this.textHoverActivateHint;
+    this.textHoverActivateHint = this.createElement('div', {
+      className: CSS_CLASSES.TEXT_HOVER_ACTIVATE_HINT,
+      style: `
+        position: fixed;
+        pointer-events: none;
+        z-index: ${Z_INDEX.OVERLAYS_ABOVE};
+      `
+    });
+    this._renderTextHoverActivateHint();
+    document.body.appendChild(this.textHoverActivateHint);
+    return this.textHoverActivateHint;
+  }
+
+  /**
+   * Position a vertical sidecar immediately left of a text field’s left edge.
+   * @param {HTMLElement} hint
+   * @param {DOMRect|{left:number,top:number,width:number,height:number}} rect
+   * @param {{ fallbackWidth?: number, fallbackHeight?: number }} [opts]
+   */
+  _positionTextFieldSidecar(hint, rect, opts = {}) {
+    if (!hint || !rect) return;
+    hint.style.display = 'flex';
+    const w = hint.offsetWidth || opts.fallbackWidth || 28;
+    const h = hint.offsetHeight || opts.fallbackHeight || 36;
+    const gap = 4;
+    hint.style.left = `${Math.round(rect.left - w - gap)}px`;
+    hint.style.top = `${Math.round(rect.top + (rect.height - h) / 2)}px`;
+    hint.style.visibility = 'visible';
+  }
+
+  /**
+   * Stack “Esc / to / exit” immediately left of the orange left-edge bar.
+   * @param {Element|null} element
+   */
+  updateTextFocusEscHint(element) {
+    if (!element) {
+      this.hideTextFocusEscHint();
+      return;
+    }
+
+    const host =
+      (this._textFocusPaintHost && this._textFocusPaintHost.isConnected)
+        ? this._textFocusPaintHost
+        : element;
+    const rect = this.getBestRect(host);
+    if (!rect || rect.width <= 0 || rect.height <= 0) {
+      this.hideTextFocusEscHint();
+      return;
+    }
+
+    this._positionTextFieldSidecar(this.ensureTextFocusEscHint(), rect, {
+      fallbackWidth: 28,
+      fallbackHeight: 36
+    });
+  }
+
+  hideTextFocusEscHint() {
+    if (this.textFocusEscHint) this.textFocusEscHint.style.display = 'none';
+  }
+
+  /**
+   * Stack “F / to / select” left of a hovered text field.
+   * @param {Element|null} element
+   */
+  updateTextHoverActivateHint(element) {
+    if (!element) {
+      this.hideTextHoverActivateHint();
+      return;
+    }
+
+    const rect = this.getBestRect(element);
+    if (!rect || rect.width <= 0 || rect.height <= 0) {
+      this.hideTextHoverActivateHint();
+      return;
+    }
+
+    this._positionTextFieldSidecar(this.ensureTextHoverActivateHint(), rect, {
+      fallbackWidth: 28,
+      fallbackHeight: 36
+    });
+  }
+
+  hideTextHoverActivateHint() {
+    if (this.textHoverActivateHint) this.textHoverActivateHint.style.display = 'none';
+  }
+
+  /** Reposition the hover activate sidecar after scroll/resize when one is active. */
+  refreshTextHoverActivateHint() {
+    if (!this._textHoverCurrentElement || !this._textHoverCurrentElement.isConnected) {
+      this.hideTextHoverActivateHint();
+      return;
+    }
+    this.updateTextHoverActivateHint(this._textHoverCurrentElement);
+  }
+
   _clearTextFocusElementStyling() {
     if (!this._textFocusStyledElements || this._textFocusStyledElements.size === 0) {
       this._textFocusCurrentElement = null;
       this._textFocusPaintHost = null;
       this._textFocusAppliedStyle = null;
+      this.hideTextFocusEscHint();
       return;
     }
     try {
@@ -859,6 +1029,7 @@ export class OverlayManager {
       this._textFocusCurrentElement = null;
       this._textFocusPaintHost = null;
       this._textFocusAppliedStyle = null;
+      this.hideTextFocusEscHint();
     }
   }
 
@@ -1172,6 +1343,7 @@ export class OverlayManager {
   _clearTextHoverElementStyling() {
     if (!this._textHoverStyledElements || this._textHoverStyledElements.size === 0) {
       this._textHoverCurrentElement = null;
+      this.hideTextHoverActivateHint();
       return;
     }
     try {
@@ -1185,6 +1357,7 @@ export class OverlayManager {
     } finally {
       this._textHoverStyledElements.clear();
       this._textHoverCurrentElement = null;
+      this.hideTextHoverActivateHint();
     }
   }
 
@@ -1194,9 +1367,10 @@ export class OverlayManager {
       return;
     }
 
-    // Avoid thrashing while mouse is steady.
+    // Avoid thrashing while mouse is steady — still refresh the sidecar position.
     if (this._textHoverCurrentElement === inputEl && this._textHoverStyledElements.size > 0) {
       try { inputEl.classList.add(CSS_CLASSES.TEXT_HOVER_INPUT); } catch { /* ignore */ }
+      this.updateTextHoverActivateHint(inputEl);
       return;
     }
 
@@ -1209,7 +1383,8 @@ export class OverlayManager {
       this._textHoverStyledElements.add(inputEl);
     } catch { /* ignore */ }
 
-    // Hover is outline + SVG hint only — do not tint wrapper parents.
+    // Hover is outline + left sidecar only — do not tint wrapper parents.
+    this.updateTextHoverActivateHint(inputEl);
   }
 
   setupOverlayObserver() {
@@ -1285,10 +1460,16 @@ export class OverlayManager {
       
       if (mode === 'text_focus') {
         // Labels are attached to the focused text field, not the hovered element.
-        if (focusedTextElement) this.updateTextModeLabels(focusedTextElement);
-        else this.hideTextModeLabels();
+        if (focusedTextElement) {
+          this.updateTextModeLabels(focusedTextElement);
+          this.updateTextFocusEscHint(focusedTextElement);
+        } else {
+          this.hideTextModeLabels();
+          this.hideTextFocusEscHint();
+        }
       } else {
         this.hideTextModeLabels();
+        this.hideTextFocusEscHint();
       }
     } else {
       this.hideFocusOverlay();
@@ -1357,7 +1538,7 @@ export class OverlayManager {
       return;
     }
 
-    // Text inputs: show orange outline AND paint the SVG "Press F to select…" hint.
+    // Text inputs: show orange outline AND the left “F to select” sidecar.
     // (Do not return early — fall through so the focus rectangle still draws.)
     try {
       const isTextInput = element && element.matches && element.matches(SELECTORS.FOCUSABLE_TEXT);
@@ -1445,13 +1626,30 @@ export class OverlayManager {
         }
       }
 
-      // Debug HUD can force A / B / C regardless of auto (for shadow experiments).
+      // Debug HUD can force A / B / C, or Auto B→C (skip A), regardless of auto.
       const override = this._shadowDebugHudEnabled
         ? this._shadowDebugPaintOverride
         : null;
-      const strategy = (override === 'A' || override === 'B' || override === 'C')
-        ? override
-        : autoStrategy;
+      let strategy = autoStrategy;
+      // Same-origin popover iframes (Docs / Settings): parent body-fixed rings
+      // paint *under* the iframe. Always outline the inner node (strategy A).
+      try {
+        if (!override && element.ownerDocument && element.ownerDocument !== document) {
+          autoStrategy = 'A';
+          strategy = 'A';
+        }
+      } catch { /* ignore */ }
+      if (override === 'A' || override === 'B' || override === 'C') {
+        strategy = override;
+      } else if (override === 'BC') {
+        // Auto B→C: never use element outline; try in-target then fixed.
+        let canB = false;
+        try {
+          canB = !!(FEATURE_FLAGS && FEATURE_FLAGS.ENABLE_IN_TARGET_FOCUS_RING) &&
+            !!this._resolveInTargetHost(element);
+        } catch { canB = false; }
+        strategy = canB ? 'B' : 'C';
+      }
 
       try {
         this._updateShadowRootDebugHud(element, paintEl, {
@@ -3440,6 +3638,8 @@ export class OverlayManager {
         if (child === this._inTargetRing) continue;
         try {
           if (child.classList && child.classList.contains(ringClass)) continue;
+          // Ephemeral F-click flash siblings must not inflate local z forever.
+          if (child.hasAttribute && child.hasAttribute('data-kp-ephemeral-effect')) continue;
         } catch { /* ignore */ }
         let cs = null;
         try { cs = window.getComputedStyle(child); } catch { cs = null; }
@@ -3906,10 +4106,13 @@ export class OverlayManager {
     if (useInset) stylingTarget.classList.add('keypilot-focus-element--inset');
     else stylingTarget.classList.remove('keypilot-focus-element--inset');
 
-    // Shadow trees: also paint outline inline. Injected <style> can be wiped by
-    // Lit re-renders, and closed-shadow nodes from composedPath cannot receive
-    // stylesheet injection — inline outline is the reliable source of truth.
-    if (this._isInShadowTree(stylingTarget)) {
+    // Shadow trees / same-origin iframe documents: also paint outline inline.
+    // Injected <style> can be wiped, and iframe docs do not inherit parent CSS.
+    let foreignDoc = false;
+    try {
+      foreignDoc = !!(stylingTarget.ownerDocument && stylingTarget.ownerDocument !== document);
+    } catch { /* ignore */ }
+    if (this._isInShadowTree(stylingTarget) || foreignDoc) {
       try {
         stylingTarget.setAttribute('data-kp-focus-inline', '1');
         stylingTarget.style.setProperty(
@@ -6139,17 +6342,79 @@ export class OverlayManager {
   }
 
   /**
-   * Track a temporary fixed overlay so it is removed when the source target is
-   * gone/hidden or the page navigates — not only when the CSS animation ends.
+   * True when a foreign stacking layer now paints over the source center
+   * (lightbox / modal portal). IntersectionObserver cannot detect z-index
+   * occlusion — this is the real "covered away" check for fixed ghosts.
+   *
+   * @param {Element} sourceEl
+   * @param {Element|null|undefined} pulse - ephemeral effect to ignore in the stack
+   * @returns {boolean}
+   */
+  _isEphemeralSourceOccluded(sourceEl, pulse = null) {
+    if (!sourceEl || sourceEl.nodeType !== 1 || !sourceEl.isConnected) return true;
+    let rect = null;
+    try { rect = sourceEl.getBoundingClientRect(); } catch { return true; }
+    if (!rect || !(rect.width > 0) || !(rect.height > 0)) return true;
+
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 0;
+    const vh = typeof window !== 'undefined' ? window.innerHeight : 0;
+    if (!(x >= 0 && y >= 0 && x <= vw && y <= vh)) return false;
+
+    let stack = null;
+    try {
+      if (typeof document.elementsFromPoint === 'function') {
+        stack = document.elementsFromPoint(x, y);
+      }
+    } catch { stack = null; }
+    if (!stack || !stack.length) return false;
+
+    const ringClass = CSS_CLASSES.FOCUS_RING_INTARGET || 'kpv2-focus-ring-intarget';
+    for (let i = 0; i < stack.length; i++) {
+      const hit = stack[i];
+      if (!hit || hit.nodeType !== 1) continue;
+      if (pulse && hit === pulse) continue;
+      try {
+        if (hit.hasAttribute && hit.hasAttribute('data-kp-ephemeral-effect')) continue;
+        if (hit.classList && hit.classList.contains(ringClass)) continue;
+      } catch { /* ignore */ }
+      if (hit === this._inTargetRing || hit === this.focusOverlay) continue;
+      try {
+        if (hit.classList && hit.classList.contains(CSS_CLASSES.FOCUS_OVERLAY)) continue;
+      } catch { /* ignore */ }
+
+      // Source (or something inside / wrapping it) is still the top meaningful hit.
+      if (
+        hit === sourceEl ||
+        containsComposed(sourceEl, hit) ||
+        containsComposed(hit, sourceEl)
+      ) {
+        return false;
+      }
+
+      // Foreign layer above the source (lightbox, modal, site overlay).
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Track a temporary click effect so it is removed when the source target is
+   * gone/hidden, occluded (fixed path), or the page navigates — not only when
+   * the CSS animation ends.
    *
    * @param {Element} pulse
    * @param {Element|null|undefined} sourceEl
    * @param {{ left: number, top: number, width: number, height: number }|null|undefined} originRect
    * @param {number} cleanupMs
+   * @param {{ checkOcclusion?: boolean }} [opts]
    */
-  _trackEphemeralEffect(pulse, sourceEl, originRect, cleanupMs) {
+  _trackEphemeralEffect(pulse, sourceEl, originRect, cleanupMs, opts = {}) {
     if (!pulse) return;
     this._installEphemeralEffectLifecycle();
+
+    const checkOcclusion = opts?.checkOcclusion === true;
 
     const entry = {
       pulse,
@@ -6162,6 +6427,7 @@ export class OverlayManager {
             height: originRect.height
           }
         : null,
+      checkOcclusion,
       rafId: 0,
       timeoutId: 0,
       io: /** @type {IntersectionObserver|null} */ (null),
@@ -6192,7 +6458,8 @@ export class OverlayManager {
     entry.teardown = teardown;
     this._activeEphemeralEffects.add(entry);
 
-    // Source left the viewport / was covered away → drop the ghost immediately.
+    // Source left the viewport / clipped by an ancestor → drop immediately.
+    // (Does not detect z-index lightbox occlusion — see checkOcclusion.)
     if (entry.sourceEl) {
       try {
         entry.io = new IntersectionObserver(
@@ -6212,7 +6479,7 @@ export class OverlayManager {
       }
     }
 
-    // Poll for disconnect / zero-size / large layout jump (SPA transition, scroll-away).
+    // Poll for disconnect / zero-size / large layout jump / occlusion.
     const origin = entry.originRect;
     const tick = () => {
       if (tornDown) return;
@@ -6247,7 +6514,7 @@ export class OverlayManager {
               return;
             }
           }
-          // Covered / opacity-0 during view transitions.
+          // Opacity-0 / display:none during view transitions.
           try {
             const cs = window.getComputedStyle(src);
             if (cs) {
@@ -6258,6 +6525,12 @@ export class OverlayManager {
               }
             }
           } catch { /* ignore */ }
+
+          // Fixed ghosts: tear down when a lightbox/modal paints over the source.
+          if (checkOcclusion && this._isEphemeralSourceOccluded(src, pulse)) {
+            teardown();
+            return;
+          }
         } catch {
           teardown();
           return;
@@ -6281,6 +6554,112 @@ export class OverlayManager {
   }
 
   /**
+   * Border-radius for F-click / image-copy ghosts. Prefer the live blue hover
+   * paint (B ring or C overlay), then visual resolve on the source elements.
+   * Always returns a CSS value (defaults to `0`) so flash corners match the box.
+   *
+   * @param {...(Element|null|undefined)} sources
+   * @returns {string}
+   */
+  _resolveClickEffectBorderRadius(...sources) {
+    // Live strategy-B ring already carries the visual host radius.
+    try {
+      if (
+        this._focusPaintUsesInTargetRing &&
+        this._inTargetRing &&
+        this._inTargetRing.isConnected
+      ) {
+        const raw =
+          this._inTargetRing.style?.getPropertyValue?.('border-radius') ||
+          window.getComputedStyle(this._inTargetRing).borderRadius ||
+          '';
+        const trimmed = String(raw).trim();
+        if (trimmed) return trimmed;
+      }
+    } catch { /* ignore */ }
+
+    // Live strategy-C fixed overlay.
+    try {
+      if (
+        this._focusPaintUsesFixedOverlay &&
+        this.focusOverlay &&
+        this.focusOverlay.style.display !== 'none'
+      ) {
+        const raw =
+          this.focusOverlay.style?.borderRadius ||
+          window.getComputedStyle(this.focusOverlay).borderRadius ||
+          '';
+        const trimmed = String(raw).trim();
+        if (trimmed) return trimmed;
+      }
+    } catch { /* ignore */ }
+
+    // Strategy A may have written radius onto the styled host (which
+    // `_resolveElementBorderRadius` skips as a KP paint node).
+    try {
+      const styled = this._currentStyledElement;
+      if (
+        styled &&
+        styled.nodeType === 1 &&
+        styled.isConnected &&
+        !this._focusPaintUsesInTargetRing &&
+        !this._focusPaintUsesFixedOverlay
+      ) {
+        const raw =
+          styled.style?.getPropertyValue?.('border-radius') ||
+          window.getComputedStyle(styled).borderRadius ||
+          '';
+        const trimmed = String(raw).trim();
+        if (trimmed && !/^(0|0px)(\s+(0|0px))*$/i.test(trimmed.replace(/\s*\/\s*/g, ' '))) {
+          return trimmed;
+        }
+      }
+    } catch { /* ignore */ }
+
+    for (const src of sources) {
+      if (!src || src.nodeType !== 1) continue;
+      try {
+        // Prefer resolve on a non-KP-marker ancestor/child path. If `src` is
+        // the styled focus host, temporarily read via descendants/ancestors.
+        const r = this._resolveElementBorderRadius(src);
+        if (r) return r;
+      } catch { /* try next */ }
+    }
+    return '0';
+  }
+
+  /**
+   * Apply border-radius onto an ephemeral flash node (div or dash SVG).
+   * @param {Element} pulse
+   * @param {string|null|undefined} borderRadius
+   * @param {{ width?: number, height?: number }|null} [box] - for SVG rx/ry refresh
+   */
+  _applyEphemeralBorderRadius(pulse, borderRadius, box = null) {
+    const radius = (borderRadius && String(borderRadius).trim()) || '0';
+    if (!pulse) return;
+    try {
+      pulse.style.setProperty('border-radius', radius, 'important');
+    } catch { /* ignore */ }
+
+    // Dash SVG: keep rx/ry in sync with the resolved radius.
+    try {
+      if (typeof SVGElement !== 'undefined' && pulse instanceof SVGElement) {
+        const shape = pulse.querySelector?.('rect');
+        if (shape) {
+          const w = Math.max(1, Number(box?.width) || parseFloat(pulse.getAttribute('width')) || 1);
+          const h = Math.max(1, Number(box?.height) || parseFloat(pulse.getAttribute('height')) || 1);
+          const stroke = 3;
+          const rw = Math.max(1, w - stroke);
+          const rh = Math.max(1, h - stroke);
+          const rx = Math.min(this._borderRadiusToSvgRx(radius, w, h), rw / 2, rh / 2);
+          shape.setAttribute('rx', String(rx));
+          shape.setAttribute('ry', String(rx));
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  /**
    * Approximate border-radius in CSS px for SVG rx/ry from a CSS border-radius string.
    * @param {string|null|undefined} borderRadius
    * @param {number} width
@@ -6288,16 +6667,17 @@ export class OverlayManager {
    * @returns {number}
    */
   _borderRadiusToSvgRx(borderRadius, width, height) {
-    if (!borderRadius) return 3;
+    if (!borderRadius) return 0;
     const first = String(borderRadius).trim().split(/\s+/)[0] || '';
-    if (!first) return 3;
+    if (!first) return 0;
+    if (/^(0|0px|0%)$/i.test(first)) return 0;
     if (first.endsWith('%')) {
       const p = parseFloat(first);
-      if (!Number.isFinite(p)) return 3;
+      if (!Number.isFinite(p)) return 0;
       return Math.max(0, Math.min(width, height) * (p / 100));
     }
     const n = parseFloat(first);
-    return Number.isFinite(n) ? Math.max(0, n) : 3;
+    return Number.isFinite(n) ? Math.max(0, n) : 0;
   }
 
   /**
@@ -6374,13 +6754,214 @@ export class OverlayManager {
   }
 
   /**
+   * Local z-index for an ephemeral in-target flash — sit above the live B ring.
+   * @param {Element} host
+   * @returns {number}
+   */
+  _inTargetEphemeralZIndex(host) {
+    let z = this._maxLocalZIndex(host) + 1;
+    try {
+      if (this._inTargetRing && this._inTargetRing.parentNode === host) {
+        const raw =
+          this._inTargetRing.style?.getPropertyValue?.('z-index') ||
+          window.getComputedStyle(this._inTargetRing).zIndex;
+        const n = parseInt(String(raw), 10);
+        if (Number.isFinite(n)) z = Math.max(z, n + 1);
+      }
+    } catch { /* ignore */ }
+    try {
+      if (this._isInShadowTree(host)) z = Math.max(z, 2147483000);
+    } catch { /* ignore */ }
+    return z;
+  }
+
+  /**
+   * Restyle a fixed-position click-effect node as an absolute inset:0 sibling
+   * inside the strategy-B host (co-located; naturally under lightboxes).
+   * @param {HTMLElement|SVGSVGElement} pulse
+   * @param {Element} host
+   * @param {string|null|undefined} borderRadius
+   * @param {string} clickEffect
+   * @param {{ width: number, height: number }|null} [box]
+   */
+  _applyInTargetEphemeralLayout(pulse, host, borderRadius, clickEffect, box = null) {
+    const z = this._inTargetEphemeralZIndex(host);
+    const isSvg = typeof SVGElement !== 'undefined' && pulse instanceof SVGElement;
+    const lockTransform = clickEffect !== 'scale' && clickEffect !== 'marquee';
+
+    pulse.style.setProperty('position', 'absolute', 'important');
+    pulse.style.setProperty('inset', '0', 'important');
+    pulse.style.setProperty('left', '0', 'important');
+    pulse.style.setProperty('top', '0', 'important');
+    pulse.style.setProperty('right', '0', 'important');
+    pulse.style.setProperty('bottom', '0', 'important');
+    pulse.style.setProperty('margin', '0', 'important');
+    pulse.style.setProperty('pointer-events', 'none', 'important');
+    pulse.style.setProperty('z-index', String(z), 'important');
+    pulse.style.setProperty('box-sizing', 'border-box', 'important');
+
+    if (isSvg && box) {
+      pulse.style.setProperty('width', `${Math.max(1, box.width)}px`, 'important');
+      pulse.style.setProperty('height', `${Math.max(1, box.height)}px`, 'important');
+      try {
+        pulse.setAttribute('width', String(Math.max(1, box.width)));
+        pulse.setAttribute('height', String(Math.max(1, box.height)));
+      } catch { /* ignore */ }
+    } else {
+      pulse.style.setProperty('width', 'auto', 'important');
+      pulse.style.setProperty('height', 'auto', 'important');
+    }
+
+    this._applyEphemeralBorderRadius(pulse, borderRadius, box);
+    if (lockTransform) {
+      pulse.style.setProperty('transform', 'none', 'important');
+      pulse.style.setProperty('transform-origin', 'center', 'important');
+      pulse.style.setProperty('scale', 'none', 'important');
+      pulse.style.setProperty('translate', 'none', 'important');
+      pulse.style.setProperty('rotate', 'none', 'important');
+    }
+  }
+
+  /**
+   * When hover paint is already strategy B, mount the green flash as an absolute
+   * sibling inside the same host so lightbox portals naturally cover it.
+   * @param {string} clickEffect
+   * @param {{ className: string, cleanupMs: number }} presentation
+   * @param {Element|null|undefined} activationEl
+   * @returns {boolean}
+   */
+  _tryFlashInTargetEffect(clickEffect, presentation, activationEl) {
+    if (!this._focusPaintUsesInTargetRing) return false;
+    const host = this._inTargetHost;
+    if (!host || host.nodeType !== 1 || !host.isConnected) return false;
+
+    // Only when this host belongs to the activation target (not a stale B ring).
+    try {
+      if (
+        activationEl &&
+        activationEl.nodeType === 1 &&
+        host !== activationEl &&
+        !(typeof host.contains === 'function' && host.contains(activationEl)) &&
+        !(typeof activationEl.contains === 'function' && activationEl.contains(host)) &&
+        !containsComposed(host, activationEl) &&
+        !containsComposed(activationEl, host)
+      ) {
+        return false;
+      }
+    } catch { /* keep trying */ }
+
+    let borderRadius = '0';
+    try {
+      borderRadius = this._resolveClickEffectBorderRadius(host, activationEl);
+    } catch { borderRadius = '0'; }
+
+    let hostRect = null;
+    try { hostRect = this._asPositiveViewportRect(host.getBoundingClientRect()); } catch { hostRect = null; }
+    if (!hostRect) return false;
+
+    const w = Math.max(1, host.clientWidth || hostRect.width);
+    const h = Math.max(1, host.clientHeight || hostRect.height);
+
+    /** @type {HTMLElement|SVGSVGElement} */
+    let pulse;
+    try {
+      if (clickEffect === 'dash') {
+        pulse = this._createDashChasePulse({ left: 0, top: 0, width: w, height: h }, borderRadius);
+        this._applyInTargetEphemeralLayout(pulse, host, borderRadius, clickEffect, { width: w, height: h });
+      } else {
+        pulse = document.createElement('div');
+        pulse.className = presentation.className;
+        pulse.setAttribute('aria-hidden', 'true');
+        pulse.setAttribute('data-kp-ephemeral-effect', clickEffect);
+        this._applyInTargetEphemeralLayout(pulse, host, borderRadius, clickEffect);
+      }
+
+      // Last child → above earlier siblings including the blue B ring.
+      host.appendChild(pulse);
+      this._trackEphemeralEffect(
+        pulse,
+        host,
+        hostRect,
+        presentation.cleanupMs,
+        { checkOcclusion: false }
+      );
+      return true;
+    } catch (e) {
+      try { if (pulse && pulse.isConnected) pulse.remove(); } catch { /* ignore */ }
+      if (window.KEYPILOT_DEBUG) {
+        console.warn('[KeyPilot] in-target focus pulse failed:', e);
+      }
+      return false;
+    }
+  }
+
+  /**
+   * Body-fixed green ghosts that copy the blue hover box (A or C, or B fallthrough).
+   * Uses occlusion cleanup so lightbox portals do not leave a green linger.
+   *
+   * @param {string} clickEffect
+   * @param {{ className: string, cleanupMs: number }} presentation
+   * @param {Element|null|undefined} el
+   */
+  _flashFixedClickEffect(clickEffect, presentation, el) {
+    const { paintEl, rects } = this._resolveClickEffectRects(el);
+    if (!rects || !rects.length) return;
+
+    const radiusSource = (paintEl && paintEl.nodeType === 1) ? paintEl : el;
+    let borderRadius = '0';
+    try {
+      borderRadius = this._resolveClickEffectBorderRadius(
+        this._inTargetHost,
+        radiusSource,
+        el
+      );
+    } catch { borderRadius = '0'; }
+
+    const trackEl = (paintEl && paintEl.nodeType === 1) ? paintEl : el;
+
+    for (let i = 0; i < rects.length; i++) {
+      const liveRect = rects[i];
+      if (!liveRect) continue;
+      try {
+        /** @type {HTMLElement|SVGSVGElement} */
+        let pulse;
+        if (clickEffect === 'dash') {
+          pulse = this._createDashChasePulse(liveRect, borderRadius);
+        } else {
+          pulse = document.createElement('div');
+          pulse.className = presentation.className;
+          pulse.setAttribute('aria-hidden', 'true');
+          pulse.setAttribute('data-kp-ephemeral-effect', clickEffect);
+          pulse.style.left = `${liveRect.left}px`;
+          pulse.style.top = `${liveRect.top}px`;
+          pulse.style.width = `${liveRect.width}px`;
+          pulse.style.height = `${liveRect.height}px`;
+        }
+        this._applyEphemeralBorderRadius(pulse, borderRadius, liveRect);
+        document.body.appendChild(pulse);
+        this._trackEphemeralEffect(
+          pulse,
+          trackEl,
+          liveRect,
+          presentation.cleanupMs,
+          { checkOcclusion: true }
+        );
+      } catch (e) {
+        if (window.KEYPILOT_DEBUG) {
+          console.warn('[KeyPilot] focus pulse failed:', e);
+        }
+      }
+    }
+  }
+
+  /**
    * F-key activation feedback for link-style targets.
    *
-   * Green flash is always a body-fixed overlay ghost that duplicates the blue
-   * hover paint box. When hover is strategy A or B, that means a fixed green
-   * rectangle (or per-line boxes for multi-line A) matching the blue ring —
-   * never recoloring the live A outline in place. Strategy C already paints
-   * blue as a fixed overlay; the green ghost copies that same box.
+   * Hybrid paint (see focus-ring-paint.md):
+   *   - Hover already on strategy B → ephemeral green sibling in the same host
+   *     (local max z+1). Co-located so lightbox portals cover it naturally.
+   *   - Otherwise (A or C, or B mount failed) → body-fixed ghost + occlusion
+   *     cleanup via elementsFromPoint when a modal covers the source.
    *
    * Effect style comes from settings (clickMode.clickEffect):
    *   - flash (default): hard strobe border + glow
@@ -6429,53 +7010,9 @@ export class OverlayManager {
       } catch { /* ignore */ }
     }
 
-    // Always body-fixed green ghosts that copy the blue hover box (A, B, or C).
-    // Strategy A used to recolor the live CSS outline in place; that diverged
-    // from the fixed flash path and could not match clipped / multi-box cases.
-
-    const { paintEl, rects } = this._resolveClickEffectRects(el);
-    if (!rects || !rects.length) return;
-
-    const radiusSource = (paintEl && paintEl.nodeType === 1) ? paintEl : el;
-    let borderRadius = null;
-    try { borderRadius = this._resolveElementBorderRadius(radiusSource); } catch { borderRadius = null; }
-
-    const trackEl = (paintEl && paintEl.nodeType === 1) ? paintEl : el;
-
-    for (let i = 0; i < rects.length; i++) {
-      const liveRect = rects[i];
-      if (!liveRect) continue;
-      try {
-        /** @type {HTMLElement|SVGSVGElement} */
-        let pulse;
-        if (clickEffect === 'dash') {
-          pulse = this._createDashChasePulse(liveRect, borderRadius);
-        } else {
-          pulse = document.createElement('div');
-          pulse.className = presentation.className;
-          pulse.setAttribute('aria-hidden', 'true');
-          pulse.setAttribute('data-kp-ephemeral-effect', clickEffect);
-          pulse.style.left = `${liveRect.left}px`;
-          pulse.style.top = `${liveRect.top}px`;
-          pulse.style.width = `${liveRect.width}px`;
-          pulse.style.height = `${liveRect.height}px`;
-          if (borderRadius) {
-            pulse.style.borderRadius = borderRadius;
-          }
-        }
-        document.body.appendChild(pulse);
-        this._trackEphemeralEffect(
-          pulse,
-          trackEl,
-          liveRect,
-          presentation.cleanupMs
-        );
-      } catch (e) {
-        if (window.KEYPILOT_DEBUG) {
-          console.warn('[KeyPilot] focus pulse failed:', e);
-        }
-      }
-    }
+    // B → B flash; A/C (or B fallthrough) → fixed + occlusion cleanup.
+    if (this._tryFlashInTargetEffect(clickEffect, presentation, el)) return;
+    this._flashFixedClickEffect(clickEffect, presentation, el);
   }
 
   /**
@@ -6527,16 +7064,15 @@ export class OverlayManager {
       pulse.style.width = `${width}px`;
       pulse.style.height = `${height}px`;
       // Match corners to the source image/host when it has a non-default radius.
-      const borderRadius = this._resolveElementBorderRadius(element);
-      if (borderRadius) {
-        pulse.style.borderRadius = borderRadius;
-      }
+      const borderRadius = this._resolveClickEffectBorderRadius(element);
+      this._applyEphemeralBorderRadius(pulse, borderRadius, { width, height });
       document.body.appendChild(pulse);
       this._trackEphemeralEffect(
         pulse,
         element,
         { left, top, width, height },
-        900
+        900,
+        { checkOcclusion: true }
       );
     } catch (e) {
       if (window.KEYPILOT_DEBUG) {
@@ -6842,6 +7378,14 @@ export class OverlayManager {
     if (this.escExitLabelHover) {
       this.escExitLabelHover.remove();
       this.escExitLabelHover = null;
+    }
+    if (this.textFocusEscHint) {
+      this.textFocusEscHint.remove();
+      this.textFocusEscHint = null;
+    }
+    if (this.textHoverActivateHint) {
+      this.textHoverActivateHint.remove();
+      this.textHoverActivateHint = null;
     }
 
     // Clean up debug panel / shadow HUD
@@ -7158,6 +7702,286 @@ export class OverlayManager {
   }
 
   /**
+   * Apply the Docs titlebar text-size slider to the in-page Docs host.
+   * @param {number} scale
+   */
+  setDocsFontScale(scale) {
+    const n = Number(scale);
+    if (!Number.isFinite(n) || n < 0.8 || n > 1.75) return;
+    this._docsFontScale = n;
+    try {
+      this._docsHost?.style?.setProperty('--docs-font-scale', String(n));
+      const app = this._docsHost?.shadowRoot?.querySelector?.('.docs-app');
+      app?.style?.setProperty('--docs-font-scale', String(n));
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Docs popover without an iframe: same modal chrome as Settings/Guide, but the
+   * article/nav live in an open shadow tree so KeyPilot hover, F-click, and
+   * Text Mode work like Tab History / Launcher.
+   * @param {object} opts
+   * @param {string} [opts.title]
+   * @param {string} [opts.hintKeyLabel]
+   * @param {string} [opts.width]
+   * @param {string} [opts.height]
+   * @param {HTMLElement|HTMLElement[]|null} [opts.actions]
+   */
+  showInPageDocsPopover(opts = {}) {
+    this.hidePopover();
+
+    const requestClosePopover = () => {
+      try {
+        if (window.__KeyPilotInstance && typeof window.__KeyPilotInstance.handleClosePopover === 'function') {
+          window.__KeyPilotInstance.handleClosePopover();
+          return;
+        }
+      } catch { /* ignore */ }
+      this.hidePopover();
+    };
+
+    this.popoverContainer = this.createElement('div', {
+      className: 'kpv2-popover-container kpv2-docs-popover',
+      tabindex: '-1',
+      role: 'dialog',
+      'aria-modal': 'true',
+      style: `
+        position: fixed;
+        inset: 0;
+        width: ${opts.width || 'calc(100vw - 40pt)'};
+        height: ${opts.height || 'calc(100vh - 40pt)'};
+        max-width: calc(100vw - 40pt);
+        max-height: calc(100vh - 40pt);
+        margin: auto;
+        background: ${NCT_DARK_UI_PANEL_BACKGROUND};
+        border-radius: ${NCT_DARK_UI_PANEL_RADIUS};
+        border: ${NCT_DARK_UI_PANEL_BORDER};
+        box-shadow: ${NCT_DARK_UI_PANEL_BOX_SHADOW};
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        font-family: ${KP_UI_FONT};
+        font-size: 14px;
+        line-height: 1.3;
+        letter-spacing: normal;
+      `
+    });
+
+    const chromeHost = this.createElement('div', {
+      className: 'kpv2-popover-chrome-host',
+      style: `
+        display: flex;
+        flex: 0 0 auto;
+        flex-direction: column;
+        min-height: 0;
+      `
+    });
+    const chromeShadow = ensureOpenChromeShadow(chromeHost, { id: 'docs-popover' });
+    const chromeMount = chromeShadow || chromeHost;
+
+    const titlebarApi = createPopoverTitlebar({
+      title: (opts.title && String(opts.title).trim()) || 'KeyPilot Docs',
+      variant: 'modal',
+      showClose: true,
+      onClose: requestClosePopover,
+      closeTitle: 'Close (Esc)',
+      hint: createTitlebarCloseHint({
+        keys: [opts.hintKeyLabel || 'Alt+H', 'Esc'],
+        suffix: 'Use the same keyboard navigation controls.'
+      }),
+      className: 'kpv2-popover-titlebar',
+      actions: opts.actions || null
+    });
+    const header = titlebarApi.titlebar;
+    this.popoverCloseButton = titlebarApi.closeButton;
+
+    chromeMount.appendChild(header);
+    this.popoverContainer.appendChild(chromeHost);
+
+    const bodyHost = this.createElement('div', {
+      className: 'kpv2-docs-host',
+      style: `
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        background: linear-gradient(rgb(18, 18, 18) 0%, rgb(11, 11, 11) 100%);
+      `
+    });
+    const shadow = bodyHost.attachShadow({ mode: 'open' });
+    try {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = chrome.runtime.getURL('pages/docs.css');
+      shadow.appendChild(link);
+    } catch { /* ignore */ }
+
+    this._docsHost = bodyHost;
+    this._docsUnmount = mountDocsApp(shadow, {
+      embedded: true,
+      onClose: requestClosePopover,
+      fontScale: this._docsFontScale
+    });
+    this.setDocsFontScale(this._docsFontScale);
+    this.popoverContainer.appendChild(bodyHost);
+
+    this.popupManager?.showModal?.({
+      id: this._popoverPopupId,
+      panel: this.popoverContainer,
+      onRequestClose: requestClosePopover
+    });
+
+    document.body.style.overflow = 'hidden';
+
+    const handlePopoverKeyDown = (e) => {
+      if (e.key !== 'Escape') return;
+      try {
+        const kp = window.__KeyPilotInstance;
+        const st = kp?.state?.getState?.();
+        if (st?.mode === MODES.TEXT_FOCUS || st?.focusedTextElement) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          kp.handleEscapeFromTextFocus(st);
+          return;
+        }
+      } catch { /* ignore */ }
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      requestClosePopover();
+    };
+    document.addEventListener('keydown', handlePopoverKeyDown, true);
+    this.popoverContainer.addEventListener('keydown', handlePopoverKeyDown, true);
+    this.popoverKeyHandler = handlePopoverKeyDown;
+
+    try { this.popoverContainer.focus(); } catch { /* ignore */ }
+  }
+
+  /**
+   * Settings popover without an iframe — same chrome as Docs.
+   * @param {object} opts
+   */
+  async showInPageSettingsPopover(opts = {}) {
+    this.hidePopover();
+
+    const requestClosePopover = () => {
+      try {
+        if (window.__KeyPilotInstance && typeof window.__KeyPilotInstance.handleClosePopover === 'function') {
+          window.__KeyPilotInstance.handleClosePopover();
+          return;
+        }
+      } catch { /* ignore */ }
+      this.hidePopover();
+    };
+
+    this.popoverContainer = this.createElement('div', {
+      className: 'kpv2-popover-container kpv2-settings-popover',
+      tabindex: '-1',
+      role: 'dialog',
+      'aria-modal': 'true',
+      style: `
+        position: fixed;
+        inset: 0;
+        width: ${opts.width || 'calc(100vw - 40pt)'};
+        height: ${opts.height || 'calc(100vh - 40pt)'};
+        max-width: calc(100vw - 40pt);
+        max-height: calc(100vh - 40pt);
+        margin: auto;
+        background: ${NCT_DARK_UI_PANEL_BACKGROUND};
+        border-radius: ${NCT_DARK_UI_PANEL_RADIUS};
+        border: ${NCT_DARK_UI_PANEL_BORDER};
+        box-shadow: ${NCT_DARK_UI_PANEL_BOX_SHADOW};
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        font-family: ${KP_UI_FONT};
+        font-size: 14px;
+        line-height: 1.3;
+        letter-spacing: normal;
+      `
+    });
+
+    const chromeHost = this.createElement('div', {
+      className: 'kpv2-popover-chrome-host',
+      style: `
+        display: flex;
+        flex: 0 0 auto;
+        flex-direction: column;
+        min-height: 0;
+      `
+    });
+    const chromeShadow = ensureOpenChromeShadow(chromeHost, { id: 'settings-popover' });
+    const chromeMount = chromeShadow || chromeHost;
+
+    const titlebarApi = createPopoverTitlebar({
+      title: (opts.title && String(opts.title).trim()) || 'KeyPilot Settings',
+      variant: 'modal',
+      showClose: true,
+      onClose: requestClosePopover,
+      closeTitle: 'Close (Esc)',
+      hint: createTitlebarCloseHint({
+        keys: [opts.hintKeyLabel || "'", 'Esc'],
+        suffix: 'Use the same keyboard navigation controls.'
+      }),
+      className: 'kpv2-popover-titlebar',
+      actions: opts.actions || null
+    });
+    this.popoverCloseButton = titlebarApi.closeButton;
+    chromeMount.appendChild(titlebarApi.titlebar);
+    this.popoverContainer.appendChild(chromeHost);
+
+    const bodyHost = this.createElement('div', {
+      className: 'kpv2-settings-host',
+      style: `
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        background: linear-gradient(rgb(18, 18, 18) 0%, rgb(11, 11, 11) 100%);
+      `
+    });
+    const shadow = bodyHost.attachShadow({ mode: 'open' });
+    this._docsUnmount = await mountSettingsApp(shadow, {
+      embedded: true,
+      onClose: requestClosePopover
+    });
+    this.popoverContainer.appendChild(bodyHost);
+
+    this.popupManager?.showModal?.({
+      id: this._popoverPopupId,
+      panel: this.popoverContainer,
+      onRequestClose: requestClosePopover
+    });
+
+    document.body.style.overflow = 'hidden';
+
+    const handlePopoverKeyDown = (e) => {
+      if (e.key !== 'Escape') return;
+      try {
+        const kp = window.__KeyPilotInstance;
+        const st = kp?.state?.getState?.();
+        if (st?.mode === MODES.TEXT_FOCUS || st?.focusedTextElement) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          kp.handleEscapeFromTextFocus(st);
+          return;
+        }
+      } catch { /* ignore */ }
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      requestClosePopover();
+    };
+    document.addEventListener('keydown', handlePopoverKeyDown, true);
+    this.popoverContainer.addEventListener('keydown', handlePopoverKeyDown, true);
+    this.popoverKeyHandler = handlePopoverKeyDown;
+
+    try { this.popoverContainer.focus(); } catch { /* ignore */ }
+  }
+
+  /**
    * Show popover with iframe containing the linked page.
    * http(s) Open Popover uses {@link createUrlPopoverTitlebar} (Open / Open in New Tab)
    * and deferred iframe src after HTTPS prep. Settings/Guide keep {@link createPopoverTitlebar}.
@@ -7169,7 +7993,9 @@ export class OverlayManager {
    * @param {string} [opts.hintKeyLabel] - Optional key label in the titlebar hint (defaults to 'P')
    * @param {boolean} [opts.showClose=true] - Whether to show the titlebar close button
    * @param {string|Node|null} [opts.titlebarHint] - Override titlebar hint (string or Node)
+   * @param {HTMLElement|HTMLElement[]|null} [opts.actions] - Controls placed before the close button
    * @param {string[]} [opts.closeKeys] - Keys forwarded from iframe that should request close (defaults to ['Escape','p','P'])
+   * @param {boolean} [opts.forceWindow] - Skip iframe overlay and open a sized OS popup
    * @param {string} [opts.width] - Optional fixed width (e.g., '920px', overrides viewport-minus-20pt)
    * @param {string} [opts.height] - Optional fixed height (e.g., '600px', overrides viewport-minus-20pt)
    */
@@ -7190,8 +8016,8 @@ export class OverlayManager {
       ? opts.closeKeys.map(String)
       : ['Escape', 'p', 'P'];
 
-    // Eager separate-window path for hosts that refuse iframes.
-    if (isUrlPopover && isKnownIframeDenierHost(originalUrl)) {
+    // Always-new-window setting, or eager path for hosts that refuse iframes.
+    if (isUrlPopover && (opts.forceWindow || isKnownIframeDenierHost(originalUrl))) {
       void this._openPopoverWindow({
         url: originalUrl,
         kind: 'modal',
@@ -7334,7 +8160,8 @@ export class OverlayManager {
         onClose: requestClosePopover,
         closeTitle: 'Close (Esc)',
         hint: titlebarHint,
-        className: 'kpv2-popover-titlebar'
+        className: 'kpv2-popover-titlebar',
+        actions: opts?.actions || null
       });
     const header = titlebarApi.titlebar;
     const closeButton = titlebarApi.closeButton;
@@ -7471,6 +8298,12 @@ export class OverlayManager {
       loadTimeout = null;
       console.log('[KeyPilot] Iframe loaded successfully');
       sendBridgeInit();
+      try {
+        const childDoc = iframe.contentDocument;
+        if (childDoc) {
+          window.__KeyPilotInstance?.styleManager?.injectIntoForeignDocument?.(childDoc);
+        }
+      } catch { /* cross-origin preview */ }
     };
 
     chromeMount.appendChild(header);
@@ -7611,7 +8444,10 @@ export class OverlayManager {
         if (k === 'f' || k === 'F') {
           // Prefer "click close button if hovered" so users can use F on the × affordance
           // even when focus is inside the iframe (keydown doesn't propagate to parent).
-          clickCloseIfHovered();
+          if (clickCloseIfHovered()) return;
+          try {
+            window.__KeyPilotInstance?.handleActivateKey?.();
+          } catch { /* ignore */ }
         }
       }
     };
@@ -7790,6 +8626,12 @@ export class OverlayManager {
     this.popoverIframeElement = null;
     this.popoverBridgeReady = false;
     this.popoverCloseButton = null;
+
+    if (this._docsUnmount) {
+      try { this._docsUnmount(); } catch { /* ignore */ }
+      this._docsUnmount = null;
+    }
+    this._docsHost = null;
 
     // Remove keyboard event listeners
     if (this.popoverKeyHandler) {
@@ -8155,6 +8997,7 @@ export class OverlayManager {
    * @param {string} url - URL to load in iframe
    * @param {Object} opts - Options including mouseX, mouseY for positioning
    * @param {'mobile'|'desktop'} [opts.viewportMode] - Override mode; otherwise host preference or desktop default
+   * @param {boolean} [opts.forceWindow] - Skip iframe overlay and open a sized OS popup
    */
   async showPreviewPopover(url, opts = {}) {
     // Remove existing popover if any
@@ -8168,8 +9011,8 @@ export class OverlayManager {
       ? opts.closeKeys.map(String)
       : ['Escape', 'e', 'E'];
 
-    // Eager separate-window path for hosts that refuse iframes.
-    if (isKnownIframeDenierHost(url)) {
+    // Always-new-window setting, or eager path for hosts that refuse iframes.
+    if (opts.forceWindow || isKnownIframeDenierHost(url)) {
       await this._openPopoverWindow({
         url,
         kind: 'preview',
@@ -8728,6 +9571,12 @@ export class OverlayManager {
       clearLoadTimeout();
       console.log('[KeyPilot] Iframe loaded successfully');
       sendBridgeInit();
+      try {
+        const childDoc = iframe.contentDocument;
+        if (childDoc) {
+          window.__KeyPilotInstance?.styleManager?.injectIntoForeignDocument?.(childDoc);
+        }
+      } catch { /* cross-origin preview */ }
     };
 
     iframeViewport.appendChild(iframe);
@@ -8888,7 +9737,10 @@ export class OverlayManager {
       if (data.type === 'KP_POPOVER_BRIDGE_KEYDOWN') {
         const k = String(data.key || '');
         if (k === 'f' || k === 'F') {
-          clickCloseIfHovered();
+          if (clickCloseIfHovered()) return;
+          try {
+            window.__KeyPilotInstance?.handleActivateKey?.();
+          } catch { /* ignore */ }
         }
       }
     };
@@ -9204,7 +10056,7 @@ Observer Updates: ${data.observerUpdates.toLocaleString()}
   }
 
   // =============================================================================
-  // SHADOW ROOT DEBUG HUD — leaf / focus / paint + force A|B|C
+  // SHADOW ROOT DEBUG HUD — leaf / focus / paint + Auto | Auto B→C | A|B|C
   // =============================================================================
 
   /**
@@ -9246,12 +10098,25 @@ Observer Updates: ${data.observerUpdates.toLocaleString()}
 
   /**
    * Force paint strategy while the HUD is open.
-   * @param {'A'|'B'|'C'|null|string} strategy - null / 'auto' clears override
+   * @param {'A'|'B'|'C'|'BC'|null|string} strategy
+   *   null / 'auto' clears override (full A→B→C auto).
+   *   'BC' / 'B->C' / 'AUTO_BC' = Auto B→C (skip A; try B then C).
    */
   setShadowDebugPaintStrategy(strategy) {
-    const s = strategy == null ? null : String(strategy).toUpperCase();
-    if (s === 'A' || s === 'B' || s === 'C') {
-      this._shadowDebugPaintOverride = s;
+    const raw = strategy == null ? null : String(strategy).trim();
+    const upper = raw ? raw.toUpperCase() : null;
+    if (upper === 'A' || upper === 'B' || upper === 'C') {
+      this._shadowDebugPaintOverride = upper;
+    } else if (
+      upper === 'BC' ||
+      upper === 'B->C' ||
+      upper === 'B→C' ||
+      upper === 'AUTO_BC' ||
+      upper === 'AUTO-BC' ||
+      upper === 'AUTO B->C' ||
+      upper === 'AUTO B→C'
+    ) {
+      this._shadowDebugPaintOverride = 'BC';
     } else {
       this._shadowDebugPaintOverride = null;
     }
@@ -9335,6 +10200,15 @@ Observer Updates: ${data.observerUpdates.toLocaleString()}
 
   _ensureShadowRootDebugHud() {
     if (this._shadowDebugHud && this._shadowDebugHud.isConnected) {
+      // Hot-reload: rebuild if the Auto B→C control is missing.
+      try {
+        if (!this._shadowDebugHud.querySelector('[data-kp-shadow-dbg-strategy="BC"]')) {
+          this._shadowDebugHud.remove();
+          this._shadowDebugHud = null;
+        }
+      } catch { /* keep existing */ }
+    }
+    if (this._shadowDebugHud && this._shadowDebugHud.isConnected) {
       this._shadowDebugHud.style.display = 'block';
       this._refreshShadowDebugHudButtons();
       return this._shadowDebugHud;
@@ -9376,12 +10250,13 @@ Observer Updates: ${data.observerUpdates.toLocaleString()}
       <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
         <span style="color:#8ab89a;">Paint:</span>
         <button type="button" data-kp-shadow-dbg-strategy="auto">Auto</button>
+        <button type="button" data-kp-shadow-dbg-strategy="BC">Auto B→C</button>
         <button type="button" data-kp-shadow-dbg-strategy="A">A outline</button>
         <button type="button" data-kp-shadow-dbg-strategy="B">B in-target</button>
         <button type="button" data-kp-shadow-dbg-strategy="C">C fixed</button>
       </div>
       <div style="margin-top:8px;color:#6f9a80;font-size:10px;">
-        A = element outline · B = absolute ring in host · C = body fixed overlay
+        Auto = A→B→C · Auto B→C = skip A · A outline · B in-host · C body fixed
       </div>
     `;
 
@@ -9411,7 +10286,7 @@ Observer Updates: ${data.observerUpdates.toLocaleString()}
       }
       const strat = t.getAttribute('data-kp-shadow-dbg-strategy');
       if (strat === 'auto') this.setShadowDebugPaintStrategy(null);
-      else if (strat === 'A' || strat === 'B' || strat === 'C') {
+      else if (strat === 'A' || strat === 'B' || strat === 'C' || strat === 'BC') {
         this.setShadowDebugPaintStrategy(strat);
       }
     }, true);
@@ -9522,6 +10397,10 @@ Observer Updates: ${data.observerUpdates.toLocaleString()}
         ? 'same as focus'
         : (paintEl ? 'resolved (may pierce shadow)' : '—');
 
+    const overrideLabel =
+      override === 'BC' ? 'Auto B→C'
+        : (override ? `forced ${override}` : null);
+
     body.textContent =
 `Leaf (under pointer)
   ${leafDesc.line}
@@ -9539,7 +10418,7 @@ Paint target (outline box)
 Strategy
   focus in shadow: ${inShadow ? 'YES' : 'no'}
   auto would use:  ${autoStrategy}
-  applied now:     ${applied}${override ? `  (forced ${override})` : '  (auto)'}`;
+  applied now:     ${applied}${overrideLabel ? `  (${overrideLabel})` : '  (auto)'}`;
 
     this._refreshShadowDebugHudButtons();
   }

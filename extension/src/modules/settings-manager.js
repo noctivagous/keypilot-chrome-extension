@@ -119,7 +119,8 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  * @typedef {{
  *   keyboardReference: PanelPositionSettings,
  *   controlStrip: PanelPositionSettings,
- *   keyboardLayoutConfig: PanelPositionSettings
+ *   keyboardLayoutConfig: PanelPositionSettings,
+ *   topSites: PanelPositionSettings
  * }} PanelPositionsSettings
  */
 
@@ -134,6 +135,7 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  *   keyboardReferenceKeyFeedback: boolean,
  *   keyboardReferenceShowNumberRow: boolean,
  *   keyboardReferenceCollapsed: boolean,
+ *   topSitesPersistent: boolean,
  *   actionsLibraryTableExpanded: string[],
  *   controlStrip: ControlStripSettings,
  *   panelPositions: PanelPositionsSettings,
@@ -165,6 +167,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
   keyboardReferenceShowNumberRow: false,
   // When true, the floating keyboard reference panel is titlebar-only (body hidden).
   keyboardReferenceCollapsed: false,
+  // When true, Top Sites remounts on each page while left open (Keyboard Reference-style).
+  topSitesPersistent: false,
   // Actions Library hierarchical table: expanded group keys (top-level open by default;
   // nested categories / parents start collapsed until the user opens them).
   actionsLibraryTableExpanded: Object.freeze(['functions', 'macros', 'macroKeys']),
@@ -178,7 +182,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
   panelPositions: Object.freeze({
     keyboardReference: Object.freeze({ anchor: 'bottom-left' }),
     controlStrip: Object.freeze({ anchor: 'top-left' }),
-    keyboardLayoutConfig: Object.freeze({ anchor: 'middle-right' })
+    keyboardLayoutConfig: Object.freeze({ anchor: 'middle-right' }),
+    // Empty: first open stays viewport-centered until the user moves/resizes.
+    topSites: Object.freeze({})
   }),
   // Per-key action settings (Keyboard Reference mode switches / config params).
   actionSettings: Object.freeze({
@@ -531,6 +537,10 @@ function normalizePanelPositions(raw) {
     keyboardLayoutConfig: normalizePanelPositionEntry(
       stored.keyboardLayoutConfig,
       DEFAULT_SETTINGS.panelPositions.keyboardLayoutConfig
+    ),
+    topSites: normalizePanelPositionEntry(
+      stored.topSites,
+      DEFAULT_SETTINGS.panelPositions.topSites
     )
   };
 }
@@ -647,6 +657,10 @@ export async function getSettings() {
         stored?.keyboardReferenceCollapsed,
         DEFAULT_SETTINGS.keyboardReferenceCollapsed
       ),
+      topSitesPersistent: normalizeBoolean(
+        stored?.topSitesPersistent,
+        DEFAULT_SETTINGS.topSitesPersistent
+      ),
       actionsLibraryTableExpanded: normalizeActionsLibraryTableExpanded(
         stored?.actionsLibraryTableExpanded
       ),
@@ -664,7 +678,8 @@ export async function getSettings() {
       panelPositions: {
         keyboardReference: { ...DEFAULT_SETTINGS.panelPositions.keyboardReference },
         controlStrip: { ...DEFAULT_SETTINGS.panelPositions.controlStrip },
-        keyboardLayoutConfig: { ...DEFAULT_SETTINGS.panelPositions.keyboardLayoutConfig }
+        keyboardLayoutConfig: { ...DEFAULT_SETTINGS.panelPositions.keyboardLayoutConfig },
+        topSites: { ...DEFAULT_SETTINGS.panelPositions.topSites }
       },
       actionSettings: normalizeActionSettings(null),
       clickMode: { ...DEFAULT_SETTINGS.clickMode, cursor: { ...DEFAULT_SETTINGS.clickMode.cursor } },
@@ -711,6 +726,12 @@ export async function setSettings(partial) {
         ...(current.panelPositions.keyboardLayoutConfig || DEFAULT_SETTINGS.panelPositions.keyboardLayoutConfig),
         ...(pPositions?.keyboardLayoutConfig && typeof pPositions.keyboardLayoutConfig === 'object'
           ? pPositions.keyboardLayoutConfig
+          : {})
+      },
+      topSites: {
+        ...(current.panelPositions.topSites || DEFAULT_SETTINGS.panelPositions.topSites),
+        ...(pPositions?.topSites && typeof pPositions.topSites === 'object'
+          ? pPositions.topSites
           : {})
       }
     },
@@ -783,6 +804,10 @@ export async function setSettings(partial) {
   next.keyboardReferenceCollapsed = normalizeBoolean(
     next.keyboardReferenceCollapsed,
     DEFAULT_SETTINGS.keyboardReferenceCollapsed
+  );
+  next.topSitesPersistent = normalizeBoolean(
+    next.topSitesPersistent,
+    DEFAULT_SETTINGS.topSitesPersistent
   );
   next.actionsLibraryTableExpanded = normalizeActionsLibraryTableExpanded(
     next.actionsLibraryTableExpanded

@@ -591,6 +591,14 @@ export class ElementDetector {
     let controlRect = null;
     try { controlRect = control.getBoundingClientRect(); } catch { controlRect = null; }
 
+    // Native range that already paints its own track (Docs/Settings scale sliders).
+    // Do not promote a wrapping <label> or titlebar chrome as seek geometry.
+    try {
+      if (this.isNativeType(control, 'range') && controlRect && controlRect.width >= 40) {
+        return /** @type {HTMLElement} */ (control);
+      }
+    } catch { /* ignore */ }
+
     // Prefer an explicit presentation sibling/host around a tiny thumb input.
     const roots = [];
     try {

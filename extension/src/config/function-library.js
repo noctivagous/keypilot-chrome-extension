@@ -202,7 +202,9 @@ export const FIXED_KEY_FUNCTION_IDS = Object.freeze([
   'COPY_HOVERED_VIDEO',
   'POI_ADDRESS',
   'PAGE_TOP',
-  'PAGE_BOTTOM'
+  'PAGE_BOTTOM',
+  'PREVIEW_LINK_POPOVER',
+  'OPEN_POPOVER'
 ]);
 
 /**
@@ -218,6 +220,16 @@ export const FIXED_KEY_FUNCTION_IDS = Object.freeze([
  * parameter literally named `mode` to keep rendering it as the button-group switch it always was.
  * `PAGE_TOP` / `PAGE_BOTTOM` use the same `mode` switch for Fade vs Scroll.
  */
+/** Shared by Link Preview / Open Popover: OS window vs in-page iframe overlay. */
+const LINK_POPOVER_WINDOW_PARAMETERS = Object.freeze([
+  Object.freeze({
+    id: 'alwaysNewWindow',
+    label: 'Always make new window',
+    type: 'boolean',
+    defaultValue: true
+  })
+]);
+
 /** Shared by Scroll To Top / Scroll To Bottom (inlined as the key-info `mode` switch). */
 const EDGE_SCROLL_PARAMETERS = Object.freeze([
   Object.freeze({
@@ -234,6 +246,8 @@ const EDGE_SCROLL_PARAMETERS = Object.freeze([
 
 /** @type {Readonly<Record<string, FunctionDef['parameters']>>} */
 const BUILTIN_FUNCTION_PARAMETER_OVERRIDES = Object.freeze({
+  PREVIEW_LINK_POPOVER: LINK_POPOVER_WINDOW_PARAMETERS,
+  OPEN_POPOVER: LINK_POPOVER_WINDOW_PARAMETERS,
   PAGE_TOP: EDGE_SCROLL_PARAMETERS,
   PAGE_BOTTOM: EDGE_SCROLL_PARAMETERS,
   HIGHLIGHT: Object.freeze([
@@ -494,7 +508,7 @@ function buildBuiltinActionFunctionDefs() {
       keyboardClass: def.keyboardClass ?? null,
       // No `parameters` by default: most built-ins remain simple/non-instantiable Functions.
       // A few (SEND_TEXT_TO_AI, RECTANGLE_HIGHLIGHT, HIGHLIGHT, COPY_HOVERED_IMAGE,
-      // COPY_HOVERED_URL, COPY_HOVERED_VIDEO)
+      // COPY_HOVERED_URL, COPY_HOVERED_VIDEO, PREVIEW_LINK_POPOVER, OPEN_POPOVER)
       // get their schema below from
       // BUILTIN_FUNCTION_PARAMETER_OVERRIDES — see KEY_ACTION_ARCHITECTURE.md "Migration mapping".
       ...(TEXT_ACTIVE_BUILTIN_FUNCTION_IDS.has(id) ? { worksWhileTyping: true } : {}),
