@@ -247,6 +247,17 @@ export const SCROLL = Object.freeze({
   PAGE_PX: 800,
   /** C / V: smaller step (default = prior 400px × 1.25) */
   HALF_PAGE_PX: 500,
+  /**
+   * Hold C / V: continuous rAF scroll speed (px/s). Instant per-frame deltas —
+   * not CSS smooth — so overlapping animations cannot jitter.
+   */
+  HOLD_PX_PER_SEC: 1400,
+  /**
+   * Delay before continuous rAF starts after the first keydown. Keeps a quick
+   * tap as a single configured step; holding past this (or first OS repeat)
+   * engages continuous motion.
+   */
+  HOLD_RAF_START_MS: 120,
   /** Default CSS scroll-behavior for keyboard scrolling */
   BEHAVIOR: 'smooth',
   /** Fade-in / fade-out duration for Scroll To Top / Bottom "Fade" jump style */
@@ -312,7 +323,7 @@ export const ELEMENT_SELECT_TAGS = Object.freeze([
   'td', 'th', 'dt', 'dd', 'caption', 'summary', 'label'
 ]);
 
-// Cursor behavior mode (Settings label for CUSTOM_CURSORS is "Crosshair"):
+// Cursor behavior mode (Settings labels: "No Custom Cursors" | "KeyPilot Cursors"):
 // - NO_CUSTOM_CURSORS: KeyPilot does not override the page cursor at all.
 // - CUSTOM_CURSORS: KeyPilot applies its crosshair (or other) cursor overrides.
 export const CURSOR_MODE = Object.freeze({

@@ -115,6 +115,7 @@ import {
   elementFromPointDeep,
   isDocumentScrollRoot
 } from './utils/scroll-at-point.js';
+import { ScrollHoldController } from './utils/scroll-hold.js';
 import {
   findMapSurfaceAtPoint,
   createMapPanSession,
@@ -251,6 +252,9 @@ export class KeyPilot extends EventManager {
     this._scrollLineTarget = null;
     this._scrollLineDragSession = null;
     this._scrollLineOrigin = { x: 0, y: 0 };
+    this._scrollHold = new ScrollHoldController({
+      apply: (ctx) => this._applyScrollHoldFrame(ctx)
+    });
     this._pointerBindingClaimed = false;
 
     // Link-hover → keyboard key glow (debounced; video thumbs thrash focusEl).
@@ -2956,22 +2960,22 @@ export class KeyPilot extends EventManager {
       const popoverScrollKeys = collectPopoverScrollKeysFromKeyPilot(this);
       if (popoverScrollKeyMatches(popoverScrollKeys, 'pageUp', e.key)) {
         e.preventDefault();
-        this.overlayManager?.scrollPopoverBy?.(-this._getPageScrollPx(), this._getScrollBehavior());
+        this._scrollPopoverByHeld(e, -1, this._getPageScrollPx());
         return;
       }
       if (popoverScrollKeyMatches(popoverScrollKeys, 'pageDown', e.key)) {
         e.preventDefault();
-        this.overlayManager?.scrollPopoverBy?.(this._getPageScrollPx(), this._getScrollBehavior());
+        this._scrollPopoverByHeld(e, 1, this._getPageScrollPx());
         return;
       }
       if (popoverScrollKeyMatches(popoverScrollKeys, 'pageUpInstant', e.key)) {
         e.preventDefault();
-        this.overlayManager?.scrollPopoverBy?.(-this._getHalfPageScrollPx(), this._getScrollBehavior());
+        this._scrollPopoverByHeld(e, -1, this._getHalfPageScrollPx());
         return;
       }
       if (popoverScrollKeyMatches(popoverScrollKeys, 'pageDownInstant', e.key)) {
         e.preventDefault();
-        this.overlayManager?.scrollPopoverBy?.(this._getHalfPageScrollPx(), this._getScrollBehavior());
+        this._scrollPopoverByHeld(e, 1, this._getHalfPageScrollPx());
         return;
       }
       if (popoverScrollKeyMatches(popoverScrollKeys, 'pageTop', e.key)) {
@@ -3222,6 +3226,7 @@ export class KeyPilot extends EventManager {
     // KeyPilot may have stopped the matching keydown before the floating
     // keyboard's listener could observe it, so mirror releases as well.
     this._reflectKeyOnKeyboardHelp(e, 'up');
+    try { this._scrollHold?.end?.(e?.key); } catch { /* ignore */ }
   }
 
   /**
@@ -3859,34 +3864,129 @@ export class KeyPilot extends EventManager {
     return scrollBehaviorFromSpeed(this._settings?.scroll?.speed ?? DEFAULT_SETTINGS.scroll.speed);
   }
 
+  /**
+   * Parent-document popover iframe scroll (C/V while the popover is open).
+   * @param {KeyboardEvent} e
+   * @param {number} sign
+   * @param {number} stepPx
+   */
+  _scrollPopoverByHeld(e, sign, stepPx) {
+    const s = sign < 0 ? -1 : 1;
+    if (e?.repeat) {
+      this._scrollHold.noteRepeat(e.key, s);
+      return;
+    }
+    const behavior = this._getScrollBehavior();
+    this.overlayManager?.scrollPopoverBy?.(s * stepPx, behavior);
+    this._scrollHold.begin({
+      key: e?.key,
+      sign: s,
+      target: { kind: 'popover' }
+    });
+  }
+
   handlePageUp(e) {
     if (!this._allowActionKey('handlePageUp', e)) return;
-    window.scrollBy({
-      top: -this._getPageScrollPx(),
-      behavior: this._getScrollBehavior()
-    });
+    this._scrollWindowByHeld(e, -1, this._getPageScrollPx());
     this.emitAction('scrollUp');
   }
 
   handlePageDown(e) {
     if (!this._allowActionKey('handlePageDown', e)) return;
-    window.scrollBy({
-      top: this._getPageScrollPx(),
-      behavior: this._getScrollBehavior()
-    });
+    this._scrollWindowByHeld(e, 1, this._getPageScrollPx());
     this.emitAction('scrollDown');
   }
 
   handleInstantPageUp(e) {
     if (!this._allowActionKey('handleInstantPageUp', e)) return;
-    this._scrollHalfPageAtCursor(-1);
+    this._scrollHalfPageAtCursor(-1, e);
     this.emitAction('scrollUp');
   }
 
   handleInstantPageDown(e) {
     if (!this._allowActionKey('handleInstantPageDown', e)) return;
-    this._scrollHalfPageAtCursor(1);
+    this._scrollHalfPageAtCursor(1, e);
     this.emitAction('scrollDown');
+  }
+
+  /**
+   * @returns {Element}
+   */
+  _getWindowScrollEl() {
+    try {
+      return document.scrollingElement || document.documentElement || document.body;
+    } catch {
+      return document.documentElement;
+    }
+  }
+
+  /**
+   * Hold speed for continuous rAF (px/s). Scales lightly with configured step.
+   * @param {number} [stepPx]
+   * @returns {number}
+   */
+  _getScrollHoldSpeed(stepPx) {
+    const base = Number(SCROLL.HOLD_PX_PER_SEC);
+    const fallback = Number.isFinite(base) && base > 0 ? base : 1400;
+    const step = Number(stepPx);
+    if (!Number.isFinite(step) || step <= 0) return fallback;
+    // ~2.8 configured steps per second while holding.
+    return Math.max(600, Math.min(2400, step * 2.8));
+  }
+
+  /**
+   * Per-frame apply for continuous hold (always instant — never CSS smooth).
+   * @param {{ deltaPx: number, sign: number, target?: any }} ctx
+   */
+  _applyScrollHoldFrame(ctx) {
+    const target = ctx?.target;
+    const delta = Number(ctx?.deltaPx) || 0;
+    if (!delta || !target) return;
+
+    if (target.kind === 'popover') {
+      this.overlayManager?.scrollPopoverBy?.(delta, 'auto');
+      return;
+    }
+
+    if (target.kind === 'iframe') {
+      const { x, y } = this._getScrollCursorPoint();
+      this._tryScrollIframeUnderCursor(x, y, ctx.sign, 'auto', {
+        mode: 'delta',
+        deltaPx: Math.abs(delta)
+      });
+      return;
+    }
+
+    if (target.kind === 'window' || target.kind === 'element') {
+      const el = target.el || this._getWindowScrollEl();
+      const axis = target.axis === 'x' ? 'x' : 'y';
+      const dx = axis === 'x' ? delta : 0;
+      const dy = axis === 'y' ? delta : 0;
+      scrollElementBy(el, dx, dy, 'auto');
+    }
+  }
+
+  /**
+   * Legacy window PAGE_UP / PAGE_DOWN: tap step + continuous rAF while held.
+   * @param {KeyboardEvent} e
+   * @param {number} sign
+   * @param {number} stepPx
+   */
+  _scrollWindowByHeld(e, sign, stepPx) {
+    const s = sign < 0 ? -1 : 1;
+    if (e?.repeat) {
+      this._scrollHold.noteRepeat(e.key, s);
+      return;
+    }
+    const behavior = this._getScrollBehavior();
+    const el = this._getWindowScrollEl();
+    window.scrollBy({ top: s * stepPx, behavior });
+    this._scrollHold.begin({
+      key: e?.key,
+      sign: s,
+      target: { kind: 'window', el, axis: 'y' },
+      speedPxPerSec: this._getScrollHoldSpeed(stepPx)
+    });
   }
 
   /**
@@ -3910,20 +4010,46 @@ export class KeyPilot extends EventManager {
    * page when nothing nested can move. Forwards into iframes via the light
    * frame-click-agent (FRAME_SCROLL).
    *
+   * Tap: one configured step (smooth/instant from Settings).
+   * Hold: continuous rAF instant deltas until keyup (ignores OS key-repeat).
+   *
    * @param {number} sign  -1 = C (up/left), +1 = V (down/right)
+   * @param {KeyboardEvent|null|undefined} [e]
    */
-  _scrollHalfPageAtCursor(sign) {
-    const delta = this._getHalfPageScrollPx();
+  _scrollHalfPageAtCursor(sign, e = null) {
+    const stepPx = this._getHalfPageScrollPx();
     const behavior = this._getScrollBehavior();
     const s = sign < 0 ? -1 : 1;
-    const { x, y } = this._getScrollCursorPoint();
 
-    // Iframe under cursor: top hit-testing only sees the shell.
-    if (this._tryScrollIframeUnderCursor(x, y, s, behavior, { mode: 'delta', deltaPx: delta })) {
+    if (e?.repeat) {
+      this._scrollHold.noteRepeat(e.key, s);
       return;
     }
 
-    scrollAtPoint(x, y, s, delta, behavior);
+    const { x, y } = this._getScrollCursorPoint();
+    const speed = this._getScrollHoldSpeed(stepPx);
+
+    // Iframe under cursor: top hit-testing only sees the shell.
+    if (this._tryScrollIframeUnderCursor(x, y, s, behavior, { mode: 'delta', deltaPx: stepPx })) {
+      this._scrollHold.begin({
+        key: e?.key,
+        sign: s,
+        target: { kind: 'iframe' },
+        speedPxPerSec: speed
+      });
+      return;
+    }
+
+    const found = findScrollTargetAtPoint(x, y, s);
+    const el = found?.el || this._getWindowScrollEl();
+    const axis = found?.axis || 'y';
+    scrollAtPoint(x, y, s, stepPx, behavior);
+    this._scrollHold.begin({
+      key: e?.key,
+      sign: s,
+      target: { kind: 'element', el, axis },
+      speedPxPerSec: speed
+    });
   }
 
   /**
@@ -9420,6 +9546,7 @@ export class KeyPilot extends EventManager {
       }
     } catch { /* ignore */ }
     try { this._scrollLineOverlay?.destroy?.(); } catch { /* ignore */ }
+    try { this._scrollHold?.reset?.(); } catch { /* ignore */ }
     this.stop();
     // Clean up intersection observer optimizations
     if (this.intersectionManager) {

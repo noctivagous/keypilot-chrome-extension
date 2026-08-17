@@ -192,6 +192,91 @@ export function scrollElementBy(el, deltaX, deltaY, behavior = 'smooth', doc = d
 }
 
 /**
+ * Current offset on an axis (element, or window for document roots).
+ * @param {Element|null|undefined} el
+ * @param {'y'|'x'} axis
+ * @param {Document} [doc]
+ * @param {Window} [win]
+ * @returns {number}
+ */
+export function readScrollAxisPos(el, axis, doc = document, win = window) {
+  try {
+    if (el && axis === 'x') return Number(el.scrollLeft) || 0;
+    if (el && axis === 'y') return Number(el.scrollTop) || 0;
+  } catch { /* fall through */ }
+  try {
+    if (axis === 'x') return Number(win.scrollX || win.pageXOffset) || 0;
+    return Number(win.scrollY || win.pageYOffset) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Scroll an element (or window for document roots) to an absolute axis position.
+ * Prefer this over stacking `scrollBy` while a key is held so the browser can
+ * retarget one smooth animation instead of fighting overlapping ones.
+ * @param {Element} el
+ * @param {'y'|'x'} axis
+ * @param {number} pos
+ * @param {ScrollBehavior} [behavior]
+ * @param {Document} [doc]
+ * @param {Window} [win]
+ * @returns {boolean}
+ */
+export function scrollElementToPos(el, axis, pos, behavior = 'smooth', doc = document, win = window) {
+  if (!el || (axis !== 'y' && axis !== 'x')) return false;
+  const raw = Number(pos);
+  if (!Number.isFinite(raw)) return false;
+
+  let left = 0;
+  let top = 0;
+  try {
+    if (axis === 'y') {
+      const max = Math.max(0, (el.scrollHeight || 0) - (el.clientHeight || 0));
+      left = el.scrollLeft || 0;
+      top = Math.min(max, Math.max(0, raw));
+    } else {
+      const max = Math.max(0, (el.scrollWidth || 0) - (el.clientWidth || 0));
+      top = el.scrollTop || 0;
+      left = Math.min(max, Math.max(0, raw));
+    }
+  } catch {
+    return false;
+  }
+
+  const opts = { left, top, behavior };
+
+  try {
+    if (typeof el.scrollTo === 'function') {
+      el.scrollTo(opts);
+      return true;
+    }
+  } catch { /* fall through */ }
+
+  try {
+    if (axis === 'y') el.scrollTop = top;
+    else el.scrollLeft = left;
+    return true;
+  } catch { /* ignore */ }
+
+  if (isDocumentScrollRoot(el, doc) && win && typeof win.scrollTo === 'function') {
+    try {
+      win.scrollTo(opts);
+      return true;
+    } catch {
+      try {
+        if (axis === 'y') win.scrollTo(win.pageXOffset || 0, top);
+        else win.scrollTo(left, win.pageYOffset || 0);
+        return true;
+      } catch { /* ignore */ }
+    }
+  }
+
+  return false;
+}
+
+/**
  * Resolve which axis to use for a capacity snapshot.
  * Prefer vertical when it can move in `sign`; else horizontal when it can.
  * @param {ScrollCapacity} cap

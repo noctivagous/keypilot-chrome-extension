@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-17T04:59:34.941Z
+ * Generated on 2026-08-17T06:30:01.708Z
  */
 
 (() => {
@@ -1287,6 +1287,17 @@
     PAGE_PX: 800,
     /** C / V: smaller step (default = prior 400px × 1.25) */
     HALF_PAGE_PX: 500,
+    /**
+     * Hold C / V: continuous rAF scroll speed (px/s). Instant per-frame deltas —
+     * not CSS smooth — so overlapping animations cannot jitter.
+     */
+    HOLD_PX_PER_SEC: 1400,
+    /**
+     * Delay before continuous rAF starts after the first keydown. Keeps a quick
+     * tap as a single configured step; holding past this (or first OS repeat)
+     * engages continuous motion.
+     */
+    HOLD_RAF_START_MS: 120,
     /** Default CSS scroll-behavior for keyboard scrolling */
     BEHAVIOR: "smooth",
     /** Fade-in / fade-out duration for Scroll To Top / Bottom "Fade" jump style */
@@ -2492,6 +2503,157 @@
     return { scrolled: ok, axis, el };
   }
 
+  // src/utils/scroll-hold.js
+  function holdCfg() {
+    const speed = Number(SCROLL.HOLD_PX_PER_SEC);
+    const delay = Number(SCROLL.HOLD_RAF_START_MS);
+    return {
+      speedPxPerSec: Number.isFinite(speed) && speed > 0 ? speed : 1400,
+      startDelayMs: Number.isFinite(delay) && delay >= 0 ? delay : 120
+    };
+  }
+  var ScrollHoldController = class {
+    /**
+     * @param {{ apply: (ctx: ScrollHoldApplyContext) => void, speedPxPerSec?: number, startDelayMs?: number }} opts
+     */
+    constructor(opts) {
+      this._apply = typeof opts?.apply === "function" ? opts.apply : () => {
+      };
+      this._speedOverride = Number(opts?.speedPxPerSec);
+      this._delayOverride = Number(opts?.startDelayMs);
+      this.key = null;
+      this.sign = 0;
+      this.target = null;
+      this._raf = 0;
+      this._lastTs = 0;
+      this._armTimer = 0;
+    }
+    /** @returns {boolean} */
+    get active() {
+      return !!this.key;
+    }
+    /**
+     * @param {string|null|undefined} key
+     * @param {number} [sign]
+     * @returns {boolean}
+     */
+    isHolding(key, sign) {
+      if (!this.key) return false;
+      if (key != null && this.key !== key) return false;
+      if (sign != null && this.sign !== (sign < 0 ? -1 : 1)) return false;
+      return true;
+    }
+    /**
+     * Start (or redirect) a hold. Does not apply the tap step — caller does that.
+     * Continuous rAF begins after a short delay so a quick tap stays a single step.
+     *
+     * @param {{ key?: string|null, sign: number, target?: any, speedPxPerSec?: number }} args
+     */
+    begin(args) {
+      const sign = args.sign < 0 ? -1 : 1;
+      const key = args.key == null ? null : String(args.key);
+      const same = this.key != null && this.key === key && this.sign === sign;
+      this.key = key;
+      this.sign = sign;
+      this.target = args.target ?? this.target;
+      if (Number.isFinite(Number(args.speedPxPerSec)) && Number(args.speedPxPerSec) > 0) {
+        this._speedOverride = Number(args.speedPxPerSec);
+      }
+      if (same && (this._raf || this._armTimer)) return;
+      this._clearArmTimer();
+      if (this._raf) return;
+      const cfg = holdCfg();
+      const delay = Number.isFinite(this._delayOverride) && this._delayOverride >= 0 ? this._delayOverride : cfg.startDelayMs;
+      if (delay <= 0) {
+        this._startLoop();
+        return;
+      }
+      this._armTimer = setTimeout(() => {
+        this._armTimer = 0;
+        if (!this.key) return;
+        this._startLoop();
+      }, delay);
+    }
+    /**
+     * OS key-repeat: keep the hold alive; do not scroll here (rAF owns motion).
+     * @param {string|null|undefined} key
+     * @param {number} [sign]
+     * @returns {boolean} true if this repeat belongs to the active hold
+     */
+    noteRepeat(key, sign) {
+      if (!this.isHolding(key, sign)) return false;
+      if (!this._raf && !this._armTimer) {
+        this._startLoop();
+      } else if (!this._raf && this._armTimer) {
+        this._clearArmTimer();
+        this._startLoop();
+      }
+      return true;
+    }
+    /**
+     * @param {string|null|undefined} [key]  if set, only stop when it matches
+     */
+    end(key) {
+      if (key != null && this.key != null && this.key !== key) return;
+      this.reset();
+    }
+    reset() {
+      this._clearArmTimer();
+      if (this._raf) {
+        try {
+          cancelAnimationFrame(this._raf);
+        } catch {
+        }
+        this._raf = 0;
+      }
+      this._lastTs = 0;
+      this.key = null;
+      this.sign = 0;
+      this.target = null;
+    }
+    _clearArmTimer() {
+      if (this._armTimer) {
+        try {
+          clearTimeout(this._armTimer);
+        } catch {
+        }
+        this._armTimer = 0;
+      }
+    }
+    _speed() {
+      if (Number.isFinite(this._speedOverride) && this._speedOverride > 0) {
+        return this._speedOverride;
+      }
+      return holdCfg().speedPxPerSec;
+    }
+    _startLoop() {
+      if (this._raf) return;
+      this._lastTs = 0;
+      const tick = (ts) => {
+        this._raf = 0;
+        if (!this.key) return;
+        const last = this._lastTs;
+        this._lastTs = ts;
+        this._raf = requestAnimationFrame(tick);
+        if (!last) return;
+        const dt = Math.min(0.05, Math.max(0, (ts - last) / 1e3));
+        if (!dt) return;
+        const deltaPx = this.sign * this._speed() * dt;
+        if (!deltaPx) return;
+        try {
+          this._apply({
+            deltaPx,
+            sign: this.sign,
+            dtSec: dt,
+            target: this.target
+          });
+        } catch {
+        }
+      };
+      this._raf = requestAnimationFrame(tick);
+    }
+  };
+
   // src/utils/resolve-hovered-link.js
   function composedParent2(node) {
     if (!node || node.nodeType !== 1) return null;
@@ -3080,6 +3242,15 @@
       let keybindings = buildEffectiveKeybindings(DEFAULT_KEYBOARD_LAYOUT_ID);
       let halfPagePx = SCROLL.HALF_PAGE_PX;
       let scrollBehavior = SCROLL.BEHAVIOR === "smooth" ? "smooth" : "auto";
+      let scrollHoldLock = null;
+      const scrollHold = new ScrollHoldController({
+        apply: ({ deltaPx, target }) => {
+          const t = target || scrollHoldLock;
+          if (!t?.el) return;
+          const axis = t.axis === "x" ? "x" : "y";
+          scrollElementBy(t.el, axis === "x" ? deltaPx : 0, axis === "y" ? deltaPx : 0, "auto");
+        }
+      });
       let hoverEl = null;
       let hoverTarget = null;
       let hoverRaf = 0;
@@ -3779,7 +3950,27 @@
           e.stopPropagation();
           e.stopImmediatePropagation();
           if (scrollSign !== null) {
-            scrollAt(x, y, scrollSign, halfPagePx, scrollBehavior, scrollMode);
+            if (scrollMode === "edge") {
+              scrollAt(x, y, scrollSign, halfPagePx, scrollBehavior, scrollMode);
+              return;
+            }
+            const s = scrollSign < 0 ? -1 : 1;
+            if (e.repeat) {
+              scrollHold.noteRepeat(key, s);
+              return;
+            }
+            const found = findScrollTargetAtPoint(x, y, s);
+            const el = found?.el || document.scrollingElement || document.documentElement || document.body;
+            const axis = found?.axis || "y";
+            scrollAt(x, y, s, halfPagePx, scrollBehavior, "delta");
+            scrollHoldLock = el ? { el, axis } : null;
+            const speed = Math.max(600, Math.min(2400, halfPagePx * 2.8));
+            scrollHold.begin({
+              key,
+              sign: s,
+              target: scrollHoldLock,
+              speedPxPerSec: speed
+            });
             return;
           }
           activateAt(x, y, {
@@ -3864,6 +4055,13 @@
         } catch {
         }
       };
+      const onKeyUp = (e) => {
+        try {
+          scrollHold.end(e?.key);
+          if (!scrollHold.active) scrollHoldLock = null;
+        } catch {
+        }
+      };
       window.addEventListener("message", onMessage, true);
       document.addEventListener("mousemove", onPointer, { capture: true, passive: true });
       document.addEventListener("pointermove", onPointer, { capture: true, passive: true });
@@ -3872,6 +4070,7 @@
       document.addEventListener("scroll", onScroll, { capture: true, passive: true });
       window.addEventListener("scroll", onScroll, { capture: true, passive: true });
       document.addEventListener("keydown", onKeyDown, true);
+      document.addEventListener("keyup", onKeyUp, true);
       document.addEventListener("focusin", onFocusIn, true);
       document.addEventListener("focusout", onFocusOut, true);
       try {
@@ -3916,6 +4115,7 @@
             document.removeEventListener("scroll", onScroll, true);
             window.removeEventListener("scroll", onScroll, true);
             document.removeEventListener("keydown", onKeyDown, true);
+            document.removeEventListener("keyup", onKeyUp, true);
             document.removeEventListener("focusin", onFocusIn, true);
             document.removeEventListener("focusout", onFocusOut, true);
           } catch {
@@ -4025,6 +4225,15 @@
       let pointerSyncRaf = 0;
       let closeKeySet = /* @__PURE__ */ new Set(["Escape", "e", "E", "p", "P"]);
       let scrollKeys = DEFAULT_POPOVER_SCROLL_KEYS;
+      let scrollHoldLock = null;
+      const scrollHold = new ScrollHoldController({
+        apply: ({ deltaPx, target }) => {
+          const t = target || scrollHoldLock;
+          if (!t?.el) return;
+          const axis = t.axis === "x" ? "x" : "y";
+          scrollElementBy(t.el, axis === "x" ? deltaPx : 0, axis === "y" ? deltaPx : 0, "auto");
+        }
+      });
       const fullKeyPilotPresent = () => {
         try {
           return !!(window.keyPilot || window.__KeyPilotInstance || window.__KeyPilotToggleHandler);
@@ -4222,22 +4431,39 @@
           }
           return { mx, my };
         };
+        const applyHeldScroll = (sign, stepPx) => {
+          const s = sign < 0 ? -1 : 1;
+          if (e.repeat) {
+            scrollHold.noteRepeat(key, s);
+            return;
+          }
+          const { mx, my } = cursorPoint();
+          const found = findScrollTargetAtPoint(mx, my, s);
+          const el = found?.el || document.scrollingElement || document.documentElement || document.body;
+          const axis = found?.axis || "y";
+          scrollAtPoint(mx, my, s, stepPx, behavior);
+          scrollHoldLock = el ? { el, axis } : null;
+          const base = Number(SCROLL.HOLD_PX_PER_SEC);
+          const speed = Math.max(600, Math.min(2400, stepPx * 2.8));
+          scrollHold.begin({
+            key,
+            sign: s,
+            target: scrollHoldLock,
+            speedPxPerSec: Number.isFinite(speed) ? speed : base || 1400
+          });
+        };
         if (popoverScrollKeyMatches(scrollKeys, "pageUp", key)) {
           e.preventDefault();
-          const { mx, my } = cursorPoint();
-          scrollAtPoint(mx, my, -1, pagePx, behavior);
+          applyHeldScroll(-1, pagePx);
         } else if (popoverScrollKeyMatches(scrollKeys, "pageDown", key)) {
           e.preventDefault();
-          const { mx, my } = cursorPoint();
-          scrollAtPoint(mx, my, 1, pagePx, behavior);
+          applyHeldScroll(1, pagePx);
         } else if (popoverScrollKeyMatches(scrollKeys, "pageUpInstant", key)) {
           e.preventDefault();
-          const { mx, my } = cursorPoint();
-          scrollAtPoint(mx, my, -1, halfPx, behavior);
+          applyHeldScroll(-1, halfPx);
         } else if (popoverScrollKeyMatches(scrollKeys, "pageDownInstant", key)) {
           e.preventDefault();
-          const { mx, my } = cursorPoint();
-          scrollAtPoint(mx, my, 1, halfPx, behavior);
+          applyHeldScroll(1, halfPx);
         } else if (popoverScrollKeyMatches(scrollKeys, "pageTop", key)) {
           e.preventDefault();
           const { mx, my } = cursorPoint();
@@ -4252,6 +4478,13 @@
         updateMouse(e);
         schedulePointerSync();
       };
+      const onKeyUp = (e) => {
+        try {
+          scrollHold.end(e?.key);
+          if (!scrollHold.active) scrollHoldLock = null;
+        } catch {
+        }
+      };
       document.addEventListener("mousemove", onMouseMove, true);
       document.addEventListener("pointermove", onMouseMove, true);
       document.addEventListener("mouseenter", () => setInside(true), true);
@@ -4265,11 +4498,13 @@
       }
       window.addEventListener("message", onMessage, true);
       document.addEventListener("keydown", onKeyDown, true);
+      document.addEventListener("keyup", onKeyUp, true);
       return {
         dispose() {
           try {
             window.removeEventListener("message", onMessage, true);
             document.removeEventListener("keydown", onKeyDown, true);
+            document.removeEventListener("keyup", onKeyUp, true);
             document.removeEventListener("mousemove", onMouseMove, true);
             document.removeEventListener("pointermove", onMouseMove, true);
           } catch {

@@ -124,6 +124,8 @@ import {
 
 /** Shared drag MIME for layout items (functions/macros/key slots). */
 export const KP_LAYOUT_ITEM_MIME = 'application/x-kp-layout-item';
+/** Drag MIME for reordering steps inside the User Macros script canvas. */
+export const KP_MACRO_STEP_MIME = 'application/x-kp-macro-step';
 
 /**
  * Adapt a `UserAction` for one of the legacy keystroke-primitive Functions
@@ -154,7 +156,7 @@ const CONFIG_PANEL_WIDTH_PX = 960;
 const CONFIG_PANEL_MIN_HEIGHT_PX = 460;
 const CONFIG_INSPECTOR_WIDTH_PX = 280;
 const CONFIG_STYLE_ATTR = 'data-kp-layout-config-panel-style';
-const CONFIG_STYLE_VERSION = 'v18';
+const CONFIG_STYLE_VERSION = 'v19';
 const CONFIG_ICON_SPRITE_ATTR = 'data-kp-layout-config-icons';
 const CONFIG_PLACE_ARROW_STYLE_ATTR = 'data-kp-layout-place-arrow-style';
 
@@ -583,6 +585,8 @@ export class KeyboardLayoutConfigPanel {
     this._dragDispose = null;
     this._resizeDispose = null;
     this._positionHydrated = false;
+    /** Index of the macro step currently being drag-reordered, or -1. */
+    this._macroStepDragFrom = -1;
     /** @type {'all'|'macros'|'macroKeys'|'functions'} */
     this._libPrimaryTab = 'all';
     this._libFunctionCategory = '';
@@ -2658,10 +2662,59 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
   border-radius: ${NCT_DARK_UI_BTN_RADIUS};
   border: 1px solid #3a3a3a;
   background: #222;
+  position: relative;
 }
 .kp-layout-config-panel .kp-cfg-step.kp-cfg-step-selected {
   border-color: ${c.accent};
   background: ${NCT_DARK_UI_SELECTED_TINT};
+}
+.kp-layout-config-panel .kp-cfg-step.kp-cfg-step-dragging {
+  opacity: 0.45;
+}
+.kp-layout-config-panel .kp-cfg-step.kp-cfg-step-drag-over-before::before,
+.kp-layout-config-panel .kp-cfg-step.kp-cfg-step-drag-over-after::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  height: 2px;
+  border-radius: 1px;
+  background: ${c.accent};
+  pointer-events: none;
+  z-index: 1;
+}
+.kp-layout-config-panel .kp-cfg-step.kp-cfg-step-drag-over-before::before {
+  top: -1px;
+}
+.kp-layout-config-panel .kp-cfg-step.kp-cfg-step-drag-over-after::after {
+  bottom: -1px;
+}
+.kp-layout-config-panel .kp-cfg-step-grip {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 2px;
+  background: transparent;
+  color: #7a7a7a;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: -1px;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.kp-layout-config-panel .kp-cfg-step-grip:hover {
+  color: #b0b0b0;
+  background: rgba(255, 255, 255, 0.06);
+}
+.kp-layout-config-panel .kp-cfg-step-grip:active {
+  cursor: grabbing;
 }
 .kp-layout-config-panel .kp-cfg-step-idx {
   opacity: 0.5;
@@ -3031,6 +3084,13 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 .kp-layout-config-panel .kp-cfg-step.kp-cfg-step-selected {
   border-color: #355f82;
   background: rgba(155,190,220,0.55);
+}
+.kp-layout-config-panel .kp-cfg-step-grip {
+  color: ${ONBOARDING_METAL.fgDim};
+}
+.kp-layout-config-panel .kp-cfg-step-grip:hover {
+  color: ${ONBOARDING_METAL.fg};
+  background: rgba(0, 0, 0, 0.08);
 }
 
 .kp-layout-config-panel .kp-cfg-split {
@@ -5249,6 +5309,14 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       this._renderInspector();
     }, false);
 
+    const grip = document.createElement('span');
+    grip.className = 'kp-cfg-step-grip';
+    grip.textContent = '\u22EE\u22EE';
+    grip.title = 'Drag to reorder';
+    grip.setAttribute('aria-hidden', 'true');
+    grip.draggable = true;
+    row.appendChild(grip);
+
     const idx = document.createElement('span');
     idx.className = 'kp-cfg-step-idx';
     idx.textContent = String(index + 1);
@@ -5359,7 +5427,89 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     ops.appendChild(mkOp('\u00d7', 'Remove step', false, () => this._removeDraftStep(index)));
     row.appendChild(ops);
 
+    this._bindMacroStepDrag(row, grip, index);
     return row;
+  }
+
+  /**
+   * HTML5 drag-reorder for a macro script step row (grip is the drag source so inputs stay usable).
+   * @param {HTMLElement} row
+   * @param {HTMLElement} grip
+   * @param {number} index
+   */
+  _bindMacroStepDrag(row, grip, index) {
+    grip.addEventListener('dragstart', (e) => {
+      e.stopPropagation();
+      this._macroStepDragFrom = index;
+      row.classList.add('kp-cfg-step-dragging');
+      try {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData(KP_MACRO_STEP_MIME, String(index));
+        e.dataTransfer.setData('text/plain', String(index));
+      } catch { /* ignore */ }
+    }, true);
+
+    grip.addEventListener('dragend', () => {
+      this._macroStepDragFrom = -1;
+      this._clearMacroStepDragOver();
+      row.classList.remove('kp-cfg-step-dragging');
+    }, true);
+
+    row.addEventListener('dragover', (e) => {
+      if (!this._isMacroStepDrag(e)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      try { e.dataTransfer.dropEffect = 'move'; } catch { /* ignore */ }
+      const rect = row.getBoundingClientRect();
+      const before = e.clientY < rect.top + rect.height / 2;
+      this._clearMacroStepDragOver();
+      row.classList.add(before ? 'kp-cfg-step-drag-over-before' : 'kp-cfg-step-drag-over-after');
+    }, true);
+
+    row.addEventListener('dragleave', (e) => {
+      if (!row.contains(/** @type {Node} */ (e.relatedTarget))) {
+        row.classList.remove('kp-cfg-step-drag-over-before', 'kp-cfg-step-drag-over-after');
+      }
+    }, true);
+
+    row.addEventListener('drop', (e) => {
+      if (!this._isMacroStepDrag(e)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const from = this._macroStepDragFrom >= 0
+        ? this._macroStepDragFrom
+        : Number(e.dataTransfer?.getData(KP_MACRO_STEP_MIME) || e.dataTransfer?.getData('text/plain') || -1);
+      this._clearMacroStepDragOver();
+      row.classList.remove('kp-cfg-step-dragging');
+      this._macroStepDragFrom = -1;
+      if (!Number.isFinite(from) || from < 0) return;
+      const rect = row.getBoundingClientRect();
+      const before = e.clientY < rect.top + rect.height / 2;
+      let to = before ? index : index + 1;
+      if (from < to) to -= 1;
+      if (to === from) return;
+      this._moveDraftStep(from, to);
+    }, true);
+  }
+
+  /** @param {DragEvent} e */
+  _isMacroStepDrag(e) {
+    if (this._macroStepDragFrom >= 0) return true;
+    try {
+      const types = e.dataTransfer?.types;
+      if (!types) return false;
+      return Array.from(types).includes(KP_MACRO_STEP_MIME);
+    } catch {
+      return false;
+    }
+  }
+
+  _clearMacroStepDragOver() {
+    const host = this._scriptStepsHost;
+    if (!host) return;
+    host.querySelectorAll('.kp-cfg-step-drag-over-before, .kp-cfg-step-drag-over-after').forEach((el) => {
+      el.classList.remove('kp-cfg-step-drag-over-before', 'kp-cfg-step-drag-over-after');
+    });
   }
 
   /**
@@ -5433,6 +5583,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const steps = this._macroDraft?.steps;
     if (!Array.isArray(steps) || !steps[from]) return;
     const next = Math.max(0, Math.min(to, steps.length - 1));
+    if (next === from) return;
     const [moved] = steps.splice(from, 1);
     steps.splice(next, 0, moved);
     this._macroDraft.dirty = true;

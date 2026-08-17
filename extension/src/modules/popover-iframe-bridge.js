@@ -16,7 +16,8 @@
 import { SCROLL } from '../config/constants.js';
 import { MSG } from '../messaging/types.js';
 import { isTypingContext, hasModifierKeys } from '../utils/dom-context.js';
-import { scrollAtPoint, scrollToEdgeAtPoint } from '../utils/scroll-at-point.js';
+import { scrollAtPoint, scrollToEdgeAtPoint, findScrollTargetAtPoint, scrollElementBy } from '../utils/scroll-at-point.js';
+import { ScrollHoldController } from '../utils/scroll-hold.js';
 import { deepElementFromPoint as pierceElementFromPoint } from '../utils/element-from-point.js';
 import {
   DEFAULT_POPOVER_SCROLL_KEYS,
@@ -63,6 +64,16 @@ export function installPopoverIframeBridge(options = {}) {
     // Scroll keys from parent INIT (layout / custom slots). Defaults match
     // right-handed built-in until the first INIT arrives.
     let scrollKeys = DEFAULT_POPOVER_SCROLL_KEYS;
+    /** @type {{ el: Element, axis: 'x'|'y' }|null} */
+    let scrollHoldLock = null;
+    const scrollHold = new ScrollHoldController({
+      apply: ({ deltaPx, target }) => {
+        const t = target || scrollHoldLock;
+        if (!t?.el) return;
+        const axis = t.axis === 'x' ? 'x' : 'y';
+        scrollElementBy(t.el, axis === 'x' ? deltaPx : 0, axis === 'y' ? deltaPx : 0, 'auto');
+      }
+    });
 
     const fullKeyPilotPresent = () => {
       try {
@@ -327,22 +338,40 @@ export function installPopoverIframeBridge(options = {}) {
         return { mx, my };
       };
 
+      const applyHeldScroll = (sign, stepPx) => {
+        const s = sign < 0 ? -1 : 1;
+        if (e.repeat) {
+          scrollHold.noteRepeat(key, s);
+          return;
+        }
+        const { mx, my } = cursorPoint();
+        const found = findScrollTargetAtPoint(mx, my, s);
+        const el = found?.el || document.scrollingElement || document.documentElement || document.body;
+        const axis = found?.axis || 'y';
+        scrollAtPoint(mx, my, s, stepPx, behavior);
+        scrollHoldLock = el ? { el, axis } : null;
+        const base = Number(SCROLL.HOLD_PX_PER_SEC);
+        const speed = Math.max(600, Math.min(2400, stepPx * 2.8));
+        scrollHold.begin({
+          key,
+          sign: s,
+          target: scrollHoldLock,
+          speedPxPerSec: Number.isFinite(speed) ? speed : (base || 1400)
+        });
+      };
+
       if (popoverScrollKeyMatches(scrollKeys, 'pageUp', key)) {
         e.preventDefault();
-        const { mx, my } = cursorPoint();
-        scrollAtPoint(mx, my, -1, pagePx, behavior);
+        applyHeldScroll(-1, pagePx);
       } else if (popoverScrollKeyMatches(scrollKeys, 'pageDown', key)) {
         e.preventDefault();
-        const { mx, my } = cursorPoint();
-        scrollAtPoint(mx, my, 1, pagePx, behavior);
+        applyHeldScroll(1, pagePx);
       } else if (popoverScrollKeyMatches(scrollKeys, 'pageUpInstant', key)) {
         e.preventDefault();
-        const { mx, my } = cursorPoint();
-        scrollAtPoint(mx, my, -1, halfPx, behavior);
+        applyHeldScroll(-1, halfPx);
       } else if (popoverScrollKeyMatches(scrollKeys, 'pageDownInstant', key)) {
         e.preventDefault();
-        const { mx, my } = cursorPoint();
-        scrollAtPoint(mx, my, 1, halfPx, behavior);
+        applyHeldScroll(1, halfPx);
       } else if (popoverScrollKeyMatches(scrollKeys, 'pageTop', key)) {
         e.preventDefault();
         const { mx, my } = cursorPoint();
@@ -357,6 +386,13 @@ export function installPopoverIframeBridge(options = {}) {
     const onMouseMove = (e) => {
       updateMouse(e);
       schedulePointerSync();
+    };
+
+    const onKeyUp = (e) => {
+      try {
+        scrollHold.end(e?.key);
+        if (!scrollHold.active) scrollHoldLock = null;
+      } catch { /* ignore */ }
     };
 
     // Mouse tracking (needed for F-click before KP and inside/outside detection).
@@ -375,12 +411,14 @@ export function installPopoverIframeBridge(options = {}) {
 
     window.addEventListener('message', onMessage, true);
     document.addEventListener('keydown', onKeyDown, true);
+    document.addEventListener('keyup', onKeyUp, true);
 
     return {
       dispose() {
         try {
           window.removeEventListener('message', onMessage, true);
           document.removeEventListener('keydown', onKeyDown, true);
+          document.removeEventListener('keyup', onKeyUp, true);
           document.removeEventListener('mousemove', onMouseMove, true);
           document.removeEventListener('pointermove', onMouseMove, true);
         } catch {

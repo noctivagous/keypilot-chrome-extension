@@ -22,7 +22,7 @@ Start with **Keyboard** (layout + handedness) and **Scrolling** (<kbd>C</kbd>/<k
 | **Click Mode** | Cursor style, crosshair geometry, focus rectangle look, link-hover hints, activation effects |
 | **Text Mode** | Cursor, focus style (pulsing edge / tint), edge width, labels, outline |
 | **Scrolling** | <kbd>C</kbd>/<kbd>V</kbd> distance, smooth vs instant jumps, carousel skip, middle-click Scroll Line |
-| **Cursor** | Disable custom cursors or use KeyPilot crosshairs |
+| **Cursor** | No Custom Cursors vs KeyPilot Cursors; Click Mode crosshair geometry when enabled |
 | **Control Strip** | Visibility and start-collapsed; restore with <kbd>Alt</kbd>+<kbd>J</kbd> |
 | **Search** | Brave, Google, or DuckDuckGo for Omnibox / New Tab search |
 | **About** | Storage and sync notes for this Chrome profile |

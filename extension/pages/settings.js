@@ -275,8 +275,8 @@ async function render() {
   const keyboardLeftHandedToggle = /** @type {HTMLInputElement|null} */ (settingsEl('keyboard-left-handed'));
   const controlStripVisible = /** @type {HTMLInputElement|null} */ (settingsEl('control-strip-visible'));
   const controlStripCollapsed = /** @type {HTMLInputElement|null} */ (settingsEl('control-strip-collapsed'));
-  // Cursor mode controls
-  const cursorModeSelect = /** @type {HTMLSelectElement|null} */ (settingsEl('cursor-mode'));
+  // Cursor mode controls (segmented toggle)
+  const cursorModeRadios = /** @type {HTMLInputElement[]} */ (Array.from(settingsAll('input[name="cursor-mode"]')));
   const cursorSettingsClick = settingsEl('cursor-settings-click');
   const cursorSettingsText = settingsEl('cursor-settings-text');
 
@@ -401,7 +401,9 @@ async function render() {
 
   const applyCursorMode = (cursorMode) => {
     const mode = normalizeCursorMode(cursorMode);
-    setInputValue(cursorModeSelect, mode);
+    cursorModeRadios.forEach((r) => {
+      r.checked = r.value === mode;
+    });
 
     const showCursorSettings = mode === CURSOR_MODE.CUSTOM_CURSORS;
     applyVisibility(cursorSettingsClick, showCursorSettings);
@@ -559,12 +561,15 @@ async function render() {
     withOptionalViewTransition(() => applyKeyboardHandedness(s.keyboardHandedness));
   }, true);
 
-  cursorModeSelect?.addEventListener('change', async () => {
-    const next = normalizeCursorMode(cursorModeSelect.value);
-    await setSettings({ cursorMode: next });
-    const s = await getSettings();
-    withOptionalViewTransition(() => applyCursorMode(s.cursorMode));
-  }, true);
+  cursorModeRadios.forEach((radio) => {
+    radio.addEventListener('change', async () => {
+      if (!radio.checked) return;
+      const next = normalizeCursorMode(radio.value);
+      await setSettings({ cursorMode: next });
+      const s = await getSettings();
+      withOptionalViewTransition(() => applyCursorMode(s.cursorMode));
+    }, true);
+  });
 
   // Click Mode handlers
   clickCursorType?.addEventListener('change', async () => {
@@ -665,12 +670,8 @@ async function render() {
   }, true);
 
   clickModeResetBtn?.addEventListener('click', async () => {
-    await setSettings({
-      clickMode: {
-        ...DEFAULT_SETTINGS.clickMode,
-        cursor: { ...DEFAULT_SETTINGS.clickMode.cursor }
-      }
-    });
+    const { cursor: _cursor, ...clickModeDefaults } = DEFAULT_SETTINGS.clickMode;
+    await setSettings({ clickMode: { ...clickModeDefaults } });
     const s = await getSettings();
     applyClickMode(s.clickMode);
   }, true);
@@ -783,18 +784,25 @@ async function render() {
 
 /**
  * Inject standalone settings.html fragments into an open ShadowRoot.
+ * CSS is fetched as text and applied via style elements so rules are present
+ * before the app DOM paints (avoids FOUC; link onload is unreliable here).
  * @param {ShadowRoot} root
  */
 async function injectSettingsDom(root) {
   if (root.querySelector?.('.settings-app')) return;
   const url = chrome.runtime.getURL('pages/settings.html');
-  const html = await fetch(url).then((res) => res.text());
+  const stylesheetHrefs = ['pages/ui-standards.css', 'pages/settings.css'];
+  const [html, ...cssTexts] = await Promise.all([
+    fetch(url).then((res) => res.text()),
+    ...stylesheetHrefs.map((href) =>
+      fetch(chrome.runtime.getURL(href)).then((res) => res.text())
+    )
+  ]);
   const parsed = new DOMParser().parseFromString(html, 'text/html');
-  for (const href of ['pages/ui-standards.css', 'pages/settings.css']) {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = chrome.runtime.getURL(href);
-    root.appendChild(link);
+  for (const cssText of cssTexts) {
+    const style = document.createElement('style');
+    style.textContent = cssText;
+    root.appendChild(style);
   }
   const sprite = parsed.querySelector('.settings-icon-sprite');
   const app = parsed.querySelector('.settings-app');

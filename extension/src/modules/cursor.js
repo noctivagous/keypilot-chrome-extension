@@ -12,6 +12,7 @@ export class CursorManager {
     this.forceUpdateCount = 0;
     this.currentMode = null; // Cache current mode to avoid unnecessary updates
     this.currentModeKey = null; // Cache mode+options to allow updates within same mode
+    this.lastOptions = {}; // Last options passed to setMode (restored by show())
     this.uriCache = new Map(); // Cache generated URIs
   }
 
@@ -81,6 +82,7 @@ export class CursorManager {
 
     this.currentMode = mode;
     this.currentModeKey = nextModeKey;
+    this.lastOptions = options && typeof options === 'object' ? { ...options } : {};
 
     // Native cursor options bypass SVG entirely.
     if (cursorType === 'native_arrow') {
@@ -100,7 +102,6 @@ export class CursorManager {
     const cursorUri = this.getCursorDataUri(mode, options);
     const cursorValue = `url("${cursorUri}") 30 30, auto`;
 
-    console.log('setMode: cursorValue', cursorValue);
     // Set cursor using CSS variable on document element
     // The StyleManager has a global rule to apply this to all elements
     document.documentElement.style.setProperty('--kpv2-cursor', cursorValue);
@@ -249,13 +250,13 @@ export class CursorManager {
 
   show() {
     if (this.cursorEl) {
-      // Show cursor by restoring current mode
+      // Restore the last settings-derived cursor (gap/size/etc).
+      // Passing {} here used to reset to hardcoded defaults (gap=0) until the
+      // next hover-driven setMode(), which made load look like a solid crosshair.
       const currentMode = this.getCurrentMode();
-      // Reset currentMode to force update in setMode
-      const oldMode = this.currentMode;
-      this.currentMode = null; 
+      this.currentMode = null;
       this.currentModeKey = null;
-      this.setMode(currentMode, {});
+      this.setMode(currentMode, this.lastOptions || {});
     }
   }
 

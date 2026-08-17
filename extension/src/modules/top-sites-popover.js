@@ -15,6 +15,7 @@ import { applyCardBackground } from '../ui/page-thumb-ui.js';
 import { createPopoverTitlebar } from '../ui/popover-titlebar.js';
 import { getActionIconDataUri } from '../ui/keybindings-ui-shared.js';
 import {
+  NCT_DARK_UI_BTN_BORDER,
   NCT_DARK_UI_BTN_GRADIENT,
   NCT_DARK_UI_BTN_RADIUS,
   NCT_DARK_UI_COLORS,

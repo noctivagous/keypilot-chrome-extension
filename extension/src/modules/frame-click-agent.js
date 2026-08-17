@@ -30,7 +30,8 @@ import {
   resolveKeyboardLayoutId
 } from '../config/keyboard-layouts.js';
 import { getSettings, SETTINGS_STORAGE_KEY, scrollBehaviorFromSpeed, DEFAULT_SETTINGS } from './settings-manager.js';
-import { scrollAtPoint, scrollToEdgeAtPoint, scrollByAtPoint } from '../utils/scroll-at-point.js';
+import { scrollAtPoint, scrollToEdgeAtPoint, scrollByAtPoint, findScrollTargetAtPoint, scrollElementBy } from '../utils/scroll-at-point.js';
+import { ScrollHoldController } from '../utils/scroll-hold.js';
 import { deepElementFromPoint } from '../utils/element-from-point.js';
 import { resolveHoveredLink } from '../utils/resolve-hovered-link.js';
 import { containsComposed } from '../ui/kp-chrome-shadow.js';
@@ -468,6 +469,16 @@ export function installFrameClickAgent() {
     let halfPagePx = SCROLL.HALF_PAGE_PX;
     /** @type {'smooth'|'auto'} */
     let scrollBehavior = SCROLL.BEHAVIOR === 'smooth' ? 'smooth' : 'auto';
+    /** @type {{ el: Element, axis: 'x'|'y' }|null} */
+    let scrollHoldLock = null;
+    const scrollHold = new ScrollHoldController({
+      apply: ({ deltaPx, target }) => {
+        const t = target || scrollHoldLock;
+        if (!t?.el) return;
+        const axis = t.axis === 'x' ? 'x' : 'y';
+        scrollElementBy(t.el, axis === 'x' ? deltaPx : 0, axis === 'y' ? deltaPx : 0, 'auto');
+      }
+    });
 
     /** @type {HTMLElement|null} */
     let hoverEl = null;
@@ -1355,7 +1366,27 @@ export function installFrameClickAgent() {
         e.stopImmediatePropagation();
 
         if (scrollSign !== null) {
-          scrollAt(x, y, scrollSign, halfPagePx, scrollBehavior, scrollMode);
+          if (scrollMode === 'edge') {
+            scrollAt(x, y, scrollSign, halfPagePx, scrollBehavior, scrollMode);
+            return;
+          }
+          const s = scrollSign < 0 ? -1 : 1;
+          if (e.repeat) {
+            scrollHold.noteRepeat(key, s);
+            return;
+          }
+          const found = findScrollTargetAtPoint(x, y, s);
+          const el = found?.el || document.scrollingElement || document.documentElement || document.body;
+          const axis = found?.axis || 'y';
+          scrollAt(x, y, s, halfPagePx, scrollBehavior, 'delta');
+          scrollHoldLock = el ? { el, axis } : null;
+          const speed = Math.max(600, Math.min(2400, halfPagePx * 2.8));
+          scrollHold.begin({
+            key,
+            sign: s,
+            target: scrollHoldLock,
+            speedPxPerSec: speed
+          });
           return;
         }
 
@@ -1445,6 +1476,14 @@ export function installFrameClickAgent() {
       }
     };
 
+    /** @param {KeyboardEvent} e */
+    const onKeyUp = (e) => {
+      try {
+        scrollHold.end(e?.key);
+        if (!scrollHold.active) scrollHoldLock = null;
+      } catch { /* ignore */ }
+    };
+
     window.addEventListener('message', onMessage, true);
     document.addEventListener('mousemove', onPointer, { capture: true, passive: true });
     document.addEventListener('pointermove', onPointer, { capture: true, passive: true });
@@ -1453,6 +1492,7 @@ export function installFrameClickAgent() {
     document.addEventListener('scroll', onScroll, { capture: true, passive: true });
     window.addEventListener('scroll', onScroll, { capture: true, passive: true });
     document.addEventListener('keydown', onKeyDown, true);
+    document.addEventListener('keyup', onKeyUp, true);
     document.addEventListener('focusin', onFocusIn, true);
     document.addEventListener('focusout', onFocusOut, true);
 
@@ -1492,6 +1532,7 @@ export function installFrameClickAgent() {
           document.removeEventListener('scroll', onScroll, true);
           window.removeEventListener('scroll', onScroll, true);
           document.removeEventListener('keydown', onKeyDown, true);
+          document.removeEventListener('keyup', onKeyUp, true);
           document.removeEventListener('focusin', onFocusIn, true);
           document.removeEventListener('focusout', onFocusOut, true);
         } catch { /* ignore */ }

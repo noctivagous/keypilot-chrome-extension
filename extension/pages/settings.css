@@ -49,7 +49,9 @@ body {
 }
 
 .settings-app.kp-popover-embed {
-  background: transparent;
+  /* Host already paints the panel fill; keep embed opaque so cards never
+     composite against the page during stylesheet load / FOUC. */
+  background: linear-gradient(rgb(18, 18, 18) 0%, rgb(11, 11, 11) 100%);
 }
 
 .header {
@@ -247,17 +249,18 @@ h1 {
   padding: 12px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(0, 0, 0, 0.35);
+  /* Opaque lift on the dark panel — translucent black on #121212 looked empty. */
+  background: #2a2a2a;
   color: inherit;
   text-align: left;
   font: inherit;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   transition: background 120ms ease, border-color 120ms ease;
 }
 
 .settings-hub-tile:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: #333333;
   border-color: rgba(255, 255, 255, 0.28);
 }
 
@@ -480,6 +483,72 @@ h1 {
   padding: 10px 10px;
   font-size: 13px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* Two-option segmented toggle (Cursor mode, etc.) */
+.seg-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.seg-toggle-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  min-height: 38px;
+  padding: 8px 10px;
+  cursor: pointer;
+  user-select: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.seg-toggle-option:last-child {
+  border-right: none;
+}
+
+.seg-toggle-option:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.seg-toggle-option:has(input:checked) {
+  background: rgba(120, 180, 255, 0.22);
+  color: rgba(255, 255, 255, 0.98);
+}
+
+.seg-toggle-option:has(input:focus-visible) {
+  outline: 2px solid rgba(120, 180, 255, 0.75);
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+.seg-toggle-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+
+.seg-toggle-text {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.15px;
+  text-align: center;
+  line-height: 1.25;
+  color: rgba(235, 235, 235, 0.72);
+}
+
+.seg-toggle-option:has(input:checked) .seg-toggle-text {
+  color: rgba(255, 255, 255, 0.98);
 }
 
 .range-row {
