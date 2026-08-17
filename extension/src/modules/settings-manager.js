@@ -65,6 +65,13 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
 /** @typedef {'blue'|'green'} FocusColor */
 
 /**
+ * Focus-ring paint backend preference (Click Mode → Advanced).
+ * - `auto`: full A→B→C (element outline when possible)
+ * - `BC`: Auto B→C (skip A; in-target then body-fixed)
+ * @typedef {'auto'|'BC'} ClickPaintStrategy
+ */
+
+/**
  * @typedef {{
  *   cursor: ClickCursorSettings,
  *   focusColor: FocusColor,
@@ -72,7 +79,9 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  *   overlayShadowEnabled: boolean,
  *   rectangleThickness: number,
  *   clickEffect: ClickEffect,
- *   keyboardLinkHoverHints: boolean
+ *   keyboardLinkHoverHints: boolean,
+ *   paintStrategy: ClickPaintStrategy,
+ *   focusPadding: number
  * }} ClickModeSettings
  */
 
@@ -215,7 +224,13 @@ export const DEFAULT_SETTINGS = Object.freeze({
     clickEffect: 'flash',
     // When true, hovering a link glows matching green keys on the Keyboard Reference.
     // Off by default (opt-in via Settings → Click Mode).
-    keyboardLinkHoverHints: false
+    keyboardLinkHoverHints: false,
+    // Default skip DOM outline (A); use in-target (B) then body-fixed (C).
+    // Matches Shadow Root Debug “Auto B→C”.
+    paintStrategy: 'BC',
+    // Outward ring padding (px). Strategy A uses this as preferred outline-offset;
+    // B/C expand their boxes by the same amount (A historically ~2px; B→C was 0).
+    focusPadding: 2
   }),
   textMode: Object.freeze({
     cursorType: 't_square',
@@ -344,6 +359,30 @@ export function normalizeFocusColor(raw) {
 
 /**
  * @param {any} raw
+ * @returns {ClickPaintStrategy}
+ */
+export function normalizePaintStrategy(raw) {
+  if (raw === 'auto' || raw === 'BC') return raw;
+  // Accept HUD-style aliases from experiments / older notes.
+  const upper = raw == null ? '' : String(raw).trim().toUpperCase();
+  if (
+    upper === 'B->C' ||
+    upper === 'B→C' ||
+    upper === 'AUTO_BC' ||
+    upper === 'AUTO-BC' ||
+    upper === 'AUTO B->C' ||
+    upper === 'AUTO B→C'
+  ) {
+    return 'BC';
+  }
+  if (upper === 'AUTO' || upper === 'A->B->C' || upper === 'A→B→C') {
+    return 'auto';
+  }
+  return DEFAULT_SETTINGS.clickMode.paintStrategy;
+}
+
+/**
+ * @param {any} raw
  * @returns {ClickModeSettings}
  */
 function normalizeClickMode(raw) {
@@ -390,6 +429,13 @@ function normalizeClickMode(raw) {
     keyboardLinkHoverHints: normalizeBoolean(
       stored.keyboardLinkHoverHints,
       DEFAULT_SETTINGS.clickMode.keyboardLinkHoverHints
+    ),
+    paintStrategy: normalizePaintStrategy(stored.paintStrategy),
+    focusPadding: normalizeNumber(
+      stored.focusPadding,
+      DEFAULT_SETTINGS.clickMode.focusPadding,
+      0,
+      16
     )
   };
 }

@@ -1077,6 +1077,7 @@ export class TopSitesPopover {
     const titlebarApi = createPopoverTitlebar({
       doc,
       title: 'Top Sites',
+      shortcut: ';',
       variant: 'panel',
       draggable: true,
       closeTitle: 'Close',
@@ -1085,6 +1086,7 @@ export class TopSitesPopover {
       className: 'kpv2-popover-titlebar kpv2-ts-titlebar'
     });
     this._titlebar = titlebarApi.titlebar;
+    this._titlebarApi = titlebarApi;
 
     const tabstrip = doc.createElement('div');
     tabstrip.className = 'kpv2-ts-tabstrip';

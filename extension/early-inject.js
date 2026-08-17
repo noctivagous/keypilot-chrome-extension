@@ -705,7 +705,7 @@
       },
       {
         "type": "key",
-        "text": "a/`"
+        "text": "A"
       },
       {
         "type": "key",
@@ -1061,7 +1061,7 @@
       },
       {
         "type": "key",
-        "text": "a/`"
+        "text": "A"
       },
       {
         "type": "key",
@@ -1511,8 +1511,8 @@
     "TOP_SITES": {
       "label": "Top Sites",
       "description": "Open Top Sites (toolbar, most visited, recent bookmarks)",
-      "keyLabel": "a/`",
-      "displayKey": "a/`",
+      "keyLabel": "A",
+      "displayKey": "A",
       "keyboardClass": "key-launcher-orange"
     },
     "OPEN_SETTINGS_POPOVER": {
@@ -3394,7 +3394,7 @@
 
 .kp-keybindings-popover .kp-popover-title-row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
   margin: 0 0 3px 0;
@@ -3413,9 +3413,15 @@
   flex: 0 0 auto;
   font-size: 10px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.58);
+  color: rgba(255, 255, 255, 0.82);
   letter-spacing: 0.02em;
   white-space: nowrap;
+  line-height: 1.3;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.32);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .kp-keybindings-popover .kp-popover-settings-hint[hidden] {
@@ -3441,6 +3447,26 @@
 .kp-keybindings-popover[data-kp-popover-pinned="true"] {
   pointer-events: auto;
   max-width: min(340px, calc(100vw - 20px));
+  background:
+    linear-gradient(180deg,
+      rgba(0, 0, 0, 0.4) 0%,
+      rgba(0, 0, 0, 0.55) 100%),
+    linear-gradient(180deg,
+      rgba(255, 255, 255, 0.06) 0%,
+      rgba(255, 255, 255, 0.01) 18%,
+      transparent 42%),
+    linear-gradient(180deg,
+      var(--kp-key-face) 0%,
+      var(--kp-key-mid) 70%,
+      var(--kp-key-deep) 100%);
+  outline: 1.5px solid color-mix(in srgb, var(--kp-key-face) 45%, white);
+  outline-offset: 0;
+  border-color: color-mix(in srgb, var(--kp-key-face) 35%, black);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.55),
+    0 10px 24px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.28);
 }
 
 .kp-keybindings-popover .kp-popover-settings {
@@ -3532,6 +3558,14 @@
   border-top-color: var(--kp-key-deep);
 }
 
+.kp-keybindings-popover[data-kp-popover-pinned="true"][data-placement="top"]::after {
+  border-top-color: color-mix(in srgb, var(--kp-key-deep) 45%, black);
+}
+
+.kp-keybindings-popover[data-kp-popover-pinned="true"][data-placement="top"]::before {
+  border-top-color: color-mix(in srgb, var(--kp-key-face) 45%, white);
+}
+
 .kp-keybindings-popover[data-placement="bottom"]::before {
   bottom: 100%;
   border-bottom-color: rgba(255, 255, 255, 0.12);
@@ -3546,6 +3580,14 @@
   bottom: calc(100% - 1px);
   border: 8px solid transparent;
   border-bottom-color: var(--kp-key-face);
+}
+
+.kp-keybindings-popover[data-kp-popover-pinned="true"][data-placement="bottom"]::after {
+  border-bottom-color: color-mix(in srgb, var(--kp-key-face) 45%, black);
+}
+
+.kp-keybindings-popover[data-kp-popover-pinned="true"][data-placement="bottom"]::before {
+  border-bottom-color: color-mix(in srgb, var(--kp-key-face) 45%, white);
 }
 
 /* Font Awesome-style faded key background icons (behind white labels) */
@@ -5193,8 +5235,9 @@
   let controlStripShadowRoot = null;
   let controlStripDesiredVisible = true;
   let controlStripCollapsed = true;
-  // Do not hide the Keyboard/Settings module group based on fallback defaults
-  // before the persisted collapsed state has arrived from extension storage.
+  // Default matches SettingsManager (compact). Apply that immediately so the
+  // strip does not paint expanded while storage is in flight; expand only if
+  // persisted settings say so.
   let controlStripLayoutHydrated = false;
   let controlStripStorageListener = null;
   let controlStripRefs = null; // { statusBtn, statusDot, statusLabel, modules, moveBtn, keyboardBtn, settingsBtn, collapseBtn, closeBtn }
@@ -6771,7 +6814,7 @@
   function applyEarlyControlStripCollapsedLayout() {
     const refs = controlStripRefs;
     if (!controlStripRoot || !refs) return;
-    const collapsed = controlStripLayoutHydrated && !!controlStripCollapsed;
+    const collapsed = !!controlStripCollapsed;
     try {
       if (refs.modules) refs.modules.style.display = collapsed ? 'none' : 'flex';
       if (refs.closeBtn) refs.closeBtn.style.display = collapsed ? 'none' : 'inline-flex';
@@ -7063,6 +7106,8 @@
       root.setAttribute('data-kp-control-strip', 'true');
       root.setAttribute('data-kp-early-control-strip', 'true');
       root.dataset.kpEarlyControlStrip = 'true';
+      // Compact by default (matches SettingsManager) so first paint is not expanded.
+      root.setAttribute('data-kp-collapsed', 'true');
       const shell = ensureEarlyOpenChromeShadow(root, 'control-strip') || root;
 
       Object.assign(root.style, {
@@ -7143,7 +7188,7 @@
       const modules = document.createElement('div');
       modules.setAttribute('data-kp-control-strip-modules', 'true');
       Object.assign(modules.style, {
-        display: 'flex',
+        display: 'none',
         flexDirection: 'row',
         alignItems: 'stretch',
         flex: '0 0 auto'
@@ -7188,9 +7233,9 @@
       modules.appendChild(settingsBtn);
 
       const collapseBtn = createEarlyControlStripSegmentButton({
-        ariaLabel: 'Collapse control strip',
-        title: 'Collapse',
-        text: '◀',
+        ariaLabel: 'Expand control strip',
+        title: 'Expand',
+        text: '▶',
         compact: true
       });
       collapseBtn.setAttribute('data-kp-control-strip-collapse', 'true');
@@ -7205,6 +7250,7 @@
       });
       closeBtn.setAttribute('data-kp-control-strip-close', 'true');
       closeBtn.style.boxShadow = 'inset 0 0 0 1px #3a3a3a';
+      closeBtn.style.display = 'none';
 
       // Early interactions (guarded so main extension owns handlers after handoff).
       statusBtn.addEventListener('click', (e) => {
@@ -7494,8 +7540,9 @@
 
     const hint = doc.createElement('div');
     hint.setAttribute('data-kp-floating-keyboard-hint', 'true');
+    hint.hidden = true;
     Object.assign(hint.style, {
-      display: 'inline-flex',
+      display: 'none',
       alignItems: 'center',
       gap: '4px',
       marginLeft: 'auto',
@@ -7510,28 +7557,26 @@
       lineHeight: '28px',
       whiteSpace: 'nowrap'
     });
-    hint.appendChild(doc.createTextNode('Press '));
-    const hintKbd = doc.createElement('kbd');
-    hintKbd.setAttribute('data-kp-floating-keyboard-hint-key', 'true');
-    hintKbd.textContent = 'K';
-    Object.assign(hintKbd.style, {
-      display: 'inline-block',
+
+    const shortcut = doc.createElement('kbd');
+    shortcut.setAttribute('data-kp-floating-keyboard-shortcut', 'true');
+    shortcut.setAttribute('data-kp-titlebar-shortcut', 'true');
+    shortcut.textContent = '([K])';
+    shortcut.title = 'Toggle keyboard reference';
+    Object.assign(shortcut.style, {
       fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
       fontSize: '10px',
-      fontWeight: '600',
+      fontWeight: '400',
       lineHeight: '1.2',
-      padding: '1px 5px',
-      border: '1px solid rgba(255, 255, 255, 0.16)',
-      borderBottomColor: 'rgba(0, 0, 0, 0.55)',
+      padding: '1px 6px',
+      marginLeft: '0',
+      border: '1px solid #0a0a0a',
       borderRadius: '4px',
-      background: 'linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-      color: 'rgba(230, 232, 238, 0.95)',
-      boxShadow: '0 1px 0 rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06)',
-      verticalAlign: 'middle'
+      background: 'linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 55%, #1f1f1f 100%)',
+      color: '#ddd',
+      boxSizing: 'border-box',
+      flexShrink: '0'
     });
-    hint.appendChild(hintKbd);
-    hint.appendChild(doc.createTextNode(' to toggle'));
-    try { hint.setAttribute('aria-label', 'Press K to toggle'); } catch { /* ignore */ }
 
     const closeBtn = doc.createElement('button');
     closeBtn.type = 'button';
@@ -7584,6 +7629,7 @@
     });
 
     header.appendChild(title);
+    header.appendChild(shortcut);
     header.appendChild(layoutSelect);
     header.appendChild(hint);
     header.appendChild(collapseBtn);
@@ -7657,48 +7703,20 @@
   function updateKeyboardHelpHintForLayout(layoutId) {
     try {
       if (!keyboardHelpRoot) return;
-      const hint = (keyboardHelpShadowRoot || keyboardHelpRoot).querySelector('[data-kp-floating-keyboard-hint="true"]');
-      if (!hint) return;
+      const root = keyboardHelpShadowRoot || keyboardHelpRoot;
+      const shortcut = root.querySelector('[data-kp-floating-keyboard-shortcut="true"]')
+        || root.querySelector('[data-kp-titlebar-shortcut="true"]');
+      if (!shortcut) return;
       const data = getEarlyKeyboardDataForLayout(layoutId || keyboardLayoutId);
       const binding = data?.bindings?.TOGGLE_KEYBOARD_HELP;
       const key = binding && (binding.displayKey || binding.keyLabel) ? String(binding.displayKey || binding.keyLabel) : 'K';
-
-      // Idempotent — rebuilding the <kbd> every settings sync / layout paint flashes the chip.
+      const next = `([${key}])`;
+      if (shortcut.textContent === next) return;
+      shortcut.textContent = next;
       try {
-        const existing = hint.querySelector('[data-kp-floating-keyboard-hint-key="true"]');
-        if (existing && existing.textContent === key && hint.getAttribute('aria-label') === `Press ${key} to toggle`) {
-          return;
-        }
+        shortcut.title = `Toggle with ${key}`;
+        shortcut.setAttribute('aria-label', `Toggle keyboard reference (${key})`);
       } catch { /* ignore */ }
-
-      while (hint.firstChild) hint.removeChild(hint.firstChild);
-      hint.appendChild(document.createTextNode('Press '));
-      let kbd = null;
-      try { kbd = document.createElement('kbd'); } catch { kbd = null; }
-      if (kbd) {
-        kbd.setAttribute('data-kp-floating-keyboard-hint-key', 'true');
-        kbd.textContent = key;
-        Object.assign(kbd.style, {
-          display: 'inline-block',
-          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-          fontSize: '10px',
-          fontWeight: '600',
-          lineHeight: '1.2',
-          padding: '1px 5px',
-          border: '1px solid rgba(255, 255, 255, 0.16)',
-          borderBottomColor: 'rgba(0, 0, 0, 0.55)',
-          borderRadius: '4px',
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-          color: 'rgba(230, 232, 238, 0.95)',
-          boxShadow: '0 1px 0 rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06)',
-          verticalAlign: 'middle'
-        });
-        hint.appendChild(kbd);
-      } else {
-        hint.appendChild(document.createTextNode(key));
-      }
-      hint.appendChild(document.createTextNode(' to toggle'));
-      try { hint.setAttribute('aria-label', `Press ${key} to toggle`); } catch { /* ignore */ }
     } catch { /* ignore */ }
   }
 

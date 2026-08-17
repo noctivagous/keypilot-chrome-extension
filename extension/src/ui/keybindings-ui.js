@@ -53,7 +53,7 @@ const KEY_INFO_POPOVER_INNER_HTML = `
         <div class="kp-popover-title-wrap">
           <div class="kp-popover-title-row">
             <div class="kp-popover-title"></div>
-            <div class="kp-popover-settings-hint" hidden>Click to Show Settings</div>
+            <div class="kp-popover-settings-hint" hidden>Click to show settings</div>
           </div>
           <div class="kp-popover-keys"></div>
         </div>
@@ -207,9 +207,10 @@ export function renderKeybindingsKeyboard({ container, keybindings, keyboardLayo
   }
   if (existingVisual && existingVisual.dataset && existingVisual.dataset.kpKeyboardBuilt === 'true') {
     const existingLayoutKey = String(existingVisual.dataset.kpLayoutId || '');
-    // If the caller provided a layoutId, only reuse DOM when it matches exactly.
-    // This ensures switching layouts re-builds the keyboard positions (not just labels).
-    const canReuse = !layoutKey ? true : (existingLayoutKey === layoutKey);
+    // Reuse only when the existing DOM was built for this exact layout.
+    // An empty/missing layoutId must not keep a previous (e.g. left-handed)
+    // keyboard and only rewrite labels — that leaves leftover mappings.
+    const canReuse = !!layoutKey && existingLayoutKey === layoutKey;
     if (canReuse) {
       if (updateExistingKeyboardDOM({ container, keybindings })) {
         if (attachPopovers) {
@@ -420,7 +421,7 @@ function ensurePopover(doc, _container) {
           const hint = doc.createElement('div');
           hint.className = 'kp-popover-settings-hint';
           hint.hidden = true;
-          hint.textContent = 'Click to Show Settings';
+          hint.textContent = 'Click to show settings';
           row.appendChild(hint);
         }
       } catch { /* ignore */ }
@@ -452,6 +453,7 @@ function hidePopover(pop, opts = {}) {
   if (opts.clearPinned !== false) {
     _pinnedActionId = null;
     _pinnedKeyEl = null;
+    _settingsRenderGen += 1;
     try { pop.removeAttribute('data-kp-popover-pinned'); } catch { /* ignore */ }
     try { pop.style.pointerEvents = ''; } catch { /* ignore */ }
   }
@@ -565,6 +567,7 @@ function showPopoverForTarget({ doc, pop, targetEl, binding, actionId, pinned = 
   if (keysEl) keysEl.textContent = keys ? `Key: ${keys}` : '';
   if (descEl) descEl.textContent = desc;
   if (hintEl) {
+    hintEl.textContent = 'Click to show settings';
     const showHint = !pinned && actionHasSettings(actionId);
     hintEl.hidden = !showHint;
   }
@@ -596,6 +599,7 @@ function showPopoverForTarget({ doc, pop, targetEl, binding, actionId, pinned = 
       pop.style.pointerEvents = 'auto';
       void renderPopoverSettings({ doc, pop, targetEl, binding, actionId });
     } else {
+      _settingsRenderGen += 1;
       pop.removeAttribute('data-kp-popover-pinned');
       pop.style.pointerEvents = '';
       const settingsHost = pop.querySelector('.kp-popover-settings');
@@ -1010,7 +1014,15 @@ export function attachKeyPopoverBehavior({ root, keybindings }) {
   function handleKeyClick(e) {
     e.preventDefault();
     e.stopPropagation();
-    showForKeyEl(e.currentTarget, { pinned: true });
+    const keyEl = e.currentTarget;
+    const actionId = keyEl?.dataset?.kpActionId;
+    if (_pinnedActionId && _pinnedKeyEl === keyEl && actionId === _pinnedActionId) {
+      _pinnedActionId = null;
+      _pinnedKeyEl = null;
+      showForKeyEl(keyEl, { pinned: false });
+      return;
+    }
+    showForKeyEl(keyEl, { pinned: true });
   }
 
   root._kpKeyHandlers.enter = handleKeyEnter;

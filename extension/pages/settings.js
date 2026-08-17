@@ -5,7 +5,7 @@ import {
   normalizeKeyboardLayoutFamilyId
 } from '../src/config/keyboard-layouts.js';
 import { SEARCH_ENGINE_META } from '../src/config/search-engines.js';
-import { CLICK_EFFECT_IDS, DEFAULT_SETTINGS, getSettings, normalizeCursorMode, normalizeFocusColor, normalizeSearchEngine, normalizeTextFocusStyle, setSettings, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
+import { CLICK_EFFECT_IDS, DEFAULT_SETTINGS, getSettings, normalizeCursorMode, normalizeFocusColor, normalizePaintStrategy, normalizeSearchEngine, normalizeTextFocusStyle, setSettings, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
 import { GENERIC_FAVICON_DATA_URL, getExtensionFaviconUrl } from '../src/ui/url-listing.js';
 import { CursorManager } from '../src/modules/cursor.js';
 
@@ -296,6 +296,9 @@ async function render() {
   const clickRectThicknessNumber = /** @type {HTMLInputElement|null} */ (settingsEl('click-rect-thickness-number'));
   const clickEffectRadios = /** @type {HTMLInputElement[]} */ (Array.from(settingsAll('input[name="click-effect"]')));
   const clickKeyboardLinkHints = /** @type {HTMLInputElement|null} */ (settingsEl('click-keyboard-link-hints'));
+  const clickPaintStrategy = /** @type {HTMLSelectElement|null} */ (settingsEl('click-paint-strategy'));
+  const clickFocusPaddingRange = /** @type {HTMLInputElement|null} */ (settingsEl('click-focus-padding-range'));
+  const clickFocusPaddingNumber = /** @type {HTMLInputElement|null} */ (settingsEl('click-focus-padding-number'));
   const clickCursorResetBtn = settingsEl('click-cursor-reset');
   const clickModeResetBtn = settingsEl('click-mode-reset');
 
@@ -431,6 +434,13 @@ async function render() {
     }
     setInputValue(clickRectThicknessRange, cm?.rectangleThickness ?? DEFAULT_SETTINGS.clickMode.rectangleThickness);
     setInputValue(clickRectThicknessNumber, cm?.rectangleThickness ?? DEFAULT_SETTINGS.clickMode.rectangleThickness);
+    if (clickPaintStrategy) {
+      clickPaintStrategy.value = normalizePaintStrategy(
+        cm?.paintStrategy ?? DEFAULT_SETTINGS.clickMode.paintStrategy
+      );
+    }
+    setInputValue(clickFocusPaddingRange, cm?.focusPadding ?? DEFAULT_SETTINGS.clickMode.focusPadding);
+    setInputValue(clickFocusPaddingNumber, cm?.focusPadding ?? DEFAULT_SETTINGS.clickMode.focusPadding);
 
     const effect = cm?.clickEffect ?? DEFAULT_SETTINGS.clickMode.clickEffect ?? 'flash';
     clickEffectRadios.forEach((r) => {
@@ -650,6 +660,25 @@ async function render() {
     const s = await getSettings();
     applyClickMode(s.clickMode);
   });
+
+  clickPaintStrategy?.addEventListener('change', async () => {
+    const value = normalizePaintStrategy(clickPaintStrategy.value);
+    await setSettings({ clickMode: { paintStrategy: value } });
+    const s = await getSettings();
+    applyClickMode(s.clickMode);
+  }, true);
+
+  const commitClickFocusPadding = async (v) => {
+    const n = clampNumber(v, 0, 16);
+    setInputValue(clickFocusPaddingRange, n);
+    setInputValue(clickFocusPaddingNumber, n);
+    await setSettings({ clickMode: { focusPadding: n } });
+    const s = await getSettings();
+    applyClickMode(s.clickMode);
+  };
+
+  clickFocusPaddingRange?.addEventListener('input', async () => commitClickFocusPadding(clickFocusPaddingRange.value), true);
+  clickFocusPaddingNumber?.addEventListener('input', async () => commitClickFocusPadding(clickFocusPaddingNumber.value), true);
 
   clickEffectRadios.forEach((radio) => {
     radio.addEventListener('change', async () => {

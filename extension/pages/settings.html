@@ -581,6 +581,42 @@
                 </label>
               </div>
 
+              <div class="divider"></div>
+
+              <div class="kp-accordion">
+                <details class="kp-subsection">
+                  <summary class="kp-subsection-summary">
+                    <span class="kp-subsection-summary-text">
+                      <span class="kp-subsection-title">Advanced</span>
+                      <span class="kp-subsection-sub">Paint backend and focus-ring padding</span>
+                    </span>
+                  </summary>
+                  <div class="kp-subsection-body">
+                    <div class="field">
+                      <div class="field-label">Paint mode</div>
+                      <select id="click-paint-strategy" class="select">
+                        <option value="BC">Auto B→C (skip outline)</option>
+                        <option value="auto">Auto (A→B→C)</option>
+                      </select>
+                      <div class="field-hint">
+                        How the hover focus rectangle is drawn. <strong>Auto B→C</strong> skips DOM outline (A) and uses an in-target ring, then a fixed overlay. Matches Shadow Root Debug (<kbd>Alt</kbd>+<kbd>D</kbd>).
+                      </div>
+                    </div>
+
+                    <div class="field">
+                      <div class="field-label">Padding</div>
+                      <div class="range-row">
+                        <input id="click-focus-padding-range" type="range" min="0" max="16" step="1" />
+                        <input id="click-focus-padding-number" class="number" type="number" min="0" max="16" step="1" />
+                      </div>
+                      <div class="field-hint">
+                        Outward gap around the focus rectangle (0–16px). Default 2px matches the old outline offset; B→C rings previously used 0.
+                      </div>
+                    </div>
+                  </div>
+                </details>
+              </div>
+
               <div class="row-actions">
                 <button id="click-mode-reset" class="btn btn-secondary btn-small" type="button">Reset Click Mode to defaults</button>
               </div>

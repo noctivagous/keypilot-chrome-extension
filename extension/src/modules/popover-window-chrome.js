@@ -216,6 +216,7 @@ export async function installPopoverWindowChrome(info) {
 
   const titlebarApi = createUrlPopoverTitlebar({
     title: titleText,
+    shortcut: kind === 'modal' ? 'P' : 'E',
     variant: 'preview',
     showClose: true,
     onClose: requestClose,

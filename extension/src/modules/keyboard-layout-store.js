@@ -17,7 +17,8 @@
 import {
   buildEffectiveKeybindings,
   getKeyboardUiLayoutForLayout,
-  inferFamilyAndHandednessFromLayoutId
+  inferFamilyAndHandednessFromLayoutId,
+  physicalSlotLabelFromBinding
 } from '../config/keyboard-layouts.js';
 import {
   defaultFunctionParameters,
@@ -142,15 +143,7 @@ function normalizeSlotLabel(raw) {
  * @returns {string}
  */
 function slotLabelFromBinding(binding) {
-  const s = String(binding?.displayKey || binding?.keyLabel || '').trim();
-  if (!s) return '';
-  if (s.length === 1) return normalizeSlotLabel(s);
-  // Handle a few common composite labels we emit today (e.g. "a/`").
-  if (s.includes('/')) {
-    const first = s.split('/')[0];
-    if (first && first.trim().length === 1) return normalizeSlotLabel(first.trim());
-  }
-  return '';
+  return physicalSlotLabelFromBinding(binding);
 }
 
 /**

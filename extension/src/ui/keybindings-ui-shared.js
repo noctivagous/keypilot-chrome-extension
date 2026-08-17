@@ -1335,7 +1335,7 @@ ${fontFaceCss}
 
 .kp-keybindings-popover .kp-popover-title-row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
   margin: 0 0 3px 0;
@@ -1354,9 +1354,15 @@ ${fontFaceCss}
   flex: 0 0 auto;
   font-size: 10px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.58);
+  color: rgba(255, 255, 255, 0.82);
   letter-spacing: 0.02em;
   white-space: nowrap;
+  line-height: 1.3;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.32);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .kp-keybindings-popover .kp-popover-settings-hint[hidden] {
@@ -1382,6 +1388,26 @@ ${fontFaceCss}
 .kp-keybindings-popover[data-kp-popover-pinned="true"] {
   pointer-events: auto;
   max-width: min(340px, calc(100vw - 20px));
+  background:
+    linear-gradient(180deg,
+      rgba(0, 0, 0, 0.4) 0%,
+      rgba(0, 0, 0, 0.55) 100%),
+    linear-gradient(180deg,
+      rgba(255, 255, 255, 0.06) 0%,
+      rgba(255, 255, 255, 0.01) 18%,
+      transparent 42%),
+    linear-gradient(180deg,
+      var(--kp-key-face) 0%,
+      var(--kp-key-mid) 70%,
+      var(--kp-key-deep) 100%);
+  outline: 1.5px solid color-mix(in srgb, var(--kp-key-face) 45%, white);
+  outline-offset: 0;
+  border-color: color-mix(in srgb, var(--kp-key-face) 35%, black);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.55),
+    0 10px 24px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.28);
 }
 
 .kp-keybindings-popover .kp-popover-settings {
@@ -1473,6 +1499,14 @@ ${fontFaceCss}
   border-top-color: var(--kp-key-deep);
 }
 
+.kp-keybindings-popover[data-kp-popover-pinned="true"][data-placement="top"]::after {
+  border-top-color: color-mix(in srgb, var(--kp-key-deep) 45%, black);
+}
+
+.kp-keybindings-popover[data-kp-popover-pinned="true"][data-placement="top"]::before {
+  border-top-color: color-mix(in srgb, var(--kp-key-face) 45%, white);
+}
+
 .kp-keybindings-popover[data-placement="bottom"]::before {
   bottom: 100%;
   border-bottom-color: rgba(255, 255, 255, 0.12);
@@ -1487,6 +1521,14 @@ ${fontFaceCss}
   bottom: calc(100% - 1px);
   border: 8px solid transparent;
   border-bottom-color: var(--kp-key-face);
+}
+
+.kp-keybindings-popover[data-kp-popover-pinned="true"][data-placement="bottom"]::after {
+  border-bottom-color: color-mix(in srgb, var(--kp-key-face) 45%, black);
+}
+
+.kp-keybindings-popover[data-kp-popover-pinned="true"][data-placement="bottom"]::before {
+  border-bottom-color: color-mix(in srgb, var(--kp-key-face) 45%, white);
 }
 
 /* Font Awesome-style faded key background icons (behind white labels) */

@@ -178,9 +178,13 @@ export class OverlayManager {
     /**
      * Forced paint strategy while HUD is open:
      * 'A' | 'B' | 'C' | 'BC' (Auto B→C) | null (full auto).
+     * Seeded from Settings default so first HUD open matches Advanced paint mode.
      * @type {'A'|'B'|'C'|'BC'|null}
      */
-    this._shadowDebugPaintOverride = null;
+    this._shadowDebugPaintOverride =
+      (DEFAULT_SETTINGS.clickMode && DEFAULT_SETTINGS.clickMode.paintStrategy === 'BC')
+        ? 'BC'
+        : null;
     /** @type {{ leaf: Element|null, focus: Element|null, paint: Element|null, auto: string, applied: string, inShadow: boolean }|null} */
     this._shadowDebugLastInfo = null;
 
@@ -653,6 +657,10 @@ export class OverlayManager {
    * @param {object|null|undefined} settings
    */
   setModeSettings(settings) {
+    const prevPaint =
+      this._modeSettings?.clickMode && typeof this._modeSettings.clickMode === 'object'
+        ? this._modeSettings.clickMode.paintStrategy
+        : undefined;
     const s = settings && typeof settings === 'object' ? settings : {};
     this._modeSettings = {
       clickMode: s.clickMode && typeof s.clickMode === 'object' ? s.clickMode : null,
@@ -666,6 +674,23 @@ export class OverlayManager {
         this._textFocusCurrentElement = null;
         this._applyTextFocusElementStyling(focused);
       }
+    } catch { /* ignore */ }
+
+    // Keep Shadow Root Debug selection aligned when the Advanced paint mode changes.
+    try {
+      const nextPaint = this._getClickModeSettings().paintStrategy;
+      if (prevPaint !== nextPaint && this._shadowDebugHudEnabled) {
+        this._shadowDebugPaintOverride = this._settingsPaintOverride();
+        this._refreshShadowDebugHudButtons();
+      }
+    } catch { /* ignore */ }
+
+    // Live re-paint so padding / strategy changes apply without a mouse move.
+    try {
+      const focusEl = window.keyPilot?.state?.getState?.()?.focusEl ||
+        window.keyPilot?.intersectionManager?.getDomHoveredElement?.() ||
+        null;
+      if (focusEl) this.updateFocusOverlay(focusEl);
     } catch { /* ignore */ }
   }
 
@@ -691,13 +716,45 @@ export class OverlayManager {
       rawEffect === 'none'
         ? rawEffect
         : (def.clickEffect || 'flash');
+    const paintStrategy = cm.paintStrategy === 'auto' || cm.paintStrategy === 'BC'
+      ? cm.paintStrategy
+      : (def.paintStrategy === 'auto' ? 'auto' : 'BC');
+    const padRaw = Number(cm.focusPadding);
+    const focusPadding = Number.isFinite(padRaw)
+      ? Math.min(Math.max(padRaw, 0), 16)
+      : Math.min(Math.max(Number(def.focusPadding) || 2, 0), 16);
     return {
       rectangleThickness: thickness,
       overlayFillEnabled,
       overlayShadowEnabled,
       focusColor,
-      clickEffect
+      clickEffect,
+      paintStrategy,
+      focusPadding
     };
+  }
+
+  /**
+   * Settings → Advanced paint mode as a HUD-style override token.
+   * @returns {'BC'|null} null = full Auto (A→B→C)
+   */
+  _settingsPaintOverride() {
+    try {
+      return this._getClickModeSettings().paintStrategy === 'BC' ? 'BC' : null;
+    } catch {
+      return (DEFAULT_SETTINGS.clickMode?.paintStrategy === 'BC') ? 'BC' : null;
+    }
+  }
+
+  /**
+   * Active paint override: HUD temporary choice while open, else Settings Advanced.
+   * @returns {'A'|'B'|'C'|'BC'|null}
+   */
+  _effectivePaintOverride() {
+    if (this._shadowDebugHudEnabled) {
+      return this._shadowDebugPaintOverride;
+    }
+    return this._settingsPaintOverride();
   }
 
   _getTextModeSettings() {
@@ -1626,20 +1683,20 @@ export class OverlayManager {
         }
       }
 
-      // Debug HUD can force A / B / C, or Auto B→C (skip A), regardless of auto.
-      const override = this._shadowDebugHudEnabled
-        ? this._shadowDebugPaintOverride
-        : null;
+      // Settings Advanced / Debug HUD can force A / B / C, or Auto B→C (skip A).
+      const override = this._effectivePaintOverride();
       let strategy = autoStrategy;
       // Same-origin popover iframes (Docs / Settings): parent body-fixed rings
-      // paint *under* the iframe. Always outline the inner node (strategy A).
+      // paint *under* the iframe. Always outline the inner node (strategy A),
+      // even when Settings/HUD prefer Auto B→C.
+      let forceIframeA = false;
       try {
-        if (!override && element.ownerDocument && element.ownerDocument !== document) {
-          autoStrategy = 'A';
-          strategy = 'A';
-        }
-      } catch { /* ignore */ }
-      if (override === 'A' || override === 'B' || override === 'C') {
+        forceIframeA = !!(element.ownerDocument && element.ownerDocument !== document);
+      } catch { forceIframeA = false; }
+      if (forceIframeA) {
+        autoStrategy = 'A';
+        strategy = 'A';
+      } else if (override === 'A' || override === 'B' || override === 'C') {
         strategy = override;
       } else if (override === 'BC') {
         // Auto B→C: never use element outline; try in-target then fixed.
@@ -2404,10 +2461,14 @@ export class OverlayManager {
 
   /**
    * Preferred outer outline-offset (px) when clip ancestors leave enough room.
-   * Matches the historical path-A default.
+   * Driven by Click Mode → Advanced → Padding (historical path-A default: 2).
    */
   _preferredFocusOutlineOffsetPx() {
-    return 2;
+    try {
+      return this._getClickModeSettings().focusPadding;
+    } catch {
+      return 2;
+    }
   }
 
   /**
@@ -3860,9 +3921,29 @@ export class OverlayManager {
     // Use a high floor so the ring stays above Lit/Fluent content.
     const z = this._isInShadowTree(host) ? Math.max(zLocal, 2147483000) : zLocal;
 
+    let focusPad = 0;
+    try {
+      focusPad = Math.max(0, Number(this._getClickModeSettings().focusPadding) || 0);
+    } catch {
+      focusPad = 0;
+    }
+
     try {
       ring.style.setProperty('position', 'absolute', 'important');
-      ring.style.setProperty('inset', '0', 'important');
+      // Outward padding matches strategy-A outline-offset (B historically used inset:0).
+      if (focusPad > 0) {
+        ring.style.setProperty('top', `-${focusPad}px`, 'important');
+        ring.style.setProperty('right', `-${focusPad}px`, 'important');
+        ring.style.setProperty('bottom', `-${focusPad}px`, 'important');
+        ring.style.setProperty('left', `-${focusPad}px`, 'important');
+        ring.style.removeProperty('inset');
+      } else {
+        ring.style.setProperty('inset', '0', 'important');
+        ring.style.removeProperty('top');
+        ring.style.removeProperty('right');
+        ring.style.removeProperty('bottom');
+        ring.style.removeProperty('left');
+      }
       ring.style.setProperty('box-sizing', 'border-box', 'important');
       ring.style.setProperty('pointer-events', 'none', 'important');
       ring.style.setProperty('margin', '0', 'important');
@@ -3923,13 +4004,16 @@ export class OverlayManager {
       }
       // Host clips itself and ring is still much larger than host (site transform
       // or layout won) → border sits outside the clip; use body fixed instead.
+      // Allow intentional focusPadding expansion.
       let hostBox = null;
       try { hostBox = host.getBoundingClientRect(); } catch { hostBox = null; }
+      const padSlack = focusPad * 2 + 2;
       if (
         hostBox &&
         hostBox.width > 1 &&
         hostBox.height > 1 &&
-        (rr.width > hostBox.width * 1.35 + 4 || rr.height > hostBox.height * 1.35 + 4)
+        (rr.width > hostBox.width * 1.35 + 4 + padSlack ||
+          rr.height > hostBox.height * 1.35 + 4 + padSlack)
       ) {
         let hostClips = false;
         try {
@@ -4576,6 +4660,20 @@ export class OverlayManager {
       this.hideFocusOverlay();
       return;
     }
+    // Expand by Advanced → Padding so B→C rings match strategy-A outer offset.
+    try {
+      const pad = Math.max(0, Number(this._getClickModeSettings().focusPadding) || 0);
+      if (pad > 0) {
+        rect = {
+          left: rect.left - pad,
+          top: rect.top - pad,
+          width: rect.width + pad * 2,
+          height: rect.height + pad * 2,
+          right: (rect.right != null ? rect.right : rect.left + rect.width) + pad,
+          bottom: (rect.bottom != null ? rect.bottom : rect.top + rect.height) + pad
+        };
+      }
+    } catch { /* keep unpadded rect */ }
     // If the hover target is extremely large, a filled overlay becomes distracting; keep just the frame.
     const isVeryLarge = rect && rect.width > 512 && rect.height > 512;
     
@@ -7781,6 +7879,7 @@ export class OverlayManager {
 
     const titlebarApi = createPopoverTitlebar({
       title: (opts.title && String(opts.title).trim()) || 'KeyPilot Docs',
+      shortcut: opts.hintKeyLabel || 'Alt + H',
       variant: 'modal',
       showClose: true,
       onClose: requestClosePopover,
@@ -7916,6 +8015,7 @@ export class OverlayManager {
 
     const titlebarApi = createPopoverTitlebar({
       title: (opts.title && String(opts.title).trim()) || 'KeyPilot Settings',
+      shortcut: opts.hintKeyLabel || "'",
       variant: 'modal',
       showClose: true,
       onClose: requestClosePopover,
@@ -8155,6 +8255,7 @@ export class OverlayManager {
       })
       : createPopoverTitlebar({
         title: titleText,
+        shortcut: hintKeyLabel || null,
         variant: 'modal',
         showClose,
         onClose: requestClosePopover,
@@ -9294,6 +9395,7 @@ export class OverlayManager {
     // Shared URL-popover titlebar: Mobile/Desktop extra + Open / Open in New Tab.
     const titlebarApi = createUrlPopoverTitlebar({
       title: titleText,
+      shortcut: 'E',
       variant: 'preview',
       draggable: true,
       titleAttr: 'Drag to move',
@@ -10071,6 +10173,8 @@ Observer Updates: ${data.observerUpdates.toLocaleString()}
     } catch { /* ignore */ }
 
     if (this._shadowDebugHudEnabled) {
+      // First open reflects Settings → Advanced paint mode (default Auto B→C).
+      this._shadowDebugPaintOverride = this._settingsPaintOverride();
       this._ensureShadowRootDebugHud();
       // Re-paint current focus with current override (if any).
       try {
@@ -10088,7 +10192,7 @@ Observer Updates: ${data.observerUpdates.toLocaleString()}
     } else {
       this._shadowDebugPaintOverride = null;
       this.cleanupShadowRootDebugHud();
-      // Restore auto paint for current focus.
+      // Restore settings-driven paint for current focus.
       try {
         const focusEl = window.keyPilot?.state?.getState?.()?.focusEl || null;
         if (focusEl) this.updateFocusOverlay(focusEl);

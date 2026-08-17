@@ -947,7 +947,7 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   // (KB Reference / Settings / Esc live in the system layer, not layout assignments.)
   TAB_HISTORY: Object.freeze({ keys: ['f', 'F'] }),
   OMNIBOX: Object.freeze({ keys: ['s', 'S'] }),
-  TOP_SITES: Object.freeze({ keys: ['a', 'A', '`', '~', 'Backquote'], matchOn: ['key', 'code'], displayKey: 'a/`', keyLabel: 'a/`' }),
+  TOP_SITES: Object.freeze({ keys: ['a', 'A', '`', '~', 'Backquote'], matchOn: ['key', 'code'], displayKey: 'A', keyLabel: 'A' }),
 
   // Bottom row cluster: Z X C V B  ->  / . , M N (mirrored)
   PAGE_TOP: Object.freeze({ keys: ['/', '?'], displayKey: '/', keyLabel: '/' }),
@@ -1093,11 +1093,29 @@ function pickAssignments(source, allowedIds) {
 }
 
 /**
- * @param {KeyAssignment|null|undefined} assignment
+ * Physical slot letter for a binding (Q, A, ;, …).
+ * Composite labels like "a/`" resolve to the first single-character part.
+ * @param {any} binding
  * @returns {string}
  */
+export function physicalSlotLabelFromBinding(binding) {
+  const s = String(binding?.displayKey || binding?.keyLabel || '').trim();
+  if (!s) return '';
+  if (s.length === 1) return /[a-z]/i.test(s) ? s.toUpperCase() : s;
+  if (s.includes('/')) {
+    const first = s.split('/')[0];
+    if (first && first.trim().length === 1) {
+      const ch = first.trim();
+      return /[a-z]/i.test(ch) ? ch.toUpperCase() : ch;
+    }
+  }
+  return '';
+}
+
 function letterFromAssignment(assignment) {
   if (!assignment) return '';
+  const slot = physicalSlotLabelFromBinding(assignment);
+  if (slot) return slot;
   if (typeof assignment.displayKey === 'string' && assignment.displayKey) return assignment.displayKey;
   if (typeof assignment.keyLabel === 'string' && assignment.keyLabel) return assignment.keyLabel;
   const keys = Array.isArray(assignment.keys) ? assignment.keys : [];

@@ -267,6 +267,18 @@ const KBD_STYLE = `
   color: ${NCT_DARK_UI_COLORS.fg};
 `;
 
+/** Title-adjacent toggle shortcut: normal weight so it doesn't compete with the title. */
+const SHORTCUT_KBD_STYLE = `
+  ${KBD_STYLE}
+  font-weight: 400;
+  font-size: 10px;
+  line-height: 1.2;
+  margin-left: 6px;
+  flex-shrink: 0;
+  vertical-align: middle;
+  box-sizing: border-box;
+`;
+
 /**
  * Compact key chip for titlebar hints.
  * @param {Document} [doc]
@@ -278,6 +290,42 @@ export function createTitlebarKbd(doc = document, label = '') {
   kbd.style.cssText = KBD_STYLE;
   kbd.textContent = String(label || '');
   return kbd;
+}
+
+/**
+ * Title-adjacent window shortcut chip, e.g. "(Alt + C)" or "([K])".
+ * Parentheses wrap {@link shortcut}; styling is kbd with normal font-weight.
+ *
+ * @param {Document} [doc]
+ * @param {string} shortcut - Inner label without outer parens ("Alt + C", "[K]")
+ * @returns {HTMLElement}
+ */
+export function createTitlebarShortcut(doc = document, shortcut = '') {
+  const kbd = doc.createElement('kbd');
+  kbd.className = 'kpv2-popover-titlebar-shortcut';
+  kbd.setAttribute('data-kp-titlebar-shortcut', 'true');
+  kbd.style.cssText = SHORTCUT_KBD_STYLE;
+  const label = String(shortcut || '').trim();
+  kbd.textContent = label ? `(${label})` : '';
+  if (!label) kbd.style.display = 'none';
+  return kbd;
+}
+
+/**
+ * Apply / clear a title-adjacent shortcut on an existing kbd chip.
+ * @param {HTMLElement|null|undefined} el
+ * @param {string|null|undefined} shortcut
+ */
+export function setTitlebarShortcutText(el, shortcut) {
+  if (!el) return;
+  const label = shortcut != null ? String(shortcut).trim() : '';
+  if (!label) {
+    el.textContent = '';
+    el.style.display = 'none';
+    return;
+  }
+  el.textContent = `(${label})`;
+  el.style.display = '';
 }
 
 /**
@@ -322,6 +370,9 @@ export function createTitlebarCloseHint({
  * @typedef {object} PopoverTitlebarConfig
  * @property {Document} [doc]
  * @property {string} [title]
+ * @property {string|null} [shortcut] - Toggle/open shortcut beside the title in kbd styling
+ *   (normal font-weight), wrapped as "(…)" — e.g. "Alt + C" → "(Alt + C)", "[K]" → "([K])".
+ *   Distinct from {@link hint} (close instructions, etc.).
  * @property {string|Node|null} [hint] - plain text, or a Node/DocumentFragment for rich hints
  * @property {boolean} [showClose=true]
  * @property {() => void} [onClose]
@@ -343,10 +394,12 @@ export function createTitlebarCloseHint({
  *   titlebar: HTMLElement,
  *   closeButton: HTMLButtonElement|null,
  *   titleEl: HTMLElement,
+ *   shortcutEl: HTMLElement,
  *   hintEl: HTMLElement,
  *   titleContainer: HTMLElement,
  *   actionsSlot: HTMLElement,
  *   setTitle: (text: string) => void,
+ *   setShortcut: (shortcut: string|null|undefined) => void,
  *   setHint: (hint: string|Node|null|undefined) => void,
  *   getInteractiveElements: () => HTMLElement[]
  * }}
@@ -385,7 +438,7 @@ export function createPopoverTitlebar(config = {}) {
   titleContainer.className = 'kpv2-popover-titlebar-title-wrap';
   titleContainer.style.cssText = `
     display: flex;
-    align-items: baseline;
+    align-items: center;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -400,11 +453,17 @@ export function createPopoverTitlebar(config = {}) {
   titleEl.style.cssText = styles.title;
   titleEl.textContent = typeof config.title === 'string' ? config.title : '';
 
+  const shortcutEl = createTitlebarShortcut(doc, '');
+  if (variant === 'panel' || variant === 'preview') {
+    shortcutEl.style.fontSize = '10px';
+  }
+
   const hintEl = doc.createElement('span');
   hintEl.className = 'kpv2-popover-titlebar-hint';
   hintEl.style.cssText = styles.hint;
 
   titleContainer.appendChild(titleEl);
+  titleContainer.appendChild(shortcutEl);
   titleContainer.appendChild(hintEl);
   titlebar.appendChild(titleContainer);
 
@@ -476,6 +535,11 @@ export function createPopoverTitlebar(config = {}) {
     titleEl.textContent = text != null ? String(text) : '';
   };
 
+  const setShortcut = (shortcut) => {
+    setTitlebarShortcutText(shortcutEl, shortcut);
+  };
+
+  setShortcut(config.shortcut);
   setHint(config.hint);
 
   const getInteractiveElements = () => {
@@ -498,10 +562,12 @@ export function createPopoverTitlebar(config = {}) {
     titlebar,
     closeButton,
     titleEl,
+    shortcutEl,
     hintEl,
     titleContainer,
     actionsSlot,
     setTitle,
+    setShortcut,
     setHint,
     getInteractiveElements
   };

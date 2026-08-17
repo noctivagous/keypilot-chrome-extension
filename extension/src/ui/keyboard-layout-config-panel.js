@@ -24,11 +24,12 @@ import {
   KEYBINDING_ACTION_DEFS,
   listLayoutPickerGroups,
   nextUserCopyLayoutLabel,
+  normalizeKeyboardHandedness,
   normalizeKeyboardLayoutFamilyId,
   parseBuiltinFamilySelectValue,
   resolveKeyboardLayoutId
 } from '../config/keyboard-layouts.js';
-import { DEFAULT_SETTINGS, getSettings, setSettings } from '../modules/settings-manager.js';
+import { DEFAULT_SETTINGS, getSettings, setSettings, SETTINGS_STORAGE_KEY } from '../modules/settings-manager.js';
 import {
   createUserAction,
   createUserMacro,
@@ -548,6 +549,13 @@ export class KeyboardLayoutConfigPanel {
     this._layoutOptsBtn = null;
     /** @type {HTMLElement|null} */
     this._layoutOptsMenu = null;
+    /** @type {HTMLElement|null} */
+    this._handednessSeg = null;
+    /** @type {HTMLInputElement|null} */
+    this._leftHandedMenuToggle = null;
+    this._showNumRowToggle = null;
+    /** @type {((changes: any, area: string) => void)|null} */
+    this._settingsStorageListener = null;
     this._searchInput = null;
     this._macroKeysActionsRow = null;
     /** Inspector dock body — every Config-side editor renders in here. */
@@ -581,7 +589,6 @@ export class KeyboardLayoutConfigPanel {
     this._libTabsEl = null;
     this._fnCategorySelect = null;
     this._currentBadge = null;
-    this._showNumRowToggle = null;
     this._dragDispose = null;
     this._resizeDispose = null;
     this._positionHydrated = false;
@@ -725,6 +732,7 @@ export class KeyboardLayoutConfigPanel {
       } catch { /* ignore */ }
     }
     this._setVisible(true);
+    try { this._syncHandednessUi(); } catch { /* ignore */ }
     this._emitChange();
   }
 
@@ -746,6 +754,12 @@ export class KeyboardLayoutConfigPanel {
   cleanup() {
     this._cancelPlaceMode();
     this._stopChordCapture();
+    try {
+      if (this._settingsStorageListener) {
+        chrome?.storage?.onChanged?.removeListener?.(this._settingsStorageListener);
+      }
+    } catch { /* ignore */ }
+    this._settingsStorageListener = null;
     try { this._dragDispose?.(); } catch { /* ignore */ }
     this._dragDispose = null;
     try { this._resizeDispose?.(); } catch { /* ignore */ }
@@ -756,6 +770,8 @@ export class KeyboardLayoutConfigPanel {
     this.root = null;
     this.shadowRoot = null;
     this._listEl = null;
+    this._handednessSeg = null;
+    this._leftHandedMenuToggle = null;
     this._kp = null;
   }
 
@@ -1029,6 +1045,21 @@ export class KeyboardLayoutConfigPanel {
   line-height: 28px;
   min-width: 0;
 }
+.kp-layout-config-panel .kp-cfg-title-shortcut {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.2;
+  padding: 1px 6px;
+  margin-left: 2px;
+  border: ${ONBOARDING_METAL.kbdBorder};
+  border-radius: ${NCT_DARK_UI_BTN_RADIUS};
+  background: ${ONBOARDING_METAL.kbdBg};
+  color: ${ONBOARDING_METAL.kbdColor};
+  box-shadow: ${ONBOARDING_METAL.kbdShadow};
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
 .kp-layout-config-panel .kp-cfg-close {
   width: 22px;
   height: 22px;
@@ -1105,6 +1136,24 @@ export class KeyboardLayoutConfigPanel {
 .kp-layout-config-panel .kp-cfg-strip .kp-cfg-tool-group .kp-cfg-btn:hover:not(:disabled) {
   filter: none;
   background: rgba(255, 255, 255, 0.22);
+}
+.kp-layout-config-panel .kp-cfg-strip .kp-cfg-handedness-seg {
+  border: ${ONBOARDING_METAL.btnBorder};
+  background: ${ONBOARDING_METAL.btnBg};
+  box-shadow: ${ONBOARDING_METAL.btnShadow};
+}
+.kp-layout-config-panel .kp-cfg-strip .kp-cfg-handedness-seg .kp-cfg-seg-btn {
+  border-right-color: rgba(0, 0, 0, 0.22);
+  color: ${ONBOARDING_METAL.fgDim};
+}
+.kp-layout-config-panel .kp-cfg-strip .kp-cfg-handedness-seg .kp-cfg-seg-btn:hover {
+  color: ${ONBOARDING_METAL.fg};
+  background: rgba(255, 255, 255, 0.3);
+}
+.kp-layout-config-panel .kp-cfg-strip .kp-cfg-handedness-seg .kp-cfg-seg-btn[aria-selected="true"] {
+  background: ${NCT_DARK_UI_SELECTED_TINT};
+  color: ${NCT_DARK_UI_SELECTED_TEXT};
+  box-shadow: none;
 }
 .kp-layout-config-panel .kp-cfg-strip .kp-cfg-tool-sep {
   background: rgba(0, 0, 0, 0.28);
@@ -1336,6 +1385,19 @@ export class KeyboardLayoutConfigPanel {
   flex: 0 0 auto;
   margin-left: auto;
   height: 22px;
+}
+.kp-layout-config-panel .kp-cfg-handedness-seg {
+  flex: 0 0 auto;
+  height: 22px;
+  align-self: center;
+}
+.kp-layout-config-panel .kp-cfg-handedness-seg[hidden] {
+  display: none !important;
+}
+.kp-layout-config-panel .kp-cfg-handedness-seg .kp-cfg-seg-btn {
+  height: 100%;
+  padding: 0 8px;
+  font-size: 9px;
 }
 .kp-layout-config-panel .kp-cfg-tool-group {
   display: inline-flex;
@@ -1604,50 +1666,41 @@ export class KeyboardLayoutConfigPanel {
 .kp-layout-config-panel .kp-cfg-lib-viewbar {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px 12px;
   padding: 2px 2px 8px;
   flex: 0 0 auto;
 }
 .kp-layout-config-panel .kp-cfg-lib-viewbar .kp-cfg-seg {
   flex: 0 0 auto;
+  margin-top: 1px;
 }
-.kp-layout-config-panel .kp-cfg-legend-mini {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 6px 10px;
-  font-size: 8px;
-  color: rgba(235, 235, 235, 0.72);
-  opacity: 0.95;
+.kp-layout-config-panel .kp-cfg-lib-instructions {
+  flex: 1 1 180px;
+  min-width: 0;
+  font-size: 10px;
+  line-height: 1.35;
+  color: rgba(235, 235, 235, 0.78);
 }
-.kp-layout-config-panel .kp-cfg-legend-mini span {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+.kp-layout-config-panel .kp-cfg-lib-instructions-title {
+  font-weight: 600;
+  color: rgba(235, 235, 235, 0.88);
+  margin-bottom: 2px;
 }
-.kp-layout-config-panel .kp-cfg-legend-mini i {
-  display: inline-block;
-  width: 10px;
-  height: 8px;
-  border-radius: 1px;
-  border: 1px solid #444;
-  box-sizing: border-box;
+.kp-layout-config-panel .kp-cfg-lib-instructions ol {
+  margin: 0;
+  padding-left: 1.25em;
 }
-.kp-layout-config-panel .kp-cfg-legend-mini .kp-cfg-sw-stock-fn {
-  background: #b0b0b0;
-  border-color: #4a4a4a;
+.kp-layout-config-panel .kp-cfg-lib-instructions > ol {
+  list-style: decimal;
 }
-.kp-layout-config-panel .kp-cfg-legend-mini .kp-cfg-sw-user {
-  background: #b0b0b0;
-  border-color: ${accentA(0.65)};
+.kp-layout-config-panel .kp-cfg-lib-instructions ol ol {
+  list-style: lower-alpha;
+  margin-top: 2px;
+  padding-left: 1.15em;
 }
-.kp-layout-config-panel .kp-cfg-legend-mini .kp-cfg-sw-stock-macro {
-  background: #a4b0a6;
-  border-left: 3px solid #3f7a68;
-}
-.kp-layout-config-panel .kp-cfg-legend-mini .kp-cfg-sw-user-macro {
-  background: #aba1b6;
-  border-left: 3px solid #6d519a;
+.kp-layout-config-panel .kp-cfg-lib-instructions li {
+  margin: 0 0 2px;
 }
 ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
 .kp-layout-config-panel .kp-hier-table tr.kp-cfg-lib-row-inspecting {
@@ -3191,6 +3244,13 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 .kp-layout-config-panel .kp-cfg-layout-combo {
   height: 28px;
 }
+.kp-layout-config-panel .kp-cfg-handedness-seg {
+  height: 28px;
+}
+.kp-layout-config-panel .kp-cfg-handedness-seg .kp-cfg-seg-btn {
+  font-size: 11px;
+  padding: 0 10px;
+}
 .kp-layout-config-panel .kp-cfg-strip-label {
   font-size: 11.25px;
   line-height: 28px;
@@ -3343,6 +3403,12 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     titleText.textContent = 'Keyboard Layout Config';
     title.appendChild(titleText);
 
+    const titleShortcut = doc.createElement('kbd');
+    titleShortcut.className = 'kp-cfg-title-shortcut';
+    titleShortcut.setAttribute('data-kp-titlebar-shortcut', 'true');
+    titleShortcut.textContent = '(Alt + C)';
+    titleShortcut.title = 'Toggle with Alt+C';
+
     const closeBtn = doc.createElement('button');
     closeBtn.type = 'button';
     closeBtn.className = 'kp-cfg-close';
@@ -3357,6 +3423,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const titleStart = doc.createElement('div');
     titleStart.className = 'kp-cfg-titlebar-start';
     titleStart.appendChild(title);
+    titleStart.appendChild(titleShortcut);
 
     header.appendChild(titleStart);
     header.appendChild(closeBtn);
@@ -3494,6 +3561,28 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const primary = doc.createElement('div');
     primary.className = 'kp-cfg-layout-primary';
 
+    const handednessSeg = doc.createElement('div');
+    handednessSeg.className = 'kp-cfg-seg kp-cfg-handedness-seg';
+    handednessSeg.setAttribute('role', 'tablist');
+    handednessSeg.setAttribute('aria-label', 'Keyboard handedness');
+    handednessSeg.hidden = true;
+    for (const mode of [
+      { id: 'left', label: 'Left', title: 'Left-handed layout' },
+      { id: 'right', label: 'Right', title: 'Right-handed layout' }
+    ]) {
+      const b = doc.createElement('button');
+      b.type = 'button';
+      b.className = 'kp-cfg-seg-btn';
+      b.setAttribute('role', 'tab');
+      b.dataset.kpHandedness = mode.id;
+      b.textContent = mode.label;
+      b.title = mode.title;
+      b.addEventListener('click', () => {
+        void this._setKeyboardHandedness(mode.id);
+      }, true);
+      handednessSeg.appendChild(b);
+    }
+
     const optsWrap = doc.createElement('div');
     optsWrap.className = 'kp-cfg-opts-wrap';
     const optsBtn = mkIconBtn('layout-opts', 'Layout options', 'kp-cfg-i-more');
@@ -3506,6 +3595,17 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     optsMenu.className = 'kp-cfg-opts-menu';
     optsMenu.setAttribute('role', 'menu');
     optsMenu.hidden = true;
+
+    const leftHandLabel = doc.createElement('label');
+    leftHandLabel.className = 'kp-cfg-opts-check';
+    leftHandLabel.setAttribute('role', 'menuitemcheckbox');
+    const leftHandedMenuToggle = doc.createElement('input');
+    leftHandedMenuToggle.type = 'checkbox';
+    const leftHandText = doc.createElement('span');
+    leftHandText.textContent = 'Left-handed';
+    leftHandLabel.appendChild(leftHandedMenuToggle);
+    leftHandLabel.appendChild(leftHandText);
+    optsMenu.appendChild(leftHandLabel);
 
     const numRowLabel = doc.createElement('label');
     numRowLabel.className = 'kp-cfg-opts-check';
@@ -3521,6 +3621,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     optsWrap.appendChild(optsBtn);
     optsWrap.appendChild(optsMenu);
 
+    primary.appendChild(handednessSeg);
     primary.appendChild(optsWrap);
 
     const importFile = doc.createElement('input');
@@ -3622,25 +3723,32 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       viewSeg.appendChild(b);
     }
 
-    const legendMini = doc.createElement('div');
-    legendMini.className = 'kp-cfg-legend-mini';
-    legendMini.title = 'Card / row color meaning';
-    for (const [swClass, text] of [
-      ['kp-cfg-sw-stock-fn', 'Stock function'],
-      ['kp-cfg-sw-user', 'Configurable'],
-      ['kp-cfg-sw-stock-macro', 'Stock macro'],
-      ['kp-cfg-sw-user-macro', 'User macro']
-    ]) {
-      const span = doc.createElement('span');
-      const sw = doc.createElement('i');
-      sw.className = swClass;
-      span.appendChild(sw);
-      span.appendChild(doc.createTextNode(text));
-      legendMini.appendChild(span);
-    }
+    const instructions = doc.createElement('div');
+    instructions.className = 'kp-cfg-lib-instructions';
+    instructions.setAttribute('aria-label', 'Layout assignment instructions');
+    const instructionsTitle = doc.createElement('div');
+    instructionsTitle.className = 'kp-cfg-lib-instructions-title';
+    instructionsTitle.textContent = 'Instructions:';
+    const instructionsList = doc.createElement('ol');
+    const step1 = doc.createElement('li');
+    step1.textContent = 'Hover over a key and press the close button to remove its action.';
+    const step2 = doc.createElement('li');
+    step2.appendChild(doc.createTextNode('Assign key caps in one of two ways:'));
+    const step2Ways = doc.createElement('ol');
+    const wayA = doc.createElement('li');
+    wayA.textContent = 'Click a key cap once and move the mouse to use the placement arrow.';
+    const wayB = doc.createElement('li');
+    wayB.textContent = 'Drag a key cap to its position';
+    step2Ways.appendChild(wayA);
+    step2Ways.appendChild(wayB);
+    step2.appendChild(step2Ways);
+    instructionsList.appendChild(step1);
+    instructionsList.appendChild(step2);
+    instructions.appendChild(instructionsTitle);
+    instructions.appendChild(instructionsList);
 
     viewBar.appendChild(viewSeg);
-    viewBar.appendChild(legendMini);
+    viewBar.appendChild(instructions);
 
     libraryPane.appendChild(libraryHdr);
     libraryPane.appendChild(list);
@@ -3921,6 +4029,8 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     this._layoutOptsWrap = optsWrap;
     this._layoutOptsBtn = optsBtn;
     this._layoutOptsMenu = optsMenu;
+    this._handednessSeg = handednessSeg;
+    this._leftHandedMenuToggle = leftHandedMenuToggle;
     this._searchInput = search;
     this._currentBadge = currentBadge;
     this._showNumRowToggle = showNumRowToggle;
@@ -4020,6 +4130,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
         try {
           showNumRowToggle.checked = !!settings?.keyboardReferenceShowNumberRow;
         } catch { /* ignore */ }
+        try { this._syncHandednessUi(settings?.keyboardHandedness); } catch { /* ignore */ }
         this._applyTableExpandedFromSettings(settings?.actionsLibraryTableExpanded);
         this._positionHydrated = true;
         if (this.isOpen()) this._applyPanelPositionNow();
@@ -4273,6 +4384,95 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
         this._emitChange();
       } catch { /* ignore */ }
     }, true);
+
+    leftHandedMenuToggle.addEventListener('change', async () => {
+      try {
+        await this._setKeyboardHandedness(leftHandedMenuToggle.checked ? 'left' : 'right');
+        this._setLayoutOptsOpen(false);
+      } catch { /* ignore */ }
+    }, true);
+
+    if (!this._settingsStorageListener) {
+      this._settingsStorageListener = (changes, area) => {
+        try {
+          if (area && area !== 'sync' && area !== 'local') return;
+          const entry = changes && changes[SETTINGS_STORAGE_KEY];
+          if (!entry || !entry.newValue) return;
+          const hand = entry.newValue.keyboardHandedness;
+          this._syncHandednessUi(hand);
+          try {
+            showNumRowToggle.checked = !!entry.newValue.keyboardReferenceShowNumberRow;
+          } catch { /* ignore */ }
+        } catch { /* ignore */ }
+      };
+      try {
+        chrome?.storage?.onChanged?.addListener?.(this._settingsStorageListener);
+      } catch { /* ignore */ }
+    }
+  }
+
+  /**
+   * Current handedness from KeyPilot settings (fallback: right).
+   * @param {any} [raw]
+   * @returns {'left'|'right'}
+   */
+  _currentHandedness(raw) {
+    const fromArg = raw != null ? raw : undefined;
+    const fromKp = this._kp?._settings?.keyboardHandedness;
+    return normalizeKeyboardHandedness(
+      fromArg !== undefined ? fromArg : (fromKp ?? DEFAULT_SETTINGS.keyboardHandedness)
+    );
+  }
+
+  /**
+   * Show Left|Right segment only while left-handed is active; keep [...] menu checkbox in sync.
+   * @param {any} [rawHandedness]
+   */
+  _syncHandednessUi(rawHandedness) {
+    const hand = this._currentHandedness(rawHandedness);
+    const seg = this._handednessSeg;
+    if (seg) {
+      seg.hidden = hand !== 'left';
+      try {
+        seg.querySelectorAll('[data-kp-handedness]').forEach((btn) => {
+          const on = btn.getAttribute('data-kp-handedness') === hand;
+          btn.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+      } catch { /* ignore */ }
+    }
+    if (this._leftHandedMenuToggle) {
+      this._leftHandedMenuToggle.checked = hand === 'left';
+    }
+  }
+
+  /**
+   * Persist handedness and refresh layout chrome (Keyboard Reference + this panel).
+   * Selecting Right hides the LAYOUT segment; Left (via Settings or [...]) shows it again.
+   * @param {'left'|'right'|string} hand
+   */
+  async _setKeyboardHandedness(hand) {
+    const next = normalizeKeyboardHandedness(hand);
+    const prev = this._currentHandedness();
+    if (next === prev) {
+      this._syncHandednessUi(next);
+      return;
+    }
+    try {
+      await setSettings({ keyboardHandedness: next });
+    } catch { /* ignore */ }
+    try {
+      if (this._kp?._settings) this._kp._settings.keyboardHandedness = next;
+    } catch { /* ignore */ }
+    try {
+      const familyId = normalizeKeyboardLayoutFamilyId(
+        this._kp?._settings?.keyboardLayoutFamilyId
+      );
+      this._st.builtinLayoutId = resolveKeyboardLayoutId({ familyId, handedness: next });
+    } catch { /* ignore */ }
+    try { this._kp?._applyKeyboardLayoutFromSettings?.(); } catch { /* ignore */ }
+    this._syncHandednessUi(next);
+    try { this._renderLayoutSelect(); } catch { /* ignore */ }
+    this._emitChange();
   }
 
   _notify(message, type) {

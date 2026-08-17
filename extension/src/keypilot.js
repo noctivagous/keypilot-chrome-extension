@@ -1181,12 +1181,20 @@ export class KeyPilot extends EventManager {
     // If the floating keyboard reference is active, keep it in sync (no flicker if layoutId matches).
     try {
       if (this.floatingKeyboardHelp) {
-        this.floatingKeyboardHelp.setKeybindings(this.keybindings);
-        if (typeof this.floatingKeyboardHelp.setKeyboardLayout === 'function') {
-          this.floatingKeyboardHelp.setKeyboardLayout({
+        if (typeof this.floatingKeyboardHelp.setLayoutChrome === 'function') {
+          this.floatingKeyboardHelp.setLayoutChrome({
+            keybindings: this.keybindings,
             keyboardLayout: this._keyboardUiLayout,
             layoutId: this._keyboardLayoutId
           });
+        } else {
+          this.floatingKeyboardHelp.setKeybindings(this.keybindings);
+          if (typeof this.floatingKeyboardHelp.setKeyboardLayout === 'function') {
+            this.floatingKeyboardHelp.setKeyboardLayout({
+              keyboardLayout: this._keyboardUiLayout,
+              layoutId: this._keyboardLayoutId
+            });
+          }
         }
       }
     } catch { /* ignore */ }
@@ -1972,12 +1980,20 @@ export class KeyPilot extends EventManager {
           this.floatingKeyboardHelp.setKeyPilotAccessor?.(() => this);
         } catch { /* ignore */ }
         // Keep bindings current (in case they were updated).
-        this.floatingKeyboardHelp.setKeybindings(kb);
-        if (typeof this.floatingKeyboardHelp.setKeyboardLayout === 'function') {
-          this.floatingKeyboardHelp.setKeyboardLayout({
+        if (typeof this.floatingKeyboardHelp.setLayoutChrome === 'function') {
+          this.floatingKeyboardHelp.setLayoutChrome({
+            keybindings: kb,
             keyboardLayout: this._keyboardUiLayout,
             layoutId: this._keyboardLayoutId
           });
+        } else {
+          this.floatingKeyboardHelp.setKeybindings(kb);
+          if (typeof this.floatingKeyboardHelp.setKeyboardLayout === 'function') {
+            this.floatingKeyboardHelp.setKeyboardLayout({
+              keyboardLayout: this._keyboardUiLayout,
+              layoutId: this._keyboardLayoutId
+            });
+          }
         }
         // Re-seed from settings before show (handles multi-tab move while hidden).
         if (settingsReady && typeof this.floatingKeyboardHelp.setPanelPositionFromSettings === 'function') {
@@ -8843,7 +8859,7 @@ export class KeyPilot extends EventManager {
 
     this.overlayManager.showInPageDocsPopover({
       title: 'KeyPilot Docs',
-      hintKeyLabel: 'Alt+H',
+      hintKeyLabel: 'Alt + H',
       width: `${docsContainerWidth}px`,
       height: `${docsContainerHeight}px`,
       actions: this._createDocsFontScaleControl()

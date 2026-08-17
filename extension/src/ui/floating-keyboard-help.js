@@ -29,12 +29,16 @@ import { MODES, Z_INDEX } from '../config/constants.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
 import { getSettings, setSettings, SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS } from '../modules/settings-manager.js';
 import {
+  buildEffectiveKeybindings,
   builtinFamilySelectValue,
   getKeyboardUiLayoutForLayout,
   inferFamilyAndHandednessFromLayoutId,
   listLayoutPickerGroups,
+  normalizeKeyboardHandedness,
   normalizeKeyboardLayoutFamilyId,
-  parseBuiltinFamilySelectValue
+  parseBuiltinFamilySelectValue,
+  physicalSlotLabelFromBinding,
+  resolveKeyboardLayoutId
 } from '../config/keyboard-layouts.js';
 import { getFunctionDef } from '../config/function-library.js';
 import {
@@ -49,7 +53,7 @@ import {
   openKeyboardLayoutConfigurator
 } from './keyboard-layout-configurator.js';
 import { makePopoverResizable } from '../utils/popover-resize.js';
-import { createTitlebarKbd } from './popover-titlebar.js';
+import { createTitlebarKbd, createTitlebarShortcut, setTitlebarShortcutText } from './popover-titlebar.js';
 import { ensureOpenChromeShadow, injectChromeStyles, ensureChromeHostMounted } from './kp-chrome-shadow.js';
 import {
   PANEL_POSITION_MARGIN_PX,
@@ -178,6 +182,8 @@ export class FloatingKeyboardHelp {
     this._keyboardBody = null;
     this.closeBtn = null;
     this.hintEl = null;
+    /** @type {HTMLElement|null} Title-adjacent toggle shortcut chip "([K])". */
+    this._shortcutEl = null;
     /** @type {HTMLElement|null} */
     this._titlebar = null;
     /** @type {HTMLButtonElement|null} */
@@ -342,6 +348,20 @@ export class FloatingKeyboardHelp {
   }
 
   /**
+   * Apply keybindings + visual layout together so a handedness change cannot
+   * paint the new key positions with leftover mappings (or the reverse).
+   * @param {{ keybindings?: Record<string, any>, keyboardLayout?: any[], layoutId?: string }} params
+   */
+  setLayoutChrome({ keybindings, keyboardLayout, layoutId } = {}) {
+    if (keybindings) this.keybindings = keybindings;
+    if (keyboardLayout) this.keyboardLayout = keyboardLayout;
+    if (typeof layoutId === 'string') this.layoutId = layoutId;
+    if (this.root && !this.root.hidden) {
+      this._render();
+    }
+  }
+
+  /**
    * @param {object} params
    * @param {string} params.currentKeyboardLayoutId
    * @param {any|null} [params.userLayout]
@@ -393,17 +413,22 @@ export class FloatingKeyboardHelp {
       } catch { /* ignore */ }
     }
 
-    // Update titlebar hint
+    // Update titlebar status hint (edit mode uses the far-right hint slot).
     try {
       if (this.hintEl) {
         if (next) {
           while (this.hintEl.firstChild) this.hintEl.removeChild(this.hintEl.firstChild);
+          this.hintEl.hidden = false;
+          this.hintEl.style.display = 'inline-flex';
           this.hintEl.appendChild(document.createTextNode('Editing — Alt+C to exit'));
           this.hintEl.setAttribute('aria-label', 'Editing layout — Alt+C to exit');
         } else {
+          while (this.hintEl.firstChild) this.hintEl.removeChild(this.hintEl.firstChild);
+          this.hintEl.hidden = true;
+          this.hintEl.style.display = 'none';
           const b = this.keybindings && this.keybindings.TOGGLE_KEYBOARD_HELP;
           const key = (b && (b.displayKey || b.keyLabel)) ? String(b.displayKey || b.keyLabel) : 'K';
-          this._setToggleHint(this.hintEl, key);
+          this._setToggleShortcut(key);
         }
       }
     } catch { /* ignore */ }
@@ -968,7 +993,7 @@ export class FloatingKeyboardHelp {
   /**
    * Compact, dark window-style titlebar (drag handle).
    * @param {HTMLElement|null} header
-   * @param {{ titleEl?: HTMLElement|null, hintEl?: HTMLElement|null, closeBtn?: HTMLElement|null }} [parts]
+   * @param {{ titleEl?: HTMLElement|null, shortcutEl?: HTMLElement|null, hintEl?: HTMLElement|null, closeBtn?: HTMLElement|null }} [parts]
    */
   _applyCompactTitlebar(header, parts = {}) {
     if (!header || !header.style) return;
@@ -1008,14 +1033,26 @@ export class FloatingKeyboardHelp {
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         margin: '0',
-        padding: '0'
+        padding: '0',
+        flex: '0 1 auto',
+        minWidth: '0'
+      });
+    }
+
+    const shortcutEl = parts.shortcutEl
+      || header.querySelector('[data-kp-floating-keyboard-shortcut="true"]')
+      || header.querySelector('[data-kp-titlebar-shortcut="true"]');
+    if (shortcutEl && shortcutEl.style) {
+      Object.assign(shortcutEl.style, {
+        marginLeft: '0',
+        flexShrink: '0'
       });
     }
 
     const hintEl = parts.hintEl || header.querySelector('[data-kp-floating-keyboard-hint="true"]');
     if (hintEl && hintEl.style) {
       Object.assign(hintEl.style, {
-        display: 'inline-flex',
+        display: hintEl.hidden ? 'none' : 'inline-flex',
         alignItems: 'center',
         gap: '4px',
         marginLeft: 'auto',
@@ -1229,6 +1266,19 @@ export class FloatingKeyboardHelp {
         const hintEl = shell.querySelector('[data-kp-floating-keyboard-hint="true"]');
         const titleEl = shell.querySelector('[data-kp-floating-keyboard-title="true"]')
           || (header ? header.querySelector('div:not([data-kp-floating-keyboard-hint])') : null);
+        let shortcutEl = shell.querySelector('[data-kp-floating-keyboard-shortcut="true"]')
+          || shell.querySelector('[data-kp-titlebar-shortcut="true"]');
+        if (!shortcutEl && header && titleEl) {
+          shortcutEl = createTitlebarShortcut(document, '[K]');
+          shortcutEl.setAttribute('data-kp-floating-keyboard-shortcut', 'true');
+          shortcutEl.title = 'Toggle keyboard reference';
+          try {
+            if (titleEl.nextSibling) header.insertBefore(shortcutEl, titleEl.nextSibling);
+            else header.appendChild(shortcutEl);
+          } catch {
+            try { header.appendChild(shortcutEl); } catch { /* ignore */ }
+          }
+        }
         let layoutSelect = shell.querySelector('[data-kp-floating-keyboard-layout-select="true"]');
         if (!layoutSelect && header) {
           layoutSelect = document.createElement('select');
@@ -1266,8 +1316,16 @@ export class FloatingKeyboardHelp {
         }
 
         try {
+          if (hintEl && !this._editMode) {
+            while (hintEl.firstChild) hintEl.removeChild(hintEl.firstChild);
+            hintEl.hidden = true;
+            hintEl.style.display = 'none';
+          }
+        } catch { /* ignore */ }
+
+        try {
           this._applyProPanelChrome(existing);
-          this._applyCompactTitlebar(header, { titleEl, hintEl, closeBtn });
+          this._applyCompactTitlebar(header, { titleEl, shortcutEl, hintEl, closeBtn });
           this._applyKeyboardBodyChrome(body);
           this._applyKeyboardHostChrome(keyboardContainer);
         } catch { /* ignore */ }
@@ -1279,6 +1337,7 @@ export class FloatingKeyboardHelp {
           this._keyboardBody = body;
           this.closeBtn = closeBtn || null;
           this.hintEl = hintEl || null;
+          this._shortcutEl = shortcutEl || null;
           this._titlebar = header || null;
           this._layoutSelectEl = layoutSelect || null;
           this._layoutTitleEl = titleEl || null;
@@ -1322,6 +1381,10 @@ export class FloatingKeyboardHelp {
     title.textContent = 'Keyboard Reference';
     title.setAttribute('data-kp-floating-keyboard-title', 'true');
 
+    const shortcut = createTitlebarShortcut(document, '[K]');
+    shortcut.setAttribute('data-kp-floating-keyboard-shortcut', 'true');
+    shortcut.title = 'Toggle keyboard reference';
+
     const layoutSelect = document.createElement('select');
     layoutSelect.setAttribute('aria-label', 'Current keyboard layout');
     layoutSelect.setAttribute('data-kp-floating-keyboard-layout-select', 'true');
@@ -1342,7 +1405,7 @@ export class FloatingKeyboardHelp {
 
     const hint = document.createElement('div');
     hint.setAttribute('data-kp-floating-keyboard-hint', 'true');
-    this._setToggleHint(hint, 'K');
+    hint.hidden = true;
 
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
@@ -1353,10 +1416,16 @@ export class FloatingKeyboardHelp {
     closeBtn.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
 
     header.appendChild(title);
+    header.appendChild(shortcut);
     header.appendChild(layoutSelect);
     header.appendChild(hint);
     header.appendChild(closeBtn);
-    this._applyCompactTitlebar(header, { titleEl: title, hintEl: hint, closeBtn });
+    this._applyCompactTitlebar(header, {
+      titleEl: title,
+      shortcutEl: shortcut,
+      hintEl: hint,
+      closeBtn
+    });
 
     const body = document.createElement('div');
     body.setAttribute('data-kp-floating-keyboard-body', 'true');
@@ -1380,6 +1449,7 @@ export class FloatingKeyboardHelp {
     this._keyboardBody = body;
     this.closeBtn = closeBtn;
     this.hintEl = hint;
+    this._shortcutEl = shortcut;
     this._titlebar = header;
     this._layoutSelectEl = layoutSelect;
     this._layoutTitleEl = title;
@@ -1480,55 +1550,42 @@ export class FloatingKeyboardHelp {
   }
 
   /**
-   * Titlebar hint: "Press <kbd>K</kbd> to toggle" (key label is layout-aware).
+   * Title-adjacent toggle shortcut "([K])" (key label is layout-aware).
+   * @param {string} keyLabel
+   */
+  _setToggleShortcut(keyLabel) {
+    const key = String(keyLabel || 'K').trim() || 'K';
+    const el = this._shortcutEl
+      || this._titlebar?.querySelector?.('[data-kp-floating-keyboard-shortcut="true"]')
+      || this._titlebar?.querySelector?.('[data-kp-titlebar-shortcut="true"]')
+      || null;
+    if (!el) return;
+    this._shortcutEl = el;
+    const inner = `[${key}]`;
+    try {
+      if (el.textContent === `(${inner})` && el.style.display !== 'none') return;
+    } catch { /* ignore */ }
+    setTitlebarShortcutText(el, inner);
+    try {
+      el.title = `Toggle with ${key}`;
+      el.setAttribute('aria-label', `Toggle keyboard reference (${key})`);
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * @deprecated Prefer {@link _setToggleShortcut}; kept for early-inject adopt paths.
    * @param {HTMLElement|null} hintEl
    * @param {string} keyLabel
    */
   _setToggleHint(hintEl, keyLabel) {
-    if (!hintEl) return;
-    const key = String(keyLabel || 'K').trim() || 'K';
-    // Skip rebuild when the chip is already correct — avoids K flashing on every
-    // show/render (and on post-navigation adopt after early-inject painted the hint).
-    try {
-      const existing = hintEl.querySelector('[data-kp-floating-keyboard-hint-key="true"]');
-      if (
-        existing
-        && existing.textContent === key
-        && hintEl.getAttribute('aria-label') === `Press ${key} to toggle`
-        && !this._editMode
-      ) {
-        return;
-      }
-    } catch { /* ignore */ }
-
-    while (hintEl.firstChild) hintEl.removeChild(hintEl.firstChild);
-
-    hintEl.appendChild(document.createTextNode('Press '));
-
-    const kbd = document.createElement('kbd');
-    kbd.setAttribute('data-kp-floating-keyboard-hint-key', 'true');
-    kbd.textContent = key;
-    Object.assign(kbd.style, {
-      display: 'inline-block',
-      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-      fontSize: '10px',
-      fontWeight: '600',
-      lineHeight: '1.2',
-      padding: '1px 5px',
-      border: '1px solid rgba(255, 255, 255, 0.16)',
-      borderBottomColor: 'rgba(0, 0, 0, 0.55)',
-      borderRadius: '4px',
-      background: 'linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
-      color: 'rgba(230, 232, 238, 0.95)',
-      boxShadow: '0 1px 0 rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06)',
-      verticalAlign: 'middle'
-    });
-    hintEl.appendChild(kbd);
-
-    hintEl.appendChild(document.createTextNode(' to toggle'));
-    try {
-      hintEl.setAttribute('aria-label', `Press ${key} to toggle`);
-    } catch { /* ignore */ }
+    this._setToggleShortcut(keyLabel);
+    if (hintEl && !this._editMode) {
+      try {
+        while (hintEl.firstChild) hintEl.removeChild(hintEl.firstChild);
+        hintEl.hidden = true;
+        hintEl.style.display = 'none';
+      } catch { /* ignore */ }
+    }
   }
 
   _render() {
@@ -1537,7 +1594,7 @@ export class FloatingKeyboardHelp {
       if (!this._editMode) {
         const b = this.keybindings && this.keybindings.TOGGLE_KEYBOARD_HELP;
         const key = (b && (b.displayKey || b.keyLabel)) ? String(b.displayKey || b.keyLabel) : 'K';
-        this._setToggleHint(this.hintEl, key);
+        this._setToggleShortcut(key);
       }
     } catch { /* ignore */ }
     this._syncEscExitButton();
@@ -1646,10 +1703,10 @@ export class FloatingKeyboardHelp {
     } catch { /* ignore */ }
 
     try {
-      if (this.hintEl && !on) {
+      if (this.hintEl && !on && !this._editMode) {
         const b = this.keybindings && this.keybindings.TOGGLE_KEYBOARD_HELP;
         const key = (b && (b.displayKey || b.keyLabel)) ? String(b.displayKey || b.keyLabel) : 'K';
-        this._setToggleHint(this.hintEl, key);
+        this._setToggleShortcut(key);
       }
     } catch { /* ignore */ }
   }
@@ -1882,7 +1939,7 @@ export class FloatingKeyboardHelp {
           selEl.appendChild(document.createElement('hr'));
         } catch { /* ignore */ }
         appendGroup('Keyboard Layout Config', [
-          { value: LAYOUT_SELECT_EDIT_VALUE, label: 'Edit Keyboard Layout…' },
+          { value: LAYOUT_SELECT_EDIT_VALUE, label: 'Edit Keyboard Layout…  Alt + C' },
           { value: LAYOUT_SELECT_NEW_VALUE, label: 'New Blank Keyboard Layout' },
           { value: LAYOUT_SELECT_DUP_VALUE, label: 'New Duplicate Keyboard Layout' }
         ]);
@@ -1952,18 +2009,28 @@ export class FloatingKeyboardHelp {
 
     if (!sel.startsWith('user:')) {
       // Built-in render — always honor number-row setting (don't rely on a possibly-stale
-      // this.keyboardLayout from before settings hydrated).
+      // this.keyboardLayout from before settings hydrated). Resolve layout + bindings
+      // from settings so toggling left-handed cannot leave leftover mappings on a
+      // rebuilt right-handed keyboard (or the reverse).
       try {
         const showNumberRow = !!(settings && settings.keyboardReferenceShowNumberRow);
-        const uiLayout = getKeyboardUiLayoutForLayout(this.layoutId || 'browsing-right', {
+        const handedness = normalizeKeyboardHandedness(settings?.keyboardHandedness);
+        const layoutId = resolveKeyboardLayoutId({
+          familyId: settings?.keyboardLayoutFamilyId,
+          handedness
+        }) || this.layoutId || 'browsing-right';
+        this.layoutId = layoutId;
+        const uiLayout = getKeyboardUiLayoutForLayout(layoutId, {
           includeNumberRow: showNumberRow
         });
         this.keyboardLayout = uiLayout;
+        const keybindings = buildEffectiveKeybindings(layoutId, handedness);
+        this.keybindings = keybindings;
         renderKeybindingsKeyboard({
           container: this.keyboardContainer,
-          keybindings: this.keybindings,
+          keybindings,
           keyboardLayout: uiLayout,
-          layoutId: this.layoutId || undefined,
+          layoutId,
           attachPopovers: true
         });
         this._rebuildKeyIndex();
@@ -2003,15 +2070,23 @@ export class FloatingKeyboardHelp {
         } catch { /* ignore */ }
         try {
           const showNumberRow = !!(settings && settings.keyboardReferenceShowNumberRow);
-          const uiLayout = getKeyboardUiLayoutForLayout(this.layoutId || 'browsing-right', {
+          const handedness = normalizeKeyboardHandedness(settings?.keyboardHandedness);
+          const layoutId = resolveKeyboardLayoutId({
+            familyId: settings?.keyboardLayoutFamilyId,
+            handedness
+          }) || this.layoutId || 'browsing-right';
+          this.layoutId = layoutId;
+          const uiLayout = getKeyboardUiLayoutForLayout(layoutId, {
             includeNumberRow: showNumberRow
           });
           this.keyboardLayout = uiLayout;
+          const keybindings = buildEffectiveKeybindings(layoutId, handedness);
+          this.keybindings = keybindings;
           renderKeybindingsKeyboard({
             container: this.keyboardContainer,
-            keybindings: this.keybindings,
+            keybindings,
             keyboardLayout: uiLayout,
-            layoutId: this.layoutId || undefined,
+            layoutId,
             attachPopovers: true
           });
           this._rebuildKeyIndex();
@@ -2025,13 +2100,15 @@ export class FloatingKeyboardHelp {
       const baseId = String(userLayout.baseBuiltinLayoutId || this.layoutId || 'browsing-right');
       const showNumberRow = !!(settings && settings.keyboardReferenceShowNumberRow);
       const uiLayout = getKeyboardUiLayoutForLayout(baseId, { includeNumberRow: showNumberRow });
+      const baseHand = inferFamilyAndHandednessFromLayoutId(baseId).handedness;
+      const baseKb = buildEffectiveKeybindings(baseId, baseHand);
       this._renderSlotKeyboard({
         container: this.keyboardContainer,
         uiLayout,
         slots: userLayout.slots || {},
         macros,
         actions,
-        keybindings: this.keybindings,
+        keybindings: baseKb,
         editMode: false
       });
       this._rebuildKeyIndex();
@@ -2058,24 +2135,32 @@ export class FloatingKeyboardHelp {
     let slots = {};
     let macros = Array.isArray(st?.macros) ? st.macros : (this._currentUserMacros || []);
     let actions = Array.isArray(st?.actions) ? st.actions : (this._currentUserActions || []);
-    let baseId = this.layoutId || 'browsing-right';
     let userLayout = null;
-
+    // Pin the key grid to the layout this user map was copied from. Live
+    // Settings handedness updates this.layoutId; using that here would move
+    // action positions while slots stay on the old letters.
+    let baseId = '';
     if (mode === 'user' && st?.userLayout) {
       userLayout = st.userLayout;
       slots = userLayout.slots && typeof userLayout.slots === 'object' ? userLayout.slots : {};
-      baseId = String(userLayout.baseBuiltinLayoutId || baseId);
+      baseId = String(userLayout.baseBuiltinLayoutId || '');
     } else {
       // Built-in preview slots from current keybindings — transient/derived, never persisted, so
       // using `type: 'function'` here (rather than the legacy `type: 'action'`) is purely cosmetic
       // consistency with what a real duplicated layout would contain (see
       // `duplicateBuiltinLayoutToUserLayout()` in keyboard-layout-store.js).
       for (const [actionId, binding] of Object.entries(this.keybindings || {})) {
-        const label = String(binding?.displayKey || binding?.keyLabel || '').trim();
-        if (!label || label.length !== 1) continue;
-        slots[label.toUpperCase()] = { type: 'function', id: String(actionId) };
+        const slot = physicalSlotLabelFromBinding(binding);
+        if (!slot) continue;
+        slots[slot] = { type: 'function', id: String(actionId) };
       }
-      baseId = String(st?.builtinLayoutId || this.layoutId || 'browsing-right');
+    }
+    if (!baseId) {
+      const handedness = normalizeKeyboardHandedness(settings?.keyboardHandedness);
+      baseId = resolveKeyboardLayoutId({
+        familyId: settings?.keyboardLayoutFamilyId,
+        handedness
+      }) || this.layoutId || 'browsing-right';
     }
 
     if (!macros.length) {
@@ -2088,13 +2173,15 @@ export class FloatingKeyboardHelp {
 
     const showNumberRow = !!(settings && settings.keyboardReferenceShowNumberRow);
     const uiLayout = getKeyboardUiLayoutForLayout(baseId, { includeNumberRow: showNumberRow });
+    const baseHand = inferFamilyAndHandednessFromLayoutId(baseId).handedness;
+    const baseKb = buildEffectiveKeybindings(baseId, baseHand);
     this._renderSlotKeyboard({
       container: this.keyboardContainer,
       uiLayout,
       slots,
       macros,
       actions,
-      keybindings: this.keybindings,
+      keybindings: baseKb,
       editMode: true,
       readOnly,
       userLayout
@@ -2185,8 +2272,7 @@ export class FloatingKeyboardHelp {
     const kb = keybindings || this.keybindings || {};
     const actionSlotLabelFromItem = (item) => {
       const binding = kb && kb[item.id];
-      const label = String(binding?.displayKey || binding?.keyLabel || '').trim();
-      return label && label.length === 1 ? label.toUpperCase() : '';
+      return physicalSlotLabelFromBinding(binding);
     };
 
     const editable = !!(editMode && !readOnly && userLayout && typeof userLayout.slots === 'object');

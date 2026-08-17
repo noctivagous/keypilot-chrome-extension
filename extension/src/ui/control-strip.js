@@ -73,7 +73,9 @@ export class ControlStrip {
 
     this._enabled = true;
     this._textMode = false;
-    this._collapsed = false;
+    // Match DEFAULT_SETTINGS.controlStrip.collapsed so first paint is compact.
+    this._collapsed = true;
+    this._collapsedExplicit = false;
     this._keyboardActive = false;
     this._desiredVisible = true;
 
@@ -173,6 +175,7 @@ export class ControlStrip {
    */
   setCollapsed(collapsed, opts = {}) {
     const next = !!collapsed;
+    this._collapsedExplicit = true;
     if (this._collapsed === next) {
       this._applyCollapsedLayout();
       this._bindDrag();
@@ -310,6 +313,16 @@ export class ControlStrip {
           this._settingsBtn = settingsBtn;
           this._collapseBtn = collapseBtn;
           this._closeBtn = closeBtn;
+
+          // Honor the early shell so we don't expand a compact paint on adopt,
+          // unless settings already supplied an explicit collapsed value.
+          if (!this._collapsedExplicit) {
+            try {
+              const earlyCollapsed = existing.getAttribute('data-kp-collapsed');
+              if (earlyCollapsed === 'true') this._collapsed = true;
+              else if (earlyCollapsed === 'false') this._collapsed = false;
+            } catch { /* ignore */ }
+          }
 
           // Keep shell rim + titlebar bevel in sync with current chrome
           // (early inject may still have a flat near-black fill / opaque ON segment).

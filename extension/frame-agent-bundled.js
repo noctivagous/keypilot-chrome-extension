@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-17T06:30:01.708Z
+ * Generated on 2026-08-17T23:24:20.689Z
  */
 
 (() => {
@@ -802,7 +802,7 @@
     // (KB Reference / Settings / Esc live in the system layer, not layout assignments.)
     TAB_HISTORY: Object.freeze({ keys: ["f", "F"] }),
     OMNIBOX: Object.freeze({ keys: ["s", "S"] }),
-    TOP_SITES: Object.freeze({ keys: ["a", "A", "`", "~", "Backquote"], matchOn: ["key", "code"], displayKey: "a/`", keyLabel: "a/`" }),
+    TOP_SITES: Object.freeze({ keys: ["a", "A", "`", "~", "Backquote"], matchOn: ["key", "code"], displayKey: "A", keyLabel: "A" }),
     // Bottom row cluster: Z X C V B  ->  / . , M N (mirrored)
     PAGE_TOP: Object.freeze({ keys: ["/", "?"], displayKey: "/", keyLabel: "/" }),
     PAGE_BOTTOM: Object.freeze({ keys: ["b", "B"] }),
@@ -899,8 +899,23 @@
     }
     return Object.freeze(out);
   }
+  function physicalSlotLabelFromBinding(binding) {
+    const s = String(binding?.displayKey || binding?.keyLabel || "").trim();
+    if (!s) return "";
+    if (s.length === 1) return /[a-z]/i.test(s) ? s.toUpperCase() : s;
+    if (s.includes("/")) {
+      const first = s.split("/")[0];
+      if (first && first.trim().length === 1) {
+        const ch = first.trim();
+        return /[a-z]/i.test(ch) ? ch.toUpperCase() : ch;
+      }
+    }
+    return "";
+  }
   function letterFromAssignment(assignment) {
     if (!assignment) return "";
+    const slot = physicalSlotLabelFromBinding(assignment);
+    if (slot) return slot;
     if (typeof assignment.displayKey === "string" && assignment.displayKey) return assignment.displayKey;
     if (typeof assignment.keyLabel === "string" && assignment.keyLabel) return assignment.keyLabel;
     const keys = Array.isArray(assignment.keys) ? assignment.keys : [];
@@ -1676,7 +1691,13 @@
       clickEffect: "flash",
       // When true, hovering a link glows matching green keys on the Keyboard Reference.
       // Off by default (opt-in via Settings → Click Mode).
-      keyboardLinkHoverHints: false
+      keyboardLinkHoverHints: false,
+      // Default skip DOM outline (A); use in-target (B) then body-fixed (C).
+      // Matches Shadow Root Debug “Auto B→C”.
+      paintStrategy: "BC",
+      // Outward ring padding (px). Strategy A uses this as preferred outline-offset;
+      // B/C expand their boxes by the same amount (A historically ~2px; B→C was 0).
+      focusPadding: 2
     }),
     textMode: Object.freeze({
       cursorType: "t_square",
@@ -1750,6 +1771,17 @@
     if (raw === "blue" || raw === "green") return raw;
     return DEFAULT_SETTINGS.clickMode.focusColor;
   }
+  function normalizePaintStrategy(raw) {
+    if (raw === "auto" || raw === "BC") return raw;
+    const upper = raw == null ? "" : String(raw).trim().toUpperCase();
+    if (upper === "B->C" || upper === "B\u2192C" || upper === "AUTO_BC" || upper === "AUTO-BC" || upper === "AUTO B->C" || upper === "AUTO B\u2192C") {
+      return "BC";
+    }
+    if (upper === "AUTO" || upper === "A->B->C" || upper === "A\u2192B\u2192C") {
+      return "auto";
+    }
+    return DEFAULT_SETTINGS.clickMode.paintStrategy;
+  }
   function normalizeClickMode(raw) {
     const stored = raw && typeof raw === "object" ? raw : {};
     const storedCursor = stored.cursor && typeof stored.cursor === "object" ? stored.cursor : {};
@@ -1794,6 +1826,13 @@
       keyboardLinkHoverHints: normalizeBoolean(
         stored.keyboardLinkHoverHints,
         DEFAULT_SETTINGS.clickMode.keyboardLinkHoverHints
+      ),
+      paintStrategy: normalizePaintStrategy(stored.paintStrategy),
+      focusPadding: normalizeNumber(
+        stored.focusPadding,
+        DEFAULT_SETTINGS.clickMode.focusPadding,
+        0,
+        16
       )
     };
   }
