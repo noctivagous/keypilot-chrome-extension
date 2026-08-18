@@ -1,0 +1,69 @@
+{
+  "viewport": { "width": 1440, "height": 900 },
+  "deviceScaleFactor": 2,
+  "shots": [
+    {
+      "id": "settings-overview",
+      "file": "settings-overview.png",
+      "open": "settings",
+      "panelId": "overview",
+      "selector": ".kpv2-settings-popover"
+    },
+    {
+      "id": "settings-keyboard",
+      "file": "settings-keyboard.png",
+      "open": "settings",
+      "panelId": "keyboard",
+      "selector": ".kpv2-settings-popover"
+    },
+    {
+      "id": "docs-intro",
+      "file": "docs-intro.png",
+      "open": "docs",
+      "topicId": "intro",
+      "selector": ".kpv2-docs-popover"
+    },
+    {
+      "id": "keyboard-reference",
+      "file": "keyboard-reference.png",
+      "open": "keyboardHelp",
+      "selector": ".kp-floating-keyboard-help"
+    },
+    {
+      "id": "layout-config",
+      "file": "layout-config.png",
+      "open": "layoutConfig",
+      "selector": ".kp-layout-config-panel"
+    },
+    {
+      "id": "control-strip",
+      "file": "control-strip.png",
+      "open": "controlStrip",
+      "selector": ".kp-control-strip"
+    },
+    {
+      "id": "omnibox",
+      "file": "omnibox.png",
+      "open": "omnibox",
+      "selector": ".kpv2-omnibox-panel"
+    },
+    {
+      "id": "launcher",
+      "file": "launcher.png",
+      "open": "launcher",
+      "selector": ".kp-launcher-container"
+    },
+    {
+      "id": "popup",
+      "file": "popup.png",
+      "page": "popup.html",
+      "selector": "body"
+    },
+    {
+      "id": "guide",
+      "file": "guide.png",
+      "page": "pages/guide.html",
+      "selector": "body"
+    }
+  ]
+}
