@@ -60,6 +60,7 @@ import {
   getFunctionCategory,
   getFunctionDef,
   isFunctionInstantiable,
+  functionAssignableToKey,
   listFunctionDefs,
   macroKeyKindFromFunctionId,
   sortFunctionDefsForLibrary,
@@ -3880,6 +3881,18 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     jsChip.appendChild(jsSpan);
     jsChip.addEventListener('click', () => this._addDraftFunctionStep('EXECUTE_JS'), true);
     logicPalette.appendChild(jsChip);
+    const popoverChip = doc.createElement('button');
+    popoverChip.type = 'button';
+    popoverChip.className = 'kp-cfg-logic-chip';
+    popoverChip.dataset.kpPrimitiveFunction = 'SHOW_POPOVER';
+    const popoverStrong = doc.createElement('strong');
+    popoverStrong.textContent = 'Show Popover';
+    const popoverSpan = doc.createElement('span');
+    popoverSpan.textContent = 'Route prior result to a popover';
+    popoverChip.appendChild(popoverStrong);
+    popoverChip.appendChild(popoverSpan);
+    popoverChip.addEventListener('click', () => this._addDraftFunctionStep('SHOW_POPOVER'), true);
+    logicPalette.appendChild(popoverChip);
 
     const stepsPane = doc.createElement('div');
     stepsPane.className = 'kp-cfg-steps-pane';
@@ -3924,7 +3937,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     scriptFooter.className = 'kp-cfg-strip-row';
     const placeHint = doc.createElement('span');
     placeHint.className = 'kp-cfg-hint';
-    placeHint.textContent = 'Click a Logic chip or Execute JS, or pick a Function below and Add step. Save adds it to Macros.';
+    placeHint.textContent = 'Click a Logic chip, Execute JS, or Show Popover, or pick a Function below and Add step. Save adds it to Macros.';
     const scriptMeta = doc.createElement('span');
     scriptMeta.className = 'kp-cfg-hint';
     scriptMeta.textContent = '0 steps';
@@ -4779,12 +4792,15 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     host.appendChild(this._renderAssignmentTable({ type: 'function', id: functionId }));
 
     /** @type {Array<{ label: string, onClick: () => void, title?: string, icon?: string }>} */
-    const actions = [{
-      label: 'Place on keyboard',
-      icon: 'kp-cfg-i-place',
-      title: 'Then click a Keyboard Reference key',
-      onClick: () => this._beginPlaceModeFromLibrary({ type: 'function', id: functionId })
-    }];
+    const actions = [];
+    if (functionAssignableToKey(functionId)) {
+      actions.push({
+        label: 'Place on keyboard',
+        icon: 'kp-cfg-i-place',
+        title: 'Then click a Keyboard Reference key',
+        onClick: () => this._beginPlaceModeFromLibrary({ type: 'function', id: functionId })
+      });
+    }
     if (def && FIXED_KEY_FUNCTION_IDS.includes(def.id)
       && (actionHasParameters(def.id) || actionHasDestination(def.id))) {
       actions.push({
@@ -4794,7 +4810,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
         }
       });
     }
-    host.appendChild(this._dockActions(actions));
+    if (actions.length) host.appendChild(this._dockActions(actions));
 
     if (def?.worksWhileTyping) {
       host.appendChild(this._renderModifierToggles({ type: 'function', id: functionId }, def));
@@ -5303,11 +5319,13 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       summarizeFunctionParameters(instance.functionId, instance.parameters) || 'Configured instance'
     ));
     host.appendChild(this._renderAssignmentTable({ type: 'function', id: instance.id }));
-    host.appendChild(this._dockActions([{
-      label: 'Place on keyboard',
-      icon: 'kp-cfg-i-place',
-      onClick: () => this._beginPlaceModeFromLibrary({ type: 'function', id: instance.id })
-    }]));
+    if (functionAssignableToKey(def.id)) {
+      host.appendChild(this._dockActions([{
+        label: 'Place on keyboard',
+        icon: 'kp-cfg-i-place',
+        onClick: () => this._beginPlaceModeFromLibrary({ type: 'function', id: instance.id })
+      }]));
+    }
 
     const wrap = document.createElement('div');
     wrap.className = 'kp-mk-editor';
@@ -6509,7 +6527,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     select.appendChild(all);
     const cats = new Set();
     for (const def of listFunctionDefs()) {
-      if (!def || def.legacyMacroKeyKind) continue;
+      if (!def || def.legacyMacroKeyKind || def.assignableToKey === false) continue;
       cats.add(getFunctionCategory(def.id) || 'Other');
     }
     const order = Array.isArray(FUNCTION_CATEGORY_ORDER) ? FUNCTION_CATEGORY_ORDER : [];
@@ -6765,14 +6783,14 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     // items now (see KEY_ACTION_ARCHITECTURE.md's "Config panel tabs" row) so they render as
     // sections of one list, filtered by the primary tabs above.
 
-    // Every Function in the unified Function Library (function-library.js) is browsable and
+    // Every key-assignable Function in the unified Function Library is browsable and
     // placeable here — built-ins, keystroke primitives (surfaced below as "Configured Macro
-    // Keys" instead, so they're excluded here), Type Characters, and the Data/Lookup/
-    // Translate/Display/Media Library Functions all render as sections of this same list. This
-    // is what used to require a second, additive `function-library-panel.js` window.
+    // Keys" instead, so they're excluded here), Type Characters, and Data/Lookup/
+    // Translate/Media Library Functions. Macro-step primitives (`assignableToKey: false`,
+    // e.g. SHOW_POPOVER) stay out of this list and live on the User Macros palette.
     const allDefs = showFunctions
       ? listFunctionDefs().filter((d) => {
-        if (!d || d.legacyMacroKeyKind) return false;
+        if (!d || d.legacyMacroKeyKind || d.assignableToKey === false) return false;
         if (tab === 'functions' && this._libFunctionCategory) {
           return (getFunctionCategory(d.id) || 'Other') === this._libFunctionCategory;
         }
@@ -7268,7 +7286,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 
     const allDefs = showFunctions
       ? listFunctionDefs().filter((d) => {
-        if (!d || d.legacyMacroKeyKind) return false;
+        if (!d || d.legacyMacroKeyKind || d.assignableToKey === false) return false;
         if (tab === 'functions' && this._libFunctionCategory) {
           return (getFunctionCategory(d.id) || 'Other') === this._libFunctionCategory;
         }
@@ -7922,6 +7940,14 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
         || this._inspectorSelection.id !== item.id) {
         this._inspectItem(item);
       }
+      return;
+    }
+    if (functionId && !functionAssignableToKey(functionId)) {
+      const def = getFunctionDef(functionId);
+      this._notify(
+        `"${def?.label || 'This action'}" is a Macro Step, not a key action. Add it in User Macros.`,
+        'error'
+      );
       return;
     }
     this._cancelPlaceMode();

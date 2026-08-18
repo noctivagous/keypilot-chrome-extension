@@ -26,12 +26,12 @@ for common web interactions, eliminating the need for mouse navigation.
 | `;` | Open Top Sites (toolbar, most visited, recent bookmarks) |
 | `B` | Open Link in New Tab (Foreground) |
 | `D` | Go Back (History) |
-| `E` | Open Link Preview in Popover |
+| `E` | Open Link Preview in a popup window |
 | `F` | Click Element |
 | `G` | Open Link in New Tab (Background, like middle click) |
 | `J` | Open Tab History (Branch-Retaining) |
 | `L` | Open Omnibox (Address Bar Overlay) |
-| `P` | Open Link in Popover |
+| `P` | Open link in a popup window |
 | `S` | Go Back (History) |
 | `N` | Scroll from a fixed origin: move the mouse away from the dot to scroll faster. Optional middle-click on empty page area (Settings → Scrolling). |
 | `'` | Open KeyPilot Settings |
@@ -67,6 +67,10 @@ for common web interactions, eliminating the need for mouse navigation.
 | `Esc` | Exit Focus |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
+
+
+
 
 
 

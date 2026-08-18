@@ -378,13 +378,6 @@ export class StyleManager {
       /* F-key activation: hard strobe on the outline (minimal motion). */
       @keyframes kpv2-focus-flash {
         0% {
-          opacity: 0;
-          border-color: ${COLORS.FLASH_GREEN};
-          box-shadow:
-            0 0 0 0 transparent,
-            0 0 0 0 transparent;
-        }
-        10% {
           opacity: 1;
           border-color: #ffffff;
           box-shadow:

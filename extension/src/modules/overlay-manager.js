@@ -11,15 +11,11 @@ import { MSG } from '../messaging/types.js';
 import { HighlightManager } from './highlight-manager.js';
 import { PopupManager } from './popup-manager.js';
 import { DEFAULT_SETTINGS } from './settings-manager.js';
-import { storageGetValue, storageSetValue } from '../utils/storage.js';
-import { makePopoverResizable } from '../utils/popover-resize.js';
 import {
   createPopoverTitlebar,
-  createTitlebarCloseHint,
-  createUrlPopoverTitlebar
+  createTitlebarCloseHint
 } from '../ui/popover-titlebar.js';
 import { containsComposed, ensureOpenChromeShadow } from '../ui/kp-chrome-shadow.js';
-import { createSegmentedControl } from '../ui/segmented-control.js';
 import {
   NCT_DARK_UI_PANEL_BACKGROUND,
   NCT_DARK_UI_PANEL_BORDER,
@@ -27,24 +23,14 @@ import {
   NCT_DARK_UI_PANEL_BOX_SHADOW
 } from '../ui/nct-dark-ui.js';
 import {
-  assignPopoverIframeSrc,
-  createPopoverIframe,
   isHttpPopoverUrl,
-  isKnownIframeDenierHost,
-  preparePopoverIframeUrl
+  preferHttpsForPreview
 } from '../utils/preview-url.js';
 import { resolveActivationIdentity } from '../utils/resolve-hovered-link.js';
 import { postPopoverBridgeInit } from './popover-bridge-init.js';
 import { mountDocsApp } from '../../pages/docs.js';
 import { mountSettingsApp } from '../../pages/settings.js';
 
-/** Per-host Link Preview viewport mode: { [hostname]: 'mobile' }. Missing/default = desktop. */
-const PREVIEW_VIEWPORT_BY_HOST_KEY = 'kp_link_preview_viewport_by_host';
-
-/**
- * @param {string} url
- * @returns {string} normalized hostname (lowercase, no leading www.)
- */
 /** Font Awesome 6 solid paths (viewBox 0 0 512 512) for PAGE_TOP / PAGE_BOTTOM.
  * Bar sits at the arrow tip (top for ↑, bottom for ↓), not the shaft tail.
  */
@@ -54,16 +40,6 @@ const EDGE_JUMP_ICON_PATHS = Object.freeze({
   // Down arrow + horizontal bar at tip (bottom)
   bottom: 'M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l96-96c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L288 306.7V128c0-17.7-14.3-32-32-32s-32 14.3-32 32V306.7l-41.4-41.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l96 96zM64 448c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H96c-17.7 0-32-14.3-32-32z'
 });
-
-function previewHostFromUrl(url) {
-  try {
-    let host = new URL(String(url || '')).hostname.toLowerCase();
-    if (host.startsWith('www.')) host = host.slice(4);
-    return host;
-  } catch {
-    return '';
-  }
-}
 
 
 
@@ -122,8 +98,7 @@ export class OverlayManager {
     /** @type {(() => void)|null} */
     this._docsUnmount = null;
     this._docsFontScale = 1.25;
-    this._previewMobileUaActive = false; // SW session rule: mobile UA for preview iframe
-    /** @type {number|null} OS popup window id when using separate-window fallback */
+    /** @type {number|null} OS popup window id for Link Preview / Open Popover */
     this._popoverWindowId = null;
     /** @type {number|null} tab id inside the OS popup window */
     this._popoverWindowTabId = null;
@@ -131,8 +106,6 @@ export class OverlayManager {
     this._popoverWindowUrl = null;
     /** @type {'preview'|'modal'|null} */
     this._popoverWindowKind = null;
-    /** Pending iframe denial watch payload (for promote-on-deny). */
-    this._pendingIframePromote = null;
     /** @type {((message: any, sender: any, sendResponse: any) => boolean|void)|null} */
     this._popoverWindowMsgHandler = null;
     /** @type {HTMLElement|null} */
@@ -6506,13 +6479,28 @@ export class OverlayManager {
    * @param {Element|null|undefined} sourceEl
    * @param {{ left: number, top: number, width: number, height: number }|null|undefined} originRect
    * @param {number} cleanupMs
-   * @param {{ checkOcclusion?: boolean }} [opts]
+   * @param {{ checkOcclusion?: boolean, minVisibleMs?: number }} [opts]
+   *   minVisibleMs: keep the ghost through source teardown/occlusion until this
+   *   many ms have elapsed (F-click flash must survive the click's SPA unmount).
    */
   _trackEphemeralEffect(pulse, sourceEl, originRect, cleanupMs, opts = {}) {
     if (!pulse) return;
     this._installEphemeralEffectLifecycle();
 
     const checkOcclusion = opts?.checkOcclusion === true;
+    const minVisibleMs = Number.isFinite(opts?.minVisibleMs)
+      ? Math.max(0, opts.minVisibleMs)
+      : 0;
+    const visibleSince = (typeof performance !== 'undefined' && performance.now)
+      ? performance.now()
+      : Date.now();
+    const earlyTeardownAllowed = () => {
+      if (minVisibleMs <= 0) return true;
+      const now = (typeof performance !== 'undefined' && performance.now)
+        ? performance.now()
+        : Date.now();
+      return (now - visibleSince) >= minVisibleMs;
+    };
 
     const entry = {
       pulse,
@@ -6562,6 +6550,7 @@ export class OverlayManager {
       try {
         entry.io = new IntersectionObserver(
           (records) => {
+            if (!earlyTeardownAllowed()) return;
             for (const r of records) {
               if (!r.isIntersecting || r.intersectionRatio <= 0) {
                 teardown();
@@ -6590,7 +6579,7 @@ export class OverlayManager {
       } catch { /* ignore */ }
 
       const src = entry.sourceEl;
-      if (src) {
+      if (src && earlyTeardownAllowed()) {
         if (!src.isConnected) {
           teardown();
           return;
@@ -7003,7 +6992,7 @@ export class OverlayManager {
    */
   _flashFixedClickEffect(clickEffect, presentation, el) {
     const { paintEl, rects } = this._resolveClickEffectRects(el);
-    if (!rects || !rects.length) return;
+    if (!rects || !rects.length) return false;
 
     const radiusSource = (paintEl && paintEl.nodeType === 1) ? paintEl : el;
     let borderRadius = '0';
@@ -7016,6 +7005,7 @@ export class OverlayManager {
     } catch { borderRadius = '0'; }
 
     const trackEl = (paintEl && paintEl.nodeType === 1) ? paintEl : el;
+    let mounted = false;
 
     for (let i = 0; i < rects.length; i++) {
       const liveRect = rects[i];
@@ -7037,29 +7027,32 @@ export class OverlayManager {
         }
         this._applyEphemeralBorderRadius(pulse, borderRadius, liveRect);
         document.body.appendChild(pulse);
+        // Kick layout so the CSS animation starts this frame, not after click().
+        try { void pulse.offsetWidth; } catch { /* ignore */ }
         this._trackEphemeralEffect(
           pulse,
           trackEl,
           liveRect,
           presentation.cleanupMs,
-          { checkOcclusion: true }
+          { checkOcclusion: true, minVisibleMs: 140 }
         );
+        mounted = true;
       } catch (e) {
         if (window.KEYPILOT_DEBUG) {
           console.warn('[KeyPilot] focus pulse failed:', e);
         }
       }
     }
+    return mounted;
   }
 
   /**
    * F-key activation feedback for link-style targets.
    *
-   * Hybrid paint (see focus-ring-paint.md):
-   *   - Hover already on strategy B → ephemeral green sibling in the same host
-   *     (local max z+1). Co-located so lightbox portals cover it naturally.
-   *   - Otherwise (A or C, or B mount failed) → body-fixed ghost + occlusion
-   *     cleanup via elementsFromPoint when a modal covers the source.
+   * Always a body-fixed ghost (not an in-target sibling). Click / SPA
+   * re-render would unmount an in-host pulse with the target before paint.
+   * Occlusion cleanup still drops the ghost once a lightbox covers the source,
+   * after a short min-visible window.
    *
    * Effect style comes from settings (clickMode.clickEffect):
    *   - flash (default): hard strobe border + glow
@@ -7074,6 +7067,7 @@ export class OverlayManager {
    *
    * @param {Element|null} [activationTarget] - Element that was F-activated.
    *   Prefer this over last-hover focus so category matches the real target.
+   * @returns {boolean} true when a pulse node was mounted
    */
   flashFocusOverlay(activationTarget = null) {
     const el = (activationTarget && activationTarget.nodeType === 1)
@@ -7090,27 +7084,25 @@ export class OverlayManager {
         ? detector.isLinkStyleCategory(cat)
         : (cat === CLICKABLE_CATEGORY.LINK || cat === CLICKABLE_CATEGORY.GENERIC);
 
-      if (!showEffect) return;
+      if (!showEffect) return false;
     } catch { /* ignore */ }
 
     const { clickEffect } = this._getClickModeSettings();
-    if (clickEffect === 'none') return;
+    if (clickEffect === 'none') return false;
 
     const presentation = this._clickEffectPresentation(clickEffect);
-    if (!presentation) return;
+    if (!presentation) return false;
 
     // Don't start an effect if the activation target is already gone / not painted.
     if (el && el.nodeType === 1) {
-      if (!el.isConnected) return;
+      if (!el.isConnected) return false;
       try {
         const cs = window.getComputedStyle(el);
-        if (cs && (cs.display === 'none' || cs.visibility === 'hidden')) return;
+        if (cs && (cs.display === 'none' || cs.visibility === 'hidden')) return false;
       } catch { /* ignore */ }
     }
 
-    // B → B flash; A/C (or B fallthrough) → fixed + occlusion cleanup.
-    if (this._tryFlashInTargetEffect(clickEffect, presentation, el)) return;
-    this._flashFixedClickEffect(clickEffect, presentation, el);
+    return !!this._flashFixedClickEffect(clickEffect, presentation, el);
   }
 
   /**
@@ -7580,17 +7572,13 @@ export class OverlayManager {
   }
 
   /**
-   * Ensure we listen for SW popover-window / iframe-denial messages once.
+   * Ensure we listen for SW popover-window closed messages once.
    */
   _ensurePopoverWindowMessageListener() {
     if (this._popoverWindowMsgHandler) return;
     this._popoverWindowMsgHandler = (message) => {
       try {
         if (!message || typeof message.type !== 'string') return;
-        if (message.type === MSG.PREVIEW_IFRAME_DENIED) {
-          void this._promoteDeniedIframeToWindow(message);
-          return;
-        }
         if (message.type === MSG.POPOVER_WINDOW_CLOSED) {
           // Clear local window tracking; KeyPilot also clears mode state.
           if (
@@ -7651,7 +7639,6 @@ export class OverlayManager {
    * @param {string} opts.url
    * @param {'preview'|'modal'} [opts.kind='preview']
    * @param {string[]} [opts.closeKeys]
-   * @param {'mobile'|'desktop'} [opts.viewportMode]
    * @param {number} [opts.mouseX]
    * @param {number} [opts.width]
    * @param {number} [opts.height]
@@ -7667,15 +7654,6 @@ export class OverlayManager {
     const closeKeys = Array.isArray(opts.closeKeys) && opts.closeKeys.length
       ? opts.closeKeys.map(String)
       : (kind === 'modal' ? ['Escape', 'p', 'P'] : ['Escape', 'e', 'E']);
-
-    let viewportMode = opts.viewportMode === 'mobile' ? 'mobile' : 'desktop';
-    if (opts.viewportMode == null) {
-      try {
-        viewportMode = await this._getPreviewViewportModeForHost(previewHostFromUrl(url));
-      } catch {
-        viewportMode = 'desktop';
-      }
-    }
 
     const bounds = this._computePopoverWindowBounds(kind, url, { mouseX: opts.mouseX });
     const width = typeof opts.width === 'number' ? opts.width : bounds.width;
@@ -7698,8 +7676,7 @@ export class OverlayManager {
         width,
         height,
         left,
-        top,
-        viewportMode
+        top
       });
       if (res?.type === MSG.ERROR || typeof res?.windowId !== 'number') {
         console.warn('[KeyPilot] Failed to open popover window:', res?.error || res);
@@ -7712,7 +7689,6 @@ export class OverlayManager {
       this._popoverWindowTabId = typeof res.tabId === 'number' ? res.tabId : null;
       this._popoverWindowUrl = url;
       this._popoverWindowKind = kind;
-      this._pendingIframePromote = null;
       return true;
     } catch (e) {
       console.warn('[KeyPilot] OPEN_POPOVER_WINDOW failed:', e?.message || e);
@@ -7720,64 +7696,6 @@ export class OverlayManager {
         window.__KeyPilotInstance?.state?.setPopoverOpen?.(false, null);
       } catch { /* ignore */ }
       return false;
-    }
-  }
-
-  /**
-   * Register a pending iframe load so the SW can detect framing denial.
-   * @param {object} payload
-   */
-  async _registerPreviewIframeWatch(payload) {
-    this._ensurePopoverWindowMessageListener();
-    this._pendingIframePromote = payload;
-    try {
-      await chrome.runtime.sendMessage({
-        type: MSG.REGISTER_PREVIEW_IFRAME,
-        ...payload
-      });
-    } catch (e) {
-      console.warn('[KeyPilot] REGISTER_PREVIEW_IFRAME failed:', e?.message || e);
-    }
-  }
-
-  async _unregisterPreviewIframeWatch() {
-    this._pendingIframePromote = null;
-    try {
-      await chrome.runtime.sendMessage({ type: MSG.UNREGISTER_PREVIEW_IFRAME });
-    } catch { /* ignore */ }
-  }
-
-  /**
-   * After ERR_BLOCKED_BY_RESPONSE on the preview iframe, promote to OS window.
-   * @param {object} message
-   */
-  async _promoteDeniedIframeToWindow(message) {
-    const url = String(message?.url || this._pendingIframePromote?.url || '').trim();
-    if (!url) return;
-    // Ignore stale denials if we already have a window or a different overlay URL.
-    if (this._popoverWindowId != null) return;
-
-    const kind = message?.kind === 'modal' ? 'modal' : 'preview';
-    const closeKeys = Array.isArray(message?.closeKeys) && message.closeKeys.length
-      ? message.closeKeys.map(String)
-      : (this._pendingIframePromote?.closeKeys || undefined);
-
-    // Tear down overlay DOM only — do not flicker popover mode off.
-    this.hidePopover({ closeWindow: false });
-    await this._unregisterPreviewIframeWatch();
-
-    const ok = await this._openPopoverWindow({
-      url,
-      kind,
-      closeKeys,
-      viewportMode: message?.viewportMode,
-      width: message?.width,
-      height: message?.height,
-      left: message?.left,
-      top: message?.top
-    });
-    if (!ok) {
-      console.warn('[KeyPilot] Promote to popover window failed for', url);
     }
   }
 
@@ -8082,10 +8000,9 @@ export class OverlayManager {
   }
 
   /**
-   * Show popover with iframe containing the linked page.
-   * http(s) Open Popover uses {@link createUrlPopoverTitlebar} (Open / Open in New Tab)
-   * and deferred iframe src after HTTPS prep. Settings/Guide keep {@link createPopoverTitlebar}.
-   * Known iframe deniers (X/FB/IG) open a sized OS popup instead.
+   * Show popover with iframe (extension Guide/settings pages) or OS window (http(s)).
+   * http(s) Open Popover always opens a sized OS popup. Settings/Guide keep the
+   * in-page iframe overlay with {@link createPopoverTitlebar}.
    *
    * @param {string} url - The URL to load in the popover
    * @param {object} [opts]
@@ -8095,7 +8012,6 @@ export class OverlayManager {
    * @param {string|Node|null} [opts.titlebarHint] - Override titlebar hint (string or Node)
    * @param {HTMLElement|HTMLElement[]|null} [opts.actions] - Controls placed before the close button
    * @param {string[]} [opts.closeKeys] - Keys forwarded from iframe that should request close (defaults to ['Escape','p','P'])
-   * @param {boolean} [opts.forceWindow] - Skip iframe overlay and open a sized OS popup
    * @param {string} [opts.width] - Optional fixed width (e.g., '920px', overrides viewport-minus-20pt)
    * @param {string} [opts.height] - Optional fixed height (e.g., '600px', overrides viewport-minus-20pt)
    */
@@ -8103,23 +8019,14 @@ export class OverlayManager {
     // Remove existing popover if any
     this.hidePopover();
 
-    const isUrlPopover = isHttpPopoverUrl(url);
-    let originalUrl = String(url || '');
-    let iframeSrc = originalUrl;
-    if (isUrlPopover) {
-      const prepared = preparePopoverIframeUrl(url, { rewriteForEmbed: false });
-      originalUrl = prepared.originalUrl;
-      iframeSrc = prepared.iframeSrc;
-    }
-
     const closeKeys = Array.isArray(opts?.closeKeys) && opts.closeKeys.length
       ? opts.closeKeys.map(String)
       : ['Escape', 'p', 'P'];
 
-    // Always-new-window setting, or eager path for hosts that refuse iframes.
-    if (isUrlPopover && (opts.forceWindow || isKnownIframeDenierHost(originalUrl))) {
+    // http(s) always opens in a sized OS popup window.
+    if (isHttpPopoverUrl(url)) {
       void this._openPopoverWindow({
-        url: originalUrl,
+        url: preferHttpsForPreview(url),
         kind: 'modal',
         closeKeys
       });
@@ -8128,7 +8035,7 @@ export class OverlayManager {
 
     const titleText = (opts && typeof opts.title === 'string' && opts.title.trim())
       ? opts.title.trim()
-      : originalUrl;
+      : String(url || '');
     const hintKeyLabel = (opts && typeof opts.hintKeyLabel === 'string' && opts.hintKeyLabel.trim()) ? opts.hintKeyLabel.trim() : 'P';
 
     // Centralized close request:
@@ -8169,8 +8076,7 @@ export class OverlayManager {
         const x = this._popoverLastMouse.x;
         const y = this._popoverLastMouse.y;
         if (typeof x !== 'number' || typeof y !== 'number') return false;
-        const el = previewChromeHost?.shadowRoot?.elementFromPoint?.(x, y)
-          || document.elementFromPoint(x, y);
+        const el = document.elementFromPoint(x, y);
         const shadowEl = btn.getRootNode?.()?.elementFromPoint?.(x, y);
         if (el === btn || btn.contains(el) || shadowEl === btn || btn.contains(shadowEl)) {
           try { btn.click(); } catch { /* ignore */ }
@@ -8240,30 +8146,17 @@ export class OverlayManager {
         keys: [hintKeyLabel, 'Esc'],
         suffix: 'Use the same keyboard navigation controls.'
       });
-    const titlebarApi = isUrlPopover
-      ? createUrlPopoverTitlebar({
-        title: titleText,
-        variant: 'modal',
-        showClose,
-        onClose: requestClosePopover,
-        closeTitle: 'Close (Esc)',
-        hint: titlebarHint,
-        className: 'kpv2-popover-titlebar',
-        getUrl: () => originalUrl,
-        afterOpen: requestClosePopover,
-        afterOpenNewTab: requestClosePopover
-      })
-      : createPopoverTitlebar({
-        title: titleText,
-        shortcut: hintKeyLabel || null,
-        variant: 'modal',
-        showClose,
-        onClose: requestClosePopover,
-        closeTitle: 'Close (Esc)',
-        hint: titlebarHint,
-        className: 'kpv2-popover-titlebar',
-        actions: opts?.actions || null
-      });
+    const titlebarApi = createPopoverTitlebar({
+      title: titleText,
+      shortcut: hintKeyLabel || null,
+      variant: 'modal',
+      showClose,
+      onClose: requestClosePopover,
+      closeTitle: 'Close (Esc)',
+      hint: titlebarHint,
+      className: 'kpv2-popover-titlebar',
+      actions: opts?.actions || null
+    });
     const header = titlebarApi.titlebar;
     const closeButton = titlebarApi.closeButton;
     this.popoverCloseButton = closeButton;
@@ -8330,7 +8223,7 @@ export class OverlayManager {
     });
     openInTabButton.textContent = 'Open in New Tab';
     openInTabButton.onclick = () => {
-      window.open(originalUrl, '_blank');
+      window.open(url, '_blank');
       requestClosePopover();
     };
     errorContainer.appendChild(openInTabButton);
@@ -8341,14 +8234,12 @@ export class OverlayManager {
         width: 100%;
         height: 100%;
       `;
-    // http(s): create without src, then assign after mount. Extension pages load immediately.
-    const iframe = isUrlPopover
-      ? createPopoverIframe({ style: iframeStyle })
-      : this.createElement('iframe', {
-        src: url,
-        tabindex: '0',
-        style: iframeStyle
-      });
+    // Extension Guide/settings pages load immediately via iframe overlay.
+    const iframe = this.createElement('iframe', {
+      src: url,
+      tabindex: '0',
+      style: iframeStyle
+    });
     iframeRef = iframe;
     this.popoverIframeElement = iframe;
     this.popoverIframeWindow = iframe.contentWindow || null;
@@ -8363,8 +8254,7 @@ export class OverlayManager {
 
     // Detect iframe load errors
     // Note: We can't reliably detect X-Frame-Options blocking for cross-origin iframes
-    // due to same-origin policy. The declarativeNetRequest rules should handle most cases.
-    // Only show error on actual load failure (onerror event).
+    // due to same-origin policy. Only show error on actual load failure (onerror event).
     const showLoadError = () => {
       iframe.style.display = 'none';
       chromeHost.style.flex = '1 1 auto';
@@ -8404,7 +8294,7 @@ export class OverlayManager {
         if (childDoc) {
           window.__KeyPilotInstance?.styleManager?.injectIntoForeignDocument?.(childDoc);
         }
-      } catch { /* cross-origin preview */ }
+      } catch { /* cross-origin */ }
     };
 
     chromeMount.appendChild(header);
@@ -8420,38 +8310,7 @@ export class OverlayManager {
       onRequestClose: requestClosePopover
     });
 
-    if (isUrlPopover) {
-      void (async () => {
-        try {
-          const bounds = this._computePopoverWindowBounds('modal', originalUrl);
-          await this._registerPreviewIframeWatch({
-            url: originalUrl,
-            kind: 'modal',
-            closeKeys,
-            width: bounds.width,
-            height: bounds.height,
-            left: bounds.left,
-            top: bounds.top,
-            viewportMode: 'desktop'
-          });
-          const win = await assignPopoverIframeSrc(iframe, iframeSrc, {
-            beforeNavigate: () => { armLoadTimeout(); }
-          });
-          this.popoverIframeWindow = win;
-        } catch (e) {
-          console.error('[KeyPilot] Failed to load popover URL:', e?.message || e);
-          try { clearTimeout(loadTimeout); } catch { /* ignore */ }
-          // Prefer OS-window promote over static error UI.
-          void this._promoteDeniedIframeToWindow({
-            url: originalUrl,
-            kind: 'modal',
-            closeKeys
-          });
-        }
-      })();
-    } else {
-      armLoadTimeout();
-    }
+    armLoadTimeout();
     sendBridgeInit();
 
     // Short retry window to cover slow frames / initial about:blank then navigation
@@ -8567,84 +8426,6 @@ export class OverlayManager {
   }
 
   /**
-   * Hide the popover
-   */
-  /**
-   * Remembered viewport mode for a host. Default is desktop; only mobile is stored.
-   * @param {string} hostname
-   * @returns {Promise<'mobile'|'desktop'>}
-   */
-  async _getPreviewViewportModeForHost(hostname) {
-    const host = String(hostname || '').toLowerCase();
-    if (!host) return 'desktop';
-    try {
-      const map = await storageGetValue(PREVIEW_VIEWPORT_BY_HOST_KEY, {});
-      if (map && typeof map === 'object' && map[host] === 'mobile') {
-        return 'mobile';
-      }
-    } catch (e) {
-      console.warn('[KeyPilot] Failed to read preview viewport prefs:', e?.message || e);
-    }
-    return 'desktop';
-  }
-
-  /**
-   * Persist viewport mode for a host. Desktop clears the override (default).
-   * @param {string} hostname
-   * @param {'mobile'|'desktop'} mode
-   * @returns {Promise<void>}
-   */
-  async _setPreviewViewportModeForHost(hostname, mode) {
-    const host = String(hostname || '').toLowerCase();
-    if (!host) return;
-    try {
-      const prev = await storageGetValue(PREVIEW_VIEWPORT_BY_HOST_KEY, {});
-      const map = (prev && typeof prev === 'object' && !Array.isArray(prev))
-        ? { ...prev }
-        : {};
-      if (mode === 'mobile') {
-        map[host] = 'mobile';
-      } else {
-        delete map[host];
-      }
-      await storageSetValue(PREVIEW_VIEWPORT_BY_HOST_KEY, map);
-    } catch (e) {
-      console.warn('[KeyPilot] Failed to save preview viewport prefs:', e?.message || e);
-    }
-  }
-
-  /**
-   * Ask the service worker to enable/disable mobile User-Agent for this tab's
-   * sub_frame requests (Link Preview Mobile mode).
-   * @param {boolean} enabled
-   * @returns {Promise<boolean>}
-   */
-  async _setPreviewMobileUa(enabled) {
-    const next = !!enabled;
-    try {
-      if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) {
-        this._previewMobileUaActive = false;
-        return false;
-      }
-      const res = await chrome.runtime.sendMessage({
-        type: MSG.SET_PREVIEW_MOBILE_UA,
-        enabled: next
-      });
-      if (res?.type === MSG.ERROR) {
-        console.warn('[KeyPilot] Preview mobile UA not applied:', res.error || res);
-        this._previewMobileUaActive = false;
-        return false;
-      }
-      this._previewMobileUaActive = next;
-      return true;
-    } catch (e) {
-      console.warn('[KeyPilot] Preview mobile UA message failed:', e?.message || e);
-      this._previewMobileUaActive = false;
-      return false;
-    }
-  }
-
-  /**
    * Move focus out of the popover (esp. its iframe) before the node is removed.
    * Otherwise Chrome often hands focus to the browser omnibox, which steals keys
    * from the page (notably on New Tab after a second E closes Link Preview).
@@ -8686,19 +8467,8 @@ export class OverlayManager {
   hidePopover(opts = {}) {
     const closeWindow = opts.closeWindow !== false;
 
-    // Drop denial watch so a late error does not reopen a window after close.
-    void this._unregisterPreviewIframeWatch();
-
     if (closeWindow) {
       void this._closeTrackedPopoverWindow();
-    }
-
-    // Drop mobile UA session rule so host-page iframes are not affected after close.
-    if (this._previewMobileUaActive) {
-      this._previewMobileUaActive = false;
-      try {
-        void this._setPreviewMobileUa(false);
-      } catch { /* ignore */ }
     }
 
     // Capture focus back onto the page *before* removing a focused iframe.
@@ -9094,770 +8864,23 @@ export class OverlayManager {
   }
 
   /**
-   * Show a preview popover near the cursor (picture-in-picture style)
-   * @param {string} url - URL to load in iframe
-   * @param {Object} opts - Options including mouseX, mouseY for positioning
-   * @param {'mobile'|'desktop'} [opts.viewportMode] - Override mode; otherwise host preference or desktop default
-   * @param {boolean} [opts.forceWindow] - Skip iframe overlay and open a sized OS popup
+   * Show Link Preview in a sized OS popup window (windows-only; no in-page iframe).
+   * @param {string} url - URL to preview
+   * @param {Object} opts - Options including mouseX for window placement
+   * @param {string[]} [opts.closeKeys]
+   * @param {number} [opts.mouseX]
    */
   async showPreviewPopover(url, opts = {}) {
-    // Remove existing popover if any
     this.hidePopover();
-
-    const { originalUrl, iframeSrc } = preparePopoverIframeUrl(url, { rewriteForEmbed: true });
-    url = originalUrl;
-
-    const mouseX = opts.mouseX ?? window.innerWidth / 2;
-    const closeKeys = Array.isArray(opts?.closeKeys) && opts.closeKeys.length
-      ? opts.closeKeys.map(String)
-      : ['Escape', 'e', 'E'];
-
-    // Always-new-window setting, or eager path for hosts that refuse iframes.
-    if (opts.forceWindow || isKnownIframeDenierHost(url)) {
-      await this._openPopoverWindow({
-        url,
-        kind: 'preview',
-        closeKeys,
-        mouseX,
-        viewportMode: opts.viewportMode
-      });
-      return;
-    }
-
-    const popoverWidth = 600;
-    const arrowSize = 10; // Kept for drag cleanup / style vars if user resizes later
-    const margin = 20; // Margin from viewport edges
-    const previewHost = previewHostFromUrl(url);
-
-    // Full viewport height with the existing edge margins (top + bottom).
-    const popoverHeight = Math.max(200, window.innerHeight - margin * 2);
-    const top = margin;
-
-    // Center horizontally under cursor, but clamp to viewport
-    let left = mouseX - popoverWidth / 2;
-    left = Math.max(margin, Math.min(left, window.innerWidth - popoverWidth - margin));
-
-    // No top/bottom caret on a full-height panel (would sit outside the viewport).
-    const arrowLeft = Math.max(20, Math.min(mouseX - left, popoverWidth - 20));
-
-    const titleText = 'Link Preview';
-
-    // Default desktop; restore per-host Mobile if the user chose it before.
-    /** @type {'mobile'|'desktop'} */
-    let viewportMode = 'desktop';
-    if (opts.viewportMode === 'mobile' || opts.viewportMode === 'desktop') {
-      viewportMode = opts.viewportMode;
-    } else {
-      try {
-        viewportMode = await this._getPreviewViewportModeForHost(previewHost);
-      } catch {
-        viewportMode = 'desktop';
-      }
-    }
-
-    // Centralized close request
-    const requestClosePopover = () => {
-      try {
-        if (window.__KeyPilotInstance && typeof window.__KeyPilotInstance.handleClosePopover === 'function') {
-          window.__KeyPilotInstance.handleClosePopover();
-          return;
-        }
-      } catch (_e) {
-        // Ignore and fall back to direct hide
-      }
-      this.hidePopover();
-    };
-
-    const ensureTopMouseTracking = () => {
-      if (this._popoverMouseTrackerInstalled) return;
-      this._popoverMouseTrackerInstalled = true;
-      const update = (e) => {
-        try {
-          if (!e) return;
-          if (typeof e.clientX === 'number') this._popoverLastMouse.x = e.clientX;
-          if (typeof e.clientY === 'number') this._popoverLastMouse.y = e.clientY;
-        } catch {
-          // ignore
-        }
-      };
-      try { document.addEventListener('mousemove', update, true); } catch { /* ignore */ }
-      try { document.addEventListener('pointermove', update, true); } catch { /* ignore */ }
-    };
-
-    const clickCloseIfHovered = () => {
-      try {
-        const btn = this.popoverCloseButton;
-        if (!btn) return false;
-        const x = this._popoverLastMouse.x;
-        const y = this._popoverLastMouse.y;
-        if (typeof x !== 'number' || typeof y !== 'number') return false;
-        const el = document.elementFromPoint(x, y);
-        if (!el) return false;
-        if (el === btn || btn.contains(el)) {
-          try { btn.click(); } catch { /* ignore */ }
-          return true;
-        }
-        return false;
-      } catch {
-        return false;
-      }
-    };
-
-    // Create popover container (full viewport height; no top/bottom caret).
-    this.popoverContainer = this.createElement('div', {
-      className: 'kpv2-preview-popover-container',
-      tabindex: '-1',
-      role: 'dialog',
-      'aria-modal': 'true',
-      style: `
-        position: fixed;
-        top: ${top}px;
-        left: ${left}px;
-        width: ${popoverWidth}px;
-        height: ${popoverHeight}px;
-        background: ${NCT_DARK_UI_PANEL_BACKGROUND};
-        border-radius: ${NCT_DARK_UI_PANEL_RADIUS};
-        border: ${NCT_DARK_UI_PANEL_BORDER};
-        box-shadow: ${NCT_DARK_UI_PANEL_BOX_SHADOW};
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        --arrow-left: ${arrowLeft}px;
-        z-index: ${Z_INDEX.POPUP_PANEL_BASE};
-        font-family: ${KP_UI_FONT};
-        font-size: 12px;
-        line-height: 1.3;
-        letter-spacing: normal;
-      `
+    url = preferHttpsForPreview(url);
+    await this._openPopoverWindow({
+      url,
+      kind: 'preview',
+      closeKeys: Array.isArray(opts?.closeKeys) && opts.closeKeys.length
+        ? opts.closeKeys.map(String)
+        : ['Escape', 'e', 'E'],
+      mouseX: opts.mouseX
     });
-    // Intentionally hybrid:
-    // - The light host owns fixed geometry, the caret pseudo-elements, the
-    //   iframe viewport, and resize handles. The iframe bridge/focus flow
-    //   depends on this host relationship, and the resize utility pins this
-    //   host's box while temporarily disabling iframe pointer events.
-    // - Only KeyPilot-owned interactive chrome is placed in the open shadow
-    //   root, preventing page CSS from restyling the titlebar and controls.
-    // Do not move the iframe or resize handles into this shadow root without
-    // updating their focus, hit-testing, and geometry contracts together.
-    const previewChromeHost = this.createElement('div', {
-      className: 'kpv2-preview-popover-chrome-host',
-      style: 'display:flex; flex:0 0 auto; flex-direction:column; min-height:0;'
-    });
-    const previewChromeShadow = ensureOpenChromeShadow(previewChromeHost, { id: 'link-preview-chrome' });
-    const previewChromeMount = previewChromeShadow || previewChromeHost;
-
-    // Inject triangle arrow CSS
-    const arrowStyle = this.createElement('style');
-    arrowStyle.textContent = `
-      .kpv2-preview-popover-container::before {
-        content: "";
-        position: absolute;
-        width: 0;
-        height: 0;
-        left: var(--arrow-left, 50%);
-        margin-left: -${arrowSize}px;
-        border: ${arrowSize}px solid transparent;
-        z-index: 1;
-      }
-      .kpv2-preview-popover-container::after {
-        content: "";
-        position: absolute;
-        width: 0;
-        height: 0;
-        left: var(--arrow-left, 50%);
-        margin-left: -${arrowSize - 1}px;
-        border: ${arrowSize - 1}px solid transparent;
-        z-index: 2;
-      }
-      .kpv2-preview-popover-container[data-placement="bottom"]::before {
-        top: -${arrowSize * 2}px;
-        border-bottom-color: rgb(43, 43, 43);
-      }
-      .kpv2-preview-popover-container[data-placement="bottom"]::after {
-        top: -${arrowSize * 2 - 1}px;
-        border-bottom-color: rgb(18, 18, 18);
-      }
-      .kpv2-preview-popover-container[data-placement="top"]::before {
-        bottom: -${arrowSize * 2}px;
-        border-top-color: rgb(43, 43, 43);
-      }
-      .kpv2-preview-popover-container[data-placement="top"]::after {
-        bottom: -${arrowSize * 2 - 1}px;
-        border-top-color: rgb(11, 11, 11);
-      }
-    `;
-    document.head.appendChild(arrowStyle);
-    this._popoverArrowStyle = arrowStyle;
-
-    // Store iframe reference for focus management
-    let iframeRef = null;
-    this.popoverBridgeReady = false;
-
-    // Full-bleed viewport shell (mobile and desktop both fill the popover width).
-    const iframeViewport = this.createElement('div', {
-      className: 'kpv2-preview-popover-viewport',
-      style: `
-        flex: 1;
-        min-height: 0;
-        display: flex;
-        align-items: stretch;
-        justify-content: stretch;
-        overflow: hidden;
-        background: #0a0a0a;
-      `
-    });
-
-    /**
-     * Mobile = mobile User-Agent + client hints (true mobile pages).
-     * Desktop = normal desktop UA.
-     * Both modes fill the popover width; reload is required for UA to take effect.
-     * @param {'mobile'|'desktop'} mode
-     * @param {{ reload?: boolean }} [opts]
-     */
-    const applyViewportMode = async (mode, opts = {}) => {
-      const next = mode === 'desktop' ? 'desktop' : 'mobile';
-      const prev = viewportMode;
-      const shouldReload = opts.reload !== false && prev !== next && !!iframeRef;
-      viewportMode = next;
-      try {
-        this.popoverContainer?.setAttribute('data-kp-preview-viewport', viewportMode);
-      } catch { /* ignore */ }
-
-      // Full-width frame in both modes (no side letterboxing).
-      if (iframeRef) {
-        iframeRef.style.width = '100%';
-        iframeRef.style.maxWidth = 'none';
-        iframeRef.style.flex = '1 1 auto';
-        iframeRef.style.alignSelf = 'stretch';
-        iframeRef.style.height = '100%';
-      }
-      iframeViewport.style.justifyContent = 'stretch';
-
-      // Install / clear mobile UA before any navigation so the document request sees it.
-      if (viewportMode === 'mobile') {
-        await this._setPreviewMobileUa(true);
-      } else {
-        await this._setPreviewMobileUa(false);
-      }
-
-      if (shouldReload && iframeRef) {
-        try {
-          // Reset load error UI if we were showing it.
-          iframeViewport.style.display = '';
-          errorContainer.style.display = 'none';
-        } catch { /* ignore */ }
-        try {
-          armLoadTimeout();
-        } catch { /* ignore — armLoadTimeout defined later; first apply never reloads */ }
-        try {
-          // Force a real navigation with the new UA (same-url assignment can be a no-op).
-          iframeRef.src = 'about:blank';
-          iframeRef.src = iframeSrc;
-          this.popoverIframeWindow = iframeRef.contentWindow || null;
-        } catch {
-          try {
-            iframeRef.src = iframeSrc;
-            this.popoverIframeWindow = iframeRef.contentWindow || null;
-          } catch { /* ignore */ }
-        }
-      }
-    };
-
-    const viewportModeControl = createSegmentedControl({
-      value: viewportMode,
-      ariaLabel: 'Preview viewport mode',
-      className: 'kpv2-preview-viewport-mode',
-      options: [
-        {
-          value: 'mobile',
-          label: 'Mobile',
-          title: 'Mobile site (mobile User-Agent). Remembered for this website.',
-          ariaLabel: 'Mobile preview'
-        },
-        {
-          value: 'desktop',
-          label: 'Desktop',
-          title: 'Desktop site (default). Remembered for this website.',
-          ariaLabel: 'Desktop preview'
-        }
-      ],
-      onChange: (value) => {
-        void (async () => {
-          await applyViewportMode(value, { reload: true });
-          // Persist per website so future Link Previews open in the same mode.
-          try {
-            await this._setPreviewViewportModeForHost(previewHost, value === 'mobile' ? 'mobile' : 'desktop');
-          } catch { /* ignore */ }
-        })();
-      }
-    });
-
-    // Shared URL-popover titlebar: Mobile/Desktop extra + Open / Open in New Tab.
-    const titlebarApi = createUrlPopoverTitlebar({
-      title: titleText,
-      shortcut: 'E',
-      variant: 'preview',
-      draggable: true,
-      titleAttr: 'Drag to move',
-      showClose: true,
-      onClose: requestClosePopover,
-      closeTitle: 'Close (Esc)',
-      hint: 'Press Esc / E to hide',
-      extraActions: [viewportModeControl.root],
-      className: 'kpv2-preview-popover-titlebar',
-      getUrl: () => url,
-      afterOpen: () => requestClosePopover(),
-      afterOpenNewTab: () => requestClosePopover()
-    });
-    const header = titlebarApi.titlebar;
-    const closeButton = titlebarApi.closeButton;
-    this.popoverCloseButton = closeButton;
-    ensureTopMouseTracking();
-
-    // Titlebar drag: move the preview popover; clamp to viewport; hide caret once moved.
-    let dragState = null;
-    const DRAG_MOVE_THRESHOLD_PX = 3;
-
-    const clampPopoverPosition = (leftPx, topPx) => {
-      const el = this.popoverContainer;
-      if (!el) return { left: leftPx, top: topPx };
-      const w = el.offsetWidth || popoverWidth;
-      const h = el.offsetHeight || popoverHeight;
-      const maxLeft = Math.max(margin, window.innerWidth - w - margin);
-      const maxTop = Math.max(margin, window.innerHeight - h - margin);
-      return {
-        left: Math.max(margin, Math.min(leftPx, maxLeft)),
-        top: Math.max(margin, Math.min(topPx, maxTop))
-      };
-    };
-
-    const hidePreviewArrow = () => {
-      const el = this.popoverContainer;
-      if (!el || el.dataset.kpDragged === '1') return;
-      el.dataset.kpDragged = '1';
-      el.removeAttribute('data-placement');
-    };
-
-    const onDragPointerMove = (e) => {
-      if (!dragState || !this.popoverContainer) return;
-      const dx = e.clientX - dragState.startX;
-      const dy = e.clientY - dragState.startY;
-      if (!dragState.moved) {
-        if (Math.abs(dx) < DRAG_MOVE_THRESHOLD_PX && Math.abs(dy) < DRAG_MOVE_THRESHOLD_PX) {
-          return;
-        }
-        dragState.moved = true;
-        hidePreviewArrow();
-        header.style.cursor = 'grabbing';
-        // Prevent iframe from swallowing pointer events mid-drag
-        if (this.popoverIframeElement) {
-          this.popoverIframeElement.style.pointerEvents = 'none';
-        }
-      }
-      const next = clampPopoverPosition(dragState.originLeft + dx, dragState.originTop + dy);
-      this.popoverContainer.style.left = `${next.left}px`;
-      this.popoverContainer.style.top = `${next.top}px`;
-    };
-
-    const endDrag = (e) => {
-      if (!dragState) return;
-      const pointerId = dragState.pointerId;
-      dragState = null;
-      header.style.cursor = 'grab';
-      if (this.popoverIframeElement) {
-        this.popoverIframeElement.style.pointerEvents = '';
-      }
-      try {
-        if (e && typeof e.pointerId === 'number') {
-          header.releasePointerCapture(e.pointerId);
-        } else if (typeof pointerId === 'number') {
-          header.releasePointerCapture(pointerId);
-        }
-      } catch { /* ignore */ }
-      document.removeEventListener('pointermove', onDragPointerMove, true);
-      document.removeEventListener('pointerup', endDrag, true);
-      document.removeEventListener('pointercancel', endDrag, true);
-    };
-
-    const onTitlebarPointerDown = (e) => {
-      // Action / close buttons keep their own click behavior (don't start a drag)
-      const interactive = titlebarApi.getInteractiveElements();
-      for (const btn of interactive) {
-        if (e.target === btn || (btn.contains && btn.contains(e.target))) {
-          return;
-        }
-      }
-      // Primary button only for mouse
-      if (e.pointerType === 'mouse' && e.button !== 0) return;
-      if (!this.popoverContainer) return;
-
-      e.preventDefault();
-      e.stopPropagation();
-
-      const rect = this.popoverContainer.getBoundingClientRect();
-      dragState = {
-        startX: e.clientX,
-        startY: e.clientY,
-        originLeft: rect.left,
-        originTop: rect.top,
-        pointerId: e.pointerId,
-        moved: false
-      };
-
-      try {
-        header.setPointerCapture(e.pointerId);
-      } catch { /* ignore */ }
-
-      document.addEventListener('pointermove', onDragPointerMove, true);
-      document.addEventListener('pointerup', endDrag, true);
-      document.addEventListener('pointercancel', endDrag, true);
-    };
-
-    header.addEventListener('pointerdown', onTitlebarPointerDown);
-
-    this._previewPopoverDragCleanup = () => {
-      endDrag();
-      try {
-        header.removeEventListener('pointerdown', onTitlebarPointerDown);
-      } catch { /* ignore */ }
-    };
-
-    // Generic resize handles (edges + SE grip). Shared util used by all popovers.
-    try {
-      this._popoverResizeDispose?.();
-    } catch { /* ignore */ }
-    try {
-      const resizeApi = makePopoverResizable(this.popoverContainer, {
-        minWidth: 280,
-        minHeight: 200,
-        margin,
-        onResizeStart: () => {
-          hidePreviewArrow();
-        }
-      });
-      this._popoverResizeDispose = resizeApi?.dispose || null;
-    } catch (e) {
-      console.warn('[KeyPilot] Failed to make preview popover resizable:', e?.message || e);
-      this._popoverResizeDispose = null;
-    }
-
-    // Create error message container (initially hidden)
-    const errorContainer = this.createElement('div', {
-      className: 'kpv2-popover-error',
-      style: `
-        flex: 1;
-        display: none;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-        text-align: center;
-        background: #f9f9f9;
-      `
-    });
-    // `display:contents` preserves the original flex fallback layout while
-    // still giving KeyPilot's error UI its own isolated shadow tree.
-    const previewErrorHost = this.createElement('div', {
-      className: 'kpv2-preview-popover-error-host',
-      style: 'display:contents;'
-    });
-    const previewErrorShadow = ensureOpenChromeShadow(previewErrorHost, { id: 'link-preview-error' });
-    const previewErrorMount = previewErrorShadow || previewErrorHost;
-
-    const errorIcon = this.createElement('div', {
-      style: `
-        font-size: 32px;
-        margin-bottom: 12px;
-        color: #999;
-      `
-    });
-    errorIcon.textContent = '🚫';
-    errorContainer.appendChild(errorIcon);
-
-    const errorTitle = this.createElement('div', {
-      style: `
-        font-size: 14px;
-        font-weight: 600;
-        color: #333;
-        margin-bottom: 6px;
-      `
-    });
-    errorTitle.textContent = 'Cannot Display Page';
-    errorContainer.appendChild(errorTitle);
-
-    const errorMessage = this.createElement('div', {
-      style: `
-        font-size: 12px;
-        color: #666;
-        margin-bottom: 16px;
-        max-width: 300px;
-      `
-    });
-    errorMessage.textContent = 'This website prevents embedding in iframes.';
-    errorContainer.appendChild(errorMessage);
-
-    const openInTabButton = this.createElement('button', {
-      style: `
-        background: #4CAF50;
-        color: white;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 12px;
-        font-weight: 500;
-      `
-    });
-    openInTabButton.textContent = 'Open in New Tab';
-    openInTabButton.onclick = () => {
-      window.open(url, '_blank');
-      requestClosePopover();
-    };
-    errorContainer.appendChild(openInTabButton);
-
-    // Create iframe full-bleed; src is set only after mobile UA is installed (when needed).
-    const iframe = createPopoverIframe({
-      style: `
-        border: none;
-        width: 100%;
-        max-width: none;
-        height: 100%;
-        flex: 1 1 auto;
-        align-self: stretch;
-        background: #fff;
-      `
-    });
-    iframeRef = iframe;
-    this.popoverIframeElement = iframe;
-    this.popoverIframeWindow = iframe.contentWindow || null;
-
-    // Initialize the iframe bridge; pass closeKeys so Esc/E close from inside the frame.
-    const sendBridgeInit = () => {
-      postPopoverBridgeInit(iframe.contentWindow, { closeKeys });
-    };
-
-    // Detect iframe load errors / hangs
-    /** @type {ReturnType<typeof setTimeout>|null} */
-    let loadTimeout = null;
-    const armLoadTimeout = () => {
-      if (loadTimeout) {
-        try { clearTimeout(loadTimeout); } catch { /* ignore */ }
-      }
-      loadTimeout = setTimeout(() => {
-        console.log('[KeyPilot] Iframe load timeout - showing error as fallback');
-        iframeViewport.style.display = 'none';
-        errorContainer.style.display = 'flex';
-      }, 30000);
-    };
-    const clearLoadTimeout = () => {
-      if (!loadTimeout) return;
-      try { clearTimeout(loadTimeout); } catch { /* ignore */ }
-      loadTimeout = null;
-    };
-
-    iframe.onerror = () => {
-      console.log('[KeyPilot] Iframe load error detected');
-      clearLoadTimeout();
-      iframeViewport.style.display = 'none';
-      errorContainer.style.display = 'flex';
-    };
-
-    iframe.onload = () => {
-      // Ignore the intermediate about:blank used when switching UA modes.
-      try {
-        const srcAttr = iframe.getAttribute('src') || '';
-        if (srcAttr === 'about:blank' || iframe.src === 'about:blank') {
-          return;
-        }
-      } catch { /* ignore */ }
-      clearLoadTimeout();
-      console.log('[KeyPilot] Iframe loaded successfully');
-      sendBridgeInit();
-      try {
-        const childDoc = iframe.contentDocument;
-        if (childDoc) {
-          window.__KeyPilotInstance?.styleManager?.injectIntoForeignDocument?.(childDoc);
-        }
-      } catch { /* cross-origin preview */ }
-    };
-
-    iframeViewport.appendChild(iframe);
-    previewChromeMount.appendChild(header);
-    previewErrorMount.appendChild(errorContainer);
-    this.popoverContainer.appendChild(previewChromeHost);
-    this.popoverContainer.appendChild(iframeViewport);
-    this.popoverContainer.appendChild(previewErrorHost);
-
-    // Mark this as a preview popover (for cleanup logic)
-    this._isPreviewPopover = true;
-
-    // Mount directly to document.body (no backdrop/blur for preview popover)
-    try {
-      document.body.appendChild(this.popoverContainer);
-    } catch (e) {
-      console.error('[KeyPilot] Failed to mount preview popover:', e);
-      this._isPreviewPopover = false;
-      return;
-    }
-
-    // Apply UA for remembered/default mode before first navigation (desktop = no spoof).
-    void (async () => {
-      try {
-        const winBounds = this._computePopoverWindowBounds('preview', url, { mouseX });
-        await this._registerPreviewIframeWatch({
-          url,
-          kind: 'preview',
-          closeKeys,
-          width: winBounds.width,
-          height: winBounds.height,
-          left: winBounds.left,
-          top: winBounds.top,
-          viewportMode
-        });
-        const win = await assignPopoverIframeSrc(iframe, iframeSrc, {
-          beforeNavigate: async () => {
-            try {
-              await applyViewportMode(viewportMode, { reload: false });
-            } catch (e) {
-              console.warn('[KeyPilot] Failed to prepare preview viewport mode:', e?.message || e);
-            }
-            armLoadTimeout();
-          }
-        });
-        this.popoverIframeWindow = win;
-      } catch (e) {
-        console.error('[KeyPilot] Failed to load preview URL:', e?.message || e);
-        clearLoadTimeout();
-        void this._promoteDeniedIframeToWindow({
-          url,
-          kind: 'preview',
-          closeKeys,
-          viewportMode
-        });
-      }
-    })();
-
-    // Add click-outside-to-close handler for preview popover
-    this._popoverClickOutsideHandler = (e) => {
-      // Check if click is outside the popover container
-      if (this.popoverContainer && !this.popoverContainer.contains(e.target)) {
-        console.log('[KeyPilot] Click outside preview popover, closing');
-        requestClosePopover();
-      }
-    };
-    // Use a small delay to avoid immediately closing if the preview key click triggered this
-    setTimeout(() => {
-      if (this.popoverContainer) {
-        document.addEventListener('mousedown', this._popoverClickOutsideHandler, true);
-      }
-    }, 100);
-
-    sendBridgeInit();
-
-    // Retry window for iframe bridge init
-    try {
-      let attemptsLeft = 6;
-      this.popoverInitTimer = setInterval(() => {
-        if (!this.popoverContainer || attemptsLeft <= 0) {
-          clearInterval(this.popoverInitTimer);
-          this.popoverInitTimer = null;
-          return;
-        }
-        attemptsLeft -= 1;
-        sendBridgeInit();
-      }, 250);
-    } catch {
-      // Ignore
-    }
-
-    // Don't prevent body scroll for preview popover - page should remain interactive
-
-    // Parent-side close while focus is on chrome (titlebar / buttons).
-    // When focus is in the iframe, Esc/E are handled by the bridge → REQUEST_CLOSE.
-    const handlePopoverKeyDown = (e) => {
-      console.log('[KeyPilot] Preview popover key event:', e.key);
-
-      if (e.key === 'Escape' || closeKeys.includes(String(e.key))) {
-        // Only handle here if focus is still in the parent document.
-        // (If focus is in the iframe, the bridge already owns these keys.)
-        const ae = document.activeElement;
-        const focusInIframe = ae === iframeRef || ae === iframe;
-        if (focusInIframe) return;
-
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        requestClosePopover();
-        return;
-      }
-    };
-
-    document.addEventListener('keydown', handlePopoverKeyDown, true);
-    this.popoverContainer.addEventListener('keydown', handlePopoverKeyDown, true);
-
-    this.popoverKeyHandler = handlePopoverKeyDown;
-
-    // Listen for messages from iframe bridge
-    this.popoverMessageHandler = (event) => {
-      const data = event?.data;
-      if (!data || typeof data.type !== 'string') return;
-      if (this.popoverIframeWindow && event.source !== this.popoverIframeWindow) return;
-
-      if (data.type === 'KP_POPOVER_BRIDGE_READY') {
-        this.popoverBridgeReady = true;
-        // Auto-focus iframe so full KeyPilot works on the preview page without a click.
-        // Esc/E close via bridge → parent; hybrid focus returns to chrome on titlebar hover.
-        this._focusPopoverIframe(iframeRef);
-        this._installPopoverHybridFocus({
-          iframe: iframeRef,
-          chromeEls: [
-            header,
-            ...titlebarApi.getInteractiveElements()
-          ].filter(Boolean),
-          focusChromeEl: closeButton || header
-        });
-        return;
-      }
-
-      if (data.type === 'KP_POPOVER_REQUEST_CLOSE') {
-        if (closeKeys.includes(String(data.key))) requestClosePopover();
-      }
-
-      if (data.type === 'KP_POPOVER_LAUNCH_WALKTHROUGH') {
-        requestClosePopover();
-        try {
-          const ob = window.__KeyPilotOnboarding;
-          if (ob && typeof ob.resetTutorial === 'function') {
-            void ob.resetTutorial();
-          }
-        } catch {
-          // ignore
-        }
-        return;
-      }
-
-      if (data.type === 'KP_POPOVER_BRIDGE_KEYDOWN') {
-        const k = String(data.key || '');
-        if (k === 'f' || k === 'F') {
-          if (clickCloseIfHovered()) return;
-          try {
-            window.__KeyPilotInstance?.handleActivateKey?.();
-          } catch { /* ignore */ }
-        }
-      }
-    };
-    window.addEventListener('message', this.popoverMessageHandler, true);
-
-    // Until bridge ready, park focus on chrome.
-    try {
-      (closeButton || header)?.focus?.();
-    } catch (_e) {
-      try {
-        this.popoverContainer.focus();
-      } catch (_e2) {
-        // Ignore
-      }
-    }
   }
 
   // =============================================================================

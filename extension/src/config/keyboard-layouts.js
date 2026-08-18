@@ -466,14 +466,14 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
   OPEN_POPOVER: Object.freeze({
     handler: 'handleOpenPopover',
     label: 'Open Popover',
-    description: 'Open Link in Popover',
+    description: 'Open link in a popup window',
     keyboardClass: 'key-open-popover',
     row: 2
   }),
   PREVIEW_LINK_POPOVER: Object.freeze({
     handler: 'handlePreviewLinkPopover',
     label: 'Preview Link',
-    description: 'Open Link Preview in Popover',
+    description: 'Open Link Preview in a popup window',
     keyboardClass: 'key-preview-popover',
     row: 2
   }),

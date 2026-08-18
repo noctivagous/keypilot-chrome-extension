@@ -341,15 +341,16 @@ use**, applied consistently to acquisition targets and destinations, not just to
 ### `SHOW_POPOVER` as a composable primitive, not just a destination
 
 `deliverActionResult`'s `popover` branch already calls `showProcedureResultPopover` internally —
-that's a **destination behavior** baked into the delivery helper, not an addressable Function. For
-the future macro builder, formalize the same behavior as an explicit, standalone Function:
+that's a **destination behavior** baked into the delivery helper. The same behavior is also an
+explicit Macro Step (`SHOW_POPOVER`), not a standalone key action (`assignableToKey: false`):
 
-- `SHOW_POPOVER` — category `Display`; params: `{ content }` (text/html to render). Takes whatever
-  the previous Macro Step produced and renders it in a popover.
+- `SHOW_POPOVER` — category `Display`; params: `{ content }` (fallback text if the previous step
+  produced none). Takes whatever the previous Macro Step produced and renders it in a popover.
+  Lives on the User Macros Logic/primitive palette, not in the Actions Library.
 
 This is the concrete instance of the Automator/Shortcuts decomposition promised in "Problem this
 solves": a casual user presses one key bound to the stock `LOOKUP_WORD` Function (data source +
-destination bundled, zero setup); an advanced user, in the future macro builder, could instead chain
+destination bundled, zero setup); an advanced user chains
 `GET_TEXT_AT_CURSOR { granularity: word }` → `DICTIONARY_LOOKUP` → `SHOW_POPOVER` as three explicit
 Steps to build the same behavior with more control (e.g. inserting a translation step in between).
 

@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-17T23:24:20.689Z
+ * Generated on 2026-08-17T23:56:13.398Z
  */
 
 (() => {
@@ -65,21 +65,13 @@
     // --- Generic ---
     SUCCESS: "KP_SUCCESS",
     ERROR: "KP_ERROR",
-    // --- Link Preview mobile User-Agent (SW declarativeNetRequest session rules) ---
-    SET_PREVIEW_MOBILE_UA: "KP_SET_PREVIEW_MOBILE_UA",
-    // --- Separate-window popover fallback (chrome.windows popup) ---
+    // --- Separate-window Link Preview / Open Popover (chrome.windows popup) ---
     OPEN_POPOVER_WINDOW: "KP_OPEN_POPOVER_WINDOW",
     CLOSE_POPOVER_WINDOW: "KP_CLOSE_POPOVER_WINDOW",
-    REGISTER_PREVIEW_IFRAME: "KP_REGISTER_PREVIEW_IFRAME",
-    UNREGISTER_PREVIEW_IFRAME: "KP_UNREGISTER_PREVIEW_IFRAME",
-    /** SW → opener: sub_frame navigation refused after DNR (promote to OS window). */
-    PREVIEW_IFRAME_DENIED: "KP_PREVIEW_IFRAME_DENIED",
     /** SW → opener: popover window closed (OS ✕ or in-window close). */
     POPOVER_WINDOW_CLOSED: "KP_POPOVER_WINDOW_CLOSED",
     /** Popup tab → SW: am I a KeyPilot popover window? */
     AM_I_POPOVER_WINDOW: "KP_AM_I_POPOVER_WINDOW",
-    /** Reload popover-window tab after Mobile/Desktop UA change. */
-    RELOAD_POPOVER_WINDOW_TAB: "KP_RELOAD_POPOVER_WINDOW_TAB",
     // --- Parent ↔ popover iframe (window.postMessage) ---
     POPOVER_BRIDGE_INIT: "KP_POPOVER_BRIDGE_INIT",
     POPOVER_BRIDGE_READY: "KP_POPOVER_BRIDGE_READY",
@@ -477,14 +469,14 @@
     OPEN_POPOVER: Object.freeze({
       handler: "handleOpenPopover",
       label: "Open Popover",
-      description: "Open Link in Popover",
+      description: "Open link in a popup window",
       keyboardClass: "key-open-popover",
       row: 2
     }),
     PREVIEW_LINK_POPOVER: Object.freeze({
       handler: "handlePreviewLinkPopover",
       label: "Preview Link",
-      description: "Open Link Preview in Popover",
+      description: "Open Link Preview in a popup window",
       keyboardClass: "key-preview-popover",
       row: 2
     }),
@@ -1275,7 +1267,7 @@
     ONBOARDING_PANEL: 2147483026,
     // Cols Toggle slip-edit bar (bottom of viewport; below keyboard help / cursor)
     COLS_SLIP_BAR: 2147483030,
-    // Iframe-based popover modal (Open Popover)
+    // Sized OS popup for Open Popover (http(s)); extension Guide still uses iframe overlay
     POPOVER_IFRAME_MODAL: 2147483035,
     // Notifications / message overlays
     MESSAGE_BOX: 2147483040,

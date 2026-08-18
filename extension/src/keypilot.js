@@ -712,22 +712,16 @@ export class KeyPilot extends EventManager {
     const target = currentState?.focusEl;
     if (!target) return;
 
-    // Try semantic activation first
-    if (this.activator.handleSmartActivate(target, currentState.lastMouse.x, currentState.lastMouse.y)) {
-      this.showRipple(currentState.lastMouse.x, currentState.lastMouse.y);
-      this.overlayManager.flashFocusOverlay(target);
-      this.postClickRefresh(target, currentState.lastMouse.x, currentState.lastMouse.y);
-    } else {
-      // Fallback to click
-      this.activator.smartClick(target, currentState.lastMouse.x, currentState.lastMouse.y);
-      this.showRipple(currentState.lastMouse.x, currentState.lastMouse.y);
-      this.overlayManager.flashFocusOverlay(target);
-      this.postClickRefresh(target, currentState.lastMouse.x, currentState.lastMouse.y);
-    }
-
-    // After clicking, hide hover UI until the user moves the mouse again.
-    this._disarmTextModeClick();
-    this.state.setFocusElement(null);
+    const x = currentState.lastMouse.x;
+    const y = currentState.lastMouse.y;
+    this._flashThenActivate(target, () => {
+      if (!this.activator.handleSmartActivate(target, x, y)) {
+        this.activator.smartClick(target, x, y);
+      }
+      this.postClickRefresh(target, x, y);
+      this._disarmTextModeClick();
+      this.state.setFocusElement(null);
+    });
   }
 
   shouldImmediateRefreshAfterClick(target) {
@@ -6924,18 +6918,20 @@ export class KeyPilot extends EventManager {
   }
 
   /**
-   * SHOW_POPOVER Function handler — shows the Action Instance's configured `content` in a
-   * popover. A display primitive: takes a static configured value today, but formalizes the
-   * same "render a result" behavior `deliverActionResult`'s `popover` branch already has baked
-   * in, so it can become an explicit macro Step once the macro builder passes a previous Step's
-   * output forward — see KEY_ACTION_ARCHITECTURE.md "SHOW_POPOVER as a composable primitive".
+   * SHOW_POPOVER — Macro Step that renders the previous step's result (or configured fallback
+   * `content`) via `deliverActionResult`'s popover destination. Not a standalone key action.
    * @param {KeyboardEvent} _e
    * @param {{ content?: string }} [parameters]
+   * @param {{ priorResult?: any }} [meta]
    */
-  async handleShowPopoverKey(_e, parameters) {
-    const content = String(parameters?.content ?? '').trim();
+  async handleShowPopoverKey(_e, parameters, meta = {}) {
+    const prior = meta?.priorResult;
+    let fromPrior = '';
+    if (typeof prior === 'string') fromPrior = prior;
+    else if (prior && typeof prior === 'object' && prior.text != null) fromPrior = String(prior.text);
+    const content = String(fromPrior || parameters?.content || '').trim();
     if (!content) {
-      this.showFlashNotification('No content configured for this key', COLORS.NOTIFICATION_INFO);
+      this.showFlashNotification('No content to show in popover', COLORS.NOTIFICATION_INFO);
       return;
     }
     await deliverActionResult(this, {
@@ -6943,6 +6939,7 @@ export class KeyPilot extends EventManager {
       title: 'Popover',
       destination: ACTION_RESULT_DESTINATIONS.POPOVER
     });
+    return content;
   }
 
   /**
@@ -8056,6 +8053,52 @@ export class KeyPilot extends EventManager {
     return posted;
   }
 
+  /**
+   * Mount F-click flash (and ripple) before HTMLElement.click() / navigation.
+   * Same-tick click unloads or re-renders the target before the browser paints,
+   * which is why the green strobe was almost never visible.
+   * When a pulse actually mounted, wait two animation frames (after paint)
+   * then run `activate`. Selects/file pickers skip that wait so they stay
+   * inside the key-gesture (no flash for CONTROL category).
+   * @param {Element|null|undefined} target
+   * @param {() => void} activate
+   */
+  _flashThenActivate(target, activate) {
+    this._activationFlashToken = (this._activationFlashToken || 0) + 1;
+    const token = this._activationFlashToken;
+    const state = this.state?.getState?.();
+    const x = state?.lastMouse?.x;
+    const y = state?.lastMouse?.y;
+    try {
+      if (typeof x === 'number' && typeof y === 'number') this.showRipple(x, y);
+    } catch { /* ignore */ }
+
+    let flashed = false;
+    try {
+      flashed = !!this.overlayManager?.flashFocusOverlay?.(target);
+    } catch { /* ignore */ }
+
+    const run = () => {
+      if (token !== this._activationFlashToken) return;
+      try { activate(); } catch (e) {
+        console.warn('[KeyPilot] Activation after flash failed:', e);
+      }
+    };
+
+    if (!flashed) {
+      run();
+      return;
+    }
+
+    try {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(run);
+      });
+    } catch {
+      run();
+    }
+  }
+
   handleActivateKey() {
     const currentState = this.state.getState();
     const x = currentState.lastMouse.x;
@@ -8104,14 +8147,14 @@ export class KeyPilot extends EventManager {
 
     // Store coordinates if this is a link click
     if (target.tagName === 'A' && target.href) {
-      this.mouseCoordinateManager.handleLinkClick(currentState.lastMouse.x, currentState.lastMouse.y, target);
+      this.mouseCoordinateManager.handleLinkClick(x, y, target);
     }
 
-    // Try semantic activation first
-    if (this.activator.handleSmartActivate(target, currentState.lastMouse.x, currentState.lastMouse.y)) {
-      this.showRipple(currentState.lastMouse.x, currentState.lastMouse.y);
-      this.overlayManager.flashFocusOverlay(target);
-      this.postClickRefresh(target, currentState.lastMouse.x, currentState.lastMouse.y);
+    this._flashThenActivate(target, () => {
+      if (!this.activator.handleSmartActivate(target, x, y)) {
+        this.activator.smartClick(target, x, y);
+      }
+      this.postClickRefresh(target, x, y);
       this.emitAction('activate', activationDetail);
       if (activationDetail.isKeyboardHelpKey) {
         try {
@@ -8119,22 +8162,7 @@ export class KeyPilot extends EventManager {
           if (actionId) pinKeyPopover(actionId, { keybindings: this.keybindings });
         } catch { /* ignore */ }
       }
-      return;
-    }
-
-    // Always try to click the element, regardless of whether it's "detected" as interactive
-    // This ensures videos, custom elements, and other non-standard interactive elements work
-    this.activator.smartClick(target, currentState.lastMouse.x, currentState.lastMouse.y);
-    this.showRipple(currentState.lastMouse.x, currentState.lastMouse.y);
-    this.overlayManager.flashFocusOverlay(target);
-    this.postClickRefresh(target, currentState.lastMouse.x, currentState.lastMouse.y);
-    this.emitAction('activate', activationDetail);
-    if (activationDetail.isKeyboardHelpKey) {
-      try {
-        const actionId = closestComposed(target, '[data-kp-action-id]')?.dataset?.kpActionId;
-        if (actionId) pinKeyPopover(actionId, { keybindings: this.keybindings });
-      } catch { /* ignore */ }
-    }
+    });
   }
 
   handleActivateNewTabKey() {
@@ -8178,42 +8206,44 @@ export class KeyPilot extends EventManager {
       link = resolvedNewTab.link;
     }
 
+    const mx = currentState.lastMouse.x;
+    const my = currentState.lastMouse.y;
+
     if (url) {
-      this.mouseCoordinateManager.handleLinkClick(currentState.lastMouse.x, currentState.lastMouse.y, link);
+      this.mouseCoordinateManager.handleLinkClick(mx, my, link);
 
-      try {
-        if (this._sendRuntimeMessage({ type: MSG.OPEN_URL_FOREGROUND, url })) {
-          this.showRipple(currentState.lastMouse.x, currentState.lastMouse.y);
-          this.overlayManager.flashFocusOverlay(link);
-          this.postClickRefresh(link, currentState.lastMouse.x, currentState.lastMouse.y);
-          this.emitAction('activateNewTab', { isLink: true, href: url });
-          return;
+      this._flashThenActivate(link, () => {
+        try {
+          if (this._sendRuntimeMessage({ type: MSG.OPEN_URL_FOREGROUND, url })) {
+            this.postClickRefresh(link, mx, my);
+            this.emitAction('activateNewTab', { isLink: true, href: url });
+            return;
+          }
+        } catch (error) {
+          if (noteExtensionContextError(error)) {
+            this._handleExtensionContextInvalidated();
+          } else {
+            console.error('[KeyPilot] Failed to open link in foreground tab:', error);
+          }
         }
-        // Context invalidated — fall through to legacy window.open path below.
-      } catch (error) {
-        if (noteExtensionContextError(error)) {
-          this._handleExtensionContextInvalidated();
-        } else {
-          console.error('[KeyPilot] Failed to open link in foreground tab:', error);
-        }
-        // Fall through to legacy behavior below.
-      }
-    }
-
-    // Try semantic activation first (but force new tab for links)
-    if (this.activator.handleSmartActivate(target, currentState.lastMouse.x, currentState.lastMouse.y, true)) {
-      this.showRipple(currentState.lastMouse.x, currentState.lastMouse.y);
-      this.overlayManager.flashFocusOverlay(target);
-      this.postClickRefresh(target, currentState.lastMouse.x, currentState.lastMouse.y);
-      this.emitAction('activateNewTab', this._buildActivationDetail(target));
+        this._activateNewTabFallback(target, mx, my);
+      });
       return;
     }
 
-    // Always try to click the element in new tab mode
-    this.activator.smartClick(target, currentState.lastMouse.x, currentState.lastMouse.y, true);
-    this.showRipple(currentState.lastMouse.x, currentState.lastMouse.y);
-    this.overlayManager.flashFocusOverlay(target);
-    this.postClickRefresh(target, currentState.lastMouse.x, currentState.lastMouse.y);
+    this._flashThenActivate(target, () => {
+      this._activateNewTabFallback(target, mx, my);
+    });
+  }
+
+  _activateNewTabFallback(target, x, y) {
+    if (this.activator.handleSmartActivate(target, x, y, true)) {
+      this.postClickRefresh(target, x, y);
+      this.emitAction('activateNewTab', this._buildActivationDetail(target));
+      return;
+    }
+    this.activator.smartClick(target, x, y, true);
+    this.postClickRefresh(target, x, y);
     this.emitAction('activateNewTab', this._buildActivationDetail(target));
   }
 
@@ -8260,26 +8290,23 @@ export class KeyPilot extends EventManager {
     // Store coordinates for link click
     this.mouseCoordinateManager.handleLinkClick(currentState.lastMouse.x, currentState.lastMouse.y, link);
 
-    // Open link in a background tab (middle-click style: do NOT switch/focus the new tab).
-    try {
-      if (this._sendRuntimeMessage({ type: MSG.OPEN_URL_BACKGROUND, url })) {
-        this.showRipple(currentState.lastMouse.x, currentState.lastMouse.y);
-        this.overlayManager.flashFocusOverlay(link);
-        this.postClickRefresh(link, currentState.lastMouse.x, currentState.lastMouse.y);
-        this.emitAction('activateNewTabBackground', { isLink: true, href: url });
-        return;
+    this._flashThenActivate(link, () => {
+      try {
+        if (this._sendRuntimeMessage({ type: MSG.OPEN_URL_BACKGROUND, url })) {
+          this.postClickRefresh(link, currentState.lastMouse.x, currentState.lastMouse.y);
+          this.emitAction('activateNewTabBackground', { isLink: true, href: url });
+          return;
+        }
+        try { window.open(url, '_blank', 'noopener,noreferrer'); } catch { /* ignore */ }
+      } catch (error) {
+        if (noteExtensionContextError(error)) {
+          this._handleExtensionContextInvalidated();
+        } else {
+          console.error('[KeyPilot] Failed to open link in background tab:', error);
+        }
+        try { window.open(url, '_blank', 'noopener,noreferrer'); } catch { /* ignore */ }
       }
-      // Context invalidated — fall through to window.open fallback.
-      try { window.open(url, '_blank', 'noopener,noreferrer'); } catch { /* ignore */ }
-    } catch (error) {
-      if (noteExtensionContextError(error)) {
-        this._handleExtensionContextInvalidated();
-      } else {
-        console.error('[KeyPilot] Failed to open link in background tab:', error);
-      }
-      // Fallback (may focus the new tab depending on browser/user settings).
-      try { window.open(url, '_blank', 'noopener,noreferrer'); } catch { /* ignore */ }
-    }
+    });
   }
 
   handleOpenPopover(e) {
@@ -8333,9 +8360,7 @@ export class KeyPilot extends EventManager {
     console.log('[KeyPilot] Opening popover for link:', url);
 
     // Show popover
-    this.overlayManager.showPopover(url, {
-      forceWindow: this._linkPopoverAlwaysNewWindow('OPEN_POPOVER')
-    });
+    this.overlayManager.showPopover(url);
     this.state.setPopoverOpen(true, url);
   }
 
@@ -8573,29 +8598,13 @@ export class KeyPilot extends EventManager {
     }
   }
 
-  /**
-   * Link Preview / Open Popover: when true, skip the in-page iframe and always
-   * open a Chrome popup window. Default is on.
-   * @param {'PREVIEW_LINK_POPOVER'|'OPEN_POPOVER'} functionId
-   * @returns {boolean}
-   */
-  _linkPopoverAlwaysNewWindow(functionId) {
-    const v = getActionParameter(
-      this._getBuiltinFunctionActionParams(functionId),
-      functionId,
-      'alwaysNewWindow'
-    );
-    return v !== false;
-  }
-
   _openLinkPreviewPopover(url, mouseX, mouseY) {
     const href = String(url || '').trim();
     if (!href) return;
     this.overlayManager.showPreviewPopover(href, {
       title: 'Link Preview',
       mouseX,
-      mouseY,
-      forceWindow: this._linkPopoverAlwaysNewWindow('PREVIEW_LINK_POPOVER')
+      mouseY
     });
     this.state.setPopoverOpen(true, href);
   }
@@ -8607,9 +8616,7 @@ export class KeyPilot extends EventManager {
   _openFullPopover(url) {
     const href = String(url || '').trim();
     if (!href) return;
-    this.overlayManager.showPopover(href, {
-      forceWindow: this._linkPopoverAlwaysNewWindow('OPEN_POPOVER')
-    });
+    this.overlayManager.showPopover(href);
     this.state.setPopoverOpen(true, href);
   }
 
@@ -8711,8 +8718,7 @@ export class KeyPilot extends EventManager {
     this.overlayManager.showPreviewPopover(url, {
       title: 'Link Preview',
       mouseX: lastMouse.x,
-      mouseY: lastMouse.y,
-      forceWindow: this._linkPopoverAlwaysNewWindow('PREVIEW_LINK_POPOVER')
+      mouseY: lastMouse.y
     });
     this.state.setPopoverOpen(true, url);
   }

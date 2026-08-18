@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "KeyPilot",
     "version": "0.3.4",
-    "description": "Aug-17-2026-6:24PM Keyboard-first navigation: F click link under cursor; D back; R forward; ESC cancel.",
+    "description": "Aug-17-2026-6:56PM Keyboard-first navigation: F click link under cursor; D back; R forward; ESC cancel.",
     "action": {
         "default_title": "KeyPilot Minimal",
         "default_popup": "popup.html",
@@ -25,7 +25,6 @@
         "tabs",
         "windows",
         "scripting",
-        "declarativeNetRequest",
         "history",
         "bookmarks",
         "topSites",
@@ -37,15 +36,6 @@
     "host_permissions": [
         "<all_urls>"
     ],
-    "declarative_net_request": {
-        "rule_resources": [
-            {
-                "id": "remove_frame_restrictions",
-                "enabled": true,
-                "path": "rules.json"
-            }
-        ]
-    },
     "content_scripts": [
         {
             "matches": [

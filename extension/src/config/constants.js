@@ -200,7 +200,7 @@ export const Z_INDEX = {
   // Cols Toggle slip-edit bar (bottom of viewport; below keyboard help / cursor)
   COLS_SLIP_BAR: 2147483030,
 
-  // Iframe-based popover modal (Open Popover)
+  // Sized OS popup for Open Popover (http(s)); extension Guide still uses iframe overlay
   POPOVER_IFRAME_MODAL: 2147483035,
 
   // Notifications / message overlays

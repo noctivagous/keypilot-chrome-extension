@@ -1186,7 +1186,7 @@
     },
     "PREVIEW_LINK_POPOVER": {
       "label": "Preview Link",
-      "description": "Open Link Preview in Popover",
+      "description": "Open Link Preview in a popup window",
       "keyLabel": "E",
       "displayKey": "E",
       "keyboardClass": "key-preview-popover"
@@ -1235,7 +1235,7 @@
     },
     "OPEN_POPOVER": {
       "label": "Open Popover",
-      "description": "Open Link in Popover",
+      "description": "Open link in a popup window",
       "keyLabel": "P",
       "displayKey": "P",
       "keyboardClass": "key-open-popover"
@@ -1398,7 +1398,7 @@
     },
     "PREVIEW_LINK_POPOVER": {
       "label": "Preview Link",
-      "description": "Open Link Preview in Popover",
+      "description": "Open Link Preview in a popup window",
       "keyLabel": "W",
       "displayKey": "W",
       "keyboardClass": "key-preview-popover"
@@ -1433,7 +1433,7 @@
     },
     "OPEN_POPOVER": {
       "label": "Open Popover",
-      "description": "Open Link in Popover",
+      "description": "Open link in a popup window",
       "keyLabel": "I",
       "displayKey": "I",
       "keyboardClass": "key-open-popover"
@@ -2077,7 +2077,7 @@
   },
   "PREVIEW_LINK_POPOVER": {
     "label": "Preview Link",
-    "description": "Open Link Preview in Popover",
+    "description": "Open Link Preview in a popup window",
     "keyLabel": "E",
     "displayKey": "E",
     "keyboardClass": "key-preview-popover"
@@ -2126,7 +2126,7 @@
   },
   "OPEN_POPOVER": {
     "label": "Open Popover",
-    "description": "Open Link in Popover",
+    "description": "Open link in a popup window",
     "keyLabel": "P",
     "displayKey": "P",
     "keyboardClass": "key-open-popover"

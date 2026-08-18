@@ -25,7 +25,7 @@ To change behavior later, edit the instance’s parameters in Config — every k
 
 ### Library categories (overview)
 
-Navigation · Tab Control · Begin URL · Get Page Data · Maps · Scroll · Select · Clipboard · Type · Keystrokes · Data · Lookup · Translate · Display · Script · Media Library · AI · KeyPilot · Tools · System
+Navigation · Tab Control · Begin URL · Get Page Data · Maps · Scroll · Select · Clipboard · Type · Keystrokes · Data · Lookup · Translate · Script · Media Library · AI · KeyPilot · Tools · System
 
 ### Notable Functions
 
@@ -33,7 +33,6 @@ Navigation · Tab Control · Begin URL · Get Page Data · Maps · Scroll · Sel
 - **Copy image / video / URL** — with destination choices
 - **Get text/media under cursor**, **Get highlighted range**
 - **Lookup Word**, **Translate**
-- **Show Popover**
 - **Send selection to AI** — instruction + result destination
 - **Add URL to Media Library**
 - **Execute JS** — custom script (see that topic)

@@ -72,102 +72,6 @@ const ONBOARDING_ACTIVE_STORAGE_KEY = 'keypilot_onboarding_active';
 const ONBOARDING_PROGRESS_STORAGE_KEY = 'keypilot_onboarding_progress';
 const TRANSIENT_ACTION_STORAGE_KEY = 'keypilot_transient_action';
 
-// Session DNR rules: spoof mobile UA for Link Preview.
-// Static rules.json uses id 1; keep session ids well clear of that range.
-const PREVIEW_MOBILE_UA_SUBFRAME_RULE_ID = 9101;
-const PREVIEW_MOBILE_UA_MAINFRAME_RULE_ID = 9102;
-/** @type {Set<number>} opener tabs that want mobile UA on preview iframes (sub_frame only) */
-const previewMobileUaSubFrameTabIds = new Set();
-/** @type {Set<number>} popover-window tabs that want mobile UA on the top-level page */
-const previewMobileUaMainFrameTabIds = new Set();
-
-// Pixel 7 / Chrome Android — close enough for sites that branch on UA + client hints.
-const PREVIEW_MOBILE_USER_AGENT =
-  'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36';
-const PREVIEW_MOBILE_SEC_CH_UA =
-  '"Chromium";v="131", "Google Chrome";v="131", "Not_A Brand";v="24"';
-
-function buildPreviewMobileUaAction() {
-  return {
-    type: 'modifyHeaders',
-    requestHeaders: [
-      { header: 'User-Agent', operation: 'set', value: PREVIEW_MOBILE_USER_AGENT },
-      { header: 'Sec-CH-UA', operation: 'set', value: PREVIEW_MOBILE_SEC_CH_UA },
-      { header: 'Sec-CH-UA-Mobile', operation: 'set', value: '?1' },
-      { header: 'Sec-CH-UA-Platform', operation: 'set', value: '"Android"' },
-      { header: 'Sec-CH-UA-Platform-Version', operation: 'set', value: '"14.0.0"' },
-      { header: 'Sec-CH-UA-Model', operation: 'set', value: '"Pixel 7"' },
-      { header: 'Sec-CH-UA-Full-Version-List', operation: 'set', value: PREVIEW_MOBILE_SEC_CH_UA }
-    ]
-  };
-}
-
-/**
- * Sync session DNR rules for preview mobile UA.
- * - Opener tabs: sub_frame only (iframe preview; host page unaffected).
- * - Popover-window tabs: main_frame + sub_frame (top-level OS popup page).
- */
-async function syncPreviewMobileUaRules() {
-  const removeRuleIds = [
-    PREVIEW_MOBILE_UA_SUBFRAME_RULE_ID,
-    PREVIEW_MOBILE_UA_MAINFRAME_RULE_ID
-  ];
-  /** @type {chrome.declarativeNetRequest.Rule[]} */
-  const addRules = [];
-  const action = buildPreviewMobileUaAction();
-
-  if (previewMobileUaSubFrameTabIds.size > 0) {
-    addRules.push({
-      id: PREVIEW_MOBILE_UA_SUBFRAME_RULE_ID,
-      priority: 100,
-      action,
-      condition: {
-        tabIds: Array.from(previewMobileUaSubFrameTabIds),
-        resourceTypes: ['sub_frame']
-      }
-    });
-  }
-
-  if (previewMobileUaMainFrameTabIds.size > 0) {
-    addRules.push({
-      id: PREVIEW_MOBILE_UA_MAINFRAME_RULE_ID,
-      priority: 100,
-      action,
-      condition: {
-        tabIds: Array.from(previewMobileUaMainFrameTabIds),
-        resourceTypes: ['main_frame', 'sub_frame']
-      }
-    });
-  }
-
-  try {
-    await chrome.declarativeNetRequest.updateSessionRules({ removeRuleIds, addRules });
-  } catch (e) {
-    console.warn('[KeyPilot] Failed to sync preview mobile UA rules:', e?.message || e);
-    throw e;
-  }
-}
-
-/**
- * @param {number} tabId
- * @param {boolean} enabled
- * @param {'sub_frame'|'main_frame'} [scope='sub_frame']
- */
-async function setPreviewMobileUaForTab(tabId, enabled, scope = 'sub_frame') {
-  if (typeof tabId !== 'number') {
-    throw new Error('Invalid tab id for preview mobile UA');
-  }
-  const set = scope === 'main_frame'
-    ? previewMobileUaMainFrameTabIds
-    : previewMobileUaSubFrameTabIds;
-  if (enabled) {
-    set.add(tabId);
-  } else {
-    set.delete(tabId);
-  }
-  await syncPreviewMobileUaRules();
-}
-
 // --- Separate-window popover session map ---
 /**
  * @typedef {{
@@ -175,8 +79,7 @@ async function setPreviewMobileUaForTab(tabId, enabled, scope = 'sub_frame') {
  *   popupTabId: number,
  *   url: string,
  *   kind: 'preview'|'modal',
- *   closeKeys: string[],
- *   viewportMode: 'mobile'|'desktop'
+ *   closeKeys: string[]
  * }} PopoverWindowEntry
  */
 /** @type {Map<number, PopoverWindowEntry>} */
@@ -185,20 +88,6 @@ const popoverWindowsByWindowId = new Map();
 const popoverWindowByOpenerTabId = new Map();
 /** @type {Map<number, number>} popupTabId → windowId */
 const popoverWindowByPopupTabId = new Map();
-/**
- * Pending iframe loads awaiting framing-denial watch.
- * @type {Map<number, {
- *   url: string,
- *   kind: 'preview'|'modal',
- *   closeKeys: string[],
- *   width?: number,
- *   height?: number,
- *   left?: number,
- *   top?: number,
- *   viewportMode?: 'mobile'|'desktop'
- * }>}
- */
-const pendingPreviewIframeByOpenerTabId = new Map();
 
 /**
  * @param {number} windowId
@@ -214,10 +103,6 @@ async function clearPopoverWindowEntry(windowId, { notifyOpener = true, reason =
   if (popoverWindowByPopupTabId.get(entry.popupTabId) === windowId) {
     popoverWindowByPopupTabId.delete(entry.popupTabId);
   }
-  previewMobileUaMainFrameTabIds.delete(entry.popupTabId);
-  try {
-    await syncPreviewMobileUaRules();
-  } catch { /* ignore */ }
 
   if (notifyOpener && typeof entry.openerTabId === 'number') {
     try {
@@ -242,8 +127,7 @@ async function clearPopoverWindowEntry(windowId, { notifyOpener = true, reason =
  *   width?: number,
  *   height?: number,
  *   left?: number,
- *   top?: number,
- *   viewportMode?: 'mobile'|'desktop'
+ *   top?: number
  * }} opts
  * @returns {Promise<{ windowId: number, tabId: number }>}
  */
@@ -254,7 +138,6 @@ async function openPopoverWindowForOpener(openerTabId, opts) {
   const closeKeys = Array.isArray(opts?.closeKeys) && opts.closeKeys.length
     ? opts.closeKeys.map(String)
     : (kind === 'modal' ? ['Escape', 'p', 'P'] : ['Escape', 'e', 'E']);
-  const viewportMode = opts?.viewportMode === 'mobile' ? 'mobile' : 'desktop';
 
   // One popover window per opener.
   const existingWindowId = popoverWindowByOpenerTabId.get(openerTabId);
@@ -301,21 +184,11 @@ async function openPopoverWindowForOpener(openerTabId, opts) {
     popupTabId,
     url,
     kind,
-    closeKeys,
-    viewportMode
+    closeKeys
   };
   popoverWindowsByWindowId.set(windowId, entry);
   popoverWindowByOpenerTabId.set(openerTabId, windowId);
   popoverWindowByPopupTabId.set(popupTabId, windowId);
-
-  if (viewportMode === 'mobile') {
-    try {
-      await setPreviewMobileUaForTab(popupTabId, true, 'main_frame');
-      await chrome.tabs.reload(popupTabId);
-    } catch (e) {
-      console.warn('[KeyPilot] Failed to apply mobile UA to popover window:', e?.message || e);
-    }
-  }
 
   return { windowId, tabId: popupTabId };
 }
@@ -345,49 +218,6 @@ async function closePopoverWindow(query, opts = {}) {
   return true;
 }
 
-function isFramingDenialError(error) {
-  const s = String(error || '');
-  return s.includes('ERR_BLOCKED_BY_RESPONSE') || s.includes('ERR_BLOCKED_BY_CLIENT');
-}
-
-try {
-  chrome.webNavigation.onErrorOccurred.addListener((details) => {
-    try {
-      if (!details || details.frameId === 0) return;
-      if (!isFramingDenialError(details.error)) return;
-      const openerTabId = details.tabId;
-      if (typeof openerTabId !== 'number') return;
-      const pending = pendingPreviewIframeByOpenerTabId.get(openerTabId);
-      if (!pending) return;
-
-      // Ignore unrelated sub_frames on the host page (ads, widgets, etc.).
-      if (details.url && pending.url) {
-        try {
-          const pendingOrigin = new URL(pending.url).origin;
-          const errorOrigin = new URL(details.url).origin;
-          if (pendingOrigin !== errorOrigin) return;
-        } catch { /* if URL parse fails, still consider promoting */ }
-      }
-
-      pendingPreviewIframeByOpenerTabId.delete(openerTabId);
-      chrome.tabs.sendMessage(openerTabId, {
-        type: MSG.PREVIEW_IFRAME_DENIED,
-        url: pending.url,
-        kind: pending.kind,
-        closeKeys: pending.closeKeys,
-        width: pending.width,
-        height: pending.height,
-        left: pending.left,
-        top: pending.top,
-        viewportMode: pending.viewportMode,
-        error: details.error
-      }).catch(() => { /* ignore */ });
-    } catch { /* ignore */ }
-  });
-} catch (e) {
-  console.warn('[KeyPilot] Failed to install preview iframe denial watch:', e?.message || e);
-}
-
 try {
   chrome.windows.onRemoved.addListener((windowId) => {
     if (!popoverWindowsByWindowId.has(windowId)) return;
@@ -397,21 +227,6 @@ try {
 
 try {
   chrome.tabs.onRemoved.addListener((tabId) => {
-    let uaDirty = false;
-    if (previewMobileUaSubFrameTabIds.has(tabId)) {
-      previewMobileUaSubFrameTabIds.delete(tabId);
-      uaDirty = true;
-    }
-    if (previewMobileUaMainFrameTabIds.has(tabId)) {
-      previewMobileUaMainFrameTabIds.delete(tabId);
-      uaDirty = true;
-    }
-    if (uaDirty) {
-      void syncPreviewMobileUaRules().catch(() => { /* ignore */ });
-    }
-
-    pendingPreviewIframeByOpenerTabId.delete(tabId);
-
     // Opener closed → close its popover window.
     const openerWindowId = popoverWindowByOpenerTabId.get(tabId);
     if (typeof openerWindowId === 'number') {
@@ -2528,42 +2343,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
-        case MSG.SET_PREVIEW_MOBILE_UA: {
-          // Content script: enable/disable mobile User-Agent for preview.
-          // Opener iframe previews → sub_frame only; popover OS windows → main_frame.
-          const tabId = sender?.tab?.id;
-          if (typeof tabId !== 'number') {
-            sendResponse({ type: MSG.ERROR, error: 'No sender tab id' });
-            break;
-          }
-          const enabled = message.enabled === true;
-          const isPopoverWin = popoverWindowByPopupTabId.has(tabId);
-          const scope = isPopoverWin || message.scope === 'main_frame'
-            ? 'main_frame'
-            : 'sub_frame';
-          try {
-            await setPreviewMobileUaForTab(tabId, enabled, scope);
-            // Remember viewport mode on the popover-window entry.
-            if (isPopoverWin) {
-              const windowId = popoverWindowByPopupTabId.get(tabId);
-              const entry = typeof windowId === 'number'
-                ? popoverWindowsByWindowId.get(windowId)
-                : null;
-              if (entry) {
-                entry.viewportMode = enabled ? 'mobile' : 'desktop';
-              }
-            }
-            sendResponse({ type: MSG.SUCCESS, enabled, tabId, scope });
-          } catch (e) {
-            console.warn('[KeyPilot] SET_PREVIEW_MOBILE_UA failed:', e?.message || e);
-            sendResponse({
-              type: MSG.ERROR,
-              error: e?.message || 'Failed to update preview mobile UA'
-            });
-          }
-          break;
-        }
-
         case MSG.OPEN_POPOVER_WINDOW: {
           const openerTabId = sender?.tab?.id;
           if (typeof openerTabId !== 'number') {
@@ -2575,7 +2354,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             break;
           }
           try {
-            pendingPreviewIframeByOpenerTabId.delete(openerTabId);
             const result = await openPopoverWindowForOpener(openerTabId, {
               url: message.url,
               kind: message.kind,
@@ -2583,8 +2361,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               width: message.width,
               height: message.height,
               left: message.left,
-              top: message.top,
-              viewportMode: message.viewportMode
+              top: message.top
             });
             sendResponse({
               type: MSG.SUCCESS,
@@ -2635,40 +2412,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
-        case MSG.REGISTER_PREVIEW_IFRAME: {
-          const openerTabId = sender?.tab?.id;
-          if (typeof openerTabId !== 'number') {
-            sendResponse({ type: MSG.ERROR, error: 'No sender tab id' });
-            break;
-          }
-          const url = String(message.url || '').trim();
-          if (!url) {
-            sendResponse({ type: MSG.ERROR, error: 'Invalid url' });
-            break;
-          }
-          pendingPreviewIframeByOpenerTabId.set(openerTabId, {
-            url,
-            kind: message.kind === 'modal' ? 'modal' : 'preview',
-            closeKeys: Array.isArray(message.closeKeys) ? message.closeKeys.map(String) : [],
-            width: typeof message.width === 'number' ? message.width : undefined,
-            height: typeof message.height === 'number' ? message.height : undefined,
-            left: typeof message.left === 'number' ? message.left : undefined,
-            top: typeof message.top === 'number' ? message.top : undefined,
-            viewportMode: message.viewportMode === 'mobile' ? 'mobile' : 'desktop'
-          });
-          sendResponse({ type: MSG.SUCCESS });
-          break;
-        }
-
-        case MSG.UNREGISTER_PREVIEW_IFRAME: {
-          const openerTabId = sender?.tab?.id;
-          if (typeof openerTabId === 'number') {
-            pendingPreviewIframeByOpenerTabId.delete(openerTabId);
-          }
-          sendResponse({ type: MSG.SUCCESS });
-          break;
-        }
-
         case MSG.AM_I_POPOVER_WINDOW: {
           const tabId = sender?.tab?.id;
           if (typeof tabId !== 'number') {
@@ -2690,27 +2433,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             kind: entry.kind,
             closeKeys: entry.closeKeys,
             originalUrl: entry.url,
-            viewportMode: entry.viewportMode,
             openerTabId: entry.openerTabId
           });
-          break;
-        }
-
-        case MSG.RELOAD_POPOVER_WINDOW_TAB: {
-          const tabId = sender?.tab?.id;
-          if (typeof tabId !== 'number' || !popoverWindowByPopupTabId.has(tabId)) {
-            sendResponse({ type: MSG.ERROR, error: 'Not a popover window tab' });
-            break;
-          }
-          try {
-            await chrome.tabs.reload(tabId);
-            sendResponse({ type: MSG.SUCCESS });
-          } catch (e) {
-            sendResponse({
-              type: MSG.ERROR,
-              error: e?.message || 'Failed to reload'
-            });
-          }
           break;
         }
 

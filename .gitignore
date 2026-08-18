@@ -10,6 +10,9 @@ extension/content-bundled.min.js
 extension/content-bundled.esbuild.js
 extension/frame-agent-bundled.esbuild.js
 
+#TASKS
+TASKS.md
+
 # macOS
 .DS_Store
 .DS_Store?

@@ -93,7 +93,11 @@ import { ACTION_RESULT_DESTINATIONS, buildResultDestinationParameter } from '../
  *   // `file` (arbitrary fetched document — PDF/mp3/mp4/…) is distinct from `media` (an existing
  *   // on-page `<img>`/`<video>` read directly, never fetched over the network).
  *   dataKind?: 'text'|'media'|'file',
- *   destinations?: import('../modules/action-result-delivery.js').ActionResultDestination[]
+ *   destinations?: import('../modules/action-result-delivery.js').ActionResultDestination[],
+ *   // False when this Function is a Macro Step / result-routing primitive, not a key action.
+ *   // Omitted or true: browsable and placeable in the Actions Library. Runtime still accepts
+ *   // leftover key bindings so existing layouts keep working.
+ *   assignableToKey?: boolean
  * }} FunctionDef
  */
 
@@ -220,16 +224,6 @@ export const FIXED_KEY_FUNCTION_IDS = Object.freeze([
  * parameter literally named `mode` to keep rendering it as the button-group switch it always was.
  * `PAGE_TOP` / `PAGE_BOTTOM` use the same `mode` switch for Fade vs Scroll.
  */
-/** Shared by Link Preview / Open Popover: OS window vs in-page iframe overlay. */
-const LINK_POPOVER_WINDOW_PARAMETERS = Object.freeze([
-  Object.freeze({
-    id: 'alwaysNewWindow',
-    label: 'Always make new window',
-    type: 'boolean',
-    defaultValue: true
-  })
-]);
-
 /** Shared by Scroll To Top / Scroll To Bottom (inlined as the key-info `mode` switch). */
 const EDGE_SCROLL_PARAMETERS = Object.freeze([
   Object.freeze({
@@ -246,8 +240,6 @@ const EDGE_SCROLL_PARAMETERS = Object.freeze([
 
 /** @type {Readonly<Record<string, FunctionDef['parameters']>>} */
 const BUILTIN_FUNCTION_PARAMETER_OVERRIDES = Object.freeze({
-  PREVIEW_LINK_POPOVER: LINK_POPOVER_WINDOW_PARAMETERS,
-  OPEN_POPOVER: LINK_POPOVER_WINDOW_PARAMETERS,
   PAGE_TOP: EDGE_SCROLL_PARAMETERS,
   PAGE_BOTTOM: EDGE_SCROLL_PARAMETERS,
   HIGHLIGHT: Object.freeze([
@@ -530,8 +522,9 @@ function buildBuiltinActionFunctionDefs() {
  * directly key-assignable (each copies its result to the clipboard so it's independently useful
  * today), but their real purpose is as a future macro-builder Step feeding a destination-writer
  * Step — hence the single fixed `clipboard` destination rather than a full `destinations` list.
- * `LOOKUP_WORD` / `TRANSLATE` / `SHOW_POPOVER` are the composed, stock-ready examples built from
- * those same getters. `ADD_URL_TO_MEDIA_LIBRARY` stores the hovered href in Media Library.
+ * `LOOKUP_WORD` / `TRANSLATE` are the composed, stock-ready examples built from
+ * those same getters. `SHOW_POPOVER` is the Display destination as an explicit Macro Step
+ * (not a standalone key action). `ADD_URL_TO_MEDIA_LIBRARY` stores the hovered href in Media Library.
  * `FETCH_URL_FOR_MEDIA_LIBRARY` remains a catalog stub until Documents / Videos ingest exists.
  * @returns {Record<string, FunctionDef>}
  */
@@ -627,18 +620,19 @@ function buildDataAcquisitionFunctionDefs() {
     SHOW_POPOVER: Object.freeze({
       id: 'SHOW_POPOVER',
       label: 'Show Popover',
-      description: 'Shows the configured text in a popover — a display primitive for composing into future macro steps.',
+      description: 'Renders the previous Macro Step’s result (or configured fallback text) in a popover. A display primitive — add it as a Macro Step, not as a key action.',
       handler: 'handleShowPopoverKey',
       category: DISPLAY_FUNCTION_CATEGORY,
       dataSource: 'none',
       destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.POPOVER]),
+      assignableToKey: false,
       parameters: Object.freeze([Object.freeze({
         id: 'content',
         label: 'Content',
         type: 'string',
         multiline: true,
         defaultValue: '',
-        placeholder: 'Text to show in the popover…'
+        placeholder: 'Fallback text if the previous step produced none…'
       })])
     }),
     ADD_URL_TO_MEDIA_LIBRARY: Object.freeze({
@@ -797,6 +791,19 @@ export function isFunctionInstantiable(functionId) {
 }
 
 /**
+ * True when this Function may occupy a keyboard slot from the Actions Library.
+ * Macro-step / routing primitives (`assignableToKey: false`) stay in the catalog for
+ * composition and stock Functions, but are not placeable as standalone key actions.
+ * @param {string} functionId
+ * @returns {boolean}
+ */
+export function functionAssignableToKey(functionId) {
+  const def = getFunctionDef(functionId);
+  if (!def) return false;
+  return def.assignableToKey !== false;
+}
+
+/**
  * @param {string} functionId
  * @returns {Record<string, any>}
  */
@@ -866,6 +873,11 @@ export function summarizeFunctionParameters(functionId, parameters) {
   if (functionId === 'TYPE_CHARACTERS') {
     const text = String(parameters?.text || '');
     if (!text) return '(empty)';
+    return text.length > 24 ? `${text.slice(0, 24)}…` : text;
+  }
+  if (functionId === 'SHOW_POPOVER') {
+    const text = String(parameters?.content || '').trim();
+    if (!text) return '(previous step)';
     return text.length > 24 ? `${text.slice(0, 24)}…` : text;
   }
   if (functionId === 'EXECUTE_JS') {
@@ -945,6 +957,12 @@ export function getFunctionDataKind(functionId) {
 export function validateFunctionSlotKey(functionId, slotKey) {
   const def = getFunctionDef(functionId);
   if (!def) return { ok: false, reason: `Unknown Function: ${functionId}` };
+  if (def.assignableToKey === false) {
+    return {
+      ok: false,
+      reason: `"${def.label}" is a Macro Step, not a key action. Add it in User Macros.`
+    };
+  }
   if (def.worksWhileTyping && !isChordSlotKey(slotKey)) {
     return {
       ok: false,

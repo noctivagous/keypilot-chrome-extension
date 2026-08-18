@@ -18,7 +18,7 @@ import {
   LAUNCHER_CATALOG_CATEGORY_KEYS,
   LAUNCHER_SITE_CATALOG
 } from '../config/launcher-sites.js';
-import { createPreviewOpenActionButtons, createOutlineIcon } from '../ui/preview-open-actions.js';
+import { createOutlineIcon } from '../ui/preview-open-actions.js';
 import {
   addToLaunchDeck,
   composeLaunchDeck,
@@ -29,18 +29,14 @@ import {
   removeFromLaunchDeck,
   setLaunchDeckOrder
 } from '../utils/launch-deck.js';
-import { rewriteUrlForIframePreview } from '../utils/preview-url.js';
-import { postPopoverBridgeInit } from './popover-bridge-init.js';
+import { preferHttpsForPreview } from '../utils/preview-url.js';
 import {
   NCT_DARK_UI_PANEL_BACKGROUND,
   NCT_DARK_UI_PANEL_BORDER,
   NCT_DARK_UI_PANEL_RADIUS,
   NCT_DARK_UI_PANEL_BOX_SHADOW,
   NCT_DARK_UI_TITLEBAR_GRADIENT,
-  NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM,
-  NCT_DARK_UI_BTN_RADIUS,
-  NCT_DARK_UI_HOVER_TINT,
-  NCT_DARK_UI_COLORS
+  NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM
 } from '../ui/nct-dark-ui.js';
 import { ensureOpenChromeShadow, injectChromeStyles } from '../ui/kp-chrome-shadow.js';
 import { storageGetValue, storageSetValue } from '../utils/storage.js';
@@ -165,16 +161,6 @@ export class LauncherPopover {
     this._headerSearchDrafts = Object.create(null);
     /** Selected Videos site home URL for the header search dropdown. */
     this._videosSearchSiteUrl = 'https://youtube.com';
-    /**
-     * In-pane search results (iframe replaces the card grid).
-     * @type {Record<string, { url: string, title: string }>}
-     */
-    this._pageResults = Object.create(null);
-    /** @type {HTMLIFrameElement|null} */
-    this._pageResultsIframe = null;
-    this._pageResultsBridgeTimer = null;
-    /** @type {ReturnType<typeof setTimeout>|null} */
-    this._pageResultsLoadTimeout = null;
 
     // Define available sub-tabs for each category (extensible for future types)
     // Order matters: Launch Deck / Favorites → History → Search (virtual results tab).
@@ -208,12 +194,8 @@ export class LauncherPopover {
         renderHeaderSearch: (doc) => this._createVideosSearchBar(doc)
       }
     };
-    // Preview-related properties
-    this._previewError = null;
-    this._errorTitle = null;
-    this._errorMessage = null;
+    /** Last URL opened via KeyPilot OS preview popup (for Launch Deck hide sync). */
     this._currentPreviewUrl = null;
-    this._previewBridgeTimer = null;
   }
 
   /**
@@ -280,12 +262,6 @@ export class LauncherPopover {
     this._launchDeckEditMode = false;
     this._closeAddSitePicker();
 
-    // Clear any pending bridge initialization
-    if (this._previewBridgeTimer) {
-      clearInterval(this._previewBridgeTimer);
-      this._previewBridgeTimer = null;
-    }
-
     // Leave text-focus mode that the search field may have entered.
     try { this._searchInput?.blur?.(); } catch { /* ignore */ }
     try { this._categorySearchInput?.blur?.(); } catch { /* ignore */ }
@@ -316,14 +292,11 @@ export class LauncherPopover {
     this._siteFilterRow = null;
     this._clearBtn = null;
     this._previewArea = null;
-    this._previewIframe = null;
-    this._pageResultsIframe = null;
-    this._teardownPageResultsBridge();
+    this._currentPreviewUrl = null;
     this._currentSheet = 0;
     this._searchQuery = '';
     this._headerSearchDrafts = Object.create(null);
     this._videosSearchSiteUrl = 'https://youtube.com';
-    this._pageResults = Object.create(null);
     this._categorySiteFilters = Object.create(null);
     this._historyLoaded = Object.create(null);
     this._cachedTopSites = null;
@@ -1840,214 +1813,14 @@ export class LauncherPopover {
     contentArea.appendChild(this._gridContainer);
     contentArea.appendChild(footer);
 
-    // Preview area (iframe)
+    // Collapsed preview slot — previews open in KeyPilot OS popup; pane stays unused.
     const previewArea = doc.createElement('div');
     previewArea.className = 'kp-launcher-preview-area';
     previewArea.style.cssText = `
       width: 0;
-      background: #0f0f0f;
-      border-left: 1px solid #333;
-      display: flex;
-      flex-direction: column;
       overflow: hidden;
-      transition: width 0.3s ease;
-    `;
-
-    // Preview header
-    const previewHeader = doc.createElement('div');
-    previewHeader.className = 'kp-launcher-preview-header';
-    previewHeader.style.cssText = `
-      padding: 8px 12px;
-      border-bottom: ${NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM};
-      background: ${NCT_DARK_UI_TITLEBAR_GRADIENT};
-      display: flex;
-      justify-content: flex-start;
-      align-items: center;
-      gap: 8px;
-    `;
-
-    const previewTitle = doc.createElement('div');
-    previewTitle.className = 'kp-launcher-preview-title';
-    previewTitle.textContent = 'Preview';
-    previewTitle.style.cssText = `
-      color: #fff;
-      font-size: 14px;
-      font-weight: 500;
-      flex: 1;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    `;
-
-    // Same Open / Open in New Tab controls as Link Preview titlebar
-    const { actions: previewOpenActions } = createPreviewOpenActionButtons({
-      doc,
-      getUrl: () => this._currentPreviewUrl,
-      afterOpen: () => {
-        try { this.hide(); } catch { /* ignore */ }
-      },
-      afterOpenNewTab: () => {
-        // Keep launcher open after spawning a tab so the user can keep browsing.
-      }
-    });
-
-    // Hide-pane control (preview slides in from the right; this tucks it back).
-    const previewCloseBtn = doc.createElement('button');
-    previewCloseBtn.type = 'button';
-    previewCloseBtn.className = 'kp-launcher-preview-close';
-    previewCloseBtn.title = 'Hide preview pane';
-    previewCloseBtn.setAttribute('aria-label', 'Hide preview pane');
-    previewCloseBtn.style.cssText = `
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0;
-      appearance: none;
-      -webkit-appearance: none;
-      box-sizing: border-box;
-      background: transparent;
-      border: 1px solid transparent;
-      box-shadow: none;
-      color: ${NCT_DARK_UI_COLORS.fgMute};
-      cursor: pointer;
-      padding: 0;
-      width: 28px;
-      height: 28px;
-      border-radius: ${NCT_DARK_UI_BTN_RADIUS};
       flex-shrink: 0;
-      transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
     `;
-    // Panel with a right rail and an arrow sliding into it.
-    const collapseIcon = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    collapseIcon.setAttribute('viewBox', '0 0 24 24');
-    collapseIcon.setAttribute('width', '18');
-    collapseIcon.setAttribute('height', '18');
-    collapseIcon.setAttribute('aria-hidden', 'true');
-    collapseIcon.style.cssText = 'display: block; pointer-events: none;';
-    const stroke = {
-      fill: 'none',
-      stroke: 'currentColor',
-      'stroke-width': '1.75',
-      'stroke-linecap': 'round',
-      'stroke-linejoin': 'round'
-    };
-    const addSvg = (name, attrs) => {
-      const el = doc.createElementNS('http://www.w3.org/2000/svg', name);
-      for (const [k, v] of Object.entries({ ...stroke, ...attrs })) {
-        el.setAttribute(k, v);
-      }
-      collapseIcon.appendChild(el);
-      return el;
-    };
-    addSvg('rect', { x: '3', y: '4', width: '18', height: '16', rx: '2', 'stroke-width': '1.75' });
-    addSvg('path', { d: 'M16 4v16' });
-    addSvg('path', { d: 'M7 12h6' });
-    addSvg('path', { d: 'M10.5 9L13.5 12 10.5 15' });
-    previewCloseBtn.appendChild(collapseIcon);
-
-    previewCloseBtn.addEventListener('click', () => {
-      this._hidePreview();
-    });
-
-    previewCloseBtn.addEventListener('mouseenter', () => {
-      previewCloseBtn.style.color = '#fff';
-      previewCloseBtn.style.background = NCT_DARK_UI_HOVER_TINT;
-      previewCloseBtn.style.borderColor = NCT_DARK_UI_COLORS.panelEdge;
-    });
-
-    previewCloseBtn.addEventListener('mouseleave', () => {
-      previewCloseBtn.style.color = NCT_DARK_UI_COLORS.fgMute;
-      previewCloseBtn.style.background = 'transparent';
-      previewCloseBtn.style.borderColor = 'transparent';
-    });
-
-    previewHeader.appendChild(previewCloseBtn);
-    previewHeader.appendChild(previewTitle);
-    previewHeader.appendChild(previewOpenActions);
-
-    // Preview iframe
-    this._previewIframe = doc.createElement('iframe');
-    this._previewIframe.className = 'kp-launcher-preview-iframe';
-    this._previewIframe.style.cssText = `
-      flex: 1;
-      border: none;
-      background: #fff;
-    `;
-
-    // Create error message container (initially hidden)
-    this._previewError = doc.createElement('div');
-    this._previewError.className = 'kp-launcher-preview-error';
-    this._previewError.style.cssText = `
-      flex: 1;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      text-align: center;
-      background: #f9f9f9;
-      border-radius: 8px;
-      margin: 8px;
-    `;
-
-    const errorIcon = doc.createElement('div');
-    errorIcon.style.cssText = `
-      font-size: 32px;
-      margin-bottom: 12px;
-      color: #999;
-    `;
-    errorIcon.textContent = '🚫';
-    this._previewError.appendChild(errorIcon);
-
-    this._errorTitle = doc.createElement('div');
-    this._errorTitle.style.cssText = `
-      font-size: 16px;
-      font-weight: 600;
-      color: #333;
-      margin-bottom: 6px;
-    `;
-    this._errorTitle.textContent = 'Cannot Display Page';
-    this._previewError.appendChild(this._errorTitle);
-
-    this._errorMessage = doc.createElement('div');
-    this._errorMessage.style.cssText = `
-      font-size: 13px;
-      color: #666;
-      margin-bottom: 16px;
-      max-width: 300px;
-    `;
-    this._errorMessage.textContent = 'This website prevents embedding in iframes for security reasons.';
-    this._previewError.appendChild(this._errorMessage);
-
-    const openInTabButton = doc.createElement('button');
-    openInTabButton.style.cssText = `
-      margin: 0;
-      appearance: none;
-      -webkit-appearance: none;
-      box-sizing: border-box;
-      background: #4CAF50;
-      color: white;
-      border: none;
-      box-shadow: none;
-      padding: 8px 16px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 500;
-    `;
-    openInTabButton.textContent = 'Open in New Tab';
-    openInTabButton.onclick = () => {
-      if (this._currentPreviewUrl) {
-        window.open(this._currentPreviewUrl, '_blank');
-      }
-    };
-    this._previewError.appendChild(openInTabButton);
-
-    previewArea.appendChild(previewHeader);
-    previewArea.appendChild(this._previewIframe);
-    previewArea.appendChild(this._previewError);
-
     this._previewArea = previewArea;
 
     // Assemble container
@@ -2126,7 +1899,6 @@ export class LauncherPopover {
    */
   _activateSearchTab(opts = {}) {
     const focus = opts.focus !== false;
-    this._clearCategoryPageResults(this._currentCategory, { render: false });
     this._categorySubTabs[this._currentCategory] = 'search';
     this._currentSheet = 0;
     this._updateSiteFilterTabsUI();
@@ -2307,7 +2079,6 @@ export class LauncherPopover {
     subTab.appendChild(countEl);
 
     subTab.addEventListener('click', () => {
-      this._clearCategoryPageResults(this._currentCategory, { render: false });
       this._categorySubTabs[this._currentCategory] = type;
       this._currentSheet = 0;
       if (type !== 'sites' && this._launchDeckEditMode) {
@@ -3062,24 +2833,13 @@ export class LauncherPopover {
   }
 
   /**
-   * Render a category's page template + card grid, or in-pane search results.
+   * Render a category's page template + card grid.
    * Header page search is managed separately via `_updateHeaderPageSearch`.
    */
   _renderCategory(categoryKey) {
     if (!this._categories || !this._categories[categoryKey]) return;
 
-    this._teardownPageResultsBridge();
-    this._pageResultsIframe = null;
     this._gridContainer.innerHTML = '';
-
-    const pageResults = this._pageResults[categoryKey];
-    if (pageResults?.url) {
-      this._gridContainer.appendChild(
-        this._createCategoryResultsView(document, categoryKey, pageResults)
-      );
-      try { this._updateTabCounts?.(); } catch { /* ignore */ }
-      return;
-    }
 
     const currentSubTab = this._categorySubTabs[categoryKey] || 'history';
     const items = this._getActiveSubTabItems(categoryKey);
@@ -3237,46 +2997,14 @@ export class LauncherPopover {
   }
 
   /**
-   * Show search results in the category's card area (iframe).
+   * Open category header-search results in the KeyPilot OS preview popup.
    * @param {string} categoryKey
    * @param {string} url
    * @param {string} [title]
    */
   _showCategoryPageResults(categoryKey, url, title = 'Search results') {
     if (!categoryKey || !url) return;
-    this._pageResults[categoryKey] = { url, title };
-    if (this._currentCategory === categoryKey && this._gridContainer) {
-      this._renderCategory(categoryKey);
-    }
-  }
-
-  /**
-   * Clear in-pane results and optionally restore the card grid.
-   * @param {string} categoryKey
-   * @param {{ render?: boolean }} [opts]
-   */
-  _clearCategoryPageResults(categoryKey, opts = {}) {
-    if (!categoryKey) return;
-    const render = opts.render !== false;
-    if (this._pageResults[categoryKey]) {
-      delete this._pageResults[categoryKey];
-    }
-    this._teardownPageResultsBridge();
-    this._pageResultsIframe = null;
-    if (render && this._currentCategory === categoryKey && this._gridContainer) {
-      this._renderCategory(categoryKey);
-    }
-  }
-
-  _teardownPageResultsBridge() {
-    if (this._pageResultsBridgeTimer) {
-      clearInterval(this._pageResultsBridgeTimer);
-      this._pageResultsBridgeTimer = null;
-    }
-    if (this._pageResultsLoadTimeout) {
-      clearTimeout(this._pageResultsLoadTimeout);
-      this._pageResultsLoadTimeout = null;
-    }
+    void this._openPreviewWindow(url);
   }
 
   /**
@@ -3298,258 +3026,6 @@ export class LauncherPopover {
    */
   _getVideoSearchSites() {
     return (this._defaultSites.videos || []).filter((s) => !!s.searchUrlPrefix);
-  }
-
-  /**
-   * In-pane results view that replaces the card grid after a header search.
-   * Embeds via the same declarativeNetRequest strategy as Link Preview /
-   * launcher preview (`rules.json` strips X-Frame-Options + CSP on sub_frame).
-   * @param {Document} doc
-   * @param {string} categoryKey
-   * @param {{ url: string, title: string }} results
-   * @returns {HTMLElement}
-   */
-  _createCategoryResultsView(doc, categoryKey, results) {
-    const wrap = doc.createElement('div');
-    wrap.className = 'kp-launcher-page-results';
-    wrap.style.cssText = `
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      min-height: 0;
-      gap: 0;
-      background: #0f0f0f;
-      border: 1px solid #333;
-      border-radius: 8px;
-      overflow: hidden;
-    `;
-
-    const toolbar = doc.createElement('div');
-    toolbar.className = 'kp-launcher-page-results-toolbar';
-    toolbar.style.cssText = `
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 8px 12px;
-      border-bottom: 1px solid #333;
-      background: #141414;
-      flex-shrink: 0;
-    `;
-
-    const backBtn = doc.createElement('button');
-    backBtn.type = 'button';
-    backBtn.textContent = '← Launch Deck';
-    backBtn.style.cssText = `
-      margin: 0;
-      appearance: none;
-      -webkit-appearance: none;
-      padding: 6px 10px;
-      background: #2a2a2a;
-      border: 1px solid #444;
-      border-radius: 6px;
-      color: #fff;
-      font-size: 12px;
-      cursor: pointer;
-      white-space: nowrap;
-    `;
-    backBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      this._clearCategoryPageResults(categoryKey);
-    });
-
-    const titleEl = doc.createElement('div');
-    titleEl.textContent = results.title || 'Search results';
-    titleEl.title = results.url;
-    titleEl.style.cssText = `
-      flex: 1;
-      min-width: 0;
-      color: #ddd;
-      font-size: 13px;
-      font-weight: 500;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    `;
-
-    const { actions: openActions } = createPreviewOpenActionButtons({
-      doc,
-      getUrl: () => this._pageResults[categoryKey]?.url || results.url,
-      afterOpen: () => {
-        try { this.hide(); } catch { /* ignore */ }
-      },
-      afterOpenNewTab: () => {
-        try { this.hide(); } catch { /* ignore */ }
-      }
-    });
-
-    toolbar.appendChild(backBtn);
-    toolbar.appendChild(titleEl);
-    toolbar.appendChild(openActions);
-
-    const frameWrap = doc.createElement('div');
-    frameWrap.style.cssText = `
-      position: relative;
-      flex: 1;
-      min-height: 0;
-      background: #fff;
-    `;
-
-    // Same embedding path as Link Preview / launcher card preview:
-    // static DNR rules.json removes X-Frame-Options + CSP for sub_frame loads.
-    const iframe = doc.createElement('iframe');
-    iframe.className = 'kp-launcher-page-results-iframe';
-    iframe.title = results.title || 'Search results';
-    iframe.tabIndex = 0;
-    iframe.style.cssText = `
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      border: 0;
-      background: #fff;
-      display: block;
-    `;
-
-    const errorEl = doc.createElement('div');
-    errorEl.className = 'kp-launcher-page-results-error';
-    errorEl.style.cssText = `
-      display: none;
-      position: absolute;
-      inset: 0;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      gap: 12px;
-      padding: 24px;
-      text-align: center;
-      color: #666;
-      background: #f9f9f9;
-      z-index: 1;
-    `;
-
-    const errorIcon = doc.createElement('div');
-    errorIcon.textContent = '🚫';
-    errorIcon.style.cssText = 'font-size: 32px; color: #999;';
-
-    const errorTitle = doc.createElement('div');
-    errorTitle.textContent = 'Cannot Display Page';
-    errorTitle.style.cssText = 'color: #333; font-size: 16px; font-weight: 600;';
-
-    const errorMsg = doc.createElement('div');
-    errorMsg.textContent = 'This website prevents embedding in iframes for security reasons.';
-    errorMsg.style.cssText = 'font-size: 13px; max-width: 360px;';
-
-    const openInTabButton = doc.createElement('button');
-    openInTabButton.type = 'button';
-    openInTabButton.textContent = 'Open in New Tab';
-    openInTabButton.style.cssText = `
-      margin: 0;
-      appearance: none;
-      -webkit-appearance: none;
-      background: #4CAF50;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 500;
-    `;
-    openInTabButton.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const url = this._pageResults[categoryKey]?.url || results.url;
-      if (!url) return;
-      try {
-        const a = doc.createElement('a');
-        a.href = url;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        a.style.display = 'none';
-        doc.body.appendChild(a);
-        a.click();
-        a.remove();
-      } catch {
-        try { window.open(url, '_blank', 'noopener,noreferrer'); } catch { /* ignore */ }
-      }
-      try { this.hide(); } catch { /* ignore */ }
-    });
-
-    errorEl.appendChild(errorIcon);
-    errorEl.appendChild(errorTitle);
-    errorEl.appendChild(errorMsg);
-    errorEl.appendChild(openInTabButton);
-
-    const showResultsError = () => {
-      iframe.style.display = 'none';
-      errorEl.style.display = 'flex';
-    };
-
-    const sendBridgeInit = () => {
-      postPopoverBridgeInit(iframe.contentWindow);
-    };
-
-    this._teardownPageResultsBridge();
-    this._pageResultsIframe = iframe;
-
-    // Detect iframe load errors.
-    // Note: We can't reliably detect X-Frame-Options blocking for cross-origin
-    // iframes due to same-origin policy. The declarativeNetRequest rules should
-    // handle most cases (same as Link Preview). Only show error on actual failure.
-    iframe.onerror = () => {
-      console.log('[LauncherPopover] Page-results iframe load error detected');
-      showResultsError();
-    };
-
-    // Last-resort timeout when neither onload nor onerror fires
-    // (shouldn't happen with declarativeNetRequest header stripping).
-    this._pageResultsLoadTimeout = setTimeout(() => {
-      this._pageResultsLoadTimeout = null;
-      console.log('[LauncherPopover] Page-results iframe load timeout — showing error fallback');
-      showResultsError();
-    }, 30000);
-
-    iframe.onload = () => {
-      if (this._pageResultsLoadTimeout) {
-        clearTimeout(this._pageResultsLoadTimeout);
-        this._pageResultsLoadTimeout = null;
-      }
-      // Keep iframe visible — if onload fired, embedding worked (or DNR allowed it).
-      console.log('[LauncherPopover] Page-results iframe loaded successfully');
-      iframe.style.display = 'block';
-      errorEl.style.display = 'none';
-      sendBridgeInit();
-    };
-
-    iframe.src = rewriteUrlForIframePreview(results.url);
-    sendBridgeInit();
-
-    try {
-      let attemptsLeft = 6; // ~1.5s total
-      this._pageResultsBridgeTimer = setInterval(() => {
-        if (attemptsLeft <= 0 || !this._pageResultsIframe || !this._isOpen) {
-          if (this._pageResultsBridgeTimer) {
-            clearInterval(this._pageResultsBridgeTimer);
-            this._pageResultsBridgeTimer = null;
-          }
-          return;
-        }
-        attemptsLeft -= 1;
-        sendBridgeInit();
-      }, 250);
-    } catch { /* ignore */ }
-
-    // Ensure the results pane has a usable height inside the scroll container.
-    const minH = Math.max(320, Math.floor((this._gridContainer?.clientHeight || 480) - 8));
-    wrap.style.minHeight = `${minH}px`;
-    wrap.style.height = `${minH}px`;
-
-    frameWrap.appendChild(iframe);
-    frameWrap.appendChild(errorEl);
-    wrap.appendChild(toolbar);
-    wrap.appendChild(frameWrap);
-    return wrap;
   }
 
   /**
@@ -4357,135 +3833,67 @@ export class LauncherPopover {
   }
 
   /**
-   * Collapse the preview pane and clear the loaded URL.
+   * Open a URL in the same KeyPilot OS popup used by Link Preview.
+   * @param {string} url
+   * @param {{ closeKeys?: string[] }} [opts]
+   * @returns {Promise<boolean>}
+   */
+  async _openPreviewWindow(url, opts = {}) {
+    const href = preferHttpsForPreview(String(url || '').trim());
+    if (!href || href.startsWith('file://')) return false;
+    const om = window.__KeyPilotInstance?.overlayManager;
+    if (!om || typeof om._openPopoverWindow !== 'function') return false;
+    return om._openPopoverWindow({
+      url: href,
+      kind: 'preview',
+      closeKeys: opts.closeKeys || ['Escape', 'e', 'E']
+    });
+  }
+
+  /**
+   * Close any KeyPilot OS preview popup opened from the launcher.
    */
   _hidePreview() {
-    if (this._previewBridgeTimer) {
-      clearInterval(this._previewBridgeTimer);
-      this._previewBridgeTimer = null;
-    }
+    this._currentPreviewUrl = null;
+    try {
+      window.__KeyPilotInstance?.overlayManager?.hidePopover?.();
+    } catch { /* ignore */ }
     if (this._previewArea) {
       this._previewArea.style.width = '0';
-    }
-    this._currentPreviewUrl = null;
-    if (this._previewIframe) {
-      this._previewIframe.src = 'about:blank';
-      this._previewIframe.onload = null;
-      this._previewIframe.onerror = null;
-    }
-    if (this._previewError) {
-      this._previewError.style.display = 'none';
     }
   }
 
   /**
-   * Show preview iframe with URL using advanced bridge system.
-   * Clicking preview again for the same URL collapses the pane.
+   * Open Link Preview OS popup for a launcher card URL.
+   * Clicking preview again for the same URL closes the popup.
    */
   _showPreview(url) {
-    if (!this._previewArea || !this._previewIframe) return;
+    if (url && String(url).startsWith('file://')) {
+      console.warn('[LauncherPopover] Cannot preview file:// URLs due to CSP restrictions');
+      return;
+    }
 
-    // Toggle closed when the same URL is already loaded in the preview pane.
+    const href = preferHttpsForPreview(String(url || '').trim());
+    const om = window.__KeyPilotInstance?.overlayManager;
     if (
-      url &&
-      this._currentPreviewUrl === url &&
-      this._previewArea.style.width &&
-      this._previewArea.style.width !== '0' &&
-      this._previewArea.style.width !== '0px'
+      href &&
+      this._currentPreviewUrl &&
+      preferHttpsForPreview(this._currentPreviewUrl) === href &&
+      om?.isPopoverOpen?.() &&
+      preferHttpsForPreview(String(om._popoverWindowUrl || '')) === href
     ) {
       this._hidePreview();
       return;
     }
 
-    // Prevent CSP violation by blocking file:// URLs
-    if (url && url.startsWith('file://')) {
-      console.warn('[LauncherPopover] Cannot preview file:// URLs due to CSP restrictions');
-      this._showPreviewError('Cannot preview local files');
-      return;
-    }
-
-    // Track current preview URL for error recovery
-    this._currentPreviewUrl = url;
-
-    this._previewArea.style.width = '40%';
-    this._previewIframe.style.display = 'flex';
-    if (this._previewError) {
-      this._previewError.style.display = 'none';
-    }
-
-    // Clear any existing bridge initialization
-    if (this._previewBridgeTimer) {
-      clearInterval(this._previewBridgeTimer);
-      this._previewBridgeTimer = null;
-    }
-
-    // Initialize the iframe bridge (content script running inside the iframe)
-    // We retry a few times because content scripts in the frame may not be ready immediately
-    const sendBridgeInit = () => {
-      postPopoverBridgeInit(this._previewIframe.contentWindow);
-    };
-
-    // Handle iframe load errors.
-    // Note: X-Frame-Options / CSP frame-ancestors are stripped by declarativeNetRequest
-    // (rules.json) — same strategy as Link Preview. Only surface real load failures.
-    this._previewIframe.onerror = () => {
-      console.log('[LauncherPopover] Preview iframe load error detected');
-      this._showPreviewError();
-    };
-
-    // Handle successful iframe load
-    this._previewIframe.onload = () => {
-      console.log('[LauncherPopover] Preview iframe loaded successfully');
-      sendBridgeInit();
-    };
-
-    // Set the URL to start loading
-    this._previewIframe.src = rewriteUrlForIframePreview(url);
-
-    // Send initial bridge init attempt
-    sendBridgeInit();
-
-    // Short retry window to cover slow frames / initial about:blank then navigation
-    try {
-      let attemptsLeft = 6; // ~1.5s total
-      this._previewBridgeTimer = setInterval(() => {
-        if (attemptsLeft <= 0 || !this._previewIframe || !this._isOpen) {
-          if (this._previewBridgeTimer) {
-            clearInterval(this._previewBridgeTimer);
-            this._previewBridgeTimer = null;
-          }
-          return;
-        }
-        attemptsLeft -= 1;
-        sendBridgeInit();
-      }, 250);
-    } catch {
-      // Ignore
-    }
-  }
-
-  /**
-   * Show preview error message
-   */
-  _showPreviewError(message = null) {
-    if (!this._previewArea) return;
-
-    this._previewArea.style.width = '40%';
-    this._previewIframe.style.display = 'none';
-    this._previewError.style.display = 'flex';
-
-    if (message) {
-      this._errorMessage.textContent = message;
-    } else {
-      this._errorMessage.textContent = 'This website prevents embedding in iframes for security reasons.';
-    }
+    this._currentPreviewUrl = href || null;
+    void this._openPreviewWindow(url);
   }
 
   /**
    * Scroll to previous sheet
    */
   _scrollUp() {
-    if (this._pageResults[this._currentCategory]?.url) return;
     if (this._currentSheet > 0) {
       this._currentSheet--;
       this._renderCategory(this._currentCategory);
@@ -4496,7 +3904,6 @@ export class LauncherPopover {
    * Scroll to next sheet
    */
   _scrollDown() {
-    if (this._pageResults[this._currentCategory]?.url) return;
     if (!this._categories || !this._categories[this._currentCategory]) return;
 
     const items = this._getActiveSubTabItems(this._currentCategory);
