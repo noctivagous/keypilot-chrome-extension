@@ -218,6 +218,8 @@ export const Z_INDEX = {
   KEY_ACTION_CONFIG: 2147483047,
   // Compact Keyboard Layout Config palette (beside Reference while editing)
   KEYBOARD_LAYOUT_CONFIG: 2147483048,
+  // Custom select lists: above Keyboard Ref / layout chrome, below click ripple
+  SELECT_MENU: 2147483049,
   // Click-to-place arrow (fallback when Popover API unavailable)
   LAYOUT_PLACE_ARROW: 2147483052,
 

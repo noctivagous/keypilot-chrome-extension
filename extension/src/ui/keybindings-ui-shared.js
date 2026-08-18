@@ -634,6 +634,17 @@ ${fontFaceCss}
     background 100ms ease;
 }
 
+/* Upgrade: corner-shape so key borders follow cut corners (clip-path baseline above).
+ * Cut themes force --kp-key-effective-radius: 0px for the clip-path path; the
+ * upgrade must win so bevel length comes from --kp-key-shape-radius. */
+@supports (corner-shape: bevel) {
+  .${KEYBINDINGS_UI_ROOT_CLASS} .key {
+    clip-path: none !important;
+    border-radius: var(--kp-key-shape-radius, var(--kp-key-effective-radius, var(--kp-radius-key, 7px))) !important;
+    corner-shape: var(--kp-key-corner-shape, round);
+  }
+}
+
 /* Minimal face sheen (not a tall sculpted plate) */
 .${KEYBINDINGS_UI_ROOT_CLASS} .key::before {
   content: '';

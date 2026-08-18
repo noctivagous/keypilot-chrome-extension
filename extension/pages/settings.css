@@ -107,6 +107,11 @@ body {
   text-transform: uppercase;
 }
 
+/* Author `display` overrides UA [hidden] { display: none }; keep the attr effective. */
+.settings-custom-badge[hidden] {
+  display: none !important;
+}
+
 .appearance-group {
   margin: 0 0 16px;
   padding: 10px 12px 12px;

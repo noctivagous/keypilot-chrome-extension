@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-18T04:01:45.737Z
+ * Generated on 2026-08-18T05:28:54.154Z
  */
 
 (() => {
@@ -1327,6 +1327,8 @@
     KEY_ACTION_CONFIG: 2147483047,
     // Compact Keyboard Layout Config palette (beside Reference while editing)
     KEYBOARD_LAYOUT_CONFIG: 2147483048,
+    // Custom select lists: above Keyboard Ref / layout chrome, below click ripple
+    SELECT_MENU: 2147483049,
     // Click-to-place arrow (fallback when Popover API unavailable)
     LAYOUT_PLACE_ARROW: 2147483052,
     // Cursor sits above chrome; click ripple is above even that so the

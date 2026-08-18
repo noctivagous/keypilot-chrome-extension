@@ -163,6 +163,10 @@ export function applyThemeToRoots(theme, opts = {}) {
   } catch { /* ignore */ }
 
   notify();
+  try {
+    const id = _activeTheme?.id;
+    if (id) localStorage.setItem('kp_theme_id_v1', id);
+  } catch { /* ignore */ }
   return _activeTheme;
 }
 

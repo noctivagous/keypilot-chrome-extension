@@ -327,6 +327,8 @@ export class ControlStrip {
           // Keep shell rim + titlebar bevel in sync with current chrome
           // (early inject may still have a flat near-black fill / opaque ON segment).
           try {
+            this.root.style.background = NCT_DARK_UI_TITLEBAR_GRADIENT;
+            this.root.style.color = 'var(--kp-color-fg, #ddd)';
             this.root.style.border = NCT_DARK_UI_PANEL_BORDER;
             this.root.style.borderRadius = NCT_DARK_UI_PANEL_RADIUS;
             this.root.style.boxShadow = NCT_DARK_UI_PANEL_BOX_SHADOW;

@@ -15,7 +15,13 @@ import {
   createPopoverTitlebar,
   createTitlebarCloseHint
 } from '../ui/popover-titlebar.js';
-import { containsComposed, ensureOpenChromeShadow, markChromeWindow } from '../ui/kp-chrome-shadow.js';
+import {
+  closestComposed,
+  containsComposed,
+  ensureOpenChromeShadow,
+  isClickableKeyPilotChromeElement,
+  markChromeWindow
+} from '../ui/kp-chrome-shadow.js';
 import {
   NCT_DARK_UI_PANEL_BACKGROUND,
   NCT_DARK_UI_PANEL_BORDER,
@@ -1666,7 +1672,14 @@ export class OverlayManager {
       try {
         forceIframeA = !!(element.ownerDocument && element.ownerDocument !== document);
       } catch { forceIframeA = false; }
-      if (forceIframeA) {
+      // Onboarding sits above Z_INDEX.OVERLAYS in an open shadow. Auto B→C
+      // either clips the in-target ring or paints C under the panel.
+      // Outline the button itself (A), same as popover iframes.
+      let forceOnboardingA = false;
+      try {
+        forceOnboardingA = !!closestComposed(element, '.kp-onboarding-panel');
+      } catch { forceOnboardingA = false; }
+      if (forceIframeA || forceOnboardingA) {
         autoStrategy = 'A';
         strategy = 'A';
       } else if (override === 'A' || override === 'B' || override === 'C') {
@@ -1721,7 +1734,25 @@ export class OverlayManager {
           } catch { /* ignore */ }
           return;
         }
-        // B failed to mount — fall through to C.
+        // B failed to mount — fall through to C, except on KeyPilot chrome.
+        // C is a body overlay at Z_INDEX.OVERLAYS, which paints *under*
+        // Keyboard Reference / the control strip. Use A (element outline)
+        // so the ring stays on the key/button itself.
+        if (isClickableKeyPilotChromeElement(element)) {
+          this._focusPaintUsesFixedOverlay = false;
+          this._focusPaintUsesInTargetRing = false;
+          try { this.hideInTargetFocusRing(); } catch { /* ignore */ }
+          try { this.hideFocusOverlayDOM(); } catch { /* ignore */ }
+          try {
+            this._updateShadowRootDebugHud(element, paintEl, {
+              inShadow,
+              autoStrategy,
+              appliedStrategy: 'A',
+              override
+            });
+          } catch { /* ignore */ }
+          return this.updateFocusOverlayElementStyling(element, mode);
+        }
       }
 
       // Strategy C: body fixed overlay.
@@ -2169,12 +2200,25 @@ export class OverlayManager {
   }
 
   /**
-   * Overflow or paint-containment clip (self / wrapper).
+   * clip-path (other than none) clips descendants the same way overflow does.
+   * Keyboard Ref keycaps use --kp-key-clip for truncated corners.
    * @param {CSSStyleDeclaration|null|undefined} cs
    * @returns {boolean}
    */
+  _styleClipsClipPath(cs) {
+    if (!cs) return false;
+    try {
+      const clip = String(cs.clipPath || cs.webkitClipPath || '');
+      return !!(clip && clip !== 'none');
+    } catch {
+      return false;
+    }
+  }
+
   _styleClipsSelf(cs) {
-    return this._styleClipsOverflow(cs) || this._styleClipsPaintContain(cs);
+    return this._styleClipsOverflow(cs)
+      || this._styleClipsPaintContain(cs)
+      || this._styleClipsClipPath(cs);
   }
 
   /**
@@ -3900,6 +3944,16 @@ export class OverlayManager {
     } catch {
       focusPad = 0;
     }
+    // Expanding the ring outside an overflow/clip-path host (Keyboard Ref
+    // keycaps are overflow:hidden + optional --kp-key-clip) clips the stroke
+    // away, then Auto B→C falls through to a body overlay under the window.
+    let hostClipsSelf = false;
+    try {
+      hostClipsSelf = this._styleClipsSelf(window.getComputedStyle(host));
+    } catch {
+      hostClipsSelf = false;
+    }
+    if (hostClipsSelf) focusPad = 0;
 
     try {
       ring.style.setProperty('position', 'absolute', 'important');

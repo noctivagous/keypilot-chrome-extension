@@ -64,6 +64,7 @@ import {
 } from '../utils/panel-position.js';
 import {
   NCT_DARK_UI_FONT,
+  NCT_DARK_UI_PANEL_BACKGROUND,
   NCT_DARK_UI_PANEL_BORDER,
   NCT_DARK_UI_PANEL_RADIUS,
   NCT_DARK_UI_PANEL_BOX_SHADOW,
@@ -843,8 +844,8 @@ export class FloatingKeyboardHelp {
       overflow: 'hidden',
       boxSizing: 'border-box',
       zIndex: String(Z_INDEX.FLOATING_KEYBOARD_HELP),
-      background: NCT_DARK_UI_COLORS.panel,
-      color: NCT_DARK_UI_COLORS.fg,
+      background: NCT_DARK_UI_PANEL_BACKGROUND,
+      color: 'var(--kp-color-fg, #ddd)',
       // NCT dark UI panel rim (dual-edge inset rim).
       border: NCT_DARK_UI_PANEL_BORDER,
       borderRadius: NCT_DARK_UI_PANEL_RADIUS,

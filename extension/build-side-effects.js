@@ -24,7 +24,7 @@ import {
   getKeybindingsUiCss
 } from './src/ui/keybindings-ui-shared.js';
 import { POPUP_THEME_VARS } from './src/ui/popup-theme-vars.js';
-import { getAllThemesCss } from './themes/index.js';
+import { getAllThemesCss, getTheme, THEME_IDS } from './themes/index.js';
 
 function getBuildTimestamp(now = new Date()) {
   // Format date as: Mar-14-2026-4:20PM
@@ -452,6 +452,12 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
     const escapedCss = String(css).replaceAll('`', '\\`');
     const themeCss = getAllThemesCss();
     const escapedThemeCss = String(themeCss).replaceAll('\\', '\\\\').replaceAll('`', '\\`').replaceAll('${', '\\${');
+    /** @type {Record<string, 'cut' | 'radius'>} */
+    const themeCornerById = {};
+    for (const themeId of THEME_IDS) {
+      themeCornerById[themeId] =
+        getTheme(themeId)?.shape?.cornerMode === 'cut' ? 'cut' : 'radius';
+    }
 
     // Stamp onboarding-shared.js (export-stripped) so early-inject uses the same shell/progress helpers.
     let onboardingSharedIndented = '';
@@ -507,17 +513,55 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       `    } catch { /* ignore */ }\n` +
       `  }\n` +
       `  // Shared early-compatible subset of kp-chrome-shadow.js. This script cannot import ESM.\n` +
-      `  function ensureEarlyOpenChromeShadow(host, id) {\n` +
-      `    if (!host) return null;\n` +
-      `    try { host.setAttribute('data-kp-ui-shadow', String(id || 'chrome')); } catch { /* ignore */ }\n` +
-      `    try { return host.shadowRoot || host.attachShadow({ mode: 'open' }); } catch { return host.shadowRoot || null; }\n` +
+      `  const KP_THEME_CACHE_KEY = 'kp_theme_id_v1';\n` +
+      `  function peekCachedThemeId() {\n` +
+      `    try {\n` +
+      `      const id = localStorage.getItem(KP_THEME_CACHE_KEY);\n` +
+      `      if (id && KP_THEME_IDS.indexOf(id) >= 0) return id;\n` +
+      `    } catch { /* ignore */ }\n` +
+      `    return null;\n` +
       `  }\n` +
-      `  const KEYBINDINGS_UI_EARLY_CSS = \`${escapedCss}\`;\n` +
-      `  const KP_ALL_THEMES_CSS = \`${escapedThemeCss}\`;\n` +
-      `  const KP_THEME_IDS = ["dark-pro","gray-metal-pro","gx-er"];\n` +
-      `  function applyEarlyTheme(themeId) {\n` +
-      `    const id = KP_THEME_IDS.indexOf(themeId) >= 0 ? themeId : 'dark-pro';\n` +
-      `    try { document.documentElement.setAttribute('data-kp-theme', id); } catch { /* ignore */ }\n` +
+      `  function cacheThemeId(id) {\n` +
+      `    if (!id || KP_THEME_IDS.indexOf(id) < 0) return;\n` +
+      `    try { localStorage.setItem(KP_THEME_CACHE_KEY, id); } catch { /* ignore */ }\n` +
+      `  }\n` +
+      `  function getEarlyThemeFontFaceCss() {\n` +
+      `    function fontUrl(file) {\n` +
+      `      try {\n` +
+      `        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {\n` +
+      `          return chrome.runtime.getURL('fonts/' + file);\n` +
+      `        }\n` +
+      `      } catch { /* ignore */ }\n` +
+      `      return '';\n` +
+      `    }\n` +
+      `    const faces = [\n` +
+      `      ['ROBOTECHGPRegular', 'ROBOTECHGPRegular.ttf', 'truetype'],\n` +
+      `      ['TitilliumText', 'TitilliumTextRegular.otf', 'opentype'],\n` +
+      `      ['Cubellan', 'CubellanRegular.ttf', 'truetype'],\n` +
+      `      ['Ezarion', 'EzarionRegular.ttf', 'truetype'],\n` +
+      `      ['Dosis', 'DosisBook.ttf', 'truetype']\n` +
+      `    ];\n` +
+      `    let out = '';\n` +
+      `    for (const [family, file, format] of faces) {\n` +
+      `      const url = fontUrl(file);\n` +
+      `      if (!url) continue;\n` +
+      `      out += "@font-face{font-family:'" + family + "';src:url('" + url + "') format('" + format + "');font-weight:normal;font-style:normal;font-display:block;}" ;\n` +
+      `    }\n` +
+      `    return out;\n` +
+      `  }\n` +
+      `  function ensureEarlyThemeStyles() {\n` +
+      `    try {\n` +
+      `      const fontCss = getEarlyThemeFontFaceCss();\n` +
+      `      if (fontCss) {\n` +
+      `        let fonts = document.getElementById('kp-early-theme-fonts');\n` +
+      `        if (!fonts) {\n` +
+      `          fonts = document.createElement('style');\n` +
+      `          fonts.id = 'kp-early-theme-fonts';\n` +
+      `          (document.head || document.documentElement).appendChild(fonts);\n` +
+      `        }\n` +
+      `        if (fonts.textContent !== fontCss) fonts.textContent = fontCss;\n` +
+      `      }\n` +
+      `    } catch { /* ignore */ }\n` +
       `    try {\n` +
       `      let style = document.getElementById('kp-early-theme');\n` +
       `      if (!style) {\n` +
@@ -528,6 +572,47 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       `      if (style.textContent !== KP_ALL_THEMES_CSS) style.textContent = KP_ALL_THEMES_CSS;\n` +
       `    } catch { /* ignore */ }\n` +
       `  }\n` +
+      `  function resolveEarlyThemeId(themeId) {\n` +
+      `    if (themeId && KP_THEME_IDS.indexOf(themeId) >= 0) return themeId;\n` +
+      `    return peekCachedThemeId() || 'dark-pro';\n` +
+      `  }\n` +
+      `  function applyEarlyTheme(themeId) {\n` +
+      `    const id = resolveEarlyThemeId(themeId);\n` +
+      `    const cut = KP_THEME_CORNER[id] === 'cut';\n` +
+      `    ensureEarlyThemeStyles();\n` +
+      `    try { document.documentElement.setAttribute('data-kp-theme', id); } catch { /* ignore */ }\n` +
+      `    try {\n` +
+      `      if (cut) document.documentElement.setAttribute('data-kp-corner', 'cut');\n` +
+      `      else document.documentElement.removeAttribute('data-kp-corner');\n` +
+      `    } catch { /* ignore */ }\n` +
+      `    try {\n` +
+      `      document.querySelectorAll('.kp-chrome-window, [data-kp-ui-shadow]').forEach((el) => {\n` +
+      `        try {\n` +
+      `          el.setAttribute('data-kp-theme', id);\n` +
+      `          if (cut) el.setAttribute('data-kp-corner', 'cut');\n` +
+      `          else el.removeAttribute('data-kp-corner');\n` +
+      `        } catch { /* ignore */ }\n` +
+      `      });\n` +
+      `    } catch { /* ignore */ }\n` +
+      `    cacheThemeId(id);\n` +
+      `  }\n` +
+      `  function ensureEarlyOpenChromeShadow(host, id) {\n` +
+      `    if (!host) return null;\n` +
+      `    try { host.setAttribute('data-kp-ui-shadow', String(id || 'chrome')); } catch { /* ignore */ }\n` +
+      `    try { host.classList.add('kp-chrome-window'); } catch { /* ignore */ }\n` +
+      `    try {\n` +
+      `      const themeId = document.documentElement.getAttribute('data-kp-theme') || peekCachedThemeId() || 'dark-pro';\n` +
+      `      host.setAttribute('data-kp-theme', themeId);\n` +
+      `      const cut = document.documentElement.getAttribute('data-kp-corner') === 'cut' || KP_THEME_CORNER[themeId] === 'cut';\n` +
+      `      if (cut) host.setAttribute('data-kp-corner', 'cut');\n` +
+      `      else host.removeAttribute('data-kp-corner');\n` +
+      `    } catch { /* ignore */ }\n` +
+      `    try { return host.shadowRoot || host.attachShadow({ mode: 'open' }); } catch { return host.shadowRoot || null; }\n` +
+      `  }\n` +
+      `  const KEYBINDINGS_UI_EARLY_CSS = \`${escapedCss}\`;\n` +
+      `  const KP_ALL_THEMES_CSS = \`${escapedThemeCss}\`;\n` +
+      `  const KP_THEME_IDS = ${JSON.stringify([...THEME_IDS])};\n` +
+      `  const KP_THEME_CORNER = ${JSON.stringify(themeCornerById)};\n` +
       (onboardingSharedIndented
         ? `\n  // --- begin stamped onboarding-shared.js ---\n${onboardingSharedIndented}\n  // --- end stamped onboarding-shared.js ---\n`
         : '');

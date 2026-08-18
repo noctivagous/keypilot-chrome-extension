@@ -236,6 +236,7 @@ export function isClickableKeyPilotChromeElement(element) {
       '.kp-select-menu',
       '.kp-action-config-panel',
       '.kp-control-strip',
+      '.kp-onboarding-panel',
       '.kp-layout-config-panel',
       '.kpv2-top-sites-panel',
       '.kpv2-tab-history-panel',

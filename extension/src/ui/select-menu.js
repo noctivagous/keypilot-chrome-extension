@@ -5,8 +5,10 @@
  * cannot pick individual <option>s (OS picker). Items here are real buttons
  * with role="option" so hover + F-activate work.
  *
- * The list uses the HTML Popover API (top layer) so it is not clipped by
- * panel overflow. Position is computed from the trigger rect (no CSS anchors).
+ * The list is always a `position:fixed` sibling of the panel host on
+ * `document.body` (never inside a chrome shadow / overflow:hidden window).
+ * Popover top-layer was losing to the Keyboard Ref compositor layer, so
+ * stacking is a plain z-index above FLOATING_KEYBOARD_HELP.
  */
 
 import { Z_INDEX } from '../config/constants.js';
@@ -20,15 +22,15 @@ const STYLE_ATTR = 'data-kp-select-menu-style';
 let _idSeq = 0;
 
 /**
- * @param {HTMLElement|null} el
- * @returns {boolean}
+ * @param {Document|null|undefined} doc
+ * @returns {HTMLElement|null}
  */
-function supportsPopoverApi(el) {
+function getBodyMount(doc) {
   try {
-    return !!(el && typeof el.showPopover === 'function' && typeof HTMLElement !== 'undefined'
-      && 'popover' in HTMLElement.prototype);
+    const d = doc?.defaultView?.document || doc || document;
+    return d.body || d.documentElement || null;
   } catch {
-    return false;
+    return document.body || document.documentElement || null;
   }
 }
 
@@ -149,16 +151,13 @@ export function createSelectMenu(config = {}) {
   list.className = 'kp-select-menu';
   list.setAttribute('role', 'listbox');
   if (config.ariaLabel) list.setAttribute('aria-label', config.ariaLabel);
-  list.style.zIndex = String(Z_INDEX.OVERLAYS_ABOVE + 40);
-
-  const usePopover = supportsPopoverApi(list);
-  if (usePopover) {
-    try { list.setAttribute('popover', 'auto'); } catch { /* ignore */ }
-    try { trigger.popoverTargetElement = list; } catch { /* ignore */ }
-  } else {
-    list.setAttribute('data-kp-select-fallback', 'true');
-    list.hidden = true;
+  try { list.style.setProperty('position', 'fixed', 'important'); } catch { /* ignore */ }
+  try { list.style.setProperty('z-index', String(Z_INDEX.SELECT_MENU), 'important'); } catch {
+    list.style.zIndex = String(Z_INDEX.SELECT_MENU);
   }
+  list.setAttribute('data-kp-select-fallback', 'true');
+  list.hidden = true;
+  try { list.style.setProperty('display', 'none', 'important'); } catch { /* ignore */ }
 
   const stopDrag = (e) => {
     try { e.stopPropagation(); } catch { /* ignore */ }
@@ -198,12 +197,7 @@ export function createSelectMenu(config = {}) {
     }
   };
 
-  const isListOpen = () => {
-    if (usePopover) {
-      try { return !!list.matches?.(':popover-open'); } catch { return false; }
-    }
-    return fallbackOpen;
-  };
+  const isListOpen = () => fallbackOpen;
 
   const setExpanded = (open) => {
     try { trigger.setAttribute('aria-expanded', open ? 'true' : 'false'); } catch { /* ignore */ }
@@ -235,6 +229,7 @@ export function createSelectMenu(config = {}) {
   const closeFallback = () => {
     fallbackOpen = false;
     list.hidden = true;
+    try { list.style.setProperty('display', 'none', 'important'); } catch { /* ignore */ }
     setExpanded(false);
     try { doc.removeEventListener('pointerdown', onDocPointerDown, true); } catch { /* ignore */ }
   };
@@ -247,31 +242,17 @@ export function createSelectMenu(config = {}) {
 
   const openList = () => {
     if (disabled) return;
+    mountList();
     themeListHost(list);
-    if (usePopover) {
-      try {
-        if (!list.matches?.(':popover-open')) list.showPopover();
-      } catch {
-        try { list.showPopover(); } catch { /* ignore */ }
-      }
-      return;
-    }
     fallbackOpen = true;
     list.hidden = false;
+    try { list.style.setProperty('display', 'block', 'important'); } catch { /* ignore */ }
     setExpanded(true);
     positionList();
     try { doc.addEventListener('pointerdown', onDocPointerDown, true); } catch { /* ignore */ }
   };
 
   const closeList = () => {
-    if (usePopover) {
-      try {
-        if (list.matches?.(':popover-open')) list.hidePopover();
-      } catch {
-        try { list.hidePopover(); } catch { /* ignore */ }
-      }
-      return;
-    }
     closeFallback();
   };
 
@@ -354,25 +335,10 @@ export function createSelectMenu(config = {}) {
     syncTrigger();
   };
 
-  const onToggle = (e) => {
-    const open = e?.newState === 'open' || isListOpen();
-    setExpanded(open);
-    if (open) {
-      themeListHost(list);
-      positionList();
-    }
-  };
-
-  if (usePopover) {
-    try { list.addEventListener('toggle', onToggle); } catch { /* ignore */ }
-  }
-
   trigger.addEventListener('click', (e) => {
     try { e.stopPropagation(); } catch { /* ignore */ }
-    if (disabled) return;
-    // Invoker binding toggles the popover; don't preventDefault or it never opens.
-    if (usePopover && trigger.popoverTargetElement === list) return;
     try { e.preventDefault(); } catch { /* ignore */ }
+    if (disabled) return;
     toggleList();
   });
 
@@ -396,8 +362,8 @@ export function createSelectMenu(config = {}) {
   });
 
   const mountList = () => {
-    const parent = doc.body || doc.documentElement;
-    if (parent && list.parentNode !== parent) {
+    const parent = getBodyMount(doc);
+    if (parent) {
       try { parent.appendChild(list); } catch { /* ignore */ }
     }
     ensureSelectMenuStyles(doc);
@@ -443,7 +409,6 @@ export function createSelectMenu(config = {}) {
     close: closeList,
     destroy() {
       closeList();
-      try { list.removeEventListener('toggle', onToggle); } catch { /* ignore */ }
       try { doc.removeEventListener('pointerdown', onDocPointerDown, true); } catch { /* ignore */ }
       try { list.remove(); } catch {
         try { list.parentNode?.removeChild(list); } catch { /* ignore */ }

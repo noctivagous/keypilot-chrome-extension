@@ -24,35 +24,35 @@ export function getThemeFontFaceCss() {
   src: url('${robotech}') format('truetype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 @font-face {
   font-family: 'TitilliumText';
   src: url('${titillium}') format('opentype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 @font-face {
   font-family: 'Cubellan';
   src: url('${cubellan}') format('truetype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 @font-face {
   font-family: 'Ezarion';
   src: url('${ezarion}') format('truetype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 @font-face {
   font-family: 'Dosis';
   src: url('${dosis}') format('truetype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 `.trim();
 }
@@ -65,35 +65,35 @@ export function getThemeFontFaceCssForPages() {
   src: url('../fonts/ROBOTECHGPRegular.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 @font-face {
   font-family: 'TitilliumText';
   src: url('../fonts/TitilliumTextRegular.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 @font-face {
   font-family: 'Cubellan';
   src: url('../fonts/CubellanRegular.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 @font-face {
   font-family: 'Ezarion';
   src: url('../fonts/EzarionRegular.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 @font-face {
   font-family: 'Dosis';
   src: url('../fonts/DosisBook.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 `.trim();
 }

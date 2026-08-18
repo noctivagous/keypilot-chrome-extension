@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-18T04:01:45.737Z
+ * Generated on 2026-08-18T05:28:54.154Z
  */
 
 var __defProp = Object.defineProperty;
@@ -6626,6 +6626,9 @@ function themeToCssVars(theme) {
     "--kp-key-cut-size": keys.cutSize || "4px",
     "--kp-key-clip": keyCornerCut ? keyClipPath(keys.cutSize || "4px") : KEY_CLIP_NONE,
     "--kp-key-effective-radius": keyCornerCut ? "0px" : radius.key || "7px",
+    // Used by @supports (corner-shape: bevel) upgrade (clip-path baseline otherwise).
+    "--kp-key-shape-radius": keyCornerCut ? keys.cutSize || "4px" : radius.key || "7px",
+    "--kp-key-corner-shape": keyCornerCut ? "bevel" : "round",
     "--kp-key-sheen-opacity": (keys.shading || "bevel") === "flat" ? "0" : "1",
     "--kp-key-shade-layer": (keys.shading || "bevel") === "flat" ? "transparent" : KEY_SHADE_BEVEL,
     "--kp-icon-chrome": iconColor.chrome || (color4.fg || "#ddd"),
@@ -6776,8 +6779,15 @@ function getSelectMenuCss() {
 }
 .kp-select-menu {
   position: fixed;
-  z-index: 2147483646;
+  /* Kill UA popover centering (inset 0 / margin auto) without locking longhands. */
   margin: 0;
+  top: auto;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  width: max-content;
+  height: fit-content;
+  z-index: 2147483049;
   padding: 4px 0;
   min-width: 190px;
   max-width: min(360px, calc(100vw - 16px));
@@ -6855,6 +6865,7 @@ function getCutCornerCss() {
 .kp-chrome-window:not([data-kp-corner="cut"]) {
   border-radius: var(--kp-radius-panel, 3px);
 }
+/* Baseline (presentation): proven clip-path chamfer */
 [data-kp-corner="cut"],
 :host([data-kp-corner="cut"]),
 .kp-chrome-window[data-kp-corner="cut"] {
@@ -6868,7 +6879,17 @@ function getCutCornerCss() {
     0 calc(100% - var(--kp-cut-size, 8px)),
     0 var(--kp-cut-size, 8px)
   );
-  border-radius: 0 !important;
+  border-radius: 0;
+}
+/* Upgrade: native chamfer keeps stroke + shadow on the cut edge */
+@supports (corner-shape: bevel) {
+  [data-kp-corner="cut"],
+  :host([data-kp-corner="cut"]),
+  .kp-chrome-window[data-kp-corner="cut"] {
+    clip-path: none !important;
+    border-radius: var(--kp-cut-size, 8px) !important;
+    corner-shape: bevel;
+  }
 }
 `.trim();
 }
@@ -7896,35 +7917,35 @@ function getThemeFontFaceCss() {
   src: url('${robotech}') format('truetype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 @font-face {
   font-family: 'TitilliumText';
   src: url('${titillium}') format('opentype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 @font-face {
   font-family: 'Cubellan';
   src: url('${cubellan}') format('truetype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 @font-face {
   font-family: 'Ezarion';
   src: url('${ezarion}') format('truetype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 @font-face {
   font-family: 'Dosis';
   src: url('${dosis}') format('truetype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 `.trim();
 }
@@ -8045,6 +8066,11 @@ function applyThemeToRoots(theme, opts = {}) {
   } catch {
   }
   notify();
+  try {
+    const id = _activeTheme?.id;
+    if (id) localStorage.setItem("kp_theme_id_v1", id);
+  } catch {
+  }
   return _activeTheme;
 }
 function resolveThemeFromSettings(settings) {

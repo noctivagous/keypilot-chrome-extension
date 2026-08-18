@@ -2531,9 +2531,100 @@
     } catch { /* ignore */ }
   }
   // Shared early-compatible subset of kp-chrome-shadow.js. This script cannot import ESM.
+  const KP_THEME_CACHE_KEY = 'kp_theme_id_v1';
+  function peekCachedThemeId() {
+    try {
+      const id = localStorage.getItem(KP_THEME_CACHE_KEY);
+      if (id && KP_THEME_IDS.indexOf(id) >= 0) return id;
+    } catch { /* ignore */ }
+    return null;
+  }
+  function cacheThemeId(id) {
+    if (!id || KP_THEME_IDS.indexOf(id) < 0) return;
+    try { localStorage.setItem(KP_THEME_CACHE_KEY, id); } catch { /* ignore */ }
+  }
+  function getEarlyThemeFontFaceCss() {
+    function fontUrl(file) {
+      try {
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
+          return chrome.runtime.getURL('fonts/' + file);
+        }
+      } catch { /* ignore */ }
+      return '';
+    }
+    const faces = [
+      ['ROBOTECHGPRegular', 'ROBOTECHGPRegular.ttf', 'truetype'],
+      ['TitilliumText', 'TitilliumTextRegular.otf', 'opentype'],
+      ['Cubellan', 'CubellanRegular.ttf', 'truetype'],
+      ['Ezarion', 'EzarionRegular.ttf', 'truetype'],
+      ['Dosis', 'DosisBook.ttf', 'truetype']
+    ];
+    let out = '';
+    for (const [family, file, format] of faces) {
+      const url = fontUrl(file);
+      if (!url) continue;
+      out += "@font-face{font-family:'" + family + "';src:url('" + url + "') format('" + format + "');font-weight:normal;font-style:normal;font-display:block;}" ;
+    }
+    return out;
+  }
+  function ensureEarlyThemeStyles() {
+    try {
+      const fontCss = getEarlyThemeFontFaceCss();
+      if (fontCss) {
+        let fonts = document.getElementById('kp-early-theme-fonts');
+        if (!fonts) {
+          fonts = document.createElement('style');
+          fonts.id = 'kp-early-theme-fonts';
+          (document.head || document.documentElement).appendChild(fonts);
+        }
+        if (fonts.textContent !== fontCss) fonts.textContent = fontCss;
+      }
+    } catch { /* ignore */ }
+    try {
+      let style = document.getElementById('kp-early-theme');
+      if (!style) {
+        style = document.createElement('style');
+        style.id = 'kp-early-theme';
+        (document.head || document.documentElement).appendChild(style);
+      }
+      if (style.textContent !== KP_ALL_THEMES_CSS) style.textContent = KP_ALL_THEMES_CSS;
+    } catch { /* ignore */ }
+  }
+  function resolveEarlyThemeId(themeId) {
+    if (themeId && KP_THEME_IDS.indexOf(themeId) >= 0) return themeId;
+    return peekCachedThemeId() || 'dark-pro';
+  }
+  function applyEarlyTheme(themeId) {
+    const id = resolveEarlyThemeId(themeId);
+    const cut = KP_THEME_CORNER[id] === 'cut';
+    ensureEarlyThemeStyles();
+    try { document.documentElement.setAttribute('data-kp-theme', id); } catch { /* ignore */ }
+    try {
+      if (cut) document.documentElement.setAttribute('data-kp-corner', 'cut');
+      else document.documentElement.removeAttribute('data-kp-corner');
+    } catch { /* ignore */ }
+    try {
+      document.querySelectorAll('.kp-chrome-window, [data-kp-ui-shadow]').forEach((el) => {
+        try {
+          el.setAttribute('data-kp-theme', id);
+          if (cut) el.setAttribute('data-kp-corner', 'cut');
+          else el.removeAttribute('data-kp-corner');
+        } catch { /* ignore */ }
+      });
+    } catch { /* ignore */ }
+    cacheThemeId(id);
+  }
   function ensureEarlyOpenChromeShadow(host, id) {
     if (!host) return null;
     try { host.setAttribute('data-kp-ui-shadow', String(id || 'chrome')); } catch { /* ignore */ }
+    try { host.classList.add('kp-chrome-window'); } catch { /* ignore */ }
+    try {
+      const themeId = document.documentElement.getAttribute('data-kp-theme') || peekCachedThemeId() || 'dark-pro';
+      host.setAttribute('data-kp-theme', themeId);
+      const cut = document.documentElement.getAttribute('data-kp-corner') === 'cut' || KP_THEME_CORNER[themeId] === 'cut';
+      if (cut) host.setAttribute('data-kp-corner', 'cut');
+      else host.removeAttribute('data-kp-corner');
+    } catch { /* ignore */ }
     try { return host.shadowRoot || host.attachShadow({ mode: 'open' }); } catch { return host.shadowRoot || null; }
   }
   const KEYBINDINGS_UI_EARLY_CSS = `
@@ -2691,6 +2782,17 @@
     filter 100ms ease,
     border-color 100ms ease,
     background 100ms ease;
+}
+
+/* Upgrade: corner-shape so key borders follow cut corners (clip-path baseline above).
+ * Cut themes force --kp-key-effective-radius: 0px for the clip-path path; the
+ * upgrade must win so bevel length comes from --kp-key-shape-radius. */
+@supports (corner-shape: bevel) {
+  .kp-keybindings-ui .key {
+    clip-path: none !important;
+    border-radius: var(--kp-key-shape-radius, var(--kp-key-effective-radius, var(--kp-radius-key, 7px))) !important;
+    corner-shape: var(--kp-key-corner-shape, round);
+  }
 }
 
 /* Minimal face sheen (not a tall sculpted plate) */
@@ -3872,6 +3974,8 @@
   --kp-key-cut-size: 4px;
   --kp-key-clip: none;
   --kp-key-effective-radius: 7px;
+  --kp-key-shape-radius: 7px;
+  --kp-key-corner-shape: round;
   --kp-key-sheen-opacity: 1;
   --kp-key-shade-layer: linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 18%, transparent 42%);
   --kp-icon-chrome: #ddd;
@@ -3985,6 +4089,8 @@
   --kp-key-cut-size: 4px;
   --kp-key-clip: none;
   --kp-key-effective-radius: 7px;
+  --kp-key-shape-radius: 7px;
+  --kp-key-corner-shape: round;
   --kp-key-sheen-opacity: 1;
   --kp-key-shade-layer: linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 18%, transparent 42%);
   --kp-icon-chrome: #1c1c1c;
@@ -4098,6 +4204,8 @@
   --kp-key-cut-size: 4px;
   --kp-key-clip: polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px);
   --kp-key-effective-radius: 0px;
+  --kp-key-shape-radius: 4px;
+  --kp-key-corner-shape: bevel;
   --kp-key-sheen-opacity: 1;
   --kp-key-shade-layer: linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 18%, transparent 42%);
   --kp-icon-chrome: #00e5ff;
@@ -4211,6 +4319,8 @@
   --kp-key-cut-size: 4px;
   --kp-key-clip: none;
   --kp-key-effective-radius: 7px;
+  --kp-key-shape-radius: 7px;
+  --kp-key-corner-shape: round;
   --kp-key-sheen-opacity: 1;
   --kp-key-shade-layer: linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 18%, transparent 42%);
   --kp-icon-chrome: #1c1c1c;
@@ -4224,6 +4334,7 @@
 .kp-chrome-window:not([data-kp-corner="cut"]) {
   border-radius: var(--kp-radius-panel, 3px);
 }
+/* Baseline (presentation): proven clip-path chamfer */
 [data-kp-corner="cut"],
 :host([data-kp-corner="cut"]),
 .kp-chrome-window[data-kp-corner="cut"] {
@@ -4237,7 +4348,17 @@
     0 calc(100% - var(--kp-cut-size, 8px)),
     0 var(--kp-cut-size, 8px)
   );
-  border-radius: 0 !important;
+  border-radius: 0;
+}
+/* Upgrade: native chamfer keeps stroke + shadow on the cut edge */
+@supports (corner-shape: bevel) {
+  [data-kp-corner="cut"],
+  :host([data-kp-corner="cut"]),
+  .kp-chrome-window[data-kp-corner="cut"] {
+    clip-path: none !important;
+    border-radius: var(--kp-cut-size, 8px) !important;
+    corner-shape: bevel;
+  }
 }
 .kp-titlebar-icon {
   display: var(--kp-titlebar-icon-display, none);
@@ -4368,8 +4489,15 @@
 }
 .kp-select-menu {
   position: fixed;
-  z-index: 2147483646;
+  /* Kill UA popover centering (inset 0 / margin auto) without locking longhands. */
   margin: 0;
+  top: auto;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  width: max-content;
+  height: fit-content;
+  z-index: 2147483049;
   padding: 4px 0;
   min-width: 190px;
   max-width: min(360px, calc(100vw - 16px));
@@ -4438,19 +4566,7 @@
   flex-shrink: 0;
 }`;
   const KP_THEME_IDS = ["dark-pro","gray-metal-pro","gx-er"];
-  function applyEarlyTheme(themeId) {
-    const id = KP_THEME_IDS.indexOf(themeId) >= 0 ? themeId : 'dark-pro';
-    try { document.documentElement.setAttribute('data-kp-theme', id); } catch { /* ignore */ }
-    try {
-      let style = document.getElementById('kp-early-theme');
-      if (!style) {
-        style = document.createElement('style');
-        style.id = 'kp-early-theme';
-        (document.head || document.documentElement).appendChild(style);
-      }
-      if (style.textContent !== KP_ALL_THEMES_CSS) style.textContent = KP_ALL_THEMES_CSS;
-    } catch { /* ignore */ }
-  }
+  const KP_THEME_CORNER = {"dark-pro":"radius","gray-metal-pro":"radius","gx-er":"cut"};
 
   // --- begin stamped onboarding-shared.js ---
   /**
@@ -7814,14 +7930,13 @@
         flexDirection: 'row',
         alignItems: 'stretch',
         zIndex: String(Z_CONTROL_STRIP),
-        // Match NCT dark titlebar bevel so the ON segment (transparent) shares strip chrome.
-        background: 'linear-gradient(180deg, #4c4c4c 0%, #353535 45%, #252525 100%)',
-        color: 'rgba(248, 250, 252, 0.95)',
-        // NCT dark UI panel rim with a restrained neutral glow.
-        border: '1px solid #111',
-        borderRadius: '3px',
-        boxShadow: '0 0 0 1px #3a3a3a inset, 0 0 0 1px rgba(190,190,190,0.52), 0 0 10px rgba(255,255,255,0.14), 0 16px 40px rgba(0,0,0,0.55)',
-        fontFamily: 'Helvetica, Arial, sans-serif',
+        // Theme tokens — never hardcode Dark Pro so gx-er (etc.) can paint first frame.
+        background: 'var(--kp-titlebar-bg)',
+        color: 'var(--kp-color-fg, #ddd)',
+        border: 'var(--kp-panel-border, 1px solid #111)',
+        borderRadius: 'var(--kp-radius-panel, 3px)',
+        boxShadow: 'var(--kp-panel-shadow)',
+        fontFamily: 'var(--kp-font-ui, Helvetica, Arial, sans-serif)',
         pointerEvents: 'none',
         overflow: 'hidden',
         boxSizing: 'border-box',
@@ -8131,12 +8246,12 @@
       overflow: 'hidden',
       boxSizing: 'border-box',
       zIndex: String(Z_FLOATING_KEYBOARD_HELP),
-      background: '#232323',
-      color: '#ddd',
-      border: '1px solid #111',
-      borderRadius: '3px',
-      boxShadow: '0 0 0 1px #3a3a3a inset, 0 0 0 1px rgba(190,190,190,0.52), 0 0 10px rgba(255,255,255,0.14), 0 16px 40px rgba(0,0,0,0.55)',
-      fontFamily: 'Helvetica, Arial, sans-serif',
+      background: 'var(--kp-panel-bg, #232323)',
+      color: 'var(--kp-color-fg, #ddd)',
+      border: 'var(--kp-panel-border, 1px solid #111)',
+      borderRadius: 'var(--kp-radius-panel, 3px)',
+      boxShadow: 'var(--kp-panel-shadow)',
+      fontFamily: 'var(--kp-font-ui, Helvetica, Arial, sans-serif)',
       display: 'none',
       flexDirection: 'column',
       pointerEvents: 'none'
@@ -8166,9 +8281,9 @@
       boxSizing: 'border-box',
       padding: '0 6px 0 10px',
       margin: '0',
-      borderBottom: '1px solid #111',
-      boxShadow: '0 1px 0 #3a3a3a',
-      background: 'linear-gradient(180deg, #4c4c4c 0%, #353535 45%, #252525 100%)',
+      borderBottom: 'var(--kp-titlebar-border, 1px solid #111)',
+      boxShadow: 'var(--kp-titlebar-shadow)',
+      background: 'var(--kp-titlebar-bg)',
       flex: '0 0 auto',
       cursor: 'grab',
       userSelect: 'none',
@@ -8765,6 +8880,11 @@
         isExtensionEnabled = true; // Default enabled
       }
     }
+    try {
+      if (typeof applyEarlyTheme === 'function') {
+        applyEarlyTheme(settingsObj && settingsObj.themeId);
+      }
+    } catch { /* ignore */ }
     updateCursorVisibility();
     if (!isPopoverOsWindow) {
       ensureEarlyFloatingKeyboardHelpShell();
@@ -9053,6 +9173,20 @@
     // NOTE: The rules are scoped to `html.kpv2-cursor-hidden` so they are inert unless enabled.
     injectEarlyCSS();
 
+    // Stamp theme CSS + dataset immediately so fonts/tokens start before chrome exists.
+    let themeReady = false;
+    try {
+      if (typeof applyEarlyTheme === 'function') {
+        const cached = typeof peekCachedThemeId === 'function' ? peekCachedThemeId() : null;
+        if (cached) {
+          applyEarlyTheme(cached);
+          themeReady = true;
+        } else if (typeof ensureEarlyThemeStyles === 'function') {
+          ensureEarlyThemeStyles();
+        }
+      }
+    } catch { /* ignore */ }
+
     // Resolve before any storage-driven Keyboard Reference paint so separate-window
     // Link Preview / Open Popover never flashes the panel.
     try {
@@ -9064,16 +9198,16 @@
     // Onboarding + control strip shells should appear as early as possible to avoid UI pop-in.
     // The bundled content script will adopt this DOM and hydrate it later.
     setupEarlyOnboardingStorageSync();
-    // Kick control-strip shell immediately (visibility refined once storage returns).
+    // Build shells immediately; only show them once a theme is known (cache or storage).
     try {
       ensureEarlyControlStripShell();
-      applyEarlyControlStripVisibility();
+      if (themeReady) applyEarlyControlStripVisibility();
       // Build the matching Keyboard Reference shell in the same document_start
       // pass. Storage determines whether it is shown, but shell construction no
       // longer waits until after the control strip has painted.
       if (!isPopoverOsWindow) {
         ensureEarlyFloatingKeyboardHelpShell();
-        applyEarlyKeyboardHelpVisibility(keyboardHelpVisible);
+        if (themeReady) applyEarlyKeyboardHelpVisibility(keyboardHelpVisible);
       }
     } catch { /* ignore */ }
     await checkExtensionState();
