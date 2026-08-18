@@ -1730,6 +1730,8 @@ export class OverlayManager {
         strategy = canB ? 'B' : (this._strategyAIsViable(element) ? 'A' : 'C');
       }
 
+      // Stay off C for the whole scroll gesture. Idle (scroll-end) is the
+      // only time we may return to a body-fixed ring.
       if (this._preferADuringScroll && strategy === 'C') {
         strategy = 'A';
       }
@@ -2212,6 +2214,27 @@ export class OverlayManager {
       (cs.overflowX && cs.overflowX !== 'visible') ||
       (cs.overflowY && cs.overflowY !== 'visible')
     ));
+  }
+
+  /**
+   * Chrome's used value for replaced elements is often `overflow: clip` even
+   * when the author never clipped. That is not a wrapper clip; do not treat
+   * it as one (it was sending every <img> down the A-dead → C path).
+   * @param {Element|null|undefined} el
+   * @param {CSSStyleDeclaration|null|undefined} cs
+   * @returns {boolean}
+   */
+  _styleClipsSelfFor(el, cs) {
+    if (!cs) return false;
+    if (el && this._isReplacedOrVoidElement(el)) {
+      const ox = String(cs.overflowX || cs.overflow || '');
+      const oy = String(cs.overflowY || cs.overflow || '');
+      const authorClip =
+        (ox && ox !== 'visible' && ox !== 'clip') ||
+        (oy && oy !== 'visible' && oy !== 'clip');
+      return authorClip || this._styleClipsPaintContain(cs) || this._styleClipsClipPath(cs);
+    }
+    return this._styleClipsSelf(cs);
   }
 
   /**
@@ -2805,7 +2828,7 @@ export class OverlayManager {
 
     let selfClips = false;
     try {
-      selfClips = this._styleClipsSelf(window.getComputedStyle(paintEl));
+      selfClips = this._styleClipsSelfFor(paintEl, window.getComputedStyle(paintEl));
     } catch { /* ignore */ }
     // Shadow host whose *own* light-DOM style is non-clipping but whose
     // internal shadow wrapper clips (msn.com cs-responsive-card pattern:
@@ -3566,6 +3589,106 @@ export class OverlayManager {
   }
 
   /**
+   * True when `el` can host an absolute inset:0 ring (not replaced, not a
+   * bare-inline / multi-fragment box).
+   * @param {Element|null|undefined} el
+   * @returns {boolean}
+   */
+  _isViableInTargetHost(el) {
+    if (!el || el.nodeType !== 1) return false;
+    if (this._isReplacedOrVoidElement(el)) return false;
+    if (this._isFragmentedInlineFocusTarget(el)) return false;
+    return !!this._canMountVisibleChildOnHost(el);
+  }
+
+  /**
+   * Same-size block descendant that can take the B ring (inline <a> wrapping
+   * a clipped thumb).
+   * @param {Element} start
+   * @param {DOMRect|ClientRect|null|undefined} focusRect
+   * @returns {Element|null}
+   */
+  _findSameSizeInTargetDescendant(start, focusRect) {
+    if (!start || start.nodeType !== 1) return null;
+    /** @type {Element[]} */
+    const queue = [];
+    try {
+      const kids = start.children;
+      if (kids) {
+        for (let i = 0; i < kids.length; i++) {
+          if (kids[i]?.nodeType === 1) queue.push(kids[i]);
+        }
+      }
+    } catch {
+      return null;
+    }
+    let seen = 0;
+    while (queue.length && seen++ < 16) {
+      const cur = queue.shift();
+      if (!cur || cur.nodeType !== 1) continue;
+      if (this._isViableInTargetHost(cur)) {
+        let r = null;
+        try { r = cur.getBoundingClientRect(); } catch { r = null; }
+        if (r && r.width >= 8 && r.height >= 8 && this._inTargetHostSizeOk(r, focusRect)) {
+          return cur;
+        }
+      }
+      try {
+        const kids = cur.children;
+        if (kids) {
+          for (let i = 0; i < kids.length; i++) {
+            if (kids[i]?.nodeType === 1) queue.push(kids[i]);
+          }
+        }
+      } catch { /* ignore */ }
+    }
+    return null;
+  }
+
+  /**
+   * Box used to accept/reject a B host. Prefer the visual media box over an
+   * inline <a> line box so a same-size clip wrap matches and a larger
+   * caption/card parent does not.
+   * @param {Element} element
+   * @param {Element|null|undefined} paintEl
+   * @returns {DOMRect|ClientRect|null}
+   */
+  _visualFocusRectForInTarget(element, paintEl) {
+    /** @type {Array<DOMRect|ClientRect>} */
+    const boxes = [];
+    const push = (el) => {
+      if (!el || el.nodeType !== 1) return;
+      try {
+        const r = el.getBoundingClientRect();
+        if (r && r.width > 1 && r.height > 1) boxes.push(r);
+      } catch { /* ignore */ }
+    };
+    push(element);
+    if (paintEl && paintEl !== element) push(paintEl);
+    try {
+      const media = this._findDominantReplacedPaintChild(element);
+      if (media) push(media);
+    } catch { /* ignore */ }
+    if (paintEl && paintEl !== element) {
+      try {
+        const media = this._findDominantReplacedPaintChild(paintEl);
+        if (media) push(media);
+      } catch { /* ignore */ }
+    }
+    if (!boxes.length) return null;
+    let best = boxes[0];
+    let bestArea = best.width * best.height;
+    for (let i = 1; i < boxes.length; i++) {
+      const a = boxes[i].width * boxes[i].height;
+      if (a > bestArea) {
+        bestArea = a;
+        best = boxes[i];
+      }
+    }
+    return best;
+  }
+
+  /**
    * Host for an in-target absolute ring: paint-resolved clickable that can
    * accept a last-child ring (sibling above full-bleed media tiles).
    *
@@ -3608,18 +3731,21 @@ export class OverlayManager {
     }
 
     /** @type {DOMRect|ClientRect|null} */
-    let focusRect = null;
-    try { focusRect = element.getBoundingClientRect(); } catch { focusRect = null; }
-    if (!focusRect || !(focusRect.width > 1) || !(focusRect.height > 1)) {
-      try { focusRect = paintEl.getBoundingClientRect(); } catch { focusRect = null; }
-    }
+    let focusRect = this._visualFocusRectForInTarget(element, paintEl);
 
     // Open-shadow: size the ring to the clickable, not the owning custom element
     // (news lists share one large shadow host for many small links).
     try {
       const root = typeof paintEl.getRootNode === 'function' ? paintEl.getRootNode() : null;
       if (root && typeof ShadowRoot !== 'undefined' && root instanceof ShadowRoot) {
-        if (this._canMountVisibleChildOnHost(paintEl)) {
+        // Prefer the clickable itself (flex <a> around an <img>) over the
+        // replaced paint child and over the full-width shadow host layer.
+        if (this._isViableInTargetHost(element)) {
+          let er = null;
+          try { er = element.getBoundingClientRect(); } catch { er = null; }
+          if (er && er.width >= 8 && er.height >= 8) return element;
+        }
+        if (this._isViableInTargetHost(paintEl)) {
           let pr = null;
           try { pr = paintEl.getBoundingClientRect(); } catch { pr = null; }
           if (pr && pr.width >= 8 && pr.height >= 8) {
@@ -3634,7 +3760,7 @@ export class OverlayManager {
           try {
             if (typeof n.getRootNode === 'function' && n.getRootNode() !== root) break;
           } catch { break; }
-          if (this._canMountVisibleChildOnHost(n)) {
+          if (this._isViableInTargetHost(n)) {
             let nr = null;
             try { nr = n.getBoundingClientRect(); } catch { nr = null; }
             if (nr && nr.width >= 8 && nr.height >= 8 && this._inTargetHostSizeOk(nr, focusRect)) {
@@ -3660,11 +3786,19 @@ export class OverlayManager {
       }
     } catch { /* fall through */ }
 
-    if (this._canMountVisibleChildOnHost(paintEl)) {
+    if (this._isViableInTargetHost(paintEl)) {
       let pr = null;
       try { pr = paintEl.getBoundingClientRect(); } catch { pr = null; }
       if (pr && pr.width >= 8 && pr.height >= 8) return paintEl;
     }
+
+    // Inline <a> wrapping a block thumb: mount on a same-size block child
+    // (clip wrap). Search paint node and semantic <a> (paint may be the <img>).
+    let nearChild = this._findSameSizeInTargetDescendant(paintEl, focusRect);
+    if (!nearChild && element !== paintEl) {
+      nearChild = this._findSameSizeInTargetDescendant(element, focusRect);
+    }
+    if (nearChild) return nearChild;
 
     // Slotless open-shadow host: mount inside, preferring a box ≈ focus size.
     if (this._getOpenShadowRoot(paintEl)) {
@@ -3678,7 +3812,7 @@ export class OverlayManager {
     let depth = 0;
     while (n && n.nodeType === 1 && depth++ < 8) {
       if (n === document.body || n === document.documentElement) break;
-      if (this._canMountVisibleChildOnHost(n)) {
+      if (this._isViableInTargetHost(n)) {
         let nr = null;
         try { nr = n.getBoundingClientRect(); } catch { nr = null; }
         if (nr && nr.width >= 8 && nr.height >= 8 && this._inTargetHostSizeOk(nr, focusRect)) {
@@ -3889,13 +4023,11 @@ export class OverlayManager {
     if (!element || element.nodeType !== 1) return false;
 
     // Wrapped text links: B's inset:0 ring only covers one line fragment.
-    // Let Auto fall through to C (body fixed union box) for full width —
-    // except image+text cards, where we lift to a block shell first.
+    // Do not bail here — `_resolveInTargetHost` may still find a same-size
+    // block parent/child (e.g. overflow-hidden thumb wrap around an inline <a>).
+    // A larger parent (caption, card chrome) is rejected by the size gate.
     let cardHost = null;
     try { cardHost = this._resolveMediaTextCardShell(element); } catch { cardHost = null; }
-    if (!cardHost && this._isFragmentedInlineFocusTarget(element)) {
-      return false;
-    }
 
     const host = cardHost || this._resolveInTargetHost(element);
     if (!host) return false;

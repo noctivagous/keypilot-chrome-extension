@@ -249,6 +249,8 @@ export class FloatingKeyboardHelp {
     this._showGeneration = 0;
     /** True after we have told early-inject to stop owning this shell. */
     this._earlyAdoptSignaled = false;
+    /** Reuse early-inject custom-layout paint on first adopt (avoids a post-load flash). */
+    this._reuseEarlyCustomPaint = false;
     this._positionApplyScheduled = false;
     this._onWinResizePosition = this._onWinResizePosition.bind(this);
     this._suppressPositionPersist = false;
@@ -719,15 +721,15 @@ export class FloatingKeyboardHelp {
     };
 
     const revealAfterLayoutReady = () => {
-      // User layouts are read asynchronously. Keep the adopted early shell hidden
-      // until that read replaces its built-in placeholder, preventing a visible
-      // built-in-layout flash after a navigation.
+      // User layouts used to wait on an async store read (early-inject left the
+      // shell empty). When early-inject already assembled the matching layout,
+      // reveal immediately so navigation does not flash an empty then-filled panel.
       const layoutSel = String(
         this._getKeyPilot?.()?._settings?.currentKeyboardLayoutId
         || this._currentKeyboardLayoutId
         || ''
       );
-      if (layoutSel.startsWith('user:')) {
+      if (layoutSel.startsWith('user:') && !this._earlyCustomPaintMatches(layoutSel)) {
         void this._renderAsync().finally(() => reveal({ render: false }));
         return;
       }
@@ -1356,6 +1358,7 @@ export class FloatingKeyboardHelp {
           try { ensureStylesInjected(shadowRoot || existing); } catch { /* ignore */ }
           this._bindHostGuard();
           this._signalEarlyKeyboardHelpAdopted();
+          this._reuseEarlyCustomPaint = true;
           return;
         }
       }
@@ -1974,6 +1977,18 @@ export class FloatingKeyboardHelp {
     } catch { /* ignore */ }
   }
 
+  _earlyCustomPaintMatches(sel) {
+    const wanted = String(sel || '');
+    if (!wanted.startsWith('user:') || !this.keyboardContainer) return false;
+    let visual = null;
+    try { visual = this.keyboardContainer.querySelector(':scope > .keyboard-visual'); } catch { /* ignore */ }
+    if (!visual) {
+      try { visual = this.keyboardContainer.querySelector('.keyboard-visual'); } catch { /* ignore */ }
+    }
+    if (!visual || !visual.dataset) return false;
+    return visual.dataset.kpKeyboardBuilt === 'true' && String(visual.dataset.kpLayoutId || '') === wanted;
+  }
+
   async _renderAsync() {
     const token = ++this._renderToken;
     if (!this.keyboardContainer) return;
@@ -2044,6 +2059,34 @@ export class FloatingKeyboardHelp {
 
     // User layout render: slot-based keyboard view.
     try {
+      if (this._reuseEarlyCustomPaint && this._earlyCustomPaintMatches(sel)) {
+        this._reuseEarlyCustomPaint = false;
+        const id = sel.slice('user:'.length);
+        const userLayout = this._currentUserLayout && this._currentUserLayout.id === id
+          ? this._currentUserLayout
+          : await getUserKeyboardLayoutById(id);
+        const macros = (Array.isArray(this._currentUserMacros) && this._currentUserMacros.length)
+          ? this._currentUserMacros
+          : await listUserMacros();
+        const actions = (Array.isArray(this._currentUserActions) && this._currentUserActions.length)
+          ? this._currentUserActions
+          : await listUserActions();
+        if (token !== this._renderToken) return;
+        if (userLayout) {
+          this._currentUserLayout = userLayout;
+          this._currentUserMacros = macros;
+          this._currentUserActions = actions;
+          const baseId = String(userLayout.baseBuiltinLayoutId || this.layoutId || 'browsing-right');
+          const showNumberRow = !!(settings && settings.keyboardReferenceShowNumberRow);
+          this.layoutId = baseId;
+          this.keyboardLayout = getKeyboardUiLayoutForLayout(baseId, { includeNumberRow: showNumberRow });
+          const baseHand = inferFamilyAndHandednessFromLayoutId(baseId).handedness;
+          this.keybindings = buildEffectiveKeybindings(baseId, baseHand);
+          try { attachKeyPopoverBehavior({ root: this.keyboardContainer, keybindings: this.keybindings }); } catch { /* ignore */ }
+          this._rebuildKeyIndex();
+          return;
+        }
+      }
       const id = sel.slice('user:'.length);
       const userLayout = this._currentUserLayout && this._currentUserLayout.id === id
         ? this._currentUserLayout

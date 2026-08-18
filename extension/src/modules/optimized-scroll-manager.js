@@ -167,7 +167,7 @@ export class OptimizedScrollManager {
     }
     this.scrollTimeout = setTimeout(() => {
       this.handleScrollEnd();
-    }, 100);
+    }, 280);
   }
 
   handleScrollThrottled() {
@@ -318,6 +318,7 @@ export class OptimizedScrollManager {
       (this.scrollMetrics.averageScrollDuration + scrollDuration) / 2;
 
     this.isScrolling = false;
+    // Only now may paint return to C. Mid-gesture idle must not flip back.
     try { this.overlayManager?.setScrollPaintPreferA?.(false); } catch { /* ignore */ }
 
     let currentState;
