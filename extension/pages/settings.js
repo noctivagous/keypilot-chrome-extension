@@ -98,6 +98,57 @@ function adaptHeaderForPopoverEmbed(embedded = false) {
 }
 
 const SETTINGS_TAB_STORAGE_KEY = 'kp_settings_active_tab';
+const KEYBOARD_HELP_STORAGE_KEY = 'keypilot_keyboard_help_visible';
+
+async function queryKeyboardHelpVisible() {
+  try {
+    const kp = window.keyPilot || window.__KeyPilotInstance;
+    if (kp && typeof kp.getKeyboardHelpVisibleFromStorage === 'function') {
+      return Boolean(await kp.getKeyboardHelpVisibleFromStorage());
+    }
+  } catch {
+    // ignore
+  }
+  try {
+    const syncResult = await chrome.storage.sync.get([KEYBOARD_HELP_STORAGE_KEY]);
+    if (typeof syncResult?.[KEYBOARD_HELP_STORAGE_KEY] === 'boolean') {
+      return syncResult[KEYBOARD_HELP_STORAGE_KEY];
+    }
+  } catch {
+    // ignore
+  }
+  try {
+    const localResult = await chrome.storage.local.get([KEYBOARD_HELP_STORAGE_KEY]);
+    if (typeof localResult?.[KEYBOARD_HELP_STORAGE_KEY] === 'boolean') {
+      return localResult[KEYBOARD_HELP_STORAGE_KEY];
+    }
+  } catch {
+    // ignore
+  }
+  return false;
+}
+
+/**
+ * Persist Keyboard Reference visibility and apply on this page when KeyPilot can host it.
+ * Always writes storage so other tabs / the opener sync even when Settings is in a popover window.
+ */
+async function setKeyboardHelpVisible(visible) {
+  const desired = Boolean(visible);
+  const payload = { [KEYBOARD_HELP_STORAGE_KEY]: desired, timestamp: Date.now() };
+  try { await chrome.storage.sync.set(payload); } catch { /* ignore */ }
+  try { await chrome.storage.local.set(payload); } catch { /* ignore */ }
+
+  try {
+    const kp = window.keyPilot || window.__KeyPilotInstance;
+    const inPopover = !!(kp?._isPopoverOsWindow || window.__KP_POPOVER_WINDOW);
+    if (!inPopover && kp && typeof kp.applyKeyboardHelpVisibility === 'function') {
+      kp.applyKeyboardHelpVisibility(desired, { persist: false });
+    }
+  } catch {
+    // storage listener on content scripts still applies
+  }
+  return desired;
+}
 const SETTINGS_DEFAULT_PANEL_ID = 'overview';
 const SETTINGS_PANEL_IDS = Object.freeze([
   'overview',
@@ -333,6 +384,8 @@ async function render() {
   const radios = Array.from(settingsAll('input[type="radio"][name="engine"]'));
   const keyFeedbackToggle = /** @type {HTMLInputElement|null} */ (settingsEl('keyboard-reference-key-feedback'));
   const showNumberRowToggle = /** @type {HTMLInputElement|null} */ (settingsEl('keyboard-reference-show-number-row'));
+  const keyboardHelpToggle = /** @type {HTMLInputElement|null} */ (settingsEl('settings-keyboard-help-toggle'));
+  const keyboardHelpStateText = settingsEl('settings-keyboard-help-text');
   const keyboardLayoutFamilySelect = /** @type {HTMLSelectElement|null} */ (settingsEl('keyboard-layout-family'));
   const keyboardLeftHandedToggle = /** @type {HTMLInputElement|null} */ (settingsEl('keyboard-left-handed'));
   const controlStripVisible = /** @type {HTMLInputElement|null} */ (settingsEl('control-strip-visible'));
@@ -435,6 +488,15 @@ async function render() {
   const applyShowNumberRowToggle = (enabled) => {
     if (!showNumberRowToggle) return;
     showNumberRowToggle.checked = !!enabled;
+  };
+
+  const applyKeyboardHelpVisible = (visible) => {
+    const on = Boolean(visible);
+    if (keyboardHelpToggle) keyboardHelpToggle.checked = on;
+    if (keyboardHelpStateText) {
+      keyboardHelpStateText.textContent = on ? 'ON' : 'OFF';
+      keyboardHelpStateText.setAttribute('data-state', on ? 'on' : 'off');
+    }
   };
 
   const ensureLayoutFamilyOptions = () => {
@@ -694,6 +756,9 @@ async function render() {
     applyAllSettings(DEFAULT_SETTINGS);
   }
 
+  // Keyboard Reference visibility is stored separately from SETTINGS_STORAGE_KEY.
+  queryKeyboardHelpVisible().then(applyKeyboardHelpVisible).catch(() => applyKeyboardHelpVisible(false));
+
   if (settingsHandlersInstalled) return;
   settingsHandlersInstalled = true;
 
@@ -828,6 +893,19 @@ async function render() {
 
   showNumberRowToggle?.addEventListener('change', async () => {
     await setSettings({ keyboardReferenceShowNumberRow: !!showNumberRowToggle.checked });
+  }, true);
+
+  keyboardHelpToggle?.addEventListener('change', async () => {
+    const desired = !!keyboardHelpToggle.checked;
+    keyboardHelpToggle.disabled = true;
+    try {
+      const actual = await setKeyboardHelpVisible(desired);
+      applyKeyboardHelpVisible(actual);
+    } catch {
+      applyKeyboardHelpVisible(await queryKeyboardHelpVisible());
+    } finally {
+      keyboardHelpToggle.disabled = false;
+    }
   }, true);
 
   controlStripVisible?.addEventListener('change', async () => {
@@ -1077,6 +1155,12 @@ async function render() {
   try {
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area !== 'sync' && area !== 'local') return;
+
+      const helpChange = changes?.[KEYBOARD_HELP_STORAGE_KEY];
+      if (helpChange && typeof helpChange.newValue === 'boolean') {
+        applyKeyboardHelpVisible(helpChange.newValue);
+      }
+
       const entry = changes && changes[SETTINGS_STORAGE_KEY];
       if (!entry || !entry.newValue) return;
       void getSettings().then((s) => applyAllSettings(s)).catch(() => {

@@ -151,12 +151,11 @@ export class OptimizedScrollManager {
       this.isScrolling = true;
       this.scrollStartTime = performance.now();
 
-      // Fixed focus backends only: drop a stuck ring until the throttled path
-      // repositions it. Never call hideFocusOverlay in element-styling mode —
-      // that clears data-kp-focus / outline mid-scroll and causes flicker.
+      // C is viewport-fixed and will drift. Switch that hover to A for the
+      // gesture so the ring rides the element (including nested overflow).
       if (!this._usesElementFocusStyling()) {
         try {
-          this.overlayManager?.hideFocusOverlay?.();
+          this.overlayManager?.setScrollPaintPreferA?.(true);
         } catch { /* ignore */ }
       }
     }
@@ -319,6 +318,7 @@ export class OptimizedScrollManager {
       (this.scrollMetrics.averageScrollDuration + scrollDuration) / 2;
 
     this.isScrolling = false;
+    try { this.overlayManager?.setScrollPaintPreferA?.(false); } catch { /* ignore */ }
 
     let currentState;
     try {

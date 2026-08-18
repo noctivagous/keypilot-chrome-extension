@@ -186,6 +186,14 @@ export class OverlayManager {
      */
     this._focusPaintUsesInTargetRing = false;
 
+    /**
+     * While a scroll gesture is in flight, paint C targets with A so the ring
+     * rides the element. Nested overflow (Settings pane) often never reaches
+     * the document scroll listener, so repositioning C would miss anyway.
+     * @type {boolean}
+     */
+    this._preferADuringScroll = false;
+
     /** @type {HTMLElement|null} singleton in-target ring node */
     this._inTargetRing = null;
     /** @type {Element|null} host currently holding the in-target ring */
@@ -263,6 +271,21 @@ export class OverlayManager {
     // A (DOM outline) and B (in-target ring) co-locate with the element.
     // C (body fixed) needs scroll reposition — only that reports false.
     return !!this._useDomHoverFocusColors && !this._focusPaintUsesFixedOverlay;
+  }
+
+  /**
+   * Ask hover paint to use A for the rest of this scroll gesture (C rings
+   * stay pinned to the last viewport rect).
+   * @param {boolean} on
+   */
+  setScrollPaintPreferA(on) {
+    const next = !!on;
+    if (this._preferADuringScroll === next) return;
+    this._preferADuringScroll = next;
+    const el = this._lastFocusElement;
+    if (el && el.isConnected) {
+      try { this.updateFocusOverlay(el); } catch { /* ignore */ }
+    }
   }
 
   /**
@@ -1658,7 +1681,9 @@ export class OverlayManager {
             canB = !!(FEATURE_FLAGS && FEATURE_FLAGS.ENABLE_IN_TARGET_FOCUS_RING) &&
               !!this._resolveInTargetHost(element);
           } catch { canB = false; }
-          autoStrategy = canB ? 'B' : 'C';
+          // Shadow skip-A is for hostile site trees. If B cannot mount and A
+          // can still show (Settings fieldset, KP chrome), do not jump to C.
+          autoStrategy = canB ? 'B' : (this._strategyAIsViable(element) ? 'A' : 'C');
         }
       }
 
@@ -1679,19 +1704,34 @@ export class OverlayManager {
       try {
         forceOnboardingA = !!closestComposed(element, '.kp-onboarding-panel');
       } catch { forceOnboardingA = false; }
-      if (forceIframeA || forceOnboardingA) {
+      // Settings / Docs mount in an open shadow in *this* document (not an
+      // iframe). forceIframeA does not apply; without this, Auto B→C skips A
+      // and a fieldset legend often fails B's ring-size check → C.
+      let forceOwnedChromeA = false;
+      try {
+        forceOwnedChromeA = !!closestComposed(
+          element,
+          '.kpv2-settings-host, .kpv2-docs-host, .kpv2-popover-container'
+        );
+      } catch { forceOwnedChromeA = false; }
+      if (forceIframeA || forceOnboardingA || forceOwnedChromeA) {
         autoStrategy = 'A';
         strategy = 'A';
       } else if (override === 'A' || override === 'B' || override === 'C') {
         strategy = override;
       } else if (override === 'BC') {
-        // Auto B→C: never use element outline; try in-target then fixed.
+        // Auto B→C: skip A only while B can mount. If B cannot, prefer A
+        // whenever it can still show — C is last resort (A invisible).
         let canB = false;
         try {
           canB = !!(FEATURE_FLAGS && FEATURE_FLAGS.ENABLE_IN_TARGET_FOCUS_RING) &&
             !!this._resolveInTargetHost(element);
         } catch { canB = false; }
-        strategy = canB ? 'B' : 'C';
+        strategy = canB ? 'B' : (this._strategyAIsViable(element) ? 'A' : 'C');
+      }
+
+      if (this._preferADuringScroll && strategy === 'C') {
+        strategy = 'A';
       }
 
       try {
@@ -1734,11 +1774,9 @@ export class OverlayManager {
           } catch { /* ignore */ }
           return;
         }
-        // B failed to mount — fall through to C, except on KeyPilot chrome.
-        // C is a body overlay at Z_INDEX.OVERLAYS, which paints *under*
-        // Keyboard Reference / the control strip. Use A (element outline)
-        // so the ring stays on the key/button itself.
-        if (isClickableKeyPilotChromeElement(element)) {
+        // B failed to mount — C only when A cannot show a ring (media cover,
+        // overflowing a clipper). Fieldsets / KP chrome usually work on A.
+        if (isClickableKeyPilotChromeElement(element) || this._strategyAIsViable(element)) {
           this._focusPaintUsesFixedOverlay = false;
           this._focusPaintUsesInTargetRing = false;
           try { this.hideInTargetFocusRing(); } catch { /* ignore */ }
@@ -2662,6 +2700,27 @@ export class OverlayManager {
     }
     const offset = this._computeGradedFocusOutlineOffset(paintEl, stroke);
     return offset < -0.25;
+  }
+
+  /**
+   * True when strategy A (CSS outline on the node) can still show a ring.
+   * Used so B-fail / Auto B→C does not jump to C for ordinary boxes (Settings
+   * fieldset, KP chrome) that never needed a body-fixed overlay.
+   * @param {Element|null|undefined} element
+   * @returns {boolean}
+   */
+  _strategyAIsViable(element) {
+    if (!element || element.nodeType !== 1) return false;
+    try {
+      if (this._resolveMediaTextCardShell(element)) return false;
+    } catch { /* ignore */ }
+    try {
+      if (this._shouldUseFixedFocusOverlay(element)) return false;
+    } catch { /* if the geometry check throws, still try A */ }
+    try {
+      this._ensureStylesForElement(element);
+    } catch { /* inline outline still applies in open shadows */ }
+    return true;
   }
 
   /**

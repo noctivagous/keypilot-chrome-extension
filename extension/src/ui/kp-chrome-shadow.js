@@ -240,6 +240,9 @@ export function isClickableKeyPilotChromeElement(element) {
       '.kp-layout-config-panel',
       '.kpv2-top-sites-panel',
       '.kpv2-tab-history-panel',
+      '.kpv2-settings-host',
+      '.kpv2-docs-host',
+      '.kpv2-popover-container',
       '.kp-launcher-container'
     ].join(', ')
   );

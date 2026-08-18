@@ -1,5 +1,26 @@
 # Focus ring paint: outline-first, overlay only when needed
 
+C is needed only when A cannot paint a visible ring and B cannot mount one either. It is the last escape hatch, not the default for shadows or “B failed.”
+
+A is an outline on the node. B is a ring inside the node. C is a position: fixed box on document.body. Use C only when those first two cannot show the hover box.
+
+A cannot show (_shouldUseFixedFocusOverlay) when:
+
+• The clickable is a media+text card shell (image and title stacked; an outline on the <a> looks disconnected).
+• The target sticks out of a clipping ancestor (negative room). Graded inset A cannot expose the cut-off edge — e.g. a headline with negative margin above overflow: hidden.
+• The paint target is replaced media (<img> / <video>) inside a clip box, so an inset outline is under the pixels.
+• The target clips itself (overflow / contain / clip-path) and a full-bleed or edge-flush image/::before covers the inset outline (Thenextweb cards, msn.com hero-on-top cards).
+
+Parent clip with the target still fully inside (room ≥ 0) is not a C case. That stays on A with an inset outline (control-strip buttons).
+
+B cannot mount when there is no place to put a last-child ring: slotless shadow hosts (archive.org media-button), replaced/void elements, fragmented inline links (inset: 0 only covers one line box), or the ring’s box does not match the target.
+
+Then C. Typical survivors: a 0×0 <a> over a clipped <img> in a slotless shadow; a multi-line inline link whose fragments B cannot wrap.
+
+C is not needed for: Settings fieldsets, Keyboard Ref keys, onboarding buttons, or “the node lives in a shadow.” Those get A or B.
+
+HUD/Settings can still force C for debugging. During scroll, even a real C ring switches to A so it does not stay pinned in the viewport.
+
 ## How it works
 
 In normal browsing, KeyPilot does not re-hit-test every mousemove.
@@ -72,7 +93,8 @@ Implemented in `OverlayManager.updateFocusOverlay` when `_useDomHoverFocusColors
    - Living in a `ShadowRoot` (or being an open-shadow host) **skips A** and defaults to **B** (then C).
 2. If escape hatch needed:
    - **B** (`ENABLE_IN_TARGET_FOCUS_RING`): `updateFocusOverlayInTarget` — inject `.kpv2-focus-ring-intarget` as last child of host (shadow-aware mount), `z-index: maxLocal+1`, `border-radius` via `_resolveElementBorderRadius`. Set `_focusPaintUsesInTargetRing`. Still counts as element-associated for scroll (`usesElementFocusStyling()` true).
-   - **C** if B fails: `updateFocusOverlayDOM`, called with the paint-resolved element so `getBestRect` doesn't collapse to 0×0 on slotless shadow hosts. Set `_focusPaintUsesFixedOverlay`. Also copies border-radius.
+   - **C** if B fails **and A cannot show** (media cover, target overflowing a clipper, styles cannot be injected). B-fail alone is not enough — Settings fieldsets and other ordinary boxes stay on **A**. Set `_focusPaintUsesFixedOverlay`. Also copies border-radius.
+  - During scroll, an active **C** ring switches to **A** for the gesture (`setScrollPaintPreferA`) so it is not left pinned in the viewport.
 3. Else → **A** `updateFocusOverlayElementStyling`. Hide in-target ring + fixed overlay.
 4. Never use B/C “just in case.” If the check throws or is inconclusive, stay on element styling (**A**).
 5. Shadow debug HUD (`Alt+D`) can force Auto / Auto B→C / A / B / C regardless of auto.

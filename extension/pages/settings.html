@@ -465,6 +465,30 @@
             </header>
 
             <div class="stack">
+              <label
+                class="kp-switch kp-switch--row"
+                for="settings-keyboard-help-toggle"
+                title="Show/hide floating keyboard reference (K)"
+              >
+                <span class="kp-switch-meta">
+                  <span class="kp-switch-label">Keyboard Reference</span>
+                  <span class="kp-switch-shortcut">K</span>
+                </span>
+                <span class="kp-switch-control">
+                  <input
+                    id="settings-keyboard-help-toggle"
+                    class="kp-switch-input"
+                    type="checkbox"
+                    role="switch"
+                    aria-label="Keyboard reference visible"
+                  />
+                  <span class="kp-switch-track" aria-hidden="true">
+                    <span class="kp-switch-thumb" aria-hidden="true"></span>
+                  </span>
+                  <span id="settings-keyboard-help-text" class="kp-switch-state" aria-hidden="true">…</span>
+                </span>
+              </label>
+
               <label class="field">
                 <div class="field-label">Keyboard layout family</div>
                 <select id="keyboard-layout-family" class="select">
