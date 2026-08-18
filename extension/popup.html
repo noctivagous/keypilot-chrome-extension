@@ -4,12 +4,12 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>KeyPilot </title>
+    <title>KeyPilot</title>
     <link rel="stylesheet" href="styles/popup.css" />
 </head>
 
 <body>
-    <div class="wrap" style="width:550pt">
+    <div class="wrap wrap-hub">
         <header>
             <h1>KeyPilot</h1><span class="version">0.3.4</span>
             <div class="header-controls">
@@ -24,37 +24,71 @@
                 <div class="unavailable-message" id="unavailable-message" style="display: none;">
                     <span class="pill unavailable">UNAVAILABLE</span>
                 </div>
-                <div class="header-action">
-                    <button id="open-tutorial" class="pill" type="button" title="Open walkthrough (Alt + T)">TUTORIAL</button>
-                    <span class="hotkey-hint" aria-label="Hotkey Alt plus slash"><kbd>Alt</kbd>+<kbd>/</kbd></span>
-                </div>
-                <div class="header-action">
-                    <button id="open-settings" class="pill" type="button" title="Open Settings (')">SETTINGS</button>
-                    <span class="hotkey-hint" aria-label="Hotkey apostrophe"><kbd>'</kbd></span>
-                </div>
             </div>
         </header>
-        <div class="keyboard-container">
-            <!-- Rendered dynamically from src/config/constants.js when the popup opens -->
-            <div id="kp-keyboard"></div>
+
+        <div class="hub-grid" role="navigation" aria-label="KeyPilot tools">
+            <button type="button" class="hub-card kp-url-row kp-hub-card" data-action="keyboard" role="switch" aria-checked="false" aria-label="Keyboard Reference">
+                <span class="kp-url-content">
+                    <span class="kp-url-favicon kp-hub-icon" data-icon="TOGGLE_KEYBOARD_HELP" aria-hidden="true"></span>
+                    <span class="kp-url-text">
+                        <span class="kp-url-domain">Keyboard Reference</span>
+                        <span class="kp-url-title" data-status>…</span>
+                        <span class="kp-url-path">K</span>
+                    </span>
+                </span>
+            </button>
+
+            <button type="button" class="hub-card kp-url-row kp-hub-card" data-action="docs" aria-label="KeyPilot Help and Documentation">
+                <span class="kp-url-content">
+                    <span class="kp-url-favicon kp-hub-icon" data-icon="LOOKUP_WORD" aria-hidden="true"></span>
+                    <span class="kp-url-text">
+                        <span class="kp-url-domain">Help / Docs</span>
+                        <span class="kp-url-title">Documentation</span>
+                        <span class="kp-url-path">Alt+H</span>
+                    </span>
+                </span>
+            </button>
+
+            <button type="button" class="hub-card kp-url-row kp-hub-card" data-action="tutorial" aria-label="Onboarding Tutorial">
+                <span class="kp-url-content">
+                    <span class="kp-url-favicon kp-hub-icon" data-icon="LAUNCHER" aria-hidden="true"></span>
+                    <span class="kp-url-text">
+                        <span class="kp-url-domain">Onboarding Tutorial</span>
+                        <span class="kp-url-title" data-status>…</span>
+                        <span class="kp-url-path">Alt+T</span>
+                    </span>
+                </span>
+            </button>
+
+            <button type="button" class="hub-card kp-url-row kp-hub-card" data-action="settings" aria-label="Settings">
+                <span class="kp-url-content">
+                    <span class="kp-url-favicon kp-hub-icon" data-icon="OPEN_SETTINGS_POPOVER" aria-hidden="true"></span>
+                    <span class="kp-url-text">
+                        <span class="kp-url-domain">Settings</span>
+                        <span class="kp-url-title">Preferences</span>
+                        <span class="kp-url-path">'</span>
+                    </span>
+                </span>
+            </button>
+
+            <button type="button" class="hub-card kp-url-row kp-hub-card" data-action="control-strip" role="switch" aria-checked="false" aria-label="Control Strip">
+                <span class="kp-url-content">
+                    <span class="kp-url-favicon kp-hub-icon" data-icon="TOP_SITES" aria-hidden="true"></span>
+                    <span class="kp-url-text">
+                        <span class="kp-url-domain">Control Strip</span>
+                        <span class="kp-url-title" data-status>…</span>
+                        <span class="kp-url-path">Alt+J</span>
+                    </span>
+                </span>
+            </button>
         </div>
-        
-         <section class="legend-panel" aria-labelledby="legend-title">
-      <h2 id="legend-title">Assigned Keys</h2>
-      <table class="legend-table" role="table">
-        <thead>
-          <tr><th>Key / Combo</th><th>Action</th></tr>
-          <tr aria-hidden="true"><th>Key / Combo</th><th>Action</th></tr>
-        </thead>
-        <tbody id="kp-assigned-keys-body"></tbody>
-      </table>
-    </section>
-        
+
         <footer>
             <small>Keyboard-first web navigation.</small>
         </footer>
     </div>
-    <script src="popup.js"></script>
+    <script type="module" src="popup.js"></script>
     <script type="module" src="pages/popup-theme.js"></script>
 </body>
 

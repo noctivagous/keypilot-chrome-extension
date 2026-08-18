@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-18T20:36:29.173Z
+ * Generated on 2026-08-18T23:56:51.826Z
  */
 
 var __defProp = Object.defineProperty;
@@ -5800,7 +5800,7 @@ var KEYBINDING_ACTION_DEFS = Object.freeze({
     handler: "handleSelectWordKey",
     label: "Select Word",
     description: "Select the word under the cursor",
-    details: "Selects the word under the KeyPilot cursor. Press again over the same word to deselect it. Exclusive mode replaces the current selection; cumulative mode adds or removes words. Copy reads this selection.",
+    details: "Selects the word under the KeyPilot cursor. Press again over the same word to deselect it. Exclusive vs cumulative is a popover setting (shared, not per-key). Copy reads this selection.",
     keyboardClass: null,
     row: null
   }),
@@ -5808,7 +5808,7 @@ var KEYBINDING_ACTION_DEFS = Object.freeze({
     handler: "handleSelectSentenceKey",
     label: "Select Sentence",
     description: "Select the sentence under the cursor",
-    details: "Selects the sentence under the KeyPilot cursor. Press again over the same sentence to deselect it. Exclusive mode replaces the current selection; cumulative mode adds or removes sentences.",
+    details: "Selects the sentence under the KeyPilot cursor. Press again over the same sentence to deselect it. Exclusive vs cumulative is a popover setting (shared, not per-key).",
     keyboardClass: null,
     row: null
   }),
@@ -5816,7 +5816,7 @@ var KEYBINDING_ACTION_DEFS = Object.freeze({
     handler: "handleSelectParagraphKey",
     label: "Select Paragraph",
     description: "Select the paragraph under the cursor",
-    details: "Selects the paragraph (or nearest block) under the KeyPilot cursor. Press again over the same block to deselect it. Exclusive mode replaces the current selection; cumulative mode adds or removes paragraphs.",
+    details: "Selects the paragraph (or nearest block) under the KeyPilot cursor. Press again over the same block to deselect it. Exclusive vs cumulative is a popover setting (shared, not per-key).",
     keyboardClass: null,
     row: null
   }),
@@ -5824,7 +5824,7 @@ var KEYBINDING_ACTION_DEFS = Object.freeze({
     handler: "handleSelectImageKey",
     label: "Select Image",
     description: "Select the image under the cursor",
-    details: "Selects the image under the KeyPilot cursor. Press again over the same image to deselect it. Exclusive mode replaces the current selection; cumulative mode adds or removes images. Copy can copy selected images.",
+    details: "Selects the image under the KeyPilot cursor. Press again over the same image to deselect it. Exclusive vs cumulative is a popover setting (shared, not per-key). Copy can copy selected images.",
     keyboardClass: null,
     row: null
   }),
@@ -8367,7 +8367,13 @@ var markdown = new MarkdownItCallable({
   linkify: true,
   typographer: true
 });
-markdown.validateLink = (url) => /^(https?:|chrome-extension:|mailto:|kp:|#)/i.test(String(url || "").trim());
+function isAllowedDocsHref(url) {
+  const s = String(url || "").trim();
+  if (/^(https?:|chrome-extension:|mailto:|kp:|#|data:)/i.test(s)) return true;
+  if (/^(\.\/)?(userdocs\/)?images\//i.test(s)) return true;
+  return false;
+}
+markdown.validateLink = (url) => isAllowedDocsHref(url);
 var defaultLinkOpen = markdown.renderer.rules.link_open || ((tokens, idx, options, _env, renderer) => renderer.renderToken(tokens, idx, options));
 markdown.renderer.rules.link_open = (tokens, idx, options, env, renderer) => {
   const href = tokens[idx].attrGet("href") || "";
@@ -8379,6 +8385,40 @@ markdown.renderer.rules.link_open = (tokens, idx, options, env, renderer) => {
 };
 markdown.renderer.rules.table_open = () => '<div class="table-scroll"><table>\n';
 markdown.renderer.rules.table_close = () => "</table></div>\n";
+var defaultImage = markdown.renderer.rules.image || ((tokens, idx, options, env, renderer) => renderer.renderToken(tokens, idx, options));
+markdown.renderer.rules.image = (tokens, idx, options, env, renderer) => {
+  const token = tokens[idx];
+  const src = String(token.attrGet("src") || "").trim();
+  if (src && !/^(https?:|chrome-extension:|data:)/i.test(src)) {
+    const cleaned = src.replace(/^\.\//, "").replace(/^userdocs\//, "");
+    const rel = cleaned.startsWith("images/") ? `userdocs/${cleaned}` : `userdocs/images/${cleaned}`;
+    try {
+      token.attrSet("src", chrome.runtime.getURL(rel));
+    } catch {
+      token.attrSet("src", rel);
+    }
+  }
+  token.attrSet("class", [token.attrGet("class") || "", "docs-shot"].filter(Boolean).join(" ").trim());
+  return defaultImage(tokens, idx, options, env, renderer);
+};
+function slugifyHeading(text2) {
+  return String(text2 || "").toLowerCase().trim().replace(/<[^>]+>/g, "").replace(/[`*_~]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+var defaultHeadingOpen = markdown.renderer.rules.heading_open || ((tokens, idx, options, _env, renderer) => renderer.renderToken(tokens, idx, options));
+markdown.renderer.rules.heading_open = (tokens, idx, options, env, renderer) => {
+  const token = tokens[idx];
+  if (token && !token.attrGet("id")) {
+    let title = "";
+    for (let i = idx + 1; i < tokens.length; i++) {
+      const t = tokens[i];
+      if (t.type === "heading_close") break;
+      if (t.type === "inline") title += t.content || "";
+    }
+    const id = slugifyHeading(title);
+    if (id) token.attrSet("id", id);
+  }
+  return defaultHeadingOpen(tokens, idx, options, env, renderer);
+};
 function renderMarkdown(md) {
   return markdown.render(String(md || ""));
 }
@@ -8635,7 +8675,19 @@ function selectDoc(id, articleHash) {
   activeId = doc.id;
   articleEl.innerHTML = doc.html || '<p class="muted">Empty document.</p>';
   renderNav();
+  bindDocsCopyPrompts(articleEl);
   scrollDocsArticleToHash(articleHash);
+}
+function bindDocsCopyPrompts(article) {
+  if (!article) return;
+  article.querySelectorAll("textarea.kp-docs-copy-prompt").forEach((el) => {
+    el.addEventListener("focus", () => {
+      try {
+        el.select();
+      } catch {
+      }
+    });
+  });
 }
 function scrollDocsArticleToHash(hash) {
   const id = String(hash || "").replace(/^#/, "").trim();

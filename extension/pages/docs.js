@@ -153,8 +153,15 @@ const markdown = new MarkdownIt({
   typographer: true
 });
 
-markdown.validateLink = (url) =>
-  /^(https?:|chrome-extension:|mailto:|kp:|#)/i.test(String(url || '').trim());
+function isAllowedDocsHref(url) {
+  const s = String(url || '').trim();
+  if (/^(https?:|chrome-extension:|mailto:|kp:|#|data:)/i.test(s)) return true;
+  // Docs screenshot slots: ![…](images/foo.png)
+  if (/^(\.\/)?(userdocs\/)?images\//i.test(s)) return true;
+  return false;
+}
+
+markdown.validateLink = (url) => isAllowedDocsHref(url);
 
 const defaultLinkOpen =
   markdown.renderer.rules.link_open ||
@@ -172,6 +179,56 @@ markdown.renderer.rules.link_open = (tokens, idx, options, env, renderer) => {
 
 markdown.renderer.rules.table_open = () => '<div class="table-scroll"><table>\n';
 markdown.renderer.rules.table_close = () => '</table></div>\n';
+
+const defaultImage =
+  markdown.renderer.rules.image ||
+  ((tokens, idx, options, env, renderer) => renderer.renderToken(tokens, idx, options));
+
+markdown.renderer.rules.image = (tokens, idx, options, env, renderer) => {
+  const token = tokens[idx];
+  const src = String(token.attrGet('src') || '').trim();
+  if (src && !/^(https?:|chrome-extension:|data:)/i.test(src)) {
+    const cleaned = src.replace(/^\.\//, '').replace(/^userdocs\//, '');
+    const rel = cleaned.startsWith('images/') ? `userdocs/${cleaned}` : `userdocs/images/${cleaned}`;
+    try {
+      token.attrSet('src', chrome.runtime.getURL(rel));
+    } catch {
+      token.attrSet('src', rel);
+    }
+  }
+  token.attrSet('class', [token.attrGet('class') || '', 'docs-shot'].filter(Boolean).join(' ').trim());
+  return defaultImage(tokens, idx, options, env, renderer);
+};
+
+function slugifyHeading(text) {
+  return String(text || '')
+    .toLowerCase()
+    .trim()
+    .replace(/<[^>]+>/g, '')
+    .replace(/[`*_~]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+const defaultHeadingOpen =
+  markdown.renderer.rules.heading_open ||
+  ((tokens, idx, options, _env, renderer) =>
+    renderer.renderToken(tokens, idx, options));
+
+markdown.renderer.rules.heading_open = (tokens, idx, options, env, renderer) => {
+  const token = tokens[idx];
+  if (token && !token.attrGet('id')) {
+    let title = '';
+    for (let i = idx + 1; i < tokens.length; i++) {
+      const t = tokens[i];
+      if (t.type === 'heading_close') break;
+      if (t.type === 'inline') title += t.content || '';
+    }
+    const id = slugifyHeading(title);
+    if (id) token.attrSet('id', id);
+  }
+  return defaultHeadingOpen(tokens, idx, options, env, renderer);
+};
 
 /**
  * @param {string} md
@@ -522,7 +579,21 @@ function selectDoc(id, articleHash) {
   activeId = doc.id;
   articleEl.innerHTML = doc.html || '<p class="muted">Empty document.</p>';
   renderNav();
+  bindDocsCopyPrompts(articleEl);
   scrollDocsArticleToHash(articleHash);
+}
+
+/**
+ * Readonly AI-prompt textareas: select all on focus so copy is one shortcut.
+ * @param {HTMLElement|null} article
+ */
+function bindDocsCopyPrompts(article) {
+  if (!article) return;
+  article.querySelectorAll('textarea.kp-docs-copy-prompt').forEach((el) => {
+    el.addEventListener('focus', () => {
+      try { el.select(); } catch { /* ignore */ }
+    });
+  });
 }
 
 /**

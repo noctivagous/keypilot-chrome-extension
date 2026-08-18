@@ -64,6 +64,7 @@ import {
   getFunctionCategory,
   getFunctionCategoryDescription,
   getFunctionDef,
+  getFunctionDocsUrl,
   isFunctionInstantiable,
   functionAssignableToKey,
   listFunctionDefs,
@@ -167,7 +168,7 @@ const CONFIG_PANEL_WIDTH_PX = 960;
 const CONFIG_PANEL_MIN_HEIGHT_PX = 460;
 const CONFIG_INSPECTOR_WIDTH_PX = 280;
 const CONFIG_STYLE_ATTR = 'data-kp-layout-config-panel-style';
-const CONFIG_STYLE_VERSION = 'v19';
+const CONFIG_STYLE_VERSION = 'v20';
 const CONFIG_ICON_SPRITE_ATTR = 'data-kp-layout-config-icons';
 const CONFIG_PLACE_ARROW_STYLE_ATTR = 'data-kp-layout-place-arrow-style';
 
@@ -214,6 +215,7 @@ const PLACE_ARROW_CSS = `
 const CONFIG_ICON_SYMBOLS = Object.freeze([
   ['kp-cfg-i-kb', 'M1 4h14v9H1V4zm2 2v2h2V6H3zm3 0v2h2V6H6zm3 0v2h2V6H9zm3 0v2h2V6h-2zM3 9v2h8V9H3z'],
   ['kp-cfg-i-lib', 'M2 2h4v12H2V2zm5 0h2v12H7V2zm3 1h4v11h-4V3z'],
+  ['kp-cfg-i-docs', 'M3 1.5h10v13H4.6A1.6 1.6 0 0 1 3 12.9V1.5zm1.5 2.5h7M4.5 7h7M4.5 9.5h5'],
   ['kp-cfg-i-create', 'M8 1l2 4h4l-3 3 1 5-4-2-4 2 1-5-3-3h4L8 1zm0 4l-.7 1.4H5.8l1.1.9-.4 1.5L8 8.2l1.5.6-.4-1.5 1.1-.9H8.7L8 5z'],
   ['kp-cfg-i-eye', 'M8 3c4 0 7 5 7 5s-3 5-7 5-7-5-7-5 3-5 7-5zm0 2a3 3 0 100 6 3 3 0 000-6zm0 2a1 1 0 110 2 1 1 0 010-2z'],
   ['kp-cfg-i-close', 'M3 2l5 5 5-5 1 1-5 5 5 5-1 1-5-5-5 5-1-1 5-5-5-5 1-1z'],
@@ -2456,6 +2458,38 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
   word-break: break-word;
   color: #d8e4f0;
 }
+.kp-layout-config-panel .kp-cfg-dock-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.kp-layout-config-panel .kp-cfg-dock-title-row .kp-cfg-dock-title {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.kp-layout-config-panel .kp-cfg-dock-docs {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #9ec0ff;
+  cursor: pointer;
+}
+.kp-layout-config-panel .kp-cfg-dock-docs:hover {
+  background: rgba(158, 192, 255, 0.12);
+  border-color: rgba(158, 192, 255, 0.35);
+}
+.kp-layout-config-panel .kp-cfg-dock-docs .kp-cfg-ico {
+  width: 13px;
+  height: 13px;
+}
 .kp-layout-config-panel .kp-cfg-assign-kbd {
   font-family: var(--kp-font-kbd, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
   font-size: var(--kp-type-kbd-size, 10px);
@@ -2975,6 +3009,17 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
   font-size: 10px;
   color: ${c.fgMute};
   line-height: 1.35;
+}
+.kp-layout-config-panel .kp-cfg-hint-link {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #3a6ea8;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }
 ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 
@@ -4779,12 +4824,32 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
   }
 
   /** Small helpers for the Inspector dock's shared chrome. */
-  _dockTitle(text, subtitle) {
+  _dockTitle(text, subtitle, opts = {}) {
     const frag = document.createDocumentFragment();
+    const docsUrl = String(opts.docsUrl || '').trim();
     const title = document.createElement('div');
     title.className = 'kp-cfg-dock-title';
     title.textContent = String(text || '');
-    frag.appendChild(title);
+    if (docsUrl) {
+      const row = document.createElement('div');
+      row.className = 'kp-cfg-dock-title-row';
+      row.appendChild(title);
+      const docsBtn = document.createElement('button');
+      docsBtn.type = 'button';
+      docsBtn.className = 'kp-cfg-dock-docs';
+      docsBtn.title = 'Open KeyPilot documentation for this action';
+      docsBtn.setAttribute('aria-label', 'Open documentation');
+      try { docsBtn.appendChild(mkCfgIcon(document, 'kp-cfg-i-docs')); } catch { /* ignore */ }
+      docsBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this._openFunctionDocs(docsUrl);
+      }, true);
+      row.appendChild(docsBtn);
+      frag.appendChild(row);
+    } else {
+      frag.appendChild(title);
+    }
     if (subtitle) {
       const sub = document.createElement('div');
       sub.className = 'kp-cfg-dock-subtitle';
@@ -4792,6 +4857,27 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       frag.appendChild(sub);
     }
     return frag;
+  }
+
+  /**
+   * Open Docs at a Function's kp:// docsUrl (closes Config so the docs popover can show).
+   * @param {string} docsUrl
+   */
+  _openFunctionDocs(docsUrl) {
+    const href = String(docsUrl || '').trim();
+    if (!href) return;
+    const kp = this._kp || (typeof window !== 'undefined' && window.__KeyPilotInstance) || null;
+    try {
+      if (kp && typeof kp.navigateKpDeepLink === 'function') {
+        kp.navigateKpDeepLink(href);
+        return;
+      }
+    } catch { /* ignore */ }
+    try {
+      if (kp && typeof kp.handleOpenDocsPopover === 'function') {
+        kp.handleOpenDocsPopover({ topicId: 'functions' });
+      }
+    } catch { /* ignore */ }
   }
 
   /** @param {Array<[string, string]>} pairs */
@@ -4967,7 +5053,9 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       return;
     }
 
-    host.appendChild(this._dockTitle(label, 'Stock function'));
+    host.appendChild(this._dockTitle(label, 'Stock function', {
+      docsUrl: def?.docsUrl || getFunctionDocsUrl(functionId)
+    }));
     const about = String(def?.description || actionDef?.description || binding?.description || '');
     const details = String(
       def?.details || actionDef?.details || binding?.details || ''
@@ -5312,7 +5400,18 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     if (def?.id === 'EXECUTE_JS') {
       const hint = document.createElement('p');
       hint.className = 'kp-cfg-hint';
-      hint.textContent = 'Bindings: kpHoveredClickable, kpHoverLeaf, kpFocusedTextField, kpMode, kpPageUrl, kpSelection, kpPriorResult. Callbacks are functions only when checked.';
+      hint.appendChild(document.createTextNode(
+        'Bindings: kpHoveredClickable, kpHoverLeaf, kpFocusedTextField, kpMode, kpPageUrl, kpSelection, kpPriorResult. Callbacks are functions only when checked. '
+      ));
+      const docsLink = document.createElement('button');
+      docsLink.type = 'button';
+      docsLink.className = 'kp-cfg-hint-link';
+      docsLink.textContent = 'Open Execute JS help';
+      docsLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        this._openFunctionDocs(def.docsUrl || getFunctionDocsUrl('EXECUTE_JS'));
+      }, true);
+      hint.appendChild(docsLink);
       host.appendChild(hint);
     }
     for (const { group, params } of groupFunctionParameters(def?.parameters)) {
@@ -5406,7 +5505,10 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
    */
   _renderMacroKeyEditorInto(host, macroKey) {
     this._macroKeyDraft = { ...macroKey, config: { ...(macroKey.config || {}) } };
-    host.appendChild(this._dockTitle(String(macroKey.label || macroKey.kind || 'Macro Key'), 'Macro Key'));
+    const mkFunctionId = FUNCTION_ID_BY_MACRO_KEY_KIND[macroKey.kind] || '';
+    host.appendChild(this._dockTitle(String(macroKey.label || macroKey.kind || 'Macro Key'), 'Macro Key', {
+      docsUrl: getFunctionDef(mkFunctionId)?.docsUrl || getFunctionDocsUrl(mkFunctionId)
+    }));
     host.appendChild(this._renderAssignmentTable({ type: 'function', id: macroKey.id }));
     host.appendChild(this._dockActions([{
       label: 'Place on keyboard',
@@ -5509,7 +5611,8 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 
     host.appendChild(this._dockTitle(
       String(instance.label || def.label),
-      summarizeFunctionParameters(instance.functionId, instance.parameters) || 'Configured instance'
+      summarizeFunctionParameters(instance.functionId, instance.parameters) || 'Configured instance',
+      { docsUrl: def.docsUrl || getFunctionDocsUrl(def.id) }
     ));
     host.appendChild(this._renderAssignmentTable({ type: 'function', id: instance.id }));
     if (functionAssignableToKey(def.id)) {

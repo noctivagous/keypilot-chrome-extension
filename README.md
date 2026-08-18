@@ -780,6 +780,13 @@ on the keyboard in specific places to make web navigation quick.
 
 
 
+
+
+
+
+
+
+
 ### Control Strip
 
 A compact macOS Control Strip–style bar sits in the upper-left of the viewport by default (dark GUI Pro styling, matching the keyboard reference panel).

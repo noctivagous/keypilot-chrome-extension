@@ -479,6 +479,55 @@ h1 {
   text-decoration: underline;
 }
 
+.docs-article img.docs-shot,
+.docs-article img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 12px 0 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.docs-article .kp-docs-ai-prompt {
+  margin: 0 0 18px;
+  padding: 12px 12px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.docs-article .kp-docs-ai-prompt label {
+  display: block;
+  font-size: 12px;
+  font-weight: 650;
+  color: rgba(220, 230, 240, 0.92);
+  margin-bottom: 8px;
+  line-height: 1.35;
+}
+
+.docs-article textarea.kp-docs-copy-prompt {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 12em;
+  resize: vertical;
+  margin: 0;
+  padding: 10px 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: calc(11.5px * var(--docs-font-scale, 1));
+  line-height: 1.4;
+  color: rgba(230, 236, 244, 0.95);
+  background: rgba(8, 10, 14, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+}
+
+.docs-article .kp-docs-ai-prompt .muted {
+  margin: 8px 0 0;
+}
+
 .docs-article .error {
   color: rgba(255, 150, 150, 0.95);
 }

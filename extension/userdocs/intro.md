@@ -4,6 +4,8 @@ KeyPilot adds keyboard shortcuts to regular web pages. Point at a link or button
 
 ## Basic usage
 
+![KeyPilot documentation popover](images/docs-intro.png)
+
 ### Clicking elements
 1. Move the pointer over a link. A focus rectangle appears on the target.
 2. Press <kbd>F</kbd> (default Browsing layout, right-handed) to click.

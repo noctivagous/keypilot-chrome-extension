@@ -1,6 +1,7 @@
 /**
  * TopSitesPopover
- * Overlay of common sites: Toolbar, Most Visited, Recent Bookmarks.
+ * Overlay of common sites: Toolbar, Most Visited, Recent Bookmarks,
+ * plus a KeyPilot tab with the extension-popup hub cards.
  * Default host is a transient PopupManager modal; optional persistent mode
  * remounts across pages like Keyboard Reference.
  */
@@ -47,27 +48,46 @@ import {
   PANEL_POSITION_MARGIN_PX
 } from '../utils/panel-position.js';
 import { storageGetValue, storageSetValue } from '../utils/storage.js';
+import {
+  KEYPILOT_HUB_CARDS,
+  KP_KEYBOARD_HELP_STORAGE_KEY,
+  ONBOARDING_ACTIVE_STORAGE_KEY,
+  createKeypilotHubCard,
+  refreshKeypilotHubCards,
+  setControlStripVisible,
+  setKeyboardHelpVisible
+} from '../ui/keypilot-hub.js';
 
 const TAB_STATE_KEY = 'kpTopSitesSelectedTab_v1';
 const POPUP_ID = 'kpv2-top-sites-popover';
 const DEFAULT_WIDTH_PX = 600;
-const DEFAULT_HEIGHT_PX = 338;
+const CARD_ROW_PX = 80;
+const CARD_GAP_PX = 12;
+const GRID_PAD_Y_PX = 24;
+const TITLEBAR_PX = 28;
+const TABSTRIP_PX = 44;
+const STATUS_PX = 22;
+const PANEL_BORDER_Y_PX = 2;
+const THREE_ROW_GRID_PX = CARD_ROW_PX * 3 + CARD_GAP_PX * 2 + GRID_PAD_Y_PX;
+const DEFAULT_HEIGHT_PX = TITLEBAR_PX + TABSTRIP_PX + STATUS_PX + THREE_ROW_GRID_PX + PANEL_BORDER_Y_PX + 8;
 const MIN_WIDTH_PX = 480;
-const MIN_HEIGHT_PX = 270;
+const MIN_HEIGHT_PX = TITLEBAR_PX + TABSTRIP_PX + STATUS_PX + THREE_ROW_GRID_PX + PANEL_BORDER_Y_PX;
 const POSITION_MARGIN_PX = PANEL_POSITION_MARGIN_PX;
 
-/** @typedef {'toolbar'|'mostVisited'|'recentBookmarks'} TopSitesTabId */
+/** @typedef {'toolbar'|'mostVisited'|'recentBookmarks'|'keypilot'} TopSitesTabId */
 
 const TABS = Object.freeze([
   Object.freeze({ id: 'toolbar', label: 'Toolbar' }),
   Object.freeze({ id: 'mostVisited', label: 'Most Visited' }),
-  Object.freeze({ id: 'recentBookmarks', label: 'Recent Bookmarks' })
+  Object.freeze({ id: 'recentBookmarks', label: 'Recent Bookmarks' }),
+  Object.freeze({ id: 'keypilot', label: 'KeyPilot' })
 ]);
 
 const EMPTY_COPY = Object.freeze({
   toolbar: 'No bookmarks on the Bookmarks bar.',
   mostVisited: 'No frequently visited sites yet.',
-  recentBookmarks: 'No recent bookmarks.'
+  recentBookmarks: 'No recent bookmarks.',
+  keypilot: 'No KeyPilot tools.'
 });
 
 const CARD_CLASS_NAMES = {
@@ -81,7 +101,8 @@ const CARD_CLASS_NAMES = {
   favicon: 'kp-url-favicon'
 };
 
-const GEAR_PATH = 'M495.9 166.1c3.3 12.7 .9 26.3-7.1 36.1l-37.3 45.7c2.1 11.1 3.2 22.6 3.2 34.3s-1.1 23.2-3.2 34.3l37.3 45.7c8 9.8 10.4 23.4 7.1 36.1c-6.3 24.2-17.7 46.6-33.1 66.3c-8.1 10.3-21.2 14.9-33.9 12.1l-57.5-12.7c-17.9 15.3-38.4 27.3-60.7 35.4l-13.7 57.5c-2.9 12.1-12.9 21.1-25.4 22.4c-24.2 2.6-49.1 2.6-73.3 0c-12.5-1.3-22.5-10.3-25.4-22.4l-13.7-57.5c-22.3-8.1-42.8-20.1-60.7-35.4L71.6 436.6c-12.7 2.8-25.8-1.8-33.9-12.1C22.3 404.8 10.9 382.4 4.6 358.2c-3.3-12.7-.9-26.3 7.1-36.1l37.3-45.7C46.9 265.2 45.8 253.7 45.8 242s1.1-23.2-3.2-34.3L11.7 161.9c-8-9.8-10.4-23.4-7.1-36.1C10.9 101.6 22.3 79.2 37.7 59.5c8.1-10.3 21.2-14.9 33.9-12.1l57.5 12.7c17.9-15.3 38.4-27.3 60.7-35.4L203.5-32.8c2.9-12.1 12.9-21.1-25.4-22.4c24.2-2.6 49.1-2.6 73.3 0c12.5 1.3 22.5 10.3 25.4 22.4l13.7 57.5c22.3 8.1 42.8 20.1 60.7 35.4l57.5-12.7c12.7-2.8 25.8 1.8 33.9 12.1c15.4 19.7 26.8 42.1 33.1 66.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z';
+/** Font Awesome Free solid "gear" — fallback if action icon URI unavailable. */
+const GEAR_PATH = 'M495.9 166.1c3.3 12.7 .9 26.3-7.1 36.1l-37.3 45.7c2.1 11.1 3.2 22.6 3.2 34.3s-1.1 23.2-3.2 34.3l37.3 45.7c8 9.8 10.4 23.4 7.1 36.1c-6.3 24.2-17.7 46.6-33.1 66.3c-8.1 10.3-21.2 14.9-33.9 12.1l-57.5-12.7c-17.9 15.3-38.4 27.3-60.7 35.4l-13.7 57.5c-2.9 12.1-12.9 21.1-25.4 22.4c-24.2 2.6-49.1 2.6-73.3 0c-12.5-1.3-22.5-10.3-25.4-22.4l-13.7-57.5c-22.3-8.1-42.8-20.1-60.7-35.4L71.6 436.6c-12.7 2.8-25.8-1.8-33.9-12.1C22.3 404.8 10.9 382.4 4.6 358.2c-3.3-12.7-.9-26.3 7.1-36.1l37.3-45.7c-2.1-11.1-3.2-22.6-3.2-34.3s1.1-23.2 3.2-34.3L11.7 161.9c-8-9.8-10.4-23.4-7.1-36.1C10.9 101.6 22.3 79.2 37.7 59.5c8.1-10.3 21.2-14.9 33.9-12.1l57.5 12.7c17.9-15.3 38.4-27.3 60.7-35.4L203.5 17.2c2.9-12.1 12.9-21.1 25.4-22.4c24.2-2.6 49.1-2.6 73.3 0c12.5 1.3 22.5 10.3 25.4 22.4l13.7 57.5c22.3 8.1 42.8 20.1 60.7 35.4l57.5-12.7c12.7-2.8 25.8 1.8 33.9 12.1c15.4 19.7 26.8 42.1 33.1 66.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z';
 
 /**
  * @param {{ url?: string, title?: string }} item
@@ -266,7 +287,7 @@ export class TopSitesPopover {
       return true;
     }
 
-    if (key === '1' || key === '2' || key === '3') {
+    if (key >= '1' && key <= '9') {
       const idx = Number(key) - 1;
       const tab = TABS[idx];
       if (tab) {
@@ -321,6 +342,12 @@ export class TopSitesPopover {
 
     if (key === 'Enter' || key === ' ') {
       const item = this._items[this._selectedIndex];
+      if (this._tab === 'keypilot' && item?.action) {
+        e.preventDefault();
+        e.stopPropagation();
+        void this._activateHubAction(item.action);
+        return true;
+      }
       if (item?.url) {
         e.preventDefault();
         e.stopPropagation();
@@ -400,6 +427,15 @@ export class TopSitesPopover {
   _onStorageChanged(changes, area) {
     try {
       if (area !== 'sync' && area !== 'local') return;
+      if (this._open && this._tab === 'keypilot') {
+        const help = changes?.[KP_KEYBOARD_HELP_STORAGE_KEY];
+        const onboarding = changes?.[ONBOARDING_ACTIVE_STORAGE_KEY];
+        const settingsEntry = changes?.[SETTINGS_STORAGE_KEY];
+        const cs = settingsEntry?.newValue?.controlStrip;
+        if (help || onboarding || (cs && typeof cs.visible === 'boolean')) {
+          void this._refreshHubStatus();
+        }
+      }
       const entry = changes && changes[SETTINGS_STORAGE_KEY];
       if (!entry || !entry.newValue) return;
       const next = entry.newValue;
@@ -411,6 +447,7 @@ export class TopSitesPopover {
           if (this._open) this._applyHost();
         }
       }
+
       const nextPos = next.panelPositions?.topSites;
       if (nextPos && typeof nextPos === 'object' && this._open && this._panel) {
         this._suppressPositionPersist = true;
@@ -464,8 +501,8 @@ export class TopSitesPopover {
     const w = Number(this._panelPosition?.width);
     const h = Number(this._panelPosition?.height);
     return {
-      width: Number.isFinite(w) && w > 0 ? w : DEFAULT_WIDTH_PX,
-      height: Number.isFinite(h) && h > 0 ? h : DEFAULT_HEIGHT_PX
+      width: Math.max(MIN_WIDTH_PX, Number.isFinite(w) && w > 0 ? w : DEFAULT_WIDTH_PX),
+      height: Math.max(MIN_HEIGHT_PX, Number.isFinite(h) && h > 0 ? h : DEFAULT_HEIGHT_PX)
     };
   }
 
@@ -837,6 +874,10 @@ export class TopSitesPopover {
         border-bottom: 1px solid ${c.panelEdgeDark};
       }
 
+      .kpv2-top-sites-panel .kpv2-ts-tab[data-tab-id="keypilot"] {
+        margin-left: auto;
+      }
+
       .kpv2-top-sites-panel .kpv2-ts-tab {
         appearance: none;
         -webkit-appearance: none;
@@ -1045,6 +1086,24 @@ export class TopSitesPopover {
         text-shadow: 0 1px 2px rgba(0,0,0,0.85);
       }
 
+      .kpv2-top-sites-panel .kp-hub-card .kp-hub-icon {
+        background-color: rgba(255,255,255,0.94);
+        background-image: none;
+        -webkit-mask: var(--kp-hub-icon) center / contain no-repeat;
+        mask: var(--kp-hub-icon) center / contain no-repeat;
+      }
+
+      .kpv2-top-sites-panel .kp-hub-card.is-on {
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,0.18),
+          0 0 0 2px ${c.litEdge},
+          0 6px 14px rgba(0,0,0,0.4);
+      }
+
+      .kpv2-top-sites-panel .kp-hub-card.is-on .kp-url-title {
+        color: #7dcea0;
+      }
+
       ${getNctDarkUiScrollbarCss({ scopeSelector: '.kpv2-top-sites-panel' })}
     `;
     const shadowRoot = this._panel?.shadowRoot || null;
@@ -1092,7 +1151,7 @@ export class TopSitesPopover {
     const tabstrip = doc.createElement('div');
     tabstrip.className = 'kpv2-ts-tabstrip';
     tabstrip.setAttribute('role', 'tablist');
-    tabstrip.setAttribute('aria-label', 'Top Sites lists');
+    tabstrip.setAttribute('aria-label', 'Top Sites and KeyPilot');
 
     for (const tab of TABS) {
       const btn = doc.createElement('button');
@@ -1228,6 +1287,11 @@ export class TopSitesPopover {
     this._grid.textContent = '';
     this._items = [];
 
+    if (this._tab === 'keypilot') {
+      this._renderHubCards();
+      return;
+    }
+
     let items = [];
     try {
       items = await this._fetchItems(this._tab);
@@ -1249,6 +1313,7 @@ export class TopSitesPopover {
    * @returns {Promise<Array<{title?: string, url?: string}>>}
    */
   async _fetchItems(tabId) {
+    if (tabId === 'keypilot') return [];
     if (tabId === 'toolbar') {
       const response = await chrome.runtime.sendMessage({ type: MSG.GET_BOOKMARKS });
       const bookmarks = Array.isArray(response?.bookmarks) ? response.bookmarks : [];
@@ -1319,6 +1384,72 @@ export class TopSitesPopover {
         }
       }
     });
+  }
+
+  _renderHubCards() {
+    if (!this._grid) return;
+    const doc = this._grid.ownerDocument || document;
+    this._grid.textContent = '';
+    this._items = KEYPILOT_HUB_CARDS.map((def) => ({ ...def }));
+    this._selectedIndex = 0;
+    this._status.textContent = `${KEYPILOT_HUB_CARDS.length} tools`;
+
+    KEYPILOT_HUB_CARDS.forEach((def, idx) => {
+      const row = createKeypilotHubCard(doc, def);
+      row.dataset.kpUrlListingIndex = String(idx);
+      if (idx === this._selectedIndex) {
+        row.classList.add('kp-url-row--selected');
+      }
+      row.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this._setSelectedIndex(idx);
+        void this._activateHubAction(def.action);
+      });
+      this._grid.appendChild(row);
+    });
+    void this._refreshHubStatus();
+  }
+
+  _refreshHubStatus() {
+    return refreshKeypilotHubCards(this._grid);
+  }
+
+  /**
+   * @param {import('../ui/keypilot-hub.js').KeypilotHubAction} action
+   */
+  async _activateHubAction(action) {
+    if (action === 'keyboard') {
+      const card = this._grid?.querySelector?.('[data-action="keyboard"]');
+      const next = card?.getAttribute('aria-checked') !== 'true';
+      try {
+        await setKeyboardHelpVisible(next);
+      } catch { /* ignore */ }
+      await this._refreshHubStatus();
+      return;
+    }
+    if (action === 'control-strip') {
+      const card = this._grid?.querySelector?.('[data-action="control-strip"]');
+      const next = card?.getAttribute('aria-checked') !== 'true';
+      try {
+        await setControlStripVisible(next);
+      } catch { /* ignore */ }
+      await this._refreshHubStatus();
+      return;
+    }
+
+    const type = action === 'settings'
+      ? MSG.OPEN_SETTINGS_POPOVER
+      : action === 'docs'
+        ? MSG.OPEN_DOCS_POPOVER
+        : action === 'tutorial'
+          ? MSG.OPEN_ONBOARDING
+          : null;
+    if (!type) return;
+    this.hide({ persistClosed: !this._persistent });
+    try {
+      await chrome.runtime.sendMessage({ type });
+    } catch { /* ignore */ }
   }
 
   /**

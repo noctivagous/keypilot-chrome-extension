@@ -4,12 +4,16 @@ Settings control appearance, scrolling, search engine, Control Strip, and which 
 
 ## Use it
 
+![Settings overview](images/settings-overview.png)
+
 1. Press <kbd>'</kbd> (quote), or open Settings from the Control Strip, popup, New Tab page, or Keyboard Reference dropdown.
 2. Pick a category in the left nav.
 3. Adjust controls — most apply immediately.
 4. Press <kbd>Esc</kbd> or the titlebar close control when finished.
 
 Start with [**Keyboard**](kp://settings/keyboard) (layout + handedness) and [**Scrolling**](kp://settings/scrolling) (<kbd>C</kbd>/<kbd>V</kbd> distance). Fine-tune [**Click Mode**](kp://settings/click-mode) and [**Text Mode**](kp://settings/text-mode) once the basics feel right.
+
+![Settings Keyboard tab](images/settings-keyboard.png)
 
 ## Reference
 

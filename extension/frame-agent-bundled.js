@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-18T20:36:29.173Z
+ * Generated on 2026-08-18T23:56:51.826Z
  */
 
 (() => {
@@ -669,7 +669,7 @@
       handler: "handleSelectWordKey",
       label: "Select Word",
       description: "Select the word under the cursor",
-      details: "Selects the word under the KeyPilot cursor. Press again over the same word to deselect it. Exclusive mode replaces the current selection; cumulative mode adds or removes words. Copy reads this selection.",
+      details: "Selects the word under the KeyPilot cursor. Press again over the same word to deselect it. Exclusive vs cumulative is a popover setting (shared, not per-key). Copy reads this selection.",
       keyboardClass: null,
       row: null
     }),
@@ -677,7 +677,7 @@
       handler: "handleSelectSentenceKey",
       label: "Select Sentence",
       description: "Select the sentence under the cursor",
-      details: "Selects the sentence under the KeyPilot cursor. Press again over the same sentence to deselect it. Exclusive mode replaces the current selection; cumulative mode adds or removes sentences.",
+      details: "Selects the sentence under the KeyPilot cursor. Press again over the same sentence to deselect it. Exclusive vs cumulative is a popover setting (shared, not per-key).",
       keyboardClass: null,
       row: null
     }),
@@ -685,7 +685,7 @@
       handler: "handleSelectParagraphKey",
       label: "Select Paragraph",
       description: "Select the paragraph under the cursor",
-      details: "Selects the paragraph (or nearest block) under the KeyPilot cursor. Press again over the same block to deselect it. Exclusive mode replaces the current selection; cumulative mode adds or removes paragraphs.",
+      details: "Selects the paragraph (or nearest block) under the KeyPilot cursor. Press again over the same block to deselect it. Exclusive vs cumulative is a popover setting (shared, not per-key).",
       keyboardClass: null,
       row: null
     }),
@@ -693,7 +693,7 @@
       handler: "handleSelectImageKey",
       label: "Select Image",
       description: "Select the image under the cursor",
-      details: "Selects the image under the KeyPilot cursor. Press again over the same image to deselect it. Exclusive mode replaces the current selection; cumulative mode adds or removes images. Copy can copy selected images.",
+      details: "Selects the image under the KeyPilot cursor. Press again over the same image to deselect it. Exclusive vs cumulative is a popover setting (shared, not per-key). Copy can copy selected images.",
       keyboardClass: null,
       row: null
     }),

@@ -29,18 +29,49 @@ Navigation · Tab Control · Begin URL · Get Page Data · Maps · Scroll · Sel
 
 ### Notable Functions
 
-- **Type Characters** — insert text (modifier-chord friendly while typing)
-- **Copy image / video / URL** — with destination choices
-- **Select Word / Sentence / Paragraph / Image** — Clipboard section; exclusive or cumulative under-cursor select, then Copy
-- **Font Info** — popover with family, size, file type, and download URL for the styled text under the cursor
-- **Get text/media under cursor**
-- **Lookup Word** — Free Dictionary API definition for the word under the cursor
-- **Translate**
-- **Send selection to AI** — instruction + result destination
-- **Add URL to Media Library**
-- **Fetch URL for Media Library** — download the linked file (PDF, video, audio, image)
-- **Execute JS** — custom script (see that topic)
-- **Macro Keys** — hotkey, burst, round-robin, continuous key, synthetic mouse, remaps
+<h3 id="type-characters">Type Characters</h3>
+
+Insert saved text into the focused field. Bind with a modifier chord so it can run while typing. Create one Action Instance per snippet.
+
+<h3 id="font-info">Font Info</h3>
+
+Popover with family, size, file type, and download URL for the styled text under the cursor, plus an outline of that text run.
+
+<h3 id="lookup-word">Lookup Word</h3>
+
+Free Dictionary API definition for the word under the cursor. Optional Ask AI source on the Action Instance when that path is available.
+
+<h3 id="translate">Translate</h3>
+
+Translate the highlight, or the word/sentence/paragraph under the cursor. Destination can replace page text or open a popover.
+
+<h3 id="send-text-to-ai">Send selection to AI</h3>
+
+Sends selected text with a configurable instruction. Route the result to the clipboard, a popover, or both.
+
+<h3 id="get-text-at-cursor">Get text / media under cursor</h3>
+
+**Get Text At Cursor** copies word, sentence, paragraph, or hyperlink text. **Get Media At Cursor** copies image, video, or audio under the cursor. **Get Text Range** is a Macro Step that passes the current highlight to the next step.
+
+<h3 id="show-popover">Show Popover</h3>
+
+Macro Step that displays the previous step’s result (or fallback text) in a result popover.
+
+<h3 id="poi">Map place (POI)</h3>
+
+When a map pin is under the cursor: **Place Website** opens the place page in Link Preview; **Place Address** copies the street address (txt or vCard).
+
+<h3 id="media-library-functions">Add / Fetch URL for Media Library</h3>
+
+**Add URL** stores the hovered href without downloading. **Fetch URL** downloads the linked file (PDF, audio, video, image) into Media Library.
+
+<h3 id="execute-js">Execute JS</h3>
+
+Custom script Function. Full bindings, callbacks, and an AI prompt: [Execute JS](kp://docs/execute-js).
+
+<h3 id="keystrokes">Macro Keys (keystrokes)</h3>
+
+Hotkey, burst, round-robin, continuous key, synthetic mouse, and remaps — instantiable keystroke Functions in the Actions Library. See [Keyboard Layout Config](kp://docs/layout-config).
 
 ### Stock vs user
 

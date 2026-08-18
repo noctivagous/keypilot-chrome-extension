@@ -8,7 +8,8 @@
     "build": "cd extension && node build.js",
     "build:macro-builder": "cd extension && node build.js --macro-builder",
     "build:minify": "cd extension && node build.js --minify",
-    "minify": "npm run build:minify"
+    "minify": "npm run build:minify",
+    "docs:screenshots": "node scripts/docs-screenshots/capture.mjs"
   },
   "dependencies": {
     "markdown-it": "^15.0.0",

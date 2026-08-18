@@ -940,8 +940,7 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
     }
   }
 
-  function updatePopupHtmlFile({ version }) {
-    const popupPath = path.resolve(process.cwd(), 'popup.html');
+  function stampPopupVersion(popupPath, version) {
     try {
       if (!fs.existsSync(popupPath)) return;
       const content = fs.readFileSync(popupPath, 'utf8');
@@ -959,6 +958,11 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
     } catch (err) {
       console.warn(`WARN: Failed to update popup version in ${popupPath}:`, err && err.message ? err.message : err);
     }
+  }
+
+  function updatePopupHtmlFile({ version }) {
+    stampPopupVersion(path.resolve(process.cwd(), 'popup.html'), version);
+    stampPopupVersion(path.resolve(process.cwd(), 'popup-v1.html'), version);
   }
 
   // Update manifest.json description with build date/time

@@ -50,7 +50,7 @@ Place **Select Word**, **Select Sentence**, **Select Paragraph**, or **Select Im
 3. Use **Copy** (or Cut) to send the KeyPilot selection to the clipboard.
 4. Press <kbd>Esc</kbd> to clear the selection.
 
-Each Function has a popover setting:
+Each Function shows Exclusive / Cumulative on its Keyboard Reference key-info popover (shared for that Function, not a per-key Action Instance).
 
 - **Exclusive** (default) — the press replaces the current selection.
 - **Cumulative** — add or remove units; disjoint ranges stay highlighted.

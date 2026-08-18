@@ -30,6 +30,7 @@ import {
 import { isChordSlotKey } from '../utils/key-chord.js';
 import { ACTION_RESULT_DESTINATIONS, buildResultDestinationParameter } from '../modules/action-result-delivery.js';
 import { isWordLookupAiAvailable } from '../modules/ai-text-service.js';
+import { buildKpDeepLink } from '../utils/kp-deep-link.js';
 
 /**
  * @typedef {{
@@ -101,7 +102,9 @@ import { isWordLookupAiAvailable } from '../modules/ai-text-service.js';
  *   // False when this Function is a Macro Step / result-routing primitive, not a key action.
  *   // Omitted or true: browsable and placeable in the Actions Library. Runtime still accepts
  *   // leftover key bindings so existing layouts keep working.
- *   assignableToKey?: boolean
+ *   assignableToKey?: boolean,
+ *   // In-extension docs deep link (kp://docs/<topic>[#hash]) for the Inspector docs icon.
+ *   docsUrl?: string
  * }} FunctionDef
  */
 
@@ -222,6 +225,18 @@ export const FIXED_KEY_FUNCTION_IDS = Object.freeze([
   'PAGE_BOTTOM',
   'PREVIEW_LINK_POPOVER',
   'OPEN_POPOVER'
+]);
+
+/**
+ * Placeable Clipboard select Functions. Exclusive/Cumulative lives on the key-info popover
+ * (canonical `action:builtin:<id>`), not on per-key Action Instances.
+ * @type {ReadonlyArray<string>}
+ */
+export const UNIT_SELECT_FUNCTION_IDS = Object.freeze([
+  'SELECT_WORD',
+  'SELECT_SENTENCE',
+  'SELECT_PARAGRAPH',
+  'SELECT_IMAGE'
 ]);
 
 /**
@@ -348,6 +363,104 @@ const BUILTIN_FUNCTION_PARAMETER_OVERRIDES = Object.freeze({
   ])
 });
 
+/**
+ * kp:// docs target for a Function. Topic pages when they exist; Functions & Actions
+ * headings otherwise. Unknown ids fall back to the Functions overview.
+ * @param {string} topicId
+ * @param {string} [hash]
+ * @returns {string}
+ */
+function docsUrl(topicId, hash) {
+  return buildKpDeepLink({ kind: 'docs', id: topicId, ...(hash ? { hash } : {}) });
+}
+
+/** @type {Readonly<Record<string, string>>} */
+const FUNCTION_DOCS_URL_BY_ID = Object.freeze({
+  ACTIVATE: docsUrl('browsing-click'),
+  ACTIVATE_NEW_TAB: docsUrl('browsing-click'),
+  ACTIVATE_NEW_TAB_BACKGROUND: docsUrl('browsing-click'),
+  PREVIEW_LINK_POPOVER: docsUrl('tools-previews'),
+  OPEN_POPOVER: docsUrl('tools-previews'),
+  FORWARD: docsUrl('browsing-tabs'),
+  BACK: docsUrl('browsing-tabs'),
+  BACK2: docsUrl('browsing-tabs'),
+  ROOT: docsUrl('browsing-tabs'),
+  CLOSE_TAB: docsUrl('browsing-tabs'),
+  TAB_LEFT: docsUrl('browsing-tabs'),
+  TAB_RIGHT: docsUrl('browsing-tabs'),
+  NEW_TAB: docsUrl('browsing-tabs'),
+  TAB_HISTORY: docsUrl('tools-tab-history'),
+  PAGE_UP_INSTANT: docsUrl('browsing-scroll'),
+  PAGE_DOWN_INSTANT: docsUrl('browsing-scroll'),
+  PAGE_TOP: docsUrl('browsing-scroll'),
+  PAGE_BOTTOM: docsUrl('browsing-scroll'),
+  SCROLL_LINE: docsUrl('browsing-scroll'),
+  HIGHLIGHT: docsUrl('browsing-select'),
+  RECTANGLE_HIGHLIGHT: docsUrl('browsing-select'),
+  COPY_HOVERED_IMAGE: docsUrl('media-copy'),
+  COPY_HOVERED_URL: docsUrl('media-copy'),
+  COPY_HOVERED_VIDEO: docsUrl('media-copy'),
+  FONT_INFO: docsUrl('functions', 'font-info'),
+  PAGE_MEDIA: docsUrl('media-page'),
+  DELETE: docsUrl('browsing-modes'),
+  COLS_TOGGLE: docsUrl('browsing-modes'),
+  OPEN_MEDIA_LIBRARY: docsUrl('media-library'),
+  CLIPBOARD_COPY: docsUrl('browsing-select'),
+  CLIPBOARD_CUT: docsUrl('browsing-select'),
+  CLIPBOARD_PASTE: docsUrl('browsing-select'),
+  CLIPBOARD_SELECT_ALL: docsUrl('browsing-select'),
+  SELECT_WORD: docsUrl('browsing-select'),
+  SELECT_SENTENCE: docsUrl('browsing-select'),
+  SELECT_PARAGRAPH: docsUrl('browsing-select'),
+  SELECT_IMAGE: docsUrl('browsing-select'),
+  SEND_TEXT_TO_AI: docsUrl('functions', 'send-text-to-ai'),
+  LAUNCHER: docsUrl('tools-launcher'),
+  TOP_SITES: docsUrl('tools-top-sites'),
+  OMNIBOX: docsUrl('tools-omnibox'),
+  TOGGLE_KEYBOARD_HELP: docsUrl('keyboard-reference'),
+  OPEN_SETTINGS_POPOVER: docsUrl('settings'),
+  CANCEL: docsUrl('browsing-modes'),
+  POI_WEBSITE: docsUrl('functions', 'poi'),
+  POI_ADDRESS: docsUrl('functions', 'poi'),
+  TYPE_CHARACTERS: docsUrl('functions', 'type-characters'),
+  EXECUTE_JS: docsUrl('execute-js'),
+  GET_TEXT_AT_CURSOR: docsUrl('functions', 'get-text-at-cursor'),
+  GET_TEXT_RANGE: docsUrl('functions', 'get-text-at-cursor'),
+  GET_MEDIA_AT_CURSOR: docsUrl('functions', 'get-text-at-cursor'),
+  LOOKUP_WORD: docsUrl('functions', 'lookup-word'),
+  TRANSLATE: docsUrl('functions', 'translate'),
+  SHOW_POPOVER: docsUrl('functions', 'show-popover'),
+  ADD_URL_TO_MEDIA_LIBRARY: docsUrl('functions', 'media-library-functions'),
+  FETCH_URL_FOR_MEDIA_LIBRARY: docsUrl('functions', 'media-library-functions'),
+  SEND_HOTKEY: docsUrl('functions', 'keystrokes'),
+  SEND_BURST: docsUrl('functions', 'keystrokes'),
+  CYCLE_ROUND_ROBIN: docsUrl('functions', 'keystrokes'),
+  HOLD_CONTINUOUS: docsUrl('functions', 'keystrokes'),
+  CLICK_MOUSE_BUTTON: docsUrl('functions', 'keystrokes'),
+  REMAP_KEY: docsUrl('functions', 'keystrokes')
+});
+
+const DEFAULT_FUNCTION_DOCS_URL = docsUrl('functions');
+
+/**
+ * @param {string} functionId
+ * @returns {string}
+ */
+export function getFunctionDocsUrl(functionId) {
+  const id = String(functionId || '');
+  return FUNCTION_DOCS_URL_BY_ID[id] || DEFAULT_FUNCTION_DOCS_URL;
+}
+
+/**
+ * @param {FunctionDef} def
+ * @returns {FunctionDef}
+ */
+function withDocsUrl(def) {
+  if (!def || !def.id) return def;
+  const url = getFunctionDocsUrl(def.id);
+  return Object.freeze({ ...def, docsUrl: url });
+}
+
 /** Category used for Functions generalized from macro-key kinds. */
 const KEYSTROKE_FUNCTION_CATEGORY = 'Keystrokes';
 
@@ -402,7 +515,7 @@ function buildKeystrokeFunctionDefs() {
   for (const kindDef of MACRO_KEY_KIND_DEFS) {
     const functionId = FUNCTION_ID_BY_MACRO_KEY_KIND[kindDef.id];
     if (!functionId) continue;
-    out[functionId] = Object.freeze({
+    out[functionId] = withDocsUrl(Object.freeze({
       id: functionId,
       label: kindDef.label,
       description: kindDef.description,
@@ -417,7 +530,7 @@ function buildKeystrokeFunctionDefs() {
         Object.freeze({ id: 'config', label: 'Configuration', type: 'string' })
       ]),
       legacyMacroKeyKind: kindDef.id
-    });
+    }));
   }
   return out;
 }
@@ -525,7 +638,7 @@ function buildBuiltinActionFunctionDefs() {
   const out = {};
   for (const [id, def] of Object.entries(KEYBINDING_ACTION_DEFS)) {
     if (isBuildExcludedKeyAction(id)) continue;
-    out[id] = Object.freeze({
+    out[id] = withDocsUrl(Object.freeze({
       id,
       label: def.label,
       description: def.description,
@@ -544,7 +657,7 @@ function buildBuiltinActionFunctionDefs() {
       ...(def.pointerBinding ? { pointerBinding: def.pointerBinding } : {}),
       ...(BUILTIN_FUNCTION_DATA_TAGS[id] || {}),
       ...(BUILTIN_FUNCTION_PARAMETER_OVERRIDES[id] ? { parameters: BUILTIN_FUNCTION_PARAMETER_OVERRIDES[id] } : {})
-    });
+    }));
   }
   return out;
 }
@@ -720,9 +833,11 @@ function buildDataAcquisitionFunctionDefs() {
 export const FUNCTION_LIBRARY = Object.freeze({
   ...buildBuiltinActionFunctionDefs(),
   ...buildKeystrokeFunctionDefs(),
-  [TYPE_CHARACTERS_FUNCTION_DEF.id]: TYPE_CHARACTERS_FUNCTION_DEF,
-  [EXECUTE_JS_FUNCTION_DEF.id]: EXECUTE_JS_FUNCTION_DEF,
-  ...buildDataAcquisitionFunctionDefs()
+  [TYPE_CHARACTERS_FUNCTION_DEF.id]: withDocsUrl(TYPE_CHARACTERS_FUNCTION_DEF),
+  [EXECUTE_JS_FUNCTION_DEF.id]: withDocsUrl(EXECUTE_JS_FUNCTION_DEF),
+  ...Object.fromEntries(
+    Object.entries(buildDataAcquisitionFunctionDefs()).map(([id, def]) => [id, withDocsUrl(def)])
+  )
 });
 
 /** Stable category display order for the Functions browser. */
@@ -899,6 +1014,9 @@ export function isFunctionInstantiable(functionId) {
   // LOOKUP_WORD keeps a gated `source` param for a future AI path; until AI is available
   // there is nothing to configure, so treat it as a stock zero-config Function.
   if (functionId === 'LOOKUP_WORD' && !isWordLookupAiAvailable()) return false;
+  // Select Word / Sentence / Paragraph / Image: Exclusive|Cumulative is a shared popover
+  // setting, not a reason to mint per-key Action Instances.
+  if (UNIT_SELECT_FUNCTION_IDS.includes(functionId)) return false;
   return true;
 }
 

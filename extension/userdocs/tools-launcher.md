@@ -4,6 +4,8 @@ Launcher is a categorized site browser with search, bookmarks, history, and an e
 
 ## Use it
 
+![Launcher](images/launcher.png)
+
 1. Press <kbd>Alt</kbd>+<kbd>;</kbd> or <kbd>Alt</kbd>+<kbd>A</kbd> to open Launcher with search focused.
 2. Type to filter, or browse categories (Launch Deck, Bookmarks, Recent, Social, News, Productivity, Videos, Entertainment, Shopping, AI, Internet Archive, Searches, and more).
 3. Open a site from the grid or list.

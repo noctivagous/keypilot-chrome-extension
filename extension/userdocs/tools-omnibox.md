@@ -4,6 +4,8 @@ Omnibox is an on-page address/search box with history and bookmark suggestions.
 
 ## Use it
 
+![Omnibox](images/omnibox.png)
+
 1. Press <kbd>L</kbd> (default Browsing) or <kbd>Alt</kbd>+<kbd>L</kbd>.
 2. Type a URL or search query.
 3. Use <kbd>↑</kbd>/<kbd>↓</kbd> or the pointer to pick a suggestion.

@@ -83,7 +83,7 @@ import {
 import { getOrCreateBuiltinFunctionUserAction, getUserKeyboardLayoutById, getUserActionById, getUserMacroById, listUserActions, listUserMacros } from './modules/keyboard-layout-store.js';
 import { runLegacyMacroKeyFunction } from './modules/macro-key-runtime.js';
 import { runUserExecuteJs, stringifyExecuteJsValue } from './modules/execute-js-runtime.js';
-import { getFunctionDef, functionWorksWhileTyping, functionCancelsOnPointerDown, FIXED_KEY_FUNCTION_IDS } from './config/function-library.js';
+import { getFunctionDef, functionWorksWhileTyping, functionCancelsOnPointerDown, FIXED_KEY_FUNCTION_IDS, UNIT_SELECT_FUNCTION_IDS } from './config/function-library.js';
 import { getStockMacroById, resolveMacroById } from './config/stock-macros.js';
 import { chordSlotKeyFromEvent } from './utils/key-chord.js';
 import { getTextAtPoint } from './utils/text-at-point.js';
@@ -1233,7 +1233,7 @@ export class KeyPilot extends EventManager {
 
   /** Built-in Function ids read via {@link _getBuiltinFunctionActionParams} in hot key handlers. */
   static get BUILTIN_FUNCTION_ACTION_IDS() {
-    return FIXED_KEY_FUNCTION_IDS;
+    return [...FIXED_KEY_FUNCTION_IDS, ...UNIT_SELECT_FUNCTION_IDS];
   }
 
   /**
@@ -6705,10 +6705,10 @@ export class KeyPilot extends EventManager {
 
   /**
    * @param {'word'|'sentence'|'paragraph'} kind
-   * @param {Record<string, any>|undefined} parameters
+   * @param {Record<string, any>|undefined} [_parameters]
    * @param {string} functionId
    */
-  _toggleTextUnit(kind, parameters, functionId) {
+  _toggleTextUnit(kind, _parameters, functionId) {
     const pt = this._lastMousePoint();
     if (!pt) {
       this.showFlashNotification('No cursor position available', COLORS.NOTIFICATION_INFO);
@@ -6720,9 +6720,7 @@ export class KeyPilot extends EventManager {
       this.showFlashNotification(`No ${kind} under cursor`, COLORS.NOTIFICATION_INFO);
       return;
     }
-    const params = parameters && Object.keys(parameters).length
-      ? parameters
-      : this._getBuiltinFunctionActionParams(functionId);
+    const params = this._getBuiltinFunctionActionParams(functionId);
     const mode = getActionMode(params, functionId) === 'cumulative' ? 'cumulative' : 'exclusive';
     const result = this.unitSelection.toggle(unit, mode);
     this.emitAction('select_unit', { kind, mode, added: result.added, removed: result.removed, count: result.count });
@@ -6740,7 +6738,7 @@ export class KeyPilot extends EventManager {
     this._toggleTextUnit('paragraph', parameters, 'SELECT_PARAGRAPH');
   }
 
-  handleSelectImageKey(_e, parameters) {
+  handleSelectImageKey(_e, _parameters) {
     const pt = this._lastMousePoint();
     if (!pt) {
       this.showFlashNotification('No cursor position available', COLORS.NOTIFICATION_INFO);
@@ -6752,9 +6750,7 @@ export class KeyPilot extends EventManager {
       this.showFlashNotification('No image under cursor', COLORS.NOTIFICATION_INFO);
       return;
     }
-    const params = parameters && Object.keys(parameters).length
-      ? parameters
-      : this._getBuiltinFunctionActionParams('SELECT_IMAGE');
+    const params = this._getBuiltinFunctionActionParams('SELECT_IMAGE');
     const mode = getActionMode(params, 'SELECT_IMAGE') === 'cumulative' ? 'cumulative' : 'exclusive';
     const result = this.unitSelection.toggle(unit, mode);
     this.emitAction('select_unit', { kind: 'image', mode, added: result.added, removed: result.removed, count: result.count });

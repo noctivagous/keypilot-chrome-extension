@@ -4,6 +4,8 @@ The Control Strip is a small always-visible bar for toggling KeyPilot, opening t
 
 ## Use it
 
+![Control Strip](images/control-strip.png)
+
 1. Find the strip on the page (draggable). If it's gone, press <kbd>Alt</kbd>+<kbd>J</kbd> to restore it.
 2. Use it to:
    - Turn KeyPilot **On/Off**
