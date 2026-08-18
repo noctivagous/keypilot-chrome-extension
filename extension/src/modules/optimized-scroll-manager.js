@@ -185,7 +185,8 @@ export class OptimizedScrollManager {
     let didOverlayWork = false;
 
     // Highlight: dashed selection rect + carets are document-anchored fixed layers.
-    if (mode === 'highlight' && this.onScrollFrame) {
+    // Unit-select overlays (Select Word/Image) are also viewport-fixed.
+    if (this.onScrollFrame) {
       try {
         this.onScrollFrame();
         didOverlayWork = true;

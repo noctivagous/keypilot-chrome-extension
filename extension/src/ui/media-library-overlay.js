@@ -1,6 +1,6 @@
 /**
  * Media Library overlay — personal scrapbook gallery (M key).
- * Left column: media types + domain children under Images, Videos, and URLs.
+ * Left column: media types + domain children under Images, Videos, Documents, and URLs.
  * DOM-only (TrustedHTML-safe). Prefixes: kpv2-media-lib-*.
  */
 
@@ -48,8 +48,8 @@ let _notify = () => {};
 let _kind = 'image';
 /** @type {string} */
 let _domain = '';
-/** @type {{ image: boolean, video: boolean, url: boolean }} */
-let _navExpanded = { image: true, video: true, url: true };
+/** @type {{ image: boolean, video: boolean, document: boolean, url: boolean }} */
+let _navExpanded = { image: true, video: true, document: true, url: true };
 /** @type {import('../utils/media-library-service.js').MediaLibraryItemMeta[]} */
 let _items = [];
 /** @type {Array<{ domain: string, count: number }>} */
@@ -76,7 +76,7 @@ function emptyCounts() {
 }
 
 function kindHasGallery(kind) {
-  return kind === 'image' || kind === 'url' || kind === 'video';
+  return kind === 'image' || kind === 'url' || kind === 'video' || kind === 'document';
 }
 
 function getOverlayRoot() {
@@ -463,9 +463,17 @@ function renderSidebar() {
   sidebar.appendChild(buildKindTab({
     kind: 'document',
     label: 'Documents',
-    count: _counts.document,
-    enabled: false
+    count: _counts.document || 0,
+    enabled: true,
+    expandable: true,
+    expanded: !!_navExpanded.document
   }));
+
+  if (_navExpanded.document && _kind === 'document') {
+    for (const { domain, count } of _domains) {
+      sidebar.appendChild(buildDomainRow(domain, count));
+    }
+  }
 }
 
 /**
@@ -587,6 +595,10 @@ function renderGrid() {
         ? (_domain
           ? `No videos from ${_domain}`
           : 'No videos yet. Set Copy Video destination to Media Library or Both.')
+      : _kind === 'document'
+        ? (_domain
+          ? `No documents from ${_domain}`
+          : 'No documents yet. Use Fetch URL for Media Library or send from Page Media.')
       : (_domain
         ? `No images from ${_domain}`
         : 'No images yet. Send from Page Media (O) or set Copy Image destination to Media Library.');
@@ -661,10 +673,12 @@ function buildCard(item) {
 
   const isUrl = item.kind === 'url';
   const isVideo = item.kind === 'video';
+  const isDoc = item.kind === 'document';
   const wrap = document.createElement('div');
   wrap.className = 'kpv2-media-lib-thumb-wrap';
   if (isUrl) wrap.classList.add('is-url');
   if (isVideo) wrap.classList.add('is-video');
+  if (isDoc) wrap.classList.add('is-document');
   const img = document.createElement('img');
   img.className = 'kpv2-media-lib-thumb';
   img.alt = '';
@@ -675,12 +689,12 @@ function buildCard(item) {
   } else {
     const ph = document.createElement('span');
     ph.className = 'kpv2-media-lib-placeholder';
-    ph.textContent = isUrl ? 'URL' : (isVideo ? 'VID' : String(item.ext || 'IMG'));
+    ph.textContent = isUrl ? 'URL' : (isVideo ? 'VID' : String(item.ext || (isDoc ? 'DOC' : 'IMG')));
     wrap.appendChild(ph);
   }
 
   const sourceHost = String(item.sourceDomain || item.domain || '').trim();
-  const selectLabel = `Select ${sourceHost || (isUrl ? 'URL' : isVideo ? 'video' : 'image')}`;
+  const selectLabel = `Select ${sourceHost || (isUrl ? 'URL' : isVideo ? 'video' : isDoc ? 'document' : 'image')}`;
 
   const selectBtn = document.createElement('button');
   selectBtn.type = 'button';
@@ -700,7 +714,9 @@ function buildCard(item) {
     ? `Open ${sourceHost || 'URL'}`
     : isVideo
       ? `Play ${sourceHost || 'video'}`
-      : `Open ${sourceHost || 'image'}`);
+      : isDoc
+        ? `Open ${sourceHost || 'document'}`
+        : `Open ${sourceHost || 'image'}`);
   wrap.appendChild(openBtn);
   wrap.appendChild(buildHoverActions(item));
 
@@ -714,12 +730,12 @@ function buildCard(item) {
   metaRow.className = 'kpv2-media-lib-meta-row';
   const typeBadge = document.createElement('span');
   typeBadge.className = 'kpv2-media-lib-badge';
-  typeBadge.textContent = String(item.ext || (isUrl ? 'URL' : isVideo ? 'VID' : 'IMG'));
+  typeBadge.textContent = String(item.ext || (isUrl ? 'URL' : isVideo ? 'VID' : isDoc ? 'DOC' : 'IMG'));
   const dimBadge = document.createElement('span');
   dimBadge.className = 'kpv2-media-lib-badge kpv2-media-lib-badge-dims';
   const w = Number(item.width) || 0;
   const h = Number(item.height) || 0;
-  dimBadge.textContent = isUrl ? 'LINK' : (w > 0 && h > 0 ? `${w}×${h}` : '—');
+  dimBadge.textContent = isUrl ? 'LINK' : (isDoc ? 'FILE' : (w > 0 && h > 0 ? `${w}×${h}` : '—'));
   metaRow.appendChild(typeBadge);
   metaRow.appendChild(dimBadge);
 
@@ -748,7 +764,7 @@ function buildCard(item) {
   const dpi = document.createElement('span');
   dpi.className = 'kpv2-media-lib-dpi';
   const dpiVal = Number(item.dpi) || 0;
-  dpi.textContent = isUrl || isVideo ? '' : (dpiVal > 0 ? `${Math.round(dpiVal)} dpi` : '—');
+  dpi.textContent = isUrl || isVideo || isDoc ? '' : (dpiVal > 0 ? `${Math.round(dpiVal)} dpi` : '—');
   sizeRow.appendChild(size);
   sizeRow.appendChild(dpi);
   info.appendChild(sizeRow);
@@ -811,8 +827,11 @@ function buildHoverActions(item) {
     ? 'Copy URL'
     : isVideoItem(item)
       ? (item.thumbDataUrl ? 'Copy frame' : 'Copy video URL')
-      : 'Copy to pasteboard', () => copyLibraryItem(item)));
-  if (isUrlItem(item) || (isVideoItem(item) && isHttpUrl(item.sourceUrl))) {
+      : isDocumentItem(item)
+        ? (item.sourceUrl ? 'Copy URL' : 'Copy file name')
+        : 'Copy to pasteboard', () => copyLibraryItem(item)));
+  if (isUrlItem(item) || (isVideoItem(item) && isHttpUrl(item.sourceUrl))
+    || (isDocumentItem(item) && isHttpUrl(item.sourceUrl))) {
     bar.appendChild(mk('Open', 'Open in a new tab', async () => openStoredUrl(item)));
   }
   bar.appendChild(mk('Download', (isUrlItem(item) || isVideoShortcut(item))
@@ -827,6 +846,10 @@ function isUrlItem(item) {
 
 function isVideoItem(item) {
   return item?.kind === 'video';
+}
+
+function isDocumentItem(item) {
+  return item?.kind === 'document';
 }
 
 function isVideoShortcut(item) {
@@ -983,6 +1006,17 @@ async function copyLibraryItem(item) {
     _notify('Could not copy video', 'error');
     return;
   }
+  if (item?.kind === 'document') {
+    if (item.sourceUrl && navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(item.sourceUrl);
+        _notify('Document URL copied', 'success');
+        return;
+      } catch { /* ignore */ }
+    }
+    _notify('Could not copy document', 'error');
+    return;
+  }
   const result = await getMediaLibraryOriginal(item.id);
   const blob = result?.blob;
   if (!(blob instanceof Blob) || blob.size <= 0) {
@@ -1034,14 +1068,22 @@ function libraryDownloadFilename(item) {
     host = host.replace(/[\\/:*?"<>|]+/g, '_').slice(0, 80);
     return `${host}.url`;
   }
-  const ext = String(item.ext || (item?.kind === 'video' ? 'mp4' : 'img')).toLowerCase();
+  const ext = String(item.ext || (
+    item?.kind === 'video' ? 'mp4' : item?.kind === 'document' ? 'bin' : 'img'
+  )).toLowerCase();
   let base = '';
   try {
     const u = new URL(String(item.sourceUrl || ''));
     base = decodeURIComponent((u.pathname || '').split('/').pop() || '');
   } catch { /* ignore */ }
-  if (!base) base = String(item.id || (item?.kind === 'video' ? 'video' : 'image')).replace(/^ml_/, '');
-  base = base.replace(/[\\/:*?"<>|]+/g, '_').slice(0, 120) || (item?.kind === 'video' ? 'video' : 'image');
+  if (!base) {
+    base = String(item.id || (
+      item?.kind === 'video' ? 'video' : item?.kind === 'document' ? 'document' : 'image'
+    )).replace(/^ml_/, '');
+  }
+  base = base.replace(/[\\/:*?"<>|]+/g, '_').slice(0, 120) || (
+    item?.kind === 'video' ? 'video' : item?.kind === 'document' ? 'document' : 'image'
+  );
   if (ext && !new RegExp(`\\.${ext}$`, 'i').test(base)) base += `.${ext}`;
   return base;
 }
@@ -1154,7 +1196,10 @@ async function zipCurrentView() {
     return;
   }
   downloadBlob(result.blob, result.filename || (
-    _kind === 'url' ? 'URLs.zip' : _kind === 'video' ? 'Videos.zip' : 'Images.zip'
+    _kind === 'url' ? 'URLs.zip'
+      : _kind === 'video' ? 'Videos.zip'
+        : _kind === 'document' ? 'Documents.zip'
+          : 'Images.zip'
   ));
   _notify('Download started', 'success');
 }
@@ -1204,6 +1249,7 @@ async function openFullView(id) {
 
   const listed = _items.find((it) => it.id === id) || null;
   const isVideo = listed?.kind === 'video' || _kind === 'video';
+  const isDoc = listed?.kind === 'document' || _kind === 'document';
 
   revokeFullObjectUrl();
   host.replaceChildren();
@@ -1211,6 +1257,12 @@ async function openFullView(id) {
 
   if (isVideo) {
     const ok = await mountFullVideo(host, id, listed);
+    if (!ok) {
+      _fullViewId = null;
+      return;
+    }
+  } else if (isDoc) {
+    const ok = await mountFullDocument(host, id, listed);
     if (!ok) {
       _fullViewId = null;
       return;
@@ -1304,6 +1356,37 @@ async function mountFullVideo(host, id, listed) {
     host.appendChild(openLink);
   }
 
+  return true;
+}
+
+/**
+ * Preview a stored document (PDF / text) or start a download for other types.
+ * @param {HTMLElement} host
+ * @param {string} id
+ * @param {import('../utils/media-library-service.js').MediaLibraryItemMeta|null} listed
+ * @returns {Promise<boolean>}
+ */
+async function mountFullDocument(host, id, listed) {
+  const result = await getMediaLibraryOriginal(id);
+  const blob = result?.blob;
+  const meta = result?.item || listed;
+  if (!result?.success || !(blob instanceof Blob) || blob.size <= 0) {
+    _notify(result?.error || 'Could not open document', 'error');
+    return false;
+  }
+  const mime = String(meta?.mime || blob.type || '').toLowerCase().split(';')[0].trim();
+  const previewable = mime === 'application/pdf' || mime.startsWith('text/');
+  if (!previewable) {
+    downloadBlob(blob, libraryDownloadFilename(meta || listed || { id, kind: 'document' }));
+    _notify('Download started', 'success');
+    return false;
+  }
+  _fullObjectUrl = URL.createObjectURL(blob);
+  const frame = document.createElement('iframe');
+  frame.className = 'kpv2-media-lib-fullframe';
+  frame.title = meta?.ext || 'Document';
+  frame.src = _fullObjectUrl;
+  host.appendChild(frame);
   return true;
 }
 
@@ -1590,7 +1673,8 @@ ${getNctDarkUiScrollbarCss()}
   color: ${c.fgMute};
 }
 .kpv2-media-lib-thumb-wrap.is-url,
-.kpv2-media-lib-thumb-wrap.is-video {
+.kpv2-media-lib-thumb-wrap.is-video,
+.kpv2-media-lib-thumb-wrap.is-document {
   background: #161616;
 }
 .kpv2-media-lib-select {
@@ -1792,6 +1876,13 @@ ${getNctDarkUiScrollbarCss()}
   max-width: 90vw;
   max-height: 80vh;
   background: #000;
+}
+.kpv2-media-lib-fullframe {
+  width: 90vw;
+  height: 85vh;
+  border: 0;
+  background: #111;
+  border-radius: 3px;
 }
 .kpv2-media-lib-openlink {
   color: ${c.accent};

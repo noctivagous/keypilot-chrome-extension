@@ -107,6 +107,10 @@ export const CSS_CLASSES = {
   COLS_CLOSE_BTN: 'kpv2-cols-close-btn',
   HIGHLIGHT_OVERLAY: 'kpv2-highlight-overlay',
   HIGHLIGHT_SELECTION: 'kpv2-highlight-selection',
+  /** Overlay boxes for Select Image (and text fallback when CSS Highlight is unavailable) */
+  UNIT_SELECT_OVERLAY: 'kpv2-unit-select-overlay',
+  /** Outline around the Font Info inspected text run */
+  FONT_INFO_OUTLINE: 'kpv2-font-info-outline',
   /** Persistent outline for elements added in cumulative inspector pick */
   INSPECTOR_PICKED: 'kpv2-inspector-picked',
   INSPECTOR_PICKED_OVERLAY: 'kpv2-inspector-picked-overlay',
@@ -238,7 +242,9 @@ export const Z_INDEX = {
  * (`scroll-at-point.js`): nested overflow under the pointer first (vertical,
  * or horizontal when that container scrolls on X), then the document. Iframes
  * are forwarded via the light frame-click-agent (KP_FRAME_SCROLL).
- * Z / X default to a Fade jump: cover that overflow box, instant-scroll, uncover.
+ * Z / X default to a Fade jump: cover that overflow box, force an instant
+ * scroll (not CSSOM `behavior: auto`, which follows CSS `scroll-behavior`),
+ * wait until the scroller settles, then uncover.
  *
  * Cross-frame pointer/focus: child agents post KP_FRAME_POINTER so top lastMouse
  * stays accurate over iframes; KP_FRAME_FOCUS_RECLAIM returns keyboard ownership
@@ -264,6 +270,12 @@ export const SCROLL = Object.freeze({
   BEHAVIOR: 'smooth',
   /** Fade-in / fade-out duration for Scroll To Top / Bottom "Fade" jump style */
   EDGE_JUMP_FADE_MS: 180,
+  /**
+   * After the instant jump, keep the veil opaque until scroll position is
+   * stable (or this timeout). Covers CSS `scroll-behavior: smooth` and
+   * Lenis-style hijacks that keep interpolating after scrollTo returns.
+   */
+  EDGE_JUMP_SETTLE_MS: 480,
   /** Scroll Line: no scroll inside this radius from the origin dot */
   LINE_DEADZONE_PX: 12,
   /**
@@ -410,6 +422,11 @@ export const COLORS = {
   // Highlight selection colors
   HIGHLIGHT_SELECTION_BG: 'rgba(0,120,255,0.3)',
   HIGHLIGHT_SELECTION_BORDER: 'rgba(0,120,255,0.6)',
+
+  // Font Info inspected-run outline (stroke, not Text Select fill)
+  FONT_INFO_OUTLINE: 'rgba(255, 193, 7, 0.95)',
+  FONT_INFO_OUTLINE_SHADOW: 'rgba(255, 193, 7, 0.45)',
+  FONT_INFO_OUTLINE_FILL: 'rgba(255, 193, 7, 0.08)',
 
   // Solid accents for ESC exit labels (distinct from translucent overlay borders)
   ORANGE_BG: 'rgba(255, 165, 0, 0.9)',

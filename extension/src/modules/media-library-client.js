@@ -160,6 +160,72 @@ export async function addVideoToMediaLibrary(input) {
 }
 
 /**
+ * Store a document / audio / other file (`kind: 'document'`).
+ * Prefer SW fetch of http(s) URLs; only inline small page-captured blobs.
+ *
+ * @param {{
+ *   blob?: Blob,
+ *   dataUrl?: string,
+ *   mime?: string,
+ *   sourceUrl?: string,
+ *   pageUrl?: string
+ * }} input
+ * @returns {Promise<{ success: boolean, duplicate: boolean, item?: any, error?: string }>}
+ */
+export async function addDocumentToMediaLibrary(input) {
+  const sourceUrl = String(input?.sourceUrl || '').trim();
+  const canSwFetch = isServiceWorkerFetchableVideoUrl(sourceUrl);
+
+  let dataUrl = typeof input?.dataUrl === 'string' ? input.dataUrl : '';
+  const fileBlob = input?.blob instanceof Blob && input.blob.size > 0 ? input.blob : null;
+
+  if (!dataUrl && fileBlob && !canSwFetch && fileBlob.size <= MAX_INLINE_VIDEO_BYTES) {
+    try {
+      dataUrl = await blobToDataUrl(fileBlob);
+    } catch {
+      dataUrl = '';
+    }
+  }
+  if (!dataUrl && !sourceUrl) {
+    return { success: false, duplicate: false, error: 'No document' };
+  }
+  return send({
+    type: MSG.MEDIA_LIBRARY_ADD,
+    kind: 'document',
+    dataUrl,
+    mime: input?.mime || fileBlob?.type || '',
+    sourceUrl,
+    pageUrl: input?.pageUrl || '',
+    fetchSource: canSwFetch && !dataUrl
+  });
+}
+
+/**
+ * Fetch the resource at `sourceUrl` and store it (image / video / document).
+ * @param {{ sourceUrl?: string, url?: string, pageUrl?: string }} input
+ * @returns {Promise<{ success: boolean, duplicate: boolean, item?: any, error?: string }>}
+ */
+export async function fetchUrlIntoMediaLibrary(input) {
+  const sourceUrl = String(input?.sourceUrl || input?.url || '').trim();
+  if (!sourceUrl) {
+    return { success: false, duplicate: false, error: 'No URL' };
+  }
+  const canSwFetch = isServiceWorkerFetchableVideoUrl(sourceUrl);
+  const dataUrl = /^data:/i.test(sourceUrl) ? sourceUrl : '';
+  if (!canSwFetch && !dataUrl) {
+    return { success: false, duplicate: false, error: 'Could not fetch file' };
+  }
+  return send({
+    type: MSG.MEDIA_LIBRARY_ADD,
+    kind: 'file',
+    sourceUrl,
+    dataUrl,
+    pageUrl: input?.pageUrl || '',
+    fetchSource: canSwFetch && !dataUrl
+  });
+}
+
+/**
  * @param {{ kind?: string, domain?: string, includeThumbs?: boolean }} [opts]
  * @returns {Promise<any>}
  */

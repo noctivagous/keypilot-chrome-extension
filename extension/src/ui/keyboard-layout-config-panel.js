@@ -15,6 +15,7 @@
 
 import { Z_INDEX } from '../config/constants.js';
 import {
+  buildEffectiveKeybindings,
   buildKeybindingsForLayout,
   BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META,
   builtinFamilySelectValue,
@@ -28,6 +29,7 @@ import {
   normalizeKeyboardHandedness,
   normalizeKeyboardLayoutFamilyId,
   parseBuiltinFamilySelectValue,
+  physicalSlotLabelFromBinding,
   resolveKeyboardLayoutId
 } from '../config/keyboard-layouts.js';
 import { DEFAULT_SETTINGS, getSettings, setSettings, SETTINGS_STORAGE_KEY } from '../modules/settings-manager.js';
@@ -263,6 +265,10 @@ const LIBRARY_KEY_ICON_BY_FUNCTION_ID = Object.freeze({
   HIGHLIGHT: 'kp-cfg-i-select',
   RECTANGLE_HIGHLIGHT: 'kp-cfg-i-select',
   CLIPBOARD_COPY: 'kp-cfg-i-copy',
+  SELECT_WORD: 'kp-cfg-i-select',
+  SELECT_SENTENCE: 'kp-cfg-i-select',
+  SELECT_PARAGRAPH: 'kp-cfg-i-select',
+  SELECT_IMAGE: 'kp-cfg-i-image',
   OPEN_POPOVER: 'kp-cfg-i-display',
   PAGE_DOWN_INSTANT: 'kp-cfg-i-scroll',
   PAGE_UP_INSTANT: 'kp-cfg-i-scroll',
@@ -278,6 +284,7 @@ const LIBRARY_KEY_ICON_BY_FUNCTION_ID = Object.freeze({
   GET_MEDIA_AT_CURSOR: 'kp-cfg-i-image',
   PAGE_MEDIA: 'kp-cfg-i-image',
   LOOKUP_WORD: 'kp-cfg-i-lookup',
+  FONT_INFO: 'kp-cfg-i-data',
   TRANSLATE: 'kp-cfg-i-translate',
   SHOW_POPOVER: 'kp-cfg-i-display'
 });
@@ -590,6 +597,7 @@ export class KeyboardLayoutConfigPanel {
     this._scriptStockBanner = null;
     this._scriptMetaEl = null;
     this._placeHintEl = null;
+    this._placePulseEl = null;
     this._legendEl = null;
     this._libViewSegEl = null;
     this._addStepSelect = null;
@@ -649,6 +657,7 @@ export class KeyboardLayoutConfigPanel {
     this._onPlacePointerMove = this._onPlacePointerMove.bind(this);
     this._onPlaceKeyDown = this._onPlaceKeyDown.bind(this);
     this._onPlacePointerDown = this._onPlacePointerDown.bind(this);
+    this._onPlaceClick = this._onPlaceClick.bind(this);
     /** @type {import('../modules/settings-manager.js').PanelPositionSettings} */
     this._panelPosition = {
       ...DEFAULT_SETTINGS.panelPositions.keyboardLayoutConfig
@@ -932,6 +941,7 @@ export class KeyboardLayoutConfigPanel {
     } catch { /* ignore */ }
     this._renderLayoutSelect();
     this._renderRightList();
+    try { this._renderInspector(); } catch { /* ignore */ }
   }
 
   _emitChange() {
@@ -1073,6 +1083,30 @@ export class KeyboardLayoutConfigPanel {
   color: var(--kp-color-kbd-fg, ${ONBOARDING_METAL.kbdColor});
   box-shadow: var(--kp-kbd-shadow, ${ONBOARDING_METAL.kbdShadow});
   flex-shrink: 0;
+  box-sizing: border-box;
+}
+.kp-layout-config-panel .kp-cfg-titlebar-end {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+.kp-layout-config-panel .kp-cfg-autosaves-chip {
+  flex: 0 0 auto;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+  white-space: nowrap;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(28, 28, 28, 0.18);
+  background: rgba(255, 255, 255, 0.42);
+  color: ${ONBOARDING_METAL.fgDim};
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+  user-select: none;
   box-sizing: border-box;
 }
 .kp-layout-config-panel .kp-cfg-close {
@@ -1691,31 +1725,48 @@ export class KeyboardLayoutConfigPanel {
   margin-top: 1px;
 }
 .kp-layout-config-panel .kp-cfg-lib-instructions {
-  flex: 1 1 180px;
+  flex: 1 1 220px;
   min-width: 0;
-  font-size: 10px;
-  line-height: 1.35;
-  color: rgba(235, 235, 235, 0.78);
+  font-size: 12px;
+  line-height: 1.4;
+  color: rgba(235, 235, 235, 0.82);
+}
+.kp-layout-config-panel .kp-cfg-lib-instructions-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 3px;
 }
 .kp-layout-config-panel .kp-cfg-lib-instructions-title {
-  font-weight: 600;
-  color: rgba(235, 235, 235, 0.88);
-  margin-bottom: 2px;
-}
-.kp-layout-config-panel .kp-cfg-lib-instructions ol {
+  font-weight: 700;
+  font-size: 13px;
+  color: rgba(245, 245, 245, 0.94);
   margin: 0;
-  padding-left: 1.25em;
+  flex: 0 0 auto;
 }
-.kp-layout-config-panel .kp-cfg-lib-instructions > ol {
-  list-style: decimal;
+.kp-layout-config-panel .kp-cfg-lib-instructions-body {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
 }
-.kp-layout-config-panel .kp-cfg-lib-instructions ol ol {
-  list-style: lower-alpha;
-  margin-top: 2px;
-  padding-left: 1.15em;
+.kp-layout-config-panel .kp-cfg-lib-place-pulse {
+  flex: 1 1 180px;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.3;
+  padding: 4px 8px;
+  border: 1px solid rgba(255, 176, 72, 0.7);
+  border-radius: var(--kp-radius-btn, ${NCT_DARK_UI_BTN_RADIUS});
+  background: rgba(255, 140, 0, 0.22);
+  color: #ffe8c0;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.28) inset;
+  animation: kp-cfg-place-pulse 1.15s ease-in-out infinite;
 }
-.kp-layout-config-panel .kp-cfg-lib-instructions li {
-  margin: 0 0 2px;
+@keyframes kp-cfg-place-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 140, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.28) inset; }
+  50% { opacity: 0.72; box-shadow: 0 0 12px 2px rgba(255, 140, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.28) inset; }
 }
 ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
 .kp-layout-config-panel .kp-hier-table tr.kp-cfg-lib-row-inspecting {
@@ -1739,14 +1790,20 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
   height: 22px !important;
   min-height: 22px !important;
   max-height: 22px !important;
-  border-radius: 6px !important;
+  border-radius: var(--kp-key-shape-radius, var(--kp-key-effective-radius, var(--kp-radius-key, 7px)));
+  corner-shape: var(--kp-key-corner-shape, round);
   cursor: grab;
   padding: 0 !important;
   margin: 0;
   display: block;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   box-sizing: border-box;
+  box-shadow:
+    2px 2px 1px rgba(0, 0, 0, 0.88),
+    0 1px 0 rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18);
 }
 .kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .kp-hier-table .key.kp-cfg-lib-key:active {
   cursor: grabbing;
@@ -1844,15 +1901,6 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
   border-radius: 2px;
   background: rgba(0, 0, 0, 0.18);
 }
-.kp-layout-config-panel .kp-cfg-desc-fieldset > legend {
-  padding: 0 5px;
-  margin-left: 1px;
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #6a7a68;
-}
 .kp-layout-config-panel .kp-cfg-desc-line {
   margin: 0;
   font-size: 11px;
@@ -1862,17 +1910,11 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
 .kp-layout-config-panel .kp-cfg-category[data-kp-section="macros"] .kp-cfg-desc-fieldset {
   border-color: rgba(154, 122, 184, 0.16);
 }
-.kp-layout-config-panel .kp-cfg-category[data-kp-section="macros"] .kp-cfg-desc-fieldset > legend {
-  color: #7a6a8a;
-}
 .kp-layout-config-panel .kp-cfg-category[data-kp-section="macros"] .kp-cfg-desc-line {
   color: #a090b0;
 }
 .kp-layout-config-panel .kp-cfg-category[data-kp-section="macroKeys"] .kp-cfg-desc-fieldset {
   border-color: rgba(90, 140, 180, 0.16);
-}
-.kp-layout-config-panel .kp-cfg-category[data-kp-section="macroKeys"] .kp-cfg-desc-fieldset > legend {
-  color: #6a8090;
 }
 .kp-layout-config-panel .kp-cfg-category[data-kp-section="macroKeys"] .kp-cfg-desc-line {
   color: #8a9aaa;
@@ -2079,7 +2121,22 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
   max-height: ${CONFIG_KEY_SIZE_PX}px !important;
   cursor: pointer;
   position: relative;
-  border-radius: 7px !important;
+  overflow: visible;
+  border-radius: var(--kp-key-shape-radius, var(--kp-key-effective-radius, var(--kp-radius-key, 7px)));
+  corner-shape: var(--kp-key-corner-shape, round);
+  box-shadow:
+    2px 2px 1px rgba(0, 0, 0, 0.88),
+    0 1px 0 rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18);
+}
+.kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .kp-cfg-item .key:hover {
+  box-shadow:
+    2px 2px 1px rgba(0, 0, 0, 0.92),
+    0 1px 0 rgba(0, 0, 0, 0.4),
+    0 3px 8px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.16);
 }
 .kp-layout-config-panel [data-kp-layout-list].${KEYBINDINGS_UI_ROOT_CLASS} .key.kp-place-source {
   outline: 2px solid ${c.accent};
@@ -2398,6 +2455,21 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
   margin-bottom: 2px;
   word-break: break-word;
   color: #d8e4f0;
+}
+.kp-layout-config-panel .kp-cfg-assign-kbd {
+  font-family: var(--kp-font-kbd, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+  font-size: var(--kp-type-kbd-size, 10px);
+  font-weight: var(--kp-type-weight-regular, 400);
+  line-height: 1.2;
+  text-transform: var(--kp-kbd-transform, none);
+  letter-spacing: var(--kp-kbd-tracking, 0.02em);
+  padding: 1px 6px;
+  border: var(--kp-kbd-border, ${ONBOARDING_METAL.kbdBorder});
+  border-radius: var(--kp-radius-btn, ${NCT_DARK_UI_BTN_RADIUS});
+  background: var(--kp-kbd-bg, ${ONBOARDING_METAL.kbdBg});
+  color: var(--kp-color-kbd-fg, ${ONBOARDING_METAL.kbdColor});
+  box-shadow: var(--kp-kbd-shadow, ${ONBOARDING_METAL.kbdShadow});
+  box-sizing: border-box;
 }
 .kp-layout-config-panel .kp-cfg-dock-subtitle {
   font-size: 9px;
@@ -3067,8 +3139,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 .kp-layout-config-panel .kp-cfg-macro-fieldset > legend,
 .kp-layout-config-panel .kp-cfg-macro-fieldset[data-macro-group="stock"] > legend,
 .kp-layout-config-panel .kp-cfg-macro-fieldset[data-macro-group="user"] > legend,
-.kp-layout-config-panel .kp-cfg-instance-fieldset > legend,
-.kp-layout-config-panel .kp-cfg-desc-fieldset > legend {
+.kp-layout-config-panel .kp-cfg-instance-fieldset > legend {
   color: rgba(240,240,240,0.72);
 }
 .kp-layout-config-panel .kp-cfg-desc-fieldset {
@@ -3134,6 +3205,9 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 .kp-layout-config-panel .kp-cfg-dock-title,
 .kp-layout-config-panel .kp-cfg-dock-rows dd {
   color: ${ONBOARDING_METAL.fg};
+}
+.kp-layout-config-panel .kp-cfg-dock-title {
+  font-weight: 700;
 }
 .kp-layout-config-panel .kp-cfg-dock-empty,
 .kp-layout-config-panel .kp-cfg-dock-subtitle,
@@ -3296,6 +3370,10 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
   font-size: 13.75px;
   line-height: 35px;
 }
+.kp-layout-config-panel .kp-cfg-autosaves-chip {
+  font-size: 10.5px;
+  padding: 3px 9px;
+}
 .kp-layout-config-panel .kp-cfg-close {
   width: 28px;
   height: 28px;
@@ -3380,6 +3458,14 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 .kp-layout-config-panel .kp-cfg-card-name,
 .kp-layout-config-panel .kp-cfg-dock-title {
   font-size: 13.75px;
+  font-weight: 700;
+}
+.kp-layout-config-panel .kp-cfg-lib-instructions-title {
+  font-size: 14.5px;
+}
+.kp-layout-config-panel .kp-cfg-lib-instructions-body,
+.kp-layout-config-panel .kp-cfg-lib-place-pulse {
+  font-size: 12.5px;
 }
 `.trim().replaceAll('.kp-layout-config-panel', ':host');
   }
@@ -3479,6 +3565,11 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     titleShortcut.textContent = 'Alt + C';
     titleShortcut.title = 'Toggle with Alt+C';
 
+    const autosavesChip = doc.createElement('span');
+    autosavesChip.className = 'kp-cfg-autosaves-chip';
+    autosavesChip.textContent = 'Autosaves';
+    autosavesChip.title = 'Layout changes save automatically';
+
     const closeBtn = doc.createElement('button');
     closeBtn.type = 'button';
     closeBtn.className = 'kp-cfg-close';
@@ -3495,8 +3586,13 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     titleStart.appendChild(title);
     titleStart.appendChild(titleShortcut);
 
+    const titleEnd = doc.createElement('div');
+    titleEnd.className = 'kp-cfg-titlebar-end';
+    titleEnd.appendChild(autosavesChip);
+    titleEnd.appendChild(closeBtn);
+
     header.appendChild(titleStart);
-    header.appendChild(closeBtn);
+    header.appendChild(titleEnd);
 
     const body = doc.createElement('div');
     body.className = 'kp-cfg-body';
@@ -3791,26 +3887,24 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const instructions = doc.createElement('div');
     instructions.className = 'kp-cfg-lib-instructions';
     instructions.setAttribute('aria-label', 'Layout assignment instructions');
+    const instructionsHead = doc.createElement('div');
+    instructionsHead.className = 'kp-cfg-lib-instructions-head';
     const instructionsTitle = doc.createElement('div');
     instructionsTitle.className = 'kp-cfg-lib-instructions-title';
     instructionsTitle.textContent = 'Instructions:';
-    const instructionsList = doc.createElement('ol');
-    const step1 = doc.createElement('li');
-    step1.textContent = 'Hover over a key and press the close button to remove its action.';
-    const step2 = doc.createElement('li');
-    step2.appendChild(doc.createTextNode('Assign key caps in one of two ways:'));
-    const step2Ways = doc.createElement('ol');
-    const wayA = doc.createElement('li');
-    wayA.textContent = 'Click a key cap once and move the mouse to use the placement arrow.';
-    const wayB = doc.createElement('li');
-    wayB.textContent = 'Drag a key cap to its position';
-    step2Ways.appendChild(wayA);
-    step2Ways.appendChild(wayB);
-    step2.appendChild(step2Ways);
-    instructionsList.appendChild(step1);
-    instructionsList.appendChild(step2);
-    instructions.appendChild(instructionsTitle);
-    instructions.appendChild(instructionsList);
+    const placePulse = doc.createElement('div');
+    placePulse.className = 'kp-cfg-lib-place-pulse';
+    placePulse.setAttribute('role', 'status');
+    placePulse.hidden = true;
+    placePulse.textContent = 'Click the desired key cap location on the Keyboard Reference.';
+    instructionsHead.appendChild(instructionsTitle);
+    instructionsHead.appendChild(placePulse);
+    const instructionsBody = doc.createElement('p');
+    instructionsBody.className = 'kp-cfg-lib-instructions-body';
+    instructionsBody.textContent =
+      'Click a key cap below once and move the mouse. Use the placement arrow to place the action on the keyboard.';
+    instructions.appendChild(instructionsHead);
+    instructions.appendChild(instructionsBody);
 
     viewBar.appendChild(viewSeg);
     viewBar.appendChild(instructions);
@@ -4140,6 +4234,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     this._scriptStockBanner = stockBanner;
     this._scriptMetaEl = scriptMeta;
     this._placeHintEl = placeHint;
+    this._placePulseEl = placePulse;
     this._legendEl = viewBar;
     this._libViewSegEl = viewSeg;
     this._addStepSelect = addStepSelect;
@@ -4773,7 +4868,10 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     for (const slot of keys) {
       const tr = document.createElement('tr');
       const tdKey = document.createElement('td');
-      tdKey.textContent = formatChordSlotKeyLabel(slot);
+      const kbd = document.createElement('kbd');
+      kbd.className = 'kp-cfg-assign-kbd';
+      kbd.textContent = formatChordSlotKeyLabel(slot);
+      tdKey.appendChild(kbd);
       const tdAct = document.createElement('td');
       const del = document.createElement('button');
       del.type = 'button';
@@ -6654,12 +6752,16 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
   }
 
   _buildBuiltinSlotMap() {
-    const kb = this._kp?.keybindings || buildKeybindingsForLayout(this._st.builtinLayoutId);
+    const inferred = inferFamilyAndHandednessFromLayoutId(this._st.builtinLayoutId);
+    const kb = this._kp?.keybindings || buildEffectiveKeybindings(
+      this._st.builtinLayoutId,
+      inferred.handedness
+    );
     const map = {};
     for (const [actionId, binding] of Object.entries(kb || {})) {
-      const label = String(binding?.displayKey || binding?.keyLabel || '').trim();
-      if (!label || label.length !== 1) continue;
-      map[label.toUpperCase()] = { type: 'function', id: String(actionId) };
+      const slot = physicalSlotLabelFromBinding(binding);
+      if (!slot) continue;
+      map[slot] = { type: 'function', id: String(actionId) };
     }
     return map;
   }
@@ -6745,9 +6847,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     if (!line) return null;
     const fieldset = document.createElement('fieldset');
     fieldset.className = 'kp-cfg-desc-fieldset';
-    const legend = document.createElement('legend');
-    legend.textContent = 'Description';
-    fieldset.appendChild(legend);
+    fieldset.setAttribute('aria-label', 'Description');
     const p = document.createElement('p');
     p.className = 'kp-cfg-desc-line';
     p.textContent = line;
@@ -7730,11 +7830,24 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
    */
   _findSlotKeysForItem(item) {
     const slots = this._getEditableSlotMap() || {};
-    const type = String(item?.type || '');
+    const wantedType = String(item?.type || '');
     const id = String(item?.id || '');
+    const instanceIds = new Set();
+    if (wantedType === 'function' && id && getFunctionDef(id)) {
+      for (const action of this._st.actions || []) {
+        if (action && action.functionId === id && action.id) instanceIds.add(String(action.id));
+      }
+    }
+    const typeMatches = (type) => {
+      const t = String(type || '');
+      if (wantedType === 'function') return t === 'function' || t === 'action';
+      return t === wantedType;
+    };
     const out = [];
     for (const [key, val] of Object.entries(slots)) {
-      if (val && val.type === type && String(val.id) === id) out.push(key);
+      if (!val || !typeMatches(val.type)) continue;
+      const vid = String(val.id || '');
+      if (vid === id || instanceIds.has(vid)) out.push(key);
     }
     return out;
   }
@@ -8105,6 +8218,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       ? `Place mode — click a Keyboard Reference key (binds as ${this._formatModsPreview(this._getChordModsForItem(item), 'Key')}; Esc to cancel).`
       : 'Place mode — click a Keyboard Reference key (Esc to cancel).';
     this._setPlaceHint(placeHint);
+    this._syncPlacePulse();
 
     try {
       this._kp?.floatingKeyboardHelp?.setPlaceTargeting?.({
@@ -8138,6 +8252,12 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     try { this._kp?.floatingKeyboardHelp?.clearPlaceTargeting?.(); } catch { /* ignore */ }
     try { this._renderRightList(); } catch { /* ignore */ }
     this._setPlaceHint('Add Logic steps or Functions. Save commits the macro to Macros.');
+    this._syncPlacePulse();
+  }
+
+  _syncPlacePulse() {
+    const on = this.isPlaceModeActive();
+    if (this._placePulseEl) this._placePulseEl.hidden = !on;
   }
 
   /** @param {string} text */
@@ -8173,6 +8293,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     try {
       document.addEventListener('pointermove', this._onPlacePointerMove, true);
       document.addEventListener('pointerdown', this._onPlacePointerDown, true);
+      document.addEventListener('click', this._onPlaceClick, true);
       document.addEventListener('keydown', this._onPlaceKeyDown, true);
       this._placePointerBound = true;
     } catch { /* ignore */ }
@@ -8182,8 +8303,29 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     if (!this._placePointerBound) return;
     try { document.removeEventListener('pointermove', this._onPlacePointerMove, true); } catch { /* ignore */ }
     try { document.removeEventListener('pointerdown', this._onPlacePointerDown, true); } catch { /* ignore */ }
+    try { document.removeEventListener('click', this._onPlaceClick, true); } catch { /* ignore */ }
     try { document.removeEventListener('keydown', this._onPlaceKeyDown, true); } catch { /* ignore */ }
     this._placePointerBound = false;
+  }
+
+  /** Keyboard Reference slot that should receive the place. */
+  _isKeyboardRefSlotEvent(e) {
+    try {
+      const slot = getComposedEventElement(e, '[data-kp-slot]');
+      return !!closestComposed(slot, '.kp-floating-keyboard-help');
+    } catch {
+      return false;
+    }
+  }
+
+  /** Palette keycap — click toggles/switches source via `_beginPlaceMode`. */
+  _isPlaceSourceKeyEvent(e) {
+    try {
+      const source = getComposedEventElement(e, '.key[data-kp-item-type][data-kp-item-id]');
+      return !!(source && source.getRootNode?.() === this.shadowRoot);
+    } catch {
+      return false;
+    }
   }
 
   _onPlacePointerMove(e) {
@@ -8205,25 +8347,43 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
   }
 
   /**
-   * Cancel place mode on any click that is not a Keyboard Reference slot
-   * (or a Config palette key, so users can switch/toggle the source).
+   * Cancel place mode on pointerdown outside Config / Keyboard Reference.
+   * Inside Config, `_onPlaceClick` cancels (covers mouse and Click Element).
    * @param {PointerEvent} e
    */
   _onPlacePointerDown(e) {
     if (!this._placeItem) return;
     if (typeof e.button === 'number' && e.button !== 0) return;
     try {
-      // Placing onto a Keyboard Reference slot — leave for the slot click handler.
-      const slot = getComposedEventElement(e, '[data-kp-slot]');
-      if (closestComposed(slot, '.kp-floating-keyboard-help')) return;
-      // Switching/toggling from a Config palette key — leave for that click handler.
-      const source = getComposedEventElement(e, '[data-kp-item-type][data-kp-item-id]');
-      if (source?.getRootNode?.() === this.shadowRoot) return;
+      if (this._isKeyboardRefSlotEvent(e)) return;
+      if (this._isPlaceSourceKeyEvent(e)) return;
+      // Config chrome: wait for click so Inspector / library handlers still run.
+      if (getComposedEventElement(e, '.kp-layout-config-panel')) return;
 
       e.preventDefault();
       e.stopPropagation();
       try { e.stopImmediatePropagation(); } catch { /* ignore */ }
       this._cancelPlaceMode();
+    } catch {
+      this._cancelPlaceMode();
+    }
+  }
+
+  /**
+   * Click inside Keyboard Layout Config (mouse or Click Element) ends place mode,
+   * except palette keycaps (toggle/switch) and Keyboard Reference slots (place).
+   * Deferred so the originating click can still inspect / activate controls.
+   * @param {MouseEvent} e
+   */
+  _onPlaceClick(e) {
+    if (!this._placeItem) return;
+    try {
+      if (this._isKeyboardRefSlotEvent(e)) return;
+      if (this._isPlaceSourceKeyEvent(e)) return;
+      if (!getComposedEventElement(e, '.kp-layout-config-panel')) return;
+      queueMicrotask(() => {
+        try { this._cancelPlaceMode(); } catch { /* ignore */ }
+      });
     } catch {
       this._cancelPlaceMode();
     }
@@ -8373,6 +8533,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
         return;
       }
       await this._afterSlotWrite(result.layout, ensured.becameCurrent);
+      try { this._renderInspector(); } catch { /* ignore */ }
     } catch {
       this._notify('Failed to bind key.', 'error');
     }

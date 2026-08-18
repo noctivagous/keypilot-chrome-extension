@@ -85,6 +85,26 @@ export function normalizeMediaDomain(sourceUrl, pageUrl) {
   return '(unknown)';
 }
 
+/** @type {Readonly<Record<string, string>>} */
+const DOCUMENT_MIME_EXT = Object.freeze({
+  'application/pdf': 'PDF',
+  'application/msword': 'DOC',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'DOCX',
+  'application/vnd.ms-excel': 'XLS',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'XLSX',
+  'application/vnd.ms-powerpoint': 'PPT',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PPTX',
+  'application/vnd.oasis.opendocument.text': 'ODT',
+  'application/rtf': 'RTF',
+  'text/rtf': 'RTF',
+  'text/markdown': 'MD',
+  'text/csv': 'CSV',
+  'application/epub+zip': 'EPUB',
+  'application/zip': 'ZIP',
+  'application/x-zip-compressed': 'ZIP',
+  'application/json': 'JSON'
+});
+
 /**
  * Display file type from mime / filename (JPG, WEBP, PNG, …).
  * @param {string|null|undefined} mime
@@ -110,9 +130,20 @@ export function extFromMime(mime, sourceUrl) {
     if (sub) return sub.toUpperCase().slice(0, 5);
     return 'MP4';
   }
-  if (m === 'text/uri-list' || m === 'text/plain' || m === 'application/internet-shortcut') {
+  if (m.startsWith('audio/')) {
+    const sub = m.slice(6).split('+')[0];
+    if (sub === 'mpeg' || sub === 'mp3') return 'MP3';
+    if (sub === 'mp4' || sub === 'x-m4a') return 'M4A';
+    if (sub === 'ogg' || sub === 'vorbis') return 'OGG';
+    if (sub === 'wav' || sub === 'x-wav') return 'WAV';
+    if (sub) return sub.toUpperCase().slice(0, 5);
+    return 'AUD';
+  }
+  if (DOCUMENT_MIME_EXT[m]) return DOCUMENT_MIME_EXT[m];
+  if (m === 'text/uri-list' || m === 'application/internet-shortcut') {
     return 'URL';
   }
+  if (m === 'text/plain') return 'TXT';
   const url = String(sourceUrl || '');
   const path = url.split('?')[0].split('#')[0];
   const dot = path.lastIndexOf('.');
@@ -123,7 +154,52 @@ export function extFromMime(mime, sourceUrl) {
       return ext === 'jpg' ? 'JPG' : ext.toUpperCase();
     }
   }
-  return 'IMG';
+  return m.startsWith('image/') ? 'IMG' : 'BIN';
+}
+
+const IMAGE_EXT_SET = new Set([
+  'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif', 'ico', 'bmp', 'tif', 'tiff', 'heic', 'heif'
+]);
+const VIDEO_EXT_SET = new Set([
+  'mp4', 'mov', 'webm', 'm4v', 'mkv', 'avi', 'mpg', 'mpeg', 'ogv'
+]);
+
+/**
+ * Classify fetched bytes for Media Library ingest.
+ * `webpage` means do not store — the URL is a page, not a file.
+ * @param {string|null|undefined} mime
+ * @param {string|null|undefined} [sourceUrl]
+ * @returns {'image'|'video'|'document'|'url'|'webpage'}
+ */
+export function classifyLibraryKind(mime, sourceUrl) {
+  const m = String(mime || '').toLowerCase().split(';')[0].trim();
+  if (m === 'text/uri-list' || m === 'application/internet-shortcut') return 'url';
+  if (m === 'text/html' || m === 'application/xhtml+xml') return 'webpage';
+  if (m.startsWith('image/')) return 'image';
+  if (m.startsWith('video/')) return 'video';
+
+  const ext = extFromMime(m, sourceUrl).toLowerCase();
+  if (ext === 'html' || ext === 'htm') return 'webpage';
+  if (IMAGE_EXT_SET.has(ext) || ext === 'img') return 'image';
+  if (VIDEO_EXT_SET.has(ext)) return 'video';
+  if (m.startsWith('audio/') || m.startsWith('application/') || m.startsWith('text/')) return 'document';
+  if (ext && ext !== 'bin' && ext !== 'url') return 'document';
+  return 'document';
+}
+
+/**
+ * @param {Blob} blob
+ * @returns {Promise<boolean>}
+ */
+export async function blobLooksLikeHtml(blob) {
+  if (!(blob instanceof Blob) || blob.size <= 0) return false;
+  try {
+    const head = await blob.slice(0, 256).text();
+    const t = String(head || '').trimStart().slice(0, 80).toLowerCase();
+    return t.startsWith('<!doctype html') || t.startsWith('<html');
+  } catch {
+    return false;
+  }
 }
 
 /**

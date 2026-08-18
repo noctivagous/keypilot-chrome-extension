@@ -795,7 +795,7 @@ export function installFrameClickAgent() {
       const delta = Number.isFinite(amount) && amount > 0 ? amount : halfPagePx;
       const s = sign < 0 ? -1 : 1;
       const beh = xyMode || behavior === 'auto' || behavior === 'instant'
-        ? 'auto'
+        ? 'instant'
         : (behavior || scrollBehavior);
       const deltaX = Number(xy?.deltaX) || 0;
       const deltaY = Number(xy?.deltaY) || 0;
@@ -1222,7 +1222,7 @@ export function installFrameClickAgent() {
           const sign = Number(data.sign) < 0 ? -1 : 1;
           const delta = Number(data.deltaPx);
           const beh = data.behavior === 'auto' || data.behavior === 'instant'
-            ? 'auto'
+            ? 'instant'
             : (data.behavior || scrollBehavior);
           const mode = data.mode === 'edge' ? 'edge' : (data.mode === 'xy' ? 'xy' : 'delta');
           scrollAt(x, y, sign, delta, beh, mode, {

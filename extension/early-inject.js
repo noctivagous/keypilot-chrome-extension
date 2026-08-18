@@ -21,6 +21,22 @@
   const CURSOR_ID = 'kpv2-cursor';
   const STYLE_ID = 'kpv2-early-style';
   const FOCUS_GREEN_BRIGHT = 'rgba(0,128,0,0.95)';
+  const EARLY_FOCUS_BLUE = 'rgba(33,150,243,0.95)';
+  const EARLY_FOCUS_BLUE_SHADOW = 'rgba(33,150,243,0.35)';
+  const EARLY_FOCUS_BLUE_SHADOW_BRIGHT = 'rgba(33,150,243,0.45)';
+  const EARLY_FOCUS_BLUE_FILL = 'rgba(33,150,243,0.25)';
+  const EARLY_FOCUS_GREEN = 'rgba(0,180,0,0.95)';
+  const EARLY_FOCUS_GREEN_SHADOW = 'rgba(0,180,0,0.45)';
+  const EARLY_FOCUS_GREEN_SHADOW_BRIGHT = 'rgba(0,180,0,0.5)';
+  const EARLY_FOCUS_GREEN_FILL = 'rgba(46, 204, 113, 0.4)';
+  const EARLY_HOVER_Z = 2147483020;
+  const EARLY_HOVER_ID = 'kpv2-early-hover';
+  const EARLY_CLICKABLE_SEL =
+    'a[href], button, [role="button"], [role="link"], [role="menuitem"], [role="option"], [role="tab"], [role="checkbox"], [role="radio"], [role="switch"], summary, [onclick], input, select, textarea, label';
+  const EARLY_TEXT_ENTRY_INPUT_TYPES = new Set([
+    'text', 'search', 'url', 'email', 'tel', 'password', 'number',
+    'date', 'datetime-local', 'month', 'week', 'time'
+  ]);
   const KEYBOARD_HELP_STORAGE_KEY = 'keypilot_keyboard_help_visible';
   const ONBOARDING_ACTIVE_STORAGE_KEY = 'keypilot_onboarding_active';
   const ONBOARDING_PROGRESS_STORAGE_KEY = 'keypilot_onboarding_progress';
@@ -143,8 +159,8 @@
       },
       {
         "type": "action",
-        "id": "BACK2",
-        "fallbackText": "Go Back"
+        "id": "ROOT",
+        "fallbackText": "Go to Site Root"
       },
       {
         "type": "action",
@@ -376,8 +392,8 @@
       },
       {
         "type": "action",
-        "id": "BACK2",
-        "fallbackText": "Go Back"
+        "id": "ROOT",
+        "fallbackText": "Go to Site Root"
       },
       {
         "type": "action",
@@ -529,8 +545,8 @@
       },
       {
         "type": "action",
-        "id": "BACK2",
-        "fallbackText": "Go Back"
+        "id": "ROOT",
+        "fallbackText": "Go to Site Root"
       },
       {
         "type": "action",
@@ -742,8 +758,8 @@
       },
       {
         "type": "action",
-        "id": "BACK2",
-        "fallbackText": "Go Back"
+        "id": "ROOT",
+        "fallbackText": "Go to Site Root"
       },
       {
         "type": "key",
@@ -891,8 +907,8 @@
       },
       {
         "type": "action",
-        "id": "BACK2",
-        "fallbackText": "Go Back"
+        "id": "ROOT",
+        "fallbackText": "Go to Site Root"
       },
       {
         "type": "action",
@@ -1098,8 +1114,8 @@
       },
       {
         "type": "action",
-        "id": "BACK2",
-        "fallbackText": "Go Back"
+        "id": "ROOT",
+        "fallbackText": "Go to Site Root"
       },
       {
         "type": "key",
@@ -1256,12 +1272,12 @@
       "displayKey": "A",
       "keyboardClass": "key-close-tab"
     },
-    "BACK2": {
-      "label": "Go Back",
-      "description": "Browser history back",
+    "ROOT": {
+      "label": "Go to Site Root",
+      "description": "Navigate to the site origin",
       "keyLabel": "S",
       "displayKey": "S",
-      "keyboardClass": "key-back"
+      "keyboardClass": null
     },
     "BACK": {
       "label": "Go Back",
@@ -1454,12 +1470,12 @@
       "displayKey": ";",
       "keyboardClass": "key-close-tab"
     },
-    "BACK2": {
-      "label": "Go Back",
-      "description": "Browser history back",
+    "ROOT": {
+      "label": "Go to Site Root",
+      "description": "Navigate to the site origin",
       "keyLabel": "L",
       "displayKey": "L",
-      "keyboardClass": "key-back"
+      "keyboardClass": null
     },
     "BACK": {
       "label": "Go Back",
@@ -1596,12 +1612,12 @@
       "displayKey": "R",
       "keyboardClass": "key-forward"
     },
-    "BACK2": {
-      "label": "Go Back",
-      "description": "Browser history back",
+    "ROOT": {
+      "label": "Go to Site Root",
+      "description": "Navigate to the site origin",
       "keyLabel": "S",
       "displayKey": "S",
-      "keyboardClass": "key-back"
+      "keyboardClass": null
     },
     "BACK": {
       "label": "Go Back",
@@ -1689,12 +1705,12 @@
       "displayKey": "U",
       "keyboardClass": "key-forward"
     },
-    "BACK2": {
-      "label": "Go Back",
-      "description": "Browser history back",
+    "ROOT": {
+      "label": "Go to Site Root",
+      "description": "Navigate to the site origin",
       "keyLabel": "L",
       "displayKey": "L",
-      "keyboardClass": "key-back"
+      "keyboardClass": null
     },
     "BACK": {
       "label": "Go Back",
@@ -1768,12 +1784,12 @@
       "displayKey": "R",
       "keyboardClass": "key-forward"
     },
-    "BACK2": {
-      "label": "Go Back",
-      "description": "Browser history back",
+    "ROOT": {
+      "label": "Go to Site Root",
+      "description": "Navigate to the site origin",
       "keyLabel": "S",
       "displayKey": "S",
-      "keyboardClass": "key-back"
+      "keyboardClass": null
     },
     "BACK": {
       "label": "Go Back",
@@ -1819,12 +1835,12 @@
       "displayKey": "U",
       "keyboardClass": "key-forward"
     },
-    "BACK2": {
-      "label": "Go Back",
-      "description": "Browser history back",
+    "ROOT": {
+      "label": "Go to Site Root",
+      "description": "Navigate to the site origin",
       "keyLabel": "L",
       "displayKey": "L",
-      "keyboardClass": "key-back"
+      "keyboardClass": null
     },
     "BACK": {
       "label": "Go Back",
@@ -1948,8 +1964,8 @@
     },
     {
       "type": "action",
-      "id": "BACK2",
-      "fallbackText": "Go Back"
+      "id": "ROOT",
+      "fallbackText": "Go to Site Root"
     },
     {
       "type": "action",
@@ -2147,12 +2163,12 @@
     "displayKey": "A",
     "keyboardClass": "key-close-tab"
   },
-  "BACK2": {
-    "label": "Go Back",
-    "description": "Browser history back",
+  "ROOT": {
+    "label": "Go to Site Root",
+    "description": "Navigate to the site origin",
     "keyLabel": "S",
     "displayKey": "S",
-    "keyboardClass": "key-back"
+    "keyboardClass": null
   },
   "BACK": {
     "label": "Go Back",
@@ -2407,6 +2423,10 @@
     "label": "Copy Video",
     "keyboardClass": null
   },
+  "FONT_INFO": {
+    "label": "Font Info",
+    "keyboardClass": null
+  },
   "PAGE_MEDIA": {
     "label": "Page Media",
     "keyboardClass": null
@@ -2429,6 +2449,22 @@
   },
   "CLIPBOARD_SELECT_ALL": {
     "label": "Select All",
+    "keyboardClass": null
+  },
+  "SELECT_WORD": {
+    "label": "Select Word",
+    "keyboardClass": null
+  },
+  "SELECT_SENTENCE": {
+    "label": "Select Sentence",
+    "keyboardClass": null
+  },
+  "SELECT_PARAGRAPH": {
+    "label": "Select Paragraph",
+    "keyboardClass": null
+  },
+  "SELECT_IMAGE": {
+    "label": "Select Image",
     "keyboardClass": null
   },
   "SEND_TEXT_TO_AI": {
@@ -4012,12 +4048,17 @@
 .kp-keybindings-ui .key[data-kp-action-id="COPY_HOVERED_IMAGE"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="COPY_HOVERED_URL"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M326.612%20185.391c59.747%2059.809%2058.927%20155.698.36%20214.59-.11.12-.24.25-.36.37l-67.2%2067.2c-59.27%2059.27-155.699%2059.262-214.96%200-59.27-59.26-59.27-155.7%200-214.96l37.106-37.106c9.84-9.84%2026.786-3.3%2027.294%2010.606.648%2017.722%203.826%2035.527%209.69%2052.721%201.986%205.822.567%2012.262-3.783%2016.612l-13.087%2013.087c-28.026%2028.026-28.026%2073.66%200%20101.682%2028.026%2028.026%2073.66%2028.026%20101.682%200l67.2-67.2c28.026-28.026%2028.026-73.66%200-101.682-3.794-3.808-7.368-5.703-10.954-6.817-10.756-3.356-22.666%201.983-27.085%2012.227-5.575%2012.941-17.35%2020.326-30.978%2020.326-12.802%200-22.414-11.312-19.101-23.541%206.027-22.318%209.025-49.922%202.753-73.389-13.415-49.971.392-102.811%2037.393-139.813%2059.17-59.117%20154.849-59.262%20214.096-.31zM213.388%20326.609c-59.747-59.809-58.927-155.698-.36-214.59.11-.12.24-.25.36-.37l67.2-67.2c59.27-59.27%20155.699-59.262%20214.96%200%2059.27%2059.26%2059.27%20155.7%200%20214.96l-37.106%2037.106c-9.84%209.84-26.786%203.3-27.294-10.606-.648-17.722-3.826-35.527-9.69-52.721-1.986-5.822-.567-12.262%203.783-16.612l13.087-13.087c28.026-28.026%2028.026-73.66%200-101.682-28.026-28.026-73.66-28.026-101.682%200l-67.2%2067.2c-28.026%2028.026-28.026%2073.66%200%20101.682%203.794%203.808%207.368%205.703%2010.954%206.817%2010.756%203.356%2022.666-1.983%2027.085-12.227%205.575-12.941%2017.35-20.326%2030.978-20.326%2012.802%200%2022.414%2011.312%2019.101%2023.541-6.027%2022.318-9.025%2049.922-2.753%2073.389%2013.415%2049.971-.392%20102.811-37.393%20139.813-59.17%2059.117-154.849%2059.262-214.096.31z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M326.612%20185.391c59.747%2059.809%2058.927%20155.698.36%20214.59-.11.12-.24.25-.36.37l-67.2%2067.2c-59.27%2059.27-155.699%2059.262-214.96%200-59.27-59.26-59.27-155.7%200-214.96l37.106-37.106c9.84-9.84%2026.786-3.3%2027.294%2010.606.648%2017.722%203.826%2035.527%209.69%2052.721%201.986%205.822.567%2012.262-3.783%2016.612l-13.087%2013.087c-28.026%2028.026-28.026%2073.66%200%20101.682%2028.026%2028.026%2073.66%2028.026%20101.682%200l67.2-67.2c28.026-28.026%2028.026-73.66%200-101.682-3.794-3.808-7.368-5.703-10.954-6.817-10.756-3.356-22.666%201.983-27.085%2012.227-5.575%2012.941-17.35%2020.326-30.978%2020.326-12.802%200-22.414-11.312-19.101-23.541%206.027-22.318%209.025-49.922%202.753-73.389-13.415-49.971.392-102.811%2037.393-139.813%2059.17-59.117%20154.849-59.262%20214.096-.31zM213.388%20326.609c-59.747-59.809-58.927-155.698-.36-214.59.11-.12.24-.25.36-.37l67.2-67.2c59.27-59.27%20155.699-59.262%20214.96%200%2059.27%2059.26%2059.27%20155.7%200%20214.96l-37.106%2037.106c-9.84%209.84-26.786%203.3-27.294-10.606-.648-17.722-3.826-35.527-9.69-52.721-1.986-5.822-.567-12.262%203.783-16.612l13.087-13.087c28.026-28.026%2028.026-73.66%200-101.682-28.026-28.026-73.66-28.026-101.682%200l-67.2%2067.2c-28.026%2028.026-28.026%2073.66%200%20101.682%203.794%203.808%207.368%205.703%2010.954%206.817%2010.756%203.356%2022.666-1.983%2027.085-12.227%205.575-12.941%2017.35-20.326%2030.978-20.326%2012.802%200%2022.414%2011.312%2019.101%2023.541-6.027%2022.318-9.025%2049.922-2.753%2073.389%2013.415%2049.971-.392%20102.811-37.393%20139.813-59.17%2059.117-154.849%2059.262-214.096.31z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="COPY_HOVERED_VIDEO"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%20128C0%2092.7%2028.7%2064%2064%2064H320c35.3%200%2064%2028.7%2064%2064V384c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V128zM559.1%2099.8c10.4%205.6%2016.9%2016.4%2016.9%2028.2V384c0%2011.8-6.5%2022.6-16.9%2028.2s-23%206-32.9%201.3L384%20337.1V174.9l142.2-76.4c9.8-4.7%2022.4-4.3%2032.9%201.3z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%20128C0%2092.7%2028.7%2064%2064%2064H320c35.3%200%2064%2028.7%2064%2064V384c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V128zM559.1%2099.8c10.4%205.6%2016.9%2016.4%2016.9%2028.2V384c0%2011.8-6.5%2022.6-16.9%2028.2s-23%206-32.9%201.3L384%20337.1V174.9l142.2-76.4c9.8-4.7%2022.4-4.3%2032.9%201.3z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="FONT_INFO"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2032c14.2%200%2027.3%207.5%2034.5%2019.8l216%20368c6.1%2010.4%206.1%2023.3%200%2033.7s-17.4%2016.5-29.9%2016.5H35.4c-12.5%200-23.8-6.6-29.9-16.5s-6.1-23.3%200-33.7l216-368C228.7%2039.5%20241.8%2032%20256%2032zm0%2088.4L96.7%20392h318.6L256%20120.4z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2032c14.2%200%2027.3%207.5%2034.5%2019.8l216%20368c6.1%2010.4%206.1%2023.3%200%2033.7s-17.4%2016.5-29.9%2016.5H35.4c-12.5%200-23.8-6.6-29.9-16.5s-6.1-23.3%200-33.7l216-368C228.7%2039.5%20241.8%2032%20256%2032zm0%2088.4L96.7%20392h318.6L256%20120.4z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="PAGE_MEDIA"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="OPEN_MEDIA_LIBRARY"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="CLIPBOARD_COPY"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M192%200c35.3%200%2064%2028.7%2064%2064l0%2032%20112%200c35.3%200%2064%2028.7%2064%2064l0%20288c0%2035.3-28.7%2064-64%2064L64%20512c-35.3%200-64-28.7-64-64L0%20160c0-35.3%2028.7-64%2064-64l112%200%200-32c0-35.3%2028.7-64%2064-64zm0%2064l0%2032%2064%200%200-32c0-17.7-14.3-32-32-32s-32%2014.3-32%2032zM64%20160l0%20288c0%2017.7%2014.3%2032%2032%2032l256%200c17.7%200%2032-14.3%2032-32l0-288c0-17.7-14.3-32-32-32L64%20128c-17.7%200-32%2014.3-32%2032z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M192%200c35.3%200%2064%2028.7%2064%2064l0%2032%20112%200c35.3%200%2064%2028.7%2064%2064l0%20288c0%2035.3-28.7%2064-64%2064L64%20512c-35.3%200-64-28.7-64-64L0%20160c0-35.3%2028.7-64%2064-64l112%200%200-32c0-35.3%2028.7-64%2064-64zm0%2064l0%2032%2064%200%200-32c0-17.7-14.3-32-32-32s-32%2014.3-32%2032zM64%20160l0%20288c0%2017.7%2014.3%2032%2032%2032l256%200c17.7%200%2032-14.3%2032-32l0-288c0-17.7-14.3-32-32-32L64%20128c-17.7%200-32%2014.3-32%2032z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="CLIPBOARD_CUT"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M44.6%2066.2l117.5%20117.5c-4.7%208-7.1%2017-7.1%2026.3c0%2026.5%2021.5%2048%2048%2048s48-21.5%2048-48s-21.5-48-48-48c-4.8%200-9.4%20.7-13.7%202L44.6%2066.2C39.3%2060.9%2030.7%2060.9%2025.4%2066.2S20.1%2080.1%2025.4%2085.4L44.6%2066.2zM203.2%20237.8L85.4%20355.6c-5.3%205.3-5.3%2013.9%200%2019.2s13.9%205.3%2019.2%200l117.8-117.8c4.3%201.3%208.9%202%2013.7%202c26.5%200%2048-21.5%2048-48s-21.5-48-48-48c-9.3%200-18.3%202.4-26.3%207.1zM432%20144c26.5%200%2048-21.5%2048-48s-21.5-48-48-48s-48%2021.5-48%2048s21.5%2048%2048%2048zm0%20256c26.5%200%2048-21.5%2048-48s-21.5-48-48-48s-48%2021.5-48%2048s21.5%2048%2048%2048zM162.6%20466.2c5.3%205.3%2013.9%205.3%2019.2%200L467.4%20180.6c5.3-5.3%205.3-13.9%200-19.2s-13.9-5.3-19.2%200L162.6%20447c-5.3%205.3-5.3%2013.9%200%2019.2z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M44.6%2066.2l117.5%20117.5c-4.7%208-7.1%2017-7.1%2026.3c0%2026.5%2021.5%2048%2048%2048s48-21.5%2048-48s-21.5-48-48-48c-4.8%200-9.4%20.7-13.7%202L44.6%2066.2C39.3%2060.9%2030.7%2060.9%2025.4%2066.2S20.1%2080.1%2025.4%2085.4L44.6%2066.2zM203.2%20237.8L85.4%20355.6c-5.3%205.3-5.3%2013.9%200%2019.2s13.9%205.3%2019.2%200l117.8-117.8c4.3%201.3%208.9%202%2013.7%202c26.5%200%2048-21.5%2048-48s-21.5-48-48-48c-9.3%200-18.3%202.4-26.3%207.1zM432%20144c26.5%200%2048-21.5%2048-48s-21.5-48-48-48s-48%2021.5-48%2048s21.5%2048%2048%2048zm0%20256c26.5%200%2048-21.5%2048-48s-21.5-48-48-48s-48%2021.5-48%2048s21.5%2048%2048%2048zM162.6%20466.2c5.3%205.3%2013.9%205.3%2019.2%200L467.4%20180.6c5.3-5.3%205.3-13.9%200-19.2s-13.9-5.3-19.2%200L162.6%20447c-5.3%205.3-5.3%2013.9%200%2019.2z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="CLIPBOARD_PASTE"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M192%200c35.3%200%2064%2028.7%2064%2064l0%2032%20112%200c35.3%200%2064%2028.7%2064%2064l0%20288c0%2035.3-28.7%2064-64%2064L64%20512c-35.3%200-64-28.7-64-64L0%20160c0-35.3%2028.7-64%2064-64l112%200%200-32c0-35.3%2028.7-64%2064-64zm0%2064l0%2032%2064%200%200-32c0-17.7-14.3-32-32-32s-32%2014.3-32%2032zM64%20160l0%20288c0%2017.7%2014.3%2032%2032%2032l256%200c17.7%200%2032-14.3%2032-32l0-288c0-17.7-14.3-32-32-32L64%20128c-17.7%200-32%2014.3-32%2032z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M192%200c35.3%200%2064%2028.7%2064%2064l0%2032%20112%200c35.3%200%2064%2028.7%2064%2064l0%20288c0%2035.3-28.7%2064-64%2064L64%20512c-35.3%200-64-28.7-64-64L0%20160c0-35.3%2028.7-64%2064-64l112%200%200-32c0-35.3%2028.7-64%2064-64zm0%2064l0%2032%2064%200%200-32c0-17.7-14.3-32-32-32s-32%2014.3-32%2032zM64%20160l0%20288c0%2017.7%2014.3%2032%2032%2032l256%200c17.7%200%2032-14.3%2032-32l0-288c0-17.7-14.3-32-32-32L64%20128c-17.7%200-32%2014.3-32%2032z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="CLIPBOARD_SELECT_ALL"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2032c14.2%200%2027.3%207.5%2034.5%2019.8l216%20368c6.1%2010.4%206.1%2023.3%200%2033.7s-17.4%2016.5-29.9%2016.5H35.4c-12.5%200-23.8-6.6-29.9-16.5s-6.1-23.3%200-33.7l216-368C228.7%2039.5%20241.8%2032%20256%2032zm0%2088.4L96.7%20392h318.6L256%20120.4z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2032c14.2%200%2027.3%207.5%2034.5%2019.8l216%20368c6.1%2010.4%206.1%2023.3%200%2033.7s-17.4%2016.5-29.9%2016.5H35.4c-12.5%200-23.8-6.6-29.9-16.5s-6.1-23.3%200-33.7l216-368C228.7%2039.5%20241.8%2032%20256%2032zm0%2088.4L96.7%20392h318.6L256%20120.4z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="SELECT_WORD"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2032c14.2%200%2027.3%207.5%2034.5%2019.8l216%20368c6.1%2010.4%206.1%2023.3%200%2033.7s-17.4%2016.5-29.9%2016.5H35.4c-12.5%200-23.8-6.6-29.9-16.5s-6.1-23.3%200-33.7l216-368C228.7%2039.5%20241.8%2032%20256%2032zm0%2088.4L96.7%20392h318.6L256%20120.4z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2032c14.2%200%2027.3%207.5%2034.5%2019.8l216%20368c6.1%2010.4%206.1%2023.3%200%2033.7s-17.4%2016.5-29.9%2016.5H35.4c-12.5%200-23.8-6.6-29.9-16.5s-6.1-23.3%200-33.7l216-368C228.7%2039.5%20241.8%2032%20256%2032zm0%2088.4L96.7%20392h318.6L256%20120.4z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="SELECT_SENTENCE"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2032c14.2%200%2027.3%207.5%2034.5%2019.8l216%20368c6.1%2010.4%206.1%2023.3%200%2033.7s-17.4%2016.5-29.9%2016.5H35.4c-12.5%200-23.8-6.6-29.9-16.5s-6.1-23.3%200-33.7l216-368C228.7%2039.5%20241.8%2032%20256%2032zm0%2088.4L96.7%20392h318.6L256%20120.4z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2032c14.2%200%2027.3%207.5%2034.5%2019.8l216%20368c6.1%2010.4%206.1%2023.3%200%2033.7s-17.4%2016.5-29.9%2016.5H35.4c-12.5%200-23.8-6.6-29.9-16.5s-6.1-23.3%200-33.7l216-368C228.7%2039.5%20241.8%2032%20256%2032zm0%2088.4L96.7%20392h318.6L256%20120.4z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="SELECT_PARAGRAPH"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2032c14.2%200%2027.3%207.5%2034.5%2019.8l216%20368c6.1%2010.4%206.1%2023.3%200%2033.7s-17.4%2016.5-29.9%2016.5H35.4c-12.5%200-23.8-6.6-29.9-16.5s-6.1-23.3%200-33.7l216-368C228.7%2039.5%20241.8%2032%20256%2032zm0%2088.4L96.7%20392h318.6L256%20120.4z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2032c14.2%200%2027.3%207.5%2034.5%2019.8l216%20368c6.1%2010.4%206.1%2023.3%200%2033.7s-17.4%2016.5-29.9%2016.5H35.4c-12.5%200-23.8-6.6-29.9-16.5s-6.1-23.3%200-33.7l216-368C228.7%2039.5%20241.8%2032%20256%2032zm0%2088.4L96.7%20392h318.6L256%20120.4z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="SELECT_IMAGE"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zM323.8%20202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4%203.9-19.8%2010.5l-87%20127.6L170.7%20297c-4.6-5.7-11.5-9-18.7-9s-14.2%203.3-18.7%209l-64%2080c-5.8%207.2-6.9%2017.1-2.9%2025.4s12.4%2013.6%2021.6%2013.6h96%2032H424c8.9%200%2017.1-4.9%2021.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112%20192a48%2048%200%201%200%200-96%2048%2048%200%201%200%200%2096z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="SEND_TEXT_TO_AI"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M32%20160c0-35.3%2028.7-64%2064-64l32%200%200-32c0-17.7%2014.3-32%2032-32s32%2014.3%2032%2032l0%2032%20128%200%200-32c0-17.7%2014.3-32%2032-32s32%2014.3%2032%2032l0%2032%2032%200c35.3%200%2064%2028.7%2064%2064l0%2032%2032%200c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032l-32%200%200%20128c0%2035.3-28.7%2064-64%2064l-16%200%200%2048c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32l0-48-128%200%200%2048c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32l0-48-16%200c-35.3%200-64-28.7-64-64l0-128-32%200c-17.7%200-32-14.3-32-32s14.3-32%2032-32l32%200%200-32zm96%2064a32%2032%200%201%200%200%2064%2032%2032%200%201%200%200-64zm128%2032a32%2032%200%201%200%2064%200%2032%2032%200%201%200-64%200z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M32%20160c0-35.3%2028.7-64%2064-64l32%200%200-32c0-17.7%2014.3-32%2032-32s32%2014.3%2032%2032l0%2032%20128%200%200-32c0-17.7%2014.3-32%2032-32s32%2014.3%2032%2032l0%2032%2032%200c35.3%200%2064%2028.7%2064%2064l0%2032%2032%200c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032l-32%200%200%20128c0%2035.3-28.7%2064-64%2064l-16%200%200%2048c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32l0-48-128%200%200%2048c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32l0-48-16%200c-35.3%200-64-28.7-64-64l0-128-32%200c-17.7%200-32-14.3-32-32s14.3-32%2032-32l32%200%200-32zm96%2064a32%2032%200%201%200%200%2064%2032%2032%200%201%200%200-64zm128%2032a32%2032%200%201%200%2064%200%2032%2032%200%201%200-64%200z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="SEND_HOTKEY"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zm128%2064v32h32V160H128zm64%200v32h32V160H192zm64%200v32h32V160H256zm64%200v32h32V160H320zm64%200v32h32V160H384zM96%20256v32h64V256H96zm96%200v32h32V256H192zm64%200v32h32V256H256zm64%200v32h32V256H320zm64%200v32h32V256H384zm64%200v32h32V256H448zM128%20352v32H384V352H128z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zm128%2064v32h32V160H128zm64%200v32h32V160H192zm64%200v32h32V160H256zm64%200v32h32V160H320zm64%200v32h32V160H384zM96%20256v32h64V256H96zm96%200v32h32V256H192zm64%200v32h32V256H256zm64%200v32h32V256H320zm64%200v32h32V256H384zm64%200v32h32V256H448zM128%20352v32H384V352H128z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="SEND_BURST"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M234.5%205.7c13.9-5%2029.1-.6%2038.2%2010.9l144%20176c9.2%2011.2%2011.2%2027.1%205.1%2040.3s-19.2%2021.1-33.3%2021.1L320%20254V432c0%2026.5-21.5%2048-48%2048H176c-26.5%200-48-21.5-48-48V254H53.5c-14.1%200-27.1-7.9-33.3-21.1s-4.1-29%205.1-40.3l144-176c9.2-11.5%2024.3-15.9%2038.2-10.9z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M234.5%205.7c13.9-5%2029.1-.6%2038.2%2010.9l144%20176c9.2%2011.2%2011.2%2027.1%205.1%2040.3s-19.2%2021.1-33.3%2021.1L320%20254V432c0%2026.5-21.5%2048-48%2048H176c-26.5%200-48-21.5-48-48V254H53.5c-14.1%200-27.1-7.9-33.3-21.1s-4.1-29%205.1-40.3l144-176c9.2-11.5%2024.3-15.9%2038.2-10.9z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
@@ -6221,6 +6262,22 @@
       visibility: hidden !important;
       pointer-events: none !important;
     }
+
+    /* Pre-load clickable hover outline (document_start → main-script handoff). */
+    #${EARLY_HOVER_ID} {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 0;
+      height: 0;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      pointer-events: none !important;
+      z-index: ${EARLY_HOVER_Z};
+      border-radius: 2px;
+      display: none;
+    }
   `;
 
   // Early cursor state
@@ -6230,6 +6287,16 @@
   let earlyObserver = null;
   let earlyClickableElements = new Set();
   let keyboardListenersActive = false;
+  let earlyHoverEl = null;
+  let earlyHoverTarget = null;
+  let earlyHoverRaf = 0;
+  let earlyScrollResizeListener = null;
+  let earlyFocusChrome = {
+    focusColor: 'blue',
+    overlayFillEnabled: false,
+    overlayShadowEnabled: false,
+    rectangleThickness: 3
+  };
   let pendingKeyEvents = [];
   let cursorApplied = false; // Track if cursor has been applied to prevent unnecessary updates
   let cursorSettingsChanged = false; // Track if settings changed to force cursor reapplication
@@ -6334,6 +6401,7 @@
       ensureEarlyChromeHostMounted(controlStripRoot);
       ensureEarlyChromeHostMounted(keyboardHelpRoot);
       ensureEarlyChromeHostMounted(onboardingRoot);
+      remountEarlyHoverEl();
     } catch { /* ignore */ }
   }
 
@@ -6384,6 +6452,7 @@
 
       // Stop early mouse tracking (main extension will handle this)
       try { document.removeEventListener('mousemove', handleMouseMove); } catch {}
+      try { stopEarlyHoverTracking(); } catch {}
 
       // Stop early keyboard capture
       try { stopEarlyKeyboardCapture(); } catch {}
@@ -7252,6 +7321,22 @@
     return { layoutChanged, familyChanged, customLayoutChanged };
   }
 
+  function applyEarlyFocusChromeFromSettingsObj(settingsObj) {
+    const cm = settingsObj && settingsObj.clickMode && typeof settingsObj.clickMode === 'object'
+      ? settingsObj.clickMode
+      : {};
+    const thickness = Number(cm.rectangleThickness);
+    earlyFocusChrome = {
+      focusColor: cm.focusColor === 'green' ? 'green' : 'blue',
+      overlayFillEnabled: cm.overlayFillEnabled === true,
+      overlayShadowEnabled: cm.overlayShadowEnabled === true,
+      rectangleThickness: Number.isFinite(thickness) && thickness >= 1
+        ? Math.min(16, thickness)
+        : 3
+    };
+    applyEarlyFocusChromeToHoverEl();
+  }
+
   function applyEarlyKeyboardLayoutStore(raw) {
     if (raw && typeof raw === 'object' && Number(raw.version) === 1) {
       keyboardLayoutStore = raw;
@@ -7841,6 +7926,7 @@
     } else {
       // Reset cursor applied flag when disabling
       cursorApplied = false;
+      try { hideEarlyHover(); } catch { /* ignore */ }
       try {
         if (document.documentElement) {
           document.documentElement.classList.remove(CURSOR_HIDDEN_CLASS);
@@ -9196,6 +9282,7 @@
           if (layoutChanged) updateKeyboardHelpHintForLayout(keyboardLayoutId);
         }
         if (customLayoutChanged) applyEarlyKeyboardHelpVisibility(keyboardHelpVisible);
+        try { applyEarlyFocusChromeFromSettingsObj(nextObj); } catch { /* ignore */ }
       } catch { /* ignore */ }
       
       if (isExtensionEnabled) {
@@ -9240,6 +9327,7 @@
   function handleMouseMove(event) {
     if (!isExtensionEnabled) return;
     updateCursorPosition(event.clientX, event.clientY);
+    if (!isMainExtensionLoaded) scheduleEarlyHoverUpdate();
   }
 
   /**
@@ -9377,6 +9465,7 @@
     setupCursorSettingsListener();
     setupKeyboardLayoutStoreListener();
     applyEarlyControlStripFromSettingsObject(settingsObj);
+    try { applyEarlyFocusChromeFromSettingsObj(settingsObj); } catch { /* ignore */ }
     setupControlStripStorageListener();
   }
 
@@ -9392,6 +9481,9 @@
           applyEarlyKeyboardHelpVisibility(keyboardHelpVisible);
           try { renderEarlyControlStripStatus(); } catch { /* ignore */ }
           try { renderEarlyControlStripKeyboard(); } catch { /* ignore */ }
+          if (message.enabled) {
+            try { scheduleEarlyHoverUpdate(); } catch { /* ignore */ }
+          }
         } else if (message.type === 'KP_TOGGLE_STATE' || message.type === 'KP_UPDATE_STATE') {
           // Broadcast from service worker after toggle; keep strip On/Off indicator current.
           if (typeof message.enabled === 'boolean') {
@@ -9400,6 +9492,11 @@
             applyEarlyKeyboardHelpVisibility(keyboardHelpVisible);
             try { renderEarlyControlStripStatus(); } catch { /* ignore */ }
             try { renderEarlyControlStripKeyboard(); } catch { /* ignore */ }
+            if (!message.enabled) {
+              try { hideEarlyHover(); } catch { /* ignore */ }
+            } else {
+              try { scheduleEarlyHoverUpdate(); } catch { /* ignore */ }
+            }
           }
         } else if (message.type === 'CURSOR_MODE_CHANGE') {
           currentMode = message.mode;
@@ -9444,6 +9541,367 @@
     injectEarlyCSS();
   }
 
+  function isEarlyTypingContext(event) {
+    let node = null;
+    try {
+      const path = event && typeof event.composedPath === 'function' ? event.composedPath() : null;
+      if (path && path.length) {
+        for (const n of path) {
+          if (n && n.nodeType === 1) {
+            node = n;
+            break;
+          }
+        }
+      }
+    } catch { /* ignore */ }
+    if (!node) {
+      try { node = event && event.target && event.target.nodeType === 1 ? event.target : null; } catch { /* ignore */ }
+    }
+    if (!node) {
+      try { node = document.activeElement; } catch { /* ignore */ }
+    }
+    if (!node || node.nodeType !== 1) return false;
+    try {
+      if (node.isContentEditable) return true;
+    } catch { /* ignore */ }
+    try {
+      let p = node.parentElement;
+      let depth = 0;
+      while (p && depth++ < 4) {
+        if (p.isContentEditable) return true;
+        p = p.parentElement;
+      }
+    } catch { /* ignore */ }
+    const tag = String(node.tagName || '').toLowerCase();
+    if (tag === 'textarea') return !node.disabled;
+    if (tag !== 'input') return false;
+    if (node.disabled || node.readOnly) return false;
+    const type = String(node.type || 'text').toLowerCase();
+    return EARLY_TEXT_ENTRY_INPUT_TYPES.has(type);
+  }
+
+  function earlyBindingMatchesEvent(binding, slot, key, event) {
+    if (!binding) return false;
+    const label = String(binding.keyLabel || binding.displayKey || '').trim();
+    if (!label) return false;
+    if (label.length === 1) return slot === label.toUpperCase();
+    if (label.includes('/')) {
+      return label.split('/').some((part) => {
+        const t = String(part || '').trim();
+        if (!t) return false;
+        if (t.length === 1) return slot === t.toUpperCase();
+        return key === t || event.code === t;
+      });
+    }
+    return key === label || event.code === label || slot === label.toUpperCase();
+  }
+
+  function resolveEarlyActionIdForEvent(event) {
+    if (!event || event.ctrlKey || event.metaKey || event.altKey) return null;
+    const key = String(event.key || '');
+    if (!key || key === ' ') return null;
+    const slot = key.length === 1 ? key.toUpperCase() : key;
+
+    if (keyboardUsesCustomLayout) {
+      const user = getEarlyActiveUserLayout();
+      const assigned = user && user.slots && typeof user.slots === 'object' ? user.slots[slot] : null;
+      if (!assigned || assigned.type !== 'function' || !assigned.id) return null;
+      let fid = String(assigned.id);
+      if (fid.startsWith('action:')) {
+        try { fid = String(resolveEarlyFunctionSlotPaint(fid).functionId || ''); } catch { fid = ''; }
+      }
+      if (fid === 'BACK' || fid === 'BACK2' || fid === 'ACTIVATE') return fid;
+      return null;
+    }
+
+    const data = getEarlyKeyboardDataForLayout(keyboardLayoutId);
+    const bindings = (data && data.bindings) || EARLY_KEYBINDINGS;
+    for (const id of ['ACTIVATE', 'BACK', 'BACK2']) {
+      if (earlyBindingMatchesEvent(bindings[id], slot, key, event)) return id;
+    }
+    return null;
+  }
+
+  function resolveEarlyClickable(el) {
+    if (!el || el.nodeType !== 1) return null;
+    try {
+      if (el.id === EARLY_HOVER_ID || el.closest?.(`#${EARLY_HOVER_ID}`)) return null;
+    } catch { /* ignore */ }
+    try {
+      const specific = typeof el.closest === 'function' ? el.closest(EARLY_CLICKABLE_SEL) : null;
+      if (!specific || specific === document.documentElement || specific === document.body) return null;
+      return specific;
+    } catch {
+      return null;
+    }
+  }
+
+  function earlyElementFromPoint(x, y) {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    try {
+      const stack = typeof document.elementsFromPoint === 'function'
+        ? document.elementsFromPoint(x, y)
+        : [document.elementFromPoint(x, y)];
+      if (!stack || !stack.length) return null;
+      for (const node of stack) {
+        if (!node || node.nodeType !== 1) continue;
+        if (node.id === EARLY_HOVER_ID) continue;
+        return node;
+      }
+    } catch { /* ignore */ }
+    try { return document.elementFromPoint(x, y); } catch { return null; }
+  }
+
+  function applyEarlyFocusChromeToHoverEl(target) {
+    if (!earlyHoverEl) return;
+    const green = earlyFocusChrome.focusColor === 'green';
+    const p = green
+      ? {
+          border: EARLY_FOCUS_GREEN,
+          shadow: EARLY_FOCUS_GREEN_SHADOW,
+          shadowBright: EARLY_FOCUS_GREEN_SHADOW_BRIGHT,
+          fill: EARLY_FOCUS_GREEN_FILL
+        }
+      : {
+          border: EARLY_FOCUS_BLUE,
+          shadow: EARLY_FOCUS_BLUE_SHADOW,
+          shadowBright: EARLY_FOCUS_BLUE_SHADOW_BRIGHT,
+          fill: EARLY_FOCUS_BLUE_FILL
+        };
+    const thickness = Math.min(Math.max(Number(earlyFocusChrome.rectangleThickness) || 3, 1), 16);
+    try {
+      earlyHoverEl.style.border = `${thickness}px solid ${p.border}`;
+      earlyHoverEl.style.background = earlyFocusChrome.overlayFillEnabled === true ? p.fill : 'transparent';
+      earlyHoverEl.style.boxShadow = earlyFocusChrome.overlayShadowEnabled === true
+        ? `0 0 0 1px ${p.shadow}, 0 0 8px ${p.shadowBright}`
+        : 'none';
+    } catch { /* ignore */ }
+    void target;
+  }
+
+  function ensureEarlyHoverEl() {
+    if (isMainExtensionLoaded) return null;
+    if (earlyHoverEl && earlyHoverEl.isConnected) return earlyHoverEl;
+    try {
+      const el = document.createElement('div');
+      el.id = EARLY_HOVER_ID;
+      el.setAttribute('aria-hidden', 'true');
+      el.style.display = 'none';
+      (document.body || document.documentElement)?.appendChild(el);
+      earlyHoverEl = el;
+      applyEarlyFocusChromeToHoverEl();
+      return el;
+    } catch {
+      return null;
+    }
+  }
+
+  function remountEarlyHoverEl() {
+    if (!earlyHoverEl || isMainExtensionLoaded) return;
+    try {
+      const host = document.body || document.documentElement;
+      if (host && earlyHoverEl.parentNode !== host) host.appendChild(earlyHoverEl);
+    } catch { /* ignore */ }
+  }
+
+  function hideEarlyHover() {
+    earlyHoverTarget = null;
+    if (earlyHoverRaf) {
+      try { cancelAnimationFrame(earlyHoverRaf); } catch { /* ignore */ }
+      earlyHoverRaf = 0;
+    }
+    if (earlyHoverEl) {
+      try {
+        earlyHoverEl.style.display = 'none';
+        earlyHoverEl.style.width = '0px';
+        earlyHoverEl.style.height = '0px';
+      } catch { /* ignore */ }
+    }
+  }
+
+  function paintEarlyHover(target) {
+    if (!target || !(target instanceof Element)) {
+      hideEarlyHover();
+      return;
+    }
+    if (target.tagName === 'IFRAME' || target.tagName === 'FRAME') {
+      hideEarlyHover();
+      return;
+    }
+    let rect;
+    try { rect = target.getBoundingClientRect(); } catch {
+      hideEarlyHover();
+      return;
+    }
+    if (!rect || rect.width <= 0 || rect.height <= 0) {
+      hideEarlyHover();
+      return;
+    }
+    try {
+      if (rect.width >= window.innerWidth * 0.95 && rect.height >= window.innerHeight * 0.95) {
+        hideEarlyHover();
+        return;
+      }
+    } catch { /* ignore */ }
+
+    const el = ensureEarlyHoverEl();
+    if (!el) return;
+    earlyHoverTarget = target;
+    applyEarlyFocusChromeToHoverEl(target);
+    try {
+      el.style.display = 'block';
+      el.style.transform = `translate(${Math.round(rect.left)}px, ${Math.round(rect.top)}px)`;
+      el.style.width = `${Math.round(rect.width)}px`;
+      el.style.height = `${Math.round(rect.height)}px`;
+    } catch { /* ignore */ }
+  }
+
+  function scheduleEarlyHoverUpdate() {
+    if (earlyHoverRaf) return;
+    earlyHoverRaf = requestAnimationFrame(() => {
+      earlyHoverRaf = 0;
+      try {
+        if (isMainExtensionLoaded || !isExtensionEnabled) {
+          hideEarlyHover();
+          return;
+        }
+        const x = mousePosition.x;
+        const y = mousePosition.y;
+        if (!Number.isFinite(x) || !Number.isFinite(y)) {
+          hideEarlyHover();
+          return;
+        }
+        const clickable = resolveEarlyClickable(earlyElementFromPoint(x, y));
+        paintEarlyHover(clickable);
+      } catch {
+        hideEarlyHover();
+      }
+    });
+  }
+
+  function handleEarlyScrollOrResize() {
+    if (isMainExtensionLoaded || !isExtensionEnabled) return;
+    scheduleEarlyHoverUpdate();
+  }
+
+  function startEarlyHoverTracking() {
+    if (earlyScrollResizeListener) return;
+    earlyScrollResizeListener = handleEarlyScrollOrResize;
+    try {
+      window.addEventListener('scroll', earlyScrollResizeListener, { passive: true, capture: true });
+      window.addEventListener('resize', earlyScrollResizeListener, { passive: true });
+    } catch { /* ignore */ }
+    scheduleEarlyHoverUpdate();
+  }
+
+  function stopEarlyHoverTracking() {
+    if (earlyScrollResizeListener) {
+      try { window.removeEventListener('scroll', earlyScrollResizeListener, { capture: true }); } catch { /* ignore */ }
+      try { window.removeEventListener('resize', earlyScrollResizeListener); } catch { /* ignore */ }
+      earlyScrollResizeListener = null;
+    }
+    hideEarlyHover();
+    if (earlyHoverEl) {
+      try { earlyHoverEl.remove(); } catch { /* ignore */ }
+      earlyHoverEl = null;
+    }
+  }
+
+  function dispatchEarlyClickSequence(target, clientX, clientY) {
+    if (!target) return;
+    const common = {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      view: window,
+      clientX,
+      clientY,
+      button: 0,
+      buttons: 1
+    };
+    const hasPointer = typeof window.PointerEvent === 'function';
+    if (hasPointer) {
+      const pCommon = { ...common, pointerId: 1, pointerType: 'mouse', isPrimary: true };
+      try { target.dispatchEvent(new PointerEvent('pointerover', pCommon)); } catch { /* ignore */ }
+      try { target.dispatchEvent(new PointerEvent('pointerenter', pCommon)); } catch { /* ignore */ }
+      try { target.dispatchEvent(new PointerEvent('pointerdown', pCommon)); } catch { /* ignore */ }
+    }
+    try { target.dispatchEvent(new MouseEvent('mouseover', common)); } catch { /* ignore */ }
+    try { target.dispatchEvent(new MouseEvent('mousedown', common)); } catch { /* ignore */ }
+    const commonUp = { ...common, buttons: 0 };
+    if (hasPointer) {
+      const pUp = { ...commonUp, pointerId: 1, pointerType: 'mouse', isPrimary: true };
+      try { target.dispatchEvent(new PointerEvent('pointerup', pUp)); } catch { /* ignore */ }
+    }
+    try { target.dispatchEvent(new MouseEvent('mouseup', commonUp)); } catch { /* ignore */ }
+    try { target.dispatchEvent(new MouseEvent('click', commonUp)); } catch { /* ignore */ }
+  }
+
+  function activateEarlyClickableAt(clientX, clientY) {
+    const under = earlyElementFromPoint(clientX, clientY);
+    if (!under) return false;
+    const activator = resolveEarlyClickable(under) || under;
+    if (!activator || activator === document.documentElement || activator === document.body) return false;
+
+    try {
+      if (activator.tagName === 'A' && activator.href && typeof activator.click === 'function') {
+        activator.click();
+        return true;
+      }
+    } catch { /* ignore */ }
+
+    try {
+      const role = String(activator.getAttribute?.('role') || '').toLowerCase();
+      if (
+        (activator.tagName === 'BUTTON' || role === 'button' || activator.tagName === 'SUMMARY') &&
+        typeof activator.click === 'function'
+      ) {
+        activator.click();
+        return true;
+      }
+    } catch { /* ignore */ }
+
+    try {
+      const summary = activator.tagName === 'SUMMARY'
+        ? activator
+        : (typeof under.closest === 'function' ? under.closest('summary') : null);
+      if (summary && typeof summary.click === 'function') {
+        summary.click();
+        return true;
+      }
+    } catch { /* ignore */ }
+
+    try {
+      if (typeof activator.click === 'function') {
+        activator.click();
+        return true;
+      }
+    } catch { /* ignore */ }
+    dispatchEarlyClickSequence(activator, clientX, clientY);
+    return true;
+  }
+
+  function performEarlyGoBack() {
+    try {
+      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+        chrome.runtime.sendMessage({
+          type: 'KP_TRANSIENT_ACTION',
+          action: 'back',
+          timestamp: Date.now()
+        }, () => { void chrome.runtime.lastError; });
+      }
+    } catch { /* ignore */ }
+    try {
+      history.back();
+    } catch {
+      try {
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+          chrome.runtime.sendMessage({ type: 'KP_GO_BACK' }, () => { void chrome.runtime.lastError; });
+        }
+      } catch { /* ignore */ }
+    }
+  }
+
   /**
    * Check if element is clickable for early detection
    */
@@ -9480,6 +9938,7 @@
             if (clickables) {
               clickables.forEach(el => earlyClickableElements.add(el));
             }
+            scheduleEarlyHoverUpdate();
           }
         });
 
@@ -9519,6 +9978,24 @@
     }
 
     if (!isExtensionEnabled) return;
+
+    if (!isMainExtensionLoaded && !event.repeat && !isEarlyTypingContext(event)) {
+      const actionId = resolveEarlyActionIdForEvent(event);
+      if (actionId === 'BACK' || actionId === 'BACK2') {
+        event.preventDefault();
+        event.stopPropagation();
+        try { event.stopImmediatePropagation(); } catch { /* ignore */ }
+        performEarlyGoBack();
+        return;
+      }
+      if (actionId === 'ACTIVATE') {
+        event.preventDefault();
+        event.stopPropagation();
+        try { event.stopImmediatePropagation(); } catch { /* ignore */ }
+        activateEarlyClickableAt(mousePosition.x, mousePosition.y);
+        return;
+      }
+    }
 
     // Store key event for main extension
     pendingKeyEvents.push({
@@ -9583,9 +10060,10 @@
         reInjectCSS();
         // Start mouse tracking
         document.addEventListener('mousemove', handleMouseMove, { passive: true });
+        updateCursorPosition(window.innerWidth / 2, window.innerHeight / 2);
+        startEarlyHoverTracking();
         // Ensure cursor is visible
         updateCursorVisibility();
-        updateCursorPosition(window.innerWidth / 2, window.innerHeight / 2); // Start at center
         
         // Debug logging
         console.log('[KeyPilot Early] CSS cursor applied');
@@ -9620,6 +10098,9 @@
     setEnabled: (enabled) => {
       isExtensionEnabled = enabled;
       updateCursorVisibility();
+      if (enabled && !isMainExtensionLoaded) {
+        try { scheduleEarlyHoverUpdate(); } catch { /* ignore */ }
+      }
     },
     cleanup: () => {
       // Remove CSS cursor
@@ -9635,6 +10116,7 @@
       }
       document.removeEventListener('mousemove', handleMouseMove);
       stopEarlyKeyboardCapture();
+      stopEarlyHoverTracking();
       if (earlyObserver) {
         earlyObserver.disconnect();
       }

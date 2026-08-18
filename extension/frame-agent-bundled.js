@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-18T06:51:03.877Z
+ * Generated on 2026-08-18T20:36:29.173Z
  */
 
 (() => {
@@ -31,6 +31,8 @@
     // --- UI open (content-script handlers; SW may forward) ---
     OPEN_SETTINGS_POPOVER: "KP_OPEN_SETTINGS_POPOVER",
     OPEN_GUIDE_POPOVER: "KP_OPEN_GUIDE_POPOVER",
+    /** Open Docs popover; optional topicId / hash deep-link. */
+    OPEN_DOCS_POPOVER: "KP_OPEN_DOCS_POPOVER",
     OPEN_ONBOARDING: "KP_OPEN_ONBOARDING",
     /** Reset walkthrough progress and open it (e.g. Guide "Launch Walkthrough"). */
     LAUNCH_WALKTHROUGH: "KP_LAUNCH_WALKTHROUGH",
@@ -123,6 +125,7 @@
   var TAB_UI_FORWARD_TYPES = Object.freeze([
     MSG.OPEN_SETTINGS_POPOVER,
     MSG.OPEN_GUIDE_POPOVER,
+    MSG.OPEN_DOCS_POPOVER,
     MSG.OPEN_ONBOARDING,
     MSG.LAUNCH_WALKTHROUGH
   ]);
@@ -400,7 +403,7 @@
       description: "Navigate to the site origin",
       details: "Jumps to the site root (scheme + host) of the current page \u2014 useful for escaping deep paths without typing a URL.",
       keyboardClass: null,
-      row: null
+      row: 2
     }),
     LAUNCHER: Object.freeze({
       handler: "handleLauncherKey",
@@ -601,12 +604,21 @@
       keyboardClass: null,
       row: null
     }),
+    // Font under cursor — Actions Library only (no built-in layout key).
+    FONT_INFO: Object.freeze({
+      handler: "handleFontInfoKey",
+      label: "Font Info",
+      description: "Inspect font under the cursor",
+      details: "Shows a popover with the font name, size, family, file type, and resource URL for the styled text under the cursor, and outlines that text run. No default layout key \u2014 bind it in Layout Config if you need it.",
+      keyboardClass: null,
+      row: null
+    }),
     // Page-wide Image / Video / Text gallery (O on right-handed; O is TAB_RIGHT on left-handed).
     PAGE_MEDIA: Object.freeze({
       handler: "handlePageMediaKey",
       label: "Page Media",
       description: "Browse media found on this page",
-      details: "Opens a gallery of images, videos, and documents discovered on the current page so you can review or collect them without hunting through the DOM.",
+      details: "Opens a gallery of images, videos, documents, fonts, and URLs discovered on the current page so you can review or collect them without hunting through the DOM.",
       keyboardClass: null,
       row: 1
     }),
@@ -653,6 +665,38 @@
       keyboardClass: null,
       row: null
     }),
+    SELECT_WORD: Object.freeze({
+      handler: "handleSelectWordKey",
+      label: "Select Word",
+      description: "Select the word under the cursor",
+      details: "Selects the word under the KeyPilot cursor. Press again over the same word to deselect it. Exclusive mode replaces the current selection; cumulative mode adds or removes words. Copy reads this selection.",
+      keyboardClass: null,
+      row: null
+    }),
+    SELECT_SENTENCE: Object.freeze({
+      handler: "handleSelectSentenceKey",
+      label: "Select Sentence",
+      description: "Select the sentence under the cursor",
+      details: "Selects the sentence under the KeyPilot cursor. Press again over the same sentence to deselect it. Exclusive mode replaces the current selection; cumulative mode adds or removes sentences.",
+      keyboardClass: null,
+      row: null
+    }),
+    SELECT_PARAGRAPH: Object.freeze({
+      handler: "handleSelectParagraphKey",
+      label: "Select Paragraph",
+      description: "Select the paragraph under the cursor",
+      details: "Selects the paragraph (or nearest block) under the KeyPilot cursor. Press again over the same block to deselect it. Exclusive mode replaces the current selection; cumulative mode adds or removes paragraphs.",
+      keyboardClass: null,
+      row: null
+    }),
+    SELECT_IMAGE: Object.freeze({
+      handler: "handleSelectImageKey",
+      label: "Select Image",
+      description: "Select the image under the cursor",
+      details: "Selects the image under the KeyPilot cursor. Press again over the same image to deselect it. Exclusive mode replaces the current selection; cumulative mode adds or removes images. Copy can copy selected images.",
+      keyboardClass: null,
+      row: null
+    }),
     // AI (Functions palette — AI category).
     SEND_TEXT_TO_AI: Object.freeze({
       handler: "handleSendTextToAiKey",
@@ -692,6 +736,7 @@
     COPY_HOVERED_IMAGE: "Get Page Data",
     COPY_HOVERED_URL: "Get Page Data",
     COPY_HOVERED_VIDEO: "Get Page Data",
+    FONT_INFO: "Get Page Data",
     PAGE_MEDIA: "Get Page Data",
     DELETE: "Select",
     COLS_TOGGLE: "Select",
@@ -700,6 +745,10 @@
     CLIPBOARD_CUT: "Clipboard",
     CLIPBOARD_PASTE: "Clipboard",
     CLIPBOARD_SELECT_ALL: "Clipboard",
+    SELECT_WORD: "Clipboard",
+    SELECT_SENTENCE: "Clipboard",
+    SELECT_PARAGRAPH: "Clipboard",
+    SELECT_IMAGE: "Clipboard",
     SEND_TEXT_TO_AI: "AI",
     LAUNCHER: "Begin URL",
     TOP_SITES: "Begin URL",
@@ -793,7 +842,7 @@
     FORWARD: Object.freeze({ keys: ["r", "R"] }),
     NEW_TAB: Object.freeze({ keys: ["t", "T"] }),
     CLOSE_TAB: Object.freeze({ keys: ["a", "A"] }),
-    BACK2: Object.freeze({ keys: ["s", "S"] }),
+    ROOT: Object.freeze({ keys: ["s", "S", "1", "!"], displayKey: "S", keyLabel: "S" }),
     BACK: Object.freeze({ keys: ["d", "D"] }),
     ACTIVATE: Object.freeze({ keys: ["f", "F"] }),
     ACTIVATE_NEW_TAB_BACKGROUND: Object.freeze({ keys: ["g", "G"] }),
@@ -813,7 +862,6 @@
     PAGE_MEDIA: Object.freeze({ keys: ["o", "O"] }),
     // M is otherwise unused on the right-handed layout (it's PAGE_DOWN_INSTANT on left-handed).
     OPEN_MEDIA_LIBRARY: Object.freeze({ keys: ["m", "M"] }),
-    ROOT: Object.freeze({ keys: ["1", "!"], displayKey: "1", keyLabel: "1" }),
     DELETE: Object.freeze({ keys: ["Backspace"], displayKey: "Backspace", keyLabel: "Backspace" })
     // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
   });
@@ -828,7 +876,7 @@
     SCROLL_LINE: Object.freeze({ keys: ["t", "T"] }),
     // Home row cluster: A S D F G  ->  ; L K J H (mirrored-ish around center)
     CLOSE_TAB: Object.freeze({ keys: [";", ":"], displayKey: ";", keyLabel: ";" }),
-    BACK2: Object.freeze({ keys: ["l", "L"] }),
+    ROOT: Object.freeze({ keys: ["l", "L", "1", "!"], displayKey: "L", keyLabel: "L" }),
     BACK: Object.freeze({ keys: ["k", "K"] }),
     ACTIVATE: Object.freeze({ keys: ["j", "J"] }),
     ACTIVATE_NEW_TAB_BACKGROUND: Object.freeze({ keys: ["h", "H"] }),
@@ -849,7 +897,6 @@
     // I is OPEN_POPOVER on left-handed; E is free.
     COPY_HOVERED_IMAGE: Object.freeze({ keys: ["e", "E"] }),
     // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
-    ROOT: Object.freeze({ keys: ["1", "!"], displayKey: "1", keyLabel: "1" }),
     DELETE: Object.freeze({ keys: ["Backspace"], displayKey: "Backspace", keyLabel: "Backspace" })
   });
   var SYSTEM_LAYER_ACTION_IDS = Object.freeze([
@@ -903,7 +950,7 @@
     "TAB_RIGHT",
     "FORWARD",
     "BACK",
-    "BACK2",
+    "ROOT",
     "PAGE_TOP",
     "PAGE_BOTTOM",
     "PAGE_UP_INSTANT",
@@ -912,7 +959,7 @@
   var CLICK_HISTORY_ACTION_IDS = Object.freeze([
     "ACTIVATE",
     "BACK",
-    "BACK2",
+    "ROOT",
     "FORWARD"
   ]);
   var BASIC_NAVIGATION_UI_ACTION_IDS = Object.freeze([
@@ -1013,7 +1060,7 @@
     [
       { type: "special", text: "Caps", className: "key key-caps" },
       { type: "action", id: "CLOSE_TAB", fallbackText: "Close Tab" },
-      { type: "action", id: "BACK2", fallbackText: "Go Back" },
+      { type: "action", id: "ROOT", fallbackText: "Go to Site Root" },
       { type: "action", id: "BACK", fallbackText: "Go Back" },
       { type: "action", id: "ACTIVATE", fallbackText: "Click Element" },
       { type: "action", id: "ACTIVATE_NEW_TAB_BACKGROUND", fallbackText: "Click New Tab Background" },
@@ -1084,7 +1131,7 @@
       // J
       { type: "action", id: "BACK", fallbackText: "Go Back" },
       // K
-      { type: "action", id: "BACK2", fallbackText: "Go Back" },
+      { type: "action", id: "ROOT", fallbackText: "Go to Site Root" },
       // L
       { type: "action", id: "CLOSE_TAB", fallbackText: "Close Tab" },
       // ;
@@ -1243,6 +1290,10 @@
     COLS_CLOSE_BTN: "kpv2-cols-close-btn",
     HIGHLIGHT_OVERLAY: "kpv2-highlight-overlay",
     HIGHLIGHT_SELECTION: "kpv2-highlight-selection",
+    /** Overlay boxes for Select Image (and text fallback when CSS Highlight is unavailable) */
+    UNIT_SELECT_OVERLAY: "kpv2-unit-select-overlay",
+    /** Outline around the Font Info inspected text run */
+    FONT_INFO_OUTLINE: "kpv2-font-info-outline",
     /** Persistent outline for elements added in cumulative inspector pick */
     INSPECTOR_PICKED: "kpv2-inspector-picked",
     INSPECTOR_PICKED_OVERLAY: "kpv2-inspector-picked-overlay",
@@ -1356,6 +1407,12 @@
     BEHAVIOR: "smooth",
     /** Fade-in / fade-out duration for Scroll To Top / Bottom "Fade" jump style */
     EDGE_JUMP_FADE_MS: 180,
+    /**
+     * After the instant jump, keep the veil opaque until scroll position is
+     * stable (or this timeout). Covers CSS `scroll-behavior: smooth` and
+     * Lenis-style hijacks that keep interpolating after scrollTo returns.
+     */
+    EDGE_JUMP_SETTLE_MS: 480,
     /** Scroll Line: no scroll inside this radius from the origin dot */
     LINE_DEADZONE_PX: 12,
     /**
@@ -1473,6 +1530,10 @@
     // Highlight selection colors
     HIGHLIGHT_SELECTION_BG: "rgba(0,120,255,0.3)",
     HIGHLIGHT_SELECTION_BORDER: "rgba(0,120,255,0.6)",
+    // Font Info inspected-run outline (stroke, not Text Select fill)
+    FONT_INFO_OUTLINE: "rgba(255, 193, 7, 0.95)",
+    FONT_INFO_OUTLINE_SHADOW: "rgba(255, 193, 7, 0.45)",
+    FONT_INFO_OUTLINE_FILL: "rgba(255, 193, 7, 0.08)",
     // Solid accents for ESC exit labels (distinct from translucent overlay borders)
     ORANGE_BG: "rgba(255, 165, 0, 0.9)",
     ORANGE_TEXT: "#fff",
@@ -2306,6 +2367,110 @@
 
   // src/utils/scroll-at-point.js
   var EDGE_EPS = 1;
+  function isInstantScrollBehavior(behavior) {
+    return behavior === "auto" || behavior === "instant";
+  }
+  function collectScrollBehaviorNodes(el, doc) {
+    const nodes = [];
+    const add = (n) => {
+      if (n && n.nodeType === 1 && !nodes.includes(n)) nodes.push(n);
+    };
+    add(el);
+    try {
+      add(doc?.scrollingElement);
+      add(doc?.documentElement);
+      add(doc?.body);
+    } catch {
+    }
+    return nodes;
+  }
+  function forceCssScrollBehaviorAuto(nodes) {
+    const saved = [];
+    for (const node of nodes) {
+      try {
+        const style = node.style;
+        if (!style) continue;
+        saved.push({
+          node,
+          had: style.getPropertyValue("scroll-behavior") !== "",
+          value: style.getPropertyValue("scroll-behavior")
+        });
+        style.setProperty("scroll-behavior", "auto", "important");
+      } catch {
+      }
+    }
+    return () => {
+      for (const { node, had, value } of saved) {
+        try {
+          if (had) node.style.setProperty("scroll-behavior", value);
+          else node.style.removeProperty("scroll-behavior");
+        } catch {
+        }
+      }
+    };
+  }
+  function tryHijackInstant(win, left, top) {
+    if (!win) return;
+    const inst = win.lenis;
+    if (inst && typeof inst.scrollTo === "function") {
+      try {
+        inst.scrollTo(top, { immediate: true, force: true, lock: false });
+      } catch {
+        try {
+          inst.scrollTo(top, { immediate: true });
+        } catch {
+        }
+      }
+    }
+    const loco = win.locoScroll || win.locomotiveScroll;
+    if (loco && typeof loco.scrollTo === "function") {
+      try {
+        loco.scrollTo(top, { duration: 0, disableLerp: true, immediate: true });
+      } catch {
+      }
+    }
+  }
+  function applyInstantScrollTo(el, left, top, doc = document, win = window) {
+    if (!el) return false;
+    const L = Number(left) || 0;
+    const T = Number(top) || 0;
+    const restore = forceCssScrollBehaviorAuto(collectScrollBehaviorNodes(el, doc));
+    try {
+      try {
+        void el.offsetHeight;
+      } catch {
+      }
+      try {
+        if (typeof el.scrollTo === "function") {
+          try {
+            el.scrollTo({ left: L, top: T, behavior: "instant" });
+          } catch {
+            el.scrollTo(L, T);
+          }
+        }
+      } catch {
+      }
+      try {
+        el.scrollLeft = L;
+        el.scrollTop = T;
+      } catch {
+      }
+      if (isDocumentScrollRoot(el, doc) && win && typeof win.scrollTo === "function") {
+        try {
+          try {
+            win.scrollTo({ left: L, top: T, behavior: "instant" });
+          } catch {
+            win.scrollTo(L, T);
+          }
+        } catch {
+        }
+      }
+      tryHijackInstant(win, L, T);
+      return true;
+    } finally {
+      restore();
+    }
+  }
   function composedParent(node) {
     if (!node || node.nodeType !== 1) return null;
     const el = (
@@ -2393,6 +2558,11 @@
     const dx = Number(deltaX) || 0;
     const dy = Number(deltaY) || 0;
     if (!dx && !dy) return false;
+    if (isInstantScrollBehavior(behavior)) {
+      const left = (Number(el.scrollLeft) || 0) + dx;
+      const top = (Number(el.scrollTop) || 0) + dy;
+      return applyInstantScrollTo(el, left, top, doc, win);
+    }
     const opts = { left: dx, top: dy, behavior };
     try {
       if (typeof el.scrollBy === "function") {
@@ -2627,9 +2797,20 @@
     const target = findScrollableAtPoint(clientX, clientY, { doc, win });
     if (!target) {
       try {
+        const se = doc.scrollingElement || doc.documentElement || doc.body;
+        if (se && isInstantScrollBehavior(behavior)) {
+          const ok2 = applyInstantScrollTo(
+            se,
+            (Number(se.scrollLeft) || 0) + dx,
+            (Number(se.scrollTop) || 0) + dy,
+            doc,
+            win
+          );
+          return { scrolled: ok2, el: se };
+        }
         if (win && typeof win.scrollBy === "function") {
           win.scrollBy({ left: dx, top: dy, behavior });
-          return { scrolled: true, el: doc.scrollingElement || doc.documentElement || null };
+          return { scrolled: true, el: se || null };
         }
       } catch {
       }
@@ -2652,9 +2833,20 @@
     const target = findScrollTargetAtPoint(clientX, clientY, s, { doc, win });
     if (!target) {
       try {
+        const se = doc.scrollingElement || doc.documentElement || doc.body;
+        if (se && isInstantScrollBehavior(behavior)) {
+          const ok2 = applyInstantScrollTo(
+            se,
+            Number(se.scrollLeft) || 0,
+            (Number(se.scrollTop) || 0) + s * amount,
+            doc,
+            win
+          );
+          return { scrolled: ok2, axis: "y", el: se };
+        }
         if (win && typeof win.scrollBy === "function") {
           win.scrollBy({ top: s * amount, left: 0, behavior });
-          return { scrolled: true, axis: "y", el: doc.scrollingElement || doc.documentElement || null };
+          return { scrolled: true, axis: "y", el: se || null };
         }
       } catch {
       }
@@ -2681,6 +2873,9 @@
       }
     } catch {
       return false;
+    }
+    if (isInstantScrollBehavior(behavior)) {
+      return applyInstantScrollTo(el, left, top, doc, win);
     }
     const opts = { left, top, behavior };
     try {
@@ -2721,7 +2916,12 @@
         if (win && typeof win.scrollTo === "function") {
           const se = doc.scrollingElement || doc.documentElement || doc.body;
           const top = s < 0 ? 0 : Math.max(0, (se?.scrollHeight || doc.body?.scrollHeight || 0) - (win.innerHeight || 0));
-          win.scrollTo({ top, left: win.pageXOffset || 0, behavior });
+          const left = win.pageXOffset || 0;
+          if (se && isInstantScrollBehavior(behavior)) {
+            applyInstantScrollTo(se, left, top, doc, win);
+          } else {
+            win.scrollTo({ top, left, behavior });
+          }
           return { scrolled: true, axis: "y", el: se || null };
         }
       } catch {
@@ -4115,7 +4315,7 @@
         const amount = Math.abs(Number(deltaPx));
         const delta = Number.isFinite(amount) && amount > 0 ? amount : halfPagePx;
         const s = sign < 0 ? -1 : 1;
-        const beh = xyMode || behavior === "auto" || behavior === "instant" ? "auto" : behavior || scrollBehavior;
+        const beh = xyMode || behavior === "auto" || behavior === "instant" ? "instant" : behavior || scrollBehavior;
         const deltaX = Number(xy?.deltaX) || 0;
         const deltaY = Number(xy?.deltaY) || 0;
         try {
@@ -4466,7 +4666,7 @@
             const y = Number(data.clientY);
             const sign = Number(data.sign) < 0 ? -1 : 1;
             const delta = Number(data.deltaPx);
-            const beh = data.behavior === "auto" || data.behavior === "instant" ? "auto" : data.behavior || scrollBehavior;
+            const beh = data.behavior === "auto" || data.behavior === "instant" ? "instant" : data.behavior || scrollBehavior;
             const mode = data.mode === "edge" ? "edge" : data.mode === "xy" ? "xy" : "delta";
             scrollAt(x, y, sign, delta, beh, mode, {
               deltaX: Number(data.deltaX) || 0,
@@ -4867,6 +5067,14 @@
       const scrollByY = (deltaY, behavior = "smooth") => {
         try {
           const el = document.scrollingElement || document.documentElement || document.body;
+          if (el && isInstantScrollBehavior(behavior)) {
+            applyInstantScrollTo(
+              el,
+              Number(el.scrollLeft) || 0,
+              (Number(el.scrollTop) || 0) + (Number(deltaY) || 0)
+            );
+            return;
+          }
           if (el && typeof el.scrollBy === "function") {
             el.scrollBy({ top: deltaY, behavior });
           } else {
@@ -4877,6 +5085,11 @@
       };
       const scrollToY = (top, behavior = "smooth") => {
         try {
+          const el = document.scrollingElement || document.documentElement || document.body;
+          if (el && isInstantScrollBehavior(behavior)) {
+            applyInstantScrollTo(el, Number(el.scrollLeft) || window.pageXOffset || 0, Number(top) || 0);
+            return;
+          }
           window.scrollTo({ top, behavior });
         } catch {
         }
@@ -4980,7 +5193,7 @@
         }
         if (!bridgeActive) return;
         if (data.type === MSG.POPOVER_SCROLL) {
-          const behavior = data.behavior === "auto" ? "auto" : "smooth";
+          const behavior = data.behavior === "auto" || data.behavior === "instant" ? "instant" : "smooth";
           if (data.command === "scrollBy") {
             const delta = Number(data.delta) || 0;
             scrollByY(delta, behavior);

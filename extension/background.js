@@ -22,12 +22,12 @@ import {
 } from './src/utils/dictionary-lookup.js';
 
 /**
- * Fetch progressive video bytes in the service worker (host_permissions bypass CORS).
- * Rejects HTML error pages and streaming manifests.
+ * Fetch file bytes in the service worker (host_permissions bypass CORS).
  * @param {string} url
+ * @param {{ minBytes?: number, defaultMime?: string }} [opts]
  * @returns {Promise<{ blob: Blob, mime: string }|null>}
  */
-async function fetchVideoBytesInServiceWorker(url) {
+async function fetchFileBytesInServiceWorker(url, opts = {}) {
   const src = String(url || '').trim();
   if (!isServiceWorkerFetchableVideoUrl(src)) return null;
   try {
@@ -39,8 +39,7 @@ async function fetchVideoBytesInServiceWorker(url) {
     if (!res.ok) return null;
     const ct = String(res.headers.get('content-type') || '').toLowerCase();
     if (
-      ct.includes('text/html')
-      || ct.includes('application/vnd.apple.mpegurl')
+      ct.includes('application/vnd.apple.mpegurl')
       || ct.includes('application/x-mpegurl')
       || ct.includes('application/dash+xml')
     ) {
@@ -48,16 +47,32 @@ async function fetchVideoBytesInServiceWorker(url) {
     }
     const blob = await res.blob();
     if (!(blob instanceof Blob) || blob.size <= 0) return null;
-    // Tiny non-video bodies are usually error pages or stubs.
-    if (blob.size < 2048 && !ct.startsWith('video/') && !/^application\/(octet-stream|mp4)/i.test(ct)) {
+    const minBytes = Number(opts.minBytes) || 0;
+    if (minBytes > 0 && blob.size < minBytes
+      && !ct.startsWith('video/')
+      && !/^application\/(octet-stream|mp4)/i.test(ct)) {
       return null;
     }
-    const mime = (ct.split(';')[0].trim() || blob.type || 'video/mp4');
+    const mime = (ct.split(';')[0].trim() || blob.type || opts.defaultMime || 'application/octet-stream');
     return { blob, mime };
   } catch (e) {
-    console.warn('[KeyPilot] SW video fetch failed:', e?.message || e);
+    console.warn('[KeyPilot] SW file fetch failed:', e?.message || e);
     return null;
   }
+}
+
+/**
+ * Fetch progressive video bytes in the service worker (host_permissions bypass CORS).
+ * Rejects HTML error pages and streaming manifests.
+ * @param {string} url
+ * @returns {Promise<{ blob: Blob, mime: string }|null>}
+ */
+async function fetchVideoBytesInServiceWorker(url) {
+  const fetched = await fetchFileBytesInServiceWorker(url, { minBytes: 2048, defaultMime: 'video/mp4' });
+  if (!fetched) return null;
+  const ct = String(fetched.mime || '').toLowerCase();
+  if (ct.includes('text/html')) return null;
+  return fetched;
 }
 
 /** @type {Map<string, { url: string, source: string, ts: number }>} */
@@ -1824,22 +1839,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               ? 'url'
               : message.kind === 'video'
                 ? 'video'
-                : 'image';
+                : message.kind === 'document'
+                  ? 'document'
+                  : message.kind === 'file'
+                    ? 'file'
+                    : 'image';
+            const sourceUrl = typeof message.sourceUrl === 'string' ? message.sourceUrl : '';
+            const pageUrl = typeof message.pageUrl === 'string' ? message.pageUrl : '';
+            const dataUrl = typeof message.dataUrl === 'string' ? message.dataUrl : '';
+            let mime = typeof message.mime === 'string' ? message.mime : '';
+            const shouldFetch = message.fetchSource !== false
+              && !dataUrl
+              && isServiceWorkerFetchableVideoUrl(sourceUrl);
+
             const result = kind === 'url'
-              ? await mediaLibraryService.addUrl({
-                  sourceUrl: typeof message.sourceUrl === 'string' ? message.sourceUrl : '',
-                  pageUrl: typeof message.pageUrl === 'string' ? message.pageUrl : ''
-                })
+              ? await mediaLibraryService.addUrl({ sourceUrl, pageUrl })
               : kind === 'video'
                 ? await (async () => {
-                    const sourceUrl = typeof message.sourceUrl === 'string' ? message.sourceUrl : '';
-                    const dataUrl = typeof message.dataUrl === 'string' ? message.dataUrl : '';
-                    let mime = typeof message.mime === 'string' ? message.mime : '';
                     /** @type {Blob|null} */
                     let blob = null;
-                    const shouldFetch = message.fetchSource !== false
-                      && !dataUrl
-                      && isServiceWorkerFetchableVideoUrl(sourceUrl);
                     if (shouldFetch) {
                       const fetched = await fetchVideoBytesInServiceWorker(sourceUrl);
                       if (fetched?.blob) {
@@ -1852,17 +1870,56 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                       dataUrl,
                       mime,
                       sourceUrl,
-                      pageUrl: typeof message.pageUrl === 'string' ? message.pageUrl : '',
+                      pageUrl,
                       thumbDataUrl: typeof message.thumbDataUrl === 'string' ? message.thumbDataUrl : '',
                       width: Number(message.width) || 0,
                       height: Number(message.height) || 0
                     });
                   })()
+              : kind === 'document'
+                ? await (async () => {
+                    /** @type {Blob|null} */
+                    let blob = null;
+                    if (shouldFetch) {
+                      const fetched = await fetchFileBytesInServiceWorker(sourceUrl);
+                      if (fetched?.blob) {
+                        blob = fetched.blob;
+                        if (!mime) mime = fetched.mime || '';
+                      }
+                    }
+                    return mediaLibraryService.addDocument({
+                      blob: blob || undefined,
+                      dataUrl,
+                      mime,
+                      sourceUrl,
+                      pageUrl
+                    });
+                  })()
+              : kind === 'file'
+                ? await (async () => {
+                    /** @type {Blob|null} */
+                    let blob = null;
+                    let fileMime = mime;
+                    if (shouldFetch) {
+                      const fetched = await fetchFileBytesInServiceWorker(sourceUrl);
+                      if (fetched?.blob) {
+                        blob = fetched.blob;
+                        if (!fileMime) fileMime = fetched.mime || '';
+                      }
+                    }
+                    return mediaLibraryService.addFetchedFile({
+                      blob: blob || undefined,
+                      dataUrl,
+                      mime: fileMime,
+                      sourceUrl,
+                      pageUrl
+                    });
+                  })()
               : await mediaLibraryService.addImage({
-                  dataUrl: typeof message.dataUrl === 'string' ? message.dataUrl : '',
-                  mime: typeof message.mime === 'string' ? message.mime : '',
-                  sourceUrl: typeof message.sourceUrl === 'string' ? message.sourceUrl : '',
-                  pageUrl: typeof message.pageUrl === 'string' ? message.pageUrl : '',
+                  dataUrl,
+                  mime,
+                  sourceUrl,
+                  pageUrl,
                   kind: 'image'
                 });
             sendResponse({ type: MSG.MEDIA_LIBRARY_ADD, ...result });
@@ -2338,6 +2395,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         case MSG.OPEN_SETTINGS_POPOVER:
         case MSG.OPEN_GUIDE_POPOVER:
+        case MSG.OPEN_DOCS_POPOVER:
         case MSG.OPEN_ONBOARDING:
         case MSG.LAUNCH_WALKTHROUGH: {
           // Extension pages (guide/settings iframes) call chrome.runtime.sendMessage.
@@ -2361,7 +2419,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             break;
           }
           try {
-            await chrome.tabs.sendMessage(tabId, { type: message.type });
+            const forward = { type: message.type };
+            if (message.panelId != null) forward.panelId = message.panelId;
+            if (message.topicId != null) forward.topicId = message.topicId;
+            if (message.hash != null) forward.hash = message.hash;
+            await chrome.tabs.sendMessage(tabId, forward);
             sendResponse({ type: MSG.SUCCESS });
           } catch (error) {
             console.warn('[KeyPilot] Failed to forward UI open message:', error?.message || error);

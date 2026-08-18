@@ -32,10 +32,9 @@ for common web interactions, eliminating the need for mouse navigation.
 | `J` | Browse this tab’s history |
 | `L` | Address bar overlay |
 | `P` | Open link in a popup window |
-| `S` | Browser history back |
+| `S` | Navigate to the site origin |
 | `N` | Origin-based continuous scroll |
 | `'` | Open KeyPilot Settings |
-| `1` | Navigate to the site origin |
 
 #### Tabs
 
@@ -67,6 +66,21 @@ for common web interactions, eliminating the need for mouse navigation.
 | `Esc` | Leave modes and overlays |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

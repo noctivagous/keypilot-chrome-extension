@@ -24,6 +24,11 @@ import {
 import { MODES, INSPECTOR_KIND, CURSOR_MODE, CSS_CLASSES, COLORS, Z_INDEX, RECTANGLE_SELECTION, EDGE_ONLY_SELECTION, FEATURE_FLAGS, SCROLL, CLICKABLE_CATEGORY } from './config/constants.js';
 import { MSG } from './messaging/types.js';
 import {
+  isKpDeepLink,
+  normalizeSettingsPanelId,
+  parseKpDeepLink
+} from './utils/kp-deep-link.js';
+import {
   installPopoverWindowChrome,
   queryPopoverWindowInfo
 } from './modules/popover-window-chrome.js';
@@ -82,6 +87,17 @@ import { getFunctionDef, functionWorksWhileTyping, functionCancelsOnPointerDown,
 import { getStockMacroById, resolveMacroById } from './config/stock-macros.js';
 import { chordSlotKeyFromEvent } from './utils/key-chord.js';
 import { getTextAtPoint } from './utils/text-at-point.js';
+import {
+  UnitSelectionManager,
+  unitFromTextRange,
+  unitFromImageElement
+} from './modules/unit-selection-manager.js';
+import { inspectFontAtPoint } from './utils/font-at-point.js';
+import {
+  hideFontInfoPopover,
+  isFontInfoPopoverOpen,
+  showFontInfoPopover
+} from './ui/font-info-popover.js';
 import { normalizeWordForLookup } from './utils/dictionary-lookup.js';
 import { toggleKeyboardLayoutConfigurator } from './ui/keyboard-layout-configurator.js';
 import { createTitlebarActionButton } from './ui/preview-open-actions.js';
@@ -110,6 +126,8 @@ import {
   addImageToMediaLibrary,
   addUrlToMediaLibrary,
   addVideoToMediaLibrary,
+  addDocumentToMediaLibrary,
+  fetchUrlIntoMediaLibrary,
   fetchMediaBlob
 } from './modules/media-library-client.js';
 import {
@@ -177,6 +195,7 @@ export class KeyPilot extends EventManager {
     this.mouseCoordinateManager = new MouseCoordinateManager();
     this.focusDetector = new FocusDetector(this.state, this.mouseCoordinateManager);
     this.overlayManager = new OverlayManager();
+    this.unitSelection = new UnitSelectionManager();
     this.styleManager = new StyleManager();
     this.columnLayoutManager = new ColumnLayoutManager();
     this.inspector = new InspectorModeController({
@@ -278,7 +297,10 @@ export class KeyPilot extends EventManager {
     // (see OptimizedScrollManager). Fixed canvas/RBush path can re-enable later.
     this.scrollManager = new OptimizedScrollManager(this.overlayManager, this.state, {
       // Live-refresh text/rectangle selection overlays every scroll frame (~60fps).
-      onScrollFrame: () => this.refreshHighlightDuringScroll()
+      onScrollFrame: () => {
+        this.refreshHighlightDuringScroll();
+        try { this.unitSelection?.refreshOverlays?.(); } catch { /* ignore */ }
+      }
     });
 
     // Permanent hover targeting: browser-native DOM hover listeners drive focusEl
@@ -2424,7 +2446,9 @@ export class KeyPilot extends EventManager {
         try {
           // Tab-local open (top frame only)
           if (window !== window.top) return;
-          this.handleOpenSettingsPopover();
+          this.handleOpenSettingsPopover({
+            panelId: typeof msg.panelId === 'string' ? msg.panelId : undefined
+          });
         } catch (e) {
           console.warn('[KeyPilot] Failed to open settings popover via message:', e);
         }
@@ -2435,6 +2459,16 @@ export class KeyPilot extends EventManager {
           this.handleOpenGuidePopover();
         } catch (e) {
           console.warn('[KeyPilot] Failed to open guide popover via message:', e);
+        }
+      } else if (msg.type === MSG.OPEN_DOCS_POPOVER) {
+        try {
+          if (window !== window.top) return;
+          this.handleOpenDocsPopover({
+            topicId: typeof msg.topicId === 'string' ? msg.topicId : undefined,
+            hash: typeof msg.hash === 'string' ? msg.hash : undefined
+          });
+        } catch (e) {
+          console.warn('[KeyPilot] Failed to open docs popover via message:', e);
         }
       } else if (msg.type === MSG.POPOVER_WINDOW_CLOSED) {
         // OS popup closed (✕ or in-window close) — clear opener popover mode.
@@ -4201,7 +4235,7 @@ export class KeyPilot extends EventManager {
   _scrollPopoverToEdge(sign) {
     const functionId = sign < 0 ? 'PAGE_TOP' : 'PAGE_BOTTOM';
     const fade = this._resolveEdgeJumpStyle(functionId) === 'fade';
-    const behavior = fade ? 'auto' : this._getScrollBehavior();
+    const behavior = fade ? 'instant' : this._getScrollBehavior();
     const jump = () => {
       if (sign < 0) this.overlayManager?.scrollPopoverToTop?.(behavior);
       else this.overlayManager?.scrollPopoverToBottom?.(behavior);
@@ -5016,6 +5050,7 @@ export class KeyPilot extends EventManager {
 
     if (!this.state.isHighlightMode()) {
       console.log('[KeyPilot] Entering highlight mode');
+      try { this.unitSelection?.clear?.(); } catch { /* ignore */ }
       
       // Cancel shared inspector pick if active
       if (this.state.isInspectorMode()) {
@@ -5050,6 +5085,8 @@ export class KeyPilot extends EventManager {
       console.log('[KeyPilot] Rectangle highlight ignored - currently in text focus mode');
       return;
     }
+
+    try { this.unitSelection?.clear?.(); } catch { /* ignore */ }
 
     const yMode = getActionMode(this._getBuiltinFunctionActionParams('RECTANGLE_HIGHLIGHT'), 'RECTANGLE_HIGHLIGHT');
 
@@ -6359,7 +6396,7 @@ export class KeyPilot extends EventManager {
   }
 
   /**
-   * Page Media (O) — scan the page for images, videos, and document links;
+   * Page Media (O) — scan the page for images, videos, documents, fonts, and URLs;
    * open a tabbed overlay gallery. Press O again (or Esc) to close.
    * @param {KeyboardEvent} [e]
    */
@@ -6396,40 +6433,7 @@ export class KeyPilot extends EventManager {
           this.showFlashNotification(String(message || ''), color);
         },
         onSendToMediaLibrary: async (item) => {
-          if (item?.category && item.category !== 'image') {
-            this.showFlashNotification(
-              'Media Library currently supports images only',
-              COLORS.NOTIFICATION_INFO
-            );
-            return;
-          }
-          try {
-            let blob = null;
-            if (item?.url) blob = await fetchMediaBlob(item.url);
-            if (!blob || blob.size <= 0) {
-              this.showFlashNotification('Could not send to Media Library', COLORS.NOTIFICATION_ERROR);
-              return;
-            }
-            const mime = (blob.type && blob.type.startsWith('image/'))
-              ? blob.type
-              : (item.mimeType && String(item.mimeType).startsWith('image/')
-                ? String(item.mimeType)
-                : 'image/png');
-            await this._saveImageToMediaLibrary({
-              blob,
-              mimeType: mime,
-              url: item.url
-            });
-            try {
-              this.emitAction('page_media_send_to_library', {
-                category: item?.category || '',
-                url: item?.url ? String(item.url).slice(0, 200) : ''
-              });
-            } catch { /* ignore */ }
-          } catch (error) {
-            console.warn('[KeyPilot] send to Media Library failed:', error);
-            this.showFlashNotification('Could not send to Media Library', COLORS.NOTIFICATION_ERROR);
-          }
+          await this._sendPageMediaItemToLibrary(item);
         }
       }).catch((error) => {
         console.warn('[KeyPilot] openPageMediaOverlay failed:', error);
@@ -6447,6 +6451,11 @@ export class KeyPilot extends EventManager {
    * @returns {string}
    */
   getSelectedPlainText() {
+    try {
+      const unitText = this.unitSelection?.getPlainText?.();
+      if (unitText && String(unitText).trim()) return String(unitText);
+    } catch { /* ignore */ }
+
     try {
       const peeked = this.overlayManager?.peekCharacterSelectedText?.();
       if (peeked && String(peeked).trim()) return String(peeked);
@@ -6532,6 +6541,9 @@ export class KeyPilot extends EventManager {
   }
 
   async handleClipboardCopyKey() {
+    if (this.unitSelection?.hasItems?.()) {
+      return this._copyUnitSelection({ cut: false });
+    }
     // Prefer native cut/copy when a real selection exists (preserves rich content).
     if (this._execDocumentCommand('copy')) {
       this.showFlashNotification('Copied', COLORS.NOTIFICATION_SUCCESS);
@@ -6555,6 +6567,9 @@ export class KeyPilot extends EventManager {
   }
 
   async handleClipboardCutKey() {
+    if (this.unitSelection?.hasItems?.()) {
+      return this._copyUnitSelection({ cut: true });
+    }
     if (this._execDocumentCommand('cut')) {
       this.showFlashNotification('Cut', COLORS.NOTIFICATION_SUCCESS);
       this.emitAction('clipboard_cut', { via: 'execCommand' });
@@ -6616,6 +6631,133 @@ export class KeyPilot extends EventManager {
       }
     } catch { /* ignore */ }
     this.showFlashNotification('Could not select all', COLORS.NOTIFICATION_INFO);
+  }
+
+  /**
+   * @returns {{ x: number, y: number }|null}
+   */
+  _lastMousePoint() {
+    const st = this.state.getState();
+    const x = Number(st?.lastMouse?.x);
+    const y = Number(st?.lastMouse?.y);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    return { x, y };
+  }
+
+  /**
+   * Copy KeyPilot unit selection (Select Word / Sentence / Paragraph / Image).
+   * Cut copies the bag but does not delete page content.
+   * @param {{ cut?: boolean }} [opts]
+   */
+  async _copyUnitSelection(opts = {}) {
+    const bag = this.unitSelection;
+    if (!bag?.hasItems?.()) {
+      this.showFlashNotification('Nothing selected to copy', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+
+    if (bag.isImagesOnly()) {
+      const images = bag.getImageItems();
+      if (images.length === 1 && images[0].element) {
+        const el = images[0].element;
+        let result = null;
+        try {
+          const rect = el.getBoundingClientRect();
+          result = await getHoveredImage(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        } catch (error) {
+          console.warn('[KeyPilot] unit image copy failed:', error);
+        }
+        if (result?.blob) {
+          const ok = await this.copyImageToClipboard(result.blob, result.mimeType);
+          this.showFlashNotification(
+            ok ? (opts.cut ? 'Copied (page not changed)' : 'Copied') : 'Could not copy',
+            ok ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_ERROR
+          );
+          if (ok) {
+            this.emitAction(opts.cut ? 'clipboard_cut' : 'clipboard_copy', {
+              via: 'unitSelection',
+              kind: 'image'
+            });
+          }
+          return ok;
+        }
+      }
+    }
+
+    const content = bag.getClipboardContent();
+    if (!String(content.plainText || '').trim()) {
+      this.showFlashNotification('Nothing selected to copy', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+    const ok = await this.copyToClipboard(content);
+    this.showFlashNotification(
+      ok ? (opts.cut ? 'Copied (page not changed)' : 'Copied') : 'Could not copy',
+      ok ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_ERROR
+    );
+    if (ok) {
+      this.emitAction(opts.cut ? 'clipboard_cut' : 'clipboard_copy', {
+        via: 'unitSelection',
+        length: content.plainText.length
+      });
+      return content.plainText;
+    }
+  }
+
+  /**
+   * @param {'word'|'sentence'|'paragraph'} kind
+   * @param {Record<string, any>|undefined} parameters
+   * @param {string} functionId
+   */
+  _toggleTextUnit(kind, parameters, functionId) {
+    const pt = this._lastMousePoint();
+    if (!pt) {
+      this.showFlashNotification('No cursor position available', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+    const { text, range } = getTextAtPoint(pt.x, pt.y, { granularity: kind });
+    const unit = unitFromTextRange(kind, range, text);
+    if (!unit) {
+      this.showFlashNotification(`No ${kind} under cursor`, COLORS.NOTIFICATION_INFO);
+      return;
+    }
+    const params = parameters && Object.keys(parameters).length
+      ? parameters
+      : this._getBuiltinFunctionActionParams(functionId);
+    const mode = getActionMode(params, functionId) === 'cumulative' ? 'cumulative' : 'exclusive';
+    const result = this.unitSelection.toggle(unit, mode);
+    this.emitAction('select_unit', { kind, mode, added: result.added, removed: result.removed, count: result.count });
+  }
+
+  handleSelectWordKey(_e, parameters) {
+    this._toggleTextUnit('word', parameters, 'SELECT_WORD');
+  }
+
+  handleSelectSentenceKey(_e, parameters) {
+    this._toggleTextUnit('sentence', parameters, 'SELECT_SENTENCE');
+  }
+
+  handleSelectParagraphKey(_e, parameters) {
+    this._toggleTextUnit('paragraph', parameters, 'SELECT_PARAGRAPH');
+  }
+
+  handleSelectImageKey(_e, parameters) {
+    const pt = this._lastMousePoint();
+    if (!pt) {
+      this.showFlashNotification('No cursor position available', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+    const source = findHoveredImageSource(pt.x, pt.y);
+    const unit = source?.element ? unitFromImageElement(source.element, source.url) : null;
+    if (!unit) {
+      this.showFlashNotification('No image under cursor', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+    const params = parameters && Object.keys(parameters).length
+      ? parameters
+      : this._getBuiltinFunctionActionParams('SELECT_IMAGE');
+    const mode = getActionMode(params, 'SELECT_IMAGE') === 'cumulative' ? 'cumulative' : 'exclusive';
+    const result = this.unitSelection.toggle(unit, mode);
+    this.emitAction('select_unit', { kind: 'image', mode, added: result.added, removed: result.removed, count: result.count });
   }
 
   /**
@@ -6901,6 +7043,44 @@ export class KeyPilot extends EventManager {
   }
 
   /**
+   * FONT_INFO — inspect the styled text run under the cursor.
+   * @param {KeyboardEvent} [_e]
+   */
+  async handleFontInfoKey(_e) {
+    const st = this.state.getState();
+    const x = Number(st?.lastMouse?.x);
+    const y = Number(st?.lastMouse?.y);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      this.showFlashNotification('No cursor position available', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+
+    const info = inspectFontAtPoint(x, y);
+    if (!info) {
+      this.showFlashNotification('No text under cursor', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+
+    try { this.overlayManager?.showFontInfoOutline?.(info.range); } catch { /* ignore */ }
+
+    let anchor = null;
+    try {
+      const r = info.range.getBoundingClientRect();
+      if (r && (r.width > 0 || r.height > 0)) {
+        anchor = { left: r.right + 12, top: r.top };
+      }
+    } catch { /* ignore */ }
+
+    showFontInfoPopover({
+      ...info,
+      onClose: () => {
+        try { this.overlayManager?.hideFontInfoOutline?.(); } catch { /* ignore */ }
+      }
+    }, anchor);
+    this.emitAction('font_info', { family: info.usedFamily, size: info.size });
+  }
+
+  /**
    * TRANSLATE Function handler — translates the current highlight/selection, or (if nothing is
    * highlighted) the word/sentence/paragraph under the cursor, via the same on-device AI
    * provider `SEND_TEXT_TO_AI` uses. `modifyPage` writes the translation back over the acquired
@@ -7131,6 +7311,40 @@ export class KeyPilot extends EventManager {
   }
 
   /**
+   * @param {{ success?: boolean, duplicate?: boolean, error?: string }|null} result
+   */
+  _notifyDocumentLibrarySave(result) {
+    if (result?.duplicate) {
+      this.showFlashNotification('Already in Media Library', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+    if (result?.success) {
+      this.showFlashNotification('Document saved to Media Library', COLORS.NOTIFICATION_SUCCESS);
+      return;
+    }
+    this.showFlashNotification(
+      result?.error || 'Could not save document to Media Library',
+      COLORS.NOTIFICATION_ERROR
+    );
+  }
+
+  /**
+   * @param {{ success?: boolean, duplicate?: boolean, error?: string, item?: { kind?: string } }|null} result
+   */
+  _notifyFetchedLibrarySave(result) {
+    const kind = String(result?.item?.kind || '');
+    if (kind === 'video') {
+      this._notifyVideoLibrarySave(result);
+      return;
+    }
+    if (kind === 'image') {
+      this._notifyMediaLibrarySave(result, { kind: 'image' });
+      return;
+    }
+    this._notifyDocumentLibrarySave(result);
+  }
+
+  /**
    * Persist an image blob in the Media Library (no flash).
    * @param {{ blob: Blob, mimeType?: string, url?: string|null, kind?: string }} input
    * @returns {Promise<{ success: boolean, duplicate: boolean, error?: string }>}
@@ -7234,6 +7448,91 @@ export class KeyPilot extends EventManager {
   }
 
   /**
+   * Persist a Page Media item into the Media Library (image / video / document / URL).
+   * @param {import('./utils/page-media-utils.js').PageMediaItem} item
+   */
+  async _sendPageMediaItemToLibrary(item) {
+    const pageUrl = typeof location !== 'undefined' ? String(location.href || '') : '';
+    const url = String(item?.url || '').trim();
+    const category = String(item?.category || '');
+
+    try {
+      if (category === 'url') {
+        if (!url) {
+          this.showFlashNotification('Could not send to Media Library', COLORS.NOTIFICATION_ERROR);
+          return;
+        }
+        const saved = await this._persistUrlToMediaLibrary(url);
+        this._notifyUrlLibrarySave(saved);
+        if (saved?.success && !saved?.duplicate) {
+          this.emitAction('page_media_send_to_library', { category, url: url.slice(0, 200) });
+        }
+        return;
+      }
+
+      if (category === 'video') {
+        if (!url) {
+          this.showFlashNotification('Could not send to Media Library', COLORS.NOTIFICATION_ERROR);
+          return;
+        }
+        const saved = await addVideoToMediaLibrary({
+          mime: item?.mimeType || '',
+          sourceUrl: url,
+          pageUrl
+        });
+        this._notifyVideoLibrarySave(saved);
+        if (saved?.success && !saved?.duplicate) {
+          this.emitAction('page_media_send_to_library', { category, url: url.slice(0, 200) });
+        }
+        return;
+      }
+
+      if (category === 'text') {
+        if (!url) {
+          this.showFlashNotification('Could not send to Media Library', COLORS.NOTIFICATION_ERROR);
+          return;
+        }
+        const saved = await addDocumentToMediaLibrary({
+          mime: item?.mimeType || '',
+          sourceUrl: url,
+          pageUrl
+        });
+        this._notifyDocumentLibrarySave(saved);
+        if (saved?.success && !saved?.duplicate) {
+          this.emitAction('page_media_send_to_library', { category, url: url.slice(0, 200) });
+        }
+        return;
+      }
+
+      let blob = null;
+      if (url) blob = await fetchMediaBlob(url);
+      if (!blob || blob.size <= 0) {
+        this.showFlashNotification('Could not send to Media Library', COLORS.NOTIFICATION_ERROR);
+        return;
+      }
+      const mime = (blob.type && blob.type.startsWith('image/'))
+        ? blob.type
+        : (item?.mimeType && String(item.mimeType).startsWith('image/')
+          ? String(item.mimeType)
+          : 'image/png');
+      await this._saveImageToMediaLibrary({
+        blob,
+        mimeType: mime,
+        url
+      });
+      try {
+        this.emitAction('page_media_send_to_library', {
+          category: category || 'image',
+          url: url ? url.slice(0, 200) : ''
+        });
+      } catch { /* ignore */ }
+    } catch (error) {
+      console.warn('[KeyPilot] send to Media Library failed:', error);
+      this.showFlashNotification('Could not send to Media Library', COLORS.NOTIFICATION_ERROR);
+    }
+  }
+
+  /**
    * ADD_URL_TO_MEDIA_LIBRARY — store the hovered hyperlink (href only, no fetch).
    * @param {KeyboardEvent} [_e]
    */
@@ -7248,13 +7547,36 @@ export class KeyPilot extends EventManager {
   }
 
   /**
-   * Shared handler for `FETCH_URL_FOR_MEDIA_LIBRARY` until Documents / Videos ingest exists.
+   * FETCH_URL_FOR_MEDIA_LIBRARY — download the resource the hovered href points to.
+   * @param {KeyboardEvent} [_e]
    */
-  handleMediaLibraryNotAvailableKey() {
-    this.showFlashNotification(
-      'Adding files to Media Library is coming soon',
-      COLORS.NOTIFICATION_INFO
-    );
+  async handleFetchUrlForMediaLibraryKey(_e) {
+    const url = this._getHoveredHyperlinkUrl();
+    if (!url) {
+      this.showFlashNotification('No URL under cursor', COLORS.NOTIFICATION_INFO);
+      return;
+    }
+    this.showFlashNotification('Fetching file…', COLORS.NOTIFICATION_INFO);
+    let saved = null;
+    try {
+      saved = await fetchUrlIntoMediaLibrary({
+        sourceUrl: url,
+        pageUrl: typeof location !== 'undefined' ? String(location.href || '') : ''
+      });
+    } catch (error) {
+      console.warn('[KeyPilot] Fetch URL for Media Library failed:', error);
+      this.showFlashNotification('Could not fetch file', COLORS.NOTIFICATION_ERROR);
+      return;
+    }
+    this._notifyFetchedLibrarySave(saved);
+    if (saved?.success && !saved?.duplicate) {
+      try {
+        this.emitAction('media_library_add', {
+          kind: saved?.item?.kind || 'file',
+          url: url.slice(0, 200)
+        });
+      } catch { /* ignore */ }
+    }
   }
 
   /**
@@ -8230,8 +8552,9 @@ export class KeyPilot extends EventManager {
       this.emitAction('activate', activationDetail);
       if (activationDetail.isKeyboardHelpKey) {
         try {
-          const actionId = closestComposed(target, '[data-kp-action-id]')?.dataset?.kpActionId;
-          if (actionId) pinKeyPopover(actionId, { keybindings: this.keybindings });
+          const keyEl = closestComposed(target, '[data-kp-action-id]');
+          const actionId = keyEl?.dataset?.kpActionId;
+          if (actionId) pinKeyPopover(actionId, { keyEl, keybindings: this.keybindings });
         } catch { /* ignore */ }
       }
     });
@@ -8819,12 +9142,25 @@ export class KeyPilot extends EventManager {
     }
   }
 
-  handleOpenSettingsPopover() {
+  handleOpenSettingsPopover(opts = {}) {
     const url = this.getSettingsPopoverUrl();
     if (!url) return;
 
-    // Close any existing popover first (e.g., if opened from Guide)
+    const panelId = normalizeSettingsPanelId(opts?.panelId) || null;
     const currentState = this.state.getState();
+
+    // Already on Settings: switch panel without remount when possible.
+    if (currentState.mode === MODES.POPOVER && currentState.popoverUrl === url) {
+      if (panelId) {
+        try {
+          if (this.overlayManager?.setSettingsPanel?.(panelId)) return;
+        } catch { /* fall through to remount */ }
+      } else {
+        return;
+      }
+    }
+
+    // Close any existing popover first (e.g., if opened from Guide / Docs)
     if (currentState.mode === MODES.POPOVER) {
       this.handleClosePopover();
     }
@@ -8839,7 +9175,8 @@ export class KeyPilot extends EventManager {
       hintKeyLabel: "'",
       width: `${settingsContainerWidth}px`,
       height: `${settingsContainerHeight}px`,
-      actions: this._createSettingsDocsTitlebarButton()
+      actions: this._createSettingsDocsTitlebarButton(),
+      panelId: panelId || undefined
     });
     this.state.setPopoverOpen(true, url);
   }
@@ -8857,7 +9194,7 @@ export class KeyPilot extends EventManager {
         { attrs: { d: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20' } },
         { attrs: { d: 'M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z' } }
       ],
-      onClick: () => this.handleOpenDocsPopover()
+      onClick: () => this.handleOpenDocsPopover({ topicId: 'settings' })
     });
   }
 
@@ -8923,11 +9260,28 @@ export class KeyPilot extends EventManager {
     this.state.setPopoverOpen(true, url);
   }
 
-  handleOpenDocsPopover() {
+  /**
+   * Open Docs popover, optionally at a catalog topic / in-article hash.
+   * @param {{ topicId?: string, hash?: string }} [opts]
+   */
+  handleOpenDocsPopover(opts = {}) {
     const url = this.getDocsPopoverUrl();
     if (!url) return;
 
+    const topicId = String(opts?.topicId || '').trim() || null;
+    const hash = String(opts?.hash || '').replace(/^#/, '').trim() || null;
     const currentState = this.state.getState();
+
+    if (currentState.mode === MODES.POPOVER && currentState.popoverUrl === url) {
+      if (topicId) {
+        try {
+          if (this.overlayManager?.setDocsTopic?.(topicId, hash || undefined)) return;
+        } catch { /* fall through to remount */ }
+      } else {
+        return;
+      }
+    }
+
     if (currentState.mode === MODES.POPOVER) {
       this.handleClosePopover();
     }
@@ -8940,9 +9294,71 @@ export class KeyPilot extends EventManager {
       hintKeyLabel: 'Alt + H',
       width: `${docsContainerWidth}px`,
       height: `${docsContainerHeight}px`,
-      actions: this._createDocsFontScaleControl()
+      actions: this._createDocsFontScaleControl(),
+      topicId: topicId || undefined,
+      hash: hash || undefined,
+      onNavigateDeepLink: (target) => this.navigateKpDeepLink(target)
     });
     this.state.setPopoverOpen(true, url);
+  }
+
+  /**
+   * Route a parsed kp:// deep link to Settings or Docs.
+   * @param {string|{ kind: string, id: string, hash?: string }|null|undefined} hrefOrTarget
+   */
+  navigateKpDeepLink(hrefOrTarget) {
+    const target =
+      hrefOrTarget && typeof hrefOrTarget === 'object' && hrefOrTarget.kind
+        ? hrefOrTarget
+        : parseKpDeepLink(hrefOrTarget);
+    if (!target) return;
+
+    if (target.kind === 'settings') {
+      this.handleOpenSettingsPopover({ panelId: target.id });
+      return;
+    }
+    if (target.kind === 'docs') {
+      this.handleOpenDocsPopover({ topicId: target.id, hash: target.hash });
+    }
+  }
+
+  /**
+   * Install click capture on a root so kp:// anchors open Settings/Docs.
+   * @param {ParentNode|null|undefined} root
+   * @returns {() => void} dispose
+   */
+  installKpDeepLinkClickHandler(root) {
+    if (!root || typeof root.addEventListener !== 'function') return () => {};
+    const onClick = (e) => {
+      if (!e || e.defaultPrevented) return;
+      if (e.button != null && e.button !== 0) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
+      /** @type {Element|null} */
+      let el = null;
+      for (const node of path) {
+        if (node && node.nodeType === 1 && /** @type {Element} */ (node).tagName === 'A') {
+          el = /** @type {Element} */ (node);
+          break;
+        }
+      }
+      if (!el) {
+        const t = e.target;
+        el = t && /** @type {Element} */ (t).closest ? /** @type {Element} */ (t).closest('a[href]') : null;
+      }
+      if (!el) return;
+      const href = el.getAttribute('href') || '';
+      if (!isKpDeepLink(href)) return;
+      const parsed = parseKpDeepLink(href);
+      if (!parsed) return;
+      e.preventDefault();
+      e.stopPropagation();
+      this.navigateKpDeepLink(parsed);
+    };
+    root.addEventListener('click', onClick, true);
+    return () => {
+      try { root.removeEventListener('click', onClick, true); } catch { /* ignore */ }
+    };
   }
 
   handleToggleDocsPopover() {
@@ -9053,7 +9469,15 @@ export class KeyPilot extends EventManager {
         return;
       }
     } catch { /* ignore */ }
+    try {
+      if (isFontInfoPopoverOpen()) {
+        hideFontInfoPopover();
+        return;
+      }
+    } catch { /* ignore */ }
     
+    try { this.unitSelection?.clear?.(); } catch { /* ignore */ }
+
     // Handle highlight mode cancellation specifically
     if (currentState.mode === MODES.HIGHLIGHT) {
       this.cancelHighlightMode();
@@ -9529,6 +9953,7 @@ export class KeyPilot extends EventManager {
 
     // Clear sticky column layout + slip bar so the page is not left altered.
     try { this.columnLayoutManager?.clear?.(); } catch { /* ignore */ }
+    try { this.unitSelection?.clear?.(); } catch { /* ignore */ }
 
     try {
       this.controlStrip?.setEnabledState?.(false);
@@ -9666,6 +10091,8 @@ export class KeyPilot extends EventManager {
     if (this.overlayManager) {
       this.overlayManager.cleanup();
     }
+
+    try { this.unitSelection?.clear?.(); } catch { /* ignore */ }
 
     if (this.styleManager) {
       this.styleManager.cleanup();

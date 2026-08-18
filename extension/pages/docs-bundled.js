@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-18T06:51:03.877Z
+ * Generated on 2026-08-18T20:36:29.173Z
  */
 
 var __defProp = Object.defineProperty;
@@ -5534,7 +5534,7 @@ var KEYBINDING_ACTION_DEFS = Object.freeze({
     description: "Navigate to the site origin",
     details: "Jumps to the site root (scheme + host) of the current page \u2014 useful for escaping deep paths without typing a URL.",
     keyboardClass: null,
-    row: null
+    row: 2
   }),
   LAUNCHER: Object.freeze({
     handler: "handleLauncherKey",
@@ -5735,12 +5735,21 @@ var KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: null,
     row: null
   }),
+  // Font under cursor — Actions Library only (no built-in layout key).
+  FONT_INFO: Object.freeze({
+    handler: "handleFontInfoKey",
+    label: "Font Info",
+    description: "Inspect font under the cursor",
+    details: "Shows a popover with the font name, size, family, file type, and resource URL for the styled text under the cursor, and outlines that text run. No default layout key \u2014 bind it in Layout Config if you need it.",
+    keyboardClass: null,
+    row: null
+  }),
   // Page-wide Image / Video / Text gallery (O on right-handed; O is TAB_RIGHT on left-handed).
   PAGE_MEDIA: Object.freeze({
     handler: "handlePageMediaKey",
     label: "Page Media",
     description: "Browse media found on this page",
-    details: "Opens a gallery of images, videos, and documents discovered on the current page so you can review or collect them without hunting through the DOM.",
+    details: "Opens a gallery of images, videos, documents, fonts, and URLs discovered on the current page so you can review or collect them without hunting through the DOM.",
     keyboardClass: null,
     row: 1
   }),
@@ -5787,6 +5796,38 @@ var KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: null,
     row: null
   }),
+  SELECT_WORD: Object.freeze({
+    handler: "handleSelectWordKey",
+    label: "Select Word",
+    description: "Select the word under the cursor",
+    details: "Selects the word under the KeyPilot cursor. Press again over the same word to deselect it. Exclusive mode replaces the current selection; cumulative mode adds or removes words. Copy reads this selection.",
+    keyboardClass: null,
+    row: null
+  }),
+  SELECT_SENTENCE: Object.freeze({
+    handler: "handleSelectSentenceKey",
+    label: "Select Sentence",
+    description: "Select the sentence under the cursor",
+    details: "Selects the sentence under the KeyPilot cursor. Press again over the same sentence to deselect it. Exclusive mode replaces the current selection; cumulative mode adds or removes sentences.",
+    keyboardClass: null,
+    row: null
+  }),
+  SELECT_PARAGRAPH: Object.freeze({
+    handler: "handleSelectParagraphKey",
+    label: "Select Paragraph",
+    description: "Select the paragraph under the cursor",
+    details: "Selects the paragraph (or nearest block) under the KeyPilot cursor. Press again over the same block to deselect it. Exclusive mode replaces the current selection; cumulative mode adds or removes paragraphs.",
+    keyboardClass: null,
+    row: null
+  }),
+  SELECT_IMAGE: Object.freeze({
+    handler: "handleSelectImageKey",
+    label: "Select Image",
+    description: "Select the image under the cursor",
+    details: "Selects the image under the KeyPilot cursor. Press again over the same image to deselect it. Exclusive mode replaces the current selection; cumulative mode adds or removes images. Copy can copy selected images.",
+    keyboardClass: null,
+    row: null
+  }),
   // AI (Functions palette — AI category).
   SEND_TEXT_TO_AI: Object.freeze({
     handler: "handleSendTextToAiKey",
@@ -5826,6 +5867,7 @@ var KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
   COPY_HOVERED_IMAGE: "Get Page Data",
   COPY_HOVERED_URL: "Get Page Data",
   COPY_HOVERED_VIDEO: "Get Page Data",
+  FONT_INFO: "Get Page Data",
   PAGE_MEDIA: "Get Page Data",
   DELETE: "Select",
   COLS_TOGGLE: "Select",
@@ -5834,6 +5876,10 @@ var KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
   CLIPBOARD_CUT: "Clipboard",
   CLIPBOARD_PASTE: "Clipboard",
   CLIPBOARD_SELECT_ALL: "Clipboard",
+  SELECT_WORD: "Clipboard",
+  SELECT_SENTENCE: "Clipboard",
+  SELECT_PARAGRAPH: "Clipboard",
+  SELECT_IMAGE: "Clipboard",
   SEND_TEXT_TO_AI: "AI",
   LAUNCHER: "Begin URL",
   TOP_SITES: "Begin URL",
@@ -5927,7 +5973,7 @@ var ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   FORWARD: Object.freeze({ keys: ["r", "R"] }),
   NEW_TAB: Object.freeze({ keys: ["t", "T"] }),
   CLOSE_TAB: Object.freeze({ keys: ["a", "A"] }),
-  BACK2: Object.freeze({ keys: ["s", "S"] }),
+  ROOT: Object.freeze({ keys: ["s", "S", "1", "!"], displayKey: "S", keyLabel: "S" }),
   BACK: Object.freeze({ keys: ["d", "D"] }),
   ACTIVATE: Object.freeze({ keys: ["f", "F"] }),
   ACTIVATE_NEW_TAB_BACKGROUND: Object.freeze({ keys: ["g", "G"] }),
@@ -5947,7 +5993,6 @@ var ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   PAGE_MEDIA: Object.freeze({ keys: ["o", "O"] }),
   // M is otherwise unused on the right-handed layout (it's PAGE_DOWN_INSTANT on left-handed).
   OPEN_MEDIA_LIBRARY: Object.freeze({ keys: ["m", "M"] }),
-  ROOT: Object.freeze({ keys: ["1", "!"], displayKey: "1", keyLabel: "1" }),
   DELETE: Object.freeze({ keys: ["Backspace"], displayKey: "Backspace", keyLabel: "Backspace" })
   // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
 });
@@ -5962,7 +6007,7 @@ var ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   SCROLL_LINE: Object.freeze({ keys: ["t", "T"] }),
   // Home row cluster: A S D F G  ->  ; L K J H (mirrored-ish around center)
   CLOSE_TAB: Object.freeze({ keys: [";", ":"], displayKey: ";", keyLabel: ";" }),
-  BACK2: Object.freeze({ keys: ["l", "L"] }),
+  ROOT: Object.freeze({ keys: ["l", "L", "1", "!"], displayKey: "L", keyLabel: "L" }),
   BACK: Object.freeze({ keys: ["k", "K"] }),
   ACTIVATE: Object.freeze({ keys: ["j", "J"] }),
   ACTIVATE_NEW_TAB_BACKGROUND: Object.freeze({ keys: ["h", "H"] }),
@@ -5983,7 +6028,6 @@ var ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   // I is OPEN_POPOVER on left-handed; E is free.
   COPY_HOVERED_IMAGE: Object.freeze({ keys: ["e", "E"] }),
   // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
-  ROOT: Object.freeze({ keys: ["1", "!"], displayKey: "1", keyLabel: "1" }),
   DELETE: Object.freeze({ keys: ["Backspace"], displayKey: "Backspace", keyLabel: "Backspace" })
 });
 var SYSTEM_LAYER_ACTION_IDS = Object.freeze([
@@ -6037,7 +6081,7 @@ var BASIC_NAVIGATION_ACTION_IDS = Object.freeze([
   "TAB_RIGHT",
   "FORWARD",
   "BACK",
-  "BACK2",
+  "ROOT",
   "PAGE_TOP",
   "PAGE_BOTTOM",
   "PAGE_UP_INSTANT",
@@ -6046,7 +6090,7 @@ var BASIC_NAVIGATION_ACTION_IDS = Object.freeze([
 var CLICK_HISTORY_ACTION_IDS = Object.freeze([
   "ACTIVATE",
   "BACK",
-  "BACK2",
+  "ROOT",
   "FORWARD"
 ]);
 var BASIC_NAVIGATION_UI_ACTION_IDS = Object.freeze([
@@ -6147,7 +6191,7 @@ var KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
   [
     { type: "special", text: "Caps", className: "key key-caps" },
     { type: "action", id: "CLOSE_TAB", fallbackText: "Close Tab" },
-    { type: "action", id: "BACK2", fallbackText: "Go Back" },
+    { type: "action", id: "ROOT", fallbackText: "Go to Site Root" },
     { type: "action", id: "BACK", fallbackText: "Go Back" },
     { type: "action", id: "ACTIVATE", fallbackText: "Click Element" },
     { type: "action", id: "ACTIVATE_NEW_TAB_BACKGROUND", fallbackText: "Click New Tab Background" },
@@ -6218,7 +6262,7 @@ var KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
     // J
     { type: "action", id: "BACK", fallbackText: "Go Back" },
     // K
-    { type: "action", id: "BACK2", fallbackText: "Go Back" },
+    { type: "action", id: "ROOT", fallbackText: "Go to Site Root" },
     // L
     { type: "action", id: "CLOSE_TAB", fallbackText: "Close Tab" },
     // ;
@@ -6329,6 +6373,12 @@ var SCROLL = Object.freeze({
   BEHAVIOR: "smooth",
   /** Fade-in / fade-out duration for Scroll To Top / Bottom "Fade" jump style */
   EDGE_JUMP_FADE_MS: 180,
+  /**
+   * After the instant jump, keep the veil opaque until scroll position is
+   * stable (or this timeout). Covers CSS `scroll-behavior: smooth` and
+   * Lenis-style hijacks that keep interpolating after scrollTo returns.
+   */
+  EDGE_JUMP_SETTLE_MS: 480,
   /** Scroll Line: no scroll inside this radius from the origin dot */
   LINE_DEADZONE_PX: 12,
   /**
@@ -8079,6 +8129,175 @@ function resolveThemeFromSettings(settings) {
   return getTheme(id, overrides);
 }
 
+// src/utils/kp-deep-link.js
+var KP_SETTINGS_PANEL_IDS = Object.freeze([
+  "overview",
+  "appearance",
+  "keyboard",
+  "click-mode",
+  "text-mode",
+  "scrolling",
+  "cursor",
+  "control-strip",
+  "search",
+  "about"
+]);
+function isKpDeepLink(href) {
+  return /^kp:\/\//i.test(String(href || "").trim());
+}
+function parseKpDeepLink(href) {
+  const raw = String(href || "").trim();
+  if (!raw) return null;
+  if (raw.includes("..")) return null;
+  let url;
+  try {
+    url = new URL(raw);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "kp:") return null;
+  let kind = (url.hostname || "").toLowerCase();
+  let pathId = (url.pathname || "").replace(/^\/+|\/+$/g, "");
+  if (!kind && pathId) {
+    const parts = pathId.split("/").filter(Boolean);
+    kind = (parts[0] || "").toLowerCase();
+    pathId = parts.slice(1).join("/");
+  }
+  if (kind !== "settings" && kind !== "docs") return null;
+  if (pathId.includes("/")) return null;
+  const id = String(pathId || "").trim();
+  if (!id) return null;
+  if (!/^[a-z0-9][a-z0-9_-]*$/i.test(id)) return null;
+  const hash = (url.hash || "").replace(/^#/, "").trim() || void 0;
+  return { kind, id, ...hash ? { hash } : {} };
+}
+
+// src/messaging/types.js
+var MSG = Object.freeze({
+  // --- Extension enable / status ---
+  GET_STATE: "KP_GET_STATE",
+  SET_STATE: "KP_SET_STATE",
+  TOGGLE_STATE: "KP_TOGGLE_STATE",
+  STATE_RESPONSE: "KP_STATE_RESPONSE",
+  STATE_CHANGED: "KP_STATE_CHANGED",
+  UPDATE_STATE: "KP_UPDATE_STATE",
+  GET_STATUS: "KP_GET_STATUS",
+  STATUS: "KP_STATUS",
+  // --- Transient onboarding actions ---
+  TRANSIENT_ACTION: "KP_TRANSIENT_ACTION",
+  // --- Tab / history navigation ---
+  TAB_LEFT: "KP_TAB_LEFT",
+  TAB_RIGHT: "KP_TAB_RIGHT",
+  NEW_TAB: "KP_NEW_TAB",
+  CLOSE_TAB: "KP_CLOSE_TAB",
+  GO_BACK: "KP_GO_BACK",
+  GO_FORWARD: "KP_GO_FORWARD",
+  OPEN_URL_BACKGROUND: "KP_OPEN_URL_BACKGROUND",
+  OPEN_URL_FOREGROUND: "KP_OPEN_URL_FOREGROUND",
+  /** Same-tab navigate (chrome.tabs.update). Used when sandboxed iframes cannot top-navigate without a real user gesture. */
+  NAVIGATE_SAME_TAB: "KP_NAVIGATE_SAME_TAB",
+  // --- UI open (content-script handlers; SW may forward) ---
+  OPEN_SETTINGS_POPOVER: "KP_OPEN_SETTINGS_POPOVER",
+  OPEN_GUIDE_POPOVER: "KP_OPEN_GUIDE_POPOVER",
+  /** Open Docs popover; optional topicId / hash deep-link. */
+  OPEN_DOCS_POPOVER: "KP_OPEN_DOCS_POPOVER",
+  OPEN_ONBOARDING: "KP_OPEN_ONBOARDING",
+  /** Reset walkthrough progress and open it (e.g. Guide "Launch Walkthrough"). */
+  LAUNCH_WALKTHROUGH: "KP_LAUNCH_WALKTHROUGH",
+  // --- History / bookmarks / favicon (SW APIs for content scripts) ---
+  OMNIBOX_SUGGEST: "KP_OMNIBOX_SUGGEST",
+  GET_BOOKMARKS: "KP_GET_BOOKMARKS",
+  GET_RECENT_BOOKMARKS: "KP_GET_RECENT_BOOKMARKS",
+  BROWSER_HISTORY_GET: "KP_BROWSER_HISTORY_GET",
+  GET_TOP_SITES: "KP_GET_TOP_SITES",
+  GET_MOST_VISITED: "KP_GET_MOST_VISITED",
+  GET_HISTORY_FOR_DOMAINS: "KP_GET_HISTORY_FOR_DOMAINS",
+  GET_RECENT_HISTORY: "KP_GET_RECENT_HISTORY",
+  GET_FAVICON: "KP_GET_FAVICON",
+  // --- Page preview screenshots for card backgrounds ---
+  GET_PAGE_THUMB: "KP_GET_PAGE_THUMB",
+  PAGE_THUMB_RESPONSE: "KP_PAGE_THUMB_RESPONSE",
+  PAGE_THUMB_UPDATED: "KP_PAGE_THUMB_UPDATED",
+  GET_VIDEO_THUMB: "KP_GET_VIDEO_THUMB",
+  VIDEO_THUMB_RESPONSE: "KP_VIDEO_THUMB_RESPONSE",
+  // --- Media Library (IndexedDB at extension origin; SW owns Blobs) ---
+  MEDIA_LIBRARY_ADD: "KP_MEDIA_LIBRARY_ADD",
+  MEDIA_LIBRARY_LIST: "KP_MEDIA_LIBRARY_LIST",
+  MEDIA_LIBRARY_GET: "KP_MEDIA_LIBRARY_GET",
+  MEDIA_LIBRARY_DELETE: "KP_MEDIA_LIBRARY_DELETE",
+  MEDIA_LIBRARY_ZIP: "KP_MEDIA_LIBRARY_ZIP",
+  /** SW → tabs: library contents changed (add/delete). Overlay reloads if open. */
+  MEDIA_LIBRARY_CHANGED: "KP_MEDIA_LIBRARY_CHANGED",
+  // --- Dictionary lookup (Free Dictionary API via SW; LOOKUP_WORD) ---
+  DICTIONARY_LOOKUP: "KP_DICTIONARY_LOOKUP",
+  // --- Per-tab navigation graph ---
+  NAVGRAPH_GET: "KP_NAVGRAPH_GET",
+  NAVGRAPH_JUMP: "KP_NAVGRAPH_JUMP",
+  NAVGRAPH_CLEAR: "KP_NAVGRAPH_CLEAR",
+  // --- Generic ---
+  SUCCESS: "KP_SUCCESS",
+  ERROR: "KP_ERROR",
+  // --- Separate-window Link Preview / Open Popover (chrome.windows popup) ---
+  OPEN_POPOVER_WINDOW: "KP_OPEN_POPOVER_WINDOW",
+  CLOSE_POPOVER_WINDOW: "KP_CLOSE_POPOVER_WINDOW",
+  /** SW → opener: popover window closed (OS ✕ or in-window close). */
+  POPOVER_WINDOW_CLOSED: "KP_POPOVER_WINDOW_CLOSED",
+  /** Popup tab → SW: am I a KeyPilot popover window? */
+  AM_I_POPOVER_WINDOW: "KP_AM_I_POPOVER_WINDOW",
+  // --- Parent ↔ popover iframe (window.postMessage) ---
+  POPOVER_BRIDGE_INIT: "KP_POPOVER_BRIDGE_INIT",
+  POPOVER_BRIDGE_READY: "KP_POPOVER_BRIDGE_READY",
+  POPOVER_REQUEST_CLOSE: "KP_POPOVER_REQUEST_CLOSE",
+  POPOVER_BRIDGE_KEYDOWN: "KP_POPOVER_BRIDGE_KEYDOWN",
+  POPOVER_SCROLL: "KP_POPOVER_SCROLL",
+  /** Guide iframe → parent: close guide and open walkthrough from a reset state. */
+  POPOVER_LAUNCH_WALKTHROUGH: "KP_POPOVER_LAUNCH_WALKTHROUGH",
+  // --- Parent → child frame activate (window.postMessage; third-party iframes) ---
+  // Top-frame KeyPilot posts this when F/B/G lands on a cross-origin <iframe>.
+  // Child frame-click-agent performs elementFromPoint + click in its own document.
+  // Optional topOrigin: parent tab origin for link routing (no hardcoded domains).
+  FRAME_ACTIVATE: "KP_FRAME_ACTIVATE",
+  // --- Parent → child frame scroll (window.postMessage; layout scroll keys under an iframe) ---
+  // Top-frame KeyPilot posts this when scroll keys land on an <iframe> shell. Child
+  // frame-click-agent runs scroll-at-point (delta or edge) at local coordinates
+  // (nested overflow first, then the frame document).
+  FRAME_SCROLL: "KP_FRAME_SCROLL",
+  // --- Child → parent pointer sync (window.postMessage) ---
+  // Frame agent reports local client coords so top KeyPilot can keep lastMouse fresh
+  // while the pointer is over a cross-origin (or any) iframe — parent documents do
+  // not receive mousemove inside iframes. Nested agents re-bubble with translated coords.
+  // Payload: { type, inside: boolean, clientX?: number, clientY?: number }
+  FRAME_POINTER: "KP_FRAME_POINTER",
+  // --- Child → parent: return keyboard focus to the top frame ---
+  // Sent on Esc / pointer leave when the iframe had document focus (manual click).
+  // Top blurs the focused <iframe> so KeyPilot keybinds work on the parent again.
+  FRAME_FOCUS_RECLAIM: "KP_FRAME_FOCUS_RECLAIM",
+  // --- Child → parent: typing focus inside a page iframe ---
+  // Frame agent posts these on focusin/focusout of a text field in its document
+  // (Gutenberg editor-canvas, etc.). Top FocusDetector peeks the same-origin
+  // activeElement and enters/exits text_focus. No element is sent.
+  // Payload: { type }
+  FRAME_TYPING_FOCUS: "KP_FRAME_TYPING_FOCUS",
+  FRAME_TYPING_BLUR: "KP_FRAME_TYPING_BLUR",
+  // --- Parent → child: blur the typing field (Esc from top-frame text mode) ---
+  FRAME_BLUR_TYPING: "KP_FRAME_BLUR_TYPING",
+  // --- Child frame-agent → SW: inject full content-bundled.js into this frame ---
+  // Used when a KeyPilot popover iframe needs full KeyPilot (cursor/overlays).
+  // Thin frame-agent-bundled.js does not include the full app.
+  INJECT_FULL_KEYPILOT_IN_FRAME: "KP_INJECT_FULL_KEYPILOT_IN_FRAME",
+  // --- Content → SW: inject MAIN-world map.panBy bridge into the sender frame ---
+  // Scroll Line uses this so isolated content can pan Leaflet/Mapbox/Google via
+  // page globals. Idempotent; bridge listens for CustomEvent __kp_map_pan_v1.
+  ENSURE_MAP_PAN_BRIDGE: "KP_ENSURE_MAP_PAN_BRIDGE"
+});
+var TAB_UI_FORWARD_TYPES = Object.freeze([
+  MSG.OPEN_SETTINGS_POPOVER,
+  MSG.OPEN_GUIDE_POPOVER,
+  MSG.OPEN_DOCS_POPOVER,
+  MSG.OPEN_ONBOARDING,
+  MSG.LAUNCH_WALKTHROUGH
+]);
+
 // pages/docs.js
 var INDEX_URL = () => chrome.runtime.getURL("userdocs/index.json");
 var docUrl = (file) => chrome.runtime.getURL(`userdocs/${file}`);
@@ -8092,6 +8311,10 @@ var articleEl = null;
 var searchEl = null;
 var closeBtn = null;
 var docsAppEl = null;
+var pendingInitialTopic = null;
+var pendingArticleHash = null;
+var onNavigateDeepLink = null;
+var docsCatalogReady = false;
 function bindDocsElements(root) {
   const scope = root && root.querySelector ? root : document;
   topicListEl = scope.querySelector("#docs-topic-list");
@@ -8144,11 +8367,11 @@ var markdown = new MarkdownItCallable({
   linkify: true,
   typographer: true
 });
-markdown.validateLink = (url) => /^(https?:|chrome-extension:|mailto:|#)/i.test(String(url || "").trim());
+markdown.validateLink = (url) => /^(https?:|chrome-extension:|mailto:|kp:|#)/i.test(String(url || "").trim());
 var defaultLinkOpen = markdown.renderer.rules.link_open || ((tokens, idx, options, _env, renderer) => renderer.renderToken(tokens, idx, options));
 markdown.renderer.rules.link_open = (tokens, idx, options, env, renderer) => {
   const href = tokens[idx].attrGet("href") || "";
-  if (!href.startsWith("#")) {
+  if (!href.startsWith("#") && !isKpDeepLink(href)) {
     tokens[idx].attrSet("target", "_blank");
     tokens[idx].attrSet("rel", "noopener noreferrer");
   }
@@ -8399,7 +8622,7 @@ function renderNav() {
     appendNavNode(node, topicListEl);
   }
 }
-function selectDoc(id) {
+function selectDoc(id, articleHash) {
   const resolved = resolveSelectableId(id) || id;
   const doc = allDocs.find((d) => d.id === resolved);
   if (!doc || !articleEl) return;
@@ -8412,6 +8635,133 @@ function selectDoc(id) {
   activeId = doc.id;
   articleEl.innerHTML = doc.html || '<p class="muted">Empty document.</p>';
   renderNav();
+  scrollDocsArticleToHash(articleHash);
+}
+function scrollDocsArticleToHash(hash) {
+  const id = String(hash || "").replace(/^#/, "").trim();
+  if (!id || !articleEl) return;
+  try {
+    const el = articleEl.querySelector(`#${CSS.escape(id)}`) || articleEl.querySelector(`[name="${CSS.escape(id)}"]`);
+    if (el && typeof el.scrollIntoView === "function") {
+      el.scrollIntoView({ block: "start", behavior: "auto" });
+      return;
+    }
+  } catch {
+  }
+  try {
+    articleEl.scrollTop = 0;
+  } catch {
+  }
+}
+function navigateDocsApp(topicId, hash) {
+  if (!docsCatalogReady || !articleEl) return false;
+  const id = String(topicId || "").trim();
+  if (!id) return false;
+  const resolved = resolveSelectableId(id);
+  if (!resolved) {
+    const first = allDocs.find((d) => d.selectable);
+    if (!first) return false;
+    selectDoc(first.id);
+    return false;
+  }
+  selectDoc(resolved, hash);
+  return true;
+}
+function defaultNavigateDeepLink(target) {
+  if (!target || target.kind !== "settings" && target.kind !== "docs") return;
+  if (target.kind === "docs") {
+    if (navigateDocsApp(target.id, target.hash)) return;
+  }
+  try {
+    const kp = typeof window !== "undefined" && (window.__KeyPilotInstance || window.keyPilot) || null;
+    if (kp && typeof kp.navigateKpDeepLink === "function") {
+      kp.navigateKpDeepLink(target);
+      return;
+    }
+  } catch {
+  }
+  try {
+    const parentKp = typeof window !== "undefined" && window.parent && window.parent !== window && (window.parent.__KeyPilotInstance || window.parent.keyPilot) || null;
+    if (parentKp && typeof parentKp.navigateKpDeepLink === "function") {
+      try {
+        window.parent.postMessage({ type: MSG.POPOVER_REQUEST_CLOSE, key: "Escape" }, "*");
+      } catch {
+      }
+      parentKp.navigateKpDeepLink(target);
+      return;
+    }
+  } catch {
+  }
+  try {
+    if (typeof chrome !== "undefined" && chrome.runtime?.sendMessage) {
+      if (target.kind === "settings") {
+        void chrome.runtime.sendMessage({
+          type: MSG.OPEN_SETTINGS_POPOVER,
+          panelId: target.id
+        });
+      } else {
+        void chrome.runtime.sendMessage({
+          type: MSG.OPEN_DOCS_POPOVER,
+          topicId: target.id,
+          hash: target.hash
+        });
+      }
+    }
+  } catch {
+  }
+}
+function onDocsDeepLinkClick(e) {
+  if (!e || e.defaultPrevented) return;
+  if (e.button != null && e.button !== 0) return;
+  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  const path = typeof e.composedPath === "function" ? e.composedPath() : [];
+  let el = null;
+  for (const node of path) {
+    if (node && node.nodeType === 1 && /** @type {Element} */
+    node.tagName === "A") {
+      el = /** @type {Element} */
+      node;
+      break;
+    }
+  }
+  if (!el) {
+    const t = e.target;
+    el = t && /** @type {Element} */
+    t.closest ? (
+      /** @type {Element} */
+      t.closest("a[href]")
+    ) : null;
+  }
+  if (!el) return;
+  const href = el.getAttribute("href") || "";
+  const parsed = parseKpDeepLink(href);
+  if (!parsed) return;
+  e.preventDefault();
+  e.stopPropagation();
+  if (parsed.kind === "docs") {
+    navigateDocsApp(parsed.id, parsed.hash);
+    return;
+  }
+  const nav = onNavigateDeepLink || defaultNavigateDeepLink;
+  try {
+    nav(parsed);
+  } catch {
+  }
+}
+function resolveInitialDocsTarget(fromOptions) {
+  const opt = String(fromOptions || "").trim();
+  if (opt) return { topicId: opt, hash: pendingArticleHash };
+  try {
+    const raw = (location.hash || "").replace(/^#/, "").trim();
+    if (!raw) return { topicId: null, hash: null };
+    const slash = raw.indexOf("/");
+    if (slash > 0) {
+      return { topicId: raw.slice(0, slash), hash: raw.slice(slash + 1) || null };
+    }
+    return { topicId: raw, hash: null };
+  } catch {
+    return { topicId: null, hash: null };
+  }
 }
 function applyFontScale(scale) {
   const n = Number(scale);
@@ -8431,6 +8781,10 @@ function applyFontScale(scale) {
 function mountDocsApp(root, options = {}) {
   const embedded = options.embedded === true;
   const onClose = typeof options.onClose === "function" ? options.onClose : null;
+  onNavigateDeepLink = typeof options.onNavigateDeepLink === "function" ? options.onNavigateDeepLink : null;
+  pendingInitialTopic = String(options.initialTopic || "").trim() || null;
+  pendingArticleHash = String(options.initialHash || "").replace(/^#/, "").trim() || null;
+  docsCatalogReady = false;
   docsRoot = root;
   const mountNode = root.nodeType === 9 ? (
     /** @type {Document} */
@@ -8496,6 +8850,7 @@ function mountDocsApp(root, options = {}) {
   };
   closeBtn?.addEventListener("click", requestClose);
   searchEl?.addEventListener("input", onSearchInput);
+  mountNode.addEventListener?.("click", onDocsDeepLinkClick, true);
   void (async () => {
     try {
       const res = await fetch(INDEX_URL());
@@ -8504,6 +8859,7 @@ function mountDocsApp(root, options = {}) {
       topicTree = filterTopicsForBuild(Array.isArray(index?.topics) ? index.topics : []);
       const flat = flattenTopics(topicTree);
       allDocs = await loadDocs(flat);
+      docsCatalogReady = true;
       const firstSelectable = allDocs.find((d) => d.selectable);
       if (!firstSelectable) {
         if (articleEl) {
@@ -8512,10 +8868,19 @@ function mountDocsApp(root, options = {}) {
         renderNav();
         return;
       }
-      selectDoc(firstSelectable.id);
+      const { topicId, hash } = resolveInitialDocsTarget(pendingInitialTopic);
+      pendingInitialTopic = null;
+      const articleHash = hash || pendingArticleHash;
+      pendingArticleHash = null;
+      if (topicId && resolveSelectableId(topicId)) {
+        selectDoc(topicId, articleHash);
+      } else {
+        selectDoc(firstSelectable.id);
+      }
       if (!embedded) searchEl?.focus();
     } catch (err) {
       console.warn("[KeyPilot Docs] Failed to load index:", err);
+      docsCatalogReady = false;
       if (articleEl) {
         articleEl.innerHTML = '<p class="error">Could not load documentation catalog.</p>';
       }
@@ -8524,6 +8889,10 @@ function mountDocsApp(root, options = {}) {
   return () => {
     closeBtn?.removeEventListener("click", requestClose);
     searchEl?.removeEventListener("input", onSearchInput);
+    try {
+      mountNode.removeEventListener?.("click", onDocsDeepLinkClick, true);
+    } catch {
+    }
     topicListEl = null;
     emptyEl = null;
     articleEl = null;
@@ -8531,11 +8900,16 @@ function mountDocsApp(root, options = {}) {
     closeBtn = null;
     docsAppEl = null;
     docsRoot = null;
+    onNavigateDeepLink = null;
+    pendingInitialTopic = null;
+    pendingArticleHash = null;
+    docsCatalogReady = false;
   };
 }
 if (typeof document !== "undefined" && document.documentElement?.hasAttribute("data-kp-docs-page")) {
   mountDocsApp(document, { embedded: false });
 }
 export {
-  mountDocsApp
+  mountDocsApp,
+  navigateDocsApp
 };

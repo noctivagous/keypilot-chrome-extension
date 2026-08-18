@@ -145,8 +145,17 @@ body {
 
 .appearance-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 10px 14px;
+}
+
+.appearance-grid .seg-toggle {
+  width: 100%;
+}
+
+.appearance-grid .seg-toggle-option {
+  min-height: 34px;
+  padding: 6px 8px;
 }
 
 .appearance-span-2 {
@@ -708,7 +717,7 @@ h1 {
   box-shadow: 0 1px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
-/* Two-option segmented toggle (Cursor mode, etc.) */
+/* Segmented toggle (Cursor mode, Appearance enums, etc.) */
 .seg-toggle {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -718,6 +727,10 @@ h1 {
   overflow: hidden;
   background: rgba(0, 0, 0, 0.4);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.seg-toggle-cols-3 {
+  grid-template-columns: 1fr 1fr 1fr;
 }
 
 .seg-toggle-option {
@@ -776,18 +789,24 @@ h1 {
 
 .range-row {
   display: grid;
-  grid-template-columns: 1fr 90px;
+  grid-template-columns: minmax(0, 1fr) 72px;
   gap: 10px;
   align-items: center;
 }
 
 .number {
+  box-sizing: border-box;
+  width: 72px;
+  min-width: 72px;
   background: rgba(0,0,0,0.35);
   color: rgba(255, 255, 255, 0.95);
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.95);
   border: 1px solid rgba(255,255,255,0.25);
   border-radius: 5px;
-  padding: 10px 10px;
+  padding: 8px 8px;
   font-size: 13px;
+  line-height: 1.2;
+  color-scheme: dark;
   box-shadow: 0 1px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
 }
 

@@ -172,6 +172,11 @@ const BUILTIN_FUNCTION_DATA_TAGS = Object.freeze({
     dataKind: 'media',
     destinations: VIDEO_COPY_DESTINATIONS
   }),
+  FONT_INFO: Object.freeze({
+    dataSource: 'underCursor',
+    dataKind: 'text',
+    destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.POPOVER])
+  }),
   // Whole-page scan (not under-cursor); opens a tabbed overlay rather than a sink.
   PAGE_MEDIA: Object.freeze({ dataSource: 'none', dataKind: 'media' }),
   OPEN_MEDIA_LIBRARY: Object.freeze({ dataSource: 'none' }),
@@ -187,7 +192,11 @@ const BUILTIN_FUNCTION_DATA_TAGS = Object.freeze({
   CLIPBOARD_COPY: Object.freeze({ dataSource: 'none' }),
   CLIPBOARD_CUT: Object.freeze({ dataSource: 'none' }),
   CLIPBOARD_PASTE: Object.freeze({ dataSource: 'none' }),
-  CLIPBOARD_SELECT_ALL: Object.freeze({ dataSource: 'none' })
+  CLIPBOARD_SELECT_ALL: Object.freeze({ dataSource: 'none' }),
+  SELECT_WORD: Object.freeze({ dataSource: 'underCursor', dataKind: 'text' }),
+  SELECT_SENTENCE: Object.freeze({ dataSource: 'underCursor', dataKind: 'text' }),
+  SELECT_PARAGRAPH: Object.freeze({ dataSource: 'underCursor', dataKind: 'text' }),
+  SELECT_IMAGE: Object.freeze({ dataSource: 'underCursor', dataKind: 'media' })
 });
 
 /**
@@ -242,10 +251,28 @@ const EDGE_SCROLL_PARAMETERS = Object.freeze([
   })
 ]);
 
+/** Shared by Select Word / Sentence / Paragraph / Image (key-info Exclusive | Cumulative switch). */
+const UNIT_SELECT_MODE_PARAMETERS = Object.freeze([
+  Object.freeze({
+    id: 'mode',
+    label: 'Selection mode',
+    type: 'enum',
+    defaultValue: 'exclusive',
+    options: Object.freeze([
+      Object.freeze({ id: 'exclusive', label: 'Exclusive' }),
+      Object.freeze({ id: 'cumulative', label: 'Cumulative' })
+    ])
+  })
+]);
+
 /** @type {Readonly<Record<string, FunctionDef['parameters']>>} */
 const BUILTIN_FUNCTION_PARAMETER_OVERRIDES = Object.freeze({
   PAGE_TOP: EDGE_SCROLL_PARAMETERS,
   PAGE_BOTTOM: EDGE_SCROLL_PARAMETERS,
+  SELECT_WORD: UNIT_SELECT_MODE_PARAMETERS,
+  SELECT_SENTENCE: UNIT_SELECT_MODE_PARAMETERS,
+  SELECT_PARAGRAPH: UNIT_SELECT_MODE_PARAMETERS,
+  SELECT_IMAGE: UNIT_SELECT_MODE_PARAMETERS,
   HIGHLIGHT: Object.freeze([
     Object.freeze({
       id: 'mode',
@@ -342,7 +369,7 @@ const DISPLAY_FUNCTION_CATEGORY = 'Display';
 /** Category for user-authored script Functions. */
 const SCRIPT_FUNCTION_CATEGORY = 'Script';
 
-/** Category for Media Library Functions (URL/fetch ingest still catalog-only). */
+/** Category for Media Library Functions (URL ingest and file fetch). */
 const MEDIA_LIBRARY_FUNCTION_CATEGORY = 'Media Library';
 
 /**
@@ -532,7 +559,7 @@ function buildBuiltinActionFunctionDefs() {
  * data. `LOOKUP_WORD` / `TRANSLATE` are the composed, stock-ready examples. `SHOW_POPOVER` is
  * the Display destination as an explicit Macro Step. `ADD_URL_TO_MEDIA_LIBRARY` stores the
  * hovered href in Media Library.
- * `FETCH_URL_FOR_MEDIA_LIBRARY` remains a catalog stub until Documents / Videos ingest exists.
+ * `FETCH_URL_FOR_MEDIA_LIBRARY` fetches the linked file (image / video / document).
  * @returns {Record<string, FunctionDef>}
  */
 function buildDataAcquisitionFunctionDefs() {
@@ -675,8 +702,8 @@ function buildDataAcquisitionFunctionDefs() {
       id: 'FETCH_URL_FOR_MEDIA_LIBRARY',
       label: 'Fetch URL for Media Library',
       description: 'Download linked file into library',
-      details: 'Fetches the resource the hyperlink under the cursor points to (e.g. a .pdf/.mp3/.mp4) to store it. Documents and videos are not in Media Library v1 yet — this remains a catalog stub until that ingest exists.',
-      handler: 'handleMediaLibraryNotAvailableKey',
+      details: 'Fetches the resource the hyperlink under the cursor points to (for example a .pdf, .mp3, or .mp4) and stores it in Media Library. Images, videos, and documents are classified from the file type. Web pages are not downloaded — use Add URL to Media Library for those.',
+      handler: 'handleFetchUrlForMediaLibraryKey',
       category: MEDIA_LIBRARY_FUNCTION_CATEGORY,
       dataSource: 'urlFetch',
       dataKind: 'file',
@@ -731,11 +758,11 @@ export const FUNCTION_CATEGORY_DESCRIPTIONS = Object.freeze({
   Navigation: 'Click links, preview, and move through browsing history.',
   'Tab Control': 'Open, close, switch, and review tabs.',
   'Begin URL': 'Jump to a URL via Launcher, Top Sites, or the omnibox.',
-  'Get Page Data': 'Capture text, images, video, URLs, and other page media.',
+  'Get Page Data': 'Capture text, images, video, URLs, fonts, and other page media.',
   Maps: 'Open a place’s website or address from a map pin under the cursor.',
   Scroll: 'Scroll the page by line, page, or to the top/bottom.',
   Select: 'Delete or toggle multi-column selection helpers.',
-  Clipboard: 'Standard copy, cut, paste, and select-all.',
+  Clipboard: 'Copy, cut, paste, select-all, and select word, sentence, paragraph, or image under the cursor.',
   [TEXT_FUNCTION_CATEGORY]: 'Type saved text into the focused field.',
   [KEYSTROKE_FUNCTION_CATEGORY]: 'Send keystrokes, chords, bursts, and mouse remaps.',
   [DATA_FUNCTION_CATEGORY]: 'Read text or media under the cursor, or from a highlight.',
@@ -789,9 +816,19 @@ export const FUNCTION_LIBRARY_ITEM_ORDER = Object.freeze({
   COPY_HOVERED_IMAGE: 200,
   COPY_HOVERED_VIDEO: 201,
   COPY_HOVERED_URL: 202,
+  FONT_INFO: 203,
   PAGE_MEDIA: 205,
   RECTANGLE_HIGHLIGHT: 210,
   HIGHLIGHT: 220,
+  // Clipboard
+  CLIPBOARD_COPY: 230,
+  CLIPBOARD_CUT: 231,
+  CLIPBOARD_PASTE: 232,
+  CLIPBOARD_SELECT_ALL: 233,
+  SELECT_WORD: 234,
+  SELECT_SENTENCE: 235,
+  SELECT_PARAGRAPH: 236,
+  SELECT_IMAGE: 237,
   // KeyPilot
   TOGGLE_KEYBOARD_HELP: 280,
   OPEN_SETTINGS_POPOVER: 290

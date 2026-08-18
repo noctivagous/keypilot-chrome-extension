@@ -11,6 +11,207 @@
 const EDGE_EPS = 1;
 
 /**
+ * KeyPilot uses `auto` for Settings "instant" (and Fade edge-jumps).
+ * CSSOM `behavior: 'auto'` is NOT instant — it follows CSS `scroll-behavior`.
+ * @param {string|null|undefined} behavior
+ * @returns {boolean}
+ */
+export function isInstantScrollBehavior(behavior) {
+  return behavior === 'auto' || behavior === 'instant';
+}
+
+/**
+ * @param {Element|null|undefined} el
+ * @param {Document} [doc]
+ * @returns {Element[]}
+ */
+function collectScrollBehaviorNodes(el, doc) {
+  /** @type {Element[]} */
+  const nodes = [];
+  const add = (n) => {
+    if (n && n.nodeType === 1 && !nodes.includes(n)) nodes.push(n);
+  };
+  add(el);
+  try {
+    add(doc?.scrollingElement);
+    add(doc?.documentElement);
+    add(doc?.body);
+  } catch { /* ignore */ }
+  return nodes;
+}
+
+/**
+ * Temporarily force CSS `scroll-behavior: auto` so assignment / two-arg
+ * `scrollTo` cannot be interpolated.
+ * @param {Element[]} nodes
+ * @returns {() => void}
+ */
+function forceCssScrollBehaviorAuto(nodes) {
+  /** @type {{ node: Element, had: boolean, value: string }[]} */
+  const saved = [];
+  for (const node of nodes) {
+    try {
+      const style = node.style;
+      if (!style) continue;
+      saved.push({
+        node,
+        had: style.getPropertyValue('scroll-behavior') !== '',
+        value: style.getPropertyValue('scroll-behavior')
+      });
+      style.setProperty('scroll-behavior', 'auto', 'important');
+    } catch { /* ignore */ }
+  }
+  return () => {
+    for (const { node, had, value } of saved) {
+      try {
+        if (had) node.style.setProperty('scroll-behavior', value);
+        else node.style.removeProperty('scroll-behavior');
+      } catch { /* ignore */ }
+    }
+  };
+}
+
+/**
+ * Best-effort: Lenis / similar engines keep lerping after native scrollTo.
+ * @param {Window|null|undefined} win
+ * @param {number} left
+ * @param {number} top
+ */
+function tryHijackInstant(win, left, top) {
+  if (!win) return;
+  const inst = win.lenis;
+  if (inst && typeof inst.scrollTo === 'function') {
+    try {
+      inst.scrollTo(top, { immediate: true, force: true, lock: false });
+    } catch {
+      try { inst.scrollTo(top, { immediate: true }); } catch { /* ignore */ }
+    }
+  }
+  const loco = win.locoScroll || win.locomotiveScroll;
+  if (loco && typeof loco.scrollTo === 'function') {
+    try {
+      loco.scrollTo(top, { duration: 0, disableLerp: true, immediate: true });
+    } catch { /* ignore */ }
+  }
+}
+
+/**
+ * Jump `el` to an absolute offset in one frame (ignores CSS smooth scrolling).
+ * @param {Element} el
+ * @param {number} left
+ * @param {number} top
+ * @param {Document} [doc]
+ * @param {Window} [win]
+ * @returns {boolean}
+ */
+export function applyInstantScrollTo(el, left, top, doc = document, win = window) {
+  if (!el) return false;
+  const L = Number(left) || 0;
+  const T = Number(top) || 0;
+  const restore = forceCssScrollBehaviorAuto(collectScrollBehaviorNodes(el, doc));
+  try {
+    try { void el.offsetHeight; } catch { /* flush */ }
+
+    try {
+      if (typeof el.scrollTo === 'function') {
+        try {
+          el.scrollTo({ left: L, top: T, behavior: 'instant' });
+        } catch {
+          el.scrollTo(L, T);
+        }
+      }
+    } catch { /* ignore */ }
+
+    try {
+      el.scrollLeft = L;
+      el.scrollTop = T;
+    } catch { /* ignore */ }
+
+    if (isDocumentScrollRoot(el, doc) && win && typeof win.scrollTo === 'function') {
+      try {
+        try {
+          win.scrollTo({ left: L, top: T, behavior: 'instant' });
+        } catch {
+          win.scrollTo(L, T);
+        }
+      } catch { /* ignore */ }
+    }
+
+    tryHijackInstant(win, L, T);
+    return true;
+  } finally {
+    restore();
+  }
+}
+
+/**
+ * @param {Element|null|undefined} el
+ * @param {Document} [doc]
+ * @param {Window} [win]
+ * @returns {{ x: number, y: number }}
+ */
+export function readScrollPoint(el, doc = document, win = window) {
+  try {
+    if (el && !isDocumentScrollRoot(el, doc)) {
+      return { x: Number(el.scrollLeft) || 0, y: Number(el.scrollTop) || 0 };
+    }
+  } catch { /* fall through */ }
+  try {
+    return {
+      x: Number(win.scrollX ?? win.pageXOffset) || 0,
+      y: Number(win.scrollY ?? win.pageYOffset) || 0
+    };
+  } catch {
+    return { x: 0, y: 0 };
+  }
+}
+
+/**
+ * Wait until the scroller stops moving (or `timeoutMs`), so a Fade veil is
+ * not lifted while CSS/Lenis is still interpolating.
+ * @param {Element|null|undefined} el
+ * @param {{ timeoutMs?: number, doc?: Document, win?: Window }} [opts]
+ * @returns {Promise<void>}
+ */
+export function waitForScrollSettle(el, opts = {}) {
+  const doc = opts.doc || el?.ownerDocument || document;
+  const win = opts.win || doc.defaultView || window;
+  const timeoutMs = Number.isFinite(Number(opts.timeoutMs))
+    ? Math.max(0, Number(opts.timeoutMs))
+    : 480;
+
+  return new Promise((resolve) => {
+    let last = readScrollPoint(el, doc, win);
+    let stableFrames = 0;
+    const t0 = typeof performance !== 'undefined' && performance.now
+      ? performance.now()
+      : Date.now();
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      resolve();
+    };
+    const tick = () => {
+      if (done) return;
+      const now = typeof performance !== 'undefined' && performance.now
+        ? performance.now()
+        : Date.now();
+      const p = readScrollPoint(el, doc, win);
+      if (Math.abs(p.x - last.x) < 1 && Math.abs(p.y - last.y) < 1) stableFrames += 1;
+      else stableFrames = 0;
+      last = p;
+      if (stableFrames >= 2 || now - t0 >= timeoutMs) {
+        finish();
+        return;
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+}
+
+/**
  * Composed parent: light DOM parent, or open shadow host when crossing a root.
  * @param {Node|null|undefined} node
  * @returns {Element|null}
@@ -148,6 +349,12 @@ export function scrollElementBy(el, deltaX, deltaY, behavior = 'smooth', doc = d
   const dy = Number(deltaY) || 0;
   if (!dx && !dy) return false;
 
+  if (isInstantScrollBehavior(behavior)) {
+    const left = (Number(el.scrollLeft) || 0) + dx;
+    const top = (Number(el.scrollTop) || 0) + dy;
+    return applyInstantScrollTo(el, left, top, doc, win);
+  }
+
   const opts = { left: dx, top: dy, behavior };
 
   // Prefer element.scrollBy; fall back to mutating scrollTop/scrollLeft.
@@ -243,6 +450,10 @@ export function scrollElementToPos(el, axis, pos, behavior = 'smooth', doc = doc
     }
   } catch {
     return false;
+  }
+
+  if (isInstantScrollBehavior(behavior)) {
+    return applyInstantScrollTo(el, left, top, doc, win);
   }
 
   const opts = { left, top, behavior };
@@ -538,9 +749,20 @@ export function scrollByAtPoint(clientX, clientY, deltaX, deltaY, behavior = 'au
   const target = findScrollableAtPoint(clientX, clientY, { doc, win });
   if (!target) {
     try {
+      const se = doc.scrollingElement || doc.documentElement || doc.body;
+      if (se && isInstantScrollBehavior(behavior)) {
+        const ok = applyInstantScrollTo(
+          se,
+          (Number(se.scrollLeft) || 0) + dx,
+          (Number(se.scrollTop) || 0) + dy,
+          doc,
+          win
+        );
+        return { scrolled: ok, el: se };
+      }
       if (win && typeof win.scrollBy === 'function') {
         win.scrollBy({ left: dx, top: dy, behavior });
-        return { scrolled: true, el: doc.scrollingElement || doc.documentElement || null };
+        return { scrolled: true, el: se || null };
       }
     } catch { /* ignore */ }
     return { scrolled: false, el: null };
@@ -579,9 +801,20 @@ export function scrollAtPoint(clientX, clientY, sign, deltaPx, behavior = 'smoot
   if (!target) {
     // Absolute last resort: window scroll on Y (preserves old C/V behavior).
     try {
+      const se = doc.scrollingElement || doc.documentElement || doc.body;
+      if (se && isInstantScrollBehavior(behavior)) {
+        const ok = applyInstantScrollTo(
+          se,
+          Number(se.scrollLeft) || 0,
+          (Number(se.scrollTop) || 0) + s * amount,
+          doc,
+          win
+        );
+        return { scrolled: ok, axis: 'y', el: se };
+      }
       if (win && typeof win.scrollBy === 'function') {
         win.scrollBy({ top: s * amount, left: 0, behavior });
-        return { scrolled: true, axis: 'y', el: doc.scrollingElement || doc.documentElement || null };
+        return { scrolled: true, axis: 'y', el: se || null };
       }
     } catch { /* ignore */ }
     return { scrolled: false, axis: null, el: null };
@@ -620,6 +853,10 @@ export function scrollElementToEdge(el, axis, sign, behavior = 'smooth', doc = d
     }
   } catch {
     return false;
+  }
+
+  if (isInstantScrollBehavior(behavior)) {
+    return applyInstantScrollTo(el, left, top, doc, win);
   }
 
   const opts = { left, top, behavior };
@@ -678,7 +915,12 @@ export function scrollToEdgeAtPoint(clientX, clientY, sign, behavior = 'smooth',
         const top = s < 0
           ? 0
           : Math.max(0, (se?.scrollHeight || doc.body?.scrollHeight || 0) - (win.innerHeight || 0));
-        win.scrollTo({ top, left: win.pageXOffset || 0, behavior });
+        const left = win.pageXOffset || 0;
+        if (se && isInstantScrollBehavior(behavior)) {
+          applyInstantScrollTo(se, left, top, doc, win);
+        } else {
+          win.scrollTo({ top, left, behavior });
+        }
         return { scrolled: true, axis: 'y', el: se || null };
       }
     } catch { /* ignore */ }

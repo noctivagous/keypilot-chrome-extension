@@ -14,12 +14,13 @@ Press the first few keys on any page; keep the Keyboard Reference open until the
 | Goal | Default key |
 | --- | --- |
 | Click / focus under cursor | <kbd>F</kbd> |
-| Back | <kbd>D</kbd> (also <kbd>S</kbd>) |
+| Back | <kbd>D</kbd> |
+| Site root | <kbd>S</kbd> |
 | Forward | <kbd>R</kbd> |
 | Scroll up / down | <kbd>C</kbd> / <kbd>V</kbd> |
 | Exit mode / cancel | <kbd>Esc</kbd> |
 | Keyboard Reference | <kbd>K</kbd> |
-| Settings | <kbd>'</kbd> |
+| Settings | <kbd>'</kbd> — open [Settings](kp://settings/overview) or jump to [Keyboard](kp://settings/keyboard) |
 | Toggle KeyPilot | <kbd>Alt</kbd>+<kbd>K</kbd> |
 | This documentation | <kbd>Alt</kbd>+<kbd>H</kbd> |
 

@@ -7,6 +7,8 @@
 
 import {
   MediaLibraryStore,
+  blobLooksLikeHtml,
+  classifyLibraryKind,
   extFromMime,
   hostFromMediaUrl,
   normalizeLibraryHref,
@@ -261,6 +263,34 @@ export class MediaLibraryService {
   }
 
   /**
+   * Store a fetched document / audio / other file blob (`kind: 'document'`).
+   * @param {{
+   *   blob?: Blob,
+   *   dataUrl?: string,
+   *   mime?: string,
+   *   sourceUrl?: string,
+   *   pageUrl?: string
+   * }} input
+   */
+  addDocument(input) {
+    return this._enqueue(() => this._addDocument(input));
+  }
+
+  /**
+   * Classify fetched bytes and store as image, video, or document.
+   * @param {{
+   *   blob?: Blob,
+   *   dataUrl?: string,
+   *   mime?: string,
+   *   sourceUrl?: string,
+   *   pageUrl?: string
+   * }} input
+   */
+  addFetchedFile(input) {
+    return this._enqueue(() => this._addFetchedFile(input));
+  }
+
+  /**
    * @param {{ sourceUrl?: string, url?: string, pageUrl?: string }} input
    */
   async _addUrl(input) {
@@ -440,6 +470,143 @@ export class MediaLibraryService {
    *   dataUrl?: string,
    *   mime?: string,
    *   sourceUrl?: string,
+   *   pageUrl?: string
+   * }} input
+   */
+  async _addDocument(input) {
+    let blob = input?.blob instanceof Blob ? input.blob : null;
+    if (!(blob instanceof Blob) || blob.size <= 0) {
+      blob = dataUrlToBlob(input?.dataUrl, input?.mime || '');
+    }
+    if (!(blob instanceof Blob) || blob.size <= 0) {
+      return { success: false, duplicate: false, error: 'No document data' };
+    }
+
+    let contentHash = '';
+    try {
+      contentHash = await sha256Hex(blob);
+    } catch (e) {
+      return { success: false, duplicate: false, error: e?.message || 'Could not hash document' };
+    }
+
+    try {
+      const existing = await this.store.getByHash(contentHash);
+      if (existing) {
+        const item = await toMeta(existing, { includeThumb: false });
+        return { success: true, duplicate: true, item };
+      }
+    } catch (e) {
+      console.warn('[MediaLibrary] document hash lookup failed:', e?.message || e);
+    }
+
+    const sourceUrl = String(input?.sourceUrl || '');
+    const pageUrl = String(input?.pageUrl || '');
+    const mime = String(input?.mime || blob.type || 'application/octet-stream').split(';')[0].trim()
+      || 'application/octet-stream';
+    let ext = extFromMime(mime, sourceUrl);
+    if (ext === 'IMG' || ext === 'URL') ext = 'BIN';
+    const domain = normalizeMediaDomain(sourceUrl, pageUrl);
+    const id = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? `ml_${crypto.randomUUID()}`
+      : `ml_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+
+    /** @type {MediaLibraryRecord} */
+    const record = {
+      id,
+      kind: 'document',
+      contentHash,
+      sourceUrl,
+      pageUrl,
+      domain,
+      mime,
+      ext,
+      width: 0,
+      height: 0,
+      byteSize: blob.size,
+      dpi: 0,
+      createdAt: Date.now(),
+      blob,
+      thumbBlob: null
+    };
+
+    try {
+      await this.store.put(record);
+    } catch (e) {
+      try {
+        const existing = await this.store.getByHash(contentHash);
+        if (existing) {
+          return { success: true, duplicate: true, item: await toMeta(existing, { includeThumb: false }) };
+        }
+      } catch { /* ignore */ }
+      return { success: false, duplicate: false, error: e?.message || 'Could not save document' };
+    }
+
+    return { success: true, duplicate: false, item: await toMeta(record, { includeThumb: false }) };
+  }
+
+  /**
+   * @param {{
+   *   blob?: Blob,
+   *   dataUrl?: string,
+   *   mime?: string,
+   *   sourceUrl?: string,
+   *   pageUrl?: string
+   * }} input
+   */
+  async _addFetchedFile(input) {
+    let blob = input?.blob instanceof Blob ? input.blob : null;
+    if (!(blob instanceof Blob) || blob.size <= 0) {
+      blob = dataUrlToBlob(input?.dataUrl, input?.mime || '');
+    }
+    if (!(blob instanceof Blob) || blob.size <= 0) {
+      return { success: false, duplicate: false, error: 'Could not fetch file' };
+    }
+
+    const mime = String(input?.mime || blob.type || '').split(';')[0].trim();
+    const sourceUrl = String(input?.sourceUrl || '');
+    let kind = classifyLibraryKind(mime, sourceUrl);
+    if (kind !== 'image' && kind !== 'video') {
+      try {
+        if (await blobLooksLikeHtml(blob)) kind = 'webpage';
+      } catch { /* ignore */ }
+    }
+    if (kind === 'webpage') {
+      return {
+        success: false,
+        duplicate: false,
+        error: 'That URL is a web page — use Add URL to Media Library'
+      };
+    }
+    if (kind === 'image') {
+      return this._addImage({
+        blob,
+        mime: mime || blob.type,
+        sourceUrl,
+        pageUrl: input?.pageUrl
+      });
+    }
+    if (kind === 'video') {
+      return this._addVideo({
+        blob,
+        mime: mime || blob.type,
+        sourceUrl,
+        pageUrl: input?.pageUrl
+      });
+    }
+    return this._addDocument({
+      blob,
+      mime: mime || blob.type,
+      sourceUrl,
+      pageUrl: input?.pageUrl
+    });
+  }
+
+  /**
+   * @param {{
+   *   blob?: Blob,
+   *   dataUrl?: string,
+   *   mime?: string,
+   *   sourceUrl?: string,
    *   pageUrl?: string,
    *   kind?: MediaLibraryKind
    * }} input
@@ -451,11 +618,6 @@ export class MediaLibraryService {
     }
     if (!(blob instanceof Blob) || blob.size <= 0) {
       return { success: false, duplicate: false, error: 'No image data' };
-    }
-
-    const kind = normalizeKind(input.kind);
-    if (kind !== 'image') {
-      return { success: false, duplicate: false, error: 'Media Library currently supports images only' };
     }
 
     let contentHash = '';
@@ -719,7 +881,9 @@ function zipFilenameForRecord(row) {
   }
   const ext = String(row.ext || 'IMG').toLowerCase();
   const fileExt = ext === 'jpeg' ? 'jpg' : ext;
-  return `${sanitizeZipPathPart(row.domain || (row.kind === 'video' ? 'video' : 'image'))}.${fileExt}.zip`;
+  return `${sanitizeZipPathPart(row.domain || (
+    row.kind === 'video' ? 'video' : row.kind === 'document' ? 'document' : 'image'
+  ))}.${fileExt}.zip`;
 }
 
 /**

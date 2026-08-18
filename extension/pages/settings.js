@@ -10,10 +10,17 @@ import { applyThemeToRoots, getTheme, getThemeClickDefaults, resolveThemeFromSet
 import { hasThemeOverrides, listThemes, normalizeThemeId, THEME_META } from '../themes/index.js';
 import { GENERIC_FAVICON_DATA_URL, getExtensionFaviconUrl } from '../src/ui/url-listing.js';
 import { CursorManager } from '../src/modules/cursor.js';
+import { normalizeSettingsPanelId } from '../src/utils/kp-deep-link.js';
 
 /** Document or open ShadowRoot the settings UI is mounted in. */
 let settingsScope = document;
 let settingsHandlersInstalled = false;
+/** Last settings object applied to the UI (for re-sync when a hidden panel is shown). */
+let lastUiSettings = null;
+/** `.settings-app` node that currently has DOM listeners. */
+let settingsDomBoundApp = null;
+/** Preferred panel for the next master–detail install (from mount options). */
+let pendingInitialPanel = null;
 
 function getLiveSettingsSnapshot() {
   try {
@@ -25,13 +32,23 @@ function getLiveSettingsSnapshot() {
 }
 
 function settingsEl(id) {
+  const scope = settingsScope || document;
+  if (!scope || !id) return null;
   try {
-    const scope = settingsScope || document;
-    // ShadowRoot.getElementById is missing or unreliable in some embeds; query the scope.
-    if (scope.nodeType === 9 && typeof scope.getElementById === 'function') {
-      return scope.getElementById(id);
+    if (typeof scope.getElementById === 'function') {
+      const hit = scope.getElementById(id);
+      if (hit) return hit;
     }
-    return scope.querySelector?.(`#${CSS.escape(id)}`) || null;
+  } catch { /* ignore */ }
+  try {
+    const escaped = (typeof CSS !== 'undefined' && typeof CSS.escape === 'function')
+      ? CSS.escape(id)
+      : id;
+    const hit = scope.querySelector?.(`#${escaped}`);
+    if (hit) return hit;
+  } catch { /* ignore */ }
+  try {
+    return scope.querySelector?.(`[id="${id}"]`) || null;
   } catch {
     return null;
   }
@@ -193,6 +210,12 @@ function activateSettingsPanel(panelId, opts = {}) {
     }
   });
 
+  // Number/range values set while the panel was `display:none` often fail to
+  // paint until the controls are visible — re-apply Appearance when it is shown.
+  if (id === 'appearance') {
+    try { applyAppearanceControls(lastUiSettings); } catch { /* ignore */ }
+  }
+
   if (opts.persist !== false) {
     try {
       sessionStorage.setItem(SETTINGS_TAB_STORAGE_KEY, id);
@@ -216,16 +239,22 @@ function installSettingsMasterDetailNav() {
   if (!nav || tabs.length === 0) return;
 
   let initial = SETTINGS_DEFAULT_PANEL_ID;
-  try {
-    const hash = (location.hash || '').replace(/^#/, '');
-    if (SETTINGS_PANEL_IDS.includes(hash)) {
-      initial = hash;
-    } else {
-      const stored = sessionStorage.getItem(SETTINGS_TAB_STORAGE_KEY);
-      if (stored && SETTINGS_PANEL_IDS.includes(stored)) initial = stored;
+  const fromMount = normalizeSettingsPanelId(pendingInitialPanel);
+  pendingInitialPanel = null;
+  if (fromMount) {
+    initial = fromMount;
+  } else {
+    try {
+      const hash = (location.hash || '').replace(/^#/, '');
+      if (SETTINGS_PANEL_IDS.includes(hash)) {
+        initial = hash;
+      } else {
+        const stored = sessionStorage.getItem(SETTINGS_TAB_STORAGE_KEY);
+        if (stored && SETTINGS_PANEL_IDS.includes(stored)) initial = stored;
+      }
+    } catch {
+      // ignore
     }
-  } catch {
-    // ignore
   }
 
   activateSettingsPanel(initial, { persist: false });
@@ -324,9 +353,100 @@ function clampNumber(n, min, max) {
   return Math.min(Math.max(v, min), max);
 }
 
+/**
+ * @param {HTMLInputElement[]} radios
+ * @param {string} value
+ */
+function setRadioGroupValue(radios, value) {
+  const v = String(value);
+  radios.forEach((r) => {
+    r.checked = r.value === v;
+  });
+}
+
 function setInputValue(el, value) {
   if (!el) return;
-  el.value = String(value);
+  const s = String(value);
+  try { el.value = s; } catch { /* ignore */ }
+  try { el.defaultValue = s; } catch { /* ignore */ }
+}
+
+/**
+ * Push resolved theme tokens into Appearance controls.
+ * Safe to call while the panel is hidden; call again after it is shown.
+ * @param {object|null} [settings]
+ */
+function applyAppearanceControls(settings) {
+  const s = settings || lastUiSettings || getLiveSettingsSnapshot() || DEFAULT_SETTINGS;
+  lastUiSettings = s;
+  const theme = resolveThemeFromSettings(s);
+  const shape = theme.shape || {};
+  const radius = theme.radius || {};
+  const type = theme.type || {};
+  const titlebar = theme.titlebar || {};
+  const keys = theme.keys || {};
+  const color = theme.color || {};
+  const cutSize = parsePxNumber(shape.cutSize, 8);
+  const panelRadius = parsePxNumber(radius.panel, 3);
+  const keyCut = parsePxNumber(keys.cutSize, 4);
+  const typeUi = parsePxNumber(type.size?.ui, 12);
+  const typeKbd = parsePxNumber(type.size?.kbd, 10);
+  const titleWeight = String(titlebar.titleWeight || '600');
+  const normalizedTitleWeight = titleWeight === '400' || titleWeight === '700' ? titleWeight : '600';
+
+  setRadioGroupValue(
+    /** @type {HTMLInputElement[]} */ (Array.from(settingsAll('input[name="app-corner-mode"]'))),
+    shape.cornerMode === 'cut' ? 'cut' : 'radius'
+  );
+  setInputValue(settingsEl('app-cut-size-range'), cutSize);
+  setInputValue(settingsEl('app-cut-size-number'), cutSize);
+  setInputValue(settingsEl('app-panel-radius-range'), panelRadius);
+  setInputValue(settingsEl('app-panel-radius-number'), panelRadius);
+  setRadioGroupValue(
+    /** @type {HTMLInputElement[]} */ (Array.from(settingsAll('input[name="app-title-transform"]'))),
+    type.textTransform?.titlebar === 'uppercase' ? 'uppercase' : 'none'
+  );
+  setInputValue(settingsEl('app-title-tracking'), type.letterSpacing?.titlebar || '0.02em');
+  setRadioGroupValue(
+    /** @type {HTMLInputElement[]} */ (Array.from(settingsAll('input[name="app-title-weight"]'))),
+    normalizedTitleWeight
+  );
+  setRadioGroupValue(
+    /** @type {HTMLInputElement[]} */ (Array.from(settingsAll('input[name="app-title-icon"]'))),
+    titlebar.iconDisplay === 'inline-flex' ? 'inline-flex' : 'none'
+  );
+  setRadioGroupValue(
+    /** @type {HTMLInputElement[]} */ (Array.from(settingsAll('input[name="app-kbd-transform"]'))),
+    titlebar.kbdTransform === 'uppercase' ? 'uppercase' : 'none'
+  );
+  setRadioGroupValue(
+    /** @type {HTMLInputElement[]} */ (Array.from(settingsAll('input[name="app-key-shading"]'))),
+    keys.shading === 'flat' ? 'flat' : 'bevel'
+  );
+  setRadioGroupValue(
+    /** @type {HTMLInputElement[]} */ (Array.from(settingsAll('input[name="app-key-corner"]'))),
+    keys.cornerMode === 'cut' ? 'cut' : 'radius'
+  );
+  setInputValue(settingsEl('app-key-cut-range'), keyCut);
+  setInputValue(settingsEl('app-key-cut-number'), keyCut);
+  setInputValue(settingsEl('app-key-border'), keys.border || '1px solid rgba(0, 0, 0, 0.4)');
+  const colorEl = (id, value, fallback) => {
+    const el = /** @type {HTMLInputElement|null} */ (settingsEl(id));
+    if (el) el.value = toHexColor(value, fallback);
+  };
+  colorEl('app-color-accent', color.accent, '#4a90c8');
+  colorEl('app-color-fg', color.fg, '#dddddd');
+  colorEl('app-color-fg-dim', color.fgDim, '#aaaaaa');
+  colorEl('app-color-panel', color.panel, '#232323');
+  colorEl('app-color-panel-edge', color.panelEdge, '#3a3a3a');
+  colorEl('app-color-title-top', color.titleTop, '#4c4c4c');
+  colorEl('app-color-title-mid', color.titleMid, '#353535');
+  colorEl('app-color-title-bot', color.titleBot, '#252525');
+  colorEl('app-color-kbd', color.kbdColor || color.fg, '#dddddd');
+  setInputValue(settingsEl('app-type-ui-range'), typeUi);
+  setInputValue(settingsEl('app-type-ui-number'), typeUi);
+  setInputValue(settingsEl('app-type-kbd-range'), typeKbd);
+  setInputValue(settingsEl('app-type-kbd-number'), typeKbd);
 }
 
 function renderCursorPreview({ container, kind, uri }) {
@@ -377,7 +497,13 @@ function withOptionalViewTransition(fn) {
 async function render() {
   applySearchEngineIcons();
 
-  if (!settingsHandlersInstalled) {
+  const appRoot = settingsOne('.settings-app');
+  const bindDom = !!(appRoot && appRoot !== settingsDomBoundApp);
+  if (bindDom) settingsDomBoundApp = appRoot;
+  const bindGlobal = !settingsHandlersInstalled;
+  if (bindGlobal) settingsHandlersInstalled = true;
+
+  if (bindDom) {
     installSettingsMasterDetailNav();
   }
 
@@ -458,20 +584,21 @@ async function render() {
   // In Settings we want "F" to activate even when focus is on non-text controls.
   // However, KeyPilot itself also binds "F" globally; if both run, checkboxes can toggle twice.
   // Run this handler in bubble phase and bail if KeyPilot already handled/prevented the event.
-  document.addEventListener('keydown', (e) => {
-    if (!e) return;
-    if (e.key !== 'f' && e.key !== 'F') return;
-    if (isTextEntry(e.target)) return;
-    if (e.defaultPrevented) return;
-    // If something already stopped propagation (likely KeyPilot), don't double-activate.
-    if (e.cancelBubble) return;
-    const kp = window.__KeyPilotInstance;
-    if (!kp || typeof kp.handleActivateKey !== 'function') return;
-    e.preventDefault();
-    e.stopPropagation();
-    e.stopImmediatePropagation();
-    try { kp.handleActivateKey(); } catch { /* ignore */ }
-  }, false);
+  if (bindGlobal) {
+    document.addEventListener('keydown', (e) => {
+      if (!e) return;
+      if (e.key !== 'f' && e.key !== 'F') return;
+      if (isTextEntry(e.target)) return;
+      if (e.defaultPrevented) return;
+      if (e.cancelBubble) return;
+      const kp = window.__KeyPilotInstance;
+      if (!kp || typeof kp.handleActivateKey !== 'function') return;
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      try { kp.handleActivateKey(); } catch { /* ignore */ }
+    }, false);
+  }
 
   const applyEngine = (engine) => {
     const normalized = normalizeSearchEngine(engine);
@@ -666,43 +793,6 @@ async function render() {
     } catch { /* ignore */ }
   };
 
-  const applyAppearanceControls = (settings) => {
-    const theme = resolveThemeFromSettings(settings);
-    const shape = theme.shape || {};
-    const radius = theme.radius || {};
-    const type = theme.type || {};
-    const titlebar = theme.titlebar || {};
-    const keys = theme.keys || {};
-    const color = theme.color || {};
-    setInputValue(settingsEl('app-corner-mode'), shape.cornerMode === 'cut' ? 'cut' : 'radius');
-    setInputValue(settingsEl('app-cut-size'), parsePxNumber(shape.cutSize, 8));
-    setInputValue(settingsEl('app-panel-radius'), parsePxNumber(radius.panel, 3));
-    setInputValue(settingsEl('app-title-transform'), type.textTransform?.titlebar === 'uppercase' ? 'uppercase' : 'none');
-    setInputValue(settingsEl('app-title-tracking'), type.letterSpacing?.titlebar || '0.02em');
-    setInputValue(settingsEl('app-title-weight'), String(titlebar.titleWeight || '600'));
-    setInputValue(settingsEl('app-title-icon'), titlebar.iconDisplay === 'inline-flex' ? 'inline-flex' : 'none');
-    setInputValue(settingsEl('app-kbd-transform'), titlebar.kbdTransform === 'uppercase' ? 'uppercase' : 'none');
-    setInputValue(settingsEl('app-key-shading'), keys.shading === 'flat' ? 'flat' : 'bevel');
-    setInputValue(settingsEl('app-key-corner'), keys.cornerMode === 'cut' ? 'cut' : 'radius');
-    setInputValue(settingsEl('app-key-cut'), parsePxNumber(keys.cutSize, 4));
-    setInputValue(settingsEl('app-key-border'), keys.border || '1px solid rgba(0, 0, 0, 0.4)');
-    const colorEl = (id, value, fallback) => {
-      const el = /** @type {HTMLInputElement|null} */ (settingsEl(id));
-      if (el) el.value = toHexColor(value, fallback);
-    };
-    colorEl('app-color-accent', color.accent, '#4a90c8');
-    colorEl('app-color-fg', color.fg, '#dddddd');
-    colorEl('app-color-fg-dim', color.fgDim, '#aaaaaa');
-    colorEl('app-color-panel', color.panel, '#232323');
-    colorEl('app-color-panel-edge', color.panelEdge, '#3a3a3a');
-    colorEl('app-color-title-top', color.titleTop, '#4c4c4c');
-    colorEl('app-color-title-mid', color.titleMid, '#353535');
-    colorEl('app-color-title-bot', color.titleBot, '#252525');
-    colorEl('app-color-kbd', color.kbdColor || color.fg, '#dddddd');
-    setInputValue(settingsEl('app-type-ui'), parsePxNumber(type.size?.ui, 12));
-    setInputValue(settingsEl('app-type-kbd'), parsePxNumber(type.size?.kbd, 10));
-  };
-
   const applyScroll = (scroll) => {
     const sc = scroll || DEFAULT_SETTINGS.scroll;
     const half = sc?.halfPagePx ?? DEFAULT_SETTINGS.scroll.halfPagePx;
@@ -720,6 +810,7 @@ async function render() {
 
   const applyAllSettings = (settings) => {
     const s = settings || DEFAULT_SETTINGS;
+    lastUiSettings = s;
     applyThemeSelect(s);
     applyAppearanceControls(s);
     paintPageTheme(s);
@@ -759,8 +850,7 @@ async function render() {
   // Keyboard Reference visibility is stored separately from SETTINGS_STORAGE_KEY.
   queryKeyboardHelpVisible().then(applyKeyboardHelpVisible).catch(() => applyKeyboardHelpVisible(false));
 
-  if (settingsHandlersInstalled) return;
-  settingsHandlersInstalled = true;
+  if (!bindDom && !bindGlobal) return;
 
   // Change handler
   radios.forEach((r) => {
@@ -799,63 +889,81 @@ async function render() {
     applyAllSettings(s);
   }, true);
 
+  const commitAppearanceOverride = async (path, value) => {
+    const s0 = await getSettings();
+    const nextOverrides = setOverridePath(s0.themeOverrides, path, value);
+    await setSettings({ themeOverrides: nextOverrides });
+    const s = await getSettings();
+    lastUiSettings = s;
+    applyThemeSelect(s);
+    applyAppearanceControls(s);
+    paintPageTheme(s);
+  };
+
   const bindAppearanceControl = (id, eventName, readValue) => {
     const el = settingsEl(id);
     if (!el) return;
     el.addEventListener(eventName, async () => {
-      const s0 = await getSettings();
-      const nextOverrides = setOverridePath(s0.themeOverrides, readValue.path, readValue.fromEl(el));
-      await setSettings({ themeOverrides: nextOverrides });
-      const s = await getSettings();
-      applyThemeSelect(s);
-      paintPageTheme(s);
+      await commitAppearanceOverride(readValue.path, readValue.fromEl(el));
     }, true);
   };
 
-  bindAppearanceControl('app-corner-mode', 'change', {
-    path: 'shape.cornerMode',
-    fromEl: (el) => (el.value === 'cut' ? 'cut' : 'radius')
-  });
-  bindAppearanceControl('app-cut-size', 'change', {
-    path: 'shape.cutSize',
-    fromEl: (el) => `${clampNumber(el.value, 0, 24)}px`
-  });
-  bindAppearanceControl('app-panel-radius', 'change', {
-    path: 'radius.panel',
-    fromEl: (el) => `${clampNumber(el.value, 0, 24)}px`
-  });
-  bindAppearanceControl('app-title-transform', 'change', {
-    path: 'type.textTransform.titlebar',
-    fromEl: (el) => (el.value === 'uppercase' ? 'uppercase' : 'none')
-  });
+  /**
+   * @param {string} name
+   * @param {string} path
+   * @param {(raw: string) => *} normalizeValue
+   */
+  const bindAppearanceRadios = (name, path, normalizeValue) => {
+    const radios = /** @type {HTMLInputElement[]} */ (Array.from(settingsAll(`input[name="${name}"]`)));
+    radios.forEach((radio) => {
+      radio.addEventListener('change', async () => {
+        if (!radio.checked) return;
+        await commitAppearanceOverride(path, normalizeValue(radio.value));
+      }, true);
+    });
+  };
+
+  /**
+   * Slider + number field pair (same pattern as Click Mode cursor geometry).
+   * @param {string} baseId - prefix without -range/-number suffix
+   * @param {string} path
+   * @param {number} min
+   * @param {number} max
+   * @param {(n: number) => *} [formatValue]
+   */
+  const bindAppearanceRangePair = (baseId, path, min, max, formatValue) => {
+    const range = /** @type {HTMLInputElement|null} */ (settingsEl(`${baseId}-range`));
+    const number = /** @type {HTMLInputElement|null} */ (settingsEl(`${baseId}-number`));
+    const format = typeof formatValue === 'function'
+      ? formatValue
+      : (n) => `${n}px`;
+    const commit = async (raw) => {
+      const n = clampNumber(raw, min, max);
+      setInputValue(range, n);
+      setInputValue(number, n);
+      await commitAppearanceOverride(path, format(n));
+    };
+    range?.addEventListener('input', async () => commit(range.value), true);
+    number?.addEventListener('input', async () => commit(number.value), true);
+  };
+
+  bindAppearanceRadios('app-corner-mode', 'shape.cornerMode', (v) => (v === 'cut' ? 'cut' : 'radius'));
+  bindAppearanceRangePair('app-cut-size', 'shape.cutSize', 0, 24);
+  bindAppearanceRangePair('app-panel-radius', 'radius.panel', 0, 24);
+  bindAppearanceRadios('app-title-transform', 'type.textTransform.titlebar', (v) => (v === 'uppercase' ? 'uppercase' : 'none'));
   bindAppearanceControl('app-title-tracking', 'change', {
     path: 'type.letterSpacing.titlebar',
     fromEl: (el) => String(el.value || '0.02em').trim() || '0.02em'
   });
-  bindAppearanceControl('app-title-weight', 'change', {
-    path: 'titlebar.titleWeight',
-    fromEl: (el) => String(el.value || '600')
+  bindAppearanceRadios('app-title-weight', 'titlebar.titleWeight', (v) => {
+    if (v === '400' || v === '700') return v;
+    return '600';
   });
-  bindAppearanceControl('app-title-icon', 'change', {
-    path: 'titlebar.iconDisplay',
-    fromEl: (el) => (el.value === 'inline-flex' ? 'inline-flex' : 'none')
-  });
-  bindAppearanceControl('app-kbd-transform', 'change', {
-    path: 'titlebar.kbdTransform',
-    fromEl: (el) => (el.value === 'uppercase' ? 'uppercase' : 'none')
-  });
-  bindAppearanceControl('app-key-shading', 'change', {
-    path: 'keys.shading',
-    fromEl: (el) => (el.value === 'flat' ? 'flat' : 'bevel')
-  });
-  bindAppearanceControl('app-key-corner', 'change', {
-    path: 'keys.cornerMode',
-    fromEl: (el) => (el.value === 'cut' ? 'cut' : 'radius')
-  });
-  bindAppearanceControl('app-key-cut', 'change', {
-    path: 'keys.cutSize',
-    fromEl: (el) => `${clampNumber(el.value, 0, 16)}px`
-  });
+  bindAppearanceRadios('app-title-icon', 'titlebar.iconDisplay', (v) => (v === 'inline-flex' ? 'inline-flex' : 'none'));
+  bindAppearanceRadios('app-kbd-transform', 'titlebar.kbdTransform', (v) => (v === 'uppercase' ? 'uppercase' : 'none'));
+  bindAppearanceRadios('app-key-shading', 'keys.shading', (v) => (v === 'flat' ? 'flat' : 'bevel'));
+  bindAppearanceRadios('app-key-corner', 'keys.cornerMode', (v) => (v === 'cut' ? 'cut' : 'radius'));
+  bindAppearanceRangePair('app-key-cut', 'keys.cutSize', 0, 16);
   bindAppearanceControl('app-key-border', 'change', {
     path: 'keys.border',
     fromEl: (el) => String(el.value || '').trim() || '1px solid rgba(0, 0, 0, 0.4)'
@@ -869,14 +977,8 @@ async function render() {
   bindAppearanceControl('app-color-title-mid', 'input', { path: 'color.titleMid', fromEl: (el) => el.value });
   bindAppearanceControl('app-color-title-bot', 'input', { path: 'color.titleBot', fromEl: (el) => el.value });
   bindAppearanceControl('app-color-kbd', 'input', { path: 'color.kbdColor', fromEl: (el) => el.value });
-  bindAppearanceControl('app-type-ui', 'change', {
-    path: 'type.size.ui',
-    fromEl: (el) => `${clampNumber(el.value, 9, 18)}px`
-  });
-  bindAppearanceControl('app-type-kbd', 'change', {
-    path: 'type.size.kbd',
-    fromEl: (el) => `${clampNumber(el.value, 8, 16)}px`
-  });
+  bindAppearanceRangePair('app-type-ui', 'type.size.ui', 9, 18);
+  bindAppearanceRangePair('app-type-kbd', 'type.size.kbd', 8, 16);
 
   settingsResetAllBtn?.addEventListener('click', async () => {
     const ok = typeof window.confirm === 'function'
@@ -1151,24 +1253,26 @@ async function render() {
     applyScroll(s.scroll);
   }, true);
 
-  // Sync when other tabs / this page update (sync preferred; local is fallback).
-  try {
-    chrome.storage.onChanged.addListener((changes, area) => {
-      if (area !== 'sync' && area !== 'local') return;
+  if (bindGlobal) {
+    // Sync when other tabs / this page update (sync preferred; local is fallback).
+    try {
+      chrome.storage.onChanged.addListener((changes, area) => {
+        if (area !== 'sync' && area !== 'local') return;
 
-      const helpChange = changes?.[KEYBOARD_HELP_STORAGE_KEY];
-      if (helpChange && typeof helpChange.newValue === 'boolean') {
-        applyKeyboardHelpVisible(helpChange.newValue);
-      }
+        const helpChange = changes?.[KEYBOARD_HELP_STORAGE_KEY];
+        if (helpChange && typeof helpChange.newValue === 'boolean') {
+          applyKeyboardHelpVisible(helpChange.newValue);
+        }
 
-      const entry = changes && changes[SETTINGS_STORAGE_KEY];
-      if (!entry || !entry.newValue) return;
-      void getSettings().then((s) => applyAllSettings(s)).catch(() => {
-        applyAllSettings(entry.newValue);
+        const entry = changes && changes[SETTINGS_STORAGE_KEY];
+        if (!entry || !entry.newValue) return;
+        void getSettings().then((s) => applyAllSettings(s)).catch(() => {
+          applyAllSettings(entry.newValue);
+        });
       });
-    });
-  } catch {
-    // ignore
+    } catch {
+      // ignore
+    }
   }
 }
 
@@ -1201,13 +1305,26 @@ async function injectSettingsDom(root) {
 }
 
 /**
+ * Switch the active Settings panel when the app is already mounted.
+ * @param {string} panelId
+ * @returns {boolean}
+ */
+export function setActiveSettingsPanel(panelId) {
+  const id = normalizeSettingsPanelId(panelId);
+  if (!id || !settingsDomBoundApp) return false;
+  activateSettingsPanel(id, { focusTab: true });
+  return true;
+}
+
+/**
  * Mount Settings UI into a document or open ShadowRoot.
  * Does not start KeyPilot — the host page already has it when embedded.
  * @param {Document|ShadowRoot} root
- * @param {{ embedded?: boolean }} [options]
+ * @param {{ embedded?: boolean, initialPanel?: string }} [options]
  */
 export async function mountSettingsApp(root, options = {}) {
   const embedded = options.embedded === true;
+  pendingInitialPanel = normalizeSettingsPanelId(options.initialPanel) || null;
   if (root && root.nodeType !== 9) {
     await injectSettingsDom(root);
     settingsScope = root;
@@ -1218,6 +1335,8 @@ export async function mountSettingsApp(root, options = {}) {
   await render();
   return () => {
     settingsScope = document;
+    settingsDomBoundApp = null;
+    pendingInitialPanel = null;
   };
 }
 

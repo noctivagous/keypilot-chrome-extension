@@ -297,84 +297,170 @@
             <fieldset class="appearance-group">
               <legend>Windows</legend>
               <div class="appearance-grid">
-                <label class="field">
-                  <span class="field-label" for="app-corner-mode">Corner style</span>
-                  <select id="app-corner-mode">
-                    <option value="radius">Rounded</option>
-                    <option value="cut">Cut</option>
-                  </select>
-                </label>
-                <label class="field">
-                  <span class="field-label" for="app-cut-size">Cut size</span>
-                  <input id="app-cut-size" type="number" min="0" max="24" step="1" />
-                </label>
-                <label class="field">
-                  <span class="field-label" for="app-panel-radius">Panel radius</span>
-                  <input id="app-panel-radius" type="number" min="0" max="24" step="1" />
-                </label>
+                <div class="field appearance-span-2">
+                  <div class="field-label" id="app-corner-mode-label">Corner style</div>
+                  <div
+                    class="seg-toggle"
+                    role="radiogroup"
+                    aria-labelledby="app-corner-mode-label"
+                    id="app-corner-mode"
+                  >
+                    <label class="seg-toggle-option">
+                      <input type="radio" name="app-corner-mode" value="radius" checked />
+                      <span class="seg-toggle-text">Rounded</span>
+                    </label>
+                    <label class="seg-toggle-option">
+                      <input type="radio" name="app-corner-mode" value="cut" />
+                      <span class="seg-toggle-text">Cut</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="field appearance-span-2">
+                  <div class="field-label" id="app-cut-size-label">Cut size</div>
+                  <div class="range-row">
+                    <input id="app-cut-size-range" type="range" min="0" max="24" step="1" value="8" aria-labelledby="app-cut-size-label" />
+                    <input id="app-cut-size-number" class="number" type="number" min="0" max="24" step="1" value="8" aria-labelledby="app-cut-size-label" />
+                  </div>
+                  <div class="field-hint">Corner cut depth in pixels (0–24). Used when Corner style is Cut.</div>
+                </div>
+                <div class="field appearance-span-2">
+                  <div class="field-label" id="app-panel-radius-label">Panel radius</div>
+                  <div class="range-row">
+                    <input id="app-panel-radius-range" type="range" min="0" max="24" step="1" value="3" aria-labelledby="app-panel-radius-label" />
+                    <input id="app-panel-radius-number" class="number" type="number" min="0" max="24" step="1" value="3" aria-labelledby="app-panel-radius-label" />
+                  </div>
+                  <div class="field-hint">Rounded corner radius in pixels (0–24). Used when Corner style is Rounded.</div>
+                </div>
               </div>
             </fieldset>
 
             <fieldset class="appearance-group">
               <legend>Titlebar</legend>
               <div class="appearance-grid">
-                <label class="field">
-                  <span class="field-label" for="app-title-transform">Title case</span>
-                  <select id="app-title-transform">
-                    <option value="none">As written</option>
-                    <option value="uppercase">Uppercase</option>
-                  </select>
-                </label>
+                <div class="field">
+                  <div class="field-label" id="app-title-transform-label">Title case</div>
+                  <div
+                    class="seg-toggle"
+                    role="radiogroup"
+                    aria-labelledby="app-title-transform-label"
+                  >
+                    <label class="seg-toggle-option">
+                      <input type="radio" name="app-title-transform" value="none" checked />
+                      <span class="seg-toggle-text">As written</span>
+                    </label>
+                    <label class="seg-toggle-option">
+                      <input type="radio" name="app-title-transform" value="uppercase" />
+                      <span class="seg-toggle-text">Uppercase</span>
+                    </label>
+                  </div>
+                </div>
                 <label class="field">
                   <span class="field-label" for="app-title-tracking">Letter spacing</span>
                   <input id="app-title-tracking" type="text" />
                 </label>
-                <label class="field">
-                  <span class="field-label" for="app-title-weight">Title weight</span>
-                  <select id="app-title-weight">
-                    <option value="400">Regular</option>
-                    <option value="600">Semibold</option>
-                    <option value="700">Bold</option>
-                  </select>
-                </label>
-                <label class="field">
-                  <span class="field-label" for="app-title-icon">Leading icon</span>
-                  <select id="app-title-icon">
-                    <option value="none">Hidden</option>
-                    <option value="inline-flex">Shown</option>
-                  </select>
-                </label>
-                <label class="field">
-                  <span class="field-label" for="app-kbd-transform">Shortcut case</span>
-                  <select id="app-kbd-transform">
-                    <option value="none">As written</option>
-                    <option value="uppercase">Uppercase</option>
-                  </select>
-                </label>
+                <div class="field appearance-span-2">
+                  <div class="field-label" id="app-title-weight-label">Title weight</div>
+                  <div
+                    class="seg-toggle seg-toggle-cols-3"
+                    role="radiogroup"
+                    aria-labelledby="app-title-weight-label"
+                  >
+                    <label class="seg-toggle-option">
+                      <input type="radio" name="app-title-weight" value="400" />
+                      <span class="seg-toggle-text">Regular</span>
+                    </label>
+                    <label class="seg-toggle-option">
+                      <input type="radio" name="app-title-weight" value="600" checked />
+                      <span class="seg-toggle-text">Semibold</span>
+                    </label>
+                    <label class="seg-toggle-option">
+                      <input type="radio" name="app-title-weight" value="700" />
+                      <span class="seg-toggle-text">Bold</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="field">
+                  <div class="field-label" id="app-title-icon-label">Leading icon</div>
+                  <div
+                    class="seg-toggle"
+                    role="radiogroup"
+                    aria-labelledby="app-title-icon-label"
+                  >
+                    <label class="seg-toggle-option">
+                      <input type="radio" name="app-title-icon" value="none" checked />
+                      <span class="seg-toggle-text">Hidden</span>
+                    </label>
+                    <label class="seg-toggle-option">
+                      <input type="radio" name="app-title-icon" value="inline-flex" />
+                      <span class="seg-toggle-text">Shown</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="field">
+                  <div class="field-label" id="app-kbd-transform-label">Shortcut case</div>
+                  <div
+                    class="seg-toggle"
+                    role="radiogroup"
+                    aria-labelledby="app-kbd-transform-label"
+                  >
+                    <label class="seg-toggle-option">
+                      <input type="radio" name="app-kbd-transform" value="none" checked />
+                      <span class="seg-toggle-text">As written</span>
+                    </label>
+                    <label class="seg-toggle-option">
+                      <input type="radio" name="app-kbd-transform" value="uppercase" />
+                      <span class="seg-toggle-text">Uppercase</span>
+                    </label>
+                  </div>
+                </div>
               </div>
             </fieldset>
 
             <fieldset class="appearance-group">
               <legend>Keyboard keys</legend>
               <div class="appearance-grid">
-                <label class="field">
-                  <span class="field-label" for="app-key-shading">Shading</span>
-                  <select id="app-key-shading">
-                    <option value="bevel">Bevel</option>
-                    <option value="flat">Flat</option>
-                  </select>
-                </label>
-                <label class="field">
-                  <span class="field-label" for="app-key-corner">Key corners</span>
-                  <select id="app-key-corner">
-                    <option value="radius">Rounded</option>
-                    <option value="cut">Cut</option>
-                  </select>
-                </label>
-                <label class="field">
-                  <span class="field-label" for="app-key-cut">Key cut size</span>
-                  <input id="app-key-cut" type="number" min="0" max="16" step="1" />
-                </label>
+                <div class="field">
+                  <div class="field-label" id="app-key-shading-label">Shading</div>
+                  <div
+                    class="seg-toggle"
+                    role="radiogroup"
+                    aria-labelledby="app-key-shading-label"
+                  >
+                    <label class="seg-toggle-option">
+                      <input type="radio" name="app-key-shading" value="bevel" checked />
+                      <span class="seg-toggle-text">Bevel</span>
+                    </label>
+                    <label class="seg-toggle-option">
+                      <input type="radio" name="app-key-shading" value="flat" />
+                      <span class="seg-toggle-text">Flat</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="field">
+                  <div class="field-label" id="app-key-corner-label">Key corners</div>
+                  <div
+                    class="seg-toggle"
+                    role="radiogroup"
+                    aria-labelledby="app-key-corner-label"
+                  >
+                    <label class="seg-toggle-option">
+                      <input type="radio" name="app-key-corner" value="radius" checked />
+                      <span class="seg-toggle-text">Rounded</span>
+                    </label>
+                    <label class="seg-toggle-option">
+                      <input type="radio" name="app-key-corner" value="cut" />
+                      <span class="seg-toggle-text">Cut</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="field appearance-span-2">
+                  <div class="field-label" id="app-key-cut-label">Key cut size</div>
+                  <div class="range-row">
+                    <input id="app-key-cut-range" type="range" min="0" max="16" step="1" value="4" aria-labelledby="app-key-cut-label" />
+                    <input id="app-key-cut-number" class="number" type="number" min="0" max="16" step="1" value="4" aria-labelledby="app-key-cut-label" />
+                  </div>
+                  <div class="field-hint">Key corner cut depth in pixels (0–16). Used when Key corners is Cut.</div>
+                </div>
                 <label class="field appearance-span-2">
                   <span class="field-label" for="app-key-border">Outline</span>
                   <input id="app-key-border" type="text" />
@@ -400,14 +486,22 @@
             <fieldset class="appearance-group">
               <legend>Type</legend>
               <div class="appearance-grid">
-                <label class="field">
-                  <span class="field-label" for="app-type-ui">UI size (px)</span>
-                  <input id="app-type-ui" type="number" min="9" max="18" step="1" />
-                </label>
-                <label class="field">
-                  <span class="field-label" for="app-type-kbd">Key label size (px)</span>
-                  <input id="app-type-kbd" type="number" min="8" max="16" step="1" />
-                </label>
+                <div class="field appearance-span-2">
+                  <div class="field-label" id="app-type-ui-label">UI size</div>
+                  <div class="range-row">
+                    <input id="app-type-ui-range" type="range" min="9" max="18" step="1" value="12" aria-labelledby="app-type-ui-label" />
+                    <input id="app-type-ui-number" class="number" type="number" min="9" max="18" step="1" value="12" aria-labelledby="app-type-ui-label" />
+                  </div>
+                  <div class="field-hint">Base UI font size in pixels (9–18).</div>
+                </div>
+                <div class="field appearance-span-2">
+                  <div class="field-label" id="app-type-kbd-label">Key label size</div>
+                  <div class="range-row">
+                    <input id="app-type-kbd-range" type="range" min="8" max="16" step="1" value="10" aria-labelledby="app-type-kbd-label" />
+                    <input id="app-type-kbd-number" class="number" type="number" min="8" max="16" step="1" value="10" aria-labelledby="app-type-kbd-label" />
+                  </div>
+                  <div class="field-hint">Keyboard key label font size in pixels (8–16).</div>
+                </div>
               </div>
             </fieldset>
 

@@ -1649,7 +1649,7 @@ async function init() {
             title: 'KeyPilot Docs',
             hintKeyLabel: 'Alt+H',
             closeKeys: ['Escape'],
-            url: 'docs.html',
+            url: 'docs.html#settings',
             width: `${docsContainerWidth}px`,
             height: `${docsContainerHeight}px`
           });

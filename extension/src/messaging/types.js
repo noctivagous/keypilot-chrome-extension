@@ -38,6 +38,8 @@ export const MSG = Object.freeze({
   // --- UI open (content-script handlers; SW may forward) ---
   OPEN_SETTINGS_POPOVER: 'KP_OPEN_SETTINGS_POPOVER',
   OPEN_GUIDE_POPOVER: 'KP_OPEN_GUIDE_POPOVER',
+  /** Open Docs popover; optional topicId / hash deep-link. */
+  OPEN_DOCS_POPOVER: 'KP_OPEN_DOCS_POPOVER',
   OPEN_ONBOARDING: 'KP_OPEN_ONBOARDING',
   /** Reset walkthrough progress and open it (e.g. Guide "Launch Walkthrough"). */
   LAUNCH_WALKTHROUGH: 'KP_LAUNCH_WALKTHROUGH',
@@ -151,6 +153,7 @@ export const MSG = Object.freeze({
 export const TAB_UI_FORWARD_TYPES = Object.freeze([
   MSG.OPEN_SETTINGS_POPOVER,
   MSG.OPEN_GUIDE_POPOVER,
+  MSG.OPEN_DOCS_POPOVER,
   MSG.OPEN_ONBOARDING,
   MSG.LAUNCH_WALKTHROUGH
 ]);

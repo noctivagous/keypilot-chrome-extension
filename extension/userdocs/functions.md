@@ -31,11 +31,14 @@ Navigation · Tab Control · Begin URL · Get Page Data · Maps · Scroll · Sel
 
 - **Type Characters** — insert text (modifier-chord friendly while typing)
 - **Copy image / video / URL** — with destination choices
+- **Select Word / Sentence / Paragraph / Image** — Clipboard section; exclusive or cumulative under-cursor select, then Copy
+- **Font Info** — popover with family, size, file type, and download URL for the styled text under the cursor
 - **Get text/media under cursor**
 - **Lookup Word** — Free Dictionary API definition for the word under the cursor
 - **Translate**
 - **Send selection to AI** — instruction + result destination
 - **Add URL to Media Library**
+- **Fetch URL for Media Library** — download the linked file (PDF, video, audio, image)
 - **Execute JS** — custom script (see that topic)
 - **Macro Keys** — hotkey, burst, round-robin, continuous key, synthetic mouse, remaps
 

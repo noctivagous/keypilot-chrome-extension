@@ -411,7 +411,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     description: 'Navigate to the site origin',
     details: 'Jumps to the site root (scheme + host) of the current page — useful for escaping deep paths without typing a URL.',
     keyboardClass: null,
-    row: null
+    row: 2
   }),
   LAUNCHER: Object.freeze({
     handler: 'handleLauncherKey',
@@ -612,12 +612,21 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: null,
     row: null
   }),
+  // Font under cursor — Actions Library only (no built-in layout key).
+  FONT_INFO: Object.freeze({
+    handler: 'handleFontInfoKey',
+    label: 'Font Info',
+    description: 'Inspect font under the cursor',
+    details: 'Shows a popover with the font name, size, family, file type, and resource URL for the styled text under the cursor, and outlines that text run. No default layout key — bind it in Layout Config if you need it.',
+    keyboardClass: null,
+    row: null
+  }),
   // Page-wide Image / Video / Text gallery (O on right-handed; O is TAB_RIGHT on left-handed).
   PAGE_MEDIA: Object.freeze({
     handler: 'handlePageMediaKey',
     label: 'Page Media',
     description: 'Browse media found on this page',
-    details: 'Opens a gallery of images, videos, and documents discovered on the current page so you can review or collect them without hunting through the DOM.',
+    details: 'Opens a gallery of images, videos, documents, fonts, and URLs discovered on the current page so you can review or collect them without hunting through the DOM.',
     keyboardClass: null,
     row: 1
   }),
@@ -664,6 +673,38 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: null,
     row: null
   }),
+  SELECT_WORD: Object.freeze({
+    handler: 'handleSelectWordKey',
+    label: 'Select Word',
+    description: 'Select the word under the cursor',
+    details: 'Selects the word under the KeyPilot cursor. Press again over the same word to deselect it. Exclusive mode replaces the current selection; cumulative mode adds or removes words. Copy reads this selection.',
+    keyboardClass: null,
+    row: null
+  }),
+  SELECT_SENTENCE: Object.freeze({
+    handler: 'handleSelectSentenceKey',
+    label: 'Select Sentence',
+    description: 'Select the sentence under the cursor',
+    details: 'Selects the sentence under the KeyPilot cursor. Press again over the same sentence to deselect it. Exclusive mode replaces the current selection; cumulative mode adds or removes sentences.',
+    keyboardClass: null,
+    row: null
+  }),
+  SELECT_PARAGRAPH: Object.freeze({
+    handler: 'handleSelectParagraphKey',
+    label: 'Select Paragraph',
+    description: 'Select the paragraph under the cursor',
+    details: 'Selects the paragraph (or nearest block) under the KeyPilot cursor. Press again over the same block to deselect it. Exclusive mode replaces the current selection; cumulative mode adds or removes paragraphs.',
+    keyboardClass: null,
+    row: null
+  }),
+  SELECT_IMAGE: Object.freeze({
+    handler: 'handleSelectImageKey',
+    label: 'Select Image',
+    description: 'Select the image under the cursor',
+    details: 'Selects the image under the KeyPilot cursor. Press again over the same image to deselect it. Exclusive mode replaces the current selection; cumulative mode adds or removes images. Copy can copy selected images.',
+    keyboardClass: null,
+    row: null
+  }),
   // AI (Functions palette — AI category).
   SEND_TEXT_TO_AI: Object.freeze({
     handler: 'handleSendTextToAiKey',
@@ -704,6 +745,7 @@ export const KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
   COPY_HOVERED_IMAGE: 'Get Page Data',
   COPY_HOVERED_URL: 'Get Page Data',
   COPY_HOVERED_VIDEO: 'Get Page Data',
+  FONT_INFO: 'Get Page Data',
   PAGE_MEDIA: 'Get Page Data',
   DELETE: 'Select',
   COLS_TOGGLE: 'Select',
@@ -712,6 +754,10 @@ export const KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
   CLIPBOARD_CUT: 'Clipboard',
   CLIPBOARD_PASTE: 'Clipboard',
   CLIPBOARD_SELECT_ALL: 'Clipboard',
+  SELECT_WORD: 'Clipboard',
+  SELECT_SENTENCE: 'Clipboard',
+  SELECT_PARAGRAPH: 'Clipboard',
+  SELECT_IMAGE: 'Clipboard',
   SEND_TEXT_TO_AI: 'AI',
   LAUNCHER: 'Begin URL',
   TOP_SITES: 'Begin URL',
@@ -945,7 +991,7 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   NEW_TAB: Object.freeze({ keys: ['t', 'T'] }),
 
   CLOSE_TAB: Object.freeze({ keys: ['a', 'A'] }),
-  BACK2: Object.freeze({ keys: ['s', 'S'] }),
+  ROOT: Object.freeze({ keys: ['s', 'S', '1', '!'], displayKey: 'S', keyLabel: 'S' }),
   BACK: Object.freeze({ keys: ['d', 'D'] }),
   ACTIVATE: Object.freeze({ keys: ['f', 'F'] }),
   ACTIVATE_NEW_TAB_BACKGROUND: Object.freeze({ keys: ['g', 'G'] }),
@@ -968,7 +1014,6 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   // M is otherwise unused on the right-handed layout (it's PAGE_DOWN_INSTANT on left-handed).
   OPEN_MEDIA_LIBRARY: Object.freeze({ keys: ['m', 'M'] }),
 
-  ROOT: Object.freeze({ keys: ['1', '!'], displayKey: '1', keyLabel: '1' }),
   DELETE: Object.freeze({ keys: ['Backspace'], displayKey: 'Backspace', keyLabel: 'Backspace' })
   // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
 });
@@ -989,7 +1034,7 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
 
   // Home row cluster: A S D F G  ->  ; L K J H (mirrored-ish around center)
   CLOSE_TAB: Object.freeze({ keys: [';', ':'], displayKey: ';', keyLabel: ';' }),
-  BACK2: Object.freeze({ keys: ['l', 'L'] }),
+  ROOT: Object.freeze({ keys: ['l', 'L', '1', '!'], displayKey: 'L', keyLabel: 'L' }),
   BACK: Object.freeze({ keys: ['k', 'K'] }),
   ACTIVATE: Object.freeze({ keys: ['j', 'J'] }),
   ACTIVATE_NEW_TAB_BACKGROUND: Object.freeze({ keys: ['h', 'H'] }),
@@ -1013,7 +1058,6 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   COPY_HOVERED_IMAGE: Object.freeze({ keys: ['e', 'E'] }),
   // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
 
-  ROOT: Object.freeze({ keys: ['1', '!'], displayKey: '1', keyLabel: '1' }),
   DELETE: Object.freeze({ keys: ['Backspace'], displayKey: 'Backspace', keyLabel: 'Backspace' })
 });
 
@@ -1100,7 +1144,7 @@ const BASIC_NAVIGATION_ACTION_IDS = Object.freeze([
   'TAB_RIGHT',
   'FORWARD',
   'BACK',
-  'BACK2',
+  'ROOT',
   'PAGE_TOP',
   'PAGE_BOTTOM',
   'PAGE_UP_INSTANT',
@@ -1111,7 +1155,7 @@ const BASIC_NAVIGATION_ACTION_IDS = Object.freeze([
 const CLICK_HISTORY_ACTION_IDS = Object.freeze([
   'ACTIVATE',
   'BACK',
-  'BACK2',
+  'ROOT',
   'FORWARD'
 ]);
 
@@ -1245,7 +1289,7 @@ const KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
   [
     { type: 'special', text: 'Caps', className: 'key key-caps' },
     { type: 'action', id: 'CLOSE_TAB', fallbackText: 'Close Tab' },
-    { type: 'action', id: 'BACK2', fallbackText: 'Go Back' },
+    { type: 'action', id: 'ROOT', fallbackText: 'Go to Site Root' },
     { type: 'action', id: 'BACK', fallbackText: 'Go Back' },
     { type: 'action', id: 'ACTIVATE', fallbackText: 'Click Element' },
     { type: 'action', id: 'ACTIVATE_NEW_TAB_BACKGROUND', fallbackText: 'Click New Tab Background' },
@@ -1302,7 +1346,7 @@ const KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
     { type: 'action', id: 'ACTIVATE_NEW_TAB_BACKGROUND', fallbackText: 'Click New Tab Background' }, // H
     { type: 'action', id: 'ACTIVATE', fallbackText: 'Click Element' }, // J
     { type: 'action', id: 'BACK', fallbackText: 'Go Back' }, // K
-    { type: 'action', id: 'BACK2', fallbackText: 'Go Back' }, // L
+    { type: 'action', id: 'ROOT', fallbackText: 'Go to Site Root' }, // L
     { type: 'action', id: 'CLOSE_TAB', fallbackText: 'Close Tab' }, // ;
     { type: 'action', id: 'OPEN_SETTINGS_POPOVER', fallbackText: 'Settings' }, // '
     { type: 'special', text: 'Enter', className: 'key key-enter' }

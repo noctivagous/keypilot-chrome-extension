@@ -35,6 +35,7 @@ export function buildKeyPilotPrintCss() {
     `.${CSS_CLASSES.COLS_SLIP_BAR}`,
     `.${CSS_CLASSES.HIGHLIGHT_OVERLAY}`,
     `.${CSS_CLASSES.HIGHLIGHT_SELECTION}`,
+    `.${CSS_CLASSES.UNIT_SELECT_OVERLAY}`,
     `.${CSS_CLASSES.RIPPLE}`,
     `.${CSS_CLASSES.FOCUS_PULSE}`,
     `.${CSS_CLASSES.FOCUS_FLASH}`,
@@ -685,6 +686,19 @@ export class StyleManager {
         z-index: ${Z_INDEX.HIGHLIGHT_SELECTION}; 
         background: ${COLORS.HIGHLIGHT_SELECTION_BG}; 
         border: 1px solid ${COLORS.HIGHLIGHT_SELECTION_BORDER}; 
+      }
+
+      .${CSS_CLASSES.UNIT_SELECT_OVERLAY} {
+        position: fixed;
+        pointer-events: none;
+        z-index: ${Z_INDEX.HIGHLIGHT_SELECTION};
+        background: ${COLORS.HIGHLIGHT_SELECTION_BG};
+        border: 1px solid ${COLORS.HIGHLIGHT_SELECTION_BORDER};
+        box-sizing: border-box;
+      }
+
+      ::highlight(kp-unit-select) {
+        background-color: ${COLORS.HIGHLIGHT_SELECTION_BG};
       }
 
       /* Omnibox overlay */
@@ -1441,6 +1455,7 @@ export class StyleManager {
       CSS_CLASSES.TEXT_HOVER_ACTIVATE_HINT,
       CSS_CLASSES.HIGHLIGHT_OVERLAY,
       CSS_CLASSES.HIGHLIGHT_SELECTION,
+      CSS_CLASSES.UNIT_SELECT_OVERLAY,
       CSS_CLASSES.TEXT_FOCUS_INPUT,
       CSS_CLASSES.TEXT_FOCUS_INPUT_PARENT,
       CSS_CLASSES.TEXT_FOCUS_LEFT_EDGE,

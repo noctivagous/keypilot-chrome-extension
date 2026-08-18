@@ -16,7 +16,7 @@
 import { SCROLL } from '../config/constants.js';
 import { MSG } from '../messaging/types.js';
 import { isTypingContext, hasModifierKeys } from '../utils/dom-context.js';
-import { scrollAtPoint, scrollToEdgeAtPoint, findScrollTargetAtPoint, scrollElementBy } from '../utils/scroll-at-point.js';
+import { scrollAtPoint, scrollToEdgeAtPoint, findScrollTargetAtPoint, scrollElementBy, applyInstantScrollTo, isInstantScrollBehavior } from '../utils/scroll-at-point.js';
 import { ScrollHoldController } from '../utils/scroll-hold.js';
 import { deepElementFromPoint as pierceElementFromPoint } from '../utils/element-from-point.js';
 import {
@@ -86,6 +86,14 @@ export function installPopoverIframeBridge(options = {}) {
     const scrollByY = (deltaY, behavior = 'smooth') => {
       try {
         const el = document.scrollingElement || document.documentElement || document.body;
+        if (el && isInstantScrollBehavior(behavior)) {
+          applyInstantScrollTo(
+            el,
+            Number(el.scrollLeft) || 0,
+            (Number(el.scrollTop) || 0) + (Number(deltaY) || 0)
+          );
+          return;
+        }
         if (el && typeof el.scrollBy === 'function') {
           el.scrollBy({ top: deltaY, behavior });
         } else {
@@ -98,6 +106,11 @@ export function installPopoverIframeBridge(options = {}) {
 
     const scrollToY = (top, behavior = 'smooth') => {
       try {
+        const el = document.scrollingElement || document.documentElement || document.body;
+        if (el && isInstantScrollBehavior(behavior)) {
+          applyInstantScrollTo(el, Number(el.scrollLeft) || window.pageXOffset || 0, Number(top) || 0);
+          return;
+        }
         window.scrollTo({ top, behavior });
       } catch {
         // ignore
@@ -237,7 +250,7 @@ export function installPopoverIframeBridge(options = {}) {
       if (!bridgeActive) return;
 
       if (data.type === MSG.POPOVER_SCROLL) {
-        const behavior = data.behavior === 'auto' ? 'auto' : 'smooth';
+        const behavior = data.behavior === 'auto' || data.behavior === 'instant' ? 'instant' : 'smooth';
         if (data.command === 'scrollBy') {
           const delta = Number(data.delta) || 0;
           scrollByY(delta, behavior);

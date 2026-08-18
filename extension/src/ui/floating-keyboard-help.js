@@ -409,6 +409,7 @@ export class FloatingKeyboardHelp {
         else this.root.removeAttribute('data-kp-edit-mode');
       }
     } catch { /* ignore */ }
+    this._syncPlaceTargetingAttr();
 
     this._ensureEditModeStyles();
 
@@ -609,6 +610,7 @@ export class FloatingKeyboardHelp {
     this._placeItem = item && item.type && item.id ? { type: String(item.type), id: String(item.id) } : null;
     this._onPlaceSlot = this._placeItem && typeof onPlace === 'function' ? onPlace : null;
     this._placeHoverSlot = null;
+    this._syncPlaceTargetingAttr();
     if (this._editMode && this.root && !this.root.hidden) this._render();
   }
 
@@ -628,6 +630,14 @@ export class FloatingKeyboardHelp {
 
   isPlaceTargetingActive() {
     return !!(this._placeItem && this._placeItem.type && this._placeItem.id);
+  }
+
+  _syncPlaceTargetingAttr() {
+    try {
+      if (!this.root) return;
+      if (this.isPlaceTargetingActive()) this.root.setAttribute('data-kp-place-targeting', 'true');
+      else this.root.removeAttribute('data-kp-place-targeting');
+    } catch { /* ignore */ }
   }
 
   /**
@@ -1715,6 +1725,13 @@ export class FloatingKeyboardHelp {
 :host [data-kp-floating-keyboard-body="true"].kp-kb-edit-hatch {
   background-color: var(--kp-hatch-edit-body-bg, #1a1c20) !important;
   background-image: var(--kp-hatch-edit) !important;
+}
+:host([data-kp-place-targeting="true"]) [data-kp-floating-keyboard-titlebar="true"] {
+  animation: kp-kb-place-titlebar-pulse 1.15s ease-in-out infinite;
+}
+@keyframes kp-kb-place-titlebar-pulse {
+  0%, 100% { filter: brightness(1); box-shadow: inset 0 0 0 0 rgba(255, 140, 0, 0); }
+  50% { filter: brightness(1.18); box-shadow: inset 0 0 0 2px rgba(255, 176, 72, 0.85), 0 0 14px rgba(255, 140, 0, 0.55); }
 }
 /* Lighten the panel chrome fill while editing. */
 :host([data-kp-edit-mode="true"]) {

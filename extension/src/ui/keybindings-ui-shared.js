@@ -150,6 +150,7 @@ export const KEYBOARD_ACTION_ICON_IDS = Object.freeze({
   COPY_HOVERED_IMAGE: 'image',
   COPY_HOVERED_URL: 'link',
   COPY_HOVERED_VIDEO: 'video',
+  FONT_INFO: 'font',
   PAGE_MEDIA: 'image',
   OPEN_MEDIA_LIBRARY: 'image',
   // Function Library (Config cards + placeable Actions)
@@ -157,6 +158,10 @@ export const KEYBOARD_ACTION_ICON_IDS = Object.freeze({
   CLIPBOARD_CUT: 'scissors',
   CLIPBOARD_PASTE: 'clipboard',
   CLIPBOARD_SELECT_ALL: 'font',
+  SELECT_WORD: 'font',
+  SELECT_SENTENCE: 'font',
+  SELECT_PARAGRAPH: 'font',
+  SELECT_IMAGE: 'image',
   SEND_TEXT_TO_AI: 'robot',
   SEND_HOTKEY: 'keyboard',
   SEND_BURST: 'bolt',

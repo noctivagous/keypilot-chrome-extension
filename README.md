@@ -49,10 +49,9 @@ on the keyboard in specific places to make web navigation quick.
 | `J` | Browse this tab’s history |
 | `L` | Address bar overlay |
 | `P` | Open link in a popup window |
-| `S` | Browser history back |
+| `S` | Navigate to the site origin |
 | `N` | Origin-based continuous scroll |
 | `'` | Open KeyPilot Settings |
-| `1` | Navigate to the site origin |
 
 #### Tabs
 
@@ -84,6 +83,21 @@ on the keyboard in specific places to make web navigation quick.
 | `Esc` | Leave modes and overlays |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -170,6 +170,7 @@ function renderGuideForLayout(layoutIdRaw) {
 
   const activate = labelsForActions(bindings, ['ACTIVATE']);
   const back = labelsForActions(bindings, ['BACK', 'BACK2']);
+  const root = labelsForActions(bindings, ['ROOT']);
   const forward = labelsForActions(bindings, ['FORWARD']);
   const tabs = labelsForActions(bindings, ['TAB_LEFT', 'TAB_RIGHT']);
   const omnibox = labelsForActions(bindings, ['OMNIBOX']);
@@ -186,6 +187,7 @@ function renderGuideForLayout(layoutIdRaw) {
   fillList(document.getElementById('guide-core-list'), [
     { keys: activate, text: 'click element under the KeyPilot cursor' },
     { keys: back, text: 'back' },
+    { keys: root, text: 'site root' },
     { keys: forward, text: 'forward' },
     { keys: tabs, text: 'tab left/right' },
     { keys: omnibox, text: 'omnibox' },

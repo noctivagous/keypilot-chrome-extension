@@ -40,3 +40,19 @@ Copy format (rich or plain text) is configurable on the Text Select Function's A
 - <kbd>I</kbd> / <kbd>U</kbd> copy hovered image / URL (see *Copy under cursor*).
 - <kbd>O</kbd> opens Page Media for everything found on the page.
 - Clipboard and Media Library destinations appear on many Get / Copy Functions in Layout Config.
+
+## Unit select (Clipboard)
+
+Place **Select Word**, **Select Sentence**, **Select Paragraph**, or **Select Image** from the Actions Library Clipboard section. These select under the KeyPilot cursor without copying.
+
+1. Hover the word, sentence, paragraph, or image.
+2. Press the bound key to select it. Press again over the same unit to deselect it.
+3. Use **Copy** (or Cut) to send the KeyPilot selection to the clipboard.
+4. Press <kbd>Esc</kbd> to clear the selection.
+
+Each Function has a popover setting:
+
+- **Exclusive** (default) — the press replaces the current selection.
+- **Cumulative** — add or remove units; disjoint ranges stay highlighted.
+
+KeyPilot paints its own highlight so gapped selections stay visible. This is separate from <kbd>H</kbd> / <kbd>Y</kbd> drag selection.

@@ -850,17 +850,17 @@ export function pinKeyPopover(actionId, opts = {}) {
   const binding = resolveKeybinding(actionId, keybindings);
   if (!binding) return false;
 
-  // F-activate already fired a synthetic click that pinned this key. Re-rendering
-  // would race renderPopoverSettings and duplicate the settings row — but still
-  // keep the popover open (ensurePopover used to hide it on every lookup).
+  // Same key already in settings mode: a second Click Element (or pin call)
+  // returns the popover to hover styling. Mouse clicks toggle in handleKeyClick
+  // instead; untrusted clicks are ignored there so this path is not doubled.
   if (_pinnedActionId === actionId && _pinnedKeyEl === keyEl) {
     if (root._kpKeyHandlers) {
       try { clearTimeout(root._kpKeyHandlers.hideTimer); } catch { /* ignore */ }
       root._kpKeyHandlers.hideTimer = null;
     }
-    openPopoverElement(pop);
-    const hintEl = pop.querySelector('.kp-popover-settings-hint');
-    if (hintEl) hintEl.hidden = true;
+    _pinnedActionId = null;
+    _pinnedKeyEl = null;
+    showPopoverForTarget({ doc, pop, targetEl: keyEl, binding, actionId, pinned: false });
     return true;
   }
 
@@ -1014,6 +1014,9 @@ export function attachKeyPopoverBehavior({ root, keybindings }) {
   function handleKeyClick(e) {
     e.preventDefault();
     e.stopPropagation();
+    // Click Element dispatches an untrusted click, then handleActivateKey calls
+    // pinKeyPopover (which toggles). Ignore that click so we don't pin then unpin.
+    if (e && e.isTrusted === false) return;
     const keyEl = e.currentTarget;
     const actionId = keyEl?.dataset?.kpActionId;
     if (_pinnedActionId && _pinnedKeyEl === keyEl && actionId === _pinnedActionId) {

@@ -7,10 +7,11 @@
 
 import { extractFirstBackgroundImageUrl } from './image-utils.js';
 import { parseDpiFromImageBytes } from './image-dpi.js';
+import { collectPageFonts } from './font-at-point.js';
 
 export { parseDpiFromImageBytes };
 
-/** @typedef {'image'|'video'|'text'|'url'|'pageText'} PageMediaCategory */
+/** @typedef {'image'|'video'|'text'|'url'|'pageText'|'font'} PageMediaCategory */
 
 /**
  * @typedef {{
@@ -28,7 +29,11 @@ export { parseDpiFromImageBytes };
    *   posterUrl?: string|null,
    *   thumbUrl?: string|null,
    *   text?: string|null,
-   *   urlGroup?: 'page'|'document'|'image'|'video'|'other'
+   *   urlGroup?: 'page'|'document'|'image'|'video'|'other',
+   *   fontFamily?: string,
+   *   fontWeight?: string,
+   *   fontStyle?: string,
+   *   sourceKind?: 'webfont'|'local'
    * }} PageMediaItem
  *
  * @typedef {{
@@ -60,6 +65,87 @@ const TEXT_EXTS = Object.freeze([
 const IMAGE_EXT_SET = new Set(IMAGE_EXTS);
 const VIDEO_EXT_SET = new Set(VIDEO_EXTS);
 const TEXT_EXT_SET = new Set(TEXT_EXTS);
+
+/** @type {Readonly<Record<string, string>>} */
+const MIME_TO_EXT = Object.freeze({
+  'image/jpeg': 'jpg',
+  'image/jpg': 'jpg',
+  'image/pjpeg': 'jpg',
+  'image/png': 'png',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+  'image/avif': 'avif',
+  'image/svg+xml': 'svg',
+  'image/svg': 'svg',
+  'image/bmp': 'bmp',
+  'image/x-icon': 'ico',
+  'image/vnd.microsoft.icon': 'ico',
+  'image/tiff': 'tif',
+  'image/tif': 'tif',
+  'image/heic': 'heic',
+  'image/heif': 'heif',
+  'video/mp4': 'mp4',
+  'video/webm': 'webm',
+  'video/quicktime': 'mov',
+  'video/x-m4v': 'm4v',
+  'application/pdf': 'pdf'
+});
+
+/**
+ * @param {string|null|undefined} mime
+ * @returns {string}
+ */
+export function extFromMimeType(mime) {
+  const m = String(mime || '').toLowerCase().split(';')[0].trim();
+  if (!m) return '';
+  if (MIME_TO_EXT[m]) return MIME_TO_EXT[m];
+  if (m.startsWith('image/')) {
+    const sub = m.slice(6).split('+')[0];
+    if (sub === 'jpeg') return 'jpg';
+    if (sub === 'svg') return 'svg';
+    return sub || '';
+  }
+  if (m.startsWith('video/')) {
+    const sub = m.slice(6).split('+')[0];
+    return sub || '';
+  }
+  return '';
+}
+
+/**
+ * @param {string|null|undefined} mime
+ * @returns {PageMediaCategory|null}
+ */
+export function categoryFromMimeType(mime) {
+  const m = String(mime || '').toLowerCase().split(';')[0].trim();
+  if (!m) return null;
+  if (m.startsWith('image/')) return 'image';
+  if (m.startsWith('video/')) return 'video';
+  if (m === 'application/pdf' || m.startsWith('text/')) return 'text';
+  return null;
+}
+
+/**
+ * @param {string} url
+ * @returns {string}
+ */
+function extFromDataUrl(url) {
+  const m = String(url || '').match(/^data:([a-z0-9.+/-]+)/i);
+  if (!m) return '';
+  return extFromMimeType(m[1]);
+}
+
+/**
+ * @param {string} ext
+ * @returns {string}
+ */
+function normalizeStoredExt(ext) {
+  const e = String(ext || '').toLowerCase();
+  if (e === 'jpeg') return 'jpg';
+  if (e === 'tiff') return 'tif';
+  if (e === 'svg+xml') return 'svg';
+  return e;
+}
 
 /** Asset / internal page resources excluded from the URLs tab. */
 const URL_TAB_EXCLUDE_EXTS = Object.freeze([
@@ -640,7 +726,17 @@ export function collectPageMedia(root = document) {
     if (raw.category === 'url') return;
     if (byUrl.has(resolved)) return;
 
-    const ext = raw.ext || extensionFromUrl(resolved) || '';
+    const placeholderExts = new Set(['img', 'bg', 'video']);
+    const rawExt = normalizeStoredExt(raw.ext);
+    const fromUrl = normalizeStoredExt(extensionFromUrl(resolved));
+    const fromMime = normalizeStoredExt(
+      extFromMimeType(raw.mimeType) || extFromDataUrl(resolved)
+    );
+    const ext = (rawExt && !placeholderExts.has(rawExt) ? rawExt : '')
+      || fromUrl
+      || fromMime
+      || rawExt
+      || '';
     const label = raw.label || filenameFromUrl(resolved) || resolved.slice(0, 48);
     /** @type {PageMediaItem} */
     const item = {
@@ -796,8 +892,26 @@ export function collectPageMedia(root = document) {
     }
 
     if (tag === 'SOURCE') {
+      const typeAttr = String(el.getAttribute('type') || '').toLowerCase();
       const urls = harvestAttrUrls(el);
-      for (const u of urls) addByExtension(u, el, 'source');
+      for (const u of urls) {
+        notePageUrl(u, el, 'source');
+        const resolved = resolveUrl(u, el);
+        if (!isUsableUrl(resolved)) continue;
+        const ext = normalizeStoredExt(
+          extensionFromUrl(resolved) || extFromMimeType(typeAttr) || extFromDataUrl(resolved)
+        );
+        const category = categoryFromExtension(ext) || categoryFromMimeType(typeAttr);
+        if (!category) continue;
+        add({
+          category,
+          kind: 'source',
+          url: resolved,
+          element: el,
+          ext,
+          mimeType: typeAttr || undefined
+        });
+      }
     }
 
     if (tag === 'A' || tag === 'AREA' || tag === 'LINK' || tag === 'EMBED' || tag === 'OBJECT') {
@@ -821,7 +935,8 @@ export function collectPageMedia(root = document) {
   // Media items first, then URL-tab entries (may overlap media URLs; URLs tab is deduped),
   // then page-text blocks for the Text tab.
   const pageTextItems = collectPageTextItems(root);
-  return [...byUrl.values(), ...allPageUrls.values(), ...pageTextItems];
+  const fontItems = collectPageFonts(root);
+  return [...byUrl.values(), ...allPageUrls.values(), ...pageTextItems, ...fontItems];
 }
 
 const MAX_PAGE_TEXT_BLOCKS = 40;
@@ -982,17 +1097,18 @@ export function collectPageTextItems(root = document) {
 
 /**
  * @param {PageMediaItem[]} items
- * @returns {{ image: PageMediaItem[], video: PageMediaItem[], text: PageMediaItem[], url: PageMediaItem[], pageText: PageMediaItem[] }}
+ * @returns {{ image: PageMediaItem[], video: PageMediaItem[], text: PageMediaItem[], url: PageMediaItem[], pageText: PageMediaItem[], font: PageMediaItem[] }}
  */
 export function groupPageMediaByCategory(items) {
-  /** @type {{ image: PageMediaItem[], video: PageMediaItem[], text: PageMediaItem[], url: PageMediaItem[], pageText: PageMediaItem[] }} */
-  const groups = { image: [], video: [], text: [], url: [], pageText: [] };
+  /** @type {{ image: PageMediaItem[], video: PageMediaItem[], text: PageMediaItem[], url: PageMediaItem[], pageText: PageMediaItem[], font: PageMediaItem[] }} */
+  const groups = { image: [], video: [], text: [], url: [], pageText: [], font: [] };
   for (const item of items || []) {
     if (item?.category === 'image') groups.image.push(item);
     else if (item?.category === 'video') groups.video.push(item);
     else if (item?.category === 'text') groups.text.push(item);
     else if (item?.category === 'url') groups.url.push(item);
     else if (item?.category === 'pageText') groups.pageText.push(item);
+    else if (item?.category === 'font') groups.font.push(item);
   }
   // Sort URLs: web pages → documents → other; alpha within group.
   groups.url.sort((a, b) => {
@@ -1096,6 +1212,33 @@ export function groupImagesByDimensionSize(items) {
     });
   }
   return out;
+}
+
+/**
+ * Sort images by pixel area (file size as tie-breaker). Unknown dimensions last.
+ * Page order preserves collect/DOM order.
+ * @param {PageMediaItem[]} items
+ * @param {'size-desc'|'size-asc'|'page'|string} [mode]
+ * @returns {PageMediaItem[]}
+ */
+export function sortImageItems(items, mode) {
+  const list = (items || []).filter(Boolean).slice();
+  const m = mode === 'size-asc' || mode === 'page' ? mode : 'size-desc';
+  if (m === 'page') return list;
+  const dir = m === 'size-asc' ? 1 : -1;
+  list.sort((a, b) => {
+    const aa = (Number(a.width) || 0) * (Number(a.height) || 0);
+    const bb = (Number(b.width) || 0) * (Number(b.height) || 0);
+    const aKnown = aa > 0;
+    const bKnown = bb > 0;
+    if (aKnown !== bKnown) return aKnown ? -1 : 1;
+    if (aa !== bb) return dir * (aa - bb);
+    const sa = Number(a.fileSizeBytes) || 0;
+    const sb = Number(b.fileSizeBytes) || 0;
+    if (sa !== sb) return dir * (sa - sb);
+    return String(a.label || a.url || '').localeCompare(String(b.label || b.url || ''));
+  });
+  return list;
 }
 
 /**
@@ -1310,13 +1453,8 @@ async function fetchImageNetworkMeta(url, opts = {}) {
         const ct = head.headers.get('content-type');
         if (ct) {
           out.mimeType = ct;
-          const m = ct.match(/image\/([a-z0-9.+-]+)/i);
-          if (m) {
-            let sub = m[1].toLowerCase();
-            if (sub === 'jpeg') sub = 'jpg';
-            if (sub === 'svg+xml') sub = 'svg';
-            out.ext = sub.split('+')[0];
-          }
+          const fromMime = extFromMimeType(ct);
+          if (fromMime) out.ext = fromMime;
         }
       }
     } catch { /* ignore */ }
@@ -1336,6 +1474,10 @@ async function fetchImageNetworkMeta(url, opts = {}) {
       if (res.ok || res.status === 206) {
         const ct = res.headers.get('content-type');
         if (ct && !out.mimeType) out.mimeType = ct;
+        if (ct && !out.ext) {
+          const fromMime = extFromMimeType(ct);
+          if (fromMime) out.ext = fromMime;
+        }
         if (out.fileSizeBytes == null) {
           const cr = res.headers.get('content-range');
           const m = cr && cr.match(/\/(\d+)\s*$/);

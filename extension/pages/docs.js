@@ -8,6 +8,8 @@ import MarkdownIt from 'markdown-it';
 import { getSettings } from '../src/modules/settings-manager.js';
 import { applyThemeToRoots, resolveThemeFromSettings } from '../src/modules/theme-manager.js';
 import { BUILD_ENABLE_MACRO_BUILDER } from '../src/config/keyboard-layouts.js';
+import { isKpDeepLink, parseKpDeepLink } from '../src/utils/kp-deep-link.js';
+import { MSG } from '../src/messaging/types.js';
 
 /**
  * @typedef {{
@@ -78,6 +80,14 @@ let searchEl = null;
 let closeBtn = null;
 /** @type {HTMLElement|null} */
 let docsAppEl = null;
+/** Preferred topic for the next catalog load (from mount options or location.hash). */
+let pendingInitialTopic = null;
+/** In-article hash to scroll after selectDoc (without leading #). */
+let pendingArticleHash = null;
+/** @type {((target: import('../src/utils/kp-deep-link.js').KpDeepLinkTarget) => void)|null} */
+let onNavigateDeepLink = null;
+/** True once catalog load finished for the current mount. */
+let docsCatalogReady = false;
 
 function bindDocsElements(root) {
   const scope = root && root.querySelector ? root : document;
@@ -144,7 +154,7 @@ const markdown = new MarkdownIt({
 });
 
 markdown.validateLink = (url) =>
-  /^(https?:|chrome-extension:|mailto:|#)/i.test(String(url || '').trim());
+  /^(https?:|chrome-extension:|mailto:|kp:|#)/i.test(String(url || '').trim());
 
 const defaultLinkOpen =
   markdown.renderer.rules.link_open ||
@@ -153,7 +163,7 @@ const defaultLinkOpen =
 
 markdown.renderer.rules.link_open = (tokens, idx, options, env, renderer) => {
   const href = tokens[idx].attrGet('href') || '';
-  if (!href.startsWith('#')) {
+  if (!href.startsWith('#') && !isKpDeepLink(href)) {
     tokens[idx].attrSet('target', '_blank');
     tokens[idx].attrSet('rel', 'noopener noreferrer');
   }
@@ -498,7 +508,7 @@ function renderNav() {
   }
 }
 
-function selectDoc(id) {
+function selectDoc(id, articleHash) {
   const resolved = resolveSelectableId(id) || id;
   const doc = allDocs.find((d) => d.id === resolved);
   if (!doc || !articleEl) return;
@@ -512,6 +522,167 @@ function selectDoc(id) {
   activeId = doc.id;
   articleEl.innerHTML = doc.html || '<p class="muted">Empty document.</p>';
   renderNav();
+  scrollDocsArticleToHash(articleHash);
+}
+
+/**
+ * Scroll the article to an in-document heading/id after topic select.
+ * @param {string|null|undefined} hash
+ */
+function scrollDocsArticleToHash(hash) {
+  const id = String(hash || '').replace(/^#/, '').trim();
+  if (!id || !articleEl) return;
+  try {
+    const el =
+      articleEl.querySelector(`#${CSS.escape(id)}`) ||
+      articleEl.querySelector(`[name="${CSS.escape(id)}"]`);
+    if (el && typeof el.scrollIntoView === 'function') {
+      el.scrollIntoView({ block: 'start', behavior: 'auto' });
+      return;
+    }
+  } catch { /* ignore */ }
+  try {
+    articleEl.scrollTop = 0;
+  } catch { /* ignore */ }
+}
+
+/**
+ * Navigate the mounted Docs app to a topic (and optional in-article hash).
+ * @param {string} topicId
+ * @param {string} [hash]
+ * @returns {boolean}
+ */
+export function navigateDocsApp(topicId, hash) {
+  if (!docsCatalogReady || !articleEl) return false;
+  const id = String(topicId || '').trim();
+  if (!id) return false;
+  const resolved = resolveSelectableId(id);
+  if (!resolved) {
+    const first = allDocs.find((d) => d.selectable);
+    if (!first) return false;
+    selectDoc(first.id);
+    return false;
+  }
+  selectDoc(resolved, hash);
+  return true;
+}
+
+/**
+ * Default deep-link navigation when no host callback is provided
+ * (standalone docs.html / newtab iframe).
+ * @param {import('../src/utils/kp-deep-link.js').KpDeepLinkTarget} target
+ */
+function defaultNavigateDeepLink(target) {
+  if (!target || (target.kind !== 'settings' && target.kind !== 'docs')) return;
+
+  if (target.kind === 'docs') {
+    if (navigateDocsApp(target.id, target.hash)) return;
+  }
+
+  try {
+    const kp =
+      (typeof window !== 'undefined' && (window.__KeyPilotInstance || window.keyPilot)) ||
+      null;
+    if (kp && typeof kp.navigateKpDeepLink === 'function') {
+      kp.navigateKpDeepLink(target);
+      return;
+    }
+  } catch { /* ignore */ }
+
+  // New Tab / Guide iframe: parent page owns KeyPilot.
+  try {
+    const parentKp =
+      (typeof window !== 'undefined' &&
+        window.parent &&
+        window.parent !== window &&
+        (window.parent.__KeyPilotInstance || window.parent.keyPilot)) ||
+      null;
+    if (parentKp && typeof parentKp.navigateKpDeepLink === 'function') {
+      try {
+        window.parent.postMessage({ type: MSG.POPOVER_REQUEST_CLOSE, key: 'Escape' }, '*');
+      } catch { /* ignore */ }
+      parentKp.navigateKpDeepLink(target);
+      return;
+    }
+  } catch { /* ignore cross-origin */ }
+
+  try {
+    if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+      if (target.kind === 'settings') {
+        void chrome.runtime.sendMessage({
+          type: MSG.OPEN_SETTINGS_POPOVER,
+          panelId: target.id
+        });
+      } else {
+        void chrome.runtime.sendMessage({
+          type: MSG.OPEN_DOCS_POPOVER,
+          topicId: target.id,
+          hash: target.hash
+        });
+      }
+    }
+  } catch { /* ignore */ }
+}
+
+/**
+ * @param {MouseEvent} e
+ */
+function onDocsDeepLinkClick(e) {
+  if (!e || e.defaultPrevented) return;
+  if (e.button != null && e.button !== 0) return;
+  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
+  /** @type {Element|null} */
+  let el = null;
+  for (const node of path) {
+    if (node && node.nodeType === 1 && /** @type {Element} */ (node).tagName === 'A') {
+      el = /** @type {Element} */ (node);
+      break;
+    }
+  }
+  if (!el) {
+    const t = e.target;
+    el = t && /** @type {Element} */ (t).closest ? /** @type {Element} */ (t).closest('a[href]') : null;
+  }
+  if (!el) return;
+  const href = el.getAttribute('href') || '';
+  const parsed = parseKpDeepLink(href);
+  if (!parsed) return;
+  e.preventDefault();
+  e.stopPropagation();
+
+  if (parsed.kind === 'docs') {
+    navigateDocsApp(parsed.id, parsed.hash);
+    return;
+  }
+
+  const nav = onNavigateDeepLink || defaultNavigateDeepLink;
+  try {
+    nav(parsed);
+  } catch { /* ignore */ }
+}
+
+/**
+ * Resolve initial topic from mount option, then location.hash (standalone).
+ * @param {string|null|undefined} fromOptions
+ * @returns {{ topicId: string|null, hash: string|null }}
+ */
+function resolveInitialDocsTarget(fromOptions) {
+  const opt = String(fromOptions || '').trim();
+  if (opt) return { topicId: opt, hash: pendingArticleHash };
+
+  try {
+    const raw = (location.hash || '').replace(/^#/, '').trim();
+    if (!raw) return { topicId: null, hash: null };
+    // docs.html#browsing-click or docs.html#browsing-click/section
+    const slash = raw.indexOf('/');
+    if (slash > 0) {
+      return { topicId: raw.slice(0, slash), hash: raw.slice(slash + 1) || null };
+    }
+    return { topicId: raw, hash: null };
+  } catch {
+    return { topicId: null, hash: null };
+  }
 }
 
 function applyFontScale(scale) {
@@ -533,13 +704,21 @@ function applyFontScale(scale) {
  * @param {{
  *   embedded?: boolean,
  *   onClose?: () => void,
- *   fontScale?: number
+ *   fontScale?: number,
+ *   initialTopic?: string,
+ *   initialHash?: string,
+ *   onNavigateDeepLink?: (target: import('../src/utils/kp-deep-link.js').KpDeepLinkTarget) => void
  * }} [options]
  * @returns {() => void}
  */
 export function mountDocsApp(root, options = {}) {
   const embedded = options.embedded === true;
   const onClose = typeof options.onClose === 'function' ? options.onClose : null;
+  onNavigateDeepLink =
+    typeof options.onNavigateDeepLink === 'function' ? options.onNavigateDeepLink : null;
+  pendingInitialTopic = String(options.initialTopic || '').trim() || null;
+  pendingArticleHash = String(options.initialHash || '').replace(/^#/, '').trim() || null;
+  docsCatalogReady = false;
   docsRoot = root;
 
   const mountNode = root.nodeType === 9
@@ -613,6 +792,8 @@ export function mountDocsApp(root, options = {}) {
 
   closeBtn?.addEventListener('click', requestClose);
   searchEl?.addEventListener('input', onSearchInput);
+  // Capture so KeyPilot F-click / page handlers do not steal kp:// navigation.
+  mountNode.addEventListener?.('click', onDocsDeepLinkClick, true);
 
   void (async () => {
     try {
@@ -622,6 +803,8 @@ export function mountDocsApp(root, options = {}) {
       topicTree = filterTopicsForBuild(Array.isArray(index?.topics) ? index.topics : []);
       const flat = flattenTopics(topicTree);
       allDocs = await loadDocs(flat);
+      docsCatalogReady = true;
+
       const firstSelectable = allDocs.find((d) => d.selectable);
       if (!firstSelectable) {
         if (articleEl) {
@@ -630,12 +813,23 @@ export function mountDocsApp(root, options = {}) {
         renderNav();
         return;
       }
-      selectDoc(firstSelectable.id);
+
+      const { topicId, hash } = resolveInitialDocsTarget(pendingInitialTopic);
+      pendingInitialTopic = null;
+      const articleHash = hash || pendingArticleHash;
+      pendingArticleHash = null;
+
+      if (topicId && resolveSelectableId(topicId)) {
+        selectDoc(topicId, articleHash);
+      } else {
+        selectDoc(firstSelectable.id);
+      }
       // Standalone page: land in the search box. Embedded popover: wait for F-click
       // so KeyPilot stays in browse mode (hover outlines / topic activation).
       if (!embedded) searchEl?.focus();
     } catch (err) {
       console.warn('[KeyPilot Docs] Failed to load index:', err);
+      docsCatalogReady = false;
       if (articleEl) {
         articleEl.innerHTML =
           '<p class="error">Could not load documentation catalog.</p>';
@@ -646,6 +840,7 @@ export function mountDocsApp(root, options = {}) {
   return () => {
     closeBtn?.removeEventListener('click', requestClose);
     searchEl?.removeEventListener('input', onSearchInput);
+    try { mountNode.removeEventListener?.('click', onDocsDeepLinkClick, true); } catch { /* ignore */ }
     topicListEl = null;
     emptyEl = null;
     articleEl = null;
@@ -653,6 +848,10 @@ export function mountDocsApp(root, options = {}) {
     closeBtn = null;
     docsAppEl = null;
     docsRoot = null;
+    onNavigateDeepLink = null;
+    pendingInitialTopic = null;
+    pendingArticleHash = null;
+    docsCatalogReady = false;
   };
 }
 

@@ -33,9 +33,10 @@ import {
   preferHttpsForPreview
 } from '../utils/preview-url.js';
 import { resolveActivationIdentity } from '../utils/resolve-hovered-link.js';
+import { waitForScrollSettle } from '../utils/scroll-at-point.js';
 import { postPopoverBridgeInit } from './popover-bridge-init.js';
-import { mountDocsApp } from '../../pages/docs.js';
-import { mountSettingsApp } from '../../pages/settings.js';
+import { mountDocsApp, navigateDocsApp } from '../../pages/docs.js';
+import { mountSettingsApp, setActiveSettingsPanel } from '../../pages/settings.js';
 
 /** Font Awesome 6 solid paths (viewBox 0 0 512 512) for PAGE_TOP / PAGE_BOTTOM.
  * Bar sits at the arrow tip (top for ↑, bottom for ↓), not the shaft tail.
@@ -103,6 +104,8 @@ export class OverlayManager {
     this._docsHost = null;
     /** @type {(() => void)|null} */
     this._docsUnmount = null;
+    /** @type {'docs'|'settings'|null} */
+    this._inPagePopoverKind = null;
     this._docsFontScale = 1.25;
     /** @type {number|null} OS popup window id for Link Preview / Open Popover */
     this._popoverWindowId = null;
@@ -117,6 +120,8 @@ export class OverlayManager {
     /** @type {HTMLElement|null} */
     this._edgeJumpFadeEl = null;
     this._edgeJumpFadeToken = 0;
+    /** @type {HTMLElement[]} Font Info inspected-run outlines */
+    this.fontInfoOverlays = [];
 
     // Central popup stack + blurred backdrop (kept below click overlays).
     // Note: Panel change callback will be set by KeyPilot after initialization
@@ -1805,6 +1810,20 @@ export class OverlayManager {
       const cResult = this.updateFocusOverlayDOM(paintForC, mode, rectOverride, {
         colorFrom: element
       });
+      if (cResult === 'occluded') {
+        this._focusPaintUsesFixedOverlay = false;
+        if (isClickableKeyPilotChromeElement(element) || this._strategyAIsViable(element)) {
+          try {
+            this._updateShadowRootDebugHud(element, paintEl, {
+              inShadow,
+              autoStrategy,
+              appliedStrategy: 'A',
+              override
+            });
+          } catch { /* ignore */ }
+          return this.updateFocusOverlayElementStyling(element, mode);
+        }
+      }
       try {
         this._updateShadowRootDebugHud(element, paintEl, {
           inShadow,
@@ -2735,7 +2754,11 @@ export class OverlayManager {
   _strategyAIsViable(element) {
     if (!element || element.nodeType !== 1) return false;
     try {
-      if (this._resolveMediaTextCardShell(element)) return false;
+      // A is fine on a single-box card <a> (Gizmodo deals). It fails only when
+      // the card link is inline and fragments into image + title line boxes.
+      if (this._isFragmentedInlineFocusTarget(element)) return false;
+      const shell = this._resolveMediaTextCardShell(element);
+      if (shell && this._isFragmentedInlineFocusTarget(shell)) return false;
     } catch { /* ignore */ }
     try {
       if (this._shouldUseFixedFocusOverlay(element)) return false;
@@ -2794,11 +2817,13 @@ export class OverlayManager {
     }
     if (!er || !(er.width > 0) || !(er.height > 0)) return false;
 
-    // Wrapping image+text clickable (Tom's Hardware): outer outline (A) looks
-    // disconnected from the stacked pair. Prefer B on the visual shell.
-    // Nested headline / thumb links do not qualify (see fill check).
+    // Image+text card whose <a> is inline and splits into image + title
+    // fragments: A outline is disjoint. A single flex/block card box can
+    // take A. Nested headline/thumb links do not qualify (fill check).
     try {
-      if (this._resolveMediaTextCardShell(paintEl) || this._resolveMediaTextCardShell(element)) {
+      const shell = this._resolveMediaTextCardShell(paintEl)
+        || this._resolveMediaTextCardShell(element);
+      if (shell && this._isFragmentedInlineFocusTarget(shell)) {
         return true;
       }
     } catch { /* ignore */ }
@@ -4876,7 +4901,7 @@ export class OverlayManager {
     rect = this._clipViewportRectToVisible(element, rect);
     if (!rect || !(rect.width > 0) || !(rect.height > 0)) {
       this.hideFocusOverlay();
-      return;
+      return 'hidden';
     }
     // Expand by Advanced → Padding so B→C rings match strategy-A outer offset.
     try {
@@ -4892,6 +4917,18 @@ export class OverlayManager {
         };
       }
     } catch { /* keep unpadded rect */ }
+    // Sticky headers / sibling layers: inset any C edge whose corners are covered.
+    try {
+      const source = (opts && opts.colorFrom && opts.colorFrom.nodeType === 1)
+        ? opts.colorFrom
+        : element;
+      const inset = this._insetCRectForOcclusion(source, rect);
+      if (!inset) {
+        this.hideFocusOverlay();
+        return 'occluded';
+      }
+      rect = inset;
+    } catch { /* keep un-inset rect */ }
     // If the hover target is extremely large, a filled overlay becomes distracting; keep just the frame.
     const isVeryLarge = rect && rect.width > 512 && rect.height > 512;
     
@@ -6658,6 +6695,161 @@ export class OverlayManager {
   }
 
   /**
+   * Hits to ignore while probing occlusion (C overlay, B ring, F-click ghosts).
+   * @param {Element} hit
+   * @param {Element|null|undefined} extraIgnore
+   * @returns {boolean}
+   */
+  _isOcclusionProbeIgnoreHit(hit, extraIgnore = null) {
+    if (!hit || hit.nodeType !== 1) return true;
+    if (extraIgnore && hit === extraIgnore) return true;
+    if (hit === this._inTargetRing || hit === this.focusOverlay) return true;
+    try {
+      if (hit.hasAttribute && hit.hasAttribute('data-kp-ephemeral-effect')) return true;
+      if (hit.hasAttribute && hit.hasAttribute('data-kp-focus-ring')) return true;
+      const ringClass = CSS_CLASSES.FOCUS_RING_INTARGET || 'kpv2-focus-ring-intarget';
+      if (hit.classList && (hit.classList.contains(ringClass)
+        || hit.classList.contains(CSS_CLASSES.FOCUS_OVERLAY))) {
+        return true;
+      }
+    } catch { /* ignore */ }
+    return false;
+  }
+
+  /**
+   * True when the top meaningful hit at (x,y) is sourceEl (or inside / wrapping it).
+   * @param {Element} sourceEl
+   * @param {number} x
+   * @param {number} y
+   * @returns {boolean}
+   */
+  _isPointOnSource(sourceEl, x, y) {
+    if (!sourceEl || !Number.isFinite(x) || !Number.isFinite(y)) return true;
+    let stack = null;
+    try {
+      if (typeof document.elementsFromPoint === 'function') {
+        stack = document.elementsFromPoint(x, y);
+      }
+    } catch {
+      stack = null;
+    }
+    if (!stack || !stack.length) return true;
+    for (let i = 0; i < stack.length; i++) {
+      const hit = stack[i];
+      if (this._isOcclusionProbeIgnoreHit(hit)) continue;
+      return !!(
+        hit === sourceEl ||
+        containsComposed(sourceEl, hit) ||
+        containsComposed(hit, sourceEl)
+      );
+    }
+    return true;
+  }
+
+  /**
+   * Shrink a strategy-C viewport rect so covered edges (sticky header, sibling
+   * layer) are pulled in. Four-corner samples; an edge is inset when both of
+   * its corners are covered, or one corner plus that edge's midpoint.
+   * @param {Element} sourceEl
+   * @param {{ left: number, top: number, width: number, height: number }} rect
+   * @returns {{ left: number, top: number, width: number, height: number }|null}
+   */
+  _insetCRectForOcclusion(sourceEl, rect) {
+    if (!sourceEl || sourceEl.nodeType !== 1 || !rect) return rect || null;
+    let box = this._asPositiveViewportRect(rect);
+    if (!box) return null;
+    if (typeof document.elementsFromPoint !== 'function') return box;
+
+    const MIN = 8;
+    const pad = () => Math.max(1, Math.min(6, box.width / 4, box.height / 4));
+    const onSrc = (x, y) => this._isPointOnSource(sourceEl, x, y);
+
+    const corners = () => {
+      const p = pad();
+      return {
+        tl: !onSrc(box.left + p, box.top + p),
+        tr: !onSrc(box.left + box.width - p, box.top + p),
+        bl: !onSrc(box.left + p, box.top + box.height - p),
+        br: !onSrc(box.left + box.width - p, box.top + box.height - p)
+      };
+    };
+
+    const edgeCovered = (side, c) => {
+      const p = pad();
+      if (side === 'top') {
+        if (c.tl && c.tr) return true;
+        if (c.tl || c.tr) return !onSrc(box.left + box.width / 2, box.top + p);
+      } else if (side === 'bottom') {
+        if (c.bl && c.br) return true;
+        if (c.bl || c.br) return !onSrc(box.left + box.width / 2, box.top + box.height - p);
+      } else if (side === 'left') {
+        if (c.tl && c.bl) return true;
+        if (c.tl || c.bl) return !onSrc(box.left + p, box.top + box.height / 2);
+      } else if (side === 'right') {
+        if (c.tr && c.br) return true;
+        if (c.tr || c.br) return !onSrc(box.left + box.width - p, box.top + box.height / 2);
+      }
+      return false;
+    };
+
+    const shrinkEdge = (side) => {
+      const p = pad();
+      if (side === 'top' || side === 'bottom') {
+        let lo = 0;
+        let hi = Math.max(0, box.height - MIN);
+        for (let i = 0; i < 8 && hi - lo > 1; i++) {
+          const mid = (lo + hi) / 2;
+          const y = side === 'top' ? box.top + mid + p : box.top + box.height - mid - p;
+          const clear = onSrc(box.left + p, y) && onSrc(box.left + box.width - p, y);
+          if (clear) hi = mid;
+          else lo = mid;
+        }
+        const cut = hi;
+        if (!(cut > 0.5)) return;
+        if (side === 'top') {
+          box = { left: box.left, top: box.top + cut, width: box.width, height: box.height - cut };
+        } else {
+          box = { left: box.left, top: box.top, width: box.width, height: box.height - cut };
+        }
+      } else {
+        let lo = 0;
+        let hi = Math.max(0, box.width - MIN);
+        for (let i = 0; i < 8 && hi - lo > 1; i++) {
+          const mid = (lo + hi) / 2;
+          const x = side === 'left' ? box.left + mid + p : box.left + box.width - mid - p;
+          const clear = onSrc(x, box.top + p) && onSrc(x, box.top + box.height - p);
+          if (clear) hi = mid;
+          else lo = mid;
+        }
+        const cut = hi;
+        if (!(cut > 0.5)) return;
+        if (side === 'left') {
+          box = { left: box.left + cut, top: box.top, width: box.width - cut, height: box.height };
+        } else {
+          box = { left: box.left, top: box.top, width: box.width - cut, height: box.height };
+        }
+      }
+    };
+
+    let guard = 0;
+    while (guard++ < 4) {
+      if (box.width < MIN || box.height < MIN) return null;
+      const c = corners();
+      const sides = [];
+      if (edgeCovered('top', c)) sides.push('top');
+      if (edgeCovered('bottom', c)) sides.push('bottom');
+      if (edgeCovered('left', c)) sides.push('left');
+      if (edgeCovered('right', c)) sides.push('right');
+      if (!sides.length) break;
+      if (sides.length === 4) return null;
+      for (const side of sides) shrinkEdge(side);
+    }
+
+    if (!box || box.width < MIN || box.height < MIN) return null;
+    return box;
+  }
+
+  /**
    * True when a foreign stacking layer now paints over the source center
    * (lightbox / modal portal). IntersectionObserver cannot detect z-index
    * occlusion — this is the real "covered away" check for fixed ghosts.
@@ -6686,19 +6878,9 @@ export class OverlayManager {
     } catch { stack = null; }
     if (!stack || !stack.length) return false;
 
-    const ringClass = CSS_CLASSES.FOCUS_RING_INTARGET || 'kpv2-focus-ring-intarget';
     for (let i = 0; i < stack.length; i++) {
       const hit = stack[i];
-      if (!hit || hit.nodeType !== 1) continue;
-      if (pulse && hit === pulse) continue;
-      try {
-        if (hit.hasAttribute && hit.hasAttribute('data-kp-ephemeral-effect')) continue;
-        if (hit.classList && hit.classList.contains(ringClass)) continue;
-      } catch { /* ignore */ }
-      if (hit === this._inTargetRing || hit === this.focusOverlay) continue;
-      try {
-        if (hit.classList && hit.classList.contains(CSS_CLASSES.FOCUS_OVERLAY)) continue;
-      } catch { /* ignore */ }
+      if (this._isOcclusionProbeIgnoreHit(hit, pulse)) continue;
 
       // Source (or something inside / wrapping it) is still the top meaningful hit.
       if (
@@ -7416,6 +7598,61 @@ export class OverlayManager {
     }
   }
 
+  /**
+   * Outline the Font Info inspected text run (stroke rects, not Text Select fill).
+   * @param {Range|null|undefined} range
+   */
+  showFontInfoOutline(range) {
+    this.hideFontInfoOutline();
+    if (!range || range.collapsed) return;
+
+    let rects;
+    try {
+      rects = this.getClientRectsWithShadowSupport(range);
+    } catch {
+      rects = [];
+    }
+    if (!rects || !rects.length) return;
+
+    const maxRects = 40;
+    const n = Math.min(rects.length, maxRects);
+    for (let i = 0; i < n; i++) {
+      const rect = rects[i];
+      const w = Number(rect.width) || 0;
+      const h = Number(rect.height) || 0;
+      if (w <= 0 || h <= 0) continue;
+      try {
+        const overlay = this.createElement('div', {
+          className: CSS_CLASSES.FONT_INFO_OUTLINE,
+          style: `
+            position: fixed;
+            left: ${rect.left}px;
+            top: ${rect.top}px;
+            width: ${w}px;
+            height: ${h}px;
+            box-sizing: border-box;
+            background: ${COLORS.FONT_INFO_OUTLINE_FILL};
+            border: 2px solid ${COLORS.FONT_INFO_OUTLINE};
+            box-shadow: 0 0 0 1px ${COLORS.FONT_INFO_OUTLINE_SHADOW};
+            pointer-events: none;
+            z-index: ${Z_INDEX.OVERLAYS_BELOW};
+          `
+        });
+        overlay.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(overlay);
+        this.fontInfoOverlays.push(overlay);
+      } catch { /* ignore */ }
+    }
+  }
+
+  hideFontInfoOutline() {
+    const list = this.fontInfoOverlays || [];
+    for (const el of list) {
+      try { el.remove(); } catch { /* ignore */ }
+    }
+    this.fontInfoOverlays = [];
+  }
+
   createViewportModalFrame() {
     if (this.viewportModalFrame) {
       return this.viewportModalFrame;
@@ -7726,6 +7963,7 @@ export class OverlayManager {
     // Clean up debug panel / shadow HUD
     this.cleanupDebugPanel();
     this.cleanupShadowRootDebugHud();
+    this.hideFontInfoOutline();
   }
 
   createElement(tag, props = {}) {
@@ -7987,6 +8225,9 @@ export class OverlayManager {
    * @param {string} [opts.width]
    * @param {string} [opts.height]
    * @param {HTMLElement|HTMLElement[]|null} [opts.actions]
+   * @param {string} [opts.topicId]
+   * @param {string} [opts.hash]
+   * @param {(target: object) => void} [opts.onNavigateDeepLink]
    */
   showInPageDocsPopover(opts = {}) {
     this.hidePopover();
@@ -8081,10 +8322,16 @@ export class OverlayManager {
     } catch { /* ignore */ }
 
     this._docsHost = bodyHost;
+    this._inPagePopoverKind = 'docs';
     this._docsUnmount = mountDocsApp(shadow, {
       embedded: true,
       onClose: requestClosePopover,
-      fontScale: this._docsFontScale
+      fontScale: this._docsFontScale,
+      initialTopic: opts.topicId || null,
+      initialHash: opts.hash || null,
+      onNavigateDeepLink: typeof opts.onNavigateDeepLink === 'function'
+        ? opts.onNavigateDeepLink
+        : null
     });
     this.setDocsFontScale(this._docsFontScale);
     this.popoverContainer.appendChild(bodyHost);
@@ -8123,8 +8370,20 @@ export class OverlayManager {
   }
 
   /**
+   * Navigate the open in-page Docs popover to a topic.
+   * @param {string} topicId
+   * @param {string} [hash]
+   * @returns {boolean}
+   */
+  setDocsTopic(topicId, hash) {
+    if (this._inPagePopoverKind !== 'docs') return false;
+    return navigateDocsApp(topicId, hash);
+  }
+
+  /**
    * Settings popover without an iframe — same chrome as Docs.
    * @param {object} opts
+   * @param {string} [opts.panelId]
    */
   async showInPageSettingsPopover(opts = {}) {
     this.hidePopover();
@@ -8209,9 +8468,12 @@ export class OverlayManager {
       `
     });
     const shadow = bodyHost.attachShadow({ mode: 'open' });
+    this._docsHost = null;
+    this._inPagePopoverKind = 'settings';
     this._docsUnmount = await mountSettingsApp(shadow, {
       embedded: true,
-      onClose: requestClosePopover
+      onClose: requestClosePopover,
+      initialPanel: opts.panelId || null
     });
     this.popoverContainer.appendChild(bodyHost);
 
@@ -8246,6 +8508,16 @@ export class OverlayManager {
     this.popoverKeyHandler = handlePopoverKeyDown;
 
     try { this.popoverContainer.focus(); } catch { /* ignore */ }
+  }
+
+  /**
+   * Switch the active panel on the open in-page Settings popover.
+   * @param {string} panelId
+   * @returns {boolean}
+   */
+  setSettingsPanel(panelId) {
+    if (this._inPagePopoverKind !== 'settings') return false;
+    return setActiveSettingsPanel(panelId);
   }
 
   /**
@@ -8754,6 +9026,7 @@ export class OverlayManager {
       this._docsUnmount = null;
     }
     this._docsHost = null;
+    this._inPagePopoverKind = null;
 
     // Remove keyboard event listeners
     if (this.popoverKeyHandler) {
@@ -8856,7 +9129,8 @@ export class OverlayManager {
   }
 
   /**
-   * Cover the overflow box that will jump, run `onCovered` (instant scroll), then uncover.
+   * Cover the overflow box that will jump, run `onCovered` (instant scroll),
+   * wait for the scroller to stop moving, then uncover.
    * Nested scrollers get their client box; the document root gets the viewport.
    * @param {() => void} onCovered
    * @param {{ durationMs?: number, coverEl?: Element|null, coverRect?: { left: number, top: number, width: number, height: number }|null, edge?: 'top'|'bottom'|null }} [opts]
@@ -8885,6 +9159,10 @@ export class OverlayManager {
     el.style.transition = `opacity ${durationMs}ms ease`;
     await this._fadeEdgeJumpEl(el, 1, durationMs);
     try { onCovered?.(); } catch { /* ignore */ }
+    if (token !== this._edgeJumpFadeToken) return;
+    await waitForScrollSettle(opts.coverEl || null, {
+      timeoutMs: SCROLL.EDGE_JUMP_SETTLE_MS
+    });
     if (token !== this._edgeJumpFadeToken) return;
     await this._fadeEdgeJumpEl(el, 0, durationMs);
     if (token === this._edgeJumpFadeToken) this._removeEdgeJumpFadeEl();

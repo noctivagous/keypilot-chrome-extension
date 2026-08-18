@@ -25,7 +25,7 @@ import {
 } from './nct-dark-ui.js';
 import {
   groupPageMediaByCategory,
-  groupImagesByDimensionSize,
+  sortImageItems,
   partitionImageItems,
   enrichImageItems,
   resolveVideoThumbnail,
@@ -55,6 +55,10 @@ const IMAGE_SCALE_DEFAULT = 1.5;
 const IMAGE_ASPECT_STORAGE_KEY = 'kp_page_media_image_aspect';
 /** @typedef {'square'|'original'} ImageAspectMode */
 const IMAGE_ASPECT_DEFAULT = /** @type {ImageAspectMode} */ ('square');
+/** Image-tab sort. Previous default was collect/DOM (page) order. */
+const IMAGE_SORT_STORAGE_KEY = 'kp_page_media_image_sort';
+/** @typedef {'size-desc'|'size-asc'|'page'} ImageSortMode */
+const IMAGE_SORT_DEFAULT = /** @type {ImageSortMode} */ ('size-desc');
 /** URLs tab presentation: hierarchical table (default) vs grouped list. */
 const URL_VIEW_STORAGE_KEY = 'kp_page_media_url_view';
 /** @typedef {'table'|'list'} UrlViewMode */
@@ -90,6 +94,10 @@ let _imageScaleSlider = IMAGE_SCALE_DEFAULT;
 let _imageAspectMode = IMAGE_ASPECT_DEFAULT;
 /** @type {ReturnType<typeof createSegmentedControl>|null} */
 let _aspectControl = null;
+/** @type {ImageSortMode} */
+let _imageSortMode = IMAGE_SORT_DEFAULT;
+/** @type {ReturnType<typeof createSegmentedControl>|null} */
+let _sortControl = null;
 /** @type {UrlViewMode} */
 let _urlViewMode = URL_VIEW_DEFAULT;
 /** @type {ReturnType<typeof createSegmentedControl>|null} */
@@ -157,6 +165,8 @@ export function closePageMediaOverlay() {
   _imageScaleSlider = IMAGE_SCALE_DEFAULT;
   _imageAspectMode = IMAGE_ASPECT_DEFAULT;
   _aspectControl = null;
+  _imageSortMode = IMAGE_SORT_DEFAULT;
+  _sortControl = null;
   _urlViewControl = null;
   _urlTableExpanded = new Set();
   _urlTableExpandedReady = false;
@@ -235,6 +245,34 @@ function persistImageAspectPreference(mode) {
 }
 
 /**
+ * @param {unknown} raw
+ * @returns {ImageSortMode}
+ */
+function normalizeImageSortMode(raw) {
+  if (raw === 'size-asc' || raw === 'page') return raw;
+  return 'size-desc';
+}
+
+async function loadImageSortPreference() {
+  try {
+    const stored = await storageGetValue(IMAGE_SORT_STORAGE_KEY, IMAGE_SORT_DEFAULT);
+    _imageSortMode = normalizeImageSortMode(stored);
+  } catch {
+    _imageSortMode = IMAGE_SORT_DEFAULT;
+  }
+}
+
+/**
+ * @param {ImageSortMode} mode
+ */
+function persistImageSortPreference(mode) {
+  _imageSortMode = normalizeImageSortMode(mode);
+  try {
+    void storageSetValue(IMAGE_SORT_STORAGE_KEY, _imageSortMode);
+  } catch { /* ignore */ }
+}
+
+/**
  * Apply aspect mode class + refresh all image thumbs.
  * @param {ImageAspectMode} [mode]
  */
@@ -248,6 +286,9 @@ function applyImageAspectMode(mode = _imageAspectMode) {
   }
   if (_aspectControl) {
     _aspectControl.setValue(_imageAspectMode, { silent: true });
+  }
+  if (_sortControl) {
+    _sortControl.setValue(_imageSortMode, { silent: true });
   }
   requestAnimationFrame(() => {
     if (!_overlay) return;
@@ -399,6 +440,33 @@ function buildImageAspectToolbar() {
 
   bar.appendChild(label);
   bar.appendChild(_aspectControl.root);
+
+  const sortWrap = document.createElement('div');
+  sortWrap.className = 'kpv2-page-media-sort-wrap';
+
+  const sortLabel = document.createElement('span');
+  sortLabel.className = 'kpv2-page-media-aspect-label';
+  sortLabel.textContent = 'Sort:';
+
+  _sortControl = createSegmentedControl({
+    className: 'kpv2-page-media-sort-seg',
+    ariaLabel: 'Image sort order',
+    value: _imageSortMode,
+    options: [
+      { value: 'size-desc', label: 'Size:Descending', title: 'Largest pixel area first' },
+      { value: 'size-asc', label: 'Size:Ascending', title: 'Smallest pixel area first' },
+      { value: 'page', label: 'Page Order', title: 'Order images appear on the page' }
+    ],
+    onChange: (value) => {
+      const mode = normalizeImageSortMode(value);
+      persistImageSortPreference(mode);
+      if (_activeTab === 'image') renderImageGrid({ preserveScroll: true });
+    }
+  });
+
+  sortWrap.appendChild(sortLabel);
+  sortWrap.appendChild(_sortControl.root);
+  bar.appendChild(sortWrap);
   return bar;
 }
 
@@ -493,6 +561,7 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
 
   await loadImageScalePreference();
   await loadImageAspectPreference();
+  await loadImageSortPreference();
   await loadUrlViewPreference();
   _urlTableExpanded = new Set();
   _urlTableExpandedReady = false;
@@ -502,6 +571,7 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
   else if (groups.video.length) _activeTab = 'video';
   else if (groups.pageText.length) _activeTab = 'pageText';
   else if (groups.text.length) _activeTab = 'text';
+  else if (groups.font.length) _activeTab = 'font';
   else if (groups.url.length) _activeTab = 'url';
   else _activeTab = 'image';
 
@@ -538,9 +608,12 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
   total.className = 'kpv2-page-media-count';
   const mediaCount =
     groups.image.length + groups.video.length + groups.text.length + groups.pageText.length;
-  total.textContent = String(mediaCount || groups.url.length);
-  total.title = groups.url.length
-    ? `${mediaCount} media · ${groups.url.length} unique URLs`
+  total.textContent = String(mediaCount || groups.font.length || groups.url.length);
+  const extraBits = [];
+  if (groups.font.length) extraBits.push(`${groups.font.length} fonts`);
+  if (groups.url.length) extraBits.push(`${groups.url.length} unique URLs`);
+  total.title = extraBits.length
+    ? `${mediaCount} media · ${extraBits.join(' · ')}`
     : `${mediaCount} media`;
   titleWrap.appendChild(title);
   titleWrap.appendChild(total);
@@ -556,6 +629,7 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
     { id: 'video', label: 'Video' },
     { id: 'pageText', label: 'Text' },
     { id: 'text', label: 'Docs' },
+    { id: 'font', label: 'Fonts' },
     { id: 'url', label: 'URLs' }
   ]);
   for (const { id, label } of tabDefs) {
@@ -714,7 +788,7 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
 }
 
 /**
- * @param {'image'|'video'|'text'|'url'|'pageText'} tab
+ * @param {'image'|'video'|'text'|'url'|'pageText'|'font'} tab
  */
 function setActiveTab(tab) {
   _activeTab = tab;
@@ -762,10 +836,10 @@ function renderGrid() {
   }
 
   while (content.firstChild) content.removeChild(content.firstChild);
-  content.classList.remove('is-image-tab', 'is-video-tab', 'is-url-tab', 'is-page-text-tab');
+  content.classList.remove('is-image-tab', 'is-video-tab', 'is-url-tab', 'is-page-text-tab', 'is-font-tab');
 
   const groups = groupPageMediaByCategory(_items);
-  const list = groups[/** @type {'video'|'text'|'url'|'pageText'} */ (_activeTab)] || [];
+  const list = groups[/** @type {'video'|'text'|'url'|'pageText'|'font'} */ (_activeTab)] || [];
 
   if (!list.length) {
     const empty = document.createElement('div');
@@ -773,6 +847,7 @@ function renderGrid() {
     empty.textContent =
       _activeTab === 'url' ? 'No URLs found on this page.'
         : _activeTab === 'pageText' ? 'No article or main text found on this page.'
+          : _activeTab === 'font' ? 'No fonts found on this page.'
           : `No ${_activeTab === 'text' ? 'document' : _activeTab} files found on this page.`;
     content.appendChild(empty);
     return;
@@ -796,6 +871,12 @@ function renderGrid() {
     } else {
       content.appendChild(buildUrlTableView(list));
     }
+    return;
+  }
+
+  if (_activeTab === 'font') {
+    content.classList.add('is-font-tab');
+    content.appendChild(buildFontListView(list));
     return;
   }
 
@@ -839,12 +920,12 @@ function renderImageGrid(opts = {}) {
   }
 
   const { photos, posters } = partitionImageItems(images);
-  const sizeGroups = groupImagesByDimensionSize(photos);
   /** @type {import('../utils/page-media-utils.js').PageMediaItem[]} */
   const flat = [];
 
-  // One continuous grid for dimension-sorted photos (no section line breaks).
-  const photoItems = sizeGroups.flatMap((g) => g.items);
+  // One continuous grid (no size-band headings). Default is pixel-area descending.
+  const photoItems = sortImageItems(photos, _imageSortMode);
+  const posterItems = sortImageItems(posters, _imageSortMode);
   if (photoItems.length) {
     const grid = document.createElement('div');
     grid.className = 'kpv2-page-media-size-grid';
@@ -859,7 +940,7 @@ function renderImageGrid(opts = {}) {
   }
 
   // Video posters stay in their own section below.
-  if (posters.length) {
+  if (posterItems.length) {
     const section = document.createElement('section');
     section.className = 'kpv2-page-media-size-group';
     section.dataset.sizeGroup = 'video-posters';
@@ -870,14 +951,14 @@ function renderImageGrid(opts = {}) {
     title.textContent = 'Video posters';
     const count = document.createElement('span');
     count.className = 'kpv2-page-media-size-count';
-    count.textContent = String(posters.length);
+    count.textContent = String(posterItems.length);
     heading.appendChild(title);
     heading.appendChild(count);
     section.appendChild(heading);
 
     const grid = document.createElement('div');
     grid.className = 'kpv2-page-media-size-grid';
-    for (const item of posters) {
+    for (const item of posterItems) {
       const flatIndex = flat.length;
       flat.push(item);
       const card = buildImageCard(item, () => onItemActivate(flat, flatIndex));
@@ -967,7 +1048,7 @@ function buildImageCard(item, onActivate) {
   name.textContent = truncate(item.label || item.url, 36);
   const meta = document.createElement('div');
   meta.className = 'kpv2-page-media-meta';
-  meta.textContent = formatImageFooterMeta(item);
+  fillImageFooterMeta(meta, item);
   info.appendChild(name);
   info.appendChild(meta);
   card.appendChild(info);
@@ -1024,7 +1105,7 @@ function buildVideoCard(item, onActivate) {
   name.textContent = truncate(item.label || item.url, 36);
   const meta = document.createElement('div');
   meta.className = 'kpv2-page-media-meta';
-  meta.textContent = item.ext ? `.${item.ext}` : 'video';
+  fillExtChipMeta(meta, item, item.ext ? '' : 'video');
   info.appendChild(name);
   info.appendChild(meta);
   card.appendChild(info);
@@ -1175,6 +1256,123 @@ function urlItemKindLabel(item) {
   if (item?.ext) return `.${item.ext}`;
   if (item?.kind && item.kind !== 'url') return String(item.kind);
   return 'Link';
+}
+
+/**
+ * @param {import('../utils/page-media-utils.js').PageMediaItem[]} list
+ * @returns {HTMLElement}
+ */
+function buildFontListView(list) {
+  const wrap = document.createElement('div');
+  wrap.className = 'kpv2-page-media-font-list';
+
+  const custom = [];
+  const local = [];
+  for (const item of list || []) {
+    if (item?.kind === 'custom' || item?.sourceKind === 'webfont') custom.push(item);
+    else local.push(item);
+  }
+
+  const addSection = (title, items) => {
+    if (!items.length) return;
+    const section = document.createElement('section');
+    section.className = 'kpv2-page-media-font-group';
+    const heading = document.createElement('h3');
+    heading.className = 'kpv2-page-media-font-heading';
+    const name = document.createElement('span');
+    name.textContent = title;
+    const count = document.createElement('span');
+    count.className = 'kpv2-page-media-font-count';
+    count.textContent = String(items.length);
+    heading.appendChild(name);
+    heading.appendChild(count);
+    section.appendChild(heading);
+    const rows = document.createElement('div');
+    rows.className = 'kpv2-page-media-font-rows';
+    items.forEach((item) => {
+      const index = list.indexOf(item);
+      rows.appendChild(buildFontRow(item, () => onItemActivate(list, index)));
+    });
+    section.appendChild(rows);
+    wrap.appendChild(section);
+  };
+
+  addSection('Custom', custom);
+  addSection('System', local);
+  return wrap;
+}
+
+/**
+ * @param {import('../utils/page-media-utils.js').PageMediaItem} item
+ * @param {() => void} onActivate
+ * @returns {HTMLElement}
+ */
+function buildFontRow(item, onActivate) {
+  const row = document.createElement('div');
+  row.className = 'kpv2-page-media-font-row';
+  row.setAttribute('role', 'button');
+  row.tabIndex = 0;
+  row.title = item.url || item.label || '';
+
+  const sample = document.createElement('div');
+  sample.className = 'kpv2-page-media-font-sample';
+  sample.textContent = 'Ag';
+  sample.setAttribute('aria-hidden', 'true');
+  try {
+    const family = String(item.fontFamily || item.label || '').replace(/"/g, '');
+    if (family) sample.style.fontFamily = `"${family}", sans-serif`;
+    if (item.fontWeight) sample.style.fontWeight = String(item.fontWeight);
+    if (item.fontStyle) sample.style.fontStyle = String(item.fontStyle);
+  } catch { /* ignore */ }
+
+  const main = document.createElement('div');
+  main.className = 'kpv2-page-media-font-main';
+  const name = document.createElement('div');
+  name.className = 'kpv2-page-media-font-name';
+  name.textContent = item.label || item.fontFamily || 'Font';
+  const meta = document.createElement('div');
+  meta.className = 'kpv2-page-media-font-meta';
+  const type = document.createElement('span');
+  type.className = 'kpv2-page-media-font-type';
+  const ext = String(item.ext || '').replace(/^\./, '');
+  type.textContent = ext && ext !== 'local' && ext !== 'font' ? `.${ext}` : 'local';
+  meta.appendChild(type);
+  if (item.fontWeight) {
+    const w = document.createElement('span');
+    w.textContent = String(item.fontWeight);
+    meta.appendChild(w);
+  }
+  if (item.fontStyle && String(item.fontStyle).toLowerCase() !== 'normal') {
+    const s = document.createElement('span');
+    s.textContent = String(item.fontStyle);
+    meta.appendChild(s);
+  }
+  main.appendChild(name);
+  main.appendChild(meta);
+  if (item.url) {
+    const urlEl = document.createElement('div');
+    urlEl.className = 'kpv2-page-media-font-url';
+    urlEl.textContent = item.url;
+    main.appendChild(urlEl);
+  }
+
+  row.appendChild(sample);
+  row.appendChild(main);
+  const actions = buildHoverActions(item);
+  actions.classList.add('kpv2-page-media-font-actions');
+  row.appendChild(actions);
+
+  const activate = (e) => {
+    if (e.target && /** @type {Element} */ (e.target).closest?.('.kpv2-page-media-actions')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    onActivate();
+  };
+  row.addEventListener('click', activate, true);
+  row.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') activate(e);
+  }, true);
+  return row;
 }
 
 /**
@@ -1336,7 +1534,7 @@ function buildUrlTableView(list) {
           title: item.url,
           cells: [
             displayUrl,
-            urlItemKindLabel(item),
+            buildUrlKindCell(item),
             titleText,
             actions
           ],
@@ -1386,11 +1584,7 @@ function buildUrlRow(item, onActivate, opts = {}) {
 
   const meta = document.createElement('div');
   meta.className = 'kpv2-page-media-url-meta';
-  const bits = [];
-  if (item.ext) bits.push(`.${item.ext}`);
-  if (item.kind && item.kind !== 'url') bits.push(item.kind);
-  meta.textContent = bits.join(' · ') || 'link';
-
+  fillExtChipMeta(meta, item, item.kind && item.kind !== 'url' ? item.kind : (item.ext ? '' : 'link'));
   main.appendChild(urlEl);
   main.appendChild(meta);
 
@@ -1443,7 +1637,7 @@ function buildFileCard(item, onActivate) {
   name.textContent = truncate(item.label || item.url, 42);
   const meta = document.createElement('div');
   meta.className = 'kpv2-page-media-meta';
-  meta.textContent = item.ext ? `.${item.ext}` : item.kind;
+  fillExtChipMeta(meta, item, item.ext ? '' : (item.kind || ''));
   info.appendChild(name);
   info.appendChild(meta);
   card.appendChild(info);
@@ -1493,8 +1687,12 @@ function buildHoverActions(item) {
   };
 
   bar.appendChild(mk('Copy', 'Copy to pasteboard', () => copyItemToPasteboard(item)));
-  bar.appendChild(mk('Send', 'Send to Media Library', () => sendItemToMediaLibrary(item)));
-  bar.appendChild(mk('Download', 'Download file', () => downloadItem(item)));
+  if (item?.category !== 'pageText' && item?.category !== 'font') {
+    bar.appendChild(mk('Send', 'Send to Media Library', () => sendItemToMediaLibrary(item)));
+  }
+  if (item?.url || item?.category === 'pageText') {
+    bar.appendChild(mk('Download', 'Download file', () => downloadItem(item)));
+  }
   return bar;
 }
 
@@ -1502,6 +1700,23 @@ function buildHoverActions(item) {
  * @param {import('../utils/page-media-utils.js').PageMediaItem} item
  */
 async function copyItemToPasteboard(item) {
+  if (item?.category === 'font') {
+    const bits = [
+      item.fontFamily || item.label || '',
+      item.ext && item.ext !== 'local' ? `.${String(item.ext).replace(/^\./, '')}` : 'local',
+      item.url || ''
+    ].filter(Boolean);
+    const text = bits.join('\n');
+    try {
+      if (navigator.clipboard?.writeText && text) {
+        await navigator.clipboard.writeText(text);
+        _notify('Font info copied to pasteboard', 'success');
+        return;
+      }
+    } catch { /* ignore */ }
+    _notify('Could not copy to pasteboard', 'error');
+    return;
+  }
   const pageText = item?.category === 'pageText' ? String(item.text || '') : '';
   if (pageText) {
     try {
@@ -1782,7 +1997,7 @@ function applyThumbFitMode(thumb, wrap) {
  */
 function updateImageCardMeta(card, item) {
   const meta = card.querySelector('.kpv2-page-media-meta');
-  if (meta) meta.textContent = formatImageFooterMeta(item);
+  if (meta) fillImageFooterMeta(meta, item);
   updateMetaRow(card, item);
 }
 
@@ -1820,12 +2035,83 @@ function updateMetaRow(card, item) {
 }
 
 /**
- * Footer meta under the filename (type + dpi; dims/size live in the meta row).
+ * Footer meta under the filename (type chip + dpi; dims/size live in the meta row).
+ * @param {HTMLElement} host
+ * @param {import('../utils/page-media-utils.js').PageMediaItem} item
+ */
+function fillImageFooterMeta(host, item) {
+  const dpi = formatImageDpi(item);
+  fillExtChipMeta(host, item, dpi && dpi !== '—' ? dpi : '');
+}
+
+/**
+ * @param {string} label
+ * @returns {string}
+ */
+function normalizeExtChipKey(label) {
+  const raw = String(label || '').replace(/^\./, '').toLowerCase();
+  if (raw === 'jpeg') return 'jpg';
+  if (raw === 'tiff') return 'tif';
+  if (raw === 'svg+xml') return 'svg';
+  return raw || 'unknown';
+}
+
+/**
  * @param {import('../utils/page-media-utils.js').PageMediaItem} item
  * @returns {string}
  */
-function formatImageFooterMeta(item) {
-  return [formatImageFileType(item), formatImageDpi(item)].join(' · ');
+function formatExtChipLabel(item) {
+  if (item?.category === 'image') return formatImageFileType(item);
+  const ext = String(item?.ext || '').toLowerCase();
+  if (!ext || ext === 'video' || ext === 'img' || ext === 'bg') return '';
+  return ext === 'jpeg' ? 'JPG' : ext.toUpperCase();
+}
+
+/**
+ * @param {string} label
+ * @returns {HTMLElement}
+ */
+function buildExtChip(label) {
+  const chip = document.createElement('span');
+  chip.className = 'kpv2-page-media-ext-chip';
+  const text = String(label || '').replace(/^\./, '');
+  chip.dataset.ext = normalizeExtChipKey(text);
+  chip.textContent = text;
+  return chip;
+}
+
+/**
+ * @param {HTMLElement} host
+ * @param {import('../utils/page-media-utils.js').PageMediaItem} item
+ * @param {string} [extra]
+ */
+function fillExtChipMeta(host, item, extra) {
+  while (host.firstChild) host.removeChild(host.firstChild);
+  const label = formatExtChipLabel(item);
+  if (label) host.appendChild(buildExtChip(label));
+  const extraText = String(extra || '').trim();
+  if (extraText) {
+    const rest = document.createElement('span');
+    rest.className = 'kpv2-page-media-meta-extra';
+    rest.textContent = extraText;
+    host.appendChild(rest);
+  }
+  if (!host.firstChild) {
+    host.textContent = 'link';
+  }
+}
+
+/**
+ * @param {import('../utils/page-media-utils.js').PageMediaItem} item
+ * @returns {HTMLElement}
+ */
+function buildUrlKindCell(item) {
+  const wrap = document.createElement('span');
+  wrap.className = 'kpv2-page-media-url-kind';
+  const label = formatExtChipLabel(item);
+  if (label) wrap.appendChild(buildExtChip(label));
+  else wrap.textContent = urlItemKindLabel(item);
+  return wrap;
 }
 
 /**
@@ -1841,8 +2127,9 @@ function onItemActivate(list, index) {
     return;
   }
 
-  if (_activeTab === 'text' || _activeTab === 'url') {
-    openUrl(item.url);
+  if (_activeTab === 'text' || _activeTab === 'url' || _activeTab === 'font') {
+    if (item.url) openUrl(item.url);
+    else copyItemToPasteboard(item);
     return;
   }
 
@@ -1995,6 +2282,7 @@ ${getNctDarkUiScrollbarCss()}
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
   flex-shrink: 0;
   padding: 8px 14px;
   background: ${c.panel};
@@ -2012,8 +2300,17 @@ ${getNctDarkUiScrollbarCss()}
   user-select: none;
   white-space: nowrap;
 }
-.kpv2-page-media-aspect-seg {
+.kpv2-page-media-aspect-seg,
+.kpv2-page-media-sort-seg {
   font-size: 11px;
+}
+.kpv2-page-media-sort-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 8px;
+  padding-left: 14px;
+  border-left: 1px solid ${c.panelEdgeDark};
 }
 .kpv2-page-media-url-view-bar {
   display: flex;
@@ -2176,6 +2473,10 @@ ${getNctDarkUiScaleSliderCss({ rangeWidth: '88px' })}
   margin-top: calc(4px * var(--kpv2-pm-image-scale, 1.5));
   font-size: calc(10px * var(--kpv2-pm-image-scale, 1.5));
 }
+.kpv2-page-media-content .kpv2-page-media-ext-chip {
+  font-size: calc(9px * var(--kpv2-pm-image-scale, 1.5));
+  padding: calc(1px * var(--kpv2-pm-image-scale, 1.5)) calc(7px * var(--kpv2-pm-image-scale, 1.5));
+}
 .kpv2-page-media-content .kpv2-page-media-size-heading {
   font-size: calc(12px * var(--kpv2-pm-image-scale, 1.5));
   margin-bottom: calc(10px * var(--kpv2-pm-image-scale, 1.5));
@@ -2257,6 +2558,137 @@ ${getNctDarkUiScaleSliderCss({ rangeWidth: '88px' })}
 .kpv2-page-media-content.is-url-tab {
   display: block;
   padding: 8px 12px 24px;
+}
+.kpv2-page-media-content.is-font-tab {
+  display: block;
+  padding: 8px 12px 24px;
+}
+.kpv2-page-media-font-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.kpv2-page-media-font-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: ${c.fgDim};
+}
+.kpv2-page-media-font-count {
+  font-weight: 600;
+  color: ${c.fgMute};
+  letter-spacing: 0;
+  text-transform: none;
+}
+.kpv2-page-media-font-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.kpv2-page-media-font-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid ${c.panelEdgeDark};
+  border-radius: 3px;
+  background: ${c.panel};
+  box-shadow: 0 0 0 1px ${c.panelEdge} inset;
+  cursor: pointer;
+  color: inherit;
+  position: relative;
+}
+.kpv2-page-media-font-row:hover {
+  border-color: ${c.accent};
+}
+.kpv2-page-media-font-row:hover .kpv2-page-media-actions,
+.kpv2-page-media-font-row:focus-within .kpv2-page-media-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+.kpv2-page-media-font-actions.kpv2-page-media-actions {
+  position: static;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 200px;
+  opacity: 0;
+  pointer-events: none;
+  margin-top: 2px;
+}
+.kpv2-page-media-font-sample {
+  flex: 0 0 56px;
+  width: 56px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  line-height: 1;
+  background: rgba(0,0,0,0.22);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.kpv2-page-media-font-main {
+  flex: 1;
+  min-width: 0;
+}
+.kpv2-page-media-font-name {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kpv2-page-media-font-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: ${c.fgDim};
+}
+.kpv2-page-media-font-type {
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: ${c.accent};
+}
+.kpv2-page-media-font-url {
+  margin-top: 4px;
+  font-size: 11px;
+  color: ${c.fgMute};
+  word-break: break-all;
+}
+.kpv2-page-media-content .kpv2-page-media-font-list {
+  gap: calc(16px * var(--kpv2-pm-image-scale, 1.5));
+}
+.kpv2-page-media-content .kpv2-page-media-font-heading {
+  font-size: calc(12px * var(--kpv2-pm-image-scale, 1.5));
+  margin-bottom: calc(8px * var(--kpv2-pm-image-scale, 1.5));
+}
+.kpv2-page-media-content .kpv2-page-media-font-row {
+  gap: calc(12px * var(--kpv2-pm-image-scale, 1.5));
+  padding: calc(10px * var(--kpv2-pm-image-scale, 1.5)) calc(12px * var(--kpv2-pm-image-scale, 1.5));
+}
+.kpv2-page-media-content .kpv2-page-media-font-sample {
+  flex-basis: calc(56px * var(--kpv2-pm-image-scale, 1.5));
+  width: calc(56px * var(--kpv2-pm-image-scale, 1.5));
+  height: calc(48px * var(--kpv2-pm-image-scale, 1.5));
+  font-size: calc(28px * var(--kpv2-pm-image-scale, 1.5));
+}
+.kpv2-page-media-content .kpv2-page-media-font-name {
+  font-size: calc(13px * var(--kpv2-pm-image-scale, 1.5));
+}
+.kpv2-page-media-content .kpv2-page-media-font-meta,
+.kpv2-page-media-content .kpv2-page-media-font-url {
+  font-size: calc(11px * var(--kpv2-pm-image-scale, 1.5));
 }
 .kpv2-page-media-url-list {
   display: flex;
@@ -2449,7 +2881,11 @@ ${getNctDarkUiScaleSliderCss({ rangeWidth: '88px' })}
   margin-top: 2px;
   font-size: 10px;
   color: ${c.fgMute};
-  text-transform: lowercase;
+  text-transform: none;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 .kpv2-page-media-url-actions.kpv2-page-media-actions {
   position: static;
@@ -2670,6 +3106,115 @@ ${getNctDarkUiScaleSliderCss({ rangeWidth: '88px' })}
   line-height: 1.35;
   letter-spacing: 0.01em;
   text-transform: none;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.kpv2-page-media-url-kind {
+  display: inline-flex;
+  align-items: center;
+}
+.kpv2-page-media-meta-extra {
+  color: ${c.fgMute};
+}
+.kpv2-page-media-ext-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  color: ${c.fgDim};
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.kpv2-page-media-ext-chip[data-ext="jpg"] {
+  color: #f6d7a8;
+  background: rgba(196, 120, 28, 0.28);
+  border-color: rgba(232, 168, 64, 0.5);
+}
+.kpv2-page-media-ext-chip[data-ext="png"] {
+  color: #b8d4f8;
+  background: rgba(48, 110, 196, 0.3);
+  border-color: rgba(96, 160, 236, 0.5);
+}
+.kpv2-page-media-ext-chip[data-ext="gif"] {
+  color: #f4c4e4;
+  background: rgba(176, 48, 140, 0.3);
+  border-color: rgba(228, 96, 188, 0.5);
+}
+.kpv2-page-media-ext-chip[data-ext="webp"] {
+  color: #c4ecc0;
+  background: rgba(40, 140, 72, 0.28);
+  border-color: rgba(88, 196, 112, 0.5);
+}
+.kpv2-page-media-ext-chip[data-ext="avif"] {
+  color: #b8f0ea;
+  background: rgba(16, 140, 148, 0.3);
+  border-color: rgba(64, 212, 204, 0.5);
+}
+.kpv2-page-media-ext-chip[data-ext="svg"] {
+  color: #f8c8a0;
+  background: rgba(196, 96, 32, 0.28);
+  border-color: rgba(236, 140, 64, 0.5);
+}
+.kpv2-page-media-ext-chip[data-ext="ico"] {
+  color: #d0d4dc;
+  background: rgba(120, 128, 140, 0.28);
+  border-color: rgba(168, 176, 188, 0.45);
+}
+.kpv2-page-media-ext-chip[data-ext="bmp"] {
+  color: #e8d0b0;
+  background: rgba(140, 92, 40, 0.3);
+  border-color: rgba(196, 140, 72, 0.45);
+}
+.kpv2-page-media-ext-chip[data-ext="tif"] {
+  color: #dcc8f8;
+  background: rgba(112, 64, 176, 0.3);
+  border-color: rgba(168, 120, 228, 0.5);
+}
+.kpv2-page-media-ext-chip[data-ext="heic"],
+.kpv2-page-media-ext-chip[data-ext="heif"] {
+  color: #c8e0f8;
+  background: rgba(32, 88, 160, 0.32);
+  border-color: rgba(80, 148, 220, 0.5);
+}
+.kpv2-page-media-ext-chip[data-ext="mp4"],
+.kpv2-page-media-ext-chip[data-ext="m4v"] {
+  color: #f8c0c0;
+  background: rgba(176, 40, 48, 0.3);
+  border-color: rgba(228, 88, 88, 0.5);
+}
+.kpv2-page-media-ext-chip[data-ext="webm"] {
+  color: #d4f4a8;
+  background: rgba(88, 140, 24, 0.3);
+  border-color: rgba(148, 204, 56, 0.5);
+}
+.kpv2-page-media-ext-chip[data-ext="mov"] {
+  color: #f0d8b0;
+  background: rgba(160, 96, 24, 0.3);
+  border-color: rgba(220, 148, 56, 0.5);
+}
+.kpv2-page-media-ext-chip[data-ext="pdf"] {
+  color: #f8c4c0;
+  background: rgba(176, 32, 40, 0.32);
+  border-color: rgba(228, 72, 72, 0.55);
+}
+.kpv2-page-media-ext-chip[data-ext="md"],
+.kpv2-page-media-ext-chip[data-ext="markdown"] {
+  color: #c8d8f8;
+  background: rgba(56, 80, 160, 0.3);
+  border-color: rgba(112, 140, 220, 0.5);
+}
+.kpv2-page-media-ext-chip[data-ext="txt"] {
+  color: #d4d8dc;
+  background: rgba(100, 108, 116, 0.28);
+  border-color: rgba(160, 168, 176, 0.4);
 }
 .kpv2-page-media-fullview {
   display: none;
