@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-17T23:56:13.398Z
+ * Generated on 2026-08-18T04:01:45.737Z
  */
 
 var __defProp = Object.defineProperty;
@@ -1404,8 +1404,8 @@ var errors = {
 var baseMinusTMin = base - tMin;
 var floor = Math.floor;
 var stringFromCharCode = String.fromCharCode;
-function error(type) {
-  throw new RangeError(errors[type]);
+function error(type2) {
+  throw new RangeError(errors[type2]);
 }
 function map(array, callback) {
   const result = [];
@@ -1971,7 +1971,7 @@ function _defineProperty(e, r, t) {
   }) : e[r] = t, e;
 }
 var Token = class {
-  constructor(type, tag, nesting) {
+  constructor(type2, tag, nesting) {
     _defineProperty(
       this,
       /**
@@ -2043,7 +2043,7 @@ var Token = class {
       "hidden",
       false
     );
-    this.type = type;
+    this.type = type2;
     this.tag = tag;
     this.attrs = null;
     this.nesting = nesting;
@@ -2463,8 +2463,8 @@ var Renderer = class {
     let result = "";
     const rules = this.rules;
     for (let i = 0, len = tokens.length; i < len; i++) {
-      const type = tokens[i].type;
-      if (typeof rules[type] !== "undefined") result += rules[type](tokens, i, options, env, this);
+      const type2 = tokens[i].type;
+      if (typeof rules[type2] !== "undefined") result += rules[type2](tokens, i, options, env, this);
       else result += this.renderToken(tokens, i, options);
     }
     return result;
@@ -2510,9 +2510,9 @@ var Renderer = class {
     let result = "";
     const rules = this.rules;
     for (let i = 0, len = tokens.length; i < len; i++) {
-      const type = tokens[i].type;
-      if (type === "inline") result += this.renderInline(tokens[i].children, options, env);
-      else if (typeof rules[type] !== "undefined") result += rules[type](tokens, i, options, env, this);
+      const type2 = tokens[i].type;
+      if (type2 === "inline") result += this.renderInline(tokens[i].children, options, env);
+      else if (typeof rules[type2] !== "undefined") result += rules[type2](tokens, i, options, env, this);
       else result += this.renderToken(tokens, i, options);
     }
     return result;
@@ -2910,8 +2910,8 @@ var StateBlock = class {
     this.bsCount.push(0);
     this.lineMax = this.bMarks.length - 1;
   }
-  push(type, tag, nesting) {
-    const token = new Token(type, tag, nesting);
+  push(type2, tag, nesting) {
+    const token = new Token(type2, tag, nesting);
     token.block = true;
     if (nesting < 0) this.level--;
     token.level = this.level;
@@ -3974,9 +3974,9 @@ var StateInline = class {
     this.pending = "";
     return token;
   }
-  push(type, tag, nesting) {
+  push(type2, tag, nesting) {
     if (this.pending) this.pushPending();
-    const token = new Token(type, tag, nesting);
+    const token = new Token(type2, tag, nesting);
     let token_meta = void 0;
     if (nesting < 0) {
       this.level--;
@@ -5261,6 +5261,2798 @@ _defineProperty(MarkdownIt, "ParserInline", ParserInline);
 _defineProperty(MarkdownIt, "StateInline", StateInline);
 var MarkdownItCallable = callable(MarkdownIt);
 
+// src/config/keyboard-layouts.js
+var DEFAULT_KEYBOARD_LAYOUT_ID = (
+  /** @type {const} */
+  "browsing-right"
+);
+var DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID = (
+  /** @type {const} */
+  "browsing"
+);
+var DEFAULT_KEYBOARD_HANDEDNESS = (
+  /** @type {const} */
+  "right"
+);
+var SOURCE_BUILD_ENABLE_MACRO_BUILDER = false;
+var BUILD_ENABLE_MACRO_BUILDER = typeof __KP_BUILD_ENABLE_MACRO_BUILDER__ !== "undefined" ? !!__KP_BUILD_ENABLE_MACRO_BUILDER__ : SOURCE_BUILD_ENABLE_MACRO_BUILDER;
+var BUILD_EXCLUDED_KEY_ACTIONS = Object.freeze([
+  "COLS_TOGGLE"
+]);
+var BUILD_EXCLUDED_KEY_ACTION_SET = new Set(BUILD_EXCLUDED_KEY_ACTIONS);
+function isBuildExcludedKeyAction(actionId) {
+  const id = String(actionId || "");
+  return !!id && BUILD_EXCLUDED_KEY_ACTION_SET.has(id);
+}
+var BUILTIN_KEYBOARD_LAYOUT_META = Object.freeze([
+  Object.freeze({
+    id: (
+      /** @type {const} */
+      "browsing-right"
+    ),
+    label: "Browsing: right-handed",
+    description: "Full browsing layout. Mouse: right hand. Shortcuts primarily on the left."
+  }),
+  Object.freeze({
+    id: (
+      /** @type {const} */
+      "browsing-left"
+    ),
+    label: "Browsing: left-handed",
+    description: "Full browsing layout. Mouse: left hand. Shortcuts primarily on the right."
+  }),
+  Object.freeze({
+    id: (
+      /** @type {const} */
+      "basic-navigation-right"
+    ),
+    label: "Basic Navigation: right-handed",
+    description: "Page scroll, click, tab switch, back/forward only."
+  }),
+  Object.freeze({
+    id: (
+      /** @type {const} */
+      "basic-navigation-left"
+    ),
+    label: "Basic Navigation: left-handed",
+    description: "Page scroll, click, tab switch, back/forward only."
+  }),
+  Object.freeze({
+    id: (
+      /** @type {const} */
+      "click-history-right"
+    ),
+    label: "Navigation: right-handed",
+    description: "Click element, go back, and go forward only."
+  }),
+  Object.freeze({
+    id: (
+      /** @type {const} */
+      "click-history-left"
+    ),
+    label: "Navigation: left-handed",
+    description: "Click element, go back, and go forward only."
+  })
+]);
+var BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META = Object.freeze([
+  Object.freeze({
+    id: (
+      /** @type {const} */
+      "browsing"
+    ),
+    label: "Browsing",
+    builtIn: true,
+    description: "Full browsing controls (scroll, tabs, click, history, tools).",
+    variants: Object.freeze({
+      right: (
+        /** @type {const} */
+        "browsing-right"
+      ),
+      left: (
+        /** @type {const} */
+        "browsing-left"
+      )
+    })
+  }),
+  Object.freeze({
+    id: (
+      /** @type {const} */
+      "click-history"
+    ),
+    label: "Navigation",
+    builtIn: true,
+    description: "Click element, go back, and go forward.",
+    variants: Object.freeze({
+      right: (
+        /** @type {const} */
+        "click-history-right"
+      ),
+      left: (
+        /** @type {const} */
+        "click-history-left"
+      )
+    })
+  })
+]);
+var LEGACY_KEYBOARD_LAYOUT_FAMILY_VARIANTS = Object.freeze({
+  "basic-navigation": Object.freeze({
+    right: (
+      /** @type {const} */
+      "basic-navigation-right"
+    ),
+    left: (
+      /** @type {const} */
+      "basic-navigation-left"
+    )
+  })
+});
+var KNOWN_BUILTIN_LAYOUT_IDS = new Set(
+  BUILTIN_KEYBOARD_LAYOUT_META.map((m) => m && m.id).filter(Boolean)
+);
+function normalizeKeyboardLayoutId(raw) {
+  const v = String(raw || "").trim();
+  if (KNOWN_BUILTIN_LAYOUT_IDS.has(v)) return (
+    /** @type {BuiltinKeyboardLayoutId} */
+    v
+  );
+  return DEFAULT_KEYBOARD_LAYOUT_ID;
+}
+function normalizeKeyboardLayoutFamilyId(raw) {
+  const v = String(raw || "").trim();
+  if (v === "navigation") return "browsing";
+  if (!v) return DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID;
+  const known = BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META.some((m) => m && m.id === v);
+  if (known) return v;
+  if (Object.prototype.hasOwnProperty.call(LEGACY_KEYBOARD_LAYOUT_FAMILY_VARIANTS, v)) {
+    return (
+      /** @type {KeyboardLayoutFamilyId} */
+      v
+    );
+  }
+  return DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID;
+}
+function normalizeKeyboardHandedness(raw) {
+  const v = String(raw || "").trim().toLowerCase();
+  if (v === "left" || v === "right") return (
+    /** @type {KeyboardHandedness} */
+    v
+  );
+  return DEFAULT_KEYBOARD_HANDEDNESS;
+}
+function resolveKeyboardLayoutId({ familyId, handedness } = {}) {
+  const fam = normalizeKeyboardLayoutFamilyId(familyId);
+  const hand = normalizeKeyboardHandedness(handedness);
+  const meta = BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META.find((m) => m && m.id === fam);
+  const legacy = LEGACY_KEYBOARD_LAYOUT_FAMILY_VARIANTS[fam];
+  const resolved = meta?.variants?.[hand] || legacy?.[hand];
+  return normalizeKeyboardLayoutId(resolved);
+}
+function inferFamilyAndHandednessFromLayoutId(rawLayoutId) {
+  const id = normalizeKeyboardLayoutId(rawLayoutId);
+  if (id.endsWith("-left")) {
+    const familyId = id.slice(0, -"-left".length);
+    return {
+      familyId: normalizeKeyboardLayoutFamilyId(familyId),
+      handedness: "left"
+    };
+  }
+  if (id.endsWith("-right")) {
+    const familyId = id.slice(0, -"-right".length);
+    return {
+      familyId: normalizeKeyboardLayoutFamilyId(familyId),
+      handedness: "right"
+    };
+  }
+  return { familyId: DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID, handedness: DEFAULT_KEYBOARD_HANDEDNESS };
+}
+var KEYBINDING_ACTION_DEFS = Object.freeze({
+  ACTIVATE: Object.freeze({
+    handler: "handleActivateKey",
+    label: "Click Element",
+    description: "Click the hovered element",
+    details: "Activates the clickable under the cursor \u2014 the same as a left mouse click on that element. Works with links, buttons, and other interactive targets KeyPilot highlights.",
+    keyboardClass: "key-activate",
+    row: 2
+  }),
+  // Foreground new tab (switch to the new tab).
+  ACTIVATE_NEW_TAB: Object.freeze({
+    handler: "handleActivateNewTabKey",
+    label: "Click New Tab",
+    description: "Open link in a new foreground tab",
+    details: "Opens the hovered link in a new tab and switches to it immediately. Use when you want to follow a link without leaving your place permanently, but still jump to the new page right away.",
+    keyboardClass: "key-activate-new",
+    row: 2
+  }),
+  // Background new tab (middle-click style; do not switch focus).
+  ACTIVATE_NEW_TAB_BACKGROUND: Object.freeze({
+    handler: "handleActivateNewTabBackgroundKey",
+    label: "Click New Tab Background",
+    description: "Open link in a new background tab",
+    details: "Opens the hovered link in a new tab without switching focus \u2014 like a middle-click. Useful for queueing several links while you keep reading the current page.",
+    keyboardClass: "key-activate-new-over",
+    row: 2
+  }),
+  BACK: Object.freeze({
+    handler: "handleBackKey",
+    label: "Go Back",
+    description: "Browser history back",
+    details: "Navigates one step back in the current tab\u2019s history, equivalent to the browser Back button.",
+    keyboardClass: "key-back",
+    row: 2
+  }),
+  BACK2: Object.freeze({
+    handler: "handleBackKey",
+    label: "Go Back",
+    description: "Browser history back",
+    details: "Navigates one step back in the current tab\u2019s history, equivalent to the browser Back button. Duplicate id for layouts that expose a second Back binding.",
+    keyboardClass: "key-back",
+    row: 2
+  }),
+  FORWARD: Object.freeze({
+    handler: "handleForwardKey",
+    label: "Go Forward",
+    description: "Browser history forward",
+    details: "Navigates one step forward in the current tab\u2019s history, equivalent to the browser Forward button.",
+    keyboardClass: "key-forward",
+    row: 1
+  }),
+  DELETE: Object.freeze({
+    handler: "handleDeleteKey",
+    label: "Delete Mode",
+    description: "Hide elements under the cursor",
+    details: "Toggles Delete Mode: hover elements and remove (hide) them from the page so you can declutter layouts. Exit with Exit Focus or by toggling again.",
+    keyboardClass: "key-delete",
+    row: 2
+  }),
+  COLS_TOGGLE: Object.freeze({
+    handler: "handleColsToggleKey",
+    label: "Cols Toggle",
+    description: "Multi-column layout under cursor",
+    details: "Columnizes the element under the cursor into a multi-column layout so dense text or lists are easier to scan. Toggle again to restore the original layout.",
+    keyboardClass: "key-cols",
+    row: 3
+  }),
+  TAB_LEFT: Object.freeze({
+    handler: "handleTabLeftKey",
+    label: "Tab Left",
+    description: "Switch to the previous tab",
+    details: "Activates the tab to the left of the current one in the window\u2019s tab strip.",
+    keyboardClass: "key-gray",
+    row: 1
+  }),
+  TAB_RIGHT: Object.freeze({
+    handler: "handleTabRightKey",
+    label: "Tab Right",
+    description: "Switch to the next tab",
+    details: "Activates the tab to the right of the current one in the window\u2019s tab strip.",
+    keyboardClass: "key-gray",
+    row: 1
+  }),
+  ROOT: Object.freeze({
+    handler: "handleRootKey",
+    label: "Go to Site Root",
+    description: "Navigate to the site origin",
+    details: "Jumps to the site root (scheme + host) of the current page \u2014 useful for escaping deep paths without typing a URL.",
+    keyboardClass: null,
+    row: null
+  }),
+  LAUNCHER: Object.freeze({
+    handler: "handleLauncherKey",
+    label: "Launcher",
+    description: "Quick-access site launcher",
+    details: "Opens the Launcher popover for jumping to favorite or configured sites without using the omnibox.",
+    keyboardClass: "key-launcher-orange",
+    row: 2
+  }),
+  TOP_SITES: Object.freeze({
+    handler: "handleTopSitesKey",
+    label: "Top Sites",
+    description: "Toolbar, visits, and bookmarks",
+    details: "Opens Top Sites: a quick list drawn from the toolbar, most-visited pages, and recent bookmarks so you can open a frequent destination in one step.",
+    keyboardClass: "key-launcher-orange",
+    row: 2
+  }),
+  CLOSE_TAB: Object.freeze({
+    handler: "handleCloseTabKey",
+    label: "Close Tab",
+    description: "Close the current tab",
+    details: "Closes the active tab. Behavior matches the browser\u2019s close-tab action for the current window.",
+    keyboardClass: "key-close-tab",
+    row: 3
+  }),
+  CANCEL: Object.freeze({
+    handler: "cancelModes",
+    label: "Exit Focus",
+    description: "Leave modes and overlays",
+    details: "Cancels the current KeyPilot mode or overlay (Delete Mode, Scroll Line, text focus helpers, and similar) and returns to normal browsing.",
+    keyboardClass: null,
+    row: null
+  }),
+  PAGE_UP_INSTANT: Object.freeze({
+    handler: "handleInstantPageUp",
+    label: "Page Up Fast",
+    description: "Jump one page up instantly",
+    details: "Scrolls the current scroll target up by roughly one viewport without animation \u2014 faster than a smooth page-up when you need to move quickly.",
+    keyboardClass: "key-scroll",
+    row: 3
+  }),
+  PAGE_DOWN_INSTANT: Object.freeze({
+    handler: "handleInstantPageDown",
+    label: "Page Down Fast",
+    description: "Jump one page down instantly",
+    details: "Scrolls the current scroll target down by roughly one viewport without animation \u2014 faster than a smooth page-down when you need to move quickly.",
+    keyboardClass: "key-scroll",
+    row: 3
+  }),
+  PAGE_TOP: Object.freeze({
+    handler: "handlePageTop",
+    label: "Scroll To Top",
+    description: "Jump to top of scroll target",
+    details: "Moves to the top of the current scroll target. Fade mode hides the jump; Scroll mode animates. Configure the motion style in Settings \u2192 Scrolling.",
+    keyboardClass: "key-scroll",
+    row: 3
+  }),
+  PAGE_BOTTOM: Object.freeze({
+    handler: "handlePageBottom",
+    label: "Scroll To Bottom",
+    description: "Jump to bottom of scroll target",
+    details: "Moves to the bottom of the current scroll target. Fade mode hides the jump; Scroll mode animates. Configure the motion style in Settings \u2192 Scrolling.",
+    keyboardClass: "key-scroll",
+    row: 3
+  }),
+  SCROLL_LINE: Object.freeze({
+    handler: "handleScrollLineKey",
+    label: "Scroll Line",
+    description: "Origin-based continuous scroll",
+    details: "Scrolls from a fixed origin: move the mouse away from the on-screen dot to scroll faster in that direction. Optionally enable middle-click on empty page area under Settings \u2192 Scrolling.",
+    keyboardClass: "key-scroll",
+    row: 3,
+    mode: "scroll_line",
+    cancelOnPointerDown: true,
+    pointerBinding: Object.freeze({
+      button: "middle",
+      yieldToClickables: true,
+      yieldToTextEntry: true,
+      yieldToModes: Object.freeze(["text_focus", "popover", "omnibox"]),
+      enabledSetting: "scroll.middleClickScrollLine"
+    })
+  }),
+  NEW_TAB: Object.freeze({
+    handler: "handleNewTabKey",
+    label: "New Tab",
+    description: "Open a blank new tab",
+    details: "Opens a new empty tab in the current window, same as the browser\u2019s New Tab command.",
+    keyboardClass: "key-gray",
+    row: 1
+  }),
+  OPEN_POPOVER: Object.freeze({
+    handler: "handleOpenPopover",
+    label: "Open Popover",
+    description: "Open link in a popup window",
+    details: "Opens the hovered link in a KeyPilot popup window so you can peek or work in a separate chrome without a full new tab.",
+    keyboardClass: "key-open-popover",
+    row: 2
+  }),
+  PREVIEW_LINK_POPOVER: Object.freeze({
+    handler: "handlePreviewLinkPopover",
+    label: "Preview Link",
+    description: "Preview link in a popup",
+    details: "Opens Link Preview for the hovered URL in a popup window \u2014 skim the destination without committing a full navigation in the main tab.",
+    keyboardClass: "key-preview-popover",
+    row: 2
+  }),
+  POI_WEBSITE: Object.freeze({
+    handler: "handlePoiWebsiteKey",
+    label: "POI Website",
+    description: "Open map place website",
+    details: "When a map place (POI) is under the cursor, opens that place\u2019s website in Link Preview so you can visit the business or location page without leaving the map.",
+    keyboardClass: "key-preview-popover",
+    row: null
+  }),
+  POI_ADDRESS: Object.freeze({
+    handler: "handlePoiAddressKey",
+    label: "POI Address",
+    description: "Copy map place address",
+    details: "When a map place (POI) is under the cursor, copies its street address to the clipboard for pasting into directions, notes, or forms.",
+    keyboardClass: null,
+    row: null
+  }),
+  OPEN_SETTINGS_POPOVER: Object.freeze({
+    handler: "handleToggleSettingsPopover",
+    label: "Settings",
+    description: "Open KeyPilot Settings",
+    details: "Opens or closes the KeyPilot Settings popover for themes, scrolling, click mode, layouts, and other preferences.",
+    keyboardClass: "key-settings-dark",
+    row: null
+  }),
+  OMNIBOX: Object.freeze({
+    handler: "handleOpenOmnibox",
+    label: "Omnibox",
+    description: "Address bar overlay",
+    details: "Opens KeyPilot\u2019s omnibox overlay so you can type a URL or search without clicking the browser address bar.",
+    keyboardClass: "key-orange",
+    row: 2
+  }),
+  TAB_HISTORY: Object.freeze({
+    handler: "handleToggleTabHistoryPopover",
+    label: "Tab History",
+    description: "Browse this tab\u2019s history",
+    details: "Opens Tab History for the current tab so you can jump to a previously visited page in this tab\u2019s session without using the browser\u2019s native history UI.",
+    keyboardClass: "key-gray",
+    row: 2
+  }),
+  TOGGLE_KEYBOARD_HELP: Object.freeze({
+    handler: "handleToggleKeyboardHelp",
+    label: "KB Reference",
+    description: "Show or hide the keyboard map",
+    details: "Toggles the floating Keyboard Reference window that shows your current layout\u2019s keycaps and bindings.",
+    keyboardClass: "key-purple",
+    row: 2
+  }),
+  // Text select: default character-level (H on right-handed layout).
+  HIGHLIGHT: Object.freeze({
+    handler: "handleHighlightKey",
+    label: "Text Select",
+    description: "Select text and copy rich text",
+    details: "Enters character-level text selection under the cursor. By default, the selection is copied as rich text so formatting is preserved when you paste.",
+    keyboardClass: "key-highlight",
+    row: 2
+  }),
+  // Rectangle region select (Y on right-handed; R free on left-handed).
+  RECTANGLE_HIGHLIGHT: Object.freeze({
+    handler: "handleRectangleHighlightKey",
+    label: "Element Select",
+    description: "Rectangle or cumulative element pick",
+    details: "Selects HTML elements that intersect a dragged rectangle, or pick elements cumulatively. Useful for grabbing structure (not just plain text) from a page region.",
+    keyboardClass: "key-rect-highlight",
+    row: 1
+  }),
+  // Copy image under cursor (I on right-handed; E on left-handed — I is OPEN_POPOVER there).
+  COPY_HOVERED_IMAGE: Object.freeze({
+    handler: "handleCopyHoveredImageKey",
+    label: "Copy Image",
+    description: "Copy hovered image",
+    details: "Copies the image under the cursor to the clipboard, Media Library, or both \u2014 configure the destination on the action. Prefer this when you want the image bytes or a saved library entry, not just a URL.",
+    // Default key face (no tinted key-gray / family fill).
+    keyboardClass: null,
+    row: 1
+  }),
+  // Copy hyperlink under cursor (U on right-handed; no default on left — U is FORWARD there).
+  COPY_HOVERED_URL: Object.freeze({
+    handler: "handleCopyHoveredUrlKey",
+    label: "Copy URL",
+    description: "Copy hovered link URL",
+    details: "Copies the URL under the cursor to the clipboard, Media Library, or both. Use this when you need the href itself rather than fetching or opening the resource.",
+    keyboardClass: null,
+    row: 1
+  }),
+  // Copy video under cursor — Actions Library only (no built-in layout key).
+  COPY_HOVERED_VIDEO: Object.freeze({
+    handler: "handleCopyHoveredVideoKey",
+    label: "Copy Video",
+    description: "Copy hovered video",
+    details: "Copies the video under the cursor (file bytes to Media Library when fetchable, or the video URL to the clipboard). No default layout key \u2014 bind it in Layout Config if you need it.",
+    keyboardClass: null,
+    row: null
+  }),
+  // Page-wide Image / Video / Text gallery (O on right-handed; O is TAB_RIGHT on left-handed).
+  PAGE_MEDIA: Object.freeze({
+    handler: "handlePageMediaKey",
+    label: "Page Media",
+    description: "Browse media found on this page",
+    details: "Opens a gallery of images, videos, and documents discovered on the current page so you can review or collect them without hunting through the DOM.",
+    keyboardClass: null,
+    row: 1
+  }),
+  // Media Library entry point (M on right-handed only — M is PAGE_DOWN_INSTANT on left-handed,
+  // so this doesn't get a default binding there yet).
+  OPEN_MEDIA_LIBRARY: Object.freeze({
+    handler: "handleOpenMediaLibraryKey",
+    label: "Media Library",
+    description: "Open saved Media Library",
+    details: "Opens the Media Library where items you previously copied or saved (images, videos, URLs, and related assets) are kept for reuse.",
+    keyboardClass: null,
+    row: 1
+  }),
+  // Clipboard commands (Functions palette — Clipboard category).
+  CLIPBOARD_COPY: Object.freeze({
+    handler: "handleClipboardCopyKey",
+    label: "Copy",
+    description: "Copy selection to clipboard",
+    details: "Copies the current text selection to the system clipboard. Prefer this over OS shortcuts when you want Copy available as a KeyPilot layout binding.",
+    keyboardClass: null,
+    row: null
+  }),
+  CLIPBOARD_CUT: Object.freeze({
+    handler: "handleClipboardCutKey",
+    label: "Cut",
+    description: "Cut selection to clipboard",
+    details: "Cuts the current text selection to the system clipboard from the focused field or editable region.",
+    keyboardClass: null,
+    row: null
+  }),
+  CLIPBOARD_PASTE: Object.freeze({
+    handler: "handleClipboardPasteKey",
+    label: "Paste",
+    description: "Paste into the focused field",
+    details: "Pastes clipboard text into the focused text field or editable element. Bind with a modifier chord if you need it while typing.",
+    keyboardClass: null,
+    row: null
+  }),
+  CLIPBOARD_SELECT_ALL: Object.freeze({
+    handler: "handleClipboardSelectAllKey",
+    label: "Select All",
+    description: "Select all in field or page",
+    details: "Selects all text in the focused field, or the page content when nothing editable is focused \u2014 same idea as the usual Select All shortcut.",
+    keyboardClass: null,
+    row: null
+  }),
+  // AI (Functions palette — AI category).
+  SEND_TEXT_TO_AI: Object.freeze({
+    handler: "handleSendTextToAiKey",
+    label: "Send Text To AI",
+    description: "Run AI on selected text",
+    details: "Sends the selected text to AI with a configurable instruction, then routes the result to the clipboard and/or a popover. Configure the prompt and destination on the action instance.",
+    keyboardClass: "key-purple",
+    row: null
+  })
+});
+var KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
+  // Navigation — click / link preview / history
+  ACTIVATE: "Navigation",
+  ACTIVATE_NEW_TAB: "Navigation",
+  ACTIVATE_NEW_TAB_BACKGROUND: "Navigation",
+  PREVIEW_LINK_POPOVER: "Navigation",
+  POI_WEBSITE: "Maps",
+  POI_ADDRESS: "Maps",
+  OPEN_POPOVER: "Navigation",
+  FORWARD: "Navigation",
+  BACK: "Navigation",
+  BACK2: "Navigation",
+  ROOT: "Navigation",
+  // Tab Control
+  CLOSE_TAB: "Tab Control",
+  TAB_LEFT: "Tab Control",
+  TAB_RIGHT: "Tab Control",
+  NEW_TAB: "Tab Control",
+  TAB_HISTORY: "Tab Control",
+  PAGE_UP_INSTANT: "Scroll",
+  PAGE_DOWN_INSTANT: "Scroll",
+  PAGE_TOP: "Scroll",
+  PAGE_BOTTOM: "Scroll",
+  SCROLL_LINE: "Scroll",
+  HIGHLIGHT: "Get Page Data",
+  RECTANGLE_HIGHLIGHT: "Get Page Data",
+  COPY_HOVERED_IMAGE: "Get Page Data",
+  COPY_HOVERED_URL: "Get Page Data",
+  COPY_HOVERED_VIDEO: "Get Page Data",
+  PAGE_MEDIA: "Get Page Data",
+  DELETE: "Select",
+  COLS_TOGGLE: "Select",
+  OPEN_MEDIA_LIBRARY: "Media Library",
+  CLIPBOARD_COPY: "Clipboard",
+  CLIPBOARD_CUT: "Clipboard",
+  CLIPBOARD_PASTE: "Clipboard",
+  CLIPBOARD_SELECT_ALL: "Clipboard",
+  SEND_TEXT_TO_AI: "AI",
+  LAUNCHER: "Begin URL",
+  TOP_SITES: "Begin URL",
+  OMNIBOX: "Begin URL",
+  TOGGLE_KEYBOARD_HELP: "KeyPilot",
+  OPEN_SETTINGS_POPOVER: "KeyPilot",
+  CANCEL: "System"
+});
+var KEYBINDING_ACTION_CATEGORY_ORDER = Object.freeze([
+  "Navigation",
+  "Tab Control",
+  "Begin URL",
+  "Get Page Data",
+  "Maps",
+  "Scroll",
+  "Select",
+  "Media Library",
+  "Clipboard",
+  "AI",
+  "KeyPilot",
+  "Tools",
+  "System",
+  "Other"
+]);
+function upperLetter(s) {
+  const ch = String(s || "");
+  if (!ch) return "";
+  return ch.length === 1 ? ch.toUpperCase() : ch;
+}
+function normalizeAssignmentLabels(a) {
+  const keys = Array.isArray(a?.keys) ? a.keys : [];
+  const first = keys[0] || "";
+  const explicitDisplay = typeof a?.displayKey === "string" ? a.displayKey : "";
+  const explicitKeyLabel = typeof a?.keyLabel === "string" ? a.keyLabel : "";
+  if (explicitDisplay || explicitKeyLabel) {
+    const dk = explicitDisplay || explicitKeyLabel;
+    const kl = explicitKeyLabel || explicitDisplay;
+    return { keyLabel: kl || dk || "", displayKey: dk || kl || "" };
+  }
+  if (typeof first === "string" && first.length === 1 && /[a-zA-Z]/.test(first)) {
+    const up = upperLetter(first);
+    return { keyLabel: up, displayKey: up };
+  }
+  return { keyLabel: String(first || ""), displayKey: String(first || "") };
+}
+function buildKeybindingsForLayout(layoutId) {
+  const id = normalizeKeyboardLayoutId(layoutId);
+  const layout = BUILTIN_KEYBOARD_LAYOUTS[id];
+  const out = {};
+  for (const [actionId, def] of Object.entries(KEYBINDING_ACTION_DEFS)) {
+    if (isBuildExcludedKeyAction(actionId)) continue;
+    const assign = layout?.assignments?.[actionId];
+    if (!assign || !Array.isArray(assign.keys)) continue;
+    const labels = normalizeAssignmentLabels(assign);
+    out[actionId] = {
+      keys: assign.keys.slice(),
+      ...Array.isArray(assign.matchOn) ? { matchOn: assign.matchOn.slice() } : {},
+      handler: def.handler,
+      label: def.label,
+      description: def.description,
+      keyLabel: labels.keyLabel,
+      keyboardClass: def.keyboardClass ?? null,
+      row: def.row ?? null,
+      displayKey: labels.displayKey
+    };
+  }
+  return out;
+}
+var CATALOG_KEYBINDINGS = (() => {
+  const out = {};
+  for (const [actionId, def] of Object.entries(KEYBINDING_ACTION_DEFS)) {
+    if (isBuildExcludedKeyAction(actionId)) continue;
+    out[actionId] = Object.freeze({
+      keys: Object.freeze([]),
+      handler: def.handler,
+      label: def.label,
+      description: def.description,
+      keyboardClass: def.keyboardClass ?? null,
+      row: def.row ?? null,
+      displayKey: "",
+      keyLabel: ""
+    });
+  }
+  return Object.freeze(out);
+})();
+var ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
+  TAB_LEFT: Object.freeze({ keys: ["q", "Q"] }),
+  TAB_RIGHT: Object.freeze({ keys: ["w", "W"] }),
+  OPEN_POPOVER: Object.freeze({ keys: ["p", "P"] }),
+  PREVIEW_LINK_POPOVER: Object.freeze({ keys: ["e", "E"] }),
+  FORWARD: Object.freeze({ keys: ["r", "R"] }),
+  NEW_TAB: Object.freeze({ keys: ["t", "T"] }),
+  CLOSE_TAB: Object.freeze({ keys: ["a", "A"] }),
+  BACK2: Object.freeze({ keys: ["s", "S"] }),
+  BACK: Object.freeze({ keys: ["d", "D"] }),
+  ACTIVATE: Object.freeze({ keys: ["f", "F"] }),
+  ACTIVATE_NEW_TAB_BACKGROUND: Object.freeze({ keys: ["g", "G"] }),
+  HIGHLIGHT: Object.freeze({ keys: ["h", "H"] }),
+  TAB_HISTORY: Object.freeze({ keys: ["j", "J"] }),
+  OMNIBOX: Object.freeze({ keys: ["l", "L"] }),
+  TOP_SITES: Object.freeze({ keys: [";", ":", "Semicolon", "`", "~", "Backquote"], matchOn: ["key", "code"], displayKey: ";", keyLabel: ";" }),
+  PAGE_TOP: Object.freeze({ keys: ["z", "Z"] }),
+  PAGE_BOTTOM: Object.freeze({ keys: ["x", "X"] }),
+  PAGE_UP_INSTANT: Object.freeze({ keys: ["c", "C"] }),
+  PAGE_DOWN_INSTANT: Object.freeze({ keys: ["v", "V"] }),
+  ACTIVATE_NEW_TAB: Object.freeze({ keys: ["b", "B"] }),
+  SCROLL_LINE: Object.freeze({ keys: ["n", "N"] }),
+  RECTANGLE_HIGHLIGHT: Object.freeze({ keys: ["y", "Y"] }),
+  COPY_HOVERED_IMAGE: Object.freeze({ keys: ["i", "I"] }),
+  COPY_HOVERED_URL: Object.freeze({ keys: ["u", "U"] }),
+  PAGE_MEDIA: Object.freeze({ keys: ["o", "O"] }),
+  // M is otherwise unused on the right-handed layout (it's PAGE_DOWN_INSTANT on left-handed).
+  OPEN_MEDIA_LIBRARY: Object.freeze({ keys: ["m", "M"] }),
+  ROOT: Object.freeze({ keys: ["1", "!"], displayKey: "1", keyLabel: "1" }),
+  DELETE: Object.freeze({ keys: ["Backspace"], displayKey: "Backspace", keyLabel: "Backspace" })
+  // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
+});
+var ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
+  // Top row cluster: Q W E R T  ->  P O I U Y (mirrored)
+  TAB_LEFT: Object.freeze({ keys: ["p", "P"] }),
+  TAB_RIGHT: Object.freeze({ keys: ["o", "O"] }),
+  OPEN_POPOVER: Object.freeze({ keys: ["i", "I"] }),
+  PREVIEW_LINK_POPOVER: Object.freeze({ keys: ["w", "W"] }),
+  FORWARD: Object.freeze({ keys: ["u", "U"] }),
+  NEW_TAB: Object.freeze({ keys: ["y", "Y"] }),
+  SCROLL_LINE: Object.freeze({ keys: ["t", "T"] }),
+  // Home row cluster: A S D F G  ->  ; L K J H (mirrored-ish around center)
+  CLOSE_TAB: Object.freeze({ keys: [";", ":"], displayKey: ";", keyLabel: ";" }),
+  BACK2: Object.freeze({ keys: ["l", "L"] }),
+  BACK: Object.freeze({ keys: ["k", "K"] }),
+  ACTIVATE: Object.freeze({ keys: ["j", "J"] }),
+  ACTIVATE_NEW_TAB_BACKGROUND: Object.freeze({ keys: ["h", "H"] }),
+  // H is background-tab open on left; G/R free for selection.
+  HIGHLIGHT: Object.freeze({ keys: ["g", "G"] }),
+  RECTANGLE_HIGHLIGHT: Object.freeze({ keys: ["r", "R"] }),
+  // Utility actions on the left avoid colliding with J/K/L cluster.
+  // (KB Reference / Settings / Esc live in the system layer, not layout assignments.)
+  TAB_HISTORY: Object.freeze({ keys: ["f", "F"] }),
+  OMNIBOX: Object.freeze({ keys: ["s", "S"] }),
+  TOP_SITES: Object.freeze({ keys: ["a", "A", "`", "~", "Backquote"], matchOn: ["key", "code"], displayKey: "A", keyLabel: "A" }),
+  // Bottom row cluster: Z X C V B  ->  / . , M N (mirrored)
+  PAGE_TOP: Object.freeze({ keys: ["/", "?"], displayKey: "/", keyLabel: "/" }),
+  PAGE_BOTTOM: Object.freeze({ keys: ["b", "B"] }),
+  PAGE_UP_INSTANT: Object.freeze({ keys: [",", "<"], displayKey: ",", keyLabel: "," }),
+  PAGE_DOWN_INSTANT: Object.freeze({ keys: ["m", "M"] }),
+  ACTIVATE_NEW_TAB: Object.freeze({ keys: ["n", "N"] }),
+  // I is OPEN_POPOVER on left-handed; E is free.
+  COPY_HOVERED_IMAGE: Object.freeze({ keys: ["e", "E"] }),
+  // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
+  ROOT: Object.freeze({ keys: ["1", "!"], displayKey: "1", keyLabel: "1" }),
+  DELETE: Object.freeze({ keys: ["Backspace"], displayKey: "Backspace", keyLabel: "Backspace" })
+});
+var SYSTEM_LAYER_ACTION_IDS = Object.freeze([
+  "CANCEL",
+  "TOGGLE_KEYBOARD_HELP",
+  "OPEN_SETTINGS_POPOVER"
+]);
+var SYSTEM_LAYER_ASSIGNMENTS_RIGHT = Object.freeze({
+  CANCEL: Object.freeze({ keys: ["Escape"], displayKey: "Esc", keyLabel: "Esc" }),
+  TOGGLE_KEYBOARD_HELP: Object.freeze({ keys: ["k", "K"] }),
+  OPEN_SETTINGS_POPOVER: Object.freeze({ keys: ["'", "Quote"], matchOn: ["key", "code"], displayKey: "'" })
+});
+var SYSTEM_LAYER_ASSIGNMENTS_LEFT = Object.freeze({
+  CANCEL: Object.freeze({ keys: ["Escape"], displayKey: "Esc", keyLabel: "Esc" }),
+  TOGGLE_KEYBOARD_HELP: Object.freeze({ keys: ["d", "D"] }),
+  OPEN_SETTINGS_POPOVER: Object.freeze({ keys: ["'", "Quote"], matchOn: ["key", "code"], displayKey: "'" })
+});
+function buildSystemKeybindings(handedness = DEFAULT_KEYBOARD_HANDEDNESS) {
+  const hand = normalizeKeyboardHandedness(handedness);
+  const assignments = hand === "left" ? SYSTEM_LAYER_ASSIGNMENTS_LEFT : SYSTEM_LAYER_ASSIGNMENTS_RIGHT;
+  const out = {};
+  for (const actionId of SYSTEM_LAYER_ACTION_IDS) {
+    const def = KEYBINDING_ACTION_DEFS[actionId];
+    const assign = assignments[actionId];
+    if (!def || !assign || !Array.isArray(assign.keys)) continue;
+    const labels = normalizeAssignmentLabels(assign);
+    out[actionId] = {
+      keys: assign.keys.slice(),
+      ...Array.isArray(assign.matchOn) ? { matchOn: assign.matchOn.slice() } : {},
+      handler: def.handler,
+      label: def.label,
+      description: def.description,
+      keyLabel: labels.keyLabel,
+      keyboardClass: def.keyboardClass ?? null,
+      row: def.row ?? null,
+      displayKey: labels.displayKey,
+      systemLayer: true
+    };
+  }
+  return out;
+}
+function buildEffectiveKeybindings(layoutId, handedness = DEFAULT_KEYBOARD_HANDEDNESS) {
+  return {
+    ...buildKeybindingsForLayout(layoutId),
+    ...buildSystemKeybindings(handedness)
+  };
+}
+var BASIC_NAVIGATION_ACTION_IDS = Object.freeze([
+  "ACTIVATE",
+  "TAB_LEFT",
+  "TAB_RIGHT",
+  "FORWARD",
+  "BACK",
+  "BACK2",
+  "PAGE_TOP",
+  "PAGE_BOTTOM",
+  "PAGE_UP_INSTANT",
+  "PAGE_DOWN_INSTANT"
+]);
+var CLICK_HISTORY_ACTION_IDS = Object.freeze([
+  "ACTIVATE",
+  "BACK",
+  "BACK2",
+  "FORWARD"
+]);
+var BASIC_NAVIGATION_UI_ACTION_IDS = Object.freeze([
+  ...BASIC_NAVIGATION_ACTION_IDS,
+  ...SYSTEM_LAYER_ACTION_IDS
+]);
+var CLICK_HISTORY_UI_ACTION_IDS = Object.freeze([
+  ...CLICK_HISTORY_ACTION_IDS,
+  ...SYSTEM_LAYER_ACTION_IDS
+]);
+function pickAssignments(source, allowedIds) {
+  const allowed = new Set(allowedIds);
+  const out = {};
+  for (const id of allowedIds) {
+    if (isBuildExcludedKeyAction(id)) continue;
+    if (source[id]) out[id] = source[id];
+  }
+  for (const [id, assignment] of Object.entries(source || {})) {
+    if (isBuildExcludedKeyAction(id)) continue;
+    if (allowed.has(id) && !out[id]) out[id] = assignment;
+  }
+  return Object.freeze(out);
+}
+function physicalSlotLabelFromBinding(binding) {
+  const s = String(binding?.displayKey || binding?.keyLabel || "").trim();
+  if (!s) return "";
+  if (s.length === 1) return /[a-z]/i.test(s) ? s.toUpperCase() : s;
+  if (s.includes("/")) {
+    const first = s.split("/")[0];
+    if (first && first.trim().length === 1) {
+      const ch = first.trim();
+      return /[a-z]/i.test(ch) ? ch.toUpperCase() : ch;
+    }
+  }
+  return "";
+}
+function letterFromAssignment(assignment) {
+  if (!assignment) return "";
+  const slot = physicalSlotLabelFromBinding(assignment);
+  if (slot) return slot;
+  if (typeof assignment.displayKey === "string" && assignment.displayKey) return assignment.displayKey;
+  if (typeof assignment.keyLabel === "string" && assignment.keyLabel) return assignment.keyLabel;
+  const keys = Array.isArray(assignment.keys) ? assignment.keys : [];
+  for (const k of keys) {
+    const s = String(k || "");
+    if (!s || s === "Semicolon" || s === "Quote" || s === "Backquote") continue;
+    if (s.length === 1) return s.toUpperCase();
+    if (s === "Backspace" || s === "Escape") return s;
+  }
+  return "";
+}
+function projectKeyboardUiLayout(baseLayout, fullAssignments, allowedIds) {
+  const allowed = new Set(allowedIds);
+  return Object.freeze(
+    (Array.isArray(baseLayout) ? baseLayout : []).map(
+      (row) => Object.freeze(
+        (Array.isArray(row) ? row : []).map((cell) => {
+          if (!cell || cell.type !== "action" || !cell.id) return cell;
+          if (isBuildExcludedKeyAction(cell.id) || !allowed.has(cell.id)) {
+            if (cell.id === "DELETE" || cell.className && String(cell.className).includes("key-backspace")) {
+              return Object.freeze({ type: "special", text: "Backspace", className: "key key-backspace" });
+            }
+            const text2 = letterFromAssignment(fullAssignments[cell.id]);
+            if (!text2) return Object.freeze({ type: "key", text: "" });
+            if (text2 === "Backspace") {
+              return Object.freeze({ type: "special", text: "Backspace", className: "key key-backspace" });
+            }
+            const glyph = text2.length <= 3 ? text2 : text2.slice(0, 1).toUpperCase();
+            return Object.freeze({ type: "key", text: glyph.length === 1 ? glyph.toUpperCase() : glyph });
+          }
+          return cell;
+        })
+      )
+    )
+  );
+}
+var ASSIGNMENTS_BASIC_NAVIGATION_RIGHT = pickAssignments(ASSIGNMENTS_BROWSING_RIGHT, BASIC_NAVIGATION_ACTION_IDS);
+var ASSIGNMENTS_BASIC_NAVIGATION_LEFT = pickAssignments(ASSIGNMENTS_BROWSING_LEFT, BASIC_NAVIGATION_ACTION_IDS);
+var ASSIGNMENTS_CLICK_HISTORY_RIGHT = pickAssignments(ASSIGNMENTS_BROWSING_RIGHT, CLICK_HISTORY_ACTION_IDS);
+var ASSIGNMENTS_CLICK_HISTORY_LEFT = pickAssignments(ASSIGNMENTS_BROWSING_LEFT, CLICK_HISTORY_ACTION_IDS);
+var KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
+  [
+    { type: "special", text: "Tab", className: "key key-tab" },
+    { type: "action", id: "TAB_LEFT", fallbackText: "Tab Left" },
+    { type: "action", id: "TAB_RIGHT", fallbackText: "Tab Right" },
+    { type: "action", id: "PREVIEW_LINK_POPOVER", fallbackText: "Preview Link" },
+    { type: "action", id: "FORWARD", fallbackText: "Go Forward" },
+    { type: "action", id: "NEW_TAB", fallbackText: "New Tab" },
+    { type: "action", id: "RECTANGLE_HIGHLIGHT", fallbackText: "Rectangle Select" },
+    { type: "action", id: "COPY_HOVERED_URL", fallbackText: "Copy URL" },
+    { type: "action", id: "COPY_HOVERED_IMAGE", fallbackText: "Copy Image" },
+    { type: "action", id: "PAGE_MEDIA", fallbackText: "Page Media" },
+    { type: "action", id: "OPEN_POPOVER", fallbackText: "Open Popover" },
+    { type: "key", text: "[" },
+    { type: "key", text: "]" },
+    { type: "action", id: "DELETE", fallbackText: "Delete Mode", className: "key key-backspace" }
+  ],
+  [
+    { type: "special", text: "Caps", className: "key key-caps" },
+    { type: "action", id: "CLOSE_TAB", fallbackText: "Close Tab" },
+    { type: "action", id: "BACK2", fallbackText: "Go Back" },
+    { type: "action", id: "BACK", fallbackText: "Go Back" },
+    { type: "action", id: "ACTIVATE", fallbackText: "Click Element" },
+    { type: "action", id: "ACTIVATE_NEW_TAB_BACKGROUND", fallbackText: "Click New Tab Background" },
+    { type: "action", id: "HIGHLIGHT", fallbackText: "Text Select" },
+    { type: "action", id: "TAB_HISTORY", fallbackText: "History" },
+    { type: "action", id: "TOGGLE_KEYBOARD_HELP", fallbackText: "KB Reference" },
+    { type: "action", id: "OMNIBOX", fallbackText: "Omnibox" },
+    { type: "action", id: "TOP_SITES", fallbackText: "Top Sites" },
+    { type: "action", id: "OPEN_SETTINGS_POPOVER", fallbackText: "Settings" },
+    { type: "special", text: "Enter", className: "key key-enter" }
+  ],
+  [
+    { type: "special", text: "Shift", className: "key key-shift" },
+    { type: "action", id: "PAGE_TOP", fallbackText: "Scroll To Top" },
+    { type: "action", id: "PAGE_BOTTOM", fallbackText: "Scroll To Bottom" },
+    { type: "action", id: "PAGE_UP_INSTANT", fallbackText: "Page Up Fast" },
+    { type: "action", id: "PAGE_DOWN_INSTANT", fallbackText: "Page Down Fast" },
+    { type: "action", id: "ACTIVATE_NEW_TAB", fallbackText: "Click New Tab" },
+    { type: "action", id: "SCROLL_LINE", fallbackText: "Scroll Line" },
+    { type: "action", id: "OPEN_MEDIA_LIBRARY", fallbackText: "Media Library" },
+    { type: "key", text: "," },
+    { type: "key", text: "." },
+    { type: "key", text: "/" },
+    { type: "special", text: "Shift", className: "key key-shift" }
+  ]
+]);
+var KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
+  [
+    { type: "special", text: "Tab", className: "key key-tab" },
+    { type: "key", text: "Q" },
+    { type: "action", id: "PREVIEW_LINK_POPOVER", fallbackText: "Preview Link" },
+    // W
+    { type: "action", id: "COPY_HOVERED_IMAGE", fallbackText: "Copy Image" },
+    // E
+    { type: "action", id: "RECTANGLE_HIGHLIGHT", fallbackText: "Rectangle Select" },
+    // R
+    { type: "action", id: "SCROLL_LINE", fallbackText: "Scroll Line" },
+    // T
+    { type: "action", id: "NEW_TAB", fallbackText: "New Tab" },
+    // Y
+    { type: "action", id: "FORWARD", fallbackText: "Go Forward" },
+    // U
+    { type: "action", id: "OPEN_POPOVER", fallbackText: "Open Popover" },
+    // I
+    { type: "action", id: "TAB_RIGHT", fallbackText: "Tab Right" },
+    // O
+    { type: "action", id: "TAB_LEFT", fallbackText: "Tab Left" },
+    // P
+    { type: "key", text: "[" },
+    { type: "key", text: "]" },
+    { type: "action", id: "DELETE", fallbackText: "Delete Mode", className: "key key-backspace" }
+  ],
+  [
+    { type: "special", text: "Caps", className: "key key-caps" },
+    { type: "action", id: "TOP_SITES", fallbackText: "Top Sites" },
+    // Utility keys on the left (to avoid colliding with right-hand cluster)
+    { type: "action", id: "OMNIBOX", fallbackText: "Omnibox" },
+    // S
+    { type: "action", id: "TOGGLE_KEYBOARD_HELP", fallbackText: "KB Reference" },
+    // D
+    { type: "action", id: "TAB_HISTORY", fallbackText: "History" },
+    // F
+    { type: "action", id: "HIGHLIGHT", fallbackText: "Text Select" },
+    // G
+    { type: "action", id: "ACTIVATE_NEW_TAB_BACKGROUND", fallbackText: "Click New Tab Background" },
+    // H
+    { type: "action", id: "ACTIVATE", fallbackText: "Click Element" },
+    // J
+    { type: "action", id: "BACK", fallbackText: "Go Back" },
+    // K
+    { type: "action", id: "BACK2", fallbackText: "Go Back" },
+    // L
+    { type: "action", id: "CLOSE_TAB", fallbackText: "Close Tab" },
+    // ;
+    { type: "action", id: "OPEN_SETTINGS_POPOVER", fallbackText: "Settings" },
+    // '
+    { type: "special", text: "Enter", className: "key key-enter" }
+  ],
+  [
+    { type: "special", text: "Shift", className: "key key-shift" },
+    { type: "key", text: "Z" },
+    { type: "key", text: "X" },
+    { type: "key", text: "C" },
+    { type: "key", text: "V" },
+    { type: "action", id: "PAGE_BOTTOM", fallbackText: "Scroll To Bottom" },
+    // B
+    { type: "action", id: "ACTIVATE_NEW_TAB", fallbackText: "Click New Tab" },
+    // N
+    { type: "action", id: "PAGE_DOWN_INSTANT", fallbackText: "Page Down Fast" },
+    // M
+    { type: "action", id: "PAGE_UP_INSTANT", fallbackText: "Page Up Fast" },
+    // ,
+    { type: "key", text: "." },
+    { type: "action", id: "PAGE_TOP", fallbackText: "Scroll To Top" },
+    // /
+    { type: "special", text: "Shift", className: "key key-shift" }
+  ]
+]);
+var BUILTIN_KEYBOARD_LAYOUTS = Object.freeze({
+  "browsing-right": Object.freeze({
+    id: "browsing-right",
+    label: "Browsing: right-handed",
+    description: "Full browsing layout. Mouse: right hand. Shortcuts primarily on the left.",
+    assignments: ASSIGNMENTS_BROWSING_RIGHT,
+    keyboardLayout: KEYBOARD_UI_LAYOUT_RIGHT
+  }),
+  "browsing-left": Object.freeze({
+    id: "browsing-left",
+    label: "Browsing: left-handed",
+    description: "Full browsing layout. Mouse: left hand. Shortcuts primarily on the right.",
+    assignments: ASSIGNMENTS_BROWSING_LEFT,
+    keyboardLayout: KEYBOARD_UI_LAYOUT_LEFT
+  }),
+  "basic-navigation-right": Object.freeze({
+    id: "basic-navigation-right",
+    label: "Basic Navigation: right-handed",
+    description: "Page scroll, click, tab switch, back/forward only.",
+    assignments: ASSIGNMENTS_BASIC_NAVIGATION_RIGHT,
+    keyboardLayout: projectKeyboardUiLayout(
+      KEYBOARD_UI_LAYOUT_RIGHT,
+      { ...ASSIGNMENTS_BROWSING_RIGHT, ...SYSTEM_LAYER_ASSIGNMENTS_RIGHT },
+      BASIC_NAVIGATION_UI_ACTION_IDS
+    )
+  }),
+  "basic-navigation-left": Object.freeze({
+    id: "basic-navigation-left",
+    label: "Basic Navigation: left-handed",
+    description: "Page scroll, click, tab switch, back/forward only.",
+    assignments: ASSIGNMENTS_BASIC_NAVIGATION_LEFT,
+    keyboardLayout: projectKeyboardUiLayout(
+      KEYBOARD_UI_LAYOUT_LEFT,
+      { ...ASSIGNMENTS_BROWSING_LEFT, ...SYSTEM_LAYER_ASSIGNMENTS_LEFT },
+      BASIC_NAVIGATION_UI_ACTION_IDS
+    )
+  }),
+  "click-history-right": Object.freeze({
+    id: "click-history-right",
+    label: "Navigation: right-handed",
+    description: "Click element, go back, and go forward only.",
+    assignments: ASSIGNMENTS_CLICK_HISTORY_RIGHT,
+    keyboardLayout: projectKeyboardUiLayout(
+      KEYBOARD_UI_LAYOUT_RIGHT,
+      { ...ASSIGNMENTS_BROWSING_RIGHT, ...SYSTEM_LAYER_ASSIGNMENTS_RIGHT },
+      CLICK_HISTORY_UI_ACTION_IDS
+    )
+  }),
+  "click-history-left": Object.freeze({
+    id: "click-history-left",
+    label: "Navigation: left-handed",
+    description: "Click element, go back, and go forward only.",
+    assignments: ASSIGNMENTS_CLICK_HISTORY_LEFT,
+    keyboardLayout: projectKeyboardUiLayout(
+      KEYBOARD_UI_LAYOUT_LEFT,
+      { ...ASSIGNMENTS_BROWSING_LEFT, ...SYSTEM_LAYER_ASSIGNMENTS_LEFT },
+      CLICK_HISTORY_UI_ACTION_IDS
+    )
+  })
+});
+
+// src/config/constants.js
+var KEYBINDINGS = buildEffectiveKeybindings(DEFAULT_KEYBOARD_LAYOUT_ID, DEFAULT_KEYBOARD_HANDEDNESS);
+var SCROLL = Object.freeze({
+  /** Legacy large page step (popover parent→iframe PAGE_UP/DOWN path) */
+  PAGE_PX: 800,
+  /** C / V: smaller step (default = prior 400px × 1.25) */
+  HALF_PAGE_PX: 500,
+  /**
+   * Hold C / V: continuous rAF scroll speed (px/s). Instant per-frame deltas —
+   * not CSS smooth — so overlapping animations cannot jitter.
+   */
+  HOLD_PX_PER_SEC: 1400,
+  /**
+   * Delay before continuous rAF starts after the first keydown. Keeps a quick
+   * tap as a single configured step; holding past this (or first OS repeat)
+   * engages continuous motion.
+   */
+  HOLD_RAF_START_MS: 120,
+  /** Default CSS scroll-behavior for keyboard scrolling */
+  BEHAVIOR: "smooth",
+  /** Fade-in / fade-out duration for Scroll To Top / Bottom "Fade" jump style */
+  EDGE_JUMP_FADE_MS: 180,
+  /** Scroll Line: no scroll inside this radius from the origin dot */
+  LINE_DEADZONE_PX: 12,
+  /**
+   * Scroll Line: ease-in power. 1 = linear, 2 = quadratic (gentle near the
+   * dot, ramps harder toward the edge of the range).
+   */
+  LINE_CURVE_EXPONENT: 1.75,
+  /** Scroll Line: offset beyond the dead zone that maps to max speed */
+  LINE_CURVE_RANGE_PX: 360,
+  /** Scroll Line: cap on each axis */
+  LINE_MAX_PX_PER_SEC: 2400
+});
+var INSPECTOR_KIND = Object.freeze({
+  DELETE: "delete",
+  COLS: "cols",
+  /** Cumulative element pick for Rectangle Select (Y) alternate mode */
+  RECTANGLE_PICK: "rectangle_pick"
+});
+var ELEMENT_SELECT_TAGS = Object.freeze([
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "p",
+  "li",
+  "blockquote",
+  "pre",
+  "code",
+  "article",
+  "section",
+  "aside",
+  "header",
+  "footer",
+  "main",
+  "nav",
+  "a",
+  "img",
+  "figure",
+  "figcaption",
+  "picture",
+  "video",
+  "audio",
+  "svg",
+  "td",
+  "th",
+  "dt",
+  "dd",
+  "caption",
+  "summary",
+  "label"
+]);
+var CURSOR_MODE = Object.freeze({
+  NO_CUSTOM_CURSORS: "NO-CUSTOM-CURSORS",
+  CUSTOM_CURSORS: "CUSTOM-CURSORS"
+});
+
+// themes/schema.js
+var DEFAULT_THEME_ID = "dark-pro";
+var THEME_IDS = Object.freeze([
+  "dark-pro",
+  "gray-metal-pro",
+  "gx-er"
+]);
+var THEME_META = Object.freeze({
+  "dark-pro": { name: "Dark Pro" },
+  "gray-metal-pro": { name: "Gray Metal Pro" },
+  "gx-er": { name: "GX-er" }
+});
+var PRO_SANS = "Helvetica, Arial, sans-serif";
+var PRO_MONO = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+var TYPE_ROLES = Object.freeze([
+  "display",
+  "heading",
+  "subhead",
+  "body",
+  "ui",
+  "kbd",
+  "mono",
+  "caption"
+]);
+function createProTypeTokens(stacks = {}) {
+  return {
+    stacks: {
+      display: stacks.display || PRO_SANS,
+      heading: stacks.heading || PRO_SANS,
+      subhead: stacks.subhead || PRO_SANS,
+      body: stacks.body || PRO_SANS,
+      ui: stacks.ui || PRO_SANS,
+      kbd: stacks.kbd || PRO_MONO,
+      mono: stacks.mono || PRO_MONO,
+      caption: stacks.caption || PRO_SANS
+    },
+    size: {
+      display: "22px",
+      h1: "22px",
+      h2: "16px",
+      h3: "14px",
+      body: "13px",
+      ui: "12px",
+      kbd: "10px",
+      caption: "11px",
+      code: "12px"
+    },
+    scale: "1.25",
+    weight: {
+      regular: "400",
+      medium: "500",
+      semibold: "600",
+      bold: "700"
+    },
+    letterSpacing: {
+      display: "0.02em",
+      titlebar: "0.02em",
+      ui: "normal"
+    },
+    textTransform: {
+      display: "none",
+      titlebar: "none"
+    },
+    lineHeight: {
+      tight: "1.2",
+      body: "1.35",
+      prose: "1.55"
+    }
+  };
+}
+function createTitlebarChromeTokens(overrides = {}) {
+  return {
+    titleWeight: "600",
+    iconDisplay: "none",
+    iconSize: "12px",
+    kbdTransform: "none",
+    kbdTracking: "0.02em",
+    ...overrides
+  };
+}
+function createProRadiusTokens(overrides = {}) {
+  return {
+    none: "0px",
+    xs: "2px",
+    sm: "3px",
+    md: "6px",
+    lg: "10px",
+    pill: "999px",
+    panel: "3px",
+    btn: "2px",
+    field: "2px",
+    key: "7px",
+    plate: "14px",
+    ...overrides
+  };
+}
+var KEY_CLIP_NONE = "none";
+var KEY_SHADE_BEVEL = "linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 18%, transparent 42%)";
+function createKeyChromeTokens(overrides = {}) {
+  return {
+    shading: "bevel",
+    border: "1px solid rgba(0, 0, 0, 0.4)",
+    cornerMode: "radius",
+    cutSize: "4px",
+    ...overrides
+  };
+}
+function keyClipPath(cutSize) {
+  const s = cutSize || "4px";
+  return `polygon(${s} 0, calc(100% - ${s}) 0, 100% ${s}, 100% calc(100% - ${s}), calc(100% - ${s}) 100%, ${s} 100%, 0 calc(100% - ${s}), 0 ${s})`;
+}
+function themeToCssVars(theme) {
+  const t = theme && typeof theme === "object" ? theme : {};
+  const type2 = t.type || createProTypeTokens();
+  const stacks = type2.stacks || {};
+  const size = type2.size || {};
+  const weight = type2.weight || {};
+  const ls = type2.letterSpacing || {};
+  const tf = type2.textTransform || {};
+  const lh = type2.lineHeight || {};
+  const radius = t.radius || createProRadiusTokens();
+  const color4 = t.color || {};
+  const effect = t.effect || {};
+  const shape = t.shape || { cornerMode: "radius", cutSize: "0px" };
+  const keys = t.keys || createKeyChromeTokens();
+  const keyCornerCut = (keys.cornerMode || "radius") === "cut";
+  const icons = t.icons || {};
+  const iconColor = icons.color || {};
+  const vars = {
+    "--kp-theme-id": String(t.id || DEFAULT_THEME_ID),
+    "--kp-font-display": stacks.display || PRO_SANS,
+    "--kp-font-heading": stacks.heading || PRO_SANS,
+    "--kp-font-subhead": stacks.subhead || PRO_SANS,
+    "--kp-font-body": stacks.body || PRO_SANS,
+    "--kp-font-ui": stacks.ui || PRO_SANS,
+    "--kp-font-kbd": stacks.kbd || PRO_MONO,
+    "--kp-font-mono": stacks.mono || PRO_MONO,
+    "--kp-font-caption": stacks.caption || PRO_SANS,
+    "--kp-type-scale": String(type2.scale || "1"),
+    "--kp-type-display-size": size.display || "22px",
+    "--kp-type-h1-size": size.h1 || "22px",
+    "--kp-type-h2-size": size.h2 || "16px",
+    "--kp-type-h3-size": size.h3 || "14px",
+    "--kp-type-body-size": size.body || "13px",
+    "--kp-type-ui-size": size.ui || "12px",
+    "--kp-type-kbd-size": size.kbd || "10px",
+    "--kp-type-caption-size": size.caption || "11px",
+    "--kp-type-code-size": size.code || "12px",
+    "--kp-type-weight-regular": weight.regular || "400",
+    "--kp-type-weight-medium": weight.medium || "500",
+    "--kp-type-weight-semibold": weight.semibold || "600",
+    "--kp-type-weight-bold": weight.bold || "700",
+    "--kp-type-tracking-display": ls.display || "0.02em",
+    "--kp-type-tracking-titlebar": ls.titlebar || "0.02em",
+    "--kp-type-tracking-ui": ls.ui || "normal",
+    "--kp-type-transform-display": tf.display || "none",
+    "--kp-type-transform-titlebar": tf.titlebar || "none",
+    "--kp-titlebar-title-weight": t.titlebar && t.titlebar.titleWeight || "600",
+    "--kp-titlebar-icon-display": t.titlebar && t.titlebar.iconDisplay || "none",
+    "--kp-titlebar-icon-size": t.titlebar && t.titlebar.iconSize || "12px",
+    "--kp-kbd-transform": t.titlebar && t.titlebar.kbdTransform || "none",
+    "--kp-kbd-tracking": t.titlebar && t.titlebar.kbdTracking || "0.02em",
+    "--kp-type-leading-tight": lh.tight || "1.2",
+    "--kp-type-leading-body": lh.body || "1.35",
+    "--kp-type-leading-prose": lh.prose || "1.55",
+    "--kp-radius-none": radius.none || "0px",
+    "--kp-radius-xs": radius.xs || "2px",
+    "--kp-radius-sm": radius.sm || "3px",
+    "--kp-radius-md": radius.md || "6px",
+    "--kp-radius-lg": radius.lg || "10px",
+    "--kp-radius-pill": radius.pill || "999px",
+    "--kp-radius-panel": radius.panel || "3px",
+    "--kp-radius-btn": radius.btn || "2px",
+    "--kp-radius-field": radius.field || "2px",
+    "--kp-radius-key": radius.key || "7px",
+    "--kp-radius-plate": radius.plate || "14px",
+    "--kp-color-bg": color4.bg || "#0f0f10",
+    "--kp-color-panel": color4.panel || "#232323",
+    "--kp-color-panel-edge": color4.panelEdge || "#3a3a3a",
+    "--kp-color-panel-edge-dark": color4.panelEdgeDark || "#111",
+    "--kp-color-title-top": color4.titleTop || "#4c4c4c",
+    "--kp-color-title-mid": color4.titleMid || "#353535",
+    "--kp-color-title-bot": color4.titleBot || "#252525",
+    "--kp-color-btn-top": color4.btnTop || "#4a4a4a",
+    "--kp-color-btn-mid": color4.btnMid || "#343434",
+    "--kp-color-btn-bot": color4.btnBot || "#2a2a2a",
+    "--kp-color-lit-top": color4.litTop || "#5a7a9a",
+    "--kp-color-lit-bot": color4.litBot || "#3a5570",
+    "--kp-color-lit-edge": color4.litEdge || "#2a4a66",
+    "--kp-color-accent": color4.accent || "#4a90c8",
+    "--kp-color-accent-2": color4.accent2 || color4.accent || "#4a90c8",
+    "--kp-color-fg": color4.fg || "#ddd",
+    "--kp-color-fg-dim": color4.fgDim || "#aaa",
+    "--kp-color-fg-mute": color4.fgMute || "#777",
+    "--kp-color-field-bg": color4.fieldBg || "#141414",
+    "--kp-color-field-edge": color4.fieldEdge || "#0a0a0a",
+    "--kp-color-field-inset": color4.fieldInsetTop || "#333",
+    "--kp-color-hover": color4.hover || "rgba(255,255,255,0.06)",
+    "--kp-color-selected": color4.selected || "rgba(74,144,200,0.22)",
+    "--kp-color-selected-text": color4.selectedText || "#e8f0f8",
+    "--kp-color-focus-ring": color4.focusRing || "inset 0 0 0 1px rgba(74,144,200,0.55)",
+    "--kp-color-kbd-fg": color4.kbdColor || color4.fg || "#ddd",
+    "--kp-titlebar-bg": (() => {
+      const titleGrad = `linear-gradient(180deg, ${color4.titleTop || "#4c4c4c"} 0%, ${color4.titleMid || "#353535"} 45%, ${color4.titleBot || "#252525"} 100%)`;
+      const baked = String(effect.titlebarBg || "");
+      const idx = baked.lastIndexOf("linear-gradient(180deg");
+      return idx > 0 ? `${baked.slice(0, idx)}${titleGrad}` : titleGrad;
+    })(),
+    "--kp-titlebar-border": effect.titlebarBorder || `1px solid ${color4.panelEdgeDark || "#111"}`,
+    "--kp-titlebar-shadow": effect.titlebarShadow || `0 1px 0 ${color4.panelEdge || "#3a3a3a"}`,
+    "--kp-panel-bg": color4.panel || effect.panelBg || "#232323",
+    "--kp-panel-border": effect.panelBorder || `1px solid ${color4.panelEdgeDark || "#111"}`,
+    "--kp-panel-shadow": effect.panelShadow || `0 0 0 1px ${color4.panelEdge || "#3a3a3a"} inset, 0 0 0 1px rgba(190, 190, 190, 0.52), 0 0 10px rgba(255, 255, 255, 0.14), 0 16px 40px rgba(0,0,0,0.55)`,
+    "--kp-btn-bg": effect.btnBg || `linear-gradient(180deg, ${color4.btnTop || "#4a4a4a"} 0%, ${color4.btnMid || "#343434"} 50%, ${color4.btnBot || "#2a2a2a"} 100%)`,
+    "--kp-btn-border": effect.btnBorder || `1px solid ${color4.panelEdgeDark || "#111"}`,
+    "--kp-btn-lit-bg": effect.btnLitBg || `linear-gradient(180deg, ${color4.litTop || "#5a7a9a"} 0%, ${color4.litBot || "#3a5570"} 100%)`,
+    "--kp-btn-lit-border": effect.btnLitBorder || `1px solid ${color4.litEdge || "#2a4a66"}`,
+    "--kp-field-bg": effect.fieldBg || (color4.fieldBg || "#141414"),
+    "--kp-field-border": effect.fieldBorder || `1px solid ${color4.fieldEdge || "#0a0a0a"}`,
+    "--kp-field-shadow": effect.fieldShadow || `inset 0 1px 0 ${color4.fieldInsetTop || "#333"}`,
+    "--kp-kbd-bg": effect.kbdBg || (color4.fieldBg || "#141414"),
+    "--kp-kbd-border": effect.kbdBorder || `1px solid ${color4.panelEdgeDark || "#111"}`,
+    "--kp-kbd-shadow": effect.kbdShadow || "none",
+    "--kp-backdrop-bg": effect.backdropBg || "rgba(0,0,0,0.35)",
+    "--kp-backdrop-blur": effect.backdropBlur || "blur(6px)",
+    "--kp-hatch-edit": effect.hatchEdit || "repeating-linear-gradient(-45deg, rgba(180, 200, 220, 0.08) 0px, rgba(180, 200, 220, 0.08) 1px, transparent 1px, transparent 7px)",
+    "--kp-hatch-edit-titlebar-bg": effect.hatchEditTitlebarBg || "linear-gradient(180deg, #646464 0%, #4a4a4a 45%, #383838 100%)",
+    "--kp-hatch-edit-body-bg": effect.hatchEditBodyBg || "#1a1c20",
+    "--kp-scrollbar-thumb": color4.scrollbarThumb || "#4a4a4a",
+    "--kp-scrollbar-thumb-hover": color4.scrollbarThumbHover || "#5c5c5c",
+    "--kp-scrollbar-track": color4.scrollbarTrack || (color4.fieldBg || "#141414"),
+    "--kp-corner-mode": shape.cornerMode || "radius",
+    "--kp-cut-size": shape.cutSize || "0px",
+    "--kp-key-shading": keys.shading || "bevel",
+    "--kp-key-border": keys.border || "1px solid rgba(0, 0, 0, 0.4)",
+    "--kp-key-corner-mode": keys.cornerMode || "radius",
+    "--kp-key-cut-size": keys.cutSize || "4px",
+    "--kp-key-clip": keyCornerCut ? keyClipPath(keys.cutSize || "4px") : KEY_CLIP_NONE,
+    "--kp-key-effective-radius": keyCornerCut ? "0px" : radius.key || "7px",
+    "--kp-key-sheen-opacity": (keys.shading || "bevel") === "flat" ? "0" : "1",
+    "--kp-key-shade-layer": (keys.shading || "bevel") === "flat" ? "transparent" : KEY_SHADE_BEVEL,
+    "--kp-icon-chrome": iconColor.chrome || (color4.fg || "#ddd"),
+    "--kp-icon-keycap": iconColor.keycap || (color4.fg || "#0c1018"),
+    "--kp-icon-accent": iconColor.accent || (color4.accent || "#4a90c8"),
+    "--kp-key-icon": iconColor.keycap || "#0c1018"
+  };
+  return vars;
+}
+function cssVarsToBlock(vars, selector = ":host, :root, [data-kp-theme]") {
+  const lines = Object.entries(vars || {}).map(([k, v]) => `  ${k}: ${v};`);
+  return `${selector} {
+${lines.join("\n")}
+}`;
+}
+function getTitlebarChromeCss() {
+  return `
+.kp-titlebar-icon {
+  display: var(--kp-titlebar-icon-display, none);
+  width: var(--kp-titlebar-icon-size, 12px);
+  height: var(--kp-titlebar-icon-size, 12px);
+  flex: 0 0 auto;
+  background-color: var(--kp-icon-chrome, currentColor);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+[data-kp-titlebar-shortcut],
+.kp-titlebar-kbd {
+  font-family: var(--kp-font-kbd, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  font-size: var(--kp-type-kbd-size, 10px);
+  font-weight: var(--kp-type-weight-regular, 400);
+  line-height: 1.2;
+  text-transform: var(--kp-kbd-transform, none);
+  letter-spacing: var(--kp-kbd-tracking, 0.02em);
+  padding: 1px 6px;
+  border: var(--kp-kbd-border, 1px solid #111);
+  border-radius: var(--kp-radius-btn, 2px);
+  background: var(--kp-kbd-bg, #141414);
+  color: var(--kp-color-kbd-fg, #ddd);
+  box-shadow: var(--kp-kbd-shadow, none);
+  box-sizing: border-box;
+}
+.kpv2-popover-titlebar,
+[data-kp-popover-titlebar],
+[data-kp-floating-keyboard-titlebar],
+.kp-cfg-titlebar,
+.kp-action-config-panel__titlebar,
+.kp-procedure-result__titlebar,
+.kp-practice-popover__header {
+  letter-spacing: var(--kp-type-tracking-titlebar, 0.02em);
+  text-transform: var(--kp-type-transform-titlebar, none);
+}
+.kpv2-popover-titlebar-title,
+[data-kp-floating-keyboard-title],
+.kp-cfg-title,
+.kp-action-config-panel__title,
+.kp-procedure-result__title,
+.kp-practice-popover__title {
+  font-weight: var(--kp-titlebar-title-weight, 600);
+  letter-spacing: var(--kp-type-tracking-titlebar, 0.02em);
+  text-transform: var(--kp-type-transform-titlebar, none);
+  color: var(--kp-color-fg, inherit);
+}
+`.trim();
+}
+function getSelectMenuCss() {
+  return `
+.kp-select {
+  display: inline-flex;
+  align-items: stretch;
+  flex: 0 0 auto;
+  min-width: 0;
+  box-sizing: border-box;
+  font-family: var(--kp-font-ui, Helvetica, Arial, sans-serif);
+}
+.kp-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 2px 6px;
+  border: var(--kp-field-border, 1px solid #0a0a0a);
+  border-radius: var(--kp-radius-field, 2px);
+  background: var(--kp-field-bg, #141414);
+  color: var(--kp-color-fg, #ddd);
+  box-shadow: var(--kp-field-shadow, none);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  box-sizing: border-box;
+}
+.kp-select--titlebar .kp-select-trigger {
+  width: 190px;
+  height: 22px;
+  margin-left: 6px;
+}
+.kp-select-trigger:hover {
+  background: color-mix(in srgb, var(--kp-color-hover, rgba(255,255,255,0.08)) 70%, var(--kp-field-bg, #141414));
+}
+.kp-select-trigger:focus-visible {
+  outline: 1px solid var(--kp-color-focus-ring, var(--kp-color-accent, #4a90c8));
+  outline-offset: 1px;
+}
+.kp-select.is-open .kp-select-trigger,
+.kp-select-trigger[aria-expanded="true"] {
+  border-color: var(--kp-color-accent, #4a90c8);
+}
+.kp-select-trigger-icon,
+.kp-select-item-icon {
+  display: block;
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  background-color: var(--kp-icon-chrome, currentColor);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+.kp-select-trigger-label,
+.kp-select-item-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kp-select-chevron {
+  width: 0;
+  height: 0;
+  margin-left: 2px;
+  border-left: 3.5px solid transparent;
+  border-right: 3.5px solid transparent;
+  border-top: 4px solid currentColor;
+  opacity: 0.65;
+  flex: 0 0 auto;
+}
+.kp-select-menu {
+  position: fixed;
+  z-index: 2147483646;
+  margin: 0;
+  padding: 4px 0;
+  min-width: 190px;
+  max-width: min(360px, calc(100vw - 16px));
+  max-height: min(320px, calc(100vh - 16px));
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+  border: var(--kp-panel-border, 1px solid #111);
+  border-radius: var(--kp-radius-panel, 3px);
+  background: var(--kp-panel-bg, #232323);
+  box-shadow: var(--kp-panel-shadow, 0 8px 24px rgba(0,0,0,0.45));
+  color: var(--kp-color-fg, #ddd);
+  font-family: var(--kp-font-ui, Helvetica, Arial, sans-serif);
+  font-size: 12px;
+  line-height: 1.3;
+}
+.kp-select-menu[data-kp-select-fallback="true"][hidden] {
+  display: none !important;
+}
+.kp-select-group {
+  padding: 6px 10px 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--kp-color-fg-mute, #777);
+  pointer-events: none;
+  user-select: none;
+}
+.kp-select-separator {
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--kp-color-field-edge, #0a0a0a);
+  border: 0;
+  pointer-events: none;
+}
+.kp-select-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-sizing: border-box;
+  outline: none;
+}
+.kp-select-item:hover,
+.kp-select-item.is-active {
+  background: var(--kp-color-hover, rgba(255,255,255,0.08));
+  outline: 1px solid var(--kp-color-focus-ring, var(--kp-color-accent, #4a90c8));
+  outline-offset: -1px;
+}
+.kp-select-item[aria-selected="true"] {
+  background: var(--kp-color-selected, rgba(74, 144, 200, 0.28));
+  color: var(--kp-color-selected-text, var(--kp-color-fg, #ddd));
+}
+.kp-select-item .kp-titlebar-kbd {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+`.trim();
+}
+function getCutCornerCss() {
+  return `
+.kp-chrome-window {
+  overflow: hidden;
+}
+.kp-chrome-window:not([data-kp-corner="cut"]) {
+  border-radius: var(--kp-radius-panel, 3px);
+}
+[data-kp-corner="cut"],
+:host([data-kp-corner="cut"]),
+.kp-chrome-window[data-kp-corner="cut"] {
+  clip-path: polygon(
+    var(--kp-cut-size, 8px) 0,
+    calc(100% - var(--kp-cut-size, 8px)) 0,
+    100% var(--kp-cut-size, 8px),
+    100% calc(100% - var(--kp-cut-size, 8px)),
+    calc(100% - var(--kp-cut-size, 8px)) 100%,
+    var(--kp-cut-size, 8px) 100%,
+    0 calc(100% - var(--kp-cut-size, 8px)),
+    0 var(--kp-cut-size, 8px)
+  );
+  border-radius: 0 !important;
+}
+`.trim();
+}
+function mergeTheme(base2, overrides) {
+  if (!overrides || typeof overrides !== "object") return base2;
+  const out = { ...base2 };
+  for (const [k, v] of Object.entries(overrides)) {
+    if (v && typeof v === "object" && !Array.isArray(v) && base2[k] && typeof base2[k] === "object" && !Array.isArray(base2[k])) {
+      out[k] = mergeTheme(base2[k], v);
+    } else if (v !== void 0) {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+function normalizeThemeId(raw) {
+  const id = typeof raw === "string" ? raw.trim() : "";
+  return THEME_IDS.includes(id) ? id : DEFAULT_THEME_ID;
+}
+
+// src/config/search-engines.js
+var SEARCH_ENGINE_META = Object.freeze({
+  brave: Object.freeze({
+    id: "brave",
+    label: "Brave",
+    homeUrl: "https://search.brave.com/",
+    searchUrlPrefix: "https://search.brave.com/search?q="
+  }),
+  google: Object.freeze({
+    id: "google",
+    label: "Google",
+    homeUrl: "https://www.google.com/",
+    searchUrlPrefix: "https://www.google.com/search?q="
+  }),
+  duckduckgo: Object.freeze({
+    id: "duckduckgo",
+    label: "DuckDuckGo",
+    homeUrl: "https://duckduckgo.com/",
+    searchUrlPrefix: "https://duckduckgo.com/?q="
+  })
+});
+var DEFAULT_SEARCH_ENGINE_ID = (
+  /** @type {SearchEngineId} */
+  "brave"
+);
+var LAUNCHER_SEARCH_SITES = Object.freeze([
+  Object.freeze({ title: "Google", url: "https://google.com", isDefault: true }),
+  Object.freeze({ title: "Bing", url: "https://bing.com", isDefault: true }),
+  Object.freeze({ title: "DuckDuckGo", url: "https://duckduckgo.com", isDefault: true }),
+  Object.freeze({ title: "Yahoo", url: "https://yahoo.com", isDefault: true }),
+  Object.freeze({ title: "Brave Search", url: "https://search.brave.com", isDefault: true }),
+  Object.freeze({ title: "Ecosia", url: "https://ecosia.org", isDefault: true }),
+  Object.freeze({ title: "Startpage", url: "https://startpage.com", isDefault: true }),
+  Object.freeze({ title: "Yandex", url: "https://yandex.com", isDefault: true })
+]);
+function normalizeSearchEngineId(raw) {
+  if (raw === "google" || raw === "duckduckgo" || raw === "brave") return raw;
+  return DEFAULT_SEARCH_ENGINE_ID;
+}
+
+// src/utils/storage.js
+function pickNewerStoredValue(syncVal, localVal) {
+  const syncAt = syncVal && typeof syncVal === "object" ? Number(syncVal._updatedAt) : 0;
+  const localAt = localVal && typeof localVal === "object" ? Number(localVal._updatedAt) : 0;
+  const syncTs = Number.isFinite(syncAt) ? syncAt : 0;
+  const localTs = Number.isFinite(localAt) ? localAt : 0;
+  if (syncTs && localTs) return localTs >= syncTs ? localVal : syncVal;
+  if (localTs && !syncTs) return localVal;
+  if (syncTs && !localTs) return syncVal;
+  return syncVal;
+}
+async function storageGetValue(key, defaultValue = void 0) {
+  if (!key || typeof key !== "string") return defaultValue;
+  let syncVal = void 0;
+  let syncHas = false;
+  try {
+    if (chrome?.storage?.sync?.get) {
+      const syncResult = await chrome.storage.sync.get([key]);
+      if (syncResult && Object.prototype.hasOwnProperty.call(syncResult, key) && syncResult[key] !== void 0) {
+        syncHas = true;
+        syncVal = /** @type {T} */
+        syncResult[key];
+      }
+    }
+  } catch {
+  }
+  let localVal = void 0;
+  let localHas = false;
+  try {
+    if (chrome?.storage?.local?.get) {
+      const localResult = await chrome.storage.local.get([key]);
+      if (localResult && Object.prototype.hasOwnProperty.call(localResult, key) && localResult[key] !== void 0) {
+        localHas = true;
+        localVal = /** @type {T} */
+        localResult[key];
+      }
+    }
+  } catch {
+  }
+  if (syncHas && localHas) return pickNewerStoredValue(syncVal, localVal);
+  if (syncHas) return syncVal;
+  if (localHas) return localVal;
+  return defaultValue;
+}
+
+// src/utils/platform.js
+function isMacPlatform() {
+  try {
+    const uaPlatform = navigator.userAgentData?.platform;
+    if (typeof uaPlatform === "string" && uaPlatform) {
+      return uaPlatform === "macOS";
+    }
+  } catch {
+  }
+  try {
+    const plat = String(navigator.platform || "");
+    const ua = String(navigator.userAgent || "");
+    return /^Mac/i.test(plat) || /Mac OS X/i.test(ua);
+  } catch {
+  }
+  return false;
+}
+
+// src/modules/settings-manager.js
+var SETTINGS_STORAGE_KEY = "kp_settings_v1";
+var TEXT_FOCUS_STYLE_IDS = Object.freeze(
+  /** @type {const} */
+  [
+    "left_edge",
+    "background_tint"
+  ]
+);
+var CLICK_EFFECT_IDS = Object.freeze(
+  /** @type {const} */
+  [
+    "flash",
+    "dash",
+    "marquee",
+    "scale",
+    "none"
+  ]
+);
+var DEFAULT_SETTINGS = Object.freeze({
+  themeId: DEFAULT_THEME_ID,
+  themeOverrides: Object.freeze({}),
+  // Last theme whose clickDefaults were written into clickMode/cursorMode.
+  // Empty means never synced (adopt the active theme's click defaults once).
+  clickModeThemeId: "",
+  searchEngine: DEFAULT_SEARCH_ENGINE_ID,
+  cursorMode: CURSOR_MODE.NO_CUSTOM_CURSORS,
+  // New model:
+  // - keyboardLayoutFamilyId + keyboardHandedness are the user-facing selection.
+  // - keyboardLayoutId is the resolved concrete implementation (kept for back-compat + early-inject).
+  keyboardLayoutFamilyId: DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID,
+  keyboardHandedness: DEFAULT_KEYBOARD_HANDEDNESS,
+  keyboardLayoutId: DEFAULT_KEYBOARD_LAYOUT_ID,
+  // Active layout selection for runtime + keyboard reference:
+  // - 'builtin' uses the current built-in family + handedness selection.
+  // - 'user:<layoutId>' uses a stored user layout (created/duplicated in Alt+C).
+  currentKeyboardLayoutId: "builtin",
+  // When true, the floating keyboard reference panel highlights keys on keydown/keyup.
+  keyboardReferenceKeyFeedback: true,
+  // When true, the floating keyboard reference panel includes the number row (1–0).
+  // Default is off to keep the panel compact.
+  keyboardReferenceShowNumberRow: false,
+  // When true, the floating keyboard reference panel is titlebar-only (body hidden).
+  keyboardReferenceCollapsed: false,
+  // When true, Top Sites remounts on each page while left open (Keyboard Reference-style).
+  topSitesPersistent: false,
+  // Actions Library hierarchical table: expanded group keys (top-level open by default;
+  // nested categories / parents start collapsed until the user opens them).
+  actionsLibraryTableExpanded: Object.freeze(["functions", "macros", "macroKeys"]),
+  // Floating Control Strip (upper-left): visibility + collapsed (On/Off-only) state.
+  controlStrip: Object.freeze({
+    visible: true,
+    collapsed: true
+  }),
+  // Dock / free positions for movable chrome (keyboard reference, control strip, …).
+  // Anchors re-resolve on resize; free left/top reclamps inside the viewport margin.
+  panelPositions: Object.freeze({
+    keyboardReference: Object.freeze({ anchor: "bottom-left" }),
+    controlStrip: Object.freeze({ anchor: "top-left" }),
+    keyboardLayoutConfig: Object.freeze({ anchor: "middle-right" }),
+    // Empty: first open stays viewport-centered until the user moves/resizes.
+    topSites: Object.freeze({})
+  }),
+  // Per-key action settings (Keyboard Reference mode switches / config params).
+  actionSettings: Object.freeze({
+    RECTANGLE_HIGHLIGHT: Object.freeze({
+      mode: "element",
+      parameters: Object.freeze({})
+    })
+  }),
+  clickMode: Object.freeze({
+    cursor: Object.freeze({
+      type: "crosshair",
+      // Cursor SVG stroke width. Slider range: 1–12.
+      lineWidth: 4,
+      // Cursor size in pixels. Default is half of previous (was ~30px, now 15px).
+      sizePixels: 10,
+      // Gap between center and crosshair bars in pixels. 0 = intersecting lines, >0 = separate bars.
+      gap: 6
+    }),
+    // Hover focus ring color (DOM-hover mode default is blue).
+    focusColor: "blue",
+    // When true, the focus rectangle can include a translucent fill (where applicable).
+    overlayFillEnabled: false,
+    // When true, draw a soft outer glow/shadow on the focus rectangle.
+    overlayShadowEnabled: false,
+    // Focus rectangle border thickness in px.
+    rectangleThickness: 3,
+    // F-key activation feedback on link-style targets (flash is the default).
+    clickEffect: "flash",
+    // When true, hovering a link glows matching green keys on the Keyboard Reference.
+    // Off by default (opt-in via Settings → Click Mode).
+    keyboardLinkHoverHints: false,
+    // Default skip DOM outline (A); use in-target (B) then body-fixed (C).
+    // Matches Shadow Root Debug “Auto B→C”.
+    paintStrategy: "BC",
+    // Outward ring padding (px). Strategy A uses this as preferred outline-offset;
+    // B/C expand their boxes by the same amount (A historically ~2px; B→C was 0).
+    focusPadding: 2
+  }),
+  textMode: Object.freeze({
+    cursorType: "t_square",
+    // When true, show both labels: "Active text field" + "Press ESC to close".
+    labelsEnabled: false,
+    // Stroke thickness in px for orange text-mode rectangles.
+    strokeThickness: 3,
+    // How the focused text field is styled while in text mode.
+    // left_edge: pulsating orange bar on the left inset edge (default).
+    // background_tint: full-field orange wash (legacy).
+    focusStyle: "left_edge",
+    // Width of the left-edge pulse bar in px (when focusStyle is left_edge).
+    leftEdgeWidth: 5
+  }),
+  scroll: Object.freeze({
+    // C / V scroll distance in pixels (default = prior 400 × 1.25).
+    halfPagePx: SCROLL.HALF_PAGE_PX,
+    // Animation speed for keyboard scrolling: smooth (animated) or instant (jump).
+    speed: SCROLL.BEHAVIOR === "smooth" ? "smooth" : "instant",
+    // Middle mouse button → Scroll Line Function (empty page only). On by default on Mac.
+    middleClickScrollLine: isMacPlatform(),
+    // Scroll Line: skip wide in-page overflow (carousels); keep square / taller boxes.
+    linePreferPortraitTargets: true
+  })
+});
+function normalizeSearchEngine(raw) {
+  return normalizeSearchEngineId(raw);
+}
+function normalizeCursorMode(raw) {
+  if (raw === CURSOR_MODE.NO_CUSTOM_CURSORS || raw === CURSOR_MODE.CUSTOM_CURSORS) return raw;
+  return DEFAULT_SETTINGS.cursorMode;
+}
+function normalizeThemeOverrides(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  return raw;
+}
+function normalizeBoolean(raw, fallback) {
+  if (raw === true || raw === false) return raw;
+  if (raw === "true") return true;
+  if (raw === "false") return false;
+  return !!fallback;
+}
+function normalizeCurrentKeyboardLayoutId(raw) {
+  const v = String(raw || "").trim();
+  if (!v) return DEFAULT_SETTINGS.currentKeyboardLayoutId;
+  if (v === "builtin") return "builtin";
+  if (v.startsWith("user:") && v.length > "user:".length) return v;
+  return DEFAULT_SETTINGS.currentKeyboardLayoutId;
+}
+function normalizeNumber(raw, fallback, min, max) {
+  const n = typeof raw === "number" ? raw : typeof raw === "string" ? Number(raw) : NaN;
+  const v = Number.isFinite(n) ? n : fallback;
+  const clamped = Math.min(Math.max(v, min), max);
+  return clamped;
+}
+function normalizeClickCursorType(raw) {
+  if (raw === "crosshair" || raw === "native_arrow" || raw === "native_pointer") return raw;
+  return DEFAULT_SETTINGS.clickMode.cursor.type;
+}
+function normalizeClickEffect(raw) {
+  if (raw === "flash" || raw === "dash" || raw === "marquee" || raw === "scale" || raw === "none") {
+    return raw;
+  }
+  return DEFAULT_SETTINGS.clickMode.clickEffect;
+}
+function normalizeTextCursorType(raw) {
+  if (raw === "t_square" || raw === "crosshair") return raw;
+  return DEFAULT_SETTINGS.textMode.cursorType;
+}
+function normalizeTextFocusStyle(raw) {
+  if (raw === "left_edge" || raw === "background_tint") return raw;
+  return DEFAULT_SETTINGS.textMode.focusStyle;
+}
+function normalizeFocusColor(raw) {
+  if (raw === "blue" || raw === "green") return raw;
+  return DEFAULT_SETTINGS.clickMode.focusColor;
+}
+function normalizePaintStrategy(raw) {
+  if (raw === "auto" || raw === "BC") return raw;
+  const upper = raw == null ? "" : String(raw).trim().toUpperCase();
+  if (upper === "B->C" || upper === "B\u2192C" || upper === "AUTO_BC" || upper === "AUTO-BC" || upper === "AUTO B->C" || upper === "AUTO B\u2192C") {
+    return "BC";
+  }
+  if (upper === "AUTO" || upper === "A->B->C" || upper === "A\u2192B\u2192C") {
+    return "auto";
+  }
+  return DEFAULT_SETTINGS.clickMode.paintStrategy;
+}
+function normalizeClickMode(raw) {
+  const stored = raw && typeof raw === "object" ? raw : {};
+  const storedCursor = stored.cursor && typeof stored.cursor === "object" ? stored.cursor : {};
+  return {
+    cursor: {
+      type: normalizeClickCursorType(storedCursor.type),
+      lineWidth: normalizeNumber(
+        storedCursor.lineWidth,
+        DEFAULT_SETTINGS.clickMode.cursor.lineWidth,
+        1,
+        12
+      ),
+      sizePixels: normalizeNumber(
+        storedCursor.sizePixels,
+        DEFAULT_SETTINGS.clickMode.cursor.sizePixels,
+        5,
+        60
+      ),
+      gap: normalizeNumber(
+        storedCursor.gap,
+        DEFAULT_SETTINGS.clickMode.cursor.gap,
+        0,
+        20
+      )
+    },
+    focusColor: normalizeFocusColor(stored.focusColor),
+    overlayFillEnabled: normalizeBoolean(
+      stored.overlayFillEnabled,
+      DEFAULT_SETTINGS.clickMode.overlayFillEnabled
+    ),
+    overlayShadowEnabled: normalizeBoolean(
+      stored.overlayShadowEnabled,
+      DEFAULT_SETTINGS.clickMode.overlayShadowEnabled
+    ),
+    rectangleThickness: normalizeNumber(
+      stored.rectangleThickness,
+      DEFAULT_SETTINGS.clickMode.rectangleThickness,
+      1,
+      16
+    ),
+    clickEffect: normalizeClickEffect(stored.clickEffect),
+    keyboardLinkHoverHints: normalizeBoolean(
+      stored.keyboardLinkHoverHints,
+      DEFAULT_SETTINGS.clickMode.keyboardLinkHoverHints
+    ),
+    paintStrategy: normalizePaintStrategy(stored.paintStrategy),
+    focusPadding: normalizeNumber(
+      stored.focusPadding,
+      DEFAULT_SETTINGS.clickMode.focusPadding,
+      0,
+      16
+    )
+  };
+}
+function normalizeTextMode(raw) {
+  const stored = raw && typeof raw === "object" ? raw : {};
+  return {
+    cursorType: normalizeTextCursorType(stored.cursorType),
+    labelsEnabled: normalizeBoolean(stored.labelsEnabled, DEFAULT_SETTINGS.textMode.labelsEnabled),
+    strokeThickness: normalizeNumber(
+      stored.strokeThickness,
+      DEFAULT_SETTINGS.textMode.strokeThickness,
+      1,
+      16
+    ),
+    focusStyle: normalizeTextFocusStyle(stored.focusStyle),
+    leftEdgeWidth: normalizeNumber(
+      stored.leftEdgeWidth,
+      DEFAULT_SETTINGS.textMode.leftEdgeWidth,
+      1,
+      24
+    )
+  };
+}
+function normalizeScrollSpeed(raw) {
+  if (raw === "smooth" || raw === "instant") return raw;
+  if (raw === "auto") return "instant";
+  return DEFAULT_SETTINGS.scroll.speed;
+}
+function normalizeScroll(raw) {
+  const stored = raw && typeof raw === "object" ? raw : {};
+  const middleClickDefault = DEFAULT_SETTINGS.scroll.middleClickScrollLine;
+  return {
+    halfPagePx: normalizeNumber(
+      stored.halfPagePx,
+      DEFAULT_SETTINGS.scroll.halfPagePx,
+      50,
+      2e3
+    ),
+    speed: normalizeScrollSpeed(stored.speed),
+    // Missing key → platform default (Mac on, others off). Explicit boolean is honored on any OS.
+    middleClickScrollLine: normalizeBoolean(stored.middleClickScrollLine, middleClickDefault),
+    linePreferPortraitTargets: normalizeBoolean(
+      stored.linePreferPortraitTargets,
+      DEFAULT_SETTINGS.scroll.linePreferPortraitTargets
+    )
+  };
+}
+function normalizeControlStrip(raw) {
+  const stored = raw && typeof raw === "object" ? raw : {};
+  return {
+    visible: normalizeBoolean(stored.visible, DEFAULT_SETTINGS.controlStrip.visible),
+    collapsed: normalizeBoolean(stored.collapsed, DEFAULT_SETTINGS.controlStrip.collapsed)
+  };
+}
+var PANEL_ANCHOR_IDS = /* @__PURE__ */ new Set([
+  "top-left",
+  "top-center",
+  "top-right",
+  "middle-left",
+  "middle-right",
+  "bottom-left",
+  "bottom-center",
+  "bottom-right"
+]);
+function normalizePanelPositionEntry(raw, fallback) {
+  const fb = fallback && typeof fallback === "object" ? fallback : {};
+  if (!raw || typeof raw !== "object") {
+    return {
+      left: Number.isFinite(fb.left) ? fb.left : void 0,
+      top: Number.isFinite(fb.top) ? fb.top : void 0,
+      anchor: typeof fb.anchor === "string" ? fb.anchor : fb.anchor === null ? null : void 0
+    };
+  }
+  const out = {};
+  const left = typeof raw.left === "number" ? raw.left : typeof raw.left === "string" ? Number(raw.left) : NaN;
+  const top = typeof raw.top === "number" ? raw.top : typeof raw.top === "string" ? Number(raw.top) : NaN;
+  const width = typeof raw.width === "number" ? raw.width : typeof raw.width === "string" ? Number(raw.width) : NaN;
+  const height = typeof raw.height === "number" ? raw.height : typeof raw.height === "string" ? Number(raw.height) : NaN;
+  if (Number.isFinite(left)) out.left = left;
+  if (Number.isFinite(top)) out.top = top;
+  if (Number.isFinite(width) && width > 0) out.width = width;
+  if (Number.isFinite(height) && height > 0) out.height = height;
+  if (raw.anchor === null) {
+    out.anchor = null;
+  } else if (typeof raw.anchor === "string" && PANEL_ANCHOR_IDS.has(raw.anchor.trim())) {
+    out.anchor = raw.anchor.trim();
+  } else if (typeof fb.anchor === "string" && !Number.isFinite(left) && !Number.isFinite(top)) {
+    out.anchor = fb.anchor;
+  }
+  if (out.left === void 0 && out.top === void 0 && out.anchor === void 0) {
+    return {
+      left: Number.isFinite(fb.left) ? fb.left : void 0,
+      top: Number.isFinite(fb.top) ? fb.top : void 0,
+      anchor: typeof fb.anchor === "string" ? fb.anchor : fb.anchor === null ? null : void 0
+    };
+  }
+  return out;
+}
+function normalizePanelPositions(raw) {
+  const stored = raw && typeof raw === "object" ? raw : {};
+  return {
+    keyboardReference: normalizePanelPositionEntry(
+      stored.keyboardReference,
+      DEFAULT_SETTINGS.panelPositions.keyboardReference
+    ),
+    controlStrip: normalizePanelPositionEntry(
+      stored.controlStrip,
+      DEFAULT_SETTINGS.panelPositions.controlStrip
+    ),
+    keyboardLayoutConfig: normalizePanelPositionEntry(
+      stored.keyboardLayoutConfig,
+      DEFAULT_SETTINGS.panelPositions.keyboardLayoutConfig
+    ),
+    topSites: normalizePanelPositionEntry(
+      stored.topSites,
+      DEFAULT_SETTINGS.panelPositions.topSites
+    )
+  };
+}
+function normalizeStringIdList(raw, fallback) {
+  const fb = Array.isArray(fallback) ? [...fallback] : [];
+  if (!Array.isArray(raw)) return fb;
+  const out = [];
+  const seen = /* @__PURE__ */ new Set();
+  for (const v of raw) {
+    if (typeof v !== "string") continue;
+    const id = v.trim();
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+  }
+  return out;
+}
+function normalizeActionsLibraryTableExpanded(raw) {
+  if (!Array.isArray(raw)) {
+    return [...DEFAULT_SETTINGS.actionsLibraryTableExpanded];
+  }
+  return normalizeStringIdList(raw, DEFAULT_SETTINGS.actionsLibraryTableExpanded);
+}
+function normalizeActionSettings(raw) {
+  const defaults = DEFAULT_SETTINGS.actionSettings || {};
+  const stored = raw && typeof raw === "object" ? raw : {};
+  const out = {};
+  const keys = /* @__PURE__ */ new Set([...Object.keys(defaults), ...Object.keys(stored)]);
+  for (const actionId of keys) {
+    const fb = defaults[actionId] && typeof defaults[actionId] === "object" ? defaults[actionId] : {};
+    const entry = stored[actionId] && typeof stored[actionId] === "object" ? stored[actionId] : {};
+    const mode = typeof entry.mode === "string" && entry.mode ? entry.mode : typeof fb.mode === "string" ? fb.mode : void 0;
+    const parameters = {
+      ...fb.parameters && typeof fb.parameters === "object" ? fb.parameters : {},
+      ...entry.parameters && typeof entry.parameters === "object" ? entry.parameters : {}
+    };
+    out[actionId] = { mode, parameters };
+  }
+  return out;
+}
+async function getSettings() {
+  try {
+    let stored = await storageGetValue(SETTINGS_STORAGE_KEY, null);
+    if (!stored || typeof stored !== "object") stored = {};
+    let familyId = normalizeKeyboardLayoutFamilyId(stored?.keyboardLayoutFamilyId);
+    let handedness = normalizeKeyboardHandedness(stored?.keyboardHandedness);
+    const hasNewFields = Object.prototype.hasOwnProperty.call(stored || {}, "keyboardLayoutFamilyId") || Object.prototype.hasOwnProperty.call(stored || {}, "keyboardHandedness");
+    if (!hasNewFields) {
+      const inferred = inferFamilyAndHandednessFromLayoutId(stored?.keyboardLayoutId);
+      familyId = normalizeKeyboardLayoutFamilyId(inferred.familyId);
+      handedness = normalizeKeyboardHandedness(inferred.handedness);
+    }
+    const resolvedLayoutId = resolveKeyboardLayoutId({ familyId, handedness });
+    return {
+      ...DEFAULT_SETTINGS,
+      ...stored,
+      themeId: normalizeThemeId(stored?.themeId),
+      themeOverrides: normalizeThemeOverrides(stored?.themeOverrides),
+      clickModeThemeId: typeof stored?.clickModeThemeId === "string" && stored.clickModeThemeId.trim() ? normalizeThemeId(stored.clickModeThemeId) : "",
+      searchEngine: normalizeSearchEngine(stored?.searchEngine),
+      cursorMode: normalizeCursorMode(stored?.cursorMode),
+      keyboardLayoutFamilyId: familyId,
+      keyboardHandedness: handedness,
+      keyboardLayoutId: resolvedLayoutId,
+      currentKeyboardLayoutId: normalizeCurrentKeyboardLayoutId(stored?.currentKeyboardLayoutId),
+      keyboardReferenceKeyFeedback: normalizeBoolean(
+        stored?.keyboardReferenceKeyFeedback,
+        DEFAULT_SETTINGS.keyboardReferenceKeyFeedback
+      ),
+      keyboardReferenceShowNumberRow: normalizeBoolean(
+        stored?.keyboardReferenceShowNumberRow,
+        DEFAULT_SETTINGS.keyboardReferenceShowNumberRow
+      ),
+      keyboardReferenceCollapsed: normalizeBoolean(
+        stored?.keyboardReferenceCollapsed,
+        DEFAULT_SETTINGS.keyboardReferenceCollapsed
+      ),
+      topSitesPersistent: normalizeBoolean(
+        stored?.topSitesPersistent,
+        DEFAULT_SETTINGS.topSitesPersistent
+      ),
+      actionsLibraryTableExpanded: normalizeActionsLibraryTableExpanded(
+        stored?.actionsLibraryTableExpanded
+      ),
+      controlStrip: normalizeControlStrip(stored?.controlStrip),
+      panelPositions: normalizePanelPositions(stored?.panelPositions),
+      actionSettings: normalizeActionSettings(stored?.actionSettings),
+      clickMode: normalizeClickMode(stored?.clickMode),
+      textMode: normalizeTextMode(stored?.textMode),
+      scroll: normalizeScroll(stored?.scroll)
+    };
+  } catch (_e) {
+    return {
+      ...DEFAULT_SETTINGS,
+      controlStrip: { ...DEFAULT_SETTINGS.controlStrip },
+      panelPositions: {
+        keyboardReference: { ...DEFAULT_SETTINGS.panelPositions.keyboardReference },
+        controlStrip: { ...DEFAULT_SETTINGS.panelPositions.controlStrip },
+        keyboardLayoutConfig: { ...DEFAULT_SETTINGS.panelPositions.keyboardLayoutConfig },
+        topSites: { ...DEFAULT_SETTINGS.panelPositions.topSites }
+      },
+      actionSettings: normalizeActionSettings(null),
+      clickMode: { ...DEFAULT_SETTINGS.clickMode, cursor: { ...DEFAULT_SETTINGS.clickMode.cursor } },
+      textMode: { ...DEFAULT_SETTINGS.textMode },
+      scroll: { ...DEFAULT_SETTINGS.scroll },
+      actionsLibraryTableExpanded: [...DEFAULT_SETTINGS.actionsLibraryTableExpanded],
+      themeId: DEFAULT_THEME_ID,
+      themeOverrides: {},
+      clickModeThemeId: ""
+    };
+  }
+}
+
+// themes/chrome-recipes.js
+var METAL_SPECULAR = "linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.08) 28%, transparent 55%)";
+function createDarkProColor() {
+  return {
+    bg: "#0f0f10",
+    panel: "#232323",
+    panelEdge: "#3a3a3a",
+    panelEdgeDark: "#111",
+    titleTop: "#4c4c4c",
+    titleMid: "#353535",
+    titleBot: "#252525",
+    btnTop: "#4a4a4a",
+    btnMid: "#343434",
+    btnBot: "#2a2a2a",
+    litTop: "#5a7a9a",
+    litBot: "#3a5570",
+    litEdge: "#2a4a66",
+    accent: "#4a90c8",
+    accent2: "#4a90c8",
+    fg: "#ddd",
+    fgDim: "#aaa",
+    fgMute: "#777",
+    fieldBg: "#141414",
+    fieldEdge: "#0a0a0a",
+    fieldInsetTop: "#333",
+    hover: "rgba(255,255,255,0.06)",
+    selected: "rgba(74,144,200,0.22)",
+    selectedText: "#e8f0f8",
+    focusRing: "inset 0 0 0 1px rgba(74,144,200,0.55)",
+    kbdColor: "#ddd",
+    scrollbarThumb: "#4a4a4a",
+    scrollbarThumbHover: "#5c5c5c",
+    scrollbarTrack: "#141414"
+  };
+}
+function createDarkProEffect(c) {
+  return {
+    titlebarBg: `linear-gradient(180deg, ${c.titleTop} 0%, ${c.titleMid} 45%, ${c.titleBot} 100%)`,
+    titlebarBorder: `1px solid ${c.panelEdgeDark}`,
+    titlebarShadow: `0 1px 0 ${c.panelEdge}`,
+    panelBg: c.panel,
+    panelBorder: `1px solid ${c.panelEdgeDark}`,
+    panelShadow: `0 0 0 1px ${c.panelEdge} inset, 0 0 0 1px rgba(190, 190, 190, 0.52), 0 0 10px rgba(255, 255, 255, 0.14), 0 16px 40px rgba(0,0,0,0.55)`,
+    btnBg: `linear-gradient(180deg, ${c.btnTop} 0%, ${c.btnMid} 50%, ${c.btnBot} 100%)`,
+    btnBorder: `1px solid ${c.panelEdgeDark}`,
+    btnLitBg: `linear-gradient(180deg, ${c.litTop} 0%, ${c.litBot} 100%)`,
+    btnLitBorder: `1px solid ${c.litEdge}`,
+    fieldBg: c.fieldBg,
+    fieldBorder: `1px solid ${c.fieldEdge}`,
+    fieldShadow: `inset 0 1px 0 ${c.fieldInsetTop}`,
+    kbdBg: c.fieldBg,
+    kbdBorder: `1px solid ${c.panelEdgeDark}`,
+    kbdShadow: "none",
+    backdropBg: "rgba(0,0,0,0.35)",
+    backdropBlur: "blur(6px)",
+    hatchEdit: "repeating-linear-gradient(-45deg, rgba(180, 200, 220, 0.08) 0px, rgba(180, 200, 220, 0.08) 1px, transparent 1px, transparent 7px)",
+    hatchEditTitlebarBg: "linear-gradient(180deg, #646464 0%, #4a4a4a 45%, #383838 100%)",
+    hatchEditBodyBg: "#1a1c20"
+  };
+}
+function createMetalColor() {
+  return {
+    bg: "#6e6e6e",
+    panel: "#838383",
+    panelEdge: "rgba(190,190,190,0.48)",
+    panelEdgeDark: "rgba(42,52,62,0.92)",
+    titleTop: "#b0b0b0",
+    titleMid: "#929292",
+    titleBot: "#787878",
+    btnTop: "#c2c2c2",
+    btnMid: "#9e9e9e",
+    btnBot: "#868686",
+    litTop: "#7aa0c0",
+    litBot: "#4a7090",
+    litEdge: "#3a5a78",
+    accent: "#3a6a94",
+    accent2: "#3a6a94",
+    fg: "#1c1c1c",
+    fgDim: "rgba(28,28,28,0.72)",
+    fgMute: "rgba(28,28,28,0.55)",
+    fieldBg: "#9a9a9a",
+    fieldEdge: "#4a4a4a",
+    fieldInsetTop: "rgba(255,255,255,0.35)",
+    hover: "rgba(255,255,255,0.22)",
+    selected: "rgba(58,106,148,0.28)",
+    selectedText: "#0e1a24",
+    focusRing: "inset 0 0 0 1px rgba(58,106,148,0.55)",
+    kbdColor: "#141414",
+    scrollbarThumb: "#a8a8a8",
+    scrollbarThumbHover: "#b5b5b5",
+    scrollbarTrack: "#747474"
+  };
+}
+function createMetalEffect(c) {
+  return {
+    titlebarBg: `${METAL_SPECULAR}, linear-gradient(180deg, ${c.titleTop} 0%, ${c.titleMid} 45%, ${c.titleBot} 100%)`,
+    titlebarBorder: "1px solid #4a4a4a",
+    titlebarShadow: "0 1px 0 rgba(255,255,255,0.35)",
+    panelBg: `${METAL_SPECULAR}, linear-gradient(180deg, #9a9a9a 0%, #838383 48%, #707070 100%)`,
+    panelBorder: "1px solid rgba(42,52,62,0.92)",
+    panelShadow: "0 0 0 1px rgba(255,255,255,0.28) inset, 0 0 0 1px rgba(190,190,190,0.48), 0 0 10px rgba(255,255,255,0.12), 0 16px 40px rgba(0,0,0,0.45)",
+    btnBg: `linear-gradient(180deg, ${c.btnTop} 0%, ${c.btnMid} 50%, ${c.btnBot} 100%)`,
+    btnBorder: "1px solid #4a4a4a",
+    btnLitBg: `linear-gradient(180deg, ${c.litTop} 0%, ${c.litBot} 100%)`,
+    btnLitBorder: `1px solid ${c.litEdge}`,
+    fieldBg: c.fieldBg,
+    fieldBorder: "1px solid #4a4a4a",
+    fieldShadow: "inset 0 1px 0 rgba(255,255,255,0.40)",
+    kbdBg: "linear-gradient(180deg, #e4e4e4 0%, #c8c8c8 45%, #b0b0b0 55%, #9a9a9a 100%)",
+    kbdBorder: "1px solid #3d3d3d",
+    kbdShadow: "0 1px 0 rgba(255,255,255,0.72) inset, 0 -1px 0 rgba(0,0,0,0.28) inset, 0 1px 2px rgba(0,0,0,0.32)",
+    backdropBg: "rgba(40,40,40,0.35)",
+    backdropBlur: "blur(6px)",
+    hatchEdit: "repeating-linear-gradient(-45deg, rgba(24, 24, 24, 0.28) 0px, rgba(24, 24, 24, 0.28) 1px, transparent 1px, transparent 7px)",
+    hatchEditTitlebarBg: `${METAL_SPECULAR}, linear-gradient(180deg, #b8b8b8 0%, #9a9a9a 45%, #808080 100%)`,
+    hatchEditBodyBg: "#8a8a8a"
+  };
+}
+function createGxColor() {
+  return {
+    bg: "#0a0a0c",
+    panel: "#16161a",
+    panelEdge: "#2a2a32",
+    panelEdgeDark: "#050506",
+    titleTop: "#2c2c34",
+    titleMid: "#1c1c22",
+    titleBot: "#121216",
+    btnTop: "#3a3a44",
+    btnMid: "#26262e",
+    btnBot: "#1a1a20",
+    litTop: "#00e5ff",
+    litBot: "#0088aa",
+    litEdge: "#006688",
+    accent: "#00e5ff",
+    accent2: "#ff2d95",
+    fg: "#e8e8ef",
+    fgDim: "#9aa0b0",
+    fgMute: "#6a7080",
+    fieldBg: "#0c0c10",
+    fieldEdge: "#000",
+    fieldInsetTop: "#333344",
+    hover: "rgba(0,229,255,0.08)",
+    selected: "rgba(0,229,255,0.18)",
+    selectedText: "#f0ffff",
+    focusRing: "inset 0 0 0 1px rgba(0,229,255,0.55)",
+    kbdColor: "#00e5ff",
+    scrollbarThumb: "#3a3a44",
+    scrollbarThumbHover: "#00e5ff",
+    scrollbarTrack: "#0c0c10"
+  };
+}
+function createGxEffect(c) {
+  return {
+    titlebarBg: `linear-gradient(180deg, ${c.titleTop} 0%, ${c.titleMid} 45%, ${c.titleBot} 100%)`,
+    titlebarBorder: `1px solid ${c.panelEdgeDark}`,
+    titlebarShadow: `0 1px 0 ${c.accent}33`,
+    panelBg: `linear-gradient(180deg, #1c1c22 0%, ${c.panel} 48%, #101014 100%)`,
+    panelBorder: `1px solid ${c.panelEdgeDark}`,
+    panelShadow: `0 0 0 1px ${c.panelEdge} inset, 0 0 0 1px rgba(0, 229, 255, 0.22), 0 0 14px rgba(0, 229, 255, 0.12), 0 16px 40px rgba(0,0,0,0.65)`,
+    btnBg: `linear-gradient(180deg, ${c.btnTop} 0%, ${c.btnMid} 50%, ${c.btnBot} 100%)`,
+    btnBorder: `1px solid ${c.panelEdgeDark}`,
+    btnLitBg: `linear-gradient(180deg, ${c.litTop} 0%, ${c.litBot} 100%)`,
+    btnLitBorder: `1px solid ${c.litEdge}`,
+    fieldBg: c.fieldBg,
+    fieldBorder: `1px solid ${c.fieldEdge}`,
+    fieldShadow: `inset 0 1px 0 ${c.fieldInsetTop}`,
+    kbdBg: "rgba(0, 229, 255, 0.08)",
+    kbdBorder: `1px solid ${c.accent}`,
+    kbdShadow: `0 0 0 1px ${c.accent}55, 0 0 8px ${c.accent}44`,
+    backdropBg: "rgba(0,0,0,0.5)",
+    backdropBlur: "blur(8px)",
+    hatchEdit: "repeating-linear-gradient(-45deg, rgba(0, 229, 255, 0.16) 0px, rgba(0, 229, 255, 0.16) 1px, transparent 1px, transparent 7px)",
+    hatchEditTitlebarBg: `linear-gradient(180deg, ${c.titleTop} 0%, ${c.titleMid} 45%, ${c.titleBot} 100%)`,
+    hatchEditBodyBg: "#101014"
+  };
+}
+
+// themes/click-defaults.js
+var NO_CUSTOM = "NO-CUSTOM-CURSORS";
+var DARK_PRO_CLICK_DEFAULTS = Object.freeze({
+  cursorMode: NO_CUSTOM,
+  clickMode: Object.freeze({
+    cursor: Object.freeze({
+      type: "crosshair",
+      lineWidth: 4,
+      sizePixels: 10,
+      gap: 6
+    }),
+    focusColor: "blue",
+    overlayFillEnabled: false,
+    overlayShadowEnabled: false,
+    rectangleThickness: 3,
+    clickEffect: "flash",
+    keyboardLinkHoverHints: false,
+    paintStrategy: "BC",
+    focusPadding: 2
+  })
+});
+var GRAY_METAL_CLICK_DEFAULTS = Object.freeze({
+  cursorMode: NO_CUSTOM,
+  clickMode: Object.freeze({
+    cursor: Object.freeze({
+      type: "crosshair",
+      lineWidth: 5,
+      sizePixels: 12,
+      gap: 6
+    }),
+    focusColor: "blue",
+    overlayFillEnabled: false,
+    overlayShadowEnabled: false,
+    rectangleThickness: 4,
+    clickEffect: "flash",
+    keyboardLinkHoverHints: false,
+    paintStrategy: "BC",
+    focusPadding: 2
+  })
+});
+var GX_ER_CLICK_DEFAULTS = Object.freeze({
+  cursorMode: NO_CUSTOM,
+  clickMode: Object.freeze({
+    cursor: Object.freeze({
+      type: "crosshair",
+      lineWidth: 3,
+      sizePixels: 14,
+      gap: 8
+    }),
+    focusColor: "green",
+    overlayFillEnabled: false,
+    overlayShadowEnabled: true,
+    rectangleThickness: 3,
+    clickEffect: "flash",
+    keyboardLinkHoverHints: false,
+    paintStrategy: "BC",
+    focusPadding: 2
+  })
+});
+
+// themes/dark-pro/theme.js
+var color = createDarkProColor();
+var metalColor = createMetalColor();
+var DARK_PRO_THEME = Object.freeze({
+  id: "dark-pro",
+  meta: Object.freeze({ name: "Dark Pro" }),
+  type: createProTypeTokens(),
+  titlebar: createTitlebarChromeTokens(),
+  keys: createKeyChromeTokens(),
+  radius: createProRadiusTokens(),
+  color,
+  effect: createDarkProEffect(color),
+  shape: Object.freeze({ cornerMode: "radius", cutSize: "0px" }),
+  icons: Object.freeze({
+    pack: "dark-pro",
+    fallbackPack: "shared",
+    overrides: Object.freeze({}),
+    color: Object.freeze({
+      chrome: color.fg,
+      keycap: "#0c1018",
+      accent: color.accent
+    })
+  }),
+  clickDefaults: DARK_PRO_CLICK_DEFAULTS,
+  surfaces: Object.freeze({
+    onboarding: Object.freeze({
+      color: metalColor,
+      effect: createMetalEffect(metalColor),
+      icons: Object.freeze({
+        color: Object.freeze({
+          chrome: metalColor.fg,
+          keycap: "#1c1c1c",
+          accent: metalColor.accent
+        })
+      })
+    })
+  })
+});
+
+// themes/gray-metal-pro/theme.js
+var color2 = createMetalColor();
+var GRAY_METAL_PRO_THEME = Object.freeze({
+  id: "gray-metal-pro",
+  meta: Object.freeze({ name: "Gray Metal Pro" }),
+  type: createProTypeTokens({
+    ui: "Helvetica, Arial, sans-serif"
+  }),
+  titlebar: createTitlebarChromeTokens(),
+  keys: createKeyChromeTokens(),
+  radius: createProRadiusTokens({ panel: "3px", btn: "2px" }),
+  color: color2,
+  effect: createMetalEffect(color2),
+  shape: Object.freeze({ cornerMode: "radius", cutSize: "0px" }),
+  icons: Object.freeze({
+    pack: "gray-metal-pro",
+    fallbackPack: "shared",
+    overrides: Object.freeze({}),
+    color: Object.freeze({
+      chrome: color2.fg,
+      keycap: "#1c1c1c",
+      accent: color2.accent
+    })
+  }),
+  clickDefaults: GRAY_METAL_CLICK_DEFAULTS
+});
+
+// themes/gx-er/theme.js
+var color3 = createGxColor();
+var type = createProTypeTokens({
+  display: "'ROBOTECHGPRegular', 'TitilliumText', Helvetica, Arial, sans-serif",
+  heading: "'Cubellan', 'TitilliumText', Helvetica, Arial, sans-serif",
+  subhead: "'TitilliumText', Helvetica, Arial, sans-serif",
+  body: "'Ezarion', 'Dosis', Helvetica, Arial, sans-serif",
+  ui: "'TitilliumText', Helvetica, Arial, sans-serif",
+  kbd: "'Dosis', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+  mono: "'Dosis', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+  caption: "'Ezarion', Helvetica, Arial, sans-serif"
+});
+type.letterSpacing = {
+  display: "0.08em",
+  titlebar: "0.06em",
+  ui: "0.02em"
+};
+type.textTransform = {
+  display: "uppercase",
+  titlebar: "uppercase"
+};
+var GX_ER_THEME = Object.freeze({
+  id: "gx-er",
+  meta: Object.freeze({ name: "GX-er" }),
+  type,
+  titlebar: createTitlebarChromeTokens({
+    titleWeight: "700",
+    iconDisplay: "inline-flex",
+    iconSize: "12px",
+    kbdTransform: "uppercase",
+    kbdTracking: "0.06em"
+  }),
+  keys: createKeyChromeTokens({
+    shading: "bevel",
+    border: "1px solid rgba(0, 229, 255, 0.35)",
+    cornerMode: "cut",
+    cutSize: "4px"
+  }),
+  radius: createProRadiusTokens({
+    panel: "0px",
+    btn: "0px",
+    field: "0px",
+    xs: "0px",
+    sm: "0px"
+  }),
+  color: color3,
+  effect: createGxEffect(color3),
+  shape: Object.freeze({ cornerMode: "cut", cutSize: "8px" }),
+  icons: Object.freeze({
+    pack: "gx-er",
+    fallbackPack: "shared",
+    overrides: Object.freeze({
+      close: "chrome/close.svg",
+      collapse: "chrome/collapse.svg",
+      gear: "chrome/gear.svg"
+    }),
+    color: Object.freeze({
+      chrome: color3.accent,
+      keycap: "#001018",
+      accent: color3.accent
+    })
+  }),
+  clickDefaults: GX_ER_CLICK_DEFAULTS
+});
+
+// themes/icons.js
+var THEME_ICON_FILES = Object.freeze({
+  close: "chrome/close.svg",
+  collapse: "chrome/collapse.svg",
+  gear: "chrome/gear.svg",
+  keyboard: "chrome/keyboard.svg",
+  window: "chrome/window.svg"
+});
+var THEME_ICON_IDS = Object.freeze(Object.keys(THEME_ICON_FILES));
+
+// themes/index.js
+var PACKAGES = Object.freeze({
+  "dark-pro": DARK_PRO_THEME,
+  "gray-metal-pro": GRAY_METAL_PRO_THEME,
+  "gx-er": GX_ER_THEME
+});
+function getTheme(id, overrides) {
+  const key = normalizeThemeId(id);
+  const base2 = PACKAGES[key] || PACKAGES[DEFAULT_THEME_ID];
+  return mergeTheme(base2, overrides && typeof overrides === "object" ? overrides : {});
+}
+function getAllThemesCss() {
+  const blocks = THEME_IDS.map((id) => {
+    const vars = themeToCssVars(getTheme(id));
+    return cssVarsToBlock(vars, `[data-kp-theme="${id}"]`);
+  });
+  const onboarding = themeToCssVars(
+    mergeTheme(DARK_PRO_THEME, DARK_PRO_THEME.surfaces?.onboarding || {})
+  );
+  blocks.push(cssVarsToBlock(
+    onboarding,
+    `[data-kp-theme="dark-pro"][data-kp-surface="onboarding"], [data-kp-theme="dark-pro"] [data-kp-surface="onboarding"]`
+  ));
+  return `${blocks.join("\n")}
+${getCutCornerCss()}
+${getTitlebarChromeCss()}
+${getSelectMenuCss()}`;
+}
+function getThemeCss(theme) {
+  const vars = themeToCssVars(theme);
+  const id = theme?.id || DEFAULT_THEME_ID;
+  return `${cssVarsToBlock(vars, `:host, :root, [data-kp-theme="${id}"]`)}
+${getCutCornerCss()}
+${getTitlebarChromeCss()}
+${getSelectMenuCss()}`;
+}
+
+// themes/font-faces.js
+function fontUrl(file) {
+  try {
+    if (typeof chrome !== "undefined" && chrome.runtime?.getURL) {
+      return chrome.runtime.getURL(`fonts/${file}`);
+    }
+  } catch {
+  }
+  return `../fonts/${file}`;
+}
+function getThemeFontFaceCss() {
+  const robotech = fontUrl("ROBOTECHGPRegular.ttf");
+  const titillium = fontUrl("TitilliumTextRegular.otf");
+  const cubellan = fontUrl("CubellanRegular.ttf");
+  const ezarion = fontUrl("EzarionRegular.ttf");
+  const dosis = fontUrl("DosisBook.ttf");
+  return `
+@font-face {
+  font-family: 'ROBOTECHGPRegular';
+  src: url('${robotech}') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'TitilliumText';
+  src: url('${titillium}') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Cubellan';
+  src: url('${cubellan}') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Ezarion';
+  src: url('${ezarion}') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Dosis';
+  src: url('${dosis}') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+`.trim();
+}
+
+// src/modules/theme-manager.js
+var STYLE_ATTR = "data-kp-theme-vars";
+var FONT_ATTR = "data-kp-theme-fonts";
+var ALL_THEMES_ATTR = "data-kp-all-themes";
+var _activeTheme = getTheme(DEFAULT_THEME_ID);
+var _listeners = /* @__PURE__ */ new Set();
+function notify() {
+  for (const fn of _listeners) {
+    try {
+      fn(_activeTheme);
+    } catch {
+    }
+  }
+}
+function injectStyle(root, css, attr) {
+  if (!root) return;
+  const doc = root.nodeType === 9 ? root : root.ownerDocument || document;
+  const mount = root.nodeType === 9 ? root.head || root.documentElement : root.host ? root : root;
+  if (!doc || !mount?.appendChild) return;
+  let style = null;
+  try {
+    style = mount.querySelector?.(`style[${attr}]`);
+  } catch {
+  }
+  if (!style) {
+    try {
+      style = doc.createElement("style");
+      style.setAttribute(attr, "true");
+      style.textContent = css;
+      mount.appendChild(style);
+    } catch {
+    }
+    return;
+  }
+  if (style.textContent !== css) {
+    try {
+      style.textContent = css;
+    } catch {
+    }
+  }
+}
+function applyThemeDataset(el, theme) {
+  if (!el?.setAttribute) return;
+  const id = theme?.id || DEFAULT_THEME_ID;
+  try {
+    el.setAttribute("data-kp-theme", id);
+  } catch {
+  }
+  const cut = theme?.shape?.cornerMode === "cut";
+  try {
+    if (cut) el.setAttribute("data-kp-corner", "cut");
+    else el.removeAttribute("data-kp-corner");
+  } catch {
+  }
+}
+function applyThemeCssVars(el, theme) {
+  if (!el?.style?.setProperty) return;
+  const vars = themeToCssVars(theme);
+  for (const [k, v] of Object.entries(vars)) {
+    try {
+      el.style.setProperty(k, v);
+    } catch {
+    }
+  }
+}
+function injectAllThemeMaps(root = document) {
+  injectStyle(root, getThemeFontFaceCss(), FONT_ATTR);
+  injectStyle(root, `${getAllThemesCss()}
+${getCutCornerCss()}`, ALL_THEMES_ATTR);
+}
+function collectChromeThemeHosts(root) {
+  const out = [];
+  if (!root?.querySelectorAll) return out;
+  try {
+    root.querySelectorAll(".kp-chrome-window, [data-kp-ui-shadow]").forEach((el) => out.push(el));
+  } catch {
+  }
+  return out;
+}
+function applyThemeToRoots(theme, opts = {}) {
+  _activeTheme = theme || getTheme(DEFAULT_THEME_ID);
+  const roots = opts.roots && opts.roots.length ? opts.roots : [document];
+  const hostSet = /* @__PURE__ */ new Set();
+  for (const host of opts.hosts || []) {
+    if (host) hostSet.add(host);
+  }
+  try {
+    collectChromeThemeHosts(document).forEach((el) => hostSet.add(el));
+  } catch {
+  }
+  for (const root of roots) {
+    collectChromeThemeHosts(root).forEach((el) => hostSet.add(el));
+  }
+  for (const root of roots) {
+    if (!root) continue;
+    injectAllThemeMaps(root);
+    injectStyle(root, getThemeCss(_activeTheme), STYLE_ATTR);
+    const el = root.nodeType === 9 ? root.documentElement : root.host || null;
+    applyThemeDataset(el, _activeTheme);
+    if (el) applyThemeCssVars(el, _activeTheme);
+  }
+  for (const host of hostSet) {
+    applyThemeDataset(host, _activeTheme);
+    applyThemeCssVars(host, _activeTheme);
+    if (host?.shadowRoot) {
+      injectAllThemeMaps(host.shadowRoot);
+      applyThemeDataset(host.shadowRoot.host, _activeTheme);
+    }
+  }
+  try {
+    applyThemeDataset(document.documentElement, _activeTheme);
+    applyThemeCssVars(document.documentElement, _activeTheme);
+    injectAllThemeMaps(document);
+  } catch {
+  }
+  notify();
+  return _activeTheme;
+}
+function resolveThemeFromSettings(settings) {
+  const id = normalizeThemeId(settings?.themeId);
+  const overrides = settings?.themeOverrides && typeof settings.themeOverrides === "object" ? settings.themeOverrides : {};
+  return getTheme(id, overrides);
+}
+
 // pages/docs.js
 var INDEX_URL = () => chrome.runtime.getURL("userdocs/index.json");
 var docUrl = (file) => chrome.runtime.getURL(`userdocs/${file}`);
@@ -5366,6 +8158,15 @@ var NAV_ICON_PATHS = Object.freeze({
   macros: ["M8 6h13M8 12h13M8 18h13", "m3 6 1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"],
   code: ["m8 9-3 3 3 3M16 9l3 3-3 3", "m14 5-4 14"]
 });
+function filterTopicsForBuild(topics) {
+  if (BUILD_ENABLE_MACRO_BUILDER) return topics;
+  const hide = /* @__PURE__ */ new Set(["macros-overview", "macro-builder"]);
+  const walk = (list2) => (list2 || []).filter((t) => t && !hide.has(t.id)).map((t) => {
+    const children = Array.isArray(t.children) ? walk(t.children) : void 0;
+    return children && children.length ? { ...t, children } : { ...t, children: void 0 };
+  });
+  return walk(topics);
+}
 function flattenTopics(topics, depth = 0, parentId = null) {
   const out = [];
   for (const topic of topics || []) {
@@ -5618,6 +8419,18 @@ function mountDocsApp(root, options = {}) {
     if (app) mountNode.appendChild(app);
   }
   bindDocsElements(mountNode);
+  try {
+    void getSettings().then((settings) => {
+      applyThemeToRoots(resolveThemeFromSettings(settings), {
+        roots: [root.nodeType === 9 ? root : document],
+        hosts: [
+          root.nodeType === 9 ? root.documentElement : root.host || document.documentElement
+        ]
+      });
+    }).catch(() => {
+    });
+  } catch {
+  }
   if (embedded && docsAppEl) {
     docsAppEl.classList.add("kp-popover-embed");
     const header = docsAppEl.querySelector(".header");
@@ -5662,7 +8475,7 @@ function mountDocsApp(root, options = {}) {
       const res = await fetch(INDEX_URL());
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const index = await res.json();
-      topicTree = Array.isArray(index?.topics) ? index.topics : [];
+      topicTree = filterTopicsForBuild(Array.isArray(index?.topics) ? index.topics : []);
       const flat = flattenTopics(topicTree);
       allDocs = await loadDocs(flat);
       const firstSelectable = allDocs.find((d) => d.selectable);

@@ -1068,7 +1068,7 @@ export class TopSitesPopover {
     panel.setAttribute('role', 'dialog');
     panel.setAttribute('aria-label', 'Top Sites');
     panel.tabIndex = -1;
-    const shadowRoot = ensureOpenChromeShadow(panel, { id: 'top-sites' });
+    const shadowRoot = ensureOpenChromeShadow(panel, { id: 'top-sites', chromeWindow: true });
     const shell = shadowRoot || panel;
 
     this._gearBtn = this._createGearButton(doc);
@@ -1078,6 +1078,7 @@ export class TopSitesPopover {
       doc,
       title: 'Top Sites',
       shortcut: ';',
+      icon: 'window',
       variant: 'panel',
       draggable: true,
       closeTitle: 'Close',

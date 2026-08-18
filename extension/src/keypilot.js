@@ -63,12 +63,18 @@ import {
   destinationFlags,
   normalizeActionResultDestination
 } from './modules/action-result-delivery.js';
-import { sendTextToAi } from './modules/ai-text-service.js';
+import { sendTextToAi, isWordLookupAiAvailable } from './modules/ai-text-service.js';
 import { OmniboxManager } from './modules/omnibox-manager.js';
 import { TabHistoryPopover } from './modules/tab-history-popover.js';
 import { LauncherPopover } from './modules/launcher-popover.js';
 import { TopSitesPopover } from './modules/top-sites-popover.js';
 import { DEFAULT_SETTINGS, getSettings, setSettings, SETTINGS_STORAGE_KEY, scrollBehaviorFromSpeed } from './modules/settings-manager.js';
+import {
+  applyOnboardingSurface,
+  applyThemeToRoots,
+  getThemeClickDefaults,
+  resolveThemeFromSettings
+} from './modules/theme-manager.js';
 import { getOrCreateBuiltinFunctionUserAction, getUserKeyboardLayoutById, getUserActionById, getUserMacroById, listUserActions, listUserMacros } from './modules/keyboard-layout-store.js';
 import { runLegacyMacroKeyFunction } from './modules/macro-key-runtime.js';
 import { runUserExecuteJs, stringifyExecuteJsValue } from './modules/execute-js-runtime.js';
@@ -76,6 +82,7 @@ import { getFunctionDef, functionWorksWhileTyping, functionCancelsOnPointerDown,
 import { getStockMacroById, resolveMacroById } from './config/stock-macros.js';
 import { chordSlotKeyFromEvent } from './utils/key-chord.js';
 import { getTextAtPoint } from './utils/text-at-point.js';
+import { normalizeWordForLookup } from './utils/dictionary-lookup.js';
 import { toggleKeyboardLayoutConfigurator } from './ui/keyboard-layout-configurator.js';
 import { createTitlebarActionButton } from './ui/preview-open-actions.js';
 import {
@@ -901,6 +908,14 @@ export class KeyPilot extends EventManager {
       this._settings = { ...DEFAULT_SETTINGS };
     }
 
+    try {
+      await this._syncClickDefaultsForTheme();
+    } catch { /* ignore */ }
+
+    try {
+      this._applyThemeFromSettings();
+    } catch { /* ignore */ }
+
     // Apply keyboard layout immediately (used by key handling + keyboard reference UI).
     try {
       this._applyKeyboardLayoutFromSettings();
@@ -1693,6 +1708,38 @@ export class KeyPilot extends EventManager {
     });
     this.overlayManager?.setTextFocusEscKeyLabel?.(cancel);
     this.overlayManager?.setTextHoverActivateKeyLabel?.(activate);
+  }
+
+  _applyThemeFromSettings() {
+    const theme = resolveThemeFromSettings(this._settings || DEFAULT_SETTINGS);
+    const hosts = [];
+    try {
+      document.querySelectorAll('[data-kp-ui-shadow]').forEach((el) => hosts.push(el));
+    } catch { /* ignore */ }
+    applyThemeToRoots(theme, { roots: [document], hosts });
+    try {
+      document.querySelectorAll('.kp-onboarding-panel, .kp-layout-config-panel').forEach((el) => {
+        applyOnboardingSurface(el, theme);
+      });
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * When the active theme has no matching clickMode snapshot, adopt that theme's
+   * Click Mode / cursor defaults so Settings and hover chrome stay in sync.
+   */
+  async _syncClickDefaultsForTheme() {
+    const s = this._settings || DEFAULT_SETTINGS;
+    const themeId = s.themeId || DEFAULT_SETTINGS.themeId;
+    if (s.clickModeThemeId === themeId) return;
+    const theme = resolveThemeFromSettings(s);
+    const patch = getThemeClickDefaults(theme);
+    const next = await setSettings({
+      cursorMode: patch.cursorMode,
+      clickMode: patch.clickMode,
+      clickModeThemeId: themeId
+    });
+    this._settings = next;
   }
 
   installSettingsSync() {
@@ -6704,25 +6751,30 @@ export class KeyPilot extends EventManager {
   }
 
   /**
-   * GET_TEXT_RANGE Function handler — reads the current highlight/selection (set up beforehand)
-   * and copies it to the clipboard. Same acquisition as `handleClipboardCopyKey`, but as an
-   * explicit, addressable Function for future macro composition rather than a fixed key.
+   * GET_TEXT_RANGE — Macro Step that reads the current highlight/selection and yields it as
+   * the next step's prior result. Clipboard is Copy's job; leftover key bindings still copy
+   * so existing layouts keep working. Not a standalone key action.
+   * @param {KeyboardEvent} _e
+   * @param {Record<string, any>} [_parameters]
+   * @param {{ macroId?: string }} [meta]
    */
-  async handleGetTextRangeKey() {
+  async handleGetTextRangeKey(_e, _parameters, meta = {}) {
     const text = this.getSelectedPlainText();
     if (!text.trim()) {
       this.showFlashNotification('Nothing selected — set up a text range first', COLORS.NOTIFICATION_INFO);
       return;
     }
-    const ok = await this.copyToClipboard(text);
-    this.showFlashNotification(
-      ok ? 'Copied' : 'Could not copy',
-      ok ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_ERROR
-    );
-    if (ok) {
-      this.emitAction('get_text_range', { length: text.length });
-      return text;
+    const inMacro = !!(meta && meta.macroId);
+    if (!inMacro) {
+      const ok = await this.copyToClipboard(text);
+      this.showFlashNotification(
+        ok ? 'Copied' : 'Could not copy',
+        ok ? COLORS.NOTIFICATION_SUCCESS : COLORS.NOTIFICATION_ERROR
+      );
+      if (!ok) return;
     }
+    this.emitAction('get_text_range', { length: text.length });
+    return text;
   }
 
   /**
@@ -6785,11 +6837,13 @@ export class KeyPilot extends EventManager {
   }
 
   /**
-   * LOOKUP_WORD Function handler — shows a definition popover for the word under the cursor,
-   * via the same on-device AI provider `SEND_TEXT_TO_AI` uses (`ai-text-service.js`). No setup
-   * required — this is the "stock, zero-configuration" example from KEY_ACTION_ARCHITECTURE.md.
+   * LOOKUP_WORD Function handler — shows a definition popover for the word under the cursor.
+   * Default source is the Free Dictionary API (via the service worker). AI is reserved for
+   * when {@link isWordLookupAiAvailable} is true and the Action Instance sets `source: 'ai'`.
+   * @param {KeyboardEvent} [_e]
+   * @param {{ source?: 'dictionary'|'ai' }} [parameters]
    */
-  async handleLookupWordKey() {
+  async handleLookupWordKey(_e, parameters) {
     const st = this.state.getState();
     const x = Number(st?.lastMouse?.x);
     const y = Number(st?.lastMouse?.y);
@@ -6797,27 +6851,45 @@ export class KeyPilot extends EventManager {
       this.showFlashNotification('No cursor position available', COLORS.NOTIFICATION_INFO);
       return;
     }
-    const { text: word } = getTextAtPoint(x, y, { granularity: 'word' });
-    if (!word.trim()) {
+    const { text: rawWord } = getTextAtPoint(x, y, { granularity: 'word' });
+    const word = normalizeWordForLookup(rawWord);
+    if (!word) {
       this.showFlashNotification('No word under cursor', COLORS.NOTIFICATION_INFO);
       return;
     }
 
+    const source = String(parameters?.source || 'dictionary').trim() || 'dictionary';
+    const useAi = source === 'ai' && isWordLookupAiAvailable();
+
     this.showFlashNotification('Looking up…', COLORS.NOTIFICATION_INFO);
     let result;
     try {
-      result = await sendTextToAi({
-        prompt: 'Give a concise dictionary-style definition of this single word or short phrase: ' +
-          'part of speech, a one-sentence definition, and one short example sentence. No preamble.',
-        text: word
-      });
+      if (useAi) {
+        result = await sendTextToAi({
+          prompt: 'Give a concise dictionary-style definition of this single word or short phrase: ' +
+            'part of speech, a one-sentence definition, and one short example sentence. No preamble.',
+          text: word
+        });
+      } else {
+        if (!isExtensionContextValid()) {
+          this.showFlashNotification('Lookup failed', COLORS.NOTIFICATION_ERROR);
+          return;
+        }
+        const response = await chrome.runtime.sendMessage({
+          type: MSG.DICTIONARY_LOOKUP,
+          word
+        });
+        result = response && typeof response === 'object'
+          ? response
+          : { ok: false, error: 'No response from dictionary lookup' };
+      }
     } catch (e) {
       console.warn('[KeyPilot] Lookup failed:', e);
       this.showFlashNotification('Lookup failed', COLORS.NOTIFICATION_ERROR);
       return;
     }
     if (!result?.ok) {
-      this.showFlashNotification(result?.error || 'Lookup failed', COLORS.NOTIFICATION_ERROR);
+      this.showFlashNotification(result?.error || 'No definition found', COLORS.NOTIFICATION_ERROR);
       return;
     }
     await deliverActionResult(this, {
@@ -6825,7 +6897,7 @@ export class KeyPilot extends EventManager {
       title: `Definition — ${word}`,
       destination: ACTION_RESULT_DESTINATIONS.POPOVER
     });
-    this.emitAction('lookup_word', { word });
+    this.emitAction('lookup_word', { word, source: useAi ? 'ai' : 'dictionary' });
   }
 
   /**

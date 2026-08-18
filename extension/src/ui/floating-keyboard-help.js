@@ -53,7 +53,8 @@ import {
   openKeyboardLayoutConfigurator
 } from './keyboard-layout-configurator.js';
 import { makePopoverResizable } from '../utils/popover-resize.js';
-import { createTitlebarKbd, createTitlebarShortcut, setTitlebarShortcutText } from './popover-titlebar.js';
+import { createTitlebarKbd, createTitlebarLeadingIcon, createTitlebarShortcut, setTitlebarShortcutText } from './popover-titlebar.js';
+import { createSelectMenu } from './select-menu.js';
 import { ensureOpenChromeShadow, injectChromeStyles, ensureChromeHostMounted } from './kp-chrome-shadow.js';
 import {
   PANEL_POSITION_MARGIN_PX,
@@ -182,7 +183,7 @@ export class FloatingKeyboardHelp {
     this._keyboardBody = null;
     this.closeBtn = null;
     this.hintEl = null;
-    /** @type {HTMLElement|null} Title-adjacent toggle shortcut chip "([K])". */
+    /** @type {HTMLElement|null} Title-adjacent toggle shortcut chip. */
     this._shortcutEl = null;
     /** @type {HTMLElement|null} */
     this._titlebar = null;
@@ -195,6 +196,8 @@ export class FloatingKeyboardHelp {
     this._onCollapseClick = this._onCollapseClick.bind(this);
     this._onExitTextModeClick = this._onExitTextModeClick.bind(this);
     this._onLayoutSelectChange = this._onLayoutSelectChange.bind(this);
+    /** @type {ReturnType<typeof createSelectMenu>|null} */
+    this._layoutSelectApi = null;
     /** @type {(() => any)|null} */
     this._getKeyPilot = typeof getKeyPilot === 'function' ? getKeyPilot : null;
 
@@ -250,7 +253,7 @@ export class FloatingKeyboardHelp {
     this._suppressPositionPersist = false;
 
     // Active layout selection (builtin vs user) for rendering + dropdown.
-    /** @type {HTMLSelectElement|null} */
+    /** @type {HTMLElement|null} */
     this._layoutSelectEl = null;
     /** @type {HTMLElement|null} */
     this._layoutTitleEl = null;
@@ -434,7 +437,7 @@ export class FloatingKeyboardHelp {
     } catch { /* ignore */ }
 
     try {
-      if (this._layoutSelectEl) this._layoutSelectEl.disabled = false;
+      this._layoutSelectApi?.setDisabled?.(false);
     } catch { /* ignore */ }
 
     this._applyEditModeHatch(next);
@@ -758,6 +761,7 @@ export class FloatingKeyboardHelp {
       this.setEditMode(false);
     }
     this._setRootVisible(false);
+    try { this._layoutSelectApi?.close?.(); } catch { /* ignore */ }
     this.setLinkHoverHints(false);
     this.setTextModeFilter(false);
     this._unbindKeydownFeedback();
@@ -785,6 +789,9 @@ export class FloatingKeyboardHelp {
         this._exitTextModeBtn.removeEventListener('click', this._onExitTextModeClick);
       }
     } catch { /* ignore */ }
+    try { this._layoutSelectApi?.destroy?.(); } catch { /* ignore */ }
+    this._layoutSelectApi = null;
+    this._layoutSelectEl = null;
     this._unbindWindowChrome();
     this._unbindKeydownFeedback();
     this._unbindSettingsSync();
@@ -1000,7 +1007,7 @@ export class FloatingKeyboardHelp {
     Object.assign(header.style, {
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'space-between',
+      justifyContent: 'flex-start',
       gap: '8px',
       height: '28px',
       minHeight: '28px',
@@ -1024,10 +1031,10 @@ export class FloatingKeyboardHelp {
     if (titleEl && titleEl.style) {
       Object.assign(titleEl.style, {
         fontSize: '11px',
-        fontWeight: '600',
-        letterSpacing: '0.01em',
-        textTransform: 'none',
-        color: NCT_DARK_UI_COLORS.fg,
+        fontWeight: 'var(--kp-titlebar-title-weight, 600)',
+        letterSpacing: 'var(--kp-type-tracking-titlebar, 0.02em)',
+        textTransform: 'var(--kp-type-transform-titlebar, none)',
+        color: 'var(--kp-color-fg, #ddd)',
         lineHeight: '28px',
         whiteSpace: 'nowrap',
         overflow: 'hidden',
@@ -1055,7 +1062,7 @@ export class FloatingKeyboardHelp {
         display: hintEl.hidden ? 'none' : 'inline-flex',
         alignItems: 'center',
         gap: '4px',
-        marginLeft: 'auto',
+        marginLeft: '0',
         fontSize: '10px',
         fontWeight: '500',
         letterSpacing: '0',
@@ -1067,6 +1074,13 @@ export class FloatingKeyboardHelp {
         lineHeight: '28px',
         whiteSpace: 'nowrap'
       });
+    }
+
+    const collapseBtn = parts.collapseBtn
+      || header.querySelector('button[data-kp-floating-keyboard-collapse="true"]');
+    if (collapseBtn && collapseBtn.style) {
+      collapseBtn.style.marginLeft = 'auto';
+      collapseBtn.style.flex = '0 0 auto';
     }
 
     const closeBtn = parts.closeBtn
@@ -1252,7 +1266,7 @@ export class FloatingKeyboardHelp {
     try {
       const existing = document.querySelector('.kp-floating-keyboard-help[data-kp-early-floating-keyboard="true"]');
       if (existing && existing.isConnected) {
-        const shadowRoot = ensureOpenChromeShadow(existing, { id: 'keyboard-help' });
+        const shadowRoot = ensureOpenChromeShadow(existing, { id: 'keyboard-help', chromeWindow: true });
         const shell = shadowRoot || existing;
         const keyboardContainer = shell.querySelector('.kp-floating-keyboard-help__keyboard');
         const closeBtn =
@@ -1269,7 +1283,7 @@ export class FloatingKeyboardHelp {
         let shortcutEl = shell.querySelector('[data-kp-floating-keyboard-shortcut="true"]')
           || shell.querySelector('[data-kp-titlebar-shortcut="true"]');
         if (!shortcutEl && header && titleEl) {
-          shortcutEl = createTitlebarShortcut(document, '[K]');
+          shortcutEl = createTitlebarShortcut(document, 'K');
           shortcutEl.setAttribute('data-kp-floating-keyboard-shortcut', 'true');
           shortcutEl.title = 'Toggle keyboard reference';
           try {
@@ -1279,34 +1293,16 @@ export class FloatingKeyboardHelp {
             try { header.appendChild(shortcutEl); } catch { /* ignore */ }
           }
         }
+        if (header && titleEl && !header.querySelector('[data-kp-floating-keyboard-icon="true"], .kp-titlebar-icon')) {
+          const leadingIcon = createTitlebarLeadingIcon(document, 'keyboard');
+          leadingIcon.setAttribute('data-kp-floating-keyboard-icon', 'true');
+          try { header.insertBefore(leadingIcon, titleEl); } catch { /* ignore */ }
+        }
         let layoutSelect = shell.querySelector('[data-kp-floating-keyboard-layout-select="true"]');
-        if (!layoutSelect && header) {
-          layoutSelect = document.createElement('select');
-          layoutSelect.setAttribute('aria-label', 'Current keyboard layout');
-          layoutSelect.setAttribute('data-kp-floating-keyboard-layout-select', 'true');
-          Object.assign(layoutSelect.style, {
-            marginLeft: '6px',
-            padding: '2px 6px',
-            borderRadius: '2px',
-            border: NCT_DARK_UI_FIELD_BORDER,
-            background: NCT_DARK_UI_FIELD_BACKGROUND,
-            color: NCT_DARK_UI_COLORS.fg,
-            outline: 'none',
-            fontSize: '11px',
-            width: '190px',
-            height: '22px',
-            cursor: 'pointer'
-          });
-          this._wireLayoutSelect(layoutSelect);
-          try {
-            const hintNode = hintEl || header.querySelector('[data-kp-floating-keyboard-hint="true"]');
-            if (hintNode) header.insertBefore(layoutSelect, hintNode);
-            else header.appendChild(layoutSelect);
-          } catch {
-            try { header.appendChild(layoutSelect); } catch { /* ignore */ }
-          }
+        if (header) {
+          layoutSelect = this._installLayoutSelect(layoutSelect, header, hintEl);
         } else if (layoutSelect) {
-          this._wireLayoutSelect(layoutSelect);
+          this._installLayoutSelect(layoutSelect, layoutSelect.parentElement, layoutSelect.nextSibling);
         }
 
         // Prefer early shell's already-applied position when we were not seeded.
@@ -1369,7 +1365,7 @@ export class FloatingKeyboardHelp {
     root.hidden = true;
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-label', 'KeyPilot keyboard reference');
-    const shadowRoot = ensureOpenChromeShadow(root, { id: 'keyboard-help' });
+    const shadowRoot = ensureOpenChromeShadow(root, { id: 'keyboard-help', chromeWindow: true });
     const shell = shadowRoot || root;
 
     this._applyProPanelChrome(root);
@@ -1381,31 +1377,18 @@ export class FloatingKeyboardHelp {
     title.textContent = 'Keyboard Reference';
     title.setAttribute('data-kp-floating-keyboard-title', 'true');
 
-    const shortcut = createTitlebarShortcut(document, '[K]');
+    const leadingIcon = createTitlebarLeadingIcon(document, 'keyboard');
+    leadingIcon.setAttribute('data-kp-floating-keyboard-icon', 'true');
+
+    const shortcut = createTitlebarShortcut(document, 'K');
     shortcut.setAttribute('data-kp-floating-keyboard-shortcut', 'true');
     shortcut.title = 'Toggle keyboard reference';
-
-    const layoutSelect = document.createElement('select');
-    layoutSelect.setAttribute('aria-label', 'Current keyboard layout');
-    layoutSelect.setAttribute('data-kp-floating-keyboard-layout-select', 'true');
-    Object.assign(layoutSelect.style, {
-      marginLeft: '6px',
-      padding: '2px 6px',
-      borderRadius: '2px',
-      border: NCT_DARK_UI_FIELD_BORDER,
-      background: NCT_DARK_UI_FIELD_BACKGROUND,
-      color: NCT_DARK_UI_COLORS.fg,
-      outline: 'none',
-      fontSize: '11px',
-      width: '190px',
-      height: '22px',
-      cursor: 'pointer'
-    });
-    this._wireLayoutSelect(layoutSelect);
 
     const hint = document.createElement('div');
     hint.setAttribute('data-kp-floating-keyboard-hint', 'true');
     hint.hidden = true;
+
+    const layoutSelect = this._installLayoutSelect(null, header, hint);
 
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
@@ -1415,6 +1398,7 @@ export class FloatingKeyboardHelp {
     closeBtn.addEventListener('click', this._onCloseClick);
     closeBtn.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
 
+    header.appendChild(leadingIcon);
     header.appendChild(title);
     header.appendChild(shortcut);
     header.appendChild(layoutSelect);
@@ -1488,6 +1472,7 @@ export class FloatingKeyboardHelp {
       lineHeight: '20px',
       padding: '0',
       margin: '0',
+      marginLeft: 'auto',
       flex: '0 0 auto',
       boxShadow: NCT_DARK_UI_ICON_BUTTON_OUTLINE
     });
@@ -1550,7 +1535,7 @@ export class FloatingKeyboardHelp {
   }
 
   /**
-   * Title-adjacent toggle shortcut "([K])" (key label is layout-aware).
+   * Title-adjacent toggle shortcut (key label is layout-aware).
    * @param {string} keyLabel
    */
   _setToggleShortcut(keyLabel) {
@@ -1561,11 +1546,10 @@ export class FloatingKeyboardHelp {
       || null;
     if (!el) return;
     this._shortcutEl = el;
-    const inner = `[${key}]`;
     try {
-      if (el.textContent === `(${inner})` && el.style.display !== 'none') return;
+      if (el.textContent === key && el.style.display !== 'none') return;
     } catch { /* ignore */ }
-    setTitlebarShortcutText(el, inner);
+    setTitlebarShortcutText(el, key);
     try {
       el.title = `Toggle with ${key}`;
       el.setAttribute('aria-label', `Toggle keyboard reference (${key})`);
@@ -1619,7 +1603,7 @@ export class FloatingKeyboardHelp {
    * @param {HTMLElement|null} [body]
    */
   _applyEditModeHatch(on, header = null, body = null) {
-    const hatch = 'repeating-linear-gradient(-45deg, rgba(180, 200, 220, 0.08) 0px, rgba(180, 200, 220, 0.08) 1px, transparent 1px, transparent 7px)';
+    const hatch = 'var(--kp-hatch-edit)';
     const titlebar = header || this._titlebar;
     const keyboardBody = body || this._keyboardBody;
     try {
@@ -1630,7 +1614,7 @@ export class FloatingKeyboardHelp {
       if (titlebar?.style) {
         if (on) {
           titlebar.style.backgroundImage =
-            `${hatch}, linear-gradient(180deg, #646464 0%, #4a4a4a 45%, #383838 100%)`;
+            `${hatch}, var(--kp-hatch-edit-titlebar-bg, linear-gradient(180deg, #646464 0%, #4a4a4a 45%, #383838 100%))`;
         } else {
           titlebar.style.background = NCT_DARK_UI_TITLEBAR_GRADIENT;
         }
@@ -1639,7 +1623,7 @@ export class FloatingKeyboardHelp {
     try {
       if (keyboardBody?.style) {
         if (on) {
-          keyboardBody.style.backgroundColor = '#1a1c20';
+          keyboardBody.style.backgroundColor = 'var(--kp-hatch-edit-body-bg, #1a1c20)';
           keyboardBody.style.backgroundImage = hatch;
         } else {
           keyboardBody.style.background = 'transparent';
@@ -1720,26 +1704,13 @@ export class FloatingKeyboardHelp {
 :host([data-kp-edit-mode="true"]) [data-kp-floating-keyboard-titlebar="true"],
 :host [data-kp-floating-keyboard-titlebar="true"].kp-kb-edit-hatch {
   background-image:
-    repeating-linear-gradient(
-      -45deg,
-      rgba(180, 200, 220, 0.08) 0px,
-      rgba(180, 200, 220, 0.08) 1px,
-      transparent 1px,
-      transparent 7px
-    ),
-    linear-gradient(180deg, #646464 0%, #4a4a4a 45%, #383838 100%) !important;
+    var(--kp-hatch-edit),
+    var(--kp-hatch-edit-titlebar-bg, linear-gradient(180deg, #646464 0%, #4a4a4a 45%, #383838 100%)) !important;
 }
 :host([data-kp-edit-mode="true"]) [data-kp-floating-keyboard-body="true"],
 :host [data-kp-floating-keyboard-body="true"].kp-kb-edit-hatch {
-  background-color: #1a1c20 !important;
-  background-image:
-    repeating-linear-gradient(
-      -45deg,
-      rgba(180, 200, 220, 0.08) 0px,
-      rgba(180, 200, 220, 0.08) 1px,
-      transparent 1px,
-      transparent 7px
-    ) !important;
+  background-color: var(--kp-hatch-edit-body-bg, #1a1c20) !important;
+  background-image: var(--kp-hatch-edit) !important;
 }
 /* Lighten the panel chrome fill while editing. */
 :host([data-kp-edit-mode="true"]) {
@@ -1787,17 +1758,14 @@ export class FloatingKeyboardHelp {
   }
 
   /**
-   * Shared change handler for the titlebar layout <select>.
+   * Shared change handler for the titlebar layout select.
    * In edit mode this switches the layout being edited (same as Config's Layout combo).
    * Outside edit mode it sets the current/active layout.
-   * @param {Event} e
+   * @param {string} raw
    */
-  async _onLayoutSelectChange(e) {
-    const sel = (e?.currentTarget instanceof HTMLSelectElement)
-      ? e.currentTarget
-      : this._layoutSelectEl;
-    if (!sel) return;
-    const v = String(sel.value || 'builtin');
+  async _onLayoutSelectChange(raw) {
+    const api = this._layoutSelectApi;
+    const v = String(raw || 'builtin');
     if (
       v === LAYOUT_SELECT_EDIT_VALUE
       || v === LAYOUT_SELECT_NEW_VALUE
@@ -1806,10 +1774,8 @@ export class FloatingKeyboardHelp {
       || v === LAYOUT_SELECT_DOCS_VALUE
       || v === LAYOUT_SELECT_SETTINGS_VALUE
     ) {
-      // Action item — restore prior layout selection, then run the action.
       const prev = this._layoutSelectValueForCurrent();
-      const known = [...sel.options].some((o) => o && o.value === prev);
-      sel.value = known ? prev : builtinFamilySelectValue('browsing');
+      try { api?.setValue?.(prev, { silent: true }); } catch { /* ignore */ }
       try {
         const kp = this._getKeyPilot?.();
         if (v === LAYOUT_SELECT_ONBOARDING_VALUE) {
@@ -1845,7 +1811,7 @@ export class FloatingKeyboardHelp {
         const panel = typeof this._getConfigPanel === 'function' ? this._getConfigPanel() : null;
         if (panel && typeof panel.selectLayoutByValue === 'function') {
           await panel.selectLayoutByValue(v);
-          try { sel.value = this._layoutSelectValueForCurrent(); } catch { /* ignore */ }
+          try { api?.setValue?.(this._layoutSelectValueForCurrent(), { silent: true }); } catch { /* ignore */ }
           return;
         }
       } catch { /* ignore */ }
@@ -1864,7 +1830,7 @@ export class FloatingKeyboardHelp {
   }
 
   /**
-   * Current <select> value for the active layout (builtin family or user id).
+   * Current select value for the active layout (builtin family or user id).
    * While editing, follows the Config panel's selection rather than the live current layout.
    * @returns {string}
    */
@@ -1888,67 +1854,100 @@ export class FloatingKeyboardHelp {
   }
 
   /**
-   * Wire (or re-wire) the layout select change listener once.
-   * @param {HTMLSelectElement|null} layoutSelect
+   * Mount or replace the titlebar layout picker with the custom select control.
+   * @param {Element|null} existing
+   * @param {Element|null} header
+   * @param {Node|null} [beforeNode]
+   * @returns {HTMLElement|null}
+   */
+  _installLayoutSelect(existing, header, beforeNode = null) {
+    if (this._layoutSelectApi && this._layoutSelectEl?.isConnected) {
+      this._wireLayoutSelect(this._layoutSelectEl);
+      return this._layoutSelectEl;
+    }
+    try { this._layoutSelectApi?.destroy?.(); } catch { /* ignore */ }
+    this._layoutSelectApi = null;
+
+    const menu = createSelectMenu({
+      doc: document,
+      ariaLabel: 'Current keyboard layout',
+      variant: 'titlebar',
+      value: this._layoutSelectValueForCurrent(),
+      onChange: (value) => {
+        void this._onLayoutSelectChange(value);
+      }
+    });
+    menu.root.setAttribute('data-kp-floating-keyboard-layout-select', 'true');
+    this._layoutSelectApi = menu;
+    this._layoutSelectEl = menu.root;
+
+    const parent = (existing && existing.parentNode) || header;
+    if (existing && existing.parentNode) {
+      try { existing.parentNode.replaceChild(menu.root, existing); } catch {
+        try { parent?.appendChild?.(menu.root); } catch { /* ignore */ }
+      }
+    } else if (parent) {
+      try {
+        const hintNode = beforeNode
+          || (header && header.querySelector?.('[data-kp-floating-keyboard-hint="true"]'));
+        if (hintNode && hintNode.parentNode === parent) parent.insertBefore(menu.root, hintNode);
+        else parent.appendChild(menu.root);
+      } catch {
+        try { parent.appendChild(menu.root); } catch { /* ignore */ }
+      }
+    }
+    this._wireLayoutSelect(menu.root);
+    return menu.root;
+  }
+
+  /**
+   * Wire (or re-wire) the layout select once.
+   * @param {HTMLElement|null} layoutSelect
    */
   _wireLayoutSelect(layoutSelect) {
     if (!layoutSelect) return;
-    try { layoutSelect.removeEventListener('change', this._onLayoutSelectChange, true); } catch { /* ignore */ }
-    layoutSelect.addEventListener('change', this._onLayoutSelectChange, true);
     if (layoutSelect.dataset.kpLayoutSelectWired === 'true') return;
     layoutSelect.dataset.kpLayoutSelectWired = 'true';
-    // Prevent titlebar drag when interacting with the select.
     layoutSelect.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
     layoutSelect.addEventListener('mousedown', (e) => e.stopPropagation(), true);
   }
 
   async _refreshLayoutSelectOptions() {
-    const selEl = this._layoutSelectEl;
-    if (!selEl) return;
+    const api = this._layoutSelectApi;
+    if (!api) return;
     try {
       const layouts = await listUserKeyboardLayouts();
       const groups = listLayoutPickerGroups(layouts);
-      selEl.innerHTML = '';
 
+      /** @type {import('./select-menu.js').SelectMenuOption[]} */
+      const options = [];
       const known = new Set();
       const appendGroup = (heading, items) => {
-        const hdr = document.createElement('option');
-        hdr.disabled = true;
-        hdr.textContent = heading;
-        selEl.appendChild(hdr);
+        if (options.length) options.push({ type: 'separator' });
+        options.push({ type: 'group', label: heading });
         for (const item of items || []) {
           if (!item?.value) continue;
-          const opt = document.createElement('option');
-          opt.value = item.value;
-          opt.textContent = item.label;
-          selEl.appendChild(opt);
-          known.add(opt.value);
+          options.push({
+            value: item.value,
+            label: item.label,
+            icon: item.icon,
+            shortcut: item.shortcut
+          });
+          known.add(item.value);
         }
       };
       appendGroup('Built-In', groups.builtin);
-      // Legacy single "Built-in" value still resolves via parseBuiltinFamilySelectValue.
       known.add('builtin');
-      try {
-        selEl.appendChild(document.createElement('hr'));
-      } catch { /* ignore */ }
       appendGroup('Custom', groups.custom);
 
-      // Action items only outside edit mode — while editing, this select matches Config's Layout combo.
       if (!this._editMode) {
-        try {
-          selEl.appendChild(document.createElement('hr'));
-        } catch { /* ignore */ }
         appendGroup('Keyboard Layout Config', [
-          { value: LAYOUT_SELECT_EDIT_VALUE, label: 'Edit Keyboard Layout…  Alt + C' },
+          { value: LAYOUT_SELECT_EDIT_VALUE, label: 'Edit Keyboard Layout…', shortcut: 'Alt + C' },
           { value: LAYOUT_SELECT_NEW_VALUE, label: 'New Blank Keyboard Layout' },
           { value: LAYOUT_SELECT_DUP_VALUE, label: 'New Duplicate Keyboard Layout' }
         ]);
       }
 
-      // KeyPilot app actions (always at the bottom).
-      try {
-        selEl.appendChild(document.createElement('hr'));
-      } catch { /* ignore */ }
       appendGroup('KeyPilot', [
         { value: LAYOUT_SELECT_ONBOARDING_VALUE, label: 'Onboarding Tutorial' },
         { value: LAYOUT_SELECT_DOCS_VALUE, label: 'KeyPilot Documentation/Help' },
@@ -1969,7 +1968,8 @@ export class FloatingKeyboardHelp {
           this._currentUserLayout = null;
         }
       }
-      selEl.value = v;
+      api.setOptions(options);
+      api.setValue(v, { silent: true });
     } catch { /* ignore */ }
   }
 

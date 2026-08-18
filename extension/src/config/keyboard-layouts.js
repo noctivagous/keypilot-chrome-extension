@@ -41,7 +41,10 @@
  * @typedef {{
  *   handler: string,
  *   label: string,
+ *   // Short "About" blurb for Actions Library key-action cards (keep concise).
  *   description: string,
+ *   // Longer inspector Description; shown in the Actions Library dock, not on cards.
+ *   details?: string,
  *   keyboardClass?: string|null,
  *   row?: number|null,
  *   category?: string,
@@ -74,6 +77,21 @@ export const DEFAULT_KEYBOARD_LAYOUT_ID = /** @type {const} */ ('browsing-right'
 
 export const DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID = /** @type {const} */ ('browsing');
 export const DEFAULT_KEYBOARD_HANDEDNESS = /** @type {const} */ ('right');
+
+/**
+ * User Macros / Macro Builder UI (Keyboard Layout Config).
+ *
+ * Off in v1 — composition is Execute JS on a key. Runtime still runs any Macro already
+ * bound to a slot (stock or leftover user macros). Flip `SOURCE_BUILD_ENABLE_MACRO_BUILDER`
+ * to `true` for a v1.2 / local-dev build (same idea as removing an id from
+ * {@link BUILD_EXCLUDED_KEY_ACTIONS}), or pass `--macro-builder` to `node build.js`.
+ * @type {boolean}
+ */
+const SOURCE_BUILD_ENABLE_MACRO_BUILDER = false;
+
+export const BUILD_ENABLE_MACRO_BUILDER = typeof __KP_BUILD_ENABLE_MACRO_BUILDER__ !== 'undefined'
+  ? !!__KP_BUILD_ENABLE_MACRO_BUILDER__
+  : SOURCE_BUILD_ENABLE_MACRO_BUILDER;
 
 /**
  * Key action IDs omitted from shipped builds (builtin layouts, catalogs, Function Library).
@@ -308,7 +326,8 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
   ACTIVATE: Object.freeze({
     handler: 'handleActivateKey',
     label: 'Click Element',
-    description: 'Click Element',
+    description: 'Click the hovered element',
+    details: 'Activates the clickable under the cursor — the same as a left mouse click on that element. Works with links, buttons, and other interactive targets KeyPilot highlights.',
     keyboardClass: 'key-activate',
     row: 2
   }),
@@ -316,7 +335,8 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
   ACTIVATE_NEW_TAB: Object.freeze({
     handler: 'handleActivateNewTabKey',
     label: 'Click New Tab',
-    description: 'Open Link in New Tab (Foreground)',
+    description: 'Open link in a new foreground tab',
+    details: 'Opens the hovered link in a new tab and switches to it immediately. Use when you want to follow a link without leaving your place permanently, but still jump to the new page right away.',
     keyboardClass: 'key-activate-new',
     row: 2
   }),
@@ -324,126 +344,144 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
   ACTIVATE_NEW_TAB_BACKGROUND: Object.freeze({
     handler: 'handleActivateNewTabBackgroundKey',
     label: 'Click New Tab Background',
-    description: 'Open Link in New Tab (Background, like middle click)',
+    description: 'Open link in a new background tab',
+    details: 'Opens the hovered link in a new tab without switching focus — like a middle-click. Useful for queueing several links while you keep reading the current page.',
     keyboardClass: 'key-activate-new-over',
     row: 2
   }),
   BACK: Object.freeze({
     handler: 'handleBackKey',
     label: 'Go Back',
-    description: 'Go Back (History)',
+    description: 'Browser history back',
+    details: 'Navigates one step back in the current tab’s history, equivalent to the browser Back button.',
     keyboardClass: 'key-back',
     row: 2
   }),
   BACK2: Object.freeze({
     handler: 'handleBackKey',
     label: 'Go Back',
-    description: 'Go Back (History)',
+    description: 'Browser history back',
+    details: 'Navigates one step back in the current tab’s history, equivalent to the browser Back button. Duplicate id for layouts that expose a second Back binding.',
     keyboardClass: 'key-back',
     row: 2
   }),
   FORWARD: Object.freeze({
     handler: 'handleForwardKey',
     label: 'Go Forward',
-    description: 'Go Forward (History)',
+    description: 'Browser history forward',
+    details: 'Navigates one step forward in the current tab’s history, equivalent to the browser Forward button.',
     keyboardClass: 'key-forward',
     row: 1
   }),
   DELETE: Object.freeze({
     handler: 'handleDeleteKey',
     label: 'Delete Mode',
-    description: 'Delete Mode',
+    description: 'Hide elements under the cursor',
+    details: 'Toggles Delete Mode: hover elements and remove (hide) them from the page so you can declutter layouts. Exit with Exit Focus or by toggling again.',
     keyboardClass: 'key-delete',
     row: 2
   }),
   COLS_TOGGLE: Object.freeze({
     handler: 'handleColsToggleKey',
     label: 'Cols Toggle',
-    description: 'Columnize element under cursor (multi-column layout)',
+    description: 'Multi-column layout under cursor',
+    details: 'Columnizes the element under the cursor into a multi-column layout so dense text or lists are easier to scan. Toggle again to restore the original layout.',
     keyboardClass: 'key-cols',
     row: 3
   }),
   TAB_LEFT: Object.freeze({
     handler: 'handleTabLeftKey',
     label: 'Tab Left',
-    description: 'Move To Previous Tab',
+    description: 'Switch to the previous tab',
+    details: 'Activates the tab to the left of the current one in the window’s tab strip.',
     keyboardClass: 'key-gray',
     row: 1
   }),
   TAB_RIGHT: Object.freeze({
     handler: 'handleTabRightKey',
     label: 'Tab Right',
-    description: 'Move To Next Tab',
+    description: 'Switch to the next tab',
+    details: 'Activates the tab to the right of the current one in the window’s tab strip.',
     keyboardClass: 'key-gray',
     row: 1
   }),
   ROOT: Object.freeze({
     handler: 'handleRootKey',
     label: 'Go to Site Root',
-    description: 'Go to Site Root',
+    description: 'Navigate to the site origin',
+    details: 'Jumps to the site root (scheme + host) of the current page — useful for escaping deep paths without typing a URL.',
     keyboardClass: null,
     row: null
   }),
   LAUNCHER: Object.freeze({
     handler: 'handleLauncherKey',
     label: 'Launcher',
-    description: 'Open Launcher (Quick Access to Sites)',
+    description: 'Quick-access site launcher',
+    details: 'Opens the Launcher popover for jumping to favorite or configured sites without using the omnibox.',
     keyboardClass: 'key-launcher-orange',
     row: 2
   }),
   TOP_SITES: Object.freeze({
     handler: 'handleTopSitesKey',
     label: 'Top Sites',
-    description: 'Open Top Sites (toolbar, most visited, recent bookmarks)',
+    description: 'Toolbar, visits, and bookmarks',
+    details: 'Opens Top Sites: a quick list drawn from the toolbar, most-visited pages, and recent bookmarks so you can open a frequent destination in one step.',
     keyboardClass: 'key-launcher-orange',
     row: 2
   }),
   CLOSE_TAB: Object.freeze({
     handler: 'handleCloseTabKey',
     label: 'Close Tab',
-    description: 'Close Tab',
+    description: 'Close the current tab',
+    details: 'Closes the active tab. Behavior matches the browser’s close-tab action for the current window.',
     keyboardClass: 'key-close-tab',
     row: 3
   }),
   CANCEL: Object.freeze({
     handler: 'cancelModes',
     label: 'Exit Focus',
-    description: 'Exit Focus',
+    description: 'Leave modes and overlays',
+    details: 'Cancels the current KeyPilot mode or overlay (Delete Mode, Scroll Line, text focus helpers, and similar) and returns to normal browsing.',
     keyboardClass: null,
     row: null
   }),
   PAGE_UP_INSTANT: Object.freeze({
     handler: 'handleInstantPageUp',
     label: 'Page Up Fast',
-    description: 'Page Up (Instant)',
+    description: 'Jump one page up instantly',
+    details: 'Scrolls the current scroll target up by roughly one viewport without animation — faster than a smooth page-up when you need to move quickly.',
     keyboardClass: 'key-scroll',
     row: 3
   }),
   PAGE_DOWN_INSTANT: Object.freeze({
     handler: 'handleInstantPageDown',
     label: 'Page Down Fast',
-    description: 'Page Down (Instant)',
+    description: 'Jump one page down instantly',
+    details: 'Scrolls the current scroll target down by roughly one viewport without animation — faster than a smooth page-down when you need to move quickly.',
     keyboardClass: 'key-scroll',
     row: 3
   }),
   PAGE_TOP: Object.freeze({
     handler: 'handlePageTop',
     label: 'Scroll To Top',
-    description: 'Jump to the top of the scroll target (Fade hides the jump; Scroll animates)',
+    description: 'Jump to top of scroll target',
+    details: 'Moves to the top of the current scroll target. Fade mode hides the jump; Scroll mode animates. Configure the motion style in Settings → Scrolling.',
     keyboardClass: 'key-scroll',
     row: 3
   }),
   PAGE_BOTTOM: Object.freeze({
     handler: 'handlePageBottom',
     label: 'Scroll To Bottom',
-    description: 'Jump to the bottom of the scroll target (Fade hides the jump; Scroll animates)',
+    description: 'Jump to bottom of scroll target',
+    details: 'Moves to the bottom of the current scroll target. Fade mode hides the jump; Scroll mode animates. Configure the motion style in Settings → Scrolling.',
     keyboardClass: 'key-scroll',
     row: 3
   }),
   SCROLL_LINE: Object.freeze({
     handler: 'handleScrollLineKey',
     label: 'Scroll Line',
-    description: 'Scroll from a fixed origin: move the mouse away from the dot to scroll faster. Optional middle-click on empty page area (Settings → Scrolling).',
+    description: 'Origin-based continuous scroll',
+    details: 'Scrolls from a fixed origin: move the mouse away from the on-screen dot to scroll faster in that direction. Optionally enable middle-click on empty page area under Settings → Scrolling.',
     keyboardClass: 'key-scroll',
     row: 3,
     mode: 'scroll_line',
@@ -459,7 +497,8 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
   NEW_TAB: Object.freeze({
     handler: 'handleNewTabKey',
     label: 'New Tab',
-    description: 'Open New Tab',
+    description: 'Open a blank new tab',
+    details: 'Opens a new empty tab in the current window, same as the browser’s New Tab command.',
     keyboardClass: 'key-gray',
     row: 1
   }),
@@ -467,27 +506,31 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     handler: 'handleOpenPopover',
     label: 'Open Popover',
     description: 'Open link in a popup window',
+    details: 'Opens the hovered link in a KeyPilot popup window so you can peek or work in a separate chrome without a full new tab.',
     keyboardClass: 'key-open-popover',
     row: 2
   }),
   PREVIEW_LINK_POPOVER: Object.freeze({
     handler: 'handlePreviewLinkPopover',
     label: 'Preview Link',
-    description: 'Open Link Preview in a popup window',
+    description: 'Preview link in a popup',
+    details: 'Opens Link Preview for the hovered URL in a popup window — skim the destination without committing a full navigation in the main tab.',
     keyboardClass: 'key-preview-popover',
     row: 2
   }),
   POI_WEBSITE: Object.freeze({
     handler: 'handlePoiWebsiteKey',
     label: 'POI Website',
-    description: 'Open the map place website under the cursor in Link Preview',
+    description: 'Open map place website',
+    details: 'When a map place (POI) is under the cursor, opens that place’s website in Link Preview so you can visit the business or location page without leaving the map.',
     keyboardClass: 'key-preview-popover',
     row: null
   }),
   POI_ADDRESS: Object.freeze({
     handler: 'handlePoiAddressKey',
     label: 'POI Address',
-    description: 'Copy the map place address under the cursor',
+    description: 'Copy map place address',
+    details: 'When a map place (POI) is under the cursor, copies its street address to the clipboard for pasting into directions, notes, or forms.',
     keyboardClass: null,
     row: null
   }),
@@ -495,27 +538,31 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     handler: 'handleToggleSettingsPopover',
     label: 'Settings',
     description: 'Open KeyPilot Settings',
+    details: 'Opens or closes the KeyPilot Settings popover for themes, scrolling, click mode, layouts, and other preferences.',
     keyboardClass: 'key-settings-dark',
     row: null
   }),
   OMNIBOX: Object.freeze({
     handler: 'handleOpenOmnibox',
     label: 'Omnibox',
-    description: 'Open Omnibox (Address Bar Overlay)',
+    description: 'Address bar overlay',
+    details: 'Opens KeyPilot’s omnibox overlay so you can type a URL or search without clicking the browser address bar.',
     keyboardClass: 'key-orange',
     row: 2
   }),
   TAB_HISTORY: Object.freeze({
     handler: 'handleToggleTabHistoryPopover',
     label: 'Tab History',
-    description: 'Open Tab History (Branch-Retaining)',
+    description: 'Browse this tab’s history',
+    details: 'Opens Tab History for the current tab so you can jump to a previously visited page in this tab’s session without using the browser’s native history UI.',
     keyboardClass: 'key-gray',
     row: 2
   }),
   TOGGLE_KEYBOARD_HELP: Object.freeze({
     handler: 'handleToggleKeyboardHelp',
     label: 'KB Reference',
-    description: 'Show/Hide the floating KeyPilot keyboard reference',
+    description: 'Show or hide the keyboard map',
+    details: 'Toggles the floating Keyboard Reference window that shows your current layout’s keycaps and bindings.',
     keyboardClass: 'key-purple',
     row: 2
   }),
@@ -523,7 +570,8 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
   HIGHLIGHT: Object.freeze({
     handler: 'handleHighlightKey',
     label: 'Text Select',
-    description: 'Select text (character level) and copy as rich text by default',
+    description: 'Select text and copy rich text',
+    details: 'Enters character-level text selection under the cursor. By default, the selection is copied as rich text so formatting is preserved when you paste.',
     keyboardClass: 'key-highlight',
     row: 2
   }),
@@ -531,7 +579,8 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
   RECTANGLE_HIGHLIGHT: Object.freeze({
     handler: 'handleRectangleHighlightKey',
     label: 'Element Select',
-    description: 'Select intersecting HTML elements in a rectangle (or pick cumulative)',
+    description: 'Rectangle or cumulative element pick',
+    details: 'Selects HTML elements that intersect a dragged rectangle, or pick elements cumulatively. Useful for grabbing structure (not just plain text) from a page region.',
     keyboardClass: 'key-rect-highlight',
     row: 1
   }),
@@ -539,7 +588,8 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
   COPY_HOVERED_IMAGE: Object.freeze({
     handler: 'handleCopyHoveredImageKey',
     label: 'Copy Image',
-    description: 'Copy image under cursor (clipboard, Media Library, or both)',
+    description: 'Copy hovered image',
+    details: 'Copies the image under the cursor to the clipboard, Media Library, or both — configure the destination on the action. Prefer this when you want the image bytes or a saved library entry, not just a URL.',
     // Default key face (no tinted key-gray / family fill).
     keyboardClass: null,
     row: 1
@@ -548,7 +598,8 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
   COPY_HOVERED_URL: Object.freeze({
     handler: 'handleCopyHoveredUrlKey',
     label: 'Copy URL',
-    description: 'Copy URL under cursor (clipboard, Media Library, or both)',
+    description: 'Copy hovered link URL',
+    details: 'Copies the URL under the cursor to the clipboard, Media Library, or both. Use this when you need the href itself rather than fetching or opening the resource.',
     keyboardClass: null,
     row: 1
   }),
@@ -556,7 +607,8 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
   COPY_HOVERED_VIDEO: Object.freeze({
     handler: 'handleCopyHoveredVideoKey',
     label: 'Copy Video',
-    description: 'Copy video under cursor (clipboard, Media Library, or both)',
+    description: 'Copy hovered video',
+    details: 'Copies the video under the cursor (file bytes to Media Library when fetchable, or the video URL to the clipboard). No default layout key — bind it in Layout Config if you need it.',
     keyboardClass: null,
     row: null
   }),
@@ -564,7 +616,8 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
   PAGE_MEDIA: Object.freeze({
     handler: 'handlePageMediaKey',
     label: 'Page Media',
-    description: 'Browse images, videos, and documents found on this page',
+    description: 'Browse media found on this page',
+    details: 'Opens a gallery of images, videos, and documents discovered on the current page so you can review or collect them without hunting through the DOM.',
     keyboardClass: null,
     row: 1
   }),
@@ -573,7 +626,8 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
   OPEN_MEDIA_LIBRARY: Object.freeze({
     handler: 'handleOpenMediaLibraryKey',
     label: 'Media Library',
-    description: 'Open the Media Library.',
+    description: 'Open saved Media Library',
+    details: 'Opens the Media Library where items you previously copied or saved (images, videos, URLs, and related assets) are kept for reuse.',
     keyboardClass: null,
     row: 1
   }),
@@ -581,28 +635,32 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
   CLIPBOARD_COPY: Object.freeze({
     handler: 'handleClipboardCopyKey',
     label: 'Copy',
-    description: 'Copy selected text to the clipboard',
+    description: 'Copy selection to clipboard',
+    details: 'Copies the current text selection to the system clipboard. Prefer this over OS shortcuts when you want Copy available as a KeyPilot layout binding.',
     keyboardClass: null,
     row: null
   }),
   CLIPBOARD_CUT: Object.freeze({
     handler: 'handleClipboardCutKey',
     label: 'Cut',
-    description: 'Cut selected text to the clipboard',
+    description: 'Cut selection to clipboard',
+    details: 'Cuts the current text selection to the system clipboard from the focused field or editable region.',
     keyboardClass: null,
     row: null
   }),
   CLIPBOARD_PASTE: Object.freeze({
     handler: 'handleClipboardPasteKey',
     label: 'Paste',
-    description: 'Paste clipboard text into the focused field',
+    description: 'Paste into the focused field',
+    details: 'Pastes clipboard text into the focused text field or editable element. Bind with a modifier chord if you need it while typing.',
     keyboardClass: null,
     row: null
   }),
   CLIPBOARD_SELECT_ALL: Object.freeze({
     handler: 'handleClipboardSelectAllKey',
     label: 'Select All',
-    description: 'Select all text in the focused field or page',
+    description: 'Select all in field or page',
+    details: 'Selects all text in the focused field, or the page content when nothing editable is focused — same idea as the usual Select All shortcut.',
     keyboardClass: null,
     row: null
   }),
@@ -610,17 +668,13 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
   SEND_TEXT_TO_AI: Object.freeze({
     handler: 'handleSendTextToAiKey',
     label: 'Send Text To AI',
-    description: 'Send selected text to AI with a configurable instruction; route the result to clipboard and/or popover',
+    description: 'Run AI on selected text',
+    details: 'Sends the selected text to AI with a configurable instruction, then routes the result to the clipboard and/or a popover. Configure the prompt and destination on the action instance.',
     keyboardClass: 'key-purple',
     row: null
   })
 });
 
-/**
- * Display category for each action (Keyboard Layout Config grouping).
- * Unknown ids fall back to "Other".
- * @type {Readonly<Record<string, string>>}
- */
 export const KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
   // Navigation — click / link preview / history
   ACTIVATE: 'Navigation',

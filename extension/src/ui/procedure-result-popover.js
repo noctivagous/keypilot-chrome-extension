@@ -60,11 +60,15 @@ function ensureStyles(root) {
   background: ${NCT_DARK_UI_TITLEBAR_GRADIENT};
   border-bottom: ${NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM};
   flex: 0 0 auto;
+  letter-spacing: var(--kp-type-tracking-titlebar, 0.02em);
+  text-transform: var(--kp-type-transform-titlebar, none);
 }
 .${ROOT_CLASS}__title {
-  font-weight: 600;
+  font-weight: var(--kp-titlebar-title-weight, 600);
   font-size: 12px;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--kp-type-tracking-titlebar, 0.02em);
+  text-transform: var(--kp-type-transform-titlebar, none);
+  color: var(--kp-color-fg, inherit);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -133,7 +137,7 @@ export function showProcedureResultPopover(opts = {}) {
     _root.className = ROOT_CLASS;
     _root.setAttribute('role', 'dialog');
     _root.setAttribute('aria-label', 'Procedure result');
-    const shadowRoot = ensureOpenChromeShadow(_root, { id: 'procedure-result' });
+    const shadowRoot = ensureOpenChromeShadow(_root, { id: 'procedure-result', chromeWindow: true });
     const panelRoot = shadowRoot || _root;
     ensureStyles(panelRoot);
     panelRoot.innerHTML = `

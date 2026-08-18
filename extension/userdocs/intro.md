@@ -22,7 +22,7 @@ Key names in these docs refer to the **default right-handed Browsing** layout un
 
 - **Click, scroll, and navigate** without moving hands between keyboard and mouse for every action — <kbd>F</kbd> clicks, <kbd>C</kbd>/<kbd>V</kbd> scroll, <kbd>D</kbd>/<kbd>R</kbd> go back/forward.
 - **Extra browsing tools** — Omnibox, Launcher, Top Sites, Tab History, and media collection.
-- **Full customization** — remap keys, create Action Instances, write Macros, and run Execute JS scripts.
+- **Full customization** — remap keys, create Action Instances, and run Execute JS scripts.
 
 </section>
 <section class="article-column">

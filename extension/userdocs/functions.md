@@ -1,6 +1,6 @@
 # Functions & Actions
 
-Functions are the building blocks you bind to keys or drop into Macros. An **Action Instance** is a Function plus saved parameter values.
+Functions are the building blocks you bind to keys. An **Action Instance** is a Function plus saved parameter values.
 
 ## Use it
 
@@ -31,8 +31,9 @@ Navigation · Tab Control · Begin URL · Get Page Data · Maps · Scroll · Sel
 
 - **Type Characters** — insert text (modifier-chord friendly while typing)
 - **Copy image / video / URL** — with destination choices
-- **Get text/media under cursor**, **Get highlighted range**
-- **Lookup Word**, **Translate**
+- **Get text/media under cursor**
+- **Lookup Word** — Free Dictionary API definition for the word under the cursor
+- **Translate**
 - **Send selection to AI** — instruction + result destination
 - **Add URL to Media Library**
 - **Execute JS** — custom script (see that topic)
@@ -40,4 +41,4 @@ Navigation · Tab Control · Begin URL · Get Page Data · Maps · Scroll · Sel
 
 ### Stock vs user
 
-Stock macros and built-in layouts are read-only sources; editing forks a user copy you own.
+Built-in layouts are read-only sources; editing forks a user copy you own.

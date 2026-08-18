@@ -30,7 +30,7 @@ function ensurePracticePanelStyles(root) {
   background: ${ONBOARDING_METAL.panelBg};
   color: ${ONBOARDING_METAL.fg};
   border: ${ONBOARDING_METAL.panelBorder};
-  border-radius: 3px;
+  border-radius: var(--kp-radius-panel, 3px);
   box-shadow: ${ONBOARDING_METAL.panelShadow};
   font-family: Helvetica, Arial, sans-serif;
   pointer-events: auto;
@@ -45,12 +45,15 @@ function ensurePracticePanelStyles(root) {
   background: ${ONBOARDING_METAL.titlebarBg};
   border-bottom: ${ONBOARDING_METAL.titlebarBorder};
   box-shadow: ${ONBOARDING_METAL.titlebarShadow};
+  letter-spacing: var(--kp-type-tracking-titlebar, 0.02em);
+  text-transform: var(--kp-type-transform-titlebar, none);
 }
 .kp-practice-popover__title {
   font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.2px;
-  color: ${ONBOARDING_METAL.fg};
+  font-weight: var(--kp-titlebar-title-weight, 800);
+  letter-spacing: var(--kp-type-tracking-titlebar, 0.02em);
+  text-transform: var(--kp-type-transform-titlebar, none);
+  color: var(--kp-color-fg, ${ONBOARDING_METAL.fg});
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -449,7 +452,7 @@ export class PracticePopoverPanel {
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-label', 'KeyPilot practice popover');
     applyPopupThemeVars(root);
-    const shadowRoot = ensureOpenChromeShadow(root, { id: 'practice-popover' });
+    const shadowRoot = ensureOpenChromeShadow(root, { id: 'practice-popover', chromeWindow: true });
     const panelRoot = shadowRoot || root;
     ensurePracticePanelStyles(panelRoot);
 

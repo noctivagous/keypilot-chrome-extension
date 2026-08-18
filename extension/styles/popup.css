@@ -55,10 +55,10 @@
     --border2: #4d617b;
 
     /* Typography (match website vibe) */
-    --font-display: 'ROBOTECHGPRegular', 'TitilliumText', system-ui, sans-serif;
-    --font-heading: 'Cubellan', 'TitilliumText', system-ui, sans-serif;
-    --font-body: 'Ezarion', 'Dosis', system-ui, sans-serif;
-    --font-mono: 'Dosis', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --font-display: var(--kp-font-display, 'ROBOTECHGPRegular', 'TitilliumText', system-ui, sans-serif);
+    --font-heading: var(--kp-font-heading, 'Cubellan', 'TitilliumText', system-ui, sans-serif);
+    --font-body: var(--kp-font-body, 'Ezarion', 'Dosis', system-ui, sans-serif);
+    --font-mono: var(--kp-font-mono, 'Dosis', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace);
 }
 
 html,
@@ -398,9 +398,22 @@ input:disabled+.toggle-slider {
 }
 
 .legend-table{
+  display: grid;
   width: 100%;
-  border-collapse: collapse;
   font-size: 12px;
+}
+
+.legend-table thead,
+.legend-table tbody{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 20px;
+}
+
+.legend-table tr{
+  display: grid;
+  grid-template-columns: minmax(4.5em, 34%) minmax(0, 1fr);
+  align-items: baseline;
 }
 
 .legend-table th,
@@ -408,6 +421,7 @@ input:disabled+.toggle-slider {
   text-align: left;
   padding: 6px 8px;
   border-bottom: 1px solid #a1b6de !important;
+  min-width: 0;
 }
 
 .legend-table th{
@@ -416,6 +430,16 @@ input:disabled+.toggle-slider {
 }
 
 .legend-table td:first-child{
-  width: 32%;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+@media (max-width: 420px) {
+  .legend-table thead,
+  .legend-table tbody{
+    grid-template-columns: 1fr;
+  }
+
+  .legend-table thead tr[aria-hidden]{
+    display: none;
+  }
 }

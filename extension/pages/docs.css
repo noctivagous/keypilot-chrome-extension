@@ -1,3 +1,5 @@
+@import url('kp-fonts.css');
+
 :host, :root {
   color-scheme: dark;
   --docs-nav-width: 220px;
@@ -5,10 +7,14 @@
   --docs-nav-bg: rgba(0, 0, 0, 0.28);
   --docs-tab-active-bg: rgba(255, 255, 255, 0.12);
   --docs-tab-hover-bg: rgba(255, 255, 255, 0.06);
-  --docs-tab-active-border: rgba(120, 180, 255, 0.45);
-  --docs-tab-active-accent: rgba(120, 180, 255, 0.95);
-  --docs-tab-focus-ring: rgba(120, 180, 255, 0.75);
-  --docs-font-scale: 1.25;
+  --docs-tab-active-border: color-mix(in srgb, var(--kp-color-accent, #4a90c8) 45%, transparent);
+  --docs-tab-active-accent: var(--kp-color-accent, #4a90c8);
+  --docs-tab-focus-ring: color-mix(in srgb, var(--kp-color-accent, #4a90c8) 75%, transparent);
+  --docs-font-scale: var(--kp-type-scale, 1.25);
+  --font-display: var(--kp-font-display, Helvetica, Arial, sans-serif);
+  --font-heading: var(--kp-font-heading, Helvetica, Arial, sans-serif);
+  --font-body: var(--kp-font-body, Helvetica, Arial, sans-serif);
+  --font-mono: var(--kp-font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
 }
 
 html, body {
@@ -18,9 +24,9 @@ html, body {
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-family: var(--kp-font-body, Helvetica, Arial, sans-serif);
   background: linear-gradient(rgb(18, 18, 18) 0%, rgb(11, 11, 11) 100%);
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--kp-color-fg, rgba(255, 255, 255, 0.92));
 }
 
 :host {
@@ -28,8 +34,8 @@ body {
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  color: rgba(255, 255, 255, 0.92);
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  color: var(--kp-color-fg, rgba(255, 255, 255, 0.92));
+  font-family: var(--kp-font-body, Helvetica, Arial, sans-serif);
 }
 
 .docs-app {
@@ -68,8 +74,9 @@ body {
 
 h1 {
   margin: 0;
-  font-size: 18px;
-  letter-spacing: 0.2px;
+  font-family: var(--kp-font-heading, Helvetica, Arial, sans-serif);
+  font-size: var(--kp-type-h2-size, 18px);
+  letter-spacing: var(--kp-type-tracking-titlebar, 0.2px);
 }
 
 .sub {
@@ -244,7 +251,7 @@ h1 {
   width: auto;
   max-width: 48px;
   padding: 0 5px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--kp-font-kbd, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
   font-size: 9px;
   font-weight: 750;
   line-height: 1;
@@ -310,26 +317,34 @@ h1 {
 }
 
 .docs-article h1 {
-  font-size: calc(22px * var(--docs-font-scale));
+  font-family: var(--kp-font-display, var(--kp-font-heading, Helvetica, Arial, sans-serif));
+  font-size: calc(var(--kp-type-h1-size, 22px) * var(--docs-font-scale, 1.25));
+  font-weight: var(--kp-type-weight-bold, 700);
+  letter-spacing: var(--kp-type-tracking-display, 0.02em);
+  text-transform: var(--kp-type-transform-display, none);
   margin: 0 0 12px;
 }
 
 .docs-article h2 {
-  font-size: calc(16px * var(--docs-font-scale));
+  font-family: var(--kp-font-heading, Helvetica, Arial, sans-serif);
+  font-size: calc(var(--kp-type-h2-size, 16px) * var(--docs-font-scale, 1.25));
+  font-weight: var(--kp-type-weight-semibold, 600);
   margin: 22px 0 8px;
-  letter-spacing: 0.2px;
+  letter-spacing: var(--kp-type-tracking-titlebar, 0.2px);
 }
 
 .docs-article h3 {
-  font-size: calc(14px * var(--docs-font-scale));
+  font-family: var(--kp-font-subhead, Helvetica, Arial, sans-serif);
+  font-size: calc(var(--kp-type-h3-size, 14px) * var(--docs-font-scale, 1.25));
   margin: 18px 0 6px;
 }
 
 .docs-article p,
 .docs-article li {
-  font-size: calc(13px * var(--docs-font-scale));
-  line-height: 1.55;
-  color: rgba(255, 255, 255, 0.88);
+  font-family: var(--kp-font-body, Helvetica, Arial, sans-serif);
+  font-size: calc(var(--kp-type-body-size, 13px) * var(--docs-font-scale, 1.25));
+  line-height: var(--kp-type-leading-prose, 1.55);
+  color: var(--kp-color-fg, rgba(255, 255, 255, 0.88));
 }
 
 .docs-article p {
@@ -357,8 +372,8 @@ h1 {
 }
 
 .docs-article code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: calc(12px * var(--docs-font-scale));
+  font-family: var(--kp-font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: calc(var(--kp-type-code-size, 12px) * var(--docs-font-scale, 1.25));
   padding: 1px 5px;
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.08);
@@ -377,7 +392,7 @@ h1 {
   background: linear-gradient(180deg, #343434 0%, #1c1c1c 100%);
   color: rgba(255, 255, 255, 0.96);
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--kp-font-kbd, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
   font-size: 0.84em;
   font-weight: 650;
   line-height: 1.25;

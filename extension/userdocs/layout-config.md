@@ -1,6 +1,6 @@
 # Keyboard Layout Config
 
-Layout Config is the editor for custom keymaps: place Functions and Macros on keys, create layouts, and manage Action Instances.
+Layout Config is the editor for custom keymaps: place Functions on keys, create layouts, and manage Action Instances.
 
 ## Use it
 
@@ -32,4 +32,4 @@ Also available from the dropdown: **New Blank Keyboard Layout** and **New Duplic
 
 - Keep Keyboard Reference visible while placing — hover keycaps to confirm.
 - Start from Duplicate of Browsing if you only want a few changes.
-- See *Functions & Actions*, *Macros*, and *Execute JS* for what you can place.
+- See *Functions & Actions* and *Execute JS* for what you can place.

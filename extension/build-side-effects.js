@@ -10,6 +10,7 @@ import {
   BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META,
   BUILTIN_KEYBOARD_LAYOUT_META,
   BUILD_EXCLUDED_KEY_ACTIONS,
+  BUILD_ENABLE_MACRO_BUILDER,
   DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID,
   DEFAULT_KEYBOARD_LAYOUT_ID,
   SYSTEM_LAYER_ACTION_IDS,
@@ -23,6 +24,7 @@ import {
   getKeybindingsUiCss
 } from './src/ui/keybindings-ui-shared.js';
 import { POPUP_THEME_VARS } from './src/ui/popup-theme-vars.js';
+import { getAllThemesCss } from './themes/index.js';
 
 function getBuildTimestamp(now = new Date()) {
   // Format date as: Mar-14-2026-4:20PM
@@ -40,11 +42,13 @@ function getBuildTimestamp(now = new Date()) {
 }
 
 
-export async function runPostBundleTasks({ shouldMinify = false } = {}) {
+export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuilder = false } = {}) {
   const shouldMinifyFlag = shouldMinify;
   if (Array.isArray(BUILD_EXCLUDED_KEY_ACTIONS) && BUILD_EXCLUDED_KEY_ACTIONS.length) {
     console.log(`Build-excluded key actions: ${BUILD_EXCLUDED_KEY_ACTIONS.join(', ')}`);
   }
+  const macroBuilderOn = !!enableMacroBuilder || !!BUILD_ENABLE_MACRO_BUILDER;
+  console.log(`Macro Builder UI: ${macroBuilderOn ? 'enabled' : 'disabled (v1 — use Execute JS)'}`);
   // Validate background.js exists in extension directory
   if (fs.existsSync('background.js')) {
     console.log('background.js found and ready for extension');
@@ -446,6 +450,8 @@ export async function runPostBundleTasks({ shouldMinify = false } = {}) {
 
     const css = getKeybindingsUiCss({ zKeybindingsPopover: Z_INDEX.KEYBINDINGS_POPOVER });
     const escapedCss = String(css).replaceAll('`', '\\`');
+    const themeCss = getAllThemesCss();
+    const escapedThemeCss = String(themeCss).replaceAll('\\', '\\\\').replaceAll('`', '\\`').replaceAll('${', '\\${');
 
     // Stamp onboarding-shared.js (export-stripped) so early-inject uses the same shell/progress helpers.
     let onboardingSharedIndented = '';
@@ -507,6 +513,21 @@ export async function runPostBundleTasks({ shouldMinify = false } = {}) {
       `    try { return host.shadowRoot || host.attachShadow({ mode: 'open' }); } catch { return host.shadowRoot || null; }\n` +
       `  }\n` +
       `  const KEYBINDINGS_UI_EARLY_CSS = \`${escapedCss}\`;\n` +
+      `  const KP_ALL_THEMES_CSS = \`${escapedThemeCss}\`;\n` +
+      `  const KP_THEME_IDS = ["dark-pro","gray-metal-pro","gx-er"];\n` +
+      `  function applyEarlyTheme(themeId) {\n` +
+      `    const id = KP_THEME_IDS.indexOf(themeId) >= 0 ? themeId : 'dark-pro';\n` +
+      `    try { document.documentElement.setAttribute('data-kp-theme', id); } catch { /* ignore */ }\n` +
+      `    try {\n` +
+      `      let style = document.getElementById('kp-early-theme');\n` +
+      `      if (!style) {\n` +
+      `        style = document.createElement('style');\n` +
+      `        style.id = 'kp-early-theme';\n` +
+      `        (document.head || document.documentElement).appendChild(style);\n` +
+      `      }\n` +
+      `      if (style.textContent !== KP_ALL_THEMES_CSS) style.textContent = KP_ALL_THEMES_CSS;\n` +
+      `    } catch { /* ignore */ }\n` +
+      `  }\n` +
       (onboardingSharedIndented
         ? `\n  // --- begin stamped onboarding-shared.js ---\n${onboardingSharedIndented}\n  // --- end stamped onboarding-shared.js ---\n`
         : '');

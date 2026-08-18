@@ -21,6 +21,45 @@ export function formatSendTextToAiRequest(prompt, text) {
 }
 
 /**
+ * Whether LOOKUP_WORD may offer / use an AI definition source.
+ * Returns false until the AI key / provider system is wired up; then check that
+ * the user has configured a usable provider.
+ * @returns {boolean}
+ */
+export function isWordLookupAiAvailable() {
+  return false;
+}
+
+/**
+ * Filter enum options for Config UI. Hides LOOKUP_WORD "Ask AI instead" until AI is available.
+ * @param {string} functionId
+ * @param {{ id?: string, type?: string, options?: Array<{ id: string, label: string }> }|null|undefined} param
+ * @returns {Array<{ id: string, label: string }>}
+ */
+export function filterFunctionParameterOptions(functionId, param) {
+  const options = Array.isArray(param?.options) ? param.options : [];
+  if (functionId === 'LOOKUP_WORD' && param?.id === 'source' && !isWordLookupAiAvailable()) {
+    return options.filter((o) => o && o.id !== 'ai');
+  }
+  return options;
+}
+
+/**
+ * Whether a Function parameter should appear in Config UI.
+ * LOOKUP_WORD `source` is hidden while AI is unavailable (dictionary-only default).
+ * @param {string} functionId
+ * @param {{ id?: string, type?: string, options?: Array<{ id: string, label: string }> }|null|undefined} param
+ * @returns {boolean}
+ */
+export function shouldShowFunctionParameter(functionId, param) {
+  if (!param) return false;
+  if (functionId === 'LOOKUP_WORD' && param.id === 'source' && !isWordLookupAiAvailable()) {
+    return false;
+  }
+  return true;
+}
+
+/**
  * Resolve Chrome's on-device Prompt API constructor when present.
  * @returns {any|null}
  */

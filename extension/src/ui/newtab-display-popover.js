@@ -330,6 +330,7 @@ export function createNewtabDisplayPopover(config = {}) {
   const titlebarApi = createPopoverTitlebar({
     doc,
     title: 'Theme',
+    icon: 'gear',
     variant: 'preview',
     showClose: true,
     closeTitle: 'Close',

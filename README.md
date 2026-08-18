@@ -36,54 +36,69 @@ on the keyboard in specific places to make web navigation quick.
 
 | Keys | Action |
 | --- | --- |
-| `I` | Copy image under cursor (clipboard, Media Library, or both) |
-| `M` | Open the Media Library. |
-| `R` | Go Forward (History) |
-| `U` | Copy URL under cursor (clipboard, Media Library, or both) |
-| `;` | Open Top Sites (toolbar, most visited, recent bookmarks) |
-| `B` | Open Link in New Tab (Foreground) |
-| `D` | Go Back (History) |
-| `E` | Open Link Preview in a popup window |
-| `F` | Click Element |
-| `G` | Open Link in New Tab (Background, like middle click) |
-| `J` | Open Tab History (Branch-Retaining) |
-| `L` | Open Omnibox (Address Bar Overlay) |
+| `I` | Copy hovered image |
+| `M` | Open saved Media Library |
+| `R` | Browser history forward |
+| `U` | Copy hovered link URL |
+| `;` | Toolbar, visits, and bookmarks |
+| `B` | Open link in a new foreground tab |
+| `D` | Browser history back |
+| `E` | Preview link in a popup |
+| `F` | Click the hovered element |
+| `G` | Open link in a new background tab |
+| `J` | Browse this tab’s history |
+| `L` | Address bar overlay |
 | `P` | Open link in a popup window |
-| `S` | Go Back (History) |
-| `N` | Scroll from a fixed origin: move the mouse away from the dot to scroll faster. Optional middle-click on empty page area (Settings → Scrolling). |
+| `S` | Browser history back |
+| `N` | Origin-based continuous scroll |
 | `'` | Open KeyPilot Settings |
-| `1` | Go to Site Root |
+| `1` | Navigate to the site origin |
 
 #### Tabs
 
 | Keys | Action |
 | --- | --- |
-| `Q` | Move To Previous Tab |
-| `T` | Open New Tab |
-| `W` | Move To Next Tab |
-| `A` | Close Tab |
+| `Q` | Switch to the previous tab |
+| `T` | Open a blank new tab |
+| `W` | Switch to the next tab |
+| `A` | Close the current tab |
 
 #### Page navigation
 
 | Keys | Action |
 | --- | --- |
-| `O` | Browse images, videos, and documents found on this page |
-| `C` | Page Up (Instant) |
-| `V` | Page Down (Instant) |
-| `X` | Jump to the bottom of the scroll target (Fade hides the jump; Scroll animates) |
-| `Z` | Jump to the top of the scroll target (Fade hides the jump; Scroll animates) |
+| `O` | Browse media found on this page |
+| `C` | Jump one page up instantly |
+| `V` | Jump one page down instantly |
+| `X` | Jump to bottom of scroll target |
+| `Z` | Jump to top of scroll target |
 
 #### Modes & UI
 
 | Keys | Action |
 | --- | --- |
-| `Y` | Select intersecting HTML elements in a rectangle (or pick cumulative) |
-| `Backspace` | Delete Mode |
-| `H` | Select text (character level) and copy as rich text by default |
-| `K` | Show/Hide the floating KeyPilot keyboard reference |
-| `Esc` | Exit Focus |
+| `Y` | Rectangle or cumulative element pick |
+| `Backspace` | Hide elements under the cursor |
+| `H` | Select text and copy rich text |
+| `K` | Show or hide the keyboard map |
+| `Esc` | Leave modes and overlays |
 
 <!-- KP_KEY_MAPPINGS_END -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

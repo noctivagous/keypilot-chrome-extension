@@ -245,18 +245,18 @@ export function getOnboardingPanelCss(opts = {}) {
   let css =
     `${s('kbd')} {
         display: inline-block;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-        font-size: 11px;
-        font-weight: 700;
+        font-family: var(--kp-font-kbd, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+        font-size: var(--kp-type-kbd-size, 11px);
+        font-weight: var(--kp-type-weight-bold, 700);
         line-height: 1.2;
         letter-spacing: 0.02em;
         padding: 2px 7px;
         margin: 0 1px;
-        border: ${ONBOARDING_METAL.kbdBorder};
-        border-radius: 4px;
-        background: ${ONBOARDING_METAL.kbdBg};
-        color: ${ONBOARDING_METAL.kbdColor};
-        box-shadow: ${ONBOARDING_METAL.kbdShadow};
+        border: var(--kp-kbd-border, ${ONBOARDING_METAL.kbdBorder});
+        border-radius: var(--kp-radius-sm, 4px);
+        background: var(--kp-kbd-bg, ${ONBOARDING_METAL.kbdBg});
+        color: var(--kp-color-kbd-fg, ${ONBOARDING_METAL.kbdColor});
+        box-shadow: var(--kp-kbd-shadow, ${ONBOARDING_METAL.kbdShadow});
         vertical-align: baseline;
         white-space: nowrap;
       }
@@ -443,6 +443,7 @@ export function createOnboardingShell(doc, opts = {}) {
   root.className = ONBOARDING_PANEL_CLASS;
   root.hidden = initiallyHidden;
   if (opts.early) root.dataset.kpEarlyOnboarding = 'true';
+  try { root.setAttribute('data-kp-surface', 'onboarding'); } catch { /* ignore */ }
   root.setAttribute('role', 'dialog');
   root.setAttribute('aria-label', 'KeyPilot onboarding walkthrough');
   try { root.setAttribute('data-kp-ui-shadow', 'onboarding'); } catch { /* ignore */ }
@@ -463,12 +464,12 @@ export function createOnboardingShell(doc, opts = {}) {
     flexDirection: 'column',
     overflow: 'hidden',
     zIndex: String(zIndex),
-    background: ONBOARDING_METAL.panelBg,
-    color: ONBOARDING_METAL.fg,
-    border: ONBOARDING_METAL.panelBorder,
-    borderRadius: '3px',
-    boxShadow: ONBOARDING_METAL.panelShadow,
-    fontFamily: 'Helvetica, Arial, sans-serif',
+    background: 'var(--kp-panel-bg)',
+    color: 'var(--kp-color-fg)',
+    border: 'var(--kp-panel-border)',
+    borderRadius: 'var(--kp-radius-panel, 3px)',
+    boxShadow: 'var(--kp-panel-shadow)',
+    fontFamily: 'var(--kp-font-ui, Helvetica, Arial, sans-serif)',
     pointerEvents: initiallyHidden ? 'none' : 'auto'
   });
 

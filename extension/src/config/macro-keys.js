@@ -47,43 +47,49 @@ export const MACRO_KEY_ID_PREFIX = 'macroKey:';
 
 /**
  * Catalog of built-in kinds shown in Keyboard Layout Config.
- * @type {ReadonlyArray<{ id: MacroKeyKind, label: string, description: string, keyboardClass: string }>}
+ * @type {ReadonlyArray<{ id: MacroKeyKind, label: string, description: string, details?: string, keyboardClass: string }>}
  */
 export const MACRO_KEY_KIND_DEFS = Object.freeze([
   Object.freeze({
     id: /** @type {const} */ ('hotkey'),
     label: 'Combination / Hotkey',
-    description: 'One key sends a modifier chord (e.g. Ctrl+C, Win+R, Ctrl+Shift+Esc).',
+    description: 'Send a modifier chord',
+    details: 'One key sends a modifier chord such as Ctrl+C, Win+R, or Ctrl+Shift+Esc. Configure the chord on the Action Instance.',
     keyboardClass: 'key-orange'
   }),
   Object.freeze({
     id: /** @type {const} */ ('burst'),
     label: 'Burst Keys',
-    description: 'One press types a short sequence (e.g. a→b→c or Ctrl+C → Ctrl+V → Enter).',
+    description: 'Type a short key sequence',
+    details: 'One press types a short sequence of keystrokes (e.g. a→b→c or Ctrl+C → Ctrl+V → Enter). Configure the steps on the Action Instance.',
     keyboardClass: 'key-purple'
   }),
   Object.freeze({
     id: /** @type {const} */ ('roundRobin'),
     label: 'Round Robin',
-    description: 'Each press advances a cycle of strokes (A, then B, then C, then A…).',
+    description: 'Cycle through stroke options',
+    details: 'Each press advances a cycle of strokes (A, then B, then C, then A…). Useful when one key should rotate through several outputs.',
     keyboardClass: 'key-scroll'
   }),
   Object.freeze({
     id: /** @type {const} */ ('continuous'),
     label: 'Continue / Continuous',
-    description: 'Press to start sending a stroke repeatedly; press again to stop.',
+    description: 'Repeat a stroke until stopped',
+    details: 'Press to start sending a stroke repeatedly; press again to stop. Configure the repeated stroke on the Action Instance.',
     keyboardClass: 'key-highlight'
   }),
   Object.freeze({
     id: /** @type {const} */ ('mouse'),
     label: 'Synthetic Mouse',
-    description: 'Left, middle, or right click under the cursor.',
+    description: 'Click under the cursor',
+    details: 'Synthesizes a left, middle, or right click under the cursor without moving your physical mouse buttons. Choose the button on the Action Instance.',
     keyboardClass: 'key-activate'
   }),
   Object.freeze({
     id: /** @type {const} */ ('key'),
     label: 'Normal Key',
-    description: 'Remap this slot to another key (e.g. F sends 1).',
+    description: 'Remap this slot to another key',
+    details: 'Remaps this layout slot so pressing it sends a different key (e.g. F sends 1). Configure the target key on the Action Instance.',
     keyboardClass: 'key-gray'
   })
 ]);

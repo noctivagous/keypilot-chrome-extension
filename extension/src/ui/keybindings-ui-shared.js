@@ -599,21 +599,22 @@ ${fontFaceCss}
   /* Block layout: letter/name layers are absolutely positioned (not flex-flow) */
   display: block !important;
   padding: 0 !important;
-  border-radius: 7px;
+  border-radius: var(--kp-key-effective-radius, var(--kp-radius-key, 7px));
+  clip-path: var(--kp-key-clip, none);
 
   /*
    * Low-profile key: nearly flat face, thin rim, soft ground shadow.
    * Reads more like a real chiclet key than a heavy 3D bevel.
    */
-  border: 1px solid rgba(0, 0, 0, 0.4);
+  border: var(--kp-key-border, 1px solid rgba(0, 0, 0, 0.4));
   border-top-color: rgba(255, 255, 255, 0.1);
   border-bottom-color: rgba(0, 0, 0, 0.5);
 
   background:
-    linear-gradient(180deg,
+    var(--kp-key-shade-layer, linear-gradient(180deg,
       rgba(255, 255, 255, 0.07) 0%,
       rgba(255, 255, 255, 0.02) 18%,
-      transparent 42%),
+      transparent 42%)),
     linear-gradient(180deg,
       var(--kp-key-face) 0%,
       var(--kp-key-mid) 70%,
@@ -648,6 +649,7 @@ ${fontFaceCss}
     rgba(255, 255, 255, 0.02) 60%,
     transparent 100%);
   pointer-events: none;
+  opacity: var(--kp-key-sheen-opacity, 1);
 }
 
 /* Prevent UA :disabled washout on edit-readonly keycaps (still non-interactive). */
@@ -780,13 +782,7 @@ ${fontFaceCss}
 /* Edit-mode plate hatch (same steel lines as Keyboard Layout Config). */
 .keyboard-visual.${KEYBINDINGS_UI_ROOT_CLASS}.kp-kb-edit-hatch {
   background:
-    repeating-linear-gradient(
-      -45deg,
-      rgba(180, 200, 220, 0.08) 0px,
-      rgba(180, 200, 220, 0.08) 1px,
-      transparent 1px,
-      transparent 7px
-    ),
+    var(--kp-hatch-edit, repeating-linear-gradient(-45deg, rgba(180, 200, 220, 0.08) 0px, rgba(180, 200, 220, 0.08) 1px, transparent 1px, transparent 7px)),
     linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, transparent 28%),
     radial-gradient(120% 80% at 50% 0%, rgba(91, 226, 241, 0.07) 0%, transparent 55%),
     linear-gradient(180deg, #222833 0%, #1a1f28 45%, #13161e 100%) !important;

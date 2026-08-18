@@ -69,10 +69,10 @@ html[data-theme="cyberforward"] {
   --nt-section-panel-height: 25rem; /* ~400px at 16px root */
   --nt-top-site-min-height: 5.625rem;
 
-  --nt-font-display: 'ROBOTECHGPRegular', 'TitilliumText', system-ui, sans-serif;
-  --nt-font-heading: 'Cubellan', 'TitilliumText', system-ui, sans-serif;
-  --nt-font-body: 'Ezarion', 'Dosis', system-ui, sans-serif;
-  --nt-font-mono: 'Dosis', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  --nt-font-display: var(--kp-font-display, 'ROBOTECHGPRegular', 'TitilliumText', system-ui, sans-serif);
+  --nt-font-heading: var(--kp-font-heading, 'Cubellan', 'TitilliumText', system-ui, sans-serif);
+  --nt-font-body: var(--kp-font-body, 'Ezarion', 'Dosis', system-ui, sans-serif);
+  --nt-font-mono: var(--kp-font-mono, 'Dosis', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace);
 
   --nt-fg: #f1f5f9;
   --nt-fg-92: rgba(241, 245, 249, 0.92);

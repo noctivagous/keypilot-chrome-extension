@@ -5,19 +5,33 @@ import {
   normalizeKeyboardLayoutFamilyId
 } from '../src/config/keyboard-layouts.js';
 import { SEARCH_ENGINE_META } from '../src/config/search-engines.js';
-import { CLICK_EFFECT_IDS, DEFAULT_SETTINGS, getSettings, normalizeCursorMode, normalizeFocusColor, normalizePaintStrategy, normalizeSearchEngine, normalizeTextFocusStyle, setSettings, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
+import { CLICK_EFFECT_IDS, DEFAULT_SETTINGS, getSettings, normalizeCursorMode, normalizeFocusColor, normalizePaintStrategy, normalizeSearchEngine, normalizeTextFocusStyle, resetAllSettings, setSettings, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
+import { applyThemeToRoots, getTheme, getThemeClickDefaults, resolveThemeFromSettings } from '../src/modules/theme-manager.js';
+import { hasThemeOverrides, listThemes, normalizeThemeId, THEME_META } from '../themes/index.js';
 import { GENERIC_FAVICON_DATA_URL, getExtensionFaviconUrl } from '../src/ui/url-listing.js';
 import { CursorManager } from '../src/modules/cursor.js';
 
 /** Document or open ShadowRoot the settings UI is mounted in. */
 let settingsScope = document;
+let settingsHandlersInstalled = false;
+
+function getLiveSettingsSnapshot() {
+  try {
+    const kp = window.keyPilot || window.__KeyPilotInstance;
+    const s = kp && kp._settings;
+    if (s && typeof s === 'object') return s;
+  } catch { /* ignore */ }
+  return null;
+}
 
 function settingsEl(id) {
   try {
-    if (settingsScope && typeof settingsScope.getElementById === 'function') {
-      return settingsScope.getElementById(id);
+    const scope = settingsScope || document;
+    // ShadowRoot.getElementById is missing or unreliable in some embeds; query the scope.
+    if (scope.nodeType === 9 && typeof scope.getElementById === 'function') {
+      return scope.getElementById(id);
     }
-    return settingsScope?.querySelector?.(`#${CSS.escape(id)}`) || null;
+    return scope.querySelector?.(`#${CSS.escape(id)}`) || null;
   } catch {
     return null;
   }
@@ -87,6 +101,7 @@ const SETTINGS_TAB_STORAGE_KEY = 'kp_settings_active_tab';
 const SETTINGS_DEFAULT_PANEL_ID = 'overview';
 const SETTINGS_PANEL_IDS = Object.freeze([
   'overview',
+  'appearance',
   'keyboard',
   'click-mode',
   'text-mode',
@@ -207,6 +222,51 @@ function installSettingsMasterDetailNav() {
   });
 }
 
+function cloneJson(value, fallback) {
+  try {
+    return JSON.parse(JSON.stringify(value ?? fallback));
+  } catch {
+    return fallback;
+  }
+}
+
+function setOverridePath(overrides, path, value) {
+  const next = cloneJson(overrides && typeof overrides === 'object' ? overrides : {}, {});
+  const parts = String(path).split('.').filter(Boolean);
+  let cur = next;
+  for (let i = 0; i < parts.length - 1; i++) {
+    const key = parts[i];
+    if (!cur[key] || typeof cur[key] !== 'object' || Array.isArray(cur[key])) cur[key] = {};
+    cur = cur[key];
+  }
+  if (parts.length) cur[parts[parts.length - 1]] = value;
+  return next;
+}
+
+function parsePxNumber(raw, fallback = 0) {
+  const n = parseFloat(String(raw ?? '').replace(/px$/i, '').trim());
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function toHexColor(raw, fallback = '#888888') {
+  const s = String(raw || '').trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(s)) return s.toLowerCase();
+  if (/^#[0-9a-fA-F]{3}$/.test(s)) {
+    return `#${s[1]}${s[1]}${s[2]}${s[2]}${s[3]}${s[3]}`.toLowerCase();
+  }
+  const m = s.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+  if (m) {
+    const h = (n) => Number(n).toString(16).padStart(2, '0');
+    return `#${h(m[1])}${h(m[2])}${h(m[3])}`;
+  }
+  return fallback;
+}
+
+function themeDisplayName(themeId, customized) {
+  const name = THEME_META[themeId]?.name || themeId;
+  return customized ? `${name} (custom)` : name;
+}
+
 function clampNumber(n, min, max) {
   const v = typeof n === 'number' ? n : Number(n);
   if (!Number.isFinite(v)) return min;
@@ -266,7 +326,9 @@ function withOptionalViewTransition(fn) {
 async function render() {
   applySearchEngineIcons();
 
-  installSettingsMasterDetailNav();
+  if (!settingsHandlersInstalled) {
+    installSettingsMasterDetailNav();
+  }
 
   const radios = Array.from(settingsAll('input[type="radio"][name="engine"]'));
   const keyFeedbackToggle = /** @type {HTMLInputElement|null} */ (settingsEl('keyboard-reference-key-feedback'));
@@ -301,6 +363,10 @@ async function render() {
   const clickFocusPaddingNumber = /** @type {HTMLInputElement|null} */ (settingsEl('click-focus-padding-number'));
   const clickCursorResetBtn = settingsEl('click-cursor-reset');
   const clickModeResetBtn = settingsEl('click-mode-reset');
+  const uiThemeSelect = /** @type {HTMLSelectElement|null} */ (settingsEl('ui-theme-select'));
+  const uiThemeSelectAppearance = /** @type {HTMLSelectElement|null} */ (settingsEl('ui-theme-select-appearance'));
+  const settingsResetAllBtn = settingsEl('settings-reset-all');
+  const settingsResetAppearanceBtn = settingsEl('settings-reset-appearance');
 
   const textCursorType = /** @type {HTMLSelectElement|null} */ (settingsEl('text-cursor-type'));
   const textCursorPreview = settingsEl('text-cursor-preview');
@@ -492,6 +558,89 @@ async function render() {
     }
   };
 
+  const applyThemeSelect = (settings) => {
+    const themeId = normalizeThemeId(settings?.themeId);
+    const customized = hasThemeOverrides(settings?.themeOverrides);
+    const labelFor = (id) => themeDisplayName(id, customized && id === themeId);
+    const fillSelect = (el) => {
+      if (!el) return;
+      const items = listThemes();
+      if (el.options.length !== items.length) {
+        el.innerHTML = '';
+        for (const item of items) {
+          const opt = document.createElement('option');
+          opt.value = item.id;
+          opt.textContent = labelFor(item.id);
+          el.appendChild(opt);
+        }
+      } else {
+        Array.from(el.options).forEach((opt) => {
+          opt.textContent = labelFor(opt.value);
+        });
+      }
+      el.value = themeId;
+    };
+    fillSelect(uiThemeSelect);
+    fillSelect(uiThemeSelectAppearance);
+    const badges = [
+      settingsEl('ui-theme-custom-badge'),
+      settingsEl('ui-theme-custom-badge-appearance')
+    ];
+    badges.forEach((badge) => {
+      if (!badge) return;
+      badge.hidden = !customized;
+    });
+  };
+
+  const paintPageTheme = (settings) => {
+    try {
+      const theme = resolveThemeFromSettings(settings);
+      const roots = [document];
+      if (settingsScope && settingsScope !== document) roots.push(settingsScope);
+      applyThemeToRoots(theme, {
+        roots,
+        hosts: [document.documentElement]
+      });
+    } catch { /* ignore */ }
+  };
+
+  const applyAppearanceControls = (settings) => {
+    const theme = resolveThemeFromSettings(settings);
+    const shape = theme.shape || {};
+    const radius = theme.radius || {};
+    const type = theme.type || {};
+    const titlebar = theme.titlebar || {};
+    const keys = theme.keys || {};
+    const color = theme.color || {};
+    setInputValue(settingsEl('app-corner-mode'), shape.cornerMode === 'cut' ? 'cut' : 'radius');
+    setInputValue(settingsEl('app-cut-size'), parsePxNumber(shape.cutSize, 8));
+    setInputValue(settingsEl('app-panel-radius'), parsePxNumber(radius.panel, 3));
+    setInputValue(settingsEl('app-title-transform'), type.textTransform?.titlebar === 'uppercase' ? 'uppercase' : 'none');
+    setInputValue(settingsEl('app-title-tracking'), type.letterSpacing?.titlebar || '0.02em');
+    setInputValue(settingsEl('app-title-weight'), String(titlebar.titleWeight || '600'));
+    setInputValue(settingsEl('app-title-icon'), titlebar.iconDisplay === 'inline-flex' ? 'inline-flex' : 'none');
+    setInputValue(settingsEl('app-kbd-transform'), titlebar.kbdTransform === 'uppercase' ? 'uppercase' : 'none');
+    setInputValue(settingsEl('app-key-shading'), keys.shading === 'flat' ? 'flat' : 'bevel');
+    setInputValue(settingsEl('app-key-corner'), keys.cornerMode === 'cut' ? 'cut' : 'radius');
+    setInputValue(settingsEl('app-key-cut'), parsePxNumber(keys.cutSize, 4));
+    setInputValue(settingsEl('app-key-border'), keys.border || '1px solid rgba(0, 0, 0, 0.4)');
+    const colorEl = (id, value, fallback) => {
+      const el = /** @type {HTMLInputElement|null} */ (settingsEl(id));
+      if (el) el.value = toHexColor(value, fallback);
+    };
+    colorEl('app-color-accent', color.accent, '#4a90c8');
+    colorEl('app-color-fg', color.fg, '#dddddd');
+    colorEl('app-color-fg-dim', color.fgDim, '#aaaaaa');
+    colorEl('app-color-panel', color.panel, '#232323');
+    colorEl('app-color-panel-edge', color.panelEdge, '#3a3a3a');
+    colorEl('app-color-title-top', color.titleTop, '#4c4c4c');
+    colorEl('app-color-title-mid', color.titleMid, '#353535');
+    colorEl('app-color-title-bot', color.titleBot, '#252525');
+    colorEl('app-color-kbd', color.kbdColor || color.fg, '#dddddd');
+    setInputValue(settingsEl('app-type-ui'), parsePxNumber(type.size?.ui, 12));
+    setInputValue(settingsEl('app-type-kbd'), parsePxNumber(type.size?.kbd, 10));
+  };
+
   const applyScroll = (scroll) => {
     const sc = scroll || DEFAULT_SETTINGS.scroll;
     const half = sc?.halfPagePx ?? DEFAULT_SETTINGS.scroll.halfPagePx;
@@ -507,33 +656,46 @@ async function render() {
     }
   };
 
-  // Initial state
+  const applyAllSettings = (settings) => {
+    const s = settings || DEFAULT_SETTINGS;
+    applyThemeSelect(s);
+    applyAppearanceControls(s);
+    paintPageTheme(s);
+    applyEngine(s.searchEngine);
+    applyCursorMode(s.cursorMode);
+    applyKeyboardLayoutFamily(s.keyboardLayoutFamilyId);
+    applyKeyboardHandedness(s.keyboardHandedness);
+    applyKeyFeedbackToggle(s.keyboardReferenceKeyFeedback);
+    applyShowNumberRowToggle(s.keyboardReferenceShowNumberRow);
+    applyControlStrip(s.controlStrip);
+    applyClickMode(s.clickMode);
+    applyTextMode(s.textMode);
+    applyScroll(s.scroll);
+  };
+
+  // Initial state: prefer the live KeyPilot snapshot (same tab as hover chrome /
+  // Keyboard Reference) so the popover cannot show stale storage defaults.
   try {
+    if (uiThemeSelect) {
+      uiThemeSelect.replaceChildren();
+      for (const t of listThemes()) {
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        opt.textContent = t.name;
+        uiThemeSelect.appendChild(opt);
+      }
+    }
     ensureLayoutFamilyOptions();
-    const settings = await getSettings();
-    applyEngine(settings.searchEngine);
-    applyCursorMode(settings.cursorMode);
-    applyKeyboardLayoutFamily(settings.keyboardLayoutFamilyId);
-    applyKeyboardHandedness(settings.keyboardHandedness);
-    applyKeyFeedbackToggle(settings.keyboardReferenceKeyFeedback);
-    applyShowNumberRowToggle(settings.keyboardReferenceShowNumberRow);
-    applyControlStrip(settings.controlStrip);
-    applyClickMode(settings.clickMode);
-    applyTextMode(settings.textMode);
-    applyScroll(settings.scroll);
+    const live = getLiveSettingsSnapshot();
+    const settings = live || await getSettings();
+    applyAllSettings(settings);
   } catch {
     ensureLayoutFamilyOptions();
-    applyEngine('brave');
-    applyCursorMode(DEFAULT_SETTINGS.cursorMode);
-    applyKeyboardLayoutFamily(DEFAULT_SETTINGS.keyboardLayoutFamilyId);
-    applyKeyboardHandedness(DEFAULT_SETTINGS.keyboardHandedness);
-    applyKeyFeedbackToggle(true);
-    applyShowNumberRowToggle(DEFAULT_SETTINGS.keyboardReferenceShowNumberRow);
-    applyControlStrip(DEFAULT_SETTINGS.controlStrip);
-    applyClickMode(DEFAULT_SETTINGS.clickMode);
-    applyTextMode(DEFAULT_SETTINGS.textMode);
-    applyScroll(DEFAULT_SETTINGS.scroll);
+    applyAllSettings(DEFAULT_SETTINGS);
   }
+
+  if (settingsHandlersInstalled) return;
+  settingsHandlersInstalled = true;
 
   // Change handler
   radios.forEach((r) => {
@@ -542,6 +704,123 @@ async function render() {
       await setSettings({ searchEngine: r.value });
     }, true);
   });
+
+  const commitThemePack = async (rawId) => {
+    const themeId = normalizeThemeId(rawId);
+    const theme = getTheme(themeId);
+    const clickPatch = getThemeClickDefaults(theme);
+    await setSettings({
+      themeId,
+      themeOverrides: {},
+      cursorMode: clickPatch.cursorMode,
+      clickMode: clickPatch.clickMode,
+      clickModeThemeId: themeId
+    });
+    const s = await getSettings();
+    applyAllSettings(s);
+  };
+
+  uiThemeSelect?.addEventListener('change', async () => {
+    await commitThemePack(uiThemeSelect.value);
+  }, true);
+
+  uiThemeSelectAppearance?.addEventListener('change', async () => {
+    await commitThemePack(uiThemeSelectAppearance.value);
+  }, true);
+
+  settingsResetAppearanceBtn?.addEventListener('click', async () => {
+    await setSettings({ themeOverrides: {} });
+    const s = await getSettings();
+    applyAllSettings(s);
+  }, true);
+
+  const bindAppearanceControl = (id, eventName, readValue) => {
+    const el = settingsEl(id);
+    if (!el) return;
+    el.addEventListener(eventName, async () => {
+      const s0 = await getSettings();
+      const nextOverrides = setOverridePath(s0.themeOverrides, readValue.path, readValue.fromEl(el));
+      await setSettings({ themeOverrides: nextOverrides });
+      const s = await getSettings();
+      applyThemeSelect(s);
+      paintPageTheme(s);
+    }, true);
+  };
+
+  bindAppearanceControl('app-corner-mode', 'change', {
+    path: 'shape.cornerMode',
+    fromEl: (el) => (el.value === 'cut' ? 'cut' : 'radius')
+  });
+  bindAppearanceControl('app-cut-size', 'change', {
+    path: 'shape.cutSize',
+    fromEl: (el) => `${clampNumber(el.value, 0, 24)}px`
+  });
+  bindAppearanceControl('app-panel-radius', 'change', {
+    path: 'radius.panel',
+    fromEl: (el) => `${clampNumber(el.value, 0, 24)}px`
+  });
+  bindAppearanceControl('app-title-transform', 'change', {
+    path: 'type.textTransform.titlebar',
+    fromEl: (el) => (el.value === 'uppercase' ? 'uppercase' : 'none')
+  });
+  bindAppearanceControl('app-title-tracking', 'change', {
+    path: 'type.letterSpacing.titlebar',
+    fromEl: (el) => String(el.value || '0.02em').trim() || '0.02em'
+  });
+  bindAppearanceControl('app-title-weight', 'change', {
+    path: 'titlebar.titleWeight',
+    fromEl: (el) => String(el.value || '600')
+  });
+  bindAppearanceControl('app-title-icon', 'change', {
+    path: 'titlebar.iconDisplay',
+    fromEl: (el) => (el.value === 'inline-flex' ? 'inline-flex' : 'none')
+  });
+  bindAppearanceControl('app-kbd-transform', 'change', {
+    path: 'titlebar.kbdTransform',
+    fromEl: (el) => (el.value === 'uppercase' ? 'uppercase' : 'none')
+  });
+  bindAppearanceControl('app-key-shading', 'change', {
+    path: 'keys.shading',
+    fromEl: (el) => (el.value === 'flat' ? 'flat' : 'bevel')
+  });
+  bindAppearanceControl('app-key-corner', 'change', {
+    path: 'keys.cornerMode',
+    fromEl: (el) => (el.value === 'cut' ? 'cut' : 'radius')
+  });
+  bindAppearanceControl('app-key-cut', 'change', {
+    path: 'keys.cutSize',
+    fromEl: (el) => `${clampNumber(el.value, 0, 16)}px`
+  });
+  bindAppearanceControl('app-key-border', 'change', {
+    path: 'keys.border',
+    fromEl: (el) => String(el.value || '').trim() || '1px solid rgba(0, 0, 0, 0.4)'
+  });
+  bindAppearanceControl('app-color-accent', 'input', { path: 'color.accent', fromEl: (el) => el.value });
+  bindAppearanceControl('app-color-fg', 'input', { path: 'color.fg', fromEl: (el) => el.value });
+  bindAppearanceControl('app-color-fg-dim', 'input', { path: 'color.fgDim', fromEl: (el) => el.value });
+  bindAppearanceControl('app-color-panel', 'input', { path: 'color.panel', fromEl: (el) => el.value });
+  bindAppearanceControl('app-color-panel-edge', 'input', { path: 'color.panelEdge', fromEl: (el) => el.value });
+  bindAppearanceControl('app-color-title-top', 'input', { path: 'color.titleTop', fromEl: (el) => el.value });
+  bindAppearanceControl('app-color-title-mid', 'input', { path: 'color.titleMid', fromEl: (el) => el.value });
+  bindAppearanceControl('app-color-title-bot', 'input', { path: 'color.titleBot', fromEl: (el) => el.value });
+  bindAppearanceControl('app-color-kbd', 'input', { path: 'color.kbdColor', fromEl: (el) => el.value });
+  bindAppearanceControl('app-type-ui', 'change', {
+    path: 'type.size.ui',
+    fromEl: (el) => `${clampNumber(el.value, 9, 18)}px`
+  });
+  bindAppearanceControl('app-type-kbd', 'change', {
+    path: 'type.size.kbd',
+    fromEl: (el) => `${clampNumber(el.value, 8, 16)}px`
+  });
+
+  settingsResetAllBtn?.addEventListener('click', async () => {
+    const ok = typeof window.confirm === 'function'
+      ? window.confirm('Reset all KeyPilot settings to defaults? This cannot be undone.')
+      : true;
+    if (!ok) return;
+    const s = await resetAllSettings();
+    applyAllSettings(s);
+  }, true);
 
   keyFeedbackToggle?.addEventListener('change', async () => {
     await setSettings({ keyboardReferenceKeyFeedback: !!keyFeedbackToggle.checked });
@@ -693,13 +972,17 @@ async function render() {
   });
 
   clickCursorResetBtn?.addEventListener('click', async () => {
-    await setSettings({ clickMode: { cursor: { ...DEFAULT_SETTINGS.clickMode.cursor } } });
+    const s0 = await getSettings();
+    const defaults = getThemeClickDefaults(getTheme(s0.themeId));
+    await setSettings({ clickMode: { cursor: { ...defaults.clickMode.cursor } } });
     const s = await getSettings();
     applyClickMode(s.clickMode);
   }, true);
 
   clickModeResetBtn?.addEventListener('click', async () => {
-    const { cursor: _cursor, ...clickModeDefaults } = DEFAULT_SETTINGS.clickMode;
+    const s0 = await getSettings();
+    const defaults = getThemeClickDefaults(getTheme(s0.themeId));
+    const { cursor: _cursor, ...clickModeDefaults } = defaults.clickMode;
     await setSettings({ clickMode: { ...clickModeDefaults } });
     const s = await getSettings();
     applyClickMode(s.clickMode);
@@ -796,15 +1079,9 @@ async function render() {
       if (area !== 'sync' && area !== 'local') return;
       const entry = changes && changes[SETTINGS_STORAGE_KEY];
       if (!entry || !entry.newValue) return;
-      applyEngine(entry.newValue.searchEngine);
-      applyKeyFeedbackToggle(entry.newValue.keyboardReferenceKeyFeedback);
-      applyShowNumberRowToggle(entry.newValue.keyboardReferenceShowNumberRow);
-      applyKeyboardLayoutFamily(entry.newValue.keyboardLayoutFamilyId);
-      applyKeyboardHandedness(entry.newValue.keyboardHandedness);
-      applyControlStrip(entry.newValue.controlStrip);
-      applyClickMode(entry.newValue.clickMode);
-      applyTextMode(entry.newValue.textMode);
-      applyScroll(entry.newValue.scroll);
+      void getSettings().then((s) => applyAllSettings(s)).catch(() => {
+        applyAllSettings(entry.newValue);
+      });
     });
   } catch {
     // ignore

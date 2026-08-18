@@ -16,6 +16,10 @@ import { mediaLibraryService } from './src/utils/media-library-service.js';
 import { blobToDataUrl } from './src/utils/media-library-transfer.js';
 import { resolveVideoThumbnailUrl } from './src/utils/youtube-thumb.js';
 import { isServiceWorkerFetchableVideoUrl } from './src/utils/video-url-utils.js';
+import {
+  fetchDictionaryDefinition,
+  normalizeWordForLookup
+} from './src/utils/dictionary-lookup.js';
 
 /**
  * Fetch progressive video bytes in the service worker (host_permissions bypass CORS).
@@ -1783,6 +1787,32 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               type: 'KP_PAGE_THUMB_RESPONSE',
               success: false,
               error: error?.message || 'Unknown error'
+            });
+          }
+          break;
+        }
+
+        case MSG.DICTIONARY_LOOKUP: {
+          try {
+            const word = normalizeWordForLookup(message.word);
+            if (!word) {
+              sendResponse({
+                type: MSG.DICTIONARY_LOOKUP,
+                ok: false,
+                word: '',
+                error: 'No word under cursor'
+              });
+              break;
+            }
+            const result = await fetchDictionaryDefinition(word);
+            sendResponse({ type: MSG.DICTIONARY_LOOKUP, ...result });
+          } catch (error) {
+            console.error('KP_DICTIONARY_LOOKUP failed:', error);
+            sendResponse({
+              type: MSG.DICTIONARY_LOOKUP,
+              ok: false,
+              word: normalizeWordForLookup(message.word),
+              error: error?.message || 'Dictionary lookup failed'
             });
           }
           break;

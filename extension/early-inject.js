@@ -1172,63 +1172,63 @@
   "browsing-right": {
     "TAB_LEFT": {
       "label": "Tab Left",
-      "description": "Move To Previous Tab",
+      "description": "Switch to the previous tab",
       "keyLabel": "Q",
       "displayKey": "Q",
       "keyboardClass": "key-gray"
     },
     "TAB_RIGHT": {
       "label": "Tab Right",
-      "description": "Move To Next Tab",
+      "description": "Switch to the next tab",
       "keyLabel": "W",
       "displayKey": "W",
       "keyboardClass": "key-gray"
     },
     "PREVIEW_LINK_POPOVER": {
       "label": "Preview Link",
-      "description": "Open Link Preview in a popup window",
+      "description": "Preview link in a popup",
       "keyLabel": "E",
       "displayKey": "E",
       "keyboardClass": "key-preview-popover"
     },
     "FORWARD": {
       "label": "Go Forward",
-      "description": "Go Forward (History)",
+      "description": "Browser history forward",
       "keyLabel": "R",
       "displayKey": "R",
       "keyboardClass": "key-forward"
     },
     "NEW_TAB": {
       "label": "New Tab",
-      "description": "Open New Tab",
+      "description": "Open a blank new tab",
       "keyLabel": "T",
       "displayKey": "T",
       "keyboardClass": "key-gray"
     },
     "RECTANGLE_HIGHLIGHT": {
       "label": "Element Select",
-      "description": "Select intersecting HTML elements in a rectangle (or pick cumulative)",
+      "description": "Rectangle or cumulative element pick",
       "keyLabel": "Y",
       "displayKey": "Y",
       "keyboardClass": "key-rect-highlight"
     },
     "COPY_HOVERED_URL": {
       "label": "Copy URL",
-      "description": "Copy URL under cursor (clipboard, Media Library, or both)",
+      "description": "Copy hovered link URL",
       "keyLabel": "U",
       "displayKey": "U",
       "keyboardClass": null
     },
     "COPY_HOVERED_IMAGE": {
       "label": "Copy Image",
-      "description": "Copy image under cursor (clipboard, Media Library, or both)",
+      "description": "Copy hovered image",
       "keyLabel": "I",
       "displayKey": "I",
       "keyboardClass": null
     },
     "PAGE_MEDIA": {
       "label": "Page Media",
-      "description": "Browse images, videos, and documents found on this page",
+      "description": "Browse media found on this page",
       "keyLabel": "O",
       "displayKey": "O",
       "keyboardClass": null
@@ -1242,77 +1242,77 @@
     },
     "DELETE": {
       "label": "Delete Mode",
-      "description": "Delete Mode",
+      "description": "Hide elements under the cursor",
       "keyLabel": "Backspace",
       "displayKey": "Backspace",
       "keyboardClass": "key-delete"
     },
     "CLOSE_TAB": {
       "label": "Close Tab",
-      "description": "Close Tab",
+      "description": "Close the current tab",
       "keyLabel": "A",
       "displayKey": "A",
       "keyboardClass": "key-close-tab"
     },
     "BACK2": {
       "label": "Go Back",
-      "description": "Go Back (History)",
+      "description": "Browser history back",
       "keyLabel": "S",
       "displayKey": "S",
       "keyboardClass": "key-back"
     },
     "BACK": {
       "label": "Go Back",
-      "description": "Go Back (History)",
+      "description": "Browser history back",
       "keyLabel": "D",
       "displayKey": "D",
       "keyboardClass": "key-back"
     },
     "ACTIVATE": {
       "label": "Click Element",
-      "description": "Click Element",
+      "description": "Click the hovered element",
       "keyLabel": "F",
       "displayKey": "F",
       "keyboardClass": "key-activate"
     },
     "ACTIVATE_NEW_TAB_BACKGROUND": {
       "label": "Click New Tab Background",
-      "description": "Open Link in New Tab (Background, like middle click)",
+      "description": "Open link in a new background tab",
       "keyLabel": "G",
       "displayKey": "G",
       "keyboardClass": "key-activate-new-over"
     },
     "HIGHLIGHT": {
       "label": "Text Select",
-      "description": "Select text (character level) and copy as rich text by default",
+      "description": "Select text and copy rich text",
       "keyLabel": "H",
       "displayKey": "H",
       "keyboardClass": "key-highlight"
     },
     "TAB_HISTORY": {
       "label": "Tab History",
-      "description": "Open Tab History (Branch-Retaining)",
+      "description": "Browse this tab’s history",
       "keyLabel": "J",
       "displayKey": "J",
       "keyboardClass": "key-gray"
     },
     "TOGGLE_KEYBOARD_HELP": {
       "label": "KB Reference",
-      "description": "Show/Hide the floating KeyPilot keyboard reference",
+      "description": "Show or hide the keyboard map",
       "keyLabel": "K",
       "displayKey": "K",
       "keyboardClass": "key-purple"
     },
     "OMNIBOX": {
       "label": "Omnibox",
-      "description": "Open Omnibox (Address Bar Overlay)",
+      "description": "Address bar overlay",
       "keyLabel": "L",
       "displayKey": "L",
       "keyboardClass": "key-orange"
     },
     "TOP_SITES": {
       "label": "Top Sites",
-      "description": "Open Top Sites (toolbar, most visited, recent bookmarks)",
+      "description": "Toolbar, visits, and bookmarks",
       "keyLabel": ";",
       "displayKey": ";",
       "keyboardClass": "key-launcher-orange"
@@ -1326,56 +1326,56 @@
     },
     "PAGE_TOP": {
       "label": "Scroll To Top",
-      "description": "Jump to the top of the scroll target (Fade hides the jump; Scroll animates)",
+      "description": "Jump to top of scroll target",
       "keyLabel": "Z",
       "displayKey": "Z",
       "keyboardClass": "key-scroll"
     },
     "PAGE_BOTTOM": {
       "label": "Scroll To Bottom",
-      "description": "Jump to the bottom of the scroll target (Fade hides the jump; Scroll animates)",
+      "description": "Jump to bottom of scroll target",
       "keyLabel": "X",
       "displayKey": "X",
       "keyboardClass": "key-scroll"
     },
     "PAGE_UP_INSTANT": {
       "label": "Page Up Fast",
-      "description": "Page Up (Instant)",
+      "description": "Jump one page up instantly",
       "keyLabel": "C",
       "displayKey": "C",
       "keyboardClass": "key-scroll"
     },
     "PAGE_DOWN_INSTANT": {
       "label": "Page Down Fast",
-      "description": "Page Down (Instant)",
+      "description": "Jump one page down instantly",
       "keyLabel": "V",
       "displayKey": "V",
       "keyboardClass": "key-scroll"
     },
     "ACTIVATE_NEW_TAB": {
       "label": "Click New Tab",
-      "description": "Open Link in New Tab (Foreground)",
+      "description": "Open link in a new foreground tab",
       "keyLabel": "B",
       "displayKey": "B",
       "keyboardClass": "key-activate-new"
     },
     "SCROLL_LINE": {
       "label": "Scroll Line",
-      "description": "Scroll from a fixed origin: move the mouse away from the dot to scroll faster. Optional middle-click on empty page area (Settings → Scrolling).",
+      "description": "Origin-based continuous scroll",
       "keyLabel": "N",
       "displayKey": "N",
       "keyboardClass": "key-scroll"
     },
     "OPEN_MEDIA_LIBRARY": {
       "label": "Media Library",
-      "description": "Open the Media Library.",
+      "description": "Open saved Media Library",
       "keyLabel": "M",
       "displayKey": "M",
       "keyboardClass": null
     },
     "CANCEL": {
       "label": "Exit Focus",
-      "description": "Exit Focus",
+      "description": "Leave modes and overlays",
       "keyLabel": "Esc",
       "displayKey": "Esc",
       "keyboardClass": null
@@ -1384,49 +1384,49 @@
   "browsing-left": {
     "TAB_LEFT": {
       "label": "Tab Left",
-      "description": "Move To Previous Tab",
+      "description": "Switch to the previous tab",
       "keyLabel": "P",
       "displayKey": "P",
       "keyboardClass": "key-gray"
     },
     "TAB_RIGHT": {
       "label": "Tab Right",
-      "description": "Move To Next Tab",
+      "description": "Switch to the next tab",
       "keyLabel": "O",
       "displayKey": "O",
       "keyboardClass": "key-gray"
     },
     "PREVIEW_LINK_POPOVER": {
       "label": "Preview Link",
-      "description": "Open Link Preview in a popup window",
+      "description": "Preview link in a popup",
       "keyLabel": "W",
       "displayKey": "W",
       "keyboardClass": "key-preview-popover"
     },
     "FORWARD": {
       "label": "Go Forward",
-      "description": "Go Forward (History)",
+      "description": "Browser history forward",
       "keyLabel": "U",
       "displayKey": "U",
       "keyboardClass": "key-forward"
     },
     "NEW_TAB": {
       "label": "New Tab",
-      "description": "Open New Tab",
+      "description": "Open a blank new tab",
       "keyLabel": "Y",
       "displayKey": "Y",
       "keyboardClass": "key-gray"
     },
     "RECTANGLE_HIGHLIGHT": {
       "label": "Element Select",
-      "description": "Select intersecting HTML elements in a rectangle (or pick cumulative)",
+      "description": "Rectangle or cumulative element pick",
       "keyLabel": "R",
       "displayKey": "R",
       "keyboardClass": "key-rect-highlight"
     },
     "COPY_HOVERED_IMAGE": {
       "label": "Copy Image",
-      "description": "Copy image under cursor (clipboard, Media Library, or both)",
+      "description": "Copy hovered image",
       "keyLabel": "E",
       "displayKey": "E",
       "keyboardClass": null
@@ -1440,77 +1440,77 @@
     },
     "DELETE": {
       "label": "Delete Mode",
-      "description": "Delete Mode",
+      "description": "Hide elements under the cursor",
       "keyLabel": "Backspace",
       "displayKey": "Backspace",
       "keyboardClass": "key-delete"
     },
     "CLOSE_TAB": {
       "label": "Close Tab",
-      "description": "Close Tab",
+      "description": "Close the current tab",
       "keyLabel": ";",
       "displayKey": ";",
       "keyboardClass": "key-close-tab"
     },
     "BACK2": {
       "label": "Go Back",
-      "description": "Go Back (History)",
+      "description": "Browser history back",
       "keyLabel": "L",
       "displayKey": "L",
       "keyboardClass": "key-back"
     },
     "BACK": {
       "label": "Go Back",
-      "description": "Go Back (History)",
+      "description": "Browser history back",
       "keyLabel": "K",
       "displayKey": "K",
       "keyboardClass": "key-back"
     },
     "ACTIVATE": {
       "label": "Click Element",
-      "description": "Click Element",
+      "description": "Click the hovered element",
       "keyLabel": "J",
       "displayKey": "J",
       "keyboardClass": "key-activate"
     },
     "ACTIVATE_NEW_TAB_BACKGROUND": {
       "label": "Click New Tab Background",
-      "description": "Open Link in New Tab (Background, like middle click)",
+      "description": "Open link in a new background tab",
       "keyLabel": "H",
       "displayKey": "H",
       "keyboardClass": "key-activate-new-over"
     },
     "HIGHLIGHT": {
       "label": "Text Select",
-      "description": "Select text (character level) and copy as rich text by default",
+      "description": "Select text and copy rich text",
       "keyLabel": "G",
       "displayKey": "G",
       "keyboardClass": "key-highlight"
     },
     "TAB_HISTORY": {
       "label": "Tab History",
-      "description": "Open Tab History (Branch-Retaining)",
+      "description": "Browse this tab’s history",
       "keyLabel": "F",
       "displayKey": "F",
       "keyboardClass": "key-gray"
     },
     "TOGGLE_KEYBOARD_HELP": {
       "label": "KB Reference",
-      "description": "Show/Hide the floating KeyPilot keyboard reference",
+      "description": "Show or hide the keyboard map",
       "keyLabel": "D",
       "displayKey": "D",
       "keyboardClass": "key-purple"
     },
     "OMNIBOX": {
       "label": "Omnibox",
-      "description": "Open Omnibox (Address Bar Overlay)",
+      "description": "Address bar overlay",
       "keyLabel": "S",
       "displayKey": "S",
       "keyboardClass": "key-orange"
     },
     "TOP_SITES": {
       "label": "Top Sites",
-      "description": "Open Top Sites (toolbar, most visited, recent bookmarks)",
+      "description": "Toolbar, visits, and bookmarks",
       "keyLabel": "A",
       "displayKey": "A",
       "keyboardClass": "key-launcher-orange"
@@ -1524,49 +1524,49 @@
     },
     "PAGE_TOP": {
       "label": "Scroll To Top",
-      "description": "Jump to the top of the scroll target (Fade hides the jump; Scroll animates)",
+      "description": "Jump to top of scroll target",
       "keyLabel": "/",
       "displayKey": "/",
       "keyboardClass": "key-scroll"
     },
     "PAGE_BOTTOM": {
       "label": "Scroll To Bottom",
-      "description": "Jump to the bottom of the scroll target (Fade hides the jump; Scroll animates)",
+      "description": "Jump to bottom of scroll target",
       "keyLabel": "B",
       "displayKey": "B",
       "keyboardClass": "key-scroll"
     },
     "PAGE_UP_INSTANT": {
       "label": "Page Up Fast",
-      "description": "Page Up (Instant)",
+      "description": "Jump one page up instantly",
       "keyLabel": ",",
       "displayKey": ",",
       "keyboardClass": "key-scroll"
     },
     "PAGE_DOWN_INSTANT": {
       "label": "Page Down Fast",
-      "description": "Page Down (Instant)",
+      "description": "Jump one page down instantly",
       "keyLabel": "M",
       "displayKey": "M",
       "keyboardClass": "key-scroll"
     },
     "ACTIVATE_NEW_TAB": {
       "label": "Click New Tab",
-      "description": "Open Link in New Tab (Foreground)",
+      "description": "Open link in a new foreground tab",
       "keyLabel": "N",
       "displayKey": "N",
       "keyboardClass": "key-activate-new"
     },
     "SCROLL_LINE": {
       "label": "Scroll Line",
-      "description": "Scroll from a fixed origin: move the mouse away from the dot to scroll faster. Optional middle-click on empty page area (Settings → Scrolling).",
+      "description": "Origin-based continuous scroll",
       "keyLabel": "T",
       "displayKey": "T",
       "keyboardClass": "key-scroll"
     },
     "CANCEL": {
       "label": "Exit Focus",
-      "description": "Exit Focus",
+      "description": "Leave modes and overlays",
       "keyLabel": "Esc",
       "displayKey": "Esc",
       "keyboardClass": null
@@ -1575,49 +1575,49 @@
   "basic-navigation-right": {
     "TAB_LEFT": {
       "label": "Tab Left",
-      "description": "Move To Previous Tab",
+      "description": "Switch to the previous tab",
       "keyLabel": "Q",
       "displayKey": "Q",
       "keyboardClass": "key-gray"
     },
     "TAB_RIGHT": {
       "label": "Tab Right",
-      "description": "Move To Next Tab",
+      "description": "Switch to the next tab",
       "keyLabel": "W",
       "displayKey": "W",
       "keyboardClass": "key-gray"
     },
     "FORWARD": {
       "label": "Go Forward",
-      "description": "Go Forward (History)",
+      "description": "Browser history forward",
       "keyLabel": "R",
       "displayKey": "R",
       "keyboardClass": "key-forward"
     },
     "BACK2": {
       "label": "Go Back",
-      "description": "Go Back (History)",
+      "description": "Browser history back",
       "keyLabel": "S",
       "displayKey": "S",
       "keyboardClass": "key-back"
     },
     "BACK": {
       "label": "Go Back",
-      "description": "Go Back (History)",
+      "description": "Browser history back",
       "keyLabel": "D",
       "displayKey": "D",
       "keyboardClass": "key-back"
     },
     "ACTIVATE": {
       "label": "Click Element",
-      "description": "Click Element",
+      "description": "Click the hovered element",
       "keyLabel": "F",
       "displayKey": "F",
       "keyboardClass": "key-activate"
     },
     "TOGGLE_KEYBOARD_HELP": {
       "label": "KB Reference",
-      "description": "Show/Hide the floating KeyPilot keyboard reference",
+      "description": "Show or hide the keyboard map",
       "keyLabel": "K",
       "displayKey": "K",
       "keyboardClass": "key-purple"
@@ -1631,35 +1631,35 @@
     },
     "PAGE_TOP": {
       "label": "Scroll To Top",
-      "description": "Jump to the top of the scroll target (Fade hides the jump; Scroll animates)",
+      "description": "Jump to top of scroll target",
       "keyLabel": "Z",
       "displayKey": "Z",
       "keyboardClass": "key-scroll"
     },
     "PAGE_BOTTOM": {
       "label": "Scroll To Bottom",
-      "description": "Jump to the bottom of the scroll target (Fade hides the jump; Scroll animates)",
+      "description": "Jump to bottom of scroll target",
       "keyLabel": "X",
       "displayKey": "X",
       "keyboardClass": "key-scroll"
     },
     "PAGE_UP_INSTANT": {
       "label": "Page Up Fast",
-      "description": "Page Up (Instant)",
+      "description": "Jump one page up instantly",
       "keyLabel": "C",
       "displayKey": "C",
       "keyboardClass": "key-scroll"
     },
     "PAGE_DOWN_INSTANT": {
       "label": "Page Down Fast",
-      "description": "Page Down (Instant)",
+      "description": "Jump one page down instantly",
       "keyLabel": "V",
       "displayKey": "V",
       "keyboardClass": "key-scroll"
     },
     "CANCEL": {
       "label": "Exit Focus",
-      "description": "Exit Focus",
+      "description": "Leave modes and overlays",
       "keyLabel": "Esc",
       "displayKey": "Esc",
       "keyboardClass": null
@@ -1668,49 +1668,49 @@
   "basic-navigation-left": {
     "TAB_LEFT": {
       "label": "Tab Left",
-      "description": "Move To Previous Tab",
+      "description": "Switch to the previous tab",
       "keyLabel": "P",
       "displayKey": "P",
       "keyboardClass": "key-gray"
     },
     "TAB_RIGHT": {
       "label": "Tab Right",
-      "description": "Move To Next Tab",
+      "description": "Switch to the next tab",
       "keyLabel": "O",
       "displayKey": "O",
       "keyboardClass": "key-gray"
     },
     "FORWARD": {
       "label": "Go Forward",
-      "description": "Go Forward (History)",
+      "description": "Browser history forward",
       "keyLabel": "U",
       "displayKey": "U",
       "keyboardClass": "key-forward"
     },
     "BACK2": {
       "label": "Go Back",
-      "description": "Go Back (History)",
+      "description": "Browser history back",
       "keyLabel": "L",
       "displayKey": "L",
       "keyboardClass": "key-back"
     },
     "BACK": {
       "label": "Go Back",
-      "description": "Go Back (History)",
+      "description": "Browser history back",
       "keyLabel": "K",
       "displayKey": "K",
       "keyboardClass": "key-back"
     },
     "ACTIVATE": {
       "label": "Click Element",
-      "description": "Click Element",
+      "description": "Click the hovered element",
       "keyLabel": "J",
       "displayKey": "J",
       "keyboardClass": "key-activate"
     },
     "TOGGLE_KEYBOARD_HELP": {
       "label": "KB Reference",
-      "description": "Show/Hide the floating KeyPilot keyboard reference",
+      "description": "Show or hide the keyboard map",
       "keyLabel": "D",
       "displayKey": "D",
       "keyboardClass": "key-purple"
@@ -1724,35 +1724,35 @@
     },
     "PAGE_TOP": {
       "label": "Scroll To Top",
-      "description": "Jump to the top of the scroll target (Fade hides the jump; Scroll animates)",
+      "description": "Jump to top of scroll target",
       "keyLabel": "/",
       "displayKey": "/",
       "keyboardClass": "key-scroll"
     },
     "PAGE_BOTTOM": {
       "label": "Scroll To Bottom",
-      "description": "Jump to the bottom of the scroll target (Fade hides the jump; Scroll animates)",
+      "description": "Jump to bottom of scroll target",
       "keyLabel": "B",
       "displayKey": "B",
       "keyboardClass": "key-scroll"
     },
     "PAGE_UP_INSTANT": {
       "label": "Page Up Fast",
-      "description": "Page Up (Instant)",
+      "description": "Jump one page up instantly",
       "keyLabel": ",",
       "displayKey": ",",
       "keyboardClass": "key-scroll"
     },
     "PAGE_DOWN_INSTANT": {
       "label": "Page Down Fast",
-      "description": "Page Down (Instant)",
+      "description": "Jump one page down instantly",
       "keyLabel": "M",
       "displayKey": "M",
       "keyboardClass": "key-scroll"
     },
     "CANCEL": {
       "label": "Exit Focus",
-      "description": "Exit Focus",
+      "description": "Leave modes and overlays",
       "keyLabel": "Esc",
       "displayKey": "Esc",
       "keyboardClass": null
@@ -1761,35 +1761,35 @@
   "click-history-right": {
     "FORWARD": {
       "label": "Go Forward",
-      "description": "Go Forward (History)",
+      "description": "Browser history forward",
       "keyLabel": "R",
       "displayKey": "R",
       "keyboardClass": "key-forward"
     },
     "BACK2": {
       "label": "Go Back",
-      "description": "Go Back (History)",
+      "description": "Browser history back",
       "keyLabel": "S",
       "displayKey": "S",
       "keyboardClass": "key-back"
     },
     "BACK": {
       "label": "Go Back",
-      "description": "Go Back (History)",
+      "description": "Browser history back",
       "keyLabel": "D",
       "displayKey": "D",
       "keyboardClass": "key-back"
     },
     "ACTIVATE": {
       "label": "Click Element",
-      "description": "Click Element",
+      "description": "Click the hovered element",
       "keyLabel": "F",
       "displayKey": "F",
       "keyboardClass": "key-activate"
     },
     "TOGGLE_KEYBOARD_HELP": {
       "label": "KB Reference",
-      "description": "Show/Hide the floating KeyPilot keyboard reference",
+      "description": "Show or hide the keyboard map",
       "keyLabel": "K",
       "displayKey": "K",
       "keyboardClass": "key-purple"
@@ -1803,7 +1803,7 @@
     },
     "CANCEL": {
       "label": "Exit Focus",
-      "description": "Exit Focus",
+      "description": "Leave modes and overlays",
       "keyLabel": "Esc",
       "displayKey": "Esc",
       "keyboardClass": null
@@ -1812,35 +1812,35 @@
   "click-history-left": {
     "FORWARD": {
       "label": "Go Forward",
-      "description": "Go Forward (History)",
+      "description": "Browser history forward",
       "keyLabel": "U",
       "displayKey": "U",
       "keyboardClass": "key-forward"
     },
     "BACK2": {
       "label": "Go Back",
-      "description": "Go Back (History)",
+      "description": "Browser history back",
       "keyLabel": "L",
       "displayKey": "L",
       "keyboardClass": "key-back"
     },
     "BACK": {
       "label": "Go Back",
-      "description": "Go Back (History)",
+      "description": "Browser history back",
       "keyLabel": "K",
       "displayKey": "K",
       "keyboardClass": "key-back"
     },
     "ACTIVATE": {
       "label": "Click Element",
-      "description": "Click Element",
+      "description": "Click the hovered element",
       "keyLabel": "J",
       "displayKey": "J",
       "keyboardClass": "key-activate"
     },
     "TOGGLE_KEYBOARD_HELP": {
       "label": "KB Reference",
-      "description": "Show/Hide the floating KeyPilot keyboard reference",
+      "description": "Show or hide the keyboard map",
       "keyLabel": "D",
       "displayKey": "D",
       "keyboardClass": "key-purple"
@@ -1854,7 +1854,7 @@
     },
     "CANCEL": {
       "label": "Exit Focus",
-      "description": "Exit Focus",
+      "description": "Leave modes and overlays",
       "keyLabel": "Esc",
       "displayKey": "Esc",
       "keyboardClass": null
@@ -2063,63 +2063,63 @@
   const EARLY_KEYBINDINGS = {
   "TAB_LEFT": {
     "label": "Tab Left",
-    "description": "Move To Previous Tab",
+    "description": "Switch to the previous tab",
     "keyLabel": "Q",
     "displayKey": "Q",
     "keyboardClass": "key-gray"
   },
   "TAB_RIGHT": {
     "label": "Tab Right",
-    "description": "Move To Next Tab",
+    "description": "Switch to the next tab",
     "keyLabel": "W",
     "displayKey": "W",
     "keyboardClass": "key-gray"
   },
   "PREVIEW_LINK_POPOVER": {
     "label": "Preview Link",
-    "description": "Open Link Preview in a popup window",
+    "description": "Preview link in a popup",
     "keyLabel": "E",
     "displayKey": "E",
     "keyboardClass": "key-preview-popover"
   },
   "FORWARD": {
     "label": "Go Forward",
-    "description": "Go Forward (History)",
+    "description": "Browser history forward",
     "keyLabel": "R",
     "displayKey": "R",
     "keyboardClass": "key-forward"
   },
   "NEW_TAB": {
     "label": "New Tab",
-    "description": "Open New Tab",
+    "description": "Open a blank new tab",
     "keyLabel": "T",
     "displayKey": "T",
     "keyboardClass": "key-gray"
   },
   "RECTANGLE_HIGHLIGHT": {
     "label": "Element Select",
-    "description": "Select intersecting HTML elements in a rectangle (or pick cumulative)",
+    "description": "Rectangle or cumulative element pick",
     "keyLabel": "Y",
     "displayKey": "Y",
     "keyboardClass": "key-rect-highlight"
   },
   "COPY_HOVERED_URL": {
     "label": "Copy URL",
-    "description": "Copy URL under cursor (clipboard, Media Library, or both)",
+    "description": "Copy hovered link URL",
     "keyLabel": "U",
     "displayKey": "U",
     "keyboardClass": null
   },
   "COPY_HOVERED_IMAGE": {
     "label": "Copy Image",
-    "description": "Copy image under cursor (clipboard, Media Library, or both)",
+    "description": "Copy hovered image",
     "keyLabel": "I",
     "displayKey": "I",
     "keyboardClass": null
   },
   "PAGE_MEDIA": {
     "label": "Page Media",
-    "description": "Browse images, videos, and documents found on this page",
+    "description": "Browse media found on this page",
     "keyLabel": "O",
     "displayKey": "O",
     "keyboardClass": null
@@ -2133,77 +2133,77 @@
   },
   "DELETE": {
     "label": "Delete Mode",
-    "description": "Delete Mode",
+    "description": "Hide elements under the cursor",
     "keyLabel": "Backspace",
     "displayKey": "Backspace",
     "keyboardClass": "key-delete"
   },
   "CLOSE_TAB": {
     "label": "Close Tab",
-    "description": "Close Tab",
+    "description": "Close the current tab",
     "keyLabel": "A",
     "displayKey": "A",
     "keyboardClass": "key-close-tab"
   },
   "BACK2": {
     "label": "Go Back",
-    "description": "Go Back (History)",
+    "description": "Browser history back",
     "keyLabel": "S",
     "displayKey": "S",
     "keyboardClass": "key-back"
   },
   "BACK": {
     "label": "Go Back",
-    "description": "Go Back (History)",
+    "description": "Browser history back",
     "keyLabel": "D",
     "displayKey": "D",
     "keyboardClass": "key-back"
   },
   "ACTIVATE": {
     "label": "Click Element",
-    "description": "Click Element",
+    "description": "Click the hovered element",
     "keyLabel": "F",
     "displayKey": "F",
     "keyboardClass": "key-activate"
   },
   "ACTIVATE_NEW_TAB_BACKGROUND": {
     "label": "Click New Tab Background",
-    "description": "Open Link in New Tab (Background, like middle click)",
+    "description": "Open link in a new background tab",
     "keyLabel": "G",
     "displayKey": "G",
     "keyboardClass": "key-activate-new-over"
   },
   "HIGHLIGHT": {
     "label": "Text Select",
-    "description": "Select text (character level) and copy as rich text by default",
+    "description": "Select text and copy rich text",
     "keyLabel": "H",
     "displayKey": "H",
     "keyboardClass": "key-highlight"
   },
   "TAB_HISTORY": {
     "label": "Tab History",
-    "description": "Open Tab History (Branch-Retaining)",
+    "description": "Browse this tab’s history",
     "keyLabel": "J",
     "displayKey": "J",
     "keyboardClass": "key-gray"
   },
   "TOGGLE_KEYBOARD_HELP": {
     "label": "KB Reference",
-    "description": "Show/Hide the floating KeyPilot keyboard reference",
+    "description": "Show or hide the keyboard map",
     "keyLabel": "K",
     "displayKey": "K",
     "keyboardClass": "key-purple"
   },
   "OMNIBOX": {
     "label": "Omnibox",
-    "description": "Open Omnibox (Address Bar Overlay)",
+    "description": "Address bar overlay",
     "keyLabel": "L",
     "displayKey": "L",
     "keyboardClass": "key-orange"
   },
   "TOP_SITES": {
     "label": "Top Sites",
-    "description": "Open Top Sites (toolbar, most visited, recent bookmarks)",
+    "description": "Toolbar, visits, and bookmarks",
     "keyLabel": ";",
     "displayKey": ";",
     "keyboardClass": "key-launcher-orange"
@@ -2217,56 +2217,56 @@
   },
   "PAGE_TOP": {
     "label": "Scroll To Top",
-    "description": "Jump to the top of the scroll target (Fade hides the jump; Scroll animates)",
+    "description": "Jump to top of scroll target",
     "keyLabel": "Z",
     "displayKey": "Z",
     "keyboardClass": "key-scroll"
   },
   "PAGE_BOTTOM": {
     "label": "Scroll To Bottom",
-    "description": "Jump to the bottom of the scroll target (Fade hides the jump; Scroll animates)",
+    "description": "Jump to bottom of scroll target",
     "keyLabel": "X",
     "displayKey": "X",
     "keyboardClass": "key-scroll"
   },
   "PAGE_UP_INSTANT": {
     "label": "Page Up Fast",
-    "description": "Page Up (Instant)",
+    "description": "Jump one page up instantly",
     "keyLabel": "C",
     "displayKey": "C",
     "keyboardClass": "key-scroll"
   },
   "PAGE_DOWN_INSTANT": {
     "label": "Page Down Fast",
-    "description": "Page Down (Instant)",
+    "description": "Jump one page down instantly",
     "keyLabel": "V",
     "displayKey": "V",
     "keyboardClass": "key-scroll"
   },
   "ACTIVATE_NEW_TAB": {
     "label": "Click New Tab",
-    "description": "Open Link in New Tab (Foreground)",
+    "description": "Open link in a new foreground tab",
     "keyLabel": "B",
     "displayKey": "B",
     "keyboardClass": "key-activate-new"
   },
   "SCROLL_LINE": {
     "label": "Scroll Line",
-    "description": "Scroll from a fixed origin: move the mouse away from the dot to scroll faster. Optional middle-click on empty page area (Settings → Scrolling).",
+    "description": "Origin-based continuous scroll",
     "keyLabel": "N",
     "displayKey": "N",
     "keyboardClass": "key-scroll"
   },
   "OPEN_MEDIA_LIBRARY": {
     "label": "Media Library",
-    "description": "Open the Media Library.",
+    "description": "Open saved Media Library",
     "keyLabel": "M",
     "displayKey": "M",
     "keyboardClass": null
   },
   "CANCEL": {
     "label": "Exit Focus",
-    "description": "Exit Focus",
+    "description": "Leave modes and overlays",
     "keyLabel": "Esc",
     "displayKey": "Esc",
     "keyboardClass": null
@@ -2658,21 +2658,22 @@
   /* Block layout: letter/name layers are absolutely positioned (not flex-flow) */
   display: block !important;
   padding: 0 !important;
-  border-radius: 7px;
+  border-radius: var(--kp-key-effective-radius, var(--kp-radius-key, 7px));
+  clip-path: var(--kp-key-clip, none);
 
   /*
    * Low-profile key: nearly flat face, thin rim, soft ground shadow.
    * Reads more like a real chiclet key than a heavy 3D bevel.
    */
-  border: 1px solid rgba(0, 0, 0, 0.4);
+  border: var(--kp-key-border, 1px solid rgba(0, 0, 0, 0.4));
   border-top-color: rgba(255, 255, 255, 0.1);
   border-bottom-color: rgba(0, 0, 0, 0.5);
 
   background:
-    linear-gradient(180deg,
+    var(--kp-key-shade-layer, linear-gradient(180deg,
       rgba(255, 255, 255, 0.07) 0%,
       rgba(255, 255, 255, 0.02) 18%,
-      transparent 42%),
+      transparent 42%)),
     linear-gradient(180deg,
       var(--kp-key-face) 0%,
       var(--kp-key-mid) 70%,
@@ -2707,6 +2708,7 @@
     rgba(255, 255, 255, 0.02) 60%,
     transparent 100%);
   pointer-events: none;
+  opacity: var(--kp-key-sheen-opacity, 1);
 }
 
 /* Prevent UA :disabled washout on edit-readonly keycaps (still non-interactive). */
@@ -2839,13 +2841,7 @@
 /* Edit-mode plate hatch (same steel lines as Keyboard Layout Config). */
 .keyboard-visual.kp-keybindings-ui.kp-kb-edit-hatch {
   background:
-    repeating-linear-gradient(
-      -45deg,
-      rgba(180, 200, 220, 0.08) 0px,
-      rgba(180, 200, 220, 0.08) 1px,
-      transparent 1px,
-      transparent 7px
-    ),
+    var(--kp-hatch-edit, repeating-linear-gradient(-45deg, rgba(180, 200, 220, 0.08) 0px, rgba(180, 200, 220, 0.08) 1px, transparent 1px, transparent 7px)),
     linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, transparent 28%),
     radial-gradient(120% 80% at 50% 0%, rgba(91, 226, 241, 0.07) 0%, transparent 55%),
     linear-gradient(180deg, #222833 0%, #1a1f28 45%, #13161e 100%) !important;
@@ -3770,6 +3766,691 @@
  * }
  */
 `;
+  const KP_ALL_THEMES_CSS = `[data-kp-theme="dark-pro"] {
+  --kp-theme-id: dark-pro;
+  --kp-font-display: Helvetica, Arial, sans-serif;
+  --kp-font-heading: Helvetica, Arial, sans-serif;
+  --kp-font-subhead: Helvetica, Arial, sans-serif;
+  --kp-font-body: Helvetica, Arial, sans-serif;
+  --kp-font-ui: Helvetica, Arial, sans-serif;
+  --kp-font-kbd: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --kp-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --kp-font-caption: Helvetica, Arial, sans-serif;
+  --kp-type-scale: 1.25;
+  --kp-type-display-size: 22px;
+  --kp-type-h1-size: 22px;
+  --kp-type-h2-size: 16px;
+  --kp-type-h3-size: 14px;
+  --kp-type-body-size: 13px;
+  --kp-type-ui-size: 12px;
+  --kp-type-kbd-size: 10px;
+  --kp-type-caption-size: 11px;
+  --kp-type-code-size: 12px;
+  --kp-type-weight-regular: 400;
+  --kp-type-weight-medium: 500;
+  --kp-type-weight-semibold: 600;
+  --kp-type-weight-bold: 700;
+  --kp-type-tracking-display: 0.02em;
+  --kp-type-tracking-titlebar: 0.02em;
+  --kp-type-tracking-ui: normal;
+  --kp-type-transform-display: none;
+  --kp-type-transform-titlebar: none;
+  --kp-titlebar-title-weight: 600;
+  --kp-titlebar-icon-display: none;
+  --kp-titlebar-icon-size: 12px;
+  --kp-kbd-transform: none;
+  --kp-kbd-tracking: 0.02em;
+  --kp-type-leading-tight: 1.2;
+  --kp-type-leading-body: 1.35;
+  --kp-type-leading-prose: 1.55;
+  --kp-radius-none: 0px;
+  --kp-radius-xs: 2px;
+  --kp-radius-sm: 3px;
+  --kp-radius-md: 6px;
+  --kp-radius-lg: 10px;
+  --kp-radius-pill: 999px;
+  --kp-radius-panel: 3px;
+  --kp-radius-btn: 2px;
+  --kp-radius-field: 2px;
+  --kp-radius-key: 7px;
+  --kp-radius-plate: 14px;
+  --kp-color-bg: #0f0f10;
+  --kp-color-panel: #232323;
+  --kp-color-panel-edge: #3a3a3a;
+  --kp-color-panel-edge-dark: #111;
+  --kp-color-title-top: #4c4c4c;
+  --kp-color-title-mid: #353535;
+  --kp-color-title-bot: #252525;
+  --kp-color-btn-top: #4a4a4a;
+  --kp-color-btn-mid: #343434;
+  --kp-color-btn-bot: #2a2a2a;
+  --kp-color-lit-top: #5a7a9a;
+  --kp-color-lit-bot: #3a5570;
+  --kp-color-lit-edge: #2a4a66;
+  --kp-color-accent: #4a90c8;
+  --kp-color-accent-2: #4a90c8;
+  --kp-color-fg: #ddd;
+  --kp-color-fg-dim: #aaa;
+  --kp-color-fg-mute: #777;
+  --kp-color-field-bg: #141414;
+  --kp-color-field-edge: #0a0a0a;
+  --kp-color-field-inset: #333;
+  --kp-color-hover: rgba(255,255,255,0.06);
+  --kp-color-selected: rgba(74,144,200,0.22);
+  --kp-color-selected-text: #e8f0f8;
+  --kp-color-focus-ring: inset 0 0 0 1px rgba(74,144,200,0.55);
+  --kp-color-kbd-fg: #ddd;
+  --kp-titlebar-bg: linear-gradient(180deg, #4c4c4c 0%, #353535 45%, #252525 100%);
+  --kp-titlebar-border: 1px solid #111;
+  --kp-titlebar-shadow: 0 1px 0 #3a3a3a;
+  --kp-panel-bg: #232323;
+  --kp-panel-border: 1px solid #111;
+  --kp-panel-shadow: 0 0 0 1px #3a3a3a inset, 0 0 0 1px rgba(190, 190, 190, 0.52), 0 0 10px rgba(255, 255, 255, 0.14), 0 16px 40px rgba(0,0,0,0.55);
+  --kp-btn-bg: linear-gradient(180deg, #4a4a4a 0%, #343434 50%, #2a2a2a 100%);
+  --kp-btn-border: 1px solid #111;
+  --kp-btn-lit-bg: linear-gradient(180deg, #5a7a9a 0%, #3a5570 100%);
+  --kp-btn-lit-border: 1px solid #2a4a66;
+  --kp-field-bg: #141414;
+  --kp-field-border: 1px solid #0a0a0a;
+  --kp-field-shadow: inset 0 1px 0 #333;
+  --kp-kbd-bg: #141414;
+  --kp-kbd-border: 1px solid #111;
+  --kp-kbd-shadow: none;
+  --kp-backdrop-bg: rgba(0,0,0,0.35);
+  --kp-backdrop-blur: blur(6px);
+  --kp-hatch-edit: repeating-linear-gradient(-45deg, rgba(180, 200, 220, 0.08) 0px, rgba(180, 200, 220, 0.08) 1px, transparent 1px, transparent 7px);
+  --kp-hatch-edit-titlebar-bg: linear-gradient(180deg, #646464 0%, #4a4a4a 45%, #383838 100%);
+  --kp-hatch-edit-body-bg: #1a1c20;
+  --kp-scrollbar-thumb: #4a4a4a;
+  --kp-scrollbar-thumb-hover: #5c5c5c;
+  --kp-scrollbar-track: #141414;
+  --kp-corner-mode: radius;
+  --kp-cut-size: 0px;
+  --kp-key-shading: bevel;
+  --kp-key-border: 1px solid rgba(0, 0, 0, 0.4);
+  --kp-key-corner-mode: radius;
+  --kp-key-cut-size: 4px;
+  --kp-key-clip: none;
+  --kp-key-effective-radius: 7px;
+  --kp-key-sheen-opacity: 1;
+  --kp-key-shade-layer: linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 18%, transparent 42%);
+  --kp-icon-chrome: #ddd;
+  --kp-icon-keycap: #0c1018;
+  --kp-icon-accent: #4a90c8;
+  --kp-key-icon: #0c1018;
+}
+[data-kp-theme="gray-metal-pro"] {
+  --kp-theme-id: gray-metal-pro;
+  --kp-font-display: Helvetica, Arial, sans-serif;
+  --kp-font-heading: Helvetica, Arial, sans-serif;
+  --kp-font-subhead: Helvetica, Arial, sans-serif;
+  --kp-font-body: Helvetica, Arial, sans-serif;
+  --kp-font-ui: Helvetica, Arial, sans-serif;
+  --kp-font-kbd: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --kp-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --kp-font-caption: Helvetica, Arial, sans-serif;
+  --kp-type-scale: 1.25;
+  --kp-type-display-size: 22px;
+  --kp-type-h1-size: 22px;
+  --kp-type-h2-size: 16px;
+  --kp-type-h3-size: 14px;
+  --kp-type-body-size: 13px;
+  --kp-type-ui-size: 12px;
+  --kp-type-kbd-size: 10px;
+  --kp-type-caption-size: 11px;
+  --kp-type-code-size: 12px;
+  --kp-type-weight-regular: 400;
+  --kp-type-weight-medium: 500;
+  --kp-type-weight-semibold: 600;
+  --kp-type-weight-bold: 700;
+  --kp-type-tracking-display: 0.02em;
+  --kp-type-tracking-titlebar: 0.02em;
+  --kp-type-tracking-ui: normal;
+  --kp-type-transform-display: none;
+  --kp-type-transform-titlebar: none;
+  --kp-titlebar-title-weight: 600;
+  --kp-titlebar-icon-display: none;
+  --kp-titlebar-icon-size: 12px;
+  --kp-kbd-transform: none;
+  --kp-kbd-tracking: 0.02em;
+  --kp-type-leading-tight: 1.2;
+  --kp-type-leading-body: 1.35;
+  --kp-type-leading-prose: 1.55;
+  --kp-radius-none: 0px;
+  --kp-radius-xs: 2px;
+  --kp-radius-sm: 3px;
+  --kp-radius-md: 6px;
+  --kp-radius-lg: 10px;
+  --kp-radius-pill: 999px;
+  --kp-radius-panel: 3px;
+  --kp-radius-btn: 2px;
+  --kp-radius-field: 2px;
+  --kp-radius-key: 7px;
+  --kp-radius-plate: 14px;
+  --kp-color-bg: #6e6e6e;
+  --kp-color-panel: #838383;
+  --kp-color-panel-edge: rgba(190,190,190,0.48);
+  --kp-color-panel-edge-dark: rgba(42,52,62,0.92);
+  --kp-color-title-top: #b0b0b0;
+  --kp-color-title-mid: #929292;
+  --kp-color-title-bot: #787878;
+  --kp-color-btn-top: #c2c2c2;
+  --kp-color-btn-mid: #9e9e9e;
+  --kp-color-btn-bot: #868686;
+  --kp-color-lit-top: #7aa0c0;
+  --kp-color-lit-bot: #4a7090;
+  --kp-color-lit-edge: #3a5a78;
+  --kp-color-accent: #3a6a94;
+  --kp-color-accent-2: #3a6a94;
+  --kp-color-fg: #1c1c1c;
+  --kp-color-fg-dim: rgba(28,28,28,0.72);
+  --kp-color-fg-mute: rgba(28,28,28,0.55);
+  --kp-color-field-bg: #9a9a9a;
+  --kp-color-field-edge: #4a4a4a;
+  --kp-color-field-inset: rgba(255,255,255,0.35);
+  --kp-color-hover: rgba(255,255,255,0.22);
+  --kp-color-selected: rgba(58,106,148,0.28);
+  --kp-color-selected-text: #0e1a24;
+  --kp-color-focus-ring: inset 0 0 0 1px rgba(58,106,148,0.55);
+  --kp-color-kbd-fg: #141414;
+  --kp-titlebar-bg: linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.08) 28%, transparent 55%), linear-gradient(180deg, #b0b0b0 0%, #929292 45%, #787878 100%);
+  --kp-titlebar-border: 1px solid #4a4a4a;
+  --kp-titlebar-shadow: 0 1px 0 rgba(255,255,255,0.35);
+  --kp-panel-bg: #838383;
+  --kp-panel-border: 1px solid rgba(42,52,62,0.92);
+  --kp-panel-shadow: 0 0 0 1px rgba(255,255,255,0.28) inset, 0 0 0 1px rgba(190,190,190,0.48), 0 0 10px rgba(255,255,255,0.12), 0 16px 40px rgba(0,0,0,0.45);
+  --kp-btn-bg: linear-gradient(180deg, #c2c2c2 0%, #9e9e9e 50%, #868686 100%);
+  --kp-btn-border: 1px solid #4a4a4a;
+  --kp-btn-lit-bg: linear-gradient(180deg, #7aa0c0 0%, #4a7090 100%);
+  --kp-btn-lit-border: 1px solid #3a5a78;
+  --kp-field-bg: #9a9a9a;
+  --kp-field-border: 1px solid #4a4a4a;
+  --kp-field-shadow: inset 0 1px 0 rgba(255,255,255,0.40);
+  --kp-kbd-bg: linear-gradient(180deg, #e4e4e4 0%, #c8c8c8 45%, #b0b0b0 55%, #9a9a9a 100%);
+  --kp-kbd-border: 1px solid #3d3d3d;
+  --kp-kbd-shadow: 0 1px 0 rgba(255,255,255,0.72) inset, 0 -1px 0 rgba(0,0,0,0.28) inset, 0 1px 2px rgba(0,0,0,0.32);
+  --kp-backdrop-bg: rgba(40,40,40,0.35);
+  --kp-backdrop-blur: blur(6px);
+  --kp-hatch-edit: repeating-linear-gradient(-45deg, rgba(24, 24, 24, 0.28) 0px, rgba(24, 24, 24, 0.28) 1px, transparent 1px, transparent 7px);
+  --kp-hatch-edit-titlebar-bg: linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.08) 28%, transparent 55%), linear-gradient(180deg, #b8b8b8 0%, #9a9a9a 45%, #808080 100%);
+  --kp-hatch-edit-body-bg: #8a8a8a;
+  --kp-scrollbar-thumb: #a8a8a8;
+  --kp-scrollbar-thumb-hover: #b5b5b5;
+  --kp-scrollbar-track: #747474;
+  --kp-corner-mode: radius;
+  --kp-cut-size: 0px;
+  --kp-key-shading: bevel;
+  --kp-key-border: 1px solid rgba(0, 0, 0, 0.4);
+  --kp-key-corner-mode: radius;
+  --kp-key-cut-size: 4px;
+  --kp-key-clip: none;
+  --kp-key-effective-radius: 7px;
+  --kp-key-sheen-opacity: 1;
+  --kp-key-shade-layer: linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 18%, transparent 42%);
+  --kp-icon-chrome: #1c1c1c;
+  --kp-icon-keycap: #1c1c1c;
+  --kp-icon-accent: #3a6a94;
+  --kp-key-icon: #1c1c1c;
+}
+[data-kp-theme="gx-er"] {
+  --kp-theme-id: gx-er;
+  --kp-font-display: 'ROBOTECHGPRegular', 'TitilliumText', Helvetica, Arial, sans-serif;
+  --kp-font-heading: 'Cubellan', 'TitilliumText', Helvetica, Arial, sans-serif;
+  --kp-font-subhead: 'TitilliumText', Helvetica, Arial, sans-serif;
+  --kp-font-body: 'Ezarion', 'Dosis', Helvetica, Arial, sans-serif;
+  --kp-font-ui: 'TitilliumText', Helvetica, Arial, sans-serif;
+  --kp-font-kbd: 'Dosis', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --kp-font-mono: 'Dosis', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --kp-font-caption: 'Ezarion', Helvetica, Arial, sans-serif;
+  --kp-type-scale: 1.25;
+  --kp-type-display-size: 22px;
+  --kp-type-h1-size: 22px;
+  --kp-type-h2-size: 16px;
+  --kp-type-h3-size: 14px;
+  --kp-type-body-size: 13px;
+  --kp-type-ui-size: 12px;
+  --kp-type-kbd-size: 10px;
+  --kp-type-caption-size: 11px;
+  --kp-type-code-size: 12px;
+  --kp-type-weight-regular: 400;
+  --kp-type-weight-medium: 500;
+  --kp-type-weight-semibold: 600;
+  --kp-type-weight-bold: 700;
+  --kp-type-tracking-display: 0.08em;
+  --kp-type-tracking-titlebar: 0.06em;
+  --kp-type-tracking-ui: 0.02em;
+  --kp-type-transform-display: uppercase;
+  --kp-type-transform-titlebar: uppercase;
+  --kp-titlebar-title-weight: 700;
+  --kp-titlebar-icon-display: inline-flex;
+  --kp-titlebar-icon-size: 12px;
+  --kp-kbd-transform: uppercase;
+  --kp-kbd-tracking: 0.06em;
+  --kp-type-leading-tight: 1.2;
+  --kp-type-leading-body: 1.35;
+  --kp-type-leading-prose: 1.55;
+  --kp-radius-none: 0px;
+  --kp-radius-xs: 0px;
+  --kp-radius-sm: 0px;
+  --kp-radius-md: 6px;
+  --kp-radius-lg: 10px;
+  --kp-radius-pill: 999px;
+  --kp-radius-panel: 0px;
+  --kp-radius-btn: 0px;
+  --kp-radius-field: 0px;
+  --kp-radius-key: 7px;
+  --kp-radius-plate: 14px;
+  --kp-color-bg: #0a0a0c;
+  --kp-color-panel: #16161a;
+  --kp-color-panel-edge: #2a2a32;
+  --kp-color-panel-edge-dark: #050506;
+  --kp-color-title-top: #2c2c34;
+  --kp-color-title-mid: #1c1c22;
+  --kp-color-title-bot: #121216;
+  --kp-color-btn-top: #3a3a44;
+  --kp-color-btn-mid: #26262e;
+  --kp-color-btn-bot: #1a1a20;
+  --kp-color-lit-top: #00e5ff;
+  --kp-color-lit-bot: #0088aa;
+  --kp-color-lit-edge: #006688;
+  --kp-color-accent: #00e5ff;
+  --kp-color-accent-2: #ff2d95;
+  --kp-color-fg: #e8e8ef;
+  --kp-color-fg-dim: #9aa0b0;
+  --kp-color-fg-mute: #6a7080;
+  --kp-color-field-bg: #0c0c10;
+  --kp-color-field-edge: #000;
+  --kp-color-field-inset: #333344;
+  --kp-color-hover: rgba(0,229,255,0.08);
+  --kp-color-selected: rgba(0,229,255,0.18);
+  --kp-color-selected-text: #f0ffff;
+  --kp-color-focus-ring: inset 0 0 0 1px rgba(0,229,255,0.55);
+  --kp-color-kbd-fg: #00e5ff;
+  --kp-titlebar-bg: linear-gradient(180deg, #2c2c34 0%, #1c1c22 45%, #121216 100%);
+  --kp-titlebar-border: 1px solid #050506;
+  --kp-titlebar-shadow: 0 1px 0 #00e5ff33;
+  --kp-panel-bg: #16161a;
+  --kp-panel-border: 1px solid #050506;
+  --kp-panel-shadow: 0 0 0 1px #2a2a32 inset, 0 0 0 1px rgba(0, 229, 255, 0.22), 0 0 14px rgba(0, 229, 255, 0.12), 0 16px 40px rgba(0,0,0,0.65);
+  --kp-btn-bg: linear-gradient(180deg, #3a3a44 0%, #26262e 50%, #1a1a20 100%);
+  --kp-btn-border: 1px solid #050506;
+  --kp-btn-lit-bg: linear-gradient(180deg, #00e5ff 0%, #0088aa 100%);
+  --kp-btn-lit-border: 1px solid #006688;
+  --kp-field-bg: #0c0c10;
+  --kp-field-border: 1px solid #000;
+  --kp-field-shadow: inset 0 1px 0 #333344;
+  --kp-kbd-bg: rgba(0, 229, 255, 0.08);
+  --kp-kbd-border: 1px solid #00e5ff;
+  --kp-kbd-shadow: 0 0 0 1px #00e5ff55, 0 0 8px #00e5ff44;
+  --kp-backdrop-bg: rgba(0,0,0,0.5);
+  --kp-backdrop-blur: blur(8px);
+  --kp-hatch-edit: repeating-linear-gradient(-45deg, rgba(0, 229, 255, 0.16) 0px, rgba(0, 229, 255, 0.16) 1px, transparent 1px, transparent 7px);
+  --kp-hatch-edit-titlebar-bg: linear-gradient(180deg, #2c2c34 0%, #1c1c22 45%, #121216 100%);
+  --kp-hatch-edit-body-bg: #101014;
+  --kp-scrollbar-thumb: #3a3a44;
+  --kp-scrollbar-thumb-hover: #00e5ff;
+  --kp-scrollbar-track: #0c0c10;
+  --kp-corner-mode: cut;
+  --kp-cut-size: 8px;
+  --kp-key-shading: bevel;
+  --kp-key-border: 1px solid rgba(0, 229, 255, 0.35);
+  --kp-key-corner-mode: cut;
+  --kp-key-cut-size: 4px;
+  --kp-key-clip: polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px);
+  --kp-key-effective-radius: 0px;
+  --kp-key-sheen-opacity: 1;
+  --kp-key-shade-layer: linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 18%, transparent 42%);
+  --kp-icon-chrome: #00e5ff;
+  --kp-icon-keycap: #001018;
+  --kp-icon-accent: #00e5ff;
+  --kp-key-icon: #001018;
+}
+[data-kp-theme="dark-pro"][data-kp-surface="onboarding"], [data-kp-theme="dark-pro"] [data-kp-surface="onboarding"] {
+  --kp-theme-id: dark-pro;
+  --kp-font-display: Helvetica, Arial, sans-serif;
+  --kp-font-heading: Helvetica, Arial, sans-serif;
+  --kp-font-subhead: Helvetica, Arial, sans-serif;
+  --kp-font-body: Helvetica, Arial, sans-serif;
+  --kp-font-ui: Helvetica, Arial, sans-serif;
+  --kp-font-kbd: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --kp-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --kp-font-caption: Helvetica, Arial, sans-serif;
+  --kp-type-scale: 1.25;
+  --kp-type-display-size: 22px;
+  --kp-type-h1-size: 22px;
+  --kp-type-h2-size: 16px;
+  --kp-type-h3-size: 14px;
+  --kp-type-body-size: 13px;
+  --kp-type-ui-size: 12px;
+  --kp-type-kbd-size: 10px;
+  --kp-type-caption-size: 11px;
+  --kp-type-code-size: 12px;
+  --kp-type-weight-regular: 400;
+  --kp-type-weight-medium: 500;
+  --kp-type-weight-semibold: 600;
+  --kp-type-weight-bold: 700;
+  --kp-type-tracking-display: 0.02em;
+  --kp-type-tracking-titlebar: 0.02em;
+  --kp-type-tracking-ui: normal;
+  --kp-type-transform-display: none;
+  --kp-type-transform-titlebar: none;
+  --kp-titlebar-title-weight: 600;
+  --kp-titlebar-icon-display: none;
+  --kp-titlebar-icon-size: 12px;
+  --kp-kbd-transform: none;
+  --kp-kbd-tracking: 0.02em;
+  --kp-type-leading-tight: 1.2;
+  --kp-type-leading-body: 1.35;
+  --kp-type-leading-prose: 1.55;
+  --kp-radius-none: 0px;
+  --kp-radius-xs: 2px;
+  --kp-radius-sm: 3px;
+  --kp-radius-md: 6px;
+  --kp-radius-lg: 10px;
+  --kp-radius-pill: 999px;
+  --kp-radius-panel: 3px;
+  --kp-radius-btn: 2px;
+  --kp-radius-field: 2px;
+  --kp-radius-key: 7px;
+  --kp-radius-plate: 14px;
+  --kp-color-bg: #6e6e6e;
+  --kp-color-panel: #838383;
+  --kp-color-panel-edge: rgba(190,190,190,0.48);
+  --kp-color-panel-edge-dark: rgba(42,52,62,0.92);
+  --kp-color-title-top: #b0b0b0;
+  --kp-color-title-mid: #929292;
+  --kp-color-title-bot: #787878;
+  --kp-color-btn-top: #c2c2c2;
+  --kp-color-btn-mid: #9e9e9e;
+  --kp-color-btn-bot: #868686;
+  --kp-color-lit-top: #7aa0c0;
+  --kp-color-lit-bot: #4a7090;
+  --kp-color-lit-edge: #3a5a78;
+  --kp-color-accent: #3a6a94;
+  --kp-color-accent-2: #3a6a94;
+  --kp-color-fg: #1c1c1c;
+  --kp-color-fg-dim: rgba(28,28,28,0.72);
+  --kp-color-fg-mute: rgba(28,28,28,0.55);
+  --kp-color-field-bg: #9a9a9a;
+  --kp-color-field-edge: #4a4a4a;
+  --kp-color-field-inset: rgba(255,255,255,0.35);
+  --kp-color-hover: rgba(255,255,255,0.22);
+  --kp-color-selected: rgba(58,106,148,0.28);
+  --kp-color-selected-text: #0e1a24;
+  --kp-color-focus-ring: inset 0 0 0 1px rgba(58,106,148,0.55);
+  --kp-color-kbd-fg: #141414;
+  --kp-titlebar-bg: linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.08) 28%, transparent 55%), linear-gradient(180deg, #b0b0b0 0%, #929292 45%, #787878 100%);
+  --kp-titlebar-border: 1px solid #4a4a4a;
+  --kp-titlebar-shadow: 0 1px 0 rgba(255,255,255,0.35);
+  --kp-panel-bg: #838383;
+  --kp-panel-border: 1px solid rgba(42,52,62,0.92);
+  --kp-panel-shadow: 0 0 0 1px rgba(255,255,255,0.28) inset, 0 0 0 1px rgba(190,190,190,0.48), 0 0 10px rgba(255,255,255,0.12), 0 16px 40px rgba(0,0,0,0.45);
+  --kp-btn-bg: linear-gradient(180deg, #c2c2c2 0%, #9e9e9e 50%, #868686 100%);
+  --kp-btn-border: 1px solid #4a4a4a;
+  --kp-btn-lit-bg: linear-gradient(180deg, #7aa0c0 0%, #4a7090 100%);
+  --kp-btn-lit-border: 1px solid #3a5a78;
+  --kp-field-bg: #9a9a9a;
+  --kp-field-border: 1px solid #4a4a4a;
+  --kp-field-shadow: inset 0 1px 0 rgba(255,255,255,0.40);
+  --kp-kbd-bg: linear-gradient(180deg, #e4e4e4 0%, #c8c8c8 45%, #b0b0b0 55%, #9a9a9a 100%);
+  --kp-kbd-border: 1px solid #3d3d3d;
+  --kp-kbd-shadow: 0 1px 0 rgba(255,255,255,0.72) inset, 0 -1px 0 rgba(0,0,0,0.28) inset, 0 1px 2px rgba(0,0,0,0.32);
+  --kp-backdrop-bg: rgba(40,40,40,0.35);
+  --kp-backdrop-blur: blur(6px);
+  --kp-hatch-edit: repeating-linear-gradient(-45deg, rgba(24, 24, 24, 0.28) 0px, rgba(24, 24, 24, 0.28) 1px, transparent 1px, transparent 7px);
+  --kp-hatch-edit-titlebar-bg: linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.08) 28%, transparent 55%), linear-gradient(180deg, #b8b8b8 0%, #9a9a9a 45%, #808080 100%);
+  --kp-hatch-edit-body-bg: #8a8a8a;
+  --kp-scrollbar-thumb: #a8a8a8;
+  --kp-scrollbar-thumb-hover: #b5b5b5;
+  --kp-scrollbar-track: #747474;
+  --kp-corner-mode: radius;
+  --kp-cut-size: 0px;
+  --kp-key-shading: bevel;
+  --kp-key-border: 1px solid rgba(0, 0, 0, 0.4);
+  --kp-key-corner-mode: radius;
+  --kp-key-cut-size: 4px;
+  --kp-key-clip: none;
+  --kp-key-effective-radius: 7px;
+  --kp-key-sheen-opacity: 1;
+  --kp-key-shade-layer: linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 18%, transparent 42%);
+  --kp-icon-chrome: #1c1c1c;
+  --kp-icon-keycap: #1c1c1c;
+  --kp-icon-accent: #3a6a94;
+  --kp-key-icon: #1c1c1c;
+}
+.kp-chrome-window {
+  overflow: hidden;
+}
+.kp-chrome-window:not([data-kp-corner="cut"]) {
+  border-radius: var(--kp-radius-panel, 3px);
+}
+[data-kp-corner="cut"],
+:host([data-kp-corner="cut"]),
+.kp-chrome-window[data-kp-corner="cut"] {
+  clip-path: polygon(
+    var(--kp-cut-size, 8px) 0,
+    calc(100% - var(--kp-cut-size, 8px)) 0,
+    100% var(--kp-cut-size, 8px),
+    100% calc(100% - var(--kp-cut-size, 8px)),
+    calc(100% - var(--kp-cut-size, 8px)) 100%,
+    var(--kp-cut-size, 8px) 100%,
+    0 calc(100% - var(--kp-cut-size, 8px)),
+    0 var(--kp-cut-size, 8px)
+  );
+  border-radius: 0 !important;
+}
+.kp-titlebar-icon {
+  display: var(--kp-titlebar-icon-display, none);
+  width: var(--kp-titlebar-icon-size, 12px);
+  height: var(--kp-titlebar-icon-size, 12px);
+  flex: 0 0 auto;
+  background-color: var(--kp-icon-chrome, currentColor);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+[data-kp-titlebar-shortcut],
+.kp-titlebar-kbd {
+  font-family: var(--kp-font-kbd, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  font-size: var(--kp-type-kbd-size, 10px);
+  font-weight: var(--kp-type-weight-regular, 400);
+  line-height: 1.2;
+  text-transform: var(--kp-kbd-transform, none);
+  letter-spacing: var(--kp-kbd-tracking, 0.02em);
+  padding: 1px 6px;
+  border: var(--kp-kbd-border, 1px solid #111);
+  border-radius: var(--kp-radius-btn, 2px);
+  background: var(--kp-kbd-bg, #141414);
+  color: var(--kp-color-kbd-fg, #ddd);
+  box-shadow: var(--kp-kbd-shadow, none);
+  box-sizing: border-box;
+}
+.kpv2-popover-titlebar,
+[data-kp-popover-titlebar],
+[data-kp-floating-keyboard-titlebar],
+.kp-cfg-titlebar,
+.kp-action-config-panel__titlebar,
+.kp-procedure-result__titlebar,
+.kp-practice-popover__header {
+  letter-spacing: var(--kp-type-tracking-titlebar, 0.02em);
+  text-transform: var(--kp-type-transform-titlebar, none);
+}
+.kpv2-popover-titlebar-title,
+[data-kp-floating-keyboard-title],
+.kp-cfg-title,
+.kp-action-config-panel__title,
+.kp-procedure-result__title,
+.kp-practice-popover__title {
+  font-weight: var(--kp-titlebar-title-weight, 600);
+  letter-spacing: var(--kp-type-tracking-titlebar, 0.02em);
+  text-transform: var(--kp-type-transform-titlebar, none);
+  color: var(--kp-color-fg, inherit);
+}
+.kp-select {
+  display: inline-flex;
+  align-items: stretch;
+  flex: 0 0 auto;
+  min-width: 0;
+  box-sizing: border-box;
+  font-family: var(--kp-font-ui, Helvetica, Arial, sans-serif);
+}
+.kp-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 2px 6px;
+  border: var(--kp-field-border, 1px solid #0a0a0a);
+  border-radius: var(--kp-radius-field, 2px);
+  background: var(--kp-field-bg, #141414);
+  color: var(--kp-color-fg, #ddd);
+  box-shadow: var(--kp-field-shadow, none);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  box-sizing: border-box;
+}
+.kp-select--titlebar .kp-select-trigger {
+  width: 190px;
+  height: 22px;
+  margin-left: 6px;
+}
+.kp-select-trigger:hover {
+  background: color-mix(in srgb, var(--kp-color-hover, rgba(255,255,255,0.08)) 70%, var(--kp-field-bg, #141414));
+}
+.kp-select-trigger:focus-visible {
+  outline: 1px solid var(--kp-color-focus-ring, var(--kp-color-accent, #4a90c8));
+  outline-offset: 1px;
+}
+.kp-select.is-open .kp-select-trigger,
+.kp-select-trigger[aria-expanded="true"] {
+  border-color: var(--kp-color-accent, #4a90c8);
+}
+.kp-select-trigger-icon,
+.kp-select-item-icon {
+  display: block;
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  background-color: var(--kp-icon-chrome, currentColor);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+.kp-select-trigger-label,
+.kp-select-item-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kp-select-chevron {
+  width: 0;
+  height: 0;
+  margin-left: 2px;
+  border-left: 3.5px solid transparent;
+  border-right: 3.5px solid transparent;
+  border-top: 4px solid currentColor;
+  opacity: 0.65;
+  flex: 0 0 auto;
+}
+.kp-select-menu {
+  position: fixed;
+  z-index: 2147483646;
+  margin: 0;
+  padding: 4px 0;
+  min-width: 190px;
+  max-width: min(360px, calc(100vw - 16px));
+  max-height: min(320px, calc(100vh - 16px));
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+  border: var(--kp-panel-border, 1px solid #111);
+  border-radius: var(--kp-radius-panel, 3px);
+  background: var(--kp-panel-bg, #232323);
+  box-shadow: var(--kp-panel-shadow, 0 8px 24px rgba(0,0,0,0.45));
+  color: var(--kp-color-fg, #ddd);
+  font-family: var(--kp-font-ui, Helvetica, Arial, sans-serif);
+  font-size: 12px;
+  line-height: 1.3;
+}
+.kp-select-menu[data-kp-select-fallback="true"][hidden] {
+  display: none !important;
+}
+.kp-select-group {
+  padding: 6px 10px 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--kp-color-fg-mute, #777);
+  pointer-events: none;
+  user-select: none;
+}
+.kp-select-separator {
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--kp-color-field-edge, #0a0a0a);
+  border: 0;
+  pointer-events: none;
+}
+.kp-select-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-sizing: border-box;
+  outline: none;
+}
+.kp-select-item:hover,
+.kp-select-item.is-active {
+  background: var(--kp-color-hover, rgba(255,255,255,0.08));
+  outline: 1px solid var(--kp-color-focus-ring, var(--kp-color-accent, #4a90c8));
+  outline-offset: -1px;
+}
+.kp-select-item[aria-selected="true"] {
+  background: var(--kp-color-selected, rgba(74, 144, 200, 0.28));
+  color: var(--kp-color-selected-text, var(--kp-color-fg, #ddd));
+}
+.kp-select-item .kp-titlebar-kbd {
+  margin-left: auto;
+  flex-shrink: 0;
+}`;
+  const KP_THEME_IDS = ["dark-pro","gray-metal-pro","gx-er"];
+  function applyEarlyTheme(themeId) {
+    const id = KP_THEME_IDS.indexOf(themeId) >= 0 ? themeId : 'dark-pro';
+    try { document.documentElement.setAttribute('data-kp-theme', id); } catch { /* ignore */ }
+    try {
+      let style = document.getElementById('kp-early-theme');
+      if (!style) {
+        style = document.createElement('style');
+        style.id = 'kp-early-theme';
+        (document.head || document.documentElement).appendChild(style);
+      }
+      if (style.textContent !== KP_ALL_THEMES_CSS) style.textContent = KP_ALL_THEMES_CSS;
+    } catch { /* ignore */ }
+  }
 
   // --- begin stamped onboarding-shared.js ---
   /**
@@ -4019,18 +4700,18 @@
     let css =
       `${s('kbd')} {
           display: inline-block;
-          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-          font-size: 11px;
-          font-weight: 700;
+          font-family: var(--kp-font-kbd, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+          font-size: var(--kp-type-kbd-size, 11px);
+          font-weight: var(--kp-type-weight-bold, 700);
           line-height: 1.2;
           letter-spacing: 0.02em;
           padding: 2px 7px;
           margin: 0 1px;
-          border: ${ONBOARDING_METAL.kbdBorder};
-          border-radius: 4px;
-          background: ${ONBOARDING_METAL.kbdBg};
-          color: ${ONBOARDING_METAL.kbdColor};
-          box-shadow: ${ONBOARDING_METAL.kbdShadow};
+          border: var(--kp-kbd-border, ${ONBOARDING_METAL.kbdBorder});
+          border-radius: var(--kp-radius-sm, 4px);
+          background: var(--kp-kbd-bg, ${ONBOARDING_METAL.kbdBg});
+          color: var(--kp-color-kbd-fg, ${ONBOARDING_METAL.kbdColor});
+          box-shadow: var(--kp-kbd-shadow, ${ONBOARDING_METAL.kbdShadow});
           vertical-align: baseline;
           white-space: nowrap;
         }
@@ -4217,6 +4898,7 @@
     root.className = ONBOARDING_PANEL_CLASS;
     root.hidden = initiallyHidden;
     if (opts.early) root.dataset.kpEarlyOnboarding = 'true';
+    try { root.setAttribute('data-kp-surface', 'onboarding'); } catch { /* ignore */ }
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-label', 'KeyPilot onboarding walkthrough');
     try { root.setAttribute('data-kp-ui-shadow', 'onboarding'); } catch { /* ignore */ }
@@ -4237,12 +4919,12 @@
       flexDirection: 'column',
       overflow: 'hidden',
       zIndex: String(zIndex),
-      background: ONBOARDING_METAL.panelBg,
-      color: ONBOARDING_METAL.fg,
-      border: ONBOARDING_METAL.panelBorder,
-      borderRadius: '3px',
-      boxShadow: ONBOARDING_METAL.panelShadow,
-      fontFamily: 'Helvetica, Arial, sans-serif',
+      background: 'var(--kp-panel-bg)',
+      color: 'var(--kp-color-fg)',
+      border: 'var(--kp-panel-border)',
+      borderRadius: 'var(--kp-radius-panel, 3px)',
+      boxShadow: 'var(--kp-panel-shadow)',
+      fontFamily: 'var(--kp-font-ui, Helvetica, Arial, sans-serif)',
       pointerEvents: initiallyHidden ? 'none' : 'auto'
     });
 
@@ -6180,8 +6862,18 @@
       if (!sel) return;
       if (keyboardUsesCustomLayout) return;
       const value = `builtin:${keyboardLayoutFamilyId}`;
-      const has = Array.prototype.some.call(sel.options || [], (o) => o && o.value === value);
-      if (has && sel.value !== value) sel.value = value;
+      try { sel.setAttribute('data-kp-select-value', value); } catch { /* ignore */ }
+      let label = '';
+      try {
+        const pair = earlyLayoutFamilyOptions().find((p) => p && p[0] === value);
+        if (pair && pair[1]) label = String(pair[1]);
+      } catch { /* ignore */ }
+      const labelEl = sel.querySelector && sel.querySelector('.kp-select-trigger-label');
+      if (labelEl && label) labelEl.textContent = label;
+      if (sel.tagName === 'SELECT') {
+        const has = Array.prototype.some.call(sel.options || [], (o) => o && o.value === value);
+        if (has && sel.value !== value) sel.value = value;
+      }
     } catch { /* ignore */ }
   }
 
@@ -7391,6 +8083,9 @@
       try {
         const next = changes[SETTINGS_STORAGE_KEY]?.newValue;
         applyEarlyControlStripFromSettingsObject(next && typeof next === 'object' ? next : null);
+        try {
+          if (typeof applyEarlyTheme === 'function' && next && typeof next === 'object') applyEarlyTheme(next.themeId);
+        } catch { /* ignore */ }
       } catch { /* ignore */ }
     };
     try {
@@ -7463,7 +8158,7 @@
     Object.assign(header.style, {
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'space-between',
+      justifyContent: 'flex-start',
       gap: '8px',
       height: '28px',
       minHeight: '28px',
@@ -7487,10 +8182,10 @@
     title.setAttribute('data-kp-floating-keyboard-title', 'true');
     Object.assign(title.style, {
       fontSize: '11px',
-      fontWeight: '600',
-      letterSpacing: '0.01em',
-      textTransform: 'none',
-      color: '#ddd',
+      fontWeight: 'var(--kp-titlebar-title-weight, 600)',
+      letterSpacing: 'var(--kp-type-tracking-titlebar, 0.02em)',
+      textTransform: 'var(--kp-type-transform-titlebar, none)',
+      color: 'var(--kp-color-fg, #ddd)',
       lineHeight: '28px',
       whiteSpace: 'nowrap',
       overflow: 'hidden',
@@ -7500,12 +8195,30 @@
     });
 
     // Layout select must exist in the early shell — otherwise adopt inserts it and the
-    // titlebar visibly rebuilds on every navigation.
-    const layoutSelect = doc.createElement('select');
-    layoutSelect.setAttribute('aria-label', 'Current keyboard layout');
+    // titlebar visibly rebuilds on every navigation. Placeholder trigger only; the
+    // content script replaces this with the interactive custom select.
+    const layoutSelect = doc.createElement('div');
+    layoutSelect.className = 'kp-select kp-select--titlebar';
+    layoutSelect.setAttribute('data-kp-select', 'true');
     layoutSelect.setAttribute('data-kp-floating-keyboard-layout-select', 'true');
+    layoutSelect.setAttribute('aria-label', 'Current keyboard layout');
     Object.assign(layoutSelect.style, {
+      display: 'inline-flex',
+      alignItems: 'stretch',
       marginLeft: '6px',
+      flex: '0 0 auto'
+    });
+    const layoutTrigger = doc.createElement('button');
+    layoutTrigger.type = 'button';
+    layoutTrigger.className = 'kp-select-trigger';
+    layoutTrigger.setAttribute('aria-label', 'Current keyboard layout');
+    Object.assign(layoutTrigger.style, {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '6px',
+      width: '190px',
+      height: '22px',
+      margin: '0',
       padding: '2px 6px',
       borderRadius: '2px',
       border: '1px solid #0a0a0a',
@@ -7513,30 +8226,48 @@
       color: '#ddd',
       outline: 'none',
       fontSize: '11px',
-      width: '190px',
-      height: '22px',
+      lineHeight: '1.2',
       cursor: 'pointer',
-      fontFamily: 'Helvetica, Arial, sans-serif'
+      fontFamily: 'Helvetica, Arial, sans-serif',
+      textAlign: 'left',
+      boxSizing: 'border-box'
     });
+    const layoutTriggerLabel = doc.createElement('span');
+    layoutTriggerLabel.className = 'kp-select-trigger-label';
+    let earlyLayoutLabel = 'Browsing';
     try {
-      const builtinHdr = doc.createElement('option');
-      builtinHdr.disabled = true;
-      builtinHdr.textContent = 'Built-In';
-      layoutSelect.appendChild(builtinHdr);
-      for (const [value, label] of earlyLayoutFamilyOptions()) {
-        const opt = doc.createElement('option');
-        opt.value = value;
-        opt.textContent = label;
-        layoutSelect.appendChild(opt);
-      }
-      try {
-        layoutSelect.appendChild(doc.createElement('hr'));
-      } catch { /* ignore */ }
-      const customHdr = doc.createElement('option');
-      customHdr.disabled = true;
-      customHdr.textContent = 'Custom';
-      layoutSelect.appendChild(customHdr);
+      const value = `builtin:${keyboardLayoutFamilyId}`;
+      layoutSelect.setAttribute('data-kp-select-value', value);
+      const pair = earlyLayoutFamilyOptions().find((p) => p && p[0] === value);
+      if (pair && pair[1]) earlyLayoutLabel = String(pair[1]);
     } catch { /* ignore */ }
+    layoutTriggerLabel.textContent = earlyLayoutLabel;
+    Object.assign(layoutTriggerLabel.style, {
+      flex: '1 1 auto',
+      minWidth: '0',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap'
+    });
+    const layoutChevron = doc.createElement('span');
+    layoutChevron.className = 'kp-select-chevron';
+    layoutChevron.setAttribute('aria-hidden', 'true');
+    Object.assign(layoutChevron.style, {
+      width: '0',
+      height: '0',
+      marginLeft: '2px',
+      borderLeft: '3.5px solid transparent',
+      borderRight: '3.5px solid transparent',
+      borderTop: '4px solid #ddd',
+      flex: '0 0 auto',
+      opacity: '0.65'
+    });
+    layoutTrigger.appendChild(layoutTriggerLabel);
+    layoutTrigger.appendChild(layoutChevron);
+    layoutTrigger.addEventListener('pointerdown', (e) => {
+      try { e.stopPropagation(); } catch { /* ignore */ }
+    }, true);
+    layoutSelect.appendChild(layoutTrigger);
 
     const hint = doc.createElement('div');
     hint.setAttribute('data-kp-floating-keyboard-hint', 'true');
@@ -7545,7 +8276,7 @@
       display: 'none',
       alignItems: 'center',
       gap: '4px',
-      marginLeft: 'auto',
+      marginLeft: '0',
       fontSize: '10px',
       fontWeight: '500',
       letterSpacing: '0',
@@ -7561,22 +8292,39 @@
     const shortcut = doc.createElement('kbd');
     shortcut.setAttribute('data-kp-floating-keyboard-shortcut', 'true');
     shortcut.setAttribute('data-kp-titlebar-shortcut', 'true');
-    shortcut.textContent = '([K])';
+    shortcut.textContent = 'K';
     shortcut.title = 'Toggle keyboard reference';
     Object.assign(shortcut.style, {
-      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-      fontSize: '10px',
+      fontFamily: 'var(--kp-font-kbd, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace)',
+      fontSize: 'var(--kp-type-kbd-size, 10px)',
       fontWeight: '400',
       lineHeight: '1.2',
       padding: '1px 6px',
       marginLeft: '0',
-      border: '1px solid #0a0a0a',
-      borderRadius: '4px',
-      background: 'linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 55%, #1f1f1f 100%)',
-      color: '#ddd',
+      border: 'var(--kp-kbd-border, 1px solid #0a0a0a)',
+      borderRadius: 'var(--kp-radius-btn, 4px)',
+      background: 'var(--kp-kbd-bg, linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 55%, #1f1f1f 100%))',
+      color: 'var(--kp-color-kbd-fg, #ddd)',
+      boxShadow: 'var(--kp-kbd-shadow, none)',
+      textTransform: 'var(--kp-kbd-transform, none)',
+      letterSpacing: 'var(--kp-kbd-tracking, 0.02em)',
       boxSizing: 'border-box',
       flexShrink: '0'
     });
+
+    const leadingIcon = doc.createElement('span');
+    leadingIcon.className = 'kp-titlebar-icon';
+    leadingIcon.setAttribute('aria-hidden', 'true');
+    leadingIcon.setAttribute('data-kp-titlebar-icon', 'keyboard');
+    leadingIcon.setAttribute('data-kp-floating-keyboard-icon', 'true');
+    try {
+      const iconUrl = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL)
+        ? chrome.runtime.getURL('themes/shared/icons/chrome/keyboard.svg')
+        : 'themes/shared/icons/chrome/keyboard.svg';
+      const img = `url("${iconUrl}")`;
+      leadingIcon.style.webkitMaskImage = img;
+      leadingIcon.style.maskImage = img;
+    } catch { /* ignore */ }
 
     const closeBtn = doc.createElement('button');
     closeBtn.type = 'button';
@@ -7624,10 +8372,12 @@
       lineHeight: '20px',
       padding: '0',
       margin: '0',
+      marginLeft: 'auto',
       flex: '0 0 auto',
       boxShadow: 'inset 0 0 0 1px #3a3a3a'
     });
 
+    header.appendChild(leadingIcon);
     header.appendChild(title);
     header.appendChild(shortcut);
     header.appendChild(layoutSelect);
@@ -7710,7 +8460,7 @@
       const data = getEarlyKeyboardDataForLayout(layoutId || keyboardLayoutId);
       const binding = data?.bindings?.TOGGLE_KEYBOARD_HELP;
       const key = binding && (binding.displayKey || binding.keyLabel) ? String(binding.displayKey || binding.keyLabel) : 'K';
-      const next = `([${key}])`;
+      const next = key;
       if (shortcut.textContent === next) return;
       shortcut.textContent = next;
       try {
@@ -7868,6 +8618,7 @@
         const next = changes[SETTINGS_STORAGE_KEY]?.newValue;
         const nextObj = next && typeof next === 'object' ? next : null;
         const { layoutChanged, customLayoutChanged } = applyEarlyKeyboardLayoutFromSettingsObj(nextObj);
+        try { if (typeof applyEarlyTheme === 'function') applyEarlyTheme(nextObj && nextObj.themeId); } catch { /* ignore */ }
         const nextNum = !!(nextObj && nextObj.keyboardReferenceShowNumberRow);
         const nextCollapsed = !!(nextObj && nextObj.keyboardReferenceCollapsed);
         const numChanged = nextNum !== keyboardShowNumberRow;
@@ -7952,6 +8703,7 @@
           const st = result && result[SETTINGS_STORAGE_KEY] && typeof result[SETTINGS_STORAGE_KEY] === 'object' ? result[SETTINGS_STORAGE_KEY] : null;
           settingsObj = st;
           applyEarlyKeyboardLayoutFromSettingsObj(st);
+          try { if (typeof applyEarlyTheme === 'function') applyEarlyTheme(st && st.themeId); } catch { /* ignore */ }
           keyboardShowNumberRow = !!(st && st.keyboardReferenceShowNumberRow);
           keyboardReferenceCollapsed = !!(st && st.keyboardReferenceCollapsed);
           earlyPanelPositions = readEarlyPanelPositionsFromSettingsObj(st);
@@ -7997,6 +8749,7 @@
             : null;
           if (settingsObj) {
             applyEarlyKeyboardLayoutFromSettingsObj(settingsObj);
+            try { if (typeof applyEarlyTheme === 'function') applyEarlyTheme(settingsObj.themeId); } catch { /* ignore */ }
             keyboardShowNumberRow = !!settingsObj.keyboardReferenceShowNumberRow;
             keyboardReferenceCollapsed = !!settingsObj.keyboardReferenceCollapsed;
             earlyPanelPositions = readEarlyPanelPositionsFromSettingsObj(settingsObj);

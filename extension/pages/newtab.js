@@ -320,6 +320,7 @@ function createModal({ title, hintKeyLabel, closeKeys, url, width, height, actio
   });
   const titlebarApi = createPopoverTitlebar({
     title,
+    icon: 'window',
     variant: 'modal',
     showClose: true,
     onClose: requestClose,

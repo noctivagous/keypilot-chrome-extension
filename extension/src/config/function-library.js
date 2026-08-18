@@ -29,6 +29,7 @@ import {
 } from './macro-keys.js';
 import { isChordSlotKey } from '../utils/key-chord.js';
 import { ACTION_RESULT_DESTINATIONS, buildResultDestinationParameter } from '../modules/action-result-delivery.js';
+import { isWordLookupAiAvailable } from '../modules/ai-text-service.js';
 
 /**
  * @typedef {{
@@ -51,7 +52,10 @@ import { ACTION_RESULT_DESTINATIONS, buildResultDestinationParameter } from '../
  * @typedef {{
  *   id: string,
  *   label: string,
+ *   // Short "About" blurb for Actions Library key-action cards (keep concise).
  *   description: string,
+ *   // Longer inspector Description; shown in the Actions Library dock, not on cards.
+ *   details?: string,
  *   handler: string,
  *   category: string,
  *   keyboardClass?: string|null,
@@ -375,6 +379,7 @@ function buildKeystrokeFunctionDefs() {
       id: functionId,
       label: kindDef.label,
       description: kindDef.description,
+      ...(kindDef.details ? { details: kindDef.details } : {}),
       handler: 'handleLegacyMacroKeyFunction',
       category: KEYSTROKE_FUNCTION_CATEGORY,
       keyboardClass: kindDef.keyboardClass,
@@ -394,8 +399,9 @@ function buildKeystrokeFunctionDefs() {
 const TYPE_CHARACTERS_FUNCTION_DEF = Object.freeze({
   id: 'TYPE_CHARACTERS',
   label: 'Type Characters',
-  description: 'Types configured text into the focused field each time the key is pressed. ' +
-    'Assign this Function to multiple keys, each with its own text.',
+  description: 'Type saved text into a field',
+  details: 'Types configured text into the focused field each time the key is pressed. ' +
+    'Create multiple Action Instances of this Function — each with its own text — and place them on different keys.',
   handler: 'handleTypeCharactersKey',
   category: TEXT_FUNCTION_CATEGORY,
   keyboardClass: 'key-purple',
@@ -424,8 +430,9 @@ const EXECUTE_JS_SCRIPT_PLACEHOLDER =
 const EXECUTE_JS_FUNCTION_DEF = Object.freeze({
   id: 'EXECUTE_JS',
   label: 'Execute JS',
-  description: 'Runs a pasted JavaScript snippet with the hovered clickable and other page state. ' +
-    'Optional callbacks (popover, clipboard, notify) are injected only when checked.',
+  description: 'Run a pasted JS snippet',
+  details: 'Runs a pasted JavaScript snippet in the content-script isolated world with the hovered clickable and other page state. ' +
+    'Optional callbacks (popover, clipboard, notify) are injected only when checked on the Action Instance.',
   handler: 'handleExecuteJsKey',
   category: SCRIPT_FUNCTION_CATEGORY,
   keyboardClass: 'key-purple',
@@ -495,6 +502,7 @@ function buildBuiltinActionFunctionDefs() {
       id,
       label: def.label,
       description: def.description,
+      ...(def.details ? { details: def.details } : {}),
       handler: def.handler,
       category: KEYBINDING_ACTION_CATEGORY_BY_ID[id] || 'Other',
       keyboardClass: def.keyboardClass ?? null,
@@ -518,13 +526,12 @@ function buildBuiltinActionFunctionDefs() {
  * Data Acquisition + Result Destination example/primitive Functions — see
  * KEY_ACTION_ARCHITECTURE.md, "Data Acquisition & Result Destinations", for the full design.
  *
- * `GET_TEXT_AT_CURSOR` / `GET_TEXT_RANGE` / `GET_MEDIA_AT_CURSOR` are the low-level getters: real,
- * directly key-assignable (each copies its result to the clipboard so it's independently useful
- * today), but their real purpose is as a future macro-builder Step feeding a destination-writer
- * Step — hence the single fixed `clipboard` destination rather than a full `destinations` list.
- * `LOOKUP_WORD` / `TRANSLATE` are the composed, stock-ready examples built from
- * those same getters. `SHOW_POPOVER` is the Display destination as an explicit Macro Step
- * (not a standalone key action). `ADD_URL_TO_MEDIA_LIBRARY` stores the hovered href in Media Library.
+ * `GET_TEXT_AT_CURSOR` / `GET_MEDIA_AT_CURSOR` are key-assignable getters (each copies to the
+ * clipboard so they're useful on a key today). `GET_TEXT_RANGE` is the selection/highlight
+ * getter as a Macro Step only (`assignableToKey: false`) — Copy is the key action for that
+ * data. `LOOKUP_WORD` / `TRANSLATE` are the composed, stock-ready examples. `SHOW_POPOVER` is
+ * the Display destination as an explicit Macro Step. `ADD_URL_TO_MEDIA_LIBRARY` stores the
+ * hovered href in Media Library.
  * `FETCH_URL_FOR_MEDIA_LIBRARY` remains a catalog stub until Documents / Videos ingest exists.
  * @returns {Record<string, FunctionDef>}
  */
@@ -544,7 +551,8 @@ function buildDataAcquisitionFunctionDefs() {
     GET_TEXT_AT_CURSOR: Object.freeze({
       id: 'GET_TEXT_AT_CURSOR',
       label: 'Get Text At Cursor',
-      description: 'Reads the word, sentence, paragraph, or hyperlink under the cursor and copies it to the clipboard.',
+      description: 'Copy text under the cursor',
+      details: 'Reads the word, sentence, paragraph, or hyperlink under the cursor (choose granularity on the Action Instance) and copies it to the clipboard.',
       handler: 'handleGetTextAtCursorKey',
       category: DATA_FUNCTION_CATEGORY,
       dataSource: 'underCursor',
@@ -555,17 +563,19 @@ function buildDataAcquisitionFunctionDefs() {
     GET_TEXT_RANGE: Object.freeze({
       id: 'GET_TEXT_RANGE',
       label: 'Get Text Range',
-      description: 'Reads the current highlight/selection (set up beforehand) and copies it to the clipboard.',
+      description: 'Pass selection to the next Macro Step',
+      details: 'Reads the current highlight/selection into the next Macro Step. A data primitive — add it as a Macro Step, not as a key action (use Copy for that).',
       handler: 'handleGetTextRangeKey',
       category: DATA_FUNCTION_CATEGORY,
       dataSource: 'textRange',
       dataKind: 'text',
-      destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.CLIPBOARD])
+      assignableToKey: false
     }),
     GET_MEDIA_AT_CURSOR: Object.freeze({
       id: 'GET_MEDIA_AT_CURSOR',
       label: 'Get Media At Cursor',
-      description: 'Reads the image, video, or audio under the cursor and copies it (or its URL) to the clipboard.',
+      description: 'Copy media under the cursor',
+      details: 'Reads the image, video, or audio under the cursor (choose kind on the Action Instance) and copies it — or its URL — to the clipboard.',
       handler: 'handleGetMediaAtCursorKey',
       category: DATA_FUNCTION_CATEGORY,
       dataSource: 'underCursor',
@@ -586,17 +596,31 @@ function buildDataAcquisitionFunctionDefs() {
     LOOKUP_WORD: Object.freeze({
       id: 'LOOKUP_WORD',
       label: 'Lookup Word',
-      description: 'Shows a definition popover for the word under the cursor. No setup required.',
+      description: 'Dictionary definition under cursor',
+      details: 'Shows a Free Dictionary API definition popover for the word under the cursor. No AI setup required; optionally switch the source to Ask AI on the Action Instance.',
       handler: 'handleLookupWordKey',
       category: LOOKUP_FUNCTION_CATEGORY,
       dataSource: 'underCursor',
       dataKind: 'text',
-      destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.POPOVER])
+      destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.POPOVER]),
+      parameters: Object.freeze([
+        Object.freeze({
+          id: 'source',
+          label: 'Source',
+          type: 'enum',
+          defaultValue: 'dictionary',
+          options: Object.freeze([
+            Object.freeze({ id: 'dictionary', label: 'Dictionary' }),
+            Object.freeze({ id: 'ai', label: 'Ask AI instead' })
+          ])
+        })
+      ])
     }),
     TRANSLATE: Object.freeze({
       id: 'TRANSLATE',
       label: 'Translate',
-      description: 'Translates the highlighted text (or the word/sentence/paragraph under the cursor if nothing is highlighted).',
+      description: 'Translate selection or under-cursor text',
+      details: 'Translates the highlighted text, or the word/sentence/paragraph under the cursor when nothing is highlighted. Configure target language and whether the result replaces page text or opens in a popover.',
       handler: 'handleTranslateKey',
       category: TRANSLATE_FUNCTION_CATEGORY,
       dataSource: 'underCursor',
@@ -620,7 +644,8 @@ function buildDataAcquisitionFunctionDefs() {
     SHOW_POPOVER: Object.freeze({
       id: 'SHOW_POPOVER',
       label: 'Show Popover',
-      description: 'Renders the previous Macro Step’s result (or configured fallback text) in a popover. A display primitive — add it as a Macro Step, not as a key action.',
+      description: 'Show prior Macro Step result',
+      details: 'Renders the previous Macro Step’s result (or configured fallback text) in a popover. A display primitive — add it as a Macro Step, not as a key action.',
       handler: 'handleShowPopoverKey',
       category: DISPLAY_FUNCTION_CATEGORY,
       dataSource: 'none',
@@ -638,7 +663,8 @@ function buildDataAcquisitionFunctionDefs() {
     ADD_URL_TO_MEDIA_LIBRARY: Object.freeze({
       id: 'ADD_URL_TO_MEDIA_LIBRARY',
       label: 'Add URL to Media Library',
-      description: 'Stores the hyperlink under the cursor itself (its href) — does not download anything.',
+      description: 'Save hovered href (no download)',
+      details: 'Stores the hyperlink under the cursor itself (its href) in Media Library — does not download the resource the link points to.',
       handler: 'handleAddUrlToMediaLibraryKey',
       category: MEDIA_LIBRARY_FUNCTION_CATEGORY,
       dataSource: 'underCursor',
@@ -648,7 +674,8 @@ function buildDataAcquisitionFunctionDefs() {
     FETCH_URL_FOR_MEDIA_LIBRARY: Object.freeze({
       id: 'FETCH_URL_FOR_MEDIA_LIBRARY',
       label: 'Fetch URL for Media Library',
-      description: 'Fetches the resource the hyperlink under the cursor points to (e.g. a .pdf/.mp3/.mp4) to store it. Documents and videos are not in Media Library v1 yet.',
+      description: 'Download linked file into library',
+      details: 'Fetches the resource the hyperlink under the cursor points to (e.g. a .pdf/.mp3/.mp4) to store it. Documents and videos are not in Media Library v1 yet — this remains a catalog stub until that ingest exists.',
       handler: 'handleMediaLibraryNotAvailableKey',
       category: MEDIA_LIBRARY_FUNCTION_CATEGORY,
       dataSource: 'urlFetch',
@@ -695,6 +722,40 @@ export const FUNCTION_CATEGORY_ORDER = Object.freeze([
   'System',
   'Other'
 ]);
+
+/**
+ * One-line Actions Library blurb shown above the cards in each category section.
+ * @type {Readonly<Record<string, string>>}
+ */
+export const FUNCTION_CATEGORY_DESCRIPTIONS = Object.freeze({
+  Navigation: 'Click links, preview, and move through browsing history.',
+  'Tab Control': 'Open, close, switch, and review tabs.',
+  'Begin URL': 'Jump to a URL via Launcher, Top Sites, or the omnibox.',
+  'Get Page Data': 'Capture text, images, video, URLs, and other page media.',
+  Maps: 'Open a place’s website or address from a map pin under the cursor.',
+  Scroll: 'Scroll the page by line, page, or to the top/bottom.',
+  Select: 'Delete or toggle multi-column selection helpers.',
+  Clipboard: 'Standard copy, cut, paste, and select-all.',
+  [TEXT_FUNCTION_CATEGORY]: 'Type saved text into the focused field.',
+  [KEYSTROKE_FUNCTION_CATEGORY]: 'Send keystrokes, chords, bursts, and mouse remaps.',
+  [DATA_FUNCTION_CATEGORY]: 'Read text or media under the cursor, or from a highlight.',
+  [LOOKUP_FUNCTION_CATEGORY]: 'Look up a definition for the word under the cursor.',
+  [TRANSLATE_FUNCTION_CATEGORY]: 'Translate highlighted or under-cursor text.',
+  [DISPLAY_FUNCTION_CATEGORY]: 'Show a previous Macro Step’s result in a popover.',
+  [SCRIPT_FUNCTION_CATEGORY]: 'Run a custom JavaScript snippet against page state.',
+  [MEDIA_LIBRARY_FUNCTION_CATEGORY]: 'Save links or fetched files into Media Library.',
+  AI: 'Send selected text to AI with a prompt and result destination.',
+  KeyPilot: 'Open KeyPilot chrome — keyboard reference, settings, and modes.',
+  Tools: 'Utility overlays and helpers.',
+  System: 'Cancel the current KeyPilot gesture or mode.',
+  Other: 'Uncategorized Functions.'
+});
+
+/** Section blurbs for non-Function Actions Library groups. */
+export const LIBRARY_SECTION_DESCRIPTIONS = Object.freeze({
+  macros: 'Multi-step sequences you can place on a key. Customize a stock macro to fork an editable copy.',
+  macroKeys: 'Saved Macro Key instances (hotkey, burst, round-robin, and related kinds) ready to place.'
+});
 
 /**
  * Preferred within-category order for Actions Library cards/table.
@@ -780,6 +841,16 @@ export function getFunctionCategory(functionId) {
 }
 
 /**
+ * Short description for an Actions Library Function category section.
+ * @param {string} category
+ * @returns {string}
+ */
+export function getFunctionCategoryDescription(category) {
+  const cat = String(category || '');
+  return FUNCTION_CATEGORY_DESCRIPTIONS[cat] || '';
+}
+
+/**
  * True when this Function's values must live on a per-assignment Action Instance rather than
  * being called bare. (i.e. it has a non-empty parameter schema.)
  * @param {string} functionId
@@ -787,7 +858,11 @@ export function getFunctionCategory(functionId) {
  */
 export function isFunctionInstantiable(functionId) {
   const def = getFunctionDef(functionId);
-  return !!(def?.parameters && def.parameters.length > 0);
+  if (!def?.parameters || def.parameters.length === 0) return false;
+  // LOOKUP_WORD keeps a gated `source` param for a future AI path; until AI is available
+  // there is nothing to configure, so treat it as a stock zero-config Function.
+  if (functionId === 'LOOKUP_WORD' && !isWordLookupAiAvailable()) return false;
+  return true;
 }
 
 /**
@@ -960,7 +1035,7 @@ export function validateFunctionSlotKey(functionId, slotKey) {
   if (def.assignableToKey === false) {
     return {
       ok: false,
-      reason: `"${def.label}" is a Macro Step, not a key action. Add it in User Macros.`
+      reason: `"${def.label}" is a Macro Step, not a key action.`
     };
   }
   if (def.worksWhileTyping && !isChordSlotKey(slotKey)) {

@@ -287,7 +287,7 @@ export class ControlStrip {
     try {
       const existing = document.querySelector('.kp-control-strip[data-kp-early-control-strip="true"]');
       if (existing && existing.isConnected) {
-        const shadowRoot = ensureOpenChromeShadow(existing, { id: 'control-strip' });
+        const shadowRoot = ensureOpenChromeShadow(existing, { id: 'control-strip', chromeWindow: true });
         const shell = shadowRoot || existing;
         const statusBtn = shell.querySelector('[data-kp-control-strip-status="true"]');
         const statusDot = shell.querySelector('[data-kp-control-strip-status-dot="true"]');
@@ -357,7 +357,7 @@ export class ControlStrip {
     root.setAttribute('role', 'toolbar');
     root.setAttribute('aria-label', 'KeyPilot control strip');
     root.setAttribute('data-kp-control-strip', 'true');
-    const shadowRoot = ensureOpenChromeShadow(root, { id: 'control-strip' });
+    const shadowRoot = ensureOpenChromeShadow(root, { id: 'control-strip', chromeWindow: true });
     const shell = shadowRoot || root;
 
     Object.assign(root.style, {

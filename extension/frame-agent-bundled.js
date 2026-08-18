@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-17T23:56:13.398Z
+ * Generated on 2026-08-18T04:01:45.737Z
  */
 
 (() => {
@@ -58,6 +58,8 @@
     MEDIA_LIBRARY_ZIP: "KP_MEDIA_LIBRARY_ZIP",
     /** SW → tabs: library contents changed (add/delete). Overlay reloads if open. */
     MEDIA_LIBRARY_CHANGED: "KP_MEDIA_LIBRARY_CHANGED",
+    // --- Dictionary lookup (Free Dictionary API via SW; LOOKUP_WORD) ---
+    DICTIONARY_LOOKUP: "KP_DICTIONARY_LOOKUP",
     // --- Per-tab navigation graph ---
     NAVGRAPH_GET: "KP_NAVGRAPH_GET",
     NAVGRAPH_JUMP: "KP_NAVGRAPH_JUMP",
@@ -138,6 +140,8 @@
     /** @type {const} */
     "right"
   );
+  var SOURCE_BUILD_ENABLE_MACRO_BUILDER = false;
+  var BUILD_ENABLE_MACRO_BUILDER = typeof __KP_BUILD_ENABLE_MACRO_BUILDER__ !== "undefined" ? !!__KP_BUILD_ENABLE_MACRO_BUILDER__ : SOURCE_BUILD_ENABLE_MACRO_BUILDER;
   var BUILD_EXCLUDED_KEY_ACTIONS = Object.freeze([
     "COLS_TOGGLE"
   ]);
@@ -311,7 +315,8 @@
     ACTIVATE: Object.freeze({
       handler: "handleActivateKey",
       label: "Click Element",
-      description: "Click Element",
+      description: "Click the hovered element",
+      details: "Activates the clickable under the cursor \u2014 the same as a left mouse click on that element. Works with links, buttons, and other interactive targets KeyPilot highlights.",
       keyboardClass: "key-activate",
       row: 2
     }),
@@ -319,7 +324,8 @@
     ACTIVATE_NEW_TAB: Object.freeze({
       handler: "handleActivateNewTabKey",
       label: "Click New Tab",
-      description: "Open Link in New Tab (Foreground)",
+      description: "Open link in a new foreground tab",
+      details: "Opens the hovered link in a new tab and switches to it immediately. Use when you want to follow a link without leaving your place permanently, but still jump to the new page right away.",
       keyboardClass: "key-activate-new",
       row: 2
     }),
@@ -327,126 +333,144 @@
     ACTIVATE_NEW_TAB_BACKGROUND: Object.freeze({
       handler: "handleActivateNewTabBackgroundKey",
       label: "Click New Tab Background",
-      description: "Open Link in New Tab (Background, like middle click)",
+      description: "Open link in a new background tab",
+      details: "Opens the hovered link in a new tab without switching focus \u2014 like a middle-click. Useful for queueing several links while you keep reading the current page.",
       keyboardClass: "key-activate-new-over",
       row: 2
     }),
     BACK: Object.freeze({
       handler: "handleBackKey",
       label: "Go Back",
-      description: "Go Back (History)",
+      description: "Browser history back",
+      details: "Navigates one step back in the current tab\u2019s history, equivalent to the browser Back button.",
       keyboardClass: "key-back",
       row: 2
     }),
     BACK2: Object.freeze({
       handler: "handleBackKey",
       label: "Go Back",
-      description: "Go Back (History)",
+      description: "Browser history back",
+      details: "Navigates one step back in the current tab\u2019s history, equivalent to the browser Back button. Duplicate id for layouts that expose a second Back binding.",
       keyboardClass: "key-back",
       row: 2
     }),
     FORWARD: Object.freeze({
       handler: "handleForwardKey",
       label: "Go Forward",
-      description: "Go Forward (History)",
+      description: "Browser history forward",
+      details: "Navigates one step forward in the current tab\u2019s history, equivalent to the browser Forward button.",
       keyboardClass: "key-forward",
       row: 1
     }),
     DELETE: Object.freeze({
       handler: "handleDeleteKey",
       label: "Delete Mode",
-      description: "Delete Mode",
+      description: "Hide elements under the cursor",
+      details: "Toggles Delete Mode: hover elements and remove (hide) them from the page so you can declutter layouts. Exit with Exit Focus or by toggling again.",
       keyboardClass: "key-delete",
       row: 2
     }),
     COLS_TOGGLE: Object.freeze({
       handler: "handleColsToggleKey",
       label: "Cols Toggle",
-      description: "Columnize element under cursor (multi-column layout)",
+      description: "Multi-column layout under cursor",
+      details: "Columnizes the element under the cursor into a multi-column layout so dense text or lists are easier to scan. Toggle again to restore the original layout.",
       keyboardClass: "key-cols",
       row: 3
     }),
     TAB_LEFT: Object.freeze({
       handler: "handleTabLeftKey",
       label: "Tab Left",
-      description: "Move To Previous Tab",
+      description: "Switch to the previous tab",
+      details: "Activates the tab to the left of the current one in the window\u2019s tab strip.",
       keyboardClass: "key-gray",
       row: 1
     }),
     TAB_RIGHT: Object.freeze({
       handler: "handleTabRightKey",
       label: "Tab Right",
-      description: "Move To Next Tab",
+      description: "Switch to the next tab",
+      details: "Activates the tab to the right of the current one in the window\u2019s tab strip.",
       keyboardClass: "key-gray",
       row: 1
     }),
     ROOT: Object.freeze({
       handler: "handleRootKey",
       label: "Go to Site Root",
-      description: "Go to Site Root",
+      description: "Navigate to the site origin",
+      details: "Jumps to the site root (scheme + host) of the current page \u2014 useful for escaping deep paths without typing a URL.",
       keyboardClass: null,
       row: null
     }),
     LAUNCHER: Object.freeze({
       handler: "handleLauncherKey",
       label: "Launcher",
-      description: "Open Launcher (Quick Access to Sites)",
+      description: "Quick-access site launcher",
+      details: "Opens the Launcher popover for jumping to favorite or configured sites without using the omnibox.",
       keyboardClass: "key-launcher-orange",
       row: 2
     }),
     TOP_SITES: Object.freeze({
       handler: "handleTopSitesKey",
       label: "Top Sites",
-      description: "Open Top Sites (toolbar, most visited, recent bookmarks)",
+      description: "Toolbar, visits, and bookmarks",
+      details: "Opens Top Sites: a quick list drawn from the toolbar, most-visited pages, and recent bookmarks so you can open a frequent destination in one step.",
       keyboardClass: "key-launcher-orange",
       row: 2
     }),
     CLOSE_TAB: Object.freeze({
       handler: "handleCloseTabKey",
       label: "Close Tab",
-      description: "Close Tab",
+      description: "Close the current tab",
+      details: "Closes the active tab. Behavior matches the browser\u2019s close-tab action for the current window.",
       keyboardClass: "key-close-tab",
       row: 3
     }),
     CANCEL: Object.freeze({
       handler: "cancelModes",
       label: "Exit Focus",
-      description: "Exit Focus",
+      description: "Leave modes and overlays",
+      details: "Cancels the current KeyPilot mode or overlay (Delete Mode, Scroll Line, text focus helpers, and similar) and returns to normal browsing.",
       keyboardClass: null,
       row: null
     }),
     PAGE_UP_INSTANT: Object.freeze({
       handler: "handleInstantPageUp",
       label: "Page Up Fast",
-      description: "Page Up (Instant)",
+      description: "Jump one page up instantly",
+      details: "Scrolls the current scroll target up by roughly one viewport without animation \u2014 faster than a smooth page-up when you need to move quickly.",
       keyboardClass: "key-scroll",
       row: 3
     }),
     PAGE_DOWN_INSTANT: Object.freeze({
       handler: "handleInstantPageDown",
       label: "Page Down Fast",
-      description: "Page Down (Instant)",
+      description: "Jump one page down instantly",
+      details: "Scrolls the current scroll target down by roughly one viewport without animation \u2014 faster than a smooth page-down when you need to move quickly.",
       keyboardClass: "key-scroll",
       row: 3
     }),
     PAGE_TOP: Object.freeze({
       handler: "handlePageTop",
       label: "Scroll To Top",
-      description: "Jump to the top of the scroll target (Fade hides the jump; Scroll animates)",
+      description: "Jump to top of scroll target",
+      details: "Moves to the top of the current scroll target. Fade mode hides the jump; Scroll mode animates. Configure the motion style in Settings \u2192 Scrolling.",
       keyboardClass: "key-scroll",
       row: 3
     }),
     PAGE_BOTTOM: Object.freeze({
       handler: "handlePageBottom",
       label: "Scroll To Bottom",
-      description: "Jump to the bottom of the scroll target (Fade hides the jump; Scroll animates)",
+      description: "Jump to bottom of scroll target",
+      details: "Moves to the bottom of the current scroll target. Fade mode hides the jump; Scroll mode animates. Configure the motion style in Settings \u2192 Scrolling.",
       keyboardClass: "key-scroll",
       row: 3
     }),
     SCROLL_LINE: Object.freeze({
       handler: "handleScrollLineKey",
       label: "Scroll Line",
-      description: "Scroll from a fixed origin: move the mouse away from the dot to scroll faster. Optional middle-click on empty page area (Settings \u2192 Scrolling).",
+      description: "Origin-based continuous scroll",
+      details: "Scrolls from a fixed origin: move the mouse away from the on-screen dot to scroll faster in that direction. Optionally enable middle-click on empty page area under Settings \u2192 Scrolling.",
       keyboardClass: "key-scroll",
       row: 3,
       mode: "scroll_line",
@@ -462,7 +486,8 @@
     NEW_TAB: Object.freeze({
       handler: "handleNewTabKey",
       label: "New Tab",
-      description: "Open New Tab",
+      description: "Open a blank new tab",
+      details: "Opens a new empty tab in the current window, same as the browser\u2019s New Tab command.",
       keyboardClass: "key-gray",
       row: 1
     }),
@@ -470,27 +495,31 @@
       handler: "handleOpenPopover",
       label: "Open Popover",
       description: "Open link in a popup window",
+      details: "Opens the hovered link in a KeyPilot popup window so you can peek or work in a separate chrome without a full new tab.",
       keyboardClass: "key-open-popover",
       row: 2
     }),
     PREVIEW_LINK_POPOVER: Object.freeze({
       handler: "handlePreviewLinkPopover",
       label: "Preview Link",
-      description: "Open Link Preview in a popup window",
+      description: "Preview link in a popup",
+      details: "Opens Link Preview for the hovered URL in a popup window \u2014 skim the destination without committing a full navigation in the main tab.",
       keyboardClass: "key-preview-popover",
       row: 2
     }),
     POI_WEBSITE: Object.freeze({
       handler: "handlePoiWebsiteKey",
       label: "POI Website",
-      description: "Open the map place website under the cursor in Link Preview",
+      description: "Open map place website",
+      details: "When a map place (POI) is under the cursor, opens that place\u2019s website in Link Preview so you can visit the business or location page without leaving the map.",
       keyboardClass: "key-preview-popover",
       row: null
     }),
     POI_ADDRESS: Object.freeze({
       handler: "handlePoiAddressKey",
       label: "POI Address",
-      description: "Copy the map place address under the cursor",
+      description: "Copy map place address",
+      details: "When a map place (POI) is under the cursor, copies its street address to the clipboard for pasting into directions, notes, or forms.",
       keyboardClass: null,
       row: null
     }),
@@ -498,27 +527,31 @@
       handler: "handleToggleSettingsPopover",
       label: "Settings",
       description: "Open KeyPilot Settings",
+      details: "Opens or closes the KeyPilot Settings popover for themes, scrolling, click mode, layouts, and other preferences.",
       keyboardClass: "key-settings-dark",
       row: null
     }),
     OMNIBOX: Object.freeze({
       handler: "handleOpenOmnibox",
       label: "Omnibox",
-      description: "Open Omnibox (Address Bar Overlay)",
+      description: "Address bar overlay",
+      details: "Opens KeyPilot\u2019s omnibox overlay so you can type a URL or search without clicking the browser address bar.",
       keyboardClass: "key-orange",
       row: 2
     }),
     TAB_HISTORY: Object.freeze({
       handler: "handleToggleTabHistoryPopover",
       label: "Tab History",
-      description: "Open Tab History (Branch-Retaining)",
+      description: "Browse this tab\u2019s history",
+      details: "Opens Tab History for the current tab so you can jump to a previously visited page in this tab\u2019s session without using the browser\u2019s native history UI.",
       keyboardClass: "key-gray",
       row: 2
     }),
     TOGGLE_KEYBOARD_HELP: Object.freeze({
       handler: "handleToggleKeyboardHelp",
       label: "KB Reference",
-      description: "Show/Hide the floating KeyPilot keyboard reference",
+      description: "Show or hide the keyboard map",
+      details: "Toggles the floating Keyboard Reference window that shows your current layout\u2019s keycaps and bindings.",
       keyboardClass: "key-purple",
       row: 2
     }),
@@ -526,7 +559,8 @@
     HIGHLIGHT: Object.freeze({
       handler: "handleHighlightKey",
       label: "Text Select",
-      description: "Select text (character level) and copy as rich text by default",
+      description: "Select text and copy rich text",
+      details: "Enters character-level text selection under the cursor. By default, the selection is copied as rich text so formatting is preserved when you paste.",
       keyboardClass: "key-highlight",
       row: 2
     }),
@@ -534,7 +568,8 @@
     RECTANGLE_HIGHLIGHT: Object.freeze({
       handler: "handleRectangleHighlightKey",
       label: "Element Select",
-      description: "Select intersecting HTML elements in a rectangle (or pick cumulative)",
+      description: "Rectangle or cumulative element pick",
+      details: "Selects HTML elements that intersect a dragged rectangle, or pick elements cumulatively. Useful for grabbing structure (not just plain text) from a page region.",
       keyboardClass: "key-rect-highlight",
       row: 1
     }),
@@ -542,7 +577,8 @@
     COPY_HOVERED_IMAGE: Object.freeze({
       handler: "handleCopyHoveredImageKey",
       label: "Copy Image",
-      description: "Copy image under cursor (clipboard, Media Library, or both)",
+      description: "Copy hovered image",
+      details: "Copies the image under the cursor to the clipboard, Media Library, or both \u2014 configure the destination on the action. Prefer this when you want the image bytes or a saved library entry, not just a URL.",
       // Default key face (no tinted key-gray / family fill).
       keyboardClass: null,
       row: 1
@@ -551,7 +587,8 @@
     COPY_HOVERED_URL: Object.freeze({
       handler: "handleCopyHoveredUrlKey",
       label: "Copy URL",
-      description: "Copy URL under cursor (clipboard, Media Library, or both)",
+      description: "Copy hovered link URL",
+      details: "Copies the URL under the cursor to the clipboard, Media Library, or both. Use this when you need the href itself rather than fetching or opening the resource.",
       keyboardClass: null,
       row: 1
     }),
@@ -559,7 +596,8 @@
     COPY_HOVERED_VIDEO: Object.freeze({
       handler: "handleCopyHoveredVideoKey",
       label: "Copy Video",
-      description: "Copy video under cursor (clipboard, Media Library, or both)",
+      description: "Copy hovered video",
+      details: "Copies the video under the cursor (file bytes to Media Library when fetchable, or the video URL to the clipboard). No default layout key \u2014 bind it in Layout Config if you need it.",
       keyboardClass: null,
       row: null
     }),
@@ -567,7 +605,8 @@
     PAGE_MEDIA: Object.freeze({
       handler: "handlePageMediaKey",
       label: "Page Media",
-      description: "Browse images, videos, and documents found on this page",
+      description: "Browse media found on this page",
+      details: "Opens a gallery of images, videos, and documents discovered on the current page so you can review or collect them without hunting through the DOM.",
       keyboardClass: null,
       row: 1
     }),
@@ -576,7 +615,8 @@
     OPEN_MEDIA_LIBRARY: Object.freeze({
       handler: "handleOpenMediaLibraryKey",
       label: "Media Library",
-      description: "Open the Media Library.",
+      description: "Open saved Media Library",
+      details: "Opens the Media Library where items you previously copied or saved (images, videos, URLs, and related assets) are kept for reuse.",
       keyboardClass: null,
       row: 1
     }),
@@ -584,28 +624,32 @@
     CLIPBOARD_COPY: Object.freeze({
       handler: "handleClipboardCopyKey",
       label: "Copy",
-      description: "Copy selected text to the clipboard",
+      description: "Copy selection to clipboard",
+      details: "Copies the current text selection to the system clipboard. Prefer this over OS shortcuts when you want Copy available as a KeyPilot layout binding.",
       keyboardClass: null,
       row: null
     }),
     CLIPBOARD_CUT: Object.freeze({
       handler: "handleClipboardCutKey",
       label: "Cut",
-      description: "Cut selected text to the clipboard",
+      description: "Cut selection to clipboard",
+      details: "Cuts the current text selection to the system clipboard from the focused field or editable region.",
       keyboardClass: null,
       row: null
     }),
     CLIPBOARD_PASTE: Object.freeze({
       handler: "handleClipboardPasteKey",
       label: "Paste",
-      description: "Paste clipboard text into the focused field",
+      description: "Paste into the focused field",
+      details: "Pastes clipboard text into the focused text field or editable element. Bind with a modifier chord if you need it while typing.",
       keyboardClass: null,
       row: null
     }),
     CLIPBOARD_SELECT_ALL: Object.freeze({
       handler: "handleClipboardSelectAllKey",
       label: "Select All",
-      description: "Select all text in the focused field or page",
+      description: "Select all in field or page",
+      details: "Selects all text in the focused field, or the page content when nothing editable is focused \u2014 same idea as the usual Select All shortcut.",
       keyboardClass: null,
       row: null
     }),
@@ -613,7 +657,8 @@
     SEND_TEXT_TO_AI: Object.freeze({
       handler: "handleSendTextToAiKey",
       label: "Send Text To AI",
-      description: "Send selected text to AI with a configurable instruction; route the result to clipboard and/or popover",
+      description: "Run AI on selected text",
+      details: "Sends the selected text to AI with a configurable instruction, then routes the result to the clipboard and/or a popover. Configure the prompt and destination on the action instance.",
       keyboardClass: "key-purple",
       row: null
     })
@@ -1500,12 +1545,134 @@
       node
     );
     if (input.disabled || input.readOnly) return false;
-    const type = String(input.type || "text").toLowerCase();
-    return TEXT_ENTRY_TYPE_SET.has(type);
+    const type2 = String(input.type || "text").toLowerCase();
+    return TEXT_ENTRY_TYPE_SET.has(type2);
   }
   function hasModifierKeys(e) {
     if (!e) return false;
     return !!(e.ctrlKey || e.metaKey || e.altKey || e.shiftKey);
+  }
+
+  // themes/schema.js
+  var DEFAULT_THEME_ID = "dark-pro";
+  var THEME_IDS = Object.freeze([
+    "dark-pro",
+    "gray-metal-pro",
+    "gx-er"
+  ]);
+  var THEME_META = Object.freeze({
+    "dark-pro": { name: "Dark Pro" },
+    "gray-metal-pro": { name: "Gray Metal Pro" },
+    "gx-er": { name: "GX-er" }
+  });
+  var PRO_SANS = "Helvetica, Arial, sans-serif";
+  var PRO_MONO = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+  var TYPE_ROLES = Object.freeze([
+    "display",
+    "heading",
+    "subhead",
+    "body",
+    "ui",
+    "kbd",
+    "mono",
+    "caption"
+  ]);
+  function createProTypeTokens(stacks = {}) {
+    return {
+      stacks: {
+        display: stacks.display || PRO_SANS,
+        heading: stacks.heading || PRO_SANS,
+        subhead: stacks.subhead || PRO_SANS,
+        body: stacks.body || PRO_SANS,
+        ui: stacks.ui || PRO_SANS,
+        kbd: stacks.kbd || PRO_MONO,
+        mono: stacks.mono || PRO_MONO,
+        caption: stacks.caption || PRO_SANS
+      },
+      size: {
+        display: "22px",
+        h1: "22px",
+        h2: "16px",
+        h3: "14px",
+        body: "13px",
+        ui: "12px",
+        kbd: "10px",
+        caption: "11px",
+        code: "12px"
+      },
+      scale: "1.25",
+      weight: {
+        regular: "400",
+        medium: "500",
+        semibold: "600",
+        bold: "700"
+      },
+      letterSpacing: {
+        display: "0.02em",
+        titlebar: "0.02em",
+        ui: "normal"
+      },
+      textTransform: {
+        display: "none",
+        titlebar: "none"
+      },
+      lineHeight: {
+        tight: "1.2",
+        body: "1.35",
+        prose: "1.55"
+      }
+    };
+  }
+  function createTitlebarChromeTokens(overrides = {}) {
+    return {
+      titleWeight: "600",
+      iconDisplay: "none",
+      iconSize: "12px",
+      kbdTransform: "none",
+      kbdTracking: "0.02em",
+      ...overrides
+    };
+  }
+  function createProRadiusTokens(overrides = {}) {
+    return {
+      none: "0px",
+      xs: "2px",
+      sm: "3px",
+      md: "6px",
+      lg: "10px",
+      pill: "999px",
+      panel: "3px",
+      btn: "2px",
+      field: "2px",
+      key: "7px",
+      plate: "14px",
+      ...overrides
+    };
+  }
+  function createKeyChromeTokens(overrides = {}) {
+    return {
+      shading: "bevel",
+      border: "1px solid rgba(0, 0, 0, 0.4)",
+      cornerMode: "radius",
+      cutSize: "4px",
+      ...overrides
+    };
+  }
+  function mergeTheme(base, overrides) {
+    if (!overrides || typeof overrides !== "object") return base;
+    const out = { ...base };
+    for (const [k, v] of Object.entries(overrides)) {
+      if (v && typeof v === "object" && !Array.isArray(v) && base[k] && typeof base[k] === "object" && !Array.isArray(base[k])) {
+        out[k] = mergeTheme(base[k], v);
+      } else if (v !== void 0) {
+        out[k] = v;
+      }
+    }
+    return out;
+  }
+  function normalizeThemeId(raw) {
+    const id = typeof raw === "string" ? raw.trim() : "";
+    return THEME_IDS.includes(id) ? id : DEFAULT_THEME_ID;
   }
 
   // src/config/search-engines.js
@@ -1549,32 +1716,47 @@
   }
 
   // src/utils/storage.js
+  function pickNewerStoredValue(syncVal, localVal) {
+    const syncAt = syncVal && typeof syncVal === "object" ? Number(syncVal._updatedAt) : 0;
+    const localAt = localVal && typeof localVal === "object" ? Number(localVal._updatedAt) : 0;
+    const syncTs = Number.isFinite(syncAt) ? syncAt : 0;
+    const localTs = Number.isFinite(localAt) ? localAt : 0;
+    if (syncTs && localTs) return localTs >= syncTs ? localVal : syncVal;
+    if (localTs && !syncTs) return localVal;
+    if (syncTs && !localTs) return syncVal;
+    return syncVal;
+  }
   async function storageGetValue(key, defaultValue = void 0) {
     if (!key || typeof key !== "string") return defaultValue;
+    let syncVal = void 0;
+    let syncHas = false;
     try {
       if (chrome?.storage?.sync?.get) {
         const syncResult = await chrome.storage.sync.get([key]);
         if (syncResult && Object.prototype.hasOwnProperty.call(syncResult, key) && syncResult[key] !== void 0) {
-          return (
-            /** @type {T} */
-            syncResult[key]
-          );
+          syncHas = true;
+          syncVal = /** @type {T} */
+          syncResult[key];
         }
       }
     } catch {
     }
+    let localVal = void 0;
+    let localHas = false;
     try {
       if (chrome?.storage?.local?.get) {
         const localResult = await chrome.storage.local.get([key]);
         if (localResult && Object.prototype.hasOwnProperty.call(localResult, key) && localResult[key] !== void 0) {
-          return (
-            /** @type {T} */
-            localResult[key]
-          );
+          localHas = true;
+          localVal = /** @type {T} */
+          localResult[key];
         }
       }
     } catch {
     }
+    if (syncHas && localHas) return pickNewerStoredValue(syncVal, localVal);
+    if (syncHas) return syncVal;
+    if (localHas) return localVal;
     return defaultValue;
   }
 
@@ -1616,6 +1798,11 @@
     ]
   );
   var DEFAULT_SETTINGS = Object.freeze({
+    themeId: DEFAULT_THEME_ID,
+    themeOverrides: Object.freeze({}),
+    // Last theme whose clickDefaults were written into clickMode/cursorMode.
+    // Empty means never synced (adopt the active theme's click defaults once).
+    clickModeThemeId: "",
     searchEngine: DEFAULT_SEARCH_ENGINE_ID,
     cursorMode: CURSOR_MODE.NO_CUSTOM_CURSORS,
     // New model:
@@ -1721,6 +1908,10 @@
   function normalizeCursorMode(raw) {
     if (raw === CURSOR_MODE.NO_CUSTOM_CURSORS || raw === CURSOR_MODE.CUSTOM_CURSORS) return raw;
     return DEFAULT_SETTINGS.cursorMode;
+  }
+  function normalizeThemeOverrides(raw) {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+    return raw;
   }
   function normalizeBoolean(raw, fallback) {
     if (raw === true || raw === false) return raw;
@@ -2000,6 +2191,9 @@
       return {
         ...DEFAULT_SETTINGS,
         ...stored,
+        themeId: normalizeThemeId(stored?.themeId),
+        themeOverrides: normalizeThemeOverrides(stored?.themeOverrides),
+        clickModeThemeId: typeof stored?.clickModeThemeId === "string" && stored.clickModeThemeId.trim() ? normalizeThemeId(stored.clickModeThemeId) : "",
         searchEngine: normalizeSearchEngine(stored?.searchEngine),
         cursorMode: normalizeCursorMode(stored?.cursorMode),
         keyboardLayoutFamilyId: familyId,
@@ -2046,7 +2240,10 @@
         clickMode: { ...DEFAULT_SETTINGS.clickMode, cursor: { ...DEFAULT_SETTINGS.clickMode.cursor } },
         textMode: { ...DEFAULT_SETTINGS.textMode },
         scroll: { ...DEFAULT_SETTINGS.scroll },
-        actionsLibraryTableExpanded: [...DEFAULT_SETTINGS.actionsLibraryTableExpanded]
+        actionsLibraryTableExpanded: [...DEFAULT_SETTINGS.actionsLibraryTableExpanded],
+        themeId: DEFAULT_THEME_ID,
+        themeOverrides: {},
+        clickModeThemeId: ""
       };
     }
   }
@@ -2877,6 +3074,399 @@
     return resolveDescendantPermalink(card);
   }
 
+  // themes/chrome-recipes.js
+  var METAL_SPECULAR = "linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.08) 28%, transparent 55%)";
+  function createDarkProColor() {
+    return {
+      bg: "#0f0f10",
+      panel: "#232323",
+      panelEdge: "#3a3a3a",
+      panelEdgeDark: "#111",
+      titleTop: "#4c4c4c",
+      titleMid: "#353535",
+      titleBot: "#252525",
+      btnTop: "#4a4a4a",
+      btnMid: "#343434",
+      btnBot: "#2a2a2a",
+      litTop: "#5a7a9a",
+      litBot: "#3a5570",
+      litEdge: "#2a4a66",
+      accent: "#4a90c8",
+      accent2: "#4a90c8",
+      fg: "#ddd",
+      fgDim: "#aaa",
+      fgMute: "#777",
+      fieldBg: "#141414",
+      fieldEdge: "#0a0a0a",
+      fieldInsetTop: "#333",
+      hover: "rgba(255,255,255,0.06)",
+      selected: "rgba(74,144,200,0.22)",
+      selectedText: "#e8f0f8",
+      focusRing: "inset 0 0 0 1px rgba(74,144,200,0.55)",
+      kbdColor: "#ddd",
+      scrollbarThumb: "#4a4a4a",
+      scrollbarThumbHover: "#5c5c5c",
+      scrollbarTrack: "#141414"
+    };
+  }
+  function createDarkProEffect(c) {
+    return {
+      titlebarBg: `linear-gradient(180deg, ${c.titleTop} 0%, ${c.titleMid} 45%, ${c.titleBot} 100%)`,
+      titlebarBorder: `1px solid ${c.panelEdgeDark}`,
+      titlebarShadow: `0 1px 0 ${c.panelEdge}`,
+      panelBg: c.panel,
+      panelBorder: `1px solid ${c.panelEdgeDark}`,
+      panelShadow: `0 0 0 1px ${c.panelEdge} inset, 0 0 0 1px rgba(190, 190, 190, 0.52), 0 0 10px rgba(255, 255, 255, 0.14), 0 16px 40px rgba(0,0,0,0.55)`,
+      btnBg: `linear-gradient(180deg, ${c.btnTop} 0%, ${c.btnMid} 50%, ${c.btnBot} 100%)`,
+      btnBorder: `1px solid ${c.panelEdgeDark}`,
+      btnLitBg: `linear-gradient(180deg, ${c.litTop} 0%, ${c.litBot} 100%)`,
+      btnLitBorder: `1px solid ${c.litEdge}`,
+      fieldBg: c.fieldBg,
+      fieldBorder: `1px solid ${c.fieldEdge}`,
+      fieldShadow: `inset 0 1px 0 ${c.fieldInsetTop}`,
+      kbdBg: c.fieldBg,
+      kbdBorder: `1px solid ${c.panelEdgeDark}`,
+      kbdShadow: "none",
+      backdropBg: "rgba(0,0,0,0.35)",
+      backdropBlur: "blur(6px)",
+      hatchEdit: "repeating-linear-gradient(-45deg, rgba(180, 200, 220, 0.08) 0px, rgba(180, 200, 220, 0.08) 1px, transparent 1px, transparent 7px)",
+      hatchEditTitlebarBg: "linear-gradient(180deg, #646464 0%, #4a4a4a 45%, #383838 100%)",
+      hatchEditBodyBg: "#1a1c20"
+    };
+  }
+  function createMetalColor() {
+    return {
+      bg: "#6e6e6e",
+      panel: "#838383",
+      panelEdge: "rgba(190,190,190,0.48)",
+      panelEdgeDark: "rgba(42,52,62,0.92)",
+      titleTop: "#b0b0b0",
+      titleMid: "#929292",
+      titleBot: "#787878",
+      btnTop: "#c2c2c2",
+      btnMid: "#9e9e9e",
+      btnBot: "#868686",
+      litTop: "#7aa0c0",
+      litBot: "#4a7090",
+      litEdge: "#3a5a78",
+      accent: "#3a6a94",
+      accent2: "#3a6a94",
+      fg: "#1c1c1c",
+      fgDim: "rgba(28,28,28,0.72)",
+      fgMute: "rgba(28,28,28,0.55)",
+      fieldBg: "#9a9a9a",
+      fieldEdge: "#4a4a4a",
+      fieldInsetTop: "rgba(255,255,255,0.35)",
+      hover: "rgba(255,255,255,0.22)",
+      selected: "rgba(58,106,148,0.28)",
+      selectedText: "#0e1a24",
+      focusRing: "inset 0 0 0 1px rgba(58,106,148,0.55)",
+      kbdColor: "#141414",
+      scrollbarThumb: "#a8a8a8",
+      scrollbarThumbHover: "#b5b5b5",
+      scrollbarTrack: "#747474"
+    };
+  }
+  function createMetalEffect(c) {
+    return {
+      titlebarBg: `${METAL_SPECULAR}, linear-gradient(180deg, ${c.titleTop} 0%, ${c.titleMid} 45%, ${c.titleBot} 100%)`,
+      titlebarBorder: "1px solid #4a4a4a",
+      titlebarShadow: "0 1px 0 rgba(255,255,255,0.35)",
+      panelBg: `${METAL_SPECULAR}, linear-gradient(180deg, #9a9a9a 0%, #838383 48%, #707070 100%)`,
+      panelBorder: "1px solid rgba(42,52,62,0.92)",
+      panelShadow: "0 0 0 1px rgba(255,255,255,0.28) inset, 0 0 0 1px rgba(190,190,190,0.48), 0 0 10px rgba(255,255,255,0.12), 0 16px 40px rgba(0,0,0,0.45)",
+      btnBg: `linear-gradient(180deg, ${c.btnTop} 0%, ${c.btnMid} 50%, ${c.btnBot} 100%)`,
+      btnBorder: "1px solid #4a4a4a",
+      btnLitBg: `linear-gradient(180deg, ${c.litTop} 0%, ${c.litBot} 100%)`,
+      btnLitBorder: `1px solid ${c.litEdge}`,
+      fieldBg: c.fieldBg,
+      fieldBorder: "1px solid #4a4a4a",
+      fieldShadow: "inset 0 1px 0 rgba(255,255,255,0.40)",
+      kbdBg: "linear-gradient(180deg, #e4e4e4 0%, #c8c8c8 45%, #b0b0b0 55%, #9a9a9a 100%)",
+      kbdBorder: "1px solid #3d3d3d",
+      kbdShadow: "0 1px 0 rgba(255,255,255,0.72) inset, 0 -1px 0 rgba(0,0,0,0.28) inset, 0 1px 2px rgba(0,0,0,0.32)",
+      backdropBg: "rgba(40,40,40,0.35)",
+      backdropBlur: "blur(6px)",
+      hatchEdit: "repeating-linear-gradient(-45deg, rgba(24, 24, 24, 0.28) 0px, rgba(24, 24, 24, 0.28) 1px, transparent 1px, transparent 7px)",
+      hatchEditTitlebarBg: `${METAL_SPECULAR}, linear-gradient(180deg, #b8b8b8 0%, #9a9a9a 45%, #808080 100%)`,
+      hatchEditBodyBg: "#8a8a8a"
+    };
+  }
+  function createGxColor() {
+    return {
+      bg: "#0a0a0c",
+      panel: "#16161a",
+      panelEdge: "#2a2a32",
+      panelEdgeDark: "#050506",
+      titleTop: "#2c2c34",
+      titleMid: "#1c1c22",
+      titleBot: "#121216",
+      btnTop: "#3a3a44",
+      btnMid: "#26262e",
+      btnBot: "#1a1a20",
+      litTop: "#00e5ff",
+      litBot: "#0088aa",
+      litEdge: "#006688",
+      accent: "#00e5ff",
+      accent2: "#ff2d95",
+      fg: "#e8e8ef",
+      fgDim: "#9aa0b0",
+      fgMute: "#6a7080",
+      fieldBg: "#0c0c10",
+      fieldEdge: "#000",
+      fieldInsetTop: "#333344",
+      hover: "rgba(0,229,255,0.08)",
+      selected: "rgba(0,229,255,0.18)",
+      selectedText: "#f0ffff",
+      focusRing: "inset 0 0 0 1px rgba(0,229,255,0.55)",
+      kbdColor: "#00e5ff",
+      scrollbarThumb: "#3a3a44",
+      scrollbarThumbHover: "#00e5ff",
+      scrollbarTrack: "#0c0c10"
+    };
+  }
+  function createGxEffect(c) {
+    return {
+      titlebarBg: `linear-gradient(180deg, ${c.titleTop} 0%, ${c.titleMid} 45%, ${c.titleBot} 100%)`,
+      titlebarBorder: `1px solid ${c.panelEdgeDark}`,
+      titlebarShadow: `0 1px 0 ${c.accent}33`,
+      panelBg: `linear-gradient(180deg, #1c1c22 0%, ${c.panel} 48%, #101014 100%)`,
+      panelBorder: `1px solid ${c.panelEdgeDark}`,
+      panelShadow: `0 0 0 1px ${c.panelEdge} inset, 0 0 0 1px rgba(0, 229, 255, 0.22), 0 0 14px rgba(0, 229, 255, 0.12), 0 16px 40px rgba(0,0,0,0.65)`,
+      btnBg: `linear-gradient(180deg, ${c.btnTop} 0%, ${c.btnMid} 50%, ${c.btnBot} 100%)`,
+      btnBorder: `1px solid ${c.panelEdgeDark}`,
+      btnLitBg: `linear-gradient(180deg, ${c.litTop} 0%, ${c.litBot} 100%)`,
+      btnLitBorder: `1px solid ${c.litEdge}`,
+      fieldBg: c.fieldBg,
+      fieldBorder: `1px solid ${c.fieldEdge}`,
+      fieldShadow: `inset 0 1px 0 ${c.fieldInsetTop}`,
+      kbdBg: "rgba(0, 229, 255, 0.08)",
+      kbdBorder: `1px solid ${c.accent}`,
+      kbdShadow: `0 0 0 1px ${c.accent}55, 0 0 8px ${c.accent}44`,
+      backdropBg: "rgba(0,0,0,0.5)",
+      backdropBlur: "blur(8px)",
+      hatchEdit: "repeating-linear-gradient(-45deg, rgba(0, 229, 255, 0.16) 0px, rgba(0, 229, 255, 0.16) 1px, transparent 1px, transparent 7px)",
+      hatchEditTitlebarBg: `linear-gradient(180deg, ${c.titleTop} 0%, ${c.titleMid} 45%, ${c.titleBot} 100%)`,
+      hatchEditBodyBg: "#101014"
+    };
+  }
+
+  // themes/click-defaults.js
+  var NO_CUSTOM = "NO-CUSTOM-CURSORS";
+  var DARK_PRO_CLICK_DEFAULTS = Object.freeze({
+    cursorMode: NO_CUSTOM,
+    clickMode: Object.freeze({
+      cursor: Object.freeze({
+        type: "crosshair",
+        lineWidth: 4,
+        sizePixels: 10,
+        gap: 6
+      }),
+      focusColor: "blue",
+      overlayFillEnabled: false,
+      overlayShadowEnabled: false,
+      rectangleThickness: 3,
+      clickEffect: "flash",
+      keyboardLinkHoverHints: false,
+      paintStrategy: "BC",
+      focusPadding: 2
+    })
+  });
+  var GRAY_METAL_CLICK_DEFAULTS = Object.freeze({
+    cursorMode: NO_CUSTOM,
+    clickMode: Object.freeze({
+      cursor: Object.freeze({
+        type: "crosshair",
+        lineWidth: 5,
+        sizePixels: 12,
+        gap: 6
+      }),
+      focusColor: "blue",
+      overlayFillEnabled: false,
+      overlayShadowEnabled: false,
+      rectangleThickness: 4,
+      clickEffect: "flash",
+      keyboardLinkHoverHints: false,
+      paintStrategy: "BC",
+      focusPadding: 2
+    })
+  });
+  var GX_ER_CLICK_DEFAULTS = Object.freeze({
+    cursorMode: NO_CUSTOM,
+    clickMode: Object.freeze({
+      cursor: Object.freeze({
+        type: "crosshair",
+        lineWidth: 3,
+        sizePixels: 14,
+        gap: 8
+      }),
+      focusColor: "green",
+      overlayFillEnabled: false,
+      overlayShadowEnabled: true,
+      rectangleThickness: 3,
+      clickEffect: "flash",
+      keyboardLinkHoverHints: false,
+      paintStrategy: "BC",
+      focusPadding: 2
+    })
+  });
+
+  // themes/dark-pro/theme.js
+  var color = createDarkProColor();
+  var metalColor = createMetalColor();
+  var DARK_PRO_THEME = Object.freeze({
+    id: "dark-pro",
+    meta: Object.freeze({ name: "Dark Pro" }),
+    type: createProTypeTokens(),
+    titlebar: createTitlebarChromeTokens(),
+    keys: createKeyChromeTokens(),
+    radius: createProRadiusTokens(),
+    color,
+    effect: createDarkProEffect(color),
+    shape: Object.freeze({ cornerMode: "radius", cutSize: "0px" }),
+    icons: Object.freeze({
+      pack: "dark-pro",
+      fallbackPack: "shared",
+      overrides: Object.freeze({}),
+      color: Object.freeze({
+        chrome: color.fg,
+        keycap: "#0c1018",
+        accent: color.accent
+      })
+    }),
+    clickDefaults: DARK_PRO_CLICK_DEFAULTS,
+    surfaces: Object.freeze({
+      onboarding: Object.freeze({
+        color: metalColor,
+        effect: createMetalEffect(metalColor),
+        icons: Object.freeze({
+          color: Object.freeze({
+            chrome: metalColor.fg,
+            keycap: "#1c1c1c",
+            accent: metalColor.accent
+          })
+        })
+      })
+    })
+  });
+
+  // themes/gray-metal-pro/theme.js
+  var color2 = createMetalColor();
+  var GRAY_METAL_PRO_THEME = Object.freeze({
+    id: "gray-metal-pro",
+    meta: Object.freeze({ name: "Gray Metal Pro" }),
+    type: createProTypeTokens({
+      ui: "Helvetica, Arial, sans-serif"
+    }),
+    titlebar: createTitlebarChromeTokens(),
+    keys: createKeyChromeTokens(),
+    radius: createProRadiusTokens({ panel: "3px", btn: "2px" }),
+    color: color2,
+    effect: createMetalEffect(color2),
+    shape: Object.freeze({ cornerMode: "radius", cutSize: "0px" }),
+    icons: Object.freeze({
+      pack: "gray-metal-pro",
+      fallbackPack: "shared",
+      overrides: Object.freeze({}),
+      color: Object.freeze({
+        chrome: color2.fg,
+        keycap: "#1c1c1c",
+        accent: color2.accent
+      })
+    }),
+    clickDefaults: GRAY_METAL_CLICK_DEFAULTS
+  });
+
+  // themes/gx-er/theme.js
+  var color3 = createGxColor();
+  var type = createProTypeTokens({
+    display: "'ROBOTECHGPRegular', 'TitilliumText', Helvetica, Arial, sans-serif",
+    heading: "'Cubellan', 'TitilliumText', Helvetica, Arial, sans-serif",
+    subhead: "'TitilliumText', Helvetica, Arial, sans-serif",
+    body: "'Ezarion', 'Dosis', Helvetica, Arial, sans-serif",
+    ui: "'TitilliumText', Helvetica, Arial, sans-serif",
+    kbd: "'Dosis', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+    mono: "'Dosis', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+    caption: "'Ezarion', Helvetica, Arial, sans-serif"
+  });
+  type.letterSpacing = {
+    display: "0.08em",
+    titlebar: "0.06em",
+    ui: "0.02em"
+  };
+  type.textTransform = {
+    display: "uppercase",
+    titlebar: "uppercase"
+  };
+  var GX_ER_THEME = Object.freeze({
+    id: "gx-er",
+    meta: Object.freeze({ name: "GX-er" }),
+    type,
+    titlebar: createTitlebarChromeTokens({
+      titleWeight: "700",
+      iconDisplay: "inline-flex",
+      iconSize: "12px",
+      kbdTransform: "uppercase",
+      kbdTracking: "0.06em"
+    }),
+    keys: createKeyChromeTokens({
+      shading: "bevel",
+      border: "1px solid rgba(0, 229, 255, 0.35)",
+      cornerMode: "cut",
+      cutSize: "4px"
+    }),
+    radius: createProRadiusTokens({
+      panel: "0px",
+      btn: "0px",
+      field: "0px",
+      xs: "0px",
+      sm: "0px"
+    }),
+    color: color3,
+    effect: createGxEffect(color3),
+    shape: Object.freeze({ cornerMode: "cut", cutSize: "8px" }),
+    icons: Object.freeze({
+      pack: "gx-er",
+      fallbackPack: "shared",
+      overrides: Object.freeze({
+        close: "chrome/close.svg",
+        collapse: "chrome/collapse.svg",
+        gear: "chrome/gear.svg"
+      }),
+      color: Object.freeze({
+        chrome: color3.accent,
+        keycap: "#001018",
+        accent: color3.accent
+      })
+    }),
+    clickDefaults: GX_ER_CLICK_DEFAULTS
+  });
+
+  // themes/icons.js
+  var THEME_ICON_FILES = Object.freeze({
+    close: "chrome/close.svg",
+    collapse: "chrome/collapse.svg",
+    gear: "chrome/gear.svg",
+    keyboard: "chrome/keyboard.svg",
+    window: "chrome/window.svg"
+  });
+  var THEME_ICON_IDS = Object.freeze(Object.keys(THEME_ICON_FILES));
+
+  // themes/index.js
+  var PACKAGES = Object.freeze({
+    "dark-pro": DARK_PRO_THEME,
+    "gray-metal-pro": GRAY_METAL_PRO_THEME,
+    "gx-er": GX_ER_THEME
+  });
+  function getTheme(id, overrides) {
+    const key = normalizeThemeId(id);
+    const base = PACKAGES[key] || PACKAGES[DEFAULT_THEME_ID];
+    return mergeTheme(base, overrides && typeof overrides === "object" ? overrides : {});
+  }
+
+  // src/modules/theme-manager.js
+  var _activeTheme = getTheme(DEFAULT_THEME_ID);
+
   // src/ui/kp-chrome-shadow.js
   function containsComposed(host, node) {
     if (!host || !node) return false;
@@ -3169,8 +3759,8 @@
     if (!url) return false;
     try {
       if (typeof chrome === "undefined" || !chrome.runtime?.sendMessage) return false;
-      const type = opts.background ? MSG.OPEN_URL_BACKGROUND : MSG.OPEN_URL_FOREGROUND;
-      chrome.runtime.sendMessage({ type, url }).catch(() => {
+      const type2 = opts.background ? MSG.OPEN_URL_BACKGROUND : MSG.OPEN_URL_FOREGROUND;
+      chrome.runtime.sendMessage({ type: type2, url }).catch(() => {
       });
       return true;
     } catch {
@@ -3435,8 +4025,8 @@
         postPointerToParent(true, x, y);
         return true;
       };
-      const paletteFor = (color) => {
-        if (color === "green") {
+      const paletteFor = (color4) => {
+        if (color4 === "green") {
           return {
             border: COLORS.FOCUS_GREEN || "rgba(0,180,0,0.95)",
             shadow: COLORS.GREEN_SHADOW || "rgba(0,180,0,0.45)",
@@ -3831,8 +4421,8 @@
         }
         return true;
       };
-      const acceptFramePayload = (event, data, type) => {
-        if (!data || data.type !== type) return false;
+      const acceptFramePayload = (event, data, type2) => {
+        if (!data || data.type !== type2) return false;
         if (!enabled) return false;
         try {
           if (window === window.top) return false;

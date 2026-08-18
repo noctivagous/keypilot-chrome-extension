@@ -1,14 +1,11 @@
 /**
- * Shared "NCT dark UI" chrome tokens — the NLE-style pro-app design system
- * defined in `/gui-mockups` (keyboard-layout-config-A-toolbar.svg /
- * keyboard-layout-config-B-two-pane.*).
- *
- * Gray bevel chrome, tight radii, steel-blue accent. Used by the control strip,
- * Keyboard Reference / Keyboard Layout Config panels, and popover chrome
- * (titlebars, close/segmented/action buttons, fields).
+ * Shared "NCT dark UI" chrome tokens — now backed by the dark-pro theme package
+ * (`extension/themes/`). Constants interpolate `var(--kp-*)` with NCT fallbacks
+ * so existing CSS templates theme when ThemeManager applies CSS variables.
  */
 
-export const NCT_DARK_UI_FONT = 'Helvetica, Arial, sans-serif';
+/** Resolves through the active theme (`--kp-font-ui`); Helvetica fallback. */
+export const NCT_DARK_UI_FONT = 'var(--kp-font-ui, Helvetica, Arial, sans-serif)';
 
 export const NCT_DARK_UI_COLORS = {
   bg: '#0f0f10',
@@ -33,29 +30,25 @@ export const NCT_DARK_UI_COLORS = {
   fieldInsetTop: '#333'
 };
 
-/** `.panel` background fill (NCT dark UI panels are flat `--panel`). */
-export const NCT_DARK_UI_PANEL_BACKGROUND = NCT_DARK_UI_COLORS.panel;
+/** `.panel` background fill (theme `--kp-panel-bg` / `--kp-color-panel`). */
+export const NCT_DARK_UI_PANEL_BACKGROUND = 'var(--kp-panel-bg, var(--kp-color-panel, #232323))';
 
 /**
  * `.panel` border + rim + drop shadow.
  * The outer neutral rim and restrained glow keep dark Pro windows legible on
  * near-black web pages without turning every panel into a bright focus state.
  */
-export const NCT_DARK_UI_PANEL_BORDER = `1px solid ${NCT_DARK_UI_COLORS.panelEdgeDark}`;
-export const NCT_DARK_UI_PANEL_BOX_SHADOW =
-  `0 0 0 1px ${NCT_DARK_UI_COLORS.panelEdge} inset, ` +
-  `0 0 0 1px rgba(190, 190, 190, 0.52), ` +
-  `0 0 10px rgba(255, 255, 255, 0.14), ` +
-  `0 16px 40px rgba(0,0,0,0.55)`;
-export const NCT_DARK_UI_PANEL_RADIUS = '3px';
+export const NCT_DARK_UI_PANEL_BORDER = 'var(--kp-panel-border, 1px solid #111)';
+export const NCT_DARK_UI_PANEL_BOX_SHADOW = 'var(--kp-panel-shadow)';
+export const NCT_DARK_UI_PANEL_RADIUS = 'var(--kp-radius-panel, 3px)';
 
 /**
  * Full-viewport modal dimmer + page blur (Launcher / PopupManager backdrop).
  * Keep this on a sibling *behind* the panel so backdrop-filter never blurs chrome.
  */
 export const NCT_DARK_UI_BACKDROP_CLASS = 'kp-nct-backdrop';
-export const NCT_DARK_UI_BACKDROP_BACKGROUND = 'rgba(0,0,0,0.35)';
-export const NCT_DARK_UI_BACKDROP_BLUR = 'blur(6px)';
+export const NCT_DARK_UI_BACKDROP_BACKGROUND = 'var(--kp-backdrop-bg, rgba(0,0,0,0.35))';
+export const NCT_DARK_UI_BACKDROP_BLUR = 'var(--kp-backdrop-blur, blur(6px))';
 
 /**
  * Opt-in scrollbar class for NCT dark scroll regions.
@@ -101,11 +94,11 @@ export function getNctDarkUiScrollbarCss(opts = {}) {
     ? `${opts.scopeSelector.trim()} `
     : '';
   const root = `${scope}.${cls}`;
-  const thumb = '#4a4a4a';
-  const thumbHover = '#5c5c5c';
-  const thumbActive = NCT_DARK_UI_COLORS.accent;
-  const track = NCT_DARK_UI_COLORS.fieldBg;
-  const edge = NCT_DARK_UI_COLORS.panelEdgeDark;
+  const thumb = 'var(--kp-scrollbar-thumb, #4a4a4a)';
+  const thumbHover = 'var(--kp-scrollbar-thumb-hover, #5c5c5c)';
+  const thumbActive = 'var(--kp-color-accent, #4a90c8)';
+  const track = 'var(--kp-scrollbar-track, #141414)';
+  const edge = 'var(--kp-color-panel-edge-dark, #111)';
   return `
 ${root} {
   scrollbar-width: thin;
@@ -142,16 +135,15 @@ ${root} ::-webkit-scrollbar-thumb:hover {
 ${root}::-webkit-scrollbar-thumb:active,
 ${root} ::-webkit-scrollbar-thumb:active {
   background: linear-gradient(180deg, ${thumbActive} 0%, #3a6a94 100%);
-  border-color: ${NCT_DARK_UI_COLORS.litEdge};
+  border-color: var(--kp-color-lit-edge, #2a4a66);
 }
 `.trim();
 }
 
 /** `.titlebar` gradient + rim. */
-export const NCT_DARK_UI_TITLEBAR_GRADIENT =
-  `linear-gradient(180deg, ${NCT_DARK_UI_COLORS.titleTop} 0%, ${NCT_DARK_UI_COLORS.titleMid} 45%, ${NCT_DARK_UI_COLORS.titleBot} 100%)`;
-export const NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM = `1px solid ${NCT_DARK_UI_COLORS.panelEdgeDark}`;
-export const NCT_DARK_UI_TITLEBAR_BOX_SHADOW = `0 1px 0 ${NCT_DARK_UI_COLORS.panelEdge}`;
+export const NCT_DARK_UI_TITLEBAR_GRADIENT = 'var(--kp-titlebar-bg)';
+export const NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM = 'var(--kp-titlebar-border, 1px solid #111)';
+export const NCT_DARK_UI_TITLEBAR_BOX_SHADOW = 'var(--kp-titlebar-shadow)';
 
 /**
  * Text / typing mode orange cast over the NCT titlebar bevel
@@ -165,32 +157,30 @@ export const NCT_DARK_UI_TITLEBAR_TEXT_MODE_TITLE_COLOR = 'rgba(255, 210, 150, 0
 export const NCT_DARK_UI_TITLEBAR_TEXT_MODE_HINT_COLOR = 'rgba(253, 186, 116, 0.95)';
 
 /** `.btn` default (gray bevel) gradient + rim. */
-export const NCT_DARK_UI_BTN_GRADIENT =
-  `linear-gradient(180deg, ${NCT_DARK_UI_COLORS.btnTop} 0%, ${NCT_DARK_UI_COLORS.btnMid} 50%, ${NCT_DARK_UI_COLORS.btnBot} 100%)`;
-export const NCT_DARK_UI_BTN_BORDER = `1px solid ${NCT_DARK_UI_COLORS.panelEdgeDark}`;
-export const NCT_DARK_UI_BTN_RADIUS = '2px';
+export const NCT_DARK_UI_BTN_GRADIENT = 'var(--kp-btn-bg)';
+export const NCT_DARK_UI_BTN_BORDER = 'var(--kp-btn-border, 1px solid #111)';
+export const NCT_DARK_UI_BTN_RADIUS = 'var(--kp-radius-btn, 2px)';
 
 /** Outline ring for compact titlebar controls such as Close and Collapse. */
 export const NCT_DARK_UI_ICON_BUTTON_OUTLINE =
-  `inset 0 0 0 1px ${NCT_DARK_UI_COLORS.panelEdge}`;
+  'inset 0 0 0 1px var(--kp-color-panel-edge, #3a3a3a)';
 
 /** `.btn.lit` (active / primary steel-blue) gradient + rim. */
-export const NCT_DARK_UI_BTN_LIT_GRADIENT =
-  `linear-gradient(180deg, ${NCT_DARK_UI_COLORS.litTop} 0%, ${NCT_DARK_UI_COLORS.litBot} 100%)`;
-export const NCT_DARK_UI_BTN_LIT_BORDER = `1px solid ${NCT_DARK_UI_COLORS.litEdge}`;
+export const NCT_DARK_UI_BTN_LIT_GRADIENT = 'var(--kp-btn-lit-bg)';
+export const NCT_DARK_UI_BTN_LIT_BORDER = 'var(--kp-btn-lit-border, 1px solid #2a4a66)';
 
 /** `.field` (recessed input) chrome. */
-export const NCT_DARK_UI_FIELD_BACKGROUND = NCT_DARK_UI_COLORS.fieldBg;
-export const NCT_DARK_UI_FIELD_BORDER = `1px solid ${NCT_DARK_UI_COLORS.fieldEdge}`;
-export const NCT_DARK_UI_FIELD_BOX_SHADOW = `inset 0 1px 0 ${NCT_DARK_UI_COLORS.fieldInsetTop}`;
-export const NCT_DARK_UI_FIELD_FOCUS_BORDER = NCT_DARK_UI_COLORS.accent;
-export const NCT_DARK_UI_FIELD_FOCUS_BOX_SHADOW = `inset 0 0 0 1px rgba(74,144,200,0.35)`;
+export const NCT_DARK_UI_FIELD_BACKGROUND = 'var(--kp-field-bg, #141414)';
+export const NCT_DARK_UI_FIELD_BORDER = 'var(--kp-field-border, 1px solid #0a0a0a)';
+export const NCT_DARK_UI_FIELD_BOX_SHADOW = 'var(--kp-field-shadow)';
+export const NCT_DARK_UI_FIELD_FOCUS_BORDER = 'var(--kp-color-accent, #4a90c8)';
+export const NCT_DARK_UI_FIELD_FOCUS_BOX_SHADOW = 'inset 0 0 0 1px color-mix(in srgb, var(--kp-color-accent, #4a90c8) 35%, transparent)';
 
 /** Accent focus ring for interactive chrome (buttons, segments). */
-export const NCT_DARK_UI_FOCUS_RING = `inset 0 0 0 1px rgba(74,144,200,0.55)`;
-export const NCT_DARK_UI_SELECTED_TINT = 'rgba(74,144,200,0.22)';
-export const NCT_DARK_UI_SELECTED_TEXT = '#e8f0f8';
-export const NCT_DARK_UI_HOVER_TINT = 'rgba(255,255,255,0.06)';
+export const NCT_DARK_UI_FOCUS_RING = 'var(--kp-color-focus-ring)';
+export const NCT_DARK_UI_SELECTED_TINT = 'var(--kp-color-selected, rgba(74,144,200,0.22))';
+export const NCT_DARK_UI_SELECTED_TEXT = 'var(--kp-color-selected-text, #e8f0f8)';
+export const NCT_DARK_UI_HOVER_TINT = 'var(--kp-color-hover, rgba(255,255,255,0.06))';
 
 /**
  * Compact NCT dark scale / range control (titlebars, overlay toolbars).
@@ -215,7 +205,6 @@ export function getNctDarkUiScaleSliderCss(opts = {}) {
   const rangeWidth = typeof opts.rangeWidth === 'string' && opts.rangeWidth.trim()
     ? opts.rangeWidth.trim()
     : '82px';
-  const c = NCT_DARK_UI_COLORS;
   return `
 .${cls} {
   display: inline-flex;
@@ -223,26 +212,26 @@ export function getNctDarkUiScaleSliderCss(opts = {}) {
   gap: 6px;
   flex-shrink: 0;
   padding: 3px 8px;
-  border: 1px solid ${c.panelEdgeDark};
+  border: 1px solid var(--kp-color-panel-edge-dark, #111);
   border-radius: ${NCT_DARK_UI_BTN_RADIUS};
-  background: ${c.fieldBg};
-  box-shadow: 0 0 0 1px ${c.panelEdge} inset;
-  color: ${c.fg};
+  background: var(--kp-color-field-bg, #141414);
+  box-shadow: 0 0 0 1px var(--kp-color-panel-edge, #3a3a3a) inset;
+  color: var(--kp-color-fg, #ddd);
   font-family: ${NCT_DARK_UI_FONT};
   white-space: nowrap;
   box-sizing: border-box;
 }
 .${cls}-label {
-  font-size: 10px;
-  font-weight: 700;
+  font-size: var(--kp-type-kbd-size, 10px);
+  font-weight: var(--kp-type-weight-bold, 700);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: ${c.fgMute};
+  color: var(--kp-color-fg-mute, #777);
   user-select: none;
 }
 .${cls}-edge {
-  font-size: 10px;
-  color: ${c.fgDim};
+  font-size: var(--kp-type-kbd-size, 10px);
+  color: var(--kp-color-fg-dim, #aaa);
   font-variant-numeric: tabular-nums;
   user-select: none;
 }
@@ -250,7 +239,7 @@ export function getNctDarkUiScaleSliderCss(opts = {}) {
   min-width: 2.6em;
   font-size: 11px;
   font-weight: 600;
-  color: ${c.fg};
+  color: var(--kp-color-fg, #ddd);
   font-variant-numeric: tabular-nums;
   text-align: right;
   user-select: none;
@@ -260,8 +249,8 @@ export function getNctDarkUiScaleSliderCss(opts = {}) {
   appearance: none;
   width: ${rangeWidth};
   height: 4px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, ${c.panelEdgeDark} 0%, ${c.accent} 100%);
+  border-radius: var(--kp-radius-xs, 2px);
+  background: linear-gradient(90deg, var(--kp-color-panel-edge-dark, #111) 0%, var(--kp-color-accent, #4a90c8) 100%);
   outline: none;
   cursor: pointer;
   margin: 0;
@@ -272,7 +261,7 @@ export function getNctDarkUiScaleSliderCss(opts = {}) {
   appearance: none;
   width: 12px;
   height: 12px;
-  border-radius: 2px;
+  border-radius: var(--kp-radius-xs, 2px);
   background: ${NCT_DARK_UI_BTN_LIT_GRADIENT};
   border: ${NCT_DARK_UI_BTN_LIT_BORDER};
   box-shadow: 0 1px 3px rgba(0,0,0,0.55);
@@ -281,16 +270,16 @@ export function getNctDarkUiScaleSliderCss(opts = {}) {
 .${cls}-range::-moz-range-thumb {
   width: 12px;
   height: 12px;
-  border-radius: 2px;
-  background: #3a5f7a;
+  border-radius: var(--kp-radius-xs, 2px);
+  background: var(--kp-color-lit-bot, #3a5570);
   border: ${NCT_DARK_UI_BTN_LIT_BORDER};
   box-shadow: 0 1px 3px rgba(0,0,0,0.55);
   cursor: pointer;
 }
 .${cls}-range::-moz-range-track {
   height: 4px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, ${c.panelEdgeDark} 0%, ${c.accent} 100%);
+  border-radius: var(--kp-radius-xs, 2px);
+  background: linear-gradient(90deg, var(--kp-color-panel-edge-dark, #111) 0%, var(--kp-color-accent, #4a90c8) 100%);
 }
 .${cls}-range:focus-visible {
   outline: none;
@@ -462,9 +451,9 @@ export function applyFlashNotificationStyle(el, opts = {}) {
       backgroundColor: color,
       color: '#fff',
       padding: hasThumbnail ? '8px 12px 8px 14px' : '8px 16px',
-      borderRadius: '2px',
+      borderRadius: 'var(--kp-radius-btn, 2px)',
       border: '1px solid rgba(0,0,0,0.55)',
-      fontSize: '12px',
+      fontSize: 'var(--kp-type-ui-size, 12px)',
       fontWeight: '700',
       letterSpacing: '0.02em',
       fontFamily: NCT_DARK_UI_FONT,
@@ -501,7 +490,7 @@ export function applyFlashNotificationThumbnailStyle(el) {
       flex: '0 0 auto',
       maxWidth: '150px',
       maxHeight: '150px',
-      borderRadius: '2px',
+      borderRadius: 'var(--kp-radius-btn, 2px)',
       overflow: 'hidden',
       backgroundColor: '#141414',
       border: '1px solid rgba(0,0,0,0.55)',

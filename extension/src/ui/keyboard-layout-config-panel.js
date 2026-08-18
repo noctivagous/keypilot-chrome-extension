@@ -22,6 +22,7 @@ import {
   formatBuiltinFamilyLabel,
   inferFamilyAndHandednessFromLayoutId,
   KEYBINDING_ACTION_DEFS,
+  BUILD_ENABLE_MACRO_BUILDER,
   listLayoutPickerGroups,
   nextUserCopyLayoutLabel,
   normalizeKeyboardHandedness,
@@ -57,7 +58,9 @@ import {
   FIXED_KEY_FUNCTION_IDS,
   FUNCTION_CATEGORY_ORDER,
   FUNCTION_ID_BY_MACRO_KEY_KIND,
+  LIBRARY_SECTION_DESCRIPTIONS,
   getFunctionCategory,
+  getFunctionCategoryDescription,
   getFunctionDef,
   isFunctionInstantiable,
   functionAssignableToKey,
@@ -70,6 +73,10 @@ import {
   defaultFunctionParameters,
   validateFunctionSlotKey
 } from '../config/function-library.js';
+import {
+  filterFunctionParameterOptions,
+  shouldShowFunctionParameter
+} from '../modules/ai-text-service.js';
 import {
   KEYBINDINGS_UI_ROOT_CLASS,
   KEYBINDINGS_UI_STYLE_ATTR,
@@ -988,18 +995,19 @@ export class KeyboardLayoutConfigPanel {
     const accentA = (a) => `rgba(74,144,200,${a})`;
     return `
 .kp-layout-config-panel {
-  font-family: ${NCT_DARK_UI_FONT};
-  font-size: 12px;
-  line-height: 1.35;
-  color: ${ONBOARDING_METAL.fg};
-  /* Light gray metal chrome shared with the onboarding walkthrough panel. */
-  background-color: #838383 !important;
+  font-family: var(--kp-font-ui, ${NCT_DARK_UI_FONT});
+  font-size: var(--kp-type-ui-size, 12px);
+  line-height: var(--kp-type-leading-body, 1.35);
+  color: var(--kp-color-fg, ${ONBOARDING_METAL.fg});
+  background-color: var(--kp-color-panel, #838383) !important;
+  background: var(--kp-panel-bg) !important;
 }
 .kp-layout-config-panel .kp-cfg-ico {
   width: 12px;
   height: 12px;
   flex: 0 0 auto;
   fill: currentColor;
+  color: var(--kp-icon-chrome, currentColor);
   display: inline-block;
   vertical-align: -1px;
 }
@@ -1014,9 +1022,12 @@ export class KeyboardLayoutConfigPanel {
   box-sizing: border-box;
   padding: 0 6px 0 10px;
   margin: 0;
-  border-bottom: ${ONBOARDING_METAL.titlebarBorder};
-  box-shadow: ${ONBOARDING_METAL.titlebarShadow};
-  background: ${ONBOARDING_METAL.titlebarBg};
+  border-bottom: var(--kp-titlebar-border, ${ONBOARDING_METAL.titlebarBorder});
+  box-shadow: var(--kp-titlebar-shadow, ${ONBOARDING_METAL.titlebarShadow});
+  background: var(--kp-hatch-edit), var(--kp-titlebar-bg, ${ONBOARDING_METAL.titlebarBg});
+  font-family: var(--kp-font-heading, ${NCT_DARK_UI_FONT});
+  letter-spacing: var(--kp-type-tracking-titlebar, 0.02em);
+  text-transform: var(--kp-type-transform-titlebar, none);
   flex: 0 0 auto;
   cursor: grab;
   user-select: none;
@@ -1035,9 +1046,10 @@ export class KeyboardLayoutConfigPanel {
   align-items: center;
   gap: 6px;
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: ${ONBOARDING_METAL.fg};
+  font-weight: var(--kp-titlebar-title-weight, 700);
+  letter-spacing: var(--kp-type-tracking-titlebar, 0.02em);
+  text-transform: var(--kp-type-transform-titlebar, none);
+  color: var(--kp-color-fg, ${ONBOARDING_METAL.fg});
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1047,17 +1059,19 @@ export class KeyboardLayoutConfigPanel {
   min-width: 0;
 }
 .kp-layout-config-panel .kp-cfg-title-shortcut {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 10px;
-  font-weight: 400;
+  font-family: var(--kp-font-kbd, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+  font-size: var(--kp-type-kbd-size, 10px);
+  font-weight: var(--kp-type-weight-regular, 400);
   line-height: 1.2;
+  text-transform: var(--kp-kbd-transform, none);
+  letter-spacing: var(--kp-kbd-tracking, 0.02em);
   padding: 1px 6px;
   margin-left: 2px;
-  border: ${ONBOARDING_METAL.kbdBorder};
-  border-radius: ${NCT_DARK_UI_BTN_RADIUS};
-  background: ${ONBOARDING_METAL.kbdBg};
-  color: ${ONBOARDING_METAL.kbdColor};
-  box-shadow: ${ONBOARDING_METAL.kbdShadow};
+  border: var(--kp-kbd-border, ${ONBOARDING_METAL.kbdBorder});
+  border-radius: var(--kp-radius-btn, ${NCT_DARK_UI_BTN_RADIUS});
+  background: var(--kp-kbd-bg, ${ONBOARDING_METAL.kbdBg});
+  color: var(--kp-color-kbd-fg, ${ONBOARDING_METAL.kbdColor});
+  box-shadow: var(--kp-kbd-shadow, ${ONBOARDING_METAL.kbdShadow});
   flex-shrink: 0;
   box-sizing: border-box;
 }
@@ -1822,6 +1836,47 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
   color: #8a9a78;
   background: #121410;
 }
+.kp-layout-config-panel .kp-cfg-desc-fieldset {
+  margin: 4px 0 2px;
+  padding: 6px 8px 7px;
+  min-width: 0;
+  border: 1px solid rgba(120, 140, 100, 0.14);
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.18);
+}
+.kp-layout-config-panel .kp-cfg-desc-fieldset > legend {
+  padding: 0 5px;
+  margin-left: 1px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6a7a68;
+}
+.kp-layout-config-panel .kp-cfg-desc-line {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #9aaa90;
+}
+.kp-layout-config-panel .kp-cfg-category[data-kp-section="macros"] .kp-cfg-desc-fieldset {
+  border-color: rgba(154, 122, 184, 0.16);
+}
+.kp-layout-config-panel .kp-cfg-category[data-kp-section="macros"] .kp-cfg-desc-fieldset > legend {
+  color: #7a6a8a;
+}
+.kp-layout-config-panel .kp-cfg-category[data-kp-section="macros"] .kp-cfg-desc-line {
+  color: #a090b0;
+}
+.kp-layout-config-panel .kp-cfg-category[data-kp-section="macroKeys"] .kp-cfg-desc-fieldset {
+  border-color: rgba(90, 140, 180, 0.16);
+}
+.kp-layout-config-panel .kp-cfg-category[data-kp-section="macroKeys"] .kp-cfg-desc-fieldset > legend {
+  color: #6a8090;
+}
+.kp-layout-config-panel .kp-cfg-category[data-kp-section="macroKeys"] .kp-cfg-desc-line {
+  color: #8a9aaa;
+}
 .kp-layout-config-panel .kp-cfg-category[data-kp-section="macros"] {
   border-color: rgba(154, 122, 184, 0.12);
   background: rgba(10, 8, 14, 0.35);
@@ -2466,6 +2521,10 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
     inset 0 1px 0 rgba(220, 190, 255, 0.14),
     inset 0 0 0 1px rgba(140, 100, 180, 0.14);
 }
+.kp-layout-config-panel .kp-cfg-workspace.kp-cfg-no-macro-builder > .kp-cfg-pane-create,
+.kp-layout-config-panel .kp-cfg-workspace.kp-cfg-no-macro-builder > .kp-cfg-split-h {
+  display: none !important;
+}
 .kp-layout-config-panel .kp-cfg-pane-create .kp-cfg-pane-hdr {
   background: linear-gradient(180deg, #4a3a58, #342844);
   color: #d8c8e8;
@@ -3008,8 +3067,17 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 .kp-layout-config-panel .kp-cfg-macro-fieldset > legend,
 .kp-layout-config-panel .kp-cfg-macro-fieldset[data-macro-group="stock"] > legend,
 .kp-layout-config-panel .kp-cfg-macro-fieldset[data-macro-group="user"] > legend,
-.kp-layout-config-panel .kp-cfg-instance-fieldset > legend {
+.kp-layout-config-panel .kp-cfg-instance-fieldset > legend,
+.kp-layout-config-panel .kp-cfg-desc-fieldset > legend {
   color: rgba(240,240,240,0.72);
+}
+.kp-layout-config-panel .kp-cfg-desc-fieldset {
+  border-color: rgba(0,0,0,0.3);
+  background: rgba(0,0,0,0.22);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.kp-layout-config-panel .kp-cfg-desc-line {
+  color: rgba(240,240,240,0.62);
 }
 .kp-layout-config-panel .kp-cfg-subgroup-empty {
   color: rgba(240,240,240,0.55);
@@ -3330,11 +3398,11 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       overflow: 'hidden',
       boxSizing: 'border-box',
       zIndex: String(Z_INDEX.KEYBOARD_LAYOUT_CONFIG),
-      background: ONBOARDING_METAL.panelBg,
-      color: ONBOARDING_METAL.fg,
-      border: ONBOARDING_METAL.panelBorder,
+      background: 'var(--kp-panel-bg, var(--kp-color-panel))',
+      color: 'var(--kp-color-fg)',
+      border: 'var(--kp-panel-border)',
       borderRadius: NCT_DARK_UI_PANEL_RADIUS,
-      boxShadow: ONBOARDING_METAL.panelShadow,
+      boxShadow: 'var(--kp-panel-shadow)',
       fontFamily: NCT_DARK_UI_FONT
     });
     applyPopupThemeVars(root);
@@ -3386,9 +3454,10 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     root.className = 'kp-layout-config-panel';
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-label', 'Keyboard layout configuration');
+    try { root.setAttribute('data-kp-surface', 'onboarding'); } catch { /* ignore */ }
     root.hidden = true;
     this._applyProChrome(root);
-    const shadowRoot = ensureOpenChromeShadow(root, { id: 'keyboard-layout-config' });
+    const shadowRoot = ensureOpenChromeShadow(root, { id: 'keyboard-layout-config', chromeWindow: true });
     if (!shadowRoot) return;
     this._ensureStylesInjected(doc, shadowRoot);
 
@@ -3407,7 +3476,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const titleShortcut = doc.createElement('kbd');
     titleShortcut.className = 'kp-cfg-title-shortcut';
     titleShortcut.setAttribute('data-kp-titlebar-shortcut', 'true');
-    titleShortcut.textContent = '(Alt + C)';
+    titleShortcut.textContent = 'Alt + C';
     titleShortcut.title = 'Toggle with Alt+C';
 
     const closeBtn = doc.createElement('button');
@@ -3634,13 +3703,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     layoutStrip.appendChild(tools);
     layoutStrip.appendChild(primary);
 
-    const hint = doc.createElement('div');
-    hint.className = 'kp-cfg-hint kp-cfg-strip-hint';
-    hint.textContent = 'Click a keycap in the Actions Library, then click a Keyboard Reference key to place it. ' +
-      'Functions marked "Needs modifier" must use "Bind modifier combo" instead — they run while a text field is focused.';
-
     strip.appendChild(layoutStrip);
-    strip.appendChild(hint);
     strip.appendChild(importFile);
 
     // ---- Main row: Actions Library + User Macros | Inspector ----------------------------
@@ -3649,6 +3712,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 
     const workspace = doc.createElement('div');
     workspace.className = 'kp-cfg-workspace';
+    if (!BUILD_ENABLE_MACRO_BUILDER) workspace.classList.add('kp-cfg-no-macro-builder');
 
     const libraryPane = doc.createElement('section');
     libraryPane.className = 'kp-cfg-pane kp-cfg-pane-library';
@@ -3881,6 +3945,18 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     jsChip.appendChild(jsSpan);
     jsChip.addEventListener('click', () => this._addDraftFunctionStep('EXECUTE_JS'), true);
     logicPalette.appendChild(jsChip);
+    const rangeChip = doc.createElement('button');
+    rangeChip.type = 'button';
+    rangeChip.className = 'kp-cfg-logic-chip';
+    rangeChip.dataset.kpPrimitiveFunction = 'GET_TEXT_RANGE';
+    const rangeStrong = doc.createElement('strong');
+    rangeStrong.textContent = 'Get Text Range';
+    const rangeSpan = doc.createElement('span');
+    rangeSpan.textContent = 'Capture the current selection for the next step';
+    rangeChip.appendChild(rangeStrong);
+    rangeChip.appendChild(rangeSpan);
+    rangeChip.addEventListener('click', () => this._addDraftFunctionStep('GET_TEXT_RANGE'), true);
+    logicPalette.appendChild(rangeChip);
     const popoverChip = doc.createElement('button');
     popoverChip.type = 'button';
     popoverChip.className = 'kp-cfg-logic-chip';
@@ -3937,7 +4013,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     scriptFooter.className = 'kp-cfg-strip-row';
     const placeHint = doc.createElement('span');
     placeHint.className = 'kp-cfg-hint';
-    placeHint.textContent = 'Click a Logic chip, Execute JS, or Show Popover, or pick a Function below and Add step. Save adds it to Macros.';
+    placeHint.textContent = 'Click a Logic chip, Get Text Range, Show Popover, or Execute JS, or pick a Function below and Add step. Save adds it to Macros.';
     const scriptMeta = doc.createElement('span');
     scriptMeta.className = 'kp-cfg-hint';
     scriptMeta.textContent = '0 steps';
@@ -4538,6 +4614,11 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     return this._st.mode !== 'user';
   }
 
+  /** User Macros / Macro Builder chrome. Off in v1; runtime still executes bound macros. */
+  _macroBuilderEnabled() {
+    return BUILD_ENABLE_MACRO_BUILDER === true;
+  }
+
   async _persistUserLayout() {
     if (this._st.mode !== 'user' || !this._st.userLayout) return;
     try {
@@ -4546,7 +4627,13 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
   }
 
   _renderMacroKeyKindButtons() {
-    const host = this._macroKeysActionsRow;
+    this._fillMacroKeyKindCreateGrid(this._macroKeysActionsRow);
+  }
+
+  /**
+   * @param {HTMLElement|null} host
+   */
+  _fillMacroKeyKindCreateGrid(host) {
     if (!host) return;
     host.replaceChildren();
     const title = document.createElement('div');
@@ -4783,10 +4870,14 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     }
 
     host.appendChild(this._dockTitle(label, 'Stock function'));
+    const about = String(def?.description || actionDef?.description || binding?.description || '');
+    const details = String(
+      def?.details || actionDef?.details || binding?.details || ''
+    );
     host.appendChild(this._dockRows([
-      ['Id', functionId],
       ['Category', def ? (getFunctionCategory(def.id) || 'Other') : ''],
-      ['About', String(def?.description || actionDef?.description || binding?.description || '')],
+      ['About', about],
+      ['Description', details],
       [def?.worksWhileTyping ? 'Note' : '', def?.worksWhileTyping ? 'Requires a modifier combo' : '']
     ]));
     host.appendChild(this._renderAssignmentTable({ type: 'function', id: functionId }));
@@ -4835,13 +4926,12 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const steps = Array.isArray(macro.steps) ? macro.steps : [];
     host.appendChild(this._dockTitle(String(macro.label || 'Macro'), stock ? 'Stock macro' : 'User macro'));
     host.appendChild(this._dockRows([
-      ['Id', macro.id],
       ['Based on', macro.baseStockMacroId || ''],
       ['Steps', String(steps.length)]
     ]));
     host.appendChild(this._renderAssignmentTable({ type: 'macro', id: macro.id }));
     host.appendChild(this._renderStepSummaryList(steps));
-    host.appendChild(this._dockActions([
+    const inspectorActions = [
       {
         label: 'Place on keyboard',
         icon: 'kp-cfg-i-place',
@@ -4850,21 +4940,25 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       {
         label: 'Run',
         onClick: () => { void this._kp?._runMacroById?.(macro.id); }
-      },
-      {
+      }
+    ];
+    if (this._macroBuilderEnabled()) {
+      inspectorActions.push({
         label: stock ? 'Customize' : 'Edit steps',
         title: stock ? 'Open an editable copy in the User Macros builder' : 'Open in the User Macros builder',
         onClick: () => this._openMacroStepsEditor(macro)
-      },
-      {
+      }, {
         label: 'Duplicate',
         onClick: () => { void this._duplicateMacro(macro.id); }
-      },
-      stock ? null : {
+      });
+    }
+    if (!stock) {
+      inspectorActions.push({
         label: 'Delete',
         onClick: () => { void this._deleteMacro(macro.id); }
-      }
-    ].filter(Boolean)));
+      });
+    }
+    host.appendChild(this._dockActions(inspectorActions));
   }
 
   /**
@@ -4879,7 +4973,6 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       draft.stock ? 'Stock macro (unsaved copy)' : 'User macro (unsaved)'
     ));
     host.appendChild(this._dockRows([
-      ['Id', draft.id || '(unsaved)'],
       ['Based on', draft.baseStockMacroId || ''],
       ['Steps', String((draft.steps || []).length)]
     ]));
@@ -5134,6 +5227,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
         host.appendChild(heading);
       }
       for (const param of params) {
+        if (!shouldShowFunctionParameter(def?.id || '', param)) continue;
         const current = values?.[param.id] !== undefined ? values[param.id] : param.defaultValue;
         const row = document.createElement('div');
         row.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
@@ -5151,7 +5245,8 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
         } else if (param.type === 'enum' && Array.isArray(param.options)) {
           control = document.createElement('select');
           control.className = 'kp-cfg-field';
-          for (const optionDef of param.options) {
+          const options = filterFunctionParameterOptions(def?.id || '', param);
+          for (const optionDef of options) {
             const option = document.createElement('option');
             option.value = optionDef.id;
             option.textContent = optionDef.label;
@@ -5406,6 +5501,10 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
    * @param {{ id: string, label?: string, steps?: any[], baseStockMacroId?: string }} macro
    */
   _openMacroStepsEditor(macro) {
+    if (!this._macroBuilderEnabled()) {
+      this._notify('Macro Builder is not in this build. Use Execute JS for custom sequences.', 'info');
+      return;
+    }
     if (!macro || !macro.id) return;
     const id = String(macro.id);
     const current = this._macroDraft;
@@ -5447,6 +5546,10 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
   }
 
   _startNewMacroDraft() {
+    if (!this._macroBuilderEnabled()) {
+      this._notify('Macro Builder is not in this build. Use Execute JS for custom sequences.', 'info');
+      return;
+    }
     if (!this._confirmDiscardDirtyMacroDraft()) return;
     this._resetMacroDraft(`Macro ${(this._st.macros || []).length + 1}`);
     this._setCreateMode('script', { open: true });
@@ -5497,7 +5600,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       const strong = document.createElement('strong');
       strong.textContent = 'Build a macro script';
       const span = document.createElement('span');
-      span.textContent = 'Click a Logic chip on the left, or pick a Function below and Add step.';
+      span.textContent = 'Click a Logic chip, Get Text Range, Show Popover, or Execute JS, or pick a Function below and Add step.';
       empty.appendChild(strong);
       empty.appendChild(span);
       host.appendChild(empty);
@@ -6272,6 +6375,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 
   /** @param {boolean} open */
   _setCreateOpen(open) {
+    if (!this._macroBuilderEnabled()) open = false;
     this._createOpen = !!open;
     if (!this._createOpen) this._createMaximized = false;
     const pane = this._createPane;
@@ -6446,9 +6550,14 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const tabs = [
       { id: 'all', label: 'All', icon: 'kp-cfg-i-all' },
       { id: 'functions', label: 'Functions', icon: 'kp-cfg-i-lib' },
-      { id: 'macros', label: 'Macros', icon: 'kp-cfg-i-macro' },
+      ...(this._macroBuilderEnabled()
+        ? [{ id: 'macros', label: 'Macros', icon: 'kp-cfg-i-macro' }]
+        : []),
       { id: 'macroKeys', label: 'Macro Keys', icon: 'kp-cfg-i-keycap' }
     ];
+    if (!this._macroBuilderEnabled() && this._libPrimaryTab === 'macros') {
+      this._libPrimaryTab = 'all';
+    }
     for (const tab of tabs) {
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -6626,6 +6735,26 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     this._beginPlaceMode(item, sourceEl);
   }
 
+  /**
+   * Short Description fieldset shown above cards in an Actions Library section.
+   * @param {string} text
+   * @returns {HTMLElement|null}
+   */
+  _createSectionDescriptionFieldset(text) {
+    const line = String(text || '').trim();
+    if (!line) return null;
+    const fieldset = document.createElement('fieldset');
+    fieldset.className = 'kp-cfg-desc-fieldset';
+    const legend = document.createElement('legend');
+    legend.textContent = 'Description';
+    fieldset.appendChild(legend);
+    const p = document.createElement('p');
+    p.className = 'kp-cfg-desc-line';
+    p.textContent = line;
+    fieldset.appendChild(p);
+    return fieldset;
+  }
+
   _renderRightList() {
     const list = this._listEl;
     if (!list) return;
@@ -6646,7 +6775,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     } catch { /* ignore */ }
 
     const tab = this._libPrimaryTab;
-    const showMacros = tab === 'all' || tab === 'macros';
+    const showMacros = this._macroBuilderEnabled() && (tab === 'all' || tab === 'macros');
     const showMacroKeys = tab === 'all' || tab === 'macroKeys';
     const showFunctions = tab === 'all' || tab === 'functions';
 
@@ -6787,7 +6916,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     // placeable here — built-ins, keystroke primitives (surfaced below as "Configured Macro
     // Keys" instead, so they're excluded here), Type Characters, and Data/Lookup/
     // Translate/Media Library Functions. Macro-step primitives (`assignableToKey: false`,
-    // e.g. SHOW_POPOVER) stay out of this list and live on the User Macros palette.
+    // e.g. SHOW_POPOVER, GET_TEXT_RANGE) stay out of this list and live on the User Macros palette.
     const allDefs = showFunctions
       ? listFunctionDefs().filter((d) => {
         if (!d || d.legacyMacroKeyKind || d.assignableToKey === false) return false;
@@ -6800,7 +6929,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const filteredDefs = sortFunctionDefsForLibrary(
       q
         ? allDefs.filter((d) => (
-          `${d.id} ${d.label} ${d.description || ''} ${getFunctionCategory(d.id)}`
+          `${d.id} ${d.label} ${d.description || ''} ${d.details || ''} ${getFunctionCategory(d.id)}`
         ).toLowerCase().includes(q))
         : allDefs
     );
@@ -6829,6 +6958,8 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       title.className = 'kp-cfg-category-title';
       title.textContent = cat;
       section.appendChild(title);
+      const catDesc = this._createSectionDescriptionFieldset(getFunctionCategoryDescription(cat));
+      if (catDesc) section.appendChild(catDesc);
       const grid = document.createElement('div');
       grid.className = 'kp-cfg-key-grid';
 
@@ -6962,6 +7093,8 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       newMacroBtn.addEventListener('click', () => this._startNewMacroDraft(), true);
       macrosTitle.appendChild(newMacroBtn);
       macrosSection.appendChild(macrosTitle);
+      const macrosDesc = this._createSectionDescriptionFieldset(LIBRARY_SECTION_DESCRIPTIONS.macros);
+      if (macrosDesc) macrosSection.appendChild(macrosDesc);
 
       const subgroups = document.createElement('div');
       subgroups.className = 'kp-cfg-macro-subgroups';
@@ -7051,6 +7184,14 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       title.className = 'kp-cfg-category-title';
       title.textContent = 'Configured Macro Keys';
       section.appendChild(title);
+      const mkDesc = this._createSectionDescriptionFieldset(LIBRARY_SECTION_DESCRIPTIONS.macroKeys);
+      if (mkDesc) section.appendChild(mkDesc);
+      if (!this._macroBuilderEnabled()) {
+        const createHost = document.createElement('div');
+        createHost.className = 'kp-cfg-macrokey-inline-create';
+        this._fillMacroKeyKindCreateGrid(createHost);
+        section.appendChild(createHost);
+      }
       if (macroKeyItems.length) {
         const grid = document.createElement('div');
         grid.className = 'kp-cfg-key-grid';
@@ -7089,7 +7230,9 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       } else {
         const empty = document.createElement('div');
         empty.className = 'kp-cfg-hint';
-        empty.textContent = 'Create one from User Macros → Macro Key, configure it, then click its keycap to place it.';
+        empty.textContent = this._macroBuilderEnabled()
+          ? 'Create one from User Macros → Macro Key, configure it, then click its keycap to place it.'
+          : 'Create a Macro Key above, then click its keycap to place it.';
         section.appendChild(empty);
       }
       list.appendChild(section);
@@ -7296,7 +7439,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const filteredDefs = sortFunctionDefsForLibrary(
       q
         ? allDefs.filter((d) => (
-          `${d.id} ${d.label} ${d.description || ''} ${getFunctionCategory(d.id)}`
+          `${d.id} ${d.label} ${d.description || ''} ${d.details || ''} ${getFunctionCategory(d.id)}`
         ).toLowerCase().includes(q))
         : allDefs
     );
@@ -7525,7 +7668,9 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       })) {
         if (!macroKeyItems.length) {
           appendHintRow(
-            'Create one from User Macros → Macro Key, configure it, then Place it.',
+            this._macroBuilderEnabled()
+              ? 'Create one from User Macros → Macro Key, configure it, then Place it.'
+              : 'Switch to Cards view to create a Macro Key, then place it.',
             1
           );
         }
@@ -7945,7 +8090,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     if (functionId && !functionAssignableToKey(functionId)) {
       const def = getFunctionDef(functionId);
       this._notify(
-        `"${def?.label || 'This action'}" is a Macro Step, not a key action. Add it in User Macros.`,
+        `"${def?.label || 'This action'}" is a Macro Step, not a key action.`,
         'error'
       );
       return;

@@ -6,6 +6,7 @@
   "main": "extension/build.js",
   "scripts": {
     "build": "cd extension && node build.js",
+    "build:macro-builder": "cd extension && node build.js --macro-builder",
     "build:minify": "cd extension && node build.js --minify",
     "minify": "npm run build:minify"
   },

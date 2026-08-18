@@ -5,6 +5,7 @@
  */
 
 import { CURSOR_MODE, SCROLL } from '../config/constants.js';
+import { DEFAULT_THEME_ID, normalizeThemeId } from '../../themes/schema.js';
 import {
   DEFAULT_KEYBOARD_HANDEDNESS,
   DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID,
@@ -135,6 +136,9 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
 
 /**
  * @typedef {{
+ *   themeId: string,
+ *   themeOverrides: Record<string, any>,
+ *   clickModeThemeId: string,
  *   searchEngine: SearchEngine,
  *   cursorMode: CursorMode,
  *   keyboardLayoutFamilyId: string,
@@ -157,6 +161,11 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
 
 /** @type {KeyPilotSettings} */
 export const DEFAULT_SETTINGS = Object.freeze({
+  themeId: DEFAULT_THEME_ID,
+  themeOverrides: Object.freeze({}),
+  // Last theme whose clickDefaults were written into clickMode/cursorMode.
+  // Empty means never synced (adopt the active theme's click defaults once).
+  clickModeThemeId: '',
   searchEngine: DEFAULT_SEARCH_ENGINE_ID,
   cursorMode: CURSOR_MODE.NO_CUSTOM_CURSORS,
   // New model:
@@ -272,6 +281,23 @@ export function normalizeSearchEngine(raw) {
 export function normalizeCursorMode(raw) {
   if (raw === CURSOR_MODE.NO_CUSTOM_CURSORS || raw === CURSOR_MODE.CUSTOM_CURSORS) return raw;
   return DEFAULT_SETTINGS.cursorMode;
+}
+
+/**
+ * @param {any} raw
+ * @returns {Record<string, any>}
+ */
+export function normalizeThemeOverrides(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  return raw;
+}
+
+/**
+ * @param {any} raw
+ * @returns {string}
+ */
+export function normalizeUiThemeId(raw) {
+  return normalizeThemeId(raw);
 }
 
 /**
@@ -685,6 +711,11 @@ export async function getSettings() {
     return {
       ...DEFAULT_SETTINGS,
       ...stored,
+      themeId: normalizeThemeId(stored?.themeId),
+      themeOverrides: normalizeThemeOverrides(stored?.themeOverrides),
+      clickModeThemeId: (typeof stored?.clickModeThemeId === 'string' && stored.clickModeThemeId.trim())
+        ? normalizeThemeId(stored.clickModeThemeId)
+        : '',
       searchEngine: normalizeSearchEngine(stored?.searchEngine),
       cursorMode: normalizeCursorMode(stored?.cursorMode),
       keyboardLayoutFamilyId: familyId,
@@ -731,7 +762,10 @@ export async function getSettings() {
       clickMode: { ...DEFAULT_SETTINGS.clickMode, cursor: { ...DEFAULT_SETTINGS.clickMode.cursor } },
       textMode: { ...DEFAULT_SETTINGS.textMode },
       scroll: { ...DEFAULT_SETTINGS.scroll },
-      actionsLibraryTableExpanded: [...DEFAULT_SETTINGS.actionsLibraryTableExpanded]
+      actionsLibraryTableExpanded: [...DEFAULT_SETTINGS.actionsLibraryTableExpanded],
+      themeId: DEFAULT_THEME_ID,
+      themeOverrides: {},
+      clickModeThemeId: '',
     };
   }
 }
@@ -819,6 +853,11 @@ export async function setSettings(partial) {
   };
   next.searchEngine = normalizeSearchEngine(next.searchEngine);
   next.cursorMode = normalizeCursorMode(next.cursorMode);
+  next.themeId = normalizeThemeId(next.themeId);
+  next.themeOverrides = normalizeThemeOverrides(next.themeOverrides);
+  next.clickModeThemeId = (typeof next.clickModeThemeId === 'string' && next.clickModeThemeId.trim())
+    ? normalizeThemeId(next.clickModeThemeId)
+    : '';
 
   // Keyboard layout resolution rules:
   // - If caller set keyboardLayoutId directly (legacy), infer family/handedness from it.
@@ -864,8 +903,38 @@ export async function setSettings(partial) {
   next.clickMode = normalizeClickMode(next.clickMode);
   next.textMode = normalizeTextMode(next.textMode);
   next.scroll = normalizeScroll(next.scroll);
-  await storageSetValue(SETTINGS_STORAGE_KEY, next);
+  next._updatedAt = Date.now();
+  await storageSetValue(SETTINGS_STORAGE_KEY, next, { dualWrite: true });
   return next;
+}
+
+/**
+ * Replace stored settings with product defaults (does not merge with current).
+ * @returns {Promise<KeyPilotSettings>}
+ */
+export async function resetAllSettings() {
+  const next = {
+    ...DEFAULT_SETTINGS,
+    themeOverrides: {},
+    controlStrip: { ...DEFAULT_SETTINGS.controlStrip },
+    panelPositions: {
+      keyboardReference: { ...DEFAULT_SETTINGS.panelPositions.keyboardReference },
+      controlStrip: { ...DEFAULT_SETTINGS.panelPositions.controlStrip },
+      keyboardLayoutConfig: { ...DEFAULT_SETTINGS.panelPositions.keyboardLayoutConfig },
+      topSites: { ...DEFAULT_SETTINGS.panelPositions.topSites }
+    },
+    actionSettings: normalizeActionSettings(null),
+    clickMode: {
+      ...DEFAULT_SETTINGS.clickMode,
+      cursor: { ...DEFAULT_SETTINGS.clickMode.cursor }
+    },
+    textMode: { ...DEFAULT_SETTINGS.textMode },
+    scroll: { ...DEFAULT_SETTINGS.scroll },
+    actionsLibraryTableExpanded: [...DEFAULT_SETTINGS.actionsLibraryTableExpanded],
+    _updatedAt: Date.now()
+  };
+  await storageSetValue(SETTINGS_STORAGE_KEY, next, { dualWrite: true });
+  return getSettings();
 }
 
 /**

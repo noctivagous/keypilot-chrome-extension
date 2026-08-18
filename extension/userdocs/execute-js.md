@@ -1,6 +1,6 @@
 # Execute JS
 
-Execute JS is a Script Function you can bind to a key or drop into a Macro. Use it when a built-in Function is not enough.
+Execute JS is a Script Function you bind to a key when a built-in Function is not enough.
 
 ## Use it
 
@@ -8,8 +8,8 @@ Execute JS is a Script Function you can bind to a key or drop into a Macro. Use 
 2. Create a new **Execute JS** Action Instance in the Actions Library.
 3. Paste your script.
 4. Optionally enable **Callbacks** (popover, clipboard, notify).
-5. Place the instance on a key — or add it as a Macro step (Logic chips sit beside Execute JS in the builder).
-6. Press the key on a page to run. In a Macro, the script’s return value becomes the next Gate’s `kpPriorResult`.
+5. Place the instance on a key.
+6. Press the key on a page to run.
 
 Scripts run in the **content-script isolated world**: they can use the page DOM, but not the page’s own JavaScript globals. There is an **8s** timeout.
 
@@ -25,7 +25,7 @@ Scripts run in the **content-script isolated world**: they can use the page DOM,
 | `kpMode` | Current KeyPilot mode |
 | `kpPageUrl` | Page URL |
 | `kpSelection` | Current selection data |
-| `kpPriorResult` | Previous Macro step result |
+| `kpPriorResult` | Previous result when run as a Macro step (Macro Builder builds) |
 
 ### Callbacks (only if enabled)
 
@@ -34,12 +34,6 @@ Scripts run in the **content-script isolated world**: they can use the page DOM,
 | `showPopover` | Show a result popover |
 | `copyToClipboard` | Copy text |
 | `notify` | Show a notification |
-
-### Macro integration
-
-- Multiple Execute JS steps are allowed in one Macro.
-- Return a value intentionally when a following Gate should branch.
-- Prefer small scripts; use built-in Functions for clipboard and navigation when they already cover what you need.
 
 ### Safety notes
 

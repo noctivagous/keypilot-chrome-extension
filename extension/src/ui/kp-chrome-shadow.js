@@ -5,6 +5,13 @@
  * selectors. Its shadow owns panel internals and panel-local styles.
  */
 
+import {
+  applyThemeCssVars,
+  applyThemeDataset,
+  getActiveTheme,
+  injectAllThemeMaps
+} from '../modules/theme-manager.js';
+
 /**
  * Preferred mount parent for floating KP chrome.
  *
@@ -51,8 +58,23 @@ export function ensureChromeHostMounted(host, doc = document) {
 }
 
 /**
+ * Mark an outer KP window shell so cut/radius tokens apply to the clip edge.
+ * @param {Element|null|undefined} el
+ */
+export function markChromeWindow(el) {
+  if (!el) return el;
+  try { el.classList?.add('kp-chrome-window'); } catch { /* ignore */ }
+  try {
+    const theme = getActiveTheme();
+    applyThemeDataset(el, theme);
+    applyThemeCssVars(el, theme);
+  } catch { /* ignore */ }
+  return el;
+}
+
+/**
  * @param {HTMLElement|null|undefined} host
- * @param {{ id?: string }} [opts]
+ * @param {{ id?: string, chromeWindow?: boolean }} [opts]
  * @returns {ShadowRoot|null}
  */
 export function ensureOpenChromeShadow(host, opts = {}) {
@@ -60,12 +82,20 @@ export function ensureOpenChromeShadow(host, opts = {}) {
   try {
     host.setAttribute('data-kp-ui-shadow', String(opts.id || 'chrome'));
   } catch { /* ignore */ }
+  if (opts.chromeWindow) markChromeWindow(host);
+  let shadow = null;
   try {
-    if (host.shadowRoot) return host.shadowRoot;
-    return host.attachShadow({ mode: 'open' });
+    shadow = host.shadowRoot || host.attachShadow({ mode: 'open' });
   } catch {
-    return host.shadowRoot || null;
+    shadow = host.shadowRoot || null;
   }
+  try {
+    const theme = getActiveTheme();
+    applyThemeDataset(host, theme);
+    applyThemeCssVars(host, theme);
+    if (shadow) injectAllThemeMaps(shadow);
+  } catch { /* ignore */ }
+  return shadow;
 }
 
 /**
@@ -202,6 +232,8 @@ export function isClickableKeyPilotChromeElement(element) {
     [
       '.kp-floating-keyboard-help',
       '.kp-keybindings-popover',
+      '.kp-select',
+      '.kp-select-menu',
       '.kp-action-config-panel',
       '.kp-control-strip',
       '.kp-layout-config-panel',
@@ -220,6 +252,8 @@ export function isKeyPilotChromeElement(element) {
     [
       '[data-kp-ui-shadow]',
       '.kp-floating-keyboard-help',
+      '.kp-select',
+      '.kp-select-menu',
       '.kp-control-strip',
       '.kp-onboarding-panel',
       '.kp-layout-config-panel',

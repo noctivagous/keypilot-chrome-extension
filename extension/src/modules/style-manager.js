@@ -600,8 +600,8 @@ export class StyleManager {
         position: fixed; 
         pointer-events: none; 
         z-index: ${Z_INDEX.OVERLAYS}; 
-        border: 3px solid ${COLORS.FOCUS_GREEN}; 
-        box-shadow: 0 0 0 2px ${COLORS.GREEN_SHADOW}, 0 0 10px 2px ${COLORS.GREEN_SHADOW_BRIGHT}; 
+        border: 3px solid var(--keypilot-focus-ring-color, ${COLORS.FOCUS_BLUE}); 
+        box-shadow: 0 0 0 2px var(--keypilot-focus-ring-shadow, ${COLORS.BLUE_SHADOW}), 0 0 10px 2px var(--keypilot-focus-ring-shadow-bright, ${COLORS.BLUE_SHADOW_BRIGHT}); 
         background: transparent; 
       }
       

@@ -1,0 +1,35 @@
+@font-face {
+  font-family: 'ROBOTECHGPRegular';
+  src: url('../fonts/ROBOTECHGPRegular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'TitilliumText';
+  src: url('../fonts/TitilliumTextRegular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Cubellan';
+  src: url('../fonts/CubellanRegular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Ezarion';
+  src: url('../fonts/EzarionRegular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Dosis';
+  src: url('../fonts/DosisBook.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}

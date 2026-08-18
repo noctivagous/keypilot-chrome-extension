@@ -15,7 +15,7 @@ import {
   createPopoverTitlebar,
   createTitlebarCloseHint
 } from '../ui/popover-titlebar.js';
-import { containsComposed, ensureOpenChromeShadow } from '../ui/kp-chrome-shadow.js';
+import { containsComposed, ensureOpenChromeShadow, markChromeWindow } from '../ui/kp-chrome-shadow.js';
 import {
   NCT_DARK_UI_PANEL_BACKGROUND,
   NCT_DARK_UI_PANEL_BORDER,
@@ -7757,7 +7757,7 @@ export class OverlayManager {
     };
 
     this.popoverContainer = this.createElement('div', {
-      className: 'kpv2-popover-container kpv2-docs-popover',
+      className: 'kpv2-popover-container kpv2-docs-popover kp-chrome-window',
       tabindex: '-1',
       role: 'dialog',
       'aria-modal': 'true',
@@ -7782,6 +7782,7 @@ export class OverlayManager {
         letter-spacing: normal;
       `
     });
+    markChromeWindow(this.popoverContainer);
 
     const chromeHost = this.createElement('div', {
       className: 'kpv2-popover-chrome-host',
@@ -7798,6 +7799,7 @@ export class OverlayManager {
     const titlebarApi = createPopoverTitlebar({
       title: (opts.title && String(opts.title).trim()) || 'KeyPilot Docs',
       shortcut: opts.hintKeyLabel || 'Alt + H',
+      icon: 'window',
       variant: 'modal',
       showClose: true,
       onClose: requestClosePopover,
@@ -7893,7 +7895,7 @@ export class OverlayManager {
     };
 
     this.popoverContainer = this.createElement('div', {
-      className: 'kpv2-popover-container kpv2-settings-popover',
+      className: 'kpv2-popover-container kpv2-settings-popover kp-chrome-window',
       tabindex: '-1',
       role: 'dialog',
       'aria-modal': 'true',
@@ -7918,6 +7920,7 @@ export class OverlayManager {
         letter-spacing: normal;
       `
     });
+    markChromeWindow(this.popoverContainer);
 
     const chromeHost = this.createElement('div', {
       className: 'kpv2-popover-chrome-host',
@@ -7934,6 +7937,7 @@ export class OverlayManager {
     const titlebarApi = createPopoverTitlebar({
       title: (opts.title && String(opts.title).trim()) || 'KeyPilot Settings',
       shortcut: opts.hintKeyLabel || "'",
+      icon: 'gear',
       variant: 'modal',
       showClose: true,
       onClose: requestClosePopover,
@@ -8092,7 +8096,7 @@ export class OverlayManager {
     // The Popover API uses the browser "top layer", which can sit above our cursor /
     // green click rectangle regardless of z-index, breaking F-to-click on popover UI.
     this.popoverContainer = this.createElement('div', {
-      className: 'kpv2-popover-container',
+      className: 'kpv2-popover-container kp-chrome-window',
       tabindex: '-1',
       role: 'dialog',
       'aria-modal': 'true',
@@ -8117,6 +8121,7 @@ export class OverlayManager {
         letter-spacing: normal;
       `
     });
+    markChromeWindow(this.popoverContainer);
 
     // Keep the PopupManager panel and iframe in the light DOM: its focus and
     // resize paths operate on these host-owned nodes. Only KeyPilot-owned
@@ -8149,6 +8154,7 @@ export class OverlayManager {
     const titlebarApi = createPopoverTitlebar({
       title: titleText,
       shortcut: hintKeyLabel || null,
+      icon: 'window',
       variant: 'modal',
       showClose,
       onClose: requestClosePopover,

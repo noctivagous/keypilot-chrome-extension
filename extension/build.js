@@ -6,7 +6,8 @@
  *
  * Usage:
  *   node build.js
- *   node build.js --minify   # also writes content-bundled.min.js
+ *   node build.js --minify          # also writes content-bundled.min.js
+ *   node build.js --macro-builder   # enable User Macros / Macro Builder UI (v1.2 surface)
  */
 import * as esbuild from 'esbuild';
 import fs from 'fs';
@@ -16,6 +17,7 @@ import { runPostBundleTasks } from './build-side-effects.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const shouldMinify = process.argv.includes('--minify') || process.argv.includes('-m');
+const enableMacroBuilder = process.argv.includes('--macro-builder');
 
 const banner = `/**
  * KeyPilot Chrome Extension — esbuild bundle
@@ -32,6 +34,9 @@ const shared = {
   legalComments: 'none',
   logLevel: 'info',
   banner: { js: banner },
+  ...(enableMacroBuilder
+    ? { define: { __KP_BUILD_ENABLE_MACRO_BUILDER__: 'true' } }
+    : {})
 };
 
 const entries = [
@@ -75,7 +80,7 @@ async function buildOne(entry, opts = {}) {
   return { outfile: entry.outfile, bytes, result };
 }
 
-console.log(`Starting build (esbuild, minify=${shouldMinify})...`);
+console.log(`Starting build (esbuild, minify=${shouldMinify}, macroBuilder=${enableMacroBuilder})...`);
 const started = Date.now();
 
 for (const entry of entries) {
@@ -99,4 +104,4 @@ if (shouldMinify) {
 
 console.log(`esbuild finished in ${Date.now() - started}ms`);
 
-await runPostBundleTasks({ shouldMinify });
+await runPostBundleTasks({ shouldMinify, enableMacroBuilder });

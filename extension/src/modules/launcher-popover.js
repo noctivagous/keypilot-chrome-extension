@@ -1441,7 +1441,7 @@ export class LauncherPopover {
       -webkit-transform: translateZ(0);
     `;
 
-    this._shadowRoot = ensureOpenChromeShadow(this._container, { id: 'launcher' });
+    this._shadowRoot = ensureOpenChromeShadow(this._container, { id: 'launcher', chromeWindow: true });
     const mount = this._shadowRoot || this._container;
     this._injectScopedStyles(this._shadowRoot);
     this._shell = doc.createElement('div');

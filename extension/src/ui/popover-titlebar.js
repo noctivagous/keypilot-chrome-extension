@@ -6,7 +6,7 @@
  * and dockable floating panels via {@link createPopoverTitlebar} `variant: 'panel'`.
  *
  * Layout (left → right):
- *   [ title  · optional hint ]     [ actions… ]  [ × close ]
+ *   [ icon  title  shortcut  · optional hint ]     [ actions… ]  [ × close ]
  *
  * Variants:
  *   - modal   — 40px iframe / settings chrome
@@ -26,6 +26,8 @@ import {
   NCT_DARK_UI_COLORS
 } from './nct-dark-ui.js';
 import { createPreviewOpenActionButtons } from './preview-open-actions.js';
+import { getThemeIconUrl } from '../../themes/icons.js';
+import { getActiveTheme } from '../modules/theme-manager.js';
 
 // Pin UI font (KP_UI_FONT) so host pages cannot leak typography into chrome.
 // Preview popovers mount in the light DOM under body and inherit page fonts otherwise.
@@ -44,20 +46,22 @@ const VARIANT_STYLES = {
       flex-shrink: 0;
       min-height: 40px;
       box-sizing: border-box;
-      font-family: ${KP_UI_FONT};
+      font-family: var(--kp-font-heading, ${KP_UI_FONT});
       font-size: 14px;
       font-weight: 400;
       font-style: normal;
       line-height: 1.3;
-      letter-spacing: normal;
-      text-transform: none;
+      letter-spacing: var(--kp-type-tracking-titlebar, 0.02em);
+      text-transform: var(--kp-type-transform-titlebar, none);
       -webkit-font-smoothing: antialiased;
     `,
     title: `
       font-family: inherit;
       font-size: 14px;
-      font-weight: 500;
-      color: #e8e8e8;
+      font-weight: var(--kp-titlebar-title-weight, 600);
+      letter-spacing: var(--kp-type-tracking-titlebar, 0.02em);
+      text-transform: var(--kp-type-transform-titlebar, none);
+      color: var(--kp-color-fg, #e8e8e8);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -118,20 +122,22 @@ const VARIANT_STYLES = {
       user-select: none;
       -webkit-user-select: none;
       touch-action: none;
-      font-family: ${KP_UI_FONT};
+      font-family: var(--kp-font-heading, ${KP_UI_FONT});
       font-size: 12px;
       font-weight: 400;
       font-style: normal;
       line-height: 1.3;
-      letter-spacing: normal;
-      text-transform: none;
+      letter-spacing: var(--kp-type-tracking-titlebar, 0.02em);
+      text-transform: var(--kp-type-transform-titlebar, none);
       -webkit-font-smoothing: antialiased;
     `,
     title: `
       font-family: inherit;
       font-size: 12px;
-      font-weight: 500;
-      color: #e8e8e8;
+      font-weight: var(--kp-titlebar-title-weight, 600);
+      letter-spacing: var(--kp-type-tracking-titlebar, 0.02em);
+      text-transform: var(--kp-type-transform-titlebar, none);
+      color: var(--kp-color-fg, #e8e8e8);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -195,21 +201,22 @@ const VARIANT_STYLES = {
       -webkit-user-select: none;
       touch-action: none;
       cursor: grab;
-      font-family: ${KP_UI_FONT};
+      font-family: var(--kp-font-heading, ${KP_UI_FONT});
       font-size: 11px;
       font-weight: 400;
       font-style: normal;
       line-height: 1.3;
-      letter-spacing: normal;
-      text-transform: none;
+      letter-spacing: var(--kp-type-tracking-titlebar, 0.02em);
+      text-transform: var(--kp-type-transform-titlebar, none);
       -webkit-font-smoothing: antialiased;
     `,
     title: `
       font-family: inherit;
       font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.01em;
-      color: ${NCT_DARK_UI_COLORS.fg};
+      font-weight: var(--kp-titlebar-title-weight, 600);
+      letter-spacing: var(--kp-type-tracking-titlebar, 0.02em);
+      text-transform: var(--kp-type-transform-titlebar, none);
+      color: var(--kp-color-fg, ${NCT_DARK_UI_COLORS.fg});
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -258,13 +265,16 @@ const VARIANT_STYLES = {
 };
 
 const KBD_STYLE = `
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 11px;
+  font-family: var(--kp-font-kbd, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+  font-size: var(--kp-type-kbd-size, 10px);
   padding: 1px 6px;
-  border: ${NCT_DARK_UI_BTN_BORDER};
-  border-radius: ${NCT_DARK_UI_BTN_RADIUS};
-  background: ${NCT_DARK_UI_BTN_GRADIENT};
-  color: ${NCT_DARK_UI_COLORS.fg};
+  border: var(--kp-kbd-border, ${NCT_DARK_UI_BTN_BORDER});
+  border-radius: var(--kp-radius-btn, ${NCT_DARK_UI_BTN_RADIUS});
+  background: var(--kp-kbd-bg, ${NCT_DARK_UI_BTN_GRADIENT});
+  color: var(--kp-color-kbd-fg, ${NCT_DARK_UI_COLORS.fg});
+  box-shadow: var(--kp-kbd-shadow, none);
+  text-transform: var(--kp-kbd-transform, none);
+  letter-spacing: var(--kp-kbd-tracking, 0.02em);
 `;
 
 /** Title-adjacent toggle shortcut: normal weight so it doesn't compete with the title. */
@@ -287,17 +297,57 @@ const SHORTCUT_KBD_STYLE = `
  */
 export function createTitlebarKbd(doc = document, label = '') {
   const kbd = doc.createElement('kbd');
+  kbd.className = 'kp-titlebar-kbd';
   kbd.style.cssText = KBD_STYLE;
   kbd.textContent = String(label || '');
   return kbd;
 }
 
 /**
- * Title-adjacent window shortcut chip, e.g. "(Alt + C)" or "([K])".
- * Parentheses wrap {@link shortcut}; styling is kbd with normal font-weight.
+ * Leading titlebar glyph. Visibility is a theme token (`--kp-titlebar-icon-display`).
+ * @param {Document} [doc]
+ * @param {string} [iconId]
+ * @returns {HTMLElement}
+ */
+export function createTitlebarLeadingIcon(doc = document, iconId = 'window') {
+  const el = doc.createElement('span');
+  el.className = 'kp-titlebar-icon';
+  el.setAttribute('aria-hidden', 'true');
+  const id = typeof iconId === 'string' && iconId.trim() ? iconId.trim() : 'window';
+  el.setAttribute('data-kp-titlebar-icon', id);
+  try {
+    const url = getThemeIconUrl(id, getActiveTheme());
+    if (url) {
+      const img = `url("${String(url).replace(/"/g, '\\"')}")`;
+      el.style.webkitMaskImage = img;
+      el.style.maskImage = img;
+    }
+  } catch { /* ignore */ }
+  return el;
+}
+
+/**
+ * Strip leftover decorative wrappers so kbd chips show only the key label.
+ * @param {any} raw
+ * @returns {string}
+ */
+function normalizeTitlebarShortcutLabel(raw) {
+  let label = raw != null ? String(raw).trim() : '';
+  while (
+    (label.length >= 2 && label.startsWith('(') && label.endsWith(')')) ||
+    (label.length >= 2 && label.startsWith('[') && label.endsWith(']'))
+  ) {
+    label = label.slice(1, -1).trim();
+  }
+  return label;
+}
+
+/**
+ * Title-adjacent window shortcut chip, e.g. Alt + C or K.
+ * Styling is kbd with normal font-weight; the chip itself is the wrapper.
  *
  * @param {Document} [doc]
- * @param {string} shortcut - Inner label without outer parens ("Alt + C", "[K]")
+ * @param {string} shortcut - Key label only ("Alt + C", "K")
  * @returns {HTMLElement}
  */
 export function createTitlebarShortcut(doc = document, shortcut = '') {
@@ -305,8 +355,8 @@ export function createTitlebarShortcut(doc = document, shortcut = '') {
   kbd.className = 'kpv2-popover-titlebar-shortcut';
   kbd.setAttribute('data-kp-titlebar-shortcut', 'true');
   kbd.style.cssText = SHORTCUT_KBD_STYLE;
-  const label = String(shortcut || '').trim();
-  kbd.textContent = label ? `(${label})` : '';
+  const label = normalizeTitlebarShortcutLabel(shortcut);
+  kbd.textContent = label;
   if (!label) kbd.style.display = 'none';
   return kbd;
 }
@@ -318,13 +368,13 @@ export function createTitlebarShortcut(doc = document, shortcut = '') {
  */
 export function setTitlebarShortcutText(el, shortcut) {
   if (!el) return;
-  const label = shortcut != null ? String(shortcut).trim() : '';
+  const label = normalizeTitlebarShortcutLabel(shortcut);
   if (!label) {
     el.textContent = '';
     el.style.display = 'none';
     return;
   }
-  el.textContent = `(${label})`;
+  el.textContent = label;
   el.style.display = '';
 }
 
@@ -371,7 +421,7 @@ export function createTitlebarCloseHint({
  * @property {Document} [doc]
  * @property {string} [title]
  * @property {string|null} [shortcut] - Toggle/open shortcut beside the title in kbd styling
- *   (normal font-weight), wrapped as "(…)" — e.g. "Alt + C" → "(Alt + C)", "[K]" → "([K])".
+ *   (normal font-weight). Pass the key label only, e.g. "Alt + C" or "K".
  *   Distinct from {@link hint} (close instructions, etc.).
  * @property {string|Node|null} [hint] - plain text, or a Node/DocumentFragment for rich hints
  * @property {boolean} [showClose=true]
@@ -379,6 +429,8 @@ export function createTitlebarCloseHint({
  * @property {string} [closeTitle='Close (Esc)']
  * @property {string} [closeLabel='×']
  * @property {HTMLElement|HTMLElement[]|null} [actions] - nodes placed before the close button
+ * @property {string|false|null} [icon] - Semantic theme icon id (`keyboard`, `gear`, `window`).
+ *   Default `window`. Pass `false` to omit. Visibility is `--kp-titlebar-icon-display`.
  * @property {'modal'|'preview'|'panel'} [variant='modal']
  * @property {boolean} [draggable=false]
  * @property {string} [className='kpv2-popover-titlebar']
@@ -439,6 +491,7 @@ export function createPopoverTitlebar(config = {}) {
   titleContainer.style.cssText = `
     display: flex;
     align-items: center;
+    gap: 6px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -447,6 +500,13 @@ export function createPopoverTitlebar(config = {}) {
     margin-right: 4px;
     ${draggable ? 'pointer-events: none;' : ''}
   `;
+
+  if (config.icon !== false) {
+    const iconId = typeof config.icon === 'string' && config.icon.trim()
+      ? config.icon.trim()
+      : 'window';
+    titleContainer.appendChild(createTitlebarLeadingIcon(doc, iconId));
+  }
 
   const titleEl = doc.createElement('span');
   titleEl.className = 'kpv2-popover-titlebar-title';

@@ -5,6 +5,9 @@
  */
 
 import MarkdownIt from 'markdown-it';
+import { getSettings } from '../src/modules/settings-manager.js';
+import { applyThemeToRoots, resolveThemeFromSettings } from '../src/modules/theme-manager.js';
+import { BUILD_ENABLE_MACRO_BUILDER } from '../src/config/keyboard-layouts.js';
 
 /**
  * @typedef {{
@@ -199,6 +202,26 @@ const NAV_ICON_PATHS = Object.freeze({
 // ---------------------------------------------------------------------------
 // Tree helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Flatten topic tree into loadable nodes (depth-first).
+ * Group-only nodes (no file) are kept so they can appear as section headers.
+ * @param {TopicMeta[]} topics
+ * @param {number} [depth]
+ * @param {string|null} [parentId]
+ * @returns {Array<{ id: string, title: string, file: string|null, placeholder: boolean, depth: number, parentId: string|null, childIds: string[], icon: string|null, shortcut: string|null, accent: string|null }>}
+ */
+function filterTopicsForBuild(topics) {
+  if (BUILD_ENABLE_MACRO_BUILDER) return topics;
+  const hide = new Set(['macros-overview', 'macro-builder']);
+  const walk = (list) => (list || [])
+    .filter((t) => t && !hide.has(t.id))
+    .map((t) => {
+      const children = Array.isArray(t.children) ? walk(t.children) : undefined;
+      return children && children.length ? { ...t, children } : { ...t, children: undefined };
+    });
+  return walk(topics);
+}
 
 /**
  * Flatten topic tree into loadable nodes (depth-first).
@@ -533,6 +556,19 @@ export function mountDocsApp(root, options = {}) {
 
   bindDocsElements(mountNode);
 
+  try {
+    void getSettings().then((settings) => {
+      applyThemeToRoots(resolveThemeFromSettings(settings), {
+        roots: [root.nodeType === 9 ? root : document],
+        hosts: [
+          root.nodeType === 9
+            ? root.documentElement
+            : (root.host || document.documentElement)
+        ]
+      });
+    }).catch(() => { /* ignore */ });
+  } catch { /* ignore */ }
+
   if (embedded && docsAppEl) {
     docsAppEl.classList.add('kp-popover-embed');
     const header = docsAppEl.querySelector('.header');
@@ -583,7 +619,7 @@ export function mountDocsApp(root, options = {}) {
       const res = await fetch(INDEX_URL());
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const index = await res.json();
-      topicTree = Array.isArray(index?.topics) ? index.topics : [];
+      topicTree = filterTopicsForBuild(Array.isArray(index?.topics) ? index.topics : []);
       const flat = flattenTopics(topicTree);
       allDocs = await loadDocs(flat);
       const firstSelectable = allDocs.find((d) => d.selectable);

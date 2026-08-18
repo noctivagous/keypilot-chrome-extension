@@ -39,6 +39,10 @@ import {
   getOrCreateBuiltinFunctionUserAction,
   setBuiltinFunctionUserActionParameter
 } from '../modules/keyboard-layout-store.js';
+import {
+  filterFunctionParameterOptions,
+  shouldShowFunctionParameter
+} from '../modules/ai-text-service.js';
 
 /**
  * @typedef {{ id: string, label: string }} ActionModeOption
@@ -106,7 +110,11 @@ function nonModeParameters(actionId) {
  * @returns {ActionParameterDef[]}
  */
 function configPanelParameters(actionId) {
-  return nonModeParameters(actionId).filter((p) => p && !INLINE_ENUM_PARAMETER_IDS.includes(p.id));
+  return nonModeParameters(actionId).filter(
+    (p) => p
+      && !INLINE_ENUM_PARAMETER_IDS.includes(p.id)
+      && shouldShowFunctionParameter(actionId, p)
+  );
 }
 
 /**
@@ -252,11 +260,15 @@ function ensureConfigPanelStyles(root) {
   user-select: none;
   background: ${NCT_DARK_UI_TITLEBAR_GRADIENT};
   border-bottom: ${NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM};
+  letter-spacing: var(--kp-type-tracking-titlebar, 0.02em);
+  text-transform: var(--kp-type-transform-titlebar, none);
 }
 .kp-action-config-panel__title {
-  font-weight: 600;
+  font-weight: var(--kp-titlebar-title-weight, 600);
   font-size: 12px;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--kp-type-tracking-titlebar, 0.02em);
+  text-transform: var(--kp-type-transform-titlebar, none);
+  color: var(--kp-color-fg, inherit);
 }
 .kp-action-config-panel__close {
   appearance: none;
@@ -348,7 +360,7 @@ export class KeyActionConfigPanel {
       this.root = doc.createElement('div');
       this.root.className = 'kp-action-config-panel';
       this.root.setAttribute('role', 'dialog');
-      this.shadowRoot = ensureOpenChromeShadow(this.root, { id: 'action-config' });
+      this.shadowRoot = ensureOpenChromeShadow(this.root, { id: 'action-config', chromeWindow: true });
       const panelRoot = this.shadowRoot || this.root;
       ensureConfigPanelStyles(panelRoot);
       panelRoot.innerHTML = `
@@ -444,6 +456,7 @@ export class KeyActionConfigPanel {
         body.appendChild(heading);
       }
       for (const param of groupParams) {
+      if (!shouldShowFunctionParameter(actionId, param)) continue;
       const row = document.createElement('div');
       row.className = 'kp-action-config-panel__row';
 
@@ -469,7 +482,8 @@ export class KeyActionConfigPanel {
       } else if (param.type === 'enum' && Array.isArray(param.options)) {
         control = document.createElement('select');
         control.className = 'kp-action-config-panel__control';
-        for (const opt of param.options) {
+        const options = filterFunctionParameterOptions(actionId, param);
+        for (const opt of options) {
           const o = document.createElement('option');
           o.value = opt.id;
           o.textContent = opt.label;
