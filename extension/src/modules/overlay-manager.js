@@ -4300,6 +4300,12 @@ export class OverlayManager {
     } catch {
       clipRoom = Infinity;
     }
+    // Cannot expand outside the host when the host clips, or when an ancestor
+    // clipper is tighter than the outward pad (x.com photo frames are ~1px
+    // larger overflow:hidden; SHORT VIDEOS `.scroll` is flush). In that case
+    // sit flush (edge 0) — the border-box stroke stays inside the host.
+    // Do *not* pull the ring inward; that made every overflow:hidden media
+    // tile look inset (x.com <article> photos).
     const outwardBlocked = hostClipsSelf ||
       (Number.isFinite(clipRoom) && clipRoom < focusPad + 0.5);
 
@@ -4309,12 +4315,10 @@ export class OverlayManager {
       // with removeProperty — in Blink `inset` IS those four properties, so
       // removing one form wipes the other and the ring collapses to ~6×6
       // (border-only). Then Auto B→C falls through to C.
-      // Negative = expand outside the host; positive = inset so a flush
-      // clipper (SHORT VIDEOS scroller) does not eat the stroke.
+      // Negative = expand outside the host; 0 = flush when a clipper would
+      // shave an outward pad.
       let edgePx = 0;
-      if (outwardBlocked) {
-        edgePx = Math.max(focusPad, 2);
-      } else if (focusPad > 0) {
+      if (!outwardBlocked && focusPad > 0) {
         edgePx = -focusPad;
       }
       const edge = `${edgePx}px`;

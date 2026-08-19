@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "KeyPilot",
     "version": "0.3.4",
-    "description": "Aug-18-2026-11:18PM Move the cursor with the mouse then click links with keyboard keys.",
+    "description": "Aug-18-2026-11:39PM Move the cursor with the mouse then click links with keyboard keys.",
     "action": {
         "default_title": "KeyPilot Minimal",
         "default_popup": "popup.html",
