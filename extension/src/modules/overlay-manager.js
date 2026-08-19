@@ -1883,6 +1883,29 @@ export class OverlayManager {
   }
 
   /**
+   * True when two viewport boxes overlap. Abspos flyouts (Epoch Times header
+   * `group-hover` mega-menu) are DOM descendants of an `overflow-x-auto` bar
+   * but paint entirely *outside* that bar — the overflow box is not a clipper
+   * for that target, so do not use it to skip A or zero out C.
+   * @param {{ left?: number, top?: number, width?: number, height?: number, right?: number, bottom?: number }|null|undefined} a
+   * @param {{ left?: number, top?: number, width?: number, height?: number, right?: number, bottom?: number }|null|undefined} b
+   * @returns {boolean}
+   */
+  _viewportRectsOverlap(a, b) {
+    if (!a || !b) return false;
+    const aL = Number(a.left);
+    const aT = Number(a.top);
+    const aR = Number(a.right != null ? a.right : aL + Number(a.width));
+    const aB = Number(a.bottom != null ? a.bottom : aT + Number(a.height));
+    const bL = Number(b.left);
+    const bT = Number(b.top);
+    const bR = Number(b.right != null ? b.right : bL + Number(b.width));
+    const bB = Number(b.bottom != null ? b.bottom : bT + Number(b.height));
+    if (![aL, aT, aR, aB, bL, bT, bR, bB].every(Number.isFinite)) return false;
+    return aR > bL + 0.5 && aL < bR - 0.5 && aB > bT + 0.5 && aT < bB - 0.5;
+  }
+
+  /**
    * Shrink a strategy-C / flash viewport box to the portion still visible after
    * ancestor overflow / paint-containment clipping (and the viewport itself).
    *
@@ -1910,12 +1933,15 @@ export class OverlayManager {
 
     if (!element || element.nodeType !== 1) return out;
 
+    const origin = out;
     const intersectNode = (n) => {
       if (!n || n.nodeType !== 1) return true;
       let ar = null;
       try { ar = n.getBoundingClientRect(); } catch { ar = null; }
       const cr = this._asPositiveViewportRect(ar);
       if (!cr) return true;
+      // Target sits fully outside this overflow box (escaped abspos flyout).
+      if (origin && !this._viewportRectsOverlap(origin, cr)) return true;
       out = this._intersectViewportRects(out, cr);
       return !!out;
     };
@@ -2092,6 +2118,13 @@ export class OverlayManager {
           const similarSize =
             Math.abs(ar.width - er.width) < 20 &&
             Math.abs(ar.height - er.height) < 20;
+
+          // Mega-menu links live in the header scroller's DOM but paint below
+          // it. No overlap → this overflow box is not clipping the target.
+          if (!this._viewportRectsOverlap(ar, er)) {
+            n = this._composedParent(n);
+            continue;
+          }
 
           if (clipsRing || (cvClip && similarSize)) {
             clippers.push(n);
@@ -2669,6 +2702,7 @@ export class OverlayManager {
       let ar = null;
       try { ar = c.getBoundingClientRect(); } catch { ar = null; }
       if (!ar) continue;
+      if (!this._viewportRectsOverlap(ar, er)) continue;
       const roomLeft = er.left - ar.left;
       const roomTop = er.top - ar.top;
       const roomRight = ar.right - er.right;
@@ -3634,7 +3668,35 @@ export class OverlayManager {
     if (!el || el.nodeType !== 1) return false;
     if (this._isReplacedOrVoidElement(el)) return false;
     if (this._isFragmentedInlineFocusTarget(el)) return false;
+    if (this._isInsideCssMultiColumn(el)) return false;
     return !!this._canMountVisibleChildOnHost(el);
+  }
+
+  /**
+   * CSS `columns` / `column-count` break absolute containing blocks (Blink
+   * paints abspos children in the first column). Strategy B must not mount
+   * there — Epoch Times header mega-menu section links use `columns-2`.
+   * @param {Element|null|undefined} el
+   * @returns {boolean}
+   */
+  _isInsideCssMultiColumn(el) {
+    if (!el || el.nodeType !== 1) return false;
+    let n = el;
+    let depth = 0;
+    while (n && n.nodeType === 1 && depth++ < 12) {
+      if (n === document.body || n === document.documentElement) break;
+      try {
+        const cs = window.getComputedStyle(n);
+        const count = parseInt(String(cs.columnCount || ''), 10);
+        if (Number.isFinite(count) && count >= 2) return true;
+      } catch { /* ignore */ }
+      try {
+        n = this._composedParent(n);
+      } catch {
+        n = n.parentElement;
+      }
+    }
+    return false;
   }
 
   /**
