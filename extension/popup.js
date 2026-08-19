@@ -117,6 +117,7 @@ class PopupHubController {
     this.toggleSwitch = null;
     this.toggleContainer = null;
     this.unavailableMessage = null;
+    this.hubGrid = null;
     this.keyboardCard = null;
     this.controlStripCard = null;
     this.tutorialCard = null;
@@ -128,6 +129,7 @@ class PopupHubController {
     this.toggleSwitch = document.getElementById('extension-toggle');
     this.toggleContainer = document.getElementById('toggle-container');
     this.unavailableMessage = document.getElementById('unavailable-message');
+    this.hubGrid = document.querySelector('.hub-grid');
     this.keyboardCard = document.querySelector('[data-action="keyboard"]');
     this.controlStripCard = document.querySelector('[data-action="control-strip"]');
     this.tutorialCard = document.querySelector('[data-action="tutorial"]');
@@ -149,8 +151,10 @@ class PopupHubController {
     }
 
     await this.refreshOverlayStatus();
-    this.bindCards();
-    this.listenForStorage();
+    if (!this.isUnavailable) {
+      this.bindCards();
+      this.listenForStorage();
+    }
 
     chrome.runtime.onMessage.addListener((message) => {
       if (message && message.type === 'KP_STATE_CHANGED') {
@@ -289,6 +293,11 @@ class PopupHubController {
   showUnavailableState() {
     if (this.toggleContainer) this.toggleContainer.style.display = 'none';
     if (this.unavailableMessage) this.unavailableMessage.style.display = 'flex';
+    if (this.hubGrid) this.hubGrid.classList.add('unavailable');
+    this.hubGrid?.querySelectorAll('.hub-card').forEach((card) => {
+      card.disabled = true;
+      card.setAttribute('aria-disabled', 'true');
+    });
     setStatus('unavailable', false);
   }
 

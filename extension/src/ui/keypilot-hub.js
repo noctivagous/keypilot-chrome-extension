@@ -217,6 +217,20 @@ export function createKeypilotHubCard(doc, def) {
   text.append(title, meta, path);
   content.append(icon, text);
   btn.append(content);
+
+  if (def.role === 'switch') {
+    const sw = doc.createElement('span');
+    sw.className = 'kp-hub-switch';
+    sw.setAttribute('aria-hidden', 'true');
+    const track = doc.createElement('span');
+    track.className = 'kp-hub-switch-track';
+    const thumb = doc.createElement('span');
+    thumb.className = 'kp-hub-switch-thumb';
+    track.append(thumb);
+    sw.append(track);
+    btn.append(sw);
+  }
+
   return btn;
 }
 
@@ -354,6 +368,56 @@ export function getKeypilotHubCardCss() {
 .kp-hub-card.is-on .kp-url-title,
 .hub-card.is-on .kp-url-title {
   color: #7dcea0;
+}
+
+.kp-hub-card .kp-hub-switch,
+.hub-card .kp-hub-switch {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.kp-hub-card .kp-hub-switch-track,
+.hub-card .kp-hub-switch-track {
+  display: block;
+  box-sizing: border-box;
+  width: 32px;
+  height: 16px;
+  padding: 2px;
+  border-radius: 3px;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  background: rgba(248, 113, 113, 0.18);
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.kp-hub-card .kp-hub-switch-thumb,
+.hub-card .kp-hub-switch-thumb {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  transform: translateX(0);
+  transition: transform 140ms ease, background 140ms ease;
+}
+
+.kp-hub-card.is-on .kp-hub-switch-track,
+.hub-card.is-on .kp-hub-switch-track,
+.kp-hub-card[aria-checked="true"] .kp-hub-switch-track,
+.hub-card[aria-checked="true"] .kp-hub-switch-track {
+  border-color: rgba(16, 185, 129, 0.5);
+  background: rgba(16, 185, 129, 0.28);
+}
+
+.kp-hub-card.is-on .kp-hub-switch-thumb,
+.hub-card.is-on .kp-hub-switch-thumb,
+.kp-hub-card[aria-checked="true"] .kp-hub-switch-thumb,
+.hub-card[aria-checked="true"] .kp-hub-switch-thumb {
+  transform: translateX(16px);
+  background: #ecfdf5;
 }
 `.trim();
 }

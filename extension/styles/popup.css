@@ -418,6 +418,16 @@ input:disabled+.toggle-slider {
     filter: grayscale(70%) drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
 }
 
+.hub-grid.unavailable {
+    opacity: 0.5;
+    filter: grayscale(70%);
+    pointer-events: none;
+}
+
+.hub-grid.unavailable .hub-card {
+    cursor: not-allowed;
+}
+
 
 /* Legend panel */
 .legend-panel{

@@ -1104,6 +1104,49 @@ export class TopSitesPopover {
         color: #7dcea0;
       }
 
+      .kpv2-top-sites-panel .kp-hub-card .kp-hub-switch {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        z-index: 2;
+        pointer-events: none;
+      }
+
+      .kpv2-top-sites-panel .kp-hub-card .kp-hub-switch-track {
+        display: block;
+        box-sizing: border-box;
+        width: 32px;
+        height: 16px;
+        padding: 2px;
+        border-radius: 3px;
+        border: 1px solid rgba(248, 113, 113, 0.4);
+        background: rgba(248, 113, 113, 0.18);
+        transition: background 140ms ease, border-color 140ms ease;
+      }
+
+      .kpv2-top-sites-panel .kp-hub-card .kp-hub-switch-thumb {
+        display: block;
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+        background: rgba(255, 255, 255, 0.88);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+        transform: translateX(0);
+        transition: transform 140ms ease, background 140ms ease;
+      }
+
+      .kpv2-top-sites-panel .kp-hub-card.is-on .kp-hub-switch-track,
+      .kpv2-top-sites-panel .kp-hub-card[aria-checked="true"] .kp-hub-switch-track {
+        border-color: rgba(16, 185, 129, 0.5);
+        background: rgba(16, 185, 129, 0.28);
+      }
+
+      .kpv2-top-sites-panel .kp-hub-card.is-on .kp-hub-switch-thumb,
+      .kpv2-top-sites-panel .kp-hub-card[aria-checked="true"] .kp-hub-switch-thumb {
+        transform: translateX(16px);
+        background: #ecfdf5;
+      }
+
       ${getNctDarkUiScrollbarCss({ scopeSelector: '.kpv2-top-sites-panel' })}
     `;
     const shadowRoot = this._panel?.shadowRoot || null;

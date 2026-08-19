@@ -7,31 +7,35 @@ This directory contains the following icon files:
 - `icon48.png` - 48×48 (extensions management page)
 - `icon76.png` - 76×76 (new-tab brand slot @2x for 38px display)
 - `icon128.png` - 128×128 (Chrome Web Store / install dialog)
-- `icon-source.png` - full-resolution source art (center-cropped when generating)
+- `icon256.png` - 256×256 (high-DPI source; declared in `icons`, not `action.default_icon`)
+- `icon-source.png` - full-resolution source art (edge-to-edge; alpha-trimmed when generating)
 - `icon.svg` - legacy SVG (superseded by photo art)
 
 ## Icon Design
 
-Front-facing cybernetic racing yoke with cyan (left) and amber (right) grip buttons on a black background. Source art uses transparent pixels whose RGB is magenta — flatten onto black before resize or the chroma shows through.
+Front-facing cybernetic racing yoke with cyan (left) and amber (right) grip buttons. Background is transparent. Source fills the width (no side margins); square canvases pad top/bottom only. Neutralize leftover magenta fringe under low-alpha edge pixels before resize.
 
 ## Regenerating
 
-From the repo root (requires ImageMagick). Point `SRC` at the latest source screenshot/PNG:
+From the repo root (requires ImageMagick):
 
 ```bash
 SRC="extension/icons/icon-source.png"
+BOUNDS=$(magick "$SRC" -alpha extract -trim -format '%wx%h%O' info:)
 magick "$SRC" \
-  -background black -alpha remove -alpha off \
-  -fuzz 8% -trim +repage \
-  -bordercolor black -border 6% \
-  -background black -gravity center \
+  -channel RGB -fuzz 20% -fill black -opaque '#FF00FF' +channel \
+  -background none \
+  -crop "$BOUNDS" +repage \
+  -gravity center \
   -extent '%[fx:max(w,h)]x%[fx:max(w,h)]' \
-  /tmp/kp-icon-square.png
-for s in 16 32 48 76 128; do
-  magick /tmp/kp-icon-square.png -filter Lanczos -resize ${s}x${s} -unsharp 0x0.6+0.9+0.02 -strip extension/icons/icon${s}.png
+  PNG32:/tmp/kp-icon-square.png
+for s in 16 32 48 76 128 256; do
+  magick /tmp/kp-icon-square.png -background none -filter Lanczos \
+    -resize ${s}x${s} -unsharp 0x0.6+0.9+0.02 -strip \
+    PNG32:extension/icons/icon${s}.png
 done
 ```
 
 ## Chrome Web Store
 
-PNG sizes 16 / 48 / 128 (plus optional 32) as required by Chromium extension packaging.
+PNG sizes 16 / 48 / 128 (plus optional 32) as required by Chromium extension packaging. 256 is valid in the `icons` map (Chrome picks the closest size) but is not a documented toolbar or Web Store size.
