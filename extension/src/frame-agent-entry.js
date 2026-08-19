@@ -10,6 +10,9 @@
 import { MSG } from './messaging/types.js';
 import { installFrameClickAgent } from './modules/frame-click-agent.js';
 import { installPopoverIframeBridge } from './modules/popover-iframe-bridge.js';
+import { startKeyPilotDebugFromSettings } from './utils/debug.js';
+
+void startKeyPilotDebugFromSettings();
 
 (function installFrameAgentsIfNeeded() {
   try {

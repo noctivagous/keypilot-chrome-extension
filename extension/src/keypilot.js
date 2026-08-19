@@ -74,6 +74,7 @@ import { TabHistoryPopover } from './modules/tab-history-popover.js';
 import { LauncherPopover } from './modules/launcher-popover.js';
 import { TopSitesPopover } from './modules/top-sites-popover.js';
 import { DEFAULT_SETTINGS, getSettings, setSettings, SETTINGS_STORAGE_KEY, scrollBehaviorFromSpeed } from './modules/settings-manager.js';
+import { applyDebugSetting, startKeyPilotDebugFromSettings } from './utils/debug.js';
 import {
   applyOnboardingSurface,
   applyThemeToRoots,
@@ -839,6 +840,8 @@ export class KeyPilot extends EventManager {
   }
 
   async init() {
+    await startKeyPilotDebugFromSettings();
+
     // Always set up styles and shadow DOM support
     this.setupStyles();
     this.setupShadowDOMSupport();
@@ -929,6 +932,10 @@ export class KeyPilot extends EventManager {
     } catch {
       this._settings = { ...DEFAULT_SETTINGS };
     }
+
+    try {
+      applyDebugSetting(!!this._settings?.debugLogging);
+    } catch { /* ignore */ }
 
     try {
       await this._syncClickDefaultsForTheme();

@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-19T21:34:34.041Z
+ * Generated on 2026-08-19T22:48:48.471Z
  */
 
 (() => {
@@ -1887,6 +1887,8 @@
     keyboardReferenceCollapsed: false,
     // When true, Top Sites remounts on each page while left open (Keyboard Reference-style).
     topSitesPersistent: false,
+    // Verbose console.log / debug / info in extension isolated worlds. Off in store builds.
+    debugLogging: false,
     // Actions Library hierarchical table: expanded group keys (top-level open by default;
     // nested categories / parents start collapsed until the user opens them).
     actionsLibraryTableExpanded: Object.freeze(["functions", "macros", "macroKeys"]),
@@ -2292,6 +2294,10 @@
         topSitesPersistent: normalizeBoolean(
           stored?.topSitesPersistent,
           DEFAULT_SETTINGS.topSitesPersistent
+        ),
+        debugLogging: normalizeBoolean(
+          stored?.debugLogging,
+          DEFAULT_SETTINGS.debugLogging
         ),
         actionsLibraryTableExpanded: normalizeActionsLibraryTableExpanded(
           stored?.actionsLibraryTableExpanded
@@ -3649,8 +3655,7 @@
       fallbackPack: "shared",
       overrides: Object.freeze({
         close: "chrome/close.svg",
-        collapse: "chrome/collapse.svg",
-        gear: "chrome/gear.svg"
+        collapse: "chrome/collapse.svg"
       }),
       color: Object.freeze({
         chrome: color3.accent,
@@ -5377,7 +5382,66 @@
     }
   }
 
+  // src/utils/debug.js
+  var consoleWrapped = false;
+  var storageListenerInstalled = false;
+  function isKeyPilotDebugEnabled() {
+    try {
+      return !!globalThis.KEYPILOT_DEBUG;
+    } catch {
+      return false;
+    }
+  }
+  function applyDebugSetting(enabled) {
+    try {
+      globalThis.KEYPILOT_DEBUG = !!enabled;
+    } catch {
+    }
+  }
+  function installKeyPilotDebugConsole() {
+    if (consoleWrapped) return;
+    consoleWrapped = true;
+    applyDebugSetting(!!globalThis.KEYPILOT_DEBUG);
+    const origLog = console.log.bind(console);
+    const origDebug = console.debug.bind(console);
+    const origInfo = console.info.bind(console);
+    console.log = (...args) => {
+      if (isKeyPilotDebugEnabled()) origLog(...args);
+    };
+    console.debug = (...args) => {
+      if (isKeyPilotDebugEnabled()) origDebug(...args);
+    };
+    console.info = (...args) => {
+      if (isKeyPilotDebugEnabled()) origInfo(...args);
+    };
+  }
+  function applyFromStoredSettings(raw) {
+    applyDebugSetting(!!(raw && typeof raw === "object" && raw.debugLogging));
+  }
+  async function startKeyPilotDebugFromSettings() {
+    installKeyPilotDebugConsole();
+    try {
+      const settings = await getSettings();
+      applyDebugSetting(!!settings?.debugLogging);
+    } catch {
+      applyDebugSetting(false);
+    }
+    if (storageListenerInstalled) return;
+    storageListenerInstalled = true;
+    try {
+      if (!chrome?.storage?.onChanged?.addListener) return;
+      chrome.storage.onChanged.addListener((changes, area) => {
+        if (area !== "sync" && area !== "local") return;
+        const ch = changes?.[SETTINGS_STORAGE_KEY];
+        if (!ch) return;
+        applyFromStoredSettings(ch.newValue);
+      });
+    } catch {
+    }
+  }
+
   // src/frame-agent-entry.js
+  void startKeyPilotDebugFromSettings();
   (function installFrameAgentsIfNeeded() {
     try {
       if (window === window.top) return;

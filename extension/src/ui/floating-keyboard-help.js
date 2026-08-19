@@ -193,6 +193,8 @@ export class FloatingKeyboardHelp {
     /** @type {HTMLButtonElement|null} */
     this._collapseBtn = null;
     this._collapsed = false;
+    /** Bumped on every setCollapsed so in-flight settings hydrate cannot clobber it. */
+    this._collapseEpoch = 0;
     this._onCloseClick = this._onCloseClick.bind(this);
     this._onCollapseClick = this._onCollapseClick.bind(this);
     this._onExitTextModeClick = this._onExitTextModeClick.bind(this);
@@ -1516,12 +1518,18 @@ export class FloatingKeyboardHelp {
    */
   setCollapsed(collapsed, { persist = false } = {}) {
     const next = !!collapsed;
+    this._collapseEpoch = (this._collapseEpoch || 0) + 1;
     if (this._collapsed === next) {
       this._applyCollapsedLayout();
       // Collapse changes the panel's measured height. Resolve its anchor in
       // this same task so a bottom/middle-docked panel cannot paint once at
       // its expanded location before the post-layout position pass runs.
       this._applyPanelPositionNow();
+      if (persist) {
+        try {
+          void setSettings({ keyboardReferenceCollapsed: next });
+        } catch { /* ignore */ }
+      }
       return;
     }
     this._collapsed = next;
@@ -1543,7 +1551,9 @@ export class FloatingKeyboardHelp {
 
   async _hydrateCollapsedFromSettings() {
     try {
+      const epoch = this._collapseEpoch || 0;
       const settings = await getSettings();
+      if ((this._collapseEpoch || 0) !== epoch) return;
       this.setCollapsed(!!settings?.keyboardReferenceCollapsed, { persist: false });
     } catch { /* ignore */ }
   }

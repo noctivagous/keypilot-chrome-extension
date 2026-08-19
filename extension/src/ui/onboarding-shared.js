@@ -24,6 +24,9 @@ export const ONBOARDING_REOPEN_TIP = 'Tip: Press Alt + T to re-open this walkthr
 /** Default z-index fallback if caller does not pass Z_INDEX.ONBOARDING_PANEL. */
 export const ONBOARDING_PANEL_Z_FALLBACK = 2147483026;
 
+/** Visual scale of the floating walkthrough panel (Chromium `zoom`). */
+export const ONBOARDING_PANEL_SCALE = 1.1;
+
 /** Layout: control strip stays at top; walkthrough sits just below it. */
 export const ONBOARDING_DEFAULT_LEFT_PX = 16;
 export const ONBOARDING_DEFAULT_TOP_PX = 16;
@@ -470,7 +473,8 @@ export function createOnboardingShell(doc, opts = {}) {
     borderRadius: 'var(--kp-radius-panel, 3px)',
     boxShadow: 'var(--kp-panel-shadow)',
     fontFamily: 'var(--kp-font-ui, Helvetica, Arial, sans-serif)',
-    pointerEvents: initiallyHidden ? 'none' : 'auto'
+    pointerEvents: initiallyHidden ? 'none' : 'auto',
+    zoom: String(ONBOARDING_PANEL_SCALE)
   });
 
   try { opts.applyTheme?.(root); } catch { /* ignore */ }
@@ -681,6 +685,7 @@ export function setOnboardingPanelVisible(root, visible) {
     root.hidden = !show;
     root.style.display = show ? 'flex' : 'none';
     root.style.pointerEvents = show ? 'auto' : 'none';
+    root.style.zoom = String(ONBOARDING_PANEL_SCALE);
     if (show) positionOnboardingBelowControlStrip(root);
   } catch { /* ignore */ }
 }

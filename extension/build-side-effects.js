@@ -1017,12 +1017,10 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
     process.exit(1);
   }
 
-  // Update README key mappings (extension README + project README)
+  // Update README key mappings (project README only)
   console.log('Updating README key mappings...');
   {
-    const extensionReadme = path.resolve(process.cwd(), 'README.md');
     const projectReadme = path.resolve(process.cwd(), '..', 'README.md');
-    updateReadmeFile({ readmePath: extensionReadme, keybindings: KEYBINDINGS, manifest: manifestForDocs });
     updateReadmeFile({ readmePath: projectReadme, keybindings: KEYBINDINGS, manifest: manifestForDocs });
   }
 

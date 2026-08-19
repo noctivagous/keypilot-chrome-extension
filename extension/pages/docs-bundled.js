@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-19T21:34:34.041Z
+ * Generated on 2026-08-19T22:48:48.471Z
  */
 
 var __defProp = Object.defineProperty;
@@ -7109,6 +7109,8 @@ var DEFAULT_SETTINGS = Object.freeze({
   keyboardReferenceCollapsed: false,
   // When true, Top Sites remounts on each page while left open (Keyboard Reference-style).
   topSitesPersistent: false,
+  // Verbose console.log / debug / info in extension isolated worlds. Off in store builds.
+  debugLogging: false,
   // Actions Library hierarchical table: expanded group keys (top-level open by default;
   // nested categories / parents start collapsed until the user opens them).
   actionsLibraryTableExpanded: Object.freeze(["functions", "macros", "macroKeys"]),
@@ -7512,6 +7514,10 @@ async function getSettings() {
         stored?.topSitesPersistent,
         DEFAULT_SETTINGS.topSitesPersistent
       ),
+      debugLogging: normalizeBoolean(
+        stored?.debugLogging,
+        DEFAULT_SETTINGS.debugLogging
+      ),
       actionsLibraryTableExpanded: normalizeActionsLibraryTableExpanded(
         stored?.actionsLibraryTableExpanded
       ),
@@ -7903,8 +7909,7 @@ var GX_ER_THEME = Object.freeze({
     fallbackPack: "shared",
     overrides: Object.freeze({
       close: "chrome/close.svg",
-      collapse: "chrome/collapse.svg",
-      gear: "chrome/gear.svg"
+      collapse: "chrome/collapse.svg"
     }),
     color: Object.freeze({
       chrome: color3.accent,

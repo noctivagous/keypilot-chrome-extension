@@ -1,0 +1,59 @@
+{
+  "description": "Browse the web with key-clicks: click links with keyboard keys instead of mouse buttons.",
+  "descriptionMaxLength": 132,
+  "stagingDir": "dist/opera",
+  "zipDir": "dist",
+  "zipNameTemplate": "keypilot-opera-v{version}.zip",
+  "operaIconSizes": ["16", "48", "128"],
+  "requiredGeneratedFiles": [
+    "content-bundled.js",
+    "frame-agent-bundled.js",
+    "pages/docs-bundled.js"
+  ],
+  "requiredRuntimeFiles": [
+    "map-pan-bridge.js",
+    "icons/icon16.png",
+    "icons/icon48.png",
+    "icons/icon128.png",
+    "fonts/ROBOTECHGPRegular.ttf",
+    "fonts/TitilliumTextRegular.otf",
+    "fonts/CubellanRegular.ttf",
+    "fonts/EzarionRegular.ttf",
+    "fonts/DosisBook.ttf"
+  ],
+  "virtualWarPaths": [
+    "_favicon/*"
+  ],
+  "forbiddenFirstPartyMinJs": [
+    "content-bundled.min.js"
+  ],
+  "exclude": [
+    "build.js",
+    "build-side-effects.js",
+    "babel.config.cjs",
+    "content-bundled.min.js",
+    "content-bundled.esbuild.js",
+    "frame-agent-bundled.esbuild.js",
+    "popup-v1.html",
+    "popup-v1.js",
+    "README.md",
+    "pages/docs.js",
+    "pages/text-mode-practice.html",
+    "pages/text-mode-tutorial.html",
+    "keyboard/**",
+    "plans/**",
+    "reference-info/**",
+    "img/**",
+    "tests/**",
+    "test-pages/**",
+    "icons/README.md",
+    "icons/icon-source.png",
+    "icons/icon.svg",
+    "icons/icon32.png",
+    "icons/icon76.png",
+    "icons/icon256.png",
+    "themes/**/README.md",
+    ".DS_Store",
+    "**/.DS_Store"
+  ]
+}

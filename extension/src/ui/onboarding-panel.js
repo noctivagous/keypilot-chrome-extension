@@ -155,6 +155,55 @@ function applyToggleOffArrowColor(el, accent) {
   } catch { /* ignore */ }
 }
 
+/**
+ * First incomplete task in checklist order.
+ * @param {Array<{id?: string}>|null|undefined} tasks
+ * @param {Set<string>|string[]|null|undefined} completedTaskIds
+ * @returns {string}
+ */
+function nextIncompleteTaskId(tasks, completedTaskIds) {
+  const done = completedTaskIds instanceof Set
+    ? completedTaskIds
+    : new Set(Array.isArray(completedTaskIds) ? completedTaskIds.map(String) : []);
+  for (const task of tasks || []) {
+    const id = String(task?.id || '');
+    if (id && !done.has(id)) return id;
+  }
+  return '';
+}
+
+/**
+ * The Keyboard Reference hover step needs the window visible with keycaps shown.
+ * Retries once after layout so a reopen is not lost to Keyboard Reference's
+ * async position/collapse hydrate.
+ */
+function ensureKeyboardReferenceOpenAndExpanded() {
+  const apply = () => {
+    try {
+      const kp = window.__KeyPilotInstance;
+      if (!kp) return false;
+      if (typeof kp.applyKeyboardHelpVisibility === 'function') {
+        kp.applyKeyboardHelpVisibility(true, { persist: true });
+      }
+      try {
+        kp.floatingKeyboardHelp?.setCollapsed?.(false, { persist: true });
+      } catch { /* ignore */ }
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  apply();
+  try {
+    requestAnimationFrame(() => {
+      apply();
+      try { window.setTimeout(apply, 0); } catch { /* ignore */ }
+    });
+  } catch {
+    try { window.setTimeout(apply, 0); } catch { /* ignore */ }
+  }
+}
+
 export class OnboardingPanel {
   /**
    * @param {Object} params
@@ -185,6 +234,8 @@ export class OnboardingPanel {
     this._overlayOpen = false;
     this._lastRenderedSlideId = null;
     this._lastRenderedSlideIndex = null;
+    /** True while the next incomplete task is hovering a Keyboard Reference key. */
+    this._keyboardKeyInfoStepActive = false;
     this._onRequestClose = typeof onRequestClose === 'function' ? onRequestClose : null;
     this._onRequestPrev = typeof onRequestPrev === 'function' ? onRequestPrev : null;
     this._onRequestNext = typeof onRequestNext === 'function' ? onRequestNext : null;
@@ -215,6 +266,14 @@ export class OnboardingPanel {
     this._onToggleOffArrowReposition = this._onToggleOffArrowReposition.bind(this);
   }
 
+  /**
+   * Open + expand Keyboard Reference for the hover-key onboarding task.
+   */
+  ensureKeyboardReferenceOpenAndExpanded() {
+    this._keyboardKeyInfoStepActive = true;
+    ensureKeyboardReferenceOpenAndExpanded();
+  }
+
   isVisible() {
     return !!(this.root && this.root.isConnected && this.root.hidden === false);
   }
@@ -239,6 +298,10 @@ export class OnboardingPanel {
     if (window !== window.top) return;
     this._ensure();
     setOnboardingPanelVisible(this.root, true);
+    // Close + reopen (Alt+T / ✕) calls show() even when render bails as still-hidden.
+    if (this._keyboardKeyInfoStepActive) {
+      ensureKeyboardReferenceOpenAndExpanded();
+    }
   }
 
   hide() {
@@ -575,6 +638,10 @@ export class OnboardingPanel {
     transition = null,
     forceRebuild = false
   }) {
+    const keyInfoStep = nextIncompleteTaskId(tasks, completedTaskIds) === 'keyboard_key_info';
+    this._keyboardKeyInfoStepActive = keyInfoStep;
+    if (keyInfoStep) ensureKeyboardReferenceOpenAndExpanded();
+
     if (!this.root || this.root.hidden) return;
 
     try {

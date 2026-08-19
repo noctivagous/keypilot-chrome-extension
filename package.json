@@ -9,7 +9,10 @@
     "build:macro-builder": "cd extension && node build.js --macro-builder",
     "build:minify": "cd extension && node build.js --minify",
     "minify": "npm run build:minify",
-    "docs:screenshots": "node scripts/docs-screenshots/capture.mjs"
+    "package:opera": "node scripts/package-opera.mjs",
+    "docs:screenshots": "node scripts/docs-screenshots/capture.mjs",
+    "audit": "npm audit --omit=dev",
+    "audit:all": "npm audit"
   },
   "dependencies": {
     "markdown-it": "^15.0.0",
@@ -17,6 +20,7 @@
     "terser": "^5.36.0"
   },
   "devDependencies": {
+    "archiver": "^8.0.0",
     "esbuild": "^0.28.2"
   }
 }

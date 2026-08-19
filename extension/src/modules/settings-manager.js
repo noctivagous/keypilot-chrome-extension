@@ -151,6 +151,7 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  *   keyboardReferenceShowNumberRow: boolean,
  *   keyboardReferenceCollapsed: boolean,
  *   topSitesPersistent: boolean,
+ *   debugLogging: boolean,
  *   actionsLibraryTableExpanded: string[],
  *   controlStrip: ControlStripSettings,
  *   panelPositions: PanelPositionsSettings,
@@ -189,6 +190,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
   keyboardReferenceCollapsed: false,
   // When true, Top Sites remounts on each page while left open (Keyboard Reference-style).
   topSitesPersistent: false,
+  // Verbose console.log / debug / info in extension isolated worlds. Off in store builds.
+  debugLogging: false,
   // Actions Library hierarchical table: expanded group keys (top-level open by default;
   // nested categories / parents start collapsed until the user opens them).
   actionsLibraryTableExpanded: Object.freeze(['functions', 'macros', 'macroKeys']),
@@ -754,6 +757,10 @@ export async function getSettings() {
         stored?.topSitesPersistent,
         DEFAULT_SETTINGS.topSitesPersistent
       ),
+      debugLogging: normalizeBoolean(
+        stored?.debugLogging,
+        DEFAULT_SETTINGS.debugLogging
+      ),
       actionsLibraryTableExpanded: normalizeActionsLibraryTableExpanded(
         stored?.actionsLibraryTableExpanded
       ),
@@ -909,6 +916,10 @@ export async function setSettings(partial) {
   next.topSitesPersistent = normalizeBoolean(
     next.topSitesPersistent,
     DEFAULT_SETTINGS.topSitesPersistent
+  );
+  next.debugLogging = normalizeBoolean(
+    next.debugLogging,
+    DEFAULT_SETTINGS.debugLogging
   );
   next.actionsLibraryTableExpanded = normalizeActionsLibraryTableExpanded(
     next.actionsLibraryTableExpanded

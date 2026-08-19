@@ -697,7 +697,7 @@ export const FEATURE_FLAGS = {
   ENABLE_CLICK_LISTENER_TRACKING: true,
 
   // ---- Focus-ring paint (DOM-hover) ----
-  // Preference order (see extension/reference-info/focus-ring-paint.md):
+  // Preference order (see unused/reference-info/focus-ring-paint.md):
   //   A = DOM outline on the paint target (default; cheapest)
   //   B = in-target absolute ring (local max z-index + 1) when A cannot show
   //   C = body fixed overlay when B cannot mount (replaced elements, etc.)
@@ -720,7 +720,9 @@ export const FEATURE_FLAGS = {
   ENABLE_FOCUS_TIGHT_WRAPPER_PROMOTION: false,
   ENABLE_IN_TARGET_FOCUS_RING: true,
 
-  // Debug and development flags
+  // Debug and development flags — keep false in store builds.
+  // Runtime verbose console output is Settings → About → Debug logging
+  // (`kp_settings_v1.debugLogging` / `window.KEYPILOT_DEBUG`), not these flags.
   DEBUG_RECTANGLE_SELECTION: false, // Enable detailed logging for rectangle selection
   DEBUG_EDGE_ONLY_PROCESSING: false, // Enable detailed logging for edge-only processing
   SHOW_SELECTION_METHOD_IN_UI: false, // Show which selection method was used in notifications

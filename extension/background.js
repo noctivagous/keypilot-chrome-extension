@@ -20,6 +20,9 @@ import {
   fetchDictionaryDefinition,
   normalizeWordForLookup
 } from './src/utils/dictionary-lookup.js';
+import { startKeyPilotDebugFromSettings } from './src/utils/debug.js';
+
+void startKeyPilotDebugFromSettings();
 
 /**
  * Fetch file bytes in the service worker (host_permissions bypass CORS).

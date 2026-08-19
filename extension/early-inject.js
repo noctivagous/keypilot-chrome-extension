@@ -17,6 +17,27 @@
     // ignore
   }
 
+  if (typeof window.KEYPILOT_DEBUG === 'undefined') {
+    window.KEYPILOT_DEBUG = false;
+  }
+  function kpEarlyDebugLog(...args) {
+    try {
+      if (window.KEYPILOT_DEBUG) console.log.apply(console, args);
+    } catch {}
+  }
+  try {
+    const applyEarlyDebug = (raw) => {
+      window.KEYPILOT_DEBUG = !!(raw && raw.debugLogging);
+    };
+    chrome.storage.sync.get('kp_settings_v1', (r) => {
+      applyEarlyDebug(r && r.kp_settings_v1);
+    });
+    chrome.storage.local.get('kp_settings_v1', (r) => {
+      if (window.KEYPILOT_DEBUG) return;
+      applyEarlyDebug(r && r.kp_settings_v1);
+    });
+  } catch {}
+
   // Constants extracted from main extension for early injection
   const CURSOR_ID = 'kpv2-cursor';
   const STYLE_ID = 'kpv2-early-style';
@@ -4864,6 +4885,9 @@
   /** Default z-index fallback if caller does not pass Z_INDEX.ONBOARDING_PANEL. */
   const ONBOARDING_PANEL_Z_FALLBACK = 2147483026;
 
+  /** Visual scale of the floating walkthrough panel (Chromium `zoom`). */
+  const ONBOARDING_PANEL_SCALE = 1.1;
+
   /** Layout: control strip stays at top; walkthrough sits just below it. */
   const ONBOARDING_DEFAULT_LEFT_PX = 16;
   const ONBOARDING_DEFAULT_TOP_PX = 16;
@@ -5310,7 +5334,8 @@
       borderRadius: 'var(--kp-radius-panel, 3px)',
       boxShadow: 'var(--kp-panel-shadow)',
       fontFamily: 'var(--kp-font-ui, Helvetica, Arial, sans-serif)',
-      pointerEvents: initiallyHidden ? 'none' : 'auto'
+      pointerEvents: initiallyHidden ? 'none' : 'auto',
+      zoom: String(ONBOARDING_PANEL_SCALE)
     });
 
     try { opts.applyTheme?.(root); } catch { /* ignore */ }
@@ -5521,6 +5546,7 @@
       root.hidden = !show;
       root.style.display = show ? 'flex' : 'none';
       root.style.pointerEvents = show ? 'auto' : 'none';
+      root.style.zoom = String(ONBOARDING_PANEL_SCALE);
       if (show) positionOnboardingBelowControlStrip(root);
     } catch { /* ignore */ }
   }
@@ -6490,7 +6516,7 @@
       } catch {}
       controlStripStorageListener = null;
 
-      console.log('[KeyPilot Early] Handed off to main extension, cursor control yielded');
+      kpEarlyDebugLog('[KeyPilot Early] Handed off to main extension, cursor control yielded');
     }, { once: true });
 
     window.addEventListener('keypilot-keyboard-help-adopted', () => {
@@ -10066,7 +10092,7 @@
         updateCursorVisibility();
         
         // Debug logging
-        console.log('[KeyPilot Early] CSS cursor applied');
+        kpEarlyDebugLog('[KeyPilot Early] CSS cursor applied');
       } else {
         // Retry in next tick
         setTimeout(applyCursor, 1);
@@ -10183,7 +10209,7 @@
         setupControlStripStorageListener();
         setupStateListener();
       } catch { /* ignore */ }
-      console.log('[KeyPilot Early] Extension is disabled, skipping early injection but keeping Alt+K capture active');
+      kpEarlyDebugLog('[KeyPilot Early] Extension is disabled, skipping early injection but keeping Alt+K capture active');
     }
   }
   

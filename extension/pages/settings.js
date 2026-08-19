@@ -6,6 +6,7 @@ import {
 } from '../src/config/keyboard-layouts.js';
 import { SEARCH_ENGINE_META } from '../src/config/search-engines.js';
 import { CLICK_EFFECT_IDS, DEFAULT_SETTINGS, getSettings, normalizeCursorMode, normalizeFocusColor, normalizePaintStrategy, normalizeSearchEngine, normalizeTextFocusStyle, resetAllSettings, setSettings, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
+import { applyDebugSetting } from '../src/utils/debug.js';
 import { applyThemeToRoots, getTheme, getThemeClickDefaults, resolveThemeFromSettings } from '../src/modules/theme-manager.js';
 import { hasThemeOverrides, listThemes, normalizeThemeId, THEME_META } from '../themes/index.js';
 import { GENERIC_FAVICON_DATA_URL, getExtensionFaviconUrl } from '../src/ui/url-listing.js';
@@ -548,6 +549,7 @@ async function render() {
   const uiThemeSelectAppearance = /** @type {HTMLSelectElement|null} */ (settingsEl('ui-theme-select-appearance'));
   const settingsResetAllBtn = settingsEl('settings-reset-all');
   const settingsResetAppearanceBtn = settingsEl('settings-reset-appearance');
+  const debugLoggingToggle = /** @type {HTMLInputElement|null} */ (settingsEl('debug-logging'));
 
   const textCursorType = /** @type {HTMLSelectElement|null} */ (settingsEl('text-cursor-type'));
   const textCursorPreview = settingsEl('text-cursor-preview');
@@ -816,6 +818,12 @@ async function render() {
     }
   };
 
+  const applyDebugLogging = (enabled) => {
+    const on = !!enabled;
+    if (debugLoggingToggle) debugLoggingToggle.checked = on;
+    applyDebugSetting(on);
+  };
+
   const applyAllSettings = (settings) => {
     const s = settings || DEFAULT_SETTINGS;
     lastUiSettings = s;
@@ -832,6 +840,7 @@ async function render() {
     applyClickMode(s.clickMode);
     applyTextMode(s.textMode);
     applyScroll(s.scroll);
+    applyDebugLogging(s.debugLogging);
   };
 
   // Initial state: prefer the live KeyPilot snapshot (same tab as hover chrome /
@@ -1145,6 +1154,12 @@ async function render() {
     await setSettings({ clickMode: { paintBackendDebugDashes: !!clickPaintBackendDebug.checked } });
     const s = await getSettings();
     applyClickMode(s.clickMode);
+  });
+
+  debugLoggingToggle?.addEventListener('change', async () => {
+    const on = !!debugLoggingToggle.checked;
+    applyDebugSetting(on);
+    await setSettings({ debugLogging: on });
   });
 
   const commitClickFocusPadding = async (v) => {

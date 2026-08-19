@@ -257,7 +257,7 @@
                   <span class="settings-category-visual" data-accent="indigo" aria-hidden="true"><svg class="settings-category-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#settings-icon-about" /></svg></span>
                   <span class="settings-hub-title">About</span>
                 </span>
-                <span class="settings-hub-desc">Where settings are stored and how they sync across tabs.</span>
+                <span class="settings-hub-desc">Where settings are stored, how they sync, and optional debug logging.</span>
               </button>
             </div>
 
@@ -1101,7 +1101,17 @@
             <div class="stack">
               <div class="about-card">
                 <p class="about-brand">noctivagous.com</p>
-             </div>
+              </div>
+
+              <label class="toggle" for="debug-logging">
+                <input id="debug-logging" type="checkbox" />
+                <div class="toggle-text">
+                  <div class="toggle-title">Debug logging</div>
+                  <div class="toggle-sub">
+                    Off by default. When on, KeyPilot writes verbose console messages in the service worker and page consoles. Leave off for store/release builds.
+                  </div>
+                </div>
+              </label>
             </div>
           </section>
         </div>

@@ -1,20 +1,19 @@
-# KeyPilot Architecture Audit — Todo List
+# KeyPilot Architecture Audit — Current Backlog
 
-Findings from the codebase audit (architecture, SSOT, duplication, dead code, config extraction).  
-Priority: **P0** = do first / product-blocking, **P1** = high leverage, **P2** = cleanup, **P3** = long-term.
-
-Check items as you complete them.
+Refreshed 2026-08-19 against the active extension sources and esbuild pipeline.
+Priority: **P1** = protect current behavior / high leverage, **P2** = targeted
+cleanup, **P3** = defer until feature work creates a clear seam.
 
 ---
 
-## Done (this audit pass)
+## Completed since the original audit
 
 - [x] Delete unused `extension/src/utils/logger.js`
 - [x] Forward `KP_OPEN_SETTINGS_POPOVER` / `KP_OPEN_GUIDE_POPOVER` / `KP_OPEN_ONBOARDING` from service worker → tab content script
 
 ---
 
-## P0 — Product decisions
+## Confirmed product decisions
 
 - [x] **Text-highlight subsystem:** choose one path  
   - [x] **Option A:** Re-bind `HIGHLIGHT` / `RECTANGLE_HIGHLIGHT` in `keyboard-layouts.js` and ship the feature  
@@ -22,13 +21,14 @@ Check items as you complete them.
     - Left: **G** = character, **R** = rectangle  
     - Character default uses caret APIs (`caretRangeFromPoint`); edge-only stack is **lazy** (rectangle only)  
     - Do not re-enable edge analytics/HUD by default  
-  - [ ] **Option B:** Remove / freeze dormant selection stack (~8–10k LOC) and stop `initializeEdgeOnlyProcessing()` on enable  
   - [x] Document decision in architecture notes (this file)
 - [x] **Hover targeting:** keep DOM-hover only (product decision)  
   - [x] DOM-hover permanent: primary path for normal browsing; F / special modes fall back to `elementFromPoint`  
   - [x] Dropped `src/vendor/rbush.js`; build no longer ships RBush  
   - [x] Isolated residual RBush code in `intersection-observer-manager` (`_rtreeEnabled()` always false; `setupSpatialIndex` no-op)  
-  - [ ] P3 follow-up: delete residual `_rtree*` methods / metrics once no callers remain
+  - [ ] P2 follow-up: delete the unreachable `_rtree*` state, methods, call sites,
+    and debug/memory metrics. This is deletion work rather than an esbuild
+    tree-shaking task: class methods remain bundled even when disabled.
 
 ---
 
@@ -38,9 +38,12 @@ Check items as you complete them.
   - `src/utils/dom-context.js`
 - [x] Shared **skip-URL patterns** for `isSkippableTab` / `isSkippableUrl` in `background.js`
   - `src/config/url-policy.js` (SW imports as ES module)
-- [x] Scroll distances (`800` / `400`) → constants used by `keypilot.js` and iframe bridges
+- [x] Scroll distances (`800` / `500`) → constants used by `keypilot.js` and iframe bridges
   - `SCROLL` in `src/config/constants.js`
 - [x] **`KP_*` message types** → `src/messaging/types.js` (or similar) enum + payload notes
+  - [ ] Complete adoption: register service-worker response types, replace raw
+    `KP_*` switch cases and extension-page literals with `MSG.*`, then consolidate
+    the independent content-script `onMessage` listeners behind one router.
 - [x] Rename **`ACTIVATE_NEW_TAB` / `ACTIVATE_NEW_TAB_OVER`** so id, label, and handler names match behavior
   - `ACTIVATE_NEW_TAB` → foreground (`handleActivateNewTabKey`, B/N)
   - `ACTIVATE_NEW_TAB_BACKGROUND` → background (`handleActivateNewTabBackgroundKey`, G/H)
@@ -53,14 +56,26 @@ Check items as you complete them.
 
 ---
 
-## P1 — Extract data to config files
+## P1 — Configuration sources of truth
 
-- [ ] `config/launcher-sites.json` — default sites per category (from `launcher-popover.js`)
-- [ ] `config/search-engines.json` — engines (from `SEARCH_ENGINE_META`)
-- [ ] Scroll / URL-policy constants → `config/scroll.json` or entries in `constants.js` (if not JSON)
-- [ ] Optional: `config/feature-flags.json` (or keep JS for build-time dead-code elimination)
-- [ ] Optional: selection performance knobs → separate config if highlight feature is kept
-- [ ] Keep `pages/onboarding.xml` as SSOT for onboarding (already good)
+- [x] Launcher category catalog: `src/config/launcher-sites.js`.
+  - The former `launcher-sites.json` proposal is obsolete. JavaScript intentionally
+    composes imported search-site data and is bundled by esbuild.
+- [x] Search engine metadata and Launcher search sites:
+  `src/config/search-engines.js`.
+- [x] Scroll constants: `SCROLL` in `src/config/constants.js`; a standalone JSON
+  file is unnecessary.
+- [x] Onboarding source and its early-inject build stamp remain the source of truth.
+- [x] Keep feature flags and selection-performance knobs in JavaScript unless a
+  runtime-editable configuration requirement emerges.
+
+### P1 — Add regression coverage before further decomposition
+
+- [ ] Establish a minimal automated check path for settings normalization/migration,
+  message routing, URL policy, and early-inject handoff.
+  - `package.json` has build, packaging, and audit scripts but no test script.
+  - Start with pure modules and service-worker routing seams; add browser-level
+    tests only where they cover behavior unit tests cannot.
 
 ---
 
@@ -68,7 +83,8 @@ Check items as you complete them.
 
 - [x] Merge **popover bridge** logic (`content-script.js` vs `pages/popover-bridge.js`)
   - Shared `src/modules/popover-iframe-bridge.js` (`installPopoverIframeBridge`)
-  - Thin wrappers: content-script (F-click + start KP) and pages (select-as-typing + quote close)
+  - Thin wrappers: `frame-agent-entry.js` (frame setup) and
+    `pages/popover-bridge.js` (extension-page behavior).
 - [x] Route live highlight/selection geometry through **`HighlightManager`** only
   - Live path uses caret APIs inside HighlightManager (no KeyPilot TreeWalker binds)
   - Deleted ~1.2k LOC of dead parallel selection construction in `keypilot.js`
@@ -79,81 +95,96 @@ Check items as you complete them.
 - [x] Shared storage helper (sync → local → default)
   - `src/utils/storage.js` (`storageGetValue` / `storageGetKeys` / `storageSetValue` / `storageSetObject`)
   - Wired: settings-manager, keypilot keyboard-help, onboarding, SW enabled flag + navgraph mode, newtab
+  - [ ] Define the remaining storage-policy boundaries: direct sync-only keyboard
+    layout writes, localStorage new-tab display preferences, overlay visibility
+    keys outside `kp_settings_v1`, and the inconsistent timestamp merge behavior
+    between `storageGetValue` and `storageGetKeys`.
 
 ---
 
 ## P2 — Small cleanups
 
-- [ ] Remove or wire **`pendingKeyEvents`** in `early-inject.js` (never consumed by main bundle)
-- [ ] Confirm **`babel.config.cjs`** unused → delete if unused
-- [ ] Gate **`console.log` / debug noise** behind `KEYPILOT_DEBUG` (hot paths especially)
-- [ ] Default verbose feature flags off (`DETAILED_EDGE_LOGGING`, etc.)
-- [ ] Document messaging policy: extension page → SW → `tabs.sendMessage` for tab-local UI
-- [ ] Update README if it still references deleted `utils/logger.js`
+- [ ] Remove `pendingKeyEvents` and its `KEYPILOT_EARLY` accessors from
+  `early-inject.js`, or add a real handoff consumer.
+  - It is appended to on qualifying keydown events and trimmed every five seconds,
+    but no source consumer calls `getPendingKeyEvents` or `clearPendingKeyEvents`.
+  - Prefer removal unless a documented startup-loss scenario requires replay.
+- [ ] Audit the parallel early-inject toggle path against `KeyPilotToggleHandler`
+  for duplicate-toggle races during the document-start → document-idle handoff.
+- [ ] Treat `early-inject.js` as generated/stamped output: review its input changes
+  and keep its CSS (especially print rules) synchronized with `StyleManager`.
+- [ ] Remove `babel.config.cjs` after a clean `npm run build` confirms no external
+  tooling relies on it.
+  - The active build invokes esbuild directly; the package manifest declares no
+    Babel dependency or script.
+- [x] Gate **`console.log` / debug noise** behind `KEYPILOT_DEBUG` (hot paths especially)
+  - `src/utils/debug.js` + Settings → About → Debug logging (`debugLogging`, default off)
+  - Verbose `console.log`/`debug`/`info` wrapped in content script, frame agent, and service worker
+- [x] Default verbose feature flags off (`DETAILED_EDGE_LOGGING`, etc.)
+- [x] Document messaging policy: extension page → SW → `tabs.sendMessage` for tab-local UI
+- [x] Update README if it still references deleted `utils/logger.js`
 
 ---
 
 ## P2 — Split monoliths (medium)
 
-### `keypilot.js` (~5.5k)
+Do not split these solely for a store submission. 2026-08-19: deferred except extracting `src/utils/debug.js`. Revisit when adding tests or removing duplication.
+
+### `keypilot.js` (10,115 LOC)
 
 - [ ] Extract `navigation-handlers.js` (back/forward/tabs/root/scroll)
 - [ ] Extract `activation-handlers.js` (F/G/B, open popover)
-- [ ] Extract or delete `text-selection/` block from KeyPilot
+- [ ] Extract selection-session orchestration only when selection work needs a
+  separately testable boundary; `HighlightManager` remains the geometry owner.
 - [ ] Keep thin orchestrator: init, `handleKeyDown` dispatch, module wiring
 
-### `overlay-manager.js` (~3.7k)
+### `overlay-manager.js` (10,232 LOC)
 
 - [ ] Extract `popover-iframe.js` (E-key modal)
 - [ ] Extract `preview-popover.js` (P-key)
 - [ ] Extract focus-overlay drawing
 - [ ] Keep `OverlayManager` as façade
 
-### `background.js` (~2.1k)
+### `background.js` (3,089 LOC)
 
 - [ ] Split: toggle, omnibox/history APIs, navgraph, tab navigation, message router
 - [ ] Shared `url-filters` module
 
-### `launcher-popover.js` (~1.7k)
+### `launcher-popover.js` (4,007 LOC)
 
 - [ ] Data load vs UI build vs preview as separate modules
-- [ ] Load sites from JSON config
+- [x] Load sites from `src/config/launcher-sites.js`; do not reintroduce a
+  JSON-only requirement.
+
+### `keyboard-layout-config-panel.js` (8,758 LOC)
+
+- [ ] Add an extraction plan when keyboard-layout configuration work resumes; it is
+  a larger editable UI monolith than the original audit captured.
 
 ---
 
 ## P3 — Large / long-term
 
 - [x] Replace custom concat build with **esbuild** (tree-shaking, real graph); old concat path removed
-- [ ] Tree-shake unused highlight residual code + residual `_rtree*` RBush stubs after DOM-hover decision
 - [x] Single hover/targeting architecture with one primary path (DOM-hover; elementFromPoint fallback for activation/special modes)
-- [ ] Small **storage service** wrapping chrome.storage patterns
-- [ ] Settings UI driven from schema / single defaults object
+- [ ] Extract a small **storage service** only after repeated direct
+  `chrome.storage` patterns create a concrete inconsistency; the existing shared
+  helper already covers sync → local → default reads and writes.
+- [ ] Turn `DEFAULT_SETTINGS` into a declarative schema only if settings controls,
+  validation, and migration logic continue to diverge. It is currently the runtime
+  defaults source of truth in `settings-manager.js`.
 - [ ] Optional keyboard layout editor from same keybinding SSOT
-- [ ] Full decomposition of `rectangle-intersection-observer.js` (~5.7k) if selection feature is kept
-
----
-
-## Architecture add / change / remove
-
-### Add
-
-- [ ] `src/messaging/types.js` — message constants
-- [ ] Background UI-open forwarding (partially done) + tests/docs
-- [ ] `src/utils/` for pure shared helpers (typing, URL policy, scroll)
-- [ ] Feature folders: `selection/`, `popover/`, `launcher/`, `navigation/` as modules grow
-
-### Change
-
-- [ ] KeyPilot = composition root, not god-object
-- [ ] One settings schema for popup/settings page/content script
-- [ ] Consistent message routing for all tab-local UI
-
-### Remove (after decisions)
-
-- [ ] Dormant highlight pipeline (if Option B)
-- [ ] Dead early pending-key buffer
-- [ ] Legacy cursor storage keys after migration
-- [x] Unused RBush vendor path if DOM-hover-only (`src/vendor/rbush.js` deleted)
+- [ ] Decompose `rectangle-intersection-observer.js` (5,625 LOC) only when
+  selection work needs independently testable geometry or performance components.
+- [ ] Consider feature folders (`selection/`, `popover/`, `launcher/`,
+  `navigation/`) as units are extracted; do not move files merely to create folders.
+- [ ] Document the unbundled build graph (service worker, early inject, and
+  extension pages) and add import-graph or build-output validation so it cannot
+  silently drift from the three esbuild entry points.
+- [ ] Review whether `web_accessible_resources` can be narrowed from broad `src/*`
+  exposure to the modules actually fetched by web pages.
+- [ ] Refresh `refs/KEYPILOT_ARCHITECTURE.md`; it still presents removed files as
+  active parts of the tree.
 
 ---
 
@@ -170,27 +201,29 @@ Check items as you complete them.
 
 ## Suggested execution order
 
-1. [x] P0: Highlight keep vs delete (Option A shipped: H character / Y rectangle); hover = DOM-hover only (RBush retired)  
-2. [ ] P1: Shared typing/scroll/URL/message SSOT helpers  
-3. [ ] P1: Launcher sites JSON + message registry  
-4. [ ] P2: Split navigation/activation out of `keypilot.js`  
-5. [ ] P2: Split background + overlay popovers  
-6. [ ] P3: Bundler + tree-shake + deeper module folders  
+1. [ ] Remove the unconsumed early key buffer or document and test its handoff.
+2. [ ] Add focused regression coverage for the current pure and service-worker seams.
+3. [ ] Delete the inert RBush implementation and obsolete Babel configuration.
+4. [ ] Extract navigation/activation, background routing, or overlay units only as
+   feature work or tests need their boundaries.
 
 ---
 
-## File size reference (approx.)
+## File size reference
 
-| File | ~LOC | Notes |
-|------|------|--------|
-| `rectangle-intersection-observer.js` | 5765 | Selection only; largely dormant without keys |
-| `keypilot.js` | ~4.5k | God-object; selection orchestration kept, dead parallel tree-walker path removed |
-| `overlay-manager.js` | 3719 | Popovers + overlays + debug |
-| `early-inject.js` | 3430 | Partly generated by build |
-| `intersection-observer-manager.js` | ~2.5k | DOM-hover primary; residual RBush stubs inert |
-| `background.js` | 2108 | SW message hub |
-| `launcher-popover.js` | 1736 | Hardcoded site catalogs |
+Measured 2026-08-19; sizes are source lines, not bundle size.
+
+| File | LOC | Notes |
+|------|----:|-------|
+| `src/modules/rectangle-intersection-observer.js` | 5,625 | Rectangle-selection geometry |
+| `src/modules/intersection-observer-manager.js` | 2,879 | DOM-hover primary; includes inert RBush remnants |
+| `background.js` | 3,089 | MV3 service-worker hub |
+| `src/modules/launcher-popover.js` | 4,007 | Catalog-backed Launcher UI and preview behavior |
+| `src/keypilot.js` | 10,115 | Main composition and key-dispatch surface |
+| `early-inject.js` | 10,219 | Generated/stamped early-runtime surface |
+| `src/modules/overlay-manager.js` | 10,232 | Overlays, popovers, and diagnostics |
 
 ---
 
-*Generated from architecture audit. Update checkboxes as work lands.*
+*Refresh this checklist when a listed seam changes; retain only decisions and
+open work that are still evidence-backed.*

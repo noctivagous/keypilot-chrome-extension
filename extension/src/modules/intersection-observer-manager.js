@@ -778,7 +778,7 @@ export class IntersectionObserverManager {
    *
    * Important: when hover paint uses strategy B (in-target ring) or C (body
    * fixed overlay) for overflow-clipped media cards — see
-   * extension/reference-info/focus-ring-paint.md — `data-kp-focus` is
+   * unused/reference-info/focus-ring-paint.md — `data-kp-focus` is
    * intentionally absent on the clickable. Do NOT treat that as a wipe and
    * force `updateFocusOverlayElementStyling` (A only) — that fights the ring,
    * applies inset outlines under full-bleed content, and on sites with

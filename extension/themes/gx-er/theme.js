@@ -56,8 +56,7 @@ export const GX_ER_THEME = Object.freeze({
     fallbackPack: 'shared',
     overrides: Object.freeze({
       close: 'chrome/close.svg',
-      collapse: 'chrome/collapse.svg',
-      gear: 'chrome/gear.svg'
+      collapse: 'chrome/collapse.svg'
     }),
     color: Object.freeze({
       chrome: color.accent,

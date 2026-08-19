@@ -930,6 +930,7 @@ export class OnboardingManager {
     }
 
     this.panel.show();
+    this._syncKeyboardReferenceForKeyInfoStep();
 
     if (transition && transition.type === 'slide') {
       this._emit('slideTransitionStart', {
@@ -1023,6 +1024,7 @@ export class OnboardingManager {
 
     // Control-strip arrow only for the next incomplete "turn off" task.
     this._syncToggleOffArrow();
+    this._syncKeyboardReferenceForKeyInfoStep();
 
   }
 
@@ -1470,6 +1472,27 @@ export class OnboardingManager {
 
   hideToggleOffArrow() {
     try { this.panel?.hideToggleOffArrow?.(); } catch { /* ignore */ }
+  }
+
+  /**
+   * Keyboard Reference hover step: keep the window open and expanded, including
+   * after the walkthrough is closed and reopened on this task.
+   */
+  _syncKeyboardReferenceForKeyInfoStep() {
+    try {
+      if (!this.active || this.progress.completed || !this._isKeyPilotEnabled()) return;
+      const slide = this._getCurrentSlide();
+      if (!slide) return;
+      const completed = new Set(
+        Array.isArray(this.progress.completedTaskIds)
+          ? this.progress.completedTaskIds.map(String)
+          : []
+      );
+      const nextTask = this._nextIncompleteTask(slide, completed);
+      if (nextTask && String(nextTask.id) === 'keyboard_key_info') {
+        this.panel?.ensureKeyboardReferenceOpenAndExpanded?.();
+      }
+    } catch { /* ignore */ }
   }
 
   /**

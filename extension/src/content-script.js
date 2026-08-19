@@ -8,6 +8,9 @@
 import { KeyPilot } from './keypilot.js';
 import { KeyPilotToggleHandler } from './modules/keypilot-toggle-handler.js';
 import { OnboardingManager } from './modules/onboarding-manager.js';
+import { startKeyPilotDebugFromSettings } from './utils/debug.js';
+
+void startKeyPilotDebugFromSettings();
 
 /**
  * Initialize KeyPilot with toggle functionality.
@@ -15,6 +18,7 @@ import { OnboardingManager } from './modules/onboarding-manager.js';
  */
 async function initializeKeyPilot() {
   try {
+    await startKeyPilotDebugFromSettings();
     if (window.__KeyPilotToggleHandler || window.keyPilot) {
       return;
     }
