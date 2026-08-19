@@ -3916,7 +3916,10 @@ export class OverlayManager {
   }
 
   /**
-   * Max numeric z-index among host pseudos and element children (excluding ring).
+   * Max numeric z-index among host pseudos and descendants (excluding the ring).
+   * Direct children are not enough: Epoch Times SHORT VIDEOS put the play
+   * overlay / poster several levels down, so a sibling-only scan stays at 0
+   * and the ring's `max+1` is still under that layer.
    * @param {Element} host
    * @returns {number}
    */
@@ -3925,7 +3928,10 @@ export class OverlayManager {
     const consider = (z) => {
       if (z == null || z === '' || z === 'auto') return;
       const n = parseInt(String(z), 10);
-      if (Number.isFinite(n)) max = Math.max(max, n);
+      if (!Number.isFinite(n)) return;
+      // Ignore site-wide "max int" layers so we do not race popovers.
+      if (n > 1000000) return;
+      max = Math.max(max, n);
     };
 
     try {
@@ -3935,26 +3941,42 @@ export class OverlayManager {
       }
     } catch { /* ignore */ }
 
+    const ringClass = CSS_CLASSES.FOCUS_RING_INTARGET || 'kpv2-focus-ring-intarget';
+    /** @type {Element[]} */
+    const queue = [];
     try {
       const kids = host.children;
-      if (!kids) return max;
-      const ringClass = CSS_CLASSES.FOCUS_RING_INTARGET || 'kpv2-focus-ring-intarget';
-      for (let i = 0; i < kids.length; i++) {
-        const child = kids[i];
-        if (!child || child.nodeType !== 1) continue;
-        if (child === this._inTargetRing) continue;
-        try {
-          if (child.classList && child.classList.contains(ringClass)) continue;
-          // Ephemeral F-click flash siblings must not inflate local z forever.
-          if (child.hasAttribute && child.hasAttribute('data-kp-ephemeral-effect')) continue;
-        } catch { /* ignore */ }
-        let cs = null;
-        try { cs = window.getComputedStyle(child); } catch { cs = null; }
-        if (!cs) continue;
-        // Only positioned / z-indexed children participate as explicit layers.
-        if (cs.zIndex !== 'auto') consider(cs.zIndex);
+      if (kids) {
+        for (let i = 0; i < kids.length; i++) {
+          if (kids[i]?.nodeType === 1) queue.push(kids[i]);
+        }
       }
-    } catch { /* ignore */ }
+    } catch {
+      return max;
+    }
+
+    let seen = 0;
+    const maxNodes = 40;
+    while (queue.length && seen++ < maxNodes) {
+      const child = queue.shift();
+      if (!child || child.nodeType !== 1) continue;
+      if (child === this._inTargetRing) continue;
+      try {
+        if (child.classList && child.classList.contains(ringClass)) continue;
+        if (child.hasAttribute && child.hasAttribute('data-kp-ephemeral-effect')) continue;
+      } catch { /* ignore */ }
+      let cs = null;
+      try { cs = window.getComputedStyle(child); } catch { cs = null; }
+      if (cs && cs.zIndex !== 'auto') consider(cs.zIndex);
+      try {
+        const kids = child.children;
+        if (kids) {
+          for (let i = 0; i < kids.length && queue.length < maxNodes; i++) {
+            if (kids[i]?.nodeType === 1) queue.push(kids[i]);
+          }
+        }
+      } catch { /* ignore */ }
+    }
 
     return max;
   }
@@ -4183,7 +4205,14 @@ export class OverlayManager {
     const zLocal = this._maxLocalZIndex(host) + 1;
     // Shadow trees often nest stacking contexts (collection-tile inside tile-link).
     // Use a high floor so the ring stays above Lit/Fluent content.
-    const z = this._isInShadowTree(host) ? Math.max(zLocal, 2147483000) : zLocal;
+    // Light DOM: still beat auto-z posters / play overlays (SHORT VIDEOS).
+    let z = zLocal;
+    try {
+      if (this._isInShadowTree(host)) z = Math.max(z, 2147483000);
+      else z = Math.max(z, 2);
+    } catch {
+      z = Math.max(zLocal, 2);
+    }
 
     let focusPad = 0;
     try {
@@ -4200,7 +4229,17 @@ export class OverlayManager {
     } catch {
       hostClipsSelf = false;
     }
-    if (hostClipsSelf) focusPad = 0;
+
+    // Ancestor clip (carousel `.scroll { overflow:auto }` flush with the card)
+    // also shaves an outward pad — same as self-clip.
+    let clipRoom = Infinity;
+    try {
+      clipRoom = this._minFocusOutlineRoomPx(host);
+    } catch {
+      clipRoom = Infinity;
+    }
+    const outwardBlocked = hostClipsSelf ||
+      (Number.isFinite(clipRoom) && clipRoom < focusPad + 0.5);
 
     try {
       ring.style.setProperty('position', 'absolute', 'important');
@@ -4208,7 +4247,15 @@ export class OverlayManager {
       // with removeProperty — in Blink `inset` IS those four properties, so
       // removing one form wipes the other and the ring collapses to ~6×6
       // (border-only). Then Auto B→C falls through to C.
-      const edge = focusPad > 0 ? `-${focusPad}px` : '0px';
+      // Negative = expand outside the host; positive = inset so a flush
+      // clipper (SHORT VIDEOS scroller) does not eat the stroke.
+      let edgePx = 0;
+      if (outwardBlocked) {
+        edgePx = Math.max(focusPad, 2);
+      } else if (focusPad > 0) {
+        edgePx = -focusPad;
+      }
+      const edge = `${edgePx}px`;
       ring.style.setProperty('top', edge, 'important');
       ring.style.setProperty('right', edge, 'important');
       ring.style.setProperty('bottom', edge, 'important');
@@ -4238,6 +4285,7 @@ export class OverlayManager {
       ring.style.setProperty('rotate', 'none', 'important');
       ring.style.setProperty('filter', 'none', 'important');
       ring.style.setProperty('mix-blend-mode', 'normal', 'important');
+      ring.style.setProperty('isolation', 'isolate', 'important');
       if (overlayShadowEnabled === false) {
         ring.style.setProperty('box-shadow', 'none', 'important');
       } else {
