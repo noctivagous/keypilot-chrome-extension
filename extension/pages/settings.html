@@ -897,7 +897,7 @@
                   <summary class="kp-subsection-summary">
                     <span class="kp-subsection-summary-text">
                       <span class="kp-subsection-title">Advanced</span>
-                      <span class="kp-subsection-sub">Paint backend, debug borders, and focus-ring padding</span>
+                      <span class="kp-subsection-sub">Paint backend, parent skip, debug borders, and focus-ring padding</span>
                     </span>
                   </summary>
                   <div class="kp-subsection-body">
@@ -911,6 +911,16 @@
                         How the hover focus rectangle is drawn. <strong>Auto B→C</strong> skips DOM outline (A) and uses an in-target ring, then a fixed overlay. Matches Shadow Root Debug (<kbd>Alt</kbd>+<kbd>D</kbd>).
                       </div>
                     </div>
+
+                    <label class="toggle" for="click-skip-for-parent">
+                      <input id="click-skip-for-parent" type="checkbox" />
+                      <div class="toggle-text">
+                        <div class="toggle-title">Skip for parent</div>
+                        <div class="toggle-sub">
+                          Nested links that go to the same URL as a covering card use the parent’s hover ring. Buttons and other destinations keep their own. On by default.
+                        </div>
+                      </div>
+                    </label>
 
                     <label class="toggle" for="click-paint-backend-debug">
                       <input id="click-paint-backend-debug" type="checkbox" />

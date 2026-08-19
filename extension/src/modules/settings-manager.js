@@ -83,7 +83,8 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  *   keyboardLinkHoverHints: boolean,
  *   paintStrategy: ClickPaintStrategy,
  *   paintBackendDebugDashes: boolean,
- *   focusPadding: number
+ *   focusPadding: number,
+ *   skipForParent: boolean
  * }} ClickModeSettings
  */
 
@@ -243,7 +244,10 @@ export const DEFAULT_SETTINGS = Object.freeze({
     paintBackendDebugDashes: false,
     // Outward ring padding (px). Strategy A uses this as preferred outline-offset;
     // B/C expand their boxes by the same amount (A historically ~2px; B→C was 0).
-    focusPadding: 2
+    focusPadding: 2,
+    // When a nested control shares the parent's destination (same URL), hover
+    // the parent card instead. Different-destination children keep their own ring.
+    skipForParent: true
   }),
   textMode: Object.freeze({
     cursorType: 't_square',
@@ -470,6 +474,10 @@ function normalizeClickMode(raw) {
       DEFAULT_SETTINGS.clickMode.focusPadding,
       0,
       16
+    ),
+    skipForParent: normalizeBoolean(
+      stored.skipForParent,
+      DEFAULT_SETTINGS.clickMode.skipForParent
     )
   };
 }

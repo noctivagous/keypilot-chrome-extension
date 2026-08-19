@@ -539,6 +539,7 @@ async function render() {
   const clickKeyboardLinkHints = /** @type {HTMLInputElement|null} */ (settingsEl('click-keyboard-link-hints'));
   const clickPaintStrategy = /** @type {HTMLSelectElement|null} */ (settingsEl('click-paint-strategy'));
   const clickPaintBackendDebug = /** @type {HTMLInputElement|null} */ (settingsEl('click-paint-backend-debug'));
+  const clickSkipForParent = /** @type {HTMLInputElement|null} */ (settingsEl('click-skip-for-parent'));
   const clickFocusPaddingRange = /** @type {HTMLInputElement|null} */ (settingsEl('click-focus-padding-range'));
   const clickFocusPaddingNumber = /** @type {HTMLInputElement|null} */ (settingsEl('click-focus-padding-number'));
   const clickCursorResetBtn = settingsEl('click-cursor-reset');
@@ -697,6 +698,9 @@ async function render() {
     }
     if (clickPaintBackendDebug) {
       clickPaintBackendDebug.checked = cm?.paintBackendDebugDashes === true;
+    }
+    if (clickSkipForParent) {
+      clickSkipForParent.checked = cm?.skipForParent !== false;
     }
     setInputValue(clickFocusPaddingRange, cm?.focusPadding ?? DEFAULT_SETTINGS.clickMode.focusPadding);
     setInputValue(clickFocusPaddingNumber, cm?.focusPadding ?? DEFAULT_SETTINGS.clickMode.focusPadding);
@@ -1127,6 +1131,12 @@ async function render() {
   clickPaintStrategy?.addEventListener('change', async () => {
     const value = normalizePaintStrategy(clickPaintStrategy.value);
     await setSettings({ clickMode: { paintStrategy: value } });
+    const s = await getSettings();
+    applyClickMode(s.clickMode);
+  }, true);
+
+  clickSkipForParent?.addEventListener('change', async () => {
+    await setSettings({ clickMode: { skipForParent: !!clickSkipForParent.checked } });
     const s = await getSettings();
     applyClickMode(s.clickMode);
   }, true);

@@ -801,6 +801,106 @@ export class ElementDetector {
   }
 
   /**
+   * Settings → Click Mode → Skip for parent (on by default).
+   * @returns {boolean}
+   */
+  _skipForParentEnabled() {
+    try {
+      const v = window.keyPilot?._settings?.clickMode?.skipForParent;
+      if (v === false) return false;
+    } catch { /* default on */ }
+    return true;
+  }
+
+  /**
+   * Larger same-destination card/overlay to hover instead of `leaf`.
+   * Sibling stretched links (Home Depot product-pod overlay) count; a
+   * different-destination child (Add to Cart) is never replaced.
+   * @param {Element} leaf
+   * @returns {Element|null}
+   */
+  _findSkipForParentHost(leaf) {
+    if (!this._skipForParentEnabled()) return null;
+    if (!leaf || leaf.nodeType !== 1) return null;
+
+    let leafRect = null;
+    try { leafRect = leaf.getBoundingClientRect(); } catch { leafRect = null; }
+    if (!leafRect || !(leafRect.width > 0) || !(leafRect.height > 0)) return null;
+    const leafArea = leafRect.width * leafRect.height;
+
+    /** @type {Element|null} */
+    let best = null;
+    let bestArea = 0;
+
+    const consider = (el) => {
+      if (!el || el === leaf || el.nodeType !== 1) return;
+      try {
+        if (!this.isLikelyInteractive(el, { allowCursor: false })) return;
+      } catch {
+        return;
+      }
+      try {
+        if (this._isFullBleedChromeBar(el) || this.isCompositeClickContainer(el)) return;
+      } catch { /* ignore */ }
+      try {
+        if (!activationIdentitiesMatch(leaf, el)) return;
+      } catch {
+        return;
+      }
+      let r = null;
+      try { r = el.getBoundingClientRect(); } catch { r = null; }
+      if (!r || r.width < 100 || r.height < 32) return;
+      const area = r.width * r.height;
+      if (area < leafArea * 1.35) return;
+      const overlapW = Math.max(0, Math.min(r.right, leafRect.right) - Math.max(r.left, leafRect.left));
+      const overlapH = Math.max(0, Math.min(r.bottom, leafRect.bottom) - Math.max(r.top, leafRect.top));
+      if (overlapW * overlapH < leafArea * 0.8) return;
+      if (area > bestArea) {
+        bestArea = area;
+        best = el;
+      }
+    };
+
+    let n = leaf;
+    let depth = 0;
+    while (n && n !== document.body && n.nodeType === 1 && depth++ < 14) {
+      consider(n);
+      let parent = null;
+      try {
+        parent = n.parentElement ||
+          (typeof n.getRootNode === 'function' && n.getRootNode() instanceof ShadowRoot
+            ? n.getRootNode().host
+            : null);
+      } catch {
+        parent = n.parentElement;
+      }
+      if (!parent || parent.nodeType !== 1 || parent === document.body) break;
+      try {
+        const kids = parent.children;
+        if (kids) {
+          for (let i = 0; i < kids.length; i++) consider(kids[i]);
+        }
+      } catch { /* ignore */ }
+      n = parent;
+    }
+
+    return best;
+  }
+
+  /**
+   * @param {Element|null|undefined} el
+   * @returns {Element|null|undefined}
+   */
+  _applySkipForParent(el) {
+    if (!el || el.nodeType !== 1) return el;
+    try {
+      const host = this._findSkipForParentHost(el);
+      if (host) return host;
+    } catch { /* keep el */ }
+    return el;
+  }
+
+  /**
    * Prefer a stable "host" interactive for hover chrome: row-sized role=link
    * cards and role=tab strips, instead of nested More/buttons/sub-links.
    * @param {Element} leaf
@@ -1135,7 +1235,7 @@ export class ElementDetector {
                 const stretchTarget = this._resolveStretchedLinkHoverTarget(
                   leafInside, clientX, clientY
                 );
-                if (stretchTarget) return stretchTarget;
+                if (stretchTarget) return this._applySkipForParent(stretchTarget);
               } catch { /* ignore */ }
             }
             if (!leafInside || leafInside === prev || this._isNestedHoverChrome(leafInside, prev)) {
@@ -1145,8 +1245,8 @@ export class ElementDetector {
             // still prefer host for row-sized role=link / tab.
             const host = this._findPreferableHoverHost(leafInside);
             if (host === prev) return prev;
-            if (host) return host;
-            return leafInside;
+            if (host) return this._applySkipForParent(host);
+            return this._applySkipForParent(leafInside);
           }
         }
       } catch { /* ignore */ }
@@ -1182,7 +1282,7 @@ export class ElementDetector {
           const stretchTarget = this._resolveStretchedLinkHoverTarget(
             leafAtPoint, clientX, clientY
           );
-          if (stretchTarget) return stretchTarget;
+          if (stretchTarget) return this._applySkipForParent(stretchTarget);
         } catch { /* ignore */ }
       }
       if (!leafAtPoint || leafAtPoint === prev || this._isNestedHoverChrome(leafAtPoint, prev)) {
@@ -1192,7 +1292,7 @@ export class ElementDetector {
       try {
         if (this._isFullBleedChromeBar(prev) && leafAtPoint !== prev) {
           const host = this._findPreferableHoverHost(leafAtPoint);
-          return host || leafAtPoint;
+          return this._applySkipForParent(host || leafAtPoint);
         }
       } catch { /* ignore */ }
       try {
@@ -1201,7 +1301,7 @@ export class ElementDetector {
           this.pointInElementUnionBox(leafAtPoint, clientX, clientY, 1)
         ) {
           const host = this._findPreferableHoverHost(leafAtPoint);
-          return host || leafAtPoint;
+          return this._applySkipForParent(host || leafAtPoint);
         }
       } catch { /* keep prev */ }
       return prev;
@@ -1215,17 +1315,17 @@ export class ElementDetector {
       const underlay = this._findSiblingUnderlayClickable(under);
       if (!underlay) return null;
       const underlayHost = this._findPreferableHoverHost(underlay);
-      return underlayHost || underlay;
+      return this._applySkipForParent(underlayHost || underlay);
     }
 
     // msn.com-style stretched headline: card shell on media/chrome, link on title.
     try {
       const stretchTarget = this._resolveStretchedLinkHoverTarget(leaf, clientX, clientY);
-      if (stretchTarget) return stretchTarget;
+      if (stretchTarget) return this._applySkipForParent(stretchTarget);
     } catch { /* ignore */ }
 
     const host = this._findPreferableHoverHost(leaf);
-    return host || leaf;
+    return this._applySkipForParent(host || leaf);
   }
 
   isTextLike(el) {

@@ -17,7 +17,8 @@ export const DARK_PRO_CLICK_DEFAULTS = Object.freeze({
     clickEffect: 'flash',
     keyboardLinkHoverHints: false,
     paintStrategy: 'BC',
-    focusPadding: 2
+    focusPadding: 2,
+    skipForParent: true
   })
 });
 
@@ -37,7 +38,8 @@ export const GRAY_METAL_CLICK_DEFAULTS = Object.freeze({
     clickEffect: 'flash',
     keyboardLinkHoverHints: false,
     paintStrategy: 'BC',
-    focusPadding: 2
+    focusPadding: 2,
+    skipForParent: true
   })
 });
 
@@ -57,6 +59,7 @@ export const GX_ER_CLICK_DEFAULTS = Object.freeze({
     clickEffect: 'flash',
     keyboardLinkHoverHints: false,
     paintStrategy: 'BC',
-    focusPadding: 2
+    focusPadding: 2,
+    skipForParent: true
   })
 });

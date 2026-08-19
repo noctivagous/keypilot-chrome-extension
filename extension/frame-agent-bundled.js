@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-19T05:10:33.317Z
+ * Generated on 2026-08-19T21:34:34.041Z
  */
 
 (() => {
@@ -1942,7 +1942,10 @@
       paintBackendDebugDashes: false,
       // Outward ring padding (px). Strategy A uses this as preferred outline-offset;
       // B/C expand their boxes by the same amount (A historically ~2px; B→C was 0).
-      focusPadding: 2
+      focusPadding: 2,
+      // When a nested control shares the parent's destination (same URL), hover
+      // the parent card instead. Different-destination children keep their own ring.
+      skipForParent: true
     }),
     textMode: Object.freeze({
       cursorType: "t_square",
@@ -2086,6 +2089,10 @@
         DEFAULT_SETTINGS.clickMode.focusPadding,
         0,
         16
+      ),
+      skipForParent: normalizeBoolean(
+        stored.skipForParent,
+        DEFAULT_SETTINGS.clickMode.skipForParent
       )
     };
   }
@@ -3478,7 +3485,8 @@
       clickEffect: "flash",
       keyboardLinkHoverHints: false,
       paintStrategy: "BC",
-      focusPadding: 2
+      focusPadding: 2,
+      skipForParent: true
     })
   });
   var GRAY_METAL_CLICK_DEFAULTS = Object.freeze({
@@ -3497,7 +3505,8 @@
       clickEffect: "flash",
       keyboardLinkHoverHints: false,
       paintStrategy: "BC",
-      focusPadding: 2
+      focusPadding: 2,
+      skipForParent: true
     })
   });
   var GX_ER_CLICK_DEFAULTS = Object.freeze({
@@ -3516,7 +3525,8 @@
       clickEffect: "flash",
       keyboardLinkHoverHints: false,
       paintStrategy: "BC",
-      focusPadding: 2
+      focusPadding: 2,
+      skipForParent: true
     })
   });
 
