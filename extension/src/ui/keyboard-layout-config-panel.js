@@ -1112,22 +1112,30 @@ export class KeyboardLayoutConfigPanel {
   box-sizing: border-box;
 }
 .kp-layout-config-panel .kp-cfg-close {
-  width: 22px;
   height: 22px;
-  min-width: 22px;
   min-height: 22px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 4px;
   border-radius: ${NCT_DARK_UI_BTN_RADIUS};
   border: none;
   background: transparent;
   color: ${ONBOARDING_METAL.fgDim};
   cursor: pointer;
-  padding: 0;
+  padding: 0 6px;
   margin: 0;
   flex: 0 0 auto;
   box-shadow: none;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;
+}
+.kp-layout-config-panel .kp-cfg-close .kp-cfg-ico {
+  flex: 0 0 auto;
 }
 .kp-layout-config-panel .kp-cfg-close:hover {
   color: ${ONBOARDING_METAL.fg};
@@ -3420,10 +3428,11 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
   padding: 3px 9px;
 }
 .kp-layout-config-panel .kp-cfg-close {
-  width: 28px;
   height: 28px;
-  min-width: 28px;
   min-height: 28px;
+  font-size: 12px;
+  padding: 0 8px;
+  gap: 5px;
 }
 .kp-layout-config-panel .kp-cfg-layout-strip {
   height: 40px;
@@ -3620,6 +3629,9 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     closeBtn.className = 'kp-cfg-close';
     closeBtn.setAttribute('aria-label', 'Close layout config');
     closeBtn.title = 'Close';
+    const closeLabel = doc.createElement('span');
+    closeLabel.textContent = 'Close';
+    closeBtn.appendChild(closeLabel);
     closeBtn.appendChild(mkCfgIcon(doc, 'kp-cfg-i-close'));
     closeBtn.addEventListener('click', () => {
       this.hide();

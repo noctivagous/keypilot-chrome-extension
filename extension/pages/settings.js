@@ -538,6 +538,7 @@ async function render() {
   const clickEffectRadios = /** @type {HTMLInputElement[]} */ (Array.from(settingsAll('input[name="click-effect"]')));
   const clickKeyboardLinkHints = /** @type {HTMLInputElement|null} */ (settingsEl('click-keyboard-link-hints'));
   const clickPaintStrategy = /** @type {HTMLSelectElement|null} */ (settingsEl('click-paint-strategy'));
+  const clickPaintBackendDebug = /** @type {HTMLInputElement|null} */ (settingsEl('click-paint-backend-debug'));
   const clickFocusPaddingRange = /** @type {HTMLInputElement|null} */ (settingsEl('click-focus-padding-range'));
   const clickFocusPaddingNumber = /** @type {HTMLInputElement|null} */ (settingsEl('click-focus-padding-number'));
   const clickCursorResetBtn = settingsEl('click-cursor-reset');
@@ -693,6 +694,9 @@ async function render() {
       clickPaintStrategy.value = normalizePaintStrategy(
         cm?.paintStrategy ?? DEFAULT_SETTINGS.clickMode.paintStrategy
       );
+    }
+    if (clickPaintBackendDebug) {
+      clickPaintBackendDebug.checked = cm?.paintBackendDebugDashes === true;
     }
     setInputValue(clickFocusPaddingRange, cm?.focusPadding ?? DEFAULT_SETTINGS.clickMode.focusPadding);
     setInputValue(clickFocusPaddingNumber, cm?.focusPadding ?? DEFAULT_SETTINGS.clickMode.focusPadding);
@@ -1126,6 +1130,12 @@ async function render() {
     const s = await getSettings();
     applyClickMode(s.clickMode);
   }, true);
+
+  clickPaintBackendDebug?.addEventListener('change', async () => {
+    await setSettings({ clickMode: { paintBackendDebugDashes: !!clickPaintBackendDebug.checked } });
+    const s = await getSettings();
+    applyClickMode(s.clickMode);
+  });
 
   const commitClickFocusPadding = async (v) => {
     const n = clampNumber(v, 0, 16);

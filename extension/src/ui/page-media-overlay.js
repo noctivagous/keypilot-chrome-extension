@@ -36,7 +36,8 @@ import {
   domainFromUrl,
   urlPathDisplay,
   urlPathRelativeToPrefix,
-  groupUrlItemsByPathPrefix
+  groupUrlItemsByPathPrefix,
+  compareUrlTabItems
 } from '../utils/page-media-utils.js';
 import { Z_INDEX } from '../config/constants.js';
 import { storageGetValue, storageSetValue } from '../utils/storage.js';
@@ -59,10 +60,16 @@ const IMAGE_ASPECT_DEFAULT = /** @type {ImageAspectMode} */ ('square');
 const IMAGE_SORT_STORAGE_KEY = 'kp_page_media_image_sort';
 /** @typedef {'size-desc'|'size-asc'|'page'} ImageSortMode */
 const IMAGE_SORT_DEFAULT = /** @type {ImageSortMode} */ ('size-desc');
+/** Image-tab: put article/main images before site chrome. Default on. */
+const IMAGE_LANDMARK_STORAGE_KEY = 'kp_page_media_image_landmark';
+const IMAGE_LANDMARK_DEFAULT = true;
 /** URLs tab presentation: hierarchical table (default) vs grouped list. */
 const URL_VIEW_STORAGE_KEY = 'kp_page_media_url_view';
 /** @typedef {'table'|'list'} UrlViewMode */
 const URL_VIEW_DEFAULT = /** @type {UrlViewMode} */ ('table');
+
+/** Temporarily hidden tabs (restore by emptying this set). */
+const HIDDEN_PAGE_MEDIA_TABS = new Set(['pageText', 'url']);
 
 /** @type {HTMLElement|null} */
 let _overlay = null;
@@ -98,6 +105,10 @@ let _aspectControl = null;
 let _imageSortMode = IMAGE_SORT_DEFAULT;
 /** @type {ReturnType<typeof createSegmentedControl>|null} */
 let _sortControl = null;
+/** When true, article/main images sort before header/nav/footer. */
+let _imagePrioritizeLandmarks = IMAGE_LANDMARK_DEFAULT;
+/** @type {HTMLInputElement|null} */
+let _imageLandmarkCheck = null;
 /** @type {UrlViewMode} */
 let _urlViewMode = URL_VIEW_DEFAULT;
 /** @type {ReturnType<typeof createSegmentedControl>|null} */
@@ -167,6 +178,8 @@ export function closePageMediaOverlay() {
   _aspectControl = null;
   _imageSortMode = IMAGE_SORT_DEFAULT;
   _sortControl = null;
+  _imagePrioritizeLandmarks = IMAGE_LANDMARK_DEFAULT;
+  _imageLandmarkCheck = null;
   _urlViewControl = null;
   _urlTableExpanded = new Set();
   _urlTableExpandedReady = false;
@@ -269,6 +282,37 @@ function persistImageSortPreference(mode) {
   _imageSortMode = normalizeImageSortMode(mode);
   try {
     void storageSetValue(IMAGE_SORT_STORAGE_KEY, _imageSortMode);
+  } catch { /* ignore */ }
+}
+
+/**
+ * @param {unknown} raw
+ * @returns {boolean}
+ */
+function normalizeImageLandmarkPreference(raw) {
+  if (raw === false || raw === 'false' || raw === 0) return false;
+  if (raw === true || raw === 'true' || raw === 1) return true;
+  return IMAGE_LANDMARK_DEFAULT;
+}
+
+async function loadImageLandmarkPreference() {
+  try {
+    const stored = await storageGetValue(IMAGE_LANDMARK_STORAGE_KEY, IMAGE_LANDMARK_DEFAULT);
+    _imagePrioritizeLandmarks = normalizeImageLandmarkPreference(
+      stored === undefined || stored === null ? IMAGE_LANDMARK_DEFAULT : stored
+    );
+  } catch {
+    _imagePrioritizeLandmarks = IMAGE_LANDMARK_DEFAULT;
+  }
+}
+
+/**
+ * @param {boolean} on
+ */
+function persistImageLandmarkPreference(on) {
+  _imagePrioritizeLandmarks = !!on;
+  try {
+    void storageSetValue(IMAGE_LANDMARK_STORAGE_KEY, _imagePrioritizeLandmarks);
   } catch { /* ignore */ }
 }
 
@@ -396,7 +440,7 @@ function buildUrlViewToolbar() {
     value: _urlViewMode,
     options: [
       { value: 'table', label: 'Table', title: 'Hierarchical table by domain and path' },
-      { value: 'list', label: 'List', title: 'Grouped list by domain and path' }
+      { value: 'list', label: 'List', title: 'Horizontal cards grouped by domain and path' }
     ],
     onChange: (value) => {
       const mode = normalizeUrlViewMode(value);
@@ -467,6 +511,27 @@ function buildImageAspectToolbar() {
   sortWrap.appendChild(sortLabel);
   sortWrap.appendChild(_sortControl.root);
   bar.appendChild(sortWrap);
+
+  const landmarkWrap = document.createElement('label');
+  landmarkWrap.className = 'kpv2-page-media-landmark-check';
+  landmarkWrap.title = 'Show images in articles and main content before site header, nav, and footer';
+
+  _imageLandmarkCheck = document.createElement('input');
+  _imageLandmarkCheck.type = 'checkbox';
+  _imageLandmarkCheck.checked = _imagePrioritizeLandmarks;
+  _imageLandmarkCheck.setAttribute('aria-label', 'Prioritize article and main content images');
+  _imageLandmarkCheck.addEventListener('change', () => {
+    persistImageLandmarkPreference(!!_imageLandmarkCheck?.checked);
+    if (_activeTab === 'image') renderImageGrid({ preserveScroll: true });
+  });
+
+  const landmarkText = document.createElement('span');
+  landmarkText.textContent = 'Article first';
+
+  landmarkWrap.appendChild(_imageLandmarkCheck);
+  landmarkWrap.appendChild(landmarkText);
+  bar.appendChild(landmarkWrap);
+
   return bar;
 }
 
@@ -562,6 +627,7 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
   await loadImageScalePreference();
   await loadImageAspectPreference();
   await loadImageSortPreference();
+  await loadImageLandmarkPreference();
   await loadUrlViewPreference();
   _urlTableExpanded = new Set();
   _urlTableExpandedReady = false;
@@ -569,10 +635,10 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
   const groups = groupPageMediaByCategory(_items);
   if (groups.image.length) _activeTab = 'image';
   else if (groups.video.length) _activeTab = 'video';
-  else if (groups.pageText.length) _activeTab = 'pageText';
+  else if (!HIDDEN_PAGE_MEDIA_TABS.has('pageText') && groups.pageText.length) _activeTab = 'pageText';
   else if (groups.text.length) _activeTab = 'text';
   else if (groups.font.length) _activeTab = 'font';
-  else if (groups.url.length) _activeTab = 'url';
+  else if (!HIDDEN_PAGE_MEDIA_TABS.has('url') && groups.url.length) _activeTab = 'url';
   else _activeTab = 'image';
 
   const overlay = document.createElement('div');
@@ -607,11 +673,15 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
   const total = document.createElement('span');
   total.className = 'kpv2-page-media-count';
   const mediaCount =
-    groups.image.length + groups.video.length + groups.text.length + groups.pageText.length;
-  total.textContent = String(mediaCount || groups.font.length || groups.url.length);
+    groups.image.length + groups.video.length + groups.text.length
+    + (HIDDEN_PAGE_MEDIA_TABS.has('pageText') ? 0 : groups.pageText.length);
+  total.textContent = String(mediaCount || groups.font.length
+    || (HIDDEN_PAGE_MEDIA_TABS.has('url') ? 0 : groups.url.length));
   const extraBits = [];
   if (groups.font.length) extraBits.push(`${groups.font.length} fonts`);
-  if (groups.url.length) extraBits.push(`${groups.url.length} unique URLs`);
+  if (!HIDDEN_PAGE_MEDIA_TABS.has('url') && groups.url.length) {
+    extraBits.push(`${groups.url.length} unique URLs`);
+  }
   total.title = extraBits.length
     ? `${mediaCount} media · ${extraBits.join(' · ')}`
     : `${mediaCount} media`;
@@ -633,6 +703,7 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
     { id: 'url', label: 'URLs' }
   ]);
   for (const { id, label } of tabDefs) {
+    if (HIDDEN_PAGE_MEDIA_TABS.has(id)) continue;
     const count = groups[id].length;
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -717,7 +788,9 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
 
   shell.appendChild(header);
   shell.appendChild(buildImageAspectToolbar());
-  shell.appendChild(buildUrlViewToolbar());
+  if (!HIDDEN_PAGE_MEDIA_TABS.has('url')) {
+    shell.appendChild(buildUrlViewToolbar());
+  }
   shell.appendChild(content);
   shell.appendChild(fullView);
   mount.appendChild(backdrop);
@@ -791,6 +864,7 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
  * @param {'image'|'video'|'text'|'url'|'pageText'|'font'} tab
  */
 function setActiveTab(tab) {
+  if (HIDDEN_PAGE_MEDIA_TABS.has(tab)) return;
   _activeTab = tab;
   if (!_overlay) return;
   const buttons = /** @type {any} */ (_overlay)._tabButtons || {};
@@ -924,8 +998,12 @@ function renderImageGrid(opts = {}) {
   const flat = [];
 
   // One continuous grid (no size-band headings). Default is pixel-area descending.
-  const photoItems = sortImageItems(photos, _imageSortMode);
-  const posterItems = sortImageItems(posters, _imageSortMode);
+  const photoItems = sortImageItems(photos, _imageSortMode, {
+    prioritizeLandmarks: _imagePrioritizeLandmarks
+  });
+  const posterItems = sortImageItems(posters, _imageSortMode, {
+    prioritizeLandmarks: _imagePrioritizeLandmarks
+  });
   if (photoItems.length) {
     const grid = document.createElement('div');
     grid.className = 'kpv2-page-media-size-grid';
@@ -981,6 +1059,28 @@ function renderImageGrid(opts = {}) {
     try { content.scrollTop = scrollTop; } catch { /* ignore */ }
   }
   applyImageAspectMode(_imageAspectMode);
+}
+
+/**
+ * Clicks on overlay images must not create a native Selection range.
+ * Chromium treats a mousedown on <img> as selectNode(img), which then paints
+ * as a text-range highlight on the lightbox image.
+ * @param {Element} el
+ */
+function suppressOverlayTextRange(el) {
+  if (!el) return;
+  const stop = (e) => {
+    try {
+      if (e.button != null && e.button !== 0) return;
+      e.preventDefault();
+    } catch { /* ignore */ }
+  };
+  el.addEventListener('mousedown', stop, true);
+  el.addEventListener('selectstart', stop, true);
+}
+
+function clearDocumentTextRange() {
+  try { window.getSelection()?.removeAllRanges(); } catch { /* ignore */ }
 }
 
 /**
@@ -1058,11 +1158,13 @@ function buildImageCard(item, onActivate) {
     e.preventDefault();
     e.stopPropagation();
     onActivate();
+    clearDocumentTextRange();
   };
   card.addEventListener('click', activate, true);
   card.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') activate(e);
   }, true);
+  suppressOverlayTextRange(card);
 
   return card;
 }
@@ -1115,11 +1217,13 @@ function buildVideoCard(item, onActivate) {
     e.preventDefault();
     e.stopPropagation();
     onActivate();
+    clearDocumentTextRange();
   };
   card.addEventListener('click', activate, true);
   card.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') activate(e);
   }, true);
+  suppressOverlayTextRange(card);
 
   // Resolve poster / captured still asynchronously.
   resolveVideoThumbnail(item).then((thumbUrl) => {
@@ -1191,6 +1295,7 @@ function buildPageTextRow(item, onActivate) {
     e.preventDefault();
     e.stopPropagation();
     onActivate();
+    clearDocumentTextRange();
   };
   row.addEventListener('click', activate, true);
   row.addEventListener('keydown', (e) => {
@@ -1269,6 +1374,7 @@ function buildFontListView(list) {
   const custom = [];
   const local = [];
   for (const item of list || []) {
+    if (/^(chrome|chrome-extension|chrome-untrusted):/i.test(String(item?.url || ''))) continue;
     if (item?.kind === 'custom' || item?.sourceKind === 'webfont') custom.push(item);
     else local.push(item);
   }
@@ -1367,6 +1473,7 @@ function buildFontRow(item, onActivate) {
     e.preventDefault();
     e.stopPropagation();
     onActivate();
+    clearDocumentTextRange();
   };
   row.addEventListener('click', activate, true);
   row.addEventListener('keydown', (e) => {
@@ -1390,7 +1497,7 @@ function buildUrlListView(list) {
   const flat = [];
   for (const domain of domains) {
     const items = byDomain.get(domain) || [];
-    items.sort((a, b) => String(a.url || '').localeCompare(String(b.url || '')));
+    items.sort(compareUrlTabItems);
 
     const section = document.createElement('section');
     section.className = 'kpv2-page-media-url-group';
@@ -1412,8 +1519,9 @@ function buildUrlListView(list) {
 
     const pathGroups = groupUrlItemsByPathPrefix(items, 2);
     for (const { prefix, items: pathItems } of pathGroups) {
-      /** @type {HTMLElement} */
-      let host = rows;
+      const grid = document.createElement('div');
+      grid.className = 'kpv2-page-media-url-card-grid';
+
       if (prefix) {
         const sub = document.createElement('div');
         sub.className = 'kpv2-page-media-url-subpath';
@@ -1427,17 +1535,16 @@ function buildUrlListView(list) {
         subHeading.appendChild(subTitle);
         subHeading.appendChild(subCount);
         sub.appendChild(subHeading);
-        const subRows = document.createElement('div');
-        subRows.className = 'kpv2-page-media-url-subpath-rows';
-        sub.appendChild(subRows);
+        sub.appendChild(grid);
         rows.appendChild(sub);
-        host = subRows;
+      } else {
+        rows.appendChild(grid);
       }
 
       for (const item of pathItems) {
         const flatIndex = flat.length;
         flat.push(item);
-        host.appendChild(buildUrlRow(item, () => onItemActivate(flat, flatIndex), {
+        grid.appendChild(buildUrlRow(item, () => onItemActivate(flat, flatIndex), {
           displayUrl: prefix
             ? urlPathRelativeToPrefix(item.url, prefix)
             : urlPathDisplay(item.url)
@@ -1479,7 +1586,7 @@ function buildUrlTableView(list) {
 
   for (const domain of domains) {
     const items = byDomain.get(domain) || [];
-    items.sort((a, b) => String(a.url || '').localeCompare(String(b.url || '')));
+    items.sort(compareUrlTabItems);
     const domainKey = `domain:${domain}`;
     const isCurrent = !!(pageHost && domain === pageHost);
 
@@ -1555,7 +1662,7 @@ function buildUrlTableView(list) {
  */
 function buildUrlRow(item, onActivate, opts = {}) {
   const row = document.createElement('div');
-  row.className = 'kpv2-page-media-url-row';
+  row.className = 'kpv2-page-media-url-row kpv2-page-media-url-card';
   row.setAttribute('role', 'button');
   row.tabIndex = 0;
   row.title = item.url;
@@ -1599,6 +1706,7 @@ function buildUrlRow(item, onActivate, opts = {}) {
     e.preventDefault();
     e.stopPropagation();
     onActivate();
+    clearDocumentTextRange();
   };
   row.addEventListener('click', activate, true);
   row.addEventListener('keydown', (e) => {
@@ -1647,6 +1755,7 @@ function buildFileCard(item, onActivate) {
     e.preventDefault();
     e.stopPropagation();
     onActivate();
+    clearDocumentTextRange();
   };
   card.addEventListener('click', activate, true);
   card.addEventListener('keydown', (e) => {
@@ -2182,8 +2291,12 @@ function openFullView(list, index, mode) {
     img.className = 'kpv2-page-media-fullimage';
     img.src = item.url;
     img.alt = item.label || '';
+    img.draggable = false;
+    suppressOverlayTextRange(img);
     host.appendChild(img);
   }
+
+  clearDocumentTextRange();
 
   if (counter) counter.textContent = `${index + 1} / ${list.length}`;
   modal.classList.add('is-open');
@@ -2266,6 +2379,8 @@ function ensureStyles(root) {
   box-shadow: ${NCT_DARK_UI_PANEL_BOX_SHADOW};
   font-family: ${NCT_DARK_UI_FONT};
   color: ${c.fg};
+  user-select: none;
+  -webkit-user-select: none;
 }
 ${getNctDarkUiBackdropCss()}
 ${getNctDarkUiScrollbarCss()}
@@ -2311,6 +2426,28 @@ ${getNctDarkUiScrollbarCss()}
   margin-left: 8px;
   padding-left: 14px;
   border-left: 1px solid ${c.panelEdgeDark};
+}
+.kpv2-page-media-landmark-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+  padding-left: 14px;
+  border-left: 1px solid ${c.panelEdgeDark};
+  font-size: 11px;
+  font-weight: 600;
+  color: ${c.fgDim};
+  letter-spacing: 0.02em;
+  user-select: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.kpv2-page-media-landmark-check input {
+  width: 13px;
+  height: 13px;
+  margin: 0;
+  accent-color: ${c.accent || '#8fb36a'};
+  cursor: pointer;
 }
 .kpv2-page-media-url-view-bar {
   display: flex;
@@ -2526,25 +2663,23 @@ ${getNctDarkUiScaleSliderCss({ rangeWidth: '88px' })}
   margin-bottom: calc(10px * var(--kpv2-pm-image-scale, 1.5));
 }
 .kpv2-page-media-content .kpv2-page-media-url-group-rows {
-  gap: calc(8px * var(--kpv2-pm-image-scale, 1.5));
+  gap: calc(12px * var(--kpv2-pm-image-scale, 1.5));
 }
 .kpv2-page-media-content .kpv2-page-media-url-subpath {
-  gap: calc(6px * var(--kpv2-pm-image-scale, 1.5));
+  gap: calc(8px * var(--kpv2-pm-image-scale, 1.5));
   padding: calc(8px * var(--kpv2-pm-image-scale, 1.5));
-  flex-basis: calc(280px * var(--kpv2-pm-image-scale, 1.5));
 }
 .kpv2-page-media-content .kpv2-page-media-url-subpath-heading {
   font-size: calc(11px * var(--kpv2-pm-image-scale, 1.5));
 }
-.kpv2-page-media-content .kpv2-page-media-url-subpath-rows {
-  gap: calc(6px * var(--kpv2-pm-image-scale, 1.5));
+.kpv2-page-media-content .kpv2-page-media-url-card-grid {
+  gap: calc(10px * var(--kpv2-pm-image-scale, 1.5));
+  grid-template-columns: repeat(auto-fill, minmax(calc(180px * var(--kpv2-pm-image-scale, 1.5)), 1fr));
 }
 .kpv2-page-media-content .kpv2-page-media-url-row {
-  flex-basis: calc(180px * var(--kpv2-pm-image-scale, 1.5));
-  max-width: calc(320px * var(--kpv2-pm-image-scale, 1.5));
-  min-width: calc(140px * var(--kpv2-pm-image-scale, 1.5));
   gap: calc(6px * var(--kpv2-pm-image-scale, 1.5));
-  padding: calc(8px * var(--kpv2-pm-image-scale, 1.5)) calc(10px * var(--kpv2-pm-image-scale, 1.5));
+  padding: calc(10px * var(--kpv2-pm-image-scale, 1.5)) calc(10px * var(--kpv2-pm-image-scale, 1.5));
+  min-height: calc(88px * var(--kpv2-pm-image-scale, 1.5));
 }
 .kpv2-page-media-content .kpv2-page-media-url-title {
   font-size: calc(12px * var(--kpv2-pm-image-scale, 1.5));
@@ -2721,21 +2856,20 @@ ${getNctDarkUiScaleSliderCss({ rangeWidth: '88px' })}
 }
 .kpv2-page-media-url-group-rows {
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-direction: column;
+  gap: 12px;
   align-items: stretch;
 }
 .kpv2-page-media-url-subpath {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   padding: 8px;
   border: 1px solid ${c.panelEdgeDark};
   border-radius: 2px;
   background: rgba(0, 0, 0, 0.18);
-  min-width: min(100%, 220px);
-  flex: 1 1 280px;
+  min-width: 0;
+  width: 100%;
   max-width: 100%;
 }
 .kpv2-page-media-url-subpath-heading {
@@ -2749,18 +2883,17 @@ ${getNctDarkUiScaleSliderCss({ rangeWidth: '88px' })}
   color: ${c.fgDim};
   word-break: break-all;
 }
-.kpv2-page-media-url-subpath-rows {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: stretch;
+.kpv2-page-media-url-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+  align-content: start;
 }
 .kpv2-page-media-url-group .kpv2-page-media-url-row {
   margin-bottom: 0;
-  flex: 1 1 180px;
-  max-width: 320px;
-  min-width: 140px;
+  min-width: 0;
+  width: 100%;
+  max-width: none;
 }
 .kpv2-page-media-content.is-page-text-tab {
   display: block;
@@ -2840,14 +2973,18 @@ ${getNctDarkUiScaleSliderCss({ rangeWidth: '88px' })}
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  justify-content: space-between;
   gap: 6px;
-  padding: 8px 10px;
+  padding: 10px;
+  min-height: 88px;
   border: 1px solid ${c.panelEdgeDark};
   border-radius: 3px;
   background: ${c.fieldBg};
-  box-shadow: none;
+  box-shadow: 0 0 0 1px ${c.panelEdge} inset;
   cursor: pointer;
   color: inherit;
+  overflow: hidden;
+  position: relative;
 }
 .kpv2-page-media-url-row:hover {
   border-color: ${c.accent};
@@ -2870,12 +3007,20 @@ ${getNctDarkUiScaleSliderCss({ rangeWidth: '88px' })}
   color: ${c.fg};
   line-height: 1.35;
   word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .kpv2-page-media-url-text {
   font-size: 11px;
   color: ${c.fgDim};
   word-break: break-all;
   line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .kpv2-page-media-url-meta {
   margin-top: 2px;
@@ -2888,13 +3033,13 @@ ${getNctDarkUiScaleSliderCss({ rangeWidth: '88px' })}
   gap: 6px;
 }
 .kpv2-page-media-url-actions.kpv2-page-media-actions {
-  position: static;
-  left: auto;
-  right: auto;
-  bottom: auto;
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 6px;
   flex: 0 0 auto;
   width: auto;
-  max-width: 220px;
+  max-width: none;
   opacity: 0;
   pointer-events: none;
 }
@@ -3043,6 +3188,9 @@ ${getNctDarkUiScaleSliderCss({ rangeWidth: '88px' })}
 .kpv2-page-media-thumb {
   display: block;
   background: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
 }
 .kpv2-page-media-thumb.is-cover {
   width: 100%;
@@ -3243,6 +3391,9 @@ ${getNctDarkUiScaleSliderCss({ rangeWidth: '88px' })}
   max-height: 85vh;
   object-fit: contain;
   border-radius: 3px;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
 }
 .kpv2-page-media-fullvideo {
   max-width: 90vw;
@@ -3287,6 +3438,10 @@ ${getNctDarkUiScaleSliderCss({ rangeWidth: '88px' })}
   }
   .kpv2-page-media-size-grid {
     grid-template-columns: repeat(auto-fill, minmax(calc(110px * var(--kpv2-pm-image-scale, 1.5)), 1fr));
+    gap: calc(8px * var(--kpv2-pm-image-scale, 1.5));
+  }
+  .kpv2-page-media-url-card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(calc(140px * var(--kpv2-pm-image-scale, 1.5)), 1fr));
     gap: calc(8px * var(--kpv2-pm-image-scale, 1.5));
   }
   .kpv2-page-media-header {

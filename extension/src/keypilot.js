@@ -3922,9 +3922,11 @@ export class KeyPilot extends EventManager {
     // Shared inspector pick mode: track any element under cursor (not just clickables).
     this.inspector.updateHover(under);
 
-    // Update text selection in highlight mode
+    // Gallery overlays: don't extend a page text-range onto lightbox images.
     if (this.state.isHighlightMode()) {
-      this.updateSelection();
+      if (!isPageMediaOverlayOpen() && !isMediaLibraryOverlayOpen()) {
+        this.updateSelection();
+      }
     }
   }
 

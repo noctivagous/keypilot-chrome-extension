@@ -521,7 +521,7 @@
             hidden
           >
             <header class="panel-header">
-              <h2>Search engine</h2>
+              <h2>Search engine (Omnibox)</h2>
               <p class="panel-lead">Used by the New Tab search box and KeyPilot’s omnibox (Alt+L).</p>
             </header>
 
@@ -897,7 +897,7 @@
                   <summary class="kp-subsection-summary">
                     <span class="kp-subsection-summary-text">
                       <span class="kp-subsection-title">Advanced</span>
-                      <span class="kp-subsection-sub">Paint backend and focus-ring padding</span>
+                      <span class="kp-subsection-sub">Paint backend, debug borders, and focus-ring padding</span>
                     </span>
                   </summary>
                   <div class="kp-subsection-body">
@@ -911,6 +911,16 @@
                         How the hover focus rectangle is drawn. <strong>Auto B→C</strong> skips DOM outline (A) and uses an in-target ring, then a fixed overlay. Matches Shadow Root Debug (<kbd>Alt</kbd>+<kbd>D</kbd>).
                       </div>
                     </div>
+
+                    <label class="toggle" for="click-paint-backend-debug">
+                      <input id="click-paint-backend-debug" type="checkbox" />
+                      <div class="toggle-text">
+                        <div class="toggle-title">Debug paint backend borders</div>
+                        <div class="toggle-sub">
+                          Dashes A / B / C differently so you can tell which backend painted the hover ring (A dashed, B dotted, C double). Off by default.
+                        </div>
+                      </div>
+                    </label>
 
                     <div class="field">
                       <div class="field-label">Padding</div>
@@ -1081,8 +1091,7 @@
             <div class="stack">
               <div class="about-card">
                 <p class="about-brand">noctivagous.com</p>
-                <p class="hint" style="margin:0;">Settings are stored in <code>chrome.storage.sync</code> so they stay consistent across tabs.</p>
-              </div>
+             </div>
             </div>
           </section>
         </div>

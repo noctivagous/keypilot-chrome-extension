@@ -12,19 +12,24 @@ This directory contains the following icon files:
 
 ## Icon Design
 
-Front-facing cybernetic racing yoke with cyan (left) and amber (right) grip buttons against a dark teal holographic circuit background.
+Front-facing cybernetic racing yoke with cyan (left) and amber (right) grip buttons on a black background. Source art uses transparent pixels whose RGB is magenta — flatten onto black before resize or the chroma shows through.
 
 ## Regenerating
 
 From the repo root (requires ImageMagick). Point `SRC` at the latest source screenshot/PNG:
 
 ```bash
-SRC="Screenshot 2026-08-04 at 2.32.49 PM copy.png"
-magick "$SRC" -gravity center -crop '%[fx:min(w,h)]x%[fx:min(w,h)]+0+0' +repage /tmp/kp-icon-square.png
+SRC="extension/icons/icon-source.png"
+magick "$SRC" \
+  -background black -alpha remove -alpha off \
+  -fuzz 8% -trim +repage \
+  -bordercolor black -border 6% \
+  -background black -gravity center \
+  -extent '%[fx:max(w,h)]x%[fx:max(w,h)]' \
+  /tmp/kp-icon-square.png
 for s in 16 32 48 76 128; do
-  magick /tmp/kp-icon-square.png -resize ${s}x${s} -strip extension/icons/icon${s}.png
+  magick /tmp/kp-icon-square.png -filter Lanczos -resize ${s}x${s} -unsharp 0x0.6+0.9+0.02 -strip extension/icons/icon${s}.png
 done
-cp "$SRC" extension/icons/icon-source.png
 ```
 
 ## Chrome Web Store

@@ -726,6 +726,7 @@ export class OverlayManager {
     const paintStrategy = cm.paintStrategy === 'auto' || cm.paintStrategy === 'BC'
       ? cm.paintStrategy
       : (def.paintStrategy === 'auto' ? 'auto' : 'BC');
+    const paintBackendDebugDashes = cm.paintBackendDebugDashes === true;
     const padRaw = Number(cm.focusPadding);
     const focusPadding = Number.isFinite(padRaw)
       ? Math.min(Math.max(padRaw, 0), 16)
@@ -737,6 +738,7 @@ export class OverlayManager {
       focusColor,
       clickEffect,
       paintStrategy,
+      paintBackendDebugDashes,
       focusPadding
     };
   }
@@ -2753,12 +2755,19 @@ export class OverlayManager {
    */
   _strategyAIsViable(element) {
     if (!element || element.nodeType !== 1) return false;
+    let paintEl = element;
     try {
-      // A is fine on a single-box card <a> (Gizmodo deals). It fails only when
-      // the card link is inline and fragments into image + title line boxes.
-      if (this._isFragmentedInlineFocusTarget(element)) return false;
+      paintEl = this._resolveFocusPaintElement(element) || element;
+    } catch {
+      paintEl = element;
+    }
+    try {
+      // A is fine on a single painted box (Epoch Times inline <a><picture><img>
+      // outlines the <img>). It fails when the *paint* node (or wrapping card)
+      // really splits into image + title / multi-line boxes.
+      if (this._positiveClientRectCount(paintEl) >= 2) return false;
       const shell = this._resolveMediaTextCardShell(element);
-      if (shell && this._isFragmentedInlineFocusTarget(shell)) return false;
+      if (shell && this._positiveClientRectCount(shell) >= 2) return false;
     } catch { /* ignore */ }
     try {
       if (this._shouldUseFixedFocusOverlay(element)) return false;
@@ -2823,7 +2832,9 @@ export class OverlayManager {
     try {
       const shell = this._resolveMediaTextCardShell(paintEl)
         || this._resolveMediaTextCardShell(element);
-      if (shell && this._isFragmentedInlineFocusTarget(shell)) {
+      // Real split (image + title line boxes), not a single box with 0×0
+      // <source> leftovers or a bare `display:inline` wrapping one <img>.
+      if (shell && this._positiveClientRectCount(shell) >= 2) {
         return true;
       }
     } catch { /* ignore */ }
@@ -4013,18 +4024,38 @@ export class OverlayManager {
   }
 
   /**
+   * Count getClientRects() boxes with a real painted area.
+   * `<picture>` / `<source>` leftover 0×0 rects (theepochtimes.com thumbs)
+   * must not count as line-box fragments.
+   * @param {Element|null|undefined} el
+   * @returns {number}
+   */
+  _positiveClientRectCount(el) {
+    if (!el || el.nodeType !== 1) return 0;
+    try {
+      const rects = el.getClientRects();
+      if (!rects || !rects.length) return 0;
+      let n = 0;
+      for (let i = 0; i < rects.length; i++) {
+        const r = rects[i];
+        if (r && r.width > 1 && r.height > 1) n++;
+      }
+      return n;
+    } catch {
+      return 0;
+    }
+  }
+
+  /**
    * Multi-line / wrapped inline clickables fragment into several line boxes.
    * Absolute `inset:0` on an inline host sizes to one fragment (often first line
-   * width only) — fall through to strategy C for the union rect instead.
+   * width only) — do not mount B on that host (climb to a same-size block).
    * @param {Element|null|undefined} el
    * @returns {boolean}
    */
   _isFragmentedInlineFocusTarget(el) {
     if (!el || el.nodeType !== 1) return false;
-    try {
-      const rects = el.getClientRects();
-      if (rects && rects.length >= 2) return true;
-    } catch { /* ignore */ }
+    if (this._positiveClientRectCount(el) >= 2) return true;
     try {
       const display = String(window.getComputedStyle(el)?.display || '');
       // Bare `inline` abspos containing blocks are fragment-sized in Blink.
@@ -4173,20 +4204,15 @@ export class OverlayManager {
 
     try {
       ring.style.setProperty('position', 'absolute', 'important');
-      // Outward padding matches strategy-A outline-offset (B historically used inset:0).
-      if (focusPad > 0) {
-        ring.style.setProperty('top', `-${focusPad}px`, 'important');
-        ring.style.setProperty('right', `-${focusPad}px`, 'important');
-        ring.style.setProperty('bottom', `-${focusPad}px`, 'important');
-        ring.style.setProperty('left', `-${focusPad}px`, 'important');
-        ring.style.removeProperty('inset');
-      } else {
-        ring.style.setProperty('inset', '0', 'important');
-        ring.style.removeProperty('top');
-        ring.style.removeProperty('right');
-        ring.style.removeProperty('bottom');
-        ring.style.removeProperty('left');
-      }
+      // Always set the four longhands. Do not toggle `inset` vs top/right/…
+      // with removeProperty — in Blink `inset` IS those four properties, so
+      // removing one form wipes the other and the ring collapses to ~6×6
+      // (border-only). Then Auto B→C falls through to C.
+      const edge = focusPad > 0 ? `-${focusPad}px` : '0px';
+      ring.style.setProperty('top', edge, 'important');
+      ring.style.setProperty('right', edge, 'important');
+      ring.style.setProperty('bottom', edge, 'important');
+      ring.style.setProperty('left', edge, 'important');
       ring.style.setProperty('box-sizing', 'border-box', 'important');
       ring.style.setProperty('pointer-events', 'none', 'important');
       ring.style.setProperty('margin', '0', 'important');
@@ -4195,7 +4221,9 @@ export class OverlayManager {
       ring.style.setProperty('height', 'auto', 'important');
       ring.style.setProperty('z-index', String(z), 'important');
       ring.style.setProperty('border-width', `${ringWidthPx}px`, 'important');
-      ring.style.setProperty('border-style', 'solid', 'important');
+      // Advanced → Debug paint backend: B = dotted (vs A dashed / C double).
+      const borderStyle = this._getClickModeSettings().paintBackendDebugDashes ? 'dotted' : 'solid';
+      ring.style.setProperty('border-style', borderStyle, 'important');
       ring.style.setProperty('border-color', borderColor, 'important');
       ring.style.setProperty('border-radius', radius, 'important');
       ring.style.setProperty('background', backgroundColor, 'important');
@@ -4399,6 +4427,13 @@ export class OverlayManager {
     stylingTarget.style.setProperty('--keypilot-focus-shadow-color', shadowColor);
     stylingTarget.style.setProperty('--keypilot-focus-ring-bg-color', ringBgColor);
     stylingTarget.style.setProperty('--keypilot-focus-box-shadow', boxShadow);
+    // Advanced → Debug paint backend: A = dashed outline (vs B dotted / C double).
+    try {
+      const outlineStyle = this._getClickModeSettings().paintBackendDebugDashes ? 'dashed' : 'solid';
+      stylingTarget.style.setProperty('--keypilot-focus-outline-style', outlineStyle);
+    } catch {
+      stylingTarget.style.setProperty('--keypilot-focus-outline-style', 'solid');
+    }
 
     // Outline follows the element's own border-radius. Many video thumbs put
     // radius on img / wrapper (12px) while the clickable <a> is square (0) —
@@ -4741,6 +4776,7 @@ export class OverlayManager {
         el.removeAttribute('data-kp-focus');
         el.removeAttribute('data-kp-focus-inset');
         el.style.removeProperty('--keypilot-focus-outline-offset');
+        el.style.removeProperty('--keypilot-focus-outline-style');
         el.style.removeProperty('--keypilot-focus-ring-color');
         el.style.removeProperty('--keypilot-focus-ring-width');
         el.style.removeProperty('--keypilot-focus-shadow-color');
@@ -5015,7 +5051,9 @@ export class OverlayManager {
     // Update overlay colors based on current context
     // Ensure any previous fade-out is cancelled when we re-show/update the overlay.
     this.focusOverlay.style.opacity = '1';
-    this.focusOverlay.style.border = `${rectangleThickness}px solid ${borderColor}`;
+    // Advanced → Debug paint backend: C = double (vs A dashed / B dotted).
+    const borderStyle = this._getClickModeSettings().paintBackendDebugDashes ? 'double' : 'solid';
+    this.focusOverlay.style.border = `${rectangleThickness}px ${borderStyle} ${borderColor}`;
     this.focusOverlay.style.background = backgroundColor;
     this.focusOverlay.style.boxSizing = 'border-box';
     // Strategy C: match target corner radius (A inherits it; fixed layer does not).
@@ -9289,7 +9327,7 @@ export class OverlayManager {
   }
 
   /**
-   * Corner SVG: top-right for Scroll To Top, bottom-right for Scroll To Bottom.
+   * Corner SVG: top-left for Scroll To Top, bottom-left for Scroll To Bottom.
    * @param {HTMLElement} veil
    * @param {'top'|'bottom'|string|null|undefined} edge
    * @param {string} backgroundColor

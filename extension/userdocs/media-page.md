@@ -24,9 +24,9 @@ Rebind via Layout Config if needed.
 
 ### Capabilities
 
-- Image scale and aspect controls
+- Image scale and aspect controls; **Article first** (on by default) ranks images in articles/main before site chrome
 - Fonts tab (custom `.woff2` / `.otf` / `.ttf` first, then system fonts)
-- URL table/list views
+- URL table view, or list view as a wrapping card grid (article/main first; site header/footer last)
 - Copy, Media Library send, download
 - Full view for images/videos
 

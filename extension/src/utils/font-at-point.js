@@ -449,6 +449,15 @@ function isKpChromeEl(el) {
   return false;
 }
 
+/**
+ * Browser-internal font files (chrome://resources, chrome-extension://, …).
+ * @param {string|null|undefined} url
+ * @returns {boolean}
+ */
+function isBrowserInternalFontUrl(url) {
+  return /^(chrome|chrome-extension|chrome-untrusted):/i.test(String(url || '').trim());
+}
+
 function customFileRank(ext) {
   const e = String(ext || '').replace(/^\./, '').toLowerCase();
   if (e === 'woff2') return 0;
@@ -525,6 +534,7 @@ export function collectPageFonts(root = document) {
   const seen = new Set();
 
   const push = (item) => {
+    if (isBrowserInternalFontUrl(item?.url)) return;
     const key = [
       String(item.fontFamily || '').toLowerCase(),
       String(item.url || ''),
@@ -537,7 +547,7 @@ export function collectPageFonts(root = document) {
   };
 
   for (const face of faces) {
-    const first = face.urls[0] || null;
+    const first = (face.urls || []).find((u) => u?.url && !isBrowserInternalFontUrl(u.url)) || null;
     const url = first?.url || '';
     const fileType = fontFileTypeLabel(first?.format || '', url);
     const ext = (fileType || '').replace(/^\./, '') || (url ? 'font' : 'local');
@@ -569,6 +579,7 @@ export function collectPageFonts(root = document) {
       const needle = rec.family.replace(/\s+/g, '').toLowerCase();
       for (const e of entries) {
         const name = String(e?.name || '');
+        if (isBrowserInternalFontUrl(name)) continue;
         const low = name.toLowerCase();
         if (!/\.(woff2?|ttf|otf|eot)(\?|#|$)/i.test(low)) continue;
         if (needle && low.replace(/[^a-z0-9]/g, '').includes(needle.replace(/[^a-z0-9]/g, ''))) {

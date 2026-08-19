@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-18T23:56:51.826Z
+ * Generated on 2026-08-19T03:44:44.135Z
  */
 
 (() => {
@@ -1937,6 +1937,9 @@
       // Default skip DOM outline (A); use in-target (B) then body-fixed (C).
       // Matches Shadow Root Debug “Auto B→C”.
       paintStrategy: "BC",
+      // When true, dash A/B/C hover rings differently for paint-backend recognition.
+      // Off by default (opt-in via Settings → Click Mode → Advanced).
+      paintBackendDebugDashes: false,
       // Outward ring padding (px). Strategy A uses this as preferred outline-offset;
       // B/C expand their boxes by the same amount (A historically ~2px; B→C was 0).
       focusPadding: 2
@@ -2074,6 +2077,10 @@
         DEFAULT_SETTINGS.clickMode.keyboardLinkHoverHints
       ),
       paintStrategy: normalizePaintStrategy(stored.paintStrategy),
+      paintBackendDebugDashes: normalizeBoolean(
+        stored.paintBackendDebugDashes,
+        DEFAULT_SETTINGS.clickMode.paintBackendDebugDashes
+      ),
       focusPadding: normalizeNumber(
         stored.focusPadding,
         DEFAULT_SETTINGS.clickMode.focusPadding,

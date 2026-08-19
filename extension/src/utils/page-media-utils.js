@@ -13,6 +13,9 @@ export { parseDpiFromImageBytes };
 
 /** @typedef {'image'|'video'|'text'|'url'|'pageText'|'font'} PageMediaCategory */
 
+/** Closest URL-tab landmark for sort priority (article first, site chrome last). */
+/** @typedef {'article'|'main'|'content'|'body'|'aside'|'nav'|'header'|'footer'|'dialog'} UrlLandmark */
+
 /**
  * @typedef {{
  *   category: PageMediaCategory,
@@ -30,6 +33,7 @@ export { parseDpiFromImageBytes };
    *   thumbUrl?: string|null,
    *   text?: string|null,
    *   urlGroup?: 'page'|'document'|'image'|'video'|'other',
+   *   urlLandmark?: UrlLandmark,
    *   fontFamily?: string,
    *   fontWeight?: string,
    *   fontStyle?: string,
@@ -411,7 +415,7 @@ export function groupUrlItemsByPathPrefix(items, minSize = 2) {
   /** @type {{ prefix: string, items: PageMediaItem[] }[]} */
   const groups = [];
   for (const [prefix, groupItems] of buckets) {
-    groupItems.sort((a, b) => String(a.url || '').localeCompare(String(b.url || '')));
+    groupItems.sort(compareUrlTabItems);
     groups.push({ prefix, items: groupItems });
   }
 
@@ -434,6 +438,142 @@ function urlTabGroupSortOrder(group) {
   if (group === 'image') return 2;
   if (group === 'video') return 3;
   return 4;
+}
+
+/**
+ * Landmark sort: article → main → in-content → unmarked body → aside → nav → header → footer → dialog.
+ * @param {UrlLandmark|string|null|undefined} landmark
+ * @returns {number}
+ */
+export function urlLandmarkSortOrder(landmark) {
+  const k = String(landmark || '');
+  if (k === 'article') return 0;
+  if (k === 'main') return 1;
+  if (k === 'content') return 2;
+  if (k === 'body') return 3;
+  if (k === 'aside') return 4;
+  if (k === 'nav') return 5;
+  if (k === 'header') return 6;
+  if (k === 'footer') return 7;
+  if (k === 'dialog') return 8;
+  return 3;
+}
+
+/**
+ * @param {Element|null|undefined} node
+ * @returns {string}
+ */
+function landmarkKindFromNode(node) {
+  if (!node || node.nodeType !== 1) return '';
+  const tag = String(node.tagName || '').toUpperCase();
+  let role = '';
+  try {
+    role = String(node.getAttribute?.('role') || '').trim().toLowerCase();
+  } catch { /* ignore */ }
+  const roles = role ? role.split(/\s+/) : [];
+
+  if (tag === 'DIALOG' || roles.includes('dialog') || roles.includes('alertdialog')) return 'dialog';
+  try {
+    if (String(node.getAttribute?.('aria-modal') || '') === 'true') return 'dialog';
+  } catch { /* ignore */ }
+
+  if (tag === 'ARTICLE' || roles.includes('article')) return 'article';
+  if (tag === 'MAIN' || roles.includes('main')) return 'main';
+  if (tag === 'NAV' || roles.includes('navigation') || tag === 'MENU') return 'nav';
+  if (tag === 'ASIDE' || roles.includes('complementary')) return 'aside';
+  if (roles.includes('search') || roles.includes('searchbox')) return 'search';
+  if (tag === 'HEADER' || roles.includes('banner')) return 'header';
+  if (tag === 'FOOTER' || roles.includes('contentinfo')) return 'footer';
+  if (tag === 'FIGURE' || tag === 'BLOCKQUOTE' || tag === 'CITE' || tag === 'TABLE') return 'content';
+  if (tag === 'SECTION' || roles.includes('region')) return 'section';
+  return '';
+}
+
+/**
+ * Walk light-DOM parents and open shadow hosts.
+ * @param {Element|null|undefined} el
+ * @param {(node: Element) => void} visit
+ */
+function walkComposedAncestors(el, visit) {
+  let node = el;
+  let depth = 0;
+  while (node && depth++ < 64) {
+    if (node.nodeType === 1) visit(node);
+    if (node.parentElement) {
+      node = node.parentElement;
+      continue;
+    }
+    try {
+      const root = typeof node.getRootNode === 'function' ? node.getRootNode() : null;
+      node = (root && typeof ShadowRoot !== 'undefined' && root instanceof ShadowRoot)
+        ? root.host
+        : null;
+    } catch {
+      break;
+    }
+  }
+}
+
+/**
+ * Closest URL-tab landmark. Nested header/footer/nav inside article stay article.
+ * @param {Element|null|undefined} el
+ * @returns {UrlLandmark}
+ */
+export function urlLandmarkFromElement(el) {
+  if (!el || el.nodeType !== 1) return 'body';
+
+  let inArticle = false;
+  let inMain = false;
+  let closest = '';
+
+  walkComposedAncestors(el, (node) => {
+    const kind = landmarkKindFromNode(node);
+    if (!kind) return;
+    if (kind === 'article') inArticle = true;
+    if (kind === 'main') inMain = true;
+    if (!closest) closest = kind;
+  });
+
+  if (closest === 'dialog') return 'dialog';
+  if (inArticle) return 'article';
+  if (inMain) {
+    if (closest === 'aside') return 'aside';
+    if (closest === 'nav' || closest === 'search') return 'nav';
+    if (closest === 'header') return 'header';
+    if (closest === 'footer') return 'footer';
+    return 'main';
+  }
+  if (closest === 'aside') return 'aside';
+  if (closest === 'nav' || closest === 'search') return 'nav';
+  if (closest === 'header') return 'header';
+  if (closest === 'footer') return 'footer';
+  if (closest === 'content') return 'content';
+  return 'body';
+}
+
+/**
+ * @param {PageMediaItem|null|undefined} item
+ * @returns {UrlLandmark}
+ */
+function urlLandmarkForItem(item) {
+  if (item?.urlLandmark) return item.urlLandmark;
+  return urlLandmarkFromElement(item?.element || null);
+}
+
+/**
+ * URL-tab order: file group, then landmark, then URL.
+ * @param {PageMediaItem} a
+ * @param {PageMediaItem} b
+ * @returns {number}
+ */
+export function compareUrlTabItems(a, b) {
+  const ga = urlTabGroupSortOrder(a?.urlGroup || urlTabGroupForUrl(a?.url, a?.ext));
+  const gb = urlTabGroupSortOrder(b?.urlGroup || urlTabGroupForUrl(b?.url, b?.ext));
+  if (ga !== gb) return ga - gb;
+  const la = urlLandmarkSortOrder(urlLandmarkForItem(a));
+  const lb = urlLandmarkSortOrder(urlLandmarkForItem(b));
+  if (la !== lb) return la - lb;
+  return String(a?.url || '').localeCompare(String(b?.url || ''));
 }
 
 /**
@@ -694,11 +834,22 @@ export function collectPageMedia(root = document) {
     if (shouldExcludeFromUrlTab(resolved, ext, el)) return;
 
     const linkTitle = linkTitleFromElement(el);
+    const urlLandmark = urlLandmarkFromElement(el);
     if (allPageUrls.has(resolved)) {
       const existing = allPageUrls.get(resolved);
-      if (existing && linkTitle && (!existing.label || existing.label === resolved)) {
-        existing.label = linkTitle;
-        if (!existing.element && el) existing.element = el;
+      if (existing) {
+        const existingRank = urlLandmarkSortOrder(urlLandmarkForItem(existing));
+        const nextRank = urlLandmarkSortOrder(urlLandmark);
+        if (nextRank < existingRank) {
+          if (el) existing.element = el;
+          existing.urlLandmark = urlLandmark;
+        } else if (!existing.element && el) {
+          existing.element = el;
+          existing.urlLandmark = urlLandmark;
+        }
+        if (linkTitle && (!existing.label || existing.label === resolved)) {
+          existing.label = linkTitle;
+        }
       }
       return;
     }
@@ -710,7 +861,8 @@ export function collectPageMedia(root = document) {
       element: el,
       label: linkTitle || filenameFromUrl(resolved) || resolved,
       ext,
-      urlGroup: urlTabGroupForUrl(resolved, ext)
+      urlGroup: urlTabGroupForUrl(resolved, ext),
+      urlLandmark
     });
   };
 
@@ -724,7 +876,15 @@ export function collectPageMedia(root = document) {
       notePageUrl(resolved, raw.element || null, raw.kind || raw.category);
     }
     if (raw.category === 'url') return;
-    if (byUrl.has(resolved)) return;
+    if (byUrl.has(resolved)) {
+      const existing = byUrl.get(resolved);
+      const nextLandmark = urlLandmarkFromElement(raw.element || null);
+      if (existing && urlLandmarkSortOrder(nextLandmark) < urlLandmarkSortOrder(urlLandmarkForItem(existing))) {
+        if (raw.element) existing.element = raw.element;
+        existing.urlLandmark = nextLandmark;
+      }
+      return;
+    }
 
     const placeholderExts = new Set(['img', 'bg', 'video']);
     const rawExt = normalizeStoredExt(raw.ext);
@@ -745,7 +905,8 @@ export function collectPageMedia(root = document) {
       url: resolved,
       element: raw.element || null,
       label,
-      ext
+      ext,
+      urlLandmark: urlLandmarkFromElement(raw.element || null)
     };
     if (typeof raw.width === 'number' && raw.width > 0) item.width = raw.width;
     if (typeof raw.height === 'number' && raw.height > 0) item.height = raw.height;
@@ -1110,13 +1271,8 @@ export function groupPageMediaByCategory(items) {
     else if (item?.category === 'pageText') groups.pageText.push(item);
     else if (item?.category === 'font') groups.font.push(item);
   }
-  // Sort URLs: web pages → documents → other; alpha within group.
-  groups.url.sort((a, b) => {
-    const ga = urlTabGroupSortOrder(a.urlGroup || urlTabGroupForUrl(a.url, a.ext));
-    const gb = urlTabGroupSortOrder(b.urlGroup || urlTabGroupForUrl(b.url, b.ext));
-    if (ga !== gb) return ga - gb;
-    return String(a.url || '').localeCompare(String(b.url || ''));
-  });
+  // Sort URLs: web pages → documents → other; landmark (article first, chrome last); alpha.
+  groups.url.sort(compareUrlTabItems);
   return groups;
 }
 
@@ -1217,16 +1373,26 @@ export function groupImagesByDimensionSize(items) {
 /**
  * Sort images by pixel area (file size as tie-breaker). Unknown dimensions last.
  * Page order preserves collect/DOM order.
+ * When prioritizeLandmarks is set, article/main images come first and site
+ * header/footer/nav last (stable within each landmark).
  * @param {PageMediaItem[]} items
  * @param {'size-desc'|'size-asc'|'page'|string} [mode]
+ * @param {{ prioritizeLandmarks?: boolean }} [opts]
  * @returns {PageMediaItem[]}
  */
-export function sortImageItems(items, mode) {
+export function sortImageItems(items, mode, opts = {}) {
   const list = (items || []).filter(Boolean).slice();
   const m = mode === 'size-asc' || mode === 'page' ? mode : 'size-desc';
-  if (m === 'page') return list;
+  const byLandmark = !!opts?.prioritizeLandmarks;
+  if (m === 'page' && !byLandmark) return list;
   const dir = m === 'size-asc' ? 1 : -1;
   list.sort((a, b) => {
+    if (byLandmark) {
+      const la = urlLandmarkSortOrder(urlLandmarkForItem(a));
+      const lb = urlLandmarkSortOrder(urlLandmarkForItem(b));
+      if (la !== lb) return la - lb;
+    }
+    if (m === 'page') return 0;
     const aa = (Number(a.width) || 0) * (Number(a.height) || 0);
     const bb = (Number(b.width) || 0) * (Number(b.height) || 0);
     const aKnown = aa > 0;

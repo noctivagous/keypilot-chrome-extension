@@ -337,7 +337,7 @@ export class StyleManager {
 
       .${CSS_CLASSES.EDGE_JUMP_FADE_ICON} {
         position: absolute;
-        right: 18px;
+        left: 100px;
         width: 56px;
         height: 56px;
         pointer-events: none;
@@ -345,12 +345,12 @@ export class StyleManager {
       }
 
       .${CSS_CLASSES.EDGE_JUMP_FADE_ICON}[data-kp-edge="top"] {
-        top: 18px;
+        top: 100px;
         bottom: auto;
       }
 
       .${CSS_CLASSES.EDGE_JUMP_FADE_ICON}[data-kp-edge="bottom"] {
-        bottom: 18px;
+        bottom: 100px;
         top: auto;
       }
       
@@ -938,7 +938,7 @@ export class StyleManager {
        */
       .keypilot-focus-element,
       [data-kp-focus="1"] {
-        outline: var(--keypilot-focus-ring-width, 3px) solid var(--keypilot-focus-ring-color, #2196f3) !important;
+        outline: var(--keypilot-focus-ring-width, 3px) var(--keypilot-focus-outline-style, solid) var(--keypilot-focus-ring-color, #2196f3) !important;
         /* Graded by OverlayManager: +2 outer default → mild shrink → full inset */
         outline-offset: var(--keypilot-focus-outline-offset, 2px) !important;
         box-shadow: var(--keypilot-focus-box-shadow, none) !important;
@@ -948,7 +948,7 @@ export class StyleManager {
       /* --inset kept for diagnostics; offset always comes from the graded var */
       .keypilot-focus-element.keypilot-focus-element--inset,
       [data-kp-focus="1"][data-kp-focus-inset="1"] {
-        outline: var(--keypilot-focus-ring-width, 3px) solid var(--keypilot-focus-ring-color, #2196f3) !important;
+        outline: var(--keypilot-focus-ring-width, 3px) var(--keypilot-focus-outline-style, solid) var(--keypilot-focus-ring-color, #2196f3) !important;
         outline-offset: var(--keypilot-focus-outline-offset, calc(-1 * var(--keypilot-focus-ring-width, 3px))) !important;
         box-shadow: var(--keypilot-focus-box-shadow, none) !important;
         filter: none !important;
@@ -1084,7 +1084,7 @@ export class StyleManager {
       /* Element styling for DOM hover mode in shadow DOM (settings-driven ring). */
       .keypilot-focus-element,
       [data-kp-focus="1"] {
-        outline: var(--keypilot-focus-ring-width, 3px) solid var(--keypilot-focus-ring-color, #2196f3) !important;
+        outline: var(--keypilot-focus-ring-width, 3px) var(--keypilot-focus-outline-style, solid) var(--keypilot-focus-ring-color, #2196f3) !important;
         /* Graded by OverlayManager: +2 outer default → mild shrink → full inset */
         outline-offset: var(--keypilot-focus-outline-offset, 2px) !important;
         box-shadow: var(--keypilot-focus-box-shadow, none) !important;
@@ -1094,7 +1094,7 @@ export class StyleManager {
       /* --inset kept for diagnostics; offset always comes from the graded var */
       .keypilot-focus-element.keypilot-focus-element--inset,
       [data-kp-focus="1"][data-kp-focus-inset="1"] {
-        outline: var(--keypilot-focus-ring-width, 3px) solid var(--keypilot-focus-ring-color, #2196f3) !important;
+        outline: var(--keypilot-focus-ring-width, 3px) var(--keypilot-focus-outline-style, solid) var(--keypilot-focus-ring-color, #2196f3) !important;
         outline-offset: var(--keypilot-focus-outline-offset, calc(-1 * var(--keypilot-focus-ring-width, 3px))) !important;
         box-shadow: var(--keypilot-focus-box-shadow, none) !important;
         filter: none !important;
