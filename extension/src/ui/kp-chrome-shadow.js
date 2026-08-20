@@ -243,7 +243,11 @@ export function isClickableKeyPilotChromeElement(element) {
       '.kpv2-settings-host',
       '.kpv2-docs-host',
       '.kpv2-popover-container',
-      '.kp-launcher-container'
+      '.kp-launcher-container',
+      // OS popup Link Preview / Open Popover: injected titlebar (Open, New Tab, ×)
+      '#kpv2-popover-window-chrome-host',
+      '[data-kp-popover-window-chrome]',
+      '.kpv2-popover-window-titlebar'
     ].join(', ')
   );
 }

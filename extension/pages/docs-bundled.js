@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-20T00:09:33.137Z
+ * Generated on 2026-08-20T00:41:01.953Z
  */
 
 var __defProp = Object.defineProperty;
@@ -6397,7 +6397,24 @@ var INSPECTOR_KIND = Object.freeze({
   /** Cumulative element pick for Rectangle Select (Y) alternate mode */
   RECTANGLE_PICK: "rectangle_pick"
 });
-var ELEMENT_SELECT_TAGS = Object.freeze([
+var ELEMENT_SELECT_AGGREGATES = Object.freeze([
+  "table",
+  "figure",
+  "picture",
+  "ul",
+  "ol",
+  "dl"
+]);
+var ELEMENT_SELECT_LANDMARKS = Object.freeze([
+  "article",
+  "section",
+  "aside",
+  "header",
+  "footer",
+  "main",
+  "nav"
+]);
+var ELEMENT_SELECT_ATOMS = Object.freeze([
   "h1",
   "h2",
   "h3",
@@ -6405,32 +6422,31 @@ var ELEMENT_SELECT_TAGS = Object.freeze([
   "h5",
   "h6",
   "p",
-  "li",
   "blockquote",
   "pre",
-  "code",
-  "article",
-  "section",
-  "aside",
-  "header",
-  "footer",
-  "main",
-  "nav",
-  "a",
+  "li",
   "img",
-  "figure",
-  "figcaption",
-  "picture",
   "video",
   "audio",
-  "svg",
+  "svg"
+]);
+var ELEMENT_SELECT_FRAGMENTS = Object.freeze([
+  "a",
+  "code",
+  "label",
   "td",
   "th",
+  "caption",
+  "figcaption",
   "dt",
   "dd",
-  "caption",
-  "summary",
-  "label"
+  "summary"
+]);
+var ELEMENT_SELECT_TAGS = Object.freeze([
+  ...ELEMENT_SELECT_AGGREGATES,
+  ...ELEMENT_SELECT_LANDMARKS,
+  ...ELEMENT_SELECT_ATOMS,
+  ...ELEMENT_SELECT_FRAGMENTS
 ]);
 var CURSOR_MODE = Object.freeze({
   NO_CUSTOM_CURSORS: "NO-CUSTOM-CURSORS",

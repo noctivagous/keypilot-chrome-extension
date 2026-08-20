@@ -6,7 +6,8 @@ Related code:
 
 - `extension/rules.json` — DNR header stripping
 - `extension/src/utils/preview-url.js` — HTTPS prefer + X/Twitter embed rewrite
-- `extension/src/modules/overlay-manager.js` — `showPreviewPopover()`
+- `extension/src/modules/overlay-manager.js` — façade `showPreviewPopover()`
+- `extension/src/modules/popover-controller.js` — OS popup implementation
 - `extension/src/modules/launcher-popover.js` — same iframe strategy
 - `extension/src/ui/preview-open-actions.js` — Open / Open in New Tab (always the **original** URL)
 

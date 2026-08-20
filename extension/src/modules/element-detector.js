@@ -3,7 +3,11 @@
  */
 import { CLICKABLE_CATEGORY, CSS_CLASSES, FEATURE_FLAGS } from '../config/constants.js';
 import { deepElementFromPoint as pierceElementFromPoint } from '../utils/element-from-point.js';
-import { resolveHoveredLink, activationIdentitiesMatch } from '../utils/resolve-hovered-link.js';
+import {
+  resolveHoveredLink,
+  activationIdentitiesMatch,
+  isOwnActionControl
+} from '../utils/resolve-hovered-link.js';
 
 export class ElementDetector {
   constructor() {
@@ -24,6 +28,8 @@ export class ElementDetector {
 
     // Track elements with addEventListener click handlers
     this.clickHandlerElements = new WeakSet();
+    /** @type {WeakMap<Element, Set<Function|EventListenerObject>>} */
+    this.clickHandlerListeners = new WeakMap();
 
     // Depth for nested _withNativePageCursors calls (one suspend/restore pair).
     this._nativeCursorSuspendDepth = 0;
@@ -176,6 +182,14 @@ export class ElementDetector {
         try {
           // Use a WeakSet to avoid memory leaks
           elementDetectorInstance.clickHandlerElements.add(this);
+          if (listener && (typeof listener === 'function' || typeof listener.handleEvent === 'function')) {
+            let set = elementDetectorInstance.clickHandlerListeners.get(this);
+            if (!set) {
+              set = new Set();
+              elementDetectorInstance.clickHandlerListeners.set(this, set);
+            }
+            set.add(listener);
+          }
         } catch {
           // Ignore errors in tracking
         }
@@ -188,6 +202,49 @@ export class ElementDetector {
 
   hasTrackedClickHandler(el) {
     return this.clickHandlerElements.has(el);
+  }
+
+  /**
+   * True when `a` and `b` share an addEventListener('click') function.
+   * Action controls (buttons) never match this way — Add to Cart must keep
+   * its own ring even if a parent card also has a click listener.
+   * Isolated-world wrap only sees listeners registered in this world.
+   * @param {Element|null|undefined} a
+   * @param {Element|null|undefined} b
+   * @returns {boolean}
+   */
+  _shareClickListener(a, b) {
+    if (!a || !b || a === b || a.nodeType !== 1 || b.nodeType !== 1) return false;
+    try {
+      if (isOwnActionControl(a) || isOwnActionControl(b)) return false;
+    } catch { /* continue */ }
+    let sa = null;
+    let sb = null;
+    try { sa = this.clickHandlerListeners.get(a); } catch { sa = null; }
+    try { sb = this.clickHandlerListeners.get(b); } catch { sb = null; }
+    if (!sa || !sb || !sa.size || !sb.size) return false;
+    try {
+      for (const fn of sa) {
+        if (sb.has(fn)) return true;
+      }
+    } catch { /* ignore */ }
+    return false;
+  }
+
+  /**
+   * Same F-destination: matching URL / data-href / onclick, or a shared click fn.
+   * @param {Element} leaf
+   * @param {Element} host
+   * @returns {boolean}
+   */
+  _skipForParentDestinationsMatch(leaf, host) {
+    try {
+      if (activationIdentitiesMatch(leaf, host)) return true;
+    } catch { /* ignore */ }
+    try {
+      if (this._shareClickListener(leaf, host)) return true;
+    } catch { /* ignore */ }
+    return false;
   }
 
   /**
@@ -770,7 +827,7 @@ export class ElementDetector {
     } catch { /* ignore */ }
 
     try {
-      return activationIdentitiesMatch(el, host);
+      return this._skipForParentDestinationsMatch(el, host);
     } catch {
       return false;
     }
@@ -843,7 +900,7 @@ export class ElementDetector {
         if (this._isFullBleedChromeBar(el) || this.isCompositeClickContainer(el)) return;
       } catch { /* ignore */ }
       try {
-        if (!activationIdentitiesMatch(leaf, el)) return;
+        if (!this._skipForParentDestinationsMatch(leaf, el)) return;
       } catch {
         return;
       }

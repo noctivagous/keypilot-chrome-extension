@@ -246,11 +246,48 @@ function ownNavigableHref(el) {
   return '';
 }
 
+const JS_NAV_DEST_ATTRS = Object.freeze([
+  'data-href',
+  'data-url',
+  'data-link',
+  'data-nav',
+  'data-destination',
+  'data-kp-url'
+]);
+
+/**
+ * JS-driven navigation dest on `el` itself (not an ancestor).
+ * @param {Element} el
+ * @returns {string}
+ */
+function ownJsNavigableDest(el) {
+  if (!el || el.nodeType !== 1) return '';
+  for (let i = 0; i < JS_NAV_DEST_ATTRS.length; i++) {
+    let raw = '';
+    try { raw = String(el.getAttribute(JS_NAV_DEST_ATTRS[i]) || '').trim(); } catch { raw = ''; }
+    const dest = normalizeActivationDest(raw);
+    if (dest) return dest;
+  }
+  return '';
+}
+
+/**
+ * Normalized inline onclick text. Empty when missing.
+ * @param {Element} el
+ * @returns {string}
+ */
+function ownOnclickToken(el) {
+  if (!el || el.nodeType !== 1) return '';
+  let raw = '';
+  try { raw = String(el.getAttribute('onclick') || '').replace(/\s+/g, ' ').trim(); } catch { raw = ''; }
+  return raw ? raw.slice(0, 180).toLowerCase() : '';
+}
+
 /**
  * @param {Element} el
  * @returns {boolean}
  */
-function isOwnActionControl(el) {
+export function isOwnActionControl(el) {
   if (!el || el.nodeType !== 1) return false;
   const tag = el.tagName;
   if (tag === 'BUTTON') return true;
@@ -283,10 +320,12 @@ function isImpliedPermalinkHost(el) {
 
 /**
  * Stable id for what F would do on `el`.
- * - `nav:` + normalized URL for links and article-style cards (implied permalink)
+ * - `nav:` + normalized URL for links, data-href/data-url cards, implied permalinks
+ * - `js:` + inline onclick text for JS-only destinations
  * - `act:` + testid/label for buttons and other actions
  *
  * Does not walk up to an ancestor <a> — that would make Like inherit the tweet URL.
+ * Action controls stay `act:` even if they also have data-href (Add to Cart).
  *
  * @param {Element|null|undefined} el
  * @returns {string} empty when unknown
@@ -307,6 +346,12 @@ export function resolveActivationIdentity(el) {
     const key = testid || label || role || el.tagName;
     return `act:${String(key).toLowerCase()}`;
   }
+
+  const dataDest = ownJsNavigableDest(el);
+  if (dataDest) return `nav:${dataDest}`;
+
+  const onclickTok = ownOnclickToken(el);
+  if (onclickTok) return `js:${onclickTok}`;
 
   if (isImpliedPermalinkHost(el)) {
     const perma = resolveDescendantPermalink(el);

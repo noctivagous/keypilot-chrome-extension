@@ -2475,12 +2475,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
           }
           // Ensure local tracking is cleared even if overlay listener raced.
           try {
-            if (this.overlayManager) {
-              this.overlayManager._popoverWindowId = null;
-              this.overlayManager._popoverWindowTabId = null;
-              this.overlayManager._popoverWindowUrl = null;
-              this.overlayManager._popoverWindowKind = null;
-            }
+            this.overlayManager?.clearPopoverWindowTracking?.();
           } catch { /* ignore */ }
         } catch (e) {
           console.warn('[KeyPilot] Failed to handle POPOVER_WINDOW_CLOSED:', e);

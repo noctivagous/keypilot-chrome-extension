@@ -176,12 +176,19 @@ Do not split these solely for a store submission. 2026-08-19: deferred except ex
     math out of HighlightManager.
 - [ ] Keep thin orchestrator: init, `handleKeyDown` dispatch, module wiring
 
-### `overlay-manager.js` (10,232 LOC)
+### `overlay-manager.js` (~4,156 LOC façade)
 
-- [ ] Extract `popover-iframe.js` (E-key modal)
-- [ ] Extract `preview-popover.js` (P-key)
-- [ ] Extract focus-overlay drawing
-- [ ] Keep `OverlayManager` as façade
+- [x] Extract popover controller (`src/modules/popover-controller.js`, ~1,219 LOC)
+  - E-key in-page iframe modal, Docs/Settings hosts, http(s) OS window
+  - P-key Link Preview is OS-window-only (`showPreviewPopover`); not a
+    separate in-page iframe module
+  - OverlayManager keeps public delegates + `popoverContainer` /
+    `_popoverWindowUrl` getters for callers
+- [x] Extract focus-overlay drawing (`src/modules/focus-overlay.js`, ~5,164 LOC)
+  - Backends + A/B/C paint + text-field hints; paint fields stay on the
+    OverlayManager façade (IO/scroll read `focusOverlay` / `_inTargetRing`)
+- [x] Keep `OverlayManager` as façade (inspector, highlight wrappers, edge-jump,
+  debug HUD, `updateOverlays` orchestration)
 
 ### `background.js` (3,089 LOC)
 
@@ -249,7 +256,8 @@ Do not split these solely for a store submission. 2026-08-19: deferred except ex
 2. [ ] Add focused regression coverage for the current pure and service-worker seams.
 3. [ ] Delete the inert RBush implementation and obsolete Babel configuration.
 4. [x] Extract navigation/activation from `keypilot.js` (mixin classes; dispatch unchanged).
-   Next overlay/background splits only as feature work or tests need their boundaries.
+   [x] Overlay split: `popover-controller.js` + `focus-overlay.js`; OverlayManager façade.
+   Next background splits only as feature work or tests need their boundaries.
 
 ---
 
@@ -267,7 +275,9 @@ Measured 2026-08-19; sizes are source lines, not bundle size.
 | `src/modules/navigation-handlers.js` | 1,087 | Back/forward/tabs/root/scroll handlers |
 | `src/modules/activation-handlers.js` | 283 | F/G/B activate + Open Popover handlers |
 | `early-inject.js` | 10,219 | Generated/stamped early-runtime surface |
-| `src/modules/overlay-manager.js` | 10,232 | Overlays, popovers, and diagnostics |
+| `src/modules/overlay-manager.js` | 4,156 | Overlay façade (inspector, highlight, HUD) |
+| `src/modules/focus-overlay.js` | 5,164 | Focus ring backends + A/B/C paint |
+| `src/modules/popover-controller.js` | 1,219 | E/P popovers (iframe modal + OS window) |
 
 ---
 
