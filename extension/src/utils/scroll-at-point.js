@@ -629,8 +629,7 @@ function isKeyPilotScrollChrome(n) {
 }
 
 /**
- * True when the box is wider than tall (landscape). Scroll Line can skip these
- * so horizontal carousels lose to a portrait/square ancestor or the page.
+ * True when the box is wider than tall (landscape).
  * @param {Element} el
  * @returns {boolean}
  */
@@ -640,6 +639,19 @@ export function isWideOverflowTarget(el) {
   try { r = el.getBoundingClientRect(); } catch { r = null; }
   if (!r || !(r.width > 1) || !(r.height > 1)) return false;
   return r.width > r.height + 1;
+}
+
+/**
+ * Horizontal-only landscape overflow (image/video carousels). Vertical-only
+ * landscape panes — including full-viewport app-shell columns — are the page
+ * scroller and must not be skipped.
+ * @param {Element} el
+ * @param {ScrollCapacity} [cap]
+ * @returns {boolean}
+ */
+export function isCarouselLikeOverflowTarget(el, cap) {
+  if (!el || !cap || !cap.canX || cap.canY) return false;
+  return isWideOverflowTarget(el);
 }
 
 /**
@@ -695,7 +707,7 @@ export function findScrollableAtPoint(clientX, clientY, ctx = {}) {
         n = composedParent(n);
         continue;
       }
-      if (skipWide && isWideOverflowTarget(n)) {
+      if (skipWide && isCarouselLikeOverflowTarget(n, cap)) {
         n = composedParent(n);
         continue;
       }

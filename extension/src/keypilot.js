@@ -7761,6 +7761,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
 
     if (!target || !(target instanceof Element)) {
       console.log('[KeyPilot] Preview popover: not hovering over a link');
+      this._flashUrlActionUnavailable(target, lastMouse?.x, lastMouse?.y);
       return;
     }
 
@@ -7785,6 +7786,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
 
     if (!url) {
       console.log('[KeyPilot] Preview popover: not hovering over a link');
+      this._flashUrlActionUnavailable(target, lastMouse?.x, lastMouse?.y);
       return;
     }
     console.log('[KeyPilot] Opening preview popover for link:', url);

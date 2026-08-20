@@ -2675,7 +2675,8 @@ export class OverlayManager {
   }
 
   /**
-   * Click New Tab / Click New Tab Background when the hover target has no URL.
+   * Click New Tab / Background, Preview Link, Open Popover when the hover
+   * target has no navigable URL.
    * Always a dashed orange strobe (not the user clickEffect, and not gated on
    * link-style category) so buttons, text, and empty space still get a "nope".
    *

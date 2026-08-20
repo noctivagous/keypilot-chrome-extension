@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-20T00:41:01.953Z
+ * Generated on 2026-08-20T03:17:00.088Z
  */
 
 var __defProp = Object.defineProperty;
@@ -7207,7 +7207,7 @@ var DEFAULT_SETTINGS = Object.freeze({
     speed: SCROLL.BEHAVIOR === "smooth" ? "smooth" : "instant",
     // Middle mouse button → Scroll Line Function (empty page only). On by default on Mac.
     middleClickScrollLine: isMacPlatform(),
-    // Scroll Line: skip wide in-page overflow (carousels); keep square / taller boxes.
+    // Scroll Line: skip horizontal-only landscape overflow (carousels).
     linePreferPortraitTargets: true
   })
 });

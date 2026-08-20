@@ -10,6 +10,7 @@ import {
   elementFromPointDeep,
   findScrollableAtPoint,
   findScrollTargetAtPoint,
+  getScrollCapacity,
   isDocumentScrollRoot,
   scrollAtPoint,
   scrollByAtPoint,
@@ -645,8 +646,18 @@ export function withNavigationHandlers(Base) {
         if (!this._isKeyPilotUiElement?.(under)) {
           const iframe = /** @type {HTMLIFrameElement} */ (under);
           const rect = iframe.getBoundingClientRect();
-          const wideIframe = skipWide && rect && rect.width > rect.height + 1;
-          if (rect && rect.width > 0 && rect.height > 0 && !wideIframe) {
+          const vw = window.innerWidth || 0;
+          const vh = window.innerHeight || 0;
+          const fullPane = !!(
+            rect &&
+            vw > 0 &&
+            vh > 0 &&
+            rect.width >= vw * 0.94 &&
+            rect.height >= vh * 0.94
+          );
+          // Skip landscape iframe strips (carousel embeds), not a full-viewport pane.
+          const wideStrip = skipWide && rect && rect.width > rect.height + 1 && !fullPane;
+          if (rect && rect.width > 0 && rect.height > 0 && !wideStrip) {
             return {
               kind: 'iframe',
               iframe,
@@ -664,7 +675,14 @@ export function withNavigationHandlers(Base) {
     }
 
     const se = document.scrollingElement || document.documentElement || document.body;
-    if (se) return { kind: 'element', el: se, canX: true, canY: true };
+    if (se) {
+      try {
+        const cap = getScrollCapacity(se);
+        if (cap.canX || cap.canY) {
+          return { kind: 'element', el: se, canX: !!cap.canX, canY: !!cap.canY };
+        }
+      } catch { /* ignore */ }
+    }
     return null;
   }
 

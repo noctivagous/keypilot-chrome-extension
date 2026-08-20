@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-20T00:41:01.953Z
+ * Generated on 2026-08-20T03:17:00.088Z
  */
 
 (() => {
@@ -1255,7 +1255,7 @@
     FOCUS_FLASH: "kpv2-focus-flash",
     /** Temporary dashed border whose dashes chase around the perimeter on F-click */
     FOCUS_DASH: "kpv2-focus-dash",
-    /** Brief dashed outline when Click New Tab has no navigable URL under the cursor */
+    /** Brief dashed outline when a URL action has no navigable URL under the cursor */
     FOCUS_DASH_DENIED: "kpv2-focus-dash-denied",
     /** Temporary frame that scales (pop then shrink) when copying an image under cursor */
     IMAGE_COPY_PULSE: "kpv2-image-copy-pulse",
@@ -1531,7 +1531,7 @@
     FLASH_GREEN: "rgba(0,255,0,1)",
     FLASH_GREEN_SHADOW: "rgba(0,255,0,0.8)",
     FLASH_GREEN_GLOW: "rgba(0,255,0,0.9)",
-    /** Click New Tab / Background when the hover target has no URL */
+    /** URL actions (new tab, preview, popover) when the hover target has no URL */
     FLASH_DENIED: "rgba(255,140,0,1)",
     FLASH_DENIED_SHADOW: "rgba(255,140,0,0.85)",
     FLASH_DENIED_GLOW: "rgba(255,140,0,0.7)",
@@ -1991,7 +1991,7 @@
       speed: SCROLL.BEHAVIOR === "smooth" ? "smooth" : "instant",
       // Middle mouse button → Scroll Line Function (empty page only). On by default on Mac.
       middleClickScrollLine: isMacPlatform(),
-      // Scroll Line: skip wide in-page overflow (carousels); keep square / taller boxes.
+      // Scroll Line: skip horizontal-only landscape overflow (carousels).
       linePreferPortraitTargets: true
     })
   });
@@ -2760,6 +2760,10 @@
     if (!r || !(r.width > 1) || !(r.height > 1)) return false;
     return r.width > r.height + 1;
   }
+  function isCarouselLikeOverflowTarget(el, cap) {
+    if (!el || !cap || !cap.canX || cap.canY) return false;
+    return isWideOverflowTarget(el);
+  }
   function findScrollableAtPoint(clientX, clientY, ctx = {}) {
     const doc = ctx.doc || document;
     const skipWide = !!ctx.skipWideTargets;
@@ -2799,7 +2803,7 @@
           n = composedParent(n);
           continue;
         }
-        if (skipWide && isWideOverflowTarget(n)) {
+        if (skipWide && isCarouselLikeOverflowTarget(n, cap)) {
           n = composedParent(n);
           continue;
         }

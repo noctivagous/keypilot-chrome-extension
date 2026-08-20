@@ -72,7 +72,7 @@ export const CSS_CLASSES = {
   FOCUS_FLASH: 'kpv2-focus-flash',
   /** Temporary dashed border whose dashes chase around the perimeter on F-click */
   FOCUS_DASH: 'kpv2-focus-dash',
-  /** Brief dashed outline when Click New Tab has no navigable URL under the cursor */
+  /** Brief dashed outline when a URL action has no navigable URL under the cursor */
   FOCUS_DASH_DENIED: 'kpv2-focus-dash-denied',
   /** Temporary frame that scales (pop then shrink) when copying an image under cursor */
   IMAGE_COPY_PULSE: 'kpv2-image-copy-pulse',
@@ -418,7 +418,7 @@ export const COLORS = {
   FLASH_GREEN: 'rgba(0,255,0,1)',
   FLASH_GREEN_SHADOW: 'rgba(0,255,0,0.8)',
   FLASH_GREEN_GLOW: 'rgba(0,255,0,0.9)',
-  /** Click New Tab / Background when the hover target has no URL */
+  /** URL actions (new tab, preview, popover) when the hover target has no URL */
   FLASH_DENIED: 'rgba(255,140,0,1)',
   FLASH_DENIED_SHADOW: 'rgba(255,140,0,0.85)',
   FLASH_DENIED_GLOW: 'rgba(255,140,0,0.7)',

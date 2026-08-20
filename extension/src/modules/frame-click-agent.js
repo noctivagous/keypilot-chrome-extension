@@ -907,7 +907,8 @@ export function installFrameClickAgent() {
     };
 
     /**
-     * Click New Tab / Background with no URL in this frame: dashed orange flash.
+     * Click New Tab / Background (and other URL actions) with no URL in this frame:
+     * dashed orange flash.
      * Frame agent does not load StyleManager, so this is a self-contained pulse.
      * @param {Element|null} target
      * @param {number} clientX

@@ -94,14 +94,14 @@ export function withActivationHandlers(Base) {
     const target = this._getValidatedActivationTarget(currentState);
 
     if (!target || target === document.documentElement || target === document.body) {
-      this._flashNewTabUnavailable(target, x, y);
+      this._flashUrlActionUnavailable(target, x, y);
       return;
     }
 
     // Popover mode is modal: don't allow activation on background page elements.
     if (currentState.mode === MODES.POPOVER) {
       if (!this._isElementInPopover(target)) {
-        this._flashNewTabUnavailable(target, x, y);
+        this._flashUrlActionUnavailable(target, x, y);
         return;
       }
     }
@@ -127,7 +127,7 @@ export function withActivationHandlers(Base) {
     const my = currentState.lastMouse.y;
 
     if (!url) {
-      this._flashNewTabUnavailable(target, mx, my);
+      this._flashUrlActionUnavailable(target, mx, my);
       return;
     }
 
@@ -152,13 +152,14 @@ export function withActivationHandlers(Base) {
   }
 
   /**
-   * Visual "this will not open a tab" cue: dashed orange outline on the hover
+   * Visual "this action needs a URL" cue: dashed orange outline on the hover
    * box, or a small cursor square when nothing interactive is under the pointer.
+   * Used by Click New Tab, Click New Tab Background, Preview Link, Open Popover.
    * @param {Element|null|undefined} target
    * @param {number} [x]
    * @param {number} [y]
    */
-  _flashNewTabUnavailable(target, x, y) {
+  _flashUrlActionUnavailable(target, x, y) {
     const el =
       (target instanceof Element &&
         target !== document.documentElement &&
@@ -195,14 +196,14 @@ export function withActivationHandlers(Base) {
     const target = this._getValidatedActivationTarget(currentState);
 
     if (!target || target === document.documentElement || target === document.body) {
-      this._flashNewTabUnavailable(target, x, y);
+      this._flashUrlActionUnavailable(target, x, y);
       return;
     }
 
     // Popover mode is modal: don't allow activation on background page elements.
     if (currentState.mode === MODES.POPOVER) {
       if (!this._isElementInPopover(target)) {
-        this._flashNewTabUnavailable(target, x, y);
+        this._flashUrlActionUnavailable(target, x, y);
         return;
       }
     }
@@ -218,7 +219,7 @@ export function withActivationHandlers(Base) {
     // Only work if we have a URL
     if (!url) {
       console.log('[KeyPilot] Activate New Tab Background: not hovering over a hyperlink');
-      this._flashNewTabUnavailable(target, x, y);
+      this._flashUrlActionUnavailable(target, x, y);
       return;
     }
 
@@ -284,6 +285,7 @@ export function withActivationHandlers(Base) {
 
     if (!target || !(target instanceof Element)) {
       console.log('[KeyPilot] Open popover: not hovering over a link');
+      this._flashUrlActionUnavailable(target, lastMouse?.x, lastMouse?.y);
       return;
     }
 
@@ -292,6 +294,7 @@ export function withActivationHandlers(Base) {
 
     if (!url) {
       console.log('[KeyPilot] Open popover: not hovering over a link');
+      this._flashUrlActionUnavailable(target, lastMouse?.x, lastMouse?.y);
       return;
     }
     console.log('[KeyPilot] Opening popover for link:', url);
