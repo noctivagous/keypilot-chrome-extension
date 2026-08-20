@@ -107,6 +107,7 @@ import {
   safeRuntimeSendMessage
 } from './utils/extension-context.js';
 import { storageGetValue, storageSetValue } from './utils/storage.js';
+import { cacheChromeLayout, peekChromeLayoutCache } from './utils/chrome-layout-cache.js';
 import { getHoveredImage } from './utils/image-utils.js';
 import { getHoveredVideo } from './utils/video-utils.js';
 import { collectPageMedia } from './utils/page-media-utils.js';
@@ -253,6 +254,12 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     });
     this.KEYBOARD_HELP_STORAGE_KEY = 'keypilot_keyboard_help_visible';
     this._keyboardHelpVisible = false;
+    try {
+      const cached = peekChromeLayoutCache();
+      if (typeof cached?.keyboardHelpVisible === 'boolean') {
+        this._keyboardHelpVisible = cached.keyboardHelpVisible;
+      }
+    } catch { /* ignore */ }
     this._keyboardHelpStorageListener = null;
     this.TOP_SITES_STORAGE_KEY = 'keypilot_top_sites_visible';
     this._topSitesVisible = false;
@@ -1949,7 +1956,9 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
 
   async setKeyboardHelpVisibleInStorage(visible) {
     if (!chrome?.storage) return;
-    await storageSetValue(this.KEYBOARD_HELP_STORAGE_KEY, Boolean(visible), {
+    const next = Boolean(visible);
+    try { cacheChromeLayout({ keyboardHelpVisible: next }); } catch { /* ignore */ }
+    await storageSetValue(this.KEYBOARD_HELP_STORAGE_KEY, next, {
       includeTimestamp: true,
       dualWrite: true
     });
@@ -2003,6 +2012,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
 
     const next = Boolean(visible);
     this._keyboardHelpVisible = next;
+    try { cacheChromeLayout({ keyboardHelpVisible: next }); } catch { /* ignore */ }
 
     // If KeyPilot is disabled, ensure the panel is not visible but remember the desired state.
     if (!this.enabled) {

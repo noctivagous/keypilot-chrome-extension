@@ -104,10 +104,22 @@ ${root} {
   scrollbar-width: thin;
   scrollbar-color: ${thumb} ${track};
 }
+/* Blink: scrollbar-width uses overlay bars that only appear on scroll and
+   suppress ::-webkit-scrollbar. Unset so the themed classic bar paints as
+   soon as the region overflows (Dark Pro tokens by default). */
+@supports selector(::-webkit-scrollbar) {
+  ${root} {
+    scrollbar-width: unset;
+    scrollbar-color: unset;
+  }
+}
 ${root}::-webkit-scrollbar,
 ${root} ::-webkit-scrollbar {
+  -webkit-appearance: none;
+  appearance: none;
   width: 10px;
   height: 10px;
+  background: ${track};
 }
 ${root}::-webkit-scrollbar-corner,
 ${root} ::-webkit-scrollbar-corner {

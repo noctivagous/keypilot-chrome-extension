@@ -377,7 +377,7 @@ function setInputValue(el, value) {
  * Safe to call while the panel is hidden; call again after it is shown.
  * @param {object|null} [settings]
  */
-function applyAppearanceControls(settings) {
+export function applyAppearanceControls(settings) {
   const s = settings || lastUiSettings || getLiveSettingsSnapshot() || DEFAULT_SETTINGS;
   lastUiSettings = s;
   const theme = resolveThemeFromSettings(s);
@@ -448,6 +448,23 @@ function applyAppearanceControls(settings) {
   setInputValue(settingsEl('app-type-ui-number'), typeUi);
   setInputValue(settingsEl('app-type-kbd-range'), typeKbd);
   setInputValue(settingsEl('app-type-kbd-number'), typeKbd);
+}
+
+function applyAppearanceFromCache() {
+  let overrides = {};
+  try {
+    const raw = localStorage.getItem('kp_theme_overrides_v1');
+    const parsed = raw ? JSON.parse(raw) : {};
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) overrides = parsed;
+  } catch {
+    overrides = {};
+  }
+  let themeId = 'dark-pro';
+  try {
+    const cached = localStorage.getItem('kp_theme_id_v1');
+    if (cached) themeId = cached;
+  } catch { /* ignore */ }
+  applyAppearanceControls({ themeId, themeOverrides: overrides });
 }
 
 function renderCursorPreview({ container, kind, uri }) {
@@ -1367,6 +1384,7 @@ export async function mountSettingsApp(root, options = {}) {
     settingsScope = document;
   }
   adaptHeaderForPopoverEmbed(embedded);
+  try { applyAppearanceFromCache(); } catch { /* ignore */ }
   await render();
   return () => {
     settingsScope = document;

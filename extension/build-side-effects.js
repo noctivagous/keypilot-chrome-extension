@@ -22,6 +22,7 @@ import { FUNCTION_LIBRARY } from './src/config/function-library.js';
 import {
   KEYBINDINGS_KEYBOARD_LAYOUT,
   KEYBINDINGS_UI_STYLE_ATTR,
+  getActionIconDataUri,
   getKeybindingsUiCss
 } from './src/ui/keybindings-ui-shared.js';
 import { POPUP_THEME_VARS } from './src/ui/popup-theme-vars.js';
@@ -500,7 +501,7 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       `  // - \`extension/src/config/constants.js\` (KEYBINDINGS, Z_INDEX)\n` +
       `  // - \`extension/src/config/keyboard-layouts.js\` (built-in layout data)\n` +
       `  // - \`extension/src/config/function-library.js\` (slot paint: label + keyboardClass)\n` +
-      `  // - \`extension/src/ui/keybindings-ui-shared.js\` (CSS + layout + style attr)\n` +
+      `  // - \`extension/src/ui/keybindings-ui-shared.js\` (CSS + layout + style attr + control-strip icons)\n` +
       `  // - \`extension/pages/onboarding.xml\` (early onboarding model)\n` +
       `  // - \`extension/src/ui/onboarding-shared.js\` (shell / progress / checklist DOM)\n` +
       `  // Do not edit by hand.\n` +
@@ -516,6 +517,10 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       `  const KEYBINDINGS_KEYBOARD_LAYOUT = ${JSON.stringify(layout, null, 2)};\n` +
       `  const EARLY_KEYBINDINGS = ${JSON.stringify(earlyKeybindings, null, 2)};\n` +
       `  const EARLY_FUNCTION_PAINT = ${JSON.stringify(earlyFunctionPaint, null, 2)};\n` +
+      `  const EARLY_CONTROL_STRIP_ICON_URIS = ${JSON.stringify({
+        TOGGLE_KEYBOARD_HELP: getActionIconDataUri('TOGGLE_KEYBOARD_HELP', { fill: '#ddd' }),
+        OPEN_SETTINGS_POPOVER: getActionIconDataUri('OPEN_SETTINGS_POPOVER', { fill: '#ddd' })
+      })};\n` +
       `  const EARLY_ONBOARDING_MODEL = ${JSON.stringify(earlyOnboardingModel, null, 2)};\n` +
       `  const POPUP_THEME_VARS = ${JSON.stringify(POPUP_THEME_VARS, null, 2)};\n` +
       `  function applyPopupThemeVars(targetEl) {\n` +
@@ -538,6 +543,81 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       `  function cacheThemeId(id) {\n` +
       `    if (!id || KP_THEME_IDS.indexOf(id) < 0) return;\n` +
       `    try { localStorage.setItem(KP_THEME_CACHE_KEY, id); } catch { /* ignore */ }\n` +
+      `  }\n` +
+      `  const KP_THEME_OVERRIDES_CACHE_KEY = 'kp_theme_overrides_v1';\n` +
+      `  const KP_KEY_SHADE_BEVEL = 'linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 18%, transparent 42%)';\n` +
+      `  const KP_KEY_OVERRIDE_VARS = ['--kp-key-shading','--kp-key-sheen-opacity','--kp-key-shade-layer','--kp-key-border','--kp-key-corner-mode','--kp-key-cut-size','--kp-key-clip','--kp-key-effective-radius','--kp-key-shape-radius','--kp-key-corner-shape','--kp-titlebar-icon-display'];\n` +
+      `  function peekCachedThemeOverrides() {\n` +
+      `    try {\n` +
+      `      const raw = localStorage.getItem(KP_THEME_OVERRIDES_CACHE_KEY);\n` +
+      `      if (!raw) return {};\n` +
+      `      const o = JSON.parse(raw);\n` +
+      `      return o && typeof o === 'object' && !Array.isArray(o) ? o : {};\n` +
+      `    } catch { /* ignore */ }\n` +
+      `    return {};\n` +
+      `  }\n` +
+      `  function cacheThemeOverrides(overrides) {\n` +
+      `    try {\n` +
+      `      const o = overrides && typeof overrides === 'object' && !Array.isArray(overrides) ? overrides : {};\n` +
+      `      localStorage.setItem(KP_THEME_OVERRIDES_CACHE_KEY, JSON.stringify(o));\n` +
+      `    } catch { /* ignore */ }\n` +
+      `  }\n` +
+      `  function earlyKeyClipPath(cutSize) {\n` +
+      `    const s = String(cutSize || '4px');\n` +
+      `    return 'polygon(' + s + ' 0, calc(100% - ' + s + ') 0, 100% ' + s + ', 100% calc(100% - ' + s + '), calc(100% - ' + s + ') 100%, ' + s + ' 100%, 0 calc(100% - ' + s + '), 0 ' + s + ')';\n` +
+      `  }\n` +
+      `  function applyEarlyKeyChromeVars(el, overrides) {\n` +
+      `    if (!el || !el.style || !el.style.setProperty) return;\n` +
+      `    const keys = overrides && typeof overrides === 'object' ? overrides.keys : null;\n` +
+      `    const titlebar = overrides && typeof overrides === 'object' ? overrides.titlebar : null;\n` +
+      `    if ((!keys || typeof keys !== 'object') && (!titlebar || typeof titlebar !== 'object')) {\n` +
+      `      for (let i = 0; i < KP_KEY_OVERRIDE_VARS.length; i++) {\n` +
+      `        try { el.style.removeProperty(KP_KEY_OVERRIDE_VARS[i]); } catch { /* ignore */ }\n` +
+      `      }\n` +
+      `      return;\n` +
+      `    }\n` +
+      `    try {\n` +
+      `      if (keys && typeof keys === 'object') {\n` +
+      `        if (keys.shading === 'flat' || keys.shading === 'bevel') {\n` +
+      `          const flat = keys.shading === 'flat';\n` +
+      `          el.style.setProperty('--kp-key-shading', keys.shading);\n` +
+      `          el.style.setProperty('--kp-key-sheen-opacity', flat ? '0' : '1');\n` +
+      `          el.style.setProperty('--kp-key-shade-layer', flat ? 'transparent' : KP_KEY_SHADE_BEVEL);\n` +
+      `        }\n` +
+      `        if (keys.border) el.style.setProperty('--kp-key-border', String(keys.border));\n` +
+      `        if (keys.cornerMode === 'cut' || keys.cornerMode === 'radius') {\n` +
+      `          const cut = keys.cornerMode === 'cut';\n` +
+      `          const cutSize = String(keys.cutSize || '4px');\n` +
+      `          el.style.setProperty('--kp-key-corner-mode', keys.cornerMode);\n` +
+      `          el.style.setProperty('--kp-key-cut-size', cutSize);\n` +
+      `          el.style.setProperty('--kp-key-clip', cut ? earlyKeyClipPath(cutSize) : 'none');\n` +
+      `          if (cut) {\n` +
+      `            el.style.setProperty('--kp-key-effective-radius', '0px');\n` +
+      `            el.style.setProperty('--kp-key-shape-radius', cutSize);\n` +
+      `            el.style.setProperty('--kp-key-corner-shape', 'bevel');\n` +
+      `          } else {\n` +
+      `            el.style.removeProperty('--kp-key-effective-radius');\n` +
+      `            el.style.setProperty('--kp-key-corner-shape', 'round');\n` +
+      `          }\n` +
+      `        }\n` +
+      `      }\n` +
+      `      if (titlebar && typeof titlebar === 'object') {\n` +
+      `        if (titlebar.iconDisplay === 'inline-flex' || titlebar.iconDisplay === 'none') {\n` +
+      `          el.style.setProperty('--kp-titlebar-icon-display', titlebar.iconDisplay);\n` +
+      `        }\n` +
+      `      }\n` +
+      `    } catch { /* ignore */ }\n` +
+      `  }\n` +
+      `  function stampEarlyKeyChrome(overrides) {\n` +
+      `    try { applyEarlyKeyChromeVars(document.documentElement, overrides); } catch { /* ignore */ }\n` +
+      `    try {\n` +
+      `      document.querySelectorAll('.kp-chrome-window, [data-kp-ui-shadow]').forEach(function (el) {\n` +
+      `        applyEarlyKeyChromeVars(el, overrides);\n` +
+      `        try {\n` +
+      `          if (el.shadowRoot && el.shadowRoot.host) applyEarlyKeyChromeVars(el.shadowRoot.host, overrides);\n` +
+      `        } catch { /* ignore */ }\n` +
+      `      });\n` +
+      `    } catch { /* ignore */ }\n` +
       `  }\n` +
       `  function getEarlyThemeFontFaceCss() {\n` +
       `    function fontUrl(file) {\n` +
@@ -590,9 +670,12 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       `    if (themeId && KP_THEME_IDS.indexOf(themeId) >= 0) return themeId;\n` +
       `    return peekCachedThemeId() || 'dark-pro';\n` +
       `  }\n` +
-      `  function applyEarlyTheme(themeId) {\n` +
+      `  function applyEarlyTheme(themeId, overrides) {\n` +
       `    const id = resolveEarlyThemeId(themeId);\n` +
       `    const cut = KP_THEME_CORNER[id] === 'cut';\n` +
+      `    const ov = overrides === undefined\n` +
+      `      ? peekCachedThemeOverrides()\n` +
+      `      : (overrides && typeof overrides === 'object' && !Array.isArray(overrides) ? overrides : {});\n` +
       `    ensureEarlyThemeStyles();\n` +
       `    try { document.documentElement.setAttribute('data-kp-theme', id); } catch { /* ignore */ }\n` +
       `    try {\n` +
@@ -616,6 +699,8 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       `      document.querySelectorAll('.kp-chrome-window, [data-kp-ui-shadow]').forEach(stamp);\n` +
       `    } catch { /* ignore */ }\n` +
       `    cacheThemeId(id);\n` +
+      `    cacheThemeOverrides(ov);\n` +
+      `    stampEarlyKeyChrome(ov);\n` +
       `  }\n` +
       `  function ensureEarlyOpenChromeShadow(host, id) {\n` +
       `    if (!host) return null;\n` +
@@ -628,6 +713,7 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       `      if (cut) host.setAttribute('data-kp-corner', 'cut');\n` +
       `      else host.removeAttribute('data-kp-corner');\n` +
       `    } catch { /* ignore */ }\n` +
+      `    try { applyEarlyKeyChromeVars(host, peekCachedThemeOverrides()); } catch { /* ignore */ }\n` +
       `    try { return host.shadowRoot || host.attachShadow({ mode: 'open' }); } catch { return host.shadowRoot || null; }\n` +
       `  }\n` +
       `  const KEYBINDINGS_UI_EARLY_CSS = \`${escapedCss}\`;\n` +

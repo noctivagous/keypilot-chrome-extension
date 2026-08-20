@@ -99,6 +99,42 @@ cleanup, **P3** = defer until feature work creates a clear seam.
   - `package.json` has build, packaging, and audit scripts but no test script.
   - Start with pure modules and service-worker routing seams; add browser-level
     tests only where they cover behavior unit tests cannot.
+  - Browser-level handoff coverage must reload/navigate with Keyboard Reference
+    and Control Strip visible, hidden, collapsed, and moved; assert that the
+    document-start host is adopted rather than replaced by the document-idle
+    runtime.
+  - Include delayed/unavailable storage cases; a fallback may be used, but
+    document-start chrome must not block or flash through an incorrect default
+    state before its persisted state is reconciled.
+
+### P1 — Persistent in-page chrome handoff
+
+KeyPilot's Keyboard Reference, Control Strip, and similar windows are intended
+to feel like persistent browser chrome across navigation. Treat this as an
+architecture invariant:
+
+> `early-inject.js` mounts enabled persistent-chrome hosts at `document_start`
+> from a lightweight last-known state; the full runtime reconciles and adopts
+> those same hosts without removal, replacement, position jump, or a
+> default-to-saved-state flash.
+
+- [ ] Define the compact bootstrap snapshot and its owner: visibility,
+  collapsed state, panel position/anchor, selected layout id, and the minimal
+  theme tokens required for first paint.
+- [ ] Keep the snapshot smaller than the full settings model; it must be
+  available without waiting for expensive configuration or UI work.
+- [ ] Define sync/local fallback, versioning, and write timing for the
+  bootstrap snapshot.
+- [ ] Audit `early-inject.js` mounts for Keyboard Reference, Control Strip,
+  and other persistent windows to ensure each creates one stable host.
+- [ ] Ensure document-idle KeyPilot code adopts the early-created host and
+  attaches behavior without disconnecting or recreating it.
+- [ ] Reconcile authoritative storage as soon as it is available, retaining a
+  safe fallback rather than blocking document start.
+- [ ] Test host identity, visibility, collapsed state, and panel position
+  across reload/navigation and storage delay/failure.
+- [ ] Require future Settings, build, and UI-framework changes to preserve this
+  bootstrap → reconcile → adopt contract.
 
 ---
 

@@ -229,6 +229,20 @@ export function applyThemeToRoots(theme, opts = {}) {
     const id = _activeTheme?.id;
     if (id) localStorage.setItem('kp_theme_id_v1', id);
   } catch { /* ignore */ }
+  try {
+    const keys = _activeTheme?.keys || {};
+    localStorage.setItem('kp_theme_overrides_v1', JSON.stringify({
+      keys: {
+        shading: keys.shading === 'flat' ? 'flat' : 'bevel',
+        cornerMode: keys.cornerMode === 'cut' ? 'cut' : 'radius',
+        cutSize: keys.cutSize || '4px',
+        border: keys.border || '1px solid rgba(0, 0, 0, 0.4)'
+      },
+      titlebar: {
+        iconDisplay: (_activeTheme?.titlebar?.iconDisplay === 'inline-flex') ? 'inline-flex' : 'none'
+      }
+    }));
+  } catch { /* ignore */ }
   return _activeTheme;
 }
 

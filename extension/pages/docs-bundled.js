@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-20T04:31:09.541Z
+ * Generated on 2026-08-20T07:10:43.589Z
  */
 
 var __defProp = Object.defineProperty;
@@ -8227,6 +8227,21 @@ function applyThemeToRoots(theme, opts = {}) {
   try {
     const id = _activeTheme?.id;
     if (id) localStorage.setItem("kp_theme_id_v1", id);
+  } catch {
+  }
+  try {
+    const keys = _activeTheme?.keys || {};
+    localStorage.setItem("kp_theme_overrides_v1", JSON.stringify({
+      keys: {
+        shading: keys.shading === "flat" ? "flat" : "bevel",
+        cornerMode: keys.cornerMode === "cut" ? "cut" : "radius",
+        cutSize: keys.cutSize || "4px",
+        border: keys.border || "1px solid rgba(0, 0, 0, 0.4)"
+      },
+      titlebar: {
+        iconDisplay: _activeTheme?.titlebar?.iconDisplay === "inline-flex" ? "inline-flex" : "none"
+      }
+    }));
   } catch {
   }
   return _activeTheme;

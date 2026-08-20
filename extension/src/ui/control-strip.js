@@ -36,6 +36,7 @@ import {
   makePanelDraggable,
   normalizePanelPositionState
 } from '../utils/panel-position.js';
+import { cacheChromeLayout, peekChromeLayoutCache } from '../utils/chrome-layout-cache.js';
 
 const CONTROL_STRIP_ROOT_CLASS = 'kp-control-strip';
 const DEFAULT_TOP_PX = 16;
@@ -81,6 +82,24 @@ export class ControlStrip {
 
     /** @type {import('../modules/settings-manager.js').PanelPositionSettings} */
     this._panelPosition = { ...DEFAULT_SETTINGS.panelPositions.controlStrip };
+    try {
+      const cached = peekChromeLayoutCache();
+      const pos = cached?.panelPositions?.controlStrip;
+      if (pos && typeof pos === 'object') {
+        const left = Number(pos.left);
+        const top = Number(pos.top);
+        const hasFree = Number.isFinite(left) && Number.isFinite(top);
+        this._panelPosition = {
+          ...(hasFree ? { left, top } : this._panelPosition),
+          anchor: pos.anchor !== undefined
+            ? pos.anchor
+            : (hasFree ? null : this._panelPosition.anchor)
+        };
+      }
+      if (typeof cached?.keyboardHelpVisible === 'boolean') {
+        this._keyboardActive = cached.keyboardHelpVisible;
+      }
+    } catch { /* ignore */ }
     this._suppressPositionPersist = false;
     /** @type {(() => void)|null} */
     this._dragDispose = null;
@@ -246,6 +265,7 @@ export class ControlStrip {
   setKeyboardHelpActive(active) {
     this._keyboardActive = !!active;
     this._renderKeyboard();
+    try { cacheChromeLayout({ keyboardHelpVisible: this._keyboardActive }); } catch { /* ignore */ }
   }
 
   cleanup() {
@@ -343,6 +363,20 @@ export class ControlStrip {
 
           this._ensureMoveHandle();
           this._bindButtonHandlers();
+          try {
+            if (keyboardBtn.getAttribute('aria-pressed') === 'true') this._keyboardActive = true;
+          } catch { /* ignore */ }
+          try {
+            const fromDom = this._readPositionFromDom(existing);
+            if (fromDom) {
+              this._panelPosition = {
+                ...this._panelPosition,
+                left: fromDom.left,
+                top: fromDom.top,
+                anchor: fromDom.anchor
+              };
+            }
+          } catch { /* ignore */ }
           this._renderStatus();
           this._renderKeyboard();
           this._applyCollapsedLayout();
@@ -564,6 +598,28 @@ export class ControlStrip {
   }
 
   /**
+   * Read left/top already painted on the early shell so adopt does not snap to top-left.
+   * @param {HTMLElement|null} el
+   * @returns {import('../modules/settings-manager.js').PanelPositionSettings|null}
+   */
+  _readPositionFromDom(el) {
+    if (!el || !el.style) return null;
+    try {
+      const left = parseFloat(el.style.left);
+      const top = parseFloat(el.style.top);
+      if (!Number.isFinite(left) || !Number.isFinite(top)) return null;
+      let anchor = null;
+      try {
+        const attr = el.getAttribute('data-kp-panel-anchor');
+        if (attr) anchor = attr;
+      } catch { /* ignore */ }
+      return { left, top, anchor: anchor || null };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * @param {import('../modules/settings-manager.js').PanelPositionSettings|null|undefined} next
    * @param {{ persist?: boolean }} [opts]
    */
@@ -579,6 +635,17 @@ export class ControlStrip {
     };
     this._applyPanelPositionNow();
     this._syncOnboardingOffset();
+    try {
+      cacheChromeLayout({
+        panelPositions: {
+          controlStrip: {
+            left: this._panelPosition.left,
+            top: this._panelPosition.top,
+            anchor: this._panelPosition.anchor === undefined ? null : this._panelPosition.anchor
+          }
+        }
+      });
+    } catch { /* ignore */ }
     if (opts.persist && !this._suppressPositionPersist) {
       this._persistPanelPosition(this._panelPosition);
     }

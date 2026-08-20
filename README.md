@@ -93,6 +93,11 @@ Default layout (right-handed browsing). Custom layouts are edited in Layout Conf
 
 
 
+
+
+
+
+
 ## Compatibility
 
 - Chrome and other Chromium browsers: full support

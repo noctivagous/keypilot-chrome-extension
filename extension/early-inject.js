@@ -63,6 +63,35 @@
   const ONBOARDING_PROGRESS_STORAGE_KEY = 'keypilot_onboarding_progress';
   const SETTINGS_STORAGE_KEY = 'kp_settings_v1';
   const KEYBOARD_LAYOUT_STORE_KEY = 'kp_keyboard_layout_store_v1';
+  const KP_CHROME_LAYOUT_CACHE_KEY = 'kp_chrome_layout_v1';
+  function peekCachedChromeLayout() {
+    try {
+      const raw = localStorage.getItem(KP_CHROME_LAYOUT_CACHE_KEY);
+      if (!raw) return null;
+      const o = JSON.parse(raw);
+      return o && typeof o === 'object' && !Array.isArray(o) ? o : null;
+    } catch {
+      return null;
+    }
+  }
+  function cacheEarlyChromeLayout(patch) {
+    if (!patch || typeof patch !== 'object') return;
+    try {
+      const prev = peekCachedChromeLayout() || {};
+      const next = { ...prev };
+      if (patch.panelPositions && typeof patch.panelPositions === 'object') {
+        next.panelPositions = { ...(prev.panelPositions || {}), ...patch.panelPositions };
+      }
+      if (patch.controlStrip && typeof patch.controlStrip === 'object') {
+        next.controlStrip = { ...(prev.controlStrip || {}), ...patch.controlStrip };
+      }
+      if (typeof patch.keyboardHelpVisible === 'boolean') next.keyboardHelpVisible = patch.keyboardHelpVisible;
+      if (typeof patch.keyboardReferenceCollapsed === 'boolean') {
+        next.keyboardReferenceCollapsed = patch.keyboardReferenceCollapsed;
+      }
+      localStorage.setItem(KP_CHROME_LAYOUT_CACHE_KEY, JSON.stringify(next));
+    } catch { /* ignore */ }
+  }
   // Keep in sync with Z_INDEX in src/config/constants.js
   const Z_CONTROL_STRIP = 2147483025;
   const Z_ONBOARDING_PANEL = 2147483026;
@@ -83,7 +112,7 @@
   // - `extension/src/config/constants.js` (KEYBINDINGS, Z_INDEX)
   // - `extension/src/config/keyboard-layouts.js` (built-in layout data)
   // - `extension/src/config/function-library.js` (slot paint: label + keyboardClass)
-  // - `extension/src/ui/keybindings-ui-shared.js` (CSS + layout + style attr)
+  // - `extension/src/ui/keybindings-ui-shared.js` (CSS + layout + style attr + control-strip icons)
   // - `extension/pages/onboarding.xml` (early onboarding model)
   // - `extension/src/ui/onboarding-shared.js` (shell / progress / checklist DOM)
   // Do not edit by hand.
@@ -2557,6 +2586,7 @@
     "keyboardClass": null
   }
 };
+  const EARLY_CONTROL_STRIP_ICON_URIS = {"TOGGLE_KEYBOARD_HELP":"url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22%23ddd%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zm128%2064v32h32V160H128zm64%200v32h32V160H192zm64%200v32h32V160H256zm64%200v32h32V160H320zm64%200v32h32V160H384zM96%20256v32h64V256H96zm96%200v32h32V256H192zm64%200v32h32V256H256zm64%200v32h32V256H320zm64%200v32h32V256H384zm64%200v32h32V256H448zM128%20352v32H384V352H128z%22%2F%3E%3C%2Fsvg%3E\")","OPEN_SETTINGS_POPOVER":"url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22%23ddd%22%3E%3Cpath%20d%3D%22M9.405%201.05c-.413-1.4-2.397-1.4-2.81%200l-.1.34a1.464%201.464%200%200%201-2.275.819l-.31-.17c-1.283-.698-2.686.705-1.987%201.987l.169.311c.446.82.023%201.841-.82%202.275l-.34.1c-1.4.413-1.4%202.397%200%202.81l.34.1a1.464%201.464%200%200%201%20.82%202.275l-.17.31c-.698%201.283.705%202.686%201.987%201.987l.311-.169a1.464%201.464%200%200%201%202.275.82l.1.34c.413%201.4%202.397%201.4%202.81%200l.1-.34a1.464%201.464%200%200%201%202.275-.82l.31.17c1.283.698%202.686-.705%201.987-1.987l-.169-.311a1.464%201.464%200%200%201%20.82-2.275l.34-.1c1.4-.413%201.4-2.397%200-2.81l-.34-.1a1.464%201.464%200%200%201-.82-2.275l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464%201.464%200%200%201-2.275-.82zM8%2010.93a2.93%202.93%200%201%201%200-5.86%202.93%202.93%200%200%201%200%205.86z%22%2F%3E%3C%2Fsvg%3E\")"};
   const EARLY_ONBOARDING_MODEL = {
   "slides": [
     {
@@ -2828,6 +2858,81 @@
     if (!id || KP_THEME_IDS.indexOf(id) < 0) return;
     try { localStorage.setItem(KP_THEME_CACHE_KEY, id); } catch { /* ignore */ }
   }
+  const KP_THEME_OVERRIDES_CACHE_KEY = 'kp_theme_overrides_v1';
+  const KP_KEY_SHADE_BEVEL = 'linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 18%, transparent 42%)';
+  const KP_KEY_OVERRIDE_VARS = ['--kp-key-shading','--kp-key-sheen-opacity','--kp-key-shade-layer','--kp-key-border','--kp-key-corner-mode','--kp-key-cut-size','--kp-key-clip','--kp-key-effective-radius','--kp-key-shape-radius','--kp-key-corner-shape','--kp-titlebar-icon-display'];
+  function peekCachedThemeOverrides() {
+    try {
+      const raw = localStorage.getItem(KP_THEME_OVERRIDES_CACHE_KEY);
+      if (!raw) return {};
+      const o = JSON.parse(raw);
+      return o && typeof o === 'object' && !Array.isArray(o) ? o : {};
+    } catch { /* ignore */ }
+    return {};
+  }
+  function cacheThemeOverrides(overrides) {
+    try {
+      const o = overrides && typeof overrides === 'object' && !Array.isArray(overrides) ? overrides : {};
+      localStorage.setItem(KP_THEME_OVERRIDES_CACHE_KEY, JSON.stringify(o));
+    } catch { /* ignore */ }
+  }
+  function earlyKeyClipPath(cutSize) {
+    const s = String(cutSize || '4px');
+    return 'polygon(' + s + ' 0, calc(100% - ' + s + ') 0, 100% ' + s + ', 100% calc(100% - ' + s + '), calc(100% - ' + s + ') 100%, ' + s + ' 100%, 0 calc(100% - ' + s + '), 0 ' + s + ')';
+  }
+  function applyEarlyKeyChromeVars(el, overrides) {
+    if (!el || !el.style || !el.style.setProperty) return;
+    const keys = overrides && typeof overrides === 'object' ? overrides.keys : null;
+    const titlebar = overrides && typeof overrides === 'object' ? overrides.titlebar : null;
+    if ((!keys || typeof keys !== 'object') && (!titlebar || typeof titlebar !== 'object')) {
+      for (let i = 0; i < KP_KEY_OVERRIDE_VARS.length; i++) {
+        try { el.style.removeProperty(KP_KEY_OVERRIDE_VARS[i]); } catch { /* ignore */ }
+      }
+      return;
+    }
+    try {
+      if (keys && typeof keys === 'object') {
+        if (keys.shading === 'flat' || keys.shading === 'bevel') {
+          const flat = keys.shading === 'flat';
+          el.style.setProperty('--kp-key-shading', keys.shading);
+          el.style.setProperty('--kp-key-sheen-opacity', flat ? '0' : '1');
+          el.style.setProperty('--kp-key-shade-layer', flat ? 'transparent' : KP_KEY_SHADE_BEVEL);
+        }
+        if (keys.border) el.style.setProperty('--kp-key-border', String(keys.border));
+        if (keys.cornerMode === 'cut' || keys.cornerMode === 'radius') {
+          const cut = keys.cornerMode === 'cut';
+          const cutSize = String(keys.cutSize || '4px');
+          el.style.setProperty('--kp-key-corner-mode', keys.cornerMode);
+          el.style.setProperty('--kp-key-cut-size', cutSize);
+          el.style.setProperty('--kp-key-clip', cut ? earlyKeyClipPath(cutSize) : 'none');
+          if (cut) {
+            el.style.setProperty('--kp-key-effective-radius', '0px');
+            el.style.setProperty('--kp-key-shape-radius', cutSize);
+            el.style.setProperty('--kp-key-corner-shape', 'bevel');
+          } else {
+            el.style.removeProperty('--kp-key-effective-radius');
+            el.style.setProperty('--kp-key-corner-shape', 'round');
+          }
+        }
+      }
+      if (titlebar && typeof titlebar === 'object') {
+        if (titlebar.iconDisplay === 'inline-flex' || titlebar.iconDisplay === 'none') {
+          el.style.setProperty('--kp-titlebar-icon-display', titlebar.iconDisplay);
+        }
+      }
+    } catch { /* ignore */ }
+  }
+  function stampEarlyKeyChrome(overrides) {
+    try { applyEarlyKeyChromeVars(document.documentElement, overrides); } catch { /* ignore */ }
+    try {
+      document.querySelectorAll('.kp-chrome-window, [data-kp-ui-shadow]').forEach(function (el) {
+        applyEarlyKeyChromeVars(el, overrides);
+        try {
+          if (el.shadowRoot && el.shadowRoot.host) applyEarlyKeyChromeVars(el.shadowRoot.host, overrides);
+        } catch { /* ignore */ }
+      });
+    } catch { /* ignore */ }
+  }
   function getEarlyThemeFontFaceCss() {
     function fontUrl(file) {
       try {
@@ -2879,9 +2984,12 @@
     if (themeId && KP_THEME_IDS.indexOf(themeId) >= 0) return themeId;
     return peekCachedThemeId() || 'dark-pro';
   }
-  function applyEarlyTheme(themeId) {
+  function applyEarlyTheme(themeId, overrides) {
     const id = resolveEarlyThemeId(themeId);
     const cut = KP_THEME_CORNER[id] === 'cut';
+    const ov = overrides === undefined
+      ? peekCachedThemeOverrides()
+      : (overrides && typeof overrides === 'object' && !Array.isArray(overrides) ? overrides : {});
     ensureEarlyThemeStyles();
     try { document.documentElement.setAttribute('data-kp-theme', id); } catch { /* ignore */ }
     try {
@@ -2905,6 +3013,8 @@
       document.querySelectorAll('.kp-chrome-window, [data-kp-ui-shadow]').forEach(stamp);
     } catch { /* ignore */ }
     cacheThemeId(id);
+    cacheThemeOverrides(ov);
+    stampEarlyKeyChrome(ov);
   }
   function ensureEarlyOpenChromeShadow(host, id) {
     if (!host) return null;
@@ -2917,6 +3027,7 @@
       if (cut) host.setAttribute('data-kp-corner', 'cut');
       else host.removeAttribute('data-kp-corner');
     } catch { /* ignore */ }
+    try { applyEarlyKeyChromeVars(host, peekCachedThemeOverrides()); } catch { /* ignore */ }
     try { return host.shadowRoot || host.attachShadow({ mode: 'open' }); } catch { return host.shadowRoot || null; }
   }
   const KEYBINDINGS_UI_EARLY_CSS = `
@@ -7997,6 +8108,7 @@
    * @param {boolean} collapsed
    */
   function persistEarlyKeyboardReferenceCollapsed(collapsed) {
+    try { cacheEarlyChromeLayout({ keyboardReferenceCollapsed: !!collapsed }); } catch { /* ignore */ }
     try {
       if (!chrome?.storage) return;
       const nextCollapsed = !!collapsed;
@@ -8061,6 +8173,14 @@
    */
   function persistEarlyControlStripSettings(partial) {
     try {
+      cacheEarlyChromeLayout({
+        controlStrip: {
+          ...(typeof partial.visible === 'boolean' ? { visible: partial.visible } : {}),
+          ...(typeof partial.collapsed === 'boolean' ? { collapsed: partial.collapsed } : {})
+        }
+      });
+    } catch { /* ignore */ }
+    try {
       if (!chrome?.storage) return;
       const apply = (area) => {
         area.get([SETTINGS_STORAGE_KEY], (result) => {
@@ -8101,11 +8221,80 @@
     };
   }
 
+  /**
+   * Same <img> glyphs ControlStrip injects after handoff (keyboard + gear).
+   * Prefer stamped EARLY_CONTROL_STRIP_ICON_URIS; fall back to the canonical FA paths.
+   */
+  const EARLY_STRIP_ICON_PATHS = {
+    TOGGLE_KEYBOARD_HELP: {
+      viewBox: '0 0 512 512',
+      d: 'M0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zm128 64v32h32V160H128zm64 0v32h32V160H192zm64 0v32h32V160H256zm64 0v32h32V160H320zm64 0v32h32V160H384zM96 256v32h64V256H96zm96 0v32h32V256H192zm64 0v32h32V256H256zm64 0v32h32V256H320zm64 0v32h32V256H384zm64 0v32h32V256H448zM128 352v32H384V352H128z'
+    },
+    OPEN_SETTINGS_POPOVER: {
+      viewBox: '0 0 16 16',
+      d: 'M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.275.819l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.82 2.275l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .82 2.275l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.275.82l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.275-.82l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .82-2.275l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.82-2.275l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.275-.82zM8 10.93a2.93 2.93 0 1 1 0-5.86 2.93 2.93 0 0 1 0 5.86z'
+    }
+  };
+
+  function earlyControlStripIconSrc(actionId) {
+    try {
+      const uris = (typeof EARLY_CONTROL_STRIP_ICON_URIS === 'object' && EARLY_CONTROL_STRIP_ICON_URIS)
+        ? EARLY_CONTROL_STRIP_ICON_URIS
+        : null;
+      const cssUri = uris && actionId ? uris[actionId] : '';
+      if (cssUri) {
+        const match = String(cssUri).match(/^url\("(.+)"\)$/);
+        if (match && match[1]) return match[1];
+      }
+    } catch { /* ignore */ }
+    const spec = EARLY_STRIP_ICON_PATHS[actionId];
+    if (!spec) return null;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${spec.viewBox}" fill="#ddd"><path d="${spec.d}"/></svg>`;
+    return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+  }
+
+  function createEarlyControlStripActionIcon(actionId) {
+    try {
+      const src = earlyControlStripIconSrc(actionId);
+      if (!src) return null;
+      const img = document.createElement('img');
+      img.src = src;
+      img.alt = '';
+      img.setAttribute('aria-hidden', 'true');
+      img.setAttribute('data-kp-control-strip-icon', 'true');
+      Object.assign(img.style, {
+        width: '14px',
+        height: '14px',
+        display: 'block',
+        pointerEvents: 'none',
+        flex: '0 0 auto',
+        opacity: '0.95'
+      });
+      return img;
+    } catch {
+      return null;
+    }
+  }
+
+  function ensureEarlyControlStripSegmentIcon(btn, actionId) {
+    if (!btn || !actionId) return;
+    try {
+      if (btn.querySelector('img[data-kp-control-strip-icon="true"]')) return;
+      const icon = createEarlyControlStripActionIcon(actionId);
+      if (!icon) return;
+      btn.insertBefore(icon, btn.firstChild);
+    } catch { /* ignore */ }
+  }
+
   function createEarlyControlStripSegmentButton(opts) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.setAttribute('aria-label', opts.ariaLabel || '');
     if (opts.title) btn.title = opts.title;
+    if (opts.iconActionId) {
+      const icon = createEarlyControlStripActionIcon(opts.iconActionId);
+      if (icon) btn.appendChild(icon);
+    }
     if (opts.text) {
       const label = document.createElement('span');
       label.textContent = opts.text;
@@ -8412,6 +8601,31 @@
 
   /** Cached panelPositions from kp_settings_v1 (best-effort at document_start). */
   let earlyPanelPositions = null;
+  try {
+    const cachedLayout = peekCachedChromeLayout();
+    if (cachedLayout) {
+      if (cachedLayout.panelPositions && typeof cachedLayout.panelPositions === 'object') {
+        earlyPanelPositions = {
+          keyboardReference: cachedLayout.panelPositions.keyboardReference || null,
+          controlStrip: cachedLayout.panelPositions.controlStrip || null
+        };
+      }
+      if (typeof cachedLayout.keyboardHelpVisible === 'boolean') {
+        keyboardHelpVisible = cachedLayout.keyboardHelpVisible;
+      }
+      if (typeof cachedLayout.keyboardReferenceCollapsed === 'boolean') {
+        keyboardReferenceCollapsed = cachedLayout.keyboardReferenceCollapsed;
+      }
+      if (cachedLayout.controlStrip && typeof cachedLayout.controlStrip === 'object') {
+        if (typeof cachedLayout.controlStrip.visible === 'boolean') {
+          controlStripDesiredVisible = cachedLayout.controlStrip.visible;
+        }
+        if (typeof cachedLayout.controlStrip.collapsed === 'boolean') {
+          controlStripCollapsed = cachedLayout.controlStrip.collapsed;
+        }
+      }
+    }
+  } catch { /* ignore */ }
 
   function readEarlyPanelPositionsFromSettingsObj(settingsObj) {
     try {
@@ -8484,6 +8698,8 @@
           collapseBtn: shell.querySelector('[data-kp-control-strip-collapse="true"]'),
           closeBtn: shell.querySelector('[data-kp-control-strip-close="true"]')
         };
+        try { ensureEarlyControlStripSegmentIcon(controlStripRefs.keyboardBtn, 'TOGGLE_KEYBOARD_HELP'); } catch { /* ignore */ }
+        try { ensureEarlyControlStripSegmentIcon(controlStripRefs.settingsBtn, 'OPEN_SETTINGS_POPOVER'); } catch { /* ignore */ }
         return controlStripRoot;
       }
 
@@ -8605,14 +8821,16 @@
       const keyboardBtn = createEarlyControlStripSegmentButton({
         ariaLabel: 'Toggle keyboard reference',
         title: 'Keyboard reference',
-        text: 'KB'
+        text: 'KB',
+        iconActionId: 'TOGGLE_KEYBOARD_HELP'
       });
       keyboardBtn.setAttribute('data-kp-control-strip-keyboard', 'true');
 
       const settingsBtn = createEarlyControlStripSegmentButton({
         ariaLabel: 'Open KeyPilot settings',
         title: 'Settings',
-        text: 'Settings'
+        text: 'Settings',
+        iconActionId: 'OPEN_SETTINGS_POPOVER'
       });
       settingsBtn.setAttribute('data-kp-control-strip-settings', 'true');
 
@@ -8724,6 +8942,15 @@
     if (!controlStripRoot) return;
     // Control strip stays available even when KeyPilot is disabled (On/Off re-enable).
     const show = !!controlStripDesiredVisible;
+    if (show) {
+      try {
+        earlyApplyPanelPosition(controlStripRoot, earlyPanelPositions && earlyPanelPositions.controlStrip, {
+          margin: EARLY_STRIP_MARGIN_PX,
+          defaultAnchor: 'top-left',
+          defaultHeight: CONTROL_STRIP_HEIGHT_PX
+        });
+      } catch { /* ignore */ }
+    }
     try {
       controlStripRoot.hidden = !show;
       controlStripRoot.style.display = show ? 'flex' : 'none';
@@ -8746,6 +8973,12 @@
     controlStripLayoutHydrated = true;
     try {
       earlyPanelPositions = readEarlyPanelPositionsFromSettingsObj(settingsObj) || earlyPanelPositions;
+    } catch { /* ignore */ }
+    try {
+      cacheEarlyChromeLayout({
+        panelPositions: earlyPanelPositions || undefined,
+        controlStrip: { visible: controlStripDesiredVisible, collapsed: controlStripCollapsed }
+      });
     } catch { /* ignore */ }
     applyEarlyControlStripVisibility();
     // Re-apply dock positions when settings arrive (shells may already exist).
@@ -8780,7 +9013,7 @@
         const next = changes[SETTINGS_STORAGE_KEY]?.newValue;
         applyEarlyControlStripFromSettingsObject(next && typeof next === 'object' ? next : null);
         try {
-          if (typeof applyEarlyTheme === 'function' && next && typeof next === 'object') applyEarlyTheme(next.themeId);
+          if (typeof applyEarlyTheme === 'function' && next && typeof next === 'object') applyEarlyTheme(next.themeId, next.themeOverrides);
         } catch { /* ignore */ }
       } catch { /* ignore */ }
     };
@@ -9014,9 +9247,9 @@
     leadingIcon.setAttribute('data-kp-titlebar-icon', 'keyboard');
     leadingIcon.setAttribute('data-kp-floating-keyboard-icon', 'true');
     try {
-      const iconUrl = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL)
-        ? chrome.runtime.getURL('themes/shared/icons/chrome/keyboard.svg')
-        : 'themes/shared/icons/chrome/keyboard.svg';
+      const iconUrl = 'data:image/svg+xml,' + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="black"><path d="M1.5 4h13v9h-13V4zm2 2v2h2V6h-2zm3 0v2h2V6h-2zm3 0v2h2V6h-2zm3 0v2h2V6h-2zM3.5 9v2h8V9h-8z"/></svg>'
+      );
       const img = `url("${iconUrl}")`;
       leadingIcon.style.webkitMaskImage = img;
       leadingIcon.style.maskImage = img;
@@ -9195,6 +9428,7 @@
   function applyEarlyKeyboardHelpVisibility(visible) {
     if (keyboardHelpHandedOff) return;
     keyboardHelpVisible = Boolean(visible);
+    try { cacheEarlyChromeLayout({ keyboardHelpVisible }); } catch { /* ignore */ }
 
     // Separate-window Link Preview / Open Popover: never paint Keyboard Reference.
     if (isPopoverOsWindow) {
@@ -9315,7 +9549,7 @@
         const next = changes[SETTINGS_STORAGE_KEY]?.newValue;
         const nextObj = next && typeof next === 'object' ? next : null;
         const { layoutChanged, customLayoutChanged } = applyEarlyKeyboardLayoutFromSettingsObj(nextObj);
-        try { if (typeof applyEarlyTheme === 'function') applyEarlyTheme(nextObj && nextObj.themeId); } catch { /* ignore */ }
+        try { if (typeof applyEarlyTheme === 'function') applyEarlyTheme(nextObj && nextObj.themeId, nextObj ? nextObj.themeOverrides : undefined); } catch { /* ignore */ }
         const nextNum = !!(nextObj && nextObj.keyboardReferenceShowNumberRow);
         const nextCollapsed = !!(nextObj && nextObj.keyboardReferenceCollapsed);
         const numChanged = nextNum !== keyboardShowNumberRow;
@@ -9460,7 +9694,7 @@
           settingsObj = st;
           applyEarlyKeyboardLayoutFromSettingsObj(st);
           try { applyEarlyKeyboardLayoutStore(result && result[KEYBOARD_LAYOUT_STORE_KEY]); } catch { /* ignore */ }
-          try { if (typeof applyEarlyTheme === 'function') applyEarlyTheme(st && st.themeId); } catch { /* ignore */ }
+          try { if (typeof applyEarlyTheme === 'function') applyEarlyTheme(st && st.themeId, st ? st.themeOverrides : undefined); } catch { /* ignore */ }
           keyboardShowNumberRow = !!(st && st.keyboardReferenceShowNumberRow);
           keyboardReferenceCollapsed = !!(st && st.keyboardReferenceCollapsed);
           earlyPanelPositions = readEarlyPanelPositionsFromSettingsObj(st);
@@ -9507,7 +9741,7 @@
             : null;
           if (settingsObj) {
             applyEarlyKeyboardLayoutFromSettingsObj(settingsObj);
-            try { if (typeof applyEarlyTheme === 'function') applyEarlyTheme(settingsObj.themeId); } catch { /* ignore */ }
+            try { if (typeof applyEarlyTheme === 'function') applyEarlyTheme(settingsObj.themeId, settingsObj.themeOverrides); } catch { /* ignore */ }
             keyboardShowNumberRow = !!settingsObj.keyboardReferenceShowNumberRow;
             keyboardReferenceCollapsed = !!settingsObj.keyboardReferenceCollapsed;
             earlyPanelPositions = readEarlyPanelPositionsFromSettingsObj(settingsObj);
@@ -9526,7 +9760,7 @@
     }
     try {
       if (typeof applyEarlyTheme === 'function') {
-        applyEarlyTheme(settingsObj && settingsObj.themeId);
+        applyEarlyTheme(settingsObj && settingsObj.themeId, settingsObj ? settingsObj.themeOverrides : undefined);
       }
     } catch { /* ignore */ }
     updateCursorVisibility();
@@ -10226,6 +10460,11 @@
           themeReady = true;
         } else if (typeof ensureEarlyThemeStyles === 'function') {
           ensureEarlyThemeStyles();
+          try {
+            if (typeof stampEarlyKeyChrome === 'function' && typeof peekCachedThemeOverrides === 'function') {
+              stampEarlyKeyChrome(peekCachedThemeOverrides());
+            }
+          } catch { /* ignore */ }
         }
       }
     } catch { /* ignore */ }
