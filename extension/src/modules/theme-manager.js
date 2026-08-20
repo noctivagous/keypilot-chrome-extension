@@ -111,13 +111,67 @@ export function injectAllThemeMaps(root = document) {
   injectStyle(root, `${getAllThemesCss()}\n${getCutCornerCss()}`, ALL_THEMES_ATTR);
 }
 
-function collectChromeThemeHosts(root) {
-  const out = [];
-  if (!root?.querySelectorAll) return out;
+const CHROME_THEME_HOST_SEL = [
+  '.kp-chrome-window',
+  '[data-kp-ui-shadow]',
+  '[data-kp-select]',
+  '.kp-select-menu',
+  '.kpv2-settings-host',
+  '.kpv2-docs-host'
+].join(', ');
+
+/**
+ * Light-DOM chrome plus open shadow trees (querySelectorAll does not pierce).
+ * @param {Document|ShadowRoot|Element|null} root
+ * @param {Element[]} [out]
+ * @param {Set<Element>} [seen]
+ * @returns {Element[]}
+ */
+function collectChromeThemeHosts(root, out = [], seen = new Set()) {
+  if (!root) return out;
+  const addHost = (el) => {
+    if (!el || seen.has(el)) return;
+    seen.add(el);
+    out.push(el);
+    try {
+      if (el.shadowRoot) collectChromeThemeHosts(el.shadowRoot, out, seen);
+    } catch { /* ignore */ }
+  };
   try {
-    root.querySelectorAll('.kp-chrome-window, [data-kp-ui-shadow]').forEach((el) => out.push(el));
+    if (root.querySelectorAll) {
+      root.querySelectorAll(CHROME_THEME_HOST_SEL).forEach(addHost);
+    }
   } catch { /* ignore */ }
   return out;
+}
+
+/**
+ * @param {ShadowRoot|null|undefined} shadow
+ * @param {object} theme
+ */
+function paintShadowTheme(shadow, theme) {
+  if (!shadow) return;
+  injectAllThemeMaps(shadow);
+  injectStyle(shadow, getThemeCss(theme), STYLE_ATTR);
+}
+
+/**
+ * Refresh mask URLs that were stamped for the previous pack.
+ * @param {Document|ShadowRoot|null} root
+ * @param {object} theme
+ */
+function syncThemedIconMasks(root, theme) {
+  if (!root?.querySelectorAll) return;
+  try {
+    root.querySelectorAll('[data-kp-theme-icon]').forEach((el) => {
+      const id = el.getAttribute('data-kp-theme-icon');
+      const url = getThemeIconUrl(id, theme);
+      if (!url || !el.style) return;
+      const img = `url("${String(url).replace(/"/g, '\\"')}")`;
+      try { el.style.webkitMaskImage = img; } catch { /* ignore */ }
+      try { el.style.maskImage = img; } catch { /* ignore */ }
+    });
+  } catch { /* ignore */ }
 }
 
 /**
@@ -151,15 +205,23 @@ export function applyThemeToRoots(theme, opts = {}) {
     applyThemeDataset(host, _activeTheme);
     applyThemeCssVars(host, _activeTheme);
     if (host?.shadowRoot) {
-      injectAllThemeMaps(host.shadowRoot);
+      paintShadowTheme(host.shadowRoot, _activeTheme);
       applyThemeDataset(host.shadowRoot.host, _activeTheme);
+      syncThemedIconMasks(host.shadowRoot, _activeTheme);
     }
+    syncThemedIconMasks(host, _activeTheme);
+  }
+
+  for (const root of roots) {
+    syncThemedIconMasks(root, _activeTheme);
   }
 
   try {
     applyThemeDataset(document.documentElement, _activeTheme);
     applyThemeCssVars(document.documentElement, _activeTheme);
     injectAllThemeMaps(document);
+    injectStyle(document, getThemeCss(_activeTheme), STYLE_ATTR);
+    syncThemedIconMasks(document, _activeTheme);
   } catch { /* ignore */ }
 
   notify();

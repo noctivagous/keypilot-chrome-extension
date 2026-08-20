@@ -2889,13 +2889,20 @@
       else document.documentElement.removeAttribute('data-kp-corner');
     } catch { /* ignore */ }
     try {
-      document.querySelectorAll('.kp-chrome-window, [data-kp-ui-shadow]').forEach((el) => {
+      const stamp = (el) => {
+        if (!el || !el.setAttribute) return;
         try {
           el.setAttribute('data-kp-theme', id);
           if (cut) el.setAttribute('data-kp-corner', 'cut');
           else el.removeAttribute('data-kp-corner');
         } catch { /* ignore */ }
-      });
+        try {
+          if (el.shadowRoot && el.shadowRoot.querySelectorAll) {
+            el.shadowRoot.querySelectorAll('.kp-chrome-window, [data-kp-ui-shadow]').forEach(stamp);
+          }
+        } catch { /* ignore */ }
+      };
+      document.querySelectorAll('.kp-chrome-window, [data-kp-ui-shadow]').forEach(stamp);
     } catch { /* ignore */ }
     cacheThemeId(id);
   }
@@ -4158,7 +4165,7 @@
  * }
  */
 `;
-  const KP_ALL_THEMES_CSS = `[data-kp-theme="dark-pro"] {
+  const KP_ALL_THEMES_CSS = `:host([data-kp-theme="dark-pro"]), [data-kp-theme="dark-pro"] {
   --kp-theme-id: dark-pro;
   --kp-font-display: Helvetica, Arial, sans-serif;
   --kp-font-heading: Helvetica, Arial, sans-serif;
@@ -4273,7 +4280,7 @@
   --kp-icon-accent: #4a90c8;
   --kp-key-icon: #0c1018;
 }
-[data-kp-theme="gray-metal-pro"] {
+:host([data-kp-theme="gray-metal-pro"]), [data-kp-theme="gray-metal-pro"] {
   --kp-theme-id: gray-metal-pro;
   --kp-font-display: Helvetica, Arial, sans-serif;
   --kp-font-heading: Helvetica, Arial, sans-serif;
@@ -4388,7 +4395,7 @@
   --kp-icon-accent: #3a6a94;
   --kp-key-icon: #1c1c1c;
 }
-[data-kp-theme="gx-er"] {
+:host([data-kp-theme="gx-er"]), [data-kp-theme="gx-er"] {
   --kp-theme-id: gx-er;
   --kp-font-display: 'ROBOTECHGPRegular', 'TitilliumText', Helvetica, Arial, sans-serif;
   --kp-font-heading: 'Cubellan', 'TitilliumText', Helvetica, Arial, sans-serif;
@@ -6309,7 +6316,10 @@
   // Early cursor state
   let isExtensionEnabled = true;
   let currentMode = 'none';
-  let mousePosition = { x: 0, y: 0 };
+  let mousePosition = { x: NaN, y: NaN };
+  /** False until a trusted pointer event reports real client coords (do not seed viewport-center). */
+  let earlyPointerSeen = false;
+  let earlyPointerListenersActive = false;
   let earlyObserver = null;
   let earlyClickableElements = new Set();
   let keyboardListenersActive = false;
@@ -6479,7 +6489,7 @@
       // SPA body replacement steal a still-hidden early shell.
 
       // Stop early mouse tracking (main extension will handle this)
-      try { document.removeEventListener('mousemove', handleMouseMove); } catch {}
+      try { stopEarlyPointerListeners(); } catch {}
       try { stopEarlyHoverTracking(); } catch {}
 
       // Stop early keyboard capture
@@ -9363,13 +9373,42 @@
     } catch {}
   }
 
+  function noteEarlyPointer(event) {
+    if (!isExtensionEnabled || isMainExtensionLoaded) return;
+    if (!event || event.isTrusted === false) return;
+    const x = event.clientX;
+    const y = event.clientY;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    earlyPointerSeen = true;
+    updateCursorPosition(x, y);
+    scheduleEarlyHoverUpdate();
+  }
+
   /**
    * Handle mouse movement for early cursor tracking
    */
   function handleMouseMove(event) {
-    if (!isExtensionEnabled) return;
-    updateCursorPosition(event.clientX, event.clientY);
-    if (!isMainExtensionLoaded) scheduleEarlyHoverUpdate();
+    noteEarlyPointer(event);
+  }
+
+  function startEarlyPointerListeners() {
+    if (earlyPointerListenersActive) return;
+    earlyPointerListenersActive = true;
+    try {
+      document.addEventListener('mousemove', handleMouseMove, { passive: true });
+      document.addEventListener('pointermove', handleMouseMove, { passive: true });
+      // Stationary pointer after a click-navigation never fires mousemove; mouseover
+      // still reports the real client coordinates as nodes appear under the cursor.
+      document.addEventListener('mouseover', handleMouseMove, { passive: true, capture: true });
+    } catch { /* ignore */ }
+  }
+
+  function stopEarlyPointerListeners() {
+    if (!earlyPointerListenersActive) return;
+    earlyPointerListenersActive = false;
+    try { document.removeEventListener('mousemove', handleMouseMove); } catch { /* ignore */ }
+    try { document.removeEventListener('pointermove', handleMouseMove); } catch { /* ignore */ }
+    try { document.removeEventListener('mouseover', handleMouseMove, { capture: true }); } catch { /* ignore */ }
   }
 
   /**
@@ -9807,6 +9846,10 @@
           hideEarlyHover();
           return;
         }
+        if (!earlyPointerSeen) {
+          hideEarlyHover();
+          return;
+        }
         const x = mousePosition.x;
         const y = mousePosition.y;
         if (!Number.isFinite(x) || !Number.isFinite(y)) {
@@ -10100,9 +10143,9 @@
       if (document.documentElement || document.body) {
         // Re-inject CSS after DOM is ready to prevent override
         reInjectCSS();
-        // Start mouse tracking
-        document.addEventListener('mousemove', handleMouseMove, { passive: true });
-        updateCursorPosition(window.innerWidth / 2, window.innerHeight / 2);
+        // Track the real pointer only. Seeding viewport-center made Click Element
+        // hover outline a random mid-page clickable until document_idle handoff.
+        startEarlyPointerListeners();
         startEarlyHoverTracking();
         // Ensure cursor is visible
         updateCursorVisibility();
@@ -10156,7 +10199,7 @@
       if (document.body) {
         document.body.style.cursor = '';
       }
-      document.removeEventListener('mousemove', handleMouseMove);
+      stopEarlyPointerListeners();
       stopEarlyKeyboardCapture();
       stopEarlyHoverTracking();
       if (earlyObserver) {

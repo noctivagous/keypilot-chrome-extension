@@ -315,6 +315,7 @@ export function createTitlebarLeadingIcon(doc = document, iconId = 'window') {
   el.setAttribute('aria-hidden', 'true');
   const id = typeof iconId === 'string' && iconId.trim() ? iconId.trim() : 'window';
   el.setAttribute('data-kp-titlebar-icon', id);
+  el.setAttribute('data-kp-theme-icon', id);
   try {
     const url = getThemeIconUrl(id, getActiveTheme());
     if (url) {

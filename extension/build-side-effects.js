@@ -600,13 +600,20 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       `      else document.documentElement.removeAttribute('data-kp-corner');\n` +
       `    } catch { /* ignore */ }\n` +
       `    try {\n` +
-      `      document.querySelectorAll('.kp-chrome-window, [data-kp-ui-shadow]').forEach((el) => {\n` +
+      `      const stamp = (el) => {\n` +
+      `        if (!el || !el.setAttribute) return;\n` +
       `        try {\n` +
       `          el.setAttribute('data-kp-theme', id);\n` +
       `          if (cut) el.setAttribute('data-kp-corner', 'cut');\n` +
       `          else el.removeAttribute('data-kp-corner');\n` +
       `        } catch { /* ignore */ }\n` +
-      `      });\n` +
+      `        try {\n` +
+      `          if (el.shadowRoot && el.shadowRoot.querySelectorAll) {\n` +
+      `            el.shadowRoot.querySelectorAll('.kp-chrome-window, [data-kp-ui-shadow]').forEach(stamp);\n` +
+      `          }\n` +
+      `        } catch { /* ignore */ }\n` +
+      `      };\n` +
+      `      document.querySelectorAll('.kp-chrome-window, [data-kp-ui-shadow]').forEach(stamp);\n` +
       `    } catch { /* ignore */ }\n` +
       `    cacheThemeId(id);\n` +
       `  }\n` +

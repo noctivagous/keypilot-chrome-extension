@@ -5,11 +5,46 @@
  */
 
 import MarkdownIt from 'markdown-it';
-import { getSettings } from '../src/modules/settings-manager.js';
+import { getSettings, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
 import { applyThemeToRoots, resolveThemeFromSettings } from '../src/modules/theme-manager.js';
 import { BUILD_ENABLE_MACRO_BUILDER } from '../src/config/keyboard-layouts.js';
 import { isKpDeepLink, parseKpDeepLink } from '../src/utils/kp-deep-link.js';
 import { MSG } from '../src/messaging/types.js';
+
+let docsThemeStorageInstalled = false;
+/** @type {Document|ShadowRoot|null} */
+let docsThemeRoot = null;
+
+function paintDocsTheme(settings) {
+  const root = docsThemeRoot;
+  if (!root) return;
+  const roots = root.nodeType === 9 ? [root] : [document, root];
+  applyThemeToRoots(resolveThemeFromSettings(settings), {
+    roots,
+    hosts: [
+      root.nodeType === 9
+        ? root.documentElement
+        : (root.host || document.documentElement)
+    ]
+  });
+}
+
+function installDocsThemeStorageSync() {
+  if (docsThemeStorageInstalled) return;
+  docsThemeStorageInstalled = true;
+  try {
+    chrome.storage?.onChanged?.addListener((changes, area) => {
+      if (area !== 'sync' && area !== 'local') return;
+      const entry = changes?.[SETTINGS_STORAGE_KEY];
+      if (!entry) return;
+      const raw = entry.newValue;
+      if (raw && typeof raw === 'object') {
+        try { paintDocsTheme(raw); } catch { /* ignore */ }
+      }
+      void getSettings().then(paintDocsTheme).catch(() => { /* ignore */ });
+    });
+  } catch { /* ignore */ }
+}
 
 /**
  * @typedef {{
@@ -806,18 +841,14 @@ export function mountDocsApp(root, options = {}) {
 
   bindDocsElements(mountNode);
 
+  docsThemeRoot = root;
+  const paint = (settings) => {
+    try { paintDocsTheme(settings); } catch { /* ignore */ }
+  };
   try {
-    void getSettings().then((settings) => {
-      applyThemeToRoots(resolveThemeFromSettings(settings), {
-        roots: [root.nodeType === 9 ? root : document],
-        hosts: [
-          root.nodeType === 9
-            ? root.documentElement
-            : (root.host || document.documentElement)
-        ]
-      });
-    }).catch(() => { /* ignore */ });
+    void getSettings().then(paint).catch(() => { /* ignore */ });
   } catch { /* ignore */ }
+  installDocsThemeStorageSync();
 
   if (embedded && docsAppEl) {
     docsAppEl.classList.add('kp-popover-embed');

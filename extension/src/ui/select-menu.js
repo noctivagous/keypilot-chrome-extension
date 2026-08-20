@@ -57,6 +57,7 @@ function createSelectIcon(doc, iconId, className) {
   const el = doc.createElement('span');
   el.className = className;
   el.setAttribute('aria-hidden', 'true');
+  el.setAttribute('data-kp-theme-icon', id);
   try {
     const url = getThemeIconUrl(id, getActiveTheme());
     if (url) {
@@ -178,6 +179,7 @@ export function createSelectMenu(config = {}) {
     const iconId = choice?.icon;
     if (iconId) {
       try {
+        triggerIcon.setAttribute('data-kp-theme-icon', iconId);
         const url = getThemeIconUrl(iconId, getActiveTheme());
         if (url) {
           const img = `url("${String(url).replace(/"/g, '\\"')}")`;

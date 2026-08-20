@@ -390,10 +390,10 @@ export class PopoverController {
         min-height: 0;
         display: flex;
         flex-direction: column;
-        background: linear-gradient(rgb(18, 18, 18) 0%, rgb(11, 11, 11) 100%);
+        background: var(--kp-color-bg, #0f0f10);
       `
     });
-    const shadow = bodyHost.attachShadow({ mode: 'open' });
+    const shadow = ensureOpenChromeShadow(bodyHost, { id: 'docs-app' }) || bodyHost.shadowRoot;
     try {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
@@ -544,10 +544,10 @@ export class PopoverController {
         min-height: 0;
         display: flex;
         flex-direction: column;
-        background: linear-gradient(rgb(18, 18, 18) 0%, rgb(11, 11, 11) 100%);
+        background: var(--kp-color-bg, #0f0f10);
       `
     });
-    const shadow = bodyHost.attachShadow({ mode: 'open' });
+    const shadow = ensureOpenChromeShadow(bodyHost, { id: 'settings-app' }) || bodyHost.shadowRoot;
     this._docsHost = null;
     this._inPagePopoverKind = 'settings';
     this._docsUnmount = await mountSettingsApp(shadow, {

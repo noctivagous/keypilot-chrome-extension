@@ -49,7 +49,10 @@ export function getTheme(id, overrides) {
 export function getAllThemesCss() {
   const blocks = THEME_IDS.map((id) => {
     const vars = themeToCssVars(getTheme(id));
-    return cssVarsToBlock(vars, `[data-kp-theme="${id}"]`);
+    return cssVarsToBlock(
+      vars,
+      `:host([data-kp-theme="${id}"]), [data-kp-theme="${id}"]`
+    );
   });
   const onboarding = themeToCssVars(
     mergeTheme(DARK_PRO_THEME, DARK_PRO_THEME.surfaces?.onboarding || {})

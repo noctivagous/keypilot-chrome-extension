@@ -1729,11 +1729,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
 
   _applyThemeFromSettings() {
     const theme = resolveThemeFromSettings(this._settings || DEFAULT_SETTINGS);
-    const hosts = [];
-    try {
-      document.querySelectorAll('[data-kp-ui-shadow]').forEach((el) => hosts.push(el));
-    } catch { /* ignore */ }
-    applyThemeToRoots(theme, { roots: [document], hosts });
+    applyThemeToRoots(theme, { roots: [document], hosts: [document.documentElement] });
     try {
       document.querySelectorAll('.kp-onboarding-panel, .kp-layout-config-panel').forEach((el) => {
         applyOnboardingSurface(el, theme);
@@ -1765,7 +1761,15 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       this._settingsStorageListener = (changes, area) => {
         // Prefer sync; also accept local (storage helper falls back when sync fails).
         if (area !== 'sync' && area !== 'local') return;
-        if (!changes || !changes[SETTINGS_STORAGE_KEY]) return;
+        const entry = changes?.[SETTINGS_STORAGE_KEY];
+        if (!entry) return;
+        const raw = entry.newValue;
+        if (raw && typeof raw === 'object') {
+          try {
+            this._settings = { ...(this._settings || DEFAULT_SETTINGS), ...raw };
+            this._applyThemeFromSettings();
+          } catch { /* ignore */ }
+        }
         this.refreshSettingsFromStorage();
       };
       chrome.storage.onChanged.addListener(this._settingsStorageListener);

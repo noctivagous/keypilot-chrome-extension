@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-20T03:17:00.088Z
+ * Generated on 2026-08-20T04:31:09.541Z
  */
 
 var __defProp = Object.defineProperty;
@@ -7945,6 +7945,23 @@ var THEME_ICON_FILES = Object.freeze({
   window: "chrome/window.svg"
 });
 var THEME_ICON_IDS = Object.freeze(Object.keys(THEME_ICON_FILES));
+function getThemeIconUrl(semanticId, theme) {
+  const id = typeof semanticId === "string" ? semanticId : "";
+  const baseFile = THEME_ICON_FILES[id];
+  if (!baseFile || !id) return "";
+  const pack = theme?.icons?.pack || "shared";
+  const fallback = theme?.icons?.fallbackPack || "shared";
+  const override = theme?.icons?.overrides && theme.icons.overrides[id];
+  const file = typeof override === "string" && override.trim() ? override.trim() : baseFile;
+  const folder = override ? pack : fallback;
+  try {
+    if (typeof chrome !== "undefined" && chrome.runtime?.getURL) {
+      return chrome.runtime.getURL(`themes/${folder}/icons/${file}`);
+    }
+  } catch {
+  }
+  return `themes/${folder}/icons/${file}`;
+}
 
 // themes/index.js
 var PACKAGES = Object.freeze({
@@ -7960,7 +7977,10 @@ function getTheme(id, overrides) {
 function getAllThemesCss() {
   const blocks = THEME_IDS.map((id) => {
     const vars = themeToCssVars(getTheme(id));
-    return cssVarsToBlock(vars, `[data-kp-theme="${id}"]`);
+    return cssVarsToBlock(
+      vars,
+      `:host([data-kp-theme="${id}"]), [data-kp-theme="${id}"]`
+    );
   });
   const onboarding = themeToCssVars(
     mergeTheme(DARK_PRO_THEME, DARK_PRO_THEME.surfaces?.onboarding || {})
@@ -8108,14 +8128,57 @@ function injectAllThemeMaps(root = document) {
   injectStyle(root, `${getAllThemesCss()}
 ${getCutCornerCss()}`, ALL_THEMES_ATTR);
 }
-function collectChromeThemeHosts(root) {
-  const out = [];
-  if (!root?.querySelectorAll) return out;
+var CHROME_THEME_HOST_SEL = [
+  ".kp-chrome-window",
+  "[data-kp-ui-shadow]",
+  "[data-kp-select]",
+  ".kp-select-menu",
+  ".kpv2-settings-host",
+  ".kpv2-docs-host"
+].join(", ");
+function collectChromeThemeHosts(root, out = [], seen = /* @__PURE__ */ new Set()) {
+  if (!root) return out;
+  const addHost = (el) => {
+    if (!el || seen.has(el)) return;
+    seen.add(el);
+    out.push(el);
+    try {
+      if (el.shadowRoot) collectChromeThemeHosts(el.shadowRoot, out, seen);
+    } catch {
+    }
+  };
   try {
-    root.querySelectorAll(".kp-chrome-window, [data-kp-ui-shadow]").forEach((el) => out.push(el));
+    if (root.querySelectorAll) {
+      root.querySelectorAll(CHROME_THEME_HOST_SEL).forEach(addHost);
+    }
   } catch {
   }
   return out;
+}
+function paintShadowTheme(shadow, theme) {
+  if (!shadow) return;
+  injectAllThemeMaps(shadow);
+  injectStyle(shadow, getThemeCss(theme), STYLE_ATTR);
+}
+function syncThemedIconMasks(root, theme) {
+  if (!root?.querySelectorAll) return;
+  try {
+    root.querySelectorAll("[data-kp-theme-icon]").forEach((el) => {
+      const id = el.getAttribute("data-kp-theme-icon");
+      const url = getThemeIconUrl(id, theme);
+      if (!url || !el.style) return;
+      const img = `url("${String(url).replace(/"/g, '\\"')}")`;
+      try {
+        el.style.webkitMaskImage = img;
+      } catch {
+      }
+      try {
+        el.style.maskImage = img;
+      } catch {
+      }
+    });
+  } catch {
+  }
 }
 function applyThemeToRoots(theme, opts = {}) {
   _activeTheme = theme || getTheme(DEFAULT_THEME_ID);
@@ -8143,14 +8206,21 @@ function applyThemeToRoots(theme, opts = {}) {
     applyThemeDataset(host, _activeTheme);
     applyThemeCssVars(host, _activeTheme);
     if (host?.shadowRoot) {
-      injectAllThemeMaps(host.shadowRoot);
+      paintShadowTheme(host.shadowRoot, _activeTheme);
       applyThemeDataset(host.shadowRoot.host, _activeTheme);
+      syncThemedIconMasks(host.shadowRoot, _activeTheme);
     }
+    syncThemedIconMasks(host, _activeTheme);
+  }
+  for (const root of roots) {
+    syncThemedIconMasks(root, _activeTheme);
   }
   try {
     applyThemeDataset(document.documentElement, _activeTheme);
     applyThemeCssVars(document.documentElement, _activeTheme);
     injectAllThemeMaps(document);
+    injectStyle(document, getThemeCss(_activeTheme), STYLE_ATTR);
+    syncThemedIconMasks(document, _activeTheme);
   } catch {
   }
   notify();
@@ -8337,6 +8407,40 @@ var TAB_UI_FORWARD_TYPES = Object.freeze([
 ]);
 
 // pages/docs.js
+var docsThemeStorageInstalled = false;
+var docsThemeRoot = null;
+function paintDocsTheme(settings) {
+  const root = docsThemeRoot;
+  if (!root) return;
+  const roots = root.nodeType === 9 ? [root] : [document, root];
+  applyThemeToRoots(resolveThemeFromSettings(settings), {
+    roots,
+    hosts: [
+      root.nodeType === 9 ? root.documentElement : root.host || document.documentElement
+    ]
+  });
+}
+function installDocsThemeStorageSync() {
+  if (docsThemeStorageInstalled) return;
+  docsThemeStorageInstalled = true;
+  try {
+    chrome.storage?.onChanged?.addListener((changes, area) => {
+      if (area !== "sync" && area !== "local") return;
+      const entry = changes?.[SETTINGS_STORAGE_KEY];
+      if (!entry) return;
+      const raw = entry.newValue;
+      if (raw && typeof raw === "object") {
+        try {
+          paintDocsTheme(raw);
+        } catch {
+        }
+      }
+      void getSettings().then(paintDocsTheme).catch(() => {
+      });
+    });
+  } catch {
+  }
+}
 var INDEX_URL = () => chrome.runtime.getURL("userdocs/index.json");
 var docUrl = (file) => chrome.runtime.getURL(`userdocs/${file}`);
 var allDocs = [];
@@ -8889,18 +8993,19 @@ function mountDocsApp(root, options = {}) {
     if (app) mountNode.appendChild(app);
   }
   bindDocsElements(mountNode);
+  docsThemeRoot = root;
+  const paint = (settings) => {
+    try {
+      paintDocsTheme(settings);
+    } catch {
+    }
+  };
   try {
-    void getSettings().then((settings) => {
-      applyThemeToRoots(resolveThemeFromSettings(settings), {
-        roots: [root.nodeType === 9 ? root : document],
-        hosts: [
-          root.nodeType === 9 ? root.documentElement : root.host || document.documentElement
-        ]
-      });
-    }).catch(() => {
+    void getSettings().then(paint).catch(() => {
     });
   } catch {
   }
+  installDocsThemeStorageSync();
   if (embedded && docsAppEl) {
     docsAppEl.classList.add("kp-popover-embed");
     const header = docsAppEl.querySelector(".header");

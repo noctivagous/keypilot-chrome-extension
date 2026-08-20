@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-20T03:17:00.088Z
+ * Generated on 2026-08-20T04:31:09.541Z
  */
 
 (() => {
@@ -3724,6 +3724,14 @@
 
   // src/modules/theme-manager.js
   var _activeTheme = getTheme(DEFAULT_THEME_ID);
+  var CHROME_THEME_HOST_SEL = [
+    ".kp-chrome-window",
+    "[data-kp-ui-shadow]",
+    "[data-kp-select]",
+    ".kp-select-menu",
+    ".kpv2-settings-host",
+    ".kpv2-docs-host"
+  ].join(", ");
 
   // src/ui/kp-chrome-shadow.js
   function containsComposed(host, node) {

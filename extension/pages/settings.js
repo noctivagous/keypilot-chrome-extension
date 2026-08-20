@@ -798,7 +798,7 @@ async function render() {
       if (settingsScope && settingsScope !== document) roots.push(settingsScope);
       applyThemeToRoots(theme, {
         roots,
-        hosts: [document.documentElement]
+        hosts: [document.documentElement, settingsScope?.host].filter(Boolean)
       });
     } catch { /* ignore */ }
   };
