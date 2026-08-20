@@ -2,8 +2,8 @@
  * Client helpers for page-preview card backgrounds.
  *
  * Prefer official video thumbnails (YouTube, Dailymotion, Rumble/Odysee/Vimeo
- * via SW oEmbed) for video URLs; otherwise request a stored capture from the
- * service worker (IndexedDB).
+ * via SW oEmbed) for video URLs. Page-screenshot captures are parked in
+ * unused/page-previews/ for a later version.
  *
  * Loads are rate-limited, session-cached, and (optionally) deferred until the
  * card is near the scroll viewport so grids stay filled without a stampede.
@@ -53,38 +53,6 @@ export function buildDarkenedThumbBackground(imageUrl, topAlpha = 0.55, bottomAl
 }
 
 /**
- * Request a stored page screenshot from the service worker.
- * @param {string} pageUrl
- * @returns {Promise<string|null>} data URL or null
- */
-export async function requestPageThumb(pageUrl) {
-  const url = String(pageUrl || '').trim();
-  if (!url) return null;
-
-  try {
-    if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) {
-      return null;
-    }
-    const response = await chrome.runtime.sendMessage({
-      type: 'KP_GET_PAGE_THUMB',
-      pageUrl: url
-    });
-    if (
-      response &&
-      response.type === 'KP_PAGE_THUMB_RESPONSE' &&
-      response.success &&
-      typeof response.dataUrl === 'string' &&
-      response.dataUrl
-    ) {
-      return response.dataUrl;
-    }
-  } catch {
-    // SW unavailable or no thumb.
-  }
-  return null;
-}
-
-/**
  * Request an official video thumbnail (oEmbed / sync) via the service worker.
  * @param {string} pageUrl
  * @returns {Promise<{ url: string, source: string }|null>}
@@ -128,7 +96,7 @@ export async function requestVideoThumb(pageUrl) {
 
 /**
  * Resolve the best available card background image URL for a page.
- * Video URL → official thumb; else stored capture.
+ * Video URL → official thumb; otherwise no background (captures parked).
  *
  * @param {string} pageUrl
  * @param {{ youtubePrefer?: boolean, videoPrefer?: boolean, youtubeQuality?: string }} [opts]
@@ -140,9 +108,6 @@ export async function resolveCardBackgroundImage(pageUrl, opts = {}) {
     const video = await requestVideoThumb(pageUrl);
     if (video?.url) return video;
   }
-
-  const dataUrl = await requestPageThumb(pageUrl);
-  if (dataUrl) return { url: dataUrl, source: 'capture' };
   return null;
 }
 

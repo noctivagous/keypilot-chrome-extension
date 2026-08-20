@@ -9,7 +9,7 @@ import {
   extractDomain,
   parseUrlForThreeLineDisplay
 } from '../src/ui/url-listing.js';
-import { applyCardBackground, requestPageThumb } from '../src/ui/page-thumb-ui.js';
+import { applyCardBackground } from '../src/ui/page-thumb-ui.js';
 import { createPopoverTitlebar, createTitlebarCloseHint } from '../src/ui/popover-titlebar.js';
 import { createTitlebarActionButton } from '../src/ui/preview-open-actions.js';
 import { createSegmentedControl } from '../src/ui/segmented-control.js';
@@ -945,25 +945,6 @@ async function renderRecentHistory() {
       cssVarName: '--kp-page-thumb',
       readyClass: 'kp-has-page-thumb'
     });
-    if (primaryThumbUrl !== rootUrl) {
-      void (async () => {
-        const primary = await requestPageThumb(primaryThumbUrl);
-        if (primary || !details.isConnected) return;
-        if (details.classList.contains('kp-has-page-thumb')) return;
-        const rootData = await requestPageThumb(rootUrl);
-        if (!rootData || !details.isConnected) return;
-        if (details.classList.contains('kp-has-page-thumb')) return;
-        try {
-          const safe = String(rootData).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-          details.style.setProperty('--kp-page-thumb', `url("${safe}")`);
-          details.classList.add('kp-has-page-thumb');
-          details.dataset.kpThumbSource = 'capture';
-          details.dataset.kpThumbReady = '1';
-        } catch {
-          // ignore
-        }
-      })();
-    }
 
     const children = document.createElement('div');
     children.className = 'history-outline-children';

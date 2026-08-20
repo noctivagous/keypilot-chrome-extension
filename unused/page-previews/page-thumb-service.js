@@ -1,6 +1,10 @@
 /**
  * Page thumbnail capture service (service worker).
  *
+ * PARKED: originally `extension/src/utils/page-thumb-service.js`.
+ * Restore by moving this file back next to `page-thumb-store.js` under
+ * `extension/src/utils/` so the `../config/url-policy.js` import resolves.
+ *
  * Opportunistically screenshots the visible area of active tabs after load,
  * stores low-res WebP in IndexedDB, pins bookmark URLs, and GCs history thumbs.
  */

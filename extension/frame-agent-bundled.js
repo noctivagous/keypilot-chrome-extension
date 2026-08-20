@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-20T20:20:19.033Z
+ * Generated on 2026-08-20T23:47:14.858Z
  */
 
 (() => {
@@ -36,7 +36,7 @@
     OPEN_ONBOARDING: "KP_OPEN_ONBOARDING",
     /** Reset walkthrough progress and open it (e.g. Guide "Launch Walkthrough"). */
     LAUNCH_WALKTHROUGH: "KP_LAUNCH_WALKTHROUGH",
-    // --- History / bookmarks / favicon (SW APIs for content scripts) ---
+    // --- History / bookmarks / top sites (SW APIs for content scripts) ---
     OMNIBOX_SUGGEST: "KP_OMNIBOX_SUGGEST",
     GET_BOOKMARKS: "KP_GET_BOOKMARKS",
     GET_RECENT_BOOKMARKS: "KP_GET_RECENT_BOOKMARKS",
@@ -45,11 +45,7 @@
     GET_MOST_VISITED: "KP_GET_MOST_VISITED",
     GET_HISTORY_FOR_DOMAINS: "KP_GET_HISTORY_FOR_DOMAINS",
     GET_RECENT_HISTORY: "KP_GET_RECENT_HISTORY",
-    GET_FAVICON: "KP_GET_FAVICON",
-    // --- Page preview screenshots for card backgrounds ---
-    GET_PAGE_THUMB: "KP_GET_PAGE_THUMB",
-    PAGE_THUMB_RESPONSE: "KP_PAGE_THUMB_RESPONSE",
-    PAGE_THUMB_UPDATED: "KP_PAGE_THUMB_UPDATED",
+    // --- Video thumbnails for card backgrounds (official oEmbed / sync URLs) ---
     GET_VIDEO_THUMB: "KP_GET_VIDEO_THUMB",
     VIDEO_THUMB_RESPONSE: "KP_VIDEO_THUMB_RESPONSE",
     // --- Media Library (IndexedDB at extension origin; SW owns Blobs) ---

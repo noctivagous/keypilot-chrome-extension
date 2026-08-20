@@ -1,6 +1,8 @@
 /**
  * IndexedDB store for low-res page screenshots used as card backgrounds.
  *
+ * PARKED: originally `extension/src/utils/page-thumb-store.js`.
+ *
  * Not for chrome.storage.local — favicon-style data URLs do not scale to
  * thousands of page previews. Blobs live here; UI fetches via the SW.
  */

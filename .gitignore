@@ -53,6 +53,10 @@ pids/
 # Coverage directory used by tools like istanbul
 coverage/
 
+# IDEs
+.cursor
+.grok
+
 # Temporary files
 tmp/
 temp/
