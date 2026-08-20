@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-20T07:10:43.589Z
+ * Generated on 2026-08-20T20:20:19.033Z
  */
 
 (() => {
@@ -3315,11 +3315,79 @@
       }
       probe = root.host;
     }
+    const unique = uniqueDescendantNavigableLink(el);
+    if (unique) return unique;
     const card = findPermalinkCardHost(
       /** @type {Element} */
       el
     );
     return resolveDescendantPermalink(card);
+  }
+  function uniqueDescendantNavigableLink(host) {
+    if (!host || host.nodeType !== 1) return null;
+    let found = null;
+    let foundDest = "";
+    try {
+      const list = host.querySelectorAll("a[href]");
+      if (!list || !list.length || list.length > 32) return null;
+      for (let i = 0; i < list.length; i++) {
+        const a = list[i];
+        let href = "";
+        try {
+          href = String(
+            /** @type {HTMLAnchorElement} */
+            a.href || ""
+          ).trim();
+        } catch {
+          href = "";
+        }
+        if (!href || href.toLowerCase().startsWith("javascript:")) continue;
+        const dest = activationDestKey(href);
+        if (!dest) continue;
+        if (!found) {
+          found = a;
+          foundDest = dest;
+        } else if (dest !== foundDest) {
+          return null;
+        }
+      }
+    } catch {
+      return null;
+    }
+    if (!found || !foundDest) return null;
+    let url = "";
+    try {
+      url = String(
+        /** @type {HTMLAnchorElement} */
+        found.href || ""
+      ).trim();
+    } catch {
+      url = "";
+    }
+    if (!url) return null;
+    return { url, link: found };
+  }
+  function normalizeActivationDest(href) {
+    const raw = String(href || "").trim();
+    if (!raw || raw === "#" || raw.toLowerCase().startsWith("javascript:")) return "";
+    try {
+      const u = new URL(raw, typeof location !== "undefined" ? location.href : void 0);
+      const path = (u.pathname || "/").replace(/\/+$/, "") || "/";
+      return `${u.origin}${path}`.toLowerCase();
+    } catch {
+      return raw.split(/[?#]/)[0].replace(/\/+$/, "").toLowerCase();
+    }
+  }
+  function activationDestKey(href) {
+    const dest = normalizeActivationDest(href);
+    if (!dest) return "";
+    try {
+      const u = new URL(String(href || "").trim(), typeof location !== "undefined" ? location.href : void 0);
+      const hash = String(u.hash || "").toLowerCase();
+      return dest + hash;
+    } catch {
+      return dest;
+    }
   }
   var JS_NAV_DEST_ATTRS = Object.freeze([
     "data-href",

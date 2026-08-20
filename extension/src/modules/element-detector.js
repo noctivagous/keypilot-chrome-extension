@@ -6,7 +6,9 @@ import { deepElementFromPoint as pierceElementFromPoint } from '../utils/element
 import {
   resolveHoveredLink,
   activationIdentitiesMatch,
-  isOwnActionControl
+  isOwnActionControl,
+  resolveActivationIdentity,
+  uniqueDescendantNavigableLink
 } from '../utils/resolve-hovered-link.js';
 
 export class ElementDetector {
@@ -141,6 +143,52 @@ export class ElementDetector {
   }
 
   /**
+   * Google Closure `jsaction` (Gmail thread rows, Maps, etc.).
+   * Weak like a tracked listener — composite list/grid shells must not light up.
+   * @param {Element|null|undefined} el
+   * @returns {boolean}
+   */
+  hasJsActionHandler(el) {
+    if (!el || el.nodeType !== 1) return false;
+    try {
+      const raw = el.getAttribute && el.getAttribute('jsaction');
+      return !!(raw && String(raw).trim());
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * @param {Element|null|undefined} el
+   * @returns {string}
+   */
+  _jsActionToken(el) {
+    if (!el || el.nodeType !== 1) return '';
+    try {
+      return String((el.getAttribute && el.getAttribute('jsaction')) || '').replace(/\s+/g, ' ').trim();
+    } catch {
+      return '';
+    }
+  }
+
+  /**
+   * Inbox scroller / feed shells also have jsaction; those must not become F-targets.
+   * Thread rows (~40–80px) and chips stay.
+   * @param {Element} el
+   * @returns {boolean}
+   */
+  _jsActionHostTooLarge(el) {
+    if (!el || el.nodeType !== 1) return false;
+    try {
+      const r = el.getBoundingClientRect();
+      if (!r || !(r.height > 0)) return false;
+      return r.height > 160;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Site chrome bar (full-width header/nav) — not a real F-target.
    * NVIDIA sets cursor:pointer on `nav.global-nav` / `.nav-header`, which
    * would otherwise light up the entire top bar and then sticky-trap items.
@@ -155,6 +203,10 @@ export class ElementDetector {
     let role = '';
     try {
       role = ((el.getAttribute && el.getAttribute('role')) || '').trim().toLowerCase();
+    } catch { /* ignore */ }
+    // Inbox/thread rows are full-width and sit under the Gmail header — not a nav bar.
+    try {
+      if (el.tagName === 'TR' || role === 'row') return false;
     } catch { /* ignore */ }
     if (role === 'banner' || role === 'navigation') return true;
     try {
@@ -232,7 +284,71 @@ export class ElementDetector {
   }
 
   /**
-   * Same F-destination: matching URL / data-href / onclick, or a shared click fn.
+   * Host is the click surface F would actually fire (row jsaction, card URL, …).
+   * @param {Element} el
+   * @returns {boolean}
+   */
+  _hasDelegatedClickSurface(el) {
+    if (!el || el.nodeType !== 1) return false;
+    try {
+      if (this.hasJsActionHandler(el) || this.hasTrackedClickHandler(el)) return true;
+    } catch { /* ignore */ }
+    try {
+      if (el.onclick || (el.getAttribute && el.getAttribute('onclick'))) return true;
+    } catch { /* ignore */ }
+    try {
+      if (resolveActivationIdentity(el)) return true;
+    } catch { /* ignore */ }
+    return false;
+  }
+
+  /**
+   * Gmail subject `div.xS[role=link]` has no href/onclick; F bubbles to `tr[jsaction]`.
+   * Distinct widgets (star, checkbox, attachment chip) must not inherit.
+   * @param {Element} leaf
+   * @param {Element} host
+   * @returns {boolean}
+   */
+  _leafInheritsHostActivation(leaf, host) {
+    if (!leaf || !host || leaf === host || leaf.nodeType !== 1 || host.nodeType !== 1) {
+      return false;
+    }
+    try {
+      if (isOwnActionControl(leaf)) return false;
+    } catch { /* continue */ }
+    try {
+      const role = ((leaf.getAttribute && leaf.getAttribute('role')) || '').trim().toLowerCase();
+      // role=link without a URL is still the parent's open-row action (Gmail subject).
+      if (role && role !== 'link' && this.CLICKABLE_ROLES.includes(role)) return false;
+    } catch { /* continue */ }
+    try {
+      if (resolveActivationIdentity(leaf)) return false;
+    } catch { /* continue */ }
+    try {
+      const leafTok = this._jsActionToken(leaf);
+      const hostTok = this._jsActionToken(host);
+      if (leafTok && leafTok !== hostTok) return false;
+      // Don't jump over a closer jsaction widget (Gmail attachment chip).
+      if (hostTok) {
+        let n = leaf.parentElement;
+        let depth = 0;
+        while (n && n !== host && n.nodeType === 1 && depth++ < 14) {
+          const tok = this._jsActionToken(n);
+          if (tok && tok !== hostTok) return false;
+          n = n.parentElement;
+        }
+      }
+    } catch { /* continue */ }
+    try {
+      return this._hasDelegatedClickSurface(host);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Same F-destination: matching URL / data-href / onclick, a shared click fn,
+   * or a nested label that only activates by bubbling to the host (Gmail rows).
    * @param {Element} leaf
    * @param {Element} host
    * @returns {boolean}
@@ -244,7 +360,51 @@ export class ElementDetector {
     try {
       if (this._shareClickListener(leaf, host)) return true;
     } catch { /* ignore */ }
+    try {
+      if (this._leafInheritsHostActivation(leaf, host)) return true;
+    } catch { /* ignore */ }
+    try {
+      if (this._hostPrimaryNavMatchesLeaf(leaf, host)) return true;
+    } catch { /* ignore */ }
     return false;
+  }
+
+  /**
+   * Leaf is the only navigable dest inside `host` (Gmail left-nav `.TO` chip:
+   * short <a>Inbox</a> in a 240×32 row). Parent need not declare href/jsaction.
+   * @param {Element} leaf
+   * @param {Element} host
+   * @returns {boolean}
+   */
+  _hostPrimaryNavMatchesLeaf(leaf, host) {
+    if (!leaf || !host || leaf === host || leaf.nodeType !== 1 || host.nodeType !== 1) {
+      return false;
+    }
+    try {
+      if (isOwnActionControl(leaf) || isOwnActionControl(host)) return false;
+    } catch { /* continue */ }
+    let leafId = '';
+    try { leafId = resolveActivationIdentity(leaf); } catch { leafId = ''; }
+    if (!leafId || leafId.slice(0, 4) !== 'nav:') return false;
+    try {
+      const hostId = resolveActivationIdentity(host);
+      if (hostId && hostId !== leafId) return false;
+    } catch { /* ignore */ }
+    try {
+      if (!this.composedContains(host, leaf)) return false;
+    } catch {
+      return false;
+    }
+    try {
+      const unique = uniqueDescendantNavigableLink(host);
+      if (!unique?.link) return false;
+      if (unique.link === leaf) return true;
+      let leafHref = '';
+      try { leafHref = String(/** @type {any} */ (leaf).href || '').trim(); } catch { leafHref = ''; }
+      return !!(leafHref && unique.url === leafHref);
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -383,9 +543,14 @@ export class ElementDetector {
     // on a parent list/nav/tablist — and must not light up the whole container.
     const hasInlineClick = !!(el.onclick || (el.getAttribute && el.getAttribute('onclick')));
     const hasTrackedClick = this.hasTrackedClickHandler(el);
-    let hasClickHandler = hasInlineClick || hasTrackedClick;
+    const hasJsAction = this.hasJsActionHandler(el);
+    let hasClickHandler = hasInlineClick || hasTrackedClick || hasJsAction;
     if (hasClickHandler && !matchesSelector && !hasRole && !hasInlineClick &&
         this.isCompositeClickContainer(el, role)) {
+      hasClickHandler = false;
+    }
+    if (hasClickHandler && hasJsAction && !hasInlineClick && !hasTrackedClick &&
+        !matchesSelector && !hasRole && this._jsActionHostTooLarge(el)) {
       hasClickHandler = false;
     }
 
@@ -892,7 +1057,14 @@ export class ElementDetector {
     const consider = (el) => {
       if (!el || el === leaf || el.nodeType !== 1) return;
       try {
-        if (!this.isLikelyInteractive(el, { allowCursor: false })) return;
+        // Explicit cursor:pointer counts (Gmail `tr.zA`); inherited pointer does not.
+        // jsaction is a skip-host signal only — not a global hover target (list shells).
+        // Label rows that only wrap a nested <a> (Gmail Inbox/Starred) are not
+        // independently interactive — still valid skip hosts.
+        const ok = this.isLikelyInteractive(el, { allowCursor: true }) ||
+          this.hasJsActionHandler(el) ||
+          this._hostPrimaryNavMatchesLeaf(leaf, el);
+        if (!ok) return;
       } catch {
         return;
       }
@@ -906,9 +1078,12 @@ export class ElementDetector {
       }
       let r = null;
       try { r = el.getBoundingClientRect(); } catch { r = null; }
-      if (!r || r.width < 100 || r.height < 32) return;
+      // 24px: compact Gmail rows; 32px excluded those.
+      if (!r || r.width < 100 || r.height < 24) return;
       const area = r.width * r.height;
       if (area < leafArea * 1.35) return;
+      // Inbox table wrappers / feed shells, not the message row.
+      if (r.height > Math.max(96, leafRect.height * 4) && area > leafArea * 8) return;
       const overlapW = Math.max(0, Math.min(r.right, leafRect.right) - Math.max(r.left, leafRect.left));
       const overlapH = Math.max(0, Math.min(r.bottom, leafRect.bottom) - Math.max(r.top, leafRect.top));
       if (overlapW * overlapH < leafArea * 0.8) return;

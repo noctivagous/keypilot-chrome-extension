@@ -203,8 +203,51 @@ export function resolveHoveredLink(el) {
     probe = root.host;
   }
 
+  // Gmail left-nav `.TO` rows wrap a single hash <a> (score too low for permalink).
+  const unique = uniqueDescendantNavigableLink(el);
+  if (unique) return unique;
+
   const card = findPermalinkCardHost(/** @type {Element} */ (el));
   return resolveDescendantPermalink(card);
+}
+
+/**
+ * Single navigable dest among descendant <a href>. Mixed dests → null.
+ * Label/sidebar rows (Gmail Inbox/Starred) wrap one short link in a larger chip.
+ *
+ * @param {Element|null|undefined} host
+ * @returns {{ url: string, link: Element }|null}
+ */
+export function uniqueDescendantNavigableLink(host) {
+  if (!host || host.nodeType !== 1) return null;
+  /** @type {Element|null} */
+  let found = null;
+  let foundDest = '';
+  try {
+    const list = host.querySelectorAll('a[href]');
+    if (!list || !list.length || list.length > 32) return null;
+    for (let i = 0; i < list.length; i++) {
+      const a = list[i];
+      let href = '';
+      try { href = String(/** @type {HTMLAnchorElement} */ (a).href || '').trim(); } catch { href = ''; }
+      if (!href || href.toLowerCase().startsWith('javascript:')) continue;
+      const dest = activationDestKey(href);
+      if (!dest) continue;
+      if (!found) {
+        found = a;
+        foundDest = dest;
+      } else if (dest !== foundDest) {
+        return null;
+      }
+    }
+  } catch {
+    return null;
+  }
+  if (!found || !foundDest) return null;
+  let url = '';
+  try { url = String(/** @type {HTMLAnchorElement} */ (found).href || '').trim(); } catch { url = ''; }
+  if (!url) return null;
+  return { url, link: found };
 }
 
 /**
@@ -221,6 +264,23 @@ export function normalizeActivationDest(href) {
     return `${u.origin}${path}`.toLowerCase();
   } catch {
     return raw.split(/[?#]/)[0].replace(/\/+$/, '').toLowerCase();
+  }
+}
+
+/**
+ * Dest identity that keeps hash so Gmail #inbox vs #starred stay distinct.
+ * @param {string} href
+ * @returns {string}
+ */
+function activationDestKey(href) {
+  const dest = normalizeActivationDest(href);
+  if (!dest) return '';
+  try {
+    const u = new URL(String(href || '').trim(), typeof location !== 'undefined' ? location.href : undefined);
+    const hash = String(u.hash || '').toLowerCase();
+    return dest + hash;
+  } catch {
+    return dest;
   }
 }
 
