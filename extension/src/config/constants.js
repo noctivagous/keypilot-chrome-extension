@@ -72,6 +72,8 @@ export const CSS_CLASSES = {
   FOCUS_FLASH: 'kpv2-focus-flash',
   /** Temporary dashed border whose dashes chase around the perimeter on F-click */
   FOCUS_DASH: 'kpv2-focus-dash',
+  /** Brief dashed outline when Click New Tab has no navigable URL under the cursor */
+  FOCUS_DASH_DENIED: 'kpv2-focus-dash-denied',
   /** Temporary frame that scales (pop then shrink) when copying an image under cursor */
   IMAGE_COPY_PULSE: 'kpv2-image-copy-pulse',
   DELETE_OVERLAY: 'kpv2-delete-overlay',
@@ -326,15 +328,30 @@ export const INSPECTOR_KIND = Object.freeze({
 });
 
 /**
- * Semantic HTML tags used as selection granularity for Y element-rectangle mode.
- * Deepest intersecting match wins when both ancestor and descendant qualify.
+ * Semantic tags for Y element-rectangle mode.
+ * Default granularity is an article *feature unit*: paragraph, heading, whole
+ * table (not cells), whole figure (not the inner img), whole list, etc.
+ * Landmarks (article/section/…) yield to those inner units.
  */
-export const ELEMENT_SELECT_TAGS = Object.freeze([
+export const ELEMENT_SELECT_AGGREGATES = Object.freeze([
+  'table', 'figure', 'picture', 'ul', 'ol', 'dl'
+]);
+export const ELEMENT_SELECT_LANDMARKS = Object.freeze([
+  'article', 'section', 'aside', 'header', 'footer', 'main', 'nav'
+]);
+export const ELEMENT_SELECT_ATOMS = Object.freeze([
   'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-  'p', 'li', 'blockquote', 'pre', 'code',
-  'article', 'section', 'aside', 'header', 'footer', 'main', 'nav',
-  'a', 'img', 'figure', 'figcaption', 'picture', 'video', 'audio', 'svg',
-  'td', 'th', 'dt', 'dd', 'caption', 'summary', 'label'
+  'p', 'blockquote', 'pre',
+  'li', 'img', 'video', 'audio', 'svg'
+]);
+export const ELEMENT_SELECT_FRAGMENTS = Object.freeze([
+  'a', 'code', 'label', 'td', 'th', 'caption', 'figcaption', 'dt', 'dd', 'summary'
+]);
+export const ELEMENT_SELECT_TAGS = Object.freeze([
+  ...ELEMENT_SELECT_AGGREGATES,
+  ...ELEMENT_SELECT_LANDMARKS,
+  ...ELEMENT_SELECT_ATOMS,
+  ...ELEMENT_SELECT_FRAGMENTS
 ]);
 
 // Cursor behavior mode (Settings labels: "No Custom Cursors" | "KeyPilot Cursors"):
@@ -401,6 +418,10 @@ export const COLORS = {
   FLASH_GREEN: 'rgba(0,255,0,1)',
   FLASH_GREEN_SHADOW: 'rgba(0,255,0,0.8)',
   FLASH_GREEN_GLOW: 'rgba(0,255,0,0.9)',
+  /** Click New Tab / Background when the hover target has no URL */
+  FLASH_DENIED: 'rgba(255,140,0,1)',
+  FLASH_DENIED_SHADOW: 'rgba(255,140,0,0.85)',
+  FLASH_DENIED_GLOW: 'rgba(255,140,0,0.7)',
 
   // Image-copy pulse (distinct from green F-click pulse)
   IMAGE_COPY_FRAME: 'rgba(33,150,243,0.95)',

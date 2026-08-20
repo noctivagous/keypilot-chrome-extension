@@ -30,7 +30,6 @@
   "exclude": [
     "build.js",
     "build-side-effects.js",
-    "babel.config.cjs",
     "content-bundled.min.js",
     "content-bundled.esbuild.js",
     "frame-agent-bundled.esbuild.js",

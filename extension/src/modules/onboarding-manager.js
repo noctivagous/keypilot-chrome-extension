@@ -904,10 +904,12 @@ export class OnboardingManager {
       String(this._lastRenderedSlideId) !== String(slide.id);
 
     /** @type {{type:'slide', dir:1|-1}|null} */
-    const transition =
+    const wantTransition =
       opts && opts.transition
         ? opts.transition
         : (isSlideChange ? { type: 'slide', dir: index > (this._lastRenderedSlideIndex || 0) ? 1 : -1 } : null);
+    // Don't slide-animate the first reveal (would animate off the placeholder).
+    const transition = this.panel.isVisible() ? wantTransition : null;
 
     const reason = opts && opts.reason ? String(opts.reason) : 'render';
     const forceRebuild = !!(opts && opts.forceRebuild) || reason === 'reset';
@@ -929,7 +931,6 @@ export class OnboardingManager {
       this._runOnEnter(slide);
     }
 
-    this.panel.show();
     this._syncKeyboardReferenceForKeyInfoStep();
 
     if (transition && transition.type === 'slide') {
@@ -967,6 +968,10 @@ export class OnboardingManager {
       transition,
       forceRebuild
     });
+
+    // Reveal after the first paint so a restored slideIndex > 0 is not preceded
+    // by the early-inject placeholder / slide 1 title.
+    this.panel.show();
 
     // Transition end hook (best-effort).
     if (transition && transition.type === 'slide') {

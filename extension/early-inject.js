@@ -2727,7 +2727,7 @@
       "tasks": [
         {
           "id": "open_link_background_tab",
-          "label": "Click a link into a new tab but don't open it (`G`).",
+          "label": "Click a hyperlink into a new tab but don't open it (`G`).",
           "when": {
             "type": "action",
             "action": "activateNewTabBackground",
@@ -2738,7 +2738,7 @@
         },
         {
           "id": "open_link_new_tab",
-          "label": "Click a link into a new tab (`B`).",
+          "label": "Click a hyperlink into a new tab (`B`).",
           "when": {
             "type": "action",
             "action": "activateNewTab",
@@ -6350,6 +6350,8 @@
   let keyboardHelpKeyboardContainer = null;
   let keyboardHelpStorageListener = null;
   let onboardingRoot = null;
+  /** Cached shadow-piercing shell refs (host.querySelector cannot see the checklist). */
+  let onboardingShellRefs = null;
   let onboardingStorageListener = null;
   // Control strip defaults match SettingsManager DEFAULT_SETTINGS.controlStrip
   let controlStripRoot = null;
@@ -6536,6 +6538,11 @@
       const existing = document.querySelector('.kp-onboarding-panel[data-kp-early-onboarding="true"]');
       if (existing && existing.isConnected) {
         onboardingRoot = existing;
+        try {
+          onboardingShellRefs =
+            (typeof queryOnboardingShellRefs === 'function' && queryOnboardingShellRefs(existing)) ||
+            onboardingShellRefs;
+        } catch { /* ignore */ }
         return onboardingRoot;
       }
 
@@ -6548,10 +6555,13 @@
         includeViewTransitions: false,
         applyTheme: typeof applyPopupThemeVars === 'function' ? applyPopupThemeVars : null,
         stepText: '…',
-        navDisabled: true
+        navDisabled: true,
+        // Avoid "Welcome to KeyPilot" looking like slide 1 if we reveal before storage.
+        title: '…'
       });
 
       const { root, slideSurface, titleEl, stepEl, resetBtn, closeBtn } = shell;
+      onboardingShellRefs = shell;
 
       // Early-inject reset: clear progress + re-enable onboarding (dual-write).
       resetBtn.addEventListener('click', () => {
@@ -6628,16 +6638,9 @@
         } catch { /* ignore */ }
       });
 
-      // Best-effort initial checklist (storage-backed render updates shortly after).
-      try {
-        const firstId =
-          (typeof ONBOARDING_FIRST_SLIDE_ID === 'string' && ONBOARDING_FIRST_SLIDE_ID) ||
-          'basic_navigation';
-        renderEarlyOnboardingContent(
-          { body: slideSurface, titleEl, stepEl },
-          { slideId: firstId, completedTaskIds: [] }
-        );
-      } catch { /* ignore */ }
+      // Do not paint slide 1 here. Storage-backed refresh paints the restored
+      // slide while the shell is still hidden, then reveals it. Painting
+      // `basic_navigation` first is what flashes on reload when slideIndex > 0.
 
       (document.body || document.documentElement).appendChild(root);
       try { ensureEarlyChromeHostMounted(root); } catch { /* ignore */ }
@@ -6655,6 +6658,18 @@
       }
     } catch { /* ignore */ }
     return { slides: [] };
+  }
+
+  function getOnboardingShellRefs() {
+    if (onboardingShellRefs?.slideSurface?.isConnected || onboardingShellRefs?.body?.isConnected) {
+      return onboardingShellRefs;
+    }
+    try {
+      if (typeof queryOnboardingShellRefs === 'function') {
+        onboardingShellRefs = queryOnboardingShellRefs(onboardingRoot);
+      }
+    } catch { /* ignore */ }
+    return onboardingShellRefs;
   }
 
   function findEarlySlide(model, slideId) {
@@ -6681,12 +6696,13 @@
       ? progress.completedTaskIds.map(String)
       : [];
 
+    const resolved = refs || getOnboardingShellRefs() || {};
     const surface =
-      refs?.body ||
-      onboardingRoot?.querySelector?.('[data-kp-onboarding-slide-surface="true"]') ||
-      onboardingRoot?.querySelector?.('[data-kp-onboarding-body="true"]');
-    const titleEl = refs?.titleEl || onboardingRoot?.querySelector?.('[data-kp-onboarding-title="true"]');
-    const stepEl = refs?.stepEl || onboardingRoot?.querySelector?.('[data-kp-onboarding-step="true"]');
+      resolved.slideSurface ||
+      resolved.body ||
+      null;
+    const titleEl = resolved.titleEl || null;
+    const stepEl = resolved.stepEl || null;
     if (!surface) return;
 
     const chromeRefs = { root: onboardingRoot, titleEl, stepEl };

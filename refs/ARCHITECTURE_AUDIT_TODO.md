@@ -29,6 +29,29 @@ cleanup, **P3** = defer until feature work creates a clear seam.
   - [ ] P2 follow-up: delete the unreachable `_rtree*` state, methods, call sites,
     and debug/memory metrics. This is deletion work rather than an esbuild
     tree-shaking task: class methods remain bundled even when disabled.
+- [x] **Text Select (H) geometry:** ship **caret-to-caret** (model B), not rectangle
+  membership (model A).
+  - Live path: `caretRangeFromPoint` / `caretPositionFromPoint` → one document-order
+    `Range`. The dashed overlay is a **drag guide**, not a clip. Text that intersects
+    the rect edge or sits inside the box but is not between the two carets is
+    expected to be omitted; text between the carets but outside the box is expected
+    to be included.
+  - Do **not** re-enable `USE_EDGE_ONLY_SELECTION` for accuracy (broken non-ancestor
+    IntersectionObserver root).
+  - [ ] **Deferred — model A:** include a character iff its glyph box intersects the
+    dashed rect (edge counts; no document-order holes). Chromium cannot express
+    disjoint runs as one `Selection` range, so A needs intersecting runs plus CSS
+    Highlight (or overlays) and assembled clipboard. Full-document TreeWalker on
+    mousemove is rejected (historical freeze). First A slice is likely hybrid: keep
+    B live, refine to intersecting runs on complete. Implementation seam: P2
+    selection-session extract and P3 pure geometry predicates
+    (`character-box` AABB, not glyph-center).
+  - **Y (2026-08-19):** overlap uses `getClientRects()`. Default granularity is an
+    article feature unit: `p` / heading; whole `table` (not cells); whole `figure`
+    or `picture` (not the inner `img`); whole `ul`/`ol`/`dl`. Hitting a link inside
+    a paragraph selects the paragraph immediately. Landmarks (`article`/`section`/…)
+    yield to those inner units. Standalone `img`/`a` (no aggregate/atom ancestor)
+    stay selected. Tag-list expansion (`div`/`span`/…) remains a later pass.
 
 ---
 
@@ -113,10 +136,10 @@ cleanup, **P3** = defer until feature work creates a clear seam.
   for duplicate-toggle races during the document-start → document-idle handoff.
 - [ ] Treat `early-inject.js` as generated/stamped output: review its input changes
   and keep its CSS (especially print rules) synchronized with `StyleManager`.
-- [ ] Remove `babel.config.cjs` after a clean `npm run build` confirms no external
+- [x] Remove `babel.config.cjs` after a clean `npm run build` confirms no external
   tooling relies on it.
-  - The active build invokes esbuild directly; the package manifest declares no
-    Babel dependency or script.
+  - Deleted `extension/babel.config.cjs` (2026-08-19). Build is esbuild-only; no
+    Babel dependency or script in `package.json`.
 - [x] Gate **`console.log` / debug noise** behind `KEYPILOT_DEBUG` (hot paths especially)
   - `src/utils/debug.js` + Settings → About → Debug logging (`debugLogging`, default off)
   - Verbose `console.log`/`debug`/`info` wrapped in content script, frame agent, and service worker
@@ -130,12 +153,27 @@ cleanup, **P3** = defer until feature work creates a clear seam.
 
 Do not split these solely for a store submission. 2026-08-19: deferred except extracting `src/utils/debug.js`. Revisit when adding tests or removing duplication.
 
-### `keypilot.js` (10,115 LOC)
+### `keypilot.js` (8,783 LOC)
 
-- [ ] Extract `navigation-handlers.js` (back/forward/tabs/root/scroll)
-- [ ] Extract `activation-handlers.js` (F/G/B, open popover)
+- [x] Extract `navigation-handlers.js` (back/forward/tabs/root/scroll)
+  - Mixin `withNavigationHandlers` in `src/modules/navigation-handlers.js` (~1,087 LOC)
+  - Layout dispatch is unchanged: handlers still live on the KeyPilot instance
+    prototype chain as `this[handler]()`.
+- [x] Extract `activation-handlers.js` (F/G/B, open popover)
+  - Mixin `withActivationHandlers` in `src/modules/activation-handlers.js` (~283 LOC)
+  - Semantic DOM click remains in `activation-handler.js`; iframe/flash helpers stay
+    on KeyPilot. Preview popover (P) stays in `keypilot.js`.
 - [ ] Extract selection-session orchestration only when selection work needs a
   separately testable boundary; `HighlightManager` remains the geometry owner.
+  - **Hold.** Not next work. Caret bugs (2px complete throttle, element caret
+    offset) and Y feature-unit matching (`getClientRects`, aggregate table/figure/list,
+    paragraph over inner links, landmarks yield) were fixed **in place**. Extracting
+    start/update/complete/cancel/clipboard from `keypilot.js` would not have
+    helped those and would only add a file boundary.
+  - **Do extract** when shipping **model A** (live caret vs complete intersecting
+    runs — that is a real session seam) or when adding tests that cannot reach
+    the session without booting KeyPilot. Do not move caret or Y feature-target
+    math out of HighlightManager.
 - [ ] Keep thin orchestrator: init, `handleKeyDown` dispatch, module wiring
 
 ### `overlay-manager.js` (10,232 LOC)
@@ -176,6 +214,12 @@ Do not split these solely for a store submission. 2026-08-19: deferred except ex
 - [ ] Optional keyboard layout editor from same keybinding SSOT
 - [ ] Decompose `rectangle-intersection-observer.js` (5,625 LOC) only when
   selection work needs independently testable geometry or performance components.
+  - **Trigger (2026-08-19 accuracy audit):** Do **not** re-enable
+    `USE_EDGE_ONLY_SELECTION` to fix H/Y accuracy (broken non-ancestor IO root;
+    empty intersections). Extract pure predicates instead: rect AABB, client-rect
+    overlap, character-box intersection (AABB, not glyph-center), deepest-wins,
+    tag filter. Leave caching/analytics in the monolith until a live incremental
+    observer is actually required.
 - [ ] Consider feature folders (`selection/`, `popover/`, `launcher/`,
   `navigation/`) as units are extracted; do not move files merely to create folders.
 - [ ] Document the unbundled build graph (service worker, early inject, and
@@ -204,8 +248,8 @@ Do not split these solely for a store submission. 2026-08-19: deferred except ex
 1. [ ] Remove the unconsumed early key buffer or document and test its handoff.
 2. [ ] Add focused regression coverage for the current pure and service-worker seams.
 3. [ ] Delete the inert RBush implementation and obsolete Babel configuration.
-4. [ ] Extract navigation/activation, background routing, or overlay units only as
-   feature work or tests need their boundaries.
+4. [x] Extract navigation/activation from `keypilot.js` (mixin classes; dispatch unchanged).
+   Next overlay/background splits only as feature work or tests need their boundaries.
 
 ---
 
@@ -219,7 +263,9 @@ Measured 2026-08-19; sizes are source lines, not bundle size.
 | `src/modules/intersection-observer-manager.js` | 2,879 | DOM-hover primary; includes inert RBush remnants |
 | `background.js` | 3,089 | MV3 service-worker hub |
 | `src/modules/launcher-popover.js` | 4,007 | Catalog-backed Launcher UI and preview behavior |
-| `src/keypilot.js` | 10,115 | Main composition and key-dispatch surface |
+| `src/keypilot.js` | 8,783 | Composition root; navigation/activation handlers mixed in |
+| `src/modules/navigation-handlers.js` | 1,087 | Back/forward/tabs/root/scroll handlers |
+| `src/modules/activation-handlers.js` | 283 | F/G/B activate + Open Popover handlers |
 | `early-inject.js` | 10,219 | Generated/stamped early-runtime surface |
 | `src/modules/overlay-manager.js` | 10,232 | Overlays, popovers, and diagnostics |
 

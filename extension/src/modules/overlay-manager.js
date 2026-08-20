@@ -990,10 +990,50 @@ export class OverlayManager {
   }
 
   /**
+   * Body-level sidecars use OVERLAYS_ABOVE, which sits *below* KP chrome
+   * (onboarding, practice popover, settings). Fields inside those open
+   * shadows still need the hint painted on `document.body` (host overflow
+   * would clip an in-shadow mount), so lift z-index above the target’s
+   * light-DOM stacking context — still below the cursor.
+   * @param {Element|null|undefined} el
+   * @returns {number}
+   */
+  _overlayZIndexAboveTarget(el) {
+    const floor = Z_INDEX.OVERLAYS_ABOVE;
+    const cap = (Z_INDEX.CURSOR || 2147483050) - 1;
+    let maxZ = 0;
+    let node = el;
+    const seen = new Set();
+    while (node && node.nodeType && !seen.has(node)) {
+      seen.add(node);
+      if (node.nodeType === 1) {
+        try {
+          let zi = parseInt(node.style?.zIndex, 10);
+          if (!Number.isFinite(zi)) {
+            zi = parseInt(window.getComputedStyle(node).zIndex, 10);
+          }
+          if (Number.isFinite(zi) && zi > maxZ) maxZ = zi;
+        } catch { /* ignore */ }
+      }
+      if (node.parentElement) {
+        node = node.parentElement;
+        continue;
+      }
+      try {
+        const root = typeof node.getRootNode === 'function' ? node.getRootNode() : null;
+        node = (root && root.host && root.host !== node) ? root.host : null;
+      } catch {
+        node = null;
+      }
+    }
+    return Math.min(Math.max(floor, maxZ + 1), cap);
+  }
+
+  /**
    * Position a vertical sidecar immediately left of a text field’s left edge.
    * @param {HTMLElement} hint
    * @param {DOMRect|{left:number,top:number,width:number,height:number}} rect
-   * @param {{ fallbackWidth?: number, fallbackHeight?: number }} [opts]
+   * @param {{ fallbackWidth?: number, fallbackHeight?: number, targetEl?: Element|null }} [opts]
    */
   _positionTextFieldSidecar(hint, rect, opts = {}) {
     if (!hint || !rect) return;
@@ -1004,6 +1044,9 @@ export class OverlayManager {
     hint.style.left = `${Math.round(rect.left - w - gap)}px`;
     hint.style.top = `${Math.round(rect.top + (rect.height - h) / 2)}px`;
     hint.style.visibility = 'visible';
+    try {
+      hint.style.zIndex = String(this._overlayZIndexAboveTarget(opts.targetEl || null));
+    } catch { /* ignore */ }
   }
 
   /**
@@ -1028,7 +1071,8 @@ export class OverlayManager {
 
     this._positionTextFieldSidecar(this.ensureTextFocusEscHint(), rect, {
       fallbackWidth: 28,
-      fallbackHeight: 36
+      fallbackHeight: 36,
+      targetEl: host
     });
   }
 
@@ -1054,7 +1098,8 @@ export class OverlayManager {
 
     this._positionTextFieldSidecar(this.ensureTextHoverActivateHint(), rect, {
       fallbackWidth: 28,
-      fallbackHeight: 36
+      fallbackHeight: 36,
+      targetEl: element
     });
   }
 
@@ -7682,6 +7727,95 @@ export class OverlayManager {
     }
 
     return !!this._flashFixedClickEffect(clickEffect, presentation, el);
+  }
+
+  /**
+   * Click New Tab / Click New Tab Background when the hover target has no URL.
+   * Always a dashed orange strobe (not the user clickEffect, and not gated on
+   * link-style category) so buttons, text, and empty space still get a "nope".
+   *
+   * @param {Element|null} [activationTarget]
+   * @param {{ x?: number, y?: number }} [point] cursor fallback when there is no box
+   * @returns {boolean}
+   */
+  flashDeniedDashOutline(activationTarget = null, point = null) {
+    const el = (activationTarget && activationTarget.nodeType === 1)
+      ? activationTarget
+      : (this._currentStyledElement || this._lastFocusElement);
+
+    const skipHuge =
+      el === document.documentElement || el === document.body;
+    const source = skipHuge ? null : el;
+
+    let rects = [];
+    let paintEl = source;
+    if (source) {
+      try {
+        const resolved = this._resolveClickEffectRects(source);
+        paintEl = resolved.paintEl || source;
+        rects = resolved.rects || [];
+      } catch { /* ignore */ }
+    } else {
+      try {
+        if (this.focusOverlay && this.focusOverlay.style.display !== 'none') {
+          const r = this._asPositiveViewportRect(this.focusOverlay.getBoundingClientRect());
+          if (r) rects = [r];
+        }
+      } catch { /* ignore */ }
+    }
+
+    if (!rects.length) {
+      const x = Number(point?.x);
+      const y = Number(point?.y);
+      if (Number.isFinite(x) && Number.isFinite(y)) {
+        const size = 36;
+        rects = [{ left: x - size / 2, top: y - size / 2, width: size, height: size }];
+      }
+    }
+    if (!rects.length) return false;
+
+    const radiusSource = (paintEl && paintEl.nodeType === 1) ? paintEl : source;
+    let borderRadius = '0';
+    try {
+      borderRadius = this._resolveClickEffectBorderRadius(
+        this._inTargetHost,
+        radiusSource,
+        source
+      );
+    } catch { borderRadius = '0'; }
+
+    const trackEl = (paintEl && paintEl.nodeType === 1) ? paintEl : source;
+    let mounted = false;
+    for (let i = 0; i < rects.length; i++) {
+      const liveRect = rects[i];
+      if (!liveRect) continue;
+      try {
+        const pulse = document.createElement('div');
+        pulse.className = CSS_CLASSES.FOCUS_DASH_DENIED;
+        pulse.setAttribute('aria-hidden', 'true');
+        pulse.setAttribute('data-kp-ephemeral-effect', 'dash-denied');
+        pulse.style.left = `${liveRect.left}px`;
+        pulse.style.top = `${liveRect.top}px`;
+        pulse.style.width = `${liveRect.width}px`;
+        pulse.style.height = `${liveRect.height}px`;
+        this._applyEphemeralBorderRadius(pulse, borderRadius, liveRect);
+        document.body.appendChild(pulse);
+        try { void pulse.offsetWidth; } catch { /* ignore */ }
+        this._trackEphemeralEffect(
+          pulse,
+          trackEl,
+          liveRect,
+          700,
+          { checkOcclusion: false, minVisibleMs: 120 }
+        );
+        mounted = true;
+      } catch (e) {
+        if (window.KEYPILOT_DEBUG) {
+          console.warn('[KeyPilot] denied dash outline failed:', e);
+        }
+      }
+    }
+    return mounted;
   }
 
   /**

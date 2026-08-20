@@ -1,5 +1,5 @@
 import { EventManager } from './event-manager.js';
-import { COLORS, Z_INDEX, CSS_CLASSES, FEATURE_FLAGS, RECTANGLE_SELECTION, ELEMENT_SELECT_TAGS } from '../config/constants.js';
+import { COLORS, Z_INDEX, CSS_CLASSES, FEATURE_FLAGS, RECTANGLE_SELECTION, ELEMENT_SELECT_TAGS, ELEMENT_SELECT_AGGREGATES, ELEMENT_SELECT_LANDMARKS, ELEMENT_SELECT_ATOMS } from '../config/constants.js';
 
 /**
  * Shared highlight / select-element mode (Text Select + Element Select rectangle).
@@ -42,6 +42,9 @@ export class HighlightManager extends EventManager {
     /** @type {Element[]} */
     this.elementMatchedElements = [];
     this._elementSelectSelector = ELEMENT_SELECT_TAGS.map((t) => String(t)).join(',');
+    this._elementSelectAggregates = new Set(ELEMENT_SELECT_AGGREGATES);
+    this._elementSelectLandmarks = new Set(ELEMENT_SELECT_LANDMARKS);
+    this._elementSelectAtoms = new Set(ELEMENT_SELECT_ATOMS);
 
     // Debug HUD
     this.debugHUD = null; // Debug HUD overlay for live rectangle debugging
@@ -680,12 +683,11 @@ export class HighlightManager extends EventManager {
           if (node.nodeType === Node.TEXT_NODE) {
             return { textNode: node, offset: caretRange.startOffset };
           }
-          // Element container: try first text child at offset
-          if (node.nodeType === Node.ELEMENT_NODE && node.childNodes?.length) {
-            const child = node.childNodes[Math.min(caretRange.startOffset, node.childNodes.length - 1)];
-            if (child?.nodeType === Node.TEXT_NODE) {
-              return { textNode: child, offset: 0 };
-            }
+          // Element offset is a child index (Range semantics). Do not clamp to
+          // last child + offset 0 — that drops characters after the last child.
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            const mapped = this.caretFromElementChildIndex(node, caretRange.startOffset);
+            if (mapped) return mapped;
           }
         }
       }
@@ -698,7 +700,92 @@ export class HighlightManager extends EventManager {
           if (node.nodeType === Node.TEXT_NODE) {
             return { textNode: node, offset: pos.offset };
           }
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            const mapped = this.caretFromElementChildIndex(node, pos.offset);
+            if (mapped) return mapped;
+          }
         }
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  }
+
+  /**
+   * Map a caret on an Element (child-index offset) to a text node + offset.
+   * @param {Element|Node} element
+   * @param {number} offset
+   * @returns {{ textNode: Text, offset: number }|null}
+   */
+  caretFromElementChildIndex(element, offset) {
+    if (!element || !element.childNodes) return null;
+    const kids = element.childNodes;
+    const n = kids.length;
+    if (!n) return null;
+
+    const index = typeof offset === 'number' && offset >= 0 ? offset : 0;
+
+    if (index >= n) {
+      return this.caretAtEndOfNode(element);
+    }
+
+    const child = kids[index];
+    if (!child) return this.caretAtEndOfNode(element);
+
+    if (child.nodeType === Node.TEXT_NODE) {
+      return { textNode: child, offset: 0 };
+    }
+
+    const firstInChild = this.firstTextCaretIn(child);
+    if (firstInChild) return firstInChild;
+
+    for (let i = index - 1; i >= 0; i--) {
+      const prev = this.caretAtEndOfNode(kids[i]);
+      if (prev) return prev;
+    }
+    return null;
+  }
+
+  /**
+   * @param {Node} root
+   * @returns {{ textNode: Text, offset: number }|null}
+   */
+  firstTextCaretIn(root) {
+    if (!root) return null;
+    if (root.nodeType === Node.TEXT_NODE) {
+      return { textNode: root, offset: 0 };
+    }
+    try {
+      const doc = root.ownerDocument || document;
+      const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      const node = walker.nextNode();
+      if (node) return { textNode: node, offset: 0 };
+    } catch {
+      // ignore
+    }
+    return null;
+  }
+
+  /**
+   * @param {Node} root
+   * @returns {{ textNode: Text, offset: number }|null}
+   */
+  caretAtEndOfNode(root) {
+    if (!root) return null;
+    if (root.nodeType === Node.TEXT_NODE) {
+      const len = root.textContent ? root.textContent.length : 0;
+      return { textNode: root, offset: len };
+    }
+    try {
+      const doc = root.ownerDocument || document;
+      const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      let last = null;
+      let n;
+      while ((n = walker.nextNode())) last = n;
+      if (last) {
+        const len = last.textContent ? last.textContent.length : 0;
+        return { textNode: last, offset: len };
       }
     } catch {
       // ignore
@@ -922,8 +1009,7 @@ export class HighlightManager extends EventManager {
    */
   updateElementRectangleSelection(startPosition, currentPosition) {
     if (!currentPosition) {
-      this.elementMatchedElements = [];
-      this.clearHighlightSelectionOverlays();
+      this.clearElementSelection();
       return [];
     }
 
@@ -936,8 +1022,7 @@ export class HighlightManager extends EventManager {
       const rect = this.computeViewportRectFromOriginAndCursor(currentPosition);
       if (!rect || rect.width < (RECTANGLE_SELECTION.MIN_WIDTH || 3)
           || rect.height < (RECTANGLE_SELECTION.MIN_HEIGHT || 3)) {
-        this.elementMatchedElements = [];
-        this.clearHighlightSelectionOverlays();
+        this.clearElementSelection();
         return [];
       }
 
@@ -947,7 +1032,7 @@ export class HighlightManager extends EventManager {
       return matched;
     } catch (error) {
       console.warn('[KeyPilot] Error updating element rectangle selection:', error);
-      this.elementMatchedElements = [];
+      this.clearElementSelection();
       return [];
     }
   }
@@ -1046,34 +1131,119 @@ export class HighlightManager extends EventManager {
     for (const el of candidates) {
       if (!el || el.nodeType !== 1) continue;
       if (this._isKeyPilotChromeElement(el)) continue;
-      let r;
-      try {
-        r = el.getBoundingClientRect();
-      } catch {
-        continue;
-      }
-      if (!r || (r.width <= 0 && r.height <= 0)) continue;
-      if (!this._rectsIntersect(rect, r)) continue;
+      const boxes = this._elementClientRects(el);
+      if (!boxes.length) continue;
+      if (!this._clientRectsIntersectRect(rect, boxes)) continue;
       hits.push(el);
     }
 
-    return this._deepestWins(hits);
+    return this._resolveAncestorDescendantHits(hits);
   }
 
   /**
-   * Prefer deepest elements: drop any hit that contains another hit.
+   * Line boxes for overlap tests (wrapped <a> AABB corners must not count).
+   * @param {Element} el
+   * @returns {DOMRect[]}
+   */
+  _elementClientRects(el) {
+    try {
+      const list = el.getClientRects?.();
+      if (list && list.length) {
+        const boxes = Array.from(list).filter((r) => r && (r.width > 0 || r.height > 0));
+        if (boxes.length) return boxes;
+      }
+    } catch { /* fall through */ }
+    try {
+      const r = el.getBoundingClientRect();
+      if (r && (r.width > 0 || r.height > 0)) return [r];
+    } catch { /* ignore */ }
+    return [];
+  }
+
+  /**
+   * @param {{ left: number, top: number, right: number, bottom: number }} rect
+   * @param {Array<{ left: number, top: number, right: number, bottom: number }>} boxes
+   */
+  _clientRectsIntersectRect(rect, boxes) {
+    for (const b of boxes) {
+      if (this._rectsIntersect(rect, b)) return true;
+    }
+    return false;
+  }
+
+  _elementSelectTag(el) {
+    try {
+      return String(el?.tagName || '').toLowerCase();
+    } catch {
+      return '';
+    }
+  }
+
+  _isElementSelectLandmark(el) {
+    return this._elementSelectLandmarks.has(this._elementSelectTag(el));
+  }
+
+  /**
+   * Walk self (if includeSelf) then ancestors for the first listed tag in `tagSet`.
+   * @param {Element} el
+   * @param {Set<string>} tagSet
+   * @param {boolean} includeSelf
+   * @returns {Element|null}
+   */
+  _nearestElementSelectMatch(el, tagSet, includeSelf) {
+    let n = includeSelf ? el : el?.parentElement;
+    while (n && n.nodeType === 1) {
+      if (!this._isKeyPilotChromeElement(n)) {
+        const tag = this._elementSelectTag(n);
+        if (tag && tagSet.has(tag)) return n;
+      }
+      n = n.parentElement;
+    }
+    return null;
+  }
+
+  /**
+   * Map a hit to its article feature unit: aggregate wrapper first (table, figure,
+   * list, picture), else nearest atom (p, heading, img, …).
+   * @param {Element} el
+   * @returns {Element}
+   */
+  _elementSelectFeatureTarget(el) {
+    const agg = this._nearestElementSelectMatch(el, this._elementSelectAggregates, true);
+    if (agg) return agg;
+    const atom = this._nearestElementSelectMatch(el, this._elementSelectAtoms, true);
+    if (atom) return atom;
+    return el;
+  }
+
+  /**
+   * Aggregates swallow descendants. Landmarks yield to inner feature units.
+   * Multiple sibling units (two paragraphs) all stay.
    * @param {Element[]} elements
    * @returns {Element[]}
    */
-  _deepestWins(elements) {
-    if (!elements || elements.length <= 1) return elements || [];
-    const set = new Set(elements);
-    return elements.filter((el) => {
-      for (const other of set) {
-        if (other === el) continue;
-        try {
-          if (el.contains(other)) return false;
-        } catch { /* ignore */ }
+  _resolveAncestorDescendantHits(elements) {
+    if (!elements || !elements.length) return [];
+
+    const targets = [];
+    const seen = new Set();
+    for (const el of elements) {
+      const target = this._elementSelectFeatureTarget(el);
+      if (!target || seen.has(target)) continue;
+      if (this._isKeyPilotChromeElement(target)) continue;
+      seen.add(target);
+      targets.push(target);
+    }
+
+    const remaining = new Set(targets);
+    return targets.filter((el) => {
+      if (this._isElementSelectLandmark(el)) {
+        for (const other of remaining) {
+          if (other === el) continue;
+          try {
+            if (el.contains(other)) return false;
+          } catch { /* ignore */ }
+        }
       }
       return true;
     });

@@ -11,6 +11,8 @@ Select text or HTML elements under the cursor, then copy or act on the result.
 3. Move to the end of the range and press <kbd>H</kbd> again to finish and copy.
 4. Press <kbd>Esc</kbd> to cancel without copying.
 
+Text Select is caret-to-caret (like click-drag), not a clip of the dashed rectangle. The rectangle is a drag guide: the copied range is everything in document order between the start and end carets.
+
 Copy format (rich or plain text) is configurable on the Text Select Function's Action Instance.
 
 ### Element selection
@@ -19,6 +21,8 @@ Copy format (rich or plain text) is configurable on the Text Select Function's A
 2. Drag/adjust the rectangle over the elements you want.
 3. Complete the selection per the on-screen prompts (or use cumulative pick mode if configured).
 4. Press <kbd>Esc</kbd> to cancel.
+
+Default granularity is an article feature unit: a paragraph or heading, a whole table (not individual cells), a whole figure or picture (not the inner image), a whole list. Hitting a link inside a paragraph selects that paragraph immediately. Overlap uses each element’s line boxes, not one bounding box.
 
 ## Reference
 
@@ -32,7 +36,7 @@ Copy format (rich or plain text) is configurable on the Text Select Function's A
 
 ### Modes for <kbd>Y</kbd>
 
-- **Rectangle** — select elements intersecting a drawn rectangle.
+- **Rectangle** — select article feature units whose line boxes intersect a drawn rectangle (paragraph, table, figure, list). A link inside a paragraph selects the paragraph.
 - **Cumulative pick** — add elements one by one and finish with <kbd>Enter</kbd> (configured on the Function).
 
 ### Related tools

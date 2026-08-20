@@ -901,8 +901,74 @@ export function installFrameClickAgent() {
         applyFocusChromeToHoverEl();
         return el;
       } catch {
+        hoverEl = null;
         return null;
       }
+    };
+
+    /**
+     * Click New Tab / Background with no URL in this frame: dashed orange flash.
+     * Frame agent does not load StyleManager, so this is a self-contained pulse.
+     * @param {Element|null} target
+     * @param {number} clientX
+     * @param {number} clientY
+     */
+    const flashDeniedDashOutline = (target, clientX, clientY) => {
+      try {
+        let left;
+        let top;
+        let width;
+        let height;
+        const el =
+          (target &&
+            target.nodeType === 1 &&
+            target !== document.body &&
+            target !== document.documentElement)
+            ? target
+            : null;
+        if (el) {
+          const r = el.getBoundingClientRect();
+          if (r && r.width >= 2 && r.height >= 2) {
+            left = r.left;
+            top = r.top;
+            width = r.width;
+            height = r.height;
+          }
+        }
+        if (width == null) {
+          const size = 36;
+          left = clientX - size / 2;
+          top = clientY - size / 2;
+          width = size;
+          height = size;
+        }
+        const pulse = document.createElement('div');
+        pulse.setAttribute('aria-hidden', 'true');
+        pulse.style.cssText = [
+          'position:fixed',
+          `left:${left}px`,
+          `top:${top}px`,
+          `width:${width}px`,
+          `height:${height}px`,
+          'box-sizing:border-box',
+          'pointer-events:none',
+          `z-index:${typeof Z_INDEX?.OVERLAYS_ABOVE === 'number' ? Z_INDEX.OVERLAYS_ABOVE : 2147483021}`,
+          `border:3px dashed ${COLORS.FLASH_DENIED || 'rgba(255,140,0,1)'}`,
+          'background:transparent',
+          `box-shadow:0 0 0 1px ${COLORS.FLASH_DENIED_SHADOW || 'rgba(255,140,0,0.85)'},0 0 10px 1px ${COLORS.FLASH_DENIED_GLOW || 'rgba(255,140,0,0.7)'}`
+        ].join(';');
+        (document.body || document.documentElement)?.appendChild(pulse);
+        const anim = pulse.animate(
+          [{ opacity: 1 }, { opacity: 0.12 }, { opacity: 1 }, { opacity: 0 }],
+          { duration: 480, easing: 'ease-out' }
+        );
+        const cleanup = () => { try { pulse.remove(); } catch { /* ignore */ } };
+        if (anim && typeof anim.addEventListener === 'function') {
+          anim.addEventListener('finish', cleanup);
+        } else {
+          setTimeout(cleanup, 500);
+        }
+      } catch { /* ignore */ }
     };
 
     const hideHover = () => {
@@ -1059,21 +1125,38 @@ export function installFrameClickAgent() {
         return true;
       }
 
-      if (link && (openInNewTab || background)) {
-        const url = resolveHttpHref(link) || link.href;
+      if (openInNewTab || background) {
+        let url = '';
+        let openLink = link;
+        try {
+          const resolved = resolveHoveredLink(el) || resolveHoveredLink(activator);
+          if (resolved?.url) {
+            url = resolved.url;
+            openLink = resolved.link || link;
+          }
+        } catch { /* ignore */ }
+        if (!url && link) {
+          url = resolveHttpHref(link) || link.href || '';
+        }
+        if (!url) {
+          flashDeniedDashOutline(activator || el, clientX, clientY);
+          return true;
+        }
         if (openUrlViaRuntime(url, { background })) return true;
         try {
           if (background) {
             window.open(url, '_blank', 'noopener,noreferrer');
-          } else {
-            const originalTarget = link.target;
-            link.target = '_blank';
-            try { link.click(); } catch { window.open(url, '_blank', 'noopener,noreferrer'); }
+          } else if (openLink && openLink.tagName === 'A') {
+            const originalTarget = openLink.target;
+            openLink.target = '_blank';
+            try { openLink.click(); } catch { window.open(url, '_blank', 'noopener,noreferrer'); }
             if (originalTarget !== undefined && originalTarget !== null && originalTarget !== '') {
-              link.target = originalTarget;
+              openLink.target = originalTarget;
             } else {
-              link.removeAttribute('target');
+              openLink.removeAttribute('target');
             }
+          } else {
+            window.open(url, '_blank', 'noopener,noreferrer');
           }
           return true;
         } catch {

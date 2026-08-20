@@ -40,6 +40,7 @@ export function buildKeyPilotPrintCss() {
     `.${CSS_CLASSES.FOCUS_PULSE}`,
     `.${CSS_CLASSES.FOCUS_FLASH}`,
     `.${CSS_CLASSES.FOCUS_DASH}`,
+    `.${CSS_CLASSES.FOCUS_DASH_DENIED}`,
     `.${CSS_CLASSES.FOCUS_MARQUEE}`,
     `.${CSS_CLASSES.IMAGE_COPY_PULSE}`,
     `.${CSS_CLASSES.EDGE_JUMP_FADE}`,
@@ -527,6 +528,30 @@ export class StyleManager {
       .${CSS_CLASSES.FOCUS_DASH}-stroke {
         will-change: stroke-dashoffset, opacity;
         animation: kpv2-focus-dash-chase 720ms linear forwards;
+      }
+
+      @keyframes kpv2-focus-dash-denied {
+        0% { opacity: 1; }
+        32% { opacity: 0.12; }
+        52% { opacity: 1; }
+        100% { opacity: 0; }
+      }
+
+      .${CSS_CLASSES.FOCUS_DASH_DENIED} {
+        position: fixed;
+        left: 0;
+        top: 0;
+        pointer-events: none;
+        z-index: ${Z_INDEX.OVERLAYS_ABOVE};
+        box-sizing: border-box;
+        border: 3px dashed ${COLORS.FLASH_DENIED};
+        border-radius: 0;
+        background: transparent;
+        box-shadow:
+          0 0 0 1px ${COLORS.FLASH_DENIED_SHADOW},
+          0 0 10px 1px ${COLORS.FLASH_DENIED_GLOW};
+        will-change: opacity;
+        animation: kpv2-focus-dash-denied 480ms ease-out forwards;
       }
 
       /*

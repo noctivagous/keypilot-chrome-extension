@@ -642,7 +642,15 @@ export class OnboardingPanel {
     this._keyboardKeyInfoStepActive = keyInfoStep;
     if (keyInfoStep) ensureKeyboardReferenceOpenAndExpanded();
 
-    if (!this.root || this.root.hidden) return;
+    // Paint while hidden so refresh can restore slide N before the first reveal.
+    // (Previously this bailed on `hidden`, so the manager had to show() first —
+    // which flashed the early-inject placeholder / slide 1 title.)
+    this._ensure();
+    if (!this.root || !this.root.isConnected) return;
+    let panelHidden = false;
+    try {
+      panelHidden = this.root.hidden === true || String(this.root.style?.display || '') === 'none';
+    } catch { /* ignore */ }
 
     try {
       const targetSurface = this.slideSurface || this.body;
@@ -674,7 +682,7 @@ export class OnboardingPanel {
         });
       };
 
-      const doSlide = !!(transition && transition.type === 'slide');
+      const doSlide = !panelHidden && !!(transition && transition.type === 'slide');
       const dir = doSlide && transition?.dir === -1 ? -1 : 1;
 
       if (!doSlide) {

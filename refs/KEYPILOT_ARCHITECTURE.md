@@ -348,7 +348,6 @@ extension/
 │   │   └── logger.js
 │   ├── content-script.js  # Entry point
 │   └── keypilot.js        # Main class
-├── babel.config.cjs       # Babel configuration for build system
 ├── build.js              # esbuild entry (bundles + side effects)
 ├── build-side-effects.js # Manifest/README/website/early-inject stamps
 ├── content-bundled.js    # Generated top-frame bundle
