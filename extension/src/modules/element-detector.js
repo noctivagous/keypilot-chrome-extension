@@ -452,6 +452,17 @@ export class ElementDetector {
         return false;
       }
     } catch { /* continue */ }
+    // Full-width layout slots around a centered CTA (Crunchyroll
+    // `.perks-section-unlock-more-perks-button-slot` is ~1050×40 for a 183×40
+    // button). Same-height hosts that are much wider are not label rows.
+    try {
+      const lr = leaf.getBoundingClientRect();
+      const hr = host.getBoundingClientRect();
+      if (lr.width > 0 && lr.height > 0 && hr.width > 0 && hr.height > 0) {
+        const sameHeight = hr.height <= Math.max(lr.height * 1.15, lr.height + 4);
+        if (sameHeight && hr.width > lr.width * 2.2 + 24) return false;
+      }
+    } catch { /* continue */ }
     try {
       const unique = uniqueDescendantNavigableLink(host);
       if (!unique?.link) return false;
