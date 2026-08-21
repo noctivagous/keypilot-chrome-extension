@@ -120,6 +120,7 @@ export const FOCUS_OVERLAY_METHOD_NAMES = Object.freeze(
   '_restoreInTargetHostPosition',
   'hideInTargetFocusRing',
   '_positiveClientRectCount',
+  '_visualContentUnionRect',
   '_isFragmentedInlineFocusTarget',
   'updateFocusOverlayInTarget',
   'updateFocusOverlayElementStyling',
@@ -2774,7 +2775,10 @@ export class FocusOverlayPainter {
   _isMediaTextSplitCard(el) {
     if (!el || el.nodeType !== 1) return false;
     let box = null;
-    try { box = el.getBoundingClientRect(); } catch { box = null; }
+    try { box = this._visualContentUnionRect(el); } catch { box = null; }
+    if (!box) {
+      try { box = el.getBoundingClientRect(); } catch { box = null; }
+    }
     if (!box || box.width < 160 || box.height < 140) return false;
     if (box.width > 920 || box.height > 780) return false;
     try {
@@ -2838,8 +2842,8 @@ export class FocusOverlayPainter {
     if (focusEl === shell) return true;
     let fr = null;
     let sr = null;
-    try { fr = focusEl.getBoundingClientRect(); } catch { fr = null; }
-    try { sr = shell.getBoundingClientRect(); } catch { sr = null; }
+    try { fr = this._visualContentUnionRect(focusEl) || focusEl.getBoundingClientRect(); } catch { fr = null; }
+    try { sr = this._visualContentUnionRect(shell) || shell.getBoundingClientRect(); } catch { sr = null; }
     if (!fr || !sr || !(fr.width > 0) || !(fr.height > 0) || !(sr.width > 0) || !(sr.height > 0)) {
       return false;
     }
@@ -2872,7 +2876,7 @@ export class FocusOverlayPainter {
 
     if (!found) {
       let ir = null;
-      try { ir = el.getBoundingClientRect(); } catch { ir = null; }
+      try { ir = this._visualContentUnionRect(el) || el.getBoundingClientRect(); } catch { ir = null; }
       if (!ir || ir.width < 4 || ir.height < 4) return null;
 
       let p = null;
@@ -2951,7 +2955,7 @@ export class FocusOverlayPainter {
     } catch { /* lift */ }
 
     let ir = null;
-    try { ir = shell.getBoundingClientRect(); } catch { ir = null; }
+    try { ir = this._visualContentUnionRect(shell) || shell.getBoundingClientRect(); } catch { ir = null; }
     if (!ir || ir.width < 8 || ir.height < 8) return shell;
 
     let p = null;
@@ -3580,6 +3584,10 @@ export class FocusOverlayPainter {
     const push = (el) => {
       if (!el || el.nodeType !== 1) return;
       try {
+        const union = this._visualContentUnionRect(el);
+        if (union && union.width > 1 && union.height > 1) boxes.push(union);
+      } catch { /* ignore */ }
+      try {
         const r = el.getBoundingClientRect();
         if (r && r.width > 1 && r.height > 1) boxes.push(r);
       } catch { /* ignore */ }
@@ -3951,6 +3959,60 @@ export class FocusOverlayPainter {
     } catch {
       return 0;
     }
+  }
+
+  /**
+   * Painted union of `el` plus descendant media. Blink omits a tall <img>
+   * from an inline host's getBoundingClientRect / getClientRects when the
+   * <a> also wraps a display:block title (Rumble `a.category__link`).
+   * Strategy B's inset:0 ring follows that under-measured line box unless
+   * we size against this union.
+   *
+   * @param {Element|null|undefined} el
+   * @returns {{ left: number, top: number, right: number, bottom: number, width: number, height: number, x: number, y: number }|null}
+   */
+  _visualContentUnionRect(el) {
+    if (!el || el.nodeType !== 1) return null;
+    let left = Infinity;
+    let top = Infinity;
+    let right = -Infinity;
+    let bottom = -Infinity;
+    let any = false;
+    const absorb = (r) => {
+      if (!r || !(r.width > 1) || !(r.height > 1)) return;
+      left = Math.min(left, r.left);
+      top = Math.min(top, r.top);
+      right = Math.max(right, r.right);
+      bottom = Math.max(bottom, r.bottom);
+      any = true;
+    };
+    try { absorb(el.getBoundingClientRect()); } catch { /* ignore */ }
+    try {
+      const rects = el.getClientRects();
+      if (rects) {
+        for (let i = 0; i < rects.length && i < 16; i++) absorb(rects[i]);
+      }
+    } catch { /* ignore */ }
+    try {
+      const media = el.querySelectorAll('img, video, canvas, svg');
+      for (let i = 0; i < media.length && i < 12; i++) {
+        const n = media[i];
+        if (!n || n.nodeType !== 1) continue;
+        let r = null;
+        try { r = n.getBoundingClientRect(); } catch { r = null; }
+        if (!r || r.width < 8 || r.height < 8) continue;
+        try {
+          const host = el.getBoundingClientRect();
+          if (host && host.width > 8 && r.width > host.width * 1.35 + 24) continue;
+        } catch { /* keep */ }
+        absorb(r);
+      }
+    } catch { /* ignore */ }
+    if (!any || !Number.isFinite(left) || !Number.isFinite(top)) return null;
+    const width = right - left;
+    const height = bottom - top;
+    if (!(width > 1) || !(height > 1)) return null;
+    return { left, top, right, bottom, width, height, x: left, y: top };
   }
 
   /**

@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-21T01:09:22.946Z
+ * Generated on 2026-08-21T01:15:37.132Z
  */
 
 var __defProp = Object.defineProperty;
