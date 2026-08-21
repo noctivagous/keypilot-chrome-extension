@@ -349,13 +349,26 @@ export class ElementDetector {
     try {
       if (isOwnActionControl(leaf)) return false;
     } catch { /* continue */ }
+    let role = '';
     try {
-      const role = ((leaf.getAttribute && leaf.getAttribute('role')) || '').trim().toLowerCase();
+      role = ((leaf.getAttribute && leaf.getAttribute('role')) || '').trim().toLowerCase();
       // role=link without a URL is still the parent's open-row action (Gmail subject).
       if (role && role !== 'link' && this.CLICKABLE_ROLES.includes(role)) return false;
     } catch { /* continue */ }
     try {
       if (resolveActivationIdentity(leaf)) return false;
+    } catch { /* continue */ }
+    // X quote cards are role=link with no href; the parent <article> has an
+    // implied status permalink. Those are different F-targets — do not absorb
+    // the quote into the outer tweet (Gmail subject→row still works: row has
+    // no nav: identity, only jsaction).
+    try {
+      const leafIsControl = role === 'link' ||
+        (typeof leaf.matches === 'function' && leaf.matches(this.FOCUSABLE_SEL));
+      if (leafIsControl) {
+        const hostId = resolveActivationIdentity(host);
+        if (hostId && hostId.slice(0, 4) === 'nav:') return false;
+      }
     } catch { /* continue */ }
     try {
       const leafTok = this._jsActionToken(leaf);
@@ -428,6 +441,17 @@ export class ElementDetector {
     } catch {
       return false;
     }
+    // Gmail row labels are mostly the link text ("Inbox 89"). A lone @mention
+    // inside tweet prose is a small fraction — keep the mention's own ring
+    // (two mentions already fail uniqueDescendantNavigableLink).
+    try {
+      const hostText = String(host.innerText || '').replace(/\s+/g, ' ').trim();
+      const leafText = String(leaf.innerText || leaf.textContent || '').replace(/\s+/g, ' ').trim();
+      if (hostText.length >= 8 && leafText.length >= 1 &&
+          leafText.length < hostText.length * 0.45) {
+        return false;
+      }
+    } catch { /* continue */ }
     try {
       const unique = uniqueDescendantNavigableLink(host);
       if (!unique?.link) return false;

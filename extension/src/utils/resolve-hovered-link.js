@@ -268,7 +268,8 @@ export function normalizeActivationDest(href) {
 }
 
 /**
- * Dest identity that keeps hash so Gmail #inbox vs #starred stay distinct.
+ * Dest identity that keeps search + hash so distinct actions stay distinct:
+ * Gmail #inbox vs #starred, Crunchyroll Start vs Skip free-trial (query state).
  * @param {string} href
  * @returns {string}
  */
@@ -277,8 +278,9 @@ function activationDestKey(href) {
   if (!dest) return '';
   try {
     const u = new URL(String(href || '').trim(), typeof location !== 'undefined' ? location.href : undefined);
+    const search = String(u.search || '').toLowerCase();
     const hash = String(u.hash || '').toLowerCase();
-    return dest + hash;
+    return dest + search + hash;
   } catch {
     return dest;
   }
@@ -294,13 +296,13 @@ function ownNavigableHref(el) {
   try {
     if (el.tagName === 'A') {
       const href = String(/** @type {HTMLAnchorElement} */ (el).href || '').trim();
-      return normalizeActivationDest(href);
+      return activationDestKey(href);
     }
   } catch { /* ignore */ }
   try {
     if ((el.getAttribute('role') || '').trim().toLowerCase() === 'link') {
       const data = String(el.dataset?.kpUrl || el.getAttribute('href') || '').trim();
-      if (data) return normalizeActivationDest(data);
+      if (data) return activationDestKey(data);
     }
   } catch { /* ignore */ }
   return '';
@@ -325,7 +327,7 @@ function ownJsNavigableDest(el) {
   for (let i = 0; i < JS_NAV_DEST_ATTRS.length; i++) {
     let raw = '';
     try { raw = String(el.getAttribute(JS_NAV_DEST_ATTRS[i]) || '').trim(); } catch { raw = ''; }
-    const dest = normalizeActivationDest(raw);
+    const dest = activationDestKey(raw);
     if (dest) return dest;
   }
   return '';

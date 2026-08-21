@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-21T03:20:14.984Z
+ * Generated on 2026-08-21T05:01:23.870Z
  */
 
 (() => {
@@ -3405,8 +3405,9 @@
     if (!dest) return "";
     try {
       const u = new URL(String(href || "").trim(), typeof location !== "undefined" ? location.href : void 0);
+      const search = String(u.search || "").toLowerCase();
       const hash = String(u.hash || "").toLowerCase();
-      return dest + hash;
+      return dest + search + hash;
     } catch {
       return dest;
     }
