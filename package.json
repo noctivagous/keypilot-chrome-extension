@@ -12,6 +12,9 @@
     "minify": "npm run build:minify",
     "package:opera": "node scripts/package-opera.mjs",
     "docs:screenshots": "node scripts/docs-screenshots/capture.mjs",
+    "test": "node --test --test-concurrency=1 test/*.test.js",
+    "test:settings": "node --test --test-concurrency=1 test/settings-manager.test.js",
+    "test:storage": "node --test --test-concurrency=1 test/storage.test.js",
     "audit": "npm audit --omit=dev",
     "audit:all": "npm audit"
   },

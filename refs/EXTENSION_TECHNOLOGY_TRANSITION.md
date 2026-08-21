@@ -263,11 +263,11 @@ verify each phase before using it as a dependency of the next.
 
 ### Phase 1 — Add testing infrastructure
 
-This is the highest-return and lowest-risk transition. `package.json` has
-build and audit scripts but no test script, while the architecture audit calls
-focused regression coverage P1 work.
+This is the highest-return and lowest-risk transition. Focused regression
+coverage is P1 work in the architecture audit.
 
-It has to be integrated, but it does not need to be extensive initially.
+**Runner (locked):** Node built-in `node:test` + `node:assert/strict` (no Vitest).
+CI can call the same `npm test` script when a workflow is added.
 
 A minimal first pass is:
 
@@ -285,28 +285,49 @@ It becomes extensive only if you try to retrofit every large DOM and content-scr
 
 Tasks:
 
-- [ ] Select `node:test` or Vitest; prefer the smallest runner that supports
-  ESM, mocks, and coverage needed by this project.
-- [ ] Add `test` and focused-test scripts to `package.json`.
-- [ ] Create reusable Chrome storage mocks for sync, local, and
-  `chrome.storage.onChanged`.
-- [ ] Test `settings-manager` defaults, normalization, migrations, and nested
-  merge behavior.
-- [ ] Test the shared URL policy and other pure configuration modules.
-- [ ] Test representative message routing and request/response behavior
-  without starting a browser.
-- [ ] Add an early-chrome handoff test plan and identify the tests that require
-  a real extension/browser environment.
-- [ ] Run the test suite in the normal build/check workflow.
-- [ ] Document which behaviors still require browser-level coverage.
+- [x] Select `node:test` (smallest runner that fits this ESM repo).
+- [x] Add `test`, `test:settings`, and `test:storage` scripts to `package.json`.
+- [x] Create reusable Chrome storage mocks for sync, local, and
+  `chrome.storage.onChanged` (`test/helpers/chrome-mock.js`).
+- [x] Test `settings-manager` defaults, normalization, migrations, and nested
+  merge behavior (`test/settings-manager.test.js`).
+- [x] Test the shared URL policy (`test/url-policy.test.js`).
+- [x] Test message catalog / `TAB_UI_FORWARD_TYPES` without starting a browser
+  (`test/messaging-types.test.js`). Full service-worker routing extraction
+  remains Phase 3.
+- [x] Document early-chrome handoff cases that require a real extension/browser
+  environment (see below).
+- [x] Run the test suite locally via `npm test`.
+- [x] Document which behaviors still require browser-level coverage.
+
+**What `npm test` covers today**
+
+- `extension/src/utils/storage.js` — sync/local fallback, `_updatedAt` conflict,
+  dual-write, total failure → default
+- `extension/src/modules/settings-manager.js` — defaults, normalizers, legacy
+  keyboard layout migration, nested merge, reset, storage failure → defaults
+- `extension/src/config/url-policy.js` — skippable URLs/tabs, KeyPilot newtab allowlist
+- `extension/src/messaging/types.js` — frozen `MSG` catalog and UI forward list
+
+**Deferred — requires a real browser / extension load**
+
+Do not automate these in Phase 1 (Playwright or similar can come later):
+
+- Keyboard Reference and Control Strip across reload/navigation for
+  visible, hidden, collapsed, and moved positions
+- Delayed or unavailable storage at `document_start`: fallback may be used, but
+  chrome must not block startup or flash an incorrect default before reconcile
+- Document-idle runtime must **adopt** early-inject hosts rather than removing
+  and remounting them (no position jump / default-to-saved flash)
 
 Completion criteria:
 
-- [ ] Pure settings, URL-policy, and message-routing regressions fail locally
-  before a bundle is produced.
-- [ ] Later phases can add tests without inventing new harnesses.
-- [ ] The test plan covers a delayed or unavailable storage read without
-  blocking document-start chrome.
+- [x] Pure settings, URL-policy, and message-catalog regressions fail locally
+  before a bundle is produced (`npm test`).
+- [x] Later phases can add tests without inventing new harnesses
+  (`test/*.test.js` + `test/helpers/chrome-mock.js`).
+- [x] The test plan covers a delayed or unavailable storage read without
+  blocking document-start chrome (documented above as browser-level).
 
 ### Phase 2 — Formalize storage policy
 
@@ -541,7 +562,7 @@ completion.
 
 | Done | Phase | Deliverable |
 |---|---:|---|
-| [ ] | 1 | Test runner, Chrome API mocks, and initial pure-module coverage |
+| [x] | 1 | Test runner, Chrome API mocks, and initial pure-module coverage |
 | [ ] | 2 | Documented and tested storage ownership/conflict policy |
 | [ ] | 3 | Shared validated message catalog and one router per context |
 | [ ] | 4 | Framework-neutral Settings controller and declarative DOM binder |
