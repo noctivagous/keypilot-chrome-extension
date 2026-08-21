@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-21T01:18:36.748Z
+ * Generated on 2026-08-21T01:44:03.073Z
  */
 
 (() => {
@@ -1807,6 +1807,12 @@
     if (syncTs && !localTs) return syncVal;
     return syncVal;
   }
+  function resolveStoredAreas(syncVal, syncHas, localVal, localHas, defaultValue) {
+    if (syncHas && localHas) return pickNewerStoredValue(syncVal, localVal);
+    if (syncHas) return syncVal;
+    if (localHas) return localVal;
+    return defaultValue;
+  }
   async function storageGetValue(key, defaultValue = void 0) {
     if (!key || typeof key !== "string") return defaultValue;
     let syncVal = void 0;
@@ -1835,10 +1841,10 @@
       }
     } catch {
     }
-    if (syncHas && localHas) return pickNewerStoredValue(syncVal, localVal);
-    if (syncHas) return syncVal;
-    if (localHas) return localVal;
-    return defaultValue;
+    return (
+      /** @type {T} */
+      resolveStoredAreas(syncVal, syncHas, localVal, localHas, defaultValue)
+    );
   }
 
   // src/utils/platform.js

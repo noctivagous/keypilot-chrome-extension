@@ -189,6 +189,39 @@ export class ElementDetector {
   }
 
   /**
+   * jsaction on a chip/tab scroller (Google News `jsname=w60JDf`) must not make
+   * the whole strip an F-target when the pointer is in the gap between items.
+   * @param {Element} el
+   * @returns {boolean}
+   */
+  _isJsActionMultiItemShell(el) {
+    if (!el || el.nodeType !== 1) return false;
+    try {
+      const items = el.querySelectorAll(
+        '[role="tab"], [role="button"], button, a[href], [role="link"], [role="menuitem"], [role="option"]'
+      );
+      return !!(items && items.length >= 2);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * jsaction-only hosts that are list/strip shells, not a single row/card click.
+   * @param {Element} el
+   * @returns {boolean}
+   */
+  _isJsActionDelegationShell(el) {
+    try {
+      if (this._jsActionHostTooLarge(el)) return true;
+    } catch { /* ignore */ }
+    try {
+      if (this._isJsActionMultiItemShell(el)) return true;
+    } catch { /* ignore */ }
+    return false;
+  }
+
+  /**
    * Site chrome bar (full-width header/nav) — not a real F-target.
    * NVIDIA sets cursor:pointer on `nav.global-nav` / `.nav-header`, which
    * would otherwise light up the entire top bar and then sticky-trap items.
@@ -550,7 +583,7 @@ export class ElementDetector {
       hasClickHandler = false;
     }
     if (hasClickHandler && hasJsAction && !hasInlineClick && !hasTrackedClick &&
-        !matchesSelector && !hasRole && this._jsActionHostTooLarge(el)) {
+        !matchesSelector && !hasRole && this._isJsActionDelegationShell(el)) {
       hasClickHandler = false;
     }
 
@@ -1058,11 +1091,12 @@ export class ElementDetector {
       if (!el || el === leaf || el.nodeType !== 1) return;
       try {
         // Explicit cursor:pointer counts (Gmail `tr.zA`); inherited pointer does not.
-        // jsaction is a skip-host signal only — not a global hover target (list shells).
+        // jsaction is a skip-host signal only — not a global hover target (list
+        // shells / Google News chip strips with many tabs).
         // Label rows that only wrap a nested <a> (Gmail Inbox/Starred) are not
         // independently interactive — still valid skip hosts.
         const ok = this.isLikelyInteractive(el, { allowCursor: true }) ||
-          this.hasJsActionHandler(el) ||
+          (this.hasJsActionHandler(el) && !this._isJsActionDelegationShell(el)) ||
           this._hostPrimaryNavMatchesLeaf(leaf, el);
         if (!ok) return;
       } catch {

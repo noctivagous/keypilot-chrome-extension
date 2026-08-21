@@ -1,10 +1,21 @@
 /**
  * Shared chrome.storage helpers.
  *
- * Policy used across KeyPilot:
- * - Prefer `chrome.storage.sync` (profile-wide)
- * - Fall back to `chrome.storage.local` when sync fails or is empty
- * - Return caller default when neither has a value
+ * Canonical ownership, areas, and conflict rules:
+ *   refs/STORAGE_POLICY.md
+ *
+ * Read policy (storageGetValue / storageGetKeys):
+ * - Prefer sync, fall back to local, else caller default
+ * - When both areas have a value and both are objects with `_updatedAt`,
+ *   the newer timestamp wins (local wins ties)
+ * - When both areas have a value without usable `_updatedAt`, prefer sync
+ *
+ * Write policy (storageSetValue):
+ * - Try sync first; on failure write local
+ * - `dualWrite: true` also mirrors to local after a successful sync so a
+ *   later sync miss cannot resurrect a stale local copy
+ * - `includeTimestamp: true` writes a sibling top-level `timestamp` key
+ *   (legacy; does not participate in `_updatedAt` conflict resolution)
  */
 
 function pickNewerStoredValue(syncVal, localVal) {
@@ -16,6 +27,20 @@ function pickNewerStoredValue(syncVal, localVal) {
   if (localTs && !syncTs) return localVal;
   if (syncTs && !localTs) return syncVal;
   return syncVal;
+}
+
+/**
+ * @param {any} syncVal
+ * @param {boolean} syncHas
+ * @param {any} localVal
+ * @param {boolean} localHas
+ * @param {any} defaultValue
+ */
+function resolveStoredAreas(syncVal, syncHas, localVal, localHas, defaultValue) {
+  if (syncHas && localHas) return pickNewerStoredValue(syncVal, localVal);
+  if (syncHas) return syncVal;
+  if (localHas) return localVal;
+  return defaultValue;
 }
 
 /**
@@ -59,14 +84,12 @@ export async function storageGetValue(key, defaultValue = undefined) {
     // ignore
   }
 
-  if (syncHas && localHas) return pickNewerStoredValue(syncVal, localVal);
-  if (syncHas) return syncVal;
-  if (localHas) return localVal;
-  return defaultValue;
+  return /** @type {T} */ (resolveStoredAreas(syncVal, syncHas, localVal, localHas, defaultValue));
 }
 
 /**
- * Read multiple keys. For each key, prefer sync value when present, else local.
+ * Read multiple keys with the same merge rules as `storageGetValue`
+ * (including `_updatedAt` newer-wins when both areas have a key).
  * @param {string[]} keys
  * @returns {Promise<Record<string, any>>}
  */
@@ -98,11 +121,17 @@ export async function storageGetKeys(keys) {
   /** @type {Record<string, any>} */
   const out = {};
   for (const key of list) {
-    if (Object.prototype.hasOwnProperty.call(sync, key) && sync[key] !== undefined) {
-      out[key] = sync[key];
-    } else if (Object.prototype.hasOwnProperty.call(local, key) && local[key] !== undefined) {
-      out[key] = local[key];
-    }
+    const syncHas = Object.prototype.hasOwnProperty.call(sync, key) && sync[key] !== undefined;
+    const localHas = Object.prototype.hasOwnProperty.call(local, key) && local[key] !== undefined;
+    if (!syncHas && !localHas) continue;
+    const resolved = resolveStoredAreas(
+      syncHas ? sync[key] : undefined,
+      syncHas,
+      localHas ? local[key] : undefined,
+      localHas,
+      undefined
+    );
+    if (resolved !== undefined) out[key] = resolved;
   }
   return out;
 }
@@ -150,6 +179,7 @@ export async function storageSetValue(key, value, opts = {}) {
 
 /**
  * Write an object of keys: try sync, then local.
+ * Not dual-write: successful sync does not mirror to local.
  * @param {Record<string, any>} obj
  * @returns {Promise<boolean>}
  */

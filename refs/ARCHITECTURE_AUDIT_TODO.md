@@ -154,10 +154,10 @@ architecture invariant:
 - [x] Shared storage helper (sync → local → default)
   - `src/utils/storage.js` (`storageGetValue` / `storageGetKeys` / `storageSetValue` / `storageSetObject`)
   - Wired: settings-manager, keypilot keyboard-help, onboarding, SW enabled flag + navgraph mode, newtab
-  - [ ] Define the remaining storage-policy boundaries: direct sync-only keyboard
+  - [x] Define the remaining storage-policy boundaries: direct sync-only keyboard
     layout writes, localStorage new-tab display preferences, overlay visibility
-    keys outside `kp_settings_v1`, and the inconsistent timestamp merge behavior
-    between `storageGetValue` and `storageGetKeys`.
+    keys outside `kp_settings_v1`, and aligned `_updatedAt` merge for
+    `storageGetValue` / `storageGetKeys` — see `refs/STORAGE_POLICY.md`.
 
 ---
 

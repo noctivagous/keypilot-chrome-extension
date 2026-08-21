@@ -59,7 +59,7 @@ describe('storageGetValue', () => {
 });
 
 describe('storageGetKeys', () => {
-  it('prefers sync per key and falls back to local', async () => {
+  it('prefers sync per key and falls back to local when no _updatedAt', async () => {
     const { storageGetKeys } = await import('../extension/src/utils/storage.js');
     mock.seed('a', 1, 'sync');
     mock.seed('b', 2, 'local');
@@ -68,10 +68,31 @@ describe('storageGetKeys', () => {
     assert.deepEqual(await storageGetKeys(['a', 'b', 'c', 'd']), { a: 1, b: 2, c: 3 });
   });
 
+  it('applies the same _updatedAt newer-wins rule as storageGetValue', async () => {
+    const { storageGetKeys, storageGetValue } = await import('../extension/src/utils/storage.js');
+    mock.seed('k', { name: 'sync', _updatedAt: 100 }, 'sync');
+    mock.seed('k', { name: 'local', _updatedAt: 200 }, 'local');
+    const viaKeys = await storageGetKeys(['k']);
+    const viaValue = await storageGetValue('k');
+    assert.equal(viaKeys.k.name, 'local');
+    assert.deepEqual(viaKeys.k, viaValue);
+
+    mock.seed('k', { name: 'sync', _updatedAt: 300 }, 'sync');
+    assert.equal((await storageGetKeys(['k'])).k.name, 'sync');
+  });
+
   it('returns {} for empty or invalid key lists', async () => {
     const { storageGetKeys } = await import('../extension/src/utils/storage.js');
     assert.deepEqual(await storageGetKeys([]), {});
     assert.deepEqual(await storageGetKeys(null), {});
+  });
+
+  it('omits keys when both areas fail', async () => {
+    const { storageGetKeys } = await import('../extension/src/utils/storage.js');
+    mock.seed('k', { v: 1 }, 'sync');
+    mock.setSyncThrows(true);
+    mock.setLocalThrows(true);
+    assert.deepEqual(await storageGetKeys(['k']), {});
   });
 });
 
@@ -98,10 +119,25 @@ describe('storageSetValue', () => {
     assert.deepEqual(mock.localStore.get('k'), { ok: true });
   });
 
+  it('returns true when dualWrite sync succeeds but local fails (partial failure)', async () => {
+    const { storageSetValue } = await import('../extension/src/utils/storage.js');
+    mock.setLocalThrows(true);
+    assert.equal(await storageSetValue('k', { ok: true }, { dualWrite: true }), true);
+    assert.deepEqual(mock.syncStore.get('k'), { ok: true });
+    assert.equal(mock.localStore.has('k'), false);
+  });
+
   it('returns false when both areas fail', async () => {
     const { storageSetValue } = await import('../extension/src/utils/storage.js');
     mock.setSyncThrows(true);
     mock.setLocalThrows(true);
     assert.equal(await storageSetValue('k', { ok: true }), false);
+  });
+
+  it('writes sibling timestamp key when includeTimestamp is set', async () => {
+    const { storageSetValue } = await import('../extension/src/utils/storage.js');
+    assert.equal(await storageSetValue('k', true, { includeTimestamp: true }), true);
+    assert.equal(mock.syncStore.get('k'), true);
+    assert.equal(typeof mock.syncStore.get('timestamp'), 'number');
   });
 });

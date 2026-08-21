@@ -331,40 +331,47 @@ Completion criteria:
 
 ### Phase 2 — Formalize storage policy
 
-`settings-manager` and the shared storage helper are solid foundations, but
-the audit identifies remaining direct storage paths and inconsistent timestamp
-merge behavior. Start by defining policy; do not create a storage service
-merely to add another layer.
+`settings-manager` and the shared storage helper are solid foundations. Phase 2
+defines ownership and conflict rules rather than adding another abstraction
+layer.
+
+**Policy document:** [STORAGE_POLICY.md](./STORAGE_POLICY.md)
 
 Tasks:
 
-- [ ] Inventory every direct `chrome.storage`, shared storage helper, and
-  `localStorage` access.
-- [ ] Assign ownership for values in `kp_settings_v1`.
-- [ ] Define the policy for sync-only keyboard-layout data.
-- [ ] Define the policy for local-only new-tab preferences.
-- [ ] Define ownership for keyboard-reference and overlay-visibility keys
+- [x] Inventory every direct `chrome.storage`, shared storage helper, and
+  `localStorage` access (recorded in STORAGE_POLICY.md).
+- [x] Assign ownership for values in `kp_settings_v1`.
+- [x] Define the policy for sync-only keyboard-layout data
+  (`kp_keyboard_layout_store_v1`).
+- [x] Define the policy for local-only new-tab preferences (`kp_newtab_*`).
+- [x] Define ownership for keyboard-reference and overlay-visibility keys
   outside the primary settings object.
-- [ ] Specify sync/local fallback behavior and timestamp conflict resolution.
-- [ ] Define a compact early-chrome bootstrap snapshot and its versioning,
-  ownership, write timing, and fallback rules.
-- [ ] Include Keyboard Reference, Control Strip, and any other persistent
-  in-page window that needs document-start restoration.
-- [ ] Align `storageGetValue` and `storageGetKeys` timestamp/merge semantics,
-  or document why they intentionally differ.
-- [ ] Add tests for fallback, dual-write, partial failure, and conflict cases.
-- [ ] Replace direct accesses only where the new policy establishes a shared
-  owner.
-- [ ] Introduce a dedicated storage service only if the implemented policy is
-  otherwise repeated across multiple consumers.
+- [x] Specify sync/local fallback behavior and timestamp conflict resolution.
+- [x] Define a compact early-chrome bootstrap snapshot (`kp_chrome_layout_v1`)
+  and its versioning, ownership, read/write timing, and fallback rules.
+- [x] Include Keyboard Reference, Control Strip, and other persistent
+  in-page windows that need document-start restoration.
+- [x] Align `storageGetValue` and `storageGetKeys` timestamp/merge semantics
+  (shared `resolveStoredAreas` / `_updatedAt` newer-wins).
+- [x] Add tests for fallback, dual-write, partial failure, and conflict cases
+  (`test/storage.test.js`).
+- [x] Replace direct accesses only where the new policy establishes a shared
+  owner — deferred mass migration of early-inject / onboarding / help dual
+  paths; policy documents the intended owner and helper. No dedicated storage
+  service introduced.
+- [x] Introduce a dedicated storage service only if the implemented policy is
+  otherwise repeated across multiple consumers — **not needed**; helper +
+  STORAGE_POLICY.md suffice.
 
 Completion criteria:
 
-- [ ] Every persisted value has a documented owner, storage area, fallback
-  rule, and conflict rule.
-- [ ] Storage behavior is tested independently of the UI.
-- [ ] The bootstrap snapshot can be read at document start without requiring
-  the full settings model or expensive UI configuration.
+- [x] Every persisted value has a documented owner, storage area, fallback
+  rule, and conflict rule ([STORAGE_POLICY.md](./STORAGE_POLICY.md)).
+- [x] Storage behavior is tested independently of the UI (`npm test`).
+- [x] The bootstrap snapshot can be read at document start without requiring
+  the full settings model or expensive UI configuration (`kp_chrome_layout_v1`
+  via localStorage; see policy).
 
 ### Phase 3 — Formalize messaging contracts
 
@@ -563,7 +570,7 @@ completion.
 | Done | Phase | Deliverable |
 |---|---:|---|
 | [x] | 1 | Test runner, Chrome API mocks, and initial pure-module coverage |
-| [ ] | 2 | Documented and tested storage ownership/conflict policy |
+| [x] | 2 | Documented and tested storage ownership/conflict policy |
 | [ ] | 3 | Shared validated message catalog and one router per context |
 | [ ] | 4 | Framework-neutral Settings controller and declarative DOM binder |
 | [ ] | 5 | Proven schema-driven keyboard-configuration pilot |
