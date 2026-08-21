@@ -23,10 +23,12 @@ export class ElementDetector {
       'toolbar', 'group', 'navigation', 'list', 'directory', 'rowgroup', 'table'
     ];
 
-    this.CLICKABLE_SEL = 'a[href], button, input, select, textarea, video, audio, summary';
+    // video/audio only with controls — decorative autoplay backgrounds (noctivagous.com
+    // hero/features) must not become hover/F targets.
+    this.CLICKABLE_SEL = 'a[href], button, input, select, textarea, video[controls], audio[controls], summary';
     // Include <summary> so details/summary groups (e.g. New Tab recent-history outlines)
     // are semantic hover/F targets for the full header, not only cursor:pointer leaves.
-    this.FOCUSABLE_SEL = 'a[href], button, input, select, textarea, video, audio, summary, [contenteditable="true"], [role="button"], [role="link"], [role="checkbox"], [role="radio"], [role="tab"], [role="menuitem"], [data-action], [data-toggle], [data-click], [data-href], [data-link], [vue-click], [ng-click]';
+    this.FOCUSABLE_SEL = 'a[href], button, input, select, textarea, video[controls], audio[controls], summary, [contenteditable="true"], [role="button"], [role="link"], [role="checkbox"], [role="radio"], [role="tab"], [role="menuitem"], [data-action], [data-toggle], [data-click], [data-href], [data-link], [vue-click], [ng-click]';
 
     // Track elements with addEventListener click handlers
     this.clickHandlerElements = new WeakSet();
@@ -602,7 +604,8 @@ export class ElementDetector {
       ? !!opts.allowCursor
       : true;
 
-    const matchesSelector = el.matches(this.FOCUSABLE_SEL);
+    let matchesSelector = false;
+    try { matchesSelector = el.matches(this.FOCUSABLE_SEL); } catch { matchesSelector = false; }
     const role = (el.getAttribute && (el.getAttribute('role') || '').trim().toLowerCase()) || '';
     const hasRole = role && this.CLICKABLE_ROLES.includes(role);
 
