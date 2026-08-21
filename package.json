@@ -2,6 +2,7 @@
   "name": "keypilot-chrome-extension",
   "version": "1.0.0",
   "description": "KeyPilot Chrome Extension",
+  "license": "MIT",
   "type": "module",
   "main": "extension/build.js",
   "scripts": {
