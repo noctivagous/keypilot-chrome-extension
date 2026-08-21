@@ -20,6 +20,7 @@ import {
   NCT_DARK_UI_COLORS
 } from '../ui/nct-dark-ui.js';
 import { ensureOpenChromeShadow, injectChromeStyles } from '../ui/kp-chrome-shadow.js';
+import { MSG } from '../messaging/types.js';
 
 /**
  * Visit stamp for history cards: time only when today; date + time otherwise.
@@ -695,14 +696,14 @@ export class TabHistoryPopover {
 
     let resp = null;
     try {
-      resp = await chrome.runtime.sendMessage({ type: 'KP_NAVGRAPH_GET' });
+      resp = await chrome.runtime.sendMessage({ type: MSG.NAVGRAPH_GET });
     } catch {
       resp = null;
     }
 
     if (!this._open) return;
 
-    if (!resp || resp.type !== 'KP_NAVGRAPH_GRAPH' || !resp.graph) {
+    if (!resp || resp.type !== MSG.NAVGRAPH_GRAPH || !resp.graph) {
       this._tabStatus.textContent = 'Tab history unavailable.';
       return;
     }
@@ -719,7 +720,7 @@ export class TabHistoryPopover {
     try {
       // Recent history; background uses chrome.history (not available in content scripts).
       resp = await chrome.runtime.sendMessage({
-        type: 'KP_BROWSER_HISTORY_GET',
+        type: MSG.BROWSER_HISTORY_GET,
         query: '',
         maxResults: 40,
         days: 14
@@ -731,7 +732,7 @@ export class TabHistoryPopover {
     if (!this._open) return;
 
     const items = Array.isArray(resp?.items) ? resp.items : [];
-    if (!resp || resp.type !== 'KP_BROWSER_HISTORY_RESULT') {
+    if (!resp || resp.type !== MSG.BROWSER_HISTORY_RESULT) {
       this._browserStatus.textContent = 'Browser history unavailable.';
       return;
     }
@@ -865,7 +866,7 @@ export class TabHistoryPopover {
           const url = typeof item?.node?.url === 'string' ? item.node.url : '';
           if (!url) return;
           try {
-            await chrome.runtime.sendMessage({ type: 'KP_NAVGRAPH_JUMP', url });
+            await chrome.runtime.sendMessage({ type: MSG.NAVGRAPH_JUMP, url });
           } catch {
             // ignore
           }
@@ -965,7 +966,7 @@ export class TabHistoryPopover {
           event.preventDefault();
           event.stopPropagation();
           try {
-            await chrome.runtime.sendMessage({ type: 'KP_NAVGRAPH_JUMP', url: item.url });
+            await chrome.runtime.sendMessage({ type: MSG.NAVGRAPH_JUMP, url: item.url });
           } catch {
             try { window.location.assign(item.url); } catch { /* ignore */ }
           }

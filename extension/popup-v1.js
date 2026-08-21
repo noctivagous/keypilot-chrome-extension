@@ -1,3 +1,4 @@
+import { MSG } from './src/messaging/types.js';
 (function () {
 const statusEl = document.getElementById('status');
 
@@ -36,7 +37,7 @@ class PopupToggleController {
 
         // Query current state from service worker
         try {
-            const response = await chrome.runtime.sendMessage({ type: 'KP_GET_STATE' });
+            const response = await chrome.runtime.sendMessage({ type: MSG.GET_STATE });
             const enabled = response && response.enabled !== undefined ? response.enabled : true;
             this.updateToggleState(enabled);
         } catch (error) {
@@ -60,7 +61,7 @@ class PopupToggleController {
 
         // Listen for state changes from service worker
         chrome.runtime.onMessage.addListener((message) => {
-            if (message && message.type === 'KP_STATE_CHANGED') {
+            if (message && message.type === MSG.STATE_CHANGED) {
                 this.updateToggleState(message.enabled);
             }
         });
@@ -72,7 +73,7 @@ class PopupToggleController {
         try {
             const tab = await queryActiveTab();
             if (tab && tab.id) {
-                await chrome.tabs.sendMessage(tab.id, { type: 'KP_OPEN_SETTINGS_POPOVER' });
+                await chrome.tabs.sendMessage(tab.id, { type: MSG.OPEN_SETTINGS_POPOVER });
                 window.close();
                 return;
             }
@@ -93,7 +94,7 @@ class PopupToggleController {
         try {
             const tab = await queryActiveTab();
             if (tab && tab.id) {
-                await chrome.tabs.sendMessage(tab.id, { type: 'KP_OPEN_ONBOARDING' });
+                await chrome.tabs.sendMessage(tab.id, { type: MSG.OPEN_ONBOARDING });
                 window.close();
                 return;
             }
@@ -119,7 +120,7 @@ class PopupToggleController {
         try {
             // Send toggle command to service worker
             await chrome.runtime.sendMessage({ 
-                type: 'KP_SET_STATE', 
+                type: MSG.SET_STATE, 
                 enabled: enabled 
             });
         } catch (error) {
@@ -307,7 +308,7 @@ async function getStatus() {
         // First check if extension is globally enabled
         let extensionEnabled = true;
         try {
-            const stateResponse = await chrome.runtime.sendMessage({ type: 'KP_GET_STATE' });
+            const stateResponse = await chrome.runtime.sendMessage({ type: MSG.GET_STATE });
             extensionEnabled = stateResponse && stateResponse.enabled !== undefined ? stateResponse.enabled : true;
         } catch (error) {
             console.error('Failed to get extension state:', error);
@@ -322,13 +323,13 @@ async function getStatus() {
         const tab = await queryActiveTab();
         if (!tab || !tab.id) return setStatus('none', true);
         
-        const resp = await chrome.tabs.sendMessage(tab.id, { type: 'KP_GET_STATUS' });
+        const resp = await chrome.tabs.sendMessage(tab.id, { type: MSG.GET_STATUS });
         setStatus(resp && resp.mode || 'none', true);
     } catch (e) {
         // Content script may not be injected yet (e.g., chrome:// pages). 
         // Check extension state and show appropriate status
         try {
-            const stateResponse = await chrome.runtime.sendMessage({ type: 'KP_GET_STATE' });
+            const stateResponse = await chrome.runtime.sendMessage({ type: MSG.GET_STATE });
             const extensionEnabled = stateResponse && stateResponse.enabled !== undefined ? stateResponse.enabled : true;
             setStatus('none', extensionEnabled);
         } catch (error) {
@@ -345,16 +346,16 @@ chrome.runtime.onMessage.addListener((msg) => {
         return; // Don't process messages if extension is unavailable
     }
 
-    if (msg && msg.type === 'KP_STATUS') {
+    if (msg && msg.type === MSG.STATUS) {
         // When receiving status updates, check if extension is still enabled
-        chrome.runtime.sendMessage({ type: 'KP_GET_STATE' }).then(response => {
+        chrome.runtime.sendMessage({ type: MSG.GET_STATE }).then(response => {
             const extensionEnabled = response && response.enabled !== undefined ? response.enabled : true;
             setStatus(msg.mode, extensionEnabled);
         }).catch(() => {
             // If service worker is not available, assume enabled
             setStatus(msg.mode, true);
         });
-    } else if (msg && msg.type === 'KP_STATE_CHANGED') {
+    } else if (msg && msg.type === MSG.STATE_CHANGED) {
         // Extension toggle state changed, refresh status
         getStatus();
     }

@@ -23,6 +23,7 @@ import {
   resolveCardThumbQueued,
   setCachedCardThumb
 } from '../utils/thumb-load-queue.js';
+import { MSG } from '../messaging/types.js';
 
 export {
   extractYouTubeVideoId,
@@ -73,12 +74,12 @@ export async function requestVideoThumb(pageUrl) {
       return null;
     }
     const response = await chrome.runtime.sendMessage({
-      type: 'KP_GET_VIDEO_THUMB',
+      type: MSG.GET_VIDEO_THUMB,
       pageUrl: url
     });
     if (
       response &&
-      response.type === 'KP_VIDEO_THUMB_RESPONSE' &&
+      response.type === MSG.VIDEO_THUMB_RESPONSE &&
       response.success &&
       typeof response.thumbUrl === 'string' &&
       response.thumbUrl

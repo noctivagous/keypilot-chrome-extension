@@ -9,8 +9,10 @@ import { KeyPilot } from './keypilot.js';
 import { KeyPilotToggleHandler } from './modules/keypilot-toggle-handler.js';
 import { OnboardingManager } from './modules/onboarding-manager.js';
 import { startKeyPilotDebugFromSettings } from './utils/debug.js';
+import { installContentRuntimeRouter } from './messaging/content-runtime-router.js';
 
 void startKeyPilotDebugFromSettings();
+installContentRuntimeRouter();
 
 /**
  * Initialize KeyPilot with toggle functionality.

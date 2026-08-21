@@ -5,6 +5,10 @@
 import { KP_UI_FONT, MODES } from '../config/constants.js';
 import { MSG } from '../messaging/types.js';
 import {
+  installContentRuntimeRouter,
+  registerContentRuntimeHandler
+} from '../messaging/content-runtime-router.js';
+import {
   createPopoverTitlebar,
   createTitlebarCloseHint
 } from '../ui/popover-titlebar.js';
@@ -159,7 +163,11 @@ export class PopoverController {
       }
     };
     try {
-      chrome.runtime.onMessage.addListener(this._popoverWindowMsgHandler);
+      installContentRuntimeRouter();
+      this._popoverWindowMsgDispose = registerContentRuntimeHandler(
+        MSG.POPOVER_WINDOW_CLOSED,
+        this._popoverWindowMsgHandler
+      );
     } catch { /* ignore */ }
   }
 
@@ -970,7 +978,7 @@ export class PopoverController {
       if (!data || typeof data.type !== 'string') return;
       if (this.popoverIframeWindow && event.source !== this.popoverIframeWindow) return;
 
-      if (data.type === 'KP_POPOVER_BRIDGE_READY') {
+      if (data.type === MSG.POPOVER_BRIDGE_READY) {
         this.popoverBridgeReady = true;
         // Auto-focus iframe so full KeyPilot works inside without a user click.
         // Close keys (Esc/P) are handled by the iframe bridge → parent.
@@ -983,12 +991,12 @@ export class PopoverController {
         return;
       }
 
-      if (data.type === 'KP_POPOVER_REQUEST_CLOSE') {
+      if (data.type === MSG.POPOVER_REQUEST_CLOSE) {
         // Close on configured keys forwarded by the iframe bridge.
         if (closeKeys.includes(String(data.key))) requestClosePopover();
       }
 
-      if (data.type === 'KP_POPOVER_LAUNCH_WALKTHROUGH') {
+      if (data.type === MSG.POPOVER_LAUNCH_WALKTHROUGH) {
         // Guide "Launch Walkthrough": close this popover, then open tutorial from reset.
         requestClosePopover();
         try {
@@ -1002,7 +1010,7 @@ export class PopoverController {
         return;
       }
 
-      if (data.type === 'KP_POPOVER_BRIDGE_KEYDOWN') {
+      if (data.type === MSG.POPOVER_BRIDGE_KEYDOWN) {
         const k = String(data.key || '');
         if (k === 'f' || k === 'F') {
           // Prefer "click close button if hovered" so users can use F on the × affordance
@@ -1166,7 +1174,7 @@ export class PopoverController {
 
   scrollPopoverBy(deltaY, behavior = 'smooth') {
     return this.postMessageToPopoverIframe({
-      type: 'KP_POPOVER_SCROLL',
+      type: MSG.POPOVER_SCROLL,
       command: 'scrollBy',
       delta: deltaY,
       behavior
@@ -1175,7 +1183,7 @@ export class PopoverController {
 
   scrollPopoverToTop(behavior = 'smooth') {
     return this.postMessageToPopoverIframe({
-      type: 'KP_POPOVER_SCROLL',
+      type: MSG.POPOVER_SCROLL,
       command: 'scrollToTop',
       behavior
     });
@@ -1183,7 +1191,7 @@ export class PopoverController {
 
   scrollPopoverToBottom(behavior = 'smooth') {
     return this.postMessageToPopoverIframe({
-      type: 'KP_POPOVER_SCROLL',
+      type: MSG.POPOVER_SCROLL,
       command: 'scrollToBottom',
       behavior
     });

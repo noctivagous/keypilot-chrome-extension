@@ -869,7 +869,7 @@ export function mountDocsApp(root, options = {}) {
       return;
     }
     try {
-      window.parent.postMessage({ type: 'KP_POPOVER_REQUEST_CLOSE', key: 'Escape' }, '*');
+      window.parent.postMessage({ type: MSG.POPOVER_REQUEST_CLOSE, key: 'Escape' }, '*');
     } catch {
       /* ignore */
     }

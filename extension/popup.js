@@ -12,6 +12,7 @@ import {
   setControlStripVisible,
   setKeyboardHelpVisible
 } from './src/ui/keypilot-hub.js';
+import { MSG } from './src/messaging/types.js';
 
 const statusEl = document.getElementById('status');
 
@@ -141,7 +142,7 @@ class PopupHubController {
       this.showUnavailableState();
     } else {
       try {
-        const response = await chrome.runtime.sendMessage({ type: 'KP_GET_STATE' });
+        const response = await chrome.runtime.sendMessage({ type: MSG.GET_STATE });
         const enabled = response && response.enabled !== undefined ? response.enabled : true;
         this.updateToggleState(enabled);
       } catch {
@@ -157,7 +158,7 @@ class PopupHubController {
     }
 
     chrome.runtime.onMessage.addListener((message) => {
-      if (message && message.type === 'KP_STATE_CHANGED') {
+      if (message && message.type === MSG.STATE_CHANGED) {
         this.updateToggleState(message.enabled);
       }
     });
@@ -192,21 +193,21 @@ class PopupHubController {
 
     document.querySelector('[data-action="settings"]')?.addEventListener('click', () => {
       void openOnActiveTabOrFallback(
-        { type: 'KP_OPEN_SETTINGS_POPOVER' },
+        { type: MSG.OPEN_SETTINGS_POPOVER },
         'pages/settings.html'
       );
     });
 
     document.querySelector('[data-action="docs"]')?.addEventListener('click', () => {
       void openOnActiveTabOrFallback(
-        { type: 'KP_OPEN_DOCS_POPOVER' },
+        { type: MSG.OPEN_DOCS_POPOVER },
         'pages/docs.html'
       );
     });
 
     this.tutorialCard?.addEventListener('click', () => {
       void openOnActiveTabOrFallback(
-        { type: 'KP_OPEN_ONBOARDING' },
+        { type: MSG.OPEN_ONBOARDING },
         'pages/guide.html'
       );
     });
@@ -258,7 +259,7 @@ class PopupHubController {
     if (!this.isInitialized || this.isUnavailable || !this.toggleSwitch) return;
     const enabled = this.toggleSwitch.checked;
     try {
-      await chrome.runtime.sendMessage({ type: 'KP_SET_STATE', enabled });
+      await chrome.runtime.sendMessage({ type: MSG.SET_STATE, enabled });
     } catch (error) {
       console.error('Failed to set extension state:', error);
       this.toggleSwitch.checked = !enabled;
@@ -317,7 +318,7 @@ async function getStatus() {
   try {
     let extensionEnabled = true;
     try {
-      const stateResponse = await chrome.runtime.sendMessage({ type: 'KP_GET_STATE' });
+      const stateResponse = await chrome.runtime.sendMessage({ type: MSG.GET_STATE });
       extensionEnabled = stateResponse && stateResponse.enabled !== undefined ? stateResponse.enabled : true;
     } catch { /* ignore */ }
 
@@ -328,11 +329,11 @@ async function getStatus() {
     const tab = await queryActiveTab();
     if (!tab || !tab.id) return setStatus('none', true);
 
-    const resp = await chrome.tabs.sendMessage(tab.id, { type: 'KP_GET_STATUS' });
+    const resp = await chrome.tabs.sendMessage(tab.id, { type: MSG.GET_STATUS });
     setStatus((resp && resp.mode) || 'none', true);
   } catch {
     try {
-      const stateResponse = await chrome.runtime.sendMessage({ type: 'KP_GET_STATE' });
+      const stateResponse = await chrome.runtime.sendMessage({ type: MSG.GET_STATE });
       const extensionEnabled = stateResponse && stateResponse.enabled !== undefined ? stateResponse.enabled : true;
       setStatus('none', extensionEnabled);
     } catch {
@@ -343,12 +344,12 @@ async function getStatus() {
 
 chrome.runtime.onMessage.addListener((msg) => {
   if (hub.isUnavailable) return;
-  if (msg && msg.type === 'KP_STATUS') {
-    chrome.runtime.sendMessage({ type: 'KP_GET_STATE' }).then((response) => {
+  if (msg && msg.type === MSG.STATUS) {
+    chrome.runtime.sendMessage({ type: MSG.GET_STATE }).then((response) => {
       const extensionEnabled = response && response.enabled !== undefined ? response.enabled : true;
       setStatus(msg.mode, extensionEnabled);
     }).catch(() => setStatus(msg.mode, true));
-  } else if (msg && msg.type === 'KP_STATE_CHANGED') {
+  } else if (msg && msg.type === MSG.STATE_CHANGED) {
     getStatus();
   }
 });

@@ -6,6 +6,11 @@ import { EventManager } from './event-manager.js';
 import { COLORS, Z_INDEX } from '../config/constants.js';
 import { applyFlashNotificationStyle } from '../ui/nct-dark-ui.js';
 import { ensureOpenChromeShadow } from '../ui/kp-chrome-shadow.js';
+import { MSG } from '../messaging/types.js';
+import {
+  installContentRuntimeRouter,
+  registerContentRuntimeHandler
+} from '../messaging/content-runtime-router.js';
 
 export class KeyPilotToggleHandler extends EventManager {
   constructor(keyPilotInstance) {
@@ -34,7 +39,7 @@ export class KeyPilotToggleHandler extends EventManager {
   async initialize() {
     try {
       // Query service worker for current extension state
-      const response = await chrome.runtime.sendMessage({ type: 'KP_GET_STATE' });
+      const response = await chrome.runtime.sendMessage({ type: MSG.GET_STATE });
       
       if (response && typeof response.enabled === 'boolean') {
         this.setEnabled(response.enabled, false); // Don't show notification during initialization
@@ -48,9 +53,13 @@ export class KeyPilotToggleHandler extends EventManager {
       this.setEnabled(true, false); // Don't show notification during initialization
     }
 
-    // Broadcast path: service worker → tabs.sendMessage(KP_TOGGLE_STATE, { enabled }).
+    // Broadcast path: service worker → tabs.sendMessage(TOGGLE_STATE / UPDATE_STATE).
     try {
-      chrome.runtime.onMessage.addListener(this._onRuntimeMessage);
+      installContentRuntimeRouter();
+      this._runtimeDisposers = [
+        registerContentRuntimeHandler(MSG.TOGGLE_STATE, this._onRuntimeMessage),
+        registerContentRuntimeHandler(MSG.UPDATE_STATE, this._onRuntimeMessage)
+      ];
     } catch {
       // ignore
     }
@@ -80,7 +89,7 @@ export class KeyPilotToggleHandler extends EventManager {
           e.stopImmediatePropagation();
 
           if (typeof chrome !== 'undefined' && chrome.runtime) {
-            chrome.runtime.sendMessage({ type: 'KP_TOGGLE_STATE' }).catch(() => {
+            chrome.runtime.sendMessage({ type: MSG.TOGGLE_STATE }).catch(() => {
               // Ignore errors if background script is not available
             });
           }
@@ -123,7 +132,7 @@ export class KeyPilotToggleHandler extends EventManager {
     try {
       // Broadcast from SW includes `enabled`. Ignore bare toggle *requests* (no enabled)
       // that are only meant for the service worker.
-      if (message?.type === 'KP_TOGGLE_STATE' || message?.type === 'KP_UPDATE_STATE') {
+      if (message?.type === MSG.TOGGLE_STATE || message?.type === MSG.UPDATE_STATE) {
         if (typeof message.enabled === 'boolean') {
           // Message path already represents a user-initiated global change.
           void this.setEnabled(message.enabled, true);
@@ -508,9 +517,10 @@ export class KeyPilotToggleHandler extends EventManager {
   cleanup() {
     // Remove message listeners
     try {
-      if (chrome?.runtime?.onMessage?.removeListener) {
-        chrome.runtime.onMessage.removeListener(this._onRuntimeMessage);
+      for (const dispose of this._runtimeDisposers || []) {
+        try { dispose(); } catch { /* ignore */ }
       }
+      this._runtimeDisposers = [];
     } catch {
       // ignore
     }

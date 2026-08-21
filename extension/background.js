@@ -6,6 +6,7 @@
 import { isSkippableTab, isSkippableUrl } from './src/config/url-policy.js';
 import { FEATURE_FLAGS } from './src/config/constants.js';
 import { MSG, TAB_UI_FORWARD_TYPES } from './src/messaging/types.js';
+import { errorResponse, validateRuntimeMessage } from './src/messaging/validate.js';
 import {
   storageGetValue,
   storageSetValue,
@@ -944,7 +945,7 @@ class ContentScriptManager {
     try {
       const tabs = await chrome.tabs.query({});
       const message = {
-        type: 'KP_UPDATE_STATE',
+        type: MSG.UPDATE_STATE,
         enabled: enabled,
         timestamp: Date.now()
       };
@@ -984,14 +985,20 @@ console.log('KeyPilot service worker started');/**
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('Message received:', message, 'from:', sender);
-  
+
   // Handle async operations properly
   (async () => {
     try {
+      const validationError = validateRuntimeMessage(message, { requireSwRequest: true });
+      if (validationError) {
+        sendResponse(errorResponse(validationError));
+        return;
+      }
+
       await extensionToggleManager.initialize();
-      
+
       switch (message.type) {
-        case 'KP_TRANSIENT_ACTION': {
+        case MSG.TRANSIENT_ACTION: {
           // Persist transient actions (like "back") in extension storage so they survive
           // content-script unload / navigation timing.
           //
@@ -1000,7 +1007,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           const action = typeof message.action === 'string' ? message.action : '';
           const timestamp = typeof message.timestamp === 'number' ? message.timestamp : Date.now();
           if (!action) {
-            sendResponse({ type: 'KP_ERROR', message: 'Missing action' });
+            sendResponse({ type: MSG.ERROR, message: 'Missing action' });
             break;
           }
 
@@ -1022,15 +1029,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             } catch {
               // ignore
             }
-            sendResponse({ type: 'KP_SUCCESS' });
+            sendResponse({ type: MSG.SUCCESS });
           } catch (e) {
             console.warn('Failed to persist transient action:', e?.message || e);
-            sendResponse({ type: 'KP_ERROR', message: 'Failed to persist transient action' });
+            sendResponse({ type: MSG.ERROR, message: 'Failed to persist transient action' });
           }
           break;
         }
 
-        case 'KP_GET_RECENT_BOOKMARKS': {
+        case MSG.GET_RECENT_BOOKMARKS: {
           const maxResults = Math.max(1, Math.min(100, Number(message.maxResults) || 24));
           try {
             if (chrome.bookmarks && typeof chrome.bookmarks.getRecent === 'function') {
@@ -1045,13 +1052,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                   parentId: n.parentId
                 }));
               sendResponse({
-                type: 'KP_RECENT_BOOKMARKS_RESPONSE',
+                type: MSG.RECENT_BOOKMARKS_RESPONSE,
                 bookmarks,
                 success: true
               });
             } else {
               sendResponse({
-                type: 'KP_RECENT_BOOKMARKS_RESPONSE',
+                type: MSG.RECENT_BOOKMARKS_RESPONSE,
                 bookmarks: [],
                 success: false,
                 error: 'Bookmarks API not available'
@@ -1060,7 +1067,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           } catch (error) {
             console.error('KP_GET_RECENT_BOOKMARKS failed:', error);
             sendResponse({
-              type: 'KP_RECENT_BOOKMARKS_RESPONSE',
+              type: MSG.RECENT_BOOKMARKS_RESPONSE,
               bookmarks: [],
               success: false,
               error: error.message
@@ -1069,7 +1076,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
-        case 'KP_GET_MOST_VISITED': {
+        case MSG.GET_MOST_VISITED: {
           try {
             if (chrome.topSites && typeof chrome.topSites.get === 'function') {
               const sites = await chrome.topSites.get();
@@ -1081,13 +1088,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                   url: s.url
                 }));
               sendResponse({
-                type: 'KP_MOST_VISITED_RESPONSE',
+                type: MSG.MOST_VISITED_RESPONSE,
                 sites: list,
                 success: true
               });
             } else {
               sendResponse({
-                type: 'KP_MOST_VISITED_RESPONSE',
+                type: MSG.MOST_VISITED_RESPONSE,
                 sites: [],
                 success: false,
                 error: 'Top Sites API not available'
@@ -1096,7 +1103,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           } catch (error) {
             console.error('KP_GET_MOST_VISITED failed:', error);
             sendResponse({
-              type: 'KP_MOST_VISITED_RESPONSE',
+              type: MSG.MOST_VISITED_RESPONSE,
               sites: [],
               success: false,
               error: error.message
@@ -1105,7 +1112,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
-        case 'KP_GET_BOOKMARKS': {
+        case MSG.GET_BOOKMARKS: {
           // Return bookmark tree for launcher popover
           try {
             if (chrome.bookmarks && typeof chrome.bookmarks.getTree === 'function') {
@@ -1146,13 +1153,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               }
 
               sendResponse({
-                type: 'KP_BOOKMARKS_RESPONSE',
+                type: MSG.BOOKMARKS_RESPONSE,
                 bookmarks: bookmarks,
                 success: true
               });
             } else {
               sendResponse({
-                type: 'KP_BOOKMARKS_RESPONSE',
+                type: MSG.BOOKMARKS_RESPONSE,
                 bookmarks: [],
                 success: false,
                 error: 'Bookmarks API not available'
@@ -1161,7 +1168,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           } catch (error) {
             console.error('KP_GET_BOOKMARKS failed:', error);
             sendResponse({
-              type: 'KP_BOOKMARKS_RESPONSE',
+              type: MSG.BOOKMARKS_RESPONSE,
               bookmarks: [],
               success: false,
               error: error.message
@@ -1170,7 +1177,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
-        case 'KP_OMNIBOX_SUGGEST': {
+        case MSG.OMNIBOX_SUGGEST: {
           // Return omnibox suggestions from:
           // - topSites (most visited)
           // - bookmarks (bookmark bar first, then others)
@@ -1432,7 +1439,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           }
 
           sendResponse({
-            type: 'KP_OMNIBOX_SUGGESTIONS',
+            type: MSG.OMNIBOX_SUGGESTIONS,
             query,
             suggestions,
             timestamp: Date.now()
@@ -1440,7 +1447,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
-        case 'KP_BROWSER_HISTORY_GET': {
+        case MSG.BROWSER_HISTORY_GET: {
           // Return recent browser history entries (for the J history popover).
           const query = typeof message.query === 'string' ? message.query.trim() : '';
           const maxResults = Math.max(1, Math.min(100, Number(message.maxResults) || 40));
@@ -1477,7 +1484,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           }
 
           sendResponse({
-            type: 'KP_BROWSER_HISTORY_RESULT',
+            type: MSG.BROWSER_HISTORY_RESULT,
             query,
             items,
             timestamp: Date.now()
@@ -1485,7 +1492,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
-        case 'KP_GET_TOP_SITES': {
+        case MSG.GET_TOP_SITES: {
           // Return top visited sites from history
           const maxResults = Math.max(1, Math.min(1000, Number(message.maxResults) || 1000));
           const days = Math.max(1, Math.min(90, Number(message.days) || 30));
@@ -1537,13 +1544,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 }));
 
               sendResponse({
-                type: 'KP_TOP_SITES_RESPONSE',
+                type: MSG.TOP_SITES_RESPONSE,
                 topSites: topSites,
                 success: true
               });
             } else {
               sendResponse({
-                type: 'KP_TOP_SITES_RESPONSE',
+                type: MSG.TOP_SITES_RESPONSE,
                 topSites: [],
                 success: false,
                 error: 'History API not available'
@@ -1552,7 +1559,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           } catch (error) {
             console.error('KP_GET_TOP_SITES failed:', error);
             sendResponse({
-              type: 'KP_TOP_SITES_RESPONSE',
+              type: MSG.TOP_SITES_RESPONSE,
               topSites: [],
               success: false,
               error: error.message
@@ -1561,7 +1568,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
-        case 'KP_GET_HISTORY_FOR_DOMAINS': {
+        case MSG.GET_HISTORY_FOR_DOMAINS: {
           // Search history for specific domains (parallel queries).
           // Prefer https://domain text queries so URL hits aren't crowded out by
           // off-site pages that merely mention the domain in their title.
@@ -1634,13 +1641,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               });
 
               sendResponse({
-                type: 'KP_HISTORY_FOR_DOMAINS_RESPONSE',
+                type: MSG.HISTORY_FOR_DOMAINS_RESPONSE,
                 history: sortedResults,
                 success: true
               });
             } else {
               sendResponse({
-                type: 'KP_HISTORY_FOR_DOMAINS_RESPONSE',
+                type: MSG.HISTORY_FOR_DOMAINS_RESPONSE,
                 history: [],
                 success: false,
                 error: 'History API not available'
@@ -1649,7 +1656,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           } catch (error) {
             console.error('KP_GET_HISTORY_FOR_DOMAINS failed:', error);
             sendResponse({
-              type: 'KP_HISTORY_FOR_DOMAINS_RESPONSE',
+              type: MSG.HISTORY_FOR_DOMAINS_RESPONSE,
               history: [],
               success: false,
               error: error.message
@@ -1659,7 +1666,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
 
         case MSG.GET_RECENT_HISTORY:
-        case 'KP_GET_RECENT_HISTORY': {
+        case MSG.GET_RECENT_HISTORY: {
           const maxResults = Math.max(1, Math.min(2000, Number(message.maxResults) || 500));
           const days = Math.max(1, Math.min(90, Number(message.days) || 30));
           const startTime = Date.now() - days * 24 * 60 * 60 * 1000;
@@ -1682,13 +1689,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 .sort((a, b) => (b.lastVisitTime || 0) - (a.lastVisitTime || 0));
 
               sendResponse({
-                type: 'KP_RECENT_HISTORY_RESPONSE',
+                type: MSG.RECENT_HISTORY_RESPONSE,
                 items,
                 success: true
               });
             } else {
               sendResponse({
-                type: 'KP_RECENT_HISTORY_RESPONSE',
+                type: MSG.RECENT_HISTORY_RESPONSE,
                 items: [],
                 success: false,
                 error: 'History API not available'
@@ -1697,7 +1704,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           } catch (error) {
             console.error('KP_GET_RECENT_HISTORY failed:', error);
             sendResponse({
-              type: 'KP_RECENT_HISTORY_RESPONSE',
+              type: MSG.RECENT_HISTORY_RESPONSE,
               items: [],
               success: false,
               error: error.message
@@ -1707,7 +1714,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
 
         case MSG.GET_VIDEO_THUMB:
-        case 'KP_GET_VIDEO_THUMB': {
+        case MSG.GET_VIDEO_THUMB: {
           const pageUrl = typeof message.pageUrl === 'string' ? message.pageUrl.trim() : '';
           try {
             if (!pageUrl) {
@@ -2008,10 +2015,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
-        case 'KP_NAVGRAPH_GET': {
+        case MSG.NAVGRAPH_GET: {
           const tabId = sender?.tab?.id;
           if (typeof tabId !== 'number') {
-            sendResponse({ type: 'KP_ERROR', error: 'No sender tab id' });
+            sendResponse({ type: MSG.ERROR, error: 'No sender tab id' });
             break;
           }
 
@@ -2030,7 +2037,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
           const { graph } = await tabNavGraphManager.getGraph(tabId, { currentUrl: tabUrl, currentTitle: tabTitle });
           sendResponse({
-            type: 'KP_NAVGRAPH_GRAPH',
+            type: MSG.NAVGRAPH_GRAPH,
             tabId,
             graph,
             timestamp: Date.now()
@@ -2038,38 +2045,38 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
-        case 'KP_NAVGRAPH_JUMP': {
+        case MSG.NAVGRAPH_JUMP: {
           const tabId = sender?.tab?.id;
           const url = typeof message.url === 'string' ? message.url.trim() : '';
           if (typeof tabId !== 'number') {
-            sendResponse({ type: 'KP_ERROR', error: 'No sender tab id' });
+            sendResponse({ type: MSG.ERROR, error: 'No sender tab id' });
             break;
           }
           if (!url) {
-            sendResponse({ type: 'KP_ERROR', error: 'Invalid url' });
+            sendResponse({ type: MSG.ERROR, error: 'Invalid url' });
             break;
           }
 
           try {
             await chrome.tabs.update(tabId, { url });
-            sendResponse({ type: 'KP_SUCCESS', tabId });
+            sendResponse({ type: MSG.SUCCESS, tabId });
           } catch (e) {
-            sendResponse({ type: 'KP_ERROR', error: `Failed to navigate: ${e?.message || e}` });
+            sendResponse({ type: MSG.ERROR, error: `Failed to navigate: ${e?.message || e}` });
           }
           break;
         }
 
-        case 'KP_NAVGRAPH_CLEAR': {
+        case MSG.NAVGRAPH_CLEAR: {
           const tabId = sender?.tab?.id;
           if (typeof tabId !== 'number') {
-            sendResponse({ type: 'KP_ERROR', error: 'No sender tab id' });
+            sendResponse({ type: MSG.ERROR, error: 'No sender tab id' });
             break;
           }
           try {
             await tabNavGraphManager.clear(tabId);
-            sendResponse({ type: 'KP_SUCCESS', tabId });
+            sendResponse({ type: MSG.SUCCESS, tabId });
           } catch (e) {
-            sendResponse({ type: 'KP_ERROR', error: `Failed to clear: ${e?.message || e}` });
+            sendResponse({ type: MSG.ERROR, error: `Failed to clear: ${e?.message || e}` });
           }
           break;
         }
@@ -2359,23 +2366,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
-        case 'KP_GET_STATE':
+        case MSG.GET_STATE:
           // Content script or popup requesting current state
           const currentState = await extensionToggleManager.getState();
           sendResponse({
-            type: 'KP_STATE_RESPONSE',
+            type: MSG.STATE_RESPONSE,
             enabled: currentState,
             timestamp: Date.now()
           });
           console.log('Sent current state:', currentState);
           break;
           
-        case 'KP_SET_STATE':
+        case MSG.SET_STATE:
           // Popup requesting state change
           if (typeof message.enabled === 'boolean') {
             const newState = await extensionToggleManager.setState(message.enabled);
             sendResponse({
-              type: 'KP_STATE_CHANGED',
+              type: MSG.STATE_CHANGED,
               enabled: newState,
               timestamp: Date.now()
             });
@@ -2383,17 +2390,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           } else {
             console.error('Invalid enabled value in KP_SET_STATE:', message.enabled);
             sendResponse({
-              type: 'KP_ERROR',
+              type: MSG.ERROR,
               error: 'Invalid enabled value'
             });
           }
           break;
           
-        case 'KP_TOGGLE_STATE':
+        case MSG.TOGGLE_STATE:
           // Request to toggle current state
           const toggledState = await extensionToggleManager.toggleState();
           sendResponse({
-            type: 'KP_STATE_CHANGED',
+            type: MSG.STATE_CHANGED,
             enabled: toggledState,
             timestamp: Date.now()
           });
@@ -2403,7 +2410,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         // Legacy KP_GET_CURSOR_SETTINGS / KP_SET_CURSOR_* removed.
         // Cursor appearance is stored in kp_settings_v1 (settings-manager).
 
-        case 'KP_CLOSE_TAB':
+        case MSG.CLOSE_TAB:
           // Request to close current tab
           if (sender.tab && sender.tab.id) {
             try {
@@ -2413,21 +2420,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             } catch (error) {
               console.error('Failed to close tab:', error);
               sendResponse({
-                type: 'KP_ERROR',
+                type: MSG.ERROR,
                 error: 'Failed to close tab: ' + error.message
               });
             }
           } else {
             console.error('No valid tab ID in close tab request');
             sendResponse({
-              type: 'KP_ERROR',
+              type: MSG.ERROR,
               error: 'No valid tab ID'
             });
           }
           break;
 
-        case 'KP_GO_BACK':
-        case 'KP_GO_FORWARD': {
+        case MSG.GO_BACK:
+        case MSG.GO_FORWARD: {
           // Browser history navigation for the sender tab.
           // Optionally record a transient action first so onboarding can recover after unload.
           const tabId = sender?.tab?.id;
@@ -2456,29 +2463,29 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           }
 
           if (!tabId) {
-            sendResponse({ type: 'KP_ERROR', error: 'No valid tab ID' });
+            sendResponse({ type: MSG.ERROR, error: 'No valid tab ID' });
             break;
           }
 
           try {
-            if (message.type === 'KP_GO_BACK') {
+            if (message.type === MSG.GO_BACK) {
               await chrome.tabs.goBack(tabId);
             } else {
               await chrome.tabs.goForward(tabId);
             }
-            sendResponse({ type: 'KP_SUCCESS' });
+            sendResponse({ type: MSG.SUCCESS });
           } catch (error) {
             // No history entry / already at edge — treat as soft success.
             console.warn('[KeyPilot] History navigation failed:', error?.message || error);
             sendResponse({
-              type: 'KP_ERROR',
+              type: MSG.ERROR,
               error: error?.message || 'History navigation failed'
             });
           }
           break;
         }
 
-        case 'KP_TAB_LEFT':
+        case MSG.TAB_LEFT:
           // Switch to the tab to the left
           if (sender.tab && sender.tab.id) {
             try {
@@ -2495,7 +2502,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               } else {
                 // Soft failure: only one usable tab — content script shows flash UI, no console noise.
                 sendResponse({
-                  type: 'KP_ERROR',
+                  type: MSG.ERROR,
                   error: 'No valid tabs to switch to'
                 });
                 break;
@@ -2503,18 +2510,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               
               await chrome.tabs.update(tabs[targetIndex].id, { active: true });
               console.log('Switched to left tab:', tabs[targetIndex].id);
-              sendResponse({ type: 'KP_SUCCESS' });
+              sendResponse({ type: MSG.SUCCESS });
             } catch (error) {
               console.error('Failed to switch to left tab:', error);
               sendResponse({
-                type: 'KP_ERROR',
+                type: MSG.ERROR,
                 error: 'Failed to switch tab: ' + error.message
               });
             }
           }
           break;
 
-        case 'KP_TAB_RIGHT':
+        case MSG.TAB_RIGHT:
           // Switch to the tab to the right
           if (sender.tab && sender.tab.id) {
             try {
@@ -2531,7 +2538,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               } else {
                 // Soft failure: only one usable tab — content script shows flash UI, no console noise.
                 sendResponse({
-                  type: 'KP_ERROR',
+                  type: MSG.ERROR,
                   error: 'No valid tabs to switch to'
                 });
                 break;
@@ -2539,18 +2546,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               
               await chrome.tabs.update(tabs[targetIndex].id, { active: true });
               console.log('Switched to right tab:', tabs[targetIndex].id);
-              sendResponse({ type: 'KP_SUCCESS' });
+              sendResponse({ type: MSG.SUCCESS });
             } catch (error) {
               console.error('Failed to switch to right tab:', error);
               sendResponse({
-                type: 'KP_ERROR',
+                type: MSG.ERROR,
                 error: 'Failed to switch tab: ' + error.message
               });
             }
           }
           break;
 
-        case 'KP_NEW_TAB':
+        case MSG.NEW_TAB:
           // Open a new tab (Chrome default NTP, or KeyPilot page when flagged on).
           try {
             /** @type {chrome.tabs.CreateProperties} */
@@ -2575,21 +2582,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
             const newTab = await chrome.tabs.create(createProps);
             console.log('Opened new tab:', newTab.id);
-            sendResponse({ type: 'KP_SUCCESS', tabId: newTab.id });
+            sendResponse({ type: MSG.SUCCESS, tabId: newTab.id });
           } catch (error) {
             console.error('Failed to open new tab:', error);
             sendResponse({
-              type: 'KP_ERROR',
+              type: MSG.ERROR,
               error: 'Failed to open new tab: ' + error.message
             });
           }
           break;
 
-        case 'KP_OPEN_URL_BACKGROUND':
+        case MSG.OPEN_URL_BACKGROUND:
           // Open a URL in a new tab without focusing it (middle-click style).
           if (!message.url || typeof message.url !== 'string') {
             sendResponse({
-              type: 'KP_ERROR',
+              type: MSG.ERROR,
               error: 'Invalid url'
             });
             break;
@@ -2617,21 +2624,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
             const tab = await chrome.tabs.create(createProps);
             console.log('Opened background tab:', tab.id, 'url:', message.url);
-            sendResponse({ type: 'KP_SUCCESS', tabId: tab.id });
+            sendResponse({ type: MSG.SUCCESS, tabId: tab.id });
           } catch (error) {
             console.error('Failed to open background tab:', error);
             sendResponse({
-              type: 'KP_ERROR',
+              type: MSG.ERROR,
               error: 'Failed to open background tab: ' + error.message
             });
           }
           break;
 
-        case 'KP_OPEN_URL_FOREGROUND':
+        case MSG.OPEN_URL_FOREGROUND:
           // Open a URL in a new tab AND focus it.
           if (!message.url || typeof message.url !== 'string') {
             sendResponse({
-              type: 'KP_ERROR',
+              type: MSG.ERROR,
               error: 'Invalid url'
             });
             break;
@@ -2659,59 +2666,59 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
             const tab = await chrome.tabs.create(createProps);
             console.log('Opened foreground tab:', tab.id, 'url:', message.url);
-            sendResponse({ type: 'KP_SUCCESS', tabId: tab.id });
+            sendResponse({ type: MSG.SUCCESS, tabId: tab.id });
           } catch (error) {
             console.error('Failed to open foreground tab:', error);
             sendResponse({
-              type: 'KP_ERROR',
+              type: MSG.ERROR,
               error: 'Failed to open foreground tab: ' + error.message
             });
           }
           break;
 
-        case 'KP_NAVIGATE_SAME_TAB': {
+        case MSG.NAVIGATE_SAME_TAB: {
           // Same-tab navigate — used by frame-click-agent when a sandboxed iframe
           // cannot top-navigate without a real user gesture (e.g. Observable gallery).
           const tabId = sender?.tab?.id;
           const url = typeof message.url === 'string' ? message.url.trim() : '';
           if (typeof tabId !== 'number') {
-            sendResponse({ type: 'KP_ERROR', error: 'No sender tab id' });
+            sendResponse({ type: MSG.ERROR, error: 'No sender tab id' });
             break;
           }
           if (!url) {
-            sendResponse({ type: 'KP_ERROR', error: 'Invalid url' });
+            sendResponse({ type: MSG.ERROR, error: 'Invalid url' });
             break;
           }
           try {
             await chrome.tabs.update(tabId, { url });
-            sendResponse({ type: 'KP_SUCCESS', tabId });
+            sendResponse({ type: MSG.SUCCESS, tabId });
           } catch (error) {
             console.error('Failed to navigate same tab:', error);
             sendResponse({
-              type: 'KP_ERROR',
+              type: MSG.ERROR,
               error: 'Failed to navigate: ' + (error?.message || error)
             });
           }
           break;
         }
 
-        case 'KP_STATUS':
+        case MSG.STATUS:
           // Status updates are broadcast to update the popup UI.
           // Background script doesn't need to handle them, just acknowledge.
-          sendResponse({ type: 'KP_ACK' });
+          sendResponse({ type: MSG.ACK });
           break;
           
         default:
           console.warn('Unknown message type:', message.type);
           sendResponse({
-            type: 'KP_ERROR',
+            type: MSG.ERROR,
             error: 'Unknown message type'
           });
       }
     } catch (error) {
       console.error('Error handling message:', error);
       sendResponse({
-        type: 'KP_ERROR',
+        type: MSG.ERROR,
         error: error.message
       });
     }

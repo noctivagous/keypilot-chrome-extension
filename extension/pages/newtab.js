@@ -33,6 +33,7 @@ import {
 } from '../src/ui/newtab-display-popover.js';
 import { storageGetValue } from '../src/utils/storage.js';
 import { postPopoverBridgeInit } from '../src/modules/popover-bridge-init.js';
+import { MSG } from '../src/messaging/types.js';
 
 let currentEngine = 'brave';
 const KP_ENABLED_STORAGE_KEY = 'keypilot_enabled';
@@ -348,17 +349,17 @@ function createModal({ title, hintKeyLabel, closeKeys, url, width, height, actio
     if (!data || typeof data.type !== 'string') return;
     if (iframe.contentWindow && event.source !== iframe.contentWindow) return;
 
-    if (data.type === 'KP_POPOVER_BRIDGE_READY') {
+    if (data.type === MSG.POPOVER_BRIDGE_READY) {
       try { iframe.focus(); } catch { /* ignore */ }
       try { iframe.contentWindow?.focus?.(); } catch { /* ignore */ }
       return;
     }
 
-    if (data.type === 'KP_POPOVER_REQUEST_CLOSE') {
+    if (data.type === MSG.POPOVER_REQUEST_CLOSE) {
       if (closeKeys.includes(String(data.key))) requestClose();
     }
 
-    if (data.type === 'KP_POPOVER_LAUNCH_WALKTHROUGH') {
+    if (data.type === MSG.POPOVER_LAUNCH_WALKTHROUGH) {
       requestClose();
       try {
         const ob = window.__KeyPilotOnboarding;
@@ -476,11 +477,11 @@ function createSuggestionsController({ inputEl, rootEl }) {
     try {
       if (!chrome?.runtime?.sendMessage) return [];
       const resp = await chrome.runtime.sendMessage({
-        type: 'KP_OMNIBOX_SUGGEST',
+        type: MSG.OMNIBOX_SUGGEST,
         query,
         maxResults: 12
       });
-      if (resp && resp.type === 'KP_OMNIBOX_SUGGESTIONS' && Array.isArray(resp.suggestions)) {
+      if (resp && resp.type === MSG.OMNIBOX_SUGGESTIONS && Array.isArray(resp.suggestions)) {
         return resp.suggestions
           .filter((s) => s && typeof s.url === 'string' && s.url.trim())
           .slice(0, 12);
@@ -1073,7 +1074,7 @@ async function renderTopSites() {
 async function queryGlobalEnabledState() {
   // Preferred: ask the service worker (handles sync/local fallback consistently).
   try {
-    const resp = await chrome.runtime.sendMessage({ type: 'KP_GET_STATE' });
+    const resp = await chrome.runtime.sendMessage({ type: MSG.GET_STATE });
     if (resp && typeof resp.enabled === 'boolean') return resp.enabled;
   } catch {
     // ignore
@@ -1086,7 +1087,7 @@ async function queryGlobalEnabledState() {
 
 async function setGlobalEnabledState(enabled) {
   const desired = Boolean(enabled);
-  const resp = await chrome.runtime.sendMessage({ type: 'KP_SET_STATE', enabled: desired });
+  const resp = await chrome.runtime.sendMessage({ type: MSG.SET_STATE, enabled: desired });
   if (resp && typeof resp.enabled === 'boolean') return resp.enabled;
   return desired;
 }

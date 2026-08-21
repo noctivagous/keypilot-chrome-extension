@@ -15,6 +15,7 @@ import {
   progressEqual
 } from '../ui/onboarding-shared.js';
 import { storageSetObject } from '../utils/storage.js';
+import { MSG } from '../messaging/types.js';
 
 // NOTE: Do not `import { X as Y }` — build.js strips imports and aliases are lost.
 // Use ONBOARDING_STORAGE_KEYS by name (defined in onboarding-shared.js).
@@ -435,7 +436,7 @@ export class OnboardingManager {
   async _syncEnabledFromServiceWorker() {
     // The service worker is the source of truth for global enable/disable.
     try {
-      const resp = await chrome.runtime.sendMessage({ type: 'KP_GET_STATE' });
+      const resp = await chrome.runtime.sendMessage({ type: MSG.GET_STATE });
       if (resp && typeof resp.enabled === 'boolean') {
         this._enabledCache = resp.enabled === true;
         this._enabledCacheTs = Date.now();
@@ -1237,7 +1238,7 @@ export class OnboardingManager {
 
         // Prefer opening via background so it behaves like KeyPilot's other new-tab actions.
         try {
-          chrome.runtime.sendMessage({ type: 'KP_OPEN_URL_FOREGROUND', url }).catch(() => {});
+          chrome.runtime.sendMessage({ type: MSG.OPEN_URL_FOREGROUND, url }).catch(() => {});
           continue;
         } catch {
           // fall back

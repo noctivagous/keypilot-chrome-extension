@@ -25,6 +25,10 @@ import {
 import { formatFileSize } from '../utils/page-media-utils.js';
 import { Z_INDEX } from '../config/constants.js';
 import { MSG } from '../messaging/types.js';
+import {
+  installContentRuntimeRouter,
+  registerContentRuntimeHandler
+} from '../messaging/content-runtime-router.js';
 import { ensureOpenChromeShadow, injectChromeStyles } from './kp-chrome-shadow.js';
 import {
   listMediaLibrary,
@@ -403,7 +407,8 @@ function scheduleRemoteReload() {
 }
 
 try {
-  chrome.runtime?.onMessage?.addListener((msg) => {
+  installContentRuntimeRouter();
+  registerContentRuntimeHandler(MSG.MEDIA_LIBRARY_CHANGED, (msg) => {
     if (msg?.type !== MSG.MEDIA_LIBRARY_CHANGED) return;
     if (typeof window !== 'undefined' && window !== window.top) return;
     scheduleRemoteReload();

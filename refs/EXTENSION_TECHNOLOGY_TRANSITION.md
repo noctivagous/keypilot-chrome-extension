@@ -379,21 +379,29 @@ The extension communicates across a service worker, top-frame content script,
 child frames, extension pages, and popovers. Complete the existing `MSG.*`
 adoption before considering a larger language or framework transition.
 
+**Contract document:** [MESSAGING_CONTRACT.md](./MESSAGING_CONTRACT.md)
+
 Tasks:
 
-- [ ] Inventory remaining raw `KP_*` message literals and independent
-  `onMessage` listeners.
-- [ ] Define one discriminated message catalog with documented payload and
-  response shapes.
-- [ ] Register service-worker response types in the shared contract.
-- [ ] Replace extension-page and switch-case literals with shared message
-  identifiers.
-- [ ] Add lightweight runtime validation at external/context boundaries.
-- [ ] Consolidate independent content-script listeners behind one router.
-- [ ] Keep one explicit router per receiving context.
-- [ ] Test valid requests, invalid payloads, responses, frame routing, and
-  service-worker-to-tab forwarding.
-- [ ] Document which messages are notifications and which require responses.
+- [x] Inventory remaining raw `KP_*` message literals and independent
+  `onMessage` listeners (recorded in MESSAGING_CONTRACT.md).
+- [x] Define one discriminated message catalog with documented payload and
+  response shapes (`types.js` + MESSAGING_CONTRACT.md).
+- [x] Register service-worker response types in the shared contract
+  (`OMNIBOX_SUGGESTIONS`, `*_RESPONSE`, `NAVGRAPH_GRAPH`, `ACK`, …).
+- [x] Replace extension-page and switch-case literals with shared message
+  identifiers (SW, popup, pages, modules). **Exception:** `early-inject.js`
+  keeps wire-compatible string literals (no ESM at document_start).
+- [x] Add lightweight runtime validation at the SW boundary
+  (`messaging/validate.js`).
+- [x] Consolidate independent content-script listeners behind one router
+  (`content-runtime-router.js`; KeyPilot, toggle, popover, media-library).
+- [x] Keep one explicit router per receiving context (documented in
+  MESSAGING_CONTRACT.md).
+- [x] Test valid requests, invalid payloads, catalog completeness, and
+  `TAB_UI_FORWARD` (`test/messaging-types.test.js`). Frame postMessage
+  routing remains covered by existing frame-agent behavior + contract notes.
+- [x] Document which messages are notifications and which require responses.
 
 TypeScript is optional. JSDoc discriminated unions plus a small runtime
 validator are sufficient if they provide one validated contract. A wholesale
@@ -401,9 +409,12 @@ language migration is not required.
 
 Completion criteria:
 
-- [ ] No active message path depends on an undocumented raw string.
-- [ ] Invalid payloads fail predictably at a receiving boundary.
-- [ ] Each context has one discoverable routing entry point.
+- [x] No active message path depends on an undocumented raw string
+  (catalog + contract; early-inject literals are wire values of `MSG.*`).
+- [x] Invalid payloads fail predictably at a receiving boundary (SW
+  `validateRuntimeMessage` → `MSG.ERROR`).
+- [x] Each context has one discoverable routing entry point
+  (MESSAGING_CONTRACT.md table).
 
 ### Phase 4 — Extract the Settings controller and declarative binder
 
@@ -571,7 +582,7 @@ completion.
 |---|---:|---|
 | [x] | 1 | Test runner, Chrome API mocks, and initial pure-module coverage |
 | [x] | 2 | Documented and tested storage ownership/conflict policy |
-| [ ] | 3 | Shared validated message catalog and one router per context |
+| [x] | 3 | Shared validated message catalog and one router per context |
 | [ ] | 4 | Framework-neutral Settings controller and declarative DOM binder |
 | [ ] | 5 | Proven schema-driven keyboard-configuration pilot |
 | [ ] | 6 | Lazy UI bundle boundary and evidence-based Lit decision |

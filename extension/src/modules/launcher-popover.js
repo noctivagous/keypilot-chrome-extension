@@ -40,6 +40,7 @@ import {
 } from '../ui/nct-dark-ui.js';
 import { ensureOpenChromeShadow, injectChromeStyles } from '../ui/kp-chrome-shadow.js';
 import { storageGetValue, storageSetValue } from '../utils/storage.js';
+import { MSG } from '../messaging/types.js';
 
 const LAUNCHER_NAV_STATE_KEY = 'kpLauncherNavState_v1';
 
@@ -907,7 +908,7 @@ export class LauncherPopover {
   async _getBookmarks() {
     try {
       const response = await chrome.runtime.sendMessage({
-        type: 'KP_GET_BOOKMARKS'
+        type: MSG.GET_BOOKMARKS
       });
 
       if (response && response.success && response.bookmarks) {
@@ -927,7 +928,7 @@ export class LauncherPopover {
   async _getTopSites() {
     try {
       const response = await chrome.runtime.sendMessage({
-        type: 'KP_GET_TOP_SITES',
+        type: MSG.GET_TOP_SITES,
         // Background already aggregates to top 100 domains; 250 raw hits is enough.
         maxResults: 250,
         days: 30
@@ -950,7 +951,7 @@ export class LauncherPopover {
   async _getRecentHistory() {
     try {
       const response = await chrome.runtime.sendMessage({
-        type: 'KP_GET_RECENT_HISTORY',
+        type: MSG.GET_RECENT_HISTORY,
         maxResults: 1000,
         days: 30
       });
@@ -1072,7 +1073,7 @@ export class LauncherPopover {
   async _getHistoryForDomains(domains, opts = {}) {
     try {
       const response = await chrome.runtime.sendMessage({
-        type: 'KP_GET_HISTORY_FOR_DOMAINS',
+        type: MSG.GET_HISTORY_FOR_DOMAINS,
         domains: domains,
         queries: Array.isArray(opts.queries) ? opts.queries : [],
         days: opts.days || 30,

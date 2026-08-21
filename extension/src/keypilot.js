@@ -23,6 +23,7 @@ import {
 } from './modules/inspector-mode.js';
 import { MODES, INSPECTOR_KIND, CURSOR_MODE, CSS_CLASSES, COLORS, Z_INDEX, RECTANGLE_SELECTION, EDGE_ONLY_SELECTION, FEATURE_FLAGS, CLICKABLE_CATEGORY } from './config/constants.js';
 import { MSG } from './messaging/types.js';
+import { registerContentRuntimeHandler } from './messaging/content-runtime-router.js';
 import {
   isKpDeepLink,
   normalizeSettingsPanelId,
@@ -2431,7 +2432,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
   }
 
   setupPopupCommunication() {
-    chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+    const handler = (msg, _sender, sendResponse) => {
       if (msg.type === MSG.GET_STATUS) {
         sendResponse({ mode: this.state.getState().mode });
       } else if (msg.type === MSG.TOGGLE_STATE || msg.type === MSG.UPDATE_STATE) {
@@ -2534,7 +2535,20 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
           console.warn('[KeyPilot] Failed to launch walkthrough via message:', e);
         }
       }
-    });
+    };
+
+    /** @type {Array<() => void>} */
+    this._runtimeMessageDisposers = [
+      registerContentRuntimeHandler(MSG.GET_STATUS, handler),
+      registerContentRuntimeHandler(MSG.TOGGLE_STATE, handler),
+      registerContentRuntimeHandler(MSG.UPDATE_STATE, handler),
+      registerContentRuntimeHandler(MSG.OPEN_SETTINGS_POPOVER, handler),
+      registerContentRuntimeHandler(MSG.OPEN_GUIDE_POPOVER, handler),
+      registerContentRuntimeHandler(MSG.OPEN_DOCS_POPOVER, handler),
+      registerContentRuntimeHandler(MSG.POPOVER_WINDOW_CLOSED, handler),
+      registerContentRuntimeHandler(MSG.OPEN_ONBOARDING, handler),
+      registerContentRuntimeHandler(MSG.LAUNCH_WALKTHROUGH, handler)
+    ];
   }
 
   handleStateChange(newState, prevState) {
@@ -2901,7 +2915,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
               } catch { /* ignore */ }
             } else {
               try {
-                window.parent.postMessage({ type: 'KP_POPOVER_REQUEST_CLOSE', key: k }, '*');
+                window.parent.postMessage({ type: MSG.POPOVER_REQUEST_CLOSE, key: k }, '*');
               } catch { /* ignore */ }
             }
             return;

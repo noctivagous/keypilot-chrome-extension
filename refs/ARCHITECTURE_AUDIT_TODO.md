@@ -64,9 +64,10 @@ cleanup, **P3** = defer until feature work creates a clear seam.
 - [x] Scroll distances (`800` / `500`) → constants used by `keypilot.js` and iframe bridges
   - `SCROLL` in `src/config/constants.js`
 - [x] **`KP_*` message types** → `src/messaging/types.js` (or similar) enum + payload notes
-  - [ ] Complete adoption: register service-worker response types, replace raw
-    `KP_*` switch cases and extension-page literals with `MSG.*`, then consolidate
-    the independent content-script `onMessage` listeners behind one router.
+  - [x] Complete adoption: register service-worker response types, replace raw
+    `KP_*` switch cases and extension-page literals with `MSG.*`, consolidate
+    content-script `onMessage` listeners behind `content-runtime-router.js`
+    (see `refs/MESSAGING_CONTRACT.md`). Early-inject keeps wire string literals.
 - [x] Rename **`ACTIVATE_NEW_TAB` / `ACTIVATE_NEW_TAB_OVER`** so id, label, and handler names match behavior
   - `ACTIVATE_NEW_TAB` → foreground (`handleActivateNewTabKey`, B/N)
   - `ACTIVATE_NEW_TAB_BACKGROUND` → background (`handleActivateNewTabBackgroundKey`, G/H)

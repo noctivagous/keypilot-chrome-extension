@@ -5,10 +5,11 @@ import {
 } from '../src/config/keyboard-layouts.js';
 import { getSettings, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
 import { startKeyPilotOnPage } from './keypilot-page-init.js';
+import { MSG } from '../src/messaging/types.js';
 
 function postCloseRequest() {
   try {
-    window.parent.postMessage({ type: 'KP_POPOVER_REQUEST_CLOSE', key: 'Escape' }, '*');
+    window.parent.postMessage({ type: MSG.POPOVER_REQUEST_CLOSE, key: 'Escape' }, '*');
   } catch {
     // ignore
   }
@@ -29,7 +30,7 @@ function launchWalkthrough() {
 
   if (embedded) {
     try {
-      window.parent.postMessage({ type: 'KP_POPOVER_LAUNCH_WALKTHROUGH' }, '*');
+      window.parent.postMessage({ type: MSG.POPOVER_LAUNCH_WALKTHROUGH }, '*');
       return;
     } catch {
       // fall through
@@ -48,7 +49,7 @@ function launchWalkthrough() {
   }
 
   try {
-    void chrome.runtime.sendMessage({ type: 'KP_LAUNCH_WALKTHROUGH' });
+    void chrome.runtime.sendMessage({ type: MSG.LAUNCH_WALKTHROUGH });
   } catch {
     // ignore
   }
@@ -239,7 +240,7 @@ async function init() {
 
   openSettingsBtn?.addEventListener('click', async () => {
     try {
-      await chrome.runtime.sendMessage({ type: 'KP_OPEN_SETTINGS_POPOVER' });
+      await chrome.runtime.sendMessage({ type: MSG.OPEN_SETTINGS_POPOVER });
     } catch {
       // ignore
     }

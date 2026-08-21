@@ -1023,7 +1023,7 @@ export function withNavigationHandlers(Base) {
    */
   _notifyTabSwitchFailure(response) {
     if (!response || typeof response !== 'object') return;
-    if (/** @type {{ type?: string }} */ (response).type !== 'KP_ERROR') return;
+    if (/** @type {{ type?: string }} */ (response).type !== MSG.ERROR) return;
 
     const error = String(/** @type {{ error?: unknown }} */ (response).error || '');
     const message = /no valid tabs to switch to/i.test(error)

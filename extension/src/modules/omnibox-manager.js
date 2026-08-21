@@ -8,6 +8,7 @@ import { CSS_CLASSES, Z_INDEX } from '../config/constants.js';
 import { buildSearchUrl, getEngineHomeUrl, getSettings, normalizeSearchEngine, SETTINGS_STORAGE_KEY } from './settings-manager.js';
 import { createUrlListingContainer, renderUrlListing } from '../ui/url-listing.js';
 import { ensureOpenChromeShadow } from '../ui/kp-chrome-shadow.js';
+import { MSG } from '../messaging/types.js';
 
 export class OmniboxManager {
   /**
@@ -508,12 +509,12 @@ export class OmniboxManager {
     try {
       if (typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.sendMessage === 'function') {
         const resp = await chrome.runtime.sendMessage({
-          type: 'KP_OMNIBOX_SUGGEST',
+          type: MSG.OMNIBOX_SUGGEST,
           query,
           maxResults: 12
         });
 
-        if (resp && resp.type === 'KP_OMNIBOX_SUGGESTIONS' && Array.isArray(resp.suggestions)) {
+        if (resp && resp.type === MSG.OMNIBOX_SUGGESTIONS && Array.isArray(resp.suggestions)) {
           suggestions = resp.suggestions
             .filter((s) => s && typeof s.url === 'string' && s.url.trim())
             .slice(0, 12);
