@@ -50,7 +50,8 @@ import {
 } from '../modules/keyboard-layout-store.js';
 import { KP_LAYOUT_ITEM_MIME } from './keyboard-layout-config-panel.js';
 import {
-  openKeyboardLayoutConfigurator
+  openKeyboardLayoutConfigurator,
+  exitKeyboardLayoutEditMode
 } from './keyboard-layout-configurator.js';
 import { makePopoverResizable } from '../utils/popover-resize.js';
 import { createTitlebarKbd, createTitlebarLeadingIcon, createTitlebarShortcut, setTitlebarShortcutText } from './popover-titlebar.js';
@@ -88,11 +89,11 @@ const KEYBOARD_POSITION_MARGIN_PX = Math.max(PANEL_POSITION_MARGIN_PX, 16);
 /** Keep max size in sync with margin on every edge (was 24 → asymmetric right/bottom gaps). */
 const KEYBOARD_MAX_VIEWPORT_INSET_PX = KEYBOARD_POSITION_MARGIN_PX * 2;
 
-/** Sentinel value for the layout <select> action that opens Keyboard Layout Config. */
+/** Sentinel value for the layout <select> action that opens Keyboard Layout Editor. */
 const LAYOUT_SELECT_EDIT_VALUE = '__edit_layouts__';
-/** Sentinel value for creating a blank layout and opening Keyboard Layout Config. */
+/** Sentinel value for creating a blank layout and opening Keyboard Layout Editor. */
 const LAYOUT_SELECT_NEW_VALUE = '__new_layout__';
-/** Sentinel value for duplicating the current layout and opening Keyboard Layout Config. */
+/** Sentinel value for duplicating the current layout and opening Keyboard Layout Editor. */
 const LAYOUT_SELECT_DUP_VALUE = '__duplicate_layout__';
 /** Sentinel value for opening the Onboarding Tutorial from the layout <select>. */
 const LAYOUT_SELECT_ONBOARDING_VALUE = '__onboarding_tutorial__';
@@ -191,6 +192,8 @@ export class FloatingKeyboardHelp {
     /** @type {HTMLButtonElement|null} */
     this._exitTextModeBtn = null;
     /** @type {HTMLButtonElement|null} */
+    this._closeEditorBtn = null;
+    /** @type {HTMLButtonElement|null} */
     this._collapseBtn = null;
     this._collapsed = false;
     /** Bumped on every setCollapsed so in-flight settings hydrate cannot clobber it. */
@@ -198,6 +201,7 @@ export class FloatingKeyboardHelp {
     this._onCloseClick = this._onCloseClick.bind(this);
     this._onCollapseClick = this._onCollapseClick.bind(this);
     this._onExitTextModeClick = this._onExitTextModeClick.bind(this);
+    this._onCloseEditorClick = this._onCloseEditorClick.bind(this);
     this._onLayoutSelectChange = this._onLayoutSelectChange.bind(this);
     /** @type {ReturnType<typeof createSelectMenu>|null} */
     this._layoutSelectApi = null;
@@ -448,6 +452,7 @@ export class FloatingKeyboardHelp {
 
     this._applyEditModeHatch(next);
     this._syncEscExitButton();
+    this._syncCloseEditorButton();
 
     if (this.root && !this.root.hidden) this._render();
   }
@@ -590,6 +595,103 @@ export class FloatingKeyboardHelp {
         return;
       }
       kp.focusDetector?.clearTextFocus?.();
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Titlebar CTA shown only while Keyboard Layout Editor (Alt+C) is open.
+   * Placed immediately after the "Editing — Alt+C to exit" hint.
+   */
+  _syncCloseEditorButton() {
+    try {
+      const visible = !!this._editMode;
+      if (visible) this._ensureCloseEditorButton();
+      this._setExitBtnShown(this._closeEditorBtn, visible);
+    } catch { /* ignore */ }
+  }
+
+  _ensureCloseEditorButton() {
+    const header = this._titlebar
+      || this.shadowRoot?.querySelector?.('[data-kp-floating-keyboard-titlebar="true"]')
+      || null;
+    if (!header) return;
+
+    let btn = (this._closeEditorBtn && this._closeEditorBtn.isConnected)
+      ? this._closeEditorBtn
+      : header.querySelector('button[data-kp-floating-keyboard-close-editor="true"]');
+    if (!btn) {
+      const doc = header.ownerDocument || document;
+      btn = doc.createElement('button');
+      btn.type = 'button';
+      btn.setAttribute('data-kp-floating-keyboard-close-editor', 'true');
+      btn.setAttribute('aria-label', 'Close layout editor (Alt+C)');
+      btn.title = 'Close layout editor (Alt+C)';
+      Object.assign(btn.style, {
+        marginLeft: '6px',
+        padding: '0 7px',
+        height: '22px',
+        minHeight: '22px',
+        borderRadius: NCT_DARK_UI_BTN_RADIUS,
+        border: NCT_DARK_UI_BTN_BORDER,
+        background: NCT_DARK_UI_BTN_GRADIENT,
+        color: NCT_DARK_UI_COLORS.fg,
+        outline: 'none',
+        fontSize: '11px',
+        fontWeight: '600',
+        fontFamily: NCT_DARK_UI_FONT,
+        lineHeight: '20px',
+        whiteSpace: 'nowrap',
+        cursor: 'pointer',
+        flex: '0 0 auto',
+        display: 'none',
+        alignItems: 'center',
+        gap: '5px'
+      });
+      btn.hidden = true;
+      btn.setAttribute('aria-hidden', 'true');
+      btn.style.setProperty('display', 'none', 'important');
+      btn.appendChild(doc.createTextNode('Close Editor'));
+    }
+
+    // Place immediately after the edit-mode hint (… · Alt+C to exit · Close Editor · …).
+    const hintEl = this.hintEl
+      || header.querySelector('[data-kp-floating-keyboard-hint="true"]');
+    try {
+      if (hintEl) {
+        if (btn.previousSibling !== hintEl) {
+          header.insertBefore(btn, hintEl.nextSibling);
+        }
+      } else if (!btn.isConnected) {
+        const collapseBtn = this._collapseBtn
+          || header.querySelector('button[data-kp-floating-keyboard-collapse="true"]');
+        if (collapseBtn) header.insertBefore(btn, collapseBtn);
+        else if (this.closeBtn) header.insertBefore(btn, this.closeBtn);
+        else header.appendChild(btn);
+      }
+    } catch {
+      try { if (!btn.isConnected) header.appendChild(btn); } catch { /* ignore */ }
+    }
+
+    try {
+      btn.removeEventListener('click', this._onCloseEditorClick);
+    } catch { /* ignore */ }
+    btn.addEventListener('click', this._onCloseEditorClick);
+    try {
+      btn.addEventListener('pointerdown', (e) => {
+        try { e.stopPropagation(); } catch { /* ignore */ }
+      });
+    } catch { /* ignore */ }
+
+    this._closeEditorBtn = btn;
+    this._setExitBtnShown(btn, !!this._editMode);
+  }
+
+  _onCloseEditorClick(e) {
+    try { e?.preventDefault?.(); e?.stopPropagation?.(); } catch { /* ignore */ }
+    try {
+      const kp = typeof this._getKeyPilot === 'function' ? this._getKeyPilot() : null;
+      if (!kp) return;
+      exitKeyboardLayoutEditMode(kp);
     } catch { /* ignore */ }
   }
 
@@ -804,6 +906,11 @@ export class FloatingKeyboardHelp {
         this._exitTextModeBtn.removeEventListener('click', this._onExitTextModeClick);
       }
     } catch { /* ignore */ }
+    try {
+      if (this._closeEditorBtn) {
+        this._closeEditorBtn.removeEventListener('click', this._onCloseEditorClick);
+      }
+    } catch { /* ignore */ }
     try { this._layoutSelectApi?.destroy?.(); } catch { /* ignore */ }
     this._layoutSelectApi = null;
     this._layoutSelectEl = null;
@@ -822,6 +929,7 @@ export class FloatingKeyboardHelp {
     this.closeBtn = null;
     this._titlebar = null;
     this._exitTextModeBtn = null;
+    this._closeEditorBtn = null;
     this._collapseBtn = null;
   }
 
@@ -1606,6 +1714,7 @@ export class FloatingKeyboardHelp {
       }
     } catch { /* ignore */ }
     this._syncEscExitButton();
+    this._syncCloseEditorButton();
     void this._renderAsync();
   }
 
@@ -1754,13 +1863,6 @@ export class FloatingKeyboardHelp {
 :host([data-kp-edit-mode="true"]) .keyboard-visual.${KEYBINDINGS_UI_ROOT_CLASS} .key[data-kp-edit-readonly="true"] {
   cursor: default;
   opacity: 0.9;
-}
-:host([data-kp-edit-mode="true"]) .keyboard-visual.${KEYBINDINGS_UI_ROOT_CLASS} .key .key-main {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  padding-right: 16px;
 }
 /* Drop / place hover: use border + box-shadow — base .key sets outline:none !important. */
 :host([data-kp-edit-mode="true"]) .key.kp-drop-target,
@@ -1972,7 +2074,7 @@ export class FloatingKeyboardHelp {
       appendGroup('Custom', groups.custom);
 
       if (!this._editMode) {
-        appendGroup('Keyboard Layout Config', [
+        appendGroup('Keyboard Layout Editor', [
           { value: LAYOUT_SELECT_EDIT_VALUE, label: 'Edit Keyboard Layout…', shortcut: 'Alt + C' },
           { value: LAYOUT_SELECT_NEW_VALUE, label: 'New Blank Keyboard Layout' },
           { value: LAYOUT_SELECT_DUP_VALUE, label: 'New Duplicate Keyboard Layout' }
@@ -2465,22 +2567,14 @@ export class FloatingKeyboardHelp {
       ensureKeyPressOverlay(doc, btn);
 
       if (editMode && editable && assigned && !placeActive) {
+        const overlay = doc.createElement('div');
+        overlay.className = 'kp-key-delete-overlay';
         const del = doc.createElement('button');
         del.type = 'button';
         del.className = 'kp-key-delete';
         del.textContent = '×';
         del.setAttribute('aria-label', `Remove action from ${slotLabel}`);
         del.title = 'Remove';
-        Object.assign(del.style, {
-          position: 'absolute',
-          top: '1px',
-          right: '1px',
-          left: 'auto',
-          bottom: 'auto',
-          width: '14px',
-          height: '14px',
-          zIndex: '8'
-        });
         del.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -2488,7 +2582,8 @@ export class FloatingKeyboardHelp {
         }, true);
         del.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
         del.addEventListener('mousedown', (e) => e.stopPropagation(), true);
-        btn.appendChild(del);
+        overlay.appendChild(del);
+        btn.appendChild(overlay);
       }
 
       if (placeActive) {

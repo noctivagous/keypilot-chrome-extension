@@ -10,7 +10,7 @@ The floating Keyboard Reference is a live map of your current layout — the fas
 2. Hover a keycap to see the bound action.
 3. Use the **titlebar layout dropdown** to:
    - Switch built-in families or custom layouts
-   - Open Layout Config (Edit / New / Duplicate)
+   - Open Layout Editor (Edit / New / Duplicate)
    - Launch **Onboarding Tutorial**
    - Open **KeyPilot Documentation/Help** (this popover)
    - Open **KeyPilot Settings**
@@ -29,7 +29,7 @@ The floating Keyboard Reference is a live map of your current layout — the fas
 
 ### Edit mode
 
-When <kbd>Alt</kbd>+<kbd>C</kbd> Layout Config is open, the Keyboard Reference becomes the placement surface: pick an action in the library, then click a keycap to assign it.
+When <kbd>Alt</kbd>+<kbd>C</kbd> Layout Editor is open, the Keyboard Reference becomes the placement surface: pick an action in the library, then click a keycap to assign it.
 
 ### Tips
 

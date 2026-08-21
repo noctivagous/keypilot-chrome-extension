@@ -9,7 +9,7 @@ KeyPilot uses modal states for operations that need continuous input. Most brows
 3. **Scroll Line** — press <kbd>N</kbd>; move away from the origin to scroll; <kbd>N</kbd>, click, or <kbd>Esc</kbd> exits.
 4. **Selection** — <kbd>H</kbd> or <kbd>Y</kbd>; <kbd>Esc</kbd> cancels.
 5. **Delete Mode** — press <kbd>Backspace</kbd>, aim at an element, confirm to remove it from the page; <kbd>Esc</kbd> cancels.
-6. **Popovers / Omnibox / Layout Config** — their own open states; <kbd>Esc</kbd> or the tool’s close key dismisses them.
+6. **Popovers / Omnibox / Layout Editor** — their own open states; <kbd>Esc</kbd> or the tool’s close key dismisses them.
 
 If keys seem “dead,” you are probably in Text Mode or another modal — press <kbd>Esc</kbd> once and try again.
 
@@ -33,7 +33,7 @@ If keys seem “dead,” you are probably in Text Mode or another modal — pres
 | Link Preview | <kbd>E</kbd> | <kbd>Esc</kbd>, titlebar close, or action again |
 | Popover | <kbd>P</kbd> | <kbd>Esc</kbd> / toggle <kbd>P</kbd> |
 | Omnibox | <kbd>L</kbd> / <kbd>Alt</kbd>+<kbd>L</kbd> | <kbd>Esc</kbd> |
-| Keyboard Layout Config | <kbd>Alt</kbd>+<kbd>C</kbd> | <kbd>Alt</kbd>+<kbd>C</kbd> / close |
+| Keyboard Layout Editor | <kbd>Alt</kbd>+<kbd>C</kbd> | <kbd>Alt</kbd>+<kbd>C</kbd> / close |
 | Settings / Docs / Guide | <kbd>'</kbd> / <kbd>Alt</kbd>+<kbd>H</kbd> / Guide entry | <kbd>Esc</kbd> |
 
 ### Always available

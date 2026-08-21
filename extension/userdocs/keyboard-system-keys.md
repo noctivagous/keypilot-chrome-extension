@@ -23,7 +23,7 @@ Hold <kbd>Alt</kbd> and press:
 | <kbd>Alt</kbd>+<kbd>L</kbd> | Open Omnibox |
 | <kbd>Alt</kbd>+<kbd>;</kbd> or <kbd>Alt</kbd>+<kbd>A</kbd> | Open Launcher with search focused |
 | <kbd>Alt</kbd>+<kbd>[</kbd> / <kbd>Alt</kbd>+<kbd>]</kbd> | Previous / next layout family |
-| <kbd>Alt</kbd>+<kbd>C</kbd> | Toggle Keyboard Layout Config |
+| <kbd>Alt</kbd>+<kbd>C</kbd> | Toggle Keyboard Layout Editor |
 | <kbd>Alt</kbd>+<kbd>H</kbd> | Open this documentation |
 | <kbd>Alt</kbd>+<kbd>T</kbd> | Show/hide the onboarding walkthrough |
 

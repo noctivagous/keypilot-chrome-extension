@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-20T23:47:14.858Z
+ * Generated on 2026-08-21T01:09:22.946Z
  */
 
 var __defProp = Object.defineProperty;
@@ -5731,7 +5731,7 @@ var KEYBINDING_ACTION_DEFS = Object.freeze({
     handler: "handleCopyHoveredVideoKey",
     label: "Copy Video",
     description: "Copy hovered video",
-    details: "Copies the video under the cursor (file bytes to Media Library when fetchable, or the video URL to the clipboard). No default layout key \u2014 bind it in Layout Config if you need it.",
+    details: "Copies the video under the cursor (file bytes to Media Library when fetchable, or the video URL to the clipboard). No default layout key \u2014 bind it in Layout Editor if you need it.",
     keyboardClass: null,
     row: null
   }),
@@ -5740,7 +5740,7 @@ var KEYBINDING_ACTION_DEFS = Object.freeze({
     handler: "handleFontInfoKey",
     label: "Font Info",
     description: "Inspect font under the cursor",
-    details: "Shows a popover with the font name, size, family, file type, and resource URL for the styled text under the cursor, and outlines that text run. No default layout key \u2014 bind it in Layout Config if you need it.",
+    details: "Shows a popover with the font name, size, family, file type, and resource URL for the styled text under the cursor, and outlines that text run. No default layout key \u2014 bind it in Layout Editor if you need it.",
     keyboardClass: null,
     row: null
   }),
@@ -7130,6 +7130,8 @@ var DEFAULT_SETTINGS = Object.freeze({
   // Actions Library hierarchical table: expanded group keys (top-level open by default;
   // nested categories / parents start collapsed until the user opens them).
   actionsLibraryTableExpanded: Object.freeze(["functions", "macros", "macroKeys"]),
+  // Actions Library placement instructions section (between titlebar and cards).
+  actionsLibraryInstructionsExpanded: true,
   // Floating Control Strip (upper-left): visibility + collapsed (On/Off-only) state.
   controlStrip: Object.freeze({
     visible: true,
@@ -7537,6 +7539,10 @@ async function getSettings() {
       actionsLibraryTableExpanded: normalizeActionsLibraryTableExpanded(
         stored?.actionsLibraryTableExpanded
       ),
+      actionsLibraryInstructionsExpanded: normalizeBoolean(
+        stored?.actionsLibraryInstructionsExpanded,
+        DEFAULT_SETTINGS.actionsLibraryInstructionsExpanded
+      ),
       controlStrip: normalizeControlStrip(stored?.controlStrip),
       panelPositions: normalizePanelPositions(stored?.panelPositions),
       actionSettings: normalizeActionSettings(stored?.actionSettings),
@@ -7559,6 +7565,7 @@ async function getSettings() {
       textMode: { ...DEFAULT_SETTINGS.textMode },
       scroll: { ...DEFAULT_SETTINGS.scroll },
       actionsLibraryTableExpanded: [...DEFAULT_SETTINGS.actionsLibraryTableExpanded],
+      actionsLibraryInstructionsExpanded: DEFAULT_SETTINGS.actionsLibraryInstructionsExpanded,
       themeId: DEFAULT_THEME_ID,
       themeOverrides: {},
       clickModeThemeId: ""
@@ -8016,6 +8023,7 @@ function fontUrl(file) {
 function getThemeFontFaceCss() {
   const robotech = fontUrl("ROBOTECHGPRegular.ttf");
   const titillium = fontUrl("TitilliumTextRegular.otf");
+  const titilliumBold = fontUrl("TitilliumTextBold.ttf");
   const cubellan = fontUrl("CubellanRegular.ttf");
   const ezarion = fontUrl("EzarionRegular.ttf");
   const dosis = fontUrl("DosisBook.ttf");
@@ -8030,7 +8038,14 @@ function getThemeFontFaceCss() {
 @font-face {
   font-family: 'TitilliumText';
   src: url('${titillium}') format('opentype');
-  font-weight: normal;
+  font-weight: 100 500;
+  font-style: normal;
+  font-display: block;
+}
+@font-face {
+  font-family: 'TitilliumText';
+  src: url('${titilliumBold}') format('truetype');
+  font-weight: 600 900;
   font-style: normal;
   font-display: block;
 }

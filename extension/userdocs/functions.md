@@ -4,7 +4,7 @@ Functions are the building blocks you bind to keys. An **Action Instance** is a 
 
 ## Use it
 
-1. Open **Keyboard Layout Config** (<kbd>Alt</kbd>+<kbd>C</kbd>).
+1. Open **Keyboard Layout Editor** (<kbd>Alt</kbd>+<kbd>C</kbd>).
 2. Browse or search the **Actions Library** (card or table view).
 3. Select a Function. If it has parameters, create or edit an **Action Instance** (name it clearly).
 4. Click a Keyboard Reference keycap to place that instance.
@@ -71,7 +71,7 @@ Custom script Function. Full bindings, callbacks, and an AI prompt: [Execute JS]
 
 <h3 id="keystrokes">Macro Keys (keystrokes)</h3>
 
-Hotkey, burst, round-robin, continuous key, synthetic mouse, and remaps — instantiable keystroke Functions in the Actions Library. See [Keyboard Layout Config](kp://docs/layout-config).
+Hotkey, burst, round-robin, continuous key, synthetic mouse, and remaps — instantiable keystroke Functions in the Actions Library. See [Keyboard Layout Editor](kp://docs/layout-config).
 
 ### Stock vs user
 

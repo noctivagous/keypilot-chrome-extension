@@ -608,7 +608,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     handler: 'handleCopyHoveredVideoKey',
     label: 'Copy Video',
     description: 'Copy hovered video',
-    details: 'Copies the video under the cursor (file bytes to Media Library when fetchable, or the video URL to the clipboard). No default layout key — bind it in Layout Config if you need it.',
+    details: 'Copies the video under the cursor (file bytes to Media Library when fetchable, or the video URL to the clipboard). No default layout key — bind it in Layout Editor if you need it.',
     keyboardClass: null,
     row: null
   }),
@@ -617,7 +617,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     handler: 'handleFontInfoKey',
     label: 'Font Info',
     description: 'Inspect font under the cursor',
-    details: 'Shows a popover with the font name, size, family, file type, and resource URL for the styled text under the cursor, and outlines that text run. No default layout key — bind it in Layout Config if you need it.',
+    details: 'Shows a popover with the font name, size, family, file type, and resource URL for the styled text under the cursor, and outlines that text run. No default layout key — bind it in Layout Editor if you need it.',
     keyboardClass: null,
     row: null
   }),

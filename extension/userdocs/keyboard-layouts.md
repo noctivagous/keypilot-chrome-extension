@@ -10,7 +10,7 @@ A **layout** is the map of keys → actions. KeyPilot ships built-in families; y
    - **Navigation** — lean set focused on click / back / forward.
 3. Enable **left-handed** if you keep the mouse in your left hand — primary shortcuts move to the right side of the keyboard.
 4. Cycle families anytime with <kbd>Alt</kbd>+<kbd>[</kbd> (previous) and <kbd>Alt</kbd>+<kbd>]</kbd> (next) without changing handedness.
-5. To deeply customize keys, press <kbd>Alt</kbd>+<kbd>C</kbd> for Keyboard Layout Config (see that topic).
+5. To deeply customize keys, press <kbd>Alt</kbd>+<kbd>C</kbd> for Keyboard Layout Editor (see that topic).
 
 Open <kbd>K</kbd> (Keyboard Reference) after switching — the drawn keyboard always matches the active layout.
 
@@ -27,9 +27,9 @@ Handedness is independent of family. Legacy “Basic Navigation” ids may still
 
 ### Custom layouts
 
-- Editing a built-in in Layout Config creates a user copy (for example “Browsing Copy 1”).
+- Editing a built-in in Layout Editor creates a user copy (for example “Browsing Copy 1”).
 - Custom layouts are **exclusive**: only assigned slots plus the always-on system layer fire.
-- Import/export JSON from Layout Config to back up or share layouts.
+- Import/export JSON from Layout Editor to back up or share layouts.
 
 ### Related settings
 

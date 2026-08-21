@@ -15,6 +15,7 @@ function fontUrl(file) {
 export function getThemeFontFaceCss() {
   const robotech = fontUrl('ROBOTECHGPRegular.ttf');
   const titillium = fontUrl('TitilliumTextRegular.otf');
+  const titilliumBold = fontUrl('TitilliumTextBold.ttf');
   const cubellan = fontUrl('CubellanRegular.ttf');
   const ezarion = fontUrl('EzarionRegular.ttf');
   const dosis = fontUrl('DosisBook.ttf');
@@ -29,7 +30,14 @@ export function getThemeFontFaceCss() {
 @font-face {
   font-family: 'TitilliumText';
   src: url('${titillium}') format('opentype');
-  font-weight: normal;
+  font-weight: 100 500;
+  font-style: normal;
+  font-display: block;
+}
+@font-face {
+  font-family: 'TitilliumText';
+  src: url('${titilliumBold}') format('truetype');
+  font-weight: 600 900;
   font-style: normal;
   font-display: block;
 }
@@ -70,7 +78,14 @@ export function getThemeFontFaceCssForPages() {
 @font-face {
   font-family: 'TitilliumText';
   src: url('../fonts/TitilliumTextRegular.otf') format('opentype');
-  font-weight: normal;
+  font-weight: 100 500;
+  font-style: normal;
+  font-display: block;
+}
+@font-face {
+  font-family: 'TitilliumText';
+  src: url('../fonts/TitilliumTextBold.ttf') format('truetype');
+  font-weight: 600 900;
   font-style: normal;
   font-display: block;
 }

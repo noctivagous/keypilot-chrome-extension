@@ -170,7 +170,7 @@
       "children": [
         {
           "id": "layout-config",
-          "title": "Keyboard Layout Config",
+          "title": "Keyboard Layout Editor",
           "file": "layout-config.md",
           "icon": "layout",
           "accent": "cyan"

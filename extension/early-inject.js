@@ -2943,17 +2943,18 @@
       return '';
     }
     const faces = [
-      ['ROBOTECHGPRegular', 'ROBOTECHGPRegular.ttf', 'truetype'],
-      ['TitilliumText', 'TitilliumTextRegular.otf', 'opentype'],
-      ['Cubellan', 'CubellanRegular.ttf', 'truetype'],
-      ['Ezarion', 'EzarionRegular.ttf', 'truetype'],
-      ['Dosis', 'DosisBook.ttf', 'truetype']
+      ['ROBOTECHGPRegular', 'ROBOTECHGPRegular.ttf', 'truetype', 'normal'],
+      ['TitilliumText', 'TitilliumTextRegular.otf', 'opentype', '100 500'],
+      ['TitilliumText', 'TitilliumTextBold.ttf', 'truetype', '600 900'],
+      ['Cubellan', 'CubellanRegular.ttf', 'truetype', 'normal'],
+      ['Ezarion', 'EzarionRegular.ttf', 'truetype', 'normal'],
+      ['Dosis', 'DosisBook.ttf', 'truetype', 'normal']
     ];
     let out = '';
-    for (const [family, file, format] of faces) {
+    for (const [family, file, format, weight] of faces) {
       const url = fontUrl(file);
       if (!url) continue;
-      out += "@font-face{font-family:'" + family + "';src:url('" + url + "') format('" + format + "');font-weight:normal;font-style:normal;font-display:block;}" ;
+      out += "@font-face{font-family:'" + family + "';src:url('" + url + "') format('" + format + "');font-weight:" + weight + ";font-style:normal;font-display:block;}" ;
     }
     return out;
   }
@@ -3043,7 +3044,15 @@
 @font-face {
   font-family: "TitilliumText";
   src: url("__KP_FONT_TITILLIUM_URL__") format("opentype");
-  font-weight: normal;
+  font-weight: 100 500;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "TitilliumText";
+  src: url("__KP_FONT_TITILLIUM_BOLD_URL__") format("truetype");
+  font-weight: 600 900;
   font-style: normal;
   font-display: block;
 }
@@ -3308,20 +3317,26 @@
   color: var(--kp-accent, #5be2f1);
 }
 
-/* Edit-mode slot delete: pin to the keycap's upper-right, above the FA glyph. */
-.kp-keybindings-ui .key > .kp-key-delete {
-  position: absolute !important;
-  top: 1px !important;
-  right: 1px !important;
-  left: auto !important;
-  bottom: auto !important;
-  width: 14px !important;
-  height: 14px !important;
-  min-width: 14px !important;
-  min-height: 14px !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: none !important;
+/* Edit-mode slot delete: fixed overlay on the keycap, independent of .key-main. */
+.kp-keybindings-ui .key > .kp-key-delete-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+}
+.kp-keybindings-ui .key > .kp-key-delete-overlay > .kp-key-delete {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  left: auto;
+  bottom: auto;
+  width: 14px;
+  height: 14px;
+  min-width: 14px;
+  min-height: 14px;
+  margin: 0;
+  padding: 0;
+  border: none;
   border-radius: 3px;
   display: none;
   align-items: center;
@@ -3332,14 +3347,13 @@
   cursor: pointer;
   color: rgba(248, 250, 252, 0.95);
   background: rgba(220, 50, 50, 0.85);
-  z-index: 8;
   pointer-events: auto;
 }
-.kp-keybindings-ui .key:hover > .kp-key-delete,
-.kp-keybindings-ui .key:focus-within > .kp-key-delete {
-  display: flex !important;
+.kp-keybindings-ui .key:hover > .kp-key-delete-overlay > .kp-key-delete,
+.kp-keybindings-ui .key:focus-within > .kp-key-delete-overlay > .kp-key-delete {
+  display: flex;
 }
-.kp-keybindings-ui .key > .kp-key-delete:hover {
+.kp-keybindings-ui .key > .kp-key-delete-overlay > .kp-key-delete:hover {
   background: rgba(255, 70, 70, 1);
 }
 
@@ -7289,6 +7303,7 @@
       return {
         robotech: getURL('fonts/ROBOTECHGPRegular.ttf'),
         titillium: getURL('fonts/TitilliumTextRegular.otf'),
+        titilliumBold: getURL('fonts/TitilliumTextBold.ttf'),
         cubellan: getURL('fonts/CubellanRegular.ttf'),
         ezarion: getURL('fonts/EzarionRegular.ttf'),
         dosis: getURL('fonts/DosisBook.ttf')
@@ -7365,6 +7380,7 @@
           css = css
             .replaceAll('__KP_FONT_ROBOTECH_URL__', urls.robotech)
             .replaceAll('__KP_FONT_TITILLIUM_URL__', urls.titillium)
+            .replaceAll('__KP_FONT_TITILLIUM_BOLD_URL__', urls.titilliumBold)
             .replaceAll('__KP_FONT_CUBELLAN_URL__', urls.cubellan)
             .replaceAll('__KP_FONT_EZARION_URL__', urls.ezarion)
             .replaceAll('__KP_FONT_DOSIS_URL__', urls.dosis);

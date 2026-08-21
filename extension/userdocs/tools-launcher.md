@@ -20,7 +20,7 @@ To pin your own shortcuts, open **Launch Deck** and use edit mode to reorder, re
 | Method | Notes |
 | --- | --- |
 | <kbd>Alt</kbd>+<kbd>;</kbd> / <kbd>Alt</kbd>+<kbd>A</kbd> | Chrome hotkey — search focused |
-| Layout Function | Launcher can be bound to any key in Layout Config (no bare default on right-handed Browsing) |
+| Layout Function | Launcher can be bound to any key in Layout Editor (no bare default on right-handed Browsing) |
 
 ### Subviews
 

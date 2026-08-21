@@ -1,7 +1,7 @@
 /**
  * Keyboard layout edit-mode orchestrator (Alt+C).
  *
- * Opens the Keyboard Reference in edit mode and a compact Keyboard Layout Config
+ * Opens the Keyboard Reference in edit mode and a compact Keyboard Layout Editor
  * floating panel (palette + CRUD). The keyboard itself is edited on the Reference.
  */
 
@@ -126,7 +126,7 @@ export function openKeyboardLayoutConfigurator(kp, opts = {}) {
 
 /**
  * Toggle layout edit mode: Keyboard Reference becomes the edit surface;
- * Keyboard Layout Config supplies functions/macros.
+ * Keyboard Layout Editor supplies functions/macros.
  * @param {any} kp KeyPilot instance
  */
 export function toggleKeyboardLayoutConfigurator(kp) {

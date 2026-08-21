@@ -629,17 +629,18 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       `      return '';\n` +
       `    }\n` +
       `    const faces = [\n` +
-      `      ['ROBOTECHGPRegular', 'ROBOTECHGPRegular.ttf', 'truetype'],\n` +
-      `      ['TitilliumText', 'TitilliumTextRegular.otf', 'opentype'],\n` +
-      `      ['Cubellan', 'CubellanRegular.ttf', 'truetype'],\n` +
-      `      ['Ezarion', 'EzarionRegular.ttf', 'truetype'],\n` +
-      `      ['Dosis', 'DosisBook.ttf', 'truetype']\n` +
+      `      ['ROBOTECHGPRegular', 'ROBOTECHGPRegular.ttf', 'truetype', 'normal'],\n` +
+      `      ['TitilliumText', 'TitilliumTextRegular.otf', 'opentype', '100 500'],\n` +
+      `      ['TitilliumText', 'TitilliumTextBold.ttf', 'truetype', '600 900'],\n` +
+      `      ['Cubellan', 'CubellanRegular.ttf', 'truetype', 'normal'],\n` +
+      `      ['Ezarion', 'EzarionRegular.ttf', 'truetype', 'normal'],\n` +
+      `      ['Dosis', 'DosisBook.ttf', 'truetype', 'normal']\n` +
       `    ];\n` +
       `    let out = '';\n` +
-      `    for (const [family, file, format] of faces) {\n` +
+      `    for (const [family, file, format, weight] of faces) {\n` +
       `      const url = fontUrl(file);\n` +
       `      if (!url) continue;\n` +
-      `      out += "@font-face{font-family:'" + family + "';src:url('" + url + "') format('" + format + "');font-weight:normal;font-style:normal;font-display:block;}" ;\n` +
+      `      out += "@font-face{font-family:'" + family + "';src:url('" + url + "') format('" + format + "');font-weight:" + weight + ";font-style:normal;font-display:block;}" ;\n` +
       `    }\n` +
       `    return out;\n` +
       `  }\n` +

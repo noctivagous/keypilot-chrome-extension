@@ -4,7 +4,7 @@ A Macro is an ordered sequence of Function and Logic steps bound to a single key
 
 ## Use it
 
-1. Open **Keyboard Layout Config** (<kbd>Alt</kbd>+<kbd>C</kbd>) and go to **User Macros** (see *Macro Builder* for editing).
+1. Open **Keyboard Layout Editor** (<kbd>Alt</kbd>+<kbd>C</kbd>) and go to **User Macros** (see *Macro Builder* for editing).
 2. Pick a stock macro to try, or create your own.
 3. Place the Macro on a Keyboard Reference keycap like any other action.
 4. Press that key on a page — steps run in order, with Gates deciding whether to continue.

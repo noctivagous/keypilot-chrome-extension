@@ -78,6 +78,7 @@ function getRuntimeFontUrls() {
     return {
       robotech: getURL('fonts/ROBOTECHGPRegular.ttf'),
       titillium: getURL('fonts/TitilliumTextRegular.otf'),
+      titilliumBold: getURL('fonts/TitilliumTextBold.ttf'),
       cubellan: getURL('fonts/CubellanRegular.ttf'),
       ezarion: getURL('fonts/EzarionRegular.ttf'),
       dosis: getURL('fonts/DosisBook.ttf')

@@ -1,10 +1,10 @@
 # Macro Builder
 
-Macro Builder is the step editor for user Macros, accessed from Keyboard Layout Config.
+Macro Builder is the step editor for user Macros, accessed from Keyboard Layout Editor.
 
 ## Use it
 
-1. Press <kbd>Alt</kbd>+<kbd>C</kbd> to open Layout Config.
+1. Press <kbd>Alt</kbd>+<kbd>C</kbd> to open Layout Editor.
 2. Open **User Macros**.
 3. **Create** a macro and give it a clear name — or duplicate an existing one.
 4. Add steps:

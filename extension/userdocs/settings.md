@@ -34,5 +34,5 @@ Start with [**Keyboard**](kp://settings/keyboard) (layout + handedness) and [**S
 
 ### Related surfaces
 
-- Deep key remapping lives in **Keyboard Layout Config** (<kbd>Alt</kbd>+<kbd>C</kbd>), not in Settings. See [Keyboard Layout Config](kp://docs/layout-config).
+- Deep key remapping lives in **Keyboard Layout Editor** (<kbd>Alt</kbd>+<kbd>C</kbd>), not in Settings. See [Keyboard Layout Editor](kp://docs/layout-config).
 - Documentation is <kbd>Alt</kbd>+<kbd>H</kbd>; the short Guide page remains available from several chrome entry points.

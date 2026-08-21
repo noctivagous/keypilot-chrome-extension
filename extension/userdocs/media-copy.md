@@ -7,9 +7,9 @@ Grab the hovered image or URL with one key — to the clipboard, Media Library, 
 1. Hover an image or a link/URL target until KeyPilot highlights it.
 2. Press <kbd>I</kbd> to copy the hovered **image**.
 3. Press <kbd>U</kbd> to copy the hovered **URL**.
-4. Check the Action Instance settings in Layout Config if you want Media Library instead of (or in addition to) the clipboard.
+4. Check the Action Instance settings in Layout Editor if you want Media Library instead of (or in addition to) the clipboard.
 
-**Copy Video** exists in the Actions Library but has no default built-in key — bind it in Layout Config if you need it.
+**Copy Video** exists in the Actions Library but has no default built-in key — bind it in Layout Editor if you need it.
 
 ## Reference
 

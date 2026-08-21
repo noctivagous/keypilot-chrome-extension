@@ -8,7 +8,7 @@ Execute JS is a Script Function you bind to a key when a built-in Function is no
 
 Here is how KeyPilot works and what it is.
 
-KeyPilot is a Chrome extension for keyboard-driven browsing: you point with the mouse and fire actions with keys. Functions (reusable operations) are bound to keys in Keyboard Layout Config (Alt+C). Execute JS is a Function whose Action Instance holds a pasted script. When the key is pressed, KeyPilot runs that script.
+KeyPilot is a Chrome extension for keyboard-driven browsing: you point with the mouse and fire actions with keys. Functions (reusable operations) are bound to keys in Keyboard Layout Editor (Alt+C). Execute JS is a Function whose Action Instance holds a pasted script. When the key is pressed, KeyPilot runs that script.
 
 Write a complete script I can paste into the Execute JS “Script” field. Do not wrap it in a function declaration — the snippet is already the body of an async function.
 
@@ -38,7 +38,7 @@ Please output only the script body.</textarea>
 
 ## Use it
 
-1. Open **Keyboard Layout Config** (<kbd>Alt</kbd>+<kbd>C</kbd>).
+1. Open **Keyboard Layout Editor** (<kbd>Alt</kbd>+<kbd>C</kbd>).
 2. Create a new **Execute JS** Action Instance in the Actions Library.
 3. Paste your script into **Script**.
 4. Enable any **Callbacks** you will call (`showPopover`, `copyToClipboard`, `notify`).

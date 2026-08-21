@@ -1,5 +1,5 @@
 /**
- * Keyboard Layout Config — floating palette + layout CRUD.
+ * Keyboard Layout Editor — floating palette + layout CRUD.
  *
  * No keyboard chrome here: editing happens on the Keyboard Reference panel
  * while it is in edit mode. Click a function/macro, then click a Reference slot
@@ -600,12 +600,17 @@ export class KeyboardLayoutConfigPanel {
     this._scriptMetaEl = null;
     this._placeHintEl = null;
     this._placePulseEl = null;
+    this._titlebarPlaceMsgEl = null;
+    this._libInstructionsEl = null;
+    this._libInstructionsToggleEl = null;
+    this._libInstructionsExpanded = true;
     this._legendEl = null;
     this._libViewSegEl = null;
     this._addStepSelect = null;
     this._addStepDelayInput = null;
     this._libTabsEl = null;
     this._fnCategorySelect = null;
+    this._fnCategoryWrap = null;
     this._currentBadge = null;
     this._dragDispose = null;
     this._resizeDispose = null;
@@ -987,6 +992,7 @@ export class KeyboardLayoutConfigPanel {
       const fontUrls = getURL ? {
         robotech: getURL('fonts/ROBOTECHGPRegular.ttf'),
         titillium: getURL('fonts/TitilliumTextRegular.otf'),
+        titilliumBold: getURL('fonts/TitilliumTextBold.ttf'),
         cubellan: getURL('fonts/CubellanRegular.ttf'),
         ezarion: getURL('fonts/EzarionRegular.ttf'),
         dosis: getURL('fonts/DosisBook.ttf')
@@ -1045,6 +1051,38 @@ export class KeyboardLayoutConfigPanel {
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
+  position: relative;
+}
+.kp-layout-config-panel[data-kp-place-targeting="true"] .kp-cfg-titlebar {
+  animation: kp-cfg-place-titlebar-pulse 1.15s ease-in-out infinite;
+}
+@keyframes kp-cfg-place-titlebar-pulse {
+  0%, 100% { filter: brightness(1); box-shadow: inset 0 0 0 0 rgba(255, 140, 0, 0), var(--kp-titlebar-shadow, ${ONBOARDING_METAL.titlebarShadow}); }
+  50% { filter: brightness(1.18); box-shadow: inset 0 0 0 2px rgba(255, 176, 72, 0.85), 0 0 14px rgba(255, 140, 0, 0.55); }
+}
+.kp-layout-config-panel .kp-cfg-titlebar-place-msg {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  max-width: calc(100% - 180px);
+  padding: 2px 10px;
+  border: 1px solid rgba(255, 176, 72, 0.75);
+  border-radius: var(--kp-radius-btn, ${NCT_DARK_UI_BTN_RADIUS});
+  background: rgba(255, 140, 0, 0.28);
+  color: #ffe8c0;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.28) inset;
+}
+.kp-layout-config-panel .kp-cfg-titlebar-place-msg[hidden] {
+  display: none !important;
 }
 .kp-layout-config-panel .kp-cfg-titlebar-start {
   display: inline-flex;
@@ -1118,28 +1156,30 @@ export class KeyboardLayoutConfigPanel {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  border-radius: ${NCT_DARK_UI_BTN_RADIUS};
-  border: none;
-  background: transparent;
+  border-radius: 999px;
+  border: 1px solid rgba(28, 28, 28, 0.18);
+  background: rgba(255, 255, 255, 0.42);
   color: ${ONBOARDING_METAL.fgDim};
   cursor: pointer;
-  padding: 0 6px;
+  padding: 0 8px;
   margin: 0;
   flex: 0 0 auto;
-  box-shadow: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
   font: inherit;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.02em;
   line-height: 1;
   white-space: nowrap;
+  box-sizing: border-box;
 }
 .kp-layout-config-panel .kp-cfg-close .kp-cfg-ico {
   flex: 0 0 auto;
 }
 .kp-layout-config-panel .kp-cfg-close:hover {
   color: ${ONBOARDING_METAL.fg};
-  background: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.58);
+  border-color: rgba(28, 28, 28, 0.28);
 }
 .kp-layout-config-panel .kp-cfg-body {
   display: flex;
@@ -1709,18 +1749,33 @@ export class KeyboardLayoutConfigPanel {
   color: ${ONBOARDING_METAL.fg};
   background: rgba(255, 255, 255, 0.3);
 }
-.kp-layout-config-panel .kp-cfg-pane-hdr .kp-cfg-fn-cat {
+.kp-layout-config-panel .kp-cfg-pane-hdr .kp-cfg-fn-cat-wrap {
   background: #e8e8e8;
-  border-color: #4a4a4a;
+  border: 1px solid #4a4a4a;
+  border-radius: var(--kp-radius-btn, ${NCT_DARK_UI_BTN_RADIUS});
   color: ${ONBOARDING_METAL.fg};
 }
-.kp-layout-config-panel .kp-cfg-fn-cat {
-  width: auto;
-  min-width: 120px;
-  max-width: 180px;
-  padding: 0 6px;
+.kp-layout-config-panel .kp-cfg-fn-cat-wrap {
+  display: inline-flex;
+  align-items: stretch;
+  box-sizing: border-box;
+  width: 140px;
+  min-width: 100px;
+  max-width: min(320px, 100%);
   height: 18px;
+  resize: horizontal;
+  overflow: hidden;
+}
+.kp-layout-config-panel .kp-cfg-fn-cat {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  padding: 0 6px;
+  height: 100%;
   font-size: 9px;
+  border: 0;
+  background: transparent;
+  box-sizing: border-box;
 }
 .kp-layout-config-panel .kp-cfg-lib-viewbar {
   display: flex;
@@ -1735,11 +1790,40 @@ export class KeyboardLayoutConfigPanel {
   margin-top: 1px;
 }
 .kp-layout-config-panel .kp-cfg-lib-instructions {
-  flex: 1 1 220px;
-  min-width: 0;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 6px 8px 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.28);
+  background: rgba(0, 0, 0, 0.12);
   font-size: 12px;
   line-height: 1.4;
   color: rgba(235, 235, 235, 0.82);
+}
+.kp-layout-config-panel .kp-cfg-lib-instructions-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  flex: 0 0 auto;
+  text-align: left;
+}
+.kp-layout-config-panel .kp-cfg-lib-instructions-toggle:hover {
+  color: rgba(255, 255, 255, 0.95);
+}
+.kp-layout-config-panel .kp-cfg-lib-instructions-toggle .kp-cfg-ico {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  transition: transform 0.12s ease;
+}
+.kp-layout-config-panel .kp-cfg-lib-instructions.is-collapsed .kp-cfg-lib-instructions-toggle .kp-cfg-ico {
+  transform: rotate(-90deg);
 }
 .kp-layout-config-panel .kp-cfg-lib-instructions-head {
   display: flex;
@@ -1747,6 +1831,9 @@ export class KeyboardLayoutConfigPanel {
   gap: 8px;
   flex-wrap: wrap;
   margin-bottom: 3px;
+}
+.kp-layout-config-panel .kp-cfg-lib-instructions.is-collapsed .kp-cfg-lib-instructions-head {
+  margin-bottom: 0;
 }
 .kp-layout-config-panel .kp-cfg-lib-instructions-title {
   font-weight: 700;
@@ -1759,6 +1846,9 @@ export class KeyboardLayoutConfigPanel {
   margin: 0;
   font-size: 12px;
   line-height: 1.4;
+}
+.kp-layout-config-panel .kp-cfg-lib-instructions.is-collapsed .kp-cfg-lib-instructions-body {
+  display: none;
 }
 .kp-layout-config-panel .kp-cfg-lib-place-pulse {
   flex: 1 1 180px;
@@ -2562,6 +2652,7 @@ ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
   flex-wrap: wrap;
   gap: 4px;
   margin-top: 8px;
+  margin-bottom: 12px;
 }
 .kp-layout-config-panel .kp-cfg-assign {
   margin: 8px 0;
@@ -3494,6 +3585,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 }
 .kp-layout-config-panel .kp-cfg-search,
 .kp-layout-config-panel .kp-cfg-fn-cat,
+.kp-layout-config-panel .kp-cfg-fn-cat-wrap,
 .kp-layout-config-panel .kp-cfg-inspect {
   height: 23px;
   font-size: 12.5px;
@@ -3593,7 +3685,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const root = doc.createElement('div');
     root.className = 'kp-layout-config-panel';
     root.setAttribute('role', 'dialog');
-    root.setAttribute('aria-label', 'Keyboard layout configuration');
+    root.setAttribute('aria-label', 'Keyboard layout editor');
     try { root.setAttribute('data-kp-surface', 'onboarding'); } catch { /* ignore */ }
     root.hidden = true;
     this._applyProChrome(root);
@@ -3610,7 +3702,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     title.className = 'kp-cfg-title';
     title.appendChild(mkCfgIcon(doc, 'kp-cfg-i-kb'));
     const titleText = doc.createElement('span');
-    titleText.textContent = 'Keyboard Layout Config';
+    titleText.textContent = 'Keyboard Layout Editor';
     title.appendChild(titleText);
 
     const titleShortcut = doc.createElement('kbd');
@@ -3627,7 +3719,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const closeBtn = doc.createElement('button');
     closeBtn.type = 'button';
     closeBtn.className = 'kp-cfg-close';
-    closeBtn.setAttribute('aria-label', 'Close layout config');
+    closeBtn.setAttribute('aria-label', 'Close layout editor');
     closeBtn.title = 'Close';
     const closeLabel = doc.createElement('span');
     closeLabel.textContent = 'Close';
@@ -3648,8 +3740,15 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     titleEnd.appendChild(autosavesChip);
     titleEnd.appendChild(closeBtn);
 
+    const titlebarPlaceMsg = doc.createElement('div');
+    titlebarPlaceMsg.className = 'kp-cfg-titlebar-place-msg';
+    titlebarPlaceMsg.setAttribute('role', 'status');
+    titlebarPlaceMsg.hidden = true;
+    titlebarPlaceMsg.textContent = 'Move the mouse and place the action on the keyboard.';
+
     header.appendChild(titleStart);
     header.appendChild(titleEnd);
+    header.appendChild(titlebarPlaceMsg);
 
     const body = doc.createElement('div');
     body.className = 'kp-cfg-body';
@@ -3895,12 +3994,15 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const fnCategorySelect = doc.createElement('select');
     fnCategorySelect.className = 'kp-cfg-field kp-cfg-fn-cat';
     fnCategorySelect.setAttribute('aria-label', 'Function category');
-    fnCategorySelect.hidden = true;
+    const fnCategoryWrap = doc.createElement('div');
+    fnCategoryWrap.className = 'kp-cfg-fn-cat-wrap';
+    fnCategoryWrap.hidden = true;
+    fnCategoryWrap.appendChild(fnCategorySelect);
 
     libraryHdr.appendChild(libraryTitle);
     libraryHdr.appendChild(searchWrap);
     libraryHdr.appendChild(libTabs);
-    libraryHdr.appendChild(fnCategorySelect);
+    libraryHdr.appendChild(fnCategoryWrap);
 
     const list = doc.createElement('div');
     list.setAttribute('data-kp-layout-list', 'true');
@@ -3946,27 +4048,40 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     instructions.setAttribute('aria-label', 'Layout assignment instructions');
     const instructionsHead = doc.createElement('div');
     instructionsHead.className = 'kp-cfg-lib-instructions-head';
-    const instructionsTitle = doc.createElement('div');
+    const instructionsToggle = doc.createElement('button');
+    instructionsToggle.type = 'button';
+    instructionsToggle.className = 'kp-cfg-lib-instructions-toggle';
+    instructionsToggle.setAttribute('aria-expanded', 'true');
+    instructionsToggle.setAttribute('aria-controls', 'kp-cfg-lib-instructions-body');
+    instructionsToggle.title = 'Collapse instructions';
+    instructionsToggle.appendChild(mkCfgIcon(doc, 'kp-cfg-i-chevron'));
+    const instructionsTitle = doc.createElement('span');
     instructionsTitle.className = 'kp-cfg-lib-instructions-title';
     instructionsTitle.textContent = 'Instructions:';
+    instructionsToggle.appendChild(instructionsTitle);
     const placePulse = doc.createElement('div');
     placePulse.className = 'kp-cfg-lib-place-pulse';
     placePulse.setAttribute('role', 'status');
     placePulse.hidden = true;
     placePulse.textContent = 'Click the desired key cap location on the Keyboard Reference.';
-    instructionsHead.appendChild(instructionsTitle);
+    instructionsHead.appendChild(instructionsToggle);
     instructionsHead.appendChild(placePulse);
     const instructionsBody = doc.createElement('p');
     instructionsBody.className = 'kp-cfg-lib-instructions-body';
+    instructionsBody.id = 'kp-cfg-lib-instructions-body';
     instructionsBody.textContent =
       'Click a key cap below once and move the mouse. Use the placement arrow to place the action on the keyboard.';
     instructions.appendChild(instructionsHead);
     instructions.appendChild(instructionsBody);
+    instructionsToggle.addEventListener('click', (e) => {
+      try { e.preventDefault(); e.stopPropagation(); } catch { /* ignore */ }
+      this._setLibInstructionsExpanded(!this._libInstructionsExpanded, { persist: true });
+    }, true);
 
     viewBar.appendChild(viewSeg);
-    viewBar.appendChild(instructions);
 
     libraryPane.appendChild(libraryHdr);
+    libraryPane.appendChild(instructions);
     libraryPane.appendChild(list);
     list.appendChild(viewBar);
 
@@ -4277,6 +4392,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     this._mainRow = mainRow;
     this._libTabsEl = libTabs;
     this._fnCategorySelect = fnCategorySelect;
+    this._fnCategoryWrap = fnCategoryWrap;
     this._createPane = createPane;
     this._createBody = createBody;
     this._createToggleBtn = createToggleBtn;
@@ -4292,6 +4408,9 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     this._scriptMetaEl = scriptMeta;
     this._placeHintEl = placeHint;
     this._placePulseEl = placePulse;
+    this._titlebarPlaceMsgEl = titlebarPlaceMsg;
+    this._libInstructionsEl = instructions;
+    this._libInstructionsToggleEl = instructionsToggle;
     this._legendEl = viewBar;
     this._libViewSegEl = viewSeg;
     this._addStepSelect = addStepSelect;
@@ -4305,6 +4424,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     this._renderLibraryTabs();
     this._syncLibViewSeg();
     this._renderFunctionCategorySelect();
+    this._setLibInstructionsExpanded(this._libInstructionsExpanded, { persist: false });
     this._setInspectorOpen(this._inspectorOpen);
     this._setCreateOpen(this._createOpen);
     this._setCreateMode(this._createMode);
@@ -4316,7 +4436,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     try {
       const api = makePanelDraggable(root, header, {
         margin: CONFIG_POSITION_MARGIN_PX,
-        excludeSelector: 'button[aria-label="Close layout config"], .kp-cfg-close',
+        excludeSelector: 'button[aria-label="Close layout editor"], .kp-cfg-close',
         onMoveEnd: (state) => {
           if (!state?.moved) return;
           void this._persistPosition({
@@ -4373,6 +4493,10 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
         } catch { /* ignore */ }
         try { this._syncHandednessUi(settings?.keyboardHandedness); } catch { /* ignore */ }
         this._applyTableExpandedFromSettings(settings?.actionsLibraryTableExpanded);
+        this._setLibInstructionsExpanded(
+          settings?.actionsLibraryInstructionsExpanded !== false,
+          { persist: false }
+        );
         this._positionHydrated = true;
         if (this.isOpen()) this._applyPanelPositionNow();
         try { this._renderRightList(); } catch { /* ignore */ }
@@ -6788,7 +6912,10 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       host.appendChild(btn);
     }
     const select = this._fnCategorySelect;
-    if (select) select.hidden = this._libPrimaryTab !== 'functions';
+    const wrap = this._fnCategoryWrap || select?.parentElement;
+    const show = this._libPrimaryTab === 'functions';
+    if (select) select.hidden = !show;
+    if (wrap && wrap !== select) wrap.hidden = !show;
   }
 
   _syncLibViewSeg() {
@@ -6825,6 +6952,39 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     try {
       const keys = [...(this._tableExpanded || [])];
       await setSettings({ actionsLibraryTableExpanded: keys });
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Expand/collapse the Actions Library placement instructions section.
+   * @param {boolean} expanded
+   * @param {{ persist?: boolean }} [opts]
+   */
+  _setLibInstructionsExpanded(expanded, opts = {}) {
+    const next = !!expanded;
+    this._libInstructionsExpanded = next;
+    const el = this._libInstructionsEl;
+    const toggle = this._libInstructionsToggleEl
+      || el?.querySelector?.('.kp-cfg-lib-instructions-toggle');
+    try {
+      if (el) el.classList.toggle('is-collapsed', !next);
+    } catch { /* ignore */ }
+    try {
+      if (toggle) {
+        toggle.setAttribute('aria-expanded', next ? 'true' : 'false');
+        toggle.title = next ? 'Collapse instructions' : 'Expand instructions';
+      }
+    } catch { /* ignore */ }
+    if (opts.persist !== false) {
+      void this._persistLibInstructionsExpanded();
+    }
+  }
+
+  async _persistLibInstructionsExpanded() {
+    try {
+      await setSettings({
+        actionsLibraryInstructionsExpanded: !!this._libInstructionsExpanded
+      });
     } catch { /* ignore */ }
   }
 
@@ -8373,6 +8533,13 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
   _syncPlacePulse() {
     const on = this.isPlaceModeActive();
     if (this._placePulseEl) this._placePulseEl.hidden = !on;
+    if (this._titlebarPlaceMsgEl) this._titlebarPlaceMsgEl.hidden = !on;
+    try {
+      if (this.root) {
+        if (on) this.root.setAttribute('data-kp-place-targeting', 'true');
+        else this.root.removeAttribute('data-kp-place-targeting');
+      }
+    } catch { /* ignore */ }
   }
 
   /** @param {string} text */
@@ -8485,7 +8652,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
   }
 
   /**
-   * Click inside Keyboard Layout Config (mouse or Click Element) ends place mode,
+   * Click inside Keyboard Layout Editor (mouse or Click Element) ends place mode,
    * except palette keycaps (toggle/switch) and Keyboard Reference slots (place).
    * Deferred so the originating click can still inspect / activate controls.
    * @param {MouseEvent} e

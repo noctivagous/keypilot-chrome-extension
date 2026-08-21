@@ -1576,7 +1576,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       const steps = Array.isArray(macro.steps) ? macro.steps : [];
       if (steps.length === 0) {
         this.overlayManager?.showNotification?.(
-          `Macro "${macro.label}" has no steps yet — add some via Keyboard Layout Config.`,
+          `Macro "${macro.label}" has no steps yet — add some via Keyboard Layout Editor.`,
           'info'
         );
         return;

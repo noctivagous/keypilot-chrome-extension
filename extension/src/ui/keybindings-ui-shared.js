@@ -19,6 +19,7 @@ export const KEYBINDINGS_UI_FONT_PRELOAD_ATTR = 'data-kp-keybindings-font-preloa
 export const KEYBINDINGS_UI_FONT_PLACEHOLDERS = {
   ROBOTECH: '__KP_FONT_ROBOTECH_URL__',
   TITILLIUM: '__KP_FONT_TITILLIUM_URL__',
+  TITILLIUM_BOLD: '__KP_FONT_TITILLIUM_BOLD_URL__',
   CUBELLAN: '__KP_FONT_CUBELLAN_URL__',
   EZARION: '__KP_FONT_EZARION_URL__',
   DOSIS: '__KP_FONT_DOSIS_URL__'
@@ -410,12 +411,13 @@ export function setKeyPressedState(keyEl, pressed, doc) {
  * `font-display: block` avoids a fallback-font flash on key labels (FOUT from `swap`).
  * Pair with {@link preloadKeybindingsUiFonts} so the block period is typically zero.
  *
- * @param {{ robotech?: string, titillium?: string, cubellan?: string, ezarion?: string, dosis?: string }} [fontUrls]
+ * @param {{ robotech?: string, titillium?: string, titilliumBold?: string, cubellan?: string, ezarion?: string, dosis?: string }} [fontUrls]
  * @returns {string}
  */
 export function getKeybindingsUiFontFaceCss(fontUrls = {}) {
   const urlRobotech = fontUrls.robotech || KEYBINDINGS_UI_FONT_PLACEHOLDERS.ROBOTECH;
   const urlTitillium = fontUrls.titillium || KEYBINDINGS_UI_FONT_PLACEHOLDERS.TITILLIUM;
+  const urlTitilliumBold = fontUrls.titilliumBold || KEYBINDINGS_UI_FONT_PLACEHOLDERS.TITILLIUM_BOLD;
   const urlCubellan = fontUrls.cubellan || KEYBINDINGS_UI_FONT_PLACEHOLDERS.CUBELLAN;
   const urlEzarion = fontUrls.ezarion || KEYBINDINGS_UI_FONT_PLACEHOLDERS.EZARION;
   const urlDosis = fontUrls.dosis || KEYBINDINGS_UI_FONT_PLACEHOLDERS.DOSIS;
@@ -431,7 +433,15 @@ export function getKeybindingsUiFontFaceCss(fontUrls = {}) {
 @font-face {
   font-family: "TitilliumText";
   src: url("${urlTitillium}") format("opentype");
-  font-weight: normal;
+  font-weight: 100 500;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "TitilliumText";
+  src: url("${urlTitilliumBold}") format("truetype");
+  font-weight: 600 900;
   font-style: normal;
   font-display: block;
 }
@@ -467,7 +477,7 @@ export function getKeybindingsUiFontFaceCss(fontUrls = {}) {
  * Dosis is the key-label face; the others are declared in the same @font-face sheet.
  *
  * @param {Document|null|undefined} doc
- * @param {{ robotech?: string, titillium?: string, cubellan?: string, ezarion?: string, dosis?: string }|null|undefined} fontUrls
+ * @param {{ robotech?: string, titillium?: string, titilliumBold?: string, cubellan?: string, ezarion?: string, dosis?: string }|null|undefined} fontUrls
  */
 export function preloadKeybindingsUiFonts(doc, fontUrls) {
   if (!doc || !fontUrls) return;
@@ -477,6 +487,7 @@ export function preloadKeybindingsUiFonts(doc, fontUrls) {
     { id: 'dosis', href: fontUrls.dosis, type: 'font/ttf' },
     { id: 'robotech', href: fontUrls.robotech, type: 'font/ttf' },
     { id: 'titillium', href: fontUrls.titillium, type: 'font/otf' },
+    { id: 'titilliumBold', href: fontUrls.titilliumBold, type: 'font/ttf' },
     { id: 'cubellan', href: fontUrls.cubellan, type: 'font/ttf' },
     { id: 'ezarion', href: fontUrls.ezarion, type: 'font/ttf' }
   ];
@@ -519,6 +530,7 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
   // can be replaced at runtime (early-inject) or overwritten by the bundled UI.
   const urlRobotech = (fontUrls && fontUrls.robotech) || KEYBINDINGS_UI_FONT_PLACEHOLDERS.ROBOTECH;
   const urlTitillium = (fontUrls && fontUrls.titillium) || KEYBINDINGS_UI_FONT_PLACEHOLDERS.TITILLIUM;
+  const urlTitilliumBold = (fontUrls && fontUrls.titilliumBold) || KEYBINDINGS_UI_FONT_PLACEHOLDERS.TITILLIUM_BOLD;
   const urlCubellan = (fontUrls && fontUrls.cubellan) || KEYBINDINGS_UI_FONT_PLACEHOLDERS.CUBELLAN;
   const urlEzarion = (fontUrls && fontUrls.ezarion) || KEYBINDINGS_UI_FONT_PLACEHOLDERS.EZARION;
   const urlDosis = (fontUrls && fontUrls.dosis) || KEYBINDINGS_UI_FONT_PLACEHOLDERS.DOSIS;
@@ -527,6 +539,7 @@ export function getKeybindingsUiCss({ zKeybindingsPopover, fontUrls } = {}) {
   const fontFaceCss = getKeybindingsUiFontFaceCss({
     robotech: urlRobotech,
     titillium: urlTitillium,
+    titilliumBold: urlTitilliumBold,
     cubellan: urlCubellan,
     ezarion: urlEzarion,
     dosis: urlDosis
@@ -772,20 +785,26 @@ ${fontFaceCss}
   color: var(--kp-accent, #5be2f1);
 }
 
-/* Edit-mode slot delete: pin to the keycap's upper-right, above the FA glyph. */
-.${KEYBINDINGS_UI_ROOT_CLASS} .key > .kp-key-delete {
-  position: absolute !important;
-  top: 1px !important;
-  right: 1px !important;
-  left: auto !important;
-  bottom: auto !important;
-  width: 14px !important;
-  height: 14px !important;
-  min-width: 14px !important;
-  min-height: 14px !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: none !important;
+/* Edit-mode slot delete: fixed overlay on the keycap, independent of .key-main. */
+.${KEYBINDINGS_UI_ROOT_CLASS} .key > .kp-key-delete-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+}
+.${KEYBINDINGS_UI_ROOT_CLASS} .key > .kp-key-delete-overlay > .kp-key-delete {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  left: auto;
+  bottom: auto;
+  width: 14px;
+  height: 14px;
+  min-width: 14px;
+  min-height: 14px;
+  margin: 0;
+  padding: 0;
+  border: none;
   border-radius: 3px;
   display: none;
   align-items: center;
@@ -796,14 +815,13 @@ ${fontFaceCss}
   cursor: pointer;
   color: rgba(248, 250, 252, 0.95);
   background: rgba(220, 50, 50, 0.85);
-  z-index: 8;
   pointer-events: auto;
 }
-.${KEYBINDINGS_UI_ROOT_CLASS} .key:hover > .kp-key-delete,
-.${KEYBINDINGS_UI_ROOT_CLASS} .key:focus-within > .kp-key-delete {
-  display: flex !important;
+.${KEYBINDINGS_UI_ROOT_CLASS} .key:hover > .kp-key-delete-overlay > .kp-key-delete,
+.${KEYBINDINGS_UI_ROOT_CLASS} .key:focus-within > .kp-key-delete-overlay > .kp-key-delete {
+  display: flex;
 }
-.${KEYBINDINGS_UI_ROOT_CLASS} .key > .kp-key-delete:hover {
+.${KEYBINDINGS_UI_ROOT_CLASS} .key > .kp-key-delete-overlay > .kp-key-delete:hover {
   background: rgba(255, 70, 70, 1);
 }
 

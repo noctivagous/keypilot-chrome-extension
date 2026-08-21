@@ -153,6 +153,7 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  *   topSitesPersistent: boolean,
  *   debugLogging: boolean,
  *   actionsLibraryTableExpanded: string[],
+ *   actionsLibraryInstructionsExpanded: boolean,
  *   controlStrip: ControlStripSettings,
  *   panelPositions: PanelPositionsSettings,
  *   clickMode: ClickModeSettings,
@@ -195,6 +196,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
   // Actions Library hierarchical table: expanded group keys (top-level open by default;
   // nested categories / parents start collapsed until the user opens them).
   actionsLibraryTableExpanded: Object.freeze(['functions', 'macros', 'macroKeys']),
+  // Actions Library placement instructions section (between titlebar and cards).
+  actionsLibraryInstructionsExpanded: true,
   // Floating Control Strip (upper-left): visibility + collapsed (On/Off-only) state.
   controlStrip: Object.freeze({
     visible: true,
@@ -764,6 +767,10 @@ export async function getSettings() {
       actionsLibraryTableExpanded: normalizeActionsLibraryTableExpanded(
         stored?.actionsLibraryTableExpanded
       ),
+      actionsLibraryInstructionsExpanded: normalizeBoolean(
+        stored?.actionsLibraryInstructionsExpanded,
+        DEFAULT_SETTINGS.actionsLibraryInstructionsExpanded
+      ),
       controlStrip: normalizeControlStrip(stored?.controlStrip),
       panelPositions: normalizePanelPositions(stored?.panelPositions),
       actionSettings: normalizeActionSettings(stored?.actionSettings),
@@ -786,6 +793,7 @@ export async function getSettings() {
       textMode: { ...DEFAULT_SETTINGS.textMode },
       scroll: { ...DEFAULT_SETTINGS.scroll },
       actionsLibraryTableExpanded: [...DEFAULT_SETTINGS.actionsLibraryTableExpanded],
+      actionsLibraryInstructionsExpanded: DEFAULT_SETTINGS.actionsLibraryInstructionsExpanded,
       themeId: DEFAULT_THEME_ID,
       themeOverrides: {},
       clickModeThemeId: '',
@@ -924,6 +932,10 @@ export async function setSettings(partial) {
   next.actionsLibraryTableExpanded = normalizeActionsLibraryTableExpanded(
     next.actionsLibraryTableExpanded
   );
+  next.actionsLibraryInstructionsExpanded = normalizeBoolean(
+    next.actionsLibraryInstructionsExpanded,
+    DEFAULT_SETTINGS.actionsLibraryInstructionsExpanded
+  );
   next.controlStrip = normalizeControlStrip(next.controlStrip);
   next.panelPositions = normalizePanelPositions(next.panelPositions);
   next.actionSettings = normalizeActionSettings(next.actionSettings);
@@ -958,6 +970,7 @@ export async function resetAllSettings() {
     textMode: { ...DEFAULT_SETTINGS.textMode },
     scroll: { ...DEFAULT_SETTINGS.scroll },
     actionsLibraryTableExpanded: [...DEFAULT_SETTINGS.actionsLibraryTableExpanded],
+    actionsLibraryInstructionsExpanded: DEFAULT_SETTINGS.actionsLibraryInstructionsExpanded,
     _updatedAt: Date.now()
   };
   await storageSetValue(SETTINGS_STORAGE_KEY, next, { dualWrite: true });

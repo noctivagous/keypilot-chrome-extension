@@ -32,4 +32,4 @@ Launcher card preview and category search results use the same popup window.
 
 - Previews always open as Chrome/Brave popup windows (not in-page iframes).
 - Settings / Guide / Docs still use in-page popover chrome (titlebar, <kbd>Esc</kbd> to close).
-- Customize or rebind these Functions in Layout Config.
+- Customize or rebind these Functions in Layout Editor.

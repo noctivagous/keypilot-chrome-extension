@@ -20,7 +20,7 @@ Use Page Media when you want everything on the page; use <kbd>I</kbd> / <kbd>U</
 | --- | --- |
 | Browsing right-handed | <kbd>O</kbd> |
 
-Rebind via Layout Config if needed.
+Rebind via Layout Editor if needed.
 
 ### Capabilities
 

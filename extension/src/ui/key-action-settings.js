@@ -442,7 +442,7 @@ export class KeyActionConfigPanel {
     if (actionId === 'EXECUTE_JS') {
       const hint = document.createElement('div');
       hint.className = 'kp-action-config-panel__empty';
-      hint.textContent = 'Bindings: kpHoveredClickable, kpHoverLeaf, kpFocusedTextField, kpMode, kpPageUrl, kpSelection, kpPriorResult. Callbacks are functions only when checked. See Keyboard Layout Config Inspector → docs icon, or Execute JS in KeyPilot Docs.';
+      hint.textContent = 'Bindings: kpHoveredClickable, kpHoverLeaf, kpFocusedTextField, kpMode, kpPageUrl, kpSelection, kpPriorResult. Callbacks are functions only when checked. See Keyboard Layout Editor Inspector → docs icon, or Execute JS in KeyPilot Docs.';
       body.appendChild(hint);
     }
 

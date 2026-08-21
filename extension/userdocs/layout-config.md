@@ -1,10 +1,10 @@
-# Keyboard Layout Config
+# Keyboard Layout Editor
 
-Layout Config is the editor for custom keymaps: place Functions on keys, create layouts, and manage Action Instances.
+The Layout Editor is for custom keymaps: place Functions on keys, create layouts, and manage Action Instances.
 
 ## Use it
 
-![Keyboard Layout Config](images/layout-config.png)
+![Keyboard Layout Editor](images/layout-config.png)
 
 1. Press <kbd>Alt</kbd>+<kbd>C</kbd>, or choose **Edit Keyboard Layout…** from the Keyboard Reference dropdown.
 2. The Keyboard Reference becomes the placement surface; the Config panel holds the Actions Library and layout tools.

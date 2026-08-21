@@ -23,4 +23,4 @@ Use it after exploring several paths from the same article or docs site when Bac
 
 - Cards navigate the current tab.
 - Closing with <kbd>Esc</kbd> does not change the page.
-- Rebind or remove Tab History in Layout Config if you need the key for something else.
+- Rebind or remove Tab History in Layout Editor if you need the key for something else.
