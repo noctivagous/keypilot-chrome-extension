@@ -424,43 +424,43 @@ the existing HTML and visual behavior.
 
 Controller tasks:
 
-- [ ] Extract a `SettingsController` that owns normalized state, initial load,
+- [x] Extract a `SettingsController` that owns normalized state, initial load,
   persistence, subscriptions, resets, and derived state.
-- [ ] Define `load()`, `subscribe()`, `update(path, value)`, `reset(scope)`,
+- [x] Define `load()`, `subscribe()`, `update(path, value)`, `reset(scope)`,
   and disposal behavior.
-- [ ] Ensure the controller contains no DOM queries or element mutation.
-- [ ] Ensure the view no longer calls `getSettings()` or `setSettings()`
+- [x] Ensure the controller contains no DOM queries or element mutation.
+- [x] Ensure the view no longer calls `getSettings()` or `setSettings()`
   directly.
-- [ ] Move `chrome.storage.onChanged` coordination into the controller.
-- [ ] Test update normalization, external storage changes, reset scopes, and
+- [x] Move `chrome.storage.onChanged` coordination into the controller.
+- [x] Test update normalization, external storage changes, reset scopes, and
   disposal.
 
 Binder and view tasks:
 
-- [ ] Define control metadata for `toggle`, `select`, `radio`, and
+- [x] Define control metadata for `toggle`, `select`, `radio`, and
   `rangePair` controls.
-- [ ] Extend the existing Appearance binding pattern to Click Mode, Text Mode,
+- [x] Extend the existing Appearance binding pattern to Click Mode, Text Mode,
   Scrolling, and ordinary settings controls.
-- [ ] Route all routine control changes through `controller.update(...)`.
-- [ ] Remove unnecessary write/read/render storage round-trips.
-- [ ] Keep imperative adapters for theme application, cursor previews,
+- [x] Route all routine control changes through `controller.update(...)`.
+- [x] Remove unnecessary write/read/render storage round-trips.
+- [x] Keep imperative adapters for theme application, cursor previews,
   visibility dependencies, resets, and keyboard behavior.
-- [ ] Preserve per-tab master-detail listeners so KeyPilot does not treat
+- [x] Preserve per-tab master-detail listeners so KeyPilot does not treat
   empty navigation padding as one interactive target.
-- [ ] Track listener cleanup with returned disposers or an `AbortController`.
-- [ ] Verify standalone document and embedded ShadowRoot mounts, unmounts, and
+- [x] Track listener cleanup with returned disposers or an `AbortController`.
+- [x] Verify standalone document and embedded ShadowRoot mounts, unmounts, and
   remounts without duplicate listeners.
-- [ ] Keep Settings changes compatible with the early-chrome bootstrap
+- [x] Keep Settings changes compatible with the early-chrome bootstrap
   snapshot; a settings save must not create a default-state flash on the next
   navigation.
 
 Completion criteria:
 
-- [ ] Settings state can be tested without constructing a DOM.
-- [ ] The current DOM UI is an adapter over controller state.
-- [ ] Routine controls are described declaratively instead of each owning
+- [x] Settings state can be tested without constructing a DOM.
+- [x] The current DOM UI is an adapter over controller state.
+- [x] Routine controls are described declaratively instead of each owning
   bespoke apply/commit wiring.
-- [ ] Standalone and popover Settings behave identically to the current UI.
+- [x] Standalone and popover Settings behave identically to the current UI.
 
 ### Phase 5 — Apply schema-driven controls to keyboard configuration
 
@@ -583,7 +583,7 @@ completion.
 | [x] | 1 | Test runner, Chrome API mocks, and initial pure-module coverage |
 | [x] | 2 | Documented and tested storage ownership/conflict policy |
 | [x] | 3 | Shared validated message catalog and one router per context |
-| [ ] | 4 | Framework-neutral Settings controller and declarative DOM binder |
+| [x] | 4 | Framework-neutral Settings controller and declarative DOM binder |
 | [ ] | 5 | Proven schema-driven keyboard-configuration pilot |
 | [ ] | 6 | Lazy UI bundle boundary and evidence-based Lit decision |
 

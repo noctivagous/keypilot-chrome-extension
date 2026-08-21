@@ -5,9 +5,11 @@ import {
   normalizeKeyboardLayoutFamilyId
 } from '../src/config/keyboard-layouts.js';
 import { SEARCH_ENGINE_META } from '../src/config/search-engines.js';
-import { CLICK_EFFECT_IDS, DEFAULT_SETTINGS, getSettings, normalizeCursorMode, normalizeFocusColor, normalizePaintStrategy, normalizeSearchEngine, normalizeTextFocusStyle, resetAllSettings, setSettings, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
+import { DEFAULT_SETTINGS, normalizeCursorMode, normalizeFocusColor, normalizePaintStrategy, normalizeSearchEngine, normalizeTextFocusStyle } from '../src/modules/settings-manager.js';
+import { createSettingsController } from '../src/modules/settings-controller.js';
+import { bindSettingsControls } from '../src/modules/settings-binder.js';
 import { applyDebugSetting } from '../src/utils/debug.js';
-import { applyThemeToRoots, getTheme, getThemeClickDefaults, resolveThemeFromSettings } from '../src/modules/theme-manager.js';
+import { applyThemeToRoots, resolveThemeFromSettings } from '../src/modules/theme-manager.js';
 import { hasThemeOverrides, listThemes, normalizeThemeId, THEME_META } from '../themes/index.js';
 import { GENERIC_FAVICON_DATA_URL, getExtensionFaviconUrl } from '../src/ui/url-listing.js';
 import { CursorManager } from '../src/modules/cursor.js';
@@ -22,6 +24,12 @@ let lastUiSettings = null;
 let settingsDomBoundApp = null;
 /** Preferred panel for the next master–detail install (from mount options). */
 let pendingInitialPanel = null;
+/** @type {import('../src/modules/settings-controller.js').SettingsController|null} */
+let settingsController = null;
+/** @type {AbortController|null} */
+let settingsUiAbort = null;
+/** @type {(() => void)|null} */
+let settingsControllerUnsub = null;
 
 function getLiveSettingsSnapshot() {
   try {
@@ -260,6 +268,9 @@ function installSettingsMasterDetailNav() {
 
   activateSettingsPanel(initial, { persist: false });
 
+  const signal = settingsUiAbort?.signal;
+  const listenOpts = signal ? { signal } : {};
+
   // Bind clicks on each tab, not the nav container.
   // A delegated click listener on `.settings-nav` is tracked by KeyPilot as a
   // click handler on the whole master column, so empty padding/gaps become one
@@ -269,7 +280,7 @@ function installSettingsMasterDetailNav() {
       e.preventDefault();
       const panelId = tab.getAttribute('data-panel');
       withOptionalViewTransition(() => activateSettingsPanel(panelId));
-    });
+    }, listenOpts);
   });
 
   // Overview hub tiles jump into a category (same as left-nav tabs).
@@ -279,7 +290,7 @@ function installSettingsMasterDetailNav() {
       const panelId = tile.getAttribute('data-goto');
       if (!panelId || !SETTINGS_PANEL_IDS.includes(panelId)) return;
       withOptionalViewTransition(() => activateSettingsPanel(panelId, { focusTab: true }));
-    });
+    }, listenOpts);
   });
 
   // Arrow-key navigation within the vertical tablist (ARIA tabs pattern).
@@ -300,28 +311,7 @@ function installSettingsMasterDetailNav() {
     e.preventDefault();
     const panelId = tabs[nextIndex].getAttribute('data-panel');
     withOptionalViewTransition(() => activateSettingsPanel(panelId, { focusTab: true }));
-  });
-}
-
-function cloneJson(value, fallback) {
-  try {
-    return JSON.parse(JSON.stringify(value ?? fallback));
-  } catch {
-    return fallback;
-  }
-}
-
-function setOverridePath(overrides, path, value) {
-  const next = cloneJson(overrides && typeof overrides === 'object' ? overrides : {}, {});
-  const parts = String(path).split('.').filter(Boolean);
-  let cur = next;
-  for (let i = 0; i < parts.length - 1; i++) {
-    const key = parts[i];
-    if (!cur[key] || typeof cur[key] !== 'object' || Array.isArray(cur[key])) cur[key] = {};
-    cur = cur[key];
-  }
-  if (parts.length) cur[parts[parts.length - 1]] = value;
-  return next;
+  }, listenOpts);
 }
 
 function parsePxNumber(raw, fallback = 0) {
@@ -346,12 +336,6 @@ function toHexColor(raw, fallback = '#888888') {
 function themeDisplayName(themeId, customized) {
   const name = THEME_META[themeId]?.name || themeId;
   return customized ? `${name} (custom)` : name;
-}
-
-function clampNumber(n, min, max) {
-  const v = typeof n === 'number' ? n : Number(n);
-  if (!Number.isFinite(v)) return min;
-  return Math.min(Math.max(v, min), max);
 }
 
 /**
@@ -521,6 +505,12 @@ async function render() {
   const bindGlobal = !settingsHandlersInstalled;
   if (bindGlobal) settingsHandlersInstalled = true;
 
+  if (bindDom || bindGlobal) {
+    settingsUiAbort?.abort();
+    settingsUiAbort = new AbortController();
+  }
+  const uiSignal = settingsUiAbort?.signal;
+
   if (bindDom) {
     installSettingsMasterDetailNav();
   }
@@ -618,7 +608,7 @@ async function render() {
       e.stopPropagation();
       e.stopImmediatePropagation();
       try { kp.handleActivateKey(); } catch { /* ignore */ }
-    }, false);
+    }, { capture: false, signal: uiSignal });
   }
 
   const applyEngine = (engine) => {
@@ -873,163 +863,60 @@ async function render() {
       }
     }
     ensureLayoutFamilyOptions();
+    if (!settingsController || settingsController.disposed) {
+      settingsController = createSettingsController();
+    }
+    if (settingsControllerUnsub) {
+      try { settingsControllerUnsub(); } catch { /* ignore */ }
+      settingsControllerUnsub = null;
+    }
+    settingsControllerUnsub = settingsController.subscribe((s) => applyAllSettings(s));
     const live = getLiveSettingsSnapshot();
-    const settings = live || await getSettings();
-    applyAllSettings(settings);
+    await settingsController.load({ snapshot: live });
   } catch {
     ensureLayoutFamilyOptions();
     applyAllSettings(DEFAULT_SETTINGS);
   }
 
-  // Keyboard Reference visibility is stored separately from SETTINGS_STORAGE_KEY.
+  // Keyboard Reference visibility is stored separately from settings-manager.
   queryKeyboardHelpVisible().then(applyKeyboardHelpVisible).catch(() => applyKeyboardHelpVisible(false));
 
   if (!bindDom && !bindGlobal) return;
+  if (!settingsController) return;
 
-  // Change handler
-  radios.forEach((r) => {
-    r.addEventListener('change', async () => {
-      if (!r.checked) return;
-      await setSettings({ searchEngine: r.value });
-    }, true);
+  const signal = settingsUiAbort?.signal;
+  if (!signal) return;
+  const listenOpts = { signal, capture: true };
+
+  bindSettingsControls({
+    controller: settingsController,
+    el: settingsEl,
+    all: settingsAll,
+    setInputValue,
+    signal,
+    withViewTransition: withOptionalViewTransition,
+    applyState: applyAllSettings
   });
 
-  const commitThemePack = async (rawId) => {
-    const themeId = normalizeThemeId(rawId);
-    const theme = getTheme(themeId);
-    const clickPatch = getThemeClickDefaults(theme);
-    await setSettings({
-      themeId,
-      themeOverrides: {},
-      cursorMode: clickPatch.cursorMode,
-      clickMode: clickPatch.clickMode,
-      clickModeThemeId: themeId
-    });
-    const s = await getSettings();
-    applyAllSettings(s);
-  };
+  uiThemeSelect?.addEventListener('change', () => {
+    void settingsController.applyThemePack(uiThemeSelect.value);
+  }, listenOpts);
 
-  uiThemeSelect?.addEventListener('change', async () => {
-    await commitThemePack(uiThemeSelect.value);
-  }, true);
+  uiThemeSelectAppearance?.addEventListener('change', () => {
+    void settingsController.applyThemePack(uiThemeSelectAppearance.value);
+  }, listenOpts);
 
-  uiThemeSelectAppearance?.addEventListener('change', async () => {
-    await commitThemePack(uiThemeSelectAppearance.value);
-  }, true);
-
-  settingsResetAppearanceBtn?.addEventListener('click', async () => {
-    await setSettings({ themeOverrides: {} });
-    const s = await getSettings();
-    applyAllSettings(s);
-  }, true);
-
-  const commitAppearanceOverride = async (path, value) => {
-    const s0 = await getSettings();
-    const nextOverrides = setOverridePath(s0.themeOverrides, path, value);
-    await setSettings({ themeOverrides: nextOverrides });
-    const s = await getSettings();
-    lastUiSettings = s;
-    applyThemeSelect(s);
-    applyAppearanceControls(s);
-    paintPageTheme(s);
-  };
-
-  const bindAppearanceControl = (id, eventName, readValue) => {
-    const el = settingsEl(id);
-    if (!el) return;
-    el.addEventListener(eventName, async () => {
-      await commitAppearanceOverride(readValue.path, readValue.fromEl(el));
-    }, true);
-  };
-
-  /**
-   * @param {string} name
-   * @param {string} path
-   * @param {(raw: string) => *} normalizeValue
-   */
-  const bindAppearanceRadios = (name, path, normalizeValue) => {
-    const radios = /** @type {HTMLInputElement[]} */ (Array.from(settingsAll(`input[name="${name}"]`)));
-    radios.forEach((radio) => {
-      radio.addEventListener('change', async () => {
-        if (!radio.checked) return;
-        await commitAppearanceOverride(path, normalizeValue(radio.value));
-      }, true);
-    });
-  };
-
-  /**
-   * Slider + number field pair (same pattern as Click Mode cursor geometry).
-   * @param {string} baseId - prefix without -range/-number suffix
-   * @param {string} path
-   * @param {number} min
-   * @param {number} max
-   * @param {(n: number) => *} [formatValue]
-   */
-  const bindAppearanceRangePair = (baseId, path, min, max, formatValue) => {
-    const range = /** @type {HTMLInputElement|null} */ (settingsEl(`${baseId}-range`));
-    const number = /** @type {HTMLInputElement|null} */ (settingsEl(`${baseId}-number`));
-    const format = typeof formatValue === 'function'
-      ? formatValue
-      : (n) => `${n}px`;
-    const commit = async (raw) => {
-      const n = clampNumber(raw, min, max);
-      setInputValue(range, n);
-      setInputValue(number, n);
-      await commitAppearanceOverride(path, format(n));
-    };
-    range?.addEventListener('input', async () => commit(range.value), true);
-    number?.addEventListener('input', async () => commit(number.value), true);
-  };
-
-  bindAppearanceRadios('app-corner-mode', 'shape.cornerMode', (v) => (v === 'cut' ? 'cut' : 'radius'));
-  bindAppearanceRangePair('app-cut-size', 'shape.cutSize', 0, 24);
-  bindAppearanceRangePair('app-panel-radius', 'radius.panel', 0, 24);
-  bindAppearanceRadios('app-title-transform', 'type.textTransform.titlebar', (v) => (v === 'uppercase' ? 'uppercase' : 'none'));
-  bindAppearanceControl('app-title-tracking', 'change', {
-    path: 'type.letterSpacing.titlebar',
-    fromEl: (el) => String(el.value || '0.02em').trim() || '0.02em'
-  });
-  bindAppearanceRadios('app-title-weight', 'titlebar.titleWeight', (v) => {
-    if (v === '400' || v === '700') return v;
-    return '600';
-  });
-  bindAppearanceRadios('app-title-icon', 'titlebar.iconDisplay', (v) => (v === 'inline-flex' ? 'inline-flex' : 'none'));
-  bindAppearanceRadios('app-kbd-transform', 'titlebar.kbdTransform', (v) => (v === 'uppercase' ? 'uppercase' : 'none'));
-  bindAppearanceRadios('app-key-shading', 'keys.shading', (v) => (v === 'flat' ? 'flat' : 'bevel'));
-  bindAppearanceRadios('app-key-corner', 'keys.cornerMode', (v) => (v === 'cut' ? 'cut' : 'radius'));
-  bindAppearanceRangePair('app-key-cut', 'keys.cutSize', 0, 16);
-  bindAppearanceControl('app-key-border', 'change', {
-    path: 'keys.border',
-    fromEl: (el) => String(el.value || '').trim() || '1px solid rgba(0, 0, 0, 0.4)'
-  });
-  bindAppearanceControl('app-color-accent', 'input', { path: 'color.accent', fromEl: (el) => el.value });
-  bindAppearanceControl('app-color-fg', 'input', { path: 'color.fg', fromEl: (el) => el.value });
-  bindAppearanceControl('app-color-fg-dim', 'input', { path: 'color.fgDim', fromEl: (el) => el.value });
-  bindAppearanceControl('app-color-panel', 'input', { path: 'color.panel', fromEl: (el) => el.value });
-  bindAppearanceControl('app-color-panel-edge', 'input', { path: 'color.panelEdge', fromEl: (el) => el.value });
-  bindAppearanceControl('app-color-title-top', 'input', { path: 'color.titleTop', fromEl: (el) => el.value });
-  bindAppearanceControl('app-color-title-mid', 'input', { path: 'color.titleMid', fromEl: (el) => el.value });
-  bindAppearanceControl('app-color-title-bot', 'input', { path: 'color.titleBot', fromEl: (el) => el.value });
-  bindAppearanceControl('app-color-kbd', 'input', { path: 'color.kbdColor', fromEl: (el) => el.value });
-  bindAppearanceRangePair('app-type-ui', 'type.size.ui', 9, 18);
-  bindAppearanceRangePair('app-type-kbd', 'type.size.kbd', 8, 16);
+  settingsResetAppearanceBtn?.addEventListener('click', () => {
+    void settingsController.reset('appearance');
+  }, listenOpts);
 
   settingsResetAllBtn?.addEventListener('click', async () => {
     const ok = typeof window.confirm === 'function'
       ? window.confirm('Reset all KeyPilot settings to defaults? This cannot be undone.')
       : true;
     if (!ok) return;
-    const s = await resetAllSettings();
-    applyAllSettings(s);
-  }, true);
-
-  keyFeedbackToggle?.addEventListener('change', async () => {
-    await setSettings({ keyboardReferenceKeyFeedback: !!keyFeedbackToggle.checked });
-  }, true);
-
-  showNumberRowToggle?.addEventListener('change', async () => {
-    await setSettings({ keyboardReferenceShowNumberRow: !!showNumberRowToggle.checked });
-  }, true);
+    await settingsController.reset('all');
+  }, listenOpts);
 
   keyboardHelpToggle?.addEventListener('change', async () => {
     const desired = !!keyboardHelpToggle.checked;
@@ -1042,290 +929,45 @@ async function render() {
     } finally {
       keyboardHelpToggle.disabled = false;
     }
-  }, true);
+  }, listenOpts);
 
-  controlStripVisible?.addEventListener('change', async () => {
-    await setSettings({ controlStrip: { visible: !!controlStripVisible.checked } });
-  }, true);
+  clickCursorResetBtn?.addEventListener('click', () => {
+    void settingsController.reset('click-cursor');
+  }, listenOpts);
 
-  controlStripCollapsed?.addEventListener('change', async () => {
-    await setSettings({ controlStrip: { collapsed: !!controlStripCollapsed.checked } });
-  }, true);
+  clickModeResetBtn?.addEventListener('click', () => {
+    void settingsController.reset('click-mode');
+  }, listenOpts);
 
-  keyboardLayoutFamilySelect?.addEventListener('change', async () => {
-    await setSettings({ keyboardLayoutFamilyId: keyboardLayoutFamilySelect.value });
-    const s = await getSettings();
-    withOptionalViewTransition(() => applyKeyboardLayoutFamily(s.keyboardLayoutFamilyId));
-  }, true);
+  textCursorResetBtn?.addEventListener('click', () => {
+    void settingsController.reset('text-cursor');
+  }, listenOpts);
 
-  keyboardLeftHandedToggle?.addEventListener('change', async () => {
-    await setSettings({ keyboardHandedness: keyboardLeftHandedToggle.checked ? 'left' : 'right' });
-    const s = await getSettings();
-    withOptionalViewTransition(() => applyKeyboardHandedness(s.keyboardHandedness));
-  }, true);
+  textModeResetBtn?.addEventListener('click', () => {
+    void settingsController.reset('text-mode');
+  }, listenOpts);
 
-  cursorModeRadios.forEach((radio) => {
-    radio.addEventListener('change', async () => {
-      if (!radio.checked) return;
-      const next = normalizeCursorMode(radio.value);
-      await setSettings({ cursorMode: next });
-      const s = await getSettings();
-      withOptionalViewTransition(() => applyCursorMode(s.cursorMode));
-    }, true);
-  });
+  scrollResetBtn?.addEventListener('click', () => {
+    void settingsController.reset('scroll');
+  }, listenOpts);
 
-  // Click Mode handlers
-  clickCursorType?.addEventListener('change', async () => {
-    await setSettings({ clickMode: { cursor: { type: clickCursorType.value } } });
-    const s = await getSettings();
-    applyClickMode(s.clickMode);
-  }, true);
-
-  const commitClickLineWidth = async (v) => {
-    const n = clampNumber(v, 1, 12);
-    setInputValue(clickCursorLineWidthRange, n);
-    setInputValue(clickCursorLineWidthNumber, n);
-    await setSettings({ clickMode: { cursor: { lineWidth: n } } });
-    const s = await getSettings();
-    applyClickMode(s.clickMode);
-  };
-
-  clickCursorLineWidthRange?.addEventListener('input', async () => commitClickLineWidth(clickCursorLineWidthRange.value), true);
-  clickCursorLineWidthNumber?.addEventListener('input', async () => commitClickLineWidth(clickCursorLineWidthNumber.value), true);
-
-  const commitClickSize = async (v) => {
-    const n = clampNumber(v, 5, 60);
-    setInputValue(clickCursorSizeRange, n);
-    setInputValue(clickCursorSizeNumber, n);
-    await setSettings({ clickMode: { cursor: { sizePixels: n } } });
-    const s = await getSettings();
-    applyClickMode(s.clickMode);
-  };
-
-  clickCursorSizeRange?.addEventListener('input', async () => commitClickSize(clickCursorSizeRange.value), true);
-  clickCursorSizeNumber?.addEventListener('input', async () => commitClickSize(clickCursorSizeNumber.value), true);
-
-  const commitClickGap = async (v) => {
-    const n = clampNumber(v, 0, 20);
-    setInputValue(clickCursorGapRange, n);
-    setInputValue(clickCursorGapNumber, n);
-    await setSettings({ clickMode: { cursor: { gap: n } } });
-    const s = await getSettings();
-    applyClickMode(s.clickMode);
-  };
-
-  clickCursorGapRange?.addEventListener('input', async () => commitClickGap(clickCursorGapRange.value), true);
-  clickCursorGapNumber?.addEventListener('input', async () => commitClickGap(clickCursorGapNumber.value), true);
-
-  clickFocusColor?.addEventListener('change', async () => {
-    const color = normalizeFocusColor(clickFocusColor.value);
-    await setSettings({ clickMode: { focusColor: color } });
-    const s = await getSettings();
-    applyClickMode(s.clickMode);
-  }, true);
-
-  clickOverlayFill?.addEventListener('change', async () => {
-    await setSettings({ clickMode: { overlayFillEnabled: !!clickOverlayFill.checked } });
-    const s = await getSettings();
-    applyClickMode(s.clickMode);
-  }, true);
-
-  clickOverlayShadow?.addEventListener('change', async () => {
-    await setSettings({ clickMode: { overlayShadowEnabled: !!clickOverlayShadow.checked } });
-    const s = await getSettings();
-    applyClickMode(s.clickMode);
-  }, true);
-
-  const commitClickRectThickness = async (v) => {
-    const n = clampNumber(v, 1, 16);
-    setInputValue(clickRectThicknessRange, n);
-    setInputValue(clickRectThicknessNumber, n);
-    await setSettings({ clickMode: { rectangleThickness: n } });
-    const s = await getSettings();
-    applyClickMode(s.clickMode);
-  };
-
-  clickRectThicknessRange?.addEventListener('input', async () => commitClickRectThickness(clickRectThicknessRange.value), true);
-  clickRectThicknessNumber?.addEventListener('input', async () => commitClickRectThickness(clickRectThicknessNumber.value), true);
-
-  clickKeyboardLinkHints?.addEventListener('change', async () => {
-    await setSettings({ clickMode: { keyboardLinkHoverHints: !!clickKeyboardLinkHints.checked } });
-    const s = await getSettings();
-    applyClickMode(s.clickMode);
-  });
-
-  clickPaintStrategy?.addEventListener('change', async () => {
-    const value = normalizePaintStrategy(clickPaintStrategy.value);
-    await setSettings({ clickMode: { paintStrategy: value } });
-    const s = await getSettings();
-    applyClickMode(s.clickMode);
-  }, true);
-
-  clickSkipForParent?.addEventListener('change', async () => {
-    await setSettings({ clickMode: { skipForParent: !!clickSkipForParent.checked } });
-    const s = await getSettings();
-    applyClickMode(s.clickMode);
-  }, true);
-
-  clickPaintBackendDebug?.addEventListener('change', async () => {
-    await setSettings({ clickMode: { paintBackendDebugDashes: !!clickPaintBackendDebug.checked } });
-    const s = await getSettings();
-    applyClickMode(s.clickMode);
-  });
-
-  debugLoggingToggle?.addEventListener('change', async () => {
-    const on = !!debugLoggingToggle.checked;
-    applyDebugSetting(on);
-    await setSettings({ debugLogging: on });
-  });
-
-  const commitClickFocusPadding = async (v) => {
-    const n = clampNumber(v, 0, 16);
-    setInputValue(clickFocusPaddingRange, n);
-    setInputValue(clickFocusPaddingNumber, n);
-    await setSettings({ clickMode: { focusPadding: n } });
-    const s = await getSettings();
-    applyClickMode(s.clickMode);
-  };
-
-  clickFocusPaddingRange?.addEventListener('input', async () => commitClickFocusPadding(clickFocusPaddingRange.value), true);
-  clickFocusPaddingNumber?.addEventListener('input', async () => commitClickFocusPadding(clickFocusPaddingNumber.value), true);
-
-  clickEffectRadios.forEach((radio) => {
-    radio.addEventListener('change', async () => {
-      if (!radio.checked) return;
-      const value = CLICK_EFFECT_IDS.includes(/** @type {any} */ (radio.value))
-        ? radio.value
-        : 'flash';
-      await setSettings({ clickMode: { clickEffect: value } });
-      const s = await getSettings();
-      applyClickMode(s.clickMode);
-    }, true);
-  });
-
-  clickCursorResetBtn?.addEventListener('click', async () => {
-    const s0 = await getSettings();
-    const defaults = getThemeClickDefaults(getTheme(s0.themeId));
-    await setSettings({ clickMode: { cursor: { ...defaults.clickMode.cursor } } });
-    const s = await getSettings();
-    applyClickMode(s.clickMode);
-  }, true);
-
-  clickModeResetBtn?.addEventListener('click', async () => {
-    const s0 = await getSettings();
-    const defaults = getThemeClickDefaults(getTheme(s0.themeId));
-    const { cursor: _cursor, ...clickModeDefaults } = defaults.clickMode;
-    await setSettings({ clickMode: { ...clickModeDefaults } });
-    const s = await getSettings();
-    applyClickMode(s.clickMode);
-  }, true);
-
-  // Text Mode handlers
-  textCursorType?.addEventListener('change', async () => {
-    await setSettings({ textMode: { cursorType: textCursorType.value } });
-    const s = await getSettings();
-    applyTextMode(s.textMode);
-  }, true);
-
-  textCursorResetBtn?.addEventListener('click', async () => {
-    await setSettings({ textMode: { cursorType: DEFAULT_SETTINGS.textMode.cursorType } });
-    const s = await getSettings();
-    applyTextMode(s.textMode);
-  }, true);
-
-  textLabelsEnabled?.addEventListener('change', async () => {
-    await setSettings({ textMode: { labelsEnabled: !!textLabelsEnabled.checked } });
-  }, true);
-
-  textFocusStyleRadios.forEach((r) => {
-    r.addEventListener('change', async () => {
-      if (!r.checked) return;
-      const focusStyle = normalizeTextFocusStyle(r.value);
-      await setSettings({ textMode: { focusStyle } });
-      const s = await getSettings();
-      applyTextMode(s.textMode);
-    }, true);
-  });
-
-  const commitTextLeftEdgeWidth = async (v) => {
-    const n = clampNumber(v, 1, 24);
-    setInputValue(textLeftEdgeWidthRange, n);
-    setInputValue(textLeftEdgeWidthNumber, n);
-    await setSettings({ textMode: { leftEdgeWidth: n } });
-  };
-
-  textLeftEdgeWidthRange?.addEventListener('input', async () => commitTextLeftEdgeWidth(textLeftEdgeWidthRange.value), true);
-  textLeftEdgeWidthNumber?.addEventListener('input', async () => commitTextLeftEdgeWidth(textLeftEdgeWidthNumber.value), true);
-
-  const commitTextStrokeThickness = async (v) => {
-    const n = clampNumber(v, 1, 16);
-    setInputValue(textStrokeThicknessRange, n);
-    setInputValue(textStrokeThicknessNumber, n);
-    await setSettings({ textMode: { strokeThickness: n } });
-  };
-
-  textStrokeThicknessRange?.addEventListener('input', async () => commitTextStrokeThickness(textStrokeThicknessRange.value), true);
-  textStrokeThicknessNumber?.addEventListener('input', async () => commitTextStrokeThickness(textStrokeThicknessNumber.value), true);
-
-  textModeResetBtn?.addEventListener('click', async () => {
-    await setSettings({ textMode: { ...DEFAULT_SETTINGS.textMode } });
-    const s = await getSettings();
-    applyTextMode(s.textMode);
-  }, true);
-
-  // Scrolling handlers
-  const commitScrollHalfPage = async (v) => {
-    const n = clampNumber(v, 50, 2000);
-    setInputValue(scrollHalfPageRange, n);
-    setInputValue(scrollHalfPageNumber, n);
-    await setSettings({ scroll: { halfPagePx: n } });
-  };
-
-  scrollHalfPageRange?.addEventListener('input', async () => commitScrollHalfPage(scrollHalfPageRange.value), true);
-  scrollHalfPageNumber?.addEventListener('input', async () => commitScrollHalfPage(scrollHalfPageNumber.value), true);
-
-  scrollSpeedSelect?.addEventListener('change', async () => {
-    const speed = scrollSpeedSelect.value === 'instant' ? 'instant' : 'smooth';
-    await setSettings({ scroll: { speed } });
-    const s = await getSettings();
-    applyScroll(s.scroll);
-  }, true);
-
-  scrollMiddleClickScrollLine?.addEventListener('change', async () => {
-    await setSettings({ scroll: { middleClickScrollLine: !!scrollMiddleClickScrollLine.checked } });
-  }, true);
-
-  scrollLinePreferPortrait?.addEventListener('change', async () => {
-    await setSettings({ scroll: { linePreferPortraitTargets: !!scrollLinePreferPortrait.checked } });
-  }, true);
-
-  scrollResetBtn?.addEventListener('click', async () => {
-    await setSettings({ scroll: { ...DEFAULT_SETTINGS.scroll } });
-    const s = await getSettings();
-    applyScroll(s.scroll);
-  }, true);
-
-  if (bindGlobal) {
-    // Sync when other tabs / this page update (sync preferred; local is fallback).
-    try {
-      chrome.storage.onChanged.addListener((changes, area) => {
-        if (area !== 'sync' && area !== 'local') return;
-
-        const helpChange = changes?.[KEYBOARD_HELP_STORAGE_KEY];
-        if (helpChange && typeof helpChange.newValue === 'boolean') {
-          applyKeyboardHelpVisible(helpChange.newValue);
-        }
-
-        const entry = changes && changes[SETTINGS_STORAGE_KEY];
-        if (!entry || !entry.newValue) return;
-        void getSettings().then((s) => applyAllSettings(s)).catch(() => {
-          applyAllSettings(entry.newValue);
-        });
-      });
-    } catch {
-      // ignore
-    }
+  try {
+    const onHelpStorage = (changes, area) => {
+      if (signal.aborted) return;
+      if (area !== 'sync' && area !== 'local') return;
+      const helpChange = changes?.[KEYBOARD_HELP_STORAGE_KEY];
+      if (helpChange && typeof helpChange.newValue === 'boolean') {
+        applyKeyboardHelpVisible(helpChange.newValue);
+      }
+    };
+    chrome.storage.onChanged.addListener(onHelpStorage);
+    signal.addEventListener('abort', () => {
+      try { chrome.storage.onChanged.removeListener(onHelpStorage); } catch { /* ignore */ }
+    }, { once: true });
+  } catch {
+    // ignore
   }
+
 }
 
 /**
@@ -1387,6 +1029,15 @@ export async function mountSettingsApp(root, options = {}) {
   try { applyAppearanceFromCache(); } catch { /* ignore */ }
   await render();
   return () => {
+    try { settingsUiAbort?.abort(); } catch { /* ignore */ }
+    settingsUiAbort = null;
+    if (settingsControllerUnsub) {
+      try { settingsControllerUnsub(); } catch { /* ignore */ }
+      settingsControllerUnsub = null;
+    }
+    try { settingsController?.dispose(); } catch { /* ignore */ }
+    settingsController = null;
+    settingsHandlersInstalled = false;
     settingsScope = document;
     settingsDomBoundApp = null;
     pendingInitialPanel = null;
