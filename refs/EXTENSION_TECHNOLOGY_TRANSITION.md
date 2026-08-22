@@ -471,17 +471,21 @@ rewriting the entire panel.
 
 Tasks:
 
-- [ ] Identify one self-contained configuration section as the pilot.
-- [ ] Separate that section’s state/actions from DOM rendering.
-- [ ] Reuse the controller contract and control metadata concepts from
+Pilot: Function parameter fields shared by the Keyboard Layout Inspector
+(`_appendFunctionParameterFields`) and `KeyActionConfigPanel` — not keyboard
+geometry (`keybindings-ui.js`) and not the rest of the layout-editor chrome.
+
+- [x] Identify one self-contained configuration section as the pilot.
+- [x] Separate that section’s state/actions from DOM rendering.
+- [x] Reuse the controller contract and control metadata concepts from
   Settings where they fit.
-- [ ] Define declarative field schemas for range, select, radio, toggle, enum,
+- [x] Define declarative field schemas for range, select, radio, toggle, enum,
   and action-parameter controls.
-- [ ] Preserve the existing key-action settings source of truth.
-- [ ] Add tests for action-configuration state and schema normalization.
+- [x] Preserve the existing key-action settings source of truth.
+- [x] Add tests for action-configuration state and schema normalization.
 - [ ] Migrate additional sections only after the pilot reduces code and keeps
   behavior understandable.
-- [ ] Keep keyboard geometry rendering outside the form-controller layer.
+- [x] Keep keyboard geometry rendering outside the form-controller layer.
 
 This is a better candidate for formal UI composition than
 `keybindings-ui.js`, which is an incremental keyboard-geometry renderer rather
@@ -489,9 +493,9 @@ than a conventional form.
 
 Completion criteria:
 
-- [ ] At least one real keyboard-configuration section uses the shared
+- [x] At least one real keyboard-configuration section uses the shared
   controller/schema approach.
-- [ ] The approach demonstrably reduces duplicated binding code before wider
+- [x] The approach demonstrably reduces duplicated binding code before wider
   adoption.
 
 ### Phase 6 — Create lazy UI boundaries and evaluate Lit
@@ -584,7 +588,7 @@ completion.
 | [x] | 2 | Documented and tested storage ownership/conflict policy |
 | [x] | 3 | Shared validated message catalog and one router per context |
 | [x] | 4 | Framework-neutral Settings controller and declarative DOM binder |
-| [ ] | 5 | Proven schema-driven keyboard-configuration pilot |
+| [x] | 5 | Proven schema-driven keyboard-configuration pilot |
 | [ ] | 6 | Lazy UI bundle boundary and evidence-based Lit decision |
 
 The architectural issue is not that KeyPilot lacks a framework. Its most

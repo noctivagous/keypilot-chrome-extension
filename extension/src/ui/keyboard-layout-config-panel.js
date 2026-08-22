@@ -72,14 +72,11 @@ import {
   sortFunctionDefsForLibrary,
   functionWorksWhileTyping,
   summarizeFunctionParameters,
-  groupFunctionParameters,
   defaultFunctionParameters,
   validateFunctionSlotKey
 } from '../config/function-library.js';
-import {
-  filterFunctionParameterOptions,
-  shouldShowFunctionParameter
-} from '../modules/ai-text-service.js';
+import { createActionConfigController } from '../modules/action-config-controller.js';
+import { appendActionConfigFields } from '../modules/action-config-binder.js';
 import {
   KEYBINDINGS_UI_ROOT_CLASS,
   KEYBINDINGS_UI_STYLE_ATTR,
@@ -5550,78 +5547,24 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       hint.appendChild(docsLink);
       host.appendChild(hint);
     }
-    for (const { group, params } of groupFunctionParameters(def?.parameters)) {
-      if (group) {
-        const heading = document.createElement('div');
-        heading.className = 'kp-mk-field-label';
-        heading.textContent = group;
-        heading.style.marginTop = '8px';
-        heading.style.fontWeight = '600';
-        host.appendChild(heading);
+    const controller = createActionConfigController();
+    controller.load({
+      functionId: def?.id || '',
+      snapshot: values,
+      parameters: def?.parameters,
+      persist: (_functionId, paramId, value) => {
+        onChange(paramId, value);
       }
-      for (const param of params) {
-        if (!shouldShowFunctionParameter(def?.id || '', param)) continue;
-        const current = values?.[param.id] !== undefined ? values[param.id] : param.defaultValue;
-        const row = document.createElement('div');
-        row.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
-        const label = document.createElement('div');
-        label.className = 'kp-mk-field-label';
-        label.textContent = param.label || param.id;
-        row.appendChild(label);
-
-        let control;
-        if (param.type === 'boolean') {
-          control = document.createElement('input');
-          control.type = 'checkbox';
-          control.checked = !!current;
-          control.addEventListener('change', () => onChange(param.id, !!control.checked), true);
-        } else if (param.type === 'enum' && Array.isArray(param.options)) {
-          control = document.createElement('select');
-          control.className = 'kp-cfg-field';
-          const options = filterFunctionParameterOptions(def?.id || '', param);
-          for (const optionDef of options) {
-            const option = document.createElement('option');
-            option.value = optionDef.id;
-            option.textContent = optionDef.label;
-            option.selected = optionDef.id === current;
-            control.appendChild(option);
-          }
-          control.addEventListener('change', () => onChange(param.id, control.value), true);
-        } else if (param.type === 'number') {
-          control = document.createElement('input');
-          control.type = 'number';
-          control.className = 'kp-cfg-field';
-          if (param.min != null) control.min = String(param.min);
-          if (param.max != null) control.max = String(param.max);
-          if (param.step != null) control.step = String(param.step);
-          control.value = current != null ? String(current) : '';
-          control.addEventListener('change', () => {
-            const n = Number(control.value);
-            onChange(param.id, Number.isFinite(n) ? n : param.defaultValue);
-          }, true);
-        } else if (param.multiline) {
-          control = document.createElement('textarea');
-          control.className = 'kp-cfg-field';
-          const rows = Number(param.rows);
-          control.rows = Number.isFinite(rows) && rows > 0 ? rows : 3;
-          control.value = current == null ? '' : String(current);
-          const commit = () => onChange(param.id, control.value);
-          control.addEventListener('change', commit, true);
-          if (live) control.addEventListener('input', commit, true);
-        } else {
-          control = document.createElement('input');
-          control.type = 'text';
-          control.className = 'kp-cfg-field';
-          control.value = current == null ? '' : String(current);
-          const commit = () => onChange(param.id, control.value);
-          control.addEventListener('change', commit, true);
-          if (live) control.addEventListener('input', commit, true);
-        }
-        if (param.placeholder) control.placeholder = String(param.placeholder);
-        row.appendChild(control);
-        host.appendChild(row);
+    });
+    appendActionConfigFields(host, {
+      controller,
+      live,
+      classes: {
+        label: 'kp-mk-field-label',
+        control: 'kp-cfg-field',
+        group: 'kp-mk-field-label'
       }
-    }
+    });
   }
 
   /**

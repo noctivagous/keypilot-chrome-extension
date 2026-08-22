@@ -17,7 +17,7 @@
 import { Z_INDEX, KP_UI_FONT } from '../config/constants.js';
 import { makePanelDraggable } from '../utils/panel-position.js';
 import { ensureOpenChromeShadow, injectChromeStyles } from './kp-chrome-shadow.js';
-import { getFunctionDef, groupFunctionParameters } from '../config/function-library.js';
+import { getFunctionDef } from '../config/function-library.js';
 import {
   NCT_DARK_UI_PANEL_BACKGROUND,
   NCT_DARK_UI_PANEL_BORDER,
@@ -39,10 +39,9 @@ import {
   getOrCreateBuiltinFunctionUserAction,
   setBuiltinFunctionUserActionParameter
 } from '../modules/keyboard-layout-store.js';
-import {
-  filterFunctionParameterOptions,
-  shouldShowFunctionParameter
-} from '../modules/ai-text-service.js';
+import { shouldShowFunctionParameter } from '../modules/ai-text-service.js';
+import { createActionConfigController } from '../modules/action-config-controller.js';
+import { appendActionConfigFields } from '../modules/action-config-binder.js';
 
 /**
  * @typedef {{ id: string, label: string }} ActionModeOption
@@ -446,95 +445,28 @@ export class KeyActionConfigPanel {
       body.appendChild(hint);
     }
 
-    for (const { group, params: groupParams } of groupFunctionParameters(params)) {
-      if (group) {
-        const heading = document.createElement('div');
-        heading.className = 'kp-action-config-panel__label';
-        heading.textContent = group;
-        heading.style.fontWeight = '600';
-        heading.style.marginTop = '8px';
-        body.appendChild(heading);
+    const controller = createActionConfigController();
+    controller.load({
+      functionId: actionId,
+      snapshot: storedParams,
+      parameters: params,
+      persist: async (functionId, paramId, value) => {
+        const next = await setActionParameter(functionId, paramId, value);
+        try { this.onSettingsChanged?.(next); } catch { /* ignore */ }
+        return next;
       }
-      for (const param of groupParams) {
-      if (!shouldShowFunctionParameter(actionId, param)) continue;
-      const row = document.createElement('div');
-      row.className = 'kp-action-config-panel__row';
-
-      const label = document.createElement('label');
-      label.className = 'kp-action-config-panel__label';
-      label.textContent = param.label || param.id;
-      row.appendChild(label);
-
-      const currentVal = storedParams[param.id] !== undefined
-        ? storedParams[param.id]
-        : param.defaultValue;
-
-      let control;
-      if (param.type === 'boolean') {
-        control = document.createElement('input');
-        control.type = 'checkbox';
-        control.className = 'kp-action-config-panel__control';
-        control.checked = !!currentVal;
-        control.addEventListener('change', async () => {
-          const next = await setActionParameter(actionId, param.id, !!control.checked);
-          try { this.onSettingsChanged?.(next); } catch { /* ignore */ }
-        });
-      } else if (param.type === 'enum' && Array.isArray(param.options)) {
-        control = document.createElement('select');
-        control.className = 'kp-action-config-panel__control';
-        const options = filterFunctionParameterOptions(actionId, param);
-        for (const opt of options) {
-          const o = document.createElement('option');
-          o.value = opt.id;
-          o.textContent = opt.label;
-          if (opt.id === currentVal) o.selected = true;
-          control.appendChild(o);
-        }
-        control.addEventListener('change', async () => {
-          const next = await setActionParameter(actionId, param.id, control.value);
-          try { this.onSettingsChanged?.(next); } catch { /* ignore */ }
-        });
-      } else if (param.type === 'number') {
-        control = document.createElement('input');
-        control.type = 'number';
-        control.className = 'kp-action-config-panel__control';
-        if (param.min != null) control.min = String(param.min);
-        if (param.max != null) control.max = String(param.max);
-        if (param.step != null) control.step = String(param.step);
-        control.value = currentVal != null ? String(currentVal) : '';
-        control.addEventListener('change', async () => {
-          const n = Number(control.value);
-          const next = await setActionParameter(actionId, param.id, Number.isFinite(n) ? n : param.defaultValue);
-          try { this.onSettingsChanged?.(next); } catch { /* ignore */ }
-        });
-      } else if (param.multiline) {
-        control = document.createElement('textarea');
-        control.className = 'kp-action-config-panel__control';
-        control.setAttribute('data-multiline', 'true');
-        const rows = Number(param.rows);
-        control.rows = Number.isFinite(rows) && rows > 0 ? rows : 3;
-        if (param.placeholder) control.placeholder = String(param.placeholder);
-        control.value = currentVal != null ? String(currentVal) : '';
-        control.addEventListener('change', async () => {
-          const next = await setActionParameter(actionId, param.id, control.value);
-          try { this.onSettingsChanged?.(next); } catch { /* ignore */ }
-        });
-      } else {
-        control = document.createElement('input');
-        control.type = 'text';
-        control.className = 'kp-action-config-panel__control';
-        if (param.placeholder) control.placeholder = String(param.placeholder);
-        control.value = currentVal != null ? String(currentVal) : '';
-        control.addEventListener('change', async () => {
-          const next = await setActionParameter(actionId, param.id, control.value);
-          try { this.onSettingsChanged?.(next); } catch { /* ignore */ }
-        });
+    });
+    appendActionConfigFields(body, {
+      controller,
+      live: false,
+      classes: {
+        row: 'kp-action-config-panel__row',
+        label: 'kp-action-config-panel__label',
+        control: 'kp-action-config-panel__control',
+        group: 'kp-action-config-panel__label',
+        applyControlClassToToggle: true
       }
-
-      row.appendChild(control);
-      body.appendChild(row);
-      }
-    }
+    });
   }
 
   dispose() {
