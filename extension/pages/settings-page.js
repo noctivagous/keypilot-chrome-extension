@@ -4,7 +4,7 @@
  */
 import { getSettings } from '../src/modules/settings-manager.js';
 import { startKeyPilotOnPage } from './keypilot-page-init.js';
-import { applyAppearanceControls, mountSettingsApp } from './settings.js';
+import { applyAppearanceControls, mountSettingsApp } from './settings-bundled.js';
 
 const embedded = (() => {
   try { return !!(window.parent && window.parent !== window); } catch { return false; }

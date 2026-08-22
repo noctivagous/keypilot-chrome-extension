@@ -1,8 +1,13 @@
 /**
  * KeyPilot extension build (esbuild).
  *
- * Bundles content + frame-agent entry points, then runs post-bundle side effects
- * (manifest stamp, README/website sync, early-inject UI block).
+ * Bundles content, frame-agent, and occasional-UI (Docs / Settings) entry points,
+ * then runs post-bundle side effects (manifest stamp, README/website sync,
+ * early-inject UI block).
+ *
+ * Settings and Docs must stay on their own ESM entries (`pages/*-bundled.js`).
+ * Do not import `pages/settings.js` or `pages/docs.js` from the content-script
+ * graph — content loads them lazily via `chrome.runtime.getURL`.
  *
  * Usage:
  *   node build.js
@@ -54,6 +59,12 @@ const entries = [
     infile: path.join(__dirname, 'pages/docs.js'),
     outfile: path.join(__dirname, 'pages/docs-bundled.js'),
     label: 'documentation popover',
+    format: 'esm',
+  },
+  {
+    infile: path.join(__dirname, 'pages/settings.js'),
+    outfile: path.join(__dirname, 'pages/settings-bundled.js'),
+    label: 'settings popover / page',
     format: 'esm',
   },
 ];

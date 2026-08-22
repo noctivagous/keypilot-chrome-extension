@@ -7999,7 +7999,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     const docsContainerWidth = Math.min(980, window.innerWidth - 36) + 20;
     const docsContainerHeight = Math.min(window.innerHeight * 0.82, window.innerHeight - 80) + 20;
 
-    this.overlayManager.showInPageDocsPopover({
+    void this.overlayManager.showInPageDocsPopover({
       title: 'KeyPilot Docs',
       hintKeyLabel: 'Alt + H',
       width: `${docsContainerWidth}px`,

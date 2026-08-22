@@ -12,7 +12,7 @@ npm run build
 
 Or from this directory: `node build.js`.
 
-That regenerates `content-bundled.js`, `frame-agent-bundled.js`, and `pages/docs-bundled.js`. Edit `src/` (and `background.js`); do not edit the bundled outputs.
+That regenerates `content-bundled.js`, `frame-agent-bundled.js`, `pages/docs-bundled.js`, and `pages/settings-bundled.js`. Edit `src/` (and `background.js`); do not edit the bundled outputs. Settings and Docs are loaded from those page bundles when opened, not from the eager content script.
 
 Optional:
 

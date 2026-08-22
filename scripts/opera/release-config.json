@@ -8,7 +8,8 @@
   "requiredGeneratedFiles": [
     "content-bundled.js",
     "frame-agent-bundled.js",
-    "pages/docs-bundled.js"
+    "pages/docs-bundled.js",
+    "pages/settings-bundled.js"
   ],
   "requiredRuntimeFiles": [
     "map-pan-bridge.js",
@@ -38,6 +39,7 @@
     "popup-v1.js",
     "README.md",
     "pages/docs.js",
+    "pages/settings.js",
     "pages/text-mode-practice.html",
     "pages/text-mode-tutorial.html",
     "keyboard/**",

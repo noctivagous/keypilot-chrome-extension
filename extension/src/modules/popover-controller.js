@@ -27,8 +27,7 @@ import {
   preferHttpsForPreview
 } from '../utils/preview-url.js';
 import { postPopoverBridgeInit } from './popover-bridge-init.js';
-import { mountDocsApp, navigateDocsApp } from '../../pages/docs.js';
-import { mountSettingsApp, setActiveSettingsPanel } from '../../pages/settings.js';
+import { loadDocsUi, loadSettingsUi } from './lazy-page-ui.js';
 
 export class PopoverController {
   /** @param {import('./overlay-manager.js').OverlayManager} host */
@@ -50,6 +49,10 @@ export class PopoverController {
     this._docsHost = null;
     /** @type {(() => void)|null} */
     this._docsUnmount = null;
+    /** @type {{ mountDocsApp?: Function, navigateDocsApp?: Function }|null} */
+    this._docsUi = null;
+    /** @type {{ mountSettingsApp?: Function, setActiveSettingsPanel?: Function }|null} */
+    this._settingsUi = null;
     /** @type {'docs'|'settings'|null} */
     this._inPagePopoverKind = null;
     this._docsFontScale = 1.25;
@@ -317,7 +320,15 @@ export class PopoverController {
    * @param {string} [opts.hash]
    * @param {(target: object) => void} [opts.onNavigateDeepLink]
    */
-  showInPageDocsPopover(opts = {}) {
+  async showInPageDocsPopover(opts = {}) {
+    let docsUi;
+    try {
+      docsUi = await loadDocsUi();
+    } catch (err) {
+      console.warn('[KeyPilot] Failed to load Docs UI bundle:', err);
+      return;
+    }
+    this._docsUi = docsUi;
     this.hidePopover();
 
     const requestClosePopover = () => {
@@ -411,7 +422,7 @@ export class PopoverController {
 
     this._docsHost = bodyHost;
     this._inPagePopoverKind = 'docs';
-    this._docsUnmount = mountDocsApp(shadow, {
+    this._docsUnmount = docsUi.mountDocsApp(shadow, {
       embedded: true,
       onClose: requestClosePopover,
       fontScale: this._docsFontScale,
@@ -465,7 +476,7 @@ export class PopoverController {
    */
   setDocsTopic(topicId, hash) {
     if (this._inPagePopoverKind !== 'docs') return false;
-    return navigateDocsApp(topicId, hash);
+    return this._docsUi?.navigateDocsApp?.(topicId, hash) || false;
   }
 
   /**
@@ -474,6 +485,14 @@ export class PopoverController {
    * @param {string} [opts.panelId]
    */
   async showInPageSettingsPopover(opts = {}) {
+    let settingsUi;
+    try {
+      settingsUi = await loadSettingsUi();
+    } catch (err) {
+      console.warn('[KeyPilot] Failed to load Settings UI bundle:', err);
+      return;
+    }
+    this._settingsUi = settingsUi;
     this.hidePopover();
 
     const requestClosePopover = () => {
@@ -558,7 +577,7 @@ export class PopoverController {
     const shadow = ensureOpenChromeShadow(bodyHost, { id: 'settings-app' }) || bodyHost.shadowRoot;
     this._docsHost = null;
     this._inPagePopoverKind = 'settings';
-    this._docsUnmount = await mountSettingsApp(shadow, {
+    this._docsUnmount = await settingsUi.mountSettingsApp(shadow, {
       embedded: true,
       onClose: requestClosePopover,
       initialPanel: opts.panelId || null
@@ -605,7 +624,7 @@ export class PopoverController {
    */
   setSettingsPanel(panelId) {
     if (this._inPagePopoverKind !== 'settings') return false;
-    return setActiveSettingsPanel(panelId);
+    return this._settingsUi?.setActiveSettingsPanel?.(panelId) || false;
   }
 
   /**

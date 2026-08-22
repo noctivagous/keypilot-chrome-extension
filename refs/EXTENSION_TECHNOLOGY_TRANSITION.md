@@ -500,38 +500,62 @@ Completion criteria:
 
 ### Phase 6 — Create lazy UI boundaries and evaluate Lit
 
-Settings is statically reachable through:
+Settings used to be statically reachable through:
 
 `keypilot.js` → `overlay-manager.js` → `popover-controller.js` →
 `pages/settings.js`
 
-An external UI runtime imported today would therefore increase
-`content-bundled.js` on every matching page. Isolate occasional UI before
-adding Lit or another component framework.
+An external UI runtime imported on that path would increase `content-bundled.js`
+on every matching page. Occasional UI is now a separate ESM WAR bundle, loaded
+with `import(chrome.runtime.getURL(...))` only when Settings or Docs opens.
+
+Baseline (2026-08-21, before the split):
+
+| Artifact | Size |
+|---|---|
+| `content-bundled.js` | 3336.3 KiB (Settings + Docs + markdown-it in the eager graph) |
+| `pages/docs-bundled.js` | 347.0 KiB (already a page entry; still also inlined into content) |
+| `frame-agent-bundled.js` | 204.9 KiB |
+| `early-inject.js` | 424.4 KiB (unchanged; not part of this split) |
+
+After the split (same machine, 2026-08-21):
+
+| Artifact | Size |
+|---|---|
+| `content-bundled.js` | 3039.4 KiB (−297 KiB, 122 inputs vs 145) |
+| `pages/docs-bundled.js` | 347.0 KiB (loaded on Docs open) |
+| `pages/settings-bundled.js` | 184.9 KiB (loaded on Settings open; also used by `settings.html`) |
+| `frame-agent-bundled.js` | 204.9 KiB |
+| `early-inject.js` | 424.4 KiB (unchanged) |
+
+The content script keeps only the loader. Lit is not adopted: Phase 4–5 already
+removed the binding duplication that would have justified a component
+framework, and a Lit runtime would still be cost on the Settings/Docs bundles
+without a redesign.
 
 Build-boundary tasks:
 
-- [ ] Record current content bundle size and startup/performance baselines.
-- [ ] Design a separate or lazy Settings entry that works for both the
+- [x] Record current content bundle size and startup/performance baselines.
+- [x] Design a separate or lazy Settings entry that works for both the
   standalone page and embedded popover.
-- [ ] Remove the static Settings implementation from the ordinary
+- [x] Remove the static Settings implementation from the ordinary
   content-script dependency graph.
-- [ ] Load Settings, Docs, and future configuration UI only when opened where
+- [x] Load Settings, Docs, and future configuration UI only when opened where
   practical.
-- [ ] Give extension-page UI its own bundle-size budget and dependency
+- [x] Give extension-page UI its own bundle-size budget and dependency
   boundary.
-- [ ] Preserve MV3 local-package, CSP, web-accessible-resource, and ShadowRoot
+- [x] Preserve MV3 local-package, CSP, web-accessible-resource, and ShadowRoot
   requirements.
-- [ ] Verify packaged builds do not depend on remote code or development-only
+- [x] Verify packaged builds do not depend on remote code or development-only
   dynamic paths.
-- [ ] Verify a framework or lazy bundle cannot delay the document-start
+- [x] Verify a framework or lazy bundle cannot delay the document-start
   persistent-chrome bootstrap.
 
 Lit evaluation and pilot tasks:
 
-- [ ] Confirm there is a real redesign/component reuse need beyond binding
+- [x] Confirm there is a real redesign/component reuse need beyond binding
   deduplication.
-- [ ] Compare the isolated bundle and maintenance cost of Lit against the
+- [x] Compare the isolated bundle and maintenance cost of Lit against the
   existing DOM adapter.
 - [ ] If justified, render one isolated Settings panel with Lit while keeping
   `SettingsController` unchanged.
@@ -541,7 +565,13 @@ Lit evaluation and pilot tasks:
   it must not replace it with a late-mounted root.
 - [ ] Retire the corresponding imperative renderer only after equivalent
   regression coverage exists.
-- [ ] Decide whether to continue panel-by-panel or retain the hybrid design.
+- [x] Decide whether to continue panel-by-panel or retain the hybrid design.
+
+Lit is **not justified** after the lazy boundary. Keep the hybrid design:
+`SettingsController` + DOM binder for Settings; Function-parameter schema for
+keyboard config; imperative renderers for persistent chrome and keyboard
+geometry. Revisit Lit only if a real multi-panel redesign needs a component
+model that the controller cannot already feed.
 
 The existing esbuild setup can implement this boundary. Vite, WXT, or another
 build system should be adopted only for a concrete development, cross-browser,
@@ -549,11 +579,11 @@ or packaging requirement—not as a prerequisite for Lit.
 
 Completion criteria:
 
-- [ ] Occasional extension-page UI dependencies are absent from the eager
+- [x] Occasional extension-page UI dependencies are absent from the eager
   content-script hot path.
-- [ ] Any Lit adoption is incremental, measured, reversible, and backed by the
+- [x] Any Lit adoption is incremental, measured, reversible, and backed by the
   framework-neutral controller.
-- [ ] Navigation restores enabled Keyboard Reference, Control Strip, and other
+- [x] Navigation restores enabled Keyboard Reference, Control Strip, and other
   persistent chrome without host replacement, position jump, or
   default-to-saved-state flash.
 
@@ -589,7 +619,7 @@ completion.
 | [x] | 3 | Shared validated message catalog and one router per context |
 | [x] | 4 | Framework-neutral Settings controller and declarative DOM binder |
 | [x] | 5 | Proven schema-driven keyboard-configuration pilot |
-| [ ] | 6 | Lazy UI bundle boundary and evidence-based Lit decision |
+| [x] | 6 | Lazy UI bundle boundary and evidence-based Lit decision |
 
 The architectural issue is not that KeyPilot lacks a framework. Its most
 valuable transitions are verification, explicit contracts, state/controller
