@@ -270,8 +270,14 @@ export const SCROLL = Object.freeze({
   HOLD_RAF_START_MS: 120,
   /** Default CSS scroll-behavior for keyboard scrolling */
   BEHAVIOR: 'smooth',
-  /** Fade-in / fade-out duration for Scroll To Top / Bottom "Fade" jump style */
-  EDGE_JUMP_FADE_MS: 180,
+  /** Blur-in duration for Scroll To Top / Bottom "Fade" jump style */
+  EDGE_JUMP_BLUR_MS: 140,
+  /** Opaque cover transition before the instant jump */
+  EDGE_JUMP_COVER_MS: 90,
+  /** Soft destination reveal duration after the jump */
+  EDGE_JUMP_REVEAL_MS: 160,
+  /** Clear the veil after the destination reveal */
+  EDGE_JUMP_CLEAR_MS: 140,
   /**
    * After the instant jump, keep the veil opaque until scroll position is
    * stable (or this timeout). Covers CSS `scroll-behavior: smooth` and

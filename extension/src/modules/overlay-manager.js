@@ -3272,7 +3272,7 @@ export class OverlayManager {
   async runEdgeJumpFade(onCovered, opts = {}) {
     const durationMs = Number.isFinite(Number(opts.durationMs))
       ? Math.max(80, Number(opts.durationMs))
-      : SCROLL.EDGE_JUMP_FADE_MS;
+      : null;
 
     let reduced = false;
     try {
@@ -3287,17 +3287,44 @@ export class OverlayManager {
     const el = this._ensureEdgeJumpFadeEl();
     this._positionEdgeJumpFadeEl(el, opts.coverEl || null, opts.coverRect || null);
     const bg = this._resolveEdgeJumpFadeColor(opts.coverEl || null);
-    el.style.background = bg;
+    const blurMs = durationMs ?? SCROLL.EDGE_JUMP_BLUR_MS;
+    const coverMs = durationMs === null
+      ? SCROLL.EDGE_JUMP_COVER_MS
+      : Math.round(durationMs * 0.5);
+    const revealMs = durationMs ?? SCROLL.EDGE_JUMP_REVEAL_MS;
+    const clearMs = durationMs === null
+      ? SCROLL.EDGE_JUMP_CLEAR_MS
+      : Math.round(durationMs * 0.75);
     this._syncEdgeJumpFadeIcon(el, opts.edge, bg);
-    el.style.transition = `opacity ${durationMs}ms ease`;
-    await this._fadeEdgeJumpEl(el, 1, durationMs);
+    el.style.transition = 'none';
+    el.style.opacity = '0';
+    el.style.backdropFilter = 'none';
+    el.style.webkitBackdropFilter = 'none';
+    el.style.background = this._withEdgeJumpFadeAlpha(bg, 0);
+    await this._fadeEdgeJumpEl(el, 1, blurMs, {
+      blurPx: 10,
+      background: this._withEdgeJumpFadeAlpha(bg, 0.42)
+    });
+    if (token !== this._edgeJumpFadeToken) return;
+    await this._fadeEdgeJumpEl(el, 1, coverMs, {
+      blurPx: 0,
+      background: this._withEdgeJumpFadeAlpha(bg, 1)
+    });
     try { onCovered?.(); } catch { /* ignore */ }
     if (token !== this._edgeJumpFadeToken) return;
     await waitForScrollSettle(opts.coverEl || null, {
       timeoutMs: SCROLL.EDGE_JUMP_SETTLE_MS
     });
     if (token !== this._edgeJumpFadeToken) return;
-    await this._fadeEdgeJumpEl(el, 0, durationMs);
+    await this._fadeEdgeJumpEl(el, 1, revealMs, {
+      blurPx: 10,
+      background: this._withEdgeJumpFadeAlpha(bg, 0.42)
+    });
+    if (token !== this._edgeJumpFadeToken) return;
+    await this._fadeEdgeJumpEl(el, 0, clearMs, {
+      blurPx: 0,
+      background: this._withEdgeJumpFadeAlpha(bg, 0)
+    });
     if (token === this._edgeJumpFadeToken) this._removeEdgeJumpFadeEl();
   }
 
@@ -3422,6 +3449,40 @@ export class OverlayManager {
   }
 
   /**
+   * Convert the resolved veil color to a translucent tint without applying
+   * opacity to the child icon. Computed styles normally return rgb(...), but
+   * keep hex support for the dark/light fallbacks above.
+   * @param {string} color
+   * @param {number} alpha
+   * @returns {string}
+   */
+  _withEdgeJumpFadeAlpha(color, alpha) {
+    const s = String(color || '').trim().toLowerCase();
+    let r;
+    let g;
+    let b;
+    const hex = s.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+    if (hex) {
+      const h = hex[1];
+      r = parseInt(h.length === 3 ? h[0] + h[0] : h.slice(0, 2), 16);
+      g = parseInt(h.length === 3 ? h[1] + h[1] : h.slice(2, 4), 16);
+      b = parseInt(h.length === 3 ? h[2] + h[2] : h.slice(4, 6), 16);
+    } else {
+      const rgb = s.match(
+        /^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:\s*[,/]\s*[\d.]+)?\s*\)$/
+      );
+      if (rgb) {
+        r = Number(rgb[1]);
+        g = Number(rgb[2]);
+        b = Number(rgb[3]);
+      }
+    }
+    if (![r, g, b].every(Number.isFinite)) return `rgba(255, 255, 255, ${alpha})`;
+    const a = Math.max(0, Math.min(1, Number(alpha)));
+    return `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${a})`;
+  }
+
+  /**
    * Corner SVG: top-left for Scroll To Top, bottom-left for Scroll To Bottom.
    * @param {HTMLElement} veil
    * @param {'top'|'bottom'|string|null|undefined} edge
@@ -3457,9 +3518,10 @@ export class OverlayManager {
    * @param {HTMLElement} el
    * @param {number} opacity
    * @param {number} ms
+   * @param {{ blurPx?: number, background?: string }} [state]
    * @returns {Promise<void>}
    */
-  _fadeEdgeJumpEl(el, opacity, ms) {
+  _fadeEdgeJumpEl(el, opacity, ms, state = {}) {
     return new Promise((resolve) => {
       let settled = false;
       const done = () => {
@@ -3469,11 +3531,31 @@ export class OverlayManager {
         resolve();
       };
       const onEnd = (e) => {
-        if (e.target !== el || (e.propertyName && e.propertyName !== 'opacity')) return;
+        if (
+          e.target !== el
+          || (
+            e.propertyName
+            && !['opacity', 'backdrop-filter', '-webkit-backdrop-filter', 'background-color']
+              .includes(e.propertyName)
+          )
+        ) return;
         done();
       };
       el.addEventListener('transitionend', onEnd);
-      const apply = () => { el.style.opacity = String(opacity); };
+      el.style.transition = [
+        `opacity ${ms}ms ease`,
+        `backdrop-filter ${ms}ms ease`,
+        `-webkit-backdrop-filter ${ms}ms ease`,
+        `background-color ${ms}ms ease`
+      ].join(', ');
+      const apply = () => {
+        el.style.opacity = String(opacity);
+        const blurPx = Number(state.blurPx) || 0;
+        const blur = blurPx > 0 ? `blur(${blurPx}px)` : 'none';
+        el.style.backdropFilter = blur;
+        el.style.webkitBackdropFilter = blur;
+        if (state.background) el.style.background = state.background;
+      };
       requestAnimationFrame(() => requestAnimationFrame(apply));
       setTimeout(done, ms + 80);
     });

@@ -333,7 +333,9 @@ export class StyleManager {
         opacity: 0;
         background: #fff;
         overflow: hidden;
-        will-change: opacity, left, top, width, height;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        will-change: opacity, backdrop-filter, -webkit-backdrop-filter, background-color, left, top, width, height;
       }
 
       .${CSS_CLASSES.EDGE_JUMP_FADE_ICON} {
