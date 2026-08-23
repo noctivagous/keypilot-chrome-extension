@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-22T04:37:01.587Z
+ * Generated on 2026-08-22T05:37:13.796Z
  */
 
 (() => {
@@ -5697,4 +5697,6 @@
       console.warn("[KeyPilot] Failed to install frame agents:", error);
     }
   })();
+})();
+
 })();

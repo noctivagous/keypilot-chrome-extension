@@ -405,7 +405,7 @@ export function getSelectMenuCss() {
 }
 .kp-select-trigger-icon,
 .kp-select-item-icon {
-  display: block;
+  display: none;
   width: 12px;
   height: 12px;
   flex: 0 0 auto;
@@ -416,6 +416,10 @@ export function getSelectMenuCss() {
   mask-position: center;
   -webkit-mask-size: contain;
   mask-size: contain;
+}
+.kp-select-trigger-icon:not([hidden]),
+.kp-select-item-icon:not([hidden]) {
+  display: block;
 }
 .kp-select-trigger-label,
 .kp-select-item-label {

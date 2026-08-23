@@ -177,6 +177,7 @@ export function createSelectMenu(config = {}) {
     const label = choice?.label != null ? String(choice.label) : (currentValue ? String(currentValue) : '');
     triggerLabel.textContent = label;
     const iconId = choice?.icon;
+    let showIcon = false;
     if (iconId) {
       try {
         triggerIcon.setAttribute('data-kp-theme-icon', iconId);
@@ -185,18 +186,16 @@ export function createSelectMenu(config = {}) {
           const img = `url("${String(url).replace(/"/g, '\\"')}")`;
           triggerIcon.style.webkitMaskImage = img;
           triggerIcon.style.maskImage = img;
-          triggerIcon.hidden = false;
-        } else {
-          triggerIcon.hidden = true;
+          showIcon = true;
         }
-      } catch {
-        triggerIcon.hidden = true;
-      }
-    } else {
-      triggerIcon.hidden = true;
+      } catch { /* ignore */ }
+    }
+    if (!showIcon) {
+      triggerIcon.removeAttribute('data-kp-theme-icon');
       triggerIcon.style.webkitMaskImage = '';
       triggerIcon.style.maskImage = '';
     }
+    triggerIcon.hidden = !showIcon;
   };
 
   const isListOpen = () => fallbackOpen;

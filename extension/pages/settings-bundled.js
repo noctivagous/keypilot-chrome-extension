@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-22T04:37:01.587Z
+ * Generated on 2026-08-22T05:37:13.796Z
  */
 
 
@@ -1680,7 +1680,7 @@ function getSelectMenuCss() {
 }
 .kp-select-trigger-icon,
 .kp-select-item-icon {
-  display: block;
+  display: none;
   width: 12px;
   height: 12px;
   flex: 0 0 auto;
@@ -1691,6 +1691,10 @@ function getSelectMenuCss() {
   mask-position: center;
   -webkit-mask-size: contain;
   mask-size: contain;
+}
+.kp-select-trigger-icon:not([hidden]),
+.kp-select-item-icon:not([hidden]) {
+  display: block;
 }
 .kp-select-trigger-label,
 .kp-select-item-label {
