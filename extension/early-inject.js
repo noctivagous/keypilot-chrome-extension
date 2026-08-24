@@ -282,12 +282,12 @@
       {
         "type": "action",
         "id": "PAGE_UP_INSTANT",
-        "fallbackText": "Page Up Fast"
+        "fallbackText": "Page Up"
       },
       {
         "type": "action",
         "id": "PAGE_DOWN_INSTANT",
-        "fallbackText": "Page Down Fast"
+        "fallbackText": "Page Down"
       },
       {
         "type": "action",
@@ -496,12 +496,12 @@
       {
         "type": "action",
         "id": "PAGE_DOWN_INSTANT",
-        "fallbackText": "Page Down Fast"
+        "fallbackText": "Page Down"
       },
       {
         "type": "action",
         "id": "PAGE_UP_INSTANT",
-        "fallbackText": "Page Up Fast"
+        "fallbackText": "Page Up"
       },
       {
         "type": "key",
@@ -663,12 +663,12 @@
       {
         "type": "action",
         "id": "PAGE_UP_INSTANT",
-        "fallbackText": "Page Up Fast"
+        "fallbackText": "Page Up"
       },
       {
         "type": "action",
         "id": "PAGE_DOWN_INSTANT",
-        "fallbackText": "Page Down Fast"
+        "fallbackText": "Page Down"
       },
       {
         "type": "key",
@@ -860,12 +860,12 @@
       {
         "type": "action",
         "id": "PAGE_DOWN_INSTANT",
-        "fallbackText": "Page Down Fast"
+        "fallbackText": "Page Down"
       },
       {
         "type": "action",
         "id": "PAGE_UP_INSTANT",
-        "fallbackText": "Page Up Fast"
+        "fallbackText": "Page Up"
       },
       {
         "type": "key",
@@ -1407,14 +1407,14 @@
       "keyboardClass": "key-scroll"
     },
     "PAGE_UP_INSTANT": {
-      "label": "Page Up Fast",
+      "label": "Page Up",
       "description": "Jump one page up instantly",
       "keyLabel": "C",
       "displayKey": "C",
       "keyboardClass": "key-scroll"
     },
     "PAGE_DOWN_INSTANT": {
-      "label": "Page Down Fast",
+      "label": "Page Down",
       "description": "Jump one page down instantly",
       "keyLabel": "V",
       "displayKey": "V",
@@ -1605,14 +1605,14 @@
       "keyboardClass": "key-scroll"
     },
     "PAGE_UP_INSTANT": {
-      "label": "Page Up Fast",
+      "label": "Page Up",
       "description": "Jump one page up instantly",
       "keyLabel": ",",
       "displayKey": ",",
       "keyboardClass": "key-scroll"
     },
     "PAGE_DOWN_INSTANT": {
-      "label": "Page Down Fast",
+      "label": "Page Down",
       "description": "Jump one page down instantly",
       "keyLabel": "M",
       "displayKey": "M",
@@ -1712,14 +1712,14 @@
       "keyboardClass": "key-scroll"
     },
     "PAGE_UP_INSTANT": {
-      "label": "Page Up Fast",
+      "label": "Page Up",
       "description": "Jump one page up instantly",
       "keyLabel": "C",
       "displayKey": "C",
       "keyboardClass": "key-scroll"
     },
     "PAGE_DOWN_INSTANT": {
-      "label": "Page Down Fast",
+      "label": "Page Down",
       "description": "Jump one page down instantly",
       "keyLabel": "V",
       "displayKey": "V",
@@ -1805,14 +1805,14 @@
       "keyboardClass": "key-scroll"
     },
     "PAGE_UP_INSTANT": {
-      "label": "Page Up Fast",
+      "label": "Page Up",
       "description": "Jump one page up instantly",
       "keyLabel": ",",
       "displayKey": ",",
       "keyboardClass": "key-scroll"
     },
     "PAGE_DOWN_INSTANT": {
-      "label": "Page Down Fast",
+      "label": "Page Down",
       "description": "Jump one page down instantly",
       "keyLabel": "M",
       "displayKey": "M",
@@ -2087,12 +2087,12 @@
     {
       "type": "action",
       "id": "PAGE_UP_INSTANT",
-      "fallbackText": "Page Up Fast"
+      "fallbackText": "Page Up"
     },
     {
       "type": "action",
       "id": "PAGE_DOWN_INSTANT",
-      "fallbackText": "Page Down Fast"
+      "fallbackText": "Page Down"
     },
     {
       "type": "action",
@@ -2298,14 +2298,14 @@
     "keyboardClass": "key-scroll"
   },
   "PAGE_UP_INSTANT": {
-    "label": "Page Up Fast",
+    "label": "Page Up",
     "description": "Jump one page up instantly",
     "keyLabel": "C",
     "displayKey": "C",
     "keyboardClass": "key-scroll"
   },
   "PAGE_DOWN_INSTANT": {
-    "label": "Page Down Fast",
+    "label": "Page Down",
     "description": "Jump one page down instantly",
     "keyLabel": "V",
     "displayKey": "V",
@@ -2398,11 +2398,11 @@
     "keyboardClass": null
   },
   "PAGE_UP_INSTANT": {
-    "label": "Page Up Fast",
+    "label": "Page Up",
     "keyboardClass": "key-scroll"
   },
   "PAGE_DOWN_INSTANT": {
-    "label": "Page Down Fast",
+    "label": "Page Down",
     "keyboardClass": "key-scroll"
   },
   "PAGE_TOP": {
@@ -7392,6 +7392,14 @@
       } catch {
         // ignore; fallback to placeholders (bundled UI will overwrite later)
       }
+      // Theme chrome (incl. .kp-titlebar-icon) must live in the shadow. Document-head
+      // copies of KP_ALL_THEMES_CSS do not match nodes inside open shadows, which left
+      // a flex gap before "Keyboard Reference" until document_end adopted.
+      try {
+        if (typeof KP_ALL_THEMES_CSS === 'string' && KP_ALL_THEMES_CSS) {
+          css = `${KP_ALL_THEMES_CSS}\n${css}`;
+        }
+      } catch { /* ignore */ }
       style.textContent = css;
       mount.appendChild(style);
     } catch {
@@ -9069,6 +9077,12 @@
     root.setAttribute('data-kp-early-floating-keyboard', 'true');
     const shell = ensureEarlyOpenChromeShadow(root, 'keyboard-help') || root;
 
+    // Theme + keybindings CSS must be in the shadow before titlebar children are
+    // appended. Document-head theme CSS does not reach .kp-titlebar-icon here, so
+    // a hidden-by-theme leading icon would otherwise leave an 8px flex gap.
+    try { ensureKeybindingsFontsReady(); } catch { /* ignore */ }
+    try { ensureKeybindingsUiStylesInjected(shell); } catch { /* ignore */ }
+
     // NCT dark UI panel chrome (matches floating-keyboard-help.js `_applyProPanelChrome`).
     Object.assign(root.style, {
       position: 'fixed',
@@ -9364,10 +9378,6 @@
     keyboardHelpRoot = root;
     keyboardHelpShadowRoot = root.shadowRoot || null;
     keyboardHelpKeyboardContainer = keyboardContainer;
-
-    // Start Dosis + keyboard CSS in the shadow before the first keycap paint.
-    try { ensureKeybindingsFontsReady(); } catch { /* ignore */ }
-    try { ensureKeybindingsUiStylesInjected(shell); } catch { /* ignore */ }
 
     // Apply stored collapsed state before first paint when visible.
     try { applyEarlyKeyboardReferenceCollapsed(keyboardReferenceCollapsed); } catch { /* ignore */ }

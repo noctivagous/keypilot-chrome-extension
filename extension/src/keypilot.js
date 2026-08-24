@@ -81,7 +81,7 @@ import {
   getThemeClickDefaults,
   resolveThemeFromSettings
 } from './modules/theme-manager.js';
-import { getOrCreateBuiltinFunctionUserAction, getUserKeyboardLayoutById, getUserActionById, getUserMacroById, listUserActions, listUserMacros } from './modules/keyboard-layout-store.js';
+import { getOrCreateBuiltinFunctionUserAction, getUserKeyboardLayoutById, getUserActionById, getUserMacroById, listUserActions, listUserMacros, setUserKeyboardLayoutHandedness } from './modules/keyboard-layout-store.js';
 import { runLegacyMacroKeyFunction } from './modules/macro-key-runtime.js';
 import { runUserExecuteJs, stringifyExecuteJsValue } from './modules/execute-js-runtime.js';
 import { getFunctionDef, functionWorksWhileTyping, functionCancelsOnPointerDown, FIXED_KEY_FUNCTION_IDS, UNIT_SELECT_FUNCTION_IDS } from './config/function-library.js';
@@ -1234,6 +1234,36 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     } catch { /* ignore */ }
   }
 
+  /**
+   * Change handedness. For a current custom layout this moves each assignment
+   * to its paired physical key and changes its built-in visual base, preserving
+   * every customization instead of leaving a right-handed copy unchanged.
+   * @param {'left'|'right'|string} handedness
+   */
+  async setKeyboardHandedness(handedness) {
+    const next = normalizeKeyboardHandedness(handedness);
+    const prev = normalizeKeyboardHandedness(this._settings?.keyboardHandedness);
+    if (next === prev) return;
+
+    let updatedUserLayout = null;
+    if (String(this._currentKeyboardLayoutId || '').startsWith('user:') && this._currentUserLayout) {
+      try {
+        updatedUserLayout = await setUserKeyboardLayoutHandedness(this._currentUserLayout, next);
+      } catch { /* ignore */ }
+    }
+
+    try { await setSettings({ keyboardHandedness: next }); } catch { /* ignore */ }
+    if (this._settings) this._settings.keyboardHandedness = next;
+    this._applyKeyboardLayoutFromSettings();
+
+    if (updatedUserLayout) {
+      await this.applyLiveUserLayout(updatedUserLayout, {
+        macros: this._currentUserMacros,
+        actions: this._currentUserActions
+      });
+    }
+  }
+
   /** Built-in Function ids read via {@link _getBuiltinFunctionActionParams} in hot key handlers. */
   static get BUILTIN_FUNCTION_ACTION_IDS() {
     return [...FIXED_KEY_FUNCTION_IDS, ...UNIT_SELECT_FUNCTION_IDS];
@@ -1353,9 +1383,10 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
 
       const key = (e && typeof e.key === 'string') ? e.key : '';
       if (!key || key === ' ') return false;
-      const slot = String(key).trim().toUpperCase();
+      const raw = String(key).trim();
+      const slot = raw.length === 1 ? raw.toUpperCase() : raw;
       if (!slot) return false;
-      const assigned = slots[slot];
+      const assigned = slots[slot] || slots[raw.toUpperCase()];
       if (!assigned || !assigned.type || !assigned.id) return false;
 
       if (assigned.type === 'macro') {

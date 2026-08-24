@@ -203,6 +203,7 @@ export class FloatingKeyboardHelp {
     this._onExitTextModeClick = this._onExitTextModeClick.bind(this);
     this._onCloseEditorClick = this._onCloseEditorClick.bind(this);
     this._onLayoutSelectChange = this._onLayoutSelectChange.bind(this);
+    this._onHandednessChipClick = this._onHandednessChipClick.bind(this);
     /** @type {ReturnType<typeof createSelectMenu>|null} */
     this._layoutSelectApi = null;
     /** @type {(() => any)|null} */
@@ -264,6 +265,8 @@ export class FloatingKeyboardHelp {
     // Active layout selection (builtin vs user) for rendering + dropdown.
     /** @type {HTMLElement|null} */
     this._layoutSelectEl = null;
+    /** @type {HTMLButtonElement|null} Left-handed status chip beside the layout picker. */
+    this._handednessChip = null;
     /** @type {HTMLElement|null} */
     this._layoutTitleEl = null;
     this._currentKeyboardLayoutId = 'builtin';
@@ -911,9 +914,11 @@ export class FloatingKeyboardHelp {
         this._closeEditorBtn.removeEventListener('click', this._onCloseEditorClick);
       }
     } catch { /* ignore */ }
+    try { this._handednessChip?.removeEventListener('click', this._onHandednessChipClick); } catch { /* ignore */ }
     try { this._layoutSelectApi?.destroy?.(); } catch { /* ignore */ }
     this._layoutSelectApi = null;
     this._layoutSelectEl = null;
+    this._handednessChip = null;
     this._unbindWindowChrome();
     this._unbindKeydownFeedback();
     this._unbindSettingsSync();
@@ -1424,6 +1429,7 @@ export class FloatingKeyboardHelp {
         let layoutSelect = shell.querySelector('[data-kp-floating-keyboard-layout-select="true"]');
         if (header) {
           layoutSelect = this._installLayoutSelect(layoutSelect, header, hintEl);
+          this._ensureHandednessChip(header, layoutSelect);
         } else if (layoutSelect) {
           this._installLayoutSelect(layoutSelect, layoutSelect.parentElement, layoutSelect.nextSibling);
         }
@@ -1526,6 +1532,7 @@ export class FloatingKeyboardHelp {
     header.appendChild(title);
     header.appendChild(shortcut);
     header.appendChild(layoutSelect);
+    this._ensureHandednessChip(header, layoutSelect);
     header.appendChild(hint);
     header.appendChild(closeBtn);
     this._applyCompactTitlebar(header, {
@@ -1847,10 +1854,29 @@ export class FloatingKeyboardHelp {
 }
 :host([data-kp-place-targeting="true"]) [data-kp-floating-keyboard-titlebar="true"] {
   animation: kp-kb-place-titlebar-pulse 1.15s ease-in-out infinite;
+  position: relative;
+  isolation: isolate;
+}
+:host([data-kp-place-targeting="true"]) [data-kp-floating-keyboard-titlebar="true"]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: rgba(144, 82, 255, 0.38);
+  animation: kp-kb-place-hatch-tint 1.15s ease-in-out infinite;
+}
+:host([data-kp-place-targeting="true"]) [data-kp-floating-keyboard-titlebar="true"] > * {
+  position: relative;
+  z-index: 1;
 }
 @keyframes kp-kb-place-titlebar-pulse {
-  0%, 100% { filter: brightness(1); box-shadow: inset 0 0 0 0 rgba(255, 140, 0, 0); }
-  50% { filter: brightness(1.18); box-shadow: inset 0 0 0 2px rgba(255, 176, 72, 0.85), 0 0 14px rgba(255, 140, 0, 0.55); }
+  0%, 100% { filter: brightness(1); box-shadow: inset 0 0 0 0 rgba(144, 82, 255, 0); }
+  50% { filter: brightness(1.12); box-shadow: inset 0 0 0 2px rgba(193, 151, 255, 0.88), 0 0 14px rgba(144, 82, 255, 0.62); }
+}
+@keyframes kp-kb-place-hatch-tint {
+  0%, 100% { opacity: 0.08; }
+  50% { opacity: 0.58; }
 }
 /* Lighten the panel chrome fill while editing. */
 :host([data-kp-edit-mode="true"]) {
@@ -2034,6 +2060,83 @@ export class FloatingKeyboardHelp {
   }
 
   /**
+   * Status/action chip shown only for the left-handed layout. It intentionally
+   * lives beside the picker so the active mapping is visible even for custom
+   * layouts, whose names do not otherwise encode handedness.
+   * @param {Element|null} header
+   * @param {HTMLElement|null} layoutSelect
+   */
+  _ensureHandednessChip(header, layoutSelect) {
+    if (!header || !layoutSelect) return null;
+    let chip = this._handednessChip
+      || header.querySelector?.('[data-kp-floating-keyboard-handedness-chip="true"]');
+    if (!chip) {
+      chip = document.createElement('button');
+      chip.type = 'button';
+      chip.hidden = true;
+      chip.setAttribute('data-kp-floating-keyboard-handedness-chip', 'true');
+      chip.setAttribute('aria-label', 'Turn off left-handed layout');
+      chip.title = 'Turn off left-handed layout';
+      Object.assign(chip.style, {
+        display: 'none',
+        alignItems: 'center',
+        gap: '3px',
+        flex: '0 0 auto',
+        border: '1px solid rgba(155, 205, 255, 0.58)',
+        borderRadius: '10px',
+        padding: '1px 6px',
+        color: '#dceeff',
+        background: 'rgba(44, 104, 166, 0.38)',
+        font: '600 10px/16px inherit',
+        whiteSpace: 'nowrap',
+        cursor: 'pointer'
+      });
+      const label = document.createElement('span');
+      label.textContent = 'Lefthanded';
+      const close = document.createElement('span');
+      close.textContent = '×';
+      close.setAttribute('aria-hidden', 'true');
+      close.setAttribute('data-kp-handedness-chip-close', 'true');
+      Object.assign(close.style, { display: 'none', fontSize: '13px', lineHeight: '12px' });
+      chip.append(label, close);
+      chip.addEventListener('pointerdown', (event) => event.stopPropagation(), true);
+      chip.addEventListener('mouseenter', () => { close.style.display = 'inline'; });
+      chip.addEventListener('mouseleave', () => { close.style.display = 'none'; });
+      chip.addEventListener('click', this._onHandednessChipClick);
+    }
+    if (chip.previousSibling !== layoutSelect) {
+      try { header.insertBefore(chip, layoutSelect.nextSibling); } catch { /* ignore */ }
+    }
+    this._handednessChip = chip;
+    return chip;
+  }
+
+  /**
+   * @param {any} rawHandedness
+   */
+  _syncHandednessChip(rawHandedness) {
+    const chip = this._handednessChip;
+    if (!chip) return;
+    const leftHanded = normalizeKeyboardHandedness(rawHandedness) === 'left';
+    chip.hidden = !leftHanded;
+    chip.style.display = leftHanded ? 'inline-flex' : 'none';
+  }
+
+  async _onHandednessChipClick(event) {
+    try { event?.stopPropagation?.(); } catch { /* ignore */ }
+    const kp = this._getKeyPilot?.();
+    try {
+      if (typeof kp?.setKeyboardHandedness === 'function') {
+        await kp.setKeyboardHandedness('right');
+      } else {
+        await setSettings({ keyboardHandedness: 'right' });
+      }
+    } catch { /* ignore */ }
+    this._syncHandednessChip('right');
+    this._render();
+  }
+
+  /**
    * Wire (or re-wire) the layout select once.
    * @param {HTMLElement|null} layoutSelect
    */
@@ -2082,9 +2185,9 @@ export class FloatingKeyboardHelp {
       }
 
       appendGroup('KeyPilot', [
-        { value: LAYOUT_SELECT_ONBOARDING_VALUE, label: 'Onboarding Tutorial' },
-        { value: LAYOUT_SELECT_DOCS_VALUE, label: 'KeyPilot Documentation/Help' },
-        { value: LAYOUT_SELECT_SETTINGS_VALUE, label: 'KeyPilot Settings' }
+        { value: LAYOUT_SELECT_ONBOARDING_VALUE, label: 'Onboarding Tutorial', shortcut: 'Alt + T' },
+        { value: LAYOUT_SELECT_DOCS_VALUE, label: 'KeyPilot Documentation', shortcut: 'Alt + H' },
+        { value: LAYOUT_SELECT_SETTINGS_VALUE, label: 'KeyPilot Settings', shortcut: "'" }
       ]);
 
       let v = this._layoutSelectValueForCurrent();
@@ -2128,6 +2231,7 @@ export class FloatingKeyboardHelp {
     let settings = null;
     try { settings = await getSettings(); } catch { /* ignore */ }
     if (token !== this._renderToken) return;
+    this._syncHandednessChip(settings?.keyboardHandedness);
 
     // Edit mode: always render a slot keyboard driven by the Config panel's selection.
     if (this._editMode) {
@@ -2499,7 +2603,7 @@ export class FloatingKeyboardHelp {
       this._render();
     };
 
-    const renderSlot = (slotLabel, assigned) => {
+    const renderSlot = (slotLabel, assigned, extraClass = '') => {
       const previewing = !!(placeItem && placeHoverSlot === slotLabel);
       const displayAssigned = previewing ? placeItem : assigned;
 
@@ -2514,7 +2618,11 @@ export class FloatingKeyboardHelp {
       } else if (displayAssigned && displayAssigned.type === 'macro') {
         keyboardClass = 'key-purple';
       }
-      btn.className = `key${keyboardClass ? ' ' + keyboardClass : ''}${previewing ? ' kp-place-preview' : ''}`;
+      const chromeClass = extraClass
+        .split(/\s+/)
+        .filter((c) => c && c !== 'key' && c !== keyboardClass)
+        .join(' ');
+      btn.className = `key${keyboardClass ? ' ' + keyboardClass : ''}${chromeClass ? ' ' + chromeClass : ''}${previewing ? ' kp-place-preview' : ''}`;
       btn.dataset.kpBaseClass = 'key';
       btn.dataset.kpSlot = slotLabel;
       if (markReadonly && !placeActive) {
@@ -2668,24 +2776,18 @@ export class FloatingKeyboardHelp {
           rowEl.appendChild(sp);
           continue;
         }
-        // Backspace is a fixed keyboard-chrome key, not an assignable one-character
-        // slot. It arrives as DELETE in the full built-in layout, so preserve it
-        // when switching the reference to the slot-based edit renderer.
-        if (item.type === 'action' && (item.id === 'DELETE' || String(item.className || '').includes('key-backspace'))) {
-          const sp = doc.createElement('div');
-          sp.className = String(item.className || 'key key-backspace');
-          const text = doc.createElement('span');
-          text.className = 'key-text';
-          text.textContent = 'Backspace';
-          sp.appendChild(text);
-          ensureKeyPressOverlay(doc, sp);
-          rowEl.appendChild(sp);
-          continue;
-        }
-
+        let extraClass = '';
         let slotLabel = '';
-        if (item.type === 'key') slotLabel = String(item.text || '').trim().toUpperCase();
-        else if (item.type === 'action') slotLabel = actionSlotLabelFromItem(item);
+        // Backspace is a named physical slot (Delete Mode on built-in Browsing).
+        // Render it as an assignable slot so copies keep DELETE instead of a blank chrome key.
+        if (item.type === 'action' && (item.id === 'DELETE' || String(item.className || '').includes('key-backspace'))) {
+          slotLabel = 'Backspace';
+          extraClass = String(item.className || 'key key-backspace');
+        } else if (item.type === 'key') {
+          slotLabel = String(item.text || '').trim().toUpperCase();
+        } else if (item.type === 'action') {
+          slotLabel = actionSlotLabelFromItem(item);
+        }
         if (!slotLabel) {
           const empty = doc.createElement('div');
           empty.className = 'key';
@@ -2694,7 +2796,7 @@ export class FloatingKeyboardHelp {
           continue;
         }
         const assigned = slots && typeof slots === 'object' ? (slots[slotLabel] || null) : null;
-        rowEl.appendChild(renderSlot(slotLabel, assigned));
+        rowEl.appendChild(renderSlot(slotLabel, assigned, extraClass));
       }
     }
 

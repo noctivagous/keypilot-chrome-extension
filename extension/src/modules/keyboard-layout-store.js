@@ -18,6 +18,8 @@ import {
   buildEffectiveKeybindings,
   getKeyboardUiLayoutForLayout,
   inferFamilyAndHandednessFromLayoutId,
+  normalizeKeyboardHandedness,
+  resolveKeyboardLayoutId,
   physicalSlotLabelFromBinding
 } from '../config/keyboard-layouts.js';
 import {
@@ -133,6 +135,43 @@ function normalizeSlotLabel(raw) {
   if (!s) return '';
   // Prefer stable, simple slot keys.
   return s.length === 1 ? s.toUpperCase() : s;
+}
+
+/**
+ * Physical-key pairs for changing a custom layout between the built-in right
+ * and left-handed variants. The keycap labels do not move; the assignment does.
+ * Keeping this as an explicit physical map (rather than mirroring character
+ * codes) means punctuation and the staggered bottom row stay correct.
+ */
+const HANDEDNESS_SLOT_PAIRS = Object.freeze([
+  ['Q', 'P'], ['W', 'O'], ['E', 'I'], ['R', 'U'], ['T', 'Y'],
+  ['A', ';'], ['S', 'L'], ['D', 'K'], ['F', 'J'], ['G', 'H'],
+  ['Z', '/'], ['X', '.'], ['C', ','], ['V', 'M'], ['B', 'N']
+]);
+
+const MIRRORED_PHYSICAL_SLOT = Object.freeze(Object.fromEntries(
+  HANDEDNESS_SLOT_PAIRS.flatMap(([a, b]) => [[a, b], [b, a]])
+));
+
+/**
+ * Mirror a bare key slot or the terminal key in a modifier-chord slot.
+ * Unknown/special slots remain unchanged so imports and future key shapes
+ * remain lossless.
+ *
+ * @param {string} slotKey
+ * @returns {string}
+ */
+export function mirrorKeyboardLayoutSlotKey(slotKey) {
+  const key = String(slotKey || '');
+  const chordPrefix = 'CHORD:';
+  if (key.startsWith(chordPrefix)) {
+    const parts = key.slice(chordPrefix.length).split('+');
+    const last = parts.pop();
+    if (!last) return key;
+    const mirrored = MIRRORED_PHYSICAL_SLOT[String(last).toUpperCase()];
+    return mirrored ? `${chordPrefix}${[...parts, mirrored].join('+')}` : key;
+  }
+  return MIRRORED_PHYSICAL_SLOT[key.toUpperCase()] || key;
 }
 
 /**
@@ -731,6 +770,41 @@ export async function upsertUserKeyboardLayout(layout) {
   st.layouts[l.id] = l;
   await setKeyboardLayoutStore(st);
   return l;
+}
+
+/**
+ * Convert a custom layout to the requested handedness without discarding its
+ * edits. Assignments move to their opposite physical key while the layout keeps
+ * the same built-in family. Switching back is therefore lossless.
+ *
+ * @param {UserKeyboardLayout} layout
+ * @param {'left'|'right'|string} handedness
+ * @returns {Promise<UserKeyboardLayout|null>}
+ */
+export async function setUserKeyboardLayoutHandedness(layout, handedness) {
+  if (!layout?.id) return null;
+  const baseId = String(layout.baseBuiltinLayoutId || '');
+  const inferred = inferFamilyAndHandednessFromLayoutId(baseId);
+  const targetHand = normalizeKeyboardHandedness(handedness);
+  if (inferred.handedness === targetHand) return layout;
+
+  /** @type {Record<string, SlotAssignment|null>} */
+  const slots = {};
+  for (const [slotKey, assignment] of Object.entries(layout.slots || {})) {
+    const mirroredKey = mirrorKeyboardLayoutSlotKey(slotKey);
+    slots[mirroredKey] = assignment && typeof assignment === 'object'
+      ? { type: String(assignment.type), id: String(assignment.id) }
+      : null;
+  }
+  const nextBaseBuiltinLayoutId = resolveKeyboardLayoutId({
+    familyId: inferred.familyId,
+    handedness: targetHand
+  });
+  return await upsertUserKeyboardLayout({
+    ...layout,
+    baseBuiltinLayoutId: nextBaseBuiltinLayoutId,
+    slots
+  });
 }
 
 /**

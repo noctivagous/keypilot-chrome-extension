@@ -418,3 +418,75 @@ export function createSelectMenu(config = {}) {
     }
   };
 }
+
+/**
+ * Replace the visible face of an existing native select while retaining the
+ * native control as the value/event bridge for older callers. This lets
+ * existing form code continue to read `.value` and listen for `change`.
+ *
+ * @param {HTMLSelectElement|null|undefined} select
+ * @param {{ variant?: 'titlebar'|'field', className?: string }} [opts]
+ * @returns {ReturnType<typeof createSelectMenu>|null}
+ */
+export function enhanceNativeSelect(select, opts = {}) {
+  if (!select || select.dataset?.kpSelectEnhanced === 'true') return null;
+  const doc = select.ownerDocument || document;
+  const options = Array.from(select.options || []).map((option) => ({
+    value: String(option.value),
+    label: String(option.textContent || option.label || option.value),
+    disabled: !!option.disabled
+  }));
+  const menu = createSelectMenu({
+    doc,
+    ariaLabel: select.getAttribute('aria-label') || undefined,
+    value: select.value,
+    variant: opts.variant === 'titlebar' ? 'titlebar' : 'field',
+    className: opts.className || select.className || '',
+    options,
+    onChange: (value) => {
+      select.value = value;
+      try {
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+      } catch {
+        try {
+          select.dispatchEvent(new doc.defaultView.Event('change', { bubbles: true }));
+        } catch { /* ignore */ }
+      }
+    }
+  });
+  select.dataset.kpSelectEnhanced = 'true';
+  select.setAttribute('aria-hidden', 'true');
+  try { select.style.setProperty('display', 'none', 'important'); } catch { /* ignore */ }
+  try { select.parentNode?.insertBefore(menu.root, select.nextSibling); } catch { /* ignore */ }
+  menu.setDisabled(!!select.disabled);
+  let observer = null;
+  const api = {
+    ...menu,
+    syncFromNative() {
+      menu.setOptions(Array.from(select.options || []).map((option) => ({
+        value: String(option.value),
+        label: String(option.textContent || option.label || option.value),
+        disabled: !!option.disabled
+      })));
+      menu.setValue(select.value, { silent: true });
+      menu.setDisabled(!!select.disabled);
+    },
+    destroy() {
+      try { observer?.disconnect?.(); } catch { /* ignore */ }
+      observer = null;
+      menu.destroy();
+    }
+  };
+  try {
+    const target = doc.documentElement || doc.body;
+    if (target && typeof MutationObserver !== 'undefined') {
+      observer = new MutationObserver(() => {
+        if (!select.isConnected) api.destroy();
+      });
+      observer.observe(target, { childList: true, subtree: true });
+    }
+  } catch { /* ignore */ }
+  // Kept on the native bridge for callers that still update its options/value.
+  select._kpSelectMenu = api;
+  return api;
+}

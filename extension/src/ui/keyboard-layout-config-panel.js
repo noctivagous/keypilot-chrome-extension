@@ -86,6 +86,7 @@ import {
 import { actionHasDestination, actionHasParameters, getSharedKeyActionConfigPanel } from './key-action-settings.js';
 import { inspectKeyActionFromAnchor } from './keybindings-ui.js';
 import { createMacroKeyEditor } from './macro-key-editor.js';
+import { enhanceNativeSelect } from './select-menu.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
 import {
   closestComposed,
@@ -1052,10 +1053,28 @@ export class KeyboardLayoutConfigPanel {
 }
 .kp-layout-config-panel[data-kp-place-targeting="true"] .kp-cfg-titlebar {
   animation: kp-cfg-place-titlebar-pulse 1.15s ease-in-out infinite;
+  isolation: isolate;
+}
+.kp-layout-config-panel[data-kp-place-targeting="true"] .kp-cfg-titlebar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: rgba(144, 82, 255, 0.38);
+  animation: kp-cfg-place-hatch-tint 1.15s ease-in-out infinite;
+}
+.kp-layout-config-panel[data-kp-place-targeting="true"] .kp-cfg-titlebar > * {
+  position: relative;
+  z-index: 1;
 }
 @keyframes kp-cfg-place-titlebar-pulse {
-  0%, 100% { filter: brightness(1); box-shadow: inset 0 0 0 0 rgba(255, 140, 0, 0), var(--kp-titlebar-shadow, ${ONBOARDING_METAL.titlebarShadow}); }
-  50% { filter: brightness(1.18); box-shadow: inset 0 0 0 2px rgba(255, 176, 72, 0.85), 0 0 14px rgba(255, 140, 0, 0.55); }
+  0%, 100% { filter: brightness(1); box-shadow: inset 0 0 0 0 rgba(144, 82, 255, 0), var(--kp-titlebar-shadow, ${ONBOARDING_METAL.titlebarShadow}); }
+  50% { filter: brightness(1.12); box-shadow: inset 0 0 0 2px rgba(193, 151, 255, 0.88), 0 0 14px rgba(144, 82, 255, 0.62); }
+}
+@keyframes kp-cfg-place-hatch-tint {
+  0%, 100% { opacity: 0.08; }
+  50% { opacity: 0.58; }
 }
 .kp-layout-config-panel .kp-cfg-titlebar-place-msg {
   position: absolute;
@@ -1065,10 +1084,10 @@ export class KeyboardLayoutConfigPanel {
   z-index: 3;
   max-width: calc(100% - 180px);
   padding: 2px 10px;
-  border: 1px solid rgba(255, 176, 72, 0.75);
+  border: 1px solid rgba(193, 151, 255, 0.78);
   border-radius: var(--kp-radius-btn, ${NCT_DARK_UI_BTN_RADIUS});
-  background: rgba(255, 140, 0, 0.28);
-  color: #ffe8c0;
+  background: rgba(104, 55, 190, 0.42);
+  color: #f0e4ff;
   font-size: 11px;
   font-weight: 650;
   line-height: 1.25;
@@ -1854,16 +1873,16 @@ export class KeyboardLayoutConfigPanel {
   font-weight: 650;
   line-height: 1.3;
   padding: 4px 8px;
-  border: 1px solid rgba(255, 176, 72, 0.7);
+  border: 1px solid rgba(193, 151, 255, 0.72);
   border-radius: var(--kp-radius-btn, ${NCT_DARK_UI_BTN_RADIUS});
-  background: rgba(255, 140, 0, 0.22);
-  color: #ffe8c0;
+  background: rgba(104, 55, 190, 0.34);
+  color: #f0e4ff;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.28) inset;
   animation: kp-cfg-place-pulse 1.15s ease-in-out infinite;
 }
 @keyframes kp-cfg-place-pulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 140, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.28) inset; }
-  50% { opacity: 0.72; box-shadow: 0 0 12px 2px rgba(255, 140, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.28) inset; }
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(144, 82, 255, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.28) inset; }
+  50% { opacity: 0.72; box-shadow: 0 0 12px 2px rgba(144, 82, 255, 0.62), 0 0 0 1px rgba(0, 0, 0, 0.28) inset; }
 }
 ${getHierarchicalTableCss({ rootSelector: '.kp-layout-config-panel' })}
 .kp-layout-config-panel .kp-hier-table tr.kp-cfg-lib-row-inspecting {
@@ -4421,6 +4440,8 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     this._renderLibraryTabs();
     this._syncLibViewSeg();
     this._renderFunctionCategorySelect();
+    enhanceNativeSelect(fnCategorySelect);
+    enhanceNativeSelect(addStepSelect);
     this._setLibInstructionsExpanded(this._libInstructionsExpanded, { persist: false });
     this._setInspectorOpen(this._inspectorOpen);
     this._setCreateOpen(this._createOpen);
@@ -4820,7 +4841,14 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       return;
     }
     try {
-      await setSettings({ keyboardHandedness: next });
+      if (typeof this._kp?.setKeyboardHandedness === 'function') {
+        await this._kp.setKeyboardHandedness(next);
+        if (this._st.mode === 'user' && this._st.userLayout) {
+          await this._reloadStore();
+        }
+      } else {
+        await setSettings({ keyboardHandedness: next });
+      }
     } catch { /* ignore */ }
     try {
       if (this._kp?._settings) this._kp._settings.keyboardHandedness = next;
@@ -5447,6 +5475,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       op.title = opDef.hint;
       op.addEventListener('change', () => patch({ op: op.value }), true);
       field('Condition', op);
+      enhanceNativeSelect(op);
       if (opDef.needsRight) {
         textInput('Compare to', step.right, (right) => patch({ right }), 'Value to compare against');
       }
@@ -5498,6 +5527,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       }
       select.addEventListener('change', () => patch({ macroId: select.value }), true);
       field('Macro', select);
+      enhanceNativeSelect(select);
       if (!String(step.macroId || '').trim()) {
         const missing = document.createElement('p');
         missing.className = 'kp-cfg-cycle-warn';
@@ -5996,6 +6026,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       wrap.appendChild(text);
       wrap.appendChild(select);
       fields.appendChild(wrap);
+      enhanceNativeSelect(select);
     } else if (kind === 'function') {
       fields.appendChild(mkNumber(
         'delay ms',
@@ -6967,6 +6998,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       select.appendChild(opt);
     }
     select.value = this._libFunctionCategory || '';
+    try { select._kpSelectMenu?.syncFromNative?.(); } catch { /* ignore */ }
   }
 
   _buildBuiltinSlotMap() {
@@ -7189,7 +7221,10 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
         this._inspectItem({ type, id });
         if (type === 'function' && getFunctionDef(id)) {
           this._selectedLibraryFunctionId = String(id);
-          if (this._addStepSelect) this._addStepSelect.value = String(id);
+          if (this._addStepSelect) {
+            this._addStepSelect.value = String(id);
+            this._addStepSelect._kpSelectMenu?.syncFromNative?.();
+          }
         }
       }, true);
 
@@ -7734,7 +7769,10 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
           this._inspectItem({ type, id });
           if (type === 'function' && getFunctionDef(id)) {
             this._selectedLibraryFunctionId = String(id);
-            if (this._addStepSelect) this._addStepSelect.value = String(id);
+            if (this._addStepSelect) {
+              this._addStepSelect.value = String(id);
+              this._addStepSelect._kpSelectMenu?.syncFromNative?.();
+            }
           }
         }
       });

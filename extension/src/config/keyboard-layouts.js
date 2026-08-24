@@ -447,7 +447,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
   }),
   PAGE_UP_INSTANT: Object.freeze({
     handler: 'handleInstantPageUp',
-    label: 'Page Up Fast',
+    label: 'Page Up',
     description: 'Jump one page up instantly',
     details: 'Scrolls the current scroll target up by roughly one viewport without animation — faster than a smooth page-up when you need to move quickly.',
     keyboardClass: 'key-scroll',
@@ -455,7 +455,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
   }),
   PAGE_DOWN_INSTANT: Object.freeze({
     handler: 'handleInstantPageDown',
-    label: 'Page Down Fast',
+    label: 'Page Down',
     description: 'Jump one page down instantly',
     details: 'Scrolls the current scroll target down by roughly one viewport without animation — faster than a smooth page-down when you need to move quickly.',
     keyboardClass: 'key-scroll',
@@ -1197,15 +1197,28 @@ function pickAssignments(source, allowedIds) {
  * @returns {string}
  */
 export function physicalSlotLabelFromBinding(binding) {
+  const namedSlot = (raw) => {
+    const token = String(raw || '').trim();
+    if (!token) return '';
+    if (token.length === 1) return /[a-z]/i.test(token) ? token.toUpperCase() : token;
+    if (/^(Backspace|Escape)$/i.test(token)) {
+      return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
+    }
+    return '';
+  };
+
   const s = String(binding?.displayKey || binding?.keyLabel || '').trim();
-  if (!s) return '';
-  if (s.length === 1) return /[a-z]/i.test(s) ? s.toUpperCase() : s;
+  const fromLabel = namedSlot(s);
+  if (fromLabel) return fromLabel;
   if (s.includes('/')) {
     const first = s.split('/')[0];
-    if (first && first.trim().length === 1) {
-      const ch = first.trim();
-      return /[a-z]/i.test(ch) ? ch.toUpperCase() : ch;
-    }
+    const fromComposite = namedSlot(first);
+    if (fromComposite) return fromComposite;
+  }
+  const keys = Array.isArray(binding?.keys) ? binding.keys : [];
+  for (const k of keys) {
+    const fromKey = namedSlot(k);
+    if (fromKey) return fromKey;
   }
   return '';
 }
@@ -1305,8 +1318,8 @@ const KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: 'special', text: 'Shift', className: 'key key-shift' },
     { type: 'action', id: 'PAGE_TOP', fallbackText: 'Scroll To Top' },
     { type: 'action', id: 'PAGE_BOTTOM', fallbackText: 'Scroll To Bottom' },
-    { type: 'action', id: 'PAGE_UP_INSTANT', fallbackText: 'Page Up Fast' },
-    { type: 'action', id: 'PAGE_DOWN_INSTANT', fallbackText: 'Page Down Fast' },
+    { type: 'action', id: 'PAGE_UP_INSTANT', fallbackText: 'Page Up' },
+    { type: 'action', id: 'PAGE_DOWN_INSTANT', fallbackText: 'Page Down' },
     { type: 'action', id: 'ACTIVATE_NEW_TAB', fallbackText: 'Click New Tab' },
     { type: 'action', id: 'SCROLL_LINE', fallbackText: 'Scroll Line' },
     { type: 'action', id: 'OPEN_MEDIA_LIBRARY', fallbackText: 'Media Library' },
@@ -1359,8 +1372,8 @@ const KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
     { type: 'key', text: 'V' },
     { type: 'action', id: 'PAGE_BOTTOM', fallbackText: 'Scroll To Bottom' }, // B
     { type: 'action', id: 'ACTIVATE_NEW_TAB', fallbackText: 'Click New Tab' }, // N
-    { type: 'action', id: 'PAGE_DOWN_INSTANT', fallbackText: 'Page Down Fast' }, // M
-    { type: 'action', id: 'PAGE_UP_INSTANT', fallbackText: 'Page Up Fast' }, // ,
+    { type: 'action', id: 'PAGE_DOWN_INSTANT', fallbackText: 'Page Down' }, // M
+    { type: 'action', id: 'PAGE_UP_INSTANT', fallbackText: 'Page Up' }, // ,
     { type: 'key', text: '.' },
     { type: 'action', id: 'PAGE_TOP', fallbackText: 'Scroll To Top' }, // /
     { type: 'special', text: 'Shift', className: 'key key-shift' }

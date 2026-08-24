@@ -4,6 +4,7 @@
  */
 
 import { groupActionControlSpecs } from './action-config-schema.js';
+import { enhanceNativeSelect } from '../ui/select-menu.js';
 
 /**
  * @typedef {{
@@ -164,5 +165,8 @@ function renderField(doc, spec, current, ctx) {
     control.placeholder = String(spec.placeholder);
   }
   row.appendChild(control);
+  if (control?.tagName === 'SELECT') {
+    enhanceNativeSelect(/** @type {HTMLSelectElement} */ (control));
+  }
   return row;
 }

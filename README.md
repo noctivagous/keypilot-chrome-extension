@@ -130,6 +130,17 @@ Default layout (right-handed browsing). Custom layouts are edited in Layout Edit
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 ## Compatibility
 
 - Chrome and other Chromium browsers: full support
