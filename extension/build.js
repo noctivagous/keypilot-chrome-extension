@@ -15,7 +15,6 @@
  *   node build.js --macro-builder   # enable User Macros / Macro Builder UI (v1.2 surface)
  */
 import * as esbuild from 'esbuild';
-import { execFileSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -32,12 +31,16 @@ const banner = `/**
 `;
 
 /**
- * Fail the build if a generated artifact cannot be parsed by Node.
- * This catches accidental edits to emitted bundles as well as build defects.
+ * Fail the build if a generated artifact cannot be parsed.
+ * Uses esbuild instead of `node --check` so Bun builds do not execute browser code.
  * @param {string} outfile
  */
-function verifyGeneratedSyntax(outfile) {
-  execFileSync(process.execPath, ['--check', outfile], { stdio: 'inherit' });
+async function verifyGeneratedSyntax(outfile) {
+  await esbuild.transform(fs.readFileSync(outfile, 'utf8'), {
+    loader: 'js',
+    target: 'chrome111',
+    sourcefile: outfile,
+  });
   console.log(`✓ syntax: ${path.basename(outfile)}`);
 }
 
@@ -95,7 +98,7 @@ async function buildOne(entry, opts = {}) {
     write: true,
   });
 
-  verifyGeneratedSyntax(entry.outfile);
+  await verifyGeneratedSyntax(entry.outfile);
   const bytes = fs.statSync(entry.outfile).size;
   const kb = (bytes / 1024).toFixed(1);
   const inputs = result.metafile ? Object.keys(result.metafile.inputs).length : '?';
@@ -121,7 +124,7 @@ if (shouldMinify) {
     minify: true,
     write: true,
   });
-  verifyGeneratedSyntax(minOut);
+  await verifyGeneratedSyntax(minOut);
   const kb = (fs.statSync(minOut).size / 1024).toFixed(1);
   console.log(`✓ content-bundled.min.js (${kb}KB)`);
 }
