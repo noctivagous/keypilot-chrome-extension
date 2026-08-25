@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-24T06:40:12.758Z
+ * Generated on 2026-08-25T22:35:15.299Z
  */
 
 (() => {
@@ -3837,6 +3837,7 @@
     ".kp-chrome-window",
     "[data-kp-ui-shadow]",
     "[data-kp-select]",
+    ".kp-select-menu-host",
     ".kp-select-menu",
     ".kpv2-settings-host",
     ".kpv2-docs-host"

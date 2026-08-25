@@ -115,6 +115,7 @@ const CHROME_THEME_HOST_SEL = [
   '.kp-chrome-window',
   '[data-kp-ui-shadow]',
   '[data-kp-select]',
+  '.kp-select-menu-host',
   '.kp-select-menu',
   '.kpv2-settings-host',
   '.kpv2-docs-host'

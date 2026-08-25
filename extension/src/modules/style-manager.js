@@ -66,6 +66,8 @@ export function buildKeyPilotPrintCss() {
     // Light-DOM UI roots (kp-*)
     '.kp-control-strip',
     '.kp-floating-keyboard-help',
+    '.kp-select-menu-host',
+    '.kp-select-menu',
     '.kpv2-top-sites-panel',
     '.kp-onboarding-panel',
     '.kp-launcher-container',

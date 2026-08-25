@@ -5,19 +5,48 @@
  * cannot pick individual <option>s (OS picker). Items here are real buttons
  * with role="option" so hover + F-activate work.
  *
- * The list is always a `position:fixed` sibling of the panel host on
- * `document.body` (never inside a chrome shadow / overflow:hidden window).
- * Popover top-layer was losing to the Keyboard Ref compositor layer, so
- * stacking is a plain z-index above FLOATING_KEYBOARD_HELP.
+ * The list is a `position:fixed` node on `document.body` (never inside a
+ * chrome window that clips overflow). It lives in its own open shadow so
+ * host-page rules (e.g. `button { text-transform: uppercase }` on Windows
+ * Central) cannot style the items. Popover top-layer was losing to the
+ * Keyboard Ref compositor layer, so stacking is a plain z-index above
+ * FLOATING_KEYBOARD_HELP.
  */
 
 import { Z_INDEX } from '../config/constants.js';
 import { applyThemeCssVars, applyThemeDataset, getActiveTheme } from '../modules/theme-manager.js';
 import { getSelectMenuCss, getThemeIconUrl, getTitlebarChromeCss } from '../../themes/index.js';
-import { injectChromeStyles } from './kp-chrome-shadow.js';
+import { ensureOpenChromeShadow, injectChromeStyles } from './kp-chrome-shadow.js';
 import { createTitlebarKbd } from './popover-titlebar.js';
 
 const STYLE_ATTR = 'data-kp-select-menu-style';
+
+/**
+ * Isolation for the body-mounted list host only. Do not inject this into
+ * Keyboard Reference / Config shadows — `:host { all: initial }` would reset
+ * those windows.
+ */
+const SELECT_LIST_HOST_CSS = `
+:host {
+  all: initial;
+  display: block !important;
+  position: fixed !important;
+  z-index: ${Z_INDEX.SELECT_MENU} !important;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  overflow: visible !important;
+  clip-path: none !important;
+  pointer-events: none;
+}
+:host([hidden]) {
+  display: none !important;
+}
+.kp-select-menu {
+  pointer-events: auto;
+}
+`.trim();
 
 let _idSeq = 0;
 
@@ -116,6 +145,8 @@ export function createSelectMenu(config = {}) {
   let disabled = false;
   /** @type {boolean} */
   let fallbackOpen = false;
+  /** @type {HTMLElement|null} */
+  let listHost = null;
 
   const root = doc.createElement('div');
   root.className = `kp-select kp-select--${variant}${config.className ? ` ${config.className}` : ''}`;
@@ -227,10 +258,20 @@ export function createSelectMenu(config = {}) {
     if (lr.left < 8) list.style.left = '8px';
   };
 
+  const setHostOpen = (open) => {
+    if (!listHost) return;
+    listHost.hidden = !open;
+    try {
+      if (open) listHost.style.removeProperty('display');
+      else listHost.style.setProperty('display', 'none', 'important');
+    } catch { /* ignore */ }
+  };
+
   const closeFallback = () => {
     fallbackOpen = false;
     list.hidden = true;
     try { list.style.setProperty('display', 'none', 'important'); } catch { /* ignore */ }
+    setHostOpen(false);
     setExpanded(false);
     try { doc.removeEventListener('pointerdown', onDocPointerDown, true); } catch { /* ignore */ }
   };
@@ -244,8 +285,10 @@ export function createSelectMenu(config = {}) {
   const openList = () => {
     if (disabled) return;
     mountList();
+    if (listHost) themeListHost(listHost);
     themeListHost(list);
     fallbackOpen = true;
+    setHostOpen(true);
     list.hidden = false;
     try { list.style.setProperty('display', 'block', 'important'); } catch { /* ignore */ }
     setExpanded(true);
@@ -362,13 +405,37 @@ export function createSelectMenu(config = {}) {
     }
   });
 
-  const mountList = () => {
-    const parent = getBodyMount(doc);
-    if (parent) {
-      try { parent.appendChild(list); } catch { /* ignore */ }
+  const ensureListHost = () => {
+    if (listHost) return listHost;
+    listHost = doc.createElement('div');
+    listHost.className = 'kp-select-menu-host';
+    listHost.setAttribute('data-kp-select', 'true');
+    listHost.hidden = true;
+    try { listHost.style.setProperty('display', 'none', 'important'); } catch { /* ignore */ }
+    const shadow = ensureOpenChromeShadow(listHost, { id: 'select-menu' });
+    // Cut-corner clip on a 0×0 host would hide the fixed list.
+    try { listHost.removeAttribute('data-kp-corner'); } catch { /* ignore */ }
+    try { listHost.classList.remove('kp-chrome-window'); } catch { /* ignore */ }
+    if (shadow) {
+      injectChromeStyles(shadow, {
+        attr: STYLE_ATTR,
+        css: `${SELECT_LIST_HOST_CSS}\n${getTitlebarChromeCss()}\n${getSelectMenuCss()}`
+      });
+      try { shadow.appendChild(list); } catch { /* ignore */ }
+    } else {
+      try { listHost.appendChild(list); } catch { /* ignore */ }
     }
-    ensureSelectMenuStyles(doc);
+    themeListHost(listHost);
     themeListHost(list);
+    return listHost;
+  };
+
+  const mountList = () => {
+    const host = ensureListHost();
+    const parent = getBodyMount(doc);
+    if (parent && host.parentNode !== parent) {
+      try { parent.appendChild(host); } catch { /* ignore */ }
+    }
   };
 
   const triggerRoot = () => {
@@ -411,6 +478,10 @@ export function createSelectMenu(config = {}) {
     destroy() {
       closeList();
       try { doc.removeEventListener('pointerdown', onDocPointerDown, true); } catch { /* ignore */ }
+      try { listHost?.remove(); } catch {
+        try { listHost?.parentNode?.removeChild(listHost); } catch { /* ignore */ }
+      }
+      listHost = null;
       try { list.remove(); } catch {
         try { list.parentNode?.removeChild(list); } catch { /* ignore */ }
       }

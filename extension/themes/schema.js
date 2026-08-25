@@ -383,6 +383,10 @@ export function getSelectMenuCss() {
   font-size: 11px;
   line-height: 1.2;
   text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+  appearance: none;
+  -webkit-appearance: none;
   cursor: pointer;
   outline: none;
   box-sizing: border-box;
@@ -428,6 +432,8 @@ export function getSelectMenuCss() {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-transform: none;
+  letter-spacing: normal;
 }
 .kp-select-chevron {
   width: 0;
@@ -465,6 +471,8 @@ export function getSelectMenuCss() {
   font-family: var(--kp-font-ui, Helvetica, Arial, sans-serif);
   font-size: 12px;
   line-height: 1.3;
+  text-transform: none;
+  letter-spacing: normal;
 }
 .kp-select-menu[data-kp-select-fallback="true"][hidden] {
   display: none !important;
@@ -498,7 +506,12 @@ export function getSelectMenuCss() {
   background: transparent;
   color: inherit;
   font: inherit;
+  font-weight: 400;
   text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+  appearance: none;
+  -webkit-appearance: none;
   cursor: pointer;
   box-sizing: border-box;
   outline: none;
