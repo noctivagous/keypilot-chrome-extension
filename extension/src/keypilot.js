@@ -21,7 +21,7 @@ import {
   getInspectorStatusMode,
   getInspectorDef
 } from './modules/inspector-mode.js';
-import { MODES, INSPECTOR_KIND, CURSOR_MODE, CSS_CLASSES, COLORS, Z_INDEX, RECTANGLE_SELECTION, EDGE_ONLY_SELECTION, FEATURE_FLAGS, CLICKABLE_CATEGORY } from './config/constants.js';
+import { MODES, INSPECTOR_KIND, CURSOR_MODE, CSS_CLASSES, COLORS, Z_INDEX, RECTANGLE_SELECTION, EDGE_ONLY_SELECTION, FEATURE_FLAGS, CLICKABLE_CATEGORY, modeShowsClickableHover } from './config/constants.js';
 import { MSG } from './messaging/types.js';
 import { registerContentRuntimeHandler } from './messaging/content-runtime-router.js';
 import {
@@ -2601,6 +2601,16 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       try {
         this.floatingKeyboardHelp?.syncEscExitButton?.();
       } catch { /* ignore */ }
+
+      // Click Mode hover chrome fights selection rectangles / one-at-a-time
+      // pick outlines. Suspend it while those modes own the pointer.
+      const prevClickHover = modeShowsClickableHover(prevState.mode);
+      const nextClickHover = modeShowsClickableHover(newState.mode);
+      if (prevClickHover && !nextClickHover) {
+        try { this._suspendClickableHoverTracking(); } catch { /* ignore */ }
+      } else if (!prevClickHover && nextClickHover) {
+        try { this._restoreClickableHoverTracking(); } catch { /* ignore */ }
+      }
     }
 
     // Update cursor mode (inspector kinds switch glyph without leaving INSPECTOR mode)
@@ -2617,13 +2627,15 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
 
     // Update overlays when focus/inspector targets change, mode changes (e.g. enter
     // highlight → companion "Press H again…" instruction), or an explicit trigger fires.
+    // Read latest state: entering a pick mode may nested-clear focusEl.
     if (newState.focusedTextElement !== prevState.focusedTextElement ||
         newState._overlayUpdateTrigger !== prevState._overlayUpdateTrigger ||
         newState.focusEl !== prevState.focusEl ||
         newState.inspectorEl !== prevState.inspectorEl ||
         newState.inspectorKind !== prevState.inspectorKind ||
         newState.mode !== prevState.mode) {
-      this.updateOverlays(newState.focusEl, newState.inspectorEl, newState.inspectorKind);
+      const st = this.state.getState();
+      this.updateOverlays(st.focusEl, st.inspectorEl, st.inspectorKind);
     }
 
     // Keyboard reference: glow keys that activate the currently hovered link.
@@ -3870,16 +3882,20 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
 
     this.performanceMetrics.mouseQueries++;
 
+    const clickHoverActive = modeShowsClickableHover(currentState.mode);
+
     // DOM-hover only for normal browsing; this path is for delete / popover / text-focus
     // and other modes that still need explicit under-cursor resolution via elementFromPoint.
     let under = underHint || null;
     if (!under) under = this.detector.deepElementFromPoint(x, y);
 
     let clickable = null;
-    try {
-      clickable = this.detector.findClickable(under);
-    } catch {
-      clickable = null;
+    if (clickHoverActive) {
+      try {
+        clickable = this.detector.findClickable(under);
+      } catch {
+        clickable = null;
+      }
     }
 
     // Popover mode is modal: only track elements inside the popover UI.
@@ -3942,7 +3958,10 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     }
 
     // Reduce overlay churn: only update state if focus element actually changed.
-    if (clickable !== currentState.focusEl) {
+    // Selection/pick modes must not keep a Click Mode focusEl (green hover ring).
+    if (!clickHoverActive) {
+      if (currentState.focusEl) this.state.setFocusElement(null);
+    } else if (clickable !== currentState.focusEl) {
       this.state.setFocusElement(clickable);
     }
 

@@ -323,6 +323,21 @@ export const MODES = {
 };
 
 /**
+ * True when Click Mode hover chrome should stay active: focus rectangle on
+ * clickables, DOM-hover targeting, and F-activate hover tracking.
+ * False while a selection/pick mode owns the pointer (Text Select, Element
+ * Select rectangle, cumulative click-one-at-a-time, Delete, Cols, Scroll Line).
+ * @param {string|null|undefined} mode
+ * @returns {boolean}
+ */
+export function modeShowsClickableHover(mode) {
+  return mode === MODES.NONE
+    || mode === MODES.TEXT_FOCUS
+    || mode === MODES.POPOVER
+    || mode === MODES.OMNIBOX;
+}
+
+/**
  * Inspector tool kinds while mode === MODES.INSPECTOR.
  * Register visuals/behavior in modules/inspector-mode.js.
  */

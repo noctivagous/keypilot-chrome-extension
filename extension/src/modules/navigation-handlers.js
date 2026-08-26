@@ -524,8 +524,10 @@ export function withNavigationHandlers(Base) {
   }
 
   /**
-   * Detach delegated pointerover hover targeting so clickable outlines do not
-   * update while Scroll Line owns the pointer. Restore with {@link _restoreClickableHoverTracking}.
+   * Detach delegated pointerover hover targeting so Click Mode outlines do not
+   * update while a selection/pick mode (Text Select, Element Select, Delete,
+   * Cols, Scroll Line) owns the pointer. Restore with
+   * {@link _restoreClickableHoverTracking}.
    */
   _suspendClickableHoverTracking() {
     try { this.state.setFocusElement(null); } catch { /* ignore */ }
@@ -540,7 +542,7 @@ export function withNavigationHandlers(Base) {
   }
 
   /**
-   * Re-attach pointerover hover targeting after Scroll Line ends.
+   * Re-attach pointerover hover targeting after a selection/pick mode ends.
    */
   _restoreClickableHoverTracking() {
     if (!this.enabled || !this._domHoverListenersEnabled) return;

@@ -1,7 +1,7 @@
 /**
  * Visual overlay management for focus and delete indicators
  */
-import { CSS_CLASSES, Z_INDEX, SELECTORS, MODES, COLORS, FEATURE_FLAGS, CLICKABLE_CATEGORY, KP_UI_FONT, SCROLL } from '../config/constants.js';
+import { CSS_CLASSES, Z_INDEX, SELECTORS, MODES, COLORS, FEATURE_FLAGS, CLICKABLE_CATEGORY, KP_UI_FONT, SCROLL, modeShowsClickableHover } from '../config/constants.js';
 import {
   getAllInspectorHostClasses,
   getInspectorDef,
@@ -248,12 +248,14 @@ export class OverlayManager {
    * @param {string|null} [inspectorKind] INSPECTOR_KIND when mode is inspector
    */
   updateOverlays(focusEl, inspectorEl, mode, focusedTextElement = null, focusRectOverride = null, inspectorKind = null) {
+    const showClickModeFocus = modeShowsClickableHover(mode);
+
     // Debug logging when debug mode is enabled
     if (window.KEYPILOT_DEBUG && focusEl) {
       console.log('[KeyPilot Debug] Updating overlays:', {
         focusElement: focusEl.tagName,
         mode: mode,
-        willShowFocus: mode === 'none' || mode === 'text_focus' || mode === 'highlight' || mode === 'popover',
+        willShowFocus: showClickModeFocus,
         focusedTextElement: focusedTextElement?.tagName
       });
     }
@@ -267,11 +269,10 @@ export class OverlayManager {
       this._clearTextFocusElementStyling();
     }
 
-    // Show focus overlay in normal mode, text focus mode, highlight mode, AND popover mode.
-    // Popovers are modal but still need the green rectangle so the user can F-click UI
-    // affordances like the close (×) button.
-    // Hide green focus rect while in shared inspector pick mode.
-    if (mode === 'none' || mode === 'text_focus' || mode === 'highlight' || mode === 'popover') {
+    // Click Mode focus overlay: normal browsing, text focus, popover (F-click chrome).
+    // Hide it during selection/pick modes (Text Select, Element Select, Delete, Cols)
+    // so the green clickable ring does not fight the selection rectangle / pick outline.
+    if (showClickModeFocus) {
       this.updateFocusOverlay(focusEl, mode, focusRectOverride);
       
       if (mode === 'text_focus') {
@@ -313,9 +314,10 @@ export class OverlayManager {
       this.clearInspectorPickedOverlays();
     }
     
-    // Show highlight chrome in highlight mode (instruction + optional focus ring)
+    // Show highlight chrome in highlight mode (instruction). Do not outline
+    // a clickable focusEl — that is Click Mode, not the selection rectangle.
     if (mode === 'highlight') {
-      this.highlightManager.updateHighlightOverlay(focusEl);
+      this.highlightManager.hideHighlightOverlay();
       // finishKey is set explicitly in startHighlighting; keep indicator visible here
       this.highlightManager.showHighlightModeIndicator();
     } else {
