@@ -461,7 +461,7 @@ export function getSelectMenuCss() {
   max-width: min(360px, calc(100vw - 16px));
   max-height: min(320px, calc(100vh - 16px));
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: scroll !important;
   box-sizing: border-box;
   border: var(--kp-panel-border, 1px solid #111);
   border-radius: var(--kp-radius-panel, 3px);
@@ -473,6 +473,46 @@ export function getSelectMenuCss() {
   line-height: 1.3;
   text-transform: none;
   letter-spacing: normal;
+  scrollbar-color: #a8a8a8 #747474;
+}
+/* Blink: scrollbar-width uses overlay bars that only appear on scroll and
+   suppress ::-webkit-scrollbar. Unset so the themed classic bar paints. */
+@supports selector(::-webkit-scrollbar) {
+  .kp-select-menu {
+    scrollbar-width: unset;
+    scrollbar-color: unset;
+  }
+}
+.kp-select-menu::-webkit-scrollbar {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block !important;
+  width: 10px !important;
+  height: 10px !important;
+  background: #747474;
+}
+.kp-select-menu::-webkit-scrollbar-corner {
+  background: #747474;
+}
+.kp-select-menu::-webkit-scrollbar-track {
+  background: #747474;
+  border-left: 1px solid rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(0, 0, 0, 0.3);
+}
+.kp-select-menu::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #c0c0c0 0%, #a8a8a8 45%, #8d8d8d 100%);
+  border: 1px solid #4a4a4a;
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
+  min-height: 28px;
+  min-width: 28px;
+}
+.kp-select-menu::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #cecece 0%, #b5b5b5 45%, #999 100%);
+}
+.kp-select-menu::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, #b5b5b5 0%, #8d8d8d 100%);
+  border-color: #3d3d3d;
 }
 .kp-select-menu[data-kp-select-fallback="true"][hidden] {
   display: none !important;

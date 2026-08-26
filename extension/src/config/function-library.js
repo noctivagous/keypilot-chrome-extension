@@ -836,7 +836,9 @@ export const FUNCTION_LIBRARY = Object.freeze({
   [TYPE_CHARACTERS_FUNCTION_DEF.id]: withDocsUrl(TYPE_CHARACTERS_FUNCTION_DEF),
   [EXECUTE_JS_FUNCTION_DEF.id]: withDocsUrl(EXECUTE_JS_FUNCTION_DEF),
   ...Object.fromEntries(
-    Object.entries(buildDataAcquisitionFunctionDefs()).map(([id, def]) => [id, withDocsUrl(def)])
+    Object.entries(buildDataAcquisitionFunctionDefs())
+      .filter(([id]) => !isBuildExcludedKeyAction(id))
+      .map(([id, def]) => [id, withDocsUrl(def)])
   )
 });
 

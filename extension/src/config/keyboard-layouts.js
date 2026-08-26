@@ -95,11 +95,18 @@ export const BUILD_ENABLE_MACRO_BUILDER = typeof __KP_BUILD_ENABLE_MACRO_BUILDER
 
 /**
  * Key action IDs omitted from shipped builds (builtin layouts, catalogs, Function Library).
- * Keep defs/handlers in source; remove an id here to re-enable it in the next build.
+ * Keep defs/handlers and Function categories in source; remove an id here to re-enable
+ * it in the next build (its category assignment is unchanged).
  * @type {readonly string[]}
  */
 export const BUILD_EXCLUDED_KEY_ACTIONS = Object.freeze([
-  'COLS_TOGGLE'
+  'COLS_TOGGLE',
+  // Data — "Read text or media under the cursor, or from a highlight."
+  'GET_MEDIA_AT_CURSOR',
+  // Translate — "Translate highlighted or under-cursor text."
+  'TRANSLATE',
+  // AI — "Send selected text to AI with a prompt and result destination."
+  'SEND_TEXT_TO_AI'
 ]);
 
 /** @type {ReadonlySet<string>} */

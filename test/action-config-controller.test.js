@@ -121,7 +121,7 @@ describe('ActionConfigController', () => {
     assert.equal(c.disposed, true);
   });
 
-  it('builds TYPE_CHARACTERS / SEND_TEXT_TO_AI action-parameter schema', async () => {
+  it('builds TYPE_CHARACTERS / COPY_HOVERED_IMAGE action-parameter schema', async () => {
     const { createActionConfigController } =
       await import('../extension/src/modules/action-config-controller.js');
 
@@ -134,14 +134,16 @@ describe('ActionConfigController', () => {
     assert.equal(typeChars.state.parameters.text, 'hello');
     typeChars.dispose();
 
-    const ai = createActionConfigController();
-    ai.load({ functionId: 'SEND_TEXT_TO_AI' });
-    const paths = ai.schema().map((s) => `${s.path}:${s.type}`);
-    assert.ok(paths.includes('prompt:textarea'));
+    const copyImage = createActionConfigController();
+    copyImage.load({ functionId: 'COPY_HOVERED_IMAGE' });
+    const paths = copyImage.schema().map((s) => `${s.path}:${s.type}`);
     assert.ok(paths.includes('destination:enum'));
-    await ai.update('destination', 'not-real');
-    assert.equal(ai.state.parameters.destination, ai.schema().find((s) => s.path === 'destination').defaultValue);
-    ai.dispose();
+    await copyImage.update('destination', 'not-real');
+    assert.equal(
+      copyImage.state.parameters.destination,
+      copyImage.schema().find((s) => s.path === 'destination').defaultValue
+    );
+    copyImage.dispose();
   });
 
   it('normalizes synthetic (catalog-free) parameter snapshots', async () => {

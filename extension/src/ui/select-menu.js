@@ -51,6 +51,28 @@ const SELECT_LIST_HOST_CSS = `
 let _idSeq = 0;
 
 /**
+ * @param {Element|null|undefined} el
+ * @returns {string}
+ */
+function readComposedSurface(el) {
+  let node = el;
+  try {
+    while (node) {
+      const surface = node.getAttribute?.('data-kp-surface');
+      if (surface) return String(surface);
+      const next = node.parentElement;
+      if (next) {
+        node = next;
+        continue;
+      }
+      const root = node.getRootNode?.();
+      node = root && root !== node && root.host ? root.host : null;
+    }
+  } catch { /* ignore */ }
+  return '';
+}
+
+/**
  * @param {Document|null|undefined} doc
  * @returns {HTMLElement|null}
  */
@@ -282,9 +304,23 @@ export function createSelectMenu(config = {}) {
     closeFallback();
   };
 
+  const syncListSurface = () => {
+    const surface = readComposedSurface(trigger) || readComposedSurface(root);
+    try {
+      if (surface) {
+        list.setAttribute('data-kp-surface', surface);
+        listHost?.setAttribute('data-kp-surface', surface);
+      } else {
+        list.removeAttribute('data-kp-surface');
+        listHost?.removeAttribute('data-kp-surface');
+      }
+    } catch { /* ignore */ }
+  };
+
   const openList = () => {
     if (disabled) return;
     mountList();
+    syncListSurface();
     if (listHost) themeListHost(listHost);
     themeListHost(list);
     fallbackOpen = true;
@@ -344,8 +380,8 @@ export function createSelectMenu(config = {}) {
         list.appendChild(g);
         continue;
       }
-      const value = opt.value != null ? String(opt.value) : '';
-      if (!value) continue;
+      if (opt.value == null) continue;
+      const value = String(opt.value);
       const btn = doc.createElement('button');
       btn.type = 'button';
       btn.className = 'kp-select-item';
@@ -427,6 +463,7 @@ export function createSelectMenu(config = {}) {
     }
     themeListHost(listHost);
     themeListHost(list);
+    syncListSurface();
     return listHost;
   };
 

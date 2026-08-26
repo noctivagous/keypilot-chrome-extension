@@ -602,7 +602,6 @@ export class KeyboardLayoutConfigPanel {
     this._libInstructionsEl = null;
     this._libInstructionsToggleEl = null;
     this._libInstructionsExpanded = true;
-    this._legendEl = null;
     this._libViewSegEl = null;
     this._addStepSelect = null;
     this._addStepDelayInput = null;
@@ -1748,28 +1747,22 @@ export class KeyboardLayoutConfigPanel {
   color: ${ONBOARDING_METAL.fg};
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.28);
 }
-/* Controls that sit on the light metal pane header / library view bar. */
+/* Controls that sit on the light metal pane header / library instructions. */
 .kp-layout-config-panel .kp-cfg-pane-hdr .kp-cfg-seg,
-.kp-layout-config-panel .kp-cfg-lib-viewbar .kp-cfg-seg {
+.kp-layout-config-panel .kp-cfg-lib-instructions .kp-cfg-seg {
   border: ${ONBOARDING_METAL.btnBorder};
   background: ${ONBOARDING_METAL.btnBg};
   box-shadow: ${ONBOARDING_METAL.btnShadow};
 }
 .kp-layout-config-panel .kp-cfg-pane-hdr .kp-cfg-seg-btn,
-.kp-layout-config-panel .kp-cfg-lib-viewbar .kp-cfg-seg-btn {
+.kp-layout-config-panel .kp-cfg-lib-instructions .kp-cfg-seg-btn {
   border-right-color: rgba(0, 0, 0, 0.22);
   color: ${ONBOARDING_METAL.fgDim};
 }
 .kp-layout-config-panel .kp-cfg-pane-hdr .kp-cfg-seg-btn:hover,
-.kp-layout-config-panel .kp-cfg-lib-viewbar .kp-cfg-seg-btn:hover {
+.kp-layout-config-panel .kp-cfg-lib-instructions .kp-cfg-seg-btn:hover {
   color: ${ONBOARDING_METAL.fg};
   background: rgba(255, 255, 255, 0.3);
-}
-.kp-layout-config-panel .kp-cfg-pane-hdr .kp-cfg-fn-cat-wrap {
-  background: #e8e8e8;
-  border: 1px solid #4a4a4a;
-  border-radius: var(--kp-radius-btn, ${NCT_DARK_UI_BTN_RADIUS});
-  color: ${ONBOARDING_METAL.fg};
 }
 .kp-layout-config-panel .kp-cfg-fn-cat-wrap {
   display: inline-flex;
@@ -1779,8 +1772,16 @@ export class KeyboardLayoutConfigPanel {
   min-width: 100px;
   max-width: min(320px, 100%);
   height: 18px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: ${ONBOARDING_METAL.fg};
   resize: horizontal;
   overflow: hidden;
+}
+.kp-layout-config-panel .kp-cfg-fn-cat-wrap[hidden] {
+  display: none !important;
 }
 .kp-layout-config-panel .kp-cfg-fn-cat {
   width: 100%;
@@ -1793,17 +1794,29 @@ export class KeyboardLayoutConfigPanel {
   background: transparent;
   box-sizing: border-box;
 }
-.kp-layout-config-panel .kp-cfg-lib-viewbar {
+/* Custom select copies .kp-cfg-field onto the wrapper; chrome belongs on the trigger. */
+.kp-layout-config-panel .kp-cfg-fn-cat-wrap .kp-select {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 8px 12px;
-  padding: 2px 2px 8px;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
-.kp-layout-config-panel .kp-cfg-lib-viewbar .kp-cfg-seg {
-  flex: 0 0 auto;
-  margin-top: 1px;
+.kp-layout-config-panel .kp-cfg-fn-cat-wrap .kp-select-trigger {
+  width: 100%;
+  height: 100%;
+  padding: 0 6px;
+  border: 1px solid #4a4a4a;
+  border-radius: var(--kp-radius-btn, ${NCT_DARK_UI_BTN_RADIUS});
+  background: #e8e8e8;
+  color: ${ONBOARDING_METAL.fg};
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.28);
+  font-size: inherit;
 }
 .kp-layout-config-panel .kp-cfg-lib-instructions {
   flex: 0 0 auto;
@@ -1847,6 +1860,10 @@ export class KeyboardLayoutConfigPanel {
   gap: 8px;
   flex-wrap: wrap;
   margin-bottom: 3px;
+}
+.kp-layout-config-panel .kp-cfg-lib-instructions-head .kp-cfg-seg {
+  flex: 0 0 auto;
+  order: -1;
 }
 .kp-layout-config-panel .kp-cfg-lib-instructions.is-collapsed .kp-cfg-lib-instructions-head {
   margin-bottom: 0;
@@ -3611,6 +3628,33 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
   padding: 5px 10px;
   font-size: 13.75px;
 }
+.kp-layout-config-panel .kp-select.kp-cfg-field {
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.kp-layout-config-panel .kp-select-trigger {
+  height: 28px;
+  padding: 5px 10px;
+  font-size: 13.75px;
+  background: #e8e8e8;
+  border: ${ONBOARDING_METAL.kbdBorder};
+  color: ${ONBOARDING_METAL.fg};
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.28),
+    0 1px 0 rgba(255, 255, 255, 0.28);
+}
+.kp-layout-config-panel .kp-cfg-fn-cat-wrap .kp-select,
+.kp-layout-config-panel .kp-cfg-fn-cat-wrap .kp-select.kp-cfg-field {
+  height: 100%;
+  padding: 0;
+}
+.kp-layout-config-panel .kp-cfg-fn-cat-wrap .kp-select-trigger {
+  height: 100%;
+  font-size: 12.5px;
+}
 .kp-layout-config-panel .kp-cfg-hint,
 .kp-layout-config-panel .kp-cfg-card-sub,
 .kp-layout-config-panel .kp-cfg-dock-rows,
@@ -4033,10 +4077,6 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       overflow: 'auto'
     });
 
-    const viewBar = doc.createElement('div');
-    viewBar.className = 'kp-cfg-lib-viewbar';
-    viewBar.setAttribute('aria-label', 'Actions Library view');
-
     const viewSeg = doc.createElement('div');
     viewSeg.className = 'kp-cfg-seg';
     viewSeg.setAttribute('role', 'tablist');
@@ -4080,6 +4120,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     placePulse.setAttribute('role', 'status');
     placePulse.hidden = true;
     placePulse.textContent = 'Click the desired key cap location on the Keyboard Reference.';
+    instructionsHead.appendChild(viewSeg);
     instructionsHead.appendChild(instructionsToggle);
     instructionsHead.appendChild(placePulse);
     const instructionsBody = doc.createElement('p');
@@ -4094,12 +4135,9 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       this._setLibInstructionsExpanded(!this._libInstructionsExpanded, { persist: true });
     }, true);
 
-    viewBar.appendChild(viewSeg);
-
     libraryPane.appendChild(libraryHdr);
     libraryPane.appendChild(instructions);
     libraryPane.appendChild(list);
-    list.appendChild(viewBar);
 
     const createPane = doc.createElement('aside');
     createPane.className = 'kp-cfg-pane kp-cfg-pane-create';
@@ -4427,7 +4465,6 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     this._titlebarPlaceMsgEl = titlebarPlaceMsg;
     this._libInstructionsEl = instructions;
     this._libInstructionsToggleEl = instructionsToggle;
-    this._legendEl = viewBar;
     this._libViewSegEl = viewSeg;
     this._addStepSelect = addStepSelect;
     this._addStepDelayInput = addStepDelayInput;
@@ -7109,9 +7146,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const list = this._listEl;
     if (!list) return;
     const q = String(this._searchInput?.value || '').trim().toLowerCase();
-    const viewBar = this._legendEl;
     list.replaceChildren();
-    if (viewBar) list.appendChild(viewBar);
     this._syncLibViewSeg();
     const slots = this._getEditableSlotMap();
     const assignedInfoByItemKey = new Map();

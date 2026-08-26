@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-25T22:35:15.299Z
+ * Generated on 2026-08-26T05:20:17.638Z
  */
 
 (() => {
@@ -155,7 +155,13 @@
   var SOURCE_BUILD_ENABLE_MACRO_BUILDER = false;
   var BUILD_ENABLE_MACRO_BUILDER = typeof __KP_BUILD_ENABLE_MACRO_BUILDER__ !== "undefined" ? !!__KP_BUILD_ENABLE_MACRO_BUILDER__ : SOURCE_BUILD_ENABLE_MACRO_BUILDER;
   var BUILD_EXCLUDED_KEY_ACTIONS = Object.freeze([
-    "COLS_TOGGLE"
+    "COLS_TOGGLE",
+    // Data — "Read text or media under the cursor, or from a highlight."
+    "GET_MEDIA_AT_CURSOR",
+    // Translate — "Translate highlighted or under-cursor text."
+    "TRANSLATE",
+    // AI — "Send selected text to AI with a prompt and result destination."
+    "SEND_TEXT_TO_AI"
   ]);
   var BUILD_EXCLUDED_KEY_ACTION_SET = new Set(BUILD_EXCLUDED_KEY_ACTIONS);
   function isBuildExcludedKeyAction(actionId) {
