@@ -13,6 +13,11 @@ import {
   setKeyboardHelpVisible
 } from './src/ui/keypilot-hub.js';
 import { MSG } from './src/messaging/types.js';
+import { FEATURE_FLAGS } from './src/config/constants.js';
+import {
+  isContentScriptRestrictedUrl,
+  isKeyPilotNewTabUrl
+} from './src/config/url-policy.js';
 
 const statusEl = document.getElementById('status');
 
@@ -36,16 +41,32 @@ async function queryActiveTab() {
   return tab;
 }
 
-async function isKeyPilotNewTabPage(url) {
-  try {
-    const mod = await import(chrome.runtime.getURL('src/config/url-policy.js'));
-    if (mod && typeof mod.isKeyPilotNewTabUrl === 'function') {
-      return mod.isKeyPilotNewTabUrl(url);
-    }
-  } catch {
-    // fall through
+/**
+ * True when Chrome will let this extension inject into the tab.
+ * URL policy covers chrome://, NTP, Web Store, etc.; executeScript catches
+ * any remaining gallery / privileged pages that look like normal https.
+ * @param {chrome.tabs.Tab|null|undefined} tab
+ * @returns {Promise<boolean>}
+ */
+async function canRunOnTab(tab) {
+  if (!tab) return false;
+  const url = (typeof tab.url === 'string' && tab.url.trim())
+    ? tab.url
+    : (typeof tab.pendingUrl === 'string' ? tab.pendingUrl : '');
+  if (FEATURE_FLAGS.USE_CUSTOM_NEWTAB_PAGE && isKeyPilotNewTabUrl(url)) {
+    return true;
   }
-  return /^chrome:\/\/newtab\/?/i.test(url) || /^chrome:\/\/new-tab-page\/?/i.test(url);
+  if (isContentScriptRestrictedUrl(url)) return false;
+  if (typeof tab.id !== 'number') return false;
+  try {
+    const results = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => true
+    });
+    return Array.isArray(results) && results.some((entry) => entry && entry.result === true);
+  } catch {
+    return false;
+  }
 }
 
 async function sendToActiveTab(message) {
@@ -269,23 +290,7 @@ class PopupHubController {
   async checkAvailability() {
     try {
       const tab = await queryActiveTab();
-      if (!tab || !tab.url) {
-        this.isUnavailable = true;
-        return;
-      }
-      const currentUrl = tab.url;
-      if (await isKeyPilotNewTabPage(currentUrl)) {
-        this.isUnavailable = false;
-        return;
-      }
-      const restrictedPatterns = [
-        /^chrome:\/\//,
-        /^edge:\/\//,
-        /^about:/,
-        /^data:/,
-        /^javascript:/
-      ];
-      this.isUnavailable = restrictedPatterns.some((pattern) => pattern.test(currentUrl));
+      this.isUnavailable = !(await canRunOnTab(tab));
     } catch {
       this.isUnavailable = true;
     }

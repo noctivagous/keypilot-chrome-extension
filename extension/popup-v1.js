@@ -138,27 +138,7 @@ class PopupToggleController {
                 return;
             }
 
-            const currentUrl = tab.url;
-
-            // KeyPilot's custom New Tab (and chrome://newtab while overridden) is usable.
-            if (await isKeyPilotNewTabPage(currentUrl)) {
-                this.isUnavailable = false;
-                return;
-            }
-
-            // Check for restricted URLs where content scripts can't run
-            const restrictedPatterns = [
-                /^chrome:\/\//,
-                // Removed /^chrome-extension:\/\//, - allow chrome-extension for new tab page but is general.
-                // /^moz-extension:\/\//,
-                /^edge:\/\//,
-                /^about:/,
-                // Removed /^file:\/\//, - allow file:// URLs (users must enable "Allow access to file URLs" in Chrome settings)
-                /^data:/,
-                /^javascript:/
-            ];
-
-            this.isUnavailable = restrictedPatterns.some(pattern => pattern.test(currentUrl));
+            this.isUnavailable = !(await canRunOnTab(tab));
 
         } catch (error) {
             console.error('Failed to check availability:', error);
@@ -285,16 +265,38 @@ const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 return tab;
 }
 
-async function isKeyPilotNewTabPage(url) {
+async function loadUrlPolicy() {
     try {
-        const mod = await import(chrome.runtime.getURL('src/config/url-policy.js'));
-        if (mod && typeof mod.isKeyPilotNewTabUrl === 'function') {
-            return mod.isKeyPilotNewTabUrl(url);
-        }
-    } catch (e) {
-        // fall through to inline checks
+        return await import(chrome.runtime.getURL('src/config/url-policy.js'));
+    } catch {
+        return null;
     }
-    return /^chrome:\/\/newtab\/?/i.test(url) || /^chrome:\/\/new-tab-page\/?/i.test(url);
+}
+
+async function canRunOnTab(tab) {
+    if (!tab) return false;
+    const url = (typeof tab.url === 'string' && tab.url.trim())
+        ? tab.url
+        : (typeof tab.pendingUrl === 'string' ? tab.pendingUrl : '');
+    const policy = await loadUrlPolicy();
+    const isRestricted = policy?.isContentScriptRestrictedUrl
+        ? policy.isContentScriptRestrictedUrl(url)
+        : /^(chrome|edge|opera|brave|devtools|chrome-untrusted|chrome-search|chrome-native|moz-extension):\/\//i.test(url)
+            || /^about:/i.test(url)
+            || /^(data|javascript|view-source):/i.test(url)
+            || /chromewebstore\.google\.com/i.test(url)
+            || /chrome\.google\.com\/webstore/i.test(url);
+    if (isRestricted) return false;
+    if (typeof tab.id !== 'number') return false;
+    try {
+        const results = await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => true
+        });
+        return Array.isArray(results) && results.some((entry) => entry && entry.result === true);
+    } catch {
+        return false;
+    }
 }
 
 

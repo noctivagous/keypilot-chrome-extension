@@ -1,6 +1,7 @@
 /**
  * URL / tab skip policy (single source of truth).
- * Used by the service worker for tab switching and navigation graph recording.
+ * Used by the service worker for tab switching and navigation graph recording,
+ * and by the toolbar popup to hide KeyPilot where content scripts cannot run.
  */
 
 /** Schemes that should not be recorded in the per-tab navigation graph. */
@@ -26,6 +27,26 @@ export const SKIP_TAB_URL_PATTERNS = Object.freeze([
   /^data:/i,
   /^chrome-native:/i,
   /^view-source:/i
+]);
+
+/**
+ * Schemes Chromium will not inject content scripts into (plus sibling browsers).
+ * chrome-extension:// is handled separately so our own pages stay usable.
+ */
+export const CONTENT_SCRIPT_RESTRICTED_SCHEMES = Object.freeze([
+  /^chrome:\/\//i,
+  /^chrome-untrusted:\/\//i,
+  /^chrome-search:\/\//i,
+  /^chrome-native:\/\//i,
+  /^edge:\/\//i,
+  /^opera:\/\//i,
+  /^brave:\/\//i,
+  /^about:/i,
+  /^data:/i,
+  /^javascript:/i,
+  /^view-source:/i,
+  /^devtools:\/\//i,
+  /^moz-extension:\/\//i
 ]);
 
 /**
@@ -71,6 +92,76 @@ export function isKeyPilotNewTabUrl(u) {
   }
 
   return false;
+}
+
+/**
+ * True for this extension's own chrome-extension:// pages (settings, docs, newtab.html).
+ * @param {string|null|undefined} url
+ * @returns {boolean}
+ */
+export function isOwnExtensionUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+  const s = url.trim();
+  if (!s) return false;
+  try {
+    if (typeof chrome === 'undefined' || !chrome.runtime?.getURL) return false;
+    // Compare protocol + host, not origin: chrome-extension: is a non-special
+    // scheme in the URL spec, so origin is the string "null" in some parsers.
+    const own = new URL(chrome.runtime.getURL('_/'));
+    const parsed = new URL(s);
+    return parsed.protocol === own.protocol && parsed.host === own.host;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Chrome / Edge / Opera extension galleries block content scripts even on https.
+ * @param {string|null|undefined} url
+ * @returns {boolean}
+ */
+export function isWebStoreUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+  try {
+    const parsed = new URL(url.trim());
+    const host = parsed.hostname.toLowerCase();
+    const path = parsed.pathname.toLowerCase();
+
+    if (host === 'chromewebstore.google.com' || host.endsWith('.chromewebstore.google.com')) {
+      return true;
+    }
+    if (host === 'chrome.google.com' && (path === '/webstore' || path.startsWith('/webstore/'))) {
+      return true;
+    }
+    if (host === 'microsoftedge.microsoft.com' && (path === '/addons' || path.startsWith('/addons/'))) {
+      return true;
+    }
+    if (host === 'addons.opera.com' || host.endsWith('.addons.opera.com')) {
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Whether Chrome will refuse to run this extension's content scripts on `url`.
+ * Includes chrome:// (extensions, NTP, settings), the Web Store, and other
+ * extension pages. Own KeyPilot pages are allowed. file:// is left to the
+ * user "Allow access to file URLs" setting — probe injectability at runtime.
+ *
+ * @param {string|null|undefined} url
+ * @returns {boolean}
+ */
+export function isContentScriptRestrictedUrl(url) {
+  if (!url || typeof url !== 'string') return true;
+  const s = url.trim();
+  if (!s) return true;
+  if (isOwnExtensionUrl(s)) return false;
+  if (isWebStoreUrl(s)) return true;
+  if (/^chrome-extension:\/\//i.test(s)) return true;
+  return CONTENT_SCRIPT_RESTRICTED_SCHEMES.some((pattern) => pattern.test(s));
 }
 
 /**
