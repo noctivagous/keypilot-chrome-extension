@@ -3,10 +3,6 @@
   "description": "Browse the web with key-clicks. Activate hyperlinks with keyboard keys instead of mouse buttons.",
   "descriptionMaxLength": 132,
   "homepageUrl": "https://noctivagous.com/",
-  "developer": {
-    "name": "Noctivagous",
-    "url": "https://noctivagous.com/"
-  },
   "stagingDir": "dist/chrome",
   "zipDir": "dist",
   "zipNameTemplate": "keypilot-chrome-v{version}.zip",

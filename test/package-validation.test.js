@@ -51,7 +51,7 @@ test('Opera package contains the validated release surface', (t) => {
   assert.deepEqual(Object.keys(stagedManifest.icons).sort(), ['128', '16', '48']);
   assert.deepEqual(Object.keys(stagedManifest.action.default_icon).sort(), ['128', '16', '48']);
   assert.equal(stagedManifest.homepage_url, config.homepageUrl);
-  assert.deepEqual(stagedManifest.developer, config.developer);
+  assert.equal(Object.hasOwn(stagedManifest, 'developer'), false);
 
   const resources = stagedManifest.web_accessible_resources
     .flatMap((group) => group.resources);

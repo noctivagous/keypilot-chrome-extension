@@ -202,14 +202,6 @@ export async function packageChannel(channel, { skipBuild = false } = {}) {
     if (config.homepageUrl) {
       manifest.homepage_url = String(config.homepageUrl).trim();
     }
-    if (config.developer && typeof config.developer === 'object') {
-      const name = String(config.developer.name || '').trim();
-      const url = String(config.developer.url || '').trim();
-      if (!name || !url) {
-        throw new Error(`${label} developer metadata must include both name and url`);
-      }
-      manifest.developer = { name, url };
-    }
     const sizes = config.iconSizes || config.operaIconSizes;
     if (sizes?.length) {
       if (manifest.action?.default_icon) {

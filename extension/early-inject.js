@@ -2697,7 +2697,7 @@
           "primaryText": "Yes, Continue",
           "secondaryText": "No, I'll Do It Later",
           "secondaryAction": "later",
-          "laterTitle": "Return to this Tutorial with `Alt`+`T`",
+          "laterTitle": "Return to this Tutorial with `Alt`+`I`",
           "laterPrimaryText": "OK, Close"
         }
       ],
@@ -7075,7 +7075,7 @@
               if (overlayRefs.titleEl) {
                 renderKeyboardKeysInto(
                   overlayRefs.titleEl,
-                  String(btn.dataset?.kpLaterTitle || 'Return to this Tutorial with `Alt`+`T`')
+                  String(btn.dataset?.kpLaterTitle || 'Return to this Tutorial with `Alt`+`I`')
                 );
               }
             } catch { /* ignore */ }
