@@ -129,14 +129,18 @@ Docs: [MDN `browser_specific_settings`](https://developer.mozilla.org/en-US/docs
 |---|---|
 | `background.service_worker` | `background.scripts` |
 | no Gecko ID | `keypilot@noctivagous.browserextension` |
+| no data-collection declaration | optional `browsingActivity` and `websiteContent` consent |
 | `"favicon"` / `"windows"` permissions + `/_favicon/` | drop Chromium-only declarations |
 | CSP `img-src … chrome:` | `moz-extension:` (drop `chrome:`) |
-| `match_origin_as_fallback` | keep only if min Firefox version supports it |
+| no Firefox minimum version | require Firefox 140+ for built-in data-consent support |
 
 The generated Firefox manifest includes the stable
 `browser_specific_settings.gecko.id` value
 `keypilot@noctivagous.browserextension`, which AMO requires for Manifest V3
 submissions. Background + favicon/CSP are why a generated folder is still worth it.
+
+Firefox users enable the optional consent from KeyPilot Settings before
+Dictionary Lookup or video thumbnail lookups can make third-party requests.
 
 `npm run package:firefox` rebuilds the Firefox staging directory and writes
 `dist/keypilot-firefox-v{version}.zip` plus package metadata. The archive is

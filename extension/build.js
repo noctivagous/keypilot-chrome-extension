@@ -197,6 +197,13 @@ function createFirefoxManifest(sourceManifest) {
     gecko: {
       ...(manifest.browser_specific_settings?.gecko || {}),
       id: FIREFOX_GECKO_ID,
+      strict_min_version: '140.0',
+      data_collection_permissions: {
+        optional: [
+          'browsingActivity',
+          'websiteContent',
+        ],
+      },
     },
   };
   manifest.permissions = (manifest.permissions || []).filter(
@@ -233,6 +240,15 @@ function stageFirefoxBuild() {
   if (manifest.background?.service_worker) errors.push('Firefox manifest must not include background.service_worker');
   if (manifest.browser_specific_settings?.gecko?.id !== FIREFOX_GECKO_ID) {
     errors.push('Firefox manifest must include the configured Gecko ID');
+  }
+  if (manifest.browser_specific_settings?.gecko?.strict_min_version !== '140.0') {
+    errors.push('Firefox manifest must require Firefox 140 or later');
+  }
+  if (
+    JSON.stringify(manifest.browser_specific_settings?.gecko?.data_collection_permissions?.optional) !==
+    JSON.stringify(['browsingActivity', 'websiteContent'])
+  ) {
+    errors.push('Firefox manifest must declare optional external lookup data types');
   }
   if (JSON.stringify(manifest.permissions || []).includes('"favicon"')) errors.push('Firefox manifest must not include the favicon permission');
   if (JSON.stringify(manifest.permissions || []).includes('"windows"')) errors.push('Firefox manifest must not include the windows permission');

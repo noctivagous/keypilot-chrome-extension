@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-03T11:41:08.029Z
+ * Generated on 2026-09-03T11:54:23.374Z
  */
 
 
@@ -4071,6 +4071,45 @@ function normalizeSettingsPanelId(panelId) {
   return KP_SETTINGS_PANEL_IDS.includes(id) ? id : null;
 }
 
+// src/utils/firefox-data-consent.js
+var FIREFOX_EXTERNAL_LOOKUP_DATA_TYPES = Object.freeze([
+  "browsingActivity",
+  "websiteContent"
+]);
+function firefoxPermissionsApi() {
+  try {
+    return globalThis.browser?.permissions || null;
+  } catch {
+    return null;
+  }
+}
+function isFirefoxDataConsentAvailable() {
+  const permissions = firefoxPermissionsApi();
+  return !!(permissions && typeof permissions.getAll === "function" && typeof permissions.request === "function");
+}
+async function hasFirefoxExternalLookupConsent() {
+  const permissions = firefoxPermissionsApi();
+  if (!permissions || typeof permissions.getAll !== "function") return true;
+  try {
+    const granted = await permissions.getAll();
+    const dataCollection = Array.isArray(granted?.data_collection) ? granted.data_collection : [];
+    return FIREFOX_EXTERNAL_LOOKUP_DATA_TYPES.every((type2) => dataCollection.includes(type2));
+  } catch {
+    return false;
+  }
+}
+async function requestFirefoxExternalLookupConsent() {
+  const permissions = firefoxPermissionsApi();
+  if (!permissions || typeof permissions.request !== "function") return false;
+  try {
+    return !!await permissions.request({
+      data_collection: [...FIREFOX_EXTERNAL_LOOKUP_DATA_TYPES]
+    });
+  } catch {
+    return false;
+  }
+}
+
 // pages/settings.js
 var settingsScope = document;
 var settingsHandlersInstalled = false;
@@ -4644,6 +4683,9 @@ async function render() {
     /** @type {HTMLInputElement|null} */
     settingsEl("debug-logging")
   );
+  const firefoxExternalLookupConsent = settingsEl("firefox-external-lookup-consent");
+  const firefoxExternalLookupConsentBtn = settingsEl("firefox-external-lookup-consent-button");
+  const firefoxExternalLookupConsentStatus = settingsEl("firefox-external-lookup-consent-status");
   const textCursorType = (
     /** @type {HTMLSelectElement|null} */
     settingsEl("text-cursor-type")
@@ -4978,6 +5020,21 @@ async function render() {
   const signal = settingsUiAbort?.signal;
   if (!signal) return;
   const listenOpts = { signal, capture: true };
+  const refreshFirefoxExternalLookupConsent = async () => {
+    if (!firefoxExternalLookupConsent) return;
+    const available = isFirefoxDataConsentAvailable();
+    firefoxExternalLookupConsent.hidden = !available;
+    if (!available) return;
+    const granted = await hasFirefoxExternalLookupConsent();
+    if (firefoxExternalLookupConsentBtn) {
+      firefoxExternalLookupConsentBtn.disabled = granted;
+      firefoxExternalLookupConsentBtn.textContent = granted ? "External lookups enabled" : "Enable external lookups";
+    }
+    if (firefoxExternalLookupConsentStatus) {
+      firefoxExternalLookupConsentStatus.textContent = granted ? "Consent granted for Dictionary Lookup and video thumbnail lookups." : "Dictionary Lookup and video thumbnails stay off until you enable them.";
+    }
+  };
+  void refreshFirefoxExternalLookupConsent();
   bindSettingsControls({
     controller: settingsController,
     el: settingsEl,
@@ -5000,6 +5057,14 @@ async function render() {
     const ok = typeof window.confirm === "function" ? window.confirm("Reset all KeyPilot settings to defaults? This cannot be undone.") : true;
     if (!ok) return;
     await settingsController.reset("all");
+  }, listenOpts);
+  firefoxExternalLookupConsentBtn?.addEventListener("click", async () => {
+    firefoxExternalLookupConsentBtn.disabled = true;
+    if (firefoxExternalLookupConsentStatus) {
+      firefoxExternalLookupConsentStatus.textContent = "Requesting Firefox consent\u2026";
+    }
+    await requestFirefoxExternalLookupConsent();
+    await refreshFirefoxExternalLookupConsent();
   }, listenOpts);
   keyboardHelpToggle?.addEventListener("change", async () => {
     const desired = !!keyboardHelpToggle.checked;

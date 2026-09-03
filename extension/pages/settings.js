@@ -14,6 +14,11 @@ import { hasThemeOverrides, listThemes, normalizeThemeId, THEME_META } from '../
 import { GENERIC_FAVICON_DATA_URL, getExtensionFaviconUrl } from '../src/ui/url-listing.js';
 import { CursorManager } from '../src/modules/cursor.js';
 import { normalizeSettingsPanelId } from '../src/utils/kp-deep-link.js';
+import {
+  hasFirefoxExternalLookupConsent,
+  isFirefoxDataConsentAvailable,
+  requestFirefoxExternalLookupConsent,
+} from '../src/utils/firefox-data-consent.js';
 
 /** Document or open ShadowRoot the settings UI is mounted in. */
 let settingsScope = document;
@@ -557,6 +562,9 @@ async function render() {
   const settingsResetAllBtn = settingsEl('settings-reset-all');
   const settingsResetAppearanceBtn = settingsEl('settings-reset-appearance');
   const debugLoggingToggle = /** @type {HTMLInputElement|null} */ (settingsEl('debug-logging'));
+  const firefoxExternalLookupConsent = settingsEl('firefox-external-lookup-consent');
+  const firefoxExternalLookupConsentBtn = settingsEl('firefox-external-lookup-consent-button');
+  const firefoxExternalLookupConsentStatus = settingsEl('firefox-external-lookup-consent-status');
 
   const textCursorType = /** @type {HTMLSelectElement|null} */ (settingsEl('text-cursor-type'));
   const textCursorPreview = settingsEl('text-cursor-preview');
@@ -888,6 +896,28 @@ async function render() {
   if (!signal) return;
   const listenOpts = { signal, capture: true };
 
+  const refreshFirefoxExternalLookupConsent = async () => {
+    if (!firefoxExternalLookupConsent) return;
+    const available = isFirefoxDataConsentAvailable();
+    firefoxExternalLookupConsent.hidden = !available;
+    if (!available) return;
+
+    const granted = await hasFirefoxExternalLookupConsent();
+    if (firefoxExternalLookupConsentBtn) {
+      firefoxExternalLookupConsentBtn.disabled = granted;
+      firefoxExternalLookupConsentBtn.textContent = granted
+        ? 'External lookups enabled'
+        : 'Enable external lookups';
+    }
+    if (firefoxExternalLookupConsentStatus) {
+      firefoxExternalLookupConsentStatus.textContent = granted
+        ? 'Consent granted for Dictionary Lookup and video thumbnail lookups.'
+        : 'Dictionary Lookup and video thumbnails stay off until you enable them.';
+    }
+  };
+
+  void refreshFirefoxExternalLookupConsent();
+
   bindSettingsControls({
     controller: settingsController,
     el: settingsEl,
@@ -916,6 +946,15 @@ async function render() {
       : true;
     if (!ok) return;
     await settingsController.reset('all');
+  }, listenOpts);
+
+  firefoxExternalLookupConsentBtn?.addEventListener('click', async () => {
+    firefoxExternalLookupConsentBtn.disabled = true;
+    if (firefoxExternalLookupConsentStatus) {
+      firefoxExternalLookupConsentStatus.textContent = 'Requesting Firefox consent…';
+    }
+    await requestFirefoxExternalLookupConsent();
+    await refreshFirefoxExternalLookupConsent();
   }, listenOpts);
 
   keyboardHelpToggle?.addEventListener('change', async () => {
