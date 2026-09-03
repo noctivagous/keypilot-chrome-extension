@@ -24,7 +24,7 @@ import {
   setCachedCardThumb
 } from '../utils/thumb-load-queue.js';
 import { MSG } from '../messaging/types.js';
-import { hasFirefoxExternalLookupConsent } from '../utils/firefox-data-consent.js';
+import { hasFirefoxVideoThumbnailConsent } from '../utils/firefox-data-consent.js';
 
 export {
   extractYouTubeVideoId,
@@ -62,7 +62,7 @@ export function buildDarkenedThumbBackground(imageUrl, topAlpha = 0.55, bottomAl
 export async function requestVideoThumb(pageUrl) {
   const url = String(pageUrl || '').trim();
   if (!url || !isVideoSiteUrl(url)) return null;
-  if (!await hasFirefoxExternalLookupConsent()) return null;
+  if (!await hasFirefoxVideoThumbnailConsent()) return null;
 
   // Sync patterns (YouTube / Dailymotion) — no round-trip needed.
   const sync = getSyncVideoThumbnailUrlForPage(url, 'hqdefault');

@@ -15,9 +15,9 @@ import { GENERIC_FAVICON_DATA_URL, getExtensionFaviconUrl } from '../src/ui/url-
 import { CursorManager } from '../src/modules/cursor.js';
 import { normalizeSettingsPanelId } from '../src/utils/kp-deep-link.js';
 import {
-  hasFirefoxExternalLookupConsent,
+  hasFirefoxVideoThumbnailConsent,
   isFirefoxDataConsentAvailable,
-  requestFirefoxExternalLookupConsent,
+  requestFirefoxVideoThumbnailConsent,
 } from '../src/utils/firefox-data-consent.js';
 
 /** Document or open ShadowRoot the settings UI is mounted in. */
@@ -902,17 +902,17 @@ async function render() {
     firefoxExternalLookupConsent.hidden = !available;
     if (!available) return;
 
-    const granted = await hasFirefoxExternalLookupConsent();
+    const granted = await hasFirefoxVideoThumbnailConsent();
     if (firefoxExternalLookupConsentBtn) {
       firefoxExternalLookupConsentBtn.disabled = granted;
       firefoxExternalLookupConsentBtn.textContent = granted
-        ? 'External lookups enabled'
-        : 'Enable external lookups';
+        ? 'Video thumbnails enabled'
+        : 'Enable video thumbnails';
     }
     if (firefoxExternalLookupConsentStatus) {
       firefoxExternalLookupConsentStatus.textContent = granted
-        ? 'Consent granted for Dictionary Lookup and video thumbnail lookups.'
-        : 'Dictionary Lookup and video thumbnails stay off until you enable them.';
+        ? 'Consent granted for video thumbnail lookups.'
+        : 'Video thumbnails stay off until you enable them.';
     }
   };
 
@@ -953,7 +953,7 @@ async function render() {
     if (firefoxExternalLookupConsentStatus) {
       firefoxExternalLookupConsentStatus.textContent = 'Requesting Firefox consent…';
     }
-    await requestFirefoxExternalLookupConsent();
+    await requestFirefoxVideoThumbnailConsent();
     await refreshFirefoxExternalLookupConsent();
   }, listenOpts);
 

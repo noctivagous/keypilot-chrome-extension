@@ -1,11 +1,10 @@
 /**
- * Firefox 140+ built-in consent for KeyPilot's user-enabled external lookups.
+ * Firefox 140+ built-in consent for optional video-thumbnail lookups.
  * Chrome does not expose this API, so it keeps its existing behavior.
  */
 
-export const FIREFOX_EXTERNAL_LOOKUP_DATA_TYPES = Object.freeze([
+export const FIREFOX_VIDEO_THUMBNAIL_DATA_TYPES = Object.freeze([
   'browsingActivity',
-  'websiteContent',
 ]);
 
 function firefoxPermissionsApi() {
@@ -26,11 +25,11 @@ export function isFirefoxDataConsentAvailable() {
 }
 
 /**
- * Chrome has no Firefox data-consent API, so its lookup behavior is unchanged.
- * Firefox enables external lookups only after the user grants every declared
- * data type from the Settings page.
+ * Chrome has no Firefox data-consent API, so its thumbnail behavior is unchanged.
+ * Firefox enables optional video-thumbnail requests only after the user grants
+ * browsing-activity consent from the Settings page.
  */
-export async function hasFirefoxExternalLookupConsent() {
+export async function hasFirefoxVideoThumbnailConsent() {
   const permissions = firefoxPermissionsApi();
   if (!permissions || typeof permissions.getAll !== 'function') return true;
 
@@ -39,19 +38,19 @@ export async function hasFirefoxExternalLookupConsent() {
     const dataCollection = Array.isArray(granted?.data_collection)
       ? granted.data_collection
       : [];
-    return FIREFOX_EXTERNAL_LOOKUP_DATA_TYPES.every((type) => dataCollection.includes(type));
+    return FIREFOX_VIDEO_THUMBNAIL_DATA_TYPES.every((type) => dataCollection.includes(type));
   } catch {
     return false;
   }
 }
 
-export async function requestFirefoxExternalLookupConsent() {
+export async function requestFirefoxVideoThumbnailConsent() {
   const permissions = firefoxPermissionsApi();
   if (!permissions || typeof permissions.request !== 'function') return false;
 
   try {
     return !!await permissions.request({
-      data_collection: [...FIREFOX_EXTERNAL_LOOKUP_DATA_TYPES],
+      data_collection: [...FIREFOX_VIDEO_THUMBNAIL_DATA_TYPES],
     });
   } catch {
     return false;

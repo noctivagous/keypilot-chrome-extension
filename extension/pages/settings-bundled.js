@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-03T11:57:25.501Z
+ * Generated on 2026-09-03T12:03:19.964Z
  */
 
 
@@ -4072,9 +4072,8 @@ function normalizeSettingsPanelId(panelId) {
 }
 
 // src/utils/firefox-data-consent.js
-var FIREFOX_EXTERNAL_LOOKUP_DATA_TYPES = Object.freeze([
-  "browsingActivity",
-  "websiteContent"
+var FIREFOX_VIDEO_THUMBNAIL_DATA_TYPES = Object.freeze([
+  "browsingActivity"
 ]);
 function firefoxPermissionsApi() {
   try {
@@ -4087,23 +4086,23 @@ function isFirefoxDataConsentAvailable() {
   const permissions = firefoxPermissionsApi();
   return !!(permissions && typeof permissions.getAll === "function" && typeof permissions.request === "function");
 }
-async function hasFirefoxExternalLookupConsent() {
+async function hasFirefoxVideoThumbnailConsent() {
   const permissions = firefoxPermissionsApi();
   if (!permissions || typeof permissions.getAll !== "function") return true;
   try {
     const granted = await permissions.getAll();
     const dataCollection = Array.isArray(granted?.data_collection) ? granted.data_collection : [];
-    return FIREFOX_EXTERNAL_LOOKUP_DATA_TYPES.every((type2) => dataCollection.includes(type2));
+    return FIREFOX_VIDEO_THUMBNAIL_DATA_TYPES.every((type2) => dataCollection.includes(type2));
   } catch {
     return false;
   }
 }
-async function requestFirefoxExternalLookupConsent() {
+async function requestFirefoxVideoThumbnailConsent() {
   const permissions = firefoxPermissionsApi();
   if (!permissions || typeof permissions.request !== "function") return false;
   try {
     return !!await permissions.request({
-      data_collection: [...FIREFOX_EXTERNAL_LOOKUP_DATA_TYPES]
+      data_collection: [...FIREFOX_VIDEO_THUMBNAIL_DATA_TYPES]
     });
   } catch {
     return false;
@@ -5025,13 +5024,13 @@ async function render() {
     const available = isFirefoxDataConsentAvailable();
     firefoxExternalLookupConsent.hidden = !available;
     if (!available) return;
-    const granted = await hasFirefoxExternalLookupConsent();
+    const granted = await hasFirefoxVideoThumbnailConsent();
     if (firefoxExternalLookupConsentBtn) {
       firefoxExternalLookupConsentBtn.disabled = granted;
-      firefoxExternalLookupConsentBtn.textContent = granted ? "External lookups enabled" : "Enable external lookups";
+      firefoxExternalLookupConsentBtn.textContent = granted ? "Video thumbnails enabled" : "Enable video thumbnails";
     }
     if (firefoxExternalLookupConsentStatus) {
-      firefoxExternalLookupConsentStatus.textContent = granted ? "Consent granted for Dictionary Lookup and video thumbnail lookups." : "Dictionary Lookup and video thumbnails stay off until you enable them.";
+      firefoxExternalLookupConsentStatus.textContent = granted ? "Consent granted for video thumbnail lookups." : "Video thumbnails stay off until you enable them.";
     }
   };
   void refreshFirefoxExternalLookupConsent();
@@ -5063,7 +5062,7 @@ async function render() {
     if (firefoxExternalLookupConsentStatus) {
       firefoxExternalLookupConsentStatus.textContent = "Requesting Firefox consent\u2026";
     }
-    await requestFirefoxExternalLookupConsent();
+    await requestFirefoxVideoThumbnailConsent();
     await refreshFirefoxExternalLookupConsent();
   }, listenOpts);
   keyboardHelpToggle?.addEventListener("change", async () => {

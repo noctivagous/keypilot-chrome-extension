@@ -199,10 +199,11 @@ function createFirefoxManifest(sourceManifest) {
       id: FIREFOX_GECKO_ID,
       strict_min_version: '140.0',
       data_collection_permissions: {
-        required: [],
+        required: [
+          'websiteContent',
+        ],
         optional: [
           'browsingActivity',
-          'websiteContent',
         ],
       },
     },
@@ -247,13 +248,13 @@ function stageFirefoxBuild() {
   }
   if (
     JSON.stringify(manifest.browser_specific_settings?.gecko?.data_collection_permissions?.required) !==
-    JSON.stringify([])
+    JSON.stringify(['websiteContent'])
   ) {
-    errors.push('Firefox manifest must declare no required external lookup data types');
+    errors.push('Firefox manifest must declare website content as required');
   }
   if (
     JSON.stringify(manifest.browser_specific_settings?.gecko?.data_collection_permissions?.optional) !==
-    JSON.stringify(['browsingActivity', 'websiteContent'])
+    JSON.stringify(['browsingActivity'])
   ) {
     errors.push('Firefox manifest must declare optional external lookup data types');
   }
