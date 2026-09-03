@@ -122,3 +122,7 @@ See `refs/OPERA_GX_PUBLICATION_CHECKLIST.md` Phase 4.
 ## License
 
 MIT — see the repository README. Add a `LICENSE` file before store submission if one is still missing at the repo root.
+
+## Privacy
+
+See [`PRIVACY_POLICY.md`](../PRIVACY_POLICY.md) for KeyPilot's data practices.

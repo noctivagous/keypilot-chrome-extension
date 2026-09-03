@@ -829,7 +829,7 @@ export class OnboardingManager {
 
   async setActive(active) {
     const next = !!active;
-    // Don't allow Alt+T (or other triggers) to reopen onboarding while KeyPilot is disabled.
+    // Don't allow Alt+I (or other triggers) to reopen onboarding while KeyPilot is disabled.
     if (next && !this._isKeyPilotEnabled()) {
       this.panel.hide();
       this.practicePanel.hide();
@@ -1294,10 +1294,10 @@ export class OnboardingManager {
         if (st?.mode === MODES.TEXT_FOCUS) return;
       } catch { /* ignore */ }
 
-      // Alt + T : open/close onboarding.
+      // Alt + I : open/close onboarding.
       //
       // Notes:
-      // - Prefer `e.code === 'KeyT'` because `e.key` varies by layout.
+      // - Prefer `e.code === 'KeyI'` because `e.key` varies by layout.
       // - Support AltGr layouts where the browser may report Ctrl+Alt, and/or AltGraph state.
       const isAltOrAltGraph =
         !!e &&
@@ -1306,17 +1306,17 @@ export class OnboardingManager {
           (typeof e.getModifierState === 'function' && e.getModifierState('AltGraph') === true)
         );
 
-      const isTKey =
+      const isIKey =
         !!e &&
         (
-          e.code === 'KeyT' ||
-          e.key === 't' ||
-          e.key === 'T'
+          e.code === 'KeyI' ||
+          e.key === 'i' ||
+          e.key === 'I'
         );
 
-      const isAltT = isAltOrAltGraph && isTKey;
+      const isAltI = isAltOrAltGraph && isIKey;
 
-      if (!isAltT) return;
+      if (!isAltI) return;
 
       e.preventDefault();
       e.stopPropagation();

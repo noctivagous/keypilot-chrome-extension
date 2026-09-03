@@ -5021,7 +5021,7 @@
   const ONBOARDING_FIRST_SLIDE_ID = 'basic_navigation';
   const ONBOARDING_PANEL_CLASS = 'kp-onboarding-panel';
   const ONBOARDING_DEFAULT_TITLE = 'Welcome to KeyPilot';
-  const ONBOARDING_REOPEN_TIP = 'Tip: Press Alt + T to re-open this walkthrough later.';
+  const ONBOARDING_REOPEN_TIP = 'Tip: Press Alt + I to re-open this walkthrough later.';
 
   /** Default z-index fallback if caller does not pass Z_INDEX.ONBOARDING_PANEL. */
   const ONBOARDING_PANEL_Z_FALLBACK = 2147483026;

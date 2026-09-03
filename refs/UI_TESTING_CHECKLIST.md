@@ -53,7 +53,7 @@ Open the toolbar popup on a normal tab.
 - [ ] Header: KeyPilot title, ON/OFF switch + pill, `Alt+K` hint, version `0.3.5`.
 - [ ] **Keyboard Reference** card: switch toggles the floating keyboard; status text and `aria-checked` update; shortcut `K`.
 - [ ] **Help / Docs** card: opens the in-page Docs popover (`Alt+H`).
-- [ ] **Onboarding Tutorial** card: opens the walkthrough (`Alt+T`); status reflects in-progress vs complete.
+- [ ] **Onboarding Tutorial** card: opens the walkthrough (`Alt+I`); status reflects in-progress vs complete.
 - [ ] **Settings** card: opens Settings popover (`'`).
 - [ ] **Control Strip** card: switch shows/hides the strip (`Alt+J`).
 - [ ] Popup theme matches Settings appearance (Dark Pro / Gray Metal Pro / GX-er).
@@ -137,7 +137,7 @@ Always-on, independent of custom layouts.
 | `Alt+[` / `Alt+]` | Previous / next layout family | [ ] |
 | `Alt+C` | Toggle Keyboard Layout Editor | [ ] |
 | `Alt+H` | Open Docs | [ ] |
-| `Alt+T` | Show/hide onboarding walkthrough (does not reset progress) | [ ] |
+| `Alt+I` | Show/hide onboarding walkthrough (does not reset progress) | [ ] |
 
 - [ ] On a **custom sparse layout**, unused letter keys do nothing, but `Esc`, `K`/`D`, `'` still work.
 - [ ] `Alt+D` (Shadow Root Debug HUD) is **dev-only**. Skip for store QA unless diagnosing paint. If you open it: it toggles, does not steal everyday keys, and closes cleanly.
@@ -387,11 +387,11 @@ Open the KeyPilot New Tab (if this build overrides NTP; otherwise open `extensio
 
 ---
 
-## 13. Onboarding walkthrough (`Alt+T`)
+## 13. Onboarding walkthrough (`Alt+I`)
 
 Progress is profile-wide. Reset from tutorial entry points if you need a clean run.
 
-- [ ] Launch from popup, Guide, Keyboard Reference dropdown, `Alt+T`.
+- [ ] Launch from popup, Guide, Keyboard Reference dropdown, `Alt+I`.
 - [ ] Panel chrome: title, step `n / m`, prev/next, close.
 - [ ] Slide 1 **Welcome**: overlay OK/Close; tasks auto-check:
   - Hover link + `F`
@@ -399,10 +399,10 @@ Progress is profile-wide. Reset from tutorial entry points if you need a clean r
   - Hover a Keyboard Reference keycap
   - Click Control Strip ON → off (arrow at the strip; tip bubble to turn back on)
 - [ ] Slide 2 **Text box**: practice field; `F` enter Text Mode, `Esc` exit. Overlay “KeyPilot is back on”.
-- [ ] Slide 3 **Scrolling**: optional continue vs later (`Alt+T` to return). `V` `C` `X` `Z`.
+- [ ] Slide 3 **Scrolling**: optional continue vs later (`Alt+I` to return). `V` `C` `X` `Z`.
 - [ ] Slide 4 **Tabs**: `G`, `B`, `T`, `Q`, `W`.
 - [ ] Slide 5 **Tutorial complete**.
-- [ ] `Alt+T` hides without resetting; reopen resumes incomplete tasks.
+- [ ] `Alt+I` hides without resetting; reopen resumes incomplete tasks.
 - [ ] Reset tutorial from the same entry points starts clean.
 
 ---

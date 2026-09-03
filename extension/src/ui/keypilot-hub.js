@@ -44,7 +44,7 @@ export const KEYPILOT_HUB_CARDS = Object.freeze([
     action: 'tutorial',
     title: 'Onboarding Tutorial',
     icon: 'LAUNCHER',
-    hint: 'Alt+T',
+    hint: 'Alt+I',
     meta: 'Walkthrough',
     role: 'button'
   }),

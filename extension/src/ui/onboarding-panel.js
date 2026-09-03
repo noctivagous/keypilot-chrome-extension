@@ -288,7 +288,7 @@ export class OnboardingPanel {
     if (window !== window.top) return;
     this._ensure();
     setOnboardingPanelVisible(this.root, true);
-    // Close + reopen (Alt+T / ✕) calls show() even when render bails as still-hidden.
+    // Close + reopen (Alt+I / ✕) calls show() even when render bails as still-hidden.
     if (this._keyboardKeyInfoStepActive) {
       ensureKeyboardReferenceOpenAndExpanded();
     }

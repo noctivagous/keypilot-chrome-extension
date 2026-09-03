@@ -19,7 +19,7 @@ export const ONBOARDING_STORAGE_KEYS = {
 export const ONBOARDING_FIRST_SLIDE_ID = 'basic_navigation';
 export const ONBOARDING_PANEL_CLASS = 'kp-onboarding-panel';
 export const ONBOARDING_DEFAULT_TITLE = 'Welcome to KeyPilot';
-export const ONBOARDING_REOPEN_TIP = 'Tip: Press Alt + T to re-open this walkthrough later.';
+export const ONBOARDING_REOPEN_TIP = 'Tip: Press Alt + I to re-open this walkthrough later.';
 
 /** Default z-index fallback if caller does not pass Z_INDEX.ONBOARDING_PANEL. */
 export const ONBOARDING_PANEL_Z_FALLBACK = 2147483026;
