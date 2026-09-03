@@ -129,7 +129,7 @@ Docs: [MDN `browser_specific_settings`](https://developer.mozilla.org/en-US/docs
 |---|---|
 | `background.service_worker` | `background.scripts` |
 | no Gecko ID | no Gecko ID for temporary local loading |
-| `"favicon"` permission + `/_favicon/` | drop permission; Chromium-only |
+| `"favicon"` / `"windows"` permissions + `/_favicon/` | drop Chromium-only declarations |
 | CSP `img-src … chrome:` | `moz-extension:` (drop `chrome:`) |
 | `match_origin_as_fallback` | keep only if min Firefox version supports it |
 

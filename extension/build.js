@@ -190,7 +190,9 @@ function createFirefoxManifest(sourceManifest) {
   delete background.service_worker;
   background.scripts = ['background.js'];
   manifest.background = background;
-  manifest.permissions = (manifest.permissions || []).filter((permission) => permission !== 'favicon');
+  manifest.permissions = (manifest.permissions || []).filter(
+    (permission) => permission !== 'favicon' && permission !== 'windows'
+  );
 
   manifest.web_accessible_resources = (manifest.web_accessible_resources || [])
     .map((group) => ({
@@ -221,6 +223,7 @@ function stageFirefoxBuild() {
   const errors = [];
   if (manifest.background?.service_worker) errors.push('Firefox manifest must not include background.service_worker');
   if (JSON.stringify(manifest.permissions || []).includes('"favicon"')) errors.push('Firefox manifest must not include the favicon permission');
+  if (JSON.stringify(manifest.permissions || []).includes('"windows"')) errors.push('Firefox manifest must not include the windows permission');
   if (JSON.stringify(manifest.web_accessible_resources || []).includes('_favicon/')) errors.push('Firefox manifest must not include _favicon resources');
   if (manifest.content_security_policy?.extension_pages?.includes('chrome:')) errors.push('Firefox manifest CSP must not include chrome:');
   for (const relPath of collectFirefoxManifestPaths(manifest)) {
