@@ -9,6 +9,7 @@ extension/content-bundled.js
 extension/content-bundled.min.js
 extension/content-bundled.esbuild.js
 extension/frame-agent-bundled.esbuild.js
+extension-firefox/
 dist/
 
 #TASKS

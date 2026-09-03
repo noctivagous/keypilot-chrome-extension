@@ -107,6 +107,8 @@ export const BUILD_EXCLUDED_KEY_ACTIONS = Object.freeze([
   'GET_TEXT_AT_CURSOR',
   'GET_TEXT_RANGE',
   'GET_MEDIA_AT_CURSOR',
+  // Script — "Run a user-authored JavaScript snippet against page state."
+  'EXECUTE_JS',
   // Create built-in Macro Key — "Saved Macro Key instances (hotkey, burst, round-robin, and related kinds) ready to place."
   'SEND_HOTKEY',
   'SEND_BURST',

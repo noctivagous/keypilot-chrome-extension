@@ -2517,10 +2517,6 @@
     "label": "Select Image",
     "keyboardClass": null
   },
-  "EXECUTE_JS": {
-    "label": "Execute JS",
-    "keyboardClass": "key-purple"
-  },
   "LOOKUP_WORD": {
     "label": "Lookup Word",
     "keyboardClass": null

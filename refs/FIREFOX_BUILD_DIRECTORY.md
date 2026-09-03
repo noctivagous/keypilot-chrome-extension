@@ -27,6 +27,8 @@ A single dual-key `manifest.json` in `extension/` is **not enough** for KeyPilot
 
 In that shape, Chrome agents keep editing `extension/src`, running `npm run build`, loading `extension/`. The Firefox script is dead code until someone runs it.
 
+
+
 **Where overhead actually shows up:**
 
 1. **Agents “helpfully” dual-target** — every PR starts getting “also update Firefox manifest / rules / CSP.” Process noise, not build cost. Fix with a short rule: Chrome-only unless the task says Firefox.
@@ -108,13 +110,14 @@ Docs: [MDN `browser_specific_settings`](https://developer.mozilla.org/en-US/docs
 - `web-ext lint` / `web-ext build` for AMO zip
 - Separate manifests are a known need ([web-ext #2653](https://github.com/mozilla/web-ext/issues/2653))
 
-## What `build.js` should grow into
+## Implemented build behavior
 
-Keep the current Chrome path. Add `node build.js --firefox` / `npm run build:firefox` that:
+`node build.js --firefox` / `npm run build:firefox` keeps the current Chrome path and then:
 
 1. Runs the existing esbuild (same bundles).
-2. Copies a **runtime file set** into `extension-firefox/` (not `build.js`, not `node_modules`).
+2. Recreates a generated, gitignored `extension-firefox/` from the runtime file set (not `build.js`, tests, or repo docs).
 3. Writes a **Firefox `manifest.json`** from the Chrome one (patch, don’t maintain two by hand).
+4. Validates that each manifest-referenced runtime file exists in the generated directory.
 
 **Copy in:** bundled JS, `background.js`, `early-inject.js`, `popup.*`, `pages/`, `icons/`, `fonts/`, `rules.json`, and **`src/`** (extension pages import from `src/`; WAR also lists `src/*`).
 
@@ -125,12 +128,14 @@ Keep the current Chrome path. Add `node build.js --firefox` / `npm run build:fir
 | Chrome (`extension/`) | Firefox output |
 |---|---|
 | `background.service_worker` | `background.scripts` |
-| no gecko id | `browser_specific_settings.gecko.id` |
+| no Gecko ID | no Gecko ID for temporary local loading |
 | `"favicon"` permission + `/_favicon/` | drop permission; Chromium-only |
 | CSP `img-src … chrome:` | `moz-extension:` (drop `chrome:`) |
 | `match_origin_as_fallback` | keep only if min Firefox version supports it |
 
-`browser_specific_settings` can also live in the Chrome manifest (Chrome ignores it). Background + favicon/CSP are why a generated folder is still worth it.
+This build intentionally does not add `browser_specific_settings.gecko.id`; choose a stable ID only when preparing an AMO submission. Background + favicon/CSP are why a generated folder is still worth it.
+
+A later npm run package:firefox would zip that staged directory the same way Chrome/Opera packaging works today.
 
 ## Work beyond the build script
 

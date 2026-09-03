@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-03T08:28:01.053Z
+ * Generated on 2026-09-03T11:04:54.470Z
  */
 
 
@@ -27,6 +27,8 @@ var BUILD_EXCLUDED_KEY_ACTIONS = Object.freeze([
   "GET_TEXT_AT_CURSOR",
   "GET_TEXT_RANGE",
   "GET_MEDIA_AT_CURSOR",
+  // Script — "Run a user-authored JavaScript snippet against page state."
+  "EXECUTE_JS",
   // Create built-in Macro Key — "Saved Macro Key instances (hotkey, burst, round-robin, and related kinds) ready to place."
   "SEND_HOTKEY",
   "SEND_BURST",

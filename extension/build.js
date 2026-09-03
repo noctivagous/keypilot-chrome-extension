@@ -11,6 +11,7 @@
  *
  * Usage:
  *   node build.js
+ *   node build.js --firefox         # also stages Firefox files in ../extension-firefox
  *   node build.js --minify          # also writes content-bundled.min.js
  *   node build.js --macro-builder   # enable User Macros / Macro Builder UI (v1.2 surface)
  */
@@ -23,6 +24,36 @@ import { runPostBundleTasks } from './build-side-effects.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const shouldMinify = process.argv.includes('--minify') || process.argv.includes('-m');
 const enableMacroBuilder = process.argv.includes('--macro-builder');
+const shouldBuildFirefox = process.argv.includes('--firefox');
+
+const FIREFOX_EXCLUDED_FILES = new Set([
+  'build.js',
+  'build-side-effects.js',
+  'content-bundled.min.js',
+  'content-bundled.esbuild.js',
+  'frame-agent-bundled.esbuild.js',
+  'popup-v1.html',
+  'popup-v1.js',
+  'README.md',
+  'pages/docs.js',
+  'pages/settings.js',
+  'pages/text-mode-practice.html',
+  'pages/text-mode-tutorial.html',
+  'icons/README.md',
+  'icons/icon-source.png',
+  'icons/icon.svg',
+  'icons/icon76.png',
+  '.DS_Store',
+]);
+
+const FIREFOX_EXCLUDED_DIRECTORIES = [
+  'keyboard/',
+  'plans/',
+  'reference-info/',
+  'img/',
+  'tests/',
+  'test-pages/',
+];
 
 const banner = `/**
  * KeyPilot Chrome Extension — esbuild bundle
@@ -106,7 +137,106 @@ async function buildOne(entry, opts = {}) {
   return { outfile: entry.outfile, bytes, result };
 }
 
-console.log(`Starting build (esbuild, minify=${shouldMinify}, macroBuilder=${enableMacroBuilder})...`);
+function isFirefoxExcluded(relPath) {
+  const rel = relPath.split(path.sep).join('/');
+  return FIREFOX_EXCLUDED_FILES.has(rel) ||
+    FIREFOX_EXCLUDED_DIRECTORIES.some((dir) => rel.startsWith(dir)) ||
+    (rel.startsWith('themes/') && rel.endsWith('/README.md'));
+}
+
+function copyFirefoxRuntimeFiles(sourceDir, destinationDir) {
+  const copied = [];
+  function visit(currentDir) {
+    for (const entry of fs.readdirSync(currentDir, { withFileTypes: true })) {
+      const sourcePath = path.join(currentDir, entry.name);
+      const relPath = path.relative(sourceDir, sourcePath);
+      if (isFirefoxExcluded(relPath)) continue;
+      const destinationPath = path.join(destinationDir, relPath);
+      if (entry.isDirectory()) {
+        fs.mkdirSync(destinationPath, { recursive: true });
+        visit(sourcePath);
+      } else if (entry.isFile()) {
+        fs.mkdirSync(path.dirname(destinationPath), { recursive: true });
+        fs.copyFileSync(sourcePath, destinationPath);
+        copied.push(relPath.split(path.sep).join('/'));
+      }
+    }
+  }
+
+  visit(sourceDir);
+  return copied;
+}
+
+function collectFirefoxManifestPaths(manifest) {
+  const paths = [];
+  const add = (value) => {
+    if (typeof value === 'string' && value) paths.push(value.replace(/^\/+/, ''));
+  };
+
+  for (const script of manifest.background?.scripts || []) add(script);
+  add(manifest.action?.default_popup);
+  for (const icon of Object.values(manifest.action?.default_icon || {})) add(icon);
+  for (const icon of Object.values(manifest.icons || {})) add(icon);
+  for (const group of manifest.content_scripts || []) {
+    for (const script of group.js || []) add(script);
+    for (const stylesheet of group.css || []) add(stylesheet);
+  }
+  return paths;
+}
+
+function createFirefoxManifest(sourceManifest) {
+  const manifest = JSON.parse(JSON.stringify(sourceManifest));
+  const background = { ...(manifest.background || {}) };
+  delete background.service_worker;
+  background.scripts = ['background.js'];
+  manifest.background = background;
+  manifest.permissions = (manifest.permissions || []).filter((permission) => permission !== 'favicon');
+
+  manifest.web_accessible_resources = (manifest.web_accessible_resources || [])
+    .map((group) => ({
+      ...group,
+      resources: (group.resources || []).filter((resource) => resource !== '_favicon/*'),
+    }))
+    .filter((group) => group.resources.length > 0);
+
+  const extensionPagesCsp = manifest.content_security_policy?.extension_pages;
+  if (typeof extensionPagesCsp === 'string') {
+    manifest.content_security_policy.extension_pages = extensionPagesCsp.replace(/\bchrome:/g, 'moz-extension:');
+  }
+  return manifest;
+}
+
+function stageFirefoxBuild() {
+  const outputDir = path.resolve(__dirname, '..', 'extension-firefox');
+  const sourceManifestPath = path.join(__dirname, 'manifest.json');
+  const sourceManifestContent = fs.readFileSync(sourceManifestPath, 'utf8');
+  const sourceManifest = JSON.parse(sourceManifestContent);
+
+  fs.rmSync(outputDir, { recursive: true, force: true });
+  fs.mkdirSync(outputDir, { recursive: true });
+  const copied = copyFirefoxRuntimeFiles(__dirname, outputDir);
+  const manifest = createFirefoxManifest(sourceManifest);
+  fs.writeFileSync(path.join(outputDir, 'manifest.json'), `${JSON.stringify(manifest, null, 4)}\n`);
+
+  const errors = [];
+  if (manifest.background?.service_worker) errors.push('Firefox manifest must not include background.service_worker');
+  if (JSON.stringify(manifest.permissions || []).includes('"favicon"')) errors.push('Firefox manifest must not include the favicon permission');
+  if (JSON.stringify(manifest.web_accessible_resources || []).includes('_favicon/')) errors.push('Firefox manifest must not include _favicon resources');
+  if (manifest.content_security_policy?.extension_pages?.includes('chrome:')) errors.push('Firefox manifest CSP must not include chrome:');
+  for (const relPath of collectFirefoxManifestPaths(manifest)) {
+    if (!fs.existsSync(path.join(outputDir, relPath))) {
+      errors.push(`Manifest path missing from Firefox output: ${relPath}`);
+    }
+  }
+  if (fs.readFileSync(sourceManifestPath, 'utf8') !== sourceManifestContent) {
+    errors.push('Firefox staging must not modify extension/manifest.json');
+  }
+  if (errors.length) throw new Error(`Firefox build validation failed:\n- ${errors.join('\n- ')}`);
+
+  console.log(`✓ Firefox extension staged: ${outputDir} (${copied.length + 1} files)`);
+}
+
+console.log(`Starting build (esbuild, minify=${shouldMinify}, macroBuilder=${enableMacroBuilder}, firefox=${shouldBuildFirefox})...`);
 const started = Date.now();
 
 for (const entry of entries) {
@@ -132,3 +262,7 @@ if (shouldMinify) {
 console.log(`esbuild finished in ${Date.now() - started}ms`);
 
 await runPostBundleTasks({ shouldMinify, enableMacroBuilder });
+
+if (shouldBuildFirefox) {
+  stageFirefoxBuild();
+}
