@@ -96,7 +96,7 @@ const ONBOARDING_ACTIVE_STORAGE_KEY = 'keypilot_onboarding_active';
 const ONBOARDING_PROGRESS_STORAGE_KEY = 'keypilot_onboarding_progress';
 const TRANSIENT_ACTION_STORAGE_KEY = 'keypilot_transient_action';
 
-const KEYBOARD_REFERENCE_CONTEXT_MENU_ID = 'kp-keyboard-reference';
+const KEYPILOT_CONTEXT_MENU_ID = 'kp-keypilot';
 const keyboardReferenceContextValues = new Map();
 
 function keyboardReferenceContextId(value) {
@@ -111,14 +111,14 @@ async function refreshKeyboardReferenceContextMenu() {
     keyboardReferenceContextValues.clear();
     await chrome.contextMenus.removeAll();
     chrome.contextMenus.create({
-      id: KEYBOARD_REFERENCE_CONTEXT_MENU_ID,
-      title: 'Keyboard Reference',
+      id: KEYPILOT_CONTEXT_MENU_ID,
+      title: 'KeyPilot',
       contexts: ['all']
     });
 
-    const createGroup = (title) => chrome.contextMenus.create({
+    const createGroup = (title, parentId = KEYPILOT_CONTEXT_MENU_ID) => chrome.contextMenus.create({
       id: keyboardReferenceContextId(`group:${title}`),
-      parentId: KEYBOARD_REFERENCE_CONTEXT_MENU_ID,
+      parentId,
       title,
       contexts: ['all']
     });
@@ -129,7 +129,19 @@ async function refreshKeyboardReferenceContextMenu() {
       contexts: ['all']
     });
 
-    const builtInGroup = createGroup('Built-In');
+    createAction(KEYPILOT_CONTEXT_MENU_ID, '__toggle_keypilot__', 'Toggle KeyPilot');
+
+    const keyPilotGroup = createGroup('KeyPilot Windows');
+    createAction(keyPilotGroup, '__toggle_keyboard_reference__', 'Toggle Keyboard Reference');
+    createAction(keyPilotGroup, '__onboarding_tutorial__', 'Onboarding Tutorial (Alt + T)');
+    createAction(keyPilotGroup, '__docs_help__', 'KeyPilot Documentation (Alt + H)');
+    createAction(keyPilotGroup, '__settings__', "KeyPilot Settings (')");
+
+    const keyboardReferenceGroup = createGroup('Keyboard Reference');
+    createAction(keyboardReferenceGroup, '__show_keyboard_reference__', 'Show Keyboard Reference');
+    createAction(keyboardReferenceGroup, '__hide_keyboard_reference__', 'Hide Keyboard Reference');
+
+    const builtInGroup = createGroup('Built-In Layouts', keyboardReferenceGroup);
     for (const family of BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META || []) {
       if (family?.id) {
         createAction(
@@ -140,21 +152,16 @@ async function refreshKeyboardReferenceContextMenu() {
       }
     }
 
-    const customGroup = createGroup('Custom');
+    const customGroup = createGroup('Custom Layouts', keyboardReferenceGroup);
     const groups = listLayoutPickerGroups(await listUserKeyboardLayouts());
     for (const layout of groups.custom) {
       createAction(customGroup, layout.value, layout.label);
     }
 
-    const editorGroup = createGroup('Keyboard Layout Editor');
+    const editorGroup = createGroup('Keyboard Layout Editor', keyboardReferenceGroup);
     createAction(editorGroup, '__edit_layouts__', 'Edit Keyboard Layout…');
     createAction(editorGroup, '__new_layout__', 'New Blank Keyboard Layout');
     createAction(editorGroup, '__duplicate_layout__', 'New Duplicate Keyboard Layout');
-
-    const keyPilotGroup = createGroup('KeyPilot');
-    createAction(keyPilotGroup, '__onboarding_tutorial__', 'Onboarding Tutorial (Alt + T)');
-    createAction(keyPilotGroup, '__docs_help__', 'KeyPilot Documentation (Alt + H)');
-    createAction(keyPilotGroup, '__settings__', "KeyPilot Settings (')");
   } catch (e) {
     console.warn('[KeyPilot] Failed to refresh Keyboard Reference context menu:', e?.message || e);
   }
@@ -164,6 +171,10 @@ try {
   chrome.contextMenus?.onClicked?.addListener((info, tab) => {
     const value = keyboardReferenceContextValues.get(String(info?.menuItemId || ''));
     if (!value || value.startsWith('group:') || typeof tab?.id !== 'number') return;
+    if (value === '__toggle_keypilot__') {
+      void extensionToggleManager.toggleState();
+      return;
+    }
     void chrome.tabs.sendMessage(tab.id, {
       type: MSG.KEYBOARD_REFERENCE_CONTEXT_ACTION,
       value

@@ -2568,8 +2568,22 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       } else if (msg.type === MSG.KEYBOARD_REFERENCE_CONTEXT_ACTION) {
         try {
           if (window !== window.top) return;
+          const value = typeof msg.value === 'string' ? msg.value : '';
+          if (value === '__toggle_keyboard_reference__') {
+            const visible = this.floatingKeyboardHelp?.isVisible?.() === true;
+            this.applyKeyboardHelpVisibility(!visible, { persist: true });
+            return;
+          }
+          if (value === '__show_keyboard_reference__') {
+            this.applyKeyboardHelpVisibility(true, { persist: true });
+            return;
+          }
+          if (value === '__hide_keyboard_reference__') {
+            this.applyKeyboardHelpVisibility(false, { persist: true });
+            return;
+          }
           this.floatingKeyboardHelp?.selectLayoutByValue?.(
-            typeof msg.value === 'string' ? msg.value : ''
+            value
           );
         } catch (e) {
           console.warn('[KeyPilot] Failed to handle Keyboard Reference context action:', e);
