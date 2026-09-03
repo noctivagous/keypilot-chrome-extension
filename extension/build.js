@@ -25,6 +25,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const shouldMinify = process.argv.includes('--minify') || process.argv.includes('-m');
 const enableMacroBuilder = process.argv.includes('--macro-builder');
 const shouldBuildFirefox = process.argv.includes('--firefox');
+const FIREFOX_GECKO_ID = 'keypilot@noctivagous.browserextension';
 
 const FIREFOX_EXCLUDED_FILES = new Set([
   'build.js',
@@ -139,7 +140,8 @@ async function buildOne(entry, opts = {}) {
 
 function isFirefoxExcluded(relPath) {
   const rel = relPath.split(path.sep).join('/');
-  return FIREFOX_EXCLUDED_FILES.has(rel) ||
+  return rel.split('/').includes('.DS_Store') ||
+    FIREFOX_EXCLUDED_FILES.has(rel) ||
     FIREFOX_EXCLUDED_DIRECTORIES.some((dir) => rel.startsWith(dir)) ||
     (rel.startsWith('themes/') && rel.endsWith('/README.md'));
 }
@@ -190,6 +192,13 @@ function createFirefoxManifest(sourceManifest) {
   delete background.service_worker;
   background.scripts = ['background.js'];
   manifest.background = background;
+  manifest.browser_specific_settings = {
+    ...(manifest.browser_specific_settings || {}),
+    gecko: {
+      ...(manifest.browser_specific_settings?.gecko || {}),
+      id: FIREFOX_GECKO_ID,
+    },
+  };
   manifest.permissions = (manifest.permissions || []).filter(
     (permission) => permission !== 'favicon' && permission !== 'windows'
   );
@@ -222,6 +231,9 @@ function stageFirefoxBuild() {
 
   const errors = [];
   if (manifest.background?.service_worker) errors.push('Firefox manifest must not include background.service_worker');
+  if (manifest.browser_specific_settings?.gecko?.id !== FIREFOX_GECKO_ID) {
+    errors.push('Firefox manifest must include the configured Gecko ID');
+  }
   if (JSON.stringify(manifest.permissions || []).includes('"favicon"')) errors.push('Firefox manifest must not include the favicon permission');
   if (JSON.stringify(manifest.permissions || []).includes('"windows"')) errors.push('Firefox manifest must not include the windows permission');
   if (JSON.stringify(manifest.web_accessible_resources || []).includes('_favicon/')) errors.push('Firefox manifest must not include _favicon resources');

@@ -8,8 +8,8 @@
  * Usage:
  *   npm run package:opera
  *   npm run package:chrome
- *   node scripts/package-channel.mjs opera
- *   node scripts/package-channel.mjs chrome --skip-build
+ *   npm run package:firefox
+ *   node scripts/package-channel.mjs <opera|chrome|firefox> [--skip-build]
  */
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -22,7 +22,7 @@ import { ZipArchive } from 'archiver';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 
-const CHANNELS = new Set(['opera', 'chrome']);
+const CHANNELS = new Set(['opera', 'chrome', 'firefox']);
 
 function parseArgs(argv) {
   const skipBuild = argv.includes('--skip-build');
@@ -115,6 +115,7 @@ function collectManifestPaths(manifest) {
   };
 
   add(manifest.background?.service_worker);
+  for (const script of manifest.background?.scripts || []) add(script);
   add(manifest.action?.default_popup);
   for (const value of Object.values(manifest.action?.default_icon || {})) add(value);
   for (const value of Object.values(manifest.icons || {})) add(value);
@@ -136,7 +137,7 @@ export async function packageChannel(channel, { skipBuild = false } = {}) {
   const configPath = path.join(repoRoot, 'scripts', channel, 'release-config.json');
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   const label = config.channelLabel || channel;
-  const extensionDir = path.join(repoRoot, 'extension');
+  const extensionDir = path.join(repoRoot, config.extensionDir || 'extension');
   const stagingDir = path.join(repoRoot, config.stagingDir);
   const zipDir = path.join(repoRoot, config.zipDir);
   const sourceManifestPath = path.join(extensionDir, 'manifest.json');
@@ -323,15 +324,16 @@ export async function packageChannel(channel, { skipBuild = false } = {}) {
   }
 
   if (!skipBuild) {
-    console.log('Running npm run build...');
-    await run('npm', ['run', 'build'], repoRoot);
+    const buildScript = config.buildScript || 'build';
+    console.log(`Running npm run ${buildScript}...`);
+    await run('npm', ['run', buildScript], repoRoot);
   } else {
     console.log('Skipping build (--skip-build)');
   }
 
   for (const rel of config.requiredGeneratedFiles || []) {
     if (!fs.existsSync(path.join(extensionDir, rel))) {
-      throw new Error(`Build output missing before packaging: extension/${rel}`);
+      throw new Error(`Build output missing before packaging: ${config.extensionDir || 'extension'}/${rel}`);
     }
   }
 

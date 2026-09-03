@@ -1,0 +1,36 @@
+{
+  "channelLabel": "Firefox",
+  "description": "Browse the web with key-clicks. Activate hyperlinks with keyboard keys instead of mouse buttons.",
+  "descriptionMaxLength": 132,
+  "homepageUrl": "https://noctivagous.com/",
+  "extensionDir": "extension-firefox",
+  "buildScript": "build:firefox",
+  "stagingDir": "dist/firefox",
+  "zipDir": "dist",
+  "zipNameTemplate": "keypilot-firefox-v{version}.zip",
+  "iconSizes": ["16", "32", "48", "128", "256"],
+  "requiredGeneratedFiles": [
+    "content-bundled.js",
+    "frame-agent-bundled.js",
+    "pages/docs-bundled.js",
+    "pages/settings-bundled.js"
+  ],
+  "requiredRuntimeFiles": [
+    "background.js",
+    "map-pan-bridge.js",
+    "icons/icon16.png",
+    "icons/icon32.png",
+    "icons/icon48.png",
+    "icons/icon128.png",
+    "icons/icon256.png",
+    "fonts/ROBOTECHGPRegular.ttf",
+    "fonts/TitilliumTextRegular.otf",
+    "fonts/TitilliumTextBold.ttf",
+    "fonts/CubellanRegular.ttf",
+    "fonts/EzarionRegular.ttf",
+    "fonts/DosisBook.ttf"
+  ],
+  "forbiddenFirstPartyMinJs": [
+    "content-bundled.min.js"
+  ]
+}
