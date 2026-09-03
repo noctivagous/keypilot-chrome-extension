@@ -544,7 +544,7 @@ export class OnboardingManager {
     // Prime enabled state from the service worker before we decide whether to show anything.
     await this._syncEnabledFromServiceWorker();
 
-    // Alt + T re-opens onboarding, but ONLY while KeyPilot is enabled.
+    // Alt + I re-opens onboarding, but ONLY while KeyPilot is enabled.
     this._setAltSlashListenerEnabled(this._isKeyPilotEnabled());
 
     // Show/hide based on persisted active flag.
@@ -1082,7 +1082,7 @@ export class OnboardingManager {
         const showLaterReminder = () => {
           const reminderTitle =
             laterTitle ||
-            'Return to this Tutorial with `Alt`+`T`';
+            'Return to this Tutorial with `Alt`+`I`';
           try {
             this.panel.showOverlay({
               title: reminderTitle,

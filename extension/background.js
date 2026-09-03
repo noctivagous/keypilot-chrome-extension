@@ -133,7 +133,7 @@ async function refreshKeyboardReferenceContextMenu() {
 
     const keyPilotGroup = createGroup('KeyPilot Windows');
     createAction(keyPilotGroup, '__toggle_keyboard_reference__', 'Toggle Keyboard Reference');
-    createAction(keyPilotGroup, '__onboarding_tutorial__', 'Onboarding Tutorial (Alt + T)');
+    createAction(keyPilotGroup, '__onboarding_tutorial__', 'Onboarding Tutorial (Alt + I)');
     createAction(keyPilotGroup, '__docs_help__', 'KeyPilot Documentation (Alt + H)');
     createAction(keyPilotGroup, '__settings__', "KeyPilot Settings (')");
 

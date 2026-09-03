@@ -49,7 +49,14 @@ over — KeyPilot calls this a “key-click.” For
   features. All of these are standard extension
   pages/overlays rendered by KeyPilot; none of them
   replace Opera’s new-tab page or address bar.
-  
+
+### Summary
+
+Browse the web with the keyboard: hover a link and press F to click it or press G to open it in a new background tab. This is called a key-click.  Steer the cursor with the mouse as before but activate hyperlinks with keyboard keys instead of mouse buttons.
+
+### Description
+KeyPilot changes the interactive experience of desktop web browsing.  Keyboard key presses take the place of mouse button clicks: hover a link and press F to click it or press G to open it in a new background tab.  The user steers the cursor as before with the mouse but "clicks" with keyboard keys. A number of key actions are available beyond this.  The user is able to customize keyboard layouts.
+
 ## Build
 
 From the repository root:

@@ -2194,7 +2194,7 @@ export class FloatingKeyboardHelp {
       }
 
       appendGroup('KeyPilot', [
-        { value: LAYOUT_SELECT_ONBOARDING_VALUE, label: 'Onboarding Tutorial', shortcut: 'Alt + T' },
+        { value: LAYOUT_SELECT_ONBOARDING_VALUE, label: 'Onboarding Tutorial', shortcut: 'Alt + I' },
         { value: LAYOUT_SELECT_DOCS_VALUE, label: 'KeyPilot Documentation', shortcut: 'Alt + H' },
         { value: LAYOUT_SELECT_SETTINGS_VALUE, label: 'KeyPilot Settings', shortcut: "'" }
       ]);

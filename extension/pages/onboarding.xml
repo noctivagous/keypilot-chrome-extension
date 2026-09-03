@@ -45,7 +45,7 @@
              primaryText="Yes, Continue"
              secondaryText="No, I'll Do It Later"
              secondaryAction="later"
-             laterTitle="Return to this Tutorial with `Alt`+`T`"
+             laterTitle="Return to this Tutorial with `Alt`+`I`"
              laterPrimaryText="OK, Close" />
     <task id="scroll_down" label="Scroll down with `V`.">
       <when type="action" action="scrollDown" />

@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "KeyPilot",
     "version": "0.1.0",
-    "description": "Sep-3-2026-1:31AM Browse the web with key-clicks. Activate hyperlinks with keyboard keys instead of mouse buttons.",
+    "description": "Sep-3-2026-3:20AM Browse the web with key-clicks. Activate hyperlinks with keyboard keys instead of mouse buttons.",
     "action": {
         "default_title": "KeyPilot",
         "default_popup": "popup.html",
