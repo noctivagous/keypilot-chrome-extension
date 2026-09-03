@@ -132,7 +132,7 @@ Docs: [MDN `browser_specific_settings`](https://developer.mozilla.org/en-US/docs
 | no data-collection declaration | required `websiteContent`; optional `browsingActivity` consent |
 | `"favicon"` / `"windows"` permissions + `/_favicon/` | drop Chromium-only declarations |
 | CSP `img-src … chrome:` | `moz-extension:` (drop `chrome:`) |
-| no Firefox minimum version | require Firefox 140+ for built-in data-consent support |
+| no Firefox minimum version | require Firefox 140+ desktop for built-in data-consent support |
 
 The generated Firefox manifest includes the stable
 `browser_specific_settings.gecko.id` value
@@ -148,6 +148,12 @@ third-party requests.
 `dist/keypilot-firefox-v{version}.zip` plus package metadata. The archive is
 ready to upload to AMO; approval still depends on Mozilla's automated and
 human review.
+
+Because the Firefox package includes esbuild-bundled entry points, AMO also
+needs a source archive. `npm run package:firefox-source` writes
+`dist/keypilot-firefox-source-v{version}.zip` with the pre-bundle sources,
+`package-lock.json`, Firefox packaging scripts, and `AMO-SOURCE-README.md`
+build instructions for reviewers.
 
 ## Work beyond the build script
 
