@@ -199,6 +199,7 @@ function createFirefoxManifest(sourceManifest) {
       id: FIREFOX_GECKO_ID,
       strict_min_version: '140.0',
       data_collection_permissions: {
+        required: [],
         optional: [
           'browsingActivity',
           'websiteContent',
@@ -243,6 +244,12 @@ function stageFirefoxBuild() {
   }
   if (manifest.browser_specific_settings?.gecko?.strict_min_version !== '140.0') {
     errors.push('Firefox manifest must require Firefox 140 or later');
+  }
+  if (
+    JSON.stringify(manifest.browser_specific_settings?.gecko?.data_collection_permissions?.required) !==
+    JSON.stringify([])
+  ) {
+    errors.push('Firefox manifest must declare no required external lookup data types');
   }
   if (
     JSON.stringify(manifest.browser_specific_settings?.gecko?.data_collection_permissions?.optional) !==

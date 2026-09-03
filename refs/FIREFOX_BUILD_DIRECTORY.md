@@ -129,7 +129,7 @@ Docs: [MDN `browser_specific_settings`](https://developer.mozilla.org/en-US/docs
 |---|---|
 | `background.service_worker` | `background.scripts` |
 | no Gecko ID | `keypilot@noctivagous.browserextension` |
-| no data-collection declaration | optional `browsingActivity` and `websiteContent` consent |
+| no data-collection declaration | no required data types; optional `browsingActivity` and `websiteContent` consent |
 | `"favicon"` / `"windows"` permissions + `/_favicon/` | drop Chromium-only declarations |
 | CSP `img-src … chrome:` | `moz-extension:` (drop `chrome:`) |
 | no Firefox minimum version | require Firefox 140+ for built-in data-consent support |
