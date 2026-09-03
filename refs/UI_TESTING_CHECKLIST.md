@@ -574,6 +574,9 @@ Then switch back to right-handed.
 | Item | Status |
 | --- | --- |
 | Cols Toggle | In `BUILD_EXCLUDED_KEY_ACTIONS` |
+| Type / Type Characters | In `BUILD_EXCLUDED_KEY_ACTIONS` |
+| Data getters (text/media at cursor, text range) | In `BUILD_EXCLUDED_KEY_ACTIONS` |
+| Create built-in Macro Key / Configured Macro Keys | In `BUILD_EXCLUDED_KEY_ACTIONS` |
 | Macro Builder UI | `SOURCE_BUILD_ENABLE_MACRO_BUILDER = false` unless `node build.js --macro-builder` |
 | Page Media **Text** and **URLs** tabs | Hidden via `HIDDEN_PAGE_MEDIA_TABS` |
 | Basic Navigation family | Hidden from pickers; legacy ids may still resolve |

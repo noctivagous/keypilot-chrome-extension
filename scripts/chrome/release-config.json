@@ -1,5 +1,5 @@
 {
-  "channelLabel": "Opera",
+  "channelLabel": "Chrome",
   "description": "Browse the web with key-clicks. Activate hyperlinks with keyboard keys instead of mouse buttons.",
   "descriptionMaxLength": 132,
   "homepageUrl": "https://noctivagous.com/",
@@ -7,10 +7,10 @@
     "name": "Noctivagous",
     "url": "https://noctivagous.com/"
   },
-  "stagingDir": "dist/opera",
+  "stagingDir": "dist/chrome",
   "zipDir": "dist",
-  "zipNameTemplate": "keypilot-opera-v{version}.zip",
-  "iconSizes": ["16", "48", "128"],
+  "zipNameTemplate": "keypilot-chrome-v{version}.zip",
+  "iconSizes": ["16", "32", "48", "128"],
   "requiredGeneratedFiles": [
     "content-bundled.js",
     "frame-agent-bundled.js",
@@ -20,6 +20,7 @@
   "requiredRuntimeFiles": [
     "map-pan-bridge.js",
     "icons/icon16.png",
+    "icons/icon32.png",
     "icons/icon48.png",
     "icons/icon128.png",
     "fonts/ROBOTECHGPRegular.ttf",
@@ -57,7 +58,6 @@
     "icons/README.md",
     "icons/icon-source.png",
     "icons/icon.svg",
-    "icons/icon32.png",
     "icons/icon76.png",
     "icons/icon256.png",
     "themes/**/README.md",

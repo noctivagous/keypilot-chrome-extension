@@ -507,15 +507,55 @@ h1 {
   line-height: 1.35;
 }
 
-.docs-article textarea.kp-docs-copy-prompt {
+.docs-article .kp-docs-copy-prompt-wrap {
+  margin: 0;
+}
+
+.docs-article .kp-docs-copy-prompt-top {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 6px;
+}
+
+.docs-article .kp-docs-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(230, 236, 244, 0.92);
+  cursor: pointer;
+}
+
+.docs-article .kp-docs-copy-btn:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.docs-article .kp-docs-copy-btn.is-copied {
+  border-color: color-mix(in srgb, var(--kp-color-accent, #4a90c8) 55%, transparent);
+  color: var(--kp-color-accent, #4a90c8);
+}
+
+.docs-article .kp-docs-copy-btn .topic-icon-svg {
+  width: 15px;
+  height: 15px;
+}
+
+.docs-article pre.kp-docs-copy-prompt {
   display: block;
   width: 100%;
   box-sizing: border-box;
-  min-height: 12em;
-  resize: vertical;
   margin: 0;
   padding: 10px 11px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--font-mono);
   font-size: calc(11.5px * var(--docs-font-scale, 1));
   line-height: 1.4;
   color: rgba(230, 236, 244, 0.95);

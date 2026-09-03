@@ -4265,18 +4265,20 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     jsChip.appendChild(jsSpan);
     jsChip.addEventListener('click', () => this._addDraftFunctionStep('EXECUTE_JS'), true);
     logicPalette.appendChild(jsChip);
-    const rangeChip = doc.createElement('button');
-    rangeChip.type = 'button';
-    rangeChip.className = 'kp-cfg-logic-chip';
-    rangeChip.dataset.kpPrimitiveFunction = 'GET_TEXT_RANGE';
-    const rangeStrong = doc.createElement('strong');
-    rangeStrong.textContent = 'Get Text Range';
-    const rangeSpan = doc.createElement('span');
-    rangeSpan.textContent = 'Capture the current selection for the next step';
-    rangeChip.appendChild(rangeStrong);
-    rangeChip.appendChild(rangeSpan);
-    rangeChip.addEventListener('click', () => this._addDraftFunctionStep('GET_TEXT_RANGE'), true);
-    logicPalette.appendChild(rangeChip);
+    if (getFunctionDef('GET_TEXT_RANGE')) {
+      const rangeChip = doc.createElement('button');
+      rangeChip.type = 'button';
+      rangeChip.className = 'kp-cfg-logic-chip';
+      rangeChip.dataset.kpPrimitiveFunction = 'GET_TEXT_RANGE';
+      const rangeStrong = doc.createElement('strong');
+      rangeStrong.textContent = 'Get Text Range';
+      const rangeSpan = doc.createElement('span');
+      rangeSpan.textContent = 'Capture the current selection for the next step';
+      rangeChip.appendChild(rangeStrong);
+      rangeChip.appendChild(rangeSpan);
+      rangeChip.addEventListener('click', () => this._addDraftFunctionStep('GET_TEXT_RANGE'), true);
+      logicPalette.appendChild(rangeChip);
+    }
     const popoverChip = doc.createElement('button');
     popoverChip.type = 'button';
     popoverChip.className = 'kp-cfg-logic-chip';
@@ -4957,6 +4959,14 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     return BUILD_ENABLE_MACRO_BUILDER === true;
   }
 
+  /**
+   * Configured Macro Keys + "Create built-in Macro Key" library chrome.
+   * Off while those Function ids are in BUILD_EXCLUDED_KEY_ACTIONS.
+   */
+  _macroKeysLibraryEnabled() {
+    return listFunctionDefs().some((d) => d && d.legacyMacroKeyKind);
+  }
+
   async _persistUserLayout() {
     if (this._st.mode !== 'user' || !this._st.userLayout) return;
     try {
@@ -4973,6 +4983,10 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
    */
   _fillMacroKeyKindCreateGrid(host) {
     if (!host) return;
+    if (!this._macroKeysLibraryEnabled()) {
+      host.replaceChildren();
+      return;
+    }
     host.replaceChildren();
     const title = document.createElement('div');
     title.className = 'kp-cfg-category-title';
@@ -6879,11 +6893,15 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
    * @param {{ open?: boolean }} [opts]
    */
   _setCreateMode(mode, { open = false } = {}) {
-    this._createMode = mode === 'macroKey' ? 'macroKey' : 'script';
+    const wantMacroKey = mode === 'macroKey' && this._macroKeysLibraryEnabled();
+    this._createMode = wantMacroKey ? 'macroKey' : 'script';
     if (this._scriptPanel) this._scriptPanel.hidden = this._createMode !== 'script';
     if (this._macroKeyPanel) this._macroKeyPanel.hidden = this._createMode !== 'macroKey';
     try {
       for (const btn of this._createModeSeg?.querySelectorAll('[data-kp-create-mode]') || []) {
+        if (btn.dataset.kpCreateMode === 'macroKey') {
+          btn.hidden = !this._macroKeysLibraryEnabled();
+        }
         const on = btn.dataset.kpCreateMode === this._createMode;
         btn.setAttribute('aria-selected', on ? 'true' : 'false');
       }
@@ -6901,9 +6919,14 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       ...(this._macroBuilderEnabled()
         ? [{ id: 'macros', label: 'Macros', icon: 'kp-cfg-i-macro' }]
         : []),
-      { id: 'macroKeys', label: 'Macro Keys', icon: 'kp-cfg-i-keycap' }
+      ...(this._macroKeysLibraryEnabled()
+        ? [{ id: 'macroKeys', label: 'Macro Keys', icon: 'kp-cfg-i-keycap' }]
+        : [])
     ];
     if (!this._macroBuilderEnabled() && this._libPrimaryTab === 'macros') {
+      this._libPrimaryTab = 'all';
+    }
+    if (!this._macroKeysLibraryEnabled() && this._libPrimaryTab === 'macroKeys') {
       this._libPrimaryTab = 'all';
     }
     for (const tab of tabs) {
@@ -7161,7 +7184,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 
     const tab = this._libPrimaryTab;
     const showMacros = this._macroBuilderEnabled() && (tab === 'all' || tab === 'macros');
-    const showMacroKeys = tab === 'all' || tab === 'macroKeys';
+    const showMacroKeys = this._macroKeysLibraryEnabled() && (tab === 'all' || tab === 'macroKeys');
     const showFunctions = tab === 'all' || tab === 'functions';
 
     if (this._libViewMode === 'table') {

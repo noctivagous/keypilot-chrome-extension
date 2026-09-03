@@ -619,14 +619,75 @@ function selectDoc(id, articleHash) {
 }
 
 /**
- * Readonly AI-prompt textareas: select all on focus so copy is one shortcut.
+ * @param {string} text
+ * @returns {Promise<boolean>}
+ */
+async function copyDocsText(text) {
+  const value = String(text || '');
+  if (!value) return false;
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+  } catch { /* fallback below */ }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = value;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    ta.remove();
+    return !!ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Rendered copy-prompt blocks: copy-to-clipboard control at the top of the text.
  * @param {HTMLElement|null} article
  */
 function bindDocsCopyPrompts(article) {
   if (!article) return;
-  article.querySelectorAll('textarea.kp-docs-copy-prompt').forEach((el) => {
-    el.addEventListener('focus', () => {
-      try { el.select(); } catch { /* ignore */ }
+  article.querySelectorAll('.kp-docs-copy-prompt').forEach((el) => {
+    if (!(el instanceof HTMLElement)) return;
+    if (el.closest('.kp-docs-copy-prompt-wrap')) return;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'kp-docs-copy-prompt-wrap';
+    el.parentNode?.insertBefore(wrap, el);
+
+    const top = document.createElement('div');
+    top.className = 'kp-docs-copy-prompt-top';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'kp-docs-copy-btn';
+    btn.setAttribute('aria-label', 'Copy to clipboard');
+    btn.title = 'Copy to clipboard';
+    const icon = createNavIcon('copy');
+    if (icon) btn.appendChild(icon);
+    else btn.textContent = 'Copy';
+    top.appendChild(btn);
+
+    wrap.appendChild(top);
+    wrap.appendChild(el);
+
+    btn.addEventListener('click', async () => {
+      const text = String(el.textContent || '');
+      const ok = await copyDocsText(text);
+      const prev = btn.title;
+      btn.title = ok ? 'Copied' : 'Copy failed';
+      btn.setAttribute('aria-label', btn.title);
+      btn.classList.toggle('is-copied', !!ok);
+      window.setTimeout(() => {
+        btn.title = prev;
+        btn.setAttribute('aria-label', prev);
+        btn.classList.remove('is-copied');
+      }, 1600);
     });
   });
 }

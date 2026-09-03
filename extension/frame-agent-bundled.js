@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-03T01:36:17.474Z
+ * Generated on 2026-09-03T01:50:26.245Z
  */
 
 (() => {
@@ -158,8 +158,19 @@
   var BUILD_ENABLE_MACRO_BUILDER = typeof __KP_BUILD_ENABLE_MACRO_BUILDER__ !== "undefined" ? !!__KP_BUILD_ENABLE_MACRO_BUILDER__ : SOURCE_BUILD_ENABLE_MACRO_BUILDER;
   var BUILD_EXCLUDED_KEY_ACTIONS = Object.freeze([
     "COLS_TOGGLE",
+    // Type — "Type saved text into the focused field."
+    "TYPE_CHARACTERS",
     // Data — "Read text or media under the cursor, or from a highlight."
+    "GET_TEXT_AT_CURSOR",
+    "GET_TEXT_RANGE",
     "GET_MEDIA_AT_CURSOR",
+    // Create built-in Macro Key — "Saved Macro Key instances (hotkey, burst, round-robin, and related kinds) ready to place."
+    "SEND_HOTKEY",
+    "SEND_BURST",
+    "CYCLE_ROUND_ROBIN",
+    "HOLD_CONTINUOUS",
+    "CLICK_MOUSE_BUTTON",
+    "REMAP_KEY",
     // Translate — "Translate highlighted or under-cursor text."
     "TRANSLATE",
     // AI — "Send selected text to AI with a prompt and result destination."

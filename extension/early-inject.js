@@ -2517,45 +2517,9 @@
     "label": "Select Image",
     "keyboardClass": null
   },
-  "SEND_HOTKEY": {
-    "label": "Combination / Hotkey",
-    "keyboardClass": "key-orange"
-  },
-  "SEND_BURST": {
-    "label": "Burst Keys",
-    "keyboardClass": "key-purple"
-  },
-  "CYCLE_ROUND_ROBIN": {
-    "label": "Round Robin",
-    "keyboardClass": "key-scroll"
-  },
-  "HOLD_CONTINUOUS": {
-    "label": "Continue / Continuous",
-    "keyboardClass": "key-highlight"
-  },
-  "CLICK_MOUSE_BUTTON": {
-    "label": "Synthetic Mouse",
-    "keyboardClass": "key-activate"
-  },
-  "REMAP_KEY": {
-    "label": "Normal Key",
-    "keyboardClass": "key-gray"
-  },
-  "TYPE_CHARACTERS": {
-    "label": "Type Characters",
-    "keyboardClass": "key-purple"
-  },
   "EXECUTE_JS": {
     "label": "Execute JS",
     "keyboardClass": "key-purple"
-  },
-  "GET_TEXT_AT_CURSOR": {
-    "label": "Get Text At Cursor",
-    "keyboardClass": null
-  },
-  "GET_TEXT_RANGE": {
-    "label": "Get Text Range",
-    "keyboardClass": null
   },
   "LOOKUP_WORD": {
     "label": "Lookup Word",

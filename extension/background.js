@@ -157,6 +157,15 @@ async function refreshKeyboardReferenceContextMenu() {
     for (const layout of groups.custom) {
       createAction(customGroup, layout.value, layout.label);
     }
+    if (!groups.custom.length) {
+      chrome.contextMenus.create({
+        id: keyboardReferenceContextId('__no_custom_layouts__'),
+        parentId: customGroup,
+        title: 'None',
+        contexts: ['all'],
+        enabled: false
+      });
+    }
 
     const editorGroup = createGroup('Keyboard Layout Editor', keyboardReferenceGroup);
     createAction(editorGroup, '__edit_layouts__', 'Edit Keyboard Layout…');

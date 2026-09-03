@@ -4,7 +4,7 @@ Execute JS is a Script Function you bind to a key when a built-in Function is no
 
 <div class="kp-docs-ai-prompt">
 <label for="kp-docs-execute-js-ai-prompt">Prompt for an AI chat — paste this, then finish the first sentence with what you want the script to do.</label>
-<textarea id="kp-docs-execute-js-ai-prompt" class="kp-docs-copy-prompt" readonly rows="22">I would like JavaScript code for KeyPilot, a Chrome extension, and I want it to …
+<pre id="kp-docs-execute-js-ai-prompt" class="kp-docs-copy-prompt">I would like JavaScript code for KeyPilot, a Chrome extension, and I want it to …
 
 Here is how KeyPilot works and what it is.
 
@@ -32,8 +32,8 @@ Callbacks exist only if the matching checkbox is enabled on the Action Instance;
 - await copyToClipboard(content) — copies stringified text; returns boolean
 - notify(message) — brief flash notification
 
-Please output only the script body.</textarea>
-<p class="muted">Click the box and copy (⌘C / Ctrl+C). Edit only the first sentence in the AI chat after you paste.</p>
+Please output only the script body.</pre>
+<p class="muted">Copy the prompt, then finish the first sentence in the AI chat after you paste.</p>
 </div>
 
 ## Use it

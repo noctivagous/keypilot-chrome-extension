@@ -514,7 +514,7 @@ function buildKeystrokeFunctionDefs() {
   const out = {};
   for (const kindDef of MACRO_KEY_KIND_DEFS) {
     const functionId = FUNCTION_ID_BY_MACRO_KEY_KIND[kindDef.id];
-    if (!functionId) continue;
+    if (!functionId || isBuildExcludedKeyAction(functionId)) continue;
     out[functionId] = withDocsUrl(Object.freeze({
       id: functionId,
       label: kindDef.label,
@@ -826,21 +826,32 @@ function buildDataAcquisitionFunctionDefs() {
 }
 
 /**
+ * Drop {@link isBuildExcludedKeyAction} ids from a FunctionDef map so Type / Data /
+ * Macro Key kinds stay in source but leave the shipped catalog.
+ * @param {Record<string, FunctionDef>} defs
+ * @returns {Record<string, FunctionDef>}
+ */
+function omitBuildExcludedFunctions(defs) {
+  return Object.fromEntries(
+    Object.entries(defs).filter(([id]) => !isBuildExcludedKeyAction(id))
+  );
+}
+
+/**
  * The unified Function Library: built-in stock Functions + keystroke-primitive Functions +
  * new customizable Functions, keyed by Function id.
  * @type {Readonly<Record<string, FunctionDef>>}
  */
-export const FUNCTION_LIBRARY = Object.freeze({
+export const FUNCTION_LIBRARY = Object.freeze(omitBuildExcludedFunctions({
   ...buildBuiltinActionFunctionDefs(),
   ...buildKeystrokeFunctionDefs(),
   [TYPE_CHARACTERS_FUNCTION_DEF.id]: withDocsUrl(TYPE_CHARACTERS_FUNCTION_DEF),
   [EXECUTE_JS_FUNCTION_DEF.id]: withDocsUrl(EXECUTE_JS_FUNCTION_DEF),
   ...Object.fromEntries(
     Object.entries(buildDataAcquisitionFunctionDefs())
-      .filter(([id]) => !isBuildExcludedKeyAction(id))
       .map(([id, def]) => [id, withDocsUrl(def)])
   )
-});
+}));
 
 /** Stable category display order for the Functions browser. */
 export const FUNCTION_CATEGORY_ORDER = Object.freeze([

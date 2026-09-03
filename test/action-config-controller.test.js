@@ -124,15 +124,19 @@ describe('ActionConfigController', () => {
   it('builds TYPE_CHARACTERS / COPY_HOVERED_IMAGE action-parameter schema', async () => {
     const { createActionConfigController } =
       await import('../extension/src/modules/action-config-controller.js');
+    const { isBuildExcludedKeyAction } =
+      await import('../extension/src/config/keyboard-layouts.js');
 
-    const typeChars = createActionConfigController();
-    typeChars.load({ functionId: 'TYPE_CHARACTERS' });
-    const textSpec = typeChars.schema().find((s) => s.path === 'text');
-    assert.ok(textSpec);
-    assert.equal(textSpec.type, 'textarea');
-    await typeChars.update('text', 'hello');
-    assert.equal(typeChars.state.parameters.text, 'hello');
-    typeChars.dispose();
+    if (!isBuildExcludedKeyAction('TYPE_CHARACTERS')) {
+      const typeChars = createActionConfigController();
+      typeChars.load({ functionId: 'TYPE_CHARACTERS' });
+      const textSpec = typeChars.schema().find((s) => s.path === 'text');
+      assert.ok(textSpec);
+      assert.equal(textSpec.type, 'textarea');
+      await typeChars.update('text', 'hello');
+      assert.equal(typeChars.state.parameters.text, 'hello');
+      typeChars.dispose();
+    }
 
     const copyImage = createActionConfigController();
     copyImage.load({ functionId: 'COPY_HOVERED_IMAGE' });
