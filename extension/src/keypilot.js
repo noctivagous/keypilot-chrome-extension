@@ -2565,6 +2565,15 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
         } catch (e) {
           console.warn('[KeyPilot] Failed to launch walkthrough via message:', e);
         }
+      } else if (msg.type === MSG.KEYBOARD_REFERENCE_CONTEXT_ACTION) {
+        try {
+          if (window !== window.top) return;
+          this.floatingKeyboardHelp?.selectLayoutByValue?.(
+            typeof msg.value === 'string' ? msg.value : ''
+          );
+        } catch (e) {
+          console.warn('[KeyPilot] Failed to handle Keyboard Reference context action:', e);
+        }
       }
     };
 
@@ -2578,7 +2587,8 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       registerContentRuntimeHandler(MSG.OPEN_DOCS_POPOVER, handler),
       registerContentRuntimeHandler(MSG.POPOVER_WINDOW_CLOSED, handler),
       registerContentRuntimeHandler(MSG.OPEN_ONBOARDING, handler),
-      registerContentRuntimeHandler(MSG.LAUNCH_WALKTHROUGH, handler)
+      registerContentRuntimeHandler(MSG.LAUNCH_WALKTHROUGH, handler),
+      registerContentRuntimeHandler(MSG.KEYBOARD_REFERENCE_CONTEXT_ACTION, handler)
     ];
   }
 

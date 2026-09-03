@@ -78,11 +78,16 @@ function resolveClickable(el) {
     if (el.id === 'kpv2-frame-hover' || el.closest?.('#kpv2-frame-hover')) return null;
     const specific = typeof el.closest === 'function' ? el.closest(CLICKABLE_SEL) : null;
     if (specific) return specific;
-    // cursor:pointer on this node only (not inherited from body).
-    // Suspend custom-cursor override — otherwise getComputedStyle always reports
-    // the KeyPilot crosshair and pointer-only targets never outline.
+    // CSS cursor:pointer-only targets are a fallback in native-cursor mode.
+    // Custom cursor mode forces a cursor with a document-wide !important rule;
+    // temporarily dropping it to inspect this hint invalidates the entire frame's
+    // styles for every hover transition. Keep hover responsive and rely on the
+    // semantic selector above instead.
     try {
       if (el !== document.body && el !== document.documentElement) {
+        if (document.documentElement?.classList?.contains(CSS_CLASSES.CURSOR_HIDDEN)) {
+          return null;
+        }
         return withNativePageCursors(() => {
           const cs = window.getComputedStyle(el);
           if (cs.cursor === 'pointer' && cs.pointerEvents !== 'none') {

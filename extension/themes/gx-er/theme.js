@@ -36,7 +36,7 @@ export const GX_ER_THEME = Object.freeze({
     kbdTracking: '0.06em'
   }),
   keys: createKeyChromeTokens({
-    shading: 'bevel',
+    shading: 'flat',
     border: '1px solid rgba(0, 229, 255, 0.35)',
     cornerMode: 'cut',
     cutSize: '4px'

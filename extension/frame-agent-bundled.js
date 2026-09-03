@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-26T05:20:17.638Z
+ * Generated on 2026-09-03T01:33:12.398Z
  */
 
 (() => {
@@ -17,6 +17,8 @@
     STATUS: "KP_STATUS",
     // --- Transient onboarding actions ---
     TRANSIENT_ACTION: "KP_TRANSIENT_ACTION",
+    /** Service worker → active tab action selected from the Keyboard Reference context menu. */
+    KEYBOARD_REFERENCE_CONTEXT_ACTION: "KP_KEYBOARD_REFERENCE_CONTEXT_ACTION",
     // --- Tab / history navigation ---
     TAB_LEFT: "KP_TAB_LEFT",
     TAB_RIGHT: "KP_TAB_RIGHT",
@@ -3784,7 +3786,7 @@
       kbdTracking: "0.06em"
     }),
     keys: createKeyChromeTokens({
-      shading: "bevel",
+      shading: "flat",
       border: "1px solid rgba(0, 229, 255, 0.35)",
       cornerMode: "cut",
       cutSize: "4px"
@@ -3908,6 +3910,9 @@
       if (specific) return specific;
       try {
         if (el !== document.body && el !== document.documentElement) {
+          if (document.documentElement?.classList?.contains(CSS_CLASSES.CURSOR_HIDDEN)) {
+            return null;
+          }
           return withNativePageCursors(() => {
             const cs = window.getComputedStyle(el);
             if (cs.cursor === "pointer" && cs.pointerEvents !== "none") {

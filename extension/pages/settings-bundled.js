@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-26T05:20:17.638Z
+ * Generated on 2026-09-03T01:33:12.398Z
  */
 
 
@@ -2992,7 +2992,7 @@ var GX_ER_THEME = Object.freeze({
     kbdTracking: "0.06em"
   }),
   keys: createKeyChromeTokens({
-    shading: "bevel",
+    shading: "flat",
     border: "1px solid rgba(0, 229, 255, 0.35)",
     cornerMode: "cut",
     cutSize: "4px"

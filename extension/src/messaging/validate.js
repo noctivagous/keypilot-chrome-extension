@@ -14,6 +14,7 @@ export const KNOWN_MESSAGE_TYPES = Object.freeze(new Set(Object.values(MSG)));
  */
 export const SW_RUNTIME_REQUEST_TYPES = Object.freeze([
   MSG.TRANSIENT_ACTION,
+  MSG.KEYBOARD_REFERENCE_CONTEXT_ACTION,
   MSG.GET_RECENT_BOOKMARKS,
   MSG.GET_MOST_VISITED,
   MSG.GET_BOOKMARKS,
@@ -111,6 +112,11 @@ export function validateRuntimeMessage(message, opts = {}) {
     case MSG.TRANSIENT_ACTION:
       if (typeof message.action !== 'string' || !message.action.trim()) {
         return 'TRANSIENT_ACTION requires action: string';
+      }
+      break;
+    case MSG.KEYBOARD_REFERENCE_CONTEXT_ACTION:
+      if (typeof message.value !== 'string' || !message.value.trim()) {
+        return 'KEYBOARD_REFERENCE_CONTEXT_ACTION requires value: string';
       }
       break;
     case MSG.SET_STATE:

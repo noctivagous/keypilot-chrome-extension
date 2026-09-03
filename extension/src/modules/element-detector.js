@@ -1009,20 +1009,20 @@ export class ElementDetector {
     // Standard interactive walk only — no scrubber "proximity" remapping of hover focus.
     // F-activation still resolves scrubbers from the hit target in ActivationHandler.
     //
-    // Two-pass on purpose (see focus-ring-paint.md performance notes):
-    // 1) Semantic-only walk — never toggles html.kpv2-cursor-hidden. This is the
-    //    common case (links/buttons) and must stay as cheap as No-custom-cursor.
-    // 2) Cursor:pointer fallback — suspend the Crosshair override once for the
-    //    whole walk. Eager suspend-on-every-findClickable was invalidating styles
-    //    for the entire document on each pointerover and made Crosshair feel like
-    //    a slower / different outline path even though paint is still A→B→C.
+    // Two-pass in native-cursor mode:
+    // 1) Semantic-only walk.
+    // 2) CSS cursor:pointer fallback.
+    //
+    // A custom KeyPilot cursor is enforced by a document-wide !important rule.
+    // Revealing the page's cursor for the second pass requires toggling
+    // html.kpv2-cursor-hidden, which invalidates styles for the entire document
+    // on every pointer transition. Prefer responsive semantic hover targeting
+    // over this weak heuristic while a custom cursor is active.
     const semantic = this._findClickableWalk(el, { allowCursor: false });
     if (semantic) return semantic;
 
     if (this._isCursorOverrideActive()) {
-      return this._withNativePageCursors(() =>
-        this._findClickableWalk(el, { allowCursor: true })
-      );
+      return null;
     }
     return this._findClickableWalk(el, { allowCursor: true });
   }

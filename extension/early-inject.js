@@ -4608,7 +4608,7 @@
   --kp-scrollbar-track: #0c0c10;
   --kp-corner-mode: cut;
   --kp-cut-size: 8px;
-  --kp-key-shading: bevel;
+  --kp-key-shading: flat;
   --kp-key-border: 1px solid rgba(0, 229, 255, 0.35);
   --kp-key-corner-mode: cut;
   --kp-key-cut-size: 4px;
@@ -4616,8 +4616,8 @@
   --kp-key-effective-radius: 0px;
   --kp-key-shape-radius: 4px;
   --kp-key-corner-shape: bevel;
-  --kp-key-sheen-opacity: 1;
-  --kp-key-shade-layer: linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 18%, transparent 42%);
+  --kp-key-sheen-opacity: 0;
+  --kp-key-shade-layer: transparent;
   --kp-icon-chrome: #00e5ff;
   --kp-icon-keycap: #001018;
   --kp-icon-accent: #00e5ff;
@@ -5110,6 +5110,7 @@
       '0 -1px 0 rgba(0,0,0,0.28) inset, ' +
       '0 1px 2px rgba(0,0,0,0.32)'
   };
+
   /** Prefixed names avoid clashing with early-inject locals when this file is stamped. */
   const ONBOARDING_STRIP_TOP_PX = 16;
   const ONBOARDING_STRIP_HEIGHT_PX = 28;
@@ -6220,10 +6221,19 @@
       backdropFilter: 'blur(6px)',
       WebkitBackdropFilter: 'blur(6px)',
       zIndex: '20',
-      boxSizing: 'border-box'
+      boxSizing: 'border-box',
+      overflow: 'hidden'
     });
 
-    const card = overlayEl.firstElementChild;
+    // Card is the content div (not the brand <img>).
+    let card = null;
+    try {
+      card = overlayEl.querySelector(':scope > div') ||
+        Array.from(overlayEl.children || []).find((el) => el && el.tagName === 'DIV') ||
+        null;
+    } catch {
+      card = overlayEl.firstElementChild?.tagName === 'DIV' ? overlayEl.firstElementChild : null;
+    }
     if (card) {
       assignStyle(card, {
         width: '100%',

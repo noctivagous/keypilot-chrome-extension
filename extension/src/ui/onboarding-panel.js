@@ -123,16 +123,6 @@ function ensureToggleOffArrowStyles(root) {
   display: block;
   overflow: visible;
 }
-@media (prefers-reduced-motion: reduce) {
-  :host {
-    animation: none;
-    filter:
-      drop-shadow(0 0 2px #fff)
-      drop-shadow(0 0 8px var(--kp-arrow-accent, currentColor))
-      drop-shadow(0 0 16px var(--kp-arrow-glow, currentColor))
-      drop-shadow(0 1px 2px rgba(0,0,0,0.45));
-  }
-}
 `
     });
   } catch { /* ignore */ }

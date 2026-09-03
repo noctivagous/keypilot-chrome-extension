@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-08-26T05:20:17.638Z
+ * Generated on 2026-09-03T01:33:12.398Z
  */
 
 var __defProp = Object.defineProperty;
@@ -7999,7 +7999,7 @@ var GX_ER_THEME = Object.freeze({
     kbdTracking: "0.06em"
   }),
   keys: createKeyChromeTokens({
-    shading: "bevel",
+    shading: "flat",
     border: "1px solid rgba(0, 229, 255, 0.35)",
     cornerMode: "cut",
     cutSize: "4px"
@@ -8411,6 +8411,8 @@ var MSG = Object.freeze({
   STATUS: "KP_STATUS",
   // --- Transient onboarding actions ---
   TRANSIENT_ACTION: "KP_TRANSIENT_ACTION",
+  /** Service worker → active tab action selected from the Keyboard Reference context menu. */
+  KEYBOARD_REFERENCE_CONTEXT_ACTION: "KP_KEYBOARD_REFERENCE_CONTEXT_ACTION",
   // --- Tab / history navigation ---
   TAB_LEFT: "KP_TAB_LEFT",
   TAB_RIGHT: "KP_TAB_RIGHT",

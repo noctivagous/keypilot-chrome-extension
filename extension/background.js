@@ -21,6 +21,15 @@ import {
   normalizeWordForLookup
 } from './src/utils/dictionary-lookup.js';
 import { startKeyPilotDebugFromSettings } from './src/utils/debug.js';
+import {
+  BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META,
+  builtinFamilySelectValue,
+  listLayoutPickerGroups
+} from './src/config/keyboard-layouts.js';
+import {
+  KEYBOARD_LAYOUT_STORE_KEY,
+  listUserKeyboardLayouts
+} from './src/modules/keyboard-layout-store.js';
 
 void startKeyPilotDebugFromSettings();
 
@@ -86,6 +95,87 @@ const KEYBOARD_HELP_STORAGE_KEY = 'keypilot_keyboard_help_visible';
 const ONBOARDING_ACTIVE_STORAGE_KEY = 'keypilot_onboarding_active';
 const ONBOARDING_PROGRESS_STORAGE_KEY = 'keypilot_onboarding_progress';
 const TRANSIENT_ACTION_STORAGE_KEY = 'keypilot_transient_action';
+
+const KEYBOARD_REFERENCE_CONTEXT_MENU_ID = 'kp-keyboard-reference';
+const keyboardReferenceContextValues = new Map();
+
+function keyboardReferenceContextId(value) {
+  const id = `kp-kb-context-${keyboardReferenceContextValues.size}`;
+  keyboardReferenceContextValues.set(id, String(value || ''));
+  return id;
+}
+
+async function refreshKeyboardReferenceContextMenu() {
+  if (!chrome.contextMenus?.removeAll) return;
+  try {
+    keyboardReferenceContextValues.clear();
+    await chrome.contextMenus.removeAll();
+    chrome.contextMenus.create({
+      id: KEYBOARD_REFERENCE_CONTEXT_MENU_ID,
+      title: 'Keyboard Reference',
+      contexts: ['all']
+    });
+
+    const createGroup = (title) => chrome.contextMenus.create({
+      id: keyboardReferenceContextId(`group:${title}`),
+      parentId: KEYBOARD_REFERENCE_CONTEXT_MENU_ID,
+      title,
+      contexts: ['all']
+    });
+    const createAction = (parentId, value, title) => chrome.contextMenus.create({
+      id: keyboardReferenceContextId(value),
+      parentId,
+      title,
+      contexts: ['all']
+    });
+
+    const builtInGroup = createGroup('Built-In');
+    for (const family of BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META || []) {
+      if (family?.id) {
+        createAction(
+          builtInGroup,
+          builtinFamilySelectValue(family.id),
+          String(family.label || family.id)
+        );
+      }
+    }
+
+    const customGroup = createGroup('Custom');
+    const groups = listLayoutPickerGroups(await listUserKeyboardLayouts());
+    for (const layout of groups.custom) {
+      createAction(customGroup, layout.value, layout.label);
+    }
+
+    const editorGroup = createGroup('Keyboard Layout Editor');
+    createAction(editorGroup, '__edit_layouts__', 'Edit Keyboard Layout…');
+    createAction(editorGroup, '__new_layout__', 'New Blank Keyboard Layout');
+    createAction(editorGroup, '__duplicate_layout__', 'New Duplicate Keyboard Layout');
+
+    const keyPilotGroup = createGroup('KeyPilot');
+    createAction(keyPilotGroup, '__onboarding_tutorial__', 'Onboarding Tutorial (Alt + T)');
+    createAction(keyPilotGroup, '__docs_help__', 'KeyPilot Documentation (Alt + H)');
+    createAction(keyPilotGroup, '__settings__', "KeyPilot Settings (')");
+  } catch (e) {
+    console.warn('[KeyPilot] Failed to refresh Keyboard Reference context menu:', e?.message || e);
+  }
+}
+
+try {
+  chrome.contextMenus?.onClicked?.addListener((info, tab) => {
+    const value = keyboardReferenceContextValues.get(String(info?.menuItemId || ''));
+    if (!value || value.startsWith('group:') || typeof tab?.id !== 'number') return;
+    void chrome.tabs.sendMessage(tab.id, {
+      type: MSG.KEYBOARD_REFERENCE_CONTEXT_ACTION,
+      value
+    }).catch(() => {});
+  });
+  chrome.storage?.onChanged?.addListener((changes, areaName) => {
+    if (areaName === 'sync' && changes?.[KEYBOARD_LAYOUT_STORE_KEY]) {
+      void refreshKeyboardReferenceContextMenu();
+    }
+  });
+  void refreshKeyboardReferenceContextMenu();
+} catch { /* contextMenus unavailable in tests or restricted contexts */ }
 
 // --- Separate-window popover session map ---
 /**

@@ -1989,6 +1989,15 @@ export class FloatingKeyboardHelp {
   }
 
   /**
+   * Apply a titlebar layout-menu selection received from the service worker.
+   * @param {string} value
+   */
+  selectLayoutByValue(value) {
+    this._ensure();
+    void this._onLayoutSelectChange(value);
+  }
+
+  /**
    * Current select value for the active layout (builtin family or user id).
    * While editing, follows the Config panel's selection rather than the live current layout.
    * @returns {string}

@@ -72,6 +72,7 @@ export const ONBOARDING_METAL = {
     '0 -1px 0 rgba(0,0,0,0.28) inset, ' +
     '0 1px 2px rgba(0,0,0,0.32)'
 };
+
 /** Prefixed names avoid clashing with early-inject locals when this file is stamped. */
 export const ONBOARDING_STRIP_TOP_PX = 16;
 export const ONBOARDING_STRIP_HEIGHT_PX = 28;
@@ -1182,10 +1183,19 @@ function applyOnboardingOverlayChrome(refs) {
     backdropFilter: 'blur(6px)',
     WebkitBackdropFilter: 'blur(6px)',
     zIndex: '20',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    overflow: 'hidden'
   });
 
-  const card = overlayEl.firstElementChild;
+  // Card is the content div (not the brand <img>).
+  let card = null;
+  try {
+    card = overlayEl.querySelector(':scope > div') ||
+      Array.from(overlayEl.children || []).find((el) => el && el.tagName === 'DIV') ||
+      null;
+  } catch {
+    card = overlayEl.firstElementChild?.tagName === 'DIV' ? overlayEl.firstElementChild : null;
+  }
   if (card) {
     assignStyle(card, {
       width: '100%',

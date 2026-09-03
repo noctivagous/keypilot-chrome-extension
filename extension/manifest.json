@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
     "name": "KeyPilot",
-    "version": "0.3.5",
-    "description": "Aug-26-2026-12:20AM Browse the web with key-clicks. Activate hyperlinks with keyboard keys instead of mouse buttons.",
+    "version": "0.1.0",
+    "description": "Sep-2-2026-8:33PM Browse the web with key-clicks. Activate hyperlinks with keyboard keys instead of mouse buttons.",
     "action": {
         "default_title": "KeyPilot",
         "default_popup": "popup.html",
@@ -30,7 +30,8 @@
         "topSites",
         "favicon",
         "webNavigation",
-        "unlimitedStorage"
+        "unlimitedStorage",
+        "contextMenus"
     ],
     "host_permissions": [
         "<all_urls>"

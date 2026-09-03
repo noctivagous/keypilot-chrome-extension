@@ -22,6 +22,8 @@ export const MSG = Object.freeze({
 
   // --- Transient onboarding actions ---
   TRANSIENT_ACTION: 'KP_TRANSIENT_ACTION',
+  /** Service worker → active tab action selected from the Keyboard Reference context menu. */
+  KEYBOARD_REFERENCE_CONTEXT_ACTION: 'KP_KEYBOARD_REFERENCE_CONTEXT_ACTION',
 
   // --- Tab / history navigation ---
   TAB_LEFT: 'KP_TAB_LEFT',
