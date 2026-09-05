@@ -119,7 +119,7 @@ Docs: [MDN `browser_specific_settings`](https://developer.mozilla.org/en-US/docs
 3. Writes a **Firefox `manifest.json`** from the Chrome one (patch, don’t maintain two by hand).
 4. Validates that each manifest-referenced runtime file exists in the generated directory.
 
-**Copy in:** bundled JS, `background.js`, `early-inject.js`, `popup.*`, `pages/`, `icons/`, `fonts/`, `rules.json`, and **`src/`** (extension pages import from `src/`; WAR also lists `src/*`).
+**Copy in:** bundled JS, `background.js`, `early-inject.js`, `popup.*`, `pages/`, `icons/`, `fonts/`, and **`src/`** (extension pages import from `src/`; WAR also lists `src/*`).
 
 **Leave out:** `build.js`, `build-side-effects.js`, tests, repo README.
 
@@ -160,7 +160,6 @@ build instructions for reviewers.
 The directory is the easy part. Runtime is the rest:
 
 - **`chrome.*` APIs** — Firefox accepts most of this; no bulk rewrite for a first port.
-- **`declarativeNetRequest` + `rules.json` stripping CSP/XFO on all frames** — Firefox has DNR; AMO will likely reject that rule. Expect a Firefox-specific `rules.json` or feature flag.
 - **Favicons** — Google s2 + origin probes already exist; skip `/_favicon/` on Firefox.
 - **Service-worker assumptions** — `background.js` uses SW lifetime (fetch video bytes, session DNR, in-memory `Map`s). Firefox event pages **sleep**; maps reset. Product work, not copy-files.
 - **`chrome://newtab` / skippable URLs** — `url-policy.js` is Chromium-shaped; Firefox uses `about:newtab`, etc.

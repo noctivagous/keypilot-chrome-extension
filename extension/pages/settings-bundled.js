@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-03T12:12:18.642Z
+ * Generated on 2026-09-05T06:57:34.932Z
  */
 
 
@@ -735,14 +735,14 @@ var ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   FORWARD: Object.freeze({ keys: ["r", "R"] }),
   NEW_TAB: Object.freeze({ keys: ["t", "T"] }),
   CLOSE_TAB: Object.freeze({ keys: ["a", "A"] }),
-  ROOT: Object.freeze({ keys: ["s", "S", "1", "!"], displayKey: "S", keyLabel: "S" }),
+  ROOT: Object.freeze({ keys: ["s", "S"], displayKey: "S", keyLabel: "S" }),
   BACK: Object.freeze({ keys: ["d", "D"] }),
   ACTIVATE: Object.freeze({ keys: ["f", "F"] }),
   ACTIVATE_NEW_TAB_BACKGROUND: Object.freeze({ keys: ["g", "G"] }),
   HIGHLIGHT: Object.freeze({ keys: ["h", "H"] }),
   TAB_HISTORY: Object.freeze({ keys: ["j", "J"] }),
   OMNIBOX: Object.freeze({ keys: ["l", "L"] }),
-  TOP_SITES: Object.freeze({ keys: [";", ":", "Semicolon", "`", "~", "Backquote"], matchOn: ["key", "code"], displayKey: ";", keyLabel: ";" }),
+  TOP_SITES: Object.freeze({ keys: [";", ":", "Semicolon"], matchOn: ["key", "code"], displayKey: ";", keyLabel: ";" }),
   PAGE_TOP: Object.freeze({ keys: ["z", "Z"] }),
   PAGE_BOTTOM: Object.freeze({ keys: ["x", "X"] }),
   PAGE_UP_INSTANT: Object.freeze({ keys: ["c", "C"] }),
@@ -769,7 +769,7 @@ var ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   SCROLL_LINE: Object.freeze({ keys: ["t", "T"] }),
   // Home row cluster: A S D F G  ->  ; L K J H (mirrored-ish around center)
   CLOSE_TAB: Object.freeze({ keys: [";", ":"], displayKey: ";", keyLabel: ";" }),
-  ROOT: Object.freeze({ keys: ["l", "L", "1", "!"], displayKey: "L", keyLabel: "L" }),
+  ROOT: Object.freeze({ keys: ["l", "L"], displayKey: "L", keyLabel: "L" }),
   BACK: Object.freeze({ keys: ["k", "K"] }),
   ACTIVATE: Object.freeze({ keys: ["j", "J"] }),
   ACTIVATE_NEW_TAB_BACKGROUND: Object.freeze({ keys: ["h", "H"] }),
@@ -780,7 +780,7 @@ var ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   // (KB Reference / Settings / Esc live in the system layer, not layout assignments.)
   TAB_HISTORY: Object.freeze({ keys: ["f", "F"] }),
   OMNIBOX: Object.freeze({ keys: ["s", "S"] }),
-  TOP_SITES: Object.freeze({ keys: ["a", "A", "`", "~", "Backquote"], matchOn: ["key", "code"], displayKey: "A", keyLabel: "A" }),
+  TOP_SITES: Object.freeze({ keys: ["a", "A"], displayKey: "A", keyLabel: "A" }),
   // Bottom row cluster: Z X C V B  ->  / . , M N (mirrored)
   PAGE_TOP: Object.freeze({ keys: ["/", "?"], displayKey: "/", keyLabel: "/" }),
   PAGE_BOTTOM: Object.freeze({ keys: ["b", "B"] }),
