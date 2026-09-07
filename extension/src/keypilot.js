@@ -2473,7 +2473,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
           try {
             const th = window.__KeyPilotToggleHandler;
             if (th && typeof th.setEnabled === 'function') {
-              void th.setEnabled(msg.enabled, false);
+              // Already handled by KeyPilotToggleHandler (owns the on/off toast).
               return;
             }
           } catch { /* fall through */ }

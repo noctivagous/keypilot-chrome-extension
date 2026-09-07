@@ -134,8 +134,11 @@ export class KeyPilotToggleHandler extends EventManager {
       // that are only meant for the service worker.
       if (message?.type === MSG.TOGGLE_STATE || message?.type === MSG.UPDATE_STATE) {
         if (typeof message.enabled === 'boolean') {
-          // Message path already represents a user-initiated global change.
-          void this.setEnabled(message.enabled, true);
+          // TOGGLE_STATE is the user-facing broadcast (Alt+K, strip, popup).
+          // UPDATE_STATE is the same write from ContentScriptManager — no second toast.
+          // Storage often applies first, so setEnabled may no-op; still toast on TOGGLE_STATE.
+          const showNotification = message.type === MSG.TOGGLE_STATE;
+          void this.setEnabled(message.enabled, showNotification);
           try { sendResponse({ success: true }); } catch { /* ignore */ }
           return true;
         }
@@ -204,6 +207,11 @@ export class KeyPilotToggleHandler extends EventManager {
         }
       } catch {
         // ignore
+      }
+      // Storage / UPDATE_STATE often win the race and apply state first. A later
+      // TOGGLE_STATE still needs to toast for the originating user action.
+      if (showNotification) {
+        this.showToggleNotification(next);
       }
       return;
     }
@@ -472,16 +480,51 @@ export class KeyPilotToggleHandler extends EventManager {
   }
 
   /**
+   * True when the control strip is on-screen (On/Off is already visible).
+   * @returns {boolean}
+   */
+  _isControlStripVisible() {
+    try {
+      const strip = this.keyPilot?.controlStrip;
+      if (strip && typeof strip.isVisible === 'function') {
+        return !!strip.isVisible();
+      }
+    } catch {
+      // ignore
+    }
+    return false;
+  }
+
+  /**
    * Show toggle notification to user
    * @param {boolean} enabled - Whether KeyPilot was enabled or disabled
    */
   showToggleNotification(enabled) {
+    try {
+      if (window !== window.top) return;
+    } catch {
+      return;
+    }
+
+    // Strip On/Off is the persistent indicator; toast only when that chrome is gone.
+    if (this._isControlStripVisible()) return;
+
+    try {
+      document.querySelectorAll('.kpv2-toggle-notification').forEach((el) => {
+        try { el.remove(); } catch { /* ignore */ }
+      });
+    } catch {
+      // ignore
+    }
+
+    if (!document?.body) return;
+
     // Create notification overlay
     const notification = document.createElement('div');
     notification.className = 'kpv2-toggle-notification';
     const notificationMount = ensureOpenChromeShadow(notification, { id: 'toggle-notification' }) || notification;
     const message = document.createElement('span');
-    message.textContent = enabled ? 'KeyPilot Enabled' : 'KeyPilot Disabled';
+    message.textContent = enabled ? 'KeyPilot turned on' : 'KeyPilot turned off';
     notificationMount.appendChild(message);
 
     applyFlashNotificationStyle(notification, {
