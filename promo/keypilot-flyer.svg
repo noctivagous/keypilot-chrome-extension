@@ -1,0 +1,172 @@
+<svg width="800" height="1100" viewBox="0 0 800 1100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="page" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#09091c"/>
+      <stop offset="0.52" stop-color="#17172b"/>
+      <stop offset="1" stop-color="#09091c"/>
+    </linearGradient>
+    <linearGradient id="hero" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#3d252c"/>
+      <stop offset="0.48" stop-color="#17172b"/>
+      <stop offset="1" stop-color="#19332e"/>
+    </linearGradient>
+    <linearGradient id="title" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#d6a7ad"/>
+      <stop offset="0.48" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#a8c8b8"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#1d1d32"/>
+      <stop offset="1" stop-color="#101023"/>
+    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="12"/></filter>
+    <filter id="shadow"><feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity=".35"/></filter>
+    <style>
+      .sans { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
+      .muted { fill: #b9b9cf; }
+      .line { stroke: #41415b; }
+      .eyebrow { font-size: 13px; font-weight: 800; letter-spacing: 3px; }
+      .link-text { fill: #6ea8ff; }
+      .kp-crosshair { stroke: #008000; stroke-width: 3; stroke-linecap: round; fill: none; }
+    </style>
+    <clipPath id="window-clip">
+      <rect x="4" y="30" width="368" height="162" rx="8"/>
+    </clipPath>
+  </defs>
+
+  <rect width="800" height="1100" fill="url(#page)"/>
+  <circle cx="80" cy="120" r="175" fill="#713d48" opacity=".2" filter="url(#glow)"/>
+  <circle cx="735" cy="310" r="210" fill="#32604d" opacity=".18" filter="url(#glow)"/>
+
+  <!-- Hero -->
+  <rect x="28" y="28" width="744" height="365" fill="url(#hero)" stroke="#41415b"/>
+  <text x="72" y="83" class="sans eyebrow muted"><tspan fill="#a8c8b8">●</tspan> KEYBOARD-POWERED BROWSING</text>
+  <text x="72" y="171" class="sans" font-size="82" font-weight="900" letter-spacing="-4" fill="url(#title)">KeyPilot</text>
+  <text x="76" y="211" class="sans" font-size="24" fill="#d6a7ad">A Web Extension for Google Chrome</text>
+  <line x1="76" y1="247" x2="724" y2="247" class="line"/>
+  <text x="76" y="290" class="sans" font-size="22" font-weight="700" fill="#ffffff">Browse with your mouse.</text>
+  <text x="76" y="324" class="sans" font-size="22" font-weight="700" fill="#ffffff">Activate with your keyboard.</text>
+  <text x="76" y="358" class="sans muted" font-size="17">A faster way to move through the web.</text>
+  <rect x="638" y="68" width="84" height="84" fill="#292943" stroke="#a8c8b8"/>
+  <text x="680" y="124" class="sans" font-size="40" font-weight="900" text-anchor="middle" fill="#a8c8b8">K</text>
+
+  <!-- Key-click -->
+  <text x="28" y="444" class="sans eyebrow" fill="#d6a7ad">THE CORE GESTURE</text>
+  <text x="28" y="486" class="sans" font-size="36" font-weight="800" fill="#ffffff">The “key-click”</text>
+  <text x="28" y="521" class="sans muted" font-size="18">Point with the mouse. Fire with a key.</text>
+  <rect x="28" y="544" width="744" height="240" fill="url(#card)" stroke="#41415b" filter="url(#shadow)"/>
+  <g transform="translate(48 556)">
+    <!-- Faded, staggered QWERTY context behind the window. Every key matches F. -->
+    <g opacity=".28" fill="#1d1d32" stroke="#70708c" stroke-width="1.25">
+      <rect x="34" y="8" width="62" height="62" rx="8"/><text x="65" y="47" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">Q</text>
+      <rect x="102" y="8" width="62" height="62" rx="8"/><text x="133" y="47" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">W</text>
+      <rect x="170" y="8" width="62" height="62" rx="8"/><text x="201" y="47" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">E</text>
+      <rect x="238" y="8" width="62" height="62" rx="8"/><text x="269" y="47" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">R</text>
+      <rect x="306" y="8" width="62" height="62" rx="8"/><text x="337" y="47" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">T</text>
+      <rect x="374" y="8" width="62" height="62" rx="8"/><text x="405" y="47" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">Y</text>
+      <rect x="0" y="76" width="62" height="62" rx="8"/><text x="31" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">A</text>
+      <rect x="68" y="76" width="62" height="62" rx="8"/><text x="99" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">S</text>
+      <rect x="204" y="76" width="62" height="62" rx="8"/><text x="235" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">G</text>
+      <rect x="272" y="76" width="62" height="62" rx="8"/><text x="303" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">H</text>
+      <rect x="340" y="76" width="62" height="62" rx="8"/><text x="371" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">J</text>
+      <rect x="408" y="76" width="62" height="62" rx="8"/><text x="439" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">K</text>
+      <rect x="34" y="144" width="62" height="62" rx="8"/><text x="65" y="183" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">Z</text>
+      <rect x="102" y="144" width="62" height="62" rx="8"/><text x="133" y="183" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">X</text>
+      <rect x="170" y="144" width="62" height="62" rx="8"/><text x="201" y="183" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">C</text>
+      <rect x="238" y="144" width="62" height="62" rx="8"/><text x="269" y="183" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">V</text>
+      <rect x="306" y="144" width="62" height="62" rx="8"/><text x="337" y="183" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">B</text>
+    </g>
+
+    <!-- Mini page sits over the keyboard. -->
+    <g transform="translate(218 8)">
+      <rect width="376" height="196" rx="12" fill="#0d0d1c" stroke="#41415b"/>
+      <circle cx="18" cy="16" r="4" fill="#713d48"/>
+      <circle cx="32" cy="16" r="4" fill="#32604d"/>
+      <circle cx="46" cy="16" r="4" fill="#555571"/>
+      <text x="64" y="20" class="sans" font-size="11" fill="#70708c">noctivagous.com</text>
+
+      <g clip-path="url(#window-clip)">
+        <text x="20" y="52" class="sans" font-size="13" fill="#b9b9cf">Hover the link. Press F to activate.</text>
+
+        <g id="click-target" transform="translate(20 78)">
+          <rect x="-8" y="-12" width="248" height="44" fill="rgba(33,150,243,0.08)" stroke="rgba(33,150,243,0.95)" stroke-width="3">
+            <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;.36;.4;.7;.78;1" dur="6s" repeatCount="indefinite"/>
+          </rect>
+          <text x="8" y="18" class="sans link-text" font-size="22" font-weight="700" text-decoration="underline">Hyperlink</text>
+          <rect x="-8" y="-12" width="248" height="44" fill="none" stroke="rgba(0,255,0,1)" stroke-width="3">
+            <animate attributeName="opacity" values="0;0;1;.85;0;0" keyTimes="0;.5;.52;.58;.7;1" dur="6s" repeatCount="indefinite"/>
+            <animate attributeName="stroke-width" values="3;3;5;3;3" keyTimes="0;.5;.52;.62;1" dur="6s" repeatCount="indefinite"/>
+          </rect>
+          <circle cx="116" cy="10" r="8" fill="none" stroke="rgba(0,200,0,0.45)" stroke-width="3">
+            <animate attributeName="r" values="6;6;28;36" keyTimes="0;.5;.62;1" dur="6s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0;0;.4;0" keyTimes="0;.5;.52;1" dur="6s" repeatCount="indefinite"/>
+          </circle>
+        </g>
+
+        <text x="20" y="148" class="sans" font-size="13" fill="#70708c">This is fast. It’s called a key-click.</text>
+        <text x="20" y="176" class="sans" font-size="12" fill="#a8c8b8">
+          <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;.55;.6;.78;.88;1" dur="6s" repeatCount="indefinite"/>
+          link activated
+        </text>
+
+        <g id="animated-cursor">
+          <animateTransform attributeName="transform" type="translate"
+            values="320 138; 320 138; 136 88; 136 88; 320 138"
+            keyTimes="0; .08; .38; .72; 1" dur="6s" repeatCount="indefinite"/>
+          <line class="kp-crosshair" x1="0" y1="-12" x2="0" y2="-4"/>
+          <line class="kp-crosshair" x1="0" y1="4" x2="0" y2="12"/>
+          <line class="kp-crosshair" x1="-12" y1="0" x2="-4" y2="0"/>
+          <line class="kp-crosshair" x1="4" y1="0" x2="12" y2="0"/>
+        </g>
+      </g>
+    </g>
+
+    <!-- F key stays in front of the faded neighbors. -->
+    <text x="167" y="58" class="sans" font-size="11" font-weight="800" letter-spacing="1.4" fill="#b9b9cf" text-anchor="middle">FIRE</text>
+    <g id="animated-key" transform="translate(136 76)">
+      <animateTransform attributeName="transform" type="translate"
+        values="136 76; 136 76; 136 80; 136 76; 136 76"
+        keyTimes="0; .48; .52; .58; 1" dur="6s" repeatCount="indefinite"/>
+      <rect width="62" height="62" rx="8" fill="#292943" stroke="#a8c8b8" stroke-width="2"/>
+      <rect width="62" height="62" rx="8" fill="#a8c8b8" opacity="0">
+        <animate attributeName="opacity" values="0;0;.35;0;0" keyTimes="0;.48;.52;.58;1" dur="6s" repeatCount="indefinite"/>
+      </rect>
+      <text x="31" y="42" class="sans" font-size="32" font-weight="800" text-anchor="middle" fill="#a8c8b8">F</text>
+    </g>
+
+    <!-- Physical mouse stays outside the window. -->
+    <g id="animated-mouse">
+      <animateTransform attributeName="transform" type="translate"
+        values="652 136; 652 136; 606 123; 606 123; 652 136"
+        keyTimes="0; .08; .38; .72; 1" dur="6s" repeatCount="indefinite"/>
+      <rect x="8" y="8" width="44" height="64" rx="18" fill="#17172b" stroke="#d6a7ad" stroke-width="2"/>
+      <line x1="30" y1="8" x2="30" y2="32" stroke="#d6a7ad" stroke-width="2"/>
+      <circle cx="30" cy="23" r="3.5" fill="#d6a7ad"/>
+    </g>
+  </g>
+
+  <!-- Feature cards -->
+  <text x="28" y="818" class="sans eyebrow" fill="#a8c8b8">WHY KEYPILOT</text>
+  <g transform="translate(28 840)">
+    <rect width="232" height="132" fill="url(#card)" stroke="#41415b"/>
+    <rect x="24" y="24" width="38" height="4" fill="#d6a7ad"/>
+    <text x="24" y="63" class="sans" font-size="20" font-weight="800" fill="#ffffff">Free</text>
+    <text x="24" y="91" class="sans" font-size="15" fill="#b9b9cf">MIT licensed</text>
+    <text x="24" y="113" class="sans" font-size="15" fill="#b9b9cf">and open source.</text>
+    <rect x="256" width="232" height="132" fill="url(#card)" stroke="#41415b"/>
+    <rect x="280" y="24" width="38" height="4" fill="#a8c8b8"/>
+    <text x="280" y="63" class="sans" font-size="20" font-weight="800" fill="#ffffff">Many actions</text>
+    <text x="280" y="91" class="sans" font-size="15" fill="#b9b9cf">A keyboard layout</text>
+    <text x="280" y="113" class="sans" font-size="15" fill="#b9b9cf">built for power.</text>
+    <rect x="512" width="232" height="132" fill="url(#card)" stroke="#41415b"/>
+    <rect x="536" y="24" width="38" height="4" fill="#d6a7ad"/>
+    <text x="536" y="63" class="sans" font-size="20" font-weight="800" fill="#ffffff">Try it now</text>
+    <text x="536" y="91" class="sans" font-size="15" fill="#b9b9cf">Demo at</text>
+    <text x="536" y="113" class="sans" font-size="15" fill="#d6a7ad"><a href="http://noctivagous.com">noctivagous.com</a></text>
+  </g>
+
+  <!-- CTA: same 28px inset and 28px gap as hero / features. -->
+  <rect x="28" y="1000" width="744" height="72" fill="#292943" stroke="#555571"/>
+  <text x="52" y="1042" class="sans" font-size="20" font-weight="800" fill="#ffffff">Get KeyPilot on the Chrome Web Store</text>
+  <text x="748" y="1042" class="sans" font-size="17" text-anchor="end" fill="#a8c8b8"><a href="http://noctivagous.com">NOCTIVAGOUS ↗</a></text>
+</svg>
