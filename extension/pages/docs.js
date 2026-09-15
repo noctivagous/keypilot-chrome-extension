@@ -241,7 +241,9 @@ function slugifyHeading(text) {
     .trim()
     .replace(/<[^>]+>/g, '')
     .replace(/[`*_~]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
+    // Preserve letters, numbers, and combining marks from every script so
+    // localized headings (including CJK) remain valid deep-link targets.
+    .replace(/[^\p{L}\p{N}\p{M}]+/gu, '-')
     .replace(/^-+|-+$/g, '');
 }
 

@@ -205,6 +205,47 @@ Suggested message-key convention:
 - [ ] Build each store package and inspect its locale files and manifest.
 - [ ] Record translation reviewer, browser version, tested UI locale, and outstanding untranslated content in the release record.
 
+## Future locale readiness — CJK
+
+**Outcome:** Japanese, Korean, Simplified Chinese, and Traditional Chinese can be added without regressions in text entry, typography, documentation, or deep links.
+
+### Completed prerequisite
+
+- [x] Make Docs heading anchors Unicode-safe in `extension/pages/docs.js`, so CJK headings retain IDs and can be linked with in-article fragments.
+
+### Tasks
+
+- [ ] Treat Japanese (`ja`), Korean (`ko`), Simplified Chinese (`zh_CN`), and Traditional Chinese (`zh_TW`) as separate translations and release decisions.
+- [ ] Add locale-specific, system-font-first UI stacks for CJK. Do not bundle complete CJK web-font families; their size would be paid by every installation.
+- [ ] Set the locale/language attribute on standalone extension-page roots and equivalent shadow-root hosts so locale-specific typography rules can apply.
+- [ ] Test font fallback and metrics in popup, Settings, Docs, context menus, overlays, keyboard reference, onboarding, and titlebars.
+- [ ] Add IME-composition protection to all KeyPilot shortcut handlers: ignore events while `event.isComposing` is true and handle the browser's composition lifecycle/legacy IME event behavior where necessary.
+- [ ] Test typing with Japanese, Korean, and Chinese IMEs in ordinary text fields and KeyPilot text-entry modes; candidate selection and composition must never invoke KeyPilot actions.
+- [ ] Preserve canonical shortcut keys/key codes. Translate their explanatory labels, but document any locale-specific direct-input requirement for invoking a shortcut.
+- [ ] Extend omnibox host detection to recognize Unicode internationalized domain names (IDNs), so a hostname such as `例子.中国` navigates rather than becoming a search query.
+- [ ] Make word-level under-cursor acquisition span adjacent DOM text nodes and construct the corresponding range, so split CJK text in rich editors is captured as one segmented unit.
+- [ ] Pass the page language (`document.documentElement.lang`) to `Intl.Segmenter` for under-cursor word and sentence acquisition instead of relying solely on the browser/system locale.
+- [ ] Keep basic Docs search as Unicode-safe substring matching; when a generated per-locale search index is introduced, use `Intl.Segmenter` for CJK tokenization and ranking.
+- [ ] Decide whether Lookup Word needs a CJK-capable provider or an AI-backed path. The current dictionary endpoint is English-only and must not present a failed lookup as CJK support.
+
+### Acceptance criteria
+
+- CJK glyphs render legibly without increasing the eager runtime bundle with large font assets.
+- IME composition never triggers a KeyPilot shortcut or loses typed/candidate text.
+- CJK Docs headings retain navigable in-article fragments.
+- Unicode IDNs entered in the omnibox navigate directly.
+- Under-cursor word, translation, and lookup actions operate across text-node boundaries using page-language-aware segmentation.
+- Each CJK locale can be added as an independent catalog and documentation release.
+
+### Validation
+
+- [ ] Exercise all CJK locale UI surfaces on macOS and Windows with their respective system fonts.
+- [ ] Run manual IME composition scenarios for Japanese, Korean, Simplified Chinese, and Traditional Chinese.
+- [ ] Test CJK Markdown headings and `kp://docs/<topic>#<heading>` deep links.
+- [ ] Navigate to Unicode IDNs from the omnibox and confirm CJK search text remains a search query.
+- [ ] Test under-cursor word, translation, and lookup behavior on CJK text split across inline DOM nodes and in rich editors.
+- [ ] Verify no CJK font files are imported into `content-bundled.js`.
+
 ## Ongoing maintenance
 
 - [ ] Require each new user-visible KeyPilot-owned string to add an English message and translator description in the same change.
