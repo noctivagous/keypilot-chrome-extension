@@ -47,8 +47,7 @@ over — KeyPilot calls this a “key-click.” For
   page for reviewing or remapping every shortcut,
   adjusting overlay appearance, and toggling optional
   features. All of these are standard extension
-  pages/overlays rendered by KeyPilot; none of them
-  replace Opera’s new-tab page or address bar.
+  pages/overlays rendered by KeyPilot.
 
 ### Summary
 

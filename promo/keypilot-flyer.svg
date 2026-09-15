@@ -21,6 +21,7 @@
     </linearGradient>
     <filter id="glow"><feGaussianBlur stdDeviation="12"/></filter>
     <filter id="shadow"><feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity=".35"/></filter>
+    <filter id="window-shadow"><feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000000" flood-opacity=".6"/></filter>
     <style>
       .sans { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
       .muted { fill: #b9b9cf; }
@@ -88,9 +89,9 @@
     </g>
 
     <!-- Mini browser. -->
-    <g transform="translate(256 8)">
+    <g transform="translate(256 8)" filter="url(#window-shadow)">
       <rect width="336" height="196" rx="12" fill="#12121f" stroke="#41415b"/>
-      <rect x="1" y="1" width="334" height="34" fill="#1a1a2e"/>
+      <rect x="1" y="1" width="334" height="34" fill="#07070e"/>
       <circle cx="16" cy="18" r="4" fill="#713d48"/>
       <circle cx="30" cy="18" r="4" fill="#32604d"/>
       <circle cx="44" cy="18" r="4" fill="#555571"/>
@@ -126,7 +127,7 @@
             <rect x="-8" y="-12" width="168" height="36" fill="rgba(33,150,243,0.08)" stroke="rgba(33,150,243,0.95)" stroke-width="3">
               <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;.26;.30;.40;.46;1" dur="10s" repeatCount="indefinite"/>
             </rect>
-            <text x="8" y="14" class="sans link-text" font-size="20" font-weight="700" text-decoration="underline">Article Name</text>
+            <text x="8" y="14" class="sans link-text" font-size="20" font-weight="700" text-decoration="underline">Article Title</text>
             <rect x="-8" y="-12" width="168" height="36" fill="none" stroke="rgba(0,255,0,1)" stroke-width="3">
               <animate attributeName="opacity" values="0;0;1;.85;0;0" keyTimes="0;.36;.38;.42;.48;1" dur="10s" repeatCount="indefinite"/>
               <animate attributeName="stroke-width" values="3;3;5;3;3" keyTimes="0;.36;.38;.42;1" dur="10s" repeatCount="indefinite"/>
@@ -160,6 +161,8 @@
           <line class="kp-crosshair" x1="4" y1="0" x2="12" y2="0"/>
         </g>
       </g>
+      <rect x="323" y="36" width="12" height="156" fill="#0a0a12"/>
+      <rect x="325" y="40" width="8" height="50" rx="4" fill="#3a3a48"/>
     </g>
 
     <!-- F: OPEN on page A. -->
