@@ -1,162 +1,162 @@
 {
   "extension_name": {
-    "message": "KeyPilot",
+    "message": "[GB] KeyPilot",
     "description": "The extension name displayed in browser UI and store listings."
   },
   "extension_description": {
-    "message": "Browse the web with key-clicks. Activate hyperlinks with keyboard keys instead of mouse buttons.",
+    "message": "[GB] Browse the web with key-clicks. Activate hyperlinks with keyboard keys instead of mouse buttons.",
     "description": "The short extension description displayed in browser UI and store listings."
   },
   "extension_action_title": {
-    "message": "KeyPilot",
+    "message": "[GB] KeyPilot",
     "description": "The toolbar action tooltip."
   },
   "popup_document_title": {
-    "message": "KeyPilot",
+    "message": "[GB] KeyPilot",
     "description": "The popup document title."
   },
   "popup_heading": {
-    "message": "KeyPilot",
+    "message": "[GB] KeyPilot",
     "description": "The popup heading."
   },
   "popup_hotkey_toggle_aria_label": {
-    "message": "Hotkey Alt plus K",
+    "message": "[GB] Hotkey Alt plus K",
     "description": "Accessible label for the extension-toggle keyboard shortcut."
   },
   "popup_extension_toggle_aria_label": {
-    "message": "KeyPilot enabled",
+    "message": "[GB] KeyPilot enabled",
     "description": "Accessible name for the popup master enable switch."
   },
   "popup_unavailable_on_tab": {
-    "message": "UNAVAILABLE ON THIS TAB",
+    "message": "[GB] UNAVAILABLE ON THIS TAB",
     "description": "Message shown when KeyPilot cannot run on the active tab."
   },
   "popup_tools_aria_label": {
-    "message": "KeyPilot tools",
+    "message": "[GB] KeyPilot tools",
     "description": "Accessible label for the popup tool-card navigation."
   },
   "popup_keyboard_reference": {
-    "message": "Keyboard Reference",
+    "message": "[GB] Keyboard Reference",
     "description": "Popup card label for the keyboard reference."
   },
   "popup_keyboard_reference_aria_label": {
-    "message": "Keyboard Reference",
+    "message": "[GB] Keyboard Reference",
     "description": "Accessible label for the keyboard-reference card."
   },
   "popup_docs": {
-    "message": "Help / Docs",
+    "message": "[GB] Help / Docs",
     "description": "Popup card label for documentation."
   },
   "popup_docs_aria_label": {
-    "message": "KeyPilot Help and Documentation",
+    "message": "[GB] KeyPilot Help and Documentation",
     "description": "Accessible label for the documentation card."
   },
   "popup_documentation": {
-    "message": "Documentation",
+    "message": "[GB] Documentation",
     "description": "Popup documentation-card subtitle."
   },
   "popup_tutorial": {
-    "message": "Onboarding Tutorial",
+    "message": "[GB] Onboarding Tutorial",
     "description": "Popup card label for the onboarding walkthrough."
   },
   "popup_tutorial_aria_label": {
-    "message": "Onboarding Tutorial",
+    "message": "[GB] Onboarding Tutorial",
     "description": "Accessible label for the onboarding walkthrough card."
   },
   "popup_settings": {
-    "message": "Settings",
+    "message": "[GB] Settings",
     "description": "Popup card label for KeyPilot settings."
   },
   "popup_settings_aria_label": {
-    "message": "Settings",
+    "message": "[GB] Settings",
     "description": "Accessible label for the settings card."
   },
   "popup_preferences": {
-    "message": "Preferences",
+    "message": "[GB] Preferences",
     "description": "Popup settings-card subtitle."
   },
   "popup_control_strip": {
-    "message": "Control Strip",
+    "message": "[GB] Control Strip",
     "description": "Popup card label for the control strip."
   },
   "popup_control_strip_aria_label": {
-    "message": "Control Strip",
+    "message": "[GB] Control Strip",
     "description": "Accessible label for the control-strip card."
   },
   "popup_footer": {
-    "message": "Keyboard-first web navigation.",
+    "message": "[GB] Keyboard-first web navigation.",
     "description": "Short popup footer."
   },
   "popup_status_on": {
-    "message": "ON",
+    "message": "[GB] ON",
     "description": "Short status for enabled KeyPilot."
   },
   "popup_status_off": {
-    "message": "OFF",
+    "message": "[GB] OFF",
     "description": "Short status for disabled KeyPilot."
   },
   "popup_status_unavailable": {
-    "message": "UNAVAILABLE",
+    "message": "[GB] UNAVAILABLE",
     "description": "Short status when KeyPilot cannot run on the active tab."
   },
   "popup_status_delete": {
-    "message": "DELETE",
+    "message": "[GB] DELETE",
     "description": "Short status while Delete Mode is active."
   },
   "popup_status_cols": {
-    "message": "COLS",
+    "message": "[GB] COLS",
     "description": "Short status while column mode is active."
   },
   "popup_status_inspect": {
-    "message": "INSPECT",
+    "message": "[GB] INSPECT",
     "description": "Short status while inspector mode is active."
   },
   "popup_status_text": {
-    "message": "TEXT",
+    "message": "[GB] TEXT",
     "description": "Short status while text focus is active."
   },
   "guide_document_title": {
-    "message": "KeyPilot Guide",
+    "message": "[GB] KeyPilot Guide",
     "description": "The Guide page document title."
   },
   "guide_heading": {
-    "message": "KeyPilot Guide",
+    "message": "[GB] KeyPilot Guide",
     "description": "The Guide page heading."
   },
   "guide_subtitle": {
-    "message": "Keyboard-first navigation reference.",
+    "message": "[GB] Keyboard-first navigation reference.",
     "description": "Guide page subtitle."
   },
   "guide_close": {
-    "message": "Close",
+    "message": "[GB] Close",
     "description": "Guide page close button."
   },
   "guide_launch_walkthrough": {
-    "message": "Launch Walkthrough",
+    "message": "[GB] Launch Walkthrough",
     "description": "Button that starts the onboarding walkthrough."
   },
   "guide_core_keys": {
-    "message": "Core keys",
+    "message": "[GB] Core keys",
     "description": "Heading for the Guide's core shortcut list."
   },
   "guide_popover": {
-    "message": "Popover",
+    "message": "[GB] Popover",
     "description": "Heading for the Guide's popover shortcut list."
   },
   "guide_extension_notes": {
-    "message": "Extension notes",
+    "message": "[GB] Extension notes",
     "description": "Heading for Guide availability notes."
   },
   "guide_extension_notes_description": {
-    "message": "KeyPilot runs as a content script on normal web pages. It’s unavailable on browser-internal pages like chrome:// and the Chrome Web Store.",
+    "message": "[GB] KeyPilot runs as a content script on normal web pages. It’s unavailable on browser-internal pages like chrome:// and the Chrome Web Store.",
     "description": "Guide note explaining pages where KeyPilot cannot run."
   },
   "guide_layout_note": {
-    "message": "Keys above follow your selected keyboard layout in Settings (right-handed or left-handed).",
+    "message": "[GB] Keys above follow your selected keyboard layout in Settings (right-handed or left-handed).",
     "description": "Guide note explaining that displayed shortcuts follow the selected layout."
   },
   "guide_layout_label": {
-    "message": "Layout: $1",
+    "message": "[GB] Layout: $1",
     "description": "Label preceding the active keyboard layout name.",
     "placeholders": {
       "layout": {
@@ -166,1475 +166,1475 @@
     }
   },
   "guide_action_activate": {
-    "message": "click element under the KeyPilot cursor",
+    "message": "[GB] click element under the KeyPilot cursor",
     "description": "Guide explanation for the activate shortcut."
   },
   "guide_action_back": {
-    "message": "back",
+    "message": "[GB] back",
     "description": "Guide explanation for the browser-back shortcut."
   },
   "guide_action_root": {
-    "message": "site root",
+    "message": "[GB] site root",
     "description": "Guide explanation for the navigate-to-site-root shortcut."
   },
   "guide_action_forward": {
-    "message": "forward",
+    "message": "[GB] forward",
     "description": "Guide explanation for the browser-forward shortcut."
   },
   "guide_action_tabs": {
-    "message": "tab left/right",
+    "message": "[GB] tab left/right",
     "description": "Guide explanation for the previous/next tab shortcuts."
   },
   "guide_action_omnibox": {
-    "message": "omnibox",
+    "message": "[GB] omnibox",
     "description": "Guide explanation for the omnibox shortcut."
   },
   "guide_action_cancel": {
-    "message": "cancel / exit",
+    "message": "[GB] cancel / exit",
     "description": "Guide explanation for the cancel shortcut."
   },
   "guide_action_open_popover": {
-    "message": "open link-under-cursor in popover",
+    "message": "[GB] open link-under-cursor in popover",
     "description": "Guide explanation for the open-popover shortcut."
   },
   "guide_action_open_settings": {
-    "message": "open Settings popover",
+    "message": "[GB] open Settings popover",
     "description": "Guide explanation for the settings shortcut."
   },
   "guide_action_scroll": {
-    "message": "scroll",
+    "message": "[GB] scroll",
     "description": "Guide explanation for scrolling shortcuts."
   },
   "guide_action_close": {
-    "message": "close",
+    "message": "[GB] close",
     "description": "Guide explanation for the close shortcut."
   },
   "docs_document_title": {
-    "message": "KeyPilot Docs",
+    "message": "[GB] KeyPilot Docs",
     "description": "The Docs page document title."
   },
   "docs_heading": {
-    "message": "KeyPilot Docs",
+    "message": "[GB] KeyPilot Docs",
     "description": "The Docs page heading."
   },
   "docs_subtitle": {
-    "message": "How to use KeyPilot — search topics or browse the list.",
+    "message": "[GB] How to use KeyPilot — search topics or browse the list.",
     "description": "Docs page subtitle."
   },
   "docs_close": {
-    "message": "Close",
+    "message": "[GB] Close",
     "description": "Docs page close button."
   },
   "docs_topics_aria_label": {
-    "message": "Documentation topics",
+    "message": "[GB] Documentation topics",
     "description": "Accessible label for the Docs navigation sidebar."
   },
   "docs_search_label": {
-    "message": "Search",
+    "message": "[GB] Search",
     "description": "Docs search input label."
   },
   "docs_search_placeholder": {
-    "message": "Search docs…",
+    "message": "[GB] Search docs…",
     "description": "Docs search input placeholder."
   },
   "docs_topic_list_aria_label": {
-    "message": "Topics",
+    "message": "[GB] Topics",
     "description": "Accessible label for the Docs topic list."
   },
   "docs_no_matches": {
-    "message": "No matching topics.",
+    "message": "[GB] No matching topics.",
     "description": "Message when Docs search has no matching topics."
   },
   "docs_loading": {
-    "message": "Loading documentation…",
+    "message": "[GB] Loading documentation…",
     "description": "Docs loading message."
   },
   "docs_load_failed": {
-    "message": "Failed to load this document.",
+    "message": "[GB] Failed to load this document.",
     "description": "Docs article error message."
   },
   "docs_soon": {
-    "message": "Soon",
+    "message": "[GB] Soon",
     "description": "Label for a Docs topic that is not yet available."
   },
   "settings_static_001": {
-    "message": "Settings categories",
+    "message": "[GB] Settings categories",
     "description": "Localized settings page chrome."
   },
   "settings_static_002": {
-    "message": "Search engine",
+    "message": "[GB] Search engine",
     "description": "Localized settings page chrome."
   },
   "settings_static_003": {
-    "message": "Show/hide floating keyboard reference (K)",
+    "message": "[GB] Show/hide floating keyboard reference (K)",
     "description": "Localized settings page chrome."
   },
   "settings_static_004": {
-    "message": "Keyboard reference visible",
+    "message": "[GB] Keyboard reference visible",
     "description": "Localized settings page chrome."
   },
   "settings_static_005": {
-    "message": "Click cursor preview",
+    "message": "[GB] Click cursor preview",
     "description": "Localized settings page chrome."
   },
   "settings_static_006": {
-    "message": "Click effect",
+    "message": "[GB] Click effect",
     "description": "Localized settings page chrome."
   },
   "settings_static_007": {
-    "message": "Text cursor preview",
+    "message": "[GB] Text cursor preview",
     "description": "Localized settings page chrome."
   },
   "settings_static_008": {
-    "message": "Text field focus style",
+    "message": "[GB] Text field focus style",
     "description": "Localized settings page chrome."
   },
   "settings_static_009": {
-    "message": "KeyPilot Settings",
+    "message": "[GB] KeyPilot Settings",
     "description": "Localized settings page chrome."
   },
   "settings_static_010": {
-    "message": "KeyPilot Settings",
+    "message": "[GB] KeyPilot Settings",
     "description": "Localized settings page chrome."
   },
   "settings_static_011": {
-    "message": "Changes sync across tabs automatically.",
+    "message": "[GB] Changes sync across tabs automatically.",
     "description": "Localized settings page chrome."
   },
   "settings_static_012": {
-    "message": "Modes",
+    "message": "[GB] Modes",
     "description": "Localized settings page chrome."
   },
   "settings_static_013": {
-    "message": "Interface",
+    "message": "[GB] Interface",
     "description": "Localized settings page chrome."
   },
   "settings_static_014": {
-    "message": "Info",
+    "message": "[GB] Info",
     "description": "Localized settings page chrome."
   },
   "settings_static_015": {
-    "message": "Overview",
+    "message": "[GB] Overview",
     "description": "Localized settings page chrome."
   },
   "settings_static_016": {
-    "message": "Pick a category to change how KeyPilot looks and behaves. Use the list on the left anytime.",
+    "message": "[GB] Pick a category to change how KeyPilot looks and behaves. Use the list on the left anytime.",
     "description": "Localized settings page chrome."
   },
   "settings_static_017": {
-    "message": "Theme",
+    "message": "[GB] Theme",
     "description": "Localized settings page chrome."
   },
   "settings_static_018": {
-    "message": "Dark Pro",
+    "message": "[GB] Dark Pro",
     "description": "Localized settings page chrome."
   },
   "settings_static_019": {
-    "message": "Gray Metal Pro",
+    "message": "[GB] Gray Metal Pro",
     "description": "Localized settings page chrome."
   },
   "settings_static_020": {
-    "message": "GX-er",
+    "message": "[GB] GX-er",
     "description": "Localized settings page chrome."
   },
   "settings_static_021": {
-    "message": "Customized",
+    "message": "[GB] Customized",
     "description": "Localized settings page chrome."
   },
   "settings_static_022": {
-    "message": "Built-in packs restyle chrome, type, and icons. Edits live on the Appearance tab. Choosing a theme also applies that theme’s Click Mode and cursor defaults.",
+    "message": "[GB] Built-in packs restyle chrome, type, and icons. Edits live on the Appearance tab. Choosing a theme also applies that theme’s Click Mode and cursor defaults.",
     "description": "Localized settings page chrome."
   },
   "settings_static_023": {
-    "message": "Appearance",
+    "message": "[GB] Appearance",
     "description": "Localized settings page chrome."
   },
   "settings_static_024": {
-    "message": "Theme pack, window corners, titlebar, keycaps, colors, and type size.",
+    "message": "[GB] Theme pack, window corners, titlebar, keycaps, colors, and type size.",
     "description": "Localized settings page chrome."
   },
   "settings_static_025": {
-    "message": "Keyboard",
+    "message": "[GB] Keyboard",
     "description": "Localized settings page chrome."
   },
   "settings_static_026": {
-    "message": "Layout family, left-handed variant, and floating keyboard reference options.",
+    "message": "[GB] Layout family, left-handed variant, and floating keyboard reference options.",
     "description": "Localized settings page chrome."
   },
   "settings_static_027": {
-    "message": "Click Mode",
+    "message": "[GB] Click Mode",
     "description": "Localized settings page chrome."
   },
   "settings_static_028": {
-    "message": "Hover focus rectangle, link-hover hints, and click activation effects.",
+    "message": "[GB] Hover focus rectangle, link-hover hints, and click activation effects.",
     "description": "Localized settings page chrome."
   },
   "settings_static_029": {
-    "message": "Text Mode",
+    "message": "[GB] Text Mode",
     "description": "Localized settings page chrome."
   },
   "settings_static_030": {
-    "message": "Text-field cursor, focus style, labels, and outline thickness.",
+    "message": "[GB] Text-field cursor, focus style, labels, and outline thickness.",
     "description": "Localized settings page chrome."
   },
   "settings_static_031": {
-    "message": "Scrolling",
+    "message": "[GB] Scrolling",
     "description": "Localized settings page chrome."
   },
   "settings_static_032": {
-    "message": "C / V distance, smooth vs instant, Scroll Line targeting, and middle-click.",
+    "message": "[GB] C / V distance, smooth vs instant, Scroll Line targeting, and middle-click.",
     "description": "Localized settings page chrome."
   },
   "settings_static_033": {
-    "message": "Cursor",
+    "message": "[GB] Cursor",
     "description": "Localized settings page chrome."
   },
   "settings_static_034": {
-    "message": "Custom cursors on/off, plus Click Mode crosshair type and geometry.",
+    "message": "[GB] Custom cursors on/off, plus Click Mode crosshair type and geometry.",
     "description": "Localized settings page chrome."
   },
   "settings_static_035": {
-    "message": "Control Strip",
+    "message": "[GB] Control Strip",
     "description": "Localized settings page chrome."
   },
   "settings_static_036": {
-    "message": "Show or hide the status strip, and whether it starts collapsed.",
+    "message": "[GB] Show or hide the status strip, and whether it starts collapsed.",
     "description": "Localized settings page chrome."
   },
   "settings_static_037": {
-    "message": "Search",
+    "message": "[GB] Search",
     "description": "Localized settings page chrome."
   },
   "settings_static_038": {
-    "message": "Search engine for the New Tab box and KeyPilot’s omnibox (Alt+L).",
+    "message": "[GB] Search engine for the New Tab box and KeyPilot’s omnibox (Alt+L).",
     "description": "Localized settings page chrome."
   },
   "settings_static_039": {
-    "message": "About",
+    "message": "[GB] About",
     "description": "Localized settings page chrome."
   },
   "settings_static_040": {
-    "message": "Where settings are stored, how they sync, and optional debug logging.",
+    "message": "[GB] Where settings are stored, how they sync, and optional debug logging.",
     "description": "Localized settings page chrome."
   },
   "settings_static_041": {
-    "message": "Reset",
+    "message": "[GB] Reset",
     "description": "Localized settings page chrome."
   },
   "settings_static_042": {
-    "message": "Restore all KeyPilot settings to product defaults (appearance, Click Mode, keyboard, scrolling, stored panel positions, and the rest).",
+    "message": "[GB] Restore all KeyPilot settings to product defaults (appearance, Click Mode, keyboard, scrolling, stored panel positions, and the rest).",
     "description": "Localized settings page chrome."
   },
   "settings_static_043": {
-    "message": "Reset all settings to defaults",
+    "message": "[GB] Reset all settings to defaults",
     "description": "Localized settings page chrome."
   },
   "settings_static_044": {
-    "message": "Appearance",
+    "message": "[GB] Appearance",
     "description": "Localized settings page chrome."
   },
   "settings_static_045": {
-    "message": "Customize the selected built-in theme. Changes apply immediately and stay with that pack until you reset or switch themes.",
+    "message": "[GB] Customize the selected built-in theme. Changes apply immediately and stay with that pack until you reset or switch themes.",
     "description": "Localized settings page chrome."
   },
   "settings_static_046": {
-    "message": "Theme",
+    "message": "[GB] Theme",
     "description": "Localized settings page chrome."
   },
   "settings_static_047": {
-    "message": "Dark Pro",
+    "message": "[GB] Dark Pro",
     "description": "Localized settings page chrome."
   },
   "settings_static_048": {
-    "message": "Gray Metal Pro",
+    "message": "[GB] Gray Metal Pro",
     "description": "Localized settings page chrome."
   },
   "settings_static_049": {
-    "message": "GX-er",
+    "message": "[GB] GX-er",
     "description": "Localized settings page chrome."
   },
   "settings_static_050": {
-    "message": "Customized",
+    "message": "[GB] Customized",
     "description": "Localized settings page chrome."
   },
   "settings_static_051": {
-    "message": "Switching packs starts from that theme’s defaults (custom edits are cleared). Click Mode defaults follow the pack.",
+    "message": "[GB] Switching packs starts from that theme’s defaults (custom edits are cleared). Click Mode defaults follow the pack.",
     "description": "Localized settings page chrome."
   },
   "settings_static_052": {
-    "message": "Windows",
+    "message": "[GB] Windows",
     "description": "Localized settings page chrome."
   },
   "settings_static_053": {
-    "message": "Corner style",
+    "message": "[GB] Corner style",
     "description": "Localized settings page chrome."
   },
   "settings_static_054": {
-    "message": "Rounded",
+    "message": "[GB] Rounded",
     "description": "Localized settings page chrome."
   },
   "settings_static_055": {
-    "message": "Cut",
+    "message": "[GB] Cut",
     "description": "Localized settings page chrome."
   },
   "settings_static_056": {
-    "message": "Cut size",
+    "message": "[GB] Cut size",
     "description": "Localized settings page chrome."
   },
   "settings_static_057": {
-    "message": "Corner cut depth in pixels (0–24). Used when Corner style is Cut.",
+    "message": "[GB] Corner cut depth in pixels (0–24). Used when Corner style is Cut.",
     "description": "Localized settings page chrome."
   },
   "settings_static_058": {
-    "message": "Panel radius",
+    "message": "[GB] Panel radius",
     "description": "Localized settings page chrome."
   },
   "settings_static_059": {
-    "message": "Rounded corner radius in pixels (0–24). Used when Corner style is Rounded.",
+    "message": "[GB] Rounded corner radius in pixels (0–24). Used when Corner style is Rounded.",
     "description": "Localized settings page chrome."
   },
   "settings_static_060": {
-    "message": "Titlebar",
+    "message": "[GB] Titlebar",
     "description": "Localized settings page chrome."
   },
   "settings_static_061": {
-    "message": "Title case",
+    "message": "[GB] Title case",
     "description": "Localized settings page chrome."
   },
   "settings_static_062": {
-    "message": "As written",
+    "message": "[GB] As written",
     "description": "Localized settings page chrome."
   },
   "settings_static_063": {
-    "message": "Uppercase",
+    "message": "[GB] Uppercase",
     "description": "Localized settings page chrome."
   },
   "settings_static_064": {
-    "message": "Letter spacing",
+    "message": "[GB] Letter spacing",
     "description": "Localized settings page chrome."
   },
   "settings_static_065": {
-    "message": "Title weight",
+    "message": "[GB] Title weight",
     "description": "Localized settings page chrome."
   },
   "settings_static_066": {
-    "message": "Regular",
+    "message": "[GB] Regular",
     "description": "Localized settings page chrome."
   },
   "settings_static_067": {
-    "message": "Semibold",
+    "message": "[GB] Semibold",
     "description": "Localized settings page chrome."
   },
   "settings_static_068": {
-    "message": "Bold",
+    "message": "[GB] Bold",
     "description": "Localized settings page chrome."
   },
   "settings_static_069": {
-    "message": "Leading icon",
+    "message": "[GB] Leading icon",
     "description": "Localized settings page chrome."
   },
   "settings_static_070": {
-    "message": "Hidden",
+    "message": "[GB] Hidden",
     "description": "Localized settings page chrome."
   },
   "settings_static_071": {
-    "message": "Shown",
+    "message": "[GB] Shown",
     "description": "Localized settings page chrome."
   },
   "settings_static_072": {
-    "message": "Shortcut case",
+    "message": "[GB] Shortcut case",
     "description": "Localized settings page chrome."
   },
   "settings_static_073": {
-    "message": "As written",
+    "message": "[GB] As written",
     "description": "Localized settings page chrome."
   },
   "settings_static_074": {
-    "message": "Uppercase",
+    "message": "[GB] Uppercase",
     "description": "Localized settings page chrome."
   },
   "settings_static_075": {
-    "message": "Keyboard keys",
+    "message": "[GB] Keyboard keys",
     "description": "Localized settings page chrome."
   },
   "settings_static_076": {
-    "message": "Shading",
+    "message": "[GB] Shading",
     "description": "Localized settings page chrome."
   },
   "settings_static_077": {
-    "message": "Bevel",
+    "message": "[GB] Bevel",
     "description": "Localized settings page chrome."
   },
   "settings_static_078": {
-    "message": "Flat",
+    "message": "[GB] Flat",
     "description": "Localized settings page chrome."
   },
   "settings_static_079": {
-    "message": "Key corners",
+    "message": "[GB] Key corners",
     "description": "Localized settings page chrome."
   },
   "settings_static_080": {
-    "message": "Rounded",
+    "message": "[GB] Rounded",
     "description": "Localized settings page chrome."
   },
   "settings_static_081": {
-    "message": "Cut",
+    "message": "[GB] Cut",
     "description": "Localized settings page chrome."
   },
   "settings_static_082": {
-    "message": "Key cut size",
+    "message": "[GB] Key cut size",
     "description": "Localized settings page chrome."
   },
   "settings_static_083": {
-    "message": "Key corner cut depth in pixels (0–16). Used when Key corners is Cut.",
+    "message": "[GB] Key corner cut depth in pixels (0–16). Used when Key corners is Cut.",
     "description": "Localized settings page chrome."
   },
   "settings_static_084": {
-    "message": "Outline",
+    "message": "[GB] Outline",
     "description": "Localized settings page chrome."
   },
   "settings_static_085": {
-    "message": "Color",
+    "message": "[GB] Color",
     "description": "Localized settings page chrome."
   },
   "settings_static_086": {
-    "message": "Accent",
+    "message": "[GB] Accent",
     "description": "Localized settings page chrome."
   },
   "settings_static_087": {
-    "message": "Foreground",
+    "message": "[GB] Foreground",
     "description": "Localized settings page chrome."
   },
   "settings_static_088": {
-    "message": "Dim text",
+    "message": "[GB] Dim text",
     "description": "Localized settings page chrome."
   },
   "settings_static_089": {
-    "message": "Panel",
+    "message": "[GB] Panel",
     "description": "Localized settings page chrome."
   },
   "settings_static_090": {
-    "message": "Panel edge",
+    "message": "[GB] Panel edge",
     "description": "Localized settings page chrome."
   },
   "settings_static_091": {
-    "message": "Title top",
+    "message": "[GB] Title top",
     "description": "Localized settings page chrome."
   },
   "settings_static_092": {
-    "message": "Title mid",
+    "message": "[GB] Title mid",
     "description": "Localized settings page chrome."
   },
   "settings_static_093": {
-    "message": "Title bottom",
+    "message": "[GB] Title bottom",
     "description": "Localized settings page chrome."
   },
   "settings_static_094": {
-    "message": "Shortcut text",
+    "message": "[GB] Shortcut text",
     "description": "Localized settings page chrome."
   },
   "settings_static_095": {
-    "message": "Type",
+    "message": "[GB] Type",
     "description": "Localized settings page chrome."
   },
   "settings_static_096": {
-    "message": "UI size",
+    "message": "[GB] UI size",
     "description": "Localized settings page chrome."
   },
   "settings_static_097": {
-    "message": "Base UI font size in pixels (9–18).",
+    "message": "[GB] Base UI font size in pixels (9–18).",
     "description": "Localized settings page chrome."
   },
   "settings_static_098": {
-    "message": "Key label size",
+    "message": "[GB] Key label size",
     "description": "Localized settings page chrome."
   },
   "settings_static_099": {
-    "message": "Keyboard key label font size in pixels (8–16).",
+    "message": "[GB] Keyboard key label font size in pixels (8–16).",
     "description": "Localized settings page chrome."
   },
   "settings_static_100": {
-    "message": "Reset appearance",
+    "message": "[GB] Reset appearance",
     "description": "Localized settings page chrome."
   },
   "settings_static_101": {
-    "message": "Clear token edits and restore the selected built-in theme. Click Mode is left as-is.",
+    "message": "[GB] Clear token edits and restore the selected built-in theme. Click Mode is left as-is.",
     "description": "Localized settings page chrome."
   },
   "settings_static_102": {
-    "message": "Reset appearance",
+    "message": "[GB] Reset appearance",
     "description": "Localized settings page chrome."
   },
   "settings_static_103": {
-    "message": "Search engine (Omnibox)",
+    "message": "[GB] Search engine (Omnibox)",
     "description": "Localized settings page chrome."
   },
   "settings_static_104": {
-    "message": "Used by the New Tab search box and KeyPilot’s omnibox (Alt+L).",
+    "message": "[GB] Used by the New Tab search box and KeyPilot’s omnibox (Alt+L).",
     "description": "Localized settings page chrome."
   },
   "settings_static_105": {
-    "message": "Brave",
+    "message": "[GB] Brave",
     "description": "Localized settings page chrome."
   },
   "settings_static_106": {
-    "message": "Google",
+    "message": "[GB] Google",
     "description": "Localized settings page chrome."
   },
   "settings_static_107": {
-    "message": "DuckDuckGo",
+    "message": "[GB] DuckDuckGo",
     "description": "Localized settings page chrome."
   },
   "settings_static_108": {
-    "message": "Keyboard",
+    "message": "[GB] Keyboard",
     "description": "Localized settings page chrome."
   },
   "settings_static_109": {
-    "message": "Layout and floating keyboard reference panel behavior.",
+    "message": "[GB] Layout and floating keyboard reference panel behavior.",
     "description": "Localized settings page chrome."
   },
   "settings_static_110": {
-    "message": "Keyboard Reference",
+    "message": "[GB] Keyboard Reference",
     "description": "Localized settings page chrome."
   },
   "settings_static_111": {
-    "message": "K",
+    "message": "[GB] K",
     "description": "Localized settings page chrome."
   },
   "settings_static_112": {
-    "message": "…",
+    "message": "[GB] …",
     "description": "Localized settings page chrome."
   },
   "settings_static_113": {
-    "message": "Keyboard layout family",
+    "message": "[GB] Keyboard layout family",
     "description": "Localized settings page chrome."
   },
   "settings_static_114": {
-    "message": "Controls which built-in layout family is active. Handedness is set separately so cycling families never flips left/right.",
+    "message": "[GB] Controls which built-in layout family is active. Handedness is set separately so cycling families never flips left/right.",
     "description": "Localized settings page chrome."
   },
   "settings_static_115": {
-    "message": "Left-handed",
+    "message": "[GB] Left-handed",
     "description": "Localized settings page chrome."
   },
   "settings_static_116": {
-    "message": "Use the left-handed variant of the selected layout family (shortcuts primarily on the right side).",
+    "message": "[GB] Use the left-handed variant of the selected layout family (shortcuts primarily on the right side).",
     "description": "Localized settings page chrome."
   },
   "settings_static_117": {
-    "message": "Show number row",
+    "message": "[GB] Show number row",
     "description": "Localized settings page chrome."
   },
   "settings_static_118": {
-    "message": "Include the 1–0 row in the floating keyboard reference panel and layout editor.",
+    "message": "[GB] Include the 1–0 row in the floating keyboard reference panel and layout editor.",
     "description": "Localized settings page chrome."
   },
   "settings_static_119": {
-    "message": "Show pressed-key feedback",
+    "message": "[GB] Show pressed-key feedback",
     "description": "Localized settings page chrome."
   },
   "settings_static_120": {
-    "message": "Highlights keys in the floating keyboard reference panel on keydown/keyup.",
+    "message": "[GB] Highlights keys in the floating keyboard reference panel on keydown/keyup.",
     "description": "Localized settings page chrome."
   },
   "settings_static_121": {
-    "message": "Cursor",
+    "message": "[GB] Cursor",
     "description": "Localized settings page chrome."
   },
   "settings_static_122": {
-    "message": "Whether KeyPilot overrides the page cursor, plus Click Mode cursor style and geometry.",
+    "message": "[GB] Whether KeyPilot overrides the page cursor, plus Click Mode cursor style and geometry.",
     "description": "Localized settings page chrome."
   },
   "settings_static_123": {
-    "message": "Cursor mode",
+    "message": "[GB] Cursor mode",
     "description": "Localized settings page chrome."
   },
   "settings_static_124": {
-    "message": "No Custom Cursors",
+    "message": "[GB] No Custom Cursors",
     "description": "Localized settings page chrome."
   },
   "settings_static_125": {
-    "message": "KeyPilot Cursors",
+    "message": "[GB] KeyPilot Cursors",
     "description": "Localized settings page chrome."
   },
   "settings_static_126": {
-    "message": "When “No Custom Cursors” is selected, KeyPilot won’t override the page cursor and the Click Mode cursor controls below are hidden. “KeyPilot Cursors” shows KeyPilot’s crosshair (and related) cursors instead.",
+    "message": "[GB] When “No Custom Cursors” is selected, KeyPilot won’t override the page cursor and the Click Mode cursor controls below are hidden. “KeyPilot Cursors” shows KeyPilot’s crosshair (and related) cursors instead.",
     "description": "Localized settings page chrome."
   },
   "settings_static_127": {
-    "message": "Click Mode cursor",
+    "message": "[GB] Click Mode cursor",
     "description": "Localized settings page chrome."
   },
   "settings_static_128": {
-    "message": "Type",
+    "message": "[GB] Type",
     "description": "Localized settings page chrome."
   },
   "settings_static_129": {
-    "message": "Crosshair",
+    "message": "[GB] Crosshair",
     "description": "Localized settings page chrome."
   },
   "settings_static_130": {
-    "message": "Native arrow",
+    "message": "[GB] Native arrow",
     "description": "Localized settings page chrome."
   },
   "settings_static_131": {
-    "message": "Native pointer",
+    "message": "[GB] Native pointer",
     "description": "Localized settings page chrome."
   },
   "settings_static_132": {
-    "message": "Preview",
+    "message": "[GB] Preview",
     "description": "Localized settings page chrome."
   },
   "settings_static_133": {
-    "message": "Line width",
+    "message": "[GB] Line width",
     "description": "Localized settings page chrome."
   },
   "settings_static_134": {
-    "message": "Thickness of the crosshair lines (1–12).",
+    "message": "[GB] Thickness of the crosshair lines (1–12).",
     "description": "Localized settings page chrome."
   },
   "settings_static_135": {
-    "message": "Size",
+    "message": "[GB] Size",
     "description": "Localized settings page chrome."
   },
   "settings_static_136": {
-    "message": "Size of the cursor in pixels (5–60px).",
+    "message": "[GB] Size of the cursor in pixels (5–60px).",
     "description": "Localized settings page chrome."
   },
   "settings_static_137": {
-    "message": "Gap",
+    "message": "[GB] Gap",
     "description": "Localized settings page chrome."
   },
   "settings_static_138": {
-    "message": "Gap between center and crosshair bars in pixels. 0 = intersecting lines, &gt;0 = separate bars (0–20px).",
+    "message": "[GB] Gap between center and crosshair bars in pixels. 0 = intersecting lines, &gt;0 = separate bars (0–20px).",
     "description": "Localized settings page chrome."
   },
   "settings_static_139": {
-    "message": "Reset cursor to defaults",
+    "message": "[GB] Reset cursor to defaults",
     "description": "Localized settings page chrome."
   },
   "settings_static_140": {
-    "message": "Scrolling",
+    "message": "[GB] Scrolling",
     "description": "Localized settings page chrome."
   },
   "settings_static_141": {
-    "message": "Keyboard page scrolling for C / V (smaller step). Z / X jump to the edge. Scroll Line targeting and optional middle-click.",
+    "message": "[GB] Keyboard page scrolling for C / V (smaller step). Z / X jump to the edge. Scroll Line targeting and optional middle-click.",
     "description": "Localized settings page chrome."
   },
   "settings_static_142": {
-    "message": "C / V distance",
+    "message": "[GB] C / V distance",
     "description": "Localized settings page chrome."
   },
   "settings_static_143": {
-    "message": "Pixels scrolled by C (up) and V (down). Default 500.",
+    "message": "[GB] Pixels scrolled by C (up) and V (down). Default 500.",
     "description": "Localized settings page chrome."
   },
   "settings_static_144": {
-    "message": "Scroll speed",
+    "message": "[GB] Scroll speed",
     "description": "Localized settings page chrome."
   },
   "settings_static_145": {
-    "message": "Smooth",
+    "message": "[GB] Smooth",
     "description": "Localized settings page chrome."
   },
   "settings_static_146": {
-    "message": "Instant",
+    "message": "[GB] Instant",
     "description": "Localized settings page chrome."
   },
   "settings_static_147": {
-    "message": "Animation for keyboard scrolling (C/V, Z/X, B/N).",
+    "message": "[GB] Animation for keyboard scrolling (C/V, Z/X, B/N).",
     "description": "Localized settings page chrome."
   },
   "settings_static_148": {
-    "message": "Scroll Line skips wide in-page scrollers",
+    "message": "[GB] Scroll Line skips wide in-page scrollers",
     "description": "Localized settings page chrome."
   },
   "settings_static_149": {
-    "message": "Skip horizontal carousels so Scroll Line locks the page or a vertical pane. Full-width vertical columns still scroll even when the box is landscape.",
+    "message": "[GB] Skip horizontal carousels so Scroll Line locks the page or a vertical pane. Full-width vertical columns still scroll even when the box is landscape.",
     "description": "Localized settings page chrome."
   },
   "settings_static_150": {
-    "message": "Middle click starts Scroll Line",
+    "message": "[GB] Middle click starts Scroll Line",
     "description": "Localized settings page chrome."
   },
   "settings_static_151": {
-    "message": "On empty page area, the middle mouse button runs the Scroll Line action (same as the bound key). Links, clickables, and text fields keep native middle-click. On by default on Mac.",
+    "message": "[GB] On empty page area, the middle mouse button runs the Scroll Line action (same as the bound key). Links, clickables, and text fields keep native middle-click. On by default on Mac.",
     "description": "Localized settings page chrome."
   },
   "settings_static_152": {
-    "message": "Reset scrolling to defaults",
+    "message": "[GB] Reset scrolling to defaults",
     "description": "Localized settings page chrome."
   },
   "settings_static_153": {
-    "message": "Click Mode",
+    "message": "[GB] Click Mode",
     "description": "Localized settings page chrome."
   },
   "settings_static_154": {
-    "message": "Hover focus rectangle, keyboard hints, and click activation effects.",
+    "message": "[GB] Hover focus rectangle, keyboard hints, and click activation effects.",
     "description": "Localized settings page chrome."
   },
   "settings_static_155": {
-    "message": "Focus rectangle",
+    "message": "[GB] Focus rectangle",
     "description": "Localized settings page chrome."
   },
   "settings_static_156": {
-    "message": "Live hover outline on clickable targets. Changes apply immediately (including in this Settings window).",
+    "message": "[GB] Live hover outline on clickable targets. Changes apply immediately (including in this Settings window).",
     "description": "Localized settings page chrome."
   },
   "settings_static_157": {
-    "message": "Color",
+    "message": "[GB] Color",
     "description": "Localized settings page chrome."
   },
   "settings_static_158": {
-    "message": "Blue",
+    "message": "[GB] Blue",
     "description": "Localized settings page chrome."
   },
   "settings_static_159": {
-    "message": "Green",
+    "message": "[GB] Green",
     "description": "Localized settings page chrome."
   },
   "settings_static_160": {
-    "message": "Outline color for the focus rectangle.",
+    "message": "[GB] Outline color for the focus rectangle.",
     "description": "Localized settings page chrome."
   },
   "settings_static_161": {
-    "message": "Show transparent overlay",
+    "message": "[GB] Show transparent overlay",
     "description": "Localized settings page chrome."
   },
   "settings_static_162": {
-    "message": "Adds a translucent fill inside the focus rectangle.",
+    "message": "[GB] Adds a translucent fill inside the focus rectangle.",
     "description": "Localized settings page chrome."
   },
   "settings_static_163": {
-    "message": "Show shadow / glow",
+    "message": "[GB] Show shadow / glow",
     "description": "Localized settings page chrome."
   },
   "settings_static_164": {
-    "message": "Soft outer glow around the focus rectangle.",
+    "message": "[GB] Soft outer glow around the focus rectangle.",
     "description": "Localized settings page chrome."
   },
   "settings_static_165": {
-    "message": "Rectangle thickness",
+    "message": "[GB] Rectangle thickness",
     "description": "Localized settings page chrome."
   },
   "settings_static_166": {
-    "message": "Border thickness for the focus rectangle (1–16px).",
+    "message": "[GB] Border thickness for the focus rectangle (1–16px).",
     "description": "Localized settings page chrome."
   },
   "settings_static_167": {
-    "message": "Keyboard Reference",
+    "message": "[GB] Keyboard Reference",
     "description": "Localized settings page chrome."
   },
   "settings_static_168": {
-    "message": "Glow keys when hovering a link",
+    "message": "[GB] Glow keys when hovering a link",
     "description": "Localized settings page chrome."
   },
   "settings_static_169": {
-    "message": "While the Keyboard Reference is open, matching green action keys get an outline and glow when you hover a clickable link on the page. Off by default.",
+    "message": "[GB] While the Keyboard Reference is open, matching green action keys get an outline and glow when you hover a clickable link on the page. Off by default.",
     "description": "Localized settings page chrome."
   },
   "settings_static_170": {
-    "message": "Click effect",
+    "message": "[GB] Click effect",
     "description": "Localized settings page chrome."
   },
   "settings_static_171": {
-    "message": "Flash",
+    "message": "[GB] Flash",
     "description": "Localized settings page chrome."
   },
   "settings_static_172": {
-    "message": "Hard strobe on the outline (default)",
+    "message": "[GB] Hard strobe on the outline (default)",
     "description": "Localized settings page chrome."
   },
   "settings_static_173": {
-    "message": "Dash chase",
+    "message": "[GB] Dash chase",
     "description": "Localized settings page chrome."
   },
   "settings_static_174": {
-    "message": "Dashed border marches around the edge",
+    "message": "[GB] Dashed border marches around the edge",
     "description": "Localized settings page chrome."
   },
   "settings_static_175": {
-    "message": "Marquee",
+    "message": "[GB] Marquee",
     "description": "Localized settings page chrome."
   },
   "settings_static_176": {
-    "message": "Solid light travels around the border",
+    "message": "[GB] Solid light travels around the border",
     "description": "Localized settings page chrome."
   },
   "settings_static_177": {
-    "message": "Scale",
+    "message": "[GB] Scale",
     "description": "Localized settings page chrome."
   },
   "settings_static_178": {
-    "message": "Outline expands outward and fades",
+    "message": "[GB] Outline expands outward and fades",
     "description": "Localized settings page chrome."
   },
   "settings_static_179": {
-    "message": "None",
+    "message": "[GB] None",
     "description": "Localized settings page chrome."
   },
   "settings_static_180": {
-    "message": "No activation animation",
+    "message": "[GB] No activation animation",
     "description": "Localized settings page chrome."
   },
   "settings_static_181": {
-    "message": "Advanced",
+    "message": "[GB] Advanced",
     "description": "Localized settings page chrome."
   },
   "settings_static_182": {
-    "message": "Paint backend, parent skip, debug borders, and focus-ring padding",
+    "message": "[GB] Paint backend, parent skip, debug borders, and focus-ring padding",
     "description": "Localized settings page chrome."
   },
   "settings_static_183": {
-    "message": "Paint mode",
+    "message": "[GB] Paint mode",
     "description": "Localized settings page chrome."
   },
   "settings_static_184": {
-    "message": "Auto B→C (skip outline)",
+    "message": "[GB] Auto B→C (skip outline)",
     "description": "Localized settings page chrome."
   },
   "settings_static_185": {
-    "message": "Auto (A→B→C)",
+    "message": "[GB] Auto (A→B→C)",
     "description": "Localized settings page chrome."
   },
   "settings_static_186": {
-    "message": "Auto B→C",
+    "message": "[GB] Auto B→C",
     "description": "Localized settings page chrome."
   },
   "settings_static_187": {
-    "message": "Skip for parent",
+    "message": "[GB] Skip for parent",
     "description": "Localized settings page chrome."
   },
   "settings_static_188": {
-    "message": "Nested controls that share the parent’s destination (same URL, data-href, inline onclick, the same click listener, or a parent row/card click such as Gmail) use the parent’s hover ring. Buttons and other destinations keep their own. On by default.",
+    "message": "[GB] Nested controls that share the parent’s destination (same URL, data-href, inline onclick, the same click listener, or a parent row/card click such as Gmail) use the parent’s hover ring. Buttons and other destinations keep their own. On by default.",
     "description": "Localized settings page chrome."
   },
   "settings_static_189": {
-    "message": "Debug paint backend borders",
+    "message": "[GB] Debug paint backend borders",
     "description": "Localized settings page chrome."
   },
   "settings_static_190": {
-    "message": "Dashes A / B / C differently so you can tell which backend painted the hover ring (A dashed, B dotted, C double). Off by default.",
+    "message": "[GB] Dashes A / B / C differently so you can tell which backend painted the hover ring (A dashed, B dotted, C double). Off by default.",
     "description": "Localized settings page chrome."
   },
   "settings_static_191": {
-    "message": "Padding",
+    "message": "[GB] Padding",
     "description": "Localized settings page chrome."
   },
   "settings_static_192": {
-    "message": "Outward gap around the focus rectangle (0–16px). Default 2px matches the old outline offset; B→C rings previously used 0.",
+    "message": "[GB] Outward gap around the focus rectangle (0–16px). Default 2px matches the old outline offset; B→C rings previously used 0.",
     "description": "Localized settings page chrome."
   },
   "settings_static_193": {
-    "message": "Reset Click Mode to defaults",
+    "message": "[GB] Reset Click Mode to defaults",
     "description": "Localized settings page chrome."
   },
   "settings_static_194": {
-    "message": "Text Mode",
+    "message": "[GB] Text Mode",
     "description": "Localized settings page chrome."
   },
   "settings_static_195": {
-    "message": "Cursor + focus style + labels for text fields.",
+    "message": "[GB] Cursor + focus style + labels for text fields.",
     "description": "Localized settings page chrome."
   },
   "settings_static_196": {
-    "message": "Text mode cursor",
+    "message": "[GB] Text mode cursor",
     "description": "Localized settings page chrome."
   },
   "settings_static_197": {
-    "message": "Type",
+    "message": "[GB] Type",
     "description": "Localized settings page chrome."
   },
   "settings_static_198": {
-    "message": "T-square",
+    "message": "[GB] T-square",
     "description": "Localized settings page chrome."
   },
   "settings_static_199": {
-    "message": "Crosshair",
+    "message": "[GB] Crosshair",
     "description": "Localized settings page chrome."
   },
   "settings_static_200": {
-    "message": "Preview",
+    "message": "[GB] Preview",
     "description": "Localized settings page chrome."
   },
   "settings_static_201": {
-    "message": "Reset cursor to defaults",
+    "message": "[GB] Reset cursor to defaults",
     "description": "Localized settings page chrome."
   },
   "settings_static_202": {
-    "message": "Focused text field style",
+    "message": "[GB] Focused text field style",
     "description": "Localized settings page chrome."
   },
   "settings_static_203": {
-    "message": "How the active text field looks while typing (text mode). Hover still shows an orange outline\n                and “F to select” to the left of the field.",
+    "message": "[GB] How the active text field looks while typing (text mode). Hover still shows an orange outline\n                and “F to select” to the left of the field.",
     "description": "Localized settings page chrome."
   },
   "settings_static_204": {
-    "message": "Left edge pulse",
+    "message": "[GB] Left edge pulse",
     "description": "Localized settings page chrome."
   },
   "settings_static_205": {
-    "message": "Orange bar on the left edge, pulsing (default). “Esc to exit” sits to the left of the bar.",
+    "message": "[GB] Orange bar on the left edge, pulsing (default). “Esc to exit” sits to the left of the bar.",
     "description": "Localized settings page chrome."
   },
   "settings_static_206": {
-    "message": "Background tint",
+    "message": "[GB] Background tint",
     "description": "Localized settings page chrome."
   },
   "settings_static_207": {
-    "message": "Full orange wash over the field (previous style), plus the Esc hint.",
+    "message": "[GB] Full orange wash over the field (previous style), plus the Esc hint.",
     "description": "Localized settings page chrome."
   },
   "settings_static_208": {
-    "message": "Left edge bar width",
+    "message": "[GB] Left edge bar width",
     "description": "Localized settings page chrome."
   },
   "settings_static_209": {
-    "message": "Width of the pulsating left-edge bar (1–24px). Default 5px.",
+    "message": "[GB] Width of the pulsating left-edge bar (1–24px). Default 5px.",
     "description": "Localized settings page chrome."
   },
   "settings_static_210": {
-    "message": "Labels &amp; outlines",
+    "message": "[GB] Labels &amp; outlines",
     "description": "Localized settings page chrome."
   },
   "settings_static_211": {
-    "message": "Show labels above and below focused text field",
+    "message": "[GB] Show labels above and below focused text field",
     "description": "Localized settings page chrome."
   },
   "settings_static_212": {
-    "message": "Shows “Active text field” and “Press ESC to close”. Turn off for outline-only.",
+    "message": "[GB] Shows “Active text field” and “Press ESC to close”. Turn off for outline-only.",
     "description": "Localized settings page chrome."
   },
   "settings_static_213": {
-    "message": "Stroke thickness",
+    "message": "[GB] Stroke thickness",
     "description": "Localized settings page chrome."
   },
   "settings_static_214": {
-    "message": "Thickness of the orange text-mode outlines (1–16px).",
+    "message": "[GB] Thickness of the orange text-mode outlines (1–16px).",
     "description": "Localized settings page chrome."
   },
   "settings_static_215": {
-    "message": "Reset Text Mode to defaults",
+    "message": "[GB] Reset Text Mode to defaults",
     "description": "Localized settings page chrome."
   },
   "settings_static_216": {
-    "message": "Control Strip",
+    "message": "[GB] Control Strip",
     "description": "Localized settings page chrome."
   },
   "settings_static_217": {
-    "message": "Show control strip",
+    "message": "[GB] Show control strip",
     "description": "Localized settings page chrome."
   },
   "settings_static_218": {
-    "message": "When off, the strip is hidden until you enable this or press Alt+J to toggle it back on.",
+    "message": "[GB] When off, the strip is hidden until you enable this or press Alt+J to toggle it back on.",
     "description": "Localized settings page chrome."
   },
   "settings_static_219": {
-    "message": "Collapsed by default",
+    "message": "[GB] Collapsed by default",
     "description": "Localized settings page chrome."
   },
   "settings_static_220": {
-    "message": "Shows only the On/Off status segment until you expand the strip.",
+    "message": "[GB] Shows only the On/Off status segment until you expand the strip.",
     "description": "Localized settings page chrome."
   },
   "settings_static_221": {
-    "message": "About",
+    "message": "[GB] About",
     "description": "Localized settings page chrome."
   },
   "settings_static_222": {
-    "message": "KeyPilot settings sync via Chrome profile storage.",
+    "message": "[GB] KeyPilot settings sync via Chrome profile storage.",
     "description": "Localized settings page chrome."
   },
   "settings_static_223": {
-    "message": "noctivagous.com",
+    "message": "[GB] noctivagous.com",
     "description": "Localized settings page chrome."
   },
   "settings_static_224": {
-    "message": "Debug logging",
+    "message": "[GB] Debug logging",
     "description": "Localized settings page chrome."
   },
   "settings_static_225": {
-    "message": "Off by default. When on, KeyPilot writes verbose console messages in the service worker and page consoles. Leave off for store/release builds.",
+    "message": "[GB] Off by default. When on, KeyPilot writes verbose console messages in the service worker and page consoles. Leave off for store/release builds.",
     "description": "Localized settings page chrome."
   },
   "settings_static_226": {
-    "message": "Firefox video thumbnails",
+    "message": "[GB] Firefox video thumbnails",
     "description": "Localized settings page chrome."
   },
   "settings_static_227": {
-    "message": "Video previews may send a video URL or ID to its provider to load a thumbnail.",
+    "message": "[GB] Video previews may send a video URL or ID to its provider to load a thumbnail.",
     "description": "Localized settings page chrome."
   },
   "settings_static_228": {
-    "message": "Enable video thumbnails",
+    "message": "[GB] Enable video thumbnails",
     "description": "Localized settings page chrome."
   },
   "newtab_static_001": {
-    "message": "Toggle KeyPilot on/off",
+    "message": "[GB] Toggle KeyPilot on/off",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_002": {
-    "message": "Toggle KeyPilot on/off (global)",
+    "message": "[GB] Toggle KeyPilot on/off (global)",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_003": {
-    "message": "KeyPilot enabled",
+    "message": "[GB] KeyPilot enabled",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_004": {
-    "message": "Overlay toggles",
+    "message": "[GB] Overlay toggles",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_005": {
-    "message": "Show/hide control strip (Alt+J to toggle)",
+    "message": "[GB] Show/hide control strip (Alt+J to toggle)",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_006": {
-    "message": "Control strip visible",
+    "message": "[GB] Control strip visible",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_007": {
-    "message": "Show/hide floating keyboard reference",
+    "message": "[GB] Show/hide floating keyboard reference",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_008": {
-    "message": "Keyboard reference visible",
+    "message": "[GB] Keyboard reference visible",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_009": {
-    "message": "Theme options",
+    "message": "[GB] Theme options",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_010": {
-    "message": "Pages",
+    "message": "[GB] Pages",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_011": {
-    "message": "Search",
+    "message": "[GB] Search",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_012": {
-    "message": "Search or enter address",
+    "message": "[GB] Search or enter address",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_013": {
-    "message": "Top visited sites",
+    "message": "[GB] Top visited sites",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_014": {
-    "message": "Toolbar bookmarks",
+    "message": "[GB] Toolbar bookmarks",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_015": {
-    "message": "Recent history",
+    "message": "[GB] Recent history",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_016": {
-    "message": "Bookmarks",
+    "message": "[GB] Bookmarks",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_017": {
-    "message": "Bookmarks views",
+    "message": "[GB] Bookmarks views",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_018": {
-    "message": "Bookmark view",
+    "message": "[GB] Bookmark view",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_019": {
-    "message": "KeyPilot New Tab",
+    "message": "[GB] KeyPilot New Tab",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_020": {
-    "message": "KeyPilot",
+    "message": "[GB] KeyPilot",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_021": {
-    "message": "…",
+    "message": "[GB] …",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_022": {
-    "message": "Overlays",
+    "message": "[GB] Overlays",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_023": {
-    "message": "Ctrl Strip",
+    "message": "[GB] Ctrl Strip",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_024": {
-    "message": "Alt+J",
+    "message": "[GB] Alt+J",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_025": {
-    "message": "…",
+    "message": "[GB] …",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_026": {
-    "message": "Keyboard",
+    "message": "[GB] Keyboard",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_027": {
-    "message": "K",
+    "message": "[GB] K",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_028": {
-    "message": "…",
+    "message": "[GB] …",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_029": {
-    "message": "Display",
+    "message": "[GB] Display",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_030": {
-    "message": "Theme: Earth",
+    "message": "[GB] Theme: Earth",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_031": {
-    "message": "▾",
+    "message": "[GB] ▾",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_032": {
-    "message": "Pages",
+    "message": "[GB] Pages",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_033": {
-    "message": "Settings",
+    "message": "[GB] Settings",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_034": {
-    "message": "Guide",
+    "message": "[GB] Guide",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_035": {
-    "message": "Go",
+    "message": "[GB] Go",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_036": {
-    "message": "Engine: …",
+    "message": "[GB] Engine: …",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_037": {
-    "message": "Top visited sites",
+    "message": "[GB] Top visited sites",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_038": {
-    "message": "Toolbar bookmarks",
+    "message": "[GB] Toolbar bookmarks",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_039": {
-    "message": "No toolbar bookmarks found.",
+    "message": "[GB] No toolbar bookmarks found.",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_040": {
-    "message": "Recent history",
+    "message": "[GB] Recent history",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_041": {
-    "message": "Recent",
+    "message": "[GB] Recent",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_042": {
-    "message": "All bookmarks",
+    "message": "[GB] All bookmarks",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_043": {
-    "message": "Recent bookmarks",
+    "message": "[GB] Recent bookmarks",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_044": {
-    "message": "No bookmarks found.",
+    "message": "[GB] No bookmarks found.",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_045": {
-    "message": "All bookmarks",
+    "message": "[GB] All bookmarks",
     "description": "Localized newtab page chrome."
   },
   "newtab_static_046": {
-    "message": "No bookmarks found.",
+    "message": "[GB] No bookmarks found.",
     "description": "Localized newtab page chrome."
   },
   "settings_static_229": {
-    "message": "Overview",
+    "message": "[GB] Overview",
     "description": "Localized settings page chrome."
   },
   "settings_static_230": {
-    "message": "Appearance",
+    "message": "[GB] Appearance",
     "description": "Localized settings page chrome."
   },
   "settings_static_231": {
-    "message": "Keyboard",
+    "message": "[GB] Keyboard",
     "description": "Localized settings page chrome."
   },
   "settings_static_232": {
-    "message": "Click Mode",
+    "message": "[GB] Click Mode",
     "description": "Localized settings page chrome."
   },
   "settings_static_233": {
-    "message": "Text Mode",
+    "message": "[GB] Text Mode",
     "description": "Localized settings page chrome."
   },
   "settings_static_234": {
-    "message": "Scrolling",
+    "message": "[GB] Scrolling",
     "description": "Localized settings page chrome."
   },
   "settings_static_235": {
-    "message": "Cursor",
+    "message": "[GB] Cursor",
     "description": "Localized settings page chrome."
   },
   "settings_static_236": {
-    "message": "Control Strip",
+    "message": "[GB] Control Strip",
     "description": "Localized settings page chrome."
   },
   "settings_static_237": {
-    "message": "Search",
+    "message": "[GB] Search",
     "description": "Localized settings page chrome."
   },
   "settings_static_238": {
-    "message": "About",
+    "message": "[GB] About",
     "description": "Localized settings page chrome."
   },
   "settings_theme_custom_name": {
-    "message": "$1 (custom)",
+    "message": "[GB] $1 (custom)",
     "description": "Localized extension-page UI text."
   },
   "settings_cursor_preview_native_arrow": {
-    "message": "Uses native cursor (arrow)",
+    "message": "[GB] Uses native cursor (arrow)",
     "description": "Localized extension-page UI text."
   },
   "settings_cursor_preview_native_pointer": {
-    "message": "Uses native cursor (pointer)",
+    "message": "[GB] Uses native cursor (pointer)",
     "description": "Localized extension-page UI text."
   },
   "settings_cursor_preview_unavailable": {
-    "message": "Preview unavailable",
+    "message": "[GB] Preview unavailable",
     "description": "Localized extension-page UI text."
   },
   "settings_cursor_preview_alt": {
-    "message": "Cursor preview",
+    "message": "[GB] Cursor preview",
     "description": "Localized extension-page UI text."
   },
   "settings_state_on": {
-    "message": "ON",
+    "message": "[GB] ON",
     "description": "Localized extension-page UI text."
   },
   "settings_state_off": {
-    "message": "OFF",
+    "message": "[GB] OFF",
     "description": "Localized extension-page UI text."
   },
   "settings_firefox_thumbnails_enabled_button": {
-    "message": "Video thumbnails enabled",
+    "message": "[GB] Video thumbnails enabled",
     "description": "Localized extension-page UI text."
   },
   "settings_firefox_thumbnails_enable_button": {
-    "message": "Enable video thumbnails",
+    "message": "[GB] Enable video thumbnails",
     "description": "Localized extension-page UI text."
   },
   "settings_firefox_thumbnails_granted_status": {
-    "message": "Consent granted for video thumbnail lookups.",
+    "message": "[GB] Consent granted for video thumbnail lookups.",
     "description": "Localized extension-page UI text."
   },
   "settings_firefox_thumbnails_pending_status": {
-    "message": "Video thumbnails stay off until you enable them.",
+    "message": "[GB] Video thumbnails stay off until you enable them.",
     "description": "Localized extension-page UI text."
   },
   "settings_reset_all_confirm": {
-    "message": "Reset all KeyPilot settings to defaults? This cannot be undone.",
+    "message": "[GB] Reset all KeyPilot settings to defaults? This cannot be undone.",
     "description": "Localized extension-page UI text."
   },
   "settings_firefox_thumbnails_requesting_status": {
-    "message": "Requesting Firefox consent…",
+    "message": "[GB] Requesting Firefox consent…",
     "description": "Localized extension-page UI text."
   },
   "newtab_engine_label": {
-    "message": "Engine: $1",
+    "message": "[GB] Engine: $1",
     "description": "Localized extension-page UI text."
   },
   "newtab_modal_hint_suffix": {
-    "message": "Use the same keyboard navigation controls.",
+    "message": "[GB] Use the same keyboard navigation controls.",
     "description": "Localized extension-page UI text."
   },
   "newtab_modal_close_title": {
-    "message": "Close (Esc)",
+    "message": "[GB] Close (Esc)",
     "description": "Localized extension-page UI text."
   },
   "newtab_untitled_folder": {
-    "message": "Untitled folder",
+    "message": "[GB] Untitled folder",
     "description": "Localized extension-page UI text."
   },
   "newtab_recent_history_empty": {
-    "message": "No recent history found.",
+    "message": "[GB] No recent history found.",
     "description": "Localized extension-page UI text."
   },
   "newtab_top_sites_empty": {
-    "message": "No frequently visited sites found.",
+    "message": "[GB] No frequently visited sites found.",
     "description": "Localized extension-page UI text."
   },
   "newtab_switch_on": {
-    "message": "ON",
+    "message": "[GB] ON",
     "description": "Localized extension-page UI text."
   },
   "newtab_switch_off": {
-    "message": "OFF",
+    "message": "[GB] OFF",
     "description": "Localized extension-page UI text."
   },
   "newtab_bookmark_view_aria_label": {
-    "message": "Bookmark view",
+    "message": "[GB] Bookmark view",
     "description": "Localized extension-page UI text."
   },
   "newtab_bookmark_view_list": {
-    "message": "List",
+    "message": "[GB] List",
     "description": "Localized extension-page UI text."
   },
   "newtab_bookmark_view_cards": {
-    "message": "Cards",
+    "message": "[GB] Cards",
     "description": "Localized extension-page UI text."
   },
   "docs_empty_document": {
-    "message": "Empty document.",
+    "message": "[GB] Empty document.",
     "description": "Localized extension-page UI text."
   },
   "docs_copy_button_label": {
-    "message": "Copy to clipboard",
+    "message": "[GB] Copy to clipboard",
     "description": "Localized extension-page UI text."
   },
   "docs_copy_button_text": {
-    "message": "Copy",
+    "message": "[GB] Copy",
     "description": "Localized extension-page UI text."
   },
   "docs_copy_copied": {
-    "message": "Copied",
+    "message": "[GB] Copied",
     "description": "Localized extension-page UI text."
   },
   "docs_copy_failed": {
-    "message": "Copy failed",
+    "message": "[GB] Copy failed",
     "description": "Localized extension-page UI text."
   },
   "docs_no_topics_error": {
-    "message": "No documentation topics found.",
+    "message": "[GB] No documentation topics found.",
     "description": "Localized extension-page UI text."
   },
   "docs_catalog_load_error": {
-    "message": "Could not load documentation catalog.",
+    "message": "[GB] Could not load documentation catalog.",
     "description": "Localized extension-page UI text."
   },
   "newtab_width_full": {
-    "message": "Full",
+    "message": "[GB] Full",
     "description": "Localized extension-page UI text."
   },
   "newtab_display_theme_options_aria": {
-    "message": "Theme options",
+    "message": "[GB] Theme options",
     "description": "Localized extension-page UI text."
   },
   "newtab_display_heading": {
-    "message": "Theme",
+    "message": "[GB] Theme",
     "description": "Localized extension-page UI text."
   },
   "newtab_display_close": {
-    "message": "Close",
+    "message": "[GB] Close",
     "description": "Localized extension-page UI text."
   },
   "newtab_display_theme_label": {
-    "message": "Theme",
+    "message": "[GB] Theme",
     "description": "Localized extension-page UI text."
   },
   "newtab_display_theme_aria": {
-    "message": "New Tab theme",
+    "message": "[GB] New Tab theme",
     "description": "Localized extension-page UI text."
   },
   "newtab_display_theme_cyberforward_title": {
-    "message": "Cyberforward — slate + cyan (popup / website style)",
+    "message": "[GB] Cyberforward — slate + cyan (popup / website style)",
     "description": "Localized extension-page UI text."
   },
   "newtab_display_theme_earth_title": {
-    "message": "Earth — original orange / black look",
+    "message": "[GB] Earth — original orange / black look",
     "description": "Localized extension-page UI text."
   },
   "newtab_display_font_size_label": {
-    "message": "Font size",
+    "message": "[GB] Font size",
     "description": "Localized extension-page UI text."
   },
   "newtab_display_font_size_aria": {
-    "message": "New Tab font size",
+    "message": "[GB] New Tab font size",
     "description": "Localized extension-page UI text."
   },
   "newtab_display_font_default_title": {
-    "message": "Default ($1px)",
+    "message": "[GB] Default ($1px)",
     "description": "Localized extension-page UI text."
   },
   "newtab_display_font_title": {
-    "message": "Root type size $1px",
+    "message": "[GB] Root type size $1px",
     "description": "Localized extension-page UI text."
   },
   "newtab_display_ui_scale_label": {
-    "message": "UI scale",
+    "message": "[GB] UI scale",
     "description": "Localized extension-page UI text."
   },
   "newtab_display_ui_scale_aria": {
-    "message": "New Tab UI scale",
+    "message": "[GB] New Tab UI scale",
     "description": "Localized extension-page UI text."
   },
   "newtab_display_scale_default_title": {
-    "message": "Default layout scale",
+    "message": "[GB] Default layout scale",
     "description": "Localized extension-page UI text."
   },
   "newtab_display_scale_title": {
-    "message": "Layout scale $1%",
+    "message": "[GB] Layout scale $1%",
     "description": "Localized extension-page UI text."
   },
   "newtab_display_width_label": {
-    "message": "Width",
+    "message": "[GB] Width",
     "description": "Localized extension-page UI text."
   },
   "newtab_display_width_aria": {
-    "message": "New Tab content width",
+    "message": "[GB] New Tab content width",
     "description": "Localized extension-page UI text."
   },
   "newtab_display_width_default_title": {
-    "message": "Default content width ($1px)",
+    "message": "[GB] Default content width ($1px)",
     "description": "Localized extension-page UI text."
   },
   "newtab_display_width_full_title": {
-    "message": "Use full window width (still shrinks with the viewport)",
+    "message": "[GB] Use full window width (still shrinks with the viewport)",
     "description": "Localized extension-page UI text."
   },
   "newtab_display_width_title": {
-    "message": "Content max-width $1px (shrinks if the window is narrower)",
+    "message": "[GB] Content max-width $1px (shrinks if the window is narrower)",
     "description": "Localized extension-page UI text."
   },
   "newtab_display_reset": {
-    "message": "Reset to Defaults",
+    "message": "[GB] Reset to Defaults",
     "description": "Localized extension-page UI text."
   },
   "newtab_display_reset_title": {
-    "message": "Restore default theme ($1), font $2px, UI $3%, width $4",
+    "message": "[GB] Restore default theme ($1), font $2px, UI $3%, width $4",
     "description": "Localized extension-page UI text."
   },
   "newtab_theme_summary": {
-    "message": "Theme: $1",
+    "message": "[GB] Theme: $1",
     "description": "Localized extension-page UI text."
   },
   "newtab_display_anchor_title": {
-    "message": "Theme: $1, font $2, UI $3, width $4",
+    "message": "[GB] Theme: $1, font $2, UI $3, width $4",
     "description": "Localized extension-page UI text."
   },
   "popup_tutorial_active": {
-    "message": "ACTIVE",
+    "message": "[GB] ACTIVE",
     "description": "Localized extension-page UI text."
   },
   "popup_tutorial_walkthrough": {
-    "message": "Walkthrough",
+    "message": "[GB] Walkthrough",
     "description": "Localized extension-page UI text."
   },
   "popover_titlebar_drag_title": {
-    "message": "Drag to move",
+    "message": "[GB] Drag to move",
     "description": "Tooltip for a draggable extension-page titlebar."
   },
   "popover_titlebar_press": {
-    "message": "Press",
+    "message": "[GB] Press",
     "description": "Prefix for titlebar keyboard shortcut hints."
   },
   "popover_titlebar_close": {
-    "message": "Close (Esc)",
+    "message": "[GB] Close (Esc)",
     "description": "Accessible label and tooltip for a titlebar close button."
   }
 }

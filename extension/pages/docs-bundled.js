@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-16T01:43:46.591Z
+ * Generated on 2026-09-16T01:53:25.201Z
  */
 
 var __defProp = Object.defineProperty;
@@ -8548,6 +8548,51 @@ var TAB_UI_FORWARD_TYPES = Object.freeze([
   MSG.LAUNCH_WALKTHROUGH
 ]);
 
+// src/utils/i18n.js
+function isDebugBuild() {
+  try {
+    return !!globalThis.KEYPILOT_DEBUG;
+  } catch {
+    return false;
+  }
+}
+function missingMessage(key) {
+  if (!isDebugBuild()) return "";
+  console.warn(`[KeyPilot i18n] Missing message: ${key}`);
+  return `[i18n:${key}]`;
+}
+function getMessage(key, substitutions) {
+  const messageKey = typeof key === "string" ? key.trim() : "";
+  if (!messageKey) return missingMessage(String(key || "(empty key)"));
+  try {
+    const message = chrome?.i18n?.getMessage?.(messageKey, substitutions);
+    return typeof message === "string" && message ? message : missingMessage(messageKey);
+  } catch {
+    return missingMessage(messageKey);
+  }
+}
+var ATTRIBUTE_BINDINGS = Object.freeze([
+  ["data-i18n", "textContent"],
+  ["data-i18n-placeholder", "placeholder"],
+  ["data-i18n-aria-label", "aria-label"],
+  ["data-i18n-title", "title"]
+]);
+function localizeElements(root = document) {
+  if (!root?.querySelectorAll) return;
+  for (const [attribute, property] of ATTRIBUTE_BINDINGS) {
+    for (const element of root.querySelectorAll(`[${attribute}]`)) {
+      const key = element.getAttribute(attribute);
+      const message = getMessage(key || "");
+      if (!message) continue;
+      if (property === "textContent") {
+        element.textContent = message;
+      } else {
+        element.setAttribute(property, message);
+      }
+    }
+  }
+}
+
 // pages/docs.js
 var docsThemeStorageInstalled = false;
 var docsThemeRoot = null;
@@ -8613,30 +8658,31 @@ function docsAppMarkup() {
     <div class="docs-app">
       <header class="header">
         <div class="header-text">
-          <h1>KeyPilot Docs</h1>
-          <p class="sub">How to use KeyPilot \u2014 search topics or browse the list.</p>
+          <h1 data-i18n="docs_heading">KeyPilot Docs</h1>
+          <p class="sub" data-i18n="docs_subtitle">How to use KeyPilot \u2014 search topics or browse the list.</p>
         </div>
         <div class="header-actions">
-          <button id="close" class="btn" type="button">Close</button>
+          <button id="close" class="btn" type="button" data-i18n="docs_close">Close</button>
         </div>
       </header>
       <div class="docs-shell">
-        <aside class="docs-nav" aria-label="Documentation topics">
-          <label class="search-label" for="docs-search">Search</label>
+        <aside class="docs-nav" data-i18n-aria-label="docs_topics_aria_label" aria-label="Documentation topics">
+          <label class="search-label" for="docs-search" data-i18n="docs_search_label">Search</label>
           <input
             id="docs-search"
             class="docs-search"
             type="search"
+            data-i18n-placeholder="docs_search_placeholder"
             placeholder="Search docs\u2026"
             autocomplete="off"
             spellcheck="false"
           />
-          <nav id="docs-topic-list" class="topic-list" aria-label="Topics"></nav>
-          <p id="docs-empty" class="docs-empty" hidden>No matching topics.</p>
+          <nav id="docs-topic-list" class="topic-list" data-i18n-aria-label="docs_topic_list_aria_label" aria-label="Topics"></nav>
+          <p id="docs-empty" class="docs-empty" hidden data-i18n="docs_no_matches">No matching topics.</p>
         </aside>
         <main class="docs-main">
           <article id="docs-article" class="docs-article" aria-live="polite">
-            <p class="muted">Loading documentation\u2026</p>
+            <p class="muted" data-i18n="docs_loading">Loading documentation\u2026</p>
           </article>
         </main>
       </div>
@@ -8783,7 +8829,7 @@ async function loadDocs(flat) {
           console.warn("[KeyPilot Docs] Failed to load", topic.file, err);
           bodyText = `# ${topic.title}
 
-Failed to load this document.`;
+${getMessage("docs_load_failed")}`;
         }
         html = renderMarkdown(bodyText);
       }
@@ -8909,7 +8955,7 @@ function appendNavNode(node, parentEl) {
   if (node.placeholder) {
     const badge = document.createElement("span");
     badge.className = "topic-placeholder";
-    badge.textContent = "Soon";
+    badge.textContent = getMessage("docs_soon");
     row.appendChild(badge);
   }
   if (node.selectable) {
@@ -8957,7 +9003,14 @@ function selectDoc(id, articleHash) {
     return;
   }
   activeId = doc.id;
-  articleEl.innerHTML = doc.html || '<p class="muted">Empty document.</p>';
+  if (doc.html) {
+    articleEl.innerHTML = doc.html;
+  } else {
+    const emptyDocument = document.createElement("p");
+    emptyDocument.className = "muted";
+    emptyDocument.textContent = getMessage("docs_empty_document");
+    articleEl.replaceChildren(emptyDocument);
+  }
   renderNav();
   bindDocsCopyPrompts(articleEl);
   scrollDocsArticleToHash(articleHash);
@@ -9000,11 +9053,11 @@ function bindDocsCopyPrompts(article) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "kp-docs-copy-btn";
-    btn.setAttribute("aria-label", "Copy to clipboard");
-    btn.title = "Copy to clipboard";
+    btn.setAttribute("aria-label", getMessage("docs_copy_button_label"));
+    btn.title = getMessage("docs_copy_button_label");
     const icon = createNavIcon("copy");
     if (icon) btn.appendChild(icon);
-    else btn.textContent = "Copy";
+    else btn.textContent = getMessage("docs_copy_button_text");
     top.appendChild(btn);
     wrap.appendChild(top);
     wrap.appendChild(el);
@@ -9012,7 +9065,7 @@ function bindDocsCopyPrompts(article) {
       const text2 = String(el.textContent || "");
       const ok = await copyDocsText(text2);
       const prev = btn.title;
-      btn.title = ok ? "Copied" : "Copy failed";
+      btn.title = getMessage(ok ? "docs_copy_copied" : "docs_copy_failed");
       btn.setAttribute("aria-label", btn.title);
       btn.classList.toggle("is-copied", !!ok);
       window.setTimeout(() => {
@@ -9178,12 +9231,14 @@ function mountDocsApp(root, options = {}) {
   ) : root;
   if (!mountNode) return () => {
   };
+  if (root.nodeType === 9) localizeElements(root);
   if (!mountNode.querySelector?.(".docs-app")) {
     const holder = document.createElement("div");
     holder.innerHTML = docsAppMarkup();
     const app = holder.firstElementChild;
     if (app) mountNode.appendChild(app);
   }
+  localizeElements(mountNode);
   bindDocsElements(mountNode);
   docsThemeRoot = root;
   const paint = (settings) => {
@@ -9224,7 +9279,10 @@ function mountDocsApp(root, options = {}) {
     const visible = filteredSelectableDocs();
     if (!visible.length) {
       if (articleEl) {
-        articleEl.innerHTML = '<p class="muted">No matching topics.</p>';
+        const emptyMessage = document.createElement("p");
+        emptyMessage.className = "muted";
+        emptyMessage.textContent = getMessage("docs_no_matches");
+        articleEl.replaceChildren(emptyMessage);
       }
       activeId = null;
       return;
@@ -9250,7 +9308,10 @@ function mountDocsApp(root, options = {}) {
       const firstSelectable = allDocs.find((d) => d.selectable);
       if (!firstSelectable) {
         if (articleEl) {
-          articleEl.innerHTML = '<p class="error">No documentation topics found.</p>';
+          const noTopics = document.createElement("p");
+          noTopics.className = "error";
+          noTopics.textContent = getMessage("docs_no_topics_error");
+          articleEl.replaceChildren(noTopics);
         }
         renderNav();
         return;
@@ -9269,7 +9330,10 @@ function mountDocsApp(root, options = {}) {
       console.warn("[KeyPilot Docs] Failed to load index:", err);
       docsCatalogReady = false;
       if (articleEl) {
-        articleEl.innerHTML = '<p class="error">Could not load documentation catalog.</p>';
+        const catalogError = document.createElement("p");
+        catalogError.className = "error";
+        catalogError.textContent = getMessage("docs_catalog_load_error");
+        articleEl.replaceChildren(catalogError);
       }
     }
   })();

@@ -3,6 +3,7 @@
  * "KeyPilot" tab. Visual chrome matches Top Sites tiles (80px NCT cards).
  */
 import { getActionIconDataUri } from './keybindings-ui-shared.js';
+import { getMessage } from '../utils/i18n.js';
 import {
   NCT_DARK_UI_COLORS,
   NCT_DARK_UI_FONT
@@ -133,7 +134,7 @@ export function paintHubToggleCard(card, on, statusText) {
     card.setAttribute('aria-checked', visible ? 'true' : 'false');
   }
   const status = card.querySelector('[data-status]');
-  if (status) status.textContent = statusText ?? (visible ? 'ON' : 'OFF');
+  if (status) status.textContent = statusText ?? getMessage(visible ? 'popup_status_on' : 'popup_status_off');
 }
 
 /**
@@ -145,7 +146,7 @@ export function paintHubOnboardingCard(card, active) {
   const on = Boolean(active);
   card.classList.toggle('is-on', on);
   const status = card.querySelector('[data-status]');
-  if (status) status.textContent = on ? 'ACTIVE' : 'Walkthrough';
+  if (status) status.textContent = getMessage(on ? 'popup_tutorial_active' : 'popup_tutorial_walkthrough');
 }
 
 /**

@@ -97,15 +97,15 @@ Suggested message-key convention:
 
 ### Tasks
 
-- [ ] Localize static popup text in `extension/popup.html` and dynamic popup text in its JavaScript.
-- [ ] Localize document titles, labels, button text, placeholders, `aria-*` labels, and tooltips in:
+- [x] Localize static popup text in `extension/popup.html` and dynamic popup text in its JavaScript.
+- [x] Localize document titles, labels, button text, placeholders, `aria-*` labels, and tooltips in:
   - `extension/pages/settings.html`
   - `extension/pages/docs.html`
   - `extension/pages/guide.html`
   - `extension/pages/newtab.html`
-- [ ] Initialize page localization before the visible UI is shown where feasible, avoiding an English-to-localized-text flash.
-- [ ] Audit settings and docs page modules for strings generated after initial HTML localization.
-- [ ] Keep keyboard key glyphs and shortcut notation stable unless a locale-specific rendering decision is intentionally approved.
+- [x] Initialize page localization before the visible UI is shown where feasible, avoiding an English-to-localized-text flash.
+- [x] Audit settings and docs page modules for strings generated after initial HTML localization.
+- [x] Keep keyboard key glyphs and shortcut notation stable unless a locale-specific rendering decision is intentionally approved.
 
 ### Acceptance criteria
 
@@ -115,9 +115,9 @@ Suggested message-key convention:
 
 ### Validation
 
-- [ ] Test every extension page in English and one temporary test locale.
-- [ ] Keyboard-navigate the popup and settings page to spot-check accessible names.
-- [ ] Verify title and placeholder localization.
+- [x] Test every extension page in English and one temporary test locale.
+- [x] Keyboard-navigate the popup and settings page to spot-check accessible names.
+- [x] Verify title and placeholder localization.
 
 ## Phase 4 — runtime UI and built-in catalogs
 

@@ -14,10 +14,13 @@ import {
 } from './src/ui/keypilot-hub.js';
 import { MSG } from './src/messaging/types.js';
 import { FEATURE_FLAGS } from './src/config/constants.js';
+import { getMessage, localizeElements } from './src/utils/i18n.js';
 import {
   isContentScriptRestrictedUrl,
   isKeyPilotNewTabUrl
 } from './src/config/url-policy.js';
+
+localizeElements();
 
 const statusEl = document.getElementById('status');
 
@@ -108,27 +111,29 @@ function setOnboardingCard(card, active) {
 function setStatus(mode, extensionEnabled = true) {
   if (!statusEl) return;
   if (mode === 'unavailable') {
-    statusEl.textContent = 'UNAVAILABLE';
+    statusEl.textContent = getMessage('popup_status_unavailable');
     statusEl.classList.remove('ok', 'warn', 'err');
     statusEl.classList.add('unavailable');
   } else if (!extensionEnabled) {
-    statusEl.textContent = 'OFF';
+    statusEl.textContent = getMessage('popup_status_off');
     statusEl.classList.remove('ok', 'warn', 'unavailable');
     statusEl.classList.add('err');
   } else if (mode === 'delete') {
-    statusEl.textContent = 'DELETE';
+    statusEl.textContent = getMessage('popup_status_delete');
     statusEl.classList.remove('ok', 'warn', 'unavailable');
     statusEl.classList.add('err');
   } else if (mode === 'cols' || mode === 'inspector') {
-    statusEl.textContent = mode === 'cols' ? 'COLS' : 'INSPECT';
+    statusEl.textContent = getMessage(
+      mode === 'cols' ? 'popup_status_cols' : 'popup_status_inspect'
+    );
     statusEl.classList.remove('ok', 'err', 'unavailable');
     statusEl.classList.add('warn');
   } else if (mode === 'text_focus') {
-    statusEl.textContent = 'TEXT';
+    statusEl.textContent = getMessage('popup_status_text');
     statusEl.classList.remove('ok', 'err', 'unavailable');
     statusEl.classList.add('warn');
   } else {
-    statusEl.textContent = 'ON';
+    statusEl.textContent = getMessage('popup_status_on');
     statusEl.classList.remove('err', 'warn', 'unavailable');
     statusEl.classList.add('ok');
   }

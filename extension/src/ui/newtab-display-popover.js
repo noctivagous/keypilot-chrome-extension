@@ -12,6 +12,7 @@
 import { createPopoverTitlebar } from './popover-titlebar.js';
 import { createSegmentedControl } from './segmented-control.js';
 import { ensureOpenChromeShadow, injectChromeStyles } from './kp-chrome-shadow.js';
+import { getMessage } from '../utils/i18n.js';
 
 export const NEWTAB_THEME_STORAGE_KEY = 'kp_newtab_theme';
 export const NEWTAB_FONT_SIZE_STORAGE_KEY = 'kp_newtab_font_size_px';
@@ -214,7 +215,7 @@ export function contentWidthCssValue(width) {
  */
 export function contentWidthLabel(width) {
   const w = normalizeNewtabContentWidth(width);
-  return w === 'full' ? 'Full' : `${w}px`;
+  return w === 'full' ? getMessage('newtab_width_full') : `${w}px`;
 }
 
 /**
@@ -309,7 +310,7 @@ export function createNewtabDisplayPopover(config = {}) {
   root.id = 'nt-display-popover';
   root.className = 'nt-display-popover';
   root.setAttribute('role', 'dialog');
-  root.setAttribute('aria-label', 'Theme options');
+  root.setAttribute('aria-label', getMessage('newtab_display_theme_options_aria'));
   if (supportsPopoverApi) {
     try {
       root.popover = 'auto';
@@ -329,11 +330,11 @@ export function createNewtabDisplayPopover(config = {}) {
 
   const titlebarApi = createPopoverTitlebar({
     doc,
-    title: 'Theme',
+    title: getMessage('newtab_display_heading'),
     icon: 'gear',
     variant: 'preview',
     showClose: true,
-    closeTitle: 'Close',
+    closeTitle: getMessage('newtab_display_close'),
     onClose: () => close(),
     className: 'nt-display-popover-titlebar kpv2-popover-titlebar'
   });
@@ -363,21 +364,21 @@ export function createNewtabDisplayPopover(config = {}) {
   };
 
   // --- Theme (Cyberforward / Earth) ---
-  const themeField = field('Theme');
+  const themeField = field(getMessage('newtab_display_theme_label'));
   const themeControl = createSegmentedControl({
     doc,
     value: theme,
-    ariaLabel: 'New Tab theme',
+    ariaLabel: getMessage('newtab_display_theme_aria'),
     options: [
       {
         value: 'cyberforward',
         label: NEWTAB_THEME_LABELS.cyberforward,
-        title: 'Cyberforward — slate + cyan (popup / website style)'
+        title: getMessage('newtab_display_theme_cyberforward_title')
       },
       {
         value: 'earth',
         label: NEWTAB_THEME_LABELS.earth,
-        title: 'Earth — original orange / black look'
+        title: getMessage('newtab_display_theme_earth_title')
       }
     ],
     onChange: (next) => {
@@ -397,18 +398,18 @@ export function createNewtabDisplayPopover(config = {}) {
   body.appendChild(themeField.wrap);
 
   // --- Font size (px) ---
-  const fontField = field('Font size');
+  const fontField = field(getMessage('newtab_display_font_size_label'));
   const fontControl = createSegmentedControl({
     doc,
     value: String(fontSizePx),
-    ariaLabel: 'New Tab font size',
+    ariaLabel: getMessage('newtab_display_font_size_aria'),
     options: NEWTAB_FONT_SIZE_PX_OPTIONS.map((px) => ({
       value: String(px),
       label: `${px}px`,
       title:
         px === DEFAULT_NEWTAB_FONT_SIZE_PX
-          ? `Default (${px}px)`
-          : `Root type size ${px}px`
+          ? getMessage('newtab_display_font_default_title', px)
+          : getMessage('newtab_display_font_title', px)
     })),
     onChange: (next) => {
       fontSizePx = normalizeNewtabFontSizePx(next);
@@ -427,18 +428,18 @@ export function createNewtabDisplayPopover(config = {}) {
   body.appendChild(fontField.wrap);
 
   // --- UI scale (layout zoom) ---
-  const scaleField = field('UI scale');
+  const scaleField = field(getMessage('newtab_display_ui_scale_label'));
   const scaleControl = createSegmentedControl({
     doc,
     value: String(uiScale),
-    ariaLabel: 'New Tab UI scale',
+    ariaLabel: getMessage('newtab_display_ui_scale_aria'),
     options: NEWTAB_UI_SCALE_OPTIONS.map((s) => ({
       value: String(s),
       label: `${Math.round(s * 100)}%`,
       title:
         s === DEFAULT_NEWTAB_UI_SCALE
-          ? 'Default layout scale'
-          : `Layout scale ${Math.round(s * 100)}%`
+          ? getMessage('newtab_display_scale_default_title')
+          : getMessage('newtab_display_scale_title', Math.round(s * 100))
     })),
     onChange: (next) => {
       uiScale = normalizeNewtabUiScale(next);
@@ -457,20 +458,20 @@ export function createNewtabDisplayPopover(config = {}) {
   body.appendChild(scaleField.wrap);
 
   // --- Content width (header + main max-width) ---
-  const widthField = field('Width');
+  const widthField = field(getMessage('newtab_display_width_label'));
   const widthControl = createSegmentedControl({
     doc,
     value: String(contentWidth),
-    ariaLabel: 'New Tab content width',
+    ariaLabel: getMessage('newtab_display_width_aria'),
     options: NEWTAB_CONTENT_WIDTH_OPTIONS.map((w) => ({
       value: String(w),
-      label: w === 'full' ? 'Full' : `${w}`,
+      label: w === 'full' ? getMessage('newtab_width_full') : `${w}`,
       title:
         w === DEFAULT_NEWTAB_CONTENT_WIDTH
-          ? `Default content width (${w}px)`
+          ? getMessage('newtab_display_width_default_title', w)
           : w === 'full'
-            ? 'Use full window width (still shrinks with the viewport)'
-            : `Content max-width ${w}px (shrinks if the window is narrower)`
+            ? getMessage('newtab_display_width_full_title')
+            : getMessage('newtab_display_width_title', w)
     })),
     onChange: (next) => {
       contentWidth = normalizeNewtabContentWidth(next);
@@ -502,11 +503,13 @@ export function createNewtabDisplayPopover(config = {}) {
   const resetBtn = doc.createElement('button');
   resetBtn.type = 'button';
   resetBtn.className = 'btn btn-secondary nt-display-reset-btn';
-  resetBtn.textContent = 'Reset to Defaults';
-  resetBtn.title =
-    `Restore default theme (${NEWTAB_THEME_LABELS[DEFAULT_NEWTAB_THEME]}), ` +
-    `font ${DEFAULT_NEWTAB_FONT_SIZE_PX}px, UI ${Math.round(DEFAULT_NEWTAB_UI_SCALE * 100)}%, ` +
-    `width ${contentWidthLabel(DEFAULT_NEWTAB_CONTENT_WIDTH)}`;
+  resetBtn.textContent = getMessage('newtab_display_reset');
+  resetBtn.title = getMessage('newtab_display_reset_title', [
+    NEWTAB_THEME_LABELS[DEFAULT_NEWTAB_THEME],
+    DEFAULT_NEWTAB_FONT_SIZE_PX,
+    Math.round(DEFAULT_NEWTAB_UI_SCALE * 100),
+    contentWidthLabel(DEFAULT_NEWTAB_CONTENT_WIDTH)
+  ]);
   footer.appendChild(resetBtn);
   body.appendChild(footer);
 
@@ -585,9 +588,11 @@ export function createNewtabDisplayPopover(config = {}) {
       anchor.setAttribute('aria-expanded', isOpen() ? 'true' : 'false');
       const summary = document.getElementById('btn-display-summary');
       if (summary) {
-        summary.textContent = `Theme: ${themeLabel}`;
+        summary.textContent = getMessage('newtab_theme_summary', themeLabel);
       }
-      anchor.title = `Theme: ${themeLabel}, font ${fontLabel}, UI ${scaleLabel}, width ${widthLabel}`;
+      anchor.title = getMessage('newtab_display_anchor_title', [
+        themeLabel, fontLabel, scaleLabel, widthLabel
+      ]);
     } catch {
       // ignore
     }

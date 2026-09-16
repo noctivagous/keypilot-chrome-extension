@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-16T01:43:46.591Z
+ * Generated on 2026-09-16T01:53:25.201Z
  */
 
 
@@ -3807,6 +3807,51 @@ function applyDebugSetting(enabled) {
   }
 }
 
+// src/utils/i18n.js
+function isDebugBuild() {
+  try {
+    return !!globalThis.KEYPILOT_DEBUG;
+  } catch {
+    return false;
+  }
+}
+function missingMessage(key) {
+  if (!isDebugBuild()) return "";
+  console.warn(`[KeyPilot i18n] Missing message: ${key}`);
+  return `[i18n:${key}]`;
+}
+function getMessage(key, substitutions) {
+  const messageKey = typeof key === "string" ? key.trim() : "";
+  if (!messageKey) return missingMessage(String(key || "(empty key)"));
+  try {
+    const message = chrome?.i18n?.getMessage?.(messageKey, substitutions);
+    return typeof message === "string" && message ? message : missingMessage(messageKey);
+  } catch {
+    return missingMessage(messageKey);
+  }
+}
+var ATTRIBUTE_BINDINGS = Object.freeze([
+  ["data-i18n", "textContent"],
+  ["data-i18n-placeholder", "placeholder"],
+  ["data-i18n-aria-label", "aria-label"],
+  ["data-i18n-title", "title"]
+]);
+function localizeElements(root = document) {
+  if (!root?.querySelectorAll) return;
+  for (const [attribute, property] of ATTRIBUTE_BINDINGS) {
+    for (const element of root.querySelectorAll(`[${attribute}]`)) {
+      const key = element.getAttribute(attribute);
+      const message = getMessage(key || "");
+      if (!message) continue;
+      if (property === "textContent") {
+        element.textContent = message;
+      } else {
+        element.setAttribute(property, message);
+      }
+    }
+  }
+}
+
 // src/ui/url-listing.js
 var GENERIC_FAVICON_SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -4377,7 +4422,7 @@ function toHexColor(raw, fallback = "#888888") {
 }
 function themeDisplayName(themeId, customized) {
   const name = THEME_META[themeId]?.name || themeId;
-  return customized ? `${name} (custom)` : name;
+  return customized ? getMessage("settings_theme_custom_name", name) : name;
 }
 function setRadioGroupValue(radios, value) {
   const v = String(value);
@@ -4501,20 +4546,20 @@ function renderCursorPreview({ container, kind, uri }) {
   container.innerHTML = "";
   if (kind === "native_arrow") {
     container.style.cursor = "default";
-    container.textContent = "Uses native cursor (arrow)";
+    container.textContent = getMessage("settings_cursor_preview_native_arrow");
     return;
   }
   if (kind === "native_pointer") {
     container.style.cursor = "pointer";
-    container.textContent = "Uses native cursor (pointer)";
+    container.textContent = getMessage("settings_cursor_preview_native_pointer");
     return;
   }
   if (!uri) {
-    container.textContent = "Preview unavailable";
+    container.textContent = getMessage("settings_cursor_preview_unavailable");
     return;
   }
   const img = document.createElement("img");
-  img.alt = "Cursor preview";
+  img.alt = getMessage("settings_cursor_preview_alt");
   img.src = uri;
   container.appendChild(img);
 }
@@ -4785,7 +4830,7 @@ async function render() {
     const on = Boolean(visible);
     if (keyboardHelpToggle) keyboardHelpToggle.checked = on;
     if (keyboardHelpStateText) {
-      keyboardHelpStateText.textContent = on ? "ON" : "OFF";
+      keyboardHelpStateText.textContent = getMessage(on ? "settings_state_on" : "settings_state_off");
       keyboardHelpStateText.setAttribute("data-state", on ? "on" : "off");
     }
   };
@@ -5027,10 +5072,10 @@ async function render() {
     const granted = await hasFirefoxVideoThumbnailConsent();
     if (firefoxExternalLookupConsentBtn) {
       firefoxExternalLookupConsentBtn.disabled = granted;
-      firefoxExternalLookupConsentBtn.textContent = granted ? "Video thumbnails enabled" : "Enable video thumbnails";
+      firefoxExternalLookupConsentBtn.textContent = granted ? getMessage("settings_firefox_thumbnails_enabled_button") : getMessage("settings_firefox_thumbnails_enable_button");
     }
     if (firefoxExternalLookupConsentStatus) {
-      firefoxExternalLookupConsentStatus.textContent = granted ? "Consent granted for video thumbnail lookups." : "Video thumbnails stay off until you enable them.";
+      firefoxExternalLookupConsentStatus.textContent = granted ? getMessage("settings_firefox_thumbnails_granted_status") : getMessage("settings_firefox_thumbnails_pending_status");
     }
   };
   void refreshFirefoxExternalLookupConsent();
@@ -5053,14 +5098,14 @@ async function render() {
     void settingsController.reset("appearance");
   }, listenOpts);
   settingsResetAllBtn?.addEventListener("click", async () => {
-    const ok = typeof window.confirm === "function" ? window.confirm("Reset all KeyPilot settings to defaults? This cannot be undone.") : true;
+    const ok = typeof window.confirm === "function" ? window.confirm(getMessage("settings_reset_all_confirm")) : true;
     if (!ok) return;
     await settingsController.reset("all");
   }, listenOpts);
   firefoxExternalLookupConsentBtn?.addEventListener("click", async () => {
     firefoxExternalLookupConsentBtn.disabled = true;
     if (firefoxExternalLookupConsentStatus) {
-      firefoxExternalLookupConsentStatus.textContent = "Requesting Firefox consent\u2026";
+      firefoxExternalLookupConsentStatus.textContent = getMessage("settings_firefox_thumbnails_requesting_status");
     }
     await requestFirefoxVideoThumbnailConsent();
     await refreshFirefoxExternalLookupConsent();
@@ -5147,6 +5192,7 @@ async function mountSettingsApp(root, options = {}) {
   } else {
     settingsScope = document;
   }
+  localizeElements(settingsScope);
   adaptHeaderForPopoverEmbed(embedded);
   try {
     applyAppearanceFromCache();

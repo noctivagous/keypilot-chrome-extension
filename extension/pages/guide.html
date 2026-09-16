@@ -3,26 +3,26 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>KeyPilot Guide</title>
+    <title data-i18n="guide_document_title">KeyPilot Guide</title>
     <link rel="stylesheet" href="guide.css" />
   </head>
   <body>
     <main class="wrap">
       <header class="header">
         <div>
-          <h1>KeyPilot Guide</h1>
-          <p class="sub">Keyboard-first navigation reference.</p>
+          <h1 data-i18n="guide_heading">KeyPilot Guide</h1>
+          <p class="sub" data-i18n="guide_subtitle">Keyboard-first navigation reference.</p>
         </div>
         <div class="header-actions">
         <!--  <button id="open-settings" class="btn btn-secondary" type="button">Open Settings</button>-->
-          <button id="close" class="btn" type="button">Close</button>
+          <button id="close" class="btn" type="button" data-i18n="guide_close">Close</button>
         </div>
       </header>
 
       <!-- Always visible (including iframe embed when .header is hidden). -->
       <div class="top-actions">
         <button id="launch-walkthrough" class="btn btn-launch" type="button">
-          Launch Walkthrough
+          <span data-i18n="guide_launch_walkthrough">Launch Walkthrough</span>
         </button>
       </div>
       <p class="layout-banner" aria-live="polite">
@@ -30,23 +30,23 @@
       </p>
 
       <section class="card">
-        <h2>Core keys</h2>
+        <h2 data-i18n="guide_core_keys">Core keys</h2>
         <!-- Filled by guide.js from the active keyboard layout. -->
         <ul id="guide-core-list" class="list" aria-live="polite"></ul>
       </section>
 
       <section class="card">
-        <h2>Popover</h2>
+        <h2 data-i18n="guide_popover">Popover</h2>
         <ul id="guide-popover-list" class="list" aria-live="polite"></ul>
       </section>
 
       <section class="card">
-        <h2>Extension notes</h2>
-        <p class="p">
+        <h2 data-i18n="guide_extension_notes">Extension notes</h2>
+        <p class="p" data-i18n="guide_extension_notes_description">
           KeyPilot runs as a content script on normal web pages. It’s unavailable on browser-internal pages
           like <code>chrome://</code> and the Chrome Web Store.
         </p>
-        <p class="p p-follow">
+        <p class="p p-follow" data-i18n="guide_layout_note">
           Keys above follow your selected keyboard layout in Settings (right-handed or left-handed).
         </p>
       </section>

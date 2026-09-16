@@ -14,6 +14,8 @@
  *   - panel   — 28px compact titlebar for dockable/floating panels (drag handle)
  */
 
+import { getMessage } from '../utils/i18n.js';
+
 import { KP_UI_FONT } from '../config/constants.js';
 import {
   NCT_DARK_UI_TITLEBAR_GRADIENT,
@@ -393,7 +395,7 @@ export function setTitlebarShortcutText(el, shortcut) {
 export function createTitlebarCloseHint({
   doc = document,
   keys = ['Esc'],
-  prefix = 'Press',
+  prefix = getMessage('popover_titlebar_press'),
   suffix = '',
   useKbdChips = true
 } = {}) {
@@ -481,7 +483,7 @@ export function createPopoverTitlebar(config = {}) {
   if (config.titleAttr) {
     titlebar.title = config.titleAttr;
   } else if (draggable) {
-    titlebar.title = 'Drag to move';
+    titlebar.title = getMessage('popover_titlebar_drag_title');
   }
   if (config.ariaLabel) {
     titlebar.setAttribute('aria-label', config.ariaLabel);
@@ -562,8 +564,8 @@ export function createPopoverTitlebar(config = {}) {
     closeButton.className = 'kpv2-popover-titlebar-close';
     closeButton.style.cssText = styles.close;
     closeButton.textContent = config.closeLabel != null ? String(config.closeLabel) : '×';
-    closeButton.title = config.closeTitle || 'Close (Esc)';
-    closeButton.setAttribute('aria-label', config.closeTitle || 'Close (Esc)');
+    closeButton.title = config.closeTitle || getMessage('popover_titlebar_close');
+    closeButton.setAttribute('aria-label', config.closeTitle || getMessage('popover_titlebar_close'));
     closeButton.addEventListener('click', (e) => {
       try {
         e.preventDefault();

@@ -32,6 +32,7 @@ import {
   createNewtabDisplayPopover
 } from '../src/ui/newtab-display-popover.js';
 import { storageGetValue } from '../src/utils/storage.js';
+import { getMessage, localizeElements } from '../src/utils/i18n.js';
 import { postPopoverBridgeInit } from '../src/modules/popover-bridge-init.js';
 import { MSG } from '../src/messaging/types.js';
 
@@ -39,6 +40,8 @@ let currentEngine = 'brave';
 const KP_ENABLED_STORAGE_KEY = 'keypilot_enabled';
 const KP_KEYBOARD_HELP_STORAGE_KEY = 'keypilot_keyboard_help_visible';
 const BOOKMARKS_VIEW_STORAGE_KEY = 'kp_newtab_bookmarks_view';
+
+localizeElements();
 
 /**
  * Darkened page-preview background on New Tab card rows (grid only).
@@ -265,7 +268,7 @@ async function refreshEngineLabel() {
   const label = document.getElementById('engine-label');
   if (label) {
     const pretty = currentEngine === 'duckduckgo' ? 'DuckDuckGo' : (currentEngine[0].toUpperCase() + currentEngine.slice(1));
-    label.textContent = `Engine: ${pretty}`;
+    label.textContent = getMessage('newtab_engine_label', pretty);
   }
 }
 
@@ -317,7 +320,7 @@ function createModal({ title, hintKeyLabel, closeKeys, url, width, height, actio
 
   const titlebarHint = createTitlebarCloseHint({
     keys: [hintKeyLabel, 'Esc'],
-    suffix: 'Use the same keyboard navigation controls.'
+    suffix: getMessage('newtab_modal_hint_suffix')
   });
   const titlebarApi = createPopoverTitlebar({
     title,
@@ -325,7 +328,7 @@ function createModal({ title, hintKeyLabel, closeKeys, url, width, height, actio
     variant: 'modal',
     showClose: true,
     onClose: requestClose,
-    closeTitle: 'Close (Esc)',
+    closeTitle: getMessage('newtab_modal_close_title'),
     hint: titlebarHint,
     className: 'kpv2-popover-titlebar',
     actions: actions || null
@@ -695,8 +698,8 @@ function renderBookmarkNode(node, { expanded = false } = {}) {
 
   const summary = document.createElement('summary');
   summary.className = 'bm-folder-summary';
-  summary.textContent = node?.title || 'Untitled folder';
-  summary.title = node?.title || 'Untitled folder';
+  summary.textContent = node?.title || getMessage('newtab_untitled_folder');
+  summary.title = node?.title || getMessage('newtab_untitled_folder');
 
   const leafNodes = (node?.children || []).filter((n) => n?.url);
   const folderNodes = (node?.children || []).filter((n) => n && !n.url);
@@ -862,7 +865,7 @@ async function renderRecentHistory() {
   if (!historyItems.length) {
     const empty = document.createElement('div');
     empty.className = 'empty';
-    empty.textContent = 'No recent history found.';
+    empty.textContent = getMessage('newtab_recent_history_empty');
     container.appendChild(empty);
     return;
   }
@@ -1004,7 +1007,7 @@ async function renderTopSites() {
   if (!topSites.length) {
     const empty = document.createElement('div');
     empty.className = 'empty';
-    empty.textContent = 'No frequently visited sites found.';
+    empty.textContent = getMessage('newtab_top_sites_empty');
     container.appendChild(empty);
     return;
   }
@@ -1102,7 +1105,7 @@ function initEnabledSwitch() {
     const on = Boolean(enabled);
     toggle.checked = on;
     if (stateText) {
-      stateText.textContent = on ? 'ON' : 'OFF';
+      stateText.textContent = getMessage(on ? 'newtab_switch_on' : 'newtab_switch_off');
       stateText.setAttribute('data-state', on ? 'on' : 'off');
     }
   };
@@ -1198,7 +1201,7 @@ function initKeyboardHelpSwitch() {
     const on = Boolean(visible);
     toggle.checked = on;
     if (stateText) {
-      stateText.textContent = on ? 'ON' : 'OFF';
+      stateText.textContent = getMessage(on ? 'newtab_switch_on' : 'newtab_switch_off');
       stateText.setAttribute('data-state', on ? 'on' : 'off');
     }
   };
@@ -1274,7 +1277,7 @@ function initControlStripSwitch() {
     const on = Boolean(visible);
     toggle.checked = on;
     if (stateText) {
-      stateText.textContent = on ? 'ON' : 'OFF';
+      stateText.textContent = getMessage(on ? 'newtab_switch_on' : 'newtab_switch_off');
       stateText.setAttribute('data-state', on ? 'on' : 'off');
     }
   };
@@ -1384,10 +1387,10 @@ async function initBookmarkViewToggle() {
 
   const control = createSegmentedControl({
     value: view,
-    ariaLabel: 'Bookmark view',
+    ariaLabel: getMessage('newtab_bookmark_view_aria_label'),
     options: [
-      { value: 'list', label: 'List' },
-      { value: 'grid', label: 'Cards' }
+      { value: 'list', label: getMessage('newtab_bookmark_view_list') },
+      { value: 'grid', label: getMessage('newtab_bookmark_view_cards') }
     ],
     onChange: (next) => {
       view = next;

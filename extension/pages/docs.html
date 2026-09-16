@@ -3,38 +3,39 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>KeyPilot Docs</title>
+    <title data-i18n="docs_document_title">KeyPilot Docs</title>
     <link rel="stylesheet" href="docs.css" />
   </head>
   <body>
     <div class="docs-app">
       <header class="header">
         <div class="header-text">
-          <h1>KeyPilot Docs</h1>
-          <p class="sub">How to use KeyPilot — search topics or browse the list.</p>
+          <h1 data-i18n="docs_heading">KeyPilot Docs</h1>
+          <p class="sub" data-i18n="docs_subtitle">How to use KeyPilot — search topics or browse the list.</p>
         </div>
         <div class="header-actions">
-          <button id="close" class="btn" type="button">Close</button>
+          <button id="close" class="btn" type="button" data-i18n="docs_close">Close</button>
         </div>
       </header>
 
       <div class="docs-shell">
-        <aside class="docs-nav" aria-label="Documentation topics">
-          <label class="search-label" for="docs-search">Search</label>
+        <aside class="docs-nav" data-i18n-aria-label="docs_topics_aria_label" aria-label="Documentation topics">
+          <label class="search-label" for="docs-search" data-i18n="docs_search_label">Search</label>
           <input
             id="docs-search"
             class="docs-search"
             type="search"
+            data-i18n-placeholder="docs_search_placeholder"
             placeholder="Search docs…"
             autocomplete="off"
             spellcheck="false"
           />
-          <nav id="docs-topic-list" class="topic-list" aria-label="Topics"></nav>
-          <p id="docs-empty" class="docs-empty" hidden>No matching topics.</p>
+          <nav id="docs-topic-list" class="topic-list" data-i18n-aria-label="docs_topic_list_aria_label" aria-label="Topics"></nav>
+          <p id="docs-empty" class="docs-empty" hidden data-i18n="docs_no_matches">No matching topics.</p>
         </aside>
         <main class="docs-main">
           <article id="docs-article" class="docs-article" aria-live="polite">
-            <p class="muted">Loading documentation…</p>
+            <p class="muted" data-i18n="docs_loading">Loading documentation…</p>
           </article>
         </main>
       </div>

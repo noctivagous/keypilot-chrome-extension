@@ -9,6 +9,7 @@ import { DEFAULT_SETTINGS, normalizeCursorMode, normalizeFocusColor, normalizePa
 import { createSettingsController } from '../src/modules/settings-controller.js';
 import { bindSettingsControls } from '../src/modules/settings-binder.js';
 import { applyDebugSetting } from '../src/utils/debug.js';
+import { getMessage, localizeElements } from '../src/utils/i18n.js';
 import { applyThemeToRoots, resolveThemeFromSettings } from '../src/modules/theme-manager.js';
 import { hasThemeOverrides, listThemes, normalizeThemeId, THEME_META } from '../themes/index.js';
 import { GENERIC_FAVICON_DATA_URL, getExtensionFaviconUrl } from '../src/ui/url-listing.js';
@@ -340,7 +341,7 @@ function toHexColor(raw, fallback = '#888888') {
 
 function themeDisplayName(themeId, customized) {
   const name = THEME_META[themeId]?.name || themeId;
-  return customized ? `${name} (custom)` : name;
+  return customized ? getMessage('settings_theme_custom_name', name) : name;
 }
 
 /**
@@ -462,20 +463,20 @@ function renderCursorPreview({ container, kind, uri }) {
   container.innerHTML = '';
   if (kind === 'native_arrow') {
     container.style.cursor = 'default';
-    container.textContent = 'Uses native cursor (arrow)';
+    container.textContent = getMessage('settings_cursor_preview_native_arrow');
     return;
   }
   if (kind === 'native_pointer') {
     container.style.cursor = 'pointer';
-    container.textContent = 'Uses native cursor (pointer)';
+    container.textContent = getMessage('settings_cursor_preview_native_pointer');
     return;
   }
   if (!uri) {
-    container.textContent = 'Preview unavailable';
+    container.textContent = getMessage('settings_cursor_preview_unavailable');
     return;
   }
   const img = document.createElement('img');
-  img.alt = 'Cursor preview';
+  img.alt = getMessage('settings_cursor_preview_alt');
   img.src = uri;
   container.appendChild(img);
 }
@@ -640,7 +641,7 @@ async function render() {
     const on = Boolean(visible);
     if (keyboardHelpToggle) keyboardHelpToggle.checked = on;
     if (keyboardHelpStateText) {
-      keyboardHelpStateText.textContent = on ? 'ON' : 'OFF';
+      keyboardHelpStateText.textContent = getMessage(on ? 'settings_state_on' : 'settings_state_off');
       keyboardHelpStateText.setAttribute('data-state', on ? 'on' : 'off');
     }
   };
@@ -906,13 +907,13 @@ async function render() {
     if (firefoxExternalLookupConsentBtn) {
       firefoxExternalLookupConsentBtn.disabled = granted;
       firefoxExternalLookupConsentBtn.textContent = granted
-        ? 'Video thumbnails enabled'
-        : 'Enable video thumbnails';
+        ? getMessage('settings_firefox_thumbnails_enabled_button')
+        : getMessage('settings_firefox_thumbnails_enable_button');
     }
     if (firefoxExternalLookupConsentStatus) {
       firefoxExternalLookupConsentStatus.textContent = granted
-        ? 'Consent granted for video thumbnail lookups.'
-        : 'Video thumbnails stay off until you enable them.';
+        ? getMessage('settings_firefox_thumbnails_granted_status')
+        : getMessage('settings_firefox_thumbnails_pending_status');
     }
   };
 
@@ -942,7 +943,7 @@ async function render() {
 
   settingsResetAllBtn?.addEventListener('click', async () => {
     const ok = typeof window.confirm === 'function'
-      ? window.confirm('Reset all KeyPilot settings to defaults? This cannot be undone.')
+      ? window.confirm(getMessage('settings_reset_all_confirm'))
       : true;
     if (!ok) return;
     await settingsController.reset('all');
@@ -951,7 +952,7 @@ async function render() {
   firefoxExternalLookupConsentBtn?.addEventListener('click', async () => {
     firefoxExternalLookupConsentBtn.disabled = true;
     if (firefoxExternalLookupConsentStatus) {
-      firefoxExternalLookupConsentStatus.textContent = 'Requesting Firefox consent…';
+      firefoxExternalLookupConsentStatus.textContent = getMessage('settings_firefox_thumbnails_requesting_status');
     }
     await requestFirefoxVideoThumbnailConsent();
     await refreshFirefoxExternalLookupConsent();
@@ -1064,6 +1065,7 @@ export async function mountSettingsApp(root, options = {}) {
   } else {
     settingsScope = document;
   }
+  localizeElements(settingsScope);
   adaptHeaderForPopoverEmbed(embedded);
   try { applyAppearanceFromCache(); } catch { /* ignore */ }
   await render();

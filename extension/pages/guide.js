@@ -6,6 +6,9 @@ import {
 import { getSettings, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
 import { startKeyPilotOnPage } from './keypilot-page-init.js';
 import { MSG } from '../src/messaging/types.js';
+import { getMessage, localizeElements } from '../src/utils/i18n.js';
+
+localizeElements();
 
 function postCloseRequest() {
   try {
@@ -164,7 +167,7 @@ function renderGuideForLayout(layoutIdRaw) {
   const layoutLabelEl = document.getElementById('layout-label');
   if (layoutLabelEl) {
     const label = layoutLabelText(layoutId);
-    layoutLabelEl.textContent = `Layout: ${label}`;
+    layoutLabelEl.textContent = getMessage('guide_layout_label', label);
     layoutLabelEl.hidden = false;
     layoutLabelEl.title = label;
   }
@@ -186,20 +189,20 @@ function renderGuideForLayout(layoutIdRaw) {
   ]);
 
   fillList(document.getElementById('guide-core-list'), [
-    { keys: activate, text: 'click element under the KeyPilot cursor' },
-    { keys: back, text: 'back' },
-    { keys: root, text: 'site root' },
-    { keys: forward, text: 'forward' },
-    { keys: tabs, text: 'tab left/right' },
-    { keys: omnibox, text: 'omnibox' },
-    { keys: cancel, text: 'cancel / exit' }
+    { keys: activate, text: getMessage('guide_action_activate') },
+    { keys: back, text: getMessage('guide_action_back') },
+    { keys: root, text: getMessage('guide_action_root') },
+    { keys: forward, text: getMessage('guide_action_forward') },
+    { keys: tabs, text: getMessage('guide_action_tabs') },
+    { keys: omnibox, text: getMessage('guide_action_omnibox') },
+    { keys: cancel, text: getMessage('guide_action_cancel') }
   ]);
 
   fillList(document.getElementById('guide-popover-list'), [
-    { keys: openPopover, text: 'open link-under-cursor in popover' },
-    { keys: settings, text: 'open Settings popover' },
-    { keys: scroll, text: 'scroll' },
-    { keys: cancel, text: 'close' }
+    { keys: openPopover, text: getMessage('guide_action_open_popover') },
+    { keys: settings, text: getMessage('guide_action_open_settings') },
+    { keys: scroll, text: getMessage('guide_action_scroll') },
+    { keys: cancel, text: getMessage('guide_action_close') }
   ]);
 }
 
