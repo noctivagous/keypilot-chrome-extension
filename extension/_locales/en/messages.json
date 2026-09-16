@@ -1,0 +1,14 @@
+{
+  "extension_name": {
+    "message": "KeyPilot",
+    "description": "The extension name displayed in browser UI and store listings."
+  },
+  "extension_description": {
+    "message": "Browse the web with key-clicks. Activate hyperlinks with keyboard keys instead of mouse buttons.",
+    "description": "The short extension description displayed in browser UI and store listings."
+  },
+  "extension_action_title": {
+    "message": "KeyPilot",
+    "description": "The toolbar action tooltip."
+  }
+}

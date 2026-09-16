@@ -1,6 +1,6 @@
 /**
  * Post-bundle build side effects for KeyPilot.
- * Manifest stamp, README/website sync, early-inject UI block, etc.
+ * README/website sync, early-inject UI block, etc.
  * Invoked by extension/build.js after esbuild finishes.
  */
 import fs from 'fs';
@@ -1059,8 +1059,9 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
     stampPopupVersion(path.resolve(process.cwd(), 'popup-v1.html'), version);
   }
 
-  // Update manifest.json description with build date/time
-  console.log('Updating manifest.json with build timestamp...');
+  // Read the manifest for website/README metadata. Its localized description
+  // must remain a `__MSG_*__` reference and is never build-stamped.
+  console.log('Reading manifest.json metadata...');
   const manifestPath = 'manifest.json';
   let manifestForDocs = null;
 
@@ -1076,28 +1077,7 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       throw new Error('manifest.json "version" field must be a string');
     }
 
-    // Store original values for safety
-    const originalVersion = manifest.version;
-    const originalName = manifest.name;
-
     const timestamp = getBuildTimestamp(new Date());
-
-    // Get original description and strip any existing timestamp
-    // Timestamp pattern: "MMM-DD-YYYY-HH:MMAM/PM " at the start
-    let originalDescription = manifest.description || '';
-    // Remove any existing timestamp pattern at the beginning
-    originalDescription = originalDescription.replace(/^[A-Z][a-z]{2}-\d{1,2}-\d{4}-\d{1,2}:\d{2}(AM|PM)\s+/, '');
-
-    // ONLY modify description field
-    manifest.description = `${timestamp} ${originalDescription}`;
-
-    // Ensure version and name are not accidentally modified
-    manifest.version = originalVersion;
-    manifest.name = originalName;
-
-    // Write updated manifest with proper formatting (4 spaces indentation)
-    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 4) + '\n');
-    console.log(`✓ Updated manifest.json description with timestamp: ${timestamp}`);
     manifestForDocs = manifest;
 
     // Keep the website landing page in sync with the build + keybindings
@@ -1128,5 +1108,5 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
     console.log('  - content-bundled.min.js (minified content script)');
   }
   console.log('  - background.js (service worker)');
-  console.log('  - manifest.json (updated with build timestamp)');
+  console.log('  - manifest.json (read for metadata; not modified)');
 }
