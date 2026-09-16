@@ -73,12 +73,12 @@ Suggested message-key convention:
 
 ### Tasks
 
-- [ ] Add a source helper (for example, `extension/src/utils/i18n.js`) around `chrome.i18n.getMessage`.
-- [ ] Define behavior for missing keys: surface a development warning and return an identifiable fallback, rather than silently rendering a blank string. Production messaging must not expose diagnostic copy to users.
-- [ ] Define an API for substitutions and document that messages passed to `innerHTML` require an explicit safety review; prefer `textContent`.
-- [ ] Provide a small DOM binding helper only if it reduces repeated page-local code (for `data-i18n`, `data-i18n-placeholder`, `data-i18n-aria-label`, and `data-i18n-title`).
-- [ ] Add `chrome.i18n.getMessage` behavior to `test/helpers/chrome-mock.js`, including configurable messages and a predictable missing-key path.
-- [ ] Add focused unit tests for message lookup, substitutions, and missing keys.
+- [x] Add a source helper (for example, `extension/src/utils/i18n.js`) around `chrome.i18n.getMessage`.
+- [x] Define behavior for missing keys: surface a development warning and return an identifiable fallback, rather than silently rendering a blank string. Production messaging must not expose diagnostic copy to users.
+- [x] Define an API for substitutions and document that messages passed to `innerHTML` require an explicit safety review; prefer `textContent`.
+- [x] Provide a small DOM binding helper only if it reduces repeated page-local code (for `data-i18n`, `data-i18n-placeholder`, `data-i18n-aria-label`, and `data-i18n-title`).
+- [x] Add `chrome.i18n.getMessage` behavior to `test/helpers/chrome-mock.js`, including configurable messages and a predictable missing-key path.
+- [x] Add focused unit tests for message lookup, substitutions, and missing keys.
 
 ### Acceptance criteria
 
@@ -88,8 +88,8 @@ Suggested message-key convention:
 
 ### Validation
 
-- [ ] Run the test suite.
-- [ ] Exercise a known message and a deliberately missing message in a development build.
+- [x] Run the test suite.
+- [x] Exercise a known message and a deliberately missing message in a development build.
 
 ## Phase 3 — extension-page chrome
 

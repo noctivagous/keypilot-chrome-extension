@@ -54,7 +54,8 @@ function createArea(store, flags) {
  *   localThrows?: boolean,
  *   isMac?: boolean,
  *   sync?: Record<string, any>,
- *   local?: Record<string, any>
+ *   local?: Record<string, any>,
+ *   messages?: Record<string, string|{ message?: string, placeholders?: Record<string, { content?: string }> }>
  * }} ChromeMockOptions
  */
 
@@ -64,6 +65,7 @@ function createArea(store, flags) {
 export function installChromeMock(options = {}) {
   const syncStore = new Map(Object.entries(options.sync || {}));
   const localStore = new Map(Object.entries(options.local || {}));
+  const i18nMessages = new Map(Object.entries(options.messages || {}));
   const syncFlags = { throws: !!options.syncThrows };
   const localFlags = { throws: !!options.localThrows };
   /** @type {Set<(changes: any, areaName: string) => void>} */
@@ -89,6 +91,31 @@ export function installChromeMock(options = {}) {
       getURL(path) {
         const p = String(path || '').replace(/^\//, '');
         return `${EXTENSION_ORIGIN}/${p}`;
+      }
+    },
+    i18n: {
+      getMessage(messageName, substitutions) {
+        const entry = i18nMessages.get(String(messageName || ''));
+        const message = typeof entry === 'string'
+          ? entry
+          : (typeof entry?.message === 'string' ? entry.message : '');
+        if (!message) return '';
+
+        const values = Array.isArray(substitutions)
+          ? substitutions
+          : substitutions == null
+            ? []
+            : [substitutions];
+        const placeholders = typeof entry === 'object' && entry?.placeholders
+          ? entry.placeholders
+          : {};
+        return message
+          .replace(/\$([1-9])\$/g, (_match, index) => String(values[Number(index) - 1] ?? ''))
+          .replace(/\$([a-z0-9_@]+)\$/gi, (match, name) => {
+            const content = placeholders[name.toLowerCase()]?.content;
+            const index = /^\$([1-9])$/.exec(String(content || ''))?.[1];
+            return index ? String(values[Number(index) - 1] ?? '') : match;
+          });
       }
     }
   };
@@ -126,6 +153,7 @@ export function installChromeMock(options = {}) {
     chrome,
     syncStore,
     localStore,
+    i18nMessages,
     syncFlags,
     localFlags,
     /**
@@ -147,6 +175,15 @@ export function installChromeMock(options = {}) {
       syncStore.clear();
       localStore.clear();
     },
+    /**
+     * @param {Record<string, string|{ message?: string, placeholders?: Record<string, { content?: string }> }>} messages
+     */
+    setI18nMessages(messages) {
+      i18nMessages.clear();
+      for (const [key, value] of Object.entries(messages || {})) {
+        i18nMessages.set(key, value);
+      }
+    },
     setSyncThrows(v) {
       syncFlags.throws = !!v;
     },
@@ -163,6 +200,7 @@ export function installChromeMock(options = {}) {
 export function resetChromeMock(mock) {
   if (!mock) return;
   mock.clearStores();
+  mock.setI18nMessages({});
   mock.setSyncThrows(false);
   mock.setLocalThrows(false);
 }
