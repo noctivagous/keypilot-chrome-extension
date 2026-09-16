@@ -105,7 +105,7 @@ keypilot-chrome-extension/
     │   ├── utils/            # includes debug.js (release-gated logging)
     │   └── messaging/
     ├── pages/                # Settings, guide, new tab, docs, popovers
-    ├── userdocs/             # In-product markdown topics
+    ├── userdocs/en/          # Base in-product Markdown topics and index
     ├── themes/
     ├── icons/
     └── styles/popup.css

@@ -165,16 +165,28 @@ Remaining-literal triage:
 
 ### Tasks
 
-- [ ] Define the docs locale layout, for example `extension/userdocs/en/index.json` and `extension/userdocs/en/*.md`, with parallel locale folders.
-- [ ] Update the docs loader to resolve the browser UI language, then its base language, then English.
-- [ ] Move or generate the current English docs into the defined English location as one forward-only change.
-- [ ] Localize `userdocs/index.json` navigation labels together with the matching Markdown topics.
-- [ ] Establish a screenshot policy: use shared images when language-neutral; create locale-specific assets where embedded UI text must match the translation.
-- [ ] Document translation-source and review workflow for Markdown, links, frontmatter/index metadata, and image assets.
-- [ ] Retain the existing loading boundary: `pages/docs-bundled.js` remains dynamically imported only when Docs opens, and documentation files remain outside `content-bundled.js`.
-- [ ] Measure Docs-open time, transferred/loaded bytes, and rendered-document count with English and Spanish catalogs before changing the current full-text search approach.
-- [ ] Keep the current eager per-topic fetch/render behavior if measurements remain acceptable for the shipped topic count.
-- [ ] If measurements identify a Docs-open performance problem, implement a per-locale generated search index containing titles and normalized searchable text; initially fetch and render only the selected article, then cache rendered articles for that Docs session.
+- [x] Define the docs locale layout, for example `extension/userdocs/en/index.json` and `extension/userdocs/en/*.md`, with parallel locale folders.
+- [x] Update the docs loader to resolve the browser UI language, then its base language, then English.
+- [x] Move or generate the current English docs into the defined English location as one forward-only change.
+- [x] Localize `userdocs/en/index.json` navigation labels together with the matching Markdown topics.
+- [x] Establish a screenshot policy: use shared images when language-neutral; create locale-specific assets where embedded UI text must match the translation.
+- [x] Document translation-source and review workflow for Markdown, links, frontmatter/index metadata, and image assets.
+- [x] Retain the existing loading boundary: `pages/docs-bundled.js` remains dynamically imported only when Docs opens, and documentation files remain outside `content-bundled.js`.
+- [x] Measure Docs-open time, transferred/loaded bytes, and rendered-document count with English and Spanish catalogs before changing the current full-text search approach.
+- [x] Keep the current eager per-topic fetch/render behavior if measurements remain acceptable for the shipped topic count.
+- [x] If measurements identify a Docs-open performance problem, implement a per-locale generated search index containing titles and normalized searchable text; initially fetch and render only the selected article, then cache rendered articles for that Docs session. Not implemented: first-open catalog load was 94 ms (budget ~500 ms) and article switches were ~2 ms, so the eager loader is retained. Revisit this item if the catalog exceeds the budget recorded below.
+
+Docs-open measurement (2026-09-16, Chrome `en-US`, unpacked `extension/`):
+
+| | English `userdocs/en` | Spanish stand-in `userdocs/es` (same-size copy of English; no translated tree yet) |
+|---|---|---|
+| Index + Markdown on disk | 51,999 bytes (25 `.md` + `index.json`) | 51,999 bytes |
+| Files fetched by the eager loader | 23 topics (2 Macro Builder topics omitted in this build) + index; `en-US/index.json` 404 then `en/index.json` | 25 files in a direct catalog fetch (unfiltered clone) |
+| Catalog fetch + Markdown render to first article | 94 ms (`kp-docs-catalog` measure) | 21 ms refetch of the same 25 files / 46,735 chars (no markdown-it pass; fetch-bound) |
+| Subsequent article selection | 1.9 ms (`Getting started`, pre-rendered HTML swap) | n/a (in-memory `selectDoc`, locale-independent) |
+| Docs page bundle | `pages/docs-bundled.js` 355.8 KiB on disk (locale-independent) | same |
+
+Agreed budget: keep eager full-text search while the shipped topic count stays in this range (tens of articles, tens of KB of Markdown). Revisit a generated search index if catalog fetch+render exceeds about 500 ms or Markdown grows by an order of magnitude. Spanish translation (Phase 6) should be re-timed when `userdocs/es` is real copy, not this stand-in.
 
 ### Acceptance criteria
 
@@ -186,11 +198,18 @@ Remaining-literal triage:
 
 ### Validation
 
-- [ ] Test exact-locale, base-language, and English fallback paths.
-- [ ] Check internal topic links and deep links in every supported docs locale.
-- [ ] Review localized screenshots at their rendered scale.
-- [ ] Confirm the content-script build does not import `pages/docs-bundled.js` or Markdown topic content.
-- [ ] Profile the first Docs open and a subsequent article selection in English and Spanish; record whether the eager loader remains within the agreed performance budget.
+- [x] Test exact-locale, base-language, and English fallback paths.
+- [x] Check internal topic links and deep links in every supported docs locale.
+- [x] Review localized screenshots at their rendered scale.
+- [x] Confirm the content-script build does not import `pages/docs-bundled.js` or Markdown topic content.
+
+Phase 5 validation notes (2026-09-16):
+
+- Fallback: `getDocsLocaleCandidates` tries UI language, hyphen/underscore variant, base language, then `en`. Live Chrome `en-US` requested `userdocs/en-US/index.json` (404), `userdocs/en_US/index.json` (404), then `userdocs/en/index.json` (200). Unit tests cover exact regional hit, base-language hit, and English fallback (`test/docs-locale.test.js`).
+- Links: the only shipped docs locale is `en`. Every `kp://docs/…` and `kp://settings/…` href in that tree parses and matches a topic or Settings panel id. Standalone `docs.html#layout-config` opened Keyboard Layout Editor; in-article `kp://docs/layout-config` from Settings did the same.
+- Screenshots: no locale-specific `userdocs/<locale>/images/` folders. English Markdown references shared `images/*.png`. CSS uses `max-width: 100%; height: auto` (article ~760px, image slot ~758px). The PNG files themselves are not in the tree yet (`userdocs/images/` is `.gitkeep` only); locale-specific captures still follow the README policy when Spanish ships.
+- Content script: `content-bundled.js` does not contain `docsThemeStorageInstalled`, markdown-it, `userdocs/en/`, or topic prose. It only holds the lazy URL string `pages/docs-bundled.js`.
+- [x] Profile the first Docs open and a subsequent article selection in English and Spanish; record whether the eager loader remains within the agreed performance budget.
 
 ## Phase 6 — Spanish translation, RTL readiness, and release QA
 

@@ -35,6 +35,23 @@ describe('lazy-page-ui', () => {
   });
 });
 
+describe('localized documentation layout', () => {
+  it('resolves browser, base, then English documentation locales', async () => {
+    const docsPage = readFileSync(join(root, 'extension/pages/docs.js'), 'utf8');
+    assert.equal(existsSync(join(root, 'extension/userdocs/en/index.json')), true);
+    assert.match(docsPage, /const DOCS_BASE_LOCALE = 'en';/);
+    assert.match(docsPage, /userdocs\/\$\{locale\}/);
+
+    const { getDocsLocaleCandidates } = await import('../extension/pages/docs.js');
+    mock.setUiLanguage('pt-BR');
+    assert.deepEqual(getDocsLocaleCandidates(), ['pt-BR', 'pt_BR', 'pt', 'en']);
+    assert.deepEqual(getDocsLocaleCandidates('es-MX'), ['es-MX', 'es_MX', 'es', 'en']);
+    assert.deepEqual(getDocsLocaleCandidates('en_GB'), ['en_GB', 'en-GB', 'en']);
+    assert.deepEqual(getDocsLocaleCandidates('fr'), ['fr', 'en']);
+    assert.deepEqual(getDocsLocaleCandidates('invalid locale'), ['en']);
+  });
+});
+
 describe('content-script UI import graph', () => {
   it('does not statically import Settings or Docs page modules', () => {
     const src = readFileSync(
@@ -60,5 +77,8 @@ describe('content-script UI import graph', () => {
     );
     assert.equal(src.includes('pages/docs-bundled.js'), true);
     assert.equal(src.includes('pages/settings-bundled.js'), true);
+    assert.equal(src.includes('userdocs/en/'), false, 'English Markdown path leaked into content bundle');
+    assert.equal(src.includes('userdocs/en/intro.md'), false);
+    assert.doesNotMatch(src, /KeyPilot adds keyboard shortcuts to regular web pages/);
   });
 });

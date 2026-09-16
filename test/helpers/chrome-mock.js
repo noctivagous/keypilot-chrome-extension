@@ -53,6 +53,7 @@ function createArea(store, flags) {
  *   syncThrows?: boolean,
  *   localThrows?: boolean,
  *   isMac?: boolean,
+ *   uiLanguage?: string,
  *   sync?: Record<string, any>,
  *   local?: Record<string, any>,
  *   messages?: Record<string, string|{ message?: string, placeholders?: Record<string, { content?: string }> }>
@@ -66,6 +67,7 @@ export function installChromeMock(options = {}) {
   const syncStore = new Map(Object.entries(options.sync || {}));
   const localStore = new Map(Object.entries(options.local || {}));
   const i18nMessages = new Map(Object.entries(options.messages || {}));
+  let uiLanguage = String(options.uiLanguage || 'en');
   const syncFlags = { throws: !!options.syncThrows };
   const localFlags = { throws: !!options.localThrows };
   /** @type {Set<(changes: any, areaName: string) => void>} */
@@ -94,6 +96,9 @@ export function installChromeMock(options = {}) {
       }
     },
     i18n: {
+      getUILanguage() {
+        return uiLanguage;
+      },
       getMessage(messageName, substitutions) {
         const entry = i18nMessages.get(String(messageName || ''));
         const message = typeof entry === 'string'
@@ -184,6 +189,9 @@ export function installChromeMock(options = {}) {
         i18nMessages.set(key, value);
       }
     },
+    setUiLanguage(language) {
+      uiLanguage = String(language || 'en');
+    },
     setSyncThrows(v) {
       syncFlags.throws = !!v;
     },
@@ -201,6 +209,7 @@ export function resetChromeMock(mock) {
   if (!mock) return;
   mock.clearStores();
   mock.setI18nMessages({});
+  mock.setUiLanguage('en');
   mock.setSyncThrows(false);
   mock.setLocalThrows(false);
 }

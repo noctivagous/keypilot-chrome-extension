@@ -75,7 +75,7 @@
                 "themes/*",
                 "fonts/*",
                 "pages/*",
-                "userdocs/*",
+                "userdocs/*/*",
                 "_favicon/*"
             ],
             "matches": [

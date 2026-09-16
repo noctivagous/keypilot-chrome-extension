@@ -17,7 +17,7 @@ __KP_DOCS_SHOTS.reset()
 __KP_DOCS_SHOTS.open('settings', { panelId: 'keyboard' })  // kind + opts from shots.json
 ```
 
-Screenshot the `selector` host (light DOM: Settings/Docs popover, Keyboard Reference, Config, Control Strip, Omnibox, Launcher). Save as `extension/userdocs/images/<file>`.
+Screenshot the `selector` host (light DOM: Settings/Docs popover, Keyboard Reference, Config, Control Strip, Omnibox, Launcher). Save language-neutral captures as `extension/userdocs/images/<file>`. If the capture contains translated UI text, save it under `extension/userdocs/<locale>/images/<file>`.
 
 If the tool gives base64/PNG on stdout:
 
@@ -33,4 +33,4 @@ Open `chrome-extension://<id>/popup.html` or `…/pages/guide.html` (id from `ch
 
 ## After UI changes
 
-Re-capture the affected ids in `shots.json`, commit the PNGs. Markdown already points at `images/<file>.png`.
+Re-capture the affected ids in `shots.json`, commit the PNGs, and update the locale-specific Markdown reference when the image contains translated UI. Markdown already points at `images/<file>.png` for shared captures.

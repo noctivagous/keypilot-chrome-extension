@@ -6,7 +6,9 @@
  *
  * chrome-dev: load unpacked KeyPilot, open the printed fixture URL, then for each
  * shot in shots.json: evaluate __KP_DOCS_SHOTS.reset(); __KP_DOCS_SHOTS.open(...);
- * screenshot the selector; write PNG into extension/userdocs/images/.
+ * screenshot the selector; write language-neutral PNGs into
+ * extension/userdocs/images/ (locale-specific captures belong under
+ * extension/userdocs/<locale>/images/).
  */
 
 import http from 'node:http';

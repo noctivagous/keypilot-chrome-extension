@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-16T06:34:29.455Z
+ * Generated on 2026-09-16T07:38:37.791Z
  */
 
 var __defProp = Object.defineProperty;
@@ -8628,8 +8628,31 @@ function installDocsThemeStorageSync() {
   } catch {
   }
 }
-var INDEX_URL = () => chrome.runtime.getURL("userdocs/index.json");
-var docUrl = (file) => chrome.runtime.getURL(`userdocs/${file}`);
+var DOCS_BASE_LOCALE = "en";
+var activeDocsLocale = DOCS_BASE_LOCALE;
+function getDocsLocaleCandidates(uiLanguage) {
+  const raw = String(
+    uiLanguage ?? chrome?.i18n?.getUILanguage?.() ?? DOCS_BASE_LOCALE
+  ).trim();
+  const exact = /^[A-Za-z]{2,3}(?:[-_][A-Za-z0-9]+)*$/.test(raw) ? raw : "";
+  const base2 = exact.split(/[-_]/)[0].toLowerCase();
+  const alt = exact.includes("-") ? exact.replace(/-/g, "_") : exact.includes("_") ? exact.replace(/_/g, "-") : "";
+  return [...new Set([exact, alt, base2, DOCS_BASE_LOCALE].filter(Boolean))];
+}
+var docsPath = (path = "", locale = activeDocsLocale) => `userdocs/${locale}/${path}`;
+var indexUrl = (locale) => chrome.runtime.getURL(docsPath("index.json", locale));
+var docUrl = (file) => chrome.runtime.getURL(docsPath(file));
+async function loadLocalizedIndex(uiLanguage) {
+  for (const locale of getDocsLocaleCandidates(uiLanguage)) {
+    try {
+      const res = await fetch(indexUrl(locale));
+      if (!res.ok) continue;
+      return { locale, index: await res.json() };
+    } catch {
+    }
+  }
+  throw new Error("No documentation locale catalog could be loaded");
+}
 var allDocs = [];
 var topicTree = [];
 var activeId = null;
@@ -8721,16 +8744,28 @@ markdown.renderer.rules.image = (tokens, idx, options, env, renderer) => {
   const src = String(token.attrGet("src") || "").trim();
   if (src && !/^(https?:|chrome-extension:|data:)/i.test(src)) {
     const cleaned = src.replace(/^\.\//, "").replace(/^userdocs\//, "");
-    const rel = cleaned.startsWith("images/") ? `userdocs/${cleaned}` : `userdocs/images/${cleaned}`;
+    const imagePath = cleaned.startsWith("images/") ? cleaned : `images/${cleaned}`;
+    const localeRel = docsPath(imagePath);
+    const sharedRel = `userdocs/${imagePath}`;
     try {
-      token.attrSet("src", chrome.runtime.getURL(rel));
+      token.attrSet("src", chrome.runtime.getURL(localeRel));
+      token.attrSet("data-kp-docs-shared-src", chrome.runtime.getURL(sharedRel));
     } catch {
-      token.attrSet("src", rel);
+      token.attrSet("src", localeRel);
     }
   }
   token.attrSet("class", [token.attrGet("class") || "", "docs-shot"].filter(Boolean).join(" ").trim());
   return defaultImage(tokens, idx, options, env, renderer);
 };
+function bindDocsImageFallbacks(root) {
+  for (const image2 of root?.querySelectorAll?.("img[data-kp-docs-shared-src]") || []) {
+    image2.addEventListener("error", () => {
+      const fallback = image2.getAttribute("data-kp-docs-shared-src");
+      if (!fallback || image2.src === fallback) return;
+      image2.src = fallback;
+    }, { once: true });
+  }
+}
 function slugifyHeading(text2) {
   return String(text2 || "").toLowerCase().trim().replace(/<[^>]+>/g, "").replace(/[`*_~]/g, "").replace(/[^\p{L}\p{N}\p{M}]+/gu, "-").replace(/^-+|-+$/g, "");
 }
@@ -9005,6 +9040,7 @@ function selectDoc(id, articleHash) {
   activeId = doc.id;
   if (doc.html) {
     articleEl.innerHTML = doc.html;
+    bindDocsImageFallbacks(articleEl);
   } else {
     const emptyDocument = document.createElement("p");
     emptyDocument.className = "muted";
@@ -9298,13 +9334,18 @@ function mountDocsApp(root, options = {}) {
   mountNode.addEventListener?.("click", onDocsDeepLinkClick, true);
   void (async () => {
     try {
-      const res = await fetch(INDEX_URL());
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const index = await res.json();
+      performance.mark("kp-docs-catalog-start");
+      const { locale, index } = await loadLocalizedIndex();
+      activeDocsLocale = locale;
       topicTree = filterTopicsForBuild(Array.isArray(index?.topics) ? index.topics : []);
       const flat = flattenTopics(topicTree);
       allDocs = await loadDocs(flat);
       docsCatalogReady = true;
+      performance.mark("kp-docs-catalog-ready");
+      try {
+        performance.measure("kp-docs-catalog", "kp-docs-catalog-start", "kp-docs-catalog-ready");
+      } catch {
+      }
       const firstSelectable = allDocs.find((d) => d.selectable);
       if (!firstSelectable) {
         if (articleEl) {
@@ -9361,6 +9402,8 @@ if (typeof document !== "undefined" && document.documentElement?.hasAttribute("d
   mountDocsApp(document, { embedded: false });
 }
 export {
+  getDocsLocaleCandidates,
+  loadLocalizedIndex,
   mountDocsApp,
   navigateDocsApp
 };
