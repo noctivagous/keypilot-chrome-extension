@@ -25,6 +25,14 @@
       if (window.KEYPILOT_DEBUG) console.log.apply(console, args);
     } catch {}
   }
+  function earlyMessage(key, substitutions) {
+    try {
+      const message = chrome?.i18n?.getMessage?.(key, substitutions);
+      return typeof message === 'string' && message ? message : '';
+    } catch {
+      return '';
+    }
+  }
   try {
     const applyEarlyDebug = (raw) => {
       window.KEYPILOT_DEBUG = !!(raw && raw.debugLogging);
@@ -5019,6 +5027,23 @@
   const ONBOARDING_DEFAULT_TITLE = 'Welcome to KeyPilot';
   const ONBOARDING_REOPEN_TIP = 'Tip: Press Alt + I to re-open this walkthrough later.';
 
+  function onboardingMessage(key, substitutions) {
+    try {
+      const message = globalThis.chrome?.i18n?.getMessage?.(key, substitutions);
+      return typeof message === 'string' && message ? message : '';
+    } catch {
+      return '';
+    }
+  }
+
+  function getOnboardingDefaultTitle() {
+    return onboardingMessage('onboarding_default_title');
+  }
+
+  function getOnboardingReopenTip() {
+    return onboardingMessage('onboarding_reopen_tip', 'Alt + I');
+  }
+
   /** Default z-index fallback if caller does not pass Z_INDEX.ONBOARDING_PANEL. */
   const ONBOARDING_PANEL_Z_FALLBACK = 2147483026;
 
@@ -5447,7 +5472,7 @@
     if (opts.early) root.dataset.kpEarlyOnboarding = 'true';
     try { root.setAttribute('data-kp-surface', 'onboarding'); } catch { /* ignore */ }
     root.setAttribute('role', 'dialog');
-    root.setAttribute('aria-label', 'KeyPilot onboarding walkthrough');
+    root.setAttribute('aria-label', onboardingMessage('onboarding_aria_label'));
     try { root.setAttribute('data-kp-ui-shadow', 'onboarding'); } catch { /* ignore */ }
     let shell = root;
     try { shell = root.shadowRoot || root.attachShadow({ mode: 'open' }); } catch { /* light fallback */ }
@@ -5503,7 +5528,7 @@
     });
 
     const titleEl = doc.createElement('div');
-    titleEl.textContent = String(opts.title || ONBOARDING_DEFAULT_TITLE);
+    titleEl.textContent = String(opts.title || getOnboardingDefaultTitle());
     titleEl.setAttribute('data-kp-onboarding-title', 'true');
     assignStyle(titleEl, {
       fontSize: '13px',
@@ -5556,7 +5581,7 @@
 
     const resetBtn = doc.createElement('button');
     resetBtn.type = 'button';
-    resetBtn.textContent = 'Reset';
+    resetBtn.textContent = onboardingMessage('onboarding_reset');
     resetBtn.setAttribute('data-kp-onboarding-reset', 'true');
     assignStyle(resetBtn, {
       height: '28px',
@@ -5575,7 +5600,7 @@
     const closeBtn = doc.createElement('button');
     closeBtn.type = 'button';
     closeBtn.textContent = '×';
-    closeBtn.setAttribute('aria-label', 'Close onboarding walkthrough');
+    closeBtn.setAttribute('aria-label', onboardingMessage('onboarding_close_aria'));
     closeBtn.setAttribute('data-kp-onboarding-close', 'true');
     assignStyle(closeBtn, {
       width: '28px',
@@ -6033,7 +6058,7 @@
     if (showTip) {
       const tip = doc.createElement('div');
       tip.setAttribute('data-kp-onboarding-tip', 'true');
-      tip.textContent = ONBOARDING_REOPEN_TIP;
+      tip.textContent = getOnboardingReopenTip();
       assignStyle(tip, {
         marginTop: '10px',
         fontSize: '12px',
@@ -6072,7 +6097,7 @@
       btn = doc.createElement('button');
       btn.type = 'button';
       btn.setAttribute('data-kp-onboarding-close-tutorial', 'true');
-      btn.textContent = 'Close Tutorial';
+      btn.textContent = onboardingMessage('onboarding_close_tutorial');
       assignStyle(btn, {
         display: 'flex',
         alignItems: 'center',
@@ -6128,7 +6153,7 @@
     const idx = Number(params.slideIndex) || 0;
     const total = Math.max(1, Number(params.slideCount) || 1);
     try {
-      if (refs.titleEl) refs.titleEl.textContent = String(params.title || ONBOARDING_DEFAULT_TITLE);
+      if (refs.titleEl) refs.titleEl.textContent = String(params.title || getOnboardingDefaultTitle());
     } catch { /* ignore */ }
     try {
       if (refs.stepEl) refs.stepEl.textContent = `${idx + 1} / ${total}`;
@@ -6314,7 +6339,7 @@
 
     const titleEl = d.createElement('div');
     titleEl.setAttribute('data-kp-onboarding-overlay-title', 'true');
-    titleEl.textContent = 'Nice!';
+    titleEl.textContent = onboardingMessage('onboarding_complete_title');
 
     const msgEl = d.createElement('div');
     msgEl.setAttribute('data-kp-onboarding-overlay-message', 'true');
@@ -6338,7 +6363,7 @@
 
     const primaryBtn = d.createElement('button');
     primaryBtn.type = 'button';
-    primaryBtn.textContent = 'OK';
+    primaryBtn.textContent = onboardingMessage('onboarding_complete_ok');
     primaryBtn.setAttribute('data-kp-onboarding-overlay-primary', 'true');
 
     btnRow.appendChild(secondaryBtn);
@@ -8199,9 +8224,9 @@
         collapseBtn.textContent = keyboardReferenceCollapsed ? '▸' : '▾';
         collapseBtn.setAttribute(
           'aria-label',
-          keyboardReferenceCollapsed ? 'Expand keyboard reference' : 'Collapse keyboard reference'
+          earlyMessage(keyboardReferenceCollapsed ? 'keyboard_help_expand_aria' : 'keyboard_help_collapse_aria')
         );
-        collapseBtn.title = keyboardReferenceCollapsed ? 'Expand' : 'Collapse';
+        collapseBtn.title = earlyMessage(keyboardReferenceCollapsed ? 'control_strip_expand' : 'control_strip_collapse');
       }
     } catch { /* ignore */ }
   }
@@ -8395,7 +8420,7 @@
     if (!refs || !refs.statusLabel || !refs.statusDot) return;
     const on = !!isExtensionEnabled;
     try {
-      refs.statusLabel.textContent = on ? 'ON' : 'OFF';
+      refs.statusLabel.textContent = earlyMessage(on ? 'popup_status_on' : 'popup_status_off');
       refs.statusDot.style.background = on
         ? 'rgba(16, 185, 129, 0.95)'
         : 'rgba(148, 163, 184, 0.85)';
@@ -8439,9 +8464,9 @@
         refs.collapseBtn.textContent = collapsed ? '▶' : '◀';
         refs.collapseBtn.setAttribute(
           'aria-label',
-          collapsed ? 'Expand control strip' : 'Collapse control strip'
+          earlyMessage(collapsed ? 'control_strip_expand_aria' : 'control_strip_collapse_aria')
         );
-        refs.collapseBtn.title = collapsed ? 'Expand' : 'Collapse';
+        refs.collapseBtn.title = earlyMessage(collapsed ? 'control_strip_expand' : 'control_strip_collapse');
         refs.collapseBtn.style.borderRight = collapsed
           ? 'none'
           : '1px solid rgba(255,255,255,0.08)';
@@ -8707,8 +8732,8 @@
         if (modulesEl && !moveBtn) {
           try {
             moveBtn = createEarlyControlStripSegmentButton({
-              ariaLabel: 'Move control strip',
-              title: 'Drag to move',
+              ariaLabel: earlyMessage('control_strip_move_aria'),
+              title: earlyMessage('popover_titlebar_drag_title'),
               text: '⠿',
               compact: true
             });
@@ -8746,7 +8771,7 @@
       root.className = 'kp-control-strip';
       root.hidden = true;
       root.setAttribute('role', 'toolbar');
-      root.setAttribute('aria-label', 'KeyPilot control strip');
+      root.setAttribute('aria-label', earlyMessage('control_strip_aria_label'));
       root.setAttribute('data-kp-control-strip', 'true');
       root.setAttribute('data-kp-early-control-strip', 'true');
       root.dataset.kpEarlyControlStrip = 'true';
@@ -8789,8 +8814,8 @@
       } catch { /* ignore */ }
 
       const statusBtn = createEarlyControlStripSegmentButton({
-        ariaLabel: 'Toggle KeyPilot on or off',
-        title: 'Toggle KeyPilot (Alt+K)'
+        ariaLabel: earlyMessage('control_strip_toggle_aria'),
+        title: earlyMessage('control_strip_toggle_title', 'Alt+K')
       });
       statusBtn.setAttribute('data-kp-control-strip-status', 'true');
 
@@ -8815,7 +8840,7 @@
       statusDot.setAttribute('data-kp-control-strip-status-dot', 'true');
 
       const statusLabel = document.createElement('span');
-      statusLabel.textContent = 'ON';
+      statusLabel.textContent = earlyMessage('popup_status_on');
       statusLabel.setAttribute('data-kp-control-strip-status-label', 'true');
       Object.assign(statusLabel.style, {
         fontSize: '11px',
@@ -8840,8 +8865,8 @@
       // Drag grip (expanded only). Full drag/snap is bound by the main ControlStrip
       // after handoff; include the segment here so the shell matches post-handoff layout.
       const moveBtn = createEarlyControlStripSegmentButton({
-        ariaLabel: 'Move control strip',
-        title: 'Drag to move',
+        ariaLabel: earlyMessage('control_strip_move_aria'),
+        title: earlyMessage('popover_titlebar_drag_title'),
         text: '⠿',
         compact: true
       });
@@ -8858,17 +8883,17 @@
       });
 
       const keyboardBtn = createEarlyControlStripSegmentButton({
-        ariaLabel: 'Toggle keyboard reference',
-        title: 'Keyboard reference',
+        ariaLabel: earlyMessage('control_strip_keyboard_aria'),
+        title: earlyMessage('control_strip_keyboard_title'),
         text: 'KB',
         iconActionId: 'TOGGLE_KEYBOARD_HELP'
       });
       keyboardBtn.setAttribute('data-kp-control-strip-keyboard', 'true');
 
       const settingsBtn = createEarlyControlStripSegmentButton({
-        ariaLabel: 'Open KeyPilot settings',
-        title: 'Settings',
-        text: 'Settings',
+        ariaLabel: earlyMessage('control_strip_settings_aria'),
+        title: earlyMessage('control_strip_settings_title'),
+        text: earlyMessage('control_strip_settings_title'),
         iconActionId: 'OPEN_SETTINGS_POPOVER'
       });
       settingsBtn.setAttribute('data-kp-control-strip-settings', 'true');
@@ -8878,8 +8903,8 @@
       modules.appendChild(settingsBtn);
 
       const collapseBtn = createEarlyControlStripSegmentButton({
-        ariaLabel: 'Expand control strip',
-        title: 'Expand',
+        ariaLabel: earlyMessage('control_strip_expand_aria'),
+        title: earlyMessage('control_strip_expand'),
         text: '▶',
         compact: true
       });
@@ -8887,8 +8912,8 @@
       collapseBtn.style.boxShadow = 'inset 0 0 0 1px #3a3a3a';
 
       const closeBtn = createEarlyControlStripSegmentButton({
-        ariaLabel: 'Close control strip',
-        title: 'Close (Alt+J to show again)',
+        ariaLabel: earlyMessage('control_strip_close_aria'),
+        title: earlyMessage('control_strip_close_title', 'Alt+J'),
         text: '×',
         compact: true,
         last: true
@@ -9084,7 +9109,7 @@
     root.className = 'kp-floating-keyboard-help';
     root.hidden = true;
     root.setAttribute('role', 'dialog');
-    root.setAttribute('aria-label', 'KeyPilot keyboard reference');
+    root.setAttribute('aria-label', earlyMessage('keyboard_help_aria_label'));
     root.setAttribute('data-kp-early-floating-keyboard', 'true');
     const shell = ensureEarlyOpenChromeShadow(root, 'keyboard-help') || root;
 
@@ -9152,7 +9177,7 @@
 
     const title = doc.createElement('div');
     // Match post-adopt title so content-script render doesn't rewrite title text.
-    title.textContent = 'Keyboard Reference';
+    title.textContent = earlyMessage('keyboard_help_title');
     title.setAttribute('data-kp-floating-keyboard-title', 'true');
     Object.assign(title.style, {
       fontSize: '11px',
@@ -9175,7 +9200,7 @@
     layoutSelect.className = 'kp-select kp-select--titlebar';
     layoutSelect.setAttribute('data-kp-select', 'true');
     layoutSelect.setAttribute('data-kp-floating-keyboard-layout-select', 'true');
-    layoutSelect.setAttribute('aria-label', 'Current keyboard layout');
+    layoutSelect.setAttribute('aria-label', earlyMessage('keyboard_help_layout_aria'));
     Object.assign(layoutSelect.style, {
       display: 'inline-flex',
       alignItems: 'stretch',
@@ -9185,7 +9210,7 @@
     const layoutTrigger = doc.createElement('button');
     layoutTrigger.type = 'button';
     layoutTrigger.className = 'kp-select-trigger';
-    layoutTrigger.setAttribute('aria-label', 'Current keyboard layout');
+    layoutTrigger.setAttribute('aria-label', earlyMessage('keyboard_help_layout_aria'));
     Object.assign(layoutTrigger.style, {
       display: 'inline-flex',
       alignItems: 'center',
@@ -9267,7 +9292,7 @@
     shortcut.setAttribute('data-kp-floating-keyboard-shortcut', 'true');
     shortcut.setAttribute('data-kp-titlebar-shortcut', 'true');
     shortcut.textContent = 'K';
-    shortcut.title = 'Toggle keyboard reference';
+    shortcut.title = earlyMessage('keyboard_help_toggle_title');
     Object.assign(shortcut.style, {
       fontFamily: 'var(--kp-font-kbd, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace)',
       fontSize: 'var(--kp-type-kbd-size, 10px)',
@@ -9303,7 +9328,7 @@
     const closeBtn = doc.createElement('button');
     closeBtn.type = 'button';
     closeBtn.textContent = '×';
-    closeBtn.setAttribute('aria-label', 'Close keyboard reference');
+    closeBtn.setAttribute('aria-label', earlyMessage('keyboard_help_close_aria'));
     closeBtn.setAttribute('data-kp-floating-keyboard-close', 'true');
     Object.assign(closeBtn.style, {
       width: '22px',
@@ -9330,7 +9355,7 @@
     const collapseBtn = doc.createElement('button');
     collapseBtn.type = 'button';
     collapseBtn.textContent = '▾';
-    collapseBtn.setAttribute('aria-label', 'Collapse keyboard reference');
+    collapseBtn.setAttribute('aria-label', earlyMessage('keyboard_help_collapse_aria'));
     collapseBtn.setAttribute('data-kp-floating-keyboard-collapse', 'true');
     Object.assign(collapseBtn.style, {
       width: '22px',
@@ -9435,7 +9460,7 @@
       shortcut.textContent = next;
       try {
         shortcut.title = `Toggle with ${key}`;
-        shortcut.setAttribute('aria-label', `Toggle keyboard reference (${key})`);
+        shortcut.setAttribute('aria-label', earlyMessage('keyboard_help_toggle_aria', key));
       } catch { /* ignore */ }
     } catch { /* ignore */ }
   }
@@ -9490,7 +9515,7 @@
     try {
       const title = (keyboardHelpShadowRoot || keyboardHelpRoot).querySelector('[data-kp-floating-keyboard-title="true"]');
       if (title) {
-        title.textContent = 'Keyboard Reference';
+        title.textContent = earlyMessage('keyboard_help_title');
       }
     } catch { /* ignore */ }
     const customReady = !keyboardUsesCustomLayout || !!getEarlyActiveUserLayout();

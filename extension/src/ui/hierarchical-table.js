@@ -8,6 +8,9 @@
  * DOM-only (TrustedHTML-safe). Class prefix: kp-hier-*.
  */
 
+import { getMessage } from '../utils/i18n.js';
+
+
 /**
  * @typedef {object} HierarchicalTableColumn
  * @property {string} key
@@ -344,7 +347,7 @@ export function createHierarchicalTable(config = {}) {
     twisty.type = 'button';
     twisty.className = cn.twisty;
     twisty.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-    twisty.setAttribute('aria-label', expanded ? `Collapse ${label}` : `Expand ${label}`);
+    twisty.setAttribute('aria-label', getMessage(expanded ? 'table_collapse' : 'table_expand', label));
     twisty.textContent = expanded ? '▾' : '▸';
     twisty.addEventListener('click', (e) => {
       e.preventDefault();

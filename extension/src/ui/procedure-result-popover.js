@@ -2,6 +2,7 @@
  * Generic procedure-result popover for Keyboard Layout Config destinations.
  * Used by AI (and any future Function) that routes output to "popover".
  */
+import { getMessage } from '../utils/i18n.js';
 import { Z_INDEX, KP_UI_FONT } from '../config/constants.js';
 import { makePanelDraggable } from '../utils/panel-position.js';
 import { ensureOpenChromeShadow, injectChromeStyles } from './kp-chrome-shadow.js';
@@ -136,21 +137,27 @@ export function showProcedureResultPopover(opts = {}) {
     _root = doc.createElement('div');
     _root.className = ROOT_CLASS;
     _root.setAttribute('role', 'dialog');
-    _root.setAttribute('aria-label', 'Procedure result');
+    _root.setAttribute('aria-label', getMessage('procedure_result_aria'));
     const shadowRoot = ensureOpenChromeShadow(_root, { id: 'procedure-result', chromeWindow: true });
     const panelRoot = shadowRoot || _root;
     ensureStyles(panelRoot);
     panelRoot.innerHTML = `
       <div class="${ROOT_CLASS}__titlebar" data-kp-result-drag="true">
         <div class="${ROOT_CLASS}__title"></div>
-        <button type="button" class="${ROOT_CLASS}__close" aria-label="Close">×</button>
+        <button type="button" class="${ROOT_CLASS}__close" aria-label="">×</button>
       </div>
       <div class="${ROOT_CLASS}__body"></div>
       <div class="${ROOT_CLASS}__actions">
-        <button type="button" class="${ROOT_CLASS}__btn" data-kp-result-copy="true">Copy</button>
-        <button type="button" class="${ROOT_CLASS}__btn" data-primary="true" data-kp-result-close="true">Done</button>
+        <button type="button" class="${ROOT_CLASS}__btn" data-kp-result-copy="true"></button>
+        <button type="button" class="${ROOT_CLASS}__btn" data-primary="true" data-kp-result-close="true"></button>
       </div>
     `;
+    const closeBtn = panelRoot.querySelector(`.${ROOT_CLASS}__close`);
+    if (closeBtn) closeBtn.setAttribute('aria-label', getMessage('overlay_close'));
+    const copyBtn = panelRoot.querySelector('[data-kp-result-copy="true"]');
+    if (copyBtn) copyBtn.textContent = getMessage('procedure_result_copy');
+    const doneBtn = panelRoot.querySelector('[data-kp-result-close="true"]');
+    if (doneBtn) doneBtn.textContent = getMessage('procedure_result_done');
     doc.body.appendChild(_root);
 
     panelRoot.querySelector(`.${ROOT_CLASS}__close`)?.addEventListener('click', (e) => {
@@ -173,7 +180,7 @@ export function showProcedureResultPopover(opts = {}) {
   const panelRoot = _root.shadowRoot || _root;
   ensureStyles(panelRoot);
   const titleEl = panelRoot.querySelector(`.${ROOT_CLASS}__title`);
-  if (titleEl) titleEl.textContent = String(opts.title || 'Result');
+  if (titleEl) titleEl.textContent = String(opts.title || getMessage('procedure_result_title'));
 
   const body = panelRoot.querySelector(`.${ROOT_CLASS}__body`);
   if (body) {
@@ -202,8 +209,8 @@ export function showProcedureResultPopover(opts = {}) {
           ok = true;
         } catch { /* ignore */ }
       }
-      copyBtn.textContent = ok ? 'Copied' : 'Copy failed';
-      setTimeout(() => { try { copyBtn.textContent = 'Copy'; } catch { /* ignore */ } }, 1200);
+      copyBtn.textContent = getMessage(ok ? 'docs_copy_copied' : 'docs_copy_failed');
+      setTimeout(() => { try { copyBtn.textContent = getMessage('procedure_result_copy'); } catch { /* ignore */ } }, 1200);
     };
   }
 

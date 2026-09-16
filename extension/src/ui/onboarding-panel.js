@@ -4,14 +4,15 @@
  */
 import { COLORS, CSS_CLASSES, Z_INDEX } from '../config/constants.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
+import { getMessage } from '../utils/i18n.js';
 import { ensureOpenChromeShadow, injectChromeStyles } from './kp-chrome-shadow.js';
 import {
-  ONBOARDING_DEFAULT_TITLE,
   ONBOARDING_METAL,
   ONBOARDING_PANEL_CLASS,
   ONBOARDING_PANEL_Z_FALLBACK,
   createOnboardingShell,
   ensureOnboardingOverlay,
+  getOnboardingDefaultTitle,
   queryOnboardingShellRefs,
   renderKeyboardKeysInto,
   renderOnboardingSlideSurface,
@@ -654,7 +655,7 @@ export class OnboardingPanel {
 
       const updateDom = () => {
         updateOnboardingChrome(refs, {
-          title: title || ONBOARDING_DEFAULT_TITLE,
+          title: title || getOnboardingDefaultTitle(),
           slideId,
           slideIndex,
           slideCount
@@ -729,7 +730,7 @@ export class OnboardingPanel {
         const surface = this.slideSurface || this.body;
         while (surface && surface.firstChild) surface.removeChild(surface.firstChild);
         const msg = document.createElement('div');
-        msg.textContent = 'Unable to render onboarding panel on this page.';
+        msg.textContent = getMessage('onboarding_render_error');
         surface?.appendChild(msg);
       } catch {
         // ignore
@@ -738,7 +739,7 @@ export class OnboardingPanel {
     }
   }
 
-  showOverlay({ title, message, primaryText = 'OK', secondaryText = '', onPrimary = null, onSecondary = null } = {}) {
+  showOverlay({ title, message, primaryText = getMessage('onboarding_complete_ok'), secondaryText = '', onPrimary = null, onSecondary = null } = {}) {
     this._ensure();
     if (!this.root || !this._overlayEl) return;
 

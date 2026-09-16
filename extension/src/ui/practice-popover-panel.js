@@ -8,6 +8,7 @@
  * element, so focusing them still triggers real text focus mode (and onboarding can
  * detect enter/exit through KeyPilot state).
  */
+import { getMessage } from '../utils/i18n.js';
 import { Z_INDEX } from '../config/constants.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
 import { ensureOpenChromeShadow, injectChromeStyles } from './kp-chrome-shadow.js';
@@ -386,7 +387,7 @@ export class PracticePopoverPanel {
 
     const link = document.createElement('a');
     link.href = '#kp-practice-anchor';
-    link.textContent = 'Practice link (jumps in this panel)';
+    link.textContent = getMessage('practice_link');
     link.id = 'kp-practice-link';
     Object.assign(link.style, {
       color: '#0b5f8a',
@@ -399,7 +400,7 @@ export class PracticePopoverPanel {
 
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.textContent = 'Practice button (no navigation)';
+    btn.textContent = getMessage('practice_button');
     Object.assign(btn.style, {
       display: 'inline-flex',
       alignItems: 'center',
@@ -418,9 +419,9 @@ export class PracticePopoverPanel {
     });
     btn.addEventListener('click', () => {
       try {
-        btn.textContent = 'Clicked!';
+        btn.textContent = getMessage('practice_clicked');
         setTimeout(() => {
-          btn.textContent = 'Practice button (no navigation)';
+          btn.textContent = getMessage('practice_button');
         }, 900);
       } catch { /* ignore */ }
     });
@@ -428,7 +429,7 @@ export class PracticePopoverPanel {
 
     const anchor = document.createElement('div');
     anchor.id = 'kp-practice-anchor';
-    anchor.textContent = 'Anchor reached. Press Esc to exit text mode if needed.';
+    anchor.textContent = getMessage('practice_anchor');
     Object.assign(anchor.style, {
       marginTop: '10px',
       fontSize: '12px',
@@ -450,7 +451,7 @@ export class PracticePopoverPanel {
     root.dataset.kpPracticePopover = 'true';
     root.hidden = true;
     root.setAttribute('role', 'dialog');
-    root.setAttribute('aria-label', 'KeyPilot practice popover');
+    root.setAttribute('aria-label', getMessage('practice_aria'));
     applyPopupThemeVars(root);
     const shadowRoot = ensureOpenChromeShadow(root, { id: 'practice-popover', chromeWindow: true });
     const panelRoot = shadowRoot || root;
@@ -460,13 +461,13 @@ export class PracticePopoverPanel {
     header.className = 'kp-practice-popover__header';
 
     const title = document.createElement('div');
-    title.textContent = 'Entering Text';
+    title.textContent = getMessage('practice_title');
     title.className = 'kp-practice-popover__title';
 
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
     closeBtn.textContent = '×';
-    closeBtn.setAttribute('aria-label', 'Hide practice popover');
+    closeBtn.setAttribute('aria-label', getMessage('practice_hide_aria'));
     closeBtn.className = 'kp-practice-popover__close';
     closeBtn.addEventListener('click', this._onCloseClick);
 

@@ -7,6 +7,7 @@
  * sheets of grid items.
  */
 
+import { getMessage } from '../utils/i18n.js';
 import { PopupManager } from './popup-manager.js';
 import {
   createFaviconImg,
@@ -1425,7 +1426,7 @@ export class LauncherPopover {
     this._container = doc.createElement('div');
     this._container.className = 'kp-launcher-container';
     this._container.setAttribute('role', 'dialog');
-    this._container.setAttribute('aria-label', 'Launcher');
+    this._container.setAttribute('aria-label', getMessage('launcher_title'));
     // Allow Escape to close even when the search field has focus and page handlers interfere.
     this._container.tabIndex = -1;
     this._container.style.cssText = `
@@ -1504,7 +1505,7 @@ export class LauncherPopover {
 
     const brandTitle = doc.createElement('h2');
     brandTitle.className = 'kp-launcher-title';
-    brandTitle.textContent = 'Launcher';
+    brandTitle.textContent = getMessage('launcher_title');
     brandTitle.style.cssText = `
       margin: 0;
       font-size: 14px;
@@ -1515,7 +1516,7 @@ export class LauncherPopover {
 
     const brandSubtitle = doc.createElement('p');
     brandSubtitle.className = 'kp-launcher-subtitle';
-    brandSubtitle.textContent = 'Quick access to your favorite sites';
+    brandSubtitle.textContent = getMessage('launcher_subtitle');
     brandSubtitle.style.cssText = `
       margin: 2px 0 0 0;
       font-size: 11px;
@@ -1612,7 +1613,7 @@ export class LauncherPopover {
     });
 
     const checkboxText = doc.createElement('span');
-    checkboxText.textContent = 'Show Launch Deck';
+    checkboxText.textContent = getMessage('launcher_show_deck');
 
     checkboxLabel.appendChild(checkbox);
     checkboxLabel.appendChild(checkboxText);
@@ -2269,13 +2270,13 @@ export class LauncherPopover {
     if (!editing) return;
 
     const editHint = doc.createElement('span');
-    editHint.textContent = 'Reorder, remove, or add • Esc exits edit';
+    editHint.textContent = getMessage('launcher_edit_hint');
     editHint.style.cssText = 'color: #777; font-size: 12px; white-space: nowrap;';
     bar.appendChild(editHint);
 
     const addBtn = doc.createElement('button');
     addBtn.type = 'button';
-    addBtn.textContent = 'Add site…';
+    addBtn.textContent = getMessage('launcher_add_site');
     addBtn.style.cssText = `
       padding: 5px 10px;
       border-radius: 6px;
@@ -2342,7 +2343,7 @@ export class LauncherPopover {
       border-bottom: 1px solid #333;
     `;
     const title = doc.createElement('div');
-    title.textContent = 'Add to Launch Deck';
+    title.textContent = getMessage('launcher_add_to_deck');
     title.style.cssText = 'flex: 1; color: #fff; font-weight: 600; font-size: 14px;';
     const closeBtn = doc.createElement('button');
     closeBtn.type = 'button';
@@ -2453,7 +2454,7 @@ export class LauncherPopover {
     `;
     const customBtn = doc.createElement('button');
     customBtn.type = 'button';
-    customBtn.textContent = 'Add URL';
+    customBtn.textContent = getMessage('launcher_add_url');
     customBtn.style.cssText = `
       padding: 8px 12px;
       border-radius: 6px;
@@ -2647,7 +2648,7 @@ export class LauncherPopover {
     input.type = 'search';
     input.placeholder = 'Filter results...';
     input.className = 'kp-launcher-search-input';
-    input.setAttribute('aria-label', 'Filter results');
+    input.setAttribute('aria-label', getMessage('launcher_filter_aria'));
     input.autocomplete = 'off';
     input.spellcheck = false;
     input.value = this._searchQuery || '';
@@ -2668,7 +2669,7 @@ export class LauncherPopover {
     clearBtn.type = 'button';
     clearBtn.textContent = '×';
     clearBtn.className = 'kp-launcher-search-clear';
-    clearBtn.setAttribute('aria-label', 'Clear search');
+    clearBtn.setAttribute('aria-label', getMessage('launcher_clear_search_aria'));
     clearBtn.style.cssText = `
       position: absolute;
       right: 4px;
@@ -2906,11 +2907,11 @@ export class LauncherPopover {
           ? 'No sites match your search'
           : 'Type to search sites in this category';
       } else if (categoryKey === 'launchDeck' && currentSubTab === 'favorites') {
-        empty.textContent = 'No toolbar bookmarks';
+        empty.textContent = getMessage('launcher_empty_toolbar');
       } else if (categoryKey === 'launchDeck' && currentSubTab === 'history') {
-        empty.textContent = 'No top visited sites';
+        empty.textContent = getMessage('launcher_empty_top_sites');
       } else {
-        empty.textContent = 'No items in this category';
+        empty.textContent = getMessage('launcher_empty_category');
       }
       grid.appendChild(empty);
     }
@@ -3119,7 +3120,7 @@ export class LauncherPopover {
     const submitBtn = doc.createElement('button');
     submitBtn.type = 'button';
     submitBtn.className = 'kp-launcher-page-search-submit';
-    submitBtn.textContent = 'Search';
+    submitBtn.textContent = getMessage('launcher_search');
     submitBtn.style.cssText = `
       padding: 4px 10px;
       background: #2a2a2a;
@@ -3234,7 +3235,7 @@ export class LauncherPopover {
 
     const select = doc.createElement('select');
     select.className = 'kp-launcher-videos-search-site';
-    select.setAttribute('aria-label', 'Video site to search');
+    select.setAttribute('aria-label', getMessage('launcher_video_site_aria'));
     select.style.cssText = `
       flex: 0 0 auto;
       max-width: 140px;
@@ -3427,7 +3428,7 @@ export class LauncherPopover {
     `;
 
     const launchHint = doc.createElement('div');
-    launchHint.textContent = 'Launch →';
+    launchHint.textContent = getMessage('launcher_launch_hint');
     launchHint.style.cssText = `
       margin-top: 4px;
       font-size: 11px;
@@ -3442,7 +3443,7 @@ export class LauncherPopover {
       this._launchDeckEditMode && this._isCatalogCategory(this._currentCategory);
 
     if (editing) {
-      launchHint.textContent = 'Editing';
+      launchHint.textContent = getMessage('launcher_editing');
       launchHint.style.color = '#c9a86c';
       mainLink.href = '#';
       mainLink.removeAttribute('target');
@@ -3592,7 +3593,7 @@ export class LauncherPopover {
     launchEye.setAttribute('aria-hidden', 'true');
     launchEye.textContent = '👁';
     const launchPreviewLabel = doc.createElement('span');
-    launchPreviewLabel.textContent = 'Preview';
+    launchPreviewLabel.textContent = getMessage('launcher_preview');
     launchPreviewLabel.style.cssText = `
       font-size: 10px;
       font-weight: 600;
@@ -3788,7 +3789,7 @@ export class LauncherPopover {
     listingEye.setAttribute('aria-hidden', 'true');
     listingEye.textContent = '👁';
     const listingPreviewLabel = doc.createElement('span');
-    listingPreviewLabel.textContent = 'Preview';
+    listingPreviewLabel.textContent = getMessage('launcher_preview');
     listingPreviewLabel.style.cssText = `
       font-size: 10px;
       font-weight: 600;

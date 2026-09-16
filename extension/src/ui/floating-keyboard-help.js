@@ -83,6 +83,7 @@ import {
   NCT_DARK_UI_ICON_BUTTON_OUTLINE,
   NCT_DARK_UI_COLORS
 } from './nct-dark-ui.js';
+import { getMessage } from '../utils/i18n.js';
 
 /** Match legacy keyboard dock inset (left/bottom 16px) while still using shared snap/clamp. */
 const KEYBOARD_POSITION_MARGIN_PX = Math.max(PANEL_POSITION_MARGIN_PX, 16);
@@ -437,7 +438,7 @@ export class FloatingKeyboardHelp {
           this.hintEl.hidden = false;
           this.hintEl.style.display = 'inline-flex';
           this.hintEl.appendChild(document.createTextNode('Editing — Alt+C to exit'));
-          this.hintEl.setAttribute('aria-label', 'Editing layout — Alt+C to exit');
+          this.hintEl.setAttribute('aria-label', getMessage('keyboard_help_editing_aria', 'Alt+C'));
         } else {
           while (this.hintEl.firstChild) this.hintEl.removeChild(this.hintEl.firstChild);
           this.hintEl.hidden = true;
@@ -522,8 +523,8 @@ export class FloatingKeyboardHelp {
       btn = doc.createElement('button');
       btn.type = 'button';
       btn.setAttribute('data-kp-floating-keyboard-exit-text', 'true');
-      btn.setAttribute('aria-label', 'Exit text mode (Esc)');
-      btn.title = 'Exit text mode (Esc)';
+      btn.setAttribute('aria-label', getMessage('keyboard_help_exit_text_mode', 'Esc'));
+      btn.title = getMessage('keyboard_help_exit_text_mode', 'Esc');
       Object.assign(btn.style, {
         marginLeft: '6px',
         padding: '0 7px',
@@ -627,8 +628,8 @@ export class FloatingKeyboardHelp {
       btn = doc.createElement('button');
       btn.type = 'button';
       btn.setAttribute('data-kp-floating-keyboard-close-editor', 'true');
-      btn.setAttribute('aria-label', 'Close layout editor (Alt+C)');
-      btn.title = 'Close layout editor (Alt+C)';
+      btn.setAttribute('aria-label', getMessage('keyboard_help_close_editor', 'Alt+C'));
+      btn.title = getMessage('keyboard_help_close_editor', 'Alt+C');
       Object.assign(btn.style, {
         marginLeft: '6px',
         padding: '0 7px',
@@ -1413,7 +1414,7 @@ export class FloatingKeyboardHelp {
         if (!shortcutEl && header && titleEl) {
           shortcutEl = createTitlebarShortcut(document, 'K');
           shortcutEl.setAttribute('data-kp-floating-keyboard-shortcut', 'true');
-          shortcutEl.title = 'Toggle keyboard reference';
+          shortcutEl.title = getMessage('keyboard_help_toggle_title');
           try {
             if (titleEl.nextSibling) header.insertBefore(shortcutEl, titleEl.nextSibling);
             else header.appendChild(shortcutEl);
@@ -1494,7 +1495,7 @@ export class FloatingKeyboardHelp {
     root.className = 'kp-floating-keyboard-help';
     root.hidden = true;
     root.setAttribute('role', 'dialog');
-    root.setAttribute('aria-label', 'KeyPilot keyboard reference');
+    root.setAttribute('aria-label', getMessage('keyboard_help_aria_label'));
     const shadowRoot = ensureOpenChromeShadow(root, { id: 'keyboard-help', chromeWindow: true });
     const shell = shadowRoot || root;
 
@@ -1504,7 +1505,7 @@ export class FloatingKeyboardHelp {
     header.setAttribute('data-kp-floating-keyboard-titlebar', 'true');
 
     const title = document.createElement('div');
-    title.textContent = 'Keyboard Reference';
+    title.textContent = getMessage('keyboard_help_title');
     title.setAttribute('data-kp-floating-keyboard-title', 'true');
 
     const leadingIcon = createTitlebarLeadingIcon(document, 'keyboard');
@@ -1512,7 +1513,7 @@ export class FloatingKeyboardHelp {
 
     const shortcut = createTitlebarShortcut(document, 'K');
     shortcut.setAttribute('data-kp-floating-keyboard-shortcut', 'true');
-    shortcut.title = 'Toggle keyboard reference';
+    shortcut.title = getMessage('keyboard_help_toggle_title');
 
     const hint = document.createElement('div');
     hint.setAttribute('data-kp-floating-keyboard-hint', 'true');
@@ -1523,7 +1524,7 @@ export class FloatingKeyboardHelp {
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
     closeBtn.textContent = '×';
-    closeBtn.setAttribute('aria-label', 'Close keyboard reference');
+    closeBtn.setAttribute('aria-label', getMessage('keyboard_help_close_aria'));
     closeBtn.setAttribute('data-kp-floating-keyboard-close', 'true');
     closeBtn.addEventListener('click', this._onCloseClick);
     closeBtn.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
@@ -1620,8 +1621,8 @@ export class FloatingKeyboardHelp {
       if (this.root) this.root.setAttribute('data-kp-collapsed', collapsed ? 'true' : 'false');
       if (this._collapseBtn) {
         this._collapseBtn.textContent = collapsed ? '▸' : '▾';
-        this._collapseBtn.setAttribute('aria-label', collapsed ? 'Expand keyboard reference' : 'Collapse keyboard reference');
-        this._collapseBtn.title = collapsed ? 'Expand' : 'Collapse';
+        this._collapseBtn.setAttribute('aria-label', getMessage(collapsed ? 'keyboard_help_expand_aria' : 'keyboard_help_collapse_aria'));
+        this._collapseBtn.title = getMessage(collapsed ? 'control_strip_expand' : 'control_strip_collapse');
       }
     } catch { /* ignore */ }
   }
@@ -1691,7 +1692,7 @@ export class FloatingKeyboardHelp {
     setTitlebarShortcutText(el, key);
     try {
       el.title = `Toggle with ${key}`;
-      el.setAttribute('aria-label', `Toggle keyboard reference (${key})`);
+      el.setAttribute('aria-label', getMessage('keyboard_help_toggle_aria', key));
     } catch { /* ignore */ }
   }
 
@@ -1731,7 +1732,7 @@ export class FloatingKeyboardHelp {
   _restoreLayoutTitle() {
     try {
       if (!this._layoutTitleEl || this._editMode) return;
-      this._layoutTitleEl.textContent = 'Keyboard Reference';
+      this._layoutTitleEl.textContent = getMessage('keyboard_help_title');
     } catch { /* ignore */ }
   }
 
@@ -1819,7 +1820,7 @@ export class FloatingKeyboardHelp {
     try {
       if (this._layoutTitleEl) {
         if (on) {
-          this._layoutTitleEl.textContent = 'Keyboard Reference — Typing';
+          this._layoutTitleEl.textContent = getMessage('keyboard_help_title_typing');
         } else {
           this._restoreLayoutTitle();
         }
@@ -2038,7 +2039,7 @@ export class FloatingKeyboardHelp {
 
     const menu = createSelectMenu({
       doc: document,
-      ariaLabel: 'Current keyboard layout',
+      ariaLabel: getMessage('keyboard_help_layout_aria'),
       variant: 'titlebar',
       value: this._layoutSelectValueForCurrent(),
       onChange: (value) => {
@@ -2084,8 +2085,8 @@ export class FloatingKeyboardHelp {
       chip.type = 'button';
       chip.hidden = true;
       chip.setAttribute('data-kp-floating-keyboard-handedness-chip', 'true');
-      chip.setAttribute('aria-label', 'Turn off left-handed layout');
-      chip.title = 'Turn off left-handed layout';
+      chip.setAttribute('aria-label', getMessage('keyboard_help_left_handed_off_aria'));
+      chip.title = getMessage('keyboard_help_left_handed_off_aria');
       Object.assign(chip.style, {
         display: 'none',
         alignItems: 'center',
@@ -2101,7 +2102,7 @@ export class FloatingKeyboardHelp {
         cursor: 'pointer'
       });
       const label = document.createElement('span');
-      label.textContent = 'Lefthanded';
+      label.textContent = getMessage('keyboard_help_left_handed');
       const close = document.createElement('span');
       close.textContent = '×';
       close.setAttribute('aria-hidden', 'true');
@@ -2257,8 +2258,8 @@ export class FloatingKeyboardHelp {
     try {
       if (this._layoutTitleEl) {
         const nextTitle = (this._textModeFilterActive && !this._editMode)
-          ? 'Keyboard Reference — Typing'
-          : 'Keyboard Reference';
+          ? getMessage('keyboard_help_title_typing')
+          : getMessage('keyboard_help_title');
         if (this._layoutTitleEl.textContent !== nextTitle) {
           this._layoutTitleEl.textContent = nextTitle;
         }
@@ -2293,7 +2294,7 @@ export class FloatingKeyboardHelp {
         });
         this._rebuildKeyIndex();
       } catch (e) {
-        this.keyboardContainer.textContent = 'Unable to render keyboard reference on this page.';
+        this.keyboardContainer.textContent = getMessage('keyboard_help_render_error');
         console.warn('[KeyPilot] Failed to render floating keyboard reference:', e);
       }
       return;
@@ -2350,8 +2351,8 @@ export class FloatingKeyboardHelp {
         try {
           if (this._layoutTitleEl) {
             this._layoutTitleEl.textContent = (this._textModeFilterActive && !this._editMode)
-              ? 'Keyboard Reference — Typing'
-              : 'Keyboard Reference';
+              ? getMessage('keyboard_help_title_typing')
+              : getMessage('keyboard_help_title');
           }
         } catch { /* ignore */ }
         try {
@@ -2378,7 +2379,7 @@ export class FloatingKeyboardHelp {
           this._rebuildKeyIndex();
           await this._refreshLayoutSelectOptions();
         } catch (e) {
-          this.keyboardContainer.textContent = 'Unable to render keyboard reference on this page.';
+          this.keyboardContainer.textContent = getMessage('keyboard_help_render_error');
           console.warn('[KeyPilot] Failed to render floating keyboard reference after layout fallback:', e);
         }
         return;
@@ -2399,7 +2400,7 @@ export class FloatingKeyboardHelp {
       });
       this._rebuildKeyIndex();
     } catch (e) {
-      this.keyboardContainer.textContent = 'Unable to render custom keyboard layout.';
+      this.keyboardContainer.textContent = getMessage('keyboard_help_custom_render_error');
       console.warn('[KeyPilot] Failed to render custom keyboard reference:', e);
     }
   }
@@ -2414,7 +2415,7 @@ export class FloatingKeyboardHelp {
 
     try {
       if (this._layoutTitleEl) {
-        this._layoutTitleEl.textContent = 'Keyboard Reference';
+        this._layoutTitleEl.textContent = getMessage('keyboard_help_title');
       }
     } catch { /* ignore */ }
 
@@ -2690,8 +2691,8 @@ export class FloatingKeyboardHelp {
         del.type = 'button';
         del.className = 'kp-key-delete';
         del.textContent = '×';
-        del.setAttribute('aria-label', `Remove action from ${slotLabel}`);
-        del.title = 'Remove';
+        del.setAttribute('aria-label', getMessage('keyboard_help_remove_action_aria', slotLabel));
+        del.title = getMessage('keyboard_help_remove');
         del.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();

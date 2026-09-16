@@ -2,6 +2,7 @@
  * In-page iframe / Docs / Settings popovers and OS popup windows (E + P).
  * Owned by OverlayManager; public methods stay on the OverlayManager façade.
  */
+import { getMessage } from '../utils/i18n.js';
 import { KP_UI_FONT, MODES } from '../config/constants.js';
 import { MSG } from '../messaging/types.js';
 import {
@@ -382,16 +383,16 @@ export class PopoverController {
     const chromeMount = chromeShadow || chromeHost;
 
     const titlebarApi = createPopoverTitlebar({
-      title: (opts.title && String(opts.title).trim()) || 'KeyPilot Docs',
+      title: (opts.title && String(opts.title).trim()) || getMessage('docs_document_title'),
       shortcut: opts.hintKeyLabel || 'Alt + H',
       icon: 'window',
       variant: 'modal',
       showClose: true,
       onClose: requestClosePopover,
-      closeTitle: 'Close (Esc)',
+      closeTitle: getMessage('popover_titlebar_close'),
       hint: createTitlebarCloseHint({
         keys: [opts.hintKeyLabel || 'Alt+H', 'Esc'],
-        suffix: 'Use the same keyboard navigation controls.'
+        suffix: getMessage('popover_nav_hint_suffix')
       }),
       className: 'kpv2-popover-titlebar',
       actions: opts.actions || null
@@ -546,16 +547,16 @@ export class PopoverController {
     const chromeMount = chromeShadow || chromeHost;
 
     const titlebarApi = createPopoverTitlebar({
-      title: (opts.title && String(opts.title).trim()) || 'KeyPilot Settings',
+      title: (opts.title && String(opts.title).trim()) || getMessage('settings_static_009'),
       shortcut: opts.hintKeyLabel || "'",
       icon: 'gear',
       variant: 'modal',
       showClose: true,
       onClose: requestClosePopover,
-      closeTitle: 'Close (Esc)',
+      closeTitle: getMessage('popover_titlebar_close'),
       hint: createTitlebarCloseHint({
         keys: [opts.hintKeyLabel || "'", 'Esc'],
-        suffix: 'Use the same keyboard navigation controls.'
+        suffix: getMessage('popover_nav_hint_suffix')
       }),
       className: 'kpv2-popover-titlebar',
       actions: opts.actions || null
@@ -773,7 +774,7 @@ export class PopoverController {
       ? opts.titlebarHint
       : createTitlebarCloseHint({
         keys: [hintKeyLabel, 'Esc'],
-        suffix: 'Use the same keyboard navigation controls.'
+        suffix: getMessage('popover_nav_hint_suffix')
       });
     const titlebarApi = createPopoverTitlebar({
       title: titleText,
@@ -782,7 +783,7 @@ export class PopoverController {
       variant: 'modal',
       showClose,
       onClose: requestClosePopover,
-      closeTitle: 'Close (Esc)',
+      closeTitle: getMessage('popover_titlebar_close'),
       hint: titlebarHint,
       className: 'kpv2-popover-titlebar',
       actions: opts?.actions || null
@@ -825,7 +826,7 @@ export class PopoverController {
         margin-bottom: 8px;
       `
     });
-    errorTitle.textContent = 'Cannot Display Page';
+    errorTitle.textContent = getMessage('popover_cannot_display_title');
     errorContainer.appendChild(errorTitle);
 
     const errorMessage = this.createElement('div', {
@@ -836,7 +837,7 @@ export class PopoverController {
         max-width: 400px;
       `
     });
-    errorMessage.textContent = 'This website prevents embedding in iframes for security reasons.';
+    errorMessage.textContent = getMessage('popover_cannot_display_message');
     errorContainer.appendChild(errorMessage);
 
     const openInTabButton = this.createElement('button', {
@@ -851,7 +852,7 @@ export class PopoverController {
         font-weight: 500;
       `
     });
-    openInTabButton.textContent = 'Open in New Tab';
+    openInTabButton.textContent = getMessage('preview_open_new_tab');
     openInTabButton.onclick = () => {
       window.open(url, '_blank');
       requestClosePopover();

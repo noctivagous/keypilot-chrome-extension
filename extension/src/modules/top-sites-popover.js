@@ -5,6 +5,7 @@
  * Default host is a transient PopupManager modal; optional persistent mode
  * remounts across pages like Keyboard Reference.
  */
+import { getMessage } from '../utils/i18n.js';
 import { MSG } from '../messaging/types.js';
 import { Z_INDEX } from '../config/constants.js';
 import {
@@ -77,17 +78,17 @@ const POSITION_MARGIN_PX = PANEL_POSITION_MARGIN_PX;
 /** @typedef {'toolbar'|'mostVisited'|'recentBookmarks'|'keypilot'} TopSitesTabId */
 
 const TABS = Object.freeze([
-  Object.freeze({ id: 'toolbar', label: 'Toolbar' }),
-  Object.freeze({ id: 'mostVisited', label: 'Most Visited' }),
-  Object.freeze({ id: 'recentBookmarks', label: 'Recent Bookmarks' }),
-  Object.freeze({ id: 'keypilot', label: 'KeyPilot' })
+  Object.freeze({ id: 'toolbar', labelKey: 'top_sites_tab_toolbar' }),
+  Object.freeze({ id: 'mostVisited', labelKey: 'top_sites_tab_most_visited' }),
+  Object.freeze({ id: 'recentBookmarks', labelKey: 'top_sites_tab_recent_bookmarks' }),
+  Object.freeze({ id: 'keypilot', labelKey: 'top_sites_tab_keypilot' })
 ]);
 
-const EMPTY_COPY = Object.freeze({
-  toolbar: 'No bookmarks on the Bookmarks bar.',
-  mostVisited: 'No frequently visited sites yet.',
-  recentBookmarks: 'No recent bookmarks.',
-  keypilot: 'No KeyPilot tools.'
+const EMPTY_COPY_KEYS = Object.freeze({
+  toolbar: 'top_sites_empty_toolbar',
+  mostVisited: 'top_sites_empty_most_visited',
+  recentBookmarks: 'top_sites_empty_recent_bookmarks',
+  keypilot: 'top_sites_empty_keypilot'
 });
 
 const CARD_CLASS_NAMES = {
@@ -701,7 +702,7 @@ export class TopSitesPopover {
     btn.type = 'button';
     btn.className = 'kpv2-ts-gear';
     btn.title = 'Top Sites options';
-    btn.setAttribute('aria-label', 'Top Sites options');
+    btn.setAttribute('aria-label', getMessage('top_sites_options_aria'));
     btn.setAttribute('aria-haspopup', 'menu');
     btn.setAttribute('aria-expanded', 'false');
 
@@ -738,7 +739,7 @@ export class TopSitesPopover {
     item.setAttribute('role', 'menuitemcheckbox');
     item.dataset.kpTsPersist = 'true';
     item.setAttribute('aria-checked', 'false');
-    item.textContent = 'Keep open across pages';
+    item.textContent = getMessage('top_sites_keep_open');
     item.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -1169,7 +1170,7 @@ export class TopSitesPopover {
     const panel = doc.createElement('div');
     panel.className = 'kpv2-top-sites-panel';
     panel.setAttribute('role', 'dialog');
-    panel.setAttribute('aria-label', 'Top Sites');
+    panel.setAttribute('aria-label', getMessage('top_sites_title'));
     panel.tabIndex = -1;
     const shadowRoot = ensureOpenChromeShadow(panel, { id: 'top-sites', chromeWindow: true });
     const shell = shadowRoot || panel;
@@ -1179,12 +1180,12 @@ export class TopSitesPopover {
 
     const titlebarApi = createPopoverTitlebar({
       doc,
-      title: 'Top Sites',
+      title: getMessage('top_sites_title'),
       shortcut: ';',
       icon: 'window',
       variant: 'panel',
       draggable: true,
-      closeTitle: 'Close',
+      closeTitle: getMessage('overlay_close'),
       onClose: () => this.hide(),
       actions: [this._gearBtn],
       className: 'kpv2-popover-titlebar kpv2-ts-titlebar'
@@ -1195,7 +1196,7 @@ export class TopSitesPopover {
     const tabstrip = doc.createElement('div');
     tabstrip.className = 'kpv2-ts-tabstrip';
     tabstrip.setAttribute('role', 'tablist');
-    tabstrip.setAttribute('aria-label', 'Top Sites and KeyPilot');
+    tabstrip.setAttribute('aria-label', getMessage('top_sites_tabs_aria'));
 
     for (const tab of TABS) {
       const btn = doc.createElement('button');
@@ -1204,7 +1205,7 @@ export class TopSitesPopover {
       btn.id = `kp-ts-tab-${tab.id}`;
       btn.setAttribute('role', 'tab');
       btn.dataset.tabId = tab.id;
-      btn.textContent = tab.label;
+      btn.textContent = getMessage(tab.labelKey);
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -1327,7 +1328,7 @@ export class TopSitesPopover {
 
   async _loadAndRender(gen) {
     if (!this._stillOpen(gen) || !this._grid || !this._status) return;
-    this._status.textContent = 'Loading…';
+    this._status.textContent = getMessage('top_sites_loading');
     this._grid.textContent = '';
     this._items = [];
 
@@ -1391,7 +1392,7 @@ export class TopSitesPopover {
    */
   _renderGrid(items) {
     if (!this._grid) return;
-    const emptyText = EMPTY_COPY[this._tab] || 'Nothing to show.';
+    const emptyText = getMessage(EMPTY_COPY_KEYS[this._tab] || 'top_sites_empty');
     if (!items.length) {
       this._grid.textContent = '';
       const empty = (this._grid.ownerDocument || document).createElement('div');
@@ -1436,7 +1437,7 @@ export class TopSitesPopover {
     this._grid.textContent = '';
     this._items = KEYPILOT_HUB_CARDS.map((def) => ({ ...def }));
     this._selectedIndex = 0;
-    this._status.textContent = `${KEYPILOT_HUB_CARDS.length} tools`;
+    this._status.textContent = getMessage('overlay_hub_tools_count', String(KEYPILOT_HUB_CARDS.length));
 
     KEYPILOT_HUB_CARDS.forEach((def, idx) => {
       const row = createKeypilotHubCard(doc, def);

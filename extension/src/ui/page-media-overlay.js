@@ -3,6 +3,7 @@
  * DOM-only (TrustedHTML-safe). Prefixes: kpv2-page-media-*.
  */
 
+import { getMessage } from '../utils/i18n.js';
 import {
   NCT_DARK_UI_COLORS,
   NCT_DARK_UI_FONT,
@@ -432,15 +433,15 @@ function buildUrlViewToolbar() {
 
   const label = document.createElement('span');
   label.className = 'kpv2-page-media-url-view-label';
-  label.textContent = 'URL View:';
+  label.textContent = getMessage('page_media_url_view');
 
   _urlViewControl = createSegmentedControl({
     className: 'kpv2-page-media-url-view-seg',
-    ariaLabel: 'URL list layout',
+    ariaLabel: getMessage('page_media_url_layout_aria'),
     value: _urlViewMode,
     options: [
-      { value: 'table', label: 'Table', title: 'Hierarchical table by domain and path' },
-      { value: 'list', label: 'List', title: 'Horizontal cards grouped by domain and path' }
+      { value: 'table', label: getMessage('page_media_view_table'), title: getMessage('page_media_view_table_title') },
+      { value: 'list', label: getMessage('page_media_view_list'), title: getMessage('page_media_view_list_title') }
     ],
     onChange: (value) => {
       const mode = normalizeUrlViewMode(value);
@@ -465,15 +466,15 @@ function buildImageAspectToolbar() {
 
   const label = document.createElement('span');
   label.className = 'kpv2-page-media-aspect-label';
-  label.textContent = 'Card Aspect Ratio:';
+  label.textContent = getMessage('page_media_aspect');
 
   _aspectControl = createSegmentedControl({
     className: 'kpv2-page-media-aspect-seg',
-    ariaLabel: 'Card aspect ratio',
+    ariaLabel: getMessage('page_media_aspect_aria'),
     value: _imageAspectMode,
     options: [
-      { value: 'square', label: 'Square Crop', title: 'Square crop thumbnails' },
-      { value: 'original', label: 'Img Original', title: 'Keep each image’s original aspect ratio' }
+      { value: 'square', label: getMessage('page_media_aspect_square'), title: getMessage('page_media_aspect_square_title') },
+      { value: 'original', label: getMessage('page_media_aspect_original'), title: getMessage('page_media_aspect_original_title') }
     ],
     onChange: (value) => {
       const mode = normalizeImageAspectMode(value);
@@ -490,16 +491,16 @@ function buildImageAspectToolbar() {
 
   const sortLabel = document.createElement('span');
   sortLabel.className = 'kpv2-page-media-aspect-label';
-  sortLabel.textContent = 'Sort:';
+  sortLabel.textContent = getMessage('page_media_sort');
 
   _sortControl = createSegmentedControl({
     className: 'kpv2-page-media-sort-seg',
-    ariaLabel: 'Image sort order',
+    ariaLabel: getMessage('page_media_sort_aria'),
     value: _imageSortMode,
     options: [
-      { value: 'size-desc', label: 'Size:Descending', title: 'Largest pixel area first' },
-      { value: 'size-asc', label: 'Size:Ascending', title: 'Smallest pixel area first' },
-      { value: 'page', label: 'Page Order', title: 'Order images appear on the page' }
+      { value: 'size-desc', label: getMessage('page_media_sort_size_desc'), title: getMessage('page_media_sort_size_desc_title') },
+      { value: 'size-asc', label: getMessage('page_media_sort_size_asc'), title: getMessage('page_media_sort_size_asc_title') },
+      { value: 'page', label: getMessage('page_media_sort_page'), title: getMessage('page_media_sort_page_title') }
     ],
     onChange: (value) => {
       const mode = normalizeImageSortMode(value);
@@ -514,19 +515,19 @@ function buildImageAspectToolbar() {
 
   const landmarkWrap = document.createElement('label');
   landmarkWrap.className = 'kpv2-page-media-landmark-check';
-  landmarkWrap.title = 'Show images in articles and main content before site header, nav, and footer';
+  landmarkWrap.title = getMessage('page_media_landmark_title');
 
   _imageLandmarkCheck = document.createElement('input');
   _imageLandmarkCheck.type = 'checkbox';
   _imageLandmarkCheck.checked = _imagePrioritizeLandmarks;
-  _imageLandmarkCheck.setAttribute('aria-label', 'Prioritize article and main content images');
+  _imageLandmarkCheck.setAttribute('aria-label', getMessage('page_media_article_first_aria'));
   _imageLandmarkCheck.addEventListener('change', () => {
     persistImageLandmarkPreference(!!_imageLandmarkCheck?.checked);
     if (_activeTab === 'image') renderImageGrid({ preserveScroll: true });
   });
 
   const landmarkText = document.createElement('span');
-  landmarkText.textContent = 'Article first';
+  landmarkText.textContent = getMessage('page_media_article_first');
 
   landmarkWrap.appendChild(_imageLandmarkCheck);
   landmarkWrap.appendChild(landmarkText);
@@ -580,9 +581,9 @@ function applyImageScale(slider = _imageScaleSlider) {
  */
 function buildImageScaleControl() {
   const { root } = createNctDarkUiScaleSlider({
-    label: 'Scale',
-    title: 'Overlay content scale (1×–2.5×, all tabs)',
-    ariaLabel: 'Page Media content scale',
+    label: getMessage('page_media_scale_label'),
+    title: getMessage('page_media_scale_title'),
+    ariaLabel: getMessage('page_media_scale_aria'),
     min: IMAGE_SCALE_SLIDER_MIN,
     max: IMAGE_SCALE_SLIDER_MAX,
     step: IMAGE_SCALE_SLIDER_STEP,
@@ -622,7 +623,7 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
   _notify = typeof onNotify === 'function' ? onNotify : () => {};
   _onSendToMediaLibrary = typeof onSendToMediaLibrary === 'function'
     ? onSendToMediaLibrary
-    : async () => { _notify('Could not send to Media Library', 'error'); };
+    : async () => { _notify(getMessage('overlay_notify_send_library_failed'), 'error'); };
 
   await loadImageScalePreference();
   await loadImageAspectPreference();
@@ -645,7 +646,7 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
   overlay.id = OVERLAY_ID;
   overlay.className = 'kpv2-page-media-overlay';
   overlay.setAttribute('role', 'dialog');
-  overlay.setAttribute('aria-label', 'Page Media');
+  overlay.setAttribute('aria-label', getMessage('page_media_title'));
   overlay.style.cssText = `
     position: fixed;
     inset: 0;
@@ -669,7 +670,7 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
   titleWrap.className = 'kpv2-page-media-title-wrap';
   const title = document.createElement('h2');
   title.className = 'kpv2-page-media-title';
-  title.textContent = 'Page Media';
+  title.textContent = getMessage('page_media_title');
   const total = document.createElement('span');
   total.className = 'kpv2-page-media-count';
   const mediaCount =
@@ -678,13 +679,13 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
   total.textContent = String(mediaCount || groups.font.length
     || (HIDDEN_PAGE_MEDIA_TABS.has('url') ? 0 : groups.url.length));
   const extraBits = [];
-  if (groups.font.length) extraBits.push(`${groups.font.length} fonts`);
+  if (groups.font.length) extraBits.push(getMessage('page_media_count_fonts', String(groups.font.length)));
   if (!HIDDEN_PAGE_MEDIA_TABS.has('url') && groups.url.length) {
-    extraBits.push(`${groups.url.length} unique URLs`);
+    extraBits.push(getMessage('page_media_count_urls', String(groups.url.length)));
   }
   total.title = extraBits.length
-    ? `${mediaCount} media · ${extraBits.join(' · ')}`
-    : `${mediaCount} media`;
+    ? getMessage('page_media_count_with_extra', [String(mediaCount), extraBits.join(' · ')])
+    : getMessage('page_media_count', String(mediaCount));
   titleWrap.appendChild(title);
   titleWrap.appendChild(total);
 
@@ -695,14 +696,14 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
   /** @type {Record<string, HTMLButtonElement>} */
   const tabButtons = {};
   const tabDefs = /** @type {const} */ ([
-    { id: 'image', label: 'Image' },
-    { id: 'video', label: 'Video' },
-    { id: 'pageText', label: 'Text' },
-    { id: 'text', label: 'Docs' },
-    { id: 'font', label: 'Fonts' },
-    { id: 'url', label: 'URLs' }
+    { id: 'image', labelKey: 'page_media_tab_image' },
+    { id: 'video', labelKey: 'page_media_tab_video' },
+    { id: 'pageText', labelKey: 'page_media_tab_text' },
+    { id: 'text', labelKey: 'page_media_tab_docs' },
+    { id: 'font', labelKey: 'page_media_tab_fonts' },
+    { id: 'url', labelKey: 'page_media_tab_urls' }
   ]);
-  for (const { id, label } of tabDefs) {
+  for (const { id, labelKey } of tabDefs) {
     if (HIDDEN_PAGE_MEDIA_TABS.has(id)) continue;
     const count = groups[id].length;
     const btn = document.createElement('button');
@@ -714,7 +715,7 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
     btn.setAttribute('aria-selected', id === _activeTab ? 'true' : 'false');
     if (id === _activeTab) btn.classList.add('is-active');
     const name = document.createElement('span');
-    name.textContent = label;
+    name.textContent = getMessage(labelKey);
     const badge = document.createElement('span');
     badge.className = 'kpv2-page-media-tab-badge';
     badge.textContent = String(count);
@@ -733,7 +734,7 @@ export async function openPageMediaOverlay({ items, onClose, onNotify, onSendToM
   const closeBtn = document.createElement('button');
   closeBtn.type = 'button';
   closeBtn.className = 'kpv2-page-media-close';
-  closeBtn.textContent = 'Close';
+  closeBtn.textContent = getMessage('overlay_close');
   closeBtn.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -919,10 +920,10 @@ function renderGrid() {
     const empty = document.createElement('div');
     empty.className = 'kpv2-page-media-empty';
     empty.textContent =
-      _activeTab === 'url' ? 'No URLs found on this page.'
-        : _activeTab === 'pageText' ? 'No article or main text found on this page.'
-          : _activeTab === 'font' ? 'No fonts found on this page.'
-          : `No ${_activeTab === 'text' ? 'document' : _activeTab} files found on this page.`;
+      _activeTab === 'url' ? getMessage('page_media_empty_url')
+        : _activeTab === 'pageText' ? getMessage('page_media_empty_page_text')
+          : _activeTab === 'font' ? getMessage('page_media_empty_font')
+          : getMessage(_activeTab === 'text' ? 'page_media_empty_docs' : 'page_media_empty_video');
     content.appendChild(empty);
     return;
   }
@@ -988,7 +989,7 @@ function renderImageGrid(opts = {}) {
     _imageFlatList = [];
     const empty = document.createElement('div');
     empty.className = 'kpv2-page-media-empty';
-    empty.textContent = 'No image files found on this page.';
+    empty.textContent = getMessage('page_media_empty');
     content.appendChild(empty);
     return;
   }
@@ -1026,7 +1027,7 @@ function renderImageGrid(opts = {}) {
     const heading = document.createElement('h3');
     heading.className = 'kpv2-page-media-size-heading';
     const title = document.createElement('span');
-    title.textContent = 'Video posters';
+    title.textContent = getMessage('page_media_video_posters');
     const count = document.createElement('span');
     count.className = 'kpv2-page-media-size-count';
     count.textContent = String(posterItems.length);
@@ -1050,7 +1051,7 @@ function renderImageGrid(opts = {}) {
   if (!flat.length) {
     const empty = document.createElement('div');
     empty.className = 'kpv2-page-media-empty';
-    empty.textContent = 'No image files found on this page.';
+    empty.textContent = getMessage('page_media_empty');
     content.appendChild(empty);
   }
 
@@ -1193,7 +1194,7 @@ function buildVideoCard(item, onActivate) {
 
   const thumb = document.createElement('img');
   thumb.className = 'kpv2-page-media-thumb';
-  thumb.alt = item.label || 'Video';
+  thumb.alt = item.label || getMessage('page_media_video_alt');
   thumb.draggable = false;
   thumb.hidden = true;
   thumbWrap.appendChild(thumb);
@@ -1262,7 +1263,7 @@ function buildPageTextRow(item, onActivate) {
   }
   row.setAttribute('role', 'button');
   row.tabIndex = 0;
-  row.title = 'Click to copy';
+  row.title = getMessage('page_media_click_to_copy');
 
   const main = document.createElement('div');
   main.className = 'kpv2-page-media-text-main';
@@ -1311,10 +1312,10 @@ function buildPageTextRow(item, onActivate) {
  */
 function formatPageTextKind(item) {
   const k = String(item?.kind || '');
-  if (k === 'article') return 'Article';
-  if (k === 'main') return 'Main';
-  if (k === 'full-page') return 'Full page';
-  return k || 'Text';
+  if (k === 'article') return getMessage('page_media_text_kind_article');
+  if (k === 'main') return getMessage('page_media_text_kind_main');
+  if (k === 'full-page') return getMessage('page_media_text_kind_full');
+  return k || getMessage('page_media_text_kind_text');
 }
 
 /**
@@ -1354,13 +1355,13 @@ function groupUrlItemsByDomain(list) {
  */
 function urlItemKindLabel(item) {
   const group = item?.urlGroup || '';
-  if (group === 'page') return 'Page';
-  if (group === 'document') return 'Document';
-  if (group === 'image') return 'Image';
-  if (group === 'video') return 'Video';
+  if (group === 'page') return getMessage('page_media_kind_page');
+  if (group === 'document') return getMessage('page_media_kind_document');
+  if (group === 'image') return getMessage('page_media_kind_image');
+  if (group === 'video') return getMessage('page_media_kind_video');
   if (item?.ext) return `.${item.ext}`;
   if (item?.kind && item.kind !== 'url') return String(item.kind);
-  return 'Link';
+  return getMessage('page_media_kind_link');
 }
 
 /**
@@ -1435,7 +1436,7 @@ function buildFontRow(item, onActivate) {
   main.className = 'kpv2-page-media-font-main';
   const name = document.createElement('div');
   name.className = 'kpv2-page-media-font-name';
-  name.textContent = item.label || item.fontFamily || 'Font';
+  name.textContent = item.label || item.fontFamily || getMessage('page_media_font_fallback');
   const meta = document.createElement('div');
   meta.className = 'kpv2-page-media-font-meta';
   const type = document.createElement('span');
@@ -1570,12 +1571,12 @@ function buildUrlTableView(list) {
 
   const hier = createHierarchicalTable({
     columns: [
-      { key: 'path', label: 'Path / URL', width: '52%' },
-      { key: 'kind', label: 'Kind', width: '12%' },
-      { key: 'title', label: 'Title', width: '20%' },
-      { key: 'actions', label: 'Actions', width: '16%' }
+      { key: 'path', label: getMessage('page_media_col_path'), width: '52%' },
+      { key: 'kind', label: getMessage('page_media_col_kind'), width: '12%' },
+      { key: 'title', label: getMessage('page_media_col_title'), width: '20%' },
+      { key: 'actions', label: getMessage('page_media_col_actions'), width: '16%' }
     ],
-    ariaLabel: 'Page URLs hierarchical table',
+    ariaLabel: getMessage('page_media_table_aria'),
     wrapClassName: 'kpv2-page-media-url-table-wrap',
     isGroupExpanded: isUrlTableGroupExpanded,
     onToggleGroup: toggleUrlTableGroup
@@ -1595,7 +1596,7 @@ function buildUrlTableView(list) {
       label: domain,
       depth: 0,
       count: items.length,
-      cells: [isCurrent ? 'This page' : 'Domain', ''],
+      cells: [isCurrent ? getMessage('page_media_this_page') : getMessage('page_media_domain'), ''],
       className: isCurrent ? 'is-current-domain' : ''
     })) continue;
 
@@ -1613,7 +1614,7 @@ function buildUrlTableView(list) {
           label: prefix,
           depth: 1,
           count: pathItems.length,
-          cells: ['Path', '']
+          cells: [getMessage('page_media_path'), '']
         })) continue;
         leafDepth = 2;
         pathPrefix = prefix;
@@ -1774,7 +1775,7 @@ function buildHoverActions(item) {
   const bar = document.createElement('div');
   bar.className = 'kpv2-page-media-actions';
   bar.setAttribute('role', 'group');
-  bar.setAttribute('aria-label', 'Item actions');
+  bar.setAttribute('aria-label', getMessage('page_media_item_actions_aria'));
 
   const mk = (label, title, handler) => {
     const btn = document.createElement('button');
@@ -1789,18 +1790,18 @@ function buildHoverActions(item) {
         await handler();
       } catch (err) {
         console.warn('[KeyPilot] Page Media action failed:', err);
-        _notify('Action failed', 'error');
+        _notify(getMessage('overlay_notify_action_failed'), 'error');
       }
     }, true);
     return btn;
   };
 
-  bar.appendChild(mk('Copy', 'Copy to pasteboard', () => copyItemToPasteboard(item)));
+  bar.appendChild(mk(getMessage('page_media_action_copy'), getMessage('page_media_action_copy_title'), () => copyItemToPasteboard(item)));
   if (item?.category !== 'pageText' && item?.category !== 'font') {
-    bar.appendChild(mk('Send', 'Send to Media Library', () => sendItemToMediaLibrary(item)));
+    bar.appendChild(mk(getMessage('page_media_action_send'), getMessage('page_media_action_send_title'), () => sendItemToMediaLibrary(item)));
   }
   if (item?.url || item?.category === 'pageText') {
-    bar.appendChild(mk('Download', 'Download file', () => downloadItem(item)));
+    bar.appendChild(mk(getMessage('page_media_action_download'), getMessage('page_media_action_download_title'), () => downloadItem(item)));
   }
   return bar;
 }
@@ -1819,11 +1820,11 @@ async function copyItemToPasteboard(item) {
     try {
       if (navigator.clipboard?.writeText && text) {
         await navigator.clipboard.writeText(text);
-        _notify('Font info copied to pasteboard', 'success');
+        _notify(getMessage('overlay_notify_font_copied'), 'success');
         return;
       }
     } catch { /* ignore */ }
-    _notify('Could not copy to pasteboard', 'error');
+    _notify(getMessage('overlay_notify_copy_failed'), 'error');
     return;
   }
   const pageText = item?.category === 'pageText' ? String(item.text || '') : '';
@@ -1831,16 +1832,16 @@ async function copyItemToPasteboard(item) {
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(pageText);
-        _notify('Text copied to pasteboard', 'success');
+        _notify(getMessage('overlay_notify_text_copied'), 'success');
         return;
       }
     } catch { /* ignore */ }
-    _notify('Could not copy to pasteboard', 'error');
+    _notify(getMessage('overlay_notify_copy_failed'), 'error');
     return;
   }
 
   if (!item?.url) {
-    _notify('Nothing to copy', 'info');
+    _notify(getMessage('overlay_notify_nothing_to_copy'), 'info');
     return;
   }
 
@@ -1853,7 +1854,7 @@ async function copyItemToPasteboard(item) {
           : (item.mimeType && String(item.mimeType).startsWith('image/') ? String(item.mimeType) : 'image/png');
         const ok = await writeImageBlobToClipboard(blob, mime);
         if (ok) {
-          _notify('Copied to pasteboard', 'success');
+          _notify(getMessage('overlay_notify_copied'), 'success');
           return;
         }
       }
@@ -1867,14 +1868,14 @@ async function copyItemToPasteboard(item) {
     if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(item.url);
       _notify(
-        item.category === 'image' ? 'Image URL copied' : 'URL copied to pasteboard',
+        item.category === 'image' ? getMessage('overlay_notify_image_url_copied') : getMessage('overlay_notify_url_copied_pasteboard'),
         'success'
       );
       return;
     }
   } catch { /* ignore */ }
 
-  _notify('Could not copy to pasteboard', 'error');
+  _notify(getMessage('overlay_notify_copy_failed'), 'error');
 }
 
 /**
@@ -1885,7 +1886,7 @@ async function sendItemToMediaLibrary(item) {
     await _onSendToMediaLibrary(item);
   } catch (err) {
     console.warn('[KeyPilot] send to Media Library failed:', err);
-    _notify('Could not send to Media Library', 'error');
+    _notify(getMessage('overlay_notify_send_library_failed'), 'error');
   }
 }
 
@@ -1908,16 +1909,16 @@ async function downloadItem(item) {
       setTimeout(() => {
         try { URL.revokeObjectURL(objectUrl); } catch { /* ignore */ }
       }, 2000);
-      _notify('Download started', 'success');
+      _notify(getMessage('overlay_notify_download_started'), 'success');
       return;
     } catch {
-      _notify('Could not download', 'error');
+      _notify(getMessage('overlay_notify_download_failed'), 'error');
       return;
     }
   }
 
   if (!item?.url) {
-    _notify('Nothing to download', 'info');
+    _notify(getMessage('overlay_notify_nothing_to_download'), 'info');
     return;
   }
 
@@ -1931,16 +1932,16 @@ async function downloadItem(item) {
       setTimeout(() => {
         try { URL.revokeObjectURL(objectUrl); } catch { /* ignore */ }
       }, 2000);
-      _notify('Download started', 'success');
+      _notify(getMessage('overlay_notify_download_started'), 'success');
       return;
     }
   } catch { /* fall through */ }
 
   try {
     triggerDownload(item.url, filename);
-    _notify('Download started', 'success');
+    _notify(getMessage('overlay_notify_download_started'), 'success');
   } catch {
-    _notify('Could not download', 'error');
+    _notify(getMessage('overlay_notify_download_failed'), 'error');
   }
 }
 
@@ -2206,7 +2207,7 @@ function fillExtChipMeta(host, item, extra) {
     host.appendChild(rest);
   }
   if (!host.firstChild) {
-    host.textContent = 'link';
+    host.textContent = getMessage('page_media_link');
   }
 }
 
@@ -2283,7 +2284,7 @@ function openFullView(list, index, mode) {
     openLink.href = item.url;
     openLink.target = '_blank';
     openLink.rel = 'noopener noreferrer';
-    openLink.textContent = 'Open in new tab';
+    openLink.textContent = getMessage('preview_open_new_tab_aria');
     openLink.addEventListener('click', (e) => e.stopPropagation(), true);
     host.appendChild(openLink);
   } else {

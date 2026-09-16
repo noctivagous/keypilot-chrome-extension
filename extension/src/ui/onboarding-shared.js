@@ -21,6 +21,23 @@ export const ONBOARDING_PANEL_CLASS = 'kp-onboarding-panel';
 export const ONBOARDING_DEFAULT_TITLE = 'Welcome to KeyPilot';
 export const ONBOARDING_REOPEN_TIP = 'Tip: Press Alt + I to re-open this walkthrough later.';
 
+function onboardingMessage(key, substitutions) {
+  try {
+    const message = globalThis.chrome?.i18n?.getMessage?.(key, substitutions);
+    return typeof message === 'string' && message ? message : '';
+  } catch {
+    return '';
+  }
+}
+
+export function getOnboardingDefaultTitle() {
+  return onboardingMessage('onboarding_default_title');
+}
+
+export function getOnboardingReopenTip() {
+  return onboardingMessage('onboarding_reopen_tip', 'Alt + I');
+}
+
 /** Default z-index fallback if caller does not pass Z_INDEX.ONBOARDING_PANEL. */
 export const ONBOARDING_PANEL_Z_FALLBACK = 2147483026;
 
@@ -449,7 +466,7 @@ export function createOnboardingShell(doc, opts = {}) {
   if (opts.early) root.dataset.kpEarlyOnboarding = 'true';
   try { root.setAttribute('data-kp-surface', 'onboarding'); } catch { /* ignore */ }
   root.setAttribute('role', 'dialog');
-  root.setAttribute('aria-label', 'KeyPilot onboarding walkthrough');
+  root.setAttribute('aria-label', onboardingMessage('onboarding_aria_label'));
   try { root.setAttribute('data-kp-ui-shadow', 'onboarding'); } catch { /* ignore */ }
   let shell = root;
   try { shell = root.shadowRoot || root.attachShadow({ mode: 'open' }); } catch { /* light fallback */ }
@@ -505,7 +522,7 @@ export function createOnboardingShell(doc, opts = {}) {
   });
 
   const titleEl = doc.createElement('div');
-  titleEl.textContent = String(opts.title || ONBOARDING_DEFAULT_TITLE);
+  titleEl.textContent = String(opts.title || getOnboardingDefaultTitle());
   titleEl.setAttribute('data-kp-onboarding-title', 'true');
   assignStyle(titleEl, {
     fontSize: '13px',
@@ -558,7 +575,7 @@ export function createOnboardingShell(doc, opts = {}) {
 
   const resetBtn = doc.createElement('button');
   resetBtn.type = 'button';
-  resetBtn.textContent = 'Reset';
+  resetBtn.textContent = onboardingMessage('onboarding_reset');
   resetBtn.setAttribute('data-kp-onboarding-reset', 'true');
   assignStyle(resetBtn, {
     height: '28px',
@@ -577,7 +594,7 @@ export function createOnboardingShell(doc, opts = {}) {
   const closeBtn = doc.createElement('button');
   closeBtn.type = 'button';
   closeBtn.textContent = '×';
-  closeBtn.setAttribute('aria-label', 'Close onboarding walkthrough');
+  closeBtn.setAttribute('aria-label', onboardingMessage('onboarding_close_aria'));
   closeBtn.setAttribute('data-kp-onboarding-close', 'true');
   assignStyle(closeBtn, {
     width: '28px',
@@ -1035,7 +1052,7 @@ export function renderOnboardingSlideSurface(surface, params = {}) {
   if (showTip) {
     const tip = doc.createElement('div');
     tip.setAttribute('data-kp-onboarding-tip', 'true');
-    tip.textContent = ONBOARDING_REOPEN_TIP;
+    tip.textContent = getOnboardingReopenTip();
     assignStyle(tip, {
       marginTop: '10px',
       fontSize: '12px',
@@ -1074,7 +1091,7 @@ function syncCloseTutorialButton(surface, opts = {}) {
     btn = doc.createElement('button');
     btn.type = 'button';
     btn.setAttribute('data-kp-onboarding-close-tutorial', 'true');
-    btn.textContent = 'Close Tutorial';
+    btn.textContent = onboardingMessage('onboarding_close_tutorial');
     assignStyle(btn, {
       display: 'flex',
       alignItems: 'center',
@@ -1130,7 +1147,7 @@ export function updateOnboardingChrome(refs, params = {}) {
   const idx = Number(params.slideIndex) || 0;
   const total = Math.max(1, Number(params.slideCount) || 1);
   try {
-    if (refs.titleEl) refs.titleEl.textContent = String(params.title || ONBOARDING_DEFAULT_TITLE);
+    if (refs.titleEl) refs.titleEl.textContent = String(params.title || getOnboardingDefaultTitle());
   } catch { /* ignore */ }
   try {
     if (refs.stepEl) refs.stepEl.textContent = `${idx + 1} / ${total}`;
@@ -1316,7 +1333,7 @@ export function ensureOnboardingOverlay(host, doc) {
 
   const titleEl = d.createElement('div');
   titleEl.setAttribute('data-kp-onboarding-overlay-title', 'true');
-  titleEl.textContent = 'Nice!';
+  titleEl.textContent = onboardingMessage('onboarding_complete_title');
 
   const msgEl = d.createElement('div');
   msgEl.setAttribute('data-kp-onboarding-overlay-message', 'true');
@@ -1340,7 +1357,7 @@ export function ensureOnboardingOverlay(host, doc) {
 
   const primaryBtn = d.createElement('button');
   primaryBtn.type = 'button';
-  primaryBtn.textContent = 'OK';
+  primaryBtn.textContent = onboardingMessage('onboarding_complete_ok');
   primaryBtn.setAttribute('data-kp-onboarding-overlay-primary', 'true');
 
   btnRow.appendChild(secondaryBtn);

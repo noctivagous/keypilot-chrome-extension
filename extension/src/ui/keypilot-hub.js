@@ -18,7 +18,8 @@ export const ONBOARDING_ACTIVE_STORAGE_KEY = 'keypilot_onboarding_active';
 /**
  * @typedef {object} KeypilotHubCardDef
  * @property {KeypilotHubAction} action
- * @property {string} title
+ * @property {string} titleKey
+ * @property {string} [metaKey]
  * @property {string} icon
  * @property {string} hint
  * @property {'switch'|'button'} role
@@ -28,38 +29,38 @@ export const ONBOARDING_ACTIVE_STORAGE_KEY = 'keypilot_onboarding_active';
 export const KEYPILOT_HUB_CARDS = Object.freeze([
   Object.freeze({
     action: 'keyboard',
-    title: 'Keyboard Reference',
+    titleKey: 'popup_keyboard_reference',
     icon: 'TOGGLE_KEYBOARD_HELP',
     hint: 'K',
     role: 'switch'
   }),
   Object.freeze({
     action: 'docs',
-    title: 'Help / Docs',
+    titleKey: 'popup_docs',
     icon: 'LOOKUP_WORD',
     hint: 'Alt+H',
-    meta: 'Documentation',
+    metaKey: 'popup_documentation',
     role: 'button'
   }),
   Object.freeze({
     action: 'tutorial',
-    title: 'Onboarding Tutorial',
+    titleKey: 'popup_tutorial',
     icon: 'LAUNCHER',
     hint: 'Alt+I',
-    meta: 'Walkthrough',
+    metaKey: 'popup_tutorial_walkthrough',
     role: 'button'
   }),
   Object.freeze({
     action: 'settings',
-    title: 'Settings',
+    titleKey: 'popup_settings',
     icon: 'OPEN_SETTINGS_POPOVER',
     hint: "'",
-    meta: 'Preferences',
+    metaKey: 'popup_preferences',
     role: 'button'
   }),
   Object.freeze({
     action: 'control-strip',
-    title: 'Control Strip',
+    titleKey: 'popup_control_strip',
     icon: 'TOP_SITES',
     hint: 'Alt+J',
     role: 'switch'
@@ -180,11 +181,13 @@ export async function refreshKeypilotHubCards(root) {
  * @returns {HTMLButtonElement}
  */
 export function createKeypilotHubCard(doc, def) {
+  const titleText = getMessage(def.titleKey);
+  const metaText = def.metaKey ? getMessage(def.metaKey) : '';
   const btn = doc.createElement('button');
   btn.type = 'button';
   btn.className = 'kp-url-row kp-hub-card';
   btn.dataset.action = def.action;
-  btn.setAttribute('aria-label', def.title);
+  btn.setAttribute('aria-label', titleText);
   if (def.role === 'switch') {
     btn.setAttribute('role', 'switch');
     btn.setAttribute('aria-checked', 'false');
@@ -204,12 +207,12 @@ export function createKeypilotHubCard(doc, def) {
 
   const title = doc.createElement('span');
   title.className = 'kp-url-domain';
-  title.textContent = def.title;
+  title.textContent = titleText;
 
   const meta = doc.createElement('span');
   meta.className = 'kp-url-title';
   meta.dataset.status = '';
-  meta.textContent = def.role === 'switch' ? '…' : (def.meta || def.hint);
+  meta.textContent = def.role === 'switch' ? '…' : (metaText || def.hint);
 
   const path = doc.createElement('span');
   path.className = 'kp-url-path';

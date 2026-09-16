@@ -21,6 +21,7 @@
  *
  * Sites with heavy flex/grid/sticky chrome may reflow poorly — best-effort v1.
  */
+import { getMessage } from '../utils/i18n.js';
 import { CSS_CLASSES, COLORS, Z_INDEX, KP_UI_FONT } from '../config/constants.js';
 import { makePopoverResizable } from '../utils/popover-resize.js';
 import { ensureOpenChromeShadow } from '../ui/kp-chrome-shadow.js';
@@ -364,7 +365,7 @@ export class ColumnLayoutManager {
     shell.className = CSS_CLASSES.COLS_SHELL;
     shell.setAttribute('data-kp-cols-shell', 'true');
     shell.setAttribute('role', 'region');
-    shell.setAttribute('aria-label', 'Column layout');
+    shell.setAttribute('aria-label', getMessage('columns_aria'));
 
     const body = document.createElement('div');
     body.className = CSS_CLASSES.COLS_BODY;
@@ -400,7 +401,7 @@ export class ColumnLayoutManager {
     shell.setAttribute('data-kp-cols-shell', 'true');
     shell.setAttribute('data-kp-cols-page-frame', 'true');
     shell.setAttribute('role', 'region');
-    shell.setAttribute('aria-label', 'Page column layout');
+    shell.setAttribute('aria-label', getMessage('columns_page_aria'));
 
     // Page frame is only chrome (slip + buttons); content stays on body.
     // Positioned as a bottom dock that is the full width of the slip bar / widget.
@@ -1121,7 +1122,7 @@ export class ColumnLayoutManager {
     bar.className = CSS_CLASSES.COLS_SLIP_BAR;
     bar.setAttribute('data-kp-cols-slip', 'true');
     bar.setAttribute('role', 'group');
-    bar.setAttribute('aria-label', 'Column slip controls');
+    bar.setAttribute('aria-label', getMessage('columns_slip_aria'));
     const barMount = ensureOpenChromeShadow(bar, { id: 'columns-slip-controls' }) || bar;
     Object.assign(bar.style, {
       position: 'relative',
@@ -1156,7 +1157,7 @@ export class ColumnLayoutManager {
 
     const label = document.createElement('span');
     label.className = CSS_CLASSES.COLS_SLIP_LABEL;
-    label.textContent = 'Slip';
+    label.textContent = getMessage('columns_slip');
     Object.assign(label.style, {
       fontSize: '11px',
       fontWeight: '600',
@@ -1170,7 +1171,7 @@ export class ColumnLayoutManager {
     const track = document.createElement('div');
     track.className = CSS_CLASSES.COLS_SLIP_TRACK;
     track.setAttribute('role', 'slider');
-    track.setAttribute('aria-label', 'Slip edit — shift column content');
+    track.setAttribute('aria-label', getMessage('columns_slip_edit_aria'));
     track.setAttribute('aria-valuemin', '0');
     track.setAttribute('aria-valuemax', '100');
     track.setAttribute('aria-valuenow', '0');
@@ -1210,16 +1211,16 @@ export class ColumnLayoutManager {
 
     const expandBtn = this._createChromeButton({
       className: CSS_CLASSES.COLS_EXPAND_BTN,
-      title: 'Open columns in popover',
-      ariaLabel: 'Open columns in full-size popover',
+      title: getMessage('columns_open_popover'),
+      ariaLabel: getMessage('columns_open_popover_aria'),
       onClick: () => this._promoteToPopover()
     });
     expandBtn.appendChild(this._createViewportIcon());
 
     const closeBtn = this._createChromeButton({
       className: CSS_CLASSES.COLS_CLOSE_BTN,
-      title: 'Close columns (restore element)',
-      ariaLabel: 'Close columns and restore element',
+      title: getMessage('columns_close'),
+      ariaLabel: getMessage('columns_close_aria'),
       onClick: () => this.clear(),
       label: '×',
       semiTransparent: true

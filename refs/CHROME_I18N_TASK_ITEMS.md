@@ -125,9 +125,9 @@ Suggested message-key convention:
 
 ### Tasks
 
-- [ ] Replace hardcoded context-menu strings in `extension/background.js` with runtime messages, including menu groups and empty states.
-- [ ] Localize popup hub-card definitions and dynamically generated overlay/popover controls.
-- [ ] Audit `extension/src/ui/`, `extension/src/modules/`, and `extension/early-inject.js` for visible strings, placeholders, titles, accessibility labels, status/error text, and notifications.
+- [x] Replace hardcoded context-menu strings in `extension/background.js` with runtime messages, including menu groups and empty states.
+- [x] Localize popup hub-card definitions and dynamically generated overlay/popover controls.
+- [x] Audit `extension/src/ui/`, `extension/src/modules/`, and `extension/early-inject.js` for visible strings, placeholders, titles, accessibility labels, status/error text, and notifications. Remaining product copy is concentrated in the keyboard layout editor, function/macro catalogs, launcher catalog copy, and overlay-manager debug HUD.
 - [ ] Convert built-in layout family labels and descriptions in `extension/src/config/keyboard-layouts.js` to message keys resolved at the presentation boundary.
 - [ ] Convert built-in function/macro labels, descriptions, parameter labels, option labels, and catalog category labels in `extension/src/config/function-library.js` and `extension/src/config/macro-keys.js`.
 - [ ] Audit remaining built-in catalog sources, including search-engine labels and seeded launcher metadata. Translate only KeyPilot-owned display copy; preserve public product names and user-editable defaults where translation would alter saved data semantics.

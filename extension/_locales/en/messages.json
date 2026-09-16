@@ -1636,5 +1636,1303 @@
   "popover_titlebar_close": {
     "message": "Close (Esc)",
     "description": "Accessible label and tooltip for a titlebar close button."
+  },
+  "context_menu_toggle_keypilot": {
+    "message": "Toggle KeyPilot",
+    "description": "Context-menu item that enables or disables KeyPilot."
+  },
+  "context_menu_group_windows": {
+    "message": "KeyPilot Windows",
+    "description": "Context-menu group for KeyPilot window and overlay actions."
+  },
+  "context_menu_toggle_keyboard_reference": {
+    "message": "Toggle Keyboard Reference",
+    "description": "Context-menu item that shows or hides the keyboard reference."
+  },
+  "context_menu_onboarding_tutorial": {
+    "message": "Onboarding Tutorial ($1)",
+    "description": "Context-menu item that opens the onboarding walkthrough. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt + I"
+      }
+    }
+  },
+  "context_menu_docs_help": {
+    "message": "KeyPilot Documentation ($1)",
+    "description": "Context-menu item that opens documentation. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt + H"
+      }
+    }
+  },
+  "context_menu_settings": {
+    "message": "KeyPilot Settings ($1)",
+    "description": "Context-menu item that opens Settings. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "'"
+      }
+    }
+  },
+  "context_menu_group_keyboard_reference": {
+    "message": "Keyboard Reference",
+    "description": "Context-menu group for keyboard-reference visibility and layouts."
+  },
+  "context_menu_show_keyboard_reference": {
+    "message": "Show Keyboard Reference",
+    "description": "Context-menu item that shows the keyboard reference."
+  },
+  "context_menu_hide_keyboard_reference": {
+    "message": "Hide Keyboard Reference",
+    "description": "Context-menu item that hides the keyboard reference."
+  },
+  "context_menu_group_builtin_layouts": {
+    "message": "Built-In Layouts",
+    "description": "Context-menu group listing built-in keyboard layout families."
+  },
+  "context_menu_group_custom_layouts": {
+    "message": "Custom Layouts",
+    "description": "Context-menu group listing user-created keyboard layouts."
+  },
+  "context_menu_no_custom_layouts": {
+    "message": "None",
+    "description": "Disabled empty-state item when no custom keyboard layouts exist."
+  },
+  "context_menu_group_layout_editor": {
+    "message": "Keyboard Layout Editor",
+    "description": "Context-menu group for creating and editing keyboard layouts."
+  },
+  "context_menu_edit_layouts": {
+    "message": "Edit Keyboard Layout…",
+    "description": "Context-menu item that opens the keyboard layout editor."
+  },
+  "context_menu_new_layout": {
+    "message": "New Blank Keyboard Layout",
+    "description": "Context-menu item that creates a blank custom keyboard layout."
+  },
+  "context_menu_duplicate_layout": {
+    "message": "New Duplicate Keyboard Layout",
+    "description": "Context-menu item that duplicates the current keyboard layout."
+  },
+  "overlay_hub_tools_count": {
+    "message": "$1 tools",
+    "description": "Status count for KeyPilot hub cards in Top Sites."
+  },
+  "overlay_close": {
+    "message": "Close",
+    "description": "Generic overlay close button."
+  },
+  "control_strip_aria_label": {
+    "message": "KeyPilot control strip",
+    "description": "Accessible name for the control strip toolbar."
+  },
+  "control_strip_toggle_aria": {
+    "message": "Toggle KeyPilot on or off",
+    "description": "Accessible name for the control-strip enable switch."
+  },
+  "control_strip_toggle_title": {
+    "message": "Toggle KeyPilot ($1)",
+    "description": "Tooltip for the control-strip enable switch. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+K"
+      }
+    }
+  },
+  "control_strip_keyboard_aria": {
+    "message": "Toggle keyboard reference",
+    "description": "Accessible name for the control-strip keyboard-reference button."
+  },
+  "control_strip_keyboard_title": {
+    "message": "Keyboard reference",
+    "description": "Tooltip for the control-strip keyboard-reference button."
+  },
+  "control_strip_settings_aria": {
+    "message": "Open KeyPilot settings",
+    "description": "Accessible name for the control-strip settings button."
+  },
+  "control_strip_settings_title": {
+    "message": "Settings",
+    "description": "Tooltip for the control-strip settings button."
+  },
+  "control_strip_collapse": {
+    "message": "Collapse",
+    "description": "Control-strip collapse action."
+  },
+  "control_strip_expand": {
+    "message": "Expand",
+    "description": "Control-strip expand action."
+  },
+  "control_strip_collapse_aria": {
+    "message": "Collapse control strip",
+    "description": "Accessible name for collapsing the control strip."
+  },
+  "control_strip_expand_aria": {
+    "message": "Expand control strip",
+    "description": "Accessible name for expanding the control strip."
+  },
+  "control_strip_close_aria": {
+    "message": "Close control strip",
+    "description": "Accessible name for closing the control strip."
+  },
+  "control_strip_close_title": {
+    "message": "Close ($1 to show again)",
+    "description": "Tooltip for closing the control strip. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+J"
+      }
+    }
+  },
+  "control_strip_move_aria": {
+    "message": "Move control strip",
+    "description": "Accessible name for the control-strip drag handle."
+  },
+  "keyboard_help_aria_label": {
+    "message": "KeyPilot keyboard reference",
+    "description": "Accessible name for the floating keyboard reference."
+  },
+  "keyboard_help_title": {
+    "message": "Keyboard Reference",
+    "description": "Title of the floating keyboard reference."
+  },
+  "keyboard_help_title_typing": {
+    "message": "Keyboard Reference — Typing",
+    "description": "Keyboard reference title while a text field is focused."
+  },
+  "keyboard_help_toggle_title": {
+    "message": "Toggle keyboard reference",
+    "description": "Tooltip for the keyboard-reference toggle shortcut."
+  },
+  "keyboard_help_toggle_aria": {
+    "message": "Toggle keyboard reference ($1)",
+    "description": "Accessible name for the keyboard-reference toggle shortcut. $1 is the key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "K"
+      }
+    }
+  },
+  "keyboard_help_close_aria": {
+    "message": "Close keyboard reference",
+    "description": "Accessible name for closing the keyboard reference."
+  },
+  "keyboard_help_collapse_aria": {
+    "message": "Collapse keyboard reference",
+    "description": "Accessible name for collapsing the keyboard reference."
+  },
+  "keyboard_help_expand_aria": {
+    "message": "Expand keyboard reference",
+    "description": "Accessible name for expanding the keyboard reference."
+  },
+  "keyboard_help_layout_aria": {
+    "message": "Current keyboard layout",
+    "description": "Accessible name for the keyboard-reference layout picker."
+  },
+  "keyboard_help_editing_aria": {
+    "message": "Editing layout — $1 to exit",
+    "description": "Hint while the layout editor is open. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+C"
+      }
+    }
+  },
+  "keyboard_help_exit_text_mode": {
+    "message": "Exit text mode ($1)",
+    "description": "Button that leaves text mode. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Esc"
+      }
+    }
+  },
+  "keyboard_help_close_editor": {
+    "message": "Close layout editor ($1)",
+    "description": "Button that closes the layout editor. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+C"
+      }
+    }
+  },
+  "keyboard_help_left_handed": {
+    "message": "Lefthanded",
+    "description": "Chip label for left-handed keyboard layout."
+  },
+  "keyboard_help_left_handed_off_aria": {
+    "message": "Turn off left-handed layout",
+    "description": "Accessible name for dismissing the left-handed chip."
+  },
+  "keyboard_help_render_error": {
+    "message": "Unable to render keyboard reference on this page.",
+    "description": "Error when the keyboard reference cannot paint."
+  },
+  "keyboard_help_custom_render_error": {
+    "message": "Unable to render custom keyboard layout.",
+    "description": "Error when a custom layout cannot paint."
+  },
+  "keyboard_help_remove_action_aria": {
+    "message": "Remove action from $1",
+    "description": "Accessible name for removing a key assignment. $1 is the key label.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "F"
+      }
+    }
+  },
+  "keyboard_help_remove": {
+    "message": "Remove",
+    "description": "Tooltip for removing a key assignment."
+  },
+  "onboarding_default_title": {
+    "message": "Welcome to KeyPilot",
+    "description": "Default onboarding walkthrough title."
+  },
+  "onboarding_aria_label": {
+    "message": "KeyPilot onboarding walkthrough",
+    "description": "Accessible name for the onboarding panel."
+  },
+  "onboarding_reopen_tip": {
+    "message": "Tip: Press $1 to re-open this walkthrough later.",
+    "description": "Footer tip for reopening onboarding. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt + I"
+      }
+    }
+  },
+  "onboarding_reset": {
+    "message": "Reset",
+    "description": "Onboarding reset button."
+  },
+  "onboarding_close_aria": {
+    "message": "Close onboarding walkthrough",
+    "description": "Accessible name for closing onboarding."
+  },
+  "onboarding_close_tutorial": {
+    "message": "Close Tutorial",
+    "description": "Button that ends the onboarding tutorial."
+  },
+  "onboarding_complete_title": {
+    "message": "Nice!",
+    "description": "Title shown when onboarding is complete."
+  },
+  "onboarding_complete_ok": {
+    "message": "OK",
+    "description": "Dismiss button on the onboarding complete card."
+  },
+  "onboarding_render_error": {
+    "message": "Unable to render onboarding panel on this page.",
+    "description": "Error when onboarding cannot paint."
+  },
+  "preview_open": {
+    "message": "Open",
+    "description": "Preview action that opens the URL in the current tab."
+  },
+  "preview_open_this_tab": {
+    "message": "Open in this tab",
+    "description": "Accessible label for opening a preview URL in the current tab."
+  },
+  "preview_open_new_tab": {
+    "message": "Open in New Tab",
+    "description": "Preview action that opens the URL in a new tab."
+  },
+  "preview_open_new_tab_aria": {
+    "message": "Open in new tab",
+    "description": "Accessible label for opening a URL in a new tab."
+  },
+  "popover_cannot_display_title": {
+    "message": "Cannot Display Page",
+    "description": "Title when a site blocks iframe embedding."
+  },
+  "popover_cannot_display_message": {
+    "message": "This website prevents embedding in iframes for security reasons.",
+    "description": "Explanation when a preview cannot be embedded."
+  },
+  "top_sites_title": {
+    "message": "Top Sites",
+    "description": "Title of the Top Sites overlay."
+  },
+  "top_sites_options_aria": {
+    "message": "Top Sites options",
+    "description": "Accessible name for Top Sites options."
+  },
+  "top_sites_keep_open": {
+    "message": "Keep open across pages",
+    "description": "Option to persist the Top Sites overlay."
+  },
+  "top_sites_tabs_aria": {
+    "message": "Top Sites and KeyPilot",
+    "description": "Accessible name for the Top Sites tab list."
+  },
+  "top_sites_loading": {
+    "message": "Loading…",
+    "description": "Loading status in the Top Sites overlay."
+  },
+  "tab_history_title": {
+    "message": "History",
+    "description": "Title of the History overlay."
+  },
+  "tab_history_subtitle": {
+    "message": "Browser history · Tab history",
+    "description": "Subtitle of the History overlay."
+  },
+  "tab_history_click_hint": {
+    "message": "Click to navigate",
+    "description": "Hint above history lists."
+  },
+  "tab_history_loading": {
+    "message": "Loading…",
+    "description": "Generic loading status."
+  },
+  "tab_history_loading_tabs": {
+    "message": "Loading tab history…",
+    "description": "Loading status for tab history."
+  },
+  "tab_history_loading_browser": {
+    "message": "Loading browser history…",
+    "description": "Loading status for browser history."
+  },
+  "tab_history_tabs_unavailable": {
+    "message": "Tab history unavailable.",
+    "description": "Error when tab history cannot load."
+  },
+  "tab_history_browser_unavailable": {
+    "message": "Browser history unavailable.",
+    "description": "Error when browser history cannot load."
+  },
+  "tab_history_browser_empty": {
+    "message": "No recent browser history.",
+    "description": "Empty browser-history list."
+  },
+  "tab_history_tabs_empty": {
+    "message": "No tab history yet.",
+    "description": "Empty tab-history list."
+  },
+  "tab_history_navigate_hint": {
+    "message": "Click an entry to navigate. Press Esc to close.",
+    "description": "Hint after history lists load."
+  },
+  "tab_history_more_branches_aria": {
+    "message": "$1 more branches",
+    "description": "Accessible label for extra history branches.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "launcher_title": {
+    "message": "Launcher",
+    "description": "Title of the Launcher overlay."
+  },
+  "launcher_subtitle": {
+    "message": "Quick access to your favorite sites",
+    "description": "Launcher overlay subtitle."
+  },
+  "launcher_show_deck": {
+    "message": "Show Launch Deck",
+    "description": "Toggle for showing the Launch Deck."
+  },
+  "launcher_edit_hint": {
+    "message": "Reorder, remove, or add • Esc exits edit",
+    "description": "Launcher edit-mode hint."
+  },
+  "launcher_add_site": {
+    "message": "Add site…",
+    "description": "Button that adds a site to the Launch Deck."
+  },
+  "launcher_add_to_deck": {
+    "message": "Add to Launch Deck",
+    "description": "Title of the add-site dialog."
+  },
+  "launcher_add_url": {
+    "message": "Add URL",
+    "description": "Button that adds a custom URL."
+  },
+  "launcher_filter_aria": {
+    "message": "Filter results",
+    "description": "Accessible name for the launcher search filter."
+  },
+  "launcher_clear_search_aria": {
+    "message": "Clear search",
+    "description": "Accessible name for clearing launcher search."
+  },
+  "launcher_empty_toolbar": {
+    "message": "No toolbar bookmarks",
+    "description": "Empty launcher toolbar-bookmarks list."
+  },
+  "launcher_empty_top_sites": {
+    "message": "No top visited sites",
+    "description": "Empty launcher top-sites list."
+  },
+  "launcher_empty_category": {
+    "message": "No items in this category",
+    "description": "Empty launcher category list."
+  },
+  "launcher_search": {
+    "message": "Search",
+    "description": "Launcher search submit button."
+  },
+  "launcher_video_site_aria": {
+    "message": "Video site to search",
+    "description": "Accessible name for the video-site picker."
+  },
+  "launcher_launch_hint": {
+    "message": "Launch →",
+    "description": "Hint on a launcher row."
+  },
+  "launcher_editing": {
+    "message": "Editing",
+    "description": "Launcher row state while editing."
+  },
+  "launcher_preview": {
+    "message": "Preview",
+    "description": "Launcher preview action label."
+  },
+  "page_media_title": {
+    "message": "Page Media",
+    "description": "Title of the Page Media overlay."
+  },
+  "page_media_url_view": {
+    "message": "URL View:",
+    "description": "Label for Page Media URL view mode."
+  },
+  "page_media_view_table": {
+    "message": "Table",
+    "description": "Page Media table view option."
+  },
+  "page_media_view_table_title": {
+    "message": "Hierarchical table by domain and path",
+    "description": "Tooltip for Page Media table view."
+  },
+  "page_media_view_list": {
+    "message": "List",
+    "description": "Page Media list view option."
+  },
+  "page_media_view_list_title": {
+    "message": "Horizontal cards grouped by domain and path",
+    "description": "Tooltip for Page Media list view."
+  },
+  "page_media_aspect": {
+    "message": "Card Aspect Ratio:",
+    "description": "Label for Page Media thumbnail aspect."
+  },
+  "page_media_aspect_square": {
+    "message": "Square Crop",
+    "description": "Square crop option."
+  },
+  "page_media_aspect_square_title": {
+    "message": "Square crop thumbnails",
+    "description": "Tooltip for square crop."
+  },
+  "page_media_aspect_original": {
+    "message": "Img Original",
+    "description": "Original-aspect option."
+  },
+  "page_media_aspect_original_title": {
+    "message": "Keep each image’s original aspect ratio",
+    "description": "Tooltip for original aspect."
+  },
+  "page_media_sort": {
+    "message": "Sort:",
+    "description": "Label for Page Media sort."
+  },
+  "page_media_sort_size_desc": {
+    "message": "Size:Descending",
+    "description": "Largest-first sort option."
+  },
+  "page_media_sort_size_desc_title": {
+    "message": "Largest pixel area first",
+    "description": "Tooltip for largest-first sort."
+  },
+  "page_media_sort_size_asc": {
+    "message": "Size:Ascending",
+    "description": "Smallest-first sort option."
+  },
+  "page_media_sort_size_asc_title": {
+    "message": "Smallest pixel area first",
+    "description": "Tooltip for smallest-first sort."
+  },
+  "page_media_sort_page": {
+    "message": "Page Order",
+    "description": "Page-order sort option."
+  },
+  "page_media_sort_page_title": {
+    "message": "Order images appear on the page",
+    "description": "Tooltip for page-order sort."
+  },
+  "page_media_article_first": {
+    "message": "Article first",
+    "description": "Toggle to prefer article images."
+  },
+  "page_media_article_first_aria": {
+    "message": "Prioritize article and main content images",
+    "description": "Accessible name for article-first toggle."
+  },
+  "page_media_scale_title": {
+    "message": "Overlay content scale (1×–2.5×, all tabs)",
+    "description": "Tooltip for overlay content scale."
+  },
+  "page_media_empty": {
+    "message": "No image files found on this page.",
+    "description": "Empty Page Media list."
+  },
+  "page_media_video_posters": {
+    "message": "Video posters",
+    "description": "Section title for video poster images."
+  },
+  "page_media_item_actions_aria": {
+    "message": "Item actions",
+    "description": "Accessible name for media item action bar."
+  },
+  "page_media_link": {
+    "message": "link",
+    "description": "Fallback host label for a media item without a domain."
+  },
+  "media_library_title": {
+    "message": "Media Library",
+    "description": "Title of the Media Library overlay."
+  },
+  "media_library_subtitle": {
+    "message": "Personal scrapbook",
+    "description": "Media Library subtitle."
+  },
+  "media_library_actions_aria": {
+    "message": "Library actions",
+    "description": "Accessible name for Media Library toolbar."
+  },
+  "media_library_types_aria": {
+    "message": "Media types",
+    "description": "Accessible name for Media Library type list."
+  },
+  "media_library_coming_soon": {
+    "message": "Coming soon",
+    "description": "Placeholder for an unimplemented Media Library type."
+  },
+  "font_info_aria": {
+    "message": "Font Info",
+    "description": "Accessible name for the Font Info popover."
+  },
+  "font_info_url": {
+    "message": "URL",
+    "description": "Label for a font file URL."
+  },
+  "font_info_local": {
+    "message": "Local / system font",
+    "description": "Value shown when a font has no remote URL."
+  },
+  "font_info_copy": {
+    "message": "Copy",
+    "description": "Copy button in Font Info."
+  },
+  "font_info_download": {
+    "message": "Download",
+    "description": "Download button in Font Info."
+  },
+  "font_info_downloading": {
+    "message": "Downloading…",
+    "description": "Font Info download-in-progress label."
+  },
+  "procedure_result_aria": {
+    "message": "Procedure result",
+    "description": "Accessible name for the procedure-result popover."
+  },
+  "procedure_result_copy": {
+    "message": "Copy",
+    "description": "Copy button in the procedure-result popover."
+  },
+  "practice_aria": {
+    "message": "KeyPilot practice popover",
+    "description": "Accessible name for the practice popover."
+  },
+  "practice_title": {
+    "message": "Entering Text",
+    "description": "Practice popover title."
+  },
+  "practice_hide_aria": {
+    "message": "Hide practice popover",
+    "description": "Accessible name for hiding the practice popover."
+  },
+  "practice_link": {
+    "message": "Practice link (jumps in this panel)",
+    "description": "Sample link in the practice popover."
+  },
+  "practice_button": {
+    "message": "Practice button (no navigation)",
+    "description": "Sample button in the practice popover."
+  },
+  "practice_clicked": {
+    "message": "Clicked!",
+    "description": "Feedback after clicking the practice button."
+  },
+  "practice_anchor": {
+    "message": "Anchor reached. Press Esc to exit text mode if needed.",
+    "description": "Message at the practice popover in-panel anchor."
+  },
+  "columns_aria": {
+    "message": "Column layout",
+    "description": "Accessible name for column-layout overlay."
+  },
+  "columns_page_aria": {
+    "message": "Page column layout",
+    "description": "Accessible name for page column layout."
+  },
+  "columns_slip_aria": {
+    "message": "Column slip controls",
+    "description": "Accessible name for column slip controls."
+  },
+  "columns_slip": {
+    "message": "Slip",
+    "description": "Column slip label."
+  },
+  "columns_slip_edit_aria": {
+    "message": "Slip edit — shift column content",
+    "description": "Accessible name for the slip slider."
+  },
+  "columns_open_popover": {
+    "message": "Open columns in popover",
+    "description": "Tooltip for opening columns in a popover."
+  },
+  "columns_close": {
+    "message": "Close columns (restore element)",
+    "description": "Tooltip for closing columns."
+  },
+  "procedure_result_done": {
+    "message": "Done",
+    "description": "Dismiss button in the procedure-result popover."
+  },
+  "procedure_result_title": {
+    "message": "Result",
+    "description": "Default title for the procedure-result popover."
+  },
+  "font_info_title": {
+    "message": "Font Info",
+    "description": "Title of the Font Info popover."
+  },
+  "font_info_done": {
+    "message": "Done",
+    "description": "Dismiss button in Font Info."
+  },
+  "font_info_downloaded": {
+    "message": "Downloaded",
+    "description": "Font Info download success label."
+  },
+  "font_info_download_failed": {
+    "message": "Download failed",
+    "description": "Font Info download failure label."
+  },
+  "font_info_label_name": {
+    "message": "Name",
+    "description": "Font Info field label."
+  },
+  "font_info_label_family": {
+    "message": "Family",
+    "description": "Font Info field label."
+  },
+  "font_info_label_size": {
+    "message": "Size",
+    "description": "Font Info field label."
+  },
+  "font_info_label_weight": {
+    "message": "Weight",
+    "description": "Font Info field label."
+  },
+  "font_info_label_style": {
+    "message": "Style",
+    "description": "Font Info field label."
+  },
+  "font_info_label_stretch": {
+    "message": "Stretch",
+    "description": "Font Info field label."
+  },
+  "font_info_label_file_type": {
+    "message": "File type",
+    "description": "Font Info field label."
+  },
+  "media_library_download_zip": {
+    "message": "Download zip",
+    "description": "Media Library zip-current-view button."
+  },
+  "media_library_download_zip_title": {
+    "message": "Download this category as a zip",
+    "description": "Tooltip for Media Library zip-current-view."
+  },
+  "media_library_download_selected": {
+    "message": "Download selected",
+    "description": "Media Library zip-selection button with no count."
+  },
+  "media_library_download_selected_n": {
+    "message": "Download selected ($1)",
+    "description": "Media Library zip-selection button with item count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "media_library_download_selected_title": {
+    "message": "Download selected items as a zip",
+    "description": "Tooltip for Media Library zip-selection."
+  },
+  "media_library_delete_selected": {
+    "message": "Delete selected",
+    "description": "Media Library delete-selection button with no count."
+  },
+  "media_library_delete_selected_n": {
+    "message": "Delete selected ($1)",
+    "description": "Media Library delete-selection button with item count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "media_library_delete_selected_title": {
+    "message": "Remove selected items from the library",
+    "description": "Tooltip for Media Library delete-selection."
+  },
+  "media_library_close_title": {
+    "message": "Close Media Library",
+    "description": "Tooltip for closing Media Library."
+  },
+  "media_library_kind_images": {
+    "message": "Images",
+    "description": "Media Library Images category."
+  },
+  "media_library_kind_urls": {
+    "message": "URLs",
+    "description": "Media Library URLs category."
+  },
+  "media_library_kind_videos": {
+    "message": "Videos",
+    "description": "Media Library Videos category."
+  },
+  "media_library_kind_documents": {
+    "message": "Documents",
+    "description": "Media Library Documents category."
+  },
+  "media_library_empty_urls": {
+    "message": "No URLs yet. Set Copy URL destination to Media Library or Both.",
+    "description": "Empty Media Library URLs view."
+  },
+  "media_library_empty_urls_domain": {
+    "message": "No URLs from $1",
+    "description": "Empty Media Library URLs view for a domain.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "example.com"
+      }
+    }
+  },
+  "media_library_empty_videos": {
+    "message": "No videos yet. Set Copy Video destination to Media Library or Both.",
+    "description": "Empty Media Library videos view."
+  },
+  "media_library_empty_videos_domain": {
+    "message": "No videos from $1",
+    "description": "Empty Media Library videos view for a domain.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "example.com"
+      }
+    }
+  },
+  "media_library_empty_documents": {
+    "message": "No documents yet. Use Fetch URL for Media Library or send from Page Media.",
+    "description": "Empty Media Library documents view."
+  },
+  "media_library_empty_documents_domain": {
+    "message": "No documents from $1",
+    "description": "Empty Media Library documents view for a domain.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "example.com"
+      }
+    }
+  },
+  "media_library_empty_images": {
+    "message": "No images yet. Send from Page Media (O) or set Copy Image destination to Media Library.",
+    "description": "Empty Media Library images view."
+  },
+  "media_library_empty_images_domain": {
+    "message": "No images from $1",
+    "description": "Empty Media Library images view for a domain.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "example.com"
+      }
+    }
+  },
+  "overlay_notify_action_failed": {
+    "message": "Action failed",
+    "description": "Generic overlay action failure notification."
+  },
+  "overlay_notify_copy_failed": {
+    "message": "Could not copy to pasteboard",
+    "description": "Clipboard copy failure notification."
+  },
+  "overlay_notify_copied": {
+    "message": "Copied to pasteboard",
+    "description": "Clipboard copy success notification."
+  },
+  "overlay_notify_download_started": {
+    "message": "Download started",
+    "description": "Download start notification."
+  },
+  "overlay_notify_download_failed": {
+    "message": "Could not download",
+    "description": "Download failure notification."
+  },
+  "overlay_notify_nothing_to_download": {
+    "message": "Nothing to download",
+    "description": "Empty download notification."
+  },
+  "overlay_notify_nothing_to_copy": {
+    "message": "Nothing to copy",
+    "description": "Empty copy notification."
+  },
+  "overlay_notify_send_library_failed": {
+    "message": "Could not send to Media Library",
+    "description": "Send-to-library failure notification."
+  },
+  "overlay_notify_url_copied": {
+    "message": "URL copied",
+    "description": "URL copied notification."
+  },
+  "overlay_notify_url_copied_pasteboard": {
+    "message": "URL copied to pasteboard",
+    "description": "URL copied to pasteboard notification."
+  },
+  "overlay_notify_image_url_copied": {
+    "message": "Image URL copied",
+    "description": "Image URL copied notification."
+  },
+  "overlay_notify_video_url_copied": {
+    "message": "Video URL copied",
+    "description": "Video URL copied notification."
+  },
+  "overlay_notify_document_url_copied": {
+    "message": "Document URL copied",
+    "description": "Document URL copied notification."
+  },
+  "overlay_notify_font_copied": {
+    "message": "Font info copied to pasteboard",
+    "description": "Font info copy success notification."
+  },
+  "overlay_notify_text_copied": {
+    "message": "Text copied to pasteboard",
+    "description": "Text copy success notification."
+  },
+  "overlay_notify_library_load_failed": {
+    "message": "Could not load Media Library",
+    "description": "Media Library load failure."
+  },
+  "overlay_notify_no_url": {
+    "message": "No URL",
+    "description": "Missing URL notification."
+  },
+  "overlay_notify_url_cannot_open": {
+    "message": "This link cannot be opened in a new tab",
+    "description": "URL cannot open in a tab."
+  },
+  "overlay_notify_url_open_failed": {
+    "message": "Could not open URL",
+    "description": "URL open failure."
+  },
+  "overlay_notify_zip_failed": {
+    "message": "Could not build zip",
+    "description": "Zip build failure."
+  },
+  "overlay_notify_delete_failed": {
+    "message": "Could not delete",
+    "description": "Delete failure."
+  },
+  "overlay_notify_removed_one": {
+    "message": "Removed from Media Library",
+    "description": "Single item removed from Media Library."
+  },
+  "overlay_notify_removed_n": {
+    "message": "Removed $1 items",
+    "description": "Multiple items removed from Media Library.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "overlay_notify_image_open_failed": {
+    "message": "Could not open image",
+    "description": "Image open failure."
+  },
+  "overlay_notify_video_unplayable": {
+    "message": "This video link is not playable",
+    "description": "Unplayable video notification."
+  },
+  "overlay_notify_video_open_failed": {
+    "message": "Could not open video",
+    "description": "Video open failure."
+  },
+  "overlay_notify_document_open_failed": {
+    "message": "Could not open document",
+    "description": "Document open failure."
+  },
+  "overlay_notify_copy_url_failed": {
+    "message": "Could not copy URL",
+    "description": "URL copy failure."
+  },
+  "overlay_notify_copy_video_failed": {
+    "message": "Could not copy video",
+    "description": "Video copy failure."
+  },
+  "overlay_notify_copy_document_failed": {
+    "message": "Could not copy document",
+    "description": "Document copy failure."
+  },
+  "overlay_notify_copy_image_failed": {
+    "message": "Could not copy image",
+    "description": "Image copy failure."
+  },
+  "page_media_tab_image": {
+    "message": "Image",
+    "description": "Page Media Image tab."
+  },
+  "page_media_tab_video": {
+    "message": "Video",
+    "description": "Page Media Video tab."
+  },
+  "page_media_tab_text": {
+    "message": "Text",
+    "description": "Page Media Text tab."
+  },
+  "page_media_tab_docs": {
+    "message": "Docs",
+    "description": "Page Media Docs tab."
+  },
+  "page_media_tab_fonts": {
+    "message": "Fonts",
+    "description": "Page Media Fonts tab."
+  },
+  "page_media_tab_urls": {
+    "message": "URLs",
+    "description": "Page Media URLs tab."
+  },
+  "page_media_empty_url": {
+    "message": "No URLs found on this page.",
+    "description": "Empty Page Media URLs tab."
+  },
+  "page_media_empty_page_text": {
+    "message": "No article or main text found on this page.",
+    "description": "Empty Page Media Text tab."
+  },
+  "page_media_empty_font": {
+    "message": "No fonts found on this page.",
+    "description": "Empty Page Media Fonts tab."
+  },
+  "page_media_empty_docs": {
+    "message": "No document files found on this page.",
+    "description": "Empty Page Media Docs tab."
+  },
+  "page_media_empty_video": {
+    "message": "No video files found on this page.",
+    "description": "Empty Page Media Video tab."
+  },
+  "page_media_url_layout_aria": {
+    "message": "URL list layout",
+    "description": "Accessible name for URL view segmented control."
+  },
+  "page_media_aspect_aria": {
+    "message": "Card aspect ratio",
+    "description": "Accessible name for image aspect control."
+  },
+  "page_media_sort_aria": {
+    "message": "Image sort order",
+    "description": "Accessible name for image sort control."
+  },
+  "page_media_landmark_title": {
+    "message": "Show images in articles and main content before site header, nav, and footer",
+    "description": "Tooltip for article-first image ordering."
+  },
+  "page_media_scale_label": {
+    "message": "Scale",
+    "description": "Page Media scale slider label."
+  },
+  "page_media_scale_aria": {
+    "message": "Page Media content scale",
+    "description": "Accessible name for Page Media scale slider."
+  },
+  "page_media_count": {
+    "message": "$1 media",
+    "description": "Page Media item count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "page_media_count_fonts": {
+    "message": "$1 fonts",
+    "description": "Page Media font count in the title tooltip.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "page_media_count_urls": {
+    "message": "$1 unique URLs",
+    "description": "Page Media unique URL count in the title tooltip.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "page_media_count_with_extra": {
+    "message": "$1 media · $2",
+    "description": "Page Media count with extra bits. $1 is media count, $2 is extra summary.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "12"
+      },
+      "extra": {
+        "content": "$2",
+        "example": "3 fonts"
+      }
+    }
+  },
+  "page_media_video_alt": {
+    "message": "Video",
+    "description": "Fallback alt text for a video thumbnail."
+  },
+  "page_media_kind_page": {
+    "message": "Page",
+    "description": "URL kind label."
+  },
+  "page_media_kind_document": {
+    "message": "Document",
+    "description": "URL kind label."
+  },
+  "page_media_kind_image": {
+    "message": "Image",
+    "description": "URL kind label."
+  },
+  "page_media_kind_video": {
+    "message": "Video",
+    "description": "URL kind label."
+  },
+  "page_media_kind_link": {
+    "message": "Link",
+    "description": "URL kind label."
+  },
+  "page_media_text_kind_article": {
+    "message": "Article",
+    "description": "Page text kind label."
+  },
+  "page_media_text_kind_main": {
+    "message": "Main",
+    "description": "Page text kind label."
+  },
+  "page_media_text_kind_full": {
+    "message": "Full page",
+    "description": "Page text kind label."
+  },
+  "page_media_text_kind_text": {
+    "message": "Text",
+    "description": "Fallback page text kind label."
+  },
+  "page_media_font_fallback": {
+    "message": "Font",
+    "description": "Fallback font name."
+  },
+  "page_media_col_path": {
+    "message": "Path / URL",
+    "description": "Page Media URL table column."
+  },
+  "page_media_col_kind": {
+    "message": "Kind",
+    "description": "Page Media URL table column."
+  },
+  "page_media_col_title": {
+    "message": "Title",
+    "description": "Page Media URL table column."
+  },
+  "page_media_col_actions": {
+    "message": "Actions",
+    "description": "Page Media URL table column."
+  },
+  "page_media_table_aria": {
+    "message": "Page URLs hierarchical table",
+    "description": "Accessible name for the Page Media URL table."
+  },
+  "page_media_this_page": {
+    "message": "This page",
+    "description": "Current-page group label in the URL table."
+  },
+  "page_media_domain": {
+    "message": "Domain",
+    "description": "Domain group label in the URL table."
+  },
+  "page_media_path": {
+    "message": "Path",
+    "description": "Path group label in the URL table."
+  },
+  "tab_history_section_tabs": {
+    "message": "Tab history",
+    "description": "Tab history section title."
+  },
+  "tab_history_section_browser": {
+    "message": "Browser history",
+    "description": "Browser history section title."
+  },
+  "top_sites_tab_toolbar": {
+    "message": "Toolbar",
+    "description": "Top Sites Toolbar tab."
+  },
+  "top_sites_tab_most_visited": {
+    "message": "Most Visited",
+    "description": "Top Sites Most Visited tab."
+  },
+  "top_sites_tab_recent_bookmarks": {
+    "message": "Recent Bookmarks",
+    "description": "Top Sites Recent Bookmarks tab."
+  },
+  "top_sites_tab_keypilot": {
+    "message": "KeyPilot",
+    "description": "Top Sites KeyPilot tab."
+  },
+  "top_sites_empty_toolbar": {
+    "message": "No bookmarks on the Bookmarks bar.",
+    "description": "Empty Top Sites Toolbar tab."
+  },
+  "top_sites_empty_most_visited": {
+    "message": "No frequently visited sites yet.",
+    "description": "Empty Top Sites Most Visited tab."
+  },
+  "top_sites_empty_recent_bookmarks": {
+    "message": "No recent bookmarks.",
+    "description": "Empty Top Sites Recent Bookmarks tab."
+  },
+  "top_sites_empty_keypilot": {
+    "message": "No KeyPilot tools.",
+    "description": "Empty Top Sites KeyPilot tab."
+  },
+  "top_sites_empty": {
+    "message": "Nothing to show.",
+    "description": "Generic empty Top Sites grid."
+  },
+  "popover_nav_hint_suffix": {
+    "message": "Use the same keyboard navigation controls.",
+    "description": "Titlebar hint suffix for Docs and Settings popovers."
+  },
+  "columns_open_popover_aria": {
+    "message": "Open columns in full-size popover",
+    "description": "Accessible name for expanding columns."
+  },
+  "columns_close_aria": {
+    "message": "Close columns and restore element",
+    "description": "Accessible name for closing columns."
+  },
+  "table_expand": {
+    "message": "Expand $1",
+    "description": "Expand a hierarchical table group.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "example.com"
+      }
+    }
+  },
+  "table_collapse": {
+    "message": "Collapse $1",
+    "description": "Collapse a hierarchical table group.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "example.com"
+      }
+    }
+  },
+  "page_media_action_copy": {
+    "message": "Copy",
+    "description": "Page Media item Copy action."
+  },
+  "page_media_action_copy_title": {
+    "message": "Copy to pasteboard",
+    "description": "Tooltip for Page Media Copy action."
+  },
+  "page_media_action_send": {
+    "message": "Send",
+    "description": "Page Media send-to-library action."
+  },
+  "page_media_action_send_title": {
+    "message": "Send to Media Library",
+    "description": "Tooltip for send-to-library action."
+  },
+  "page_media_action_download": {
+    "message": "Download",
+    "description": "Page Media Download action."
+  },
+  "page_media_action_download_title": {
+    "message": "Download file",
+    "description": "Tooltip for Page Media Download action."
+  },
+  "page_media_click_to_copy": {
+    "message": "Click to copy",
+    "description": "Tooltip for a page-text row that copies on click."
+  },
+  "media_library_copy_url": {
+    "message": "Copy URL",
+    "description": "Copy URL tooltip in Media Library."
+  },
+  "media_library_copy_frame": {
+    "message": "Copy frame",
+    "description": "Copy video frame tooltip in Media Library."
+  },
+  "media_library_copy_video_url": {
+    "message": "Copy video URL",
+    "description": "Copy video URL tooltip in Media Library."
+  },
+  "media_library_copy_file_name": {
+    "message": "Copy file name",
+    "description": "Copy document file name tooltip in Media Library."
+  },
+  "media_library_open": {
+    "message": "Open",
+    "description": "Open action in Media Library."
+  },
+  "media_library_open_title": {
+    "message": "Open in a new tab",
+    "description": "Open-in-tab tooltip in Media Library."
+  },
+  "media_library_download_shortcut": {
+    "message": "Download shortcut",
+    "description": "Download URL shortcut tooltip in Media Library."
   }
 }

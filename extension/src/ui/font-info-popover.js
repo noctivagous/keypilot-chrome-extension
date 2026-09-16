@@ -1,6 +1,7 @@
 /**
  * Font Info result popover — structured font details for the run under the cursor.
  */
+import { getMessage } from '../utils/i18n.js';
 import { Z_INDEX, KP_UI_FONT } from '../config/constants.js';
 import { makePanelDraggable } from '../utils/panel-position.js';
 import { ensureOpenChromeShadow, injectChromeStyles } from './kp-chrome-shadow.js';
@@ -195,22 +196,32 @@ export function showFontInfoPopover(info = {}, anchor = null) {
     _root = doc.createElement('div');
     _root.className = ROOT_CLASS;
     _root.setAttribute('role', 'dialog');
-    _root.setAttribute('aria-label', 'Font Info');
+    _root.setAttribute('aria-label', getMessage('font_info_aria'));
     const shadowRoot = ensureOpenChromeShadow(_root, { id: 'font-info', chromeWindow: true });
     const panelRoot = shadowRoot || _root;
     ensureStyles(panelRoot);
     panelRoot.innerHTML = `
       <div class="${ROOT_CLASS}__titlebar" data-kp-font-info-drag="true">
-        <div class="${ROOT_CLASS}__title">Font Info</div>
-        <button type="button" class="${ROOT_CLASS}__close" aria-label="Close">×</button>
+        <div class="${ROOT_CLASS}__title"></div>
+        <button type="button" class="${ROOT_CLASS}__close" aria-label="">×</button>
       </div>
       <div class="${ROOT_CLASS}__body"></div>
       <div class="${ROOT_CLASS}__actions">
-        <button type="button" class="${ROOT_CLASS}__btn" data-kp-font-download="true">Download</button>
-        <button type="button" class="${ROOT_CLASS}__btn" data-kp-font-copy="true">Copy</button>
-        <button type="button" class="${ROOT_CLASS}__btn" data-primary="true" data-kp-font-close="true">Done</button>
+        <button type="button" class="${ROOT_CLASS}__btn" data-kp-font-download="true"></button>
+        <button type="button" class="${ROOT_CLASS}__btn" data-kp-font-copy="true"></button>
+        <button type="button" class="${ROOT_CLASS}__btn" data-primary="true" data-kp-font-close="true"></button>
       </div>
     `;
+    const titleEl = panelRoot.querySelector(`.${ROOT_CLASS}__title`);
+    if (titleEl) titleEl.textContent = getMessage('font_info_title');
+    const closeBtn = panelRoot.querySelector(`.${ROOT_CLASS}__close`);
+    if (closeBtn) closeBtn.setAttribute('aria-label', getMessage('overlay_close'));
+    const seedDl = panelRoot.querySelector('[data-kp-font-download="true"]');
+    if (seedDl) seedDl.textContent = getMessage('font_info_download');
+    const seedCopy = panelRoot.querySelector('[data-kp-font-copy="true"]');
+    if (seedCopy) seedCopy.textContent = getMessage('font_info_copy');
+    const seedDone = panelRoot.querySelector('[data-kp-font-close="true"]');
+    if (seedDone) seedDone.textContent = getMessage('font_info_done');
     doc.body.appendChild(_root);
 
     panelRoot.querySelector(`.${ROOT_CLASS}__close`)?.addEventListener('click', (e) => {
@@ -258,13 +269,13 @@ export function showFontInfoPopover(info = {}, anchor = null) {
       : (info.size || '');
     const fileType = info.fileType || (info.sourceKind === 'local' ? 'local' : '');
     const pairs = [
-      ['Name', info.usedFamily || ''],
-      ['Family', info.familyStack || ''],
-      ['Size', sizeValue],
-      ['Weight', info.weight || ''],
-      ['Style', info.style || ''],
-      ['Stretch', info.stretch || ''],
-      ['File type', fileType]
+      [getMessage('font_info_label_name'), info.usedFamily || ''],
+      [getMessage('font_info_label_family'), info.familyStack || ''],
+      [getMessage('font_info_label_size'), sizeValue],
+      [getMessage('font_info_label_weight'), info.weight || ''],
+      [getMessage('font_info_label_style'), info.style || ''],
+      [getMessage('font_info_label_stretch'), info.stretch || ''],
+      [getMessage('font_info_label_file_type'), fileType]
     ];
     for (const [label, value] of pairs) {
       const l = doc.createElement('div');
@@ -279,7 +290,7 @@ export function showFontInfoPopover(info = {}, anchor = null) {
 
     const urlLabel = doc.createElement('div');
     urlLabel.className = `${ROOT_CLASS}__label`;
-    urlLabel.textContent = 'URL';
+    urlLabel.textContent = getMessage('font_info_url');
     const urlVal = doc.createElement('div');
     urlVal.className = `${ROOT_CLASS}__value`;
     if (info.resourceUrl) {
@@ -291,7 +302,7 @@ export function showFontInfoPopover(info = {}, anchor = null) {
       a.textContent = info.resourceUrl;
       urlVal.appendChild(a);
     } else {
-      urlVal.textContent = 'Local / system font';
+      urlVal.textContent = getMessage('font_info_local');
     }
     rows.appendChild(urlLabel);
     rows.appendChild(urlVal);
@@ -300,7 +311,7 @@ export function showFontInfoPopover(info = {}, anchor = null) {
 
   const copyBtn = panelRoot.querySelector('[data-kp-font-copy="true"]');
   if (copyBtn) {
-    copyBtn.textContent = 'Copy';
+    copyBtn.textContent = getMessage('font_info_copy');
     copyBtn.onclick = async (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -309,8 +320,8 @@ export function showFontInfoPopover(info = {}, anchor = null) {
         await navigator.clipboard.writeText(summaryText(info));
         ok = true;
       } catch { /* ignore */ }
-      copyBtn.textContent = ok ? 'Copied' : 'Copy failed';
-      setTimeout(() => { try { copyBtn.textContent = 'Copy'; } catch { /* ignore */ } }, 1200);
+      copyBtn.textContent = getMessage(ok ? 'docs_copy_copied' : 'docs_copy_failed');
+      setTimeout(() => { try { copyBtn.textContent = getMessage('font_info_copy'); } catch { /* ignore */ } }, 1200);
     };
   }
 
@@ -318,13 +329,13 @@ export function showFontInfoPopover(info = {}, anchor = null) {
   if (dlBtn) {
     const canDownload = !!info.resourceUrl && info.sourceKind !== 'local';
     dlBtn.disabled = !canDownload;
-    dlBtn.textContent = 'Download';
+    dlBtn.textContent = getMessage('font_info_download');
     dlBtn.onclick = async (e) => {
       e.preventDefault();
       e.stopPropagation();
       if (!canDownload) return;
       dlBtn.disabled = true;
-      dlBtn.textContent = 'Downloading…';
+      dlBtn.textContent = getMessage('font_info_downloading');
       let ok = false;
       try {
         const res = await fetch(info.resourceUrl);
@@ -343,12 +354,12 @@ export function showFontInfoPopover(info = {}, anchor = null) {
       } catch {
         ok = false;
       }
-      dlBtn.textContent = ok ? 'Downloaded' : 'Download failed';
+      dlBtn.textContent = getMessage(ok ? 'font_info_downloaded' : 'font_info_download_failed');
       dlBtn.disabled = !ok && canDownload ? false : !canDownload;
       if (ok) {
         setTimeout(() => {
           try {
-            dlBtn.textContent = 'Download';
+            dlBtn.textContent = getMessage('font_info_download');
             dlBtn.disabled = !canDownload;
           } catch { /* ignore */ }
         }, 1400);

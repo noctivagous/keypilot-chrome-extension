@@ -4,6 +4,7 @@
  */
 
 import { KP_UI_FONT } from '../config/constants.js';
+import { getMessage } from '../utils/i18n.js';
 import {
   NCT_DARK_UI_BTN_GRADIENT,
   NCT_DARK_UI_BTN_BORDER,
@@ -179,10 +180,10 @@ export function createPreviewOpenActionButtons({
     { attrs: { d: 'M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5' } }
   ]));
   const openLabel = doc.createElement('span');
-  openLabel.textContent = 'Open';
+  openLabel.textContent = getMessage('preview_open');
   openButton.appendChild(openLabel);
-  openButton.title = 'Open in this tab';
-  openButton.setAttribute('aria-label', 'Open in this tab');
+  openButton.title = getMessage('preview_open_this_tab');
+  openButton.setAttribute('aria-label', getMessage('preview_open_this_tab'));
   openButton.onclick = (e) => {
     try { e.preventDefault(); e.stopPropagation(); } catch { /* ignore */ }
     const url = resolveUrl();
@@ -206,10 +207,10 @@ export function createPreviewOpenActionButtons({
     { tag: 'path', attrs: { d: 'M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3' } }
   ]));
   const openNewTabLabel = doc.createElement('span');
-  openNewTabLabel.textContent = 'Open in New Tab';
+  openNewTabLabel.textContent = getMessage('preview_open_new_tab');
   openNewTabButton.appendChild(openNewTabLabel);
-  openNewTabButton.title = 'Open in new tab';
-  openNewTabButton.setAttribute('aria-label', 'Open in new tab');
+  openNewTabButton.title = getMessage('preview_open_new_tab_aria');
+  openNewTabButton.setAttribute('aria-label', getMessage('preview_open_new_tab_aria'));
   openNewTabButton.onclick = (e) => {
     try { e.preventDefault(); e.stopPropagation(); } catch { /* ignore */ }
     const url = resolveUrl();

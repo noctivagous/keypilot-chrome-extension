@@ -4,6 +4,7 @@
  * DOM-only (TrustedHTML-safe). Prefixes: kpv2-media-lib-*.
  */
 
+import { getMessage } from '../utils/i18n.js';
 import {
   NCT_DARK_UI_COLORS,
   NCT_DARK_UI_FONT,
@@ -167,7 +168,7 @@ export async function openMediaLibraryOverlay(opts = {}) {
   overlay.id = OVERLAY_ID;
   overlay.className = 'kpv2-media-lib-overlay';
   overlay.setAttribute('role', 'dialog');
-  overlay.setAttribute('aria-label', 'Media Library');
+  overlay.setAttribute('aria-label', getMessage('media_library_title'));
   overlay.style.cssText = `
     position: fixed;
     inset: 0;
@@ -192,24 +193,24 @@ export async function openMediaLibraryOverlay(opts = {}) {
   titleWrap.className = 'kpv2-media-lib-title-wrap';
   const title = document.createElement('h2');
   title.className = 'kpv2-media-lib-title';
-  title.textContent = 'Media Library';
+  title.textContent = getMessage('media_library_title');
   const subtitle = document.createElement('span');
   subtitle.className = 'kpv2-media-lib-subtitle';
-  subtitle.textContent = 'Personal scrapbook';
+  subtitle.textContent = getMessage('media_library_subtitle');
   titleWrap.appendChild(title);
   titleWrap.appendChild(subtitle);
 
   const toolbar = document.createElement('div');
   toolbar.className = 'kpv2-media-lib-toolbar';
   toolbar.setAttribute('role', 'toolbar');
-  toolbar.setAttribute('aria-label', 'Library actions');
+  toolbar.setAttribute('aria-label', getMessage('media_library_actions_aria'));
 
-  const zipCatBtn = makeHeaderBtn('Download zip', 'Download this category as a zip', () => zipCurrentView());
+  const zipCatBtn = makeHeaderBtn(getMessage('media_library_download_zip'), getMessage('media_library_download_zip_title'), () => zipCurrentView());
   zipCatBtn.dataset.role = 'zip-category';
-  const zipSelBtn = makeHeaderBtn('Download selected', 'Download selected items as a zip', () => zipSelection());
+  const zipSelBtn = makeHeaderBtn(getMessage('media_library_download_selected'), getMessage('media_library_download_selected_title'), () => zipSelection());
   zipSelBtn.dataset.role = 'zip-selected';
   zipSelBtn.disabled = true;
-  const delBtn = makeHeaderBtn('Delete selected', 'Remove selected items from the library', () => deleteSelection());
+  const delBtn = makeHeaderBtn(getMessage('media_library_delete_selected'), getMessage('media_library_delete_selected_title'), () => deleteSelection());
   delBtn.dataset.role = 'delete-selected';
   delBtn.disabled = true;
 
@@ -217,7 +218,7 @@ export async function openMediaLibraryOverlay(opts = {}) {
   toolbar.appendChild(zipSelBtn);
   toolbar.appendChild(delBtn);
 
-  const closeBtn = makeHeaderBtn('Close', 'Close Media Library', () => closeMediaLibraryOverlay());
+  const closeBtn = makeHeaderBtn(getMessage('overlay_close'), getMessage('media_library_close_title'), () => closeMediaLibraryOverlay());
   closeBtn.classList.add('kpv2-media-lib-close');
 
   header.appendChild(titleWrap);
@@ -229,7 +230,7 @@ export async function openMediaLibraryOverlay(opts = {}) {
 
   const sidebar = document.createElement('nav');
   sidebar.className = `kpv2-media-lib-sidebar ${NCT_DARK_UI_SCROLLBAR_CLASS}`;
-  sidebar.setAttribute('aria-label', 'Media types');
+  sidebar.setAttribute('aria-label', getMessage('media_library_types_aria'));
 
   const content = document.createElement('div');
   content.className = `kpv2-media-lib-content ${NCT_DARK_UI_SCROLLBAR_CLASS}`;
@@ -338,7 +339,7 @@ function makeHeaderBtn(label, title, handler) {
       await handler();
     } catch (err) {
       console.warn('[KeyPilot] Media Library action failed:', err);
-      _notify('Action failed', 'error');
+      _notify(getMessage('overlay_notify_action_failed'), 'error');
     }
   }, true);
   return btn;
@@ -350,11 +351,15 @@ function updateSelectionButtons() {
   const delBtn = /** @type {any} */ (_overlay)?._delBtn;
   if (zipSel) {
     zipSel.disabled = n === 0;
-    zipSel.textContent = n > 0 ? `Download selected (${n})` : 'Download selected';
+    zipSel.textContent = n > 0
+      ? getMessage('media_library_download_selected_n', String(n))
+      : getMessage('media_library_download_selected');
   }
   if (delBtn) {
     delBtn.disabled = n === 0;
-    delBtn.textContent = n > 0 ? `Delete selected (${n})` : 'Delete selected';
+    delBtn.textContent = n > 0
+      ? getMessage('media_library_delete_selected_n', String(n))
+      : getMessage('media_library_delete_selected');
   }
 }
 
@@ -369,7 +374,7 @@ async function reload() {
     });
     if (gen !== _loadGen || !isMediaLibraryOverlayOpen()) return;
     if (!result?.success) {
-      _notify(result?.error || 'Could not load Media Library', 'error');
+      _notify(result?.error || getMessage('overlay_notify_library_load_failed'), 'error');
       _items = [];
       _domains = [];
       _counts = emptyCounts();
@@ -391,7 +396,7 @@ async function reload() {
   } catch (err) {
     if (gen !== _loadGen) return;
     console.warn('[KeyPilot] Media Library list failed:', err);
-    _notify('Could not load Media Library', 'error');
+    _notify(getMessage('overlay_notify_library_load_failed'), 'error');
   }
 }
 
@@ -422,7 +427,7 @@ function renderSidebar() {
 
   sidebar.appendChild(buildKindTab({
     kind: 'image',
-    label: 'Images',
+    label: getMessage('media_library_kind_images'),
     count: _counts.image,
     enabled: true,
     expandable: true,
@@ -437,7 +442,7 @@ function renderSidebar() {
 
   sidebar.appendChild(buildKindTab({
     kind: 'url',
-    label: 'URLs',
+    label: getMessage('media_library_kind_urls'),
     count: _counts.url || 0,
     enabled: true,
     expandable: true,
@@ -452,7 +457,7 @@ function renderSidebar() {
 
   sidebar.appendChild(buildKindTab({
     kind: 'video',
-    label: 'Videos',
+    label: getMessage('media_library_kind_videos'),
     count: _counts.video || 0,
     enabled: true,
     expandable: true,
@@ -467,7 +472,7 @@ function renderSidebar() {
 
   sidebar.appendChild(buildKindTab({
     kind: 'document',
-    label: 'Documents',
+    label: getMessage('media_library_kind_documents'),
     count: _counts.document || 0,
     enabled: true,
     expandable: true,
@@ -499,7 +504,7 @@ function buildKindTab(def) {
   if (!def.enabled) {
     btn.classList.add('is-disabled');
     btn.disabled = true;
-    btn.title = 'Coming soon';
+    btn.title = getMessage('media_library_coming_soon');
   }
   btn.setAttribute('role', 'tab');
   btn.setAttribute('aria-selected', def.enabled && _kind === def.kind && !_domain ? 'true' : 'false');
@@ -518,7 +523,7 @@ function buildKindTab(def) {
 
   const badge = document.createElement('span');
   badge.className = 'kpv2-media-lib-tab-count';
-  badge.textContent = def.enabled ? String(def.count) : 'soon';
+  badge.textContent = def.enabled ? String(def.count) : getMessage('media_library_coming_soon');
 
   btn.appendChild(label);
   btn.appendChild(badge);
@@ -584,7 +589,7 @@ function renderGrid() {
   if (!kindHasGallery(_kind)) {
     const empty = document.createElement('div');
     empty.className = 'kpv2-media-lib-empty';
-    empty.textContent = 'Coming soon';
+    empty.textContent = getMessage('media_library_coming_soon');
     content.appendChild(empty);
     return;
   }
@@ -594,19 +599,19 @@ function renderGrid() {
     empty.className = 'kpv2-media-lib-empty';
     empty.textContent = _kind === 'url'
       ? (_domain
-        ? `No URLs from ${_domain}`
-        : 'No URLs yet. Set Copy URL destination to Media Library or Both.')
+        ? getMessage('media_library_empty_urls_domain', _domain)
+        : getMessage('media_library_empty_urls'))
       : _kind === 'video'
         ? (_domain
-          ? `No videos from ${_domain}`
-          : 'No videos yet. Set Copy Video destination to Media Library or Both.')
+          ? getMessage('media_library_empty_videos_domain', _domain)
+          : getMessage('media_library_empty_videos'))
       : _kind === 'document'
         ? (_domain
-          ? `No documents from ${_domain}`
-          : 'No documents yet. Use Fetch URL for Media Library or send from Page Media.')
+          ? getMessage('media_library_empty_documents_domain', _domain)
+          : getMessage('media_library_empty_documents'))
       : (_domain
-        ? `No images from ${_domain}`
-        : 'No images yet. Send from Page Media (O) or set Copy Image destination to Media Library.');
+        ? getMessage('media_library_empty_images_domain', _domain)
+        : getMessage('media_library_empty_images'));
     content.appendChild(empty);
     return;
   }
@@ -807,7 +812,7 @@ function buildHoverActions(item) {
   const bar = document.createElement('div');
   bar.className = 'kpv2-media-lib-actions';
   bar.setAttribute('role', 'group');
-  bar.setAttribute('aria-label', 'Item actions');
+  bar.setAttribute('aria-label', getMessage('page_media_item_actions_aria'));
 
   const mk = (label, title, handler) => {
     const btn = document.createElement('button');
@@ -822,26 +827,26 @@ function buildHoverActions(item) {
         await handler();
       } catch (err) {
         console.warn('[KeyPilot] Media Library action failed:', err);
-        _notify('Action failed', 'error');
+        _notify(getMessage('overlay_notify_action_failed'), 'error');
       }
     }, true);
     return btn;
   };
 
-  bar.appendChild(mk('Copy', isUrlItem(item)
-    ? 'Copy URL'
+  bar.appendChild(mk(getMessage('page_media_action_copy'), isUrlItem(item)
+    ? getMessage('media_library_copy_url')
     : isVideoItem(item)
-      ? (item.thumbDataUrl ? 'Copy frame' : 'Copy video URL')
+      ? (item.thumbDataUrl ? getMessage('media_library_copy_frame') : getMessage('media_library_copy_video_url'))
       : isDocumentItem(item)
-        ? (item.sourceUrl ? 'Copy URL' : 'Copy file name')
-        : 'Copy to pasteboard', () => copyLibraryItem(item)));
+        ? (item.sourceUrl ? getMessage('media_library_copy_url') : getMessage('media_library_copy_file_name'))
+        : getMessage('page_media_action_copy_title'), () => copyLibraryItem(item)));
   if (isUrlItem(item) || (isVideoItem(item) && isHttpUrl(item.sourceUrl))
     || (isDocumentItem(item) && isHttpUrl(item.sourceUrl))) {
-    bar.appendChild(mk('Open', 'Open in a new tab', async () => openStoredUrl(item)));
+    bar.appendChild(mk(getMessage('media_library_open'), getMessage('media_library_open_title'), async () => openStoredUrl(item)));
   }
-  bar.appendChild(mk('Download', (isUrlItem(item) || isVideoShortcut(item))
-    ? 'Download shortcut'
-    : 'Download file', () => downloadLibraryItem(item)));
+  bar.appendChild(mk(getMessage('page_media_action_download'), (isUrlItem(item) || isVideoShortcut(item))
+    ? getMessage('media_library_download_shortcut')
+    : getMessage('page_media_action_download_title'), () => downloadLibraryItem(item)));
   return bar;
 }
 
@@ -958,17 +963,17 @@ function urlCardTitle(item) {
 function openStoredUrl(item) {
   const href = String(item?.sourceUrl || '').trim();
   if (!href) {
-    _notify('No URL', 'error');
+    _notify(getMessage('overlay_notify_no_url'), 'error');
     return;
   }
   if (!isHttpUrl(href)) {
-    _notify('This link cannot be opened in a new tab', 'error');
+    _notify(getMessage('overlay_notify_url_cannot_open'), 'error');
     return;
   }
   try {
     window.open(href, '_blank', 'noopener,noreferrer');
   } catch {
-    _notify('Could not open URL', 'error');
+    _notify(getMessage('overlay_notify_url_open_failed'), 'error');
   }
 }
 
@@ -980,11 +985,11 @@ async function copyLibraryItem(item) {
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(item.sourceUrl);
-        _notify('URL copied', 'success');
+        _notify(getMessage('overlay_notify_url_copied'), 'success');
         return;
       }
     } catch { /* ignore */ }
-    _notify('Could not copy URL', 'error');
+    _notify(getMessage('overlay_notify_copy_url_failed'), 'error');
     return;
   }
   if (item?.kind === 'video') {
@@ -995,7 +1000,7 @@ async function copyLibraryItem(item) {
         if (blob && blob.size > 0) {
           const ok = await writeImageBlobToClipboard(blob, blob.type || 'image/png');
           if (ok) {
-            _notify('Copied to pasteboard', 'success');
+            _notify(getMessage('overlay_notify_copied'), 'success');
             return;
           }
         }
@@ -1004,44 +1009,44 @@ async function copyLibraryItem(item) {
     if (item.sourceUrl && navigator.clipboard?.writeText) {
       try {
         await navigator.clipboard.writeText(item.sourceUrl);
-        _notify('Video URL copied', 'success');
+        _notify(getMessage('overlay_notify_video_url_copied'), 'success');
         return;
       } catch { /* ignore */ }
     }
-    _notify('Could not copy video', 'error');
+    _notify(getMessage('overlay_notify_copy_video_failed'), 'error');
     return;
   }
   if (item?.kind === 'document') {
     if (item.sourceUrl && navigator.clipboard?.writeText) {
       try {
         await navigator.clipboard.writeText(item.sourceUrl);
-        _notify('Document URL copied', 'success');
+        _notify(getMessage('overlay_notify_document_url_copied'), 'success');
         return;
       } catch { /* ignore */ }
     }
-    _notify('Could not copy document', 'error');
+    _notify(getMessage('overlay_notify_copy_document_failed'), 'error');
     return;
   }
   const result = await getMediaLibraryOriginal(item.id);
   const blob = result?.blob;
   if (!(blob instanceof Blob) || blob.size <= 0) {
-    _notify('Could not copy image', 'error');
+    _notify(getMessage('overlay_notify_copy_image_failed'), 'error');
     return;
   }
   const mime = result?.item?.mime || blob.type || 'image/png';
   const ok = await writeImageBlobToClipboard(blob, mime);
   if (ok) {
-    _notify('Copied to pasteboard', 'success');
+    _notify(getMessage('overlay_notify_copied'), 'success');
     return;
   }
   try {
     if (item.sourceUrl && navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(item.sourceUrl);
-      _notify('Image URL copied', 'success');
+      _notify(getMessage('overlay_notify_image_url_copied'), 'success');
       return;
     }
   } catch { /* ignore */ }
-  _notify('Could not copy to pasteboard', 'error');
+  _notify(getMessage('overlay_notify_copy_failed'), 'error');
 }
 
 /**
@@ -1051,17 +1056,17 @@ async function downloadLibraryItem(item) {
   if ((item?.kind === 'url' || isVideoShortcut(item)) && item.sourceUrl) {
     const body = `[InternetShortcut]\r\nURL=${item.sourceUrl}\r\n`;
     downloadBlob(new Blob([body], { type: 'application/internet-shortcut' }), libraryDownloadFilename(item));
-    _notify('Download started', 'success');
+    _notify(getMessage('overlay_notify_download_started'), 'success');
     return;
   }
   const result = await getMediaLibraryOriginal(item.id);
   const blob = result?.blob;
   if (!(blob instanceof Blob) || blob.size <= 0) {
-    _notify('Could not download', 'error');
+    _notify(getMessage('overlay_notify_download_failed'), 'error');
     return;
   }
   downloadBlob(blob, libraryDownloadFilename(item));
-  _notify('Download started', 'success');
+  _notify(getMessage('overlay_notify_download_started'), 'success');
 }
 
 /**
@@ -1185,7 +1190,7 @@ function syncCardSelection() {
 
 async function zipCurrentView() {
   if (!kindHasGallery(_kind)) {
-    _notify('Nothing to download', 'info');
+    _notify(getMessage('overlay_notify_nothing_to_download'), 'info');
     return;
   }
   const result = await zipMediaLibrary({
@@ -1193,11 +1198,11 @@ async function zipCurrentView() {
     domain: _domain || ''
   });
   if (result?.empty || !result?.blob) {
-    _notify(result?.error || 'Nothing to download', 'info');
+    _notify(result?.error || getMessage('overlay_notify_nothing_to_download'), 'info');
     return;
   }
   if (!result.success) {
-    _notify(result.error || 'Could not build zip', 'error');
+    _notify(result.error || getMessage('overlay_notify_zip_failed'), 'error');
     return;
   }
   downloadBlob(result.blob, result.filename || (
@@ -1206,26 +1211,26 @@ async function zipCurrentView() {
         : _kind === 'document' ? 'Documents.zip'
           : 'Images.zip'
   ));
-  _notify('Download started', 'success');
+  _notify(getMessage('overlay_notify_download_started'), 'success');
 }
 
 async function zipSelection() {
   const ids = Array.from(_selected);
   if (!ids.length) {
-    _notify('Nothing to download', 'info');
+    _notify(getMessage('overlay_notify_nothing_to_download'), 'info');
     return;
   }
   const result = await zipMediaLibrary({ ids, kind: _kind });
   if (result?.empty || !result?.blob) {
-    _notify(result?.error || 'Nothing to download', 'info');
+    _notify(result?.error || getMessage('overlay_notify_nothing_to_download'), 'info');
     return;
   }
   if (!result.success) {
-    _notify(result.error || 'Could not build zip', 'error');
+    _notify(result.error || getMessage('overlay_notify_zip_failed'), 'error');
     return;
   }
   downloadBlob(result.blob, result.filename || 'Media-selection.zip');
-  _notify('Download started', 'success');
+  _notify(getMessage('overlay_notify_download_started'), 'success');
 }
 
 async function deleteSelection() {
@@ -1233,11 +1238,11 @@ async function deleteSelection() {
   if (!ids.length) return;
   const result = await deleteMediaLibraryItems(ids);
   if (!result?.success) {
-    _notify(result?.error || 'Could not delete', 'error');
+    _notify(result?.error || getMessage('overlay_notify_delete_failed'), 'error');
     return;
   }
   _selected = new Set();
-  _notify(ids.length === 1 ? 'Removed from Media Library' : `Removed ${ids.length} items`, 'success');
+  _notify(ids.length === 1 ? getMessage('overlay_notify_removed_one') : getMessage('overlay_notify_removed_n', String(ids.length)), 'success');
   await reload();
 }
 
@@ -1275,7 +1280,7 @@ async function openFullView(id) {
   } else {
     const result = await getMediaLibraryOriginal(id);
     if (!result?.success || !result.blob) {
-      _notify(result?.error || 'Could not open image', 'error');
+      _notify(result?.error || getMessage('overlay_notify_image_open_failed'), 'error');
       _fullViewId = null;
       return;
     }
@@ -1311,7 +1316,7 @@ async function mountFullVideo(host, id, listed) {
   if (isVideoShortcut(item)) {
     const href = String(item.sourceUrl || '').trim();
     if (!isHttpUrl(href)) {
-      _notify('This video link is not playable', 'error');
+      _notify(getMessage('overlay_notify_video_unplayable'), 'error');
       return false;
     }
     src = href;
@@ -1322,7 +1327,7 @@ async function mountFullVideo(host, id, listed) {
     if (isVideoShortcut(meta)) {
       const href = String(meta.sourceUrl || item.sourceUrl || '').trim();
       if (!isHttpUrl(href)) {
-        _notify('This video link is not playable', 'error');
+        _notify(getMessage('overlay_notify_video_unplayable'), 'error');
         return false;
       }
       src = href;
@@ -1335,7 +1340,7 @@ async function mountFullVideo(host, id, listed) {
       if (isHttpUrl(href)) {
         src = href;
       } else {
-        _notify(result?.error || 'Could not open video', 'error');
+        _notify(result?.error || getMessage('overlay_notify_video_open_failed'), 'error');
         return false;
       }
     }
@@ -1356,7 +1361,7 @@ async function mountFullVideo(host, id, listed) {
     openLink.href = href;
     openLink.target = '_blank';
     openLink.rel = 'noopener noreferrer';
-    openLink.textContent = 'Open in new tab';
+    openLink.textContent = getMessage('preview_open_new_tab_aria');
     openLink.addEventListener('click', (e) => e.stopPropagation(), true);
     host.appendChild(openLink);
   }
@@ -1376,14 +1381,14 @@ async function mountFullDocument(host, id, listed) {
   const blob = result?.blob;
   const meta = result?.item || listed;
   if (!result?.success || !(blob instanceof Blob) || blob.size <= 0) {
-    _notify(result?.error || 'Could not open document', 'error');
+    _notify(result?.error || getMessage('overlay_notify_document_open_failed'), 'error');
     return false;
   }
   const mime = String(meta?.mime || blob.type || '').toLowerCase().split(';')[0].trim();
   const previewable = mime === 'application/pdf' || mime.startsWith('text/');
   if (!previewable) {
     downloadBlob(blob, libraryDownloadFilename(meta || listed || { id, kind: 'document' }));
-    _notify('Download started', 'success');
+    _notify(getMessage('overlay_notify_download_started'), 'success');
     return false;
   }
   _fullObjectUrl = URL.createObjectURL(blob);

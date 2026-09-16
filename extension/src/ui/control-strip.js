@@ -37,6 +37,7 @@ import {
   normalizePanelPositionState
 } from '../utils/panel-position.js';
 import { cacheChromeLayout, peekChromeLayoutCache } from '../utils/chrome-layout-cache.js';
+import { getMessage } from '../utils/i18n.js';
 
 const CONTROL_STRIP_ROOT_CLASS = 'kp-control-strip';
 const DEFAULT_TOP_PX = 16;
@@ -391,7 +392,7 @@ export class ControlStrip {
     root.className = CONTROL_STRIP_ROOT_CLASS;
     root.hidden = true;
     root.setAttribute('role', 'toolbar');
-    root.setAttribute('aria-label', 'KeyPilot control strip');
+    root.setAttribute('aria-label', getMessage('control_strip_aria_label'));
     root.setAttribute('data-kp-control-strip', 'true');
     const shadowRoot = ensureOpenChromeShadow(root, { id: 'control-strip', chromeWindow: true });
     const shell = shadowRoot || root;
@@ -426,8 +427,8 @@ export class ControlStrip {
     // strip titlebar bevel (and text-mode orange cast) shows through; ON/OFF is
     // signaled by the dot + label color, not an opaque segment fill.
     const statusBtn = this._createSegmentButton({
-      ariaLabel: 'Toggle KeyPilot on or off',
-      title: 'Toggle KeyPilot (Alt+K)'
+      ariaLabel: getMessage('control_strip_toggle_aria'),
+      title: getMessage('control_strip_toggle_title', 'Alt+K')
     });
     statusBtn.setAttribute('data-kp-control-strip-status', 'true');
 
@@ -452,7 +453,7 @@ export class ControlStrip {
     statusDot.setAttribute('data-kp-control-strip-status-dot', 'true');
 
     const statusLabel = document.createElement('span');
-    statusLabel.textContent = 'ON';
+    statusLabel.textContent = getMessage('popup_status_on');
     statusLabel.setAttribute('data-kp-control-strip-status-label', 'true');
     Object.assign(statusLabel.style, {
       fontSize: '11px',
@@ -478,17 +479,17 @@ export class ControlStrip {
     const moveBtn = this._createMoveHandleButton();
 
     const keyboardBtn = this._createSegmentButton({
-      ariaLabel: 'Toggle keyboard reference',
-      title: 'Keyboard reference',
+      ariaLabel: getMessage('control_strip_keyboard_aria'),
+      title: getMessage('control_strip_keyboard_title'),
       text: 'KB',
       iconActionId: 'TOGGLE_KEYBOARD_HELP'
     });
     keyboardBtn.setAttribute('data-kp-control-strip-keyboard', 'true');
 
     const settingsBtn = this._createSegmentButton({
-      ariaLabel: 'Open KeyPilot settings',
-      title: 'Settings',
-      text: 'Settings',
+      ariaLabel: getMessage('control_strip_settings_aria'),
+      title: getMessage('control_strip_settings_title'),
+      text: getMessage('control_strip_settings_title'),
       iconActionId: 'OPEN_SETTINGS_POPOVER'
     });
     settingsBtn.setAttribute('data-kp-control-strip-settings', 'true');
@@ -499,8 +500,8 @@ export class ControlStrip {
 
     // Collapse / expand
     const collapseBtn = this._createSegmentButton({
-      ariaLabel: 'Collapse control strip',
-      title: 'Collapse',
+      ariaLabel: getMessage('control_strip_collapse_aria'),
+      title: getMessage('control_strip_collapse'),
       text: '◀',
       compact: true
     });
@@ -508,8 +509,8 @@ export class ControlStrip {
 
     // Close
     const closeBtn = this._createSegmentButton({
-      ariaLabel: 'Close control strip',
-      title: 'Close (Alt+J to show again)',
+      ariaLabel: getMessage('control_strip_close_aria'),
+      title: getMessage('control_strip_close_title', 'Alt+J'),
       text: '×',
       compact: true,
       last: true
@@ -550,8 +551,8 @@ export class ControlStrip {
    */
   _createMoveHandleButton() {
     const btn = this._createSegmentButton({
-      ariaLabel: 'Move control strip',
-      title: 'Drag to move',
+      ariaLabel: getMessage('control_strip_move_aria'),
+      title: getMessage('popover_titlebar_drag_title'),
       text: '⠿',
       compact: true
     });
@@ -937,9 +938,9 @@ export class ControlStrip {
       this._collapseBtn.textContent = collapsed ? '▶' : '◀';
       this._collapseBtn.setAttribute(
         'aria-label',
-        collapsed ? 'Expand control strip' : 'Collapse control strip'
+        getMessage(collapsed ? 'control_strip_expand_aria' : 'control_strip_collapse_aria')
       );
-      this._collapseBtn.title = collapsed ? 'Expand' : 'Collapse';
+      this._collapseBtn.title = getMessage(collapsed ? 'control_strip_expand' : 'control_strip_collapse');
       // When collapsed, collapse control is last visible segment.
       this._collapseBtn.style.borderRight = 'none';
       if (!collapsed && this._closeBtn) {
@@ -957,7 +958,7 @@ export class ControlStrip {
     if (!this._statusLabel || !this._statusDot) return;
     const on = !!this._enabled;
     const textMode = on && !!this._textMode;
-    this._statusLabel.textContent = on ? 'ON' : 'OFF';
+    this._statusLabel.textContent = getMessage(on ? 'popup_status_on' : 'popup_status_off');
 
     // Green when on; orange while a text field has focus (text mode); gray when off.
     let dotBg;

@@ -4,6 +4,7 @@
  * - Full-width panel with two stacked horizontal card rails (Tab + Browser).
  * - Uses PopupManager to keep z-index below click overlays and to enable View Transitions.
  */
+import { getMessage } from '../utils/i18n.js';
 import {
   createUrlListingContainer,
   renderUrlListing,
@@ -577,7 +578,7 @@ export class TabHistoryPopover {
     const panel = doc.createElement('div');
     panel.className = 'kpv2-tab-history-panel';
     panel.setAttribute('role', 'dialog');
-    panel.setAttribute('aria-label', 'History');
+    panel.setAttribute('aria-label', getMessage('tab_history_title'));
     const shadowRoot = ensureOpenChromeShadow(panel, { id: 'tab-history' });
     const shell = shadowRoot || panel;
 
@@ -589,11 +590,11 @@ export class TabHistoryPopover {
 
     const title = doc.createElement('div');
     title.className = 'kpv2-history-title';
-    title.textContent = 'History';
+    title.textContent = getMessage('tab_history_title');
 
     const subtitle = doc.createElement('div');
     subtitle.className = 'kpv2-history-subtitle';
-    subtitle.textContent = 'Browser history · Tab history';
+    subtitle.textContent = getMessage('tab_history_subtitle');
 
     titleWrap.appendChild(title);
     titleWrap.appendChild(subtitle);
@@ -602,7 +603,7 @@ export class TabHistoryPopover {
     closeBtn.type = 'button';
     closeBtn.className = 'kpv2-history-close';
     closeBtn.textContent = '×';
-    closeBtn.setAttribute('aria-label', 'Close');
+    closeBtn.setAttribute('aria-label', getMessage('overlay_close'));
     closeBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -628,14 +629,14 @@ export class TabHistoryPopover {
 
       const sectionHint = doc.createElement('div');
       sectionHint.className = 'kpv2-history-section-hint';
-      sectionHint.textContent = 'Click to navigate';
+      sectionHint.textContent = getMessage('tab_history_click_hint');
 
       sectionHeader.appendChild(sectionTitle);
       sectionHeader.appendChild(sectionHint);
 
       const sectionStatus = doc.createElement('div');
       sectionStatus.className = 'kpv2-history-section-status';
-      sectionStatus.textContent = 'Loading…';
+      sectionStatus.textContent = getMessage('tab_history_loading');
 
       const rail = createUrlListingContainer({
         doc,
@@ -659,8 +660,8 @@ export class TabHistoryPopover {
       return { section, sectionStatus, rail };
     };
 
-    const tabSection = makeSection({ titleText: 'Tab history' });
-    const browserSection = makeSection({ titleText: 'Browser history' });
+    const tabSection = makeSection({ titleText: getMessage('tab_history_section_tabs') });
+    const browserSection = makeSection({ titleText: getMessage('tab_history_section_browser') });
 
     shell.appendChild(header);
     // Browser history above Tab history
@@ -679,9 +680,9 @@ export class TabHistoryPopover {
     if (!this._open) return;
     if (!this._tabStatus || !this._tabList || !this._browserStatus || !this._browserList) return;
 
-    this._tabStatus.textContent = 'Loading tab history…';
+    this._tabStatus.textContent = getMessage('tab_history_loading_tabs');
     this._tabList.textContent = '';
-    this._browserStatus.textContent = 'Loading browser history…';
+    this._browserStatus.textContent = getMessage('tab_history_loading_browser');
     this._browserList.textContent = '';
 
     await Promise.allSettled([
@@ -704,7 +705,7 @@ export class TabHistoryPopover {
     if (!this._open) return;
 
     if (!resp || resp.type !== MSG.NAVGRAPH_GRAPH || !resp.graph) {
-      this._tabStatus.textContent = 'Tab history unavailable.';
+      this._tabStatus.textContent = getMessage('tab_history_tabs_unavailable');
       return;
     }
 
@@ -733,17 +734,17 @@ export class TabHistoryPopover {
 
     const items = Array.isArray(resp?.items) ? resp.items : [];
     if (!resp || resp.type !== MSG.BROWSER_HISTORY_RESULT) {
-      this._browserStatus.textContent = 'Browser history unavailable.';
+      this._browserStatus.textContent = getMessage('tab_history_browser_unavailable');
       return;
     }
 
     if (!items.length) {
-      this._browserStatus.textContent = 'No recent browser history.';
+      this._browserStatus.textContent = getMessage('tab_history_browser_empty');
       this._browserList.textContent = '';
       return;
     }
 
-    this._browserStatus.textContent = 'Click an entry to navigate. Press Esc to close.';
+    this._browserStatus.textContent = getMessage('tab_history_navigate_hint');
     this._renderBrowserHistory(items);
   }
 
@@ -755,11 +756,11 @@ export class TabHistoryPopover {
     const cursorId = graph.cursorId;
 
     if (!nodes.length) {
-      this._tabStatus.textContent = 'No tab history yet.';
+      this._tabStatus.textContent = getMessage('tab_history_tabs_empty');
       return;
     }
 
-    this._tabStatus.textContent = 'Click an entry to navigate. Press Esc to close.';
+    this._tabStatus.textContent = getMessage('tab_history_navigate_hint');
 
     const nodeById = new Map();
     for (const n of nodes) {
@@ -896,7 +897,7 @@ export class TabHistoryPopover {
             const badge = document.createElement('div');
             badge.className = 'kp-url-branch-badge';
             badge.textContent = `+${item.branchCount - 1}`;
-            badge.setAttribute('aria-label', `${item.branchCount - 1} more branches`);
+            badge.setAttribute('aria-label', getMessage('tab_history_more_branches_aria', String(item.branchCount - 1)));
             row.appendChild(badge);
           }
 
