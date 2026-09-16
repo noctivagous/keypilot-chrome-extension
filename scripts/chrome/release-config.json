@@ -1,6 +1,6 @@
 {
   "channelLabel": "Chrome",
-  "description": "Browse the web with key-clicks. Activate hyperlinks with keyboard keys instead of mouse buttons.",
+  "descriptionMessageKey": "extension_description",
   "descriptionMaxLength": 132,
   "homepageUrl": "https://noctivagous.com/",
   "stagingDir": "dist/chrome",

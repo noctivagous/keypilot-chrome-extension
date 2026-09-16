@@ -68,6 +68,8 @@ Or from this directory: `node build.js`.
 
 That regenerates `content-bundled.js`, `frame-agent-bundled.js`, `pages/docs-bundled.js`, and `pages/settings-bundled.js`. Edit `src/` (and `background.js`); do not edit the bundled outputs. Settings and Docs are loaded from those page bundles when opened, not from the eager content script.
 
+Extension name, description, and toolbar title are localized from `_locales/<locale>/messages.json`; keep `manifest.json` values as `__MSG_*__` references. Builds and store-packaging scripts validate those references but do not rewrite them.
+
 Optional:
 
 - `npm run build:macro-builder` — enable the Macro Builder UI

@@ -45,9 +45,14 @@ test('Opera package contains the validated release surface', (t) => {
   const config = readJson(configPath);
   const stagedDir = join(extensionRoot, config.stagingDir);
   const stagedManifest = readJson(join(stagedDir, 'manifest.json'));
+  const messages = readJson(join(stagedDir, '_locales', stagedManifest.default_locale, 'messages.json'));
 
-  assert.equal(stagedManifest.description, config.description);
-  assert.ok(stagedManifest.description.length <= config.descriptionMaxLength);
+  assert.equal(
+    stagedManifest.description,
+    `__MSG_${config.descriptionMessageKey}__`,
+    'staged manifest must retain its localized description reference'
+  );
+  assert.ok(messages[config.descriptionMessageKey].message.length <= config.descriptionMaxLength);
   assert.deepEqual(Object.keys(stagedManifest.icons).sort(), ['128', '16', '48']);
   assert.deepEqual(Object.keys(stagedManifest.action.default_icon).sort(), ['128', '16', '48']);
   assert.equal(stagedManifest.homepage_url, config.homepageUrl);

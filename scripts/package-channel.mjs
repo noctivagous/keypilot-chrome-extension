@@ -1,9 +1,8 @@
 /**
  * Package a reviewable store ZIP from a staged copy of the extension.
  *
- * Does not rewrite extension/manifest.json. The shared `npm run build` step may
- * still stamp the development description; this script copies that file and
- * replaces the description only in the staged channel manifest.
+ * Does not rewrite extension/manifest.json. Localized manifest metadata stays
+ * as `__MSG_*__` references in every staged channel package.
  *
  * Usage:
  *   npm run package:opera
@@ -186,9 +185,30 @@ export async function packageChannel(channel, { skipBuild = false } = {}) {
   function patchStagedManifest() {
     const stagedPath = path.join(stagingDir, 'manifest.json');
     const manifest = JSON.parse(fs.readFileSync(stagedPath, 'utf8'));
-    const description = String(config.description || '').trim();
+    const descriptionMessageKey = String(config.descriptionMessageKey || '').trim();
+    if (!descriptionMessageKey) {
+      throw new Error(`${label} release description message key is empty`);
+    }
+    const expectedDescription = `__MSG_${descriptionMessageKey}__`;
+    if (manifest.description !== expectedDescription) {
+      throw new Error(
+        `${label} manifest description must be ${expectedDescription}; received ${JSON.stringify(manifest.description)}`
+      );
+    }
+    const defaultLocale = String(manifest.default_locale || '').trim();
+    if (!defaultLocale) {
+      throw new Error(`${label} manifest is missing default_locale`);
+    }
+    const messagesPath = path.join(stagingDir, '_locales', defaultLocale, 'messages.json');
+    let messages;
+    try {
+      messages = JSON.parse(fs.readFileSync(messagesPath, 'utf8'));
+    } catch (err) {
+      throw new Error(`${label} cannot read default-locale messages: ${messagesPath} (${err.message})`);
+    }
+    const description = String(messages?.[descriptionMessageKey]?.message || '').trim();
     if (!description) {
-      throw new Error(`${label} release description is empty`);
+      throw new Error(`${label} default-locale message "${descriptionMessageKey}" is empty`);
     }
     if (description.length > config.descriptionMaxLength) {
       throw new Error(
@@ -199,7 +219,6 @@ export async function packageChannel(channel, { skipBuild = false } = {}) {
       throw new Error(`${label} description must not include a build timestamp`);
     }
 
-    manifest.description = description;
     if (config.homepageUrl) {
       manifest.homepage_url = String(config.homepageUrl).trim();
     }

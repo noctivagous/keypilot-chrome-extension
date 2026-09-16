@@ -45,13 +45,13 @@ Suggested message-key convention:
 
 ### Tasks
 
-- [ ] Create `extension/_locales/en/messages.json`.
-- [ ] Add complete English messages for the extension name, store description, and toolbar title.
-- [ ] Set `default_locale` to `en` in `extension/manifest.json`.
-- [ ] Replace manifest `name`, `description`, and `action.default_title` literals with their `__MSG_*__` references.
-- [ ] Review `scripts/package-channel.mjs`: it currently replaces the staged manifest's `description`. Change the channel configuration/packaging behavior so packaged manifests retain the message reference and the English release description lives in the English message catalog.
-- [ ] Confirm all packaging targets that copy `extension/` include `_locales/`, including Chrome, Opera, Edge's shared artifact, and Firefox staging.
-- [ ] Update store-release instructions as needed to make description changes occur in the English catalog, rather than by overwriting a localized manifest value.
+- [x] Create `extension/_locales/en/messages.json`.
+- [x] Add complete English messages for the extension name, store description, and toolbar title.
+- [x] Set `default_locale` to `en` in `extension/manifest.json`.
+- [x] Replace manifest `name`, `description`, and `action.default_title` literals with their `__MSG_*__` references.
+- [x] Review `scripts/package-channel.mjs`: it currently replaces the staged manifest's `description`. Change the channel configuration/packaging behavior so packaged manifests retain the message reference and the English release description lives in the English message catalog.
+- [x] Confirm all packaging targets that copy `extension/` include `_locales/`, including Chrome, Opera, Edge's shared artifact, and Firefox staging.
+- [x] Update store-release instructions as needed to make description changes occur in the English catalog, rather than by overwriting a localized manifest value.
 
 ### Acceptance criteria
 
@@ -64,8 +64,8 @@ Suggested message-key convention:
 
 - [ ] Load unpacked extension in Chrome.
 - [ ] Inspect `chrome://extensions` and the toolbar action tooltip.
-- [ ] Inspect staged ZIP contents and staged `manifest.json`.
-- [ ] Run the ordinary build and package commands.
+- [x] Inspect staged ZIP contents and staged `manifest.json`.
+- [x] Run the ordinary build and package commands.
 
 ## Phase 2 — shared localization interface
 

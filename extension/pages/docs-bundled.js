@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-05T06:57:34.932Z
+ * Generated on 2026-09-16T01:41:14.260Z
  */
 
 var __defProp = Object.defineProperty;
@@ -8686,7 +8686,7 @@ markdown.renderer.rules.image = (tokens, idx, options, env, renderer) => {
   return defaultImage(tokens, idx, options, env, renderer);
 };
 function slugifyHeading(text2) {
-  return String(text2 || "").toLowerCase().trim().replace(/<[^>]+>/g, "").replace(/[`*_~]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return String(text2 || "").toLowerCase().trim().replace(/<[^>]+>/g, "").replace(/[`*_~]/g, "").replace(/[^\p{L}\p{N}\p{M}]+/gu, "-").replace(/^-+|-+$/g, "");
 }
 var defaultHeadingOpen = markdown.renderer.rules.heading_open || ((tokens, idx, options, _env, renderer) => renderer.renderToken(tokens, idx, options));
 markdown.renderer.rules.heading_open = (tokens, idx, options, env, renderer) => {
