@@ -46,7 +46,7 @@ describe('Launcher catalog localization', () => {
       readFile('extension/src/config/launcher-sites.js', 'utf8'),
       readFile('extension/src/modules/launcher-popover.js', 'utf8'),
       readFile('extension/_locales/en/messages.json', 'utf8').then(JSON.parse),
-      readFile('extension/_locales/en_GB/messages.json', 'utf8').then(JSON.parse)
+      readFile('test/fixtures/locales/en_GB/messages.json', 'utf8').then(JSON.parse)
     ]);
     const searchDescriptionMap = Array.from(
       source.matchAll(/SEARCH_ENGINE_DESCRIPTION_KEYS = Object\.freeze\(\{[\s\S]*?\}\);/g)

@@ -38,7 +38,7 @@ describe('keyboard layout family localization', () => {
   it('defines all layout-family messages in English and the test locale', async () => {
     const [english, testLocale] = await Promise.all([
       readFile('extension/_locales/en/messages.json', 'utf8').then(JSON.parse),
-      readFile('extension/_locales/en_GB/messages.json', 'utf8').then(JSON.parse)
+      readFile('test/fixtures/locales/en_GB/messages.json', 'utf8').then(JSON.parse)
     ]);
 
     for (const key of FAMILY_MESSAGE_KEYS) {

@@ -26,7 +26,7 @@ describe('context-menu localization', () => {
   it('defines every context-menu message used by the service worker', async () => {
     const [english, testLocale, source] = await Promise.all([
       readFile('extension/_locales/en/messages.json', 'utf8').then(JSON.parse),
-      readFile('extension/_locales/en_GB/messages.json', 'utf8').then(JSON.parse),
+      readFile('test/fixtures/locales/en_GB/messages.json', 'utf8').then(JSON.parse),
       readFile('extension/background.js', 'utf8')
     ]);
 

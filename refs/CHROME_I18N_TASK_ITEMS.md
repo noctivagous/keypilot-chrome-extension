@@ -6,6 +6,7 @@ Implementation checklist for localizing KeyPilot's Chrome-extension surfaces.
 
 - Use Chrome's built-in [`chrome.i18n`](https://developer.chrome.com/docs/extensions/reference/api/i18n) message catalog mechanism. It selects strings from `_locales/<locale>/messages.json` according to the browser UI locale.
 - The first implementation must have a complete English (`en`) catalog and set `"default_locale": "en"` in `extension/manifest.json`. Chrome falls back from a region locale (for example, `en_GB`) to its base language and then to `default_locale`.
+- Do not ship test-only locale prefixes such as `[GB]` or `[ES]` in `extension/_locales/`. Marked catalogs used to prove a second locale is applied belong in `test/fixtures/locales/`, not in the unpacked extension. Shipped locales (`en`, later `es`, and so on) must contain real UI copy.
 - `__MSG_messageKey__` substitutions work in the manifest and extension CSS. JavaScript must call `chrome.i18n.getMessage('messageKey')`; extension HTML requires explicit runtime localization.
 - Preserve stable action, function, setting, and layout IDs. Localize their displayed labels and descriptions, not their identifiers or stored user data.
 - Do not localize user-created layout names, macro names, custom launcher entries, browser/page-derived titles, URLs, or text captured from a page.
@@ -141,9 +142,22 @@ Suggested message-key convention:
 
 ### Validation
 
-- [ ] Add unit tests for representative catalog-to-display resolution.
-- [ ] Exercise each overlay/mode and inspect menus in English plus one translated locale.
-- [ ] Search source for remaining user-visible literals; triage each as intended user/page data, non-visible text, or an extraction task.
+- [x] Add unit tests for representative catalog-to-display resolution.
+- [x] Exercise each overlay/mode and inspect menus in English plus one translated locale.
+- [x] Search source for remaining user-visible literals; triage each as intended user/page data, non-visible text, or an extraction task.
+
+Catalog-to-display coverage: `test/catalog-display-i18n.test.js` plus the Function/Macro, launcher, layout-family, overlay, and context-menu i18n tests.
+
+Remaining-literal triage:
+
+| Bucket | Examples | Action |
+|---|---|---|
+| Intended public product names | `search-engines.js` labels (Brave, Google); launcher site titles (Instagram, Gmail) | Keep. Do not translate public names. |
+| User / page data | Custom layout labels from `listLayoutPickerGroups`; user Launch Deck titles; page-derived titles/URLs | Keep as stored or page data. |
+| Keyboard glyphs / shortcut notation | Hub `hint` values (`K`, `Alt+H`); `kbd` glyphs; `Tab`/`Caps`/`Shift` keycap text | Keep unless a locale-specific rendering decision is approved. |
+| Non-visible / debug | `overlay-manager.js` debug HUD and console (`KeyPilot Debug Panel`, clickable-reason strings); gated by debug flags | Leave unless the HUD ships to users. |
+| Fallback English in early-inject | `fallbackText` on keyboard keycaps (`Click Element`, `KB Reference`) | Used when action metadata is missing; extract with action-catalog localization. |
+| Extraction remaining | Keyboard Layout Editor (`keyboard-layout-config-panel.js`, `key-action-settings.js`, `keybindings-ui.js`); `KEYBINDING_ACTION_DEFS` labels/descriptions; `BUILTIN_KEYBOARD_LAYOUT_META` handedness labels; stock macro labels; inspector instruction templates (`Press {key} again to delete`); overlay ESC/`F clicks` labels; `highlight-manager.js` finish-selection banner; `ONBOARDING_DEFAULT_TITLE` / `ONBOARDING_REOPEN_TIP` constants (runtime already prefers `getMessage`) | Follow-up extraction. Not Phase 4 catalog work. |
 
 ## Phase 5 — localized documentation and image assets
 
@@ -184,7 +198,7 @@ Suggested message-key convention:
 
 ### Tasks
 
-- [ ] Create `_locales/es/messages.json` by copying the complete English catalog, then translate and review terminology, placeholders, length, and accelerator/shortcut wording.
+- [ ] Create `_locales/es/messages.json` by copying the complete English catalog, then translate and review terminology, placeholders, length, and accelerator/shortcut wording. Do not leave `[ES]` or other test markers in the shipped Spanish catalog; if a marked catalog is needed to prove locale switching, keep it under `test/fixtures/locales/`.
 - [ ] Use generic Spanish (`es`) for the initial release. Add regional catalogs such as `es_419`, `es_ES`, or `es_MX` only when their wording needs to differ.
 - [ ] Translate the Phase 3–5 surfaces committed for Spanish, including the Spanish docs tree.
 - [ ] Add CI or a release check that compares non-English catalog keys to the English source catalog and reports missing/extra keys.

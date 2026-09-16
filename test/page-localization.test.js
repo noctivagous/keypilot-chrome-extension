@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { describe, it } from 'node:test';
 
 const pages = [
@@ -10,8 +10,11 @@ const pages = [
   'extension/pages/newtab.html'
 ];
 
+const ENGLISH_CATALOG = 'extension/_locales/en/messages.json';
+const TEST_LOCALE_CATALOG = 'test/fixtures/locales/en_GB/messages.json';
+
 async function catalog(locale) {
-  return JSON.parse(await readFile(`extension/_locales/${locale}/messages.json`, 'utf8'));
+  return JSON.parse(await readFile(locale === 'en' ? ENGLISH_CATALOG : TEST_LOCALE_CATALOG, 'utf8'));
 }
 
 describe('extension-page localization', () => {
@@ -25,6 +28,24 @@ describe('extension-page localization', () => {
       for (const [, key] of bindings) {
         assert.equal(typeof english[key]?.message, 'string', `${page} English key: ${key}`);
         assert.equal(typeof testLocale[key]?.message, 'string', `${page} test-locale key: ${key}`);
+      }
+    }
+  });
+
+  it('does not ship test-locale prefixes such as [GB] or [ES] in extension/_locales', async () => {
+    const locales = await readdir('extension/_locales', { withFileTypes: true });
+    const shipped = locales.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
+    assert.ok(shipped.includes('en'), 'English catalog is shipped');
+
+    for (const locale of shipped) {
+      const messages = JSON.parse(await readFile(`extension/_locales/${locale}/messages.json`, 'utf8'));
+      for (const [key, entry] of Object.entries(messages)) {
+        assert.equal(typeof entry?.message, 'string', `${locale} ${key}`);
+        assert.doesNotMatch(
+          entry.message,
+          /^\[[A-Z]{2}(?:_[A-Z0-9]+)?\]\s/,
+          `${locale}/${key} looks like a test marker, not a translation`
+        );
       }
     }
   });

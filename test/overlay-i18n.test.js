@@ -45,7 +45,7 @@ describe('overlay and popover localization', () => {
   it('defines overlay keys in English and the test locale', async () => {
     const [english, testLocale] = await Promise.all([
       readFile('extension/_locales/en/messages.json', 'utf8').then(JSON.parse),
-      readFile('extension/_locales/en_GB/messages.json', 'utf8').then(JSON.parse)
+      readFile('test/fixtures/locales/en_GB/messages.json', 'utf8').then(JSON.parse)
     ]);
 
     for (const [file, keys] of OVERLAY_KEYS) {
@@ -61,7 +61,7 @@ describe('overlay and popover localization', () => {
   it('keeps English and test-locale overlay catalogs in key parity', async () => {
     const [english, testLocale] = await Promise.all([
       readFile('extension/_locales/en/messages.json', 'utf8').then(JSON.parse),
-      readFile('extension/_locales/en_GB/messages.json', 'utf8').then(JSON.parse)
+      readFile('test/fixtures/locales/en_GB/messages.json', 'utf8').then(JSON.parse)
     ]);
     assert.deepEqual(Object.keys(english).sort(), Object.keys(testLocale).sort());
   });

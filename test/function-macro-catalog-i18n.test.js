@@ -76,7 +76,7 @@ describe('Function and Macro catalog localization', () => {
       readFile('extension/build-side-effects.js', 'utf8'),
       readFile('extension/early-inject.js', 'utf8'),
       readFile('extension/_locales/en/messages.json', 'utf8').then(JSON.parse),
-      readFile('extension/_locales/en_GB/messages.json', 'utf8').then(JSON.parse)
+      readFile('test/fixtures/locales/en_GB/messages.json', 'utf8').then(JSON.parse)
     ]);
     const { FUNCTION_LIBRARY } = await import('../extension/src/config/function-library.js');
     const { MACRO_KEY_KIND_DEFS, MACRO_BUILDER_STEP_TYPES } = await import('../extension/src/config/macro-keys.js');
