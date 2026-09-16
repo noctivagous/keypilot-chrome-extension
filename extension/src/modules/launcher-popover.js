@@ -384,79 +384,79 @@ export class LauncherPopover {
 
     this._categories = {
       launchDeck: {
-        label: 'Launch Deck',
-        description: 'Toolbar bookmarks and your most visited sites',
+        labelKey: 'launcher_category_launchDeck_label',
+        descriptionKey: 'launcher_category_launchDeck_description',
         ...emptyLists()
       },
       bookmarks: {
-        label: 'Bookmarks',
-        description: 'Your saved bookmarks and frequently visited sites',
+        labelKey: 'launcher_category_bookmarks_label',
+        descriptionKey: 'launcher_category_bookmarks_description',
         ...emptyLists()
       },
       history: {
-        label: 'Recent',
-        description: 'Sites you have visited most recently',
+        labelKey: 'launcher_category_history_label',
+        descriptionKey: 'launcher_category_history_description',
         ...emptyLists()
       },
       social: {
-        label: 'Social Media',
-        description: 'Stay connected across social networks',
+        labelKey: 'launcher_category_social_label',
+        descriptionKey: 'launcher_category_social_description',
         sites: [],
         history: [],
         favorites: []
       },
       news: {
-        label: 'News',
-        description: 'Headlines and reporting from major outlets',
+        labelKey: 'launcher_category_news_label',
+        descriptionKey: 'launcher_category_news_description',
         sites: [],
         history: [],
         favorites: []
       },
       productivity: {
-        label: 'Productivity',
-        description: 'Mail, docs, calendars, and work tools',
+        labelKey: 'launcher_category_productivity_label',
+        descriptionKey: 'launcher_category_productivity_description',
         sites: [],
         history: [],
         favorites: []
       },
       videos: {
-        label: 'Videos',
-        description: 'Watch and search video sites',
+        labelKey: 'launcher_category_videos_label',
+        descriptionKey: 'launcher_category_videos_description',
         sites: [],
         history: [],
         favorites: []
       },
       entertainment: {
-        label: 'Entertainment',
-        description: 'Streaming and entertainment destinations',
+        labelKey: 'launcher_category_entertainment_label',
+        descriptionKey: 'launcher_category_entertainment_description',
         sites: [],
         history: [],
         favorites: []
       },
       shopping: {
-        label: 'Shopping',
-        description: 'Stores and marketplaces',
+        labelKey: 'launcher_category_shopping_label',
+        descriptionKey: 'launcher_category_shopping_description',
         sites: [],
         history: [],
         favorites: []
       },
       ai: {
-        label: 'AI',
-        description: 'Chatbots and AI assistants',
+        labelKey: 'launcher_category_ai_label',
+        descriptionKey: 'launcher_category_ai_description',
         sites: [],
         history: [],
         favorites: []
       },
       archive: {
-        label: 'Internet Archive',
-        description: 'Search and browse the Internet Archive library',
+        labelKey: 'launcher_category_archive_label',
+        descriptionKey: 'launcher_category_archive_description',
         sites: [],
         history: [],
         favorites: []
       },
       searches: {
-        label: 'Searches',
-        description: 'Search engines and recent web searches',
+        labelKey: 'launcher_category_searches_label',
+        descriptionKey: 'launcher_category_searches_description',
         sites: [],
         history: [],
         favorites: []
@@ -1969,7 +1969,7 @@ export class LauncherPopover {
 
     const label = doc.createElement('span');
     label.className = 'kp-launcher-tab-label';
-    label.textContent = category.label;
+    label.textContent = getMessage(category.labelKey || 'launcher_title');
     label.style.cssText = `
       flex: 1;
       min-width: 0;
@@ -2386,7 +2386,8 @@ export class LauncherPopover {
         if (!needle) return true;
         return (
           s.title.toLowerCase().includes(needle) ||
-          s.url.toLowerCase().includes(needle)
+          s.url.toLowerCase().includes(needle) ||
+          s.description.toLowerCase().includes(needle)
         );
       });
       if (!rows.length) {
@@ -2415,10 +2416,14 @@ export class LauncherPopover {
         const t = doc.createElement('div');
         t.textContent = site.title;
         t.style.cssText = 'font-size: 13px; font-weight: 600;';
+        const d = doc.createElement('div');
+        d.textContent = site.description;
+        d.style.cssText = 'font-size: 12px; color: #aaa;';
         const u = doc.createElement('div');
         u.textContent = site.url;
         u.style.cssText = 'font-size: 11px; color: #888;';
         row.appendChild(t);
+        row.appendChild(d);
         row.appendChild(u);
         row.addEventListener('click', () => {
           void this._addLaunchDeckSite({
@@ -2929,11 +2934,15 @@ export class LauncherPopover {
   _updateContentHeader(categoryKey = this._currentCategory) {
     const category = this._categories?.[categoryKey];
     if (this._headerTitle) {
-      this._headerTitle.textContent = category?.label || categoryKey || 'Launcher';
+      this._headerTitle.textContent = category?.labelKey
+        ? getMessage(category.labelKey)
+        : getMessage('launcher_title');
     }
     if (this._headerDescription) {
       this._headerDescription.textContent =
-        category?.description || 'Quick access to sites in this category';
+        category?.descriptionKey
+          ? getMessage(category.descriptionKey)
+          : getMessage('launcher_category_fallback_description');
     }
   }
 

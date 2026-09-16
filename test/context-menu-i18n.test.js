@@ -40,4 +40,22 @@ describe('context-menu localization', () => {
     assert.doesNotMatch(source, /createGroup\('KeyPilot Windows'\)/);
     assert.doesNotMatch(source, /title: 'None'/);
   });
+
+  it('refreshes context menus on first registration and browser startup', async () => {
+    const source = await readFile('extension/background.js', 'utf8');
+
+    assert.match(
+      source,
+      /onStartup\.addListener\(async \(\) => \{\s*void refreshKeyboardReferenceContextMenu\(\);/
+    );
+    assert.match(
+      source,
+      /onInstalled\.addListener\(async \(details\) => \{\s*void refreshKeyboardReferenceContextMenu\(\);/
+    );
+    assert.match(source, /scheduleContextMenuI18nRetry/);
+    assert.match(
+      source,
+      /const rootTitle = getMessage\('extension_name'\);\s*if \(!rootTitle\) \{\s*scheduleContextMenuI18nRetry\(\);/
+    );
+  });
 });

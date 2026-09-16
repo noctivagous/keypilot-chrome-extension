@@ -130,8 +130,8 @@ Suggested message-key convention:
 - [x] Audit `extension/src/ui/`, `extension/src/modules/`, and `extension/early-inject.js` for visible strings, placeholders, titles, accessibility labels, status/error text, and notifications. Remaining product copy is concentrated in the keyboard layout editor, function/macro catalogs, launcher catalog copy, and overlay-manager debug HUD.
 - [x] Convert built-in layout family labels and descriptions in `extension/src/config/keyboard-layouts.js` to message keys resolved at the presentation boundary.
 - [x] Convert built-in function/macro labels, descriptions, parameter labels, option labels, and catalog category labels in `extension/src/config/function-library.js` and `extension/src/config/macro-keys.js`.
-- [ ] Audit remaining built-in catalog sources, including search-engine labels and seeded launcher metadata. Translate only KeyPilot-owned display copy; preserve public product names and user-editable defaults where translation would alter saved data semantics.
-- [ ] Ensure context menus refresh when their localized labels are first registered; changing Chrome's UI language itself can require browser restart/reload.
+- [x] Audit remaining built-in catalog sources, including search-engine labels and seeded launcher metadata. Translate only KeyPilot-owned display copy; preserve public product names and user-editable defaults where translation would alter saved data semantics.
+- [x] Ensure context menus refresh when their localized labels are first registered; changing Chrome's UI language itself can require browser restart/reload.
 
 ### Acceptance criteria
 

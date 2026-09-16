@@ -4294,5 +4294,955 @@
   "mk_editor_key": {
     "message": "[GB] Key",
     "description": "Macro Key editor key field label and placeholder."
+  },
+  "launcher_site_social_001_description": {
+    "message": "[GB] Photo and short-video social network",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_002_description": {
+    "message": "[GB] Friends, groups, and community feed",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_003_description": {
+    "message": "[GB] Real-time posts and public conversation",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_004_description": {
+    "message": "[GB] Topic communities and discussion threads",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_005_description": {
+    "message": "[GB] Decentralized microblogging network",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_006_description": {
+    "message": "[GB] Professional networking and careers",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_007_description": {
+    "message": "[GB] Text-focused social feed from Meta",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_008_description": {
+    "message": "[GB] Federated open-source social network",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_009_description": {
+    "message": "[GB] Short-form video discovery and creation",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_010_description": {
+    "message": "[GB] Encrypted messaging and group chats",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_011_description": {
+    "message": "[GB] Visual boards for ideas and inspiration",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_012_description": {
+    "message": "[GB] Voice, chat, and community servers",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_013_description": {
+    "message": "[GB] Cloud messaging and large channels",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_014_description": {
+    "message": "[GB] Ephemeral snaps and Stories",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_015_description": {
+    "message": "[GB] Facebook messaging app on the web",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_016_description": {
+    "message": "[GB] Neighborhood news and local chat",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_017_description": {
+    "message": "[GB] Blogs, fandoms, and creative posts",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_018_description": {
+    "message": "[GB] Q&A from experts and communities",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_019_description": {
+    "message": "[GB] Long-form writing and essays",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_020_description": {
+    "message": "[GB] Creative portfolios and project showcases",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_021_description": {
+    "message": "[GB] Design shots and creative hiring",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_022_description": {
+    "message": "[GB] Book reviews, lists, and reading goals",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_023_description": {
+    "message": "[GB] Photo hosting and photographer community",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_024_description": {
+    "message": "[GB] Support creators with memberships",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_025_description": {
+    "message": "[GB] Writer network and short social posts",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_news_001_description": {
+    "message": "[GB] Breaking news and US/world coverage",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_002_description": {
+    "message": "[GB] International news from the BBC",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_003_description": {
+    "message": "[GB] In-depth reporting and analysis",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_004_description": {
+    "message": "[GB] Wire-service news and business headlines",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_005_description": {
+    "message": "[GB] UK and global news and opinion",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_006_description": {
+    "message": "[GB] Associated Press wire and photos",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_007_description": {
+    "message": "[GB] Personalized news aggregator",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_008_description": {
+    "message": "[GB] Aggregated headlines and original stories",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_009_description": {
+    "message": "[GB] Microsoft news portal and lifestyle feeds",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_010_description": {
+    "message": "[GB] US news and opinion programming",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_011_description": {
+    "message": "[GB] Network news and investigations",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_012_description": {
+    "message": "[GB] US broadcast news and live updates",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_013_description": {
+    "message": "[GB] National news and 60 Minutes",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_014_description": {
+    "message": "[GB] National newspaper and sports coverage",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_015_description": {
+    "message": "[GB] Politics and national reporting",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_016_description": {
+    "message": "[GB] Business and finance journalism",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_017_description": {
+    "message": "[GB] Public radio news and podcasts",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_018_description": {
+    "message": "[GB] Markets, business, and finance TV",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_019_description": {
+    "message": "[GB] Global markets and financial news",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_020_description": {
+    "message": "[GB] Long-form culture and politics",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_021_description": {
+    "message": "[GB] Politics and policy reporting",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_022_description": {
+    "message": "[GB] Short, scannable news briefings",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_023_description": {
+    "message": "[GB] Congress, campaigns, and policy",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_024_description": {
+    "message": "[GB] International news and documentaries",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_025_description": {
+    "message": "[GB] Magazine news and covers",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_026_description": {
+    "message": "[GB] Weekly news and opinion magazine",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_027_description": {
+    "message": "[GB] UK tabloid news and celebrity",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_028_description": {
+    "message": "[GB] Independent news and China coverage",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_029_description": {
+    "message": "[GB] New Tang Dynasty news and video",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_030_description": {
+    "message": "[GB] NY metro news and entertainment",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_031_description": {
+    "message": "[GB] Independent newsletters and writers",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_032_description": {
+    "message": "[GB] Startups, tech, and venture news",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_productivity_001_description": {
+    "message": "[GB] Google email and inbox",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_002_description": {
+    "message": "[GB] Schedules, events, and reminders",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_003_description": {
+    "message": "[GB] Cloud files and shared folders",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_004_description": {
+    "message": "[GB] Collaborative documents and sheets",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_005_description": {
+    "message": "[GB] Notes, wikis, and project databases",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_006_description": {
+    "message": "[GB] Team chat and workplace channels",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_007_description": {
+    "message": "[GB] Kanban boards for tasks",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_008_description": {
+    "message": "[GB] Microsoft email and calendar",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_009_description": {
+    "message": "[GB] Meetings, chat, and team hubs",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_010_description": {
+    "message": "[GB] Microsoft cloud storage",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_011_description": {
+    "message": "[GB] File sync and shared folders",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_012_description": {
+    "message": "[GB] Notes, clippings, and notebooks",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_013_description": {
+    "message": "[GB] Work OS for teams and projects",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_014_description": {
+    "message": "[GB] Spreadsheet-database hybrid apps",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_015_description": {
+    "message": "[GB] Collaborative UI and design files",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_016_description": {
+    "message": "[GB] Easy graphic design templates",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_017_description": {
+    "message": "[GB] Video meetings and webinars",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_018_description": {
+    "message": "[GB] Google video calls",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_019_description": {
+    "message": "[GB] Code hosting and pull requests",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_020_description": {
+    "message": "[GB] DevOps platform and Git repos",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_021_description": {
+    "message": "[GB] Issue tracking for product teams",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_022_description": {
+    "message": "[GB] Agile project and issue tracking",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_023_description": {
+    "message": "[GB] Team wikis and documentation",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_024_description": {
+    "message": "[GB] Online whiteboard for workshops",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_025_description": {
+    "message": "[GB] Local-first knowledge base notes",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_026_description": {
+    "message": "[GB] Apple mail, photos, and Drive",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_videos_001_description": {
+    "message": "[GB] World’s largest video hosting platform",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_002_description": {
+    "message": "[GB] Video hosting with creator-focused payouts",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_003_description": {
+    "message": "[GB] Live streaming for games and creators",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_004_description": {
+    "message": "[GB] High-quality creator and pro video hosting",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_005_description": {
+    "message": "[GB] Video sharing and publisher player network",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_006_description": {
+    "message": "[GB] Decentralized video on the LBRY network",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_007_description": {
+    "message": "[GB] Short-form vertical video feed",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_008_description": {
+    "message": "[GB] Clean family-friendly video platform",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_009_description": {
+    "message": "[GB] Live streaming alternative for creators",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_010_description": {
+    "message": "[GB] Music streaming powered by YouTube",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_011_description": {
+    "message": "[GB] Creator dashboard for YouTube channels",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_012_description": {
+    "message": "[GB] Documentaries and nonfiction video",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_013_description": {
+    "message": "[GB] Ideas talks and TED conferences",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_014_description": {
+    "message": "[GB] Shows and videos on Facebook",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_015_description": {
+    "message": "[GB] Short clips on Instagram",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_016_description": {
+    "message": "[GB] Public-domain and archived films",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_017_description": {
+    "message": "[GB] Free movies and TV via Plex",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_018_description": {
+    "message": "[GB] Free movies and TV via Plex",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_entertainment_001_description": {
+    "message": "[GB] Subscription movies and TV originals",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_002_description": {
+    "message": "[GB] Disney, Marvel, Star Wars, and Pixar",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_003_description": {
+    "message": "[GB] On-demand TV and current-season shows",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_004_description": {
+    "message": "[GB] Watch videos and live streams",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_005_description": {
+    "message": "[GB] HBO series, movies, and Max originals",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_006_description": {
+    "message": "[GB] Amazon streaming movies and shows",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_007_description": {
+    "message": "[GB] CBS, Paramount, and sports streams",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_008_description": {
+    "message": "[GB] NBCUniversal streaming library",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_009_description": {
+    "message": "[GB] Music, podcasts, and playlists",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_010_description": {
+    "message": "[GB] AI music generation and songs",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_011_description": {
+    "message": "[GB] Apple original series and films",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_012_description": {
+    "message": "[GB] Anime streaming and simulcasts",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_013_description": {
+    "message": "[GB] Free ad-supported movies and TV",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_014_description": {
+    "message": "[GB] Free live TV channels and on-demand",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_015_description": {
+    "message": "[GB] Movie database, ratings, and trailers",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_016_description": {
+    "message": "[GB] Critics and audience movie scores",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_017_description": {
+    "message": "[GB] Film diary and social reviews",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_018_description": {
+    "message": "[GB] Independent music and audio tracks",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_019_description": {
+    "message": "[GB] Buy music directly from artists",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_020_description": {
+    "message": "[GB] Personalized radio and music stations",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_021_description": {
+    "message": "[GB] Live games and creator streams",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_022_description": {
+    "message": "[GB] PC game store and library",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_023_description": {
+    "message": "[GB] Epic Games Store and free games",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_024_description": {
+    "message": "[GB] Xbox consoles, Game Pass, and store",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_025_description": {
+    "message": "[GB] PlayStation games and PS Plus",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_026_description": {
+    "message": "[GB] Nintendo Switch games and news",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_027_description": {
+    "message": "[GB] Track books and reading lists",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_028_description": {
+    "message": "[GB] Audiobooks and spoken-word content",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_029_description": {
+    "message": "[GB] Apple Podcasts directory and shows",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_shopping_001_description": {
+    "message": "[GB] Everything marketplace and Prime shipping",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_002_description": {
+    "message": "[GB] Auctions and buy-it-now marketplace",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_003_description": {
+    "message": "[GB] Retail goods with store pickup",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_004_description": {
+    "message": "[GB] Home, apparel, and everyday essentials",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_005_description": {
+    "message": "[GB] Handmade, vintage, and craft goods",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_006_description": {
+    "message": "[GB] Consumer electronics and appliances",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_007_description": {
+    "message": "[GB] Membership warehouse club shopping",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_008_description": {
+    "message": "[GB] Global marketplace from Chinese sellers",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_009_description": {
+    "message": "[GB] Discount marketplace for everyday goods",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_010_description": {
+    "message": "[GB] Furniture and home décor online",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_011_description": {
+    "message": "[GB] Home improvement and building supplies",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_012_description": {
+    "message": "[GB] Hardware, appliances, and DIY tools",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_013_description": {
+    "message": "[GB] Affordable furniture and home goods",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_014_description": {
+    "message": "[GB] Apple devices, accessories, and trade-in",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_015_description": {
+    "message": "[GB] PC parts and tech gear",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_016_description": {
+    "message": "[GB] Local classifieds and personals",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_017_description": {
+    "message": "[GB] Local buy/sell via Facebook",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_018_description": {
+    "message": "[GB] E-commerce platform for online stores",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_019_description": {
+    "message": "[GB] Athletic shoes, apparel, and gear",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_020_description": {
+    "message": "[GB] Sportswear, sneakers, and training gear",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_021_description": {
+    "message": "[GB] Shoes and apparel with free returns",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_022_description": {
+    "message": "[GB] Department store fashion and beauty",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_023_description": {
+    "message": "[GB] Clothing, home, and department store",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_024_description": {
+    "message": "[GB] Beauty products and makeup",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_025_description": {
+    "message": "[GB] Beauty retail and salon products",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_026_description": {
+    "message": "[GB] Pet food, supplies, and pharmacy",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_027_description": {
+    "message": "[GB] Event tickets for concerts and sports",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_028_description": {
+    "message": "[GB] Cash-back shopping portal",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_ai_001_description": {
+    "message": "[GB] OpenAI conversational AI assistant",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_002_description": {
+    "message": "[GB] Anthropic AI assistant for writing and code",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_003_description": {
+    "message": "[GB] xAI chatbot with real-time knowledge",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_004_description": {
+    "message": "[GB] Google multimodal AI assistant",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_005_description": {
+    "message": "[GB] Microsoft AI chat and Office help",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_006_description": {
+    "message": "[GB] AI search with cited answers",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_007_description": {
+    "message": "[GB] Multi-bot AI chat hub",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_008_description": {
+    "message": "[GB] Chat with custom AI characters",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_009_description": {
+    "message": "[GB] Open models and AI chat demos",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_010_description": {
+    "message": "[GB] OpenAI research, API, and products",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_011_description": {
+    "message": "[GB] Claude maker and AI safety company",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_012_description": {
+    "message": "[GB] Build and test Gemini prompts",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_013_description": {
+    "message": "[GB] AI research notebooks from your sources",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_014_description": {
+    "message": "[GB] AI image generation community",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_015_description": {
+    "message": "[GB] Generate songs with AI",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_016_description": {
+    "message": "[GB] AI image and asset generation",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_017_description": {
+    "message": "[GB] AI images with strong text rendering",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_018_description": {
+    "message": "[GB] AI video generation and editing",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_019_description": {
+    "message": "[GB] AI voice synthesis and cloning",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_020_description": {
+    "message": "[GB] Ultra-fast LLM inference platform",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_021_description": {
+    "message": "[GB] European open-weight AI chat",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_022_description": {
+    "message": "[GB] Reasoning-focused AI chat models",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_023_description": {
+    "message": "[GB] AI-powered code editor",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_024_description": {
+    "message": "[GB] Run open ML models via API",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_025_description": {
+    "message": "[GB] Hosted open-source LLM inference",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_archive_001_description": {
+    "message": "[GB] Digital library of books, media, and web",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_002_description": {
+    "message": "[GB] Wayback Machine archived web pages",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_003_description": {
+    "message": "[GB] Books and texts collection",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_004_description": {
+    "message": "[GB] Movies and video archive",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_005_description": {
+    "message": "[GB] Audio recordings and music archive",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_006_description": {
+    "message": "[GB] Vintage software and apps archive",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_007_description": {
+    "message": "[GB] Image and photo collections",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_008_description": {
+    "message": "[GB] Borrow and catalog books online",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_009_description": {
+    "message": "[GB] Searchable TV news archive",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_010_description": {
+    "message": "[GB] Browse historical snapshots of the web",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_011_description": {
+    "message": "[GB] Curated web archiving for institutions",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_012_description": {
+    "message": "[GB] Free Smithsonian collection images",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_013_description": {
+    "message": "[GB] European cultural heritage portal",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_014_description": {
+    "message": "[GB] Free public-domain ebooks",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_015_description": {
+    "message": "[GB] Digitized library books and research",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_016_description": {
+    "message": "[GB] US libraries and museums portal",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_017_description": {
+    "message": "[GB] US national library collections",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_018_description": {
+    "message": "[GB] Free media files for Wikipedia",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_019_description": {
+    "message": "[GB] Free encyclopedia anyone can edit",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_020_description": {
+    "message": "[GB] Free source texts and documents",
+    "description": "Launcher archive site description."
+  },
+  "launcher_search_google_description": {
+    "message": "[GB] General web search from Google",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_bing_description": {
+    "message": "[GB] Microsoft Bing web search",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_duckduckgo_description": {
+    "message": "[GB] Privacy-focused web search",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_yahoo_description": {
+    "message": "[GB] Yahoo Search portal",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_brave_description": {
+    "message": "[GB] Independent search from Brave",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_ecosia_description": {
+    "message": "[GB] Search that plants trees",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_startpage_description": {
+    "message": "[GB] Private Google results proxy",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_generic_description": {
+    "message": "[GB] $1 web search",
+    "description": "Launcher search-site description.",
+    "placeholders": {
+      "site": {
+        "content": "$1$",
+        "example": "Google"
+      }
+    }
+  },
+  "launcher_category_fallback_description": {
+    "message": "[GB] Quick access to sites in this category",
+    "description": "Fallback description for an unknown Launcher category."
+  },
+  "launcher_category_launchDeck_label": {
+    "message": "[GB] Launch Deck",
+    "description": "Launcher category label."
+  },
+  "launcher_category_launchDeck_description": {
+    "message": "[GB] Toolbar bookmarks and your most visited sites",
+    "description": "Launcher category description."
+  },
+  "launcher_category_bookmarks_label": {
+    "message": "[GB] Bookmarks",
+    "description": "Launcher category label."
+  },
+  "launcher_category_bookmarks_description": {
+    "message": "[GB] Your saved bookmarks and frequently visited sites",
+    "description": "Launcher category description."
+  },
+  "launcher_category_history_label": {
+    "message": "[GB] Recent",
+    "description": "Launcher category label."
+  },
+  "launcher_category_history_description": {
+    "message": "[GB] Sites you have visited most recently",
+    "description": "Launcher category description."
+  },
+  "launcher_category_social_label": {
+    "message": "[GB] Social Media",
+    "description": "Launcher category label."
+  },
+  "launcher_category_social_description": {
+    "message": "[GB] Stay connected across social networks",
+    "description": "Launcher category description."
+  },
+  "launcher_category_news_label": {
+    "message": "[GB] News",
+    "description": "Launcher category label."
+  },
+  "launcher_category_news_description": {
+    "message": "[GB] Headlines and reporting from major outlets",
+    "description": "Launcher category description."
+  },
+  "launcher_category_productivity_label": {
+    "message": "[GB] Productivity",
+    "description": "Launcher category label."
+  },
+  "launcher_category_productivity_description": {
+    "message": "[GB] Mail, docs, calendars, and work tools",
+    "description": "Launcher category description."
+  },
+  "launcher_category_videos_label": {
+    "message": "[GB] Videos",
+    "description": "Launcher category label."
+  },
+  "launcher_category_videos_description": {
+    "message": "[GB] Watch and search video sites",
+    "description": "Launcher category description."
+  },
+  "launcher_category_entertainment_label": {
+    "message": "[GB] Entertainment",
+    "description": "Launcher category label."
+  },
+  "launcher_category_entertainment_description": {
+    "message": "[GB] Streaming and entertainment destinations",
+    "description": "Launcher category description."
+  },
+  "launcher_category_shopping_label": {
+    "message": "[GB] Shopping",
+    "description": "Launcher category label."
+  },
+  "launcher_category_shopping_description": {
+    "message": "[GB] Stores and marketplaces",
+    "description": "Launcher category description."
+  },
+  "launcher_category_ai_label": {
+    "message": "[GB] AI",
+    "description": "Launcher category label."
+  },
+  "launcher_category_ai_description": {
+    "message": "[GB] Chatbots and AI assistants",
+    "description": "Launcher category description."
+  },
+  "launcher_category_archive_label": {
+    "message": "[GB] Internet Archive",
+    "description": "Launcher category label."
+  },
+  "launcher_category_archive_description": {
+    "message": "[GB] Search and browse the Internet Archive library",
+    "description": "Launcher category description."
+  },
+  "launcher_category_searches_label": {
+    "message": "[GB] Searches",
+    "description": "Launcher category label."
+  },
+  "launcher_category_searches_description": {
+    "message": "[GB] Search engines and recent web searches",
+    "description": "Launcher category description."
   }
 }

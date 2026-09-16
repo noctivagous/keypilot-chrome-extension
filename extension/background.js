@@ -103,6 +103,25 @@ const keyboardReferenceContextValues = new Map();
 let contextMenuRefreshInFlight = null;
 let contextMenuRefreshPending = false;
 
+// chrome.i18n.getMessage can return '' the first time a service worker
+// registers context menus. Retry a few times instead of wiping persisted
+// titles. Chrome UI language changes still require a browser restart or
+// extension reload (onStartup / onInstalled).
+const CONTEXT_MENU_I18N_RETRY_LIMIT = 3;
+const CONTEXT_MENU_I18N_RETRY_MS = 50;
+let contextMenuI18nRetryCount = 0;
+let contextMenuI18nRetryTimer = 0;
+
+function scheduleContextMenuI18nRetry() {
+  if (contextMenuI18nRetryCount >= CONTEXT_MENU_I18N_RETRY_LIMIT) return;
+  if (contextMenuI18nRetryTimer) return;
+  contextMenuI18nRetryCount += 1;
+  contextMenuI18nRetryTimer = setTimeout(() => {
+    contextMenuI18nRetryTimer = 0;
+    void refreshKeyboardReferenceContextMenu();
+  }, CONTEXT_MENU_I18N_RETRY_MS);
+}
+
 function keyboardReferenceContextId(value) {
   const id = `kp-kb-context-${keyboardReferenceContextValues.size}`;
   keyboardReferenceContextValues.set(id, String(value || ''));
@@ -112,11 +131,18 @@ function keyboardReferenceContextId(value) {
 async function rebuildKeyboardReferenceContextMenu() {
   if (!chrome.contextMenus?.removeAll) return;
   try {
+    const rootTitle = getMessage('extension_name');
+    if (!rootTitle) {
+      scheduleContextMenuI18nRetry();
+      return;
+    }
+    contextMenuI18nRetryCount = 0;
+
     keyboardReferenceContextValues.clear();
     await chrome.contextMenus.removeAll();
     await chrome.contextMenus.create({
       id: KEYPILOT_CONTEXT_MENU_ID,
-      title: getMessage('extension_name'),
+      title: rootTitle,
       contexts: ['all']
     });
 
@@ -2925,6 +2951,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // Initialize when service worker starts
 chrome.runtime.onStartup.addListener(async () => {
+  void refreshKeyboardReferenceContextMenu();
   console.log('Chrome startup detected, initializing ExtensionToggleManager...');
   await extensionToggleManager.initialize();
 
@@ -2935,6 +2962,7 @@ chrome.runtime.onStartup.addListener(async () => {
 
 // Initialize when extension is installed or updated
 chrome.runtime.onInstalled.addListener(async (details) => {
+  void refreshKeyboardReferenceContextMenu();
   console.log('Extension installed/updated:', details.reason);
   await extensionToggleManager.initialize();
 
