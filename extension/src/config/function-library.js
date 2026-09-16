@@ -31,32 +31,33 @@ import { isChordSlotKey } from '../utils/key-chord.js';
 import { ACTION_RESULT_DESTINATIONS, buildResultDestinationParameter } from '../modules/action-result-delivery.js';
 import { isWordLookupAiAvailable } from '../modules/ai-text-service.js';
 import { buildKpDeepLink } from '../utils/kp-deep-link.js';
+import { getMessage } from '../utils/i18n.js';
 
 /**
  * @typedef {{
  *   id: string,
- *   label: string,
+ *   labelKey?: string,
  *   type: 'boolean'|'number'|'string'|'enum',
  *   defaultValue?: any,
- *   options?: Array<{ id: string, label: string }>,
+ *   options?: Array<{ id: string, labelKey?: string }>,
  *   min?: number,
  *   max?: number,
  *   step?: number,
  *   multiline?: boolean,
- *   placeholder?: string,
+ *   placeholderKey?: string,
  *   // Optional inspector heading (e.g. "Callbacks") grouping consecutive parameters.
- *   group?: string,
+ *   groupKey?: string,
  *   // Textarea row count when `multiline` is true.
  *   rows?: number
  * }} FunctionParameterDef
  *
  * @typedef {{
  *   id: string,
- *   label: string,
+ *   labelKey?: string,
  *   // Short "About" blurb for Actions Library key-action cards (keep concise).
- *   description: string,
+ *   descriptionKey?: string,
  *   // Longer inspector Description; shown in the Actions Library dock, not on cards.
- *   details?: string,
+ *   detailsKey?: string,
  *   handler: string,
  *   category: string,
  *   keyboardClass?: string|null,
@@ -256,12 +257,12 @@ export const UNIT_SELECT_FUNCTION_IDS = Object.freeze([
 const EDGE_SCROLL_PARAMETERS = Object.freeze([
   Object.freeze({
     id: 'mode',
-    label: 'Jump style',
+    labelKey: 'fn_param_jump_style',
     type: 'enum',
     defaultValue: 'fade',
     options: Object.freeze([
-      Object.freeze({ id: 'fade', label: 'Fade' }),
-      Object.freeze({ id: 'smooth', label: 'Scroll' })
+      Object.freeze({ id: 'fade', labelKey: 'fn_param_opt_fade' }),
+      Object.freeze({ id: 'smooth', labelKey: 'fn_param_opt_scroll' })
     ])
   })
 ]);
@@ -270,12 +271,12 @@ const EDGE_SCROLL_PARAMETERS = Object.freeze([
 const UNIT_SELECT_MODE_PARAMETERS = Object.freeze([
   Object.freeze({
     id: 'mode',
-    label: 'Selection mode',
+    labelKey: 'fn_param_selection_mode',
     type: 'enum',
     defaultValue: 'exclusive',
     options: Object.freeze([
-      Object.freeze({ id: 'exclusive', label: 'Exclusive' }),
-      Object.freeze({ id: 'cumulative', label: 'Cumulative' })
+      Object.freeze({ id: 'exclusive', labelKey: 'fn_param_opt_exclusive' }),
+      Object.freeze({ id: 'cumulative', labelKey: 'fn_param_opt_cumulative' })
     ])
   })
 ]);
@@ -291,35 +292,35 @@ const BUILTIN_FUNCTION_PARAMETER_OVERRIDES = Object.freeze({
   HIGHLIGHT: Object.freeze([
     Object.freeze({
       id: 'mode',
-      label: 'Copy as',
+      labelKey: 'fn_param_copy_as',
       type: 'enum',
       defaultValue: 'rich',
       options: Object.freeze([
-        Object.freeze({ id: 'rich', label: 'Rich text' }),
-        Object.freeze({ id: 'plain', label: 'Plain text' })
+        Object.freeze({ id: 'rich', labelKey: 'fn_param_opt_rich_text' }),
+        Object.freeze({ id: 'plain', labelKey: 'fn_param_opt_plain_text' })
       ])
     })
   ]),
   RECTANGLE_HIGHLIGHT: Object.freeze([
     Object.freeze({
       id: 'mode',
-      label: 'Selection mode',
+      labelKey: 'fn_param_selection_mode',
       type: 'enum',
       defaultValue: 'element',
       options: Object.freeze([
-        Object.freeze({ id: 'element', label: 'Element rectangle' }),
-        Object.freeze({ id: 'cumulative', label: 'Pick cumulative' })
+        Object.freeze({ id: 'element', labelKey: 'fn_param_opt_element_rectangle' }),
+        Object.freeze({ id: 'cumulative', labelKey: 'fn_param_opt_pick_cumulative' })
       ])
     })
   ]),
   SEND_TEXT_TO_AI: Object.freeze([
     Object.freeze({
       id: 'prompt',
-      label: 'Instruction',
+      labelKey: 'fn_param_instruction',
       type: 'string',
       multiline: true,
       defaultValue: 'Translate to English',
-      placeholder: 'e.g. Translate to English'
+      placeholderKey: 'fn_param_instruction_placeholder'
     }),
     buildResultDestinationParameter([
       ACTION_RESULT_DESTINATIONS.CLIPBOARD,
@@ -339,21 +340,21 @@ const BUILTIN_FUNCTION_PARAMETER_OVERRIDES = Object.freeze({
   POI_ADDRESS: Object.freeze([
     Object.freeze({
       id: 'action',
-      label: 'Action',
+      labelKey: 'fn_param_action',
       type: 'enum',
       defaultValue: 'copy',
       options: Object.freeze([
-        Object.freeze({ id: 'copy', label: 'Copy address' })
+        Object.freeze({ id: 'copy', labelKey: 'fn_param_opt_copy_address' })
       ])
     }),
     Object.freeze({
       id: 'format',
-      label: 'Format',
+      labelKey: 'fn_param_format',
       type: 'enum',
       defaultValue: 'txt',
       options: Object.freeze([
-        Object.freeze({ id: 'txt', label: 'Txt' }),
-        Object.freeze({ id: 'vcard', label: 'vCard' })
+        Object.freeze({ id: 'txt', labelKey: 'fn_param_opt_txt' }),
+        Object.freeze({ id: 'vcard', labelKey: 'fn_param_opt_vcard' })
       ])
     }),
     buildResultDestinationParameter([
@@ -517,17 +518,14 @@ function buildKeystrokeFunctionDefs() {
     if (!functionId || isBuildExcludedKeyAction(functionId)) continue;
     out[functionId] = withDocsUrl(Object.freeze({
       id: functionId,
-      label: kindDef.label,
-      description: kindDef.description,
-      ...(kindDef.details ? { details: kindDef.details } : {}),
+      labelKey: kindDef.labelKey,
+      descriptionKey: kindDef.descriptionKey,
+      ...(kindDef.detailsKey ? { detailsKey: kindDef.detailsKey } : {}),
       handler: 'handleLegacyMacroKeyFunction',
       category: KEYSTROKE_FUNCTION_CATEGORY,
       keyboardClass: kindDef.keyboardClass,
-      // Non-empty sentinel so isFunctionInstantiable() is true; the actual per-field schema
-      // for these kinds lives in macro-keys.js's kind-specific config shapes (steps[], stroke, …)
-      // and isn't representable in the generic FunctionParameterDef shape yet.
       parameters: Object.freeze([
-        Object.freeze({ id: 'config', label: 'Configuration', type: 'string' })
+        Object.freeze({ id: 'config', labelKey: 'fn_param_config', type: 'string' })
       ]),
       legacyMacroKeyKind: kindDef.id
     }));
@@ -538,10 +536,9 @@ function buildKeystrokeFunctionDefs() {
 /** The new customizable "Type Characters" Function — the running example from the design doc. */
 const TYPE_CHARACTERS_FUNCTION_DEF = Object.freeze({
   id: 'TYPE_CHARACTERS',
-  label: 'Type Characters',
-  description: 'Type saved text into a field',
-  details: 'Types configured text into the focused field each time the key is pressed. ' +
-    'Create multiple Action Instances of this Function — each with its own text — and place them on different keys.',
+  labelKey: 'fn_TYPE_CHARACTERS_label',
+  descriptionKey: 'fn_TYPE_CHARACTERS_description',
+  detailsKey: 'fn_TYPE_CHARACTERS_details',
   handler: 'handleTypeCharactersKey',
   category: TEXT_FUNCTION_CATEGORY,
   keyboardClass: 'key-purple',
@@ -550,29 +547,21 @@ const TYPE_CHARACTERS_FUNCTION_DEF = Object.freeze({
   parameters: Object.freeze([
     Object.freeze({
       id: 'text',
-      label: 'Text to type',
+      labelKey: 'fn_param_text_to_type',
       type: 'string',
       multiline: true,
       defaultValue: '',
-      placeholder: 'e.g. your email address, a signature, a snippet…'
+      placeholderKey: 'fn_param_text_to_type_placeholder'
     })
   ])
 });
 
-const EXECUTE_JS_SCRIPT_PLACEHOLDER =
-  '// Bindings: kpHoveredClickable, kpHoverLeaf, kpFocusedTextField,\n' +
-  '//   kpMode, kpPageUrl, kpSelection, kpPriorResult\n' +
-  '// Callbacks (only if checked below): showPopover, copyToClipboard, notify\n' +
-  '// Example:\n' +
-  '// return kpHoveredClickable && kpHoveredClickable.textContent;';
-
 /** Instantiable Function: user-pasted JS run in the content-script isolated world. */
 const EXECUTE_JS_FUNCTION_DEF = Object.freeze({
   id: 'EXECUTE_JS',
-  label: 'Execute JS',
-  description: 'Run a pasted JS snippet',
-  details: 'Runs a pasted JavaScript snippet in the content-script isolated world with the hovered clickable and other page state. ' +
-    'Optional callbacks (popover, clipboard, notify) are injected only when checked on the Action Instance.',
+  labelKey: 'fn_EXECUTE_JS_label',
+  descriptionKey: 'fn_EXECUTE_JS_description',
+  detailsKey: 'fn_EXECUTE_JS_details',
   handler: 'handleExecuteJsKey',
   category: SCRIPT_FUNCTION_CATEGORY,
   keyboardClass: 'key-purple',
@@ -580,33 +569,33 @@ const EXECUTE_JS_FUNCTION_DEF = Object.freeze({
   parameters: Object.freeze([
     Object.freeze({
       id: 'script',
-      label: 'Script',
+      labelKey: 'fn_param_script',
       type: 'string',
       multiline: true,
       rows: 10,
       defaultValue: '',
-      placeholder: EXECUTE_JS_SCRIPT_PLACEHOLDER
+      placeholderKey: 'fn_param_script_placeholder'
     }),
     Object.freeze({
       id: 'cbShowPopover',
-      label: 'Show result in popover (showPopover)',
+      labelKey: 'fn_param_cb_show_popover',
       type: 'boolean',
       defaultValue: false,
-      group: 'Callbacks'
+      groupKey: 'fn_param_group_callbacks'
     }),
     Object.freeze({
       id: 'cbCopyToClipboard',
-      label: 'Copy to clipboard (copyToClipboard)',
+      labelKey: 'fn_param_cb_copy',
       type: 'boolean',
       defaultValue: false,
-      group: 'Callbacks'
+      groupKey: 'fn_param_group_callbacks'
     }),
     Object.freeze({
       id: 'cbNotify',
-      label: 'Flash notification (notify)',
+      labelKey: 'fn_param_cb_notify',
       type: 'boolean',
       defaultValue: false,
-      group: 'Callbacks'
+      groupKey: 'fn_param_group_callbacks'
     })
   ])
 });
@@ -621,7 +610,7 @@ export function groupFunctionParameters(parameters) {
   const groups = [];
   for (const p of parameters || []) {
     if (!p) continue;
-    const group = String(p.group || '');
+    const group = String(p.groupKey || p.group || '');
     const last = groups[groups.length - 1];
     if (last && last.group === group) last.params.push(p);
     else groups.push({ group, params: [p] });
@@ -640,9 +629,9 @@ function buildBuiltinActionFunctionDefs() {
     if (isBuildExcludedKeyAction(id)) continue;
     out[id] = withDocsUrl(Object.freeze({
       id,
-      label: def.label,
-      description: def.description,
-      ...(def.details ? { details: def.details } : {}),
+      labelKey: `fn_${id}_label`,
+      descriptionKey: `fn_${id}_description`,
+      ...(def.details ? { detailsKey: `fn_${id}_details` } : {}),
       handler: def.handler,
       category: KEYBINDING_ACTION_CATEGORY_BY_ID[id] || 'Other',
       keyboardClass: def.keyboardClass ?? null,
@@ -676,23 +665,29 @@ function buildBuiltinActionFunctionDefs() {
  * @returns {Record<string, FunctionDef>}
  */
 function buildDataAcquisitionFunctionDefs() {
+  const GRANULARITY_OPTION_KEYS = Object.freeze({
+    word: 'fn_param_opt_word',
+    sentence: 'fn_param_opt_sentence',
+    paragraph: 'fn_param_opt_paragraph',
+    hyperlink: 'fn_param_opt_hyperlink'
+  });
   const granularityOptions = (ids) => ({
     id: 'granularity',
-    label: 'Granularity',
+    labelKey: 'fn_param_granularity',
     type: 'enum',
     defaultValue: ids[0],
     options: ids.map((id) => ({
       id,
-      label: id === 'word' ? 'Word' : id === 'sentence' ? 'Sentence' : id === 'paragraph' ? 'Paragraph' : 'Hyperlink'
+      labelKey: GRANULARITY_OPTION_KEYS[id] || 'fn_param_opt_word'
     }))
   });
 
   return {
     GET_TEXT_AT_CURSOR: Object.freeze({
       id: 'GET_TEXT_AT_CURSOR',
-      label: 'Get Text At Cursor',
-      description: 'Copy text under the cursor',
-      details: 'Reads the word, sentence, paragraph, or hyperlink under the cursor (choose granularity on the Action Instance) and copies it to the clipboard.',
+      labelKey: 'fn_GET_TEXT_AT_CURSOR_label',
+      descriptionKey: 'fn_GET_TEXT_AT_CURSOR_description',
+      detailsKey: 'fn_GET_TEXT_AT_CURSOR_details',
       handler: 'handleGetTextAtCursorKey',
       category: DATA_FUNCTION_CATEGORY,
       dataSource: 'underCursor',
@@ -702,9 +697,9 @@ function buildDataAcquisitionFunctionDefs() {
     }),
     GET_TEXT_RANGE: Object.freeze({
       id: 'GET_TEXT_RANGE',
-      label: 'Get Text Range',
-      description: 'Pass selection to the next Macro Step',
-      details: 'Reads the current highlight/selection into the next Macro Step. A data primitive — add it as a Macro Step, not as a key action (use Copy for that).',
+      labelKey: 'fn_GET_TEXT_RANGE_label',
+      descriptionKey: 'fn_GET_TEXT_RANGE_description',
+      detailsKey: 'fn_GET_TEXT_RANGE_details',
       handler: 'handleGetTextRangeKey',
       category: DATA_FUNCTION_CATEGORY,
       dataSource: 'textRange',
@@ -713,9 +708,9 @@ function buildDataAcquisitionFunctionDefs() {
     }),
     GET_MEDIA_AT_CURSOR: Object.freeze({
       id: 'GET_MEDIA_AT_CURSOR',
-      label: 'Get Media At Cursor',
-      description: 'Copy media under the cursor',
-      details: 'Reads the image, video, or audio under the cursor (choose kind on the Action Instance) and copies it — or its URL — to the clipboard.',
+      labelKey: 'fn_GET_MEDIA_AT_CURSOR_label',
+      descriptionKey: 'fn_GET_MEDIA_AT_CURSOR_description',
+      detailsKey: 'fn_GET_MEDIA_AT_CURSOR_details',
       handler: 'handleGetMediaAtCursorKey',
       category: DATA_FUNCTION_CATEGORY,
       dataSource: 'underCursor',
@@ -723,21 +718,21 @@ function buildDataAcquisitionFunctionDefs() {
       destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.CLIPBOARD]),
       parameters: Object.freeze([Object.freeze({
         id: 'kind',
-        label: 'Media kind',
+        labelKey: 'fn_param_media_kind',
         type: 'enum',
         defaultValue: 'image',
         options: Object.freeze([
-          Object.freeze({ id: 'image', label: 'Image' }),
-          Object.freeze({ id: 'video', label: 'Video' }),
-          Object.freeze({ id: 'audio', label: 'Audio' })
+          Object.freeze({ id: 'image', labelKey: 'fn_param_opt_image' }),
+          Object.freeze({ id: 'video', labelKey: 'fn_param_opt_video' }),
+          Object.freeze({ id: 'audio', labelKey: 'fn_param_opt_audio' })
         ])
       })])
     }),
     LOOKUP_WORD: Object.freeze({
       id: 'LOOKUP_WORD',
-      label: 'Lookup Word',
-      description: 'Dictionary definition under cursor',
-      details: 'Shows a Free Dictionary API definition popover for the word under the cursor. No AI setup required; optionally switch the source to Ask AI on the Action Instance.',
+      labelKey: 'fn_LOOKUP_WORD_label',
+      descriptionKey: 'fn_LOOKUP_WORD_description',
+      detailsKey: 'fn_LOOKUP_WORD_details',
       handler: 'handleLookupWordKey',
       category: LOOKUP_FUNCTION_CATEGORY,
       dataSource: 'underCursor',
@@ -746,21 +741,21 @@ function buildDataAcquisitionFunctionDefs() {
       parameters: Object.freeze([
         Object.freeze({
           id: 'source',
-          label: 'Source',
+          labelKey: 'fn_param_source',
           type: 'enum',
           defaultValue: 'dictionary',
           options: Object.freeze([
-            Object.freeze({ id: 'dictionary', label: 'Dictionary' }),
-            Object.freeze({ id: 'ai', label: 'Ask AI instead' })
+            Object.freeze({ id: 'dictionary', labelKey: 'fn_param_opt_dictionary' }),
+            Object.freeze({ id: 'ai', labelKey: 'fn_param_opt_ask_ai' })
           ])
         })
       ])
     }),
     TRANSLATE: Object.freeze({
       id: 'TRANSLATE',
-      label: 'Translate',
-      description: 'Translate selection or under-cursor text',
-      details: 'Translates the highlighted text, or the word/sentence/paragraph under the cursor when nothing is highlighted. Configure target language and whether the result replaces page text or opens in a popover.',
+      labelKey: 'fn_TRANSLATE_label',
+      descriptionKey: 'fn_TRANSLATE_description',
+      detailsKey: 'fn_TRANSLATE_details',
       handler: 'handleTranslateKey',
       category: TRANSLATE_FUNCTION_CATEGORY,
       dataSource: 'underCursor',
@@ -770,10 +765,10 @@ function buildDataAcquisitionFunctionDefs() {
         Object.freeze(granularityOptions(['sentence', 'word', 'paragraph'])),
         Object.freeze({
           id: 'targetLanguage',
-          label: 'Target language',
+          labelKey: 'fn_param_target_language',
           type: 'string',
           defaultValue: 'English',
-          placeholder: 'e.g. English, Spanish, Japanese…'
+          placeholderKey: 'fn_param_target_language_placeholder'
         }),
         buildResultDestinationParameter([
           ACTION_RESULT_DESTINATIONS.MODIFY_PAGE,
@@ -783,9 +778,9 @@ function buildDataAcquisitionFunctionDefs() {
     }),
     SHOW_POPOVER: Object.freeze({
       id: 'SHOW_POPOVER',
-      label: 'Show Popover',
-      description: 'Show prior Macro Step result',
-      details: 'Renders the previous Macro Step’s result (or configured fallback text) in a popover. A display primitive — add it as a Macro Step, not as a key action.',
+      labelKey: 'fn_SHOW_POPOVER_label',
+      descriptionKey: 'fn_SHOW_POPOVER_description',
+      detailsKey: 'fn_SHOW_POPOVER_details',
       handler: 'handleShowPopoverKey',
       category: DISPLAY_FUNCTION_CATEGORY,
       dataSource: 'none',
@@ -793,18 +788,18 @@ function buildDataAcquisitionFunctionDefs() {
       assignableToKey: false,
       parameters: Object.freeze([Object.freeze({
         id: 'content',
-        label: 'Content',
+        labelKey: 'fn_param_content',
         type: 'string',
         multiline: true,
         defaultValue: '',
-        placeholder: 'Fallback text if the previous step produced none…'
+        placeholderKey: 'fn_param_content_placeholder'
       })])
     }),
     ADD_URL_TO_MEDIA_LIBRARY: Object.freeze({
       id: 'ADD_URL_TO_MEDIA_LIBRARY',
-      label: 'Add URL to Media Library',
-      description: 'Save hovered href (no download)',
-      details: 'Stores the hyperlink under the cursor itself (its href) in Media Library — does not download the resource the link points to.',
+      labelKey: 'fn_ADD_URL_TO_MEDIA_LIBRARY_label',
+      descriptionKey: 'fn_ADD_URL_TO_MEDIA_LIBRARY_description',
+      detailsKey: 'fn_ADD_URL_TO_MEDIA_LIBRARY_details',
       handler: 'handleAddUrlToMediaLibraryKey',
       category: MEDIA_LIBRARY_FUNCTION_CATEGORY,
       dataSource: 'underCursor',
@@ -813,9 +808,9 @@ function buildDataAcquisitionFunctionDefs() {
     }),
     FETCH_URL_FOR_MEDIA_LIBRARY: Object.freeze({
       id: 'FETCH_URL_FOR_MEDIA_LIBRARY',
-      label: 'Fetch URL for Media Library',
-      description: 'Download linked file into library',
-      details: 'Fetches the resource the hyperlink under the cursor points to (for example a .pdf, .mp3, or .mp4) and stores it in Media Library. Images, videos, and documents are classified from the file type. Web pages are not downloaded — use Add URL to Media Library for those.',
+      labelKey: 'fn_FETCH_URL_FOR_MEDIA_LIBRARY_label',
+      descriptionKey: 'fn_FETCH_URL_FOR_MEDIA_LIBRARY_description',
+      detailsKey: 'fn_FETCH_URL_FOR_MEDIA_LIBRARY_details',
       handler: 'handleFetchUrlForMediaLibraryKey',
       category: MEDIA_LIBRARY_FUNCTION_CATEGORY,
       dataSource: 'urlFetch',
@@ -853,7 +848,7 @@ export const FUNCTION_LIBRARY = Object.freeze(omitBuildExcludedFunctions({
   )
 }));
 
-/** Stable category display order for the Functions browser. */
+/** Stable category display order for the Functions browser. Canonical ids stay English. */
 export const FUNCTION_CATEGORY_ORDER = Object.freeze([
   'Navigation',
   'Tab Control',
@@ -878,38 +873,60 @@ export const FUNCTION_CATEGORY_ORDER = Object.freeze([
   'Other'
 ]);
 
-/**
- * One-line Actions Library blurb shown above the cards in each category section.
- * @type {Readonly<Record<string, string>>}
- */
-export const FUNCTION_CATEGORY_DESCRIPTIONS = Object.freeze({
-  Navigation: 'Click links, preview, and move through browsing history.',
-  'Tab Control': 'Open, close, switch, and review tabs.',
-  'Begin URL': 'Jump to a URL via Launcher, Top Sites, or the omnibox.',
-  'Get Page Data': 'Capture text, images, video, URLs, fonts, and other page media.',
-  Maps: 'Open a place’s website or address from a map pin under the cursor.',
-  Scroll: 'Scroll the page by line, page, or to the top/bottom.',
-  Select: 'Delete or toggle multi-column selection helpers.',
-  Clipboard: 'Copy, cut, paste, select-all, and select word, sentence, paragraph, or image under the cursor.',
-  [TEXT_FUNCTION_CATEGORY]: 'Type saved text into the focused field.',
-  [KEYSTROKE_FUNCTION_CATEGORY]: 'Send keystrokes, chords, bursts, and mouse remaps.',
-  [DATA_FUNCTION_CATEGORY]: 'Read text or media under the cursor, or from a highlight.',
-  [LOOKUP_FUNCTION_CATEGORY]: 'Look up a definition for the word under the cursor.',
-  [TRANSLATE_FUNCTION_CATEGORY]: 'Translate highlighted or under-cursor text.',
-  [DISPLAY_FUNCTION_CATEGORY]: 'Show a previous Macro Step’s result in a popover.',
-  [SCRIPT_FUNCTION_CATEGORY]: 'Run a custom JavaScript snippet against page state.',
-  [MEDIA_LIBRARY_FUNCTION_CATEGORY]: 'Save links or fetched files into Media Library.',
-  AI: 'Send selected text to AI with a prompt and result destination.',
-  KeyPilot: 'Open KeyPilot chrome — keyboard reference, settings, and modes.',
-  Tools: 'Utility overlays and helpers.',
-  System: 'Cancel the current KeyPilot gesture or mode.',
-  Other: 'Uncategorized Functions.'
+/** Message keys for Actions Library category labels. */
+export const FUNCTION_CATEGORY_LABEL_KEYS = Object.freeze({
+  Navigation: 'fn_cat_navigation_label',
+  'Tab Control': 'fn_cat_tab_control_label',
+  'Begin URL': 'fn_cat_begin_url_label',
+  'Get Page Data': 'fn_cat_get_page_data_label',
+  Maps: 'fn_cat_maps_label',
+  Scroll: 'fn_cat_scroll_label',
+  Select: 'fn_cat_select_label',
+  Clipboard: 'fn_cat_clipboard_label',
+  [TEXT_FUNCTION_CATEGORY]: 'fn_cat_type_label',
+  [KEYSTROKE_FUNCTION_CATEGORY]: 'fn_cat_keystrokes_label',
+  [DATA_FUNCTION_CATEGORY]: 'fn_cat_data_label',
+  [LOOKUP_FUNCTION_CATEGORY]: 'fn_cat_lookup_label',
+  [TRANSLATE_FUNCTION_CATEGORY]: 'fn_cat_translate_label',
+  [DISPLAY_FUNCTION_CATEGORY]: 'fn_cat_display_label',
+  [SCRIPT_FUNCTION_CATEGORY]: 'fn_cat_script_label',
+  [MEDIA_LIBRARY_FUNCTION_CATEGORY]: 'fn_cat_media_library_label',
+  AI: 'fn_cat_ai_label',
+  KeyPilot: 'fn_cat_keypilot_label',
+  Tools: 'fn_cat_tools_label',
+  System: 'fn_cat_system_label',
+  Other: 'fn_cat_other_label'
+});
+
+/** Message keys for Actions Library category blurbs. */
+export const FUNCTION_CATEGORY_DESCRIPTION_KEYS = Object.freeze({
+  Navigation: 'fn_cat_navigation_description',
+  'Tab Control': 'fn_cat_tab_control_description',
+  'Begin URL': 'fn_cat_begin_url_description',
+  'Get Page Data': 'fn_cat_get_page_data_description',
+  Maps: 'fn_cat_maps_description',
+  Scroll: 'fn_cat_scroll_description',
+  Select: 'fn_cat_select_description',
+  Clipboard: 'fn_cat_clipboard_description',
+  [TEXT_FUNCTION_CATEGORY]: 'fn_cat_type_description',
+  [KEYSTROKE_FUNCTION_CATEGORY]: 'fn_cat_keystrokes_description',
+  [DATA_FUNCTION_CATEGORY]: 'fn_cat_data_description',
+  [LOOKUP_FUNCTION_CATEGORY]: 'fn_cat_lookup_description',
+  [TRANSLATE_FUNCTION_CATEGORY]: 'fn_cat_translate_description',
+  [DISPLAY_FUNCTION_CATEGORY]: 'fn_cat_display_description',
+  [SCRIPT_FUNCTION_CATEGORY]: 'fn_cat_script_description',
+  [MEDIA_LIBRARY_FUNCTION_CATEGORY]: 'fn_cat_media_library_description',
+  AI: 'fn_cat_ai_description',
+  KeyPilot: 'fn_cat_keypilot_description',
+  Tools: 'fn_cat_tools_description',
+  System: 'fn_cat_system_description',
+  Other: 'fn_cat_other_description'
 });
 
 /** Section blurbs for non-Function Actions Library groups. */
 export const LIBRARY_SECTION_DESCRIPTIONS = Object.freeze({
-  macros: 'Multi-step sequences you can place on a key. Customize a stock macro to fork an editable copy.',
-  macroKeys: 'Saved Macro Key instances (hotkey, burst, round-robin, and related kinds) ready to place.'
+  macros: 'fn_section_macros_description',
+  macroKeys: 'fn_section_macro_keys_description'
 });
 
 /**
@@ -971,8 +988,43 @@ export function sortFunctionDefsForLibrary(defs) {
     const oa = FUNCTION_LIBRARY_ITEM_ORDER[a?.id] ?? 10000;
     const ob = FUNCTION_LIBRARY_ITEM_ORDER[b?.id] ?? 10000;
     if (oa !== ob) return oa - ob;
-    return String(a?.label || a?.id || '').localeCompare(String(b?.label || b?.id || ''));
+    const la = a?.label || (a?.labelKey ? getMessage(a.labelKey) : '') || a?.id || '';
+    const lb = b?.label || (b?.labelKey ? getMessage(b.labelKey) : '') || b?.id || '';
+    return String(la).localeCompare(String(lb));
   });
+}
+
+/**
+ * @param {FunctionParameterDef|null|undefined} param
+ * @returns {FunctionParameterDef|null|undefined}
+ */
+function localizeFunctionParameter(param) {
+  if (!param) return param;
+  const out = { ...param };
+  if (param.labelKey) out.label = getMessage(param.labelKey);
+  if (param.placeholderKey) out.placeholder = getMessage(param.placeholderKey);
+  if (param.groupKey) out.group = getMessage(param.groupKey);
+  if (Array.isArray(param.options)) {
+    out.options = param.options.map((opt) => (
+      opt?.labelKey ? { ...opt, label: getMessage(opt.labelKey) } : opt
+    ));
+  }
+  return out;
+}
+
+/**
+ * Resolve catalog message keys to display strings at the presentation boundary.
+ * @param {FunctionDef|null|undefined} def
+ * @returns {FunctionDef|null}
+ */
+export function localizeFunctionDef(def) {
+  if (!def) return null;
+  const out = { ...def };
+  if (def.labelKey) out.label = getMessage(def.labelKey);
+  if (def.descriptionKey) out.description = getMessage(def.descriptionKey);
+  if (def.detailsKey) out.details = getMessage(def.detailsKey);
+  if (Array.isArray(def.parameters)) out.parameters = def.parameters.map(localizeFunctionParameter);
+  return out;
 }
 
 /**
@@ -981,12 +1033,13 @@ export function sortFunctionDefsForLibrary(defs) {
  */
 export function getFunctionDef(functionId) {
   const id = String(functionId || '');
-  return (id && FUNCTION_LIBRARY[id]) || null;
+  const raw = id && FUNCTION_LIBRARY[id];
+  return raw ? localizeFunctionDef(raw) : null;
 }
 
 /** @returns {FunctionDef[]} */
 export function listFunctionDefs() {
-  return Object.values(FUNCTION_LIBRARY);
+  return Object.values(FUNCTION_LIBRARY).map((def) => localizeFunctionDef(def));
 }
 
 /**
@@ -1002,7 +1055,18 @@ export function listPointerBoundFunctionDefs() {
  * @returns {string}
  */
 export function getFunctionCategory(functionId) {
-  return getFunctionDef(functionId)?.category || 'Other';
+  const id = String(functionId || '');
+  return FUNCTION_LIBRARY[id]?.category || 'Other';
+}
+
+/**
+ * Localized category heading for the Actions Library.
+ * @param {string} category
+ * @returns {string}
+ */
+export function getFunctionCategoryLabel(category) {
+  const key = FUNCTION_CATEGORY_LABEL_KEYS[String(category || '')];
+  return key ? getMessage(key) : '';
 }
 
 /**
@@ -1011,8 +1075,18 @@ export function getFunctionCategory(functionId) {
  * @returns {string}
  */
 export function getFunctionCategoryDescription(category) {
-  const cat = String(category || '');
-  return FUNCTION_CATEGORY_DESCRIPTIONS[cat] || '';
+  const key = FUNCTION_CATEGORY_DESCRIPTION_KEYS[String(category || '')];
+  return key ? getMessage(key) : '';
+}
+
+/**
+ * Localized Actions Library section blurb (macros / macro keys).
+ * @param {'macros'|'macroKeys'|string} sectionId
+ * @returns {string}
+ */
+export function getLibrarySectionDescription(sectionId) {
+  const key = LIBRARY_SECTION_DESCRIPTIONS[sectionId];
+  return key ? getMessage(key) : '';
 }
 
 /**
@@ -1115,12 +1189,12 @@ export function summarizeFunctionParameters(functionId, parameters) {
   }
   if (functionId === 'TYPE_CHARACTERS') {
     const text = String(parameters?.text || '');
-    if (!text) return '(empty)';
+    if (!text) return getMessage('fn_summary_empty');
     return text.length > 24 ? `${text.slice(0, 24)}…` : text;
   }
   if (functionId === 'SHOW_POPOVER') {
     const text = String(parameters?.content || '').trim();
-    if (!text) return '(previous step)';
+    if (!text) return getMessage('fn_summary_previous_step');
     return text.length > 24 ? `${text.slice(0, 24)}…` : text;
   }
   if (functionId === 'EXECUTE_JS') {
@@ -1130,7 +1204,9 @@ export function summarizeFunctionParameters(functionId, parameters) {
       if (!t || t.startsWith('//') || t.startsWith('*') || t.startsWith('/*')) continue;
       return t.length > 32 ? `${t.slice(0, 32)}…` : t;
     }
-    return String(parameters?.script || '').trim() ? '(script)' : '(empty)';
+    return String(parameters?.script || '').trim()
+      ? getMessage('fn_summary_script')
+      : getMessage('fn_summary_empty');
   }
   return '';
 }
@@ -1199,17 +1275,17 @@ export function getFunctionDataKind(functionId) {
  */
 export function validateFunctionSlotKey(functionId, slotKey) {
   const def = getFunctionDef(functionId);
-  if (!def) return { ok: false, reason: `Unknown Function: ${functionId}` };
+  if (!def) return { ok: false, reason: getMessage('fn_unknown', String(functionId || '')) };
   if (def.assignableToKey === false) {
     return {
       ok: false,
-      reason: `"${def.label}" is a Macro Step, not a key action.`
+      reason: getMessage('fn_reason_macro_step', def.label)
     };
   }
   if (def.worksWhileTyping && !isChordSlotKey(slotKey)) {
     return {
       ok: false,
-      reason: `"${def.label}" must run while a text field is focused, so it can only be bound to a modifier-key combination (e.g. Ctrl+Alt+…), not a plain key.`
+      reason: getMessage('fn_reason_needs_chord', def.label)
     };
   }
   return { ok: true };

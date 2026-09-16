@@ -130,7 +130,7 @@
   const DEFAULT_KEYBOARD_LAYOUT_ID = "browsing-right";
   const DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID = "browsing";
   const KNOWN_BUILTIN_LAYOUT_IDS = ["browsing-right","browsing-left","basic-navigation-right","basic-navigation-left","click-history-right","click-history-left"];
-  const EARLY_LAYOUT_FAMILY_OPTIONS = [["builtin:browsing","Browsing"],["builtin:click-history","Navigation"]];
+  const EARLY_LAYOUT_FAMILY_OPTIONS = [["builtin:browsing","layout_family_browsing_label"],["builtin:click-history","layout_family_navigation_label"]];
   const KEYBOARD_LAYOUTS_BY_ID = {
   "browsing-right": [
     [
@@ -2350,195 +2350,195 @@
 };
   const EARLY_FUNCTION_PAINT = {
   "ACTIVATE": {
-    "label": "Click Element",
+    "labelKey": "fn_ACTIVATE_label",
     "keyboardClass": "key-activate"
   },
   "ACTIVATE_NEW_TAB": {
-    "label": "Click New Tab",
+    "labelKey": "fn_ACTIVATE_NEW_TAB_label",
     "keyboardClass": "key-activate-new"
   },
   "ACTIVATE_NEW_TAB_BACKGROUND": {
-    "label": "Click New Tab Background",
+    "labelKey": "fn_ACTIVATE_NEW_TAB_BACKGROUND_label",
     "keyboardClass": "key-activate-new-over"
   },
   "BACK": {
-    "label": "Go Back",
+    "labelKey": "fn_BACK_label",
     "keyboardClass": "key-back"
   },
   "BACK2": {
-    "label": "Go Back",
+    "labelKey": "fn_BACK2_label",
     "keyboardClass": "key-back"
   },
   "FORWARD": {
-    "label": "Go Forward",
+    "labelKey": "fn_FORWARD_label",
     "keyboardClass": "key-forward"
   },
   "DELETE": {
-    "label": "Delete Mode",
+    "labelKey": "fn_DELETE_label",
     "keyboardClass": "key-delete"
   },
   "TAB_LEFT": {
-    "label": "Tab Left",
+    "labelKey": "fn_TAB_LEFT_label",
     "keyboardClass": "key-gray"
   },
   "TAB_RIGHT": {
-    "label": "Tab Right",
+    "labelKey": "fn_TAB_RIGHT_label",
     "keyboardClass": "key-gray"
   },
   "ROOT": {
-    "label": "Go to Site Root",
+    "labelKey": "fn_ROOT_label",
     "keyboardClass": null
   },
   "LAUNCHER": {
-    "label": "Launcher",
+    "labelKey": "fn_LAUNCHER_label",
     "keyboardClass": "key-launcher-orange"
   },
   "TOP_SITES": {
-    "label": "Top Sites",
+    "labelKey": "fn_TOP_SITES_label",
     "keyboardClass": "key-launcher-orange"
   },
   "CLOSE_TAB": {
-    "label": "Close Tab",
+    "labelKey": "fn_CLOSE_TAB_label",
     "keyboardClass": "key-close-tab"
   },
   "CANCEL": {
-    "label": "Exit Focus",
+    "labelKey": "fn_CANCEL_label",
     "keyboardClass": null
   },
   "PAGE_UP_INSTANT": {
-    "label": "Page Up",
+    "labelKey": "fn_PAGE_UP_INSTANT_label",
     "keyboardClass": "key-scroll"
   },
   "PAGE_DOWN_INSTANT": {
-    "label": "Page Down",
+    "labelKey": "fn_PAGE_DOWN_INSTANT_label",
     "keyboardClass": "key-scroll"
   },
   "PAGE_TOP": {
-    "label": "Scroll To Top",
+    "labelKey": "fn_PAGE_TOP_label",
     "keyboardClass": "key-scroll"
   },
   "PAGE_BOTTOM": {
-    "label": "Scroll To Bottom",
+    "labelKey": "fn_PAGE_BOTTOM_label",
     "keyboardClass": "key-scroll"
   },
   "SCROLL_LINE": {
-    "label": "Scroll Line",
+    "labelKey": "fn_SCROLL_LINE_label",
     "keyboardClass": "key-scroll"
   },
   "NEW_TAB": {
-    "label": "New Tab",
+    "labelKey": "fn_NEW_TAB_label",
     "keyboardClass": "key-gray"
   },
   "OPEN_POPOVER": {
-    "label": "Open Popover",
+    "labelKey": "fn_OPEN_POPOVER_label",
     "keyboardClass": "key-open-popover"
   },
   "PREVIEW_LINK_POPOVER": {
-    "label": "Preview Link",
+    "labelKey": "fn_PREVIEW_LINK_POPOVER_label",
     "keyboardClass": "key-preview-popover"
   },
   "POI_WEBSITE": {
-    "label": "POI Website",
+    "labelKey": "fn_POI_WEBSITE_label",
     "keyboardClass": "key-preview-popover"
   },
   "POI_ADDRESS": {
-    "label": "POI Address",
+    "labelKey": "fn_POI_ADDRESS_label",
     "keyboardClass": null
   },
   "OPEN_SETTINGS_POPOVER": {
-    "label": "Settings",
+    "labelKey": "fn_OPEN_SETTINGS_POPOVER_label",
     "keyboardClass": "key-settings-dark"
   },
   "OMNIBOX": {
-    "label": "Omnibox",
+    "labelKey": "fn_OMNIBOX_label",
     "keyboardClass": "key-orange"
   },
   "TAB_HISTORY": {
-    "label": "Tab History",
+    "labelKey": "fn_TAB_HISTORY_label",
     "keyboardClass": "key-gray"
   },
   "TOGGLE_KEYBOARD_HELP": {
-    "label": "KB Reference",
+    "labelKey": "fn_TOGGLE_KEYBOARD_HELP_label",
     "keyboardClass": "key-purple"
   },
   "HIGHLIGHT": {
-    "label": "Text Select",
+    "labelKey": "fn_HIGHLIGHT_label",
     "keyboardClass": "key-highlight"
   },
   "RECTANGLE_HIGHLIGHT": {
-    "label": "Element Select",
+    "labelKey": "fn_RECTANGLE_HIGHLIGHT_label",
     "keyboardClass": "key-rect-highlight"
   },
   "COPY_HOVERED_IMAGE": {
-    "label": "Copy Image",
+    "labelKey": "fn_COPY_HOVERED_IMAGE_label",
     "keyboardClass": null
   },
   "COPY_HOVERED_URL": {
-    "label": "Copy URL",
+    "labelKey": "fn_COPY_HOVERED_URL_label",
     "keyboardClass": null
   },
   "COPY_HOVERED_VIDEO": {
-    "label": "Copy Video",
+    "labelKey": "fn_COPY_HOVERED_VIDEO_label",
     "keyboardClass": null
   },
   "FONT_INFO": {
-    "label": "Font Info",
+    "labelKey": "fn_FONT_INFO_label",
     "keyboardClass": null
   },
   "PAGE_MEDIA": {
-    "label": "Page Media",
+    "labelKey": "fn_PAGE_MEDIA_label",
     "keyboardClass": null
   },
   "OPEN_MEDIA_LIBRARY": {
-    "label": "Media Library",
+    "labelKey": "fn_OPEN_MEDIA_LIBRARY_label",
     "keyboardClass": null
   },
   "CLIPBOARD_COPY": {
-    "label": "Copy",
+    "labelKey": "fn_CLIPBOARD_COPY_label",
     "keyboardClass": null
   },
   "CLIPBOARD_CUT": {
-    "label": "Cut",
+    "labelKey": "fn_CLIPBOARD_CUT_label",
     "keyboardClass": null
   },
   "CLIPBOARD_PASTE": {
-    "label": "Paste",
+    "labelKey": "fn_CLIPBOARD_PASTE_label",
     "keyboardClass": null
   },
   "CLIPBOARD_SELECT_ALL": {
-    "label": "Select All",
+    "labelKey": "fn_CLIPBOARD_SELECT_ALL_label",
     "keyboardClass": null
   },
   "SELECT_WORD": {
-    "label": "Select Word",
+    "labelKey": "fn_SELECT_WORD_label",
     "keyboardClass": null
   },
   "SELECT_SENTENCE": {
-    "label": "Select Sentence",
+    "labelKey": "fn_SELECT_SENTENCE_label",
     "keyboardClass": null
   },
   "SELECT_PARAGRAPH": {
-    "label": "Select Paragraph",
+    "labelKey": "fn_SELECT_PARAGRAPH_label",
     "keyboardClass": null
   },
   "SELECT_IMAGE": {
-    "label": "Select Image",
+    "labelKey": "fn_SELECT_IMAGE_label",
     "keyboardClass": null
   },
   "LOOKUP_WORD": {
-    "label": "Lookup Word",
+    "labelKey": "fn_LOOKUP_WORD_label",
     "keyboardClass": null
   },
   "SHOW_POPOVER": {
-    "label": "Show Popover",
+    "labelKey": "fn_SHOW_POPOVER_label",
     "keyboardClass": null
   },
   "ADD_URL_TO_MEDIA_LIBRARY": {
-    "label": "Add URL to Media Library",
+    "labelKey": "fn_ADD_URL_TO_MEDIA_LIBRARY_label",
     "keyboardClass": null
   },
   "FETCH_URL_FOR_MEDIA_LIBRARY": {
-    "label": "Fetch URL for Media Library",
+    "labelKey": "fn_FETCH_URL_FOR_MEDIA_LIBRARY_label",
     "keyboardClass": null
   }
 };
@@ -7477,7 +7477,10 @@
         return EARLY_LAYOUT_FAMILY_OPTIONS;
       }
     } catch { /* ignore */ }
-    return [['builtin:browsing', 'Browsing'], ['builtin:click-history', 'Navigation']];
+    return [
+      ['builtin:browsing', 'layout_family_browsing_label'],
+      ['builtin:click-history', 'layout_family_navigation_label']
+    ];
   }
 
   function normalizeEarlyKeyboardLayoutFamilyId(raw, layoutId) {
@@ -7516,7 +7519,7 @@
       let label = '';
       try {
         const pair = earlyLayoutFamilyOptions().find((p) => p && p[0] === value);
-        if (pair && pair[1]) label = String(pair[1]);
+        if (pair && pair[1]) label = earlyMessage(String(pair[1]));
       } catch { /* ignore */ }
       const labelEl = sel.querySelector && sel.querySelector('.kp-select-trigger-label');
       if (labelEl && label) labelEl.textContent = label;
@@ -7612,14 +7615,18 @@
       const functionId = String((instance && instance.functionId) || '');
       const def = functionId && paint[functionId] ? paint[functionId] : null;
       return {
-        label: String((instance && instance.label) || (def && def.label) || 'Configured Function'),
+        label: String(
+          (instance && instance.label)
+          || (def?.labelKey && earlyMessage(def.labelKey))
+          || earlyMessage('early_configured_function')
+        ),
         keyboardClass: String((def && def.keyboardClass) || ''),
         functionId: functionId || key
       };
     }
     const def = paint[key];
     return {
-      label: String((def && def.label) || key),
+      label: String((def?.labelKey && earlyMessage(def.labelKey)) || key),
       keyboardClass: String((def && def.keyboardClass) || ''),
       functionId: key
     };

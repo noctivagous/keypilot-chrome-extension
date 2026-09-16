@@ -12,6 +12,7 @@
 import { COLORS } from '../config/constants.js';
 import { showProcedureResultPopover } from '../ui/procedure-result-popover.js';
 import { addImageToMediaLibrary, addUrlToMediaLibrary } from './media-library-client.js';
+import { getMessage } from '../utils/i18n.js';
 
 /**
  * `modifyPage` and `both` (clipboard+popover) are historically/currently supported combinations;
@@ -30,15 +31,15 @@ export const ACTION_RESULT_DESTINATIONS = Object.freeze({
   SCRAPBOOK: 'scrapbook'
 });
 
-/** Display labels for every known destination id, keyed the same as {@link ACTION_RESULT_DESTINATIONS}. */
-const DESTINATION_LABELS = Object.freeze({
-  [ACTION_RESULT_DESTINATIONS.CLIPBOARD]: 'Clipboard',
-  [ACTION_RESULT_DESTINATIONS.POPOVER]: 'Popover',
-  [ACTION_RESULT_DESTINATIONS.BOTH]: 'Clipboard and popover',
-  [ACTION_RESULT_DESTINATIONS.MODIFY_PAGE]: 'Replace in page',
-  [ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY]: 'Media Library',
-  [ACTION_RESULT_DESTINATIONS.CLIPBOARD_AND_MEDIA_LIBRARY]: 'Both',
-  [ACTION_RESULT_DESTINATIONS.SCRAPBOOK]: 'Scrapbook (coming soon)'
+/** Display message keys for every known destination id. */
+const DESTINATION_LABEL_KEYS = Object.freeze({
+  [ACTION_RESULT_DESTINATIONS.CLIPBOARD]: 'fn_dest_clipboard',
+  [ACTION_RESULT_DESTINATIONS.POPOVER]: 'fn_dest_popover',
+  [ACTION_RESULT_DESTINATIONS.BOTH]: 'fn_dest_both',
+  [ACTION_RESULT_DESTINATIONS.MODIFY_PAGE]: 'fn_dest_modify_page',
+  [ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY]: 'fn_dest_media_library',
+  [ACTION_RESULT_DESTINATIONS.CLIPBOARD_AND_MEDIA_LIBRARY]: 'fn_dest_clipboard_and_media_library',
+  [ACTION_RESULT_DESTINATIONS.SCRAPBOOK]: 'fn_dest_scrapbook'
 });
 
 /**
@@ -51,7 +52,7 @@ const DESTINATION_LABELS = Object.freeze({
  * sense" is a property of each Function, not universal — see KEY_ACTION_ARCHITECTURE.md.
  *
  * @param {ActionResultDestination[]} applicableDestinations
- * @returns {{ id: 'destination', label: string, type: 'enum', defaultValue: ActionResultDestination, options: Array<{ id: string, label: string }> }}
+ * @returns {{ id: 'destination', labelKey: string, type: 'enum', defaultValue: ActionResultDestination, options: Array<{ id: string, labelKey: string }> }}
  */
 export function buildResultDestinationParameter(applicableDestinations) {
   const ids = Array.isArray(applicableDestinations) && applicableDestinations.length
@@ -59,10 +60,13 @@ export function buildResultDestinationParameter(applicableDestinations) {
     : [ACTION_RESULT_DESTINATIONS.CLIPBOARD];
   return Object.freeze({
     id: 'destination',
-    label: 'Destination',
+    labelKey: 'fn_param_destination',
     type: 'enum',
     defaultValue: ids[0],
-    options: Object.freeze(ids.map((id) => Object.freeze({ id, label: DESTINATION_LABELS[id] || id })))
+    options: Object.freeze(ids.map((id) => Object.freeze({
+      id,
+      labelKey: DESTINATION_LABEL_KEYS[id] || 'fn_dest_clipboard'
+    })))
   });
 }
 
@@ -73,7 +77,7 @@ export function buildResultDestinationParameter(applicableDestinations) {
  */
 export function normalizeActionResultDestination(raw, fallback = ACTION_RESULT_DESTINATIONS.CLIPBOARD) {
   const v = String(raw || '').trim();
-  if (Object.prototype.hasOwnProperty.call(DESTINATION_LABELS, v)) {
+  if (Object.prototype.hasOwnProperty.call(DESTINATION_LABEL_KEYS, v)) {
     return /** @type {ActionResultDestination} */ (v);
   }
   return fallback;

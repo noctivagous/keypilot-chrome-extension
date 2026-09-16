@@ -2175,14 +2175,14 @@ export class FloatingKeyboardHelp {
           if (!item?.value) continue;
           options.push({
             value: item.value,
-            label: item.label,
+            label: item.labelKey ? getMessage(item.labelKey) : item.label,
             icon: item.icon,
             shortcut: item.shortcut
           });
           known.add(item.value);
         }
       };
-      appendGroup('Built-In', groups.builtin);
+      appendGroup(getMessage('layout_picker_group_builtin'), groups.builtin);
       known.add('builtin');
       appendGroup('Custom', groups.custom);
 

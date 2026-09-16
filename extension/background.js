@@ -190,7 +190,7 @@ async function rebuildKeyboardReferenceContextMenu() {
         await createAction(
           builtInGroup,
           builtinFamilySelectValue(family.id),
-          String(family.label || family.id)
+          getMessage(family.labelKey || 'layout_family_browsing_label')
         );
       }
     }

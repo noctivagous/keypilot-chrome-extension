@@ -5,10 +5,12 @@
 
 import {
   formatKeyStroke,
+  localizeMacroCatalogEntry,
   MACRO_KEY_KIND_DEFS,
   normalizeKeyStroke,
   normalizeMacroKeyConfig
 } from '../config/macro-keys.js';
+import { getMessage } from '../utils/i18n.js';
 
 /**
  * @param {Document} doc
@@ -23,9 +25,9 @@ function buildStrokeEditor(doc, stroke, onChange) {
   const keyInput = doc.createElement('input');
   keyInput.type = 'text';
   keyInput.className = 'kp-cfg-field kp-mk-key-input';
-  keyInput.placeholder = 'Key';
+  keyInput.placeholder = getMessage('mk_editor_key');
   keyInput.value = stroke?.key || '';
-  keyInput.setAttribute('aria-label', 'Key');
+  keyInput.setAttribute('aria-label', getMessage('mk_editor_key'));
   keyInput.addEventListener('input', () => {
     onChange(normalizeKeyStroke({
       ...stroke,
@@ -77,6 +79,7 @@ export function createMacroKeyEditor(opts) {
   const doc = opts.doc || document;
   const mk = opts.macroKey;
   const kindDef = MACRO_KEY_KIND_DEFS.find((d) => d.id === mk.kind);
+  const kindLabel = localizeMacroCatalogEntry(kindDef).label || mk.kind;
   let draft = {
     ...mk,
     config: normalizeMacroKeyConfig(mk.kind, mk.config)
@@ -88,12 +91,12 @@ export function createMacroKeyEditor(opts) {
 
   const title = doc.createElement('div');
   title.className = 'kp-mk-editor-title';
-  title.textContent = `Configure: ${kindDef?.label || mk.kind}`;
+  title.textContent = getMessage('mk_editor_configure', kindLabel);
   root.appendChild(title);
 
   const labelLab = doc.createElement('label');
   labelLab.className = 'kp-mk-field-label';
-  labelLab.textContent = 'Name';
+  labelLab.textContent = getMessage('mk_editor_name');
   const labelInput = doc.createElement('input');
   labelInput.type = 'text';
   labelInput.className = 'kp-cfg-field';
@@ -122,7 +125,9 @@ export function createMacroKeyEditor(opts) {
   if (mk.kind === 'hotkey' || mk.kind === 'key' || mk.kind === 'continuous') {
     const strokeLab = doc.createElement('div');
     strokeLab.className = 'kp-mk-field-label';
-    strokeLab.textContent = mk.kind === 'continuous' ? 'Key to hold/repeat' : 'Key / chord';
+    strokeLab.textContent = getMessage(
+      mk.kind === 'continuous' ? 'mk_editor_key_repeat' : 'mk_editor_key_chord'
+    );
     body.appendChild(strokeLab);
     body.appendChild(buildStrokeEditor(doc, draft.config.stroke, (stroke) => {
       emitConfig({ ...draft.config, stroke });
@@ -130,7 +135,7 @@ export function createMacroKeyEditor(opts) {
     if (mk.kind === 'continuous') {
       const intLab = doc.createElement('div');
       intLab.className = 'kp-mk-field-label';
-      intLab.textContent = 'Interval (ms)';
+      intLab.textContent = getMessage('mk_editor_interval');
       const intInput = doc.createElement('input');
       intInput.type = 'number';
       intInput.className = 'kp-cfg-field';
@@ -147,7 +152,9 @@ export function createMacroKeyEditor(opts) {
     const listKey = mk.kind === 'burst' ? 'steps' : 'items';
     const listLab = doc.createElement('div');
     listLab.className = 'kp-mk-field-label';
-    listLab.textContent = mk.kind === 'burst' ? 'Sequence' : 'Cycle items';
+    listLab.textContent = getMessage(
+      mk.kind === 'burst' ? 'mk_editor_sequence' : 'mk_editor_cycle_items'
+    );
     body.appendChild(listLab);
 
     const listHost = doc.createElement('div');
@@ -173,7 +180,7 @@ export function createMacroKeyEditor(opts) {
         rm.type = 'button';
         rm.className = 'kp-cfg-btn';
         rm.textContent = '×';
-        rm.title = 'Remove';
+        rm.title = getMessage('mk_editor_remove');
         rm.addEventListener('click', () => {
           const copy = arr.slice();
           copy.splice(index, 1);
@@ -189,7 +196,7 @@ export function createMacroKeyEditor(opts) {
     const addBtn = doc.createElement('button');
     addBtn.type = 'button';
     addBtn.className = 'kp-cfg-btn';
-    addBtn.textContent = 'Add stroke';
+    addBtn.textContent = getMessage('mk_editor_add_stroke');
     addBtn.addEventListener('click', () => {
       const arr = Array.isArray(draft.config[listKey]) ? draft.config[listKey].slice() : [];
       arr.push(normalizeKeyStroke({ key: '' }));
@@ -201,7 +208,7 @@ export function createMacroKeyEditor(opts) {
     if (mk.kind === 'burst') {
       const gapLab = doc.createElement('div');
       gapLab.className = 'kp-mk-field-label';
-      gapLab.textContent = 'Gap between strokes (ms)';
+      gapLab.textContent = getMessage('mk_editor_gap');
       const gapInput = doc.createElement('input');
       gapInput.type = 'number';
       gapInput.className = 'kp-cfg-field';
@@ -221,7 +228,7 @@ export function createMacroKeyEditor(opts) {
   } else if (mk.kind === 'mouse') {
     const lab = doc.createElement('div');
     lab.className = 'kp-mk-field-label';
-    lab.textContent = 'Mouse button';
+    lab.textContent = getMessage('mk_editor_mouse_button');
     body.appendChild(lab);
     const row = doc.createElement('div');
     row.className = 'kp-mk-mouse-row';
@@ -229,14 +236,15 @@ export function createMacroKeyEditor(opts) {
       const b = doc.createElement('button');
       b.type = 'button';
       b.className = 'kp-cfg-btn';
-      b.textContent = button;
+      b.textContent = getMessage(`mk_editor_mouse_${button}`);
       b.setAttribute('aria-pressed', draft.config.button === button ? 'true' : 'false');
       b.addEventListener('click', () => {
         emitConfig({ button });
         row.querySelectorAll('button').forEach((el) => {
-          el.setAttribute('aria-pressed', el.textContent === button ? 'true' : 'false');
+          el.setAttribute('aria-pressed', el.dataset.button === button ? 'true' : 'false');
         });
       }, true);
+      b.dataset.button = button;
       row.appendChild(b);
     }
     body.appendChild(row);
@@ -249,7 +257,7 @@ export function createMacroKeyEditor(opts) {
   const saveBtn = doc.createElement('button');
   saveBtn.type = 'button';
   saveBtn.className = 'kp-cfg-btn';
-  saveBtn.textContent = 'Save';
+  saveBtn.textContent = getMessage('mk_editor_save');
   saveBtn.addEventListener('click', () => {
     opts.onChange?.(draft);
     opts.onSave?.();
@@ -257,7 +265,7 @@ export function createMacroKeyEditor(opts) {
   const cancelBtn = doc.createElement('button');
   cancelBtn.type = 'button';
   cancelBtn.className = 'kp-cfg-btn';
-  cancelBtn.textContent = 'Cancel';
+  cancelBtn.textContent = getMessage('mk_editor_cancel');
   cancelBtn.addEventListener('click', () => opts.onCancel?.(), true);
   actions.appendChild(saveBtn);
   actions.appendChild(cancelBtn);
@@ -265,7 +273,7 @@ export function createMacroKeyEditor(opts) {
     const delBtn = doc.createElement('button');
     delBtn.type = 'button';
     delBtn.className = 'kp-cfg-btn';
-    delBtn.textContent = 'Delete';
+    delBtn.textContent = getMessage('mk_editor_delete');
     delBtn.addEventListener('click', () => opts.onDelete?.(), true);
     actions.appendChild(delBtn);
   }
@@ -283,7 +291,10 @@ function formatPreview(mk) {
   if (mk.kind === 'hotkey' || mk.kind === 'key') return formatKeyStroke(cfg.stroke);
   if (mk.kind === 'burst') return (cfg.steps || []).map(formatKeyStroke).join(' → ');
   if (mk.kind === 'roundRobin') return (cfg.items || []).map(formatKeyStroke).join(' / ');
-  if (mk.kind === 'continuous') return `${formatKeyStroke(cfg.stroke)} every ${cfg.intervalMs}ms`;
-  if (mk.kind === 'mouse') return `${cfg.button} click`;
+  if (mk.kind === 'continuous') return getMessage(
+    'mk_editor_repeat_preview',
+    [formatKeyStroke(cfg.stroke), String(cfg.intervalMs)]
+  );
+  if (mk.kind === 'mouse') return getMessage('mk_mouse_click', String(cfg.button));
   return '';
 }

@@ -651,10 +651,10 @@ async function render() {
     keyboardLayoutFamilySelect.innerHTML = '';
     const items = Array.isArray(BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META) ? BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META : [];
     for (const m of items) {
-      if (!m || !m.id) continue;
+      if (!m || !m.id || !m.labelKey) continue;
       const opt = document.createElement('option');
       opt.value = String(m.id);
-      opt.textContent = String(m.label || m.id);
+      opt.textContent = getMessage(m.labelKey);
       keyboardLayoutFamilySelect.appendChild(opt);
     }
   };

@@ -2934,5 +2934,1359 @@
   "media_library_download_shortcut": {
     "message": "Download shortcut",
     "description": "Download URL shortcut tooltip in Media Library."
+  },
+  "layout_family_browsing_label": {
+    "message": "Browsing",
+    "description": "Built-in keyboard layout family name."
+  },
+  "layout_family_browsing_description": {
+    "message": "Full browsing controls (scroll, tabs, click, history, tools).",
+    "description": "Description of the Browsing built-in keyboard layout family."
+  },
+  "layout_family_browsing_picker": {
+    "message": "Built-in: Browsing",
+    "description": "Built-in keyboard layout family label in the layout picker."
+  },
+  "layout_family_navigation_label": {
+    "message": "Navigation",
+    "description": "Built-in keyboard layout family name."
+  },
+  "layout_family_navigation_description": {
+    "message": "Click element, go back, and go forward.",
+    "description": "Description of the Navigation built-in keyboard layout family."
+  },
+  "layout_family_navigation_picker": {
+    "message": "Built-in: Navigation",
+    "description": "Built-in keyboard layout family label in the layout picker."
+  },
+  "layout_family_basic_navigation_label": {
+    "message": "Basic Navigation",
+    "description": "Legacy built-in keyboard layout family name."
+  },
+  "layout_family_basic_navigation_picker": {
+    "message": "Built-in: Basic Navigation",
+    "description": "Legacy built-in keyboard layout family label in the layout picker."
+  },
+  "layout_picker_group_builtin": {
+    "message": "Built-In",
+    "description": "Built-in keyboard layouts group heading in the layout picker."
+  },
+  "fn_ACTIVATE_label": {
+    "message": "Click Element",
+    "description": "Function Library label for ACTIVATE."
+  },
+  "fn_ACTIVATE_description": {
+    "message": "Click the hovered element",
+    "description": "Function Library description for ACTIVATE."
+  },
+  "fn_ACTIVATE_details": {
+    "message": "Activates the clickable under the cursor — the same as a left mouse click on that element. Works with links, buttons, and other interactive targets KeyPilot highlights.",
+    "description": "Function Library details for ACTIVATE."
+  },
+  "fn_ACTIVATE_NEW_TAB_label": {
+    "message": "Click New Tab",
+    "description": "Function Library label for ACTIVATE_NEW_TAB."
+  },
+  "fn_ACTIVATE_NEW_TAB_description": {
+    "message": "Open link in a new foreground tab",
+    "description": "Function Library description for ACTIVATE_NEW_TAB."
+  },
+  "fn_ACTIVATE_NEW_TAB_details": {
+    "message": "Opens the hovered link in a new tab and switches to it immediately. Use when you want to follow a link without leaving your place permanently, but still jump to the new page right away.",
+    "description": "Function Library details for ACTIVATE_NEW_TAB."
+  },
+  "fn_ACTIVATE_NEW_TAB_BACKGROUND_label": {
+    "message": "Click New Tab Background",
+    "description": "Function Library label for ACTIVATE_NEW_TAB_BACKGROUND."
+  },
+  "fn_ACTIVATE_NEW_TAB_BACKGROUND_description": {
+    "message": "Open link in a new background tab",
+    "description": "Function Library description for ACTIVATE_NEW_TAB_BACKGROUND."
+  },
+  "fn_ACTIVATE_NEW_TAB_BACKGROUND_details": {
+    "message": "Opens the hovered link in a new tab without switching focus — like a middle-click. Useful for queueing several links while you keep reading the current page.",
+    "description": "Function Library details for ACTIVATE_NEW_TAB_BACKGROUND."
+  },
+  "fn_BACK_label": {
+    "message": "Go Back",
+    "description": "Function Library label for BACK."
+  },
+  "fn_BACK_description": {
+    "message": "Browser history back",
+    "description": "Function Library description for BACK."
+  },
+  "fn_BACK_details": {
+    "message": "Navigates one step back in the current tab’s history, equivalent to the browser Back button.",
+    "description": "Function Library details for BACK."
+  },
+  "fn_BACK2_label": {
+    "message": "Go Back",
+    "description": "Function Library label for BACK2."
+  },
+  "fn_BACK2_description": {
+    "message": "Browser history back",
+    "description": "Function Library description for BACK2."
+  },
+  "fn_BACK2_details": {
+    "message": "Navigates one step back in the current tab’s history, equivalent to the browser Back button. Duplicate id for layouts that expose a second Back binding.",
+    "description": "Function Library details for BACK2."
+  },
+  "fn_FORWARD_label": {
+    "message": "Go Forward",
+    "description": "Function Library label for FORWARD."
+  },
+  "fn_FORWARD_description": {
+    "message": "Browser history forward",
+    "description": "Function Library description for FORWARD."
+  },
+  "fn_FORWARD_details": {
+    "message": "Navigates one step forward in the current tab’s history, equivalent to the browser Forward button.",
+    "description": "Function Library details for FORWARD."
+  },
+  "fn_DELETE_label": {
+    "message": "Delete Mode",
+    "description": "Function Library label for DELETE."
+  },
+  "fn_DELETE_description": {
+    "message": "Hide elements under the cursor",
+    "description": "Function Library description for DELETE."
+  },
+  "fn_DELETE_details": {
+    "message": "Toggles Delete Mode: hover elements and remove (hide) them from the page so you can declutter layouts. Exit with Exit Focus or by toggling again.",
+    "description": "Function Library details for DELETE."
+  },
+  "fn_TAB_LEFT_label": {
+    "message": "Tab Left",
+    "description": "Function Library label for TAB_LEFT."
+  },
+  "fn_TAB_LEFT_description": {
+    "message": "Switch to the previous tab",
+    "description": "Function Library description for TAB_LEFT."
+  },
+  "fn_TAB_LEFT_details": {
+    "message": "Activates the tab to the left of the current one in the window’s tab strip.",
+    "description": "Function Library details for TAB_LEFT."
+  },
+  "fn_TAB_RIGHT_label": {
+    "message": "Tab Right",
+    "description": "Function Library label for TAB_RIGHT."
+  },
+  "fn_TAB_RIGHT_description": {
+    "message": "Switch to the next tab",
+    "description": "Function Library description for TAB_RIGHT."
+  },
+  "fn_TAB_RIGHT_details": {
+    "message": "Activates the tab to the right of the current one in the window’s tab strip.",
+    "description": "Function Library details for TAB_RIGHT."
+  },
+  "fn_ROOT_label": {
+    "message": "Go to Site Root",
+    "description": "Function Library label for ROOT."
+  },
+  "fn_ROOT_description": {
+    "message": "Navigate to the site origin",
+    "description": "Function Library description for ROOT."
+  },
+  "fn_ROOT_details": {
+    "message": "Jumps to the site root (scheme + host) of the current page — useful for escaping deep paths without typing a URL.",
+    "description": "Function Library details for ROOT."
+  },
+  "fn_LAUNCHER_label": {
+    "message": "Launcher",
+    "description": "Function Library label for LAUNCHER."
+  },
+  "fn_LAUNCHER_description": {
+    "message": "Quick-access site launcher",
+    "description": "Function Library description for LAUNCHER."
+  },
+  "fn_LAUNCHER_details": {
+    "message": "Opens the Launcher popover for jumping to favorite or configured sites without using the omnibox.",
+    "description": "Function Library details for LAUNCHER."
+  },
+  "fn_TOP_SITES_label": {
+    "message": "Top Sites",
+    "description": "Function Library label for TOP_SITES."
+  },
+  "fn_TOP_SITES_description": {
+    "message": "Toolbar, visits, and bookmarks",
+    "description": "Function Library description for TOP_SITES."
+  },
+  "fn_TOP_SITES_details": {
+    "message": "Opens Top Sites: a quick list drawn from the toolbar, most-visited pages, and recent bookmarks so you can open a frequent destination in one step.",
+    "description": "Function Library details for TOP_SITES."
+  },
+  "fn_CLOSE_TAB_label": {
+    "message": "Close Tab",
+    "description": "Function Library label for CLOSE_TAB."
+  },
+  "fn_CLOSE_TAB_description": {
+    "message": "Close the current tab",
+    "description": "Function Library description for CLOSE_TAB."
+  },
+  "fn_CLOSE_TAB_details": {
+    "message": "Closes the active tab. Behavior matches the browser’s close-tab action for the current window.",
+    "description": "Function Library details for CLOSE_TAB."
+  },
+  "fn_CANCEL_label": {
+    "message": "Exit Focus",
+    "description": "Function Library label for CANCEL."
+  },
+  "fn_CANCEL_description": {
+    "message": "Leave modes and overlays",
+    "description": "Function Library description for CANCEL."
+  },
+  "fn_CANCEL_details": {
+    "message": "Cancels the current KeyPilot mode or overlay (Delete Mode, Scroll Line, text focus helpers, and similar) and returns to normal browsing.",
+    "description": "Function Library details for CANCEL."
+  },
+  "fn_PAGE_UP_INSTANT_label": {
+    "message": "Page Up",
+    "description": "Function Library label for PAGE_UP_INSTANT."
+  },
+  "fn_PAGE_UP_INSTANT_description": {
+    "message": "Jump one page up instantly",
+    "description": "Function Library description for PAGE_UP_INSTANT."
+  },
+  "fn_PAGE_UP_INSTANT_details": {
+    "message": "Scrolls the current scroll target up by roughly one viewport without animation — faster than a smooth page-up when you need to move quickly.",
+    "description": "Function Library details for PAGE_UP_INSTANT."
+  },
+  "fn_PAGE_DOWN_INSTANT_label": {
+    "message": "Page Down",
+    "description": "Function Library label for PAGE_DOWN_INSTANT."
+  },
+  "fn_PAGE_DOWN_INSTANT_description": {
+    "message": "Jump one page down instantly",
+    "description": "Function Library description for PAGE_DOWN_INSTANT."
+  },
+  "fn_PAGE_DOWN_INSTANT_details": {
+    "message": "Scrolls the current scroll target down by roughly one viewport without animation — faster than a smooth page-down when you need to move quickly.",
+    "description": "Function Library details for PAGE_DOWN_INSTANT."
+  },
+  "fn_PAGE_TOP_label": {
+    "message": "Scroll To Top",
+    "description": "Function Library label for PAGE_TOP."
+  },
+  "fn_PAGE_TOP_description": {
+    "message": "Jump to top of scroll target",
+    "description": "Function Library description for PAGE_TOP."
+  },
+  "fn_PAGE_TOP_details": {
+    "message": "Moves to the top of the current scroll target. Fade mode hides the jump; Scroll mode animates. Configure the motion style in Settings → Scrolling.",
+    "description": "Function Library details for PAGE_TOP."
+  },
+  "fn_param_jump_style": {
+    "message": "Jump style",
+    "description": "Function parameter label for PAGE_TOP.mode."
+  },
+  "fn_param_opt_fade": {
+    "message": "Fade",
+    "description": "Function parameter option for PAGE_TOP.mode.fade."
+  },
+  "fn_param_opt_scroll": {
+    "message": "Scroll",
+    "description": "Function parameter option for PAGE_TOP.mode.smooth."
+  },
+  "fn_PAGE_BOTTOM_label": {
+    "message": "Scroll To Bottom",
+    "description": "Function Library label for PAGE_BOTTOM."
+  },
+  "fn_PAGE_BOTTOM_description": {
+    "message": "Jump to bottom of scroll target",
+    "description": "Function Library description for PAGE_BOTTOM."
+  },
+  "fn_PAGE_BOTTOM_details": {
+    "message": "Moves to the bottom of the current scroll target. Fade mode hides the jump; Scroll mode animates. Configure the motion style in Settings → Scrolling.",
+    "description": "Function Library details for PAGE_BOTTOM."
+  },
+  "fn_SCROLL_LINE_label": {
+    "message": "Scroll Line",
+    "description": "Function Library label for SCROLL_LINE."
+  },
+  "fn_SCROLL_LINE_description": {
+    "message": "Origin-based continuous scroll",
+    "description": "Function Library description for SCROLL_LINE."
+  },
+  "fn_SCROLL_LINE_details": {
+    "message": "Scrolls from a fixed origin: move the mouse away from the on-screen dot to scroll faster in that direction. Optionally enable middle-click on empty page area under Settings → Scrolling.",
+    "description": "Function Library details for SCROLL_LINE."
+  },
+  "fn_NEW_TAB_label": {
+    "message": "New Tab",
+    "description": "Function Library label for NEW_TAB."
+  },
+  "fn_NEW_TAB_description": {
+    "message": "Open a blank new tab",
+    "description": "Function Library description for NEW_TAB."
+  },
+  "fn_NEW_TAB_details": {
+    "message": "Opens a new empty tab in the current window, same as the browser’s New Tab command.",
+    "description": "Function Library details for NEW_TAB."
+  },
+  "fn_OPEN_POPOVER_label": {
+    "message": "Open Popover",
+    "description": "Function Library label for OPEN_POPOVER."
+  },
+  "fn_OPEN_POPOVER_description": {
+    "message": "Open link in a popup window",
+    "description": "Function Library description for OPEN_POPOVER."
+  },
+  "fn_OPEN_POPOVER_details": {
+    "message": "Opens the hovered link in a KeyPilot popup window so you can peek or work in a separate chrome without a full new tab.",
+    "description": "Function Library details for OPEN_POPOVER."
+  },
+  "fn_PREVIEW_LINK_POPOVER_label": {
+    "message": "Preview Link",
+    "description": "Function Library label for PREVIEW_LINK_POPOVER."
+  },
+  "fn_PREVIEW_LINK_POPOVER_description": {
+    "message": "Preview link in a popup",
+    "description": "Function Library description for PREVIEW_LINK_POPOVER."
+  },
+  "fn_PREVIEW_LINK_POPOVER_details": {
+    "message": "Opens Link Preview for the hovered URL in a popup window — skim the destination without committing a full navigation in the main tab.",
+    "description": "Function Library details for PREVIEW_LINK_POPOVER."
+  },
+  "fn_POI_WEBSITE_label": {
+    "message": "POI Website",
+    "description": "Function Library label for POI_WEBSITE."
+  },
+  "fn_POI_WEBSITE_description": {
+    "message": "Open map place website",
+    "description": "Function Library description for POI_WEBSITE."
+  },
+  "fn_POI_WEBSITE_details": {
+    "message": "When a map place (POI) is under the cursor, opens that place’s website in Link Preview so you can visit the business or location page without leaving the map.",
+    "description": "Function Library details for POI_WEBSITE."
+  },
+  "fn_POI_ADDRESS_label": {
+    "message": "POI Address",
+    "description": "Function Library label for POI_ADDRESS."
+  },
+  "fn_POI_ADDRESS_description": {
+    "message": "Copy map place address",
+    "description": "Function Library description for POI_ADDRESS."
+  },
+  "fn_POI_ADDRESS_details": {
+    "message": "When a map place (POI) is under the cursor, copies its street address to the clipboard for pasting into directions, notes, or forms.",
+    "description": "Function Library details for POI_ADDRESS."
+  },
+  "fn_param_action": {
+    "message": "Action",
+    "description": "Function parameter label for POI_ADDRESS.action."
+  },
+  "fn_param_opt_copy_address": {
+    "message": "Copy address",
+    "description": "Function parameter option for POI_ADDRESS.action.copy."
+  },
+  "fn_param_format": {
+    "message": "Format",
+    "description": "Function parameter label for POI_ADDRESS.format."
+  },
+  "fn_param_opt_txt": {
+    "message": "Txt",
+    "description": "Function parameter option for POI_ADDRESS.format.txt."
+  },
+  "fn_param_opt_vcard": {
+    "message": "vCard",
+    "description": "Function parameter option for POI_ADDRESS.format.vcard."
+  },
+  "fn_OPEN_SETTINGS_POPOVER_label": {
+    "message": "Settings",
+    "description": "Function Library label for OPEN_SETTINGS_POPOVER."
+  },
+  "fn_OPEN_SETTINGS_POPOVER_description": {
+    "message": "Open KeyPilot Settings",
+    "description": "Function Library description for OPEN_SETTINGS_POPOVER."
+  },
+  "fn_OPEN_SETTINGS_POPOVER_details": {
+    "message": "Opens or closes the KeyPilot Settings popover for themes, scrolling, click mode, layouts, and other preferences.",
+    "description": "Function Library details for OPEN_SETTINGS_POPOVER."
+  },
+  "fn_OMNIBOX_label": {
+    "message": "Omnibox",
+    "description": "Function Library label for OMNIBOX."
+  },
+  "fn_OMNIBOX_description": {
+    "message": "Address bar overlay",
+    "description": "Function Library description for OMNIBOX."
+  },
+  "fn_OMNIBOX_details": {
+    "message": "Opens KeyPilot’s omnibox overlay so you can type a URL or search without clicking the browser address bar.",
+    "description": "Function Library details for OMNIBOX."
+  },
+  "fn_TAB_HISTORY_label": {
+    "message": "Tab History",
+    "description": "Function Library label for TAB_HISTORY."
+  },
+  "fn_TAB_HISTORY_description": {
+    "message": "Browse this tab’s history",
+    "description": "Function Library description for TAB_HISTORY."
+  },
+  "fn_TAB_HISTORY_details": {
+    "message": "Opens Tab History for the current tab so you can jump to a previously visited page in this tab’s session without using the browser’s native history UI.",
+    "description": "Function Library details for TAB_HISTORY."
+  },
+  "fn_TOGGLE_KEYBOARD_HELP_label": {
+    "message": "KB Reference",
+    "description": "Function Library label for TOGGLE_KEYBOARD_HELP."
+  },
+  "fn_TOGGLE_KEYBOARD_HELP_description": {
+    "message": "Show or hide the keyboard map",
+    "description": "Function Library description for TOGGLE_KEYBOARD_HELP."
+  },
+  "fn_TOGGLE_KEYBOARD_HELP_details": {
+    "message": "Toggles the floating Keyboard Reference window that shows your current layout’s keycaps and bindings.",
+    "description": "Function Library details for TOGGLE_KEYBOARD_HELP."
+  },
+  "fn_HIGHLIGHT_label": {
+    "message": "Text Select",
+    "description": "Function Library label for HIGHLIGHT."
+  },
+  "fn_HIGHLIGHT_description": {
+    "message": "Select text and copy rich text",
+    "description": "Function Library description for HIGHLIGHT."
+  },
+  "fn_HIGHLIGHT_details": {
+    "message": "Enters character-level text selection under the cursor. By default, the selection is copied as rich text so formatting is preserved when you paste.",
+    "description": "Function Library details for HIGHLIGHT."
+  },
+  "fn_param_copy_as": {
+    "message": "Copy as",
+    "description": "Function parameter label for HIGHLIGHT.mode."
+  },
+  "fn_param_opt_rich_text": {
+    "message": "Rich text",
+    "description": "Function parameter option for HIGHLIGHT.mode.rich."
+  },
+  "fn_param_opt_plain_text": {
+    "message": "Plain text",
+    "description": "Function parameter option for HIGHLIGHT.mode.plain."
+  },
+  "fn_RECTANGLE_HIGHLIGHT_label": {
+    "message": "Element Select",
+    "description": "Function Library label for RECTANGLE_HIGHLIGHT."
+  },
+  "fn_RECTANGLE_HIGHLIGHT_description": {
+    "message": "Rectangle or cumulative element pick",
+    "description": "Function Library description for RECTANGLE_HIGHLIGHT."
+  },
+  "fn_RECTANGLE_HIGHLIGHT_details": {
+    "message": "Selects HTML elements that intersect a dragged rectangle, or pick elements cumulatively. Useful for grabbing structure (not just plain text) from a page region.",
+    "description": "Function Library details for RECTANGLE_HIGHLIGHT."
+  },
+  "fn_param_selection_mode": {
+    "message": "Selection mode",
+    "description": "Function parameter label for RECTANGLE_HIGHLIGHT.mode."
+  },
+  "fn_param_opt_element_rectangle": {
+    "message": "Element rectangle",
+    "description": "Function parameter option for RECTANGLE_HIGHLIGHT.mode.element."
+  },
+  "fn_param_opt_pick_cumulative": {
+    "message": "Pick cumulative",
+    "description": "Function parameter option for RECTANGLE_HIGHLIGHT.mode.cumulative."
+  },
+  "fn_COPY_HOVERED_IMAGE_label": {
+    "message": "Copy Image",
+    "description": "Function Library label for COPY_HOVERED_IMAGE."
+  },
+  "fn_COPY_HOVERED_IMAGE_description": {
+    "message": "Copy hovered image",
+    "description": "Function Library description for COPY_HOVERED_IMAGE."
+  },
+  "fn_COPY_HOVERED_IMAGE_details": {
+    "message": "Copies the image under the cursor to the clipboard, Media Library, or both — configure the destination on the action. Prefer this when you want the image bytes or a saved library entry, not just a URL.",
+    "description": "Function Library details for COPY_HOVERED_IMAGE."
+  },
+  "fn_COPY_HOVERED_URL_label": {
+    "message": "Copy URL",
+    "description": "Function Library label for COPY_HOVERED_URL."
+  },
+  "fn_COPY_HOVERED_URL_description": {
+    "message": "Copy hovered link URL",
+    "description": "Function Library description for COPY_HOVERED_URL."
+  },
+  "fn_COPY_HOVERED_URL_details": {
+    "message": "Copies the URL under the cursor to the clipboard, Media Library, or both. Use this when you need the href itself rather than fetching or opening the resource.",
+    "description": "Function Library details for COPY_HOVERED_URL."
+  },
+  "fn_COPY_HOVERED_VIDEO_label": {
+    "message": "Copy Video",
+    "description": "Function Library label for COPY_HOVERED_VIDEO."
+  },
+  "fn_COPY_HOVERED_VIDEO_description": {
+    "message": "Copy hovered video",
+    "description": "Function Library description for COPY_HOVERED_VIDEO."
+  },
+  "fn_COPY_HOVERED_VIDEO_details": {
+    "message": "Copies the video under the cursor (file bytes to Media Library when fetchable, or the video URL to the clipboard). No default layout key — bind it in Layout Editor if you need it.",
+    "description": "Function Library details for COPY_HOVERED_VIDEO."
+  },
+  "fn_FONT_INFO_label": {
+    "message": "Font Info",
+    "description": "Function Library label for FONT_INFO."
+  },
+  "fn_FONT_INFO_description": {
+    "message": "Inspect font under the cursor",
+    "description": "Function Library description for FONT_INFO."
+  },
+  "fn_FONT_INFO_details": {
+    "message": "Shows a popover with the font name, size, family, file type, and resource URL for the styled text under the cursor, and outlines that text run. No default layout key — bind it in Layout Editor if you need it.",
+    "description": "Function Library details for FONT_INFO."
+  },
+  "fn_PAGE_MEDIA_label": {
+    "message": "Page Media",
+    "description": "Function Library label for PAGE_MEDIA."
+  },
+  "fn_PAGE_MEDIA_description": {
+    "message": "Browse media found on this page",
+    "description": "Function Library description for PAGE_MEDIA."
+  },
+  "fn_PAGE_MEDIA_details": {
+    "message": "Opens a gallery of images, videos, documents, fonts, and URLs discovered on the current page so you can review or collect them without hunting through the DOM.",
+    "description": "Function Library details for PAGE_MEDIA."
+  },
+  "fn_OPEN_MEDIA_LIBRARY_label": {
+    "message": "Media Library",
+    "description": "Function Library label for OPEN_MEDIA_LIBRARY."
+  },
+  "fn_OPEN_MEDIA_LIBRARY_description": {
+    "message": "Open saved Media Library",
+    "description": "Function Library description for OPEN_MEDIA_LIBRARY."
+  },
+  "fn_OPEN_MEDIA_LIBRARY_details": {
+    "message": "Opens the Media Library where items you previously copied or saved (images, videos, URLs, and related assets) are kept for reuse.",
+    "description": "Function Library details for OPEN_MEDIA_LIBRARY."
+  },
+  "fn_CLIPBOARD_COPY_label": {
+    "message": "Copy",
+    "description": "Function Library label for CLIPBOARD_COPY."
+  },
+  "fn_CLIPBOARD_COPY_description": {
+    "message": "Copy selection to clipboard",
+    "description": "Function Library description for CLIPBOARD_COPY."
+  },
+  "fn_CLIPBOARD_COPY_details": {
+    "message": "Copies the current text selection to the system clipboard. Prefer this over OS shortcuts when you want Copy available as a KeyPilot layout binding.",
+    "description": "Function Library details for CLIPBOARD_COPY."
+  },
+  "fn_CLIPBOARD_CUT_label": {
+    "message": "Cut",
+    "description": "Function Library label for CLIPBOARD_CUT."
+  },
+  "fn_CLIPBOARD_CUT_description": {
+    "message": "Cut selection to clipboard",
+    "description": "Function Library description for CLIPBOARD_CUT."
+  },
+  "fn_CLIPBOARD_CUT_details": {
+    "message": "Cuts the current text selection to the system clipboard from the focused field or editable region.",
+    "description": "Function Library details for CLIPBOARD_CUT."
+  },
+  "fn_CLIPBOARD_PASTE_label": {
+    "message": "Paste",
+    "description": "Function Library label for CLIPBOARD_PASTE."
+  },
+  "fn_CLIPBOARD_PASTE_description": {
+    "message": "Paste into the focused field",
+    "description": "Function Library description for CLIPBOARD_PASTE."
+  },
+  "fn_CLIPBOARD_PASTE_details": {
+    "message": "Pastes clipboard text into the focused text field or editable element. Bind with a modifier chord if you need it while typing.",
+    "description": "Function Library details for CLIPBOARD_PASTE."
+  },
+  "fn_CLIPBOARD_SELECT_ALL_label": {
+    "message": "Select All",
+    "description": "Function Library label for CLIPBOARD_SELECT_ALL."
+  },
+  "fn_CLIPBOARD_SELECT_ALL_description": {
+    "message": "Select all in field or page",
+    "description": "Function Library description for CLIPBOARD_SELECT_ALL."
+  },
+  "fn_CLIPBOARD_SELECT_ALL_details": {
+    "message": "Selects all text in the focused field, or the page content when nothing editable is focused — same idea as the usual Select All shortcut.",
+    "description": "Function Library details for CLIPBOARD_SELECT_ALL."
+  },
+  "fn_SELECT_WORD_label": {
+    "message": "Select Word",
+    "description": "Function Library label for SELECT_WORD."
+  },
+  "fn_SELECT_WORD_description": {
+    "message": "Select the word under the cursor",
+    "description": "Function Library description for SELECT_WORD."
+  },
+  "fn_SELECT_WORD_details": {
+    "message": "Selects the word under the KeyPilot cursor. Press again over the same word to deselect it. Exclusive vs cumulative is a popover setting (shared, not per-key). Copy reads this selection.",
+    "description": "Function Library details for SELECT_WORD."
+  },
+  "fn_param_opt_exclusive": {
+    "message": "Exclusive",
+    "description": "Function parameter option for SELECT_WORD.mode.exclusive."
+  },
+  "fn_param_opt_cumulative": {
+    "message": "Cumulative",
+    "description": "Function parameter option for SELECT_WORD.mode.cumulative."
+  },
+  "fn_SELECT_SENTENCE_label": {
+    "message": "Select Sentence",
+    "description": "Function Library label for SELECT_SENTENCE."
+  },
+  "fn_SELECT_SENTENCE_description": {
+    "message": "Select the sentence under the cursor",
+    "description": "Function Library description for SELECT_SENTENCE."
+  },
+  "fn_SELECT_SENTENCE_details": {
+    "message": "Selects the sentence under the KeyPilot cursor. Press again over the same sentence to deselect it. Exclusive vs cumulative is a popover setting (shared, not per-key).",
+    "description": "Function Library details for SELECT_SENTENCE."
+  },
+  "fn_SELECT_PARAGRAPH_label": {
+    "message": "Select Paragraph",
+    "description": "Function Library label for SELECT_PARAGRAPH."
+  },
+  "fn_SELECT_PARAGRAPH_description": {
+    "message": "Select the paragraph under the cursor",
+    "description": "Function Library description for SELECT_PARAGRAPH."
+  },
+  "fn_SELECT_PARAGRAPH_details": {
+    "message": "Selects the paragraph (or nearest block) under the KeyPilot cursor. Press again over the same block to deselect it. Exclusive vs cumulative is a popover setting (shared, not per-key).",
+    "description": "Function Library details for SELECT_PARAGRAPH."
+  },
+  "fn_SELECT_IMAGE_label": {
+    "message": "Select Image",
+    "description": "Function Library label for SELECT_IMAGE."
+  },
+  "fn_SELECT_IMAGE_description": {
+    "message": "Select the image under the cursor",
+    "description": "Function Library description for SELECT_IMAGE."
+  },
+  "fn_SELECT_IMAGE_details": {
+    "message": "Selects the image under the KeyPilot cursor. Press again over the same image to deselect it. Exclusive vs cumulative is a popover setting (shared, not per-key). Copy can copy selected images.",
+    "description": "Function Library details for SELECT_IMAGE."
+  },
+  "fn_LOOKUP_WORD_label": {
+    "message": "Lookup Word",
+    "description": "Function Library label for LOOKUP_WORD."
+  },
+  "fn_LOOKUP_WORD_description": {
+    "message": "Dictionary definition under cursor",
+    "description": "Function Library description for LOOKUP_WORD."
+  },
+  "fn_LOOKUP_WORD_details": {
+    "message": "Shows a Free Dictionary API definition popover for the word under the cursor. No AI setup required; optionally switch the source to Ask AI on the Action Instance.",
+    "description": "Function Library details for LOOKUP_WORD."
+  },
+  "fn_param_source": {
+    "message": "Source",
+    "description": "Function parameter label for LOOKUP_WORD.source."
+  },
+  "fn_param_opt_dictionary": {
+    "message": "Dictionary",
+    "description": "Function parameter option for LOOKUP_WORD.source.dictionary."
+  },
+  "fn_param_opt_ask_ai": {
+    "message": "Ask AI instead",
+    "description": "Function parameter option for LOOKUP_WORD.source.ai."
+  },
+  "fn_SHOW_POPOVER_label": {
+    "message": "Show Popover",
+    "description": "Function Library label for SHOW_POPOVER."
+  },
+  "fn_SHOW_POPOVER_description": {
+    "message": "Show prior Macro Step result",
+    "description": "Function Library description for SHOW_POPOVER."
+  },
+  "fn_SHOW_POPOVER_details": {
+    "message": "Renders the previous Macro Step’s result (or configured fallback text) in a popover. A display primitive — add it as a Macro Step, not as a key action.",
+    "description": "Function Library details for SHOW_POPOVER."
+  },
+  "fn_param_content": {
+    "message": "Content",
+    "description": "Function parameter label for SHOW_POPOVER.content."
+  },
+  "fn_param_content_placeholder": {
+    "message": "Fallback text if the previous step produced none…",
+    "description": "Function parameter placeholder for SHOW_POPOVER.content."
+  },
+  "fn_ADD_URL_TO_MEDIA_LIBRARY_label": {
+    "message": "Add URL to Media Library",
+    "description": "Function Library label for ADD_URL_TO_MEDIA_LIBRARY."
+  },
+  "fn_ADD_URL_TO_MEDIA_LIBRARY_description": {
+    "message": "Save hovered href (no download)",
+    "description": "Function Library description for ADD_URL_TO_MEDIA_LIBRARY."
+  },
+  "fn_ADD_URL_TO_MEDIA_LIBRARY_details": {
+    "message": "Stores the hyperlink under the cursor itself (its href) in Media Library — does not download the resource the link points to.",
+    "description": "Function Library details for ADD_URL_TO_MEDIA_LIBRARY."
+  },
+  "fn_FETCH_URL_FOR_MEDIA_LIBRARY_label": {
+    "message": "Fetch URL for Media Library",
+    "description": "Function Library label for FETCH_URL_FOR_MEDIA_LIBRARY."
+  },
+  "fn_FETCH_URL_FOR_MEDIA_LIBRARY_description": {
+    "message": "Download linked file into library",
+    "description": "Function Library description for FETCH_URL_FOR_MEDIA_LIBRARY."
+  },
+  "fn_FETCH_URL_FOR_MEDIA_LIBRARY_details": {
+    "message": "Fetches the resource the hyperlink under the cursor points to (for example a .pdf, .mp3, or .mp4) and stores it in Media Library. Images, videos, and documents are classified from the file type. Web pages are not downloaded — use Add URL to Media Library for those.",
+    "description": "Function Library details for FETCH_URL_FOR_MEDIA_LIBRARY."
+  },
+  "fn_param_script_placeholder": {
+    "message": "// Bindings: kpHoveredClickable, kpHoverLeaf, kpFocusedTextField,\n//   kpMode, kpPageUrl, kpSelection, kpPriorResult\n// Callbacks (only if checked below): showPopover, copyToClipboard, notify\n// Example:\n// return kpHoveredClickable && kpHoveredClickable.textContent;",
+    "description": "Example JavaScript for the Execute JS parameter."
+  },
+  "fn_cat_navigation_label": {
+    "message": "Navigation",
+    "description": "Actions Library category label for Navigation."
+  },
+  "fn_cat_tab_control_label": {
+    "message": "Tab Control",
+    "description": "Actions Library category label for Tab Control."
+  },
+  "fn_cat_begin_url_label": {
+    "message": "Begin URL",
+    "description": "Actions Library category label for Begin URL."
+  },
+  "fn_cat_get_page_data_label": {
+    "message": "Get Page Data",
+    "description": "Actions Library category label for Get Page Data."
+  },
+  "fn_cat_maps_label": {
+    "message": "Maps",
+    "description": "Actions Library category label for Maps."
+  },
+  "fn_cat_scroll_label": {
+    "message": "Scroll",
+    "description": "Actions Library category label for Scroll."
+  },
+  "fn_cat_select_label": {
+    "message": "Select",
+    "description": "Actions Library category label for Select."
+  },
+  "fn_cat_clipboard_label": {
+    "message": "Clipboard",
+    "description": "Actions Library category label for Clipboard."
+  },
+  "fn_cat_type_label": {
+    "message": "Type",
+    "description": "Actions Library category label for Type."
+  },
+  "fn_cat_keystrokes_label": {
+    "message": "Keystrokes",
+    "description": "Actions Library category label for Keystrokes."
+  },
+  "fn_cat_data_label": {
+    "message": "Data",
+    "description": "Actions Library category label for Data."
+  },
+  "fn_cat_lookup_label": {
+    "message": "Lookup",
+    "description": "Actions Library category label for Lookup."
+  },
+  "fn_cat_translate_label": {
+    "message": "Translate",
+    "description": "Actions Library category label for Translate."
+  },
+  "fn_cat_display_label": {
+    "message": "Display",
+    "description": "Actions Library category label for Display."
+  },
+  "fn_cat_script_label": {
+    "message": "Script",
+    "description": "Actions Library category label for Script."
+  },
+  "fn_cat_media_library_label": {
+    "message": "Media Library",
+    "description": "Actions Library category label for Media Library."
+  },
+  "fn_cat_ai_label": {
+    "message": "AI",
+    "description": "Actions Library category label for AI."
+  },
+  "fn_cat_keypilot_label": {
+    "message": "KeyPilot",
+    "description": "Actions Library category label for KeyPilot."
+  },
+  "fn_cat_tools_label": {
+    "message": "Tools",
+    "description": "Actions Library category label for Tools."
+  },
+  "fn_cat_system_label": {
+    "message": "System",
+    "description": "Actions Library category label for System."
+  },
+  "fn_cat_other_label": {
+    "message": "Other",
+    "description": "Actions Library category label for Other."
+  },
+  "fn_cat_navigation_description": {
+    "message": "Click links, preview, and move through browsing history.",
+    "description": "Actions Library category description for Navigation."
+  },
+  "fn_cat_tab_control_description": {
+    "message": "Open, close, switch, and review tabs.",
+    "description": "Actions Library category description for Tab Control."
+  },
+  "fn_cat_begin_url_description": {
+    "message": "Jump to a URL via Launcher, Top Sites, or the omnibox.",
+    "description": "Actions Library category description for Begin URL."
+  },
+  "fn_cat_get_page_data_description": {
+    "message": "Capture text, images, video, URLs, fonts, and other page media.",
+    "description": "Actions Library category description for Get Page Data."
+  },
+  "fn_cat_maps_description": {
+    "message": "Open a place’s website or address from a map pin under the cursor.",
+    "description": "Actions Library category description for Maps."
+  },
+  "fn_cat_scroll_description": {
+    "message": "Scroll the page by line, page, or to the top/bottom.",
+    "description": "Actions Library category description for Scroll."
+  },
+  "fn_cat_select_description": {
+    "message": "Delete or toggle multi-column selection helpers.",
+    "description": "Actions Library category description for Select."
+  },
+  "fn_cat_clipboard_description": {
+    "message": "Copy, cut, paste, select-all, and select word, sentence, paragraph, or image under the cursor.",
+    "description": "Actions Library category description for Clipboard."
+  },
+  "fn_cat_type_description": {
+    "message": "Type saved text into the focused field.",
+    "description": "Actions Library category description for Type."
+  },
+  "fn_cat_keystrokes_description": {
+    "message": "Send keystrokes, chords, bursts, and mouse remaps.",
+    "description": "Actions Library category description for Keystrokes."
+  },
+  "fn_cat_data_description": {
+    "message": "Read text or media under the cursor, or from a highlight.",
+    "description": "Actions Library category description for Data."
+  },
+  "fn_cat_lookup_description": {
+    "message": "Look up a definition for the word under the cursor.",
+    "description": "Actions Library category description for Lookup."
+  },
+  "fn_cat_translate_description": {
+    "message": "Translate highlighted or under-cursor text.",
+    "description": "Actions Library category description for Translate."
+  },
+  "fn_cat_display_description": {
+    "message": "Show a previous Macro Step’s result in a popover.",
+    "description": "Actions Library category description for Display."
+  },
+  "fn_cat_script_description": {
+    "message": "Run a custom JavaScript snippet against page state.",
+    "description": "Actions Library category description for Script."
+  },
+  "fn_cat_media_library_description": {
+    "message": "Save links or fetched files into Media Library.",
+    "description": "Actions Library category description for Media Library."
+  },
+  "fn_cat_ai_description": {
+    "message": "Send selected text to AI with a prompt and result destination.",
+    "description": "Actions Library category description for AI."
+  },
+  "fn_cat_keypilot_description": {
+    "message": "Open KeyPilot chrome — keyboard reference, settings, and modes.",
+    "description": "Actions Library category description for KeyPilot."
+  },
+  "fn_cat_tools_description": {
+    "message": "Utility overlays and helpers.",
+    "description": "Actions Library category description for Tools."
+  },
+  "fn_cat_system_description": {
+    "message": "Cancel the current KeyPilot gesture or mode.",
+    "description": "Actions Library category description for System."
+  },
+  "fn_cat_other_description": {
+    "message": "Uncategorized Functions.",
+    "description": "Actions Library category description for Other."
+  },
+  "fn_section_macros_description": {
+    "message": "Multi-step sequences you can place on a key. Customize a stock macro to fork an editable copy.",
+    "description": "Actions Library macros section description."
+  },
+  "fn_section_macro_keys_description": {
+    "message": "Saved Macro Key instances (hotkey, burst, round-robin, and related kinds) ready to place.",
+    "description": "Actions Library macroKeys section description."
+  },
+  "mk_hotkey_label": {
+    "message": "Combination / Hotkey",
+    "description": "Macro Key kind label for hotkey."
+  },
+  "mk_hotkey_description": {
+    "message": "Send a modifier chord",
+    "description": "Macro Key kind description for hotkey."
+  },
+  "mk_hotkey_details": {
+    "message": "One key sends a modifier chord such as Ctrl+C, Win+R, or Ctrl+Shift+Esc. Configure the chord on the Action Instance.",
+    "description": "Macro Key kind details for hotkey."
+  },
+  "mk_burst_label": {
+    "message": "Burst Keys",
+    "description": "Macro Key kind label for burst."
+  },
+  "mk_burst_description": {
+    "message": "Type a short key sequence",
+    "description": "Macro Key kind description for burst."
+  },
+  "mk_burst_details": {
+    "message": "One press types a short sequence of keystrokes (e.g. a→b→c or Ctrl+C → Ctrl+V → Enter). Configure the steps on the Action Instance.",
+    "description": "Macro Key kind details for burst."
+  },
+  "mk_roundRobin_label": {
+    "message": "Round Robin",
+    "description": "Macro Key kind label for roundRobin."
+  },
+  "mk_roundRobin_description": {
+    "message": "Cycle through stroke options",
+    "description": "Macro Key kind description for roundRobin."
+  },
+  "mk_roundRobin_details": {
+    "message": "Each press advances a cycle of strokes (A, then B, then C, then A…). Useful when one key should rotate through several outputs.",
+    "description": "Macro Key kind details for roundRobin."
+  },
+  "mk_continuous_label": {
+    "message": "Continue / Continuous",
+    "description": "Macro Key kind label for continuous."
+  },
+  "mk_continuous_description": {
+    "message": "Repeat a stroke until stopped",
+    "description": "Macro Key kind description for continuous."
+  },
+  "mk_continuous_details": {
+    "message": "Press to start sending a stroke repeatedly; press again to stop. Configure the repeated stroke on the Action Instance.",
+    "description": "Macro Key kind details for continuous."
+  },
+  "mk_mouse_label": {
+    "message": "Synthetic Mouse",
+    "description": "Macro Key kind label for mouse."
+  },
+  "mk_mouse_description": {
+    "message": "Click under the cursor",
+    "description": "Macro Key kind description for mouse."
+  },
+  "mk_mouse_details": {
+    "message": "Synthesizes a left, middle, or right click under the cursor without moving your physical mouse buttons. Choose the button on the Action Instance.",
+    "description": "Macro Key kind details for mouse."
+  },
+  "mk_key_label": {
+    "message": "Normal Key",
+    "description": "Macro Key kind label for key."
+  },
+  "mk_key_description": {
+    "message": "Remap this slot to another key",
+    "description": "Macro Key kind description for key."
+  },
+  "mk_key_details": {
+    "message": "Remaps this layout slot so pressing it sends a different key (e.g. F sends 1). Configure the target key on the Action Instance.",
+    "description": "Macro Key kind details for key."
+  },
+  "mk_step_function_label": {
+    "message": "Function",
+    "description": "Macro Builder step label for function."
+  },
+  "mk_step_function_description": {
+    "message": "Run a Function Library entry (including Macro Keys).",
+    "description": "Macro Builder step description for function."
+  },
+  "mk_step_wait_label": {
+    "message": "Wait",
+    "description": "Macro Builder step label for wait."
+  },
+  "mk_step_wait_description": {
+    "message": "Pause for N milliseconds.",
+    "description": "Macro Builder step description for wait."
+  },
+  "mk_step_gate_label": {
+    "message": "Gate",
+    "description": "Macro Builder step label for gate."
+  },
+  "mk_step_gate_description": {
+    "message": "If condition fails, skip following steps.",
+    "description": "Macro Builder step description for gate."
+  },
+  "mk_step_stop_label": {
+    "message": "Stop",
+    "description": "Macro Builder step label for stop."
+  },
+  "mk_step_stop_description": {
+    "message": "End the macro immediately.",
+    "description": "Macro Builder step description for stop."
+  },
+  "mk_step_runMacro_label": {
+    "message": "Run Macro",
+    "description": "Macro Builder step label for runMacro."
+  },
+  "mk_step_runMacro_description": {
+    "message": "Call another macro (cycle-guarded).",
+    "description": "Macro Builder step description for runMacro."
+  },
+  "mk_empty_stroke": {
+    "message": "(empty)",
+    "description": "Macro Key summary when no stroke is configured."
+  },
+  "mk_mouse_click": {
+    "message": "$1 click",
+    "description": "Macro Key mouse-click summary. $1 is the button name."
+  },
+  "mk_default_label": {
+    "message": "Macro Key",
+    "description": "Fallback label for an unknown Macro Key kind."
+  },
+  "fn_cat_all": {
+    "message": "All categories",
+    "description": "Function Library category filter option."
+  },
+  "mk_editor_configure": {
+    "message": "Configure: $1",
+    "description": "Macro Key editor title. $1 is the Macro Key kind label.",
+    "placeholders": {
+      "kind": {
+        "content": "$1",
+        "example": "Combination / Hotkey"
+      }
+    }
+  },
+  "mk_editor_name": {
+    "message": "Name",
+    "description": "Macro Key editor name field label."
+  },
+  "mk_editor_key_repeat": {
+    "message": "Key to hold/repeat",
+    "description": "Macro Key editor continuous-key field label."
+  },
+  "mk_editor_key_chord": {
+    "message": "Key / chord",
+    "description": "Macro Key editor stroke field label."
+  },
+  "mk_editor_interval": {
+    "message": "Interval (ms)",
+    "description": "Macro Key editor repeat interval field label."
+  },
+  "mk_editor_sequence": {
+    "message": "Sequence",
+    "description": "Macro Key editor burst sequence field label."
+  },
+  "mk_editor_cycle_items": {
+    "message": "Cycle items",
+    "description": "Macro Key editor round-robin items field label."
+  },
+  "mk_editor_remove": {
+    "message": "Remove",
+    "description": "Tooltip for removing a Macro Key stroke."
+  },
+  "mk_editor_add_stroke": {
+    "message": "Add stroke",
+    "description": "Macro Key editor add-stroke button."
+  },
+  "mk_editor_gap": {
+    "message": "Gap between strokes (ms)",
+    "description": "Macro Key editor burst gap field label."
+  },
+  "mk_editor_mouse_button": {
+    "message": "Mouse button",
+    "description": "Macro Key editor mouse-button field label."
+  },
+  "mk_editor_mouse_left": {
+    "message": "left",
+    "description": "Macro Key editor left mouse button option."
+  },
+  "mk_editor_mouse_middle": {
+    "message": "middle",
+    "description": "Macro Key editor middle mouse button option."
+  },
+  "mk_editor_mouse_right": {
+    "message": "right",
+    "description": "Macro Key editor right mouse button option."
+  },
+  "mk_editor_save": {
+    "message": "Save",
+    "description": "Macro Key editor Save button."
+  },
+  "mk_editor_cancel": {
+    "message": "Cancel",
+    "description": "Macro Key editor Cancel button."
+  },
+  "mk_editor_delete": {
+    "message": "Delete",
+    "description": "Macro Key editor Delete button."
+  },
+  "mk_editor_repeat_preview": {
+    "message": "$1 every $2ms",
+    "description": "Macro Key continuous repeat preview. $1 is a key stroke and $2 is milliseconds.",
+    "placeholders": {
+      "stroke": {
+        "content": "$1",
+        "example": "W"
+      },
+      "interval": {
+        "content": "$2",
+        "example": "50"
+      }
+    }
+  },
+  "fn_TYPE_CHARACTERS_label": {
+    "message": "Type Characters",
+    "description": "Function Library label for TYPE_CHARACTERS."
+  },
+  "fn_TYPE_CHARACTERS_description": {
+    "message": "Type saved text into a field",
+    "description": "Function Library description for TYPE_CHARACTERS."
+  },
+  "fn_TYPE_CHARACTERS_details": {
+    "message": "Types configured text into the focused field each time the key is pressed. Create multiple Action Instances of this Function — each with its own text — and place them on different keys.",
+    "description": "Function Library details for TYPE_CHARACTERS."
+  },
+  "fn_param_text_to_type": {
+    "message": "Text to type",
+    "description": "Function parameter label for TYPE_CHARACTERS.text."
+  },
+  "fn_param_text_to_type_placeholder": {
+    "message": "e.g. your email address, a signature, a snippet…",
+    "description": "Function parameter placeholder for TYPE_CHARACTERS.text."
+  },
+  "fn_EXECUTE_JS_label": {
+    "message": "Execute JS",
+    "description": "Function Library label for EXECUTE_JS."
+  },
+  "fn_EXECUTE_JS_description": {
+    "message": "Run a pasted JS snippet",
+    "description": "Function Library description for EXECUTE_JS."
+  },
+  "fn_EXECUTE_JS_details": {
+    "message": "Runs a pasted JavaScript snippet in the content-script isolated world with the hovered clickable and other page state. Optional callbacks (popover, clipboard, notify) are injected only when checked on the Action Instance.",
+    "description": "Function Library details for EXECUTE_JS."
+  },
+  "fn_param_script": {
+    "message": "Script",
+    "description": "Function parameter label for EXECUTE_JS.script."
+  },
+  "fn_param_cb_show_popover": {
+    "message": "Show result in popover (showPopover)",
+    "description": "Function parameter label for EXECUTE_JS.cbShowPopover."
+  },
+  "fn_param_group_callbacks": {
+    "message": "Callbacks",
+    "description": "Function parameter group for EXECUTE_JS.cbShowPopover."
+  },
+  "fn_param_cb_copy": {
+    "message": "Copy to clipboard (copyToClipboard)",
+    "description": "Function parameter label for EXECUTE_JS.cbCopyToClipboard."
+  },
+  "fn_param_cb_notify": {
+    "message": "Flash notification (notify)",
+    "description": "Function parameter label for EXECUTE_JS.cbNotify."
+  },
+  "fn_GET_TEXT_AT_CURSOR_label": {
+    "message": "Get Text At Cursor",
+    "description": "Function Library label for GET_TEXT_AT_CURSOR."
+  },
+  "fn_GET_TEXT_AT_CURSOR_description": {
+    "message": "Copy text under the cursor",
+    "description": "Function Library description for GET_TEXT_AT_CURSOR."
+  },
+  "fn_GET_TEXT_AT_CURSOR_details": {
+    "message": "Reads the word, sentence, paragraph, or hyperlink under the cursor (choose granularity on the Action Instance) and copies it to the clipboard.",
+    "description": "Function Library details for GET_TEXT_AT_CURSOR."
+  },
+  "fn_param_granularity": {
+    "message": "Granularity",
+    "description": "Function parameter label for GET_TEXT_AT_CURSOR.granularity."
+  },
+  "fn_param_opt_word": {
+    "message": "Word",
+    "description": "Function parameter option for GET_TEXT_AT_CURSOR.granularity.word."
+  },
+  "fn_param_opt_sentence": {
+    "message": "Sentence",
+    "description": "Function parameter option for GET_TEXT_AT_CURSOR.granularity.sentence."
+  },
+  "fn_param_opt_paragraph": {
+    "message": "Paragraph",
+    "description": "Function parameter option for GET_TEXT_AT_CURSOR.granularity.paragraph."
+  },
+  "fn_param_opt_hyperlink": {
+    "message": "Hyperlink",
+    "description": "Function parameter option for GET_TEXT_AT_CURSOR.granularity.hyperlink."
+  },
+  "fn_GET_TEXT_RANGE_label": {
+    "message": "Get Text Range",
+    "description": "Function Library label for GET_TEXT_RANGE."
+  },
+  "fn_GET_TEXT_RANGE_description": {
+    "message": "Pass selection to the next Macro Step",
+    "description": "Function Library description for GET_TEXT_RANGE."
+  },
+  "fn_GET_TEXT_RANGE_details": {
+    "message": "Reads the current highlight/selection into the next Macro Step. A data primitive — add it as a Macro Step, not as a key action (use Copy for that).",
+    "description": "Function Library details for GET_TEXT_RANGE."
+  },
+  "fn_GET_MEDIA_AT_CURSOR_label": {
+    "message": "Get Media At Cursor",
+    "description": "Function Library label for GET_MEDIA_AT_CURSOR."
+  },
+  "fn_GET_MEDIA_AT_CURSOR_description": {
+    "message": "Copy media under the cursor",
+    "description": "Function Library description for GET_MEDIA_AT_CURSOR."
+  },
+  "fn_GET_MEDIA_AT_CURSOR_details": {
+    "message": "Reads the image, video, or audio under the cursor (choose kind on the Action Instance) and copies it — or its URL — to the clipboard.",
+    "description": "Function Library details for GET_MEDIA_AT_CURSOR."
+  },
+  "fn_param_media_kind": {
+    "message": "Media kind",
+    "description": "Function parameter label for GET_MEDIA_AT_CURSOR.kind."
+  },
+  "fn_param_opt_image": {
+    "message": "Image",
+    "description": "Function parameter option for GET_MEDIA_AT_CURSOR.kind.image."
+  },
+  "fn_param_opt_video": {
+    "message": "Video",
+    "description": "Function parameter option for GET_MEDIA_AT_CURSOR.kind.video."
+  },
+  "fn_param_opt_audio": {
+    "message": "Audio",
+    "description": "Function parameter option for GET_MEDIA_AT_CURSOR.kind.audio."
+  },
+  "fn_TRANSLATE_label": {
+    "message": "Translate",
+    "description": "Function Library label for TRANSLATE."
+  },
+  "fn_TRANSLATE_description": {
+    "message": "Translate selection or under-cursor text",
+    "description": "Function Library description for TRANSLATE."
+  },
+  "fn_TRANSLATE_details": {
+    "message": "Translates the highlighted text, or the word/sentence/paragraph under the cursor when nothing is highlighted. Configure target language and whether the result replaces page text or opens in a popover.",
+    "description": "Function Library details for TRANSLATE."
+  },
+  "fn_param_target_language": {
+    "message": "Target language",
+    "description": "Function parameter label for TRANSLATE.targetLanguage."
+  },
+  "fn_param_target_language_placeholder": {
+    "message": "e.g. English, Spanish, Japanese…",
+    "description": "Function parameter placeholder for TRANSLATE.targetLanguage."
+  },
+  "fn_param_instruction": {
+    "message": "Instruction",
+    "description": "Function parameter label for SEND_TEXT_TO_AI.prompt."
+  },
+  "fn_param_instruction_placeholder": {
+    "message": "e.g. Translate to English",
+    "description": "Function parameter placeholder for SEND_TEXT_TO_AI.prompt."
+  },
+  "fn_param_config": {
+    "message": "Configuration",
+    "description": "Function parameter label for a Macro Key configuration."
+  },
+  "fn_param_destination": {
+    "message": "Destination",
+    "description": "Function result destination parameter label."
+  },
+  "fn_dest_clipboard": {
+    "message": "Clipboard",
+    "description": "Function result destination option."
+  },
+  "fn_dest_popover": {
+    "message": "Popover",
+    "description": "Function result destination option."
+  },
+  "fn_dest_both": {
+    "message": "Clipboard and popover",
+    "description": "Function result destination option."
+  },
+  "fn_dest_modify_page": {
+    "message": "Modify page",
+    "description": "Function result destination option."
+  },
+  "fn_dest_media_library": {
+    "message": "Media Library",
+    "description": "Function result destination option."
+  },
+  "fn_dest_clipboard_and_media_library": {
+    "message": "Clipboard and Media Library",
+    "description": "Function result destination option."
+  },
+  "fn_dest_scrapbook": {
+    "message": "Scrapbook",
+    "description": "Function result destination option."
+  },
+  "fn_COLS_TOGGLE_label": {
+    "message": "Cols Toggle",
+    "description": "Built-in Function COLS_TOGGLE label."
+  },
+  "fn_COLS_TOGGLE_description": {
+    "message": "Multi-column layout under cursor",
+    "description": "Built-in Function COLS_TOGGLE short description."
+  },
+  "fn_COLS_TOGGLE_details": {
+    "message": "Columnizes the element under the cursor into a multi-column layout so dense text or lists are easier to scan. Toggle again to restore the original layout.",
+    "description": "Built-in Function COLS_TOGGLE inspector details."
+  },
+  "fn_SEND_TEXT_TO_AI_label": {
+    "message": "Send Text To AI",
+    "description": "Built-in Function SEND_TEXT_TO_AI label."
+  },
+  "fn_SEND_TEXT_TO_AI_description": {
+    "message": "Run AI on selected text",
+    "description": "Built-in Function SEND_TEXT_TO_AI short description."
+  },
+  "fn_SEND_TEXT_TO_AI_details": {
+    "message": "Sends the selected text to AI with a configurable instruction, then routes the result to the clipboard and/or a popover. Configure the prompt and destination on the action instance.",
+    "description": "Built-in Function SEND_TEXT_TO_AI inspector details."
+  },
+  "fn_unknown": {
+    "message": "Unknown Function: $1",
+    "description": "Error when a Function id is missing.",
+    "placeholders": {
+      "id": {
+        "content": "$1",
+        "example": "FOO"
+      }
+    }
+  },
+  "fn_reason_macro_step": {
+    "message": "\"$1\" is a Macro Step, not a key action.",
+    "description": "Cannot bind a Macro Step as a key action.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Show Popover"
+      }
+    }
+  },
+  "fn_reason_needs_chord": {
+    "message": "\"$1\" must run while a text field is focused, so it can only be bound to a modifier-key combination (e.g. Ctrl+Alt+…), not a plain key.",
+    "description": "worksWhileTyping chord requirement.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Type Characters"
+      }
+    }
+  },
+  "early_configured_function": {
+    "message": "Configured Function",
+    "description": "Fallback label for a configured Function before the main content script loads."
+  },
+  "fn_summary_empty": {
+    "message": "(empty)",
+    "description": "Function parameter summary when no value is configured."
+  },
+  "fn_summary_previous_step": {
+    "message": "(previous step)",
+    "description": "Function parameter summary when a Macro step uses its prior result."
+  },
+  "fn_summary_script": {
+    "message": "(script)",
+    "description": "Function parameter summary for a configured JavaScript script."
+  },
+  "mk_editor_key": {
+    "message": "Key",
+    "description": "Macro Key editor key field label and placeholder."
   }
 }

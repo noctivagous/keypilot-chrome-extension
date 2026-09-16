@@ -176,9 +176,9 @@ export const BUILTIN_KEYBOARD_LAYOUT_META = Object.freeze([
 export const BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META = Object.freeze([
   Object.freeze({
     id: /** @type {const} */ ('browsing'),
-    label: 'Browsing',
+    labelKey: 'layout_family_browsing_label',
     builtIn: true,
-    description: 'Full browsing controls (scroll, tabs, click, history, tools).',
+    descriptionKey: 'layout_family_browsing_description',
     variants: Object.freeze({
       right: /** @type {const} */ ('browsing-right'),
       left: /** @type {const} */ ('browsing-left')
@@ -186,9 +186,9 @@ export const BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META = Object.freeze([
   }),
   Object.freeze({
     id: /** @type {const} */ ('click-history'),
-    label: 'Navigation',
+    labelKey: 'layout_family_navigation_label',
     builtIn: true,
-    description: 'Click element, go back, and go forward.',
+    descriptionKey: 'layout_family_navigation_description',
     variants: Object.freeze({
       right: /** @type {const} */ ('click-history-right'),
       left: /** @type {const} */ ('click-history-left')
@@ -261,19 +261,6 @@ export function parseBuiltinFamilySelectValue(value) {
     return normalizeKeyboardLayoutFamilyId(v.slice('builtin:'.length));
   }
   return null;
-}
-
-/**
- * User-facing built-in label, e.g. "Built-in: Browsing".
- * @param {any} familyId
- * @returns {string}
- */
-export function formatBuiltinFamilyLabel(familyId) {
-  const id = normalizeKeyboardLayoutFamilyId(familyId);
-  const meta = BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META.find((m) => m && m.id === id);
-  if (meta?.label) return `Built-in: ${meta.label}`;
-  if (id === 'basic-navigation') return 'Built-in: Basic Navigation';
-  return 'Built-in: Browsing';
 }
 
 /**
@@ -840,18 +827,19 @@ export function nextUserCopyLayoutLabel(baseLabel, existingLayouts = []) {
  *
  * @param {{ id?: string, label?: string }[]} [userLayouts]
  * @returns {{
- *   builtin: { value: string, label: string, builtIn: true }[],
+ *   builtin: { value: string, labelKey: string, descriptionKey?: string, builtIn: true }[],
  *   custom: { value: string, label: string, builtIn: false }[]
  * }}
  */
 export function listLayoutPickerGroups(userLayouts = []) {
-  /** @type {{ value: string, label: string, builtIn: true }[]} */
+  /** @type {{ value: string, labelKey: string, descriptionKey?: string, builtIn: true }[]} */
   const builtin = [];
   for (const fam of BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META || []) {
-    if (!fam?.id) continue;
+    if (!fam?.id || !fam.labelKey) continue;
     builtin.push({
       value: builtinFamilySelectValue(fam.id),
-      label: String(fam.label || fam.id),
+      labelKey: fam.labelKey,
+      descriptionKey: fam.descriptionKey,
       builtIn: true
     });
   }

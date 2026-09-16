@@ -42,54 +42,57 @@
  * (`function` | `wait` | `gate` | `stop` | `runMacro`). See KEY_ACTION_ARCHITECTURE.md.
  */
 
+import { getMessage } from '../utils/i18n.js';
+
 /** Stable id prefix for user-configured macro keys. */
 export const MACRO_KEY_ID_PREFIX = 'macroKey:';
 
 /**
  * Catalog of built-in kinds shown in Keyboard Layout Config.
- * @type {ReadonlyArray<{ id: MacroKeyKind, label: string, description: string, details?: string, keyboardClass: string }>}
+ * Display copy is message keys resolved at the presentation boundary.
+ * @type {ReadonlyArray<{ id: MacroKeyKind, labelKey: string, descriptionKey: string, detailsKey?: string, keyboardClass: string }>}
  */
 export const MACRO_KEY_KIND_DEFS = Object.freeze([
   Object.freeze({
     id: /** @type {const} */ ('hotkey'),
-    label: 'Combination / Hotkey',
-    description: 'Send a modifier chord',
-    details: 'One key sends a modifier chord such as Ctrl+C, Win+R, or Ctrl+Shift+Esc. Configure the chord on the Action Instance.',
+    labelKey: 'mk_hotkey_label',
+    descriptionKey: 'mk_hotkey_description',
+    detailsKey: 'mk_hotkey_details',
     keyboardClass: 'key-orange'
   }),
   Object.freeze({
     id: /** @type {const} */ ('burst'),
-    label: 'Burst Keys',
-    description: 'Type a short key sequence',
-    details: 'One press types a short sequence of keystrokes (e.g. a→b→c or Ctrl+C → Ctrl+V → Enter). Configure the steps on the Action Instance.',
+    labelKey: 'mk_burst_label',
+    descriptionKey: 'mk_burst_description',
+    detailsKey: 'mk_burst_details',
     keyboardClass: 'key-purple'
   }),
   Object.freeze({
     id: /** @type {const} */ ('roundRobin'),
-    label: 'Round Robin',
-    description: 'Cycle through stroke options',
-    details: 'Each press advances a cycle of strokes (A, then B, then C, then A…). Useful when one key should rotate through several outputs.',
+    labelKey: 'mk_roundRobin_label',
+    descriptionKey: 'mk_roundRobin_description',
+    detailsKey: 'mk_roundRobin_details',
     keyboardClass: 'key-scroll'
   }),
   Object.freeze({
     id: /** @type {const} */ ('continuous'),
-    label: 'Continue / Continuous',
-    description: 'Repeat a stroke until stopped',
-    details: 'Press to start sending a stroke repeatedly; press again to stop. Configure the repeated stroke on the Action Instance.',
+    labelKey: 'mk_continuous_label',
+    descriptionKey: 'mk_continuous_description',
+    detailsKey: 'mk_continuous_details',
     keyboardClass: 'key-highlight'
   }),
   Object.freeze({
     id: /** @type {const} */ ('mouse'),
-    label: 'Synthetic Mouse',
-    description: 'Click under the cursor',
-    details: 'Synthesizes a left, middle, or right click under the cursor without moving your physical mouse buttons. Choose the button on the Action Instance.',
+    labelKey: 'mk_mouse_label',
+    descriptionKey: 'mk_mouse_description',
+    detailsKey: 'mk_mouse_details',
     keyboardClass: 'key-activate'
   }),
   Object.freeze({
     id: /** @type {const} */ ('key'),
-    label: 'Normal Key',
-    description: 'Remap this slot to another key',
-    details: 'Remaps this layout slot so pressing it sends a different key (e.g. F sends 1). Configure the target key on the Action Instance.',
+    labelKey: 'mk_key_label',
+    descriptionKey: 'mk_key_description',
+    detailsKey: 'mk_key_details',
     keyboardClass: 'key-gray'
   })
 ]);
@@ -137,7 +140,7 @@ export function isKeyStrokeValid(stroke) {
  * @returns {string}
  */
 export function formatKeyStroke(stroke) {
-  if (!isKeyStrokeValid(stroke)) return '(empty)';
+  if (!isKeyStrokeValid(stroke)) return getMessage('mk_empty_stroke');
   const parts = [];
   if (stroke.ctrl) parts.push('Ctrl');
   if (stroke.alt) parts.push('Alt');
@@ -259,7 +262,7 @@ export function summarizeMacroKey(mk) {
     case 'continuous':
       return `${formatKeyStroke(cfg.stroke)} @ ${cfg.intervalMs}ms`;
     case 'mouse':
-      return `${cfg.button} click`;
+      return getMessage('mk_mouse_click', String(cfg.button));
     default:
       return String(mk.kind);
   }
@@ -272,7 +275,7 @@ export function summarizeMacroKey(mk) {
  */
 export function defaultMacroKeyLabel(kind) {
   const def = MACRO_KEY_KIND_DEFS.find((d) => d.id === kind);
-  return def ? def.label : 'Macro Key';
+  return def ? getMessage(def.labelKey) : getMessage('mk_default_label');
 }
 
 /**
@@ -291,9 +294,22 @@ export function macroKeyKeyboardClass(kind) {
  * `legacyMacroKeyKind` Function — not a separate step kind.
  */
 export const MACRO_BUILDER_STEP_TYPES = Object.freeze([
-  Object.freeze({ id: 'function', label: 'Function', description: 'Run a Function Library entry (including Macro Keys).' }),
-  Object.freeze({ id: 'wait', label: 'Wait', description: 'Pause for N milliseconds.' }),
-  Object.freeze({ id: 'gate', label: 'Gate', description: 'If condition fails, skip following steps.' }),
-  Object.freeze({ id: 'stop', label: 'Stop', description: 'End the macro immediately.' }),
-  Object.freeze({ id: 'runMacro', label: 'Run Macro', description: 'Call another macro (cycle-guarded).' })
+  Object.freeze({ id: 'function', labelKey: 'mk_step_function_label', descriptionKey: 'mk_step_function_description' }),
+  Object.freeze({ id: 'wait', labelKey: 'mk_step_wait_label', descriptionKey: 'mk_step_wait_description' }),
+  Object.freeze({ id: 'gate', labelKey: 'mk_step_gate_label', descriptionKey: 'mk_step_gate_description' }),
+  Object.freeze({ id: 'stop', labelKey: 'mk_step_stop_label', descriptionKey: 'mk_step_stop_description' }),
+  Object.freeze({ id: 'runMacro', labelKey: 'mk_step_runMacro_label', descriptionKey: 'mk_step_runMacro_description' })
 ]);
+
+/**
+ * @param {{ id: string, labelKey?: string, descriptionKey?: string }|null|undefined} def
+ * @returns {{ id: string, label: string, description: string }}
+ */
+export function localizeMacroCatalogEntry(def) {
+  if (!def?.id) return { id: '', label: '', description: '' };
+  return {
+    id: def.id,
+    label: def.labelKey ? getMessage(def.labelKey) : '',
+    description: def.descriptionKey ? getMessage(def.descriptionKey) : ''
+  };
+}

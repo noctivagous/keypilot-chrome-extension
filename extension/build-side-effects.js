@@ -418,8 +418,8 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
     if (builtinLayoutIds.length === 0) builtinLayoutIds.push(DEFAULT_KEYBOARD_LAYOUT_ID);
 
     const earlyLayoutFamilyOptions = (BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META || [])
-      .filter((m) => m && m.id)
-      .map((m) => [`builtin:${m.id}`, m.label || m.id]);
+      .filter((m) => m && m.id && m.labelKey)
+      .map((m) => [`builtin:${m.id}`, m.labelKey]);
 
     const keyboardLayoutsById = {};
     const earlyKeybindingsById = {};
@@ -456,7 +456,7 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
     for (const [id, def] of Object.entries(FUNCTION_LIBRARY || {})) {
       if (!id || !def || typeof def !== 'object') continue;
       earlyFunctionPaint[id] = {
-        label: String(def.label || id),
+        labelKey: String(def.labelKey || ''),
         keyboardClass: def.keyboardClass ? String(def.keyboardClass) : null
       };
     }

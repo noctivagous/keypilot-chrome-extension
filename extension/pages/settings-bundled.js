@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-16T05:52:34.435Z
+ * Generated on 2026-09-16T06:28:00.946Z
  */
 
 
@@ -102,9 +102,9 @@ var BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META = Object.freeze([
       /** @type {const} */
       "browsing"
     ),
-    label: "Browsing",
+    labelKey: "layout_family_browsing_label",
     builtIn: true,
-    description: "Full browsing controls (scroll, tabs, click, history, tools).",
+    descriptionKey: "layout_family_browsing_description",
     variants: Object.freeze({
       right: (
         /** @type {const} */
@@ -121,9 +121,9 @@ var BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META = Object.freeze([
       /** @type {const} */
       "click-history"
     ),
-    label: "Navigation",
+    labelKey: "layout_family_navigation_label",
     builtIn: true,
-    description: "Click element, go back, and go forward.",
+    descriptionKey: "layout_family_navigation_description",
     variants: Object.freeze({
       right: (
         /** @type {const} */
@@ -4839,10 +4839,10 @@ async function render() {
     keyboardLayoutFamilySelect.innerHTML = "";
     const items = Array.isArray(BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META) ? BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META : [];
     for (const m of items) {
-      if (!m || !m.id) continue;
+      if (!m || !m.id || !m.labelKey) continue;
       const opt = document.createElement("option");
       opt.value = String(m.id);
-      opt.textContent = String(m.label || m.id);
+      opt.textContent = getMessage(m.labelKey);
       keyboardLayoutFamilySelect.appendChild(opt);
     }
   };

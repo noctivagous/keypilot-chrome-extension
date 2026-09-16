@@ -20,7 +20,6 @@ import {
   BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META,
   builtinFamilySelectValue,
   DEFAULT_KEYBOARD_LAYOUT_ID,
-  formatBuiltinFamilyLabel,
   inferFamilyAndHandednessFromLayoutId,
   KEYBINDING_ACTION_DEFS,
   BUILD_ENABLE_MACRO_BUILDER,
@@ -55,16 +54,22 @@ import {
   upsertUserMacro
 } from '../modules/keyboard-layout-store.js';
 import { getStockMacroById, isStockMacroId, listStockMacros } from '../config/stock-macros.js';
-import { MACRO_KEY_KIND_DEFS, macroKeyKeyboardClass, summarizeMacroKey } from '../config/macro-keys.js';
+import {
+  MACRO_KEY_KIND_DEFS,
+  localizeMacroCatalogEntry,
+  macroKeyKeyboardClass,
+  summarizeMacroKey
+} from '../config/macro-keys.js';
 import {
   FIXED_KEY_FUNCTION_IDS,
   FUNCTION_CATEGORY_ORDER,
   FUNCTION_ID_BY_MACRO_KEY_KIND,
-  LIBRARY_SECTION_DESCRIPTIONS,
   getFunctionCategory,
+  getFunctionCategoryLabel,
   getFunctionCategoryDescription,
   getFunctionDef,
   getFunctionDocsUrl,
+  getLibrarySectionDescription,
   isFunctionInstantiable,
   functionAssignableToKey,
   listFunctionDefs,
@@ -87,6 +92,7 @@ import { actionHasDestination, actionHasParameters, getSharedKeyActionConfigPane
 import { inspectKeyActionFromAnchor } from './keybindings-ui.js';
 import { createMacroKeyEditor } from './macro-key-editor.js';
 import { enhanceNativeSelect } from './select-menu.js';
+import { getMessage } from '../utils/i18n.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
 import {
   closestComposed,
@@ -4998,7 +5004,13 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'kp-mk-kind-btn';
-      btn.innerHTML = `<strong>${def.label}</strong><span>${def.description}</span>`;
+      const localized = localizeMacroCatalogEntry(def);
+      const strong = document.createElement('strong');
+      strong.textContent = localized.label;
+      const description = document.createElement('span');
+      description.textContent = localized.description;
+      btn.appendChild(strong);
+      btn.appendChild(description);
       btn.addEventListener('click', () => {
         void this._createAndEditMacroKey(def.id);
       }, true);
@@ -5273,7 +5285,10 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       def?.details || actionDef?.details || binding?.details || ''
     );
     host.appendChild(this._dockRows([
-      ['Category', def ? (getFunctionCategory(def.id) || 'Other') : ''],
+      [
+        'Category',
+        def ? (getFunctionCategoryLabel(getFunctionCategory(def.id) || 'Other') || '') : ''
+      ],
       ['About', about],
       ['Description', details],
       [def?.worksWhileTyping ? 'Note' : '', def?.worksWhileTyping ? 'Requires a modifier combo' : '']
@@ -6538,9 +6553,14 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       const familyId = normalizeKeyboardLayoutFamilyId(
         this._kp?._settings?.keyboardLayoutFamilyId || inferred.familyId
       );
-      return formatBuiltinFamilyLabel(familyId);
+      const meta = (BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META || []).find((m) => m && m.id === familyId);
+      return getMessage(
+        familyId === 'basic-navigation'
+          ? 'layout_family_basic_navigation_picker'
+          : (meta?.labelKey || 'layout_family_browsing_picker')
+      );
     } catch { /* ignore */ }
-    return 'Built-in: Browsing';
+    return getMessage('layout_family_browsing_picker');
   }
 
   /** @param {boolean} open */
@@ -6667,7 +6687,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
         btn.setAttribute('aria-selected', opt.value === selected ? 'true' : 'false');
         const name = document.createElement('span');
         name.className = 'kp-cfg-combo-option-name';
-        name.textContent = opt.label;
+        name.textContent = opt.labelKey ? getMessage(opt.labelKey) : opt.label;
         btn.appendChild(name);
         if (opt.value === currentKey) {
           const chip = document.createElement('span');
@@ -6680,7 +6700,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
         list.appendChild(li);
       }
     };
-    appendGroup('Built-In', groups.builtin);
+    appendGroup(getMessage('layout_picker_group_builtin'), groups.builtin);
     appendGroup('Custom', groups.custom);
 
     if (this.shadowRoot?.activeElement !== input) {
@@ -7039,7 +7059,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     select.replaceChildren();
     const all = document.createElement('option');
     all.value = '';
-    all.textContent = 'All categories';
+    all.textContent = getMessage('fn_cat_all');
     select.appendChild(all);
     const cats = new Set();
     for (const def of listFunctionDefs()) {
@@ -7054,7 +7074,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     for (const cat of sorted) {
       const opt = document.createElement('option');
       opt.value = cat;
-      opt.textContent = cat;
+      opt.textContent = getFunctionCategoryLabel(cat) || cat;
       select.appendChild(opt);
     }
     select.value = this._libFunctionCategory || '';
@@ -7367,7 +7387,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       section.dataset.kpSection = `fn-${String(cat).toLowerCase().replace(/\s+/g, '-')}`;
       const title = document.createElement('div');
       title.className = 'kp-cfg-category-title';
-      title.textContent = cat;
+      title.textContent = getFunctionCategoryLabel(cat) || cat;
       section.appendChild(title);
       const catDesc = this._createSectionDescriptionFieldset(getFunctionCategoryDescription(cat));
       if (catDesc) section.appendChild(catDesc);
@@ -7504,7 +7524,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       newMacroBtn.addEventListener('click', () => this._startNewMacroDraft(), true);
       macrosTitle.appendChild(newMacroBtn);
       macrosSection.appendChild(macrosTitle);
-      const macrosDesc = this._createSectionDescriptionFieldset(LIBRARY_SECTION_DESCRIPTIONS.macros);
+      const macrosDesc = this._createSectionDescriptionFieldset(getLibrarySectionDescription('macros'));
       if (macrosDesc) macrosSection.appendChild(macrosDesc);
 
       const subgroups = document.createElement('div');
@@ -7595,7 +7615,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       title.className = 'kp-cfg-category-title';
       title.textContent = 'Configured Macro Keys';
       section.appendChild(title);
-      const mkDesc = this._createSectionDescriptionFieldset(LIBRARY_SECTION_DESCRIPTIONS.macroKeys);
+      const mkDesc = this._createSectionDescriptionFieldset(getLibrarySectionDescription('macroKeys'));
       if (mkDesc) section.appendChild(mkDesc);
       if (!this._macroBuilderEnabled()) {
         const createHost = document.createElement('div');
@@ -8482,9 +8502,13 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       const inferred = inferFamilyAndHandednessFromLayoutId(builtinLayoutId || this._st.builtinLayoutId);
       const familyId = normalizeKeyboardLayoutFamilyId(inferred.familyId || 'browsing');
       const meta = (BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META || []).find((m) => m && m.id === familyId);
-      return String(meta?.label || familyId || 'Layout');
+      return getMessage(
+        familyId === 'basic-navigation'
+          ? 'layout_family_basic_navigation_label'
+          : (meta?.labelKey || 'layout_family_browsing_label')
+      );
     } catch {
-      return 'Layout';
+      return getMessage('layout_family_browsing_label');
     }
   }
 
