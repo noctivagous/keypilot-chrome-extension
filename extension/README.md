@@ -87,6 +87,7 @@ keypilot-chrome-extension/
 ├── package.json              # Build/audit scripts and dependencies
 ├── refs/                     # Internal architecture and store-checklists
 ├── scripts/                  # Docs screenshot capture, etc.
+├── online-stores/            # Store-listing screenshot sources (not packed)
 └── extension/                # Load this folder as the unpacked extension
     ├── manifest.json
     ├── background.js         # MV3 service worker (ES module)

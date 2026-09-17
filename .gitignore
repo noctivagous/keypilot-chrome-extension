@@ -65,6 +65,15 @@ test-results/
 playwright-report/
 blob-report/
 
+# Store-listing composites. Captures live in online-stores/<store>/captures/;
+# SVG templates stay bitmap-free.
+online-stores/generated/**/*.png
+online-stores/generated/**/*.jpg
+online-stores/generated/**/*.jpeg
+online-stores/**/templates/**/*.png
+online-stores/**/templates/**/*.jpg
+online-stores/**/templates/**/*.jpeg
+
 
 
 

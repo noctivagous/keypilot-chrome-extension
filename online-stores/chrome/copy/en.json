@@ -1,0 +1,28 @@
+{
+  "locale": "en",
+  "slots": {
+    "key-click-browsing": {
+      "headline": "Browse the web with key-clicks.",
+      "callouts": [
+        "Steer the cursor with the mouse",
+        "Hover over a link and press F to click."
+      ]
+    },
+    "keyboard-map": {
+      "headline": "Keep common actions under your fingertips.",
+      "callouts": [
+        "Click links",
+        "Navigate tabs and history",
+        "Search, copy, and inspect."
+      ]
+    },
+    "customize-workflow": {
+      "headline": "Build a keyboard layout that fits your workflow.",
+      "callouts": [
+        "Choose a layout",
+        "Assign functions",
+        "Create macros."
+      ]
+    }
+  }
+}

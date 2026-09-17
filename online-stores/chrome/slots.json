@@ -1,0 +1,76 @@
+{
+  "store": "chrome",
+  "listingDocs": "https://developer.chrome.com/docs/webstore/cws-dashboard-listing",
+  "packageNote": "Chrome does not read store screenshots from the extension package. Upload generated PNGs in the Developer Dashboard per locale.",
+  "screenshot": {
+    "width": 1280,
+    "height": 800,
+    "maxPerLocale": 5,
+    "cornerStyle": "square",
+    "fullBleed": true
+  },
+  "paths": {
+    "copy": "chrome/copy",
+    "templates": "chrome/templates",
+    "captures": "chrome/captures",
+    "generated": "generated/chrome"
+  },
+  "excludeLocales": ["en_GB"],
+  "initialLocales": ["en"],
+  "globalPromo": [
+    {
+      "id": "small",
+      "localized": false,
+      "width": 440,
+      "height": 280,
+      "template": "chrome/templates/promo/small.svg",
+      "outputFile": "generated/chrome/promo/small.png"
+    },
+    {
+      "id": "marquee",
+      "localized": false,
+      "width": 1400,
+      "height": 560,
+      "template": "chrome/templates/promo/marquee.svg",
+      "outputFile": "generated/chrome/promo/marquee.png"
+    }
+  ],
+  "slots": [
+    {
+      "id": "key-click-browsing",
+      "order": 1,
+      "kind": "screenshot",
+      "localized": true,
+      "width": 1280,
+      "height": 800,
+      "copyKey": "key-click-browsing",
+      "template": "chrome/templates/screenshots/key-click-browsing.svg",
+      "captureFile": "key-click-browsing.png",
+      "outputFile": "01-key-click-browsing.png"
+    },
+    {
+      "id": "keyboard-map",
+      "order": 2,
+      "kind": "screenshot",
+      "localized": true,
+      "width": 1280,
+      "height": 800,
+      "copyKey": "keyboard-map",
+      "template": "chrome/templates/screenshots/keyboard-map.svg",
+      "captureFile": "keyboard-map.png",
+      "outputFile": "02-keyboard-map.png"
+    },
+    {
+      "id": "customize-workflow",
+      "order": 3,
+      "kind": "screenshot",
+      "localized": true,
+      "width": 1280,
+      "height": 800,
+      "copyKey": "customize-workflow",
+      "template": "chrome/templates/screenshots/customize-workflow.svg",
+      "captureFile": "customize-workflow.png",
+      "outputFile": "03-customize-workflow.png"
+    }
+  ]
+}

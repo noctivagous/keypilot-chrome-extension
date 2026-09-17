@@ -255,10 +255,10 @@ Use actual localized KeyPilot UI captures. SVG templates add only the localized
 headline and two or three short callouts; do not recreate the extension UI in
 SVG or place localized annotations over a capture from another locale.
 
-1. **Keyboard-first browsing** — first screenshot, shown when the listing opens.
+1. **Key-click browsing** — first screenshot, shown when the listing opens.
    Capture a normal web page with a focused-element outline, Keyboard Reference,
-   and Control Strip. Headline: “Browse the web without reaching for the mouse.”
-   Callouts: “Follow visible key hints”; “Open links, switch tabs, scroll.”
+   and Control Strip. Headline: “Browse the web with key-clicks.” Callouts:
+   “Steer the cursor with the mouse”; “Hover over a link and press `F` to click.”
 2. **Navigate and act from one keyboard map** — capture Keyboard Reference with
    a selected action/popover and the page result visible behind it. Headline:
    “Keep common actions under your fingertips.” Callouts: “Click links”;
@@ -280,7 +280,7 @@ ranking, or endorsement claims.
 
 ### Tasks
 
-- [ ] Define the `online-stores/` source layout: deterministic locale-specific GUI captures, SVG annotation templates, locale copy data, generated PNG output, and a manifest of Chrome screenshot slots. Keep generated bitmaps out of the source-template directory.
+- [x] Define the `online-stores/` source layout: deterministic locale-specific GUI captures, SVG annotation templates, locale copy data, generated PNG output, and a manifest of Chrome screenshot slots. Keep generated bitmaps out of the source-template directory. See `online-stores/README.md` and `online-stores/chrome/slots.json`.
 - [ ] Define fixed browser viewport, extension state, fixture page, and capture selectors for each Chrome screenshot slot. Capture the real KeyPilot UI in the target locale; do not use an English GUI capture beneath translated annotations.
 - [ ] Create SVG annotation templates for the selected Chrome listing slots. Each template embeds the matching real GUI capture, is exactly `1280×800`, and substitutes only product-owned headline, caption, and callout copy. Preserve product names, shortcut glyphs, and canonical UI state.
 - [ ] Define a global English small promo SVG (`440×280`) and marquee SVG (`1400×560`) separately from localized screenshot templates. Render one global bitmap for each; never emit per-locale variants for them.
@@ -385,5 +385,6 @@ ranking, or endorsement claims.
 - [Chrome: Internationalize the interface](https://developer.chrome.com/docs/extensions/develop/ui/i18n)
 - [Chrome: `chrome.i18n` API and message fallback](https://developer.chrome.com/docs/extensions/reference/api/i18n)
 - `refs/EDGE_BUILD_DIRECTORY.md` — localized manifest metadata and Edge Partner Center discovery note
+- `online-stores/README.md` — Chrome listing screenshot source layout
 - `extension/manifest.json` — current manifest metadata
 - `scripts/package-channel.mjs` — staged manifest description replacement
