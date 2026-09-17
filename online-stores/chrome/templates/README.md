@@ -15,7 +15,10 @@ Screenshot templates named in `slots.json`:
 - `screenshots/keyboard-map.svg`
 - `screenshots/customize-workflow.svg`
 
-Each screenshot template will embed the matching locale capture from
-`chrome/captures/<locale>/` and substitute only product-owned headline and
-callout copy from `chrome/copy/<locale>.json`. Promo templates are
-English-only and are not emitted per locale.
+Each screenshot template embeds `{{captureHref}}` (the matching locale
+capture) and substitutes `{{headline}}` plus `{{callout.0}}`…
+from `chrome/copy/<locale>.json`. Product names and shortcut glyphs in the
+underlying capture stay as captured.
+
+Promo templates are English-only, contain no `{{placeholders}}`, and are
+not emitted per locale.

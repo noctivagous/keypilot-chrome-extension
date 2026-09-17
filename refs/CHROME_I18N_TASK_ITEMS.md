@@ -281,14 +281,14 @@ ranking, or endorsement claims.
 ### Tasks
 
 - [x] Define the `online-stores/` source layout: deterministic locale-specific GUI captures, SVG annotation templates, locale copy data, generated PNG output, and a manifest of Chrome screenshot slots. Keep generated bitmaps out of the source-template directory. See `online-stores/README.md` and `online-stores/chrome/slots.json`.
-- [ ] Define fixed browser viewport, extension state, fixture page, and capture selectors for each Chrome screenshot slot. Capture the real KeyPilot UI in the target locale; do not use an English GUI capture beneath translated annotations.
-- [ ] Create SVG annotation templates for the selected Chrome listing slots. Each template embeds the matching real GUI capture, is exactly `1280×800`, and substitutes only product-owned headline, caption, and callout copy. Preserve product names, shortcut glyphs, and canonical UI state.
-- [ ] Define a global English small promo SVG (`440×280`) and marquee SVG (`1400×560`) separately from localized screenshot templates. Render one global bitmap for each; never emit per-locale variants for them.
-- [ ] Add an automated pipeline that discovers shipped extension locale catalogs, captures each defined UI state in that locale, resolves locale-specific annotation copy, composites captures into SVG templates, and emits deterministic PNGs under `online-stores/generated/chrome/<locale>/`.
-- [ ] Make English the initial generated locale. When a locale is shipped, require complete store-copy data before its localized screenshots are generated; do not generate marked test-locale (`en_GB`) assets.
-- [ ] Validate every generated Chrome screenshot's dimensions, file type, full-bleed canvas, slot count, capture locale, and annotation locale. Fail when an SVG placeholder is unresolved, a locale lacks required copy, the capture locale does not match its annotation locale, or text exceeds its defined safe region.
-- [ ] Document the manual Chrome Developer Dashboard procedure: choose the matching locale, upload only its screenshot PNGs under **Localized screenshots**, and retain global promo tiles separately.
-- [ ] Add a release checklist that records the generated asset revision, dashboard locale, uploaded screenshot filenames, and reviewer for each shipped locale.
+- [x] Define fixed browser viewport, extension state, fixture page, and capture selectors for each Chrome screenshot slot. Capture the real KeyPilot UI in the target locale; do not use an English GUI capture beneath translated annotations.
+- [x] Create SVG annotation templates for the selected Chrome listing slots. Each template embeds the matching real GUI capture, is exactly `1280×800`, and substitutes only product-owned headline, caption, and callout copy. Preserve product names, shortcut glyphs, and canonical UI state.
+- [x] Define a global English small promo SVG (`440×280`) and marquee SVG (`1400×560`) separately from localized screenshot templates. Render one global bitmap for each; never emit per-locale variants for them.
+- [x] Add an automated pipeline that discovers shipped extension locale catalogs, captures each defined UI state in that locale, resolves locale-specific annotation copy, composites captures into SVG templates, and emits deterministic PNGs under `online-stores/generated/chrome/<locale>/`.
+- [x] Make English the initial generated locale. When a locale is shipped, require complete store-copy data before its localized screenshots are generated; do not generate marked test-locale (`en_GB`) assets.
+- [x] Validate every generated Chrome screenshot's dimensions, file type, full-bleed canvas, slot count, capture locale, and annotation locale. Fail when an SVG placeholder is unresolved, a locale lacks required copy, the capture locale does not match its annotation locale, or text exceeds its defined safe region.
+- [x] Document the manual Chrome Developer Dashboard procedure: choose the matching locale, upload only its screenshot PNGs under **Localized screenshots**, and retain global promo tiles separately.
+- [x] Add a release checklist that records the generated asset revision, dashboard locale, uploaded screenshot filenames, and reviewer for each shipped locale.
 
 ### Acceptance criteria
 
@@ -300,24 +300,30 @@ ranking, or endorsement claims.
 
 ### Validation
 
-- [ ] Run the generator for English and verify every output dimension and filename against the Chrome slot manifest.
-- [ ] Confirm the generator excludes test-only locales and fails for an incomplete shipped locale.
+- [x] Run the generator for English and verify every output dimension and filename against the Chrome slot manifest.
+- [x] Confirm the generator excludes test-only locales and fails for an incomplete shipped locale.
 - [ ] Visually review generated images at full size and Chrome's reduced listing scale.
 - [ ] Perform one manual Chrome Dashboard localized-screenshot upload and record the selected locale and uploaded files.
 
+Phase 7 notes (2026-09-16): generator coverage is in `test/store-screenshots.test.js` (English output size/filenames, `en_GB` exclusion, incomplete shipped locale). Live English GUI captures and dashboard upload remain manual.
+
 ## Phase 8 — Spanish translation, RTL readiness, and release QA
 
-**Outcome:** Spanish (`es`) is the first releasable non-English locale and the localization process is repeatable.
+Reference: https://developer.chrome.com/docs/extensions/reference/api/i18n
+
+**Outcome:** Spanish (`es`) and `es_419` are the first releasable non-English locales and the localization process is repeatable.
 
 ### Tasks
 
 - [ ] Create `_locales/es/messages.json` by copying the complete English catalog, then translate and review terminology, placeholders, length, and accelerator/shortcut wording. Do not leave `[ES]` or other test markers in the shipped Spanish catalog; if a marked catalog is needed to prove locale switching, keep it under `test/fixtures/locales/`.
-- [ ] Use generic Spanish (`es`) for the initial release. Add regional catalogs such as `es_419`, `es_ES`, or `es_MX` only when their wording needs to differ.
+- [x] Use generic Spanish `es` and also `es_419` for the initial release.
 - [ ] Translate the Phase 3–7 surfaces committed for Spanish, including the Spanish docs tree, onboarding model, and localized store screenshots.
-- [ ] Add CI or a release check that compares non-English catalog keys to the English source catalog and reports missing/extra keys.
+- [x] Add CI or a release check that compares non-English catalog keys to the English source catalog and reports missing/extra keys. (`npm run check:locales`, included in `npm test`)
 - [ ] Test locale fallback (`es_MX` or another regional Spanish locale → `es` → `en`) in a separate Chrome profile or with Chrome's language launch configuration.
 - [ ] If shipping an RTL locale, set directionality from Chrome's bidi locale messages, audit logical CSS properties, icon direction, focus order, and overlay placement.
 - [ ] Verify Chrome Web Store metadata for every released locale.
+
+Draft note (2026-09-17): `extension/_locales/es/messages.json` and `es_419/messages.json` contain a machine-generated, placeholder-validated Spanish draft. A bilingual review of terminology, shortcut wording, and UI length remains required before release.
 
 ### Acceptance criteria
 
@@ -385,6 +391,7 @@ ranking, or endorsement claims.
 - [Chrome: Internationalize the interface](https://developer.chrome.com/docs/extensions/develop/ui/i18n)
 - [Chrome: `chrome.i18n` API and message fallback](https://developer.chrome.com/docs/extensions/reference/api/i18n)
 - `refs/EDGE_BUILD_DIRECTORY.md` — localized manifest metadata and Edge Partner Center discovery note
-- `online-stores/README.md` — Chrome listing screenshot source layout
+- `online-stores/README.md` — Chrome listing screenshot source layout, dashboard upload, and release checklist
+- `scripts/store-screenshots/README.md` — capture playbook and generator
 - `extension/manifest.json` — current manifest metadata
 - `scripts/package-channel.mjs` — staged manifest description replacement

@@ -16,7 +16,10 @@
     "package:firefox": "node scripts/package-firefox.mjs",
     "package:firefox-source": "node scripts/package-source.mjs",
     "docs:screenshots": "node scripts/docs-screenshots/capture.mjs",
-    "test": "node --test --test-concurrency=1 test/*.test.js",
+    "store:screenshots": "node scripts/store-screenshots/generate.mjs",
+    "store:screenshots:serve": "node scripts/store-screenshots/capture.mjs",
+    "check:locales": "node scripts/check-locales.mjs",
+    "test": "npm run check:locales && node --test --test-concurrency=1 test/*.test.js",
     "test:settings": "node --test --test-concurrency=1 test/settings-manager.test.js",
     "test:storage": "node --test --test-concurrency=1 test/storage.test.js",
     "audit": "npm audit --omit=dev",
@@ -28,6 +31,7 @@
     "terser": "^5.36.0"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "archiver": "^8.0.0",
     "esbuild": "^0.28.2"
   }

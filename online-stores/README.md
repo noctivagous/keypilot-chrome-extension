@@ -17,7 +17,8 @@ online-stores/
 │   ├── templates/              # SVG sources only (no generated bitmaps)
 │   │   ├── screenshots/        # 1280×800 annotated screenshot templates
 │   │   └── promo/              # Global English small + marquee tiles
-│   └── captures/<locale>/      # Deterministic GUI captures of KeyPilot in that locale
+│   ├── captures/<locale>/      # Deterministic GUI captures of KeyPilot in that locale
+│   └── RELEASE-CHECKLIST.md    # Per-locale dashboard upload record
 ├── firefox/                    # Reserved for AMO listing sources
 └── generated/                  # Pipeline output only; do not treat as source
     └── chrome/
@@ -29,7 +30,7 @@ online-stores/
 
 | Path | Role |
 |---|---|
-| `chrome/slots.json` | Manifest of listing slots: order, size, capture file, SVG template, copy key, output filename. |
+| `chrome/slots.json` | Manifest of listing slots: order, size, capture recipe, SVG template, copy key, output filename. |
 | `chrome/copy/<locale>.json` | Product-owned annotation strings for that locale. Required before generating that locale. |
 | `chrome/templates/` | Editable SVG templates. Embed the matching locale capture; substitute only headline, caption, and callouts. |
 | `chrome/captures/<locale>/` | Real KeyPilot UI captures for that locale. Never reuse an English capture under translated annotations. |
@@ -49,6 +50,12 @@ defined in `chrome/slots.json`:
 2. `keyboard-map` — Keyboard Reference with a selected action
 3. `customize-workflow` — Keyboard Layout Editor or Function Library
 
+Every slot captures a **1280×800** viewport of the store fixture page
+(`scripts/store-screenshots/fixture.html`) with KeyPilot enabled. Capture
+selectors, hover target, pinned action, and layout-editor tab are on each
+slot’s `capture` object. Generate with `npm run store:screenshots`; capture
+with `npm run store:screenshots:serve` (see `scripts/store-screenshots/README.md`).
+
 Global promo tiles (`440×280` small, `1400×560` marquee) are English-only.
 Chrome does not accept localized promo variants; emit them once under
 `generated/chrome/promo/`.
@@ -63,6 +70,25 @@ test catalogs such as `en_GB`. A shipped locale must have complete copy in
 ## Capture vs annotation locale
 
 Each localized screenshot must show the same locale in the captured UI and
-in the SVG annotations. The later capture and generator tasks fill viewport,
-fixture, and selector details on each slot; this layout only names the
-files and directories those tasks write into.
+in the SVG annotations. `captures/<locale>/meta.json` records the capture
+locale; the generator fails if it does not match the copy locale.
+
+## Chrome Developer Dashboard upload
+
+Localized screenshots are a dashboard-only asset. Uploading a new package
+does not change listing screenshots.
+
+1. Upload the extension package so Partner/Chrome listing can see each
+   `_locales/<locale>` catalog.
+2. Open the item’s **Store listing** tab
+   ([Chrome listing fields](https://developer.chrome.com/docs/webstore/cws-dashboard-listing)).
+3. Choose the language in the listing language selector.
+4. Under **Localized screenshots**, upload only the PNGs from
+   `generated/chrome/<locale>/` for that language. Use the `01-`…`03-`
+   filenames in slot order. Do not upload promo tiles in this control.
+5. Repeat for every shipped locale. Locales with no localized screenshots
+   fall back to the global screenshots.
+6. Upload `generated/chrome/promo/small.png` and `marquee.png` as the
+   global small and marquee tiles. Never create per-locale promo files.
+
+Record each upload in `chrome/RELEASE-CHECKLIST.md`.

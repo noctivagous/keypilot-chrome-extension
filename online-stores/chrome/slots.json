@@ -9,6 +9,21 @@
     "cornerStyle": "square",
     "fullBleed": true
   },
+  "copyLimits": {
+    "headline": 64,
+    "callout": 72
+  },
+  "captureDefaults": {
+    "viewport": { "width": 1280, "height": 800 },
+    "deviceScaleFactor": 1,
+    "fixture": "scripts/store-screenshots/fixture.html",
+    "pageApi": "scripts/store-screenshots/page-api.js",
+    "screenshot": "viewport",
+    "chromeUiLanguage": "match-locale",
+    "extensionState": {
+      "enabled": true
+    }
+  },
   "paths": {
     "copy": "chrome/copy",
     "templates": "chrome/templates",
@@ -46,7 +61,17 @@
       "copyKey": "key-click-browsing",
       "template": "chrome/templates/screenshots/key-click-browsing.svg",
       "captureFile": "key-click-browsing.png",
-      "outputFile": "01-key-click-browsing.png"
+      "outputFile": "01-key-click-browsing.png",
+      "capture": {
+        "open": "key-click-browsing",
+        "hoverSelector": "#kp-store-primary-link",
+        "requiredSelectors": [
+          "#kp-store-primary-link",
+          ".kpv2-focus",
+          ".kp-floating-keyboard-help",
+          ".kp-control-strip"
+        ]
+      }
     },
     {
       "id": "keyboard-map",
@@ -58,7 +83,17 @@
       "copyKey": "keyboard-map",
       "template": "chrome/templates/screenshots/keyboard-map.svg",
       "captureFile": "keyboard-map.png",
-      "outputFile": "02-keyboard-map.png"
+      "outputFile": "02-keyboard-map.png",
+      "capture": {
+        "open": "keyboard-map",
+        "hoverSelector": "#kp-store-primary-link",
+        "pinActionId": "ACTIVATE",
+        "requiredSelectors": [
+          "#kp-store-primary-link",
+          ".kp-floating-keyboard-help",
+          ".kp-keybindings-popover"
+        ]
+      }
     },
     {
       "id": "customize-workflow",
@@ -70,7 +105,16 @@
       "copyKey": "customize-workflow",
       "template": "chrome/templates/screenshots/customize-workflow.svg",
       "captureFile": "customize-workflow.png",
-      "outputFile": "03-customize-workflow.png"
+      "outputFile": "03-customize-workflow.png",
+      "capture": {
+        "open": "customize-workflow",
+        "libraryTab": "functions",
+        "requiredSelectors": [
+          ".kp-layout-config-panel",
+          ".kp-floating-keyboard-help",
+          "[data-kp-lib-tab='functions']"
+        ]
+      }
     }
   ]
 }

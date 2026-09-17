@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800">
+  <rect width="1280" height="800" fill="#14171c"/>
+  <image href="{{captureHref}}" x="0" y="0" width="1280" height="800" preserveAspectRatio="xMidYMid slice"/>
+  <rect x="0" y="0" width="1280" height="100" fill="rgba(20,23,28,0.90)"/>
+  <rect x="0" y="700" width="1280" height="100" fill="rgba(20,23,28,0.90)"/>
+  <rect x="0" y="0" width="8" height="800" fill="#ff8c00"/>
+  <text
+    data-copy="headline"
+    data-max-chars="64"
+    x="40"
+    y="64"
+    fill="#f4f6f8"
+    font-family="Titillium Web, Segoe UI, system-ui, sans-serif"
+    font-size="36"
+    font-weight="700">{{headline}}</text>
+  <g transform="translate(40,732)">
+    <rect width="28" height="28" rx="14" fill="#ff8c00"/>
+    <text x="14" y="20" text-anchor="middle" fill="#14171c" font-family="Titillium Web, Segoe UI, system-ui, sans-serif" font-size="16" font-weight="700">1</text>
+    <text
+      data-copy="callout.0"
+      data-max-chars="72"
+      x="40"
+      y="21"
+      fill="#f4f6f8"
+      font-family="Titillium Web, Segoe UI, system-ui, sans-serif"
+      font-size="20">{{callout.0}}</text>
+  </g>
+  <g transform="translate(640,732)">
+    <rect width="28" height="28" rx="14" fill="#ff8c00"/>
+    <text x="14" y="20" text-anchor="middle" fill="#14171c" font-family="Titillium Web, Segoe UI, system-ui, sans-serif" font-size="16" font-weight="700">2</text>
+    <text
+      data-copy="callout.1"
+      data-max-chars="72"
+      x="40"
+      y="21"
+      fill="#f4f6f8"
+      font-family="Titillium Web, Segoe UI, system-ui, sans-serif"
+      font-size="20">{{callout.1}}</text>
+  </g>
+</svg>

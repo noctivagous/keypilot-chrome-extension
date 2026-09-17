@@ -56,8 +56,12 @@ describe('online-stores source layout', () => {
       assert.equal(slot.height, 800);
       assert.equal(slot.template.startsWith('chrome/templates/screenshots/'), true);
       assert.equal(slot.template.endsWith('.svg'), true);
+      assert.equal(existsSync(join(storesRoot, slot.template)), true);
       assert.match(slot.captureFile, /\.png$/);
       assert.match(slot.outputFile, /^\d{2}-.+\.png$/);
+      assert.equal(typeof slot.capture?.open, 'string');
+      assert.ok(Array.isArray(slot.capture.requiredSelectors));
+      assert.ok(slot.capture.requiredSelectors.length > 0);
 
       const copy = englishCopy.slots[slot.copyKey];
       assert.equal(typeof copy?.headline, 'string', `missing headline for ${slot.id}`);
@@ -76,6 +80,8 @@ describe('online-stores source layout', () => {
     assert.equal(marquee.height, 560);
     assert.equal(small.outputFile.startsWith('generated/chrome/promo/'), true);
     assert.equal(marquee.outputFile.startsWith('generated/chrome/promo/'), true);
+    assert.equal(existsSync(join(storesRoot, small.template)), true);
+    assert.equal(existsSync(join(storesRoot, marquee.template)), true);
   });
 
   it('keeps generated and capture bitmaps out of the SVG template directory', () => {
