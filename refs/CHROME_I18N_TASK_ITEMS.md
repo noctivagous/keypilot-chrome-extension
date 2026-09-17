@@ -247,7 +247,30 @@ Phase 5 validation notes (2026-09-16):
 
 Reference: https://developer.chrome.com/docs/webstore/cws-dashboard-listing
 
-**Outcome:** Reproducible, locale-specific store screenshots are generated from SVG templates while retaining Chrome's required manual dashboard upload workflow.
+**Outcome:** Reproducible, locale-specific store screenshots combine real localized KeyPilot captures with SVG annotation templates, while retaining Chrome's required manual dashboard upload workflow.
+
+### Initial Chrome screenshot brief
+
+Use actual localized KeyPilot UI captures. SVG templates add only the localized
+headline and two or three short callouts; do not recreate the extension UI in
+SVG or place localized annotations over a capture from another locale.
+
+1. **Keyboard-first browsing** — first screenshot, shown when the listing opens.
+   Capture a normal web page with a focused-element outline, Keyboard Reference,
+   and Control Strip. Headline: “Browse the web without reaching for the mouse.”
+   Callouts: “Follow visible key hints”; “Open links, switch tabs, scroll.”
+2. **Navigate and act from one keyboard map** — capture Keyboard Reference with
+   a selected action/popover and the page result visible behind it. Headline:
+   “Keep common actions under your fingertips.” Callouts: “Click links”;
+   “Navigate tabs and history”; “Search, copy, and inspect.”
+3. **Customize KeyPilot for your workflow** — capture Keyboard Layout Editor or
+   Function Library with a representative custom layout/action configuration.
+   Headline: “Build a keyboard layout that fits your workflow.” Callouts:
+   “Choose a layout”; “Assign functions”; “Create macros.”
+
+Keep all annotation wording concise enough for translation and for Chrome's
+reduced listing scale. Do not annotate every key or use unsupported performance,
+ranking, or endorsement claims.
 
 ### Chrome Web Store scope
 
@@ -257,18 +280,20 @@ Reference: https://developer.chrome.com/docs/webstore/cws-dashboard-listing
 
 ### Tasks
 
-- [ ] Define the `online-stores/` source layout: SVG templates, locale copy data, generated PNG output, and a manifest of Chrome screenshot slots. Keep generated bitmaps out of the source-template directory.
-- [ ] Create language-templated SVG screenshot sources for the selected Chrome listing slots. Constrain each template to exactly `1280×800`, use only product-owned copy as placeholders, and preserve product names, shortcut glyphs, and UI state where they are canonical.
+- [ ] Define the `online-stores/` source layout: deterministic locale-specific GUI captures, SVG annotation templates, locale copy data, generated PNG output, and a manifest of Chrome screenshot slots. Keep generated bitmaps out of the source-template directory.
+- [ ] Define fixed browser viewport, extension state, fixture page, and capture selectors for each Chrome screenshot slot. Capture the real KeyPilot UI in the target locale; do not use an English GUI capture beneath translated annotations.
+- [ ] Create SVG annotation templates for the selected Chrome listing slots. Each template embeds the matching real GUI capture, is exactly `1280×800`, and substitutes only product-owned headline, caption, and callout copy. Preserve product names, shortcut glyphs, and canonical UI state.
 - [ ] Define a global English small promo SVG (`440×280`) and marquee SVG (`1400×560`) separately from localized screenshot templates. Render one global bitmap for each; never emit per-locale variants for them.
-- [ ] Add a generator script that discovers shipped extension locale catalogs, resolves copy from a locale-specific source, substitutes safe text into SVG templates, and emits deterministic PNGs under `online-stores/generated/chrome/<locale>/`.
+- [ ] Add an automated pipeline that discovers shipped extension locale catalogs, captures each defined UI state in that locale, resolves locale-specific annotation copy, composites captures into SVG templates, and emits deterministic PNGs under `online-stores/generated/chrome/<locale>/`.
 - [ ] Make English the initial generated locale. When a locale is shipped, require complete store-copy data before its localized screenshots are generated; do not generate marked test-locale (`en_GB`) assets.
-- [ ] Validate every generated Chrome screenshot's dimensions, file type, full-bleed canvas, and slot count. Fail when an SVG placeholder is unresolved, a locale lacks required copy, or text exceeds its defined safe region.
+- [ ] Validate every generated Chrome screenshot's dimensions, file type, full-bleed canvas, slot count, capture locale, and annotation locale. Fail when an SVG placeholder is unresolved, a locale lacks required copy, the capture locale does not match its annotation locale, or text exceeds its defined safe region.
 - [ ] Document the manual Chrome Developer Dashboard procedure: choose the matching locale, upload only its screenshot PNGs under **Localized screenshots**, and retain global promo tiles separately.
 - [ ] Add a release checklist that records the generated asset revision, dashboard locale, uploaded screenshot filenames, and reviewer for each shipped locale.
 
 ### Acceptance criteria
 
-- Each shipped locale has reproducible `1280×800` Chrome screenshot PNGs generated from its SVG templates.
+- Each shipped locale has reproducible `1280×800` Chrome screenshot PNGs generated from real UI captures composited into SVG templates.
+- Every localized screenshot shows the same locale in both its captured KeyPilot UI and its SVG annotations.
 - English global promo tiles exist once at the required Chrome dimensions and contain no locale-specific variants.
 - No store screenshot template, generated asset, or upload instructions imply that Chrome automatically reads assets from the extension package.
 - A release manager can follow the documented per-locale dashboard upload process without editing image files by hand.
