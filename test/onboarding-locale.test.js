@@ -13,6 +13,7 @@ import {
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const englishXml = join(root, 'extension/onboarding/en.xml');
+const spanishXml = join(root, 'extension/onboarding/es.xml');
 const spanishFixture = join(root, 'test/fixtures/onboarding/es.xml');
 
 /** @type {ReturnType<typeof installChromeMock>} */
@@ -65,6 +66,13 @@ describe('onboarding locale models', () => {
     assert.deepEqual(structureOf(spanishFixture), structureOf(englishXml));
     assert.notEqual(spanish.slides[0].title, english.slides[0].title);
     assert.notEqual(spanish.slides[0].tasks[0].label, english.slides[0].tasks[0].label);
+  });
+
+  it('ships the Spanish model with English-compatible structure', () => {
+    const english = parseOnboardingXml(readFileSync(englishXml, 'utf8'));
+    const spanish = parseOnboardingXml(readFileSync(spanishXml, 'utf8'));
+    assert.deepEqual(structureOf(spanishXml), structureOf(englishXml));
+    assert.notEqual(spanish.slides[0].title, english.slides[0].title);
   });
 });
 

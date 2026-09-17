@@ -1,0 +1,28 @@
+{
+  "locale": "es",
+  "slots": {
+    "key-click-browsing": {
+      "headline": "Navega por la web con clics de tecla.",
+      "callouts": [
+        "Guía el cursor con el ratón",
+        "Coloca el cursor sobre un enlace y pulsa F."
+      ]
+    },
+    "keyboard-map": {
+      "headline": "Ten las acciones habituales al alcance de tus dedos.",
+      "callouts": [
+        "Haz clic en enlaces",
+        "Navega por pestañas e historial",
+        "Busca, copia e inspecciona."
+      ]
+    },
+    "customize-workflow": {
+      "headline": "Crea una distribución de teclado para tu flujo de trabajo.",
+      "callouts": [
+        "Elige una distribución",
+        "Asigna funciones",
+        "Crea macros."
+      ]
+    }
+  }
+}

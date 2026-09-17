@@ -1,0 +1,209 @@
+{
+  "topics": [
+    {
+      "id": "intro",
+      "title": "Introducción",
+      "file": "intro.md",
+      "icon": "book",
+      "accent": "cyan"
+    },
+    {
+      "id": "getting-started",
+      "title": "Empezando",
+      "file": "getting-started.md",
+      "icon": "rocket",
+      "accent": "green"
+    },
+    {
+      "id": "browsing",
+      "title": "Navegando",
+      "children": [
+        {
+          "id": "browsing-click",
+          "title": "Hacer clic y enlaces",
+          "file": "browsing-click.md",
+          "shortcut": "F",
+          "accent": "green"
+        },
+        {
+          "id": "browsing-tabs",
+          "title": "Pestañas e historial",
+          "file": "browsing-tabs.md",
+          "icon": "tabs",
+          "accent": "blue"
+        },
+        {
+          "id": "browsing-scroll",
+          "title": "Desplazamiento",
+          "file": "browsing-scroll.md",
+          "icon": "scroll",
+          "accent": "amber"
+        },
+        {
+          "id": "browsing-select",
+          "title": "Selección",
+          "file": "browsing-select.md",
+          "icon": "select",
+          "accent": "indigo"
+        },
+        {
+          "id": "browsing-modes",
+          "title": "Modos",
+          "file": "browsing-modes.md",
+          "icon": "layers",
+          "accent": "violet"
+        }
+      ]
+    },
+    {
+      "id": "keyboard",
+      "title": "Teclado",
+      "children": [
+        {
+          "id": "keyboard-layouts",
+          "title": "Diseños y destreza",
+          "file": "keyboard-layouts.md",
+          "icon": "layout",
+          "accent": "cyan"
+        },
+        {
+          "id": "keyboard-system-keys",
+          "title": "Teclas del sistema y Alt Chrome",
+          "file": "keyboard-system-keys.md",
+          "icon": "shield",
+          "accent": "amber"
+        },
+        {
+          "id": "keyboard-reference",
+          "title": "Referencia del teclado",
+          "file": "keyboard-reference.md",
+          "shortcut": "K",
+          "accent": "green"
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "title": "Configuración",
+      "file": "settings.md",
+      "shortcut": "'",
+      "accent": "blue"
+    },
+    {
+      "id": "tools",
+      "title": "Herramientas",
+      "children": [
+        {
+          "id": "tools-omnibox",
+          "title": "Caja omnidireccional",
+          "file": "tools-omnibox.md",
+          "shortcut": "L",
+          "accent": "green"
+        },
+        {
+          "id": "tools-launcher",
+          "title": "Lanzador",
+          "file": "tools-launcher.md",
+          "shortcut": "Alt+;",
+          "accent": "amber"
+        },
+        {
+          "id": "tools-top-sites",
+          "title": "Sitios principales",
+          "file": "tools-top-sites.md",
+          "shortcut": ";",
+          "accent": "amber"
+        },
+        {
+          "id": "tools-tab-history",
+          "title": "Historial de pestañas",
+          "file": "tools-tab-history.md",
+          "shortcut": "J",
+          "accent": "blue"
+        },
+        {
+          "id": "tools-control-strip",
+          "title": "Tira de control",
+          "file": "tools-control-strip.md",
+          "shortcut": "Alt+J",
+          "accent": "cyan"
+        },
+        {
+          "id": "tools-previews",
+          "title": "Vista previa del enlace y ventana emergente",
+          "file": "tools-previews.md",
+          "icon": "preview",
+          "accent": "green"
+        }
+      ]
+    },
+    {
+      "id": "media",
+      "title": "Medios",
+      "children": [
+        {
+          "id": "media-page",
+          "title": "Medios de página",
+          "file": "media-page.md",
+          "shortcut": "O",
+          "accent": "indigo"
+        },
+        {
+          "id": "media-library",
+          "title": "Biblioteca multimedia",
+          "file": "media-library.md",
+          "shortcut": "M",
+          "accent": "violet"
+        },
+        {
+          "id": "media-copy",
+          "title": "Copiar debajo del cursor",
+          "file": "media-copy.md",
+          "shortcut": "I/U",
+          "accent": "cyan"
+        }
+      ]
+    },
+    {
+      "id": "customize",
+      "title": "Personalizar",
+      "children": [
+        {
+          "id": "layout-config",
+          "title": "Editor de diseño de teclado",
+          "file": "layout-config.md",
+          "icon": "layout",
+          "accent": "cyan"
+        },
+        {
+          "id": "functions",
+          "title": "Funciones y acciones",
+          "file": "functions.md",
+          "icon": "functions",
+          "accent": "green"
+        },
+        {
+          "id": "macros-overview",
+          "title": "macros",
+          "file": "macros.md",
+          "icon": "macros",
+          "accent": "violet"
+        },
+        {
+          "id": "macro-builder",
+          "title": "Generador de macros",
+          "file": "macro-builder.md",
+          "icon": "controls",
+          "accent": "amber"
+        },
+        {
+          "id": "execute-js",
+          "title": "Ejecutar JS",
+          "file": "execute-js.md",
+          "icon": "code",
+          "accent": "rose"
+        }
+      ]
+    }
+  ]
+}

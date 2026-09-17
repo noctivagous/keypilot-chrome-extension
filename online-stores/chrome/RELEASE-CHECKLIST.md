@@ -7,6 +7,8 @@ extension package.
 | Locale | Dashboard language | Generated revision (git SHA or date) | Uploaded files | Reviewer | Date |
 |---|---|---|---|---|---|
 | en | English | | `01-key-click-browsing.png`, `02-keyboard-map.png`, `03-customize-workflow.png` | | |
+| es | Spanish | | `01-key-click-browsing.png`, `02-keyboard-map.png`, `03-customize-workflow.png` | | |
+| es_419 | Spanish (Latin America) | | `01-key-click-browsing.png`, `02-keyboard-map.png`, `03-customize-workflow.png` | | |
 | | | | | | |
 
 Global promo tiles (upload once, not per locale):

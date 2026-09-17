@@ -15,30 +15,43 @@ function flattenTopics(topics, out = []) {
 }
 
 describe('documentation locale catalog', () => {
-  it('keeps the English navigation and Markdown topic tree aligned', () => {
-    const localeRoot = join(docsRoot, 'en');
-    const index = JSON.parse(readFileSync(join(localeRoot, 'index.json'), 'utf8'));
-    const topics = flattenTopics(index.topics);
-    const ids = new Set();
+  it('keeps every shipped locale navigation and Markdown topic tree aligned', () => {
+    const sourceRoot = join(docsRoot, 'en');
+    const sourceIndex = JSON.parse(readFileSync(join(sourceRoot, 'index.json'), 'utf8'));
+    const sourceTopics = flattenTopics(sourceIndex.topics);
+    const sourceIds = sourceTopics.map((topic) => topic.id).sort();
+    const sourceFiles = sourceTopics.filter((topic) => topic.file).map((topic) => topic.file).sort();
+    const locales = readdirSync(docsRoot, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && entry.name !== 'images')
+      .map((entry) => entry.name);
 
-    for (const topic of topics) {
-      assert.equal(ids.has(topic.id), false, `duplicate topic id: ${topic.id}`);
-      ids.add(topic.id);
-      assert.equal(typeof topic.title, 'string', `missing title: ${topic.id}`);
-      if (topic.file) {
-        assert.equal(
-          existsSync(join(localeRoot, topic.file)),
-          true,
-          `missing Markdown topic: ${topic.file}`
-        );
+    for (const locale of locales) {
+      const localeRoot = join(docsRoot, locale);
+      const index = JSON.parse(readFileSync(join(localeRoot, 'index.json'), 'utf8'));
+      const topics = flattenTopics(index.topics);
+      const ids = new Set();
+
+      for (const topic of topics) {
+        assert.equal(ids.has(topic.id), false, `duplicate topic id: ${topic.id}`);
+        ids.add(topic.id);
+        assert.equal(typeof topic.title, 'string', `missing title: ${topic.id}`);
+        if (topic.file) {
+          assert.equal(
+            existsSync(join(localeRoot, topic.file)),
+            true,
+            `missing Markdown topic: ${topic.file}`
+          );
+        }
       }
-    }
 
-    const markdownFiles = new Set(
-      readdirSync(localeRoot).filter((file) => file.endsWith('.md'))
-    );
-    const indexedFiles = new Set(topics.filter((topic) => topic.file).map((topic) => topic.file));
-    assert.deepEqual([...markdownFiles].sort(), [...indexedFiles].sort());
+      const markdownFiles = new Set(
+        readdirSync(localeRoot).filter((file) => file.endsWith('.md'))
+      );
+      const indexedFiles = new Set(topics.filter((topic) => topic.file).map((topic) => topic.file));
+      assert.deepEqual([...markdownFiles].sort(), [...indexedFiles].sort());
+      assert.deepEqual([...ids].sort(), sourceIds, `${locale} topic IDs match English`);
+      assert.deepEqual([...indexedFiles].sort(), sourceFiles, `${locale} topic files match English`);
+    }
   });
 
   it('keeps screenshots shared by default and documents locale-specific paths', () => {

@@ -323,7 +323,7 @@ Reference: https://developer.chrome.com/docs/extensions/reference/api/i18n
 - [ ] If shipping an RTL locale, set directionality from Chrome's bidi locale messages, audit logical CSS properties, icon direction, focus order, and overlay placement.
 - [ ] Verify Chrome Web Store metadata for every released locale.
 
-Draft note (2026-09-17): `extension/_locales/es/messages.json` and `es_419/messages.json` contain a machine-generated, placeholder-validated Spanish draft. A bilingual review of terminology, shortcut wording, and UI length remains required before release.
+Draft note (2026-09-17): `extension/_locales/es/messages.json` and `es_419/messages.json`, plus `extension/userdocs/es/`, contain machine-generated Spanish drafts. `extension/onboarding/es.xml` is now shipped and Spanish store-copy data is present for both locales. A bilingual review of terminology, shortcut wording, UI length, and documentation links remains required before release; locale-specific GUI captures and generated screenshots must be made from a Spanish Chrome profile.
 
 ### Acceptance criteria
 

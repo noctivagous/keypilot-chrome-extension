@@ -151,12 +151,12 @@ describe('Chrome store screenshot pipeline', () => {
 
   it('fails when a shipped locale has no store copy or the capture locale mismatches', () => {
     const root = makeTempRepo({
-      extraLocale: 'es',
+      extraLocale: 'fr',
       extraCopy: JSON.stringify({ extension_name: { message: 'KeyPilot', description: 'name' } })
     });
     const localSlots = loadSlots(root);
     assert.throws(
-      () => generateLocaleScreenshots(root, localSlots, 'es'),
+      () => generateLocaleScreenshots(root, localSlots, 'fr'),
       /missing store copy/
     );
 
