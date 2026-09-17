@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<onboarding version="1">
+  <slide id="basic_navigation" title="Bienvenido a KeyPilot">
+   <onEnter type="overlay"
+             title="Bienvenido a KeyPilot"
+             message="Te mostraremos cómo usar KeyPilot paso a paso."
+             primaryText="OK"
+             secondaryText="Cerrar"
+             secondaryAction="close" />
+       <task id="click_link" label="Pasa el cursor sobre un enlace y pulsa la tecla `F` para hacer clic.">
+      <when type="action" action="activate" target="link" />
+    </task>
+    <task id="go_back" label="Para volver (historial), pulsa la tecla `D`.">
+      <when type="action" action="back" />
+    </task>
+    <task id="keyboard_key_info" label="Fíjate en la referencia de teclado de abajo. Pasa el cursor sobre una tecla para ver qué hace.">
+      <when type="action" action="hover" target="keyboardHelpKey" />
+    </task>
+    <task id="toggle_extension_off" label="Hay una barra de control arriba que dice `ON`. Haz clic para desactivar KeyPilot por completo.">
+      <when type="action" action="toggleExtension" change="off" />
+    </task>
+  </slide>
+
+  <slide id="text_box_mode" title="Modo de cuadro de texto">
+    <onEnter type="overlay"
+             title="KeyPilot está de nuevo activado"
+             message="Siguiente: cuadros de texto."
+             primaryText="OK"
+             effect="marquee" />
+    <task id="enter_text_mode" label="Haz clic en un campo de texto a la derecha con `F` y recibirá la escritura.">
+      <when type="mode" mode="text_focus" change="enter" />
+    </task>
+    <task id="exit_text_mode" label="Pulsa `Escape` para salir del cuadro de texto.">
+      <when type="mode" mode="text_focus" change="exit" />
+    </task>
+  </slide>
+
+  <slide id="scrolling" title="Desplazamiento de la página">
+    <onEnter type="overlay"
+             title="Eso es todo lo que necesitas para navegar con KeyPilot."
+             message="¿Quieres probar más teclas?"
+             primaryText="Sí, continuar"
+             secondaryText="No, lo haré más tarde"
+             secondaryAction="later"
+             laterTitle="Vuelve a este tutorial con `Alt`+`I`"
+             laterPrimaryText="OK, cerrar" />
+    <task id="scroll_down" label="Desplázate hacia abajo con `V`.">
+      <when type="action" action="scrollDown" />
+    </task>
+    <task id="scroll_up" label="Desplázate hacia arriba con `C`.">
+      <when type="action" action="scrollUp" />
+    </task>
+    <task id="scroll_bottom" label="Ve al final de la página con `X`.">
+      <when type="action" action="scrollBottom" />
+    </task>
+    <task id="scroll_top" label="Ve al inicio de la página con `Z`.">
+      <when type="action" action="scrollTop" />
+    </task>
+  </slide>
+
+  <slide id="tabs" title="Pestañas">
+    <task id="open_link_background_tab" label="Abre un hipervínculo en una pestaña nueva sin mostrarla (`G`).">
+      <when type="action" action="activateNewTabBackground" target="link" />
+    </task>
+    <task id="open_link_new_tab" label="Abre un hipervínculo en una pestaña nueva (`B`).">
+      <when type="action" action="activateNewTab" target="link" />
+    </task>
+    <task id="open_new_tab" label="Abre una pestaña nueva (`T`).">
+      <when type="action" action="newTab" />
+    </task>
+    <task id="move_tabs" label="Muévete entre pestañas a la izquierda (`Q`).">
+      <when type="action" action="tabLeft" />
+    </task>
+    <task id="move_tabs_2" label="Muévete entre pestañas a la derecha (`W`).">
+      <when type="action" action="tabRight" />
+    </task>
+  </slide>
+
+  <slide id="completion" title="Tutorial completado">
+    <body>
+Has terminado el tutorial y ya puedes usar KeyPilot.
+    </body>
+  </slide>
+</onboarding>

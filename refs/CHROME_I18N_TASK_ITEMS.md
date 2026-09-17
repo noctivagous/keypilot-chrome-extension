@@ -211,7 +211,76 @@ Phase 5 validation notes (2026-09-16):
 - Content script: `content-bundled.js` does not contain `docsThemeStorageInstalled`, markdown-it, `userdocs/en/`, or topic prose. It only holds the lazy URL string `pages/docs-bundled.js`.
 - [x] Profile the first Docs open and a subsequent article selection in English and Spanish; record whether the eager loader remains within the agreed performance budget.
 
-## Phase 6 — Spanish translation, RTL readiness, and release QA
+## Phase 6 — localized onboarding architecture
+
+**Outcome:** The onboarding walkthrough selects localized content without translating its stable progress, action, or automation identifiers.
+
+### Tasks
+
+- [x] Move the English walkthrough model from `extension/pages/onboarding.xml` to `extension/onboarding/en.xml`. Add future locale models as `extension/onboarding/<locale>.xml`; do not retain a flat-file compatibility path.
+- [x] Keep slide IDs, task IDs, `<when>` action/target/mode/change values, and overlay action IDs locale-neutral and identical across models. Localize only slide titles, body text, task labels, and overlay text attributes.
+- [x] Add a shared locale-candidate helper that returns browser UI language, locale spelling variant where applicable, base language, then `en`. Use the same candidate ordering for Docs and onboarding.
+- [x] Update `OnboardingManager._loadModel()` to fetch the first available `onboarding/<locale>.xml`; on an unavailable locale or failed fetch, continue through base language and English.
+- [x] Change the early-inject onboarding model stamp to source only `onboarding/en.xml`, keeping it as a no-flash initial model. Once the content script loads a supported locale model, replace the in-memory model and re-render the active slide before user interaction.
+- [x] Keep early-inject self-contained: it may use the stamped English model and Chrome UI language only. Do not embed every locale's walkthrough content into the eager script or put long-form walkthrough copy in `messages.json`.
+- [x] Update the manifest web-accessible-resource declarations and package validation for `onboarding/<locale>.xml`.
+- [x] Add model integrity tests: English XML parses; IDs are unique; every task has a stable `when` definition; future locale fixtures preserve the English ID/action structure.
+- [x] Add locale-resolution tests for exact-locale, base-language, and English fallback, including the early-model-to-localized-model handoff.
+- [x] Document the onboarding translation workflow and review requirements alongside `extension/onboarding/en.xml`.
+
+### Acceptance criteria
+
+- Onboarding renders the browser locale's model when it exists, otherwise its base language, otherwise English.
+- Localizing the walkthrough never changes persisted onboarding progress or action matching.
+- First paint remains functional with the stamped English model, and a supported localized model replaces it without exposing stale completion state.
+- The eager content path does not embed non-English onboarding copy or Markdown-like long-form content.
+
+### Validation
+
+- [x] Test parser and model-structure parity against an `es` fixture.
+- [ ] Smoke test onboarding in English and a supported translated locale, including progress restoration, overlay choices, completion, close/reopen, and extension OFF/ON transitions.
+- [x] Verify missing exact and base locale files load English cleanly.
+- [x] Inspect `early-inject.js` and `content-bundled.js` to confirm only the English early model is stamped.
+- [x] Build Chrome, Firefox, and Opera packages and confirm localized onboarding XML files are present.
+
+## Phase 7 — localized store-listing screenshots
+
+Reference: https://developer.chrome.com/docs/webstore/cws-dashboard-listing
+
+**Outcome:** Reproducible, locale-specific store screenshots are generated from SVG templates while retaining Chrome's required manual dashboard upload workflow.
+
+### Chrome Web Store scope
+
+- Localized asset type: up to five screenshots per locale, each `1280×800` (preferred) or `640×400`, square-cornered and full-bleed.
+- Global-only asset types: small promo tile (`440×280`) and marquee promo tile (`1400×560`). Do not generate localized variants because Chrome does not accept them.
+- Dashboard behavior: upload the extension first, select each available `_locales/<locale>` catalog in the Store Listing language selector, then manually upload that locale's generated screenshots. Localized screenshots take precedence over global screenshots; locales with none use the global screenshots.
+
+### Tasks
+
+- [ ] Define the `online-stores/` source layout: SVG templates, locale copy data, generated PNG output, and a manifest of Chrome screenshot slots. Keep generated bitmaps out of the source-template directory.
+- [ ] Create language-templated SVG screenshot sources for the selected Chrome listing slots. Constrain each template to exactly `1280×800`, use only product-owned copy as placeholders, and preserve product names, shortcut glyphs, and UI state where they are canonical.
+- [ ] Define a global English small promo SVG (`440×280`) and marquee SVG (`1400×560`) separately from localized screenshot templates. Render one global bitmap for each; never emit per-locale variants for them.
+- [ ] Add a generator script that discovers shipped extension locale catalogs, resolves copy from a locale-specific source, substitutes safe text into SVG templates, and emits deterministic PNGs under `online-stores/generated/chrome/<locale>/`.
+- [ ] Make English the initial generated locale. When a locale is shipped, require complete store-copy data before its localized screenshots are generated; do not generate marked test-locale (`en_GB`) assets.
+- [ ] Validate every generated Chrome screenshot's dimensions, file type, full-bleed canvas, and slot count. Fail when an SVG placeholder is unresolved, a locale lacks required copy, or text exceeds its defined safe region.
+- [ ] Document the manual Chrome Developer Dashboard procedure: choose the matching locale, upload only its screenshot PNGs under **Localized screenshots**, and retain global promo tiles separately.
+- [ ] Add a release checklist that records the generated asset revision, dashboard locale, uploaded screenshot filenames, and reviewer for each shipped locale.
+
+### Acceptance criteria
+
+- Each shipped locale has reproducible `1280×800` Chrome screenshot PNGs generated from its SVG templates.
+- English global promo tiles exist once at the required Chrome dimensions and contain no locale-specific variants.
+- No store screenshot template, generated asset, or upload instructions imply that Chrome automatically reads assets from the extension package.
+- A release manager can follow the documented per-locale dashboard upload process without editing image files by hand.
+
+### Validation
+
+- [ ] Run the generator for English and verify every output dimension and filename against the Chrome slot manifest.
+- [ ] Confirm the generator excludes test-only locales and fails for an incomplete shipped locale.
+- [ ] Visually review generated images at full size and Chrome's reduced listing scale.
+- [ ] Perform one manual Chrome Dashboard localized-screenshot upload and record the selected locale and uploaded files.
+
+## Phase 8 — Spanish translation, RTL readiness, and release QA
 
 **Outcome:** Spanish (`es`) is the first releasable non-English locale and the localization process is repeatable.
 
@@ -219,11 +288,11 @@ Phase 5 validation notes (2026-09-16):
 
 - [ ] Create `_locales/es/messages.json` by copying the complete English catalog, then translate and review terminology, placeholders, length, and accelerator/shortcut wording. Do not leave `[ES]` or other test markers in the shipped Spanish catalog; if a marked catalog is needed to prove locale switching, keep it under `test/fixtures/locales/`.
 - [ ] Use generic Spanish (`es`) for the initial release. Add regional catalogs such as `es_419`, `es_ES`, or `es_MX` only when their wording needs to differ.
-- [ ] Translate the Phase 3–5 surfaces committed for Spanish, including the Spanish docs tree.
+- [ ] Translate the Phase 3–7 surfaces committed for Spanish, including the Spanish docs tree, onboarding model, and localized store screenshots.
 - [ ] Add CI or a release check that compares non-English catalog keys to the English source catalog and reports missing/extra keys.
 - [ ] Test locale fallback (`es_MX` or another regional Spanish locale → `es` → `en`) in a separate Chrome profile or with Chrome's language launch configuration.
 - [ ] If shipping an RTL locale, set directionality from Chrome's bidi locale messages, audit logical CSS properties, icon direction, focus order, and overlay placement.
-- [ ] Verify Chrome Web Store, Edge Add-ons, and Opera listing metadata for every released locale.
+- [ ] Verify Chrome Web Store metadata for every released locale.
 
 ### Acceptance criteria
 

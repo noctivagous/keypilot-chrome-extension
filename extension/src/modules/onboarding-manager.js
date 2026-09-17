@@ -15,6 +15,7 @@ import {
   progressEqual
 } from '../ui/onboarding-shared.js';
 import { storageSetObject } from '../utils/storage.js';
+import { loadLocalizedOnboardingModel } from '../utils/onboarding-model.js';
 import { MSG } from '../messaging/types.js';
 
 // NOTE: Do not `import { X as Y }` — build.js strips imports and aliases are lost.
@@ -162,65 +163,6 @@ function withViewTransition(updateDomFn) {
   }
 }
 
-function parseOnboardingXml(xmlText) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(String(xmlText || ''), 'application/xml');
-  const parseError = doc.querySelector('parsererror');
-  if (parseError) {
-    throw new Error('Failed to parse onboarding.xml');
-  }
-
-  const slides = [];
-  const slideEls = doc.querySelectorAll('onboarding > slide');
-  for (const slideEl of slideEls) {
-    const id = slideEl.getAttribute('id') || '';
-    const title = slideEl.getAttribute('title') || '';
-    if (!id) continue;
-
-    const bodyEl = slideEl.querySelector(':scope > body');
-    const bodyText = bodyEl ? String(bodyEl.textContent || '').trim() : '';
-
-    const onEnter = [];
-    const onEnterEls = slideEl.querySelectorAll(':scope > onEnter');
-    for (const oe of onEnterEls) {
-      const type = (oe.getAttribute('type') || '').trim();
-      if (!type) continue;
-      const entry = { type };
-      for (const attr of oe.attributes || []) {
-        if (!attr || !attr.name) continue;
-        if (attr.name === 'type') continue;
-        entry[attr.name] = attr.value;
-      }
-      onEnter.push(entry);
-    }
-
-    const tasks = [];
-    const taskEls = slideEl.querySelectorAll(':scope > task');
-    for (const taskEl of taskEls) {
-      const taskId = taskEl.getAttribute('id') || '';
-      const label = taskEl.getAttribute('label') || '';
-      if (!taskId) continue;
-
-      const whenEl = taskEl.querySelector(':scope > when');
-      const when = whenEl
-        ? {
-            type: (whenEl.getAttribute('type') || '').trim(),
-            action: (whenEl.getAttribute('action') || '').trim(),
-            target: (whenEl.getAttribute('target') || '').trim(),
-            mode: (whenEl.getAttribute('mode') || '').trim(),
-            change: (whenEl.getAttribute('change') || '').trim()
-          }
-        : { type: '' };
-
-      tasks.push({ id: taskId, label, when });
-    }
-
-    slides.push({ id, title, tasks, onEnter, bodyText });
-  }
-
-  return { slides };
-}
-
 export class OnboardingManager {
   /**
    * @param {Object} [params]
@@ -243,6 +185,7 @@ export class OnboardingManager {
     });
 
     this.model = { slides: [] };
+    this._onboardingLocale = 'en';
     this.progress = createEmptyProgress(null);
 
     this.active = false;
@@ -547,8 +490,9 @@ export class OnboardingManager {
     // Alt + I re-opens onboarding, but ONLY while KeyPilot is enabled.
     this._setAltSlashListenerEnabled(this._isKeyPilotEnabled());
 
-    // Show/hide based on persisted active flag.
-    this._render();
+    // Show/hide based on persisted active flag. Rebuild so a localized model
+    // replaces the stamped English early-inject shell before interaction.
+    this._render({ forceRebuild: true, reason: 'init' });
 
     // Bind to KeyPilot state (for mode enter/exit tasks).
     this._attachToKeyPilotStateSoon();
@@ -723,18 +667,20 @@ export class OnboardingManager {
 
   async _loadModel() {
     try {
-      const url = chrome.runtime.getURL('pages/onboarding.xml');
-      const res = await fetch(url);
-      const text = await res.text();
-      this.model = parseOnboardingXml(text);
-      if (this.model?.slides?.length) return;
+      const loaded = await loadLocalizedOnboardingModel();
+      if (loaded?.model?.slides?.length) {
+        this.model = loaded.model;
+        this._onboardingLocale = loaded.locale;
+        return;
+      }
     } catch {
-      // fall through to early-inject stamped model
+      // fall through to early-inject stamped English model
     }
     try {
       const early = window.KEYPILOT_EARLY?.getOnboardingModel?.();
       if (early && Array.isArray(early.slides) && early.slides.length) {
         this.model = early;
+        this._onboardingLocale = 'en';
       }
     } catch {
       // ignore

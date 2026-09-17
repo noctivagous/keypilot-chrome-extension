@@ -60,7 +60,7 @@ test('Opera package contains the validated release surface', (t) => {
 
   const resources = stagedManifest.web_accessible_resources
     .flatMap((group) => group.resources);
-  assert.deepEqual(resources, ['themes/*', 'fonts/*', 'pages/*', 'userdocs/*/*', '_favicon/*']);
+  assert.deepEqual(resources, ['themes/*', 'fonts/*', 'pages/*', 'userdocs/*/*', 'onboarding/*', '_favicon/*']);
   assert.equal(resources.some((resource) => resource.startsWith('src/')), false);
 
   for (const file of requiredGeneratedFiles) {

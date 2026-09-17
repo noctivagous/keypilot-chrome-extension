@@ -121,7 +121,7 @@
   // - `extension/src/config/keyboard-layouts.js` (built-in layout data)
   // - `extension/src/config/function-library.js` (slot paint: label + keyboardClass)
   // - `extension/src/ui/keybindings-ui-shared.js` (CSS + layout + style attr + control-strip icons)
-  // - `extension/pages/onboarding.xml` (early onboarding model)
+  // - `extension/onboarding/en.xml` (English early onboarding model)
   // - `extension/src/ui/onboarding-shared.js` (shell / progress / checklist DOM)
   // Do not edit by hand.
   const Z_FLOATING_KEYBOARD_HELP = 2147483045;

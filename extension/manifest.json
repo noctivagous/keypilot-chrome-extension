@@ -76,6 +76,7 @@
                 "fonts/*",
                 "pages/*",
                 "userdocs/*/*",
+                "onboarding/*",
                 "_favicon/*"
             ],
             "matches": [

@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-16T07:38:37.791Z
+ * Generated on 2026-09-17T00:36:08.596Z
  */
 
 var __defProp = Object.defineProperty;
@@ -8561,6 +8561,17 @@ function missingMessage(key) {
   console.warn(`[KeyPilot i18n] Missing message: ${key}`);
   return `[i18n:${key}]`;
 }
+var DEFAULT_LOCALE = "en";
+function getLocaleCandidates(uiLanguage, baseLocale = DEFAULT_LOCALE) {
+  const fallback = String(baseLocale || DEFAULT_LOCALE);
+  const raw = String(
+    uiLanguage ?? chrome?.i18n?.getUILanguage?.() ?? fallback
+  ).trim();
+  const exact = /^[A-Za-z]{2,3}(?:[-_][A-Za-z0-9]+)*$/.test(raw) ? raw : "";
+  const base2 = exact.split(/[-_]/)[0].toLowerCase();
+  const alt = exact.includes("-") ? exact.replace(/-/g, "_") : exact.includes("_") ? exact.replace(/_/g, "-") : "";
+  return [...new Set([exact, alt, base2, fallback].filter(Boolean))];
+}
 function getMessage(key, substitutions) {
   const messageKey = typeof key === "string" ? key.trim() : "";
   if (!messageKey) return missingMessage(String(key || "(empty key)"));
@@ -8631,13 +8642,7 @@ function installDocsThemeStorageSync() {
 var DOCS_BASE_LOCALE = "en";
 var activeDocsLocale = DOCS_BASE_LOCALE;
 function getDocsLocaleCandidates(uiLanguage) {
-  const raw = String(
-    uiLanguage ?? chrome?.i18n?.getUILanguage?.() ?? DOCS_BASE_LOCALE
-  ).trim();
-  const exact = /^[A-Za-z]{2,3}(?:[-_][A-Za-z0-9]+)*$/.test(raw) ? raw : "";
-  const base2 = exact.split(/[-_]/)[0].toLowerCase();
-  const alt = exact.includes("-") ? exact.replace(/-/g, "_") : exact.includes("_") ? exact.replace(/_/g, "-") : "";
-  return [...new Set([exact, alt, base2, DOCS_BASE_LOCALE].filter(Boolean))];
+  return getLocaleCandidates(uiLanguage, DOCS_BASE_LOCALE);
 }
 var docsPath = (path = "", locale = activeDocsLocale) => `userdocs/${locale}/${path}`;
 var indexUrl = (locale) => chrome.runtime.getURL(docsPath("index.json", locale));

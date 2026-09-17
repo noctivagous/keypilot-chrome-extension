@@ -23,7 +23,8 @@
     "fonts/TitilliumTextBold.ttf",
     "fonts/CubellanRegular.ttf",
     "fonts/EzarionRegular.ttf",
-    "fonts/DosisBook.ttf"
+    "fonts/DosisBook.ttf",
+    "onboarding/en.xml"
   ],
   "virtualWarPaths": [
     "_favicon/*"

@@ -38,6 +38,30 @@ function missingMessage(key) {
  * @param {string|string[]} [substitutions]
  * @returns {string}
  */
+export const DEFAULT_LOCALE = 'en';
+
+/**
+ * Return the UI language, a hyphen/underscore spelling variant, the base
+ * language, then the fallback locale, without duplicates.
+ * @param {string} [uiLanguage]
+ * @param {string} [baseLocale]
+ * @returns {string[]}
+ */
+export function getLocaleCandidates(uiLanguage, baseLocale = DEFAULT_LOCALE) {
+  const fallback = String(baseLocale || DEFAULT_LOCALE);
+  const raw = String(
+    uiLanguage ?? chrome?.i18n?.getUILanguage?.() ?? fallback
+  ).trim();
+  const exact = /^[A-Za-z]{2,3}(?:[-_][A-Za-z0-9]+)*$/.test(raw) ? raw : '';
+  const base = exact.split(/[-_]/)[0].toLowerCase();
+  const alt = exact.includes('-')
+    ? exact.replace(/-/g, '_')
+    : exact.includes('_')
+      ? exact.replace(/_/g, '-')
+      : '';
+  return [...new Set([exact, alt, base, fallback].filter(Boolean))];
+}
+
 export function getMessage(key, substitutions) {
   const messageKey = typeof key === 'string' ? key.trim() : '';
   if (!messageKey) return missingMessage(String(key || '(empty key)'));

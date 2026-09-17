@@ -26,6 +26,7 @@ import {
   getKeybindingsUiCss
 } from './src/ui/keybindings-ui-shared.js';
 import { POPUP_THEME_VARS } from './src/ui/popup-theme-vars.js';
+import { parseOnboardingXml } from './src/utils/onboarding-model.js';
 import { getAllThemesCss, getTheme, THEME_IDS } from './themes/index.js';
 
 function getBuildTimestamp(now = new Date()) {
@@ -277,99 +278,6 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
   const EARLY_UI_MARKER_START = '// KP_EARLY_INJECT_UI_START';
   const EARLY_UI_MARKER_END = '// KP_EARLY_INJECT_UI_END';
 
-  function parseOnboardingXmlForEarlyInject(xmlText) {
-    // Strip comments so commented-out <task> examples are not stamped into early-inject.
-    const xml = String(xmlText || '').replace(/<!--[\s\S]*?-->/g, '');
-    const slides = [];
-
-    // Extremely small/controlled XML file in this repo; keep parsing dependency-free.
-    const slideRe = /<slide\b([^>]*)>([\s\S]*?)<\/slide>/g;
-    const taskRe = /<task\b([^>]*)>([\s\S]*?)<\/task>/g;
-    const whenRe = /<when\b([^\/>]*)\/>/g;
-    // Self-closing onEnter (may span lines): <onEnter type="overlay" ... />
-    const onEnterRe = /<onEnter\b([\s\S]*?)\/>/g;
-    const bodyRe = /<body\b[^>]*>([\s\S]*?)<\/body>/i;
-    const attrRe = /(\w+)\s*=\s*"([^"]*)"/g;
-
-    const readAttrs = (raw) => {
-      const attrs = {};
-      if (!raw) return attrs;
-      let m;
-      attrRe.lastIndex = 0;
-      while ((m = attrRe.exec(raw))) {
-        const k = m[1];
-        const v = m[2];
-        if (k) attrs[k] = v;
-      }
-      return attrs;
-    };
-
-    let slideMatch;
-    while ((slideMatch = slideRe.exec(xml))) {
-      const slideAttrs = readAttrs(slideMatch[1]);
-      const slideBody = slideMatch[2] || '';
-      const id = String(slideAttrs.id || '').trim();
-      if (!id) continue;
-
-      const title = String(slideAttrs.title || '').trim();
-      const tasks = [];
-      const onEnter = [];
-
-      let bodyText = '';
-      const bodyMatch = bodyRe.exec(slideBody);
-      if (bodyMatch) {
-        bodyText = String(bodyMatch[1] || '').trim();
-      }
-      bodyRe.lastIndex = 0;
-
-      let onEnterMatch;
-      onEnterRe.lastIndex = 0;
-      while ((onEnterMatch = onEnterRe.exec(slideBody))) {
-        const oeAttrs = readAttrs(onEnterMatch[1]);
-        const type = String(oeAttrs.type || '').trim();
-        if (!type) continue;
-        const entry = { type };
-        for (const [k, v] of Object.entries(oeAttrs)) {
-          if (k === 'type') continue;
-          entry[k] = v;
-        }
-        onEnter.push(entry);
-      }
-
-      let taskMatch;
-      taskRe.lastIndex = 0;
-      while ((taskMatch = taskRe.exec(slideBody))) {
-        const taskAttrs = readAttrs(taskMatch[1]);
-        const taskBody = taskMatch[2] || '';
-        const taskId = String(taskAttrs.id || '').trim();
-        if (!taskId) continue;
-
-        const label = String(taskAttrs.label || '').trim();
-
-        // Take the first <when .../> inside the task (the authoring format here uses one).
-        let when = { type: '' };
-        whenRe.lastIndex = 0;
-        const whenMatch = whenRe.exec(taskBody);
-        if (whenMatch) {
-          const wAttrs = readAttrs(whenMatch[1]);
-          when = {
-            type: String(wAttrs.type || '').trim(),
-            action: String(wAttrs.action || '').trim(),
-            target: String(wAttrs.target || '').trim(),
-            mode: String(wAttrs.mode || '').trim(),
-            change: String(wAttrs.change || '').trim()
-          };
-        }
-
-        tasks.push({ id: taskId, label, when });
-      }
-
-      slides.push({ id, title, tasks, onEnter, bodyText });
-    }
-
-    return { slides };
-  }
-
   function pickEarlyBindingFields(binding) {
     if (!binding) return null;
     return {
@@ -401,15 +309,15 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
     // Keep early onboarding from flashing by stamping the walkthrough model into early-inject.
     let earlyOnboardingModel = { slides: [] };
     try {
-      const onboardingPath = path.resolve(process.cwd(), 'pages', 'onboarding.xml');
+      const onboardingPath = path.resolve(process.cwd(), 'onboarding', 'en.xml');
       if (fs.existsSync(onboardingPath)) {
         const xml = fs.readFileSync(onboardingPath, 'utf8');
-        earlyOnboardingModel = parseOnboardingXmlForEarlyInject(xml);
+        earlyOnboardingModel = parseOnboardingXml(xml);
       } else {
-        console.warn(`WARN: onboarding.xml not found at: ${onboardingPath}`);
+        console.warn(`WARN: onboarding/en.xml not found at: ${onboardingPath}`);
       }
     } catch (e) {
-      console.warn('WARN: Failed to parse onboarding.xml for early-inject:', e && e.message ? e.message : e);
+      console.warn('WARN: Failed to parse onboarding/en.xml for early-inject:', e && e.message ? e.message : e);
     }
 
     // Stamp all built-in layouts so early-inject can render the correct keyboard layout
@@ -502,7 +410,7 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       `  // - \`extension/src/config/keyboard-layouts.js\` (built-in layout data)\n` +
       `  // - \`extension/src/config/function-library.js\` (slot paint: label + keyboardClass)\n` +
       `  // - \`extension/src/ui/keybindings-ui-shared.js\` (CSS + layout + style attr + control-strip icons)\n` +
-      `  // - \`extension/pages/onboarding.xml\` (early onboarding model)\n` +
+      `  // - \`extension/onboarding/en.xml\` (English early onboarding model)\n` +
       `  // - \`extension/src/ui/onboarding-shared.js\` (shell / progress / checklist DOM)\n` +
       `  // Do not edit by hand.\n` +
       `  const Z_FLOATING_KEYBOARD_HELP = ${Number(Z_INDEX.FLOATING_KEYBOARD_HELP)};\n` +

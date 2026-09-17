@@ -11,7 +11,7 @@ import { applyThemeToRoots, resolveThemeFromSettings } from '../src/modules/them
 import { BUILD_ENABLE_MACRO_BUILDER } from '../src/config/keyboard-layouts.js';
 import { isKpDeepLink, parseKpDeepLink } from '../src/utils/kp-deep-link.js';
 import { MSG } from '../src/messaging/types.js';
-import { getMessage, localizeElements } from '../src/utils/i18n.js';
+import { getLocaleCandidates, getMessage, localizeElements } from '../src/utils/i18n.js';
 
 let docsThemeStorageInstalled = false;
 /** @type {Document|ShadowRoot|null} */
@@ -99,23 +99,12 @@ const DOCS_BASE_LOCALE = 'en';
 let activeDocsLocale = DOCS_BASE_LOCALE;
 
 /**
- * Return the browser locale, its base language, then English without
- * duplicates. Folder names deliberately follow Chrome's locale identifiers.
+ * Docs locale folders follow Chrome locale identifiers.
  * @param {string} [uiLanguage]
  * @returns {string[]}
  */
 export function getDocsLocaleCandidates(uiLanguage) {
-  const raw = String(
-    uiLanguage ?? chrome?.i18n?.getUILanguage?.() ?? DOCS_BASE_LOCALE
-  ).trim();
-  const exact = /^[A-Za-z]{2,3}(?:[-_][A-Za-z0-9]+)*$/.test(raw) ? raw : '';
-  const base = exact.split(/[-_]/)[0].toLowerCase();
-  const alt = exact.includes('-')
-    ? exact.replace(/-/g, '_')
-    : exact.includes('_')
-      ? exact.replace(/_/g, '-')
-      : '';
-  return [...new Set([exact, alt, base, DOCS_BASE_LOCALE].filter(Boolean))];
+  return getLocaleCandidates(uiLanguage, DOCS_BASE_LOCALE);
 }
 
 const docsPath = (path = '', locale = activeDocsLocale) => `userdocs/${locale}/${path}`;
