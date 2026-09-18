@@ -1745,6 +1745,88 @@
     "message": "Editor de diseño de teclado",
     "description": "Context-menu group for creating and editing keyboard layouts."
   },
+  "layout_editor_aria": {
+    "message": "Editor de diseño de teclado",
+    "description": "Accessible name for the Keyboard Layout Editor dialog."
+  },
+  "layout_editor_toggle_title": {
+    "message": "Alternar con $1",
+    "description": "Tooltip for the Keyboard Layout Editor titlebar shortcut. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+C"
+      }
+    }
+  },
+  "layout_editor_autosaves": {
+    "message": "Guardado automático",
+    "description": "Titlebar chip indicating the Keyboard Layout Editor saves automatically."
+  },
+  "layout_editor_autosaves_title": {
+    "message": "Los cambios de diseño se guardan automáticamente",
+    "description": "Tooltip for the Autosaves chip in the Keyboard Layout Editor."
+  },
+  "layout_editor_close_aria": {
+    "message": "Cerrar el editor de diseño",
+    "description": "Accessible name for closing the Keyboard Layout Editor."
+  },
+  "layout_editor_place_message": {
+    "message": "Mueva el ratón y coloque la acción en el teclado.",
+    "description": "Titlebar status while placing an action onto the Keyboard Reference."
+  },
+  "layout_editor_set_current": {
+    "message": "Establecer como actual",
+    "description": "Button that makes the selected layout the active layout."
+  },
+  "layout_editor_set_current_title": {
+    "message": "Establecer como diseño actual",
+    "description": "Tooltip for the Set to current button."
+  },
+  "layout_editor_current": {
+    "message": "Actual",
+    "description": "Badge marking the layout that is currently active."
+  },
+  "layout_editor_inspector": {
+    "message": "Inspector",
+    "description": "Keyboard Layout Editor Inspector pane title."
+  },
+  "layout_editor_inspector_expand": {
+    "message": "Expandir inspector",
+    "description": "Tooltip for expanding the Inspector pane."
+  },
+  "layout_editor_inspector_collapse": {
+    "message": "Contraer",
+    "description": "Button that collapses the Inspector pane."
+  },
+  "layout_editor_inspector_resize": {
+    "message": "Cambiar tamaño del inspector",
+    "description": "Accessible name for the Inspector splitter."
+  },
+  "layout_editor_inspector_empty": {
+    "message": "Seleccione una tarjeta en la biblioteca de acciones para inspeccionarla.",
+    "description": "Inspector empty state when nothing is selected."
+  },
+  "layout_editor_inspector_none": {
+    "message": "No hay detalles del inspector para este elemento.",
+    "description": "Inspector empty state when the selection has no details."
+  },
+  "layout_editor_assigned_keys": {
+    "message": "Teclas asignadas",
+    "description": "Inspector heading listing keys assigned to an action."
+  },
+  "layout_editor_not_assigned": {
+    "message": "No asignada a ninguna tecla.",
+    "description": "Inspector empty state when an action has no key assignment."
+  },
+  "layout_editor_macro_not_found": {
+    "message": "No se encontró la macro.",
+    "description": "Inspector empty state when a selected macro is missing."
+  },
+  "layout_editor_no_steps": {
+    "message": "Aún no hay pasos.",
+    "description": "Inspector empty state when a macro has no steps."
+  },
   "context_menu_edit_layouts": {
     "message": "Editar distribución del teclado…",
     "description": "Context-menu item that opens the keyboard layout editor."
@@ -1794,6 +1876,10 @@
   "control_strip_keyboard_title": {
     "message": "Referencia del teclado",
     "description": "Tooltip for the control-strip keyboard-reference button."
+  },
+  "control_strip_keyboard_abbrev": {
+    "message": "-",
+    "description": "Optional visible abbreviation on the control-strip keyboard button. Use '-' to hide the label and show the icon only."
   },
   "control_strip_settings_aria": {
     "message": "Abrir la configuración de KeyPilot",
@@ -1908,6 +1994,34 @@
         "example": "Alt+C"
       }
     }
+  },
+  "keyboard_help_close_editor_label": {
+    "message": "Cerrar editor",
+    "description": "Visible label on the Keyboard Reference button that closes the layout editor."
+  },
+  "keycap_tab": {
+    "message": "Tab",
+    "description": "Visible legend on the Tab keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_caps": {
+    "message": "Bloq Mayús",
+    "description": "Visible legend on the Caps Lock keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_shift": {
+    "message": "Mayús",
+    "description": "Visible legend on the Shift keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_enter": {
+    "message": "Intro",
+    "description": "Visible legend on the Enter/Return keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_backspace": {
+    "message": "Retroceso",
+    "description": "Visible legend on the Backspace keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_esc": {
+    "message": "Esc",
+    "description": "Visible legend on the Escape keycap in Keyboard Reference. Keep this short."
   },
   "keyboard_help_left_handed": {
     "message": "zurdo",
@@ -3522,7 +3636,7 @@
     "description": "Function Library details for OPEN_SETTINGS_POPOVER."
   },
   "fn_OMNIBOX_label": {
-    "message": "Caja omnidireccional",
+    "message": "Barra de direcciones",
     "description": "Function Library label for OMNIBOX."
   },
   "fn_OMNIBOX_description": {
@@ -3546,7 +3660,7 @@
     "description": "Function Library details for TAB_HISTORY."
   },
   "fn_TOGGLE_KEYBOARD_HELP_label": {
-    "message": "Referencia de la base de conocimiento",
+    "message": "Referencia del teclado",
     "description": "Function Library label for TOGGLE_KEYBOARD_HELP."
   },
   "fn_TOGGLE_KEYBOARD_HELP_description": {

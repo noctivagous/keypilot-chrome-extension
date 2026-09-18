@@ -75,7 +75,20 @@ const OVERLAY_KEYS = [
     'layout_picker_settings',
     'context_menu_group_layout_editor',
     'context_menu_edit_layouts',
-    'popup_tutorial'
+    'popup_tutorial',
+    'keyboard_help_editing_aria',
+    'keyboard_help_close_editor',
+    'keyboard_help_close_editor_label'
+  ]],
+  ['extension/src/ui/control-strip.js', [
+    'control_strip_keyboard_abbrev',
+    'context_menu_show_keyboard_reference'
+  ]],
+  ['extension/src/ui/keyboard-layout-config-panel.js', [
+    'context_menu_group_layout_editor',
+    'layout_editor_set_current',
+    'layout_editor_inspector',
+    'layout_editor_inspector_empty'
   ]]
 ];
 
@@ -93,6 +106,19 @@ describe('overlay and popover localization', () => {
         assert.equal(typeof testLocale[key]?.message, 'string', `Test locale missing ${key}`);
         assert.match(source, new RegExp(`'${key}'`));
       }
+    }
+  });
+
+  it('avoids the English KB abbreviation in non-English action labels', async () => {
+    const catalogs = await Promise.all([
+      readFile('extension/_locales/de/messages.json', 'utf8').then(JSON.parse),
+      readFile('extension/_locales/es/messages.json', 'utf8').then(JSON.parse),
+      readFile('extension/_locales/es_419/messages.json', 'utf8').then(JSON.parse)
+    ]);
+    for (const catalog of catalogs) {
+      assert.doesNotMatch(catalog.fn_TOGGLE_KEYBOARD_HELP_label.message, /\bKB\b/);
+      assert.doesNotMatch(catalog.control_strip_keyboard_abbrev.message, /^KB$/i);
+      assert.notEqual(catalog.fn_OMNIBOX_label.message, 'Omnibox');
     }
   });
 

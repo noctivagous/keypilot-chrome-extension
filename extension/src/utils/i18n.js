@@ -62,6 +62,29 @@ export function getLocaleCandidates(uiLanguage, baseLocale = DEFAULT_LOCALE) {
   return [...new Set([exact, alt, base, fallback].filter(Boolean))];
 }
 
+/** Canonical English keycap legends → message keys. Physical slot IDs stay English. */
+export const KEYCAP_MESSAGE_KEYS = Object.freeze({
+  Tab: 'keycap_tab',
+  Caps: 'keycap_caps',
+  Shift: 'keycap_shift',
+  Enter: 'keycap_enter',
+  Backspace: 'keycap_backspace',
+  Esc: 'keycap_esc',
+  Escape: 'keycap_esc'
+});
+
+/**
+ * Localize a named keycap legend (Tab, Shift, …). Unknown glyphs are returned unchanged.
+ * @param {string} text
+ * @returns {string}
+ */
+export function localizeKeycapLabel(text) {
+  const raw = String(text || '');
+  const key = KEYCAP_MESSAGE_KEYS[raw];
+  if (!key) return raw;
+  return getMessage(key) || raw;
+}
+
 export function getMessage(key, substitutions) {
   const messageKey = typeof key === 'string' ? key.trim() : '';
   if (!messageKey) return missingMessage(String(key || '(empty key)'));

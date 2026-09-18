@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-18T06:01:10.655Z
+ * Generated on 2026-09-18T06:49:50.731Z
  */
 
 var __defProp = Object.defineProperty;
@@ -5285,6 +5285,15 @@ function getLocaleCandidates(uiLanguage, baseLocale = DEFAULT_LOCALE) {
   const alt = exact.includes("-") ? exact.replace(/-/g, "_") : exact.includes("_") ? exact.replace(/_/g, "-") : "";
   return [...new Set([exact, alt, base2, fallback].filter(Boolean))];
 }
+var KEYCAP_MESSAGE_KEYS = Object.freeze({
+  Tab: "keycap_tab",
+  Caps: "keycap_caps",
+  Shift: "keycap_shift",
+  Enter: "keycap_enter",
+  Backspace: "keycap_backspace",
+  Esc: "keycap_esc",
+  Escape: "keycap_esc"
+});
 function getMessage(key, substitutions) {
   const messageKey = typeof key === "string" ? key.trim() : "";
   if (!messageKey) return missingMessage(String(key || "(empty key)"));

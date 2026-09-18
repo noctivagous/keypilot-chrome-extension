@@ -1745,6 +1745,88 @@
     "message": "Keyboard Layout Editor",
     "description": "Context-menu group for creating and editing keyboard layouts."
   },
+  "layout_editor_aria": {
+    "message": "Keyboard layout editor",
+    "description": "Accessible name for the Keyboard Layout Editor dialog."
+  },
+  "layout_editor_toggle_title": {
+    "message": "Toggle with $1",
+    "description": "Tooltip for the Keyboard Layout Editor titlebar shortcut. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+C"
+      }
+    }
+  },
+  "layout_editor_autosaves": {
+    "message": "Autosaves",
+    "description": "Titlebar chip indicating the Keyboard Layout Editor saves automatically."
+  },
+  "layout_editor_autosaves_title": {
+    "message": "Layout changes save automatically",
+    "description": "Tooltip for the Autosaves chip in the Keyboard Layout Editor."
+  },
+  "layout_editor_close_aria": {
+    "message": "Close layout editor",
+    "description": "Accessible name for closing the Keyboard Layout Editor."
+  },
+  "layout_editor_place_message": {
+    "message": "Move the mouse and place the action on the keyboard.",
+    "description": "Titlebar status while placing an action onto the Keyboard Reference."
+  },
+  "layout_editor_set_current": {
+    "message": "Set to current",
+    "description": "Button that makes the selected layout the active layout."
+  },
+  "layout_editor_set_current_title": {
+    "message": "Set as current layout",
+    "description": "Tooltip for the Set to current button."
+  },
+  "layout_editor_current": {
+    "message": "Current",
+    "description": "Badge marking the layout that is currently active."
+  },
+  "layout_editor_inspector": {
+    "message": "Inspector",
+    "description": "Keyboard Layout Editor Inspector pane title."
+  },
+  "layout_editor_inspector_expand": {
+    "message": "Expand Inspector",
+    "description": "Tooltip for expanding the Inspector pane."
+  },
+  "layout_editor_inspector_collapse": {
+    "message": "Collapse",
+    "description": "Button that collapses the Inspector pane."
+  },
+  "layout_editor_inspector_resize": {
+    "message": "Resize Inspector",
+    "description": "Accessible name for the Inspector splitter."
+  },
+  "layout_editor_inspector_empty": {
+    "message": "Select a card in the Actions Library to inspect it.",
+    "description": "Inspector empty state when nothing is selected."
+  },
+  "layout_editor_inspector_none": {
+    "message": "No inspector details for this item.",
+    "description": "Inspector empty state when the selection has no details."
+  },
+  "layout_editor_assigned_keys": {
+    "message": "Assigned keys",
+    "description": "Inspector heading listing keys assigned to an action."
+  },
+  "layout_editor_not_assigned": {
+    "message": "Not assigned to any key.",
+    "description": "Inspector empty state when an action has no key assignment."
+  },
+  "layout_editor_macro_not_found": {
+    "message": "Macro not found.",
+    "description": "Inspector empty state when a selected macro is missing."
+  },
+  "layout_editor_no_steps": {
+    "message": "No steps yet.",
+    "description": "Inspector empty state when a macro has no steps."
+  },
   "context_menu_edit_layouts": {
     "message": "Edit Keyboard Layout…",
     "description": "Context-menu item that opens the keyboard layout editor."
@@ -1794,6 +1876,10 @@
   "control_strip_keyboard_title": {
     "message": "Keyboard reference",
     "description": "Tooltip for the control-strip keyboard-reference button."
+  },
+  "control_strip_keyboard_abbrev": {
+    "message": "KB",
+    "description": "Optional visible abbreviation on the control-strip keyboard button. Use '-' to hide the label and show the icon only."
   },
   "control_strip_settings_aria": {
     "message": "Open KeyPilot settings",
@@ -1908,6 +1994,34 @@
         "example": "Alt+C"
       }
     }
+  },
+  "keyboard_help_close_editor_label": {
+    "message": "Close Editor",
+    "description": "Visible label on the Keyboard Reference button that closes the layout editor."
+  },
+  "keycap_tab": {
+    "message": "Tab",
+    "description": "Visible legend on the Tab keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_caps": {
+    "message": "Caps",
+    "description": "Visible legend on the Caps Lock keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_shift": {
+    "message": "Shift",
+    "description": "Visible legend on the Shift keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_enter": {
+    "message": "Enter",
+    "description": "Visible legend on the Enter/Return keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_backspace": {
+    "message": "Backspace",
+    "description": "Visible legend on the Backspace keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_esc": {
+    "message": "Esc",
+    "description": "Visible legend on the Escape keycap in Keyboard Reference. Keep this short."
   },
   "keyboard_help_left_handed": {
     "message": "Lefthanded",
@@ -3523,7 +3637,7 @@
   },
   "fn_OMNIBOX_label": {
     "message": "Omnibox",
-    "description": "Function Library label for OMNIBOX."
+    "description": "Function Library label for OMNIBOX. Keep this short for keycaps. Do not use the English word Omnibox in non-English catalogs."
   },
   "fn_OMNIBOX_description": {
     "message": "Address bar overlay",
@@ -3547,7 +3661,7 @@
   },
   "fn_TOGGLE_KEYBOARD_HELP_label": {
     "message": "KB Reference",
-    "description": "Function Library label for TOGGLE_KEYBOARD_HELP."
+    "description": "Function Library label for TOGGLE_KEYBOARD_HELP. English may keep the KB abbreviation; other locales must not use KB."
   },
   "fn_TOGGLE_KEYBOARD_HELP_description": {
     "message": "Show or hide the keyboard map",

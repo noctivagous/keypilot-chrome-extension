@@ -31,7 +31,7 @@ import {
 } from './key-action-settings.js';
 import { getOrCreateBuiltinFunctionUserAction } from '../modules/keyboard-layout-store.js';
 import { resolveKeybinding } from '../config/keyboard-layouts.js';
-import { getMessage } from '../utils/i18n.js';
+import { getMessage, localizeKeycapLabel } from '../utils/i18n.js';
 import {
   closestComposed,
   containsComposed,
@@ -167,7 +167,7 @@ function updateExistingKeyboardDOM({ container, keybindings }) {
     const main = keyEl.querySelector('.key-main');
     if (main) main.textContent = (binding && binding.label) || actionId;
 
-    const labelText = (binding && (binding.displayKey || binding.keyLabel)) || '';
+    const labelText = localizeKeycapLabel((binding && (binding.displayKey || binding.keyLabel)) || '');
     const existingLabel = keyEl.querySelector('.key-label');
     if (labelText) {
       if (existingLabel) existingLabel.textContent = labelText;
@@ -242,7 +242,7 @@ export function renderKeybindingsKeyboard({ container, keybindings, keyboardLayo
       if (item.type === 'special') {
         // No KeyPilot function → no background icon.
         const keyEl = el(doc, 'div', item.className || 'key');
-        keyEl.appendChild(el(doc, 'span', 'key-text', item.text));
+        keyEl.appendChild(el(doc, 'span', 'key-text', localizeKeycapLabel(item.text)));
         ensureKeyPressOverlay(doc, keyEl);
         rowEl.appendChild(keyEl);
         continue;
@@ -284,7 +284,7 @@ export function renderKeybindingsKeyboard({ container, keybindings, keyboardLayo
       );
       keyEl.appendChild(main);
 
-      const labelText = (binding && binding.displayKey) || (binding && binding.keyLabel) || '';
+      const labelText = localizeKeycapLabel((binding && binding.displayKey) || (binding && binding.keyLabel) || '');
       if (labelText) {
         keyEl.appendChild(el(doc, 'div', 'key-label', labelText));
       }
@@ -566,7 +566,7 @@ function showPopoverForTarget({ doc, pop, targetEl, binding, actionId, pinned = 
   applyKeyMaterialToPopover(pop, targetEl);
 
   if (titleEl) titleEl.textContent = title;
-  if (keysEl) keysEl.textContent = keys ? getMessage('key_info_key', keys) : '';
+  if (keysEl) keysEl.textContent = keys ? getMessage('key_info_key', localizeKeycapLabel(keys)) : '';
   if (descEl) descEl.textContent = desc;
   if (hintEl) {
     hintEl.textContent = getMessage('key_info_settings_hint');

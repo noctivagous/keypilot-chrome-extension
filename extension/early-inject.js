@@ -33,6 +33,21 @@
       return '';
     }
   }
+  const EARLY_KEYCAP_MESSAGE_KEYS = {
+    Tab: 'keycap_tab',
+    Caps: 'keycap_caps',
+    Shift: 'keycap_shift',
+    Enter: 'keycap_enter',
+    Backspace: 'keycap_backspace',
+    Esc: 'keycap_esc',
+    Escape: 'keycap_esc'
+  };
+  function earlyKeycapLabel(text) {
+    const raw = String(text || '');
+    const key = EARLY_KEYCAP_MESSAGE_KEYS[raw];
+    if (!key) return raw;
+    return earlyMessage(key) || raw;
+  }
   try {
     const applyEarlyDebug = (raw) => {
       window.KEYPILOT_DEBUG = !!(raw && raw.debugLogging);
@@ -7757,7 +7772,7 @@
 
       const main = el(doc, 'div', 'key-main', mainText);
       keyEl.appendChild(main);
-      keyEl.appendChild(el(doc, 'div', 'key-label', slotLabel));
+      keyEl.appendChild(el(doc, 'div', 'key-label', earlyKeycapLabel(slotLabel)));
       ensurePressOverlay(keyEl);
       return keyEl;
     };
@@ -7778,14 +7793,14 @@
         if (!item) continue;
         if (item.type === 'special') {
           const keyEl = el(doc, 'div', item.className || 'key');
-          keyEl.appendChild(el(doc, 'span', 'key-text', item.text));
+          keyEl.appendChild(el(doc, 'span', 'key-text', earlyKeycapLabel(item.text)));
           ensurePressOverlay(keyEl);
           rowEl.appendChild(keyEl);
           continue;
         }
         if (item.type === 'action' && (item.id === 'DELETE' || String(item.className || '').includes('key-backspace'))) {
           const keyEl = el(doc, 'div', item.className || 'key key-backspace');
-          keyEl.appendChild(el(doc, 'span', 'key-text', 'Backspace'));
+          keyEl.appendChild(el(doc, 'span', 'key-text', earlyKeycapLabel('Backspace')));
           ensurePressOverlay(keyEl);
           rowEl.appendChild(keyEl);
           continue;
@@ -7892,7 +7907,7 @@
         if (item.type === 'special') {
           // No KeyPilot function → no background icon.
           const keyEl = el(doc, 'div', item.className || 'key');
-          keyEl.appendChild(el(doc, 'span', 'key-text', item.text));
+          keyEl.appendChild(el(doc, 'span', 'key-text', earlyKeycapLabel(item.text)));
           ensurePressOverlay(keyEl);
           rowEl.appendChild(keyEl);
           continue;
@@ -7932,7 +7947,7 @@
         const main = el(doc, 'div', 'key-main', actionLabel);
         keyEl.appendChild(main);
 
-        const labelText = (binding && (binding.displayKey || binding.keyLabel)) || '';
+        const labelText = earlyKeycapLabel((binding && (binding.displayKey || binding.keyLabel)) || '');
         if (labelText) {
           keyEl.appendChild(el(doc, 'div', 'key-label', labelText));
         }
@@ -8463,7 +8478,9 @@
       btn.style.color = active
         ? 'rgba(191, 219, 254, 0.98)'
         : 'rgba(220, 220, 225, 0.92)';
-      btn.title = active ? 'Hide keyboard reference' : 'Show keyboard reference';
+      btn.title = earlyMessage(active
+        ? 'context_menu_hide_keyboard_reference'
+        : 'context_menu_show_keyboard_reference');
     } catch { /* ignore */ }
   }
 
@@ -8896,10 +8913,14 @@
         try { e.preventDefault(); e.stopPropagation(); } catch { /* ignore */ }
       });
 
+      const keyboardAbbrev = (() => {
+        const raw = String(earlyMessage('control_strip_keyboard_abbrev') || '').trim();
+        return raw === '-' ? '' : raw;
+      })();
       const keyboardBtn = createEarlyControlStripSegmentButton({
         ariaLabel: earlyMessage('control_strip_keyboard_aria'),
         title: earlyMessage('control_strip_keyboard_title'),
-        text: 'KB',
+        text: keyboardAbbrev,
         iconActionId: 'TOGGLE_KEYBOARD_HELP'
       });
       keyboardBtn.setAttribute('data-kp-control-strip-keyboard', 'true');

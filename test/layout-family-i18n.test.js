@@ -39,6 +39,21 @@ describe('keyboard layout family localization', () => {
     assert.match(source, /getMessage\(`fn_\$\{id\}_label`\)/);
   });
 
+  it('localizes named keycap legends at the presentation boundary', async () => {
+    const [keybindingsUi, earlyInject, english, testLocale] = await Promise.all([
+      readFile('extension/src/ui/keybindings-ui.js', 'utf8'),
+      readFile('extension/early-inject.js', 'utf8'),
+      readFile('extension/_locales/en/messages.json', 'utf8').then(JSON.parse),
+      readFile('test/fixtures/locales/en_GB/messages.json', 'utf8').then(JSON.parse)
+    ]);
+    assert.match(keybindingsUi, /localizeKeycapLabel\(item\.text\)/);
+    assert.match(earlyInject, /earlyKeycapLabel\(item\.text\)/);
+    for (const key of ['keycap_tab', 'keycap_caps', 'keycap_shift', 'keycap_enter', 'keycap_backspace']) {
+      assert.equal(typeof english[key]?.message, 'string', key);
+      assert.equal(typeof testLocale[key]?.message, 'string', key);
+    }
+  });
+
   it('defines all layout-family messages in English and the test locale', async () => {
     const [english, testLocale] = await Promise.all([
       readFile('extension/_locales/en/messages.json', 'utf8').then(JSON.parse),

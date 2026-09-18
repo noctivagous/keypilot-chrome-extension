@@ -25,6 +25,18 @@ describe('i18n messages', () => {
     assert.equal(getMessage('extension_name'), 'KeyPilot');
   });
 
+  it('localizes named keycap legends and leaves glyphs unchanged', async () => {
+    mock.setI18nMessages({
+      keycap_shift: { message: 'Umschalt' },
+      keycap_enter: { message: 'Eingabe' }
+    });
+    const { localizeKeycapLabel } = await import('../extension/src/utils/i18n.js');
+    assert.equal(localizeKeycapLabel('Shift'), 'Umschalt');
+    assert.equal(localizeKeycapLabel('Enter'), 'Eingabe');
+    assert.equal(localizeKeycapLabel('Q'), 'Q');
+    assert.equal(localizeKeycapLabel(''), '');
+  });
+
   it('passes substitutions through to chrome.i18n', async () => {
     mock.setI18nMessages({
       greeting: {

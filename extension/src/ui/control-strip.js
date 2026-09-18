@@ -39,6 +39,11 @@ import {
 import { cacheChromeLayout, peekChromeLayoutCache } from '../utils/chrome-layout-cache.js';
 import { getMessage } from '../utils/i18n.js';
 
+function controlStripKeyboardAbbrev() {
+  const raw = String(getMessage('control_strip_keyboard_abbrev') || '').trim();
+  return raw === '-' ? '' : raw;
+}
+
 const CONTROL_STRIP_ROOT_CLASS = 'kp-control-strip';
 const DEFAULT_TOP_PX = 16;
 const DEFAULT_LEFT_PX = 16;
@@ -363,6 +368,7 @@ export class ControlStrip {
           } catch { /* ignore */ }
 
           this._ensureMoveHandle();
+          this._syncKeyboardAbbrev();
           this._bindButtonHandlers();
           try {
             if (keyboardBtn.getAttribute('aria-pressed') === 'true') this._keyboardActive = true;
@@ -481,7 +487,7 @@ export class ControlStrip {
     const keyboardBtn = this._createSegmentButton({
       ariaLabel: getMessage('control_strip_keyboard_aria'),
       title: getMessage('control_strip_keyboard_title'),
-      text: 'KB',
+      text: controlStripKeyboardAbbrev(),
       iconActionId: 'TOGGLE_KEYBOARD_HELP'
     });
     keyboardBtn.setAttribute('data-kp-control-strip-keyboard', 'true');
@@ -857,6 +863,9 @@ export class ControlStrip {
     }
     if (opts.text) {
       const label = document.createElement('span');
+      if (opts.iconActionId === 'TOGGLE_KEYBOARD_HELP') {
+        try { label.setAttribute('data-kp-control-strip-keyboard-label', 'true'); } catch { /* ignore */ }
+      }
       label.textContent = opts.text;
       Object.assign(label.style, {
         pointerEvents: 'none',
@@ -1007,8 +1016,34 @@ export class ControlStrip {
       ? NCT_DARK_UI_SELECTED_TEXT
       : NCT_DARK_UI_COLORS.fg;
     this._keyboardBtn.title = active
-      ? 'Hide keyboard reference'
-      : 'Show keyboard reference';
+      ? getMessage('context_menu_hide_keyboard_reference')
+      : getMessage('context_menu_show_keyboard_reference');
+    this._syncKeyboardAbbrev();
+  }
+
+  _syncKeyboardAbbrev() {
+    const btn = this._keyboardBtn;
+    if (!btn) return;
+    const abbrev = controlStripKeyboardAbbrev();
+    let label = btn.querySelector('[data-kp-control-strip-keyboard-label="true"]');
+    if (!label) {
+      label = [...btn.querySelectorAll('span')].find((el) => (
+        !el.getAttribute('data-kp-control-strip-icon')
+        && !el.getAttribute('data-kp-theme-icon')
+        && !el.querySelector('img')
+      )) || null;
+    }
+    if (!abbrev) {
+      if (label) label.remove();
+      return;
+    }
+    if (!label) {
+      label = document.createElement('span');
+      Object.assign(label.style, { pointerEvents: 'none', lineHeight: '1' });
+      btn.appendChild(label);
+    }
+    try { label.setAttribute('data-kp-control-strip-keyboard-label', 'true'); } catch { /* ignore */ }
+    label.textContent = abbrev;
   }
 
   _onStatusClick(e) {

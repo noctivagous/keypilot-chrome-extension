@@ -83,7 +83,7 @@ import {
   NCT_DARK_UI_ICON_BUTTON_OUTLINE,
   NCT_DARK_UI_COLORS
 } from './nct-dark-ui.js';
-import { getMessage } from '../utils/i18n.js';
+import { getMessage, localizeKeycapLabel } from '../utils/i18n.js';
 
 /** Match legacy keyboard dock inset (left/bottom 16px) while still using shared snap/clamp. */
 const KEYBOARD_POSITION_MARGIN_PX = Math.max(PANEL_POSITION_MARGIN_PX, 16);
@@ -437,8 +437,9 @@ export class FloatingKeyboardHelp {
           while (this.hintEl.firstChild) this.hintEl.removeChild(this.hintEl.firstChild);
           this.hintEl.hidden = false;
           this.hintEl.style.display = 'inline-flex';
-          this.hintEl.appendChild(document.createTextNode('Editing — Alt+C to exit'));
-          this.hintEl.setAttribute('aria-label', getMessage('keyboard_help_editing_aria', 'Alt+C'));
+          const editingHint = getMessage('keyboard_help_editing_aria', 'Alt+C');
+          this.hintEl.appendChild(document.createTextNode(editingHint));
+          this.hintEl.setAttribute('aria-label', editingHint);
         } else {
           while (this.hintEl.firstChild) this.hintEl.removeChild(this.hintEl.firstChild);
           this.hintEl.hidden = true;
@@ -630,6 +631,7 @@ export class FloatingKeyboardHelp {
       btn.setAttribute('data-kp-floating-keyboard-close-editor', 'true');
       btn.setAttribute('aria-label', getMessage('keyboard_help_close_editor', 'Alt+C'));
       btn.title = getMessage('keyboard_help_close_editor', 'Alt+C');
+      btn.textContent = getMessage('keyboard_help_close_editor_label');
       Object.assign(btn.style, {
         marginLeft: '6px',
         padding: '0 7px',
@@ -654,7 +656,10 @@ export class FloatingKeyboardHelp {
       btn.hidden = true;
       btn.setAttribute('aria-hidden', 'true');
       btn.style.setProperty('display', 'none', 'important');
-      btn.appendChild(doc.createTextNode('Close Editor'));
+    } else {
+      btn.setAttribute('aria-label', getMessage('keyboard_help_close_editor', 'Alt+C'));
+      btn.title = getMessage('keyboard_help_close_editor', 'Alt+C');
+      btn.textContent = getMessage('keyboard_help_close_editor_label');
     }
 
     // Place immediately after the edit-mode hint (… · Alt+C to exit · Close Editor · …).
@@ -2678,7 +2683,7 @@ export class FloatingKeyboardHelp {
 
       const label = doc.createElement('div');
       label.className = 'key-label';
-      label.textContent = slotLabel;
+      label.textContent = localizeKeycapLabel(slotLabel);
 
       btn.appendChild(main);
       btn.appendChild(label);
@@ -2780,7 +2785,7 @@ export class FloatingKeyboardHelp {
           sp.className = String(item.className || 'key');
           const text = doc.createElement('span');
           text.className = 'key-text';
-          text.textContent = String(item.text || '');
+          text.textContent = localizeKeycapLabel(item.text);
           sp.appendChild(text);
           ensureKeyPressOverlay(doc, sp);
           rowEl.appendChild(sp);

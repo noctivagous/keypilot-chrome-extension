@@ -3751,7 +3751,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const root = doc.createElement('div');
     root.className = 'kp-layout-config-panel';
     root.setAttribute('role', 'dialog');
-    root.setAttribute('aria-label', 'Keyboard layout editor');
+    root.setAttribute('aria-label', getMessage('layout_editor_aria'));
     try { root.setAttribute('data-kp-surface', 'onboarding'); } catch { /* ignore */ }
     root.hidden = true;
     this._applyProChrome(root);
@@ -3762,33 +3762,33 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     // Titlebar — NCT bevel chrome (classes; no inline cyan/soft styling)
     const header = doc.createElement('div');
     header.className = 'kp-cfg-titlebar';
-    header.title = 'Drag to move';
+    header.title = getMessage('popover_titlebar_drag_title');
 
     const title = doc.createElement('div');
     title.className = 'kp-cfg-title';
     title.appendChild(mkCfgIcon(doc, 'kp-cfg-i-kb'));
     const titleText = doc.createElement('span');
-    titleText.textContent = 'Keyboard Layout Editor';
+    titleText.textContent = getMessage('context_menu_group_layout_editor');
     title.appendChild(titleText);
 
     const titleShortcut = doc.createElement('kbd');
     titleShortcut.className = 'kp-cfg-title-shortcut';
     titleShortcut.setAttribute('data-kp-titlebar-shortcut', 'true');
     titleShortcut.textContent = 'Alt + C';
-    titleShortcut.title = 'Toggle with Alt+C';
+    titleShortcut.title = getMessage('layout_editor_toggle_title', 'Alt+C');
 
     const autosavesChip = doc.createElement('span');
     autosavesChip.className = 'kp-cfg-autosaves-chip';
-    autosavesChip.textContent = 'Autosaves';
-    autosavesChip.title = 'Layout changes save automatically';
+    autosavesChip.textContent = getMessage('layout_editor_autosaves');
+    autosavesChip.title = getMessage('layout_editor_autosaves_title');
 
     const closeBtn = doc.createElement('button');
     closeBtn.type = 'button';
     closeBtn.className = 'kp-cfg-close';
-    closeBtn.setAttribute('aria-label', 'Close layout editor');
-    closeBtn.title = 'Close';
+    closeBtn.setAttribute('aria-label', getMessage('layout_editor_close_aria'));
+    closeBtn.title = getMessage('overlay_close');
     const closeLabel = doc.createElement('span');
-    closeLabel.textContent = 'Close';
+    closeLabel.textContent = getMessage('overlay_close');
     closeBtn.appendChild(closeLabel);
     closeBtn.appendChild(mkCfgIcon(doc, 'kp-cfg-i-close'));
     closeBtn.addEventListener('click', () => {
@@ -3810,7 +3810,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     titlebarPlaceMsg.className = 'kp-cfg-titlebar-place-msg';
     titlebarPlaceMsg.setAttribute('role', 'status');
     titlebarPlaceMsg.hidden = true;
-    titlebarPlaceMsg.textContent = 'Move the mouse and place the action on the keyboard.';
+    titlebarPlaceMsg.textContent = getMessage('layout_editor_place_message');
 
     header.appendChild(titleStart);
     header.appendChild(titleEnd);
@@ -3894,7 +3894,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const currentBadge = doc.createElement('span');
     currentBadge.className = 'kp-cfg-combo-current-badge';
     currentBadge.appendChild(mkCfgIcon(doc, 'kp-cfg-i-check'));
-    currentBadge.appendChild(doc.createTextNode('Current'));
+    currentBadge.appendChild(doc.createTextNode(getMessage('layout_editor_current')));
     currentBadge.hidden = true;
     currentBadge.setAttribute('aria-hidden', 'true');
 
@@ -3917,8 +3917,8 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     layoutCombo.appendChild(layoutComboToggle);
     layoutCombo.appendChild(layoutComboList);
 
-    const setCurrentBtn = mkBtn('Set to current', 'set-current');
-    setCurrentBtn.title = 'Set as current layout';
+    const setCurrentBtn = mkBtn(getMessage('layout_editor_set_current'), 'set-current');
+    setCurrentBtn.title = getMessage('layout_editor_set_current_title');
 
     identity.appendChild(layoutLabel);
     identity.appendChild(layoutCombo);
@@ -4382,16 +4382,16 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     // ---- Inspector dock -----------------------------------------------------------------
     const inspectorPane = doc.createElement('aside');
     inspectorPane.className = 'kp-cfg-pane kp-cfg-pane-inspector';
-    inspectorPane.setAttribute('aria-label', 'Inspector');
+    inspectorPane.setAttribute('aria-label', getMessage('layout_editor_inspector'));
 
     const inspectorRail = doc.createElement('button');
     inspectorRail.type = 'button';
     inspectorRail.className = 'kp-cfg-inspector-rail';
     inspectorRail.appendChild(mkCfgIcon(doc, 'kp-cfg-i-eye'));
     const railLabel = doc.createElement('span');
-    railLabel.textContent = 'Inspector';
+    railLabel.textContent = getMessage('layout_editor_inspector');
     inspectorRail.appendChild(railLabel);
-    inspectorRail.title = 'Expand Inspector';
+    inspectorRail.title = getMessage('layout_editor_inspector_expand');
     inspectorRail.addEventListener('click', () => this._setInspectorOpen(true), true);
 
     const inspectorExpanded = doc.createElement('div');
@@ -4401,8 +4401,8 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const inspectorTitle = doc.createElement('span');
     inspectorTitle.className = 'kp-cfg-pane-title';
     inspectorTitle.appendChild(mkCfgIcon(doc, 'kp-cfg-i-eye'));
-    inspectorTitle.appendChild(doc.createTextNode('Inspector'));
-    const collapseInspectorBtn = mkBtn('Collapse', 'collapse-inspector');
+    inspectorTitle.appendChild(doc.createTextNode(getMessage('layout_editor_inspector')));
+    const collapseInspectorBtn = mkBtn(getMessage('layout_editor_inspector_collapse'), 'collapse-inspector');
     collapseInspectorBtn.prepend(mkCfgIcon(doc, 'kp-cfg-i-collapse-right'));
     collapseInspectorBtn.addEventListener('click', () => this._setInspectorOpen(false), true);
     inspectorHdr.appendChild(inspectorTitle);
@@ -4421,7 +4421,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     workspaceInspectorSplitter.className = 'kp-cfg-split kp-cfg-split-v';
     workspaceInspectorSplitter.setAttribute('role', 'separator');
     workspaceInspectorSplitter.setAttribute('aria-orientation', 'vertical');
-    workspaceInspectorSplitter.setAttribute('aria-label', 'Resize Inspector');
+    workspaceInspectorSplitter.setAttribute('aria-label', getMessage('layout_editor_inspector_resize'));
     workspaceInspectorSplitter.tabIndex = 0;
 
     mainRow.appendChild(workspace);
@@ -5147,7 +5147,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     wrap.className = 'kp-cfg-assign';
     const sub = document.createElement('div');
     sub.className = 'kp-cfg-dock-subtitle';
-    sub.textContent = 'Assigned keys';
+    sub.textContent = getMessage('layout_editor_assigned_keys');
     wrap.appendChild(sub);
 
     const keys = this._findSlotKeysForItem(item).slice().sort((a, b) => (
@@ -5156,7 +5156,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     if (!keys.length) {
       const empty = document.createElement('p');
       empty.className = 'kp-cfg-dock-empty';
-      empty.textContent = 'Not assigned to any key.';
+      empty.textContent = getMessage('layout_editor_not_assigned');
       wrap.appendChild(empty);
       return wrap;
     }
@@ -5231,7 +5231,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       }
       const empty = document.createElement('p');
       empty.className = 'kp-cfg-dock-empty';
-      empty.textContent = 'Select a card in the Actions Library to inspect it.';
+      empty.textContent = getMessage('layout_editor_inspector_empty');
       host.appendChild(empty);
       return;
     }
@@ -5272,7 +5272,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     if (!def && !actionDef && !binding) {
       const empty = document.createElement('p');
       empty.className = 'kp-cfg-dock-empty';
-      empty.textContent = 'No inspector details for this item.';
+      empty.textContent = getMessage('layout_editor_inspector_none');
       host.appendChild(empty);
       return;
     }
@@ -5331,7 +5331,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     if (!macro) {
       const empty = document.createElement('p');
       empty.className = 'kp-cfg-dock-empty';
-      empty.textContent = 'Macro not found.';
+      empty.textContent = getMessage('layout_editor_macro_not_found');
       host.appendChild(empty);
       return;
     }
@@ -5419,7 +5419,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     if (!Array.isArray(steps) || !steps.length) {
       const empty = document.createElement('p');
       empty.className = 'kp-cfg-dock-empty';
-      empty.textContent = 'No steps yet.';
+      empty.textContent = getMessage('layout_editor_no_steps');
       return empty;
     }
     const ol = document.createElement('ol');
@@ -6693,7 +6693,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
           const chip = document.createElement('span');
           chip.className = 'kp-cfg-combo-option-current';
           chip.appendChild(mkCfgIcon(document, 'kp-cfg-i-check'));
-          chip.appendChild(document.createTextNode('Current'));
+          chip.appendChild(document.createTextNode(getMessage('layout_editor_current')));
           btn.appendChild(chip);
         }
         li.appendChild(btn);
