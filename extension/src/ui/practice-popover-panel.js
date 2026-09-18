@@ -252,7 +252,7 @@ export class PracticePopoverPanel {
     intro.appendChild(tip);
 //    wrap.appendChild(intro);
 
-    const fields = card('Text Boxes');
+    const fields = card(getMessage('practice_fields_title'));
     const grid = document.createElement('div');
     Object.assign(grid.style, {
       display: 'grid',
@@ -344,19 +344,19 @@ export class PracticePopoverPanel {
     };
 
     const col1 = document.createElement('div');
-    col1.appendChild(mkLabel('kp-practice-input-1', 'Practice input'));
-    col1.appendChild(mkInput('kp-practice-input-1', 'Click here with F, then type…'));
+    col1.appendChild(mkLabel('kp-practice-input-1', getMessage('practice_input_1_label')));
+    col1.appendChild(mkInput('kp-practice-input-1', getMessage('practice_input_1_placeholder')));
     const col2 = document.createElement('div');
-    col2.appendChild(mkLabel('kp-practice-input-2', 'Second input (optional)'));
-    col2.appendChild(mkInput('kp-practice-input-2', 'Try switching between fields…'));
+    col2.appendChild(mkLabel('kp-practice-input-2', getMessage('practice_input_2_label')));
+    col2.appendChild(mkInput('kp-practice-input-2', getMessage('practice_input_2_placeholder')));
     grid.appendChild(col1);
     grid.appendChild(col2);
     fields.appendChild(grid);
 
     const taWrap = document.createElement('div');
     Object.assign(taWrap.style, { marginTop: '10px' });
-    taWrap.appendChild(mkLabel('kp-practice-textarea', 'Practice textarea'));
-    taWrap.appendChild(mkTextarea('kp-practice-textarea', 'Type a few lines here…'));
+    taWrap.appendChild(mkLabel('kp-practice-textarea', getMessage('practice_textarea_label')));
+    taWrap.appendChild(mkTextarea('kp-practice-textarea', getMessage('practice_textarea_placeholder')));
     fields.appendChild(taWrap);
 
     const note = document.createElement('div');
@@ -366,9 +366,9 @@ export class PracticePopoverPanel {
       color: ONBOARDING_METAL.fgMute,
       lineHeight: '1.45'
     });
-    note.appendChild(document.createTextNode('When you’re done typing, press '));
+    note.appendChild(document.createTextNode(getMessage('practice_exit_note_before')));
     note.appendChild(kbd('Esc'));
-    note.appendChild(document.createTextNode(' to exit text box mode.'));
+    note.appendChild(document.createTextNode(getMessage('practice_exit_note_after')));
     fields.appendChild(note);
 
     wrap.appendChild(fields);

@@ -2721,6 +2721,42 @@
     "message": "[GB] Anchor reached. Press Esc to exit text mode if needed.",
     "description": "Message at the practice popover in-panel anchor."
   },
+  "practice_fields_title": {
+    "message": "[GB] Text Boxes",
+    "description": "Title above the onboarding practice text fields."
+  },
+  "practice_input_1_label": {
+    "message": "[GB] Practice input",
+    "description": "Label for the first onboarding practice text field."
+  },
+  "practice_input_1_placeholder": {
+    "message": "[GB] Click here with F, then type…",
+    "description": "Placeholder for the first onboarding practice text field."
+  },
+  "practice_input_2_label": {
+    "message": "[GB] Second input (optional)",
+    "description": "Label for the second onboarding practice text field."
+  },
+  "practice_input_2_placeholder": {
+    "message": "[GB] Try switching between fields…",
+    "description": "Placeholder for the second onboarding practice text field."
+  },
+  "practice_textarea_label": {
+    "message": "[GB] Practice textarea",
+    "description": "Label for the onboarding practice textarea."
+  },
+  "practice_textarea_placeholder": {
+    "message": "[GB] Type a few lines here…",
+    "description": "Placeholder for the onboarding practice textarea."
+  },
+  "practice_exit_note_before": {
+    "message": "[GB] When you’re done typing, press ",
+    "description": "Text before the Esc keycap in the practice-popover exit hint."
+  },
+  "practice_exit_note_after": {
+    "message": "[GB] to exit text box mode.",
+    "description": "Text after the Esc keycap in the practice-popover exit hint."
+  },
   "columns_aria": {
     "message": "[GB] Column layout",
     "description": "Accessible name for column-layout overlay."

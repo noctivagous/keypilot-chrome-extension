@@ -98,6 +98,24 @@ const OVERLAY_KEYS = [
     'control_strip_keyboard_abbrev',
     'context_menu_show_keyboard_reference'
   ]],
+  ['extension/src/ui/practice-popover-panel.js', [
+    'practice_aria',
+    'practice_title',
+    'practice_hide_aria',
+    'practice_fields_title',
+    'practice_input_1_label',
+    'practice_input_1_placeholder',
+    'practice_input_2_label',
+    'practice_input_2_placeholder',
+    'practice_textarea_label',
+    'practice_textarea_placeholder',
+    'practice_exit_note_before',
+    'practice_exit_note_after',
+    'practice_link',
+    'practice_button',
+    'practice_clicked',
+    'practice_anchor'
+  ]],
   ['extension/src/ui/keyboard-layout-config-panel.js', [
     'context_menu_group_layout_editor',
     'layout_editor_set_current',

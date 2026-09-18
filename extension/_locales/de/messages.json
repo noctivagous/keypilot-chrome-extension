@@ -2222,7 +2222,7 @@
     "description": "Title shown when onboarding is complete."
   },
   "onboarding_complete_ok": {
-    "message": "Okay",
+    "message": "OK",
     "description": "Dismiss button on the onboarding complete card."
   },
   "onboarding_render_error": {
@@ -2720,6 +2720,42 @@
   "practice_anchor": {
     "message": "Anker erreicht. Drücken Sie bei Bedarf die Esc-Taste, um den Textmodus zu verlassen.",
     "description": "Message at the practice popover in-panel anchor."
+  },
+  "practice_fields_title": {
+    "message": "Textfelder",
+    "description": "Title above the onboarding practice text fields."
+  },
+  "practice_input_1_label": {
+    "message": "Übungsfeld",
+    "description": "Label for the first onboarding practice text field."
+  },
+  "practice_input_1_placeholder": {
+    "message": "Hier mit F klicken, dann tippen …",
+    "description": "Placeholder for the first onboarding practice text field."
+  },
+  "practice_input_2_label": {
+    "message": "Zweites Feld (optional)",
+    "description": "Label for the second onboarding practice text field."
+  },
+  "practice_input_2_placeholder": {
+    "message": "Zwischen den Feldern wechseln …",
+    "description": "Placeholder for the second onboarding practice text field."
+  },
+  "practice_textarea_label": {
+    "message": "Übungs-Textbereich",
+    "description": "Label for the onboarding practice textarea."
+  },
+  "practice_textarea_placeholder": {
+    "message": "Hier ein paar Zeilen eingeben …",
+    "description": "Placeholder for the onboarding practice textarea."
+  },
+  "practice_exit_note_before": {
+    "message": "Wenn Sie fertig sind, drücken Sie ",
+    "description": "Text before the Esc keycap in the practice-popover exit hint."
+  },
+  "practice_exit_note_after": {
+    "message": ", um den Textfeldmodus zu verlassen.",
+    "description": "Text after the Esc keycap in the practice-popover exit hint."
   },
   "columns_aria": {
     "message": "Spaltenlayout",

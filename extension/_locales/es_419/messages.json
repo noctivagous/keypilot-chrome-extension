@@ -2721,6 +2721,42 @@
     "message": "Ancla alcanzada. Presione Esc para salir del modo de texto si es necesario.",
     "description": "Message at the practice popover in-panel anchor."
   },
+  "practice_fields_title": {
+    "message": "Cuadros de texto",
+    "description": "Title above the onboarding practice text fields."
+  },
+  "practice_input_1_label": {
+    "message": "Campo de práctica",
+    "description": "Label for the first onboarding practice text field."
+  },
+  "practice_input_1_placeholder": {
+    "message": "Haz clic aquí con F y escribe…",
+    "description": "Placeholder for the first onboarding practice text field."
+  },
+  "practice_input_2_label": {
+    "message": "Segundo campo (opcional)",
+    "description": "Label for the second onboarding practice text field."
+  },
+  "practice_input_2_placeholder": {
+    "message": "Prueba a cambiar entre campos…",
+    "description": "Placeholder for the second onboarding practice text field."
+  },
+  "practice_textarea_label": {
+    "message": "Área de texto de práctica",
+    "description": "Label for the onboarding practice textarea."
+  },
+  "practice_textarea_placeholder": {
+    "message": "Escribe unas líneas aquí…",
+    "description": "Placeholder for the onboarding practice textarea."
+  },
+  "practice_exit_note_before": {
+    "message": "Cuando termines de escribir, pulsa ",
+    "description": "Text before the Esc keycap in the practice-popover exit hint."
+  },
+  "practice_exit_note_after": {
+    "message": " para salir del modo de cuadro de texto.",
+    "description": "Text after the Esc keycap in the practice-popover exit hint."
+  },
   "columns_aria": {
     "message": "Diseño de columnas",
     "description": "Accessible name for column-layout overlay."
