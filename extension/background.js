@@ -2608,6 +2608,64 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
+        case MSG.FRAME_MEDIA_VOLUME: {
+          const tabId = sender?.tab?.id;
+          const frameId = typeof sender?.frameId === 'number' ? sender.frameId : 0;
+          const volume = Number(message?.volume);
+          if (typeof tabId !== 'number' || !Number.isFinite(volume) || volume < 0 || volume > 1) {
+            sendResponse({ type: MSG.ERROR, ok: false, error: 'Invalid media volume' });
+            break;
+          }
+          try {
+            if (!chrome.scripting?.executeScript) {
+              sendResponse({ type: MSG.ERROR, ok: false, error: 'chrome.scripting unavailable' });
+              break;
+            }
+            await chrome.scripting.executeScript({
+              target: { tabId, frameIds: [frameId] },
+              world: 'MAIN',
+              func: (vol) => {
+                const level = Math.max(0, Math.min(1, Number(vol)));
+                if (!Number.isFinite(level)) return { ok: false };
+                const pct = Math.round(level * 100);
+                try {
+                  const player =
+                    document.getElementById('movie_player') ||
+                    document.querySelector('.html5-video-player');
+                  if (player && typeof player.setVolume === 'function') {
+                    player.setVolume(pct);
+                    if (level <= 0 && typeof player.mute === 'function') player.mute();
+                    if (level > 0 && typeof player.unMute === 'function') player.unMute();
+                    return { ok: true, via: 'player', pct };
+                  }
+                } catch { /* ignore */ }
+                try {
+                  const v =
+                    document.querySelector('video.html5-main-video') ||
+                    document.querySelector('video.video-stream') ||
+                    document.querySelector('video');
+                  if (v) {
+                    v.volume = level;
+                    v.muted = level <= 0;
+                    return { ok: true, via: 'video', pct };
+                  }
+                } catch { /* ignore */ }
+                return { ok: false };
+              },
+              args: [volume]
+            });
+            sendResponse({ type: MSG.SUCCESS, ok: true });
+          } catch (e) {
+            console.warn('[KeyPilot] Frame media volume failed:', e?.message || e);
+            sendResponse({
+              type: MSG.ERROR,
+              ok: false,
+              error: e?.message || 'Failed to set media volume in frame'
+            });
+          }
+          break;
+        }
+
         case MSG.ENSURE_MAP_PAN_BRIDGE: {
           // Install page-world map.panBy listener (bypasses page CSP via world: MAIN).
           const tabId = sender?.tab?.id;

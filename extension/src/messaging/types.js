@@ -161,7 +161,13 @@ export const MSG = Object.freeze({
   // isolated-world video.currentTime from player state. MAIN-world seekTo
   // / currentTime in the sender frame commits the playhead.
   // Payload: { type, seconds: number }
-  FRAME_MEDIA_SEEK: 'KP_FRAME_MEDIA_SEEK'
+  FRAME_MEDIA_SEEK: 'KP_FRAME_MEDIA_SEEK',
+
+  // --- Child frame-agent → SW: set media volume in the page world ---
+  // YouTube volume popup ignores untrusted pointer on the knob. MAIN-world
+  // setVolume(0–100) / unMute in the sender frame commits the level.
+  // Payload: { type, volume: number } where volume is 0–1
+  FRAME_MEDIA_VOLUME: 'KP_FRAME_MEDIA_VOLUME'
 });
 
 /**

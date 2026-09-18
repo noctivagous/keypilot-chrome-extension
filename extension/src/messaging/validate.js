@@ -44,6 +44,7 @@ export const SW_RUNTIME_REQUEST_TYPES = Object.freeze([
   MSG.INJECT_FULL_KEYPILOT_IN_FRAME,
   MSG.ENSURE_MAP_PAN_BRIDGE,
   MSG.FRAME_MEDIA_SEEK,
+  MSG.FRAME_MEDIA_VOLUME,
   MSG.GET_STATE,
   MSG.SET_STATE,
   MSG.TOGGLE_STATE,
@@ -148,6 +149,13 @@ export function validateRuntimeMessage(message, opts = {}) {
         return 'FRAME_MEDIA_SEEK requires seconds: number >= 0';
       }
       break;
+    case MSG.FRAME_MEDIA_VOLUME: {
+      const vol = Number(message.volume);
+      if (!Number.isFinite(vol) || vol < 0 || vol > 1) {
+        return 'FRAME_MEDIA_VOLUME requires volume: number in 0–1';
+      }
+      break;
+    }
     default:
       break;
   }

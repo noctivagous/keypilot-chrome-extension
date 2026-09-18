@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-18T03:34:23.849Z
+ * Generated on 2026-09-18T03:41:57.509Z
  */
 
 (() => {
@@ -137,7 +137,12 @@
     // isolated-world video.currentTime from player state. MAIN-world seekTo
     // / currentTime in the sender frame commits the playhead.
     // Payload: { type, seconds: number }
-    FRAME_MEDIA_SEEK: "KP_FRAME_MEDIA_SEEK"
+    FRAME_MEDIA_SEEK: "KP_FRAME_MEDIA_SEEK",
+    // --- Child frame-agent → SW: set media volume in the page world ---
+    // YouTube volume popup ignores untrusted pointer on the knob. MAIN-world
+    // setVolume(0–100) / unMute in the sender frame commits the level.
+    // Payload: { type, volume: number } where volume is 0–1
+    FRAME_MEDIA_VOLUME: "KP_FRAME_MEDIA_VOLUME"
   });
   var TAB_UI_FORWARD_TYPES = Object.freeze([
     MSG.OPEN_SETTINGS_POPOVER,
@@ -4021,6 +4026,29 @@
     if (!Number.isFinite(duration) || duration <= 0 || duration === Infinity) return null;
     return clamp01((clientX - rect.left) / rect.width) * duration;
   }
+  function sliderAxis(el) {
+    try {
+      const ori = (el?.getAttribute?.("aria-orientation") || "").trim().toLowerCase();
+      if (ori === "vertical") return "y";
+      if (ori === "horizontal") return "x";
+    } catch {
+    }
+    try {
+      const r = el && typeof el.getBoundingClientRect === "function" ? el.getBoundingClientRect() : null;
+      if (r && r.height >= r.width * 1.4 && r.height >= 32) return "y";
+    } catch {
+    }
+    return "x";
+  }
+  function volumeFromClientPoint(clientX, clientY, rect, axis = "x") {
+    if (!rect) return null;
+    if (axis === "y") {
+      if (!(rect.height > 0) || !Number.isFinite(clientY)) return null;
+      return clamp01(1 - (clientY - rect.top) / rect.height);
+    }
+    if (!(rect.width > 0) || !Number.isFinite(clientX)) return null;
+    return clamp01((clientX - rect.left) / rect.width);
+  }
   function isVolumeOrNonSeekSlider(el) {
     if (!el || el.nodeType !== 1) return false;
     try {
@@ -4041,6 +4069,7 @@
         );
         if (host) return true;
       }
+      if (sliderAxis(el) === "y") return true;
     } catch {
     }
     return false;
@@ -4091,9 +4120,10 @@
     if (!el || el.nodeType !== 1) return null;
     if (isNonScrubControl(el)) return null;
     try {
-      if (isNativeRange(el)) return el;
-      const role = (el.getAttribute("role") || "").trim().toLowerCase();
-      if (role === "slider") return el;
+      if (isNativeRange(el) || (el.getAttribute("role") || "").trim().toLowerCase() === "slider") {
+        if (isVolumeOrNonSeekSlider(el)) return null;
+        return el;
+      }
     } catch {
     }
     try {
@@ -4110,6 +4140,50 @@
         if (isShortTrackHost(n) && typeof n.querySelector === "function") {
           const inner = n.querySelector(':scope > [role="slider"], :scope > input[type="range"], [role="slider"], input[type="range"]');
           if (inner && !isVolumeOrNonSeekSlider(inner)) return inner;
+        }
+      } catch {
+      }
+      n = n.parentElement;
+      depth++;
+    }
+    return null;
+  }
+  function isTallVolumeHost(el) {
+    try {
+      const r = el.getBoundingClientRect();
+      if (!r || r.height < 40 || r.width <= 0) return false;
+      if (r.height < r.width * 1.4) return false;
+      if (r.width > 80) return false;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  function resolveVolumeControl(el) {
+    if (!el || el.nodeType !== 1) return null;
+    if (isNonScrubControl(el)) return null;
+    try {
+      if (isNativeRange(el) && isVolumeOrNonSeekSlider(el)) return el;
+      const role = (el.getAttribute("role") || "").trim().toLowerCase();
+      if (role === "slider" && isVolumeOrNonSeekSlider(el)) return el;
+    } catch {
+    }
+    try {
+      if (typeof el.closest === "function") {
+        const viaClosest = el.closest('input[type="range"], [role="slider"]');
+        if (viaClosest && isVolumeOrNonSeekSlider(viaClosest)) return viaClosest;
+      }
+    } catch {
+    }
+    let n = el;
+    let depth = 0;
+    while (n && n.nodeType === 1 && depth < 4) {
+      try {
+        if (isTallVolumeHost(n) && typeof n.querySelector === "function") {
+          const inner = n.querySelector(
+            ':scope > [role="slider"], :scope > input[type="range"], [role="slider"], input[type="range"]'
+          );
+          if (inner && isVolumeOrNonSeekSlider(inner)) return inner;
         }
       } catch {
       }
@@ -4203,6 +4277,42 @@
     }
     const seconds = applyMediaSeek(control, clientX);
     return seconds == null ? true : seconds;
+  }
+  function applyMediaVolume(trackEl, clientX, clientY) {
+    if (!trackEl || !isVolumeOrNonSeekSlider(trackEl)) return null;
+    let rect = null;
+    try {
+      rect = trackEl.getBoundingClientRect();
+    } catch {
+      rect = null;
+    }
+    if (!rect) return null;
+    const axis = sliderAxis(trackEl);
+    if (axis === "y" && !(rect.height >= 24)) return null;
+    if (axis === "x" && !(rect.width >= 24)) return null;
+    const next = volumeFromClientPoint(clientX, clientY, rect, axis);
+    if (next == null) return null;
+    const media = findAssociatedMedia(trackEl);
+    try {
+      if (media) {
+        media.volume = next;
+        media.muted = next <= 1e-3;
+      }
+    } catch {
+    }
+    return next;
+  }
+  function tryActivateVolumeSlider(el, clientX, clientY) {
+    if (!el || el.nodeType !== 1) return false;
+    if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return false;
+    const control = resolveVolumeControl(el);
+    if (!control) return false;
+    try {
+      dispatchClickSequence(el, clientX, clientY);
+    } catch {
+    }
+    const volume = applyMediaVolume(control, clientX, clientY);
+    return volume == null ? true : volume;
   }
 
   // src/modules/frame-click-agent.js
@@ -5035,6 +5145,18 @@
             if (typeof scrub === "number" && Number.isFinite(scrub)) {
               try {
                 chrome.runtime?.sendMessage?.({ type: MSG.FRAME_MEDIA_SEEK, seconds: scrub });
+              } catch {
+              }
+            }
+            return true;
+          }
+        }
+        if (!openInNewTab && !background) {
+          const vol = tryActivateVolumeSlider(el, clientX, clientY);
+          if (vol !== false) {
+            if (typeof vol === "number" && Number.isFinite(vol)) {
+              try {
+                chrome.runtime?.sendMessage?.({ type: MSG.FRAME_MEDIA_VOLUME, volume: vol });
               } catch {
               }
             }

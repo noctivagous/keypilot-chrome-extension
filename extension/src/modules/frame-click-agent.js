@@ -36,7 +36,7 @@ import { deepElementFromPoint } from '../utils/element-from-point.js';
 import { resolveHoveredLink } from '../utils/resolve-hovered-link.js';
 import { containsComposed } from '../ui/kp-chrome-shadow.js';
 import { dispatchClickSequence } from '../utils/synthetic-pointer.js';
-import { tryActivateScrubber } from '../utils/media-scrubber.js';
+import { tryActivateScrubber, tryActivateVolumeSlider } from '../utils/media-scrubber.js';
 
 /**
  * @typedef {{ openInNewTab?: boolean, background?: boolean, topOrigin?: string }} FrameActivateOptions
@@ -1079,6 +1079,18 @@ export function installFrameClickAgent() {
           if (typeof scrub === 'number' && Number.isFinite(scrub)) {
             try {
               chrome.runtime?.sendMessage?.({ type: MSG.FRAME_MEDIA_SEEK, seconds: scrub });
+            } catch { /* ignore */ }
+          }
+          return true;
+        }
+      }
+
+      if (!openInNewTab && !background) {
+        const vol = tryActivateVolumeSlider(el, clientX, clientY);
+        if (vol !== false) {
+          if (typeof vol === 'number' && Number.isFinite(vol)) {
+            try {
+              chrome.runtime?.sendMessage?.({ type: MSG.FRAME_MEDIA_VOLUME, volume: vol });
             } catch { /* ignore */ }
           }
           return true;

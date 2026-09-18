@@ -34,6 +34,44 @@ export function mediaTimeFromClientX(clientX, rect, duration) {
 }
 
 /**
+ * Horizontal vs vertical slider. YouTube's post-mute volume bar is vertical.
+ * @param {Element|null|undefined} el
+ * @returns {'x'|'y'}
+ */
+export function sliderAxis(el) {
+  try {
+    const ori = (el?.getAttribute?.('aria-orientation') || '').trim().toLowerCase();
+    if (ori === 'vertical') return 'y';
+    if (ori === 'horizontal') return 'x';
+  } catch { /* ignore */ }
+  try {
+    const r = el && typeof el.getBoundingClientRect === 'function'
+      ? el.getBoundingClientRect()
+      : null;
+    if (r && r.height >= r.width * 1.4 && r.height >= 32) return 'y';
+  } catch { /* ignore */ }
+  return 'x';
+}
+
+/**
+ * Map a click onto a 0–1 volume. Vertical: bottom = 0, top = 1 (YouTube).
+ * @param {number} clientX
+ * @param {number} clientY
+ * @param {{ left: number, top: number, width: number, height: number }|null|undefined} rect
+ * @param {'x'|'y'} [axis='x']
+ * @returns {number|null}
+ */
+export function volumeFromClientPoint(clientX, clientY, rect, axis = 'x') {
+  if (!rect) return null;
+  if (axis === 'y') {
+    if (!(rect.height > 0) || !Number.isFinite(clientY)) return null;
+    return clamp01(1 - (clientY - rect.top) / rect.height);
+  }
+  if (!(rect.width > 0) || !Number.isFinite(clientX)) return null;
+  return clamp01((clientX - rect.left) / rect.width);
+}
+
+/**
  * Volume / non-timeline sliders must not drive media.currentTime.
  * @param {Element|null|undefined} el
  * @returns {boolean}
@@ -54,6 +92,8 @@ export function isVolumeOrNonSeekSlider(el) {
       );
       if (host) return true;
     }
+    // Unlabeled YouTube volume popup is a tall thin slider, not a seek bar.
+    if (sliderAxis(el) === 'y') return true;
   } catch { /* ignore */ }
   return false;
 }
@@ -132,9 +172,10 @@ export function resolveScrubberControl(el) {
   if (isNonScrubControl(el)) return null;
 
   try {
-    if (isNativeRange(el)) return el;
-    const role = (el.getAttribute('role') || '').trim().toLowerCase();
-    if (role === 'slider') return el;
+    if (isNativeRange(el) || (el.getAttribute('role') || '').trim().toLowerCase() === 'slider') {
+      if (isVolumeOrNonSeekSlider(el)) return null;
+      return el;
+    }
   } catch { /* ignore */ }
 
   try {
@@ -152,6 +193,63 @@ export function resolveScrubberControl(el) {
       if (isShortTrackHost(n) && typeof n.querySelector === 'function') {
         const inner = n.querySelector(':scope > [role="slider"], :scope > input[type="range"], [role="slider"], input[type="range"]');
         if (inner && !isVolumeOrNonSeekSlider(inner)) return inner;
+      }
+    } catch { /* ignore */ }
+    n = n.parentElement;
+    depth++;
+  }
+
+  return null;
+}
+
+/**
+ * Skinny tall host around a volume slider (YouTube `.ytp-volume-panel`).
+ * @param {Element} el
+ * @returns {boolean}
+ */
+function isTallVolumeHost(el) {
+  try {
+    const r = el.getBoundingClientRect();
+    if (!r || r.height < 40 || r.width <= 0) return false;
+    if (r.height < r.width * 1.4) return false;
+    if (r.width > 80) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Volume slider under the cursor (not the timeline).
+ * @param {Element|null|undefined} el
+ * @returns {Element|null}
+ */
+export function resolveVolumeControl(el) {
+  if (!el || el.nodeType !== 1) return null;
+  if (isNonScrubControl(el)) return null;
+
+  try {
+    if (isNativeRange(el) && isVolumeOrNonSeekSlider(el)) return el;
+    const role = (el.getAttribute('role') || '').trim().toLowerCase();
+    if (role === 'slider' && isVolumeOrNonSeekSlider(el)) return el;
+  } catch { /* ignore */ }
+
+  try {
+    if (typeof el.closest === 'function') {
+      const viaClosest = el.closest('input[type="range"], [role="slider"]');
+      if (viaClosest && isVolumeOrNonSeekSlider(viaClosest)) return viaClosest;
+    }
+  } catch { /* ignore */ }
+
+  let n = el;
+  let depth = 0;
+  while (n && n.nodeType === 1 && depth < 4) {
+    try {
+      if (isTallVolumeHost(n) && typeof n.querySelector === 'function') {
+        const inner = n.querySelector(
+          ':scope > [role="slider"], :scope > input[type="range"], [role="slider"], input[type="range"]'
+        );
+        if (inner && isVolumeOrNonSeekSlider(inner)) return inner;
       }
     } catch { /* ignore */ }
     n = n.parentElement;
@@ -259,4 +357,54 @@ export function tryActivateScrubber(el, clientX, clientY) {
 
   const seconds = applyMediaSeek(control, clientX);
   return seconds == null ? true : seconds;
+}
+
+/**
+ * Set media.volume from a click on a volume slider.
+ * @param {Element} trackEl
+ * @param {number} clientX
+ * @param {number} clientY
+ * @returns {number|null} 0–1 volume, or null
+ */
+export function applyMediaVolume(trackEl, clientX, clientY) {
+  if (!trackEl || !isVolumeOrNonSeekSlider(trackEl)) return null;
+  let rect = null;
+  try { rect = trackEl.getBoundingClientRect(); } catch { rect = null; }
+  if (!rect) return null;
+  const axis = sliderAxis(trackEl);
+  if (axis === 'y' && !(rect.height >= 24)) return null;
+  if (axis === 'x' && !(rect.width >= 24)) return null;
+  const next = volumeFromClientPoint(clientX, clientY, rect, axis);
+  if (next == null) return null;
+  const media = findAssociatedMedia(trackEl);
+  try {
+    if (media) {
+      media.volume = next;
+      media.muted = next <= 0.001;
+    }
+  } catch { /* isolated-world write; MAIN-world setVolume follows */ }
+  return next;
+}
+
+/**
+ * Activate a volume slider under the cursor.
+ * @param {Element|null|undefined} el
+ * @param {number} clientX
+ * @param {number} clientY
+ * @returns {number|true|false} 0–1 volume, `true` if handled without a mapped
+ *   value, `false` if this hit is not a volume slider
+ */
+export function tryActivateVolumeSlider(el, clientX, clientY) {
+  if (!el || el.nodeType !== 1) return false;
+  if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return false;
+
+  const control = resolveVolumeControl(el);
+  if (!control) return false;
+
+  try {
+    dispatchClickSequence(el, clientX, clientY);
+  } catch { /* ignore */ }
+
+  const volume = applyMediaVolume(control, clientX, clientY);
+  return volume == null ? true : volume;
 }

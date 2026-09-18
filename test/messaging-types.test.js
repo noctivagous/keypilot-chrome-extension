@@ -57,6 +57,7 @@ describe('messaging validate', () => {
     assert.equal(isServiceWorkerRequestType(MSG.GET_STATE), true);
     assert.equal(isServiceWorkerRequestType(MSG.FRAME_ACTIVATE), false);
     assert.equal(isServiceWorkerRequestType(MSG.FRAME_MEDIA_SEEK), true);
+    assert.equal(isServiceWorkerRequestType(MSG.FRAME_MEDIA_VOLUME), true);
     assert.equal(
       validateRuntimeMessage({ type: MSG.GET_STATE }, { requireSwRequest: true }),
       null

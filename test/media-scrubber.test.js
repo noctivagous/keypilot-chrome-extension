@@ -4,8 +4,11 @@ import assert from 'node:assert/strict';
 import {
   clamp01,
   mediaTimeFromClientX,
+  volumeFromClientPoint,
+  sliderAxis,
   isVolumeOrNonSeekSlider,
-  resolveScrubberControl
+  resolveScrubberControl,
+  resolveVolumeControl
 } from '../extension/src/utils/media-scrubber.js';
 
 describe('media-scrubber math', () => {
@@ -127,5 +130,33 @@ describe('media-scrubber volume vs timeline', () => {
       parentElement: chrome
     };
     assert.equal(resolveScrubberControl(pad), null);
+  });
+
+  it('maps a vertical volume bar: top = 1, bottom = 0', () => {
+    const rect = { left: 0, top: 100, width: 12, height: 100 };
+    assert.equal(volumeFromClientPoint(6, 100, rect, 'y'), 1);
+    assert.equal(volumeFromClientPoint(6, 150, rect, 'y'), 0.5);
+    assert.equal(volumeFromClientPoint(6, 200, rect, 'y'), 0);
+    assert.equal(volumeFromClientPoint(6, 50, rect, 'y'), 1);
+    assert.equal(volumeFromClientPoint(6, 250, rect, 'y'), 0);
+  });
+
+  it('treats a tall unlabeled slider as volume, not a seek bar', () => {
+    const vol = {
+      nodeType: 1,
+      tagName: 'DIV',
+      getAttribute: (name) => (name === 'role' ? 'slider' : ''),
+      hasAttribute: () => false,
+      className: 'ytp-volume-slider',
+      closest: function closest(sel) {
+        return String(sel).includes('slider') ? this : null;
+      },
+      getBoundingClientRect: () => ({ left: 0, top: 0, width: 12, height: 80 }),
+      parentElement: null
+    };
+    assert.equal(sliderAxis(vol), 'y');
+    assert.equal(isVolumeOrNonSeekSlider(vol), true);
+    assert.equal(resolveScrubberControl(vol), null);
+    assert.equal(resolveVolumeControl(vol), vol);
   });
 });
