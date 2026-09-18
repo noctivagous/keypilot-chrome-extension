@@ -70,6 +70,9 @@ That regenerates `content-bundled.js`, `frame-agent-bundled.js`, `pages/docs-bun
 
 Extension name, description, and toolbar title are localized from `_locales/<locale>/messages.json`; keep `manifest.json` values as `__MSG_*__` references. Builds and store-packaging scripts validate those references but do not rewrite them.
 
+For the cross-repository localization workflow, content boundaries, validation,
+and release checklist, see [`i18n/README.md`](../i18n/README.md).
+
 Optional:
 
 - `npm run build:macro-builder` — enable the Macro Builder UI

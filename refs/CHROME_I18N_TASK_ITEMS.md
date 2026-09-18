@@ -1,6 +1,8 @@
 # Chrome i18n phased task items
 
 Implementation checklist for localizing KeyPilot's Chrome-extension surfaces.
+For the durable workflow used for future localization work, see
+[`i18n/README.md`](../i18n/README.md).
 
 ## Scope and design constraints
 
