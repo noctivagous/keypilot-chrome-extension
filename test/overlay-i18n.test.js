@@ -33,11 +33,49 @@ const OVERLAY_KEYS = [
   ]],
   ['extension/src/modules/top-sites-popover.js', [
     'top_sites_tab_toolbar',
-    'top_sites_empty_toolbar'
+    'top_sites_empty_toolbar',
+    'top_sites_options_aria',
+    'top_sites_count',
+    'top_sites_count_one'
   ]],
   ['extension/src/modules/tab-history-popover.js', [
     'tab_history_section_tabs',
     'tab_history_section_browser'
+  ]],
+  ['extension/src/modules/launcher-popover.js', [
+    'launcher_title',
+    'launcher_footer_hint',
+    'launcher_subtab_launch_deck',
+    'launcher_edit_deck',
+    'launcher_filter_placeholder',
+    'launcher_archive_search_label',
+    'launcher_visited_on'
+  ]],
+  ['extension/src/keypilot.js', [
+    'settings_static_009',
+    'docs_document_title',
+    'docs_text_size_label',
+    'popup_docs'
+  ]],
+  ['extension/pages/settings.js', [
+    'settings_static_018',
+    'settings_click_effect_hint',
+    'settings_paint_mode_hint',
+    'settings_control_strip_lead'
+  ]],
+  ['extension/src/ui/keybindings-ui.js', [
+    'key_info_key',
+    'key_info_settings_hint',
+    'key_info_config'
+  ]],
+  ['extension/src/ui/floating-keyboard-help.js', [
+    'layout_picker_group_builtin',
+    'layout_picker_group_custom',
+    'layout_picker_docs',
+    'layout_picker_settings',
+    'context_menu_group_layout_editor',
+    'context_menu_edit_layouts',
+    'popup_tutorial'
   ]]
 ];
 

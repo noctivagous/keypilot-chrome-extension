@@ -2184,20 +2184,20 @@ export class FloatingKeyboardHelp {
       };
       appendGroup(getMessage('layout_picker_group_builtin'), groups.builtin);
       known.add('builtin');
-      appendGroup('Custom', groups.custom);
+      appendGroup(getMessage('layout_picker_group_custom'), groups.custom);
 
       if (!this._editMode) {
-        appendGroup('Keyboard Layout Editor', [
-          { value: LAYOUT_SELECT_EDIT_VALUE, label: 'Edit Keyboard Layout…', shortcut: 'Alt + C' },
-          { value: LAYOUT_SELECT_NEW_VALUE, label: 'New Blank Keyboard Layout' },
-          { value: LAYOUT_SELECT_DUP_VALUE, label: 'New Duplicate Keyboard Layout' }
+        appendGroup(getMessage('context_menu_group_layout_editor'), [
+          { value: LAYOUT_SELECT_EDIT_VALUE, label: getMessage('context_menu_edit_layouts'), shortcut: 'Alt + C' },
+          { value: LAYOUT_SELECT_NEW_VALUE, label: getMessage('context_menu_new_layout') },
+          { value: LAYOUT_SELECT_DUP_VALUE, label: getMessage('context_menu_duplicate_layout') }
         ]);
       }
 
-      appendGroup('KeyPilot', [
-        { value: LAYOUT_SELECT_ONBOARDING_VALUE, label: 'Onboarding Tutorial', shortcut: 'Alt + I' },
-        { value: LAYOUT_SELECT_DOCS_VALUE, label: 'KeyPilot Documentation', shortcut: 'Alt + H' },
-        { value: LAYOUT_SELECT_SETTINGS_VALUE, label: 'KeyPilot Settings', shortcut: "'" }
+      appendGroup(getMessage('extension_name'), [
+        { value: LAYOUT_SELECT_ONBOARDING_VALUE, label: getMessage('popup_tutorial'), shortcut: 'Alt + I' },
+        { value: LAYOUT_SELECT_DOCS_VALUE, label: getMessage('layout_picker_docs'), shortcut: 'Alt + H' },
+        { value: LAYOUT_SELECT_SETTINGS_VALUE, label: getMessage('layout_picker_settings'), shortcut: "'" }
       ]);
 
       let v = this._layoutSelectValueForCurrent();

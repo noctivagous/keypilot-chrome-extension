@@ -6701,7 +6701,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       }
     };
     appendGroup(getMessage('layout_picker_group_builtin'), groups.builtin);
-    appendGroup('Custom', groups.custom);
+    appendGroup(getMessage('layout_picker_group_custom'), groups.custom);
 
     if (this.shadowRoot?.activeElement !== input) {
       input.value = readOnly

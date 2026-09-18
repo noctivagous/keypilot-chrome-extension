@@ -19,7 +19,8 @@ const CONTEXT_MENU_KEYS = [
   'context_menu_group_layout_editor',
   'context_menu_edit_layouts',
   'context_menu_new_layout',
-  'context_menu_duplicate_layout'
+  'context_menu_duplicate_layout',
+  'overlay_untitled'
 ];
 
 describe('context-menu localization', () => {

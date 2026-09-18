@@ -1613,15 +1613,15 @@ async function init() {
     const settingsContainerHeight = Math.min(window.innerHeight * 0.82, window.innerHeight - 80) + 20;
 
     createModal({
-      title: 'KeyPilot Settings',
+      title: getMessage('settings_static_009'),
       hintKeyLabel: "'",
       closeKeys: ['Escape', "'", '"'],
       url: 'settings.html',
       width: `${settingsContainerWidth}px`,
       height: `${settingsContainerHeight}px`,
       actions: createTitlebarActionButton({
-        label: 'Help/Documentation',
-        title: 'Help/Documentation',
+        label: getMessage('popup_docs'),
+        title: getMessage('popup_docs_aria_label'),
         className: 'kpv2-popover-titlebar-docs',
         iconPaths: [
           { attrs: { d: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20' } },
@@ -1631,7 +1631,7 @@ async function init() {
           const docsContainerWidth = Math.min(980, window.innerWidth - 36) + 20;
           const docsContainerHeight = Math.min(window.innerHeight * 0.82, window.innerHeight - 80) + 20;
           createModal({
-            title: 'KeyPilot Docs',
+            title: getMessage('docs_document_title'),
             hintKeyLabel: 'Alt+H',
             closeKeys: ['Escape'],
             url: 'docs.html#settings',
@@ -1652,7 +1652,7 @@ async function init() {
     const guideContainerHeight = Math.min(window.innerHeight * 0.8, window.innerHeight - 100) + 20; // Use 80vh max + 10pt padding each side
 
     createModal({
-      title: 'KeyPilot Guide',
+      title: getMessage('guide_document_title'),
       hintKeyLabel: 'Esc',
       closeKeys: ['Escape', "'", '"', 'e', 'E'],
       url: 'guide.html',

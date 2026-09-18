@@ -1047,7 +1047,7 @@ export class LauncherPopover {
         (visitCount === prev.visitCount && lastVisitTime > prev.lastVisitTime)
       ) {
         bestByUrl.set(key, {
-          title: bm.title || extractDomain(bm.url) || 'Untitled',
+          title: bm.title || extractDomain(bm.url) || getMessage('overlay_untitled'),
           url: bm.url,
           dateAdded: bm.dateAdded,
           visitCount,
@@ -1774,7 +1774,7 @@ export class LauncherPopover {
     const hint = doc.createElement('div');
     hint.className = 'kp-launcher-footer-hint';
     hint.style.cssText = 'color: #888; font-size: 13px;';
-    hint.innerHTML = 'Press <strong>↑↓</strong> for tabs • <strong>/</strong> to search • <strong>F</strong> to open • <strong>Esc</strong> to close';
+    hint.textContent = getMessage('launcher_footer_hint');
 
     this._launchDeckEditBar = doc.createElement('div');
     this._launchDeckEditBar.className = 'kp-launcher-edit-bar';
@@ -2191,10 +2191,14 @@ export class LauncherPopover {
 
     // Create sub-tabs based on configuration
     const subTabLabels = {
-      sites: 'Launch Deck',
-      favorites: this._currentCategory === 'launchDeck' ? 'Toolbar Bookmarks' : 'Favorites',
-      history: this._currentCategory === 'launchDeck' ? 'Top Visited' : 'History',
-      search: 'Search'
+      sites: getMessage('launcher_subtab_launch_deck'),
+      favorites: this._currentCategory === 'launchDeck'
+        ? getMessage('launcher_subtab_toolbar_bookmarks')
+        : getMessage('launcher_subtab_favorites'),
+      history: this._currentCategory === 'launchDeck'
+        ? getMessage('launcher_subtab_top_visited')
+        : getMessage('launcher_subtab_history'),
+      search: getMessage('launcher_search')
     };
 
     subTabConfig.forEach((subTabType) => {
@@ -2248,7 +2252,7 @@ export class LauncherPopover {
 
     const toggleBtn = doc.createElement('button');
     toggleBtn.type = 'button';
-    toggleBtn.textContent = editing ? 'Done' : 'Edit Launch Deck';
+    toggleBtn.textContent = editing ? getMessage('launcher_done') : getMessage('launcher_edit_deck');
     toggleBtn.style.cssText = `
       padding: 5px 10px;
       border-radius: 6px;
@@ -2348,6 +2352,7 @@ export class LauncherPopover {
     const closeBtn = doc.createElement('button');
     closeBtn.type = 'button';
     closeBtn.textContent = '✕';
+    closeBtn.setAttribute('aria-label', getMessage('overlay_close'));
     closeBtn.style.cssText = `
       border: none; background: transparent; color: #888; cursor: pointer; font-size: 16px;
     `;
@@ -2357,7 +2362,7 @@ export class LauncherPopover {
 
     const filter = doc.createElement('input');
     filter.type = 'text';
-    filter.placeholder = 'Filter catalog…';
+    filter.placeholder = getMessage('launcher_filter_catalog_placeholder');
     filter.style.cssText = `
       margin: 10px 14px 0;
       padding: 8px 10px;
@@ -2392,7 +2397,9 @@ export class LauncherPopover {
       });
       if (!rows.length) {
         const empty = doc.createElement('div');
-        empty.textContent = needle ? 'No matching sites' : 'All catalog sites are already on your deck';
+        empty.textContent = needle
+          ? getMessage('launcher_no_matching_sites')
+          : getMessage('launcher_all_sites_on_deck');
         empty.style.cssText = 'color: #666; font-size: 13px; padding: 16px 8px;';
         list.appendChild(empty);
         return;
@@ -2651,7 +2658,7 @@ export class LauncherPopover {
 
     const input = doc.createElement('input');
     input.type = 'search';
-    input.placeholder = 'Filter results...';
+    input.placeholder = getMessage('launcher_filter_placeholder');
     input.className = 'kp-launcher-search-input';
     input.setAttribute('aria-label', getMessage('launcher_filter_aria'));
     input.autocomplete = 'off';
@@ -2909,8 +2916,8 @@ export class LauncherPopover {
       `;
       if (currentSubTab === 'search') {
         empty.textContent = this._searchQuery.trim()
-          ? 'No sites match your search'
-          : 'Type to search sites in this category';
+          ? getMessage('launcher_no_search_matches')
+          : getMessage('launcher_search_prompt');
       } else if (categoryKey === 'launchDeck' && currentSubTab === 'favorites') {
         empty.textContent = getMessage('launcher_empty_toolbar');
       } else if (categoryKey === 'launchDeck' && currentSubTab === 'history') {
@@ -3218,14 +3225,14 @@ export class LauncherPopover {
   _createArchiveSearchBar(doc) {
     return this._createHeaderPageSearchBar(doc, {
       className: 'kp-launcher-archive-search',
-      label: 'Search the Archive',
+      label: getMessage('launcher_archive_search_label'),
       inputId: 'kp-launcher-archive-search-input',
-      placeholder: 'Texts, movies, software, music, websites…',
-      ariaLabel: 'Search the Internet Archive',
+      placeholder: getMessage('launcher_archive_search_placeholder'),
+      ariaLabel: getMessage('launcher_archive_search_aria'),
       draftKey: 'archive',
       maxWidth: '420px',
       buildUrl: (q) => `https://archive.org/search?query=${encodeURIComponent(q)}`,
-      resultsTitle: (q) => `Archive · ${q}`
+      resultsTitle: (q) => getMessage('launcher_archive_results_title', q)
     });
   }
 
@@ -3281,10 +3288,10 @@ export class LauncherPopover {
 
     return this._createHeaderPageSearchBar(doc, {
       className: 'kp-launcher-videos-search',
-      label: 'Search Videos',
+      label: getMessage('launcher_videos_search_label'),
       inputId: 'kp-launcher-videos-search-input',
-      placeholder: 'Search videos…',
-      ariaLabel: 'Search videos',
+      placeholder: getMessage('launcher_videos_search_placeholder'),
+      ariaLabel: getMessage('launcher_videos_search_aria'),
       draftKey: 'videos',
       leadingControl: select,
       maxWidth: '560px',
@@ -3298,7 +3305,7 @@ export class LauncherPopover {
         const site =
           this._getVideoSearchSites().find((s) => s.url === this._videosSearchSiteUrl) ||
           this._getVideoSearchSites()[0];
-        return `${site?.title || 'Videos'} · ${q}`;
+        return `${site?.title || getMessage('launcher_category_videos_label')} · ${q}`;
       }
     });
   }
@@ -3470,7 +3477,7 @@ export class LauncherPopover {
 
     if (visitedLabel) {
       mainLink.appendChild(
-        this._createCardDateOverlay(doc, `Visited on ${visitedLabel}`)
+        this._createCardDateOverlay(doc, getMessage('launcher_visited_on', visitedLabel))
       );
     }
 
@@ -3518,14 +3525,14 @@ export class LauncherPopover {
         return btn;
       };
 
-      const upBtn = mkEditBtn('↑', 'Move up', () => {
+      const upBtn = mkEditBtn('↑', getMessage('launcher_move_up'), () => {
         void this._moveLaunchDeckItem(item.url, -1);
       });
       upBtn.style.borderLeft = 'none';
-      const downBtn = mkEditBtn('↓', 'Move down', () => {
+      const downBtn = mkEditBtn('↓', getMessage('launcher_move_down'), () => {
         void this._moveLaunchDeckItem(item.url, 1);
       });
-      const removeBtn = mkEditBtn('✕', 'Remove from Launch Deck', () => {
+      const removeBtn = mkEditBtn('✕', getMessage('launcher_remove_from_deck'), () => {
         void this._hideLaunchDeckItem(item.url);
       });
       removeBtn.addEventListener('mouseenter', () => {
@@ -3611,7 +3618,7 @@ export class LauncherPopover {
     `;
     previewBtn.appendChild(launchEye);
     previewBtn.appendChild(launchPreviewLabel);
-    previewBtn.title = 'Preview / close preview';
+    previewBtn.title = getMessage('launcher_preview_toggle');
 
     previewBtn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -3670,8 +3677,8 @@ export class LauncherPopover {
       ? this._formatBookmarkAddedDate(item.dateAdded)
       : null;
     const dateOverlayText = visitedLabel
-      ? `Visited on ${visitedLabel}`
-      : (addedLabel ? `Added on ${addedLabel}` : null);
+      ? getMessage('launcher_visited_on', visitedLabel)
+      : (addedLabel ? getMessage('launcher_added_on', addedLabel) : null);
 
     const container = doc.createElement('div');
     container.className = 'kp-launcher-card-container kp-launcher-listing-card';
@@ -3807,7 +3814,7 @@ export class LauncherPopover {
     `;
     previewBtn.appendChild(listingEye);
     previewBtn.appendChild(listingPreviewLabel);
-    previewBtn.title = 'Preview / close preview';
+    previewBtn.title = getMessage('launcher_preview_toggle');
 
     previewBtn.addEventListener('click', (e) => {
       e.preventDefault();

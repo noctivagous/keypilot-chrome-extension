@@ -11,6 +11,8 @@
  * - Future-proof for user-defined layouts (store user layouts separately; keep IDs stable).
  */
 
+import { getMessage } from '../utils/i18n.js';
+
 /**
  * @typedef {'browsing-right'|'browsing-left'|'basic-navigation-right'|'basic-navigation-left'|'click-history-right'|'click-history-left'} BuiltinKeyboardLayoutId
  * @typedef {BuiltinKeyboardLayoutId|string} KeyboardLayoutId
@@ -891,6 +893,21 @@ function normalizeAssignmentLabels(a) {
 }
 
 /**
+ * Resolve Function-catalog display copy for a built-in action.
+ * English `def.label` / `def.description` remain the fallback when a message is missing.
+ * @param {string} actionId
+ * @param {ActionDef|null|undefined} def
+ * @returns {{ label: string, description: string }}
+ */
+function localizedActionCopy(actionId, def) {
+  const id = String(actionId || '');
+  return {
+    label: getMessage(`fn_${id}_label`) || def?.label || id,
+    description: getMessage(`fn_${id}_description`) || def?.description || ''
+  };
+}
+
+/**
  * Build the legacy `KEYBINDINGS` object shape used throughout the codebase.
  *
  * @param {BuiltinKeyboardLayoutId} layoutId
@@ -906,13 +923,14 @@ export function buildKeybindingsForLayout(layoutId) {
     const assign = layout?.assignments?.[actionId];
     if (!assign || !Array.isArray(assign.keys)) continue;
     const labels = normalizeAssignmentLabels(assign);
+    const copy = localizedActionCopy(actionId, def);
 
     out[actionId] = {
       keys: assign.keys.slice(),
       ...(Array.isArray(assign.matchOn) ? { matchOn: assign.matchOn.slice() } : {}),
       handler: def.handler,
-      label: def.label,
-      description: def.description,
+      label: copy.label,
+      description: copy.description,
       keyLabel: labels.keyLabel,
       keyboardClass: def.keyboardClass ?? null,
       row: def.row ?? null,
@@ -943,11 +961,12 @@ export const CATALOG_KEYBINDINGS = (() => {
   const out = {};
   for (const [actionId, def] of Object.entries(KEYBINDING_ACTION_DEFS)) {
     if (isBuildExcludedKeyAction(actionId)) continue;
+    const copy = localizedActionCopy(actionId, def);
     out[actionId] = Object.freeze({
       keys: Object.freeze([]),
       handler: def.handler,
-      label: def.label,
-      description: def.description,
+      label: copy.label,
+      description: copy.description,
       keyboardClass: def.keyboardClass ?? null,
       row: def.row ?? null,
       displayKey: '',
@@ -966,7 +985,9 @@ export function resolveKeybinding(actionId, keybindings) {
   const id = String(actionId || '');
   if (!id) return null;
   if (keybindings && keybindings[id]) return keybindings[id];
-  return CATALOG_KEYBINDINGS[id] || null;
+  const catalog = CATALOG_KEYBINDINGS[id];
+  if (!catalog) return null;
+  return { ...catalog, ...localizedActionCopy(id, KEYBINDING_ACTION_DEFS[id]) };
 }
 
 /**
@@ -1116,12 +1137,13 @@ export function buildSystemKeybindings(handedness = DEFAULT_KEYBOARD_HANDEDNESS)
     const assign = assignments[actionId];
     if (!def || !assign || !Array.isArray(assign.keys)) continue;
     const labels = normalizeAssignmentLabels(assign);
+    const copy = localizedActionCopy(actionId, def);
     out[actionId] = {
       keys: assign.keys.slice(),
       ...(Array.isArray(assign.matchOn) ? { matchOn: assign.matchOn.slice() } : {}),
       handler: def.handler,
-      label: def.label,
-      description: def.description,
+      label: copy.label,
+      description: copy.description,
       keyLabel: labels.keyLabel,
       keyboardClass: def.keyboardClass ?? null,
       row: def.row ?? null,

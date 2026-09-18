@@ -1252,7 +1252,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               const bookmarks = (nodes || [])
                 .filter((n) => n && n.url)
                 .map((n) => ({
-                  title: n.title || 'Untitled',
+                  title: n.title || getMessage('overlay_untitled'),
                   url: n.url,
                   dateAdded: n.dateAdded,
                   id: n.id,
@@ -1336,7 +1336,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 for (const node of nodes) {
                   if (node.url) {
                     bookmarks.push({
-                      title: node.title || 'Untitled',
+                      title: node.title || getMessage('overlay_untitled'),
                       url: node.url,
                       dateAdded: node.dateAdded,
                       id: node.id,

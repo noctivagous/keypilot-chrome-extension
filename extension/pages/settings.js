@@ -339,9 +339,24 @@ function toHexColor(raw, fallback = '#888888') {
   return fallback;
 }
 
+const THEME_NAME_KEYS = Object.freeze({
+  'dark-pro': 'settings_static_018',
+  'gray-metal-pro': 'settings_static_019',
+  'gx-er': 'settings_static_020'
+});
+
 function themeDisplayName(themeId, customized) {
-  const name = THEME_META[themeId]?.name || themeId;
+  const name = getMessage(THEME_NAME_KEYS[themeId] || '') || THEME_META[themeId]?.name || themeId;
   return customized ? getMessage('settings_theme_custom_name', name) : name;
+}
+
+function localizeSettingsMixedCopy() {
+  const clickHint = settingsEl('settings-click-effect-hint');
+  if (clickHint) clickHint.textContent = getMessage('settings_click_effect_hint', 'F');
+  const paintHint = settingsEl('settings-paint-mode-hint');
+  if (paintHint) paintHint.textContent = getMessage('settings_paint_mode_hint', 'Alt+D');
+  const stripLead = settingsEl('settings-control-strip-lead');
+  if (stripLead) stripLead.textContent = getMessage('settings_control_strip_lead', 'Alt+J');
 }
 
 /**
@@ -867,7 +882,7 @@ async function render() {
       for (const t of listThemes()) {
         const opt = document.createElement('option');
         opt.value = t.id;
-        opt.textContent = t.name;
+        opt.textContent = themeDisplayName(t.id, false);
         uiThemeSelect.appendChild(opt);
       }
     }
@@ -1066,6 +1081,7 @@ export async function mountSettingsApp(root, options = {}) {
     settingsScope = document;
   }
   localizeElements(settingsScope);
+  localizeSettingsMixedCopy();
   adaptHeaderForPopoverEmbed(embedded);
   try { applyAppearanceFromCache(); } catch { /* ignore */ }
   await render();

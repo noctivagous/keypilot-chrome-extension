@@ -34,6 +34,7 @@ import {
   queryPopoverWindowInfo
 } from './modules/popover-window-chrome.js';
 import { kpGetDeepActiveElement } from './utils/dom-context.js';
+import { getMessage } from './utils/i18n.js';
 import {
   buildKeybindingsForLayout,
   buildSystemKeybindings,
@@ -7955,7 +7956,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     const settingsContainerHeight = Math.min(window.innerHeight * 0.82, window.innerHeight - 80) + 20;
 
     void this.overlayManager.showInPageSettingsPopover({
-      title: 'KeyPilot Settings',
+      title: getMessage('settings_static_009'),
       hintKeyLabel: "'",
       width: `${settingsContainerWidth}px`,
       height: `${settingsContainerHeight}px`,
@@ -7971,8 +7972,8 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
    */
   _createSettingsDocsTitlebarButton() {
     return createTitlebarActionButton({
-      label: 'Help/Documentation',
-      title: 'Help/Documentation',
+      label: getMessage('popup_docs'),
+      title: getMessage('popup_docs_aria_label'),
       className: 'kpv2-popover-titlebar-docs',
       iconPaths: [
         { attrs: { d: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20' } },
@@ -7989,9 +7990,9 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
    */
   _createDocsFontScaleControl() {
     const { root } = createNctDarkUiScaleSlider({
-      label: 'Text',
-      title: 'Documentation text size',
-      ariaLabel: 'Documentation text size',
+      label: getMessage('docs_text_size_label'),
+      title: getMessage('docs_text_size_aria'),
+      ariaLabel: getMessage('docs_text_size_aria'),
       min: 0.8,
       max: 1.75,
       step: 0.05,
@@ -8035,7 +8036,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     const guideContainerHeight = Math.min(window.innerHeight * 0.8, window.innerHeight - 100) + 20; // Use 80vh max + 10pt padding each side
 
     this.overlayManager.showPopover(url, {
-      title: 'KeyPilot Guide',
+      title: getMessage('guide_document_title'),
       hintKeyLabel: 'Esc',
       closeKeys: ['Escape', "'", '"', 'p', 'P'],
       width: `${guideContainerWidth}px`,
@@ -8074,7 +8075,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     const docsContainerHeight = Math.min(window.innerHeight * 0.82, window.innerHeight - 80) + 20;
 
     void this.overlayManager.showInPageDocsPopover({
-      title: 'KeyPilot Docs',
+      title: getMessage('docs_document_title'),
       hintKeyLabel: 'Alt + H',
       width: `${docsContainerWidth}px`,
       height: `${docsContainerHeight}px`,

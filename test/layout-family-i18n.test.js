@@ -11,7 +11,10 @@ const FAMILY_MESSAGE_KEYS = [
   'layout_family_navigation_picker',
   'layout_family_basic_navigation_label',
   'layout_family_basic_navigation_picker',
-  'layout_picker_group_builtin'
+  'layout_picker_group_builtin',
+  'layout_picker_group_custom',
+  'layout_picker_docs',
+  'layout_picker_settings'
 ];
 
 describe('keyboard layout family localization', () => {
@@ -33,6 +36,7 @@ describe('keyboard layout family localization', () => {
     assert.match(settings, /getMessage\(m\.labelKey\)/);
     assert.match(buildSideEffects, /m\.labelKey/);
     assert.match(earlyInject, /earlyMessage\(String\(pair\[1\]\)\)/);
+    assert.match(source, /getMessage\(`fn_\$\{id\}_label`\)/);
   });
 
   it('defines all layout-family messages in English and the test locale', async () => {

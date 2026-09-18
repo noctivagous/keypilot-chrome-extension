@@ -7915,14 +7915,21 @@
         keyEl.setAttribute('role', 'button');
         // Prefer aria-label over title so the browser native tooltip doesn't fight our hover popover.
         try { keyEl.removeAttribute('title'); } catch { /* ignore */ }
+        const actionLabel = (item.id && earlyMessage(`fn_${item.id}_label`))
+          || (binding && binding.label)
+          || item.fallbackText
+          || item.id;
+        const actionDescription = (item.id && earlyMessage(`fn_${item.id}_description`))
+          || (binding && binding.description)
+          || '';
         keyEl.setAttribute(
           'aria-label',
-          (binding && (binding.description || binding.label)) || item.fallbackText || item.id
+          actionDescription || actionLabel
         );
         // Only keys with functions get FA background icons.
         ensureBgIcon(keyEl);
 
-        const main = el(doc, 'div', 'key-main', (binding && binding.label) || item.fallbackText || item.id);
+        const main = el(doc, 'div', 'key-main', actionLabel);
         keyEl.appendChild(main);
 
         const labelText = (binding && (binding.displayKey || binding.keyLabel)) || '';

@@ -701,7 +701,7 @@ export class TopSitesPopover {
     const btn = doc.createElement('button');
     btn.type = 'button';
     btn.className = 'kpv2-ts-gear';
-    btn.title = 'Top Sites options';
+    btn.title = getMessage('top_sites_options_aria');
     btn.setAttribute('aria-label', getMessage('top_sites_options_aria'));
     btn.setAttribute('aria-haspopup', 'menu');
     btn.setAttribute('aria-expanded', 'false');
@@ -1348,7 +1348,7 @@ export class TopSitesPopover {
     this._items = items;
     this._selectedIndex = 0;
     this._status.textContent = items.length
-      ? `${items.length} site${items.length === 1 ? '' : 's'}`
+      ? getMessage(items.length === 1 ? 'top_sites_count_one' : 'top_sites_count', String(items.length))
       : '';
     this._renderGrid(items);
   }

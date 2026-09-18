@@ -56,7 +56,12 @@ describe('Launcher catalog localization', () => {
       ...[...searchDescriptionMap.matchAll(/:\s*'([^']+)'/g)].map((match) => match[1]),
       ...[...popoverSource.matchAll(/(?:labelKey|descriptionKey): '([^']+)'/g)].map((match) => match[1]),
       'launcher_title',
-      'launcher_category_fallback_description'
+      'launcher_category_fallback_description',
+      'launcher_footer_hint',
+      'launcher_subtab_launch_deck',
+      'launcher_edit_deck',
+      'launcher_filter_placeholder',
+      'launcher_archive_search_label'
     ]);
 
     for (const key of keys) {

@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-18T03:41:57.509Z
+ * Generated on 2026-09-18T06:01:10.655Z
  */
 
 (() => {
@@ -150,6 +150,36 @@
     MSG.OPEN_DOCS_POPOVER,
     MSG.OPEN_ONBOARDING,
     MSG.LAUNCH_WALKTHROUGH
+  ]);
+
+  // src/utils/i18n.js
+  function isDebugBuild() {
+    try {
+      return !!globalThis.KEYPILOT_DEBUG;
+    } catch {
+      return false;
+    }
+  }
+  function missingMessage(key) {
+    if (!isDebugBuild()) return "";
+    console.warn(`[KeyPilot i18n] Missing message: ${key}`);
+    return `[i18n:${key}]`;
+  }
+  function getMessage(key, substitutions) {
+    const messageKey = typeof key === "string" ? key.trim() : "";
+    if (!messageKey) return missingMessage(String(key || "(empty key)"));
+    try {
+      const message = chrome?.i18n?.getMessage?.(messageKey, substitutions);
+      return typeof message === "string" && message ? message : missingMessage(messageKey);
+    } catch {
+      return missingMessage(messageKey);
+    }
+  }
+  var ATTRIBUTE_BINDINGS = Object.freeze([
+    ["data-i18n", "textContent"],
+    ["data-i18n-placeholder", "placeholder"],
+    ["data-i18n-aria-label", "aria-label"],
+    ["data-i18n-title", "title"]
   ]);
 
   // src/config/keyboard-layouts.js
@@ -835,6 +865,13 @@
     }
     return { keyLabel: String(first || ""), displayKey: String(first || "") };
   }
+  function localizedActionCopy(actionId, def) {
+    const id = String(actionId || "");
+    return {
+      label: getMessage(`fn_${id}_label`) || def?.label || id,
+      description: getMessage(`fn_${id}_description`) || def?.description || ""
+    };
+  }
   function buildKeybindingsForLayout(layoutId) {
     const id = normalizeKeyboardLayoutId(layoutId);
     const layout = BUILTIN_KEYBOARD_LAYOUTS[id];
@@ -844,12 +881,13 @@
       const assign = layout?.assignments?.[actionId];
       if (!assign || !Array.isArray(assign.keys)) continue;
       const labels = normalizeAssignmentLabels(assign);
+      const copy = localizedActionCopy(actionId, def);
       out[actionId] = {
         keys: assign.keys.slice(),
         ...Array.isArray(assign.matchOn) ? { matchOn: assign.matchOn.slice() } : {},
         handler: def.handler,
-        label: def.label,
-        description: def.description,
+        label: copy.label,
+        description: copy.description,
         keyLabel: labels.keyLabel,
         keyboardClass: def.keyboardClass ?? null,
         row: def.row ?? null,
@@ -862,11 +900,12 @@
     const out = {};
     for (const [actionId, def] of Object.entries(KEYBINDING_ACTION_DEFS)) {
       if (isBuildExcludedKeyAction(actionId)) continue;
+      const copy = localizedActionCopy(actionId, def);
       out[actionId] = Object.freeze({
         keys: Object.freeze([]),
         handler: def.handler,
-        label: def.label,
-        description: def.description,
+        label: copy.label,
+        description: copy.description,
         keyboardClass: def.keyboardClass ?? null,
         row: def.row ?? null,
         displayKey: "",
@@ -964,12 +1003,13 @@
       const assign = assignments[actionId];
       if (!def || !assign || !Array.isArray(assign.keys)) continue;
       const labels = normalizeAssignmentLabels(assign);
+      const copy = localizedActionCopy(actionId, def);
       out[actionId] = {
         keys: assign.keys.slice(),
         ...Array.isArray(assign.matchOn) ? { matchOn: assign.matchOn.slice() } : {},
         handler: def.handler,
-        label: def.label,
-        description: def.description,
+        label: copy.label,
+        description: copy.description,
         keyLabel: labels.keyLabel,
         keyboardClass: def.keyboardClass ?? null,
         row: def.row ?? null,

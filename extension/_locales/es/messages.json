@@ -225,6 +225,14 @@
     "message": "Cerrar",
     "description": "Docs page close button."
   },
+  "docs_text_size_label": {
+    "message": "Texto",
+    "description": "Short label on the Docs titlebar text-size slider."
+  },
+  "docs_text_size_aria": {
+    "message": "Tamaño del texto de la documentación",
+    "description": "Accessible name for the Docs titlebar text-size slider."
+  },
   "docs_topics_aria_label": {
     "message": "Temas de documentación",
     "description": "Accessible label for the Docs navigation sidebar."
@@ -1393,6 +1401,36 @@
     "message": "Acerca de",
     "description": "Localized settings page chrome."
   },
+  "settings_click_effect_hint": {
+    "message": "Comentarios visuales al pulsar $1 para activar un destino de enlace.",
+    "description": "Click Mode click-effect intro. $1 is the activation key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "F"
+      }
+    }
+  },
+  "settings_paint_mode_hint": {
+    "message": "Cómo se dibuja el rectángulo de enfoque al pasar el cursor. Auto B→C omite el contorno DOM (A) y usa un anillo en el destino y luego una superposición fija. Coincide con la depuración de Shadow Root ($1).",
+    "description": "Click Mode paint-backend hint. $1 is the debug shortcut.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+D"
+      }
+    }
+  },
+  "settings_control_strip_lead": {
+    "message": "Barra de estado compacta en la esquina superior izquierda de cada página (estilo Control Strip de macOS). Pulse $1 para mostrarla de nuevo después de cerrarla.",
+    "description": "Control Strip panel lead. $1 is the restore shortcut.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+J"
+      }
+    }
+  },
   "settings_theme_custom_name": {
     "message": "$1 (personalizado)",
     "description": "Localized extension-page UI text."
@@ -1727,6 +1765,10 @@
     "message": "Cerrar",
     "description": "Generic overlay close button."
   },
+  "overlay_untitled": {
+    "message": "Sin título",
+    "description": "Fallback title when a bookmark or history item has no name."
+  },
   "control_strip_aria_label": {
     "message": "Tira de control KeyPilot",
     "description": "Accessible name for the control strip toolbar."
@@ -1983,6 +2025,26 @@
     "message": "Cargando…",
     "description": "Loading status in the Top Sites overlay."
   },
+  "top_sites_count": {
+    "message": "$1 sitios",
+    "description": "Top Sites status count for more than one site. $1 is the number.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "top_sites_count_one": {
+    "message": "$1 sitio",
+    "description": "Top Sites status count for exactly one site. $1 is the number.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "1"
+      }
+    }
+  },
   "tab_history_title": {
     "message": "Historia",
     "description": "Title of the History overlay."
@@ -2104,6 +2166,132 @@
   "launcher_preview": {
     "message": "Vista previa",
     "description": "Launcher preview action label."
+  },
+  "launcher_subtab_launch_deck": {
+    "message": "Plataforma de lanzamiento",
+    "description": "Launcher sub-tab for the user's Launch Deck."
+  },
+  "launcher_subtab_toolbar_bookmarks": {
+    "message": "Marcadores de la barra de herramientas",
+    "description": "Launcher Launch Deck sub-tab for toolbar bookmarks."
+  },
+  "launcher_subtab_favorites": {
+    "message": "Favoritos",
+    "description": "Launcher sub-tab for favorite sites."
+  },
+  "launcher_subtab_top_visited": {
+    "message": "Más visitados",
+    "description": "Launcher Launch Deck sub-tab for most-visited sites."
+  },
+  "launcher_subtab_history": {
+    "message": "Historial",
+    "description": "Launcher sub-tab for recent history."
+  },
+  "launcher_edit_deck": {
+    "message": "Editar plataforma de lanzamiento",
+    "description": "Button that starts Launch Deck editing."
+  },
+  "launcher_done": {
+    "message": "Listo",
+    "description": "Button that finishes Launch Deck editing."
+  },
+  "launcher_filter_catalog_placeholder": {
+    "message": "Filtrar catálogo…",
+    "description": "Placeholder for filtering the add-to-deck catalog."
+  },
+  "launcher_no_matching_sites": {
+    "message": "No hay sitios coincidentes",
+    "description": "Empty add-to-deck catalog after filtering."
+  },
+  "launcher_all_sites_on_deck": {
+    "message": "Todos los sitios del catálogo ya están en su plataforma",
+    "description": "Empty add-to-deck catalog when every site is already added."
+  },
+  "launcher_filter_placeholder": {
+    "message": "Filtrar resultados…",
+    "description": "Placeholder for the launcher results filter."
+  },
+  "launcher_no_search_matches": {
+    "message": "Ningún sitio coincide con su búsqueda",
+    "description": "Empty launcher search results."
+  },
+  "launcher_search_prompt": {
+    "message": "Escriba para buscar sitios en esta categoría",
+    "description": "Launcher search empty state before a query."
+  },
+  "launcher_footer_hint": {
+    "message": "Pulse ↑↓ para pestañas • / para buscar • F para abrir • Esc para cerrar",
+    "description": "Keyboard hint in the Launcher footer."
+  },
+  "launcher_archive_search_label": {
+    "message": "Buscar en el archivo",
+    "description": "Accessible label for Internet Archive search in Launcher."
+  },
+  "launcher_archive_search_placeholder": {
+    "message": "Textos, películas, software, música, sitios web…",
+    "description": "Placeholder for Internet Archive search in Launcher."
+  },
+  "launcher_archive_search_aria": {
+    "message": "Buscar en Internet Archive",
+    "description": "Accessible name for Internet Archive search in Launcher."
+  },
+  "launcher_archive_results_title": {
+    "message": "Archivo · $1",
+    "description": "Title for Internet Archive search results. $1 is the query.",
+    "placeholders": {
+      "query": {
+        "content": "$1",
+        "example": "apollo"
+      }
+    }
+  },
+  "launcher_videos_search_label": {
+    "message": "Buscar videos",
+    "description": "Accessible label for video search in Launcher."
+  },
+  "launcher_videos_search_placeholder": {
+    "message": "Buscar videos…",
+    "description": "Placeholder for video search in Launcher."
+  },
+  "launcher_videos_search_aria": {
+    "message": "Buscar videos",
+    "description": "Accessible name for video search in Launcher."
+  },
+  "launcher_visited_on": {
+    "message": "Visitado el $1",
+    "description": "Launcher card overlay for last visit. $1 is the localized date.",
+    "placeholders": {
+      "date": {
+        "content": "$1",
+        "example": "Sep 18, 2026"
+      }
+    }
+  },
+  "launcher_added_on": {
+    "message": "Añadido el $1",
+    "description": "Launcher card overlay for bookmark added date. $1 is the localized date.",
+    "placeholders": {
+      "date": {
+        "content": "$1",
+        "example": "Sep 18, 2026"
+      }
+    }
+  },
+  "launcher_move_up": {
+    "message": "Mover arriba",
+    "description": "Tooltip for moving a Launch Deck item up."
+  },
+  "launcher_move_down": {
+    "message": "Mover abajo",
+    "description": "Tooltip for moving a Launch Deck item down."
+  },
+  "launcher_remove_from_deck": {
+    "message": "Quitar de la plataforma de lanzamiento",
+    "description": "Tooltip for removing a Launch Deck item."
+  },
+  "launcher_preview_toggle": {
+    "message": "Vista previa / cerrar vista previa",
+    "description": "Tooltip for toggling a launcher site preview."
   },
   "page_media_title": {
     "message": "Medios de página",
@@ -2970,6 +3158,36 @@
   "layout_picker_group_builtin": {
     "message": "Incorporado",
     "description": "Built-in keyboard layouts group heading in the layout picker."
+  },
+  "layout_picker_group_custom": {
+    "message": "Personalizado",
+    "description": "Custom keyboard layouts group heading in the layout picker."
+  },
+  "layout_picker_docs": {
+    "message": "Documentación de KeyPilot",
+    "description": "Layout picker item that opens KeyPilot documentation."
+  },
+  "layout_picker_settings": {
+    "message": "Ajustes de KeyPilot",
+    "description": "Layout picker item that opens KeyPilot settings."
+  },
+  "key_info_key": {
+    "message": "Tecla: $1",
+    "description": "Physical key caption in the key-info popover. $1 is the key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "F"
+      }
+    }
+  },
+  "key_info_settings_hint": {
+    "message": "Haga clic para mostrar la configuración",
+    "description": "Hint shown on hover in the key-info popover when the action has settings."
+  },
+  "key_info_config": {
+    "message": "Config",
+    "description": "Button in the key-info popover that opens the action configuration panel."
   },
   "fn_ACTIVATE_label": {
     "message": "Haga clic en elemento",

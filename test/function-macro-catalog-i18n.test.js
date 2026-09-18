@@ -87,6 +87,7 @@ describe('Function and Macro catalog localization', () => {
     ]);
     assert.match(buildSideEffects, /labelKey: String\(def\.labelKey \|\| ''\)/);
     assert.match(earlyInject, /earlyMessage\(def\.labelKey\)/);
+    assert.match(earlyInject, /earlyMessage\(`fn_\$\{item\.id\}_label`\)/);
     keys.add('early_configured_function');
     keys.add('fn_summary_empty');
     keys.add('fn_summary_previous_step');

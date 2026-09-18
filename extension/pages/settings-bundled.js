@@ -1,8 +1,53 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-18T03:41:57.509Z
+ * Generated on 2026-09-18T06:01:10.655Z
  */
 
+
+// src/utils/i18n.js
+function isDebugBuild() {
+  try {
+    return !!globalThis.KEYPILOT_DEBUG;
+  } catch {
+    return false;
+  }
+}
+function missingMessage(key) {
+  if (!isDebugBuild()) return "";
+  console.warn(`[KeyPilot i18n] Missing message: ${key}`);
+  return `[i18n:${key}]`;
+}
+function getMessage(key, substitutions) {
+  const messageKey = typeof key === "string" ? key.trim() : "";
+  if (!messageKey) return missingMessage(String(key || "(empty key)"));
+  try {
+    const message = chrome?.i18n?.getMessage?.(messageKey, substitutions);
+    return typeof message === "string" && message ? message : missingMessage(messageKey);
+  } catch {
+    return missingMessage(messageKey);
+  }
+}
+var ATTRIBUTE_BINDINGS = Object.freeze([
+  ["data-i18n", "textContent"],
+  ["data-i18n-placeholder", "placeholder"],
+  ["data-i18n-aria-label", "aria-label"],
+  ["data-i18n-title", "title"]
+]);
+function localizeElements(root = document) {
+  if (!root?.querySelectorAll) return;
+  for (const [attribute, property] of ATTRIBUTE_BINDINGS) {
+    for (const element of root.querySelectorAll(`[${attribute}]`)) {
+      const key = element.getAttribute(attribute);
+      const message = getMessage(key || "");
+      if (!message) continue;
+      if (property === "textContent") {
+        element.textContent = message;
+      } else {
+        element.setAttribute(property, message);
+      }
+    }
+  }
+}
 
 // src/config/keyboard-layouts.js
 var DEFAULT_KEYBOARD_LAYOUT_ID = (
@@ -687,6 +732,13 @@ function normalizeAssignmentLabels(a) {
   }
   return { keyLabel: String(first || ""), displayKey: String(first || "") };
 }
+function localizedActionCopy(actionId, def) {
+  const id = String(actionId || "");
+  return {
+    label: getMessage(`fn_${id}_label`) || def?.label || id,
+    description: getMessage(`fn_${id}_description`) || def?.description || ""
+  };
+}
 function buildKeybindingsForLayout(layoutId) {
   const id = normalizeKeyboardLayoutId(layoutId);
   const layout = BUILTIN_KEYBOARD_LAYOUTS[id];
@@ -696,12 +748,13 @@ function buildKeybindingsForLayout(layoutId) {
     const assign = layout?.assignments?.[actionId];
     if (!assign || !Array.isArray(assign.keys)) continue;
     const labels = normalizeAssignmentLabels(assign);
+    const copy = localizedActionCopy(actionId, def);
     out[actionId] = {
       keys: assign.keys.slice(),
       ...Array.isArray(assign.matchOn) ? { matchOn: assign.matchOn.slice() } : {},
       handler: def.handler,
-      label: def.label,
-      description: def.description,
+      label: copy.label,
+      description: copy.description,
       keyLabel: labels.keyLabel,
       keyboardClass: def.keyboardClass ?? null,
       row: def.row ?? null,
@@ -714,11 +767,12 @@ var CATALOG_KEYBINDINGS = (() => {
   const out = {};
   for (const [actionId, def] of Object.entries(KEYBINDING_ACTION_DEFS)) {
     if (isBuildExcludedKeyAction(actionId)) continue;
+    const copy = localizedActionCopy(actionId, def);
     out[actionId] = Object.freeze({
       keys: Object.freeze([]),
       handler: def.handler,
-      label: def.label,
-      description: def.description,
+      label: copy.label,
+      description: copy.description,
       keyboardClass: def.keyboardClass ?? null,
       row: def.row ?? null,
       displayKey: "",
@@ -816,12 +870,13 @@ function buildSystemKeybindings(handedness = DEFAULT_KEYBOARD_HANDEDNESS) {
     const assign = assignments[actionId];
     if (!def || !assign || !Array.isArray(assign.keys)) continue;
     const labels = normalizeAssignmentLabels(assign);
+    const copy = localizedActionCopy(actionId, def);
     out[actionId] = {
       keys: assign.keys.slice(),
       ...Array.isArray(assign.matchOn) ? { matchOn: assign.matchOn.slice() } : {},
       handler: def.handler,
-      label: def.label,
-      description: def.description,
+      label: copy.label,
+      description: copy.description,
       keyLabel: labels.keyLabel,
       keyboardClass: def.keyboardClass ?? null,
       row: def.row ?? null,
@@ -3807,51 +3862,6 @@ function applyDebugSetting(enabled) {
   }
 }
 
-// src/utils/i18n.js
-function isDebugBuild() {
-  try {
-    return !!globalThis.KEYPILOT_DEBUG;
-  } catch {
-    return false;
-  }
-}
-function missingMessage(key) {
-  if (!isDebugBuild()) return "";
-  console.warn(`[KeyPilot i18n] Missing message: ${key}`);
-  return `[i18n:${key}]`;
-}
-function getMessage(key, substitutions) {
-  const messageKey = typeof key === "string" ? key.trim() : "";
-  if (!messageKey) return missingMessage(String(key || "(empty key)"));
-  try {
-    const message = chrome?.i18n?.getMessage?.(messageKey, substitutions);
-    return typeof message === "string" && message ? message : missingMessage(messageKey);
-  } catch {
-    return missingMessage(messageKey);
-  }
-}
-var ATTRIBUTE_BINDINGS = Object.freeze([
-  ["data-i18n", "textContent"],
-  ["data-i18n-placeholder", "placeholder"],
-  ["data-i18n-aria-label", "aria-label"],
-  ["data-i18n-title", "title"]
-]);
-function localizeElements(root = document) {
-  if (!root?.querySelectorAll) return;
-  for (const [attribute, property] of ATTRIBUTE_BINDINGS) {
-    for (const element of root.querySelectorAll(`[${attribute}]`)) {
-      const key = element.getAttribute(attribute);
-      const message = getMessage(key || "");
-      if (!message) continue;
-      if (property === "textContent") {
-        element.textContent = message;
-      } else {
-        element.setAttribute(property, message);
-      }
-    }
-  }
-}
-
 // src/ui/url-listing.js
 var GENERIC_FAVICON_SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -4420,9 +4430,22 @@ function toHexColor(raw, fallback = "#888888") {
   }
   return fallback;
 }
+var THEME_NAME_KEYS = Object.freeze({
+  "dark-pro": "settings_static_018",
+  "gray-metal-pro": "settings_static_019",
+  "gx-er": "settings_static_020"
+});
 function themeDisplayName(themeId, customized) {
-  const name = THEME_META[themeId]?.name || themeId;
+  const name = getMessage(THEME_NAME_KEYS[themeId] || "") || THEME_META[themeId]?.name || themeId;
   return customized ? getMessage("settings_theme_custom_name", name) : name;
+}
+function localizeSettingsMixedCopy() {
+  const clickHint = settingsEl("settings-click-effect-hint");
+  if (clickHint) clickHint.textContent = getMessage("settings_click_effect_hint", "F");
+  const paintHint = settingsEl("settings-paint-mode-hint");
+  if (paintHint) paintHint.textContent = getMessage("settings_paint_mode_hint", "Alt+D");
+  const stripLead = settingsEl("settings-control-strip-lead");
+  if (stripLead) stripLead.textContent = getMessage("settings_control_strip_lead", "Alt+J");
 }
 function setRadioGroupValue(radios, value) {
   const v = String(value);
@@ -5036,7 +5059,7 @@ async function render() {
       for (const t of listThemes()) {
         const opt = document.createElement("option");
         opt.value = t.id;
-        opt.textContent = t.name;
+        opt.textContent = themeDisplayName(t.id, false);
         uiThemeSelect.appendChild(opt);
       }
     }
@@ -5193,6 +5216,7 @@ async function mountSettingsApp(root, options = {}) {
     settingsScope = document;
   }
   localizeElements(settingsScope);
+  localizeSettingsMixedCopy();
   adaptHeaderForPopoverEmbed(embedded);
   try {
     applyAppearanceFromCache();

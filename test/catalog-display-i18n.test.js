@@ -111,4 +111,30 @@ describe('catalog-to-display resolution', () => {
       assert.match(testDisplay[key], /^\[GB\] /);
     }
   });
+
+  it('localizes built-in keybinding labels from the Function catalog', async () => {
+    mock.setI18nMessages({
+      fn_TAB_LEFT_label: { message: 'Localized Tab Left' },
+      fn_TAB_LEFT_description: { message: 'Localized previous tab' },
+      fn_TOGGLE_KEYBOARD_HELP_label: { message: 'Localized KB Reference' },
+      fn_TOGGLE_KEYBOARD_HELP_description: { message: 'Localized toggle keyboard' }
+    });
+    const {
+      buildKeybindingsForLayout,
+      buildSystemKeybindings,
+      resolveKeybinding
+    } = await import('../extension/src/config/keyboard-layouts.js');
+
+    const kb = buildKeybindingsForLayout('browsing-right');
+    assert.equal(kb.TAB_LEFT.label, 'Localized Tab Left');
+    assert.equal(kb.TAB_LEFT.description, 'Localized previous tab');
+
+    const system = buildSystemKeybindings('right');
+    assert.equal(system.TOGGLE_KEYBOARD_HELP.label, 'Localized KB Reference');
+    assert.equal(system.TOGGLE_KEYBOARD_HELP.description, 'Localized toggle keyboard');
+
+    const catalog = resolveKeybinding('TAB_LEFT');
+    assert.equal(catalog.label, 'Localized Tab Left');
+    assert.equal(catalog.description, 'Localized previous tab');
+  });
 });

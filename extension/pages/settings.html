@@ -186,9 +186,9 @@
               <label class="field-label" for="ui-theme-select" data-i18n="settings_static_017">Theme</label>
               <div class="settings-theme-row">
                 <select id="ui-theme-select">
-                  <option value="dark-pro">Dark Pro</option>
-                  <option value="gray-metal-pro">Gray Metal Pro</option>
-                  <option value="gx-er">GX-er</option>
+                  <option value="dark-pro" data-i18n="settings_static_018">Dark Pro</option>
+                  <option value="gray-metal-pro" data-i18n="settings_static_019">Gray Metal Pro</option>
+                  <option value="gx-er" data-i18n="settings_static_020">GX-er</option>
                 </select>
                 <span id="ui-theme-custom-badge" class="settings-custom-badge" hidden data-i18n="settings_static_021">Customized</span>
               </div>
@@ -285,9 +285,9 @@
               <label class="field-label" for="ui-theme-select-appearance" data-i18n="settings_static_046">Theme</label>
               <div class="settings-theme-row">
                 <select id="ui-theme-select-appearance">
-                  <option value="dark-pro">Dark Pro</option>
-                  <option value="gray-metal-pro">Gray Metal Pro</option>
-                  <option value="gx-er">GX-er</option>
+                  <option value="dark-pro" data-i18n="settings_static_018">Dark Pro</option>
+                  <option value="gray-metal-pro" data-i18n="settings_static_019">Gray Metal Pro</option>
+                  <option value="gx-er" data-i18n="settings_static_020">GX-er</option>
                 </select>
                 <span id="ui-theme-custom-badge-appearance" class="settings-custom-badge" hidden data-i18n="settings_static_050">Customized</span>
               </div>
@@ -848,8 +848,8 @@
               <div class="divider"></div>
 
               <h3 class="subhead" data-i18n="settings_static_170">Click effect</h3>
-              <p class="field-hint" style="margin-top: 0;">
-                Visual feedback when you press <kbd>F</kbd> to activate a link-style target.
+              <p class="field-hint" style="margin-top: 0;" id="settings-click-effect-hint">
+                Visual feedback when you press F to activate a link-style target.
               </p>
 
               <div class="radio-group" role="radiogroup" aria-label="Click effect" data-i18n-aria-label="settings_static_006">
@@ -907,8 +907,8 @@
                         <option value="BC" data-i18n="settings_static_184">Auto B→C (skip outline)</option>
                         <option value="auto" data-i18n="settings_static_185">Auto (A→B→C)</option>
                       </select>
-                      <div class="field-hint">
-                        How the hover focus rectangle is drawn. <strong data-i18n="settings_static_186">Auto B→C</strong> skips DOM outline (A) and uses an in-target ring, then a fixed overlay. Matches Shadow Root Debug (<kbd>Alt</kbd>+<kbd>D</kbd>).
+                      <div class="field-hint" id="settings-paint-mode-hint">
+                        How the hover focus rectangle is drawn. Auto B→C skips DOM outline (A) and uses an in-target ring, then a fixed overlay. Matches Shadow Root Debug (Alt+D).
                       </div>
                     </div>
 
@@ -1060,9 +1060,9 @@
           >
             <header class="panel-header">
               <h2 data-i18n="settings_static_216">Control Strip</h2>
-              <p class="panel-lead">
+              <p class="panel-lead" id="settings-control-strip-lead">
                 Compact status strip in the upper-left of every page (macOS Control Strip style).
-                Press <kbd>Alt</kbd>+<kbd>J</kbd> to show it again after closing.
+                Press Alt+J to show it again after closing.
               </p>
             </header>
 

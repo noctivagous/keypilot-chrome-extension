@@ -31,6 +31,7 @@ import {
 } from './key-action-settings.js';
 import { getOrCreateBuiltinFunctionUserAction } from '../modules/keyboard-layout-store.js';
 import { resolveKeybinding } from '../config/keyboard-layouts.js';
+import { getMessage } from '../utils/i18n.js';
 import {
   closestComposed,
   containsComposed,
@@ -53,7 +54,7 @@ const KEY_INFO_POPOVER_INNER_HTML = `
         <div class="kp-popover-title-wrap">
           <div class="kp-popover-title-row">
             <div class="kp-popover-title"></div>
-            <div class="kp-popover-settings-hint" hidden>Click to show settings</div>
+            <div class="kp-popover-settings-hint" hidden></div>
           </div>
           <div class="kp-popover-keys"></div>
         </div>
@@ -422,7 +423,7 @@ function ensurePopover(doc, _container) {
           const hint = doc.createElement('div');
           hint.className = 'kp-popover-settings-hint';
           hint.hidden = true;
-          hint.textContent = 'Click to show settings';
+          hint.textContent = getMessage('key_info_settings_hint');
           row.appendChild(hint);
         }
       } catch { /* ignore */ }
@@ -565,10 +566,10 @@ function showPopoverForTarget({ doc, pop, targetEl, binding, actionId, pinned = 
   applyKeyMaterialToPopover(pop, targetEl);
 
   if (titleEl) titleEl.textContent = title;
-  if (keysEl) keysEl.textContent = keys ? `Key: ${keys}` : '';
+  if (keysEl) keysEl.textContent = keys ? getMessage('key_info_key', keys) : '';
   if (descEl) descEl.textContent = desc;
   if (hintEl) {
-    hintEl.textContent = 'Click to show settings';
+    hintEl.textContent = getMessage('key_info_settings_hint');
     const showHint = !pinned && actionHasSettings(actionId);
     hintEl.hidden = !showHint;
   }
@@ -754,7 +755,7 @@ function paintPopoverSettings({ doc, pop, targetEl, binding, actionId, parameter
     const configBtn = doc.createElement('button');
     configBtn.type = 'button';
     configBtn.className = 'kp-popover-config-btn';
-    configBtn.textContent = 'Config';
+    configBtn.textContent = getMessage('key_info_config');
     configBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
