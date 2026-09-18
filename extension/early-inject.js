@@ -3881,7 +3881,7 @@
 
 .kp-keybindings-popover .kp-popover-title-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
   margin: 0 0 3px 0;
@@ -3897,15 +3897,18 @@
 }
 
 .kp-keybindings-popover .kp-popover-settings-hint {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  max-width: 11em;
   font-size: 10px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.82);
   letter-spacing: 0.02em;
-  white-space: nowrap;
-  line-height: 1.3;
+  white-space: normal;
+  overflow-wrap: break-word;
+  text-align: center;
+  line-height: 1.25;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: rgba(0, 0, 0, 0.32);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);

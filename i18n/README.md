@@ -154,6 +154,8 @@ before capturing or uploading assets.
   structure
 - [`refs/CHROME_I18N_TASK_ITEMS.md`](../refs/CHROME_I18N_TASK_ITEMS.md) —
   architecture decisions, implementation status, and future work
+- [`refs/MAC_OPT_ALT_LABELS.md`](../refs/MAC_OPT_ALT_LABELS.md) — Mac Opt vs
+  PC Alt shortcut labels (host OS, not locale)
 - [`refs/EDGE_BUILD_DIRECTORY.md`](../refs/EDGE_BUILD_DIRECTORY.md) — Edge
   localized-manifest notes
 - [Chrome i18n API](https://developer.chrome.com/docs/extensions/reference/api/i18n)

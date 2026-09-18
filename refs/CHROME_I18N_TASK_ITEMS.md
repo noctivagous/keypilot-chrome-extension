@@ -392,6 +392,7 @@ Draft note (2026-09-17): `extension/_locales/es/messages.json` and `es_419/messa
 
 - [Chrome: Internationalize the interface](https://developer.chrome.com/docs/extensions/develop/ui/i18n)
 - [Chrome: `chrome.i18n` API and message fallback](https://developer.chrome.com/docs/extensions/reference/api/i18n)
+- `refs/MAC_OPT_ALT_LABELS.md` — Mac Opt vs PC Alt in UI labels (host OS, not locale catalogs)
 - `refs/EDGE_BUILD_DIRECTORY.md` — localized manifest metadata and Edge Partner Center discovery note
 - `online-stores/README.md` — Chrome listing screenshot source layout, dashboard upload, and release checklist
 - `scripts/store-screenshots/README.md` — capture playbook and generator
