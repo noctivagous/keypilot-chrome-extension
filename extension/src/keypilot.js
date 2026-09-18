@@ -7435,7 +7435,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
             // Share open+close) and page-turn controls.
             const clickable = typeof el.closest === 'function'
               ? el.closest(
-                'a[href], button, [role="button"], [role="link"], [role="menuitem"], summary, input, select, textarea, label'
+                'a[href], button, [role="button"], [role="link"], [role="menuitem"], [role="slider"], summary, input, select, textarea, label'
               )
               : null;
             const target = clickable || el;

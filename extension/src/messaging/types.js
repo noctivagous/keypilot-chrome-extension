@@ -154,7 +154,14 @@ export const MSG = Object.freeze({
   // --- Content → SW: inject MAIN-world map.panBy bridge into the sender frame ---
   // Scroll Line uses this so isolated content can pan Leaflet/Mapbox/Google via
   // page globals. Idempotent; bridge listens for CustomEvent __kp_map_pan_v1.
-  ENSURE_MAP_PAN_BRIDGE: 'KP_ENSURE_MAP_PAN_BRIDGE'
+  ENSURE_MAP_PAN_BRIDGE: 'KP_ENSURE_MAP_PAN_BRIDGE',
+
+  // --- Child frame-agent → SW: seek media in the page world ---
+  // YouTube (and similar) ignore untrusted timeline clicks and overwrite
+  // isolated-world video.currentTime from player state. MAIN-world seekTo
+  // / currentTime in the sender frame commits the playhead.
+  // Payload: { type, seconds: number }
+  FRAME_MEDIA_SEEK: 'KP_FRAME_MEDIA_SEEK'
 });
 
 /**

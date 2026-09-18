@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-17T00:36:08.596Z
+ * Generated on 2026-09-18T03:24:15.463Z
  */
 
 (() => {
@@ -131,7 +131,13 @@
     // --- Content → SW: inject MAIN-world map.panBy bridge into the sender frame ---
     // Scroll Line uses this so isolated content can pan Leaflet/Mapbox/Google via
     // page globals. Idempotent; bridge listens for CustomEvent __kp_map_pan_v1.
-    ENSURE_MAP_PAN_BRIDGE: "KP_ENSURE_MAP_PAN_BRIDGE"
+    ENSURE_MAP_PAN_BRIDGE: "KP_ENSURE_MAP_PAN_BRIDGE",
+    // --- Child frame-agent → SW: seek media in the page world ---
+    // YouTube (and similar) ignore untrusted timeline clicks and overwrite
+    // isolated-world video.currentTime from player state. MAIN-world seekTo
+    // / currentTime in the sender frame commits the playhead.
+    // Payload: { type, seconds: number }
+    FRAME_MEDIA_SEEK: "KP_FRAME_MEDIA_SEEK"
   });
   var TAB_UI_FORWARD_TYPES = Object.freeze([
     MSG.OPEN_SETTINGS_POPOVER,
@@ -3887,8 +3893,312 @@
     return false;
   }
 
+  // src/utils/synthetic-pointer.js
+  function buildMouseEventInit(target, clientX, clientY, buttons = 1) {
+    const x = Number.isFinite(clientX) ? clientX : 0;
+    const y = Number.isFinite(clientY) ? clientY : 0;
+    let offsetX = 0;
+    let offsetY = 0;
+    try {
+      const r = target && typeof /** @type {any} */
+      target.getBoundingClientRect === "function" ? (
+        /** @type {any} */
+        target.getBoundingClientRect()
+      ) : null;
+      if (r) {
+        offsetX = x - r.left;
+        offsetY = y - r.top;
+      }
+    } catch {
+    }
+    let pageX = x;
+    let pageY = y;
+    try {
+      pageX = x + (window.scrollX || window.pageXOffset || 0);
+      pageY = y + (window.scrollY || window.pageYOffset || 0);
+    } catch {
+    }
+    return {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      view: typeof window !== "undefined" ? window : void 0,
+      clientX: x,
+      clientY: y,
+      pageX,
+      pageY,
+      offsetX,
+      offsetY,
+      screenX: x,
+      screenY: y,
+      button: 0,
+      buttons,
+      detail: 1
+    };
+  }
+  function dispatchClickSequence(target, clientX, clientY) {
+    if (!target || typeof /** @type {any} */
+    target.dispatchEvent !== "function") return;
+    const common = buildMouseEventInit(target, clientX, clientY, 1);
+    const hasPointer = typeof window !== "undefined" && typeof window.PointerEvent === "function";
+    if (hasPointer) {
+      const pCommon = { ...common, pointerId: 1, pointerType: "mouse", isPrimary: true };
+      try {
+        target.dispatchEvent(new PointerEvent("pointerover", pCommon));
+      } catch {
+      }
+      try {
+        target.dispatchEvent(new PointerEvent("pointerenter", pCommon));
+      } catch {
+      }
+      try {
+        target.dispatchEvent(new PointerEvent("pointerdown", pCommon));
+      } catch {
+      }
+    } else {
+      try {
+        target.dispatchEvent(new MouseEvent("pointerover", common));
+      } catch {
+      }
+      try {
+        target.dispatchEvent(new MouseEvent("pointerenter", common));
+      } catch {
+      }
+      try {
+        target.dispatchEvent(new MouseEvent("pointerdown", common));
+      } catch {
+      }
+    }
+    try {
+      target.dispatchEvent(new MouseEvent("mouseover", common));
+    } catch {
+    }
+    try {
+      target.dispatchEvent(new MouseEvent("mouseenter", common));
+    } catch {
+    }
+    try {
+      target.dispatchEvent(new MouseEvent("mousemove", common));
+    } catch {
+    }
+    try {
+      target.dispatchEvent(new MouseEvent("mousedown", common));
+    } catch {
+    }
+    const commonUp = buildMouseEventInit(target, clientX, clientY, 0);
+    if (hasPointer) {
+      const pUp = { ...commonUp, pointerId: 1, pointerType: "mouse", isPrimary: true };
+      try {
+        target.dispatchEvent(new PointerEvent("pointerup", pUp));
+      } catch {
+      }
+    } else {
+      try {
+        target.dispatchEvent(new MouseEvent("pointerup", commonUp));
+      } catch {
+      }
+    }
+    try {
+      target.dispatchEvent(new MouseEvent("mouseup", commonUp));
+    } catch {
+    }
+    try {
+      target.dispatchEvent(new MouseEvent("click", commonUp));
+    } catch {
+    }
+  }
+
+  // src/utils/media-scrubber.js
+  function clamp01(n) {
+    if (!Number.isFinite(n)) return 0;
+    if (n < 0) return 0;
+    if (n > 1) return 1;
+    return n;
+  }
+  function mediaTimeFromClientX(clientX, rect, duration) {
+    if (!rect || !(rect.width > 0)) return null;
+    if (!Number.isFinite(clientX)) return null;
+    if (!Number.isFinite(duration) || duration <= 0 || duration === Infinity) return null;
+    return clamp01((clientX - rect.left) / rect.width) * duration;
+  }
+  function isVolumeOrNonSeekSlider(el) {
+    if (!el || el.nodeType !== 1) return false;
+    try {
+      const label = `${el.getAttribute("aria-label") || ""} ${el.getAttribute("aria-valuetext") || ""}`.toLowerCase();
+      if (/\b(volume|mute|sound|loudness|gain)\b/.test(label)) return true;
+      try {
+        if (el.hasAttribute("data-media-volume-slider")) return true;
+      } catch {
+      }
+      const cls = String(
+        /** @type {any} */
+        el.className || ""
+      ).toLowerCase();
+      if (/\b(volume|mute)[-_]?slider\b|\bvolume-?control\b|\bvds-volume\b/.test(cls)) return true;
+      if (typeof el.closest === "function") {
+        const host = el.closest(
+          '[aria-label*="volume" i], [aria-label*="mute" i], [data-media-volume-slider], .vds-volume-slider, .ytp-volume-panel, .ytp-volume-slider'
+        );
+        if (host) return true;
+      }
+    } catch {
+    }
+    return false;
+  }
+  function isNativeRange(el) {
+    try {
+      if (!el || el.tagName !== "INPUT") return false;
+      return String(el.getAttribute("type") || "").toLowerCase() === "range";
+    } catch {
+      return false;
+    }
+  }
+  function isNonScrubControl(el) {
+    try {
+      if (el.tagName === "A" || el.tagName === "BUTTON" || el.tagName === "TEXTAREA" || el.tagName === "SELECT") {
+        return !el.closest?.('[role="slider"], input[type="range"]');
+      }
+      if (el.tagName === "INPUT") {
+        const t = String(el.getAttribute("type") || "text").toLowerCase();
+        if (t !== "range") return true;
+      }
+      const btn = typeof el.closest === "function" ? el.closest('button, [role="button"], a[href], select, textarea') : null;
+      if (!btn) return false;
+      return !btn.closest?.('[role="slider"], input[type="range"]');
+    } catch {
+      return false;
+    }
+  }
+  function isShortTrackHost(el) {
+    try {
+      const r = el.getBoundingClientRect();
+      if (!r || r.width < 64 || r.height <= 0 || r.height > 48) return false;
+      if (r.width / Math.max(r.height, 1) < 4) return false;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  function resolveScrubberControl(el) {
+    if (!el || el.nodeType !== 1) return null;
+    if (isNonScrubControl(el)) return null;
+    try {
+      if (isNativeRange(el)) return el;
+      const role = (el.getAttribute("role") || "").trim().toLowerCase();
+      if (role === "slider") return el;
+    } catch {
+    }
+    try {
+      if (typeof el.closest === "function") {
+        const viaClosest = el.closest('input[type="range"], [role="slider"]');
+        if (viaClosest && !isVolumeOrNonSeekSlider(viaClosest)) return viaClosest;
+      }
+    } catch {
+    }
+    let n = el;
+    let depth = 0;
+    while (n && n.nodeType === 1 && depth < 4) {
+      try {
+        if (isShortTrackHost(n) && typeof n.querySelector === "function") {
+          const inner = n.querySelector(':scope > [role="slider"], :scope > input[type="range"], [role="slider"], input[type="range"]');
+          if (inner && !isVolumeOrNonSeekSlider(inner)) return inner;
+        }
+      } catch {
+      }
+      n = n.parentElement;
+      depth++;
+    }
+    return null;
+  }
+  function findAssociatedMedia(fromEl) {
+    if (!fromEl || fromEl.nodeType !== 1) return null;
+    try {
+      let n = fromEl;
+      let depth = 0;
+      while (n && n.nodeType === 1 && depth < 10) {
+        if (n === document.body || n === document.documentElement) break;
+        if (n.tagName === "VIDEO" || n.tagName === "AUDIO") {
+          return (
+            /** @type {HTMLMediaElement} */
+            n
+          );
+        }
+        try {
+          const main = n.querySelector?.("video.html5-main-video") || n.querySelector?.("video.video-stream") || n.querySelector?.("video, audio");
+          if (main && (main.tagName === "VIDEO" || main.tagName === "AUDIO")) {
+            return (
+              /** @type {HTMLMediaElement} */
+              main
+            );
+          }
+        } catch {
+        }
+        n = n.parentElement;
+        depth++;
+      }
+    } catch {
+    }
+    try {
+      const all = document.querySelectorAll("video.html5-main-video, video.video-stream, video, audio");
+      for (let i = 0; i < all.length; i++) {
+        const m = all[i];
+        if (Number.isFinite(m.duration) && m.duration > 1 && m.duration !== Infinity) {
+          return (
+            /** @type {HTMLMediaElement} */
+            m
+          );
+        }
+      }
+      if (all.length) return (
+        /** @type {HTMLMediaElement} */
+        all[0]
+      );
+    } catch {
+    }
+    return null;
+  }
+  function applyMediaSeek(trackEl, clientX) {
+    if (!trackEl || isVolumeOrNonSeekSlider(trackEl)) return null;
+    const media = findAssociatedMedia(trackEl);
+    if (!media) return null;
+    let rect = null;
+    try {
+      rect = trackEl.getBoundingClientRect();
+    } catch {
+      rect = null;
+    }
+    if (!rect || rect.width < 48) return null;
+    const next = mediaTimeFromClientX(clientX, rect, media.duration);
+    if (next == null) return null;
+    try {
+      media.currentTime = next;
+    } catch {
+    }
+    return next;
+  }
+  function tryActivateScrubber(el, clientX, clientY) {
+    if (!el || el.nodeType !== 1) return false;
+    if (!Number.isFinite(clientX)) return false;
+    const control = resolveScrubberControl(el);
+    if (!control || isVolumeOrNonSeekSlider(control)) return false;
+    const y = Number.isFinite(clientY) ? clientY : (() => {
+      try {
+        const r = control.getBoundingClientRect();
+        return r.top + r.height / 2;
+      } catch {
+        return 0;
+      }
+    })();
+    try {
+      dispatchClickSequence(el, clientX, y);
+    } catch {
+    }
+    const seconds = applyMediaSeek(control, clientX);
+    return seconds == null ? true : seconds;
+  }
+
   // src/modules/frame-click-agent.js
-  var CLICKABLE_SEL = 'a[href], button, [role="button"], [role="link"], [role="menuitem"], [role="option"], [role="tab"], [role="checkbox"], [role="radio"], [role="switch"], summary, [onclick], input, select, textarea, label';
+  var CLICKABLE_SEL = 'a[href], button, [role="button"], [role="link"], [role="menuitem"], [role="option"], [role="tab"], [role="checkbox"], [role="radio"], [role="switch"], [role="slider"], summary, [onclick], input, select, textarea, label';
   function withNativePageCursors(fn) {
     let html = null;
     try {
@@ -3942,85 +4252,6 @@
       return null;
     } catch {
       return null;
-    }
-  }
-  function dispatchClickSequence(target, clientX, clientY) {
-    if (!target) return;
-    const common = {
-      bubbles: true,
-      cancelable: true,
-      composed: true,
-      view: window,
-      clientX,
-      clientY,
-      button: 0,
-      buttons: 1
-    };
-    const hasPointer = typeof window.PointerEvent === "function";
-    if (hasPointer) {
-      const pCommon = { ...common, pointerId: 1, pointerType: "mouse", isPrimary: true };
-      try {
-        target.dispatchEvent(new PointerEvent("pointerover", pCommon));
-      } catch {
-      }
-      try {
-        target.dispatchEvent(new PointerEvent("pointerenter", pCommon));
-      } catch {
-      }
-      try {
-        target.dispatchEvent(new PointerEvent("pointerdown", pCommon));
-      } catch {
-      }
-    } else {
-      try {
-        target.dispatchEvent(new MouseEvent("pointerover", common));
-      } catch {
-      }
-      try {
-        target.dispatchEvent(new MouseEvent("pointerenter", common));
-      } catch {
-      }
-      try {
-        target.dispatchEvent(new MouseEvent("pointerdown", common));
-      } catch {
-      }
-    }
-    try {
-      target.dispatchEvent(new MouseEvent("mouseover", common));
-    } catch {
-    }
-    try {
-      target.dispatchEvent(new MouseEvent("mouseenter", common));
-    } catch {
-    }
-    try {
-      target.dispatchEvent(new MouseEvent("mousemove", common));
-    } catch {
-    }
-    try {
-      target.dispatchEvent(new MouseEvent("mousedown", common));
-    } catch {
-    }
-    const commonUp = { ...common, buttons: 0 };
-    if (hasPointer) {
-      const pUp = { ...commonUp, pointerId: 1, pointerType: "mouse", isPrimary: true };
-      try {
-        target.dispatchEvent(new PointerEvent("pointerup", pUp));
-      } catch {
-      }
-    } else {
-      try {
-        target.dispatchEvent(new MouseEvent("pointerup", commonUp));
-      } catch {
-      }
-    }
-    try {
-      target.dispatchEvent(new MouseEvent("mouseup", commonUp));
-    } catch {
-    }
-    try {
-      target.dispatchEvent(new MouseEvent("click", commonUp));
-    } catch {
     }
   }
   function closestLink(el) {
@@ -4796,6 +5027,18 @@
         const mediaEl = findMediaAtPoint(el, clientX, clientY);
         const directMedia = isDirectMediaHit(el, mediaEl);
         const playOverlay = isPlayOverlayControl(el, activator);
+        if (!openInNewTab && !background) {
+          const scrub = tryActivateScrubber(el, clientX, clientY);
+          if (scrub !== false) {
+            if (typeof scrub === "number" && Number.isFinite(scrub)) {
+              try {
+                chrome.runtime?.sendMessage?.({ type: MSG.FRAME_MEDIA_SEEK, seconds: scrub });
+              } catch {
+              }
+            }
+            return true;
+          }
+        }
         if (mediaEl && !openInNewTab && !background && (directMedia || playOverlay)) {
           toggleMediaPlayback(mediaEl);
           return true;

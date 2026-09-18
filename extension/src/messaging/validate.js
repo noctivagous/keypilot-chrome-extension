@@ -43,6 +43,7 @@ export const SW_RUNTIME_REQUEST_TYPES = Object.freeze([
   MSG.AM_I_POPOVER_WINDOW,
   MSG.INJECT_FULL_KEYPILOT_IN_FRAME,
   MSG.ENSURE_MAP_PAN_BRIDGE,
+  MSG.FRAME_MEDIA_SEEK,
   MSG.GET_STATE,
   MSG.SET_STATE,
   MSG.TOGGLE_STATE,
@@ -140,6 +141,11 @@ export function validateRuntimeMessage(message, opts = {}) {
     case MSG.DICTIONARY_LOOKUP:
       if (typeof message.word !== 'string' || !message.word.trim()) {
         return 'DICTIONARY_LOOKUP requires word: string';
+      }
+      break;
+    case MSG.FRAME_MEDIA_SEEK:
+      if (!Number.isFinite(Number(message.seconds)) || Number(message.seconds) < 0) {
+        return 'FRAME_MEDIA_SEEK requires seconds: number >= 0';
       }
       break;
     default:

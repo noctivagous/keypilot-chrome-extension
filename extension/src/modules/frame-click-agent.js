@@ -35,13 +35,15 @@ import { ScrollHoldController } from '../utils/scroll-hold.js';
 import { deepElementFromPoint } from '../utils/element-from-point.js';
 import { resolveHoveredLink } from '../utils/resolve-hovered-link.js';
 import { containsComposed } from '../ui/kp-chrome-shadow.js';
+import { dispatchClickSequence } from '../utils/synthetic-pointer.js';
+import { tryActivateScrubber } from '../utils/media-scrubber.js';
 
 /**
  * @typedef {{ openInNewTab?: boolean, background?: boolean, topOrigin?: string }} FrameActivateOptions
  */
 
 const CLICKABLE_SEL =
-  'a[href], button, [role="button"], [role="link"], [role="menuitem"], [role="option"], [role="tab"], [role="checkbox"], [role="radio"], [role="switch"], summary, [onclick], input, select, textarea, label';
+  'a[href], button, [role="button"], [role="link"], [role="menuitem"], [role="option"], [role="tab"], [role="checkbox"], [role="radio"], [role="switch"], [role="slider"], summary, [onclick], input, select, textarea, label';
 
 /**
  * Read computed styles with KeyPilot custom-cursor override suspended so
@@ -106,53 +108,7 @@ function resolveClickable(el) {
   }
 }
 
-/**
- * Coordinate-carrying click sequence (mirrors ActivationHandler.dispatchClickSequence).
- * @param {EventTarget} target
- * @param {number} clientX
- * @param {number} clientY
- */
-function dispatchClickSequence(target, clientX, clientY) {
-  if (!target) return;
 
-  const common = {
-    bubbles: true,
-    cancelable: true,
-    composed: true,
-    view: window,
-    clientX,
-    clientY,
-    button: 0,
-    buttons: 1
-  };
-
-  const hasPointer = typeof window.PointerEvent === 'function';
-  if (hasPointer) {
-    const pCommon = { ...common, pointerId: 1, pointerType: 'mouse', isPrimary: true };
-    try { target.dispatchEvent(new PointerEvent('pointerover', pCommon)); } catch { /* ignore */ }
-    try { target.dispatchEvent(new PointerEvent('pointerenter', pCommon)); } catch { /* ignore */ }
-    try { target.dispatchEvent(new PointerEvent('pointerdown', pCommon)); } catch { /* ignore */ }
-  } else {
-    try { target.dispatchEvent(new MouseEvent('pointerover', common)); } catch { /* ignore */ }
-    try { target.dispatchEvent(new MouseEvent('pointerenter', common)); } catch { /* ignore */ }
-    try { target.dispatchEvent(new MouseEvent('pointerdown', common)); } catch { /* ignore */ }
-  }
-
-  try { target.dispatchEvent(new MouseEvent('mouseover', common)); } catch { /* ignore */ }
-  try { target.dispatchEvent(new MouseEvent('mouseenter', common)); } catch { /* ignore */ }
-  try { target.dispatchEvent(new MouseEvent('mousemove', common)); } catch { /* ignore */ }
-  try { target.dispatchEvent(new MouseEvent('mousedown', common)); } catch { /* ignore */ }
-
-  const commonUp = { ...common, buttons: 0 };
-  if (hasPointer) {
-    const pUp = { ...commonUp, pointerId: 1, pointerType: 'mouse', isPrimary: true };
-    try { target.dispatchEvent(new PointerEvent('pointerup', pUp)); } catch { /* ignore */ }
-  } else {
-    try { target.dispatchEvent(new MouseEvent('pointerup', commonUp)); } catch { /* ignore */ }
-  }
-  try { target.dispatchEvent(new MouseEvent('mouseup', commonUp)); } catch { /* ignore */ }
-  try { target.dispatchEvent(new MouseEvent('click', commonUp)); } catch { /* ignore */ }
-}
 
 /**
  * @param {Element|null} el
@@ -1118,6 +1074,20 @@ export function installFrameClickAgent() {
       const mediaEl = findMediaAtPoint(el, clientX, clientY);
       const directMedia = isDirectMediaHit(el, mediaEl);
       const playOverlay = isPlayOverlayControl(el, activator);
+
+      // Timeline / seek bar: do this before play-toggle. YouTube embeds ignore
+      // untrusted clicks on `.ytp-progress-bar`; MAIN-world seekTo commits.
+      if (!openInNewTab && !background) {
+        const scrub = tryActivateScrubber(el, clientX, clientY);
+        if (scrub !== false) {
+          if (typeof scrub === 'number' && Number.isFinite(scrub)) {
+            try {
+              chrome.runtime?.sendMessage?.({ type: MSG.FRAME_MEDIA_SEEK, seconds: scrub });
+            } catch { /* ignore */ }
+          }
+          return true;
+        }
+      }
 
       // Only toggle media for a direct video hit or the center play overlay.
       // Finding any nearby <video> must not swallow link / control clicks in the embed.

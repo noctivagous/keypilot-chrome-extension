@@ -1,6 +1,9 @@
 /**
  * Smart element activation with semantic handling
  */
+import { dispatchClickSequence as dispatchSharedClickSequence } from '../utils/synthetic-pointer.js';
+import { applyMediaSeek } from '../utils/media-scrubber.js';
+
 export class ActivationHandler {
   constructor(elementDetector) {
     this.detector = elementDetector;
@@ -77,54 +80,7 @@ export class ActivationHandler {
    * meaningful coordinates.
    */
   dispatchClickSequence(target, clientX, clientY) {
-    if (!target) return;
-
-    const common = {
-      bubbles: true,
-      cancelable: true,
-      composed: true,
-      view: window,
-      clientX,
-      clientY,
-      button: 0,
-      buttons: 1
-    };
-
-    // Pointer events (preferred when supported)
-    const hasPointer = typeof window.PointerEvent === 'function';
-    if (hasPointer) {
-      const pCommon = {
-        ...common,
-        pointerId: 1,
-        pointerType: 'mouse',
-        isPrimary: true
-      };
-      try { target.dispatchEvent(new PointerEvent('pointerover', pCommon)); } catch { }
-      try { target.dispatchEvent(new PointerEvent('pointerenter', pCommon)); } catch { }
-      try { target.dispatchEvent(new PointerEvent('pointerdown', pCommon)); } catch { }
-    } else {
-      // Some sites attach handlers to pointer* names; approximate with MouseEvent if needed.
-      try { target.dispatchEvent(new MouseEvent('pointerover', common)); } catch { }
-      try { target.dispatchEvent(new MouseEvent('pointerenter', common)); } catch { }
-      try { target.dispatchEvent(new MouseEvent('pointerdown', common)); } catch { }
-    }
-
-    // Mouse events
-    try { target.dispatchEvent(new MouseEvent('mouseover', common)); } catch { }
-    try { target.dispatchEvent(new MouseEvent('mouseenter', common)); } catch { }
-    try { target.dispatchEvent(new MouseEvent('mousemove', common)); } catch { }
-    try { target.dispatchEvent(new MouseEvent('mousedown', common)); } catch { }
-
-    // Release (buttons=0)
-    const commonUp = { ...common, buttons: 0 };
-    if (hasPointer) {
-      const pUp = { ...commonUp, pointerId: 1, pointerType: 'mouse', isPrimary: true };
-      try { target.dispatchEvent(new PointerEvent('pointerup', pUp)); } catch { }
-    } else {
-      try { target.dispatchEvent(new MouseEvent('pointerup', commonUp)); } catch { }
-    }
-    try { target.dispatchEvent(new MouseEvent('mouseup', commonUp)); } catch { }
-    try { target.dispatchEvent(new MouseEvent('click', commonUp)); } catch { }
+    dispatchSharedClickSequence(target, clientX, clientY);
   }
 
   smartClick(el, clientX, clientY, openInNewTab = false) {
@@ -758,22 +714,8 @@ export class ActivationHandler {
         if (root && this.isVolumeOrNonSeekSlider(root)) return;
       } catch { /* ignore */ }
 
-      const media = this.findAssociatedMedia(trackEl, rangeEl);
-      if (!media || !Number.isFinite(media.duration) || media.duration <= 0) return;
-
       const metricsEl = this.getSeekContainmentRoot(trackEl) || trackEl;
-      const rect = metricsEl.getBoundingClientRect();
-      if (!rect || rect.width <= 0) return;
-
-      // Volume/popover sliders are short; timeline scrubbers span most of the player width.
-      // Guard against mapping a narrow control's X onto media duration.
-      if (rect.width < 120) return;
-
-      const pct = this.clamp((clientX - rect.left) / rect.width, 0, 1);
-      const targetTime = pct * media.duration;
-      // Only nudge when clearly out of sync (avoid fighting smooth seeking UIs).
-      if (Math.abs(media.currentTime - targetTime) < 0.35) return;
-      media.currentTime = targetTime;
+      applyMediaSeek(metricsEl, clientX);
     } catch { /* ignore */ }
   }
 

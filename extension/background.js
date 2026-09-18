@@ -2553,6 +2553,61 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
+        case MSG.FRAME_MEDIA_SEEK: {
+          // Page-world seek (YouTube movie_player.seekTo) in the sender frame.
+          const tabId = sender?.tab?.id;
+          const frameId = typeof sender?.frameId === 'number' ? sender.frameId : 0;
+          const seconds = Number(message?.seconds);
+          if (typeof tabId !== 'number' || !Number.isFinite(seconds) || seconds < 0) {
+            sendResponse({ type: MSG.ERROR, ok: false, error: 'Invalid media seek' });
+            break;
+          }
+          try {
+            if (!chrome.scripting?.executeScript) {
+              sendResponse({ type: MSG.ERROR, ok: false, error: 'chrome.scripting unavailable' });
+              break;
+            }
+            await chrome.scripting.executeScript({
+              target: { tabId, frameIds: [frameId] },
+              world: 'MAIN',
+              func: (t) => {
+                const time = Number(t);
+                if (!Number.isFinite(time) || time < 0) return { ok: false };
+                try {
+                  const player =
+                    document.getElementById('movie_player') ||
+                    document.querySelector('.html5-video-player');
+                  if (player && typeof player.seekTo === 'function') {
+                    player.seekTo(time, true);
+                    return { ok: true, via: 'player' };
+                  }
+                } catch { /* ignore */ }
+                try {
+                  const v =
+                    document.querySelector('video.html5-main-video') ||
+                    document.querySelector('video.video-stream') ||
+                    document.querySelector('video');
+                  if (v) {
+                    v.currentTime = time;
+                    return { ok: true, via: 'video' };
+                  }
+                } catch { /* ignore */ }
+                return { ok: false };
+              },
+              args: [seconds]
+            });
+            sendResponse({ type: MSG.SUCCESS, ok: true });
+          } catch (e) {
+            console.warn('[KeyPilot] Frame media seek failed:', e?.message || e);
+            sendResponse({
+              type: MSG.ERROR,
+              ok: false,
+              error: e?.message || 'Failed to seek media in frame'
+            });
+          }
+          break;
+        }
+
         case MSG.ENSURE_MAP_PAN_BRIDGE: {
           // Install page-world map.panBy listener (bypasses page CSP via world: MAIN).
           const tabId = sender?.tab?.id;
