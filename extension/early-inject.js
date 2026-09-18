@@ -3367,11 +3367,12 @@
   width: auto;
 }
 
-.kp-keybindings-ui .key.key-tab { flex: 1.25 1 0; }
-.kp-keybindings-ui .key.key-caps { flex: 1.35 1 0; }
-.kp-keybindings-ui .key.key-enter { flex: 1.55 1 0; }
-.kp-keybindings-ui .key.key-shift { flex: 1.65 1 0; }
-.kp-keybindings-ui .key.key-backspace { flex: 1.55 1 0; }
+/* Must beat .key flex !important or modifiers stay letter-key width. */
+.kp-keybindings-ui .key.key-tab { flex: 1.5 1 0 !important; }
+.kp-keybindings-ui .key.key-caps { flex: 1.75 1 0 !important; }
+.kp-keybindings-ui .key.key-enter { flex: 2 1 0 !important; }
+.kp-keybindings-ui .key.key-shift { flex: 2.15 1 0 !important; }
+.kp-keybindings-ui .key.key-backspace { flex: 1.55 1 0 !important; }
 
 /* ── Color families (muted pro tints + darker icon color) ─────── */
 .kp-keybindings-ui .key.key-activate,
@@ -9159,7 +9160,7 @@
       position: 'fixed',
       left: '16px',
       bottom: '16px',
-      width: '760px',
+      width: '820px',
       maxWidth: 'calc(100vw - 32px)',
       maxHeight: 'calc(100vh - 32px)',
       overflow: 'hidden',

@@ -969,7 +969,7 @@ export class FloatingKeyboardHelp {
     } catch { /* ignore */ }
     Object.assign(root.style, {
       position: 'fixed',
-      width: '760px',
+      width: '820px',
       // Symmetric inset on all sides (matches KEYBOARD_POSITION_MARGIN_PX).
       maxWidth: `calc(100vw - ${KEYBOARD_MAX_VIEWPORT_INSET_PX}px)`,
       maxHeight: `calc(100vh - ${KEYBOARD_MAX_VIEWPORT_INSET_PX}px)`,
