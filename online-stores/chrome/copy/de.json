@@ -1,0 +1,28 @@
+{
+  "locale": "de",
+  "slots": {
+    "key-click-browsing": {
+      "headline": "Surfen Sie mit Tastenklicks im Web.",
+      "callouts": [
+        "Steuern Sie den Cursor mit der Maus",
+        "Bewegen Sie den Mauszeiger über einen Link und drücken Sie F."
+      ]
+    },
+    "keyboard-map": {
+      "headline": "Häufige Aktionen immer griffbereit.",
+      "callouts": [
+        "Links anklicken",
+        "Tabs und Verlauf navigieren",
+        "Suchen, kopieren und untersuchen."
+      ]
+    },
+    "customize-workflow": {
+      "headline": "Erstellen Sie ein Tastaturlayout für Ihren Arbeitsablauf.",
+      "callouts": [
+        "Layout auswählen",
+        "Funktionen zuweisen",
+        "Makros erstellen."
+      ]
+    }
+  }
+}

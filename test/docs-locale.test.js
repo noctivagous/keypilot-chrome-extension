@@ -108,7 +108,7 @@ describe('docs locale fallback', () => {
 describe('docs topic and deep links', () => {
   it('keeps kp:// docs and settings links valid in every shipped docs locale', () => {
     const locales = shippedDocsLocales();
-    assert.deepEqual(locales.sort(), ['en', 'es']);
+    assert.deepEqual(locales.sort(), ['de', 'en', 'es']);
 
     for (const locale of locales) {
       const index = JSON.parse(readFileSync(join(userdocsRoot, locale, 'index.json'), 'utf8'));

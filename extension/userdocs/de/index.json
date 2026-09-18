@@ -1,0 +1,209 @@
+{
+  "topics": [
+    {
+      "id": "intro",
+      "title": "Einführung",
+      "file": "intro.md",
+      "icon": "book",
+      "accent": "cyan"
+    },
+    {
+      "id": "getting-started",
+      "title": "Erste Schritte",
+      "file": "getting-started.md",
+      "icon": "rocket",
+      "accent": "green"
+    },
+    {
+      "id": "browsing",
+      "title": "Durchsuchen",
+      "children": [
+        {
+          "id": "browsing-click",
+          "title": "Klicken und Verlinken",
+          "file": "browsing-click.md",
+          "shortcut": "F",
+          "accent": "green"
+        },
+        {
+          "id": "browsing-tabs",
+          "title": "Registerkarten und Verlauf",
+          "file": "browsing-tabs.md",
+          "icon": "tabs",
+          "accent": "blue"
+        },
+        {
+          "id": "browsing-scroll",
+          "title": "Scrollen",
+          "file": "browsing-scroll.md",
+          "icon": "scroll",
+          "accent": "amber"
+        },
+        {
+          "id": "browsing-select",
+          "title": "Auswahl",
+          "file": "browsing-select.md",
+          "icon": "select",
+          "accent": "indigo"
+        },
+        {
+          "id": "browsing-modes",
+          "title": "Modi",
+          "file": "browsing-modes.md",
+          "icon": "layers",
+          "accent": "violet"
+        }
+      ]
+    },
+    {
+      "id": "keyboard",
+      "title": "Tastatur",
+      "children": [
+        {
+          "id": "keyboard-layouts",
+          "title": "Layouts & Händigkeit",
+          "file": "keyboard-layouts.md",
+          "icon": "layout",
+          "accent": "cyan"
+        },
+        {
+          "id": "keyboard-system-keys",
+          "title": "Systemtasten und Alt-Chrome",
+          "file": "keyboard-system-keys.md",
+          "icon": "shield",
+          "accent": "amber"
+        },
+        {
+          "id": "keyboard-reference",
+          "title": "Tastaturreferenz",
+          "file": "keyboard-reference.md",
+          "shortcut": "K",
+          "accent": "green"
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "title": "Einstellungen",
+      "file": "settings.md",
+      "shortcut": "'",
+      "accent": "blue"
+    },
+    {
+      "id": "tools",
+      "title": "Werkzeuge",
+      "children": [
+        {
+          "id": "tools-omnibox",
+          "title": "Omnibox",
+          "file": "tools-omnibox.md",
+          "shortcut": "L",
+          "accent": "green"
+        },
+        {
+          "id": "tools-launcher",
+          "title": "Launcher",
+          "file": "tools-launcher.md",
+          "shortcut": "Alt+;",
+          "accent": "amber"
+        },
+        {
+          "id": "tools-top-sites",
+          "title": "Top-Seiten",
+          "file": "tools-top-sites.md",
+          "shortcut": ";",
+          "accent": "amber"
+        },
+        {
+          "id": "tools-tab-history",
+          "title": "Tab-Verlauf",
+          "file": "tools-tab-history.md",
+          "shortcut": "J",
+          "accent": "blue"
+        },
+        {
+          "id": "tools-control-strip",
+          "title": "Kontrollstreifen",
+          "file": "tools-control-strip.md",
+          "shortcut": "Alt+J",
+          "accent": "cyan"
+        },
+        {
+          "id": "tools-previews",
+          "title": "Linkvorschau und Popover",
+          "file": "tools-previews.md",
+          "icon": "preview",
+          "accent": "green"
+        }
+      ]
+    },
+    {
+      "id": "media",
+      "title": "Medien",
+      "children": [
+        {
+          "id": "media-page",
+          "title": "Seitenmedien",
+          "file": "media-page.md",
+          "shortcut": "O",
+          "accent": "indigo"
+        },
+        {
+          "id": "media-library",
+          "title": "Medienbibliothek",
+          "file": "media-library.md",
+          "shortcut": "M",
+          "accent": "violet"
+        },
+        {
+          "id": "media-copy",
+          "title": "Unter dem Cursor kopieren",
+          "file": "media-copy.md",
+          "shortcut": "I/U",
+          "accent": "cyan"
+        }
+      ]
+    },
+    {
+      "id": "customize",
+      "title": "Anpassen",
+      "children": [
+        {
+          "id": "layout-config",
+          "title": "Tastaturlayout-Editor",
+          "file": "layout-config.md",
+          "icon": "layout",
+          "accent": "cyan"
+        },
+        {
+          "id": "functions",
+          "title": "Funktionen und Aktionen",
+          "file": "functions.md",
+          "icon": "functions",
+          "accent": "green"
+        },
+        {
+          "id": "macros-overview",
+          "title": "Makros",
+          "file": "macros.md",
+          "icon": "macros",
+          "accent": "violet"
+        },
+        {
+          "id": "macro-builder",
+          "title": "Makro-Builder",
+          "file": "macro-builder.md",
+          "icon": "controls",
+          "accent": "amber"
+        },
+        {
+          "id": "execute-js",
+          "title": "JS ausführen",
+          "file": "execute-js.md",
+          "icon": "code",
+          "accent": "rose"
+        }
+      ]
+    }
+  ]
+}
