@@ -7,7 +7,11 @@
  */
 
 import { MSG } from '../messaging/types.js';
-import { createUrlPopoverTitlebar } from '../ui/popover-titlebar.js';
+import { getMessage } from '../utils/i18n.js';
+import {
+  createUrlPopoverTitlebar,
+  createTitlebarCloseHint
+} from '../ui/popover-titlebar.js';
 import { ensureOpenChromeShadow, ensureChromeHostMounted } from '../ui/kp-chrome-shadow.js';
 import { preferHttpsForPreview } from '../utils/preview-url.js';
 
@@ -95,16 +99,22 @@ export async function installPopoverWindowChrome(info) {
     box-shadow: 0 2px 8px rgba(0,0,0,0.35);
   `;
 
-  const titleText = kind === 'modal' ? 'Open Popover' : 'Link Preview';
-  const hint = kind === 'modal' ? 'Press Esc / P to hide' : 'Press Esc / E to hide';
+  const titleText = getMessage(
+    kind === 'modal' ? 'popover_window_title_open' : 'popover_window_title_preview'
+  );
+  const hideKey = kind === 'modal' ? 'P' : 'E';
+  const hint = createTitlebarCloseHint({
+    keys: ['Esc', hideKey],
+    suffix: getMessage('popover_hide_hint_suffix')
+  });
 
   const titlebarApi = createUrlPopoverTitlebar({
     title: titleText,
-    shortcut: kind === 'modal' ? 'P' : 'E',
+    shortcut: hideKey,
     variant: 'preview',
     showClose: true,
     onClose: requestClose,
-    closeTitle: 'Close (Esc)',
+    closeTitle: getMessage('popover_titlebar_close'),
     hint,
     className: 'kpv2-popover-window-titlebar',
     getUrl: () => originalUrl || location.href,

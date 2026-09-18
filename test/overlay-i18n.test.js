@@ -98,6 +98,12 @@ const OVERLAY_KEYS = [
     'control_strip_keyboard_abbrev',
     'context_menu_show_keyboard_reference'
   ]],
+  ['extension/src/modules/popover-window-chrome.js', [
+    'popover_window_title_preview',
+    'popover_window_title_open',
+    'popover_hide_hint_suffix',
+    'popover_titlebar_close'
+  ]],
   ['extension/src/ui/practice-popover-panel.js', [
     'practice_aria',
     'practice_title',

@@ -1675,6 +1675,18 @@
     "message": "Close (Esc)",
     "description": "Accessible label and tooltip for a titlebar close button."
   },
+  "popover_window_title_preview": {
+    "message": "Link Preview",
+    "description": "Titlebar title for the Link Preview OS popup."
+  },
+  "popover_window_title_open": {
+    "message": "Open Popover",
+    "description": "Titlebar title for the Open Popover OS popup."
+  },
+  "popover_hide_hint_suffix": {
+    "message": "to hide",
+    "description": "Titlebar hint suffix after Esc / shortcut keys on Link Preview and Open Popover."
+  },
   "context_menu_toggle_keypilot": {
     "message": "Toggle KeyPilot",
     "description": "Context-menu item that enables or disables KeyPilot."
