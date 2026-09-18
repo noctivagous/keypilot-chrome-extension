@@ -493,7 +493,51 @@ export class FloatingKeyboardHelp {
       const visible = this._shouldShowEscExitButton();
       if (visible) this._ensureExitTextModeButton();
       this._setExitBtnShown(this._exitTextModeBtn, visible);
+      this._syncEscExitHint(visible);
     } catch { /* ignore */ }
+  }
+
+  /**
+   * Titlebar hint “Esc to exit” while an Esc-exit mode is active.
+   * Edit mode owns the hint slot for “Editing — Alt+C to exit”.
+   * @param {boolean} visible
+   */
+  _syncEscExitHint(visible) {
+    if (this._editMode) return;
+    const hintEl = this.hintEl
+      || this._titlebar?.querySelector?.('[data-kp-floating-keyboard-hint="true"]')
+      || null;
+    if (!hintEl) return;
+    this.hintEl = hintEl;
+    try {
+      while (hintEl.firstChild) hintEl.removeChild(hintEl.firstChild);
+      if (visible) {
+        const hint = getMessage('keyboard_help_esc_to_exit', 'Esc');
+        hintEl.hidden = false;
+        hintEl.style.display = 'inline-flex';
+        hintEl.appendChild(document.createTextNode(hint));
+        hintEl.setAttribute('aria-label', hint);
+      } else {
+        hintEl.hidden = true;
+        hintEl.style.display = 'none';
+        hintEl.removeAttribute('aria-label');
+      }
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * @param {HTMLButtonElement} btn
+   * @param {Document} doc
+   */
+  _paintExitTextModeButton(btn, doc) {
+    const aria = getMessage('keyboard_help_exit_text_mode', 'Esc');
+    btn.setAttribute('aria-label', aria);
+    btn.title = aria;
+    while (btn.firstChild) btn.removeChild(btn.firstChild);
+    btn.appendChild(doc.createTextNode(getMessage('keyboard_help_exit_text_mode_label')));
+    const kbd = createTitlebarKbd(doc, 'Esc');
+    try { kbd.style.fontSize = '10px'; } catch { /* ignore */ }
+    btn.appendChild(kbd);
   }
 
   /** @param {HTMLElement|null} btn @param {boolean} shown */
@@ -519,13 +563,11 @@ export class FloatingKeyboardHelp {
     let btn = (this._exitTextModeBtn && this._exitTextModeBtn.isConnected)
       ? this._exitTextModeBtn
       : header.querySelector('button[data-kp-floating-keyboard-exit-text="true"]');
+    const doc = header.ownerDocument || document;
     if (!btn) {
-      const doc = header.ownerDocument || document;
       btn = doc.createElement('button');
       btn.type = 'button';
       btn.setAttribute('data-kp-floating-keyboard-exit-text', 'true');
-      btn.setAttribute('aria-label', getMessage('keyboard_help_exit_text_mode', 'Esc'));
-      btn.title = getMessage('keyboard_help_exit_text_mode', 'Esc');
       Object.assign(btn.style, {
         marginLeft: '6px',
         padding: '0 7px',
@@ -550,11 +592,8 @@ export class FloatingKeyboardHelp {
       btn.hidden = true;
       btn.setAttribute('aria-hidden', 'true');
       btn.style.setProperty('display', 'none', 'important');
-      btn.appendChild(doc.createTextNode('Exit'));
-      const kbd = createTitlebarKbd(doc, 'Esc');
-      try { kbd.style.fontSize = '10px'; } catch { /* ignore */ }
-      btn.appendChild(kbd);
     }
+    this._paintExitTextModeButton(btn, doc);
 
     // Place immediately after the layout <select> (title · select · Exit · …).
     const layoutSelect = this._layoutSelectEl
@@ -1447,7 +1486,7 @@ export class FloatingKeyboardHelp {
         }
 
         try {
-          if (hintEl && !this._editMode) {
+          if (hintEl && !this._editMode && !this._shouldShowEscExitButton()) {
             while (hintEl.firstChild) hintEl.removeChild(hintEl.firstChild);
             hintEl.hidden = true;
             hintEl.style.display = 'none';

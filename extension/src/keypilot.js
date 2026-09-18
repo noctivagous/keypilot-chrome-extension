@@ -87,7 +87,7 @@ import { runLegacyMacroKeyFunction } from './modules/macro-key-runtime.js';
 import { runUserExecuteJs, stringifyExecuteJsValue } from './modules/execute-js-runtime.js';
 import { getFunctionDef, functionWorksWhileTyping, functionCancelsOnPointerDown, FIXED_KEY_FUNCTION_IDS, UNIT_SELECT_FUNCTION_IDS } from './config/function-library.js';
 import { getStockMacroById, resolveMacroById } from './config/stock-macros.js';
-import { chordSlotKeyFromEvent } from './utils/key-chord.js';
+import { chordSlotKeyFromEvent, isChordSlotKey } from './utils/key-chord.js';
 import { getTextAtPoint } from './utils/text-at-point.js';
 import {
   UnitSelectionManager,
@@ -1363,6 +1363,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       this._currentKeySlotMap = layout.slots && typeof layout.slots === 'object' ? layout.slots : {};
       if (Array.isArray(opts.macros)) this._currentUserMacros = opts.macros;
       if (Array.isArray(opts.actions)) this._currentUserActions = opts.actions;
+      try { this._applyTextInputHintLabels(); } catch { /* ignore */ }
     }
 
     try {
@@ -1745,23 +1746,84 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
   }
 
   /**
+   * Visual order for picking the first Click Element key on a custom layout.
+   * @type {readonly string[]}
+   */
+  static get _HINT_SLOT_ORDER() {
+    return Object.freeze([
+      '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=',
+      'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']',
+      'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', "'",
+      'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/'
+    ]);
+  }
+
+  /**
+   * Glyph shown in text-mode hints for a keybinding.
+   * @param {any} binding
+   * @param {string} fallback
+   * @returns {string}
+   */
+  _bindingHintGlyph(binding, fallback) {
+    const raw = binding?.keyLabel
+      || binding?.displayKey
+      || (Array.isArray(binding?.keys) ? binding.keys[0] : '')
+      || fallback;
+    const s = String(raw || '').trim();
+    if (!s) return fallback;
+    if (s.length === 1) return /[a-z]/i.test(s) ? s.toUpperCase() : s;
+    if (/^escape$/i.test(s)) return 'Esc';
+    return s;
+  }
+
+  /**
+   * First bare key on the current user layout that runs `functionId`
+   * (Click Element = ACTIVATE). Chord slots are skipped.
+   * @param {string} functionId
+   * @returns {string}
+   */
+  _firstBareSlotForFunction(functionId) {
+    const slots = this._currentKeySlotMap;
+    if (!slots || typeof slots !== 'object') return '';
+    const wanted = String(functionId || '');
+    if (!wanted) return '';
+    const actions = Array.isArray(this._currentUserActions) ? this._currentUserActions : [];
+    const hits = [];
+    for (const [slotKey, assigned] of Object.entries(slots)) {
+      if (!assigned || assigned.type !== 'function' || isChordSlotKey(slotKey)) continue;
+      let id = String(assigned.id || '');
+      if (id.startsWith('action:')) {
+        const inst = actions.find((a) => a && a.id === id);
+        id = inst ? String(inst.functionId || '') : '';
+      }
+      if (id !== wanted) continue;
+      const label = String(slotKey || '').trim();
+      if (!label) continue;
+      hits.push(label.length === 1 ? label.toUpperCase() : label);
+    }
+    if (!hits.length) return '';
+    const order = KeyPilot._HINT_SLOT_ORDER;
+    hits.sort((a, b) => {
+      const ia = order.indexOf(a);
+      const ib = order.indexOf(b);
+      return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+    });
+    return hits[0];
+  }
+
+  /**
    * Paint layout-aware "F to select" / "Esc to exit" labels
-   * (vertical sidecars left of text fields).
+   * (vertical sidecars and SVG field hints). Click Element follows the
+   * current layout, including left-handed and custom slot maps.
    */
   _applyTextInputHintLabels() {
     const KB = this.keybindings || {};
-    const activate =
-      KB.ACTIVATE?.keyLabel ||
-      KB.ACTIVATE?.displayKey ||
-      (Array.isArray(KB.ACTIVATE?.keys) ? KB.ACTIVATE.keys[0] : null) ||
-      'F';
-    const cancel =
-      KB.CANCEL?.keyLabel ||
-      KB.CANCEL?.displayKey ||
-      'Esc';
+    const activate = this._firstBareSlotForFunction('ACTIVATE')
+      || this._bindingHintGlyph(KB.ACTIVATE, 'F');
+    const cancel = this._bindingHintGlyph(KB.CANCEL, 'Esc');
     this.styleManager?.setTextInputHintLabels?.({
-      hover: `${activate} to select`,
-      focus: `press ${cancel} to exit`
+      hover: getMessage('text_mode_hint_hover', activate) || `${activate} to select`,
+      focus: getMessage('text_mode_hint_focus', cancel) || `press ${cancel} to exit`
     });
     this.overlayManager?.setTextFocusEscKeyLabel?.(cancel);
     this.overlayManager?.setTextHoverActivateKeyLabel?.(activate);

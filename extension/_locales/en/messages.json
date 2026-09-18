@@ -2073,6 +2073,52 @@
       }
     }
   },
+  "keyboard_help_exit_text_mode_label": {
+    "message": "Exit",
+    "description": "Visible label on the Keyboard Reference button that leaves text mode."
+  },
+  "keyboard_help_esc_to_exit": {
+    "message": "$1 to exit",
+    "description": "Keyboard Reference titlebar hint while text mode is active. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Esc"
+      }
+    }
+  },
+  "text_mode_sidecar_to": {
+    "message": "to",
+    "description": "Vertical text-mode sidecar preposition between the keycap and the verb. Keep this short."
+  },
+  "text_mode_sidecar_exit": {
+    "message": "exit",
+    "description": "Vertical text-mode sidecar verb under Esc. Keep this short."
+  },
+  "text_mode_sidecar_select": {
+    "message": "select",
+    "description": "Vertical text-mode sidecar verb under the Click Element key. Keep this short."
+  },
+  "text_mode_hint_focus": {
+    "message": "press $1 to exit",
+    "description": "SVG hint painted on a focused text field. $1 is the cancel key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "Esc"
+      }
+    }
+  },
+  "text_mode_hint_hover": {
+    "message": "$1 to select",
+    "description": "SVG hint painted on a hovered text field. $1 is the Click Element key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "F"
+      }
+    }
+  },
   "keyboard_help_close_editor": {
     "message": "Close layout editor ($1)",
     "description": "Button that closes the layout editor. $1 is the shortcut glyph.",

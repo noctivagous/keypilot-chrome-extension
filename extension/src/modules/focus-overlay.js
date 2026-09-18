@@ -12,6 +12,7 @@ import {
   isClickableKeyPilotChromeElement
 } from '../ui/kp-chrome-shadow.js';
 import { resolveActivationIdentity } from '../utils/resolve-hovered-link.js';
+import { getMessage } from '../utils/i18n.js';
 
 export const FOCUS_OVERLAY_METHOD_NAMES = Object.freeze(
 [
@@ -44,6 +45,7 @@ export const FOCUS_OVERLAY_METHOD_NAMES = Object.freeze(
   'setTextFocusEscKeyLabel',
   'setTextHoverActivateKeyLabel',
   '_escapeHintText',
+  '_paintVerticalKeyHint',
   '_renderTextFocusEscHint',
   '_renderTextHoverActivateHint',
   'ensureTextFocusEscHint',
@@ -848,18 +850,40 @@ export class FocusOverlayPainter {
       .replace(/"/g, '&quot;');
   }
 
+  /**
+   * Stacked sidecar: [keycap] / to / verb. Key glyph stays untranslated.
+   * @param {HTMLElement|null} host
+   * @param {string} keyLabel
+   * @param {string} verbMessageKey
+   */
+  _paintVerticalKeyHint(host, keyLabel, verbMessageKey) {
+    if (!host) return;
+    const doc = host.ownerDocument || document;
+    const kbd = doc.createElement('kbd');
+    kbd.textContent = String(keyLabel || '');
+    const to = doc.createElement('span');
+    to.textContent = getMessage('text_mode_sidecar_to');
+    const verb = doc.createElement('span');
+    verb.textContent = getMessage(verbMessageKey);
+    host.replaceChildren(kbd, to, verb);
+  }
+
   _renderTextFocusEscHint() {
     if (!this.textFocusEscHint) return;
-    const key = this._escapeHintText(this._textFocusEscKeyLabel || 'Esc');
-    this.textFocusEscHint.innerHTML =
-      `<kbd>${key}</kbd><span>to</span><span>exit</span>`;
+    this._paintVerticalKeyHint(
+      this.textFocusEscHint,
+      this._textFocusEscKeyLabel || 'Esc',
+      'text_mode_sidecar_exit'
+    );
   }
 
   _renderTextHoverActivateHint() {
     if (!this.textHoverActivateHint) return;
-    const key = this._escapeHintText(this._textHoverActivateKeyLabel || 'F');
-    this.textHoverActivateHint.innerHTML =
-      `<kbd>${key}</kbd><span>to</span><span>select</span>`;
+    this._paintVerticalKeyHint(
+      this.textHoverActivateHint,
+      this._textHoverActivateKeyLabel || 'F',
+      'text_mode_sidecar_select'
+    );
   }
 
   ensureTextFocusEscHint() {

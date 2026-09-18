@@ -2,6 +2,7 @@
  * CSS injection and style management
  */
 import { CSS_CLASSES, ELEMENT_IDS, COLORS, Z_INDEX } from '../config/constants.js';
+import { getMessage } from '../utils/i18n.js';
 
 const BLUE_TINT_FILTER_ID = 'keypilot-blue-tint-filter';
 const BLUE_TINT_SVG_ID = 'keypilot-blue-tint-filter-svg';
@@ -173,8 +174,8 @@ export class StyleManager {
     this.cursorOverridesEnabled = false;
 
     // SVG background-image hints for orange text inputs (hover / focus).
-    this._textHoverHintLabel = 'F to select';
-    this._textFocusHintLabel = 'press Esc to exit';
+    this._textHoverHintLabel = getMessage('text_mode_hint_hover', 'F') || 'F to select';
+    this._textFocusHintLabel = getMessage('text_mode_hint_focus', 'Esc') || 'press Esc to exit';
     this._textHoverHintUri = buildTextInputHintDataUri(this._textHoverHintLabel);
     this._textFocusHintUri = buildTextInputHintDataUri(this._textFocusHintLabel, {
       fill: COLORS.ORANGE,

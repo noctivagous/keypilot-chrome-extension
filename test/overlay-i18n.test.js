@@ -55,7 +55,18 @@ const OVERLAY_KEYS = [
     'settings_static_009',
     'docs_document_title',
     'docs_text_size_label',
-    'popup_docs'
+    'popup_docs',
+    'text_mode_hint_hover',
+    'text_mode_hint_focus'
+  ]],
+  ['extension/src/modules/focus-overlay.js', [
+    'text_mode_sidecar_to',
+    'text_mode_sidecar_exit',
+    'text_mode_sidecar_select'
+  ]],
+  ['extension/src/modules/style-manager.js', [
+    'text_mode_hint_hover',
+    'text_mode_hint_focus'
   ]],
   ['extension/pages/settings.js', [
     'settings_static_018',
@@ -78,7 +89,10 @@ const OVERLAY_KEYS = [
     'popup_tutorial',
     'keyboard_help_editing_aria',
     'keyboard_help_close_editor',
-    'keyboard_help_close_editor_label'
+    'keyboard_help_close_editor_label',
+    'keyboard_help_exit_text_mode',
+    'keyboard_help_exit_text_mode_label',
+    'keyboard_help_esc_to_exit'
   ]],
   ['extension/src/ui/control-strip.js', [
     'control_strip_keyboard_abbrev',
