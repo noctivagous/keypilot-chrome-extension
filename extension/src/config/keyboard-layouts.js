@@ -810,9 +810,15 @@ export function getKeybindingActionCategory(actionId) {
  * @returns {string}
  */
 export function nextUserCopyLayoutLabel(baseLabel, existingLayouts = []) {
-  const base = String(baseLabel || 'Layout').trim() || 'Layout';
+  const fallbackBase = getMessage('layout_editor_layout_noun') || 'Layout';
+  const copyWord = getMessage('layout_editor_copy_suffix') || 'Copy';
+  const base = String(baseLabel || fallbackBase).trim() || fallbackBase;
   const escaped = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const re = new RegExp(`^${escaped} Copy (\\d+)$`, 'i');
+  const copyAlts = [...new Set(['Copy', copyWord])]
+    .map((word) => String(word || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .filter(Boolean)
+    .join('|');
+  const re = new RegExp(`^${escaped} (?:${copyAlts || 'Copy'}) (\\d+)$`, 'i');
   let maxN = 0;
   for (const l of existingLayouts || []) {
     const m = String(l?.label || '').trim().match(re);
@@ -820,7 +826,7 @@ export function nextUserCopyLayoutLabel(baseLabel, existingLayouts = []) {
     const n = Number(m[1]);
     if (Number.isFinite(n) && n > maxN) maxN = n;
   }
-  return `${base} Copy ${maxN + 1}`;
+  return `${base} ${copyWord} ${maxN + 1}`;
 }
 
 /**

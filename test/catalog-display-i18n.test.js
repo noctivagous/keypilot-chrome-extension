@@ -112,6 +112,21 @@ describe('catalog-to-display resolution', () => {
     }
   });
 
+  it('localizes the Copy suffix on duplicated layout names', async () => {
+    mock.setI18nMessages({
+      layout_editor_layout_noun: { message: 'Tastaturlayout' },
+      layout_editor_copy_suffix: { message: 'Kopie' },
+      layout_family_browsing_label: { message: 'Durchsuchen' }
+    });
+    const { nextUserCopyLayoutLabel } = await import('../extension/src/config/keyboard-layouts.js');
+    assert.equal(nextUserCopyLayoutLabel('Durchsuchen', []), 'Durchsuchen Kopie 1');
+    assert.equal(
+      nextUserCopyLayoutLabel('Durchsuchen', [{ label: 'Durchsuchen Copy 1' }, { label: 'Durchsuchen Kopie 2' }]),
+      'Durchsuchen Kopie 3'
+    );
+    assert.equal(nextUserCopyLayoutLabel('', []), 'Tastaturlayout Kopie 1');
+  });
+
   it('localizes built-in keybinding labels from the Function catalog', async () => {
     mock.setI18nMessages({
       fn_TAB_LEFT_label: { message: 'Localized Tab Left' },

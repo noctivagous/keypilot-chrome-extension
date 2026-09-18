@@ -37,6 +37,7 @@ describe('keyboard layout family localization', () => {
     assert.match(buildSideEffects, /m\.labelKey/);
     assert.match(earlyInject, /earlyMessage\(String\(pair\[1\]\)\)/);
     assert.match(source, /getMessage\(`fn_\$\{id\}_label`\)/);
+    assert.match(source, /getMessage\('layout_editor_copy_suffix'\)/);
   });
 
   it('localizes named keycap legends at the presentation boundary', async () => {

@@ -1827,6 +1827,94 @@
     "message": "[GB] No steps yet.",
     "description": "Inspector empty state when a macro has no steps."
   },
+  "layout_editor_actions_library": {
+    "message": "[GB] Actions Library",
+    "description": "Title of the Actions Library pane in the Keyboard Layout Editor."
+  },
+  "layout_editor_search_placeholder": {
+    "message": "[GB] Search…",
+    "description": "Placeholder for the Actions Library search field."
+  },
+  "layout_editor_library_filter_aria": {
+    "message": "[GB] Library filter",
+    "description": "Accessible name for the All/Functions segmented control."
+  },
+  "layout_editor_function_category_aria": {
+    "message": "[GB] Function category",
+    "description": "Accessible name for the Function category dropdown."
+  },
+  "layout_editor_library_layout_aria": {
+    "message": "[GB] Library layout",
+    "description": "Accessible name for the Cards/Table segmented control."
+  },
+  "layout_editor_tab_all": {
+    "message": "[GB] All",
+    "description": "Actions Library filter tab that shows every item."
+  },
+  "layout_editor_tab_functions": {
+    "message": "[GB] Functions",
+    "description": "Actions Library filter tab that shows Functions only."
+  },
+  "layout_editor_tab_macros": {
+    "message": "[GB] Macros",
+    "description": "Actions Library filter tab that shows Macros only."
+  },
+  "layout_editor_tab_macro_keys": {
+    "message": "[GB] Macro Keys",
+    "description": "Actions Library filter tab that shows Macro Keys only."
+  },
+  "layout_editor_view_cards": {
+    "message": "[GB] Cards",
+    "description": "Actions Library presentation mode: cards."
+  },
+  "layout_editor_view_table": {
+    "message": "[GB] Table",
+    "description": "Actions Library presentation mode: table."
+  },
+  "layout_editor_instructions_aria": {
+    "message": "[GB] Layout assignment instructions",
+    "description": "Accessible name for the Actions Library instructions section."
+  },
+  "layout_editor_instructions_title": {
+    "message": "[GB] Instructions:",
+    "description": "Heading for the Actions Library placement instructions."
+  },
+  "layout_editor_instructions_body": {
+    "message": "[GB] Click a key cap below once and move the mouse. Use the placement arrow to place the action on the keyboard.",
+    "description": "Body copy for placing an action from the Actions Library onto the Keyboard Reference."
+  },
+  "layout_editor_instructions_collapse": {
+    "message": "[GB] Collapse instructions",
+    "description": "Tooltip for collapsing the Actions Library instructions."
+  },
+  "layout_editor_instructions_expand": {
+    "message": "[GB] Expand instructions",
+    "description": "Tooltip for expanding the Actions Library instructions."
+  },
+  "layout_editor_place_pulse": {
+    "message": "[GB] Click the desired key cap location on the Keyboard Reference.",
+    "description": "Status shown while placing an action onto a Keyboard Reference key."
+  },
+  "layout_editor_table_aria": {
+    "message": "[GB] Actions Library table",
+    "description": "Accessible name for the Actions Library table view."
+  },
+  "layout_editor_layout_options": {
+    "message": "[GB] Layout options",
+    "description": "Accessible name for the Keyboard Layout Editor overflow menu (left-handed, number row)."
+  },
+  "layout_editor_layout_noun": {
+    "message": "[GB] Layout",
+    "description": "Short label beside the layout picker in the Keyboard Layout Editor, and fallback base name for new layouts."
+  },
+  "layout_editor_copy_suffix": {
+    "message": "[GB] Copy",
+    "description": "Word inserted when duplicating a built-in layout, as in 'Browsing Copy 1'."
+  },
+  "layout_editor_custom_layout": {
+    "message": "[GB] Custom Layout",
+    "description": "Fallback name for a user-created keyboard layout."
+  },
   "context_menu_edit_layouts": {
     "message": "[GB] Edit Keyboard Layout…",
     "description": "Context-menu item that opens the keyboard layout editor."

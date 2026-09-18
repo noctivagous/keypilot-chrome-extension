@@ -88,7 +88,19 @@ const OVERLAY_KEYS = [
     'context_menu_group_layout_editor',
     'layout_editor_set_current',
     'layout_editor_inspector',
-    'layout_editor_inspector_empty'
+    'layout_editor_inspector_empty',
+    'layout_editor_actions_library',
+    'layout_editor_search_placeholder',
+    'layout_editor_tab_all',
+    'layout_editor_tab_functions',
+    'layout_editor_view_cards',
+    'layout_editor_view_table',
+    'layout_editor_instructions_title',
+    'layout_editor_instructions_body',
+    'layout_editor_layout_options',
+    'layout_editor_layout_noun',
+    'settings_static_115',
+    'settings_static_117'
   ]]
 ];
 

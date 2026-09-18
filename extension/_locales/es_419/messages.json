@@ -722,7 +722,7 @@
     "description": "Localized settings page chrome."
   },
   "settings_static_115": {
-    "message": "zurdo",
+    "message": "Zurdo",
     "description": "Localized settings page chrome."
   },
   "settings_static_116": {
@@ -1826,6 +1826,94 @@
   "layout_editor_no_steps": {
     "message": "Aún no hay pasos.",
     "description": "Inspector empty state when a macro has no steps."
+  },
+  "layout_editor_actions_library": {
+    "message": "Biblioteca de acciones",
+    "description": "Title of the Actions Library pane in the Keyboard Layout Editor."
+  },
+  "layout_editor_search_placeholder": {
+    "message": "Buscar…",
+    "description": "Placeholder for the Actions Library search field."
+  },
+  "layout_editor_library_filter_aria": {
+    "message": "Filtro de la biblioteca",
+    "description": "Accessible name for the All/Functions segmented control."
+  },
+  "layout_editor_function_category_aria": {
+    "message": "Categoría de función",
+    "description": "Accessible name for the Function category dropdown."
+  },
+  "layout_editor_library_layout_aria": {
+    "message": "Diseño de la biblioteca",
+    "description": "Accessible name for the Cards/Table segmented control."
+  },
+  "layout_editor_tab_all": {
+    "message": "Todas",
+    "description": "Actions Library filter tab that shows every item."
+  },
+  "layout_editor_tab_functions": {
+    "message": "Funciones",
+    "description": "Actions Library filter tab that shows Functions only."
+  },
+  "layout_editor_tab_macros": {
+    "message": "Macros",
+    "description": "Actions Library filter tab that shows Macros only."
+  },
+  "layout_editor_tab_macro_keys": {
+    "message": "Teclas macro",
+    "description": "Actions Library filter tab that shows Macro Keys only."
+  },
+  "layout_editor_view_cards": {
+    "message": "Tarjetas",
+    "description": "Actions Library presentation mode: cards."
+  },
+  "layout_editor_view_table": {
+    "message": "Tabla",
+    "description": "Actions Library presentation mode: table."
+  },
+  "layout_editor_instructions_aria": {
+    "message": "Instrucciones de asignación de diseño",
+    "description": "Accessible name for the Actions Library instructions section."
+  },
+  "layout_editor_instructions_title": {
+    "message": "Instrucciones:",
+    "description": "Heading for the Actions Library placement instructions."
+  },
+  "layout_editor_instructions_body": {
+    "message": "Haz clic una vez en una tecla de abajo y mueve el mouse. Usa la flecha de colocación para colocar la acción en el teclado.",
+    "description": "Body copy for placing an action from the Actions Library onto the Keyboard Reference."
+  },
+  "layout_editor_instructions_collapse": {
+    "message": "Contraer instrucciones",
+    "description": "Tooltip for collapsing the Actions Library instructions."
+  },
+  "layout_editor_instructions_expand": {
+    "message": "Expandir instrucciones",
+    "description": "Tooltip for expanding the Actions Library instructions."
+  },
+  "layout_editor_place_pulse": {
+    "message": "Haz clic en la tecla deseada de la Referencia del teclado.",
+    "description": "Status shown while placing an action onto a Keyboard Reference key."
+  },
+  "layout_editor_table_aria": {
+    "message": "Tabla de la biblioteca de acciones",
+    "description": "Accessible name for the Actions Library table view."
+  },
+  "layout_editor_layout_options": {
+    "message": "Opciones de diseño",
+    "description": "Accessible name for the Keyboard Layout Editor overflow menu (left-handed, number row)."
+  },
+  "layout_editor_layout_noun": {
+    "message": "Diseño",
+    "description": "Short label beside the layout picker in the Keyboard Layout Editor, and fallback base name for new layouts."
+  },
+  "layout_editor_copy_suffix": {
+    "message": "Copia",
+    "description": "Word inserted when duplicating a built-in layout, as in 'Browsing Copy 1'."
+  },
+  "layout_editor_custom_layout": {
+    "message": "Diseño personalizado",
+    "description": "Fallback name for a user-created keyboard layout."
   },
   "context_menu_edit_layouts": {
     "message": "Editar distribución del teclado…",

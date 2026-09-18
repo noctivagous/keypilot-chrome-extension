@@ -1827,6 +1827,94 @@
     "message": "Noch keine Schritte.",
     "description": "Inspector empty state when a macro has no steps."
   },
+  "layout_editor_actions_library": {
+    "message": "Aktionsbibliothek",
+    "description": "Title of the Actions Library pane in the Keyboard Layout Editor."
+  },
+  "layout_editor_search_placeholder": {
+    "message": "Suchen…",
+    "description": "Placeholder for the Actions Library search field."
+  },
+  "layout_editor_library_filter_aria": {
+    "message": "Bibliotheksfilter",
+    "description": "Accessible name for the All/Functions segmented control."
+  },
+  "layout_editor_function_category_aria": {
+    "message": "Funktionskategorie",
+    "description": "Accessible name for the Function category dropdown."
+  },
+  "layout_editor_library_layout_aria": {
+    "message": "Bibliotheksdarstellung",
+    "description": "Accessible name for the Cards/Table segmented control."
+  },
+  "layout_editor_tab_all": {
+    "message": "Alle",
+    "description": "Actions Library filter tab that shows every item."
+  },
+  "layout_editor_tab_functions": {
+    "message": "Funktionen",
+    "description": "Actions Library filter tab that shows Functions only."
+  },
+  "layout_editor_tab_macros": {
+    "message": "Makros",
+    "description": "Actions Library filter tab that shows Macros only."
+  },
+  "layout_editor_tab_macro_keys": {
+    "message": "Makrotasten",
+    "description": "Actions Library filter tab that shows Macro Keys only."
+  },
+  "layout_editor_view_cards": {
+    "message": "Karten",
+    "description": "Actions Library presentation mode: cards."
+  },
+  "layout_editor_view_table": {
+    "message": "Tabelle",
+    "description": "Actions Library presentation mode: table."
+  },
+  "layout_editor_instructions_aria": {
+    "message": "Anweisungen zur Tastenzuweisung",
+    "description": "Accessible name for the Actions Library instructions section."
+  },
+  "layout_editor_instructions_title": {
+    "message": "Anleitung:",
+    "description": "Heading for the Actions Library placement instructions."
+  },
+  "layout_editor_instructions_body": {
+    "message": "Klicken Sie einmal auf eine Taste unten und bewegen Sie die Maus. Verwenden Sie den Platzierungspfeil, um die Aktion auf der Tastatur zu platzieren.",
+    "description": "Body copy for placing an action from the Actions Library onto the Keyboard Reference."
+  },
+  "layout_editor_instructions_collapse": {
+    "message": "Anleitung einklappen",
+    "description": "Tooltip for collapsing the Actions Library instructions."
+  },
+  "layout_editor_instructions_expand": {
+    "message": "Anleitung erweitern",
+    "description": "Tooltip for expanding the Actions Library instructions."
+  },
+  "layout_editor_place_pulse": {
+    "message": "Klicken Sie auf die gewünschte Taste in der Tastaturreferenz.",
+    "description": "Status shown while placing an action onto a Keyboard Reference key."
+  },
+  "layout_editor_table_aria": {
+    "message": "Aktionsbibliothek-Tabelle",
+    "description": "Accessible name for the Actions Library table view."
+  },
+  "layout_editor_layout_options": {
+    "message": "Layout-Optionen",
+    "description": "Accessible name for the Keyboard Layout Editor overflow menu (left-handed, number row)."
+  },
+  "layout_editor_layout_noun": {
+    "message": "Tastaturlayout",
+    "description": "Short label beside the layout picker in the Keyboard Layout Editor, and fallback base name for new layouts."
+  },
+  "layout_editor_copy_suffix": {
+    "message": "Kopie",
+    "description": "Word inserted when duplicating a built-in layout, as in 'Browsing Copy 1'."
+  },
+  "layout_editor_custom_layout": {
+    "message": "Benutzerdefiniertes Layout",
+    "description": "Fallback name for a user-created keyboard layout."
+  },
   "context_menu_edit_layouts": {
     "message": "Tastaturlayout bearbeiten…",
     "description": "Context-menu item that opens the keyboard layout editor."
@@ -3968,7 +4056,7 @@
     "description": "Example JavaScript for the Execute JS parameter."
   },
   "fn_cat_navigation_label": {
-    "message": "Navigation",
+    "message": "Navigieren",
     "description": "Actions Library category label for Navigation."
   },
   "fn_cat_tab_control_label": {
@@ -4044,7 +4132,7 @@
     "description": "Actions Library category label for Tools."
   },
   "fn_cat_system_label": {
-    "message": "System",
+    "message": "Systemfunktionen",
     "description": "Actions Library category label for System."
   },
   "fn_cat_other_label": {

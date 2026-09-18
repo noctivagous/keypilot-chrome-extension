@@ -30,6 +30,7 @@ import {
   validateFunctionSlotKey
 } from '../config/function-library.js';
 import { getStockMacroById, isStockMacroId } from '../config/stock-macros.js';
+import { getMessage } from '../utils/i18n.js';
 
 export const KEYBOARD_LAYOUT_STORE_KEY = 'kp_keyboard_layout_store_v1';
 
@@ -929,7 +930,12 @@ export async function duplicateUserKeyboardLayout({ source, label } = {}) {
   const t = nowMs();
   const layout = {
     id: genId('layout:'),
-    label: String(label || `${String(source.label || 'Layout').trim() || 'Layout'} copy`),
+    label: String(label || (() => {
+      const noun = getMessage('layout_editor_layout_noun') || 'Layout';
+      const copyWord = getMessage('layout_editor_copy_suffix') || 'Copy';
+      const base = String(source.label || noun).trim() || noun;
+      return `${base} ${copyWord}`;
+    })()),
     builtIn: false,
     baseBuiltinLayoutId: source.baseBuiltinLayoutId
       ? String(source.baseBuiltinLayoutId)

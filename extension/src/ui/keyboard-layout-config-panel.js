@@ -355,26 +355,7 @@ function libraryKeyIconId(item) {
  * @returns {string}
  */
 function nextDuplicateUserLayoutLabel(sourceLabel, existingLayouts = []) {
-  const base = String(sourceLabel || 'Layout').trim() || 'Layout';
-  const userN = base.match(/^User Layout(?: (\d+))?$/i);
-  if (userN) {
-    let maxN = 1;
-    for (const l of existingLayouts || []) {
-      const m = String(l?.label || '').trim().match(/^User Layout(?: (\d+))?$/i);
-      if (!m) continue;
-      const n = m[1] ? Number(m[1]) : 1;
-      if (Number.isFinite(n) && n > maxN) maxN = n;
-    }
-    return `User Layout ${maxN + 1}`;
-  }
-  const labels = new Set(
-    (existingLayouts || []).map((l) => String(l?.label || '').trim()).filter(Boolean)
-  );
-  const copy1 = `${base} copy`;
-  if (!labels.has(copy1)) return copy1;
-  let n = 2;
-  while (labels.has(`${base} copy ${n}`)) n += 1;
-  return `${base} copy ${n}`;
+  return nextUserCopyLayoutLabel(sourceLabel, existingLayouts);
 }
 
 /**
@@ -877,12 +858,13 @@ export class KeyboardLayoutConfigPanel {
       if (!nextLabel) {
         if (sourceUser) {
           nextLabel = nextDuplicateUserLayoutLabel(
-            sourceUser.label || 'Layout',
+            sourceUser.label || getMessage('layout_editor_layout_noun'),
             layouts
           );
         } else {
           const seedId = fromBuiltinId || this._st.builtinLayoutId;
-          nextLabel = nextUserCopyLayoutLabel(this._familyBaseLabelFor(seedId), layouts) || 'Custom Layout';
+          nextLabel = nextUserCopyLayoutLabel(this._familyBaseLabelFor(seedId), layouts)
+            || getMessage('layout_editor_custom_layout');
         }
       }
 
@@ -3874,7 +3856,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const layoutLabel = doc.createElement('label');
     layoutLabel.className = 'kp-cfg-strip-label';
     layoutLabel.setAttribute('for', 'kp-cfg-layout-combo-input');
-    layoutLabel.textContent = 'Layout';
+    layoutLabel.textContent = getMessage('layout_editor_layout_noun');
 
     const layoutCombo = doc.createElement('div');
     layoutCombo.className = 'kp-cfg-layout-combo';
@@ -3888,7 +3870,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     layoutComboInput.setAttribute('aria-autocomplete', 'list');
     layoutComboInput.setAttribute('aria-expanded', 'false');
     layoutComboInput.setAttribute('aria-controls', 'kp-cfg-layout-combo-list');
-    layoutComboInput.setAttribute('aria-label', 'Layout');
+    layoutComboInput.setAttribute('aria-label', getMessage('layout_editor_layout_noun'));
     layoutComboInput.title = 'Select or rename layout';
 
     const currentBadge = doc.createElement('span');
@@ -3973,7 +3955,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 
     const optsWrap = doc.createElement('div');
     optsWrap.className = 'kp-cfg-opts-wrap';
-    const optsBtn = mkIconBtn('layout-opts', 'Layout options', 'kp-cfg-i-more');
+    const optsBtn = mkIconBtn('layout-opts', getMessage('layout_editor_layout_options'), 'kp-cfg-i-more');
     optsBtn.setAttribute('aria-haspopup', 'true');
     optsBtn.setAttribute('aria-expanded', 'false');
     optsBtn.setAttribute('aria-controls', 'kp-cfg-layout-opts-menu');
@@ -3990,7 +3972,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const leftHandedMenuToggle = doc.createElement('input');
     leftHandedMenuToggle.type = 'checkbox';
     const leftHandText = doc.createElement('span');
-    leftHandText.textContent = 'Left-handed';
+    leftHandText.textContent = getMessage('settings_static_115');
     leftHandLabel.appendChild(leftHandedMenuToggle);
     leftHandLabel.appendChild(leftHandText);
     optsMenu.appendChild(leftHandLabel);
@@ -4001,7 +3983,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const showNumRowToggle = doc.createElement('input');
     showNumRowToggle.type = 'checkbox';
     const numRowText = doc.createElement('span');
-    numRowText.textContent = 'Show number row';
+    numRowText.textContent = getMessage('settings_static_117');
     numRowLabel.appendChild(showNumRowToggle);
     numRowLabel.appendChild(numRowText);
     optsMenu.appendChild(numRowLabel);
@@ -4034,14 +4016,14 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 
     const libraryPane = doc.createElement('section');
     libraryPane.className = 'kp-cfg-pane kp-cfg-pane-library';
-    libraryPane.setAttribute('aria-label', 'Actions Library');
+    libraryPane.setAttribute('aria-label', getMessage('layout_editor_actions_library'));
 
     const libraryHdr = doc.createElement('div');
     libraryHdr.className = 'kp-cfg-pane-hdr';
     const libraryTitle = doc.createElement('span');
     libraryTitle.className = 'kp-cfg-pane-title';
     libraryTitle.appendChild(mkCfgIcon(doc, 'kp-cfg-i-lib'));
-    libraryTitle.appendChild(doc.createTextNode('Actions Library'));
+    libraryTitle.appendChild(doc.createTextNode(getMessage('layout_editor_actions_library')));
 
     const searchWrap = doc.createElement('div');
     searchWrap.className = 'kp-cfg-search-wrap';
@@ -4049,17 +4031,17 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const search = doc.createElement('input');
     search.type = 'search';
     search.className = 'kp-cfg-field kp-cfg-search';
-    search.placeholder = 'Search…';
+    search.placeholder = getMessage('layout_editor_search_placeholder');
     searchWrap.appendChild(search);
 
     const libTabs = doc.createElement('div');
     libTabs.className = 'kp-cfg-seg';
     libTabs.setAttribute('role', 'tablist');
-    libTabs.setAttribute('aria-label', 'Library filter');
+    libTabs.setAttribute('aria-label', getMessage('layout_editor_library_filter_aria'));
 
     const fnCategorySelect = doc.createElement('select');
     fnCategorySelect.className = 'kp-cfg-field kp-cfg-fn-cat';
-    fnCategorySelect.setAttribute('aria-label', 'Function category');
+    fnCategorySelect.setAttribute('aria-label', getMessage('layout_editor_function_category_aria'));
     const fnCategoryWrap = doc.createElement('div');
     fnCategoryWrap.className = 'kp-cfg-fn-cat-wrap';
     fnCategoryWrap.hidden = true;
@@ -4086,10 +4068,10 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const viewSeg = doc.createElement('div');
     viewSeg.className = 'kp-cfg-seg';
     viewSeg.setAttribute('role', 'tablist');
-    viewSeg.setAttribute('aria-label', 'Library layout');
+    viewSeg.setAttribute('aria-label', getMessage('layout_editor_library_layout_aria'));
     for (const mode of [
-      { id: 'cards', label: 'Cards' },
-      { id: 'table', label: 'Table' }
+      { id: 'cards', label: getMessage('layout_editor_view_cards') },
+      { id: 'table', label: getMessage('layout_editor_view_table') }
     ]) {
       const b = doc.createElement('button');
       b.type = 'button';
@@ -4107,7 +4089,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 
     const instructions = doc.createElement('div');
     instructions.className = 'kp-cfg-lib-instructions';
-    instructions.setAttribute('aria-label', 'Layout assignment instructions');
+    instructions.setAttribute('aria-label', getMessage('layout_editor_instructions_aria'));
     const instructionsHead = doc.createElement('div');
     instructionsHead.className = 'kp-cfg-lib-instructions-head';
     const instructionsToggle = doc.createElement('button');
@@ -4115,25 +4097,24 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     instructionsToggle.className = 'kp-cfg-lib-instructions-toggle';
     instructionsToggle.setAttribute('aria-expanded', 'true');
     instructionsToggle.setAttribute('aria-controls', 'kp-cfg-lib-instructions-body');
-    instructionsToggle.title = 'Collapse instructions';
+    instructionsToggle.title = getMessage('layout_editor_instructions_collapse');
     instructionsToggle.appendChild(mkCfgIcon(doc, 'kp-cfg-i-chevron'));
     const instructionsTitle = doc.createElement('span');
     instructionsTitle.className = 'kp-cfg-lib-instructions-title';
-    instructionsTitle.textContent = 'Instructions:';
+    instructionsTitle.textContent = getMessage('layout_editor_instructions_title');
     instructionsToggle.appendChild(instructionsTitle);
     const placePulse = doc.createElement('div');
     placePulse.className = 'kp-cfg-lib-place-pulse';
     placePulse.setAttribute('role', 'status');
     placePulse.hidden = true;
-    placePulse.textContent = 'Click the desired key cap location on the Keyboard Reference.';
+    placePulse.textContent = getMessage('layout_editor_place_pulse');
     instructionsHead.appendChild(viewSeg);
     instructionsHead.appendChild(instructionsToggle);
     instructionsHead.appendChild(placePulse);
     const instructionsBody = doc.createElement('p');
     instructionsBody.className = 'kp-cfg-lib-instructions-body';
     instructionsBody.id = 'kp-cfg-lib-instructions-body';
-    instructionsBody.textContent =
-      'Click a key cap below once and move the mouse. Use the placement arrow to place the action on the keyboard.';
+    instructionsBody.textContent = getMessage('layout_editor_instructions_body');
     instructions.appendChild(instructionsHead);
     instructions.appendChild(instructionsBody);
     instructionsToggle.addEventListener('click', (e) => {
@@ -6635,7 +6616,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       this._renderLayoutSelect();
       return;
     }
-    const next = String(input.value || '').trim() || 'Custom Layout';
+    const next = String(input.value || '').trim() || getMessage('layout_editor_custom_layout');
     if (next === String(this._st.userLayout.label || '')) return;
     this._st.userLayout.label = next;
     await this._persistUserLayout();
@@ -6706,7 +6687,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     if (this.shadowRoot?.activeElement !== input) {
       input.value = readOnly
         ? builtinName
-        : String(this._st.userLayout?.label || 'Custom Layout');
+        : String(this._st.userLayout?.label || getMessage('layout_editor_custom_layout'));
     }
     input.readOnly = readOnly;
     combo.classList.toggle('is-builtin', readOnly);
@@ -6934,13 +6915,13 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     if (!host) return;
     host.replaceChildren();
     const tabs = [
-      { id: 'all', label: 'All', icon: 'kp-cfg-i-all' },
-      { id: 'functions', label: 'Functions', icon: 'kp-cfg-i-lib' },
+      { id: 'all', label: getMessage('layout_editor_tab_all'), icon: 'kp-cfg-i-all' },
+      { id: 'functions', label: getMessage('layout_editor_tab_functions'), icon: 'kp-cfg-i-lib' },
       ...(this._macroBuilderEnabled()
-        ? [{ id: 'macros', label: 'Macros', icon: 'kp-cfg-i-macro' }]
+        ? [{ id: 'macros', label: getMessage('layout_editor_tab_macros'), icon: 'kp-cfg-i-macro' }]
         : []),
       ...(this._macroKeysLibraryEnabled()
-        ? [{ id: 'macroKeys', label: 'Macro Keys', icon: 'kp-cfg-i-keycap' }]
+        ? [{ id: 'macroKeys', label: getMessage('layout_editor_tab_macro_keys'), icon: 'kp-cfg-i-keycap' }]
         : [])
     ];
     if (!this._macroBuilderEnabled() && this._libPrimaryTab === 'macros') {
@@ -7026,7 +7007,9 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     try {
       if (toggle) {
         toggle.setAttribute('aria-expanded', next ? 'true' : 'false');
-        toggle.title = next ? 'Collapse instructions' : 'Expand instructions';
+        toggle.title = getMessage(next
+          ? 'layout_editor_instructions_collapse'
+          : 'layout_editor_instructions_expand');
       }
     } catch { /* ignore */ }
     if (opts.persist !== false) {
@@ -7692,7 +7675,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
         { key: 'slots', label: 'Slots', className: 'kp-cfg-col-slots', width: '12%' },
         { key: 'actions', label: 'Actions', className: 'kp-cfg-col-actions', width: '18%' }
       ],
-      ariaLabel: 'Actions Library table',
+      ariaLabel: getMessage('layout_editor_table_aria'),
       isGroupExpanded: (key) => this._isTableGroupExpanded(key),
       onToggleGroup: (key) => this._toggleTableGroup(key)
     });
@@ -7894,7 +7877,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     if (showFunctions && cats.length) {
       if (appendGroupRow({
         groupKey: 'functions',
-        label: 'Functions',
+        label: getMessage('layout_editor_tab_functions'),
         depth: 0,
         count: filteredDefs.length,
         kind: 'Group'
@@ -7905,7 +7888,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
           const catKey = `functions:${String(cat).toLowerCase().replace(/\s+/g, '-')}`;
           if (!appendGroupRow({
             groupKey: catKey,
-            label: cat,
+            label: getFunctionCategoryLabel(cat) || cat,
             depth: 1,
             count: items.length,
             kind: 'Category'
