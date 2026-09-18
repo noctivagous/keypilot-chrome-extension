@@ -107,6 +107,16 @@ function isShortTrackHost(el) {
     const r = el.getBoundingClientRect();
     if (!r || r.width < 64 || r.height <= 0 || r.height > 48) return false;
     if (r.width / Math.max(r.height, 1) < 4) return false;
+    // Playbar chrome (YouTube `.ytp-chrome-bottom`) is also a short wide bar
+    // but contains mute/play/fullscreen. Those must not resolve as the seek track.
+    const slider = el.querySelector?.('[role="slider"], input[type="range"]');
+    const btn = el.querySelector?.('button, [role="button"], a[href]');
+    if (slider && btn) {
+      const btnInSlider = typeof slider.contains === 'function' && slider.contains(btn);
+      if (!btnInSlider) return false;
+    } else if (btn && !slider) {
+      return false;
+    }
     return true;
   } catch {
     return false;

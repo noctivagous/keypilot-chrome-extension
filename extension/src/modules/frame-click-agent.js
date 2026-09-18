@@ -220,16 +220,12 @@ function isPlayOverlayControl(el, activator) {
     if (/like|reply|repost|retweet|share|follow|bookmark|menu|more|comment|profile/.test(label)) {
       continue;
     }
-    if (/play|pause|replay|watch/.test(label)) return true;
-
-    try {
-      const tag = c.tagName;
-      const role = (c.getAttribute?.('role') || '').toLowerCase();
-      if (tag !== 'BUTTON' && role !== 'button') continue;
-      if (c === el || c === activator || (typeof c.contains === 'function' && el && c.contains(el))) {
-        return true;
-      }
-    } catch { /* ignore */ }
+    // Player chrome (mute, captions, settings, fullscreen) must not be treated
+    // as a center play overlay — that path toggles <video> instead of click().
+    if (/\b(mute|unmute|volume|captions?|subtitle|closed caption|\bcc\b|settings|fullscreen|theatre|theater|miniplayer|picture[- ]in[- ]picture|\bpip\b)\b/.test(label)) {
+      continue;
+    }
+    if (/\b(play|pause|replay)\b/.test(label)) return true;
   }
   return false;
 }
@@ -1089,8 +1085,25 @@ export function installFrameClickAgent() {
         }
       }
 
-      // Only toggle media for a direct video hit or the center play overlay.
-      // Finding any nearby <video> must not swallow link / control clicks in the embed.
+      // Mute / settings / fullscreen / play in the player chrome: click the
+      // control. Must run before video play-toggle — otherwise every YouTube
+      // control bar button pauses/plays the <video>.
+      if (!openInNewTab && !background) {
+        try {
+          if (
+            activator &&
+            (activator.tagName === 'BUTTON' ||
+              (activator.getAttribute?.('role') || '').toLowerCase() === 'button') &&
+            typeof /** @type {any} */ (activator).click === 'function'
+          ) {
+            /** @type {any} */ (activator).click();
+            return true;
+          }
+        } catch { /* fall through */ }
+      }
+
+      // Only toggle media for a direct video hit or a labeled play overlay
+      // that is not a real button (those clicked above).
       if (
         mediaEl &&
         !openInNewTab &&
@@ -1162,19 +1175,6 @@ export function installFrameClickAgent() {
           } catch { /* fall through to event sequence */ }
         }
       }
-
-      // Buttons: prefer trusted HTMLElement.click() (media play overlays, X embeds).
-      try {
-        if (
-          activator &&
-          (activator.tagName === 'BUTTON' ||
-            (activator.getAttribute?.('role') || '').toLowerCase() === 'button') &&
-          typeof /** @type {any} */ (activator).click === 'function'
-        ) {
-          /** @type {any} */ (activator).click();
-          return true;
-        }
-      } catch { /* fall through */ }
 
       // <summary> toggles <details> only via activation behavior (HTMLElement.click() /
       // trusted click). Synthetic events alone do not open/close the accordion.

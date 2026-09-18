@@ -66,4 +66,66 @@ describe('media-scrubber volume vs timeline', () => {
     };
     assert.equal(resolveScrubberControl(play), null);
   });
+
+  it('does not promote mute in a YouTube-style playbar to the seek slider', () => {
+    const slider = {
+      nodeType: 1,
+      tagName: 'DIV',
+      getAttribute: (name) => (name === 'role' ? 'slider' : ''),
+      hasAttribute: () => false,
+      className: 'ytp-progress-bar',
+      closest: function closest(sel) {
+        return String(sel).includes('slider') ? this : null;
+      },
+      contains: (n) => n === slider,
+      parentElement: null
+    };
+    const mute = {
+      nodeType: 1,
+      tagName: 'BUTTON',
+      getAttribute: (name) => (name === 'aria-label' ? 'Mute' : ''),
+      hasAttribute: () => false,
+      className: 'ytp-mute-button',
+      closest: (sel) => {
+        const s = String(sel);
+        if (s.includes('button') || s.includes('role="button"')) return mute;
+        if (s.includes('slider')) return null;
+        return null;
+      },
+      parentElement: null
+    };
+    const chrome = {
+      nodeType: 1,
+      tagName: 'DIV',
+      getAttribute: () => '',
+      hasAttribute: () => false,
+      className: 'ytp-chrome-bottom',
+      getBoundingClientRect: () => ({ width: 600, height: 40, left: 0, top: 0 }),
+      querySelector: (sel) => {
+        const s = String(sel);
+        if (s.includes('button')) return mute;
+        if (s.includes('slider')) return slider;
+        return null;
+      },
+      contains: (n) => n === mute || n === slider,
+      closest: () => null,
+      parentElement: null
+    };
+    mute.parentElement = chrome;
+    slider.parentElement = chrome;
+    assert.equal(resolveScrubberControl(mute), null);
+
+    const pad = {
+      nodeType: 1,
+      tagName: 'DIV',
+      getAttribute: () => '',
+      hasAttribute: () => false,
+      className: '',
+      closest: () => null,
+      querySelector: () => null,
+      getBoundingClientRect: () => ({ width: 12, height: 12, left: 0, top: 0 }),
+      parentElement: chrome
+    };
+    assert.equal(resolveScrubberControl(pad), null);
+  });
 });

@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-18T03:24:15.463Z
+ * Generated on 2026-09-18T03:34:23.849Z
  */
 
 (() => {
@@ -4074,6 +4074,14 @@
       const r = el.getBoundingClientRect();
       if (!r || r.width < 64 || r.height <= 0 || r.height > 48) return false;
       if (r.width / Math.max(r.height, 1) < 4) return false;
+      const slider = el.querySelector?.('[role="slider"], input[type="range"]');
+      const btn = el.querySelector?.('button, [role="button"], a[href]');
+      if (slider && btn) {
+        const btnInSlider = typeof slider.contains === "function" && slider.contains(btn);
+        if (!btnInSlider) return false;
+      } else if (btn && !slider) {
+        return false;
+      }
       return true;
     } catch {
       return false;
@@ -4349,16 +4357,10 @@
       if (/like|reply|repost|retweet|share|follow|bookmark|menu|more|comment|profile/.test(label)) {
         continue;
       }
-      if (/play|pause|replay|watch/.test(label)) return true;
-      try {
-        const tag = c.tagName;
-        const role = (c.getAttribute?.("role") || "").toLowerCase();
-        if (tag !== "BUTTON" && role !== "button") continue;
-        if (c === el || c === activator || typeof c.contains === "function" && el && c.contains(el)) {
-          return true;
-        }
-      } catch {
+      if (/\b(mute|unmute|volume|captions?|subtitle|closed caption|\bcc\b|settings|fullscreen|theatre|theater|miniplayer|picture[- ]in[- ]picture|\bpip\b)\b/.test(label)) {
+        continue;
       }
+      if (/\b(play|pause|replay)\b/.test(label)) return true;
     }
     return false;
   }
@@ -5039,6 +5041,16 @@
             return true;
           }
         }
+        if (!openInNewTab && !background) {
+          try {
+            if (activator && (activator.tagName === "BUTTON" || (activator.getAttribute?.("role") || "").toLowerCase() === "button") && typeof /** @type {any} */
+            activator.click === "function") {
+              activator.click();
+              return true;
+            }
+          } catch {
+          }
+        }
         if (mediaEl && !openInNewTab && !background && (directMedia || playOverlay)) {
           toggleMediaPlayback(mediaEl);
           return true;
@@ -5106,14 +5118,6 @@
             } catch {
             }
           }
-        }
-        try {
-          if (activator && (activator.tagName === "BUTTON" || (activator.getAttribute?.("role") || "").toLowerCase() === "button") && typeof /** @type {any} */
-          activator.click === "function") {
-            activator.click();
-            return true;
-          }
-        } catch {
         }
         try {
           let summary = null;
