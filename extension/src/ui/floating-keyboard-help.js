@@ -84,6 +84,7 @@ import {
   NCT_DARK_UI_COLORS
 } from './nct-dark-ui.js';
 import { getMessage, localizeKeycapLabel } from '../utils/i18n.js';
+import { formatAltShortcut } from '../utils/platform.js';
 
 /** Match legacy keyboard dock inset (left/bottom 16px) while still using shared snap/clamp. */
 const KEYBOARD_POSITION_MARGIN_PX = Math.max(PANEL_POSITION_MARGIN_PX, 16);
@@ -437,7 +438,7 @@ export class FloatingKeyboardHelp {
           while (this.hintEl.firstChild) this.hintEl.removeChild(this.hintEl.firstChild);
           this.hintEl.hidden = false;
           this.hintEl.style.display = 'inline-flex';
-          const editingHint = getMessage('keyboard_help_editing_aria', 'Alt+C');
+          const editingHint = getMessage('keyboard_help_editing_aria', formatAltShortcut('C'));
           this.hintEl.appendChild(document.createTextNode(editingHint));
           this.hintEl.setAttribute('aria-label', editingHint);
         } else {
@@ -668,8 +669,8 @@ export class FloatingKeyboardHelp {
       btn = doc.createElement('button');
       btn.type = 'button';
       btn.setAttribute('data-kp-floating-keyboard-close-editor', 'true');
-      btn.setAttribute('aria-label', getMessage('keyboard_help_close_editor', 'Alt+C'));
-      btn.title = getMessage('keyboard_help_close_editor', 'Alt+C');
+      btn.setAttribute('aria-label', getMessage('keyboard_help_close_editor', formatAltShortcut('C')));
+      btn.title = getMessage('keyboard_help_close_editor', formatAltShortcut('C'));
       btn.textContent = getMessage('keyboard_help_close_editor_label');
       Object.assign(btn.style, {
         marginLeft: '6px',
@@ -696,8 +697,8 @@ export class FloatingKeyboardHelp {
       btn.setAttribute('aria-hidden', 'true');
       btn.style.setProperty('display', 'none', 'important');
     } else {
-      btn.setAttribute('aria-label', getMessage('keyboard_help_close_editor', 'Alt+C'));
-      btn.title = getMessage('keyboard_help_close_editor', 'Alt+C');
+      btn.setAttribute('aria-label', getMessage('keyboard_help_close_editor', formatAltShortcut('C')));
+      btn.title = getMessage('keyboard_help_close_editor', formatAltShortcut('C'));
       btn.textContent = getMessage('keyboard_help_close_editor_label');
     }
 
@@ -2232,15 +2233,15 @@ export class FloatingKeyboardHelp {
 
       if (!this._editMode) {
         appendGroup(getMessage('context_menu_group_layout_editor'), [
-          { value: LAYOUT_SELECT_EDIT_VALUE, label: getMessage('context_menu_edit_layouts'), shortcut: 'Alt + C' },
+          { value: LAYOUT_SELECT_EDIT_VALUE, label: getMessage('context_menu_edit_layouts'), shortcut: formatAltShortcut('C', { joiner: ' + ' }) },
           { value: LAYOUT_SELECT_NEW_VALUE, label: getMessage('context_menu_new_layout') },
           { value: LAYOUT_SELECT_DUP_VALUE, label: getMessage('context_menu_duplicate_layout') }
         ]);
       }
 
       appendGroup(getMessage('extension_name'), [
-        { value: LAYOUT_SELECT_ONBOARDING_VALUE, label: getMessage('popup_tutorial'), shortcut: 'Alt + I' },
-        { value: LAYOUT_SELECT_DOCS_VALUE, label: getMessage('layout_picker_docs'), shortcut: 'Alt + H' },
+        { value: LAYOUT_SELECT_ONBOARDING_VALUE, label: getMessage('popup_tutorial'), shortcut: formatAltShortcut('I', { joiner: ' + ' }) },
+        { value: LAYOUT_SELECT_DOCS_VALUE, label: getMessage('layout_picker_docs'), shortcut: formatAltShortcut('H', { joiner: ' + ' }) },
         { value: LAYOUT_SELECT_SETTINGS_VALUE, label: getMessage('layout_picker_settings'), shortcut: "'" }
       ]);
 

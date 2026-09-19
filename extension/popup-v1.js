@@ -1,4 +1,5 @@
 import { MSG } from './src/messaging/types.js';
+import { formatAltShortcut } from './src/utils/platform.js';
 (function () {
 const statusEl = document.getElementById('status');
 
@@ -176,7 +177,7 @@ const toggleController = new PopupToggleController();
 
 async function getToggleShortcutDisplay() {
     // Alt+K is handled directly by early-inject.js, not through chrome.commands
-    return 'Alt + K';
+    return formatAltShortcut('K', { joiner: ' + ' });
 }
 
 async function initKeybindingsUI() {

@@ -32,6 +32,7 @@ import {
   listUserKeyboardLayouts
 } from './src/modules/keyboard-layout-store.js';
 import { getMessage } from './src/utils/i18n.js';
+import { formatAltShortcut } from './src/utils/platform.js';
 
 void startKeyPilotDebugFromSettings();
 
@@ -182,12 +183,12 @@ async function rebuildKeyboardReferenceContextMenu() {
     await createAction(
       keyPilotGroup,
       '__onboarding_tutorial__',
-      getMessage('context_menu_onboarding_tutorial', 'Alt + I')
+      getMessage('context_menu_onboarding_tutorial', formatAltShortcut('I', { joiner: ' + ' }))
     );
     await createAction(
       keyPilotGroup,
       '__docs_help__',
-      getMessage('context_menu_docs_help', 'Alt + H')
+      getMessage('context_menu_docs_help', formatAltShortcut('H', { joiner: ' + ' }))
     );
     await createAction(
       keyPilotGroup,

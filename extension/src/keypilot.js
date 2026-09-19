@@ -35,6 +35,7 @@ import {
 } from './modules/popover-window-chrome.js';
 import { kpGetDeepActiveElement } from './utils/dom-context.js';
 import { getMessage } from './utils/i18n.js';
+import { formatAltShortcut } from './utils/platform.js';
 import {
   buildKeybindingsForLayout,
   buildSystemKeybindings,
@@ -8138,7 +8139,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
 
     void this.overlayManager.showInPageDocsPopover({
       title: getMessage('docs_document_title'),
-      hintKeyLabel: 'Alt + H',
+      hintKeyLabel: formatAltShortcut('H', { joiner: ' + ' }),
       width: `${docsContainerWidth}px`,
       height: `${docsContainerHeight}px`,
       actions: this._createDocsFontScaleControl(),

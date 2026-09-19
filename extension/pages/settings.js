@@ -10,6 +10,7 @@ import { createSettingsController } from '../src/modules/settings-controller.js'
 import { bindSettingsControls } from '../src/modules/settings-binder.js';
 import { applyDebugSetting } from '../src/utils/debug.js';
 import { getMessage, localizeElements } from '../src/utils/i18n.js';
+import { formatAltShortcut } from '../src/utils/platform.js';
 import { applyThemeToRoots, resolveThemeFromSettings } from '../src/modules/theme-manager.js';
 import { hasThemeOverrides, listThemes, normalizeThemeId, THEME_META } from '../themes/index.js';
 import { GENERIC_FAVICON_DATA_URL, getExtensionFaviconUrl } from '../src/ui/url-listing.js';
@@ -354,9 +355,9 @@ function localizeSettingsMixedCopy() {
   const clickHint = settingsEl('settings-click-effect-hint');
   if (clickHint) clickHint.textContent = getMessage('settings_click_effect_hint', 'F');
   const paintHint = settingsEl('settings-paint-mode-hint');
-  if (paintHint) paintHint.textContent = getMessage('settings_paint_mode_hint', 'Alt+D');
+  if (paintHint) paintHint.textContent = getMessage('settings_paint_mode_hint', formatAltShortcut('D'));
   const stripLead = settingsEl('settings-control-strip-lead');
-  if (stripLead) stripLead.textContent = getMessage('settings_control_strip_lead', 'Alt+J');
+  if (stripLead) stripLead.textContent = getMessage('settings_control_strip_lead', formatAltShortcut('J'));
 }
 
 /**

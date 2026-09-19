@@ -33,6 +33,7 @@ import {
 } from '../src/ui/newtab-display-popover.js';
 import { storageGetValue } from '../src/utils/storage.js';
 import { getMessage, localizeElements } from '../src/utils/i18n.js';
+import { formatAltShortcut } from '../src/utils/platform.js';
 import { postPopoverBridgeInit } from '../src/modules/popover-bridge-init.js';
 import { MSG } from '../src/messaging/types.js';
 
@@ -1632,7 +1633,7 @@ async function init() {
           const docsContainerHeight = Math.min(window.innerHeight * 0.82, window.innerHeight - 80) + 20;
           createModal({
             title: getMessage('docs_document_title'),
-            hintKeyLabel: 'Alt+H',
+            hintKeyLabel: formatAltShortcut('H'),
             closeKeys: ['Escape'],
             url: 'docs.html#settings',
             width: `${docsContainerWidth}px`,

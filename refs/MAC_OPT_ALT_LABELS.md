@@ -88,12 +88,12 @@ message today.
 
 ### Tasks
 
-- [ ] Add `altModifierLabel()` and `formatAltShortcut()` on top of
+- [x] Add `altModifierLabel()` and `formatAltShortcut()` on top of
       `isMacPlatform()`.
-- [ ] Keep chord/slot canonical tokens as `ALT` (and `CTRL` / `META`);
+- [x] Keep chord/slot canonical tokens as `ALT` (and `CTRL` / `META`);
       formatting is presentation-only.
-- [ ] Unit-test Mac vs non-Mac with `installChromeMock({ isMac: true|false })`.
-- [ ] Document the helper in a short comment: Mac Opt, all other hosts Alt.
+- [x] Unit-test Mac vs non-Mac with `installChromeMock({ isMac: true|false })`.
+- [x] Document the helper in a short comment: Mac Opt, all other hosts Alt.
 
 ### Acceptance criteria
 
@@ -104,7 +104,7 @@ message today.
 
 ### Validation
 
-- [ ] `npm test` covers both `isMac` branches for the formatter.
+- [x] `npm test` covers both `isMac` branches for the formatter.
 
 ## Phase 2 — runtime chrome call sites
 
@@ -114,18 +114,18 @@ into `getMessage()`.
 
 ### Tasks
 
-- [ ] Replace every JS `'Alt+…'` / `'Alt + …'` substitution with
+- [x] Replace every JS `'Alt+…'` / `'Alt + …'` substitution with
       `formatAltShortcut(...)`.
-- [ ] `background.js` context-menu titles (`context_menu_onboarding_tutorial`,
+- [x] `background.js` context-menu titles (`context_menu_onboarding_tutorial`,
       `context_menu_docs_help`).
-- [ ] `KEYPILOT_HUB_CARDS` hints (or resolve hints at render time, not in the
+- [x] `KEYPILOT_HUB_CARDS` hints (or resolve hints at render time, not in the
       frozen English literals).
-- [ ] Control-strip tooltips and remaining hardcoded titles.
-- [ ] Floating keyboard help layout-picker shortcuts and editor close labels.
-- [ ] Layout editor titlebar `Alt + C`.
-- [ ] Settings page `getMessage(..., 'Alt+D')` / `'Alt+J'` callers.
-- [ ] Popover / docs / newtab `hintKeyLabel` defaults (`Alt + H`).
-- [ ] Onboarding reopen tip substitution.
+- [x] Control-strip tooltips and remaining hardcoded titles.
+- [x] Floating keyboard help layout-picker shortcuts and editor close labels.
+- [x] Layout editor titlebar `Alt + C`.
+- [x] Settings page `getMessage(..., 'Alt+D')` / `'Alt+J'` callers.
+- [x] Popover / docs / newtab `hintKeyLabel` defaults (`Alt + H`).
+- [x] Onboarding reopen tip substitution.
 
 ### Acceptance criteria
 
@@ -134,7 +134,7 @@ into `getMessage()`.
 
 ### Validation
 
-- [ ] Reload unpacked extension on macOS and Windows (or mock both in tests).
+- [x] Reload unpacked extension on macOS and Windows (or mock both in tests).
 - [ ] Inspect popup hub, control strip, Keyboard Reference dropdown, layout
       editor titlebar, settings control-strip copy, and the page context menu.
 

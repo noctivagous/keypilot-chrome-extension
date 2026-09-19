@@ -3,6 +3,7 @@
  * Owned by OverlayManager; public methods stay on the OverlayManager façade.
  */
 import { getMessage } from '../utils/i18n.js';
+import { formatAltShortcut } from '../utils/platform.js';
 import { KP_UI_FONT, MODES } from '../config/constants.js';
 import { MSG } from '../messaging/types.js';
 import {
@@ -384,14 +385,14 @@ export class PopoverController {
 
     const titlebarApi = createPopoverTitlebar({
       title: (opts.title && String(opts.title).trim()) || getMessage('docs_document_title'),
-      shortcut: opts.hintKeyLabel || 'Alt + H',
+      shortcut: opts.hintKeyLabel || formatAltShortcut('H', { joiner: ' + ' }),
       icon: 'window',
       variant: 'modal',
       showClose: true,
       onClose: requestClosePopover,
       closeTitle: getMessage('popover_titlebar_close'),
       hint: createTitlebarCloseHint({
-        keys: [opts.hintKeyLabel || 'Alt+H', 'Esc'],
+        keys: [opts.hintKeyLabel || formatAltShortcut('H'), 'Esc'],
         suffix: getMessage('popover_nav_hint_suffix')
       }),
       className: 'kpv2-popover-titlebar',

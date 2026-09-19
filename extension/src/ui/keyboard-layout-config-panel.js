@@ -93,6 +93,7 @@ import { inspectKeyActionFromAnchor } from './keybindings-ui.js';
 import { createMacroKeyEditor } from './macro-key-editor.js';
 import { enhanceNativeSelect } from './select-menu.js';
 import { getMessage } from '../utils/i18n.js';
+import { formatAltShortcut } from '../utils/platform.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
 import {
   closestComposed,
@@ -3756,8 +3757,8 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const titleShortcut = doc.createElement('kbd');
     titleShortcut.className = 'kp-cfg-title-shortcut';
     titleShortcut.setAttribute('data-kp-titlebar-shortcut', 'true');
-    titleShortcut.textContent = 'Alt + C';
-    titleShortcut.title = getMessage('layout_editor_toggle_title', 'Alt+C');
+    titleShortcut.textContent = formatAltShortcut('C', { joiner: ' + ' });
+    titleShortcut.title = getMessage('layout_editor_toggle_title', formatAltShortcut('C'));
 
     const autosavesChip = doc.createElement('span');
     autosavesChip.className = 'kp-cfg-autosaves-chip';

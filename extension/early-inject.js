@@ -136,6 +136,7 @@
   // - `extension/src/config/keyboard-layouts.js` (built-in layout data)
   // - `extension/src/config/function-library.js` (slot paint: label + keyboardClass)
   // - `extension/src/ui/keybindings-ui-shared.js` (CSS + layout + style attr + control-strip icons)
+  // - `extension/src/utils/platform.js` (Mac Opt vs Alt shortcut legends)
   // - `extension/onboarding/en.xml` (English early onboarding model)
   // - `extension/src/ui/onboarding-shared.js` (shell / progress / checklist DOM)
   // Do not edit by hand.
@@ -5022,16 +5023,62 @@
   const KP_THEME_IDS = ["dark-pro","gray-metal-pro","gx-er"];
   const KP_THEME_CORNER = {"dark-pro":"radius","gray-metal-pro":"radius","gx-er":"cut"};
 
+  // --- begin stamped platform.js ---
+  /**
+   * Host OS helpers. Used for settings defaults (e.g. middle-click Scroll Line on Mac)
+   * and for Option/Alt shortcut legends (Mac Opt, all other hosts Alt).
+   */
+
+  /**
+   * @returns {boolean}
+   */
+  function isMacPlatform() {
+    try {
+      const uaPlatform = navigator.userAgentData?.platform;
+      if (typeof uaPlatform === 'string' && uaPlatform) {
+        return uaPlatform === 'macOS';
+      }
+    } catch { /* ignore */ }
+    try {
+      const plat = String(navigator.platform || '');
+      const ua = String(navigator.userAgent || '');
+      return /^Mac/i.test(plat) || /Mac OS X/i.test(ua);
+    } catch { /* ignore */ }
+    return false;
+  }
+
+  /**
+   * Short legend for the Option/Alt modifier. Mac shows Opt; Windows, Linux, and
+   * ChromeOS show Alt. Presentation only — event handling stays `e.altKey`.
+   * @returns {'Opt'|'Alt'}
+   */
+  function altModifierLabel() {
+    return isMacPlatform() ? 'Opt' : 'Alt';
+  }
+
+  /**
+   * Format a system-key shortcut for UI copy (chips, tooltips, getMessage substitutions).
+   * @param {string} key
+   * @param {{ joiner?: string }} [options]
+   * @returns {string}
+   */
+  function formatAltShortcut(key, options = {}) {
+    const joiner = options.joiner ?? '+';
+    return `${altModifierLabel()}${joiner}${key}`;
+  }
+
+  // --- end stamped platform.js ---
+
   // --- begin stamped onboarding-shared.js ---
   /**
    * Shared onboarding walkthrough primitives.
    *
-   * Zero imports so this file can be:
-   * - imported by ESM modules (panel / manager)
-   * - stamped into early-inject.js by build.js (export keywords stripped)
-   *
    * Keep DOM construction and progress shape here so early-inject and the
    * bundled content script cannot drift.
+   *
+   * `formatAltShortcut` is imported for ESM callers. `build.js` strips that
+   * import when stamping this file into early-inject and prepends `platform.js`
+   * so the helper stays in scope.
    */
 
   // ── Storage / progress ──────────────────────────────────────────────────────
@@ -5060,7 +5107,7 @@
   }
 
   function getOnboardingReopenTip() {
-    return onboardingMessage('onboarding_reopen_tip', 'Alt + I');
+    return onboardingMessage('onboarding_reopen_tip', formatAltShortcut('I', { joiner: ' + ' }));
   }
 
   /** Default z-index fallback if caller does not pass Z_INDEX.ONBOARDING_PANEL. */
@@ -8850,7 +8897,7 @@
 
       const statusBtn = createEarlyControlStripSegmentButton({
         ariaLabel: earlyMessage('control_strip_toggle_aria'),
-        title: earlyMessage('control_strip_toggle_title', 'Alt+K')
+        title: earlyMessage('control_strip_toggle_title', formatAltShortcut('K'))
       });
       statusBtn.setAttribute('data-kp-control-strip-status', 'true');
 
@@ -8952,7 +8999,7 @@
 
       const closeBtn = createEarlyControlStripSegmentButton({
         ariaLabel: earlyMessage('control_strip_close_aria'),
-        title: earlyMessage('control_strip_close_title', 'Alt+J'),
+        title: earlyMessage('control_strip_close_title', formatAltShortcut('J')),
         text: '×',
         compact: true,
         last: true

@@ -1,13 +1,14 @@
 /**
  * Shared onboarding walkthrough primitives.
  *
- * Zero imports so this file can be:
- * - imported by ESM modules (panel / manager)
- * - stamped into early-inject.js by build.js (export keywords stripped)
- *
  * Keep DOM construction and progress shape here so early-inject and the
  * bundled content script cannot drift.
+ *
+ * `formatAltShortcut` is imported for ESM callers. `build.js` strips that
+ * import when stamping this file into early-inject and prepends `platform.js`
+ * so the helper stays in scope.
  */
+import { formatAltShortcut } from '../utils/platform.js';
 
 // ── Storage / progress ──────────────────────────────────────────────────────
 
@@ -35,7 +36,7 @@ export function getOnboardingDefaultTitle() {
 }
 
 export function getOnboardingReopenTip() {
-  return onboardingMessage('onboarding_reopen_tip', 'Alt + I');
+  return onboardingMessage('onboarding_reopen_tip', formatAltShortcut('I', { joiner: ' + ' }));
 }
 
 /** Default z-index fallback if caller does not pass Z_INDEX.ONBOARDING_PANEL. */

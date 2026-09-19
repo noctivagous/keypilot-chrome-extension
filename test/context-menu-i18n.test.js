@@ -37,7 +37,8 @@ describe('context-menu localization', () => {
       assert.match(source, new RegExp(`getMessage\\('${key}'`));
     }
 
-    assert.doesNotMatch(source, /title: 'KeyPilot'/);
+    assert.match(source, /formatAltShortcut\('I'/);
+    assert.match(source, /formatAltShortcut\('H'/);
     assert.doesNotMatch(source, /createGroup\('KeyPilot Windows'\)/);
     assert.doesNotMatch(source, /title: 'None'/);
   });

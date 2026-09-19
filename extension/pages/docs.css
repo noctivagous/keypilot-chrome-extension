@@ -4,7 +4,7 @@
   color-scheme: dark;
   --docs-nav-width: 220px;
   --docs-header-border: rgba(255, 255, 255, 0.10);
-  --docs-nav-bg: rgba(0, 0, 0, 0.28);
+  --docs-nav-bg: rgba(255, 255, 255, 0.10);
   --docs-tab-active-bg: rgba(255, 255, 255, 0.12);
   --docs-tab-hover-bg: rgba(255, 255, 255, 0.06);
   --docs-tab-active-border: color-mix(in srgb, var(--kp-color-accent, #4a90c8) 45%, transparent);
@@ -120,7 +120,7 @@ h1 {
   background: var(--docs-nav-bg);
   border-right: 1px solid var(--docs-header-border);
   scrollbar-width: thin;
-  scrollbar-color: #4a4a4a #141414;
+  scrollbar-color: #6a6a6a #2c2c2c;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -144,7 +144,7 @@ h1 {
   padding: 8px 10px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(255, 255, 255, 0.07);
   color: rgba(255, 255, 255, 0.92);
   font-size: 13px;
   outline: none;
@@ -632,12 +632,18 @@ h1 {
   width: 10px;
   height: 10px;
 }
-.docs-nav::-webkit-scrollbar-corner,
+.docs-nav::-webkit-scrollbar-corner {
+  background: #2c2c2c;
+}
 .docs-main::-webkit-scrollbar-corner,
 .docs-article .table-scroll::-webkit-scrollbar-corner {
   background: #141414;
 }
-.docs-nav::-webkit-scrollbar-track,
+.docs-nav::-webkit-scrollbar-track {
+  background: #2c2c2c;
+  border-left: 1px solid #333;
+  border-top: 1px solid #333;
+}
 .docs-main::-webkit-scrollbar-track,
 .docs-article .table-scroll::-webkit-scrollbar-track {
   background: #141414;

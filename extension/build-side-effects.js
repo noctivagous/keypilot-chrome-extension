@@ -380,22 +380,37 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
         getTheme(themeId)?.shape?.cornerMode === 'cut' ? 'cut' : 'radius';
     }
 
+    const stripEsmForEarlyInject = (src) => src
+      .replace(/^import\s+[\s\S]*?from\s+['"][^'"]+['"]\s*;?\s*$/gm, '')
+      .replace(/^export\s+const\s+/gm, 'const ')
+      .replace(/^export\s+function\s+/gm, 'function ')
+      .replace(/^export\s+\{[\s\S]*?\}\s*;?\s*$/gm, '')
+      .replace(/^export\s+default\s+/gm, '');
+
+    const indentEarlyInject = (src) => src
+      .split('\n')
+      .map((line) => (line.length ? `  ${line}` : ''))
+      .join('\n');
+
+    // Stamp platform.js so Opt/Alt legends work in early-inject (onboarding + control strip).
+    let platformIndented = '';
+    try {
+      const platformPath = path.resolve(process.cwd(), 'src', 'utils', 'platform.js');
+      if (fs.existsSync(platformPath)) {
+        platformIndented = indentEarlyInject(stripEsmForEarlyInject(fs.readFileSync(platformPath, 'utf8')));
+      } else {
+        console.warn(`WARN: platform.js not found at: ${platformPath}`);
+      }
+    } catch (e) {
+      console.warn('WARN: Failed to stamp platform.js into early-inject:', e && e.message ? e.message : e);
+    }
+
     // Stamp onboarding-shared.js (export-stripped) so early-inject uses the same shell/progress helpers.
     let onboardingSharedIndented = '';
     try {
       const sharedPath = path.resolve(process.cwd(), 'src', 'ui', 'onboarding-shared.js');
       if (fs.existsSync(sharedPath)) {
-        let sharedSrc = fs.readFileSync(sharedPath, 'utf8');
-        // Drop ESM exports so the body is valid inside early-inject's IIFE.
-        sharedSrc = sharedSrc
-          .replace(/^export\s+const\s+/gm, 'const ')
-          .replace(/^export\s+function\s+/gm, 'function ')
-          .replace(/^export\s+\{[\s\S]*?\}\s*;?\s*$/gm, '')
-          .replace(/^export\s+default\s+/gm, '');
-        onboardingSharedIndented = sharedSrc
-          .split('\n')
-          .map((line) => (line.length ? `  ${line}` : ''))
-          .join('\n');
+        onboardingSharedIndented = indentEarlyInject(stripEsmForEarlyInject(fs.readFileSync(sharedPath, 'utf8')));
       } else {
         console.warn(`WARN: onboarding-shared.js not found at: ${sharedPath}`);
       }
@@ -410,6 +425,7 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       `  // - \`extension/src/config/keyboard-layouts.js\` (built-in layout data)\n` +
       `  // - \`extension/src/config/function-library.js\` (slot paint: label + keyboardClass)\n` +
       `  // - \`extension/src/ui/keybindings-ui-shared.js\` (CSS + layout + style attr + control-strip icons)\n` +
+      `  // - \`extension/src/utils/platform.js\` (Mac Opt vs Alt shortcut legends)\n` +
       `  // - \`extension/onboarding/en.xml\` (English early onboarding model)\n` +
       `  // - \`extension/src/ui/onboarding-shared.js\` (shell / progress / checklist DOM)\n` +
       `  // Do not edit by hand.\n` +
@@ -629,6 +645,9 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       `  const KP_ALL_THEMES_CSS = \`${escapedThemeCss}\`;\n` +
       `  const KP_THEME_IDS = ${JSON.stringify([...THEME_IDS])};\n` +
       `  const KP_THEME_CORNER = ${JSON.stringify(themeCornerById)};\n` +
+      (platformIndented
+        ? `\n  // --- begin stamped platform.js ---\n${platformIndented}\n  // --- end stamped platform.js ---\n`
+        : '') +
       (onboardingSharedIndented
         ? `\n  // --- begin stamped onboarding-shared.js ---\n${onboardingSharedIndented}\n  // --- end stamped onboarding-shared.js ---\n`
         : '');

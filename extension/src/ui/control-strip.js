@@ -38,6 +38,7 @@ import {
 } from '../utils/panel-position.js';
 import { cacheChromeLayout, peekChromeLayoutCache } from '../utils/chrome-layout-cache.js';
 import { getMessage } from '../utils/i18n.js';
+import { formatAltShortcut } from '../utils/platform.js';
 
 function controlStripKeyboardAbbrev() {
   const raw = String(getMessage('control_strip_keyboard_abbrev') || '').trim();
@@ -434,7 +435,7 @@ export class ControlStrip {
     // signaled by the dot + label color, not an opaque segment fill.
     const statusBtn = this._createSegmentButton({
       ariaLabel: getMessage('control_strip_toggle_aria'),
-      title: getMessage('control_strip_toggle_title', 'Alt+K')
+      title: getMessage('control_strip_toggle_title', formatAltShortcut('K'))
     });
     statusBtn.setAttribute('data-kp-control-strip-status', 'true');
 
@@ -516,7 +517,7 @@ export class ControlStrip {
     // Close
     const closeBtn = this._createSegmentButton({
       ariaLabel: getMessage('control_strip_close_aria'),
-      title: getMessage('control_strip_close_title', 'Alt+J'),
+      title: getMessage('control_strip_close_title', formatAltShortcut('J')),
       text: '×',
       compact: true,
       last: true

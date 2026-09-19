@@ -4,6 +4,7 @@
  */
 import { getActionIconDataUri } from './keybindings-ui-shared.js';
 import { getMessage } from '../utils/i18n.js';
+import { formatAltShortcut } from '../utils/platform.js';
 import {
   NCT_DARK_UI_COLORS,
   NCT_DARK_UI_FONT
@@ -22,6 +23,7 @@ export const ONBOARDING_ACTIVE_STORAGE_KEY = 'keypilot_onboarding_active';
  * @property {string} [metaKey]
  * @property {string} icon
  * @property {string} hint
+ * @property {boolean} [alt]
  * @property {'switch'|'button'} role
  */
 
@@ -38,7 +40,8 @@ export const KEYPILOT_HUB_CARDS = Object.freeze([
     action: 'docs',
     titleKey: 'popup_docs',
     icon: 'LOOKUP_WORD',
-    hint: 'Alt+H',
+    hint: 'H',
+    alt: true,
     metaKey: 'popup_documentation',
     role: 'button'
   }),
@@ -46,7 +49,8 @@ export const KEYPILOT_HUB_CARDS = Object.freeze([
     action: 'tutorial',
     titleKey: 'popup_tutorial',
     icon: 'LAUNCHER',
-    hint: 'Alt+I',
+    hint: 'I',
+    alt: true,
     metaKey: 'popup_tutorial_walkthrough',
     role: 'button'
   }),
@@ -62,7 +66,8 @@ export const KEYPILOT_HUB_CARDS = Object.freeze([
     action: 'control-strip',
     titleKey: 'popup_control_strip',
     icon: 'TOP_SITES',
-    hint: 'Alt+J',
+    hint: 'J',
+    alt: true,
     role: 'switch'
   })
 ]);
@@ -176,6 +181,14 @@ export async function refreshKeypilotHubCards(root) {
 }
 
 /**
+ * @param {KeypilotHubCardDef} def
+ * @returns {string}
+ */
+function hubCardHintLabel(def) {
+  return def.alt ? formatAltShortcut(def.hint) : def.hint;
+}
+
+/**
  * @param {Document} doc
  * @param {KeypilotHubCardDef} def
  * @returns {HTMLButtonElement}
@@ -183,6 +196,7 @@ export async function refreshKeypilotHubCards(root) {
 export function createKeypilotHubCard(doc, def) {
   const titleText = getMessage(def.titleKey);
   const metaText = def.metaKey ? getMessage(def.metaKey) : '';
+  const hintLabel = hubCardHintLabel(def);
   const btn = doc.createElement('button');
   btn.type = 'button';
   btn.className = 'kp-url-row kp-hub-card';
@@ -212,11 +226,11 @@ export function createKeypilotHubCard(doc, def) {
   const meta = doc.createElement('span');
   meta.className = 'kp-url-title';
   meta.dataset.status = '';
-  meta.textContent = def.role === 'switch' ? '…' : (metaText || def.hint);
+  meta.textContent = def.role === 'switch' ? '…' : (metaText || hintLabel);
 
   const path = doc.createElement('span');
   path.className = 'kp-url-path';
-  path.textContent = def.hint;
+  path.textContent = hintLabel;
 
   text.append(title, meta, path);
   content.append(icon, text);

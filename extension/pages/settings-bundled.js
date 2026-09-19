@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-18T11:53:48.224Z
+ * Generated on 2026-09-19T07:15:40.798Z
  */
 
 
@@ -2089,6 +2089,13 @@ function isMacPlatform() {
   } catch {
   }
   return false;
+}
+function altModifierLabel() {
+  return isMacPlatform() ? "Opt" : "Alt";
+}
+function formatAltShortcut(key, options = {}) {
+  const joiner = options.joiner ?? "+";
+  return `${altModifierLabel()}${joiner}${key}`;
 }
 
 // src/modules/settings-manager.js
@@ -4452,9 +4459,9 @@ function localizeSettingsMixedCopy() {
   const clickHint = settingsEl("settings-click-effect-hint");
   if (clickHint) clickHint.textContent = getMessage("settings_click_effect_hint", "F");
   const paintHint = settingsEl("settings-paint-mode-hint");
-  if (paintHint) paintHint.textContent = getMessage("settings_paint_mode_hint", "Alt+D");
+  if (paintHint) paintHint.textContent = getMessage("settings_paint_mode_hint", formatAltShortcut("D"));
   const stripLead = settingsEl("settings-control-strip-lead");
-  if (stripLead) stripLead.textContent = getMessage("settings_control_strip_lead", "Alt+J");
+  if (stripLead) stripLead.textContent = getMessage("settings_control_strip_lead", formatAltShortcut("J"));
 }
 function setRadioGroupValue(radios, value) {
   const v = String(value);
