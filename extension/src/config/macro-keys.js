@@ -43,6 +43,7 @@
  */
 
 import { getMessage } from '../utils/i18n.js';
+import { altModifierLabel } from '../utils/platform.js';
 
 /** Stable id prefix for user-configured macro keys. */
 export const MACRO_KEY_ID_PREFIX = 'macroKey:';
@@ -135,7 +136,7 @@ export function isKeyStrokeValid(stroke) {
 }
 
 /**
- * Human-readable chord label, e.g. "Ctrl+Shift+Esc".
+ * Human-readable chord label, e.g. "Ctrl+Shift+Esc" (Opt on Mac for alt).
  * @param {KeyStroke|null|undefined} stroke
  * @returns {string}
  */
@@ -143,7 +144,7 @@ export function formatKeyStroke(stroke) {
   if (!isKeyStrokeValid(stroke)) return getMessage('mk_empty_stroke');
   const parts = [];
   if (stroke.ctrl) parts.push('Ctrl');
-  if (stroke.alt) parts.push('Alt');
+  if (stroke.alt) parts.push(altModifierLabel());
   if (stroke.shift) parts.push('Shift');
   if (stroke.meta) parts.push('Win');
   const key = String(stroke.key);

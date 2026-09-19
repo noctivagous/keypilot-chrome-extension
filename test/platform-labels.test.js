@@ -2,7 +2,7 @@ import { before, beforeEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { installChromeMock, resetChromeMock } from './helpers/chrome-mock.js';
-import { buildChordSlotKey } from '../extension/src/utils/key-chord.js';
+import { buildChordSlotKey, formatChordSlotKeyLabel } from '../extension/src/utils/key-chord.js';
 
 /** @type {ReturnType<typeof installChromeMock>} */
 let mock;
@@ -94,6 +94,20 @@ describe('chord slot canonical tokens', () => {
       buildChordSlotKey({ key: 'Q', ctrl: true, alt: true }),
       'CHORD:CTRL+ALT+Q'
     );
+  });
+
+  it('labels Option as Opt on Mac and Alt on Windows', async () => {
+    const slot = 'CHORD:CTRL+ALT+Q';
+    stubNavigator({ isMac: true });
+    assert.equal(formatChordSlotKeyLabel(slot), 'Ctrl+Opt+Q');
+    stubNavigator({ isMac: false });
+    assert.equal(formatChordSlotKeyLabel(slot), 'Ctrl+Alt+Q');
+
+    const { formatKeyStroke } = await import('../extension/src/config/macro-keys.js');
+    stubNavigator({ isMac: true });
+    assert.equal(formatKeyStroke({ key: 'c', ctrl: true, alt: true }), 'Ctrl+Opt+C');
+    stubNavigator({ isMac: false });
+    assert.equal(formatKeyStroke({ key: 'c', ctrl: true, alt: true }), 'Ctrl+Alt+C');
   });
 });
 

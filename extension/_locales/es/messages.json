@@ -4810,12 +4810,16 @@
     }
   },
   "fn_reason_needs_chord": {
-    "message": "\"$1\" debe ejecutarse mientras un campo de texto está enfocado, por lo que solo puede vincularse a una combinación de teclas modificadoras (por ejemplo, Ctrl+Alt+…), no a una tecla simple.",
-    "description": "worksWhileTyping chord requirement.",
+    "message": "\"$1\" debe ejecutarse mientras un campo de texto está enfocado, por lo que solo puede vincularse a una combinación de teclas modificadoras (por ejemplo, Ctrl+$2+…), no a una tecla simple.",
+    "description": "worksWhileTyping chord requirement. $1 is the Function name. $2 is Alt or Opt.",
     "placeholders": {
       "name": {
         "content": "$1",
         "example": "Type Characters"
+      },
+      "modifier": {
+        "content": "$2",
+        "example": "Alt"
       }
     }
   },

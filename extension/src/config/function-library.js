@@ -32,6 +32,7 @@ import { ACTION_RESULT_DESTINATIONS, buildResultDestinationParameter } from '../
 import { isWordLookupAiAvailable } from '../modules/ai-text-service.js';
 import { buildKpDeepLink } from '../utils/kp-deep-link.js';
 import { getMessage } from '../utils/i18n.js';
+import { altModifierLabel } from '../utils/platform.js';
 
 /**
  * @typedef {{
@@ -1285,7 +1286,7 @@ export function validateFunctionSlotKey(functionId, slotKey) {
   if (def.worksWhileTyping && !isChordSlotKey(slotKey)) {
     return {
       ok: false,
-      reason: getMessage('fn_reason_needs_chord', def.label)
+      reason: getMessage('fn_reason_needs_chord', [def.label, altModifierLabel()])
     };
   }
   return { ok: true };

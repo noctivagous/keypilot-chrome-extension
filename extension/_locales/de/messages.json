@@ -4810,12 +4810,16 @@
     }
   },
   "fn_reason_needs_chord": {
-    "message": "„$1“ muss ausgeführt werden, während ein Textfeld fokussiert ist, daher kann es nur an eine Modifikator-Tasten-Kombination (z. B. Strg+Alt+…) gebunden werden, nicht an eine einfache Taste.",
-    "description": "worksWhileTyping chord requirement.",
+    "message": "„$1“ muss ausgeführt werden, während ein Textfeld fokussiert ist, daher kann es nur an eine Modifikator-Tasten-Kombination (z. B. Strg+$2+…) gebunden werden, nicht an eine einfache Taste.",
+    "description": "worksWhileTyping chord requirement. $1 is the Function name. $2 is Alt or Opt.",
     "placeholders": {
       "name": {
         "content": "$1",
         "example": "Type Characters"
+      },
+      "modifier": {
+        "content": "$2",
+        "example": "Alt"
       }
     }
   },

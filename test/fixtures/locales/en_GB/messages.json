@@ -4720,12 +4720,16 @@
     }
   },
   "fn_reason_needs_chord": {
-    "message": "[GB] \"$1\" must run while a text field is focused, so it can only be bound to a modifier-key combination (e.g. Ctrl+Alt+…), not a plain key.",
-    "description": "worksWhileTyping chord requirement.",
+    "message": "[GB] \"$1\" must run while a text field is focused, so it can only be bound to a modifier-key combination (e.g. Ctrl+$2+…), not a plain key.",
+    "description": "worksWhileTyping chord requirement. $1 is the Function name. $2 is Alt or Opt.",
     "placeholders": {
       "name": {
         "content": "$1",
         "example": "Type Characters"
+      },
+      "modifier": {
+        "content": "$2",
+        "example": "Alt"
       }
     }
   },

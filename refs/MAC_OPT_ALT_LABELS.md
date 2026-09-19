@@ -206,11 +206,11 @@ Mac. Internal slot keys remain `ALT`.
 
 ### Tasks
 
-- [ ] `formatChordSlotKeyLabel` (`extension/src/utils/key-chord.js`).
-- [ ] `formatKeyStroke` (`extension/src/config/macro-keys.js`).
-- [ ] Layout-editor inspector modifier toggle `['alt', 'Alt']` and related
+- [x] `formatChordSlotKeyLabel` (`extension/src/utils/key-chord.js`).
+- [x] `formatKeyStroke` (`extension/src/config/macro-keys.js`).
+- [x] Layout-editor inspector modifier toggle `['alt', 'Alt']` and related
       notify strings (“Ctrl/Alt/Shift”).
-- [ ] Macro-key editor modifier checkboxes.
+- [x] Macro-key editor modifier checkboxes.
 
 ### Acceptance criteria
 

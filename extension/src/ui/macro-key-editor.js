@@ -11,6 +11,7 @@ import {
   normalizeMacroKeyConfig
 } from '../config/macro-keys.js';
 import { getMessage } from '../utils/i18n.js';
+import { altModifierLabel } from '../utils/platform.js';
 
 /**
  * @param {Document} doc
@@ -51,8 +52,13 @@ function buildStrokeEditor(doc, stroke, onChange) {
         meta: name === 'meta' ? cb.checked : stroke?.meta
       }));
     }, true);
+    const caption = name === 'meta'
+      ? 'Win'
+      : name === 'alt'
+        ? altModifierLabel()
+        : name[0].toUpperCase() + name.slice(1);
     lab.appendChild(cb);
-    lab.appendChild(doc.createTextNode(name === 'meta' ? 'Win' : name[0].toUpperCase() + name.slice(1)));
+    lab.appendChild(doc.createTextNode(caption));
     return lab;
   };
 

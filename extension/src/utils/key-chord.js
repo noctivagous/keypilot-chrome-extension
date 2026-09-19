@@ -11,6 +11,8 @@
  * See KEY_ACTION_ARCHITECTURE.md → "Text-active Functions & modifier-chord assignment".
  */
 
+import { altModifierLabel } from './platform.js';
+
 /** Prefix that marks a slot key as a modifier chord rather than a bare key. */
 export const CHORD_SLOT_KEY_PREFIX = 'CHORD:';
 
@@ -103,7 +105,8 @@ export function parseChordSlotKey(slotKey) {
 }
 
 /**
- * Human-readable label for a chord slot key, e.g. "Ctrl+Alt+Q".
+ * Human-readable label for a chord slot key, e.g. "Ctrl+Alt+Q" (Opt on Mac).
+ * Canonical stored tokens stay `ALT`.
  * @param {string} slotKey
  * @returns {string}
  */
@@ -112,7 +115,7 @@ export function formatChordSlotKeyLabel(slotKey) {
   if (!chord) return String(slotKey || '');
   const parts = [];
   if (chord.ctrl) parts.push('Ctrl');
-  if (chord.alt) parts.push('Alt');
+  if (chord.alt) parts.push(altModifierLabel());
   if (chord.shift) parts.push('Shift');
   if (chord.meta) parts.push('Win');
   parts.push(chord.key.length === 1 ? chord.key.toUpperCase() : chord.key);

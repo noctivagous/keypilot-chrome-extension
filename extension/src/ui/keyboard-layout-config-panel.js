@@ -93,7 +93,7 @@ import { inspectKeyActionFromAnchor } from './keybindings-ui.js';
 import { createMacroKeyEditor } from './macro-key-editor.js';
 import { enhanceNativeSelect } from './select-menu.js';
 import { getMessage } from '../utils/i18n.js';
-import { formatAltShortcut } from '../utils/platform.js';
+import { altModifierLabel, formatAltShortcut } from '../utils/platform.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
 import {
   closestComposed,
@@ -8267,7 +8267,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 
     const spec = [
       ['ctrl', 'Ctrl'],
-      ['alt', 'Alt'],
+      ['alt', altModifierLabel()],
       ['shift', 'Shift'],
       ['meta', 'Win']
     ];
@@ -8933,7 +8933,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       if (ev.key === 'Escape') return;
       const hasMods = !!(ev.ctrlKey || ev.altKey || ev.shiftKey || ev.metaKey);
       if (!hasMods) {
-        this._notify('Hold a modifier key (Ctrl/Alt/Shift) while pressing the key.', 'error');
+        this._notify(`Hold a modifier key (Ctrl/${altModifierLabel()}/Shift) while pressing the key.`, 'error');
         return;
       }
       const slotKey = buildChordSlotKey({
