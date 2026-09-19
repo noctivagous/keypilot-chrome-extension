@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-19T07:20:24.313Z
+ * Generated on 2026-09-19T07:31:14.916Z
  */
 
 var __defProp = Object.defineProperty;
@@ -8437,7 +8437,11 @@ function applyThemeToRoots(theme, opts = {}) {
   }
   return _activeTheme;
 }
+var THEME_PACK_LOCKED_TO_DEFAULT = true;
 function resolveThemeFromSettings(settings) {
+  if (THEME_PACK_LOCKED_TO_DEFAULT) {
+    return getTheme(DEFAULT_THEME_ID);
+  }
   const id = normalizeThemeId(settings?.themeId);
   const overrides = settings?.themeOverrides && typeof settings.themeOverrides === "object" ? settings.themeOverrides : {};
   return getTheme(id, overrides);

@@ -122,7 +122,10 @@ body {
 }
 
 /* Author `display` overrides UA [hidden] { display: none }; keep the attr effective. */
-.settings-custom-badge[hidden] {
+.settings-custom-badge[hidden],
+.settings-tab[hidden],
+.settings-hub-tile[hidden],
+.field[hidden] {
   display: none !important;
 }
 

@@ -2819,7 +2819,9 @@
   }
   // Shared early-compatible subset of kp-chrome-shadow.js. This script cannot import ESM.
   const KP_THEME_CACHE_KEY = 'kp_theme_id_v1';
+  const KP_THEME_PACK_LOCKED_TO_DEFAULT = true;
   function peekCachedThemeId() {
+    if (KP_THEME_PACK_LOCKED_TO_DEFAULT) return 'dark-pro';
     try {
       const id = localStorage.getItem(KP_THEME_CACHE_KEY);
       if (id && KP_THEME_IDS.indexOf(id) >= 0) return id;
@@ -2834,6 +2836,7 @@
   const KP_KEY_SHADE_BEVEL = 'linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 18%, transparent 42%)';
   const KP_KEY_OVERRIDE_VARS = ['--kp-key-shading','--kp-key-sheen-opacity','--kp-key-shade-layer','--kp-key-border','--kp-key-corner-mode','--kp-key-cut-size','--kp-key-clip','--kp-key-effective-radius','--kp-key-shape-radius','--kp-key-corner-shape','--kp-titlebar-icon-display'];
   function peekCachedThemeOverrides() {
+    if (KP_THEME_PACK_LOCKED_TO_DEFAULT) return {};
     try {
       const raw = localStorage.getItem(KP_THEME_OVERRIDES_CACHE_KEY);
       if (!raw) return {};
@@ -2954,6 +2957,7 @@
     } catch { /* ignore */ }
   }
   function resolveEarlyThemeId(themeId) {
+    if (KP_THEME_PACK_LOCKED_TO_DEFAULT) return 'dark-pro';
     if (themeId && KP_THEME_IDS.indexOf(themeId) >= 0) return themeId;
     return peekCachedThemeId() || 'dark-pro';
   }

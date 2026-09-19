@@ -248,10 +248,19 @@ export function applyThemeToRoots(theme, opts = {}) {
 }
 
 /**
+ * Settings Theme pickers + Appearance are parked. Chrome always uses stock Dark Pro.
+ * Flip to false (and unhide Settings markup) to restore theme packs.
+ */
+export const THEME_PACK_LOCKED_TO_DEFAULT = true;
+
+/**
  * Resolve theme from settings-shaped object.
  * @param {{ themeId?: string, themeOverrides?: object }} [settings]
  */
 export function resolveThemeFromSettings(settings) {
+  if (THEME_PACK_LOCKED_TO_DEFAULT) {
+    return getTheme(DEFAULT_THEME_ID);
+  }
   const id = normalizeThemeId(settings?.themeId);
   const overrides = settings?.themeOverrides && typeof settings.themeOverrides === 'object'
     ? settings.themeOverrides

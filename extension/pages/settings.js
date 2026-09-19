@@ -195,6 +195,24 @@ const SETTINGS_PANEL_IDS = Object.freeze([
   'search',
   'about'
 ]);
+/** Parked Settings sections. Remove an id here and unhide matching markup to restore. */
+const SETTINGS_SUSPENDED_PANEL_IDS = Object.freeze([
+  'appearance',
+  'text-mode'
+]);
+
+function isSettingsPanelAvailable(panelId) {
+  return SETTINGS_PANEL_IDS.includes(panelId) && !SETTINGS_SUSPENDED_PANEL_IDS.includes(panelId);
+}
+
+function resolveAvailableSettingsPanelId(panelId) {
+  return isSettingsPanelAvailable(panelId) ? panelId : SETTINGS_DEFAULT_PANEL_ID;
+}
+
+function settingsNavTabs() {
+  return Array.from(settingsAll('.settings-tab[data-panel]'))
+    .filter((tab) => isSettingsPanelAvailable(tab.getAttribute('data-panel')));
+}
 
 /**
  * Master–detail left tabs: show one panel, update ARIA + optional persistence.
@@ -202,8 +220,8 @@ const SETTINGS_PANEL_IDS = Object.freeze([
  * @param {{ focusTab?: boolean, persist?: boolean }} [opts]
  */
 function activateSettingsPanel(panelId, opts = {}) {
-  const id = SETTINGS_PANEL_IDS.includes(panelId) ? panelId : SETTINGS_DEFAULT_PANEL_ID;
-  const tabs = Array.from(settingsAll('.settings-tab[data-panel]'));
+  const id = resolveAvailableSettingsPanelId(panelId);
+  const tabs = settingsNavTabs();
   const panels = Array.from(settingsAll('.settings-panel[data-panel]'));
 
   tabs.forEach((tab) => {
@@ -251,22 +269,22 @@ function activateSettingsPanel(panelId, opts = {}) {
 
 function installSettingsMasterDetailNav() {
   const nav = settingsOne('.settings-nav');
-  const tabs = Array.from(settingsAll('.settings-tab[data-panel]'));
+  const tabs = settingsNavTabs();
   if (!nav || tabs.length === 0) return;
 
   let initial = SETTINGS_DEFAULT_PANEL_ID;
   const fromMount = normalizeSettingsPanelId(pendingInitialPanel);
   pendingInitialPanel = null;
   if (fromMount) {
-    initial = fromMount;
+    initial = resolveAvailableSettingsPanelId(fromMount);
   } else {
     try {
       const hash = (location.hash || '').replace(/^#/, '');
-      if (SETTINGS_PANEL_IDS.includes(hash)) {
+      if (isSettingsPanelAvailable(hash)) {
         initial = hash;
       } else {
         const stored = sessionStorage.getItem(SETTINGS_TAB_STORAGE_KEY);
-        if (stored && SETTINGS_PANEL_IDS.includes(stored)) initial = stored;
+        if (stored && isSettingsPanelAvailable(stored)) initial = stored;
       }
     } catch {
       // ignore
@@ -295,7 +313,7 @@ function installSettingsMasterDetailNav() {
     tile.addEventListener('click', (e) => {
       e.preventDefault();
       const panelId = tile.getAttribute('data-goto');
-      if (!panelId || !SETTINGS_PANEL_IDS.includes(panelId)) return;
+      if (!panelId || !isSettingsPanelAvailable(panelId)) return;
       withOptionalViewTransition(() => activateSettingsPanel(panelId, { focusTab: true }));
     }, listenOpts);
   });
@@ -1073,7 +1091,7 @@ async function injectSettingsDom(root) {
 export function setActiveSettingsPanel(panelId) {
   const id = normalizeSettingsPanelId(panelId);
   if (!id || !settingsDomBoundApp) return false;
-  activateSettingsPanel(id, { focusTab: true });
+  activateSettingsPanel(resolveAvailableSettingsPanelId(id), { focusTab: true });
   return true;
 }
 

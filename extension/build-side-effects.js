@@ -457,7 +457,9 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       `  }\n` +
       `  // Shared early-compatible subset of kp-chrome-shadow.js. This script cannot import ESM.\n` +
       `  const KP_THEME_CACHE_KEY = 'kp_theme_id_v1';\n` +
+      `  const KP_THEME_PACK_LOCKED_TO_DEFAULT = true;\n` +
       `  function peekCachedThemeId() {\n` +
+      `    if (KP_THEME_PACK_LOCKED_TO_DEFAULT) return 'dark-pro';\n` +
       `    try {\n` +
       `      const id = localStorage.getItem(KP_THEME_CACHE_KEY);\n` +
       `      if (id && KP_THEME_IDS.indexOf(id) >= 0) return id;\n` +
@@ -472,6 +474,7 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       `  const KP_KEY_SHADE_BEVEL = 'linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 18%, transparent 42%)';\n` +
       `  const KP_KEY_OVERRIDE_VARS = ['--kp-key-shading','--kp-key-sheen-opacity','--kp-key-shade-layer','--kp-key-border','--kp-key-corner-mode','--kp-key-cut-size','--kp-key-clip','--kp-key-effective-radius','--kp-key-shape-radius','--kp-key-corner-shape','--kp-titlebar-icon-display'];\n` +
       `  function peekCachedThemeOverrides() {\n` +
+      `    if (KP_THEME_PACK_LOCKED_TO_DEFAULT) return {};\n` +
       `    try {\n` +
       `      const raw = localStorage.getItem(KP_THEME_OVERRIDES_CACHE_KEY);\n` +
       `      if (!raw) return {};\n` +
@@ -592,6 +595,7 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       `    } catch { /* ignore */ }\n` +
       `  }\n` +
       `  function resolveEarlyThemeId(themeId) {\n` +
+      `    if (KP_THEME_PACK_LOCKED_TO_DEFAULT) return 'dark-pro';\n` +
       `    if (themeId && KP_THEME_IDS.indexOf(themeId) >= 0) return themeId;\n` +
       `    return peekCachedThemeId() || 'dark-pro';\n` +
       `  }\n` +

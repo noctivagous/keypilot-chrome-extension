@@ -44,6 +44,7 @@
             <span class="settings-category-visual" data-accent="blue" aria-hidden="true"><svg class="settings-category-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#settings-icon-overview" /></svg></span>
             <span data-i18n="settings_static_229">Overview</span>
           </button>
+          <!-- SUSPENDED: Appearance section. Listed in SETTINGS_SUSPENDED_PANEL_IDS. -->
           <button
             type="button"
             class="settings-tab"
@@ -53,6 +54,7 @@
             aria-controls="panel-appearance"
             aria-selected="false"
             tabindex="-1"
+            hidden
           >
             <span class="settings-category-visual" data-accent="indigo" aria-hidden="true"><svg class="settings-category-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#settings-icon-appearance" /></svg></span>
             <span data-i18n="settings_static_230">Appearance</span>
@@ -85,6 +87,7 @@
             <span class="settings-category-visual" data-accent="green" aria-hidden="true"><svg class="settings-category-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#settings-icon-click" /></svg></span>
             <span data-i18n="settings_static_232">Click Mode</span>
           </button>
+          <!-- SUSPENDED: Text Mode section. Listed in SETTINGS_SUSPENDED_PANEL_IDS. -->
           <button
             type="button"
             class="settings-tab"
@@ -94,6 +97,7 @@
             aria-controls="panel-text-mode"
             aria-selected="false"
             tabindex="-1"
+            hidden
           >
             <span class="settings-category-visual" data-accent="violet" aria-hidden="true"><svg class="settings-category-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#settings-icon-text" /></svg></span>
             <span data-i18n="settings_static_233">Text Mode</span>
@@ -182,7 +186,8 @@
               <p class="panel-lead" data-i18n="settings_static_016">Pick a category to change how KeyPilot looks and behaves. Use the list on the left anytime.</p>
             </header>
 
-            <div class="field settings-appearance-field">
+            <!-- SUSPENDED: Overview Theme card. Unhide with THEME_PACK_LOCKED_TO_DEFAULT. -->
+            <div class="field settings-appearance-field" hidden>
               <label class="field-label" for="ui-theme-select" data-i18n="settings_static_017">Theme</label>
               <div class="settings-theme-row">
                 <select id="ui-theme-select">
@@ -196,7 +201,7 @@
             </div>
 
             <div class="settings-hub-grid">
-              <button type="button" class="settings-hub-tile" data-goto="appearance">
+              <button type="button" class="settings-hub-tile" data-goto="appearance" hidden>
                 <span class="settings-hub-heading">
                   <span class="settings-category-visual" data-accent="indigo" aria-hidden="true"><svg class="settings-category-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#settings-icon-appearance" /></svg></span>
                   <span class="settings-hub-title" data-i18n="settings_static_023">Appearance</span>
@@ -217,7 +222,7 @@
                 </span>
                 <span class="settings-hub-desc" data-i18n="settings_static_028">Hover focus rectangle, link-hover hints, and click activation effects.</span>
               </button>
-              <button type="button" class="settings-hub-tile" data-goto="text-mode">
+              <button type="button" class="settings-hub-tile" data-goto="text-mode" hidden>
                 <span class="settings-hub-heading">
                   <span class="settings-category-visual" data-accent="violet" aria-hidden="true"><svg class="settings-category-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#settings-icon-text" /></svg></span>
                   <span class="settings-hub-title" data-i18n="settings_static_029">Text Mode</span>
@@ -281,7 +286,8 @@
               <p class="panel-lead" data-i18n="settings_static_045">Customize the selected built-in theme. Changes apply immediately and stay with that pack until you reset or switch themes.</p>
             </header>
 
-            <div class="field settings-appearance-field">
+            <!-- SUSPENDED: Appearance Theme card. Unhide with THEME_PACK_LOCKED_TO_DEFAULT. -->
+            <div class="field settings-appearance-field" hidden>
               <label class="field-label" for="ui-theme-select-appearance" data-i18n="settings_static_046">Theme</label>
               <div class="settings-theme-row">
                 <select id="ui-theme-select-appearance">
