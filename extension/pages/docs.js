@@ -12,6 +12,7 @@ import { BUILD_ENABLE_MACRO_BUILDER } from '../src/config/keyboard-layouts.js';
 import { isKpDeepLink, parseKpDeepLink } from '../src/utils/kp-deep-link.js';
 import { MSG } from '../src/messaging/types.js';
 import { getLocaleCandidates, getMessage, localizeElements } from '../src/utils/i18n.js';
+import { rewriteAltShortcutPrefix, rewriteExactAltKbdHtml } from '../src/utils/platform.js';
 
 let docsThemeStorageInstalled = false;
 /** @type {Document|ShadowRoot|null} */
@@ -320,7 +321,7 @@ markdown.renderer.rules.heading_open = (tokens, idx, options, env, renderer) => 
  * @returns {string}
  */
 function renderMarkdown(md) {
-  return markdown.render(String(md || ''));
+  return rewriteExactAltKbdHtml(markdown.render(String(md || '')));
 }
 
 const NAV_ACCENTS = new Set(['green', 'blue', 'amber', 'indigo', 'rose', 'cyan', 'violet']);
@@ -395,7 +396,7 @@ function flattenTopics(topics, depth = 0, parentId = null) {
     const file = typeof topic.file === 'string' && topic.file.trim() ? topic.file.trim() : null;
     const icon = typeof topic.icon === 'string' && NAV_ICON_PATHS[topic.icon] ? topic.icon : null;
     const shortcut = typeof topic.shortcut === 'string' && topic.shortcut.trim()
-      ? topic.shortcut.trim().slice(0, 12)
+      ? rewriteAltShortcutPrefix(topic.shortcut.trim().slice(0, 12))
       : null;
     const accent = typeof topic.accent === 'string' && NAV_ACCENTS.has(topic.accent)
       ? topic.accent

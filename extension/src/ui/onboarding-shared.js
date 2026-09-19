@@ -8,7 +8,7 @@
  * import when stamping this file into early-inject and prepends `platform.js`
  * so the helper stays in scope.
  */
-import { formatAltShortcut } from '../utils/platform.js';
+import { formatAltShortcut, altModifierLabel } from '../utils/platform.js';
 
 // ── Storage / progress ──────────────────────────────────────────────────────
 
@@ -237,7 +237,7 @@ export function renderKeyboardKeysInto(el, text) {
     if (!part) continue;
     if (i % 2 === 1) {
       const k = document.createElement('kbd');
-      k.textContent = part;
+      k.textContent = part === 'Alt' ? altModifierLabel() : part;
       el.appendChild(k);
     } else {
       el.appendChild(document.createTextNode(part));
@@ -250,7 +250,10 @@ export function renderKeyboardKeysInto(el, text) {
  * @returns {string} HTML with <kbd> (for callers that intentionally use innerHTML)
  */
 export function formatKeyboardKeysHtml(text) {
-  return String(text || '').replace(/`([^`]+)`/g, '<kbd>$1</kbd>');
+  const label = altModifierLabel();
+  return String(text || '').replace(/`([^`]+)`/g, (_, token) =>
+    `<kbd>${token === 'Alt' ? label : token}</kbd>`
+  );
 }
 
 // ── CSS ─────────────────────────────────────────────────────────────────────

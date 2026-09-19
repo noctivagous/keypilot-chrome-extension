@@ -42,6 +42,37 @@ export function formatAltShortcut(key, options = {}) {
 }
 
 /**
+ * Rewrite exact docs keycaps `<kbd>Alt</kbd>` to the host modifier. Does not
+ * touch prose such as “Alt chrome” or verbs like Spanish “Alternar”.
+ * @param {string} html
+ * @returns {string}
+ */
+export function rewriteExactAltKbdHtml(html) {
+  const label = altModifierLabel();
+  return String(html || '').replace(/<kbd>Alt<\/kbd>/g, `<kbd>${label}</kbd>`);
+}
+
+/**
+ * Rewrite exact onboarding tokens `` `Alt` `` to the host modifier.
+ * @param {string} text
+ * @returns {string}
+ */
+export function rewriteBacktickAltTokens(text) {
+  const label = altModifierLabel();
+  return String(text || '').replace(/`Alt`/g, `\`${label}\``);
+}
+
+/**
+ * Rewrite a compact `Alt+…` chip prefix (nav shortcuts). Leaves other labels.
+ * @param {string} text
+ * @returns {string}
+ */
+export function rewriteAltShortcutPrefix(text) {
+  const raw = String(text || '');
+  return raw.startsWith('Alt+') ? `${altModifierLabel()}+${raw.slice(4)}` : raw;
+}
+
+/**
  * Fill static shortcut chips after localizeElements(). Chrome i18n cannot
  * branch on OS, so markup keeps canonical Alt and JS retargets to Opt on Mac.
  * @param {ParentNode} [root]

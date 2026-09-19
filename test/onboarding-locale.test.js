@@ -173,3 +173,24 @@ describe('onboarding eager-path copy', () => {
     assert.match(bundled, /onboarding\//);
   });
 });
+
+describe('onboarding later-slide Opt/Alt tokens', () => {
+  it('rewrites `Alt` in laterTitle on Mac and keeps it on Windows', () => {
+    const xml = readFileSync(englishXml, 'utf8');
+    mock = installChromeMock({ isMac: false });
+    const winModel = parseOnboardingXml(xml);
+    const laterWin = winModel.slides
+      .flatMap((slide) => slide.onEnter || [])
+      .find((entry) => entry.laterTitle);
+    assert.match(laterWin.laterTitle, /`Alt`/);
+    assert.doesNotMatch(laterWin.laterTitle, /`Opt`/);
+
+    mock = installChromeMock({ isMac: true });
+    const macModel = parseOnboardingXml(xml);
+    const laterMac = macModel.slides
+      .flatMap((slide) => slide.onEnter || [])
+      .find((entry) => entry.laterTitle);
+    assert.match(laterMac.laterTitle, /`Opt`/);
+    assert.doesNotMatch(laterMac.laterTitle, /`Alt`/);
+  });
+});

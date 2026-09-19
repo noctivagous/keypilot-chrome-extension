@@ -6,6 +6,7 @@
  */
 
 import { getLocaleCandidates } from './i18n.js';
+import { rewriteBacktickAltTokens } from './platform.js';
 
 export const ONBOARDING_BASE_LOCALE = 'en';
 export const ONBOARDING_MODEL_PATH = (locale) => `onboarding/${locale}.xml`;
@@ -57,13 +58,13 @@ export function parseOnboardingXml(xmlText) {
     const id = String(slideAttrs.id || '').trim();
     if (!id) continue;
 
-    const title = String(slideAttrs.title || '').trim();
+    const title = rewriteBacktickAltTokens(String(slideAttrs.title || '').trim());
     const tasks = [];
     const onEnter = [];
 
     let bodyText = '';
     const bodyMatch = bodyRe.exec(slideBody);
-    if (bodyMatch) bodyText = String(bodyMatch[1] || '').trim();
+    if (bodyMatch) bodyText = rewriteBacktickAltTokens(String(bodyMatch[1] || '').trim());
     bodyRe.lastIndex = 0;
 
     onEnterRe.lastIndex = 0;
@@ -75,7 +76,7 @@ export function parseOnboardingXml(xmlText) {
       const entry = { type };
       for (const [key, value] of Object.entries(oeAttrs)) {
         if (key === 'type') continue;
-        entry[key] = value;
+        entry[key] = rewriteBacktickAltTokens(value);
       }
       onEnter.push(entry);
     }
@@ -104,7 +105,7 @@ export function parseOnboardingXml(xmlText) {
 
       tasks.push({
         id: taskId,
-        label: String(taskAttrs.label || '').trim(),
+        label: rewriteBacktickAltTokens(String(taskAttrs.label || '').trim()),
         when
       });
     }

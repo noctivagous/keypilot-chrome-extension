@@ -175,14 +175,14 @@ trees.
 
 ### Tasks
 
-- [ ] Keep `<kbd>Alt</kbd>` in `userdocs/` source. Rewrite that kbd token at
+- [x] Keep `<kbd>Alt</kbd>` in `userdocs/` source. Rewrite that kbd token at
       render time in `pages/docs.js` (markdown-it kbd rule or a post-pass on
       kbd text only).
-- [ ] Substitute `` `Alt` `` in onboarding XML when the model is loaded
+- [x] Substitute `` `Alt` `` in onboarding XML when the model is loaded
       (same token discipline; do not rewrite surrounding words).
-- [ ] Decide separately whether titles/prose **“Alt chrome”** stay as product
+- [x] Decide separately whether titles/prose **“Alt chrome”** stay as product
       jargon or get a dedicated phrase. Not part of the kbd rewrite.
-- [ ] Smoke-test `keyboard-system-keys`, `getting-started`, `browsing-modes`,
+- [x] Smoke-test `keyboard-system-keys`, `getting-started`, `browsing-modes`,
       `layout-config` in en / es / de.
 
 ### Acceptance criteria
@@ -193,6 +193,8 @@ trees.
 
 ### Validation
 
+- [x] Unit tests rewrite `<kbd>Alt</kbd>` / `` `Alt` `` on Mac and leave
+      Spanish/German verbs and **Alt chrome**.
 - [ ] Open Docs on Mac and Win; search a topic that uses `<kbd>Alt</kbd>`.
 - [ ] Complete or reopen onboarding (`Alt+I` / `Opt+I`) and read the later
       overlay title.

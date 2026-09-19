@@ -5,6 +5,7 @@ import { afterEach, before, beforeEach, describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { KP_SETTINGS_PANEL_IDS, parseKpDeepLink } from '../extension/src/utils/kp-deep-link.js';
+import { rewriteExactAltKbdHtml } from '../extension/src/utils/platform.js';
 import { installChromeMock, resetChromeMock } from './helpers/chrome-mock.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -157,5 +158,40 @@ describe('docs screenshots', () => {
         }
       }
     }
+  });
+});
+
+describe('docs source keeps canonical Alt tokens', () => {
+  const smokeTopics = ['keyboard-system-keys.md', 'getting-started.md', 'browsing-modes.md', 'layout-config.md'];
+
+  it('ships <kbd>Alt</kbd> and Alt chrome jargon without Opt in Markdown', () => {
+    const systemKeys = readFileSync(join(englishDir, 'keyboard-system-keys.md'), 'utf8');
+    const spanishStart = readFileSync(join(userdocsRoot, 'es', 'getting-started.md'), 'utf8');
+    assert.match(systemKeys, /<kbd>Alt<\/kbd>/);
+    assert.match(systemKeys, /\*\*Alt chrome\*\*/);
+    assert.equal(systemKeys.includes('<kbd>Opt</kbd>'), false);
+    assert.match(spanishStart, /Alternar piloto clave/);
+    assert.match(spanishStart, /<kbd>Alt<\/kbd>/);
+  });
+
+  it('retargets kbd Alt to Opt on Mac for smoke-test topics in en/es/de', () => {
+    mock = installChromeMock({ isMac: true });
+    for (const locale of ['en', 'es', 'de']) {
+      for (const file of smokeTopics) {
+        const src = readFileSync(join(userdocsRoot, locale, file), 'utf8');
+        assert.match(src, /<kbd>Alt<\/kbd>/, `${locale}/${file} source`);
+        const out = rewriteExactAltKbdHtml(src);
+        assert.match(out, /<kbd>Opt<\/kbd>/, `${locale}/${file} Mac render`);
+        assert.equal(out.includes('<kbd>Alt</kbd>'), false, `${locale}/${file} no leftover kbd Alt`);
+      }
+    }
+    const spanish = rewriteExactAltKbdHtml(
+      readFileSync(join(userdocsRoot, 'es', 'getting-started.md'), 'utf8')
+    );
+    assert.match(spanish, /Alternar piloto clave/);
+    const germanSystem = rewriteExactAltKbdHtml(
+      readFileSync(join(userdocsRoot, 'de', 'keyboard-system-keys.md'), 'utf8')
+    );
+    assert.match(germanSystem, /\*\*Alt chrome\*\*/);
   });
 });

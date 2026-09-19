@@ -2,7 +2,7 @@
   color-scheme: dark;
   --settings-nav-width: 168px;
   --settings-header-border: rgba(255, 255, 255, 0.10);
-  --settings-nav-bg: rgba(0, 0, 0, 0.28);
+  --settings-nav-bg: rgba(255, 255, 255, 0.10);
   --settings-tab-active-bg: rgba(255, 255, 255, 0.12);
   --settings-tab-hover-bg: rgba(255, 255, 255, 0.06);
   /* Cool selection chrome — not KeyPilot text-mode orange / left-edge pulse */
@@ -219,7 +219,7 @@ h1 {
   border-right: 1px solid var(--settings-header-border);
   background: var(--settings-nav-bg);
   scrollbar-width: thin;
-  scrollbar-color: #4a4a4a #141414;
+  scrollbar-color: #6a6a6a #2c2c2c;
 }
 
 .settings-tab {
@@ -918,11 +918,17 @@ code {
   width: 10px;
   height: 10px;
 }
-.settings-nav::-webkit-scrollbar-corner,
+.settings-nav::-webkit-scrollbar-corner {
+  background: #2c2c2c;
+}
 .settings-detail::-webkit-scrollbar-corner {
   background: #141414;
 }
-.settings-nav::-webkit-scrollbar-track,
+.settings-nav::-webkit-scrollbar-track {
+  background: #2c2c2c;
+  border-left: 1px solid #333;
+  border-top: 1px solid #333;
+}
 .settings-detail::-webkit-scrollbar-track {
   background: #141414;
   border-left: 1px solid #111;

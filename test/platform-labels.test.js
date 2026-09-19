@@ -113,3 +113,41 @@ describe('onboarding reopen tip', () => {
     );
   });
 });
+
+describe('docs and onboarding Alt token rewrite', () => {
+  it('rewrites exact kbd Alt on Mac and leaves verbs and Alt chrome', () => {
+    stubNavigator({ isMac: true });
+    const html = [
+      '<p>Press <kbd>Alt</kbd>+<kbd>K</kbd>.</p>',
+      '<p><strong>Alt chrome</strong> hotkeys</p>',
+      '<p>Alternar piloto clave</p>'
+    ].join('');
+    assert.equal(
+      platform.rewriteExactAltKbdHtml(html),
+      [
+        '<p>Press <kbd>Opt</kbd>+<kbd>K</kbd>.</p>',
+        '<p><strong>Alt chrome</strong> hotkeys</p>',
+        '<p>Alternar piloto clave</p>'
+      ].join('')
+    );
+  });
+
+  it('keeps kbd Alt on Windows', () => {
+    stubNavigator({ isMac: false });
+    assert.equal(
+      platform.rewriteExactAltKbdHtml('<kbd>Alt</kbd>'),
+      '<kbd>Alt</kbd>'
+    );
+  });
+
+  it('rewrites backtick Alt tokens and Alt+ nav chips on Mac', () => {
+    stubNavigator({ isMac: true });
+    assert.equal(
+      platform.rewriteBacktickAltTokens('Return with `Alt`+`I`'),
+      'Return with `Opt`+`I`'
+    );
+    assert.equal(platform.rewriteAltShortcutPrefix('Alt+;'), 'Opt+;');
+    assert.equal(platform.rewriteAltShortcutPrefix('Alt+J'), 'Opt+J');
+    assert.equal(platform.rewriteAltShortcutPrefix('K'), 'K');
+  });
+});

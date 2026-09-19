@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-19T07:31:14.916Z
+ * Generated on 2026-09-19T07:38:27.878Z
  */
 
 var __defProp = Object.defineProperty;
@@ -7253,6 +7253,17 @@ function isMacPlatform() {
   }
   return false;
 }
+function altModifierLabel() {
+  return isMacPlatform() ? "Opt" : "Alt";
+}
+function rewriteExactAltKbdHtml(html) {
+  const label = altModifierLabel();
+  return String(html || "").replace(/<kbd>Alt<\/kbd>/g, `<kbd>${label}</kbd>`);
+}
+function rewriteAltShortcutPrefix(text2) {
+  const raw = String(text2 || "");
+  return raw.startsWith("Alt+") ? `${altModifierLabel()}+${raw.slice(4)}` : raw;
+}
 
 // src/modules/settings-manager.js
 var SETTINGS_STORAGE_KEY = "kp_settings_v1";
@@ -8824,7 +8835,7 @@ markdown.renderer.rules.heading_open = (tokens, idx, options, env, renderer) => 
   return defaultHeadingOpen(tokens, idx, options, env, renderer);
 };
 function renderMarkdown(md) {
-  return markdown.render(String(md || ""));
+  return rewriteExactAltKbdHtml(markdown.render(String(md || "")));
 }
 var NAV_ACCENTS = /* @__PURE__ */ new Set(["green", "blue", "amber", "indigo", "rose", "cyan", "violet"]);
 var NAV_ICON_PATHS = Object.freeze({
@@ -8868,7 +8879,7 @@ function flattenTopics(topics, depth = 0, parentId = null) {
     const childIds = children.filter((c) => c && typeof c.id === "string").map((c) => c.id);
     const file = typeof topic.file === "string" && topic.file.trim() ? topic.file.trim() : null;
     const icon = typeof topic.icon === "string" && NAV_ICON_PATHS[topic.icon] ? topic.icon : null;
-    const shortcut = typeof topic.shortcut === "string" && topic.shortcut.trim() ? topic.shortcut.trim().slice(0, 12) : null;
+    const shortcut = typeof topic.shortcut === "string" && topic.shortcut.trim() ? rewriteAltShortcutPrefix(topic.shortcut.trim().slice(0, 12)) : null;
     const accent = typeof topic.accent === "string" && NAV_ACCENTS.has(topic.accent) ? topic.accent : null;
     out.push({
       id: topic.id,

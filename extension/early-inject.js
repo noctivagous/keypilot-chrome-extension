@@ -2717,7 +2717,7 @@
           "primaryText": "Yes, Continue",
           "secondaryText": "No, I'll Do It Later",
           "secondaryAction": "later",
-          "laterTitle": "Return to this Tutorial with `Alt`+`I`",
+          "laterTitle": "Return to this Tutorial with `Opt`+`I`",
           "laterPrimaryText": "OK, Close"
         }
       ],
@@ -5072,6 +5072,37 @@
   }
 
   /**
+   * Rewrite exact docs keycaps `<kbd>Alt</kbd>` to the host modifier. Does not
+   * touch prose such as “Alt chrome” or verbs like Spanish “Alternar”.
+   * @param {string} html
+   * @returns {string}
+   */
+  function rewriteExactAltKbdHtml(html) {
+    const label = altModifierLabel();
+    return String(html || '').replace(/<kbd>Alt<\/kbd>/g, `<kbd>${label}</kbd>`);
+  }
+
+  /**
+   * Rewrite exact onboarding tokens `` `Alt` `` to the host modifier.
+   * @param {string} text
+   * @returns {string}
+   */
+  function rewriteBacktickAltTokens(text) {
+    const label = altModifierLabel();
+    return String(text || '').replace(/`Alt`/g, `\`${label}\``);
+  }
+
+  /**
+   * Rewrite a compact `Alt+…` chip prefix (nav shortcuts). Leaves other labels.
+   * @param {string} text
+   * @returns {string}
+   */
+  function rewriteAltShortcutPrefix(text) {
+    const raw = String(text || '');
+    return raw.startsWith('Alt+') ? `${altModifierLabel()}+${raw.slice(4)}` : raw;
+  }
+
+  /**
    * Fill static shortcut chips after localizeElements(). Chrome i18n cannot
    * branch on OS, so markup keeps canonical Alt and JS retargets to Opt on Mac.
    * @param {ParentNode} [root]
@@ -5330,7 +5361,7 @@
       if (!part) continue;
       if (i % 2 === 1) {
         const k = document.createElement('kbd');
-        k.textContent = part;
+        k.textContent = part === 'Alt' ? altModifierLabel() : part;
         el.appendChild(k);
       } else {
         el.appendChild(document.createTextNode(part));
@@ -5343,7 +5374,10 @@
    * @returns {string} HTML with <kbd> (for callers that intentionally use innerHTML)
    */
   function formatKeyboardKeysHtml(text) {
-    return String(text || '').replace(/`([^`]+)`/g, '<kbd>$1</kbd>');
+    const label = altModifierLabel();
+    return String(text || '').replace(/`([^`]+)`/g, (_, token) =>
+      `<kbd>${token === 'Alt' ? label : token}</kbd>`
+    );
   }
 
   // ── CSS ─────────────────────────────────────────────────────────────────────
