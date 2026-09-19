@@ -2677,6 +2677,23 @@ export class OverlayManager {
   }
 
   /**
+   * How long to keep the current tab on-screen after an F-click flash so the
+   * animation can play before a same-tab navigation unloads the page.
+   * @returns {number} milliseconds; 0 when there is no effect to hold for
+   */
+  getClickEffectNavigationHoldMs() {
+    try {
+      const { clickEffect } = this._getClickModeSettings();
+      if (clickEffect === 'none') return 0;
+      const presentation = this._clickEffectPresentation(clickEffect);
+      if (!presentation) return 0;
+      return Math.min(850, Math.max(300, Math.round(presentation.cleanupMs * 0.7)));
+    } catch {
+      return 0;
+    }
+  }
+
+  /**
    * Click New Tab / Background, Preview Link, Open Popover when the hover
    * target has no navigable URL.
    * Always a dashed orange strobe (not the user clickEffect, and not gated on

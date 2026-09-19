@@ -7560,12 +7560,39 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
   }
 
   /**
+   * True when F-activating `target` will unload / replace this document
+   * (http(s) navigation away from the current URL). Same-page hashes and
+   * javascript: hrefs keep the pulse on-screen, so they do not need a hold.
+   * @param {Element|null|undefined} target
+   * @returns {boolean}
+   */
+  _activationLeavesDocument(target) {
+    try {
+      if (!target || !(target instanceof Element)) return false;
+      const a = target.tagName === 'A' ? target : target.closest?.('a');
+      if (!a || a.tagName !== 'A') return false;
+      const raw = String(a.getAttribute('href') || '').trim();
+      if (!raw || raw.startsWith('#') || raw.toLowerCase().startsWith('javascript:')) {
+        return false;
+      }
+      const dest = new URL(a.href, location.href);
+      if (dest.protocol !== 'http:' && dest.protocol !== 'https:') return false;
+      return dest.origin !== location.origin
+        || dest.pathname !== location.pathname
+        || dest.search !== location.search;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Mount F-click flash (and ripple) before HTMLElement.click() / navigation.
-   * Same-tick click unloads or re-renders the target before the browser paints,
-   * which is why the green strobe was almost never visible.
-   * When a pulse actually mounted, wait two animation frames (after paint)
-   * then run `activate`. Selects/file pickers skip that wait so they stay
-   * inside the key-gesture (no flash for CONTROL category).
+   * Same-tick click unloads or re-renders the target before the browser paints.
+   * Same-document activations wait two frames so the pulse is painted, then
+   * click immediately (the ghost stays on-screen). Cross-document navigations
+   * hold until the click-effect animation has mostly played.
+   * Selects/file pickers skip that wait so they stay inside the key-gesture
+   * (no flash for CONTROL category).
    * @param {Element|null|undefined} target
    * @param {() => void} activate
    */
@@ -7593,6 +7620,22 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
 
     if (!flashed) {
       run();
+      return;
+    }
+
+    let holdMs = 0;
+    try {
+      if (this._activationLeavesDocument(target)) {
+        holdMs = Number(this.overlayManager?.getClickEffectNavigationHoldMs?.()) || 0;
+      }
+    } catch { holdMs = 0; }
+
+    if (holdMs > 0) {
+      try {
+        setTimeout(run, holdMs);
+      } catch {
+        run();
+      }
       return;
     }
 
