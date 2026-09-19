@@ -998,11 +998,10 @@ export class ControlStrip {
       try {
         this._statusBtn.setAttribute('data-kp-text-mode', textMode ? 'true' : 'false');
       } catch { /* ignore */ }
-      this._statusBtn.title = !on
-        ? 'KeyPilot is off — click to turn on (Alt+K)'
-        : textMode
-          ? 'KeyPilot is on (text mode) — click to turn off (Alt+K)'
-          : 'KeyPilot is on — click to turn off (Alt+K)';
+      this._statusBtn.title = getMessage(
+        'control_strip_toggle_title',
+        formatAltShortcut('K')
+      );
     }
   }
 

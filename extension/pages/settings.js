@@ -358,6 +358,17 @@ function localizeSettingsMixedCopy() {
   if (paintHint) paintHint.textContent = getMessage('settings_paint_mode_hint', formatAltShortcut('D'));
   const stripLead = settingsEl('settings-control-strip-lead');
   if (stripLead) stripLead.textContent = getMessage('settings_control_strip_lead', formatAltShortcut('J'));
+  const omnibox = formatAltShortcut('L');
+  const stripToggle = formatAltShortcut('J');
+  for (const el of settingsScope.querySelectorAll('[data-i18n="settings_static_038"]')) {
+    el.textContent = getMessage('settings_static_038', omnibox);
+  }
+  for (const el of settingsScope.querySelectorAll('[data-i18n="settings_static_104"]')) {
+    el.textContent = getMessage('settings_static_104', omnibox);
+  }
+  for (const el of settingsScope.querySelectorAll('[data-i18n="settings_static_218"]')) {
+    el.textContent = getMessage('settings_static_218', stripToggle);
+  }
 }
 
 /**

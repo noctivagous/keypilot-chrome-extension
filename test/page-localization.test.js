@@ -55,6 +55,36 @@ describe('extension-page localization', () => {
     assert.doesNotMatch(html, /data-i18n="[^"]*">(?:Alt\+J|Alt\+K|K)<\/span>/);
   });
 
+  it('marks popup and New Tab shortcut chips for host-OS fill-in', async () => {
+    const popup = await readFile('extension/popup.html', 'utf8');
+    assert.match(popup, /data-kp-alt-mod/);
+    assert.match(popup, /data-kp-alt-shortcut="H"/);
+    assert.match(popup, /data-kp-alt-shortcut="I"/);
+    assert.match(popup, /data-kp-alt-shortcut="J"/);
+
+    const newtab = await readFile('extension/pages/newtab.html', 'utf8');
+    assert.match(newtab, /data-kp-alt-shortcut="K"/);
+    assert.match(newtab, /data-kp-alt-shortcut="J"/);
+  });
+
+  it('uses $1 placeholders for OS-sensitive Alt/Opt catalog copy', async () => {
+    const [english, testLocale] = await Promise.all([catalog('en'), catalog('en_GB')]);
+    const keys = [
+      'popup_hotkey_toggle_aria_label',
+      'settings_static_038',
+      'settings_static_104',
+      'settings_static_218',
+      'newtab_static_005',
+      'newtab_static_024'
+    ];
+    for (const key of keys) {
+      assert.match(english[key].message, /\$1/, `English ${key}`);
+      assert.match(testLocale[key].message, /\$1/, `test-locale ${key}`);
+      assert.equal(english[key].placeholders?.shortcut?.content, '$1', `English ${key} placeholder`);
+      assert.equal(testLocale[key].placeholders?.shortcut?.content, '$1', `test-locale ${key} placeholder`);
+    }
+  });
+
   it('binds document titles and placeholders in English and the test locale', async () => {
     const [english, testLocale] = await Promise.all([catalog('en'), catalog('en_GB')]);
     const titlePages = {

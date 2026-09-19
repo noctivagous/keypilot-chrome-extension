@@ -15,12 +15,21 @@ import {
 import { MSG } from './src/messaging/types.js';
 import { FEATURE_FLAGS } from './src/config/constants.js';
 import { getMessage, localizeElements } from './src/utils/i18n.js';
+import { applyAltShortcutNodes, formatAltShortcut } from './src/utils/platform.js';
 import {
   isContentScriptRestrictedUrl,
   isKeyPilotNewTabUrl
 } from './src/config/url-policy.js';
 
 localizeElements();
+applyAltShortcutNodes();
+const hotkeyHint = document.querySelector('.hotkey-hint');
+if (hotkeyHint) {
+  hotkeyHint.setAttribute(
+    'aria-label',
+    getMessage('popup_hotkey_toggle_aria_label', formatAltShortcut('K'))
+  );
+}
 
 const statusEl = document.getElementById('status');
 

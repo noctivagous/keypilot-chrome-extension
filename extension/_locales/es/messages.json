@@ -20,8 +20,14 @@
     "description": "The popup heading."
   },
   "popup_hotkey_toggle_aria_label": {
-    "message": "Tecla de acceso rápido Alt más K",
-    "description": "Accessible label for the extension-toggle keyboard shortcut."
+    "message": "Tecla de acceso rápido $1",
+    "description": "Accessible label for the extension-toggle keyboard shortcut. $1 is Alt+K or Opt+K.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+K"
+      }
+    }
   },
   "popup_extension_toggle_aria_label": {
     "message": "Piloto clave habilitado",
@@ -414,8 +420,14 @@
     "description": "Localized settings page chrome."
   },
   "settings_static_038": {
-    "message": "Buscador del cuadro Nueva pestaña y omnibox de KeyPilot (Alt+L).",
-    "description": "Localized settings page chrome."
+    "message": "Buscador del cuadro Nueva pestaña y omnibox de KeyPilot ($1).",
+    "description": "Settings Search hub description. $1 is the omnibox shortcut (Alt+L / Opt+L).",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+L"
+      }
+    }
   },
   "settings_static_039": {
     "message": "Acerca de",
@@ -678,8 +690,14 @@
     "description": "Localized settings page chrome."
   },
   "settings_static_104": {
-    "message": "Utilizado por el cuadro de búsqueda Nueva pestaña y el omnibox de KeyPilot (Alt+L).",
-    "description": "Localized settings page chrome."
+    "message": "Utilizado por el cuadro de búsqueda Nueva pestaña y el omnibox de KeyPilot ($1).",
+    "description": "Settings Search panel lead. $1 is the omnibox shortcut (Alt+L / Opt+L).",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+L"
+      }
+    }
   },
   "settings_static_105": {
     "message": "Valiente",
@@ -1134,8 +1152,14 @@
     "description": "Localized settings page chrome."
   },
   "settings_static_218": {
-    "message": "Cuando está desactivada, la tira está oculta hasta que la habilites o presiones Alt+J para volver a activarla.",
-    "description": "Localized settings page chrome."
+    "message": "Cuando está desactivada, la tira está oculta hasta que la habilites o presiones $1 para volver a activarla.",
+    "description": "Control Strip visibility toggle help. $1 is Alt+J or Opt+J.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+J"
+      }
+    }
   },
   "settings_static_219": {
     "message": "Contraído por defecto",
@@ -1194,8 +1218,14 @@
     "description": "Localized newtab page chrome."
   },
   "newtab_static_005": {
-    "message": "Mostrar/ocultar tira de control (Alt+J para alternar)",
-    "description": "Localized newtab page chrome."
+    "message": "Mostrar/ocultar tira de control ($1 para alternar)",
+    "description": "New Tab control-strip switch title. $1 is Alt+J or Opt+J.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+J"
+      }
+    }
   },
   "newtab_static_006": {
     "message": "Tira de control visible",
@@ -1270,8 +1300,14 @@
     "description": "Localized newtab page chrome."
   },
   "newtab_static_024": {
-    "message": "Alt+J",
-    "description": "Localized newtab page chrome."
+    "message": "$1",
+    "description": "New Tab control-strip shortcut chip. $1 is Alt+J or Opt+J.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+J"
+      }
+    }
   },
   "newtab_static_025": {
     "message": "…",

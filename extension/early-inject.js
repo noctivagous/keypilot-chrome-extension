@@ -5067,6 +5067,24 @@
     return `${altModifierLabel()}${joiner}${key}`;
   }
 
+  /**
+   * Fill static shortcut chips after localizeElements(). Chrome i18n cannot
+   * branch on OS, so markup keeps canonical Alt and JS retargets to Opt on Mac.
+   * @param {ParentNode} [root]
+   */
+  function applyAltShortcutNodes(root = document) {
+    if (!root?.querySelectorAll) return;
+    for (const el of root.querySelectorAll('[data-kp-alt-mod]')) {
+      el.textContent = altModifierLabel();
+    }
+    for (const el of root.querySelectorAll('[data-kp-alt-shortcut]')) {
+      const key = el.getAttribute('data-kp-alt-shortcut');
+      if (!key) continue;
+      const joiner = el.getAttribute('data-kp-alt-joiner');
+      el.textContent = formatAltShortcut(key, joiner ? { joiner } : undefined);
+    }
+  }
+
   // --- end stamped platform.js ---
 
   // --- begin stamped onboarding-shared.js ---
@@ -8512,9 +8530,10 @@
         : 'rgba(148, 163, 184, 0.95)';
       if (refs.statusBtn) {
         refs.statusBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
-        refs.statusBtn.title = on
-          ? 'KeyPilot is on — click to turn off (Alt+K)'
-          : 'KeyPilot is off — click to turn on (Alt+K)';
+        refs.statusBtn.title = earlyMessage(
+          'control_strip_toggle_title',
+          formatAltShortcut('K')
+        );
       }
     } catch { /* ignore */ }
   }

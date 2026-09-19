@@ -145,15 +145,15 @@ name must follow the OS.
 
 ### Tasks
 
-- [ ] Convert baked English (and translated) strings that embed `Alt+…` in
+- [x] Convert baked English (and translated) strings that embed `Alt+…` in
       the sentence to `$1` placeholders. Keep placeholder names stable across
       locales. Examples: `popup_hotkey_toggle_aria_label`,
       `settings_static_038` (omnibox Alt+L), control-strip visibility copy,
       `newtab_static_024`.
-- [ ] Fill popup and newtab shortcut nodes in JS after `localizeElements()`.
+- [x] Fill popup and newtab shortcut nodes in JS after `localizeElements()`.
       Do not expect `data-i18n` to inject Opt.
-- [ ] Run `npm run check:locales` after placeholder changes.
-- [ ] Update translator `description` / `example` fields (examples may stay
+- [x] Run `npm run check:locales` after placeholder changes.
+- [x] Update translator `description` / `example` fields (examples may stay
       `Alt+K` as the canonical illustration).
 
 ### Acceptance criteria
@@ -164,8 +164,8 @@ name must follow the OS.
 
 ### Validation
 
-- [ ] `npm run check:locales`
-- [ ] English, Spanish, and German catalogs keep matching placeholder names.
+- [x] `npm run check:locales`
+- [x] English, Spanish, and German catalogs keep matching placeholder names.
 - [ ] Popup and New Tab on Mac show Opt in visible chips and aria-labels.
 
 ## Phase 4 — docs and onboarding

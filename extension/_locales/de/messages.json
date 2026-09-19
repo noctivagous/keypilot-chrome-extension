@@ -20,8 +20,14 @@
     "description": "The popup heading."
   },
   "popup_hotkey_toggle_aria_label": {
-    "message": "Hotkey Alt plus K",
-    "description": "Accessible label for the extension-toggle keyboard shortcut."
+    "message": "Tastenkombination $1",
+    "description": "Accessible label for the extension-toggle keyboard shortcut. $1 is Alt+K or Opt+K.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+K"
+      }
+    }
   },
   "popup_extension_toggle_aria_label": {
     "message": "KeyPilot aktiviert",
@@ -414,8 +420,14 @@
     "description": "Localized settings page chrome."
   },
   "settings_static_038": {
-    "message": "Suchmaschine für das Feld „Neuer Tab“ und die Omnibox von KeyPilot (Alt+L).",
-    "description": "Localized settings page chrome."
+    "message": "Suchmaschine für das Feld „Neuer Tab“ und die Omnibox von KeyPilot ($1).",
+    "description": "Settings Search hub description. $1 is the omnibox shortcut (Alt+L / Opt+L).",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+L"
+      }
+    }
   },
   "settings_static_039": {
     "message": "Über",
@@ -678,8 +690,14 @@
     "description": "Localized settings page chrome."
   },
   "settings_static_104": {
-    "message": "Wird vom Suchfeld „Neuer Tab“ und der Omnibox von KeyPilot (Alt+L) verwendet.",
-    "description": "Localized settings page chrome."
+    "message": "Wird vom Suchfeld „Neuer Tab“ und der Omnibox von KeyPilot ($1) verwendet.",
+    "description": "Settings Search panel lead. $1 is the omnibox shortcut (Alt+L / Opt+L).",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+L"
+      }
+    }
   },
   "settings_static_105": {
     "message": "Mutig",
@@ -1134,8 +1152,14 @@
     "description": "Localized settings page chrome."
   },
   "settings_static_218": {
-    "message": "Wenn diese Option deaktiviert ist, bleibt der Streifen ausgeblendet, bis Sie ihn aktivieren oder Alt+J drücken, um ihn wieder einzuschalten.",
-    "description": "Localized settings page chrome."
+    "message": "Wenn diese Option deaktiviert ist, bleibt der Streifen ausgeblendet, bis Sie ihn aktivieren oder $1 drücken, um ihn wieder einzuschalten.",
+    "description": "Control Strip visibility toggle help. $1 is Alt+J or Opt+J.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+J"
+      }
+    }
   },
   "settings_static_219": {
     "message": "Standardmäßig minimiert",
@@ -1194,8 +1218,14 @@
     "description": "Localized newtab page chrome."
   },
   "newtab_static_005": {
-    "message": "Kontrollstreifen ein-/ausblenden (Alt+J zum Umschalten)",
-    "description": "Localized newtab page chrome."
+    "message": "Kontrollstreifen ein-/ausblenden ($1 zum Umschalten)",
+    "description": "New Tab control-strip switch title. $1 is Alt+J or Opt+J.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+J"
+      }
+    }
   },
   "newtab_static_006": {
     "message": "Kontrollstreifen sichtbar",
@@ -1270,8 +1300,14 @@
     "description": "Localized newtab page chrome."
   },
   "newtab_static_024": {
-    "message": "Alt+J",
-    "description": "Localized newtab page chrome."
+    "message": "$1",
+    "description": "New Tab control-strip shortcut chip. $1 is Alt+J or Opt+J.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+J"
+      }
+    }
   },
   "newtab_static_025": {
     "message": "…",

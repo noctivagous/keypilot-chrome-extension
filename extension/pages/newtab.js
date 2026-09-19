@@ -33,7 +33,7 @@ import {
 } from '../src/ui/newtab-display-popover.js';
 import { storageGetValue } from '../src/utils/storage.js';
 import { getMessage, localizeElements } from '../src/utils/i18n.js';
-import { formatAltShortcut } from '../src/utils/platform.js';
+import { applyAltShortcutNodes, formatAltShortcut } from '../src/utils/platform.js';
 import { postPopoverBridgeInit } from '../src/modules/popover-bridge-init.js';
 import { MSG } from '../src/messaging/types.js';
 
@@ -43,6 +43,13 @@ const KP_KEYBOARD_HELP_STORAGE_KEY = 'keypilot_keyboard_help_visible';
 const BOOKMARKS_VIEW_STORAGE_KEY = 'kp_newtab_bookmarks_view';
 
 localizeElements();
+applyAltShortcutNodes();
+document.querySelectorAll('[data-i18n-title="newtab_static_005"]').forEach((el) => {
+  el.setAttribute('title', getMessage('newtab_static_005', formatAltShortcut('J')));
+});
+document.querySelectorAll('[data-kp-alt-shortcut="J"]').forEach((el) => {
+  el.textContent = getMessage('newtab_static_024', formatAltShortcut('J')) || formatAltShortcut('J');
+});
 
 /**
  * Darkened page-preview background on New Tab card rows (grid only).

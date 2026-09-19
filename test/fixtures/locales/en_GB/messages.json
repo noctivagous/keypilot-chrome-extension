@@ -20,8 +20,14 @@
     "description": "The popup heading."
   },
   "popup_hotkey_toggle_aria_label": {
-    "message": "[GB] Hotkey Alt plus K",
-    "description": "Accessible label for the extension-toggle keyboard shortcut."
+    "message": "[GB] Hotkey $1",
+    "description": "Accessible label for the extension-toggle keyboard shortcut. $1 is Alt+K or Opt+K.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+K"
+      }
+    }
   },
   "popup_extension_toggle_aria_label": {
     "message": "[GB] KeyPilot enabled",
@@ -414,8 +420,14 @@
     "description": "Localized settings page chrome."
   },
   "settings_static_038": {
-    "message": "[GB] Search engine for the New Tab box and KeyPilot’s omnibox (Alt+L).",
-    "description": "Localized settings page chrome."
+    "message": "[GB] Search engine for the New Tab box and KeyPilot’s omnibox ($1).",
+    "description": "Settings Search hub description. $1 is the omnibox shortcut (Alt+L / Opt+L).",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+L"
+      }
+    }
   },
   "settings_static_039": {
     "message": "[GB] About",
@@ -678,8 +690,14 @@
     "description": "Localized settings page chrome."
   },
   "settings_static_104": {
-    "message": "[GB] Used by the New Tab search box and KeyPilot’s omnibox (Alt+L).",
-    "description": "Localized settings page chrome."
+    "message": "[GB] Used by the New Tab search box and KeyPilot’s omnibox ($1).",
+    "description": "Settings Search panel lead. $1 is the omnibox shortcut (Alt+L / Opt+L).",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+L"
+      }
+    }
   },
   "settings_static_105": {
     "message": "[GB] Brave",
@@ -1134,8 +1152,14 @@
     "description": "Localized settings page chrome."
   },
   "settings_static_218": {
-    "message": "[GB] When off, the strip is hidden until you enable this or press Alt+J to toggle it back on.",
-    "description": "Localized settings page chrome."
+    "message": "[GB] When off, the strip is hidden until you enable this or press $1 to toggle it back on.",
+    "description": "Control Strip visibility toggle help. $1 is Alt+J or Opt+J.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+J"
+      }
+    }
   },
   "settings_static_219": {
     "message": "[GB] Collapsed by default",
@@ -1194,8 +1218,14 @@
     "description": "Localized newtab page chrome."
   },
   "newtab_static_005": {
-    "message": "[GB] Show/hide control strip (Alt+J to toggle)",
-    "description": "Localized newtab page chrome."
+    "message": "[GB] Show/hide control strip ($1 to toggle)",
+    "description": "New Tab control-strip switch title. $1 is Alt+J or Opt+J.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+J"
+      }
+    }
   },
   "newtab_static_006": {
     "message": "[GB] Control strip visible",
@@ -1270,8 +1300,14 @@
     "description": "Localized newtab page chrome."
   },
   "newtab_static_024": {
-    "message": "[GB] Alt+J",
-    "description": "Localized newtab page chrome."
+    "message": "[GB] $1",
+    "description": "New Tab control-strip shortcut chip. $1 is Alt+J or Opt+J.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+J"
+      }
+    }
   },
   "newtab_static_025": {
     "message": "[GB] …",
