@@ -111,15 +111,13 @@ function ensureToggleOffArrowStyles(root) {
       drop-shadow(0 1px 2px rgba(0,0,0,0.45));
   }
 }
-:host {
+:host svg {
+  display: block;
+  overflow: visible;
   animation:
     kp-onboarding-toggle-off-arrow-osc 1.15s ease-in-out infinite,
     kp-onboarding-toggle-off-arrow-glow 1.5s ease-in-out infinite;
   will-change: transform, filter;
-}
-:host svg {
-  display: block;
-  overflow: visible;
 }
 `
     });
@@ -501,13 +499,14 @@ export class OnboardingPanel {
     });
     applyToggleOffArrowColor(el, accent);
     const arrowMount = ensureOpenChromeShadow(el, { id: 'onboarding-toggle-off-arrow' }) || el;
-    ensureToggleOffArrowStyles(arrowMount);
 
     // Left-pointing solid arrow (currentColor = click-focus accent). Glow via CSS filter.
+    // Set markup first, then inject styles — innerHTML on a ShadowRoot would wipe the stylesheet.
     arrowMount.innerHTML =
       '<svg viewBox="0 0 32 28" width="100%" height="100%" focusable="false" aria-hidden="true">' +
       '<path d="M14 2 L2 14 L14 26 L14 19 L30 19 L30 9 L14 9 Z" fill="currentColor"/>' +
       '</svg>';
+    ensureToggleOffArrowStyles(arrowMount);
 
     (document.body || document.documentElement).appendChild(el);
     this._toggleOffArrowEl = el;
