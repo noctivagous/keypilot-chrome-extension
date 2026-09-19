@@ -1,5 +1,6 @@
 {
   "channelLabel": "Opera",
+  "buildScript": "build:release",
   "descriptionMessageKey": "extension_description",
   "descriptionMaxLength": 132,
   "homepageUrl": "https://noctivagous.com/",

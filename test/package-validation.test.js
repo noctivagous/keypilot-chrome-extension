@@ -66,6 +66,9 @@ test('Opera package contains the validated release surface', (t) => {
   for (const file of requiredGeneratedFiles) {
     assert.equal(existsSync(join(stagedDir, file)), true, `missing generated file: ${file}`);
   }
+  const stagedSettings = readFileSync(join(stagedDir, 'pages/settings.html'), 'utf8');
+  assert.equal(stagedSettings.includes('id="tab-debug"'), false, 'store package must omit Settings Debug');
+  assert.equal(stagedSettings.includes('KP_DEBUG_SETTINGS'), false, 'store package must strip Debug markers');
   for (const file of config.requiredRuntimeFiles) {
     assert.equal(existsSync(join(stagedDir, file)), true, `missing runtime file: ${file}`);
   }

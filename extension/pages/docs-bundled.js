@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-19T07:40:49.888Z
+ * Generated on 2026-09-19T08:14:29.140Z
  */
 
 var __defProp = Object.defineProperty;
@@ -7265,6 +7265,36 @@ function rewriteAltShortcutPrefix(text2) {
   return raw.startsWith("Alt+") ? `${altModifierLabel()}+${raw.slice(4)}` : raw;
 }
 
+// src/config/focus-color.js
+var FOCUS_COLOR_PRESET_IDS = Object.freeze([
+  "blue",
+  "green",
+  "orange",
+  "red",
+  "purple"
+]);
+var FOCUS_COLOR_PRESET_HEX = Object.freeze({
+  blue: "#2196f3",
+  green: "#00b400",
+  orange: "#ff8c00",
+  red: "#e53935",
+  purple: "#9c27b0"
+});
+var DEFAULT_FOCUS_COLOR = "blue";
+function parseFocusColorHex(raw) {
+  const s = String(raw || "").trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(s)) return s.toLowerCase();
+  if (/^#[0-9a-fA-F]{3}$/.test(s)) {
+    return `#${s[1]}${s[1]}${s[2]}${s[2]}${s[3]}${s[3]}`.toLowerCase();
+  }
+  return null;
+}
+function normalizeFocusColor(raw) {
+  const s = String(raw || "").trim().toLowerCase();
+  if (FOCUS_COLOR_PRESET_IDS.includes(s)) return s;
+  return parseFocusColorHex(s) || DEFAULT_FOCUS_COLOR;
+}
+
 // src/modules/settings-manager.js
 var SETTINGS_STORAGE_KEY = "kp_settings_v1";
 var TEXT_FOCUS_STYLE_IDS = Object.freeze(
@@ -7447,9 +7477,8 @@ function normalizeTextFocusStyle(raw) {
   if (raw === "left_edge" || raw === "background_tint") return raw;
   return DEFAULT_SETTINGS.textMode.focusStyle;
 }
-function normalizeFocusColor(raw) {
-  if (raw === "blue" || raw === "green") return raw;
-  return DEFAULT_SETTINGS.clickMode.focusColor;
+function normalizeFocusColor2(raw) {
+  return normalizeFocusColor(raw);
 }
 function normalizePaintStrategy(raw) {
   if (raw === "auto" || raw === "BC") return raw;
@@ -7487,7 +7516,7 @@ function normalizeClickMode(raw) {
         20
       )
     },
-    focusColor: normalizeFocusColor(stored.focusColor),
+    focusColor: normalizeFocusColor2(stored.focusColor),
     overlayFillEnabled: normalizeBoolean(
       stored.overlayFillEnabled,
       DEFAULT_SETTINGS.clickMode.overlayFillEnabled
@@ -8469,7 +8498,8 @@ var KP_SETTINGS_PANEL_IDS = Object.freeze([
   "cursor",
   "control-strip",
   "search",
-  "about"
+  "about",
+  "debug"
 ]);
 function isKpDeepLink(href) {
   return /^kp:\/\//i.test(String(href || "").trim());

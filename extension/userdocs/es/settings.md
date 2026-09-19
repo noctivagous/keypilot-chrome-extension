@@ -9,7 +9,7 @@ La configuración controla la apariencia, el desplazamiento, el motor de búsque
 3. Ajuste los controles: la mayoría se aplican de inmediato.
 4. Presione <kbd>Esc</kbd> o el control de cierre de la barra de título cuando haya terminado.
 
-Comience con [**Teclado**](kp://settings/keyboard) (diseño + lateralidad) y [**Desplazamiento**](kp://settings/scrolling) (<kbd>C</kbd>/<kbd>V</kbd> distancia). Ajuste el [**Modo de clic**](kp://settings/click-mode) y el [**Modo de texto**](kp://settings/text-mode) una vez que lo básico se sienta bien.
+Comience con [**Teclado**](kp://settings/keyboard) (diseño + lateralidad) y [**Desplazamiento**](kp://settings/scrolling) (distancia de Página arriba / Página abajo). Ajuste el [**Modo de clic**](kp://settings/click-mode) y el [**Modo de texto**](kp://settings/text-mode) una vez que lo básico se sienta bien.
 
 ## Referencia
 
@@ -22,7 +22,7 @@ Comience con [**Teclado**](kp://settings/keyboard) (diseño + lateralidad) y [**
 | [**Teclado**](kp://settings/keyboard) | Familia de diseño, zurdos, fila numérica, respuesta al presionar una tecla |
 | [**Modo de clic**](kp://settings/click-mode) | Estilo de cursor, geometría en forma de cruz, apariencia de rectángulo de enfoque, sugerencias al pasar el cursor sobre el enlace, efectos de activación |
 | [**Modo de texto**](kp://settings/text-mode) | Cursor, estilo de enfoque (borde pulsante/tinte), ancho de borde, etiquetas, contorno |
-| [**Desplazamiento**](kp://settings/scrolling) | <kbd>C</kbd>/<kbd>V</kbd> distancia, saltos suaves o instantáneos, salto en carrusel, línea de desplazamiento con clic central |
+| [**Desplazamiento**](kp://settings/scrolling) | Distancia de Página arriba / Página abajo, saltos suaves o instantáneos, salto en carrusel, línea de desplazamiento con clic central |
 | [**Cursor**](kp://settings/cursor) | No hay cursores personalizados frente a cursores KeyPilot; Haga clic en Modo geometría en forma de cruz cuando esté habilitado |
 | [**Tira de control**](kp://settings/control-strip) | Visibilidad y inicio colapsado; restaurar con <kbd>Alt</kbd>+<kbd>J</kbd> |
 | [**Buscar**](kp://settings/search) | Brave, Google o DuckDuckGo para búsqueda en Omnibox/Nueva pestaña |

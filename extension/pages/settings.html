@@ -20,6 +20,7 @@
       <symbol id="settings-icon-controls" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" /></symbol>
       <symbol id="settings-icon-search" viewBox="0 0 24 24"><path d="m21 21-4.35-4.35" /><circle cx="11" cy="11" r="8" /></symbol>
       <symbol id="settings-icon-about" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 10v6M12 7h.01" /></symbol>
+      <symbol id="settings-icon-debug" viewBox="0 0 24 24"><path d="M8 8V6a4 4 0 0 1 8 0v2" /><rect x="6" y="8" width="12" height="10" rx="2" /><path d="M4 10h2M18 10h2M4 16h2M18 16h2M12 8v10" /></symbol>
     </svg>
     <main class="settings-app">
       <header class="header">
@@ -171,6 +172,22 @@
             <span class="settings-category-visual" data-accent="indigo" aria-hidden="true"><svg class="settings-category-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#settings-icon-about" /></svg></span>
             <span data-i18n="settings_static_238">About</span>
           </button>
+          <!-- KP_DEBUG_SETTINGS -->
+          <button
+            type="button"
+            class="settings-tab"
+            role="tab"
+            id="tab-debug"
+            data-panel="debug"
+            data-kp-debug-settings
+            aria-controls="panel-debug"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            <span class="settings-category-visual" data-accent="amber" aria-hidden="true"><svg class="settings-category-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#settings-icon-debug" /></svg></span>
+            <span data-i18n="settings_static_239">Debug</span>
+          </button>
+          <!-- /KP_DEBUG_SETTINGS -->
         </nav>
 
         <div class="settings-detail">
@@ -234,7 +251,7 @@
                   <span class="settings-category-visual" data-accent="amber" aria-hidden="true"><svg class="settings-category-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#settings-icon-scroll" /></svg></span>
                   <span class="settings-hub-title" data-i18n="settings_static_031">Scrolling</span>
                 </span>
-                <span class="settings-hub-desc" data-i18n="settings_static_032">C / V distance, smooth vs instant, Scroll Line targeting, and middle-click.</span>
+                <span class="settings-hub-desc" data-i18n="settings_static_032">Page Up / Page Down distance, smooth vs instant, Scroll Line targeting, and middle-click.</span>
               </button>
               <button type="button" class="settings-hub-tile" data-goto="cursor">
                 <span class="settings-hub-heading">
@@ -262,8 +279,17 @@
                   <span class="settings-category-visual" data-accent="indigo" aria-hidden="true"><svg class="settings-category-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#settings-icon-about" /></svg></span>
                   <span class="settings-hub-title" data-i18n="settings_static_039">About</span>
                 </span>
-                <span class="settings-hub-desc" data-i18n="settings_static_040">Where settings are stored, how they sync, and optional debug logging.</span>
+                <span class="settings-hub-desc" data-i18n="settings_static_040">Where settings are stored and how they sync.</span>
               </button>
+              <!-- KP_DEBUG_SETTINGS -->
+              <button type="button" class="settings-hub-tile" data-goto="debug" data-kp-debug-settings>
+                <span class="settings-hub-heading">
+                  <span class="settings-category-visual" data-accent="amber" aria-hidden="true"><svg class="settings-category-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#settings-icon-debug" /></svg></span>
+                  <span class="settings-hub-title" data-i18n="settings_static_239">Debug</span>
+                </span>
+                <span class="settings-hub-desc" data-i18n="settings_static_240">Click Mode paint internals and verbose console logging.</span>
+              </button>
+              <!-- /KP_DEBUG_SETTINGS -->
             </div>
 
             <div class="field settings-appearance-field">
@@ -735,18 +761,18 @@
           >
             <header class="panel-header">
               <h2 data-i18n="settings_static_140">Scrolling</h2>
-              <p class="panel-lead" data-i18n="settings_static_141">Keyboard page scrolling for C / V (smaller step). Z / X jump to the edge. Scroll Line targeting and optional middle-click.</p>
+              <p class="panel-lead" data-i18n="settings_static_141">Keyboard page scrolling for Page Up / Page Down (smaller step). Scroll To Top / Scroll To Bottom jump to the edge. Scroll Line targeting and optional middle-click.</p>
             </header>
 
             <div class="stack">
               <div class="grid-2">
                 <div class="field">
-                  <div class="field-label" data-i18n="settings_static_142">C / V distance</div>
+                  <div class="field-label" data-i18n="settings_static_142">Page Up / Page Down distance</div>
                   <div class="range-row">
                     <input id="scroll-half-page-range" type="range" min="50" max="2000" step="10" />
                     <input id="scroll-half-page-number" class="number" type="number" min="50" max="2000" step="10" />
                   </div>
-                  <div class="field-hint" data-i18n="settings_static_143">Pixels scrolled by C (up) and V (down). Default 500.</div>
+                  <div class="field-hint" data-i18n="settings_static_143">Pixels scrolled by Page Up and Page Down. Default 500.</div>
                 </div>
 
                 <label class="field">
@@ -755,7 +781,7 @@
                     <option value="smooth" data-i18n="settings_static_145">Smooth</option>
                     <option value="instant" data-i18n="settings_static_146">Instant</option>
                   </select>
-                  <div class="field-hint" data-i18n="settings_static_147">Animation for keyboard scrolling (C/V, Z/X, B/N).</div>
+                  <div class="field-hint" data-i18n="settings_static_147">Animation for keyboard scrolling (Page Up / Page Down, Scroll To Top / Scroll To Bottom, Scroll Line).</div>
                 </label>
               </div>
 
@@ -799,158 +825,138 @@
             </header>
 
             <div class="stack">
-              <h3 class="subhead" data-i18n="settings_static_155">Focus rectangle</h3>
-              <p class="field-hint" style="margin-top: 0;" data-i18n="settings_static_156">
-                Live hover outline on clickable targets. Changes apply immediately (including in this Settings window).
-              </p>
+              <fieldset class="settings-group">
+                <legend data-i18n="settings_static_155">Focus rectangle</legend>
+                <p class="field-hint" style="margin-top: 0;" data-i18n="settings_static_156">
+                  Live hover outline on clickable targets. Changes apply immediately (including in this Settings window).
+                </p>
 
-              <div class="field">
-                <div class="field-label" data-i18n="settings_static_157">Color</div>
-                <select id="click-focus-color" class="select">
-                  <option value="blue" data-i18n="settings_static_158">Blue</option>
-                  <option value="green" data-i18n="settings_static_159">Green</option>
-                </select>
-                <div class="field-hint" data-i18n="settings_static_160">Outline color for the focus rectangle.</div>
-              </div>
-
-              <label class="toggle" for="click-overlay-fill">
-                <input id="click-overlay-fill" type="checkbox" />
-                <div class="toggle-text">
-                  <div class="toggle-title" data-i18n="settings_static_161">Show transparent overlay</div>
-                  <div class="toggle-sub" data-i18n="settings_static_162">Adds a translucent fill inside the focus rectangle.</div>
-                </div>
-              </label>
-
-              <label class="toggle" for="click-overlay-shadow">
-                <input id="click-overlay-shadow" type="checkbox" />
-                <div class="toggle-text">
-                  <div class="toggle-title" data-i18n="settings_static_163">Show shadow / glow</div>
-                  <div class="toggle-sub" data-i18n="settings_static_164">Soft outer glow around the focus rectangle.</div>
-                </div>
-              </label>
-
-              <div class="field">
-                <div class="field-label" data-i18n="settings_static_165">Rectangle thickness</div>
-                <div class="range-row">
-                  <input id="click-rect-thickness-range" type="range" min="1" max="16" step="1" />
-                  <input id="click-rect-thickness-number" class="number" type="number" min="1" max="16" step="1" />
-                </div>
-                <div class="field-hint" data-i18n="settings_static_166">Border thickness for the focus rectangle (1–16px).</div>
-              </div>
-
-              <div class="divider"></div>
-
-              <h3 class="subhead" data-i18n="settings_static_167">Keyboard Reference</h3>
-              <label class="toggle" for="click-keyboard-link-hints">
-                <input id="click-keyboard-link-hints" type="checkbox" />
-                <div class="toggle-text">
-                  <div class="toggle-title" data-i18n="settings_static_168">Glow keys when hovering a link</div>
-                  <div class="toggle-sub" data-i18n="settings_static_169">
-                    While the Keyboard Reference is open, matching green action keys get an outline and glow when you hover a clickable link on the page. Off by default.
+                <div class="field">
+                  <div class="field-label" data-i18n="settings_static_165">Rectangle thickness</div>
+                  <div class="range-row">
+                    <input id="click-rect-thickness-range" type="range" min="1" max="16" step="1" />
+                    <input id="click-rect-thickness-number" class="number" type="number" min="1" max="16" step="1" />
                   </div>
+                  <div class="field-hint" data-i18n="settings_static_166">Border thickness for the focus rectangle (1–16px).</div>
                 </div>
-              </label>
 
-              <div class="divider"></div>
+                <div class="field">
+                  <div class="field-label" id="click-focus-color-label" data-i18n="settings_static_157">Color</div>
+                  <div
+                    class="click-focus-color-row"
+                    role="radiogroup"
+                    aria-labelledby="click-focus-color-label"
+                  >
+                    <label class="click-focus-swatch">
+                      <input type="radio" name="click-focus-color" value="blue" checked />
+                      <span class="click-focus-swatch-chip" style="background:#2196f3"></span>
+                      <span class="visually-hidden" data-i18n="settings_static_158">Blue</span>
+                    </label>
+                    <label class="click-focus-swatch">
+                      <input type="radio" name="click-focus-color" value="green" />
+                      <span class="click-focus-swatch-chip" style="background:#00b400"></span>
+                      <span class="visually-hidden" data-i18n="settings_static_159">Green</span>
+                    </label>
+                    <label class="click-focus-swatch">
+                      <input type="radio" name="click-focus-color" value="orange" />
+                      <span class="click-focus-swatch-chip" style="background:#ff8c00"></span>
+                      <span class="visually-hidden" data-i18n="settings_static_242">Orange</span>
+                    </label>
+                    <label class="click-focus-swatch">
+                      <input type="radio" name="click-focus-color" value="red" />
+                      <span class="click-focus-swatch-chip" style="background:#e53935"></span>
+                      <span class="visually-hidden" data-i18n="settings_static_243">Red</span>
+                    </label>
+                    <label class="click-focus-swatch">
+                      <input type="radio" name="click-focus-color" value="purple" />
+                      <span class="click-focus-swatch-chip" style="background:#9c27b0"></span>
+                      <span class="visually-hidden" data-i18n="settings_static_244">Purple</span>
+                    </label>
+                    <label class="click-focus-swatch click-focus-swatch-custom">
+                      <input type="radio" name="click-focus-color" value="custom" />
+                      <input id="click-focus-color-custom" type="color" value="#2196f3" aria-label="Custom" data-i18n-aria-label="settings_static_245" />
+                      <span class="visually-hidden" data-i18n="settings_static_245">Custom</span>
+                    </label>
+                  </div>
+                  <div class="field-hint" data-i18n="settings_static_160">Outline color for the focus rectangle.</div>
+                </div>
 
-              <h3 class="subhead" data-i18n="settings_static_170">Click effect</h3>
-              <p class="field-hint" style="margin-top: 0;" id="settings-click-effect-hint">
-                Visual feedback when you press F to activate a link-style target.
-              </p>
+                <div class="grid-2 click-overlay-toggles">
+                  <label class="toggle" for="click-overlay-fill">
+                    <input id="click-overlay-fill" type="checkbox" />
+                    <div class="toggle-text">
+                      <div class="toggle-title" data-i18n="settings_static_161">Show transparent overlay</div>
+                      <div class="toggle-sub" data-i18n="settings_static_162">Adds a translucent fill inside the focus rectangle.</div>
+                    </div>
+                  </label>
 
-              <div class="radio-group" role="radiogroup" aria-label="Click effect" data-i18n-aria-label="settings_static_006">
-                <label class="radio">
-                  <input type="radio" name="click-effect" value="flash" />
-                  <span>
-                    <span class="radio-title" data-i18n="settings_static_171">Flash</span>
-                    <span class="radio-sub" data-i18n="settings_static_172">Hard strobe on the outline (default)</span>
-                  </span>
-                </label>
-                <label class="radio">
-                  <input type="radio" name="click-effect" value="dash" />
-                  <span>
-                    <span class="radio-title" data-i18n="settings_static_173">Dash chase</span>
-                    <span class="radio-sub" data-i18n="settings_static_174">Dashed border marches around the edge</span>
-                  </span>
-                </label>
-                <label class="radio">
-                  <input type="radio" name="click-effect" value="marquee" />
-                  <span>
-                    <span class="radio-title" data-i18n="settings_static_175">Marquee</span>
-                    <span class="radio-sub" data-i18n="settings_static_176">Solid light travels around the border</span>
-                  </span>
-                </label>
-                <label class="radio">
-                  <input type="radio" name="click-effect" value="scale" />
-                  <span>
-                    <span class="radio-title" data-i18n="settings_static_177">Scale</span>
-                    <span class="radio-sub" data-i18n="settings_static_178">Outline expands outward and fades</span>
-                  </span>
-                </label>
-                <label class="radio">
-                  <input type="radio" name="click-effect" value="none" />
-                  <span>
-                    <span class="radio-title" data-i18n="settings_static_179">None</span>
-                    <span class="radio-sub" data-i18n="settings_static_180">No activation animation</span>
-                  </span>
-                </label>
-              </div>
+                  <label class="toggle" for="click-overlay-shadow">
+                    <input id="click-overlay-shadow" type="checkbox" />
+                    <div class="toggle-text">
+                      <div class="toggle-title" data-i18n="settings_static_163">Show shadow / glow</div>
+                      <div class="toggle-sub" data-i18n="settings_static_164">Soft outer glow around the focus rectangle.</div>
+                    </div>
+                  </label>
+                </div>
+              </fieldset>
 
-              <div class="divider"></div>
+              <fieldset class="settings-group">
+                <legend data-i18n="settings_static_167">Keyboard Reference</legend>
+                <label class="toggle" for="click-keyboard-link-hints">
+                  <input id="click-keyboard-link-hints" type="checkbox" />
+                  <div class="toggle-text">
+                    <div class="toggle-title" data-i18n="settings_static_168">Glow keys when hovering a link</div>
+                    <div class="toggle-sub" data-i18n="settings_static_169">
+                      While the Keyboard Reference is open, matching green action keys get an outline and glow when you hover a clickable link on the page. Off by default.
+                    </div>
+                  </div>
+                </label>
+              </fieldset>
 
-              <div class="kp-accordion">
-                <details class="kp-subsection">
-                  <summary class="kp-subsection-summary">
-                    <span class="kp-subsection-summary-text">
-                      <span class="kp-subsection-title" data-i18n="settings_static_181">Advanced</span>
-                      <span class="kp-subsection-sub" data-i18n="settings_static_182">Paint backend, parent skip, debug borders, and focus-ring padding</span>
+              <fieldset class="settings-group">
+                <legend data-i18n="settings_static_170">Click effect</legend>
+                <p class="field-hint" style="margin-top: 0;" id="settings-click-effect-hint">
+                  Visual feedback when you press F to activate a link-style target.
+                </p>
+
+                <div class="radio-group" role="radiogroup" aria-label="Click effect" data-i18n-aria-label="settings_static_006">
+                  <label class="radio">
+                    <input type="radio" name="click-effect" value="flash" />
+                    <span>
+                      <span class="radio-title" data-i18n="settings_static_171">Flash</span>
+                      <span class="radio-sub" data-i18n="settings_static_172">Hard strobe on the outline (default)</span>
                     </span>
-                  </summary>
-                  <div class="kp-subsection-body">
-                    <div class="field">
-                      <div class="field-label" data-i18n="settings_static_183">Paint mode</div>
-                      <select id="click-paint-strategy" class="select">
-                        <option value="BC" data-i18n="settings_static_184">Auto B→C (skip outline)</option>
-                        <option value="auto" data-i18n="settings_static_185">Auto (A→B→C)</option>
-                      </select>
-                      <div class="field-hint" id="settings-paint-mode-hint">
-                        How the hover focus rectangle is drawn. Auto B→C skips DOM outline (A) and uses an in-target ring, then a fixed overlay. Matches Shadow Root Debug (Alt+D).
-                      </div>
-                    </div>
-
-                    <label class="toggle" for="click-skip-for-parent">
-                      <input id="click-skip-for-parent" type="checkbox" />
-                      <div class="toggle-text">
-                        <div class="toggle-title" data-i18n="settings_static_187">Skip for parent</div>
-                        <div class="toggle-sub" data-i18n="settings_static_188">
-                          Nested controls that share the parent’s destination (same URL, data-href, inline onclick, the same click listener, or a parent row/card click such as Gmail) use the parent’s hover ring. Buttons and other destinations keep their own. On by default.
-                        </div>
-                      </div>
-                    </label>
-
-                    <label class="toggle" for="click-paint-backend-debug">
-                      <input id="click-paint-backend-debug" type="checkbox" />
-                      <div class="toggle-text">
-                        <div class="toggle-title" data-i18n="settings_static_189">Debug paint backend borders</div>
-                        <div class="toggle-sub" data-i18n="settings_static_190">
-                          Dashes A / B / C differently so you can tell which backend painted the hover ring (A dashed, B dotted, C double). Off by default.
-                        </div>
-                      </div>
-                    </label>
-
-                    <div class="field">
-                      <div class="field-label" data-i18n="settings_static_191">Padding</div>
-                      <div class="range-row">
-                        <input id="click-focus-padding-range" type="range" min="0" max="16" step="1" />
-                        <input id="click-focus-padding-number" class="number" type="number" min="0" max="16" step="1" />
-                      </div>
-                      <div class="field-hint" data-i18n="settings_static_192">
-                        Outward gap around the focus rectangle (0–16px). Default 2px matches the old outline offset; B→C rings previously used 0.
-                      </div>
-                    </div>
-                  </div>
-                </details>
-              </div>
+                  </label>
+                  <label class="radio">
+                    <input type="radio" name="click-effect" value="dash" />
+                    <span>
+                      <span class="radio-title" data-i18n="settings_static_173">Dash chase</span>
+                      <span class="radio-sub" data-i18n="settings_static_174">Dashed border marches around the edge</span>
+                    </span>
+                  </label>
+                  <label class="radio">
+                    <input type="radio" name="click-effect" value="marquee" />
+                    <span>
+                      <span class="radio-title" data-i18n="settings_static_175">Marquee</span>
+                      <span class="radio-sub" data-i18n="settings_static_176">Solid light travels around the border</span>
+                    </span>
+                  </label>
+                  <label class="radio">
+                    <input type="radio" name="click-effect" value="scale" />
+                    <span>
+                      <span class="radio-title" data-i18n="settings_static_177">Scale</span>
+                      <span class="radio-sub" data-i18n="settings_static_178">Outline expands outward and fades</span>
+                    </span>
+                  </label>
+                  <label class="radio">
+                    <input type="radio" name="click-effect" value="none" />
+                    <span>
+                      <span class="radio-title" data-i18n="settings_static_179">None</span>
+                      <span class="radio-sub" data-i18n="settings_static_180">No activation animation</span>
+                    </span>
+                  </label>
+                </div>
+              </fieldset>
 
               <div class="row-actions">
                 <button id="click-mode-reset" class="btn btn-secondary btn-small" type="button" data-i18n="settings_static_193">Reset Click Mode to defaults</button>
@@ -1109,16 +1115,6 @@
                 <p class="about-brand" data-i18n="settings_static_223">noctivagous.com</p>
               </div>
 
-              <label class="toggle" for="debug-logging">
-                <input id="debug-logging" type="checkbox" />
-                <div class="toggle-text">
-                  <div class="toggle-title" data-i18n="settings_static_224">Debug logging</div>
-                  <div class="toggle-sub" data-i18n="settings_static_225">
-                    Off by default. When on, KeyPilot writes verbose console messages in the service worker and page consoles. Leave off for store/release builds.
-                  </div>
-                </div>
-              </label>
-
               <div id="firefox-external-lookup-consent" class="about-card" hidden>
                 <p class="about-brand" data-i18n="settings_static_226">Firefox video thumbnails</p>
                 <p data-i18n="settings_static_227">
@@ -1131,6 +1127,89 @@
               </div>
             </div>
           </section>
+
+          <!-- KP_DEBUG_SETTINGS -->
+          <section
+            class="settings-panel"
+            role="tabpanel"
+            id="panel-debug"
+            data-panel="debug"
+            data-kp-debug-settings
+            aria-labelledby="tab-debug"
+            hidden
+          >
+            <header class="panel-header">
+              <h2 data-i18n="settings_static_239">Debug</h2>
+              <p class="panel-lead" data-i18n="settings_static_241">Developer diagnostics for hover-ring painting and console logging.</p>
+            </header>
+
+            <div class="stack">
+              <label class="toggle" for="debug-logging">
+                <input id="debug-logging" type="checkbox" />
+                <div class="toggle-text">
+                  <div class="toggle-title" data-i18n="settings_static_224">Debug logging</div>
+                  <div class="toggle-sub" data-i18n="settings_static_225">
+                    Off by default. When on, KeyPilot writes verbose console messages in the service worker and page consoles.
+                  </div>
+                </div>
+              </label>
+
+              <div class="kp-accordion">
+                <details class="kp-subsection">
+                  <summary class="kp-subsection-summary">
+                    <span class="kp-subsection-summary-text">
+                      <span class="kp-subsection-title" data-i18n="settings_static_181">Advanced</span>
+                      <span class="kp-subsection-sub" data-i18n="settings_static_182">Paint backend, parent skip, debug borders, and focus-ring padding</span>
+                    </span>
+                  </summary>
+                  <div class="kp-subsection-body">
+                    <div class="field">
+                      <div class="field-label" data-i18n="settings_static_183">Paint mode</div>
+                      <select id="click-paint-strategy" class="select">
+                        <option value="BC" data-i18n="settings_static_184">Auto B→C (skip outline)</option>
+                        <option value="auto" data-i18n="settings_static_185">Auto (A→B→C)</option>
+                      </select>
+                      <div class="field-hint" id="settings-paint-mode-hint">
+                        How the hover focus rectangle is drawn. Auto B→C skips DOM outline (A) and uses an in-target ring, then a fixed overlay. Matches Shadow Root Debug (Alt+D).
+                      </div>
+                    </div>
+
+                    <label class="toggle" for="click-skip-for-parent">
+                      <input id="click-skip-for-parent" type="checkbox" />
+                      <div class="toggle-text">
+                        <div class="toggle-title" data-i18n="settings_static_187">Skip for parent</div>
+                        <div class="toggle-sub" data-i18n="settings_static_188">
+                          Nested controls that share the parent’s destination (same URL, data-href, inline onclick, the same click listener, or a parent row/card click such as Gmail) use the parent’s hover ring. Buttons and other destinations keep their own. On by default.
+                        </div>
+                      </div>
+                    </label>
+
+                    <label class="toggle" for="click-paint-backend-debug">
+                      <input id="click-paint-backend-debug" type="checkbox" />
+                      <div class="toggle-text">
+                        <div class="toggle-title" data-i18n="settings_static_189">Debug paint backend borders</div>
+                        <div class="toggle-sub" data-i18n="settings_static_190">
+                          Dashes A / B / C differently so you can tell which backend painted the hover ring (A dashed, B dotted, C double). Off by default.
+                        </div>
+                      </div>
+                    </label>
+
+                    <div class="field">
+                      <div class="field-label" data-i18n="settings_static_191">Padding</div>
+                      <div class="range-row">
+                        <input id="click-focus-padding-range" type="range" min="0" max="16" step="1" />
+                        <input id="click-focus-padding-number" class="number" type="number" min="0" max="16" step="1" />
+                      </div>
+                      <div class="field-hint" data-i18n="settings_static_192">
+                        Outward gap around the focus rectangle (0–16px). Default 2px matches the old outline offset; B→C rings previously used 0.
+                      </div>
+                    </div>
+                  </div>
+                </details>
+              </div>
+            </div>
+          </section>
+          <!-- /KP_DEBUG_SETTINGS -->
         </div>
       </div>
     </main>

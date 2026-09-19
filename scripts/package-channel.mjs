@@ -90,6 +90,17 @@ function emptyDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
+/** Drop Settings Debug UI from store packages even when --skip-build is used. */
+function stripDebugSettingsFromStagedHtml(stagingDir) {
+  const htmlPath = path.join(stagingDir, 'pages/settings.html');
+  if (!fs.existsSync(htmlPath)) return;
+  const next = fs.readFileSync(htmlPath, 'utf8').replace(
+    /<!--\s*KP_DEBUG_SETTINGS\s*-->[\s\S]*?<!--\s*\/KP_DEBUG_SETTINGS\s*-->/g,
+    ''
+  );
+  fs.writeFileSync(htmlPath, next);
+}
+
 function keepIconMap(map, sizes) {
   if (!map || typeof map !== 'object') return map;
   const next = {};
@@ -358,6 +369,7 @@ export async function packageChannel(channel, { skipBuild = false } = {}) {
 
   const sourceManifestBefore = sha256File(sourceManifestPath);
   const copied = copyStagedFiles();
+  stripDebugSettingsFromStagedHtml(stagingDir);
   const { manifest } = patchStagedManifest();
   const sourceManifestAfter = sha256File(sourceManifestPath);
   if (sourceManifestBefore !== sourceManifestAfter) {

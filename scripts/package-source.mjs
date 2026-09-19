@@ -157,7 +157,7 @@ npm run package:firefox
 
 That command:
 
-1. Runs \`npm run build:firefox\` (\`node extension/build.js --firefox\`)
+1. Runs \`npm run build:firefox:release\` (\`node extension/build.js --firefox --release\`)
 2. Bundles the entry points with esbuild (**without** minify)
 3. Stages a Firefox-specific tree in \`extension-firefox/\`
 4. Writes the store archive to \`dist/keypilot-firefox-v${version}.zip\`

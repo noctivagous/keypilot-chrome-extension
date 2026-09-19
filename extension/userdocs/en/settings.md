@@ -9,7 +9,7 @@ Settings control appearance, scrolling, search engine, Control Strip, and which 
 3. Adjust controls — most apply immediately.
 4. Press <kbd>Esc</kbd> or the titlebar close control when finished.
 
-Start with [**Keyboard**](kp://settings/keyboard) (layout + handedness) and [**Scrolling**](kp://settings/scrolling) (<kbd>C</kbd>/<kbd>V</kbd> distance). Fine-tune [**Click Mode**](kp://settings/click-mode) and [**Text Mode**](kp://settings/text-mode) once the basics feel right.
+Start with [**Keyboard**](kp://settings/keyboard) (layout + handedness) and [**Scrolling**](kp://settings/scrolling) (Page Up / Page Down distance). Fine-tune [**Click Mode**](kp://settings/click-mode) and [**Text Mode**](kp://settings/text-mode) once the basics feel right.
 
 ## Reference
 
@@ -22,7 +22,7 @@ Start with [**Keyboard**](kp://settings/keyboard) (layout + handedness) and [**S
 | [**Keyboard**](kp://settings/keyboard) | Layout family, left-handed, number row, pressed-key feedback |
 | [**Click Mode**](kp://settings/click-mode) | Cursor style, crosshair geometry, focus rectangle look, link-hover hints, activation effects |
 | [**Text Mode**](kp://settings/text-mode) | Cursor, focus style (pulsing edge / tint), edge width, labels, outline |
-| [**Scrolling**](kp://settings/scrolling) | <kbd>C</kbd>/<kbd>V</kbd> distance, smooth vs instant jumps, carousel skip, middle-click Scroll Line |
+| [**Scrolling**](kp://settings/scrolling) | Page Up / Page Down distance, smooth vs instant jumps, carousel skip, middle-click Scroll Line |
 | [**Cursor**](kp://settings/cursor) | No Custom Cursors vs KeyPilot Cursors; Click Mode crosshair geometry when enabled |
 | [**Control Strip**](kp://settings/control-strip) | Visibility and start-collapsed; restore with <kbd>Alt</kbd>+<kbd>J</kbd> |
 | [**Search**](kp://settings/search) | Brave, Google, or DuckDuckGo for Omnibox / New Tab search |

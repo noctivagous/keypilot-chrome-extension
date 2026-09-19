@@ -4,7 +4,7 @@
   "descriptionMaxLength": 132,
   "homepageUrl": "https://noctivagous.com/",
   "extensionDir": "extension-firefox",
-  "buildScript": "build:firefox",
+  "buildScript": "build:firefox:release",
   "stagingDir": "dist/firefox",
   "zipDir": "dist",
   "zipNameTemplate": "keypilot-firefox-v{version}.zip",

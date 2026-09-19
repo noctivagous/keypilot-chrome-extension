@@ -7,6 +7,7 @@
  */
 import { CSS_CLASSES, Z_INDEX, SELECTORS, MODES, COLORS, FEATURE_FLAGS, CLICKABLE_CATEGORY, TEXT_FOCUS_HINT_MIN_HEIGHT_PX } from '../config/constants.js';
 import { DEFAULT_SETTINGS } from './settings-manager.js';
+import { getFocusColorPalette, normalizeFocusColor } from '../config/focus-color.js';
 import {
   closestComposed,
   isClickableKeyPilotChromeElement
@@ -199,28 +200,11 @@ export class FocusOverlayPainter {
   }
 
   /**
-   * Focus ring palette from click-mode settings (blue | green).
-   * Falls back to blue when DOM-hover element styling is active and no setting is loaded.
-   * @param {'blue'|'green'|string|null|undefined} [focusColor]
+   * Focus ring palette from click-mode settings (preset or custom hex).
+   * @param {string|null|undefined} [focusColor]
    */
   _getNonTextFocusPalette(focusColor) {
-    const color = focusColor === 'green' || focusColor === 'blue'
-      ? focusColor
-      : (this._getClickModeSettings().focusColor || 'blue');
-    if (color === 'green') {
-      return {
-        borderColor: COLORS.FOCUS_GREEN,
-        shadowColor: COLORS.GREEN_SHADOW,
-        shadowBrightColor: COLORS.GREEN_SHADOW_BRIGHT,
-        backgroundColor: COLORS.FOCUS_GREEN_BG_T2
-      };
-    }
-    return {
-      borderColor: COLORS.FOCUS_BLUE,
-      shadowColor: COLORS.BLUE_SHADOW,
-      shadowBrightColor: COLORS.BLUE_SHADOW_BRIGHT,
-      backgroundColor: COLORS.FOCUS_BLUE_BG_T2
-    };
+    return getFocusColorPalette(focusColor ?? this._getClickModeSettings().focusColor);
   }
 
   /**
@@ -618,7 +602,7 @@ export class FocusOverlayPainter {
     // Defaults: outline only (no fill / no glow) unless explicitly enabled.
     const overlayFillEnabled = cm.overlayFillEnabled === true;
     const overlayShadowEnabled = cm.overlayShadowEnabled === true;
-    const focusColor = cm.focusColor === 'green' ? 'green' : 'blue';
+    const focusColor = normalizeFocusColor(cm.focusColor);
     const rawEffect = cm.clickEffect;
     const clickEffect =
       rawEffect === 'flash' ||

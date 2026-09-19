@@ -3,6 +3,7 @@
  * Shell + checklist DOM live in onboarding-shared.js (shared with early-inject).
  */
 import { COLORS, CSS_CLASSES, Z_INDEX } from '../config/constants.js';
+import { getFocusColorPalette } from '../config/focus-color.js';
 import { applyPopupThemeVars } from './popup-theme-vars.js';
 import { getMessage } from '../utils/i18n.js';
 import { ensureOpenChromeShadow, injectChromeStyles } from './kp-chrome-shadow.js';
@@ -63,11 +64,7 @@ function stripListeners(btn) {
 function resolveClickFocusColor() {
   try {
     const kp = window.__KeyPilotInstance;
-    const focusColor = kp?._settings?.clickMode?.focusColor;
-    // Match non-text focus overlay accents (overlay-manager palette).
-    if (focusColor === 'green') {
-      return 'rgba(0,180,0,0.95)';
-    }
+    return getFocusColorPalette(kp?._settings?.clickMode?.focusColor).borderColor;
   } catch { /* ignore */ }
   return COLORS.FOCUS_BLUE || 'rgba(33,150,243,0.95)';
 }
@@ -79,10 +76,10 @@ function resolveClickFocusColor() {
  */
 function resolveClickFocusGlow(accent) {
   const c = String(accent || '');
-  if (c.includes('0,180,0') || c.includes('0, 180, 0') || /green/i.test(c)) {
-    return 'rgba(80,255,120,0.95)';
+  const m = c.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+  if (m) {
+    return `rgba(${m[1]},${m[2]},${m[3]},0.95)`;
   }
-  // Default / blue focus
   return 'rgba(120,210,255,0.95)';
 }
 

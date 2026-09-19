@@ -30,6 +30,7 @@ import {
   resolveKeyboardLayoutId
 } from '../config/keyboard-layouts.js';
 import { getSettings, SETTINGS_STORAGE_KEY, scrollBehaviorFromSpeed, DEFAULT_SETTINGS } from './settings-manager.js';
+import { getFocusColorPalette, normalizeFocusColor } from '../config/focus-color.js';
 import { scrollAtPoint, scrollToEdgeAtPoint, scrollByAtPoint, findScrollTargetAtPoint, scrollElementBy } from '../utils/scroll-at-point.js';
 import { ScrollHoldController } from '../utils/scroll-hold.js';
 import { deepElementFromPoint } from '../utils/element-from-point.js';
@@ -641,19 +642,12 @@ export function installFrameClickAgent() {
     };
 
     const paletteFor = (color) => {
-      if (color === 'green') {
-        return {
-          border: COLORS.FOCUS_GREEN || 'rgba(0,180,0,0.95)',
-          shadow: COLORS.GREEN_SHADOW || 'rgba(0,180,0,0.45)',
-          shadowBright: COLORS.GREEN_SHADOW_BRIGHT || 'rgba(0,180,0,0.5)',
-          fill: COLORS.FOCUS_GREEN_BG_T2 || 'rgba(46, 204, 113, 0.4)'
-        };
-      }
+      const p = getFocusColorPalette(color);
       return {
-        border: COLORS.FOCUS_BLUE || 'rgba(33,150,243,0.95)',
-        shadow: COLORS.BLUE_SHADOW || 'rgba(33,150,243,0.35)',
-        shadowBright: COLORS.BLUE_SHADOW_BRIGHT || 'rgba(33,150,243,0.45)',
-        fill: COLORS.FOCUS_BLUE_BG_T2 || 'rgba(33,150,243,0.25)'
+        border: p.borderColor,
+        shadow: p.shadowColor,
+        shadowBright: p.shadowBrightColor,
+        fill: p.backgroundColor
       };
     };
 
@@ -711,7 +705,7 @@ export function installFrameClickAgent() {
         }
         const cm = settings?.clickMode || {};
         focusChrome = {
-          focusColor: cm.focusColor === 'green' ? 'green' : 'blue',
+          focusColor: normalizeFocusColor(cm.focusColor),
           overlayFillEnabled: cm.overlayFillEnabled === true,
           overlayShadowEnabled: cm.overlayShadowEnabled === true,
           rectangleThickness: Number(cm.rectangleThickness) || 3

@@ -26,7 +26,9 @@ describe('settings-manager normalizers', () => {
     } = await import('../extension/src/modules/settings-manager.js');
 
     assert.equal(normalizeCursorMode('nope'), DEFAULT_SETTINGS.cursorMode);
-    assert.equal(normalizeFocusColor('purple'), DEFAULT_SETTINGS.clickMode.focusColor);
+    assert.equal(normalizeFocusColor('magenta'), DEFAULT_SETTINGS.clickMode.focusColor);
+    assert.equal(normalizeFocusColor('purple'), 'purple');
+    assert.equal(normalizeFocusColor('#FF8C00'), '#ff8c00');
     assert.equal(normalizeTextFocusStyle('weird'), DEFAULT_SETTINGS.textMode.focusStyle);
     assert.equal(normalizePaintStrategy('B->C'), 'BC');
     assert.equal(normalizePaintStrategy('AUTO'), 'auto');

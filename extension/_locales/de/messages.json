@@ -396,7 +396,7 @@
     "description": "Localized settings page chrome."
   },
   "settings_static_032": {
-    "message": "C/V-Distanz, sanft vs. sofort, Scrolllinien-Targeting und Mittelklick.",
+    "message": "Seite nach oben / Seite nach unten Abstand, sanft vs. sofort, Scrolllinien-Targeting und Mittelklick.",
     "description": "Localized settings page chrome."
   },
   "settings_static_033": {
@@ -434,7 +434,7 @@
     "description": "Localized settings page chrome."
   },
   "settings_static_040": {
-    "message": "Wo Einstellungen gespeichert werden, wie sie synchronisiert werden und optionale Debug-Protokollierung.",
+    "message": "Wo Einstellungen gespeichert werden und wie sie synchronisiert werden.",
     "description": "Localized settings page chrome."
   },
   "settings_static_041": {
@@ -844,15 +844,15 @@
     "description": "Localized settings page chrome."
   },
   "settings_static_141": {
-    "message": "Scrollen der Tastaturseite für C / V (kleinerer Schritt). Z / X an den Rand springen. Scrolllinien-Targeting und optionaler Mittelklick.",
+    "message": "Tastatur-Seitenlauf für Seite nach oben / Seite nach unten (kleinerer Schritt). Nach oben scrollen / Scrollen Sie nach unten zum Rand. Scrolllinien-Targeting und optionaler Mittelklick.",
     "description": "Localized settings page chrome."
   },
   "settings_static_142": {
-    "message": "C/V-Abstand",
+    "message": "Seite nach oben / Seite nach unten Abstand",
     "description": "Localized settings page chrome."
   },
   "settings_static_143": {
-    "message": "Mit C (oben) und V (unten) gescrollte Pixel. Standard 500.",
+    "message": "Mit Seite nach oben und Seite nach unten gescrollte Pixel. Standard 500.",
     "description": "Localized settings page chrome."
   },
   "settings_static_144": {
@@ -868,7 +868,7 @@
     "description": "Localized settings page chrome."
   },
   "settings_static_147": {
-    "message": "Animation für das Scrollen über die Tastatur (C/V, Z/X, B/N).",
+    "message": "Animation für das Scrollen über die Tastatur (Seite nach oben / Seite nach unten, Nach oben scrollen / Scrollen Sie nach unten, Bildlaufzeile).",
     "description": "Localized settings page chrome."
   },
   "settings_static_148": {
@@ -1186,7 +1186,7 @@
     "description": "Localized settings page chrome."
   },
   "settings_static_225": {
-    "message": "Standardmäßig deaktiviert. Wenn diese Option aktiviert ist, schreibt KeyPilot ausführliche Konsolennachrichten in die Service-Worker- und Seitenkonsolen. Für Store-/Release-Builds weglassen.",
+    "message": "Standardmäßig deaktiviert. Wenn diese Option aktiviert ist, schreibt KeyPilot ausführliche Konsolennachrichten in die Service-Worker- und Seitenkonsolen.",
     "description": "Localized settings page chrome."
   },
   "settings_static_226": {
@@ -1435,6 +1435,34 @@
   },
   "settings_static_238": {
     "message": "Über",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_239": {
+    "message": "Debug",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_240": {
+    "message": "Interne Click-Mode-Zeichenfunktionen und ausführliche Konsolenprotokolle.",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_241": {
+    "message": "Entwicklerdiagnosen für den Hover-Ring und die Konsolenprotokollierung.",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_242": {
+    "message": "Orange",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_243": {
+    "message": "Rot",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_244": {
+    "message": "Violett",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_245": {
+    "message": "Benutzerdefiniert",
     "description": "Localized settings page chrome."
   },
   "settings_click_effect_hint": {

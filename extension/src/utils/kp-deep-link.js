@@ -15,7 +15,8 @@ export const KP_SETTINGS_PANEL_IDS = Object.freeze([
   'cursor',
   'control-strip',
   'search',
-  'about'
+  'about',
+  'debug'
 ]);
 
 /**

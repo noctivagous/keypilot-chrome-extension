@@ -3,14 +3,24 @@
  *
  * Verbose `console.log` / `console.debug` / `console.info` in KeyPilot's
  * isolated worlds (content script, service worker, extension pages) stay
- * silent unless Settings → About → Debug logging is on. `console.warn` and
+ * silent unless Settings → Debug → Debug logging is on. `console.warn` and
  * `console.error` are never gated.
  *
  * `window.KEYPILOT_DEBUG` remains the in-process flag used by existing
  * `if (window.KEYPILOT_DEBUG)` call sites.
+ *
+ * The Settings Debug section ships in local builds and is omitted from
+ * `--release` / store packages (`BUILD_ENABLE_DEBUG_SETTINGS`).
  */
 
 import { getSettings, SETTINGS_STORAGE_KEY } from '../modules/settings-manager.js';
+
+/** Local `npm run build` keeps Debug Settings. `node build.js --release` turns this off. */
+const SOURCE_BUILD_ENABLE_DEBUG_SETTINGS = true;
+
+export const BUILD_ENABLE_DEBUG_SETTINGS = typeof __KP_BUILD_ENABLE_DEBUG_SETTINGS__ !== 'undefined'
+  ? !!__KP_BUILD_ENABLE_DEBUG_SETTINGS__
+  : SOURCE_BUILD_ENABLE_DEBUG_SETTINGS;
 
 let consoleWrapped = false;
 let storageListenerInstalled = false;

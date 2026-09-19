@@ -65,14 +65,33 @@
   const CURSOR_ID = 'kpv2-cursor';
   const STYLE_ID = 'kpv2-early-style';
   const FOCUS_GREEN_BRIGHT = 'rgba(0,128,0,0.95)';
-  const EARLY_FOCUS_BLUE = 'rgba(33,150,243,0.95)';
-  const EARLY_FOCUS_BLUE_SHADOW = 'rgba(33,150,243,0.35)';
-  const EARLY_FOCUS_BLUE_SHADOW_BRIGHT = 'rgba(33,150,243,0.45)';
-  const EARLY_FOCUS_BLUE_FILL = 'rgba(33,150,243,0.25)';
-  const EARLY_FOCUS_GREEN = 'rgba(0,180,0,0.95)';
-  const EARLY_FOCUS_GREEN_SHADOW = 'rgba(0,180,0,0.45)';
-  const EARLY_FOCUS_GREEN_SHADOW_BRIGHT = 'rgba(0,180,0,0.5)';
-  const EARLY_FOCUS_GREEN_FILL = 'rgba(46, 204, 113, 0.4)';
+  const EARLY_FOCUS_PRESET_HEX = {
+    blue: '#2196f3',
+    green: '#00b400',
+    orange: '#ff8c00',
+    red: '#e53935',
+    purple: '#9c27b0'
+  };
+  function normalizeEarlyFocusColor(raw) {
+    const s = String(raw || '').trim().toLowerCase();
+    if (Object.prototype.hasOwnProperty.call(EARLY_FOCUS_PRESET_HEX, s)) return s;
+    if (/^#[0-9a-f]{6}$/.test(s)) return s;
+    if (/^#[0-9a-f]{3}$/.test(s)) return `#${s[1]}${s[1]}${s[2]}${s[2]}${s[3]}${s[3]}`;
+    return 'blue';
+  }
+  function earlyFocusPalette(raw) {
+    const id = normalizeEarlyFocusColor(raw);
+    const hex = EARLY_FOCUS_PRESET_HEX[id] || id;
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return {
+      border: `rgba(${r},${g},${b},0.95)`,
+      shadow: `rgba(${r},${g},${b},0.35)`,
+      shadowBright: `rgba(${r},${g},${b},0.45)`,
+      fill: `rgba(${r},${g},${b},0.25)`
+    };
+  }
   const EARLY_HOVER_Z = 2147483020;
   const EARLY_HOVER_ID = 'kpv2-early-hover';
   const EARLY_CLICKABLE_SEL =
@@ -7679,7 +7698,7 @@
       : {};
     const thickness = Number(cm.rectangleThickness);
     earlyFocusChrome = {
-      focusColor: cm.focusColor === 'green' ? 'green' : 'blue',
+      focusColor: normalizeEarlyFocusColor(cm.focusColor),
       overlayFillEnabled: cm.overlayFillEnabled === true,
       overlayShadowEnabled: cm.overlayShadowEnabled === true,
       rectangleThickness: Number.isFinite(thickness) && thickness >= 1
@@ -10178,20 +10197,7 @@
 
   function applyEarlyFocusChromeToHoverEl(target) {
     if (!earlyHoverEl) return;
-    const green = earlyFocusChrome.focusColor === 'green';
-    const p = green
-      ? {
-          border: EARLY_FOCUS_GREEN,
-          shadow: EARLY_FOCUS_GREEN_SHADOW,
-          shadowBright: EARLY_FOCUS_GREEN_SHADOW_BRIGHT,
-          fill: EARLY_FOCUS_GREEN_FILL
-        }
-      : {
-          border: EARLY_FOCUS_BLUE,
-          shadow: EARLY_FOCUS_BLUE_SHADOW,
-          shadowBright: EARLY_FOCUS_BLUE_SHADOW_BRIGHT,
-          fill: EARLY_FOCUS_BLUE_FILL
-        };
+    const p = earlyFocusPalette(earlyFocusChrome.focusColor);
     const thickness = Math.min(Math.max(Number(earlyFocusChrome.rectangleThickness) || 3, 1), 16);
     try {
       earlyHoverEl.style.border = `${thickness}px solid ${p.border}`;

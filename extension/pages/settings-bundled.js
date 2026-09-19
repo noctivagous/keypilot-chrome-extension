@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-19T07:40:49.888Z
+ * Generated on 2026-09-19T08:14:29.140Z
  */
 
 
@@ -2098,6 +2098,74 @@ function formatAltShortcut(key, options = {}) {
   return `${altModifierLabel()}${joiner}${key}`;
 }
 
+// src/config/focus-color.js
+var FOCUS_COLOR_PRESET_IDS = Object.freeze([
+  "blue",
+  "green",
+  "orange",
+  "red",
+  "purple"
+]);
+var FOCUS_COLOR_PRESET_HEX = Object.freeze({
+  blue: "#2196f3",
+  green: "#00b400",
+  orange: "#ff8c00",
+  red: "#e53935",
+  purple: "#9c27b0"
+});
+var DEFAULT_FOCUS_COLOR = "blue";
+function parseFocusColorHex(raw) {
+  const s = String(raw || "").trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(s)) return s.toLowerCase();
+  if (/^#[0-9a-fA-F]{3}$/.test(s)) {
+    return `#${s[1]}${s[1]}${s[2]}${s[2]}${s[3]}${s[3]}`.toLowerCase();
+  }
+  return null;
+}
+function normalizeFocusColor(raw) {
+  const s = String(raw || "").trim().toLowerCase();
+  if (FOCUS_COLOR_PRESET_IDS.includes(s)) return s;
+  return parseFocusColorHex(s) || DEFAULT_FOCUS_COLOR;
+}
+function isFocusColorPreset(raw) {
+  return FOCUS_COLOR_PRESET_IDS.includes(String(raw || "").trim().toLowerCase());
+}
+function rgbFromHex(hex) {
+  const parsed = parseFocusColorHex(hex);
+  if (!parsed) return null;
+  return {
+    r: parseInt(parsed.slice(1, 3), 16),
+    g: parseInt(parsed.slice(3, 5), 16),
+    b: parseInt(parsed.slice(5, 7), 16)
+  };
+}
+function rgba(r, g, b, a) {
+  return `rgba(${r},${g},${b},${a})`;
+}
+function paletteFromRgb(rgb) {
+  const { r, g, b } = rgb;
+  return {
+    borderColor: rgba(r, g, b, 0.95),
+    shadowColor: rgba(r, g, b, 0.35),
+    shadowBrightColor: rgba(r, g, b, 0.45),
+    backgroundColor: rgba(r, g, b, 0.25),
+    hex: `#${[r, g, b].map((n) => n.toString(16).padStart(2, "0")).join("")}`
+  };
+}
+function getFocusColorPalette(raw) {
+  const id = normalizeFocusColor(raw);
+  if (isFocusColorPreset(id)) {
+    const rgb = rgbFromHex(FOCUS_COLOR_PRESET_HEX[id]);
+    if (rgb) return paletteFromRgb(rgb);
+  }
+  const custom = rgbFromHex(id);
+  if (custom) return paletteFromRgb(custom);
+  return paletteFromRgb(rgbFromHex(FOCUS_COLOR_PRESET_HEX.blue));
+}
+function hexForFocusColor(raw) {
+  return getFocusColorPalette(raw).hex;
+}
+
 // src/modules/settings-manager.js
 var SETTINGS_STORAGE_KEY = "kp_settings_v1";
 var TEXT_FOCUS_STYLE_IDS = Object.freeze(
@@ -2280,9 +2348,8 @@ function normalizeTextFocusStyle(raw) {
   if (raw === "left_edge" || raw === "background_tint") return raw;
   return DEFAULT_SETTINGS.textMode.focusStyle;
 }
-function normalizeFocusColor(raw) {
-  if (raw === "blue" || raw === "green") return raw;
-  return DEFAULT_SETTINGS.clickMode.focusColor;
+function normalizeFocusColor2(raw) {
+  return normalizeFocusColor(raw);
 }
 function normalizePaintStrategy(raw) {
   if (raw === "auto" || raw === "BC") return raw;
@@ -2320,7 +2387,7 @@ function normalizeClickMode(raw) {
         20
       )
     },
-    focusColor: normalizeFocusColor(stored.focusColor),
+    focusColor: normalizeFocusColor2(stored.focusColor),
     overlayFillEnabled: normalizeBoolean(
       stored.overlayFillEnabled,
       DEFAULT_SETTINGS.clickMode.overlayFillEnabled
@@ -3683,7 +3750,6 @@ var SETTINGS_CONTROLS = Object.freeze([
   { type: "rangePair", baseId: "click-cursor-linewidth", path: "clickMode.cursor.lineWidth", min: 1, max: 12 },
   { type: "rangePair", baseId: "click-cursor-size", path: "clickMode.cursor.sizePixels", min: 5, max: 60 },
   { type: "rangePair", baseId: "click-cursor-gap", path: "clickMode.cursor.gap", min: 0, max: 20 },
-  { type: "select", id: "click-focus-color", path: "clickMode.focusColor" },
   { type: "toggle", id: "click-overlay-fill", path: "clickMode.overlayFillEnabled" },
   { type: "toggle", id: "click-overlay-shadow", path: "clickMode.overlayShadowEnabled" },
   { type: "rangePair", baseId: "click-rect-thickness", path: "clickMode.rectangleThickness", min: 1, max: 16 },
@@ -3875,6 +3941,8 @@ function bindSettingsControls(ctx) {
 }
 
 // src/utils/debug.js
+var SOURCE_BUILD_ENABLE_DEBUG_SETTINGS = true;
+var BUILD_ENABLE_DEBUG_SETTINGS = typeof __KP_BUILD_ENABLE_DEBUG_SETTINGS__ !== "undefined" ? !!__KP_BUILD_ENABLE_DEBUG_SETTINGS__ : SOURCE_BUILD_ENABLE_DEBUG_SETTINGS;
 function applyDebugSetting(enabled) {
   try {
     globalThis.KEYPILOT_DEBUG = !!enabled;
@@ -4139,7 +4207,8 @@ var KP_SETTINGS_PANEL_IDS = Object.freeze([
   "cursor",
   "control-strip",
   "search",
-  "about"
+  "about",
+  "debug"
 ]);
 function normalizeSettingsPanelId(panelId) {
   const id = String(panelId || "").trim();
@@ -4332,14 +4401,31 @@ var SETTINGS_PANEL_IDS = Object.freeze([
   "cursor",
   "control-strip",
   "search",
-  "about"
+  "about",
+  "debug"
 ]);
 var SETTINGS_SUSPENDED_PANEL_IDS = Object.freeze([
   "appearance",
   "text-mode"
 ]);
+function isDebugSettingsUiPresent() {
+  return !!settingsEl("tab-debug");
+}
 function isSettingsPanelAvailable(panelId) {
-  return SETTINGS_PANEL_IDS.includes(panelId) && !SETTINGS_SUSPENDED_PANEL_IDS.includes(panelId);
+  if (!SETTINGS_PANEL_IDS.includes(panelId) || SETTINGS_SUSPENDED_PANEL_IDS.includes(panelId)) {
+    return false;
+  }
+  if (panelId === "debug") return BUILD_ENABLE_DEBUG_SETTINGS && isDebugSettingsUiPresent();
+  return true;
+}
+function stripDebugSettingsSurface() {
+  if (BUILD_ENABLE_DEBUG_SETTINGS) return;
+  settingsAll("[data-kp-debug-settings]").forEach((el) => {
+    try {
+      el.remove();
+    } catch {
+    }
+  });
 }
 function resolveAvailableSettingsPanelId(panelId) {
   return isSettingsPanelAvailable(panelId) ? panelId : SETTINGS_DEFAULT_PANEL_ID;
@@ -4651,6 +4737,7 @@ function withOptionalViewTransition(fn) {
   fn();
 }
 async function render() {
+  stripDebugSettingsSurface();
   applySearchEngineIcons();
   const appRoot = settingsOne(".settings-app");
   const bindDom = !!(appRoot && appRoot !== settingsDomBoundApp);
@@ -4730,9 +4817,13 @@ async function render() {
     settingsEl("click-cursor-gap-number")
   );
   const clickCursorPreview = settingsEl("click-cursor-preview");
-  const clickFocusColor = (
-    /** @type {HTMLSelectElement|null} */
-    settingsEl("click-focus-color")
+  const clickFocusColorRadios = (
+    /** @type {HTMLInputElement[]} */
+    Array.from(settingsAll('input[name="click-focus-color"]'))
+  );
+  const clickFocusColorCustom = (
+    /** @type {HTMLInputElement|null} */
+    settingsEl("click-focus-color-custom")
   );
   const clickOverlayFill = (
     /** @type {HTMLInputElement|null} */
@@ -4946,10 +5037,12 @@ async function render() {
     setInputValue(clickCursorSizeNumber, cm?.cursor?.sizePixels ?? DEFAULT_SETTINGS.clickMode.cursor.sizePixels);
     setInputValue(clickCursorGapRange, cm?.cursor?.gap ?? DEFAULT_SETTINGS.clickMode.cursor.gap);
     setInputValue(clickCursorGapNumber, cm?.cursor?.gap ?? DEFAULT_SETTINGS.clickMode.cursor.gap);
-    setInputValue(
-      clickFocusColor,
-      normalizeFocusColor(cm?.focusColor ?? DEFAULT_SETTINGS.clickMode.focusColor)
-    );
+    const color4 = normalizeFocusColor2(cm?.focusColor ?? DEFAULT_SETTINGS.clickMode.focusColor);
+    const preset = isFocusColorPreset(color4);
+    clickFocusColorRadios.forEach((r) => {
+      r.checked = preset ? r.value === color4 : r.value === "custom";
+    });
+    if (clickFocusColorCustom) clickFocusColorCustom.value = hexForFocusColor(color4);
     if (clickOverlayFill) {
       clickOverlayFill.checked = cm?.overlayFillEnabled === true;
     }
@@ -5155,6 +5248,26 @@ async function render() {
     withViewTransition: withOptionalViewTransition,
     applyState: applyAllSettings
   });
+  const commitFocusColor = (raw) => {
+    void settingsController.update("clickMode.focusColor", normalizeFocusColor2(raw));
+  };
+  clickFocusColorRadios.forEach((radio) => {
+    radio.addEventListener("change", () => {
+      if (!radio.checked) return;
+      if (radio.value === "custom") {
+        commitFocusColor(clickFocusColorCustom?.value || hexForFocusColor("blue"));
+        return;
+      }
+      commitFocusColor(radio.value);
+    }, listenOpts);
+  });
+  const onCustomFocusColor = () => {
+    const customRadio = clickFocusColorRadios.find((r) => r.value === "custom");
+    if (customRadio) customRadio.checked = true;
+    commitFocusColor(clickFocusColorCustom.value);
+  };
+  clickFocusColorCustom?.addEventListener("input", onCustomFocusColor, listenOpts);
+  clickFocusColorCustom?.addEventListener("change", onCustomFocusColor, listenOpts);
   uiThemeSelect?.addEventListener("change", () => {
     void settingsController.applyThemePack(uiThemeSelect.value);
   }, listenOpts);

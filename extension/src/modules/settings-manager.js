@@ -24,6 +24,7 @@ import {
 } from '../config/search-engines.js';
 import { storageGetValue, storageSetValue } from '../utils/storage.js';
 import { isMacPlatform } from '../utils/platform.js';
+import { normalizeFocusColor as normalizeStoredFocusColor } from '../config/focus-color.js';
 
 export const SETTINGS_STORAGE_KEY = 'kp_settings_v1';
 
@@ -63,7 +64,7 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  * }} ClickCursorSettings
  */
 
-/** @typedef {'blue'|'green'} FocusColor */
+/** @typedef {string} FocusColor */
 
 /**
  * Focus-ring paint backend preference (Click Mode → Advanced).
@@ -393,8 +394,7 @@ export function normalizeTextFocusStyle(raw) {
  * @returns {FocusColor}
  */
 export function normalizeFocusColor(raw) {
-  if (raw === 'blue' || raw === 'green') return raw;
-  return DEFAULT_SETTINGS.clickMode.focusColor;
+  return normalizeStoredFocusColor(raw);
 }
 
 /**

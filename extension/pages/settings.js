@@ -6,9 +6,10 @@ import {
 } from '../src/config/keyboard-layouts.js';
 import { SEARCH_ENGINE_META } from '../src/config/search-engines.js';
 import { DEFAULT_SETTINGS, normalizeCursorMode, normalizeFocusColor, normalizePaintStrategy, normalizeSearchEngine, normalizeTextFocusStyle } from '../src/modules/settings-manager.js';
+import { hexForFocusColor, isFocusColorPreset } from '../src/config/focus-color.js';
 import { createSettingsController } from '../src/modules/settings-controller.js';
 import { bindSettingsControls } from '../src/modules/settings-binder.js';
-import { applyDebugSetting } from '../src/utils/debug.js';
+import { applyDebugSetting, BUILD_ENABLE_DEBUG_SETTINGS } from '../src/utils/debug.js';
 import { getMessage, localizeElements } from '../src/utils/i18n.js';
 import { formatAltShortcut } from '../src/utils/platform.js';
 import { applyThemeToRoots, resolveThemeFromSettings } from '../src/modules/theme-manager.js';
@@ -193,7 +194,8 @@ const SETTINGS_PANEL_IDS = Object.freeze([
   'cursor',
   'control-strip',
   'search',
-  'about'
+  'about',
+  'debug'
 ]);
 /** Parked Settings sections. Remove an id here and unhide matching markup to restore. */
 const SETTINGS_SUSPENDED_PANEL_IDS = Object.freeze([
@@ -201,8 +203,23 @@ const SETTINGS_SUSPENDED_PANEL_IDS = Object.freeze([
   'text-mode'
 ]);
 
+function isDebugSettingsUiPresent() {
+  return !!settingsEl('tab-debug');
+}
+
 function isSettingsPanelAvailable(panelId) {
-  return SETTINGS_PANEL_IDS.includes(panelId) && !SETTINGS_SUSPENDED_PANEL_IDS.includes(panelId);
+  if (!SETTINGS_PANEL_IDS.includes(panelId) || SETTINGS_SUSPENDED_PANEL_IDS.includes(panelId)) {
+    return false;
+  }
+  if (panelId === 'debug') return BUILD_ENABLE_DEBUG_SETTINGS && isDebugSettingsUiPresent();
+  return true;
+}
+
+function stripDebugSettingsSurface() {
+  if (BUILD_ENABLE_DEBUG_SETTINGS) return;
+  settingsAll('[data-kp-debug-settings]').forEach((el) => {
+    try { el.remove(); } catch { /* ignore */ }
+  });
 }
 
 function resolveAvailableSettingsPanelId(panelId) {
@@ -548,6 +565,7 @@ function withOptionalViewTransition(fn) {
 }
 
 async function render() {
+  stripDebugSettingsSurface();
   applySearchEngineIcons();
 
   const appRoot = settingsOne('.settings-app');
@@ -589,7 +607,8 @@ async function render() {
   const clickCursorGapRange = /** @type {HTMLInputElement|null} */ (settingsEl('click-cursor-gap-range'));
   const clickCursorGapNumber = /** @type {HTMLInputElement|null} */ (settingsEl('click-cursor-gap-number'));
   const clickCursorPreview = settingsEl('click-cursor-preview');
-  const clickFocusColor = /** @type {HTMLSelectElement|null} */ (settingsEl('click-focus-color'));
+  const clickFocusColorRadios = /** @type {HTMLInputElement[]} */ (Array.from(settingsAll('input[name="click-focus-color"]')));
+  const clickFocusColorCustom = /** @type {HTMLInputElement|null} */ (settingsEl('click-focus-color-custom'));
   const clickOverlayFill = /** @type {HTMLInputElement|null} */ (settingsEl('click-overlay-fill'));
   const clickOverlayShadow = /** @type {HTMLInputElement|null} */ (settingsEl('click-overlay-shadow'));
   const clickRectThicknessRange = /** @type {HTMLInputElement|null} */ (settingsEl('click-rect-thickness-range'));
@@ -742,10 +761,12 @@ async function render() {
     setInputValue(clickCursorSizeNumber, cm?.cursor?.sizePixels ?? DEFAULT_SETTINGS.clickMode.cursor.sizePixels);
     setInputValue(clickCursorGapRange, cm?.cursor?.gap ?? DEFAULT_SETTINGS.clickMode.cursor.gap);
     setInputValue(clickCursorGapNumber, cm?.cursor?.gap ?? DEFAULT_SETTINGS.clickMode.cursor.gap);
-    setInputValue(
-      clickFocusColor,
-      normalizeFocusColor(cm?.focusColor ?? DEFAULT_SETTINGS.clickMode.focusColor)
-    );
+    const color = normalizeFocusColor(cm?.focusColor ?? DEFAULT_SETTINGS.clickMode.focusColor);
+    const preset = isFocusColorPreset(color);
+    clickFocusColorRadios.forEach((r) => {
+      r.checked = preset ? r.value === color : r.value === 'custom';
+    });
+    if (clickFocusColorCustom) clickFocusColorCustom.value = hexForFocusColor(color);
     if (clickOverlayFill) {
       clickOverlayFill.checked = cm?.overlayFillEnabled === true;
     }
@@ -973,6 +994,27 @@ async function render() {
     withViewTransition: withOptionalViewTransition,
     applyState: applyAllSettings
   });
+
+  const commitFocusColor = (raw) => {
+    void settingsController.update('clickMode.focusColor', normalizeFocusColor(raw));
+  };
+  clickFocusColorRadios.forEach((radio) => {
+    radio.addEventListener('change', () => {
+      if (!radio.checked) return;
+      if (radio.value === 'custom') {
+        commitFocusColor(clickFocusColorCustom?.value || hexForFocusColor('blue'));
+        return;
+      }
+      commitFocusColor(radio.value);
+    }, listenOpts);
+  });
+  const onCustomFocusColor = () => {
+    const customRadio = clickFocusColorRadios.find((r) => r.value === 'custom');
+    if (customRadio) customRadio.checked = true;
+    commitFocusColor(clickFocusColorCustom.value);
+  };
+  clickFocusColorCustom?.addEventListener('input', onCustomFocusColor, listenOpts);
+  clickFocusColorCustom?.addEventListener('change', onCustomFocusColor, listenOpts);
 
   uiThemeSelect?.addEventListener('change', () => {
     void settingsController.applyThemePack(uiThemeSelect.value);

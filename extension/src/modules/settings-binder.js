@@ -44,7 +44,6 @@ export const SETTINGS_CONTROLS = Object.freeze([
   { type: 'rangePair', baseId: 'click-cursor-linewidth', path: 'clickMode.cursor.lineWidth', min: 1, max: 12 },
   { type: 'rangePair', baseId: 'click-cursor-size', path: 'clickMode.cursor.sizePixels', min: 5, max: 60 },
   { type: 'rangePair', baseId: 'click-cursor-gap', path: 'clickMode.cursor.gap', min: 0, max: 20 },
-  { type: 'select', id: 'click-focus-color', path: 'clickMode.focusColor' },
   { type: 'toggle', id: 'click-overlay-fill', path: 'clickMode.overlayFillEnabled' },
   { type: 'toggle', id: 'click-overlay-shadow', path: 'clickMode.overlayShadowEnabled' },
   { type: 'rangePair', baseId: 'click-rect-thickness', path: 'clickMode.rectangleThickness', min: 1, max: 16 },

@@ -14,6 +14,7 @@
  *   node build.js --firefox         # also stages Firefox files in ../extension-firefox
  *   node build.js --minify          # also writes content-bundled.min.js
  *   node build.js --macro-builder   # enable User Macros / Macro Builder UI (v1.2 surface)
+ *   node build.js --release         # omit Settings Debug section (store / package builds)
  */
 import * as esbuild from 'esbuild';
 import fs from 'fs';
@@ -24,6 +25,7 @@ import { runPostBundleTasks } from './build-side-effects.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const shouldMinify = process.argv.includes('--minify') || process.argv.includes('-m');
 const enableMacroBuilder = process.argv.includes('--macro-builder');
+const isRelease = process.argv.includes('--release');
 const shouldBuildFirefox = process.argv.includes('--firefox');
 const FIREFOX_GECKO_ID = 'keypilot@noctivagous.browserextension';
 
@@ -76,6 +78,11 @@ async function verifyGeneratedSyntax(outfile) {
   console.log(`✓ syntax: ${path.basename(outfile)}`);
 }
 
+const define = {
+  ...(enableMacroBuilder ? { __KP_BUILD_ENABLE_MACRO_BUILDER__: 'true' } : {}),
+  ...(isRelease ? { __KP_BUILD_ENABLE_DEBUG_SETTINGS__: 'false' } : {})
+};
+
 /** @type {import('esbuild').BuildOptions} */
 const shared = {
   bundle: true,
@@ -85,9 +92,7 @@ const shared = {
   legalComments: 'none',
   logLevel: 'info',
   banner: { js: banner },
-  ...(enableMacroBuilder
-    ? { define: { __KP_BUILD_ENABLE_MACRO_BUILDER__: 'true' } }
-    : {})
+  ...(Object.keys(define).length ? { define } : {})
 };
 
 const entries = [
@@ -275,7 +280,7 @@ function stageFirefoxBuild() {
   console.log(`✓ Firefox extension staged: ${outputDir} (${copied.length + 1} files)`);
 }
 
-console.log(`Starting build (esbuild, minify=${shouldMinify}, macroBuilder=${enableMacroBuilder}, firefox=${shouldBuildFirefox})...`);
+console.log(`Starting build (esbuild, minify=${shouldMinify}, macroBuilder=${enableMacroBuilder}, release=${isRelease}, firefox=${shouldBuildFirefox})...`);
 const started = Date.now();
 
 for (const entry of entries) {
