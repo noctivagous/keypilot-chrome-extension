@@ -76,3 +76,30 @@ test('Opera package contains the validated release surface', (t) => {
     assert.equal(existsSync(join(stagedDir, file)), false, `excluded file was staged: ${file}`);
   }
 });
+
+test('README key-map splice does not accumulate a blank line after the end marker', async () => {
+  const { spliceMarkedSection } = await import('../extension/build-side-effects.js');
+  const start = '<!-- KP_KEY_MAPPINGS_START -->';
+  const end = '<!-- KP_KEY_MAPPINGS_END -->';
+  const original = `${start}\nold\n${end}\n\nBody\n`;
+  const section = `${start}\nnew\n${end}\n`;
+  const once = spliceMarkedSection(original, start, end, section);
+  const twice = spliceMarkedSection(once, start, end, section);
+  assert.equal(once, `${start}\nnew\n${end}\n\nBody\n`);
+  assert.equal(twice, once);
+});
+
+test('package working-tree snapshot restore writes bytes back', async () => {
+  const { mkdtempSync, writeFileSync, readFileSync: read, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join: joinPath } = await import('node:path');
+  const { snapshotRepoFiles, restoreRepoFiles } = await import('../scripts/package-channel.mjs');
+  const dir = mkdtempSync(joinPath(tmpdir(), 'kp-pkg-snap-'));
+  const rel = 'tracked.txt';
+  writeFileSync(joinPath(dir, rel), 'dev');
+  const snap = snapshotRepoFiles(dir, [rel]);
+  writeFileSync(joinPath(dir, rel), 'release');
+  restoreRepoFiles(snap);
+  assert.equal(read(joinPath(dir, rel), 'utf8'), 'dev');
+  rmSync(dir, { recursive: true, force: true });
+});

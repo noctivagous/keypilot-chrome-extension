@@ -1,9 +1,9 @@
 /**
  * Chrome Web Store package target. See scripts/package-channel.mjs.
  *
- * Does not rewrite extension/manifest.json. The shared `npm run build` step may
- * still stamp the development description; this script copies that file and
- * replaces the description only in dist/chrome/manifest.json.
+ * Does not rewrite extension/manifest.json. After a release compile, the
+ * staged copy is patched and the development files that build rewrote are
+ * restored.
  *
  * Usage:
  *   npm run package:chrome

@@ -4,6 +4,10 @@
  * Does not rewrite extension/manifest.json. Localized manifest metadata stays
  * as `__MSG_*__` references in every staged channel package.
  *
+ * `build:release` still compiles in `extension/` (esbuild has no isolated
+ * outfile tree today). After the staged copy, packaging restores the files
+ * that build rewrote so the development working tree is unchanged.
+ *
  * Usage:
  *   npm run package:opera
  *   npm run package:chrome
@@ -22,6 +26,44 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 
 const CHANNELS = new Set(['opera', 'chrome', 'firefox']);
+
+/** Tracked files `extension/build.js` may rewrite during a package build. */
+export const PACKAGE_BUILD_MUTATED_REL_PATHS = Object.freeze([
+  'README.md',
+  'extension/early-inject.js',
+  'extension/popup.html',
+  'extension/popup-v1.html',
+  'extension/content-bundled.js',
+  'extension/frame-agent-bundled.js',
+  'extension/pages/docs-bundled.js',
+  'extension/pages/settings-bundled.js'
+]);
+
+/**
+ * @param {string} root
+ * @param {readonly string[]} relPaths
+ */
+export function snapshotRepoFiles(root, relPaths) {
+  return relPaths.map((rel) => {
+    const abs = path.join(root, rel);
+    const existed = fs.existsSync(abs);
+    return {
+      abs,
+      existed,
+      data: existed ? fs.readFileSync(abs) : null
+    };
+  });
+}
+
+/**
+ * @param {ReturnType<typeof snapshotRepoFiles>} snapshots
+ */
+export function restoreRepoFiles(snapshots) {
+  for (const snap of snapshots) {
+    if (snap.existed) fs.writeFileSync(snap.abs, snap.data);
+    else if (fs.existsSync(snap.abs)) fs.rmSync(snap.abs);
+  }
+}
 
 function parseArgs(argv) {
   const skipBuild = argv.includes('--skip-build');
@@ -353,66 +395,78 @@ export async function packageChannel(channel, { skipBuild = false } = {}) {
     throw new Error(`Extension directory not found: ${extensionDir}`);
   }
 
-  if (!skipBuild) {
-    const buildScript = config.buildScript || 'build';
-    console.log(`Running npm run ${buildScript}...`);
-    await run('npm', ['run', buildScript], repoRoot);
-  } else {
-    console.log('Skipping build (--skip-build)');
-  }
-
-  for (const rel of config.requiredGeneratedFiles || []) {
-    if (!fs.existsSync(path.join(extensionDir, rel))) {
-      throw new Error(`Build output missing before packaging: ${config.extensionDir || 'extension'}/${rel}`);
+  let treeSnap = null;
+  try {
+    if (!skipBuild) {
+      treeSnap = snapshotRepoFiles(repoRoot, PACKAGE_BUILD_MUTATED_REL_PATHS);
+      const buildScript = config.buildScript || 'build';
+      console.log(`Running npm run ${buildScript}...`);
+      await run('npm', ['run', buildScript], repoRoot);
+    } else {
+      console.log('Skipping build (--skip-build)');
     }
+
+    for (const rel of config.requiredGeneratedFiles || []) {
+      if (!fs.existsSync(path.join(extensionDir, rel))) {
+        throw new Error(`Build output missing before packaging: ${config.extensionDir || 'extension'}/${rel}`);
+      }
+    }
+
+    const sourceManifestBefore = sha256File(sourceManifestPath);
+    const copied = copyStagedFiles();
+    stripDebugSettingsFromStagedHtml(stagingDir);
+    if (treeSnap) {
+      restoreRepoFiles(treeSnap);
+      treeSnap = null;
+      console.log('Restored development files after staging the store copy');
+    }
+    const { manifest } = patchStagedManifest();
+    const sourceManifestAfter = sha256File(sourceManifestPath);
+    if (sourceManifestBefore !== sourceManifestAfter) {
+      throw new Error(`package:${channel} mutated extension/manifest.json; packaging must leave the development manifest unchanged`);
+    }
+
+    validateStagedManifest(manifest);
+
+    const version = String(manifest.version || '').trim();
+    if (!version) throw new Error('Staged manifest is missing version');
+    const zipName = String(config.zipNameTemplate).replace('{version}', version);
+    const zipPath = path.join(zipDir, zipName);
+    const bytes = await zipStagedDir(zipPath);
+    const digest = sha256File(zipPath);
+    const commit = await gitRev();
+    const files = walkFiles(stagingDir).map((file) => file.rel).sort();
+    const builtAt = new Date().toISOString();
+
+    const metadata = {
+      channel,
+      archive: posixRel(repoRoot, zipPath),
+      version,
+      bytes,
+      sha256: digest,
+      gitCommit: commit,
+      builtAt,
+      stagedFiles: copied,
+      sourceManifestUnchanged: true,
+      developmentTreeRestored: !skipBuild
+    };
+    const metadataPath = path.join(zipDir, zipName.replace(/\.zip$/i, '.metadata.json'));
+    fs.writeFileSync(metadataPath, `${JSON.stringify(metadata, null, 2)}\n`);
+
+    console.log('');
+    console.log(`Channel:    ${channel}`);
+    console.log(`Archive:    ${metadata.archive}`);
+    console.log(`Version:    ${version}`);
+    console.log(`Bytes:      ${bytes}`);
+    console.log(`SHA-256:    ${digest}`);
+    console.log(`Git commit: ${commit || '(unavailable)'}`);
+    console.log(`Built:      ${builtAt}`);
+    console.log(`Files:      ${files.length} total`);
+    for (const rel of files) console.log(`  ${rel}`);
+    console.log(`Metadata:   ${posixRel(repoRoot, metadataPath)}`);
+  } finally {
+    if (treeSnap) restoreRepoFiles(treeSnap);
   }
-
-  const sourceManifestBefore = sha256File(sourceManifestPath);
-  const copied = copyStagedFiles();
-  stripDebugSettingsFromStagedHtml(stagingDir);
-  const { manifest } = patchStagedManifest();
-  const sourceManifestAfter = sha256File(sourceManifestPath);
-  if (sourceManifestBefore !== sourceManifestAfter) {
-    throw new Error(`package:${channel} mutated extension/manifest.json; packaging must leave the development manifest unchanged`);
-  }
-
-  validateStagedManifest(manifest);
-
-  const version = String(manifest.version || '').trim();
-  if (!version) throw new Error('Staged manifest is missing version');
-  const zipName = String(config.zipNameTemplate).replace('{version}', version);
-  const zipPath = path.join(zipDir, zipName);
-  const bytes = await zipStagedDir(zipPath);
-  const digest = sha256File(zipPath);
-  const commit = await gitRev();
-  const files = walkFiles(stagingDir).map((file) => file.rel).sort();
-  const builtAt = new Date().toISOString();
-
-  const metadata = {
-    channel,
-    archive: posixRel(repoRoot, zipPath),
-    version,
-    bytes,
-    sha256: digest,
-    gitCommit: commit,
-    builtAt,
-    stagedFiles: copied,
-    sourceManifestUnchanged: true
-  };
-  const metadataPath = path.join(zipDir, zipName.replace(/\.zip$/i, '.metadata.json'));
-  fs.writeFileSync(metadataPath, `${JSON.stringify(metadata, null, 2)}\n`);
-
-  console.log('');
-  console.log(`Channel:    ${channel}`);
-  console.log(`Archive:    ${metadata.archive}`);
-  console.log(`Version:    ${version}`);
-  console.log(`Bytes:      ${bytes}`);
-  console.log(`SHA-256:    ${digest}`);
-  console.log(`Git commit: ${commit || '(unavailable)'}`);
-  console.log(`Built:      ${builtAt}`);
-  console.log(`Files:      ${files.length} total`);
-  for (const rel of files) console.log(`  ${rel}`);
-  console.log(`Metadata:   ${posixRel(repoRoot, metadataPath)}`);
 }
 
 const isDirectRun = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);

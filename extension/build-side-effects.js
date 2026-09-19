@@ -29,6 +29,26 @@ import { POPUP_THEME_VARS } from './src/ui/popup-theme-vars.js';
 import { parseOnboardingXml } from './src/utils/onboarding-model.js';
 import { getAllThemesCss, getTheme, THEME_IDS } from './themes/index.js';
 
+/**
+ * Replace the inclusive span from startMarker through endMarker with newSection.
+ * newSection should end with endMarker plus a newline. The original newline
+ * that followed endMarker is not kept, so rewrites do not accumulate blank lines.
+ * @param {string} fileContent
+ * @param {string} startMarker
+ * @param {string} endMarker
+ * @param {string} newSection
+ * @returns {string|null}
+ */
+export function spliceMarkedSection(fileContent, startMarker, endMarker, newSection) {
+  const startIdx = fileContent.indexOf(startMarker);
+  const endIdx = fileContent.indexOf(endMarker);
+  if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) return null;
+  let tail = fileContent.slice(endIdx + endMarker.length);
+  if (tail.startsWith('\r\n')) tail = tail.slice(2);
+  else if (tail.startsWith('\n')) tail = tail.slice(1);
+  return fileContent.slice(0, startIdx) + newSection + tail;
+}
+
 function getBuildTimestamp(now = new Date()) {
   // Format date as: Mar-14-2026-4:20PM
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -166,16 +186,7 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
   }
 
   function replaceMarkedSection(fileContent, newSection) {
-    const startIdx = fileContent.indexOf(README_MARKER_START);
-    const endIdx = fileContent.indexOf(README_MARKER_END);
-    if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
-      return (
-        fileContent.slice(0, startIdx) +
-        newSection +
-        fileContent.slice(endIdx + README_MARKER_END.length) // marker already included in newSection
-      );
-    }
-    return null;
+    return spliceMarkedSection(fileContent, README_MARKER_START, README_MARKER_END, newSection);
   }
 
   function ensureKeyMappingsSectionExists(readmeContent) {
