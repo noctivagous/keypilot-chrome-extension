@@ -4,8 +4,6 @@ Launcher es un navegador de sitios categorizado con búsqueda, marcadores, histo
 
 ## Úselo
 
-![Launcher](images/launcher.png)
-
 1. Presione <kbd>Alt</kbd>+<kbd>;</kbd> o <kbd>Alt</kbd>+<kbd>A</kbd> para abrir el Lanzador con enfoque de búsqueda.
 2. Escriba para filtrar o explorar categorías (Plataforma de lanzamiento, Marcadores, Recientes, Social, Noticias, Productividad, Videos, Entretenimiento, Compras, IA, Archivo de Internet, Búsquedas y más).
 3. Abra un sitio de la cuadrícula o lista.

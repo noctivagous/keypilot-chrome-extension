@@ -4,8 +4,6 @@ La referencia de teclado flotante es un mapa en vivo de su diseño actual: la fo
 
 ## Úselo
 
-![Keyboard Reference](images/keyboard-reference.png)
-
 1. Presione <kbd>K</kbd> (diestro) o <kbd>D</kbd> (zurdo), o use la barra de control / ventana emergente / palanca Nueva pestaña.
 2. Pase el cursor sobre una tecla para ver la acción vinculada.
 3. Utilice el **diseño desplegable de la barra de título** para:

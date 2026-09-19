@@ -4,8 +4,6 @@ Omnibox es un cuadro de búsqueda/dirección en la página con historial y suger
 
 ## Úselo
 
-![Omnibox](images/omnibox.png)
-
 1. Presione <kbd>L</kbd> (navegación predeterminada) o <kbd>Alt</kbd>+<kbd>L</kbd>.
 2. Escriba una URL o una consulta de búsqueda.
 3. Utilice <kbd> ↑</kbd>/<kbd>↓</kbd> o el puntero para elegir una sugerencia.

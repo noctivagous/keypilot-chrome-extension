@@ -4,8 +4,6 @@ KeyPilot agrega atajos de teclado a páginas web normales. Apunte a un enlace o 
 
 ## Uso básico
 
-![KeyPilot documentation popover](images/docs-intro.png)
-
 ### Hacer clic en elementos
 1. Mueva el puntero sobre un enlace. Aparece un rectángulo de enfoque en el objetivo.
 2. Presione <kbd>F</kbd> (diseño de navegación predeterminado, diestro) para hacer clic.

@@ -4,8 +4,6 @@ La Control Strip es una pequeña barra siempre visible para alternar KeyPilot, a
 
 ## Úselo
 
-![Control Strip](images/control-strip.png)
-
 1. Encuentra la tira en la página (arrastrable). Si desapareció, presione <kbd>Alt</kbd>+<kbd>J</kbd> para restaurarlo.
 2. Úselo para:
    - Encienda KeyPilot **Encendido/Apagado**

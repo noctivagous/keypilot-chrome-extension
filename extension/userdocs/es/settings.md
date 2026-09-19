@@ -4,16 +4,12 @@ La configuración controla la apariencia, el desplazamiento, el motor de búsque
 
 ## Úselo
 
-![Settings overview](images/settings-overview.png)
-
 1. Presione <kbd>'</kbd> (cita), o abra Configuración desde la Tira de control, la ventana emergente, la página Nueva pestaña o el menú desplegable Referencia del teclado.
 2. Elija una categoría en el navegador izquierdo.
 3. Ajuste los controles: la mayoría se aplican de inmediato.
 4. Presione <kbd>Esc</kbd> o el control de cierre de la barra de título cuando haya terminado.
 
 Comience con [**Teclado**](kp://settings/keyboard) (diseño + lateralidad) y [**Desplazamiento**](kp://settings/scrolling) (<kbd>C</kbd>/<kbd>V</kbd> distancia). Ajuste el [**Modo de clic**](kp://settings/click-mode) y el [**Modo de texto**](kp://settings/text-mode) una vez que lo básico se sienta bien.
-
-![Settings Keyboard tab](images/settings-keyboard.png)
 
 ## Referencia
 

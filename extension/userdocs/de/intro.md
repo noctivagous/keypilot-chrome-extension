@@ -4,8 +4,6 @@ KeyPilot fügt Tastaturkürzel zu regulären Webseiten hinzu. Zeigen Sie mit der
 
 ## Grundlegende Verwendung
 
-![KeyPilot documentation popover](images/docs-intro.png)
-
 ### Anklicken von Elementen
 1. Bewegen Sie den Mauszeiger über einen Link. Auf dem Ziel erscheint ein Fokusrechteck.
 2. Drücken Sie zum Klicken <kbd>F</kbd> (Standard-Browsing-Layout, rechtshändig).

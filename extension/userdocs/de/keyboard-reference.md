@@ -4,8 +4,6 @@ Die schwebende Tastaturreferenz ist eine Live-Karte Ihres aktuellen Layouts – 
 
 ## Benutze es
 
-![Keyboard Reference](images/keyboard-reference.png)
-
 1. Drücken Sie <kbd>K</kbd> (Rechtshänder) oder <kbd>D</kbd> (Linkshänder) oder verwenden Sie den Schalter „Kontrollleiste/Popup/Neuer Tab“.
 2. Bewegen Sie den Mauszeiger über eine Tastenkappe, um die gebundene Aktion anzuzeigen.
 3. Verwenden Sie das **Dropdown-Menü für das Titelleistenlayout**, um:

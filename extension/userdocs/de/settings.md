@@ -4,16 +4,12 @@ Die Einstellungen steuern das Erscheinungsbild, das Scrollen, die Suchmaschine, 
 
 ## Benutze es
 
-![Settings overview](images/settings-overview.png)
-
 1. Drücken Sie <kbd>'</kbd> (Zitat) oder öffnen Sie die Einstellungen über die Kontrollleiste, das Popup, die Seite „Neuer Tab“ oder das Dropdown-Menü „Tastaturreferenz“.
 2. Wählen Sie im linken Navigationsbereich eine Kategorie aus.
 3. Passen Sie die Kontrollen an – die meisten gelten sofort.
 4. Drücken Sie <kbd>Esc</kbd> oder das Steuerelement zum Schließen der Titelleiste, wenn Sie fertig sind.
 
 Beginnen Sie mit [**Tastatur**](kp://settings/keyboard) (Layout + Händigkeit) und [**Scrolling**](kp://settings/scrolling) (<kbd>C</kbd>/<kbd>V</kbd> Abstand). Passen Sie den [**Klickmodus**](kp://settings/click-mode) und den [**Textmodus**](kp://settings/text-mode)] an, sobald sich die Grundlagen richtig anfühlen.
-
-![Settings Keyboard tab](images/settings-keyboard.png)
 
 ## Referenz
 

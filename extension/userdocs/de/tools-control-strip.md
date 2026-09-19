@@ -4,8 +4,6 @@ Der Kontrollstreifen ist eine kleine, immer sichtbare Leiste zum Umschalten von 
 
 ## Benutze es
 
-![Control Strip](images/control-strip.png)
-
 1. Suchen Sie den Streifen auf der Seite (ziehbar). Wenn es nicht mehr vorhanden ist, drücken Sie <kbd>Alt</kbd>+<kbd>J</kbd>, um es wiederherzustellen.
 2. Verwenden Sie es, um:
    - KeyPilot **ein-/ausschalten**

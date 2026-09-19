@@ -4,8 +4,6 @@ Omnibox ist ein Adress-/Suchfeld auf der Seite mit Verlaufs- und Lesezeichenvors
 
 ## Benutze es
 
-![Omnibox](images/omnibox.png)
-
 1. Drücken Sie <kbd>L</kbd> (Standard-Browsing) oder <kbd>Alt</kbd>+<kbd>L</kbd>.
 2. Geben Sie eine URL oder eine Suchanfrage ein.
 3. Verwenden Sie <kbd> ↑</kbd>/<kbd>↓</kbd> oder den Zeiger, um einen Vorschlag auszuwählen.

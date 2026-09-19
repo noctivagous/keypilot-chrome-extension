@@ -4,8 +4,6 @@ The Layout Editor is for custom keymaps: place Functions on keys, create layouts
 
 ## Use it
 
-![Keyboard Layout Editor](images/layout-config.png)
-
 1. Press <kbd>Alt</kbd>+<kbd>C</kbd>, or choose **Edit Keyboard Layout…** from the Keyboard Reference dropdown.
 2. The Keyboard Reference becomes the placement surface; the Config panel holds the Actions Library and layout tools.
 3. **Create or select a layout** — editing a built-in makes a user copy (built-ins stay read-only).

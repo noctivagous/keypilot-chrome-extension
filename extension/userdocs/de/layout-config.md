@@ -4,8 +4,6 @@ Der Layout-Editor dient für benutzerdefinierte Tastaturbelegungen: Platzieren S
 
 ## Benutze es
 
-![Keyboard Layout Editor](images/layout-config.png)
-
 1. Drücken Sie <kbd>Alt</kbd>+<kbd>C</kbd> oder wählen Sie **Tastaturlayout bearbeiten…** aus der Dropdown-Liste „Tastaturreferenz“.
 2. Die Tastaturreferenz wird zur Platzierungsoberfläche; Das Konfigurationsfenster enthält die Aktionsbibliothek und Layout-Tools.
 3. **Layout erstellen oder auswählen** – Durch das Bearbeiten eines integrierten Elements wird eine Benutzerkopie erstellt (integrierte Elemente bleiben schreibgeschützt).

@@ -4,8 +4,6 @@ El Editor de diseño es para mapas de teclas personalizados: coloque funciones e
 
 ## Úselo
 
-![Keyboard Layout Editor](images/layout-config.png)
-
 1. Presione <kbd>Alt</kbd>+<kbd>C</kbd>, o elija **Editar distribución del teclado...** en el menú desplegable Referencia del teclado.
 2. La Referencia del Teclado se convierte en la superficie de colocación; el panel de configuración contiene la biblioteca de acciones y las herramientas de diseño.
 3. **Crea o selecciona un diseño**: editar un elemento integrado genera una copia del usuario (los elementos integrados permanecen como de solo lectura).

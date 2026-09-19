@@ -4,8 +4,6 @@ Launcher ist ein kategorisierter Site-Browser mit Suche, Lesezeichen, Verlauf un
 
 ## Benutze es
 
-![Launcher](images/launcher.png)
-
 1. Drücken Sie <kbd>Alt</kbd>+<kbd>;</kbd> oder <kbd>Alt</kbd>+<kbd>A</kbd>, um Launcher mit fokussierter Suche zu öffnen.
 2. Geben Sie ein, um Kategorien zu filtern oder zu durchsuchen (Launch Deck, Lesezeichen, Aktuelle, Soziale Netzwerke, Nachrichten, Produktivität, Videos, Unterhaltung, Einkaufen, KI, Internetarchiv, Suchen und mehr).
 3. Öffnen Sie eine Site aus dem Raster oder der Liste.
