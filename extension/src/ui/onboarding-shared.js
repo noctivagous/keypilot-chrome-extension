@@ -31,6 +31,19 @@ function onboardingMessage(key, substitutions) {
   }
 }
 
+/**
+ * Backtick tokens in walkthrough copy. `Alt` follows the host modifier;
+ * `ON` / `OFF` quote the Control Strip chip from popup_status_on / _off.
+ * @param {string} token
+ * @returns {string}
+ */
+function localizeOnboardingKbdToken(token) {
+  if (token === 'Alt') return altModifierLabel();
+  if (token === 'ON') return onboardingMessage('popup_status_on') || token;
+  if (token === 'OFF') return onboardingMessage('popup_status_off') || token;
+  return token;
+}
+
 export function getOnboardingDefaultTitle() {
   return onboardingMessage('onboarding_default_title');
 }
@@ -237,7 +250,7 @@ export function renderKeyboardKeysInto(el, text) {
     if (!part) continue;
     if (i % 2 === 1) {
       const k = document.createElement('kbd');
-      k.textContent = part === 'Alt' ? altModifierLabel() : part;
+      k.textContent = localizeOnboardingKbdToken(part);
       el.appendChild(k);
     } else {
       el.appendChild(document.createTextNode(part));
@@ -250,9 +263,8 @@ export function renderKeyboardKeysInto(el, text) {
  * @returns {string} HTML with <kbd> (for callers that intentionally use innerHTML)
  */
 export function formatKeyboardKeysHtml(text) {
-  const label = altModifierLabel();
   return String(text || '').replace(/`([^`]+)`/g, (_, token) =>
-    `<kbd>${token === 'Alt' ? label : token}</kbd>`
+    `<kbd>${localizeOnboardingKbdToken(token)}</kbd>`
   );
 }
 

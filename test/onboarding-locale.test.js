@@ -174,6 +174,29 @@ describe('onboarding eager-path copy', () => {
   });
 });
 
+describe('onboarding Control Strip status tokens', () => {
+  it('substitutes `ON` / `OFF` from popup_status catalog keys', async () => {
+    mock.setI18nMessages({
+      popup_status_on: 'ACTIVADO',
+      popup_status_off: 'DESACTIVADO'
+    });
+    const { formatKeyboardKeysHtml } = await import('../extension/src/ui/onboarding-shared.js');
+    const html = formatKeyboardKeysHtml(
+      'Hay una barra de control arriba que dice `ON`. Si dice `OFF`, enciéndelo.'
+    );
+    assert.match(html, /<kbd>ACTIVADO<\/kbd>/);
+    assert.match(html, /<kbd>DESACTIVADO<\/kbd>/);
+    assert.doesNotMatch(html, /<kbd>ON<\/kbd>/);
+    assert.doesNotMatch(html, /<kbd>OFF<\/kbd>/);
+  });
+
+  it('keeps `ON` when the catalog key is missing', async () => {
+    mock.setI18nMessages({});
+    const { formatKeyboardKeysHtml } = await import('../extension/src/ui/onboarding-shared.js');
+    assert.match(formatKeyboardKeysHtml('says `ON`'), /<kbd>ON<\/kbd>/);
+  });
+});
+
 describe('onboarding later-slide Opt/Alt tokens', () => {
   it('rewrites `Alt` in laterTitle on Mac and keeps it on Windows', () => {
     const xml = readFileSync(englishXml, 'utf8');

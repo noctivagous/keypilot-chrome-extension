@@ -11,7 +11,7 @@
     <task id="keyboard_key_info" label="Beachten Sie das Tastaturreferenzfenster unten. Bewegen Sie den Mauszeiger über eine seiner Tasten, um zu sehen, was es bewirkt.">
       <when type="action" action="hover" target="keyboardHelpKey" />
     </task>
-    <task id="toggle_extension_off" label="Oben befindet sich ein Kontrollstreifen mit der Aufschrift `EIN`. Klicken Sie darauf, um KeyPilot vollständig auszuschalten.">
+    <task id="toggle_extension_off" label="Oben befindet sich ein Kontrollstreifen mit der Aufschrift `ON`. Klicken Sie darauf, um KeyPilot vollständig auszuschalten.">
       <when type="action" action="toggleExtension" change="off" />
     </task>
   </slide>

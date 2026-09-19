@@ -94,11 +94,11 @@
     "description": "Short popup footer."
   },
   "popup_status_on": {
-    "message": "ENCENDIDO",
+    "message": "ACTIVADO",
     "description": "Short status for enabled KeyPilot."
   },
   "popup_status_off": {
-    "message": "APAGADO",
+    "message": "DESACTIVADO",
     "description": "Short status for disabled KeyPilot."
   },
   "popup_status_unavailable": {
@@ -1166,7 +1166,7 @@
     "description": "Localized settings page chrome."
   },
   "settings_static_220": {
-    "message": "Muestra solo el segmento de estado Encendido/Apagado hasta que expanda la tira.",
+    "message": "Muestra solo el segmento de estado Activado/Desactivado hasta que expanda la tira.",
     "description": "Localized settings page chrome."
   },
   "settings_static_221": {
@@ -1516,11 +1516,11 @@
     "description": "Localized extension-page UI text."
   },
   "settings_state_on": {
-    "message": "ENCENDIDO",
+    "message": "ACTIVADO",
     "description": "Localized extension-page UI text."
   },
   "settings_state_off": {
-    "message": "APAGADO",
+    "message": "DESACTIVADO",
     "description": "Localized extension-page UI text."
   },
   "settings_firefox_thumbnails_enabled_button": {
@@ -1572,11 +1572,11 @@
     "description": "Localized extension-page UI text."
   },
   "newtab_switch_on": {
-    "message": "ENCENDIDO",
+    "message": "ACTIVADO",
     "description": "Localized extension-page UI text."
   },
   "newtab_switch_off": {
-    "message": "APAGADO",
+    "message": "DESACTIVADO",
     "description": "Localized extension-page UI text."
   },
   "newtab_bookmark_view_aria_label": {
