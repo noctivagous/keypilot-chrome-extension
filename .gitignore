@@ -61,6 +61,7 @@ coverage/
 # Temporary files
 tmp/
 tmp-captures/
+tmp-captures/chrome-debug-profile/
 temp/
 test-results/
 playwright-report/

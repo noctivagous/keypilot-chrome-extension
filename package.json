@@ -21,6 +21,7 @@
     "store:screenshots": "node scripts/store-screenshots/generate.mjs",
     "store:screenshots:serve": "node scripts/store-screenshots/capture.mjs",
     "store:screenshots:auto": "node scripts/store-screenshots/auto-capture.mjs",
+    "debug:chrome": "node scripts/debug-chrome.mjs",
     "check:locales": "node scripts/check-locales.mjs",
     "test": "npm run check:locales && node --test --test-concurrency=1 test/*.test.js",
     "test:settings": "node --test --test-concurrency=1 test/settings-manager.test.js",
