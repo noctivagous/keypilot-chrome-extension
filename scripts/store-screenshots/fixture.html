@@ -3,58 +3,290 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Harbor Weekly — City edition</title>
+  <title>The Harbor Gazette — Maine's Daily News</title>
   <style>
+    :root {
+      --bg: #fdfaf3;
+      --text: #1b1f24;
+      --accent: #8a4b12;
+      --border: #d1cbc0;
+      --serif: "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+      --sans: system-ui, -apple-system, sans-serif;
+    }
     html, body {
       margin: 0;
       min-height: 100%;
-      background: #e7e1d4;
-      color: #1b1f24;
-      font: 18px/1.5 "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+      background: var(--bg);
+      color: var(--text);
+      font: 18px/1.6 var(--serif);
     }
     body {
-      padding: 120px 64px 140px;
+      padding: 0;
     }
-    header {
-      max-width: 46rem;
-      margin-bottom: 28px;
+    .top-bar {
+      border-bottom: 1px solid var(--border);
+      padding: 8px 64px;
+      font: 700 12px var(--sans);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      justify-content: space-between;
+      color: #666;
     }
-    .kicker {
-      color: #8a4b12;
-      font: 700 13px/1.2 system-ui, sans-serif;
-      letter-spacing: 0.12em;
+    .masthead {
+      text-align: center;
+      padding: 40px 64px 20px;
+      border-bottom: 4px double var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .masthead-logo {
+      width: 60px;
+      height: 60px;
+      background: var(--text);
+      color: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--serif);
+      font-weight: 900;
+      font-size: 40px;
+      margin-bottom: 16px;
+      border-radius: 4px;
+    }
+    .masthead h1 {
+      font-family: var(--serif);
+      font-size: 72px;
+      font-weight: 900;
+      margin: 0;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    .masthead .tagline {
+      font: italic 16px var(--serif);
+      margin-top: 10px;
+    }
+    nav.main-nav {
+      border-bottom: 1px solid var(--border);
+      padding: 12px 64px;
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      font: 700 14px var(--sans);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    nav.main-nav a {
+      color: var(--text);
+      text-decoration: none;
+    }
+    nav.main-nav a:hover {
+      color: var(--accent);
+    }
+    .breaking-bar {
+      background: #f0ede6;
+      border-bottom: 1px solid var(--border);
+      padding: 8px 64px;
+      font: 700 13px var(--sans);
+      display: flex;
+      gap: 12px;
+    }
+    .breaking-label {
+      color: #b00;
       text-transform: uppercase;
     }
-    h1 {
-      margin: 8px 0 12px;
-      font-size: 42px;
-      line-height: 1.15;
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 64px;
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 60px;
     }
-    p { max-width: 42rem; }
-    a { color: #0b57d0; }
-    nav {
+    article.lead-story {
+      max-width: 100%;
+    }
+    .kicker {
+      color: var(--accent);
+      font: 700 13px var(--sans);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    h2.story-title {
+      margin: 0 0 16px;
+      font-size: 48px;
+      line-height: 1.1;
+      font-weight: 700;
+    }
+    .byline {
+      font: italic 14px var(--serif);
+      margin-bottom: 24px;
+      color: #555;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+    .lead-image {
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .lead-image img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .caption {
+      font: italic 14px var(--serif);
+      color: #666;
+      margin-bottom: 24px;
+      line-height: 1.4;
+    }
+    .story-content p {
+      margin-bottom: 1.5rem;
+    }
+    .action-links {
       display: flex;
       gap: 1.5rem;
-      margin-top: 24px;
-      font: 600 16px/1.3 system-ui, sans-serif;
+      margin-top: 32px;
+      font: 600 16px var(--sans);
+    }
+    .action-links a {
+      color: #0b57d0;
+      text-decoration: underline;
+    }
+    aside.sidebar {
+      border-left: 1px solid var(--border);
+      padding-left: 30px;
+    }
+    .sidebar-section {
+      margin-bottom: 40px;
+    }
+    .sidebar-section h3 {
+      font: 700 13px var(--sans);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      border-bottom: 2px solid var(--text);
+      margin-bottom: 16px;
+      padding-bottom: 4px;
+    }
+    .sidebar-image {
+      width: 100%;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+    }
+    .bulletin-item {
+      margin-bottom: 16px;
+      font-size: 16px;
+      line-height: 1.4;
+    }
+    .bulletin-item a {
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .bulletin-item a:hover {
+      text-decoration: underline;
+    }
+    .weather-widget {
+      background: #fff;
+      padding: 16px;
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+    .weather-temp {
+      font-size: 32px;
+      font-weight: 700;
     }
   </style>
 </head>
 <body>
-  <header>
-    <div class="kicker">Local news</div>
-    <h1>Harbor lights return to the waterfront this weekend</h1>
-    <p>
-      Crews finished the last string of lamps along Pier 4 on Thursday. Evening
-      walks reopen after dusk, and the market stalls below the promenade stay
-      open an hour later.
-    </p>
-    <nav>
-      <a id="kp-store-primary-link" href="https://example.com/waterfront">Read the waterfront guide</a>
-      <a href="https://example.com/hours">Weekend hours</a>
-      <a href="https://example.com/map">Map and transit</a>
-    </nav>
+  <div class="top-bar">
+    <span>Saturday, September 19, 2026</span>
+    <span>Harbor District: 58°F ☁️</span>
+  </div>
+
+  <header class="masthead">
+    <div class="masthead-logo">G</div>
+    <h1>The Harbor Gazette</h1>
+    <div class="tagline">Serving the Mid-Coast and the Penobscot Bay since 1884</div>
   </header>
+
+  <nav class="main-nav">
+    <a href="#">Local</a>
+    <a href="#">Politics</a>
+    <a href="#">Coastal Life</a>
+    <a href="#">Obituaries</a>
+    <a href="#">Opinion</a>
+    <a href="#">Sports</a>
+  </nav>
+
+  <div class="breaking-bar">
+    <span class="breaking-label">Breaking:</span>
+    <span>Penobscot Bridge to close for repairs starting Monday. Seek alternate routes.</span>
+  </div>
+
+  <main class="container">
+    <article class="lead-story">
+      <div class="kicker">Waterfront News</div>
+      <h2 class="story-title">Harbor lights return to the waterfront this weekend</h2>
+      <div class="byline">By Elias Thorne, Gazette Staff Writer</div>
+      
+      <div class="lead-image">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Between_Custom_House_Wharf_and_Portland_Pier.jpg/1280px-Between_Custom_House_Wharf_and_Portland_Pier.jpg" alt="Between Custom House Wharf and Portland Pier at dusk">
+      </div>
+      <div class="caption">Crews test the new energy-efficient LED filaments on Pier 4 late Thursday evening. Restoration of the historic district is now complete.</div>
+
+      <div class="story-content">
+        <p>
+          PORTLAND — Crews finished the last string of lamps along Pier 4 on Thursday, marking the completion of a two-year restoration project. The historic waterfront district, which has seen significant redevelopment in recent years, is expected to draw thousands of residents and tourists this weekend.
+        </p>
+        <p>
+          Evening walks reopen after dusk, and the market stalls below the promenade stay open an hour later to accommodate the expected crowds. Local business owners are hopeful that the return of the lights will signal a strong autumn season for the district.
+        </p>
+      </div>
+
+      <nav class="action-links">
+        <a id="kp-store-primary-link" href="https://example.com/waterfront">Read the full waterfront guide</a>
+        <a href="https://example.com/hours">Weekend hours</a>
+        <a href="https://example.com/map">Map and transit</a>
+      </nav>
+    </article>
+
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <h3>Local Bulletin</h3>
+        <img class="sidebar-image" src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/83_Commercial_Street%2C_Portland_ME.jpg/1280px-83_Commercial_Street%2C_Portland_ME.jpg" alt="Historic brick buildings on Commercial Street, Portland">
+        <div class="bulletin-item">
+          <a href="#">Town meeting scheduled for zoning debate in West Harbor</a>
+        </div>
+        <div class="bulletin-item">
+          <a href="#">Local high school football scores: Camden Hills tops Rockland</a>
+        </div>
+        <div class="bulletin-item">
+          <a href="#">Lobster catch down slightly, but prices remain stable</a>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h3>Weather Forecast</h3>
+        <div class="weather-widget">
+          <div class="weather-temp">58°F</div>
+          <div>Mostly Cloudy</div>
+          <div style="font-size: 14px; color: #666; margin-top: 8px;">Humidity: 65% | Wind: 8mph NE</div>
+        </div>
+      </div>
+      
+      <div class="sidebar-section">
+        <h3>Opinion</h3>
+        <div class="bulletin-item">
+          <a href="#">Editorial: Why we must preserve the working waterfront</a>
+        </div>
+      </div>
+    </aside>
+  </main>
+
   <script src="/page-api.js"></script>
 </body>
 </html>
