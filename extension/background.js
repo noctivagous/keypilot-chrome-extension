@@ -20,7 +20,6 @@ import {
   fetchDictionaryDefinition,
   normalizeWordForLookup
 } from './src/utils/dictionary-lookup.js';
-import { hasFirefoxVideoThumbnailConsent } from './src/utils/firefox-data-consent.js';
 import { startKeyPilotDebugFromSettings } from './src/utils/debug.js';
 import {
   BUILTIN_KEYBOARD_LAYOUT_FAMILIES_META,
@@ -1925,16 +1924,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case MSG.GET_VIDEO_THUMB: {
           const pageUrl = typeof message.pageUrl === 'string' ? message.pageUrl.trim() : '';
           try {
-            if (!await hasFirefoxVideoThumbnailConsent()) {
-              sendResponse({
-                type: MSG.VIDEO_THUMB_RESPONSE,
-                success: false,
-                thumbUrl: null,
-                source: null,
-                error: 'Enable external lookup consent in KeyPilot Settings to load video thumbnails'
-              });
-              break;
-            }
             if (!pageUrl) {
               sendResponse({
                 type: MSG.VIDEO_THUMB_RESPONSE,

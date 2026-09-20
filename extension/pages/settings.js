@@ -17,11 +17,6 @@ import { hasThemeOverrides, listThemes, normalizeThemeId, THEME_META } from '../
 import { GENERIC_FAVICON_DATA_URL, getExtensionFaviconUrl } from '../src/ui/url-listing.js';
 import { CursorManager } from '../src/modules/cursor.js';
 import { normalizeSettingsPanelId } from '../src/utils/kp-deep-link.js';
-import {
-  hasFirefoxVideoThumbnailConsent,
-  isFirefoxDataConsentAvailable,
-  requestFirefoxVideoThumbnailConsent,
-} from '../src/utils/firefox-data-consent.js';
 
 /** Document or open ShadowRoot the settings UI is mounted in. */
 let settingsScope = document;
@@ -627,9 +622,6 @@ async function render() {
   const settingsResetAllBtn = settingsEl('settings-reset-all');
   const settingsResetAppearanceBtn = settingsEl('settings-reset-appearance');
   const debugLoggingToggle = /** @type {HTMLInputElement|null} */ (settingsEl('debug-logging'));
-  const firefoxExternalLookupConsent = settingsEl('firefox-external-lookup-consent');
-  const firefoxExternalLookupConsentBtn = settingsEl('firefox-external-lookup-consent-button');
-  const firefoxExternalLookupConsentStatus = settingsEl('firefox-external-lookup-consent-status');
 
   const textCursorType = /** @type {HTMLSelectElement|null} */ (settingsEl('text-cursor-type'));
   const textCursorPreview = settingsEl('text-cursor-preview');
@@ -963,28 +955,6 @@ async function render() {
   if (!signal) return;
   const listenOpts = { signal, capture: true };
 
-  const refreshFirefoxExternalLookupConsent = async () => {
-    if (!firefoxExternalLookupConsent) return;
-    const available = isFirefoxDataConsentAvailable();
-    firefoxExternalLookupConsent.hidden = !available;
-    if (!available) return;
-
-    const granted = await hasFirefoxVideoThumbnailConsent();
-    if (firefoxExternalLookupConsentBtn) {
-      firefoxExternalLookupConsentBtn.disabled = granted;
-      firefoxExternalLookupConsentBtn.textContent = granted
-        ? getMessage('settings_firefox_thumbnails_enabled_button')
-        : getMessage('settings_firefox_thumbnails_enable_button');
-    }
-    if (firefoxExternalLookupConsentStatus) {
-      firefoxExternalLookupConsentStatus.textContent = granted
-        ? getMessage('settings_firefox_thumbnails_granted_status')
-        : getMessage('settings_firefox_thumbnails_pending_status');
-    }
-  };
-
-  void refreshFirefoxExternalLookupConsent();
-
   bindSettingsControls({
     controller: settingsController,
     el: settingsEl,
@@ -1034,15 +1004,6 @@ async function render() {
       : true;
     if (!ok) return;
     await settingsController.reset('all');
-  }, listenOpts);
-
-  firefoxExternalLookupConsentBtn?.addEventListener('click', async () => {
-    firefoxExternalLookupConsentBtn.disabled = true;
-    if (firefoxExternalLookupConsentStatus) {
-      firefoxExternalLookupConsentStatus.textContent = getMessage('settings_firefox_thumbnails_requesting_status');
-    }
-    await requestFirefoxVideoThumbnailConsent();
-    await refreshFirefoxExternalLookupConsent();
   }, listenOpts);
 
   keyboardHelpToggle?.addEventListener('change', async () => {

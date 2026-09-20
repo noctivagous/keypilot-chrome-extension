@@ -205,10 +205,7 @@ function createFirefoxManifest(sourceManifest) {
       strict_min_version: '140.0',
       data_collection_permissions: {
         required: [
-          'websiteContent',
-        ],
-        optional: [
-          'browsingActivity',
+          'none',
         ],
       },
     },
@@ -253,15 +250,12 @@ function stageFirefoxBuild() {
   }
   if (
     JSON.stringify(manifest.browser_specific_settings?.gecko?.data_collection_permissions?.required) !==
-    JSON.stringify(['websiteContent'])
+    JSON.stringify(['none'])
   ) {
-    errors.push('Firefox manifest must declare website content as required');
+    errors.push('Firefox manifest must declare that it does not collect data');
   }
-  if (
-    JSON.stringify(manifest.browser_specific_settings?.gecko?.data_collection_permissions?.optional) !==
-    JSON.stringify(['browsingActivity'])
-  ) {
-    errors.push('Firefox manifest must declare optional external lookup data types');
+  if (manifest.browser_specific_settings?.gecko?.data_collection_permissions?.optional) {
+    errors.push('Firefox manifest must not declare optional data-collection types');
   }
   if (JSON.stringify(manifest.permissions || []).includes('"favicon"')) errors.push('Firefox manifest must not include the favicon permission');
   if (JSON.stringify(manifest.permissions || []).includes('"windows"')) errors.push('Firefox manifest must not include the windows permission');

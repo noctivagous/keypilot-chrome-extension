@@ -1189,18 +1189,6 @@
     "message": "Desactivado de forma predeterminada. Cuando está activado, KeyPilot escribe mensajes detallados de la consola en las consolas del trabajador del servicio y de la página.",
     "description": "Localized settings page chrome."
   },
-  "settings_static_226": {
-    "message": "Miniaturas de vídeos de Firefox",
-    "description": "Localized settings page chrome."
-  },
-  "settings_static_227": {
-    "message": "Las vistas previas de video pueden enviar una URL o ID de video a su proveedor para cargar una miniatura.",
-    "description": "Localized settings page chrome."
-  },
-  "settings_static_228": {
-    "message": "Habilitar miniaturas de videos",
-    "description": "Localized settings page chrome."
-  },
   "newtab_static_001": {
     "message": "Activar/desactivar KeyPilot",
     "description": "Localized newtab page chrome."
@@ -1523,28 +1511,8 @@
     "message": "DESACTIVADO",
     "description": "Localized extension-page UI text."
   },
-  "settings_firefox_thumbnails_enabled_button": {
-    "message": "Miniaturas de vídeo habilitadas",
-    "description": "Localized extension-page UI text."
-  },
-  "settings_firefox_thumbnails_enable_button": {
-    "message": "Habilitar miniaturas de videos",
-    "description": "Localized extension-page UI text."
-  },
-  "settings_firefox_thumbnails_granted_status": {
-    "message": "Consentimiento otorgado para búsquedas de miniaturas de videos.",
-    "description": "Localized extension-page UI text."
-  },
-  "settings_firefox_thumbnails_pending_status": {
-    "message": "Las miniaturas de los vídeos permanecen desactivadas hasta que las habilites.",
-    "description": "Localized extension-page UI text."
-  },
   "settings_reset_all_confirm": {
     "message": "¿Restablecer todas las configuraciones de KeyPilot a sus valores predeterminados? Esto no se puede deshacer.",
-    "description": "Localized extension-page UI text."
-  },
-  "settings_firefox_thumbnails_requesting_status": {
-    "message": "Solicitando el consentimiento de Firefox…",
     "description": "Localized extension-page UI text."
   },
   "newtab_engine_label": {

@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-20T06:58:12.266Z
+ * Generated on 2026-09-20T07:05:45.325Z
  */
 
 (() => {
@@ -6110,8 +6110,6 @@
   }
 
   // src/utils/debug.js
-  var SOURCE_BUILD_ENABLE_DEBUG_SETTINGS = true;
-  var BUILD_ENABLE_DEBUG_SETTINGS = typeof __KP_BUILD_ENABLE_DEBUG_SETTINGS__ !== "undefined" ? !!__KP_BUILD_ENABLE_DEBUG_SETTINGS__ : SOURCE_BUILD_ENABLE_DEBUG_SETTINGS;
   var consoleWrapped = false;
   var storageListenerInstalled = false;
   function isKeyPilotDebugEnabled() {

@@ -129,20 +129,18 @@ Docs: [MDN `browser_specific_settings`](https://developer.mozilla.org/en-US/docs
 |---|---|
 | `background.service_worker` | `background.scripts` |
 | no Gecko ID | `keypilot@noctivagous.browserextension` |
-| no data-collection declaration | required `websiteContent`; optional `browsingActivity` consent |
+| no data-collection declaration | required `none` (KeyPilot does not collect data) |
 | `"favicon"` / `"windows"` permissions + `/_favicon/` | drop Chromium-only declarations |
 | CSP `img-src … chrome:` | `moz-extension:` (drop `chrome:`) |
-| no Firefox minimum version | require Firefox 140+ desktop for built-in data-consent support |
+| no Firefox minimum version | require Firefox 140+ desktop for the data-collection declaration |
 
 The generated Firefox manifest includes the stable
 `browser_specific_settings.gecko.id` value
 `keypilot@noctivagous.browserextension`, which AMO requires for Manifest V3
 submissions. Background + favicon/CSP are why a generated folder is still worth it.
 
-Firefox obtains consent for Dictionary Lookup at installation because it sends
-the requested page word to Free Dictionary API. Users enable optional video
-thumbnail consent from KeyPilot Settings before thumbnail lookups can make
-third-party requests.
+The generated Firefox manifest declares `data_collection_permissions.required`
+as `none` because KeyPilot does not collect user data.
 
 `npm run package:firefox` rebuilds the Firefox staging directory and writes
 `dist/keypilot-firefox-v{version}.zip` plus package metadata. The archive is
