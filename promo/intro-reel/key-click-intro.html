@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KeyPilot — The key-click</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+            margin: 0;
+            height: 100%;
+            background: #05050e;
+        }
+        body {
+            display: grid;
+            place-items: center;
+        }
+        #stage {
+            width: min(100vw, calc(100vh * 16 / 9));
+            height: min(100vh, calc(100vw * 9 / 16));
+        }
+        #stage svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .sans {
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div
+        id="stage"
+        data-composition-id="key-click-intro"
+        data-start="0"
+        data-duration="35.3"
+        data-width="1920"
+        data-height="1080"
+        data-fps="30"
+        data-composition-variables='[{"id":"locale","type":"string","label":"Locale id","default":"en"},{"id":"document_title","type":"string","label":"Document title","default":"KeyPilot — The key-click"},{"id":"aria_label","type":"string","label":"SVG aria-label","default":"The core gesture: the key-click"},{"id":"open_kpb","type":"string","label":"Open eyebrow","default":"KEYBOARD-POWERED BROWSING"},{"id":"open_steer_1","type":"string","default":"The mouse steers."},{"id":"open_steer_2","type":"string","default":"The keyboard activates."},{"id":"intro_eyebrow","type":"string","default":"THE CORE GESTURE"},{"id":"intro_prefix","type":"string","default":"Here’s how:"},{"id":"intro_title","type":"string","default":"the key-click"},{"id":"formula_steer","type":"string","default":"Steer"},{"id":"formula_aim","type":"string","default":"The mouse only aims"},{"id":"formula_activate","type":"string","default":"Activate"},{"id":"formula_clicks","type":"string","default":"Clicks live on the keyboard"},{"id":"formula_punch","type":"string","default":"The Key-Click"},{"id":"formula_fast","type":"string","default":"FAST."},{"id":"demo_watch","type":"string","default":"Watch:"},{"id":"demo_open","type":"string","default":"OPEN"},{"id":"demo_back","type":"string","default":"GO BACK"},{"id":"demo_article","type":"string","default":"Article Name"},{"id":"theory_line_1","type":"string","default":"Two inputs + two jobs"},{"id":"theory_line_2","type":"string","default":"makes a better interface."},{"id":"close_meta","type":"string","default":"FREE · MIT LICENSE"},{"id":"close_lede_1","type":"string","default":"Point with a mouse."},{"id":"close_lede_2","type":"string","default":"Activate with a key."},{"id":"close_store","type":"string","default":"Chrome Web Store"}]'
+    >
+        <svg viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The core gesture: the key-click">
+            <defs>
+                <linearGradient id="kc-page" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#09091c"/>
+                    <stop offset="0.52" stop-color="#17172b"/>
+                    <stop offset="1" stop-color="#09091c"/>
+                </linearGradient>
+                <linearGradient id="kc-title" x1="0" y1="0" x2="1" y2="0">
+                    <stop stop-color="#d6a7ad"/>
+                    <stop offset="0.48" stop-color="#ffffff"/>
+                    <stop offset="1" stop-color="#a8c8b8"/>
+                </linearGradient>
+                <linearGradient id="kc-card" x1="0" y1="0" x2="1" y2="1">
+                    <stop stop-color="#1d1d32"/>
+                    <stop offset="1" stop-color="#101023"/>
+                </linearGradient>
+                <linearGradient id="kc-bar" x1="0" y1="0" x2="1" y2="0">
+                    <stop stop-color="#3d252c"/>
+                    <stop offset="1" stop-color="#19332e"/>
+                </linearGradient>
+                <filter id="kc-glow"><feGaussianBlur stdDeviation="18"/></filter>
+                <filter id="kc-shadow"><feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000000" flood-opacity=".4"/></filter>
+                <filter id="kc-window-shadow"><feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000000" flood-opacity=".6"/></filter>
+                <clipPath id="kc-window-clip">
+                    <rect x="4" y="36" width="328" height="156"/>
+                </clipPath>
+                <clipPath id="kc-panel-clip">
+                    <rect x="-20" y="-12" width="744" height="240"/>
+                </clipPath>
+                <!-- last-slide marquee (restore later)
+                <clipPath id="kc-ticker-clip">
+                    <rect x="48" y="930" width="1824" height="100"/>
+                </clipPath>
+                -->
+            </defs>
+
+            <rect width="1920" height="1080" fill="url(#kc-page)"/>
+            <circle id="glow-rose" cx="120" cy="140" r="320" fill="#713d48" opacity=".22" filter="url(#kc-glow)"/>
+            <circle id="glow-sage" cx="1820" cy="940" r="340" fill="#32604d" opacity=".2" filter="url(#kc-glow)"/>
+
+            <g id="chrome">
+                <rect id="frame-rect" x="64" y="64" width="1792" height="952" fill="none" stroke="#a8c8b8" stroke-width="2"/>
+                <path id="tick-tl" d="M64 104 L64 64 L104 64" fill="none" stroke="#d6a7ad" stroke-width="3"/>
+                <path id="tick-tr" d="M1816 64 L1856 64 L1856 104" fill="none" stroke="#d6a7ad" stroke-width="3"/>
+                <path id="tick-bl" d="M64 976 L64 1016 L104 1016" fill="none" stroke="#a8c8b8" stroke-width="3"/>
+                <path id="tick-br" d="M1816 1016 L1856 1016 L1856 976" fill="none" stroke="#a8c8b8" stroke-width="3"/>
+                <line id="wipe-line" x1="64" y1="200" x2="1856" y2="200" stroke="#41415b" stroke-width="2"/>
+            </g>
+
+            <!-- last-slide marquee copy:
+                 FUTURE COMPUTER USER INTERFACE  ·  A NEW WAY TO BROWSE  ·  STEER AND ACTIVATE  ·  THE NEXT DESKTOP  ·
+            <g id="ticker" clip-path="url(#kc-ticker-clip)">
+                <g id="ticker-track">
+                    <text id="ticker-copy" x="64" y="1000" class="sans" font-size="72" font-weight="800" letter-spacing="16" fill="#70708c">FUTURE COMPUTER USER INTERFACE  ·  A NEW WAY TO BROWSE  ·  STEER AND ACTIVATE  ·  THE NEXT DESKTOP  ·  FUTURE COMPUTER USER INTERFACE  ·  A NEW WAY TO BROWSE  ·  STEER AND ACTIVATE  ·  THE NEXT DESKTOP  ·  FUTURE COMPUTER USER INTERFACE  ·  A NEW WAY TO BROWSE  ·  STEER AND ACTIVATE  ·  THE NEXT DESKTOP  · </text>
+                </g>
+            </g>
+            -->
+
+            <g id="scene-open">
+                <g id="hero-lockup">
+                    <text id="hero-title" x="960" y="640" class="sans" font-size="320" font-weight="900" letter-spacing="-16" fill="url(#kc-title)" text-anchor="middle">
+                        <tspan class="kp-letter">K</tspan><tspan class="kp-letter">e</tspan><tspan class="kp-letter">y</tspan><tspan class="kp-letter">P</tspan><tspan class="kp-letter">i</tspan><tspan class="kp-letter">l</tspan><tspan class="kp-letter">o</tspan><tspan class="kp-letter">t</tspan>
+                    </text>
+                </g>
+                <text id="open-kpb" x="960" y="520" class="sans" font-size="52" font-weight="800" letter-spacing="8" fill="#a8c8b8" text-anchor="middle" data-var-text="open_kpb">KEYBOARD-POWERED BROWSING</text>
+                <text id="open-steer-1" x="96" y="650" class="sans" font-size="96" font-weight="800" fill="#ffffff" data-var-text="open_steer_1">The mouse steers.</text>
+                <text id="open-steer-2" x="96" y="770" class="sans" font-size="96" font-weight="800" fill="#ffffff" data-var-text="open_steer_2">The keyboard activates.</text>
+            </g>
+
+            <g id="scene-intro">
+                <text id="intro-eyebrow" x="96" y="140" class="sans" font-size="22" font-weight="800" letter-spacing="6" fill="#d6a7ad" data-var-text="intro_eyebrow">THE CORE GESTURE</text>
+                <text id="intro-prefix" x="96" y="300" class="sans" font-size="118" font-weight="800" letter-spacing="-4" fill="#ffffff" text-anchor="start" data-var-text="intro_prefix">Here's how:</text>
+                <text id="intro-title" x="960" y="640" class="sans" font-size="196" font-weight="800" letter-spacing="-8" fill="url(#kc-title)" text-anchor="middle" data-var-text="intro_title">the key-click</text>
+                <line id="intro-rule" x1="308" y1="680" x2="1612" y2="680" stroke="#a8c8b8" stroke-width="3"/>
+            </g>
+
+            <g id="scene-formula">
+                <g id="formula-left">
+                    <rect x="64" y="120" width="880" height="820" fill="url(#kc-card)" stroke="#41415b"/>
+                    <g id="formula-aim-mouse">
+                        <g transform="translate(220 280)">
+                            <rect width="140" height="200" rx="64" fill="none" stroke="#d6a7ad" stroke-width="6"/>
+                            <line x1="70" y1="0" x2="70" y2="78" stroke="#d6a7ad" stroke-width="6"/>
+                            <circle cx="70" cy="48" r="12" fill="#d6a7ad"/>
+                            <g id="formula-aim-reticle" transform="translate(70 48)" opacity=".85">
+                                <line x1="0" y1="-28" x2="0" y2="-14" stroke="#a8c8b8" stroke-width="3" stroke-linecap="round"/>
+                                <line x1="0" y1="14" x2="0" y2="28" stroke="#a8c8b8" stroke-width="3" stroke-linecap="round"/>
+                                <line x1="-28" y1="0" x2="-14" y2="0" stroke="#a8c8b8" stroke-width="3" stroke-linecap="round"/>
+                                <line x1="14" y1="0" x2="28" y2="0" stroke="#a8c8b8" stroke-width="3" stroke-linecap="round"/>
+                            </g>
+                        </g>
+                    </g>
+                    <text id="formula-steer" x="504" y="620" class="sans" font-size="72" font-weight="800" fill="#ffffff" text-anchor="middle" data-var-text="formula_steer">Steer</text>
+                    <text id="formula-aim" x="504" y="740" class="sans" font-size="56" fill="#b9b9cf" text-anchor="middle" data-var-text="formula_aim">The mouse only aims</text>
+                </g>
+                <g id="formula-right">
+                    <rect x="976" y="120" width="880" height="820" fill="url(#kc-card)" stroke="#41415b"/>
+                    <g id="formula-f-key" transform="translate(1336 280)">
+                        <rect width="180" height="180" rx="22" fill="#292943" stroke="#a8c8b8" stroke-width="4"/>
+                        <rect id="formula-f-flash" width="180" height="180" rx="22" fill="#a8c8b8" opacity="0"/>
+                        <text x="90" y="124" class="sans" font-size="96" font-weight="800" text-anchor="middle" fill="#a8c8b8">F</text>
+                    </g>
+                    <text id="formula-activate" x="1416" y="620" class="sans" font-size="72" font-weight="800" fill="#ffffff" text-anchor="middle" data-var-text="formula_activate">Activate</text>
+                    <text id="formula-clicks" x="1416" y="740" class="sans" font-size="56" fill="#b9b9cf" text-anchor="middle" data-var-text="formula_clicks">Clicks live on the keyboard</text>
+                </g>
+                <g id="formula-plus">
+                    <circle cx="960" cy="520" r="48" fill="#17172b" stroke="#a8c8b8" stroke-width="2"/>
+                    <text x="960" y="540" class="sans" font-size="48" fill="#a8c8b8" text-anchor="middle">+</text>
+                </g>
+                <text id="formula-punch" x="960" y="910" class="sans" font-size="72" font-weight="800" letter-spacing="-2" fill="url(#kc-title)" text-anchor="middle" data-var-text="formula_punch">The Key-Click</text>
+                <text id="formula-fast" x="1760" y="900" class="sans" font-size="48" font-weight="800" letter-spacing="6" fill="#a8c8b8" text-anchor="end" transform="rotate(-8 1760 900)" data-var-text="formula_fast">FAST.</text>
+            </g>
+
+            <g id="scene-demo">
+                <text id="demo-watch" x="960" y="150" class="sans" font-size="56" font-weight="800" fill="#ffffff" text-anchor="middle" data-var-text="demo_watch">Watch:</text>
+                <g transform="translate(50 270) scale(2.45)">
+                    <rect width="744" height="240" fill="url(#kc-card)" stroke="#41415b" filter="url(#kc-shadow)"/>
+                    <g transform="translate(20 12)" clip-path="url(#kc-panel-clip)">
+                        <g opacity=".28" fill="#1d1d32" stroke="#70708c" stroke-width="1.25">
+                            <rect x="-6" y="8" width="62" height="62" rx="8"/><text x="25" y="47" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">Q</text>
+                            <rect x="62" y="8" width="62" height="62" rx="8"/><text x="93" y="47" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">W</text>
+                            <rect x="130" y="8" width="62" height="62" rx="8"/><text x="161" y="47" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">E</text>
+                            <rect x="198" y="8" width="62" height="62" rx="8"/><text x="229" y="47" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">R</text>
+                            <rect x="266" y="8" width="62" height="62" rx="8"/><text x="297" y="47" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">T</text>
+                            <rect x="334" y="8" width="62" height="62" rx="8"/><text x="365" y="47" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">Y</text>
+                            <rect x="-40" y="76" width="62" height="62" rx="8"/><text x="-9" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">A</text>
+                            <rect x="28" y="76" width="62" height="62" rx="8"/><text x="59" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">S</text>
+                            <g id="faded-d">
+                                <rect x="96" y="76" width="62" height="62" rx="8"/><text x="127" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">D</text>
+                            </g>
+                            <g id="faded-f">
+                                <rect x="164" y="76" width="62" height="62" rx="8"/><text x="195" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">F</text>
+                            </g>
+                            <rect x="232" y="76" width="62" height="62" rx="8"/><text x="263" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">G</text>
+                            <rect x="300" y="76" width="62" height="62" rx="8"/><text x="331" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">H</text>
+                            <rect x="368" y="76" width="62" height="62" rx="8"/><text x="399" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">J</text>
+                            <rect x="-6" y="144" width="62" height="62" rx="8"/><text x="25" y="183" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">Z</text>
+                            <rect x="62" y="144" width="62" height="62" rx="8"/><text x="93" y="183" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">X</text>
+                            <rect x="130" y="144" width="62" height="62" rx="8"/><text x="161" y="183" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">C</text>
+                            <rect x="198" y="144" width="62" height="62" rx="8"/><text x="229" y="183" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">V</text>
+                            <rect x="266" y="144" width="62" height="62" rx="8"/><text x="297" y="183" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">B</text>
+                        </g>
+
+                        <g transform="translate(256 8)" filter="url(#kc-window-shadow)">
+                            <rect width="336" height="196" rx="12" fill="#12121f" stroke="#41415b"/>
+                            <rect x="1" y="1" width="334" height="34" fill="#07070e"/>
+                            <circle cx="16" cy="18" r="4" fill="#713d48"/>
+                            <circle cx="30" cy="18" r="4" fill="#32604d"/>
+                            <circle cx="44" cy="18" r="4" fill="#555571"/>
+                            <path id="back-arrow" d="M68 18 l-5 4 5 4" fill="none" stroke="#555571" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M82 18 l5 4 -5 4" fill="none" stroke="#41415b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <rect x="98" y="8" width="224" height="20" rx="10" fill="#0d0d1c" stroke="#41415b"/>
+                            <text id="url-home" x="112" y="22" class="sans" font-size="10" fill="#b9b9cf">noctivagous.com</text>
+                            <text id="url-article" x="112" y="22" class="sans" font-size="10" fill="#b9b9cf">noctivagous.com/article</text>
+                            <rect id="url-progress" x="98" y="26" width="0" height="2" fill="#a8c8b8"/>
+
+                            <g clip-path="url(#kc-window-clip)">
+                                <g id="page-a">
+                                    <rect x="12" y="44" width="310" height="148" fill="#1c1c2c"/>
+                                    <rect x="20" y="52" width="68" height="44" fill="#6a6a7e" opacity=".42"/>
+                                    <rect x="96" y="52" width="68" height="44" fill="#5e5e72" opacity=".36"/>
+                                    <rect x="172" y="52" width="68" height="44" fill="#6a6a7e" opacity=".42"/>
+                                    <rect x="248" y="52" width="64" height="44" fill="#5e5e72" opacity=".36"/>
+                                    <rect x="20" y="152" width="140" height="7" fill="#5a5a6e" opacity=".40"/>
+                                    <rect x="20" y="166" width="100" height="7" fill="#5a5a6e" opacity=".28"/>
+                                    <g id="click-target" transform="translate(20 112)">
+                                        <rect id="hover-rect" x="-8" y="-12" width="168" height="36" fill="rgba(33,150,243,0.08)" stroke="rgba(33,150,243,0.95)" stroke-width="3"/>
+                                        <text id="demo-article" x="8" y="14" class="sans" font-size="20" font-weight="700" fill="#6ea8ff" text-decoration="underline" data-var-text="demo_article">Article Name</text>
+                                        <rect id="click-flash" x="-8" y="-12" width="168" height="36" fill="none" stroke="rgba(0,255,0,1)" stroke-width="3"/>
+                                        <circle id="click-ripple" cx="76" cy="6" r="6" fill="none" stroke="rgba(0,200,0,0.45)" stroke-width="3"/>
+                                    </g>
+                                </g>
+                                <g id="page-b">
+                                    <rect x="12" y="44" width="310" height="148" fill="#2a2a36"/>
+                                    <rect x="20" y="52" width="210" height="58" fill="#8a8a9a" opacity=".38"/>
+                                    <rect x="240" y="52" width="70" height="58" fill="#7a7a8c" opacity=".30"/>
+                                    <rect x="20" y="120" width="160" height="8" fill="#c8c8d4" opacity=".55"/>
+                                    <rect x="20" y="136" width="280" height="6" fill="#9a9aaa" opacity=".40"/>
+                                    <rect x="20" y="148" width="252" height="6" fill="#9a9aaa" opacity=".32"/>
+                                    <rect x="20" y="160" width="228" height="6" fill="#9a9aaa" opacity=".26"/>
+                                    <rect x="20" y="172" width="190" height="6" fill="#9a9aaa" opacity=".20"/>
+                                </g>
+                                <g id="animated-cursor">
+                                    <line x1="0" y1="-12" x2="0" y2="-4" stroke="#008000" stroke-width="3" stroke-linecap="round"/>
+                                    <line x1="0" y1="4" x2="0" y2="12" stroke="#008000" stroke-width="3" stroke-linecap="round"/>
+                                    <line x1="-12" y1="0" x2="-4" y2="0" stroke="#008000" stroke-width="3" stroke-linecap="round"/>
+                                    <line x1="4" y1="0" x2="12" y2="0" stroke="#008000" stroke-width="3" stroke-linecap="round"/>
+                                </g>
+                            </g>
+                            <rect x="323" y="36" width="12" height="156" fill="#0a0a12"/>
+                            <rect x="325" y="40" width="8" height="50" rx="4" fill="#3a3a48"/>
+                        </g>
+
+                        <g id="open-key">
+                            <text id="demo-open" x="195" y="58" class="sans" font-size="11" font-weight="800" letter-spacing="1.4" fill="#b9b9cf" text-anchor="middle" data-var-text="demo_open">OPEN</text>
+                            <g transform="translate(164 76)">
+                                <g id="animated-key">
+                                    <rect width="62" height="62" rx="8" fill="#292943" stroke="#a8c8b8" stroke-width="2"/>
+                                    <rect id="f-key-flash" width="62" height="62" rx="8" fill="#a8c8b8" opacity="0"/>
+                                    <text x="31" y="42" class="sans" font-size="32" font-weight="800" text-anchor="middle" fill="#a8c8b8">F</text>
+                                </g>
+                            </g>
+                        </g>
+
+                        <g id="back-key">
+                            <text id="demo-back" x="127" y="58" class="sans" font-size="11" font-weight="800" letter-spacing="1.4" fill="#b9b9cf" text-anchor="middle" data-var-text="demo_back">GO BACK</text>
+                            <g transform="translate(96 76)">
+                                <g id="animated-back-key">
+                                    <rect width="62" height="62" rx="8" fill="#292943" stroke="#a8c8b8" stroke-width="2"/>
+                                    <rect id="d-key-flash" width="62" height="62" rx="8" fill="#a8c8b8" opacity="0"/>
+                                    <text x="31" y="42" class="sans" font-size="32" font-weight="800" text-anchor="middle" fill="#a8c8b8">D</text>
+                                </g>
+                            </g>
+                        </g>
+
+                        <g id="animated-mouse">
+                            <rect x="8" y="8" width="44" height="64" rx="18" fill="#17172b" stroke="#d6a7ad" stroke-width="2"/>
+                            <line x1="30" y1="8" x2="30" y2="32" stroke="#d6a7ad" stroke-width="2"/>
+                            <circle cx="30" cy="23" r="3.5" fill="#d6a7ad"/>
+                        </g>
+                    </g>
+                </g>
+            </g>
+
+            <g id="scene-theory">
+                <rect id="theory-bar" x="64" y="430" width="1792" height="220" fill="#101023" stroke="#41415b"/>
+                <text id="theory-2" class="sans" font-size="56" font-weight="800" fill="#ffffff" text-anchor="middle">
+                    <tspan id="theory-2a" data-var-text="theory_line_1" x="960" y="530">Two inputs + two jobs</tspan>
+                    <tspan id="theory-2b" data-var-text="theory_line_2" x="960" y="610">makes a better interface.</tspan>
+                </text>
+            </g>
+
+            <g id="scene-close">
+                <text id="close-title" x="96" y="200" class="sans" font-size="96" font-weight="900" letter-spacing="-3" fill="url(#kc-title)">KeyPilot</text>
+                <text id="close-meta" x="1824" y="140" class="sans" font-size="22" font-weight="800" letter-spacing="3" fill="#b9b9cf" text-anchor="end" data-var-text="close_meta">FREE · MIT LICENSE</text>
+                <text id="close-lede-1" x="960" y="500" class="sans" font-size="80" font-weight="800" fill="#ffffff" text-anchor="middle" data-var-text="close_lede_1">Point with a mouse.</text>
+                <text id="close-lede-2" x="960" y="610" class="sans" font-size="80" font-weight="800" fill="#ffffff" text-anchor="middle" data-var-text="close_lede_2">Activate with a key.</text>
+                <g id="close-bar">
+                    <rect x="0" y="840" width="1920" height="100" fill="url(#kc-bar)"/>
+                    <text x="96" y="908" class="sans" font-size="48" font-weight="700" fill="#a8c8b8">noctivagous.com</text>
+                    <text id="close-store" x="1824" y="908" class="sans" font-size="28" font-weight="700" fill="#ffffff" text-anchor="end" data-var-text="close_store">Chrome Web Store</text>
+                </g>
+            </g>
+        </svg>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/DrawSVGPlugin.min.js"></script>
+    <script src="locales/key-click-intro/apply.js"></script>
+    <script>
+    (async function () {
+        await window.__kpApplyKeyClickLocale();
+
+        if (typeof DrawSVGPlugin !== "undefined") {
+            gsap.registerPlugin(DrawSVGPlugin);
+        }
+
+        gsap.set("#scene-intro, #scene-formula, #scene-theory, #scene-close", { autoAlpha: 0 });
+        gsap.set("#scene-demo", { autoAlpha: 0 });
+        gsap.set("#open-kpb", { autoAlpha: 0 });
+        gsap.set("#open-steer-1, #open-steer-2", { autoAlpha: 0, y: 24 });
+        gsap.set(".kp-letter", { autoAlpha: 0, y: 90 });
+        gsap.set("#hero-lockup", { svgOrigin: "960px 560px" });
+        const kpbLen = document.getElementById("open-kpb").getComputedTextLength();
+        const kpbLeftX = 96 + (kpbLen || 900) / 2;
+        /* last-slide marquee
+        gsap.set("#ticker", { autoAlpha: 0 });
+        const tickerCopy = document.getElementById("ticker-copy");
+        const tickerUnit = Math.ceil(tickerCopy.getComputedTextLength()) || 1800;
+        const tickerClone = tickerCopy.cloneNode(true);
+        tickerClone.removeAttribute("id");
+        tickerClone.setAttribute("x", String(64 + tickerUnit));
+        document.getElementById("ticker-track").appendChild(tickerClone);
+        const tickerStart = -Math.round(tickerUnit * 0.35);
+        const wrapTickerX = gsap.utils.wrap(-tickerUnit, 0);
+        const wrapX = (x) => wrapTickerX(parseFloat(x)) + "px";
+        gsap.set("#ticker-track", { x: tickerStart });
+        */
+        gsap.set("#url-article", { autoAlpha: 0 });
+        gsap.set("#url-progress", { attr: { width: 0 } });
+        gsap.set("#page-b", { autoAlpha: 0 });
+        gsap.set("#hover-rect", { autoAlpha: 0 });
+        gsap.set("#click-flash", { autoAlpha: 0 });
+        gsap.set("#click-ripple", { autoAlpha: 0, attr: { r: 6 } });
+        gsap.set("#back-key", { autoAlpha: 0 });
+        gsap.set("#faded-f", { autoAlpha: 0 });
+        gsap.set("#animated-cursor", { x: 300, y: 160 });
+        gsap.set("#animated-mouse", { x: 652, y: 136 });
+        gsap.set("#glow-rose, #glow-sage", { autoAlpha: 0 });
+        gsap.set("#frame-rect, #tick-tl, #tick-tr, #tick-bl, #tick-br, #intro-rule", { drawSVG: "0%" });
+        gsap.set("#wipe-line", { scaleX: 0, transformOrigin: "64px 200px" });
+        gsap.set("#formula-left", { x: 200, autoAlpha: 0 });
+        gsap.set("#formula-right", { x: -456, autoAlpha: 0 });
+        gsap.set("#formula-plus", { scale: 0, svgOrigin: "960px 520px" });
+        gsap.set("#formula-aim-mouse", { x: 0, y: 0 });
+        gsap.set("#formula-aim-reticle", { scale: 0.85, svgOrigin: "70px 48px" });
+        gsap.set("#formula-punch", { autoAlpha: 0, y: 24 });
+        gsap.set("#formula-fast", { autoAlpha: 0, rotation: -8, svgOrigin: "1760px 900px" });
+        gsap.set("#theory-2", { autoAlpha: 0, y: 40 });
+        gsap.set("#close-title", { autoAlpha: 0, x: -40 });
+        gsap.set("#close-meta", { autoAlpha: 0 });
+        gsap.set("#close-lede-1, #close-lede-2", { autoAlpha: 0, y: 24 });
+        gsap.set("#close-bar", { y: 140 });
+        gsap.set("#intro-eyebrow", { autoAlpha: 0, x: -30 });
+        gsap.set("#intro-prefix, #intro-title", { autoAlpha: 0, y: 20 });
+
+        const tl = gsap.timeline({ paused: true });
+
+        tl.to("#glow-rose, #glow-sage", { autoAlpha: 1, duration: 1 }, 0)
+            .to("#frame-rect", { drawSVG: "100%", duration: 1.15, ease: "power2.inOut" }, 0)
+            .to("#tick-tl, #tick-tr, #tick-bl, #tick-br", { drawSVG: "100%", duration: 0.5, stagger: 0.06 }, 0.35)
+            .to("#wipe-line", { scaleX: 1, duration: 0.7, ease: "power3.out" }, 0.2)
+            .to(".kp-letter", { autoAlpha: 1, y: 0, duration: 0.55, stagger: 0.055, ease: "back.out(1.6)" }, 0.15)
+            .to("#hero-lockup", { scale: 1.08, duration: 0.35, ease: "back.out(2)" }, 0.7)
+            .to("#hero-lockup", { scale: 0.3, x: -620, y: -420, duration: 0.75, ease: "power2.inOut" }, 1.85)
+            .to("#open-kpb", { autoAlpha: 1, duration: 0.45, ease: "power3.out" }, 2.65)
+            .to("#open-kpb", { attr: { x: kpbLeftX }, duration: 0.7, ease: "power3.inOut" }, 3.2)
+            .to("#open-steer-1", { autoAlpha: 1, y: 0, duration: 0.45, ease: "power3.out" }, 3.95)
+            .to("#open-steer-2", { autoAlpha: 1, y: 0, duration: 0.45, ease: "power3.out" }, 4.95)
+            .to("#scene-open", { autoAlpha: 0, duration: 0.4, ease: "power3.in" }, 5.7);
+
+        tl.set("#scene-intro", { autoAlpha: 1 }, 6.05)
+            .to("#intro-eyebrow", { autoAlpha: 1, x: 0, duration: 0.4 }, 6.1)
+            .to("#intro-prefix", { autoAlpha: 1, y: 0, duration: 0.45, ease: "power3.out" }, 6.2)
+            .to("#intro-title", { autoAlpha: 1, y: 0, duration: 0.5, ease: "power3.out" }, 6.75)
+            .to("#intro-rule", { drawSVG: "100%", duration: 0.55 }, 7.45)
+            .to("#scene-intro", { autoAlpha: 0, duration: 0.4, ease: "power3.in" }, 9.6);
+
+        tl.set("#scene-formula", { autoAlpha: 1 }, 9.85)
+            .to("#formula-left", { autoAlpha: 1, x: 456, duration: 0.7, ease: "back.out(1.2)" }, 9.9)
+            .to("#formula-aim-mouse", { x: 78, y: -52, duration: 0.6, ease: "power2.inOut" }, 10.3)
+            .to("#formula-aim-reticle", { scale: 1.15, duration: 0.6, ease: "power2.inOut" }, 10.3)
+            .to("#formula-aim-mouse", { x: -82, y: 46, duration: 0.55, ease: "power2.inOut" }, 10.9)
+            .to("#formula-aim-reticle", { scale: 0.9, duration: 0.55, ease: "power2.inOut" }, 10.9)
+            .to("#formula-aim-mouse", { x: 48, y: 70, duration: 0.5, ease: "power2.inOut" }, 11.45)
+            .to("#formula-aim-reticle", { scale: 1.2, duration: 0.5, ease: "power2.inOut" }, 11.45)
+            .to("#formula-aim-mouse", { x: -28, y: -22, duration: 0.45, ease: "power2.inOut" }, 11.95)
+            .to("#formula-aim-reticle", { scale: 1, duration: 0.45, ease: "power2.inOut" }, 11.95)
+            .to("#formula-aim-mouse", { x: 0, y: 0, duration: 0.4, ease: "power2.inOut" }, 12.4)
+            .to("#formula-left", { autoAlpha: 0, x: 200, duration: 0.4, ease: "power3.in" }, 12.8)
+            .to("#formula-right", { autoAlpha: 1, x: -456, duration: 0.65, ease: "back.out(1.2)" }, 13.05)
+            .to("#formula-f-key", { y: 8, duration: 0.08, yoyo: true, repeat: 1 }, 13.95)
+            .to("#formula-f-flash", { opacity: 0.35, duration: 0.08, yoyo: true, repeat: 1 }, 13.95)
+            .to("#formula-left", { autoAlpha: 1, x: 0, duration: 0.7, ease: "power2.inOut" }, 14.6)
+            .to("#formula-right", { x: 0, duration: 0.7, ease: "power2.inOut" }, 14.6)
+            .to("#formula-plus", { scale: 1, duration: 0.4, ease: "back.out(1.8)" }, 15.1)
+            .to("#formula-punch", { autoAlpha: 1, y: 0, duration: 0.4, ease: "back.out(1.4)" }, 15.35)
+            .to("#formula-fast", { autoAlpha: 1, duration: 0.35 }, 16.05)
+            .to("#scene-formula", { autoAlpha: 0, duration: 0.4, ease: "power3.in" }, 17.5);
+
+        tl.to("#scene-demo", { autoAlpha: 1, duration: 0.5 }, 17.8);
+
+        const demo = 18.05;
+        tl.to("#animated-cursor", { x: 88, y: 112, duration: 1.8, ease: "power2.inOut" }, demo + 0.7)
+            .to("#animated-mouse", { x: 606, y: 123, duration: 1.8, ease: "power2.inOut" }, demo + 0.7)
+            .to("#hover-rect", { autoAlpha: 1, duration: 0.35 }, demo + 2.35)
+            .to("#animated-key", { y: 4, duration: 0.08, yoyo: true, repeat: 1 }, demo + 3.25)
+            .to("#f-key-flash", { opacity: 0.35, duration: 0.08, yoyo: true, repeat: 1 }, demo + 3.25)
+            .to("#click-flash", { autoAlpha: 1, duration: 0.08 }, demo + 3.25)
+            .to("#click-flash", { attr: { "stroke-width": 5 }, duration: 0.08, yoyo: true, repeat: 1 }, demo + 3.25)
+            .to("#click-flash", { autoAlpha: 0, duration: 0.22 }, demo + 3.55)
+            .fromTo(
+                "#click-ripple",
+                { autoAlpha: 0.4, attr: { r: 6 } },
+                { autoAlpha: 0, attr: { r: 32 }, duration: 0.9, ease: "power1.out" },
+                demo + 3.25
+            )
+            .to("#hover-rect", { autoAlpha: 0, duration: 0.25 }, demo + 3.7)
+            .to("#url-progress", { attr: { width: 224 }, duration: 0.45 }, demo + 3.7)
+            .to("#url-progress", { attr: { width: 0 }, duration: 0.08 }, demo + 4.15)
+            .to("#page-a", { autoAlpha: 0, duration: 0.45 }, demo + 3.7)
+            .to("#page-b", { autoAlpha: 1, duration: 0.45 }, demo + 3.7)
+            .to("#url-home", { autoAlpha: 0, duration: 0.35 }, demo + 3.7)
+            .to("#url-article", { autoAlpha: 1, duration: 0.35 }, demo + 3.7)
+            .to("#back-arrow", { stroke: "#a8c8b8", duration: 0.35 }, demo + 3.7)
+            .to("#open-key", { autoAlpha: 0, duration: 0.4 }, demo + 4.15)
+            .to("#faded-d", { autoAlpha: 0, duration: 0.4 }, demo + 4.15)
+            .to("#back-key", { autoAlpha: 1, duration: 0.4 }, demo + 4.15)
+            .to("#faded-f", { autoAlpha: 1, duration: 0.4 }, demo + 4.15)
+            .to("#animated-back-key", { y: 4, duration: 0.08, yoyo: true, repeat: 1 }, demo + 5.6)
+            .to("#d-key-flash", { opacity: 0.35, duration: 0.08, yoyo: true, repeat: 1 }, demo + 5.6)
+            .to("#url-progress", { attr: { width: 224 }, duration: 0.45 }, demo + 5.7)
+            .to("#url-progress", { attr: { width: 0 }, duration: 0.08 }, demo + 6.15)
+            .to("#page-b", { autoAlpha: 0, duration: 0.45 }, demo + 6.15)
+            .to("#page-a", { autoAlpha: 1, duration: 0.45 }, demo + 6.15)
+            .to("#url-article", { autoAlpha: 0, duration: 0.35 }, demo + 6.15)
+            .to("#url-home", { autoAlpha: 1, duration: 0.35 }, demo + 6.15)
+            .to("#back-arrow", { stroke: "#555571", duration: 0.35 }, demo + 6.15)
+            .to("#scene-demo", { autoAlpha: 0, duration: 0.4, ease: "power3.in" }, 25.45);
+
+        tl.set("#scene-theory", { autoAlpha: 1 }, 25.7)
+            .to("#theory-2", { autoAlpha: 1, y: 0, duration: 0.5, ease: "power3.out" }, 25.75)
+            .to("#scene-theory", { autoAlpha: 0, duration: 0.4, ease: "power3.in" }, 28.55);
+
+        tl.set("#scene-close", { autoAlpha: 1 }, 28.8)
+            .to("#close-title", { autoAlpha: 1, x: 0, duration: 0.6, ease: "back.out(1.3)" }, 28.85)
+            .to("#close-meta", { autoAlpha: 1, duration: 0.4 }, 29.15)
+            .to("#close-lede-1", { autoAlpha: 1, y: 0, duration: 0.5, ease: "power3.out" }, 29.2)
+            .to("#close-lede-2", { autoAlpha: 1, y: 0, duration: 0.5, ease: "power3.out" }, 29.55)
+            .to("#close-bar", { y: 0, duration: 0.5, ease: "power3.out" }, 29.35)
+            /* last-slide marquee
+            .set("#ticker", { autoAlpha: 1 }, 30.6)
+            .fromTo("#ticker-track", {
+                x: tickerStart
+            }, {
+                x: tickerStart - tickerUnit,
+                duration: 22,
+                ease: "none",
+                modifiers: { x: wrapX }
+            }, 30.6)
+            */
+            .to({}, { duration: 0.2 }, 35.0);
+
+        window.__timelines = window.__timelines || {};
+        window.__timelines["key-click-intro"] = tl;
+        if (!window.__hyperframes) tl.play();
+    })();
+    </script>
+</body>
+</html>

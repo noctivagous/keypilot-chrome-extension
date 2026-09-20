@@ -77,6 +77,10 @@ online-stores/**/templates/**/*.png
 online-stores/**/templates/**/*.jpg
 online-stores/**/templates/**/*.jpeg
 
+# Intro reel renders and HyperFrames runtime output
+promo/intro-reel/renders/
+promo/intro-reel/.hyperframes/
+
 
 
 

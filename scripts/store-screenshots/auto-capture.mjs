@@ -38,9 +38,9 @@ function parseArgs(argv) {
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === '--keep-browser') options.keepBrowser = true;
-    else if (arg === '--locales' || arg === '--locale') options.locales = argv[++index]?.split(',');
-    else if (arg.startsWith('--locales=')) options.locales = arg.slice('--locales='.length).split(',');
-    else if (arg.startsWith('--locale=')) options.locales = [arg.slice('--locale='.length)];
+    else if (arg === '--locales' || arg === '--locale') options.locales = parseLocaleList(argv[++index]);
+    else if (arg.startsWith('--locales=')) options.locales = parseLocaleList(arg.slice('--locales='.length));
+    else if (arg.startsWith('--locale=')) options.locales = parseLocaleList(arg.slice('--locale='.length));
     else if (arg === '--port') options.port = Number(argv[++index]);
     else if (arg.startsWith('--port=')) options.port = Number(arg.slice('--port='.length));
     else if (arg === '--profile-root') options.profileRoot = path.resolve(argv[++index]);
@@ -55,8 +55,21 @@ function parseArgs(argv) {
   return options;
 }
 
+function parseLocaleList(value) {
+  return String(value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function chromeLocale(locale) {
   return locale.replaceAll('_', '-');
+}
+
+function fixtureUrl(origin, locale) {
+  const url = new URL(origin);
+  url.searchParams.set('lang', locale);
+  return url.toString();
 }
 
 function setMacUiLanguage(locale) {
@@ -298,10 +311,23 @@ async function captureLocale(locale, options, server, slots) {
       mobile: false
     });
     const loaded = client.Page.loadEventFired();
-    await client.Page.navigate({ url: server.origin });
+    const url = fixtureUrl(server.origin, locale);
+    await client.Page.navigate({ url });
     await loaded;
     const contextId = await findKeyPilotContext(client);
     await installStoreApi(client, contextId);
+    const applied = await evaluate(client, 'document.body.getAttribute("data-locale")', false, contextId);
+    if (applied !== locale) {
+      throw new Error(`Fixture locale is "${applied}", expected "${locale}" (${url})`);
+    }
+    await evaluate(
+      client,
+      `Promise.all([...document.images].map((img) => (
+        img.complete ? null : new Promise((resolve) => { img.onload = img.onerror = resolve; })
+      )))`,
+      true,
+      contextId
+    );
     for (const slot of slots.slots) {
       const reset = await evaluate(client, 'window.__KP_STORE_SHOTS.reset()', true, contextId);
       const opened = await evaluate(client, `window.__KP_STORE_SHOTS.open(${JSON.stringify(slot.capture.open)})`, true, contextId);
@@ -374,7 +400,7 @@ async function main() {
   const slots = loadSlots(repoRoot);
   const locales = eligibleLocales(slots, options.locales);
   const server = await serveFixture();
-  console.log(`Fixture: ${server.origin}`);
+  console.log(`Fixture: ${server.origin}?lang=<locale>`);
   try {
     for (const locale of locales) await captureLocale(locale, options, server, slots);
   } finally {

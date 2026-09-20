@@ -236,8 +236,9 @@
       font-weight: 700;
     }
 
-    /* Localization Switcher UI (Hidden by default, used for manual testing) */
+    /* Hidden in store captures; add ?switcher=1 for local preview. */
     .locale-switcher {
+      display: none;
       position: fixed;
       bottom: 10px;
       right: 10px;
@@ -248,6 +249,9 @@
       font-family: sans-serif;
       font-size: 12px;
       z-index: 10000;
+    }
+    body[data-show-switcher="true"] .locale-switcher {
+      display: block;
     }
   </style>
 </head>
@@ -483,6 +487,7 @@
 
     function updateLocale(lang) {
       const locale = LOCALES[lang] || LOCALES.en;
+      document.documentElement.lang = lang === 'es_419' ? 'es' : lang;
       document.body.setAttribute('data-locale', lang);
       
       document.getElementById('page-title').innerText = locale.title;
@@ -557,11 +562,25 @@
       });
     }
 
+    function normalizeLang(raw) {
+      if (!raw) return '';
+      const trimmed = String(raw).trim();
+      if (LOCALES[trimmed]) return trimmed;
+      const underscored = trimmed.replaceAll('-', '_');
+      if (LOCALES[underscored]) return underscored;
+      const base = trimmed.split(/[-_]/)[0];
+      if (LOCALES[base]) return base;
+      return '';
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
-    let lang = urlParams.get('lang') || navigator.language.split('-')[0];
-    if (lang === 'es' && navigator.language.includes('419')) lang = 'es_419';
+    let lang = normalizeLang(urlParams.get('lang'));
+    if (!lang) {
+      const nav = navigator.language || 'en';
+      lang = nav.toLowerCase().includes('419') ? 'es_419' : (normalizeLang(nav) || 'en');
+    }
     if (!LOCALES[lang]) lang = 'en';
-    
+    if (urlParams.get('switcher') === '1') document.body.setAttribute('data-show-switcher', 'true');
     updateLocale(lang);
   </script>
   <script src="/page-api.js"></script>

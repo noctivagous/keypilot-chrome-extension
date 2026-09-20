@@ -1,5 +1,9 @@
 # Chrome store listing screenshots
 
+npm run store:screenshots:auto -- --locales=en,es,es_419,de && npm run store:screenshots -- --all
+
+
+
 No Playwright. Capture real KeyPilot UI with **chrome-dev / CDP**, then rasterize
 annotated listing PNGs.
 
@@ -25,6 +29,9 @@ npm run build
 npm run store:screenshots:auto -- --locales=en,es,es_419,de
 npm run store:screenshots -- --all
 ```
+
+Each locale opens the fixture with `?lang=` so page copy, layout, and Wikimedia
+photos match the capture folder (`en`, `es`, `es_419`, `de`).
 
 The runner uses **Google Chrome for Testing** at
 `/Applications/Google Chrome for Testing.app`, a disposable profile under
@@ -52,7 +59,7 @@ single browser process.
 1. `npm run build`
 2. Load unpacked `extension/` in a Chrome profile whose **UI language** is the
    capture locale (`chrome://settings/languages`, or `--lang=en-US`).
-3. `npm run store:screenshots:serve` and open the printed fixture URL.
+3. `npm run store:screenshots:serve` and open the printed fixture URL with `?lang=` matching the capture locale.
 4. Set the viewport to **1280×800** at **1×** device scale.
 5. Wait until `__KP_STORE_SHOTS.ready()` is true, then for each slot in
    `online-stores/chrome/slots.json`:

@@ -27,13 +27,13 @@ const MIME = {
 function printPlaybook(origin) {
   const slots = loadSlots(repoRoot);
   const viewport = slots.captureDefaults.viewport;
-  console.log(`Fixture: ${origin}`);
+  console.log(`Fixture: ${origin}?lang=<locale>  (en, es, es_419, de)`);
   console.log(`Viewport: ${viewport.width}×${viewport.height} @ ${slots.captureDefaults.deviceScaleFactor}x`);
   console.log(`Chrome UI language: ${slots.captureDefaults.chromeUiLanguage}`);
   console.log('');
   console.log('chrome-dev playbook (KeyPilot unpacked + enabled, locale matching the capture folder):');
   console.log('  1. Set the browser UI language to the capture locale (or launch Chrome with --lang).');
-  console.log('  2. Navigate to the fixture URL. Emulate the viewport above.');
+  console.log('  2. Navigate to the fixture URL with ?lang= matching the capture locale. Emulate the viewport above.');
   console.log('  3. Wait until Runtime.evaluate returns true:');
   console.log('       window.__KP_STORE_SHOTS.ready()');
   console.log('  4. For each slot:');
