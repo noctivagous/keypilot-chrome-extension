@@ -20,6 +20,7 @@
     "docs:screenshots": "node scripts/docs-screenshots/capture.mjs",
     "store:screenshots": "node scripts/store-screenshots/generate.mjs",
     "store:screenshots:serve": "node scripts/store-screenshots/capture.mjs",
+    "store:screenshots:auto": "node scripts/store-screenshots/auto-capture.mjs",
     "check:locales": "node scripts/check-locales.mjs",
     "test": "npm run check:locales && node --test --test-concurrency=1 test/*.test.js",
     "test:settings": "node --test --test-concurrency=1 test/settings-manager.test.js",
@@ -35,6 +36,7 @@
   "devDependencies": {
     "@resvg/resvg-js": "^2.6.2",
     "archiver": "^8.0.0",
+    "chrome-remote-interface": "^0.34.0",
     "esbuild": "^0.28.2"
   }
 }

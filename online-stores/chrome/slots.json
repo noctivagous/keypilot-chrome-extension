@@ -67,7 +67,7 @@
         "hoverSelector": "#kp-store-primary-link",
         "requiredSelectors": [
           "#kp-store-primary-link",
-          ".kpv2-focus",
+          ".kpv2-focus, .kpv2-focus-overlay, .kpv2-focus-ring-intarget",
           ".kp-floating-keyboard-help",
           ".kp-control-strip"
         ]

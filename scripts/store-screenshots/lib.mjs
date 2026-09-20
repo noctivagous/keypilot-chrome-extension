@@ -297,8 +297,18 @@ export function generateLocaleScreenshots(root, slots, locale, { write = true } 
     });
     assertGeneratedPng(png, { width: slot.width, height: slot.height });
     const dest = path.join(outDir, slot.outputFile);
-    if (write) fs.writeFileSync(dest, png);
-    outputs.push({ locale, slot: slot.id, file: dest, bytes: png.length });
+    const svgDest = path.join(outDir, slot.outputFile.replace(/\.png$/i, '.svg'));
+    if (write) {
+      fs.writeFileSync(svgDest, svg);
+      fs.writeFileSync(dest, png);
+    }
+    outputs.push({
+      locale,
+      slot: slot.id,
+      file: dest,
+      svgFile: svgDest,
+      bytes: png.length
+    });
   }
   return outputs;
 }

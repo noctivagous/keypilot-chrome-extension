@@ -13,6 +13,40 @@ npm run store:screenshots -- --locale=en
 Chrome does **not** read these files from the packed extension. Upload generated
 PNGs by hand in the Developer Dashboard.
 
+## Automated Chrome capture
+
+For unattended capture, use the Chrome launcher and CDP runner. It sets
+Chrome's macOS `AppleLanguages` preference, starts a disposable profile with
+the unpacked extension loaded, captures every slot in `slots.json`, and writes
+locale metadata:
+
+```bash
+npm run build
+npm run store:screenshots:auto -- --locales=en,es,es_419,de
+npm run store:screenshots -- --all
+```
+
+The runner uses **Google Chrome for Testing** at
+`/Applications/Google Chrome for Testing.app`, a disposable profile under
+`tmp-captures/chrome-profiles/`, and a free CDP port. It does not use or
+modify the normal Chrome or Brave profiles. Use `--port=9222` when another
+tool needs a fixed port, or `--keep-browser` to leave the last instance open.
+Use `--locales=en` to run one locale. Override the binary with
+`--browser-binary=` or `CHROME_BINARY` if needed.
+
+KeyPilot chrome is queried through **open shadow roots** and **same-origin
+iframes** (Settings/Docs popovers). Mouse clicks use top-level viewport
+coordinates, including iframe offsets.
+
+The runner fails early when the loaded service worker is not KeyPilot instead
+of waiting for the page API indefinitely.
+
+The current runner captures the slots defined in `online-stores/chrome/slots.json`;
+adding slots and their `page-api.js` states automatically adds them to the
+capture loop. The launch step is deterministic, but Chrome's macOS UI language
+is process-level, so each locale is launched in sequence rather than inside a
+single browser process.
+
 ## Capture (once per locale)
 
 1. `npm run build`

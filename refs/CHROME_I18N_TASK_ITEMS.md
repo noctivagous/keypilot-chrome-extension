@@ -4,6 +4,90 @@ Implementation checklist for localizing KeyPilot's Chrome-extension surfaces.
 For the durable workflow used for future localization work, see
 [`i18n/README.md`](../i18n/README.md).
 
+## Chrome Developer Dashboard: localized listing (descriptions, screenshots, promo video)
+
+Chrome does **not** take listing copy, screenshots, or YouTube promo URLs from
+the ZIP. Manifest `name` / `description` come from `_locales/<locale>/messages.json`.
+The long description, screenshots, and promo video are entered by hand on the
+item’s **Store listing** tab after a package that contains those locales is
+uploaded.
+
+Official references:
+
+- [Complete your listing information](https://developer.chrome.com/docs/webstore/cws-dashboard-listing)
+- [Supplying images](https://developer.chrome.com/docs/webstore/images)
+- [Creating a great listing page](https://developer.chrome.com/docs/webstore/best-listing)
+
+### Prerequisite
+
+1. Ship `default_locale` plus at least one `_locales/<locale>/` catalog in the
+   uploaded package. Each dropdown language maps to one of those directories
+   (`en`, `es`, `es_419`, and so on).
+2. Upload the package first. The listing language selector appears only after
+   Chrome has seen the internationalized package.
+3. Open the item in the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole)
+   and go to **Store listing**.
+
+### What is global vs per locale
+
+| Asset | Scope | Dashboard control | Notes |
+|---|---|---|---|
+| Short name and summary | Per locale (from package) | Manifest / `messages.json` | Not pasted on the listing tab. |
+| Detailed description | Per locale | Store listing, after choosing a language | Paste the long description for that locale. Repeat for every shipped locale. |
+| Screenshots | Global **and** localized | Global screenshots vs **Localized screenshots** | Up to five per locale. Prefer `1280×800` (or `640×400`), square corners, full bleed. Localized screenshots override global ones for that locale; locales with none use global screenshots. |
+| Promo / YouTube video | Global **and** optional localized | Global promo video URL vs **Localized promo video** | Required listing field is a YouTube URL. Use **one global video** for all locales unless you have a language-specific YouTube upload. |
+| Small promo tile `440×280` | Global only | Promotional images | **Cannot be localized.** Upload once. |
+| Marquee promo tile `1400×560` | Global only | Promotional images | **Cannot be localized.** Optional, but needed to be eligible for the homepage marquee. |
+| Store icon `128×128` | Global | Listing / package icon | Not locale-specific. |
+
+Listing graphics and video are shown in this order ([listing docs](https://developer.chrome.com/docs/webstore/cws-dashboard-listing)):
+
+1. Localized promo video (if that locale has one)
+2. Localized screenshots (if that locale has any)
+3. Global (non-localized) promo video
+4. Global screenshots
+
+A single global YouTube URL is enough for every locale: leave **Localized promo
+video** empty, and users still see the global video (after any localized
+screenshots). Fill **Localized promo video** only when you have a distinct
+YouTube URL in that language.
+
+### Upload procedure
+
+**Once (global assets)**
+
+1. Set the **global** YouTube promo URL (English KeyPilot video, or whichever
+   single video should appear everywhere).
+2. Upload global screenshots if you want a fallback for locales that do not yet
+   have localized PNGs.
+3. Upload the global small promo tile (`440×280`) and marquee (`1400×560`) from
+   `online-stores/generated/chrome/promo/`. Do not put these in Localized
+   screenshots.
+
+**For each shipped locale** (`en`, then `es`, `es_419`, …)
+
+1. At the **top of Store listing**, choose that language in the dropdown. The
+   list is the `_locales` catalogs in the uploaded ZIP.
+2. Paste the **detailed description** for that locale. Keep the same feature
+   set as English; Chrome may warn on inconsistent metadata, but that warning
+   does not by itself block submit.
+3. Under **Localized screenshots**, drop only that locale’s PNGs (KeyPilot:
+   `online-stores/generated/chrome/<locale>/`, slot order `01-`…`03-`).
+4. Leave **Localized promo video** blank so the **global** YouTube URL is used,
+   unless this locale has its own dubbed/captioned YouTube video.
+5. Repeat for the next language in the dropdown. Save/publish when every
+   shipped locale has description + screenshots.
+
+Region availability (which countries can find the item) is separate: that is
+the **Distribution** tab, not the listing language dropdown. By default the
+item is listed in all Chrome Web Store regions.
+
+Uploading a new package does **not** refresh listing screenshots, descriptions,
+or the promo URL. Those stay dashboard-only until you edit them again.
+
+See `online-stores/README.md` and `online-stores/chrome/RELEASE-CHECKLIST.md`
+for filenames and the per-locale upload record.
+
 ## Scope and design constraints
 
 - Use Chrome's built-in [`chrome.i18n`](https://developer.chrome.com/docs/extensions/reference/api/i18n) message catalog mechanism. It selects strings from `_locales/<locale>/messages.json` according to the browser UI locale.
@@ -390,6 +474,9 @@ Draft note (2026-09-17): `extension/_locales/es/messages.json` and `es_419/messa
 
 ## References
 
+- [Chrome: Complete your listing information](https://developer.chrome.com/docs/webstore/cws-dashboard-listing) — language dropdown, localized description/screenshots/promo video, global promo tiles, asset display order
+- [Chrome: Supplying images](https://developer.chrome.com/docs/webstore/images)
+- [Chrome: Creating a great listing page](https://developer.chrome.com/docs/webstore/best-listing)
 - [Chrome: Internationalize the interface](https://developer.chrome.com/docs/extensions/develop/ui/i18n)
 - [Chrome: `chrome.i18n` API and message fallback](https://developer.chrome.com/docs/extensions/reference/api/i18n)
 - `refs/MAC_OPT_ALT_LABELS.md` — Mac Opt vs PC Alt in UI labels (host OS, not locale catalogs)
