@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>The Harbor Gazette — Maine's Daily News</title>
-  <style>
+  <title id="page-title">The Harbor Gazette — Maine's Daily News</title>
+  <style id="locale-styles">
     :root {
       --bg: #fdfaf3;
       --text: #1b1f24;
@@ -23,6 +23,38 @@
     body {
       padding: 0;
     }
+    
+    /* Locale specific overrides */
+    body[data-locale^="de"] {
+      --serif: "Times New Roman", Times, serif;
+      --accent: #d00;
+      --bg: #f5f5f5;
+    }
+    body[data-locale^="de"] .masthead h1 {
+      letter-spacing: -0.04em;
+      font-weight: 800;
+      text-transform: none;
+    }
+
+    body[data-locale="es"] {
+      --bg: #ffffff;
+      --accent: #c00;
+      --serif: "Georgia", serif;
+    }
+    body[data-locale="es"] .masthead {
+      border-bottom: 2px solid var(--accent);
+    }
+
+    body[data-locale="es_419"] {
+      --accent: #004a99;
+      --bg: #f9f9f9;
+      --serif: "Charter", "Bitstream Charter", serif;
+    }
+    body[data-locale="es_419"] .breaking-bar {
+      background: #e8efff;
+      border-bottom-color: #004a99;
+    }
+
     .top-bar {
       border-bottom: 1px solid var(--border);
       padding: 8px 64px;
@@ -131,6 +163,8 @@
       margin-bottom: 12px;
       border: 1px solid var(--border);
       overflow: hidden;
+      background: #eee;
+      min-height: 200px;
     }
     .lead-image img {
       width: 100%;
@@ -175,6 +209,8 @@
       width: 100%;
       margin-bottom: 12px;
       border: 1px solid var(--border);
+      background: #eee;
+      min-height: 100px;
     }
     .bulletin-item {
       margin-bottom: 16px;
@@ -199,21 +235,35 @@
       font-size: 32px;
       font-weight: 700;
     }
+
+    /* Localization Switcher UI (Hidden by default, used for manual testing) */
+    .locale-switcher {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(255,255,255,0.9);
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: sans-serif;
+      font-size: 12px;
+      z-index: 10000;
+    }
   </style>
 </head>
-<body>
+<body data-locale="en">
   <div class="top-bar">
-    <span>Saturday, September 19, 2026</span>
-    <span>Harbor District: 58°F ☁️</span>
+    <span id="top-date">Saturday, September 19, 2026</span>
+    <span id="top-weather">Harbor District: 58°F ☁️</span>
   </div>
 
   <header class="masthead">
-    <div class="masthead-logo">G</div>
-    <h1>The Harbor Gazette</h1>
-    <div class="tagline">Serving the Mid-Coast and the Penobscot Bay since 1884</div>
+    <div class="masthead-logo" id="masthead-logo-text">G</div>
+    <h1 id="masthead-title">The Harbor Gazette</h1>
+    <div class="tagline" id="masthead-tagline">Serving the Mid-Coast and the Penobscot Bay since 1884</div>
   </header>
 
-  <nav class="main-nav">
+  <nav class="main-nav" id="main-nav">
     <a href="#">Local</a>
     <a href="#">Politics</a>
     <a href="#">Coastal Life</a>
@@ -223,22 +273,22 @@
   </nav>
 
   <div class="breaking-bar">
-    <span class="breaking-label">Breaking:</span>
-    <span>Penobscot Bridge to close for repairs starting Monday. Seek alternate routes.</span>
+    <span class="breaking-label" id="breaking-label">Breaking:</span>
+    <span id="breaking-content">Penobscot Bridge to close for repairs starting Monday. Seek alternate routes.</span>
   </div>
 
   <main class="container">
     <article class="lead-story">
-      <div class="kicker">Waterfront News</div>
-      <h2 class="story-title">Harbor lights return to the waterfront this weekend</h2>
-      <div class="byline">By Elias Thorne, Gazette Staff Writer</div>
+      <div class="kicker" id="story-kicker">Waterfront News</div>
+      <h2 class="story-title" id="story-title">Harbor lights return to the waterfront this weekend</h2>
+      <div class="byline" id="story-byline">By Elias Thorne, Gazette Staff Writer</div>
       
       <div class="lead-image">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Between_Custom_House_Wharf_and_Portland_Pier.jpg/1280px-Between_Custom_House_Wharf_and_Portland_Pier.jpg" alt="Between Custom House Wharf and Portland Pier at dusk">
+        <img id="lead-image-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Between_Custom_House_Wharf_and_Portland_Pier.jpg/1280px-Between_Custom_House_Wharf_and_Portland_Pier.jpg" alt="">
       </div>
-      <div class="caption">Crews test the new energy-efficient LED filaments on Pier 4 late Thursday evening. Restoration of the historic district is now complete.</div>
+      <div class="caption" id="lead-image-caption">Crews test the new energy-efficient LED filaments on Pier 4 late Thursday evening. Restoration of the historic district is now complete.</div>
 
-      <div class="story-content">
+      <div class="story-content" id="story-content">
         <p>
           PORTLAND — Crews finished the last string of lamps along Pier 4 on Thursday, marking the completion of a two-year restoration project. The historic waterfront district, which has seen significant redevelopment in recent years, is expected to draw thousands of residents and tourists this weekend.
         </p>
@@ -247,46 +297,273 @@
         </p>
       </div>
 
-      <nav class="action-links">
-        <a id="kp-store-primary-link" href="https://example.com/waterfront">Read the full waterfront guide</a>
-        <a href="https://example.com/hours">Weekend hours</a>
-        <a href="https://example.com/map">Map and transit</a>
+      <nav class="action-links" id="action-links">
+        <a id="kp-store-primary-link" href="#">Read the full waterfront guide</a>
+        <a href="#">Weekend hours</a>
+        <a href="#">Map and transit</a>
       </nav>
     </article>
 
     <aside class="sidebar">
       <div class="sidebar-section">
-        <h3>Local Bulletin</h3>
-        <img class="sidebar-image" src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/83_Commercial_Street%2C_Portland_ME.jpg/1280px-83_Commercial_Street%2C_Portland_ME.jpg" alt="Historic brick buildings on Commercial Street, Portland">
-        <div class="bulletin-item">
-          <a href="#">Town meeting scheduled for zoning debate in West Harbor</a>
-        </div>
-        <div class="bulletin-item">
-          <a href="#">Local high school football scores: Camden Hills tops Rockland</a>
-        </div>
-        <div class="bulletin-item">
-          <a href="#">Lobster catch down slightly, but prices remain stable</a>
+        <h3 id="sidebar-bulletin-title">Local Bulletin</h3>
+        <img id="sidebar-image-img" class="sidebar-image" src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/83_Commercial_Street%2C_Portland_ME.jpg/1280px-83_Commercial_Street%2C_Portland_ME.jpg" alt="">
+        <div id="sidebar-bulletin-items">
+          <div class="bulletin-item"><a href="#">Town meeting scheduled for zoning debate in West Harbor</a></div>
+          <div class="bulletin-item"><a href="#">Local high school football scores: Camden Hills tops Rockland</a></div>
+          <div class="bulletin-item"><a href="#">Lobster catch down slightly, but prices remain stable</a></div>
         </div>
       </div>
 
       <div class="sidebar-section">
-        <h3>Weather Forecast</h3>
+        <h3 id="sidebar-weather-title">Weather Forecast</h3>
         <div class="weather-widget">
-          <div class="weather-temp">58°F</div>
-          <div>Mostly Cloudy</div>
-          <div style="font-size: 14px; color: #666; margin-top: 8px;">Humidity: 65% | Wind: 8mph NE</div>
+          <div class="weather-temp" id="weather-temp">58°F</div>
+          <div id="weather-desc">Mostly Cloudy</div>
+          <div id="weather-details" style="font-size: 14px; color: #666; margin-top: 8px;">Humidity: 65% | Wind: 8mph NE</div>
         </div>
       </div>
       
       <div class="sidebar-section">
-        <h3>Opinion</h3>
-        <div class="bulletin-item">
-          <a href="#">Editorial: Why we must preserve the working waterfront</a>
+        <h3 id="sidebar-opinion-title">Opinion</h3>
+        <div id="sidebar-opinion-items">
+          <div class="bulletin-item"><a href="#">Editorial: Why we must preserve the working waterfront</a></div>
         </div>
       </div>
     </aside>
   </main>
 
+  <div class="locale-switcher">
+    Switch: 
+    <a href="?lang=en">EN</a> | 
+    <a href="?lang=es">ES</a> | 
+    <a href="?lang=es_419">ES-LATAM</a> | 
+    <a href="?lang=de">DE</a>
+  </div>
+
+  <script>
+    const LOCALES = {
+      en: {
+        title: "The Harbor Gazette — Maine's Daily News",
+        mastheadLogo: "G",
+        mastheadTitle: "The Harbor Gazette",
+        mastheadTagline: "Serving the Mid-Coast and the Penobscot Bay since 1884",
+        date: "Saturday, September 19, 2026",
+        weather: "Harbor District: 58°F ☁️",
+        nav: ["Local", "Politics", "Coastal Life", "Obituaries", "Opinion", "Sports"],
+        breakingLabel: "Breaking:",
+        breakingContent: "Penobscot Bridge to close for repairs starting Monday. Seek alternate routes.",
+        storyKicker: "Waterfront News",
+        storyTitle: "Harbor lights return to the waterfront this weekend",
+        storyByline: "By Elias Thorne, Gazette Staff Writer",
+        leadImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Between_Custom_House_Wharf_and_Portland_Pier.jpg/1280px-Between_Custom_House_Wharf_and_Portland_Pier.jpg",
+        leadCaption: "Crews test the new energy-efficient LED filaments on Pier 4 late Thursday evening. Restoration of the historic district is now complete.",
+        storyContent: [
+          "PORTLAND — Crews finished the last string of lamps along Pier 4 on Thursday, marking the completion of a two-year restoration project. The historic waterfront district, which has seen significant redevelopment in recent years, is expected to draw thousands of residents and tourists this weekend.",
+          "Evening walks reopen after dusk, and the market stalls below the promenade stay open an hour later to accommodate the expected crowds. Local business owners are hopeful that the return of the lights will signal a strong autumn season for the district."
+        ],
+        actionLinks: ["Read the full waterfront guide", "Weekend hours", "Map and transit"],
+        sidebarBulletinTitle: "Local Bulletin",
+        sidebarImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/83_Commercial_Street%2C_Portland_ME.jpg/1280px-83_Commercial_Street%2C_Portland_ME.jpg",
+        sidebarBulletins: [
+          "Town meeting scheduled for zoning debate in West Harbor",
+          "Local high school football scores: Camden Hills tops Rockland",
+          "Lobster catch down slightly, but prices remain stable"
+        ],
+        sidebarWeatherTitle: "Weather Forecast",
+        weatherTemp: "58°F",
+        weatherDesc: "Mostly Cloudy",
+        weatherDetails: "Humidity: 65% | Wind: 8mph NE",
+        sidebarOpinionTitle: "Opinion",
+        sidebarOpinions: ["Editorial: Why we must preserve the working waterfront"]
+      },
+      es: {
+        title: "El Heraldo de la Costa — Noticias de España",
+        mastheadLogo: "H",
+        mastheadTitle: "El Heraldo de la Costa",
+        mastheadTagline: "Crónica del Mediterráneo y las Islas desde 1892",
+        date: "Sábado, 19 de septiembre de 2026",
+        weather: "Distrito Marítimo: 22°C ☀️",
+        nav: ["Local", "Política", "Vida Costera", "Esquelas", "Opinión", "Deportes"],
+        breakingLabel: "Última hora:",
+        breakingContent: "El puerto de Barcelona restringe el acceso por obras en el muelle. Consulte rutas.",
+        storyKicker: "Noticias del Puerto",
+        storyTitle: "Las luces del puerto vuelven al malecón este fin de semana",
+        storyByline: "Por Elena Torres, Redactora de El Heraldo",
+        leadImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Imax_Port_Vell_Barcelona_001.JPG/1280px-Imax_Port_Vell_Barcelona_001.JPG",
+        leadCaption: "Operarios prueban el nuevo alumbrado LED en el Port Vell este jueves noche. La restauración ha concluido con éxito.",
+        storyContent: [
+          "BARCELONA — Los equipos terminaron de instalar la última serie de lámparas en el muelle este jueves, marcando el fin de un proyecto de dos años. El distrito histórico, que ha vivido una gran transformación, espera miles de visitantes.",
+          "Los paseos nocturnos reabren tras el ocaso, y los puestos del mercado bajo el paseo abrirán una hora más para atender al público esperado."
+        ],
+        actionLinks: ["Guía completa del puerto", "Horarios del fin de semana", "Mapa y transporte"],
+        sidebarBulletinTitle: "Boletín Local",
+        sidebarImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Barcelona-port.JPG/1280px-Barcelona-port.JPG",
+        sidebarBulletins: [
+          "Reunión municipal sobre el nuevo plan urbanístico en el puerto",
+          "Resultados liga regional: El equipo local vence en el derbi",
+          "La pesca de bajura se mantiene estable pese al temporal"
+        ],
+        sidebarWeatherTitle: "El Tiempo",
+        weatherTemp: "22°C",
+        weatherDesc: "Soleado",
+        weatherDetails: "Humedad: 45% | Viento: 12km/h SE",
+        sidebarOpinionTitle: "Opinión",
+        sidebarOpinions: ["Editorial: Preservar la identidad de nuestros puertos"]
+      },
+      es_419: {
+        title: "Diario del Puerto — Noticias del Cono Sur",
+        mastheadLogo: "D",
+        mastheadTitle: "Diario del Puerto",
+        mastheadTagline: "La voz del Río de la Plata y el Litoral desde 1905",
+        date: "Sábado, 19 de septiembre de 2026",
+        weather: "Puerto Madero: 18°C 🌤️",
+        nav: ["Local", "Política", "Costa", "Obituarios", "Opinión", "Deportes"],
+        breakingLabel: "Urgente:",
+        breakingContent: "Cierre temporal del Puente de la Mujer por mantenimiento técnico el lunes.",
+        storyKicker: "Actualidad Portuaria",
+        storyTitle: "Regresa la iluminación al paseo costanero este fin de semana",
+        storyByline: "Por Ricardo Gómez, Especial para el Diario",
+        leadImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Puerto_Madero%2C_Buenos_Aires_%2840689219792%29.jpg/1280px-Puerto_Madero%2C_Buenos_Aires_%2840689219792%29.jpg",
+        leadCaption: "Pruebas de iluminación en el sector de diques de Puerto Madero el jueves por la noche. Finaliza la puesta en valor.",
+        storyContent: [
+          "BUENOS AIRES — Operarios completaron la instalación de las nuevas luminarias en el Dique 3. El proyecto de restauración, largamente esperado por los vecinos, se inaugura este fin de semana.",
+          "El paseo peatonal estará habilitado desde el atardecer y los locales gastronómicos extenderán su horario para recibir a los turistas."
+        ],
+        actionLinks: ["Guía del paseo", "Horarios", "Cómo llegar"],
+        sidebarBulletinTitle: "Boletín Regional",
+        sidebarImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Buenos_Aires_night_-_panoramio_%281%29.jpg/1280px-Buenos_Aires_night_-_panoramio_%281%29.jpg",
+        sidebarBulletins: [
+          "Audiencia pública por el desarrollo de la Costanera Sur",
+          "Torneo local: Resultados de la fecha en el Bajo",
+          "Exportaciones pesqueras crecen un 5% este trimestre"
+        ],
+        sidebarWeatherTitle: "Pronóstico",
+        weatherTemp: "18°C",
+        weatherDesc: "Algo Nublado",
+        weatherDetails: "Humedad: 70% | Viento: 15km/h E",
+        sidebarOpinionTitle: "Opinión",
+        sidebarOpinions: ["Editorial: El futuro de la zona portuaria"]
+      },
+      de: {
+        title: "Hafen-Kurier — Hamburgs Tageszeitung",
+        mastheadLogo: "HK",
+        mastheadTitle: "Hafen-Kurier",
+        mastheadTagline: "Die Stimme von Elbe und Alster seit 1876",
+        date: "Samstag, 19. September 2026",
+        weather: "HafenCity: 14°C ☁️",
+        nav: ["Lokales", "Politik", "Küste", "Nachrufe", "Meinung", "Sport"],
+        breakingLabel: "Eilmeldung:",
+        breakingContent: "Köhlbrandbrücke ab Montag wegen Wartungsarbeiten gesperrt. Umleitung beachten.",
+        storyKicker: "Hafennachrichten",
+        storyTitle: "Die Hafenlichter kehren dieses Wochenende zurück",
+        storyByline: "Von Hans Schmidt, Kurier-Redaktion",
+        leadImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Hamburg%E2%80%99s_Speicherstadt_at_night.jpg/1280px-Hamburg%E2%80%99s_Speicherstadt_at_night.jpg",
+        leadCaption: "Arbeiter testen die neue Beleuchtung in der historischen Speicherstadt am Donnerstagabend.",
+        storyContent: [
+          "HAMBURG — Die letzten Leuchten an der Pier wurden am Donnerstag fertiggestellt. Das historische Hafenviertel wird dieses Wochenende Tausende Besucher anlocken.",
+          "Die Uferpromenaden sind ab der Dämmerung geöffnet, und die Marktstände bleiben für die erwarteten Gäste eine Stunde länger geöffnet."
+        ],
+        actionLinks: ["Hafenguide lesen", "Öffnungszeiten", "Karte und Anfahrt"],
+        sidebarBulletinTitle: "Lokalnachrichten",
+        sidebarImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Hamburg%2C_Speicherstadt%2C_Wasserschloss_--_2016_--_3230-6.jpg/1280px-Hamburg%2C_Speicherstadt%2C_Wasserschloss_--_2016_--_3230-6.jpg",
+        sidebarBulletins: [
+          "Bürgerversammlung zur Hafenentwicklung in Altona",
+          "Sport-Ergebnisse: St. Pauli gewinnt Heimspiel",
+          "Fischfangzahlen stabil trotz Nordseesturm"
+        ],
+        sidebarWeatherTitle: "Wettervorhersage",
+        weatherTemp: "14°C",
+        weatherDesc: "Bewölkt",
+        weatherDetails: "Feuchtigkeit: 80% | Wind: 20km/h Nord",
+        sidebarOpinionTitle: "Meinung",
+        sidebarOpinions: ["Leitartikel: Warum wir unseren Arbeitshafen bewahren müssen"]
+      }
+    };
+
+    function updateLocale(lang) {
+      const locale = LOCALES[lang] || LOCALES.en;
+      document.body.setAttribute('data-locale', lang);
+      
+      document.getElementById('page-title').innerText = locale.title;
+      document.getElementById('top-date').innerText = locale.date;
+      document.getElementById('top-weather').innerText = locale.weather;
+      document.getElementById('masthead-logo-text').innerText = locale.mastheadLogo;
+      document.getElementById('masthead-title').innerText = locale.mastheadTitle;
+      document.getElementById('masthead-tagline').innerText = locale.mastheadTagline;
+      
+      const nav = document.getElementById('main-nav');
+      nav.innerHTML = '';
+      locale.nav.forEach(item => {
+        const a = document.createElement('a');
+        a.href = '#';
+        a.innerText = item;
+        nav.appendChild(a);
+      });
+      
+      document.getElementById('breaking-label').innerText = locale.breakingLabel;
+      document.getElementById('breaking-content').innerText = locale.breakingContent;
+      
+      document.getElementById('story-kicker').innerText = locale.storyKicker;
+      document.getElementById('story-title').innerText = locale.storyTitle;
+      document.getElementById('story-byline').innerText = locale.storyByline;
+      
+      document.getElementById('lead-image-img').src = locale.leadImage;
+      document.getElementById('lead-image-caption').innerText = locale.leadCaption;
+      
+      const content = document.getElementById('story-content');
+      content.innerHTML = '';
+      locale.storyContent.forEach(text => {
+        const p = document.createElement('p');
+        p.innerText = text;
+        content.appendChild(p);
+      });
+      
+      const actionLinks = document.getElementById('action-links');
+      actionLinks.innerHTML = '';
+      locale.actionLinks.forEach((text, i) => {
+        const a = document.createElement('a');
+        a.href = '#';
+        a.innerText = text;
+        if (i === 0) a.id = 'kp-store-primary-link';
+        actionLinks.appendChild(a);
+      });
+      
+      document.getElementById('sidebar-bulletin-title').innerText = locale.sidebarBulletinTitle;
+      document.getElementById('sidebar-image-img').src = locale.sidebarImage;
+      
+      const bulletinItems = document.getElementById('sidebar-bulletin-items');
+      bulletinItems.innerHTML = '';
+      locale.sidebarBulletins.forEach(text => {
+        const div = document.createElement('div');
+        div.className = 'bulletin-item';
+        div.innerHTML = `<a href="#">${text}</a>`;
+        bulletinItems.appendChild(div);
+      });
+      
+      document.getElementById('sidebar-weather-title').innerText = locale.sidebarWeatherTitle;
+      document.getElementById('weather-temp').innerText = locale.weatherTemp;
+      document.getElementById('weather-desc').innerText = locale.weatherDesc;
+      document.getElementById('weather-details').innerText = locale.weatherDetails;
+      
+      document.getElementById('sidebar-opinion-title').innerText = locale.sidebarOpinionTitle;
+      const opinionItems = document.getElementById('sidebar-opinion-items');
+      opinionItems.innerHTML = '';
+      locale.sidebarOpinions.forEach(text => {
+        const div = document.createElement('div');
+        div.className = 'bulletin-item';
+        div.innerHTML = `<a href="#">${text}</a>`;
+        opinionItems.appendChild(div);
+      });
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    let lang = urlParams.get('lang') || navigator.language.split('-')[0];
+    if (lang === 'es' && navigator.language.includes('419')) lang = 'es_419';
+    if (!LOCALES[lang]) lang = 'en';
+    
+    updateLocale(lang);
+  </script>
   <script src="/page-api.js"></script>
 </body>
 </html>
