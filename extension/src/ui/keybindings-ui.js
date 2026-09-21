@@ -1036,10 +1036,6 @@ export function attachKeyPopoverBehavior({ root, keybindings }) {
   root._kpKeyHandlers.focusout = handleKeyFocusOut;
   root._kpKeyHandlers.click = handleKeyClick;
 
-  if (keyElements.length === 0) {
-    console.warn('[KeyPilot] No key elements found for popover behavior in:', root);
-  }
-
   keyElements.forEach((keyEl) => {
     keyEl.addEventListener('pointerenter', handleKeyEnter);
     keyEl.addEventListener('pointerleave', handleKeyLeave);
