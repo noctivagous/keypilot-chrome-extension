@@ -13,4 +13,6 @@ keypilot-chrome-extension/online-stores/generated/chrome/<locale>/
 generated/chrome/en/01-key-click-browsing.png
 generated/chrome/en/02-keyboard-map.png
 generated/chrome/en/03-customize-workflow.png
+generated/chrome/en/04-walkthrough.png
+generated/chrome/en/05-context-menu.png
 generated/chrome/en/01-key-click-browsing.svg

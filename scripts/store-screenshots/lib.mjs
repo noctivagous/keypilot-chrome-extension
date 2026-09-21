@@ -102,15 +102,15 @@ export function assertCopyComplete(slots, locale, copy) {
     if (typeof entry.headline !== 'string' || !entry.headline.trim()) {
       throw new Error(`Locale "${locale}" slot "${slot.id}" is missing a headline`);
     }
-    if (!Array.isArray(entry.callouts) || entry.callouts.length < 2 || entry.callouts.length > 3) {
-      throw new Error(`Locale "${locale}" slot "${slot.id}" must have 2 or 3 callouts`);
+    if (!Array.isArray(entry.callouts) || entry.callouts.length < 1 || entry.callouts.length > 3) {
+      throw new Error(`Locale "${locale}" slot "${slot.id}" must have 1 to 3 callouts`);
     }
     if (entry.callouts.some((text) => typeof text !== 'string' || !text.trim())) {
       throw new Error(`Locale "${locale}" slot "${slot.id}" has an empty callout`);
     }
     assertWithinLimit(entry.headline, limits.headline, `${locale} ${slot.id} headline`);
     for (const [index, text] of entry.callouts.entries()) {
-      assertWithinLimit(text, limits.callout, `${locale} ${slot.id} callout ${index}`);
+    assertWithinLimit(String(text).replace(/\[\[([A-Za-z0-9]+)\]\]/g, '$1'), limits.callout, `${locale} ${slot.id} callout ${index}`);
     }
   }
 }
@@ -148,8 +148,35 @@ export function substitutionsForSlot(slot, copyEntry, captureHref) {
   };
   for (const [index, text] of copyEntry.callouts.entries()) {
     values[`callout.${index}`] = text;
+    const kbd = splitCalloutKbd(text);
+    if (kbd) {
+      const beforeWidth = estimateTitilliumWidth(kbd.before, 22);
+      const kbdX = Math.round(40 + beforeWidth + 8);
+      values[`callout.${index}.before`] = kbd.before;
+      values[`callout.${index}.kbd`] = kbd.kbd;
+      values[`callout.${index}.after`] = kbd.after || ' ';
+      values[`callout.${index}.kbdX`] = String(kbdX);
+      values[`callout.${index}.afterX`] = String(kbdX + 22 + 6);
+    }
   }
   return values;
+}
+
+function splitCalloutKbd(text) {
+  const match = String(text).match(/^(.*)\[\[([A-Za-z0-9]+)\]\](.*)$/s);
+  if (!match) return null;
+  return { before: match[1], kbd: match[2], after: match[3] };
+}
+
+function estimateTitilliumWidth(text, fontSize) {
+  let width = 0;
+  for (const ch of String(text)) {
+    if (ch === ' ') width += fontSize * 0.25;
+    else if ('iIlj.,:;!\''.includes(ch)) width += fontSize * 0.26;
+    else if ('mwWM@'.includes(ch)) width += fontSize * 0.76;
+    else width += fontSize * 0.5;
+  }
+  return width;
 }
 
 export function applyTemplate(template, values) {
@@ -282,7 +309,11 @@ export function generateLocaleScreenshots(root, slots, locale, { write = true } 
     const { png: capturePng } = assertCaptureReady(root, slots, locale, slot);
     const templatePath = path.join(storesRoot(root), slot.template);
     const template = fs.readFileSync(templatePath, 'utf8');
-    const neededCallouts = templatePlaceholders(template).filter((key) => key.startsWith('callout.')).length;
+    const neededCallouts = new Set(
+      templatePlaceholders(template)
+        .filter((key) => /^callout\.\d+/.test(key))
+        .map((key) => key.split('.')[1])
+    ).size;
     if (neededCallouts !== copy.slots[slot.copyKey].callouts.length) {
       throw new Error(
         `Locale "${locale}" slot "${slot.id}" has ${copy.slots[slot.copyKey].callouts.length} callouts, template needs ${neededCallouts}`

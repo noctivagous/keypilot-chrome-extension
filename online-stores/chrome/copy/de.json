@@ -4,12 +4,12 @@
     "key-click-browsing": {
       "headline": "Surfen Sie mit Tastenklicks im Web.",
       "callouts": [
-        "Steuern Sie den Cursor mit der Maus",
-        "Bewegen Sie den Mauszeiger über einen Link und drücken Sie F."
+        "Bewegen Sie den Cursor mit der Maus",
+        "Fahren Sie über einen Link und drücken Sie [[F]]."
       ]
     },
     "keyboard-map": {
-      "headline": "Häufige Aktionen immer griffbereit.",
+      "headline": "Eine Vielzahl von Aktionen immer griffbereit.",
       "callouts": [
         "Links anklicken",
         "Tabs und Verlauf navigieren",
@@ -20,8 +20,19 @@
       "headline": "Erstellen Sie ein Tastaturlayout für Ihren Arbeitsablauf.",
       "callouts": [
         "Layout auswählen",
-        "Funktionen zuweisen",
-        "Makros erstellen."
+        "Funktionen zuweisen"
+      ]
+    },
+    "walkthrough": {
+      "headline": "Nach der Installation erscheint eine Einführung.",
+      "callouts": [
+        "Links anklicken, Tabs öffnen und die Seite scrollen lernen"
+      ]
+    },
+    "context-menu": {
+      "headline": "Rechtsklick steuert KeyPilot jederzeit, wenn nötig.",
+      "callouts": [
+        "Hilfe, Einstellungen und Steuerungen finden Sie hier."
       ]
     }
   }

@@ -4,12 +4,12 @@
     "key-click-browsing": {
       "headline": "Browse the web with key-clicks.",
       "callouts": [
-        "Steer the cursor with the mouse",
-        "Hover over a link and press F to click."
+        "Move the cursor with the mouse",
+        "Hover over a link and press [[F]] to click."
       ]
     },
     "keyboard-map": {
-      "headline": "Keep common actions under your fingertips.",
+      "headline": "A variety of actions are available under your fingertips",
       "callouts": [
         "Click links",
         "Navigate tabs and history",
@@ -20,8 +20,19 @@
       "headline": "Build a keyboard layout that fits your workflow.",
       "callouts": [
         "Choose a layout",
-        "Assign functions",
-        "Create macros."
+        "Assign functions"
+      ]
+    },
+    "walkthrough": {
+      "headline": "A walkthrough appears after installation.",
+      "callouts": [
+        "Learn how to click links, open tabs, scroll the page"
+      ]
+    },
+    "context-menu": {
+      "headline": "Right-click is always available to control KeyPilot.",
+      "callouts": [
+        "Help, settings, and the controls are here."
       ]
     }
   }

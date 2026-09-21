@@ -11,11 +11,11 @@
     y="64"
     fill="#f4f6f8"
     font-family="Titillium Web, Segoe UI, system-ui, sans-serif"
-    font-size="34"
+    font-size="37.4"
     font-weight="700">{{headline}}</text>
   <g transform="translate(40,732)">
-    <rect width="28" height="28" rx="14" fill="#ff8c00"/>
-    <text x="14" y="20" text-anchor="middle" fill="#14171c" font-family="Titillium Web, Segoe UI, system-ui, sans-serif" font-size="16" font-weight="700">1</text>
+    <rect width="28" height="28" rx="14" fill="#2f8f5b"/>
+    <text x="14" y="20" text-anchor="middle" fill="#f4f6f8" font-family="Titillium Web, Segoe UI, system-ui, sans-serif" font-size="16" font-weight="700">1</text>
     <text
       data-copy="callout.0"
       data-max-chars="72"
@@ -23,11 +23,11 @@
       y="21"
       fill="#f4f6f8"
       font-family="Titillium Web, Segoe UI, system-ui, sans-serif"
-      font-size="20">{{callout.0}}</text>
+      font-size="22">{{callout.0}}</text>
   </g>
   <g transform="translate(420,732)">
-    <rect width="28" height="28" rx="14" fill="#ff8c00"/>
-    <text x="14" y="20" text-anchor="middle" fill="#14171c" font-family="Titillium Web, Segoe UI, system-ui, sans-serif" font-size="16" font-weight="700">2</text>
+    <rect width="28" height="28" rx="14" fill="#2f7ea8"/>
+    <text x="14" y="20" text-anchor="middle" fill="#f4f6f8" font-family="Titillium Web, Segoe UI, system-ui, sans-serif" font-size="16" font-weight="700">2</text>
     <text
       data-copy="callout.1"
       data-max-chars="72"
@@ -35,11 +35,11 @@
       y="21"
       fill="#f4f6f8"
       font-family="Titillium Web, Segoe UI, system-ui, sans-serif"
-      font-size="20">{{callout.1}}</text>
+      font-size="22">{{callout.1}}</text>
   </g>
   <g transform="translate(860,732)">
-    <rect width="28" height="28" rx="14" fill="#ff8c00"/>
-    <text x="14" y="20" text-anchor="middle" fill="#14171c" font-family="Titillium Web, Segoe UI, system-ui, sans-serif" font-size="16" font-weight="700">3</text>
+    <rect width="28" height="28" rx="14" fill="#c97a28"/>
+    <text x="14" y="20" text-anchor="middle" fill="#f4f6f8" font-family="Titillium Web, Segoe UI, system-ui, sans-serif" font-size="16" font-weight="700">3</text>
     <text
       data-copy="callout.2"
       data-max-chars="72"
@@ -47,6 +47,6 @@
       y="21"
       fill="#f4f6f8"
       font-family="Titillium Web, Segoe UI, system-ui, sans-serif"
-      font-size="20">{{callout.2}}</text>
+      font-size="22">{{callout.2}}</text>
   </g>
 </svg>

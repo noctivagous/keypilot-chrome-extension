@@ -268,7 +268,7 @@
   </header>
 
   <nav class="main-nav" id="main-nav">
-    <a href="#">Local</a>
+    <a id="kp-store-local-nav" href="#">Local</a>
     <a href="#">Politics</a>
     <a href="#">Coastal Life</a>
     <a href="#">Obituaries</a>
@@ -499,10 +499,11 @@
       
       const nav = document.getElementById('main-nav');
       nav.innerHTML = '';
-      locale.nav.forEach(item => {
+      locale.nav.forEach((item, i) => {
         const a = document.createElement('a');
         a.href = '#';
         a.innerText = item;
+        if (i === 0) a.id = 'kp-store-local-nav';
         nav.appendChild(a);
       });
       

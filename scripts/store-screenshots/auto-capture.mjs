@@ -334,6 +334,27 @@ async function captureLocale(locale, options, server, slots) {
       if (!opened?.ok) {
         throw new Error(`Could not open slot "${slot.id}": ${opened?.error || JSON.stringify(opened)} (reset=${JSON.stringify(reset)})`);
       }
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      await evaluate(
+        client,
+        slot.capture.open === 'walkthrough'
+          ? 'window.__KP_STORE_SHOTS.placeWalkthroughKeyboardHelp()'
+          : 'window.__KP_STORE_SHOTS.placeKeyboardHelp()',
+        false,
+        contextId
+      );
+      if (slot.capture.open === 'walkthrough') {
+        await evaluate(client, 'window.__KP_STORE_SHOTS.placeOnboardingPanel()', false, contextId);
+        await evaluate(client, 'window.__KP_STORE_SHOTS.placeWalkthroughKeyboardHelp()', false, contextId);
+        await client.Input.dispatchMouseEvent({
+          type: 'mouseMoved',
+          x: 980,
+          y: 220,
+          button: 'none',
+          buttons: 0,
+          pointerType: 'mouse'
+        });
+      }
       if (slot.capture.hoverSelector) {
         const box = await evaluate(client, `window.__KP_STORE_SHOTS.box(${JSON.stringify(slot.capture.hoverSelector)})`, false, contextId);
         if (box?.visible) {
@@ -361,6 +382,35 @@ async function captureLocale(locale, options, server, slots) {
           await client.Input.dispatchMouseEvent({ type: 'mousePressed', x, y, button: 'left', buttons: 1, clickCount: 1, pointerType: 'mouse' });
           await client.Input.dispatchMouseEvent({ type: 'mouseReleased', x, y, button: 'left', buttons: 0, clickCount: 1, pointerType: 'mouse' });
         }
+        await evaluate(client, 'window.__KP_STORE_SHOTS.placeKeyboardHelp()', false, contextId);
+      }
+      if (slot.capture.showCursor && slot.capture.hoverSelector) {
+        const box = await evaluate(client, `window.__KP_STORE_SHOTS.box(${JSON.stringify(slot.capture.hoverSelector)})`, false, contextId);
+        if (box?.visible) {
+          await client.Input.dispatchMouseEvent({
+            type: 'mouseMoved',
+            x: box.x + box.width / 2,
+            y: box.y + box.height / 2,
+            button: 'none',
+            buttons: 0,
+            pointerType: 'mouse'
+          });
+        }
+        await evaluate(
+          client,
+          `${slot.capture.focusHover === false ? '' : `window.__KP_STORE_SHOTS.focusSelector(${JSON.stringify(slot.capture.hoverSelector)}); `}window.__KP_STORE_SHOTS.showCursor(${JSON.stringify(slot.capture.hoverSelector)})`,
+          false,
+          contextId
+        );
+      }
+      if (slot.capture.open === 'customize-workflow') {
+        await evaluate(client, 'window.__KP_STORE_SHOTS.syncCustomizePlaceScene()', true, contextId);
+        await evaluate(
+          client,
+          `window.__KP_STORE_SHOTS.showCursor(${JSON.stringify(slot.capture.hoverSelector)})`,
+          false,
+          contextId
+        );
       }
       await waitForSelectors(client, slot.capture.requiredSelectors || [], contextId);
       const screenshot = await client.Page.captureScreenshot({

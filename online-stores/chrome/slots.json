@@ -64,12 +64,13 @@
       "outputFile": "01-key-click-browsing.png",
       "capture": {
         "open": "key-click-browsing",
-        "hoverSelector": "#kp-store-primary-link",
+        "hoverSelector": "#kp-store-local-nav",
+        "showCursor": true,
         "requiredSelectors": [
-          "#kp-store-primary-link",
+          "#kp-store-local-nav",
           ".kpv2-focus, .kpv2-focus-overlay, .kpv2-focus-ring-intarget",
           ".kp-floating-keyboard-help",
-          ".kp-control-strip"
+          "#kp-store-shot-cursor"
         ]
       }
     },
@@ -87,7 +88,7 @@
       "capture": {
         "open": "keyboard-map",
         "hoverSelector": "#kp-store-primary-link",
-        "pinActionId": "ACTIVATE",
+        "pinActionId": "PREVIEW_LINK_POPOVER",
         "requiredSelectors": [
           "#kp-store-primary-link",
           ".kp-floating-keyboard-help",
@@ -108,11 +109,61 @@
       "outputFile": "03-customize-workflow.png",
       "capture": {
         "open": "customize-workflow",
-        "libraryTab": "functions",
+        "hoverSelector": ".kp-floating-keyboard-help [data-kp-slot=\"E\"]",
+        "showCursor": true,
+        "focusHover": false,
         "requiredSelectors": [
           ".kp-layout-config-panel",
           ".kp-floating-keyboard-help",
-          "[data-kp-lib-tab='functions']"
+          "[data-kp-lib-tab='functions']",
+          "[data-kp-item-id='CLOSE_TAB']",
+          ".kp-cfg-item-inspecting",
+          ".kp-layout-place-arrow",
+          ".kp-place-preview",
+          "#kp-store-shot-cursor"
+        ]
+      }
+    },
+    {
+      "id": "walkthrough",
+      "order": 4,
+      "kind": "screenshot",
+      "localized": true,
+      "width": 1280,
+      "height": 800,
+      "copyKey": "walkthrough",
+      "template": "chrome/templates/screenshots/walkthrough.svg",
+      "captureFile": "walkthrough.png",
+      "outputFile": "04-walkthrough.png",
+      "capture": {
+        "open": "walkthrough",
+        "requiredSelectors": [
+          ".kp-onboarding-panel",
+          "[data-kp-onboarding-slide-id='basic_navigation']",
+          "[data-kp-onboarding-body='true']",
+          ".kp-floating-keyboard-help"
+        ]
+      }
+    },
+    {
+      "id": "context-menu",
+      "order": 5,
+      "kind": "screenshot",
+      "localized": true,
+      "width": 1280,
+      "height": 800,
+      "copyKey": "context-menu",
+      "template": "chrome/templates/screenshots/context-menu.svg",
+      "captureFile": "context-menu.png",
+      "outputFile": "05-context-menu.png",
+      "capture": {
+        "open": "context-menu",
+        "requiredSelectors": [
+          "#kp-store-context-menu",
+          "[data-kp-store-ctx-keypilot]",
+          "[data-kp-store-ctx-docs]",
+          "[data-kp-store-ctx-settings]",
+          "#kp-store-shot-cursor"
         ]
       }
     }

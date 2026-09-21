@@ -4,12 +4,12 @@
     "key-click-browsing": {
       "headline": "Navega por la web con clics de tecla.",
       "callouts": [
-        "Guía el cursor con el ratón",
-        "Coloca el cursor sobre un enlace y pulsa F."
+        "Mueve el cursor con el ratón",
+        "Coloca el cursor sobre un enlace y pulsa [[F]]."
       ]
     },
     "keyboard-map": {
-      "headline": "Ten las acciones habituales al alcance de tus dedos.",
+      "headline": "Una gran variedad de acciones, al alcance de tus dedos.",
       "callouts": [
         "Haz clic en enlaces",
         "Navega por pestañas e historial",
@@ -20,8 +20,19 @@
       "headline": "Crea una distribución de teclado para tu flujo de trabajo.",
       "callouts": [
         "Elige una distribución",
-        "Asigna funciones",
-        "Crea macros."
+        "Asigna funciones"
+      ]
+    },
+    "walkthrough": {
+      "headline": "Tras la instalación aparece un recorrido guiado.",
+      "callouts": [
+        "Aprende a hacer clic en enlaces, abrir pestañas y desplazarte"
+      ]
+    },
+    "context-menu": {
+      "headline": "El clic derecho siempre está disponible para controlar KeyPilot.",
+      "callouts": [
+        "La ayuda, los ajustes y los controles están aquí."
       ]
     }
   }
