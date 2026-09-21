@@ -25,6 +25,38 @@ export function isKeyboardLayoutEditMode(kp) {
 }
 
 /**
+ * Keyboard Layout Editor edits the Keyboard Reference keycaps, so a hidden or
+ * titlebar-only window is useless. Show it expanded when entering the editor.
+ * Persist so an in-flight visibility/collapse hydrate cannot fold it back.
+ * @param {any} kp
+ */
+function ensureKeyboardReferenceOpenAndExpanded(kp) {
+  const apply = () => {
+    try {
+      if (typeof kp?.applyKeyboardHelpVisibility === 'function') {
+        kp.applyKeyboardHelpVisibility(true, { persist: true });
+      } else {
+        kp?.floatingKeyboardHelp?.show?.();
+      }
+    } catch { /* ignore */ }
+    try {
+      kp?.floatingKeyboardHelp?.setCollapsed?.(false, { persist: true });
+    } catch { /* ignore */ }
+  };
+  apply();
+  // show() hydrates collapse asynchronously; retry after layout so that paint
+  // cannot restore hidden/titlebar-only after we open.
+  try {
+    requestAnimationFrame(() => {
+      apply();
+      try { window.setTimeout(apply, 0); } catch { /* ignore */ }
+    });
+  } catch {
+    try { window.setTimeout(apply, 0); } catch { /* ignore */ }
+  }
+}
+
+/**
  * Exit edit mode and hide the config panel.
  * @param {any} kp
  */
@@ -54,6 +86,7 @@ export function openKeyboardLayoutConfigurator(kp, opts = {}) {
   try {
     if (isKeyboardLayoutEditMode(kp)) {
       try {
+        ensureKeyboardReferenceOpenAndExpanded(kp);
         void _configPanel?.show?.(kp, { duplicateBuiltin: false }).then(async () => {
           if (createNew) {
             try { await _configPanel?.createNewLayout?.(); } catch { /* ignore */ }
@@ -65,14 +98,8 @@ export function openKeyboardLayoutConfigurator(kp, opts = {}) {
       return;
     }
 
-    // Ensure Keyboard Reference is visible (edit surface).
-    try {
-      if (typeof kp.applyKeyboardHelpVisibility === 'function') {
-        kp.applyKeyboardHelpVisibility(true, { persist: false });
-      } else {
-        kp.floatingKeyboardHelp?.show?.();
-      }
-    } catch { /* ignore */ }
+    // Ensure Keyboard Reference is visible and expanded (edit surface).
+    ensureKeyboardReferenceOpenAndExpanded(kp);
 
     try { unpinKeyPopover(); } catch { /* ignore */ }
 
