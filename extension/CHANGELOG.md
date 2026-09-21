@@ -10,6 +10,30 @@
 - **Security** — vulnerability fixes
 
 
+## [0.1.1] - 2026-09-21
+
+Localization
+
+### Added
+
+- Localization (i18n) for extension UI.
+
+### Changed
+
+- Updated Settings window.
+
+### Fixed
+
+- YouTube iframe navigation on pages.
+
+### Store listing snippet
+
+```
+Localization (i18n), updated Settings window, and YouTube iframe navigation fixes.
+```
+
+---
+
 ## [0.1.0] - 2026-09-02
 
 First public release.
@@ -30,5 +54,6 @@ First release of KeyPilot: browse with key-clicks, remappable layouts, and built
 
 ---
 
-[Unreleased]: https://github.com/noctivagous/keypilot-chrome-extension/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/noctivagous/keypilot-chrome-extension/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/noctivagous/keypilot-chrome-extension/releases/tag/v0.1.1
 [0.1.0]: https://github.com/noctivagous/keypilot-chrome-extension/releases/tag/v0.1.0
