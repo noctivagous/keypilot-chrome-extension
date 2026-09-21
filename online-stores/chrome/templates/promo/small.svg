@@ -23,8 +23,8 @@
       font-size="36"
       font-weight="900"
       letter-spacing="-1.5">KeyPilot</text>
-    <rect x="22" y="160" width="108" height="3" fill="#d6a7ad"/>
-    <rect x="136" y="160" width="70" height="3" fill="#a8c8b8"/>
+    <rect x="22" y="160" width="51" height="3" fill="#d6a7ad"/>
+    <rect x="73" y="160" width="57" height="3" fill="#a8c8b8"/>
   </g>
 
   <!-- Mouse card -->

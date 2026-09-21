@@ -17,8 +17,8 @@
 
   <g font-family="Inter, Segoe UI, sans-serif">
     <text x="56" y="292" fill="url(#title)" font-size="88" font-weight="900" letter-spacing="-4">KeyPilot</text>
-    <rect x="58" y="322" width="240" height="5" fill="#d6a7ad"/>
-    <rect x="310" y="322" width="156" height="5" fill="#a8c8b8"/>
+    <rect x="62" y="322" width="122" height="5" fill="#d6a7ad"/>
+    <rect x="187" y="322" width="135" height="5" fill="#a8c8b8"/>
   </g>
 
   <!-- Mouse card -->
