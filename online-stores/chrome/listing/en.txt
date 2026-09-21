@@ -1,0 +1,3 @@
+Browse the web with the keyboard: hover over a link and press F to click it. This is called a key-click. Move the cursor with the mouse as before but activate hyperlinks with keyboard keys instead of mouse buttons.
+
+A variety of functions are provided besides the click mapped to the F key, like closing tabs, scrolling, highlighting text, and activating features of KeyPilot. They all demonstrate that key-clicks are a powerful way to interact with a desktop computer.

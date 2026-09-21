@@ -66,7 +66,7 @@ single browser process.
 
 ```js
 await __KP_STORE_SHOTS.reset()
-await __KP_STORE_SHOTS.open('key-click-browsing')  // or keyboard-map / customize-workflow
+await __KP_STORE_SHOTS.open('key-click-browsing')  // or keyboard-map / customize-workflow / walkthrough / context-menu
 ```
 
 6. Screenshot the **viewport** (full page chrome, not a cropped overlay).

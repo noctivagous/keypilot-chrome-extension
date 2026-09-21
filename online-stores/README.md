@@ -13,6 +13,7 @@ online-stores/
 ├── README.md
 ├── chrome/
 │   ├── slots.json              # Chrome screenshot slots and global promo sizes
+│   ├── listing/<locale>.txt    # Detailed description to paste in the dashboard
 │   ├── copy/<locale>.json      # Headline and callout copy per screenshot slot
 │   ├── templates/              # SVG sources only (no generated bitmaps)
 │   │   ├── screenshots/        # 1280×800 annotated screenshot templates
@@ -31,6 +32,7 @@ online-stores/
 | Path | Role |
 |---|---|
 | `chrome/slots.json` | Manifest of listing slots: order, size, capture recipe, SVG template, copy key, output filename. |
+| `chrome/listing/<locale>.txt` | Detailed description for the Store listing tab. Paste by hand; Chrome does not read it from the package. Max 16,000 characters. |
 | `chrome/copy/<locale>.json` | Product-owned annotation strings for that locale. Required before generating that locale. |
 | `chrome/templates/` | Editable SVG templates. Embed the matching locale capture; substitute only headline, caption, and callouts. |
 | `chrome/captures/<locale>/` | Real KeyPilot UI captures for that locale. Never reuse an English capture under translated annotations. |
@@ -43,12 +45,14 @@ Do not put generated PNGs, JPEG exports, or capture bitmaps inside
 ## Chrome screenshot slots
 
 Preferred listing size is `1280×800`, square-cornered and full-bleed. Chrome
-allows up to five screenshots per locale. The initial brief uses three slots
+allows up to five screenshots per locale. This listing uses all five slots
 defined in `chrome/slots.json`:
 
 1. `key-click-browsing` — first screenshot when the listing opens
 2. `keyboard-map` — Keyboard Reference with a selected action
 3. `customize-workflow` — Keyboard Layout Editor or Function Library
+4. `walkthrough` — post-install onboarding walkthrough
+5. `context-menu` — right-click KeyPilot controls
 
 Every slot captures a **1280×800** viewport of the store fixture page
 (`scripts/store-screenshots/fixture.html`) with KeyPilot enabled. Capture
@@ -83,12 +87,15 @@ does not change listing screenshots.
 2. Open the item’s **Store listing** tab
    ([Chrome listing fields](https://developer.chrome.com/docs/webstore/cws-dashboard-listing)).
 3. Choose the language in the listing language selector.
-4. Under **Localized screenshots**, upload only the PNGs from
-   `generated/chrome/<locale>/` for that language. Use the `01-`…`03-`
+4. Paste **Detailed description** from `chrome/listing/<locale>.txt`. The
+   short summary is **Summary from package** (`extension_description` in
+   `messages.json`); do not paste it here.
+5. Under **Localized screenshots**, upload only the PNGs from
+   `generated/chrome/<locale>/` for that language. Use the `01-`…`05-`
    filenames in slot order. Do not upload promo tiles in this control.
-5. Repeat for every shipped locale. Locales with no localized screenshots
+6. Repeat for every shipped locale. Locales with no localized screenshots
    fall back to the global screenshots.
-6. Upload `generated/chrome/promo/small.png` and `marquee.png` as the
+7. Upload `generated/chrome/promo/small.png` and `marquee.png` as the
    global small and marquee tiles. Never create per-locale promo files.
 
 Record each upload in `chrome/RELEASE-CHECKLIST.md`.

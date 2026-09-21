@@ -33,7 +33,7 @@ Official references:
 | Asset | Scope | Dashboard control | Notes |
 |---|---|---|---|
 | Short name and summary | Per locale (from package) | Manifest / `messages.json` | Not pasted on the listing tab. |
-| Detailed description | Per locale | Store listing, after choosing a language | Paste the long description for that locale. Repeat for every shipped locale. |
+| Detailed description | Per locale | Store listing, after choosing a language | Paste `online-stores/chrome/listing/<locale>.txt`. Repeat for every shipped locale. |
 | Screenshots | Global **and** localized | Global screenshots vs **Localized screenshots** | Up to five per locale. Prefer `1280×800` (or `640×400`), square corners, full bleed. Localized screenshots override global ones for that locale; locales with none use global screenshots. |
 | Promo / YouTube video | Global **and** optional localized | Global promo video URL vs **Localized promo video** | Required listing field is a YouTube URL. Use **one global video** for all locales unless you have a language-specific YouTube upload. |
 | Small promo tile `440×280` | Global only | Promotional images | **Cannot be localized.** Upload once. |
@@ -68,11 +68,12 @@ YouTube URL in that language.
 
 1. At the **top of Store listing**, choose that language in the dropdown. The
    list is the `_locales` catalogs in the uploaded ZIP.
-2. Paste the **detailed description** for that locale. Keep the same feature
-   set as English; Chrome may warn on inconsistent metadata, but that warning
-   does not by itself block submit.
+2. Paste the **detailed description** from
+   `online-stores/chrome/listing/<locale>.txt`. Keep the same feature set as
+   English; Chrome may warn on inconsistent metadata, but that warning does
+   not by itself block submit.
 3. Under **Localized screenshots**, drop only that locale’s PNGs (KeyPilot:
-   `online-stores/generated/chrome/<locale>/`, slot order `01-`…`03-`).
+   `online-stores/generated/chrome/<locale>/`, slot order `01-`…`05-`).
 4. Leave **Localized promo video** blank so the **global** YouTube URL is used,
    unless this locale has its own dubbed/captioned YouTube video.
 5. Repeat for the next language in the dropdown. Save/publish when every

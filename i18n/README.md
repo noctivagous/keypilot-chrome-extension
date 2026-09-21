@@ -66,6 +66,7 @@ translation quality or layout fit.
 | Long-form in-product help | `extension/userdocs/<locale>/` | Translate `index.json` navigation titles with the matching Markdown topic. |
 | Walkthrough copy | `extension/onboarding/<locale>.xml` | Preserve all progress/action structure; translate copy only. |
 | Store screenshot annotations | `online-stores/chrome/copy/<locale>.json` | Match the locale of the real UI capture. |
+| Chrome listing detailed description | `online-stores/chrome/listing/<locale>.txt` | Paste in the dashboard; not shipped in the package. |
 | Store GUI captures | `online-stores/chrome/captures/<locale>/` | Capture KeyPilot in that locale; never reuse a different locale's capture. |
 | Language-neutral documentation screenshots | `extension/userdocs/images/` | Use a locale directory only when the image includes translated UI text. |
 
@@ -83,8 +84,9 @@ Do not put Markdown or onboarding copy in `messages.json`.
 4. Add `extension/onboarding/<locale>.xml` when localizing onboarding. It must
    retain English slide IDs, task IDs, `<when>` values, and overlay action
    attributes.
-5. Add complete `online-stores/chrome/copy/<locale>.json`, localized captures,
-   and generated screenshots before the Chrome listing is localized.
+5. Add complete `online-stores/chrome/copy/<locale>.json`,
+   `online-stores/chrome/listing/<locale>.txt`, localized captures, and
+   generated screenshots before the Chrome listing is localized.
 6. Test exact-locale, base-language, and English fallback behavior. Locale
    resolution tries the browser UI locale, its hyphen/underscore variant, its
    base language, then English.

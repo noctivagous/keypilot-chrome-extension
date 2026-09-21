@@ -65,10 +65,25 @@ describe('Chrome store screenshot pipeline', () => {
     assert.equal(slots.captureDefaults.screenshot, 'viewport');
     assert.match(slots.captureDefaults.fixture, /store-screenshots\/fixture\.html$/);
 
-    assert.equal(slots.slots[0].capture.hoverSelector, '#kp-store-primary-link');
-    assert.ok(slots.slots[0].capture.requiredSelectors.includes('.kp-control-strip'));
-    assert.equal(slots.slots[1].capture.pinActionId, 'ACTIVATE');
-    assert.equal(slots.slots[2].capture.libraryTab, 'functions');
+    assert.equal(slots.slots.length, 5);
+    assert.equal(slots.screenshot.maxPerLocale, 5);
+    assert.deepEqual(
+      slots.slots.map((slot) => slot.outputFile),
+      [
+        '01-key-click-browsing.png',
+        '02-keyboard-map.png',
+        '03-customize-workflow.png',
+        '04-walkthrough.png',
+        '05-context-menu.png'
+      ]
+    );
+
+    assert.equal(slots.slots[0].capture.hoverSelector, '#kp-store-local-nav');
+    assert.ok(slots.slots[0].capture.requiredSelectors.includes('#kp-store-local-nav'));
+    assert.equal(slots.slots[1].capture.pinActionId, 'PREVIEW_LINK_POPOVER');
+    assert.ok(slots.slots[2].capture.requiredSelectors.includes("[data-kp-lib-tab='functions']"));
+    assert.ok(slots.slots[3].capture.requiredSelectors.includes('.kp-onboarding-panel'));
+    assert.ok(slots.slots[4].capture.requiredSelectors.includes('#kp-store-context-menu'));
   });
 
   it('keeps screenshot templates at 1280×800 with capture and copy placeholders', () => {
@@ -98,6 +113,20 @@ describe('Chrome store screenshot pipeline', () => {
       () => localesToGenerate(repoRoot, slots, { locale: 'en_GB' }),
       /test\/excluded catalog/
     );
+  });
+
+  it('keeps a paste-ready detailed description under 16,000 characters per shipped copy locale', () => {
+    const listingDir = join(repoRoot, 'online-stores/chrome/listing');
+    const copyDir = join(repoRoot, 'online-stores/chrome/copy');
+    const locales = ['en', 'de', 'es', 'es_419'];
+    for (const locale of locales) {
+      assert.equal(existsSync(join(copyDir, `${locale}.json`)), true);
+      const text = readFileSync(join(listingDir, `${locale}.txt`), 'utf8').trim();
+      assert.ok(text.length > 0, `listing/${locale}.txt is empty`);
+      assert.ok(text.length <= 16000, `listing/${locale}.txt exceeds Chrome's 16,000-character limit`);
+      assert.match(text, /KeyPilot/);
+      assert.match(text, /\bF\b/);
+    }
   });
 
   it('requires complete copy before generating a shipped locale', () => {
@@ -133,7 +162,7 @@ describe('Chrome store screenshot pipeline', () => {
     const outputs = generateLocaleScreenshots(root, localSlots, 'en');
     assert.deepEqual(
       outputs.map((item) => item.slot),
-      ['key-click-browsing', 'keyboard-map', 'customize-workflow']
+      ['key-click-browsing', 'keyboard-map', 'customize-workflow', 'walkthrough', 'context-menu']
     );
     for (const item of outputs) {
       const size = pngDimensions(readFileSync(item.file));

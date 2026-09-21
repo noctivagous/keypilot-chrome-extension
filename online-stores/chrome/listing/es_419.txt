@@ -1,0 +1,3 @@
+Navega por la web con el teclado: pasa el cursor sobre un enlace y pulsa F para hacer clic. Eso se llama un clic de tecla. Mueve el cursor con el mouse como siempre, pero activa los hipervínculos con las teclas del teclado en lugar de con los botones del mouse.
+
+Además del clic asignado a la tecla F, hay otras funciones, como cerrar pestañas, desplazarte, resaltar texto y activar funciones de KeyPilot. Todas ellas demuestran que los clics de tecla son una forma potente de interactuar con una computadora de escritorio.

@@ -1,0 +1,3 @@
+Surfen Sie im Web mit der Tastatur: Fahren Sie mit der Maus über einen Link und drücken Sie F, um ihn anzuklicken. Das heißt Tastenklick. Bewegen Sie den Cursor weiterhin mit der Maus, aktivieren Sie Hyperlinks aber mit Tasten statt mit Maustasten.
+
+Neben dem auf F gelegten Klick gibt es weitere Funktionen, etwa Tabs schließen, scrollen, Text markieren und KeyPilot-Funktionen aktivieren. Sie alle zeigen, dass Tastenklicks eine leistungsstarke Art sind, mit einem Desktop-Computer zu arbeiten.

@@ -11,7 +11,11 @@ generated/chrome/
 │   ├── 02-keyboard-map.svg
 │   ├── 02-keyboard-map.png
 │   ├── 03-customize-workflow.svg
-│   └── 03-customize-workflow.png
+│   ├── 03-customize-workflow.png
+│   ├── 04-walkthrough.svg
+│   ├── 04-walkthrough.png
+│   ├── 05-context-menu.svg
+│   └── 05-context-menu.png
 └── promo/
     ├── small.png
     └── marquee.png
