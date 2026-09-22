@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<onboarding version="1">
+  <slide id="basic_navigation" title="欢迎使用 KeyPilot">
+   <onEnter type="overlay"
+             title="欢迎使用 KeyPilot"
+             message="我们会一步一步向您展示如何使用 KeyPilot。"
+             primaryText="确定"
+             secondaryText="关闭"
+             secondaryAction="close" />
+      <task id="click_link" label="将鼠标悬停在链接上，然后按 `F` 键以点击它。">
+     <when type="action" action="activate" target="link" />
+   </task>
+   <task id="go_back" label="要后退（历史记录），请按 `D` 键。">
+     <when type="action" action="back" />
+   </task>
+   <task id="keyboard_key_info" label="请注意下方的键盘参考窗口。将鼠标悬停在其中一个按键上，以了解它的作用。">
+     <when type="action" action="hover" target="keyboardHelpKey" />
+   </task>
+   <!-- Turn-off step: while this is the next task, a large focus-colored arrow points at the
+        ON/OFF segment's right edge. After OFF, a tip bubble points at the strip ("click again to turn on").
+        (Former Alt+K step removed; re-enable is guided by the tip bubble, not a separate task.) -->
+   <task id="toggle_extension_off" label="上方有一个显示 `ON` 的控制栏。点击它以完全关闭 KeyPilot。">
+     <when type="action" action="toggleExtension" change="off" />
+   </task>
+ </slide>
+
+ <slide id="text_box_mode" title="文本框模式">
+   <onEnter type="overlay"
+            title="KeyPilot 已重新开启"
+            message="接下来：文本框。"
+            primaryText="确定"
+            effect="marquee" />
+   <task id="enter_text_mode" label="使用 `F` 点击右侧的文本字段，它将接收输入。">
+     <when type="mode" mode="text_focus" change="enter" />
+   </task>
+   <task id="exit_text_mode" label="按 `Escape` 退出文本框。">
+     <when type="mode" mode="text_focus" change="exit" />
+   </task>
+ </slide>
+
+ <slide id="scrolling" title="滚动页面">
+   <onEnter type="overlay"
+            title="使用 KeyPilot 浏览网页所需的内容就是这些。"
+            message="要试用更多按键吗？"
+            primaryText="是，继续"
+            secondaryText="不，我稍后再试"
+            secondaryAction="later"
+            laterTitle="使用 `Alt`+`I` 返回此教程"
+            laterPrimaryText="确定，关闭" />
+   <task id="scroll_down" label="使用 `V` 向下滚动。">
+     <when type="action" action="scrollDown" />
+   </task>
+   <task id="scroll_up" label="使用 `C` 向上滚动。">
+     <when type="action" action="scrollUp" />
+   </task>
+   <task id="scroll_bottom" label="使用 `X` 前往页面底部。">
+     <when type="action" action="scrollBottom" />
+   </task>
+   <task id="scroll_top" label="使用 `Z` 前往页面顶部。">
+     <when type="action" action="scrollTop" />
+   </task>
+ </slide>
+
+ <slide id="tabs" title="标签页">
+   <task id="open_link_background_tab" label="在新标签页中点击超链接，但不打开它（`G`）。">
+     <when type="action" action="activateNewTabBackground" target="link" />
+   </task>
+   <task id="open_link_new_tab" label="在新标签页中点击超链接（`B`）。">
+     <when type="action" action="activateNewTab" target="link" />
+   </task>
+   <task id="open_new_tab" label="打开新标签页（`T`）。">
+     <when type="action" action="newTab" />
+   </task>
+   <task id="move_tabs" label="向左切换标签页（`Q`）。">
+     <when type="action" action="tabLeft" />
+   </task>
+   <task id="move_tabs_2" label="向右切换标签页（`W`）。">
+     <when type="action" action="tabRight" />
+   </task>
+ </slide>
+ 
+ <slide id="completion" title="教程完成">
+   <body>
+您已完成教程，可以开始使用 KeyPilot 了。
+   </body>
+ </slide>
+</onboarding>

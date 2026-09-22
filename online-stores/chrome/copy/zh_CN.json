@@ -1,0 +1,39 @@
+{
+  "locale": "zh_CN",
+  "slots": {
+    "key-click-browsing": {
+      "headline": "通过按键点击浏览网页。",
+      "callouts": [
+        "像往常一样用鼠标移动光标",
+        "将鼠标悬停在链接上，然后按 [[F]] 点击。"
+      ]
+    },
+    "keyboard-map": {
+      "headline": "丰富的操作尽在您的指尖",
+      "callouts": [
+        "点击链接",
+        "导航标签页和历史记录",
+        "搜索、复制和检查。"
+      ]
+    },
+    "customize-workflow": {
+      "headline": "构建适合您工作流程的键盘布局。",
+      "callouts": [
+        "选择布局",
+        "分配函数"
+      ]
+    },
+    "walkthrough": {
+      "headline": "安装后会出现使用演练。",
+      "callouts": [
+        "学习如何点击链接、打开标签页和滚动页面"
+      ]
+    },
+    "context-menu": {
+      "headline": "始终可通过右键菜单控制 KeyPilot。",
+      "callouts": [
+        "帮助、设置和控件都在这里。"
+      ]
+    }
+  }
+}

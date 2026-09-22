@@ -263,6 +263,30 @@
         inspect: 'Untersuchen'
       };
     }
+    if (lang === 'zh_cn' || lang.startsWith('zh-cn')) {
+      return {
+        back: '后退',
+        forward: '前进',
+        reload: '重新加载',
+        saveAs: '另存为…',
+        print: '打印…',
+        translate: '翻译成简体中文',
+        viewSource: '查看网页源代码',
+        inspect: '检查'
+      };
+    }
+    if (lang === 'zh_tw' || lang.startsWith('zh-tw')) {
+      return {
+        back: '返回',
+        forward: '前進',
+        reload: '重新載入',
+        saveAs: '另存為…',
+        print: '列印…',
+        translate: '翻譯成繁體中文',
+        viewSource: '檢視網頁原始碼',
+        inspect: '檢查'
+      };
+    }
     return {
       back: 'Back',
       forward: 'Forward',

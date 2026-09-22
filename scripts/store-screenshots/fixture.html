@@ -55,6 +55,16 @@
       border-bottom-color: #004a99;
     }
 
+    body[data-locale^="zh"] {
+      --serif: "PingFang SC", "PingFang TC", "Hiragino Sans GB", "Microsoft YaHei", "Microsoft JhengHei", sans-serif;
+      --accent: #a52828;
+      --bg: #fcfaf5;
+    }
+    body[data-locale^="zh"] .masthead h1 {
+      letter-spacing: 0.02em;
+      font-weight: 800;
+    }
+
     .top-bar {
       border-bottom: 1px solid var(--border);
       padding: 8px 64px;
@@ -342,7 +352,9 @@
     <a href="?lang=en">EN</a> | 
     <a href="?lang=es">ES</a> | 
     <a href="?lang=es_419">ES-LATAM</a> | 
-    <a href="?lang=de">DE</a>
+    <a href="?lang=de">DE</a> |
+    <a href="?lang=zh_CN">简体中文</a> |
+    <a href="?lang=zh_TW">繁體中文</a>
   </div>
 
   <script>
@@ -482,6 +494,74 @@
         weatherDetails: "Feuchtigkeit: 80% | Wind: 20km/h Nord",
         sidebarOpinionTitle: "Meinung",
         sidebarOpinions: ["Leitartikel: Warum wir unseren Arbeitshafen bewahren müssen"]
+      },
+      zh_CN: {
+        title: "海港日报 — 每日新闻",
+        mastheadLogo: "海",
+        mastheadTitle: "海港日报",
+        mastheadTagline: "自 1884 年起报道中海岸与佩诺布斯科特湾",
+        date: "2026 年 9 月 19 日，星期六",
+        weather: "海港区：14°C ☁️",
+        nav: ["本地", "政治", "滨海生活", "讣告", "观点", "体育"],
+        breakingLabel: "突发：",
+        breakingContent: "佩诺布斯科特大桥将于周一开始维修而关闭，请选择其他路线。",
+        storyKicker: "滨水新闻",
+        storyTitle: "本周末，海港灯光将重现滨水区",
+        storyByline: "记者：伊莱亚斯·索恩，《日报》记者",
+        leadImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Between_Custom_House_Wharf_and_Portland_Pier.jpg/1280px-Between_Custom_House_Wharf_and_Portland_Pier.jpg",
+        leadCaption: "周四晚，工作人员在 4 号码头测试节能 LED 灯串。历史街区修复工程现已完成。",
+        storyContent: [
+          "波特兰——工作人员于周四完成了 4 号码头最后一串灯的安装，标志着为期两年的修复项目结束。近年来经历显著改造的历史滨水区预计将在本周末迎来数千名居民和游客。",
+          "夜幕降临后，海滨步道将重新开放；为接待预计到来的客流，步道下方的市场摊位将延长一小时营业。当地商户希望灯光回归能为该区带来一个强劲的秋季。"
+        ],
+        actionLinks: ["阅读完整滨水指南", "周末开放时间", "地图与交通"],
+        sidebarBulletinTitle: "本地公告",
+        sidebarImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/83_Commercial_Street%2C_Portland_ME.jpg/1280px-83_Commercial_Street%2C_Portland_ME.jpg",
+        sidebarBulletins: [
+          "西港将就分区争议举行市民会议",
+          "本地高中橄榄球赛果：卡姆登山队击败罗克兰队",
+          "龙虾捕捞量略降，但价格保持稳定"
+        ],
+        sidebarWeatherTitle: "天气预报",
+        weatherTemp: "14°C",
+        weatherDesc: "多云",
+        weatherDetails: "湿度：65%｜东北风：13 公里/小时",
+        sidebarOpinionTitle: "观点",
+        sidebarOpinions: ["社论：为何必须守护仍在运作的滨水区"]
+      },
+      zh_TW: {
+        title: "海港日報 — 每日新聞",
+        mastheadLogo: "海",
+        mastheadTitle: "海港日報",
+        mastheadTagline: "自 1884 年起報導中海岸與佩諾布斯科特灣",
+        date: "2026 年 9 月 19 日，星期六",
+        weather: "港區：14°C ☁️",
+        nav: ["地方", "政治", "濱海生活", "訃聞", "觀點", "體育"],
+        breakingLabel: "快訊：",
+        breakingContent: "佩諾布斯科特大橋將於週一起因維修關閉，請改走其他路線。",
+        storyKicker: "濱水新聞",
+        storyTitle: "本週末，海港燈光將重返濱水區",
+        storyByline: "記者：伊萊亞斯・索恩，《日報》記者",
+        leadImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Between_Custom_House_Wharf_and_Portland_Pier.jpg/1280px-Between_Custom_House_Wharf_and_Portland_Pier.jpg",
+        leadCaption: "週四晚間，工作人員在 4 號碼頭測試節能 LED 燈串。歷史街區修復工程現已完成。",
+        storyContent: [
+          "波特蘭——工作人員於週四完成 4 號碼頭最後一串燈的安裝，為期兩年的修復計畫至此完成。近年經歷顯著改造的歷史濱水區，預計將在本週末迎來數千名居民與遊客。",
+          "入夜後，海濱步道將重新開放；為接待預計到來的人潮，步道下方的市集攤位將延長一小時營業。當地商家盼望燈光回歸能為該區帶來強勁的秋季。"
+        ],
+        actionLinks: ["閱讀完整濱水指南", "週末開放時間", "地圖與交通"],
+        sidebarBulletinTitle: "地方公告",
+        sidebarImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/83_Commercial_Street%2C_Portland_ME.jpg/1280px-83_Commercial_Street%2C_Portland_ME.jpg",
+        sidebarBulletins: [
+          "西港將就分區爭議舉行市民會議",
+          "地方高中美式足球賽果：卡姆登山隊擊敗羅克蘭隊",
+          "龍蝦捕撈量略減，但價格維持穩定"
+        ],
+        sidebarWeatherTitle: "天氣預報",
+        weatherTemp: "14°C",
+        weatherDesc: "多雲",
+        weatherDetails: "濕度：65%｜東北風：每小時 13 公里",
+        sidebarOpinionTitle: "觀點",
+        sidebarOpinions: ["社論：為何必須守護仍在運作的濱水區"]
       }
     };
 

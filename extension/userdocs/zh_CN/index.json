@@ -1,0 +1,71 @@
+{
+  "topics": [
+    {
+      "id": "intro",
+      "title": "简介",
+      "file": "intro.md",
+      "icon": "book",
+      "accent": "cyan"
+    },
+    {
+      "id": "getting-started",
+      "title": "快速入门",
+      "file": "getting-started.md",
+      "icon": "rocket",
+      "accent": "green"
+    },
+    {
+      "id": "browsing",
+      "title": "浏览",
+      "children": [
+        { "id": "browsing-click", "title": "点击与链接", "file": "browsing-click.md", "shortcut": "F", "accent": "green" },
+        { "id": "browsing-tabs", "title": "标签页与历史记录", "file": "browsing-tabs.md", "icon": "tabs", "accent": "blue" },
+        { "id": "browsing-scroll", "title": "滚动", "file": "browsing-scroll.md", "icon": "scroll", "accent": "amber" },
+        { "id": "browsing-select", "title": "选择", "file": "browsing-select.md", "icon": "select", "accent": "indigo" },
+        { "id": "browsing-modes", "title": "模式", "file": "browsing-modes.md", "icon": "layers", "accent": "violet" }
+      ]
+    },
+    {
+      "id": "keyboard",
+      "title": "键盘",
+      "children": [
+        { "id": "keyboard-layouts", "title": "布局与惯用手", "file": "keyboard-layouts.md", "icon": "layout", "accent": "cyan" },
+        { "id": "keyboard-system-keys", "title": "系统按键与 Alt 快捷键", "file": "keyboard-system-keys.md", "icon": "shield", "accent": "amber" },
+        { "id": "keyboard-reference", "title": "键盘参考", "file": "keyboard-reference.md", "shortcut": "K", "accent": "green" }
+      ]
+    },
+    { "id": "settings", "title": "设置", "file": "settings.md", "shortcut": "'", "accent": "blue" },
+    {
+      "id": "tools",
+      "title": "工具",
+      "children": [
+        { "id": "tools-omnibox", "title": "万能框", "file": "tools-omnibox.md", "shortcut": "L", "accent": "green" },
+        { "id": "tools-launcher", "title": "启动器", "file": "tools-launcher.md", "shortcut": "Alt+;", "accent": "amber" },
+        { "id": "tools-top-sites", "title": "常用网站", "file": "tools-top-sites.md", "shortcut": ";", "accent": "amber" },
+        { "id": "tools-tab-history", "title": "标签页历史记录", "file": "tools-tab-history.md", "shortcut": "J", "accent": "blue" },
+        { "id": "tools-control-strip", "title": "控制栏", "file": "tools-control-strip.md", "shortcut": "Alt+J", "accent": "cyan" },
+        { "id": "tools-previews", "title": "链接预览与弹出窗口", "file": "tools-previews.md", "icon": "preview", "accent": "green" }
+      ]
+    },
+    {
+      "id": "media",
+      "title": "媒体",
+      "children": [
+        { "id": "media-page", "title": "页面媒体", "file": "media-page.md", "shortcut": "O", "accent": "indigo" },
+        { "id": "media-library", "title": "媒体库", "file": "media-library.md", "shortcut": "M", "accent": "violet" },
+        { "id": "media-copy", "title": "复制光标下内容", "file": "media-copy.md", "shortcut": "I/U", "accent": "cyan" }
+      ]
+    },
+    {
+      "id": "customize",
+      "title": "自定义",
+      "children": [
+        { "id": "layout-config", "title": "键盘布局编辑器", "file": "layout-config.md", "icon": "layout", "accent": "cyan" },
+        { "id": "functions", "title": "函数与操作", "file": "functions.md", "icon": "functions", "accent": "green" },
+        { "id": "macros-overview", "title": "宏", "file": "macros.md", "icon": "macros", "accent": "violet" },
+        { "id": "macro-builder", "title": "宏构建器", "file": "macro-builder.md", "icon": "controls", "accent": "amber" },
+        { "id": "execute-js", "title": "执行 JS", "file": "execute-js.md", "icon": "code", "accent": "rose" }
+      ]
+    }
+  ]
+}

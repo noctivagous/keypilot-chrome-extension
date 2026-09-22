@@ -1,0 +1,25 @@
+{
+  "locale": "zh_TW",
+  "slots": {
+    "key-click-browsing": {
+      "headline": "透過按鍵點擊瀏覽網路。",
+      "callouts": ["使用滑鼠移動游標", "將游標停在連結上，然後按下 [[F]] 點擊。"]
+    },
+    "keyboard-map": {
+      "headline": "各種動作都在您的指尖之下",
+      "callouts": ["點擊連結", "瀏覽分頁與記錄", "搜尋、複製及檢查。"]
+    },
+    "customize-workflow": {
+      "headline": "建立符合您工作流程的鍵盤配置。",
+      "callouts": ["選擇配置", "指派功能"]
+    },
+    "walkthrough": {
+      "headline": "安裝後會顯示操作導覽。",
+      "callouts": ["學習點擊連結、開啟分頁及捲動頁面"]
+    },
+    "context-menu": {
+      "headline": "隨時可使用右鍵控制 KeyPilot。",
+      "callouts": ["說明、設定及控制項都在這裡。"]
+    }
+  }
+}

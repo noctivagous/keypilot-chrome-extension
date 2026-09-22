@@ -154,6 +154,7 @@ function launchChrome({ locale, port, profileRoot, browserBinary }) {
     `--remote-debugging-port=${port}`,
     '--remote-allow-origins=*',
     `--user-data-dir=${profile}`,
+    `--lang=${chromeLocale(locale)}`,
     `--disable-extensions-except=${extensionPath}`,
     `--load-extension=${extensionPath}`,
     '--no-first-run',
