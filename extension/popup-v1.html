@@ -6,6 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>KeyPilot </title>
     <link rel="stylesheet" href="styles/popup.css" />
+    <link rel="stylesheet" href="pages/kp-locale-fonts.css" />
+    <script>
+      // Same resolution as getUILocaleTag() in src/utils/i18n.js.
+      try {
+        var kpCatalogTag = chrome.i18n && chrome.i18n.getMessage && chrome.i18n.getMessage('locale_tag');
+        var kpUiTag = chrome.i18n && chrome.i18n.getUILanguage && chrome.i18n.getUILanguage();
+        var kpLocaleTag = String(kpCatalogTag || kpUiTag || '').trim().replace(/_/g, '-');
+        if (/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]+)*$/.test(kpLocaleTag)) {
+          document.documentElement.setAttribute('lang', kpLocaleTag);
+        }
+      } catch (e) {}
+    </script>
 </head>
 
 <body>

@@ -11,6 +11,10 @@
     "message": "KeyPilot",
     "description": "The toolbar action tooltip."
   },
+  "locale_tag": {
+    "message": "de",
+    "description": "BCP-47 language tag of this catalog, used for the document lang attribute. Set this to the catalog locale (for example en, de, zh-CN, zh-TW, zh-HK). Do not translate it into a language name."
+  },
   "popup_document_title": {
     "message": "KeyPilot",
     "description": "The popup document title."

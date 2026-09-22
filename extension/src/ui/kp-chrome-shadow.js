@@ -11,6 +11,8 @@ import {
   getActiveTheme,
   injectAllThemeMaps
 } from '../modules/theme-manager.js';
+import { getUILocaleTag } from '../utils/i18n.js';
+import { KP_CJK_SHADOW_CSS } from './locale-fonts.js';
 
 /**
  * Preferred mount parent for floating KP chrome.
@@ -82,6 +84,11 @@ export function ensureOpenChromeShadow(host, opts = {}) {
   try {
     host.setAttribute('data-kp-ui-shadow', String(opts.id || 'chrome'));
   } catch { /* ignore */ }
+  // Language of the shadow tree is inherited from the host: set it so
+  // locale-specific typography rules (`:lang()`) can apply inside.
+  try {
+    host.setAttribute('lang', getUILocaleTag());
+  } catch { /* ignore */ }
   if (opts.chromeWindow) markChromeWindow(host);
   let shadow = null;
   try {
@@ -94,6 +101,7 @@ export function ensureOpenChromeShadow(host, opts = {}) {
     applyThemeDataset(host, theme);
     applyThemeCssVars(host, theme);
     if (shadow) injectAllThemeMaps(shadow);
+    if (shadow) injectChromeStyles(shadow, { attr: 'data-kp-cjk-fonts', css: KP_CJK_SHADOW_CSS });
   } catch { /* ignore */ }
   return shadow;
 }

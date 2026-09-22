@@ -1,0 +1,29 @@
+/**
+ * Generated from extension/src/ui/locale-fonts.js. Do not edit by hand.
+ *
+ * Locale-specific, system-font-first CJK typography for extension pages.
+ * Font names only: never add embedded CJK font faces here.
+ *
+ * The lang attribute is set by applyDocumentLocale() (src/utils/i18n.js)
+ * from the catalog that supplied the strings (locale_tag), so English
+ * fallback copy is not labeled as Chinese.
+ */
+
+html:lang(zh-HK) body,
+html:lang(zh-MO) body,
+html:lang(zh-Hant-HK) body,
+html:lang(zh-Hant-MO) body {
+  font-family: system-ui, -apple-system, "PingFang HK", "PingFang TC", "Hiragino Sans CNS", "Microsoft JhengHei", "Noto Sans HK", "Noto Sans CJK HK", "Noto Sans TC", "Noto Sans CJK TC", sans-serif;
+}
+
+html:lang(zh-TW) body,
+html:lang(zh-Hant):not(:lang(zh-Hant-HK)):not(:lang(zh-Hant-MO)) body {
+  font-family: system-ui, -apple-system, "PingFang TC", "Hiragino Sans CNS", "Microsoft JhengHei", "Noto Sans TC", "Noto Sans CJK TC", sans-serif;
+}
+
+html:lang(zh-CN) body,
+html:lang(zh-SG) body,
+html:lang(zh-Hans) body,
+html[lang="zh" i] body {
+  font-family: system-ui, -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Noto Sans CJK SC", sans-serif;
+}

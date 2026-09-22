@@ -85,6 +85,56 @@ export function localizeKeycapLabel(text) {
   return getMessage(key) || raw;
 }
 
+const LOCALE_TAG_PATTERN = /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]+)*$/;
+
+/**
+ * @param {unknown} value
+ * @returns {string}
+ */
+function normalizeLocaleTag(value) {
+  const tag = String(value ?? '').trim().replace(/_/g, '-');
+  return LOCALE_TAG_PATTERN.test(tag) ? tag : '';
+}
+
+/**
+ * BCP-47 tag for `lang` attributes.
+ *
+ * Prefers the `locale_tag` message, which is the catalog Chrome actually
+ * loaded. `getUILanguage()` stays `zh-CN` when the browser is Chinese and
+ * this extension has no Chinese catalog, and the strings on screen are then
+ * English. Underscore spellings (`zh_CN`) are normalized so `:lang()` matches.
+ * Falls back to the UI language, then English.
+ * @returns {string}
+ */
+export function getUILocaleTag() {
+  try {
+    const fromCatalog = normalizeLocaleTag(chrome?.i18n?.getMessage?.('locale_tag'));
+    if (fromCatalog) return fromCatalog;
+  } catch {
+    // ignore
+  }
+  try {
+    const fromUi = normalizeLocaleTag(chrome?.i18n?.getUILanguage?.());
+    if (fromUi) return fromUi;
+  } catch {
+    // ignore
+  }
+  return DEFAULT_LOCALE;
+}
+
+/**
+ * Set the locale/language attribute on a document root so locale-specific
+ * typography rules (`:lang()`) can apply. Safe to call before first paint.
+ * @param {Document|null|undefined} [doc]
+ */
+export function applyDocumentLocale(doc = document) {
+  try {
+    doc?.documentElement?.setAttribute?.('lang', getUILocaleTag());
+  } catch {
+    // ignore
+  }
+}
+
 export function getMessage(key, substitutions) {
   const messageKey = typeof key === 'string' ? key.trim() : '';
   if (!messageKey) return missingMessage(String(key || '(empty key)'));
@@ -128,5 +178,14 @@ export function localizeElements(root = document) {
         element.setAttribute(property, message);
       }
     }
+  }
+
+  // Every page localizes through here at startup, so the document language
+  // is set before the visible UI is shown.
+  try {
+    const doc = root.nodeType === 9 ? root : root.ownerDocument;
+    if (doc) applyDocumentLocale(doc);
+  } catch {
+    // ignore
   }
 }

@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-21T09:23:42.339Z
+ * Generated on 2026-09-22T21:58:48.197Z
  */
 
 (() => {
@@ -3987,6 +3987,103 @@
     ".kpv2-settings-host",
     ".kpv2-docs-host"
   ].join(", ");
+
+  // src/ui/locale-fonts.js
+  function quoteFamily(name) {
+    return `"${name}"`;
+  }
+  function uiStack(families) {
+    return ["system-ui", "-apple-system", ...families.map(quoteFamily), "sans-serif"].join(", ");
+  }
+  var KP_CJK_UI_STACK_SC = uiStack([
+    "PingFang SC",
+    "Hiragino Sans GB",
+    "Microsoft YaHei",
+    "Noto Sans SC",
+    "Noto Sans CJK SC"
+  ]);
+  var KP_CJK_UI_STACK_TC = uiStack([
+    "PingFang TC",
+    "Hiragino Sans CNS",
+    "Microsoft JhengHei",
+    "Noto Sans TC",
+    "Noto Sans CJK TC"
+  ]);
+  var KP_CJK_UI_STACK_HK = uiStack([
+    "PingFang HK",
+    "PingFang TC",
+    "Hiragino Sans CNS",
+    "Microsoft JhengHei",
+    "Noto Sans HK",
+    "Noto Sans CJK HK",
+    "Noto Sans TC",
+    "Noto Sans CJK TC"
+  ]);
+  function isZhHk(tag) {
+    return tag === "zh-hk" || tag.startsWith("zh-hk-") || tag === "zh-mo" || tag.startsWith("zh-mo-") || tag === "zh-hant-hk" || tag.startsWith("zh-hant-hk-") || tag === "zh-hant-mo" || tag.startsWith("zh-hant-mo-");
+  }
+  function isZhTw(tag) {
+    if (isZhHk(tag)) return false;
+    return tag === "zh-tw" || tag.startsWith("zh-tw-") || tag === "zh-hant" || tag.startsWith("zh-hant-");
+  }
+  function isZhHans(tag) {
+    return tag === "zh" || tag === "zh-cn" || tag.startsWith("zh-cn-") || tag === "zh-sg" || tag.startsWith("zh-sg-") || tag === "zh-hans" || tag.startsWith("zh-hans-");
+  }
+  var CJK_FONT_RULES = [
+    {
+      id: "hk",
+      stack: () => KP_CJK_UI_STACK_HK,
+      match: isZhHk,
+      shadow: [
+        ":host(:lang(zh-HK))",
+        ":host(:lang(zh-MO))",
+        ":host(:lang(zh-Hant-HK))",
+        ":host(:lang(zh-Hant-MO))"
+      ],
+      page: [
+        "html:lang(zh-HK) body",
+        "html:lang(zh-MO) body",
+        "html:lang(zh-Hant-HK) body",
+        "html:lang(zh-Hant-MO) body"
+      ]
+    },
+    {
+      id: "tc",
+      stack: () => KP_CJK_UI_STACK_TC,
+      match: isZhTw,
+      shadow: [
+        ":host(:lang(zh-TW))",
+        ":host(:lang(zh-Hant):not(:lang(zh-Hant-HK)):not(:lang(zh-Hant-MO)))"
+      ],
+      page: [
+        "html:lang(zh-TW) body",
+        "html:lang(zh-Hant):not(:lang(zh-Hant-HK)):not(:lang(zh-Hant-MO)) body"
+      ]
+    },
+    {
+      id: "sc",
+      stack: () => KP_CJK_UI_STACK_SC,
+      match: isZhHans,
+      shadow: [
+        ":host(:lang(zh-CN))",
+        ":host(:lang(zh-SG))",
+        ":host(:lang(zh-Hans))",
+        ':host([lang="zh" i])'
+      ],
+      page: [
+        "html:lang(zh-CN) body",
+        "html:lang(zh-SG) body",
+        "html:lang(zh-Hans) body",
+        'html[lang="zh" i] body'
+      ]
+    }
+  ];
+  function fontFamilyRule(selectors, stack) {
+    return `${selectors.join(",\n")} {
+  font-family: ${stack};
+}`;
+  }
+  var KP_CJK_SHADOW_CSS = CJK_FONT_RULES.map((rule) => fontFamilyRule(rule.shadow, rule.stack())).join("\n");
 
   // src/ui/kp-chrome-shadow.js
   function containsComposed(host, node) {

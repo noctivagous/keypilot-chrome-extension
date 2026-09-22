@@ -4,11 +4,13 @@
  * Keep DOM construction and progress shape here so early-inject and the
  * bundled content script cannot drift.
  *
- * `formatAltShortcut` is imported for ESM callers. `build.js` strips that
- * import when stamping this file into early-inject and prepends `platform.js`
- * so the helper stays in scope.
+ * `formatAltShortcut` is imported for ESM callers. `build.js` strips imports
+ * when stamping this file into early-inject and prepends `platform.js` and
+ * `early-locale-fonts.js` so those helpers stay in scope.
  */
 import { formatAltShortcut, altModifierLabel } from '../utils/platform.js';
+import { getUILocaleTag } from '../utils/i18n.js';
+import { KP_CJK_SHADOW_CSS, cjkUiFallbackStack } from './locale-fonts.js';
 
 // ── Storage / progress ──────────────────────────────────────────────────────
 
@@ -29,6 +31,17 @@ function onboardingMessage(key, substitutions) {
   } catch {
     return '';
   }
+}
+
+/**
+ * Locale-aware UI fallback stack for the onboarding shell. Non-CJK locales
+ * keep the previous Latin stack. `cjkUiFallbackStack` is stamped into
+ * early-inject from `early-locale-fonts.js` (this file's imports are stripped).
+ * @param {string} [tag]
+ * @returns {string}
+ */
+function onboardingUiFallbackStack(tag = '') {
+  return cjkUiFallbackStack(tag) || 'Helvetica, Arial, sans-serif';
 }
 
 /**
@@ -484,8 +497,20 @@ export function createOnboardingShell(doc, opts = {}) {
   root.setAttribute('role', 'dialog');
   root.setAttribute('aria-label', onboardingMessage('onboarding_aria_label'));
   try { root.setAttribute('data-kp-ui-shadow', 'onboarding'); } catch { /* ignore */ }
+  // Shadow-tree language is inherited from the host: set it so
+  // locale-specific typography rules (`:lang()`) can apply inside.
+  const shellLocaleTag = getUILocaleTag();
+  try { root.setAttribute('lang', shellLocaleTag); } catch { /* ignore */ }
   let shell = root;
   try { shell = root.shadowRoot || root.attachShadow({ mode: 'open' }); } catch { /* light fallback */ }
+  try {
+    if (KP_CJK_SHADOW_CSS && shell.appendChild) {
+      const cjkStyle = doc.createElement('style');
+      cjkStyle.setAttribute('data-kp-cjk-fonts', 'true');
+      cjkStyle.textContent = KP_CJK_SHADOW_CSS;
+      shell.appendChild(cjkStyle);
+    }
+  } catch { /* ignore */ }
 
   // When initially hidden, use display:none + pointer-events:none.
   // Some pages override [hidden]; never put display:flex on a hidden shell.
@@ -506,7 +531,7 @@ export function createOnboardingShell(doc, opts = {}) {
     border: 'var(--kp-panel-border)',
     borderRadius: 'var(--kp-radius-panel, 3px)',
     boxShadow: 'var(--kp-panel-shadow)',
-    fontFamily: 'var(--kp-font-ui, Helvetica, Arial, sans-serif)',
+    fontFamily: `var(--kp-font-ui, ${onboardingUiFallbackStack(shellLocaleTag)})`,
     pointerEvents: initiallyHidden ? 'none' : 'auto',
     zoom: String(ONBOARDING_PANEL_SCALE)
   });

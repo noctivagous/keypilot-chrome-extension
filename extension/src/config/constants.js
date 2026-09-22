@@ -387,6 +387,10 @@ export const CURSOR_MODE = Object.freeze({
  * System UI font for KeyPilot chrome injected into host pages.
  * Pin this on popovers/titlebars so site body fonts (e.g. freight-text-pro) cannot leak in.
  * Single declaration — the content bundle is one IIFE scope (no per-module consts of the same name).
+ * Latin faces only. A named CJK family in this list would satisfy every Han
+ * glyph and skip the browser's lang-aware fallback, so Traditional text would
+ * render with whichever CJK face came first. Locale stacks live in
+ * `src/ui/locale-fonts.js` and apply from the element's lang.
  */
 export const KP_UI_FONT =
   "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";

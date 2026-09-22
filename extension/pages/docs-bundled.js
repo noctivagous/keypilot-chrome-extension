@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-21T09:23:42.339Z
+ * Generated on 2026-09-22T21:58:48.197Z
  */
 
 var __defProp = Object.defineProperty;
@@ -5294,6 +5294,30 @@ var KEYCAP_MESSAGE_KEYS = Object.freeze({
   Esc: "keycap_esc",
   Escape: "keycap_esc"
 });
+var LOCALE_TAG_PATTERN = /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]+)*$/;
+function normalizeLocaleTag(value) {
+  const tag = String(value ?? "").trim().replace(/_/g, "-");
+  return LOCALE_TAG_PATTERN.test(tag) ? tag : "";
+}
+function getUILocaleTag() {
+  try {
+    const fromCatalog = normalizeLocaleTag(chrome?.i18n?.getMessage?.("locale_tag"));
+    if (fromCatalog) return fromCatalog;
+  } catch {
+  }
+  try {
+    const fromUi = normalizeLocaleTag(chrome?.i18n?.getUILanguage?.());
+    if (fromUi) return fromUi;
+  } catch {
+  }
+  return DEFAULT_LOCALE;
+}
+function applyDocumentLocale(doc = document) {
+  try {
+    doc?.documentElement?.setAttribute?.("lang", getUILocaleTag());
+  } catch {
+  }
+}
 function getMessage(key, substitutions) {
   const messageKey = typeof key === "string" ? key.trim() : "";
   if (!messageKey) return missingMessage(String(key || "(empty key)"));
@@ -5323,6 +5347,11 @@ function localizeElements(root = document) {
         element.setAttribute(property, message);
       }
     }
+  }
+  try {
+    const doc = root.nodeType === 9 ? root : root.ownerDocument;
+    if (doc) applyDocumentLocale(doc);
+  } catch {
   }
 }
 

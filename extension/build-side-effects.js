@@ -28,6 +28,7 @@ import {
 import { POPUP_THEME_VARS } from './src/ui/popup-theme-vars.js';
 import { parseOnboardingXml } from './src/utils/onboarding-model.js';
 import { getAllThemesCss, getTheme, THEME_IDS } from './themes/index.js';
+import { renderLocaleFontStylesheet } from './src/ui/locale-fonts.js';
 
 /**
  * Replace the inclusive span from startMarker through endMarker with newSection.
@@ -67,6 +68,16 @@ function getBuildTimestamp(now = new Date()) {
 
 export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuilder = false } = {}) {
   const shouldMinifyFlag = shouldMinify;
+  const localeFontsCssPath = path.resolve(process.cwd(), 'pages', 'kp-locale-fonts.css');
+  const localeFontsCss = renderLocaleFontStylesheet();
+  const previousLocaleFontsCss = fs.existsSync(localeFontsCssPath)
+    ? fs.readFileSync(localeFontsCssPath, 'utf8')
+    : '';
+  if (previousLocaleFontsCss !== localeFontsCss) {
+    fs.writeFileSync(localeFontsCssPath, localeFontsCss, 'utf8');
+    console.log(`✓ Updated locale font stylesheet: ${localeFontsCssPath}`);
+  }
+
   if (Array.isArray(BUILD_EXCLUDED_KEY_ACTIONS) && BUILD_EXCLUDED_KEY_ACTIONS.length) {
     console.log(`Build-excluded key actions: ${BUILD_EXCLUDED_KEY_ACTIONS.join(', ')}`);
   }
@@ -416,6 +427,23 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       console.warn('WARN: Failed to stamp platform.js into early-inject:', e && e.message ? e.message : e);
     }
 
+    // Stamp only the compact early locale runtime before onboarding-shared.js.
+    // Imports in onboarding-shared.js are stripped, so getUILocaleTag /
+    // cjkUiFallbackStack / KP_CJK_SHADOW_CSS must already be in scope.
+    let earlyLocaleFontsIndented = '';
+    try {
+      const earlyLocaleFontsPath = path.resolve(process.cwd(), 'src', 'ui', 'early-locale-fonts.js');
+      if (fs.existsSync(earlyLocaleFontsPath)) {
+        earlyLocaleFontsIndented = indentEarlyInject(
+          stripEsmForEarlyInject(fs.readFileSync(earlyLocaleFontsPath, 'utf8'))
+        );
+      } else {
+        console.warn(`WARN: early-locale-fonts.js not found at: ${earlyLocaleFontsPath}`);
+      }
+    } catch (e) {
+      console.warn('WARN: Failed to stamp early locale runtime into early-inject:', e && e.message ? e.message : e);
+    }
+
     // Stamp onboarding-shared.js (export-stripped) so early-inject uses the same shell/progress helpers.
     let onboardingSharedIndented = '';
     try {
@@ -437,6 +465,7 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       `  // - \`extension/src/config/function-library.js\` (slot paint: label + keyboardClass)\n` +
       `  // - \`extension/src/ui/keybindings-ui-shared.js\` (CSS + layout + style attr + control-strip icons)\n` +
       `  // - \`extension/src/utils/platform.js\` (Mac Opt vs Alt shortcut legends)\n` +
+      `  // - \`extension/src/ui/early-locale-fonts.js\` (compact early CJK locale runtime)\n` +
       `  // - \`extension/onboarding/en.xml\` (English early onboarding model)\n` +
       `  // - \`extension/src/ui/onboarding-shared.js\` (shell / progress / checklist DOM)\n` +
       `  // Do not edit by hand.\n` +
@@ -645,6 +674,7 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       `  function ensureEarlyOpenChromeShadow(host, id) {\n` +
       `    if (!host) return null;\n` +
       `    try { host.setAttribute('data-kp-ui-shadow', String(id || 'chrome')); } catch { /* ignore */ }\n` +
+      `    try { host.setAttribute('lang', getUILocaleTag()); } catch { /* ignore */ }\n` +
       `    try { host.classList.add('kp-chrome-window'); } catch { /* ignore */ }\n` +
       `    try {\n` +
       `      const themeId = document.documentElement.getAttribute('data-kp-theme') || peekCachedThemeId() || 'dark-pro';\n` +
@@ -654,7 +684,17 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       `      else host.removeAttribute('data-kp-corner');\n` +
       `    } catch { /* ignore */ }\n` +
       `    try { applyEarlyKeyChromeVars(host, peekCachedThemeOverrides()); } catch { /* ignore */ }\n` +
-      `    try { return host.shadowRoot || host.attachShadow({ mode: 'open' }); } catch { return host.shadowRoot || null; }\n` +
+      `    var shadow = null;\n` +
+      `    try { shadow = host.shadowRoot || host.attachShadow({ mode: 'open' }); } catch { shadow = host.shadowRoot || null; }\n` +
+      `    try {\n` +
+      `      if (shadow && shadow.appendChild && !shadow.querySelector('style[data-kp-cjk-fonts]')) {\n` +
+      `        var kpCjkStyle = document.createElement('style');\n` +
+      `        kpCjkStyle.setAttribute('data-kp-cjk-fonts', 'true');\n` +
+      `        kpCjkStyle.textContent = KP_CJK_SHADOW_CSS;\n` +
+      `        shadow.appendChild(kpCjkStyle);\n` +
+      `      }\n` +
+      `    } catch { /* ignore */ }\n` +
+      `    return shadow;\n` +
       `  }\n` +
       `  const KEYBINDINGS_UI_EARLY_CSS = \`${escapedCss}\`;\n` +
       `  const KP_ALL_THEMES_CSS = \`${escapedThemeCss}\`;\n` +
@@ -662,6 +702,9 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
       `  const KP_THEME_CORNER = ${JSON.stringify(themeCornerById)};\n` +
       (platformIndented
         ? `\n  // --- begin stamped platform.js ---\n${platformIndented}\n  // --- end stamped platform.js ---\n`
+        : '') +
+      (earlyLocaleFontsIndented
+        ? `\n  // --- begin stamped early-locale-fonts.js ---\n${earlyLocaleFontsIndented}\n  // --- end stamped early-locale-fonts.js ---\n`
         : '') +
       (onboardingSharedIndented
         ? `\n  // --- begin stamped onboarding-shared.js ---\n${onboardingSharedIndented}\n  // --- end stamped onboarding-shared.js ---\n`
