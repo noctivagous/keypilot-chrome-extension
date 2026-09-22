@@ -506,8 +506,8 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
   NEW_TAB: Object.freeze({
     handler: 'handleNewTabKey',
     label: 'New Tab',
-    description: 'Open a blank new tab',
-    details: 'Opens a new empty tab in the current window, same as the browser’s New Tab command.',
+    description: 'Open the KeyPilot new tab',
+    details: 'Opens a KeyPilot new tab with your bookmarks bar, top sites, and search. The browser’s own new tab stays unchanged.',
     keyboardClass: 'key-gray',
     row: 1
   }),

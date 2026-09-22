@@ -78,14 +78,17 @@ export function isKeyPilotNewTabUrl(u) {
 
   try {
     if (typeof chrome === 'undefined' || !chrome.runtime?.getURL) return false;
-    const kpNewTabUrl = chrome.runtime.getURL('pages/newtab.html');
-    if (s === kpNewTabUrl || s.startsWith(`${kpNewTabUrl}#`) || s.startsWith(`${kpNewTabUrl}?`)) {
-      return true;
-    }
-    const kp = new URL(kpNewTabUrl);
+    const pagePaths = ['pages/key-new-tab.html', 'pages/newtab.html'];
     const parsed = new URL(s);
-    if (parsed.origin === kp.origin && parsed.pathname.endsWith('/pages/newtab.html')) {
-      return true;
+    for (const pagePath of pagePaths) {
+      const kpNewTabUrl = chrome.runtime.getURL(pagePath);
+      if (s === kpNewTabUrl || s.startsWith(`${kpNewTabUrl}#`) || s.startsWith(`${kpNewTabUrl}?`)) {
+        return true;
+      }
+      const kp = new URL(kpNewTabUrl);
+      if (parsed.origin === kp.origin && parsed.pathname.endsWith(`/${pagePath}`)) {
+        return true;
+      }
     }
   } catch {
     // ignore

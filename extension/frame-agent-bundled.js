@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-22T21:58:48.197Z
+ * Generated on 2026-09-22T22:30:17.815Z
  */
 
 (() => {
@@ -569,8 +569,8 @@
     NEW_TAB: Object.freeze({
       handler: "handleNewTabKey",
       label: "New Tab",
-      description: "Open a blank new tab",
-      details: "Opens a new empty tab in the current window, same as the browser\u2019s New Tab command.",
+      description: "Open the KeyPilot new tab",
+      details: "Opens a KeyPilot new tab with your bookmarks bar, top sites, and search. The browser\u2019s own new tab stays unchanged.",
       keyboardClass: "key-gray",
       row: 1
     }),

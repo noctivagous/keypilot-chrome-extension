@@ -3766,11 +3766,11 @@
     "description": "Function Library label for NEW_TAB."
   },
   "fn_NEW_TAB_description": {
-    "message": "Otvoriť prázdnu novú kartu",
+    "message": "Otvoriť novú kartu KeyPilot",
     "description": "Function Library description for NEW_TAB."
   },
   "fn_NEW_TAB_details": {
-    "message": "Otvorí novú prázdnu kartu v aktuálnom okne, rovnako ako príkaz Nová karta v prehliadači.",
+    "message": "Otvorí novú kartu KeyPilot s panelom záložiek, najnavštevovanejšími stránkami a vyhľadávaním. Vlastná nová karta prehliadača zostáva nezmenená.",
     "description": "Function Library details for NEW_TAB."
   },
   "fn_OPEN_POPOVER_label": {
@@ -5792,5 +5792,55 @@
   "launcher_category_searches_description": {
     "message": "Vyhľadávače a nedávne webové vyhľadávania",
     "description": "Launcher category description."
+  },
+  "key_new_tab_document_title": {
+    "message": "KeyPilot",
+    "description": "Document title for the Key New Tab page."
+  },
+  "key_new_tab_bookmarks_label": {
+    "message": "Panel záložiek",
+    "description": "Accessible name for the bookmarks bar on the Key New Tab page."
+  },
+  "key_new_tab_folder": {
+    "message": "Priečinok",
+    "description": "Fallback label for an untitled bookmark folder."
+  },
+  "key_new_tab_folder_empty": {
+    "message": "Prázdny priečinok",
+    "description": "Shown inside a bookmark folder that has no items."
+  },
+  "key_new_tab_top_sites_label": {
+    "message": "Najnavštevovanejšie stránky",
+    "description": "Accessible name for the top sites section on the Key New Tab page."
+  },
+  "key_new_tab_top_sites_empty": {
+    "message": "Zatiaľ žiadne najnavštevovanejšie stránky.",
+    "description": "Shown when Chrome has no top sites to list."
+  },
+  "key_new_tab_search_label": {
+    "message": "Hľadať",
+    "description": "Accessible name for the search section on the Key New Tab page."
+  },
+  "key_new_tab_search_placeholder": {
+    "message": "Hľadať alebo zadajte adresu",
+    "description": "Placeholder for the Key New Tab search field."
+  },
+  "key_new_tab_search_submit": {
+    "message": "Hľadať",
+    "description": "Submit button for the Key New Tab search field."
+  },
+  "key_new_tab_suggestions_label": {
+    "message": "Návrhy vyhľadávania",
+    "description": "Accessible name for the Key New Tab suggestion list."
+  },
+  "key_new_tab_engine_label": {
+    "message": "Vyhľadávač: $ENGINE$",
+    "description": "Shows the search engine used by the Key New Tab field.",
+    "placeholders": {
+      "engine": {
+        "content": "$1",
+        "example": "Brave"
+      }
+    }
   }
 }

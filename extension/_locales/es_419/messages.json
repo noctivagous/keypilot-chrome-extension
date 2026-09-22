@@ -3766,11 +3766,11 @@
     "description": "Function Library label for NEW_TAB."
   },
   "fn_NEW_TAB_description": {
-    "message": "Abrir una nueva pestaña en blanco",
+    "message": "Abrir la nueva pestaña de KeyPilot",
     "description": "Function Library description for NEW_TAB."
   },
   "fn_NEW_TAB_details": {
-    "message": "Abre una nueva pestaña vacía en la ventana actual, igual que el comando Nueva pestaña del navegador.",
+    "message": "Abre una nueva pestaña de KeyPilot con la barra de marcadores, los sitios más visitados y la búsqueda. La nueva pestaña del navegador no cambia.",
     "description": "Function Library details for NEW_TAB."
   },
   "fn_OPEN_POPOVER_label": {
@@ -5792,5 +5792,55 @@
   "launcher_category_searches_description": {
     "message": "Motores de búsqueda y búsquedas web recientes",
     "description": "Launcher category description."
+  },
+  "key_new_tab_document_title": {
+    "message": "KeyPilot",
+    "description": "Document title for the Key New Tab page."
+  },
+  "key_new_tab_bookmarks_label": {
+    "message": "Barra de marcadores",
+    "description": "Accessible name for the bookmarks bar on the Key New Tab page."
+  },
+  "key_new_tab_folder": {
+    "message": "Carpeta",
+    "description": "Fallback label for an untitled bookmark folder."
+  },
+  "key_new_tab_folder_empty": {
+    "message": "Carpeta vacía",
+    "description": "Shown inside a bookmark folder that has no items."
+  },
+  "key_new_tab_top_sites_label": {
+    "message": "Sitios más visitados",
+    "description": "Accessible name for the top sites section on the Key New Tab page."
+  },
+  "key_new_tab_top_sites_empty": {
+    "message": "Aún no hay sitios más visitados.",
+    "description": "Shown when Chrome has no top sites to list."
+  },
+  "key_new_tab_search_label": {
+    "message": "Buscar",
+    "description": "Accessible name for the search section on the Key New Tab page."
+  },
+  "key_new_tab_search_placeholder": {
+    "message": "Buscar o ingresar una dirección",
+    "description": "Placeholder for the Key New Tab search field."
+  },
+  "key_new_tab_search_submit": {
+    "message": "Buscar",
+    "description": "Submit button for the Key New Tab search field."
+  },
+  "key_new_tab_suggestions_label": {
+    "message": "Sugerencias de búsqueda",
+    "description": "Accessible name for the Key New Tab suggestion list."
+  },
+  "key_new_tab_engine_label": {
+    "message": "Buscador: $ENGINE$",
+    "description": "Shows the search engine used by the Key New Tab field.",
+    "placeholders": {
+      "engine": {
+        "content": "$1",
+        "example": "Brave"
+      }
+    }
   }
 }

@@ -7,7 +7,8 @@ const pages = [
   'extension/pages/settings.html',
   'extension/pages/docs.html',
   'extension/pages/guide.html',
-  'extension/pages/newtab.html'
+  'extension/pages/newtab.html',
+  'extension/pages/key-new-tab.html'
 ];
 
 const ENGLISH_CATALOG = 'extension/_locales/en/messages.json';
@@ -92,11 +93,13 @@ describe('extension-page localization', () => {
       'extension/pages/settings.html': 'settings_static_009',
       'extension/pages/docs.html': 'docs_document_title',
       'extension/pages/guide.html': 'guide_document_title',
-      'extension/pages/newtab.html': 'newtab_static_019'
+      'extension/pages/newtab.html': 'newtab_static_019',
+      'extension/pages/key-new-tab.html': 'key_new_tab_document_title'
     };
     const placeholderPages = {
       'extension/pages/docs.html': 'docs_search_placeholder',
-      'extension/pages/newtab.html': 'newtab_static_012'
+      'extension/pages/newtab.html': 'newtab_static_012',
+      'extension/pages/key-new-tab.html': 'key_new_tab_search_placeholder'
     };
 
     for (const [page, key] of Object.entries(titlePages)) {

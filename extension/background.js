@@ -2878,14 +2878,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
 
         case MSG.NEW_TAB:
-          // Open a new tab (Chrome default NTP, or KeyPilot page when flagged on).
+          // Open a new tab (Chrome default NTP, or the Key New Tab page when flagged on).
           try {
             /** @type {chrome.tabs.CreateProperties} */
             const createProps = {
               active: true
             };
             if (FEATURE_FLAGS.USE_CUSTOM_NEWTAB_PAGE) {
-              createProps.url = chrome.runtime.getURL('pages/newtab.html');
+              createProps.url = chrome.runtime.getURL('pages/key-new-tab.html');
             }
 
             // Keep tab ordering consistent with other "open in new tab" actions:

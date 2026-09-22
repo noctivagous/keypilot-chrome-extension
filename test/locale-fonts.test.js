@@ -187,7 +187,8 @@ describe('CJK system-font-first stacks', () => {
       'extension/pages/settings.html': 'kp-locale-fonts.css',
       'extension/pages/docs.html': 'kp-locale-fonts.css',
       'extension/pages/guide.html': 'kp-locale-fonts.css',
-      'extension/pages/newtab.html': 'kp-locale-fonts.css'
+      'extension/pages/newtab.html': 'kp-locale-fonts.css',
+      'extension/pages/key-new-tab.html': 'kp-locale-fonts.css'
     };
     for (const [page, href] of Object.entries(pages)) {
       const html = await readFile(page, 'utf8');

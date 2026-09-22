@@ -40,6 +40,11 @@ describe('url-policy', () => {
     assert.equal(isKeyPilotNewTabUrl(`${kpNewTab}#focus`), true);
     assert.equal(isSkippableTab({ url: kpNewTab }), false);
 
+    const keyNewTab = `${EXTENSION_ORIGIN}/pages/key-new-tab.html`;
+    assert.equal(isKeyPilotNewTabUrl(keyNewTab), true);
+    assert.equal(isKeyPilotNewTabUrl(`${keyNewTab}?q=1`), true);
+    assert.equal(isSkippableTab({ url: keyNewTab }), false);
+
     assert.equal(isSkippableTab({ url: 'chrome://extensions' }), true);
     assert.equal(isSkippableTab({ url: 'https://example.com' }), false);
   });

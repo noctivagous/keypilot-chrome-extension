@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title data-i18n="key_new_tab_document_title">KeyPilot</title>
+    <!--
+      Content scripts do not run on extension pages. Load early-inject here so
+      KeyPilot chrome appears before the page module, same as regular web pages.
+      This page is opened only by the New Tab key. It does not replace Chrome's
+      new tab (no chrome_url_overrides).
+    -->
+    <script src="../early-inject.js"></script>
+    <link rel="stylesheet" href="key-new-tab.css" />
+    <link rel="stylesheet" href="kp-locale-fonts.css" />
+  </head>
+  <body>
+    <nav id="bookmarks-bar" class="bookmarks-bar" hidden aria-label="Bookmarks bar" data-i18n-aria-label="key_new_tab_bookmarks_label"></nav>
+
+    <main class="stage">
+      <section class="top-sites" aria-label="Top sites" data-i18n-aria-label="key_new_tab_top_sites_label">
+        <div id="top-sites" class="top-sites-row"></div>
+        <p id="top-sites-empty" class="empty" hidden data-i18n="key_new_tab_top_sites_empty">No top sites yet.</p>
+      </section>
+
+      <section class="search" aria-label="Search" data-i18n-aria-label="key_new_tab_search_label">
+        <form id="search-form" class="search-form" role="search">
+          <input
+            id="search-input"
+            class="search-input"
+            type="text"
+            spellcheck="false"
+            autocomplete="off"
+            placeholder="Search or enter address"
+            data-i18n-placeholder="key_new_tab_search_placeholder"
+            aria-autocomplete="list"
+            aria-controls="search-suggestions"
+          />
+          <button class="search-submit" type="submit" data-i18n="key_new_tab_search_submit">Search</button>
+        </form>
+        <div
+          id="search-suggestions"
+          class="suggestions"
+          role="listbox"
+          hidden
+          aria-label="Search suggestions"
+          data-i18n-aria-label="key_new_tab_suggestions_label"
+        ></div>
+        <p id="engine-label" class="engine-label"></p>
+      </section>
+    </main>
+
+    <script type="module" src="key-new-tab.js"></script>
+  </body>
+</html>

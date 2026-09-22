@@ -2,7 +2,7 @@
  * Early injection script for KeyPilot - runs at document_start
  * Makes SVG cursor available immediately before page load
  *
- * Also loaded explicitly from pages/newtab.html: Chrome does not inject
+ * Also loaded explicitly from pages/newtab.html and pages/key-new-tab.html: Chrome does not inject
  * content scripts into extension pages (chrome_url_overrides), so New Tab
  * would otherwise miss early onboarding + control-strip shells.
  */
@@ -1312,7 +1312,7 @@
     },
     "NEW_TAB": {
       "label": "New Tab",
-      "description": "Open a blank new tab",
+      "description": "Open the KeyPilot new tab",
       "keyLabel": "T",
       "displayKey": "T",
       "keyboardClass": "key-gray"
@@ -1524,7 +1524,7 @@
     },
     "NEW_TAB": {
       "label": "New Tab",
-      "description": "Open a blank new tab",
+      "description": "Open the KeyPilot new tab",
       "keyLabel": "Y",
       "displayKey": "Y",
       "keyboardClass": "key-gray"
@@ -2203,7 +2203,7 @@
   },
   "NEW_TAB": {
     "label": "New Tab",
-    "description": "Open a blank new tab",
+    "description": "Open the KeyPilot new tab",
     "keyLabel": "T",
     "displayKey": "T",
     "keyboardClass": "key-gray"

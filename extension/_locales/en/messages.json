@@ -3766,11 +3766,11 @@
     "description": "Function Library label for NEW_TAB."
   },
   "fn_NEW_TAB_description": {
-    "message": "Open a blank new tab",
+    "message": "Open the KeyPilot new tab",
     "description": "Function Library description for NEW_TAB."
   },
   "fn_NEW_TAB_details": {
-    "message": "Opens a new empty tab in the current window, same as the browser’s New Tab command.",
+    "message": "Opens a KeyPilot new tab with your bookmarks bar, top sites, and search. The browser’s own new tab stays unchanged.",
     "description": "Function Library details for NEW_TAB."
   },
   "fn_OPEN_POPOVER_label": {
@@ -5792,5 +5792,55 @@
   "launcher_category_searches_description": {
     "message": "Search engines and recent web searches",
     "description": "Launcher category description."
+  },
+  "key_new_tab_document_title": {
+    "message": "KeyPilot",
+    "description": "Document title for the Key New Tab page."
+  },
+  "key_new_tab_bookmarks_label": {
+    "message": "Bookmarks bar",
+    "description": "Accessible name for the bookmarks bar on the Key New Tab page."
+  },
+  "key_new_tab_folder": {
+    "message": "Folder",
+    "description": "Fallback label for an untitled bookmark folder."
+  },
+  "key_new_tab_folder_empty": {
+    "message": "Empty folder",
+    "description": "Shown inside a bookmark folder that has no items."
+  },
+  "key_new_tab_top_sites_label": {
+    "message": "Top sites",
+    "description": "Accessible name for the top sites section on the Key New Tab page."
+  },
+  "key_new_tab_top_sites_empty": {
+    "message": "No top sites yet.",
+    "description": "Shown when Chrome has no top sites to list."
+  },
+  "key_new_tab_search_label": {
+    "message": "Search",
+    "description": "Accessible name for the search section on the Key New Tab page."
+  },
+  "key_new_tab_search_placeholder": {
+    "message": "Search or enter address",
+    "description": "Placeholder for the Key New Tab search field."
+  },
+  "key_new_tab_search_submit": {
+    "message": "Search",
+    "description": "Submit button for the Key New Tab search field."
+  },
+  "key_new_tab_suggestions_label": {
+    "message": "Search suggestions",
+    "description": "Accessible name for the Key New Tab suggestion list."
+  },
+  "key_new_tab_engine_label": {
+    "message": "Search engine: $ENGINE$",
+    "description": "Shows the search engine used by the Key New Tab field.",
+    "placeholders": {
+      "engine": {
+        "content": "$1",
+        "example": "Brave"
+      }
+    }
   }
 }

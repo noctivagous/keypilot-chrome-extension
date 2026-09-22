@@ -59,7 +59,7 @@ on the keyboard in specific places to make web navigation quick.
 | Keys | Action |
 | --- | --- |
 | `Q` | Switch to the previous tab |
-| `T` | Open a blank new tab |
+| `T` | Open the KeyPilot new tab |
 | `W` | Switch to the next tab |
 | `A` | Close the current tab |
 
