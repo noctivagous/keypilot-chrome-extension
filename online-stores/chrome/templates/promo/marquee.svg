@@ -10,13 +10,13 @@
       <stop stop-color="#1d1d32"/><stop offset="1" stop-color="#101023"/>
     </linearGradient>
     <linearGradient id="mouseBody" x1=".12" y1="0" x2=".9" y2="1">
-      <stop stop-color="#f7ecee"/><stop offset=".2" stop-color="#e8c8cd"/><stop offset=".55" stop-color="#d6a7ad"/><stop offset="1" stop-color="#7a4e57"/>
+      <stop stop-color="#c9a0a6"/><stop offset=".22" stop-color="#a87880"/><stop offset=".58" stop-color="#7a4e57"/><stop offset="1" stop-color="#3a2428"/>
     </linearGradient>
     <linearGradient id="mouseRim" x1="0" y1="0" x2="1" y2="1">
-      <stop stop-color="#fff7f8"/><stop offset=".4" stop-color="#d6a7ad"/><stop offset="1" stop-color="#5c3840"/>
+      <stop stop-color="#d6b4b8"/><stop offset=".4" stop-color="#8a5a62"/><stop offset="1" stop-color="#2e1c20"/>
     </linearGradient>
     <radialGradient id="leftClick" cx=".35" cy=".28" r=".8">
-      <stop stop-color="#ffffff" stop-opacity=".34"/><stop offset=".5" stop-color="#f0d4d8" stop-opacity=".08"/><stop offset="1" stop-color="#4a2c34" stop-opacity="0"/>
+      <stop stop-color="#ffffff" stop-opacity=".18"/><stop offset=".5" stop-color="#c9a0a6" stop-opacity=".06"/><stop offset="1" stop-color="#2a161a" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="buttonFade" x1="0" y1="0" x2="0" y2="1">
       <stop stop-color="#ffffff"/><stop offset=".62" stop-color="#ffffff"/><stop offset="1" stop-color="#000000"/>
@@ -25,7 +25,7 @@
       <rect x="665" y="175" width="150" height="108" fill="url(#buttonFade)"/>
     </mask>
     <linearGradient id="wheelFace" x1="0" y1="0" x2="1" y2="0">
-      <stop stop-color="#5e3a42"/><stop offset=".3" stop-color="#f8f0f1"/><stop offset=".58" stop-color="#c4929a"/><stop offset="1" stop-color="#4a2e34"/>
+      <stop stop-color="#3a2428"/><stop offset=".3" stop-color="#c9a0a6"/><stop offset=".58" stop-color="#8a5a62"/><stop offset="1" stop-color="#2e1c20"/>
     </linearGradient>
     <linearGradient id="keyWall" x1="0" y1=".2" x2="1" y2="1">
       <stop stop-color="#5c5c7a"/><stop offset=".5" stop-color="#2c2c46"/><stop offset="1" stop-color="#101018"/>
@@ -65,14 +65,14 @@
   <rect x="665" y="175" width="150" height="210" rx="75" fill="none" stroke="url(#mouseRim)" stroke-width="3"/>
   <g clip-path="url(#mouseClip)">
     <g mask="url(#buttonMask)">
-      <ellipse cx="706" cy="224" rx="40" ry="18" fill="#ffffff" opacity=".28" transform="rotate(-30 706 224)"/>
+      <ellipse cx="706" cy="224" rx="40" ry="18" fill="#ffffff" opacity=".16" transform="rotate(-30 706 224)"/>
       <rect x="665" y="175" width="78" height="100" fill="url(#leftClick)"/>
     </g>
-    <rect x="738.25" y="180" width="3.5" height="64" rx="1.75" fill="#6a4550"/>
-    <rect x="741" y="188" width="1.25" height="48" rx=".6" fill="#ffffff" opacity=".45"/>
+    <rect x="738.25" y="180" width="3.5" height="64" rx="1.75" fill="#3a2428"/>
+    <rect x="741" y="188" width="1.25" height="48" rx=".6" fill="#ffffff" opacity=".25"/>
   </g>
   <rect x="731" y="197" width="18" height="36" rx="9" fill="url(#wheelFace)"/>
-  <rect x="735" y="202" width="3.5" height="16" rx="1.5" fill="#ffffff" opacity=".7"/>
+  <rect x="735" y="202" width="3.5" height="16" rx="1.5" fill="#ffffff" opacity=".35"/>
   <g stroke="#5a3840" stroke-width="1.25" opacity=".4" stroke-linecap="round">
     <line x1="735" y1="208" x2="745" y2="208"/>
     <line x1="735" y1="215" x2="745" y2="215"/>
