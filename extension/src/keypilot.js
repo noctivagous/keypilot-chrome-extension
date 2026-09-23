@@ -3681,7 +3681,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     // S/D/R, A, T, and every other binding must type into the field, not navigate.
     if (
       (inTextFocus || !!typingTarget) &&
-      KB.ACTIVATE?.keys?.includes?.(e.key) &&
+      this._matchesKeybinding(KB.ACTIVATE, e) &&
       this._textModeClickArmed &&
       currentState?.focusEl
     ) {

@@ -116,6 +116,15 @@ describe('built-in keyboard layout physical bindings', () => {
     );
   });
 
+  it('uses the physical Click Element binding during the Text Mode hover window', async () => {
+    const keyPilotSource = await readFile('extension/src/keypilot.js', 'utf8');
+
+    assert.match(
+      keyPilotSource,
+      /Text mode isolation[\s\S]*this\._matchesKeybinding\(KB\.ACTIVATE, e\)[\s\S]*this\._textModeClickArmed/
+    );
+  });
+
   it('completes rectangle selection through physical bindings and displays a keycap', async () => {
     const [keyPilotSource, highlightManagerSource] = await Promise.all([
       readFile('extension/src/keypilot.js', 'utf8'),
