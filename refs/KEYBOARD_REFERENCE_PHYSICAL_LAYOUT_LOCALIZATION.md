@@ -290,3 +290,48 @@ model. This distinction must be visible in the layout editor.
   altering the user's action assignments.
 - Unit tests reject duplicate physical codes/HID usages, missing required
   geometry, and action cells that cannot resolve to a rendered physical key.
+
+## Codebase task list
+
+- [x] Define the physical keyboard-model schema and registry in
+  `extension/src/config/keyboard-hardware-layouts.js`: stable model ID,
+  form factor, physical `code`, HID usage, geometry, and multi-level legends.
+- [x] Add a US ANSI QWERTY model that exactly reproduces the current Keyboard
+  Reference geometry before replacing `KEYBOARD_UI_LAYOUT_RIGHT` and
+  `KEYBOARD_UI_LAYOUT_LEFT` in `extension/src/config/keyboard-layouts.js`.
+- [ ] Change built-in action and system-layer assignments in
+  `extension/src/config/keyboard-layouts.js` to explicit code-based physical
+  bindings; retain a separately typed character-binding form only where it is
+  intentionally semantic.
+- [ ] Update key matching in `extension/src/keypilot.js` so physical bindings
+  test `event.code`, including pressed feedback and both normal runtime paths.
+- [ ] Update `extension/src/ui/keybindings-ui-shared.js` and
+  `extension/src/ui/floating-keyboard-help.js` to render the selected model's
+  geometry/legends and resolve action keycaps by physical code.
+- [ ] Update the layout editor (`extension/src/ui/keyboard-layout-configurator.js`
+  and `extension/src/ui/keyboard-layout-config-panel.js`) so placement,
+  selection, tooltips, and saved bindings distinguish physical keys from typed
+  characters.
+- [ ] Add a persisted **Keyboard hardware layout** preference to the keyboard
+  settings schema/store, with an explicit US ANSI default and no locale-driven
+  automatic selection.
+- [ ] Add localized labels and descriptions for model-picker options in
+  `extension/_locales/en/messages.json`, then mirror the keys in every shipped
+  locale.
+- [ ] Implement and verify initial models: US ANSI, German ISO QWERTZ, Spain
+  Spanish ISO QWERTY, Slovak QWERTZ, and Japanese JIS. Add Latin-American
+  Spanish variants only after choosing and validating each target OS/country
+  layout; do not use `es_419` as a single physical model.
+- [ ] Validate Taiwan/Hong Kong optional secondary legends separately from the
+  QWERTY physical model; keep Chinese IME selection out of the hardware-model
+  preference.
+- [ ] Capture Chromium `key`, `code`, modifier, composition, and text-entry
+  behavior on macOS, Windows, and Linux for every shipped physical model,
+  especially JIS keys and dead-key/AltGr paths.
+- [ ] Add unit tests for model schema integrity, code-based matching, German
+  Y/Z action placement, ISO-only keys, JIS geometry, and custom-binding
+  semantics; add visual/screenshot fixtures for US ANSI, German ISO, Spanish
+  ISO, Slovak, and Japanese JIS.
+- [ ] Update `extension/userdocs/en/keyboard-reference.md`,
+  `refs/UI_TESTING_CHECKLIST.md`, and store-screenshot fixtures to explain and
+  exercise the selected physical keyboard layout.
