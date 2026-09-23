@@ -64,6 +64,7 @@
       "outputFile": "01-key-click-browsing.png",
       "capture": {
         "open": "key-click-browsing",
+        "hardwareLayoutId": "us-ansi-qwerty",
         "hoverSelector": "#kp-store-local-nav",
         "showCursor": true,
         "requiredSelectors": [
@@ -87,6 +88,7 @@
       "outputFile": "02-keyboard-map.png",
       "capture": {
         "open": "keyboard-map",
+        "hardwareLayoutId": "us-ansi-qwerty",
         "hoverSelector": "#kp-store-primary-link",
         "pinActionId": "PREVIEW_LINK_POPOVER",
         "requiredSelectors": [
@@ -109,6 +111,7 @@
       "outputFile": "03-customize-workflow.png",
       "capture": {
         "open": "customize-workflow",
+        "hardwareLayoutId": "us-ansi-qwerty",
         "hoverSelector": ".kp-floating-keyboard-help [data-kp-slot=\"E\"]",
         "showCursor": true,
         "focusHover": false,
@@ -137,6 +140,7 @@
       "outputFile": "04-walkthrough.png",
       "capture": {
         "open": "walkthrough",
+        "hardwareLayoutId": "us-ansi-qwerty",
         "requiredSelectors": [
           ".kp-onboarding-panel",
           "[data-kp-onboarding-slide-id='basic_navigation']",

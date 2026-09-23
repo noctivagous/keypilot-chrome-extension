@@ -45,6 +45,7 @@ function printPlaybook(origin) {
   for (const slot of slots.slots) {
     const required = (slot.capture.requiredSelectors || []).join(', ');
     console.log(`  - ${slot.id}: __KP_STORE_SHOTS.open('${slot.capture.open}')`);
+    console.log(`      hardware model=${slot.capture.hardwareLayoutId || 'current profile selection'}`);
     console.log(`      hover=${slot.capture.hoverSelector || '—'} pin=${slot.capture.pinActionId || '—'} tab=${slot.capture.libraryTab || '—'}`);
     console.log(`      required: ${required}`);
     console.log(`      → chrome/captures/<locale>/${slot.captureFile}`);

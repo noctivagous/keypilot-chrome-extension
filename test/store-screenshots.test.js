@@ -84,6 +84,9 @@ describe('Chrome store screenshot pipeline', () => {
     assert.ok(slots.slots[2].capture.requiredSelectors.includes("[data-kp-lib-tab='functions']"));
     assert.ok(slots.slots[3].capture.requiredSelectors.includes('.kp-onboarding-panel'));
     assert.ok(slots.slots[4].capture.requiredSelectors.includes('#kp-store-context-menu'));
+    for (const slot of slots.slots.slice(0, 4)) {
+      assert.equal(slot.capture.hardwareLayoutId, 'us-ansi-qwerty', slot.id);
+    }
   });
 
   it('keeps screenshot templates at 1280×800 with capture and copy placeholders', () => {

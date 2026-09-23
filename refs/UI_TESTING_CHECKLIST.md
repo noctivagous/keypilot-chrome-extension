@@ -92,6 +92,32 @@ Open with `K` (left-handed: `D`). Also from popup, Control Strip, New Tab “Key
 - [ ] Pressed-key overlay lights the matching keycap when **Pressed-key feedback** is on (Settings → Keyboard).
 - [ ] Number row appears only when **Show number row** is on.
 
+### Physical keyboard model
+
+Set the explicit **Keyboard hardware layout** preference in the test profile;
+do not infer it from the KeyPilot UI locale or operating-system language. For
+each model below, leave the built-in Browsing layout active and confirm that
+actions remain at their DOM-code position while the visible keycap legend and
+geometry change.
+
+| Model | Required Reference checks |
+| --- | --- |
+| US ANSI QWERTY | Baseline: `KeyY` prints `Y`, `KeyZ` prints `Z`; no `IntlBackslash` keycap. |
+| German ISO QWERTZ | `KeyY` action cap prints `Z`; `KeyZ` action cap prints `Y`; ISO keycap appears before `KeyZ`; umlaut keycaps are visible. |
+| Spain Spanish ISO QWERTY | `Ñ` is visible at `Semicolon`; ISO keycap appears before `KeyZ`; Spanish punctuation/dead-key legends are visible. |
+| Slovak ISO QWERTZ | `KeyY`/`KeyZ` display `Z`/`Y`; ISO keycap appears before `KeyZ`; Slovak punctuation legends are visible. |
+| Japanese JIS 106 | JIS control/geometry keys are visible, including `IntlRo` (`ろ`) before right Shift; actions remain attached to codes, not Japanese legends. |
+
+- [ ] Change the physical model while Reference is open: the panel rebuilds
+  rather than retaining stale US legends or ANSI geometry.
+- [ ] On German QWERTZ, invoke an action assigned to `KeyY`: it operates from
+  the cap printed `Z`; the `KeyZ` action operates from the cap printed `Y`.
+- [ ] In a custom layout, mirror handedness: `code:*` slots move to their
+  opposite physical code, while `key:*` character slots do not move.
+- [ ] With a Traditional-Chinese or Japanese IME active, begin composition:
+  composing text does not invoke a KeyPilot action. The selected ANSI/ISO/JIS
+  physical model remains unchanged.
+
 ### Layout dropdown
 
 - [ ] Lists built-in families (**Browsing**, **Navigation**) and any user layouts.

@@ -384,6 +384,7 @@ model. This distinction must be visible in the layout editor.
     Keyboard Reference PNG fixtures under
     `test/fixtures/keyboard-reference-screenshots/`, captured through
     `npm run debug:chrome`.
-- [ ] Update `extension/userdocs/en/keyboard-reference.md`,
+- [x] Update `extension/userdocs/en/keyboard-reference.md`,
   `refs/UI_TESTING_CHECKLIST.md`, and store-screenshot fixtures to explain and
-  exercise the selected physical keyboard layout.
+  exercise the selected physical keyboard layout. Store captures declare their
+  explicit US ANSI baseline rather than inferring physical layout from locale.
