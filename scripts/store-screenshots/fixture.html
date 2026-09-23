@@ -354,7 +354,8 @@
     <a href="?lang=es_419">ES-LATAM</a> | 
     <a href="?lang=de">DE</a> |
     <a href="?lang=zh_CN">简体中文</a> |
-    <a href="?lang=zh_TW">繁體中文</a>
+    <a href="?lang=zh_TW">繁體中文（台灣）</a> |
+    <a href="?lang=zh_HK">繁體中文（香港）</a>
   </div>
 
   <script>
@@ -562,12 +563,46 @@
         weatherDetails: "濕度：65%｜東北風：每小時 13 公里",
         sidebarOpinionTitle: "觀點",
         sidebarOpinions: ["社論：為何必須守護仍在運作的濱水區"]
+      },
+      zh_HK: {
+        title: "海港日報 — 每日新聞",
+        mastheadLogo: "海",
+        mastheadTitle: "海港日報",
+        mastheadTagline: "自 1884 年起報導中海岸與佩諾布斯科特灣",
+        date: "2026 年 9 月 19 日，星期六",
+        weather: "港區：14°C ☁️",
+        nav: ["本地", "政治", "濱海生活", "訃聞", "觀點", "體育"],
+        breakingLabel: "快訊：",
+        breakingContent: "佩諾布斯科特大橋將於週一起因維修關閉，請改走其他路線。",
+        storyKicker: "濱水新聞",
+        storyTitle: "本週末，海港燈光將重返濱水區",
+        storyByline: "記者：伊萊亞斯・索恩，《日報》記者",
+        leadImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Between_Custom_House_Wharf_and_Portland_Pier.jpg/1280px-Between_Custom_House_Wharf_and_Portland_Pier.jpg",
+        leadCaption: "週四晚間，工作人員在 4 號碼頭測試節能 LED 燈串。歷史街區修復工程現已完成。",
+        storyContent: [
+          "波特蘭——工作人員於週四完成 4 號碼頭最後一串燈的安裝，為期兩年的修復計劃至此完成。近年經歷顯著改造的歷史濱水區，預計將在本週末迎來數千名居民與遊客。",
+          "入夜後，海濱步道將重新開放；為接待預計到來的人潮，步道下方的市集攤位將延長一小時營業。當地商家盼望燈光回歸能為該區帶來強勁的秋季。"
+        ],
+        actionLinks: ["閱讀完整濱水指南", "週末開放時間", "地圖與交通"],
+        sidebarBulletinTitle: "本地公告",
+        sidebarImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/83_Commercial_Street%2C_Portland_ME.jpg/1280px-83_Commercial_Street%2C_Portland_ME.jpg",
+        sidebarBulletins: [
+          "西港將就分區爭議舉行市民會議",
+          "本地高中美式足球賽果：卡姆登山隊擊敗羅克蘭隊",
+          "龍蝦捕撈量略減，但價格維持穩定"
+        ],
+        sidebarWeatherTitle: "天氣預報",
+        weatherTemp: "14°C",
+        weatherDesc: "多雲",
+        weatherDetails: "濕度：65%｜東北風：每小時 13 公里",
+        sidebarOpinionTitle: "觀點",
+        sidebarOpinions: ["社論：為何必須守護仍在運作的濱水區"]
       }
     };
 
     function updateLocale(lang) {
       const locale = LOCALES[lang] || LOCALES.en;
-      document.documentElement.lang = lang === 'es_419' ? 'es' : lang;
+      document.documentElement.lang = lang === 'es_419' ? 'es' : String(lang).replace(/_/g, '-');
       document.body.setAttribute('data-locale', lang);
       
       document.getElementById('page-title').innerText = locale.title;

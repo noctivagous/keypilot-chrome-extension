@@ -1,0 +1,5846 @@
+{
+  "extension_name": {
+    "message": "KeyPilot",
+    "description": "The extension name displayed in browser UI and store listings."
+  },
+  "extension_description": {
+    "message": "使用按鍵點擊瀏覽網頁。用鍵盤按鍵代替滑鼠按鈕啟用超連結。",
+    "description": "The short extension description displayed in browser UI and store listings."
+  },
+  "extension_action_title": {
+    "message": "KeyPilot",
+    "description": "The toolbar action tooltip."
+  },
+  "locale_tag": {
+    "message": "zh-HK",
+    "description": "BCP-47 language tag of this catalog, used for the document lang attribute. Set this to the catalog locale (for example en, de, zh-CN, zh-TW, zh-HK). Do not translate it into a language name."
+  },
+  "popup_document_title": {
+    "message": "KeyPilot",
+    "description": "The popup document title."
+  },
+  "popup_heading": {
+    "message": "KeyPilot",
+    "description": "The popup heading."
+  },
+  "popup_hotkey_toggle_aria_label": {
+    "message": "熱鍵 $1",
+    "description": "Accessible label for the extension-toggle keyboard shortcut. $1 is Alt+K or Opt+K.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+K"
+      }
+    }
+  },
+  "popup_extension_toggle_aria_label": {
+    "message": "KeyPilot 已啟用",
+    "description": "Accessible name for the popup master enable switch."
+  },
+  "popup_unavailable_on_tab": {
+    "message": "此分頁無法使用",
+    "description": "Message shown when KeyPilot cannot run on the active tab."
+  },
+  "popup_tools_aria_label": {
+    "message": "KeyPilot 工具",
+    "description": "Accessible label for the popup tool-card navigation."
+  },
+  "popup_keyboard_reference": {
+    "message": "鍵盤參考",
+    "description": "Popup card label for the keyboard reference."
+  },
+  "popup_keyboard_reference_aria_label": {
+    "message": "鍵盤參考",
+    "description": "Accessible label for the keyboard-reference card."
+  },
+  "popup_docs": {
+    "message": "說明 / 文件",
+    "description": "Popup card label for documentation."
+  },
+  "popup_docs_aria_label": {
+    "message": "KeyPilot 幫助和文件",
+    "description": "Accessible label for the documentation card."
+  },
+  "popup_documentation": {
+    "message": "文件",
+    "description": "Popup documentation-card subtitle."
+  },
+  "popup_tutorial": {
+    "message": "新手教學",
+    "description": "Popup card label for the onboarding walkthrough."
+  },
+  "popup_tutorial_aria_label": {
+    "message": "新手教學",
+    "description": "Accessible label for the onboarding walkthrough card."
+  },
+  "popup_settings": {
+    "message": "設定",
+    "description": "Popup card label for KeyPilot settings."
+  },
+  "popup_settings_aria_label": {
+    "message": "設定",
+    "description": "Accessible label for the settings card."
+  },
+  "popup_preferences": {
+    "message": "偏好設定",
+    "description": "Popup settings-card subtitle."
+  },
+  "popup_control_strip": {
+    "message": "控制列",
+    "description": "Popup card label for the control strip."
+  },
+  "popup_control_strip_aria_label": {
+    "message": "控制列",
+    "description": "Accessible label for the control-strip card."
+  },
+  "popup_footer": {
+    "message": "鍵盤優先的網頁導覽。",
+    "description": "Short popup footer."
+  },
+  "popup_status_on": {
+    "message": "開",
+    "description": "Short status for enabled KeyPilot."
+  },
+  "popup_status_off": {
+    "message": "關",
+    "description": "Short status for disabled KeyPilot."
+  },
+  "popup_status_unavailable": {
+    "message": "無法使用",
+    "description": "Short status when KeyPilot cannot run on the active tab."
+  },
+  "popup_status_delete": {
+    "message": "刪除",
+    "description": "Short status while Delete Mode is active."
+  },
+  "popup_status_cols": {
+    "message": "分欄",
+    "description": "Short status while column mode is active."
+  },
+  "popup_status_inspect": {
+    "message": "檢查",
+    "description": "Short status while inspector mode is active."
+  },
+  "popup_status_text": {
+    "message": "文字",
+    "description": "Short status while text focus is active."
+  },
+  "guide_document_title": {
+    "message": "關鍵飛行員指南",
+    "description": "The Guide page document title."
+  },
+  "guide_heading": {
+    "message": "關鍵飛行員指南",
+    "description": "The Guide page heading."
+  },
+  "guide_subtitle": {
+    "message": "鍵盤優先導覽參考。",
+    "description": "Guide page subtitle."
+  },
+  "guide_close": {
+    "message": "關閉",
+    "description": "Guide page close button."
+  },
+  "guide_launch_walkthrough": {
+    "message": "開始導覽教學",
+    "description": "Button that starts the onboarding walkthrough."
+  },
+  "guide_core_keys": {
+    "message": "核心按鍵",
+    "description": "Heading for the Guide's core shortcut list."
+  },
+  "guide_popover": {
+    "message": "浮層",
+    "description": "Heading for the Guide's popover shortcut list."
+  },
+  "guide_extension_notes": {
+    "message": "擴充功能說明",
+    "description": "Heading for Guide availability notes."
+  },
+  "guide_extension_notes_description": {
+    "message": "KeyPilot 在普通網頁上作為內容腳本運作。它在 chrome:// 和 Chrome Web Store 等瀏覽器內部頁面上不可用。",
+    "description": "Guide note explaining pages where KeyPilot cannot run."
+  },
+  "guide_layout_note": {
+    "message": "上方的按鍵遵循您在「設定」中選擇的鍵盤配置（右手或左手）。",
+    "description": "Guide note explaining that displayed shortcuts follow the selected layout."
+  },
+  "guide_layout_label": {
+    "message": "配置：$1",
+    "description": "Label preceding the active keyboard layout name.",
+    "placeholders": {
+      "layout": {
+        "content": "$1",
+        "example": "Browsing: right-handed"
+      }
+    }
+  },
+  "guide_action_activate": {
+    "message": "點選 KeyPilot 游標下的元素",
+    "description": "Guide explanation for the activate shortcut."
+  },
+  "guide_action_back": {
+    "message": "回上一頁",
+    "description": "Guide explanation for the browser-back shortcut."
+  },
+  "guide_action_root": {
+    "message": "網站根目錄",
+    "description": "Guide explanation for the navigate-to-site-root shortcut."
+  },
+  "guide_action_forward": {
+    "message": "前往下一頁",
+    "description": "Guide explanation for the browser-forward shortcut."
+  },
+  "guide_action_tabs": {
+    "message": "上一個 / 下一個分頁",
+    "description": "Guide explanation for the previous/next tab shortcuts."
+  },
+  "guide_action_omnibox": {
+    "message": "網址列",
+    "description": "Guide explanation for the omnibox shortcut."
+  },
+  "guide_action_cancel": {
+    "message": "取消 / 離開",
+    "description": "Guide explanation for the cancel shortcut."
+  },
+  "guide_action_open_popover": {
+    "message": "在浮層中開啟游標下的連結",
+    "description": "Guide explanation for the open-popover shortcut."
+  },
+  "guide_action_open_settings": {
+    "message": "開啟設定浮層",
+    "description": "Guide explanation for the settings shortcut."
+  },
+  "guide_action_scroll": {
+    "message": "捲動",
+    "description": "Guide explanation for scrolling shortcuts."
+  },
+  "guide_action_close": {
+    "message": "關閉",
+    "description": "Guide explanation for the close shortcut."
+  },
+  "docs_document_title": {
+    "message": "KeyPilot 文件",
+    "description": "The Docs page document title."
+  },
+  "docs_heading": {
+    "message": "KeyPilot 文件",
+    "description": "The Docs page heading."
+  },
+  "docs_subtitle": {
+    "message": "如何使用 KeyPilot — 搜尋主題或瀏覽清單。",
+    "description": "Docs page subtitle."
+  },
+  "docs_close": {
+    "message": "關閉",
+    "description": "Docs page close button."
+  },
+  "docs_text_size_label": {
+    "message": "文字",
+    "description": "Short label on the Docs titlebar text-size slider."
+  },
+  "docs_text_size_aria": {
+    "message": "文件文字大小",
+    "description": "Accessible name for the Docs titlebar text-size slider."
+  },
+  "docs_topics_aria_label": {
+    "message": "文件主題",
+    "description": "Accessible label for the Docs navigation sidebar."
+  },
+  "docs_search_label": {
+    "message": "搜尋",
+    "description": "Docs search input label."
+  },
+  "docs_search_placeholder": {
+    "message": "搜尋主題…",
+    "description": "Docs search input placeholder."
+  },
+  "docs_topic_list_aria_label": {
+    "message": "主題清單",
+    "description": "Accessible label for the Docs topic list."
+  },
+  "docs_no_matches": {
+    "message": "沒有相符的主題。",
+    "description": "Message when Docs search has no matching topics."
+  },
+  "docs_loading": {
+    "message": "載入中…",
+    "description": "Docs loading message."
+  },
+  "docs_load_failed": {
+    "message": "文件載入失敗",
+    "description": "Docs article error message."
+  },
+  "docs_soon": {
+    "message": "即將推出",
+    "description": "Label for a Docs topic that is not yet available."
+  },
+  "settings_static_001": {
+    "message": "設定分類",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_002": {
+    "message": "搜尋引擎",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_003": {
+    "message": "顯示/隱藏浮動鍵盤參考 (K)",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_004": {
+    "message": "鍵盤參考可見",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_005": {
+    "message": "點擊游標預覽",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_006": {
+    "message": "點擊效果",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_007": {
+    "message": "文字游標預覽",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_008": {
+    "message": "文字方塊聚焦樣式",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_009": {
+    "message": "KeyPilot 設定",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_010": {
+    "message": "KeyPilot 設定",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_011": {
+    "message": "會自動同步不同分頁間的變更。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_012": {
+    "message": "模式",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_013": {
+    "message": "介面",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_014": {
+    "message": "資訊",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_015": {
+    "message": "概述",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_016": {
+    "message": "選擇一個類別來更改 KeyPilot 的外觀和行為。隨時使用左側的清單。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_017": {
+    "message": "主題",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_018": {
+    "message": "黑暗專業版",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_019": {
+    "message": "灰色金屬 Pro",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_020": {
+    "message": "GX-er",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_021": {
+    "message": "自訂的",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_022": {
+    "message": "內建主題套件會重新設計瀏覽器介面、文字欄位和圖示。可在「外觀」分頁即時編輯。選擇主題也會套用該主題的點擊模式和游標預設值。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_023": {
+    "message": "外觀",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_024": {
+    "message": "主題包、視窗角落、標題列、鍵帽、顏色和字體大小。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_025": {
+    "message": "鍵盤",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_026": {
+    "message": "佈局系列、左手變體和浮動鍵盤參考選項。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_027": {
+    "message": "點擊模式",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_028": {
+    "message": "懸停聚焦框, 連結-懸停提示, 和點擊啟用效果.",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_029": {
+    "message": "文字模式",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_030": {
+    "message": "文字欄位游標、焦點樣式、標籤和輪廓粗細。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_031": {
+    "message": "捲動",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_032": {
+    "message": "Page Up / Page Down 距離、平滑與即時、捲動線定位和中鍵按一下。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_033": {
+    "message": "游標",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_034": {
+    "message": "自訂游標的開關，以及點擊模式十字游標的類型和幾何樣式。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_035": {
+    "message": "控制列",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_036": {
+    "message": "顯示或隱藏狀態欄，以及它是否開始折疊。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_037": {
+    "message": "搜尋",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_038": {
+    "message": "新分頁搜尋框和 KeyPilot 多功能框 ($1) 使用的搜尋引擎。",
+    "description": "Settings Search hub description. $1 is the omnibox shortcut (Alt+L / Opt+L).",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+L"
+      }
+    }
+  },
+  "settings_static_039": {
+    "message": "關於",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_040": {
+    "message": "設定的儲存位置以及同步方式。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_041": {
+    "message": "重設",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_042": {
+    "message": "將所有 KeyPilot 設定恢復為產品預設設定（外觀、點擊模式、鍵盤、捲動、儲存的面板位置等）。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_043": {
+    "message": "重設全部設定預設值",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_044": {
+    "message": "外觀",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_045": {
+    "message": "自訂選定的內建主題。變更會立即套用並保留在該套件中，直到您重設或切換主題。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_046": {
+    "message": "主題",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_047": {
+    "message": "黑暗專業版",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_048": {
+    "message": "灰色金屬 Pro",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_049": {
+    "message": "GX-er",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_050": {
+    "message": "自訂的",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_051": {
+    "message": "切換包從該主題的預設設定開始（自訂編輯被清除）。點選模式預設值遵循包。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_052": {
+    "message": "視窗",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_053": {
+    "message": "角樣式",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_054": {
+    "message": "圓形",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_055": {
+    "message": "剪下",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_056": {
+    "message": "剪下大小",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_057": {
+    "message": "切角深度（以像素為單位）(0–24)。當角樣式為剪切時使用。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_058": {
+    "message": "面板半徑",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_059": {
+    "message": "圓角半徑以像素 (0–24) 為單位。當角樣式為圓角時使用。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_060": {
+    "message": "標題列",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_061": {
+    "message": "標題情況",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_062": {
+    "message": "如所寫",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_063": {
+    "message": "大寫",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_064": {
+    "message": "字母間距",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_065": {
+    "message": "標題權重",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_066": {
+    "message": "常規的",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_067": {
+    "message": "半粗體",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_068": {
+    "message": "大膽的",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_069": {
+    "message": "領先的圖標",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_070": {
+    "message": "隱藏的",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_071": {
+    "message": "顯示",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_072": {
+    "message": "快速鍵情況",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_073": {
+    "message": "如所寫",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_074": {
+    "message": "大寫",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_075": {
+    "message": "鍵盤按鍵",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_076": {
+    "message": "陰影",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_077": {
+    "message": "斜角",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_078": {
+    "message": "平坦的",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_079": {
+    "message": "按鍵圓角",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_080": {
+    "message": "圓形",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_081": {
+    "message": "剪下",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_082": {
+    "message": "按鍵剪下大小",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_083": {
+    "message": "關鍵角切深度（以像素為單位）(0–16)。當關鍵角被切割時使用。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_084": {
+    "message": "輪廓",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_085": {
+    "message": "顏色",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_086": {
+    "message": "口音",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_087": {
+    "message": "前景",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_088": {
+    "message": "暗淡文字",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_089": {
+    "message": "面板",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_090": {
+    "message": "面板邊緣",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_091": {
+    "message": "標題頂部",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_092": {
+    "message": "標題中",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_093": {
+    "message": "標題底部",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_094": {
+    "message": "快速鍵文字",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_095": {
+    "message": "輸入",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_096": {
+    "message": "UI 大小",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_097": {
+    "message": "基本 UI 字體大小（以像素為單位）(9–18)。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_098": {
+    "message": "按鍵標籤大小",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_099": {
+    "message": "鍵盤按鍵標籤字體大小（以像素為單位）(8–16)。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_100": {
+    "message": "重設外觀",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_101": {
+    "message": "清除令牌編輯並恢復所選的內建主題。點選模式保持原樣。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_102": {
+    "message": "重設外觀",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_103": {
+    "message": "搜尋引擎（多功能框）",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_104": {
+    "message": "供新分頁搜尋框和 KeyPilot 多功能框 ($1) 使用。",
+    "description": "Settings Search panel lead. $1 is the omnibox shortcut (Alt+L / Opt+L).",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+L"
+      }
+    }
+  },
+  "settings_static_105": {
+    "message": "Brave",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_106": {
+    "message": "Google",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_107": {
+    "message": "DuckDuckGo",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_108": {
+    "message": "鍵盤",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_109": {
+    "message": "配置和浮動鍵盤參考面板行為.",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_110": {
+    "message": "鍵盤參考",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_111": {
+    "message": "K",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_112": {
+    "message": "…",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_113": {
+    "message": "鍵盤配置系列",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_114": {
+    "message": "控制哪個內建佈局系列處於活動狀態。慣用手是單獨設置的，因此騎行家庭永遠不會左/右翻轉。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_115": {
+    "message": "左手",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_116": {
+    "message": "使用所選佈局系列的左手變體（快捷方式主要在右側）。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_117": {
+    "message": "顯示數量列",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_118": {
+    "message": "將 1–0 行包含在浮動鍵盤參考面板和佈局編輯器中。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_119": {
+    "message": "顯示按下-按鍵回饋",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_120": {
+    "message": "在 keydown/keyup 上反白顯示鍵盤參考面板中的按鍵。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_121": {
+    "message": "游標",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_122": {
+    "message": "KeyPilot 是否會覆寫頁面游標，以及按一下模式游標樣式和幾何形狀。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_123": {
+    "message": "游標模式",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_124": {
+    "message": "無自訂游標",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_125": {
+    "message": "KeyPilot 游標",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_126": {
+    "message": "選擇「無自訂游標」時，KeyPilot 不會覆寫網頁游標，且下方的點擊模式游標控制項會隱藏。「KeyPilot 游標」則顯示 KeyPilot 的十字游標及相關游標。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_127": {
+    "message": "點擊模式游標",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_128": {
+    "message": "輸入",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_129": {
+    "message": "十字線",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_130": {
+    "message": "原生箭頭",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_131": {
+    "message": "原生指針",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_132": {
+    "message": "預覽",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_133": {
+    "message": "線寬",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_134": {
+    "message": "十字準線的粗細 (1–12)。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_135": {
+    "message": "大小",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_136": {
+    "message": "游標的大小（以像素為單位）(5–60px)。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_137": {
+    "message": "間隔",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_138": {
+    "message": "中心條和十字準線之間的間隙（以像素為單位）。 0 = 相交線，&gt;0 = 單獨的條狀 (0–20px)。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_139": {
+    "message": "重設游標預設值",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_140": {
+    "message": "捲動",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_141": {
+    "message": "使用 Page Up / Page Down 以較小幅度鍵盤捲動頁面；「捲動至頂端」和「捲動至底端」可跳至邊緣。另有捲動線定位和選用的中鍵點選。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_142": {
+    "message": "頁面上 / 頁面下距離",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_143": {
+    "message": "按下 Page Up 和 Page Down 捲動的像素。預設 500。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_144": {
+    "message": "捲動速度",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_145": {
+    "message": "光滑的",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_146": {
+    "message": "立即",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_147": {
+    "message": "鍵盤捲動動畫（向上翻頁/向下翻頁、捲動到頂部/捲動到底部、捲動線）。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_148": {
+    "message": "捲動線跳過寬的頁內捲動條",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_149": {
+    "message": "跳過水平輪播，以便捲動線鎖定頁面或垂直窗格。即使盒子是橫向的，全角垂直列仍然會捲動。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_150": {
+    "message": "中鍵點擊開始捲動線",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_151": {
+    "message": "在空白頁面區域，滑鼠中鍵執行捲軸線操作（與綁定鍵相同）。連結、可點選內容和文字欄位保留本機中鍵點選。 Mac 上預設開啟。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_152": {
+    "message": "重設捲動預設值",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_153": {
+    "message": "點擊模式",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_154": {
+    "message": "懸停焦點矩形、鍵盤提示和點擊啟動效果。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_155": {
+    "message": "聚焦矩形",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_156": {
+    "message": "可點選目標上的即時懸停輪廓。變更會立即套用（包括在此「設定」視窗中）。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_157": {
+    "message": "顏色",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_158": {
+    "message": "藍色的",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_159": {
+    "message": "綠色",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_160": {
+    "message": "輪廓顏色聚焦矩形.",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_161": {
+    "message": "顯示透明覆蓋層",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_162": {
+    "message": "在焦點矩形內添加半透明填充。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_163": {
+    "message": "顯示陰影/發光",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_164": {
+    "message": "焦點矩形周圍柔和的外發光。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_165": {
+    "message": "矩形厚度",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_166": {
+    "message": "焦點矩形的邊框厚度 (1–16px)。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_167": {
+    "message": "鍵盤參考",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_168": {
+    "message": "懸停連結時發光鍵",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_169": {
+    "message": "當鍵盤參考開啟時，當您將滑鼠懸停在頁面上的可點擊連結時，相符的綠色操作鍵會顯示輪廓並發光。預設關閉。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_170": {
+    "message": "點擊效果",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_171": {
+    "message": "閃爍",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_172": {
+    "message": "輪廓上的硬頻閃（預設）",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_173": {
+    "message": "衝刺追逐",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_174": {
+    "message": "虛線邊界沿著邊緣行進",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_175": {
+    "message": "跑馬燈",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_176": {
+    "message": "固體光沿著邊界傳播",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_177": {
+    "message": "縮放",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_178": {
+    "message": "輪廓向外擴展並淡化",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_179": {
+    "message": "無",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_180": {
+    "message": "無啟用動畫",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_181": {
+    "message": "先進的",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_182": {
+    "message": "繪製後端、父級跳過、調試邊框和焦點環填充",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_183": {
+    "message": "繪畫模式",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_184": {
+    "message": "自動 B→C (跳過輪廓)",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_185": {
+    "message": "自動 (A→B→C)",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_186": {
+    "message": "自動 B→C",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_187": {
+    "message": "跳過父層",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_188": {
+    "message": "若巢狀控制項與父項共用目的地（相同 URL、data-href、內嵌 onclick、相同點擊事件監聽器，或如 Gmail 的父項列／卡片點選），會使用父項的懸停環。按鈕和其他目的地仍保有自己的懸停環。預設開啟。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_189": {
+    "message": "調試繪製後端邊框",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_190": {
+    "message": "虛線 A / B / C 不同，這樣您就可以知道哪個後端繪製了懸停環（A 虛線，B 點線，C 雙線）。預設關閉。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_191": {
+    "message": "填充",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_192": {
+    "message": "焦點矩形周圍的向外間隙 (0–16px)。預設 2px 與舊輪廓偏移相符；B→C 環以前使用過 0。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_193": {
+    "message": "重設點擊模式預設值",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_194": {
+    "message": "文字模式",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_195": {
+    "message": "游標+焦點樣式+文字欄位的標籤。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_196": {
+    "message": "文字模式游標",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_197": {
+    "message": "輸入",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_198": {
+    "message": "T-方形",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_199": {
+    "message": "十字線",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_200": {
+    "message": "預覽",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_201": {
+    "message": "重設游標預設值",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_202": {
+    "message": "聚焦的文字方塊樣式",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_203": {
+    "message": "鍵入時活動文字欄位的外觀（文字模式）。懸停仍然顯示橙色輪廓\n                和字段左側的“F 選擇”。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_204": {
+    "message": "左邊緣脈衝",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_205": {
+    "message": "左側邊緣的橙色條，脈動（預設）。 “Esc 退出”位於欄的左側。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_206": {
+    "message": "背景色調",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_207": {
+    "message": "全橙色覆蓋整個區域（以前的樣式），加上 Esc 提示。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_208": {
+    "message": "左邊緣列寬度",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_209": {
+    "message": "脈動左邊緣條的寬度 (1–24px)。預設 5 像素。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_210": {
+    "message": "標籤 &amp; 輪廓",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_211": {
+    "message": "在焦點文字欄位上方和下方顯示標籤",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_212": {
+    "message": "顯示「作用中的文字欄位」和「按 ESC 關閉」。關閉後僅顯示輪廓。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_213": {
+    "message": "筆畫粗細",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_214": {
+    "message": "橘色文字模式輪廓的厚度 (1–16px)。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_215": {
+    "message": "重設文字模式預設值",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_216": {
+    "message": "控制列",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_217": {
+    "message": "顯示控制列",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_218": {
+    "message": "當關, 列隱藏的直到您啟用或按 $1 切換回上一頁開.",
+    "description": "Control Strip visibility toggle help. $1 is Alt+J or Opt+J.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+J"
+      }
+    }
+  },
+  "settings_static_219": {
+    "message": "已收合預設",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_220": {
+    "message": "在展開條帶之前僅顯示開/關狀態段。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_221": {
+    "message": "關於",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_222": {
+    "message": "KeyPilot 設定透過 Chrome 設定檔儲存同步。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_223": {
+    "message": "noctivagous.com",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_224": {
+    "message": "調試日誌記錄",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_225": {
+    "message": "預設關閉。啟用後，KeyPilot 會在服務工作執行緒和頁面控制台中寫入詳細控制台訊息。",
+    "description": "Localized settings page chrome."
+  },
+  "newtab_static_001": {
+    "message": "開啟/關閉 KeyPilot",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_002": {
+    "message": "開啟/關閉 KeyPilot（全域）",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_003": {
+    "message": "KeyPilot 已啟用",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_004": {
+    "message": "浮層切換",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_005": {
+    "message": "顯示/隱藏控制列 ($1 切換)",
+    "description": "New Tab control-strip switch title. $1 is Alt+J or Opt+J.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+J"
+      }
+    }
+  },
+  "newtab_static_006": {
+    "message": "控制列可見",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_007": {
+    "message": "顯示/隱藏浮動鍵盤參考",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_008": {
+    "message": "鍵盤參考可見",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_009": {
+    "message": "主題選項",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_010": {
+    "message": "頁面",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_011": {
+    "message": "搜尋",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_012": {
+    "message": "搜尋或輸入地址",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_013": {
+    "message": "頂部造訪過網站",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_014": {
+    "message": "工具列書籤",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_015": {
+    "message": "近期記錄",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_016": {
+    "message": "書籤",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_017": {
+    "message": "書籤檢視",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_018": {
+    "message": "書籤檢視",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_019": {
+    "message": "KeyPilot 新分頁",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_020": {
+    "message": "KeyPilot",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_021": {
+    "message": "…",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_022": {
+    "message": "浮層",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_023": {
+    "message": "Ctrl 條",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_024": {
+    "message": "$1",
+    "description": "New Tab control-strip shortcut chip. $1 is Alt+J or Opt+J.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+J"
+      }
+    }
+  },
+  "newtab_static_025": {
+    "message": "…",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_026": {
+    "message": "鍵盤",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_027": {
+    "message": "K",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_028": {
+    "message": "…",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_029": {
+    "message": "顯示",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_030": {
+    "message": "主題: 大地",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_031": {
+    "message": "▾",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_032": {
+    "message": "頁面",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_033": {
+    "message": "設定",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_034": {
+    "message": "指南",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_035": {
+    "message": "前往",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_036": {
+    "message": "引擎:…",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_037": {
+    "message": "頂部造訪過網站",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_038": {
+    "message": "工具列書籤",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_039": {
+    "message": "無工具列書籤找到.",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_040": {
+    "message": "近期記錄",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_041": {
+    "message": "近期",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_042": {
+    "message": "全部書籤",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_043": {
+    "message": "近期書籤",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_044": {
+    "message": "無書籤找到.",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_045": {
+    "message": "全部書籤",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_046": {
+    "message": "無書籤找到.",
+    "description": "Localized newtab page chrome."
+  },
+  "settings_static_229": {
+    "message": "概述",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_230": {
+    "message": "外觀",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_231": {
+    "message": "鍵盤",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_232": {
+    "message": "點擊模式",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_233": {
+    "message": "文字模式",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_234": {
+    "message": "捲動",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_235": {
+    "message": "游標",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_236": {
+    "message": "控制列",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_237": {
+    "message": "搜尋",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_238": {
+    "message": "關於",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_239": {
+    "message": "除錯",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_240": {
+    "message": "按一下模式繪製內部結構和詳細控制台日誌記錄。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_241": {
+    "message": "懸停環繪製和控制台日誌記錄的開發人員診斷。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_242": {
+    "message": "橘子",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_243": {
+    "message": "紅色的",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_244": {
+    "message": "紫色的",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_245": {
+    "message": "自訂",
+    "description": "Localized settings page chrome."
+  },
+  "settings_click_effect_hint": {
+    "message": "按下 $1 啟用連結類目標時的視覺回饋。",
+    "description": "Click Mode click-effect intro. $1 is the activation key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "F"
+      }
+    }
+  },
+  "settings_paint_mode_hint": {
+    "message": "設定懸停焦點矩形的繪製方式。自動 B→C 會略過 DOM 輪廓 (A)，改用目標內環，接著使用固定浮層。與 Shadow Root 偵錯設定相符（$1）。",
+    "description": "Click Mode paint-backend hint. $1 is the debug shortcut.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+D"
+      }
+    }
+  },
+  "settings_control_strip_lead": {
+    "message": "每個頁面左上角的精簡狀態列（macOS 控制列樣式）。關閉後按 $1 可再次顯示。",
+    "description": "Control Strip panel lead. $1 is the restore shortcut.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+J"
+      }
+    }
+  },
+  "settings_theme_custom_name": {
+    "message": "$1（自訂）",
+    "description": "Localized extension-page UI text."
+  },
+  "settings_cursor_preview_native_arrow": {
+    "message": "使用原生游標 (箭頭)",
+    "description": "Localized extension-page UI text."
+  },
+  "settings_cursor_preview_native_pointer": {
+    "message": "使用本機游標（指針）",
+    "description": "Localized extension-page UI text."
+  },
+  "settings_cursor_preview_unavailable": {
+    "message": "無法使用",
+    "description": "Localized extension-page UI text."
+  },
+  "settings_cursor_preview_alt": {
+    "message": "游標預覽",
+    "description": "Localized extension-page UI text."
+  },
+  "settings_state_on": {
+    "message": "開",
+    "description": "Localized extension-page UI text."
+  },
+  "settings_state_off": {
+    "message": "關",
+    "description": "Localized extension-page UI text."
+  },
+  "settings_reset_all_confirm": {
+    "message": "確定要重設所有設定嗎？",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_engine_label": {
+    "message": "引擎：$1",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_modal_hint_suffix": {
+    "message": "可保持開啟",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_modal_close_title": {
+    "message": "關閉",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_untitled_folder": {
+    "message": "未命名資料夾",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_recent_history_empty": {
+    "message": "尚無近期記錄",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_top_sites_empty": {
+    "message": "尚無常用網站",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_switch_on": {
+    "message": "開",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_switch_off": {
+    "message": "關",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_bookmark_view_aria_label": {
+    "message": "書籤檢視",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_bookmark_view_list": {
+    "message": "清單",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_bookmark_view_cards": {
+    "message": "卡片",
+    "description": "Localized extension-page UI text."
+  },
+  "docs_empty_document": {
+    "message": "空白文件",
+    "description": "Localized extension-page UI text."
+  },
+  "docs_copy_button_label": {
+    "message": "複製",
+    "description": "Localized extension-page UI text."
+  },
+  "docs_copy_button_text": {
+    "message": "複製",
+    "description": "Localized extension-page UI text."
+  },
+  "docs_copy_copied": {
+    "message": "已複製",
+    "description": "Localized extension-page UI text."
+  },
+  "docs_copy_failed": {
+    "message": "複製失敗",
+    "description": "Localized extension-page UI text."
+  },
+  "docs_no_topics_error": {
+    "message": "沒有可用主題",
+    "description": "Localized extension-page UI text."
+  },
+  "docs_catalog_load_error": {
+    "message": "目錄載入失敗",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_width_full": {
+    "message": "全寬",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_theme_options_aria": {
+    "message": "主題選項",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_heading": {
+    "message": "顯示",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_close": {
+    "message": "關閉",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_theme_label": {
+    "message": "主題",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_theme_aria": {
+    "message": "主題",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_theme_cyberforward_title": {
+    "message": "Cyber​​forward — 石板 + 青色（彈出式/網站風格）",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_theme_earth_title": {
+    "message": "大地主題",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_font_size_label": {
+    "message": "字級",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_font_size_aria": {
+    "message": "字級",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_font_default_title": {
+    "message": "預設（$1px）",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_font_title": {
+    "message": "根字級 $1px",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_ui_scale_label": {
+    "message": "介面縮放",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_ui_scale_aria": {
+    "message": "介面縮放",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_scale_default_title": {
+    "message": "預設縮放",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_scale_title": {
+    "message": "版面縮放 $1%",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_width_label": {
+    "message": "寬度",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_width_aria": {
+    "message": "寬度",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_width_default_title": {
+    "message": "預設內容寬度（$1px）",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_width_full_title": {
+    "message": "全寬",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_width_title": {
+    "message": "內容最大寬度 $1px（視窗較窄時會自動縮小）",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_reset": {
+    "message": "重設",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_reset_title": {
+    "message": "還原預設主題（$1）、字型 $2px、介面 $3%、寬度 $4",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_theme_summary": {
+    "message": "主題：$1",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_anchor_title": {
+    "message": "主題：$1，字型 $2，介面 $3，寬度 $4",
+    "description": "Localized extension-page UI text."
+  },
+  "popup_tutorial_active": {
+    "message": "作用中的",
+    "description": "Localized extension-page UI text."
+  },
+  "popup_tutorial_walkthrough": {
+    "message": "導覽教學",
+    "description": "Localized extension-page UI text."
+  },
+  "popover_titlebar_drag_title": {
+    "message": "拖曳",
+    "description": "Tooltip for a draggable extension-page titlebar."
+  },
+  "popover_titlebar_press": {
+    "message": "按住拖曳",
+    "description": "Prefix for titlebar keyboard shortcut hints."
+  },
+  "popover_titlebar_close": {
+    "message": "關閉",
+    "description": "Accessible label and tooltip for a titlebar close button."
+  },
+  "popover_window_title_preview": {
+    "message": "預覽",
+    "description": "Titlebar title for the Link Preview OS popup."
+  },
+  "popover_window_title_open": {
+    "message": "開啟",
+    "description": "Titlebar title for the Open Popover OS popup."
+  },
+  "popover_hide_hint_suffix": {
+    "message": "可隱藏",
+    "description": "Titlebar hint suffix after Esc / shortcut keys on Link Preview and Open Popover."
+  },
+  "context_menu_toggle_keypilot": {
+    "message": "切換 KeyPilot",
+    "description": "Context-menu item that enables or disables KeyPilot."
+  },
+  "context_menu_group_windows": {
+    "message": "視窗",
+    "description": "Context-menu group for KeyPilot window and overlay actions."
+  },
+  "context_menu_toggle_keyboard_reference": {
+    "message": "切換鍵盤參考",
+    "description": "Context-menu item that shows or hides the keyboard reference."
+  },
+  "context_menu_onboarding_tutorial": {
+    "message": "新手教學（$1）",
+    "description": "Context-menu item that opens the onboarding walkthrough. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt + I"
+      }
+    }
+  },
+  "context_menu_docs_help": {
+    "message": "KeyPilot 文件 ($1)",
+    "description": "Context-menu item that opens documentation. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt + H"
+      }
+    }
+  },
+  "context_menu_settings": {
+    "message": "KeyPilot 設定 ($1)",
+    "description": "Context-menu item that opens Settings. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "'"
+      }
+    }
+  },
+  "context_menu_group_keyboard_reference": {
+    "message": "鍵盤參考",
+    "description": "Context-menu group for keyboard-reference visibility and layouts."
+  },
+  "context_menu_show_keyboard_reference": {
+    "message": "顯示鍵盤參考",
+    "description": "Context-menu item that shows the keyboard reference."
+  },
+  "context_menu_hide_keyboard_reference": {
+    "message": "隱藏鍵盤參考",
+    "description": "Context-menu item that hides the keyboard reference."
+  },
+  "context_menu_group_builtin_layouts": {
+    "message": "內建配置",
+    "description": "Context-menu group listing built-in keyboard layout families."
+  },
+  "context_menu_group_custom_layouts": {
+    "message": "自訂配置",
+    "description": "Context-menu group listing user-created keyboard layouts."
+  },
+  "context_menu_no_custom_layouts": {
+    "message": "尚無自訂配置",
+    "description": "Disabled empty-state item when no custom keyboard layouts exist."
+  },
+  "context_menu_group_layout_editor": {
+    "message": "配置編輯器",
+    "description": "Context-menu group for creating and editing keyboard layouts."
+  },
+  "layout_editor_aria": {
+    "message": "配置編輯器",
+    "description": "Accessible name for the Keyboard Layout Editor dialog."
+  },
+  "layout_editor_toggle_title": {
+    "message": "用 $1 切換",
+    "description": "Tooltip for the Keyboard Layout Editor titlebar shortcut. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+C"
+      }
+    }
+  },
+  "layout_editor_autosaves": {
+    "message": "自動儲存",
+    "description": "Titlebar chip indicating the Keyboard Layout Editor saves automatically."
+  },
+  "layout_editor_autosaves_title": {
+    "message": "自動儲存",
+    "description": "Tooltip for the Autosaves chip in the Keyboard Layout Editor."
+  },
+  "layout_editor_close_aria": {
+    "message": "關閉配置編輯器",
+    "description": "Accessible name for closing the Keyboard Layout Editor."
+  },
+  "layout_editor_place_message": {
+    "message": "按一個鍵以放置操作",
+    "description": "Titlebar status while placing an action onto the Keyboard Reference."
+  },
+  "layout_editor_set_current": {
+    "message": "設為目前使用",
+    "description": "Button that makes the selected layout the active layout."
+  },
+  "layout_editor_set_current_title": {
+    "message": "設為目前使用的配置",
+    "description": "Tooltip for the Set to current button."
+  },
+  "layout_editor_current": {
+    "message": "目前使用",
+    "description": "Badge marking the layout that is currently active."
+  },
+  "layout_editor_inspector": {
+    "message": "檢查器",
+    "description": "Keyboard Layout Editor Inspector pane title."
+  },
+  "layout_editor_inspector_expand": {
+    "message": "展開",
+    "description": "Tooltip for expanding the Inspector pane."
+  },
+  "layout_editor_inspector_collapse": {
+    "message": "收合",
+    "description": "Button that collapses the Inspector pane."
+  },
+  "layout_editor_inspector_resize": {
+    "message": "調整大小",
+    "description": "Accessible name for the Inspector splitter."
+  },
+  "layout_editor_inspector_empty": {
+    "message": "空白",
+    "description": "Inspector empty state when nothing is selected."
+  },
+  "layout_editor_inspector_none": {
+    "message": "無",
+    "description": "Inspector empty state when the selection has no details."
+  },
+  "layout_editor_assigned_keys": {
+    "message": "已指派的按鍵",
+    "description": "Inspector heading listing keys assigned to an action."
+  },
+  "layout_editor_not_assigned": {
+    "message": "未指派",
+    "description": "Inspector empty state when an action has no key assignment."
+  },
+  "layout_editor_macro_not_found": {
+    "message": "找不到巨集",
+    "description": "Inspector empty state when a selected macro is missing."
+  },
+  "layout_editor_no_steps": {
+    "message": "尚無步驟",
+    "description": "Inspector empty state when a macro has no steps."
+  },
+  "layout_editor_actions_library": {
+    "message": "操作庫",
+    "description": "Title of the Actions Library pane in the Keyboard Layout Editor."
+  },
+  "layout_editor_search_placeholder": {
+    "message": "搜尋操作…",
+    "description": "Placeholder for the Actions Library search field."
+  },
+  "layout_editor_library_filter_aria": {
+    "message": "篩選操作庫",
+    "description": "Accessible name for the All/Functions segmented control."
+  },
+  "layout_editor_function_category_aria": {
+    "message": "功能分類",
+    "description": "Accessible name for the Function category dropdown."
+  },
+  "layout_editor_library_layout_aria": {
+    "message": "操作庫配置",
+    "description": "Accessible name for the Cards/Table segmented control."
+  },
+  "layout_editor_tab_all": {
+    "message": "全部",
+    "description": "Actions Library filter tab that shows every item."
+  },
+  "layout_editor_tab_functions": {
+    "message": "功能",
+    "description": "Actions Library filter tab that shows Functions only."
+  },
+  "layout_editor_tab_macros": {
+    "message": "巨集",
+    "description": "Actions Library filter tab that shows Macros only."
+  },
+  "layout_editor_tab_macro_keys": {
+    "message": "巨集按鍵",
+    "description": "Actions Library filter tab that shows Macro Keys only."
+  },
+  "layout_editor_view_cards": {
+    "message": "卡片檢視",
+    "description": "Actions Library presentation mode: cards."
+  },
+  "layout_editor_view_table": {
+    "message": "表格檢視",
+    "description": "Actions Library presentation mode: table."
+  },
+  "layout_editor_instructions_aria": {
+    "message": "使用說明",
+    "description": "Accessible name for the Actions Library instructions section."
+  },
+  "layout_editor_instructions_title": {
+    "message": "使用說明",
+    "description": "Heading for the Actions Library placement instructions."
+  },
+  "layout_editor_instructions_body": {
+    "message": "從操作庫中拖出操作並按一個鍵放置。",
+    "description": "Body copy for placing an action from the Actions Library onto the Keyboard Reference."
+  },
+  "layout_editor_instructions_collapse": {
+    "message": "收合說明",
+    "description": "Tooltip for collapsing the Actions Library instructions."
+  },
+  "layout_editor_instructions_expand": {
+    "message": "展開說明",
+    "description": "Tooltip for expanding the Actions Library instructions."
+  },
+  "layout_editor_place_pulse": {
+    "message": "按鍵以放置",
+    "description": "Status shown while placing an action onto a Keyboard Reference key."
+  },
+  "layout_editor_table_aria": {
+    "message": "配置表",
+    "description": "Accessible name for the Actions Library table view."
+  },
+  "layout_editor_layout_options": {
+    "message": "配置選項",
+    "description": "Accessible name for the Keyboard Layout Editor overflow menu (left-handed, number row)."
+  },
+  "layout_editor_layout_noun": {
+    "message": "配置",
+    "description": "Short label beside the layout picker in the Keyboard Layout Editor, and fallback base name for new layouts."
+  },
+  "layout_editor_copy_suffix": {
+    "message": "副本",
+    "description": "Word inserted when duplicating a built-in layout, as in 'Browsing Copy 1'."
+  },
+  "layout_editor_custom_layout": {
+    "message": "自訂配置",
+    "description": "Fallback name for a user-created keyboard layout."
+  },
+  "context_menu_edit_layouts": {
+    "message": "編輯配置",
+    "description": "Context-menu item that opens the keyboard layout editor."
+  },
+  "context_menu_new_layout": {
+    "message": "新增配置",
+    "description": "Context-menu item that creates a blank custom keyboard layout."
+  },
+  "context_menu_duplicate_layout": {
+    "message": "複製配置",
+    "description": "Context-menu item that duplicates the current keyboard layout."
+  },
+  "overlay_hub_tools_count": {
+    "message": "$1 個工具",
+    "description": "Status count for KeyPilot hub cards in Top Sites."
+  },
+  "overlay_close": {
+    "message": "關閉",
+    "description": "Generic overlay close button."
+  },
+  "overlay_untitled": {
+    "message": "未命名",
+    "description": "Fallback title when a bookmark or history item has no name."
+  },
+  "control_strip_aria_label": {
+    "message": "控制列",
+    "description": "Accessible name for the control strip toolbar."
+  },
+  "control_strip_toggle_aria": {
+    "message": "開啟或關閉 KeyPilot",
+    "description": "Accessible name for the control-strip enable switch."
+  },
+  "control_strip_toggle_title": {
+    "message": "切換 KeyPilot ($1)",
+    "description": "Tooltip for the control-strip enable switch. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+K"
+      }
+    }
+  },
+  "control_strip_keyboard_aria": {
+    "message": "鍵盤參考",
+    "description": "Accessible name for the control-strip keyboard-reference button."
+  },
+  "control_strip_keyboard_title": {
+    "message": "鍵盤參考",
+    "description": "Tooltip for the control-strip keyboard-reference button."
+  },
+  "control_strip_keyboard_abbrev": {
+    "message": "鍵盤",
+    "description": "Optional visible abbreviation on the control-strip keyboard button. Use '-' to hide the label and show the icon only."
+  },
+  "control_strip_settings_aria": {
+    "message": "設定",
+    "description": "Accessible name for the control-strip settings button."
+  },
+  "control_strip_settings_title": {
+    "message": "設定",
+    "description": "Tooltip for the control-strip settings button."
+  },
+  "control_strip_collapse": {
+    "message": "收合",
+    "description": "Control-strip collapse action."
+  },
+  "control_strip_expand": {
+    "message": "展開",
+    "description": "Control-strip expand action."
+  },
+  "control_strip_collapse_aria": {
+    "message": "收合控制列",
+    "description": "Accessible name for collapsing the control strip."
+  },
+  "control_strip_expand_aria": {
+    "message": "展開控制列",
+    "description": "Accessible name for expanding the control strip."
+  },
+  "control_strip_close_aria": {
+    "message": "關閉控制列",
+    "description": "Accessible name for closing the control strip."
+  },
+  "control_strip_close_title": {
+    "message": "關閉（按 $1 可重新顯示）",
+    "description": "Tooltip for closing the control strip. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+J"
+      }
+    }
+  },
+  "control_strip_move_aria": {
+    "message": "移動控制列",
+    "description": "Accessible name for the control-strip drag handle."
+  },
+  "keyboard_help_aria_label": {
+    "message": "鍵盤參考",
+    "description": "Accessible name for the floating keyboard reference."
+  },
+  "keyboard_help_title": {
+    "message": "鍵盤參考",
+    "description": "Title of the floating keyboard reference."
+  },
+  "keyboard_help_title_typing": {
+    "message": "鍵盤參考 — 輸入中",
+    "description": "Keyboard reference title while a text field is focused."
+  },
+  "keyboard_help_toggle_title": {
+    "message": "鍵盤參考",
+    "description": "Tooltip for the keyboard-reference toggle shortcut."
+  },
+  "keyboard_help_toggle_aria": {
+    "message": "切換鍵盤參考（$1）",
+    "description": "Accessible name for the keyboard-reference toggle shortcut. $1 is the key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "K"
+      }
+    }
+  },
+  "keyboard_help_close_aria": {
+    "message": "關閉鍵盤參考",
+    "description": "Accessible name for closing the keyboard reference."
+  },
+  "keyboard_help_collapse_aria": {
+    "message": "收合",
+    "description": "Accessible name for collapsing the keyboard reference."
+  },
+  "keyboard_help_expand_aria": {
+    "message": "展開",
+    "description": "Accessible name for expanding the keyboard reference."
+  },
+  "keyboard_help_layout_aria": {
+    "message": "鍵盤配置",
+    "description": "Accessible name for the keyboard-reference layout picker."
+  },
+  "keyboard_help_editing_aria": {
+    "message": "正在編輯配置 — 按 $1 離開",
+    "description": "Hint while the layout editor is open. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+C"
+      }
+    }
+  },
+  "keyboard_help_exit_text_mode": {
+    "message": "離開文字模式（$1）",
+    "description": "Button that leaves text mode. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Esc"
+      }
+    }
+  },
+  "keyboard_help_exit_text_mode_label": {
+    "message": "離開文字模式",
+    "description": "Visible label on the Keyboard Reference button that leaves text mode."
+  },
+  "keyboard_help_esc_to_exit": {
+    "message": "按 $1 離開",
+    "description": "Keyboard Reference titlebar hint while text mode is active. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Esc"
+      }
+    }
+  },
+  "text_mode_sidecar_to": {
+    "message": "到",
+    "description": "Vertical text-mode sidecar preposition between the keycap and the verb. Keep this short."
+  },
+  "text_mode_sidecar_exit": {
+    "message": "離開",
+    "description": "Vertical text-mode sidecar verb under Esc. Keep this short."
+  },
+  "text_mode_sidecar_select": {
+    "message": "選取",
+    "description": "Vertical text-mode sidecar verb under the Click Element key. Keep this short."
+  },
+  "text_mode_hint_focus": {
+    "message": "按 $1 離開",
+    "description": "SVG hint painted on a focused text field. $1 is the cancel key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "Esc"
+      }
+    }
+  },
+  "text_mode_hint_hover": {
+    "message": "$1 以選取",
+    "description": "SVG hint painted on a hovered text field. $1 is the Click Element key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "F"
+      }
+    }
+  },
+  "keyboard_help_close_editor": {
+    "message": "關閉配置編輯器（$1）",
+    "description": "Button that closes the layout editor. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+C"
+      }
+    }
+  },
+  "keyboard_help_close_editor_label": {
+    "message": "關閉配置編輯器",
+    "description": "Visible label on the Keyboard Reference button that closes the layout editor."
+  },
+  "keycap_tab": {
+    "message": "Tab",
+    "description": "Visible legend on the Tab keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_caps": {
+    "message": "Caps",
+    "description": "Visible legend on the Caps Lock keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_shift": {
+    "message": "Shift",
+    "description": "Visible legend on the Shift keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_enter": {
+    "message": "Enter",
+    "description": "Visible legend on the Enter/Return keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_backspace": {
+    "message": "Backspace",
+    "description": "Visible legend on the Backspace keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_esc": {
+    "message": "Esc",
+    "description": "Visible legend on the Escape keycap in Keyboard Reference. Keep this short."
+  },
+  "keyboard_help_left_handed": {
+    "message": "左手",
+    "description": "Chip label for left-handed keyboard layout."
+  },
+  "keyboard_help_left_handed_off_aria": {
+    "message": "切換關左手配置",
+    "description": "Accessible name for dismissing the left-handed chip."
+  },
+  "keyboard_help_render_error": {
+    "message": "鍵盤參考算繪失敗",
+    "description": "Error when the keyboard reference cannot paint."
+  },
+  "keyboard_help_custom_render_error": {
+    "message": "自訂鍵盤參考算繪失敗",
+    "description": "Error when a custom layout cannot paint."
+  },
+  "keyboard_help_remove_action_aria": {
+    "message": "從 $1 移除操作",
+    "description": "Accessible name for removing a key assignment. $1 is the key label.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "F"
+      }
+    }
+  },
+  "keyboard_help_remove": {
+    "message": "移除",
+    "description": "Tooltip for removing a key assignment."
+  },
+  "onboarding_default_title": {
+    "message": "歡迎來到 KeyPilot",
+    "description": "Default onboarding walkthrough title."
+  },
+  "onboarding_aria_label": {
+    "message": "新手教學",
+    "description": "Accessible name for the onboarding panel."
+  },
+  "onboarding_reopen_tip": {
+    "message": "提示：按 $1 可稍後重新開啟本教學。",
+    "description": "Footer tip for reopening onboarding. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt + I"
+      }
+    }
+  },
+  "onboarding_reset": {
+    "message": "重新開始",
+    "description": "Onboarding reset button."
+  },
+  "onboarding_close_aria": {
+    "message": "關閉教學",
+    "description": "Accessible name for closing onboarding."
+  },
+  "onboarding_close_tutorial": {
+    "message": "關閉教學",
+    "description": "Button that ends the onboarding tutorial."
+  },
+  "onboarding_complete_title": {
+    "message": "完成",
+    "description": "Title shown when onboarding is complete."
+  },
+  "onboarding_complete_ok": {
+    "message": "好的",
+    "description": "Dismiss button on the onboarding complete card."
+  },
+  "onboarding_render_error": {
+    "message": "教學算繪失敗",
+    "description": "Error when onboarding cannot paint."
+  },
+  "preview_open": {
+    "message": "開啟",
+    "description": "Preview action that opens the URL in the current tab."
+  },
+  "preview_open_this_tab": {
+    "message": "在目前分頁中開啟",
+    "description": "Accessible label for opening a preview URL in the current tab."
+  },
+  "preview_open_new_tab": {
+    "message": "在新分頁中開啟",
+    "description": "Preview action that opens the URL in a new tab."
+  },
+  "preview_open_new_tab_aria": {
+    "message": "在新分頁中開啟",
+    "description": "Accessible label for opening a URL in a new tab."
+  },
+  "popover_cannot_display_title": {
+    "message": "無法顯示",
+    "description": "Title when a site blocks iframe embedding."
+  },
+  "popover_cannot_display_message": {
+    "message": "該連結無法在浮層中顯示。",
+    "description": "Explanation when a preview cannot be embedded."
+  },
+  "top_sites_title": {
+    "message": "常用網站",
+    "description": "Title of the Top Sites overlay."
+  },
+  "top_sites_options_aria": {
+    "message": "常用網站選項",
+    "description": "Accessible name for Top Sites options."
+  },
+  "top_sites_keep_open": {
+    "message": "保持開啟",
+    "description": "Option to persist the Top Sites overlay."
+  },
+  "top_sites_tabs_aria": {
+    "message": "常用網站分頁",
+    "description": "Accessible name for the Top Sites tab list."
+  },
+  "top_sites_loading": {
+    "message": "載入中…",
+    "description": "Loading status in the Top Sites overlay."
+  },
+  "top_sites_count": {
+    "message": "$1 個網站",
+    "description": "Top Sites status count for more than one site. $1 is the number.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "top_sites_count_one": {
+    "message": "$1 個網站",
+    "description": "Top Sites status count for exactly one site. $1 is the number.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "1"
+      }
+    }
+  },
+  "tab_history_title": {
+    "message": "分頁記錄",
+    "description": "Title of the History overlay."
+  },
+  "tab_history_subtitle": {
+    "message": "近期的分頁與瀏覽器記錄",
+    "description": "Subtitle of the History overlay."
+  },
+  "tab_history_click_hint": {
+    "message": "點擊以開啟",
+    "description": "Hint above history lists."
+  },
+  "tab_history_loading": {
+    "message": "載入中…",
+    "description": "Generic loading status."
+  },
+  "tab_history_loading_tabs": {
+    "message": "正在載入分頁…",
+    "description": "Loading status for tab history."
+  },
+  "tab_history_loading_browser": {
+    "message": "正在載入瀏覽器記錄…",
+    "description": "Loading status for browser history."
+  },
+  "tab_history_tabs_unavailable": {
+    "message": "分頁記錄無法使用",
+    "description": "Error when tab history cannot load."
+  },
+  "tab_history_browser_unavailable": {
+    "message": "瀏覽器記錄無法使用",
+    "description": "Error when browser history cannot load."
+  },
+  "tab_history_browser_empty": {
+    "message": "尚無瀏覽器記錄",
+    "description": "Empty browser-history list."
+  },
+  "tab_history_tabs_empty": {
+    "message": "尚無分頁記錄",
+    "description": "Empty tab-history list."
+  },
+  "tab_history_navigate_hint": {
+    "message": "導覽提示",
+    "description": "Hint after history lists load."
+  },
+  "tab_history_more_branches_aria": {
+    "message": "還有 $1 個分支",
+    "description": "Accessible label for extra history branches.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "launcher_title": {
+    "message": "啟動器",
+    "description": "Title of the Launcher overlay."
+  },
+  "launcher_subtitle": {
+    "message": "網站與搜尋",
+    "description": "Launcher overlay subtitle."
+  },
+  "launcher_show_deck": {
+    "message": "顯示啟動台",
+    "description": "Toggle for showing the Launch Deck."
+  },
+  "launcher_edit_hint": {
+    "message": "可編輯",
+    "description": "Launcher edit-mode hint."
+  },
+  "launcher_add_site": {
+    "message": "新增網站",
+    "description": "Button that adds a site to the Launch Deck."
+  },
+  "launcher_add_to_deck": {
+    "message": "新增到啟動台",
+    "description": "Title of the add-site dialog."
+  },
+  "launcher_add_url": {
+    "message": "新增網址",
+    "description": "Button that adds a custom URL."
+  },
+  "launcher_filter_aria": {
+    "message": "篩選",
+    "description": "Accessible name for the launcher search filter."
+  },
+  "launcher_clear_search_aria": {
+    "message": "清除搜尋",
+    "description": "Accessible name for clearing launcher search."
+  },
+  "launcher_empty_toolbar": {
+    "message": "工具列是空的",
+    "description": "Empty launcher toolbar-bookmarks list."
+  },
+  "launcher_empty_top_sites": {
+    "message": "尚無常用網站",
+    "description": "Empty launcher top-sites list."
+  },
+  "launcher_empty_category": {
+    "message": "此分類是空的",
+    "description": "Empty launcher category list."
+  },
+  "launcher_search": {
+    "message": "搜尋",
+    "description": "Launcher search submit button."
+  },
+  "launcher_video_site_aria": {
+    "message": "影片網站",
+    "description": "Accessible name for the video-site picker."
+  },
+  "launcher_launch_hint": {
+    "message": "發射 →",
+    "description": "Hint on a launcher row."
+  },
+  "launcher_editing": {
+    "message": "編輯中",
+    "description": "Launcher row state while editing."
+  },
+  "launcher_preview": {
+    "message": "預覽",
+    "description": "Launcher preview action label."
+  },
+  "launcher_subtab_launch_deck": {
+    "message": "啟動台",
+    "description": "Launcher sub-tab for the user's Launch Deck."
+  },
+  "launcher_subtab_toolbar_bookmarks": {
+    "message": "書籤列書籤",
+    "description": "Launcher Launch Deck sub-tab for toolbar bookmarks."
+  },
+  "launcher_subtab_favorites": {
+    "message": "收藏",
+    "description": "Launcher sub-tab for favorite sites."
+  },
+  "launcher_subtab_top_visited": {
+    "message": "最常造訪",
+    "description": "Launcher Launch Deck sub-tab for most-visited sites."
+  },
+  "launcher_subtab_history": {
+    "message": "記錄",
+    "description": "Launcher sub-tab for recent history."
+  },
+  "launcher_edit_deck": {
+    "message": "編輯啟動台",
+    "description": "Button that starts Launch Deck editing."
+  },
+  "launcher_done": {
+    "message": "完成",
+    "description": "Button that finishes Launch Deck editing."
+  },
+  "launcher_filter_catalog_placeholder": {
+    "message": "篩選網站…",
+    "description": "Placeholder for filtering the add-to-deck catalog."
+  },
+  "launcher_no_matching_sites": {
+    "message": "沒有相符的網站",
+    "description": "Empty add-to-deck catalog after filtering."
+  },
+  "launcher_all_sites_on_deck": {
+    "message": "所有網站都已在啟動台上",
+    "description": "Empty add-to-deck catalog when every site is already added."
+  },
+  "launcher_filter_placeholder": {
+    "message": "篩選…",
+    "description": "Placeholder for the launcher results filter."
+  },
+  "launcher_no_search_matches": {
+    "message": "沒有相符的搜尋結果",
+    "description": "Empty launcher search results."
+  },
+  "launcher_search_prompt": {
+    "message": "輸入以搜尋",
+    "description": "Launcher search empty state before a query."
+  },
+  "launcher_footer_hint": {
+    "message": "按 ↑↓ 尋找標籤 • / 進行搜尋 • F 開啟 • Esc 關閉",
+    "description": "Keyboard hint in the Launcher footer."
+  },
+  "launcher_archive_search_label": {
+    "message": "檔案館搜尋",
+    "description": "Accessible label for Internet Archive search in Launcher."
+  },
+  "launcher_archive_search_placeholder": {
+    "message": "搜尋檔案…",
+    "description": "Placeholder for Internet Archive search in Launcher."
+  },
+  "launcher_archive_search_aria": {
+    "message": "檔案館搜尋",
+    "description": "Accessible name for Internet Archive search in Launcher."
+  },
+  "launcher_archive_results_title": {
+    "message": "檔案館 · $1",
+    "description": "Title for Internet Archive search results. $1 is the query.",
+    "placeholders": {
+      "query": {
+        "content": "$1",
+        "example": "apollo"
+      }
+    }
+  },
+  "launcher_videos_search_label": {
+    "message": "影片搜尋",
+    "description": "Accessible label for video search in Launcher."
+  },
+  "launcher_videos_search_placeholder": {
+    "message": "搜尋影片…",
+    "description": "Placeholder for video search in Launcher."
+  },
+  "launcher_videos_search_aria": {
+    "message": "影片搜尋",
+    "description": "Accessible name for video search in Launcher."
+  },
+  "launcher_visited_on": {
+    "message": "造訪於 $1",
+    "description": "Launcher card overlay for last visit. $1 is the localized date.",
+    "placeholders": {
+      "date": {
+        "content": "$1",
+        "example": "Sep 18, 2026"
+      }
+    }
+  },
+  "launcher_added_on": {
+    "message": "新增於 $1",
+    "description": "Launcher card overlay for bookmark added date. $1 is the localized date.",
+    "placeholders": {
+      "date": {
+        "content": "$1",
+        "example": "Sep 18, 2026"
+      }
+    }
+  },
+  "launcher_move_up": {
+    "message": "上移",
+    "description": "Tooltip for moving a Launch Deck item up."
+  },
+  "launcher_move_down": {
+    "message": "下移",
+    "description": "Tooltip for moving a Launch Deck item down."
+  },
+  "launcher_remove_from_deck": {
+    "message": "從啟動台移除",
+    "description": "Tooltip for removing a Launch Deck item."
+  },
+  "launcher_preview_toggle": {
+    "message": "預覽",
+    "description": "Tooltip for toggling a launcher site preview."
+  },
+  "page_media_title": {
+    "message": "頁面媒體",
+    "description": "Title of the Page Media overlay."
+  },
+  "page_media_url_view": {
+    "message": "網址檢視",
+    "description": "Label for Page Media URL view mode."
+  },
+  "page_media_view_table": {
+    "message": "表格",
+    "description": "Page Media table view option."
+  },
+  "page_media_view_table_title": {
+    "message": "表格檢視",
+    "description": "Tooltip for Page Media table view."
+  },
+  "page_media_view_list": {
+    "message": "清單",
+    "description": "Page Media list view option."
+  },
+  "page_media_view_list_title": {
+    "message": "清單檢視",
+    "description": "Tooltip for Page Media list view."
+  },
+  "page_media_aspect": {
+    "message": "長寬比",
+    "description": "Label for Page Media thumbnail aspect."
+  },
+  "page_media_aspect_square": {
+    "message": "方形",
+    "description": "Square crop option."
+  },
+  "page_media_aspect_square_title": {
+    "message": "方形縮圖",
+    "description": "Tooltip for square crop."
+  },
+  "page_media_aspect_original": {
+    "message": "原始",
+    "description": "Original-aspect option."
+  },
+  "page_media_aspect_original_title": {
+    "message": "原始長寬比",
+    "description": "Tooltip for original aspect."
+  },
+  "page_media_sort": {
+    "message": "排序",
+    "description": "Label for Page Media sort."
+  },
+  "page_media_sort_size_desc": {
+    "message": "按大小遞減",
+    "description": "Largest-first sort option."
+  },
+  "page_media_sort_size_desc_title": {
+    "message": "按大小從大到小",
+    "description": "Tooltip for largest-first sort."
+  },
+  "page_media_sort_size_asc": {
+    "message": "按大小遞增",
+    "description": "Smallest-first sort option."
+  },
+  "page_media_sort_size_asc_title": {
+    "message": "按大小從小到大",
+    "description": "Tooltip for smallest-first sort."
+  },
+  "page_media_sort_page": {
+    "message": "按頁面順序",
+    "description": "Page-order sort option."
+  },
+  "page_media_sort_page_title": {
+    "message": "按頁面順序",
+    "description": "Tooltip for page-order sort."
+  },
+  "page_media_article_first": {
+    "message": "文章優先",
+    "description": "Toggle to prefer article images."
+  },
+  "page_media_article_first_aria": {
+    "message": "文章優先",
+    "description": "Accessible name for article-first toggle."
+  },
+  "page_media_scale_title": {
+    "message": "縮放",
+    "description": "Tooltip for overlay content scale."
+  },
+  "page_media_empty": {
+    "message": "尚無媒體",
+    "description": "Empty Page Media list."
+  },
+  "page_media_video_posters": {
+    "message": "影片封面",
+    "description": "Section title for video poster images."
+  },
+  "page_media_item_actions_aria": {
+    "message": "媒體項目操作",
+    "description": "Accessible name for media item action bar."
+  },
+  "page_media_link": {
+    "message": "連結",
+    "description": "Fallback host label for a media item without a domain."
+  },
+  "media_library_title": {
+    "message": "媒體庫",
+    "description": "Title of the Media Library overlay."
+  },
+  "media_library_subtitle": {
+    "message": "已儲存的媒體",
+    "description": "Media Library subtitle."
+  },
+  "media_library_actions_aria": {
+    "message": "媒體庫操作",
+    "description": "Accessible name for Media Library toolbar."
+  },
+  "media_library_types_aria": {
+    "message": "媒體類型",
+    "description": "Accessible name for Media Library type list."
+  },
+  "media_library_coming_soon": {
+    "message": "即將推出",
+    "description": "Placeholder for an unimplemented Media Library type."
+  },
+  "font_info_aria": {
+    "message": "字型資訊",
+    "description": "Accessible name for the Font Info popover."
+  },
+  "font_info_url": {
+    "message": "網址",
+    "description": "Label for a font file URL."
+  },
+  "font_info_local": {
+    "message": "本機",
+    "description": "Value shown when a font has no remote URL."
+  },
+  "font_info_copy": {
+    "message": "複製",
+    "description": "Copy button in Font Info."
+  },
+  "font_info_download": {
+    "message": "下載",
+    "description": "Download button in Font Info."
+  },
+  "font_info_downloading": {
+    "message": "正在下載…",
+    "description": "Font Info download-in-progress label."
+  },
+  "procedure_result_aria": {
+    "message": "執行結果",
+    "description": "Accessible name for the procedure-result popover."
+  },
+  "procedure_result_copy": {
+    "message": "複製",
+    "description": "Copy button in the procedure-result popover."
+  },
+  "practice_aria": {
+    "message": "練習區",
+    "description": "Accessible name for the practice popover."
+  },
+  "practice_title": {
+    "message": "練習",
+    "description": "Practice popover title."
+  },
+  "practice_hide_aria": {
+    "message": "隱藏練習",
+    "description": "Accessible name for hiding the practice popover."
+  },
+  "practice_link": {
+    "message": "連結",
+    "description": "Sample link in the practice popover."
+  },
+  "practice_button": {
+    "message": "按鈕",
+    "description": "Sample button in the practice popover."
+  },
+  "practice_clicked": {
+    "message": "已點擊",
+    "description": "Feedback after clicking the practice button."
+  },
+  "practice_anchor": {
+    "message": "錨點",
+    "description": "Message at the practice popover in-panel anchor."
+  },
+  "practice_fields_title": {
+    "message": "表單欄位",
+    "description": "Title above the onboarding practice text fields."
+  },
+  "practice_input_1_label": {
+    "message": "輸入框 1",
+    "description": "Label for the first onboarding practice text field."
+  },
+  "practice_input_1_placeholder": {
+    "message": "在此輸入…",
+    "description": "Placeholder for the first onboarding practice text field."
+  },
+  "practice_input_2_label": {
+    "message": "輸入框 2",
+    "description": "Label for the second onboarding practice text field."
+  },
+  "practice_input_2_placeholder": {
+    "message": "在此輸入…",
+    "description": "Placeholder for the second onboarding practice text field."
+  },
+  "practice_textarea_label": {
+    "message": "文字區域",
+    "description": "Label for the onboarding practice textarea."
+  },
+  "practice_textarea_placeholder": {
+    "message": "在此輸入多行文字…",
+    "description": "Placeholder for the onboarding practice textarea."
+  },
+  "practice_exit_note_before": {
+    "message": "按",
+    "description": "Text before the Esc keycap in the practice-popover exit hint."
+  },
+  "practice_exit_note_after": {
+    "message": "離開",
+    "description": "Text after the Esc keycap in the practice-popover exit hint."
+  },
+  "columns_aria": {
+    "message": "分欄",
+    "description": "Accessible name for column-layout overlay."
+  },
+  "columns_page_aria": {
+    "message": "分欄頁面",
+    "description": "Accessible name for page column layout."
+  },
+  "columns_slip_aria": {
+    "message": "分欄頁",
+    "description": "Accessible name for column slip controls."
+  },
+  "columns_slip": {
+    "message": "分欄",
+    "description": "Column slip label."
+  },
+  "columns_slip_edit_aria": {
+    "message": "編輯分欄",
+    "description": "Accessible name for the slip slider."
+  },
+  "columns_open_popover": {
+    "message": "在浮層中開啟",
+    "description": "Tooltip for opening columns in a popover."
+  },
+  "columns_close": {
+    "message": "關閉",
+    "description": "Tooltip for closing columns."
+  },
+  "procedure_result_done": {
+    "message": "完成",
+    "description": "Dismiss button in the procedure-result popover."
+  },
+  "procedure_result_title": {
+    "message": "執行結果",
+    "description": "Default title for the procedure-result popover."
+  },
+  "font_info_title": {
+    "message": "字型資訊",
+    "description": "Title of the Font Info popover."
+  },
+  "font_info_done": {
+    "message": "完成",
+    "description": "Dismiss button in Font Info."
+  },
+  "font_info_downloaded": {
+    "message": "已下載",
+    "description": "Font Info download success label."
+  },
+  "font_info_download_failed": {
+    "message": "下載失敗",
+    "description": "Font Info download failure label."
+  },
+  "font_info_label_name": {
+    "message": "名稱",
+    "description": "Font Info field label."
+  },
+  "font_info_label_family": {
+    "message": "字型家族",
+    "description": "Font Info field label."
+  },
+  "font_info_label_size": {
+    "message": "大小",
+    "description": "Font Info field label."
+  },
+  "font_info_label_weight": {
+    "message": "字重",
+    "description": "Font Info field label."
+  },
+  "font_info_label_style": {
+    "message": "樣式",
+    "description": "Font Info field label."
+  },
+  "font_info_label_stretch": {
+    "message": "字寬",
+    "description": "Font Info field label."
+  },
+  "font_info_label_file_type": {
+    "message": "檔案類型",
+    "description": "Font Info field label."
+  },
+  "media_library_download_zip": {
+    "message": "下載壓縮包",
+    "description": "Media Library zip-current-view button."
+  },
+  "media_library_download_zip_title": {
+    "message": "下載該類別的 zip 文件",
+    "description": "Tooltip for Media Library zip-current-view."
+  },
+  "media_library_download_selected": {
+    "message": "下載所選項目",
+    "description": "Media Library zip-selection button with no count."
+  },
+  "media_library_download_selected_n": {
+    "message": "下載所選項目（$1）",
+    "description": "Media Library zip-selection button with item count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "media_library_download_selected_title": {
+    "message": "下載所選項目",
+    "description": "Tooltip for Media Library zip-selection."
+  },
+  "media_library_delete_selected": {
+    "message": "刪除所選項目",
+    "description": "Media Library delete-selection button with no count."
+  },
+  "media_library_delete_selected_n": {
+    "message": "刪除所選項目（$1）",
+    "description": "Media Library delete-selection button with item count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "media_library_delete_selected_title": {
+    "message": "刪除所選項目",
+    "description": "Tooltip for Media Library delete-selection."
+  },
+  "media_library_close_title": {
+    "message": "關閉",
+    "description": "Tooltip for closing Media Library."
+  },
+  "media_library_kind_images": {
+    "message": "圖片",
+    "description": "Media Library Images category."
+  },
+  "media_library_kind_urls": {
+    "message": "網址",
+    "description": "Media Library URLs category."
+  },
+  "media_library_kind_videos": {
+    "message": "影片",
+    "description": "Media Library Videos category."
+  },
+  "media_library_kind_documents": {
+    "message": "文件",
+    "description": "Media Library Documents category."
+  },
+  "media_library_empty_urls": {
+    "message": "尚無網址",
+    "description": "Empty Media Library URLs view."
+  },
+  "media_library_empty_urls_domain": {
+    "message": "$1 尚無網址",
+    "description": "Empty Media Library URLs view for a domain.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "example.com"
+      }
+    }
+  },
+  "media_library_empty_videos": {
+    "message": "尚無影片",
+    "description": "Empty Media Library videos view."
+  },
+  "media_library_empty_videos_domain": {
+    "message": "$1 尚無影片",
+    "description": "Empty Media Library videos view for a domain.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "example.com"
+      }
+    }
+  },
+  "media_library_empty_documents": {
+    "message": "尚無文件",
+    "description": "Empty Media Library documents view."
+  },
+  "media_library_empty_documents_domain": {
+    "message": "$1 尚無文件",
+    "description": "Empty Media Library documents view for a domain.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "example.com"
+      }
+    }
+  },
+  "media_library_empty_images": {
+    "message": "尚無圖片",
+    "description": "Empty Media Library images view."
+  },
+  "media_library_empty_images_domain": {
+    "message": "$1 尚無圖片",
+    "description": "Empty Media Library images view for a domain.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "example.com"
+      }
+    }
+  },
+  "overlay_notify_action_failed": {
+    "message": "操作失敗",
+    "description": "Generic overlay action failure notification."
+  },
+  "overlay_notify_copy_failed": {
+    "message": "複製失敗",
+    "description": "Clipboard copy failure notification."
+  },
+  "overlay_notify_copied": {
+    "message": "已複製到剪貼板",
+    "description": "Clipboard copy success notification."
+  },
+  "overlay_notify_download_started": {
+    "message": "已開始下載",
+    "description": "Download start notification."
+  },
+  "overlay_notify_download_failed": {
+    "message": "下載失敗",
+    "description": "Download failure notification."
+  },
+  "overlay_notify_nothing_to_download": {
+    "message": "沒有可下載的內容",
+    "description": "Empty download notification."
+  },
+  "overlay_notify_nothing_to_copy": {
+    "message": "沒有可複製的內容",
+    "description": "Empty copy notification."
+  },
+  "overlay_notify_send_library_failed": {
+    "message": "傳送到媒體庫失敗",
+    "description": "Send-to-library failure notification."
+  },
+  "overlay_notify_url_copied": {
+    "message": "已複製連結",
+    "description": "URL copied notification."
+  },
+  "overlay_notify_url_copied_pasteboard": {
+    "message": "連結已複製到剪貼板",
+    "description": "URL copied to pasteboard notification."
+  },
+  "overlay_notify_image_url_copied": {
+    "message": "已複製圖片連結",
+    "description": "Image URL copied notification."
+  },
+  "overlay_notify_video_url_copied": {
+    "message": "已複製影片連結",
+    "description": "Video URL copied notification."
+  },
+  "overlay_notify_document_url_copied": {
+    "message": "已複製文件連結",
+    "description": "Document URL copied notification."
+  },
+  "overlay_notify_font_copied": {
+    "message": "已複製字型",
+    "description": "Font info copy success notification."
+  },
+  "overlay_notify_text_copied": {
+    "message": "已複製文字",
+    "description": "Text copy success notification."
+  },
+  "overlay_notify_library_load_failed": {
+    "message": "媒體庫載入失敗",
+    "description": "Media Library load failure."
+  },
+  "overlay_notify_no_url": {
+    "message": "沒有可用連結",
+    "description": "Missing URL notification."
+  },
+  "overlay_notify_url_cannot_open": {
+    "message": "無法開啟該連結",
+    "description": "URL cannot open in a tab."
+  },
+  "overlay_notify_url_open_failed": {
+    "message": "開啟連結失敗",
+    "description": "URL open failure."
+  },
+  "overlay_notify_zip_failed": {
+    "message": "無法建置 zip",
+    "description": "Zip build failure."
+  },
+  "overlay_notify_delete_failed": {
+    "message": "刪除失敗",
+    "description": "Delete failure."
+  },
+  "overlay_notify_removed_one": {
+    "message": "已刪除 1 項",
+    "description": "Single item removed from Media Library."
+  },
+  "overlay_notify_removed_n": {
+    "message": "已刪除 $1 項",
+    "description": "Multiple items removed from Media Library.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "overlay_notify_image_open_failed": {
+    "message": "開啟圖片失敗",
+    "description": "Image open failure."
+  },
+  "overlay_notify_video_unplayable": {
+    "message": "影片無法播放",
+    "description": "Unplayable video notification."
+  },
+  "overlay_notify_video_open_failed": {
+    "message": "開啟影片失敗",
+    "description": "Video open failure."
+  },
+  "overlay_notify_document_open_failed": {
+    "message": "開啟文件失敗",
+    "description": "Document open failure."
+  },
+  "overlay_notify_copy_url_failed": {
+    "message": "複製連結失敗",
+    "description": "URL copy failure."
+  },
+  "overlay_notify_copy_video_failed": {
+    "message": "複製影片失敗",
+    "description": "Video copy failure."
+  },
+  "overlay_notify_copy_document_failed": {
+    "message": "複製文件失敗",
+    "description": "Document copy failure."
+  },
+  "overlay_notify_copy_image_failed": {
+    "message": "複製圖片失敗",
+    "description": "Image copy failure."
+  },
+  "page_media_tab_image": {
+    "message": "圖片",
+    "description": "Page Media Image tab."
+  },
+  "page_media_tab_video": {
+    "message": "影片",
+    "description": "Page Media Video tab."
+  },
+  "page_media_tab_text": {
+    "message": "文字",
+    "description": "Page Media Text tab."
+  },
+  "page_media_tab_docs": {
+    "message": "文件",
+    "description": "Page Media Docs tab."
+  },
+  "page_media_tab_fonts": {
+    "message": "字型",
+    "description": "Page Media Fonts tab."
+  },
+  "page_media_tab_urls": {
+    "message": "網址",
+    "description": "Page Media URLs tab."
+  },
+  "page_media_empty_url": {
+    "message": "尚無網址",
+    "description": "Empty Page Media URLs tab."
+  },
+  "page_media_empty_page_text": {
+    "message": "尚無頁面文字",
+    "description": "Empty Page Media Text tab."
+  },
+  "page_media_empty_font": {
+    "message": "尚無字型",
+    "description": "Empty Page Media Fonts tab."
+  },
+  "page_media_empty_docs": {
+    "message": "尚無文件",
+    "description": "Empty Page Media Docs tab."
+  },
+  "page_media_empty_video": {
+    "message": "尚無影片",
+    "description": "Empty Page Media Video tab."
+  },
+  "page_media_url_layout_aria": {
+    "message": "網址配置",
+    "description": "Accessible name for URL view segmented control."
+  },
+  "page_media_aspect_aria": {
+    "message": "長寬比",
+    "description": "Accessible name for image aspect control."
+  },
+  "page_media_sort_aria": {
+    "message": "排序",
+    "description": "Accessible name for image sort control."
+  },
+  "page_media_landmark_title": {
+    "message": "頁面媒體",
+    "description": "Tooltip for article-first image ordering."
+  },
+  "page_media_scale_label": {
+    "message": "縮放",
+    "description": "Page Media scale slider label."
+  },
+  "page_media_scale_aria": {
+    "message": "縮放",
+    "description": "Accessible name for Page Media scale slider."
+  },
+  "page_media_count": {
+    "message": "$1 個媒體",
+    "description": "Page Media item count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "page_media_count_fonts": {
+    "message": "$1 種字型",
+    "description": "Page Media font count in the title tooltip.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "page_media_count_urls": {
+    "message": "$1 個網址",
+    "description": "Page Media unique URL count in the title tooltip.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "page_media_count_with_extra": {
+    "message": "$1 個媒體 · $2",
+    "description": "Page Media count with extra bits. $1 is media count, $2 is extra summary.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "12"
+      },
+      "extra": {
+        "content": "$2",
+        "example": "3 fonts"
+      }
+    }
+  },
+  "page_media_video_alt": {
+    "message": "影片",
+    "description": "Fallback alt text for a video thumbnail."
+  },
+  "page_media_kind_page": {
+    "message": "頁面",
+    "description": "URL kind label."
+  },
+  "page_media_kind_document": {
+    "message": "文件",
+    "description": "URL kind label."
+  },
+  "page_media_kind_image": {
+    "message": "圖片",
+    "description": "URL kind label."
+  },
+  "page_media_kind_video": {
+    "message": "影片",
+    "description": "URL kind label."
+  },
+  "page_media_kind_link": {
+    "message": "連結",
+    "description": "URL kind label."
+  },
+  "page_media_text_kind_article": {
+    "message": "文章",
+    "description": "Page text kind label."
+  },
+  "page_media_text_kind_main": {
+    "message": "內文",
+    "description": "Page text kind label."
+  },
+  "page_media_text_kind_full": {
+    "message": "全文",
+    "description": "Page text kind label."
+  },
+  "page_media_text_kind_text": {
+    "message": "文字",
+    "description": "Fallback page text kind label."
+  },
+  "page_media_font_fallback": {
+    "message": "備用字型",
+    "description": "Fallback font name."
+  },
+  "page_media_col_path": {
+    "message": "路徑",
+    "description": "Page Media URL table column."
+  },
+  "page_media_col_kind": {
+    "message": "類型",
+    "description": "Page Media URL table column."
+  },
+  "page_media_col_title": {
+    "message": "標題",
+    "description": "Page Media URL table column."
+  },
+  "page_media_col_actions": {
+    "message": "操作",
+    "description": "Page Media URL table column."
+  },
+  "page_media_table_aria": {
+    "message": "媒體表",
+    "description": "Accessible name for the Page Media URL table."
+  },
+  "page_media_this_page": {
+    "message": "目前頁面",
+    "description": "Current-page group label in the URL table."
+  },
+  "page_media_domain": {
+    "message": "網域",
+    "description": "Domain group label in the URL table."
+  },
+  "page_media_path": {
+    "message": "路徑",
+    "description": "Path group label in the URL table."
+  },
+  "tab_history_section_tabs": {
+    "message": "分頁",
+    "description": "Tab history section title."
+  },
+  "tab_history_section_browser": {
+    "message": "瀏覽器",
+    "description": "Browser history section title."
+  },
+  "top_sites_tab_toolbar": {
+    "message": "書籤列",
+    "description": "Top Sites Toolbar tab."
+  },
+  "top_sites_tab_most_visited": {
+    "message": "最常造訪",
+    "description": "Top Sites Most Visited tab."
+  },
+  "top_sites_tab_recent_bookmarks": {
+    "message": "近期書籤",
+    "description": "Top Sites Recent Bookmarks tab."
+  },
+  "top_sites_tab_keypilot": {
+    "message": "KeyPilot",
+    "description": "Top Sites KeyPilot tab."
+  },
+  "top_sites_empty_toolbar": {
+    "message": "書籤列是空的",
+    "description": "Empty Top Sites Toolbar tab."
+  },
+  "top_sites_empty_most_visited": {
+    "message": "尚無最常造訪的網站",
+    "description": "Empty Top Sites Most Visited tab."
+  },
+  "top_sites_empty_recent_bookmarks": {
+    "message": "尚無近期書籤",
+    "description": "Empty Top Sites Recent Bookmarks tab."
+  },
+  "top_sites_empty_keypilot": {
+    "message": "沒有 KeyPilot 工具。",
+    "description": "Empty Top Sites KeyPilot tab."
+  },
+  "top_sites_empty": {
+    "message": "尚無網站",
+    "description": "Generic empty Top Sites grid."
+  },
+  "popover_nav_hint_suffix": {
+    "message": "可導覽",
+    "description": "Titlebar hint suffix for Docs and Settings popovers."
+  },
+  "columns_open_popover_aria": {
+    "message": "在浮層中開啟",
+    "description": "Accessible name for expanding columns."
+  },
+  "columns_close_aria": {
+    "message": "關閉",
+    "description": "Accessible name for closing columns."
+  },
+  "table_expand": {
+    "message": "展開 $1",
+    "description": "Expand a hierarchical table group.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "example.com"
+      }
+    }
+  },
+  "table_collapse": {
+    "message": "收合 $1",
+    "description": "Collapse a hierarchical table group.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "example.com"
+      }
+    }
+  },
+  "page_media_action_copy": {
+    "message": "複製",
+    "description": "Page Media item Copy action."
+  },
+  "page_media_action_copy_title": {
+    "message": "複製",
+    "description": "Tooltip for Page Media Copy action."
+  },
+  "page_media_action_send": {
+    "message": "傳送",
+    "description": "Page Media send-to-library action."
+  },
+  "page_media_action_send_title": {
+    "message": "傳送到媒體庫",
+    "description": "Tooltip for send-to-library action."
+  },
+  "page_media_action_download": {
+    "message": "下載",
+    "description": "Page Media Download action."
+  },
+  "page_media_action_download_title": {
+    "message": "下載",
+    "description": "Tooltip for Page Media Download action."
+  },
+  "page_media_click_to_copy": {
+    "message": "點擊以複製",
+    "description": "Tooltip for a page-text row that copies on click."
+  },
+  "media_library_copy_url": {
+    "message": "複製網址",
+    "description": "Copy URL tooltip in Media Library."
+  },
+  "media_library_copy_frame": {
+    "message": "複製影格",
+    "description": "Copy video frame tooltip in Media Library."
+  },
+  "media_library_copy_video_url": {
+    "message": "複製影片網址",
+    "description": "Copy video URL tooltip in Media Library."
+  },
+  "media_library_copy_file_name": {
+    "message": "複製檔名",
+    "description": "Copy document file name tooltip in Media Library."
+  },
+  "media_library_open": {
+    "message": "開啟",
+    "description": "Open action in Media Library."
+  },
+  "media_library_open_title": {
+    "message": "開啟",
+    "description": "Open-in-tab tooltip in Media Library."
+  },
+  "media_library_download_shortcut": {
+    "message": "下載",
+    "description": "Download URL shortcut tooltip in Media Library."
+  },
+  "layout_family_browsing_label": {
+    "message": "瀏覽",
+    "description": "Built-in keyboard layout family name."
+  },
+  "layout_family_browsing_description": {
+    "message": "完整瀏覽控制（捲動、分頁、點擊、記錄、工具）。",
+    "description": "Description of the Browsing built-in keyboard layout family."
+  },
+  "layout_family_browsing_picker": {
+    "message": "內建：瀏覽",
+    "description": "Built-in keyboard layout family label in the layout picker."
+  },
+  "layout_family_navigation_label": {
+    "message": "導覽",
+    "description": "Built-in keyboard layout family name."
+  },
+  "layout_family_navigation_description": {
+    "message": "點擊元素、回上一頁與前往下一頁。",
+    "description": "Description of the Navigation built-in keyboard layout family."
+  },
+  "layout_family_navigation_picker": {
+    "message": "內建：導覽",
+    "description": "Built-in keyboard layout family label in the layout picker."
+  },
+  "layout_family_basic_navigation_label": {
+    "message": "基礎導覽",
+    "description": "Legacy built-in keyboard layout family name."
+  },
+  "layout_family_basic_navigation_picker": {
+    "message": "內建：基礎導覽",
+    "description": "Legacy built-in keyboard layout family label in the layout picker."
+  },
+  "layout_picker_group_builtin": {
+    "message": "內建",
+    "description": "Built-in keyboard layouts group heading in the layout picker."
+  },
+  "layout_picker_group_custom": {
+    "message": "自訂",
+    "description": "Custom keyboard layouts group heading in the layout picker."
+  },
+  "layout_picker_docs": {
+    "message": "KeyPilot 文件",
+    "description": "Layout picker item that opens KeyPilot documentation."
+  },
+  "layout_picker_settings": {
+    "message": "KeyPilot 設定",
+    "description": "Layout picker item that opens KeyPilot settings."
+  },
+  "key_info_key": {
+    "message": "按鍵：$1",
+    "description": "Physical key caption in the key-info popover. $1 is the key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "F"
+      }
+    }
+  },
+  "key_info_settings_hint": {
+    "message": "可在設定中變更",
+    "description": "Hint shown on hover in the key-info popover when the action has settings."
+  },
+  "key_info_config": {
+    "message": "配置",
+    "description": "Button in the key-info popover that opens the action configuration panel."
+  },
+  "fn_ACTIVATE_label": {
+    "message": "點擊元素",
+    "description": "Function Library label for ACTIVATE."
+  },
+  "fn_ACTIVATE_description": {
+    "message": "點擊懸停的元素",
+    "description": "Function Library description for ACTIVATE."
+  },
+  "fn_ACTIVATE_details": {
+    "message": "啟動游標下的可點擊項目 - 與在該元素上按滑鼠左鍵相同。適用於連結、按鈕和 KeyPilot 突出顯示的其他互動式目標。",
+    "description": "Function Library details for ACTIVATE."
+  },
+  "fn_ACTIVATE_NEW_TAB_label": {
+    "message": "點擊到新分頁",
+    "description": "Function Library label for ACTIVATE_NEW_TAB."
+  },
+  "fn_ACTIVATE_NEW_TAB_description": {
+    "message": "在新的前景分頁中開啟連結",
+    "description": "Function Library description for ACTIVATE_NEW_TAB."
+  },
+  "fn_ACTIVATE_NEW_TAB_details": {
+    "message": "在新分頁開啟游標下的連結，並立即切換至該分頁。適合想開啟連結但不永久離開目前位置時使用。",
+    "description": "Function Library details for ACTIVATE_NEW_TAB."
+  },
+  "fn_ACTIVATE_NEW_TAB_BACKGROUND_label": {
+    "message": "點擊到背景新分頁",
+    "description": "Function Library label for ACTIVATE_NEW_TAB_BACKGROUND."
+  },
+  "fn_ACTIVATE_NEW_TAB_BACKGROUND_description": {
+    "message": "在新的背景分頁中開啟連結",
+    "description": "Function Library description for ACTIVATE_NEW_TAB_BACKGROUND."
+  },
+  "fn_ACTIVATE_NEW_TAB_BACKGROUND_details": {
+    "message": "在新分頁中開啟懸停的連結而不切換焦點 - 就像中鍵點擊一樣。對於在繼續閱讀目前頁面時對多個連結進行排隊非常有用。",
+    "description": "Function Library details for ACTIVATE_NEW_TAB_BACKGROUND."
+  },
+  "fn_BACK_label": {
+    "message": "回上一頁",
+    "description": "Function Library label for BACK."
+  },
+  "fn_BACK_description": {
+    "message": "瀏覽器記錄回上一頁",
+    "description": "Function Library description for BACK."
+  },
+  "fn_BACK_details": {
+    "message": "在目前分頁的瀏覽記錄中返回一步，等同於瀏覽器的「上一頁」按鈕。",
+    "description": "Function Library details for BACK."
+  },
+  "fn_BACK2_label": {
+    "message": "回上一頁",
+    "description": "Function Library label for BACK2."
+  },
+  "fn_BACK2_description": {
+    "message": "瀏覽器記錄回上一頁",
+    "description": "Function Library description for BACK2."
+  },
+  "fn_BACK2_details": {
+    "message": "在目前標籤的歷史記錄中向後導航一步，相當於瀏覽器的後退按鈕。公開第二個 Back 綁定的佈局的重複 id。",
+    "description": "Function Library details for BACK2."
+  },
+  "fn_FORWARD_label": {
+    "message": "前往下一頁",
+    "description": "Function Library label for FORWARD."
+  },
+  "fn_FORWARD_description": {
+    "message": "瀏覽器記錄前往下一頁",
+    "description": "Function Library description for FORWARD."
+  },
+  "fn_FORWARD_details": {
+    "message": "在目前標籤的歷史記錄中向前導航一步，相當於瀏覽器的「前進」按鈕。",
+    "description": "Function Library details for FORWARD."
+  },
+  "fn_DELETE_label": {
+    "message": "刪除模式",
+    "description": "Function Library label for DELETE."
+  },
+  "fn_DELETE_description": {
+    "message": "隱藏游標下的元素",
+    "description": "Function Library description for DELETE."
+  },
+  "fn_DELETE_details": {
+    "message": "切換刪除模式：懸停元素並將其從頁面中刪除（隱藏），以便您可以整理佈局。使用“退出焦點”或再次切換來退出。",
+    "description": "Function Library details for DELETE."
+  },
+  "fn_TAB_LEFT_label": {
+    "message": "上一個分頁",
+    "description": "Function Library label for TAB_LEFT."
+  },
+  "fn_TAB_LEFT_description": {
+    "message": "切換到上一個分頁",
+    "description": "Function Library description for TAB_LEFT."
+  },
+  "fn_TAB_LEFT_details": {
+    "message": "啟用目前視窗分頁列中，位於目前分頁左側的分頁。",
+    "description": "Function Library details for TAB_LEFT."
+  },
+  "fn_TAB_RIGHT_label": {
+    "message": "下一個分頁",
+    "description": "Function Library label for TAB_RIGHT."
+  },
+  "fn_TAB_RIGHT_description": {
+    "message": "切換到下一個分頁",
+    "description": "Function Library description for TAB_RIGHT."
+  },
+  "fn_TAB_RIGHT_details": {
+    "message": "啟用目前視窗分頁列中，位於目前分頁右側的分頁。",
+    "description": "Function Library details for TAB_RIGHT."
+  },
+  "fn_ROOT_label": {
+    "message": "前往網站根目錄",
+    "description": "Function Library label for ROOT."
+  },
+  "fn_ROOT_description": {
+    "message": "導覽到網站源站",
+    "description": "Function Library description for ROOT."
+  },
+  "fn_ROOT_details": {
+    "message": "跳到目前頁面的網站根目錄（方案 + 主機）－對於在不輸入 URL 的情況下轉義深層路徑很有用。",
+    "description": "Function Library details for ROOT."
+  },
+  "fn_LAUNCHER_label": {
+    "message": "啟動器",
+    "description": "Function Library label for LAUNCHER."
+  },
+  "fn_LAUNCHER_description": {
+    "message": "快速存取網站啟動器",
+    "description": "Function Library description for LAUNCHER."
+  },
+  "fn_LAUNCHER_details": {
+    "message": "開啟啟動器彈出視窗，以便跳到收藏夾或配置的站點，而無需使用多功能框。",
+    "description": "Function Library details for LAUNCHER."
+  },
+  "fn_TOP_SITES_label": {
+    "message": "常用網站",
+    "description": "Function Library label for TOP_SITES."
+  },
+  "fn_TOP_SITES_description": {
+    "message": "工具列、造訪記錄與書籤",
+    "description": "Function Library description for TOP_SITES."
+  },
+  "fn_TOP_SITES_details": {
+    "message": "開啟熱門網站：這份快速清單彙整工具列、最常造訪的頁面和最近書籤，讓您一步即可開啟常用網站。",
+    "description": "Function Library details for TOP_SITES."
+  },
+  "fn_CLOSE_TAB_label": {
+    "message": "關閉分頁",
+    "description": "Function Library label for CLOSE_TAB."
+  },
+  "fn_CLOSE_TAB_description": {
+    "message": "關閉目前分頁",
+    "description": "Function Library description for CLOSE_TAB."
+  },
+  "fn_CLOSE_TAB_details": {
+    "message": "關閉作用中的分頁。行為與瀏覽器目前視窗的關閉分頁操作相同。",
+    "description": "Function Library details for CLOSE_TAB."
+  },
+  "fn_CANCEL_label": {
+    "message": "離開聚焦",
+    "description": "Function Library label for CANCEL."
+  },
+  "fn_CANCEL_description": {
+    "message": "離開各模式與浮層",
+    "description": "Function Library description for CANCEL."
+  },
+  "fn_CANCEL_details": {
+    "message": "取消目前的 KeyPilot 模式或覆蓋（刪除模式、捲軸線、文字焦點助手等）並返回正常瀏覽。",
+    "description": "Function Library details for CANCEL."
+  },
+  "fn_PAGE_UP_INSTANT_label": {
+    "message": "上翻頁",
+    "description": "Function Library label for PAGE_UP_INSTANT."
+  },
+  "fn_PAGE_UP_INSTANT_description": {
+    "message": "立即向上跳一頁",
+    "description": "Function Library description for PAGE_UP_INSTANT."
+  },
+  "fn_PAGE_UP_INSTANT_details": {
+    "message": "不使用動畫，將目前捲動目標向上捲動約一個視窗高度；需要快速移動時，比平滑向上翻頁更快。",
+    "description": "Function Library details for PAGE_UP_INSTANT."
+  },
+  "fn_PAGE_DOWN_INSTANT_label": {
+    "message": "下翻頁",
+    "description": "Function Library label for PAGE_DOWN_INSTANT."
+  },
+  "fn_PAGE_DOWN_INSTANT_description": {
+    "message": "立即向下跳一頁",
+    "description": "Function Library description for PAGE_DOWN_INSTANT."
+  },
+  "fn_PAGE_DOWN_INSTANT_details": {
+    "message": "不使用動畫，將目前捲動目標向下捲動約一個視窗高度；需要快速移動時，比平滑向下翻頁更快。",
+    "description": "Function Library details for PAGE_DOWN_INSTANT."
+  },
+  "fn_PAGE_TOP_label": {
+    "message": "捲到頂部",
+    "description": "Function Library label for PAGE_TOP."
+  },
+  "fn_PAGE_TOP_description": {
+    "message": "跳到捲動目標頂部",
+    "description": "Function Library description for PAGE_TOP."
+  },
+  "fn_PAGE_TOP_details": {
+    "message": "移至目前捲動目標的頂端。淡出模式會隱藏跳轉，捲動模式則會播放動畫。可在「設定」→「捲動」設定動畫樣式。",
+    "description": "Function Library details for PAGE_TOP."
+  },
+  "fn_param_jump_style": {
+    "message": "跳轉樣式",
+    "description": "Function parameter label for PAGE_TOP.mode."
+  },
+  "fn_param_opt_fade": {
+    "message": "淡入淡出",
+    "description": "Function parameter option for PAGE_TOP.mode.fade."
+  },
+  "fn_param_opt_scroll": {
+    "message": "捲動",
+    "description": "Function parameter option for PAGE_TOP.mode.smooth."
+  },
+  "fn_PAGE_BOTTOM_label": {
+    "message": "捲到底部",
+    "description": "Function Library label for PAGE_BOTTOM."
+  },
+  "fn_PAGE_BOTTOM_description": {
+    "message": "跳到捲動目標底部",
+    "description": "Function Library description for PAGE_BOTTOM."
+  },
+  "fn_PAGE_BOTTOM_details": {
+    "message": "移至目前捲動目標的底端。淡出模式會隱藏跳轉，捲動模式則會播放動畫。可在「設定」→「捲動」設定動畫樣式。",
+    "description": "Function Library details for PAGE_BOTTOM."
+  },
+  "fn_SCROLL_LINE_label": {
+    "message": "行捲動",
+    "description": "Function Library label for SCROLL_LINE."
+  },
+  "fn_SCROLL_LINE_description": {
+    "message": "基於原點的連續捲動",
+    "description": "Function Library description for SCROLL_LINE."
+  },
+  "fn_SCROLL_LINE_details": {
+    "message": "從固定原點捲動：將滑鼠移離螢幕上的點，可以沿著該方向更快捲動。 （選用）在「設定」→「捲動」下的空白頁面區域上啟用中鍵點選。",
+    "description": "Function Library details for SCROLL_LINE."
+  },
+  "fn_NEW_TAB_label": {
+    "message": "新分頁",
+    "description": "Function Library label for NEW_TAB."
+  },
+  "fn_NEW_TAB_description": {
+    "message": "開啟 KeyPilot 新分頁",
+    "description": "Function Library description for NEW_TAB."
+  },
+  "fn_NEW_TAB_details": {
+    "message": "開啟包含書籤欄、熱門網站和搜尋的 KeyPilot 新分頁。瀏覽器自己的新分頁保持不變。",
+    "description": "Function Library details for NEW_TAB."
+  },
+  "fn_OPEN_POPOVER_label": {
+    "message": "開啟浮層",
+    "description": "Function Library label for OPEN_POPOVER."
+  },
+  "fn_OPEN_POPOVER_description": {
+    "message": "在彈出視窗中開啟連結",
+    "description": "Function Library description for OPEN_POPOVER."
+  },
+  "fn_OPEN_POPOVER_details": {
+    "message": "開啟 KeyPilot 彈出視窗中的懸停鏈接，以便您可以在單獨的 Chrome 中查看或工作，而無需完整的新分頁。",
+    "description": "Function Library details for OPEN_POPOVER."
+  },
+  "fn_PREVIEW_LINK_POPOVER_label": {
+    "message": "預覽連結",
+    "description": "Function Library label for PREVIEW_LINK_POPOVER."
+  },
+  "fn_PREVIEW_LINK_POPOVER_description": {
+    "message": "在彈出視窗中預覽連結",
+    "description": "Function Library description for PREVIEW_LINK_POPOVER."
+  },
+  "fn_PREVIEW_LINK_POPOVER_details": {
+    "message": "在彈出視窗中開啟懸停 URL 的連結預覽 — 瀏覽目的地，而無需在主標籤中提交完整導覽。",
+    "description": "Function Library details for PREVIEW_LINK_POPOVER."
+  },
+  "fn_POI_WEBSITE_label": {
+    "message": "地點官網",
+    "description": "Function Library label for POI_WEBSITE."
+  },
+  "fn_POI_WEBSITE_description": {
+    "message": "開啟地圖地點的官網",
+    "description": "Function Library description for POI_WEBSITE."
+  },
+  "fn_POI_WEBSITE_details": {
+    "message": "當地圖地點 (POI) 位於游標下方時，在連結預覽中開啟該地點的網站，以便您無需離開地圖即可造訪商家或位置頁面。",
+    "description": "Function Library details for POI_WEBSITE."
+  },
+  "fn_POI_ADDRESS_label": {
+    "message": "地點地址",
+    "description": "Function Library label for POI_ADDRESS."
+  },
+  "fn_POI_ADDRESS_description": {
+    "message": "複製地圖地點的地址",
+    "description": "Function Library description for POI_ADDRESS."
+  },
+  "fn_POI_ADDRESS_details": {
+    "message": "當地圖地點 (POI) 位於游標下方時，將其街道地址複製到剪貼板，以便貼上到方向、註釋或表單中。",
+    "description": "Function Library details for POI_ADDRESS."
+  },
+  "fn_param_action": {
+    "message": "操作",
+    "description": "Function parameter label for POI_ADDRESS.action."
+  },
+  "fn_param_opt_copy_address": {
+    "message": "複製地址",
+    "description": "Function parameter option for POI_ADDRESS.action.copy."
+  },
+  "fn_param_format": {
+    "message": "格式",
+    "description": "Function parameter label for POI_ADDRESS.format."
+  },
+  "fn_param_opt_txt": {
+    "message": "文字",
+    "description": "Function parameter option for POI_ADDRESS.format.txt."
+  },
+  "fn_param_opt_vcard": {
+    "message": "名片",
+    "description": "Function parameter option for POI_ADDRESS.format.vcard."
+  },
+  "fn_OPEN_SETTINGS_POPOVER_label": {
+    "message": "設定",
+    "description": "Function Library label for OPEN_SETTINGS_POPOVER."
+  },
+  "fn_OPEN_SETTINGS_POPOVER_description": {
+    "message": "開啟 KeyPilot 設定",
+    "description": "Function Library description for OPEN_SETTINGS_POPOVER."
+  },
+  "fn_OPEN_SETTINGS_POPOVER_details": {
+    "message": "開啟或關閉主題、捲動、點擊模式、佈局和其他首選項的 KeyPilot 設定彈出視窗。",
+    "description": "Function Library details for OPEN_SETTINGS_POPOVER."
+  },
+  "fn_OMNIBOX_label": {
+    "message": "網址列",
+    "description": "Function Library label for OMNIBOX. Keep this short for keycaps. Do not use the English word Omnibox in non-English catalogs."
+  },
+  "fn_OMNIBOX_description": {
+    "message": "網址列浮層",
+    "description": "Function Library description for OMNIBOX."
+  },
+  "fn_OMNIBOX_details": {
+    "message": "開啟 KeyPilot 的多功能框覆蓋層，以便您無需按一下瀏覽器網址列即可鍵入 URL 或進行搜尋。",
+    "description": "Function Library details for OMNIBOX."
+  },
+  "fn_TAB_HISTORY_label": {
+    "message": "分頁記錄",
+    "description": "Function Library label for TAB_HISTORY."
+  },
+  "fn_TAB_HISTORY_description": {
+    "message": "瀏覽本分頁的記錄",
+    "description": "Function Library description for TAB_HISTORY."
+  },
+  "fn_TAB_HISTORY_details": {
+    "message": "開啟目前分頁的分頁瀏覽記錄，讓您可跳至此分頁工作階段中先前造訪的頁面，而無需使用瀏覽器原生的瀏覽記錄介面。",
+    "description": "Function Library details for TAB_HISTORY."
+  },
+  "fn_TOGGLE_KEYBOARD_HELP_label": {
+    "message": "鍵盤參考",
+    "description": "Function Library label for TOGGLE_KEYBOARD_HELP. English may keep the KB abbreviation; other locales must not use KB."
+  },
+  "fn_TOGGLE_KEYBOARD_HELP_description": {
+    "message": "顯示或隱藏鍵盤圖",
+    "description": "Function Library description for TOGGLE_KEYBOARD_HELP."
+  },
+  "fn_TOGGLE_KEYBOARD_HELP_details": {
+    "message": "切換浮動鍵盤參考視窗，顯示目前配置的鍵帽和繫結。",
+    "description": "Function Library details for TOGGLE_KEYBOARD_HELP."
+  },
+  "fn_HIGHLIGHT_label": {
+    "message": "文字選取",
+    "description": "Function Library label for HIGHLIGHT."
+  },
+  "fn_HIGHLIGHT_description": {
+    "message": "選取文字並複製富文本",
+    "description": "Function Library description for HIGHLIGHT."
+  },
+  "fn_HIGHLIGHT_details": {
+    "message": "在游標下輸入字元級文字選擇。預設情況下，所選內容會複製為富文本格式，因此貼上時會保留格式。",
+    "description": "Function Library details for HIGHLIGHT."
+  },
+  "fn_param_copy_as": {
+    "message": "複製為",
+    "description": "Function parameter label for HIGHLIGHT.mode."
+  },
+  "fn_param_opt_rich_text": {
+    "message": "富文本",
+    "description": "Function parameter option for HIGHLIGHT.mode.rich."
+  },
+  "fn_param_opt_plain_text": {
+    "message": "純文字",
+    "description": "Function parameter option for HIGHLIGHT.mode.plain."
+  },
+  "fn_RECTANGLE_HIGHLIGHT_label": {
+    "message": "元素選取",
+    "description": "Function Library label for RECTANGLE_HIGHLIGHT."
+  },
+  "fn_RECTANGLE_HIGHLIGHT_description": {
+    "message": "矩形或累積式元素拾取",
+    "description": "Function Library description for RECTANGLE_HIGHLIGHT."
+  },
+  "fn_RECTANGLE_HIGHLIGHT_details": {
+    "message": "選取與拖曳的矩形相交的 HTML 元素，或累積選取元素。對於從頁面區域抓取結構（不僅僅是純文字）很有用。",
+    "description": "Function Library details for RECTANGLE_HIGHLIGHT."
+  },
+  "fn_param_selection_mode": {
+    "message": "選取模式",
+    "description": "Function parameter label for RECTANGLE_HIGHLIGHT.mode."
+  },
+  "fn_param_opt_element_rectangle": {
+    "message": "元素矩形",
+    "description": "Function parameter option for RECTANGLE_HIGHLIGHT.mode.element."
+  },
+  "fn_param_opt_pick_cumulative": {
+    "message": "累積拾取",
+    "description": "Function parameter option for RECTANGLE_HIGHLIGHT.mode.cumulative."
+  },
+  "fn_COPY_HOVERED_IMAGE_label": {
+    "message": "複製圖片",
+    "description": "Function Library label for COPY_HOVERED_IMAGE."
+  },
+  "fn_COPY_HOVERED_IMAGE_description": {
+    "message": "複製懸停的圖片",
+    "description": "Function Library description for COPY_HOVERED_IMAGE."
+  },
+  "fn_COPY_HOVERED_IMAGE_details": {
+    "message": "將游標下的影像複製到剪貼板、媒體庫或兩者 — 配置操作的目標。當您需要圖片位元組或已儲存的庫條目而不僅僅是 URL 時，請首選此方法。",
+    "description": "Function Library details for COPY_HOVERED_IMAGE."
+  },
+  "fn_COPY_HOVERED_URL_label": {
+    "message": "複製網址",
+    "description": "Function Library label for COPY_HOVERED_URL."
+  },
+  "fn_COPY_HOVERED_URL_description": {
+    "message": "複製懸停的連結 URL",
+    "description": "Function Library description for COPY_HOVERED_URL."
+  },
+  "fn_COPY_HOVERED_URL_details": {
+    "message": "將游標下的 URL 複製到剪貼板、媒體庫或兩者。當您需要 href 本身而不是獲取或開啟資源時，請使用此選項。",
+    "description": "Function Library details for COPY_HOVERED_URL."
+  },
+  "fn_COPY_HOVERED_VIDEO_label": {
+    "message": "複製影片",
+    "description": "Function Library label for COPY_HOVERED_VIDEO."
+  },
+  "fn_COPY_HOVERED_VIDEO_description": {
+    "message": "複製懸停的影片",
+    "description": "Function Library description for COPY_HOVERED_VIDEO."
+  },
+  "fn_COPY_HOVERED_VIDEO_details": {
+    "message": "複製游標下的影片（可取得時將檔案位元組複製到媒體庫，或將影片 URL 複製到剪貼板）。沒有預設的佈局鍵 - 如果需要，可以在佈局編輯器中綁定它。",
+    "description": "Function Library details for COPY_HOVERED_VIDEO."
+  },
+  "fn_FONT_INFO_label": {
+    "message": "字型資訊",
+    "description": "Function Library label for FONT_INFO."
+  },
+  "fn_FONT_INFO_description": {
+    "message": "檢視游標下的字型",
+    "description": "Function Library description for FONT_INFO."
+  },
+  "fn_FONT_INFO_details": {
+    "message": "顯示一個彈出視窗，其中包含游標下樣式文字的字體名稱、大小、系列、文件類型和資源 URL，並概述文字運行的輪廓。沒有預設的佈局鍵 - 如果需要，可以在佈局編輯器中綁定它。",
+    "description": "Function Library details for FONT_INFO."
+  },
+  "fn_PAGE_MEDIA_label": {
+    "message": "頁面媒體",
+    "description": "Function Library label for PAGE_MEDIA."
+  },
+  "fn_PAGE_MEDIA_description": {
+    "message": "瀏覽本頁找到的媒體",
+    "description": "Function Library description for PAGE_MEDIA."
+  },
+  "fn_PAGE_MEDIA_details": {
+    "message": "開啟目前頁面上找到的圖片、影片、文件、字型和 URL 圖庫，讓您無需逐一搜尋 DOM 即可檢視或收集。",
+    "description": "Function Library details for PAGE_MEDIA."
+  },
+  "fn_OPEN_MEDIA_LIBRARY_label": {
+    "message": "媒體庫",
+    "description": "Function Library label for OPEN_MEDIA_LIBRARY."
+  },
+  "fn_OPEN_MEDIA_LIBRARY_description": {
+    "message": "開啟已儲存的媒體庫",
+    "description": "Function Library description for OPEN_MEDIA_LIBRARY."
+  },
+  "fn_OPEN_MEDIA_LIBRARY_details": {
+    "message": "開啟媒體庫；其中保留您先前複製或儲存的項目（圖片、影片、URL 和相關資產）供重複使用。",
+    "description": "Function Library details for OPEN_MEDIA_LIBRARY."
+  },
+  "fn_CLIPBOARD_COPY_label": {
+    "message": "複製",
+    "description": "Function Library label for CLIPBOARD_COPY."
+  },
+  "fn_CLIPBOARD_COPY_description": {
+    "message": "複製所選到剪貼板",
+    "description": "Function Library description for CLIPBOARD_COPY."
+  },
+  "fn_CLIPBOARD_COPY_details": {
+    "message": "將目前選取的文字複製到系統剪貼板。若要將「複製」作為 KeyPilot 佈局繫結使用，請優先選擇此操作，而非作業系統快速鍵。",
+    "description": "Function Library details for CLIPBOARD_COPY."
+  },
+  "fn_CLIPBOARD_CUT_label": {
+    "message": "剪下",
+    "description": "Function Library label for CLIPBOARD_CUT."
+  },
+  "fn_CLIPBOARD_CUT_description": {
+    "message": "剪下所選到剪貼板",
+    "description": "Function Library description for CLIPBOARD_CUT."
+  },
+  "fn_CLIPBOARD_CUT_details": {
+    "message": "將目前文字選擇從聚焦欄位或可編輯區域剪下到系統剪貼板。",
+    "description": "Function Library details for CLIPBOARD_CUT."
+  },
+  "fn_CLIPBOARD_PASTE_label": {
+    "message": "貼上",
+    "description": "Function Library label for CLIPBOARD_PASTE."
+  },
+  "fn_CLIPBOARD_PASTE_description": {
+    "message": "貼上到聚焦的輸入框",
+    "description": "Function Library description for CLIPBOARD_PASTE."
+  },
+  "fn_CLIPBOARD_PASTE_details": {
+    "message": "將剪貼板文字貼到聚焦的文字欄位或可編輯元素中。如果您在打字時需要，請與修飾符和弦綁定。",
+    "description": "Function Library details for CLIPBOARD_PASTE."
+  },
+  "fn_CLIPBOARD_SELECT_ALL_label": {
+    "message": "全選",
+    "description": "Function Library label for CLIPBOARD_SELECT_ALL."
+  },
+  "fn_CLIPBOARD_SELECT_ALL_description": {
+    "message": "全選輸入框或頁面",
+    "description": "Function Library description for CLIPBOARD_SELECT_ALL."
+  },
+  "fn_CLIPBOARD_SELECT_ALL_details": {
+    "message": "選擇對焦欄位中的所有文本，或當沒有可編輯內容處於聚焦狀態時選擇頁面內容 - 與通常的「全選」捷徑相同。",
+    "description": "Function Library details for CLIPBOARD_SELECT_ALL."
+  },
+  "fn_SELECT_WORD_label": {
+    "message": "選詞",
+    "description": "Function Library label for SELECT_WORD."
+  },
+  "fn_SELECT_WORD_description": {
+    "message": "選中游標下的詞",
+    "description": "Function Library description for SELECT_WORD."
+  },
+  "fn_SELECT_WORD_details": {
+    "message": "選取 KeyPilot 游標下的單字。再次按下同一單字即可取消選取。獨佔與累積為彈出視窗共用設定，並非個別按鍵設定。複製操作會讀取此選取內容。",
+    "description": "Function Library details for SELECT_WORD."
+  },
+  "fn_param_opt_exclusive": {
+    "message": "互斥",
+    "description": "Function parameter option for SELECT_WORD.mode.exclusive."
+  },
+  "fn_param_opt_cumulative": {
+    "message": "累積",
+    "description": "Function parameter option for SELECT_WORD.mode.cumulative."
+  },
+  "fn_SELECT_SENTENCE_label": {
+    "message": "選句子",
+    "description": "Function Library label for SELECT_SENTENCE."
+  },
+  "fn_SELECT_SENTENCE_description": {
+    "message": "選中游標下的句子",
+    "description": "Function Library description for SELECT_SENTENCE."
+  },
+  "fn_SELECT_SENTENCE_details": {
+    "message": "選擇 KeyPilot 游標下的句子。再次按同一個句子即可取消選取它。獨佔與累積是彈出視窗設定（共享，而不是每個按鍵）。",
+    "description": "Function Library details for SELECT_SENTENCE."
+  },
+  "fn_SELECT_PARAGRAPH_label": {
+    "message": "選段落",
+    "description": "Function Library label for SELECT_PARAGRAPH."
+  },
+  "fn_SELECT_PARAGRAPH_description": {
+    "message": "選中游標下的段落",
+    "description": "Function Library description for SELECT_PARAGRAPH."
+  },
+  "fn_SELECT_PARAGRAPH_details": {
+    "message": "選擇 KeyPilot 游標下的段落（或最近的區塊）。再按同一塊可取消選擇它。獨佔與累積是彈出視窗設定（共享，而不是每個按鍵）。",
+    "description": "Function Library details for SELECT_PARAGRAPH."
+  },
+  "fn_SELECT_IMAGE_label": {
+    "message": "選圖片",
+    "description": "Function Library label for SELECT_IMAGE."
+  },
+  "fn_SELECT_IMAGE_description": {
+    "message": "選中游標下的圖片",
+    "description": "Function Library description for SELECT_IMAGE."
+  },
+  "fn_SELECT_IMAGE_details": {
+    "message": "選擇 KeyPilot 游標下的影像。再次按同一張圖片即可取消選取它。獨佔與累積是彈出視窗設定（共享，而不是每個按鍵）。複製可以複製選定的圖片。",
+    "description": "Function Library details for SELECT_IMAGE."
+  },
+  "fn_LOOKUP_WORD_label": {
+    "message": "查詞",
+    "description": "Function Library label for LOOKUP_WORD."
+  },
+  "fn_LOOKUP_WORD_description": {
+    "message": "檢視游標下單字的詞典釋義",
+    "description": "Function Library description for LOOKUP_WORD."
+  },
+  "fn_LOOKUP_WORD_details": {
+    "message": "顯示游標下單字的免費字典 API 定義彈出視窗。無需AI設定；（可選）將來源切換到操作實例上的 Ask AI。",
+    "description": "Function Library details for LOOKUP_WORD."
+  },
+  "fn_param_source": {
+    "message": "來源",
+    "description": "Function parameter label for LOOKUP_WORD.source."
+  },
+  "fn_param_opt_dictionary": {
+    "message": "詞典",
+    "description": "Function parameter option for LOOKUP_WORD.source.dictionary."
+  },
+  "fn_param_opt_ask_ai": {
+    "message": "改問 AI",
+    "description": "Function parameter option for LOOKUP_WORD.source.ai."
+  },
+  "fn_SHOW_POPOVER_label": {
+    "message": "顯示浮層",
+    "description": "Function Library label for SHOW_POPOVER."
+  },
+  "fn_SHOW_POPOVER_description": {
+    "message": "顯示上一個巨集步驟的結果",
+    "description": "Function Library description for SHOW_POPOVER."
+  },
+  "fn_SHOW_POPOVER_details": {
+    "message": "在彈出視窗中渲染上一個巨集步驟的結果（或配置的後備文字）。顯示基元 - 將其新增為巨集步驟，而不是關鍵操作。",
+    "description": "Function Library details for SHOW_POPOVER."
+  },
+  "fn_param_content": {
+    "message": "內容",
+    "description": "Function parameter label for SHOW_POPOVER.content."
+  },
+  "fn_param_content_placeholder": {
+    "message": "若上一步沒有產出時的備用文字…",
+    "description": "Function parameter placeholder for SHOW_POPOVER.content."
+  },
+  "fn_ADD_URL_TO_MEDIA_LIBRARY_label": {
+    "message": "新增網址到媒體庫",
+    "description": "Function Library label for ADD_URL_TO_MEDIA_LIBRARY."
+  },
+  "fn_ADD_URL_TO_MEDIA_LIBRARY_description": {
+    "message": "儲存懸停連結（不下載）",
+    "description": "Function Library description for ADD_URL_TO_MEDIA_LIBRARY."
+  },
+  "fn_ADD_URL_TO_MEDIA_LIBRARY_details": {
+    "message": "將游標本身（其 href）下的超連結儲存在媒體庫中 - 不下載連結指向的資源。",
+    "description": "Function Library details for ADD_URL_TO_MEDIA_LIBRARY."
+  },
+  "fn_FETCH_URL_FOR_MEDIA_LIBRARY_label": {
+    "message": "擷取網址到媒體庫",
+    "description": "Function Library label for FETCH_URL_FOR_MEDIA_LIBRARY."
+  },
+  "fn_FETCH_URL_FOR_MEDIA_LIBRARY_description": {
+    "message": "下載連結檔案到媒體庫",
+    "description": "Function Library description for FETCH_URL_FOR_MEDIA_LIBRARY."
+  },
+  "fn_FETCH_URL_FOR_MEDIA_LIBRARY_details": {
+    "message": "取得游標下的超連結所指向的資源（例如 .pdf、.mp3 或 .mp4）並將其儲存在媒體庫中。圖片、影片、文件依照文件類型進行分類。網頁不會被下載 - 使用「將 URL 新增至媒體庫」來下載網頁。",
+    "description": "Function Library details for FETCH_URL_FOR_MEDIA_LIBRARY."
+  },
+  "fn_param_script_placeholder": {
+    "message": "// 綁定：kpHoveredClickable、kpHoverLeaf、kpFocusedTextField、\n// kpMode、kpPageUrl、kpSelection、kpPriorResult\n// 回呼（僅當下面選取時）：showPopover、copyToClipboard、notify\n// 範例：\n// 回傳 kpHoveredClickable && kpHoveredClickable.textContent;",
+    "description": "Example JavaScript for the Execute JS parameter."
+  },
+  "fn_cat_navigation_label": {
+    "message": "導覽",
+    "description": "Actions Library category label for Navigation."
+  },
+  "fn_cat_tab_control_label": {
+    "message": "分頁控制",
+    "description": "Actions Library category label for Tab Control."
+  },
+  "fn_cat_begin_url_label": {
+    "message": "起始網址",
+    "description": "Actions Library category label for Begin URL."
+  },
+  "fn_cat_get_page_data_label": {
+    "message": "取得頁面資料",
+    "description": "Actions Library category label for Get Page Data."
+  },
+  "fn_cat_maps_label": {
+    "message": "地圖",
+    "description": "Actions Library category label for Maps."
+  },
+  "fn_cat_scroll_label": {
+    "message": "捲動",
+    "description": "Actions Library category label for Scroll."
+  },
+  "fn_cat_select_label": {
+    "message": "選取",
+    "description": "Actions Library category label for Select."
+  },
+  "fn_cat_clipboard_label": {
+    "message": "剪貼板",
+    "description": "Actions Library category label for Clipboard."
+  },
+  "fn_cat_type_label": {
+    "message": "輸入",
+    "description": "Actions Library category label for Type."
+  },
+  "fn_cat_keystrokes_label": {
+    "message": "按鍵",
+    "description": "Actions Library category label for Keystrokes."
+  },
+  "fn_cat_data_label": {
+    "message": "資料",
+    "description": "Actions Library category label for Data."
+  },
+  "fn_cat_lookup_label": {
+    "message": "查詞",
+    "description": "Actions Library category label for Lookup."
+  },
+  "fn_cat_translate_label": {
+    "message": "翻譯",
+    "description": "Actions Library category label for Translate."
+  },
+  "fn_cat_display_label": {
+    "message": "顯示",
+    "description": "Actions Library category label for Display."
+  },
+  "fn_cat_script_label": {
+    "message": "指令碼",
+    "description": "Actions Library category label for Script."
+  },
+  "fn_cat_media_library_label": {
+    "message": "媒體庫",
+    "description": "Actions Library category label for Media Library."
+  },
+  "fn_cat_ai_label": {
+    "message": "AI",
+    "description": "Actions Library category label for AI."
+  },
+  "fn_cat_keypilot_label": {
+    "message": "KeyPilot",
+    "description": "Actions Library category label for KeyPilot."
+  },
+  "fn_cat_tools_label": {
+    "message": "工具",
+    "description": "Actions Library category label for Tools."
+  },
+  "fn_cat_system_label": {
+    "message": "系統",
+    "description": "Actions Library category label for System."
+  },
+  "fn_cat_other_label": {
+    "message": "其他",
+    "description": "Actions Library category label for Other."
+  },
+  "fn_cat_navigation_description": {
+    "message": "點擊連結、預覽，並在瀏覽記錄中移動。",
+    "description": "Actions Library category description for Navigation."
+  },
+  "fn_cat_tab_control_description": {
+    "message": "開啟、關閉、切換與回顧分頁。",
+    "description": "Actions Library category description for Tab Control."
+  },
+  "fn_cat_begin_url_description": {
+    "message": "透過啟動器、常用網站或網址列跳到網址。",
+    "description": "Actions Library category description for Begin URL."
+  },
+  "fn_cat_get_page_data_description": {
+    "message": "擷取文字、圖片、影片、網址、字型及其他頁面媒體。",
+    "description": "Actions Library category description for Get Page Data."
+  },
+  "fn_cat_maps_description": {
+    "message": "從游標下的地圖圖釘開啟地點的官網或地址。",
+    "description": "Actions Library category description for Maps."
+  },
+  "fn_cat_scroll_description": {
+    "message": "按行、按頁捲動頁面，或跳到頂部／底部。",
+    "description": "Actions Library category description for Scroll."
+  },
+  "fn_cat_select_description": {
+    "message": "刪除或切換多欄選取輔助工具。",
+    "description": "Actions Library category description for Select."
+  },
+  "fn_cat_clipboard_description": {
+    "message": "複製、剪下、貼上、全選，以及選中游標下的詞、句子、段落或圖片。",
+    "description": "Actions Library category description for Clipboard."
+  },
+  "fn_cat_type_description": {
+    "message": "向聚焦的輸入框輸入儲存的文字。",
+    "description": "Actions Library category description for Type."
+  },
+  "fn_cat_keystrokes_description": {
+    "message": "傳送按鍵、組合鍵、連擊與滑鼠重對應。",
+    "description": "Actions Library category description for Keystrokes."
+  },
+  "fn_cat_data_description": {
+    "message": "讀取游標下或醒目選區中的文字或媒體。",
+    "description": "Actions Library category description for Data."
+  },
+  "fn_cat_lookup_description": {
+    "message": "查閱游標下單字的釋義。",
+    "description": "Actions Library category description for Lookup."
+  },
+  "fn_cat_translate_description": {
+    "message": "翻譯醒目或游標處的文字。",
+    "description": "Actions Library category description for Translate."
+  },
+  "fn_cat_display_description": {
+    "message": "在浮層中顯示上一個巨集步驟的結果。",
+    "description": "Actions Library category description for Display."
+  },
+  "fn_cat_script_description": {
+    "message": "針對頁面狀態執行自訂 JavaScript 片段。",
+    "description": "Actions Library category description for Script."
+  },
+  "fn_cat_media_library_description": {
+    "message": "將連結或擷取的檔案存入媒體庫。",
+    "description": "Actions Library category description for Media Library."
+  },
+  "fn_cat_ai_description": {
+    "message": "用提示詞將所選文字傳送給 AI，並設定結果去向。",
+    "description": "Actions Library category description for AI."
+  },
+  "fn_cat_keypilot_description": {
+    "message": "開啟 KeyPilot chrome — 鍵盤參考、設定和模式。",
+    "description": "Actions Library category description for KeyPilot."
+  },
+  "fn_cat_tools_description": {
+    "message": "實用浮層與輔助工具。",
+    "description": "Actions Library category description for Tools."
+  },
+  "fn_cat_system_description": {
+    "message": "取消目前的 KeyPilot 手勢或模式。",
+    "description": "Actions Library category description for System."
+  },
+  "fn_cat_other_description": {
+    "message": "未分類功能。",
+    "description": "Actions Library category description for Other."
+  },
+  "fn_section_macros_description": {
+    "message": "可放在按鍵上的多步序列。自訂內建巨集可分支出可編輯副本。",
+    "description": "Actions Library macros section description."
+  },
+  "fn_section_macro_keys_description": {
+    "message": "已儲存的巨集按鍵執行個體（熱鍵、連擊、輪詢等），可直接放置。",
+    "description": "Actions Library macroKeys section description."
+  },
+  "mk_hotkey_label": {
+    "message": "組合鍵 / 熱鍵",
+    "description": "Macro Key kind label for hotkey."
+  },
+  "mk_hotkey_description": {
+    "message": "傳送組合鍵",
+    "description": "Macro Key kind description for hotkey."
+  },
+  "mk_hotkey_details": {
+    "message": "一鍵傳送組合按鍵，例如 Ctrl+C、Win+R 或 Ctrl+Shift+Esc。請在操作執行個體上設定組合鍵。",
+    "description": "Macro Key kind details for hotkey."
+  },
+  "mk_burst_label": {
+    "message": "連擊鍵",
+    "description": "Macro Key kind label for burst."
+  },
+  "mk_burst_description": {
+    "message": "輸入一小串按鍵序列",
+    "description": "Macro Key kind description for burst."
+  },
+  "mk_burst_details": {
+    "message": "按下即可依序輸入一連串簡短按鍵（例如 a→b→c 或 Ctrl+C → Ctrl+V → Enter）。請在操作執行個體上設定步驟。",
+    "description": "Macro Key kind details for burst."
+  },
+  "mk_roundRobin_label": {
+    "message": "輪詢",
+    "description": "Macro Key kind label for roundRobin."
+  },
+  "mk_roundRobin_description": {
+    "message": "在多個筆劃選項間輪換",
+    "description": "Macro Key kind description for roundRobin."
+  },
+  "mk_roundRobin_details": {
+    "message": "每次按下都會推進一個行程循環（A，然後 B，然後 C，然後 A...）。當一個鍵需要在多個輸出之間輪換時很有用。",
+    "description": "Macro Key kind details for roundRobin."
+  },
+  "mk_continuous_label": {
+    "message": "持續 / 連續",
+    "description": "Macro Key kind label for continuous."
+  },
+  "mk_continuous_description": {
+    "message": "重複傳送筆劃直到停止",
+    "description": "Macro Key kind description for continuous."
+  },
+  "mk_continuous_details": {
+    "message": "按 開始重複發送一筆；再按一次即可停止。在動作實例上配置重複筆畫。",
+    "description": "Macro Key kind details for continuous."
+  },
+  "mk_mouse_label": {
+    "message": "合成滑鼠",
+    "description": "Macro Key kind label for mouse."
+  },
+  "mk_mouse_description": {
+    "message": "在游標下點擊",
+    "description": "Macro Key kind description for mouse."
+  },
+  "mk_mouse_details": {
+    "message": "在游標下合成左鍵、中鍵或右鍵點選，而無需移動實體滑鼠按鈕。選擇操作實例上的按鈕。",
+    "description": "Macro Key kind details for mouse."
+  },
+  "mk_key_label": {
+    "message": "一般按鍵",
+    "description": "Macro Key kind label for key."
+  },
+  "mk_key_description": {
+    "message": "將此槽位重對應為另一按鍵",
+    "description": "Macro Key kind description for key."
+  },
+  "mk_key_details": {
+    "message": "重新映射此佈局槽，以便按下它會發送不同的鍵（例如 F 發送 1）。在操作實例上配置目標鍵。",
+    "description": "Macro Key kind details for key."
+  },
+  "mk_step_function_label": {
+    "message": "功能",
+    "description": "Macro Builder step label for function."
+  },
+  "mk_step_function_description": {
+    "message": "執行功能庫項目（含巨集按鍵）。",
+    "description": "Macro Builder step description for function."
+  },
+  "mk_step_wait_label": {
+    "message": "等待",
+    "description": "Macro Builder step label for wait."
+  },
+  "mk_step_wait_description": {
+    "message": "暫停 N 毫秒。",
+    "description": "Macro Builder step description for wait."
+  },
+  "mk_step_gate_label": {
+    "message": "條件門",
+    "description": "Macro Builder step label for gate."
+  },
+  "mk_step_gate_description": {
+    "message": "若條件不成立，跳過後續步驟。",
+    "description": "Macro Builder step description for gate."
+  },
+  "mk_step_stop_label": {
+    "message": "停止",
+    "description": "Macro Builder step label for stop."
+  },
+  "mk_step_stop_description": {
+    "message": "立即結束巨集。",
+    "description": "Macro Builder step description for stop."
+  },
+  "mk_step_runMacro_label": {
+    "message": "執行巨集",
+    "description": "Macro Builder step label for runMacro."
+  },
+  "mk_step_runMacro_description": {
+    "message": "呼叫另一個巨集（含循環保護）。",
+    "description": "Macro Builder step description for runMacro."
+  },
+  "mk_empty_stroke": {
+    "message": "空筆劃",
+    "description": "Macro Key summary when no stroke is configured."
+  },
+  "mk_mouse_click": {
+    "message": "$1 點擊",
+    "description": "Macro Key mouse-click summary. $1 is the button name."
+  },
+  "mk_default_label": {
+    "message": "預設",
+    "description": "Fallback label for an unknown Macro Key kind."
+  },
+  "fn_cat_all": {
+    "message": "全部",
+    "description": "Function Library category filter option."
+  },
+  "mk_editor_configure": {
+    "message": "配置：$1",
+    "description": "Macro Key editor title. $1 is the Macro Key kind label.",
+    "placeholders": {
+      "kind": {
+        "content": "$1",
+        "example": "Combination / Hotkey"
+      }
+    }
+  },
+  "mk_editor_name": {
+    "message": "名稱",
+    "description": "Macro Key editor name field label."
+  },
+  "mk_editor_key_repeat": {
+    "message": "按鍵重複",
+    "description": "Macro Key editor continuous-key field label."
+  },
+  "mk_editor_key_chord": {
+    "message": "組合鍵",
+    "description": "Macro Key editor stroke field label."
+  },
+  "mk_editor_interval": {
+    "message": "間隔（毫秒）",
+    "description": "Macro Key editor repeat interval field label."
+  },
+  "mk_editor_sequence": {
+    "message": "序列",
+    "description": "Macro Key editor burst sequence field label."
+  },
+  "mk_editor_cycle_items": {
+    "message": "循環項目",
+    "description": "Macro Key editor round-robin items field label."
+  },
+  "mk_editor_remove": {
+    "message": "移除",
+    "description": "Tooltip for removing a Macro Key stroke."
+  },
+  "mk_editor_add_stroke": {
+    "message": "新增筆劃",
+    "description": "Macro Key editor add-stroke button."
+  },
+  "mk_editor_gap": {
+    "message": "筆劃間隔（毫秒）",
+    "description": "Macro Key editor burst gap field label."
+  },
+  "mk_editor_mouse_button": {
+    "message": "滑鼠按鍵",
+    "description": "Macro Key editor mouse-button field label."
+  },
+  "mk_editor_mouse_left": {
+    "message": "左鍵",
+    "description": "Macro Key editor left mouse button option."
+  },
+  "mk_editor_mouse_middle": {
+    "message": "中鍵",
+    "description": "Macro Key editor middle mouse button option."
+  },
+  "mk_editor_mouse_right": {
+    "message": "右鍵",
+    "description": "Macro Key editor right mouse button option."
+  },
+  "mk_editor_save": {
+    "message": "儲存",
+    "description": "Macro Key editor Save button."
+  },
+  "mk_editor_cancel": {
+    "message": "取消",
+    "description": "Macro Key editor Cancel button."
+  },
+  "mk_editor_delete": {
+    "message": "刪除",
+    "description": "Macro Key editor Delete button."
+  },
+  "mk_editor_repeat_preview": {
+    "message": "每 $2 毫秒 $1",
+    "description": "Macro Key continuous repeat preview. $1 is a key stroke and $2 is milliseconds.",
+    "placeholders": {
+      "stroke": {
+        "content": "$1",
+        "example": "W"
+      },
+      "interval": {
+        "content": "$2",
+        "example": "50"
+      }
+    }
+  },
+  "fn_TYPE_CHARACTERS_label": {
+    "message": "輸入字元",
+    "description": "Function Library label for TYPE_CHARACTERS."
+  },
+  "fn_TYPE_CHARACTERS_description": {
+    "message": "向輸入框輸入儲存的文字",
+    "description": "Function Library description for TYPE_CHARACTERS."
+  },
+  "fn_TYPE_CHARACTERS_details": {
+    "message": "每次按下該鍵時，都會在對焦欄位中鍵入配置的文字。建立此函數的多個操作實例（每個實例都有自己的文字）並將它們放在不同的鍵上。",
+    "description": "Function Library details for TYPE_CHARACTERS."
+  },
+  "fn_param_text_to_type": {
+    "message": "要輸入的文字",
+    "description": "Function parameter label for TYPE_CHARACTERS.text."
+  },
+  "fn_param_text_to_type_placeholder": {
+    "message": "例如：電子郵件地址、簽名、片段…",
+    "description": "Function parameter placeholder for TYPE_CHARACTERS.text."
+  },
+  "fn_EXECUTE_JS_label": {
+    "message": "執行 JS",
+    "description": "Function Library label for EXECUTE_JS."
+  },
+  "fn_EXECUTE_JS_description": {
+    "message": "執行貼上的 JS 片段",
+    "description": "Function Library description for EXECUTE_JS."
+  },
+  "fn_EXECUTE_JS_details": {
+    "message": "在內容腳本隔離世界中執行貼上的 JavaScript 片段，並具有懸停可點擊和其他頁面狀態。只有在操作實例上選取時才會注入可選回呼（彈出視窗、剪貼板、通知）。",
+    "description": "Function Library details for EXECUTE_JS."
+  },
+  "fn_param_script": {
+    "message": "指令碼",
+    "description": "Function parameter label for EXECUTE_JS.script."
+  },
+  "fn_param_cb_show_popover": {
+    "message": "在彈出視窗中顯示結果 (showPopover)",
+    "description": "Function parameter label for EXECUTE_JS.cbShowPopover."
+  },
+  "fn_param_group_callbacks": {
+    "message": "回呼",
+    "description": "Function parameter group for EXECUTE_JS.cbShowPopover."
+  },
+  "fn_param_cb_copy": {
+    "message": "複製到剪貼板 (copyToClipboard)",
+    "description": "Function parameter label for EXECUTE_JS.cbCopyToClipboard."
+  },
+  "fn_param_cb_notify": {
+    "message": "閃光通知（通知）",
+    "description": "Function parameter label for EXECUTE_JS.cbNotify."
+  },
+  "fn_GET_TEXT_AT_CURSOR_label": {
+    "message": "取得游標處文字",
+    "description": "Function Library label for GET_TEXT_AT_CURSOR."
+  },
+  "fn_GET_TEXT_AT_CURSOR_description": {
+    "message": "複製游標下的文字",
+    "description": "Function Library description for GET_TEXT_AT_CURSOR."
+  },
+  "fn_GET_TEXT_AT_CURSOR_details": {
+    "message": "讀取游標下的單字、句子、段落或超連結（在操作實例上選擇粒度）並將其複製到剪貼板。",
+    "description": "Function Library details for GET_TEXT_AT_CURSOR."
+  },
+  "fn_param_granularity": {
+    "message": "粒度",
+    "description": "Function parameter label for GET_TEXT_AT_CURSOR.granularity."
+  },
+  "fn_param_opt_word": {
+    "message": "詞",
+    "description": "Function parameter option for GET_TEXT_AT_CURSOR.granularity.word."
+  },
+  "fn_param_opt_sentence": {
+    "message": "句子",
+    "description": "Function parameter option for GET_TEXT_AT_CURSOR.granularity.sentence."
+  },
+  "fn_param_opt_paragraph": {
+    "message": "段落",
+    "description": "Function parameter option for GET_TEXT_AT_CURSOR.granularity.paragraph."
+  },
+  "fn_param_opt_hyperlink": {
+    "message": "超連結",
+    "description": "Function parameter option for GET_TEXT_AT_CURSOR.granularity.hyperlink."
+  },
+  "fn_GET_TEXT_RANGE_label": {
+    "message": "取得文字範圍",
+    "description": "Function Library label for GET_TEXT_RANGE."
+  },
+  "fn_GET_TEXT_RANGE_description": {
+    "message": "將所選傳給下一個巨集步驟",
+    "description": "Function Library description for GET_TEXT_RANGE."
+  },
+  "fn_GET_TEXT_RANGE_details": {
+    "message": "將目前反白顯示/選擇讀入下一個巨集步驟。資料原語 - 將其新增為巨集步驟，而不是關鍵操作（使用複製）。",
+    "description": "Function Library details for GET_TEXT_RANGE."
+  },
+  "fn_GET_MEDIA_AT_CURSOR_label": {
+    "message": "取得游標處媒體",
+    "description": "Function Library label for GET_MEDIA_AT_CURSOR."
+  },
+  "fn_GET_MEDIA_AT_CURSOR_description": {
+    "message": "複製游標下的媒體",
+    "description": "Function Library description for GET_MEDIA_AT_CURSOR."
+  },
+  "fn_GET_MEDIA_AT_CURSOR_details": {
+    "message": "讀取游標下的圖片、影片或音訊（在操作實例上選擇類型）並將其或其 URL 複製到剪貼板。",
+    "description": "Function Library details for GET_MEDIA_AT_CURSOR."
+  },
+  "fn_param_media_kind": {
+    "message": "媒體類型",
+    "description": "Function parameter label for GET_MEDIA_AT_CURSOR.kind."
+  },
+  "fn_param_opt_image": {
+    "message": "圖片",
+    "description": "Function parameter option for GET_MEDIA_AT_CURSOR.kind.image."
+  },
+  "fn_param_opt_video": {
+    "message": "影片",
+    "description": "Function parameter option for GET_MEDIA_AT_CURSOR.kind.video."
+  },
+  "fn_param_opt_audio": {
+    "message": "音訊",
+    "description": "Function parameter option for GET_MEDIA_AT_CURSOR.kind.audio."
+  },
+  "fn_TRANSLATE_label": {
+    "message": "翻譯",
+    "description": "Function Library label for TRANSLATE."
+  },
+  "fn_TRANSLATE_description": {
+    "message": "翻譯所選或游標處文字",
+    "description": "Function Library description for TRANSLATE."
+  },
+  "fn_TRANSLATE_details": {
+    "message": "翻譯醒目文字, 或詞/句子/段落在游標下當沒有內容醒目的. 配置目標語言和是否結果取代頁面文字或開啟在 a 浮層.",
+    "description": "Function Library details for TRANSLATE."
+  },
+  "fn_param_target_language": {
+    "message": "目標語言",
+    "description": "Function parameter label for TRANSLATE.targetLanguage."
+  },
+  "fn_param_target_language_placeholder": {
+    "message": "例如：英語、西班牙語、日語…",
+    "description": "Function parameter placeholder for TRANSLATE.targetLanguage."
+  },
+  "fn_param_instruction": {
+    "message": "指令",
+    "description": "Function parameter label for SEND_TEXT_TO_AI.prompt."
+  },
+  "fn_param_instruction_placeholder": {
+    "message": "例如：翻譯成英語",
+    "description": "Function parameter placeholder for SEND_TEXT_TO_AI.prompt."
+  },
+  "fn_param_config": {
+    "message": "配置",
+    "description": "Function parameter label for a Macro Key configuration."
+  },
+  "fn_param_destination": {
+    "message": "目標位置",
+    "description": "Function result destination parameter label."
+  },
+  "fn_dest_clipboard": {
+    "message": "剪貼板",
+    "description": "Function result destination option."
+  },
+  "fn_dest_popover": {
+    "message": "浮層",
+    "description": "Function result destination option."
+  },
+  "fn_dest_both": {
+    "message": "兩者",
+    "description": "Function result destination option."
+  },
+  "fn_dest_modify_page": {
+    "message": "修改頁面",
+    "description": "Function result destination option."
+  },
+  "fn_dest_media_library": {
+    "message": "媒體庫",
+    "description": "Function result destination option."
+  },
+  "fn_dest_clipboard_and_media_library": {
+    "message": "剪貼板與媒體庫",
+    "description": "Function result destination option."
+  },
+  "fn_dest_scrapbook": {
+    "message": "剪貼板",
+    "description": "Function result destination option."
+  },
+  "fn_COLS_TOGGLE_label": {
+    "message": "分欄切換",
+    "description": "Built-in Function COLS_TOGGLE label."
+  },
+  "fn_COLS_TOGGLE_description": {
+    "message": "游標下的多欄版面",
+    "description": "Built-in Function COLS_TOGGLE short description."
+  },
+  "fn_COLS_TOGGLE_details": {
+    "message": "將游標下的元素按列排列為多列佈局，以便更容易掃描密集的文字或清單。再次切換即可恢復原始佈局。",
+    "description": "Built-in Function COLS_TOGGLE inspector details."
+  },
+  "fn_SEND_TEXT_TO_AI_label": {
+    "message": "傳送文字給 AI",
+    "description": "Built-in Function SEND_TEXT_TO_AI label."
+  },
+  "fn_SEND_TEXT_TO_AI_description": {
+    "message": "對所選文字執行 AI",
+    "description": "Built-in Function SEND_TEXT_TO_AI short description."
+  },
+  "fn_SEND_TEXT_TO_AI_details": {
+    "message": "使用可設定的指令將選定的文字傳送到 AI，然後將結果路由到剪貼板和/或彈出視窗。在操作實例上配置提示和目標。",
+    "description": "Built-in Function SEND_TEXT_TO_AI inspector details."
+  },
+  "fn_unknown": {
+    "message": "未知功能：$1",
+    "description": "Error when a Function id is missing.",
+    "placeholders": {
+      "id": {
+        "content": "$1",
+        "example": "FOO"
+      }
+    }
+  },
+  "fn_reason_macro_step": {
+    "message": "「$1」是巨集步驟，不是按鍵操作。",
+    "description": "Cannot bind a Macro Step as a key action.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Show Popover"
+      }
+    }
+  },
+  "fn_reason_needs_chord": {
+    "message": "「$1」必須在文字欄位獲得焦點時運行，因此它只能綁定到修飾鍵組合（例如 Ctrl+$2+...），而不是普通鍵。",
+    "description": "worksWhileTyping chord requirement. $1 is the Function name. $2 is Alt or Opt.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Type Characters"
+      },
+      "modifier": {
+        "content": "$2",
+        "example": "Alt"
+      }
+    }
+  },
+  "early_configured_function": {
+    "message": "已配置的功能",
+    "description": "Fallback label for a configured Function before the main content script loads."
+  },
+  "fn_summary_empty": {
+    "message": "空白",
+    "description": "Function parameter summary when no value is configured."
+  },
+  "fn_summary_previous_step": {
+    "message": "上一步",
+    "description": "Function parameter summary when a Macro step uses its prior result."
+  },
+  "fn_summary_script": {
+    "message": "指令碼",
+    "description": "Function parameter summary for a configured JavaScript script."
+  },
+  "mk_editor_key": {
+    "message": "按鍵",
+    "description": "Macro Key editor key field label and placeholder."
+  },
+  "launcher_site_social_001_description": {
+    "message": "照片和短影片社交網絡",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_002_description": {
+    "message": "朋友、群組和社區動態",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_003_description": {
+    "message": "即時貼文和公共對話",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_004_description": {
+    "message": "主題社群和討論線程",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_005_description": {
+    "message": "去中心化微博網絡",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_006_description": {
+    "message": "專業人脈與職業",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_007_description": {
+    "message": "來自 Meta 的以文字為中心的社交來源",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_008_description": {
+    "message": "聯合開源社交網絡",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_009_description": {
+    "message": "短影片發現與創作",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_010_description": {
+    "message": "加密訊息和群聊",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_011_description": {
+    "message": "創意和靈感的視覺板",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_012_description": {
+    "message": "語音、聊天和社群伺服器",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_013_description": {
+    "message": "雲端訊息傳遞和大管道",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_014_description": {
+    "message": "短暫的快照和故事",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_015_description": {
+    "message": "Facebook 網絡訊息應用程式",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_016_description": {
+    "message": "社區新聞和本地聊天",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_017_description": {
+    "message": "部落格、粉絲圈和創意帖子",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_018_description": {
+    "message": "專家和社區問答",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_019_description": {
+    "message": "長篇寫作和論文",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_020_description": {
+    "message": "創意作品集與專案展示",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_021_description": {
+    "message": "設計鏡頭和創意招聘",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_022_description": {
+    "message": "書評、清單和閱讀目標",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_023_description": {
+    "message": "照片託管和攝影師社區",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_024_description": {
+    "message": "透過會員資格支持創作者",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_025_description": {
+    "message": "作家網絡和簡短的社交帖子",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_news_001_description": {
+    "message": "突發新聞和 /世界報導",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_002_description": {
+    "message": "來自 BBC 的國際新聞",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_003_description": {
+    "message": "深入的報告和分析",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_004_description": {
+    "message": "通訊社新聞和商業頭條新聞",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_005_description": {
+    "message": "英國和全球新聞和觀點",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_006_description": {
+    "message": "美聯社通訊社和照片",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_007_description": {
+    "message": "個性化新聞聚合器",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_008_description": {
+    "message": "聚合的頭條新聞和原創故事",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_009_description": {
+    "message": "Microsoft 新聞入口網站和生活風格來源",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_010_description": {
+    "message": "美國新聞與觀點節目",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_011_description": {
+    "message": "網絡新聞與調查",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_012_description": {
+    "message": "美國廣播新聞和即時更新",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_013_description": {
+    "message": "全國新聞 60 分鐘",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_014_description": {
+    "message": "國家報紙和體育報道",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_015_description": {
+    "message": "政治和國家報告",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_016_description": {
+    "message": "商業和金融新聞",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_017_description": {
+    "message": "公共廣播電台新聞及播客",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_018_description": {
+    "message": "市場、商業和金融電視",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_019_description": {
+    "message": "全球市場與財經新聞",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_020_description": {
+    "message": "長篇文化與政治",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_021_description": {
+    "message": "政治和政策報告",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_022_description": {
+    "message": "簡短、可瀏覽的新聞發布會",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_023_description": {
+    "message": "國會、競選活動和政策",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_024_description": {
+    "message": "國際新聞和紀錄片",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_025_description": {
+    "message": "雜誌新聞與封面",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_026_description": {
+    "message": "每週新聞與觀點雜誌",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_027_description": {
+    "message": "英國小報新聞與名人",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_028_description": {
+    "message": "獨立新聞和中國報道",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_029_description": {
+    "message": "新唐人新聞影片",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_030_description": {
+    "message": "紐約地鐵新聞和娛樂",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_031_description": {
+    "message": "獨立通訊和作家",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_032_description": {
+    "message": "新創公司、科技與風險新聞",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_productivity_001_description": {
+    "message": "Google 電子郵件和收件匣",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_002_description": {
+    "message": "時間表、事件和提醒",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_003_description": {
+    "message": "雲端檔案和共用的資料夾",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_004_description": {
+    "message": "協作文件和表格",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_005_description": {
+    "message": "註解、wiki 和專案資料庫",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_006_description": {
+    "message": "團隊聊天和工作場所頻道",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_007_description": {
+    "message": "任務看板",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_008_description": {
+    "message": "微軟電子郵件和行事曆",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_009_description": {
+    "message": "會議、聊天和團隊中心",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_010_description": {
+    "message": "微軟雲端儲存",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_011_description": {
+    "message": "檔案同步和共享資料夾",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_012_description": {
+    "message": "筆記、剪報和筆記本",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_013_description": {
+    "message": "團隊和專案的工作作業系統",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_014_description": {
+    "message": "電子表格資料庫混合應用程式",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_015_description": {
+    "message": "協作 UI 和設計文件",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_016_description": {
+    "message": "簡單的圖形設計模板",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_017_description": {
+    "message": "視像會議和網絡研討會",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_018_description": {
+    "message": "Google 視像通話",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_019_description": {
+    "message": "程式碼託管和拉取請求",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_020_description": {
+    "message": "DevOps 平台與 Git 儲存庫",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_021_description": {
+    "message": "產品團隊的議題追蹤",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_022_description": {
+    "message": "敏捷專案和問題追蹤",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_023_description": {
+    "message": "團隊 wiki 和文件",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_024_description": {
+    "message": "研討會線上白板",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_025_description": {
+    "message": "本機-首先知識庫說明",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_026_description": {
+    "message": "Apple 郵件、照片和雲端硬碟",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_videos_001_description": {
+    "message": "全球最大的影片託管平台",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_002_description": {
+    "message": "以創作者為中心的付費影片託管",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_003_description": {
+    "message": "直播遊戲和創作者",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_004_description": {
+    "message": "高質素創作者和專業影片託管",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_005_description": {
+    "message": "影片分享和發布者播放器網絡",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_006_description": {
+    "message": "LBRY 網絡上的去中心化影片",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_007_description": {
+    "message": "短格式垂直影片來源",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_008_description": {
+    "message": "乾淨的家庭友善影片平台",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_009_description": {
+    "message": "創作者的直播替代方案",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_010_description": {
+    "message": "由 YouTube 提供支援的音樂串流媒體",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_011_description": {
+    "message": "YouTube 頻道的創作者儀表板",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_012_description": {
+    "message": "紀錄片和紀實影片",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_013_description": {
+    "message": "創意講座和 TED 會議",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_014_description": {
+    "message": "Facebook 上的節目和影片",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_015_description": {
+    "message": "Instagram 上的短片",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_016_description": {
+    "message": "公共領域與存檔電影",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_017_description": {
+    "message": "透過 Plex 免費電影和電視",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_018_description": {
+    "message": "透過 Plex 免費電影和電視",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_entertainment_001_description": {
+    "message": "訂閱電影和電視原創作品",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_002_description": {
+    "message": "迪士尼、漫威、星際大戰和皮克斯",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_003_description": {
+    "message": "點播電視節目及當季節目",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_004_description": {
+    "message": "觀看影片和直播",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_005_description": {
+    "message": "HBO 系列、電影和 Max 原創作品",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_006_description": {
+    "message": "亞馬遜串流電影和節目",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_007_description": {
+    "message": "CBS、派拉蒙和體育節目",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_008_description": {
+    "message": "NBCUniversal 串流媒體庫",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_009_description": {
+    "message": "音樂、播客和播放列表",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_010_description": {
+    "message": "AI 音樂生成和歌曲",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_011_description": {
+    "message": "Apple 原創系列和電影",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_012_description": {
+    "message": "動漫串流媒體和聯播",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_013_description": {
+    "message": "免費的有廣告的電影和電視",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_014_description": {
+    "message": "免費直播 TV 頻道和隨選",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_015_description": {
+    "message": "電影資料庫、評級和預告片",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_016_description": {
+    "message": "影評人和觀眾的電影評分",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_017_description": {
+    "message": "電影日記和社會評論",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_018_description": {
+    "message": "獨立的音樂和音軌",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_019_description": {
+    "message": "直接向藝術家購買音樂",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_020_description": {
+    "message": "個人化廣播及音樂電台",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_021_description": {
+    "message": "現場遊戲和創作者直播",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_022_description": {
+    "message": "PC 遊戲商店和庫",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_023_description": {
+    "message": "Epic Games Store 和免費遊戲",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_024_description": {
+    "message": "Xbox 遊戲機、Game Pass 和商店",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_025_description": {
+    "message": "PlayStation 遊戲和 PS Plus",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_026_description": {
+    "message": "Nintendo Switch 遊戲和新聞",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_027_description": {
+    "message": "追蹤書籍和閱讀清單",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_028_description": {
+    "message": "有聲書和口語內容",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_029_description": {
+    "message": "Apple 播客目錄和節目",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_shopping_001_description": {
+    "message": "一切市場和 Prime 運輸",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_002_description": {
+    "message": "拍賣和立即購買市場",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_003_description": {
+    "message": "提供商店取貨服務的零售商品",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_004_description": {
+    "message": "Home、服裝與日常必需品",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_005_description": {
+    "message": "手工藝、復古和工藝品",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_006_description": {
+    "message": "消費性電子產品和電器",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_007_description": {
+    "message": "會員倉會所購物",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_008_description": {
+    "message": "來自中國賣家的全球市場",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_009_description": {
+    "message": "販售日常用品的折扣市場",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_010_description": {
+    "message": "線上家具和家居裝飾",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_011_description": {
+    "message": "Home 改善與建築用品",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_012_description": {
+    "message": "硬件、電器和 DIY 工具",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_013_description": {
+    "message": "經濟實惠的家具和家居用品",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_014_description": {
+    "message": "Apple 裝置、配件和以舊換新",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_015_description": {
+    "message": "PC 零件和技術裝備",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_016_description": {
+    "message": "本地分類廣告及交友",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_017_description": {
+    "message": "透過 Facebook 進行本地購買/銷售",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_018_description": {
+    "message": "網絡商店的電子商務平台",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_019_description": {
+    "message": "運動鞋、服裝和裝備",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_020_description": {
+    "message": "運動服、運動鞋和訓練裝備",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_021_description": {
+    "message": "鞋子和服裝可免費退貨",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_022_description": {
+    "message": "百貨公司時尚與美容",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_023_description": {
+    "message": "服裝、家居和百貨公司",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_024_description": {
+    "message": "美容產品和化妝品",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_025_description": {
+    "message": "美容零售及沙龍產品",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_026_description": {
+    "message": "寵物食品、用品和藥品",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_027_description": {
+    "message": "音樂會和體育賽事的活動門票",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_028_description": {
+    "message": "現金回饋購物門戶",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_ai_001_description": {
+    "message": "OpenAI 對話式人工智慧助手",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_002_description": {
+    "message": "用於寫作和編碼的人工智慧助手",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_003_description": {
+    "message": "具有即時知識的 xAI 聊天機器人",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_004_description": {
+    "message": "Google 多模態人工智慧助理",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_005_description": {
+    "message": "Microsoft AI 聊天和 Office 協助",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_006_description": {
+    "message": "提供引文答案的 AI 搜尋",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_007_description": {
+    "message": "多機器人人工智慧聊天中心",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_008_description": {
+    "message": "聊天自訂 AI 字元",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_009_description": {
+    "message": "開放模型和人工智慧聊天演示",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_010_description": {
+    "message": "OpenAI 研究、API 與產品",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_011_description": {
+    "message": "克勞德梅克和AI安全公司",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_012_description": {
+    "message": "建造並測試 Gemini 提示",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_013_description": {
+    "message": "來自您的來源的人工智慧研究筆記本",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_014_description": {
+    "message": "AI 圖片生成社群",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_015_description": {
+    "message": "以 AI 生成歌曲",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_016_description": {
+    "message": "AI圖片和資產生成",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_017_description": {
+    "message": "具有較強文字渲染能力的AI影像",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_018_description": {
+    "message": "AI 影片生成和編輯",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_019_description": {
+    "message": "AI語音合成與克隆",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_020_description": {
+    "message": "超快速LLM推理平台",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_021_description": {
+    "message": "歐洲開放式AI聊天",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_022_description": {
+    "message": "以推理為中心的人工智慧聊天模型",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_023_description": {
+    "message": "AI 驅動的程式碼編輯器",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_024_description": {
+    "message": "透過 API 運行開放的 ML 模型",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_025_description": {
+    "message": "託管開源 LLM 推理",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_archive_001_description": {
+    "message": "書籍、媒體與網絡的數位圖書館",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_002_description": {
+    "message": "Wayback Machine 檔案網頁",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_003_description": {
+    "message": "書籍和文本收藏",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_004_description": {
+    "message": "電影和影片檔案",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_005_description": {
+    "message": "錄音及音樂檔案",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_006_description": {
+    "message": "老式軟件和應用程式存檔",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_007_description": {
+    "message": "圖片和照片合集",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_008_description": {
+    "message": "線上借閱及編目書籍",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_009_description": {
+    "message": "可搜尋的電視新聞檔案",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_010_description": {
+    "message": "瀏覽網頁紀錄快照",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_011_description": {
+    "message": "為機構策劃的網絡存檔",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_012_description": {
+    "message": "免費史密森尼收藏圖片",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_013_description": {
+    "message": "歐洲文化遺產入口網站",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_014_description": {
+    "message": "免費公共領域電子書",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_015_description": {
+    "message": "數位化圖書館圖書和研究",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_016_description": {
+    "message": "美國圖書館和博物館入口網站",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_017_description": {
+    "message": "美國國家圖書館館藏",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_018_description": {
+    "message": "維基百科的免費媒體文件",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_019_description": {
+    "message": "任何人都可以編輯的免費百科全書",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_020_description": {
+    "message": "免費來源文字和文件",
+    "description": "Launcher archive site description."
+  },
+  "launcher_search_google_description": {
+    "message": "來自 Google 的一般網絡搜尋",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_bing_description": {
+    "message": "微軟必應網絡搜尋",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_duckduckgo_description": {
+    "message": "注重私隱的網絡搜尋",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_yahoo_description": {
+    "message": "雅虎搜尋門戶",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_brave_description": {
+    "message": "Brave 的獨立搜尋",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_ecosia_description": {
+    "message": "搜尋植樹",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_startpage_description": {
+    "message": "私人 Google 結果代理",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_generic_description": {
+    "message": "$1 網頁搜尋",
+    "description": "Launcher search-site description.",
+    "placeholders": {
+      "site": {
+        "content": "$1$",
+        "example": "Google"
+      }
+    }
+  },
+  "launcher_category_fallback_description": {
+    "message": "網站收藏",
+    "description": "Fallback description for an unknown Launcher category."
+  },
+  "launcher_category_launchDeck_label": {
+    "message": "啟動台",
+    "description": "Launcher category label."
+  },
+  "launcher_category_launchDeck_description": {
+    "message": "快速存取的網站",
+    "description": "Launcher category description."
+  },
+  "launcher_category_bookmarks_label": {
+    "message": "書籤",
+    "description": "Launcher category label."
+  },
+  "launcher_category_bookmarks_description": {
+    "message": "瀏覽器書籤",
+    "description": "Launcher category description."
+  },
+  "launcher_category_history_label": {
+    "message": "記錄",
+    "description": "Launcher category label."
+  },
+  "launcher_category_history_description": {
+    "message": "最近造訪的頁面",
+    "description": "Launcher category description."
+  },
+  "launcher_category_social_label": {
+    "message": "社群媒體",
+    "description": "Launcher category label."
+  },
+  "launcher_category_social_description": {
+    "message": "社交網絡與社群",
+    "description": "Launcher category description."
+  },
+  "launcher_category_news_label": {
+    "message": "新聞",
+    "description": "Launcher category label."
+  },
+  "launcher_category_news_description": {
+    "message": "新聞與資訊",
+    "description": "Launcher category description."
+  },
+  "launcher_category_productivity_label": {
+    "message": "效率",
+    "description": "Launcher category label."
+  },
+  "launcher_category_productivity_description": {
+    "message": "效率與辦公工具",
+    "description": "Launcher category description."
+  },
+  "launcher_category_videos_label": {
+    "message": "影片",
+    "description": "Launcher category label."
+  },
+  "launcher_category_videos_description": {
+    "message": "影片與串流",
+    "description": "Launcher category description."
+  },
+  "launcher_category_entertainment_label": {
+    "message": "娛樂",
+    "description": "Launcher category label."
+  },
+  "launcher_category_entertainment_description": {
+    "message": "娛樂與遊戲",
+    "description": "Launcher category description."
+  },
+  "launcher_category_shopping_label": {
+    "message": "購物",
+    "description": "Launcher category label."
+  },
+  "launcher_category_shopping_description": {
+    "message": "購物與比價",
+    "description": "Launcher category description."
+  },
+  "launcher_category_ai_label": {
+    "message": "AI",
+    "description": "Launcher category label."
+  },
+  "launcher_category_ai_description": {
+    "message": "AI 助手與工具",
+    "description": "Launcher category description."
+  },
+  "launcher_category_archive_label": {
+    "message": "檔案館",
+    "description": "Launcher category label."
+  },
+  "launcher_category_archive_description": {
+    "message": "檔案與知識庫",
+    "description": "Launcher category description."
+  },
+  "launcher_category_searches_label": {
+    "message": "搜尋",
+    "description": "Launcher category label."
+  },
+  "launcher_category_searches_description": {
+    "message": "搜尋引擎與近期網頁搜尋",
+    "description": "Launcher category description."
+  },
+  "key_new_tab_document_title": {
+    "message": "KeyPilot",
+    "description": "Document title for the Key New Tab page."
+  },
+  "key_new_tab_bookmarks_label": {
+    "message": "書籤列",
+    "description": "Accessible name for the bookmarks bar on the Key New Tab page."
+  },
+  "key_new_tab_folder": {
+    "message": "資料夾",
+    "description": "Fallback label for an untitled bookmark folder."
+  },
+  "key_new_tab_folder_empty": {
+    "message": "空資料夾",
+    "description": "Shown inside a bookmark folder that has no items."
+  },
+  "key_new_tab_top_sites_label": {
+    "message": "常用網站",
+    "description": "Accessible name for the top sites section on the Key New Tab page."
+  },
+  "key_new_tab_top_sites_empty": {
+    "message": "尚無常用網站。",
+    "description": "Shown when Chrome has no top sites to list."
+  },
+  "key_new_tab_search_label": {
+    "message": "搜尋",
+    "description": "Accessible name for the search section on the Key New Tab page."
+  },
+  "key_new_tab_search_placeholder": {
+    "message": "搜尋或輸入網址",
+    "description": "Placeholder for the Key New Tab search field."
+  },
+  "key_new_tab_search_submit": {
+    "message": "搜尋",
+    "description": "Submit button for the Key New Tab search field."
+  },
+  "key_new_tab_suggestions_label": {
+    "message": "搜尋建議",
+    "description": "Accessible name for the Key New Tab suggestion list."
+  },
+  "key_new_tab_engine_label": {
+    "message": "搜尋引擎：$ENGINE$",
+    "description": "Shows the search engine used by the Key New Tab field.",
+    "placeholders": {
+      "engine": {
+        "content": "$1",
+        "example": "Brave"
+      }
+    }
+  }
+}

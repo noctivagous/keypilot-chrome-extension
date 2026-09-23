@@ -1,0 +1,34 @@
+{
+  "topics": [
+    {"id":"intro","title":"簡介","file":"intro.md","icon":"book","accent":"cyan"},
+    {"id":"getting-started","title":"開始使用","file":"getting-started.md","icon":"rocket","accent":"green"},
+    {"id":"browsing","title":"瀏覽","children":[
+      {"id":"browsing-click","title":"點擊與連結","file":"browsing-click.md","shortcut":"F","accent":"green"},
+      {"id":"browsing-tabs","title":"分頁與瀏覽記錄","file":"browsing-tabs.md","icon":"tabs","accent":"blue"},
+      {"id":"browsing-scroll","title":"捲動","file":"browsing-scroll.md","icon":"scroll","accent":"amber"},
+      {"id":"browsing-select","title":"選取","file":"browsing-select.md","icon":"select","accent":"indigo"},
+      {"id":"browsing-modes","title":"模式","file":"browsing-modes.md","icon":"layers","accent":"violet"}]},
+    {"id":"keyboard","title":"鍵盤","children":[
+      {"id":"keyboard-layouts","title":"配置與慣用手","file":"keyboard-layouts.md","icon":"layout","accent":"cyan"},
+      {"id":"keyboard-system-keys","title":"系統按鍵與 Alt 控制項","file":"keyboard-system-keys.md","icon":"shield","accent":"amber"},
+      {"id":"keyboard-reference","title":"鍵盤參考","file":"keyboard-reference.md","shortcut":"K","accent":"green"}]},
+    {"id":"settings","title":"設定","file":"settings.md","shortcut":"'","accent":"blue"},
+    {"id":"tools","title":"工具","children":[
+      {"id":"tools-omnibox","title":"全方位搜尋列","file":"tools-omnibox.md","shortcut":"L","accent":"green"},
+      {"id":"tools-launcher","title":"啟動器","file":"tools-launcher.md","shortcut":"Alt+;","accent":"amber"},
+      {"id":"tools-top-sites","title":"熱門網站","file":"tools-top-sites.md","shortcut":";","accent":"amber"},
+      {"id":"tools-tab-history","title":"分頁記錄","file":"tools-tab-history.md","shortcut":"J","accent":"blue"},
+      {"id":"tools-control-strip","title":"控制列","file":"tools-control-strip.md","shortcut":"Alt+J","accent":"cyan"},
+      {"id":"tools-previews","title":"連結預覽與浮動視窗","file":"tools-previews.md","icon":"preview","accent":"green"}]},
+    {"id":"media","title":"媒體","children":[
+      {"id":"media-page","title":"頁面媒體","file":"media-page.md","shortcut":"O","accent":"indigo"},
+      {"id":"media-library","title":"媒體庫","file":"media-library.md","shortcut":"M","accent":"violet"},
+      {"id":"media-copy","title":"複製游標下的內容","file":"media-copy.md","shortcut":"I/U","accent":"cyan"}]},
+    {"id":"customize","title":"自訂","children":[
+      {"id":"layout-config","title":"鍵盤配置編輯器","file":"layout-config.md","icon":"layout","accent":"cyan"},
+      {"id":"functions","title":"功能與動作","file":"functions.md","icon":"functions","accent":"green"},
+      {"id":"macros-overview","title":"巨集","file":"macros.md","icon":"macros","accent":"violet"},
+      {"id":"macro-builder","title":"巨集建立器","file":"macro-builder.md","icon":"controls","accent":"amber"},
+      {"id":"execute-js","title":"執行 JS","file":"execute-js.md","icon":"code","accent":"rose"}]}
+  ]
+}

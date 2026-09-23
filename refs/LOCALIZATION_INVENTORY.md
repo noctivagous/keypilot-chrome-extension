@@ -27,6 +27,9 @@ is a snapshot, not a live status. As of 2026-09-22:
 | `es` | yes | yes | yes | yes | yes | yes | yes |
 | `es_419` | yes | no (falls back to `es`/`en`) | no (falls back to `es`/`en`) | yes | yes | yes | yes |
 | `sk` | yes (2026-09-22, machine-translated, needs bilingual review) | no | no | no | no | no | no |
+| `zh_CN` | yes | yes | yes | yes | yes | capture when generating listing shots | generate from captures |
+| `zh_TW` | yes | yes | yes | yes | yes | capture when generating listing shots | generate from captures |
+| `zh_HK` | yes (from `zh_TW` Traditional, 2026-09-22) | yes | yes | yes | yes | yes (gitignored captures) | yes (gitignored generated PNGs) |
 
 A locale can ship with only `messages.json` complete — Docs, onboarding, and
 store assets fall back to base language then English. But it is not a
@@ -161,7 +164,8 @@ non-empty). It proves nothing about translation quality, UI fit, or whether
 §2–§7 above were addressed. Treat a new or extended locale as incomplete
 until every applicable row in the coverage snapshot is filled in or the gap
 is explicitly and consciously deferred (as `es_419` currently defers Docs and
-onboarding to its `es` base language).
+onboarding to its `es` base language). `zh_MO` is not a shipped catalog and
+does not share `zh_HK`; Chrome will not fall `zh-MO` to `zh_HK`.
 
 ## Related references
 

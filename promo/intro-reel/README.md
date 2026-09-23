@@ -79,7 +79,7 @@ promo/intro-reel/
   key-click-intro.html    # 1920×1080, ~35s
   hyperframes.json
   README.md
-  locales/key-click-intro/   # en de es es_419 sk zh_CN zh_TW + batch.json
+  locales/key-click-intro/   # en de es es_419 sk zh_CN zh_TW zh_HK + batch.json
                              # HTML: key-click-intro.html?lang=de
   renders/                  # generated MP4s; ignored by Git
 ```
@@ -104,7 +104,7 @@ Script outline (aligns with the landing page):
 4. Bimodal Control one-liner  
 5. CTA: Chrome Web Store + noctivagous.com  
 
-Then batch the non-English copies (`de`, `es`, `es_419`, `sk`, `zh_CN`, `zh_TW`) and add YouTube URLs beside the screenshot checklist in `online-stores/chrome/RELEASE-CHECKLIST.md`.
+Then batch the non-English copies (`de`, `es`, `es_419`, `sk`, `zh_CN`, `zh_TW`, `zh_HK`) and add YouTube URLs beside the screenshot checklist in `online-stores/chrome/RELEASE-CHECKLIST.md`.
 
 ## What it will not do
 

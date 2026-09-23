@@ -16,6 +16,9 @@ developer dashboard for each language.
 | `de.txt` | German |
 | `es.txt` | Spanish |
 | `es_419.txt` | Spanish (Latin America) |
+| `zh_CN.txt` | Chinese (Simplified) |
+| `zh_TW.txt` | Chinese (Traditional) |
+| `zh_HK.txt` | Chinese (Traditional, Hong Kong) |
 
 Procedure:
 

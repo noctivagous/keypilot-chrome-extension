@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, cpSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, cpSync, writeFileSync, existsSync, readFileSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
@@ -118,7 +118,11 @@ describe('Chrome store screenshot pipeline', () => {
   it('keeps a paste-ready detailed description under 16,000 characters per shipped copy locale', () => {
     const listingDir = join(repoRoot, 'online-stores/chrome/listing');
     const copyDir = join(repoRoot, 'online-stores/chrome/copy');
-    const locales = ['en', 'de', 'es', 'es_419'];
+    const locales = readdirSync(copyDir)
+      .filter((name) => name.endsWith('.json'))
+      .map((name) => name.slice(0, -'.json'.length))
+      .sort();
+    assert.ok(locales.includes('zh_HK'), 'zh_HK store copy is present');
     for (const locale of locales) {
       assert.equal(existsSync(join(copyDir, `${locale}.json`)), true);
       const text = readFileSync(join(listingDir, `${locale}.txt`), 'utf8').trim();

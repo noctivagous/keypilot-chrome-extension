@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<onboarding version="1">
+  <slide id="basic_navigation" title="歡迎使用 KeyPilot">
+   <onEnter type="overlay" title="歡迎使用 KeyPilot" message="我們會逐步說明如何使用 KeyPilot。" primaryText="確定" secondaryText="關閉" secondaryAction="close" />
+       <task id="click_link" label="將游標停在連結上，然後按下 `F` 鍵來點擊它。"><when type="action" action="activate" target="link" /></task>
+    <task id="go_back" label="若要返回（瀏覽記錄），請按下 `D` 鍵。"><when type="action" action="back" /></task>
+    <task id="keyboard_key_info" label="請注意下方的「鍵盤參考」視窗。將游標停在其中一個按鍵上，即可查看其功能。"><when type="action" action="hover" target="keyboardHelpKey" /></task>
+    <!-- 關閉步驟：當這是下一個工作時，大型焦點色箭頭會指向 ON/OFF 區段的右邊緣。關閉後，提示泡泡會指向控制列（「再次點擊以開啟」）。
+         （已移除原本的 Alt+K 步驟；重新啟用會由提示泡泡引導，而非獨立工作。） -->
+    <task id="toggle_extension_off" label="上方有一個顯示 `ON` 的控制列。點擊它以完全關閉 KeyPilot。"><when type="action" action="toggleExtension" change="off" /></task>
+  </slide>
+  <slide id="text_box_mode" title="文字方塊模式">
+    <onEnter type="overlay" title="KeyPilot 已重新開啟" message="接下來：文字方塊。" primaryText="確定" effect="marquee" />
+    <task id="enter_text_mode" label="使用 `F` 點擊右側文字欄位，它就會接收輸入。"><when type="mode" mode="text_focus" change="enter" /></task>
+    <task id="exit_text_mode" label="按下 `Escape` 離開文字方塊。"><when type="mode" mode="text_focus" change="exit" /></task>
+  </slide>
+  <slide id="scrolling" title="捲動頁面">
+    <onEnter type="overlay" title="這就是使用 KeyPilot 瀏覽網絡所需的一切。" message="想嘗試更多按鍵嗎？" primaryText="是，繼續" secondaryText="不，我稍後再做" secondaryAction="later" laterTitle="使用 `Alt`+`I` 返回本教學課程" laterPrimaryText="確定，關閉" />
+    <task id="scroll_down" label="使用 `V` 向下捲動。"><when type="action" action="scrollDown" /></task>
+    <task id="scroll_up" label="使用 `C` 向上捲動。"><when type="action" action="scrollUp" /></task>
+    <task id="scroll_bottom" label="使用 `X` 前往頁面底部。"><when type="action" action="scrollBottom" /></task>
+    <task id="scroll_top" label="使用 `Z` 前往頁面頂端。"><when type="action" action="scrollTop" /></task>
+  </slide>
+  <slide id="tabs" title="分頁">
+    <task id="open_link_background_tab" label="在新分頁中點擊超連結，但不要開啟它（`G`）。"><when type="action" action="activateNewTabBackground" target="link" /></task>
+    <task id="open_link_new_tab" label="在新分頁中點擊超連結（`B`）。"><when type="action" action="activateNewTab" target="link" /></task>
+    <task id="open_new_tab" label="開啟新分頁（`T`）。"><when type="action" action="newTab" /></task>
+    <task id="move_tabs" label="向左切換分頁（`Q`）。"><when type="action" action="tabLeft" /></task>
+    <task id="move_tabs_2" label="向右切換分頁（`W`）。"><when type="action" action="tabRight" /></task>
+  </slide>
+  <slide id="completion" title="教學完成"><body>
+您已完成教學課程，準備好使用 KeyPilot。
+    </body></slide>
+</onboarding>

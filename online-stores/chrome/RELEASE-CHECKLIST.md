@@ -20,6 +20,9 @@ extension package.
 | de | German | | `01-key-click-browsing.png`, `02-keyboard-map.png`, `03-customize-workflow.png`, `04-walkthrough.png`, `05-context-menu.png` | | |
 | es | Spanish | | `01-key-click-browsing.png`, `02-keyboard-map.png`, `03-customize-workflow.png`, `04-walkthrough.png`, `05-context-menu.png` | | |
 | es_419 | Spanish (Latin America) | | `01-key-click-browsing.png`, `02-keyboard-map.png`, `03-customize-workflow.png`, `04-walkthrough.png`, `05-context-menu.png` | | |
+| zh_CN | Chinese (Simplified) | | `01-key-click-browsing.png`, `02-keyboard-map.png`, `03-customize-workflow.png`, `04-walkthrough.png`, `05-context-menu.png` | | |
+| zh_TW | Chinese (Traditional) | | `01-key-click-browsing.png`, `02-keyboard-map.png`, `03-customize-workflow.png`, `04-walkthrough.png`, `05-context-menu.png` | | |
+| zh_HK | Chinese (Traditional, Hong Kong) | | `01-key-click-browsing.png`, `02-keyboard-map.png`, `03-customize-workflow.png`, `04-walkthrough.png`, `05-context-menu.png` | | |
 | | | | | | |
 
 Global promo tiles (upload once, not per locale):
@@ -52,4 +55,7 @@ Detailed description paste record:
 | de | German | `listing/de.txt` | | | |
 | es | Spanish | `listing/es.txt` | | | |
 | es_419 | Spanish (Latin America) | `listing/es_419.txt` | | | |
+| zh_CN | Chinese (Simplified) | `listing/zh_CN.txt` | | | |
+| zh_TW | Chinese (Traditional) | `listing/zh_TW.txt` | | | |
+| zh_HK | Chinese (Traditional, Hong Kong) | `listing/zh_HK.txt` | | | |
 
