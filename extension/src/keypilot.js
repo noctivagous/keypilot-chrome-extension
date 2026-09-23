@@ -3348,14 +3348,14 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     // Special handling for highlight mode — complete with H/Y (layout-bound), cancel with Esc
     // or any other key (which then falls through to its normal action).
     if (currentState.mode === MODES.HIGHLIGHT) {
-      if (KB.CANCEL?.keys?.includes?.(e.key)) {
+      if (this._matchesKeybinding(KB.CANCEL, e)) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
         this.cancelHighlightMode();
         return;
       }
-      if (KB.HIGHLIGHT?.keys?.includes?.(e.key) || KB.RECTANGLE_HIGHLIGHT?.keys?.includes?.(e.key)) {
+      if (this._matchesKeybinding(KB.HIGHLIGHT, e) || this._matchesKeybinding(KB.RECTANGLE_HIGHLIGHT, e)) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
@@ -4306,9 +4306,15 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       const binding = (selectionMode === 'rectangle' || selectionMode === 'element')
         ? KB.RECTANGLE_HIGHLIGHT
         : KB.HIGHLIGHT;
-      const finishKey = Array.isArray(binding?.keys) && binding.keys.length
-        ? binding.keys.find((k) => k && k.length === 1) || binding.keys[0]
-        : ((selectionMode === 'rectangle' || selectionMode === 'element') ? 'Y' : 'H');
+      const finishCode = Array.isArray(binding?.keys) && binding.keys.length
+        ? binding.keys[0]
+        : '';
+      const renderedKey = (this._keyboardUiLayout || [])
+        .flat()
+        .find((item) => item?.code === finishCode);
+      const finishKey = renderedKey?.legend || renderedKey?.text
+        || (finishCode.startsWith('Key') ? finishCode.slice('Key'.length) : finishCode)
+        || ((selectionMode === 'rectangle' || selectionMode === 'element') ? 'Y' : 'H');
       this.overlayManager.highlightManager?.showHighlightModeIndicator?.({ finishKey });
     } catch {
       try {

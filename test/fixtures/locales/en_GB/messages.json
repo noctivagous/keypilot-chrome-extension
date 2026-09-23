@@ -2099,6 +2099,14 @@
     "message": "[GB] Japanese JIS 106 keyboard layout.",
     "description": "Description for a keyboard hardware-layout picker option."
   },
+  "highlight_finish_before": {
+    "message": "[GB] Press ",
+    "description": "Text before the keycap in the persistent selection-completion instruction."
+  },
+  "highlight_finish_after": {
+    "message": "[GB] again to finish selection",
+    "description": "Text after the keycap in the persistent selection-completion instruction."
+  },
   "keyboard_help_aria_label": {
     "message": "[GB] KeyPilot keyboard reference",
     "description": "Accessible name for the floating keyboard reference."

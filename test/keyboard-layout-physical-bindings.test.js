@@ -115,4 +115,23 @@ describe('built-in keyboard layout physical bindings', () => {
       /if \(code && code !== 'Unidentified'\)[\s\S]*else \{[\s\S]*const key = e && typeof e\.key === 'string'/
     );
   });
+
+  it('completes rectangle selection through physical bindings and displays a keycap', async () => {
+    const [keyPilotSource, highlightManagerSource] = await Promise.all([
+      readFile('extension/src/keypilot.js', 'utf8'),
+      readFile('extension/src/modules/highlight-manager.js', 'utf8')
+    ]);
+
+    assert.match(
+      keyPilotSource,
+      /currentState\.mode === MODES\.HIGHLIGHT[\s\S]*_matchesKeybinding\(KB\.HIGHLIGHT, e\)[\s\S]*_matchesKeybinding\(KB\.RECTANGLE_HIGHLIGHT, e\)/
+    );
+    assert.match(
+      keyPilotSource,
+      /renderedKey\?\.legend \|\| renderedKey\?\.text[\s\S]*finishCode\.startsWith\('Key'\)/
+    );
+    assert.match(highlightManagerSource, /getMessage\('highlight_finish_before'\)/);
+    assert.match(highlightManagerSource, /getMessage\('highlight_finish_after'\)/);
+    assert.match(highlightManagerSource, /document\.createElement\('kbd'\)/);
+  });
 });

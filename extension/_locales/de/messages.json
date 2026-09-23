@@ -5882,5 +5882,13 @@
   "keyboard_hardware_layout_ja_jis_106_description": {
     "message": "Japanisches JIS-106-Tastaturlayout.",
     "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "highlight_finish_before": {
+    "message": "Zum Abschließen der Auswahl erneut ",
+    "description": "Text before the keycap in the persistent selection-completion instruction."
+  },
+  "highlight_finish_after": {
+    "message": " drücken",
+    "description": "Text after the keycap in the persistent selection-completion instruction."
   }
 }

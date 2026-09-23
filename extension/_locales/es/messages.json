@@ -5882,5 +5882,13 @@
   "keyboard_hardware_layout_ja_jis_106_description": {
     "message": "Distribución de teclado japonés JIS 106.",
     "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "highlight_finish_before": {
+    "message": "Pulsa ",
+    "description": "Text before the keycap in the persistent selection-completion instruction."
+  },
+  "highlight_finish_after": {
+    "message": " otra vez para finalizar la selección",
+    "description": "Text after the keycap in the persistent selection-completion instruction."
   }
 }

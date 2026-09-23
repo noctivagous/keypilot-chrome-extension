@@ -5882,5 +5882,13 @@
   "keyboard_hardware_layout_ja_jis_106_description": {
     "message": "日语 JIS 106 键盘布局。",
     "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "highlight_finish_before": {
+    "message": "按 ",
+    "description": "Text before the keycap in the persistent selection-completion instruction."
+  },
+  "highlight_finish_after": {
+    "message": " 再次完成选择",
+    "description": "Text after the keycap in the persistent selection-completion instruction."
   }
 }

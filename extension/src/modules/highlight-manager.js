@@ -1,5 +1,6 @@
 import { EventManager } from './event-manager.js';
 import { COLORS, Z_INDEX, CSS_CLASSES, FEATURE_FLAGS, RECTANGLE_SELECTION, ELEMENT_SELECT_TAGS, ELEMENT_SELECT_AGGREGATES, ELEMENT_SELECT_LANDMARKS, ELEMENT_SELECT_ATOMS } from '../config/constants.js';
+import { getMessage } from '../utils/i18n.js';
 
 /**
  * Shared highlight / select-element mode (Text Select + Element Select rectangle).
@@ -2203,15 +2204,25 @@ export class HighlightManager extends EventManager {
 
   /**
    * Show companion instruction overlay while selection is active.
-   * @param {{ finishKey?: string }} [opts] - physical key to press again (e.g. "H" or "Y")
+   * @param {{ finishKey?: string }} [opts] - rendered keycap legend to press again
    */
   showHighlightModeIndicator(opts = {}) {
     const finishKeyRaw = opts.finishKey || (this.selectionMode === 'character' ? 'H' : 'Y');
-    const finishKey = String(finishKeyRaw).toUpperCase();
-    const modeText = `Press ${finishKey} again to finish selection`;
+    const finishKey = String(finishKeyRaw);
+    const before = getMessage('highlight_finish_before') || 'Press ';
+    const after = getMessage('highlight_finish_after') || ' again to finish selection';
+
+    const setContents = (indicator) => {
+      indicator.replaceChildren(document.createTextNode(before));
+      const keycap = document.createElement('kbd');
+      keycap.className = 'kpv2-highlight-mode-indicator-keycap';
+      keycap.textContent = finishKey;
+      indicator.appendChild(keycap);
+      indicator.appendChild(document.createTextNode(after));
+    };
 
     if (this.highlightModeIndicator) {
-      this.highlightModeIndicator.textContent = modeText;
+      setContents(this.highlightModeIndicator);
       this.highlightModeIndicator.style.display = 'block';
       return;
     }
@@ -2238,11 +2249,11 @@ export class HighlightManager extends EventManager {
       `
     });
 
-    this.highlightModeIndicator.textContent = modeText;
+    setContents(this.highlightModeIndicator);
     document.body.appendChild(this.highlightModeIndicator);
 
     if (window.KEYPILOT_DEBUG) {
-      console.log('[KeyPilot Debug] Highlight mode indicator shown:', modeText);
+      console.log('[KeyPilot Debug] Highlight mode indicator shown:', { finishKey });
     }
   }
 

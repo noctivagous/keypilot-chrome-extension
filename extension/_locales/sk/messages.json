@@ -5882,5 +5882,13 @@
   "keyboard_hardware_layout_ja_jis_106_description": {
     "message": "Japonské rozloženie klávesnice JIS 106.",
     "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "highlight_finish_before": {
+    "message": "Stlačte ",
+    "description": "Text before the keycap in the persistent selection-completion instruction."
+  },
+  "highlight_finish_after": {
+    "message": " znova na dokončenie výberu",
+    "description": "Text after the keycap in the persistent selection-completion instruction."
   }
 }
