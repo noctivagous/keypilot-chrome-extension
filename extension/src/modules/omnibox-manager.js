@@ -9,6 +9,7 @@ import { buildSearchUrl, getEngineHomeUrl, getSettings, normalizeSearchEngine, S
 import { createUrlListingContainer, renderUrlListing } from '../ui/url-listing.js';
 import { ensureOpenChromeShadow } from '../ui/kp-chrome-shadow.js';
 import { MSG } from '../messaging/types.js';
+import { urlFromAddressInput } from '../utils/address-input.js';
 
 export class OmniboxManager {
   /**
@@ -454,30 +455,16 @@ export class OmniboxManager {
     const text = String(input || '').trim();
     if (!text) return getEngineHomeUrl(this._searchEngine);
 
-    // Already a URL with a scheme.
-    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(text)) return text;
-
     // If it looks like a filename (e.g. "library.js"), treat it as search text
     // rather than a host. This avoids turning common file queries into bogus URLs.
     if (isLikelyFilenameQuery(text)) {
       return buildSearchUrl(this._searchEngine, text);
     }
 
-    // If input contains spaces, it's likely a search query even if it contains domain-like text
-    // This handles cases like "alice in wonderland archive.org" - treat as search, not URL
-    if (/\s/.test(text)) {
-      return buildSearchUrl(this._searchEngine, text);
-    }
-
-    // Looks like a host/path: domain.tld, localhost, or IP (+ optional port/path)
-    const looksLikeHost =
-      /(^localhost\b)/i.test(text) ||
-      /(^\d{1,3}(\.\d{1,3}){3}\b)/.test(text) ||
-      /([a-zA-Z0-9-]+\.[a-zA-Z]{2,})([\/:?#]|$)/.test(text);
-
-    if (looksLikeHost) {
-      return `https://${text}`;
-    }
+    // ASCII hosts, Unicode IDNs, localhost, and IPv4 navigate. Spaced or
+    // non-host text, including CJK search queries, stays a search.
+    const url = urlFromAddressInput(text);
+    if (url) return url;
 
     return buildSearchUrl(this._searchEngine, text);
   }

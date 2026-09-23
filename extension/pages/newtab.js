@@ -1,4 +1,5 @@
 import { buildSearchUrl, getEngineHomeUrl, getSettings, setSettings, normalizeSearchEngine, SETTINGS_STORAGE_KEY } from '../src/modules/settings-manager.js';
+import { urlFromAddressInput } from '../src/utils/address-input.js';
 import { KeyPilot } from '../src/keypilot.js';
 import { KeyPilotToggleHandler } from '../src/modules/keypilot-toggle-handler.js';
 import { OnboardingManager } from '../src/modules/onboarding-manager.js';
@@ -252,17 +253,7 @@ function renderThreeLineUrlListingEntry({ item, parts }) {
 function toUrlOrSearch(text) {
   const t = String(text || '').trim();
   if (!t) return getEngineHomeUrl(currentEngine);
-
-  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(t)) return t;
-
-  const looksLikeHost =
-    /(^localhost\b)/i.test(t) ||
-    /(^\d{1,3}(\.\d{1,3}){3}\b)/.test(t) ||
-    /([a-zA-Z0-9-]+\.[a-zA-Z]{2,})([\/:?#]|$)/.test(t);
-
-  if (looksLikeHost) return `https://${t}`;
-
-  return buildSearchUrl(currentEngine, t);
+  return urlFromAddressInput(t) || buildSearchUrl(currentEngine, t);
 }
 
 async function refreshEngineLabel() {
