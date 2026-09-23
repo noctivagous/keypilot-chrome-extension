@@ -11057,10 +11057,19 @@
         return;
       }
       if (actionId === 'ACTIVATE') {
+        // A fresh document may receive a key before it has received any trusted
+        // pointer event. Do not consume Activate in that state: the browser
+        // exposes no reliable current-pointer API, and a NaN hit-test would
+        // silently make the command appear to do nothing.
+        const { x, y } = mousePosition;
+        if (!earlyPointerSeen || !Number.isFinite(x) || !Number.isFinite(y)) {
+          kpEarlyDebugLog('[KeyPilot Early] Activate passed through: pointer position unavailable');
+          return;
+        }
         event.preventDefault();
         event.stopPropagation();
         try { event.stopImmediatePropagation(); } catch { /* ignore */ }
-        activateEarlyClickableAt(mousePosition.x, mousePosition.y);
+        activateEarlyClickableAt(x, y);
         return;
       }
     }

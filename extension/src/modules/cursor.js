@@ -19,29 +19,23 @@ export class CursorManager {
   ensure() {
     if (this.cursorEl) return;
 
-    // Handoff from early-inject:
-    // early-inject no longer creates a DOM cursor element, so we can't rely on
-    // `#kpv2-cursor` existing to know early-inject is active. Instead, if the
-    // early API exists, signal handoff once so early-inject stops managing UI.
+    // Preserve the early cursor position for the main cursor. The KeyPilot
+    // initializer owns the handoff after its keyboard listener has started;
+    // handing off here would create a gap where neither runtime handles keys.
     try {
       const earlyApi = window.KEYPILOT_EARLY;
-      if (earlyApi && !window.__KP_EARLY_HANDOFF_DONE) {
-        window.__KP_EARLY_HANDOFF_DONE = true;
+      if (earlyApi) {
         try {
           const earlyPosition = typeof earlyApi.getPosition === 'function' ? earlyApi.getPosition() : null;
-          if (earlyPosition && typeof earlyPosition.x === 'number' && typeof earlyPosition.y === 'number') {
+          if (
+            earlyPosition &&
+            Number.isFinite(earlyPosition.x) &&
+            Number.isFinite(earlyPosition.y)
+          ) {
             this.lastPosition = earlyPosition;
           }
         } catch {
           // ignore
-        }
-        try {
-          window.dispatchEvent(new CustomEvent('keypilot-main-loaded'));
-        } catch {
-          // ignore
-        }
-        if (window.KEYPILOT_DEBUG) {
-          console.log('[KeyPilot] Took over from early injection, using CSS cursor');
         }
       }
     } catch {

@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-23T08:21:39.617Z
+ * Generated on 2026-09-23T08:29:13.089Z
  */
 
 
@@ -4387,21 +4387,13 @@ var CursorManager = class {
     if (this.cursorEl) return;
     try {
       const earlyApi = window.KEYPILOT_EARLY;
-      if (earlyApi && !window.__KP_EARLY_HANDOFF_DONE) {
-        window.__KP_EARLY_HANDOFF_DONE = true;
+      if (earlyApi) {
         try {
           const earlyPosition = typeof earlyApi.getPosition === "function" ? earlyApi.getPosition() : null;
-          if (earlyPosition && typeof earlyPosition.x === "number" && typeof earlyPosition.y === "number") {
+          if (earlyPosition && Number.isFinite(earlyPosition.x) && Number.isFinite(earlyPosition.y)) {
             this.lastPosition = earlyPosition;
           }
         } catch {
-        }
-        try {
-          window.dispatchEvent(new CustomEvent("keypilot-main-loaded"));
-        } catch {
-        }
-        if (window.KEYPILOT_DEBUG) {
-          console.log("[KeyPilot] Took over from early injection, using CSS cursor");
         }
       }
     } catch {
