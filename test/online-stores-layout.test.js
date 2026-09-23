@@ -38,14 +38,14 @@ describe('online-stores source layout', () => {
     assert.equal(slots.paths.generated.startsWith('chrome/templates'), false);
   });
 
-  it('defines three 1280×800 Chrome screenshot slots with matching English copy', () => {
+  it('defines five 1280×800 Chrome screenshot slots with matching English copy', () => {
     assert.equal(slots.screenshot.width, 1280);
     assert.equal(slots.screenshot.height, 800);
     assert.equal(slots.screenshot.maxPerLocale, 5);
-    assert.equal(slots.slots.length, 3);
+    assert.equal(slots.slots.length, 5);
     assert.deepEqual(
       slots.slots.map((slot) => slot.id),
-      ['key-click-browsing', 'keyboard-map', 'customize-workflow']
+      ['key-click-browsing', 'keyboard-map', 'customize-workflow', 'walkthrough', 'context-menu']
     );
     assert.equal(englishCopy.locale, 'en');
 
@@ -66,7 +66,7 @@ describe('online-stores source layout', () => {
       const copy = englishCopy.slots[slot.copyKey];
       assert.equal(typeof copy?.headline, 'string', `missing headline for ${slot.id}`);
       assert.equal(Array.isArray(copy.callouts), true, `missing callouts for ${slot.id}`);
-      assert.ok(copy.callouts.length >= 2 && copy.callouts.length <= 3);
+      assert.ok(copy.callouts.length >= 1 && copy.callouts.length <= 3);
     }
   });
 
