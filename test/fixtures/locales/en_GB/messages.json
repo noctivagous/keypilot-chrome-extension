@@ -5804,8 +5804,8 @@
     "description": "Document title for the Key New Tab page."
   },
   "key_new_tab_bookmarks_label": {
-    "message": "[GB] Bookmarks bar",
-    "description": "Accessible name for the bookmarks bar on the Key New Tab page."
+    "message": "[GB] Toolbar bookmarks",
+    "description": "Fieldset label for toolbar bookmarks on the Key New Tab page."
   },
   "key_new_tab_folder": {
     "message": "[GB] Folder",

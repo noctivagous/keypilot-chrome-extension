@@ -15,13 +15,27 @@
     <link rel="stylesheet" href="kp-locale-fonts.css" />
   </head>
   <body>
-    <nav id="bookmarks-bar" class="bookmarks-bar" hidden aria-label="Bookmarks bar" data-i18n-aria-label="key_new_tab_bookmarks_label"></nav>
+    <div class="mesh-bg" aria-hidden="true">
+      <span class="mesh-orb mesh-orb-a"></span>
+      <span class="mesh-orb mesh-orb-b"></span>
+      <span class="mesh-orb mesh-orb-c"></span>
+      <span class="mesh-orb mesh-orb-d"></span>
+      <span class="mesh-orb mesh-orb-e"></span>
+    </div>
 
     <main class="stage">
-      <section class="top-sites" aria-label="Top sites" data-i18n-aria-label="key_new_tab_top_sites_label">
-        <div id="top-sites" class="top-sites-row"></div>
-        <p id="top-sites-empty" class="empty" hidden data-i18n="key_new_tab_top_sites_empty">No top sites yet.</p>
-      </section>
+      <img
+        class="brand-logo"
+        src="../icons/icon128.png"
+        width="60"
+        height="60"
+        alt="KeyPilot"
+      />
+
+      <fieldset id="bookmarks-shelf" class="knt-fieldset" hidden>
+        <legend data-i18n="key_new_tab_bookmarks_label">Toolbar bookmarks</legend>
+        <nav id="bookmarks-bar" class="bookmarks-bar knt-scroll"></nav>
+      </fieldset>
 
       <section class="search" aria-label="Search" data-i18n-aria-label="key_new_tab_search_label">
         <form id="search-form" class="search-form" role="search">
@@ -48,6 +62,12 @@
         ></div>
         <p id="engine-label" class="engine-label"></p>
       </section>
+
+      <fieldset class="knt-fieldset top-sites-fieldset">
+        <legend data-i18n="key_new_tab_top_sites_label">Top sites</legend>
+        <div id="top-sites" class="top-sites-row knt-scroll"></div>
+        <p id="top-sites-empty" class="empty" hidden data-i18n="key_new_tab_top_sites_empty">No top sites yet.</p>
+      </fieldset>
     </main>
 
     <script type="module" src="key-new-tab.js"></script>

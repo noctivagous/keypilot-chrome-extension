@@ -63,6 +63,55 @@ function closeAllBookmarkMenus() {
 }
 
 /**
+ * Keep folder menus in the viewport. They use position:fixed so they are not
+ * clipped by the two-row bookmarks overflow.
+ * @param {HTMLElement} folder
+ */
+function positionBookmarkMenu(folder) {
+  const menu = folder.querySelector(':scope > .bm-menu');
+  const button = folder.querySelector(':scope > .bm-folder-btn');
+  if (!menu || !button || menu.hidden) return;
+
+  const rect = button.getBoundingClientRect();
+  const nested = Boolean(folder.parentElement?.closest('.bm-menu'));
+  const menuWidth = menu.offsetWidth || 220;
+  const menuHeight = menu.offsetHeight || 160;
+  const margin = 8;
+  let top;
+  let left;
+
+  if (nested) {
+    left = rect.right + 4;
+    top = rect.top;
+    if (left + menuWidth > window.innerWidth - margin) {
+      left = Math.max(margin, rect.left - menuWidth - 4);
+    }
+  } else {
+    left = rect.left;
+    top = rect.bottom + 4;
+    if (left + menuWidth > window.innerWidth - margin) {
+      left = Math.max(margin, window.innerWidth - menuWidth - margin);
+    }
+    if (top + menuHeight > window.innerHeight - margin) {
+      top = Math.max(margin, rect.top - menuHeight - 4);
+    }
+  }
+
+  if (top + menuHeight > window.innerHeight - margin) {
+    top = Math.max(margin, window.innerHeight - menuHeight - margin);
+  }
+
+  menu.style.top = `${Math.round(top)}px`;
+  menu.style.left = `${Math.round(left)}px`;
+}
+
+function repositionOpenBookmarkMenus() {
+  document.querySelectorAll('.bm-folder.kp-open').forEach((folder) => {
+    if (folder instanceof HTMLElement) positionBookmarkMenu(folder);
+  });
+}
+
+/**
  * Close open folder menus that are not this folder or one of its ancestors.
  * @param {HTMLElement} folder
  * @param {boolean} open
@@ -89,6 +138,7 @@ function setFolderOpen(folder, open) {
   menu.hidden = !open;
   folder.classList.toggle('kp-open', open);
   button.setAttribute('aria-expanded', open ? 'true' : 'false');
+  if (open) requestAnimationFrame(() => positionBookmarkMenu(folder));
 }
 
 /**
@@ -163,6 +213,7 @@ function createBookmarkFolder(node) {
 
 async function renderBookmarksBar() {
   const bar = document.getElementById('bookmarks-bar');
+  const shelf = document.getElementById('bookmarks-shelf');
   if (!bar) return;
   bar.textContent = '';
 
@@ -177,11 +228,11 @@ async function renderBookmarksBar() {
 
   const items = children.filter((node) => node && (node.url || node.children));
   if (!items.length) {
-    bar.hidden = true;
+    if (shelf) shelf.hidden = true;
     return;
   }
 
-  bar.hidden = false;
+  if (shelf) shelf.hidden = false;
   for (const node of items) {
     bar.appendChild(node.url ? createBookmarkLink(node) : createBookmarkFolder(node));
   }
@@ -204,9 +255,11 @@ async function renderTopSites() {
   }
 
   if (!sites.length) {
+    container.hidden = true;
     if (empty) empty.hidden = false;
     return;
   }
+  container.hidden = false;
   if (empty) empty.hidden = true;
 
   for (const site of sites) {
@@ -440,6 +493,8 @@ function init() {
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') closeAllBookmarkMenus();
   });
+  window.addEventListener('resize', repositionOpenBookmarkMenus);
+  document.getElementById('bookmarks-bar')?.addEventListener('scroll', repositionOpenBookmarkMenus);
 
   try {
     chrome.storage.onChanged.addListener((changes, area) => {
