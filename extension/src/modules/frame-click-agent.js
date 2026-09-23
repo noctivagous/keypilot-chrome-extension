@@ -21,7 +21,11 @@
 
 import { MSG } from '../messaging/types.js';
 import { COLORS, CSS_CLASSES, SELECTORS, Z_INDEX, SCROLL } from '../config/constants.js';
-import { isTypingContext, hasModifierKeys } from '../utils/dom-context.js';
+import {
+  isImeComposingKeyboardEvent,
+  isTypingContext,
+  hasModifierKeys
+} from '../utils/dom-context.js';
 import {
   buildEffectiveKeybindings,
   buildSystemKeybindings,
@@ -1353,6 +1357,7 @@ export function installFrameClickAgent() {
     /** @param {KeyboardEvent} e */
     const onKeyDown = (e) => {
       try {
+        if (isImeComposingKeyboardEvent(e)) return;
         if (!enabled) return;
         // Full KeyPilot in this frame owns activate / scroll keys.
         if (hasFullKeyPilot()) return;

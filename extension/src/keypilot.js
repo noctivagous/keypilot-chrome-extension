@@ -1470,6 +1470,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
    */
   _maybeHandleTextActiveFunctionSlot(e) {
     try {
+      if (this.isImeComposing(e)) return false;
       if (!this.hasModifierKeys(e)) return false;
       const sel = String(this._currentKeyboardLayoutId || '');
       if (!sel.startsWith('user:')) return false;
@@ -2939,6 +2940,11 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
   }
 
   handleKeyDown(e) {
+    // IME candidate selection emits keyboard events that must never become
+    // KeyPilot shortcuts. This runs before Alt chrome or text-active bindings
+    // because composition can occur outside a conventional text input.
+    if (this.isImeComposing(e)) return;
+
     // Alt chrome (Alt+K, Alt+J, …) before layout dispatch. Alt-only: Ctrl/Meta/Shift
     // held with Alt does not claim the chord. Alt+I lives in OnboardingManager.
     if (this._maybeHandleAltChrome(e)) return;
@@ -3562,6 +3568,8 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
    * @returns {boolean}
    */
   _isUnsafeToRunActionKey(e) {
+    if (this.isImeComposing(e)) return true;
+
     try {
       const st = this.state?.getState?.();
       if (st?.mode === MODES.TEXT_FOCUS) return true;

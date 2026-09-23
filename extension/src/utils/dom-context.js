@@ -20,6 +20,47 @@ export const TEXT_ENTRY_INPUT_TYPES = Object.freeze([
 ]);
 
 const TEXT_ENTRY_TYPE_SET = new Set(TEXT_ENTRY_INPUT_TYPES);
+let imeCompositionActive = false;
+
+/**
+ * Record IME composition lifecycle events for browsers that omit
+ * KeyboardEvent.isComposing on one or more intermediate keyboard events.
+ * This state is local to the current document / content-script realm.
+ */
+export function noteImeCompositionStart() {
+  imeCompositionActive = true;
+}
+
+/**
+ * Clear the document-local IME composition state after either completion or
+ * cancellation.
+ */
+export function noteImeCompositionEnd() {
+  imeCompositionActive = false;
+}
+
+/**
+ * True when a keyboard event belongs to IME composition.
+ *
+ * Modern browsers expose `isComposing`. `keyCode === 229` and `key ===
+ * "Process"` retain coverage for legacy IME event streams, while the
+ * composition lifecycle state handles browsers that omit the flag from an
+ * intermediate event. KeyPilot must let these events pass through unchanged.
+ *
+ * @param {KeyboardEvent|null|undefined} e
+ * @returns {boolean}
+ */
+export function isImeComposingKeyboardEvent(e) {
+  if (imeCompositionActive) return true;
+  if (!e) return false;
+  try {
+    if (e.isComposing === true) return true;
+    if (e.key === 'Process') return true;
+    return Number(e.keyCode) === 229 || Number(e.which) === 229;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Walk open shadow roots and same-origin iframes to find the true focused element.
@@ -188,3 +229,6 @@ export const kpResolveTypingTarget = resolveTypingTarget;
 export const kpGetDeepActiveElement = getDeepActiveElement;
 export const kpGetComposedEventTarget = getComposedEventTarget;
 export const kpHasModifierKeys = hasModifierKeys;
+export const kpIsImeComposingKeyboardEvent = isImeComposingKeyboardEvent;
+export const kpNoteImeCompositionStart = noteImeCompositionStart;
+export const kpNoteImeCompositionEnd = noteImeCompositionEnd;

@@ -10621,7 +10621,26 @@
     return true;
   }
 
+  // `isComposing` is the modern signal; 229/Process retain compatibility with
+  // legacy IME key streams. This eager script runs before the shared runtime
+  // can install composition lifecycle listeners.
+  function isEarlyImeCompositionEvent(event) {
+    if (!event) return false;
+    try {
+      return event.isComposing === true ||
+        event.key === 'Process' ||
+        Number(event.keyCode) === 229 ||
+        Number(event.which) === 229;
+    } catch {
+      return false;
+    }
+  }
+
   function handleEarlyKeydown(event) {
+    // Candidate selection must reach the page unchanged. Check before Alt+K
+    // because this capture listener precedes the main KeyPilot runtime.
+    if (isEarlyImeCompositionEvent(event)) return;
+
     // Handle Alt+K toggle immediately for responsiveness - ALWAYS check this regardless of extension state.
     // Ctrl/Meta/Shift alongside Alt leaves the chord for the page.
     if (isExclusiveAltModifier(event) && (event.key === 'k' || event.key === 'K' || event.code === 'KeyK')) {

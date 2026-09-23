@@ -12,7 +12,10 @@ import {
   kpHasModifierKeys,
   kpGetDeepActiveElement,
   kpGetComposedEventTarget,
-  kpResolveTypingTarget
+  kpResolveTypingTarget,
+  kpIsImeComposingKeyboardEvent,
+  kpNoteImeCompositionStart,
+  kpNoteImeCompositionEnd
 } from '../utils/dom-context.js';
 
 export class EventManager {
@@ -26,6 +29,11 @@ export class EventManager {
 
     this.addListener(document, 'keydown', this.handleKeyDown.bind(this), { capture: true });
     this.addListener(document, 'keyup', this.handleKeyUp.bind(this), { capture: true });
+    // Maintain composition state in addition to checking KeyboardEvent.isComposing:
+    // some legacy IME streams only identify their Process key events with keyCode 229.
+    this.addListener(document, 'compositionstart', this.handleCompositionStart.bind(this), { capture: true });
+    this.addListener(document, 'compositionend', this.handleCompositionEnd.bind(this), { capture: true });
+    this.addListener(document, 'compositioncancel', this.handleCompositionEnd.bind(this), { capture: true });
 
     // Single capture pointer/mouse move is enough for cursor coords + non-DOM-hover modes.
     // (Legacy triple mousemove + mouseover/enter amplified work on every pixel.)
@@ -55,6 +63,9 @@ export class EventManager {
     if (!this.isActive) return;
     
     this.removeAllListeners();
+    // A disable/navigation during composition removes our completion listener.
+    // Do not leave later normal keystrokes marked as composing in this realm.
+    kpNoteImeCompositionEnd();
     this.isActive = false;
   }
 
@@ -107,6 +118,14 @@ export class EventManager {
 
   handleKeyUp(_e) {
     // Override in implementation
+  }
+
+  handleCompositionStart() {
+    kpNoteImeCompositionStart();
+  }
+
+  handleCompositionEnd() {
+    kpNoteImeCompositionEnd();
   }
 
   handleMouseMove(_e) {
@@ -162,5 +181,13 @@ export class EventManager {
    */
   hasModifierKeys(e) {
     return kpHasModifierKeys(e);
+  }
+
+  /**
+   * @param {KeyboardEvent|null|undefined} e
+   * @returns {boolean}
+   */
+  isImeComposing(e) {
+    return kpIsImeComposingKeyboardEvent(e);
   }
 }

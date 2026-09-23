@@ -15,7 +15,11 @@
  */
 import { SCROLL } from '../config/constants.js';
 import { MSG } from '../messaging/types.js';
-import { isTypingContext, hasModifierKeys } from '../utils/dom-context.js';
+import {
+  isImeComposingKeyboardEvent,
+  isTypingContext,
+  hasModifierKeys
+} from '../utils/dom-context.js';
 import { scrollAtPoint, scrollToEdgeAtPoint, findScrollTargetAtPoint, scrollElementBy, applyInstantScrollTo, isInstantScrollBehavior } from '../utils/scroll-at-point.js';
 import { ScrollHoldController } from '../utils/scroll-hold.js';
 import { deepElementFromPoint as pierceElementFromPoint } from '../utils/element-from-point.js';
@@ -264,6 +268,7 @@ export function installPopoverIframeBridge(options = {}) {
     };
 
     const onKeyDown = (e) => {
+      if (isImeComposingKeyboardEvent(e)) return;
       if (!bridgeActive) return;
       if (hasModifierKeys(e)) return;
 

@@ -12,6 +12,7 @@ import {
   registerContentRuntimeHandler
 } from '../messaging/content-runtime-router.js';
 import { ALT_CHROME, isAltChromeShortcut } from '../utils/alt-chrome.js';
+import { isImeComposingKeyboardEvent } from '../utils/dom-context.js';
 
 export class KeyPilotToggleHandler extends EventManager {
   constructor(keyPilotInstance) {
@@ -79,6 +80,10 @@ export class KeyPilotToggleHandler extends EventManager {
     // so we keep a separate capture listener for re-enable and control-strip restore.
     this.globalToggleKeyHandler = (e) => {
       try {
+        // Alt+K/J must not steal IME candidate-selection keystrokes while
+        // KeyPilot's regular event manager is disabled.
+        if (isImeComposingKeyboardEvent(e)) return;
+
         // Avoid double-toggling if another handler already processed this event.
         if (e && e.__kpToggleHandled) return;
 

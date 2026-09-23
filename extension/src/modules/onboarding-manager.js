@@ -18,6 +18,7 @@ import { storageSetObject } from '../utils/storage.js';
 import { loadLocalizedOnboardingModel } from '../utils/onboarding-model.js';
 import { MSG } from '../messaging/types.js';
 import { ALT_CHROME, isAltChromeShortcut } from '../utils/alt-chrome.js';
+import { isImeComposingKeyboardEvent } from '../utils/dom-context.js';
 
 // NOTE: Do not `import { X as Y }` — build.js strips imports and aliases are lost.
 // Use ONBOARDING_STORAGE_KEYS by name (defined in onboarding-shared.js).
@@ -1232,6 +1233,7 @@ export class OnboardingManager {
 
   _onDocKeydownCapture(e) {
     try {
+      if (isImeComposingKeyboardEvent(e)) return;
       if (!this._isKeyPilotEnabled()) return;
 
       // Don't open onboarding popover when in text mode (similar to how ' doesn't open settings)

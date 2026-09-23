@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-22T22:49:05.039Z
+ * Generated on 2026-09-23T01:28:57.911Z
  */
 
 (() => {
@@ -1691,6 +1691,18 @@
     "time"
   ]);
   var TEXT_ENTRY_TYPE_SET = new Set(TEXT_ENTRY_INPUT_TYPES);
+  var imeCompositionActive = false;
+  function isImeComposingKeyboardEvent(e) {
+    if (imeCompositionActive) return true;
+    if (!e) return false;
+    try {
+      if (e.isComposing === true) return true;
+      if (e.key === "Process") return true;
+      return Number(e.keyCode) === 229 || Number(e.which) === 229;
+    } catch {
+      return false;
+    }
+  }
   function isTypingContext(target, opts = {}) {
     if (!target) return false;
     let el = (
@@ -5562,6 +5574,7 @@
       };
       const onKeyDown = (e) => {
         try {
+          if (isImeComposingKeyboardEvent(e)) return;
           if (!enabled) return;
           if (hasFullKeyPilot()) return;
           if (hasModifierKeys(e)) return;
@@ -6052,6 +6065,7 @@
         }
       };
       const onKeyDown = (e) => {
+        if (isImeComposingKeyboardEvent(e)) return;
         if (!bridgeActive) return;
         if (hasModifierKeys(e)) return;
         const key = e.key;
