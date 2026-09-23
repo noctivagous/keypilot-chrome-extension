@@ -1,0 +1,16 @@
+KeyPilot — The key-click | Keyboard-powered browsing
+
+KeyPilot is a free Chrome extension from Noctivagous Software. The mouse steers. The keyboard activates.
+
+This intro shows the key-click: point with a mouse, press F to open, D to go back. Two inputs + two jobs makes a better interface.
+
+0:00 Keyboard-powered browsing
+0:06 Here's how: the key-click
+0:10 Steer + Activate
+0:18 Watch F open and D go back
+0:26 Two inputs, two jobs
+0:29 Point with a mouse. Activate with a key.
+
+Chrome Web Store: https://chromewebstore.google.com/detail/keypilot/cellbdakkaoccadahjjffdciflpfikjg
+Website: https://noctivagous.com/
+Free · MIT License

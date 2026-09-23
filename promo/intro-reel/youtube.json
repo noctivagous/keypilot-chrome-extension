@@ -1,0 +1,144 @@
+{
+  "notes": "Source of truth for intro-reel YouTube paste copy. Use youtube-description-<locale>.txt (title is the first line). Do not paste the JSON description field — \\n is only JSON encoding. MP4s live in gitignored renders/. After publish, fill youtube_url and youtube_id.",
+  "store_listing": "https://chromewebstore.google.com/detail/keypilot/cellbdakkaoccadahjjffdciflpfikjg",
+  "site": "https://noctivagous.com/",
+  "privacy": "unlisted",
+  "locales": {
+    "en": {
+      "file": "key-click-intro-en.mp4",
+      "youtube_language": "en",
+      "title": "KeyPilot — The key-click | Keyboard-powered browsing",
+      "description": "KeyPilot is a free Chrome extension from Noctivagous Software. The mouse steers. The keyboard activates.\n\nThis intro shows the key-click: point with a mouse, press F to open, D to go back. Two inputs + two jobs makes a better interface.\n\n0:00 Keyboard-powered browsing\n0:06 Here's how: the key-click\n0:10 Steer + Activate\n0:18 Watch F open and D go back\n0:26 Two inputs, two jobs\n0:29 Point with a mouse. Activate with a key.\n\nChrome Web Store: https://chromewebstore.google.com/detail/keypilot/cellbdakkaoccadahjjffdciflpfikjg\nWebsite: https://noctivagous.com/\nFree · MIT License",
+      "tags": [
+        "KeyPilot",
+        "Chrome extension",
+        "keyboard browsing",
+        "key-click",
+        "productivity",
+        "Noctivagous Software"
+      ],
+      "youtube_url": "https://youtu.be/s8QJxQRxmlU",
+      "youtube_id": "s8QJxQRxmlU",
+      "description_file": "youtube-description-en.txt"
+    },
+    "de": {
+      "file": "key-click-intro-de.mp4",
+      "youtube_language": "de",
+      "title": "KeyPilot — Der Key-Klick | Tastaturgesteuertes Browsen",
+      "description": "KeyPilot ist eine kostenlose Chrome-Erweiterung von Noctivagous Software. Die Maus steuert. Die Tastatur löst aus.\n\nDieses Intro zeigt den Key-Klick: mit der Maus zeigen, F zum Öffnen, D zum Zurückgehen. Zwei Eingaben + zwei Aufgaben ergeben eine bessere Oberfläche.\n\n0:00 Tastaturgesteuertes Browsen\n0:06 So geht’s: der Key-Klick\n0:10 Steuern + Auslösen\n0:18 Schau: F öffnet, D geht zurück\n0:26 Zwei Eingaben, zwei Aufgaben\n0:29 Mit der Maus zeigen. Mit einer Taste auslösen.\n\nChrome Web Store: https://chromewebstore.google.com/detail/keypilot/cellbdakkaoccadahjjffdciflpfikjg\nWebsite: https://noctivagous.com/de/\nKostenlos · MIT-Lizenz",
+      "tags": [
+        "KeyPilot",
+        "Chrome-Erweiterung",
+        "Tastatur",
+        "Key-Klick",
+        "Produktivität",
+        "Noctivagous Software"
+      ],
+      "youtube_url": "https://youtu.be/CRXTsNkaoTA",
+      "youtube_id": "CRXTsNkaoTA",
+      "description_file": "youtube-description-de.txt"
+    },
+    "es": {
+      "file": "key-click-intro-es.mp4",
+      "youtube_language": "es",
+      "title": "KeyPilot — El key-click | Navegación con teclado",
+      "description": "KeyPilot es una extensión de Chrome gratuita de Noctivagous Software. El ratón dirige. El teclado activa.\n\nEste intro muestra el key-click: apuntar con el ratón, pulsar F para abrir, D para volver. Dos entradas + dos trabajos hacen una mejor interfaz.\n\n0:00 Navegación con teclado\n0:06 Así: el key-click\n0:10 Dirigir + Activar\n0:18 Mira: F abre y D vuelve\n0:26 Dos entradas, dos trabajos\n0:29 Apunta con el ratón. Activa con una tecla.\n\nChrome Web Store: https://chromewebstore.google.com/detail/keypilot/cellbdakkaoccadahjjffdciflpfikjg\nWeb: https://noctivagous.com/es/\nGratis · licencia MIT",
+      "tags": [
+        "KeyPilot",
+        "extensión Chrome",
+        "navegación con teclado",
+        "key-click",
+        "productividad",
+        "Noctivagous Software"
+      ],
+      "youtube_url": "https://youtu.be/oEDfqRghFF4",
+      "youtube_id": "oEDfqRghFF4",
+      "description_file": "youtube-description-es.txt"
+    },
+    "es_419": {
+      "file": "key-click-intro-es_419.mp4",
+      "youtube_language": "es-419",
+      "title": "KeyPilot — El key-click | Navegación con teclado",
+      "description": "KeyPilot es una extensión de Chrome gratuita de Noctivagous Software. El mouse dirige. El teclado activa.\n\nEste intro muestra el key-click: apuntar con el mouse, presionar F para abrir, D para volver. Dos entradas + dos trabajos hacen una mejor interfaz.\n\n0:00 Navegación con teclado\n0:06 Así: el key-click\n0:10 Dirigir + Activar\n0:18 Mira: F abre y D vuelve\n0:26 Dos entradas, dos trabajos\n0:29 Apunta con el mouse. Activa con una tecla.\n\nChrome Web Store: https://chromewebstore.google.com/detail/keypilot/cellbdakkaoccadahjjffdciflpfikjg\nSitio: https://noctivagous.com/es_419/\nGratis · licencia MIT",
+      "tags": [
+        "KeyPilot",
+        "extensión de Chrome",
+        "navegación con teclado",
+        "key-click",
+        "productividad",
+        "Noctivagous Software"
+      ],
+      "youtube_url": "https://youtu.be/pl8MyPFyi4k",
+      "youtube_id": "pl8MyPFyi4k",
+      "description_file": "youtube-description-es_419.txt"
+    },
+    "sk": {
+      "file": "key-click-intro-sk.mp4",
+      "youtube_language": "sk",
+      "title": "KeyPilot — Key-click | Prehliadanie s klávesnicou",
+      "description": "KeyPilot je bezplatné rozšírenie pre Chrome od Noctivagous Software. Myš riadi. Klávesnica aktivuje.\n\nToto intro ukazuje key-click: ukážte myšou, stlačte F na otvorenie, D na návrat späť. Dva vstupy + dve úlohy dávajú lepšie rozhranie.\n\n0:00 Prehliadanie s klávesnicou\n0:06 Takto: key-click\n0:10 Riadiť + Aktivovať\n0:18 Sleduj: F otvorí, D ide späť\n0:26 Dva vstupy, dve úlohy\n0:29 Ukážte myšou. Aktivujte klávesom.\n\nChrome Web Store: https://chromewebstore.google.com/detail/keypilot/cellbdakkaoccadahjjffdciflpfikjg\nWeb: https://noctivagous.com/sk/\nZadarmo · licencia MIT",
+      "tags": [
+        "KeyPilot",
+        "rozšírenie Chrome",
+        "klávesnica",
+        "key-click",
+        "produktivita",
+        "Noctivagous Software"
+      ],
+      "youtube_url": "",
+      "youtube_id": "",
+      "description_file": "youtube-description-sk.txt"
+    },
+    "zh_CN": {
+      "file": "key-click-intro-zh_CN.mp4",
+      "youtube_language": "zh-CN",
+      "title": "KeyPilot — 按键点击 | 键盘驱动浏览",
+      "description": "KeyPilot 是 Noctivagous Software 推出的免费 Chrome 扩展。鼠标负责指向。键盘负责激活。\n\n这段介绍展示按键点击：用鼠标指向，按 F 打开，按 D 返回。两种输入 + 两项职责，造就更好的界面。\n\n0:00 键盘驱动浏览\n0:06 做法是：按键点击\n0:10 指向 + 激活\n0:18 请看：F 打开，D 返回\n0:26 两种输入，两项职责\n0:29 用鼠标指向。用按键激活。\n\nChrome 网上应用店：https://chromewebstore.google.com/detail/keypilot/cellbdakkaoccadahjjffdciflpfikjg\n网站：https://noctivagous.com/zh_CN/\n免费 · MIT 许可证",
+      "tags": [
+        "KeyPilot",
+        "Chrome 扩展",
+        "键盘浏览",
+        "按键点击",
+        "效率",
+        "Noctivagous Software"
+      ],
+      "youtube_url": "",
+      "youtube_id": "",
+      "description_file": "youtube-description-zh_CN.txt"
+    },
+    "zh_TW": {
+      "file": "key-click-intro-zh_TW.mp4",
+      "youtube_language": "zh-TW",
+      "title": "KeyPilot — 按鍵點擊 | 鍵盤驅動瀏覽",
+      "description": "KeyPilot 是 Noctivagous Software 推出的免費 Chrome 擴充功能。滑鼠負責指向。鍵盤負責啟用。\n\n這段介紹展示按鍵點擊：用滑鼠指向，按 F 開啟，按 D 返回。兩種輸入 + 兩項職責，造就更好的介面。\n\n0:00 鍵盤驅動瀏覽\n0:06 做法是：按鍵點擊\n0:10 指向 + 啟用\n0:18 請看：F 開啟，D 返回\n0:26 兩種輸入，兩項職責\n0:29 用滑鼠指向。用按鍵啟用。\n\nChrome 線上應用程式商店：https://chromewebstore.google.com/detail/keypilot/cellbdakkaoccadahjjffdciflpfikjg\n網站：https://noctivagous.com/zh_TW/\n免費 · MIT 授權",
+      "tags": [
+        "KeyPilot",
+        "Chrome 擴充功能",
+        "鍵盤瀏覽",
+        "按鍵點擊",
+        "效率",
+        "Noctivagous Software"
+      ],
+      "youtube_url": "",
+      "youtube_id": "",
+      "description_file": "youtube-description-zh_TW.txt"
+    },
+    "zh_HK": {
+      "file": "key-click-intro-zh_HK.mp4",
+      "youtube_language": "zh-HK",
+      "title": "KeyPilot — 按鍵點擊 | 鍵盤驅動瀏覽",
+      "description": "KeyPilot 是 Noctivagous Software 推出的免費 Chrome 擴充功能。滑鼠負責指向。鍵盤負責啟用。\n\n這段介紹展示按鍵點擊：用滑鼠指向，按 F 開啟，按 D 返回。兩種輸入 + 兩項職責，造就更好的介面。\n\n0:00 鍵盤驅動瀏覽\n0:06 做法是：按鍵點擊\n0:10 指向 + 啟用\n0:18 請看：F 開啟，D 返回\n0:26 兩種輸入，兩項職責\n0:29 用滑鼠指向。用按鍵啟用。\n\nChrome 網上應用程式商店：https://chromewebstore.google.com/detail/keypilot/cellbdakkaoccadahjjffdciflpfikjg\n網站：https://noctivagous.com/zh_HK/\n免費 · MIT 授權",
+      "tags": [
+        "KeyPilot",
+        "Chrome 擴充功能",
+        "鍵盤瀏覽",
+        "按鍵點擊",
+        "效率",
+        "Noctivagous Software"
+      ],
+      "youtube_url": "",
+      "youtube_id": "",
+      "description_file": "youtube-description-zh_HK.txt"
+    }
+  }
+}

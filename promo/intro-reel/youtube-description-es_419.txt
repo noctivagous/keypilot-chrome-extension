@@ -1,0 +1,16 @@
+KeyPilot — El key-click | Navegación con teclado
+
+KeyPilot es una extensión de Chrome gratuita de Noctivagous Software. El mouse dirige. El teclado activa.
+
+Este intro muestra el key-click: apuntar con el mouse, presionar F para abrir, D para volver. Dos entradas + dos trabajos hacen una mejor interfaz.
+
+0:00 Navegación con teclado
+0:06 Así: el key-click
+0:10 Dirigir + Activar
+0:18 Mira: F abre y D vuelve
+0:26 Dos entradas, dos trabajos
+0:29 Apunta con el mouse. Activa con una tecla.
+
+Chrome Web Store: https://chromewebstore.google.com/detail/keypilot/cellbdakkaoccadahjjffdciflpfikjg
+Sitio: https://noctivagous.com/es_419/
+Gratis · licencia MIT

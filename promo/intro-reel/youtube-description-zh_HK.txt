@@ -1,0 +1,16 @@
+KeyPilot — 按鍵點擊 | 鍵盤驅動瀏覽
+
+KeyPilot 是 Noctivagous Software 推出的免費 Chrome 擴充功能。滑鼠負責指向。鍵盤負責啟用。
+
+這段介紹展示按鍵點擊：用滑鼠指向，按 F 開啟，按 D 返回。兩種輸入 + 兩項職責，造就更好的介面。
+
+0:00 鍵盤驅動瀏覽
+0:06 做法是：按鍵點擊
+0:10 指向 + 啟用
+0:18 請看：F 開啟，D 返回
+0:26 兩種輸入，兩項職責
+0:29 用滑鼠指向。用按鍵啟用。
+
+Chrome 網上應用程式商店：https://chromewebstore.google.com/detail/keypilot/cellbdakkaoccadahjjffdciflpfikjg
+網站：https://noctivagous.com/zh_HK/
+免費 · MIT 授權

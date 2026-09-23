@@ -1,0 +1,16 @@
+KeyPilot — 按键点击 | 键盘驱动浏览
+
+KeyPilot 是 Noctivagous Software 推出的免费 Chrome 扩展。鼠标负责指向。键盘负责激活。
+
+这段介绍展示按键点击：用鼠标指向，按 F 打开，按 D 返回。两种输入 + 两项职责，造就更好的界面。
+
+0:00 键盘驱动浏览
+0:06 做法是：按键点击
+0:10 指向 + 激活
+0:18 请看：F 打开，D 返回
+0:26 两种输入，两项职责
+0:29 用鼠标指向。用按键激活。
+
+Chrome 网上应用店：https://chromewebstore.google.com/detail/keypilot/cellbdakkaoccadahjjffdciflpfikjg
+网站：https://noctivagous.com/zh_CN/
+免费 · MIT 许可证

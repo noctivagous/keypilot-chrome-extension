@@ -1,0 +1,16 @@
+KeyPilot — Key-click | Prehliadanie s klávesnicou
+
+KeyPilot je bezplatné rozšírenie pre Chrome od Noctivagous Software. Myš riadi. Klávesnica aktivuje.
+
+Toto intro ukazuje key-click: ukážte myšou, stlačte F na otvorenie, D na návrat späť. Dva vstupy + dve úlohy dávajú lepšie rozhranie.
+
+0:00 Prehliadanie s klávesnicou
+0:06 Takto: key-click
+0:10 Riadiť + Aktivovať
+0:18 Sleduj: F otvorí, D ide späť
+0:26 Dva vstupy, dve úlohy
+0:29 Ukážte myšou. Aktivujte klávesom.
+
+Chrome Web Store: https://chromewebstore.google.com/detail/keypilot/cellbdakkaoccadahjjffdciflpfikjg
+Web: https://noctivagous.com/sk/
+Zadarmo · licencia MIT

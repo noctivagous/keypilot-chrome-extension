@@ -1,0 +1,16 @@
+KeyPilot — Der Key-Klick | Tastaturgesteuertes Browsen
+
+KeyPilot ist eine kostenlose Chrome-Erweiterung von Noctivagous Software. Die Maus steuert. Die Tastatur löst aus.
+
+Dieses Intro zeigt den Key-Klick: mit der Maus zeigen, F zum Öffnen, D zum Zurückgehen. Zwei Eingaben + zwei Aufgaben ergeben eine bessere Oberfläche.
+
+0:00 Tastaturgesteuertes Browsen
+0:06 So geht’s: der Key-Klick
+0:10 Steuern + Auslösen
+0:18 Schau: F öffnet, D geht zurück
+0:26 Zwei Eingaben, zwei Aufgaben
+0:29 Mit der Maus zeigen. Mit einer Taste auslösen.
+
+Chrome Web Store: https://chromewebstore.google.com/detail/keypilot/cellbdakkaoccadahjjffdciflpfikjg
+Website: https://noctivagous.com/de/
+Kostenlos · MIT-Lizenz

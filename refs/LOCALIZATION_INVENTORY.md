@@ -20,16 +20,16 @@ implementation phases and design constraints, see
 Regenerate this table (`ls extension/_locales`, etc.) before trusting it — it
 is a snapshot, not a live status. As of 2026-09-22:
 
-| Locale | `_locales/<l>/messages.json` | `userdocs/<l>/` | `onboarding/<l>.xml` | `online-stores/chrome/copy/<l>.json` | `online-stores/chrome/listing/<l>.txt` | `online-stores/chrome/captures/<l>/` | `online-stores/generated/chrome/<l>/` |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `en` (source/default) | yes | yes | yes | yes | yes | yes | yes |
-| `de` | yes | yes | yes | yes | yes | yes | yes |
-| `es` | yes | yes | yes | yes | yes | yes | yes |
-| `es_419` | yes | no (falls back to `es`/`en`) | no (falls back to `es`/`en`) | yes | yes | yes | yes |
-| `sk` | yes (2026-09-22, machine-translated, needs bilingual review) | no | no | no | no | no | no |
-| `zh_CN` | yes | yes | yes | yes | yes | capture when generating listing shots | generate from captures |
-| `zh_TW` | yes | yes | yes | yes | yes | capture when generating listing shots | generate from captures |
-| `zh_HK` | yes (from `zh_TW` Traditional, 2026-09-22) | yes | yes | yes | yes | yes (gitignored captures) | yes (gitignored generated PNGs) |
+| Locale | `_locales/<l>/messages.json` | `userdocs/<l>/` | `onboarding/<l>.xml` | `online-stores/chrome/copy/<l>.json` | `online-stores/chrome/listing/<l>.txt` | `online-stores/chrome/captures/<l>/` | `online-stores/generated/chrome/<l>/` | intro reel (`promo/intro-reel`) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `en` (source/default) | yes | yes | yes | yes | yes | yes | yes | copy + YouTube |
+| `de` | yes | yes | yes | yes | yes | yes | yes | copy + YouTube |
+| `es` | yes | yes | yes | yes | yes | yes | yes | copy + YouTube |
+| `es_419` | yes | no (falls back to `es`/`en`) | no (falls back to `es`/`en`) | yes | yes | yes | yes | copy + YouTube |
+| `sk` | yes (2026-09-22, machine-translated, needs bilingual review) | no | no | no | no | no | no | copy; YouTube pending |
+| `zh_CN` | yes | yes | yes | yes | yes | capture when generating listing shots | generate from captures | copy; YouTube pending |
+| `zh_TW` | yes | yes | yes | yes | yes | capture when generating listing shots | generate from captures | copy; YouTube pending |
+| `zh_HK` | yes (from `zh_TW` Traditional, 2026-09-22) | yes | yes | yes | yes | yes (gitignored captures) | yes (gitignored generated PNGs) | copy; YouTube pending |
 
 A locale can ship with only `messages.json` complete — Docs, onboarding, and
 store assets fall back to base language then English. But it is not a
@@ -51,7 +51,8 @@ explicitly deferred (see [`i18n/README.md`](../i18n/README.md#add-a-locale)).
   Instagram, …) stay untranslated. `$1`/`$2` tokens preserved in position.
 - Verify: `npm run check:locales` (missing/extra keys, empty messages,
   placeholder mismatches — not translation quality or UI fit).
-- Do NOT put long-form Markdown or onboarding copy here (see §2, §3).
+- Do NOT put long-form Markdown, onboarding copy, or intro-reel copy here
+  (see §2, §3, §8).
 
 ### 2. In-product help — `extension/userdocs/<locale>/`
 
@@ -117,7 +118,29 @@ explicitly deferred (see [`i18n/README.md`](../i18n/README.md#add-a-locale)).
   **Localized screenshots** section; record the upload in
   `online-stores/chrome/RELEASE-CHECKLIST.md`.
 
-### 8. Manifest metadata — `extension/manifest.json`
+### 8. Intro reel — `promo/intro-reel/`
+
+- Shared composition: `key-click-intro.html` (one timeline for every locale).
+  Per-locale copy lives in `locales/key-click-intro/<locale>.json`. Keep the
+  same variable keys as English; translate values only. Brand name `KeyPilot`
+  and `Chrome Web Store` stay untranslated. Register the locale in
+  `locales/key-click-intro/apply.js` (`LOCALES` + `HTML_LANG`) and add a
+  matching object to `locales/key-click-intro/batch.json`.
+- CJK locales must set `html` `lang` (`zh-CN` / `zh-TW` / `zh-HK`) so the
+  composition’s Noto Sans SC/TC/HK stacks apply. Preview with
+  `key-click-intro.html?lang=<locale>`.
+- Render is local and gitignored: `npx hyperframes render --composition
+  key-click-intro.html --variables-file locales/key-click-intro/<locale>.json
+  --output renders/key-click-intro-<locale>.mp4`. Batch: `--batch
+  locales/key-click-intro/batch.json --output
+  "renders/key-click-intro-{locale}.mp4"`.
+- Chrome does not take the MP4. Paste `promo/intro-reel/youtube-description-<locale>.txt`
+  into YouTube (title is the first line), then record `youtube_url` /
+  `youtube_id` in `promo/intro-reel/youtube.json` and paste the URL as
+  **Localized promo video** in the Developer Dashboard for that language.
+- Details: [`promo/intro-reel/README.md`](../promo/intro-reel/README.md).
+
+### 9. Manifest metadata — `extension/manifest.json`
 
 - `name`, `description`, `action.default_title` must stay as `__MSG_*__`
   references, never literal strings. `default_locale` stays `"en"`.
@@ -126,7 +149,7 @@ explicitly deferred (see [`i18n/README.md`](../i18n/README.md#add-a-locale)).
   and include `_locales/` in the archive. Check after any packaging-script
   change.
 
-### 9. Test-only / fixture locales — `test/fixtures/locales/`
+### 10. Test-only / fixture locales — `test/fixtures/locales/`
 
 - Marked catalogs used to prove locale-switching logic (e.g. `en_GB`) belong
   only here, never under `extension/_locales/`. Do not ship a locale prefixed
@@ -161,7 +184,7 @@ npm run package:chrome  # inspect staged manifest + archive contents for _locale
 
 `check:locales` only proves structural completeness (keys, placeholders,
 non-empty). It proves nothing about translation quality, UI fit, or whether
-§2–§7 above were addressed. Treat a new or extended locale as incomplete
+§2–§8 above were addressed. Treat a new or extended locale as incomplete
 until every applicable row in the coverage snapshot is filled in or the gap
 is explicitly and consciously deferred (as `es_419` currently defers Docs and
 onboarding to its `es` base language). `zh_MO` is not a shipped catalog and
@@ -177,3 +200,4 @@ does not share `zh_HK`; Chrome will not fall `zh-MO` to `zh_HK`.
 - [`extension/onboarding/README.md`](../extension/onboarding/README.md)
 - [`online-stores/README.md`](../online-stores/README.md)
 - [`scripts/store-screenshots/README.md`](../scripts/store-screenshots/README.md)
+- [`promo/intro-reel/README.md`](../promo/intro-reel/README.md) — key-click intro composition, locale JSON, HyperFrames render, YouTube URLs
