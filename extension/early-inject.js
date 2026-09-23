@@ -10601,12 +10601,30 @@
   }
 
   /**
-   * Handle early keyboard events for immediate responsiveness
+   * Alt-only chord. Mirrors isExclusiveAltModifier in src/utils/alt-chrome.js.
+   * early-inject cannot import that module. AltGr (Ctrl+Alt + AltGraph) still counts.
+   * @param {KeyboardEvent|null|undefined} event
+   * @returns {boolean}
    */
+  function isExclusiveAltModifier(event) {
+    if (!event) return false;
+    let altGraph = false;
+    try {
+      altGraph = typeof event.getModifierState === 'function' && event.getModifierState('AltGraph') === true;
+    } catch {
+      altGraph = false;
+    }
+    const alt = event.altKey === true || event.code === 'AltRight' || altGraph;
+    if (!alt) return false;
+    if (event.metaKey || event.shiftKey) return false;
+    if (event.ctrlKey && !altGraph) return false;
+    return true;
+  }
+
   function handleEarlyKeydown(event) {
-    // Handle Alt+K toggle immediately for responsiveness - ALWAYS check this regardless of extension state
-    // Check for Alt key (covers both left and right Alt) and K key (case insensitive)
-    if ((event.altKey || event.code === 'AltRight') && (event.key === 'k' || event.key === 'K' || event.code === 'KeyK')) {
+    // Handle Alt+K toggle immediately for responsiveness - ALWAYS check this regardless of extension state.
+    // Ctrl/Meta/Shift alongside Alt leaves the chord for the page.
+    if (isExclusiveAltModifier(event) && (event.key === 'k' || event.key === 'K' || event.code === 'KeyK')) {
       event.preventDefault();
       // Send toggle message to background script
       if (typeof chrome !== 'undefined' && chrome.runtime) {

@@ -11,6 +11,7 @@ import {
   installContentRuntimeRouter,
   registerContentRuntimeHandler
 } from '../messaging/content-runtime-router.js';
+import { ALT_CHROME, isAltChromeShortcut } from '../utils/alt-chrome.js';
 
 export class KeyPilotToggleHandler extends EventManager {
   constructor(keyPilotInstance) {
@@ -81,8 +82,8 @@ export class KeyPilotToggleHandler extends EventManager {
         // Avoid double-toggling if another handler already processed this event.
         if (e && e.__kpToggleHandled) return;
 
-        // Alt+K (case-insensitive). e.code==='AltRight' is not needed here; we rely on e.altKey.
-        if (e && e.altKey && (e.key === 'k' || e.key === 'K' || e.code === 'KeyK')) {
+        // Alt+K. Ctrl/Meta/Shift alongside Alt leaves the chord for the page.
+        if (isAltChromeShortcut(e, ALT_CHROME.TOGGLE)) {
           e.__kpToggleHandled = true;
           e.preventDefault();
           e.stopPropagation();
@@ -97,7 +98,7 @@ export class KeyPilotToggleHandler extends EventManager {
         }
 
         // Alt+J: toggle control strip (works while KeyPilot is disabled).
-        if (e && e.altKey && (e.key === 'j' || e.key === 'J' || e.code === 'KeyJ')) {
+        if (isAltChromeShortcut(e, ALT_CHROME.CONTROL_STRIP)) {
           if (e.__kpControlStripHandled) return;
           e.__kpControlStripHandled = true;
           e.preventDefault();

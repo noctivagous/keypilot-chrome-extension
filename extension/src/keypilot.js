@@ -36,6 +36,7 @@ import {
 import { kpGetDeepActiveElement } from './utils/dom-context.js';
 import { getMessage } from './utils/i18n.js';
 import { formatAltShortcut } from './utils/platform.js';
+import { ALT_CHROME_BINDINGS, isAltChromeShortcut } from './utils/alt-chrome.js';
 import {
   buildKeybindingsForLayout,
   buildSystemKeybindings,
@@ -2869,126 +2870,78 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     } catch { /* ignore */ }
   }
 
+  /**
+   * Alt-only chrome shortcuts. Extra modifiers (Ctrl+Alt+I, etc.) are ignored
+   * so the page keeps the chord. See alt-chrome.js.
+   * @param {KeyboardEvent} e
+   * @returns {boolean} true when this handler should stop (matched, or matched but skipped)
+   */
+  _maybeHandleAltChrome(e) {
+    for (const binding of ALT_CHROME_BINDINGS) {
+      if (!isAltChromeShortcut(e, binding.spec)) continue;
+      if (binding.topOnly && window !== window.top) return true;
+      if (binding.enabledOnly && !this.enabled) return true;
+      if (binding.flag && e[binding.flag]) return true;
+      if (binding.flag) {
+        try { e[binding.flag] = true; } catch { /* ignore */ }
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      try { e.stopImmediatePropagation(); } catch { /* ignore */ }
+      this._runAltChromeBinding(binding.id);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * @param {string} id
+   */
+  _runAltChromeBinding(id) {
+    switch (id) {
+      case 'toggle':
+        this._sendRuntimeMessage({ type: MSG.TOGGLE_STATE }, { silent: true });
+        return;
+      case 'controlStrip':
+        void this.toggleControlStripFromHotkey();
+        return;
+      case 'omnibox': {
+        const currentState = this.state.getState();
+        if (currentState.mode === MODES.OMNIBOX) this.handleCloseOmnibox();
+        else this.handleOpenOmnibox();
+        return;
+      }
+      case 'launcher':
+        if (this.launcherPopover.isOpen()) this.launcherPopover.hide();
+        else this.launcherPopover.showWithSearchFocus();
+        return;
+      case 'paintDebug':
+        try {
+          const on = !!this.overlayManager?.isShadowRootDebugHudEnabled?.();
+          this.setShadowRootDebugHud(!on);
+        } catch { /* ignore */ }
+        return;
+      case 'layoutPrev':
+        this._cycleKeyboardLayoutFamily(-1);
+        return;
+      case 'layoutNext':
+        this._cycleKeyboardLayoutFamily(1);
+        return;
+      case 'layoutEdit':
+        this._toggleKeyboardLayoutConfigurator();
+        return;
+      case 'docs':
+        this.handleToggleDocsPopover();
+        return;
+      default:
+        return;
+    }
+  }
+
   handleKeyDown(e) {
-    // Handle Alt+K toggle FIRST, regardless of extension state
-    // Check for Alt key (covers both left and right Alt) and K key (case insensitive)
-    if ((e.altKey || e.code === 'AltRight') && (e.key === 'k' || e.key === 'K' || e.code === 'KeyK')) {
-      // Mark the event so any other KeyPilot-installed listeners don't double-toggle.
-      try { e.__kpToggleHandled = true; } catch { /* ignore */ }
-      e.preventDefault();
-      e.stopPropagation();
-      // Important: stop other document-level keydown capture listeners from also firing,
-      // which could otherwise trigger a second toggle and effectively do nothing.
-      e.stopImmediatePropagation();
-      // Send toggle message to background script
-      this._sendRuntimeMessage({ type: MSG.TOGGLE_STATE }, { silent: true });
-      return;
-    }
-
-    // Alt+J: toggle control strip (works even when closed; persists visibility).
-    // Also handled by KeyPilotToggleHandler's always-on listener when disabled.
-    if ((e.altKey || e.code === 'AltRight') && (e.key === 'j' || e.key === 'J' || e.code === 'KeyJ')) {
-      if (e.__kpControlStripHandled) return;
-      try { e.__kpControlStripHandled = true; } catch { /* ignore */ }
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      void this.toggleControlStripFromHotkey();
-      return;
-    }
-
-    // Alt+L: open omnibox (top frame only)
-    if ((e.altKey || e.code === 'AltRight') && (e.key === 'l' || e.key === 'L' || e.code === 'KeyL')) {
-      // Only operate in the top frame to avoid duplicates.
-      if (window !== window.top) return;
-      // Respect enabled state (do nothing when disabled).
-      if (!this.enabled) return;
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-
-      const currentState = this.state.getState();
-      if (currentState.mode === MODES.OMNIBOX) {
-        this.handleCloseOmnibox();
-      } else {
-        this.handleOpenOmnibox();
-      }
-      return;
-    }
-
-    // Alt+;: open launcher with search focused (Alt+A for left-handed)
-    if ((e.altKey || e.code === 'AltRight') && (e.key === ';' || e.key === ':' || e.code === 'Semicolon' || e.key === 'a' || e.key === 'A' || e.code === 'KeyA')) {
-      // Only operate in the top frame to avoid duplicates.
-      if (window !== window.top) return;
-      // Respect enabled state (do nothing when disabled).
-      if (!this.enabled) return;
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-
-      if (this.launcherPopover.isOpen()) {
-        this.launcherPopover.hide();
-      } else {
-        this.launcherPopover.showWithSearchFocus();
-      }
-      return;
-    }
-
-    // Alt+D: toggle shadow-root paint debug HUD (leaf / focus / paint + Auto|B→C|A|B|C).
-    if ((e.altKey || e.code === 'AltRight') && (e.key === 'd' || e.key === 'D' || e.code === 'KeyD')) {
-      if (window !== window.top) return;
-      if (!this.enabled) return;
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      try {
-        const on = !!this.overlayManager?.isShadowRootDebugHudEnabled?.();
-        this.setShadowRootDebugHud(!on);
-      } catch { /* ignore */ }
-      return;
-    }
-
-    // Alt+[ / Alt+]: cycle through installed keyboard layout families (handedness is a separate setting).
-    if ((e.altKey || e.code === 'AltRight') && (e.code === 'BracketLeft' || e.key === '[')) {
-      if (window !== window.top) return;
-      if (!this.enabled) return;
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      this._cycleKeyboardLayoutFamily(-1);
-      return;
-    }
-    if ((e.altKey || e.code === 'AltRight') && (e.code === 'BracketRight' || e.key === ']')) {
-      if (window !== window.top) return;
-      if (!this.enabled) return;
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      this._cycleKeyboardLayoutFamily(1);
-      return;
-    }
-
-    // Alt+C: keyboard layout configure mode (foundation).
-    if ((e.altKey || e.code === 'AltRight') && (e.key === 'c' || e.key === 'C' || e.code === 'KeyC')) {
-      if (window !== window.top) return;
-      if (!this.enabled) return;
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      this._toggleKeyboardLayoutConfigurator();
-      return;
-    }
-
-    // Alt+H: toggle KeyPilot documentation popover.
-    if ((e.altKey || e.code === 'AltRight') && (e.key === 'h' || e.key === 'H' || e.code === 'KeyH')) {
-      if (window !== window.top) return;
-      if (!this.enabled) return;
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      this.handleToggleDocsPopover();
-      return;
-    }
+    // Alt chrome (Alt+K, Alt+J, …) before layout dispatch. Alt-only: Ctrl/Meta/Shift
+    // held with Alt does not claim the chord. Alt+I lives in OnboardingManager.
+    if (this._maybeHandleAltChrome(e)) return;
 
     // Don't handle keys if extension is disabled
     if (!this.enabled) {

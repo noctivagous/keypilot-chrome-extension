@@ -17,6 +17,7 @@ import {
 import { storageSetObject } from '../utils/storage.js';
 import { loadLocalizedOnboardingModel } from '../utils/onboarding-model.js';
 import { MSG } from '../messaging/types.js';
+import { ALT_CHROME, isAltChromeShortcut } from '../utils/alt-chrome.js';
 
 // NOTE: Do not `import { X as Y }` — build.js strips imports and aliases are lost.
 // Use ONBOARDING_STORAGE_KEYS by name (defined in onboarding-shared.js).
@@ -1240,29 +1241,9 @@ export class OnboardingManager {
         if (st?.mode === MODES.TEXT_FOCUS) return;
       } catch { /* ignore */ }
 
-      // Alt + I : open/close onboarding.
-      //
-      // Notes:
-      // - Prefer `e.code === 'KeyI'` because `e.key` varies by layout.
-      // - Support AltGr layouts where the browser may report Ctrl+Alt, and/or AltGraph state.
-      const isAltOrAltGraph =
-        !!e &&
-        (
-          e.altKey === true ||
-          (typeof e.getModifierState === 'function' && e.getModifierState('AltGraph') === true)
-        );
-
-      const isIKey =
-        !!e &&
-        (
-          e.code === 'KeyI' ||
-          e.key === 'i' ||
-          e.key === 'I'
-        );
-
-      const isAltI = isAltOrAltGraph && isIKey;
-
-      if (!isAltI) return;
+      // Alt+I : open/close onboarding. Ctrl/Meta/Shift alongside Alt is not this shortcut.
+      // AltGr (Ctrl+Alt + AltGraph) still counts. Prefer e.code; e.key varies by layout.
+      if (!isAltChromeShortcut(e, ALT_CHROME.TUTORIAL)) return;
 
       e.preventDefault();
       e.stopPropagation();
