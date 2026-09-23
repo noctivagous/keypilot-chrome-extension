@@ -368,7 +368,7 @@ model. This distinction must be visible in the layout editor.
     Slovak dead-key/AltGr paths and Taiwan/Hong Kong US-QWERTY IME behavior.
   - [ ] Linux: record the corresponding XKB/desktop input source for each
     model, including compose/dead-key and AltGr behavior.
-- [ ] Add unit tests for model schema integrity, code-based matching, German
+- [x] Add unit tests for model schema integrity, code-based matching, German
   Y/Z action placement, ISO-only keys, JIS geometry, and custom-binding
   semantics; add visual/screenshot fixtures for US ANSI, German ISO, Spanish
   ISO, Slovak, and Japanese JIS.
@@ -377,9 +377,13 @@ model. This distinction must be visible in the layout editor.
   - [x] Add deterministic SVG model visual fixtures under
     `test/fixtures/keyboard-hardware-layouts/`; verify them with
     `npm run fixtures:keyboard-layouts -- --check`.
-  - [ ] Add direct custom-layout store lifecycle tests and rendered
-    Keyboard Reference screenshot fixtures after the selected hardware model
-    is wired into the renderer and screenshot capture API.
+  - [x] Pass the selected hardware model through built-in and custom Keyboard
+    Reference rendering; cache rendered DOM by both action-layout and hardware
+    model identity.
+  - [x] Add direct custom-layout store lifecycle tests and rendered
+    Keyboard Reference PNG fixtures under
+    `test/fixtures/keyboard-reference-screenshots/`, captured through
+    `npm run debug:chrome`.
 - [ ] Update `extension/userdocs/en/keyboard-reference.md`,
   `refs/UI_TESTING_CHECKLIST.md`, and store-screenshot fixtures to explain and
   exercise the selected physical keyboard layout.

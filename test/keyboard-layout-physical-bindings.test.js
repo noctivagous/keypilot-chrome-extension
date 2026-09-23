@@ -77,6 +77,14 @@ describe('built-in keyboard layout physical bindings', () => {
     assert.equal(keyZ.id, 'PAGE_TOP');
   });
 
+  it('uses the hardware legend for action keycaps instead of a US display label', async () => {
+    const rendererSource = await readFile('extension/src/ui/keybindings-ui.js', 'utf8');
+    assert.match(
+      rendererSource,
+      /item\.legend \|\| \(binding && binding\.displayKey\)/
+    );
+  });
+
   it('keeps custom physical and character dispatch distinct', async () => {
     const keyPilotSource = await readFile('extension/src/keypilot.js', 'utf8');
 

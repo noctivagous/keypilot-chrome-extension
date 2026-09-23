@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
+
+import { pngDimensions } from '../scripts/store-screenshots/png.mjs';
 
 const layoutIds = [
   'us-ansi-qwerty',
@@ -28,5 +30,15 @@ describe('keyboard hardware visual fixtures', () => {
         stdio: 'pipe'
       });
     });
+  });
+
+  it('contains rendered Keyboard Reference screenshots for every shipped model', () => {
+    for (const layoutId of layoutIds) {
+      const file = `test/fixtures/keyboard-reference-screenshots/${layoutId}.png`;
+      assert.equal(existsSync(file), true, layoutId);
+      const dimensions = pngDimensions(readFileSync(file));
+      assert.ok(dimensions.width >= 800, `${layoutId} screenshot width`);
+      assert.ok(dimensions.height >= 600, `${layoutId} screenshot height`);
+    }
   });
 });

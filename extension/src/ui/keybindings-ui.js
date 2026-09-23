@@ -298,7 +298,9 @@ export function renderKeybindingsKeyboard({
       );
       keyEl.appendChild(main);
 
-      const labelText = localizeKeycapLabel((binding && binding.displayKey) || (binding && binding.keyLabel) || '');
+      const labelText = localizeKeycapLabel(
+        item.legend || (binding && binding.displayKey) || (binding && binding.keyLabel) || ''
+      );
       if (labelText) {
         keyEl.appendChild(el(doc, 'div', 'key-label', labelText));
       }
