@@ -1,6 +1,6 @@
 import { EventManager } from './event-manager.js';
 import { COLORS, Z_INDEX, CSS_CLASSES, FEATURE_FLAGS, RECTANGLE_SELECTION, ELEMENT_SELECT_TAGS, ELEMENT_SELECT_AGGREGATES, ELEMENT_SELECT_LANDMARKS, ELEMENT_SELECT_ATOMS } from '../config/constants.js';
-import { getMessage } from '../utils/i18n.js';
+import { getMessage, localizeKeycapLabel } from '../utils/i18n.js';
 
 /**
  * Shared highlight / select-element mode (Text Select + Element Select rectangle).
@@ -23,6 +23,7 @@ export class HighlightManager extends EventManager {
     this.highlightRectangleOverlay = null; // Real-time highlight rectangle overlay
     this.highlightSelectionOverlays = []; // Array of overlays for selected text regions
     this.highlightModeIndicator = null; // Visual indicator for highlight mode
+    this._highlightFinishKey = '';
 
     // Selection mode state
     this.selectionMode = 'character'; // 'character' | 'rectangle' | 'element'
@@ -2207,8 +2208,11 @@ export class HighlightManager extends EventManager {
    * @param {{ finishKey?: string }} [opts] - rendered keycap legend to press again
    */
   showHighlightModeIndicator(opts = {}) {
-    const finishKeyRaw = opts.finishKey || (this.selectionMode === 'character' ? 'H' : 'Y');
-    const finishKey = String(finishKeyRaw);
+    if (opts.finishKey) this._highlightFinishKey = String(opts.finishKey);
+    const finishKeyRaw = this._highlightFinishKey
+      || opts.finishKey
+      || (this.selectionMode === 'character' ? 'H' : 'Y');
+    const finishKey = localizeKeycapLabel(finishKeyRaw);
     const before = getMessage('highlight_finish_before') || 'Press ';
     const after = getMessage('highlight_finish_after') || ' again to finish selection';
 
@@ -2264,6 +2268,7 @@ export class HighlightManager extends EventManager {
     if (this.highlightModeIndicator) {
       this.highlightModeIndicator.remove();
       this.highlightModeIndicator = null;
+      this._highlightFinishKey = '';
 
       if (window.KEYPILOT_DEBUG) {
         console.log('[KeyPilot Debug] Highlight mode indicator hidden');

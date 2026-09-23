@@ -133,5 +133,6 @@ describe('built-in keyboard layout physical bindings', () => {
     assert.match(highlightManagerSource, /getMessage\('highlight_finish_before'\)/);
     assert.match(highlightManagerSource, /getMessage\('highlight_finish_after'\)/);
     assert.match(highlightManagerSource, /document\.createElement\('kbd'\)/);
+    assert.match(highlightManagerSource, /localizeKeycapLabel\(finishKeyRaw\)/);
   });
 });

@@ -838,6 +838,7 @@ export class StyleManager {
         will-change: transform, opacity;
       }
 
+      .kpv2-highlight-mode-indicator kbd,
       .${CSS_CLASSES.ESC_EXIT_LABEL} kbd {
         background: rgba(255, 255, 255, 0.2);
         border: 1px solid rgba(255, 255, 255, 0.3);
