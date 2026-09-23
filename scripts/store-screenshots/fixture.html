@@ -55,6 +55,17 @@
       border-bottom-color: #004a99;
     }
 
+    body[data-locale="ja"] {
+      --serif: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Noto Serif JP", serif;
+      --sans: system-ui, -apple-system, "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", Meiryo, "Noto Sans JP", "Noto Sans CJK JP", sans-serif;
+      --accent: #a52828;
+      --bg: #fcfaf5;
+    }
+    body[data-locale="ja"] .masthead h1 {
+      letter-spacing: 0.02em;
+      font-weight: 800;
+    }
+
     body[data-locale^="zh"] {
       --serif: "PingFang SC", "PingFang TC", "Hiragino Sans GB", "Microsoft YaHei", "Microsoft JhengHei", sans-serif;
       --accent: #a52828;
@@ -353,6 +364,7 @@
     <a href="?lang=es">ES</a> | 
     <a href="?lang=es_419">ES-LATAM</a> | 
     <a href="?lang=de">DE</a> |
+    <a href="?lang=ja">日本語</a> |
     <a href="?lang=zh_CN">简体中文</a> |
     <a href="?lang=zh_TW">繁體中文（台灣）</a> |
     <a href="?lang=zh_HK">繁體中文（香港）</a>
@@ -495,6 +507,40 @@
         weatherDetails: "Feuchtigkeit: 80% | Wind: 20km/h Nord",
         sidebarOpinionTitle: "Meinung",
         sidebarOpinions: ["Leitartikel: Warum wir unseren Arbeitshafen bewahren müssen"]
+      },
+      ja: {
+        title: "港湾新聞 — 毎日のニュース",
+        mastheadLogo: "港",
+        mastheadTitle: "港湾新聞",
+        mastheadTagline: "1884年から中部海岸とペノブスコット湾を伝える",
+        date: "2026年9月19日（土）",
+        weather: "港湾地区：14°C ☁️",
+        nav: ["地域", "政治", "沿岸の暮らし", "訃報", "論説", "スポーツ"],
+        breakingLabel: "速報：",
+        breakingContent: "ペノブスコット橋は月曜日から修理のため通行止めになります。迂回路をご利用ください。",
+        storyKicker: "ウォーターフロントニュース",
+        storyTitle: "今週末、港の灯りがウォーターフロントに戻る",
+        storyByline: "イライアス・ソーン記者",
+        leadImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Between_Custom_House_Wharf_and_Portland_Pier.jpg/1280px-Between_Custom_House_Wharf_and_Portland_Pier.jpg",
+        leadCaption: "木曜夜、作業員が第4埠頭で省エネLED照明を試験している。歴史地区の修復工事は完了した。",
+        storyContent: [
+          "ポートランド — 作業員は木曜日、第4埠頭に沿った最後の照明列の設置を完了し、2年にわたる修復事業が終わった。近年大規模な再開発が進む歴史的なウォーターフロント地区には、今週末、数千人の住民と観光客が訪れる見込みだ。",
+          "日没後には遊歩道の散策が再開され、予想される人出に対応するため、遊歩道下の市場の店は営業時間を1時間延長する。地元事業者は、灯りの復活がこの地区に力強い秋のシーズンをもたらすことを期待している。"
+        ],
+        actionLinks: ["ウォーターフロント案内を読む", "週末の営業時間", "地図と交通"],
+        sidebarBulletinTitle: "地域のお知らせ",
+        sidebarImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/83_Commercial_Street%2C_Portland_ME.jpg/1280px-83_Commercial_Street%2C_Portland_ME.jpg",
+        sidebarBulletins: [
+          "西港で用途地域をめぐる住民集会を開催",
+          "高校アメリカンフットボール：カムデン・ヒルズがロックランドを下す",
+          "ロブスターの漁獲量はやや減少、価格は安定"
+        ],
+        sidebarWeatherTitle: "天気予報",
+        weatherTemp: "14°C",
+        weatherDesc: "おおむね曇り",
+        weatherDetails: "湿度：65%｜風：北東 13km/h",
+        sidebarOpinionTitle: "論説",
+        sidebarOpinions: ["社説：働くウォーターフロントを守るべき理由"]
       },
       zh_CN: {
         title: "海港日报 — 每日新闻",

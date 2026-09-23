@@ -1,0 +1,5846 @@
+{
+  "extension_name": {
+    "message": "KeyPilot",
+    "description": "The extension name displayed in browser UI and store listings."
+  },
+  "extension_description": {
+    "message": "キークリックでウェブを閲覧。マウスの代わりにキーボードのキーでハイパーリンクを起動します。",
+    "description": "The short extension description displayed in browser UI and store listings."
+  },
+  "extension_action_title": {
+    "message": "KeyPilot",
+    "description": "The toolbar action tooltip."
+  },
+  "locale_tag": {
+    "message": "ja",
+    "description": "BCP-47 language tag of this catalog, used for the document lang attribute. Set this to the catalog locale (for example en, de, zh-CN, zh-TW, zh-HK). Do not translate it into a language name."
+  },
+  "popup_document_title": {
+    "message": "KeyPilot",
+    "description": "The popup document title."
+  },
+  "popup_heading": {
+    "message": "KeyPilot",
+    "description": "The popup heading."
+  },
+  "popup_hotkey_toggle_aria_label": {
+    "message": "ホットキー $1",
+    "description": "Accessible label for the extension-toggle keyboard shortcut. $1 is Alt+K or Opt+K.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+K"
+      }
+    }
+  },
+  "popup_extension_toggle_aria_label": {
+    "message": "KeyPilot 有効",
+    "description": "Accessible name for the popup master enable switch."
+  },
+  "popup_unavailable_on_tab": {
+    "message": "このタブでは利用不可",
+    "description": "Message shown when KeyPilot cannot run on the active tab."
+  },
+  "popup_tools_aria_label": {
+    "message": "KeyPilot ツール",
+    "description": "Accessible label for the popup tool-card navigation."
+  },
+  "popup_keyboard_reference": {
+    "message": "キーボードリファレンス",
+    "description": "Popup card label for the keyboard reference."
+  },
+  "popup_keyboard_reference_aria_label": {
+    "message": "キーボードリファレンス",
+    "description": "Accessible label for the keyboard-reference card."
+  },
+  "popup_docs": {
+    "message": "ヘルプ / ドキュメント",
+    "description": "Popup card label for documentation."
+  },
+  "popup_docs_aria_label": {
+    "message": "KeyPilot ヘルプとドキュメント",
+    "description": "Accessible label for the documentation card."
+  },
+  "popup_documentation": {
+    "message": "ドキュメント",
+    "description": "Popup documentation-card subtitle."
+  },
+  "popup_tutorial": {
+    "message": "導入チュートリアル",
+    "description": "Popup card label for the onboarding walkthrough."
+  },
+  "popup_tutorial_aria_label": {
+    "message": "導入チュートリアル",
+    "description": "Accessible label for the onboarding walkthrough card."
+  },
+  "popup_settings": {
+    "message": "設定",
+    "description": "Popup card label for KeyPilot settings."
+  },
+  "popup_settings_aria_label": {
+    "message": "設定",
+    "description": "Accessible label for the settings card."
+  },
+  "popup_preferences": {
+    "message": "環境設定",
+    "description": "Popup settings-card subtitle."
+  },
+  "popup_control_strip": {
+    "message": "コントロールストリップ",
+    "description": "Popup card label for the control strip."
+  },
+  "popup_control_strip_aria_label": {
+    "message": "コントロールストリップ",
+    "description": "Accessible label for the control-strip card."
+  },
+  "popup_footer": {
+    "message": "キーボード優先のウェブナビゲーション。",
+    "description": "Short popup footer."
+  },
+  "popup_status_on": {
+    "message": "ON",
+    "description": "Short status for enabled KeyPilot."
+  },
+  "popup_status_off": {
+    "message": "OFF",
+    "description": "Short status for disabled KeyPilot."
+  },
+  "popup_status_unavailable": {
+    "message": "利用不可",
+    "description": "Short status when KeyPilot cannot run on the active tab."
+  },
+  "popup_status_delete": {
+    "message": "削除",
+    "description": "Short status while Delete Mode is active."
+  },
+  "popup_status_cols": {
+    "message": "列",
+    "description": "Short status while column mode is active."
+  },
+  "popup_status_inspect": {
+    "message": "検査",
+    "description": "Short status while inspector mode is active."
+  },
+  "popup_status_text": {
+    "message": "テキスト",
+    "description": "Short status while text focus is active."
+  },
+  "guide_document_title": {
+    "message": "KeyPilot ガイド",
+    "description": "The Guide page document title."
+  },
+  "guide_heading": {
+    "message": "KeyPilot ガイド",
+    "description": "The Guide page heading."
+  },
+  "guide_subtitle": {
+    "message": "キーボード優先ナビゲーションのリファレンス。",
+    "description": "Guide page subtitle."
+  },
+  "guide_close": {
+    "message": "閉じる",
+    "description": "Guide page close button."
+  },
+  "guide_launch_walkthrough": {
+    "message": "ウォークスルーを起動",
+    "description": "Button that starts the onboarding walkthrough."
+  },
+  "guide_core_keys": {
+    "message": "基本キー",
+    "description": "Heading for the Guide's core shortcut list."
+  },
+  "guide_popover": {
+    "message": "ポップオーバー",
+    "description": "Heading for the Guide's popover shortcut list."
+  },
+  "guide_extension_notes": {
+    "message": "拡張機能に関する注意",
+    "description": "Heading for Guide availability notes."
+  },
+  "guide_extension_notes_description": {
+    "message": "KeyPilot は通常のウェブページ上でコンテンツスクリプトとして動作します。chrome:// や Chrome Web Store などのブラウザー内部ページでは利用できません。",
+    "description": "Guide note explaining pages where KeyPilot cannot run."
+  },
+  "guide_layout_note": {
+    "message": "上記のキーは、設定で選択したキーボードレイアウト（右手または左手）に従います。",
+    "description": "Guide note explaining that displayed shortcuts follow the selected layout."
+  },
+  "guide_layout_label": {
+    "message": "レイアウト: $1",
+    "description": "Label preceding the active keyboard layout name.",
+    "placeholders": {
+      "layout": {
+        "content": "$1",
+        "example": "Browsing: right-handed"
+      }
+    }
+  },
+  "guide_action_activate": {
+    "message": "KeyPilot カーソル下の要素をクリック",
+    "description": "Guide explanation for the activate shortcut."
+  },
+  "guide_action_back": {
+    "message": "戻る",
+    "description": "Guide explanation for the browser-back shortcut."
+  },
+  "guide_action_root": {
+    "message": "サイトのルート",
+    "description": "Guide explanation for the navigate-to-site-root shortcut."
+  },
+  "guide_action_forward": {
+    "message": "進む",
+    "description": "Guide explanation for the browser-forward shortcut."
+  },
+  "guide_action_tabs": {
+    "message": "タブを左/右へ",
+    "description": "Guide explanation for the previous/next tab shortcuts."
+  },
+  "guide_action_omnibox": {
+    "message": "オムニボックス",
+    "description": "Guide explanation for the omnibox shortcut."
+  },
+  "guide_action_cancel": {
+    "message": "キャンセル / 終了",
+    "description": "Guide explanation for the cancel shortcut."
+  },
+  "guide_action_open_popover": {
+    "message": "カーソル下のリンクをポップオーバーで開く",
+    "description": "Guide explanation for the open-popover shortcut."
+  },
+  "guide_action_open_settings": {
+    "message": "設定ポップオーバーを開く",
+    "description": "Guide explanation for the settings shortcut."
+  },
+  "guide_action_scroll": {
+    "message": "スクロール",
+    "description": "Guide explanation for scrolling shortcuts."
+  },
+  "guide_action_close": {
+    "message": "閉じる",
+    "description": "Guide explanation for the close shortcut."
+  },
+  "docs_document_title": {
+    "message": "KeyPilot ドキュメント",
+    "description": "The Docs page document title."
+  },
+  "docs_heading": {
+    "message": "KeyPilot ドキュメント",
+    "description": "The Docs page heading."
+  },
+  "docs_subtitle": {
+    "message": "KeyPilot の使い方 — トピックを検索するか一覧を閲覧。",
+    "description": "Docs page subtitle."
+  },
+  "docs_close": {
+    "message": "閉じる",
+    "description": "Docs page close button."
+  },
+  "docs_text_size_label": {
+    "message": "文字",
+    "description": "Short label on the Docs titlebar text-size slider."
+  },
+  "docs_text_size_aria": {
+    "message": "ドキュメントの文字サイズ",
+    "description": "Accessible name for the Docs titlebar text-size slider."
+  },
+  "docs_topics_aria_label": {
+    "message": "ドキュメントのトピック",
+    "description": "Accessible label for the Docs navigation sidebar."
+  },
+  "docs_search_label": {
+    "message": "検索",
+    "description": "Docs search input label."
+  },
+  "docs_search_placeholder": {
+    "message": "ドキュメントを検索…",
+    "description": "Docs search input placeholder."
+  },
+  "docs_topic_list_aria_label": {
+    "message": "トピック",
+    "description": "Accessible label for the Docs topic list."
+  },
+  "docs_no_matches": {
+    "message": "一致するトピックがありません。",
+    "description": "Message when Docs search has no matching topics."
+  },
+  "docs_loading": {
+    "message": "ドキュメントを読み込み中…",
+    "description": "Docs loading message."
+  },
+  "docs_load_failed": {
+    "message": "このドキュメントの読み込みに失敗しました。",
+    "description": "Docs article error message."
+  },
+  "docs_soon": {
+    "message": "近日公開",
+    "description": "Label for a Docs topic that is not yet available."
+  },
+  "settings_static_001": {
+    "message": "設定カテゴリ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_002": {
+    "message": "検索エンジン",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_003": {
+    "message": "フローティングキーボードリファレンスの表示/非表示 (K)",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_004": {
+    "message": "キーボードリファレンス表示中",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_005": {
+    "message": "クリックカーソルのプレビュー",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_006": {
+    "message": "クリック効果",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_007": {
+    "message": "テキストカーソルのプレビュー",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_008": {
+    "message": "テキストフィールドのフォーカススタイル",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_009": {
+    "message": "KeyPilot 設定",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_010": {
+    "message": "KeyPilot 設定",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_011": {
+    "message": "変更はタブ間で自動的に同期されます。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_012": {
+    "message": "モード",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_013": {
+    "message": "インターフェース",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_014": {
+    "message": "情報",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_015": {
+    "message": "概要",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_016": {
+    "message": "カテゴリを選んで KeyPilot の見た目と動作を変更します。左側の一覧はいつでも使えます。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_017": {
+    "message": "テーマ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_018": {
+    "message": "Dark Pro",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_019": {
+    "message": "Gray Metal Pro",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_020": {
+    "message": "GX-er",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_021": {
+    "message": "カスタマイズ済み",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_022": {
+    "message": "組み込みパックは chrome、書体、アイコンのスタイルを変更します。編集は外観タブで行います。テーマを選ぶとそのテーマのクリックモードとカーソルの既定値も適用されます。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_023": {
+    "message": "外観",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_024": {
+    "message": "テーマパック、ウィンドウの角、タイトルバー、キーキャップ、色、文字サイズ。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_025": {
+    "message": "キーボード",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_026": {
+    "message": "レイアウトファミリー、左手バリアント、フローティングキーボードリファレンスのオプション。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_027": {
+    "message": "クリックモード",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_028": {
+    "message": "ホバーフォーカス矩形、リンクホバーヒント、クリック起動効果。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_029": {
+    "message": "テキストモード",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_030": {
+    "message": "テキストフィールドのカーソル、フォーカススタイル、ラベル、アウトラインの太さ。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_031": {
+    "message": "スクロール",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_032": {
+    "message": "Page Up / Page Down の距離、スムーズと瞬時、スクロールラインの対象、中クリック。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_033": {
+    "message": "カーソル",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_034": {
+    "message": "カスタムカーソルのオン/オフ、クリックモードのクロスヘア種類と形状。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_035": {
+    "message": "コントロールストリップ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_036": {
+    "message": "ステータスストリップの表示/非表示と、折りたたみ開始かどうか。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_037": {
+    "message": "検索",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_038": {
+    "message": "新しいタブのボックスと KeyPilot のオムニボックス ($1) 用の検索エンジン。",
+    "description": "Settings Search hub description. $1 is the omnibox shortcut (Alt+L / Opt+L).",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+L"
+      }
+    }
+  },
+  "settings_static_039": {
+    "message": "について",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_040": {
+    "message": "設定の保存場所と同期の仕組み。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_041": {
+    "message": "リセット",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_042": {
+    "message": "すべての KeyPilot 設定を製品の既定値に戻します（外観、クリックモード、キーボード、スクロール、保存されたパネル位置など）。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_043": {
+    "message": "すべての設定を既定値にリセット",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_044": {
+    "message": "外観",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_045": {
+    "message": "選択中の組み込みテーマをカスタマイズします。変更はすぐ適用され、リセットまたはテーマ切替までそのパックに残ります。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_046": {
+    "message": "テーマ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_047": {
+    "message": "Dark Pro",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_048": {
+    "message": "Gray Metal Pro",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_049": {
+    "message": "GX-er",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_050": {
+    "message": "カスタマイズ済み",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_051": {
+    "message": "パック切替はそのテーマの既定値から始まります（カスタム編集はクリアされます）。クリックモードの既定値もパックに従います。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_052": {
+    "message": "ウィンドウ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_053": {
+    "message": "角のスタイル",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_054": {
+    "message": "丸み",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_055": {
+    "message": "カット",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_056": {
+    "message": "カットサイズ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_057": {
+    "message": "角カットの深さ（ピクセル、0–24）。角のスタイルがカットのときに使用。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_058": {
+    "message": "パネルの半径",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_059": {
+    "message": "角丸の半径（ピクセル、0–24）。角のスタイルが丸みのときに使用。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_060": {
+    "message": "タイトルバー",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_061": {
+    "message": "タイトルの大文字小文字",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_062": {
+    "message": "そのまま",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_063": {
+    "message": "大文字",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_064": {
+    "message": "字間",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_065": {
+    "message": "タイトルの太さ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_066": {
+    "message": "レギュラー",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_067": {
+    "message": "セミボールド",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_068": {
+    "message": "ボールド",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_069": {
+    "message": "先頭アイコン",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_070": {
+    "message": "非表示",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_071": {
+    "message": "表示",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_072": {
+    "message": "ショートカットの大文字小文字",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_073": {
+    "message": "そのまま",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_074": {
+    "message": "大文字",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_075": {
+    "message": "キーボードキー",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_076": {
+    "message": "陰影",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_077": {
+    "message": "ベベル",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_078": {
+    "message": "フラット",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_079": {
+    "message": "キーの角",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_080": {
+    "message": "丸み",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_081": {
+    "message": "カット",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_082": {
+    "message": "キーのカットサイズ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_083": {
+    "message": "キー角カットの深さ（ピクセル、0–16）。キーの角がカットのときに使用。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_084": {
+    "message": "アウトライン",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_085": {
+    "message": "色",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_086": {
+    "message": "アクセント",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_087": {
+    "message": "前景",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_088": {
+    "message": "薄いテキスト",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_089": {
+    "message": "パネル",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_090": {
+    "message": "パネルの縁",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_091": {
+    "message": "タイトル上",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_092": {
+    "message": "タイトル中",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_093": {
+    "message": "タイトル下",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_094": {
+    "message": "ショートカットテキスト",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_095": {
+    "message": "書体",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_096": {
+    "message": "UI サイズ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_097": {
+    "message": "UI の基本フォントサイズ（ピクセル、9–18）。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_098": {
+    "message": "キーラベルサイズ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_099": {
+    "message": "キーボードキーラベルのフォントサイズ（ピクセル、8–16）。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_100": {
+    "message": "外観をリセット",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_101": {
+    "message": "トークン編集をクリアし、選択中の組み込みテーマを復元します。クリックモードはそのままです。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_102": {
+    "message": "外観をリセット",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_103": {
+    "message": "検索エンジン（オムニボックス）",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_104": {
+    "message": "新しいタブの検索ボックスと KeyPilot のオムニボックス ($1) で使用。",
+    "description": "Settings Search panel lead. $1 is the omnibox shortcut (Alt+L / Opt+L).",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+L"
+      }
+    }
+  },
+  "settings_static_105": {
+    "message": "Brave",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_106": {
+    "message": "Google",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_107": {
+    "message": "DuckDuckGo",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_108": {
+    "message": "キーボード",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_109": {
+    "message": "レイアウトとフローティングキーボードリファレンスパネルの動作。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_110": {
+    "message": "キーボードリファレンス",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_111": {
+    "message": "K",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_112": {
+    "message": "…",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_113": {
+    "message": "キーボードレイアウトファミリー",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_114": {
+    "message": "有効な組み込みレイアウトファミリーを制御します。左右は別設定のため、ファミリー切替で左右が入れ替わることはありません。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_115": {
+    "message": "左手",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_116": {
+    "message": "選択したレイアウトファミリーの左手バリアントを使用します（ショートカットは主に右側）。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_117": {
+    "message": "数字行を表示",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_118": {
+    "message": "フローティングキーボードリファレンスパネルとレイアウトエディターに 1–0 行を含めます。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_119": {
+    "message": "押下キーのフィードバックを表示",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_120": {
+    "message": "keydown/keyup 時にフローティングキーボードリファレンスパネルのキーを強調表示します。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_121": {
+    "message": "カーソル",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_122": {
+    "message": "KeyPilot がページのカーソルを上書きするか、クリックモードのカーソルスタイルと形状。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_123": {
+    "message": "カーソルモード",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_124": {
+    "message": "カスタムカーソルなし",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_125": {
+    "message": "KeyPilot カーソル",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_126": {
+    "message": "「カスタムカーソルなし」を選ぶと、KeyPilot はページのカーソルを上書きせず、下のクリックモードカーソル制御は非表示になります。「KeyPilot カーソル」は KeyPilot のクロスヘア（および関連）カーソルを表示します。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_127": {
+    "message": "クリックモードのカーソル",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_128": {
+    "message": "種類",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_129": {
+    "message": "クロスヘア",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_130": {
+    "message": "標準の矢印",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_131": {
+    "message": "標準のポインター",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_132": {
+    "message": "プレビュー",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_133": {
+    "message": "線の太さ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_134": {
+    "message": "クロスヘアの線の太さ（1–12）。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_135": {
+    "message": "サイズ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_136": {
+    "message": "カーソルのサイズ（ピクセル、5–60px）。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_137": {
+    "message": "隙間",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_138": {
+    "message": "中心とクロスヘア棒の隙間（ピクセル）。0 = 交差する線、&gt;0 = 分離した棒（0–20px）。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_139": {
+    "message": "カーソルを既定値にリセット",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_140": {
+    "message": "スクロール",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_141": {
+    "message": "Page Up / Page Down のキーボードページスクロール（小さめのステップ）。Scroll To Top / Scroll To Bottom は端へジャンプ。スクロールラインの対象と任意の中クリック。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_142": {
+    "message": "Page Up / Page Down の距離",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_143": {
+    "message": "Page Up と Page Down でスクロールするピクセル数。既定値は 500。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_144": {
+    "message": "スクロール速度",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_145": {
+    "message": "スムーズ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_146": {
+    "message": "瞬時",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_147": {
+    "message": "キーボードスクロールのアニメーション（Page Up / Page Down、Scroll To Top / Scroll To Bottom、スクロールライン）。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_148": {
+    "message": "スクロールラインは幅広のページ内スクローラーをスキップ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_149": {
+    "message": "横カルーセルをスキップし、スクロールラインがページまたは縦ペインにロックするようにします。ボックスが横長でも全幅の縦カラムはスクロールします。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_150": {
+    "message": "中クリックでスクロールラインを開始",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_151": {
+    "message": "ページの空き領域では、マウス中ボタンがスクロールラインアクションを実行します（割り当てキーと同じ）。リンク、クリック可能要素、テキストフィールドは標準の中クリックを維持。Mac では既定でオン。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_152": {
+    "message": "スクロールを既定値にリセット",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_153": {
+    "message": "クリックモード",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_154": {
+    "message": "ホバーフォーカス矩形、キーボードヒント、クリック起動効果。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_155": {
+    "message": "フォーカス矩形",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_156": {
+    "message": "クリック可能ターゲット上のライブホバーアウトライン。変更はすぐ適用されます（この設定ウィンドウ内も含む）。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_157": {
+    "message": "色",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_158": {
+    "message": "青",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_159": {
+    "message": "緑",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_160": {
+    "message": "フォーカス矩形のアウトライン色。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_161": {
+    "message": "透明オーバーレイを表示",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_162": {
+    "message": "フォーカス矩形の内側に半透明の塗りを追加します。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_163": {
+    "message": "影 / 発光を表示",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_164": {
+    "message": "フォーカス矩形の外側に柔らかい発光。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_165": {
+    "message": "矩形の太さ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_166": {
+    "message": "フォーカス矩形の枠線の太さ（1～16px）。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_167": {
+    "message": "キーボードリファレンス",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_168": {
+    "message": "リンクにホバーするとキーを光らせる",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_169": {
+    "message": "キーボードリファレンスを開いているとき、ページ上のクリック可能なリンクにホバーすると、対応する緑色のアクションキーにアウトラインとグローが表示されます。既定はオフです。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_170": {
+    "message": "クリック効果",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_171": {
+    "message": "フラッシュ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_172": {
+    "message": "アウトラインの強いストロボ（既定）",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_173": {
+    "message": "ダッシュチェイス",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_174": {
+    "message": "破線の枠が縁を回る",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_175": {
+    "message": "マーキー",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_176": {
+    "message": "実線の光が枠線を伝う",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_177": {
+    "message": "スケール",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_178": {
+    "message": "アウトラインが外側に広がりながらフェードする",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_179": {
+    "message": "なし",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_180": {
+    "message": "起動アニメーションなし",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_181": {
+    "message": "詳細",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_182": {
+    "message": "描画バックエンド、親のスキップ、デバッグ枠線、フォーカスリングのパディング",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_183": {
+    "message": "描画モード",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_184": {
+    "message": "自動 B→C（アウトラインをスキップ）",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_185": {
+    "message": "自動（A→B→C）",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_186": {
+    "message": "自動 B→C",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_187": {
+    "message": "親をスキップ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_188": {
+    "message": "親と同じ遷移先を共有する入れ子のコントロール（同じ URL、data-href、インラインの onclick、同じクリックリスナー、または Gmail のような親の行／カードのクリック）は、親のホバーリングを使います。ボタンなど別の遷移先はそのままです。既定はオンです。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_189": {
+    "message": "描画バックエンドのデバッグ枠線",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_190": {
+    "message": "A／B／C を異なる破線で描き、どのバックエンドがホバーリングを描いたか見分けやすくします（A は破線、B は点線、C は二重線）。既定はオフです。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_191": {
+    "message": "パディング",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_192": {
+    "message": "フォーカス矩形の外側の余白（0～16px）。既定の 2px は以前のアウトラインオフセットに合わせています。B→C のリングは以前 0 でした。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_193": {
+    "message": "クリックモードを既定に戻す",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_194": {
+    "message": "テキストモード",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_195": {
+    "message": "テキストフィールド向けのカーソル、フォーカススタイル、ラベル。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_196": {
+    "message": "テキストモードのカーソル",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_197": {
+    "message": "タイプ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_198": {
+    "message": "T字",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_199": {
+    "message": "クロスヘア",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_200": {
+    "message": "プレビュー",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_201": {
+    "message": "カーソルを既定に戻す",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_202": {
+    "message": "フォーカス中のテキストフィールドのスタイル",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_203": {
+    "message": "入力中（テキストモード）のアクティブなテキストフィールドの見た目。ホバー時は引き続きオレンジのアウトラインと、\n                フィールド左に「F で選択」が表示されます。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_204": {
+    "message": "左端パルス",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_205": {
+    "message": "左端にオレンジのバーが点滅します（既定）。バーの左に「Esc で終了」が表示されます。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_206": {
+    "message": "背景ティント",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_207": {
+    "message": "フィールド全体をオレンジで塗りつぶす（以前のスタイル）に加え、Esc のヒントを表示します。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_208": {
+    "message": "左端バーの幅",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_209": {
+    "message": "点滅する左端バーの幅（1～24px）。既定は 5px です。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_210": {
+    "message": "ラベルとアウトライン",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_211": {
+    "message": "フォーカス中のテキストフィールドの上下にラベルを表示",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_212": {
+    "message": "「アクティブなテキストフィールド」と「ESC で閉じる」を表示します。オフにするとアウトラインのみになります。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_213": {
+    "message": "ストロークの太さ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_214": {
+    "message": "テキストモードのオレンジアウトラインの太さ（1～16px）。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_215": {
+    "message": "テキストモードを既定に戻す",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_216": {
+    "message": "コントロールストリップ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_217": {
+    "message": "コントロールストリップを表示",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_218": {
+    "message": "オフのときは、この設定をオンにするか $1 を押して再表示するまでストリップは非表示です。",
+    "description": "Control Strip visibility toggle help. $1 is Alt+J or Opt+J.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+J"
+      }
+    }
+  },
+  "settings_static_219": {
+    "message": "既定で折りたたむ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_220": {
+    "message": "ストリップを展開するまで、オン／オフ状態のセグメントだけを表示します。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_221": {
+    "message": "情報",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_222": {
+    "message": "KeyPilot の設定は Chrome のプロファイルストレージ経由で同期されます。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_223": {
+    "message": "noctivagous.com",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_224": {
+    "message": "デバッグログ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_225": {
+    "message": "既定はオフです。オンにすると、KeyPilot はサービスワーカーとページのコンソールに詳細なメッセージを出力します。",
+    "description": "Localized settings page chrome."
+  },
+  "newtab_static_001": {
+    "message": "KeyPilot のオン／オフを切り替え",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_002": {
+    "message": "KeyPilot のオン／オフを切り替え（全体）",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_003": {
+    "message": "KeyPilot が有効",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_004": {
+    "message": "オーバーレイの切り替え",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_005": {
+    "message": "コントロールストリップの表示／非表示（$1 で切り替え）",
+    "description": "New Tab control-strip switch title. $1 is Alt+J or Opt+J.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+J"
+      }
+    }
+  },
+  "newtab_static_006": {
+    "message": "コントロールストリップを表示中",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_007": {
+    "message": "フローティングキーボードリファレンスの表示／非表示",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_008": {
+    "message": "キーボードリファレンスを表示中",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_009": {
+    "message": "テーマオプション",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_010": {
+    "message": "ページ",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_011": {
+    "message": "検索",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_012": {
+    "message": "検索またはアドレスを入力",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_013": {
+    "message": "よく訪問するサイト",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_014": {
+    "message": "ツールバーのブックマーク",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_015": {
+    "message": "最近の履歴",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_016": {
+    "message": "ブックマーク",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_017": {
+    "message": "ブックマーク表示",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_018": {
+    "message": "ブックマーク表示",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_019": {
+    "message": "KeyPilot 新しいタブ",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_020": {
+    "message": "KeyPilot",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_021": {
+    "message": "…",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_022": {
+    "message": "オーバーレイ",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_023": {
+    "message": "Ctrlストリップ",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_024": {
+    "message": "$1",
+    "description": "New Tab control-strip shortcut chip. $1 is Alt+J or Opt+J.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+J"
+      }
+    }
+  },
+  "newtab_static_025": {
+    "message": "…",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_026": {
+    "message": "キーボード",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_027": {
+    "message": "K",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_028": {
+    "message": "…",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_029": {
+    "message": "表示",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_030": {
+    "message": "テーマ: Earth",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_031": {
+    "message": "▾",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_032": {
+    "message": "ページ",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_033": {
+    "message": "設定",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_034": {
+    "message": "ガイド",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_035": {
+    "message": "移動",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_036": {
+    "message": "エンジン: …",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_037": {
+    "message": "よく訪問するサイト",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_038": {
+    "message": "ツールバーのブックマーク",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_039": {
+    "message": "ツールバーのブックマークが見つかりません。",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_040": {
+    "message": "最近の履歴",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_041": {
+    "message": "最近",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_042": {
+    "message": "すべてのブックマーク",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_043": {
+    "message": "最近のブックマーク",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_044": {
+    "message": "ブックマークが見つかりません。",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_045": {
+    "message": "すべてのブックマーク",
+    "description": "Localized newtab page chrome."
+  },
+  "newtab_static_046": {
+    "message": "ブックマークが見つかりません。",
+    "description": "Localized newtab page chrome."
+  },
+  "settings_static_229": {
+    "message": "概要",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_230": {
+    "message": "外観",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_231": {
+    "message": "キーボード",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_232": {
+    "message": "クリックモード",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_233": {
+    "message": "テキストモード",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_234": {
+    "message": "スクロール",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_235": {
+    "message": "カーソル",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_236": {
+    "message": "コントロールストリップ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_237": {
+    "message": "検索",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_238": {
+    "message": "情報",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_239": {
+    "message": "デバッグ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_240": {
+    "message": "クリックモードの描画内部処理と詳細なコンソールログ。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_241": {
+    "message": "ホバーリング描画とコンソールログ向けの開発者診断。",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_242": {
+    "message": "オレンジ",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_243": {
+    "message": "赤",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_244": {
+    "message": "紫",
+    "description": "Localized settings page chrome."
+  },
+  "settings_static_245": {
+    "message": "カスタム",
+    "description": "Localized settings page chrome."
+  },
+  "settings_click_effect_hint": {
+    "message": "$1 を押してリンク形式の対象を起動したときの視覚フィードバック。",
+    "description": "Click Mode click-effect intro. $1 is the activation key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "F"
+      }
+    }
+  },
+  "settings_paint_mode_hint": {
+    "message": "ホバーフォーカス矩形の描画方法。自動 B→C は DOM アウトライン（A）をスキップし、対象内のリング、次に固定オーバーレイを使います。Shadow Root デバッグ（$1）と一致します。",
+    "description": "Click Mode paint-backend hint. $1 is the debug shortcut.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+D"
+      }
+    }
+  },
+  "settings_control_strip_lead": {
+    "message": "すべてのページ左上に表示するコンパクトなステータスストリップ（macOS コントロールストリップ風）。閉じたあとは $1 で再表示できます。",
+    "description": "Control Strip panel lead. $1 is the restore shortcut.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+J"
+      }
+    }
+  },
+  "settings_theme_custom_name": {
+    "message": "$1（カスタム）",
+    "description": "Localized extension-page UI text."
+  },
+  "settings_cursor_preview_native_arrow": {
+    "message": "システムのカーソルを使用（矢印）",
+    "description": "Localized extension-page UI text."
+  },
+  "settings_cursor_preview_native_pointer": {
+    "message": "システムのカーソルを使用（ポインター）",
+    "description": "Localized extension-page UI text."
+  },
+  "settings_cursor_preview_unavailable": {
+    "message": "プレビュー不可",
+    "description": "Localized extension-page UI text."
+  },
+  "settings_cursor_preview_alt": {
+    "message": "カーソルプレビュー",
+    "description": "Localized extension-page UI text."
+  },
+  "settings_state_on": {
+    "message": "オン",
+    "description": "Localized extension-page UI text."
+  },
+  "settings_state_off": {
+    "message": "オフ",
+    "description": "Localized extension-page UI text."
+  },
+  "settings_reset_all_confirm": {
+    "message": "すべての KeyPilot 設定を既定に戻しますか？この操作は取り消せません。",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_engine_label": {
+    "message": "エンジン: $1",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_modal_hint_suffix": {
+    "message": "同じキーボード操作でナビゲートできます。",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_modal_close_title": {
+    "message": "閉じる（Esc）",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_untitled_folder": {
+    "message": "無題のフォルダ",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_recent_history_empty": {
+    "message": "最近の履歴が見つかりません。",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_top_sites_empty": {
+    "message": "よく訪問するサイトが見つかりません。",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_switch_on": {
+    "message": "オン",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_switch_off": {
+    "message": "オフ",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_bookmark_view_aria_label": {
+    "message": "ブックマーク表示",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_bookmark_view_list": {
+    "message": "リスト",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_bookmark_view_cards": {
+    "message": "カード",
+    "description": "Localized extension-page UI text."
+  },
+  "docs_empty_document": {
+    "message": "空のドキュメント。",
+    "description": "Localized extension-page UI text."
+  },
+  "docs_copy_button_label": {
+    "message": "クリップボードにコピー",
+    "description": "Localized extension-page UI text."
+  },
+  "docs_copy_button_text": {
+    "message": "コピー",
+    "description": "Localized extension-page UI text."
+  },
+  "docs_copy_copied": {
+    "message": "コピーしました",
+    "description": "Localized extension-page UI text."
+  },
+  "docs_copy_failed": {
+    "message": "コピーに失敗しました",
+    "description": "Localized extension-page UI text."
+  },
+  "docs_no_topics_error": {
+    "message": "ドキュメントのトピックが見つかりません。",
+    "description": "Localized extension-page UI text."
+  },
+  "docs_catalog_load_error": {
+    "message": "ドキュメントカタログを読み込めませんでした。",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_width_full": {
+    "message": "全幅",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_theme_options_aria": {
+    "message": "テーマオプション",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_heading": {
+    "message": "テーマ",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_close": {
+    "message": "閉じる",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_theme_label": {
+    "message": "テーマ",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_theme_aria": {
+    "message": "新しいタブのテーマ",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_theme_cyberforward_title": {
+    "message": "Cyberforward — スレート＋シアン（ポップアップ／ウェブサイト風）",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_theme_earth_title": {
+    "message": "Earth — オリジナルのオレンジ／黒の見た目",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_font_size_label": {
+    "message": "フォントサイズ",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_font_size_aria": {
+    "message": "新しいタブのフォントサイズ",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_font_default_title": {
+    "message": "既定（$1px）",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_font_title": {
+    "message": "ルートの文字サイズ $1px",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_ui_scale_label": {
+    "message": "UIスケール",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_ui_scale_aria": {
+    "message": "新しいタブのUIスケール",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_scale_default_title": {
+    "message": "既定のレイアウトスケール",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_scale_title": {
+    "message": "レイアウトスケール $1%",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_width_label": {
+    "message": "幅",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_width_aria": {
+    "message": "新しいタブのコンテンツ幅",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_width_default_title": {
+    "message": "既定のコンテンツ幅（$1px）",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_width_full_title": {
+    "message": "ウィンドウ全幅を使用（ビューポートに合わせて縮小）",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_width_title": {
+    "message": "コンテンツの最大幅 $1px（ウィンドウが狭い場合は縮小）",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_reset": {
+    "message": "既定に戻す",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_reset_title": {
+    "message": "既定のテーマ（$1）、フォント $2px、UI $3%、幅 $4 に戻す",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_theme_summary": {
+    "message": "テーマ: $1",
+    "description": "Localized extension-page UI text."
+  },
+  "newtab_display_anchor_title": {
+    "message": "テーマ: $1、フォント $2、UI $3、幅 $4",
+    "description": "Localized extension-page UI text."
+  },
+  "popup_tutorial_active": {
+    "message": "有効",
+    "description": "Localized extension-page UI text."
+  },
+  "popup_tutorial_walkthrough": {
+    "message": "ウォークスルー",
+    "description": "Localized extension-page UI text."
+  },
+  "popover_titlebar_drag_title": {
+    "message": "ドラッグして移動",
+    "description": "Tooltip for a draggable extension-page titlebar."
+  },
+  "popover_titlebar_press": {
+    "message": "押す",
+    "description": "Prefix for titlebar keyboard shortcut hints."
+  },
+  "popover_titlebar_close": {
+    "message": "閉じる（Esc）",
+    "description": "Accessible label and tooltip for a titlebar close button."
+  },
+  "popover_window_title_preview": {
+    "message": "リンクプレビュー",
+    "description": "Titlebar title for the Link Preview OS popup."
+  },
+  "popover_window_title_open": {
+    "message": "ポップオーバーを開く",
+    "description": "Titlebar title for the Open Popover OS popup."
+  },
+  "popover_hide_hint_suffix": {
+    "message": "で非表示",
+    "description": "Titlebar hint suffix after Esc / shortcut keys on Link Preview and Open Popover."
+  },
+  "context_menu_toggle_keypilot": {
+    "message": "KeyPilot を切り替え",
+    "description": "Context-menu item that enables or disables KeyPilot."
+  },
+  "context_menu_group_windows": {
+    "message": "KeyPilot ウィンドウ",
+    "description": "Context-menu group for KeyPilot window and overlay actions."
+  },
+  "context_menu_toggle_keyboard_reference": {
+    "message": "キーボードリファレンスを切り替え",
+    "description": "Context-menu item that shows or hides the keyboard reference."
+  },
+  "context_menu_onboarding_tutorial": {
+    "message": "導入チュートリアル（$1）",
+    "description": "Context-menu item that opens the onboarding walkthrough. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt + I"
+      }
+    }
+  },
+  "context_menu_docs_help": {
+    "message": "KeyPilot ドキュメント（$1）",
+    "description": "Context-menu item that opens documentation. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt + H"
+      }
+    }
+  },
+  "context_menu_settings": {
+    "message": "KeyPilot 設定（$1）",
+    "description": "Context-menu item that opens Settings. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "'"
+      }
+    }
+  },
+  "context_menu_group_keyboard_reference": {
+    "message": "キーボードリファレンス",
+    "description": "Context-menu group for keyboard-reference visibility and layouts."
+  },
+  "context_menu_show_keyboard_reference": {
+    "message": "キーボードリファレンスを表示",
+    "description": "Context-menu item that shows the keyboard reference."
+  },
+  "context_menu_hide_keyboard_reference": {
+    "message": "キーボードリファレンスを非表示",
+    "description": "Context-menu item that hides the keyboard reference."
+  },
+  "context_menu_group_builtin_layouts": {
+    "message": "組み込みレイアウト",
+    "description": "Context-menu group listing built-in keyboard layout families."
+  },
+  "context_menu_group_custom_layouts": {
+    "message": "カスタムレイアウト",
+    "description": "Context-menu group listing user-created keyboard layouts."
+  },
+  "context_menu_no_custom_layouts": {
+    "message": "なし",
+    "description": "Disabled empty-state item when no custom keyboard layouts exist."
+  },
+  "context_menu_group_layout_editor": {
+    "message": "キーボードレイアウトエディター",
+    "description": "Context-menu group for creating and editing keyboard layouts."
+  },
+  "layout_editor_aria": {
+    "message": "キーボードレイアウトエディター",
+    "description": "Accessible name for the Keyboard Layout Editor dialog."
+  },
+  "layout_editor_toggle_title": {
+    "message": "$1 で切り替え",
+    "description": "Tooltip for the Keyboard Layout Editor titlebar shortcut. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+C"
+      }
+    }
+  },
+  "layout_editor_autosaves": {
+    "message": "自動保存",
+    "description": "Titlebar chip indicating the Keyboard Layout Editor saves automatically."
+  },
+  "layout_editor_autosaves_title": {
+    "message": "レイアウトの変更は自動保存されます",
+    "description": "Tooltip for the Autosaves chip in the Keyboard Layout Editor."
+  },
+  "layout_editor_close_aria": {
+    "message": "レイアウトエディターを閉じる",
+    "description": "Accessible name for closing the Keyboard Layout Editor."
+  },
+  "layout_editor_place_message": {
+    "message": "マウスを動かして、キーボード上にアクションを配置します。",
+    "description": "Titlebar status while placing an action onto the Keyboard Reference."
+  },
+  "layout_editor_set_current": {
+    "message": "現在に設定",
+    "description": "Button that makes the selected layout the active layout."
+  },
+  "layout_editor_set_current_title": {
+    "message": "現在のレイアウトとして設定",
+    "description": "Tooltip for the Set to current button."
+  },
+  "layout_editor_current": {
+    "message": "現在",
+    "description": "Badge marking the layout that is currently active."
+  },
+  "layout_editor_inspector": {
+    "message": "インスペクター",
+    "description": "Keyboard Layout Editor Inspector pane title."
+  },
+  "layout_editor_inspector_expand": {
+    "message": "インスペクターを展開",
+    "description": "Tooltip for expanding the Inspector pane."
+  },
+  "layout_editor_inspector_collapse": {
+    "message": "折りたたむ",
+    "description": "Button that collapses the Inspector pane."
+  },
+  "layout_editor_inspector_resize": {
+    "message": "インスペクターのサイズ変更",
+    "description": "Accessible name for the Inspector splitter."
+  },
+  "layout_editor_inspector_empty": {
+    "message": "アクションライブラリのカードを選択して内容を確認します。",
+    "description": "Inspector empty state when nothing is selected."
+  },
+  "layout_editor_inspector_none": {
+    "message": "この項目のインスペクター詳細はありません。",
+    "description": "Inspector empty state when the selection has no details."
+  },
+  "layout_editor_assigned_keys": {
+    "message": "割り当てキー",
+    "description": "Inspector heading listing keys assigned to an action."
+  },
+  "layout_editor_not_assigned": {
+    "message": "どのキーにも割り当てられていません。",
+    "description": "Inspector empty state when an action has no key assignment."
+  },
+  "layout_editor_macro_not_found": {
+    "message": "マクロが見つかりません。",
+    "description": "Inspector empty state when a selected macro is missing."
+  },
+  "layout_editor_no_steps": {
+    "message": "ステップはまだありません。",
+    "description": "Inspector empty state when a macro has no steps."
+  },
+  "layout_editor_actions_library": {
+    "message": "アクションライブラリ",
+    "description": "Title of the Actions Library pane in the Keyboard Layout Editor."
+  },
+  "layout_editor_search_placeholder": {
+    "message": "検索…",
+    "description": "Placeholder for the Actions Library search field."
+  },
+  "layout_editor_library_filter_aria": {
+    "message": "ライブラリフィルター",
+    "description": "Accessible name for the All/Functions segmented control."
+  },
+  "layout_editor_function_category_aria": {
+    "message": "機能カテゴリ",
+    "description": "Accessible name for the Function category dropdown."
+  },
+  "layout_editor_library_layout_aria": {
+    "message": "ライブラリレイアウト",
+    "description": "Accessible name for the Cards/Table segmented control."
+  },
+  "layout_editor_tab_all": {
+    "message": "すべて",
+    "description": "Actions Library filter tab that shows every item."
+  },
+  "layout_editor_tab_functions": {
+    "message": "機能",
+    "description": "Actions Library filter tab that shows Functions only."
+  },
+  "layout_editor_tab_macros": {
+    "message": "マクロ",
+    "description": "Actions Library filter tab that shows Macros only."
+  },
+  "layout_editor_tab_macro_keys": {
+    "message": "マクロキー",
+    "description": "Actions Library filter tab that shows Macro Keys only."
+  },
+  "layout_editor_view_cards": {
+    "message": "カード",
+    "description": "Actions Library presentation mode: cards."
+  },
+  "layout_editor_view_table": {
+    "message": "テーブル",
+    "description": "Actions Library presentation mode: table."
+  },
+  "layout_editor_instructions_aria": {
+    "message": "レイアウト割り当て手順",
+    "description": "Accessible name for the Actions Library instructions section."
+  },
+  "layout_editor_instructions_title": {
+    "message": "手順:",
+    "description": "Heading for the Actions Library placement instructions."
+  },
+  "layout_editor_instructions_body": {
+    "message": "下のキーキャップを一度クリックしてマウスを動かします。配置矢印でアクションをキーボードに配置します。",
+    "description": "Body copy for placing an action from the Actions Library onto the Keyboard Reference."
+  },
+  "layout_editor_instructions_collapse": {
+    "message": "手順を折りたたむ",
+    "description": "Tooltip for collapsing the Actions Library instructions."
+  },
+  "layout_editor_instructions_expand": {
+    "message": "手順を展開",
+    "description": "Tooltip for expanding the Actions Library instructions."
+  },
+  "layout_editor_place_pulse": {
+    "message": "キーボードリファレンス上の希望のキーキャップ位置をクリックします。",
+    "description": "Status shown while placing an action onto a Keyboard Reference key."
+  },
+  "layout_editor_table_aria": {
+    "message": "アクションライブラリの表",
+    "description": "Accessible name for the Actions Library table view."
+  },
+  "layout_editor_layout_options": {
+    "message": "レイアウトオプション",
+    "description": "Accessible name for the Keyboard Layout Editor overflow menu (left-handed, number row)."
+  },
+  "layout_editor_layout_noun": {
+    "message": "レイアウト",
+    "description": "Short label beside the layout picker in the Keyboard Layout Editor, and fallback base name for new layouts."
+  },
+  "layout_editor_copy_suffix": {
+    "message": "コピー",
+    "description": "Word inserted when duplicating a built-in layout, as in 'Browsing Copy 1'."
+  },
+  "layout_editor_custom_layout": {
+    "message": "カスタムレイアウト",
+    "description": "Fallback name for a user-created keyboard layout."
+  },
+  "context_menu_edit_layouts": {
+    "message": "キーボードレイアウトを編集…",
+    "description": "Context-menu item that opens the keyboard layout editor."
+  },
+  "context_menu_new_layout": {
+    "message": "新規の空のキーボードレイアウト",
+    "description": "Context-menu item that creates a blank custom keyboard layout."
+  },
+  "context_menu_duplicate_layout": {
+    "message": "複製したキーボードレイアウトを新規作成",
+    "description": "Context-menu item that duplicates the current keyboard layout."
+  },
+  "overlay_hub_tools_count": {
+    "message": "$1 個のツール",
+    "description": "Status count for KeyPilot hub cards in Top Sites."
+  },
+  "overlay_close": {
+    "message": "閉じる",
+    "description": "Generic overlay close button."
+  },
+  "overlay_untitled": {
+    "message": "無題",
+    "description": "Fallback title when a bookmark or history item has no name."
+  },
+  "control_strip_aria_label": {
+    "message": "KeyPilot コントロールストリップ",
+    "description": "Accessible name for the control strip toolbar."
+  },
+  "control_strip_toggle_aria": {
+    "message": "KeyPilot のオン/オフを切り替え",
+    "description": "Accessible name for the control-strip enable switch."
+  },
+  "control_strip_toggle_title": {
+    "message": "KeyPilot を切り替え（$1）",
+    "description": "Tooltip for the control-strip enable switch. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+K"
+      }
+    }
+  },
+  "control_strip_keyboard_aria": {
+    "message": "キーボードリファレンスを切り替え",
+    "description": "Accessible name for the control-strip keyboard-reference button."
+  },
+  "control_strip_keyboard_title": {
+    "message": "キーボードリファレンス",
+    "description": "Tooltip for the control-strip keyboard-reference button."
+  },
+  "control_strip_keyboard_abbrev": {
+    "message": "KB",
+    "description": "Optional visible abbreviation on the control-strip keyboard button. Use '-' to hide the label and show the icon only."
+  },
+  "control_strip_settings_aria": {
+    "message": "KeyPilot の設定を開く",
+    "description": "Accessible name for the control-strip settings button."
+  },
+  "control_strip_settings_title": {
+    "message": "設定",
+    "description": "Tooltip for the control-strip settings button."
+  },
+  "control_strip_collapse": {
+    "message": "折りたたむ",
+    "description": "Control-strip collapse action."
+  },
+  "control_strip_expand": {
+    "message": "展開",
+    "description": "Control-strip expand action."
+  },
+  "control_strip_collapse_aria": {
+    "message": "コントロールストリップを折りたたむ",
+    "description": "Accessible name for collapsing the control strip."
+  },
+  "control_strip_expand_aria": {
+    "message": "コントロールストリップを展開",
+    "description": "Accessible name for expanding the control strip."
+  },
+  "control_strip_close_aria": {
+    "message": "コントロールストリップを閉じる",
+    "description": "Accessible name for closing the control strip."
+  },
+  "control_strip_close_title": {
+    "message": "閉じる（$1 で再表示）",
+    "description": "Tooltip for closing the control strip. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+J"
+      }
+    }
+  },
+  "control_strip_move_aria": {
+    "message": "コントロールストリップを移動",
+    "description": "Accessible name for the control-strip drag handle."
+  },
+  "keyboard_help_aria_label": {
+    "message": "KeyPilot キーボードリファレンス",
+    "description": "Accessible name for the floating keyboard reference."
+  },
+  "keyboard_help_title": {
+    "message": "キーボードリファレンス",
+    "description": "Title of the floating keyboard reference."
+  },
+  "keyboard_help_title_typing": {
+    "message": "キーボードリファレンス — 入力中",
+    "description": "Keyboard reference title while a text field is focused."
+  },
+  "keyboard_help_toggle_title": {
+    "message": "キーボードリファレンスを切り替え",
+    "description": "Tooltip for the keyboard-reference toggle shortcut."
+  },
+  "keyboard_help_toggle_aria": {
+    "message": "キーボードリファレンスを切り替え（$1）",
+    "description": "Accessible name for the keyboard-reference toggle shortcut. $1 is the key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "K"
+      }
+    }
+  },
+  "keyboard_help_close_aria": {
+    "message": "キーボードリファレンスを閉じる",
+    "description": "Accessible name for closing the keyboard reference."
+  },
+  "keyboard_help_collapse_aria": {
+    "message": "キーボードリファレンスを折りたたむ",
+    "description": "Accessible name for collapsing the keyboard reference."
+  },
+  "keyboard_help_expand_aria": {
+    "message": "キーボードリファレンスを展開",
+    "description": "Accessible name for expanding the keyboard reference."
+  },
+  "keyboard_help_layout_aria": {
+    "message": "現在のキーボードレイアウト",
+    "description": "Accessible name for the keyboard-reference layout picker."
+  },
+  "keyboard_help_editing_aria": {
+    "message": "レイアウト編集中 — $1 で終了",
+    "description": "Hint while the layout editor is open. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+C"
+      }
+    }
+  },
+  "keyboard_help_exit_text_mode": {
+    "message": "テキストモードを終了（$1）",
+    "description": "Button that leaves text mode. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Esc"
+      }
+    }
+  },
+  "keyboard_help_exit_text_mode_label": {
+    "message": "終了",
+    "description": "Visible label on the Keyboard Reference button that leaves text mode."
+  },
+  "keyboard_help_esc_to_exit": {
+    "message": "$1 で終了",
+    "description": "Keyboard Reference titlebar hint while text mode is active. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Esc"
+      }
+    }
+  },
+  "text_mode_sidecar_to": {
+    "message": "で",
+    "description": "Vertical text-mode sidecar preposition between the keycap and the verb. Keep this short."
+  },
+  "text_mode_sidecar_exit": {
+    "message": "終了",
+    "description": "Vertical text-mode sidecar verb under Esc. Keep this short."
+  },
+  "text_mode_sidecar_select": {
+    "message": "選択",
+    "description": "Vertical text-mode sidecar verb under the Click Element key. Keep this short."
+  },
+  "text_mode_hint_focus": {
+    "message": "$1 を押して終了",
+    "description": "SVG hint painted on a focused text field. $1 is the cancel key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "Esc"
+      }
+    }
+  },
+  "text_mode_hint_hover": {
+    "message": "$1 で選択",
+    "description": "SVG hint painted on a hovered text field. $1 is the Click Element key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "F"
+      }
+    }
+  },
+  "keyboard_help_close_editor": {
+    "message": "レイアウトエディターを閉じる（$1）",
+    "description": "Button that closes the layout editor. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+C"
+      }
+    }
+  },
+  "keyboard_help_close_editor_label": {
+    "message": "エディターを閉じる",
+    "description": "Visible label on the Keyboard Reference button that closes the layout editor."
+  },
+  "keycap_tab": {
+    "message": "Tab",
+    "description": "Visible legend on the Tab keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_caps": {
+    "message": "Caps",
+    "description": "Visible legend on the Caps Lock keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_shift": {
+    "message": "Shift",
+    "description": "Visible legend on the Shift keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_enter": {
+    "message": "Enter",
+    "description": "Visible legend on the Enter/Return keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_backspace": {
+    "message": "Backspace",
+    "description": "Visible legend on the Backspace keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_esc": {
+    "message": "Esc",
+    "description": "Visible legend on the Escape keycap in Keyboard Reference. Keep this short."
+  },
+  "keyboard_help_left_handed": {
+    "message": "左手",
+    "description": "Chip label for left-handed keyboard layout."
+  },
+  "keyboard_help_left_handed_off_aria": {
+    "message": "左手レイアウトをオフにする",
+    "description": "Accessible name for dismissing the left-handed chip."
+  },
+  "keyboard_help_render_error": {
+    "message": "このページではキーボードリファレンスを表示できません。",
+    "description": "Error when the keyboard reference cannot paint."
+  },
+  "keyboard_help_custom_render_error": {
+    "message": "カスタムキーボードレイアウトを表示できません。",
+    "description": "Error when a custom layout cannot paint."
+  },
+  "keyboard_help_remove_action_aria": {
+    "message": "$1 からアクションを削除",
+    "description": "Accessible name for removing a key assignment. $1 is the key label.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "F"
+      }
+    }
+  },
+  "keyboard_help_remove": {
+    "message": "削除",
+    "description": "Tooltip for removing a key assignment."
+  },
+  "onboarding_default_title": {
+    "message": "KeyPilot へようこそ",
+    "description": "Default onboarding walkthrough title."
+  },
+  "onboarding_aria_label": {
+    "message": "KeyPilot 導入ウォークスルー",
+    "description": "Accessible name for the onboarding panel."
+  },
+  "onboarding_reopen_tip": {
+    "message": "ヒント: $1 を押すと後からこのウォークスルーを再度開けます。",
+    "description": "Footer tip for reopening onboarding. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt + I"
+      }
+    }
+  },
+  "onboarding_reset": {
+    "message": "リセット",
+    "description": "Onboarding reset button."
+  },
+  "onboarding_close_aria": {
+    "message": "導入ウォークスルーを閉じる",
+    "description": "Accessible name for closing onboarding."
+  },
+  "onboarding_close_tutorial": {
+    "message": "チュートリアルを閉じる",
+    "description": "Button that ends the onboarding tutorial."
+  },
+  "onboarding_complete_title": {
+    "message": "完了！",
+    "description": "Title shown when onboarding is complete."
+  },
+  "onboarding_complete_ok": {
+    "message": "OK",
+    "description": "Dismiss button on the onboarding complete card."
+  },
+  "onboarding_render_error": {
+    "message": "このページでは導入パネルを表示できません。",
+    "description": "Error when onboarding cannot paint."
+  },
+  "preview_open": {
+    "message": "開く",
+    "description": "Preview action that opens the URL in the current tab."
+  },
+  "preview_open_this_tab": {
+    "message": "このタブで開く",
+    "description": "Accessible label for opening a preview URL in the current tab."
+  },
+  "preview_open_new_tab": {
+    "message": "新しいタブで開く",
+    "description": "Preview action that opens the URL in a new tab."
+  },
+  "preview_open_new_tab_aria": {
+    "message": "新しいタブで開く",
+    "description": "Accessible label for opening a URL in a new tab."
+  },
+  "popover_cannot_display_title": {
+    "message": "ページを表示できません",
+    "description": "Title when a site blocks iframe embedding."
+  },
+  "popover_cannot_display_message": {
+    "message": "このウェブサイトはセキュリティ上の理由で iframe への埋め込みを禁止しています。",
+    "description": "Explanation when a preview cannot be embedded."
+  },
+  "top_sites_title": {
+    "message": "トップサイト",
+    "description": "Title of the Top Sites overlay."
+  },
+  "top_sites_options_aria": {
+    "message": "トップサイトのオプション",
+    "description": "Accessible name for Top Sites options."
+  },
+  "top_sites_keep_open": {
+    "message": "ページ間で開いたままにする",
+    "description": "Option to persist the Top Sites overlay."
+  },
+  "top_sites_tabs_aria": {
+    "message": "トップサイトと KeyPilot",
+    "description": "Accessible name for the Top Sites tab list."
+  },
+  "top_sites_loading": {
+    "message": "読み込み中…",
+    "description": "Loading status in the Top Sites overlay."
+  },
+  "top_sites_count": {
+    "message": "$1 サイト",
+    "description": "Top Sites status count for more than one site. $1 is the number.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "top_sites_count_one": {
+    "message": "$1 サイト",
+    "description": "Top Sites status count for exactly one site. $1 is the number.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "1"
+      }
+    }
+  },
+  "tab_history_title": {
+    "message": "履歴",
+    "description": "Title of the History overlay."
+  },
+  "tab_history_subtitle": {
+    "message": "ブラウザー履歴 · タブ履歴",
+    "description": "Subtitle of the History overlay."
+  },
+  "tab_history_click_hint": {
+    "message": "クリックして移動",
+    "description": "Hint above history lists."
+  },
+  "tab_history_loading": {
+    "message": "読み込み中…",
+    "description": "Generic loading status."
+  },
+  "tab_history_loading_tabs": {
+    "message": "タブ履歴を読み込み中…",
+    "description": "Loading status for tab history."
+  },
+  "tab_history_loading_browser": {
+    "message": "ブラウザー履歴を読み込み中…",
+    "description": "Loading status for browser history."
+  },
+  "tab_history_tabs_unavailable": {
+    "message": "タブ履歴は利用できません。",
+    "description": "Error when tab history cannot load."
+  },
+  "tab_history_browser_unavailable": {
+    "message": "ブラウザー履歴は利用できません。",
+    "description": "Error when browser history cannot load."
+  },
+  "tab_history_browser_empty": {
+    "message": "最近のブラウザー履歴はありません。",
+    "description": "Empty browser-history list."
+  },
+  "tab_history_tabs_empty": {
+    "message": "タブ履歴はまだありません。",
+    "description": "Empty tab-history list."
+  },
+  "tab_history_navigate_hint": {
+    "message": "項目をクリックして移動します。Esc で閉じます。",
+    "description": "Hint after history lists load."
+  },
+  "tab_history_more_branches_aria": {
+    "message": "さらに $1 個の分岐",
+    "description": "Accessible label for extra history branches.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "launcher_title": {
+    "message": "ランチャー",
+    "description": "Title of the Launcher overlay."
+  },
+  "launcher_subtitle": {
+    "message": "お気に入りサイトへのクイックアクセス",
+    "description": "Launcher overlay subtitle."
+  },
+  "launcher_show_deck": {
+    "message": "起動デッキを表示",
+    "description": "Toggle for showing the Launch Deck."
+  },
+  "launcher_edit_hint": {
+    "message": "並べ替え、削除、追加 • Esc で編集を終了",
+    "description": "Launcher edit-mode hint."
+  },
+  "launcher_add_site": {
+    "message": "サイトを追加…",
+    "description": "Button that adds a site to the Launch Deck."
+  },
+  "launcher_add_to_deck": {
+    "message": "起動デッキに追加",
+    "description": "Title of the add-site dialog."
+  },
+  "launcher_add_url": {
+    "message": "URL を追加",
+    "description": "Button that adds a custom URL."
+  },
+  "launcher_filter_aria": {
+    "message": "結果をフィルター",
+    "description": "Accessible name for the launcher search filter."
+  },
+  "launcher_clear_search_aria": {
+    "message": "検索をクリア",
+    "description": "Accessible name for clearing launcher search."
+  },
+  "launcher_empty_toolbar": {
+    "message": "ツールバーのブックマークはありません",
+    "description": "Empty launcher toolbar-bookmarks list."
+  },
+  "launcher_empty_top_sites": {
+    "message": "よく訪問するサイトはありません",
+    "description": "Empty launcher top-sites list."
+  },
+  "launcher_empty_category": {
+    "message": "このカテゴリに項目はありません",
+    "description": "Empty launcher category list."
+  },
+  "launcher_search": {
+    "message": "検索",
+    "description": "Launcher search submit button."
+  },
+  "launcher_video_site_aria": {
+    "message": "検索する動画サイト",
+    "description": "Accessible name for the video-site picker."
+  },
+  "launcher_launch_hint": {
+    "message": "起動 →",
+    "description": "Hint on a launcher row."
+  },
+  "launcher_editing": {
+    "message": "編集中",
+    "description": "Launcher row state while editing."
+  },
+  "launcher_preview": {
+    "message": "プレビュー",
+    "description": "Launcher preview action label."
+  },
+  "launcher_subtab_launch_deck": {
+    "message": "起動デッキ",
+    "description": "Launcher sub-tab for the user's Launch Deck."
+  },
+  "launcher_subtab_toolbar_bookmarks": {
+    "message": "ツールバーのブックマーク",
+    "description": "Launcher Launch Deck sub-tab for toolbar bookmarks."
+  },
+  "launcher_subtab_favorites": {
+    "message": "お気に入り",
+    "description": "Launcher sub-tab for favorite sites."
+  },
+  "launcher_subtab_top_visited": {
+    "message": "よく訪問",
+    "description": "Launcher Launch Deck sub-tab for most-visited sites."
+  },
+  "launcher_subtab_history": {
+    "message": "履歴",
+    "description": "Launcher sub-tab for recent history."
+  },
+  "launcher_edit_deck": {
+    "message": "起動デッキを編集",
+    "description": "Button that starts Launch Deck editing."
+  },
+  "launcher_done": {
+    "message": "完了",
+    "description": "Button that finishes Launch Deck editing."
+  },
+  "launcher_filter_catalog_placeholder": {
+    "message": "カタログをフィルター…",
+    "description": "Placeholder for filtering the add-to-deck catalog."
+  },
+  "launcher_no_matching_sites": {
+    "message": "一致するサイトはありません",
+    "description": "Empty add-to-deck catalog after filtering."
+  },
+  "launcher_all_sites_on_deck": {
+    "message": "カタログのサイトはすべてデッキに追加済みです",
+    "description": "Empty add-to-deck catalog when every site is already added."
+  },
+  "launcher_filter_placeholder": {
+    "message": "結果をフィルター…",
+    "description": "Placeholder for the launcher results filter."
+  },
+  "launcher_no_search_matches": {
+    "message": "検索に一致するサイトはありません",
+    "description": "Empty launcher search results."
+  },
+  "launcher_search_prompt": {
+    "message": "入力してこのカテゴリのサイトを検索",
+    "description": "Launcher search empty state before a query."
+  },
+  "launcher_footer_hint": {
+    "message": "↑↓ でタブ切替 • / で検索 • F で開く • Esc で閉じる",
+    "description": "Keyboard hint in the Launcher footer."
+  },
+  "launcher_archive_search_label": {
+    "message": "アーカイブを検索",
+    "description": "Accessible label for Internet Archive search in Launcher."
+  },
+  "launcher_archive_search_placeholder": {
+    "message": "テキスト、映画、ソフトウェア、音楽、ウェブサイト…",
+    "description": "Placeholder for Internet Archive search in Launcher."
+  },
+  "launcher_archive_search_aria": {
+    "message": "Internet Archive を検索",
+    "description": "Accessible name for Internet Archive search in Launcher."
+  },
+  "launcher_archive_results_title": {
+    "message": "アーカイブ · $1",
+    "description": "Title for Internet Archive search results. $1 is the query.",
+    "placeholders": {
+      "query": {
+        "content": "$1",
+        "example": "apollo"
+      }
+    }
+  },
+  "launcher_videos_search_label": {
+    "message": "動画を検索",
+    "description": "Accessible label for video search in Launcher."
+  },
+  "launcher_videos_search_placeholder": {
+    "message": "動画を検索…",
+    "description": "Placeholder for video search in Launcher."
+  },
+  "launcher_videos_search_aria": {
+    "message": "動画を検索",
+    "description": "Accessible name for video search in Launcher."
+  },
+  "launcher_visited_on": {
+    "message": "$1 に訪問",
+    "description": "Launcher card overlay for last visit. $1 is the localized date.",
+    "placeholders": {
+      "date": {
+        "content": "$1",
+        "example": "Sep 18, 2026"
+      }
+    }
+  },
+  "launcher_added_on": {
+    "message": "$1 に追加",
+    "description": "Launcher card overlay for bookmark added date. $1 is the localized date.",
+    "placeholders": {
+      "date": {
+        "content": "$1",
+        "example": "Sep 18, 2026"
+      }
+    }
+  },
+  "launcher_move_up": {
+    "message": "上へ移動",
+    "description": "Tooltip for moving a Launch Deck item up."
+  },
+  "launcher_move_down": {
+    "message": "下へ移動",
+    "description": "Tooltip for moving a Launch Deck item down."
+  },
+  "launcher_remove_from_deck": {
+    "message": "起動デッキから削除",
+    "description": "Tooltip for removing a Launch Deck item."
+  },
+  "launcher_preview_toggle": {
+    "message": "プレビュー / プレビューを閉じる",
+    "description": "Tooltip for toggling a launcher site preview."
+  },
+  "page_media_title": {
+    "message": "ページメディア",
+    "description": "Title of the Page Media overlay."
+  },
+  "page_media_url_view": {
+    "message": "URL 表示:",
+    "description": "Label for Page Media URL view mode."
+  },
+  "page_media_view_table": {
+    "message": "表",
+    "description": "Page Media table view option."
+  },
+  "page_media_view_table_title": {
+    "message": "ドメインとパス別の階層表",
+    "description": "Tooltip for Page Media table view."
+  },
+  "page_media_view_list": {
+    "message": "リスト",
+    "description": "Page Media list view option."
+  },
+  "page_media_view_list_title": {
+    "message": "ドメインとパスでグループ化した横並びカード",
+    "description": "Tooltip for Page Media list view."
+  },
+  "page_media_aspect": {
+    "message": "カードのアスペクト比:",
+    "description": "Label for Page Media thumbnail aspect."
+  },
+  "page_media_aspect_square": {
+    "message": "正方形クロップ",
+    "description": "Square crop option."
+  },
+  "page_media_aspect_square_title": {
+    "message": "正方形にクロップしたサムネイル",
+    "description": "Tooltip for square crop."
+  },
+  "page_media_aspect_original": {
+    "message": "画像のオリジナル",
+    "description": "Original-aspect option."
+  },
+  "page_media_aspect_original_title": {
+    "message": "各画像の元のアスペクト比を維持",
+    "description": "Tooltip for original aspect."
+  },
+  "page_media_sort": {
+    "message": "並べ替え:",
+    "description": "Label for Page Media sort."
+  },
+  "page_media_sort_size_desc": {
+    "message": "サイズ:降順",
+    "description": "Largest-first sort option."
+  },
+  "page_media_sort_size_desc_title": {
+    "message": "ピクセル面積が大きい順",
+    "description": "Tooltip for largest-first sort."
+  },
+  "page_media_sort_size_asc": {
+    "message": "サイズ:昇順",
+    "description": "Smallest-first sort option."
+  },
+  "page_media_sort_size_asc_title": {
+    "message": "ピクセル面積が小さい順",
+    "description": "Tooltip for smallest-first sort."
+  },
+  "page_media_sort_page": {
+    "message": "ページ順",
+    "description": "Page-order sort option."
+  },
+  "page_media_sort_page_title": {
+    "message": "ページ上に表示される順",
+    "description": "Tooltip for page-order sort."
+  },
+  "page_media_article_first": {
+    "message": "記事を優先",
+    "description": "Toggle to prefer article images."
+  },
+  "page_media_article_first_aria": {
+    "message": "記事とメインコンテンツの画像を優先",
+    "description": "Accessible name for article-first toggle."
+  },
+  "page_media_scale_title": {
+    "message": "オーバーレイコンテンツの倍率（1×–2.5×、全タブ）",
+    "description": "Tooltip for overlay content scale."
+  },
+  "page_media_empty": {
+    "message": "このページに画像ファイルは見つかりませんでした。",
+    "description": "Empty Page Media list."
+  },
+  "page_media_video_posters": {
+    "message": "動画ポスター",
+    "description": "Section title for video poster images."
+  },
+  "page_media_item_actions_aria": {
+    "message": "項目のアクション",
+    "description": "Accessible name for media item action bar."
+  },
+  "page_media_link": {
+    "message": "リンク",
+    "description": "Fallback host label for a media item without a domain."
+  },
+  "media_library_title": {
+    "message": "メディアライブラリ",
+    "description": "Title of the Media Library overlay."
+  },
+  "media_library_subtitle": {
+    "message": "個人スクラップブック",
+    "description": "Media Library subtitle."
+  },
+  "media_library_actions_aria": {
+    "message": "ライブラリのアクション",
+    "description": "Accessible name for Media Library toolbar."
+  },
+  "media_library_types_aria": {
+    "message": "メディアの種類",
+    "description": "Accessible name for Media Library type list."
+  },
+  "media_library_coming_soon": {
+    "message": "近日公開",
+    "description": "Placeholder for an unimplemented Media Library type."
+  },
+  "font_info_aria": {
+    "message": "フォント情報",
+    "description": "Accessible name for the Font Info popover."
+  },
+  "font_info_url": {
+    "message": "URL",
+    "description": "Label for a font file URL."
+  },
+  "font_info_local": {
+    "message": "ローカル / システムフォント",
+    "description": "Value shown when a font has no remote URL."
+  },
+  "font_info_copy": {
+    "message": "コピー",
+    "description": "Copy button in Font Info."
+  },
+  "font_info_download": {
+    "message": "ダウンロード",
+    "description": "Download button in Font Info."
+  },
+  "font_info_downloading": {
+    "message": "ダウンロード中…",
+    "description": "Font Info download-in-progress label."
+  },
+  "procedure_result_aria": {
+    "message": "手順の結果",
+    "description": "Accessible name for the procedure-result popover."
+  },
+  "procedure_result_copy": {
+    "message": "コピー",
+    "description": "Copy button in the procedure-result popover."
+  },
+  "practice_aria": {
+    "message": "KeyPilot 練習用ポップオーバー",
+    "description": "Accessible name for the practice popover."
+  },
+  "practice_title": {
+    "message": "テキスト入力",
+    "description": "Practice popover title."
+  },
+  "practice_hide_aria": {
+    "message": "練習用ポップオーバーを隠す",
+    "description": "Accessible name for hiding the practice popover."
+  },
+  "practice_link": {
+    "message": "練習用リンク（このパネル内でジャンプ）",
+    "description": "Sample link in the practice popover."
+  },
+  "practice_button": {
+    "message": "練習用ボタン（移動なし）",
+    "description": "Sample button in the practice popover."
+  },
+  "practice_clicked": {
+    "message": "クリックしました！",
+    "description": "Feedback after clicking the practice button."
+  },
+  "practice_anchor": {
+    "message": "アンカーに到達しました。必要なら Esc でテキストモードを終了してください。",
+    "description": "Message at the practice popover in-panel anchor."
+  },
+  "practice_fields_title": {
+    "message": "テキストボックス",
+    "description": "Title above the onboarding practice text fields."
+  },
+  "practice_input_1_label": {
+    "message": "練習用入力",
+    "description": "Label for the first onboarding practice text field."
+  },
+  "practice_input_1_placeholder": {
+    "message": "F でここをクリックして入力…",
+    "description": "Placeholder for the first onboarding practice text field."
+  },
+  "practice_input_2_label": {
+    "message": "2つ目の入力（任意）",
+    "description": "Label for the second onboarding practice text field."
+  },
+  "practice_input_2_placeholder": {
+    "message": "フィールド間の切り替えを試す…",
+    "description": "Placeholder for the second onboarding practice text field."
+  },
+  "practice_textarea_label": {
+    "message": "練習用テキストエリア",
+    "description": "Label for the onboarding practice textarea."
+  },
+  "practice_textarea_placeholder": {
+    "message": "ここに数行入力…",
+    "description": "Placeholder for the onboarding practice textarea."
+  },
+  "practice_exit_note_before": {
+    "message": "入力が終わったら ",
+    "description": "Text before the Esc keycap in the practice-popover exit hint."
+  },
+  "practice_exit_note_after": {
+    "message": " を押してテキストボックスモードを終了します。",
+    "description": "Text after the Esc keycap in the practice-popover exit hint."
+  },
+  "columns_aria": {
+    "message": "カラムレイアウト",
+    "description": "Accessible name for column-layout overlay."
+  },
+  "columns_page_aria": {
+    "message": "ページのカラムレイアウト",
+    "description": "Accessible name for page column layout."
+  },
+  "columns_slip_aria": {
+    "message": "カラムスリップ操作",
+    "description": "Accessible name for column slip controls."
+  },
+  "columns_slip": {
+    "message": "スリップ",
+    "description": "Column slip label."
+  },
+  "columns_slip_edit_aria": {
+    "message": "スリップ編集 — カラム内容をずらす",
+    "description": "Accessible name for the slip slider."
+  },
+  "columns_open_popover": {
+    "message": "カラムをポップオーバーで開く",
+    "description": "Tooltip for opening columns in a popover."
+  },
+  "columns_close": {
+    "message": "カラムを閉じる（要素を復元）",
+    "description": "Tooltip for closing columns."
+  },
+  "procedure_result_done": {
+    "message": "完了",
+    "description": "Dismiss button in the procedure-result popover."
+  },
+  "procedure_result_title": {
+    "message": "結果",
+    "description": "Default title for the procedure-result popover."
+  },
+  "font_info_title": {
+    "message": "フォント情報",
+    "description": "Title of the Font Info popover."
+  },
+  "font_info_done": {
+    "message": "完了",
+    "description": "Dismiss button in Font Info."
+  },
+  "font_info_downloaded": {
+    "message": "ダウンロード済み",
+    "description": "Font Info download success label."
+  },
+  "font_info_download_failed": {
+    "message": "ダウンロードに失敗しました",
+    "description": "Font Info download failure label."
+  },
+  "font_info_label_name": {
+    "message": "名前",
+    "description": "Font Info field label."
+  },
+  "font_info_label_family": {
+    "message": "ファミリー",
+    "description": "Font Info field label."
+  },
+  "font_info_label_size": {
+    "message": "サイズ",
+    "description": "Font Info field label."
+  },
+  "font_info_label_weight": {
+    "message": "ウェイト",
+    "description": "Font Info field label."
+  },
+  "font_info_label_style": {
+    "message": "スタイル",
+    "description": "Font Info field label."
+  },
+  "font_info_label_stretch": {
+    "message": "ストレッチ",
+    "description": "Font Info field label."
+  },
+  "font_info_label_file_type": {
+    "message": "ファイル形式",
+    "description": "Font Info field label."
+  },
+  "media_library_download_zip": {
+    "message": "zip をダウンロード",
+    "description": "Media Library zip-current-view button."
+  },
+  "media_library_download_zip_title": {
+    "message": "このカテゴリを zip でダウンロード",
+    "description": "Tooltip for Media Library zip-current-view."
+  },
+  "media_library_download_selected": {
+    "message": "選択項目をダウンロード",
+    "description": "Media Library zip-selection button with no count."
+  },
+  "media_library_download_selected_n": {
+    "message": "選択項目をダウンロード（$1）",
+    "description": "Media Library zip-selection button with item count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "media_library_download_selected_title": {
+    "message": "選択した項目を zip でダウンロード",
+    "description": "Tooltip for Media Library zip-selection."
+  },
+  "media_library_delete_selected": {
+    "message": "選択項目を削除",
+    "description": "Media Library delete-selection button with no count."
+  },
+  "media_library_delete_selected_n": {
+    "message": "選択項目を削除（$1）",
+    "description": "Media Library delete-selection button with item count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "media_library_delete_selected_title": {
+    "message": "選択した項目をライブラリから削除",
+    "description": "Tooltip for Media Library delete-selection."
+  },
+  "media_library_close_title": {
+    "message": "メディアライブラリを閉じる",
+    "description": "Tooltip for closing Media Library."
+  },
+  "media_library_kind_images": {
+    "message": "画像",
+    "description": "Media Library Images category."
+  },
+  "media_library_kind_urls": {
+    "message": "URL",
+    "description": "Media Library URLs category."
+  },
+  "media_library_kind_videos": {
+    "message": "動画",
+    "description": "Media Library Videos category."
+  },
+  "media_library_kind_documents": {
+    "message": "ドキュメント",
+    "description": "Media Library Documents category."
+  },
+  "media_library_empty_urls": {
+    "message": "URL はまだありません。URL コピーの保存先をメディアライブラリまたは両方に設定してください。",
+    "description": "Empty Media Library URLs view."
+  },
+  "media_library_empty_urls_domain": {
+    "message": "$1 からの URL はありません",
+    "description": "Empty Media Library URLs view for a domain.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "example.com"
+      }
+    }
+  },
+  "media_library_empty_videos": {
+    "message": "動画はまだありません。「動画をコピー」の保存先をメディアライブラリまたは両方に設定してください。",
+    "description": "Empty Media Library videos view."
+  },
+  "media_library_empty_videos_domain": {
+    "message": "$1 の動画はありません",
+    "description": "Empty Media Library videos view for a domain.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "example.com"
+      }
+    }
+  },
+  "media_library_empty_documents": {
+    "message": "文書はまだありません。メディアライブラリ向けにURLを取得するか、ページメディアから送信してください。",
+    "description": "Empty Media Library documents view."
+  },
+  "media_library_empty_documents_domain": {
+    "message": "$1 の文書はありません",
+    "description": "Empty Media Library documents view for a domain.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "example.com"
+      }
+    }
+  },
+  "media_library_empty_images": {
+    "message": "画像はまだありません。ページメディア（O）から送信するか、「画像をコピー」の保存先をメディアライブラリに設定してください。",
+    "description": "Empty Media Library images view."
+  },
+  "media_library_empty_images_domain": {
+    "message": "$1 の画像はありません",
+    "description": "Empty Media Library images view for a domain.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "example.com"
+      }
+    }
+  },
+  "overlay_notify_action_failed": {
+    "message": "操作に失敗しました",
+    "description": "Generic overlay action failure notification."
+  },
+  "overlay_notify_copy_failed": {
+    "message": "クリップボードにコピーできませんでした",
+    "description": "Clipboard copy failure notification."
+  },
+  "overlay_notify_copied": {
+    "message": "クリップボードにコピーしました",
+    "description": "Clipboard copy success notification."
+  },
+  "overlay_notify_download_started": {
+    "message": "ダウンロードを開始しました",
+    "description": "Download start notification."
+  },
+  "overlay_notify_download_failed": {
+    "message": "ダウンロードできませんでした",
+    "description": "Download failure notification."
+  },
+  "overlay_notify_nothing_to_download": {
+    "message": "ダウンロードするものがありません",
+    "description": "Empty download notification."
+  },
+  "overlay_notify_nothing_to_copy": {
+    "message": "コピーするものがありません",
+    "description": "Empty copy notification."
+  },
+  "overlay_notify_send_library_failed": {
+    "message": "メディアライブラリに送信できませんでした",
+    "description": "Send-to-library failure notification."
+  },
+  "overlay_notify_url_copied": {
+    "message": "URLをコピーしました",
+    "description": "URL copied notification."
+  },
+  "overlay_notify_url_copied_pasteboard": {
+    "message": "URLをクリップボードにコピーしました",
+    "description": "URL copied to pasteboard notification."
+  },
+  "overlay_notify_image_url_copied": {
+    "message": "画像のURLをコピーしました",
+    "description": "Image URL copied notification."
+  },
+  "overlay_notify_video_url_copied": {
+    "message": "動画のURLをコピーしました",
+    "description": "Video URL copied notification."
+  },
+  "overlay_notify_document_url_copied": {
+    "message": "文書のURLをコピーしました",
+    "description": "Document URL copied notification."
+  },
+  "overlay_notify_font_copied": {
+    "message": "フォント情報をクリップボードにコピーしました",
+    "description": "Font info copy success notification."
+  },
+  "overlay_notify_text_copied": {
+    "message": "テキストをクリップボードにコピーしました",
+    "description": "Text copy success notification."
+  },
+  "overlay_notify_library_load_failed": {
+    "message": "メディアライブラリを読み込めませんでした",
+    "description": "Media Library load failure."
+  },
+  "overlay_notify_no_url": {
+    "message": "URLがありません",
+    "description": "Missing URL notification."
+  },
+  "overlay_notify_url_cannot_open": {
+    "message": "このリンクは新しいタブで開けません",
+    "description": "URL cannot open in a tab."
+  },
+  "overlay_notify_url_open_failed": {
+    "message": "URLを開けませんでした",
+    "description": "URL open failure."
+  },
+  "overlay_notify_zip_failed": {
+    "message": "ZIPを作成できませんでした",
+    "description": "Zip build failure."
+  },
+  "overlay_notify_delete_failed": {
+    "message": "削除できませんでした",
+    "description": "Delete failure."
+  },
+  "overlay_notify_removed_one": {
+    "message": "メディアライブラリから削除しました",
+    "description": "Single item removed from Media Library."
+  },
+  "overlay_notify_removed_n": {
+    "message": "$1 件を削除しました",
+    "description": "Multiple items removed from Media Library.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "overlay_notify_image_open_failed": {
+    "message": "画像を開けませんでした",
+    "description": "Image open failure."
+  },
+  "overlay_notify_video_unplayable": {
+    "message": "この動画リンクは再生できません",
+    "description": "Unplayable video notification."
+  },
+  "overlay_notify_video_open_failed": {
+    "message": "動画を開けませんでした",
+    "description": "Video open failure."
+  },
+  "overlay_notify_document_open_failed": {
+    "message": "文書を開けませんでした",
+    "description": "Document open failure."
+  },
+  "overlay_notify_copy_url_failed": {
+    "message": "URLをコピーできませんでした",
+    "description": "URL copy failure."
+  },
+  "overlay_notify_copy_video_failed": {
+    "message": "動画をコピーできませんでした",
+    "description": "Video copy failure."
+  },
+  "overlay_notify_copy_document_failed": {
+    "message": "文書をコピーできませんでした",
+    "description": "Document copy failure."
+  },
+  "overlay_notify_copy_image_failed": {
+    "message": "画像をコピーできませんでした",
+    "description": "Image copy failure."
+  },
+  "page_media_tab_image": {
+    "message": "画像",
+    "description": "Page Media Image tab."
+  },
+  "page_media_tab_video": {
+    "message": "動画",
+    "description": "Page Media Video tab."
+  },
+  "page_media_tab_text": {
+    "message": "テキスト",
+    "description": "Page Media Text tab."
+  },
+  "page_media_tab_docs": {
+    "message": "文書",
+    "description": "Page Media Docs tab."
+  },
+  "page_media_tab_fonts": {
+    "message": "フォント",
+    "description": "Page Media Fonts tab."
+  },
+  "page_media_tab_urls": {
+    "message": "URL",
+    "description": "Page Media URLs tab."
+  },
+  "page_media_empty_url": {
+    "message": "このページにURLは見つかりませんでした。",
+    "description": "Empty Page Media URLs tab."
+  },
+  "page_media_empty_page_text": {
+    "message": "このページに記事や本文は見つかりませんでした。",
+    "description": "Empty Page Media Text tab."
+  },
+  "page_media_empty_font": {
+    "message": "このページにフォントは見つかりませんでした。",
+    "description": "Empty Page Media Fonts tab."
+  },
+  "page_media_empty_docs": {
+    "message": "このページに文書ファイルは見つかりませんでした。",
+    "description": "Empty Page Media Docs tab."
+  },
+  "page_media_empty_video": {
+    "message": "このページに動画ファイルは見つかりませんでした。",
+    "description": "Empty Page Media Video tab."
+  },
+  "page_media_url_layout_aria": {
+    "message": "URLリストのレイアウト",
+    "description": "Accessible name for URL view segmented control."
+  },
+  "page_media_aspect_aria": {
+    "message": "カードの縦横比",
+    "description": "Accessible name for image aspect control."
+  },
+  "page_media_sort_aria": {
+    "message": "画像の並び順",
+    "description": "Accessible name for image sort control."
+  },
+  "page_media_landmark_title": {
+    "message": "ヘッダー、ナビ、フッターより先に、記事やメインコンテンツ内の画像を表示します",
+    "description": "Tooltip for article-first image ordering."
+  },
+  "page_media_scale_label": {
+    "message": "拡大縮小",
+    "description": "Page Media scale slider label."
+  },
+  "page_media_scale_aria": {
+    "message": "ページメディアのコンテンツ倍率",
+    "description": "Accessible name for Page Media scale slider."
+  },
+  "page_media_count": {
+    "message": "$1 件のメディア",
+    "description": "Page Media item count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "page_media_count_fonts": {
+    "message": "$1 件のフォント",
+    "description": "Page Media font count in the title tooltip.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "page_media_count_urls": {
+    "message": "一意のURL $1 件",
+    "description": "Page Media unique URL count in the title tooltip.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "page_media_count_with_extra": {
+    "message": "$1 件のメディア · $2",
+    "description": "Page Media count with extra bits. $1 is media count, $2 is extra summary.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "12"
+      },
+      "extra": {
+        "content": "$2",
+        "example": "3 fonts"
+      }
+    }
+  },
+  "page_media_video_alt": {
+    "message": "動画",
+    "description": "Fallback alt text for a video thumbnail."
+  },
+  "page_media_kind_page": {
+    "message": "ページ",
+    "description": "URL kind label."
+  },
+  "page_media_kind_document": {
+    "message": "文書",
+    "description": "URL kind label."
+  },
+  "page_media_kind_image": {
+    "message": "画像",
+    "description": "URL kind label."
+  },
+  "page_media_kind_video": {
+    "message": "動画",
+    "description": "URL kind label."
+  },
+  "page_media_kind_link": {
+    "message": "リンク",
+    "description": "URL kind label."
+  },
+  "page_media_text_kind_article": {
+    "message": "記事",
+    "description": "Page text kind label."
+  },
+  "page_media_text_kind_main": {
+    "message": "メイン",
+    "description": "Page text kind label."
+  },
+  "page_media_text_kind_full": {
+    "message": "ページ全体",
+    "description": "Page text kind label."
+  },
+  "page_media_text_kind_text": {
+    "message": "テキスト",
+    "description": "Fallback page text kind label."
+  },
+  "page_media_font_fallback": {
+    "message": "フォント",
+    "description": "Fallback font name."
+  },
+  "page_media_col_path": {
+    "message": "パス / URL",
+    "description": "Page Media URL table column."
+  },
+  "page_media_col_kind": {
+    "message": "種類",
+    "description": "Page Media URL table column."
+  },
+  "page_media_col_title": {
+    "message": "タイトル",
+    "description": "Page Media URL table column."
+  },
+  "page_media_col_actions": {
+    "message": "操作",
+    "description": "Page Media URL table column."
+  },
+  "page_media_table_aria": {
+    "message": "ページURLの階層テーブル",
+    "description": "Accessible name for the Page Media URL table."
+  },
+  "page_media_this_page": {
+    "message": "このページ",
+    "description": "Current-page group label in the URL table."
+  },
+  "page_media_domain": {
+    "message": "ドメイン",
+    "description": "Domain group label in the URL table."
+  },
+  "page_media_path": {
+    "message": "パス",
+    "description": "Path group label in the URL table."
+  },
+  "tab_history_section_tabs": {
+    "message": "タブ履歴",
+    "description": "Tab history section title."
+  },
+  "tab_history_section_browser": {
+    "message": "ブラウザ履歴",
+    "description": "Browser history section title."
+  },
+  "top_sites_tab_toolbar": {
+    "message": "ツールバー",
+    "description": "Top Sites Toolbar tab."
+  },
+  "top_sites_tab_most_visited": {
+    "message": "よく訪問するサイト",
+    "description": "Top Sites Most Visited tab."
+  },
+  "top_sites_tab_recent_bookmarks": {
+    "message": "最近のブックマーク",
+    "description": "Top Sites Recent Bookmarks tab."
+  },
+  "top_sites_tab_keypilot": {
+    "message": "KeyPilot",
+    "description": "Top Sites KeyPilot tab."
+  },
+  "top_sites_empty_toolbar": {
+    "message": "ブックマークバーにブックマークがありません。",
+    "description": "Empty Top Sites Toolbar tab."
+  },
+  "top_sites_empty_most_visited": {
+    "message": "よく訪問するサイトはまだありません。",
+    "description": "Empty Top Sites Most Visited tab."
+  },
+  "top_sites_empty_recent_bookmarks": {
+    "message": "最近のブックマークはありません。",
+    "description": "Empty Top Sites Recent Bookmarks tab."
+  },
+  "top_sites_empty_keypilot": {
+    "message": "KeyPilotツールはありません。",
+    "description": "Empty Top Sites KeyPilot tab."
+  },
+  "top_sites_empty": {
+    "message": "表示するものがありません。",
+    "description": "Generic empty Top Sites grid."
+  },
+  "popover_nav_hint_suffix": {
+    "message": "同じキーボード操作で移動できます。",
+    "description": "Titlebar hint suffix for Docs and Settings popovers."
+  },
+  "columns_open_popover_aria": {
+    "message": "列をフルサイズのポップオーバーで開く",
+    "description": "Accessible name for expanding columns."
+  },
+  "columns_close_aria": {
+    "message": "列を閉じて要素を復元",
+    "description": "Accessible name for closing columns."
+  },
+  "table_expand": {
+    "message": "$1 を展開",
+    "description": "Expand a hierarchical table group.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "example.com"
+      }
+    }
+  },
+  "table_collapse": {
+    "message": "$1 を折りたたむ",
+    "description": "Collapse a hierarchical table group.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "example.com"
+      }
+    }
+  },
+  "page_media_action_copy": {
+    "message": "コピー",
+    "description": "Page Media item Copy action."
+  },
+  "page_media_action_copy_title": {
+    "message": "クリップボードにコピー",
+    "description": "Tooltip for Page Media Copy action."
+  },
+  "page_media_action_send": {
+    "message": "送信",
+    "description": "Page Media send-to-library action."
+  },
+  "page_media_action_send_title": {
+    "message": "メディアライブラリに送信",
+    "description": "Tooltip for send-to-library action."
+  },
+  "page_media_action_download": {
+    "message": "ダウンロード",
+    "description": "Page Media Download action."
+  },
+  "page_media_action_download_title": {
+    "message": "ファイルをダウンロード",
+    "description": "Tooltip for Page Media Download action."
+  },
+  "page_media_click_to_copy": {
+    "message": "クリックしてコピー",
+    "description": "Tooltip for a page-text row that copies on click."
+  },
+  "media_library_copy_url": {
+    "message": "URLをコピー",
+    "description": "Copy URL tooltip in Media Library."
+  },
+  "media_library_copy_frame": {
+    "message": "フレームをコピー",
+    "description": "Copy video frame tooltip in Media Library."
+  },
+  "media_library_copy_video_url": {
+    "message": "動画URLをコピー",
+    "description": "Copy video URL tooltip in Media Library."
+  },
+  "media_library_copy_file_name": {
+    "message": "ファイル名をコピー",
+    "description": "Copy document file name tooltip in Media Library."
+  },
+  "media_library_open": {
+    "message": "開く",
+    "description": "Open action in Media Library."
+  },
+  "media_library_open_title": {
+    "message": "新しいタブで開く",
+    "description": "Open-in-tab tooltip in Media Library."
+  },
+  "media_library_download_shortcut": {
+    "message": "ダウンロードショートカット",
+    "description": "Download URL shortcut tooltip in Media Library."
+  },
+  "layout_family_browsing_label": {
+    "message": "ブラウジング",
+    "description": "Built-in keyboard layout family name."
+  },
+  "layout_family_browsing_description": {
+    "message": "スクロール、タブ、クリック、履歴、ツールなど、ブラウジング操作一式です。",
+    "description": "Description of the Browsing built-in keyboard layout family."
+  },
+  "layout_family_browsing_picker": {
+    "message": "組み込み: ブラウジング",
+    "description": "Built-in keyboard layout family label in the layout picker."
+  },
+  "layout_family_navigation_label": {
+    "message": "ナビゲーション",
+    "description": "Built-in keyboard layout family name."
+  },
+  "layout_family_navigation_description": {
+    "message": "要素のクリック、戻る、進むです。",
+    "description": "Description of the Navigation built-in keyboard layout family."
+  },
+  "layout_family_navigation_picker": {
+    "message": "組み込み: ナビゲーション",
+    "description": "Built-in keyboard layout family label in the layout picker."
+  },
+  "layout_family_basic_navigation_label": {
+    "message": "基本ナビゲーション",
+    "description": "Legacy built-in keyboard layout family name."
+  },
+  "layout_family_basic_navigation_picker": {
+    "message": "組み込み: 基本ナビゲーション",
+    "description": "Legacy built-in keyboard layout family label in the layout picker."
+  },
+  "layout_picker_group_builtin": {
+    "message": "組み込み",
+    "description": "Built-in keyboard layouts group heading in the layout picker."
+  },
+  "layout_picker_group_custom": {
+    "message": "カスタム",
+    "description": "Custom keyboard layouts group heading in the layout picker."
+  },
+  "layout_picker_docs": {
+    "message": "KeyPilotドキュメント",
+    "description": "Layout picker item that opens KeyPilot documentation."
+  },
+  "layout_picker_settings": {
+    "message": "KeyPilot設定",
+    "description": "Layout picker item that opens KeyPilot settings."
+  },
+  "key_info_key": {
+    "message": "キー: $1",
+    "description": "Physical key caption in the key-info popover. $1 is the key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "F"
+      }
+    }
+  },
+  "key_info_settings_hint": {
+    "message": "クリックして設定を表示",
+    "description": "Hint shown on hover in the key-info popover when the action has settings."
+  },
+  "key_info_config": {
+    "message": "設定",
+    "description": "Button in the key-info popover that opens the action configuration panel."
+  },
+  "fn_ACTIVATE_label": {
+    "message": "要素をクリック",
+    "description": "Function Library label for ACTIVATE."
+  },
+  "fn_ACTIVATE_description": {
+    "message": "ホバー中の要素をクリックします",
+    "description": "Function Library description for ACTIVATE."
+  },
+  "fn_ACTIVATE_details": {
+    "message": "カーソル下のクリック可能な対象を起動します。その要素へのマウス左クリックと同じです。KeyPilotがハイライトするリンク、ボタン、その他の操作対象で使えます。",
+    "description": "Function Library details for ACTIVATE."
+  },
+  "fn_ACTIVATE_NEW_TAB_label": {
+    "message": "新しいタブでクリック",
+    "description": "Function Library label for ACTIVATE_NEW_TAB."
+  },
+  "fn_ACTIVATE_NEW_TAB_description": {
+    "message": "リンクを前面の新しいタブで開きます",
+    "description": "Function Library description for ACTIVATE_NEW_TAB."
+  },
+  "fn_ACTIVATE_NEW_TAB_details": {
+    "message": "ホバー中のリンクを新しいタブで開き、すぐに切り替えます。元の場所を完全には離れずにリンク先へすぐ移動したいときに使います。",
+    "description": "Function Library details for ACTIVATE_NEW_TAB."
+  },
+  "fn_ACTIVATE_NEW_TAB_BACKGROUND_label": {
+    "message": "背面タブでクリック",
+    "description": "Function Library label for ACTIVATE_NEW_TAB_BACKGROUND."
+  },
+  "fn_ACTIVATE_NEW_TAB_BACKGROUND_description": {
+    "message": "リンクを背面の新しいタブで開きます",
+    "description": "Function Library description for ACTIVATE_NEW_TAB_BACKGROUND."
+  },
+  "fn_ACTIVATE_NEW_TAB_BACKGROUND_details": {
+    "message": "ホバー中のリンクを新しいタブで開きますが、フォーカスは切り替えません。中クリックと同様です。現在のページを読み続けながら複数のリンクをキューしたいときに便利です。",
+    "description": "Function Library details for ACTIVATE_NEW_TAB_BACKGROUND."
+  },
+  "fn_BACK_label": {
+    "message": "戻る",
+    "description": "Function Library label for BACK."
+  },
+  "fn_BACK_description": {
+    "message": "ブラウザ履歴を戻ります",
+    "description": "Function Library description for BACK."
+  },
+  "fn_BACK_details": {
+    "message": "現在のタブの履歴を1つ戻ります。ブラウザの戻るボタンと同じです。",
+    "description": "Function Library details for BACK."
+  },
+  "fn_BACK2_label": {
+    "message": "戻る",
+    "description": "Function Library label for BACK2."
+  },
+  "fn_BACK2_description": {
+    "message": "ブラウザ履歴を戻ります",
+    "description": "Function Library description for BACK2."
+  },
+  "fn_BACK2_details": {
+    "message": "現在のタブの履歴を1つ戻ります。ブラウザの戻るボタンと同じです。2つ目の戻る割り当てを持つレイアウト用の重複IDです。",
+    "description": "Function Library details for BACK2."
+  },
+  "fn_FORWARD_label": {
+    "message": "進む",
+    "description": "Function Library label for FORWARD."
+  },
+  "fn_FORWARD_description": {
+    "message": "ブラウザ履歴を進みます",
+    "description": "Function Library description for FORWARD."
+  },
+  "fn_FORWARD_details": {
+    "message": "現在のタブの履歴を1つ進みます。ブラウザの進むボタンと同じです。",
+    "description": "Function Library details for FORWARD."
+  },
+  "fn_DELETE_label": {
+    "message": "削除モード",
+    "description": "Function Library label for DELETE."
+  },
+  "fn_DELETE_description": {
+    "message": "カーソル下の要素を隠します",
+    "description": "Function Library description for DELETE."
+  },
+  "fn_DELETE_details": {
+    "message": "削除モードを切り替えます。要素にホバーしてページから取り除き（非表示にし）、レイアウトを整理できます。「フォーカスを終了」するか、もう一度切り替えて終了します。",
+    "description": "Function Library details for DELETE."
+  },
+  "fn_TAB_LEFT_label": {
+    "message": "左のタブ",
+    "description": "Function Library label for TAB_LEFT."
+  },
+  "fn_TAB_LEFT_description": {
+    "message": "前のタブに切り替えます",
+    "description": "Function Library description for TAB_LEFT."
+  },
+  "fn_TAB_LEFT_details": {
+    "message": "ウィンドウのタブバーで、現在のタブの左隣をアクティブにします。",
+    "description": "Function Library details for TAB_LEFT."
+  },
+  "fn_TAB_RIGHT_label": {
+    "message": "右のタブ",
+    "description": "Function Library label for TAB_RIGHT."
+  },
+  "fn_TAB_RIGHT_description": {
+    "message": "次のタブに切り替えます",
+    "description": "Function Library description for TAB_RIGHT."
+  },
+  "fn_TAB_RIGHT_details": {
+    "message": "ウィンドウのタブバーで、現在のタブの右隣をアクティブにします。",
+    "description": "Function Library details for TAB_RIGHT."
+  },
+  "fn_ROOT_label": {
+    "message": "サイトルートへ",
+    "description": "Function Library label for ROOT."
+  },
+  "fn_ROOT_description": {
+    "message": "サイトのオリジンへ移動します",
+    "description": "Function Library description for ROOT."
+  },
+  "fn_ROOT_details": {
+    "message": "現在のページのサイトルート（スキーム＋ホスト）へジャンプします。URLを入力せずに深いパスから抜け出すのに便利です。",
+    "description": "Function Library details for ROOT."
+  },
+  "fn_LAUNCHER_label": {
+    "message": "ランチャー",
+    "description": "Function Library label for LAUNCHER."
+  },
+  "fn_LAUNCHER_description": {
+    "message": "サイトへのクイックアクセスランチャーです",
+    "description": "Function Library description for LAUNCHER."
+  },
+  "fn_LAUNCHER_details": {
+    "message": "ランチャーのポップオーバーを開き、オムニボックスを使わずにお気に入りや設定済みのサイトへジャンプできます。",
+    "description": "Function Library details for LAUNCHER."
+  },
+  "fn_TOP_SITES_label": {
+    "message": "トップサイト",
+    "description": "Function Library label for TOP_SITES."
+  },
+  "fn_TOP_SITES_description": {
+    "message": "ツールバー、訪問履歴、ブックマークです",
+    "description": "Function Library description for TOP_SITES."
+  },
+  "fn_TOP_SITES_details": {
+    "message": "トップサイトを開きます。ツールバー、よく訪問するページ、最近のブックマークから作る一覧で、よく使う先を一歩で開けます。",
+    "description": "Function Library details for TOP_SITES."
+  },
+  "fn_CLOSE_TAB_label": {
+    "message": "タブを閉じる",
+    "description": "Function Library label for CLOSE_TAB."
+  },
+  "fn_CLOSE_TAB_description": {
+    "message": "現在のタブを閉じます",
+    "description": "Function Library description for CLOSE_TAB."
+  },
+  "fn_CLOSE_TAB_details": {
+    "message": "アクティブなタブを閉じます。現在のウィンドウでのブラウザのタブを閉じる操作と同じです。",
+    "description": "Function Library details for CLOSE_TAB."
+  },
+  "fn_CANCEL_label": {
+    "message": "フォーカスを終了",
+    "description": "Function Library label for CANCEL."
+  },
+  "fn_CANCEL_description": {
+    "message": "モードとオーバーレイを終了します",
+    "description": "Function Library description for CANCEL."
+  },
+  "fn_CANCEL_details": {
+    "message": "現在のKeyPilotモードやオーバーレイ（削除モード、スクロールライン、テキストフォーカス補助など）をキャンセルし、通常の閲覧に戻ります。",
+    "description": "Function Library details for CANCEL."
+  },
+  "fn_PAGE_UP_INSTANT_label": {
+    "message": "ページアップ",
+    "description": "Function Library label for PAGE_UP_INSTANT."
+  },
+  "fn_PAGE_UP_INSTANT_description": {
+    "message": "1ページ分すぐ上へジャンプします",
+    "description": "Function Library description for PAGE_UP_INSTANT."
+  },
+  "fn_PAGE_UP_INSTANT_details": {
+    "message": "現在のスクロール対象を、アニメーションなしでおおよそ1画面分上にスクロールします。素早く動かしたいときはスムーズなページアップより速いです。",
+    "description": "Function Library details for PAGE_UP_INSTANT."
+  },
+  "fn_PAGE_DOWN_INSTANT_label": {
+    "message": "ページダウン",
+    "description": "Function Library label for PAGE_DOWN_INSTANT."
+  },
+  "fn_PAGE_DOWN_INSTANT_description": {
+    "message": "1ページ分すぐ下へジャンプします",
+    "description": "Function Library description for PAGE_DOWN_INSTANT."
+  },
+  "fn_PAGE_DOWN_INSTANT_details": {
+    "message": "現在のスクロール対象を、アニメーションなしでおおよそ1画面分下にスクロールします。素早く動かしたいときはスムーズなページダウンより速いです。",
+    "description": "Function Library details for PAGE_DOWN_INSTANT."
+  },
+  "fn_PAGE_TOP_label": {
+    "message": "先頭へスクロール",
+    "description": "Function Library label for PAGE_TOP."
+  },
+  "fn_PAGE_TOP_description": {
+    "message": "スクロール対象の先頭へジャンプします",
+    "description": "Function Library description for PAGE_TOP."
+  },
+  "fn_PAGE_TOP_details": {
+    "message": "現在のスクロール対象の先頭へ移動します。フェードモードはジャンプを隠し、スクロールモードはアニメーションします。動きのスタイルは設定 → スクロールで変更できます。",
+    "description": "Function Library details for PAGE_TOP."
+  },
+  "fn_param_jump_style": {
+    "message": "ジャンプスタイル",
+    "description": "Function parameter label for PAGE_TOP.mode."
+  },
+  "fn_param_opt_fade": {
+    "message": "フェード",
+    "description": "Function parameter option for PAGE_TOP.mode.fade."
+  },
+  "fn_param_opt_scroll": {
+    "message": "スクロール",
+    "description": "Function parameter option for PAGE_TOP.mode.smooth."
+  },
+  "fn_PAGE_BOTTOM_label": {
+    "message": "末尾へスクロール",
+    "description": "Function Library label for PAGE_BOTTOM."
+  },
+  "fn_PAGE_BOTTOM_description": {
+    "message": "スクロール対象の末尾へジャンプします",
+    "description": "Function Library description for PAGE_BOTTOM."
+  },
+  "fn_PAGE_BOTTOM_details": {
+    "message": "現在のスクロール対象の末尾へ移動します。フェードモードはジャンプを隠し、スクロールモードはアニメーションします。動きのスタイルは設定 → スクロールで変更できます。",
+    "description": "Function Library details for PAGE_BOTTOM."
+  },
+  "fn_SCROLL_LINE_label": {
+    "message": "スクロールライン",
+    "description": "Function Library label for SCROLL_LINE."
+  },
+  "fn_SCROLL_LINE_description": {
+    "message": "原点ベースの連続スクロールです",
+    "description": "Function Library description for SCROLL_LINE."
+  },
+  "fn_SCROLL_LINE_details": {
+    "message": "固定原点からスクロールします。画面上の点からマウスを離すほど、その方向へ速くスクロールします。設定 → スクロールで、ページの空白での中クリックを有効にできます。",
+    "description": "Function Library details for SCROLL_LINE."
+  },
+  "fn_NEW_TAB_label": {
+    "message": "新しいタブ",
+    "description": "Function Library label for NEW_TAB."
+  },
+  "fn_NEW_TAB_description": {
+    "message": "KeyPilotの新しいタブを開きます",
+    "description": "Function Library description for NEW_TAB."
+  },
+  "fn_NEW_TAB_details": {
+    "message": "ブックマークバー、トップサイト、検索付きのKeyPilot新しいタブを開きます。ブラウザ本体の新しいタブはそのままです。",
+    "description": "Function Library details for NEW_TAB."
+  },
+  "fn_OPEN_POPOVER_label": {
+    "message": "ポップオーバーを開く",
+    "description": "Function Library label for OPEN_POPOVER."
+  },
+  "fn_OPEN_POPOVER_description": {
+    "message": "リンクをポップアップウィンドウで開きます",
+    "description": "Function Library description for OPEN_POPOVER."
+  },
+  "fn_OPEN_POPOVER_details": {
+    "message": "ホバー中のリンクをKeyPilotのポップアップウィンドウで開き、新しいタブを開かずに別ウィンドウで確認や作業ができます。",
+    "description": "Function Library details for OPEN_POPOVER."
+  },
+  "fn_PREVIEW_LINK_POPOVER_label": {
+    "message": "リンクをプレビュー",
+    "description": "Function Library label for PREVIEW_LINK_POPOVER."
+  },
+  "fn_PREVIEW_LINK_POPOVER_description": {
+    "message": "リンクをポップアップでプレビューします",
+    "description": "Function Library description for PREVIEW_LINK_POPOVER."
+  },
+  "fn_PREVIEW_LINK_POPOVER_details": {
+    "message": "ホバー中のURLのリンクプレビューをポップアップで開きます。メインタブで本格的に移動せずに先を確認できます。",
+    "description": "Function Library details for PREVIEW_LINK_POPOVER."
+  },
+  "fn_POI_WEBSITE_label": {
+    "message": "POIウェブサイト",
+    "description": "Function Library label for POI_WEBSITE."
+  },
+  "fn_POI_WEBSITE_description": {
+    "message": "地図上の場所のウェブサイトを開きます",
+    "description": "Function Library description for POI_WEBSITE."
+  },
+  "fn_POI_WEBSITE_details": {
+    "message": "カーソル下に地図上の場所（POI）があるとき、その場所のウェブサイトをリンクプレビューで開きます。地図を離れずに店舗や場所のページを見られます。",
+    "description": "Function Library details for POI_WEBSITE."
+  },
+  "fn_POI_ADDRESS_label": {
+    "message": "POI住所",
+    "description": "Function Library label for POI_ADDRESS."
+  },
+  "fn_POI_ADDRESS_description": {
+    "message": "地図上の場所の住所をコピーします",
+    "description": "Function Library description for POI_ADDRESS."
+  },
+  "fn_POI_ADDRESS_details": {
+    "message": "カーソル下に地図上の場所（POI）があるとき、その住所をクリップボードにコピーします。道案内、メモ、フォームに貼り付けられます。",
+    "description": "Function Library details for POI_ADDRESS."
+  },
+  "fn_param_action": {
+    "message": "操作",
+    "description": "Function parameter label for POI_ADDRESS.action."
+  },
+  "fn_param_opt_copy_address": {
+    "message": "住所をコピー",
+    "description": "Function parameter option for POI_ADDRESS.action.copy."
+  },
+  "fn_param_format": {
+    "message": "形式",
+    "description": "Function parameter label for POI_ADDRESS.format."
+  },
+  "fn_param_opt_txt": {
+    "message": "Txt",
+    "description": "Function parameter option for POI_ADDRESS.format.txt."
+  },
+  "fn_param_opt_vcard": {
+    "message": "vCard",
+    "description": "Function parameter option for POI_ADDRESS.format.vcard."
+  },
+  "fn_OPEN_SETTINGS_POPOVER_label": {
+    "message": "設定",
+    "description": "Function Library label for OPEN_SETTINGS_POPOVER."
+  },
+  "fn_OPEN_SETTINGS_POPOVER_description": {
+    "message": "KeyPilot設定を開きます",
+    "description": "Function Library description for OPEN_SETTINGS_POPOVER."
+  },
+  "fn_OPEN_SETTINGS_POPOVER_details": {
+    "message": "テーマ、スクロール、クリックモード、レイアウトなどのKeyPilot設定ポップオーバーを開閉します。",
+    "description": "Function Library details for OPEN_SETTINGS_POPOVER."
+  },
+  "fn_OMNIBOX_label": {
+    "message": "オムニボックス",
+    "description": "Function Library label for OMNIBOX. Keep this short for keycaps. Do not use the English word Omnibox in non-English catalogs."
+  },
+  "fn_OMNIBOX_description": {
+    "message": "アドレスバーのオーバーレイです",
+    "description": "Function Library description for OMNIBOX."
+  },
+  "fn_OMNIBOX_details": {
+    "message": "KeyPilotのオムニボックスオーバーレイを開き、ブラウザのアドレスバーをクリックせずにURL入力や検索ができます。",
+    "description": "Function Library details for OMNIBOX."
+  },
+  "fn_TAB_HISTORY_label": {
+    "message": "タブ履歴",
+    "description": "Function Library label for TAB_HISTORY."
+  },
+  "fn_TAB_HISTORY_description": {
+    "message": "このタブの履歴を閲覧します",
+    "description": "Function Library description for TAB_HISTORY."
+  },
+  "fn_TAB_HISTORY_details": {
+    "message": "現在のタブのタブ履歴を開き、ブラウザの履歴UIを使わずに、このタブのセッションで以前訪れたページへジャンプできます。",
+    "description": "Function Library details for TAB_HISTORY."
+  },
+  "fn_TOGGLE_KEYBOARD_HELP_label": {
+    "message": "キーボードリファレンス",
+    "description": "Function Library label for TOGGLE_KEYBOARD_HELP. English may keep the KB abbreviation; other locales must not use KB."
+  },
+  "fn_TOGGLE_KEYBOARD_HELP_description": {
+    "message": "キーボードマップの表示を切り替えます",
+    "description": "Function Library description for TOGGLE_KEYBOARD_HELP."
+  },
+  "fn_TOGGLE_KEYBOARD_HELP_details": {
+    "message": "現在のレイアウトのキーキャップと割り当てを示す、フローティングのキーボードリファレンスウィンドウを切り替えます。",
+    "description": "Function Library details for TOGGLE_KEYBOARD_HELP."
+  },
+  "fn_HIGHLIGHT_label": {
+    "message": "テキスト選択",
+    "description": "Function Library label for HIGHLIGHT."
+  },
+  "fn_HIGHLIGHT_description": {
+    "message": "テキストを選択してリッチテキストをコピーします",
+    "description": "Function Library description for HIGHLIGHT."
+  },
+  "fn_HIGHLIGHT_details": {
+    "message": "カーソル下で文字単位のテキスト選択を開始します。既定では選択範囲をリッチテキストとしてコピーし、貼り付け時に書式を保てます。",
+    "description": "Function Library details for HIGHLIGHT."
+  },
+  "fn_param_copy_as": {
+    "message": "形式",
+    "description": "Function parameter label for HIGHLIGHT.mode."
+  },
+  "fn_param_opt_rich_text": {
+    "message": "リッチテキスト",
+    "description": "Function parameter option for HIGHLIGHT.mode.rich."
+  },
+  "fn_param_opt_plain_text": {
+    "message": "プレーンテキスト",
+    "description": "Function parameter option for HIGHLIGHT.mode.plain."
+  },
+  "fn_RECTANGLE_HIGHLIGHT_label": {
+    "message": "要素選択",
+    "description": "Function Library label for RECTANGLE_HIGHLIGHT."
+  },
+  "fn_RECTANGLE_HIGHLIGHT_description": {
+    "message": "矩形または累積で要素を選びます",
+    "description": "Function Library description for RECTANGLE_HIGHLIGHT."
+  },
+  "fn_RECTANGLE_HIGHLIGHT_details": {
+    "message": "ドラッグした矩形と交差するHTML要素を選択するか、要素を累積的に選びます。ページ領域から構造（プレーンテキストだけではない内容）を取るのに便利です。",
+    "description": "Function Library details for RECTANGLE_HIGHLIGHT."
+  },
+  "fn_param_selection_mode": {
+    "message": "選択モード",
+    "description": "Function parameter label for RECTANGLE_HIGHLIGHT.mode."
+  },
+  "fn_param_opt_element_rectangle": {
+    "message": "要素の矩形",
+    "description": "Function parameter option for RECTANGLE_HIGHLIGHT.mode.element."
+  },
+  "fn_param_opt_pick_cumulative": {
+    "message": "累積選択",
+    "description": "Function parameter option for RECTANGLE_HIGHLIGHT.mode.cumulative."
+  },
+  "fn_COPY_HOVERED_IMAGE_label": {
+    "message": "画像をコピー",
+    "description": "Function Library label for COPY_HOVERED_IMAGE."
+  },
+  "fn_COPY_HOVERED_IMAGE_description": {
+    "message": "ホバー中の画像をコピーします",
+    "description": "Function Library description for COPY_HOVERED_IMAGE."
+  },
+  "fn_COPY_HOVERED_IMAGE_details": {
+    "message": "カーソル下の画像をクリップボード、メディアライブラリ、または両方にコピーします。保存先はアクションで設定できます。URLだけでなく画像データやライブラリ保存が欲しいときに使います。",
+    "description": "Function Library details for COPY_HOVERED_IMAGE."
+  },
+  "fn_COPY_HOVERED_URL_label": {
+    "message": "URLをコピー",
+    "description": "Function Library label for COPY_HOVERED_URL."
+  },
+  "fn_COPY_HOVERED_URL_description": {
+    "message": "ホバー中のリンクURLをコピーします",
+    "description": "Function Library description for COPY_HOVERED_URL."
+  },
+  "fn_COPY_HOVERED_URL_details": {
+    "message": "カーソル下のURLをクリップボード、メディアライブラリ、またはその両方にコピーします。リソースを取得・開くのではなく、hrefそのものが必要なときに使います。",
+    "description": "Function Library details for COPY_HOVERED_URL."
+  },
+  "fn_COPY_HOVERED_VIDEO_label": {
+    "message": "動画をコピー",
+    "description": "Function Library label for COPY_HOVERED_VIDEO."
+  },
+  "fn_COPY_HOVERED_VIDEO_description": {
+    "message": "ホバー中の動画をコピーします",
+    "description": "Function Library description for COPY_HOVERED_VIDEO."
+  },
+  "fn_COPY_HOVERED_VIDEO_details": {
+    "message": "カーソル下の動画をコピーします（取得可能な場合はファイルをメディアライブラリへ、そうでなければ動画URLをクリップボードへ）。既定のレイアウトキーはありません。必要な場合はレイアウトエディタで割り当ててください。",
+    "description": "Function Library details for COPY_HOVERED_VIDEO."
+  },
+  "fn_FONT_INFO_label": {
+    "message": "フォント情報",
+    "description": "Function Library label for FONT_INFO."
+  },
+  "fn_FONT_INFO_description": {
+    "message": "カーソル下のフォントを調べます",
+    "description": "Function Library description for FONT_INFO."
+  },
+  "fn_FONT_INFO_details": {
+    "message": "カーソル下のスタイル付きテキストについて、フォント名、サイズ、ファミリー、ファイル形式、リソースURLをポップオーバーで表示し、そのテキスト範囲を枠で示します。既定のレイアウトキーはありません。必要な場合はレイアウトエディタで割り当ててください。",
+    "description": "Function Library details for FONT_INFO."
+  },
+  "fn_PAGE_MEDIA_label": {
+    "message": "ページメディア",
+    "description": "Function Library label for PAGE_MEDIA."
+  },
+  "fn_PAGE_MEDIA_description": {
+    "message": "このページで見つかったメディアを閲覧します",
+    "description": "Function Library description for PAGE_MEDIA."
+  },
+  "fn_PAGE_MEDIA_details": {
+    "message": "現在のページで見つかった画像、動画、ドキュメント、フォント、URLのギャラリーを開き、DOMを探さなくても確認・収集できます。",
+    "description": "Function Library details for PAGE_MEDIA."
+  },
+  "fn_OPEN_MEDIA_LIBRARY_label": {
+    "message": "メディアライブラリ",
+    "description": "Function Library label for OPEN_MEDIA_LIBRARY."
+  },
+  "fn_OPEN_MEDIA_LIBRARY_description": {
+    "message": "保存済みのメディアライブラリを開きます",
+    "description": "Function Library description for OPEN_MEDIA_LIBRARY."
+  },
+  "fn_OPEN_MEDIA_LIBRARY_details": {
+    "message": "以前コピーまたは保存した項目（画像、動画、URL、関連アセット）を再利用できるメディアライブラリを開きます。",
+    "description": "Function Library details for OPEN_MEDIA_LIBRARY."
+  },
+  "fn_CLIPBOARD_COPY_label": {
+    "message": "コピー",
+    "description": "Function Library label for CLIPBOARD_COPY."
+  },
+  "fn_CLIPBOARD_COPY_description": {
+    "message": "選択範囲をクリップボードにコピーします",
+    "description": "Function Library description for CLIPBOARD_COPY."
+  },
+  "fn_CLIPBOARD_COPY_details": {
+    "message": "現在のテキスト選択をシステムのクリップボードにコピーします。コピーをKeyPilotのレイアウト割り当てとして使いたい場合は、OSのショートカットよりこちらを優先してください。",
+    "description": "Function Library details for CLIPBOARD_COPY."
+  },
+  "fn_CLIPBOARD_CUT_label": {
+    "message": "カット",
+    "description": "Function Library label for CLIPBOARD_CUT."
+  },
+  "fn_CLIPBOARD_CUT_description": {
+    "message": "選択範囲をクリップボードにカットします",
+    "description": "Function Library description for CLIPBOARD_CUT."
+  },
+  "fn_CLIPBOARD_CUT_details": {
+    "message": "フォーカス中のフィールドまたは編集可能領域から、現在のテキスト選択をシステムのクリップボードにカットします。",
+    "description": "Function Library details for CLIPBOARD_CUT."
+  },
+  "fn_CLIPBOARD_PASTE_label": {
+    "message": "ペースト",
+    "description": "Function Library label for CLIPBOARD_PASTE."
+  },
+  "fn_CLIPBOARD_PASTE_description": {
+    "message": "フォーカス中のフィールドに貼り付けます",
+    "description": "Function Library description for CLIPBOARD_PASTE."
+  },
+  "fn_CLIPBOARD_PASTE_details": {
+    "message": "クリップボードのテキストを、フォーカス中のテキストフィールドまたは編集可能要素に貼り付けます。入力中にも使いたい場合は修飾キーのコードで割り当ててください。",
+    "description": "Function Library details for CLIPBOARD_PASTE."
+  },
+  "fn_CLIPBOARD_SELECT_ALL_label": {
+    "message": "すべて選択",
+    "description": "Function Library label for CLIPBOARD_SELECT_ALL."
+  },
+  "fn_CLIPBOARD_SELECT_ALL_description": {
+    "message": "フィールドまたはページをすべて選択します",
+    "description": "Function Library description for CLIPBOARD_SELECT_ALL."
+  },
+  "fn_CLIPBOARD_SELECT_ALL_details": {
+    "message": "フォーカス中のフィールドのテキストをすべて選択します。編集可能なものがフォーカスされていない場合はページ内容を選択します。通常のすべて選択ショートカットと同じ考え方です。",
+    "description": "Function Library details for CLIPBOARD_SELECT_ALL."
+  },
+  "fn_SELECT_WORD_label": {
+    "message": "単語を選択",
+    "description": "Function Library label for SELECT_WORD."
+  },
+  "fn_SELECT_WORD_description": {
+    "message": "カーソル下の単語を選択します",
+    "description": "Function Library description for SELECT_WORD."
+  },
+  "fn_SELECT_WORD_details": {
+    "message": "KeyPilotカーソル下の単語を選択します。同じ単語の上でもう一度押すと選択解除します。排他か累積かはポップオーバー設定です（共有で、キーごとではありません）。コピーはこの選択を読み取ります。",
+    "description": "Function Library details for SELECT_WORD."
+  },
+  "fn_param_opt_exclusive": {
+    "message": "排他",
+    "description": "Function parameter option for SELECT_WORD.mode.exclusive."
+  },
+  "fn_param_opt_cumulative": {
+    "message": "累積",
+    "description": "Function parameter option for SELECT_WORD.mode.cumulative."
+  },
+  "fn_SELECT_SENTENCE_label": {
+    "message": "文を選択",
+    "description": "Function Library label for SELECT_SENTENCE."
+  },
+  "fn_SELECT_SENTENCE_description": {
+    "message": "カーソル下の文を選択します",
+    "description": "Function Library description for SELECT_SENTENCE."
+  },
+  "fn_SELECT_SENTENCE_details": {
+    "message": "KeyPilotカーソル下の文を選択します。同じ文の上でもう一度押すと選択解除します。排他か累積かはポップオーバー設定です（共有で、キーごとではありません）。",
+    "description": "Function Library details for SELECT_SENTENCE."
+  },
+  "fn_SELECT_PARAGRAPH_label": {
+    "message": "段落を選択",
+    "description": "Function Library label for SELECT_PARAGRAPH."
+  },
+  "fn_SELECT_PARAGRAPH_description": {
+    "message": "カーソル下の段落を選択します",
+    "description": "Function Library description for SELECT_PARAGRAPH."
+  },
+  "fn_SELECT_PARAGRAPH_details": {
+    "message": "KeyPilotカーソル下の段落（または最も近いブロック）を選択します。同じブロックの上でもう一度押すと選択解除します。排他か累積かはポップオーバー設定です（共有で、キーごとではありません）。",
+    "description": "Function Library details for SELECT_PARAGRAPH."
+  },
+  "fn_SELECT_IMAGE_label": {
+    "message": "画像を選択",
+    "description": "Function Library label for SELECT_IMAGE."
+  },
+  "fn_SELECT_IMAGE_description": {
+    "message": "カーソル下の画像を選択します",
+    "description": "Function Library description for SELECT_IMAGE."
+  },
+  "fn_SELECT_IMAGE_details": {
+    "message": "KeyPilotカーソル下の画像を選択します。同じ画像の上でもう一度押すと選択解除します。排他か累積かはポップオーバー設定です（共有で、キーごとではありません）。コピーは選択した画像をコピーできます。",
+    "description": "Function Library details for SELECT_IMAGE."
+  },
+  "fn_LOOKUP_WORD_label": {
+    "message": "単語を調べる",
+    "description": "Function Library label for LOOKUP_WORD."
+  },
+  "fn_LOOKUP_WORD_description": {
+    "message": "カーソル下の単語の辞書定義",
+    "description": "Function Library description for LOOKUP_WORD."
+  },
+  "fn_LOOKUP_WORD_details": {
+    "message": "カーソル下の単語について、Free Dictionary APIの定義ポップオーバーを表示します。AIの設定は不要です。任意でアクションインスタンス上のソースをAsk AIに切り替えられます。",
+    "description": "Function Library details for LOOKUP_WORD."
+  },
+  "fn_param_source": {
+    "message": "ソース",
+    "description": "Function parameter label for LOOKUP_WORD.source."
+  },
+  "fn_param_opt_dictionary": {
+    "message": "辞書",
+    "description": "Function parameter option for LOOKUP_WORD.source.dictionary."
+  },
+  "fn_param_opt_ask_ai": {
+    "message": "代わりにAsk AI",
+    "description": "Function parameter option for LOOKUP_WORD.source.ai."
+  },
+  "fn_SHOW_POPOVER_label": {
+    "message": "ポップオーバーを表示",
+    "description": "Function Library label for SHOW_POPOVER."
+  },
+  "fn_SHOW_POPOVER_description": {
+    "message": "直前のマクロステップの結果を表示します",
+    "description": "Function Library description for SHOW_POPOVER."
+  },
+  "fn_SHOW_POPOVER_details": {
+    "message": "直前のマクロステップの結果（または設定したフォールバックテキスト）をポップオーバーに表示します。表示用のプリミティブです。キーアクションではなくマクロステップとして追加してください。",
+    "description": "Function Library details for SHOW_POPOVER."
+  },
+  "fn_param_content": {
+    "message": "内容",
+    "description": "Function parameter label for SHOW_POPOVER.content."
+  },
+  "fn_param_content_placeholder": {
+    "message": "直前のステップが何も出さなかった場合のフォールバックテキスト…",
+    "description": "Function parameter placeholder for SHOW_POPOVER.content."
+  },
+  "fn_ADD_URL_TO_MEDIA_LIBRARY_label": {
+    "message": "URLをメディアライブラリに追加",
+    "description": "Function Library label for ADD_URL_TO_MEDIA_LIBRARY."
+  },
+  "fn_ADD_URL_TO_MEDIA_LIBRARY_description": {
+    "message": "ホバー中のhrefを保存します（ダウンロードなし）",
+    "description": "Function Library description for ADD_URL_TO_MEDIA_LIBRARY."
+  },
+  "fn_ADD_URL_TO_MEDIA_LIBRARY_details": {
+    "message": "カーソル下のハイパーリンクそのもの（href）をメディアライブラリに保存します。リンク先のリソースはダウンロードしません。",
+    "description": "Function Library details for ADD_URL_TO_MEDIA_LIBRARY."
+  },
+  "fn_FETCH_URL_FOR_MEDIA_LIBRARY_label": {
+    "message": "URLをメディアライブラリ用に取得",
+    "description": "Function Library label for FETCH_URL_FOR_MEDIA_LIBRARY."
+  },
+  "fn_FETCH_URL_FOR_MEDIA_LIBRARY_description": {
+    "message": "リンク先ファイルをライブラリにダウンロードします",
+    "description": "Function Library description for FETCH_URL_FOR_MEDIA_LIBRARY."
+  },
+  "fn_FETCH_URL_FOR_MEDIA_LIBRARY_details": {
+    "message": "カーソル下のハイパーリンクが指すリソース（例: .pdf、.mp3、.mp4）を取得し、メディアライブラリに保存します。画像、動画、ドキュメントはファイル形式から分類されます。ウェブページはダウンロードしません。それらには「URLをメディアライブラリに追加」を使ってください。",
+    "description": "Function Library details for FETCH_URL_FOR_MEDIA_LIBRARY."
+  },
+  "fn_param_script_placeholder": {
+    "message": "// バインディング: kpHoveredClickable, kpHoverLeaf, kpFocusedTextField,\n//   kpMode, kpPageUrl, kpSelection, kpPriorResult\n// コールバック（下でチェックした場合のみ）: showPopover, copyToClipboard, notify\n// 例:\n// return kpHoveredClickable && kpHoveredClickable.textContent;",
+    "description": "Example JavaScript for the Execute JS parameter."
+  },
+  "fn_cat_navigation_label": {
+    "message": "ナビゲーション",
+    "description": "Actions Library category label for Navigation."
+  },
+  "fn_cat_tab_control_label": {
+    "message": "タブ操作",
+    "description": "Actions Library category label for Tab Control."
+  },
+  "fn_cat_begin_url_label": {
+    "message": "URLを開く",
+    "description": "Actions Library category label for Begin URL."
+  },
+  "fn_cat_get_page_data_label": {
+    "message": "ページデータを取得",
+    "description": "Actions Library category label for Get Page Data."
+  },
+  "fn_cat_maps_label": {
+    "message": "マップ",
+    "description": "Actions Library category label for Maps."
+  },
+  "fn_cat_scroll_label": {
+    "message": "スクロール",
+    "description": "Actions Library category label for Scroll."
+  },
+  "fn_cat_select_label": {
+    "message": "選択",
+    "description": "Actions Library category label for Select."
+  },
+  "fn_cat_clipboard_label": {
+    "message": "クリップボード",
+    "description": "Actions Library category label for Clipboard."
+  },
+  "fn_cat_type_label": {
+    "message": "入力",
+    "description": "Actions Library category label for Type."
+  },
+  "fn_cat_keystrokes_label": {
+    "message": "キーストローク",
+    "description": "Actions Library category label for Keystrokes."
+  },
+  "fn_cat_data_label": {
+    "message": "データ",
+    "description": "Actions Library category label for Data."
+  },
+  "fn_cat_lookup_label": {
+    "message": "調べる",
+    "description": "Actions Library category label for Lookup."
+  },
+  "fn_cat_translate_label": {
+    "message": "翻訳",
+    "description": "Actions Library category label for Translate."
+  },
+  "fn_cat_display_label": {
+    "message": "表示",
+    "description": "Actions Library category label for Display."
+  },
+  "fn_cat_script_label": {
+    "message": "スクリプト",
+    "description": "Actions Library category label for Script."
+  },
+  "fn_cat_media_library_label": {
+    "message": "メディアライブラリ",
+    "description": "Actions Library category label for Media Library."
+  },
+  "fn_cat_ai_label": {
+    "message": "AI",
+    "description": "Actions Library category label for AI."
+  },
+  "fn_cat_keypilot_label": {
+    "message": "KeyPilot",
+    "description": "Actions Library category label for KeyPilot."
+  },
+  "fn_cat_tools_label": {
+    "message": "ツール",
+    "description": "Actions Library category label for Tools."
+  },
+  "fn_cat_system_label": {
+    "message": "システム",
+    "description": "Actions Library category label for System."
+  },
+  "fn_cat_other_label": {
+    "message": "その他",
+    "description": "Actions Library category label for Other."
+  },
+  "fn_cat_navigation_description": {
+    "message": "リンクのクリック、プレビュー、閲覧履歴の移動を行います。",
+    "description": "Actions Library category description for Navigation."
+  },
+  "fn_cat_tab_control_description": {
+    "message": "タブの開閉、切り替え、確認を行います。",
+    "description": "Actions Library category description for Tab Control."
+  },
+  "fn_cat_begin_url_description": {
+    "message": "ランチャー、トップサイト、またはオムニボックスからURLへジャンプします。",
+    "description": "Actions Library category description for Begin URL."
+  },
+  "fn_cat_get_page_data_description": {
+    "message": "テキスト、画像、動画、URL、フォント、その他のページメディアを取得します。",
+    "description": "Actions Library category description for Get Page Data."
+  },
+  "fn_cat_maps_description": {
+    "message": "カーソル下のマップピンから場所のウェブサイトや住所を開きます。",
+    "description": "Actions Library category description for Maps."
+  },
+  "fn_cat_scroll_description": {
+    "message": "行単位、ページ単位、または先頭／末尾へスクロールします。",
+    "description": "Actions Library category description for Scroll."
+  },
+  "fn_cat_select_description": {
+    "message": "複数列選択ヘルパーの削除や切り替えを行います。",
+    "description": "Actions Library category description for Select."
+  },
+  "fn_cat_clipboard_description": {
+    "message": "コピー、カット、ペースト、すべて選択、およびカーソル下の単語・文・段落・画像の選択を行います。",
+    "description": "Actions Library category description for Clipboard."
+  },
+  "fn_cat_type_description": {
+    "message": "保存したテキストをフォーカス中のフィールドに入力します。",
+    "description": "Actions Library category description for Type."
+  },
+  "fn_cat_keystrokes_description": {
+    "message": "キーストローク、コード、バースト、マウス再マップを送信します。",
+    "description": "Actions Library category description for Keystrokes."
+  },
+  "fn_cat_data_description": {
+    "message": "カーソル下またはハイライトからテキストやメディアを読み取ります。",
+    "description": "Actions Library category description for Data."
+  },
+  "fn_cat_lookup_description": {
+    "message": "カーソル下の単語の定義を調べます。",
+    "description": "Actions Library category description for Lookup."
+  },
+  "fn_cat_translate_description": {
+    "message": "ハイライトまたはカーソル下のテキストを翻訳します。",
+    "description": "Actions Library category description for Translate."
+  },
+  "fn_cat_display_description": {
+    "message": "直前のマクロステップの結果をポップオーバーに表示します。",
+    "description": "Actions Library category description for Display."
+  },
+  "fn_cat_script_description": {
+    "message": "ページ状態に対してカスタムのJavaScriptスニペットを実行します。",
+    "description": "Actions Library category description for Script."
+  },
+  "fn_cat_media_library_description": {
+    "message": "リンクや取得したファイルをメディアライブラリに保存します。",
+    "description": "Actions Library category description for Media Library."
+  },
+  "fn_cat_ai_description": {
+    "message": "選択テキストをプロンプト付きでAIに送り、結果の出力先を指定します。",
+    "description": "Actions Library category description for AI."
+  },
+  "fn_cat_keypilot_description": {
+    "message": "KeyPilotの画面（キーボードリファレンス、設定、モード）を開きます。",
+    "description": "Actions Library category description for KeyPilot."
+  },
+  "fn_cat_tools_description": {
+    "message": "ユーティリティのオーバーレイとヘルパーです。",
+    "description": "Actions Library category description for Tools."
+  },
+  "fn_cat_system_description": {
+    "message": "現在のKeyPilotジェスチャーまたはモードをキャンセルします。",
+    "description": "Actions Library category description for System."
+  },
+  "fn_cat_other_description": {
+    "message": "未分類のファンクションです。",
+    "description": "Actions Library category description for Other."
+  },
+  "fn_section_macros_description": {
+    "message": "キーに配置できる複数ステップのシーケンスです。標準マクロをカスタマイズすると、編集可能なコピーが作成されます。",
+    "description": "Actions Library macros section description."
+  },
+  "fn_section_macro_keys_description": {
+    "message": "配置準備済みの保存済みマクロキーインスタンス（ホットキー、バースト、ラウンドロビンなど）です。",
+    "description": "Actions Library macroKeys section description."
+  },
+  "mk_hotkey_label": {
+    "message": "コンビネーション / ホットキー",
+    "description": "Macro Key kind label for hotkey."
+  },
+  "mk_hotkey_description": {
+    "message": "修飾キーのコードを送信します",
+    "description": "Macro Key kind description for hotkey."
+  },
+  "mk_hotkey_details": {
+    "message": "1つのキーでCtrl+C、Win+R、Ctrl+Shift+Escなどの修飾キーコードを送信します。コードはアクションインスタンスで設定します。",
+    "description": "Macro Key kind details for hotkey."
+  },
+  "mk_burst_label": {
+    "message": "バーストキー",
+    "description": "Macro Key kind label for burst."
+  },
+  "mk_burst_description": {
+    "message": "短いキーシーケンスを入力します",
+    "description": "Macro Key kind description for burst."
+  },
+  "mk_burst_details": {
+    "message": "1回の押下で短いキーストローク列を入力します（例: a→b→c または Ctrl+C → Ctrl+V → Enter）。ステップはアクションインスタンスで設定します。",
+    "description": "Macro Key kind details for burst."
+  },
+  "mk_roundRobin_label": {
+    "message": "ラウンドロビン",
+    "description": "Macro Key kind label for roundRobin."
+  },
+  "mk_roundRobin_description": {
+    "message": "ストローク候補を循環します",
+    "description": "Macro Key kind description for roundRobin."
+  },
+  "mk_roundRobin_details": {
+    "message": "押すたびにストロークのサイクルが進みます（A、次にB、次にC、またA…）。1つのキーで複数の出力を切り替えたいときに便利です。",
+    "description": "Macro Key kind details for roundRobin."
+  },
+  "mk_continuous_label": {
+    "message": "継続 / 連続",
+    "description": "Macro Key kind label for continuous."
+  },
+  "mk_continuous_description": {
+    "message": "停止するまでストロークを繰り返します",
+    "description": "Macro Key kind description for continuous."
+  },
+  "mk_continuous_details": {
+    "message": "押すとストロークの繰り返し送信を開始し、もう一度押すと停止します。繰り返すストロークはアクションインスタンスで設定します。",
+    "description": "Macro Key kind details for continuous."
+  },
+  "mk_mouse_label": {
+    "message": "合成マウス",
+    "description": "Macro Key kind label for mouse."
+  },
+  "mk_mouse_description": {
+    "message": "カーソル下をクリックします",
+    "description": "Macro Key kind description for mouse."
+  },
+  "mk_mouse_details": {
+    "message": "物理マウスボタンを動かさずに、カーソル下で左・中・右クリックを合成します。ボタンはアクションインスタンスで選びます。",
+    "description": "Macro Key kind details for mouse."
+  },
+  "mk_key_label": {
+    "message": "通常キー",
+    "description": "Macro Key kind label for key."
+  },
+  "mk_key_description": {
+    "message": "このスロットを別のキーに再マップします",
+    "description": "Macro Key kind description for key."
+  },
+  "mk_key_details": {
+    "message": "このレイアウトスロットを再マップし、押すと別のキーを送信します（例: Fで1を送信）。対象キーはアクションインスタンスで設定します。",
+    "description": "Macro Key kind details for key."
+  },
+  "mk_step_function_label": {
+    "message": "ファンクション",
+    "description": "Macro Builder step label for function."
+  },
+  "mk_step_function_description": {
+    "message": "ファンクションライブラリの項目（マクロキーを含む）を実行します。",
+    "description": "Macro Builder step description for function."
+  },
+  "mk_step_wait_label": {
+    "message": "待機",
+    "description": "Macro Builder step label for wait."
+  },
+  "mk_step_wait_description": {
+    "message": "Nミリ秒一時停止します。",
+    "description": "Macro Builder step description for wait."
+  },
+  "mk_step_gate_label": {
+    "message": "ゲート",
+    "description": "Macro Builder step label for gate."
+  },
+  "mk_step_gate_description": {
+    "message": "条件が失敗したら、以降のステップをスキップします。",
+    "description": "Macro Builder step description for gate."
+  },
+  "mk_step_stop_label": {
+    "message": "停止",
+    "description": "Macro Builder step label for stop."
+  },
+  "mk_step_stop_description": {
+    "message": "マクロをすぐに終了します。",
+    "description": "Macro Builder step description for stop."
+  },
+  "mk_step_runMacro_label": {
+    "message": "マクロを実行",
+    "description": "Macro Builder step label for runMacro."
+  },
+  "mk_step_runMacro_description": {
+    "message": "別のマクロを呼び出します（循環ガード付き）。",
+    "description": "Macro Builder step description for runMacro."
+  },
+  "mk_empty_stroke": {
+    "message": "（空）",
+    "description": "Macro Key summary when no stroke is configured."
+  },
+  "mk_mouse_click": {
+    "message": "$1クリック",
+    "description": "Macro Key mouse-click summary. $1 is the button name."
+  },
+  "mk_default_label": {
+    "message": "マクロキー",
+    "description": "Fallback label for an unknown Macro Key kind."
+  },
+  "fn_cat_all": {
+    "message": "すべてのカテゴリ",
+    "description": "Function Library category filter option."
+  },
+  "mk_editor_configure": {
+    "message": "設定: $1",
+    "description": "Macro Key editor title. $1 is the Macro Key kind label.",
+    "placeholders": {
+      "kind": {
+        "content": "$1",
+        "example": "Combination / Hotkey"
+      }
+    }
+  },
+  "mk_editor_name": {
+    "message": "名前",
+    "description": "Macro Key editor name field label."
+  },
+  "mk_editor_key_repeat": {
+    "message": "長押し／繰り返しするキー",
+    "description": "Macro Key editor continuous-key field label."
+  },
+  "mk_editor_key_chord": {
+    "message": "キー / コード",
+    "description": "Macro Key editor stroke field label."
+  },
+  "mk_editor_interval": {
+    "message": "間隔（ms）",
+    "description": "Macro Key editor repeat interval field label."
+  },
+  "mk_editor_sequence": {
+    "message": "シーケンス",
+    "description": "Macro Key editor burst sequence field label."
+  },
+  "mk_editor_cycle_items": {
+    "message": "サイクル項目",
+    "description": "Macro Key editor round-robin items field label."
+  },
+  "mk_editor_remove": {
+    "message": "削除",
+    "description": "Tooltip for removing a Macro Key stroke."
+  },
+  "mk_editor_add_stroke": {
+    "message": "ストロークを追加",
+    "description": "Macro Key editor add-stroke button."
+  },
+  "mk_editor_gap": {
+    "message": "ストローク間の間隔（ms）",
+    "description": "Macro Key editor burst gap field label."
+  },
+  "mk_editor_mouse_button": {
+    "message": "マウスボタン",
+    "description": "Macro Key editor mouse-button field label."
+  },
+  "mk_editor_mouse_left": {
+    "message": "左",
+    "description": "Macro Key editor left mouse button option."
+  },
+  "mk_editor_mouse_middle": {
+    "message": "中",
+    "description": "Macro Key editor middle mouse button option."
+  },
+  "mk_editor_mouse_right": {
+    "message": "右",
+    "description": "Macro Key editor right mouse button option."
+  },
+  "mk_editor_save": {
+    "message": "保存",
+    "description": "Macro Key editor Save button."
+  },
+  "mk_editor_cancel": {
+    "message": "キャンセル",
+    "description": "Macro Key editor Cancel button."
+  },
+  "mk_editor_delete": {
+    "message": "削除",
+    "description": "Macro Key editor Delete button."
+  },
+  "mk_editor_repeat_preview": {
+    "message": "$1を$2msごと",
+    "description": "Macro Key continuous repeat preview. $1 is a key stroke and $2 is milliseconds.",
+    "placeholders": {
+      "stroke": {
+        "content": "$1",
+        "example": "W"
+      },
+      "interval": {
+        "content": "$2",
+        "example": "50"
+      }
+    }
+  },
+  "fn_TYPE_CHARACTERS_label": {
+    "message": "文字を入力",
+    "description": "Function Library label for TYPE_CHARACTERS."
+  },
+  "fn_TYPE_CHARACTERS_description": {
+    "message": "保存したテキストをフィールドに入力します",
+    "description": "Function Library description for TYPE_CHARACTERS."
+  },
+  "fn_TYPE_CHARACTERS_details": {
+    "message": "キーを押すたびに、設定したテキストをフォーカス中のフィールドへ入力します。このファンクションのアクションインスタンスを複数作成し、それぞれに異なるテキストを設定して別のキーに配置できます。",
+    "description": "Function Library details for TYPE_CHARACTERS."
+  },
+  "fn_param_text_to_type": {
+    "message": "入力するテキスト",
+    "description": "Function parameter label for TYPE_CHARACTERS.text."
+  },
+  "fn_param_text_to_type_placeholder": {
+    "message": "例: メールアドレス、署名、スニペット…",
+    "description": "Function parameter placeholder for TYPE_CHARACTERS.text."
+  },
+  "fn_EXECUTE_JS_label": {
+    "message": "JSを実行",
+    "description": "Function Library label for EXECUTE_JS."
+  },
+  "fn_EXECUTE_JS_description": {
+    "message": "貼り付けたJSスニペットを実行します",
+    "description": "Function Library description for EXECUTE_JS."
+  },
+  "fn_EXECUTE_JS_details": {
+    "message": "貼り付けたJavaScriptスニペットを、ホバー中のクリック可能要素や他のページ状態とともに、コンテンツスクリプトの隔離ワールドで実行します。任意のコールバック（ポップオーバー、クリップボード、通知）は、アクションインスタンスでチェックした場合にのみ注入されます。",
+    "description": "Function Library details for EXECUTE_JS."
+  },
+  "fn_param_script": {
+    "message": "スクリプト",
+    "description": "Function parameter label for EXECUTE_JS.script."
+  },
+  "fn_param_cb_show_popover": {
+    "message": "結果をポップオーバーに表示（showPopover）",
+    "description": "Function parameter label for EXECUTE_JS.cbShowPopover."
+  },
+  "fn_param_group_callbacks": {
+    "message": "コールバック",
+    "description": "Function parameter group for EXECUTE_JS.cbShowPopover."
+  },
+  "fn_param_cb_copy": {
+    "message": "クリップボードにコピー（copyToClipboard）",
+    "description": "Function parameter label for EXECUTE_JS.cbCopyToClipboard."
+  },
+  "fn_param_cb_notify": {
+    "message": "フラッシュ通知（notify）",
+    "description": "Function parameter label for EXECUTE_JS.cbNotify."
+  },
+  "fn_GET_TEXT_AT_CURSOR_label": {
+    "message": "カーソル位置のテキストを取得",
+    "description": "Function Library label for GET_TEXT_AT_CURSOR."
+  },
+  "fn_GET_TEXT_AT_CURSOR_description": {
+    "message": "カーソル下のテキストをコピーします",
+    "description": "Function Library description for GET_TEXT_AT_CURSOR."
+  },
+  "fn_GET_TEXT_AT_CURSOR_details": {
+    "message": "カーソル下の単語、文、段落、またはハイパーリンクを読み取り（粒度はアクションインスタンスで選択）、クリップボードにコピーします。",
+    "description": "Function Library details for GET_TEXT_AT_CURSOR."
+  },
+  "fn_param_granularity": {
+    "message": "粒度",
+    "description": "Function parameter label for GET_TEXT_AT_CURSOR.granularity."
+  },
+  "fn_param_opt_word": {
+    "message": "単語",
+    "description": "Function parameter option for GET_TEXT_AT_CURSOR.granularity.word."
+  },
+  "fn_param_opt_sentence": {
+    "message": "文",
+    "description": "Function parameter option for GET_TEXT_AT_CURSOR.granularity.sentence."
+  },
+  "fn_param_opt_paragraph": {
+    "message": "段落",
+    "description": "Function parameter option for GET_TEXT_AT_CURSOR.granularity.paragraph."
+  },
+  "fn_param_opt_hyperlink": {
+    "message": "ハイパーリンク",
+    "description": "Function parameter option for GET_TEXT_AT_CURSOR.granularity.hyperlink."
+  },
+  "fn_GET_TEXT_RANGE_label": {
+    "message": "テキスト範囲を取得",
+    "description": "Function Library label for GET_TEXT_RANGE."
+  },
+  "fn_GET_TEXT_RANGE_description": {
+    "message": "選択範囲を次のマクロステップに渡します",
+    "description": "Function Library description for GET_TEXT_RANGE."
+  },
+  "fn_GET_TEXT_RANGE_details": {
+    "message": "現在のハイライト／選択を読み取り、次のマクロステップに渡します。データ用のプリミティブです。キーアクションではなくマクロステップとして追加してください（キーにはコピーを使います）。",
+    "description": "Function Library details for GET_TEXT_RANGE."
+  },
+  "fn_GET_MEDIA_AT_CURSOR_label": {
+    "message": "カーソル位置のメディアを取得",
+    "description": "Function Library label for GET_MEDIA_AT_CURSOR."
+  },
+  "fn_GET_MEDIA_AT_CURSOR_description": {
+    "message": "カーソル下のメディアをコピーします",
+    "description": "Function Library description for GET_MEDIA_AT_CURSOR."
+  },
+  "fn_GET_MEDIA_AT_CURSOR_details": {
+    "message": "カーソル下の画像、動画、または音声を読み取り（種類はアクションインスタンスで選択）、本体またはそのURLをクリップボードにコピーします。",
+    "description": "Function Library details for GET_MEDIA_AT_CURSOR."
+  },
+  "fn_param_media_kind": {
+    "message": "メディアの種類",
+    "description": "Function parameter label for GET_MEDIA_AT_CURSOR.kind."
+  },
+  "fn_param_opt_image": {
+    "message": "画像",
+    "description": "Function parameter option for GET_MEDIA_AT_CURSOR.kind.image."
+  },
+  "fn_param_opt_video": {
+    "message": "動画",
+    "description": "Function parameter option for GET_MEDIA_AT_CURSOR.kind.video."
+  },
+  "fn_param_opt_audio": {
+    "message": "音声",
+    "description": "Function parameter option for GET_MEDIA_AT_CURSOR.kind.audio."
+  },
+  "fn_TRANSLATE_label": {
+    "message": "翻訳",
+    "description": "Function Library label for TRANSLATE."
+  },
+  "fn_TRANSLATE_description": {
+    "message": "選択またはカーソル下のテキストを翻訳します",
+    "description": "Function Library description for TRANSLATE."
+  },
+  "fn_TRANSLATE_details": {
+    "message": "ハイライトされたテキスト、またはハイライトがない場合はカーソル下の単語／文／段落を翻訳します。対象言語と、結果をページテキストの置換にするかポップオーバーで開くかを設定します。",
+    "description": "Function Library details for TRANSLATE."
+  },
+  "fn_param_target_language": {
+    "message": "対象言語",
+    "description": "Function parameter label for TRANSLATE.targetLanguage."
+  },
+  "fn_param_target_language_placeholder": {
+    "message": "例: English, Spanish, Japanese…",
+    "description": "Function parameter placeholder for TRANSLATE.targetLanguage."
+  },
+  "fn_param_instruction": {
+    "message": "指示",
+    "description": "Function parameter label for SEND_TEXT_TO_AI.prompt."
+  },
+  "fn_param_instruction_placeholder": {
+    "message": "例: Translate to English",
+    "description": "Function parameter placeholder for SEND_TEXT_TO_AI.prompt."
+  },
+  "fn_param_config": {
+    "message": "設定",
+    "description": "Function parameter label for a Macro Key configuration."
+  },
+  "fn_param_destination": {
+    "message": "出力先",
+    "description": "Function result destination parameter label."
+  },
+  "fn_dest_clipboard": {
+    "message": "クリップボード",
+    "description": "Function result destination option."
+  },
+  "fn_dest_popover": {
+    "message": "ポップオーバー",
+    "description": "Function result destination option."
+  },
+  "fn_dest_both": {
+    "message": "クリップボードとポップオーバー",
+    "description": "Function result destination option."
+  },
+  "fn_dest_modify_page": {
+    "message": "ページを変更",
+    "description": "Function result destination option."
+  },
+  "fn_dest_media_library": {
+    "message": "メディアライブラリ",
+    "description": "Function result destination option."
+  },
+  "fn_dest_clipboard_and_media_library": {
+    "message": "クリップボードとメディアライブラリ",
+    "description": "Function result destination option."
+  },
+  "fn_dest_scrapbook": {
+    "message": "スクラップブック",
+    "description": "Function result destination option."
+  },
+  "fn_COLS_TOGGLE_label": {
+    "message": "列トグル",
+    "description": "Built-in Function COLS_TOGGLE label."
+  },
+  "fn_COLS_TOGGLE_description": {
+    "message": "カーソル下を複数列レイアウトにします",
+    "description": "Built-in Function COLS_TOGGLE short description."
+  },
+  "fn_COLS_TOGGLE_details": {
+    "message": "カーソル下の要素を複数列レイアウトにし、密なテキストやリストを読みやすくします。もう一度切り替えると元のレイアウトに戻ります。",
+    "description": "Built-in Function COLS_TOGGLE inspector details."
+  },
+  "fn_SEND_TEXT_TO_AI_label": {
+    "message": "テキストをAIに送る",
+    "description": "Built-in Function SEND_TEXT_TO_AI label."
+  },
+  "fn_SEND_TEXT_TO_AI_description": {
+    "message": "選択テキストに対してAIを実行します",
+    "description": "Built-in Function SEND_TEXT_TO_AI short description."
+  },
+  "fn_SEND_TEXT_TO_AI_details": {
+    "message": "選択テキストを設定可能な指示とともにAIへ送り、結果をクリップボードおよび／またはポップオーバーへ送ります。プロンプトと出力先はアクションインスタンスで設定します。",
+    "description": "Built-in Function SEND_TEXT_TO_AI inspector details."
+  },
+  "fn_unknown": {
+    "message": "不明なファンクション: $1",
+    "description": "Error when a Function id is missing.",
+    "placeholders": {
+      "id": {
+        "content": "$1",
+        "example": "FOO"
+      }
+    }
+  },
+  "fn_reason_macro_step": {
+    "message": "「$1」はマクロステップであり、キーアクションではありません。",
+    "description": "Cannot bind a Macro Step as a key action.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Show Popover"
+      }
+    }
+  },
+  "fn_reason_needs_chord": {
+    "message": "「$1」はテキストフィールドがフォーカスされているときに実行する必要があるため、通常キーではなく修飾キーの組み合わせ（例: Ctrl+$2+…）にのみ割り当てられます。",
+    "description": "worksWhileTyping chord requirement. $1 is the Function name. $2 is Alt or Opt.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Type Characters"
+      },
+      "modifier": {
+        "content": "$2",
+        "example": "Alt"
+      }
+    }
+  },
+  "early_configured_function": {
+    "message": "設定済みファンクション",
+    "description": "Fallback label for a configured Function before the main content script loads."
+  },
+  "fn_summary_empty": {
+    "message": "（空）",
+    "description": "Function parameter summary when no value is configured."
+  },
+  "fn_summary_previous_step": {
+    "message": "（直前のステップ）",
+    "description": "Function parameter summary when a Macro step uses its prior result."
+  },
+  "fn_summary_script": {
+    "message": "（スクリプト）",
+    "description": "Function parameter summary for a configured JavaScript script."
+  },
+  "mk_editor_key": {
+    "message": "キー",
+    "description": "Macro Key editor key field label and placeholder."
+  },
+  "launcher_site_social_001_description": {
+    "message": "写真とショート動画のソーシャルネットワーク",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_002_description": {
+    "message": "友だち、グループ、コミュニティフィード",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_003_description": {
+    "message": "リアルタイムの投稿と公開の会話",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_004_description": {
+    "message": "トピック別コミュニティとディスカッションスレッド",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_005_description": {
+    "message": "分散型マイクロブログネットワーク",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_006_description": {
+    "message": "プロフェッショナル向けネットワーキングとキャリア",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_007_description": {
+    "message": "Metaのテキスト中心のソーシャルフィード",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_008_description": {
+    "message": "フェデレーション型オープンソースのソーシャルネットワーク",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_009_description": {
+    "message": "ショート動画の発見と制作",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_010_description": {
+    "message": "暗号化メッセージングとグループチャット",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_011_description": {
+    "message": "アイデアとインスピレーションのためのビジュアルボード",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_012_description": {
+    "message": "ボイス、チャット、コミュニティサーバー",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_013_description": {
+    "message": "クラウドメッセージングと大規模チャンネル",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_014_description": {
+    "message": "消えゆくスナップとStories",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_015_description": {
+    "message": "ウェブ版Facebookメッセージアプリ",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_016_description": {
+    "message": "近所のニュースとローカルチャット",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_017_description": {
+    "message": "ブログ、ファンダム、クリエイティブな投稿",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_018_description": {
+    "message": "専門家やコミュニティのQ&Aです",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_019_description": {
+    "message": "長文の文章やエッセイです",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_020_description": {
+    "message": "クリエイティブなポートフォリオと作品紹介です",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_021_description": {
+    "message": "デザイン作品とクリエイティブ採用です",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_022_description": {
+    "message": "書評、リスト、読書目標です",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_023_description": {
+    "message": "写真ホスティングと写真家コミュニティです",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_024_description": {
+    "message": "メンバーシップでクリエイターを支援します",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_social_025_description": {
+    "message": "ライターネットワークと短い投稿です",
+    "description": "Launcher social site description."
+  },
+  "launcher_site_news_001_description": {
+    "message": "速報と米国・世界のニュースです",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_002_description": {
+    "message": "BBCの国際ニュースです",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_003_description": {
+    "message": "深い取材と分析です",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_004_description": {
+    "message": "通信社ニュースとビジネス見出しです",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_005_description": {
+    "message": "英国と世界のニュース・オピニオンです",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_006_description": {
+    "message": "Associated Pressの通信と写真です",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_007_description": {
+    "message": "パーソナライズされたニュース集約です",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_008_description": {
+    "message": "集約された見出しとオリジナル記事です",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_009_description": {
+    "message": "Microsoftのニュースポータルとライフスタイル情報です",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_010_description": {
+    "message": "米国のニュースとオピニオン番組です",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_011_description": {
+    "message": "ネットワークニュースと調査報道です",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_012_description": {
+    "message": "米国の放送ニュースとライブ更新です",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_013_description": {
+    "message": "全国ニュースと60 Minutesです",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_014_description": {
+    "message": "全国紙とスポーツ報道です",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_015_description": {
+    "message": "政治と国内報道です",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_016_description": {
+    "message": "ビジネスと金融ジャーナリズムです",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_017_description": {
+    "message": "公共ラジオのニュースとポッドキャストです",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_018_description": {
+    "message": "市場、ビジネス、金融のTVです",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_019_description": {
+    "message": "世界市場と金融ニュースです",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_020_description": {
+    "message": "長文の文化・政治記事です",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_021_description": {
+    "message": "政治と政策報道です",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_022_description": {
+    "message": "短く読みやすいニュース要約です",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_023_description": {
+    "message": "議会、選挙戦、政策です",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_024_description": {
+    "message": "国際ニュースとドキュメンタリーです",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_025_description": {
+    "message": "雑誌ニュースと表紙です",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_026_description": {
+    "message": "週刊ニュースとオピニオン誌です",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_027_description": {
+    "message": "英国タブロイドのニュースと芸能です",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_028_description": {
+    "message": "独立系ニュースと中国報道です",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_029_description": {
+    "message": "New Tang Dynastyのニュースと動画です",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_030_description": {
+    "message": "NYメトロのニュースとエンタメです",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_031_description": {
+    "message": "独立系ニュースレターとライターです",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_news_032_description": {
+    "message": "スタートアップ、テック、ベンチャーニュースです",
+    "description": "Launcher news site description."
+  },
+  "launcher_site_productivity_001_description": {
+    "message": "Googleのメールと受信トレイです",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_002_description": {
+    "message": "予定、イベント、リマインダーです",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_003_description": {
+    "message": "クラウドファイルと共有フォルダです",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_004_description": {
+    "message": "共同編集のドキュメントとシートです",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_005_description": {
+    "message": "ノート、ウィキ、プロジェクトデータベースです",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_006_description": {
+    "message": "チームチャットと職場チャネルです",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_007_description": {
+    "message": "タスク用カンバンボードです",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_008_description": {
+    "message": "Microsoftのメールとカレンダーです",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_009_description": {
+    "message": "会議、チャット、チームハブです",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_010_description": {
+    "message": "Microsoftのクラウドストレージです",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_011_description": {
+    "message": "ファイル同期と共有フォルダです",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_012_description": {
+    "message": "ノート、クリッピング、ノートブックです",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_013_description": {
+    "message": "チームとプロジェクト向けのワークOSです",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_014_description": {
+    "message": "表計算とデータベースのハイブリッドアプリです",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_015_description": {
+    "message": "共同のUI・デザインファイルです",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_016_description": {
+    "message": "手軽なグラフィックデザイン用テンプレートです",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_017_description": {
+    "message": "ビデオ会議とウェビナーです",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_018_description": {
+    "message": "Googleのビデオ通話です",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_019_description": {
+    "message": "コードホスティングとプルリクエストです",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_020_description": {
+    "message": "DevOpsプラットフォームとGitリポジトリです",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_021_description": {
+    "message": "プロダクトチーム向けの課題追跡です",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_022_description": {
+    "message": "アジャイルなプロジェクトと課題追跡です",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_023_description": {
+    "message": "チームウィキとドキュメントです",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_024_description": {
+    "message": "ワークショップ用のオンラインホワイトボードです",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_025_description": {
+    "message": "ローカル優先のナレッジベースノートです",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_productivity_026_description": {
+    "message": "Appleのメール、写真、Driveです",
+    "description": "Launcher productivity site description."
+  },
+  "launcher_site_videos_001_description": {
+    "message": "世界最大の動画ホスティングプラットフォームです",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_002_description": {
+    "message": "クリエイター向け収益の動画ホスティングです",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_003_description": {
+    "message": "ゲームとクリエイター向けライブストリーミングです",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_004_description": {
+    "message": "高品質なクリエイター・プロ向け動画ホスティングです",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_005_description": {
+    "message": "動画共有とパブリッシャー向けプレーヤーネットワークです",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_006_description": {
+    "message": "LBRYネットワーク上の分散型動画です",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_007_description": {
+    "message": "縦型ショート動画フィードです",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_008_description": {
+    "message": "クリーンで家族向けの動画プラットフォームです",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_009_description": {
+    "message": "クリエイター向けライブ配信の代替です",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_010_description": {
+    "message": "YouTubeによる音楽ストリーミングです",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_011_description": {
+    "message": "YouTubeチャンネルのクリエイターダッシュボードです",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_012_description": {
+    "message": "ドキュメンタリーとノンフィクション動画です",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_013_description": {
+    "message": "アイデアの講演とTEDカンファレンスです",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_014_description": {
+    "message": "Facebookの番組と動画です",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_015_description": {
+    "message": "Instagramの短いクリップです",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_016_description": {
+    "message": "パブリックドメインとアーカイブ映画です",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_017_description": {
+    "message": "Plex経由の無料映画とTVです",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_videos_018_description": {
+    "message": "Plex経由の無料映画とTVです",
+    "description": "Launcher videos site description."
+  },
+  "launcher_site_entertainment_001_description": {
+    "message": "サブスクの映画とオリジナルTV番組です",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_002_description": {
+    "message": "Disney、Marvel、Star Wars、Pixarです",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_003_description": {
+    "message": "オンデマンドTVと今期の番組です",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_004_description": {
+    "message": "動画とライブストリームを視聴できます",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_005_description": {
+    "message": "HBOシリーズ、映画、Maxオリジナルです",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_006_description": {
+    "message": "Amazonの映画・番組ストリーミングです",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_007_description": {
+    "message": "CBS、Paramount、スポーツ配信です",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_008_description": {
+    "message": "NBCUniversalのストリーミングライブラリです",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_009_description": {
+    "message": "音楽、ポッドキャスト、プレイリストです",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_010_description": {
+    "message": "AIによる音楽生成と楽曲です",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_011_description": {
+    "message": "Appleのオリジナルシリーズと映画です",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_012_description": {
+    "message": "アニメガ配信と同時配信です",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_013_description": {
+    "message": "広告付きの無料映画とTVです",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_014_description": {
+    "message": "無料のライブTVチャンネルとオンデマンドです",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_015_description": {
+    "message": "映画データベース、評価、予告編です",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_016_description": {
+    "message": "批評家と観客の映画スコアです",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_017_description": {
+    "message": "映画日記とソーシャルレビューです",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_018_description": {
+    "message": "インディー音楽とオーディオトラックです",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_019_description": {
+    "message": "アーティストから直接音楽を購入できます",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_020_description": {
+    "message": "パーソナライズされたラジオと音楽ステーションです",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_021_description": {
+    "message": "ライブゲームとクリエイター配信です",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_022_description": {
+    "message": "PCゲームストアとライブラリです",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_023_description": {
+    "message": "Epic Games Storeと無料ゲームです",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_024_description": {
+    "message": "Xboxコンソール、Game Pass、ストアです",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_025_description": {
+    "message": "PlayStationゲームとPS Plusです",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_026_description": {
+    "message": "Nintendo Switchのゲームとニュースです",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_027_description": {
+    "message": "本と読書リストを記録できます",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_028_description": {
+    "message": "オーディオブックと朗読コンテンツです",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_entertainment_029_description": {
+    "message": "Apple Podcastsのディレクトリと番組です",
+    "description": "Launcher entertainment site description."
+  },
+  "launcher_site_shopping_001_description": {
+    "message": "なんでも揃うマーケットプレイスとPrime配送です",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_002_description": {
+    "message": "オークションと今すぐ購入のマーケットプレイスです",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_003_description": {
+    "message": "店舗受け取り対応の小売商品です",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_004_description": {
+    "message": "ホーム、アパレル、日常必需品です",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_005_description": {
+    "message": "ハンドメイド、ヴィンテージ、クラフト商品です",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_006_description": {
+    "message": "家電と電化製品です",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_007_description": {
+    "message": "会員制倉庫型クラブのショッピングです",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_008_description": {
+    "message": "中国セラーのグローバルマーケットプレイスです",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_009_description": {
+    "message": "日用品の割引マーケットプレイスです",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_010_description": {
+    "message": "家具とホームデコールのオンライン販売です",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_011_description": {
+    "message": "ホーム改善と建築資材です",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_012_description": {
+    "message": "金物、家電、DIYツールです",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_013_description": {
+    "message": "手頃な家具とホームグッズです",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_014_description": {
+    "message": "Appleデバイス、アクセサリ、下取りです",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_015_description": {
+    "message": "PCパーツとテックギアです",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_016_description": {
+    "message": "地域のクラシファイドとパーソナルです",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_017_description": {
+    "message": "Facebook経由の地域売買です",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_018_description": {
+    "message": "オンラインストア向けのEコマースプラットフォームです",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_019_description": {
+    "message": "アスレチックシューズ、アパレル、ギアです",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_020_description": {
+    "message": "スポーツウェア、スニーカー、トレーニングギアです",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_021_description": {
+    "message": "無料返品対応の靴とアパレルです",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_022_description": {
+    "message": "百貨店のファッションとビューティーです",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_023_description": {
+    "message": "衣料、ホーム、百貨店です",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_024_description": {
+    "message": "ビューティー製品とメイクアップです",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_025_description": {
+    "message": "ビューティー小売とサロン製品です",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_026_description": {
+    "message": "ペットフード、用品、薬局です",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_027_description": {
+    "message": "コンサートやスポーツのイベントチケットです",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_shopping_028_description": {
+    "message": "キャッシュバックショッピングポータルです",
+    "description": "Launcher shopping site description."
+  },
+  "launcher_site_ai_001_description": {
+    "message": "OpenAIの対話型AIアシスタントです",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_002_description": {
+    "message": "文章とコード向けのAnthropic AIアシスタントです",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_003_description": {
+    "message": "リアルタイム知識のxAIチャットボットです",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_004_description": {
+    "message": "GoogleのマルチモーダルAIアシスタントです",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_005_description": {
+    "message": "MicrosoftのAIチャットとOfficeサポートです",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_006_description": {
+    "message": "出典付き回答のAI検索です",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_007_description": {
+    "message": "複数ボットのAIチャットハブです",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_008_description": {
+    "message": "カスタムAIキャラクターとチャットできます",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_009_description": {
+    "message": "オープンモデルとAIチャットデモです",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_010_description": {
+    "message": "OpenAIの研究、API、製品です",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_011_description": {
+    "message": "Claudeの開発元でAI安全性の企業です",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_012_description": {
+    "message": "Geminiプロンプトを作成・テストできます",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_013_description": {
+    "message": "自分のソースから作るAI研究ノートです",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_014_description": {
+    "message": "AI画像生成コミュニティです",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_015_description": {
+    "message": "AIで曲を生成できます",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_016_description": {
+    "message": "AIによる画像とアセット生成です",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_017_description": {
+    "message": "テキスト描画に強いAI画像です",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_018_description": {
+    "message": "AI動画生成と編集です",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_019_description": {
+    "message": "AI音声合成とクローンです",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_020_description": {
+    "message": "超高速LLM推論プラットフォームです",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_021_description": {
+    "message": "欧州のオープンウェイトAIチャットです",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_022_description": {
+    "message": "推論重視のAIチャットモデルです",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_023_description": {
+    "message": "AI搭載のコードエディタです",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_024_description": {
+    "message": "API経由でオープンMLモデルを実行できます",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_ai_025_description": {
+    "message": "ホスト型オープンソースLLM推論です",
+    "description": "Launcher ai site description."
+  },
+  "launcher_site_archive_001_description": {
+    "message": "本、メディア、ウェブのデジタルライブラリです",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_002_description": {
+    "message": "Wayback Machineのアーカイブウェブページです",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_003_description": {
+    "message": "本とテキストのコレクションです",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_004_description": {
+    "message": "映画と動画のアーカイブです",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_005_description": {
+    "message": "音声録音と音楽アーカイブです",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_006_description": {
+    "message": "ヴィンテージソフトとアプリのアーカイブです",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_007_description": {
+    "message": "画像と写真のコレクションです",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_008_description": {
+    "message": "オンラインで本を借りてカタログできます",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_009_description": {
+    "message": "検索可能なTVニュースアーカイブです",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_010_description": {
+    "message": "ウェブの歴史的スナップショットを閲覧できます",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_011_description": {
+    "message": "機関向けの厳選ウェブアーカイブです",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_012_description": {
+    "message": "無料のSmithsonianコレクション画像です",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_013_description": {
+    "message": "欧州の文化遺産ポータルです",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_014_description": {
+    "message": "無料のパブリックドメイン電子書籍です",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_015_description": {
+    "message": "デジタル化された図書館の本と研究資料です",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_016_description": {
+    "message": "米国の図書館・博物館ポータルです",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_017_description": {
+    "message": "米国国立図書館のコレクションです",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_018_description": {
+    "message": "Wikipedia向けの無料メディアファイルです",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_019_description": {
+    "message": "誰でも編集できる無料百科事典です",
+    "description": "Launcher archive site description."
+  },
+  "launcher_site_archive_020_description": {
+    "message": "無料の原典テキストと文書です",
+    "description": "Launcher archive site description."
+  },
+  "launcher_search_google_description": {
+    "message": "Googleの一般ウェブ検索です",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_bing_description": {
+    "message": "Microsoft Bingのウェブ検索です",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_duckduckgo_description": {
+    "message": "プライバシー重視のウェブ検索です",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_yahoo_description": {
+    "message": "Yahoo Searchポータルです",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_brave_description": {
+    "message": "Braveの独立検索です",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_ecosia_description": {
+    "message": "植樹につながる検索です",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_startpage_description": {
+    "message": "Google結果のプライベートプロキシです",
+    "description": "Launcher search-site description."
+  },
+  "launcher_search_generic_description": {
+    "message": "$1のウェブ検索です",
+    "description": "Launcher search-site description.",
+    "placeholders": {
+      "site": {
+        "content": "$1$",
+        "example": "Google"
+      }
+    }
+  },
+  "launcher_category_fallback_description": {
+    "message": "このカテゴリのサイトへすばやくアクセスできます",
+    "description": "Fallback description for an unknown Launcher category."
+  },
+  "launcher_category_launchDeck_label": {
+    "message": "ローンチデッキ",
+    "description": "Launcher category label."
+  },
+  "launcher_category_launchDeck_description": {
+    "message": "ツールバーのブックマークとよく訪問するサイトです",
+    "description": "Launcher category description."
+  },
+  "launcher_category_bookmarks_label": {
+    "message": "ブックマーク",
+    "description": "Launcher category label."
+  },
+  "launcher_category_bookmarks_description": {
+    "message": "保存したブックマークとよく訪れるサイトです",
+    "description": "Launcher category description."
+  },
+  "launcher_category_history_label": {
+    "message": "最近",
+    "description": "Launcher category label."
+  },
+  "launcher_category_history_description": {
+    "message": "最近訪問したサイトです",
+    "description": "Launcher category description."
+  },
+  "launcher_category_social_label": {
+    "message": "ソーシャル",
+    "description": "Launcher category label."
+  },
+  "launcher_category_social_description": {
+    "message": "ソーシャルネットワークでつながれます",
+    "description": "Launcher category description."
+  },
+  "launcher_category_news_label": {
+    "message": "ニュース",
+    "description": "Launcher category label."
+  },
+  "launcher_category_news_description": {
+    "message": "主要メディアの見出しと報道です",
+    "description": "Launcher category description."
+  },
+  "launcher_category_productivity_label": {
+    "message": "生産性",
+    "description": "Launcher category label."
+  },
+  "launcher_category_productivity_description": {
+    "message": "メール、ドキュメント、カレンダー、仕事ツールです",
+    "description": "Launcher category description."
+  },
+  "launcher_category_videos_label": {
+    "message": "動画",
+    "description": "Launcher category label."
+  },
+  "launcher_category_videos_description": {
+    "message": "動画サイトの視聴と検索です",
+    "description": "Launcher category description."
+  },
+  "launcher_category_entertainment_label": {
+    "message": "エンタメ",
+    "description": "Launcher category label."
+  },
+  "launcher_category_entertainment_description": {
+    "message": "ストリーミングとエンタメ先です",
+    "description": "Launcher category description."
+  },
+  "launcher_category_shopping_label": {
+    "message": "ショッピング",
+    "description": "Launcher category label."
+  },
+  "launcher_category_shopping_description": {
+    "message": "ストアとマーケットプレイスです",
+    "description": "Launcher category description."
+  },
+  "launcher_category_ai_label": {
+    "message": "AI",
+    "description": "Launcher category label."
+  },
+  "launcher_category_ai_description": {
+    "message": "チャットボットとAIアシスタントです",
+    "description": "Launcher category description."
+  },
+  "launcher_category_archive_label": {
+    "message": "Internet Archive",
+    "description": "Launcher category label."
+  },
+  "launcher_category_archive_description": {
+    "message": "Internet Archiveライブラリを検索・閲覧できます",
+    "description": "Launcher category description."
+  },
+  "launcher_category_searches_label": {
+    "message": "検索",
+    "description": "Launcher category label."
+  },
+  "launcher_category_searches_description": {
+    "message": "検索エンジンと最近のウェブ検索です",
+    "description": "Launcher category description."
+  },
+  "key_new_tab_document_title": {
+    "message": "KeyPilot",
+    "description": "Document title for the Key New Tab page."
+  },
+  "key_new_tab_bookmarks_label": {
+    "message": "ツールバーのブックマーク",
+    "description": "Fieldset label for toolbar bookmarks on the Key New Tab page."
+  },
+  "key_new_tab_folder": {
+    "message": "フォルダ",
+    "description": "Fallback label for an untitled bookmark folder."
+  },
+  "key_new_tab_folder_empty": {
+    "message": "空のフォルダ",
+    "description": "Shown inside a bookmark folder that has no items."
+  },
+  "key_new_tab_top_sites_label": {
+    "message": "よく使うサイト",
+    "description": "Accessible name for the top sites section on the Key New Tab page."
+  },
+  "key_new_tab_top_sites_empty": {
+    "message": "よく使うサイトはまだありません。",
+    "description": "Shown when Chrome has no top sites to list."
+  },
+  "key_new_tab_search_label": {
+    "message": "検索",
+    "description": "Accessible name for the search section on the Key New Tab page."
+  },
+  "key_new_tab_search_placeholder": {
+    "message": "検索またはアドレスを入力",
+    "description": "Placeholder for the Key New Tab search field."
+  },
+  "key_new_tab_search_submit": {
+    "message": "検索",
+    "description": "Submit button for the Key New Tab search field."
+  },
+  "key_new_tab_suggestions_label": {
+    "message": "検索候補",
+    "description": "Accessible name for the Key New Tab suggestion list."
+  },
+  "key_new_tab_engine_label": {
+    "message": "検索エンジン: $ENGINE$",
+    "description": "Shows the search engine used by the Key New Tab field.",
+    "placeholders": {
+      "engine": {
+        "content": "$1",
+        "example": "Brave"
+      }
+    }
+  }
+}

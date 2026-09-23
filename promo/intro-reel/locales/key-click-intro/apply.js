@@ -1,11 +1,12 @@
 (function (global) {
-    var LOCALES = { en: true, de: true, es: true, es_419: true, sk: true, zh_CN: true, zh_TW: true, zh_HK: true };
+    var LOCALES = { en: true, de: true, es: true, es_419: true, sk: true, ja: true, zh_CN: true, zh_TW: true, zh_HK: true };
     var HTML_LANG = {
         en: "en",
         de: "de",
         es: "es",
         es_419: "es-419",
         sk: "sk",
+        ja: "ja",
         zh_CN: "zh-CN",
         zh_TW: "zh-TW",
         zh_HK: "zh-HK"
@@ -29,6 +30,7 @@
         if (raw.indexOf("es") === 0) return "es_419";
         if (raw.indexOf("de") === 0) return "de";
         if (raw.indexOf("sk") === 0) return "sk";
+        if (raw.indexOf("ja") === 0) return "ja";
         if (raw.indexOf("zh") === 0) {
             if (raw.indexOf("hk") !== -1) return "zh_HK";
             if (raw.indexOf("tw") !== -1 || raw.indexOf("hant") !== -1) return "zh_TW";
@@ -52,7 +54,7 @@
         if (vars.locale && HTML_LANG[vars.locale]) {
             document.documentElement.lang = HTML_LANG[vars.locale];
         }
-        if (vars.locale === "zh_CN" || vars.locale === "zh_TW" || vars.locale === "zh_HK") {
+        if (vars.locale === "ja" || vars.locale === "zh_CN" || vars.locale === "zh_TW" || vars.locale === "zh_HK") {
             CJK_TRACKING_IDS.forEach(function (id) {
                 var el = document.getElementById(id);
                 if (el) el.setAttribute("letter-spacing", "0");

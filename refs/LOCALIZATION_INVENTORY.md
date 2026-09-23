@@ -30,6 +30,7 @@ is a snapshot, not a live status. As of 2026-09-22:
 | `zh_CN` | yes | yes | yes | yes | yes | capture when generating listing shots | generate from captures | copy; YouTube pending |
 | `zh_TW` | yes | yes | yes | yes | yes | capture when generating listing shots | generate from captures | copy; YouTube pending |
 | `zh_HK` | yes (from `zh_TW` Traditional, 2026-09-22) | yes | yes | yes | yes | yes (gitignored captures) | yes (gitignored generated PNGs) | copy; YouTube pending |
+| `ja` | yes (2026-09-22, machine-translated, needs bilingual review) | yes (machine-translated, needs bilingual review) | yes | yes | yes | no | no | copy; YouTube pending |
 
 A locale can ship with only `messages.json` complete — Docs, onboarding, and
 store assets fall back to base language then English. But it is not a
@@ -103,6 +104,10 @@ explicitly deferred (see [`i18n/README.md`](../i18n/README.md#add-a-locale)).
 - Real KeyPilot screenshots taken from an actual Chrome profile running that
   UI locale. Never reuse another locale's capture underneath translated
   annotations (SVG templates only overlay text, they do not redraw the UI).
+- `scripts/store-screenshots/fixture.html` is the localized news-page fixture
+  behind screenshot slot 1. Add a matching locale object and any necessary
+  system-font stack when adding a capture locale; its `?lang=<locale>` view
+  must show real locale copy for the GUI capture.
 - Generate via `npm run store:screenshots:serve` +
   `npm run store:screenshots -- --locale=<locale>`.
 
@@ -126,8 +131,8 @@ explicitly deferred (see [`i18n/README.md`](../i18n/README.md#add-a-locale)).
   and `Chrome Web Store` stay untranslated. Register the locale in
   `locales/key-click-intro/apply.js` (`LOCALES` + `HTML_LANG`) and add a
   matching object to `locales/key-click-intro/batch.json`.
-- CJK locales must set `html` `lang` (`zh-CN` / `zh-TW` / `zh-HK`) so the
-  composition’s Noto Sans SC/TC/HK stacks apply. Preview with
+- CJK locales must set `html` `lang` (`ja` / `zh-CN` / `zh-TW` / `zh-HK`) so
+  the composition’s Noto Sans JP/SC/TC/HK stacks apply. Preview with
   `key-click-intro.html?lang=<locale>`.
 - Render is local and gitignored: `npx hyperframes render --composition
   key-click-intro.html --variables-file locales/key-click-intro/<locale>.json

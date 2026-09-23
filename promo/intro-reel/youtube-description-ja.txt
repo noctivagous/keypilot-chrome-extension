@@ -1,0 +1,16 @@
+KeyPilot — キークリック | キーボードでブラウジング
+
+KeyPilot は Noctivagous Software による無料の Chrome 拡張機能です。マウスで狙い、キーボードで実行します。
+
+この紹介動画ではキークリックを紹介します。マウスで狙い、F を押して開き、D で戻ります。2つの入力と2つの役割が、より良いインターフェースをつくります。
+
+0:00 キーボードでブラウジング
+0:06 操作方法：キークリック
+0:10 狙う + 実行する
+0:18 見てみよう：F で開き、D で戻る
+0:26 2つの入力、2つの役割
+0:29 マウスで狙う。キーで実行する。
+
+Chrome ウェブストア：https://chromewebstore.google.com/detail/keypilot/cellbdakkaoccadahjjffdciflpfikjg
+ウェブサイト：https://noctivagous.com/ja/
+無料 · MIT ライセンス

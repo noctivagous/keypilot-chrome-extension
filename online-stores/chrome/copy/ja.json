@@ -1,0 +1,39 @@
+{
+  "locale": "ja",
+  "slots": {
+    "key-click-browsing": {
+      "headline": "キークリックでウェブを閲覧。",
+      "callouts": [
+        "マウスでカーソルを動かす",
+        "リンクに合わせて [[F]] を押してクリック。"
+      ]
+    },
+    "keyboard-map": {
+      "headline": "さまざまな操作を指先から使えます",
+      "callouts": [
+        "リンクをクリック",
+        "タブと履歴を移動",
+        "検索、コピー、検証。"
+      ]
+    },
+    "customize-workflow": {
+      "headline": "自分の作業に合うキーボードレイアウトを作る。",
+      "callouts": [
+        "レイアウトを選ぶ",
+        "機能を割り当てる"
+      ]
+    },
+    "walkthrough": {
+      "headline": "インストール後に使い方ガイドが表示されます。",
+      "callouts": [
+        "リンクのクリック、タブを開く、ページのスクロールを学ぶ"
+      ]
+    },
+    "context-menu": {
+      "headline": "右クリックからいつでも KeyPilot を操作できます。",
+      "callouts": [
+        "ヘルプ、設定、操作はここにあります。"
+      ]
+    }
+  }
+}

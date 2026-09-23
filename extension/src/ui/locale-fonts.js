@@ -57,6 +57,16 @@ export const KP_CJK_UI_STACK_HK = uiStack([
   'Noto Sans CJK TC'
 ]);
 
+/** Japanese: Hiragino on macOS, Yu Gothic / Meiryo on Windows, Noto on Linux. */
+export const KP_CJK_UI_STACK_JP = uiStack([
+  'Hiragino Sans',
+  'Yu Gothic UI',
+  'Yu Gothic',
+  'Meiryo',
+  'Noto Sans JP',
+  'Noto Sans CJK JP'
+]);
+
 /**
  * @param {string} tag
  * @returns {string}
@@ -107,11 +117,31 @@ function isZhHans(tag) {
 }
 
 /**
+ * Japanese, including regional BCP-47 variants such as `ja-JP`.
+ * @param {string} tag
+ * @returns {boolean}
+ */
+function isJapanese(tag) {
+  return tag === 'ja' || tag.startsWith('ja-');
+}
+
+/**
  * Shadow and page selectors are mutually exclusive. `:lang(zh)` is not used:
  * it also matches `zh-TW`, `zh-HK`, and `zh-Hant`.
  * `:lang(zh-Hant)` matches `zh-Hant-HK`, so the Traditional rule excludes it.
  */
 const CJK_FONT_RULES = [
+  {
+    id: 'jp',
+    stack: () => KP_CJK_UI_STACK_JP,
+    match: isJapanese,
+    shadow: [
+      ':host(:lang(ja))'
+    ],
+    page: [
+      'html:lang(ja) body'
+    ]
+  },
   {
     id: 'hk',
     stack: () => KP_CJK_UI_STACK_HK,
@@ -162,19 +192,18 @@ const CJK_FONT_RULES = [
 ];
 
 /**
- * `hk`, `tc`, `sc`, or `''` when the tag is not a Chinese locale we style.
+ * `jp`, `hk`, `tc`, `sc`, or `''` when the tag has no locale-specific stack.
  * @param {string} [tag]
- * @returns {'hk'|'tc'|'sc'|''}
+ * @returns {'jp'|'hk'|'tc'|'sc'|''}
  */
 export function cjkScriptGroup(tag = '') {
   const norm = normalizeTag(tag);
-  if (!norm.startsWith('zh')) return '';
   const hit = CJK_FONT_RULES.find((rule) => rule.match(norm));
   return hit ? hit.id : '';
 }
 
 /**
- * System-font stack for a Chinese UI locale, or `''` for every other tag.
+ * System-font stack for a supported CJK UI locale, or `''` for other tags.
  * @param {string} [tag]
  * @returns {string}
  */

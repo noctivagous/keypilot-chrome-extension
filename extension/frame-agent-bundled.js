@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-23T01:56:35.490Z
+ * Generated on 2026-09-23T04:09:36.888Z
  */
 
 (() => {
@@ -4031,6 +4031,14 @@
     "Noto Sans TC",
     "Noto Sans CJK TC"
   ]);
+  var KP_CJK_UI_STACK_JP = uiStack([
+    "Hiragino Sans",
+    "Yu Gothic UI",
+    "Yu Gothic",
+    "Meiryo",
+    "Noto Sans JP",
+    "Noto Sans CJK JP"
+  ]);
   function isZhHk(tag) {
     return tag === "zh-hk" || tag.startsWith("zh-hk-") || tag === "zh-mo" || tag.startsWith("zh-mo-") || tag === "zh-hant-hk" || tag.startsWith("zh-hant-hk-") || tag === "zh-hant-mo" || tag.startsWith("zh-hant-mo-");
   }
@@ -4041,7 +4049,21 @@
   function isZhHans(tag) {
     return tag === "zh" || tag === "zh-cn" || tag.startsWith("zh-cn-") || tag === "zh-sg" || tag.startsWith("zh-sg-") || tag === "zh-hans" || tag.startsWith("zh-hans-");
   }
+  function isJapanese(tag) {
+    return tag === "ja" || tag.startsWith("ja-");
+  }
   var CJK_FONT_RULES = [
+    {
+      id: "jp",
+      stack: () => KP_CJK_UI_STACK_JP,
+      match: isJapanese,
+      shadow: [
+        ":host(:lang(ja))"
+      ],
+      page: [
+        "html:lang(ja) body"
+      ]
+    },
     {
       id: "hk",
       stack: () => KP_CJK_UI_STACK_HK,

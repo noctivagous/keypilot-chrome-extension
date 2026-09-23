@@ -19,6 +19,7 @@ developer dashboard for each language.
 | `zh_CN.txt` | Chinese (Simplified) |
 | `zh_TW.txt` | Chinese (Traditional) |
 | `zh_HK.txt` | Chinese (Traditional, Hong Kong) |
+| `ja.txt` | Japanese |
 
 Procedure:
 

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<onboarding version="1">
+  <slide id="basic_navigation" title="KeyPilot へようこそ">
+   <onEnter type="overlay"
+             title="KeyPilot へようこそ"
+             message="KeyPilot の使い方を、一つずつ案内します。"
+             primaryText="OK"
+             secondaryText="閉じる"
+             secondaryAction="close" />
+       <task id="click_link" label="リンクにカーソルを合わせ、`F` キーを押してクリックします。">
+      <when type="action" action="activate" target="link" />
+    </task>
+    <task id="go_back" label="戻る（履歴）には、`D` キーを押します。">
+      <when type="action" action="back" />
+    </task>
+    <task id="keyboard_key_info" label="下のキーボードリファレンスを確認してください。キーにカーソルを合わせると、その動作がわかります。">
+      <when type="action" action="hover" target="keyboardHelpKey" />
+    </task>
+    <!-- Turn-off step: while this is the next task, a large focus-colored arrow points at the
+         ON/OFF segment's right edge. After OFF, a tip bubble points at the strip ("click again to turn on").
+         (Former Alt+K step removed; re-enable is guided by the tip bubble, not a separate task.) -->
+    <task id="toggle_extension_off" label="上に `ON` と表示されたコントロールストリップがあります。クリックして KeyPilot を完全にオフにします。">
+      <when type="action" action="toggleExtension" change="off" />
+    </task>
+  </slide>
+
+  <slide id="text_box_mode" title="テキストボックスモード">
+    <onEnter type="overlay"
+             title="KeyPilot が再びオンになりました"
+             message="次はテキストボックスです。"
+             primaryText="OK"
+             effect="marquee" />
+    <task id="enter_text_mode" label="右のテキスト欄を `F` でクリックすると、入力を受け付けるようになります。">
+      <when type="mode" mode="text_focus" change="enter" />
+    </task>
+    <task id="exit_text_mode" label="`Escape` を押してテキストボックスを終了します。">
+      <when type="mode" mode="text_focus" change="exit" />
+    </task>
+  </slide>
+
+  <slide id="scrolling" title="ページをスクロールする">
+    <onEnter type="overlay"
+             title="これで KeyPilot によるウェブ閲覧に必要な操作は揃いました。"
+             message="ほかのキーも試しますか？"
+             primaryText="はい、続ける"
+             secondaryText="いいえ、後で"
+             secondaryAction="later"
+             laterTitle="このチュートリアルに戻るには `Alt`+`I`"
+             laterPrimaryText="OK、閉じる" />
+    <task id="scroll_down" label="`V` で下にスクロールします。">
+      <when type="action" action="scrollDown" />
+    </task>
+    <task id="scroll_up" label="`C` で上にスクロールします。">
+      <when type="action" action="scrollUp" />
+    </task>
+    <task id="scroll_bottom" label="`X` でページの末尾へ移動します。">
+      <when type="action" action="scrollBottom" />
+    </task>
+    <task id="scroll_top" label="`Z` でページの先頭へ移動します。">
+      <when type="action" action="scrollTop" />
+    </task>
+  </slide>
+
+  <slide id="tabs" title="タブ">
+    <task id="open_link_background_tab" label="ハイパーリンクを新しいタブで開きますが、そのタブには切り替えません（`G`）。">
+      <when type="action" action="activateNewTabBackground" target="link" />
+    </task>
+    <task id="open_link_new_tab" label="ハイパーリンクを新しいタブで開きます（`B`）。">
+      <when type="action" action="activateNewTab" target="link" />
+    </task>
+    <task id="open_new_tab" label="新しいタブを開きます（`T`）。">
+      <when type="action" action="newTab" />
+    </task>
+    <task id="move_tabs" label="タブを左へ移動します（`Q`）。">
+      <when type="action" action="tabLeft" />
+    </task>
+    
+    <task id="move_tabs_2" label="タブを右へ移動します（`W`）。">
+      <when type="action" action="tabRight" />
+    </task>
+  </slide>
+  
+  <slide id="completion" title="チュートリアル完了">
+    <body>
+チュートリアルが完了し、KeyPilot を使う準備ができました。
+    </body>
+  </slide>
+</onboarding>

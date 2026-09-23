@@ -93,11 +93,12 @@ describe('CJK locale tags and document language', () => {
 });
 
 describe('CJK system-font-first stacks', () => {
-  it('defines separate SC, TC, and HK stacks from OS system fonts', async () => {
+  it('defines separate Japanese and Chinese stacks from OS system fonts', async () => {
     const {
       KP_CJK_UI_STACK_SC,
       KP_CJK_UI_STACK_TC,
       KP_CJK_UI_STACK_HK,
+      KP_CJK_UI_STACK_JP,
       cjkScriptGroup,
       cjkUiFallbackStack
     } = await import('../extension/src/ui/locale-fonts.js');
@@ -112,8 +113,14 @@ describe('CJK system-font-first stacks', () => {
     assert.match(KP_CJK_UI_STACK_HK, /PingFang HK/);
     assert.match(KP_CJK_UI_STACK_HK, /Noto Sans HK/);
     assert.match(KP_CJK_UI_STACK_HK, /Noto Sans CJK HK/);
+    assert.match(KP_CJK_UI_STACK_JP, /Hiragino Sans/);
+    assert.match(KP_CJK_UI_STACK_JP, /Yu Gothic UI/);
+    assert.match(KP_CJK_UI_STACK_JP, /Meiryo/);
+    assert.match(KP_CJK_UI_STACK_JP, /Noto Sans JP/);
+    assert.match(KP_CJK_UI_STACK_JP, /Noto Sans CJK JP/);
     assert.notEqual(KP_CJK_UI_STACK_SC, KP_CJK_UI_STACK_TC);
     assert.notEqual(KP_CJK_UI_STACK_TC, KP_CJK_UI_STACK_HK);
+    assert.notEqual(KP_CJK_UI_STACK_JP, KP_CJK_UI_STACK_SC);
 
     const groups = {
       zh: 'sc',
@@ -129,7 +136,8 @@ describe('CJK system-font-first stacks', () => {
       'zh-MO': 'hk',
       'zh-Hant-HK': 'hk',
       'zh-Hant-MO': 'hk',
-      ja: '',
+      ja: 'jp',
+      'ja-JP': 'jp',
       'zh-yue': ''
     };
     for (const [tag, group] of Object.entries(groups)) {
@@ -138,6 +146,7 @@ describe('CJK system-font-first stacks', () => {
       if (group === 'sc') assert.equal(stack, KP_CJK_UI_STACK_SC);
       else if (group === 'tc') assert.equal(stack, KP_CJK_UI_STACK_TC);
       else if (group === 'hk') assert.equal(stack, KP_CJK_UI_STACK_HK);
+      else if (group === 'jp') assert.equal(stack, KP_CJK_UI_STACK_JP);
       else assert.equal(stack, '');
     }
   });
@@ -166,6 +175,7 @@ describe('CJK system-font-first stacks', () => {
     assert.match(KP_CJK_SHADOW_CSS, /:host\(:lang\(zh-CN\)\)/);
     assert.match(KP_CJK_SHADOW_CSS, /:host\(:lang\(zh-TW\)\)/);
     assert.match(KP_CJK_SHADOW_CSS, /:host\(:lang\(zh-HK\)\)/);
+    assert.match(KP_CJK_SHADOW_CSS, /:host\(:lang\(ja\)\)/);
     assert.match(KP_CJK_SHADOW_CSS, /:host\(:lang\(zh-Hant\):not\(:lang\(zh-Hant-HK\)\):not\(:lang\(zh-Hant-MO\)\)\)/);
     assert.doesNotMatch(KP_CJK_SHADOW_CSS, /:lang\(zh\)/);
   });
@@ -177,6 +187,7 @@ describe('CJK system-font-first stacks', () => {
     assert.match(css, /html:lang\(zh-CN\) body/);
     assert.match(css, /html:lang\(zh-TW\) body/);
     assert.match(css, /html:lang\(zh-HK\) body/);
+    assert.match(css, /html:lang\(ja\) body/);
     assert.doesNotMatch(css, /:lang\(zh\)/);
   });
 
@@ -289,6 +300,7 @@ describe('CJK shadow-host language', () => {
     assert.match(runtime, /PingFang SC/);
     assert.match(runtime, /PingFang TC/);
     assert.match(runtime, /PingFang HK/);
+    assert.match(runtime, /Hiragino Sans/);
     assert.doesNotMatch(runtime, /localizeElements/);
     assert.doesNotMatch(runtime, /renderLocaleFontStylesheet/);
   });

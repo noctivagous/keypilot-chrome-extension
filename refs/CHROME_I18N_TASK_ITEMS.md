@@ -454,7 +454,7 @@ Chrome falls `zh-CN` / `zh-TW` / `zh-HK` to a generic `zh` catalog, then English
   - Spanish / German — `freedictionaryapi.com` with `es` / `de` is the realistic equivalent. `es_419` would share `es`.
   - Slovak — Wiktionary-backed APIs can return `sk` entries, but coverage is thinner than EN/ES/DE.
   - Simplified / Traditional Chinese — there is no English-style free “definitions of 你好” API with the same quality as Free Dictionary API. Practical choices: Moedict for `zh_TW` (and usable for many Traditional words); Wiktionary `zh` via `freedictionaryapi.com` for both scripts, with mixed quality. CC-CEDICT is a downloadable Chinese–English dictionary, not a hosted API; using it would mean shipping or hosting the data yourself.
-- [ ] Treat Japanese (`ja`) and Korean (`ko`) as separate translation and release decisions (catalogs, docs, onboarding, store assets).
+- [ ] Finish Japanese (`ja`) release review and store captures. Catalog, docs, onboarding, store copy, and listing text are machine-translated and need bilingual review; GUI captures and generated screenshots are still absent. Korean (`ko`) remains a separate translation and release decision.
 - [ ] Test font fallback and metrics in popup, Settings, Docs, context menus, overlays, keyboard reference, onboarding, and titlebars.
 - [ ] Test typing with Japanese, Korean, and Chinese IMEs in ordinary text fields and KeyPilot text-entry modes; candidate selection and composition must never invoke KeyPilot actions.
 - [ ] Preserve canonical shortcut keys/key codes. Translate their explanatory labels, but document any locale-specific direct-input requirement for invoking a shortcut.
