@@ -272,11 +272,34 @@ function sentenceAtPoint(x, y, doc) {
 }
 
 /**
+ * Word at the caret, segmented across adjacent text nodes in the nearest block.
+ * Rich editors often split one CJK or styled word into several text nodes.
+ * @param {number} x
+ * @param {number} y
+ * @param {Document} doc
+ * @returns {{ text: string, range: Range|null }}
+ */
+function wordAtPoint(x, y, doc) {
+  const block = closestBlockAtPoint(x, y, doc);
+  if (!block) return { text: '', range: null };
+  const { text, pieces } = textPiecesIn(block);
+  if (!text.trim() || !pieces.length) return { text: '', range: null };
+  const caret = caretRangeAtPoint(x, y, doc);
+  const offset = caret ? caretOffsetInPieces(caret, pieces) : 0;
+  const found = wordSegmentAt(text, offset);
+  if (!found || !String(found.segment || '').trim()) return { text: '', range: null };
+  const end = Math.min(found.index + found.segment.length, text.length);
+  const range = rangeFromTextOffsets(doc, pieces, found.index, end);
+  return { text: found.segment.trim(), range };
+}
+
+/**
  * Acquire text at a client point, at the requested granularity.
  *
- * `range` is populated for `word` (single text node), `sentence` (mapped across the nearest
- * block), and `paragraph` (`selectNodeContents` on that block). `hyperlink` never returns a
- * range: replacing a hyperlink's visible text isn't a meaningful `modifyPage` operation.
+ * `range` is populated for `word` and `sentence` (both mapped across adjacent text
+ * nodes in the nearest block) and `paragraph` (`selectNodeContents` on that block).
+ * `hyperlink` never returns a range: replacing a hyperlink's visible text isn't a
+ * meaningful `modifyPage` operation.
  *
  * @param {number} x
  * @param {number} y
@@ -297,22 +320,5 @@ export function getTextAtPoint(x, y, opts = {}) {
     return sentenceAtPoint(x, y, doc);
   }
 
-  const caretRange = caretRangeAtPoint(x, y, doc);
-  const node = caretRange?.startContainer;
-  if (!node || node.nodeType !== Node.TEXT_NODE) return { text: '', range: null };
-  const full = String(node.textContent || '');
-  const offset = Math.min(Math.max(0, caretRange.startOffset), full.length);
-
-  const found = wordSegmentAt(full, offset);
-  if (!found || !found.segment.trim()) return { text: '', range: null };
-
-  let range = null;
-  try {
-    range = doc.createRange();
-    range.setStart(node, found.index);
-    range.setEnd(node, Math.min(found.index + found.segment.length, full.length));
-  } catch {
-    range = null;
-  }
-  return { text: found.segment.trim(), range };
+  return wordAtPoint(x, y, doc);
 }
