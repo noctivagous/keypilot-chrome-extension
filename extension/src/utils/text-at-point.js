@@ -38,16 +38,61 @@ export function caretRangeAtPoint(x, y, doc) {
 }
 
 /**
+ * Page language for word and sentence boundaries. An empty or unsupported tag
+ * falls back to the browser locale (`undefined`), which is what Segmenter uses
+ * when no locale is passed.
+ * @param {Document|null|undefined} doc
+ * @returns {string|undefined}
+ */
+function pageSegmenterLocale(doc) {
+  let tag = '';
+  try {
+    tag = String(doc?.documentElement?.lang || '').trim();
+  } catch {
+    return undefined;
+  }
+  if (!tag) return undefined;
+  try {
+    const supported = Intl.Segmenter.supportedLocalesOf(tag);
+    return supported.length ? supported[0] : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * @param {string} text
+ * @param {'word'|'sentence'} granularity
+ * @param {Document|null|undefined} doc
+ * @returns {Intl.SegmentData[]|null}
+ */
+function segmentText(text, granularity, doc) {
+  if (typeof Intl === 'undefined' || typeof Intl.Segmenter !== 'function') return null;
+  const locale = pageSegmenterLocale(doc);
+  try {
+    return [...new Intl.Segmenter(locale, { granularity }).segment(text)];
+  } catch {
+    if (locale === undefined) return null;
+    try {
+      return [...new Intl.Segmenter(undefined, { granularity }).segment(text)];
+    } catch {
+      return null;
+    }
+  }
+}
+
+/**
  * Find the word-like `Intl.Segmenter` segment at `offset`, preferring the nearest word-like
  * neighbor when `offset` lands on whitespace/punctuation between words.
  * @param {string} text
  * @param {number} offset
+ * @param {Document|null|undefined} doc
  * @returns {{ segment: string, index: number }|null}
  */
-function wordSegmentAt(text, offset) {
+function wordSegmentAt(text, offset, doc) {
   try {
-    if (typeof Intl === 'undefined' || typeof Intl.Segmenter !== 'function') return null;
-    const segments = [...new Intl.Segmenter(undefined, { granularity: 'word' }).segment(text)];
+    const segments = segmentText(text, 'word', doc);
+    if (!segments) return null;
     let idx = segments.findIndex((s) => offset >= s.index && offset < s.index + s.segment.length);
     if (idx === -1) idx = segments.length - 1;
     if (idx < 0) return null;
@@ -66,12 +111,13 @@ function wordSegmentAt(text, offset) {
 /**
  * @param {string} text
  * @param {number} offset
+ * @param {Document|null|undefined} doc
  * @returns {{ segment: string, index: number }|null}
  */
-function sentenceSegmentAt(text, offset) {
+function sentenceSegmentAt(text, offset, doc) {
   try {
-    if (typeof Intl === 'undefined' || typeof Intl.Segmenter !== 'function') return null;
-    const segments = [...new Intl.Segmenter(undefined, { granularity: 'sentence' }).segment(text)];
+    const segments = segmentText(text, 'sentence', doc);
+    if (!segments) return null;
     let found = segments.find((s) => offset >= s.index && offset < s.index + s.segment.length);
     if (!found && segments.length) {
       found = segments[segments.length - 1];
@@ -264,7 +310,7 @@ function sentenceAtPoint(x, y, doc) {
   if (!text.trim() || !pieces.length) return { text: '', range: null };
   const caret = caretRangeAtPoint(x, y, doc);
   const offset = caret ? caretOffsetInPieces(caret, pieces) : 0;
-  const found = sentenceSegmentAt(text, offset);
+  const found = sentenceSegmentAt(text, offset, doc);
   if (!found || !String(found.segment || '').trim()) return { text: '', range: null };
   const end = Math.min(found.index + found.segment.length, text.length);
   const range = rangeFromTextOffsets(doc, pieces, found.index, end);
@@ -286,7 +332,7 @@ function wordAtPoint(x, y, doc) {
   if (!text.trim() || !pieces.length) return { text: '', range: null };
   const caret = caretRangeAtPoint(x, y, doc);
   const offset = caret ? caretOffsetInPieces(caret, pieces) : 0;
-  const found = wordSegmentAt(text, offset);
+  const found = wordSegmentAt(text, offset, doc);
   if (!found || !String(found.segment || '').trim()) return { text: '', range: null };
   const end = Math.min(found.index + found.segment.length, text.length);
   const range = rangeFromTextOffsets(doc, pieces, found.index, end);

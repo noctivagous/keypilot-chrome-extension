@@ -70,9 +70,11 @@ function walkText(root, visit) {
 /**
  * @param {FakeText} caretNode
  * @param {number} caretOffset
+ * @param {string} [lang]
  */
-function fakeDocument(caretNode, caretOffset) {
+function fakeDocument(caretNode, caretOffset, lang = '') {
   return {
+    documentElement: { lang },
     caretRangeFromPoint() {
       return { startContainer: caretNode, startOffset: caretOffset };
     },
@@ -131,5 +133,36 @@ describe('word under cursor across text nodes', () => {
     assert.equal(result.range?.startOffset, 0);
     assert.equal(result.range?.endContainer, secondText);
     assert.equal(result.range?.endOffset, 1);
+  });
+
+  it('segments words and sentences with the page language', () => {
+    globalThis.Node = { TEXT_NODE, ELEMENT_NODE };
+    globalThis.NodeFilter = { SHOW_TEXT: 4, FILTER_ACCEPT: 1, FILTER_REJECT: 2 };
+
+    const original = Intl.Segmenter;
+    /** @type {Array<string|undefined>} */
+    const locales = [];
+    function RecordingSegmenter(locale, options) {
+      locales.push(locale);
+      return new original(locale, options);
+    }
+    RecordingSegmenter.supportedLocalesOf = original.supportedLocalesOf.bind(original);
+    Intl.Segmenter = /** @type {any} */ (RecordingSegmenter);
+
+    try {
+      const block = new FakeElement('p');
+      const text = new FakeText('你好。世界', block);
+      block.childNodes.push(text);
+      const doc = fakeDocument(text, 0, 'zh-CN');
+      block.ownerDocument = doc;
+      const expected = original.supportedLocalesOf('zh-CN')[0];
+
+      getTextAtPoint(0, 0, { granularity: 'word', doc: /** @type {any} */ (doc) });
+      getTextAtPoint(0, 0, { granularity: 'sentence', doc: /** @type {any} */ (doc) });
+
+      assert.deepEqual(locales, [expected, expected]);
+    } finally {
+      Intl.Segmenter = original;
+    }
   });
 });
