@@ -188,15 +188,26 @@ function updateExistingKeyboardDOM({ container, keybindings }) {
  * @param {Record<string, {label?: string, description?: string, displayKey?: string, keyboardClass?: string}>} params.keybindings
  * @param {any[]} [params.keyboardLayout]
  * @param {string} [params.layoutId]
+ * @param {string} [params.hardwareLayoutId]
  * @param {boolean} [params.attachPopovers=true] When false, skip key info popovers (edit mode).
  */
-export function renderKeybindingsKeyboard({ container, keybindings, keyboardLayout, layoutId, attachPopovers = true } = {}) {
+export function renderKeybindingsKeyboard({
+  container,
+  keybindings,
+  keyboardLayout,
+  layoutId,
+  hardwareLayoutId,
+  attachPopovers = true
+} = {}) {
   if (!container) return;
   const doc = container.ownerDocument || document;
   ensureStylesInjected(container.getRootNode?.() || doc);
 
   const layout = (keyboardLayout && Array.isArray(keyboardLayout)) ? keyboardLayout : KEYBINDINGS_KEYBOARD_LAYOUT;
-  const layoutKey = typeof layoutId === 'string' ? layoutId : '';
+  const layoutKey = [
+    typeof layoutId === 'string' ? layoutId : '',
+    typeof hardwareLayoutId === 'string' ? hardwareLayoutId : ''
+  ].filter(Boolean).join(':');
 
   // If an early-inject (or previous render) already built the keyboard DOM,
   // just update the labels/classes to avoid flicker and layout jumps.
@@ -242,6 +253,7 @@ export function renderKeybindingsKeyboard({ container, keybindings, keyboardLayo
       if (item.type === 'special') {
         // No KeyPilot function → no background icon.
         const keyEl = el(doc, 'div', item.className || 'key');
+        if (item.code) keyEl.dataset.kpPhysicalCode = String(item.code);
         keyEl.appendChild(el(doc, 'span', 'key-text', localizeKeycapLabel(item.text)));
         ensureKeyPressOverlay(doc, keyEl);
         rowEl.appendChild(keyEl);
@@ -251,6 +263,7 @@ export function renderKeybindingsKeyboard({ container, keybindings, keyboardLayo
       if (item.type === 'key') {
         // Unassigned alphanumeric key → no background icon.
         const keyEl = el(doc, 'div', item.className || 'key');
+        if (item.code) keyEl.dataset.kpPhysicalCode = String(item.code);
         keyEl.appendChild(el(doc, 'span', 'key-text', item.text));
         ensureKeyPressOverlay(doc, keyEl);
         rowEl.appendChild(keyEl);
@@ -264,6 +277,7 @@ export function renderKeybindingsKeyboard({ container, keybindings, keyboardLayo
       const keyEl = el(doc, 'button', className);
       keyEl.dataset.kpActionId = item.id;
       keyEl.dataset.kpBaseClass = baseClass;
+      if (item.code) keyEl.dataset.kpPhysicalCode = String(item.code);
       keyEl.type = 'button'; // Prevent form submission if inside a form
       // Keyboard Reference keys are pointer targets, not page-tab navigation targets.
       keyEl.tabIndex = -1;

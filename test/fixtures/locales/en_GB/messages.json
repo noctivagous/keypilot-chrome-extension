@@ -2059,6 +2059,46 @@
     "message": "[GB] Move control strip",
     "description": "Accessible name for the control-strip drag handle."
   },
+  "keyboard_hardware_layout_us_ansi_qwerty": {
+    "message": "[GB] US ANSI QWERTY",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_us_ansi_qwerty_description": {
+    "message": "[GB] US ANSI QWERTY keyboard layout.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_de_de_qwertz_iso": {
+    "message": "[GB] German ISO QWERTZ",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_de_de_qwertz_iso_description": {
+    "message": "[GB] German ISO QWERTZ keyboard layout.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_es_es_qwerty_iso": {
+    "message": "[GB] Spanish (Spain) ISO QWERTY",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_es_es_qwerty_iso_description": {
+    "message": "[GB] Spanish (Spain) ISO QWERTY keyboard layout.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_sk_sk_qwertz_iso": {
+    "message": "[GB] Slovak ISO QWERTZ",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_sk_sk_qwertz_iso_description": {
+    "message": "[GB] Slovak ISO QWERTZ keyboard layout.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_ja_jis_106": {
+    "message": "[GB] Japanese JIS 106",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_ja_jis_106_description": {
+    "message": "[GB] Japanese JIS 106 keyboard layout.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
   "keyboard_help_aria_label": {
     "message": "[GB] KeyPilot keyboard reference",
     "description": "Accessible name for the floating keyboard reference."

@@ -5842,5 +5842,45 @@
         "example": "Brave"
       }
     }
+  },
+  "keyboard_hardware_layout_us_ansi_qwerty": {
+    "message": "US-ANSI-QWERTY",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_us_ansi_qwerty_description": {
+    "message": "Standardmäßiges US-ANSI-Tastaturlayout.",
+    "description": "Description for the US ANSI QWERTY keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_de_de_qwertz_iso": {
+    "message": "Deutsches ISO-QWERTZ",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_de_de_qwertz_iso_description": {
+    "message": "Deutsches ISO-QWERTZ-Tastaturlayout.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_es_es_qwerty_iso": {
+    "message": "Spanisches (Spanien) ISO-QWERTY",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_es_es_qwerty_iso_description": {
+    "message": "Spanisches (Spanien) ISO-QWERTY-Tastaturlayout.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_sk_sk_qwertz_iso": {
+    "message": "Slowakisches ISO-QWERTZ",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_sk_sk_qwertz_iso_description": {
+    "message": "Slowakisches ISO-QWERTZ-Tastaturlayout.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_ja_jis_106": {
+    "message": "Japanisches JIS 106",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_ja_jis_106_description": {
+    "message": "Japanisches JIS-106-Tastaturlayout.",
+    "description": "Description for a keyboard hardware-layout picker option."
   }
 }

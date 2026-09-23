@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-23T04:09:36.888Z
+ * Generated on 2026-09-23T05:09:03.074Z
  */
 
 (() => {
@@ -160,10 +160,10 @@
       return false;
     }
   }
-  function missingMessage(key) {
+  function missingMessage(key2) {
     if (!isDebugBuild()) return "";
-    console.warn(`[KeyPilot i18n] Missing message: ${key}`);
-    return `[i18n:${key}]`;
+    console.warn(`[KeyPilot i18n] Missing message: ${key2}`);
+    return `[i18n:${key2}]`;
   }
   var KEYCAP_MESSAGE_KEYS = Object.freeze({
     Tab: "keycap_tab",
@@ -174,9 +174,9 @@
     Esc: "keycap_esc",
     Escape: "keycap_esc"
   });
-  function getMessage(key, substitutions) {
-    const messageKey = typeof key === "string" ? key.trim() : "";
-    if (!messageKey) return missingMessage(String(key || "(empty key)"));
+  function getMessage(key2, substitutions) {
+    const messageKey = typeof key2 === "string" ? key2.trim() : "";
+    if (!messageKey) return missingMessage(String(key2 || "(empty key)"));
     try {
       const message = chrome?.i18n?.getMessage?.(messageKey, substitutions);
       return typeof message === "string" && message ? message : missingMessage(messageKey);
@@ -190,6 +190,353 @@
     ["data-i18n-aria-label", "aria-label"],
     ["data-i18n-title", "title"]
   ]);
+
+  // src/config/keyboard-hardware-layouts.js
+  var DEFAULT_KEYBOARD_HARDWARE_LAYOUT_ID = (
+    /** @type {const} */
+    "us-ansi-qwerty"
+  );
+  function key(code, hidUsage, base, { shift, altGr, shiftAltGr, width } = {}) {
+    return Object.freeze({
+      code,
+      hidUsage,
+      ...typeof width === "number" ? { width } : {},
+      legends: Object.freeze({
+        base,
+        ...typeof shift === "string" ? { shift } : {},
+        ...typeof altGr === "string" ? { altGr } : {},
+        ...typeof shiftAltGr === "string" ? { shiftAltGr } : {}
+      })
+    });
+  }
+  function row(id, keys, { offset } = {}) {
+    return Object.freeze({
+      id,
+      ...typeof offset === "number" ? { offset } : {},
+      keys: Object.freeze(keys)
+    });
+  }
+  function referenceRow(id, codes) {
+    return Object.freeze({ id, codes: Object.freeze(codes) });
+  }
+  var US_ANSI_QWERTY_ROWS = Object.freeze([
+    row("number", [
+      key("Backquote", "0x35", "`", { shift: "~" }),
+      key("Digit1", "0x1E", "1", { shift: "!" }),
+      key("Digit2", "0x1F", "2", { shift: "@" }),
+      key("Digit3", "0x20", "3", { shift: "#" }),
+      key("Digit4", "0x21", "4", { shift: "$" }),
+      key("Digit5", "0x22", "5", { shift: "%" }),
+      key("Digit6", "0x23", "6", { shift: "^" }),
+      key("Digit7", "0x24", "7", { shift: "&" }),
+      key("Digit8", "0x25", "8", { shift: "*" }),
+      key("Digit9", "0x26", "9", { shift: "(" }),
+      key("Digit0", "0x27", "0", { shift: ")" }),
+      key("Minus", "0x2D", "-", { shift: "_" }),
+      key("Equal", "0x2E", "=", { shift: "+" }),
+      key("Backspace", "0x2A", "Backspace", { width: 1.55 })
+    ]),
+    row("top", [
+      key("Tab", "0x2B", "Tab", { width: 1.5 }),
+      key("KeyQ", "0x14", "Q", { shift: "Q" }),
+      key("KeyW", "0x1A", "W", { shift: "W" }),
+      key("KeyE", "0x08", "E", { shift: "E" }),
+      key("KeyR", "0x15", "R", { shift: "R" }),
+      key("KeyT", "0x17", "T", { shift: "T" }),
+      key("KeyY", "0x1C", "Y", { shift: "Y" }),
+      key("KeyU", "0x18", "U", { shift: "U" }),
+      key("KeyI", "0x0C", "I", { shift: "I" }),
+      key("KeyO", "0x12", "O", { shift: "O" }),
+      key("KeyP", "0x13", "P", { shift: "P" }),
+      key("BracketLeft", "0x2F", "[", { shift: "{" }),
+      key("BracketRight", "0x30", "]", { shift: "}" }),
+      key("Backslash", "0x31", "\\", { shift: "|", width: 1.5 })
+    ]),
+    row("home", [
+      key("CapsLock", "0x39", "Caps", { width: 1.75 }),
+      key("KeyA", "0x04", "A", { shift: "A" }),
+      key("KeyS", "0x16", "S", { shift: "S" }),
+      key("KeyD", "0x07", "D", { shift: "D" }),
+      key("KeyF", "0x09", "F", { shift: "F" }),
+      key("KeyG", "0x0A", "G", { shift: "G" }),
+      key("KeyH", "0x0B", "H", { shift: "H" }),
+      key("KeyJ", "0x0D", "J", { shift: "J" }),
+      key("KeyK", "0x0E", "K", { shift: "K" }),
+      key("KeyL", "0x0F", "L", { shift: "L" }),
+      key("Semicolon", "0x33", ";", { shift: ":" }),
+      key("Quote", "0x34", "'", { shift: '"' }),
+      key("Enter", "0x28", "Enter", { width: 2 })
+    ]),
+    row("bottom", [
+      key("ShiftLeft", "0xE1", "Shift", { width: 2.15 }),
+      key("KeyZ", "0x1D", "Z", { shift: "Z" }),
+      key("KeyX", "0x1B", "X", { shift: "X" }),
+      key("KeyC", "0x06", "C", { shift: "C" }),
+      key("KeyV", "0x19", "V", { shift: "V" }),
+      key("KeyB", "0x05", "B", { shift: "B" }),
+      key("KeyN", "0x11", "N", { shift: "N" }),
+      key("KeyM", "0x10", "M", { shift: "M" }),
+      key("Comma", "0x36", ",", { shift: "<" }),
+      key("Period", "0x37", ".", { shift: ">" }),
+      key("Slash", "0x38", "/", { shift: "?" }),
+      key("ShiftRight", "0xE5", "Shift", { width: 2.15 })
+    ]),
+    row("modifier", [
+      key("ControlLeft", "0xE0", "Ctrl", { width: 1.25 }),
+      key("MetaLeft", "0xE3", "Meta", { width: 1.25 }),
+      key("AltLeft", "0xE2", "Alt", { width: 1.25 }),
+      key("Space", "0x2C", "Space", { width: 6.25 }),
+      key("AltRight", "0xE6", "Alt", { width: 1.25 }),
+      key("MetaRight", "0xE7", "Meta", { width: 1.25 }),
+      key("ContextMenu", "0x65", "Menu", { width: 1.25 }),
+      key("ControlRight", "0xE4", "Ctrl", { width: 1.25 })
+    ])
+  ]);
+  var US_ANSI_QWERTY_KEYBOARD_REFERENCE = Object.freeze({
+    rows: Object.freeze([
+      referenceRow("top", [
+        "Tab",
+        "KeyQ",
+        "KeyW",
+        "KeyE",
+        "KeyR",
+        "KeyT",
+        "KeyY",
+        "KeyU",
+        "KeyI",
+        "KeyO",
+        "KeyP",
+        "BracketLeft",
+        "BracketRight",
+        "Backspace"
+      ]),
+      referenceRow("home", [
+        "CapsLock",
+        "KeyA",
+        "KeyS",
+        "KeyD",
+        "KeyF",
+        "KeyG",
+        "KeyH",
+        "KeyJ",
+        "KeyK",
+        "KeyL",
+        "Semicolon",
+        "Quote",
+        "Enter"
+      ]),
+      referenceRow("bottom", [
+        "ShiftLeft",
+        "KeyZ",
+        "KeyX",
+        "KeyC",
+        "KeyV",
+        "KeyB",
+        "KeyN",
+        "KeyM",
+        "Comma",
+        "Period",
+        "Slash",
+        "ShiftRight"
+      ])
+    ]),
+    numberRowCodes: Object.freeze([
+      "Digit1",
+      "Digit2",
+      "Digit3",
+      "Digit4",
+      "Digit5",
+      "Digit6",
+      "Digit7",
+      "Digit8",
+      "Digit9",
+      "Digit0"
+    ])
+  });
+  function cloneRowsWithLegends(baseRows, overrides = {}, extraBottomKey = null) {
+    return Object.freeze(baseRows.map((physicalRow) => {
+      const keys = physicalRow.keys.flatMap((physicalKey) => {
+        const override = overrides[physicalKey.code];
+        const next = override ? Object.freeze({ ...physicalKey, legends: Object.freeze({ ...physicalKey.legends, ...override }) }) : physicalKey;
+        if (extraBottomKey && physicalRow.id === "bottom" && physicalKey.code === "KeyZ") {
+          return [extraBottomKey, next];
+        }
+        return [next];
+      });
+      return row(physicalRow.id, keys, { offset: physicalRow.offset });
+    }));
+  }
+  function cloneReferenceGeometry(base, { extraBottomCode = "", extraTopCode = "" } = {}) {
+    return Object.freeze({
+      rows: Object.freeze(base.rows.map((referenceRowDef) => {
+        const codes = referenceRowDef.codes.flatMap((code) => {
+          if (extraBottomCode && referenceRowDef.id === "bottom" && code === "KeyZ") return [extraBottomCode, code];
+          if (extraTopCode && referenceRowDef.id === "top" && code === "Backspace") return [extraTopCode, code];
+          return [code];
+        });
+        return referenceRow(referenceRowDef.id, codes);
+      })),
+      numberRowCodes: base.numberRowCodes
+    });
+  }
+  var ISO_INTL_BACKSLASH = key("IntlBackslash", "0x64", "<", { shift: ">" });
+  var GERMAN_ISO_QWERTZ_ROWS = cloneRowsWithLegends(US_ANSI_QWERTY_ROWS, {
+    KeyY: { base: "Z", shift: "Z" },
+    KeyZ: { base: "Y", shift: "Y" },
+    BracketLeft: { base: "\xDC", shift: "\xDC" },
+    BracketRight: { base: "+", shift: "*", altGr: "~" },
+    Semicolon: { base: "\xD6", shift: "\xD6" },
+    Quote: { base: "\xC4", shift: "\xC4" }
+  }, ISO_INTL_BACKSLASH);
+  var SPAIN_ISO_QWERTY_ROWS = cloneRowsWithLegends(US_ANSI_QWERTY_ROWS, {
+    Semicolon: { base: "\xD1", shift: "\xD1" },
+    Quote: { base: "\xB4", shift: "\xA8", altGr: "{" },
+    Backslash: { base: "\xC7", shift: "\xC7", altGr: "}" }
+  }, ISO_INTL_BACKSLASH);
+  var SLOVAK_ISO_QWERTZ_ROWS = cloneRowsWithLegends(US_ANSI_QWERTY_ROWS, {
+    KeyY: { base: "Z", shift: "Z" },
+    KeyZ: { base: "Y", shift: "Y" },
+    BracketLeft: { base: "\xDA", shift: "/" },
+    BracketRight: { base: "\xC4", shift: "(" },
+    Semicolon: { base: "\xD4", shift: '"' },
+    Quote: { base: "\xA7", shift: "!" }
+  }, ISO_INTL_BACKSLASH);
+  var JIS_INTL_YEN = key("IntlYen", "0x89", "\xA5", { shift: "|" });
+  var JIS_INTL_RO = key("IntlRo", "0x87", "\u308D", { shift: "\u30ED" });
+  var JIS_NON_CONVERT = key("NonConvert", "0x8B", "\u7121\u5909\u63DB", { width: 1.25 });
+  var JIS_CONVERT = key("Convert", "0x8A", "\u5909\u63DB", { width: 1.25 });
+  var JIS_KANA_MODE = key("KanaMode", "0x88", "\u304B\u306A", { width: 1.25 });
+  var JAPANESE_JIS_ROWS = Object.freeze([
+    ...US_ANSI_QWERTY_ROWS.slice(0, 1).map((physicalRow) => row(
+      physicalRow.id,
+      physicalRow.keys.flatMap((physicalKey) => physicalKey.code === "Backspace" ? [JIS_INTL_YEN, physicalKey] : [physicalKey]),
+      { offset: physicalRow.offset }
+    )),
+    ...US_ANSI_QWERTY_ROWS.slice(1, 3),
+    row("bottom", US_ANSI_QWERTY_ROWS.find((physicalRow) => physicalRow.id === "bottom").keys.flatMap((physicalKey) => physicalKey.code === "ShiftRight" ? [JIS_INTL_RO, physicalKey] : [physicalKey])),
+    row("modifier", [
+      key("ControlLeft", "0xE0", "Ctrl", { width: 1.25 }),
+      key("MetaLeft", "0xE3", "\u82F1\u6570", { width: 1.25 }),
+      key("AltLeft", "0xE2", "Alt", { width: 1.25 }),
+      JIS_NON_CONVERT,
+      key("Space", "0x2C", "Space", { width: 3 }),
+      JIS_CONVERT,
+      JIS_KANA_MODE,
+      key("AltRight", "0xE6", "Alt", { width: 1.25 }),
+      key("ControlRight", "0xE4", "Ctrl", { width: 1.25 })
+    ])
+  ]);
+  var JAPANESE_JIS_KEYBOARD_REFERENCE = Object.freeze({
+    rows: Object.freeze([
+      referenceRow("top", [
+        "Tab",
+        "KeyQ",
+        "KeyW",
+        "KeyE",
+        "KeyR",
+        "KeyT",
+        "KeyY",
+        "KeyU",
+        "KeyI",
+        "KeyO",
+        "KeyP",
+        "BracketLeft",
+        "BracketRight",
+        "Backspace"
+      ]),
+      referenceRow("home", [
+        "CapsLock",
+        "KeyA",
+        "KeyS",
+        "KeyD",
+        "KeyF",
+        "KeyG",
+        "KeyH",
+        "KeyJ",
+        "KeyK",
+        "KeyL",
+        "Semicolon",
+        "Quote",
+        "Enter"
+      ]),
+      referenceRow("bottom", [
+        "ShiftLeft",
+        "KeyZ",
+        "KeyX",
+        "KeyC",
+        "KeyV",
+        "KeyB",
+        "KeyN",
+        "KeyM",
+        "Comma",
+        "Period",
+        "Slash",
+        "IntlRo",
+        "ShiftRight"
+      ])
+    ]),
+    numberRowCodes: Object.freeze([
+      "Digit1",
+      "Digit2",
+      "Digit3",
+      "Digit4",
+      "Digit5",
+      "Digit6",
+      "Digit7",
+      "Digit8",
+      "Digit9",
+      "Digit0"
+    ])
+  });
+  var KEYBOARD_HARDWARE_LAYOUTS = Object.freeze({
+    "us-ansi-qwerty": Object.freeze({
+      id: "us-ansi-qwerty",
+      labelKey: "keyboard_hardware_layout_us_ansi_qwerty",
+      formFactor: "ANSI",
+      rows: US_ANSI_QWERTY_ROWS,
+      keyboardReference: US_ANSI_QWERTY_KEYBOARD_REFERENCE
+    }),
+    "de-de-qwertz-iso": Object.freeze({
+      id: "de-de-qwertz-iso",
+      labelKey: "keyboard_hardware_layout_de_de_qwertz_iso",
+      formFactor: "ISO",
+      rows: GERMAN_ISO_QWERTZ_ROWS,
+      keyboardReference: cloneReferenceGeometry(US_ANSI_QWERTY_KEYBOARD_REFERENCE, { extraBottomCode: "IntlBackslash" })
+    }),
+    "es-es-qwerty-iso": Object.freeze({
+      id: "es-es-qwerty-iso",
+      labelKey: "keyboard_hardware_layout_es_es_qwerty_iso",
+      formFactor: "ISO",
+      rows: SPAIN_ISO_QWERTY_ROWS,
+      keyboardReference: cloneReferenceGeometry(US_ANSI_QWERTY_KEYBOARD_REFERENCE, { extraBottomCode: "IntlBackslash" })
+    }),
+    "sk-sk-qwertz-iso": Object.freeze({
+      id: "sk-sk-qwertz-iso",
+      labelKey: "keyboard_hardware_layout_sk_sk_qwertz_iso",
+      formFactor: "ISO",
+      rows: SLOVAK_ISO_QWERTZ_ROWS,
+      keyboardReference: cloneReferenceGeometry(US_ANSI_QWERTY_KEYBOARD_REFERENCE, { extraBottomCode: "IntlBackslash" })
+    }),
+    "ja-jis-106": Object.freeze({
+      id: "ja-jis-106",
+      labelKey: "keyboard_hardware_layout_ja_jis_106",
+      formFactor: "JIS",
+      rows: JAPANESE_JIS_ROWS,
+      keyboardReference: JAPANESE_JIS_KEYBOARD_REFERENCE
+    })
+  });
+  function normalizeKeyboardHardwareLayoutId(rawId) {
+    const id = String(rawId || "").trim();
+    return KEYBOARD_HARDWARE_LAYOUTS[id] ? id : DEFAULT_KEYBOARD_HARDWARE_LAYOUT_ID;
+  }
+  var KEYBOARD_REFERENCE_SPECIAL_CLASS_BY_CODE = Object.freeze({
+    Tab: "key key-tab",
+    CapsLock: "key key-caps",
+    Enter: "key key-enter",
+    ShiftLeft: "key key-shift",
+    ShiftRight: "key key-shift",
+    Backspace: "key key-backspace"
+  });
 
   // src/config/keyboard-layouts.js
   var DEFAULT_KEYBOARD_LAYOUT_ID = (
@@ -893,6 +1240,7 @@
       const copy = localizedActionCopy(actionId, def);
       out[actionId] = {
         keys: assign.keys.slice(),
+        ...assign.bindingType ? { bindingType: assign.bindingType } : {},
         ...Array.isArray(assign.matchOn) ? { matchOn: assign.matchOn.slice() } : {},
         handler: def.handler,
         label: copy.label,
@@ -923,70 +1271,79 @@
     }
     return Object.freeze(out);
   })();
+  function physicalAssignment(code, displayKey) {
+    return Object.freeze({
+      bindingType: "physical",
+      keys: Object.freeze([code]),
+      matchOn: Object.freeze(["code"]),
+      displayKey,
+      keyLabel: displayKey
+    });
+  }
   var ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
-    TAB_LEFT: Object.freeze({ keys: ["q", "Q"] }),
-    TAB_RIGHT: Object.freeze({ keys: ["w", "W"] }),
-    OPEN_POPOVER: Object.freeze({ keys: ["p", "P"] }),
-    PREVIEW_LINK_POPOVER: Object.freeze({ keys: ["e", "E"] }),
-    FORWARD: Object.freeze({ keys: ["r", "R"] }),
-    NEW_TAB: Object.freeze({ keys: ["t", "T"] }),
-    CLOSE_TAB: Object.freeze({ keys: ["a", "A"] }),
-    ROOT: Object.freeze({ keys: ["s", "S"], displayKey: "S", keyLabel: "S" }),
-    BACK: Object.freeze({ keys: ["d", "D"] }),
-    ACTIVATE: Object.freeze({ keys: ["f", "F"] }),
-    ACTIVATE_NEW_TAB_BACKGROUND: Object.freeze({ keys: ["g", "G"] }),
-    HIGHLIGHT: Object.freeze({ keys: ["h", "H"] }),
-    TAB_HISTORY: Object.freeze({ keys: ["j", "J"] }),
-    OMNIBOX: Object.freeze({ keys: ["l", "L"] }),
-    TOP_SITES: Object.freeze({ keys: [";", ":", "Semicolon"], matchOn: ["key", "code"], displayKey: ";", keyLabel: ";" }),
-    PAGE_TOP: Object.freeze({ keys: ["z", "Z"] }),
-    PAGE_BOTTOM: Object.freeze({ keys: ["x", "X"] }),
-    PAGE_UP_INSTANT: Object.freeze({ keys: ["c", "C"] }),
-    PAGE_DOWN_INSTANT: Object.freeze({ keys: ["v", "V"] }),
-    ACTIVATE_NEW_TAB: Object.freeze({ keys: ["b", "B"] }),
-    SCROLL_LINE: Object.freeze({ keys: ["n", "N"] }),
-    RECTANGLE_HIGHLIGHT: Object.freeze({ keys: ["y", "Y"] }),
-    COPY_HOVERED_IMAGE: Object.freeze({ keys: ["i", "I"] }),
-    COPY_HOVERED_URL: Object.freeze({ keys: ["u", "U"] }),
-    PAGE_MEDIA: Object.freeze({ keys: ["o", "O"] }),
+    TAB_LEFT: physicalAssignment("KeyQ", "Q"),
+    TAB_RIGHT: physicalAssignment("KeyW", "W"),
+    OPEN_POPOVER: physicalAssignment("KeyP", "P"),
+    PREVIEW_LINK_POPOVER: physicalAssignment("KeyE", "E"),
+    FORWARD: physicalAssignment("KeyR", "R"),
+    NEW_TAB: physicalAssignment("KeyT", "T"),
+    CLOSE_TAB: physicalAssignment("KeyA", "A"),
+    ROOT: physicalAssignment("KeyS", "S"),
+    BACK: physicalAssignment("KeyD", "D"),
+    ACTIVATE: physicalAssignment("KeyF", "F"),
+    ACTIVATE_NEW_TAB_BACKGROUND: physicalAssignment("KeyG", "G"),
+    HIGHLIGHT: physicalAssignment("KeyH", "H"),
+    TAB_HISTORY: physicalAssignment("KeyJ", "J"),
+    OMNIBOX: physicalAssignment("KeyL", "L"),
+    TOP_SITES: physicalAssignment("Semicolon", ";"),
+    PAGE_TOP: physicalAssignment("KeyZ", "Z"),
+    PAGE_BOTTOM: physicalAssignment("KeyX", "X"),
+    PAGE_UP_INSTANT: physicalAssignment("KeyC", "C"),
+    PAGE_DOWN_INSTANT: physicalAssignment("KeyV", "V"),
+    ACTIVATE_NEW_TAB: physicalAssignment("KeyB", "B"),
+    SCROLL_LINE: physicalAssignment("KeyN", "N"),
+    RECTANGLE_HIGHLIGHT: physicalAssignment("KeyY", "Y"),
+    COPY_HOVERED_IMAGE: physicalAssignment("KeyI", "I"),
+    COPY_HOVERED_URL: physicalAssignment("KeyU", "U"),
+    PAGE_MEDIA: physicalAssignment("KeyO", "O"),
     // M is otherwise unused on the right-handed layout (it's PAGE_DOWN_INSTANT on left-handed).
-    OPEN_MEDIA_LIBRARY: Object.freeze({ keys: ["m", "M"] }),
-    DELETE: Object.freeze({ keys: ["Backspace"], displayKey: "Backspace", keyLabel: "Backspace" })
+    OPEN_MEDIA_LIBRARY: physicalAssignment("KeyM", "M"),
+    DELETE: physicalAssignment("Backspace", "Backspace")
     // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
   });
   var ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
     // Top row cluster: Q W E R T  ->  P O I U Y (mirrored)
-    TAB_LEFT: Object.freeze({ keys: ["p", "P"] }),
-    TAB_RIGHT: Object.freeze({ keys: ["o", "O"] }),
-    OPEN_POPOVER: Object.freeze({ keys: ["i", "I"] }),
-    PREVIEW_LINK_POPOVER: Object.freeze({ keys: ["w", "W"] }),
-    FORWARD: Object.freeze({ keys: ["u", "U"] }),
-    NEW_TAB: Object.freeze({ keys: ["y", "Y"] }),
-    SCROLL_LINE: Object.freeze({ keys: ["t", "T"] }),
+    TAB_LEFT: physicalAssignment("KeyP", "P"),
+    TAB_RIGHT: physicalAssignment("KeyO", "O"),
+    OPEN_POPOVER: physicalAssignment("KeyI", "I"),
+    PREVIEW_LINK_POPOVER: physicalAssignment("KeyW", "W"),
+    FORWARD: physicalAssignment("KeyU", "U"),
+    NEW_TAB: physicalAssignment("KeyY", "Y"),
+    SCROLL_LINE: physicalAssignment("KeyT", "T"),
     // Home row cluster: A S D F G  ->  ; L K J H (mirrored-ish around center)
-    CLOSE_TAB: Object.freeze({ keys: [";", ":"], displayKey: ";", keyLabel: ";" }),
-    ROOT: Object.freeze({ keys: ["l", "L"], displayKey: "L", keyLabel: "L" }),
-    BACK: Object.freeze({ keys: ["k", "K"] }),
-    ACTIVATE: Object.freeze({ keys: ["j", "J"] }),
-    ACTIVATE_NEW_TAB_BACKGROUND: Object.freeze({ keys: ["h", "H"] }),
+    CLOSE_TAB: physicalAssignment("Semicolon", ";"),
+    ROOT: physicalAssignment("KeyL", "L"),
+    BACK: physicalAssignment("KeyK", "K"),
+    ACTIVATE: physicalAssignment("KeyJ", "J"),
+    ACTIVATE_NEW_TAB_BACKGROUND: physicalAssignment("KeyH", "H"),
     // H is background-tab open on left; G/R free for selection.
-    HIGHLIGHT: Object.freeze({ keys: ["g", "G"] }),
-    RECTANGLE_HIGHLIGHT: Object.freeze({ keys: ["r", "R"] }),
+    HIGHLIGHT: physicalAssignment("KeyG", "G"),
+    RECTANGLE_HIGHLIGHT: physicalAssignment("KeyR", "R"),
     // Utility actions on the left avoid colliding with J/K/L cluster.
     // (KB Reference / Settings / Esc live in the system layer, not layout assignments.)
-    TAB_HISTORY: Object.freeze({ keys: ["f", "F"] }),
-    OMNIBOX: Object.freeze({ keys: ["s", "S"] }),
-    TOP_SITES: Object.freeze({ keys: ["a", "A"], displayKey: "A", keyLabel: "A" }),
+    TAB_HISTORY: physicalAssignment("KeyF", "F"),
+    OMNIBOX: physicalAssignment("KeyS", "S"),
+    TOP_SITES: physicalAssignment("KeyA", "A"),
     // Bottom row cluster: Z X C V B  ->  / . , M N (mirrored)
-    PAGE_TOP: Object.freeze({ keys: ["/", "?"], displayKey: "/", keyLabel: "/" }),
-    PAGE_BOTTOM: Object.freeze({ keys: ["b", "B"] }),
-    PAGE_UP_INSTANT: Object.freeze({ keys: [",", "<"], displayKey: ",", keyLabel: "," }),
-    PAGE_DOWN_INSTANT: Object.freeze({ keys: ["m", "M"] }),
-    ACTIVATE_NEW_TAB: Object.freeze({ keys: ["n", "N"] }),
+    PAGE_TOP: physicalAssignment("Slash", "/"),
+    PAGE_BOTTOM: physicalAssignment("KeyB", "B"),
+    PAGE_UP_INSTANT: physicalAssignment("Comma", ","),
+    PAGE_DOWN_INSTANT: physicalAssignment("KeyM", "M"),
+    ACTIVATE_NEW_TAB: physicalAssignment("KeyN", "N"),
     // I is OPEN_POPOVER on left-handed; E is free.
-    COPY_HOVERED_IMAGE: Object.freeze({ keys: ["e", "E"] }),
+    COPY_HOVERED_IMAGE: physicalAssignment("KeyE", "E"),
     // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
-    DELETE: Object.freeze({ keys: ["Backspace"], displayKey: "Backspace", keyLabel: "Backspace" })
+    DELETE: physicalAssignment("Backspace", "Backspace")
   });
   var SYSTEM_LAYER_ACTION_IDS = Object.freeze([
     "CANCEL",
@@ -994,14 +1351,14 @@
     "OPEN_SETTINGS_POPOVER"
   ]);
   var SYSTEM_LAYER_ASSIGNMENTS_RIGHT = Object.freeze({
-    CANCEL: Object.freeze({ keys: ["Escape"], displayKey: "Esc", keyLabel: "Esc" }),
-    TOGGLE_KEYBOARD_HELP: Object.freeze({ keys: ["k", "K"] }),
-    OPEN_SETTINGS_POPOVER: Object.freeze({ keys: ["'", "Quote"], matchOn: ["key", "code"], displayKey: "'" })
+    CANCEL: physicalAssignment("Escape", "Esc"),
+    TOGGLE_KEYBOARD_HELP: physicalAssignment("KeyK", "K"),
+    OPEN_SETTINGS_POPOVER: physicalAssignment("Quote", "'")
   });
   var SYSTEM_LAYER_ASSIGNMENTS_LEFT = Object.freeze({
-    CANCEL: Object.freeze({ keys: ["Escape"], displayKey: "Esc", keyLabel: "Esc" }),
-    TOGGLE_KEYBOARD_HELP: Object.freeze({ keys: ["d", "D"] }),
-    OPEN_SETTINGS_POPOVER: Object.freeze({ keys: ["'", "Quote"], matchOn: ["key", "code"], displayKey: "'" })
+    CANCEL: physicalAssignment("Escape", "Esc"),
+    TOGGLE_KEYBOARD_HELP: physicalAssignment("KeyD", "D"),
+    OPEN_SETTINGS_POPOVER: physicalAssignment("Quote", "'")
   });
   function buildSystemKeybindings(handedness = DEFAULT_KEYBOARD_HANDEDNESS) {
     const hand = normalizeKeyboardHandedness(handedness);
@@ -1015,6 +1372,7 @@
       const copy = localizedActionCopy(actionId, def);
       out[actionId] = {
         keys: assign.keys.slice(),
+        ...assign.bindingType ? { bindingType: assign.bindingType } : {},
         ...Array.isArray(assign.matchOn) ? { matchOn: assign.matchOn.slice() } : {},
         handler: def.handler,
         label: copy.label,
@@ -1117,8 +1475,8 @@
     const allowed = new Set(allowedIds);
     return Object.freeze(
       (Array.isArray(baseLayout) ? baseLayout : []).map(
-        (row) => Object.freeze(
-          (Array.isArray(row) ? row : []).map((cell) => {
+        (row2) => Object.freeze(
+          (Array.isArray(row2) ? row2 : []).map((cell) => {
             if (!cell || cell.type !== "action" || !cell.id) return cell;
             if (isBuildExcludedKeyAction(cell.id) || !allowed.has(cell.id)) {
               if (cell.id === "DELETE" || cell.className && String(cell.className).includes("key-backspace")) {
@@ -1937,17 +2295,17 @@
     if (localHas) return localVal;
     return defaultValue;
   }
-  async function storageGetValue(key, defaultValue = void 0) {
-    if (!key || typeof key !== "string") return defaultValue;
+  async function storageGetValue(key2, defaultValue = void 0) {
+    if (!key2 || typeof key2 !== "string") return defaultValue;
     let syncVal = void 0;
     let syncHas = false;
     try {
       if (chrome?.storage?.sync?.get) {
-        const syncResult = await chrome.storage.sync.get([key]);
-        if (syncResult && Object.prototype.hasOwnProperty.call(syncResult, key) && syncResult[key] !== void 0) {
+        const syncResult = await chrome.storage.sync.get([key2]);
+        if (syncResult && Object.prototype.hasOwnProperty.call(syncResult, key2) && syncResult[key2] !== void 0) {
           syncHas = true;
           syncVal = /** @type {T} */
-          syncResult[key];
+          syncResult[key2];
         }
       }
     } catch {
@@ -1956,11 +2314,11 @@
     let localHas = false;
     try {
       if (chrome?.storage?.local?.get) {
-        const localResult = await chrome.storage.local.get([key]);
-        if (localResult && Object.prototype.hasOwnProperty.call(localResult, key) && localResult[key] !== void 0) {
+        const localResult = await chrome.storage.local.get([key2]);
+        if (localResult && Object.prototype.hasOwnProperty.call(localResult, key2) && localResult[key2] !== void 0) {
           localHas = true;
           localVal = /** @type {T} */
-          localResult[key];
+          localResult[key2];
         }
       }
     } catch {
@@ -2087,6 +2445,9 @@
     keyboardLayoutFamilyId: DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID,
     keyboardHandedness: DEFAULT_KEYBOARD_HANDEDNESS,
     keyboardLayoutId: DEFAULT_KEYBOARD_LAYOUT_ID,
+    // Physical keycap model for Keyboard Reference. This remains independent
+    // from Chrome UI language and OS input-source selection.
+    keyboardHardwareLayoutId: DEFAULT_KEYBOARD_HARDWARE_LAYOUT_ID,
     // Active layout selection for runtime + keyboard reference:
     // - 'builtin' uses the current built-in family + handedness selection.
     // - 'user:<layoutId>' uses a stored user layout (created/duplicated in Alt+C).
@@ -2492,6 +2853,7 @@
         keyboardLayoutFamilyId: familyId,
         keyboardHandedness: handedness,
         keyboardLayoutId: resolvedLayoutId,
+        keyboardHardwareLayoutId: normalizeKeyboardHardwareLayoutId(stored?.keyboardHardwareLayoutId),
         currentKeyboardLayoutId: normalizeCurrentKeyboardLayoutId(stored?.currentKeyboardLayoutId),
         keyboardReferenceKeyFeedback: normalizeBoolean(
           stored?.keyboardReferenceKeyFeedback,
@@ -3210,9 +3572,9 @@
      * @param {number} [sign]
      * @returns {boolean}
      */
-    isHolding(key, sign) {
+    isHolding(key2, sign) {
       if (!this.key) return false;
-      if (key != null && this.key !== key) return false;
+      if (key2 != null && this.key !== key2) return false;
       if (sign != null && this.sign !== (sign < 0 ? -1 : 1)) return false;
       return true;
     }
@@ -3224,9 +3586,9 @@
      */
     begin(args) {
       const sign = args.sign < 0 ? -1 : 1;
-      const key = args.key == null ? null : String(args.key);
-      const same = this.key != null && this.key === key && this.sign === sign;
-      this.key = key;
+      const key2 = args.key == null ? null : String(args.key);
+      const same = this.key != null && this.key === key2 && this.sign === sign;
+      this.key = key2;
       this.sign = sign;
       this.target = args.target ?? this.target;
       if (Number.isFinite(Number(args.speedPxPerSec)) && Number(args.speedPxPerSec) > 0) {
@@ -3253,8 +3615,8 @@
      * @param {number} [sign]
      * @returns {boolean} true if this repeat belongs to the active hold
      */
-    noteRepeat(key, sign) {
-      if (!this.isHolding(key, sign)) return false;
+    noteRepeat(key2, sign) {
+      if (!this.isHolding(key2, sign)) return false;
       if (!this._raf && !this._armTimer) {
         this._startLoop();
       } else if (!this._raf && this._armTimer) {
@@ -3266,8 +3628,8 @@
     /**
      * @param {string|null|undefined} [key]  if set, only stop when it matches
      */
-    end(key) {
-      if (key != null && this.key != null && this.key !== key) return;
+    end(key2) {
+      if (key2 != null && this.key != null && this.key !== key2) return;
       this.reset();
     }
     reset() {
@@ -3983,8 +4345,8 @@
     "gx-er": GX_ER_THEME
   });
   function getTheme(id, overrides) {
-    const key = normalizeThemeId(id);
-    const base = PACKAGES[key] || PACKAGES[DEFAULT_THEME_ID];
+    const key2 = normalizeThemeId(id);
+    const base = PACKAGES[key2] || PACKAGES[DEFAULT_THEME_ID];
     return mergeTheme(base, overrides && typeof overrides === "object" ? overrides : {});
   }
 
@@ -5043,10 +5405,10 @@
         } catch {
         }
       };
-      const keyIn = (assignment, key) => {
+      const keyIn = (assignment, key2) => {
         try {
           const keys = assignment?.keys;
-          return Array.isArray(keys) && keys.includes(key);
+          return Array.isArray(keys) && keys.includes(key2);
         } catch {
           return false;
         }
@@ -5600,9 +5962,9 @@
           if (!enabled) return;
           if (hasFullKeyPilot()) return;
           if (hasModifierKeys(e)) return;
-          const key = e.key;
+          const key2 = e.key;
           const kb = keybindings || {};
-          if ((keyIn(kb.CANCEL, key) || key === "Escape" || key === "Esc") && isTypingContext(e.target)) {
+          if ((keyIn(kb.CANCEL, key2) || key2 === "Escape" || key2 === "Esc") && isTypingContext(e.target)) {
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
@@ -5615,7 +5977,7 @@
           }
           if (isTypingContext(e.target)) return;
           if (!frameHasKeyboardFocus()) return;
-          if (keyIn(kb.CANCEL, key) || key === "Escape" || key === "Esc") {
+          if (keyIn(kb.CANCEL, key2) || key2 === "Escape" || key2 === "Esc") {
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
@@ -5625,15 +5987,15 @@
           let mode = null;
           let scrollSign = null;
           let scrollMode = "delta";
-          if (keyIn(kb.ACTIVATE, key)) mode = "activate";
-          else if (keyIn(kb.ACTIVATE_NEW_TAB, key)) mode = "newTab";
-          else if (keyIn(kb.ACTIVATE_NEW_TAB_BACKGROUND, key)) mode = "background";
-          else if (keyIn(kb.PAGE_UP_INSTANT, key)) scrollSign = -1;
-          else if (keyIn(kb.PAGE_DOWN_INSTANT, key)) scrollSign = 1;
-          else if (keyIn(kb.PAGE_TOP, key)) {
+          if (keyIn(kb.ACTIVATE, key2)) mode = "activate";
+          else if (keyIn(kb.ACTIVATE_NEW_TAB, key2)) mode = "newTab";
+          else if (keyIn(kb.ACTIVATE_NEW_TAB_BACKGROUND, key2)) mode = "background";
+          else if (keyIn(kb.PAGE_UP_INSTANT, key2)) scrollSign = -1;
+          else if (keyIn(kb.PAGE_DOWN_INSTANT, key2)) scrollSign = 1;
+          else if (keyIn(kb.PAGE_TOP, key2)) {
             scrollSign = -1;
             scrollMode = "edge";
-          } else if (keyIn(kb.PAGE_BOTTOM, key)) {
+          } else if (keyIn(kb.PAGE_BOTTOM, key2)) {
             scrollSign = 1;
             scrollMode = "edge";
           } else return;
@@ -5660,7 +6022,7 @@
             }
             const s = scrollSign < 0 ? -1 : 1;
             if (e.repeat) {
-              scrollHold.noteRepeat(key, s);
+              scrollHold.noteRepeat(key2, s);
               return;
             }
             const found = findScrollTargetAtPoint(x, y, s);
@@ -5670,7 +6032,7 @@
             scrollHoldLock = el ? { el, axis } : null;
             const speed = Math.max(600, Math.min(2400, halfPagePx * 2.8));
             scrollHold.begin({
-              key,
+              key: key2,
               sign: s,
               target: scrollHoldLock,
               speedPxPerSec: speed
@@ -5905,9 +6267,9 @@
       out
     ) : null;
   }
-  function popoverScrollKeyMatches(scrollKeys, slot, key) {
+  function popoverScrollKeyMatches(scrollKeys, slot, key2) {
     const list = scrollKeys?.[slot];
-    return Array.isArray(list) && list.includes(key);
+    return Array.isArray(list) && list.includes(key2);
   }
 
   // src/modules/popover-iframe-bridge.js
@@ -6090,34 +6452,34 @@
         if (isImeComposingKeyboardEvent(e)) return;
         if (!bridgeActive) return;
         if (hasModifierKeys(e)) return;
-        const key = e.key;
+        const key2 = e.key;
         const typing = typingAt(e.target);
         const requestClose = () => {
           e.preventDefault();
           e.stopPropagation();
           e.stopImmediatePropagation();
           try {
-            window.parent.postMessage({ type: MSG.POPOVER_REQUEST_CLOSE, key }, "*");
+            window.parent.postMessage({ type: MSG.POPOVER_REQUEST_CLOSE, key: key2 }, "*");
           } catch {
           }
         };
-        if (!typing && (key === "f" || key === "F")) {
+        if (!typing && (key2 === "f" || key2 === "F")) {
           const forwardToParent = !mouseInsideFrame || !fullKeyPilotPresent();
           if (forwardToParent) {
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
             try {
-              window.parent.postMessage({ type: MSG.POPOVER_BRIDGE_KEYDOWN, key }, "*");
+              window.parent.postMessage({ type: MSG.POPOVER_BRIDGE_KEYDOWN, key: key2 }, "*");
             } catch {
             }
             return;
           }
         }
-        if (!typing && closeKeySet.has(key)) return requestClose();
-        if (!typing && key === "Escape") return requestClose();
-        if (closeOnQuote && !typing && key === "'") return requestClose();
-        if (enableFClickBeforeKeyPilot && !keyPilotStarted && !typing && (key === "f" || key === "F")) {
+        if (!typing && closeKeySet.has(key2)) return requestClose();
+        if (!typing && key2 === "Escape") return requestClose();
+        if (closeOnQuote && !typing && key2 === "'") return requestClose();
+        if (enableFClickBeforeKeyPilot && !keyPilotStarted && !typing && (key2 === "f" || key2 === "F")) {
           let x = lastMouse.x;
           let y = lastMouse.y;
           if (typeof x !== "number" || typeof y !== "number") {
@@ -6152,7 +6514,7 @@
         const applyHeldScroll = (sign, stepPx) => {
           const s = sign < 0 ? -1 : 1;
           if (e.repeat) {
-            scrollHold.noteRepeat(key, s);
+            scrollHold.noteRepeat(key2, s);
             return;
           }
           const { mx, my } = cursorPoint();
@@ -6164,29 +6526,29 @@
           const base = Number(SCROLL.HOLD_PX_PER_SEC);
           const speed = Math.max(600, Math.min(2400, stepPx * 2.8));
           scrollHold.begin({
-            key,
+            key: key2,
             sign: s,
             target: scrollHoldLock,
             speedPxPerSec: Number.isFinite(speed) ? speed : base || 1400
           });
         };
-        if (popoverScrollKeyMatches(scrollKeys, "pageUp", key)) {
+        if (popoverScrollKeyMatches(scrollKeys, "pageUp", key2)) {
           e.preventDefault();
           applyHeldScroll(-1, pagePx);
-        } else if (popoverScrollKeyMatches(scrollKeys, "pageDown", key)) {
+        } else if (popoverScrollKeyMatches(scrollKeys, "pageDown", key2)) {
           e.preventDefault();
           applyHeldScroll(1, pagePx);
-        } else if (popoverScrollKeyMatches(scrollKeys, "pageUpInstant", key)) {
+        } else if (popoverScrollKeyMatches(scrollKeys, "pageUpInstant", key2)) {
           e.preventDefault();
           applyHeldScroll(-1, halfPx);
-        } else if (popoverScrollKeyMatches(scrollKeys, "pageDownInstant", key)) {
+        } else if (popoverScrollKeyMatches(scrollKeys, "pageDownInstant", key2)) {
           e.preventDefault();
           applyHeldScroll(1, halfPx);
-        } else if (popoverScrollKeyMatches(scrollKeys, "pageTop", key)) {
+        } else if (popoverScrollKeyMatches(scrollKeys, "pageTop", key2)) {
           e.preventDefault();
           const { mx, my } = cursorPoint();
           scrollToEdgeAtPoint(mx, my, -1, behavior);
-        } else if (popoverScrollKeyMatches(scrollKeys, "pageBottom", key)) {
+        } else if (popoverScrollKeyMatches(scrollKeys, "pageBottom", key2)) {
           e.preventDefault();
           const { mx, my } = cursorPoint();
           scrollToEdgeAtPoint(mx, my, 1, behavior);

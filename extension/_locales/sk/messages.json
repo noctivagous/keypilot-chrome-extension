@@ -5842,5 +5842,45 @@
         "example": "Brave"
       }
     }
+  },
+  "keyboard_hardware_layout_us_ansi_qwerty": {
+    "message": "US ANSI QWERTY",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_us_ansi_qwerty_description": {
+    "message": "Štandardné americké rozloženie klávesnice ANSI.",
+    "description": "Description for the US ANSI QWERTY keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_de_de_qwertz_iso": {
+    "message": "Nemecké ISO QWERTZ",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_de_de_qwertz_iso_description": {
+    "message": "Nemecké rozloženie klávesnice ISO QWERTZ.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_es_es_qwerty_iso": {
+    "message": "Španielske (Španielsko) ISO QWERTY",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_es_es_qwerty_iso_description": {
+    "message": "Španielske (Španielsko) rozloženie klávesnice ISO QWERTY.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_sk_sk_qwertz_iso": {
+    "message": "Slovenské ISO QWERTZ",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_sk_sk_qwertz_iso_description": {
+    "message": "Slovenské rozloženie klávesnice ISO QWERTZ.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_ja_jis_106": {
+    "message": "Japonské JIS 106",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_ja_jis_106_description": {
+    "message": "Japonské rozloženie klávesnice JIS 106.",
+    "description": "Description for a keyboard hardware-layout picker option."
   }
 }

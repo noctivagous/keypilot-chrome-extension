@@ -19,8 +19,7 @@ import {
   getKeyboardUiLayoutForLayout,
   inferFamilyAndHandednessFromLayoutId,
   normalizeKeyboardHandedness,
-  resolveKeyboardLayoutId,
-  physicalSlotLabelFromBinding
+  resolveKeyboardLayoutId
 } from '../config/keyboard-layouts.js';
 import {
   defaultFunctionParameters,
@@ -46,7 +45,7 @@ export const KEYBOARD_LAYOUT_STORE_KEY = 'kp_keyboard_layout_store_v1';
  *   builtIn: false,
  *   // Base built-in layoutId this was duplicated from (for future diffing/migrations)
  *   baseBuiltinLayoutId?: string,
- *   // Mapping from "slot label" (e.g. "Q", ";", "[") to assigned item (function/macro)
+ *   // Mapping from typed slot identity (e.g. "code:KeyQ", "key:ñ") to assigned item.
  *   slots: Record<string, SlotAssignment|null>,
  *   createdAt: number,
  *   updatedAt: number
@@ -131,11 +130,34 @@ function genId(prefix) {
   }
 }
 
-function normalizeSlotLabel(raw) {
-  const s = String(raw || '').trim();
-  if (!s) return '';
-  // Prefer stable, simple slot keys.
-  return s.length === 1 ? s.toUpperCase() : s;
+export const PHYSICAL_SLOT_PREFIX = 'code:';
+export const CHARACTER_SLOT_PREFIX = 'key:';
+
+/**
+ * @param {unknown} code
+ * @returns {string}
+ */
+export function physicalSlotKeyForCode(code) {
+  const value = String(code || '').trim();
+  return value ? `${PHYSICAL_SLOT_PREFIX}${value}` : '';
+}
+
+/**
+ * @param {unknown} character
+ * @returns {string}
+ */
+export function characterSlotKeyForCharacter(character) {
+  const value = String(character || '');
+  return value ? `${CHARACTER_SLOT_PREFIX}${value}` : '';
+}
+
+/**
+ * @param {unknown} slotKey
+ * @returns {string}
+ */
+export function physicalCodeFromSlotKey(slotKey) {
+  const value = String(slotKey || '');
+  return value.startsWith(PHYSICAL_SLOT_PREFIX) ? value.slice(PHYSICAL_SLOT_PREFIX.length) : '';
 }
 
 /**
@@ -145,9 +167,9 @@ function normalizeSlotLabel(raw) {
  * codes) means punctuation and the staggered bottom row stay correct.
  */
 const HANDEDNESS_SLOT_PAIRS = Object.freeze([
-  ['Q', 'P'], ['W', 'O'], ['E', 'I'], ['R', 'U'], ['T', 'Y'],
-  ['A', ';'], ['S', 'L'], ['D', 'K'], ['F', 'J'], ['G', 'H'],
-  ['Z', '/'], ['X', '.'], ['C', ','], ['V', 'M'], ['B', 'N']
+  ['KeyQ', 'KeyP'], ['KeyW', 'KeyO'], ['KeyE', 'KeyI'], ['KeyR', 'KeyU'], ['KeyT', 'KeyY'],
+  ['KeyA', 'Semicolon'], ['KeyS', 'KeyL'], ['KeyD', 'KeyK'], ['KeyF', 'KeyJ'], ['KeyG', 'KeyH'],
+  ['KeyZ', 'Slash'], ['KeyX', 'Period'], ['KeyC', 'Comma'], ['KeyV', 'KeyM'], ['KeyB', 'KeyN']
 ]);
 
 const MIRRORED_PHYSICAL_SLOT = Object.freeze(Object.fromEntries(
@@ -169,21 +191,24 @@ export function mirrorKeyboardLayoutSlotKey(slotKey) {
     const parts = key.slice(chordPrefix.length).split('+');
     const last = parts.pop();
     if (!last) return key;
-    const mirrored = MIRRORED_PHYSICAL_SLOT[String(last).toUpperCase()];
+    const mirrored = MIRRORED_PHYSICAL_SLOT[String(last)];
     return mirrored ? `${chordPrefix}${[...parts, mirrored].join('+')}` : key;
   }
-  return MIRRORED_PHYSICAL_SLOT[key.toUpperCase()] || key;
+  const code = physicalCodeFromSlotKey(key);
+  if (!code) return key;
+  const mirrored = MIRRORED_PHYSICAL_SLOT[code];
+  return mirrored ? physicalSlotKeyForCode(mirrored) : key;
 }
 
 /**
- * Extract "slot label" from a keybinding entry.
- * Works best when displayKey/keyLabel is a single printable character (e.g. Q, ;, [, ]).
+ * Extract the physical slot identity from a code-based keybinding.
  *
  * @param {any} binding
  * @returns {string}
  */
-function slotLabelFromBinding(binding) {
-  return physicalSlotLabelFromBinding(binding);
+function slotKeyFromBinding(binding) {
+  if (binding?.bindingType !== 'physical' || !Array.isArray(binding.keys)) return '';
+  return physicalSlotKeyForCode(binding.keys[0]);
 }
 
 /**
@@ -345,9 +370,9 @@ export async function createEmptyUserKeyboardLayout({ baseBuiltinLayoutId, label
     for (const item of row || []) {
       if (!item) continue;
       if (item.type === 'special') continue;
-      if (item.type === 'key') {
-        const s = normalizeSlotLabel(item.text);
-        if (s) slots[s] = slots[s] ?? null;
+      if (item.type === 'key' && item.code) {
+        const slotKey = physicalSlotKeyForCode(item.code);
+        if (slotKey) slots[slotKey] = slots[slotKey] ?? null;
       }
     }
   }
@@ -815,7 +840,8 @@ export async function setUserKeyboardLayoutHandedness(layout, handedness) {
  * enforced in one place.
  *
  * @param {string} layoutId
- * @param {string} slotKey Bare key label (e.g. "Q") or chord slot key (e.g. "CHORD:CTRL+ALT+Q").
+ * @param {string} slotKey Physical slot (e.g. "code:KeyQ"), character slot
+ *   (e.g. "key:ñ"), or chord slot key (e.g. "CHORD:CTRL+ALT+KeyQ").
  * @param {SlotAssignment|null} item `null` clears the slot.
  * @returns {Promise<{ ok: boolean, reason?: string, layout?: UserKeyboardLayout }>}
  */
@@ -869,14 +895,14 @@ export async function duplicateBuiltinLayoutToUserLayout({ builtinLayoutId, labe
     for (const item of row || []) {
       if (!item) continue;
       if (item.type === 'special') continue;
-      if (item.type === 'key') {
-        const s = normalizeSlotLabel(item.text);
-        if (s) slots[s] = slots[s] ?? null;
+      if (item.type === 'key' && item.code) {
+        const slotKey = physicalSlotKeyForCode(item.code);
+        if (slotKey) slots[slotKey] = slots[slotKey] ?? null;
         continue;
       }
       if (item.type === 'action') {
         const binding = kb && kb[item.id];
-        const slot = slotLabelFromBinding(binding);
+        const slot = slotKeyFromBinding(binding);
         if (!slot) continue;
         // `item.type === 'action'` here is the built-in KEYBOARD_UI_LAYOUT cell-type enum
         // (keyboard-layouts.js) — an unrelated concept from the `SlotAssignment` type this seeds.

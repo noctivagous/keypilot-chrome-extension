@@ -84,7 +84,7 @@ import {
   getThemeClickDefaults,
   resolveThemeFromSettings
 } from './modules/theme-manager.js';
-import { getOrCreateBuiltinFunctionUserAction, getUserKeyboardLayoutById, getUserActionById, getUserMacroById, listUserActions, listUserMacros, setUserKeyboardLayoutHandedness } from './modules/keyboard-layout-store.js';
+import { characterSlotKeyForCharacter, getOrCreateBuiltinFunctionUserAction, getUserKeyboardLayoutById, getUserActionById, getUserMacroById, listUserActions, listUserMacros, physicalSlotKeyForCode, setUserKeyboardLayoutHandedness } from './modules/keyboard-layout-store.js';
 import { runLegacyMacroKeyFunction } from './modules/macro-key-runtime.js';
 import { runUserExecuteJs, stringifyExecuteJsValue } from './modules/execute-js-runtime.js';
 import { getFunctionDef, functionWorksWhileTyping, functionCancelsOnPointerDown, FIXED_KEY_FUNCTION_IDS, UNIT_SELECT_FUNCTION_IDS } from './config/function-library.js';
@@ -1208,7 +1208,10 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       ...this._systemKeybindings
     };
     const showNumberRow = !!this._settings?.keyboardReferenceShowNumberRow;
-    this._keyboardUiLayout = getKeyboardUiLayoutForLayout(layoutId, { includeNumberRow: showNumberRow });
+    this._keyboardUiLayout = getKeyboardUiLayoutForLayout(layoutId, {
+      includeNumberRow: showNumberRow,
+      hardwareLayoutId: this._settings?.keyboardHardwareLayoutId
+    });
 
     // Keep text-input SVG background hints in sync with layout-bound keys (F vs J, Esc).
     try {
@@ -1313,7 +1316,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
         this._currentUserLayout = layout;
         try { this._currentUserMacros = await listUserMacros(); } catch { this._currentUserMacros = []; }
         try { this._currentUserActions = await listUserActions(); } catch { this._currentUserActions = []; }
-        // Slots map: key label -> assigned item
+        // Slots map: typed physical-code / character identity -> assigned item.
         this._currentKeySlotMap = layout.slots && typeof layout.slots === 'object' ? layout.slots : {};
       } else {
         // Orphaned selection (layout deleted) — fall back to built-in and heal settings.
@@ -1385,12 +1388,9 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       const slots = this._currentKeySlotMap;
       if (!slots || typeof slots !== 'object') return false;
 
-      const key = (e && typeof e.key === 'string') ? e.key : '';
-      if (!key || key === ' ') return false;
-      const raw = String(key).trim();
-      const slot = raw.length === 1 ? raw.toUpperCase() : raw;
-      if (!slot) return false;
-      const assigned = slots[slot] || slots[raw.toUpperCase()];
+      const physicalSlot = physicalSlotKeyForCode(e?.code);
+      const characterSlot = characterSlotKeyForCharacter(e?.key);
+      const assigned = slots[physicalSlot] || slots[characterSlot];
       if (!assigned || !assigned.type || !assigned.id) return false;
 
       if (assigned.type === 'macro') {
@@ -1555,9 +1555,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
         : buildSystemKeybindings(this._settings?.keyboardHandedness);
       for (const keybinding of Object.values(systemKb || {})) {
         if (!keybinding?.handler || !Array.isArray(keybinding.keys)) continue;
-        const matchOn = Array.isArray(keybinding.matchOn) ? keybinding.matchOn : ['key'];
-        const isMatch = matchOn.some((field) => keybinding.keys.includes(e[field]));
-        if (!isMatch) continue;
+        if (!this._matchesKeybinding(keybinding, e)) continue;
         if (this._isUnsafeToRunActionKey(e)) return false;
         const handlerFn = this[keybinding.handler];
         if (typeof handlerFn !== 'function') return false;
@@ -1569,6 +1567,27 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       }
     } catch {
       // ignore
+    }
+    return false;
+  }
+
+  /**
+   * Match a KeyPilot binding by its declared semantics. Built-in/system
+   * bindings are physical and must follow `KeyboardEvent.code`, independent of
+   * the character produced by the selected OS keyboard layout. Character
+   * bindings are reserved for explicitly semantic user assignments.
+   *
+   * @param {{ bindingType?: string, keys?: string[], matchOn?: string[] }} keybinding
+   * @param {KeyboardEvent} e
+   * @returns {boolean}
+   */
+  _matchesKeybinding(keybinding, e) {
+    if (!keybinding || !Array.isArray(keybinding.keys) || !e) return false;
+    if (keybinding.bindingType === 'physical') {
+      return keybinding.keys.includes(String(e.code || ''));
+    }
+    if (keybinding.bindingType === 'character') {
+      return keybinding.keys.includes(String(e.key || ''));
     }
     return false;
   }
@@ -3375,9 +3394,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       if (!keybinding?.handler || !Array.isArray(keybinding.keys)) continue;
       if (keybinding.systemLayer) continue;
 
-      const matchOn = Array.isArray(keybinding.matchOn) ? keybinding.matchOn : ['key'];
-      const isMatch = matchOn.some((field) => keybinding.keys.includes(e[field]));
-      if (!isMatch) continue;
+      if (!this._matchesKeybinding(keybinding, e)) continue;
 
       // Final fail-closed guard: never dispatch action keys while typing.
       if (this._isUnsafeToRunActionKey(e)) {

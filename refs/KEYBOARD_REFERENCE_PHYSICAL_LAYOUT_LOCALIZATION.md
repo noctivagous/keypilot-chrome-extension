@@ -178,6 +178,34 @@ Zhuyin/Cangjie legends, but those are secondary keycap labels on the same
 physical positions. Hong Kong must not inherit Taiwan's legends without
 specific verification.
 
+Validation decision for the shipped Traditional-Chinese UI locales:
+
+- Windows documents both **Chinese (Traditional) - US** (`00000404`) and
+  **Chinese (Traditional, Hong Kong S.A.R.) - US** (`00000C04`) as US
+  keyboard layouts. The Hong Kong layout’s own reference identifies it as a
+  US keyboard. These describe QWERTY physical positions, not a separate
+  Taiwan or Hong Kong hardware geometry.
+- Windows separately lists Taiwan input profiles for Microsoft Bopomofo,
+  Changjie, Quick, DaYi, and Array. The input profile chooses how keystrokes
+  compose text; it must not select or alter KeyPilot’s hardware model.
+- A Taiwan keycap may add Zhuyin, and some bilingual keyboards add Cangjie
+  radicals. Hong Kong keyboards may instead show Cangjie-related labels.
+  Those printed annotations are not a single locale-wide legend standard:
+  they vary by keyboard vendor and input method, and they are not modifier
+  output levels such as Shift or AltGr.
+
+Therefore `zh_TW` and `zh_HK` intentionally have no dedicated hardware-model
+IDs. They use the user-selected ANSI/ISO QWERTY model and retain its action
+positions. Do not encode Zhuyin, Cangjie, Bopomofo, Cantonese, or any IME as a
+`KeyboardEvent.code` mapping or hardware-layout preference. If secondary
+keycap artwork is later supported, model it as an optional, vendor-verified
+display overlay with its own source and tests; it must not change code,
+geometry, primary legends, or action binding.
+
+Sources: [Windows keyboard layouts](https://learn.microsoft.com/en-us/globalization/windows-keyboard-layouts),
+[Hong Kong Traditional Chinese - US layout](https://learn.microsoft.com/en-us/globalization/keyboards/kbdus_5),
+and [Windows default input profiles](https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/default-input-locales-for-windows-language-packs?view=windows-11).
+
 ### Japanese JIS
 
 Japanese JIS is a separate physical model, not US QWERTY with Japanese
@@ -299,39 +327,59 @@ model. This distinction must be visible in the layout editor.
 - [x] Add a US ANSI QWERTY model that exactly reproduces the current Keyboard
   Reference geometry before replacing `KEYBOARD_UI_LAYOUT_RIGHT` and
   `KEYBOARD_UI_LAYOUT_LEFT` in `extension/src/config/keyboard-layouts.js`.
-- [ ] Change built-in action and system-layer assignments in
+- [x] Change built-in action and system-layer assignments in
   `extension/src/config/keyboard-layouts.js` to explicit code-based physical
   bindings; retain a separately typed character-binding form only where it is
   intentionally semantic.
-- [ ] Update key matching in `extension/src/keypilot.js` so physical bindings
+- [x] Update key matching in `extension/src/keypilot.js` so physical bindings
   test `event.code`, including pressed feedback and both normal runtime paths.
-- [ ] Update `extension/src/ui/keybindings-ui-shared.js` and
+- [x] Update `extension/src/ui/keybindings-ui-shared.js` and
   `extension/src/ui/floating-keyboard-help.js` to render the selected model's
   geometry/legends and resolve action keycaps by physical code.
-- [ ] Update the layout editor (`extension/src/ui/keyboard-layout-configurator.js`
+- [x] Update the layout editor (`extension/src/ui/keyboard-layout-configurator.js`
   and `extension/src/ui/keyboard-layout-config-panel.js`) so placement,
   selection, tooltips, and saved bindings distinguish physical keys from typed
   characters.
-- [ ] Add a persisted **Keyboard hardware layout** preference to the keyboard
+- [x] Add a persisted **Keyboard hardware layout** preference to the keyboard
   settings schema/store, with an explicit US ANSI default and no locale-driven
   automatic selection.
-- [ ] Add localized labels and descriptions for model-picker options in
+- [x] Add localized labels and descriptions for model-picker options in
   `extension/_locales/en/messages.json`, then mirror the keys in every shipped
   locale.
-- [ ] Implement and verify initial models: US ANSI, German ISO QWERTZ, Spain
-  Spanish ISO QWERTY, Slovak QWERTZ, and Japanese JIS. Add Latin-American
-  Spanish variants only after choosing and validating each target OS/country
-  layout; do not use `es_419` as a single physical model.
-- [ ] Validate Taiwan/Hong Kong optional secondary legends separately from the
+- [x] Implement and repository-verify initial models: US ANSI, German ISO
+  QWERTZ, Spain Spanish ISO QWERTY, Slovak QWERTZ, and Japanese JIS. The
+  registry tests validate representative legends, ISO/JIS-only keys, geometry,
+  HID/code uniqueness, and the absence of a generic `es_419` model. Add
+  Latin-American Spanish variants only after choosing and validating each
+  target OS/country layout; do not use `es_419` as a single physical model.
+  Cross-platform Chromium event capture remains a separate task below.
+- [x] Validate Taiwan/Hong Kong optional secondary legends separately from the
   QWERTY physical model; keep Chinese IME selection out of the hardware-model
-  preference.
+  preference. Windows exposes Traditional-Chinese Taiwan and Hong Kong as US
+  physical layouts; vendor/IME-specific Zhuyin or Cangjie annotations remain
+  unsupported optional keycap artwork, not hardware models.
 - [ ] Capture Chromium `key`, `code`, modifier, composition, and text-entry
   behavior on macOS, Windows, and Linux for every shipped physical model,
   especially JIS keys and dead-key/AltGr paths.
+  - [ ] macOS: record each model with the target input source selected,
+    including IME composition and Japanese JIS control keys where hardware is
+    available.
+  - [ ] Windows: record each target keyboard layout/IME, including Spain and
+    Slovak dead-key/AltGr paths and Taiwan/Hong Kong US-QWERTY IME behavior.
+  - [ ] Linux: record the corresponding XKB/desktop input source for each
+    model, including compose/dead-key and AltGr behavior.
 - [ ] Add unit tests for model schema integrity, code-based matching, German
   Y/Z action placement, ISO-only keys, JIS geometry, and custom-binding
   semantics; add visual/screenshot fixtures for US ANSI, German ISO, Spanish
   ISO, Slovak, and Japanese JIS.
+  - [x] Add registry, code-based matching, German Y/Z placement, ISO/JIS
+    geometry, and typed-slot identity tests.
+  - [x] Add deterministic SVG model visual fixtures under
+    `test/fixtures/keyboard-hardware-layouts/`; verify them with
+    `npm run fixtures:keyboard-layouts -- --check`.
+  - [ ] Add direct custom-layout store lifecycle tests and rendered
+    Keyboard Reference screenshot fixtures after the selected hardware model
+    is wired into the renderer and screenshot capture API.
 - [ ] Update `extension/userdocs/en/keyboard-reference.md`,
   `refs/UI_TESTING_CHECKLIST.md`, and store-screenshot fixtures to explain and
   exercise the selected physical keyboard layout.

@@ -5842,5 +5842,45 @@
         "example": "Brave"
       }
     }
+  },
+  "keyboard_hardware_layout_us_ansi_qwerty": {
+    "message": "QWERTY ANSI de EE. UU.",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_us_ansi_qwerty_description": {
+    "message": "Distribución de teclado ANSI estándar de EE. UU.",
+    "description": "Description for the US ANSI QWERTY keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_de_de_qwertz_iso": {
+    "message": "Alemán ISO QWERTZ",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_de_de_qwertz_iso_description": {
+    "message": "Distribución de teclado alemán ISO QWERTZ.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_es_es_qwerty_iso": {
+    "message": "Español (España) ISO QWERTY",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_es_es_qwerty_iso_description": {
+    "message": "Distribución de teclado español (España) ISO QWERTY.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_sk_sk_qwertz_iso": {
+    "message": "Eslovaco ISO QWERTZ",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_sk_sk_qwertz_iso_description": {
+    "message": "Distribución de teclado eslovaco ISO QWERTZ.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_ja_jis_106": {
+    "message": "Japonés JIS 106",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_ja_jis_106_description": {
+    "message": "Distribución de teclado japonés JIS 106.",
+    "description": "Description for a keyboard hardware-layout picker option."
   }
 }

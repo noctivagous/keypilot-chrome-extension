@@ -56,6 +56,7 @@ describe('getSettings / setSettings / resetAllSettings', () => {
     const settings = await getSettings();
     assert.equal(settings.themeId, DEFAULT_SETTINGS.themeId);
     assert.equal(settings.keyboardLayoutId, DEFAULT_SETTINGS.keyboardLayoutId);
+    assert.equal(settings.keyboardHardwareLayoutId, 'us-ansi-qwerty');
     assert.equal(settings.clickMode.paintStrategy, DEFAULT_SETTINGS.clickMode.paintStrategy);
     assert.equal(settings.scroll.middleClickScrollLine, false);
     assert.equal(settings.controlStrip.collapsed, true);
@@ -70,6 +71,21 @@ describe('getSettings / setSettings / resetAllSettings', () => {
     assert.equal(settings.keyboardLayoutFamilyId, 'browsing');
     assert.equal(settings.keyboardHandedness, 'left');
     assert.equal(settings.keyboardLayoutId, 'browsing-left');
+  });
+
+  it('persists an explicit hardware layout without deriving it from locale', async () => {
+    const { getSettings, setSettings, SETTINGS_STORAGE_KEY } =
+      await import('../extension/src/modules/settings-manager.js');
+
+    await setSettings({ keyboardHardwareLayoutId: 'us-ansi-qwerty' });
+    assert.equal(
+      mock.syncStore.get(SETTINGS_STORAGE_KEY).keyboardHardwareLayoutId,
+      'us-ansi-qwerty'
+    );
+    assert.equal((await getSettings()).keyboardHardwareLayoutId, 'us-ansi-qwerty');
+
+    mock.seed(SETTINGS_STORAGE_KEY, { keyboardHardwareLayoutId: 'not-a-layout' }, 'sync');
+    assert.equal((await getSettings()).keyboardHardwareLayoutId, 'us-ansi-qwerty');
   });
 
   it('deep-merges nested partial updates without clobbering siblings', async () => {

@@ -1,7 +1,7 @@
 /**
  * Modifier-chord slot keys.
  *
- * Bare-key layout slots are keyed by a single uppercased character/label (e.g. "Q", ";").
+ * Bare-key layout slots are keyed by a physical DOM code (e.g. "KeyQ", "Semicolon").
  * Some Functions (see `worksWhileTyping` in function-library.js) must run *while a text field
  * is focused* — a bare key would either be silently swallowed by normal typing or blocked by
  * KeyPilot's typing-safety gate. Those Functions may only be bound to a *modifier chord*
@@ -68,7 +68,7 @@ export function buildChordSlotKey(chord) {
 export function chordSlotKeyFromEvent(e) {
   if (!e) return '';
   return buildChordSlotKey({
-    key: e.key,
+    key: e.code,
     ctrl: !!e.ctrlKey,
     alt: !!e.altKey,
     shift: !!e.shiftKey,

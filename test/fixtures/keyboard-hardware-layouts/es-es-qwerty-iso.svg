@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="332" viewBox="0 0 1024 332" role="img" aria-labelledby="title desc">
+  <title id="title">es-es-qwerty-iso Keyboard Reference fixture</title>
+  <desc id="desc">Compact Keyboard Reference geometry for es-es-qwerty-iso.</desc>
+  <style>
+    .canvas { fill: #101827; } .caption { fill: #eef4ff; font: 600 18px system-ui, sans-serif; }
+    .key { fill: #243049; stroke: #5e7197; stroke-width: 1; } .special { fill: #314466; }
+    .legend { fill: #f7faff; font: 600 15px system-ui, sans-serif; text-anchor: middle; dominant-baseline: middle; }
+    .code { fill: #b7c7e6; font: 10px ui-monospace, monospace; text-anchor: middle; }
+  </style>
+  <rect class="canvas" width="1024" height="332" rx="12"/>
+  <text class="caption" x="24" y="38">es-es-qwerty-iso — ISO</text>
+  <g data-row="0">
+    <g data-code="Digit1">
+      <rect class="key" x="24" y="96" width="66" height="50" rx="6"/>
+      <text class="legend" x="57" y="117">1</text>
+      <text class="code" x="57" y="138">Digit1</text>
+    </g>
+    <g data-code="Digit2">
+      <rect class="key" x="94" y="96" width="66" height="50" rx="6"/>
+      <text class="legend" x="127" y="117">2</text>
+      <text class="code" x="127" y="138">Digit2</text>
+    </g>
+    <g data-code="Digit3">
+      <rect class="key" x="164" y="96" width="66" height="50" rx="6"/>
+      <text class="legend" x="197" y="117">3</text>
+      <text class="code" x="197" y="138">Digit3</text>
+    </g>
+    <g data-code="Digit4">
+      <rect class="key" x="234" y="96" width="66" height="50" rx="6"/>
+      <text class="legend" x="267" y="117">4</text>
+      <text class="code" x="267" y="138">Digit4</text>
+    </g>
+    <g data-code="Digit5">
+      <rect class="key" x="304" y="96" width="66" height="50" rx="6"/>
+      <text class="legend" x="337" y="117">5</text>
+      <text class="code" x="337" y="138">Digit5</text>
+    </g>
+    <g data-code="Digit6">
+      <rect class="key" x="374" y="96" width="66" height="50" rx="6"/>
+      <text class="legend" x="407" y="117">6</text>
+      <text class="code" x="407" y="138">Digit6</text>
+    </g>
+    <g data-code="Digit7">
+      <rect class="key" x="444" y="96" width="66" height="50" rx="6"/>
+      <text class="legend" x="477" y="117">7</text>
+      <text class="code" x="477" y="138">Digit7</text>
+    </g>
+    <g data-code="Digit8">
+      <rect class="key" x="514" y="96" width="66" height="50" rx="6"/>
+      <text class="legend" x="547" y="117">8</text>
+      <text class="code" x="547" y="138">Digit8</text>
+    </g>
+    <g data-code="Digit9">
+      <rect class="key" x="584" y="96" width="66" height="50" rx="6"/>
+      <text class="legend" x="617" y="117">9</text>
+      <text class="code" x="617" y="138">Digit9</text>
+    </g>
+    <g data-code="Digit0">
+      <rect class="key" x="654" y="96" width="66" height="50" rx="6"/>
+      <text class="legend" x="687" y="117">0</text>
+      <text class="code" x="687" y="138">Digit0</text>
+    </g>
+  </g>
+  <g data-row="1">
+    <g data-code="Tab">
+      <rect class="key special" x="24" y="150" width="66" height="50" rx="6"/>
+      <text class="legend" x="57" y="171">Tab</text>
+      <text class="code" x="57" y="192">Tab</text>
+    </g>
+    <g data-code="KeyQ">
+      <rect class="key" x="94" y="150" width="66" height="50" rx="6"/>
+      <text class="legend" x="127" y="171">Q</text>
+      <text class="code" x="127" y="192">KeyQ</text>
+    </g>
+    <g data-code="KeyW">
+      <rect class="key" x="164" y="150" width="66" height="50" rx="6"/>
+      <text class="legend" x="197" y="171">W</text>
+      <text class="code" x="197" y="192">KeyW</text>
+    </g>
+    <g data-code="KeyE">
+      <rect class="key" x="234" y="150" width="66" height="50" rx="6"/>
+      <text class="legend" x="267" y="171">E</text>
+      <text class="code" x="267" y="192">KeyE</text>
+    </g>
+    <g data-code="KeyR">
+      <rect class="key" x="304" y="150" width="66" height="50" rx="6"/>
+      <text class="legend" x="337" y="171">R</text>
+      <text class="code" x="337" y="192">KeyR</text>
+    </g>
+    <g data-code="KeyT">
+      <rect class="key" x="374" y="150" width="66" height="50" rx="6"/>
+      <text class="legend" x="407" y="171">T</text>
+      <text class="code" x="407" y="192">KeyT</text>
+    </g>
+    <g data-code="KeyY">
+      <rect class="key" x="444" y="150" width="66" height="50" rx="6"/>
+      <text class="legend" x="477" y="171">Y</text>
+      <text class="code" x="477" y="192">KeyY</text>
+    </g>
+    <g data-code="KeyU">
+      <rect class="key" x="514" y="150" width="66" height="50" rx="6"/>
+      <text class="legend" x="547" y="171">U</text>
+      <text class="code" x="547" y="192">KeyU</text>
+    </g>
+    <g data-code="KeyI">
+      <rect class="key" x="584" y="150" width="66" height="50" rx="6"/>
+      <text class="legend" x="617" y="171">I</text>
+      <text class="code" x="617" y="192">KeyI</text>
+    </g>
+    <g data-code="KeyO">
+      <rect class="key" x="654" y="150" width="66" height="50" rx="6"/>
+      <text class="legend" x="687" y="171">O</text>
+      <text class="code" x="687" y="192">KeyO</text>
+    </g>
+    <g data-code="KeyP">
+      <rect class="key" x="724" y="150" width="66" height="50" rx="6"/>
+      <text class="legend" x="757" y="171">P</text>
+      <text class="code" x="757" y="192">KeyP</text>
+    </g>
+    <g data-code="BracketLeft">
+      <rect class="key" x="794" y="150" width="66" height="50" rx="6"/>
+      <text class="legend" x="827" y="171">[</text>
+      <text class="code" x="827" y="192">BracketLeft</text>
+    </g>
+    <g data-code="BracketRight">
+      <rect class="key" x="864" y="150" width="66" height="50" rx="6"/>
+      <text class="legend" x="897" y="171">]</text>
+      <text class="code" x="897" y="192">BracketRight</text>
+    </g>
+    <g data-code="Backspace">
+      <rect class="key special" x="934" y="150" width="66" height="50" rx="6"/>
+      <text class="legend" x="967" y="171">Backspace</text>
+      <text class="code" x="967" y="192">Backspace</text>
+    </g>
+  </g>
+  <g data-row="2">
+    <g data-code="CapsLock">
+      <rect class="key special" x="24" y="204" width="66" height="50" rx="6"/>
+      <text class="legend" x="57" y="225">Caps</text>
+      <text class="code" x="57" y="246">CapsLock</text>
+    </g>
+    <g data-code="KeyA">
+      <rect class="key" x="94" y="204" width="66" height="50" rx="6"/>
+      <text class="legend" x="127" y="225">A</text>
+      <text class="code" x="127" y="246">KeyA</text>
+    </g>
+    <g data-code="KeyS">
+      <rect class="key" x="164" y="204" width="66" height="50" rx="6"/>
+      <text class="legend" x="197" y="225">S</text>
+      <text class="code" x="197" y="246">KeyS</text>
+    </g>
+    <g data-code="KeyD">
+      <rect class="key" x="234" y="204" width="66" height="50" rx="6"/>
+      <text class="legend" x="267" y="225">D</text>
+      <text class="code" x="267" y="246">KeyD</text>
+    </g>
+    <g data-code="KeyF">
+      <rect class="key" x="304" y="204" width="66" height="50" rx="6"/>
+      <text class="legend" x="337" y="225">F</text>
+      <text class="code" x="337" y="246">KeyF</text>
+    </g>
+    <g data-code="KeyG">
+      <rect class="key" x="374" y="204" width="66" height="50" rx="6"/>
+      <text class="legend" x="407" y="225">G</text>
+      <text class="code" x="407" y="246">KeyG</text>
+    </g>
+    <g data-code="KeyH">
+      <rect class="key" x="444" y="204" width="66" height="50" rx="6"/>
+      <text class="legend" x="477" y="225">H</text>
+      <text class="code" x="477" y="246">KeyH</text>
+    </g>
+    <g data-code="KeyJ">
+      <rect class="key" x="514" y="204" width="66" height="50" rx="6"/>
+      <text class="legend" x="547" y="225">J</text>
+      <text class="code" x="547" y="246">KeyJ</text>
+    </g>
+    <g data-code="KeyK">
+      <rect class="key" x="584" y="204" width="66" height="50" rx="6"/>
+      <text class="legend" x="617" y="225">K</text>
+      <text class="code" x="617" y="246">KeyK</text>
+    </g>
+    <g data-code="KeyL">
+      <rect class="key" x="654" y="204" width="66" height="50" rx="6"/>
+      <text class="legend" x="687" y="225">L</text>
+      <text class="code" x="687" y="246">KeyL</text>
+    </g>
+    <g data-code="Semicolon">
+      <rect class="key" x="724" y="204" width="66" height="50" rx="6"/>
+      <text class="legend" x="757" y="225">Ñ</text>
+      <text class="code" x="757" y="246">Semicolon</text>
+    </g>
+    <g data-code="Quote">
+      <rect class="key" x="794" y="204" width="66" height="50" rx="6"/>
+      <text class="legend" x="827" y="225">´</text>
+      <text class="code" x="827" y="246">Quote</text>
+    </g>
+    <g data-code="Enter">
+      <rect class="key special" x="864" y="204" width="66" height="50" rx="6"/>
+      <text class="legend" x="897" y="225">Enter</text>
+      <text class="code" x="897" y="246">Enter</text>
+    </g>
+  </g>
+  <g data-row="3">
+    <g data-code="ShiftLeft">
+      <rect class="key special" x="24" y="258" width="66" height="50" rx="6"/>
+      <text class="legend" x="57" y="279">Shift</text>
+      <text class="code" x="57" y="300">ShiftLeft</text>
+    </g>
+    <g data-code="IntlBackslash">
+      <rect class="key" x="94" y="258" width="66" height="50" rx="6"/>
+      <text class="legend" x="127" y="279">&lt;</text>
+      <text class="code" x="127" y="300">IntlBackslash</text>
+    </g>
+    <g data-code="KeyZ">
+      <rect class="key" x="164" y="258" width="66" height="50" rx="6"/>
+      <text class="legend" x="197" y="279">Z</text>
+      <text class="code" x="197" y="300">KeyZ</text>
+    </g>
+    <g data-code="KeyX">
+      <rect class="key" x="234" y="258" width="66" height="50" rx="6"/>
+      <text class="legend" x="267" y="279">X</text>
+      <text class="code" x="267" y="300">KeyX</text>
+    </g>
+    <g data-code="KeyC">
+      <rect class="key" x="304" y="258" width="66" height="50" rx="6"/>
+      <text class="legend" x="337" y="279">C</text>
+      <text class="code" x="337" y="300">KeyC</text>
+    </g>
+    <g data-code="KeyV">
+      <rect class="key" x="374" y="258" width="66" height="50" rx="6"/>
+      <text class="legend" x="407" y="279">V</text>
+      <text class="code" x="407" y="300">KeyV</text>
+    </g>
+    <g data-code="KeyB">
+      <rect class="key" x="444" y="258" width="66" height="50" rx="6"/>
+      <text class="legend" x="477" y="279">B</text>
+      <text class="code" x="477" y="300">KeyB</text>
+    </g>
+    <g data-code="KeyN">
+      <rect class="key" x="514" y="258" width="66" height="50" rx="6"/>
+      <text class="legend" x="547" y="279">N</text>
+      <text class="code" x="547" y="300">KeyN</text>
+    </g>
+    <g data-code="KeyM">
+      <rect class="key" x="584" y="258" width="66" height="50" rx="6"/>
+      <text class="legend" x="617" y="279">M</text>
+      <text class="code" x="617" y="300">KeyM</text>
+    </g>
+    <g data-code="Comma">
+      <rect class="key" x="654" y="258" width="66" height="50" rx="6"/>
+      <text class="legend" x="687" y="279">,</text>
+      <text class="code" x="687" y="300">Comma</text>
+    </g>
+    <g data-code="Period">
+      <rect class="key" x="724" y="258" width="66" height="50" rx="6"/>
+      <text class="legend" x="757" y="279">.</text>
+      <text class="code" x="757" y="300">Period</text>
+    </g>
+    <g data-code="Slash">
+      <rect class="key" x="794" y="258" width="66" height="50" rx="6"/>
+      <text class="legend" x="827" y="279">/</text>
+      <text class="code" x="827" y="300">Slash</text>
+    </g>
+    <g data-code="ShiftRight">
+      <rect class="key special" x="864" y="258" width="66" height="50" rx="6"/>
+      <text class="legend" x="897" y="279">Shift</text>
+      <text class="code" x="897" y="300">ShiftRight</text>
+    </g>
+  </g>
+</svg>

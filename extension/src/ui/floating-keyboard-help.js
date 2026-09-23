@@ -37,7 +37,6 @@ import {
   normalizeKeyboardHandedness,
   normalizeKeyboardLayoutFamilyId,
   parseBuiltinFamilySelectValue,
-  physicalSlotLabelFromBinding,
   resolveKeyboardLayoutId
 } from '../config/keyboard-layouts.js';
 import { getFunctionDef } from '../config/function-library.js';
@@ -46,6 +45,7 @@ import {
   getUserKeyboardLayoutById,
   listUserMacros,
   listUserActions,
+  physicalSlotKeyForCode,
   upsertUserKeyboardLayout
 } from '../modules/keyboard-layout-store.js';
 import { KP_LAYOUT_ITEM_MIME } from './keyboard-layout-config-panel.js';
@@ -214,6 +214,8 @@ export class FloatingKeyboardHelp {
     // Keydown/keyup visual feedback
     this._pressedLabels = new Set();
     this._keyElsByLabel = new Map();
+    /** @type {Map<string, HTMLElement[]>} */
+    this._keyElsByPhysicalCode = new Map();
     /** @type {Map<string, HTMLElement[]>} */
     this._keyElsByActionId = new Map();
     this._keydownBound = false;
@@ -2325,7 +2327,8 @@ export class FloatingKeyboardHelp {
         }) || this.layoutId || 'browsing-right';
         this.layoutId = layoutId;
         const uiLayout = getKeyboardUiLayoutForLayout(layoutId, {
-          includeNumberRow: showNumberRow
+          includeNumberRow: showNumberRow,
+          hardwareLayoutId: settings?.keyboardHardwareLayoutId
         });
         this.keyboardLayout = uiLayout;
         const keybindings = buildEffectiveKeybindings(layoutId, handedness);
@@ -2335,6 +2338,7 @@ export class FloatingKeyboardHelp {
           keybindings,
           keyboardLayout: uiLayout,
           layoutId,
+          hardwareLayoutId: settings?.keyboardHardwareLayoutId,
           attachPopovers: true
         });
         this._rebuildKeyIndex();
@@ -2367,7 +2371,10 @@ export class FloatingKeyboardHelp {
           const baseId = String(userLayout.baseBuiltinLayoutId || this.layoutId || 'browsing-right');
           const showNumberRow = !!(settings && settings.keyboardReferenceShowNumberRow);
           this.layoutId = baseId;
-          this.keyboardLayout = getKeyboardUiLayoutForLayout(baseId, { includeNumberRow: showNumberRow });
+          this.keyboardLayout = getKeyboardUiLayoutForLayout(baseId, {
+            includeNumberRow: showNumberRow,
+            hardwareLayoutId: settings?.keyboardHardwareLayoutId
+          });
           const baseHand = inferFamilyAndHandednessFromLayoutId(baseId).handedness;
           this.keybindings = buildEffectiveKeybindings(baseId, baseHand);
           try { attachKeyPopoverBehavior({ root: this.keyboardContainer, keybindings: this.keybindings }); } catch { /* ignore */ }
@@ -2409,7 +2416,8 @@ export class FloatingKeyboardHelp {
           }) || this.layoutId || 'browsing-right';
           this.layoutId = layoutId;
           const uiLayout = getKeyboardUiLayoutForLayout(layoutId, {
-            includeNumberRow: showNumberRow
+            includeNumberRow: showNumberRow,
+            hardwareLayoutId: settings?.keyboardHardwareLayoutId
           });
           this.keyboardLayout = uiLayout;
           const keybindings = buildEffectiveKeybindings(layoutId, handedness);
@@ -2431,7 +2439,10 @@ export class FloatingKeyboardHelp {
       }
       const baseId = String(userLayout.baseBuiltinLayoutId || this.layoutId || 'browsing-right');
       const showNumberRow = !!(settings && settings.keyboardReferenceShowNumberRow);
-      const uiLayout = getKeyboardUiLayoutForLayout(baseId, { includeNumberRow: showNumberRow });
+      const uiLayout = getKeyboardUiLayoutForLayout(baseId, {
+        includeNumberRow: showNumberRow,
+        hardwareLayoutId: settings?.keyboardHardwareLayoutId
+      });
       const baseHand = inferFamilyAndHandednessFromLayoutId(baseId).handedness;
       const baseKb = buildEffectiveKeybindings(baseId, baseHand);
       this._renderSlotKeyboard({
@@ -2482,7 +2493,10 @@ export class FloatingKeyboardHelp {
       // consistency with what a real duplicated layout would contain (see
       // `duplicateBuiltinLayoutToUserLayout()` in keyboard-layout-store.js).
       for (const [actionId, binding] of Object.entries(this.keybindings || {})) {
-        const slot = physicalSlotLabelFromBinding(binding);
+        const code = binding?.bindingType === 'physical' && Array.isArray(binding.keys)
+          ? binding.keys[0]
+          : '';
+        const slot = physicalSlotKeyForCode(code);
         if (!slot) continue;
         slots[slot] = { type: 'function', id: String(actionId) };
       }
@@ -2504,7 +2518,10 @@ export class FloatingKeyboardHelp {
     if (token !== this._renderToken) return;
 
     const showNumberRow = !!(settings && settings.keyboardReferenceShowNumberRow);
-    const uiLayout = getKeyboardUiLayoutForLayout(baseId, { includeNumberRow: showNumberRow });
+    const uiLayout = getKeyboardUiLayoutForLayout(baseId, {
+      includeNumberRow: showNumberRow,
+      hardwareLayoutId: settings?.keyboardHardwareLayoutId
+    });
     const baseHand = inferFamilyAndHandednessFromLayoutId(baseId).handedness;
     const baseKb = buildEffectiveKeybindings(baseId, baseHand);
     this._renderSlotKeyboard({
@@ -2601,12 +2618,6 @@ export class FloatingKeyboardHelp {
       };
     };
 
-    const kb = keybindings || this.keybindings || {};
-    const actionSlotLabelFromItem = (item) => {
-      const binding = kb && kb[item.id];
-      return physicalSlotLabelFromBinding(binding);
-    };
-
     const editable = !!(editMode && !readOnly && userLayout && typeof userLayout.slots === 'object');
     // View mode must match built-in keys (clickable, not disabled). Readonly only applies
     // while editing a built-in preview that cannot be mutated in place.
@@ -2658,8 +2669,8 @@ export class FloatingKeyboardHelp {
       this._render();
     };
 
-    const renderSlot = (slotLabel, assigned, extraClass = '') => {
-      const previewing = !!(placeItem && placeHoverSlot === slotLabel);
+    const renderSlot = (slotKey, slotLabel, assigned, extraClass = '') => {
+      const previewing = !!(placeItem && placeHoverSlot === slotKey);
       const displayAssigned = previewing ? placeItem : assigned;
 
       const btn = doc.createElement('button');
@@ -2679,7 +2690,9 @@ export class FloatingKeyboardHelp {
         .join(' ');
       btn.className = `key${keyboardClass ? ' ' + keyboardClass : ''}${chromeClass ? ' ' + chromeClass : ''}${previewing ? ' kp-place-preview' : ''}`;
       btn.dataset.kpBaseClass = 'key';
-      btn.dataset.kpSlot = slotLabel;
+      btn.dataset.kpSlot = slotKey;
+      const physicalCode = slotKey.startsWith('code:') ? slotKey.slice('code:'.length) : '';
+      if (physicalCode) btn.dataset.kpPhysicalCode = physicalCode;
       if (markReadonly && !placeActive) {
         btn.disabled = true;
         btn.setAttribute('data-kp-edit-readonly', 'true');
@@ -2741,7 +2754,7 @@ export class FloatingKeyboardHelp {
         del.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          void clearSlot(slotLabel);
+          void clearSlot(slotKey);
         }, true);
         del.addEventListener('pointerdown', (e) => e.stopPropagation(), true);
         del.addEventListener('mousedown', (e) => e.stopPropagation(), true);
@@ -2751,15 +2764,15 @@ export class FloatingKeyboardHelp {
 
       if (placeActive) {
         btn.addEventListener('pointerenter', () => {
-          this.setPlaceHoverSlot(slotLabel);
+          this.setPlaceHoverSlot(slotKey);
         }, true);
         btn.addEventListener('pointerleave', () => {
-          if (this._placeHoverSlot === slotLabel) this.setPlaceHoverSlot(null);
+          if (this._placeHoverSlot === slotKey) this.setPlaceHoverSlot(null);
         }, true);
         btn.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          try { this._onPlaceSlot?.(slotLabel); } catch { /* ignore */ }
+          try { this._onPlaceSlot?.(slotKey); } catch { /* ignore */ }
         }, true);
       } else if (editMode && editable) {
         const clearOtherDropTargets = () => {
@@ -2798,13 +2811,13 @@ export class FloatingKeyboardHelp {
             const raw = e.dataTransfer?.getData?.(KP_LAYOUT_ITEM_MIME) || '';
             const data = raw ? JSON.parse(raw) : null;
             if (!data || !data.type || !data.id) return;
-            void applyDropToSlot(slotLabel, data);
+            void applyDropToSlot(slotKey, data);
           } catch { /* ignore */ }
         }, true);
         btn.addEventListener('dragstart', (e) => {
           if (!assigned) return;
           try {
-            const payload = JSON.stringify({ type: assigned.type, id: assigned.id, fromSlot: slotLabel });
+            const payload = JSON.stringify({ type: assigned.type, id: assigned.id, fromSlot: slotKey });
             e.dataTransfer?.setData?.(KP_LAYOUT_ITEM_MIME, payload);
             e.dataTransfer.effectAllowed = 'move';
           } catch { /* ignore */ }
@@ -2831,27 +2844,17 @@ export class FloatingKeyboardHelp {
           rowEl.appendChild(sp);
           continue;
         }
-        let extraClass = '';
-        let slotLabel = '';
-        // Backspace is a named physical slot (Delete Mode on built-in Browsing).
-        // Render it as an assignable slot so copies keep DELETE instead of a blank chrome key.
-        if (item.type === 'action' && (item.id === 'DELETE' || String(item.className || '').includes('key-backspace'))) {
-          slotLabel = 'Backspace';
-          extraClass = String(item.className || 'key key-backspace');
-        } else if (item.type === 'key') {
-          slotLabel = String(item.text || '').trim().toUpperCase();
-        } else if (item.type === 'action') {
-          slotLabel = actionSlotLabelFromItem(item);
-        }
-        if (!slotLabel) {
+        const slotKey = physicalSlotKeyForCode(item.code);
+        const slotLabel = String(item.legend || item.text || '').trim();
+        if (!slotKey || !slotLabel) {
           const empty = doc.createElement('div');
           empty.className = 'key';
           empty.style.visibility = 'hidden';
           rowEl.appendChild(empty);
           continue;
         }
-        const assigned = slots && typeof slots === 'object' ? (slots[slotLabel] || null) : null;
-        rowEl.appendChild(renderSlot(slotLabel, assigned, extraClass));
+        const assigned = slots && typeof slots === 'object' ? (slots[slotKey] || null) : null;
+        rowEl.appendChild(renderSlot(slotKey, slotLabel, assigned, String(item.className || '')));
       }
     }
 
@@ -3051,8 +3054,10 @@ export class FloatingKeyboardHelp {
   }
 
   _labelsFromKeyboardEvent(e) {
-    // Prefer semantic key names so this works across keyboard layouts; also use
-    // KeyboardEvent.code so physical keys still light when key is a shifted glyph.
+    // Physical code is authoritative: `event.key` follows the OS input layout
+    // (German KeyY produces "z", for example) while Keyboard Reference shows
+    // physical slots. Only fall back to the semantic key when no useful code
+    // is available, such as on a virtual/remote keyboard.
     const out = [];
     const seen = new Set();
     const pushAll = (tokens) => {
@@ -3063,15 +3068,12 @@ export class FloatingKeyboardHelp {
       }
     };
 
-    const key = e && typeof e.key === 'string' ? e.key : '';
-    if (key) pushAll(this._labelsFromToken(key));
-
     const code = e && typeof e.code === 'string' ? e.code : '';
-    if (code) {
-      // KeyA → A, Digit1 → 1
-      if (/^Key[A-Z]$/i.test(code)) pushAll([code.slice(3).toUpperCase()]);
-      else if (/^Digit[0-9]$/.test(code)) pushAll([code.slice(5)]);
-      else pushAll(this._labelsFromToken(code));
+    if (code && code !== 'Unidentified') {
+      pushAll([code]);
+    } else {
+      const key = e && typeof e.key === 'string' ? e.key : '';
+      if (key) pushAll(this._labelsFromToken(key));
     }
 
     return out;
@@ -3114,6 +3116,7 @@ export class FloatingKeyboardHelp {
   _rebuildKeyIndex() {
     if (!this.keyboardContainer) return;
     const map = new Map();
+    const physicalCodeMap = new Map();
     const byAction = new Map();
     const bindings = this.keybindings || {};
 
@@ -3134,6 +3137,12 @@ export class FloatingKeyboardHelp {
       if (!labelEl && !textEl) {
         this._indexLabel(map, keyEl.textContent, keyEl);
       }
+      const physicalCode = String(keyEl.dataset?.kpPhysicalCode || '');
+      if (physicalCode) {
+        const arr = physicalCodeMap.get(physicalCode) || [];
+        if (!arr.includes(keyEl)) arr.push(keyEl);
+        physicalCodeMap.set(physicalCode, arr);
+      }
 
       // Also index by action id for link-hover hints (ACTIVATE, OPEN_POPOVER, …).
       const actionId = keyEl.dataset?.kpActionId ? String(keyEl.dataset.kpActionId) : '';
@@ -3153,6 +3162,7 @@ export class FloatingKeyboardHelp {
     }
 
     this._keyElsByLabel = map;
+    this._keyElsByPhysicalCode = physicalCodeMap;
     this._keyElsByActionId = byAction;
 
     // A render can adopt an early-inject keyboard shell whose press-overlay
@@ -3162,9 +3172,7 @@ export class FloatingKeyboardHelp {
 
     // If we re-rendered while keys were held, re-apply pressed overlay.
     for (const label of this._pressedLabels) {
-      const els = this._keyElsByLabel.get(label);
-      if (!els) continue;
-      for (const el of els) setKeyPressedState(el, true);
+      this._setPressed(label, true);
     }
 
     // Re-apply link-hover hints after re-render.
@@ -3336,7 +3344,14 @@ export class FloatingKeyboardHelp {
   _setPressed(label, pressed) {
     const norm = this._normalizeLabel(label);
     if (!norm) return;
-    const els = this._keyElsByLabel.get(norm);
+    const physicalEls = this._keyElsByPhysicalCode.get(String(label));
+    const fallbackLabels = /^Key[A-Z]$/i.test(String(label))
+      ? [String(label).slice(3)]
+      : /^Digit[0-9]$/.test(String(label))
+        ? [String(label).slice(5)]
+        : this._labelsFromToken(label);
+    const els = physicalEls || this._keyElsByLabel.get(norm)
+      || fallbackLabels.map((fallback) => this._keyElsByLabel.get(this._normalizeLabel(fallback))).find(Boolean);
     if (!els) return;
     for (const el of els) {
       setKeyPressedState(el, pressed);

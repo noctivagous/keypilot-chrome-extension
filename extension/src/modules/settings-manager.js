@@ -17,6 +17,10 @@ import {
   resolveKeyboardLayoutId
 } from '../config/keyboard-layouts.js';
 import {
+  DEFAULT_KEYBOARD_HARDWARE_LAYOUT_ID,
+  normalizeKeyboardHardwareLayoutId
+} from '../config/keyboard-hardware-layouts.js';
+import {
   SEARCH_ENGINE_META,
   DEFAULT_SEARCH_ENGINE_ID,
   normalizeSearchEngineId,
@@ -147,6 +151,7 @@ export const CLICK_EFFECT_IDS = Object.freeze(/** @type {const} */ ([
  *   keyboardLayoutFamilyId: string,
  *   keyboardHandedness: 'left'|'right',
  *   keyboardLayoutId: string,
+ *   keyboardHardwareLayoutId: string,
  *   currentKeyboardLayoutId: string,
  *   keyboardReferenceKeyFeedback: boolean,
  *   keyboardReferenceShowNumberRow: boolean,
@@ -179,6 +184,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
   keyboardLayoutFamilyId: DEFAULT_KEYBOARD_LAYOUT_FAMILY_ID,
   keyboardHandedness: DEFAULT_KEYBOARD_HANDEDNESS,
   keyboardLayoutId: DEFAULT_KEYBOARD_LAYOUT_ID,
+  // Physical keycap model for Keyboard Reference. This remains independent
+  // from Chrome UI language and OS input-source selection.
+  keyboardHardwareLayoutId: DEFAULT_KEYBOARD_HARDWARE_LAYOUT_ID,
   // Active layout selection for runtime + keyboard reference:
   // - 'builtin' uses the current built-in family + handedness selection.
   // - 'user:<layoutId>' uses a stored user layout (created/duplicated in Alt+C).
@@ -743,6 +751,7 @@ export async function getSettings() {
       keyboardLayoutFamilyId: familyId,
       keyboardHandedness: handedness,
       keyboardLayoutId: resolvedLayoutId,
+      keyboardHardwareLayoutId: normalizeKeyboardHardwareLayoutId(stored?.keyboardHardwareLayoutId),
       currentKeyboardLayoutId: normalizeCurrentKeyboardLayoutId(stored?.currentKeyboardLayoutId),
       keyboardReferenceKeyFeedback: normalizeBoolean(
         stored?.keyboardReferenceKeyFeedback,
@@ -908,6 +917,7 @@ export async function setSettings(partial) {
     });
   }
 
+  next.keyboardHardwareLayoutId = normalizeKeyboardHardwareLayoutId(next.keyboardHardwareLayoutId);
   next.currentKeyboardLayoutId = normalizeCurrentKeyboardLayoutId(next.currentKeyboardLayoutId);
   next.keyboardReferenceKeyFeedback = normalizeBoolean(
     next.keyboardReferenceKeyFeedback,

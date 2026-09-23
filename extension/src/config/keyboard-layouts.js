@@ -12,6 +12,7 @@
  */
 
 import { getMessage } from '../utils/i18n.js';
+import { buildKeyboardReferenceUiLayout } from './keyboard-hardware-layouts.js';
 
 /**
  * @typedef {'browsing-right'|'browsing-left'|'basic-navigation-right'|'basic-navigation-left'|'click-history-right'|'click-history-left'} BuiltinKeyboardLayoutId
@@ -33,6 +34,7 @@ import { getMessage } from '../utils/i18n.js';
 /**
  * @typedef {{
  *   keys: string[],
+ *   bindingType?: 'physical'|'character',
  *   matchOn?: Array<'key'|'code'>,
  *   displayKey?: string,
  *   keyLabel?: string
@@ -933,6 +935,7 @@ export function buildKeybindingsForLayout(layoutId) {
 
     out[actionId] = {
       keys: assign.keys.slice(),
+      ...(assign.bindingType ? { bindingType: assign.bindingType } : {}),
       ...(Array.isArray(assign.matchOn) ? { matchOn: assign.matchOn.slice() } : {}),
       handler: def.handler,
       label: copy.label,
@@ -1005,6 +1008,9 @@ function cloneAssignments(base) {
   for (const [k, v] of Object.entries(base || {})) {
     out[k] = {
       keys: Array.isArray(v?.keys) ? v.keys.slice() : [],
+      ...(v?.bindingType === 'physical' || v?.bindingType === 'character'
+        ? { bindingType: v.bindingType }
+        : {}),
       ...(Array.isArray(v?.matchOn) ? { matchOn: v.matchOn.slice() } : {}),
       ...(typeof v?.displayKey === 'string' ? { displayKey: v.displayKey } : {}),
       ...(typeof v?.keyLabel === 'string' ? { keyLabel: v.keyLabel } : {})
@@ -1014,42 +1020,81 @@ function cloneAssignments(base) {
 }
 
 /**
+ * Built-in actions bind to a physical DOM code. `displayKey` is the current
+ * US-ANSI presentation fallback; a selected hardware model will replace it at
+ * the Keyboard Reference presentation boundary.
+ *
+ * @param {string} code
+ * @param {string} displayKey
+ * @returns {KeyAssignment}
+ */
+function physicalAssignment(code, displayKey) {
+  return Object.freeze({
+    bindingType: 'physical',
+    keys: Object.freeze([code]),
+    matchOn: Object.freeze(['code']),
+    displayKey,
+    keyLabel: displayKey
+  });
+}
+
+/**
+ * Explicit character-semantic assignment for user-defined layouts where the
+ * produced character, rather than its physical position, is the intended
+ * trigger. Built-in layouts must use {@link physicalAssignment}.
+ *
+ * @param {string[]} keys
+ * @param {{ displayKey?: string, keyLabel?: string }} [labels]
+ * @returns {KeyAssignment}
+ */
+export function createCharacterKeyAssignment(keys, labels = {}) {
+  const values = Array.isArray(keys) ? keys.map(String).filter(Boolean) : [];
+  return Object.freeze({
+    bindingType: 'character',
+    keys: Object.freeze(values),
+    matchOn: Object.freeze(['key']),
+    ...(typeof labels.displayKey === 'string' ? { displayKey: labels.displayKey } : {}),
+    ...(typeof labels.keyLabel === 'string' ? { keyLabel: labels.keyLabel } : {})
+  });
+}
+
+/**
  * Right-handed Navigation (full layout; storage id remains browsing-right).
  * @type {Record<string, KeyAssignment>}
  */
 const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
-  TAB_LEFT: Object.freeze({ keys: ['q', 'Q'] }),
-  TAB_RIGHT: Object.freeze({ keys: ['w', 'W'] }),
-  OPEN_POPOVER: Object.freeze({ keys: ['p', 'P'] }),
-  PREVIEW_LINK_POPOVER: Object.freeze({ keys: ['e', 'E'] }),
-  FORWARD: Object.freeze({ keys: ['r', 'R'] }),
-  NEW_TAB: Object.freeze({ keys: ['t', 'T'] }),
+  TAB_LEFT: physicalAssignment('KeyQ', 'Q'),
+  TAB_RIGHT: physicalAssignment('KeyW', 'W'),
+  OPEN_POPOVER: physicalAssignment('KeyP', 'P'),
+  PREVIEW_LINK_POPOVER: physicalAssignment('KeyE', 'E'),
+  FORWARD: physicalAssignment('KeyR', 'R'),
+  NEW_TAB: physicalAssignment('KeyT', 'T'),
 
-  CLOSE_TAB: Object.freeze({ keys: ['a', 'A'] }),
-  ROOT: Object.freeze({ keys: ['s', 'S'], displayKey: 'S', keyLabel: 'S' }),
-  BACK: Object.freeze({ keys: ['d', 'D'] }),
-  ACTIVATE: Object.freeze({ keys: ['f', 'F'] }),
-  ACTIVATE_NEW_TAB_BACKGROUND: Object.freeze({ keys: ['g', 'G'] }),
-  HIGHLIGHT: Object.freeze({ keys: ['h', 'H'] }),
+  CLOSE_TAB: physicalAssignment('KeyA', 'A'),
+  ROOT: physicalAssignment('KeyS', 'S'),
+  BACK: physicalAssignment('KeyD', 'D'),
+  ACTIVATE: physicalAssignment('KeyF', 'F'),
+  ACTIVATE_NEW_TAB_BACKGROUND: physicalAssignment('KeyG', 'G'),
+  HIGHLIGHT: physicalAssignment('KeyH', 'H'),
 
-  TAB_HISTORY: Object.freeze({ keys: ['j', 'J'] }),
-  OMNIBOX: Object.freeze({ keys: ['l', 'L'] }),
-  TOP_SITES: Object.freeze({ keys: [';', ':', 'Semicolon'], matchOn: ['key', 'code'], displayKey: ';', keyLabel: ';' }),
+  TAB_HISTORY: physicalAssignment('KeyJ', 'J'),
+  OMNIBOX: physicalAssignment('KeyL', 'L'),
+  TOP_SITES: physicalAssignment('Semicolon', ';'),
 
-  PAGE_TOP: Object.freeze({ keys: ['z', 'Z'] }),
-  PAGE_BOTTOM: Object.freeze({ keys: ['x', 'X'] }),
-  PAGE_UP_INSTANT: Object.freeze({ keys: ['c', 'C'] }),
-  PAGE_DOWN_INSTANT: Object.freeze({ keys: ['v', 'V'] }),
-  ACTIVATE_NEW_TAB: Object.freeze({ keys: ['b', 'B'] }),
-  SCROLL_LINE: Object.freeze({ keys: ['n', 'N'] }),
-  RECTANGLE_HIGHLIGHT: Object.freeze({ keys: ['y', 'Y'] }),
-  COPY_HOVERED_IMAGE: Object.freeze({ keys: ['i', 'I'] }),
-  COPY_HOVERED_URL: Object.freeze({ keys: ['u', 'U'] }),
-  PAGE_MEDIA: Object.freeze({ keys: ['o', 'O'] }),
+  PAGE_TOP: physicalAssignment('KeyZ', 'Z'),
+  PAGE_BOTTOM: physicalAssignment('KeyX', 'X'),
+  PAGE_UP_INSTANT: physicalAssignment('KeyC', 'C'),
+  PAGE_DOWN_INSTANT: physicalAssignment('KeyV', 'V'),
+  ACTIVATE_NEW_TAB: physicalAssignment('KeyB', 'B'),
+  SCROLL_LINE: physicalAssignment('KeyN', 'N'),
+  RECTANGLE_HIGHLIGHT: physicalAssignment('KeyY', 'Y'),
+  COPY_HOVERED_IMAGE: physicalAssignment('KeyI', 'I'),
+  COPY_HOVERED_URL: physicalAssignment('KeyU', 'U'),
+  PAGE_MEDIA: physicalAssignment('KeyO', 'O'),
   // M is otherwise unused on the right-handed layout (it's PAGE_DOWN_INSTANT on left-handed).
-  OPEN_MEDIA_LIBRARY: Object.freeze({ keys: ['m', 'M'] }),
+  OPEN_MEDIA_LIBRARY: physicalAssignment('KeyM', 'M'),
 
-  DELETE: Object.freeze({ keys: ['Backspace'], displayKey: 'Backspace', keyLabel: 'Backspace' })
+  DELETE: physicalAssignment('Backspace', 'Backspace')
   // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
 });
 
@@ -1059,41 +1104,41 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
  */
 const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   // Top row cluster: Q W E R T  ->  P O I U Y (mirrored)
-  TAB_LEFT: Object.freeze({ keys: ['p', 'P'] }),
-  TAB_RIGHT: Object.freeze({ keys: ['o', 'O'] }),
-  OPEN_POPOVER: Object.freeze({ keys: ['i', 'I'] }),
-  PREVIEW_LINK_POPOVER: Object.freeze({ keys: ['w', 'W'] }),
-  FORWARD: Object.freeze({ keys: ['u', 'U'] }),
-  NEW_TAB: Object.freeze({ keys: ['y', 'Y'] }),
-  SCROLL_LINE: Object.freeze({ keys: ['t', 'T'] }),
+  TAB_LEFT: physicalAssignment('KeyP', 'P'),
+  TAB_RIGHT: physicalAssignment('KeyO', 'O'),
+  OPEN_POPOVER: physicalAssignment('KeyI', 'I'),
+  PREVIEW_LINK_POPOVER: physicalAssignment('KeyW', 'W'),
+  FORWARD: physicalAssignment('KeyU', 'U'),
+  NEW_TAB: physicalAssignment('KeyY', 'Y'),
+  SCROLL_LINE: physicalAssignment('KeyT', 'T'),
 
   // Home row cluster: A S D F G  ->  ; L K J H (mirrored-ish around center)
-  CLOSE_TAB: Object.freeze({ keys: [';', ':'], displayKey: ';', keyLabel: ';' }),
-  ROOT: Object.freeze({ keys: ['l', 'L'], displayKey: 'L', keyLabel: 'L' }),
-  BACK: Object.freeze({ keys: ['k', 'K'] }),
-  ACTIVATE: Object.freeze({ keys: ['j', 'J'] }),
-  ACTIVATE_NEW_TAB_BACKGROUND: Object.freeze({ keys: ['h', 'H'] }),
+  CLOSE_TAB: physicalAssignment('Semicolon', ';'),
+  ROOT: physicalAssignment('KeyL', 'L'),
+  BACK: physicalAssignment('KeyK', 'K'),
+  ACTIVATE: physicalAssignment('KeyJ', 'J'),
+  ACTIVATE_NEW_TAB_BACKGROUND: physicalAssignment('KeyH', 'H'),
   // H is background-tab open on left; G/R free for selection.
-  HIGHLIGHT: Object.freeze({ keys: ['g', 'G'] }),
-  RECTANGLE_HIGHLIGHT: Object.freeze({ keys: ['r', 'R'] }),
+  HIGHLIGHT: physicalAssignment('KeyG', 'G'),
+  RECTANGLE_HIGHLIGHT: physicalAssignment('KeyR', 'R'),
 
   // Utility actions on the left avoid colliding with J/K/L cluster.
   // (KB Reference / Settings / Esc live in the system layer, not layout assignments.)
-  TAB_HISTORY: Object.freeze({ keys: ['f', 'F'] }),
-  OMNIBOX: Object.freeze({ keys: ['s', 'S'] }),
-  TOP_SITES: Object.freeze({ keys: ['a', 'A'], displayKey: 'A', keyLabel: 'A' }),
+  TAB_HISTORY: physicalAssignment('KeyF', 'F'),
+  OMNIBOX: physicalAssignment('KeyS', 'S'),
+  TOP_SITES: physicalAssignment('KeyA', 'A'),
 
   // Bottom row cluster: Z X C V B  ->  / . , M N (mirrored)
-  PAGE_TOP: Object.freeze({ keys: ['/', '?'], displayKey: '/', keyLabel: '/' }),
-  PAGE_BOTTOM: Object.freeze({ keys: ['b', 'B'] }),
-  PAGE_UP_INSTANT: Object.freeze({ keys: [',', '<'], displayKey: ',', keyLabel: ',' }),
-  PAGE_DOWN_INSTANT: Object.freeze({ keys: ['m', 'M'] }),
-  ACTIVATE_NEW_TAB: Object.freeze({ keys: ['n', 'N'] }),
+  PAGE_TOP: physicalAssignment('Slash', '/'),
+  PAGE_BOTTOM: physicalAssignment('KeyB', 'B'),
+  PAGE_UP_INSTANT: physicalAssignment('Comma', ','),
+  PAGE_DOWN_INSTANT: physicalAssignment('KeyM', 'M'),
+  ACTIVATE_NEW_TAB: physicalAssignment('KeyN', 'N'),
   // I is OPEN_POPOVER on left-handed; E is free.
-  COPY_HOVERED_IMAGE: Object.freeze({ keys: ['e', 'E'] }),
+  COPY_HOVERED_IMAGE: physicalAssignment('KeyE', 'E'),
   // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
 
-  DELETE: Object.freeze({ keys: ['Backspace'], displayKey: 'Backspace', keyLabel: 'Backspace' })
+  DELETE: physicalAssignment('Backspace', 'Backspace')
 });
 
 /**
@@ -1117,16 +1162,16 @@ export const SYSTEM_LAYOUT_ACTION_IDS = SYSTEM_LAYER_ACTION_IDS;
 
 /** Right-handed system-layer physical keys. */
 const SYSTEM_LAYER_ASSIGNMENTS_RIGHT = Object.freeze({
-  CANCEL: Object.freeze({ keys: ['Escape'], displayKey: 'Esc', keyLabel: 'Esc' }),
-  TOGGLE_KEYBOARD_HELP: Object.freeze({ keys: ['k', 'K'] }),
-  OPEN_SETTINGS_POPOVER: Object.freeze({ keys: ["'", 'Quote'], matchOn: ['key', 'code'], displayKey: "'" })
+  CANCEL: physicalAssignment('Escape', 'Esc'),
+  TOGGLE_KEYBOARD_HELP: physicalAssignment('KeyK', 'K'),
+  OPEN_SETTINGS_POPOVER: physicalAssignment('Quote', "'")
 });
 
 /** Left-handed system-layer physical keys (KB Reference mirrored off the home cluster). */
 const SYSTEM_LAYER_ASSIGNMENTS_LEFT = Object.freeze({
-  CANCEL: Object.freeze({ keys: ['Escape'], displayKey: 'Esc', keyLabel: 'Esc' }),
-  TOGGLE_KEYBOARD_HELP: Object.freeze({ keys: ['d', 'D'] }),
-  OPEN_SETTINGS_POPOVER: Object.freeze({ keys: ["'", 'Quote'], matchOn: ['key', 'code'], displayKey: "'" })
+  CANCEL: physicalAssignment('Escape', 'Esc'),
+  TOGGLE_KEYBOARD_HELP: physicalAssignment('KeyD', 'D'),
+  OPEN_SETTINGS_POPOVER: physicalAssignment('Quote', "'")
 });
 
 /**
@@ -1146,6 +1191,7 @@ export function buildSystemKeybindings(handedness = DEFAULT_KEYBOARD_HANDEDNESS)
     const copy = localizedActionCopy(actionId, def);
     out[actionId] = {
       keys: assign.keys.slice(),
+      ...(assign.bindingType ? { bindingType: assign.bindingType } : {}),
       ...(Array.isArray(assign.matchOn) ? { matchOn: assign.matchOn.slice() } : {}),
       handler: def.handler,
       label: copy.label,
@@ -1257,6 +1303,17 @@ export function physicalSlotLabelFromBinding(binding) {
     if (fromKey) return fromKey;
   }
   return '';
+}
+
+/**
+ * Physical DOM-code slot for a typed physical binding.
+ * @param {any} binding
+ * @returns {string}
+ */
+export function physicalSlotCodeFromBinding(binding) {
+  if (binding?.bindingType !== 'physical' || !Array.isArray(binding.keys)) return '';
+  const code = String(binding.keys[0] || '').trim();
+  return code || '';
 }
 
 function letterFromAssignment(assignment) {
@@ -1480,14 +1537,17 @@ export const BUILTIN_KEYBOARD_LAYOUTS = Object.freeze({
 
 /**
  * @param {BuiltinKeyboardLayoutId} layoutId
- * @param {{ includeNumberRow?: boolean }} [opts]
+ * @param {{ includeNumberRow?: boolean, hardwareLayoutId?: unknown }} [opts]
  * @returns {any[]}
  */
 export function getKeyboardUiLayoutForLayout(layoutId, opts = {}) {
   const id = normalizeKeyboardLayoutId(layoutId);
-  const base = BUILTIN_KEYBOARD_LAYOUTS[id]?.keyboardLayout || BUILTIN_KEYBOARD_LAYOUTS[DEFAULT_KEYBOARD_LAYOUT_ID].keyboardLayout;
-  const include = !!(opts && opts.includeNumberRow);
-  return include ? addNumberRowToKeyboardUiLayout(base) : base;
+  const inferred = inferFamilyAndHandednessFromLayoutId(id);
+  return buildKeyboardReferenceUiLayout({
+    hardwareLayoutId: opts?.hardwareLayoutId,
+    keybindings: buildEffectiveKeybindings(id, inferred.handedness),
+    includeNumberRow: !!opts?.includeNumberRow
+  });
 }
 
 /**

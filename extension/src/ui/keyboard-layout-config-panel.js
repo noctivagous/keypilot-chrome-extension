@@ -28,7 +28,7 @@ import {
   normalizeKeyboardHandedness,
   normalizeKeyboardLayoutFamilyId,
   parseBuiltinFamilySelectValue,
-  physicalSlotLabelFromBinding,
+  physicalSlotCodeFromBinding,
   resolveKeyboardLayoutId
 } from '../config/keyboard-layouts.js';
 import { DEFAULT_SETTINGS, getSettings, setSettings, SETTINGS_STORAGE_KEY } from '../modules/settings-manager.js';
@@ -43,6 +43,8 @@ import {
   duplicateUserKeyboardLayout,
   exportUserKeyboardLayout,
   forkStockMacroToUser,
+  physicalCodeFromSlotKey,
+  physicalSlotKeyForCode,
   importUserKeyboardLayout,
   listUserActions,
   listUserKeyboardLayouts,
@@ -7073,7 +7075,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     );
     const map = {};
     for (const [actionId, binding] of Object.entries(kb || {})) {
-      const slot = physicalSlotLabelFromBinding(binding);
+      const slot = physicalSlotKeyForCode(physicalSlotCodeFromBinding(binding));
       if (!slot) continue;
       map[slot] = { type: 'function', id: String(actionId) };
     }
@@ -8330,13 +8332,18 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     if (isChordSlotKey(slot)) return slot;
     const functionId = this._functionIdForItem(item);
     if (!functionWorksWhileTyping(functionId)) return slot;
+    const physicalCode = physicalCodeFromSlotKey(slot);
+    if (!physicalCode) {
+      this._notify('Choose a physical Keyboard Reference key.', 'error');
+      return '';
+    }
     const mods = this._getChordModsForItem(item);
     if (!this._hasAnyChordMod(mods)) {
       this._notify('Turn on at least one modifier in the Inspector, then place the key.', 'error');
       return '';
     }
     const chord = buildChordSlotKey({
-      key: slot,
+      key: physicalCode,
       ctrl: mods.ctrl,
       alt: mods.alt,
       shift: mods.shift,
@@ -8785,10 +8792,10 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 
   /**
    * Ensure a user layout is active (auto-dup from built-in if needed), then assign.
-   * @param {string} slotLabel
+   * @param {string} slotKey
    */
-  async _placeOnSlot(slotLabel) {
-    let slot = String(slotLabel || '').trim().toUpperCase();
+  async _placeOnSlot(slotKey) {
+    let slot = String(slotKey || '').trim();
     if (this._placeItem && slot) {
       slot = this._resolvePlaceSlotKey(this._placeItem, slot);
       if (!slot) return;
@@ -8842,7 +8849,8 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
 
   /**
    * Ensure a user layout is active (auto-dup from built-in if needed), then assign `item` to
-   * `slotKey` — a bare key label ("Q") or a modifier-chord slot key ("CHORD:CTRL+ALT+Q", see
+   * `slotKey` — a physical key (`code:KeyQ`) or modifier-chord slot key
+   * (`CHORD:CTRL+ALT+KeyQ`, see
    * utils/key-chord.js). Goes through {@link setUserKeyboardLayoutSlot} so the
    * `worksWhileTyping` chord-vs-bare-key rule is enforced here exactly like everywhere else that
    * writes a slot, instead of mutating `layout.slots` directly.
