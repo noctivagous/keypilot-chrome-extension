@@ -3201,21 +3201,21 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       // Allow click keys to interact with popover UI (e.g. the × close button).
       // Popovers are normal z-index layers (not the browser top-layer), so the
       // green rectangle + F-to-click should work again.
-      if (KB.ACTIVATE?.keys?.includes?.(e.key)) {
+      if (this._matchesKeybinding(KB.ACTIVATE, e)) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
         this.handleActivateKey();
         return;
       }
-      if (KB.ACTIVATE_NEW_TAB?.keys?.includes?.(e.key)) {
+      if (this._matchesKeybinding(KB.ACTIVATE_NEW_TAB, e)) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
         this.handleActivateNewTabKey();
         return;
       }
-      if (KB.ACTIVATE_NEW_TAB_BACKGROUND?.keys?.includes?.(e.key)) {
+      if (this._matchesKeybinding(KB.ACTIVATE_NEW_TAB_BACKGROUND, e)) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
@@ -3224,14 +3224,14 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       }
 
       // Allow preview link popover toggle (E/W) to work even when popover is open
-      if (KB.PREVIEW_LINK_POPOVER?.keys?.includes?.(e.key)) {
+      if (this._matchesKeybinding(KB.PREVIEW_LINK_POPOVER, e)) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
         this.handlePreviewLinkPopover();
         return;
       }
-      if (KB.POI_WEBSITE?.keys?.includes?.(e.key)) {
+      if (this._matchesKeybinding(KB.POI_WEBSITE, e)) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
@@ -3242,42 +3242,42 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       // Toggle popovers must work on a second press while mode is POPOVER.
       // Tab History / Open Popover set MODES.POPOVER, which used to swallow their
       // own keys and made J (and P) feel stuck open.
-      if (KB.TAB_HISTORY?.keys?.includes?.(e.key)) {
+      if (this._matchesKeybinding(KB.TAB_HISTORY, e)) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
         this.handleToggleTabHistoryPopover();
         return;
       }
-      if (KB.OPEN_POPOVER?.keys?.includes?.(e.key)) {
+      if (this._matchesKeybinding(KB.OPEN_POPOVER, e)) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
         this.handleOpenPopover(e);
         return;
       }
-      if (KB.LAUNCHER?.keys?.includes?.(e.key)) {
+      if (this._matchesKeybinding(KB.LAUNCHER, e)) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
         this.handleLauncherKey(e);
         return;
       }
-      if (KB.TOP_SITES?.keys?.includes?.(e.key) || KB.TOP_SITES?.keys?.includes?.(e.code)) {
+      if (this._matchesKeybinding(KB.TOP_SITES, e)) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
         this.handleTopSitesKey(e);
         return;
       }
-      if (KB.TOGGLE_KEYBOARD_HELP?.keys?.includes?.(e.key)) {
+      if (this._matchesKeybinding(KB.TOGGLE_KEYBOARD_HELP, e)) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
         this.handleToggleKeyboardHelp();
         return;
       }
-      if (KB.OPEN_SETTINGS_POPOVER?.keys?.includes?.(e.key)) {
+      if (this._matchesKeybinding(KB.OPEN_SETTINGS_POPOVER, e)) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
@@ -3288,14 +3288,14 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       // History navigation must work even while a popover is open (parent focus).
       // Without this, D/S/R are silently swallowed and feel like they need a second press
       // after the popover is closed.
-      if (KB.BACK?.keys?.includes?.(e.key) || KB.BACK2?.keys?.includes?.(e.key)) {
+      if (this._matchesKeybinding(KB.BACK, e) || this._matchesKeybinding(KB.BACK2, e)) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
         this.handleBackKey();
         return;
       }
-      if (KB.FORWARD?.keys?.includes?.(e.key)) {
+      if (this._matchesKeybinding(KB.FORWARD, e)) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();

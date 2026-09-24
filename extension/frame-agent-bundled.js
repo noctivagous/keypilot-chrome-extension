@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-23T08:34:11.848Z
+ * Generated on 2026-09-24T23:29:16.616Z
  */
 
 (() => {
@@ -5405,10 +5405,17 @@
         } catch {
         }
       };
-      const keyIn = (assignment, key2) => {
+      const bindingMatchesEvent = (assignment, event) => {
         try {
           const keys = assignment?.keys;
-          return Array.isArray(keys) && keys.includes(key2);
+          if (!Array.isArray(keys) || !event) return false;
+          if (assignment.bindingType === "physical") {
+            return keys.includes(String(event.code || ""));
+          }
+          if (assignment.bindingType === "character") {
+            return keys.includes(String(event.key || ""));
+          }
+          return false;
         } catch {
           return false;
         }
@@ -5964,7 +5971,7 @@
           if (hasModifierKeys(e)) return;
           const key2 = e.key;
           const kb = keybindings || {};
-          if ((keyIn(kb.CANCEL, key2) || key2 === "Escape" || key2 === "Esc") && isTypingContext(e.target)) {
+          if ((bindingMatchesEvent(kb.CANCEL, e) || key2 === "Escape" || key2 === "Esc") && isTypingContext(e.target)) {
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
@@ -5977,7 +5984,7 @@
           }
           if (isTypingContext(e.target)) return;
           if (!frameHasKeyboardFocus()) return;
-          if (keyIn(kb.CANCEL, key2) || key2 === "Escape" || key2 === "Esc") {
+          if (bindingMatchesEvent(kb.CANCEL, e) || key2 === "Escape" || key2 === "Esc") {
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
@@ -5987,15 +5994,15 @@
           let mode = null;
           let scrollSign = null;
           let scrollMode = "delta";
-          if (keyIn(kb.ACTIVATE, key2)) mode = "activate";
-          else if (keyIn(kb.ACTIVATE_NEW_TAB, key2)) mode = "newTab";
-          else if (keyIn(kb.ACTIVATE_NEW_TAB_BACKGROUND, key2)) mode = "background";
-          else if (keyIn(kb.PAGE_UP_INSTANT, key2)) scrollSign = -1;
-          else if (keyIn(kb.PAGE_DOWN_INSTANT, key2)) scrollSign = 1;
-          else if (keyIn(kb.PAGE_TOP, key2)) {
+          if (bindingMatchesEvent(kb.ACTIVATE, e)) mode = "activate";
+          else if (bindingMatchesEvent(kb.ACTIVATE_NEW_TAB, e)) mode = "newTab";
+          else if (bindingMatchesEvent(kb.ACTIVATE_NEW_TAB_BACKGROUND, e)) mode = "background";
+          else if (bindingMatchesEvent(kb.PAGE_UP_INSTANT, e)) scrollSign = -1;
+          else if (bindingMatchesEvent(kb.PAGE_DOWN_INSTANT, e)) scrollSign = 1;
+          else if (bindingMatchesEvent(kb.PAGE_TOP, e)) {
             scrollSign = -1;
             scrollMode = "edge";
-          } else if (keyIn(kb.PAGE_BOTTOM, key2)) {
+          } else if (bindingMatchesEvent(kb.PAGE_BOTTOM, e)) {
             scrollSign = 1;
             scrollMode = "edge";
           } else return;

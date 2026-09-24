@@ -125,6 +125,26 @@ describe('built-in keyboard layout physical bindings', () => {
     );
   });
 
+  it('matches physical bindings in focused iframe and popover input paths', async () => {
+    const [keyPilotSource, frameAgentSource] = await Promise.all([
+      readFile('extension/src/keypilot.js', 'utf8'),
+      readFile('extension/src/modules/frame-click-agent.js', 'utf8')
+    ]);
+
+    assert.match(
+      keyPilotSource,
+      /Allow click keys to interact with popover UI[\s\S]*this\._matchesKeybinding\(KB\.ACTIVATE, e\)/
+    );
+    assert.match(
+      frameAgentSource,
+      /assignment\.bindingType === 'physical'[\s\S]*keys\.includes\(String\(event\.code \|\| ''\)\)/
+    );
+    assert.match(
+      frameAgentSource,
+      /bindingMatchesEvent\(kb\.ACTIVATE, e\)/
+    );
+  });
+
   it('completes rectangle selection through physical bindings and displays a keycap', async () => {
     const [keyPilotSource, highlightManagerSource] = await Promise.all([
       readFile('extension/src/keypilot.js', 'utf8'),

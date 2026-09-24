@@ -683,10 +683,17 @@ export function installFrameClickAgent() {
       } catch { /* ignore */ }
     };
 
-    const keyIn = (assignment, key) => {
+    const bindingMatchesEvent = (assignment, event) => {
       try {
         const keys = assignment?.keys;
-        return Array.isArray(keys) && keys.includes(key);
+        if (!Array.isArray(keys) || !event) return false;
+        if (assignment.bindingType === 'physical') {
+          return keys.includes(String(event.code || ''));
+        }
+        if (assignment.bindingType === 'character') {
+          return keys.includes(String(event.key || ''));
+        }
+        return false;
       } catch {
         return false;
       }
@@ -1369,7 +1376,7 @@ export function installFrameClickAgent() {
         // Esc while typing: exit KeyPilot text mode (blur field, notify parent).
         // Do not reclaim the iframe — Gutenberg should keep the canvas focused.
         if (
-          (keyIn(kb.CANCEL, key) || key === 'Escape' || key === 'Esc') &&
+          (bindingMatchesEvent(kb.CANCEL, e) || key === 'Escape' || key === 'Esc') &&
           isTypingContext(e.target)
         ) {
           e.preventDefault();
@@ -1388,7 +1395,7 @@ export function installFrameClickAgent() {
         if (!frameHasKeyboardFocus()) return;
 
         // Esc / cancel: return keyboard ownership to the top frame.
-        if (keyIn(kb.CANCEL, key) || key === 'Escape' || key === 'Esc') {
+        if (bindingMatchesEvent(kb.CANCEL, e) || key === 'Escape' || key === 'Esc') {
           e.preventDefault();
           e.stopPropagation();
           e.stopImmediatePropagation();
@@ -1401,15 +1408,15 @@ export function installFrameClickAgent() {
         let scrollSign = null;
         /** @type {'delta'|'edge'} */
         let scrollMode = 'delta';
-        if (keyIn(kb.ACTIVATE, key)) mode = 'activate';
-        else if (keyIn(kb.ACTIVATE_NEW_TAB, key)) mode = 'newTab';
-        else if (keyIn(kb.ACTIVATE_NEW_TAB_BACKGROUND, key)) mode = 'background';
-        else if (keyIn(kb.PAGE_UP_INSTANT, key)) scrollSign = -1;
-        else if (keyIn(kb.PAGE_DOWN_INSTANT, key)) scrollSign = 1;
-        else if (keyIn(kb.PAGE_TOP, key)) {
+        if (bindingMatchesEvent(kb.ACTIVATE, e)) mode = 'activate';
+        else if (bindingMatchesEvent(kb.ACTIVATE_NEW_TAB, e)) mode = 'newTab';
+        else if (bindingMatchesEvent(kb.ACTIVATE_NEW_TAB_BACKGROUND, e)) mode = 'background';
+        else if (bindingMatchesEvent(kb.PAGE_UP_INSTANT, e)) scrollSign = -1;
+        else if (bindingMatchesEvent(kb.PAGE_DOWN_INSTANT, e)) scrollSign = 1;
+        else if (bindingMatchesEvent(kb.PAGE_TOP, e)) {
           scrollSign = -1;
           scrollMode = 'edge';
-        } else if (keyIn(kb.PAGE_BOTTOM, key)) {
+        } else if (bindingMatchesEvent(kb.PAGE_BOTTOM, e)) {
           scrollSign = 1;
           scrollMode = 'edge';
         } else return;
