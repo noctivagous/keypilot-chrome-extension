@@ -127,7 +127,6 @@
       if (patch.controlStrip && typeof patch.controlStrip === 'object') {
         next.controlStrip = { ...(prev.controlStrip || {}), ...patch.controlStrip };
       }
-      if (typeof patch.keyboardHelpVisible === 'boolean') next.keyboardHelpVisible = patch.keyboardHelpVisible;
       if (typeof patch.keyboardReferenceCollapsed === 'boolean') {
         next.keyboardReferenceCollapsed = patch.keyboardReferenceCollapsed;
       }
@@ -9329,9 +9328,6 @@
           controlStrip: cachedLayout.panelPositions.controlStrip || null
         };
       }
-      if (typeof cachedLayout.keyboardHelpVisible === 'boolean') {
-        keyboardHelpVisible = cachedLayout.keyboardHelpVisible;
-      }
       if (typeof cachedLayout.keyboardReferenceCollapsed === 'boolean') {
         keyboardReferenceCollapsed = cachedLayout.keyboardReferenceCollapsed;
       }
@@ -10008,7 +10004,8 @@
     });
     closeBtn.addEventListener('click', (e) => {
       try { e.preventDefault(); e.stopPropagation(); } catch {}
-      if (root) root.hidden = true;
+      applyEarlyKeyboardHelpVisibility(false);
+      persistEarlyKeyboardHelpVisibility(false);
     });
 
     const collapseBtn = doc.createElement('button');
@@ -10153,7 +10150,6 @@
   function applyEarlyKeyboardHelpVisibility(visible) {
     if (keyboardHelpHandedOff) return;
     keyboardHelpVisible = Boolean(visible);
-    try { cacheEarlyChromeLayout({ keyboardHelpVisible }); } catch { /* ignore */ }
 
     // Separate-window Link Preview / Open Popover: never paint Keyboard Reference.
     if (isPopoverOsWindow) {
@@ -10204,6 +10200,28 @@
     }
     setEarlyKeyboardHelpRootVisible(keyboardHelpRoot, shouldShow);
     try { renderEarlyControlStripKeyboard(); } catch { /* ignore */ }
+  }
+
+  /**
+   * Persist an early close before the bundled Keyboard Reference takes ownership.
+   * Visibility is global extension state, so it must never use the origin-scoped
+   * localStorage chrome-layout cache.
+   * @param {boolean} visible
+   */
+  function persistEarlyKeyboardHelpVisibility(visible) {
+    try {
+      if (!chrome?.storage) return;
+      const payload = { [KEYBOARD_HELP_STORAGE_KEY]: !!visible, timestamp: Date.now() };
+      const write = (area) => {
+        try {
+          area?.set?.(payload, () => {
+            try { void chrome.runtime?.lastError; } catch { /* ignore */ }
+          });
+        } catch { /* ignore */ }
+      };
+      write(chrome.storage.sync);
+      write(chrome.storage.local);
+    } catch { /* ignore */ }
   }
 
   /**

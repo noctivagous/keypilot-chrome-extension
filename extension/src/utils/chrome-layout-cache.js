@@ -1,7 +1,7 @@
 /**
  * document_start chrome layout cache (control strip + Keyboard Reference).
- * localStorage so early-inject can restore position / KB-toggle / visibility
- * before chrome.storage resolves (avoids top-left and highlight flashes).
+ * localStorage is origin-scoped, so cache only visual layout that is safe to
+ * restore locally before chrome.storage resolves.
  */
 
 export const CHROME_LAYOUT_CACHE_KEY = 'kp_chrome_layout_v1';
@@ -13,7 +13,6 @@ export const CHROME_LAYOUT_CACHE_KEY = 'kp_chrome_layout_v1';
  *     keyboardReference?: { left?: number, top?: number, anchor?: string|null }
  *   },
  *   controlStrip?: { visible?: boolean, collapsed?: boolean },
- *   keyboardHelpVisible?: boolean,
  *   keyboardReferenceCollapsed?: boolean
  * }|null}
  */
@@ -47,9 +46,6 @@ export function cacheChromeLayout(patch) {
         ...(prev.controlStrip || {}),
         ...patch.controlStrip
       };
-    }
-    if (typeof patch.keyboardHelpVisible === 'boolean') {
-      next.keyboardHelpVisible = patch.keyboardHelpVisible;
     }
     if (typeof patch.keyboardReferenceCollapsed === 'boolean') {
       next.keyboardReferenceCollapsed = patch.keyboardReferenceCollapsed;

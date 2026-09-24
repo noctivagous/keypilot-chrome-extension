@@ -103,9 +103,6 @@ export class ControlStrip {
             : (hasFree ? null : this._panelPosition.anchor)
         };
       }
-      if (typeof cached?.keyboardHelpVisible === 'boolean') {
-        this._keyboardActive = cached.keyboardHelpVisible;
-      }
     } catch { /* ignore */ }
     this._suppressPositionPersist = false;
     /** @type {(() => void)|null} */
@@ -272,7 +269,6 @@ export class ControlStrip {
   setKeyboardHelpActive(active) {
     this._keyboardActive = !!active;
     this._renderKeyboard();
-    try { cacheChromeLayout({ keyboardHelpVisible: this._keyboardActive }); } catch { /* ignore */ }
   }
 
   cleanup() {
