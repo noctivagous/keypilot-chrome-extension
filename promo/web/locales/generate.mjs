@@ -13,6 +13,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as esbuild from "esbuild";
+import { mergeLocaleCatalog, parentCatalogLocale } from "../../scripts/locale-catalogs.mjs";
 
 const CATALOG_DIR = path.dirname(fileURLToPath(import.meta.url));
 const WEB = path.resolve(CATALOG_DIR, "..");
@@ -403,9 +404,26 @@ function copyTree(srcDir, destDir) {
   walk("");
 }
 
-function slimMessages(locale) {
+function extensionCatalog(locale) {
   const file = path.join(ROOT, "extension", "_locales", locale, "messages.json");
-  const catalog = JSON.parse(fs.readFileSync(file, "utf8"));
+  return JSON.parse(fs.readFileSync(file, "utf8"));
+}
+
+function shippedExtensionLocales() {
+  const dir = path.join(ROOT, "extension", "_locales");
+  return fs
+    .readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .filter((locale) => fs.existsSync(path.join(dir, locale, "messages.json")));
+}
+
+function slimMessages(locale) {
+  const parentId = parentCatalogLocale(locale, shippedExtensionLocales());
+  const catalog = mergeLocaleCatalog(
+    parentId ? extensionCatalog(parentId) : null,
+    extensionCatalog(locale)
+  );
   const out = {};
   for (const [key, value] of Object.entries(catalog)) {
     if (MESSAGE_KEY.test(key)) out[key] = value;

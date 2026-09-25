@@ -50,13 +50,17 @@ table's row is filled in or explicitly deferred (see
   chrome, context menus, built-in action/function/macro catalogs, keyboard
   layout family labels, search-engine labels, control strip, onboarding
   in-app strings (not the walkthrough script itself).
-- Needs: every English key present, non-empty `message`, identical
-  `placeholders` names/examples as English, `description` left untouched
-  (it's translator metadata, never shown to users). Brand name `KeyPilot`
-  stays untranslated. Public product/site names (Google, Brave, Gmail,
-  Instagram, …) stay untranslated. `$1`/`$2` tokens preserved in position.
-- Verify: `npm run check:locales` (missing/extra keys, empty messages,
-  placeholder mismatches — not translation quality or UI fit).
+- Needs: every English key present in a language catalog, non-empty
+  `message`, identical `placeholders` names/examples as English,
+  `description` left untouched (it's translator metadata, never shown to
+  users). A regional catalog may omit keys that its shipped parent language
+  catalog already defines (`es_419` omits a key only when `es` has it).
+  Brand name `KeyPilot` stays untranslated. Public product/site names
+  (Google, Brave, Gmail, Instagram, …) stay untranslated. `$1`/`$2` tokens
+  preserved in position.
+- Verify: `npm run check:locales` (extra keys, empty messages, placeholder
+  mismatches, and gaps that are not covered by a shipped parent language
+  catalog — not translation quality or UI fit).
 - Do NOT put long-form Markdown, onboarding copy, intro-reel copy, or
   marketing-site section copy here (see §2, §3, §8, §9). Keyboard-window
   labels (`fn_*`, `keycap_*`, `keyboard_help_*`, `key_info_*`) do live here;
@@ -314,8 +318,9 @@ npm run build              # confirms build succeeds with new/changed catalogs
 npm run package:chrome     # inspect staged manifest + archive contents for _locales/
 ```
 
-`check:locales` only proves structural completeness of `extension/_locales`
-(keys, placeholders, non-empty). It does not generate the website and it
+`check:locales` proves structural completeness of `extension/_locales`
+(keys, placeholders, non-empty), allowing a regional catalog to omit keys
+its shipped parent language catalog defines. It does not generate the website and it
 proves nothing about translation quality, UI fit, or whether §2–§9 were
 addressed. `web:locales:check` covers the marketing site only. Treat a new
 or extended locale as incomplete until every applicable row in the coverage

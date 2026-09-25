@@ -6,6 +6,131 @@ content. Use it for new user-visible product copy and for adding a locale.
 the implementation plan and outstanding release work; it is not the day-to-day
 workflow.
 
+## Regenerate store assets
+
+Two different texts appear on the listing. Chrome imports the one-line
+summary from the uploaded package: `extension_description` in
+`extension/_locales/<locale>/messages.json`, shown in the dashboard as
+**Summary from package**. The description paragraphs are not in the package.
+They live in `online-stores/chrome/listing/<locale>.txt` and are pasted by
+hand into **Detailed description**.
+
+Screenshots and the promo video are also dashboard uploads. Pick the path
+that matches what changed. Commands that take `<locale>` also accept a
+comma-separated list.
+
+### Screenshots only
+
+Run this when listing images changed and the promo video did not.
+
+1. If a headline or callout changed, edit
+   `online-stores/chrome/copy/<locale>.json`. The generator requires every
+   screenshot slot.
+2. If the product UI inside the picture changed, rebuild and recapture.
+   Skip this step when the existing captures are still the right UI and only
+   the annotation text changed.
+
+   ```bash
+   npm run build
+   npm run store:screenshots:auto -- --locales=<locale>
+   ```
+
+3. Composite the PNGs:
+
+   ```bash
+   npm run store:screenshots -- --locale=<locale>
+   ```
+
+   Use `--all` instead of `--locale` to regenerate every shipped locale that
+   is not excluded. Global small and marquee tiles are English-only; regenerate
+   them with `npm run store:screenshots -- --promo-only` only when that art
+   changed.
+4. If noctivagous.com should show the new images, copy them into the site:
+
+   ```bash
+   npm run web:locales
+   npm run web:locales:check
+   ```
+
+5. Upload `online-stores/generated/chrome/<locale>/01-` through `05-` in the
+   dashboard language selector. Record it in
+   `online-stores/chrome/RELEASE-CHECKLIST.md`.
+
+### Videos only
+
+Run this when the intro reel changed and the listing screenshots did not.
+Chrome accepts a YouTube URL, not the MP4.
+
+1. Edit on-screen copy in
+   `promo/intro-reel/locales/key-click-intro/<locale>.json`. Keep the same
+   keys as `en.json`. If the YouTube title or description changed, edit
+   `promo/intro-reel/youtube-description-<locale>.txt` (first line is the
+   title).
+2. From `promo/intro-reel/`, render one locale or the batch:
+
+   ```bash
+   npx hyperframes render \
+     --composition key-click-intro.html \
+     --variables-file locales/key-click-intro/<locale>.json \
+     --output renders/key-click-intro-<locale>.mp4
+   ```
+
+   ```bash
+   npx hyperframes render \
+     --composition key-click-intro.html \
+     --batch locales/key-click-intro/batch.json \
+     --output "renders/key-click-intro-{locale}.mp4"
+   ```
+
+3. Upload `renders/key-click-intro-<locale>.mp4` to YouTube. Paste the
+   description file. Record `youtube_url` and `youtube_id` in
+   `promo/intro-reel/youtube.json`.
+4. Paste that URL into **Localized promo video** for the same dashboard
+   language.
+
+### Descriptions only
+
+Run this when the listing paragraphs changed and the screenshots and promo
+video did not.
+
+1. Edit `online-stores/chrome/listing/<locale>.txt`. Keep the same feature
+   set as `en.txt`. Leave the one-line summary in `extension_description`;
+   do not paste that sentence into the detailed description.
+2. If the summary line itself changed, update `extension_description` in
+   `extension/_locales/<locale>/messages.json`, then upload a package that
+   contains that catalog. The dashboard fills **Summary from package** from
+   that upload. The language only appears in the listing selector after the
+   package includes `_locales/<locale>`.
+3. Open **Store listing**, choose the language, and paste the full `.txt`
+   file into **Detailed description**. Record the paste in
+   `online-stores/chrome/RELEASE-CHECKLIST.md`.
+
+### Everything
+
+Run this when the listing should be rebuilt from current product UI, copy,
+and video. Do the steps in order.
+
+1. Update `extension/_locales/<locale>/messages.json` when UI strings or the
+   summary line changed, then `npm run check:locales`. Upload a package
+   before expecting **Summary from package** to change.
+2. Update `online-stores/chrome/copy/<locale>.json` and
+   `online-stores/chrome/listing/<locale>.txt`.
+3. Recapture and composite screenshots (steps 2–3 under
+   [Screenshots only](#screenshots-only)).
+4. Render and publish the intro reel (the [videos](#videos-only) steps).
+5. Regenerate the site so its screenshots match the new PNGs:
+
+   ```bash
+   npm run web:locales
+   npm run web:locales:check
+   ```
+
+6. In the dashboard, for each locale: paste
+   `online-stores/chrome/listing/<locale>.txt` into **Detailed description**,
+   upload the five screenshots, and set the localized promo video URL.
+   Confirm **Summary from package** shows `extension_description`. Upload the
+   global promo tiles only when those files were regenerated.
+
 ## Quick workflow
 
 1. Identify the content type in [Where content belongs](#where-content-belongs).
@@ -54,9 +179,13 @@ Use semantic, surface-prefixed keys: `extension_*`, `popup_*`, `settings_*`,
 feature-specific prefix such as `omnibox_*`. Do not rename a key merely
 because its English wording changes.
 
-`npm run check:locales` checks all non-English catalogs for missing/extra
-keys, empty messages, and placeholder-name mismatches. It does not assess
-translation quality or layout fit.
+`npm run check:locales` checks non-English catalogs for extra keys, empty
+messages, and placeholder-name mismatches. A regional catalog such as
+`es_419` may omit keys that its shipped parent language catalog (`es`)
+already defines. A language catalog (`es`, `de`, `zh_CN`) must still
+contain every English key. The same parent fill is applied when the site
+build copies keyboard strings out of `messages.json`. The check does not
+assess translation quality or layout fit.
 
 ## Where content belongs
 
@@ -79,7 +208,9 @@ Do not put Markdown, onboarding copy, or marketing-site strings in `messages.jso
    belong in `test/fixtures/locales/`, never in `extension/_locales/`.
 2. Copy the complete English catalog to
    `extension/_locales/<locale>/messages.json`, translate it, and run
-   `npm run check:locales`.
+   `npm run check:locales`. A regional catalog may instead contain only
+   the messages that differ from its shipped parent language catalog,
+   including `locale_tag`.
 3. Add `extension/userdocs/<locale>/` only when that locale's documentation is
    ready. It must mirror English topic IDs and filenames.
 4. Add `extension/onboarding/<locale>.xml` when localizing onboarding. It must
@@ -116,6 +247,7 @@ The detailed subsystem rules are in
 
 ## Store screenshots
 
+The regenerate order is [Regenerate store assets](#regenerate-store-assets).
 Store dashboards do not read assets from an extension package. Capture real
 localized UI at the required viewport, then generate PNGs:
 
@@ -137,8 +269,9 @@ before capturing or uploading assets.
 ## Release checklist
 
 - [ ] `npm run check:locales`, `npm test`, and `npm run build` pass.
-- [ ] Each changed catalog has the English key set, non-empty messages, correct
-      placeholders, and reviewed terminology.
+- [ ] Each changed language catalog has the English key set. A regional
+      catalog may omit keys its parent language catalog defines. Messages
+      are non-empty, placeholders match, and terminology is reviewed.
 - [ ] English and each changed locale are smoke-tested across the affected
       popup, extension pages, overlays, context menus, Docs, and onboarding.
 - [ ] UI fit, accessible names, document titles, placeholders, and tooltips
