@@ -22,7 +22,7 @@ Localization for Slovak, Chinese, and Japanese, and physical keyboard layouts.
  - Tabs and Window Overview.
  - Zoom In, Zoom Out, placed on [ and ] keys.
  - Open URLs, Open Random Bookmarks.
-- Reader Mode overlay on <kbd>P</kbd> (right-handed Browsing) / <kbd>I</kbd> (left-handed). Open Popover is no longer on a built-in key; bind it in Layout Editor. A toolbar under the title bar toggles article images; the choice is stored in `chrome.storage`.
+- Reader Mode overlay on <kbd>P</kbd> (right-handed Browsing) / <kbd>I</kbd> (left-handed). Open Popover is no longer on a built-in key; bind it in Layout Editor. A toolbar under the title bar toggles article images; the choice is stored in `chrome.storage`. Site `nav` and `footer` landmarks are omitted; article headers stay. Distillations shorter than Readability’s 500-character floor are rejected.
 
 
 ### Store listing snippet

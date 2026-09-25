@@ -89,22 +89,24 @@ export function closeReaderModeOverlay() {
  *   title?: string,
  *   html: string,
  *   byline?: string,
+ *   siteName?: string,
+ *   publishedTime?: string,
  *   closeKey?: string,
  *   onClose?: () => void
  * }} opts
  */
-export function openReaderModeOverlay({ title, html, byline, closeKey, onClose } = /** @type {any} */ ({})) {
+export function openReaderModeOverlay({ title, html, byline, siteName, publishedTime, closeKey, onClose } = /** @type {any} */ ({})) {
   closeReaderModeOverlay();
   const generation = ++_mountGeneration;
   _onClose = typeof onClose === 'function' ? onClose : null;
-  void mountReaderModeOverlay(generation, { title, html, byline, closeKey });
+  void mountReaderModeOverlay(generation, { title, html, byline, siteName, publishedTime, closeKey });
 }
 
 /**
  * @param {number} generation
- * @param {{ title?: string, html: string, byline?: string, closeKey?: string }} opts
+ * @param {{ title?: string, html: string, byline?: string, siteName?: string, publishedTime?: string, closeKey?: string }} opts
  */
-async function mountReaderModeOverlay(generation, { title, html, byline, closeKey }) {
+async function mountReaderModeOverlay(generation, { title, html, byline, siteName, publishedTime, closeKey }) {
   const showImages = await readShowImages();
   if (generation !== _mountGeneration) return;
 
@@ -154,8 +156,8 @@ async function mountReaderModeOverlay(generation, { title, html, byline, closeKe
   applyShowImages(showImages);
 
   const articleTitle = String(title || '').trim();
-  const bylineText = String(byline || '').trim();
-  if (articleTitle || bylineText) {
+  const metaText = readerMetaLine({ byline, siteName, publishedTime });
+  if (articleTitle || metaText) {
     const head = document.createElement('header');
     head.className = 'kpv2-reader-article-head';
     if (articleTitle) {
@@ -163,10 +165,10 @@ async function mountReaderModeOverlay(generation, { title, html, byline, closeKe
       heading.textContent = articleTitle;
       head.appendChild(heading);
     }
-    if (bylineText) {
+    if (metaText) {
       const by = document.createElement('p');
       by.className = 'kpv2-reader-byline';
-      by.textContent = bylineText;
+      by.textContent = metaText;
       head.appendChild(by);
     }
     article.appendChild(head);
@@ -200,6 +202,30 @@ async function mountReaderModeOverlay(generation, { title, html, byline, closeKe
   document.addEventListener('keydown', _keyHandler, true);
 
   try { content.focus?.(); } catch { /* ignore */ }
+}
+
+function readerMetaLine({ byline, siteName, publishedTime }) {
+  const date = formatPublishedTime(publishedTime);
+  return [byline, siteName, date]
+    .map((part) => String(part || '').trim())
+    .filter(Boolean)
+    .join(' · ');
+}
+
+/**
+ * @param {string|undefined} value
+ * @returns {string}
+ */
+function formatPublishedTime(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return raw;
+  try {
+    return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(date);
+  } catch {
+    return raw;
+  }
 }
 
 /**

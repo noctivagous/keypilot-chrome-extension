@@ -9,7 +9,10 @@ import {
   isPromoHeading,
   extractLooksLikePromo,
   extractIsTooNarrow,
-  MIN_ARTICLE_CHARS
+  isReaderChromeElement,
+  pruneReaderChrome,
+  MIN_ARTICLE_CHARS,
+  READABILITY_MIN_CHARS
 } from '../extension/src/utils/reader-mode-extract.js';
 
 describe('reader mode extract', () => {
@@ -46,10 +49,12 @@ describe('reader mode extract', () => {
         this.doc = doc;
       }
       parse() {
-        const body = 'Article body '.repeat(20);
+        const body = 'Article body '.repeat(50);
         return {
           title: 'Distilled',
           byline: 'Byline',
+          siteName: 'Example',
+          publishedTime: '2026-09-24',
           content: `<p>${body}</p>`,
           textContent: body
         };
@@ -67,7 +72,10 @@ describe('reader mode extract', () => {
     assert.equal(article.source, 'readability');
     assert.equal(article.title, 'Distilled');
     assert.equal(article.byline, 'Byline');
+    assert.equal(article.siteName, 'Example');
+    assert.equal(article.publishedTime, '2026-09-24');
     assert.match(article.html, /Article body/);
+    assert.equal(READABILITY_MIN_CHARS, 500);
   });
 
   it('returns null when Readability finds too little text', () => {
@@ -149,5 +157,74 @@ describe('reader mode extract', () => {
     assert.equal(article.source, 'region');
     assert.match(article.html, /Top News/);
     assert.doesNotMatch(article.html, /Sponsor Posts/);
+  });
+
+  it('keeps article headers and drops nav, footer, and site landmarks', () => {
+    const el = (tagName, role = '') => ({
+      nodeType: 1,
+      tagName,
+      getAttribute(name) { return name === 'role' ? role : null; }
+    });
+    assert.equal(isReaderChromeElement(el('NAV')), true);
+    assert.equal(isReaderChromeElement(el('FOOTER')), true);
+    assert.equal(isReaderChromeElement(el('HEADER')), false);
+    assert.equal(isReaderChromeElement(el('HEADER', 'banner')), true);
+    assert.equal(isReaderChromeElement(el('DIV', 'navigation')), true);
+    assert.equal(isReaderChromeElement(el('DIV', 'banner')), true);
+    assert.equal(isReaderChromeElement(el('DIV', 'contentinfo')), true);
+    assert.equal(isReaderChromeElement(el('ARTICLE')), false);
+    assert.equal(isReaderChromeElement(el('P')), false);
+
+    let selector = '';
+    pruneReaderChrome({
+      querySelectorAll(sel) {
+        selector = String(sel);
+        return [];
+      }
+    });
+    assert.match(selector, /\bnav\b/);
+    assert.match(selector, /\bfooter\b/);
+    assert.match(selector, /banner/);
+    assert.match(selector, /contentinfo/);
+    assert.doesNotMatch(selector, /(^|,\s*)header(\s*,|$)/);
+  });
+
+  it('skips Readability when the page does not look readerable', () => {
+    let constructed = false;
+    class FakeReadability {
+      constructor() { constructed = true; }
+      parse() {
+        const body = 'Should not run '.repeat(40);
+        return { title: 'Nope', content: `<p>${body}</p>`, textContent: body };
+      }
+    }
+    const riverText = 'Column text '.repeat(40);
+    const article = extractReaderArticle({
+      document: {
+        cloneNode() {
+          return {
+            cloneNode() { return this; },
+            body: { textContent: `${riverText} ${'sidebar extra '.repeat(80)}` },
+            querySelectorAll(sel) {
+              if (String(sel).startsWith('h1')) return [];
+              if (String(sel).includes('nav')) return [];
+              return [{
+                id: 'content',
+                className: 'article',
+                textContent: riverText,
+                innerHTML: `<p>${riverText}</p>`
+              }];
+            }
+          };
+        }
+      },
+      pageTitle: 'River',
+      pageUrl: 'https://example.com/',
+      Readability: FakeReadability,
+      isProbablyReaderable: () => false
+    });
+    assert.equal(constructed, false);
+    assert.equal(article.source, 'region');
+    assert.match(article.html, /Column text/);
   });
 });

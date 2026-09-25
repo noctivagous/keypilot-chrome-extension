@@ -5705,6 +5705,8 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
         title: article.title,
         html: article.html,
         byline: article.byline,
+        siteName: article.siteName,
+        publishedTime: article.publishedTime,
         closeKey
       });
       this.emitAction('reader_mode', { source: article.source });

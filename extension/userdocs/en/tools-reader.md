@@ -27,6 +27,7 @@ Rebind via Layout Editor if needed.
 
 - This is KeyPilot’s own overlay, not Chrome’s Reading Mode side panel.
 - The live page is not rewritten; extraction uses a document clone.
+- Site `nav` and `footer` landmarks, including banner and contentinfo roles, are left out. Article `header` elements stay.
 - Privileged URLs (`chrome://`, Web Store, and similar) are unavailable.
 - On headline rivers (for example Techmeme), a small sponsor/sidebar distill is replaced with the main column.
 

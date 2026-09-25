@@ -3,11 +3,14 @@
  * Readability runs on a document clone and never mutates the live page.
  */
 
-import { Readability } from '@mozilla/readability';
+import { Readability, isProbablyReaderable } from '@mozilla/readability';
 import { isContentScriptRestrictedUrl } from '../config/url-policy.js';
 
-/** Reject distilled pages that are shorter than a short news lede. */
+/** Shortest explicit text selection worth showing. */
 export const MIN_ARTICLE_CHARS = 60;
+
+/** Readability's own default (`charThreshold`). Shorter distillations are discarded. */
+export const READABILITY_MIN_CHARS = 500;
 
 /**
  * Side columns that look like a full article to Readability (dense blurbs)
@@ -57,6 +60,37 @@ export function extractLooksLikePromo(html, title) {
   if (isPromoHeading(title)) return true;
   const plain = compactText(String(html || '').replace(/<[^>]+>/g, ' ')).slice(0, 240);
   return isPromoHeading(plain.split(/[.!?|•\n]/)[0] || '') || /^sponsor posts\b/i.test(plain);
+}
+
+/** Bare `header` is kept so in-article bylines survive. Site banners use role. */
+const READER_CHROME_TAGS = new Set(['NAV', 'FOOTER']);
+const READER_CHROME_ROLES = new Set(['navigation', 'banner', 'contentinfo']);
+const READER_CHROME_SELECTOR = 'nav, footer, [role="navigation"], [role="banner"], [role="contentinfo"]';
+
+/**
+ * Site chrome landmarks, including ARIA equivalents of nav / header / footer.
+ * @param {Element|null|undefined} el
+ * @returns {boolean}
+ */
+export function isReaderChromeElement(el) {
+  if (!el || el.nodeType !== 1) return false;
+  const tag = String(el.tagName || '').toUpperCase();
+  if (READER_CHROME_TAGS.has(tag)) return true;
+  const roles = String(el.getAttribute?.('role') || '').trim().toLowerCase().split(/\s+/);
+  return roles.some((role) => READER_CHROME_ROLES.has(role));
+}
+
+/**
+ * Remove nav and footer, plus banner/contentinfo landmarks, from a clone.
+ * Never mutates the live document. Article `header` elements stay.
+ * @param {Document} doc
+ */
+export function pruneReaderChrome(doc) {
+  if (!doc || typeof doc.querySelectorAll !== 'function') return;
+  const nodes = doc.querySelectorAll(READER_CHROME_SELECTOR);
+  for (const el of [...nodes]) {
+    try { el.remove(); } catch { /* ignore */ }
+  }
 }
 
 /**
@@ -148,7 +182,9 @@ export function htmlFromSelection(text) {
  *   title: string,
  *   html: string,
  *   byline?: string,
- *   source: 'selection'|'readability'
+ *   siteName?: string,
+ *   publishedTime?: string,
+ *   source: 'selection'|'readability'|'region'
  * }} ReaderArticle
  */
 
@@ -158,7 +194,8 @@ export function htmlFromSelection(text) {
  *   selectionText?: string|null,
  *   pageTitle?: string|null,
  *   pageUrl?: string|null,
- *   Readability?: typeof Readability
+ *   Readability?: typeof Readability,
+ *   isProbablyReaderable?: typeof isProbablyReaderable
  * }} opts
  * @returns {ReaderArticle|null}
  */
@@ -187,20 +224,25 @@ export function extractReaderArticle(opts) {
     return null;
   }
   if (!clone) return null;
+  pruneReaderChrome(clone);
   prunePromoRegions(clone);
 
   let parsed = null;
-  try {
-    const forParse = typeof clone.cloneNode === 'function' ? clone.cloneNode(true) : clone;
-    parsed = new Ctor(forParse).parse();
-  } catch {
-    parsed = null;
+  const readerable = pageLooksReaderable(clone, opts?.isProbablyReaderable || isProbablyReaderable);
+  if (readerable) {
+    try {
+      const forParse = typeof clone.cloneNode === 'function' ? clone.cloneNode(true) : clone;
+      parsed = new Ctor(forParse).parse();
+    } catch {
+      parsed = null;
+    }
   }
 
   const html = parsed && typeof parsed.content === 'string' ? parsed.content.trim() : '';
   const text = compactText(parsed && typeof parsed.textContent === 'string' ? parsed.textContent : '');
   const parsedTitle = String(parsed?.title || '').trim();
-  const parsedOk = !!(html && text.length >= MIN_ARTICLE_CHARS);
+  const parsedOk = !!(html && text.length >= READABILITY_MIN_CHARS);
+  const meta = readabilityMeta(parsed);
 
   const region = pickPrimaryReaderRegion(clone);
   const regionText = compactText(region?.textContent);
@@ -212,7 +254,7 @@ export function extractReaderArticle(opts) {
     return {
       title: parsedTitle || pageTitle,
       html,
-      byline: String(parsed.byline || '').trim(),
+      ...meta,
       source: 'readability'
     };
   }
@@ -229,11 +271,37 @@ export function extractReaderArticle(opts) {
     return {
       title: parsedTitle || pageTitle,
       html,
-      byline: String(parsed.byline || '').trim(),
+      ...meta,
       source: 'readability'
     };
   }
   return null;
+}
+
+/**
+ * Link rivers often fail this check. A throw means the document is not a real DOM.
+ * @param {Document} doc
+ * @param {typeof isProbablyReaderable} readerable
+ * @returns {boolean}
+ */
+function pageLooksReaderable(doc, readerable) {
+  try {
+    return readerable(doc) !== false;
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * @param {any} parsed
+ * @returns {{ byline: string, siteName: string, publishedTime: string }}
+ */
+function readabilityMeta(parsed) {
+  return {
+    byline: String(parsed?.byline || '').trim(),
+    siteName: String(parsed?.siteName || '').trim(),
+    publishedTime: String(parsed?.publishedTime || '').trim()
+  };
 }
 
 const ALLOWED_TAGS = new Set([
@@ -308,6 +376,7 @@ function sanitizeNode(node, ownerDocument) {
 
   const el = /** @type {Element} */ (node);
   const tag = el.tagName.toUpperCase();
+  if (isReaderChromeElement(el)) return null;
   if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'IFRAME' || tag === 'OBJECT'
     || tag === 'EMBED' || tag === 'LINK' || tag === 'META' || tag === 'NOSCRIPT'
     || tag === 'FORM' || tag === 'INPUT' || tag === 'BUTTON' || tag === 'TEXTAREA'
