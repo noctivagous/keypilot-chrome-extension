@@ -26,16 +26,21 @@ is a snapshot, not a live status. As of 2026-09-22:
 | `de` | yes | yes | yes | yes | yes | yes | yes | copy + YouTube | yes |
 | `es` | yes | yes | yes | yes | yes | yes | yes | copy + YouTube | yes |
 | `es_419` | yes | no (falls back to `es`/`en`) | no (falls back to `es`/`en`) | yes | yes | yes | yes | copy + YouTube | yes |
-| `sk` | yes (2026-09-22, machine-translated, needs bilingual review) | no | no | no | no | no | no | copy; YouTube pending | yes |
+| `sk` | yes (2026-09-22, machine-translated, needs bilingual review) | no | no | no | no | no | no | copy; YouTube pending | HTML yes; listing PNGs missing (`web:locales:check` fails) |
 | `zh_CN` | yes | yes | yes | yes | yes | capture when generating listing shots | generate from captures | copy; YouTube pending | yes |
 | `zh_TW` | yes | yes | yes | yes | yes | capture when generating listing shots | generate from captures | copy; YouTube pending | yes |
 | `zh_HK` | yes (from `zh_TW` Traditional, 2026-09-22) | yes | yes | yes | yes | yes (gitignored captures) | yes (gitignored generated PNGs) | copy; YouTube pending | no |
 | `ja` | yes (2026-09-22, machine-translated, needs bilingual review) | yes (machine-translated, needs bilingual review) | yes | yes | yes | no | no | copy; YouTube pending | no |
 
-A locale can ship with only `messages.json` complete — Docs, onboarding, and
-store assets fall back to base language then English. But it is not a
-*finished* localization until the rest of this table's row is filled in or
-explicitly deferred (see [`i18n/README.md`](../i18n/README.md#add-a-locale)).
+A locale can ship in the extension with only `messages.json` complete — Docs,
+onboarding, and store assets fall back to base language then English. The
+marketing site does not fall back: `npm run web:locales` emits a folder only
+for ids registered in `promo/web/locales/generate.mjs`, and
+`npm run web:locales:check` fails if that locale is missing any of the five
+listing PNGs. It is not a *finished* localization until the rest of this
+table's row is filled in or explicitly deferred (see
+[`i18n/README.md`](../i18n/README.md#add-a-locale) and
+[Add a locale](#add-a-locale-extension-and-website) below).
 
 ## Locations and what "done" means
 
@@ -52,8 +57,10 @@ explicitly deferred (see [`i18n/README.md`](../i18n/README.md#add-a-locale)).
   Instagram, …) stay untranslated. `$1`/`$2` tokens preserved in position.
 - Verify: `npm run check:locales` (missing/extra keys, empty messages,
   placeholder mismatches — not translation quality or UI fit).
-- Do NOT put long-form Markdown, onboarding copy, or intro-reel copy here
-  (see §2, §3, §8).
+- Do NOT put long-form Markdown, onboarding copy, intro-reel copy, or
+  marketing-site section copy here (see §2, §3, §8, §9). Keyboard-window
+  labels (`fn_*`, `keycap_*`, `keyboard_help_*`, `key_info_*`) do live here;
+  the site generator copies a slim subset into `promo/web/messages/`.
 
 ### 2. In-product help — `extension/userdocs/<locale>/`
 
@@ -147,14 +154,53 @@ explicitly deferred (see [`i18n/README.md`](../i18n/README.md#add-a-locale)).
 
 ### 9. Marketing site — `promo/web/`
 
-- Tagged English `index.html` and `assets/keyclick-*.svg`. Per-locale copy
-  lives in `promo/web/locales/<locale>.json`. Generate static folders with
-  `npm run web:locales`. Do not hand-edit `de/`, `es/`, and the other
-  generated locale directories.
-- Icon and hero video are not in this repo: copy
-  `promo-materials/web/assets/icon256.png` and
-  `cyberpilotfloat-optimized.mp4` into the published `assets/` folder.
-- Details: [`promo/web/README.md`](../promo/web/README.md).
+English `index.html` and `assets/keyclick-*.svg` are the tagged source.
+Per-locale marketing copy lives in `promo/web/locales/<locale>.json` (same
+keys as `en.json`, including screenshot captions). Do not hand-edit `de/`,
+`es/`, and the other generated locale directories. Do not put keyboard-key
+labels in the site JSON; those come from §1.
+
+`npm run web:locales` (and `npm run web:locales:check`) does all of the following:
+
+1. Writes `<locale>/index.html` and `<locale>/assets/keyclick-*.svg` from the
+   English source plus `locales/<locale>.json`.
+2. Stamps `data-hardware` from `HARDWARE_BY_LOCALE` in
+   `promo/web/locales/generate.mjs`. Shipped models are `us-ansi-qwerty`,
+   `de-de-qwertz-iso`, `es-es-qwerty-iso`, and `sk-sk-qwertz-iso`. A locale
+   with no matching model uses `us-ansi-qwerty`. Do not invent legends.
+3. Writes `promo/web/messages/<locale>.json`, a slim extract of
+   `extension/_locales/<locale>/messages.json` (`fn_*_label`,
+   `fn_*_description`, `keycap_*`, `keyboard_help_*`, `key_info_*`, hardware
+   layout labels, the Browsing family label). The keyboard window on the page
+   reads this file. §1 must exist before this step or the window falls back
+   to English action names.
+4. Copies the five listing PNGs from
+   `online-stores/generated/chrome/<locale>/` (§7) into
+   `promo/web/assets/screenshots/` (English) or
+   `promo/web/<locale>/assets/screenshots/`. `--check` fails if any of
+   `01-key-click-browsing.png` through `05-context-menu.png` is missing.
+   Generate §7 first; this script does not launch Chrome.
+5. Rebuilds `promo/web/keyboard-demo.js` and refreshes shared fonts and
+   titlebar icons under `promo/web/assets/` (gitignored).
+
+Register the locale before generating, or the script will not emit a folder:
+
+- `LOCALES`, `HTML_LANG`, `LOCALE_META`, and `HARDWARE_BY_LOCALE` in
+  `promo/web/locales/generate.mjs`
+- A `data-locale-path` switcher link on `promo/web/index.html`, plus
+  `hreflang` alternates
+- `PATHS` (and detection, if the locale is not the language base) in
+  `promo/web/locale.js`
+- A flag SVG in `promo/web/assets/flags/`
+
+Directory names use underscores (`es_419`, `zh_CN`). HTML `lang` uses hyphens
+(`es-419`, `zh-CN`).
+
+Icon and hero video are not in this repo: copy
+`promo-materials/web/assets/icon256.png` and
+`cyberpilotfloat-optimized.mp4` into the published `assets/` folder.
+
+Details: [`promo/web/README.md`](../promo/web/README.md).
 
 ### 10. Manifest metadata — `extension/manifest.json`
 
@@ -189,28 +235,98 @@ explicitly deferred (see [`i18n/README.md`](../i18n/README.md#add-a-locale)).
 - The `description` field inside any `messages.json` entry — that's
   translator-facing metadata, not shown to end users, and stays in English.
 
+## Add a locale (extension and website)
+
+Do these in order. Extension catalogs and store PNGs have to exist before the
+site generator can fill the keyboard window and the screenshot section.
+Underscore ids (`es_419`, `zh_CN`) are the directory names everywhere below.
+HTML `lang` uses hyphens.
+
+1. **Extension strings (§1).** Copy
+   `extension/_locales/en/messages.json` to
+   `extension/_locales/<locale>/messages.json` and translate it. Keep every
+   key, placeholder name, and English `description`. Run
+   `npm run check:locales`.
+2. **In-product help and onboarding (§2, §3),** when that locale should not
+   fall back. Mirror English topic ids / slide ids. These are not produced by
+   `web:locales`.
+3. **Store copy (§4, §5).** Add `online-stores/chrome/copy/<locale>.json`
+   (every screenshot slot) and `online-stores/chrome/listing/<locale>.txt`.
+   If the news-page fixture has no `?lang=<locale>` object yet, add one in
+   `scripts/store-screenshots/fixture.html` before capturing.
+4. **Generate listing screenshots (§6, §7).** This is the extension-side
+   image generation the website consumes:
+
+   ```bash
+   npm run build
+   npm run store:screenshots:auto -- --locales=<locale>
+   npm run store:screenshots -- --locale=<locale>
+   ```
+
+   Confirm `online-stores/generated/chrome/<locale>/01-key-click-browsing.png`
+   through `05-context-menu.png` exist. Do not hand-edit them.
+5. **Intro reel (§8),** when that locale gets a video: locale JSON, `apply.js`,
+   `batch.json`, description file, then the HyperFrames render. Independent of
+   the site generator.
+6. **Marketing-site source (§9).** Copy `promo/web/locales/en.json` to
+   `promo/web/locales/<locale>.json` and translate it (page copy and the five
+   screenshot captions). Register `<locale>` in `LOCALES`, `HTML_LANG`,
+   `LOCALE_META`, and `HARDWARE_BY_LOCALE` in
+   `promo/web/locales/generate.mjs`. Add the language-switcher link, flag,
+   `hreflang` links, and `promo/web/locale.js` `PATHS` entry. Map hardware to
+   an existing model, or `us-ansi-qwerty` when none exists.
+7. **Generate the website.**
+
+   ```bash
+   npm run web:locales
+   npm run web:locales:check
+   ```
+
+   That writes `<locale>/index.html`, localized key-click SVGs, the slim
+   `promo/web/messages/<locale>.json` keyboard catalog, and
+   `<locale>/assets/screenshots/01-…png` through `05-…png`. It fails while
+   step 4 is missing. Do not edit the generated HTML or SVGs.
+8. **Ship checks.**
+
+   ```bash
+   npm test
+   npm run build
+   npm run package:chrome
+   ```
+
+   Reload the unpacked extension and open `promo/web/<locale>/index.html`:
+   keyboard legends match the hardware id, hover shows the localized tooltip,
+   and all five screenshots load.
+
+Locales that exist only under `extension/_locales/` (`ja`, `zh_HK` today) do
+not appear on noctivagous.com until steps 6–7. A site folder without §7 PNGs
+(`sk` today) fails `web:locales:check`.
+
 ## Verification commands
 
 ```bash
-npm run check:locales      # catalog key/placeholder parity across all shipped locales
-npm run web:locales:check  # marketing-site catalogs vs tagged HTML/SVGs
+npm run check:locales      # extension catalog key/placeholder parity
+npm run store:screenshots -- --locale=<locale>   # listing PNGs the site copies
+npm run web:locales        # site HTML, keyboard messages, screenshot copies
+npm run web:locales:check  # stale HTML, catalog drift, missing listing PNGs
 npm test                   # includes check:locales, plus catalog-display and locale-fallback unit tests
 npm run build              # confirms build succeeds with new/changed catalogs
 npm run package:chrome     # inspect staged manifest + archive contents for _locales/
 ```
 
-`check:locales` only proves structural completeness (keys, placeholders,
-non-empty). It proves nothing about translation quality, UI fit, or whether
-§2–§9 above were addressed. Treat a new or extended locale as incomplete
-until every applicable row in the coverage snapshot is filled in or the gap
-is explicitly and consciously deferred (as `es_419` currently defers Docs and
-onboarding to its `es` base language). `zh_MO` is not a shipped catalog and
-does not share `zh_HK`; Chrome will not fall `zh-MO` to `zh_HK`.
+`check:locales` only proves structural completeness of `extension/_locales`
+(keys, placeholders, non-empty). It does not generate the website and it
+proves nothing about translation quality, UI fit, or whether §2–§9 were
+addressed. `web:locales:check` covers the marketing site only. Treat a new
+or extended locale as incomplete until every applicable row in the coverage
+snapshot is filled in or the gap is explicitly and consciously deferred (as
+`es_419` currently defers Docs and onboarding to its `es` base language).
+`zh_MO` is not a shipped catalog and does not share `zh_HK`; Chrome will not
+fall `zh-MO` to `zh_HK`.
 
 ## Related references
 
-- [`i18n/README.md`](../i18n/README.md) — day-to-day workflow, add-a-locale
-  steps, release checklist
+- [`i18n/README.md`](../i18n/README.md) — day-to-day message workflow and release checklist. The ordered generate-both procedure is [Add a locale (extension and website)](#add-a-locale-extension-and-website) in this file.
 - [`CHROME_I18N_TASK_ITEMS.md`](CHROME_I18N_TASK_ITEMS.md) — design
   constraints, phased implementation history, CJK/RTL readiness work
 - [`extension/userdocs/README.md`](../extension/userdocs/README.md)

@@ -1,0 +1,39 @@
+{
+  "locale": "sk",
+  "slots": {
+    "key-click-browsing": {
+      "headline": "Prehliadajte web klávesovými klikmi.",
+      "callouts": [
+        "Pohybujte kurzorom myšou",
+        "Ukážte na odkaz a stlačte [[F]]."
+      ]
+    },
+    "keyboard-map": {
+      "headline": "Množstvo akcií máte na dosah prstov.",
+      "callouts": [
+        "Klikať na odkazy",
+        "Karty a história",
+        "Hľadať, kopírovať a skúmať."
+      ]
+    },
+    "customize-workflow": {
+      "headline": "Vytvorte rozloženie klávesnice pre svoju prácu.",
+      "callouts": [
+        "Vybrať rozloženie",
+        "Priradiť funkcie"
+      ]
+    },
+    "walkthrough": {
+      "headline": "Po inštalácii sa zobrazí sprievodca.",
+      "callouts": [
+        "Naučte sa klikať, otvárať karty a posúvať stránku"
+      ]
+    },
+    "context-menu": {
+      "headline": "Pravým kliknutím ovládate KeyPilot kedykoľvek.",
+      "callouts": [
+        "Pomoc, nastavenia a ovládanie sú tu."
+      ]
+    }
+  }
+}

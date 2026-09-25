@@ -468,7 +468,7 @@
   }
 
   const CLOSE_TAB_ITEM = { type: 'function', id: 'CLOSE_TAB' };
-  const PLACE_SLOT = 'E';
+  const PLACE_SLOT = 'code:KeyE';
 
   function closeTabSourceEl() {
     return queryDeep(`.kp-layout-config-panel .key[data-kp-item-id="${CLOSE_TAB_ITEM.id}"]`)

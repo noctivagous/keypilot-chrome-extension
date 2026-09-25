@@ -112,7 +112,7 @@
       "capture": {
         "open": "customize-workflow",
         "hardwareLayoutId": "us-ansi-qwerty",
-        "hoverSelector": ".kp-floating-keyboard-help [data-kp-slot=\"E\"]",
+        "hoverSelector": ".kp-floating-keyboard-help [data-kp-slot=\"code:KeyE\"]",
         "showCursor": true,
         "focusHover": false,
         "requiredSelectors": [

@@ -1,0 +1,3 @@
+Prehliadajte web klávesnicou: ukážte myšou na odkaz a stlačte F, aby ste ho otvorili. Volá sa to key-click. Kurzor stále ovládajte myšou, odkazy však aktivujte klávesmi namiesto tlačidiel myši.
+
+Okrem kliknutia na klávese F sú k dispozícii ďalšie funkcie, napríklad zatváranie kariet, posúvanie, označovanie textu a ovládanie KeyPilota. Všetky ukazujú, že key-click je účinný spôsob práce na stolnom počítači.

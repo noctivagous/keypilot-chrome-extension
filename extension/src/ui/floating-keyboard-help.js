@@ -2574,6 +2574,7 @@ export class FloatingKeyboardHelp {
     userLayout = null
   } = {}) {
     if (!container) return;
+    const kb = keybindings || {};
     const doc = container.ownerDocument || document;
     try { this._slotDnDAbort?.abort?.(); } catch { /* ignore */ }
     this._slotDnDAbort = null;
