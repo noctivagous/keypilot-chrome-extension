@@ -426,15 +426,15 @@
         "type": "action",
         "code": "Period",
         "legend": ".",
-        "id": "TABS_OVERVIEW",
-        "fallbackText": "TABS_OVERVIEW"
+        "id": "stock:social-media",
+        "fallbackText": "stock:social-media"
       },
       {
         "type": "action",
         "code": "Slash",
         "legend": "/",
-        "id": "stock:social-media",
-        "fallbackText": "stock:social-media"
+        "id": "TABS_OVERVIEW",
+        "fallbackText": "TABS_OVERVIEW"
       },
       {
         "type": "special",
@@ -645,15 +645,15 @@
         "type": "action",
         "code": "KeyZ",
         "legend": "Z",
-        "id": "stock:social-media",
-        "fallbackText": "stock:social-media"
+        "id": "TABS_OVERVIEW",
+        "fallbackText": "TABS_OVERVIEW"
       },
       {
         "type": "action",
         "code": "KeyX",
         "legend": "X",
-        "id": "TABS_OVERVIEW",
-        "fallbackText": "TABS_OVERVIEW"
+        "id": "stock:social-media",
+        "fallbackText": "stock:social-media"
       },
       {
         "type": "action",
@@ -1850,16 +1850,16 @@
       "displayKey": ",",
       "keyboardClass": "key-gray"
     },
-    "TABS_OVERVIEW": {
-      "label": "Tabs Overview",
-      "description": "Show every window and tab",
+    "stock:social-media": {
+      "label": "Social media",
+      "description": "Open Facebook, Instagram, YouTube, and X",
       "keyLabel": ".",
       "displayKey": ".",
       "keyboardClass": "key-gray"
     },
-    "stock:social-media": {
-      "label": "Social media",
-      "description": "Open Facebook, Instagram, YouTube, and X",
+    "TABS_OVERVIEW": {
+      "label": "Tabs Overview",
+      "description": "Show every window and tab",
       "keyLabel": "/",
       "displayKey": "/",
       "keyboardClass": "key-gray"
@@ -2076,16 +2076,16 @@
       "displayKey": "C",
       "keyboardClass": "key-gray"
     },
-    "TABS_OVERVIEW": {
-      "label": "Tabs Overview",
-      "description": "Show every window and tab",
+    "stock:social-media": {
+      "label": "Social media",
+      "description": "Open Facebook, Instagram, YouTube, and X",
       "keyLabel": "X",
       "displayKey": "X",
       "keyboardClass": "key-gray"
     },
-    "stock:social-media": {
-      "label": "Social media",
-      "description": "Open Facebook, Instagram, YouTube, and X",
+    "TABS_OVERVIEW": {
+      "label": "Tabs Overview",
+      "description": "Show every window and tab",
       "keyLabel": "Z",
       "displayKey": "Z",
       "keyboardClass": "key-gray"
@@ -2646,15 +2646,15 @@
       "type": "action",
       "code": "Period",
       "legend": ".",
-      "id": "TABS_OVERVIEW",
-      "fallbackText": "TABS_OVERVIEW"
+      "id": "stock:social-media",
+      "fallbackText": "stock:social-media"
     },
     {
       "type": "action",
       "code": "Slash",
       "legend": "/",
-      "id": "stock:social-media",
-      "fallbackText": "stock:social-media"
+      "id": "TABS_OVERVIEW",
+      "fallbackText": "TABS_OVERVIEW"
     },
     {
       "type": "special",
@@ -2889,16 +2889,16 @@
     "displayKey": ",",
     "keyboardClass": "key-gray"
   },
-  "TABS_OVERVIEW": {
-    "label": "Tabs Overview",
-    "description": "Show every window and tab",
+  "stock:social-media": {
+    "label": "Social media",
+    "description": "Open Facebook, Instagram, YouTube, and X",
     "keyLabel": ".",
     "displayKey": ".",
     "keyboardClass": "key-gray"
   },
-  "stock:social-media": {
-    "label": "Social media",
-    "description": "Open Facebook, Instagram, YouTube, and X",
+  "TABS_OVERVIEW": {
+    "label": "Tabs Overview",
+    "description": "Show every window and tab",
     "keyLabel": "/",
     "displayKey": "/",
     "keyboardClass": "key-gray"

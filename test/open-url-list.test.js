@@ -84,11 +84,11 @@ describe('open URL list', () => {
     );
   });
 
-  it('binds the bundled Social media instance on Browsing / and its left-handed mirror', async () => {
+  it('binds the bundled Social media instance on Browsing . and its left-handed mirror', async () => {
     const { buildKeybindingsForLayout } = await import('../extension/src/config/keyboard-layouts.js');
     const right = buildKeybindingsForLayout('browsing-right')['stock:social-media'];
     const left = buildKeybindingsForLayout('browsing-left')['stock:social-media'];
-    assert.equal(right.keys[0], 'Slash');
+    assert.equal(right.keys[0], 'Period');
     assert.equal(right.handler, 'handleOpenUrlsKey');
     assert.deepEqual(right.parameters.urls, [
       'https://facebook.com/',
@@ -96,7 +96,7 @@ describe('open URL list', () => {
       'https://youtube.com/',
       'https://x.com/'
     ]);
-    assert.equal(left.keys[0], 'KeyZ');
+    assert.equal(left.keys[0], 'KeyX');
     assert.deepEqual(left.parameters.urls, right.parameters.urls);
     assert.equal(buildKeybindingsForLayout('basic-navigation-right')['stock:social-media'], undefined);
     assert.equal(buildKeybindingsForLayout('click-history-left')['stock:social-media'], undefined);

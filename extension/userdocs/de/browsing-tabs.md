@@ -9,7 +9,7 @@ Wechseln Sie zwischen Tabs und dem Browserverlauf, ohne nach Chrome-Schaltfläch
 3. Drücken Sie <kbd>D</kbd>, um zurückzugehen; <kbd>R</kbd>, um fortzufahren.
 4. Drücken Sie <kbd>S</kbd> (oder <kbd>1</kbd>), um zum Stammverzeichnis der aktuellen Site (Schema + Host) zu springen.
 5. Drücken Sie <kbd>J</kbd> für **Tab-Verlauf** – einen verzweigungsbewussten Verlaufsstreifen für diesen Tab (siehe *Tab-Verlauf*).
-6. Drücken Sie <kbd>.</kbd> für die **Tabs-Übersicht** — jedes Fenster als Karte, darin die Tabs als Liste. Ein Tastenklick auf einen Tab wechselt dorthin. Ein Tastenklick auf die Titelleiste fokussiert nur dieses Fenster. Linkshändiges Browsen verwendet <kbd>X</kbd>.
+6. Drücken Sie <kbd>/</kbd> für die **Tabs-Übersicht** — jedes Fenster als Karte, darin die Tabs als Liste. Ein Tastenklick auf einen Tab wechselt dorthin. Ein Tastenklick auf die Titelleiste fokussiert nur dieses Fenster. Linkshändiges Browsen verwendet <kbd>Z</kbd>.
 
 ## Referenz
 
@@ -25,7 +25,7 @@ Wechseln Sie zwischen Tabs und dem Browserverlauf, ohne nach Chrome-Schaltfläch
 | <kbd>R</kbd> | Vorwärts |
 | <kbd>S</kbd> / <kbd>1</kbd> | Site-Root |
 | <kbd>J</kbd> | Popover „Tab-Verlauf“ |
-| <kbd>.</kbd> | Tabs-Übersicht (linkshändig: <kbd>X</kbd>) |
+| <kbd>/</kbd> | Tabs-Übersicht (linkshändig: <kbd>Z</kbd>) |
 
 <h3 id="open-bookmarks">Lesezeichen öffnen</h3>
 

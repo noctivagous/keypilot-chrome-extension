@@ -55,8 +55,8 @@ on the keyboard in specific places to make web navigation quick.
 | `S` | Navigate to the site origin |
 | `B` | Origin-based continuous scroll |
 | `,` | Open one random bookmark |
+| `.` | Open Facebook, Instagram, YouTube, and X |
 | `'` | Open KeyPilot Settings |
-| `/` | Open Facebook, Instagram, YouTube, and X |
 
 #### Tabs
 
@@ -65,7 +65,7 @@ on the keyboard in specific places to make web navigation quick.
 | `Q` | Switch to the previous tab |
 | `T` | Open the KeyPilot new tab |
 | `W` | Switch to the next tab |
-| `.` | Show every window and tab |
+| `/` | Show every window and tab |
 | `A` | Close the current tab |
 
 #### Page navigation

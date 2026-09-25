@@ -9,7 +9,7 @@ Muévete entre pestañas y el historial del navegador sin tener que tocar los bo
 3. Presione <kbd>D</kbd> para regresar; <kbd>R</kbd> para seguir adelante.
 4. Presione <kbd>S</kbd> (o <kbd>1</kbd>) para saltar a la raíz del sitio actual (esquema + host).
 5. Presione <kbd>J</kbd> para **Historial de pestañas**: una tira de historial compatible con sucursales para esta pestaña (consulte *Historial de pestañas*).
-6. Presione <kbd>.</kbd> para la **Vista de pestañas**: cada ventana es una tarjeta y sus pestañas van en una lista. Un clic de tecla en una pestaña cambia a ella. Un clic de tecla en la cabecera enfoca solo esa ventana. La navegación para zurdos usa <kbd>X</kbd>.
+6. Presione <kbd>/</kbd> para la **Vista de pestañas**: cada ventana es una tarjeta y sus pestañas van en una lista. Un clic de tecla en una pestaña cambia a ella. Un clic de tecla en la cabecera enfoca solo esa ventana. La navegación para zurdos usa <kbd>Z</kbd>.
 
 ## Referencia
 
@@ -25,7 +25,7 @@ Muévete entre pestañas y el historial del navegador sin tener que tocar los bo
 | <kbd>R</kbd> | Adelante |
 | <kbd>S</kbd> / <kbd>1</kbd> | Raíz del sitio |
 | <kbd>J</kbd> | Ventana emergente Historial de pestañas |
-| <kbd>.</kbd> | Vista de pestañas (zurdos: <kbd>X</kbd>) |
+| <kbd>/</kbd> | Vista de pestañas (zurdos: <kbd>Z</kbd>) |
 
 <h3 id="open-bookmarks">Abrir marcadores</h3>
 

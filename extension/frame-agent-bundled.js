@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-25T02:03:43.340Z
+ * Generated on 2026-09-25T02:05:36.833Z
  */
 
 (() => {
@@ -1456,13 +1456,14 @@
     PAGE_MEDIA: physicalAssignment("KeyO", "O"),
     // M is otherwise unused on the right-handed layout (it's PAGE_DOWN_INSTANT on left-handed).
     OPEN_MEDIA_LIBRARY: physicalAssignment("KeyM", "M"),
-    TABS_OVERVIEW: physicalAssignment("Period", "."),
+    // Period mirrors to KeyX on the left-handed layout.
+    [STOCK_SOCIAL_MEDIA_ACTION_ID]: physicalAssignment("Period", "."),
     // Comma is free on the right-handed layout. Left-handed mirror is KeyC.
     [STOCK_RANDOM_BOOKMARK_ACTION_ID]: physicalAssignment("Comma", ","),
     DELETE: physicalAssignment("Backspace", "Backspace"),
     // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
-    // Slash is free on the right-handed layout. Left-handed mirror is KeyZ.
-    [STOCK_SOCIAL_MEDIA_ACTION_ID]: physicalAssignment("Slash", "/")
+    // Slash mirrors to KeyZ on the left-handed layout.
+    TABS_OVERVIEW: physicalAssignment("Slash", "/")
   });
   var ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
     // Top row cluster: Q W E R T  ->  P O I U Y (mirrored)
@@ -1490,8 +1491,8 @@
     OMNIBOX: physicalAssignment("KeyS", "S"),
     TOP_SITES: physicalAssignment("KeyA", "A"),
     // Bottom row cluster: Z X C V B  ->  / . , M N (mirrored)
-    // Period (.) on the right-handed layout mirrors to X.
-    TABS_OVERVIEW: physicalAssignment("KeyX", "X"),
+    // Mirror of right-handed Period.
+    [STOCK_SOCIAL_MEDIA_ACTION_ID]: physicalAssignment("KeyX", "X"),
     PAGE_TOP: physicalAssignment("Slash", "/"),
     ACTIVATE_NEW_TAB: physicalAssignment("KeyB", "B"),
     PAGE_UP_INSTANT: physicalAssignment("Comma", ","),
@@ -1504,7 +1505,7 @@
     // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
     DELETE: physicalAssignment("Backspace", "Backspace"),
     // Mirror of right-handed Slash. KeyZ is free here (PAGE_TOP sits on Slash).
-    [STOCK_SOCIAL_MEDIA_ACTION_ID]: physicalAssignment("KeyZ", "Z")
+    TABS_OVERVIEW: physicalAssignment("KeyZ", "Z")
   });
   var SYSTEM_LAYER_ACTION_IDS = Object.freeze([
     "CANCEL",
@@ -1703,8 +1704,8 @@
       { type: "action", id: "ACTIVATE_NEW_TAB", fallbackText: "Click New Tab" },
       { type: "action", id: "OPEN_MEDIA_LIBRARY", fallbackText: "Media Library" },
       { type: "action", id: STOCK_RANDOM_BOOKMARK_ACTION_ID, fallbackText: "Random Bookmark" },
-      { type: "action", id: "TABS_OVERVIEW", fallbackText: "Tabs Overview" },
       { type: "action", id: STOCK_SOCIAL_MEDIA_ACTION_ID, fallbackText: "Social media" },
+      { type: "action", id: "TABS_OVERVIEW", fallbackText: "Tabs Overview" },
       { type: "special", text: "Shift", className: "key key-shift" }
     ]
   ]);
@@ -1762,10 +1763,10 @@
     ],
     [
       { type: "special", text: "Shift", className: "key key-shift" },
-      { type: "action", id: STOCK_SOCIAL_MEDIA_ACTION_ID, fallbackText: "Social media" },
-      // Z, mirror of /
       { type: "action", id: "TABS_OVERVIEW", fallbackText: "Tabs Overview" },
-      // X
+      // Z, mirror of /
+      { type: "action", id: STOCK_SOCIAL_MEDIA_ACTION_ID, fallbackText: "Social media" },
+      // X, mirror of .
       { type: "action", id: STOCK_RANDOM_BOOKMARK_ACTION_ID, fallbackText: "Random Bookmark" },
       // C, mirror of ,
       { type: "key", text: "V" },
