@@ -114,7 +114,7 @@
         <div class="container">
             <p class="eyebrow eyebrow-sage">Aké je používať KeyPilot</p>
             <h2>Demo</h2>
-            <p class="lede">Pripravili sme miniatúrnu ukážku webového prehliadača KeyPilot s dvoma klávesovými akciami. Prejdite myšou na odkaz a stlačte <kbd>F</kbd> na otvorenie. Stlačte <kbd>D</kbd> na návrat späť.</p>
+            <p class="lede">Pripravili sme miniatúrnu ukážku KeyPilot s dvoma klávesovými akciami. Prejdite myšou na odkaz a stlačte <kbd>F</kbd> na otvorenie. Stlačte <kbd>D</kbd> na návrat späť.</p>
             <p class="try-it-mobile">Toto demo je určené pre počítač, kde môžete používať myš a klávesnicu spolu.</p>
             <div class="try-it-stage" data-try-it-demo data-page="home" data-can-open tabindex="0" role="group" aria-label="Interaktívne demo key-click. Prejdite myšou na odkaz a stlačte F na otvorenie, D na návrat späť.">
                 <div class="try-it-keys" aria-hidden="true">
@@ -246,7 +246,31 @@
     <section class="bimodal" id="bimodal">
         <div class="container">
             <p class="eyebrow"><span></span> BIMODÁLNE OVLÁDANIE</p>
-            <h2 class="section-title section-title-left">Teória myši a klávesnice spolu</h2>
+            <h2 class="section-title section-title-left">Bimodálne ovládanie / Dual-Input (teória UI)</h2>
+            <h3>Gitara ako úvod do bimodálneho ovládania softvéru</h3>
+            <p class="lede">Zamyslite sa nad tým, ako gitara existuje ako nástroj. Rukám sú pridelené oddelené úlohy.</p>
+            <ol class="bimodal-roles">
+                <li>
+                    <strong>Ľavá ruka naviguje k tóne a pripraví ju na zahratie.</strong>
+                    <ul>
+                        <li>Pohybuje sa po hmatníku skôr, než stlačí strunu (struny).</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>Pravá ruka spustí zvuk tónu</strong>
+                    <ul>
+                        <li>Drží trsátko a brnká na strunu (struny) podľa načasovania.</li>
+                    </ul>
+                </li>
+            </ol>
+            <p class="lede">Tieto dve činnosti sú navzájom závislé. Aby tón zaznel, musí ho pripraviť ľavá ruka. Ľavá ruka sa spolieha na pravú, že tón zahraje — inak ostane ticho.</p>
+            <figure class="bimodal-taijitu">
+                <img src="../assets/taijitu.svg" alt="Taijitu" width="160" height="160">
+            </figure>
+            <h3>Myš</h3>
+            <p class="lede">Noctivagous vysvetľuje, že ovládanie desktopového softvéru myšou by malo hľadať tie isté princípy. Ako sa myš používa dnes, kladie na používateľa príliš veľkú kognitívnu záťaž, lebo spája 1) riadenie (pohyb kurzora) a 2) spúšťanie funkcií (klikanie) do jedného zariadenia a jedného miesta. To všetko priraďuje jednej ruke.</p>
+            <p class="lede">Keď sa tieto úlohy oddelia do dvoch vstupných miest, ktoré používajú obe ruky, používateľ má nad softvérom väčšiu kontrolu. Trackpad môže napríklad naďalej riadiť kurzor, kým „kliky“ prebiehajú inde — prvýkrát ovládané druhou rukou. Vzniká úplne iná dynamika softvéru, ako ukazuje ukážka vyššie. Pre vývojára sa v teórii UI otvárajú nové možnosti.</p>
+            <p class="lede">Dôležité je, že myš v roku 1968 vymyslel len jeden človek, Douglas Engelbart, a odvtedy sa nezmenila. Jej zavedenie bolo vtedajším vylepšením osobného počítača, ale o desaťročia neskôr je v mnohých prípadoch únavným a ťažkopádnym spôsobom práce s počítačom. Tablety s dotykovou obrazovkou ju neurobili zbytočnou. Napríklad priame dotknutie objektu na obrazovke nie je presné. Pri oboch štýloch interakcie s počítačom je veľa priestoru na zlepšenie a oba môžu ťažiť z teórie bimodálneho ovládania / dual-input.</p>
             <p class="lede">Rozšírenie existuje, aby presadzovalo teóriu rozhrania, ktorú nazývame bimodálne ovládanie. Kurzor ovládajte myšou ako doteraz, ale aktivujte klávesmi namiesto tlačidiel myši. Prejdite myšou na odkaz a stlačte <kbd>F</kbd> na kliknutie, alebo <kbd>G</kbd> na otvorenie na novej karte na pozadí. Je to rýchle. Volá sa to key-click.</p>
             <p class="lede">Okrem <kbd>F</kbd> je k dispozícii množstvo ďalších klávesových akcií. Práve v tom spočíva sila KeyPilota: rozloženie klávesnice s množstvom funkcií key-click, prispôsobiteľné vo vstavanom editore Layout Config. Je zadarmo a pod licenciou MIT.</p>
             <p class="lede">Animácia key-click na tejto stránke ukazuje gesto: ukážte myšou, stlačte <kbd>F</kbd> na otvorenie a potom <kbd>D</kbd> na návrat späť.</p>

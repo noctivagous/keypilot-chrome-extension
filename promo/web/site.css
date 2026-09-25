@@ -1317,6 +1317,48 @@ html:lang(sk) .try-it-key-label {
     padding: 3.5rem 0 4.5rem;
 }
 
+.bimodal h3 {
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 1.75rem 0 0.65rem;
+    max-width: 42rem;
+}
+
+.bimodal-roles {
+    color: var(--tint-0-4);
+    font-size: 1.05rem;
+    margin: 0 0 1.25rem;
+    max-width: 42rem;
+    padding-left: 1.35rem;
+}
+
+.bimodal-roles > li + li {
+    margin-top: 1.1rem;
+}
+
+.bimodal-roles strong {
+    color: var(--white-0-0);
+    font-weight: 700;
+}
+
+.bimodal-roles ul {
+    margin: 0.35rem 0 0;
+    padding-left: 1.15rem;
+}
+
+.bimodal-taijitu {
+    margin: 1.5rem 0 0.5rem;
+    max-width: 42rem;
+    text-align: center;
+}
+
+.bimodal-taijitu img {
+    display: inline-block;
+    height: auto;
+    width: 8rem;
+}
+
 .section-title-left {
     text-align: left;
     margin-bottom: 1.25rem;

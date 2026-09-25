@@ -114,7 +114,7 @@
         <div class="container">
             <p class="eyebrow eyebrow-sage">使用 KeyPilot 是什么感觉</p>
             <h2>演示</h2>
-            <p class="lede">我们做了一个 KeyPilot 的微型网页浏览器演示，包含两项按键操作。将鼠标悬停在链接上，按 <kbd>F</kbd> 打开。按 <kbd>D</kbd> 返回。</p>
+            <p class="lede">我们做了一个 KeyPilot 的微型演示，包含两项按键操作。将鼠标悬停在链接上，按 <kbd>F</kbd> 打开。按 <kbd>D</kbd> 返回。</p>
             <p class="try-it-mobile">此演示面向桌面电脑，需要同时使用鼠标和键盘。</p>
             <div class="try-it-stage" data-try-it-demo data-page="home" data-can-open tabindex="0" role="group" aria-label="交互式按键点击演示。将鼠标悬停在链接上，按 F 打开，按 D 返回。">
                 <div class="try-it-keys" aria-hidden="true">
@@ -246,7 +246,31 @@
     <section class="bimodal" id="bimodal">
         <div class="container">
             <p class="eyebrow"><span></span> 双模控制</p>
-            <h2 class="section-title section-title-left">鼠标与键盘协同的一套理论</h2>
+            <h2 class="section-title section-title-left">双模控制 / Dual-Input（界面理论）</h2>
+            <h3>以吉他引入软件的双模控制</h3>
+            <p class="lede">想想吉他作为乐器是如何存在的。两只手被分配了不同的任务。</p>
+            <ol class="bimodal-roles">
+                <li>
+                    <strong>左手找到音符并把它摆好，准备弹奏。</strong>
+                    <ul>
+                        <li>它先在指板上移动，再按下琴弦。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>右手触发音符发声</strong>
+                    <ul>
+                        <li>它握着拨片，按节拍拨动琴弦。</li>
+                    </ul>
+                </li>
+            </ol>
+            <p class="lede">这两项活动相互依存。音符要响起来，必须先由左手摆好。左手又依赖右手去弹奏，否则它会保持沉默。</p>
+            <figure class="bimodal-taijitu">
+                <img src="../assets/taijitu.svg" alt="太极图" width="160" height="160">
+            </figure>
+            <h3>鼠标</h3>
+            <p class="lede">Noctivagous 说明，鼠标对桌面软件的控制也应追求同样的原则。按今天的用法，鼠标把过多认知负担加在使用者身上：把 1）转向（移动光标）和 2）触发功能（点击）合并到同一装置、同一位置，并把这一切都交给一只手。</p>
+            <p class="lede">把这些角色分开，放到使用双手的两个输入位置，使用者对软件就有更大的控制。例如触控板可以继续转向光标，而“点击”发生在别处，第一次由另一只手控制。于是出现完全不同的软件动态，如上方演示所示。对软件开发者而言，界面理论的机会由此打开。</p>
+            <p class="lede">重要的是：1968 年发明鼠标的只有一个人，Douglas Engelbart，此后它几乎没有改变。当时它是个人电脑的一次升级，但几十年后，在许多场合，它成了一种乏味、使人疲倦的电脑操作方式。触屏平板并没有让它过时。其一，正面触摸屏幕上的对象并不精确。与电脑交互的两种方式都有很大改进空间，也都可以从双模控制 / Dual-Input 理论中获益。</p>
             <p class="lede">这款扩展旨在推广我们称为双模控制的界面理论。仍像以往一样用鼠标移动光标，但用键盘按键而不是鼠标按钮来激活。将鼠标悬停在链接上，按 <kbd>F</kbd> 即可点击，或按 <kbd>G</kbd> 在后台新标签页中打开。这样很快。我们称之为按键点击。</p>
             <p class="lede">除 <kbd>F</kbd> 之外还有许多按键操作。KeyPilot 的强大之处正在于此：一套包含大量按键点击功能的键盘布局，可在内置的 Layout Config 编辑器中自定义。免费，采用 MIT 许可证。</p>
             <p class="lede">本页的按键点击动画展示了这一手势：用鼠标指向，按 <kbd>F</kbd> 打开，再按 <kbd>D</kbd> 返回。</p>
