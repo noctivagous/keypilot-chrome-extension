@@ -1011,14 +1011,14 @@ ${fontFaceCss}
   })}
 }
 
-/* Reader Mode — same orange family as KeyPilot UI, darker and grayer */
+/* Reader Mode — same orange family as KeyPilot UI, darker but still orange */
 .${KEYBINDINGS_UI_ROOT_CLASS} .key.key-reader-mode {
   ${keycapMaterial({
-    face: '#83603b',
-    mid: '#684e32',
-    deep: '#4e3c2a',
-    icon: '#261c12',
-    glow: 'rgba(201, 122, 40, 0.10)'
+    face: '#b36e2c',
+    mid: '#93581f',
+    deep: '#734316',
+    icon: '#3a210a',
+    glow: 'rgba(201, 122, 40, 0.16)'
   })}
 }
 

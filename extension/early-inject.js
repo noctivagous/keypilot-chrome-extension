@@ -4070,14 +4070,14 @@
 
 }
 
-/* Reader Mode — same orange family as KeyPilot UI, darker and grayer */
+/* Reader Mode — same orange family as KeyPilot UI, darker but still orange */
 .kp-keybindings-ui .key.key-reader-mode {
   
-  --kp-key-face: #83603b;
-  --kp-key-mid: #684e32;
-  --kp-key-deep: #4e3c2a;
-  --kp-key-icon: #261c12;
-  --kp-key-glow: rgba(201, 122, 40, 0.10);
+  --kp-key-face: #b36e2c;
+  --kp-key-mid: #93581f;
+  --kp-key-deep: #734316;
+  --kp-key-icon: #3a210a;
+  --kp-key-glow: rgba(201, 122, 40, 0.16);
 
 }
 
