@@ -27,6 +27,7 @@ import {
 } from '../utils/map-surface-drag.js';
 import { noteExtensionContextError, safeRuntimeSendMessage } from '../utils/extension-context.js';
 import { scrollToKeepPoint } from '../utils/page-zoom.js';
+import { shouldShowScrollLineTargetBox } from './scroll-line-overlay.js';
 
 /** @param {Function} Base */
 export function withNavigationHandlers(Base) {
@@ -776,8 +777,9 @@ export function withNavigationHandlers(Base) {
   }
 
   /**
-   * Outline the locked nested scroller (or iframe). Hidden for document /
-   * near-full-viewport roots so page scroll does not draw a screen-sized box.
+   * Outline a small nested overflow widget. Hidden for document roots,
+   * iframes (master-detail page panes), and any box that is a large share
+   * of the viewport.
    */
   _syncScrollLineTargetOverlay() {
     const overlay = this._scrollLineOverlay;
@@ -786,9 +788,7 @@ export function withNavigationHandlers(Base) {
     const target = this._scrollLineTarget;
     /** @type {Element|null} */
     let el = null;
-    if (target?.kind === 'iframe' && target.iframe) {
-      el = target.iframe;
-    } else if (target?.kind === 'drag' && target.el) {
+    if (target?.kind === 'drag' && target.el) {
       el = target.el;
     } else if (target?.kind === 'element' && target.el) {
       el = target.el;
@@ -807,19 +807,24 @@ export function withNavigationHandlers(Base) {
 
     let r = null;
     try { r = el.getBoundingClientRect(); } catch { r = null; }
-    if (!r || !(r.width > 8) || !(r.height > 8)) {
+
+    let vw = 0;
+    let vh = 0;
+    try {
+      vw = window.innerWidth || 0;
+      vh = window.innerHeight || 0;
+    } catch { /* ignore */ }
+
+    if (!shouldShowScrollLineTargetBox({
+      kind: target?.kind,
+      width: r?.width,
+      height: r?.height,
+      vw,
+      vh
+    })) {
       overlay.setTargetBox(null);
       return;
     }
-
-    try {
-      const vw = window.innerWidth || 0;
-      const vh = window.innerHeight || 0;
-      if (vw > 0 && vh > 0 && r.width >= vw * 0.94 && r.height >= vh * 0.94) {
-        overlay.setTargetBox(null);
-        return;
-      }
-    } catch { /* ignore */ }
 
     let radius = '0';
     try {

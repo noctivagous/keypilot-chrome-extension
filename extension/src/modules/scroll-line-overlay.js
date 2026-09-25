@@ -8,6 +8,42 @@ import { CSS_CLASSES, COLORS, Z_INDEX } from '../config/constants.js';
 const STROKE = COLORS.ORANGE;
 const DOT_R = 6;
 
+/**
+ * Hide the target ring when the box covers this much of the viewport.
+ * A master column or app shell is a page surface, not a widget.
+ */
+const PAGE_PANE_AREA_RATIO = 0.38;
+/**
+ * Tall pane that is still the reading surface when area is just under
+ * PAGE_PANE_AREA_RATIO (detail column beside a narrow list).
+ */
+const PAGE_PANE_HEIGHT_RATIO = 0.85;
+const PAGE_PANE_WIDTH_RATIO = 0.4;
+
+/**
+ * Scroll Line target ring is for small nested overflow widgets.
+ * Iframes are page surfaces (master-detail browsers). Large panes are too.
+ *
+ * @param {{ kind?: string|null, width?: number, height?: number, vw?: number, vh?: number }|null|undefined} box
+ * @returns {boolean}
+ */
+export function shouldShowScrollLineTargetBox(box) {
+  if (!box) return false;
+  if (box.kind === 'iframe' || box.kind === 'frame') return false;
+
+  const w = Number(box.width) || 0;
+  const h = Number(box.height) || 0;
+  if (!(w > 8) || !(h > 8)) return false;
+
+  const vw = Number(box.vw) || 0;
+  const vh = Number(box.vh) || 0;
+  if (!(vw > 0) || !(vh > 0)) return true;
+
+  if ((w * h) >= (vw * vh) * PAGE_PANE_AREA_RATIO) return false;
+  if (h >= vh * PAGE_PANE_HEIGHT_RATIO && w >= vw * PAGE_PANE_WIDTH_RATIO) return false;
+  return true;
+}
+
 export class ScrollLineOverlay {
   constructor() {
     this.root = null;
