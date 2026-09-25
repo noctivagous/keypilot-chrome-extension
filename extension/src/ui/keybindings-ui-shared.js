@@ -1011,6 +1011,17 @@ ${fontFaceCss}
   })}
 }
 
+/* Reader Mode — same orange family as KeyPilot UI, darker and grayer */
+.${KEYBINDINGS_UI_ROOT_CLASS} .key.key-reader-mode {
+  ${keycapMaterial({
+    face: '#83603b',
+    mid: '#684e32',
+    deep: '#4e3c2a',
+    icon: '#261c12',
+    glow: 'rgba(201, 122, 40, 0.10)'
+  })}
+}
+
 /* Inspect / collect media on the current page — muted yellow */
 .${KEYBINDINGS_UI_ROOT_CLASS} .key.key-page-media {
   ${keycapMaterial({

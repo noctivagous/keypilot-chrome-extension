@@ -6,6 +6,9 @@ import {
   htmlFromSelection,
   escapeHtml,
   isReaderModeRestrictedUrl,
+  isPromoHeading,
+  extractLooksLikePromo,
+  extractIsTooNarrow,
   MIN_ARTICLE_CHARS
 } from '../extension/src/utils/reader-mode-extract.js';
 
@@ -100,5 +103,51 @@ describe('reader mode extract', () => {
   it('escapes selection HTML', () => {
     assert.equal(escapeHtml('<b>&"'), '&lt;b&gt;&amp;&quot;');
     assert.equal(htmlFromSelection('a < b'), '<p>a &lt; b</p>');
+  });
+
+  it('treats Sponsor Posts as a promo heading', () => {
+    assert.equal(isPromoHeading('Sponsor Posts'), true);
+    assert.equal(isPromoHeading('Top News'), false);
+    assert.equal(extractLooksLikePromo('<h2>Sponsor Posts</h2><p>Paid blurb</p>', 'Techmeme'), true);
+    assert.equal(extractIsTooNarrow(900, 15000), true);
+    assert.equal(extractIsTooNarrow(8000, 15000), false);
+  });
+
+  it('falls back to the primary column when Readability returns a promo sliver', () => {
+    const riverText = 'Top News item '.repeat(400);
+    const river = {
+      id: 'topcol1',
+      className: '',
+      textContent: riverText,
+      innerHTML: `<h2>Top News</h2><p>${riverText}</p>`
+    };
+    const clone = {
+      cloneNode() { return this; },
+      body: { textContent: `${riverText} ${'sidebar extra '.repeat(80)}` },
+      querySelectorAll(sel) {
+        if (String(sel).startsWith('h1')) return [];
+        return [river];
+      }
+    };
+    class FakeReadability {
+      parse() {
+        return {
+          title: 'Techmeme',
+          content: '<h2>Sponsor Posts</h2><p>A short sponsored blurb with enough characters to pass the floor.</p>',
+          textContent: 'Sponsor Posts A short sponsored blurb with enough characters to pass the floor.'
+        };
+      }
+    }
+
+    const article = extractReaderArticle({
+      document: { cloneNode: () => clone },
+      pageTitle: 'Techmeme',
+      pageUrl: 'https://www.techmeme.com/',
+      Readability: FakeReadability
+    });
+
+    assert.equal(article.source, 'region');
+    assert.match(article.html, /Top News/);
+    assert.doesNotMatch(article.html, /Sponsor Posts/);
   });
 });

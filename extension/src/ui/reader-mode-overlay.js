@@ -3,37 +3,44 @@
  * DOM-only (TrustedHTML-safe). Prefixes: kpv2-reader-*.
  */
 
-import { getMessage } from '../utils/i18n.js';
+import { getMessage, localizeKeycapLabel } from '../utils/i18n.js';
 import {
   NCT_DARK_UI_COLORS,
   NCT_DARK_UI_FONT,
-  NCT_DARK_UI_BTN_GRADIENT,
-  NCT_DARK_UI_BTN_BORDER,
-  NCT_DARK_UI_BTN_RADIUS,
   NCT_DARK_UI_PANEL_BORDER,
   NCT_DARK_UI_PANEL_RADIUS,
   NCT_DARK_UI_PANEL_BOX_SHADOW,
   NCT_DARK_UI_BACKDROP_CLASS,
   NCT_DARK_UI_SCROLLBAR_CLASS,
-  NCT_DARK_UI_TITLEBAR_GRADIENT,
-  NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM,
   getNctDarkUiBackdropCss,
   getNctDarkUiScrollbarCss
 } from './nct-dark-ui.js';
 import { Z_INDEX } from '../config/constants.js';
 import { ensureOpenChromeShadow, injectChromeStyles } from './kp-chrome-shadow.js';
 import { sanitizeArticleHtml } from '../utils/reader-mode-extract.js';
+import { createPopoverTitlebar, createTitlebarCloseHint } from './popover-titlebar.js';
+import { storageGetValue, storageSetValue } from '../utils/storage.js';
 
 const OVERLAY_ID = 'kpv2-reader-overlay';
+/** Reader Mode toolbar: show article images. Default on. */
+const SHOW_IMAGES_STORAGE_KEY = 'kp_reader_mode_show_images';
 
 /** @type {HTMLElement|null} */
 let _overlay = null;
+/** @type {HTMLElement|null} */
+let _article = null;
 /** @type {(() => void)|null} */
 let _onClose = null;
 /** @type {((e: KeyboardEvent) => void)|null} */
 let _keyHandler = null;
 /** @type {string|null} */
 let _prevOverflow = null;
+/** Bumped on open and close so a late storage read cannot mount a closed overlay. */
+let _mountGeneration = 0;
+/** @type {boolean} */
+let _showImages = true;
+/** @type {boolean} */
+let _showImagesLoaded = false;
 
 function getOverlayRoot() {
   return _overlay?.shadowRoot || _overlay;
@@ -56,6 +63,8 @@ export function requestCloseReaderModeOverlay() {
 }
 
 export function closeReaderModeOverlay() {
+  _mountGeneration += 1;
+  _article = null;
   if (_keyHandler) {
     try { document.removeEventListener('keydown', _keyHandler, true); } catch { /* ignore */ }
     _keyHandler = null;
@@ -80,13 +89,24 @@ export function closeReaderModeOverlay() {
  *   title?: string,
  *   html: string,
  *   byline?: string,
+ *   closeKey?: string,
  *   onClose?: () => void
  * }} opts
  */
-export function openReaderModeOverlay({ title, html, byline, onClose } = /** @type {any} */ ({})) {
+export function openReaderModeOverlay({ title, html, byline, closeKey, onClose } = /** @type {any} */ ({})) {
   closeReaderModeOverlay();
-
+  const generation = ++_mountGeneration;
   _onClose = typeof onClose === 'function' ? onClose : null;
+  void mountReaderModeOverlay(generation, { title, html, byline, closeKey });
+}
+
+/**
+ * @param {number} generation
+ * @param {{ title?: string, html: string, byline?: string, closeKey?: string }} opts
+ */
+async function mountReaderModeOverlay(generation, { title, html, byline, closeKey }) {
+  const showImages = await readShowImages();
+  if (generation !== _mountGeneration) return;
 
   const overlay = document.createElement('div');
   overlay.id = OVERLAY_ID;
@@ -110,44 +130,52 @@ export function openReaderModeOverlay({ title, html, byline, onClose } = /** @ty
   const shell = document.createElement('div');
   shell.className = 'kpv2-reader-shell';
 
-  const header = document.createElement('div');
-  header.className = 'kpv2-reader-header';
-
-  const titleWrap = document.createElement('div');
-  titleWrap.className = 'kpv2-reader-title-wrap';
-  const heading = document.createElement('h2');
-  heading.className = 'kpv2-reader-title';
-  heading.textContent = String(title || '').trim() || getMessage('reader_mode_title');
-  titleWrap.appendChild(heading);
-  const bylineText = String(byline || '').trim();
-  if (bylineText) {
-    const by = document.createElement('p');
-    by.className = 'kpv2-reader-byline';
-    by.textContent = bylineText;
-    titleWrap.appendChild(by);
-  }
-
-  const closeBtn = document.createElement('button');
-  closeBtn.type = 'button';
-  closeBtn.className = 'kpv2-reader-close';
-  closeBtn.textContent = getMessage('overlay_close');
-  closeBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    closeReaderModeOverlay();
-  }, true);
-
-  header.appendChild(titleWrap);
-  header.appendChild(closeBtn);
+  const hideKey = localizeKeycapLabel(String(closeKey || '').trim() || 'P');
+  const titlebarApi = createPopoverTitlebar({
+    title: getMessage('reader_mode_title'),
+    shortcut: hideKey,
+    icon: 'window',
+    variant: 'preview',
+    showClose: true,
+    onClose: closeReaderModeOverlay,
+    closeTitle: getMessage('popover_titlebar_close'),
+    hint: createTitlebarCloseHint({
+      keys: [localizeKeycapLabel('Esc'), hideKey],
+      suffix: getMessage('popover_hide_hint_suffix')
+    }),
+    className: 'kpv2-reader-titlebar'
+  });
 
   const content = document.createElement('div');
   content.className = `kpv2-reader-content ${NCT_DARK_UI_SCROLLBAR_CLASS}`;
   const article = document.createElement('article');
   article.className = 'kpv2-reader-article';
+  _article = article;
+  applyShowImages(showImages);
+
+  const articleTitle = String(title || '').trim();
+  const bylineText = String(byline || '').trim();
+  if (articleTitle || bylineText) {
+    const head = document.createElement('header');
+    head.className = 'kpv2-reader-article-head';
+    if (articleTitle) {
+      const heading = document.createElement('h1');
+      heading.textContent = articleTitle;
+      head.appendChild(heading);
+    }
+    if (bylineText) {
+      const by = document.createElement('p');
+      by.className = 'kpv2-reader-byline';
+      by.textContent = bylineText;
+      head.appendChild(by);
+    }
+    article.appendChild(head);
+  }
   article.appendChild(sanitizeArticleHtml(html, document));
   content.appendChild(article);
 
-  shell.appendChild(header);
+  shell.appendChild(titlebarApi.titlebar);
+  shell.appendChild(createReaderToolbar(showImages));
   shell.appendChild(content);
   mount.appendChild(backdrop);
   mount.appendChild(shell);
@@ -175,6 +203,68 @@ export function openReaderModeOverlay({ title, html, byline, onClose } = /** @ty
 }
 
 /**
+ * @returns {Promise<boolean>}
+ */
+async function readShowImages() {
+  if (_showImagesLoaded) return _showImages;
+  try {
+    const stored = await storageGetValue(SHOW_IMAGES_STORAGE_KEY, true);
+    _showImages = stored !== false;
+  } catch {
+    _showImages = true;
+  }
+  _showImagesLoaded = true;
+  return _showImages;
+}
+
+/**
+ * @param {boolean} show
+ */
+function persistShowImages(show) {
+  _showImages = !!show;
+  _showImagesLoaded = true;
+  applyShowImages(_showImages);
+  try {
+    void storageSetValue(SHOW_IMAGES_STORAGE_KEY, _showImages);
+  } catch { /* ignore */ }
+}
+
+/**
+ * @param {boolean} show
+ */
+function applyShowImages(show) {
+  _article?.classList.toggle('is-hide-images', !show);
+}
+
+/**
+ * @param {boolean} showImages
+ * @returns {HTMLElement}
+ */
+function createReaderToolbar(showImages) {
+  const bar = document.createElement('div');
+  bar.className = 'kpv2-reader-toolbar';
+
+  const label = document.createElement('label');
+  label.className = 'kpv2-reader-show-images';
+
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.checked = !!showImages;
+  input.setAttribute('aria-label', getMessage('reader_mode_show_images_aria'));
+  input.addEventListener('change', () => {
+    persistShowImages(!!input.checked);
+  });
+
+  const text = document.createElement('span');
+  text.textContent = getMessage('reader_mode_show_images');
+
+  label.appendChild(input);
+  label.appendChild(text);
+  bar.appendChild(label);
+  return bar;
+}
+
+/**
  * @param {ParentNode} root
  */
 function ensureStyles(root) {
@@ -198,44 +288,51 @@ function ensureStyles(root) {
 }
 ${getNctDarkUiBackdropCss()}
 ${getNctDarkUiScrollbarCss()}
-.kpv2-reader-header {
+.kpv2-reader-titlebar {
+  border-radius: ${NCT_DARK_UI_PANEL_RADIUS} ${NCT_DARK_UI_PANEL_RADIUS} 0 0;
+}
+.kpv2-reader-toolbar {
   display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  padding: 10px 14px;
-  background: ${NCT_DARK_UI_TITLEBAR_GRADIENT};
-  border-bottom: ${NCT_DARK_UI_TITLEBAR_BORDER_BOTTOM};
+  align-items: center;
+  gap: 10px;
   flex-shrink: 0;
+  padding: 8px 14px;
+  background: ${c.panel};
+  border-bottom: 1px solid ${c.panelEdgeDark};
+  box-shadow: 0 1px 0 ${c.panelEdge} inset;
 }
-.kpv2-reader-title-wrap {
-  flex: 1;
-  min-width: 0;
-}
-.kpv2-reader-title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 650;
-  line-height: 1.3;
-  color: ${c.fg};
-}
-.kpv2-reader-byline {
-  margin: 4px 0 0;
-  font-size: 12px;
+.kpv2-reader-show-images {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
   color: ${c.fgDim};
-}
-.kpv2-reader-close {
-  flex-shrink: 0;
-  padding: 5px 12px;
-  border: ${NCT_DARK_UI_BTN_BORDER};
-  border-radius: ${NCT_DARK_UI_BTN_RADIUS};
-  background: ${NCT_DARK_UI_BTN_GRADIENT};
-  color: ${c.fg};
-  font: inherit;
-  font-size: 12px;
+  letter-spacing: 0.02em;
+  user-select: none;
+  white-space: nowrap;
   cursor: pointer;
 }
-.kpv2-reader-close:hover {
-  color: #fff;
+.kpv2-reader-show-images input {
+  width: 13px;
+  height: 13px;
+  margin: 0;
+  accent-color: ${c.accent};
+  cursor: pointer;
+}
+.kpv2-reader-article-head {
+  margin: 0 0 1.25em;
+}
+.kpv2-reader-article-head h1 {
+  margin: 0;
+  font-size: 1.6em;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.kpv2-reader-byline {
+  margin: 0.4em 0 0;
+  font-size: 0.85em;
+  color: ${c.fgDim};
 }
 .kpv2-reader-content {
   flex: 1;
@@ -258,6 +355,9 @@ ${getNctDarkUiScrollbarCss()}
   line-height: 1.25;
   margin: 1.4em 0 0.5em;
 }
+.kpv2-reader-article .kpv2-reader-article-head h1 {
+  margin: 0;
+}
 .kpv2-reader-article p,
 .kpv2-reader-article ul,
 .kpv2-reader-article ol,
@@ -272,6 +372,11 @@ ${getNctDarkUiScrollbarCss()}
   display: block;
   margin: 1em auto;
   border-radius: 6px;
+}
+.kpv2-reader-article.is-hide-images img,
+.kpv2-reader-article.is-hide-images figure,
+.kpv2-reader-article.is-hide-images a:has(> img:only-child) {
+  display: none;
 }
 .kpv2-reader-article a {
   color: ${c.accent};

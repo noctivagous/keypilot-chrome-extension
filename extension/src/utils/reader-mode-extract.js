@@ -10,6 +10,103 @@ import { isContentScriptRestrictedUrl } from '../config/url-policy.js';
 export const MIN_ARTICLE_CHARS = 60;
 
 /**
+ * Side columns that look like a full article to Readability (dense blurbs)
+ * while the real river is mostly links — Techmeme “Sponsor Posts”, etc.
+ */
+export const PROMO_HEADING_RE =
+  /^(sponsor(ed)?(\s+posts?)?|advertisements?|paid\s+(posts?|content)|promoted(\s+posts?)?)$/i;
+
+/** Extract must cover at least this fraction of the primary column. */
+export const PRIMARY_REGION_COVERAGE = 0.4;
+
+/**
+ * @param {string} text
+ * @returns {boolean}
+ */
+export function isPromoHeading(text) {
+  return PROMO_HEADING_RE.test(String(text || '').replace(/\s+/g, ' ').trim());
+}
+
+/**
+ * @param {string} text
+ * @returns {string}
+ */
+function compactText(text) {
+  return String(text || '').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * @param {number} extractedLen
+ * @param {number} primaryLen
+ * @returns {boolean}
+ */
+export function extractIsTooNarrow(extractedLen, primaryLen) {
+  const extracted = Number(extractedLen) || 0;
+  const primary = Number(primaryLen) || 0;
+  if (extracted < MIN_ARTICLE_CHARS) return true;
+  if (primary < MIN_ARTICLE_CHARS * 2) return false;
+  return extracted < primary * PRIMARY_REGION_COVERAGE;
+}
+
+/**
+ * @param {string} html
+ * @param {string} [title]
+ * @returns {boolean}
+ */
+export function extractLooksLikePromo(html, title) {
+  if (isPromoHeading(title)) return true;
+  const plain = compactText(String(html || '').replace(/<[^>]+>/g, ' ')).slice(0, 240);
+  return isPromoHeading(plain.split(/[.!?|•\n]/)[0] || '') || /^sponsor posts\b/i.test(plain);
+}
+
+/**
+ * Drop small promo/sponsor boxes on a clone. Never mutates the live document.
+ * @param {Document} doc
+ */
+export function prunePromoRegions(doc) {
+  if (!doc || typeof doc.querySelectorAll !== 'function') return;
+  const bodyLen = compactText(doc.body?.textContent).length;
+  const headings = doc.querySelectorAll('h1, h2, h3, h4');
+  for (const heading of [...headings]) {
+    if (!isPromoHeading(heading.textContent)) continue;
+    const box = heading.parentElement;
+    if (!box || box === doc.body || box === doc.documentElement) continue;
+    const boxLen = compactText(box.textContent).length;
+    if (boxLen > 0 && (bodyLen < 1 || boxLen < bodyLen * 0.25)) {
+      try { box.remove(); } catch { /* ignore */ }
+    }
+  }
+}
+
+/**
+ * Largest layout region that is not essentially the whole page.
+ * @param {Document} doc
+ * @returns {Element|null}
+ */
+export function pickPrimaryReaderRegion(doc) {
+  if (!doc || typeof doc.querySelectorAll !== 'function') return null;
+  const bodyLen = compactText(doc.body?.textContent).length;
+  const nodes = doc.querySelectorAll('div, main, article, section');
+  let best = null;
+  let bestScore = 0;
+  for (const el of nodes) {
+    if (!el || el === doc.body) continue;
+    const idc = `${el.id || ''} ${typeof el.className === 'string' ? el.className : ''}`;
+    if (/\b(nav|menu|footer|sidebar|sponsor|cookie|banner)\b/i.test(idc)) continue;
+    const len = compactText(el.textContent).length;
+    if (len < MIN_ARTICLE_CHARS * 4) continue;
+    if (bodyLen > 0 && len > bodyLen * 0.85) continue;
+    let score = len;
+    if (/\b(main|content|article|topcol|river|feed|posts|news|story)\b/i.test(idc)) score *= 1.35;
+    if (score > bestScore) {
+      best = el;
+      bestScore = score;
+    }
+  }
+  return best;
+}
+
+/**
  * @param {string|null|undefined} url
  * @returns {boolean}
  */
@@ -83,23 +180,60 @@ export function extractReaderArticle(opts) {
   const Ctor = opts?.Readability || Readability;
   if (typeof Ctor !== 'function') return null;
 
+  let clone = null;
   try {
-    const clone = doc.cloneNode(true);
-    const parsed = new Ctor(clone).parse();
-    const html = parsed && typeof parsed.content === 'string' ? parsed.content.trim() : '';
-    const text = parsed && typeof parsed.textContent === 'string'
-      ? parsed.textContent.replace(/\s+/g, ' ').trim()
-      : '';
-    if (!html || text.length < MIN_ARTICLE_CHARS) return null;
+    clone = doc.cloneNode(true);
+  } catch {
+    return null;
+  }
+  if (!clone) return null;
+  prunePromoRegions(clone);
+
+  let parsed = null;
+  try {
+    const forParse = typeof clone.cloneNode === 'function' ? clone.cloneNode(true) : clone;
+    parsed = new Ctor(forParse).parse();
+  } catch {
+    parsed = null;
+  }
+
+  const html = parsed && typeof parsed.content === 'string' ? parsed.content.trim() : '';
+  const text = compactText(parsed && typeof parsed.textContent === 'string' ? parsed.textContent : '');
+  const parsedTitle = String(parsed?.title || '').trim();
+  const parsedOk = !!(html && text.length >= MIN_ARTICLE_CHARS);
+
+  const region = pickPrimaryReaderRegion(clone);
+  const regionText = compactText(region?.textContent);
+  const regionHtml = region && typeof region.innerHTML === 'string' ? region.innerHTML.trim() : '';
+  const tooNarrow = parsedOk && extractIsTooNarrow(text.length, regionText.length);
+  const promo = parsedOk && extractLooksLikePromo(html, parsedTitle);
+
+  if (parsedOk && !tooNarrow && !promo) {
     return {
-      title: String(parsed.title || pageTitle || '').trim(),
+      title: parsedTitle || pageTitle,
       html,
       byline: String(parsed.byline || '').trim(),
       source: 'readability'
     };
-  } catch {
-    return null;
   }
+
+  if (regionHtml && regionText.length >= MIN_ARTICLE_CHARS) {
+    return {
+      title: pageTitle,
+      html: regionHtml,
+      source: 'region'
+    };
+  }
+
+  if (parsedOk) {
+    return {
+      title: parsedTitle || pageTitle,
+      html,
+      byline: String(parsed.byline || '').trim(),
+      source: 'readability'
+    };
+  }
+  return null;
 }
 
 const ALLOWED_TAGS = new Set([
@@ -128,6 +262,7 @@ function isSafeUrl(value, kind) {
   const s = String(value || '').trim();
   if (!s) return false;
   if (s.startsWith('#') && kind === 'href') return true;
+  if ((s.startsWith('/') || s.startsWith('?') || s.startsWith('.')) && kind === 'href') return true;
   if (/^mailto:/i.test(s) && kind === 'href') return true;
   if (/^(https?:|data:image\/)/i.test(s)) return true;
   return false;

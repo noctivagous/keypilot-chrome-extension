@@ -6240,5 +6240,13 @@
   "guide_action_reader_mode": {
     "message": "[GB] open Reader Mode",
     "description": "Guide explanation for the Reader Mode shortcut."
+  },
+  "reader_mode_show_images": {
+    "message": "[GB] Show images",
+    "description": "Reader Mode toolbar checkbox that shows or hides article images."
+  },
+  "reader_mode_show_images_aria": {
+    "message": "[GB] Show images in Reader Mode",
+    "description": "Accessible name for the Reader Mode show-images checkbox."
   }
 }

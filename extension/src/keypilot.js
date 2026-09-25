@@ -5697,10 +5697,15 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     try {
       if (isPageMediaOverlayOpen()) closePageMediaOverlay();
       if (isMediaLibraryOverlayOpen()) closeMediaLibraryOverlay();
+      const KB = this.keybindings || {};
+      const closeKey = this._bindingHintGlyph(KB.READER_MODE, '')
+        || this._firstBareSlotForFunction('READER_MODE')
+        || 'P';
       openReaderModeOverlay({
         title: article.title,
         html: article.html,
-        byline: article.byline
+        byline: article.byline,
+        closeKey
       });
       this.emitAction('reader_mode', { source: article.source });
     } catch (error) {

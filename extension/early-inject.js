@@ -1694,7 +1694,7 @@
       "description": "Read this page without clutter",
       "keyLabel": "P",
       "displayKey": "P",
-      "keyboardClass": "key-page-media"
+      "keyboardClass": "key-reader-mode"
     },
     "ZOOM_OUT": {
       "label": "Zoom Out",
@@ -1927,7 +1927,7 @@
       "description": "Read this page without clutter",
       "keyLabel": "I",
       "displayKey": "I",
-      "keyboardClass": "key-page-media"
+      "keyboardClass": "key-reader-mode"
     },
     "ZOOM_OUT": {
       "label": "Zoom Out",
@@ -2733,7 +2733,7 @@
     "description": "Read this page without clutter",
     "keyLabel": "P",
     "displayKey": "P",
-    "keyboardClass": "key-page-media"
+    "keyboardClass": "key-reader-mode"
   },
   "ZOOM_OUT": {
     "label": "Zoom Out",
@@ -3066,7 +3066,7 @@
   },
   "READER_MODE": {
     "labelKey": "fn_READER_MODE_label",
-    "keyboardClass": "key-page-media"
+    "keyboardClass": "key-reader-mode"
   },
   "OPEN_MEDIA_LIBRARY": {
     "labelKey": "fn_OPEN_MEDIA_LIBRARY_label",
@@ -4067,6 +4067,17 @@
   --kp-key-deep: #834f16;
   --kp-key-icon: #3f250a;
   --kp-key-glow: rgba(255, 165, 0, 0.14);
+
+}
+
+/* Reader Mode — same orange family as KeyPilot UI, darker and grayer */
+.kp-keybindings-ui .key.key-reader-mode {
+  
+  --kp-key-face: #83603b;
+  --kp-key-mid: #684e32;
+  --kp-key-deep: #4e3c2a;
+  --kp-key-icon: #261c12;
+  --kp-key-glow: rgba(201, 122, 40, 0.10);
 
 }
 

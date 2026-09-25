@@ -114,6 +114,7 @@ New Tab display preferences stay on the New Tab page origin and must not sync ac
 | `kpLauncherNavState_v1` | `launcher-popover.js` |
 | `kpTopSitesSelectedTab_v1` | `top-sites-popover.js` |
 | `kp_page_media_image_scale` / `_aspect` / `_sort` / `_landmark` / `kp_page_media_url_view` | `page-media-overlay.js` |
+| `kp_reader_mode_show_images` | `reader-mode-overlay.js` |
 
 ## FOUC / session caches (not authoritative)
 

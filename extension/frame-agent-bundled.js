@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-25T04:03:02.226Z
+ * Generated on 2026-09-25T04:28:54.251Z
  */
 
 (() => {
@@ -1175,7 +1175,7 @@
       label: "Reader Mode",
       description: "Read this page without clutter",
       details: "Opens a KeyPilot overlay with the article text (or your current selection). Press again or Esc to close. Unavailable on pages with no extractable article.",
-      keyboardClass: "key-page-media",
+      keyboardClass: "key-reader-mode",
       row: 1
     }),
     // Media Library entry point (M on right-handed only — M is PAGE_DOWN_INSTANT on left-handed,
