@@ -287,6 +287,7 @@ const LIBRARY_KEY_ICON_BY_FUNCTION_ID = Object.freeze({
   ZOOM_IN: 'kp-cfg-i-scroll',
   TAB_RIGHT: 'kp-cfg-i-tabs',
   TAB_LEFT: 'kp-cfg-i-tabs',
+  TABS_OVERVIEW: 'kp-cfg-i-tabs',
   OPEN_URLS: 'kp-cfg-i-nav',
   OPEN_BOOKMARKS: 'kp-cfg-i-tabs',
   RANDOM_BOOKMARK: 'kp-cfg-i-cycle',

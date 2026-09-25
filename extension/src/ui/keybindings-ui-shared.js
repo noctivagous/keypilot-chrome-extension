@@ -102,6 +102,8 @@ const FA_SOLID_PATHS = Object.freeze({
 
   // FA Free solid "table-columns" — Cols Toggle multicol layout
   'table-columns': 'M0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zm64 64V416H224V160H64zm320 0H288V416H448V160z',
+  // FA Free solid "table-list" — Tabs Overview (windows with tab lists)
+  'table-list': 'M0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zm64 64V416h80V160H64zm128 0v64H448V160H192zm0 96v64H448V256H192zm0 96v64H448V352H192z',
 
   // Library / macro / clipboard / AI (Config card keycaps + Reference parity)
   'clipboard': 'M192 0c35.3 0 64 28.7 64 64l0 32 112 0c35.3 0 64 28.7 64 64l0 288c0 35.3-28.7 64-64 64L64 512c-35.3 0-64-28.7-64-64L0 160c0-35.3 28.7-64 64-64l112 0 0-32c0-35.3 28.7-64 64-64zm0 64l0 32 64 0 0-32c0-17.7-14.3-32-32-32s-32 14.3-32 32zM64 160l0 288c0 17.7 14.3 32 32 32l256 0c17.7 0 32-14.3 32-32l0-288c0-17.7-14.3-32-32-32L64 128c-17.7 0-32 14.3-32 32z',
@@ -158,6 +160,7 @@ export const KEYBOARD_ACTION_ICON_IDS = Object.freeze({
   OPEN_SETTINGS_POPOVER: 'gear',
   OMNIBOX: 'magnifying-glass',
   TAB_HISTORY: 'clock-rotate-left',
+  TABS_OVERVIEW: 'table-list',
   TOGGLE_KEYBOARD_HELP: 'keyboard',
   // Selection tools (recently re-enabled; were missing from the icon map)
   HIGHLIGHT: 'i-cursor',
@@ -1007,25 +1010,25 @@ ${fontFaceCss}
   })}
 }
 
-/* Inspect / collect media on the current page */
+/* Inspect / collect media on the current page — muted yellow */
 .${KEYBINDINGS_UI_ROOT_CLASS} .key.key-page-media {
   ${keycapMaterial({
-    face: '#2d7a7a',
-    mid: '#246363',
-    deep: '#1a4a4a',
-    icon: '#0c2626',
-    glow: 'rgba(45, 180, 180, 0.12)'
+    face: '#b5a45c',
+    mid: '#948546',
+    deep: '#6f6434',
+    icon: '#363018',
+    glow: 'rgba(200, 180, 80, 0.16)'
   })}
 }
 
-/* Same hue as page media, brighter and more saturated (saved library) */
+/* Same hue as page media, lower saturation (saved library) */
 .${KEYBINDINGS_UI_ROOT_CLASS} .key.key-media-library {
   ${keycapMaterial({
-    face: '#2eb8b0',
-    mid: '#249a94',
-    deep: '#1b7671',
-    icon: '#0d3f3c',
-    glow: 'rgba(46, 220, 210, 0.18)'
+    face: '#a39a70',
+    mid: '#897f57',
+    deep: '#6a6244',
+    icon: '#2e2b1e',
+    glow: 'rgba(163, 154, 112, 0.12)'
   })}
 }
 
