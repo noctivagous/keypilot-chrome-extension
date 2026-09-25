@@ -3,6 +3,10 @@ import { describe, it } from 'node:test';
 
 import {
   PAGE_ZOOM_PRESETS,
+  ZOOM_AT_POINT,
+  ZOOM_CSS_PREVIEW,
+  ZOOM_NATIVE_ANIM,
+  interpolateZoom,
   previewOrigin,
   scrollToKeepPoint,
   stepZoomFactor,
@@ -10,6 +14,20 @@ import {
 } from '../extension/src/utils/page-zoom.js';
 
 describe('page zoom steps', () => {
+  it('applies one browser zoom step by default', () => {
+    assert.equal(ZOOM_CSS_PREVIEW, false);
+    assert.equal(ZOOM_AT_POINT, false);
+    assert.equal(ZOOM_NATIVE_ANIM, false);
+  });
+
+  it('interpolates zoom geometrically and lands on the endpoints', () => {
+    assert.equal(interpolateZoom(1, 1.1, 0), 1);
+    assert.ok(Math.abs(interpolateZoom(1, 1.1, 1) - 1.1) < 1e-9);
+    const mid = interpolateZoom(1, 1.1, 0.5);
+    assert.ok(mid > 1 && mid < 1.1);
+    assert.ok(mid > 1.05);
+  });
+
   it('steps through presets in both directions and clamps at the ends', () => {
     assert.equal(stepZoomFactor(1, 1), 1.1);
     assert.equal(stepZoomFactor(1, -1), 0.9);

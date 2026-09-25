@@ -26,7 +26,7 @@ import {
   SCROLL_LINE_MAP_DRAG_ENABLED
 } from '../utils/map-surface-drag.js';
 import { noteExtensionContextError, safeRuntimeSendMessage } from '../utils/extension-context.js';
-import { previewOrigin, scrollToKeepPoint, stepZoomFactor, ZOOM_PREVIEW_MS, zoomPreviewScale } from '../utils/page-zoom.js';
+import { interpolateZoom, previewOrigin, scrollToKeepPoint, stepZoomFactor, ZOOM_ANIM_MS, ZOOM_AT_POINT, ZOOM_CSS_PREVIEW, ZOOM_NATIVE_ANIM, ZOOM_PREVIEW_MS, zoomPreviewScale } from '../utils/page-zoom.js';
 import { shouldShowScrollLineTargetBox } from './scroll-line-overlay.js';
 
 /** @param {Function} Base */
@@ -128,14 +128,17 @@ export function withNavigationHandlers(Base) {
   }
 
   /**
-   * Preview the next browser zoom step with a CSS scale at the cursor, then
-   * commit it with chrome.tabs.setZoom. Further presses before the commit
-   * retarget the same preview. The transform stays up until setZoom returns
-   * so the page does not snap back to the old factor first.
+   * Step browser tab zoom. The default is one preset via `setZoom`.
+   * `ZOOM_NATIVE_ANIM` eases through intermediate factors. `ZOOM_CSS_PREVIEW`
+   * inserts a CSS scale first.
    * @param {number} direction Positive zooms in.
    */
   _zoomAtCursor(direction) {
     const dir = direction > 0 ? 1 : -1;
+    if (!ZOOM_CSS_PREVIEW) {
+      this._zoomCommitDirect(dir);
+      return;
+    }
     const gesture = this._zoomGesture;
     if (gesture?.committing) {
       this._zoomQueued = dir;
@@ -217,6 +220,224 @@ export function withNavigationHandlers(Base) {
       onResponse: finishStart
     });
     if (!sent && this._zoomGesture === gesture) this._zoomGesture = null;
+  }
+
+  /**
+   * Ease one browser-zoom preset with setZoom. No CSS transform. A further
+   * press retargets the in-flight ease instead of starting a second one.
+   * @param {1|-1} direction
+   */
+  _zoomCommitDirect(direction) {
+    if (!ZOOM_NATIVE_ANIM) {
+      this._zoomStepOnce(direction);
+      return;
+    }
+    const anim = this._zoomNative;
+    if (anim) {
+      if (anim.starting) {
+        anim.pendingDir = direction;
+        return;
+      }
+      this._zoomNativeRetarget(anim, direction);
+      return;
+    }
+
+    /** @type {any} */
+    const next = {
+      starting: true,
+      pendingDir: 0,
+      point: this._getScrollCursorPoint(),
+      scrollX: window.scrollX || 0,
+      scrollY: window.scrollY || 0,
+      originZoom: 1,
+      from: 1,
+      target: 1,
+      lastFactor: 0,
+      startedAt: 0,
+      inFlight: false,
+      timer: 0
+    };
+    this._zoomNative = next;
+
+    const sent = safeRuntimeSendMessage({
+      type: MSG.ZOOM_STEP,
+      direction,
+      apply: false
+    }, {
+      onInvalidated: () => {
+        try { this._handleExtensionContextInvalidated?.(); } catch { /* ignore */ }
+        this._zoomNativeStop(next);
+      },
+      onError: () => this._zoomNativeStop(next),
+      onResponse: (response) => this._zoomNativeBegin(next, response)
+    });
+    if (!sent) this._zoomNativeStop(next);
+  }
+
+  /**
+   * One browser-zoom preset. No intermediate setZoom frames.
+   * @param {1|-1} direction
+   */
+  _zoomStepOnce(direction) {
+    if (this._zoomBusy) {
+      this._zoomQueued = direction;
+      return;
+    }
+    this._zoomBusy = true;
+    const point = this._getScrollCursorPoint();
+    const scrollX = window.scrollX || 0;
+    const scrollY = window.scrollY || 0;
+
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      this._zoomBusy = false;
+      const queued = this._zoomQueued;
+      this._zoomQueued = 0;
+      if (queued) this._zoomStepOnce(queued);
+    };
+
+    const sent = safeRuntimeSendMessage({ type: MSG.ZOOM_STEP, direction }, {
+      onInvalidated: () => {
+        try { this._handleExtensionContextInvalidated?.(); } catch { /* ignore */ }
+        finish();
+      },
+      onError: () => finish(),
+      onResponse: (response) => {
+        try { this._applyZoomAnchor(response, point, scrollX, scrollY); } finally { finish(); }
+      }
+    });
+    if (!sent) finish();
+  }
+
+  /**
+   * @param {any} anim
+   */
+  _zoomNativeStop(anim) {
+    if (this._zoomNative !== anim) return;
+    if (anim.timer) clearTimeout(anim.timer);
+    anim.timer = 0;
+    this._zoomNative = null;
+  }
+
+  /**
+   * @param {any} anim
+   * @param {unknown} response
+   */
+  _zoomNativeBegin(anim, response) {
+    if (this._zoomNative !== anim) return;
+    const ok = response && typeof response === 'object' && response.type === MSG.SUCCESS;
+    const origin = ok ? Number(/** @type {any} */ (response).oldZoom) : Number.NaN;
+    if (!ok || !(origin > 0)) {
+      this._zoomNativeStop(anim);
+      return;
+    }
+    let target = Number(/** @type {any} */ (response).newZoom);
+    if (!(target > 0)) target = origin;
+    if (anim.pendingDir) {
+      target = stepZoomFactor(target, anim.pendingDir);
+      anim.pendingDir = 0;
+    }
+    anim.starting = false;
+    anim.originZoom = origin;
+    anim.from = origin;
+    anim.target = target;
+    anim.lastFactor = origin;
+    if (Math.abs(target - origin) < 0.001) {
+      this._zoomNativeStop(anim);
+      return;
+    }
+    anim.startedAt = performance.now();
+    this._zoomNativeTick(anim);
+  }
+
+  /**
+   * @param {any} anim
+   * @param {1|-1} direction
+   */
+  _zoomNativeRetarget(anim, direction) {
+    const next = stepZoomFactor(anim.target, direction);
+    if (Math.abs(next - anim.target) < 0.001) return;
+    try { this._zoomAnchorCancel?.(); } catch { /* ignore */ }
+    anim.from = anim.lastFactor > 0 ? anim.lastFactor : anim.from;
+    anim.target = next;
+    anim.startedAt = performance.now();
+    if (!anim.inFlight) this._zoomNativeTick(anim);
+  }
+
+  /**
+   * @param {any} anim
+   */
+  _zoomNativeTick(anim) {
+    if (this._zoomNative !== anim) return;
+    if (anim.timer) clearTimeout(anim.timer);
+    anim.timer = 0;
+    const elapsed = performance.now() - anim.startedAt;
+    const done = elapsed >= ZOOM_ANIM_MS;
+    const atTarget = Math.abs(anim.target - anim.lastFactor) < 0.002;
+    if (done && atTarget) {
+      this._applyZoomAnchor({
+        type: MSG.SUCCESS,
+        changed: Math.abs(anim.lastFactor - anim.originZoom) > 0.001,
+        oldZoom: anim.originZoom,
+        newZoom: anim.lastFactor
+      }, anim.point, anim.scrollX, anim.scrollY, true);
+      this._zoomNativeStop(anim);
+      return;
+    }
+    if (anim.inFlight) return;
+    const factor = done ? anim.target : interpolateZoom(anim.from, anim.target, elapsed / ZOOM_ANIM_MS);
+    if (!done && Math.abs(factor - anim.lastFactor) < 0.0008) {
+      anim.timer = setTimeout(() => this._zoomNativeTick(anim), 16);
+      return;
+    }
+    this._zoomNativeSend(anim, factor, done);
+  }
+
+  /**
+   * @param {any} anim
+   * @param {number} factor
+   * @param {boolean} done
+   */
+  _zoomNativeSend(anim, factor, done) {
+    anim.inFlight = true;
+    const sent = safeRuntimeSendMessage({
+      type: MSG.ZOOM_STEP,
+      zoomFactor: factor
+    }, {
+      onInvalidated: () => {
+        try { this._handleExtensionContextInvalidated?.(); } catch { /* ignore */ }
+        anim.inFlight = false;
+        this._zoomNativeStop(anim);
+      },
+      onError: () => {
+        anim.inFlight = false;
+        this._zoomNativeStop(anim);
+      },
+      onResponse: (response) => {
+        anim.inFlight = false;
+        if (this._zoomNative !== anim) return;
+        const applied = response && typeof response === 'object'
+          ? Number(/** @type {any} */ (response).newZoom)
+          : factor;
+        const zoomNow = applied > 0 ? applied : factor;
+        anim.lastFactor = zoomNow;
+        const finished = done && Math.abs(anim.target - zoomNow) < 0.002;
+        this._applyZoomAnchor({
+          type: MSG.SUCCESS,
+          changed: Math.abs(zoomNow - anim.originZoom) > 0.001,
+          oldZoom: anim.originZoom,
+          newZoom: zoomNow
+        }, anim.point, anim.scrollX, anim.scrollY, finished);
+        if (!finished) anim.timer = setTimeout(() => this._zoomNativeTick(anim), 16);
+        else this._zoomNativeStop(anim);
+      }
+    });
+    if (!sent) {
+      anim.inFlight = false;
+      this._zoomNativeStop(anim);
+    }
   }
 
   /**
@@ -367,8 +588,10 @@ export function withNavigationHandlers(Base) {
    * @param {{ x: number, y: number }} point
    * @param {number} scrollX
    * @param {number} scrollY
+   * @param {boolean} [hold] Keep correcting after Chrome's own center anchor. Intermediate animation frames scroll once.
    */
-  _applyZoomAnchor(response, point, scrollX, scrollY) {
+  _applyZoomAnchor(response, point, scrollX, scrollY, hold = true) {
+    if (!ZOOM_AT_POINT && !ZOOM_CSS_PREVIEW) return;
     const res = response && typeof response === 'object' ? response : null;
     if (!res || res.type !== MSG.SUCCESS || !res.changed) return;
     const oldZoom = Number(res.oldZoom);
@@ -377,7 +600,12 @@ export function withNavigationHandlers(Base) {
     if (Math.abs(oldZoom - newZoom) < 1e-6) return;
 
     const next = scrollToKeepPoint({ x: scrollX, y: scrollY }, point, oldZoom, newZoom);
-    this._holdZoomAnchor(next);
+    if (hold) {
+      this._holdZoomAnchor(next);
+    } else {
+      try { this._zoomAnchorCancel?.(); } catch { /* ignore */ }
+      try { window.scrollTo(next.x, next.y); } catch { /* ignore */ }
+    }
 
     const scale = oldZoom / newZoom;
     const nx = point.x * scale;

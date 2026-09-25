@@ -6,11 +6,38 @@
  * to keep the CSS document point under the cursor fixed — the same result as a
  * pinch gesture on in-flow page content.
  *
- * The key handler previews the step with a CSS scale, then commits with setZoom.
+ * The CSS scale preview is kept behind `ZOOM_CSS_PREVIEW`. Easing through
+ * intermediate `chrome.tabs.setZoom` factors is kept behind `ZOOM_NATIVE_ANIM`.
+ * The default is one preset step.
+ *
+ * Cursor anchoring (scroll so the point under the pointer stays fixed) is kept
+ * behind `ZOOM_AT_POINT`. The default zooms the page and leaves scroll alone.
  */
+
+/**
+ * When true, [ / ] animate a CSS scale at the cursor and then commit with setZoom.
+ * Default eases the browser zoom factor instead.
+ */
+export const ZOOM_CSS_PREVIEW = false;
+
+/**
+ * When true, zoom shifts scroll so the point under the cursor stays fixed.
+ * Default leaves the page scroll where the browser puts it.
+ */
+export const ZOOM_AT_POINT = false;
+
+/**
+ * When true, a zoom step eases through intermediate browser zoom factors.
+ * Default applies the next preset in one `setZoom` call. CSS preview can
+ * still animate when `ZOOM_CSS_PREVIEW` is on.
+ */
+export const ZOOM_NATIVE_ANIM = false;
 
 /** CSS preview length before the browser zoom commit. */
 export const ZOOM_PREVIEW_MS = 180;
+
+/** Native setZoom ease length for one preset step. */
+export const ZOOM_ANIM_MS = 180;
 
 /** Chromium preset browser zoom factors (`page_zoom.cc`). */
 export const PAGE_ZOOM_PRESETS = Object.freeze([
@@ -84,6 +111,32 @@ export function previewOrigin(client, borderBox) {
     x: (Number.isFinite(x) ? x : 0) - (Number.isFinite(left) ? left : 0),
     y: (Number.isFinite(y) ? y : 0) - (Number.isFinite(top) ? top : 0)
   };
+}
+
+/**
+ * Ease-out cubic. t is 0..1.
+ * @param {number} t
+ * @returns {number}
+ */
+export function easeOutCubic(t) {
+  const x = Math.min(1, Math.max(0, Number(t) || 0));
+  return 1 - Math.pow(1 - x, 3);
+}
+
+/**
+ * Geometric blend between two browser zoom factors. Linear blend looks slow
+ * at the low end and fast at the high end; zoom is perceived as a ratio.
+ * @param {number} from
+ * @param {number} to
+ * @param {number} t 0..1, eased internally
+ * @returns {number}
+ */
+export function interpolateZoom(from, to, t) {
+  const a = Number(from);
+  const b = Number(to);
+  if (!(a > 0) || !(b > 0)) return b > 0 ? b : 1;
+  const u = easeOutCubic(t);
+  return a * Math.pow(b / a, u);
 }
 
 /**
