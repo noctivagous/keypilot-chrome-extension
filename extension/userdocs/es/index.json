@@ -134,6 +134,13 @@
           "file": "tools-previews.md",
           "icon": "preview",
           "accent": "green"
+        },
+        {
+          "id": "tools-reader",
+          "title": "Reader Mode",
+          "file": "tools-reader.md",
+          "shortcut": "P",
+          "accent": "amber"
         }
       ]
     },

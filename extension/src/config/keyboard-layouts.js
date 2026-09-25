@@ -625,7 +625,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: 'key-rect-highlight',
     row: 1
   }),
-  // Copy image under cursor (I on right-handed; E on left-handed — I is OPEN_POPOVER there).
+  // Copy image under cursor (I on right-handed; E on left-handed — I is READER_MODE there).
   COPY_HOVERED_IMAGE: Object.freeze({
     handler: 'handleCopyHoveredImageKey',
     label: 'Copy Image',
@@ -667,6 +667,14 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Page Media',
     description: 'Browse media found on this page',
     details: 'Opens a gallery of images, videos, documents, fonts, and URLs discovered on the current page so you can review or collect them without hunting through the DOM.',
+    keyboardClass: 'key-page-media',
+    row: 1
+  }),
+  READER_MODE: Object.freeze({
+    handler: 'handleReaderModeKey',
+    label: 'Reader Mode',
+    description: 'Read this page without clutter',
+    details: 'Opens a KeyPilot overlay with the article text (or your current selection). Press again or Esc to close. Unavailable on pages with no extractable article.',
     keyboardClass: 'key-page-media',
     row: 1
   }),
@@ -790,6 +798,7 @@ export const KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
   COPY_HOVERED_VIDEO: 'Get Page Data',
   FONT_INFO: 'Get Page Data',
   PAGE_MEDIA: 'Get Page Data',
+  READER_MODE: 'Get Page Data',
   DELETE: 'Select',
   COLS_TOGGLE: 'Select',
   OPEN_MEDIA_LIBRARY: 'Media Library',
@@ -1119,7 +1128,7 @@ export function createCharacterKeyAssignment(keys, labels = {}) {
 const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   TAB_LEFT: physicalAssignment('KeyQ', 'Q'),
   TAB_RIGHT: physicalAssignment('KeyW', 'W'),
-  OPEN_POPOVER: physicalAssignment('KeyP', 'P'),
+  READER_MODE: physicalAssignment('KeyP', 'P'),
   PREVIEW_LINK_POPOVER: physicalAssignment('KeyE', 'E'),
   FORWARD: physicalAssignment('KeyR', 'R'),
   NEW_TAB: physicalAssignment('KeyT', 'T'),
@@ -1168,9 +1177,9 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   // Top row cluster: Q W E R T  ->  P O I U Y (mirrored)
   TAB_LEFT: physicalAssignment('KeyP', 'P'),
   TAB_RIGHT: physicalAssignment('KeyO', 'O'),
-  OPEN_POPOVER: physicalAssignment('KeyI', 'I'),
   PREVIEW_LINK_POPOVER: physicalAssignment('KeyW', 'W'),
   FORWARD: physicalAssignment('KeyU', 'U'),
+  READER_MODE: physicalAssignment('KeyI', 'I'),
   NEW_TAB: physicalAssignment('KeyY', 'Y'),
   SCROLL_LINE: physicalAssignment('KeyT', 'T'),
   ZOOM_OUT: physicalAssignment('BracketLeft', '['),
@@ -1202,7 +1211,7 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   [STOCK_RANDOM_BOOKMARK_ACTION_ID]: physicalAssignment('KeyC', 'C'),
   PAGE_DOWN_INSTANT: physicalAssignment('KeyM', 'M'),
   PAGE_BOTTOM: physicalAssignment('KeyN', 'N'),
-  // I is OPEN_POPOVER on left-handed; E is free.
+  // I is READER_MODE on left-handed; E is free.
   COPY_HOVERED_IMAGE: physicalAssignment('KeyE', 'E'),
   // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
 
@@ -1457,7 +1466,7 @@ const KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: 'action', id: 'COPY_HOVERED_URL', fallbackText: 'Copy URL' },
     { type: 'action', id: 'COPY_HOVERED_IMAGE', fallbackText: 'Copy Image' },
     { type: 'action', id: 'PAGE_MEDIA', fallbackText: 'Page Media' },
-    { type: 'action', id: 'OPEN_POPOVER', fallbackText: 'Open Popover' },
+    { type: 'action', id: 'READER_MODE', fallbackText: 'Reader Mode' },
     { type: 'key', text: '[' },
     { type: 'key', text: ']' },
     { type: 'action', id: 'DELETE', fallbackText: 'Delete Mode', className: 'key key-backspace' }
@@ -1504,7 +1513,7 @@ const KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
     { type: 'action', id: 'SCROLL_LINE', fallbackText: 'Scroll Line' }, // T
     { type: 'action', id: 'NEW_TAB', fallbackText: 'New Tab' }, // Y
     { type: 'action', id: 'FORWARD', fallbackText: 'Go Forward' }, // U
-    { type: 'action', id: 'OPEN_POPOVER', fallbackText: 'Open Popover' }, // I
+    { type: 'action', id: 'READER_MODE', fallbackText: 'Reader Mode' }, // I
     { type: 'action', id: 'TAB_RIGHT', fallbackText: 'Tab Right' }, // O
     { type: 'action', id: 'TAB_LEFT', fallbackText: 'Tab Left' }, // P
     { type: 'key', text: '[' },

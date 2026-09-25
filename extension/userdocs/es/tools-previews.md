@@ -11,11 +11,9 @@ Eche un vistazo a un enlace en una ventana emergente del sistema operativo de ta
 3. Utilice **Abrir en esta pestaña** o **Abrir en una nueva pestaña** en la barra de título de KeyPilot.
 4. Cierra con <kbd>Esc</kbd>, el control de cierre de la barra de título o la tecla de acción nuevamente.
 
-### Ventana emergente (<kbd>P</kbd>)
+### Open Popover
 
-1. Pase el cursor sobre un enlace.
-2. Presione <kbd>P</kbd> para abrir una ventana emergente de mayor tamaño.
-3. Presione <kbd>P</kbd> nuevamente o <kbd>Esc</kbd> para cerrar.
+Abre el enlace bajo el cursor en una ventana emergente más grande. No tiene tecla predeterminada en Browsing: asígnela en el editor de diseños.
 
 La vista previa de la tarjeta de inicio y los resultados de búsqueda de categorías utilizan la misma ventana emergente.
 
@@ -26,7 +24,6 @@ La vista previa de la tarjeta de inicio y los resultados de búsqueda de categor
 | Clave | Acción |
 | --- | --- |
 | <kbd>E</kbd> | Ventana emergente de vista previa del enlace |
-| <kbd>P</kbd> | Ventana emergente abierta más grande |
 
 ### Notas de comportamiento
 

@@ -19,7 +19,8 @@
       {"id":"tools-top-sites","title":"熱門網站","file":"tools-top-sites.md","shortcut":";","accent":"amber"},
       {"id":"tools-tab-history","title":"分頁記錄","file":"tools-tab-history.md","shortcut":"J","accent":"blue"},
       {"id":"tools-control-strip","title":"控制列","file":"tools-control-strip.md","shortcut":"Alt+J","accent":"cyan"},
-      {"id":"tools-previews","title":"連結預覽與浮動視窗","file":"tools-previews.md","icon":"preview","accent":"green"}]},
+      {"id":"tools-previews","title":"連結預覽與浮動視窗","file":"tools-previews.md","icon":"preview","accent":"green"},
+      {"id":"tools-reader","title":"Reader Mode","file":"tools-reader.md","shortcut":"P","accent":"amber"}]},
     {"id":"media","title":"媒體","children":[
       {"id":"media-page","title":"頁面媒體","file":"media-page.md","shortcut":"O","accent":"indigo"},
       {"id":"media-library","title":"媒體庫","file":"media-library.md","shortcut":"M","accent":"violet"},

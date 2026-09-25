@@ -11,11 +11,9 @@ Peek at a link in a sized OS popup window without replacing your current tab.
 3. Use **Open in this tab** or **Open in New Tab** from the KeyPilot titlebar.
 4. Close with <kbd>Esc</kbd>, the titlebar close control, or the action key again.
 
-### Popover (<kbd>P</kbd>)
+### Open Popover
 
-1. Hover a link.
-2. Press <kbd>P</kbd> to open a larger sized popup window.
-3. Press <kbd>P</kbd> again or <kbd>Esc</kbd> to close.
+Opens the hovered link in a larger sized popup window. It has no built-in Browsing key — bind **Open Popover** in Layout Editor if you want it.
 
 Launcher card preview and category search results use the same popup window.
 
@@ -26,7 +24,6 @@ Launcher card preview and category search results use the same popup window.
 | Key | Action |
 | --- | --- |
 | <kbd>E</kbd> | Link Preview popup |
-| <kbd>P</kbd> | Larger Open Popover popup |
 
 ### Behavior notes
 

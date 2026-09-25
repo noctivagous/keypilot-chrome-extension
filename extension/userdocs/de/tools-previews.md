@@ -11,11 +11,9 @@ Werfen Sie einen Blick auf einen Link in einem großen Betriebssystem-Popup-Fens
 3. Verwenden Sie **In diesem Tab öffnen** oder **In neuem Tab öffnen** in der KeyPilot-Titelleiste.
 4. Schließen Sie mit <kbd>Esc</kbd>, dem Steuerelement zum Schließen der Titelleiste oder erneut der Aktionstaste.
 
-### Popover (<kbd>P</kbd>)
+### Open Popover
 
-1. Bewegen Sie den Mauszeiger über einen Link.
-2. Drücken Sie <kbd>P</kbd>, um ein größeres Popup-Fenster zu öffnen.
-3. Drücken Sie erneut <kbd>P</kbd> oder <kbd>Esc</kbd>, um zu schließen.
+Öffnet den Link unter dem Cursor in einem größeren Popup. Keine Standardtaste im Browsing-Layout — binden Sie **Open Popover** im Layout-Editor.
 
 Die Vorschau der Launcher-Karte und die Ergebnisse der Kategoriesuche verwenden dasselbe Popup-Fenster.
 
@@ -26,7 +24,6 @@ Die Vorschau der Launcher-Karte und die Ergebnisse der Kategoriesuche verwenden 
 | Schlüssel | Aktion |
 | --- | --- |
 | <kbd>E</kbd> | Link-Vorschau-Popup |
-| <kbd>P</kbd> | Größeres Popover-Popup öffnen |
 
 ### Verhaltenshinweise
 

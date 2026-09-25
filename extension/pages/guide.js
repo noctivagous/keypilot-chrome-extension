@@ -179,7 +179,7 @@ function renderGuideForLayout(layoutIdRaw) {
   const tabs = labelsForActions(bindings, ['TAB_LEFT', 'TAB_RIGHT']);
   const omnibox = labelsForActions(bindings, ['OMNIBOX']);
   const cancel = labelsForActions(bindings, ['CANCEL']);
-  const openPopover = labelsForActions(bindings, ['OPEN_POPOVER']);
+  const readerMode = labelsForActions(bindings, ['READER_MODE']);
   const settings = labelsForActions(bindings, ['OPEN_SETTINGS_POPOVER']);
   const scroll = labelsForActions(bindings, [
     'PAGE_TOP',
@@ -199,7 +199,7 @@ function renderGuideForLayout(layoutIdRaw) {
   ]);
 
   fillList(document.getElementById('guide-popover-list'), [
-    { keys: openPopover, text: getMessage('guide_action_open_popover') },
+    { keys: readerMode, text: getMessage('guide_action_reader_mode') },
     { keys: settings, text: getMessage('guide_action_open_settings') },
     { keys: scroll, text: getMessage('guide_action_scroll') },
     { keys: cancel, text: getMessage('guide_action_close') }

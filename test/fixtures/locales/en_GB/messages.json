@@ -6212,5 +6212,33 @@
   "fn_ZOOM_IN_details": {
     "message": "[GB] Zooms the tab in one browser zoom step and keeps the point under the cursor fixed, the same as a pinch-in gesture.",
     "description": "Function Library details for ZOOM_IN."
+  },
+  "fn_READER_MODE_label": {
+    "message": "[GB] Reader Mode",
+    "description": "Function Library label for READER_MODE."
+  },
+  "fn_READER_MODE_description": {
+    "message": "[GB] Read this page without clutter",
+    "description": "Function Library description for READER_MODE."
+  },
+  "fn_READER_MODE_details": {
+    "message": "[GB] Opens a KeyPilot overlay with the article text (or your current selection). Press again or Esc to close. Unavailable on pages with no extractable article.",
+    "description": "Function Library details for READER_MODE."
+  },
+  "reader_mode_title": {
+    "message": "[GB] Reader Mode",
+    "description": "Reader Mode overlay title fallback."
+  },
+  "reader_mode_aria": {
+    "message": "[GB] Reader Mode",
+    "description": "Accessible name for the Reader Mode overlay."
+  },
+  "reader_mode_unavailable": {
+    "message": "[GB] Reader Mode unavailable",
+    "description": "Flash notice when Reader Mode cannot extract an article."
+  },
+  "guide_action_reader_mode": {
+    "message": "[GB] open Reader Mode",
+    "description": "Guide explanation for the Reader Mode shortcut."
   }
 }

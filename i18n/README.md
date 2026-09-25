@@ -69,8 +69,9 @@ translation quality or layout fit.
 | Chrome listing detailed description | `online-stores/chrome/listing/<locale>.txt` | Paste in the dashboard; not shipped in the package. |
 | Store GUI captures | `online-stores/chrome/captures/<locale>/` | Capture KeyPilot in that locale; never reuse a different locale's capture. |
 | Language-neutral documentation screenshots | `extension/userdocs/images/` | Use a locale directory only when the image includes translated UI text. |
+| Marketing site (noctivagous.com) | `promo/web/` | Tagged English HTML/SVGs plus `promo/web/locales/*.json`. Do not put this copy in `messages.json`. |
 
-Do not put Markdown or onboarding copy in `messages.json`.
+Do not put Markdown, onboarding copy, or marketing-site strings in `messages.json`.
 
 ## Add a locale
 

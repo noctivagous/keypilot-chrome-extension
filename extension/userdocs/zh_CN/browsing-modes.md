@@ -31,7 +31,7 @@ KeyPilot 对需要持续输入的操作使用模态状态。模式激活时会�
 | 界面 | 常见打开方式 | 退出 |
 | --- | --- | --- |
 | 链接预览 | <kbd>E</kbd> | <kbd>Esc</kbd>、标题栏关闭或再次执行操作 |
-| 弹出窗口 | <kbd>P</kbd> | <kbd>Esc</kbd> / 切换 <kbd>P</kbd> |
+| Reader Mode | <kbd>P</kbd> | <kbd>Esc</kbd> / 切换 <kbd>P</kbd> |
 | 万能框 | <kbd>L</kbd> / <kbd>Alt</kbd>+<kbd>L</kbd> | <kbd>Esc</kbd> |
 | 键盘布局编辑器 | <kbd>Alt</kbd>+<kbd>C</kbd> | <kbd>Alt</kbd>+<kbd>C</kbd> / 关闭 |
 | 设置 / 文档 / 指南 | <kbd>'</kbd> / <kbd>Alt</kbd>+<kbd>H</kbd> / 指南入口 | <kbd>Esc</kbd> |

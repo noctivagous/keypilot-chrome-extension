@@ -23,7 +23,7 @@ Agent entry: `npx skills add heygen-com/hyperframes` then the `/hyperframes` rou
 | Surface | Current asset | Gap |
 |---|---|---|
 | noctivagous.com hero | Looping `cyberpilotfloat-optimized.mp4` (decorative, muted, `aria-hidden`) | Same file on `en` / `de` / `es` / `es_419`. Not an explainer. |
-| Site key-click demo | SMIL SVGs (`web/assets/keyclick-*.svg` + locale copies) | Lightweight and already localized, but not a store video. |
+| Site key-click demo | SMIL SVGs (`promo/web/assets/keyclick-*.svg` + locale copies) | Lightweight and already localized, but not a store video. |
 | Chrome Web Store | Localized **screenshots** for `en`, `de`, `es`, `es_419` (`store:screenshots`). Promo **tiles** are global, no text. | Listing still wants a **YouTube URL**. Chrome does not take a raw MP4. Video **can** be localized per dashboard locale. |
 
 Chrome listing order of graphic assets: localized video → localized screenshots → global video → global screenshots. A localized HyperFrames cut would sit **above** the screenshots we already generate.

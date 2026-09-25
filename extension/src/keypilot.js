@@ -128,6 +128,13 @@ import {
   requestClosePageMediaOverlay
 } from './ui/page-media-overlay.js';
 import {
+  openReaderModeOverlay,
+  closeReaderModeOverlay,
+  isReaderModeOverlayOpen,
+  requestCloseReaderModeOverlay
+} from './ui/reader-mode-overlay.js';
+import { extractReaderArticle, isReaderModeRestrictedUrl } from './utils/reader-mode-extract.js';
+import {
   openMediaLibraryOverlay,
   closeMediaLibraryOverlay,
   isMediaLibraryOverlayOpen,
@@ -440,7 +447,8 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
           id &&
           id.startsWith('kpv2-') &&
           id !== 'kpv2-media-lib-overlay' &&
-          id !== 'kpv2-page-media-overlay'
+          id !== 'kpv2-page-media-overlay' &&
+          id !== 'kpv2-reader-overlay'
         ) {
           return true;
         }
@@ -3106,6 +3114,17 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
         }
       } catch { /* ignore */ }
 
+      // Reader Mode overlay
+      try {
+        if (isReaderModeOverlayOpen()) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          requestCloseReaderModeOverlay();
+          return;
+        }
+      } catch { /* ignore */ }
+
       // Media Library overlay (M-key gallery)
       try {
         if (isMediaLibraryOverlayOpen()) {
@@ -4068,7 +4087,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
 
     // Gallery overlays: don't extend a page text-range onto lightbox images.
     if (this.state.isHighlightMode()) {
-      if (!isPageMediaOverlayOpen() && !isMediaLibraryOverlayOpen()) {
+      if (!isPageMediaOverlayOpen() && !isMediaLibraryOverlayOpen() && !isReaderModeOverlayOpen()) {
         this.updateSelection();
       }
     }
@@ -5597,6 +5616,8 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       return;
     }
 
+    if (isReaderModeOverlayOpen()) closeReaderModeOverlay();
+
     let items = [];
     try {
       items = collectPageMedia(document);
@@ -5632,6 +5653,59 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     } catch (error) {
       console.warn('[KeyPilot] openPageMediaOverlay failed:', error);
       this.showFlashNotification('Could not open Page Media', COLORS.NOTIFICATION_ERROR);
+    }
+  }
+
+  /**
+   * Reader Mode — distill the page (or current selection) into a reading overlay.
+   * Press again or Esc to close.
+   * @param {KeyboardEvent} [e]
+   */
+  handleReaderModeKey(e) {
+    if (!this._allowActionKey('handleReaderModeKey', e)) return;
+
+    if (isReaderModeOverlayOpen()) {
+      closeReaderModeOverlay();
+      return;
+    }
+
+    const pageUrl = (() => {
+      try { return String(window.location?.href || ''); } catch { return ''; }
+    })();
+    if (isReaderModeRestrictedUrl(pageUrl)) {
+      this.showFlashNotification(getMessage('reader_mode_unavailable'), COLORS.NOTIFICATION_INFO);
+      return;
+    }
+
+    let article = null;
+    try {
+      article = extractReaderArticle({
+        document,
+        selectionText: this.getSelectedPlainText(),
+        pageTitle: document.title,
+        pageUrl
+      });
+    } catch (error) {
+      console.warn('[KeyPilot] extractReaderArticle failed:', error);
+    }
+
+    if (!article?.html) {
+      this.showFlashNotification(getMessage('reader_mode_unavailable'), COLORS.NOTIFICATION_INFO);
+      return;
+    }
+
+    try {
+      if (isPageMediaOverlayOpen()) closePageMediaOverlay();
+      if (isMediaLibraryOverlayOpen()) closeMediaLibraryOverlay();
+      openReaderModeOverlay({
+        title: article.title,
+        html: article.html,
+        byline: article.byline
+      });
+      this.emitAction('reader_mode', { source: article.source });
+    } catch (error) {
+      console.warn('[KeyPilot] openReaderModeOverlay failed:', error);
+      this.showFlashNotification(getMessage('reader_mode_unavailable'), COLORS.NOTIFICATION_ERROR);
     }
   }
 
@@ -8003,7 +8077,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
   }
 
   /**
-   * Open a URL in the large Open Popover (P).
+   * Open a URL in the large Open Popover.
    * @param {string} url
    */
   _openFullPopover(url) {
@@ -8888,6 +8962,9 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
 
     // Page Media (O)
     try { closePageMediaOverlay(); } catch { /* ignore */ }
+
+    // Reader Mode
+    try { closeReaderModeOverlay(); } catch { /* ignore */ }
 
     // Omnibox (Alt+L)
     try { this.handleCloseOmnibox?.(); } catch { /* ignore */ }

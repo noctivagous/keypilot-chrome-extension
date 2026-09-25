@@ -1,0 +1,149 @@
+<svg width="360" height="500" viewBox="0 0 360 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Key-click: apuntar con el mouse, F para abrir, D para volver">
+  <defs>
+    <linearGradient id="p-card" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#1d1d32"/>
+      <stop offset="1" stop-color="#101023"/>
+    </linearGradient>
+    <filter id="p-window-shadow"><feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000000" flood-opacity=".6"/></filter>
+    <style>
+      .sans { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "PingFang TC", "Microsoft YaHei", "Microsoft JhengHei", "Noto Sans SC", "Noto Sans TC", Arial, sans-serif; }
+      .link-text { fill: #6ea8ff; }
+      .kp-crosshair { stroke: #008000; stroke-width: 3; stroke-linecap: round; fill: none; }
+    </style>
+    <clipPath id="p-window-clip">
+      <rect x="4" y="36" width="328" height="156"/>
+    </clipPath>
+  </defs>
+
+  <rect width="360" height="500" fill="url(#p-card)"/>
+  <rect width="360" height="500" fill="none" stroke="#41415b"/>
+
+  <g transform="translate(12 16)" filter="url(#p-window-shadow)">
+    <rect width="336" height="196" rx="12" fill="#12121f" stroke="#41415b"/>
+    <rect x="1" y="1" width="334" height="34" fill="#07070e"/>
+    <circle cx="16" cy="18" r="4" fill="#713d48"/>
+    <circle cx="30" cy="18" r="4" fill="#32604d"/>
+    <circle cx="44" cy="18" r="4" fill="#555571"/>
+    <path d="M68 18 l-5 4 5 4" fill="none" stroke="#70708c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <animate attributeName="stroke" values="#555571;#555571;#a8c8b8;#a8c8b8;#555571;#555571" keyTimes="0;.40;.46;.68;.74;1" dur="10s" repeatCount="indefinite"/>
+    </path>
+    <path d="M82 18 l5 4 -5 4" fill="none" stroke="#41415b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="98" y="8" width="224" height="20" rx="10" fill="#0d0d1c" stroke="#41415b"/>
+    <text x="112" y="22" class="sans" font-size="10" fill="#b9b9cf">
+      <animate attributeName="opacity" values="1;1;0;0;1;1" keyTimes="0;.40;.46;.68;.74;1" dur="10s" repeatCount="indefinite"/>
+      noctivagous.com
+    </text>
+    <text x="112" y="22" class="sans" font-size="10" fill="#b9b9cf" opacity="0">
+      <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;.40;.46;.68;.74;1" dur="10s" repeatCount="indefinite"/>
+      noctivagous.com/article
+    </text>
+    <rect x="98" y="26" width="0" height="2" fill="#a8c8b8">
+      <animate attributeName="width" values="0;0;224;0;0;224;0;0" keyTimes="0;.40;.45;.46;.68;.73;.74;1" dur="10s" repeatCount="indefinite"/>
+    </rect>
+
+    <g clip-path="url(#p-window-clip)">
+      <g id="p-page-a">
+        <animate attributeName="opacity" values="1;1;0;0;1;1" keyTimes="0;.40;.46;.68;.74;1" dur="10s" repeatCount="indefinite"/>
+        <rect x="12" y="44" width="310" height="148" fill="#1c1c2c"/>
+        <rect x="20" y="52" width="68" height="44" fill="#6a6a7e" opacity=".42"/>
+        <rect x="96" y="52" width="68" height="44" fill="#5e5e72" opacity=".36"/>
+        <rect x="172" y="52" width="68" height="44" fill="#6a6a7e" opacity=".42"/>
+        <rect x="248" y="52" width="64" height="44" fill="#5e5e72" opacity=".36"/>
+        <rect x="20" y="152" width="140" height="7" fill="#5a5a6e" opacity=".40"/>
+        <rect x="20" y="166" width="100" height="7" fill="#5a5a6e" opacity=".28"/>
+
+        <g id="p-click-target" transform="translate(20 112)">
+          <rect x="-8" y="-12" width="168" height="36" fill="rgba(33,150,243,0.08)" stroke="rgba(33,150,243,0.95)" stroke-width="3">
+            <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;.26;.30;.40;.46;1" dur="10s" repeatCount="indefinite"/>
+          </rect>
+          <text x="8" y="14" class="sans link-text" font-size="20" font-weight="700" text-decoration="underline">Artículo</text>
+          <rect x="-8" y="-12" width="168" height="36" fill="none" stroke="rgba(0,255,0,1)" stroke-width="3">
+            <animate attributeName="opacity" values="0;0;1;.85;0;0" keyTimes="0;.36;.38;.42;.48;1" dur="10s" repeatCount="indefinite"/>
+            <animate attributeName="stroke-width" values="3;3;5;3;3" keyTimes="0;.36;.38;.42;1" dur="10s" repeatCount="indefinite"/>
+          </rect>
+          <circle cx="76" cy="6" r="8" fill="none" stroke="rgba(0,200,0,0.45)" stroke-width="3">
+            <animate attributeName="r" values="6;6;24;32;32" keyTimes="0;.36;.40;.46;1" dur="10s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0;0;.4;0;0" keyTimes="0;.36;.38;.46;1" dur="10s" repeatCount="indefinite"/>
+          </circle>
+        </g>
+      </g>
+
+      <g id="p-page-b" opacity="0">
+        <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;.40;.46;.68;.74;1" dur="10s" repeatCount="indefinite"/>
+        <rect x="12" y="44" width="310" height="148" fill="#2a2a36"/>
+        <rect x="20" y="52" width="210" height="58" fill="#8a8a9a" opacity=".38"/>
+        <rect x="240" y="52" width="70" height="58" fill="#7a7a8c" opacity=".30"/>
+        <rect x="20" y="120" width="160" height="8" fill="#c8c8d4" opacity=".55"/>
+        <rect x="20" y="136" width="280" height="6" fill="#9a9aaa" opacity=".40"/>
+        <rect x="20" y="148" width="252" height="6" fill="#9a9aaa" opacity=".32"/>
+        <rect x="20" y="160" width="228" height="6" fill="#9a9aaa" opacity=".26"/>
+        <rect x="20" y="172" width="190" height="6" fill="#9a9aaa" opacity=".20"/>
+      </g>
+
+      <g id="p-animated-cursor">
+        <animateTransform attributeName="transform" type="translate"
+          values="300 160; 300 160; 88 112; 88 112; 300 160"
+          keyTimes="0; .08; .28; .82; 1" dur="10s" repeatCount="indefinite"/>
+        <line class="kp-crosshair" x1="0" y1="-12" x2="0" y2="-4"/>
+        <line class="kp-crosshair" x1="0" y1="4" x2="0" y2="12"/>
+        <line class="kp-crosshair" x1="-12" y1="0" x2="-4" y2="0"/>
+        <line class="kp-crosshair" x1="4" y1="0" x2="12" y2="0"/>
+      </g>
+    </g>
+    <rect x="323" y="36" width="12" height="156" fill="#0a0a12"/>
+    <rect x="325" y="40" width="8" height="50" rx="4" fill="#3a3a48"/>
+  </g>
+
+  <!-- Home row under the window: S D F G. F/D are the live keys. -->
+  <g opacity=".28" fill="#1d1d32" stroke="#70708c" stroke-width="1.25">
+    <rect x="16" y="286" width="62" height="62" rx="8"/><text x="47" y="325" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">S</text>
+    <g id="p-faded-d">
+      <animate attributeName="opacity" values="1;1;0;0;1;1" keyTimes="0;.46;.52;.72;.78;1" dur="10s" repeatCount="indefinite"/>
+      <rect x="84" y="286" width="62" height="62" rx="8"/><text x="115" y="325" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">D</text>
+    </g>
+    <g id="p-faded-f">
+      <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;.46;.52;.72;.78;1" dur="10s" repeatCount="indefinite"/>
+      <rect x="152" y="286" width="62" height="62" rx="8"/><text x="183" y="325" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">F</text>
+    </g>
+    <rect x="220" y="286" width="62" height="62" rx="8"/><text x="251" y="325" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">G</text>
+  </g>
+
+  <g id="p-open-key">
+    <animate attributeName="opacity" values="1;1;0;0;1;1" keyTimes="0;.46;.52;.72;.78;1" dur="10s" repeatCount="indefinite"/>
+    <text x="183" y="272" class="sans" font-size="11" font-weight="800" letter-spacing="0.6" fill="#b9b9cf" text-anchor="middle">ABRIR</text>
+    <g id="p-animated-key" transform="translate(152 286)">
+      <animateTransform attributeName="transform" type="translate"
+        values="152 286; 152 286; 152 290; 152 286; 152 286"
+        keyTimes="0; .36; .38; .42; 1" dur="10s" repeatCount="indefinite"/>
+      <rect width="62" height="62" rx="8" fill="#292943" stroke="#a8c8b8" stroke-width="2"/>
+      <rect width="62" height="62" rx="8" fill="#a8c8b8" opacity="0">
+        <animate attributeName="opacity" values="0;0;.35;0;0" keyTimes="0;.36;.38;.42;1" dur="10s" repeatCount="indefinite"/>
+      </rect>
+      <text x="31" y="42" class="sans" font-size="32" font-weight="800" text-anchor="middle" fill="#a8c8b8">F</text>
+    </g>
+  </g>
+
+  <g id="p-back-key" opacity="0">
+    <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;.46;.52;.72;.78;1" dur="10s" repeatCount="indefinite"/>
+    <text x="115" y="272" class="sans" font-size="11" font-weight="800" letter-spacing="0.4" fill="#b9b9cf" text-anchor="middle">ATRÁS</text>
+    <g id="p-animated-back-key" transform="translate(84 286)">
+      <animateTransform attributeName="transform" type="translate"
+        values="84 286; 84 286; 84 290; 84 286; 84 286"
+        keyTimes="0; .62; .64; .68; 1" dur="10s" repeatCount="indefinite"/>
+      <rect width="62" height="62" rx="8" fill="#292943" stroke="#a8c8b8" stroke-width="2"/>
+      <rect width="62" height="62" rx="8" fill="#a8c8b8" opacity="0">
+        <animate attributeName="opacity" values="0;0;.35;0;0" keyTimes="0;.62;.64;.68;1" dur="10s" repeatCount="indefinite"/>
+      </rect>
+      <text x="31" y="42" class="sans" font-size="32" font-weight="800" text-anchor="middle" fill="#a8c8b8">D</text>
+    </g>
+  </g>
+
+  <g id="p-animated-mouse">
+    <animateTransform attributeName="transform" type="translate"
+      values="286 372; 286 372; 248 360; 248 360; 286 372"
+      keyTimes="0; .08; .28; .82; 1" dur="10s" repeatCount="indefinite"/>
+    <rect x="8" y="8" width="44" height="64" rx="18" fill="#17172b" stroke="#d6a7ad" stroke-width="2"/>
+    <line x1="30" y1="8" x2="30" y2="32" stroke="#d6a7ad" stroke-width="2"/>
+    <circle cx="30" cy="23" r="3.5" fill="#d6a7ad"/>
+  </g>
+</svg>

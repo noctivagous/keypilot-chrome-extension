@@ -82,6 +82,11 @@ online-stores/**/templates/**/*.jpeg
 promo/intro-reel/renders/
 promo/intro-reel/.hyperframes/
 
+# Marketing-site icon and hero video stay in promo-materials/web/assets
+promo/web/assets/*.png
+promo/web/assets/*.mp4
+promo/web/.DS_Store
+
 
 
 

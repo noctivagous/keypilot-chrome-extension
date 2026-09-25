@@ -20,17 +20,17 @@ implementation phases and design constraints, see
 Regenerate this table (`ls extension/_locales`, etc.) before trusting it — it
 is a snapshot, not a live status. As of 2026-09-22:
 
-| Locale | `_locales/<l>/messages.json` | `userdocs/<l>/` | `onboarding/<l>.xml` | `online-stores/chrome/copy/<l>.json` | `online-stores/chrome/listing/<l>.txt` | `online-stores/chrome/captures/<l>/` | `online-stores/generated/chrome/<l>/` | intro reel (`promo/intro-reel`) |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `en` (source/default) | yes | yes | yes | yes | yes | yes | yes | copy + YouTube |
-| `de` | yes | yes | yes | yes | yes | yes | yes | copy + YouTube |
-| `es` | yes | yes | yes | yes | yes | yes | yes | copy + YouTube |
-| `es_419` | yes | no (falls back to `es`/`en`) | no (falls back to `es`/`en`) | yes | yes | yes | yes | copy + YouTube |
-| `sk` | yes (2026-09-22, machine-translated, needs bilingual review) | no | no | no | no | no | no | copy; YouTube pending |
-| `zh_CN` | yes | yes | yes | yes | yes | capture when generating listing shots | generate from captures | copy; YouTube pending |
-| `zh_TW` | yes | yes | yes | yes | yes | capture when generating listing shots | generate from captures | copy; YouTube pending |
-| `zh_HK` | yes (from `zh_TW` Traditional, 2026-09-22) | yes | yes | yes | yes | yes (gitignored captures) | yes (gitignored generated PNGs) | copy; YouTube pending |
-| `ja` | yes (2026-09-22, machine-translated, needs bilingual review) | yes (machine-translated, needs bilingual review) | yes | yes | yes | no | no | copy; YouTube pending |
+| Locale | `_locales/<l>/messages.json` | `userdocs/<l>/` | `onboarding/<l>.xml` | `online-stores/chrome/copy/<l>.json` | `online-stores/chrome/listing/<l>.txt` | `online-stores/chrome/captures/<l>/` | `online-stores/generated/chrome/<l>/` | intro reel (`promo/intro-reel`) | site (`promo/web`) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `en` (source/default) | yes | yes | yes | yes | yes | yes | yes | copy + YouTube | yes |
+| `de` | yes | yes | yes | yes | yes | yes | yes | copy + YouTube | yes |
+| `es` | yes | yes | yes | yes | yes | yes | yes | copy + YouTube | yes |
+| `es_419` | yes | no (falls back to `es`/`en`) | no (falls back to `es`/`en`) | yes | yes | yes | yes | copy + YouTube | yes |
+| `sk` | yes (2026-09-22, machine-translated, needs bilingual review) | no | no | no | no | no | no | copy; YouTube pending | yes |
+| `zh_CN` | yes | yes | yes | yes | yes | capture when generating listing shots | generate from captures | copy; YouTube pending | yes |
+| `zh_TW` | yes | yes | yes | yes | yes | capture when generating listing shots | generate from captures | copy; YouTube pending | yes |
+| `zh_HK` | yes (from `zh_TW` Traditional, 2026-09-22) | yes | yes | yes | yes | yes (gitignored captures) | yes (gitignored generated PNGs) | copy; YouTube pending | no |
+| `ja` | yes (2026-09-22, machine-translated, needs bilingual review) | yes (machine-translated, needs bilingual review) | yes | yes | yes | no | no | copy; YouTube pending | no |
 
 A locale can ship with only `messages.json` complete — Docs, onboarding, and
 store assets fall back to base language then English. But it is not a
@@ -145,7 +145,18 @@ explicitly deferred (see [`i18n/README.md`](../i18n/README.md#add-a-locale)).
   **Localized promo video** in the Developer Dashboard for that language.
 - Details: [`promo/intro-reel/README.md`](../promo/intro-reel/README.md).
 
-### 9. Manifest metadata — `extension/manifest.json`
+### 9. Marketing site — `promo/web/`
+
+- Tagged English `index.html` and `assets/keyclick-*.svg`. Per-locale copy
+  lives in `promo/web/locales/<locale>.json`. Generate static folders with
+  `npm run web:locales`. Do not hand-edit `de/`, `es/`, and the other
+  generated locale directories.
+- Icon and hero video are not in this repo: copy
+  `promo-materials/web/assets/icon256.png` and
+  `cyberpilotfloat-optimized.mp4` into the published `assets/` folder.
+- Details: [`promo/web/README.md`](../promo/web/README.md).
+
+### 10. Manifest metadata — `extension/manifest.json`
 
 - `name`, `description`, `action.default_title` must stay as `__MSG_*__`
   references, never literal strings. `default_locale` stays `"en"`.
@@ -154,7 +165,7 @@ explicitly deferred (see [`i18n/README.md`](../i18n/README.md#add-a-locale)).
   and include `_locales/` in the archive. Check after any packaging-script
   change.
 
-### 10. Test-only / fixture locales — `test/fixtures/locales/`
+### 11. Test-only / fixture locales — `test/fixtures/locales/`
 
 - Marked catalogs used to prove locale-switching logic (e.g. `en_GB`) belong
   only here, never under `extension/_locales/`. Do not ship a locale prefixed
@@ -181,15 +192,16 @@ explicitly deferred (see [`i18n/README.md`](../i18n/README.md#add-a-locale)).
 ## Verification commands
 
 ```bash
-npm run check:locales   # catalog key/placeholder parity across all shipped locales
-npm test                # includes check:locales, plus catalog-display and locale-fallback unit tests
-npm run build           # confirms build succeeds with new/changed catalogs
-npm run package:chrome  # inspect staged manifest + archive contents for _locales/
+npm run check:locales      # catalog key/placeholder parity across all shipped locales
+npm run web:locales:check  # marketing-site catalogs vs tagged HTML/SVGs
+npm test                   # includes check:locales, plus catalog-display and locale-fallback unit tests
+npm run build              # confirms build succeeds with new/changed catalogs
+npm run package:chrome     # inspect staged manifest + archive contents for _locales/
 ```
 
 `check:locales` only proves structural completeness (keys, placeholders,
 non-empty). It proves nothing about translation quality, UI fit, or whether
-§2–§8 above were addressed. Treat a new or extended locale as incomplete
+§2–§9 above were addressed. Treat a new or extended locale as incomplete
 until every applicable row in the coverage snapshot is filled in or the gap
 is explicitly and consciously deferred (as `es_419` currently defers Docs and
 onboarding to its `es` base language). `zh_MO` is not a shipped catalog and
@@ -206,3 +218,4 @@ does not share `zh_HK`; Chrome will not fall `zh-MO` to `zh_HK`.
 - [`online-stores/README.md`](../online-stores/README.md)
 - [`scripts/store-screenshots/README.md`](../scripts/store-screenshots/README.md)
 - [`promo/intro-reel/README.md`](../promo/intro-reel/README.md) — key-click intro composition, locale JSON, HyperFrames render, YouTube URLs
+- [`promo/web/README.md`](../promo/web/README.md) — noctivagous.com tagged HTML, JSON catalogs, locale generator

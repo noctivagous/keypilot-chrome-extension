@@ -31,7 +31,7 @@ KeyPilot は連続入力が必要な操作にモーダル状態を使います�
 | サーフェス | 典型的な開き方 | 終了 |
 | --- | --- | --- |
 | リンクプレビュー | <kbd>E</kbd> | <kbd>Esc</kbd>、タイトルバーの閉じる、または同じアクションをもう一度 |
-| ポップオーバー | <kbd>P</kbd> | <kbd>Esc</kbd> / <kbd>P</kbd> で切り替え |
+| Reader Mode | <kbd>P</kbd> | <kbd>Esc</kbd> / <kbd>P</kbd> で切り替え |
 | オムニボックス | <kbd>L</kbd> / <kbd>Alt</kbd>+<kbd>L</kbd> | <kbd>Esc</kbd> |
 | キーボードレイアウトエディター | <kbd>Alt</kbd>+<kbd>C</kbd> | <kbd>Alt</kbd>+<kbd>C</kbd> / 閉じる |
 | 設定 / ドキュメント / ガイド | <kbd>'</kbd> / <kbd>Alt</kbd>+<kbd>H</kbd> / ガイド入口 | <kbd>Esc</kbd> |

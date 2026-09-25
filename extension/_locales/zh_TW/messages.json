@@ -6206,5 +6206,33 @@
   "fn_ZOOM_IN_details": {
     "message": "將分頁放大一級瀏覽器縮放，並保持游標下的點不動，效果與雙指捏合放大相同。",
     "description": "Function Library details for ZOOM_IN."
+  },
+  "fn_READER_MODE_label": {
+    "message": "Reader Mode",
+    "description": "Function Library label for READER_MODE."
+  },
+  "fn_READER_MODE_description": {
+    "message": "Read this page without clutter",
+    "description": "Function Library description for READER_MODE."
+  },
+  "fn_READER_MODE_details": {
+    "message": "Opens a KeyPilot overlay with the article text (or your current selection). Press again or Esc to close. Unavailable on pages with no extractable article.",
+    "description": "Function Library details for READER_MODE."
+  },
+  "reader_mode_title": {
+    "message": "Reader Mode",
+    "description": "Reader Mode overlay title fallback."
+  },
+  "reader_mode_aria": {
+    "message": "Reader Mode",
+    "description": "Accessible name for the Reader Mode overlay."
+  },
+  "reader_mode_unavailable": {
+    "message": "Reader Mode unavailable",
+    "description": "Flash notice when Reader Mode cannot extract an article."
+  },
+  "guide_action_reader_mode": {
+    "message": "open Reader Mode",
+    "description": "Guide explanation for the Reader Mode shortcut."
   }
 }

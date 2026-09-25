@@ -299,6 +299,7 @@ const LIBRARY_KEY_ICON_BY_FUNCTION_ID = Object.freeze({
   GET_TEXT_RANGE: 'kp-cfg-i-data',
   GET_MEDIA_AT_CURSOR: 'kp-cfg-i-image',
   PAGE_MEDIA: 'kp-cfg-i-image',
+  READER_MODE: 'kp-cfg-i-docs',
   LOOKUP_WORD: 'kp-cfg-i-lookup',
   FONT_INFO: 'kp-cfg-i-data',
   TRANSLATE: 'kp-cfg-i-translate',

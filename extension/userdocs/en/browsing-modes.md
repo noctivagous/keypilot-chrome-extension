@@ -31,7 +31,7 @@ If keys seem “dead,” you are probably in Text Mode or another modal — pres
 | Surface | Typical open | Exit |
 | --- | --- | --- |
 | Link Preview | <kbd>E</kbd> | <kbd>Esc</kbd>, titlebar close, or action again |
-| Popover | <kbd>P</kbd> | <kbd>Esc</kbd> / toggle <kbd>P</kbd> |
+| Reader Mode | <kbd>P</kbd> | <kbd>Esc</kbd> / toggle <kbd>P</kbd> |
 | Omnibox | <kbd>L</kbd> / <kbd>Alt</kbd>+<kbd>L</kbd> | <kbd>Esc</kbd> |
 | Keyboard Layout Editor | <kbd>Alt</kbd>+<kbd>C</kbd> | <kbd>Alt</kbd>+<kbd>C</kbd> / close |
 | Settings / Docs / Guide | <kbd>'</kbd> / <kbd>Alt</kbd>+<kbd>H</kbd> / Guide entry | <kbd>Esc</kbd> |

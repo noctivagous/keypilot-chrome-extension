@@ -164,4 +164,13 @@ describe('built-in keyboard layout physical bindings', () => {
     assert.match(highlightManagerSource, /document\.createElement\('kbd'\)/);
     assert.match(highlightManagerSource, /localizeKeycapLabel\(finishKeyRaw\)/);
   });
+
+  it('binds Reader Mode on former Open Popover keys', () => {
+    const right = buildKeybindingsForLayout('browsing-right');
+    const left = buildKeybindingsForLayout('browsing-left');
+    assert.deepEqual(right.READER_MODE.keys, ['KeyP']);
+    assert.deepEqual(left.READER_MODE.keys, ['KeyI']);
+    assert.equal(right.OPEN_POPOVER, undefined);
+    assert.equal(left.OPEN_POPOVER, undefined);
+  });
 });

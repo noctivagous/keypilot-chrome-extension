@@ -31,7 +31,7 @@ Si las teclas parecen "muertas", probablemente esté en modo texto u otro modo: 
 | Superficie | Abierto típico | Salir |
 | --- | --- | --- |
 | Vista previa del enlace | <kbd>E</kbd> | <kbd>Esc</kbd>, cierre de la barra de título o acción nuevamente |
-| Popover | <kbd>P</kbd> | <kbd>Esc</kbd> / alternar <kbd>P</kbd> |
+| Reader Mode | <kbd>P</kbd> | <kbd>Esc</kbd> / alternar <kbd>P</kbd> |
 | Caja multifunción | <kbd>L</kbd> / <kbd>Alt</kbd>+<kbd>L</kbd> | <kbd>Esc</kbd> |
 | Editor de distribución de teclado | <kbd>Alt</kbd>+<kbd>C</kbd> | <kbd>Alt</kbd>+<kbd>C</kbd> / cerrar |
 | Configuración/Documentos/Guía | <kbd>'</kbd> / <kbd>Alt</kbd>+<kbd>H</kbd> / Entrada de guía | <kbd>Esc</kbd> |

@@ -170,6 +170,7 @@ export const KEYBOARD_ACTION_ICON_IDS = Object.freeze({
   COPY_HOVERED_VIDEO: 'video',
   FONT_INFO: 'font',
   PAGE_MEDIA: 'image',
+  READER_MODE: 'book',
   OPEN_MEDIA_LIBRARY: 'image',
   // Function Library (Config cards + placeable Actions)
   CLIPBOARD_COPY: 'clipboard',

@@ -1034,7 +1034,8 @@ export class IntersectionObserverManager {
           id &&
           id.startsWith('kpv2-') &&
           id !== 'kpv2-media-lib-overlay' &&
-          id !== 'kpv2-page-media-overlay'
+          id !== 'kpv2-page-media-overlay' &&
+          id !== 'kpv2-reader-overlay'
         ) {
           return true;
         }

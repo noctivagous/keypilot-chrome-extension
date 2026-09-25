@@ -215,7 +215,9 @@ export function isInteractiveKeyPilotOverlayElement(element) {
       '#kpv2-media-lib-overlay',
       '.kpv2-media-lib-overlay',
       '#kpv2-page-media-overlay',
-      '.kpv2-page-media-overlay'
+      '.kpv2-page-media-overlay',
+      '#kpv2-reader-overlay',
+      '.kpv2-reader-overlay'
     ].join(', ')
   );
 }
@@ -223,7 +225,7 @@ export function isInteractiveKeyPilotOverlayElement(element) {
 /** Gallery chrome classes that Click Element / hover must treat as page controls. */
 export function isInteractiveKeyPilotOverlayClass(className) {
   const c = String(className || '');
-  return c.startsWith('kpv2-media-lib-') || c.startsWith('kpv2-page-media-');
+  return c.startsWith('kpv2-media-lib-') || c.startsWith('kpv2-page-media-') || c.startsWith('kpv2-reader-');
 }
 
 /**

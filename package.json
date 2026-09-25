@@ -24,6 +24,8 @@
     "debug:chrome": "node scripts/debug-chrome.mjs",
     "fixtures:keyboard-layouts": "node scripts/generate-keyboard-layout-fixtures.mjs",
     "check:locales": "node scripts/check-locales.mjs",
+    "web:locales": "node promo/web/locales/generate.mjs",
+    "web:locales:check": "node promo/web/locales/generate.mjs --check",
     "test": "npm run check:locales && node --test --test-concurrency=1 test/*.test.js",
     "test:settings": "node --test --test-concurrency=1 test/settings-manager.test.js",
     "test:storage": "node --test --test-concurrency=1 test/storage.test.js",
@@ -31,6 +33,7 @@
     "audit:all": "npm audit"
   },
   "dependencies": {
+    "@mozilla/readability": "^0.6.0",
     "markdown-it": "^15.0.0",
     "query-selector-shadow-dom": "^1.0.1",
     "terser": "^5.36.0"

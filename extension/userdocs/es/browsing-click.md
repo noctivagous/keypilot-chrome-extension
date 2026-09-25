@@ -8,7 +8,7 @@ Apunte a los elementos con el mouse; Pulsa una tecla para activar lo que hay deb
 2. Presione <kbd>F</kbd> para hacer clic o para enfocar un campo de texto e ingresar al modo de texto.
 3. Para abrir el enlace en una **nueva pestaña de primer plano**, presione <kbd>N</kbd>.
 4. Para abrirlo en una **pestaña de fondo** (como un clic central), presione <kbd>G</kbd>.
-5. Para echar un vistazo rápido a una ventana emergente, presione <kbd>E</kbd> (Vista previa del enlace) o <kbd>P</kbd> (Vista emergente más grande). Consulte *Vista previa del enlace y ventana emergente*.
+5. Para echar un vistazo rápido a una ventana emergente, presione <kbd>E</kbd> (Vista previa del enlace). Consulte *Vista previa del enlace y ventana emergente*. Para una vista sin distracciones de esta página, presione <kbd>P</kbd> (Reader Mode).
 
 Si se resalta el elemento incorrecto, mueva ligeramente el mouse; KeyPilot prefiere la hoja debajo del cursor.
 
@@ -22,7 +22,7 @@ Si se resalta el elemento incorrecto, mueva ligeramente el mouse; KeyPilot prefi
 | <kbd>N</kbd> | Abrir enlace en una pestaña nueva (primer plano) |
 | <kbd>G</kbd> | Abrir enlace en una pestaña nueva (fondo) |
 | <kbd>E</kbd> | Ventana emergente de vista previa del enlace |
-| <kbd>P</kbd> | Abrir enlace en ventana emergente Popover |
+| <kbd>P</kbd> | Reader Mode |
 
 ### Comentarios visuales
 

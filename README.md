@@ -41,6 +41,7 @@ on the keyboard in specific places to make web navigation quick.
 | `]` | Zoom the page in at the cursor |
 | `I` | Copy hovered image |
 | `M` | Open saved Media Library |
+| `P` | Read this page without clutter |
 | `R` | Browser history forward |
 | `U` | Copy hovered link URL |
 | `;` | Toolbar, visits, and bookmarks |
@@ -51,7 +52,6 @@ on the keyboard in specific places to make web navigation quick.
 | `J` | Browse this tab’s history |
 | `L` | Address bar overlay |
 | `N` | Open link in a new foreground tab |
-| `P` | Open link in a popup window |
 | `S` | Navigate to the site origin |
 | `B` | Origin-based continuous scroll |
 | `,` | Open one random bookmark |

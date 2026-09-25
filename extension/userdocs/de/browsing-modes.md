@@ -31,7 +31,7 @@ Wenn Tasten „tot“ erscheinen, befinden Sie sich wahrscheinlich im Textmodus 
 | Oberfläche | Typisch offen | Ausstieg |
 | --- | --- | --- |
 | Linkvorschau | <kbd>E</kbd> | <kbd>Esc</kbd>, Titelleiste schließen oder erneute Aktion |
-| Popover | <kbd>P</kbd> | <kbd>Esc</kbd> / umschalten <kbd>P</kbd> |
+| Reader Mode | <kbd>P</kbd> | <kbd>Esc</kbd> / umschalten <kbd>P</kbd> |
 | Omnibox | <kbd>L</kbd> / <kbd>Alt</kbd>+<kbd>L</kbd> | <kbd>Esc</kbd> |
 | Tastaturlayout-Editor | <kbd>Alt</kbd>+<kbd>C</kbd> | <kbd>Alt</kbd>+<kbd>C</kbd> / schließen |
 | Einstellungen / Dokumente / Anleitung | <kbd>'</kbd> / <kbd>Alt</kbd>+<kbd>H</kbd> / Leitfadeneintrag | <kbd>Esc</kbd> |

@@ -44,7 +44,14 @@
         { "id": "tools-top-sites", "title": "常用网站", "file": "tools-top-sites.md", "shortcut": ";", "accent": "amber" },
         { "id": "tools-tab-history", "title": "标签页历史记录", "file": "tools-tab-history.md", "shortcut": "J", "accent": "blue" },
         { "id": "tools-control-strip", "title": "控制栏", "file": "tools-control-strip.md", "shortcut": "Alt+J", "accent": "cyan" },
-        { "id": "tools-previews", "title": "链接预览与弹出窗口", "file": "tools-previews.md", "icon": "preview", "accent": "green" }
+        { "id": "tools-previews", "title": "链接预览与弹出窗口", "file": "tools-previews.md", "icon": "preview", "accent": "green" },
+        {
+          "id": "tools-reader",
+          "title": "Reader Mode",
+          "file": "tools-reader.md",
+          "shortcut": "P",
+          "accent": "amber"
+        }
       ]
     },
     {

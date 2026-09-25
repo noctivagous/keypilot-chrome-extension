@@ -200,6 +200,7 @@ const BUILTIN_FUNCTION_DATA_TAGS = Object.freeze({
   }),
   // Whole-page scan (not under-cursor); opens a tabbed overlay rather than a sink.
   PAGE_MEDIA: Object.freeze({ dataSource: 'none', dataKind: 'media' }),
+  READER_MODE: Object.freeze({ dataSource: 'none', dataKind: 'text' }),
   OPEN_MEDIA_LIBRARY: Object.freeze({ dataSource: 'none' }),
   SEND_TEXT_TO_AI: Object.freeze({
     dataSource: 'textRange',
@@ -423,6 +424,7 @@ const FUNCTION_DOCS_URL_BY_ID = Object.freeze({
   COPY_HOVERED_VIDEO: docsUrl('media-copy'),
   FONT_INFO: docsUrl('functions', 'font-info'),
   PAGE_MEDIA: docsUrl('media-page'),
+  READER_MODE: docsUrl('tools-reader'),
   DELETE: docsUrl('browsing-modes'),
   COLS_TOGGLE: docsUrl('browsing-modes'),
   OPEN_MEDIA_LIBRARY: docsUrl('media-library'),
@@ -1088,6 +1090,7 @@ export const FUNCTION_LIBRARY_ITEM_ORDER = Object.freeze({
   COPY_HOVERED_URL: 202,
   FONT_INFO: 203,
   PAGE_MEDIA: 205,
+  READER_MODE: 206,
   RECTANGLE_HIGHLIGHT: 210,
   HIGHLIGHT: 220,
   // Clipboard

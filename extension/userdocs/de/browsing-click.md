@@ -8,7 +8,7 @@ Mit der Maus auf Elemente zeigen; Drücken Sie eine Taste, um alles zu aktiviere
 2. Drücken Sie <kbd>F</kbd>, um zu klicken – oder um ein Textfeld zu fokussieren und in den Textmodus zu wechseln.
 3. Um den Link in einem **neuen Vordergrund-Tab** zu öffnen, drücken Sie <kbd>N</kbd>.
 4. Um es in einem **Hintergrundtab** zu öffnen (wie ein Mittelklick), drücken Sie <kbd>G</kbd>.
-5. Für einen kurzen Blick in ein Popup-Fenster drücken Sie <kbd>E</kbd> (Linkvorschau) oder <kbd>P</kbd> (größeres Popover). Siehe *Linkvorschau und Popover*.
+5. Für einen kurzen Blick in ein Popup-Fenster drücken Sie <kbd>E</kbd> (Linkvorschau). Siehe *Linkvorschau und Popover*. Für eine ablenkungsfreie Ansicht dieser Seite drücken Sie <kbd>P</kbd> (Reader Mode).
 
 Wenn das falsche Element hervorgehoben wird, bewegen Sie die Maus leicht – KeyPilot bevorzugt das Blatt unter dem Cursor.
 
@@ -22,7 +22,7 @@ Wenn das falsche Element hervorgehoben wird, bewegen Sie die Maus leicht – Key
 | <kbd>N</kbd> | Link in neuem Tab öffnen (Vordergrund) |
 | <kbd>G</kbd> | Link in neuem Tab öffnen (Hintergrund) |
 | <kbd>E</kbd> | Link-Vorschau-Popup |
-| <kbd>P</kbd> | Link im Popover-Popup öffnen |
+| <kbd>P</kbd> | Reader Mode |
 
 ### Visuelles Feedback
 
