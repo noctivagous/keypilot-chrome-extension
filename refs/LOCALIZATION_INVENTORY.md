@@ -167,7 +167,8 @@ labels in the site JSON; those come from §1.
 `npm run web:locales` (and `npm run web:locales:check`) does all of the following:
 
 1. Writes `<locale>/index.html` and `<locale>/assets/keyclick-*.svg` from the
-   English source plus `locales/<locale>.json`.
+   English source plus `locales/<locale>.json`. Keycaps tagged
+   `data-hardware-code` take their legends from the locale’s physical model.
 2. Stamps `data-hardware` from `HARDWARE_BY_LOCALE` in
    `promo/web/locales/generate.mjs`. Shipped models are `us-ansi-qwerty`,
    `de-de-qwertz-iso`, `es-es-qwerty-iso`, and `sk-sk-qwertz-iso`. A locale

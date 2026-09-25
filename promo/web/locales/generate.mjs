@@ -13,7 +13,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as esbuild from "esbuild";
-import { mergeLocaleCatalog, parentCatalogLocale } from "../../scripts/locale-catalogs.mjs";
+import { mergeLocaleCatalog, parentCatalogLocale } from "../../../scripts/locale-catalogs.mjs";
+import {
+  DEFAULT_KEYBOARD_HARDWARE_LAYOUT_ID,
+  KEYBOARD_HARDWARE_LAYOUTS
+} from "../../../extension/src/config/keyboard-hardware-layouts.js";
 
 const CATALOG_DIR = path.dirname(fileURLToPath(import.meta.url));
 const WEB = path.resolve(CATALOG_DIR, "..");
@@ -61,8 +65,10 @@ const MESSAGE_KEY = /^(fn_.+_(label|description)|keycap_.+|keyboard_help_.+|key_
 const GENERATED_ATTRS = [
   "data-i18n",
   "data-i18n-alt",
+  "data-i18n-src",
   "data-i18n-aria-label",
   "data-i18n-letter-spacing",
+  "data-hardware-code",
   "data-from-web",
   "data-locale-path",
   "data-locale-current"
@@ -166,6 +172,8 @@ function replaceTaggedAttrs(html, catalog, locale) {
     let out = tag;
     const altKey = getAttr(out, "data-i18n-alt");
     if (altKey) out = setAttr(out, "alt", requireKey(catalog, altKey, locale));
+    const srcKey = getAttr(out, "data-i18n-src");
+    if (srcKey) out = setAttr(out, "src", requireKey(catalog, srcKey, locale));
     const ariaKey = getAttr(out, "data-i18n-aria-label");
     if (ariaKey) {
       out = setAttr(out, "aria-label", requireKey(catalog, ariaKey, locale));
@@ -272,9 +280,66 @@ function applyDocumentMeta(html, locale) {
   return out;
 }
 
-function applyHardware(html, locale) {
+function hardwareIdForLocale(locale) {
   const id = HARDWARE_BY_LOCALE[locale];
   if (!id) throw new Error(`Missing hardware layout for ${locale}`);
+  if (!KEYBOARD_HARDWARE_LAYOUTS[id]) {
+    throw new Error(`Unknown hardware layout "${id}" for ${locale}`);
+  }
+  return id;
+}
+
+function hardwareLegendByCode(hardwareId) {
+  const layout = KEYBOARD_HARDWARE_LAYOUTS[hardwareId];
+  const legends = new Map();
+  for (const physicalRow of layout.rows) {
+    for (const physicalKey of physicalRow.keys) {
+      legends.set(physicalKey.code, physicalKey.legends.base);
+    }
+  }
+  return legends;
+}
+
+function hardwareCodeTag() {
+  return /<([a-zA-Z][\w:-]*)([^>]*?\sdata-hardware-code="([^"]+)"[^>]*)>([\s\S]*?)<\/\1>/g;
+}
+
+function applyHardwareCodes(markup, locale, sourceName) {
+  const legends = hardwareLegendByCode(hardwareIdForLocale(locale));
+  return markup.replace(hardwareCodeTag(), (match, tag, openInner, code, inner) => {
+    if (!legends.has(code)) {
+      throw new Error(`${sourceName}: unknown data-hardware-code="${code}"`);
+    }
+    return `<${tag}${openInner}>${legends.get(code)}</${tag}>`;
+  });
+}
+
+function checkHardwareSource(html, svgFiles) {
+  const errors = [];
+  const legends = hardwareLegendByCode(DEFAULT_KEYBOARD_HARDWARE_LAYOUT_ID);
+  const check = (name, source) => {
+    source.replace(hardwareCodeTag(), (match, tag, openInner, code, inner) => {
+      if (!legends.has(code)) {
+        errors.push(`${name}: unknown data-hardware-code="${code}"`);
+        return match;
+      }
+      const actual = comparable(inner);
+      const expected = legends.get(code);
+      if (actual !== expected) {
+        errors.push(`${name} ${code}: source "${actual}" != ${DEFAULT_KEYBOARD_HARDWARE_LAYOUT_ID} "${expected}"`);
+      }
+      return match;
+    });
+  };
+  check("index.html", html);
+  for (const svg of svgFiles) check(svg.name, svg.source);
+  if (errors.length) {
+    throw new Error(`Hardware legend drift:\n- ${errors.join("\n- ")}`);
+  }
+}
+
+function applyHardware(html, locale) {
+  const id = hardwareIdForLocale(locale);
   if (!html.includes("data-hardware=")) {
     throw new Error("Missing data-hardware on the keyboard stage");
   }
@@ -296,6 +361,7 @@ function renderHtml(source, catalog, locale) {
   html = applyFromWeb(html, locale === SOURCE_LOCALE ? "" : "../");
   html = applyLocalePaths(html, locale);
   html = applyHardware(html, locale);
+  html = applyHardwareCodes(html, locale, "index.html");
   html = applyDocumentMeta(html, locale);
   html = stripGeneratedAttrs(html);
   return insertGeneratedComment(html);
@@ -304,6 +370,7 @@ function renderHtml(source, catalog, locale) {
 function renderSvg(source, catalog, locale) {
   let svg = replaceTaggedElements(source, catalog, locale);
   svg = replaceTaggedAttrs(svg, catalog, locale);
+  svg = applyHardwareCodes(svg, locale, "keyclick svg");
   return stripGeneratedAttrs(svg);
 }
 
@@ -330,6 +397,27 @@ function checkEnglishSource(html, svgFiles, catalog) {
       return match;
     }
   );
+  html.replace(/<[^>]+>/g, (tag) => {
+    const srcKey = getAttr(tag, "data-i18n-src");
+    if (srcKey) {
+      seen.add(srcKey);
+      const actual = getAttr(tag, "src");
+      const expected = catalog[srcKey];
+      if (actual !== expected) {
+        errors.push(`index.html ${srcKey}: src != en.json`);
+      }
+    }
+    const altKey = getAttr(tag, "data-i18n-alt");
+    if (altKey) {
+      seen.add(altKey);
+      const actual = getAttr(tag, "alt");
+      const expected = catalog[altKey];
+      if (actual !== expected) {
+        errors.push(`index.html ${altKey}: alt "${actual}" != en.json "${expected}"`);
+      }
+    }
+    return tag;
+  });
   for (const { name, source } of svgFiles) {
     source.replace(
       /<([a-zA-Z][\w:-]*)([^>]*?\sdata-i18n="([^"]+)"[^>]*)>([\s\S]*?)<\/\1>/g,
@@ -347,6 +435,7 @@ function checkEnglishSource(html, svgFiles, catalog) {
   for (const key of Object.keys(catalog)) {
     if (key.endsWith("_spacing")) continue;
     if (!seen.has(key) && !html.includes(`data-i18n-alt="${key}"`) &&
+        !html.includes(`data-i18n-src="${key}"`) &&
         !html.includes(`data-i18n-aria-label="${key}"`) &&
         !svgFiles.some(({ source }) => source.includes(`data-i18n-aria-label="${key}"`))) {
       errors.push(`en.json key "${key}" is not referenced in tagged source`);
@@ -485,6 +574,7 @@ async function main() {
     source: fs.readFileSync(path.join(WEB, "assets", name), "utf8")
   }));
   checkEnglishSource(htmlSource, svgFiles, en);
+  checkHardwareSource(htmlSource, svgFiles);
 
   let wrote = 0;
   for (const locale of LOCALES) {

@@ -23,30 +23,30 @@
 
   <g transform="translate(20 12)" clip-path="url(#l-panel-clip)">
     <g opacity=".28" fill="#1d1d32" stroke="#70708c" stroke-width="1.25">
-      <rect x="-6" y="8" width="62" height="62" rx="8"/><text x="25" y="47" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">Q</text>
-      <rect x="62" y="8" width="62" height="62" rx="8"/><text x="93" y="47" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">W</text>
-      <rect x="130" y="8" width="62" height="62" rx="8"/><text x="161" y="47" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">E</text>
-      <rect x="198" y="8" width="62" height="62" rx="8"/><text x="229" y="47" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">R</text>
-      <rect x="266" y="8" width="62" height="62" rx="8"/><text x="297" y="47" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">T</text>
-      <rect x="334" y="8" width="62" height="62" rx="8"/><text x="365" y="47" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">Y</text>
-      <rect x="-40" y="76" width="62" height="62" rx="8"/><text x="-9" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">A</text>
-      <rect x="28" y="76" width="62" height="62" rx="8"/><text x="59" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">S</text>
+      <rect x="-6" y="8" width="62" height="62" rx="8"/><text x="25" y="47" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle" data-hardware-code="KeyQ">Q</text>
+      <rect x="62" y="8" width="62" height="62" rx="8"/><text x="93" y="47" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle" data-hardware-code="KeyW">W</text>
+      <rect x="130" y="8" width="62" height="62" rx="8"/><text x="161" y="47" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle" data-hardware-code="KeyE">E</text>
+      <rect x="198" y="8" width="62" height="62" rx="8"/><text x="229" y="47" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle" data-hardware-code="KeyR">R</text>
+      <rect x="266" y="8" width="62" height="62" rx="8"/><text x="297" y="47" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle" data-hardware-code="KeyT">T</text>
+      <rect x="334" y="8" width="62" height="62" rx="8"/><text x="365" y="47" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle" data-hardware-code="KeyY">Y</text>
+      <rect x="-40" y="76" width="62" height="62" rx="8"/><text x="-9" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle" data-hardware-code="KeyA">A</text>
+      <rect x="28" y="76" width="62" height="62" rx="8"/><text x="59" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle" data-hardware-code="KeyS">S</text>
       <g id="l-faded-d">
         <animate attributeName="opacity" values="1;1;0;0;1;1" keyTimes="0;.46;.52;.72;.78;1" dur="10s" repeatCount="indefinite"/>
-        <rect x="96" y="76" width="62" height="62" rx="8"/><text x="127" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">D</text>
+        <rect x="96" y="76" width="62" height="62" rx="8"/><text x="127" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle" data-hardware-code="KeyD">D</text>
       </g>
       <g id="l-faded-f">
         <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;.46;.52;.72;.78;1" dur="10s" repeatCount="indefinite"/>
-        <rect x="164" y="76" width="62" height="62" rx="8"/><text x="195" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">F</text>
+        <rect x="164" y="76" width="62" height="62" rx="8"/><text x="195" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle" data-hardware-code="KeyF">F</text>
       </g>
-      <rect x="232" y="76" width="62" height="62" rx="8"/><text x="263" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">G</text>
-      <rect x="300" y="76" width="62" height="62" rx="8"/><text x="331" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">H</text>
-      <rect x="368" y="76" width="62" height="62" rx="8"/><text x="399" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">J</text>
-      <rect x="-6" y="144" width="62" height="62" rx="8"/><text x="25" y="183" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">Z</text>
-      <rect x="62" y="144" width="62" height="62" rx="8"/><text x="93" y="183" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">X</text>
-      <rect x="130" y="144" width="62" height="62" rx="8"/><text x="161" y="183" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">C</text>
-      <rect x="198" y="144" width="62" height="62" rx="8"/><text x="229" y="183" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">V</text>
-      <rect x="266" y="144" width="62" height="62" rx="8"/><text x="297" y="183" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle">B</text>
+      <rect x="232" y="76" width="62" height="62" rx="8"/><text x="263" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle" data-hardware-code="KeyG">G</text>
+      <rect x="300" y="76" width="62" height="62" rx="8"/><text x="331" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle" data-hardware-code="KeyH">H</text>
+      <rect x="368" y="76" width="62" height="62" rx="8"/><text x="399" y="115" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle" data-hardware-code="KeyJ">J</text>
+      <rect x="-6" y="144" width="62" height="62" rx="8"/><text x="25" y="183" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle" data-hardware-code="KeyZ">Z</text>
+      <rect x="62" y="144" width="62" height="62" rx="8"/><text x="93" y="183" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle" data-hardware-code="KeyX">X</text>
+      <rect x="130" y="144" width="62" height="62" rx="8"/><text x="161" y="183" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle" data-hardware-code="KeyC">C</text>
+      <rect x="198" y="144" width="62" height="62" rx="8"/><text x="229" y="183" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle" data-hardware-code="KeyV">V</text>
+      <rect x="266" y="144" width="62" height="62" rx="8"/><text x="297" y="183" class="sans" font-size="18" fill="#b9b9cf" stroke="none" text-anchor="middle" data-hardware-code="KeyB">B</text>
     </g>
 
     <g transform="translate(256 8)" filter="url(#l-window-shadow)">
@@ -136,7 +136,7 @@
         <rect width="62" height="62" rx="8" fill="#a8c8b8" opacity="0">
           <animate attributeName="opacity" values="0;0;.35;0;0" keyTimes="0;.36;.38;.42;1" dur="10s" repeatCount="indefinite"/>
         </rect>
-        <text x="31" y="42" class="sans" font-size="32" font-weight="800" text-anchor="middle" fill="#a8c8b8">F</text>
+        <text x="31" y="42" class="sans" font-size="32" font-weight="800" text-anchor="middle" fill="#a8c8b8" data-hardware-code="KeyF">F</text>
       </g>
     </g>
 
@@ -151,7 +151,7 @@
         <rect width="62" height="62" rx="8" fill="#a8c8b8" opacity="0">
           <animate attributeName="opacity" values="0;0;.35;0;0" keyTimes="0;.62;.64;.68;1" dur="10s" repeatCount="indefinite"/>
         </rect>
-        <text x="31" y="42" class="sans" font-size="32" font-weight="800" text-anchor="middle" fill="#a8c8b8">D</text>
+        <text x="31" y="42" class="sans" font-size="32" font-weight="800" text-anchor="middle" fill="#a8c8b8" data-hardware-code="KeyD">D</text>
       </g>
     </g>
 

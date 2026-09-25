@@ -112,11 +112,106 @@
         </div>
     </section>
 
+    <section class="try-it" id="try-it">
+        <div class="container">
+            <p class="eyebrow eyebrow-sage" data-i18n="try_it_eyebrow">What It's Like to Use KeyPilot</p>
+            <h2 data-i18n="try_it_title">Demo</h2>
+            <p class="lede" data-i18n="try_it_lede">We put together a miniature web browser demo of KeyPilot with two key actions. Hover over a link and press <kbd>F</kbd> to open it. Press <kbd>D</kbd> to go back.</p>
+            <p class="try-it-mobile" data-i18n="try_it_mobile">This demo is for desktop, where you can use a mouse and a keyboard together.</p>
+            <div class="try-it-stage" data-try-it-demo data-page="home" data-can-open tabindex="0" role="group" aria-label="Interactive key-click demo. Hover a link and press F to open, D to go back." data-i18n-aria-label="try_it_aria">
+                <div class="try-it-keys" aria-hidden="true">
+                    <div class="try-it-row try-it-row-1">
+                        <span class="try-it-key"><span class="try-it-key-face" data-hardware-code="KeyQ">Q</span></span>
+                        <span class="try-it-key"><span class="try-it-key-face" data-hardware-code="KeyW">W</span></span>
+                        <span class="try-it-key"><span class="try-it-key-face" data-hardware-code="KeyE">E</span></span>
+                        <span class="try-it-key"><span class="try-it-key-face" data-hardware-code="KeyR">R</span></span>
+                        <span class="try-it-key"><span class="try-it-key-face" data-hardware-code="KeyT">T</span></span>
+                        <span class="try-it-key"><span class="try-it-key-face" data-hardware-code="KeyY">Y</span></span>
+                    </div>
+                    <div class="try-it-row try-it-row-2">
+                        <span class="try-it-key"><span class="try-it-key-face" data-hardware-code="KeyA">A</span></span>
+                        <span class="try-it-key"><span class="try-it-key-face" data-hardware-code="KeyS">S</span></span>
+                        <span class="try-it-key try-it-key-d">
+                            <span class="try-it-key-label" data-i18n="demo_back">GO BACK</span>
+                            <span class="try-it-key-flash"></span>
+                            <span class="try-it-key-face" data-hardware-code="KeyD">D</span>
+                        </span>
+                        <span class="try-it-key try-it-key-f">
+                            <span class="try-it-key-label" data-i18n="demo_open">OPEN</span>
+                            <span class="try-it-key-flash"></span>
+                            <span class="try-it-key-face" data-hardware-code="KeyF">F</span>
+                        </span>
+                        <span class="try-it-key"><span class="try-it-key-face" data-hardware-code="KeyG">G</span></span>
+                        <span class="try-it-key"><span class="try-it-key-face" data-hardware-code="KeyH">H</span></span>
+                        <span class="try-it-key"><span class="try-it-key-face" data-hardware-code="KeyJ">J</span></span>
+                    </div>
+                    <div class="try-it-row try-it-row-3">
+                        <span class="try-it-key"><span class="try-it-key-face" data-hardware-code="KeyZ">Z</span></span>
+                        <span class="try-it-key"><span class="try-it-key-face" data-hardware-code="KeyX">X</span></span>
+                        <span class="try-it-key"><span class="try-it-key-face" data-hardware-code="KeyC">C</span></span>
+                        <span class="try-it-key"><span class="try-it-key-face" data-hardware-code="KeyV">V</span></span>
+                        <span class="try-it-key"><span class="try-it-key-face" data-hardware-code="KeyB">B</span></span>
+                    </div>
+                </div>
+                <div class="try-it-window">
+                    <div class="try-it-chrome">
+                        <span class="try-it-dot try-it-dot-r"></span>
+                        <span class="try-it-dot try-it-dot-g"></span>
+                        <span class="try-it-dot try-it-dot-b"></span>
+                        <span class="try-it-nav try-it-nav-back" data-try-it-back-icon>
+                            <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M7 3 L3 6 L7 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </span>
+                        <span class="try-it-nav try-it-nav-fwd">
+                            <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M5 3 L9 6 L5 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </span>
+                        <div class="try-it-omnibox">
+                            <span data-try-it-url data-i18n="try_it_host">harborgazette.paper</span>
+                            <span class="try-it-load" data-try-it-load></span>
+                        </div>
+                    </div>
+                    <div class="try-it-viewport" data-try-it-viewport>
+                        <div class="try-it-page" data-try-it-page="home">
+                            <p class="try-it-kicker" data-i18n="try_it_home_kicker">Waterfront News</p>
+                            <p class="try-it-masthead" data-i18n="try_it_home_title">The Harbor Gazette</p>
+                            <img class="try-it-photo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Between_Custom_House_Wharf_and_Portland_Pier.jpg/1280px-Between_Custom_House_Wharf_and_Portland_Pier.jpg" alt="The Portland waterfront at dusk" width="640" height="400" loading="lazy" decoding="async" data-i18n-src="try_it_img_lead" data-i18n-alt="try_it_img_lead_alt">
+                            <span class="try-it-link" role="link" data-try-it-to="story" data-i18n="try_it_link_story">Harbor lights return this weekend</span>
+                            <span class="try-it-link" role="link" data-try-it-to="related" data-i18n="try_it_link_related">Evening walks reopen on the pier</span>
+                            <span class="try-it-link" role="link" data-try-it-to="about" data-i18n="try_it_link_about">About the Gazette</span>
+                        </div>
+                        <div class="try-it-page" data-try-it-page="story" hidden>
+                            <h3 class="try-it-story-title" data-i18n="try_it_story_title">Harbor lights return to the waterfront this weekend</h3>
+                            <img class="try-it-photo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Between_Custom_House_Wharf_and_Portland_Pier.jpg/1280px-Between_Custom_House_Wharf_and_Portland_Pier.jpg" alt="The Portland waterfront at dusk" width="640" height="400" loading="lazy" decoding="async" data-i18n-src="try_it_img_lead" data-i18n-alt="try_it_img_lead_alt">
+                            <p data-i18n="try_it_story_p1">Crews finished the last lamps along Pier 4, ending a two-year restoration.</p>
+                            <p data-i18n="try_it_story_p2">Evening walks reopen after dusk. Market stalls stay open an hour later.</p>
+                            <span class="try-it-link" role="link" data-try-it-to="related" data-i18n="try_it_story_related">Read: Evening walks reopen on the pier</span>
+                        </div>
+                        <div class="try-it-page" data-try-it-page="related" hidden>
+                            <h3 class="try-it-story-title" data-i18n="try_it_related_title">Evening walks reopen on the pier</h3>
+                            <img class="try-it-photo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/83_Commercial_Street%2C_Portland_ME.jpg/1280px-83_Commercial_Street%2C_Portland_ME.jpg" alt="Commercial Street in Portland" width="640" height="400" loading="lazy" decoding="async" data-i18n-src="try_it_img_side" data-i18n-alt="try_it_img_side_alt">
+                            <p data-i18n="try_it_related_p1">The promenade is open after sunset again, with extra lighting on Pier 4.</p>
+                            <p data-i18n="try_it_related_p2">Local shops expect a busy autumn weekend on the waterfront.</p>
+                        </div>
+                        <div class="try-it-page" data-try-it-page="about" hidden>
+                            <h3 class="try-it-story-title" data-i18n="try_it_about_title">About the Gazette</h3>
+                            <p data-i18n="try_it_about_p1">The Harbor Gazette has covered the Mid-Coast and Penobscot Bay since 1884.</p>
+                            <p data-i18n="try_it_about_p2">This miniature newspaper is here so you can try KeyPilot’s F and D keys.</p>
+                        </div>
+                        <div class="try-it-crosshair" data-try-it-crosshair hidden>
+                            <span></span><span></span><span></span><span></span>
+                        </div>
+                    </div>
+                    <div class="try-it-scroll" aria-hidden="true"><span></span></div>
+                </div>
+            </div>
+            <p class="visually-hidden" data-try-it-live aria-live="polite"></p>
+        </div>
+    </section>
+
     <section class="keyboard-ref" id="keyboard">
         <div class="container">
             <p class="eyebrow" data-i18n="keyboard_eyebrow">THE KEYBOARD</p>
             <h2 data-i18n="keyboard_title">Keyboard reference</h2>
-            <p class="lede" data-i18n="keyboard_lede">Hover a key to see what it does on the default browsing layout.</p>
+            <p class="lede" data-i18n="keyboard_lede">KeyPilot features a full layout of key actions. Below is a reproduction of the keyboard reference window that you can keep open as you use the program. Hover over a key to see what it does on the default browsing layout.</p>
             <div class="keyboard-stage" data-kp-site-keyboard data-hardware="us-ansi-qwerty"></div>
         </div>
     </section>
@@ -203,6 +298,7 @@
             </p>
         </div>
     </footer>
+    <script src="try-it-demo.js" data-from-web="src"></script>
     <script src="keyboard-demo.js" data-from-web="src"></script>
     <script>
         document.querySelectorAll(".hero-video").forEach((video) => {

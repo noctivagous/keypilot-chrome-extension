@@ -1335,7 +1335,7 @@
           label: "Reader Mode",
           description: "Read this page without clutter",
           details: "Opens a KeyPilot overlay with the article text (or your current selection). Press again or Esc to close. Unavailable on pages with no extractable article.",
-          keyboardClass: "key-page-media",
+          keyboardClass: "key-reader-mode",
           row: 1
         }),
         // Media Library entry point (M on right-handed only — M is PAGE_DOWN_INSTANT on left-handed,
@@ -3491,6 +3491,17 @@ ${fontFaceCss}
       deep: "#834f16",
       icon: "#3f250a",
       glow: "rgba(255, 165, 0, 0.14)"
+    })}
+}
+
+/* Reader Mode \u2014 same orange family as KeyPilot UI, darker but still orange */
+.${KEYBINDINGS_UI_ROOT_CLASS} .key.key-reader-mode {
+  ${keycapMaterial({
+      face: "#b36e2c",
+      mid: "#93581f",
+      deep: "#734316",
+      icon: "#3a210a",
+      glow: "rgba(201, 122, 40, 0.16)"
     })}
 }
 
