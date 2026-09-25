@@ -26,6 +26,7 @@ export const KEYBINDINGS_UI_FONT_PLACEHOLDERS = {
 };
 
 import { DEFAULT_KEYBOARD_LAYOUT_ID, getKeyboardUiLayoutForLayout } from '../config/keyboard-layouts.js';
+import { STOCK_ACTIONS } from '../config/stock-actions.js';
 
 /**
  * Canonical keyboard layout used by both early-inject and the bundled UI.
@@ -323,11 +324,29 @@ function getKeyboardKeyIconCss() {
 
   // Action-specific icon masks only (keys with KeyPilot functions).
   // Color is applied here (not on the base rule) so unmapped actions stay transparent.
+  // Stock instances (stock:social-media) stay on data-kp-action-id for popovers and
+  // press lookup; they reuse their Function glyph.
+  const iconIdsByGlyph = new Map();
   for (const [actionId, iconName] of Object.entries(KEYBOARD_ACTION_ICON_IDS)) {
+    if (!iconUris[iconName]) continue;
+    const ids = iconIdsByGlyph.get(iconName) || [];
+    ids.push(actionId);
+    iconIdsByGlyph.set(iconName, ids);
+  }
+  for (const stock of STOCK_ACTIONS) {
+    const iconName = KEYBOARD_ACTION_ICON_IDS[stock.functionId];
+    if (!iconName || !iconUris[iconName]) continue;
+    const ids = iconIdsByGlyph.get(iconName) || [];
+    if (!ids.includes(stock.id)) ids.push(stock.id);
+    iconIdsByGlyph.set(iconName, ids);
+  }
+  for (const [iconName, actionIds] of iconIdsByGlyph) {
     const uri = iconUris[iconName];
-    if (!uri) continue;
+    const selectors = actionIds
+      .map((actionId) => `.${KEYBINDINGS_UI_ROOT_CLASS} .key[data-kp-action-id="${actionId}"] > .key-bg-icon`)
+      .join(',\n');
     lines.push(
-      `.${KEYBINDINGS_UI_ROOT_CLASS} .key[data-kp-action-id="${actionId}"] > .key-bg-icon {` +
+      `${selectors} {` +
       ` -webkit-mask-image: ${uri}; mask-image: ${uri};` +
       ` background-color: var(--kp-key-icon, #0c1018); }`
     );
@@ -1010,14 +1029,14 @@ ${fontFaceCss}
   })}
 }
 
-/* Open saved destinations (Open URLs, bookmarks, Site Root) */
+/* Open saved destinations (Open URLs, bookmarks, Site Root) — plum, not rose/red */
 .${KEYBINDINGS_UI_ROOT_CLASS} .key.key-open-urls {
   ${keycapMaterial({
-    face: '#a84a78',
-    mid: '#8c3c64',
-    deep: '#6b2d4c',
-    icon: '#3a1528',
-    glow: 'rgba(216, 90, 140, 0.14)'
+    face: '#6b4a8c',
+    mid: '#573b73',
+    deep: '#412c56',
+    icon: '#1f152b',
+    glow: 'rgba(140, 100, 180, 0.12)'
   })}
 }
 
