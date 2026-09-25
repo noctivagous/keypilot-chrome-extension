@@ -13,6 +13,13 @@
     <script src="../early-inject.js"></script>
     <link rel="stylesheet" href="key-new-tab.css" />
     <link rel="stylesheet" href="kp-locale-fonts.css" />
+    <!--
+      Page content starts here, ahead of the KeyPilot module. Both scripts are
+      deferred; this one does not import KeyPilot, so bookmarks and top sites
+      paint without waiting for that graph.
+    -->
+    <script type="module" src="key-new-tab-boot.js"></script>
+    <script type="module" src="key-new-tab.js"></script>
   </head>
   <body>
     <div class="mesh-bg" aria-hidden="true">
@@ -32,7 +39,7 @@
         alt="KeyPilot"
       />
 
-      <fieldset id="bookmarks-shelf" class="knt-fieldset" hidden>
+      <fieldset id="bookmarks-shelf" class="knt-fieldset">
         <legend data-i18n="key_new_tab_bookmarks_label">Toolbar bookmarks</legend>
         <nav id="bookmarks-bar" class="bookmarks-bar knt-scroll"></nav>
       </fieldset>
@@ -69,7 +76,5 @@
         <p id="top-sites-empty" class="empty" hidden data-i18n="key_new_tab_top_sites_empty">No top sites yet.</p>
       </fieldset>
     </main>
-
-    <script type="module" src="key-new-tab.js"></script>
   </body>
 </html>
