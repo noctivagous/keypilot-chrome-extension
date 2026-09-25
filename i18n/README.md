@@ -19,16 +19,22 @@ Screenshots and the promo video are also dashboard uploads. Pick the path
 that matches what changed. Commands that take `<locale>` also accept a
 comma-separated list.
 
+Edit the English source, then instruct the AI to translate that change into
+the other shipped locale files. Leave keys, placeholders, and untranslated
+names (`KeyPilot`, `Chrome Web Store`, the `F` key) as they are. Review the
+translation before generating or pasting.
+
 ### Screenshots only
 
 Run this when listing images changed and the promo video did not.
 
-1. If a headline or callout changed, edit
-   `online-stores/chrome/copy/<locale>.json`. The generator requires every
-   screenshot slot.
-2. If the product UI inside the picture changed, rebuild and recapture.
-   Skip this step when the existing captures are still the right UI and only
-   the annotation text changed.
+1. If a headline or callout changed, edit `online-stores/chrome/copy/en.json`,
+   then have the AI translate that change into each
+   `online-stores/chrome/copy/<locale>.json`. Every slot must stay filled.
+2. If the product UI inside the picture changed, edit
+   `extension/_locales/en/messages.json` first and have the AI translate
+   those keys. Then rebuild and recapture. Skip this step when the existing
+   captures are still the right UI and only the annotation text changed.
 
    ```bash
    npm run build
@@ -62,10 +68,12 @@ Run this when the intro reel changed and the listing screenshots did not.
 Chrome accepts a YouTube URL, not the MP4.
 
 1. Edit on-screen copy in
-   `promo/intro-reel/locales/key-click-intro/<locale>.json`. Keep the same
-   keys as `en.json`. If the YouTube title or description changed, edit
-   `promo/intro-reel/youtube-description-<locale>.txt` (first line is the
-   title).
+   `promo/intro-reel/locales/key-click-intro/en.json`, then have the AI
+   translate that change into each `locales/key-click-intro/<locale>.json`.
+   Keep the same keys as English. If the YouTube title or description
+   changed, edit `promo/intro-reel/youtube-description-en.txt` (first line is
+   the title) and have the AI translate the other
+   `youtube-description-<locale>.txt` files.
 2. From `promo/intro-reel/`, render one locale or the batch:
 
    ```bash
@@ -93,14 +101,16 @@ Chrome accepts a YouTube URL, not the MP4.
 Run this when the listing paragraphs changed and the screenshots and promo
 video did not.
 
-1. Edit `online-stores/chrome/listing/<locale>.txt`. Keep the same feature
-   set as `en.txt`. Leave the one-line summary in `extension_description`;
-   do not paste that sentence into the detailed description.
-2. If the summary line itself changed, update `extension_description` in
-   `extension/_locales/<locale>/messages.json`, then upload a package that
-   contains that catalog. The dashboard fills **Summary from package** from
-   that upload. The language only appears in the listing selector after the
-   package includes `_locales/<locale>`.
+1. Edit `online-stores/chrome/listing/en.txt`, then have the AI translate
+   that change into each `online-stores/chrome/listing/<locale>.txt`. Keep
+   the same feature set. Leave the one-line summary in
+   `extension_description`; do not paste that sentence into the detailed
+   description.
+2. If the summary line itself changed, edit `extension_description` in
+   `extension/_locales/en/messages.json` and have the AI translate that key.
+   Upload a package that contains the catalogs. The dashboard fills
+   **Summary from package** from that upload. The language only appears in
+   the listing selector after the package includes `_locales/<locale>`.
 3. Open **Store listing**, choose the language, and paste the full `.txt`
    file into **Detailed description**. Record the paste in
    `online-stores/chrome/RELEASE-CHECKLIST.md`.
@@ -110,22 +120,25 @@ video did not.
 Run this when the listing should be rebuilt from current product UI, copy,
 and video. Do the steps in order.
 
-1. Update `extension/_locales/<locale>/messages.json` when UI strings or the
-   summary line changed, then `npm run check:locales`. Upload a package
-   before expecting **Summary from package** to change.
-2. Update `online-stores/chrome/copy/<locale>.json` and
-   `online-stores/chrome/listing/<locale>.txt`.
-3. Recapture and composite screenshots (steps 2–3 under
+1. Edit the English sources that changed:
+   `extension/_locales/en/messages.json` (UI strings and
+   `extension_description`), `online-stores/chrome/copy/en.json`,
+   `online-stores/chrome/listing/en.txt`, and
+   `promo/intro-reel/locales/key-click-intro/en.json` plus
+   `youtube-description-en.txt` when the video changed. Have the AI translate
+   each change into the matching locale files, then `npm run check:locales`.
+   Upload a package before expecting **Summary from package** to change.
+2. Recapture and composite screenshots (steps 2–3 under
    [Screenshots only](#screenshots-only)).
-4. Render and publish the intro reel (the [videos](#videos-only) steps).
-5. Regenerate the site so its screenshots match the new PNGs:
+3. Render and publish the intro reel (the [videos](#videos-only) steps).
+4. Regenerate the site so its screenshots match the new PNGs:
 
    ```bash
    npm run web:locales
    npm run web:locales:check
    ```
 
-6. In the dashboard, for each locale: paste
+5. In the dashboard, for each locale: paste
    `online-stores/chrome/listing/<locale>.txt` into **Detailed description**,
    upload the five screenshots, and set the localized promo video URL.
    Confirm **Summary from package** shows `extension_description`. Upload the
@@ -137,7 +150,7 @@ and video. Do the steps in order.
 2. For product UI, add or update the English source entry in
    `extension/_locales/en/messages.json`. Keep its key stable when only its
    wording changes, and add a useful `description` for translators.
-3. Apply the same semantic change to every translation catalog under
+3. Instruct the AI to translate that English change into every catalog under
    `extension/_locales/`. Preserve all message keys and placeholder names.
 4. Update the matching locale-specific docs, onboarding model, or store assets
    if the UI change affects them.
