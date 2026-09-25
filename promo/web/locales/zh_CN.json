@@ -29,5 +29,15 @@
   "demo_open": "打开",
   "demo_open_spacing": "0",
   "demo_back": "返回",
-  "demo_back_spacing": "0"
+  "demo_back_spacing": "0",
+  "keyboard_eyebrow": "键盘",
+  "keyboard_title": "键盘参考",
+  "keyboard_lede": "将指针悬停在按键上，查看它在默认浏览布局中的作用。",
+  "shots_eyebrow": "页面上",
+  "shots_title": "KeyPilot 实际使用",
+  "shot_1": "通过按键点击浏览网页。",
+  "shot_2": "丰富的操作尽在您的指尖",
+  "shot_3": "构建适合您工作流程的键盘布局。",
+  "shot_4": "安装后会出现使用演练。",
+  "shot_5": "始终可通过右键菜单控制 KeyPilot。"
 }

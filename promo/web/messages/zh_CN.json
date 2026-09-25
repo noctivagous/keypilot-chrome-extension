@@ -1,0 +1,938 @@
+{
+  "control_strip_collapse": {
+    "message": "收起",
+    "description": "Control-strip collapse action."
+  },
+  "control_strip_expand": {
+    "message": "展开",
+    "description": "Control-strip expand action."
+  },
+  "keyboard_help_aria_label": {
+    "message": "键盘参考",
+    "description": "Accessible name for the floating keyboard reference."
+  },
+  "keyboard_help_title": {
+    "message": "键盘参考",
+    "description": "Title of the floating keyboard reference."
+  },
+  "keyboard_help_title_typing": {
+    "message": "键盘参考 — 输入中",
+    "description": "Keyboard reference title while a text field is focused."
+  },
+  "keyboard_help_toggle_title": {
+    "message": "键盘参考",
+    "description": "Tooltip for the keyboard-reference toggle shortcut."
+  },
+  "keyboard_help_toggle_aria": {
+    "message": "切换键盘参考（$1）",
+    "description": "Accessible name for the keyboard-reference toggle shortcut. $1 is the key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "K"
+      }
+    }
+  },
+  "keyboard_help_close_aria": {
+    "message": "关闭键盘参考",
+    "description": "Accessible name for closing the keyboard reference."
+  },
+  "keyboard_help_collapse_aria": {
+    "message": "收起",
+    "description": "Accessible name for collapsing the keyboard reference."
+  },
+  "keyboard_help_expand_aria": {
+    "message": "展开",
+    "description": "Accessible name for expanding the keyboard reference."
+  },
+  "keyboard_help_layout_aria": {
+    "message": "键盘布局",
+    "description": "Accessible name for the keyboard-reference layout picker."
+  },
+  "keyboard_help_editing_aria": {
+    "message": "正在编辑布局 — 按 $1 退出",
+    "description": "Hint while the layout editor is open. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+C"
+      }
+    }
+  },
+  "keyboard_help_exit_text_mode": {
+    "message": "退出文本模式（$1）",
+    "description": "Button that leaves text mode. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Esc"
+      }
+    }
+  },
+  "keyboard_help_exit_text_mode_label": {
+    "message": "退出文本模式",
+    "description": "Visible label on the Keyboard Reference button that leaves text mode."
+  },
+  "keyboard_help_esc_to_exit": {
+    "message": "按 $1 退出",
+    "description": "Keyboard Reference titlebar hint while text mode is active. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Esc"
+      }
+    }
+  },
+  "keyboard_help_close_editor": {
+    "message": "关闭布局编辑器（$1）",
+    "description": "Button that closes the layout editor. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+C"
+      }
+    }
+  },
+  "keyboard_help_close_editor_label": {
+    "message": "关闭布局编辑器",
+    "description": "Visible label on the Keyboard Reference button that closes the layout editor."
+  },
+  "keycap_tab": {
+    "message": "Tab",
+    "description": "Visible legend on the Tab keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_caps": {
+    "message": "Caps",
+    "description": "Visible legend on the Caps Lock keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_shift": {
+    "message": "Shift",
+    "description": "Visible legend on the Shift keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_enter": {
+    "message": "Enter",
+    "description": "Visible legend on the Enter/Return keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_backspace": {
+    "message": "Backspace",
+    "description": "Visible legend on the Backspace keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_esc": {
+    "message": "Esc",
+    "description": "Visible legend on the Escape keycap in Keyboard Reference. Keep this short."
+  },
+  "keyboard_help_left_handed": {
+    "message": "左手",
+    "description": "Chip label for left-handed keyboard layout."
+  },
+  "keyboard_help_left_handed_off_aria": {
+    "message": "切换关左手布局",
+    "description": "Accessible name for dismissing the left-handed chip."
+  },
+  "keyboard_help_render_error": {
+    "message": "键盘参考渲染失败",
+    "description": "Error when the keyboard reference cannot paint."
+  },
+  "keyboard_help_custom_render_error": {
+    "message": "自定义键盘参考渲染失败",
+    "description": "Error when a custom layout cannot paint."
+  },
+  "keyboard_help_remove_action_aria": {
+    "message": "从 $1 移除操作",
+    "description": "Accessible name for removing a key assignment. $1 is the key label.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "F"
+      }
+    }
+  },
+  "keyboard_help_remove": {
+    "message": "移除",
+    "description": "Tooltip for removing a key assignment."
+  },
+  "layout_family_browsing_label": {
+    "message": "浏览",
+    "description": "Built-in keyboard layout family name."
+  },
+  "layout_family_browsing_description": {
+    "message": "完整浏览控制（滚动、标签页、点击、历史、工具）。",
+    "description": "Description of the Browsing built-in keyboard layout family."
+  },
+  "layout_family_browsing_picker": {
+    "message": "内置：浏览",
+    "description": "Built-in keyboard layout family label in the layout picker."
+  },
+  "key_info_key": {
+    "message": "按键：$1",
+    "description": "Physical key caption in the key-info popover. $1 is the key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "F"
+      }
+    }
+  },
+  "key_info_settings_hint": {
+    "message": "可在设置中更改",
+    "description": "Hint shown on hover in the key-info popover when the action has settings."
+  },
+  "key_info_instance_title": {
+    "message": "$NAME$：$TYPE$",
+    "description": "Hover tooltip title for an action instance. $1 is the instance name, $2 is the key action type.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Social media"
+      },
+      "type": {
+        "content": "$2",
+        "example": "Open URLs"
+      }
+    }
+  },
+  "key_info_config": {
+    "message": "配置",
+    "description": "Button in the key-info popover that opens the action configuration panel."
+  },
+  "fn_ACTIVATE_label": {
+    "message": "点击元素",
+    "description": "Function Library label for ACTIVATE."
+  },
+  "fn_ACTIVATE_description": {
+    "message": "点击悬停的元素",
+    "description": "Function Library description for ACTIVATE."
+  },
+  "fn_ACTIVATE_NEW_TAB_label": {
+    "message": "点击到新标签页",
+    "description": "Function Library label for ACTIVATE_NEW_TAB."
+  },
+  "fn_ACTIVATE_NEW_TAB_description": {
+    "message": "在新的前台标签页中打开链接",
+    "description": "Function Library description for ACTIVATE_NEW_TAB."
+  },
+  "fn_ACTIVATE_NEW_TAB_BACKGROUND_label": {
+    "message": "点击到后台新标签页",
+    "description": "Function Library label for ACTIVATE_NEW_TAB_BACKGROUND."
+  },
+  "fn_ACTIVATE_NEW_TAB_BACKGROUND_description": {
+    "message": "在新的后台标签页中打开链接",
+    "description": "Function Library description for ACTIVATE_NEW_TAB_BACKGROUND."
+  },
+  "fn_BACK_label": {
+    "message": "后退",
+    "description": "Function Library label for BACK."
+  },
+  "fn_BACK_description": {
+    "message": "浏览器历史后退",
+    "description": "Function Library description for BACK."
+  },
+  "fn_BACK2_label": {
+    "message": "后退",
+    "description": "Function Library label for BACK2."
+  },
+  "fn_BACK2_description": {
+    "message": "浏览器历史后退",
+    "description": "Function Library description for BACK2."
+  },
+  "fn_FORWARD_label": {
+    "message": "前进",
+    "description": "Function Library label for FORWARD."
+  },
+  "fn_FORWARD_description": {
+    "message": "浏览器历史前进",
+    "description": "Function Library description for FORWARD."
+  },
+  "fn_DELETE_label": {
+    "message": "删除模式",
+    "description": "Function Library label for DELETE."
+  },
+  "fn_DELETE_description": {
+    "message": "隐藏光标下的元素",
+    "description": "Function Library description for DELETE."
+  },
+  "fn_TAB_LEFT_label": {
+    "message": "上一个标签页",
+    "description": "Function Library label for TAB_LEFT."
+  },
+  "fn_TAB_LEFT_description": {
+    "message": "切换到上一个标签页",
+    "description": "Function Library description for TAB_LEFT."
+  },
+  "fn_TAB_RIGHT_label": {
+    "message": "下一个标签页",
+    "description": "Function Library label for TAB_RIGHT."
+  },
+  "fn_TAB_RIGHT_description": {
+    "message": "切换到下一个标签页",
+    "description": "Function Library description for TAB_RIGHT."
+  },
+  "fn_ROOT_label": {
+    "message": "前往网站根目录",
+    "description": "Function Library label for ROOT."
+  },
+  "fn_ROOT_description": {
+    "message": "导航到网站源站",
+    "description": "Function Library description for ROOT."
+  },
+  "fn_LAUNCHER_label": {
+    "message": "启动器",
+    "description": "Function Library label for LAUNCHER."
+  },
+  "fn_LAUNCHER_description": {
+    "message": "快速访问网站启动器",
+    "description": "Function Library description for LAUNCHER."
+  },
+  "fn_TOP_SITES_label": {
+    "message": "常用网站",
+    "description": "Function Library label for TOP_SITES."
+  },
+  "fn_TOP_SITES_description": {
+    "message": "工具栏、访问记录与书签",
+    "description": "Function Library description for TOP_SITES."
+  },
+  "fn_CLOSE_TAB_label": {
+    "message": "关闭标签页",
+    "description": "Function Library label for CLOSE_TAB."
+  },
+  "fn_CLOSE_TAB_description": {
+    "message": "关闭当前标签页",
+    "description": "Function Library description for CLOSE_TAB."
+  },
+  "fn_CANCEL_label": {
+    "message": "退出聚焦",
+    "description": "Function Library label for CANCEL."
+  },
+  "fn_CANCEL_description": {
+    "message": "离开各模式与浮层",
+    "description": "Function Library description for CANCEL."
+  },
+  "fn_PAGE_UP_INSTANT_label": {
+    "message": "上翻页",
+    "description": "Function Library label for PAGE_UP_INSTANT."
+  },
+  "fn_PAGE_UP_INSTANT_description": {
+    "message": "立即向上跳一页",
+    "description": "Function Library description for PAGE_UP_INSTANT."
+  },
+  "fn_PAGE_DOWN_INSTANT_label": {
+    "message": "下翻页",
+    "description": "Function Library label for PAGE_DOWN_INSTANT."
+  },
+  "fn_PAGE_DOWN_INSTANT_description": {
+    "message": "立即向下跳一页",
+    "description": "Function Library description for PAGE_DOWN_INSTANT."
+  },
+  "fn_PAGE_TOP_label": {
+    "message": "滚到顶部",
+    "description": "Function Library label for PAGE_TOP."
+  },
+  "fn_PAGE_TOP_description": {
+    "message": "跳到滚动目标顶部",
+    "description": "Function Library description for PAGE_TOP."
+  },
+  "fn_PAGE_BOTTOM_label": {
+    "message": "滚到底部",
+    "description": "Function Library label for PAGE_BOTTOM."
+  },
+  "fn_PAGE_BOTTOM_description": {
+    "message": "跳到滚动目标底部",
+    "description": "Function Library description for PAGE_BOTTOM."
+  },
+  "fn_SCROLL_LINE_label": {
+    "message": "行滚动",
+    "description": "Function Library label for SCROLL_LINE."
+  },
+  "fn_SCROLL_LINE_description": {
+    "message": "基于原点的连续滚动",
+    "description": "Function Library description for SCROLL_LINE."
+  },
+  "fn_NEW_TAB_label": {
+    "message": "新标签页",
+    "description": "Function Library label for NEW_TAB."
+  },
+  "fn_NEW_TAB_description": {
+    "message": "打开 KeyPilot 新标签页",
+    "description": "Function Library description for NEW_TAB."
+  },
+  "fn_OPEN_POPOVER_label": {
+    "message": "打开浮层",
+    "description": "Function Library label for OPEN_POPOVER."
+  },
+  "fn_OPEN_POPOVER_description": {
+    "message": "在弹出窗口中打开链接",
+    "description": "Function Library description for OPEN_POPOVER."
+  },
+  "fn_PREVIEW_LINK_POPOVER_label": {
+    "message": "预览链接",
+    "description": "Function Library label for PREVIEW_LINK_POPOVER."
+  },
+  "fn_PREVIEW_LINK_POPOVER_description": {
+    "message": "在弹出窗口中预览链接",
+    "description": "Function Library description for PREVIEW_LINK_POPOVER."
+  },
+  "fn_POI_WEBSITE_label": {
+    "message": "地点官网",
+    "description": "Function Library label for POI_WEBSITE."
+  },
+  "fn_POI_WEBSITE_description": {
+    "message": "打开地图地点的官网",
+    "description": "Function Library description for POI_WEBSITE."
+  },
+  "fn_POI_ADDRESS_label": {
+    "message": "地点地址",
+    "description": "Function Library label for POI_ADDRESS."
+  },
+  "fn_POI_ADDRESS_description": {
+    "message": "复制地图地点的地址",
+    "description": "Function Library description for POI_ADDRESS."
+  },
+  "fn_OPEN_SETTINGS_POPOVER_label": {
+    "message": "设置",
+    "description": "Function Library label for OPEN_SETTINGS_POPOVER."
+  },
+  "fn_OPEN_SETTINGS_POPOVER_description": {
+    "message": "打开 KeyPilot 设置",
+    "description": "Function Library description for OPEN_SETTINGS_POPOVER."
+  },
+  "fn_OMNIBOX_label": {
+    "message": "地址栏",
+    "description": "Function Library label for OMNIBOX. Keep this short for keycaps. Do not use the English word Omnibox in non-English catalogs."
+  },
+  "fn_OMNIBOX_description": {
+    "message": "地址栏浮层",
+    "description": "Function Library description for OMNIBOX."
+  },
+  "fn_TAB_HISTORY_label": {
+    "message": "标签页历史",
+    "description": "Function Library label for TAB_HISTORY."
+  },
+  "fn_TAB_HISTORY_description": {
+    "message": "浏览本标签页的历史",
+    "description": "Function Library description for TAB_HISTORY."
+  },
+  "fn_TABS_OVERVIEW_label": {
+    "message": "标签页总览",
+    "description": "Function Library label for TABS_OVERVIEW."
+  },
+  "fn_TABS_OVERVIEW_description": {
+    "message": "显示所有窗口和标签页",
+    "description": "Function Library description for TABS_OVERVIEW."
+  },
+  "fn_TOGGLE_KEYBOARD_HELP_label": {
+    "message": "键盘参考",
+    "description": "Function Library label for TOGGLE_KEYBOARD_HELP. English may keep the KB abbreviation; other locales must not use KB."
+  },
+  "fn_TOGGLE_KEYBOARD_HELP_description": {
+    "message": "显示或隐藏键盘图",
+    "description": "Function Library description for TOGGLE_KEYBOARD_HELP."
+  },
+  "fn_HIGHLIGHT_label": {
+    "message": "文本选择",
+    "description": "Function Library label for HIGHLIGHT."
+  },
+  "fn_HIGHLIGHT_description": {
+    "message": "选择文本并复制富文本",
+    "description": "Function Library description for HIGHLIGHT."
+  },
+  "fn_RECTANGLE_HIGHLIGHT_label": {
+    "message": "元素选择",
+    "description": "Function Library label for RECTANGLE_HIGHLIGHT."
+  },
+  "fn_RECTANGLE_HIGHLIGHT_description": {
+    "message": "矩形或累积式元素拾取",
+    "description": "Function Library description for RECTANGLE_HIGHLIGHT."
+  },
+  "fn_COPY_HOVERED_IMAGE_label": {
+    "message": "复制图片",
+    "description": "Function Library label for COPY_HOVERED_IMAGE."
+  },
+  "fn_COPY_HOVERED_IMAGE_description": {
+    "message": "复制悬停的图片",
+    "description": "Function Library description for COPY_HOVERED_IMAGE."
+  },
+  "fn_COPY_HOVERED_URL_label": {
+    "message": "复制网址",
+    "description": "Function Library label for COPY_HOVERED_URL."
+  },
+  "fn_COPY_HOVERED_URL_description": {
+    "message": "复制悬停链接的网址",
+    "description": "Function Library description for COPY_HOVERED_URL."
+  },
+  "fn_COPY_HOVERED_VIDEO_label": {
+    "message": "复制视频",
+    "description": "Function Library label for COPY_HOVERED_VIDEO."
+  },
+  "fn_COPY_HOVERED_VIDEO_description": {
+    "message": "复制悬停的视频",
+    "description": "Function Library description for COPY_HOVERED_VIDEO."
+  },
+  "fn_FONT_INFO_label": {
+    "message": "字体信息",
+    "description": "Function Library label for FONT_INFO."
+  },
+  "fn_FONT_INFO_description": {
+    "message": "查看光标下的字体",
+    "description": "Function Library description for FONT_INFO."
+  },
+  "fn_PAGE_MEDIA_label": {
+    "message": "页面媒体",
+    "description": "Function Library label for PAGE_MEDIA."
+  },
+  "fn_PAGE_MEDIA_description": {
+    "message": "浏览本页找到的媒体",
+    "description": "Function Library description for PAGE_MEDIA."
+  },
+  "fn_OPEN_MEDIA_LIBRARY_label": {
+    "message": "媒体库",
+    "description": "Function Library label for OPEN_MEDIA_LIBRARY."
+  },
+  "fn_OPEN_MEDIA_LIBRARY_description": {
+    "message": "打开已保存的媒体库",
+    "description": "Function Library description for OPEN_MEDIA_LIBRARY."
+  },
+  "fn_CLIPBOARD_COPY_label": {
+    "message": "复制",
+    "description": "Function Library label for CLIPBOARD_COPY."
+  },
+  "fn_CLIPBOARD_COPY_description": {
+    "message": "复制所选到剪贴板",
+    "description": "Function Library description for CLIPBOARD_COPY."
+  },
+  "fn_CLIPBOARD_CUT_label": {
+    "message": "剪切",
+    "description": "Function Library label for CLIPBOARD_CUT."
+  },
+  "fn_CLIPBOARD_CUT_description": {
+    "message": "剪切所选到剪贴板",
+    "description": "Function Library description for CLIPBOARD_CUT."
+  },
+  "fn_CLIPBOARD_PASTE_label": {
+    "message": "粘贴",
+    "description": "Function Library label for CLIPBOARD_PASTE."
+  },
+  "fn_CLIPBOARD_PASTE_description": {
+    "message": "粘贴到聚焦的输入框",
+    "description": "Function Library description for CLIPBOARD_PASTE."
+  },
+  "fn_CLIPBOARD_SELECT_ALL_label": {
+    "message": "全选",
+    "description": "Function Library label for CLIPBOARD_SELECT_ALL."
+  },
+  "fn_CLIPBOARD_SELECT_ALL_description": {
+    "message": "全选输入框或页面",
+    "description": "Function Library description for CLIPBOARD_SELECT_ALL."
+  },
+  "fn_SELECT_WORD_label": {
+    "message": "选词",
+    "description": "Function Library label for SELECT_WORD."
+  },
+  "fn_SELECT_WORD_description": {
+    "message": "选中光标下的词",
+    "description": "Function Library description for SELECT_WORD."
+  },
+  "fn_SELECT_SENTENCE_label": {
+    "message": "选句子",
+    "description": "Function Library label for SELECT_SENTENCE."
+  },
+  "fn_SELECT_SENTENCE_description": {
+    "message": "选中光标下的句子",
+    "description": "Function Library description for SELECT_SENTENCE."
+  },
+  "fn_SELECT_PARAGRAPH_label": {
+    "message": "选段落",
+    "description": "Function Library label for SELECT_PARAGRAPH."
+  },
+  "fn_SELECT_PARAGRAPH_description": {
+    "message": "选中光标下的段落",
+    "description": "Function Library description for SELECT_PARAGRAPH."
+  },
+  "fn_SELECT_IMAGE_label": {
+    "message": "选图片",
+    "description": "Function Library label for SELECT_IMAGE."
+  },
+  "fn_SELECT_IMAGE_description": {
+    "message": "选中光标下的图片",
+    "description": "Function Library description for SELECT_IMAGE."
+  },
+  "fn_LOOKUP_WORD_label": {
+    "message": "查词",
+    "description": "Function Library label for LOOKUP_WORD."
+  },
+  "fn_LOOKUP_WORD_description": {
+    "message": "查看光标下单词的词典释义",
+    "description": "Function Library description for LOOKUP_WORD."
+  },
+  "fn_SHOW_POPOVER_label": {
+    "message": "显示浮层",
+    "description": "Function Library label for SHOW_POPOVER."
+  },
+  "fn_SHOW_POPOVER_description": {
+    "message": "显示上一个宏步骤的结果",
+    "description": "Function Library description for SHOW_POPOVER."
+  },
+  "fn_ADD_URL_TO_MEDIA_LIBRARY_label": {
+    "message": "添加网址到媒体库",
+    "description": "Function Library label for ADD_URL_TO_MEDIA_LIBRARY."
+  },
+  "fn_ADD_URL_TO_MEDIA_LIBRARY_description": {
+    "message": "保存悬停链接（不下载）",
+    "description": "Function Library description for ADD_URL_TO_MEDIA_LIBRARY."
+  },
+  "fn_FETCH_URL_FOR_MEDIA_LIBRARY_label": {
+    "message": "抓取网址到媒体库",
+    "description": "Function Library label for FETCH_URL_FOR_MEDIA_LIBRARY."
+  },
+  "fn_FETCH_URL_FOR_MEDIA_LIBRARY_description": {
+    "message": "下载链接文件到媒体库",
+    "description": "Function Library description for FETCH_URL_FOR_MEDIA_LIBRARY."
+  },
+  "fn_cat_navigation_label": {
+    "message": "导航",
+    "description": "Actions Library category label for Navigation."
+  },
+  "fn_cat_tab_control_label": {
+    "message": "标签页控制",
+    "description": "Actions Library category label for Tab Control."
+  },
+  "fn_cat_begin_url_label": {
+    "message": "起始网址",
+    "description": "Actions Library category label for Begin URL."
+  },
+  "fn_cat_get_page_data_label": {
+    "message": "获取页面数据",
+    "description": "Actions Library category label for Get Page Data."
+  },
+  "fn_cat_maps_label": {
+    "message": "地图",
+    "description": "Actions Library category label for Maps."
+  },
+  "fn_cat_scroll_label": {
+    "message": "滚动",
+    "description": "Actions Library category label for Scroll."
+  },
+  "fn_cat_select_label": {
+    "message": "选择",
+    "description": "Actions Library category label for Select."
+  },
+  "fn_cat_clipboard_label": {
+    "message": "剪贴板",
+    "description": "Actions Library category label for Clipboard."
+  },
+  "fn_cat_type_label": {
+    "message": "输入",
+    "description": "Actions Library category label for Type."
+  },
+  "fn_cat_keystrokes_label": {
+    "message": "按键",
+    "description": "Actions Library category label for Keystrokes."
+  },
+  "fn_cat_data_label": {
+    "message": "数据",
+    "description": "Actions Library category label for Data."
+  },
+  "fn_cat_lookup_label": {
+    "message": "查词",
+    "description": "Actions Library category label for Lookup."
+  },
+  "fn_cat_translate_label": {
+    "message": "翻译",
+    "description": "Actions Library category label for Translate."
+  },
+  "fn_cat_display_label": {
+    "message": "显示",
+    "description": "Actions Library category label for Display."
+  },
+  "fn_cat_script_label": {
+    "message": "脚本",
+    "description": "Actions Library category label for Script."
+  },
+  "fn_cat_media_library_label": {
+    "message": "媒体库",
+    "description": "Actions Library category label for Media Library."
+  },
+  "fn_cat_ai_label": {
+    "message": "AI",
+    "description": "Actions Library category label for AI."
+  },
+  "fn_cat_keypilot_label": {
+    "message": "KeyPilot",
+    "description": "Actions Library category label for KeyPilot."
+  },
+  "fn_cat_tools_label": {
+    "message": "工具",
+    "description": "Actions Library category label for Tools."
+  },
+  "fn_cat_system_label": {
+    "message": "系统",
+    "description": "Actions Library category label for System."
+  },
+  "fn_cat_other_label": {
+    "message": "其他",
+    "description": "Actions Library category label for Other."
+  },
+  "fn_cat_navigation_description": {
+    "message": "点击链接、预览，并在浏览历史中移动。",
+    "description": "Actions Library category description for Navigation."
+  },
+  "fn_cat_tab_control_description": {
+    "message": "打开、关闭、切换与回顾标签页。",
+    "description": "Actions Library category description for Tab Control."
+  },
+  "fn_cat_begin_url_description": {
+    "message": "通过启动器、常用网站或地址栏跳转到网址。",
+    "description": "Actions Library category description for Begin URL."
+  },
+  "fn_cat_get_page_data_description": {
+    "message": "捕获文本、图片、视频、网址、字体及其他页面媒体。",
+    "description": "Actions Library category description for Get Page Data."
+  },
+  "fn_cat_maps_description": {
+    "message": "从光标下的地图图钉打开地点的官网或地址。",
+    "description": "Actions Library category description for Maps."
+  },
+  "fn_cat_scroll_description": {
+    "message": "按行、按页滚动页面，或跳到顶部 / 底部。",
+    "description": "Actions Library category description for Scroll."
+  },
+  "fn_cat_select_description": {
+    "message": "删除或切换多栏选择辅助工具。",
+    "description": "Actions Library category description for Select."
+  },
+  "fn_cat_clipboard_description": {
+    "message": "复制、剪切、粘贴、全选，以及选中光标下的词、句子、段落或图片。",
+    "description": "Actions Library category description for Clipboard."
+  },
+  "fn_cat_type_description": {
+    "message": "向聚焦的输入框输入保存的文本。",
+    "description": "Actions Library category description for Type."
+  },
+  "fn_cat_keystrokes_description": {
+    "message": "发送按键、组合键、连击与鼠标重映射。",
+    "description": "Actions Library category description for Keystrokes."
+  },
+  "fn_cat_data_description": {
+    "message": "读取光标下或高亮选区中的文本或媒体。",
+    "description": "Actions Library category description for Data."
+  },
+  "fn_cat_lookup_description": {
+    "message": "查阅光标下单词的释义。",
+    "description": "Actions Library category description for Lookup."
+  },
+  "fn_cat_translate_description": {
+    "message": "翻译高亮或光标处的文本。",
+    "description": "Actions Library category description for Translate."
+  },
+  "fn_cat_display_description": {
+    "message": "在浮层中显示上一个宏步骤的结果。",
+    "description": "Actions Library category description for Display."
+  },
+  "fn_cat_script_description": {
+    "message": "针对页面状态运行自定义 JavaScript 片段。",
+    "description": "Actions Library category description for Script."
+  },
+  "fn_cat_media_library_description": {
+    "message": "将链接或抓取的文件存入媒体库。",
+    "description": "Actions Library category description for Media Library."
+  },
+  "fn_cat_ai_description": {
+    "message": "用提示词将所选文本发送给 AI，并设置结果去向。",
+    "description": "Actions Library category description for AI."
+  },
+  "fn_cat_keypilot_description": {
+    "message": "打开 KeyPilot 界面 — 键盘参考、设置与模式。",
+    "description": "Actions Library category description for KeyPilot."
+  },
+  "fn_cat_tools_description": {
+    "message": "实用浮层与辅助工具。",
+    "description": "Actions Library category description for Tools."
+  },
+  "fn_cat_system_description": {
+    "message": "取消当前的 KeyPilot 手势或模式。",
+    "description": "Actions Library category description for System."
+  },
+  "fn_cat_other_description": {
+    "message": "未分类功能。",
+    "description": "Actions Library category description for Other."
+  },
+  "fn_section_macros_description": {
+    "message": "可放在按键上的多步序列。自定义内置宏可分叉出可编辑副本。",
+    "description": "Actions Library macros section description."
+  },
+  "fn_section_macro_keys_description": {
+    "message": "已保存的宏按键实例（热键、连击、轮询等），可直接放置。",
+    "description": "Actions Library macroKeys section description."
+  },
+  "fn_TYPE_CHARACTERS_label": {
+    "message": "输入字符",
+    "description": "Function Library label for TYPE_CHARACTERS."
+  },
+  "fn_TYPE_CHARACTERS_description": {
+    "message": "向输入框输入保存的文本",
+    "description": "Function Library description for TYPE_CHARACTERS."
+  },
+  "fn_EXECUTE_JS_label": {
+    "message": "执行 JS",
+    "description": "Function Library label for EXECUTE_JS."
+  },
+  "fn_EXECUTE_JS_description": {
+    "message": "运行粘贴的 JS 片段",
+    "description": "Function Library description for EXECUTE_JS."
+  },
+  "fn_OPEN_URLS_label": {
+    "message": "打开网址",
+    "description": "Function Library label for OPEN_URLS."
+  },
+  "fn_OPEN_URLS_description": {
+    "message": "在新标签页中一次打开多个页面",
+    "description": "Function Library description for OPEN_URLS."
+  },
+  "fn_OPEN_BOOKMARKS_label": {
+    "message": "打开书签",
+    "description": "Function Library label for OPEN_BOOKMARKS."
+  },
+  "fn_OPEN_BOOKMARKS_description": {
+    "message": "打开文件夹中靠前的书签",
+    "description": "Function Library description for OPEN_BOOKMARKS."
+  },
+  "fn_RANDOM_BOOKMARK_label": {
+    "message": "随机书签",
+    "description": "Function Library label for RANDOM_BOOKMARK."
+  },
+  "fn_RANDOM_BOOKMARK_description": {
+    "message": "打开随机书签",
+    "description": "Function Library description for RANDOM_BOOKMARK."
+  },
+  "fn_stock_random_bookmark_label": {
+    "message": "随机书签",
+    "description": "Bundled Random Bookmark instance label."
+  },
+  "fn_stock_random_bookmark_description": {
+    "message": "从全部书签中打开一个随机书签",
+    "description": "Bundled Random Bookmark instance description."
+  },
+  "fn_stock_social_media_label": {
+    "message": "社交媒体",
+    "description": "Bundled Open URLs instance label."
+  },
+  "fn_stock_social_media_description": {
+    "message": "打开 Facebook、Instagram、YouTube 和 X",
+    "description": "Bundled Open URLs instance description."
+  },
+  "fn_instance_name_label": {
+    "message": "名称",
+    "description": "Action instance name field on the key info popover."
+  },
+  "fn_GET_TEXT_AT_CURSOR_label": {
+    "message": "获取光标处文本",
+    "description": "Function Library label for GET_TEXT_AT_CURSOR."
+  },
+  "fn_GET_TEXT_AT_CURSOR_description": {
+    "message": "复制光标下的文本",
+    "description": "Function Library description for GET_TEXT_AT_CURSOR."
+  },
+  "fn_GET_TEXT_RANGE_label": {
+    "message": "获取文本范围",
+    "description": "Function Library label for GET_TEXT_RANGE."
+  },
+  "fn_GET_TEXT_RANGE_description": {
+    "message": "将所选传给下一个宏步骤",
+    "description": "Function Library description for GET_TEXT_RANGE."
+  },
+  "fn_GET_MEDIA_AT_CURSOR_label": {
+    "message": "获取光标处媒体",
+    "description": "Function Library label for GET_MEDIA_AT_CURSOR."
+  },
+  "fn_GET_MEDIA_AT_CURSOR_description": {
+    "message": "复制光标下的媒体",
+    "description": "Function Library description for GET_MEDIA_AT_CURSOR."
+  },
+  "fn_TRANSLATE_label": {
+    "message": "翻译",
+    "description": "Function Library label for TRANSLATE."
+  },
+  "fn_TRANSLATE_description": {
+    "message": "翻译所选或光标处文本",
+    "description": "Function Library description for TRANSLATE."
+  },
+  "fn_COLS_TOGGLE_label": {
+    "message": "分栏切换",
+    "description": "Built-in Function COLS_TOGGLE label."
+  },
+  "fn_COLS_TOGGLE_description": {
+    "message": "光标下的多栏布局",
+    "description": "Built-in Function COLS_TOGGLE short description."
+  },
+  "fn_SEND_TEXT_TO_AI_label": {
+    "message": "发送文本给 AI",
+    "description": "Built-in Function SEND_TEXT_TO_AI label."
+  },
+  "fn_SEND_TEXT_TO_AI_description": {
+    "message": "对所选文本运行 AI",
+    "description": "Built-in Function SEND_TEXT_TO_AI short description."
+  },
+  "keyboard_hardware_layout_us_ansi_qwerty": {
+    "message": "美国 ANSI QWERTY",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_us_ansi_qwerty_description": {
+    "message": "标准美国 ANSI 键盘布局。",
+    "description": "Description for the US ANSI QWERTY keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_de_de_qwertz_iso": {
+    "message": "德语 ISO QWERTZ",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_de_de_qwertz_iso_description": {
+    "message": "德语 ISO QWERTZ 键盘布局。",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_es_es_qwerty_iso": {
+    "message": "西班牙（西班牙）ISO QWERTY",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_es_es_qwerty_iso_description": {
+    "message": "西班牙（西班牙）ISO QWERTY 键盘布局。",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_sk_sk_qwertz_iso": {
+    "message": "斯洛伐克语 ISO QWERTZ",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_sk_sk_qwertz_iso_description": {
+    "message": "斯洛伐克语 ISO QWERTZ 键盘布局。",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_ja_jis_106": {
+    "message": "日语 JIS 106",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_ja_jis_106_description": {
+    "message": "日语 JIS 106 键盘布局。",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "fn_ZOOM_OUT_label": {
+    "message": "缩小",
+    "description": "Function Library label for ZOOM_OUT."
+  },
+  "fn_ZOOM_OUT_description": {
+    "message": "在光标处缩小页面",
+    "description": "Function Library description for ZOOM_OUT."
+  },
+  "fn_ZOOM_IN_label": {
+    "message": "放大",
+    "description": "Function Library label for ZOOM_IN."
+  },
+  "fn_ZOOM_IN_description": {
+    "message": "在光标处放大页面",
+    "description": "Function Library description for ZOOM_IN."
+  },
+  "fn_READER_MODE_label": {
+    "message": "Reader Mode",
+    "description": "Function Library label for READER_MODE."
+  },
+  "fn_READER_MODE_description": {
+    "message": "Read this page without clutter",
+    "description": "Function Library description for READER_MODE."
+  }
+}

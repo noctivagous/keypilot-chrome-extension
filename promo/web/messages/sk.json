@@ -1,0 +1,938 @@
+{
+  "control_strip_collapse": {
+    "message": "Zbaliť",
+    "description": "Control-strip collapse action."
+  },
+  "control_strip_expand": {
+    "message": "Rozbaliť",
+    "description": "Control-strip expand action."
+  },
+  "keyboard_help_aria_label": {
+    "message": "Prehľad klávesnice KeyPilot",
+    "description": "Accessible name for the floating keyboard reference."
+  },
+  "keyboard_help_title": {
+    "message": "Prehľad klávesnice",
+    "description": "Title of the floating keyboard reference."
+  },
+  "keyboard_help_title_typing": {
+    "message": "Prehľad klávesnice — Písanie",
+    "description": "Keyboard reference title while a text field is focused."
+  },
+  "keyboard_help_toggle_title": {
+    "message": "Prepnúť prehľad klávesnice",
+    "description": "Tooltip for the keyboard-reference toggle shortcut."
+  },
+  "keyboard_help_toggle_aria": {
+    "message": "Prepnúť prehľad klávesnice ($1)",
+    "description": "Accessible name for the keyboard-reference toggle shortcut. $1 is the key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "K"
+      }
+    }
+  },
+  "keyboard_help_close_aria": {
+    "message": "Zavrieť prehľad klávesnice",
+    "description": "Accessible name for closing the keyboard reference."
+  },
+  "keyboard_help_collapse_aria": {
+    "message": "Zbaliť prehľad klávesnice",
+    "description": "Accessible name for collapsing the keyboard reference."
+  },
+  "keyboard_help_expand_aria": {
+    "message": "Rozbaliť prehľad klávesnice",
+    "description": "Accessible name for expanding the keyboard reference."
+  },
+  "keyboard_help_layout_aria": {
+    "message": "Aktuálne rozloženie klávesnice",
+    "description": "Accessible name for the keyboard-reference layout picker."
+  },
+  "keyboard_help_editing_aria": {
+    "message": "Úprava rozloženia — $1 na ukončenie",
+    "description": "Hint while the layout editor is open. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+C"
+      }
+    }
+  },
+  "keyboard_help_exit_text_mode": {
+    "message": "Ukončiť textový režim ($1)",
+    "description": "Button that leaves text mode. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Esc"
+      }
+    }
+  },
+  "keyboard_help_exit_text_mode_label": {
+    "message": "Ukončiť",
+    "description": "Visible label on the Keyboard Reference button that leaves text mode."
+  },
+  "keyboard_help_esc_to_exit": {
+    "message": "$1 na ukončenie",
+    "description": "Keyboard Reference titlebar hint while text mode is active. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Esc"
+      }
+    }
+  },
+  "keyboard_help_close_editor": {
+    "message": "Zavrieť editor rozloženia ($1)",
+    "description": "Button that closes the layout editor. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+C"
+      }
+    }
+  },
+  "keyboard_help_close_editor_label": {
+    "message": "Zavrieť editor",
+    "description": "Visible label on the Keyboard Reference button that closes the layout editor."
+  },
+  "keycap_tab": {
+    "message": "Tab",
+    "description": "Visible legend on the Tab keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_caps": {
+    "message": "Caps",
+    "description": "Visible legend on the Caps Lock keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_shift": {
+    "message": "Shift",
+    "description": "Visible legend on the Shift keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_enter": {
+    "message": "Enter",
+    "description": "Visible legend on the Enter/Return keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_backspace": {
+    "message": "Backspace",
+    "description": "Visible legend on the Backspace keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_esc": {
+    "message": "Esc",
+    "description": "Visible legend on the Escape keycap in Keyboard Reference. Keep this short."
+  },
+  "keyboard_help_left_handed": {
+    "message": "Ľaváci",
+    "description": "Chip label for left-handed keyboard layout."
+  },
+  "keyboard_help_left_handed_off_aria": {
+    "message": "Vypnúť rozloženie pre ľavákov",
+    "description": "Accessible name for dismissing the left-handed chip."
+  },
+  "keyboard_help_render_error": {
+    "message": "Na tejto stránke nie je možné zobraziť prehľad klávesnice.",
+    "description": "Error when the keyboard reference cannot paint."
+  },
+  "keyboard_help_custom_render_error": {
+    "message": "Vlastné rozloženie klávesnice sa nedá zobraziť.",
+    "description": "Error when a custom layout cannot paint."
+  },
+  "keyboard_help_remove_action_aria": {
+    "message": "Odstrániť akciu z $1",
+    "description": "Accessible name for removing a key assignment. $1 is the key label.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "F"
+      }
+    }
+  },
+  "keyboard_help_remove": {
+    "message": "Odstrániť",
+    "description": "Tooltip for removing a key assignment."
+  },
+  "layout_family_browsing_label": {
+    "message": "Prehliadanie",
+    "description": "Built-in keyboard layout family name."
+  },
+  "layout_family_browsing_description": {
+    "message": "Kompletné ovládanie prehliadania (posúvanie, karty, klikanie, história, nástroje).",
+    "description": "Description of the Browsing built-in keyboard layout family."
+  },
+  "layout_family_browsing_picker": {
+    "message": "Zabudované: Prehliadanie",
+    "description": "Built-in keyboard layout family label in the layout picker."
+  },
+  "key_info_key": {
+    "message": "Kláves: $1",
+    "description": "Physical key caption in the key-info popover. $1 is the key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "F"
+      }
+    }
+  },
+  "key_info_settings_hint": {
+    "message": "Kliknutím zobrazíte nastavenia",
+    "description": "Hint shown on hover in the key-info popover when the action has settings."
+  },
+  "key_info_instance_title": {
+    "message": "$NAME$: $TYPE$",
+    "description": "Hover tooltip title for an action instance. $1 is the instance name, $2 is the key action type.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Social media"
+      },
+      "type": {
+        "content": "$2",
+        "example": "Open URLs"
+      }
+    }
+  },
+  "key_info_config": {
+    "message": "Konfigurácia",
+    "description": "Button in the key-info popover that opens the action configuration panel."
+  },
+  "fn_ACTIVATE_label": {
+    "message": "Kliknúť na prvok",
+    "description": "Function Library label for ACTIVATE."
+  },
+  "fn_ACTIVATE_description": {
+    "message": "Kliknúť na prvok pod kurzorom",
+    "description": "Function Library description for ACTIVATE."
+  },
+  "fn_ACTIVATE_NEW_TAB_label": {
+    "message": "Kliknúť na novej karte",
+    "description": "Function Library label for ACTIVATE_NEW_TAB."
+  },
+  "fn_ACTIVATE_NEW_TAB_description": {
+    "message": "Otvoriť odkaz na novej aktívnej karte",
+    "description": "Function Library description for ACTIVATE_NEW_TAB."
+  },
+  "fn_ACTIVATE_NEW_TAB_BACKGROUND_label": {
+    "message": "Kliknúť na novej karte na pozadí",
+    "description": "Function Library label for ACTIVATE_NEW_TAB_BACKGROUND."
+  },
+  "fn_ACTIVATE_NEW_TAB_BACKGROUND_description": {
+    "message": "Otvoriť odkaz na novej karte na pozadí",
+    "description": "Function Library description for ACTIVATE_NEW_TAB_BACKGROUND."
+  },
+  "fn_BACK_label": {
+    "message": "Prejsť späť",
+    "description": "Function Library label for BACK."
+  },
+  "fn_BACK_description": {
+    "message": "Krok späť v histórii prehliadača",
+    "description": "Function Library description for BACK."
+  },
+  "fn_BACK2_label": {
+    "message": "Prejsť späť",
+    "description": "Function Library label for BACK2."
+  },
+  "fn_BACK2_description": {
+    "message": "Krok späť v histórii prehliadača",
+    "description": "Function Library description for BACK2."
+  },
+  "fn_FORWARD_label": {
+    "message": "Prejsť vpred",
+    "description": "Function Library label for FORWARD."
+  },
+  "fn_FORWARD_description": {
+    "message": "Krok vpred v histórii prehliadača",
+    "description": "Function Library description for FORWARD."
+  },
+  "fn_DELETE_label": {
+    "message": "Režim odstraňovania",
+    "description": "Function Library label for DELETE."
+  },
+  "fn_DELETE_description": {
+    "message": "Skryť prvky pod kurzorom",
+    "description": "Function Library description for DELETE."
+  },
+  "fn_TAB_LEFT_label": {
+    "message": "Karta vľavo",
+    "description": "Function Library label for TAB_LEFT."
+  },
+  "fn_TAB_LEFT_description": {
+    "message": "Prepnúť na predchádzajúcu kartu",
+    "description": "Function Library description for TAB_LEFT."
+  },
+  "fn_TAB_RIGHT_label": {
+    "message": "Karta vpravo",
+    "description": "Function Library label for TAB_RIGHT."
+  },
+  "fn_TAB_RIGHT_description": {
+    "message": "Prepnúť na nasledujúcu kartu",
+    "description": "Function Library description for TAB_RIGHT."
+  },
+  "fn_ROOT_label": {
+    "message": "Prejsť na koreň stránky",
+    "description": "Function Library label for ROOT."
+  },
+  "fn_ROOT_description": {
+    "message": "Prejsť na pôvod stránky",
+    "description": "Function Library description for ROOT."
+  },
+  "fn_LAUNCHER_label": {
+    "message": "Spúšťač",
+    "description": "Function Library label for LAUNCHER."
+  },
+  "fn_LAUNCHER_description": {
+    "message": "Rýchly spúšťač stránok",
+    "description": "Function Library description for LAUNCHER."
+  },
+  "fn_TOP_SITES_label": {
+    "message": "Top stránky",
+    "description": "Function Library label for TOP_SITES."
+  },
+  "fn_TOP_SITES_description": {
+    "message": "Panel s nástrojmi, návštevy a záložky",
+    "description": "Function Library description for TOP_SITES."
+  },
+  "fn_CLOSE_TAB_label": {
+    "message": "Zavrieť kartu",
+    "description": "Function Library label for CLOSE_TAB."
+  },
+  "fn_CLOSE_TAB_description": {
+    "message": "Zavrieť aktuálnu kartu",
+    "description": "Function Library description for CLOSE_TAB."
+  },
+  "fn_CANCEL_label": {
+    "message": "Opustiť zameranie",
+    "description": "Function Library label for CANCEL."
+  },
+  "fn_CANCEL_description": {
+    "message": "Opustiť režimy a prekrytia",
+    "description": "Function Library description for CANCEL."
+  },
+  "fn_PAGE_UP_INSTANT_label": {
+    "message": "Stránka nahor",
+    "description": "Function Library label for PAGE_UP_INSTANT."
+  },
+  "fn_PAGE_UP_INSTANT_description": {
+    "message": "Okamžitý skok o stránku nahor",
+    "description": "Function Library description for PAGE_UP_INSTANT."
+  },
+  "fn_PAGE_DOWN_INSTANT_label": {
+    "message": "Stránka nadol",
+    "description": "Function Library label for PAGE_DOWN_INSTANT."
+  },
+  "fn_PAGE_DOWN_INSTANT_description": {
+    "message": "Okamžitý skok o stránku nadol",
+    "description": "Function Library description for PAGE_DOWN_INSTANT."
+  },
+  "fn_PAGE_TOP_label": {
+    "message": "Posunúť na vrch",
+    "description": "Function Library label for PAGE_TOP."
+  },
+  "fn_PAGE_TOP_description": {
+    "message": "Skok na vrch cieľa posúvania",
+    "description": "Function Library description for PAGE_TOP."
+  },
+  "fn_PAGE_BOTTOM_label": {
+    "message": "Posunúť na spodok",
+    "description": "Function Library label for PAGE_BOTTOM."
+  },
+  "fn_PAGE_BOTTOM_description": {
+    "message": "Skok na spodok cieľa posúvania",
+    "description": "Function Library description for PAGE_BOTTOM."
+  },
+  "fn_SCROLL_LINE_label": {
+    "message": "Posúvanie riadku",
+    "description": "Function Library label for SCROLL_LINE."
+  },
+  "fn_SCROLL_LINE_description": {
+    "message": "Plynulé posúvanie z pevného bodu",
+    "description": "Function Library description for SCROLL_LINE."
+  },
+  "fn_NEW_TAB_label": {
+    "message": "Nová karta",
+    "description": "Function Library label for NEW_TAB."
+  },
+  "fn_NEW_TAB_description": {
+    "message": "Otvoriť novú kartu KeyPilot",
+    "description": "Function Library description for NEW_TAB."
+  },
+  "fn_OPEN_POPOVER_label": {
+    "message": "Otvoriť vo vyskakovacom okne",
+    "description": "Function Library label for OPEN_POPOVER."
+  },
+  "fn_OPEN_POPOVER_description": {
+    "message": "Otvoriť odkaz vo vyskakovacom okne",
+    "description": "Function Library description for OPEN_POPOVER."
+  },
+  "fn_PREVIEW_LINK_POPOVER_label": {
+    "message": "Náhľad odkazu",
+    "description": "Function Library label for PREVIEW_LINK_POPOVER."
+  },
+  "fn_PREVIEW_LINK_POPOVER_description": {
+    "message": "Náhľad odkazu vo vyskakovacom okne",
+    "description": "Function Library description for PREVIEW_LINK_POPOVER."
+  },
+  "fn_POI_WEBSITE_label": {
+    "message": "Webstránka miesta záujmu",
+    "description": "Function Library label for POI_WEBSITE."
+  },
+  "fn_POI_WEBSITE_description": {
+    "message": "Otvoriť webstránku miesta na mape",
+    "description": "Function Library description for POI_WEBSITE."
+  },
+  "fn_POI_ADDRESS_label": {
+    "message": "Adresa miesta záujmu",
+    "description": "Function Library label for POI_ADDRESS."
+  },
+  "fn_POI_ADDRESS_description": {
+    "message": "Kopírovať adresu miesta na mape",
+    "description": "Function Library description for POI_ADDRESS."
+  },
+  "fn_OPEN_SETTINGS_POPOVER_label": {
+    "message": "Nastavenia",
+    "description": "Function Library label for OPEN_SETTINGS_POPOVER."
+  },
+  "fn_OPEN_SETTINGS_POPOVER_description": {
+    "message": "Otvoriť Nastavenia KeyPilot",
+    "description": "Function Library description for OPEN_SETTINGS_POPOVER."
+  },
+  "fn_OMNIBOX_label": {
+    "message": "Adresný riadok",
+    "description": "Function Library label for OMNIBOX. Keep this short for keycaps. Do not use the English word Omnibox in non-English catalogs."
+  },
+  "fn_OMNIBOX_description": {
+    "message": "Prekrytie adresného riadku",
+    "description": "Function Library description for OMNIBOX."
+  },
+  "fn_TAB_HISTORY_label": {
+    "message": "História karty",
+    "description": "Function Library label for TAB_HISTORY."
+  },
+  "fn_TAB_HISTORY_description": {
+    "message": "Prehliadať históriu tejto karty",
+    "description": "Function Library description for TAB_HISTORY."
+  },
+  "fn_TABS_OVERVIEW_label": {
+    "message": "Prehľad kariet",
+    "description": "Function Library label for TABS_OVERVIEW."
+  },
+  "fn_TABS_OVERVIEW_description": {
+    "message": "Zobraziť všetky okná a karty",
+    "description": "Function Library description for TABS_OVERVIEW."
+  },
+  "fn_TOGGLE_KEYBOARD_HELP_label": {
+    "message": "Referencia klávesnice",
+    "description": "Function Library label for TOGGLE_KEYBOARD_HELP. English may keep the KB abbreviation; other locales must not use KB."
+  },
+  "fn_TOGGLE_KEYBOARD_HELP_description": {
+    "message": "Zobraziť alebo skryť mapu klávesnice",
+    "description": "Function Library description for TOGGLE_KEYBOARD_HELP."
+  },
+  "fn_HIGHLIGHT_label": {
+    "message": "Výber textu",
+    "description": "Function Library label for HIGHLIGHT."
+  },
+  "fn_HIGHLIGHT_description": {
+    "message": "Vybrať text a kopírovať formátovaný text",
+    "description": "Function Library description for HIGHLIGHT."
+  },
+  "fn_RECTANGLE_HIGHLIGHT_label": {
+    "message": "Výber prvku",
+    "description": "Function Library label for RECTANGLE_HIGHLIGHT."
+  },
+  "fn_RECTANGLE_HIGHLIGHT_description": {
+    "message": "Výber prvkov obdĺžnikom alebo postupne",
+    "description": "Function Library description for RECTANGLE_HIGHLIGHT."
+  },
+  "fn_COPY_HOVERED_IMAGE_label": {
+    "message": "Kopírovať obrázok",
+    "description": "Function Library label for COPY_HOVERED_IMAGE."
+  },
+  "fn_COPY_HOVERED_IMAGE_description": {
+    "message": "Kopírovať obrázok pod kurzorom",
+    "description": "Function Library description for COPY_HOVERED_IMAGE."
+  },
+  "fn_COPY_HOVERED_URL_label": {
+    "message": "Kopírovať URL",
+    "description": "Function Library label for COPY_HOVERED_URL."
+  },
+  "fn_COPY_HOVERED_URL_description": {
+    "message": "Kopírovať URL odkazu pod kurzorom",
+    "description": "Function Library description for COPY_HOVERED_URL."
+  },
+  "fn_COPY_HOVERED_VIDEO_label": {
+    "message": "Kopírovať video",
+    "description": "Function Library label for COPY_HOVERED_VIDEO."
+  },
+  "fn_COPY_HOVERED_VIDEO_description": {
+    "message": "Kopírovať video pod kurzorom",
+    "description": "Function Library description for COPY_HOVERED_VIDEO."
+  },
+  "fn_FONT_INFO_label": {
+    "message": "Informácie o písme",
+    "description": "Function Library label for FONT_INFO."
+  },
+  "fn_FONT_INFO_description": {
+    "message": "Preskúmať písmo pod kurzorom",
+    "description": "Function Library description for FONT_INFO."
+  },
+  "fn_PAGE_MEDIA_label": {
+    "message": "Médiá stránky",
+    "description": "Function Library label for PAGE_MEDIA."
+  },
+  "fn_PAGE_MEDIA_description": {
+    "message": "Prehliadať médiá nájdené na tejto stránke",
+    "description": "Function Library description for PAGE_MEDIA."
+  },
+  "fn_OPEN_MEDIA_LIBRARY_label": {
+    "message": "Knižnica médií",
+    "description": "Function Library label for OPEN_MEDIA_LIBRARY."
+  },
+  "fn_OPEN_MEDIA_LIBRARY_description": {
+    "message": "Otvoriť uloženú Knižnicu médií",
+    "description": "Function Library description for OPEN_MEDIA_LIBRARY."
+  },
+  "fn_CLIPBOARD_COPY_label": {
+    "message": "Kopírovať",
+    "description": "Function Library label for CLIPBOARD_COPY."
+  },
+  "fn_CLIPBOARD_COPY_description": {
+    "message": "Kopírovať výber do schránky",
+    "description": "Function Library description for CLIPBOARD_COPY."
+  },
+  "fn_CLIPBOARD_CUT_label": {
+    "message": "Vystrihnúť",
+    "description": "Function Library label for CLIPBOARD_CUT."
+  },
+  "fn_CLIPBOARD_CUT_description": {
+    "message": "Vystrihnúť výber do schránky",
+    "description": "Function Library description for CLIPBOARD_CUT."
+  },
+  "fn_CLIPBOARD_PASTE_label": {
+    "message": "Prilepiť",
+    "description": "Function Library label for CLIPBOARD_PASTE."
+  },
+  "fn_CLIPBOARD_PASTE_description": {
+    "message": "Prilepiť do aktívneho poľa",
+    "description": "Function Library description for CLIPBOARD_PASTE."
+  },
+  "fn_CLIPBOARD_SELECT_ALL_label": {
+    "message": "Vybrať všetko",
+    "description": "Function Library label for CLIPBOARD_SELECT_ALL."
+  },
+  "fn_CLIPBOARD_SELECT_ALL_description": {
+    "message": "Vybrať všetko v poli alebo na stránke",
+    "description": "Function Library description for CLIPBOARD_SELECT_ALL."
+  },
+  "fn_SELECT_WORD_label": {
+    "message": "Vybrať slovo",
+    "description": "Function Library label for SELECT_WORD."
+  },
+  "fn_SELECT_WORD_description": {
+    "message": "Vybrať slovo pod kurzorom",
+    "description": "Function Library description for SELECT_WORD."
+  },
+  "fn_SELECT_SENTENCE_label": {
+    "message": "Vybrať vetu",
+    "description": "Function Library label for SELECT_SENTENCE."
+  },
+  "fn_SELECT_SENTENCE_description": {
+    "message": "Vybrať vetu pod kurzorom",
+    "description": "Function Library description for SELECT_SENTENCE."
+  },
+  "fn_SELECT_PARAGRAPH_label": {
+    "message": "Vybrať odsek",
+    "description": "Function Library label for SELECT_PARAGRAPH."
+  },
+  "fn_SELECT_PARAGRAPH_description": {
+    "message": "Vybrať odsek pod kurzorom",
+    "description": "Function Library description for SELECT_PARAGRAPH."
+  },
+  "fn_SELECT_IMAGE_label": {
+    "message": "Vybrať obrázok",
+    "description": "Function Library label for SELECT_IMAGE."
+  },
+  "fn_SELECT_IMAGE_description": {
+    "message": "Vybrať obrázok pod kurzorom",
+    "description": "Function Library description for SELECT_IMAGE."
+  },
+  "fn_LOOKUP_WORD_label": {
+    "message": "Vyhľadať slovo",
+    "description": "Function Library label for LOOKUP_WORD."
+  },
+  "fn_LOOKUP_WORD_description": {
+    "message": "Definícia zo slovníka pod kurzorom",
+    "description": "Function Library description for LOOKUP_WORD."
+  },
+  "fn_SHOW_POPOVER_label": {
+    "message": "Zobraziť kontextové okno",
+    "description": "Function Library label for SHOW_POPOVER."
+  },
+  "fn_SHOW_POPOVER_description": {
+    "message": "Zobraziť výsledok predchádzajúceho kroku makra",
+    "description": "Function Library description for SHOW_POPOVER."
+  },
+  "fn_ADD_URL_TO_MEDIA_LIBRARY_label": {
+    "message": "Pridať URL do Knižnice médií",
+    "description": "Function Library label for ADD_URL_TO_MEDIA_LIBRARY."
+  },
+  "fn_ADD_URL_TO_MEDIA_LIBRARY_description": {
+    "message": "Uložiť odkaz pod kurzorom (bez sťahovania)",
+    "description": "Function Library description for ADD_URL_TO_MEDIA_LIBRARY."
+  },
+  "fn_FETCH_URL_FOR_MEDIA_LIBRARY_label": {
+    "message": "Stiahnuť URL do Knižnice médií",
+    "description": "Function Library label for FETCH_URL_FOR_MEDIA_LIBRARY."
+  },
+  "fn_FETCH_URL_FOR_MEDIA_LIBRARY_description": {
+    "message": "Stiahnuť prepojený súbor do knižnice",
+    "description": "Function Library description for FETCH_URL_FOR_MEDIA_LIBRARY."
+  },
+  "fn_cat_navigation_label": {
+    "message": "Navigácia",
+    "description": "Actions Library category label for Navigation."
+  },
+  "fn_cat_tab_control_label": {
+    "message": "Ovládanie kariet",
+    "description": "Actions Library category label for Tab Control."
+  },
+  "fn_cat_begin_url_label": {
+    "message": "Prejsť na URL",
+    "description": "Actions Library category label for Begin URL."
+  },
+  "fn_cat_get_page_data_label": {
+    "message": "Získať dáta stránky",
+    "description": "Actions Library category label for Get Page Data."
+  },
+  "fn_cat_maps_label": {
+    "message": "Mapy",
+    "description": "Actions Library category label for Maps."
+  },
+  "fn_cat_scroll_label": {
+    "message": "Posúvanie",
+    "description": "Actions Library category label for Scroll."
+  },
+  "fn_cat_select_label": {
+    "message": "Výber",
+    "description": "Actions Library category label for Select."
+  },
+  "fn_cat_clipboard_label": {
+    "message": "Schránka",
+    "description": "Actions Library category label for Clipboard."
+  },
+  "fn_cat_type_label": {
+    "message": "Písanie",
+    "description": "Actions Library category label for Type."
+  },
+  "fn_cat_keystrokes_label": {
+    "message": "Klávesové skratky",
+    "description": "Actions Library category label for Keystrokes."
+  },
+  "fn_cat_data_label": {
+    "message": "Dáta",
+    "description": "Actions Library category label for Data."
+  },
+  "fn_cat_lookup_label": {
+    "message": "Vyhľadávanie",
+    "description": "Actions Library category label for Lookup."
+  },
+  "fn_cat_translate_label": {
+    "message": "Preklad",
+    "description": "Actions Library category label for Translate."
+  },
+  "fn_cat_display_label": {
+    "message": "Zobrazenie",
+    "description": "Actions Library category label for Display."
+  },
+  "fn_cat_script_label": {
+    "message": "Skript",
+    "description": "Actions Library category label for Script."
+  },
+  "fn_cat_media_library_label": {
+    "message": "Knižnica médií",
+    "description": "Actions Library category label for Media Library."
+  },
+  "fn_cat_ai_label": {
+    "message": "AI",
+    "description": "Actions Library category label for AI."
+  },
+  "fn_cat_keypilot_label": {
+    "message": "KeyPilot",
+    "description": "Actions Library category label for KeyPilot."
+  },
+  "fn_cat_tools_label": {
+    "message": "Nástroje",
+    "description": "Actions Library category label for Tools."
+  },
+  "fn_cat_system_label": {
+    "message": "Systém",
+    "description": "Actions Library category label for System."
+  },
+  "fn_cat_other_label": {
+    "message": "Ostatné",
+    "description": "Actions Library category label for Other."
+  },
+  "fn_cat_navigation_description": {
+    "message": "Kliknite na odkazy, zobrazte náhľad a prechádzajte históriu prehliadania.",
+    "description": "Actions Library category description for Navigation."
+  },
+  "fn_cat_tab_control_description": {
+    "message": "Otvárajte, zatvárajte, prepínajte a prehliadajte karty.",
+    "description": "Actions Library category description for Tab Control."
+  },
+  "fn_cat_begin_url_description": {
+    "message": "Prejdite na URL adresu cez Spúšťač, Top weby alebo omnibox.",
+    "description": "Actions Library category description for Begin URL."
+  },
+  "fn_cat_get_page_data_description": {
+    "message": "Zachytávajte text, obrázky, video, URL adresy, písma a ďalšie médiá stránky.",
+    "description": "Actions Library category description for Get Page Data."
+  },
+  "fn_cat_maps_description": {
+    "message": "Otvorte webovú stránku alebo adresu miesta z mapového ukazovateľa pod kurzorom.",
+    "description": "Actions Library category description for Maps."
+  },
+  "fn_cat_scroll_description": {
+    "message": "Posúvajte stránku po riadku, stránke alebo na začiatok/koniec.",
+    "description": "Actions Library category description for Scroll."
+  },
+  "fn_cat_select_description": {
+    "message": "Odstráňte alebo prepnite pomôcky pre viacstĺpcový výber.",
+    "description": "Actions Library category description for Select."
+  },
+  "fn_cat_clipboard_description": {
+    "message": "Kopírovanie, vystrihovanie, prilepovanie, výber všetkého a výber slova, vety, odseku alebo obrázka pod kurzorom.",
+    "description": "Actions Library category description for Clipboard."
+  },
+  "fn_cat_type_description": {
+    "message": "Zapíšte uložený text do aktívneho poľa.",
+    "description": "Actions Library category description for Type."
+  },
+  "fn_cat_keystrokes_description": {
+    "message": "Odosielajte klávesové skratky, kombinácie, dávky a presmerovania myši.",
+    "description": "Actions Library category description for Keystrokes."
+  },
+  "fn_cat_data_description": {
+    "message": "Prečítajte text alebo médiá pod kurzorom, alebo z výberu.",
+    "description": "Actions Library category description for Data."
+  },
+  "fn_cat_lookup_description": {
+    "message": "Vyhľadajte definíciu pre slovo pod kurzorom.",
+    "description": "Actions Library category description for Lookup."
+  },
+  "fn_cat_translate_description": {
+    "message": "Preložte zvýraznený text alebo text pod kurzorom.",
+    "description": "Actions Library category description for Translate."
+  },
+  "fn_cat_display_description": {
+    "message": "Zobrazte výsledok predchádzajúceho kroku makra v kontextovom okne.",
+    "description": "Actions Library category description for Display."
+  },
+  "fn_cat_script_description": {
+    "message": "Spustite vlastný JavaScript kód nad stavom stránky.",
+    "description": "Actions Library category description for Script."
+  },
+  "fn_cat_media_library_description": {
+    "message": "Ukladajte odkazy alebo stiahnuté súbory do Knižnice médií.",
+    "description": "Actions Library category description for Media Library."
+  },
+  "fn_cat_ai_description": {
+    "message": "Odošlite vybraný text do AI s pokynom a cieľom výsledku.",
+    "description": "Actions Library category description for AI."
+  },
+  "fn_cat_keypilot_description": {
+    "message": "Otvorte rozhranie KeyPilot — prehľad klávesov, nastavenia a režimy.",
+    "description": "Actions Library category description for KeyPilot."
+  },
+  "fn_cat_tools_description": {
+    "message": "Užitočné prekrytia a pomôcky.",
+    "description": "Actions Library category description for Tools."
+  },
+  "fn_cat_system_description": {
+    "message": "Zrušte aktuálne gesto alebo režim KeyPilot.",
+    "description": "Actions Library category description for System."
+  },
+  "fn_cat_other_description": {
+    "message": "Nezaradené funkcie.",
+    "description": "Actions Library category description for Other."
+  },
+  "fn_section_macros_description": {
+    "message": "Viackrokové sekvencie, ktoré môžete priradiť ku klávesu. Prispôsobením štandardného makra vytvoríte upraviteľnú kópiu.",
+    "description": "Actions Library macros section description."
+  },
+  "fn_section_macro_keys_description": {
+    "message": "Uložené inštancie Makro klávesov (hotkey, dávka, round-robin a súvisiace druhy) pripravené na priradenie.",
+    "description": "Actions Library macroKeys section description."
+  },
+  "fn_TYPE_CHARACTERS_label": {
+    "message": "Napísať znaky",
+    "description": "Function Library label for TYPE_CHARACTERS."
+  },
+  "fn_TYPE_CHARACTERS_description": {
+    "message": "Napísať uložený text do poľa",
+    "description": "Function Library description for TYPE_CHARACTERS."
+  },
+  "fn_EXECUTE_JS_label": {
+    "message": "Spustiť JS",
+    "description": "Function Library label for EXECUTE_JS."
+  },
+  "fn_EXECUTE_JS_description": {
+    "message": "Spustiť vložený JS kód",
+    "description": "Function Library description for EXECUTE_JS."
+  },
+  "fn_OPEN_URLS_label": {
+    "message": "Otvoriť URL",
+    "description": "Function Library label for OPEN_URLS."
+  },
+  "fn_OPEN_URLS_description": {
+    "message": "Otvoriť niekoľko stránok v nových kartách",
+    "description": "Function Library description for OPEN_URLS."
+  },
+  "fn_OPEN_BOOKMARKS_label": {
+    "message": "Otvoriť záložky",
+    "description": "Function Library label for OPEN_BOOKMARKS."
+  },
+  "fn_OPEN_BOOKMARKS_description": {
+    "message": "Otvorí prvé záložky v priečinku",
+    "description": "Function Library description for OPEN_BOOKMARKS."
+  },
+  "fn_RANDOM_BOOKMARK_label": {
+    "message": "Náhodná záložka",
+    "description": "Function Library label for RANDOM_BOOKMARK."
+  },
+  "fn_RANDOM_BOOKMARK_description": {
+    "message": "Otvoriť náhodné záložky",
+    "description": "Function Library description for RANDOM_BOOKMARK."
+  },
+  "fn_stock_random_bookmark_label": {
+    "message": "Náhodná záložka",
+    "description": "Bundled Random Bookmark instance label."
+  },
+  "fn_stock_random_bookmark_description": {
+    "message": "Otvoriť jednu náhodnú záložku zo všetkých záložiek",
+    "description": "Bundled Random Bookmark instance description."
+  },
+  "fn_stock_social_media_label": {
+    "message": "Sociálne siete",
+    "description": "Bundled Open URLs instance label."
+  },
+  "fn_stock_social_media_description": {
+    "message": "Otvoriť Facebook, Instagram, YouTube a X",
+    "description": "Bundled Open URLs instance description."
+  },
+  "fn_instance_name_label": {
+    "message": "Názov",
+    "description": "Action instance name field on the key info popover."
+  },
+  "fn_GET_TEXT_AT_CURSOR_label": {
+    "message": "Získať text pod kurzorom",
+    "description": "Function Library label for GET_TEXT_AT_CURSOR."
+  },
+  "fn_GET_TEXT_AT_CURSOR_description": {
+    "message": "Kopírovať text pod kurzorom",
+    "description": "Function Library description for GET_TEXT_AT_CURSOR."
+  },
+  "fn_GET_TEXT_RANGE_label": {
+    "message": "Získať rozsah textu",
+    "description": "Function Library label for GET_TEXT_RANGE."
+  },
+  "fn_GET_TEXT_RANGE_description": {
+    "message": "Odovzdať výber do ďalšieho kroku makra",
+    "description": "Function Library description for GET_TEXT_RANGE."
+  },
+  "fn_GET_MEDIA_AT_CURSOR_label": {
+    "message": "Získať médiá pod kurzorom",
+    "description": "Function Library label for GET_MEDIA_AT_CURSOR."
+  },
+  "fn_GET_MEDIA_AT_CURSOR_description": {
+    "message": "Kopírovať médiá pod kurzorom",
+    "description": "Function Library description for GET_MEDIA_AT_CURSOR."
+  },
+  "fn_TRANSLATE_label": {
+    "message": "Preložiť",
+    "description": "Function Library label for TRANSLATE."
+  },
+  "fn_TRANSLATE_description": {
+    "message": "Preložiť výber alebo text pod kurzorom",
+    "description": "Function Library description for TRANSLATE."
+  },
+  "fn_COLS_TOGGLE_label": {
+    "message": "Prepnúť stĺpce",
+    "description": "Built-in Function COLS_TOGGLE label."
+  },
+  "fn_COLS_TOGGLE_description": {
+    "message": "Viacstĺpcové rozloženie pod kurzorom",
+    "description": "Built-in Function COLS_TOGGLE short description."
+  },
+  "fn_SEND_TEXT_TO_AI_label": {
+    "message": "Odoslať text do AI",
+    "description": "Built-in Function SEND_TEXT_TO_AI label."
+  },
+  "fn_SEND_TEXT_TO_AI_description": {
+    "message": "Spustiť AI nad vybraným textom",
+    "description": "Built-in Function SEND_TEXT_TO_AI short description."
+  },
+  "keyboard_hardware_layout_us_ansi_qwerty": {
+    "message": "US ANSI QWERTY",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_us_ansi_qwerty_description": {
+    "message": "Štandardné americké rozloženie klávesnice ANSI.",
+    "description": "Description for the US ANSI QWERTY keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_de_de_qwertz_iso": {
+    "message": "Nemecké ISO QWERTZ",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_de_de_qwertz_iso_description": {
+    "message": "Nemecké rozloženie klávesnice ISO QWERTZ.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_es_es_qwerty_iso": {
+    "message": "Španielske (Španielsko) ISO QWERTY",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_es_es_qwerty_iso_description": {
+    "message": "Španielske (Španielsko) rozloženie klávesnice ISO QWERTY.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_sk_sk_qwertz_iso": {
+    "message": "Slovenské ISO QWERTZ",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_sk_sk_qwertz_iso_description": {
+    "message": "Slovenské rozloženie klávesnice ISO QWERTZ.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_ja_jis_106": {
+    "message": "Japonské JIS 106",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_ja_jis_106_description": {
+    "message": "Japonské rozloženie klávesnice JIS 106.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "fn_ZOOM_OUT_label": {
+    "message": "Oddialiť",
+    "description": "Function Library label for ZOOM_OUT."
+  },
+  "fn_ZOOM_OUT_description": {
+    "message": "Oddialiť stránku v mieste kurzora",
+    "description": "Function Library description for ZOOM_OUT."
+  },
+  "fn_ZOOM_IN_label": {
+    "message": "Priblížiť",
+    "description": "Function Library label for ZOOM_IN."
+  },
+  "fn_ZOOM_IN_description": {
+    "message": "Priblížiť stránku v mieste kurzora",
+    "description": "Function Library description for ZOOM_IN."
+  },
+  "fn_READER_MODE_label": {
+    "message": "Reader Mode",
+    "description": "Function Library label for READER_MODE."
+  },
+  "fn_READER_MODE_description": {
+    "message": "Read this page without clutter",
+    "description": "Function Library description for READER_MODE."
+  }
+}

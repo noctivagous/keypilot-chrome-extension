@@ -26,6 +26,18 @@ Those files start with `<!-- Generated … Do not edit. -->`. Change copy in JSO
 
 Keep `assets/` SVG-only in git. At deploy, copy `icon256.png` and `cyberpilotfloat-optimized.mp4` from `promo-materials/web/assets/` into the published `assets/` folder so `assets/icon256.png` and `assets/cyberpilotfloat-optimized.mp4` resolve. Locale pages expect the same files at `../assets/`. The same copy is optional for local preview (`promo/web/assets/*.png` and `*.mp4` are gitignored).
 
+`npm run web:locales` also builds `keyboard-demo.js`, writes slim `messages/<locale>.json` from `extension/_locales`, copies keyboard fonts and titlebar icons into `assets/`, and copies the five Chrome listing PNGs into `assets/screenshots/` (English) and `<locale>/assets/screenshots/` (other languages). Physical keyboard models:
+
+| Locale | Hardware layout |
+|---|---|
+| `en` | `us-ansi-qwerty` |
+| `de` | `de-de-qwertz-iso` |
+| `es` | `es-es-qwerty-iso` |
+| `sk` | `sk-sk-qwertz-iso` |
+| `es_419`, `zh_CN`, `zh_TW` | `us-ansi-qwerty` (no separate hardware model) |
+
+Listing PNGs come from `online-stores/generated/chrome/<locale>/`. `--check` fails if any site locale is missing one of the five files. Generate them with `npm run store:screenshots -- --locale=<id>` first. Fonts, theme icons, and those PNGs are gitignored.
+
 ## Commands
 
 From `keypilot-chrome-extension/`:

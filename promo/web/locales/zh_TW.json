@@ -29,5 +29,15 @@
   "demo_open": "開啟",
   "demo_open_spacing": "0",
   "demo_back": "返回",
-  "demo_back_spacing": "0"
+  "demo_back_spacing": "0",
+  "keyboard_eyebrow": "鍵盤",
+  "keyboard_title": "鍵盤參考",
+  "keyboard_lede": "將指標懸停在按鍵上，查看它在預設瀏覽配置中的作用。",
+  "shots_eyebrow": "頁面上",
+  "shots_title": "KeyPilot 實際使用",
+  "shot_1": "透過按鍵點擊瀏覽網路。",
+  "shot_2": "各種動作都在您的指尖之下",
+  "shot_3": "建立符合您工作流程的鍵盤配置。",
+  "shot_4": "安裝後會顯示操作導覽。",
+  "shot_5": "隨時可使用右鍵控制 KeyPilot。"
 }

@@ -29,5 +29,15 @@
   "demo_open": "ÖFFNEN",
   "demo_open_spacing": "0.6",
   "demo_back": "ZURÜCK",
-  "demo_back_spacing": "0.4"
+  "demo_back_spacing": "0.4",
+  "keyboard_eyebrow": "DIE TASTATUR",
+  "keyboard_title": "Tastaturreferenz",
+  "keyboard_lede": "Fahren Sie über eine Taste, um zu sehen, was sie im Standard-Browsing-Layout tut.",
+  "shots_eyebrow": "AUF DER SEITE",
+  "shots_title": "KeyPilot im Einsatz",
+  "shot_1": "Surfen Sie mit Tastenklicks im Web.",
+  "shot_2": "Eine Vielzahl von Aktionen immer griffbereit.",
+  "shot_3": "Erstellen Sie ein Tastaturlayout für Ihren Arbeitsablauf.",
+  "shot_4": "Nach der Installation erscheint eine Einführung.",
+  "shot_5": "Rechtsklick steuert KeyPilot jederzeit, wenn nötig."
 }

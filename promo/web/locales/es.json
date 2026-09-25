@@ -29,5 +29,15 @@
   "demo_open": "ABRIR",
   "demo_open_spacing": "0.6",
   "demo_back": "ATRÁS",
-  "demo_back_spacing": "0.4"
+  "demo_back_spacing": "0.4",
+  "keyboard_eyebrow": "EL TECLADO",
+  "keyboard_title": "Referencia del teclado",
+  "keyboard_lede": "Pase el cursor sobre una tecla para ver qué hace en la distribución de navegación predeterminada.",
+  "shots_eyebrow": "EN LA PÁGINA",
+  "shots_title": "KeyPilot en uso",
+  "shot_1": "Navega por la web con clics de tecla.",
+  "shot_2": "Una gran variedad de acciones, al alcance de tus dedos.",
+  "shot_3": "Crea una distribución de teclado para tu flujo de trabajo.",
+  "shot_4": "Tras la instalación aparece un recorrido guiado.",
+  "shot_5": "El clic derecho siempre está disponible para controlar KeyPilot."
 }

@@ -203,6 +203,7 @@ function updateExistingKeyboardDOM({ container, keybindings }) {
  * @param {string} [params.layoutId]
  * @param {string} [params.hardwareLayoutId]
  * @param {boolean} [params.attachPopovers=true] When false, skip key info popovers (edit mode).
+ * @param {boolean} [params.pinOnClick=true] When false, hover shows the tooltip and click does not pin settings.
  * @param {() => any} [params.getKeyPilot]
  */
 export function renderKeybindingsKeyboard({
@@ -212,6 +213,7 @@ export function renderKeybindingsKeyboard({
   layoutId,
   hardwareLayoutId,
   attachPopovers = true,
+  pinOnClick = true,
   getKeyPilot
 } = {}) {
   if (!container) return;
@@ -242,7 +244,7 @@ export function renderKeybindingsKeyboard({
     if (canReuse) {
       if (updateExistingKeyboardDOM({ container, keybindings })) {
         if (attachPopovers) {
-          attachKeyPopoverBehavior({ root: container, keybindings, getKeyPilot });
+          attachKeyPopoverBehavior({ root: container, keybindings, getKeyPilot, pinOnClick });
         } else {
           detachKeyPopoverBehavior(container);
         }
@@ -331,7 +333,8 @@ export function renderKeybindingsKeyboard({
     attachKeyPopoverBehavior({
       root: container,
       keybindings,
-      getKeyPilot
+      getKeyPilot,
+      pinOnClick
     });
   } else {
     detachKeyPopoverBehavior(container);
@@ -582,6 +585,7 @@ function applyKeyMaterialToPopover(pop, targetEl) {
  *   binding: any,
  *   actionId: string,
  *   pinned?: boolean,
+ *   settingsHint?: boolean,
  *   container?: HTMLElement|null
  * }} args
  */
@@ -607,7 +611,7 @@ function instancePopoverTitle(targetEl, actionId, binding) {
   return getMessage('key_info_instance_title', [name, typeLabel]) || `${name} : ${typeLabel}`;
 }
 
-function showPopoverForTarget({ doc, pop, targetEl, binding, actionId, pinned = false }) {
+function showPopoverForTarget({ doc, pop, targetEl, binding, actionId, pinned = false, settingsHint = true }) {
   if (!doc || !pop || !targetEl) return;
 
   const titleEl = pop.querySelector('.kp-popover-title');
@@ -631,7 +635,7 @@ function showPopoverForTarget({ doc, pop, targetEl, binding, actionId, pinned = 
   if (descEl) descEl.textContent = desc;
   if (hintEl) {
     hintEl.textContent = getMessage('key_info_settings_hint');
-    const showHint = !pinned && actionHasSettings(actionId);
+    const showHint = settingsHint && !pinned && actionHasSettings(actionId);
     hintEl.hidden = !showHint;
   }
   if (iconEl) {
@@ -1113,7 +1117,7 @@ export function unpinKeyPopover() {
   hidePopover(pop);
 }
 
-export function attachKeyPopoverBehavior({ root, keybindings, getKeyPilot } = {}) {
+export function attachKeyPopoverBehavior({ root, keybindings, getKeyPilot, pinOnClick = true } = {}) {
   if (!root) return;
   const doc = root.ownerDocument || document;
 
@@ -1172,7 +1176,8 @@ export function attachKeyPopoverBehavior({ root, keybindings, getKeyPilot } = {}
       targetEl: keyEl,
       binding,
       actionId,
-      pinned: pinned || (_pinnedActionId === actionId)
+      pinned: pinned || (_pinnedActionId === actionId),
+      settingsHint: !!pinOnClick
     });
     emitKeyboardHelpKeyHover({ actionId, keyEl });
   };
@@ -1236,7 +1241,7 @@ export function attachKeyPopoverBehavior({ root, keybindings, getKeyPilot } = {}
     keyEl.addEventListener('pointerleave', handleKeyLeave);
     keyEl.addEventListener('focusin', handleKeyFocusIn);
     keyEl.addEventListener('focusout', handleKeyFocusOut);
-    keyEl.addEventListener('click', handleKeyClick);
+    if (pinOnClick) keyEl.addEventListener('click', handleKeyClick);
   });
 
   if (!root._kpKeyHandlers.docKeydown) {

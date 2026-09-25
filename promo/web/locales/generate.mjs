@@ -12,6 +12,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import * as esbuild from "esbuild";
 
 const CATALOG_DIR = path.dirname(fileURLToPath(import.meta.url));
 const WEB = path.resolve(CATALOG_DIR, "..");
@@ -39,6 +40,23 @@ const LOCALE_META = {
   zh_CN: { native: "简体中文", flag: "cn" },
   zh_TW: { native: "繁體中文", flag: "tw" }
 };
+const HARDWARE_BY_LOCALE = {
+  en: "us-ansi-qwerty",
+  de: "de-de-qwertz-iso",
+  es: "es-es-qwerty-iso",
+  es_419: "us-ansi-qwerty",
+  sk: "sk-sk-qwertz-iso",
+  zh_CN: "us-ansi-qwerty",
+  zh_TW: "us-ansi-qwerty"
+};
+const SCREENSHOTS = [
+  "01-key-click-browsing.png",
+  "02-keyboard-map.png",
+  "03-customize-workflow.png",
+  "04-walkthrough.png",
+  "05-context-menu.png"
+];
+const MESSAGE_KEY = /^(fn_.+_(label|description)|keycap_.+|keyboard_help_.+|key_info_.+|keyboard_hardware_layout_.+|layout_family_browsing_.+|control_strip_(collapse|expand))$/;
 const GENERATED_ATTRS = [
   "data-i18n",
   "data-i18n-alt",
@@ -253,6 +271,15 @@ function applyDocumentMeta(html, locale) {
   return out;
 }
 
+function applyHardware(html, locale) {
+  const id = HARDWARE_BY_LOCALE[locale];
+  if (!id) throw new Error(`Missing hardware layout for ${locale}`);
+  if (!html.includes("data-hardware=")) {
+    throw new Error("Missing data-hardware on the keyboard stage");
+  }
+  return html.replace(/data-hardware="[^"]*"/g, `data-hardware="${id}"`);
+}
+
 function insertGeneratedComment(html) {
   if (html.startsWith("<!DOCTYPE html>\n")) {
     return html.replace("<!DOCTYPE html>\n", `<!DOCTYPE html>\n${GENERATED_COMMENT}`);
@@ -267,6 +294,7 @@ function renderHtml(source, catalog, locale) {
   html = applyLocaleCurrent(html, locale);
   html = applyFromWeb(html, locale === SOURCE_LOCALE ? "" : "../");
   html = applyLocalePaths(html, locale);
+  html = applyHardware(html, locale);
   html = applyDocumentMeta(html, locale);
   html = stripGeneratedAttrs(html);
   return insertGeneratedComment(html);
@@ -344,29 +372,135 @@ function writeOrCheck(file, contents) {
   return true;
 }
 
-const en = readJson(SOURCE_LOCALE);
-checkCatalogs(en);
+function writeOrCheckBuffer(file, contents) {
+  if (CHECK) {
+    if (!fs.existsSync(file)) {
+      throw new Error(`Missing generated file: ${path.relative(ROOT, file)}`);
+    }
+    const existing = fs.readFileSync(file);
+    if (!existing.equals(contents)) {
+      throw new Error(`Out of date: ${path.relative(ROOT, file)}`);
+    }
+    return false;
+  }
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, contents);
+  return true;
+}
 
-const htmlSource = fs.readFileSync(path.join(WEB, "index.html"), "utf8");
-const svgFiles = ["keyclick-landscape.svg", "keyclick-portrait.svg"].map((name) => ({
-  name,
-  source: fs.readFileSync(path.join(WEB, "assets", name), "utf8")
-}));
-checkEnglishSource(htmlSource, svgFiles, en);
+function copyTree(srcDir, destDir) {
+  if (!fs.existsSync(srcDir)) {
+    throw new Error(`Missing ${path.relative(ROOT, srcDir)}`);
+  }
+  const walk = (rel) => {
+    const abs = path.join(srcDir, rel);
+    if (fs.statSync(abs).isDirectory()) {
+      for (const name of fs.readdirSync(abs)) walk(path.join(rel, name));
+      return;
+    }
+    writeOrCheckBuffer(path.join(destDir, rel), fs.readFileSync(abs));
+  };
+  walk("");
+}
 
-let wrote = 0;
-for (const locale of LOCALES) {
-  const catalog = readJson(locale);
-  const html = renderHtml(htmlSource, catalog, locale);
-  if (writeOrCheck(path.join(WEB, locale, "index.html"), html)) wrote += 1;
-  for (const svg of svgFiles) {
-    const rendered = renderSvg(svg.source, catalog, locale);
-    if (writeOrCheck(path.join(WEB, locale, "assets", svg.name), rendered)) wrote += 1;
+function slimMessages(locale) {
+  const file = path.join(ROOT, "extension", "_locales", locale, "messages.json");
+  const catalog = JSON.parse(fs.readFileSync(file, "utf8"));
+  const out = {};
+  for (const [key, value] of Object.entries(catalog)) {
+    if (MESSAGE_KEY.test(key)) out[key] = value;
+  }
+  if (!out.keyboard_help_title || !out.layout_family_browsing_label) {
+    throw new Error(`Slim keyboard catalog for ${locale} is missing window strings`);
+  }
+  return `${JSON.stringify(out, null, 2)}\n`;
+}
+
+function screenshotDir(locale) {
+  return locale === SOURCE_LOCALE
+    ? path.join(WEB, "assets", "screenshots")
+    : path.join(WEB, locale, "assets", "screenshots");
+}
+
+function syncScreenshots() {
+  const errors = [];
+  for (const locale of [SOURCE_LOCALE, ...LOCALES]) {
+    for (const name of SCREENSHOTS) {
+      const src = path.join(ROOT, "online-stores", "generated", "chrome", locale, name);
+      if (!fs.existsSync(src)) {
+        errors.push(`${locale}/${name}`);
+        continue;
+      }
+      writeOrCheckBuffer(path.join(screenshotDir(locale), name), fs.readFileSync(src));
+    }
+  }
+  if (errors.length) {
+    throw new Error(
+      `Missing store screenshots (run npm run store:screenshots -- --locale=<id>):\n- ${errors.join("\n- ")}`
+    );
   }
 }
 
-if (CHECK) {
-  console.log("web locales up to date");
-} else {
-  console.log(`wrote ${wrote} locale files`);
+async function buildKeyboardDemo() {
+  const result = await esbuild.build({
+    absWorkingDir: ROOT,
+    entryPoints: [path.join(WEB, "keyboard-demo", "entry.js")],
+    bundle: true,
+    format: "iife",
+    platform: "browser",
+    target: "es2022",
+    write: false,
+    legalComments: "none",
+    logLevel: "silent"
+  });
+  const js = result.outputFiles[0].text;
+  writeOrCheck(path.join(WEB, "keyboard-demo.js"), js.endsWith("\n") ? js : `${js}\n`);
 }
+
+async function main() {
+  const en = readJson(SOURCE_LOCALE);
+  checkCatalogs(en);
+
+  const htmlSource = fs.readFileSync(path.join(WEB, "index.html"), "utf8");
+  const svgFiles = ["keyclick-landscape.svg", "keyclick-portrait.svg"].map((name) => ({
+    name,
+    source: fs.readFileSync(path.join(WEB, "assets", name), "utf8")
+  }));
+  checkEnglishSource(htmlSource, svgFiles, en);
+
+  let wrote = 0;
+  for (const locale of LOCALES) {
+    const catalog = readJson(locale);
+    const html = renderHtml(htmlSource, catalog, locale);
+    if (writeOrCheck(path.join(WEB, locale, "index.html"), html)) wrote += 1;
+    for (const svg of svgFiles) {
+      const rendered = renderSvg(svg.source, catalog, locale);
+      if (writeOrCheck(path.join(WEB, locale, "assets", svg.name), rendered)) wrote += 1;
+    }
+  }
+
+  for (const locale of [SOURCE_LOCALE, ...LOCALES]) {
+    if (writeOrCheck(path.join(WEB, "messages", `${locale}.json`), slimMessages(locale))) wrote += 1;
+  }
+  copyTree(
+    path.join(ROOT, "extension", "fonts"),
+    path.join(WEB, "assets", "fonts")
+  );
+  copyTree(
+    path.join(ROOT, "extension", "themes", "shared", "icons", "chrome"),
+    path.join(WEB, "assets", "themes", "shared", "icons", "chrome")
+  );
+  await buildKeyboardDemo();
+  syncScreenshots();
+
+  if (CHECK) {
+    console.log("web locales up to date");
+  } else {
+    console.log(`wrote ${wrote} locale files`);
+  }
+}
+
+main().catch((err) => {
+  console.error(err instanceof Error ? err.message : err);
+  process.exit(1);
+});

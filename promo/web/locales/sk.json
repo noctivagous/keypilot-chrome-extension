@@ -29,5 +29,15 @@
   "demo_open": "OTVORIŤ",
   "demo_open_spacing": "0.4",
   "demo_back": "SPÄŤ",
-  "demo_back_spacing": "1.4"
+  "demo_back_spacing": "1.4",
+  "keyboard_eyebrow": "KLÁVESNICA",
+  "keyboard_title": "Referencia klávesnice",
+  "keyboard_lede": "Prejdite myšou na kláves a uvidíte, čo robí v predvolenom rozložení na prehliadanie.",
+  "shots_eyebrow": "NA STRÁNKE",
+  "shots_title": "KeyPilot v praxi",
+  "shot_1": "Prehliadajte web klávesovými klikmi.",
+  "shot_2": "Množstvo akcií máte na dosah prstov.",
+  "shot_3": "Vytvorte rozloženie klávesnice pre svoj postup práce.",
+  "shot_4": "Po inštalácii sa zobrazí sprievodca.",
+  "shot_5": "Pravým kliknutím môžete KeyPilot kedykoľvek ovládať."
 }

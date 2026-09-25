@@ -1,0 +1,938 @@
+{
+  "control_strip_collapse": {
+    "message": "Colapso",
+    "description": "Control-strip collapse action."
+  },
+  "control_strip_expand": {
+    "message": "Expandir",
+    "description": "Control-strip expand action."
+  },
+  "keyboard_help_aria_label": {
+    "message": "Referencia del teclado KeyPilot",
+    "description": "Accessible name for the floating keyboard reference."
+  },
+  "keyboard_help_title": {
+    "message": "Referencia del teclado",
+    "description": "Title of the floating keyboard reference."
+  },
+  "keyboard_help_title_typing": {
+    "message": "Referencia del teclado: escritura",
+    "description": "Keyboard reference title while a text field is focused."
+  },
+  "keyboard_help_toggle_title": {
+    "message": "Alternar referencia de teclado",
+    "description": "Tooltip for the keyboard-reference toggle shortcut."
+  },
+  "keyboard_help_toggle_aria": {
+    "message": "Alternar referencia de teclado ($1)",
+    "description": "Accessible name for the keyboard-reference toggle shortcut. $1 is the key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "K"
+      }
+    }
+  },
+  "keyboard_help_close_aria": {
+    "message": "Cerrar referencia del teclado",
+    "description": "Accessible name for closing the keyboard reference."
+  },
+  "keyboard_help_collapse_aria": {
+    "message": "Referencia de teclado contraído",
+    "description": "Accessible name for collapsing the keyboard reference."
+  },
+  "keyboard_help_expand_aria": {
+    "message": "Ampliar la referencia del teclado",
+    "description": "Accessible name for expanding the keyboard reference."
+  },
+  "keyboard_help_layout_aria": {
+    "message": "Diseño de teclado actual",
+    "description": "Accessible name for the keyboard-reference layout picker."
+  },
+  "keyboard_help_editing_aria": {
+    "message": "Editando diseño: $1 para salir",
+    "description": "Hint while the layout editor is open. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+C"
+      }
+    }
+  },
+  "keyboard_help_exit_text_mode": {
+    "message": "Salir del modo texto ($1)",
+    "description": "Button that leaves text mode. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Esc"
+      }
+    }
+  },
+  "keyboard_help_exit_text_mode_label": {
+    "message": "Salir",
+    "description": "Visible label on the Keyboard Reference button that leaves text mode."
+  },
+  "keyboard_help_esc_to_exit": {
+    "message": "$1 para salir",
+    "description": "Keyboard Reference titlebar hint while text mode is active. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Esc"
+      }
+    }
+  },
+  "keyboard_help_close_editor": {
+    "message": "Cerrar el editor de diseño ($1)",
+    "description": "Button that closes the layout editor. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+C"
+      }
+    }
+  },
+  "keyboard_help_close_editor_label": {
+    "message": "Cerrar editor",
+    "description": "Visible label on the Keyboard Reference button that closes the layout editor."
+  },
+  "keycap_tab": {
+    "message": "Tab",
+    "description": "Visible legend on the Tab keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_caps": {
+    "message": "Bloq Mayús",
+    "description": "Visible legend on the Caps Lock keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_shift": {
+    "message": "Mayús",
+    "description": "Visible legend on the Shift keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_enter": {
+    "message": "Intro",
+    "description": "Visible legend on the Enter/Return keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_backspace": {
+    "message": "Retroceso",
+    "description": "Visible legend on the Backspace keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_esc": {
+    "message": "Esc",
+    "description": "Visible legend on the Escape keycap in Keyboard Reference. Keep this short."
+  },
+  "keyboard_help_left_handed": {
+    "message": "zurdo",
+    "description": "Chip label for left-handed keyboard layout."
+  },
+  "keyboard_help_left_handed_off_aria": {
+    "message": "Desactivar el diseño para zurdos",
+    "description": "Accessible name for dismissing the left-handed chip."
+  },
+  "keyboard_help_render_error": {
+    "message": "No se puede representar la referencia del teclado en esta página.",
+    "description": "Error when the keyboard reference cannot paint."
+  },
+  "keyboard_help_custom_render_error": {
+    "message": "No se puede representar la distribución del teclado personalizada.",
+    "description": "Error when a custom layout cannot paint."
+  },
+  "keyboard_help_remove_action_aria": {
+    "message": "Eliminar acción de $1",
+    "description": "Accessible name for removing a key assignment. $1 is the key label.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "F"
+      }
+    }
+  },
+  "keyboard_help_remove": {
+    "message": "Quitar",
+    "description": "Tooltip for removing a key assignment."
+  },
+  "layout_family_browsing_label": {
+    "message": "Navegando",
+    "description": "Built-in keyboard layout family name."
+  },
+  "layout_family_browsing_description": {
+    "message": "Controles de navegación completos (desplazamiento, pestañas, clics, historial, herramientas).",
+    "description": "Description of the Browsing built-in keyboard layout family."
+  },
+  "layout_family_browsing_picker": {
+    "message": "Integrado: Navegación",
+    "description": "Built-in keyboard layout family label in the layout picker."
+  },
+  "key_info_key": {
+    "message": "Tecla: $1",
+    "description": "Physical key caption in the key-info popover. $1 is the key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "F"
+      }
+    }
+  },
+  "key_info_settings_hint": {
+    "message": "Haga clic para mostrar la configuración",
+    "description": "Hint shown on hover in the key-info popover when the action has settings."
+  },
+  "key_info_instance_title": {
+    "message": "$NAME$: $TYPE$",
+    "description": "Hover tooltip title for an action instance. $1 is the instance name, $2 is the key action type.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Social media"
+      },
+      "type": {
+        "content": "$2",
+        "example": "Open URLs"
+      }
+    }
+  },
+  "key_info_config": {
+    "message": "Config",
+    "description": "Button in the key-info popover that opens the action configuration panel."
+  },
+  "fn_ACTIVATE_label": {
+    "message": "Haga clic en elemento",
+    "description": "Function Library label for ACTIVATE."
+  },
+  "fn_ACTIVATE_description": {
+    "message": "Haga clic en el elemento suspendido",
+    "description": "Function Library description for ACTIVATE."
+  },
+  "fn_ACTIVATE_NEW_TAB_label": {
+    "message": "Haga clic en Nueva pestaña",
+    "description": "Function Library label for ACTIVATE_NEW_TAB."
+  },
+  "fn_ACTIVATE_NEW_TAB_description": {
+    "message": "Abrir enlace en una nueva pestaña en primer plano",
+    "description": "Function Library description for ACTIVATE_NEW_TAB."
+  },
+  "fn_ACTIVATE_NEW_TAB_BACKGROUND_label": {
+    "message": "Haga clic en Fondo de nueva pestaña",
+    "description": "Function Library label for ACTIVATE_NEW_TAB_BACKGROUND."
+  },
+  "fn_ACTIVATE_NEW_TAB_BACKGROUND_description": {
+    "message": "Abrir enlace en una nueva pestaña de fondo",
+    "description": "Function Library description for ACTIVATE_NEW_TAB_BACKGROUND."
+  },
+  "fn_BACK_label": {
+    "message": "Volver",
+    "description": "Function Library label for BACK."
+  },
+  "fn_BACK_description": {
+    "message": "Historial del navegador atrás",
+    "description": "Function Library description for BACK."
+  },
+  "fn_BACK2_label": {
+    "message": "Volver",
+    "description": "Function Library label for BACK2."
+  },
+  "fn_BACK2_description": {
+    "message": "Historial del navegador atrás",
+    "description": "Function Library description for BACK2."
+  },
+  "fn_FORWARD_label": {
+    "message": "seguir adelante",
+    "description": "Function Library label for FORWARD."
+  },
+  "fn_FORWARD_description": {
+    "message": "Historial del navegador hacia adelante",
+    "description": "Function Library description for FORWARD."
+  },
+  "fn_DELETE_label": {
+    "message": "Modo de eliminación",
+    "description": "Function Library label for DELETE."
+  },
+  "fn_DELETE_description": {
+    "message": "Ocultar elementos debajo del cursor",
+    "description": "Function Library description for DELETE."
+  },
+  "fn_TAB_LEFT_label": {
+    "message": "Pestaña izquierda",
+    "description": "Function Library label for TAB_LEFT."
+  },
+  "fn_TAB_LEFT_description": {
+    "message": "Cambiar a la pestaña anterior",
+    "description": "Function Library description for TAB_LEFT."
+  },
+  "fn_TAB_RIGHT_label": {
+    "message": "Pestaña derecha",
+    "description": "Function Library label for TAB_RIGHT."
+  },
+  "fn_TAB_RIGHT_description": {
+    "message": "Cambiar a la siguiente pestaña",
+    "description": "Function Library description for TAB_RIGHT."
+  },
+  "fn_ROOT_label": {
+    "message": "Ir a la raíz del sitio",
+    "description": "Function Library label for ROOT."
+  },
+  "fn_ROOT_description": {
+    "message": "Navegar al origen del sitio",
+    "description": "Function Library description for ROOT."
+  },
+  "fn_LAUNCHER_label": {
+    "message": "Lanzador",
+    "description": "Function Library label for LAUNCHER."
+  },
+  "fn_LAUNCHER_description": {
+    "message": "Lanzador de sitios de acceso rápido",
+    "description": "Function Library description for LAUNCHER."
+  },
+  "fn_TOP_SITES_label": {
+    "message": "Sitios principales",
+    "description": "Function Library label for TOP_SITES."
+  },
+  "fn_TOP_SITES_description": {
+    "message": "Barra de herramientas, visitas y marcadores",
+    "description": "Function Library description for TOP_SITES."
+  },
+  "fn_CLOSE_TAB_label": {
+    "message": "Cerrar pestaña",
+    "description": "Function Library label for CLOSE_TAB."
+  },
+  "fn_CLOSE_TAB_description": {
+    "message": "Cerrar la pestaña actual",
+    "description": "Function Library description for CLOSE_TAB."
+  },
+  "fn_CANCEL_label": {
+    "message": "Salir del foco",
+    "description": "Function Library label for CANCEL."
+  },
+  "fn_CANCEL_description": {
+    "message": "Dejar modos y superposiciones",
+    "description": "Function Library description for CANCEL."
+  },
+  "fn_PAGE_UP_INSTANT_label": {
+    "message": "Página arriba",
+    "description": "Function Library label for PAGE_UP_INSTANT."
+  },
+  "fn_PAGE_UP_INSTANT_description": {
+    "message": "Saltar una página al instante",
+    "description": "Function Library description for PAGE_UP_INSTANT."
+  },
+  "fn_PAGE_DOWN_INSTANT_label": {
+    "message": "Página abajo",
+    "description": "Function Library label for PAGE_DOWN_INSTANT."
+  },
+  "fn_PAGE_DOWN_INSTANT_description": {
+    "message": "Saltar una página hacia abajo al instante",
+    "description": "Function Library description for PAGE_DOWN_INSTANT."
+  },
+  "fn_PAGE_TOP_label": {
+    "message": "Desplazarse hacia arriba",
+    "description": "Function Library label for PAGE_TOP."
+  },
+  "fn_PAGE_TOP_description": {
+    "message": "Saltar a la parte superior del objetivo de desplazamiento",
+    "description": "Function Library description for PAGE_TOP."
+  },
+  "fn_PAGE_BOTTOM_label": {
+    "message": "Desplazarse hacia abajo",
+    "description": "Function Library label for PAGE_BOTTOM."
+  },
+  "fn_PAGE_BOTTOM_description": {
+    "message": "Saltar al final del objetivo de desplazamiento",
+    "description": "Function Library description for PAGE_BOTTOM."
+  },
+  "fn_SCROLL_LINE_label": {
+    "message": "Línea de desplazamiento",
+    "description": "Function Library label for SCROLL_LINE."
+  },
+  "fn_SCROLL_LINE_description": {
+    "message": "Desplazamiento continuo basado en el origen",
+    "description": "Function Library description for SCROLL_LINE."
+  },
+  "fn_NEW_TAB_label": {
+    "message": "Nueva pestaña",
+    "description": "Function Library label for NEW_TAB."
+  },
+  "fn_NEW_TAB_description": {
+    "message": "Abrir la nueva pestaña de KeyPilot",
+    "description": "Function Library description for NEW_TAB."
+  },
+  "fn_OPEN_POPOVER_label": {
+    "message": "Ventana emergente abierta",
+    "description": "Function Library label for OPEN_POPOVER."
+  },
+  "fn_OPEN_POPOVER_description": {
+    "message": "Abrir enlace en una ventana emergente",
+    "description": "Function Library description for OPEN_POPOVER."
+  },
+  "fn_PREVIEW_LINK_POPOVER_label": {
+    "message": "Enlace de vista previa",
+    "description": "Function Library label for PREVIEW_LINK_POPOVER."
+  },
+  "fn_PREVIEW_LINK_POPOVER_description": {
+    "message": "Enlace de vista previa en una ventana emergente",
+    "description": "Function Library description for PREVIEW_LINK_POPOVER."
+  },
+  "fn_POI_WEBSITE_label": {
+    "message": "Sitio web de PDI",
+    "description": "Function Library label for POI_WEBSITE."
+  },
+  "fn_POI_WEBSITE_description": {
+    "message": "Abrir sitio web del lugar del mapa",
+    "description": "Function Library description for POI_WEBSITE."
+  },
+  "fn_POI_ADDRESS_label": {
+    "message": "Dirección de PDI",
+    "description": "Function Library label for POI_ADDRESS."
+  },
+  "fn_POI_ADDRESS_description": {
+    "message": "Copiar la dirección del lugar del mapa",
+    "description": "Function Library description for POI_ADDRESS."
+  },
+  "fn_OPEN_SETTINGS_POPOVER_label": {
+    "message": "Configuración",
+    "description": "Function Library label for OPEN_SETTINGS_POPOVER."
+  },
+  "fn_OPEN_SETTINGS_POPOVER_description": {
+    "message": "Abrir configuración de KeyPilot",
+    "description": "Function Library description for OPEN_SETTINGS_POPOVER."
+  },
+  "fn_OMNIBOX_label": {
+    "message": "Barra de direcciones",
+    "description": "Function Library label for OMNIBOX."
+  },
+  "fn_OMNIBOX_description": {
+    "message": "Superposición de barra de direcciones",
+    "description": "Function Library description for OMNIBOX."
+  },
+  "fn_TAB_HISTORY_label": {
+    "message": "Historial de pestañas",
+    "description": "Function Library label for TAB_HISTORY."
+  },
+  "fn_TAB_HISTORY_description": {
+    "message": "Explorar el historial de esta pestaña",
+    "description": "Function Library description for TAB_HISTORY."
+  },
+  "fn_TABS_OVERVIEW_label": {
+    "message": "Vista de pestañas",
+    "description": "Function Library label for TABS_OVERVIEW."
+  },
+  "fn_TABS_OVERVIEW_description": {
+    "message": "Mostrar todas las ventanas y pestañas",
+    "description": "Function Library description for TABS_OVERVIEW."
+  },
+  "fn_TOGGLE_KEYBOARD_HELP_label": {
+    "message": "Referencia del teclado",
+    "description": "Function Library label for TOGGLE_KEYBOARD_HELP."
+  },
+  "fn_TOGGLE_KEYBOARD_HELP_description": {
+    "message": "Mostrar u ocultar el mapa del teclado",
+    "description": "Function Library description for TOGGLE_KEYBOARD_HELP."
+  },
+  "fn_HIGHLIGHT_label": {
+    "message": "Seleccionar texto",
+    "description": "Function Library label for HIGHLIGHT."
+  },
+  "fn_HIGHLIGHT_description": {
+    "message": "Seleccione texto y copie texto enriquecido",
+    "description": "Function Library description for HIGHLIGHT."
+  },
+  "fn_RECTANGLE_HIGHLIGHT_label": {
+    "message": "Seleccionar elemento",
+    "description": "Function Library label for RECTANGLE_HIGHLIGHT."
+  },
+  "fn_RECTANGLE_HIGHLIGHT_description": {
+    "message": "Selección de elemento rectangular o acumulativo",
+    "description": "Function Library description for RECTANGLE_HIGHLIGHT."
+  },
+  "fn_COPY_HOVERED_IMAGE_label": {
+    "message": "Copiar imagen",
+    "description": "Function Library label for COPY_HOVERED_IMAGE."
+  },
+  "fn_COPY_HOVERED_IMAGE_description": {
+    "message": "Copiar imagen suspendida",
+    "description": "Function Library description for COPY_HOVERED_IMAGE."
+  },
+  "fn_COPY_HOVERED_URL_label": {
+    "message": "Copiar URL",
+    "description": "Function Library label for COPY_HOVERED_URL."
+  },
+  "fn_COPY_HOVERED_URL_description": {
+    "message": "Copiar la URL del enlace suspendido",
+    "description": "Function Library description for COPY_HOVERED_URL."
+  },
+  "fn_COPY_HOVERED_VIDEO_label": {
+    "message": "Copiar vídeo",
+    "description": "Function Library label for COPY_HOVERED_VIDEO."
+  },
+  "fn_COPY_HOVERED_VIDEO_description": {
+    "message": "Copiar video suspendido",
+    "description": "Function Library description for COPY_HOVERED_VIDEO."
+  },
+  "fn_FONT_INFO_label": {
+    "message": "Información de fuente",
+    "description": "Function Library label for FONT_INFO."
+  },
+  "fn_FONT_INFO_description": {
+    "message": "Inspeccionar la fuente debajo del cursor",
+    "description": "Function Library description for FONT_INFO."
+  },
+  "fn_PAGE_MEDIA_label": {
+    "message": "Medios de página",
+    "description": "Function Library label for PAGE_MEDIA."
+  },
+  "fn_PAGE_MEDIA_description": {
+    "message": "Explorar los medios encontrados en esta página.",
+    "description": "Function Library description for PAGE_MEDIA."
+  },
+  "fn_OPEN_MEDIA_LIBRARY_label": {
+    "message": "Biblioteca multimedia",
+    "description": "Function Library label for OPEN_MEDIA_LIBRARY."
+  },
+  "fn_OPEN_MEDIA_LIBRARY_description": {
+    "message": "Abrir biblioteca multimedia guardada",
+    "description": "Function Library description for OPEN_MEDIA_LIBRARY."
+  },
+  "fn_CLIPBOARD_COPY_label": {
+    "message": "Copiar",
+    "description": "Function Library label for CLIPBOARD_COPY."
+  },
+  "fn_CLIPBOARD_COPY_description": {
+    "message": "Copiar selección al portapapeles",
+    "description": "Function Library description for CLIPBOARD_COPY."
+  },
+  "fn_CLIPBOARD_CUT_label": {
+    "message": "cortar",
+    "description": "Function Library label for CLIPBOARD_CUT."
+  },
+  "fn_CLIPBOARD_CUT_description": {
+    "message": "Cortar selección al portapapeles",
+    "description": "Function Library description for CLIPBOARD_CUT."
+  },
+  "fn_CLIPBOARD_PASTE_label": {
+    "message": "Pegar",
+    "description": "Function Library label for CLIPBOARD_PASTE."
+  },
+  "fn_CLIPBOARD_PASTE_description": {
+    "message": "Pegar en el campo enfocado",
+    "description": "Function Library description for CLIPBOARD_PASTE."
+  },
+  "fn_CLIPBOARD_SELECT_ALL_label": {
+    "message": "Seleccionar todo",
+    "description": "Function Library label for CLIPBOARD_SELECT_ALL."
+  },
+  "fn_CLIPBOARD_SELECT_ALL_description": {
+    "message": "Seleccionar todo en el campo o página",
+    "description": "Function Library description for CLIPBOARD_SELECT_ALL."
+  },
+  "fn_SELECT_WORD_label": {
+    "message": "Seleccionar palabra",
+    "description": "Function Library label for SELECT_WORD."
+  },
+  "fn_SELECT_WORD_description": {
+    "message": "Seleccione la palabra debajo del cursor",
+    "description": "Function Library description for SELECT_WORD."
+  },
+  "fn_SELECT_SENTENCE_label": {
+    "message": "Seleccionar oración",
+    "description": "Function Library label for SELECT_SENTENCE."
+  },
+  "fn_SELECT_SENTENCE_description": {
+    "message": "Seleccione la oración debajo del cursor",
+    "description": "Function Library description for SELECT_SENTENCE."
+  },
+  "fn_SELECT_PARAGRAPH_label": {
+    "message": "Seleccionar párrafo",
+    "description": "Function Library label for SELECT_PARAGRAPH."
+  },
+  "fn_SELECT_PARAGRAPH_description": {
+    "message": "Seleccione el párrafo debajo del cursor",
+    "description": "Function Library description for SELECT_PARAGRAPH."
+  },
+  "fn_SELECT_IMAGE_label": {
+    "message": "Seleccionar imagen",
+    "description": "Function Library label for SELECT_IMAGE."
+  },
+  "fn_SELECT_IMAGE_description": {
+    "message": "Seleccione la imagen debajo del cursor",
+    "description": "Function Library description for SELECT_IMAGE."
+  },
+  "fn_LOOKUP_WORD_label": {
+    "message": "Palabra de búsqueda",
+    "description": "Function Library label for LOOKUP_WORD."
+  },
+  "fn_LOOKUP_WORD_description": {
+    "message": "Definición del diccionario bajo el cursor",
+    "description": "Function Library description for LOOKUP_WORD."
+  },
+  "fn_SHOW_POPOVER_label": {
+    "message": "Mostrar ventana emergente",
+    "description": "Function Library label for SHOW_POPOVER."
+  },
+  "fn_SHOW_POPOVER_description": {
+    "message": "Mostrar el resultado del paso macro anterior",
+    "description": "Function Library description for SHOW_POPOVER."
+  },
+  "fn_ADD_URL_TO_MEDIA_LIBRARY_label": {
+    "message": "Agregar URL a la biblioteca multimedia",
+    "description": "Function Library label for ADD_URL_TO_MEDIA_LIBRARY."
+  },
+  "fn_ADD_URL_TO_MEDIA_LIBRARY_description": {
+    "message": "Guardar href flotante (sin descarga)",
+    "description": "Function Library description for ADD_URL_TO_MEDIA_LIBRARY."
+  },
+  "fn_FETCH_URL_FOR_MEDIA_LIBRARY_label": {
+    "message": "Obtener URL para la biblioteca multimedia",
+    "description": "Function Library label for FETCH_URL_FOR_MEDIA_LIBRARY."
+  },
+  "fn_FETCH_URL_FOR_MEDIA_LIBRARY_description": {
+    "message": "Descargar el archivo vinculado a la biblioteca",
+    "description": "Function Library description for FETCH_URL_FOR_MEDIA_LIBRARY."
+  },
+  "fn_cat_navigation_label": {
+    "message": "Navegación",
+    "description": "Actions Library category label for Navigation."
+  },
+  "fn_cat_tab_control_label": {
+    "message": "Control de pestañas",
+    "description": "Actions Library category label for Tab Control."
+  },
+  "fn_cat_begin_url_label": {
+    "message": "URL de inicio",
+    "description": "Actions Library category label for Begin URL."
+  },
+  "fn_cat_get_page_data_label": {
+    "message": "Obtener datos de la página",
+    "description": "Actions Library category label for Get Page Data."
+  },
+  "fn_cat_maps_label": {
+    "message": "Mapas",
+    "description": "Actions Library category label for Maps."
+  },
+  "fn_cat_scroll_label": {
+    "message": "Desplazarse",
+    "description": "Actions Library category label for Scroll."
+  },
+  "fn_cat_select_label": {
+    "message": "Seleccionar",
+    "description": "Actions Library category label for Select."
+  },
+  "fn_cat_clipboard_label": {
+    "message": "portapapeles",
+    "description": "Actions Library category label for Clipboard."
+  },
+  "fn_cat_type_label": {
+    "message": "Tipo",
+    "description": "Actions Library category label for Type."
+  },
+  "fn_cat_keystrokes_label": {
+    "message": "Pulsaciones de teclas",
+    "description": "Actions Library category label for Keystrokes."
+  },
+  "fn_cat_data_label": {
+    "message": "Datos",
+    "description": "Actions Library category label for Data."
+  },
+  "fn_cat_lookup_label": {
+    "message": "búsqueda",
+    "description": "Actions Library category label for Lookup."
+  },
+  "fn_cat_translate_label": {
+    "message": "Traducir",
+    "description": "Actions Library category label for Translate."
+  },
+  "fn_cat_display_label": {
+    "message": "Pantalla",
+    "description": "Actions Library category label for Display."
+  },
+  "fn_cat_script_label": {
+    "message": "Guión",
+    "description": "Actions Library category label for Script."
+  },
+  "fn_cat_media_library_label": {
+    "message": "Biblioteca multimedia",
+    "description": "Actions Library category label for Media Library."
+  },
+  "fn_cat_ai_label": {
+    "message": "IA",
+    "description": "Actions Library category label for AI."
+  },
+  "fn_cat_keypilot_label": {
+    "message": "KeyPilot",
+    "description": "Actions Library category label for KeyPilot."
+  },
+  "fn_cat_tools_label": {
+    "message": "Herramientas",
+    "description": "Actions Library category label for Tools."
+  },
+  "fn_cat_system_label": {
+    "message": "Sistema",
+    "description": "Actions Library category label for System."
+  },
+  "fn_cat_other_label": {
+    "message": "Otro",
+    "description": "Actions Library category label for Other."
+  },
+  "fn_cat_navigation_description": {
+    "message": "Haga clic en enlaces, obtenga una vista previa y navegue por el historial de navegación.",
+    "description": "Actions Library category description for Navigation."
+  },
+  "fn_cat_tab_control_description": {
+    "message": "Abra, cierre, cambie y revise pestañas.",
+    "description": "Actions Library category description for Tab Control."
+  },
+  "fn_cat_begin_url_description": {
+    "message": "Vaya a una URL mediante el Iniciador, los Sitios principales o el omnibox.",
+    "description": "Actions Library category description for Begin URL."
+  },
+  "fn_cat_get_page_data_description": {
+    "message": "Capture texto, imágenes, videos, URL, fuentes y otros medios de la página.",
+    "description": "Actions Library category description for Get Page Data."
+  },
+  "fn_cat_maps_description": {
+    "message": "Abra el sitio web o la dirección de un lugar desde un pin del mapa debajo del cursor.",
+    "description": "Actions Library category description for Maps."
+  },
+  "fn_cat_scroll_description": {
+    "message": "Desplácese página por línea, página o hacia arriba/abajo.",
+    "description": "Actions Library category description for Scroll."
+  },
+  "fn_cat_select_description": {
+    "message": "Elimine o alterne los ayudantes de selección de varias columnas.",
+    "description": "Actions Library category description for Select."
+  },
+  "fn_cat_clipboard_description": {
+    "message": "Copie, corte, pegue, seleccione todo y seleccione palabra, oración, párrafo o imagen debajo del cursor.",
+    "description": "Actions Library category description for Clipboard."
+  },
+  "fn_cat_type_description": {
+    "message": "Escriba el texto guardado en el campo enfocado.",
+    "description": "Actions Library category description for Type."
+  },
+  "fn_cat_keystrokes_description": {
+    "message": "Envíe pulsaciones de teclas, acordes, ráfagas y reasignaciones del mouse.",
+    "description": "Actions Library category description for Keystrokes."
+  },
+  "fn_cat_data_description": {
+    "message": "Lea texto o medios debajo del cursor o desde un resaltado.",
+    "description": "Actions Library category description for Data."
+  },
+  "fn_cat_lookup_description": {
+    "message": "Busque una definición para la palabra debajo del cursor.",
+    "description": "Actions Library category description for Lookup."
+  },
+  "fn_cat_translate_description": {
+    "message": "Traduce texto resaltado o debajo del cursor.",
+    "description": "Actions Library category description for Translate."
+  },
+  "fn_cat_display_description": {
+    "message": "Muestra el resultado de un paso macro anterior en una ventana emergente.",
+    "description": "Actions Library category description for Display."
+  },
+  "fn_cat_script_description": {
+    "message": "Ejecute un fragmento de JavaScript personalizado según el estado de la página.",
+    "description": "Actions Library category description for Script."
+  },
+  "fn_cat_media_library_description": {
+    "message": "Guarde enlaces o archivos recuperados en la biblioteca multimedia.",
+    "description": "Actions Library category description for Media Library."
+  },
+  "fn_cat_ai_description": {
+    "message": "Envíe el texto seleccionado a AI con un destino de mensaje y resultado.",
+    "description": "Actions Library category description for AI."
+  },
+  "fn_cat_keypilot_description": {
+    "message": "Abra KeyPilot Chrome: referencia, configuración y modos del teclado.",
+    "description": "Actions Library category description for KeyPilot."
+  },
+  "fn_cat_tools_description": {
+    "message": "Superposiciones de utilidades y ayudantes.",
+    "description": "Actions Library category description for Tools."
+  },
+  "fn_cat_system_description": {
+    "message": "Cancele el gesto o modo actual de KeyPilot.",
+    "description": "Actions Library category description for System."
+  },
+  "fn_cat_other_description": {
+    "message": "Funciones sin categoría.",
+    "description": "Actions Library category description for Other."
+  },
+  "fn_section_macros_description": {
+    "message": "Secuencias de varios pasos que puedes colocar en una tecla. Personalice una macro de acciones para bifurcar una copia editable.",
+    "description": "Actions Library macros section description."
+  },
+  "fn_section_macro_keys_description": {
+    "message": "Instancias de teclas de macro guardadas (tecla de acceso rápido, ráfaga, round-robin y tipos similares) listas para colocar.",
+    "description": "Actions Library macroKeys section description."
+  },
+  "fn_TYPE_CHARACTERS_label": {
+    "message": "Tipo de caracteres",
+    "description": "Function Library label for TYPE_CHARACTERS."
+  },
+  "fn_TYPE_CHARACTERS_description": {
+    "message": "Escribe el texto guardado en un campo",
+    "description": "Function Library description for TYPE_CHARACTERS."
+  },
+  "fn_EXECUTE_JS_label": {
+    "message": "Ejecutar JS",
+    "description": "Function Library label for EXECUTE_JS."
+  },
+  "fn_EXECUTE_JS_description": {
+    "message": "Ejecute un fragmento JS pegado",
+    "description": "Function Library description for EXECUTE_JS."
+  },
+  "fn_OPEN_URLS_label": {
+    "message": "Abrir URLs",
+    "description": "Function Library label for OPEN_URLS."
+  },
+  "fn_OPEN_URLS_description": {
+    "message": "Abrir varias páginas en pestañas nuevas",
+    "description": "Function Library description for OPEN_URLS."
+  },
+  "fn_OPEN_BOOKMARKS_label": {
+    "message": "Abrir marcadores",
+    "description": "Function Library label for OPEN_BOOKMARKS."
+  },
+  "fn_OPEN_BOOKMARKS_description": {
+    "message": "Abre los primeros marcadores de una carpeta",
+    "description": "Function Library description for OPEN_BOOKMARKS."
+  },
+  "fn_RANDOM_BOOKMARK_label": {
+    "message": "Marcador aleatorio",
+    "description": "Function Library label for RANDOM_BOOKMARK."
+  },
+  "fn_RANDOM_BOOKMARK_description": {
+    "message": "Abrir marcadores aleatorios",
+    "description": "Function Library description for RANDOM_BOOKMARK."
+  },
+  "fn_stock_random_bookmark_label": {
+    "message": "Marcador aleatorio",
+    "description": "Bundled Random Bookmark instance label."
+  },
+  "fn_stock_random_bookmark_description": {
+    "message": "Abrir un marcador aleatorio de todos los marcadores",
+    "description": "Bundled Random Bookmark instance description."
+  },
+  "fn_stock_social_media_label": {
+    "message": "Redes sociales",
+    "description": "Bundled Open URLs instance label."
+  },
+  "fn_stock_social_media_description": {
+    "message": "Abrir Facebook, Instagram, YouTube y X",
+    "description": "Bundled Open URLs instance description."
+  },
+  "fn_instance_name_label": {
+    "message": "Nombre",
+    "description": "Action instance name field on the key info popover."
+  },
+  "fn_GET_TEXT_AT_CURSOR_label": {
+    "message": "Obtener texto en el cursor",
+    "description": "Function Library label for GET_TEXT_AT_CURSOR."
+  },
+  "fn_GET_TEXT_AT_CURSOR_description": {
+    "message": "Copiar texto debajo del cursor",
+    "description": "Function Library description for GET_TEXT_AT_CURSOR."
+  },
+  "fn_GET_TEXT_RANGE_label": {
+    "message": "Obtener rango de texto",
+    "description": "Function Library label for GET_TEXT_RANGE."
+  },
+  "fn_GET_TEXT_RANGE_description": {
+    "message": "Pasar la selección al siguiente paso macro",
+    "description": "Function Library description for GET_TEXT_RANGE."
+  },
+  "fn_GET_MEDIA_AT_CURSOR_label": {
+    "message": "Obtener medios en el cursor",
+    "description": "Function Library label for GET_MEDIA_AT_CURSOR."
+  },
+  "fn_GET_MEDIA_AT_CURSOR_description": {
+    "message": "Copiar medios debajo del cursor",
+    "description": "Function Library description for GET_MEDIA_AT_CURSOR."
+  },
+  "fn_TRANSLATE_label": {
+    "message": "Traducir",
+    "description": "Function Library label for TRANSLATE."
+  },
+  "fn_TRANSLATE_description": {
+    "message": "Traducir selección o texto debajo del cursor",
+    "description": "Function Library description for TRANSLATE."
+  },
+  "fn_COLS_TOGGLE_label": {
+    "message": "Alternar columnas",
+    "description": "Built-in Function COLS_TOGGLE label."
+  },
+  "fn_COLS_TOGGLE_description": {
+    "message": "Diseño de varias columnas debajo del cursor",
+    "description": "Built-in Function COLS_TOGGLE short description."
+  },
+  "fn_SEND_TEXT_TO_AI_label": {
+    "message": "Enviar texto a IA",
+    "description": "Built-in Function SEND_TEXT_TO_AI label."
+  },
+  "fn_SEND_TEXT_TO_AI_description": {
+    "message": "Ejecute IA en el texto seleccionado",
+    "description": "Built-in Function SEND_TEXT_TO_AI short description."
+  },
+  "keyboard_hardware_layout_us_ansi_qwerty": {
+    "message": "QWERTY ANSI de EE. UU.",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_us_ansi_qwerty_description": {
+    "message": "Distribución de teclado ANSI estándar de EE. UU.",
+    "description": "Description for the US ANSI QWERTY keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_de_de_qwertz_iso": {
+    "message": "Alemán ISO QWERTZ",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_de_de_qwertz_iso_description": {
+    "message": "Distribución de teclado alemán ISO QWERTZ.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_es_es_qwerty_iso": {
+    "message": "Español (España) ISO QWERTY",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_es_es_qwerty_iso_description": {
+    "message": "Distribución de teclado español (España) ISO QWERTY.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_sk_sk_qwertz_iso": {
+    "message": "Eslovaco ISO QWERTZ",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_sk_sk_qwertz_iso_description": {
+    "message": "Distribución de teclado eslovaco ISO QWERTZ.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_ja_jis_106": {
+    "message": "Japonés JIS 106",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_ja_jis_106_description": {
+    "message": "Distribución de teclado japonés JIS 106.",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "fn_ZOOM_OUT_label": {
+    "message": "Alejar",
+    "description": "Function Library label for ZOOM_OUT."
+  },
+  "fn_ZOOM_OUT_description": {
+    "message": "Alejar la página en el cursor",
+    "description": "Function Library description for ZOOM_OUT."
+  },
+  "fn_ZOOM_IN_label": {
+    "message": "Acercar",
+    "description": "Function Library label for ZOOM_IN."
+  },
+  "fn_ZOOM_IN_description": {
+    "message": "Acercar la página en el cursor",
+    "description": "Function Library description for ZOOM_IN."
+  },
+  "fn_READER_MODE_label": {
+    "message": "Reader Mode",
+    "description": "Function Library label for READER_MODE."
+  },
+  "fn_READER_MODE_description": {
+    "message": "Read this page without clutter",
+    "description": "Function Library description for READER_MODE."
+  }
+}

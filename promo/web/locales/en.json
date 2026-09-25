@@ -29,5 +29,15 @@
   "demo_open": "OPEN",
   "demo_open_spacing": "1.4",
   "demo_back": "GO BACK",
-  "demo_back_spacing": "1.4"
+  "demo_back_spacing": "1.4",
+  "keyboard_eyebrow": "THE KEYBOARD",
+  "keyboard_title": "Keyboard reference",
+  "keyboard_lede": "Hover a key to see what it does on the default browsing layout.",
+  "shots_eyebrow": "ON THE PAGE",
+  "shots_title": "KeyPilot in use",
+  "shot_1": "Browse the web with key-clicks.",
+  "shot_2": "A variety of actions are available under your fingertips",
+  "shot_3": "Build a keyboard layout that fits your workflow.",
+  "shot_4": "A walkthrough appears after installation.",
+  "shot_5": "Right-click is always available to control KeyPilot."
 }

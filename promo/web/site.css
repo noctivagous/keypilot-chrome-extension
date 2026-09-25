@@ -847,6 +847,53 @@ kbd {
     display: block;
 }
 
+.keyboard-ref,
+.shots {
+    padding: 1rem 0 4rem;
+}
+
+.keyboard-ref h2,
+.shots h2 {
+    font-size: clamp(1.75rem, 4vw, 2.25rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.5rem;
+}
+
+.keyboard-stage {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+.keyboard-stage .kp-floating-keyboard-help {
+    position: relative !important;
+    inset: auto !important;
+    z-index: auto !important;
+    width: min(820px, 100%) !important;
+    max-width: 100% !important;
+    max-height: none !important;
+}
+
+.shot-grid {
+    display: grid;
+    gap: 1.75rem;
+    margin-top: 1.5rem;
+}
+
+.shot-grid img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--tint-0-0);
+    border-radius: 12px;
+}
+
+.shot-grid figcaption {
+    color: var(--tint-0-4);
+    margin-top: 0.65rem;
+}
+
 .demo-frame .demo-portrait {
     display: none;
 }
