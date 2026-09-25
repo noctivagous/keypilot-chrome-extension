@@ -37,6 +37,8 @@ on the keyboard in specific places to make web navigation quick.
 
 | Keys | Action |
 | --- | --- |
+| `[` | Zoom the page out at the cursor |
+| `]` | Zoom the page in at the cursor |
 | `I` | Copy hovered image |
 | `M` | Open saved Media Library |
 | `R` | Browser history forward |

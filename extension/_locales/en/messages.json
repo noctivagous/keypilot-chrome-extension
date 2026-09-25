@@ -6030,5 +6030,29 @@
   "highlight_finish_after": {
     "message": " again to finish selection",
     "description": "Text after the keycap in the persistent selection-completion instruction."
+  },
+  "fn_ZOOM_OUT_label": {
+    "message": "Zoom Out",
+    "description": "Function Library label for ZOOM_OUT."
+  },
+  "fn_ZOOM_OUT_description": {
+    "message": "Zoom the page out at the cursor",
+    "description": "Function Library description for ZOOM_OUT."
+  },
+  "fn_ZOOM_OUT_details": {
+    "message": "Zooms the tab out one browser zoom step and keeps the point under the cursor fixed, the same as a pinch-out gesture.",
+    "description": "Function Library details for ZOOM_OUT."
+  },
+  "fn_ZOOM_IN_label": {
+    "message": "Zoom In",
+    "description": "Function Library label for ZOOM_IN."
+  },
+  "fn_ZOOM_IN_description": {
+    "message": "Zoom the page in at the cursor",
+    "description": "Function Library description for ZOOM_IN."
+  },
+  "fn_ZOOM_IN_details": {
+    "message": "Zooms the tab in one browser zoom step and keeps the point under the cursor fixed, the same as a pinch-in gesture.",
+    "description": "Function Library details for ZOOM_IN."
   }
 }

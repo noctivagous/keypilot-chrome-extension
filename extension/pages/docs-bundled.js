@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-25T01:02:04.251Z
+ * Generated on 2026-09-25T01:09:42.058Z
  */
 
 var __defProp = Object.defineProperty;
@@ -6140,6 +6140,22 @@ var KEYBINDING_ACTION_DEFS = Object.freeze({
       enabledSetting: "scroll.middleClickScrollLine"
     })
   }),
+  ZOOM_OUT: Object.freeze({
+    handler: "handleZoomOutKey",
+    label: "Zoom Out",
+    description: "Zoom the page out at the cursor",
+    details: "Zooms the tab out one browser zoom step and keeps the point under the cursor fixed, the same as a pinch-out gesture.",
+    keyboardClass: "key-scroll",
+    row: 1
+  }),
+  ZOOM_IN: Object.freeze({
+    handler: "handleZoomInKey",
+    label: "Zoom In",
+    description: "Zoom the page in at the cursor",
+    details: "Zooms the tab in one browser zoom step and keeps the point under the cursor fixed, the same as a pinch-in gesture.",
+    keyboardClass: "key-scroll",
+    row: 1
+  }),
   NEW_TAB: Object.freeze({
     handler: "handleNewTabKey",
     label: "New Tab",
@@ -6394,6 +6410,8 @@ var KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
   PAGE_TOP: "Scroll",
   PAGE_BOTTOM: "Scroll",
   SCROLL_LINE: "Scroll",
+  ZOOM_OUT: "Scroll",
+  ZOOM_IN: "Scroll",
   HIGHLIGHT: "Get Page Data",
   RECTANGLE_HIGHLIGHT: "Get Page Data",
   COPY_HOVERED_IMAGE: "Get Page Data",
@@ -6558,6 +6576,8 @@ var ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   PAGE_UP_INSTANT: physicalAssignment("KeyC", "C"),
   PAGE_DOWN_INSTANT: physicalAssignment("KeyV", "V"),
   SCROLL_LINE: physicalAssignment("KeyB", "B"),
+  ZOOM_OUT: physicalAssignment("BracketLeft", "["),
+  ZOOM_IN: physicalAssignment("BracketRight", "]"),
   ACTIVATE_NEW_TAB: physicalAssignment("KeyN", "N"),
   RECTANGLE_HIGHLIGHT: physicalAssignment("KeyY", "Y"),
   COPY_HOVERED_IMAGE: physicalAssignment("KeyI", "I"),
@@ -6580,6 +6600,8 @@ var ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   FORWARD: physicalAssignment("KeyU", "U"),
   NEW_TAB: physicalAssignment("KeyY", "Y"),
   SCROLL_LINE: physicalAssignment("KeyT", "T"),
+  ZOOM_OUT: physicalAssignment("BracketLeft", "["),
+  ZOOM_IN: physicalAssignment("BracketRight", "]"),
   // Home row cluster: A S D F G  ->  ; L K J H (mirrored-ish around center)
   CLOSE_TAB: physicalAssignment("Semicolon", ";"),
   ROOT: physicalAssignment("KeyL", "L"),
@@ -9060,6 +9082,8 @@ var MSG = Object.freeze({
   OPEN_URLS: "KP_OPEN_URLS",
   /** Same-tab navigate (chrome.tabs.update). Used when sandboxed iframes cannot top-navigate without a real user gesture. */
   NAVIGATE_SAME_TAB: "KP_NAVIGATE_SAME_TAB",
+  /** Content → SW: step tab zoom in (+1) or out (-1). Response includes oldZoom/newZoom. */
+  ZOOM_STEP: "KP_ZOOM_STEP",
   // --- UI open (content-script handlers; SW may forward) ---
   OPEN_SETTINGS_POPOVER: "KP_OPEN_SETTINGS_POPOVER",
   OPEN_GUIDE_POPOVER: "KP_OPEN_GUIDE_POPOVER",

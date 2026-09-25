@@ -402,6 +402,8 @@ const FUNCTION_DOCS_URL_BY_ID = Object.freeze({
   PAGE_TOP: docsUrl('browsing-scroll'),
   PAGE_BOTTOM: docsUrl('browsing-scroll'),
   SCROLL_LINE: docsUrl('browsing-scroll'),
+  ZOOM_OUT: docsUrl('browsing-scroll'),
+  ZOOM_IN: docsUrl('browsing-scroll'),
   HIGHLIGHT: docsUrl('browsing-select'),
   RECTANGLE_HIGHLIGHT: docsUrl('browsing-select'),
   COPY_HOVERED_IMAGE: docsUrl('media-copy'),

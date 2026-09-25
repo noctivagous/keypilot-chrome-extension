@@ -25,7 +25,8 @@ import {
   mapPanBy,
   SCROLL_LINE_MAP_DRAG_ENABLED
 } from '../utils/map-surface-drag.js';
-import { noteExtensionContextError } from '../utils/extension-context.js';
+import { noteExtensionContextError, safeRuntimeSendMessage } from '../utils/extension-context.js';
+import { scrollToKeepPoint } from '../utils/page-zoom.js';
 
 /** @param {Function} Base */
 export function withNavigationHandlers(Base) {
@@ -111,6 +112,92 @@ export function withNavigationHandlers(Base) {
     if (!this._allowActionKey('handleInstantPageDown', e)) return;
     this._scrollHalfPageAtCursor(1, e);
     this.emitAction('scrollDown');
+  }
+
+  handleZoomOutKey(e) {
+    if (!this._allowActionKey('handleZoomOutKey', e)) return;
+    this._zoomAtCursor(-1);
+    this.emitAction('zoomOut');
+  }
+
+  handleZoomInKey(e) {
+    if (!this._allowActionKey('handleZoomInKey', e)) return;
+    this._zoomAtCursor(1);
+    this.emitAction('zoomIn');
+  }
+
+  /**
+   * Step browser tab zoom and keep the pre-zoom document point under the cursor.
+   * Repeats queue one pending step so a held key cannot overlap setZoom calls.
+   * @param {number} direction Positive zooms in.
+   */
+  _zoomAtCursor(direction) {
+    const dir = direction > 0 ? 1 : -1;
+    if (this._zoomBusy) {
+      this._zoomQueued = dir;
+      return;
+    }
+    this._zoomBusy = true;
+    const point = this._getScrollCursorPoint();
+    const scrollX = window.scrollX || 0;
+    const scrollY = window.scrollY || 0;
+
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      this._zoomBusy = false;
+      const queued = this._zoomQueued;
+      this._zoomQueued = 0;
+      if (queued) this._zoomAtCursor(queued);
+    };
+
+    const sent = safeRuntimeSendMessage({ type: MSG.ZOOM_STEP, direction: dir }, {
+      onInvalidated: () => {
+        try { this._handleExtensionContextInvalidated?.(); } catch { /* ignore */ }
+        finish();
+      },
+      onError: () => finish(),
+      onResponse: (response) => {
+        try { this._applyZoomAnchor(response, point, scrollX, scrollY); } finally { finish(); }
+      }
+    });
+    if (!sent) finish();
+  }
+
+  /**
+   * @param {unknown} response
+   * @param {{ x: number, y: number }} point
+   * @param {number} scrollX
+   * @param {number} scrollY
+   */
+  _applyZoomAnchor(response, point, scrollX, scrollY) {
+    const res = response && typeof response === 'object' ? response : null;
+    if (!res || res.type !== MSG.SUCCESS || !res.changed) return;
+    const oldZoom = Number(res.oldZoom);
+    const newZoom = Number(res.newZoom);
+    if (!Number.isFinite(oldZoom) || !Number.isFinite(newZoom) || oldZoom <= 0 || newZoom <= 0) return;
+    if (Math.abs(oldZoom - newZoom) < 1e-6) return;
+
+    const next = scrollToKeepPoint({ x: scrollX, y: scrollY }, point, oldZoom, newZoom);
+    const apply = () => {
+      try { window.scrollTo(next.x, next.y); } catch { /* ignore */ }
+    };
+    apply();
+    try {
+      requestAnimationFrame(() => {
+        apply();
+        requestAnimationFrame(apply);
+      });
+    } catch { /* ignore */ }
+
+    const scale = oldZoom / newZoom;
+    const nx = point.x * scale;
+    const ny = point.y * scale;
+    try { this.state.setMousePosition(nx, ny); } catch { /* ignore */ }
+    try { this.cursor?.updatePosition?.(nx, ny); } catch { /* ignore */ }
+    try { this.mouseCoordinateManager?.updateCurrentMousePosition?.(nx, ny); } catch { /* ignore */ }
+    try { this.updateElementsUnderCursor?.(nx, ny, false, null); } catch { /* ignore */ }
   }
 
   /**

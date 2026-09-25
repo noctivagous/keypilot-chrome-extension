@@ -12,6 +12,7 @@ Desplácese por la página o controles de desplazamiento anidados debajo del cur
    - Aleje el mouse del origen; más lejos significa un desplazamiento más rápido.
    - Use **Línea de desplazamiento** nuevamente, haga clic o presione <kbd>Esc</kbd> para salir.
 5. Opcionalmente, habilite **clic central en el área de la página vacía** en Configuración → Desplazamiento para iniciar la línea de desplazamiento sin la tecla de Línea de desplazamiento.
+6. Use **Alejar** (<kbd>[</kbd>) y **Acercar** (<kbd>]</kbd>) para cambiar el zoom de la pestaña un paso del navegador. El punto bajo el cursor permanece fijo, como en un gesto de pellizco.
 
 Ajuste el tamaño del paso y la animación en **Configuración → Desplazamiento**.
 
@@ -26,6 +27,8 @@ Ajuste el tamaño del paso y la animación en **Configuración → Desplazamient
 | **Desplazarse hacia arriba** | Saltar a la parte superior del objetivo de desplazamiento |
 | **Desplazarse hacia abajo** | Saltar al final del objetivo de desplazamiento |
 | **Línea de desplazamiento** | Alternar el desplazamiento continuo basado en origen |
+| **Alejar** | Alejar la pestaña un paso en el cursor |
+| **Acercar** | Acercar la pestaña un paso en el cursor |
 
 Las teclas predeterminadas de estas Funciones dependen de la distribución de teclado activa.
 

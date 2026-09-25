@@ -246,14 +246,18 @@
         "fallbackText": "OPEN_POPOVER"
       },
       {
-        "type": "key",
+        "type": "action",
         "code": "BracketLeft",
-        "text": "["
+        "legend": "[",
+        "id": "ZOOM_OUT",
+        "fallbackText": "ZOOM_OUT"
       },
       {
-        "type": "key",
+        "type": "action",
         "code": "BracketRight",
-        "text": "]"
+        "legend": "]",
+        "id": "ZOOM_IN",
+        "fallbackText": "ZOOM_IN"
       },
       {
         "type": "action",
@@ -515,14 +519,18 @@
         "fallbackText": "TAB_LEFT"
       },
       {
-        "type": "key",
+        "type": "action",
         "code": "BracketLeft",
-        "text": "["
+        "legend": "[",
+        "id": "ZOOM_OUT",
+        "fallbackText": "ZOOM_OUT"
       },
       {
-        "type": "key",
+        "type": "action",
         "code": "BracketRight",
-        "text": "]"
+        "legend": "]",
+        "id": "ZOOM_IN",
+        "fallbackText": "ZOOM_IN"
       },
       {
         "type": "action",
@@ -1684,6 +1692,20 @@
       "displayKey": "P",
       "keyboardClass": "key-open-popover"
     },
+    "ZOOM_OUT": {
+      "label": "Zoom Out",
+      "description": "Zoom the page out at the cursor",
+      "keyLabel": "[",
+      "displayKey": "[",
+      "keyboardClass": "key-scroll"
+    },
+    "ZOOM_IN": {
+      "label": "Zoom In",
+      "description": "Zoom the page in at the cursor",
+      "keyLabel": "]",
+      "displayKey": "]",
+      "keyboardClass": "key-scroll"
+    },
     "DELETE": {
       "label": "Delete Mode",
       "description": "Hide elements under the cursor",
@@ -1895,6 +1917,20 @@
       "keyLabel": "I",
       "displayKey": "I",
       "keyboardClass": "key-open-popover"
+    },
+    "ZOOM_OUT": {
+      "label": "Zoom Out",
+      "description": "Zoom the page out at the cursor",
+      "keyLabel": "[",
+      "displayKey": "[",
+      "keyboardClass": "key-scroll"
+    },
+    "ZOOM_IN": {
+      "label": "Zoom In",
+      "description": "Zoom the page in at the cursor",
+      "keyLabel": "]",
+      "displayKey": "]",
+      "keyboardClass": "key-scroll"
     },
     "DELETE": {
       "label": "Delete Mode",
@@ -2412,14 +2448,18 @@
       "fallbackText": "OPEN_POPOVER"
     },
     {
-      "type": "key",
+      "type": "action",
       "code": "BracketLeft",
-      "text": "["
+      "legend": "[",
+      "id": "ZOOM_OUT",
+      "fallbackText": "ZOOM_OUT"
     },
     {
-      "type": "key",
+      "type": "action",
       "code": "BracketRight",
-      "text": "]"
+      "legend": "]",
+      "id": "ZOOM_IN",
+      "fallbackText": "ZOOM_IN"
     },
     {
       "type": "action",
@@ -2675,6 +2715,20 @@
     "displayKey": "P",
     "keyboardClass": "key-open-popover"
   },
+  "ZOOM_OUT": {
+    "label": "Zoom Out",
+    "description": "Zoom the page out at the cursor",
+    "keyLabel": "[",
+    "displayKey": "[",
+    "keyboardClass": "key-scroll"
+  },
+  "ZOOM_IN": {
+    "label": "Zoom In",
+    "description": "Zoom the page in at the cursor",
+    "keyLabel": "]",
+    "displayKey": "]",
+    "keyboardClass": "key-scroll"
+  },
   "DELETE": {
     "label": "Delete Mode",
     "description": "Hide elements under the cursor",
@@ -2905,6 +2959,14 @@
   },
   "SCROLL_LINE": {
     "labelKey": "fn_SCROLL_LINE_label",
+    "keyboardClass": "key-scroll"
+  },
+  "ZOOM_OUT": {
+    "labelKey": "fn_ZOOM_OUT_label",
+    "keyboardClass": "key-scroll"
+  },
+  "ZOOM_IN": {
+    "labelKey": "fn_ZOOM_IN_label",
     "keyboardClass": "key-scroll"
   },
   "NEW_TAB": {

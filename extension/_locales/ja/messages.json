@@ -6030,5 +6030,29 @@
   "highlight_finish_after": {
     "message": " をもう一度押して選択を完了します",
     "description": "Text after the keycap in the persistent selection-completion instruction."
+  },
+  "fn_ZOOM_OUT_label": {
+    "message": "ズームアウト",
+    "description": "Function Library label for ZOOM_OUT."
+  },
+  "fn_ZOOM_OUT_description": {
+    "message": "カーソル位置を基準にページを縮小",
+    "description": "Function Library description for ZOOM_OUT."
+  },
+  "fn_ZOOM_OUT_details": {
+    "message": "タブをブラウザのズーム1段階ぶん縮小し、カーソル下の点を固定します。ピンチアウトと同じです。",
+    "description": "Function Library details for ZOOM_OUT."
+  },
+  "fn_ZOOM_IN_label": {
+    "message": "ズームイン",
+    "description": "Function Library label for ZOOM_IN."
+  },
+  "fn_ZOOM_IN_description": {
+    "message": "カーソル位置を基準にページを拡大",
+    "description": "Function Library description for ZOOM_IN."
+  },
+  "fn_ZOOM_IN_details": {
+    "message": "タブをブラウザのズーム1段階ぶん拡大し、カーソル下の点を固定します。ピンチインと同じです。",
+    "description": "Function Library details for ZOOM_IN."
   }
 }

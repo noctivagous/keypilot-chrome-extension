@@ -12,6 +12,7 @@ Scrollen Sie mit festen Schritten, Sprüngen oder kontinuierlicher Bildlauflinie
    - Bewegen Sie die Maus vom Ursprung weg – weiter bedeutet schnelleres Scrollen.
    - Verwenden Sie **Bildlaufzeile** erneut, klicken Sie oder drücken Sie <kbd>Esc</kbd>, um den Vorgang zu beenden.
 5. Aktivieren Sie optional **Mittelklick auf leeren Seitenbereich** in Einstellungen → Scrollen, um die Bildlaufzeile ohne die Bildlaufzeile-Taste zu starten.
+6. Verwenden Sie **Verkleinern** (<kbd>[</kbd>) und **Vergrößern** (<kbd>]</kbd>), um den Tab um eine Browser-Zoomstufe zu ändern. Der Punkt unter dem Cursor bleibt fest, wie bei einer Pinch-Geste.
 
 Passen Sie Schrittgröße und Animation unter **Einstellungen → Scrollen** an.
 
@@ -26,6 +27,8 @@ Passen Sie Schrittgröße und Animation unter **Einstellungen → Scrollen** an.
 | **Nach oben scrollen** | Zum Anfang des Bildlaufziels springen |
 | **Scrollen Sie nach unten** | Zum Ende des Bildlaufziels springen |
 | **Bildlaufzeile** | Ursprungsbasiertes kontinuierliches Scrollen umschalten |
+| **Verkleinern** | Tab am Cursor um eine Stufe verkleinern |
+| **Vergrößern** | Tab am Cursor um eine Stufe vergrößern |
 
 Die Standardtasten für diese Funktionen hängen vom aktiven Tastaturlayout ab.
 

@@ -33,6 +33,7 @@ import {
 import { getMessage } from './src/utils/i18n.js';
 import { formatAltShortcut } from './src/utils/platform.js';
 import { normalizeOpenUrlList } from './src/utils/open-url-list.js';
+import { stepZoomFactor } from './src/utils/page-zoom.js';
 
 void startKeyPilotDebugFromSettings();
 
@@ -3140,6 +3141,29 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             sendResponse({
               type: MSG.ERROR,
               error: 'Failed to navigate: ' + (error?.message || error)
+            });
+          }
+          break;
+        }
+
+        case MSG.ZOOM_STEP: {
+          const tabId = sender?.tab?.id;
+          const direction = message.direction === 1 ? 1 : -1;
+          if (typeof tabId !== 'number') {
+            sendResponse({ type: MSG.ERROR, error: 'No sender tab id' });
+            break;
+          }
+          try {
+            const oldZoom = await chrome.tabs.getZoom(tabId);
+            const newZoom = stepZoomFactor(oldZoom, direction);
+            const changed = Math.abs(newZoom - oldZoom) > 0.001;
+            if (changed) await chrome.tabs.setZoom(tabId, newZoom);
+            sendResponse({ type: MSG.SUCCESS, changed, oldZoom, newZoom });
+          } catch (error) {
+            console.error('Failed to zoom tab:', error);
+            sendResponse({
+              type: MSG.ERROR,
+              error: 'Failed to zoom: ' + (error?.message || error)
             });
           }
           break;

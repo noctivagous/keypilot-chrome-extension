@@ -13,10 +13,14 @@
 
 Localization for Slovak, Chinese, and Japanese, and physical keyboard layouts.
 
+
 ### Added
 
 - Localization (i18n) for Slovak, Chinese (Simplified, Traditional Taiwan, and Hong Kong), and Japanese.
 - Physical keyboard layouts for the Keyboard Reference. Choose US ANSI, German QWERTZ, Spanish (Spain), Slovak QWERTZ, or Japanese JIS. Actions stay on the physical key; keycap legends follow the selected layout.
+- Tabs and Window Overview.
+- Zoom In, Zoom Out, placed on [ and ] keys.
+
 
 ### Store listing snippet
 

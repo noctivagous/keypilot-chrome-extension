@@ -61,6 +61,7 @@ export const SW_RUNTIME_REQUEST_TYPES = Object.freeze([
   MSG.OPEN_URL_FOREGROUND,
   MSG.OPEN_URLS,
   MSG.NAVIGATE_SAME_TAB,
+  MSG.ZOOM_STEP,
   MSG.STATUS
 ]);
 
@@ -149,6 +150,11 @@ export function validateRuntimeMessage(message, opts = {}) {
     case MSG.OPEN_POPOVER_WINDOW:
       if (typeof message.url !== 'string' || !message.url.trim()) {
         return 'OPEN_POPOVER_WINDOW requires url: string';
+      }
+      break;
+    case MSG.ZOOM_STEP:
+      if (message.direction !== 1 && message.direction !== -1) {
+        return 'ZOOM_STEP requires direction: 1 or -1';
       }
       break;
     case MSG.DICTIONARY_LOOKUP:

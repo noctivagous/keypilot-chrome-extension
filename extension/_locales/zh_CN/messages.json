@@ -6030,5 +6030,29 @@
   "highlight_finish_after": {
     "message": " 再次完成选择",
     "description": "Text after the keycap in the persistent selection-completion instruction."
+  },
+  "fn_ZOOM_OUT_label": {
+    "message": "缩小",
+    "description": "Function Library label for ZOOM_OUT."
+  },
+  "fn_ZOOM_OUT_description": {
+    "message": "在光标处缩小页面",
+    "description": "Function Library description for ZOOM_OUT."
+  },
+  "fn_ZOOM_OUT_details": {
+    "message": "将标签页缩小一级浏览器缩放，并保持光标下的点不动，效果与双指捏合缩小相同。",
+    "description": "Function Library details for ZOOM_OUT."
+  },
+  "fn_ZOOM_IN_label": {
+    "message": "放大",
+    "description": "Function Library label for ZOOM_IN."
+  },
+  "fn_ZOOM_IN_description": {
+    "message": "在光标处放大页面",
+    "description": "Function Library description for ZOOM_IN."
+  },
+  "fn_ZOOM_IN_details": {
+    "message": "将标签页放大一级浏览器缩放，并保持光标下的点不动，效果与双指捏合放大相同。",
+    "description": "Function Library details for ZOOM_IN."
   }
 }

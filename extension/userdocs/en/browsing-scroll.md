@@ -12,6 +12,7 @@ Scroll the page or nested scrollers under the cursor with fixed steps, jumps, or
    - Move the mouse away from the origin — farther means faster scroll.
    - Use **Scroll Line** again, click, or press <kbd>Esc</kbd> to exit.
 5. Optionally enable **middle-click on empty page area** in Settings → Scrolling to start Scroll Line without the Scroll Line key.
+6. Use **Zoom Out** (<kbd>[</kbd>) and **Zoom In** (<kbd>]</kbd>) to change the tab zoom by one browser step. The point under the cursor stays fixed, as with a pinch gesture.
 
 Tune step size and animation under **Settings → Scrolling**.
 
@@ -26,6 +27,8 @@ Tune step size and animation under **Settings → Scrolling**.
 | **Scroll To Top** | Jump to the top of the scroll target |
 | **Scroll To Bottom** | Jump to the bottom of the scroll target |
 | **Scroll Line** | Toggle origin-based continuous scroll |
+| **Zoom Out** | Zoom the tab out one step at the cursor |
+| **Zoom In** | Zoom the tab in one step at the cursor |
 
 Default keys for these Functions depend on the active keyboard layout.
 

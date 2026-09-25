@@ -46,6 +46,8 @@ export const MSG = Object.freeze({
   OPEN_URLS: 'KP_OPEN_URLS',
   /** Same-tab navigate (chrome.tabs.update). Used when sandboxed iframes cannot top-navigate without a real user gesture. */
   NAVIGATE_SAME_TAB: 'KP_NAVIGATE_SAME_TAB',
+  /** Content → SW: step tab zoom in (+1) or out (-1). Response includes oldZoom/newZoom. */
+  ZOOM_STEP: 'KP_ZOOM_STEP',
 
   // --- UI open (content-script handlers; SW may forward) ---
   OPEN_SETTINGS_POPOVER: 'KP_OPEN_SETTINGS_POPOVER',

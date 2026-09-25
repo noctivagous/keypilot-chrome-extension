@@ -6030,5 +6030,29 @@
   "highlight_finish_after": {
     "message": " znova na dokončenie výberu",
     "description": "Text after the keycap in the persistent selection-completion instruction."
+  },
+  "fn_ZOOM_OUT_label": {
+    "message": "Oddialiť",
+    "description": "Function Library label for ZOOM_OUT."
+  },
+  "fn_ZOOM_OUT_description": {
+    "message": "Oddialiť stránku v mieste kurzora",
+    "description": "Function Library description for ZOOM_OUT."
+  },
+  "fn_ZOOM_OUT_details": {
+    "message": "Oddiali tab o jeden krok priblíženia prehliadača a podrží bod pod kurzorom, rovnako ako gesto oddialenia.",
+    "description": "Function Library details for ZOOM_OUT."
+  },
+  "fn_ZOOM_IN_label": {
+    "message": "Priblížiť",
+    "description": "Function Library label for ZOOM_IN."
+  },
+  "fn_ZOOM_IN_description": {
+    "message": "Priblížiť stránku v mieste kurzora",
+    "description": "Function Library description for ZOOM_IN."
+  },
+  "fn_ZOOM_IN_details": {
+    "message": "Priblíži tab o jeden krok priblíženia prehliadača a podrží bod pod kurzorom, rovnako ako gesto priblíženia.",
+    "description": "Function Library details for ZOOM_IN."
   }
 }

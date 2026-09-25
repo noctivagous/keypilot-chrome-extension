@@ -6030,5 +6030,29 @@
   "highlight_finish_after": {
     "message": " otra vez para finalizar la selección",
     "description": "Text after the keycap in the persistent selection-completion instruction."
+  },
+  "fn_ZOOM_OUT_label": {
+    "message": "Alejar",
+    "description": "Function Library label for ZOOM_OUT."
+  },
+  "fn_ZOOM_OUT_description": {
+    "message": "Alejar la página en el cursor",
+    "description": "Function Library description for ZOOM_OUT."
+  },
+  "fn_ZOOM_OUT_details": {
+    "message": "Aleja la pestaña un paso del zoom del navegador y mantiene fijo el punto bajo el cursor, como un gesto de pellizco para alejar.",
+    "description": "Function Library details for ZOOM_OUT."
+  },
+  "fn_ZOOM_IN_label": {
+    "message": "Acercar",
+    "description": "Function Library label for ZOOM_IN."
+  },
+  "fn_ZOOM_IN_description": {
+    "message": "Acercar la página en el cursor",
+    "description": "Function Library description for ZOOM_IN."
+  },
+  "fn_ZOOM_IN_details": {
+    "message": "Acerca la pestaña un paso del zoom del navegador y mantiene fijo el punto bajo el cursor, como un gesto de pellizco para acercar.",
+    "description": "Function Library details for ZOOM_IN."
   }
 }

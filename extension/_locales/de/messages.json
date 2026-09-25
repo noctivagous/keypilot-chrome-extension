@@ -6030,5 +6030,29 @@
   "highlight_finish_after": {
     "message": " drücken",
     "description": "Text after the keycap in the persistent selection-completion instruction."
+  },
+  "fn_ZOOM_OUT_label": {
+    "message": "Verkleinern",
+    "description": "Function Library label for ZOOM_OUT."
+  },
+  "fn_ZOOM_OUT_description": {
+    "message": "Seite am Cursor verkleinern",
+    "description": "Function Library description for ZOOM_OUT."
+  },
+  "fn_ZOOM_OUT_details": {
+    "message": "Verkleinert den Tab um eine Browser-Zoomstufe und hält den Punkt unter dem Cursor fest, wie eine Pinch-out-Geste.",
+    "description": "Function Library details for ZOOM_OUT."
+  },
+  "fn_ZOOM_IN_label": {
+    "message": "Vergrößern",
+    "description": "Function Library label for ZOOM_IN."
+  },
+  "fn_ZOOM_IN_description": {
+    "message": "Seite am Cursor vergrößern",
+    "description": "Function Library description for ZOOM_IN."
+  },
+  "fn_ZOOM_IN_details": {
+    "message": "Vergrößert den Tab um eine Browser-Zoomstufe und hält den Punkt unter dem Cursor fest, wie eine Pinch-in-Geste.",
+    "description": "Function Library details for ZOOM_IN."
   }
 }

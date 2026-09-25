@@ -6030,5 +6030,29 @@
   "highlight_finish_after": {
     "message": " 再次完成選取",
     "description": "Text after the keycap in the persistent selection-completion instruction."
+  },
+  "fn_ZOOM_OUT_label": {
+    "message": "縮小",
+    "description": "Function Library label for ZOOM_OUT."
+  },
+  "fn_ZOOM_OUT_description": {
+    "message": "在游標處縮小頁面",
+    "description": "Function Library description for ZOOM_OUT."
+  },
+  "fn_ZOOM_OUT_details": {
+    "message": "將分頁縮小一級瀏覽器縮放，並保持游標下的點不動，效果與雙指捏合縮小相同。",
+    "description": "Function Library details for ZOOM_OUT."
+  },
+  "fn_ZOOM_IN_label": {
+    "message": "放大",
+    "description": "Function Library label for ZOOM_IN."
+  },
+  "fn_ZOOM_IN_description": {
+    "message": "在游標處放大頁面",
+    "description": "Function Library description for ZOOM_IN."
+  },
+  "fn_ZOOM_IN_details": {
+    "message": "將分頁放大一級瀏覽器縮放，並保持游標下的點不動，效果與雙指捏合放大相同。",
+    "description": "Function Library details for ZOOM_IN."
   }
 }
