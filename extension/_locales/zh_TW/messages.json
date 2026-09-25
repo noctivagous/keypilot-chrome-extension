@@ -3877,6 +3877,74 @@
     "message": "開啟目前分頁的分頁瀏覽記錄，讓您可跳至此分頁工作階段中先前造訪的頁面，而無需使用瀏覽器原生的瀏覽記錄介面。",
     "description": "Function Library details for TAB_HISTORY."
   },
+  "fn_TABS_OVERVIEW_label": {
+    "message": "分頁總覽",
+    "description": "Function Library label for TABS_OVERVIEW."
+  },
+  "fn_TABS_OVERVIEW_description": {
+    "message": "顯示所有視窗與分頁",
+    "description": "Function Library description for TABS_OVERVIEW."
+  },
+  "fn_TABS_OVERVIEW_details": {
+    "message": "開啟所有瀏覽器視窗及其分頁的總覽。對分頁按鍵點擊即可切換到該分頁。對視窗標題列按鍵點擊只聚焦該視窗，不會改變其中的目前分頁。目前視窗排在最前，目前分頁會醒目顯示。",
+    "description": "Function Library details for TABS_OVERVIEW."
+  },
+  "tabs_overview_title": {
+    "message": "分頁總覽",
+    "description": "Title of the Tabs Overview overlay."
+  },
+  "tabs_overview_hint": {
+    "message": "對分頁按鍵點擊即可切換。對視窗標題列按鍵點擊即可聚焦該視窗。",
+    "description": "Subtitle of the Tabs Overview overlay."
+  },
+  "tabs_overview_this_window": {
+    "message": "此視窗",
+    "description": "Header for the window that contains the current tab."
+  },
+  "tabs_overview_window": {
+    "message": "視窗 $INDEX$",
+    "description": "Header for another browser window. $INDEX$ is its position in the grid.",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
+  "tabs_overview_tab_count": {
+    "message": "$COUNT$ 個分頁",
+    "description": "Tab count on a window header when there is not exactly one tab.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "4"
+      }
+    }
+  },
+  "tabs_overview_tab_count_one": {
+    "message": "1 個分頁",
+    "description": "Tab count on a window header when the window has one tab."
+  },
+  "tabs_overview_loading": {
+    "message": "正在載入視窗…",
+    "description": "Status while Tabs Overview loads."
+  },
+  "tabs_overview_empty": {
+    "message": "沒有可顯示的瀏覽器視窗",
+    "description": "Empty state for Tabs Overview."
+  },
+  "tabs_overview_unavailable": {
+    "message": "無法載入視窗與分頁",
+    "description": "Error state for Tabs Overview."
+  },
+  "tabs_overview_focus_window": {
+    "message": "聚焦此視窗",
+    "description": "Accessible name suffix for a window header in Tabs Overview."
+  },
+  "tabs_overview_untitled": {
+    "message": "新分頁",
+    "description": "Fallback title for a tab with no title in Tabs Overview."
+  },
   "fn_TOGGLE_KEYBOARD_HELP_label": {
     "message": "鍵盤參考",
     "description": "Function Library label for TOGGLE_KEYBOARD_HELP. English may keep the KB abbreviation; other locales must not use KB."
@@ -4628,6 +4696,78 @@
   "fn_param_cb_notify": {
     "message": "閃光通知（通知）",
     "description": "Function parameter label for EXECUTE_JS.cbNotify."
+  },
+  "fn_OPEN_URLS_label": {
+    "message": "開啟網址",
+    "description": "Function Library label for OPEN_URLS."
+  },
+  "fn_OPEN_URLS_description": {
+    "message": "在新分頁中一次開啟多個頁面",
+    "description": "Function Library description for OPEN_URLS."
+  },
+  "fn_OPEN_URLS_details": {
+    "message": "依序在目前分頁之後，用背景分頁開啟此動作實例中儲存的每個網址。可以建立多個實例，把不同的網站組放在不同的按鍵上。",
+    "description": "Function Library details for OPEN_URLS."
+  },
+  "fn_param_urls": {
+    "message": "網址",
+    "description": "Function parameter label for OPEN_URLS.urls."
+  },
+  "fn_param_urls_placeholder": {
+    "message": "https://example.com",
+    "description": "Function parameter placeholder for OPEN_URLS.urls."
+  },
+  "fn_param_urls_add": {
+    "message": "新增網址",
+    "description": "Add-row button for the OPEN_URLS URL list."
+  },
+  "fn_param_urls_remove": {
+    "message": "移除網址",
+    "description": "Remove-row button for the OPEN_URLS URL list."
+  },
+  "fn_summary_url_one": {
+    "message": "1 個網址",
+    "description": "Function parameter summary for a single Open URLs entry."
+  },
+  "fn_summary_url_count": {
+    "message": "$1 個網址",
+    "description": "Function parameter summary for Open URLs. $1 is the number of URLs.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_open_urls_none": {
+    "message": "此按鍵未設定網址",
+    "description": "Flash when Open URLs has an empty list."
+  },
+  "fn_open_urls_opened_one": {
+    "message": "已開啟 1 個分頁",
+    "description": "Flash after Open URLs opens one tab."
+  },
+  "fn_open_urls_opened": {
+    "message": "已開啟 $1 個分頁",
+    "description": "Flash after Open URLs opens more than one tab. $1 is the tab count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_open_urls_failed": {
+    "message": "無法開啟分頁",
+    "description": "Flash when Open URLs fails to open tabs."
+  },
+  "fn_stock_social_media_label": {
+    "message": "社群媒體",
+    "description": "Bundled Open URLs instance label."
+  },
+  "fn_stock_social_media_description": {
+    "message": "開啟 Facebook、Instagram、YouTube 和 X",
+    "description": "Bundled Open URLs instance description."
   },
   "fn_GET_TEXT_AT_CURSOR_label": {
     "message": "取得游標處文字",

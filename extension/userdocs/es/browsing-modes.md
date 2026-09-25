@@ -6,7 +6,7 @@ KeyPilot utiliza estados modales para operaciones que necesitan entrada continua
 
 1. **Navegación normal**: accesos directos activos; Los rectángulos de enfoque muestran objetivos en los que se puede hacer clic.
 2. **Modo de texto**: presione <kbd>F</kbd> en un campo de texto. Escriba normalmente. Presione <kbd>Esc</kbd> (o el control Salir en Referencia del teclado) cuando haya terminado.
-3. **Línea de desplazamiento** — presione <kbd>N</kbd>; alejarse del origen para desplazarse; <kbd>N</kbd>, haga clic o <kbd>Esc</kbd> sale.
+3. **Línea de desplazamiento** — presione <kbd>B</kbd>; alejarse del origen para desplazarse; <kbd>B</kbd>, haga clic o <kbd>Esc</kbd> sale.
 4. **Selección** — <kbd>H</kbd> o <kbd>Y</kbd>; <kbd>Esc</kbd> cancela.
 5. **Modo Eliminar**: presione <kbd>Retroceso</kbd>, apunte a un elemento, confirme para eliminarlo de la página; <kbd>Esc</kbd> cancela.
 6. **Popovers/Omnibox/Editor de diseño**: sus propios estados abiertos; <kbd>Esc</kbd> o la tecla de cierre de la herramienta los descarta.

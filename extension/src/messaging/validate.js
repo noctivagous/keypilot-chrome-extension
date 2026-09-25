@@ -53,9 +53,13 @@ export const SW_RUNTIME_REQUEST_TYPES = Object.freeze([
   MSG.GO_FORWARD,
   MSG.TAB_LEFT,
   MSG.TAB_RIGHT,
+  MSG.TABS_OVERVIEW_GET,
+  MSG.FOCUS_WINDOW,
+  MSG.ACTIVATE_TAB,
   MSG.NEW_TAB,
   MSG.OPEN_URL_BACKGROUND,
   MSG.OPEN_URL_FOREGROUND,
+  MSG.OPEN_URLS,
   MSG.NAVIGATE_SAME_TAB,
   MSG.STATUS
 ]);
@@ -132,6 +136,14 @@ export function validateRuntimeMessage(message, opts = {}) {
     case MSG.NAVGRAPH_JUMP:
       if (typeof message.url !== 'string' || !message.url.trim()) {
         return `${message.type} requires url: string`;
+      }
+      break;
+    case MSG.OPEN_URLS:
+      if (!Array.isArray(message.urls)
+        || message.urls.length < 1
+        || message.urls.length > 20
+        || message.urls.some((url) => typeof url !== 'string' || !url.trim())) {
+        return 'OPEN_URLS requires urls: non-empty string array (max 20)';
       }
       break;
     case MSG.OPEN_POPOVER_WINDOW:

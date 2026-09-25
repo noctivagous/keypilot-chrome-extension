@@ -95,6 +95,14 @@ describe('messaging validate', () => {
       validateRuntimeMessage({ type: MSG.NAVGRAPH_JUMP, url: 'https://example.com' }),
       null
     );
+    assert.match(
+      validateRuntimeMessage({ type: MSG.OPEN_URLS, urls: [] }) || '',
+      /urls/
+    );
+    assert.equal(
+      validateRuntimeMessage({ type: MSG.OPEN_URLS, urls: ['https://example.com'] }),
+      null
+    );
   });
 
   it('builds ERROR envelopes', () => {

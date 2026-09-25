@@ -42,17 +42,18 @@ on the keyboard in specific places to make web navigation quick.
 | `R` | Browser history forward |
 | `U` | Copy hovered link URL |
 | `;` | Toolbar, visits, and bookmarks |
-| `B` | Open link in a new foreground tab |
 | `D` | Browser history back |
 | `E` | Preview link in a popup |
 | `F` | Click the hovered element |
 | `G` | Open link in a new background tab |
 | `J` | Browse this tab’s history |
 | `L` | Address bar overlay |
+| `N` | Open link in a new foreground tab |
 | `P` | Open link in a popup window |
 | `S` | Navigate to the site origin |
-| `N` | Origin-based continuous scroll |
+| `B` | Origin-based continuous scroll |
 | `'` | Open KeyPilot Settings |
+| `/` | Open Facebook, Instagram, YouTube, and X |
 
 #### Tabs
 
@@ -61,6 +62,7 @@ on the keyboard in specific places to make web navigation quick.
 | `Q` | Switch to the previous tab |
 | `T` | Open the KeyPilot new tab |
 | `W` | Switch to the next tab |
+| `.` | Show every window and tab |
 | `A` | Close the current tab |
 
 #### Page navigation

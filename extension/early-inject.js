@@ -394,15 +394,15 @@
         "type": "action",
         "code": "KeyB",
         "legend": "B",
-        "id": "ACTIVATE_NEW_TAB",
-        "fallbackText": "ACTIVATE_NEW_TAB"
+        "id": "SCROLL_LINE",
+        "fallbackText": "SCROLL_LINE"
       },
       {
         "type": "action",
         "code": "KeyN",
         "legend": "N",
-        "id": "SCROLL_LINE",
-        "fallbackText": "SCROLL_LINE"
+        "id": "ACTIVATE_NEW_TAB",
+        "fallbackText": "ACTIVATE_NEW_TAB"
       },
       {
         "type": "action",
@@ -417,14 +417,18 @@
         "text": ","
       },
       {
-        "type": "key",
+        "type": "action",
         "code": "Period",
-        "text": "."
+        "legend": ".",
+        "id": "TABS_OVERVIEW",
+        "fallbackText": "TABS_OVERVIEW"
       },
       {
-        "type": "key",
+        "type": "action",
         "code": "Slash",
-        "text": "/"
+        "legend": "/",
+        "id": "stock:social-media",
+        "fallbackText": "stock:social-media"
       },
       {
         "type": "special",
@@ -628,14 +632,18 @@
         "className": "key key-shift"
       },
       {
-        "type": "key",
+        "type": "action",
         "code": "KeyZ",
-        "text": "Z"
+        "legend": "Z",
+        "id": "stock:social-media",
+        "fallbackText": "stock:social-media"
       },
       {
-        "type": "key",
+        "type": "action",
         "code": "KeyX",
-        "text": "X"
+        "legend": "X",
+        "id": "TABS_OVERVIEW",
+        "fallbackText": "TABS_OVERVIEW"
       },
       {
         "type": "key",
@@ -651,15 +659,15 @@
         "type": "action",
         "code": "KeyB",
         "legend": "B",
-        "id": "PAGE_BOTTOM",
-        "fallbackText": "PAGE_BOTTOM"
+        "id": "ACTIVATE_NEW_TAB",
+        "fallbackText": "ACTIVATE_NEW_TAB"
       },
       {
         "type": "action",
         "code": "KeyN",
         "legend": "N",
-        "id": "ACTIVATE_NEW_TAB",
-        "fallbackText": "ACTIVATE_NEW_TAB"
+        "id": "PAGE_BOTTOM",
+        "fallbackText": "PAGE_BOTTOM"
       },
       {
         "type": "action",
@@ -1116,16 +1124,16 @@
         "text": "V"
       },
       {
-        "type": "action",
+        "type": "key",
         "code": "KeyB",
-        "legend": "B",
-        "id": "PAGE_BOTTOM",
-        "fallbackText": "PAGE_BOTTOM"
+        "text": "B"
       },
       {
-        "type": "key",
+        "type": "action",
         "code": "KeyN",
-        "text": "N"
+        "legend": "N",
+        "id": "PAGE_BOTTOM",
+        "fallbackText": "PAGE_BOTTOM"
       },
       {
         "type": "action",
@@ -1788,19 +1796,19 @@
       "displayKey": "V",
       "keyboardClass": "key-scroll"
     },
-    "ACTIVATE_NEW_TAB": {
-      "label": "Click New Tab",
-      "description": "Open link in a new foreground tab",
-      "keyLabel": "B",
-      "displayKey": "B",
-      "keyboardClass": "key-activate-new"
-    },
     "SCROLL_LINE": {
       "label": "Scroll Line",
       "description": "Origin-based continuous scroll",
+      "keyLabel": "B",
+      "displayKey": "B",
+      "keyboardClass": "key-scroll"
+    },
+    "ACTIVATE_NEW_TAB": {
+      "label": "Click New Tab",
+      "description": "Open link in a new foreground tab",
       "keyLabel": "N",
       "displayKey": "N",
-      "keyboardClass": "key-scroll"
+      "keyboardClass": "key-activate-new"
     },
     "OPEN_MEDIA_LIBRARY": {
       "label": "Media Library",
@@ -1808,6 +1816,20 @@
       "keyLabel": "M",
       "displayKey": "M",
       "keyboardClass": null
+    },
+    "TABS_OVERVIEW": {
+      "label": "Tabs Overview",
+      "description": "Show every window and tab",
+      "keyLabel": ".",
+      "displayKey": ".",
+      "keyboardClass": "key-gray"
+    },
+    "stock:social-media": {
+      "label": "Social media",
+      "description": "Open Facebook, Instagram, YouTube, and X",
+      "keyLabel": "/",
+      "displayKey": "/",
+      "keyboardClass": "key-gray"
     },
     "CANCEL": {
       "label": "Exit Focus",
@@ -1968,8 +1990,8 @@
     "PAGE_BOTTOM": {
       "label": "Scroll To Bottom",
       "description": "Jump to bottom of scroll target",
-      "keyLabel": "B",
-      "displayKey": "B",
+      "keyLabel": "N",
+      "displayKey": "N",
       "keyboardClass": "key-scroll"
     },
     "PAGE_UP_INSTANT": {
@@ -1986,19 +2008,33 @@
       "displayKey": "M",
       "keyboardClass": "key-scroll"
     },
-    "ACTIVATE_NEW_TAB": {
-      "label": "Click New Tab",
-      "description": "Open link in a new foreground tab",
-      "keyLabel": "N",
-      "displayKey": "N",
-      "keyboardClass": "key-activate-new"
-    },
     "SCROLL_LINE": {
       "label": "Scroll Line",
       "description": "Origin-based continuous scroll",
       "keyLabel": "T",
       "displayKey": "T",
       "keyboardClass": "key-scroll"
+    },
+    "ACTIVATE_NEW_TAB": {
+      "label": "Click New Tab",
+      "description": "Open link in a new foreground tab",
+      "keyLabel": "B",
+      "displayKey": "B",
+      "keyboardClass": "key-activate-new"
+    },
+    "TABS_OVERVIEW": {
+      "label": "Tabs Overview",
+      "description": "Show every window and tab",
+      "keyLabel": "X",
+      "displayKey": "X",
+      "keyboardClass": "key-gray"
+    },
+    "stock:social-media": {
+      "label": "Social media",
+      "description": "Open Facebook, Instagram, YouTube, and X",
+      "keyLabel": "Z",
+      "displayKey": "Z",
+      "keyboardClass": "key-gray"
     },
     "CANCEL": {
       "label": "Exit Focus",
@@ -2168,8 +2204,8 @@
     "PAGE_BOTTOM": {
       "label": "Scroll To Bottom",
       "description": "Jump to bottom of scroll target",
-      "keyLabel": "B",
-      "displayKey": "B",
+      "keyLabel": "N",
+      "displayKey": "N",
       "keyboardClass": "key-scroll"
     },
     "PAGE_UP_INSTANT": {
@@ -2524,15 +2560,15 @@
       "type": "action",
       "code": "KeyB",
       "legend": "B",
-      "id": "ACTIVATE_NEW_TAB",
-      "fallbackText": "ACTIVATE_NEW_TAB"
+      "id": "SCROLL_LINE",
+      "fallbackText": "SCROLL_LINE"
     },
     {
       "type": "action",
       "code": "KeyN",
       "legend": "N",
-      "id": "SCROLL_LINE",
-      "fallbackText": "SCROLL_LINE"
+      "id": "ACTIVATE_NEW_TAB",
+      "fallbackText": "ACTIVATE_NEW_TAB"
     },
     {
       "type": "action",
@@ -2547,14 +2583,18 @@
       "text": ","
     },
     {
-      "type": "key",
+      "type": "action",
       "code": "Period",
-      "text": "."
+      "legend": ".",
+      "id": "TABS_OVERVIEW",
+      "fallbackText": "TABS_OVERVIEW"
     },
     {
-      "type": "key",
+      "type": "action",
       "code": "Slash",
-      "text": "/"
+      "legend": "/",
+      "id": "stock:social-media",
+      "fallbackText": "stock:social-media"
     },
     {
       "type": "special",
@@ -2747,19 +2787,19 @@
     "displayKey": "V",
     "keyboardClass": "key-scroll"
   },
-  "ACTIVATE_NEW_TAB": {
-    "label": "Click New Tab",
-    "description": "Open link in a new foreground tab",
-    "keyLabel": "B",
-    "displayKey": "B",
-    "keyboardClass": "key-activate-new"
-  },
   "SCROLL_LINE": {
     "label": "Scroll Line",
     "description": "Origin-based continuous scroll",
+    "keyLabel": "B",
+    "displayKey": "B",
+    "keyboardClass": "key-scroll"
+  },
+  "ACTIVATE_NEW_TAB": {
+    "label": "Click New Tab",
+    "description": "Open link in a new foreground tab",
     "keyLabel": "N",
     "displayKey": "N",
-    "keyboardClass": "key-scroll"
+    "keyboardClass": "key-activate-new"
   },
   "OPEN_MEDIA_LIBRARY": {
     "label": "Media Library",
@@ -2767,6 +2807,20 @@
     "keyLabel": "M",
     "displayKey": "M",
     "keyboardClass": null
+  },
+  "TABS_OVERVIEW": {
+    "label": "Tabs Overview",
+    "description": "Show every window and tab",
+    "keyLabel": ".",
+    "displayKey": ".",
+    "keyboardClass": "key-gray"
+  },
+  "stock:social-media": {
+    "label": "Social media",
+    "description": "Open Facebook, Instagram, YouTube, and X",
+    "keyLabel": "/",
+    "displayKey": "/",
+    "keyboardClass": "key-gray"
   },
   "CANCEL": {
     "label": "Exit Focus",
@@ -2885,6 +2939,10 @@
     "labelKey": "fn_TAB_HISTORY_label",
     "keyboardClass": "key-gray"
   },
+  "TABS_OVERVIEW": {
+    "labelKey": "fn_TABS_OVERVIEW_label",
+    "keyboardClass": "key-gray"
+  },
   "TOGGLE_KEYBOARD_HELP": {
     "labelKey": "fn_TOGGLE_KEYBOARD_HELP_label",
     "keyboardClass": "key-purple"
@@ -2952,6 +3010,10 @@
   "SELECT_IMAGE": {
     "labelKey": "fn_SELECT_IMAGE_label",
     "keyboardClass": null
+  },
+  "OPEN_URLS": {
+    "labelKey": "fn_OPEN_URLS_label",
+    "keyboardClass": "key-gray"
   },
   "LOOKUP_WORD": {
     "labelKey": "fn_LOOKUP_WORD_label",

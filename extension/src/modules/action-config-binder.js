@@ -138,6 +138,8 @@ function renderField(doc, spec, current, ctx) {
       void controller.update(spec.path, Number.isFinite(n) ? n : spec.defaultValue);
     }, listenOpts);
     control = input;
+  } else if (spec.type === 'stringList') {
+    control = renderStringList(doc, spec, current, ctx);
   } else if (spec.type === 'textarea' || spec.multiline) {
     const textarea = doc.createElement('textarea');
     textarea.setAttribute('data-multiline', 'true');
@@ -158,7 +160,7 @@ function renderField(doc, spec, current, ctx) {
     control = input;
   }
 
-  if (applyControlClass && classes.control && 'className' in control) {
+  if (spec.type !== 'stringList' && applyControlClass && classes.control && 'className' in control) {
     control.className = classes.control;
   }
   if (spec.placeholder && 'placeholder' in control) {
@@ -169,4 +171,98 @@ function renderField(doc, spec, current, ctx) {
     enhanceNativeSelect(/** @type {HTMLSelectElement} */ (control));
   }
   return row;
+}
+
+/**
+ * One text field per URL, plus add / remove. Values commit as a string array;
+ * normalization (http/https, cap) happens in the controller.
+ * @param {Document} doc
+ * @param {import('./action-config-schema.js').ActionControlSpec} spec
+ * @param {any} current
+ * @param {{
+ *   controller: import('./action-config-controller.js').ActionConfigController,
+ *   live: boolean,
+ *   classes: ActionConfigFieldClasses,
+ *   listenOpts: AddEventListenerOptions
+ * }} ctx
+ * @returns {HTMLElement}
+ */
+function renderStringList(doc, spec, current, ctx) {
+  const { controller, live, classes, listenOpts } = ctx;
+  const maxItems = Number.isFinite(spec.maxItems) && spec.maxItems > 0 ? spec.maxItems : 20;
+  const wrap = doc.createElement('div');
+  wrap.className = 'kp-cfg-url-list';
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
+
+  const rows = doc.createElement('div');
+  rows.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
+  wrap.appendChild(rows);
+
+  const addBtn = doc.createElement('button');
+  addBtn.type = 'button';
+  addBtn.className = 'kp-cfg-btn';
+  addBtn.textContent = spec.addLabel || 'Add URL';
+
+  const commit = () => {
+    const values = [...rows.querySelectorAll('input')].map((input) => input.value);
+    void controller.update(spec.path, values);
+  };
+
+  const syncAddEnabled = () => {
+    addBtn.disabled = rows.childElementCount >= maxItems;
+  };
+
+  const addRow = (value) => {
+    if (rows.childElementCount >= maxItems) return;
+    const line = doc.createElement('div');
+    line.style.cssText = 'display:flex;gap:4px;align-items:center;';
+    const input = doc.createElement('input');
+    input.type = 'text';
+    input.inputMode = 'url';
+    input.spellcheck = false;
+    input.autocomplete = 'off';
+    input.value = value == null ? '' : String(value);
+    if (classes.control) input.className = classes.control;
+    input.style.flex = '1';
+    input.style.minWidth = '0';
+    input.style.width = 'auto';
+    if (spec.placeholder) input.placeholder = String(spec.placeholder);
+    input.addEventListener('change', commit, listenOpts);
+    if (live) input.addEventListener('input', commit, listenOpts);
+
+    const remove = doc.createElement('button');
+    remove.type = 'button';
+    remove.className = 'kp-cfg-btn';
+    remove.textContent = '×';
+    remove.setAttribute('aria-label', spec.removeLabel || 'Remove URL');
+    remove.title = spec.removeLabel || 'Remove URL';
+    remove.addEventListener('click', () => {
+      line.remove();
+      if (!rows.childElementCount) addRow('');
+      syncAddEnabled();
+      commit();
+    }, listenOpts);
+
+    line.appendChild(input);
+    line.appendChild(remove);
+    rows.appendChild(line);
+    syncAddEnabled();
+  };
+
+  const initial = Array.isArray(current) ? current.filter((item) => String(item || '').trim()) : [];
+  if (initial.length) {
+    for (const value of initial) addRow(value);
+  } else {
+    addRow('');
+  }
+
+  addBtn.addEventListener('click', () => {
+    addRow('');
+    const inputs = rows.querySelectorAll('input');
+    const last = inputs[inputs.length - 1];
+    if (last) last.focus();
+  }, listenOpts);
+  wrap.appendChild(addBtn);
+  syncAddEnabled();
+  return wrap;
 }

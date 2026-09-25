@@ -6,7 +6,7 @@ Point at elements with the mouse; press a key to activate whatever is underneath
 
 1. Move the pointer over a link, button, or text field until the focus rectangle appears.
 2. Press <kbd>F</kbd> to click — or to focus a text field and enter Text Mode.
-3. To open the link in a **new foreground tab**, press <kbd>B</kbd>.
+3. To open the link in a **new foreground tab**, press <kbd>N</kbd>.
 4. To open it in a **background tab** (like a middle-click), press <kbd>G</kbd>.
 5. For a quick peek in a popup window, press <kbd>E</kbd> (Link Preview) or <kbd>P</kbd> (larger Popover). See *Link Preview & Popover*.
 
@@ -19,7 +19,7 @@ If the wrong element highlights, nudge the mouse slightly — KeyPilot prefers t
 | Key | Action |
 | --- | --- |
 | <kbd>F</kbd> | Click / activate under cursor; focus text fields |
-| <kbd>B</kbd> | Open link in new tab (foreground) |
+| <kbd>N</kbd> | Open link in new tab (foreground) |
 | <kbd>G</kbd> | Open link in new tab (background) |
 | <kbd>E</kbd> | Link Preview popup |
 | <kbd>P</kbd> | Open link in Popover popup |

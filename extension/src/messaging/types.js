@@ -28,12 +28,22 @@ export const MSG = Object.freeze({
   // --- Tab / history navigation ---
   TAB_LEFT: 'KP_TAB_LEFT',
   TAB_RIGHT: 'KP_TAB_RIGHT',
+  /** Content → SW: every normal window and its tabs. */
+  TABS_OVERVIEW_GET: 'KP_TABS_OVERVIEW_GET',
+  /** SW → content: payload for TABS_OVERVIEW_GET. */
+  TABS_OVERVIEW_RESULT: 'KP_TABS_OVERVIEW_RESULT',
+  /** Content → SW: focus a browser window without changing its active tab. */
+  FOCUS_WINDOW: 'KP_FOCUS_WINDOW',
+  /** Content → SW: activate a tab and focus its window. */
+  ACTIVATE_TAB: 'KP_ACTIVATE_TAB',
   NEW_TAB: 'KP_NEW_TAB',
   CLOSE_TAB: 'KP_CLOSE_TAB',
   GO_BACK: 'KP_GO_BACK',
   GO_FORWARD: 'KP_GO_FORWARD',
   OPEN_URL_BACKGROUND: 'KP_OPEN_URL_BACKGROUND',
   OPEN_URL_FOREGROUND: 'KP_OPEN_URL_FOREGROUND',
+  /** Open several http(s) URLs as background tabs, in order, after the sender tab. */
+  OPEN_URLS: 'KP_OPEN_URLS',
   /** Same-tab navigate (chrome.tabs.update). Used when sandboxed iframes cannot top-navigate without a real user gesture. */
   NAVIGATE_SAME_TAB: 'KP_NAVIGATE_SAME_TAB',
 

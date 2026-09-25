@@ -6,7 +6,7 @@ KeyPilot uses modal states for operations that need continuous input. Most brows
 
 1. **Normal browsing** — shortcuts active; focus rectangles show clickable targets.
 2. **Text Mode** — press <kbd>F</kbd> on a text field. Type normally. Press <kbd>Esc</kbd> (or the Exit control on Keyboard Reference) when done.
-3. **Scroll Line** — press <kbd>N</kbd>; move away from the origin to scroll; <kbd>N</kbd>, click, or <kbd>Esc</kbd> exits.
+3. **Scroll Line** — press <kbd>B</kbd>; move away from the origin to scroll; <kbd>B</kbd>, click, or <kbd>Esc</kbd> exits.
 4. **Selection** — <kbd>H</kbd> or <kbd>Y</kbd>; <kbd>Esc</kbd> cancels.
 5. **Delete Mode** — press <kbd>Backspace</kbd>, aim at an element, confirm to remove it from the page; <kbd>Esc</kbd> cancels.
 6. **Popovers / Omnibox / Layout Editor** — their own open states; <kbd>Esc</kbd> or the tool’s close key dismisses them.

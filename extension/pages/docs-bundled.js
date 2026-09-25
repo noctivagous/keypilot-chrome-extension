@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-24T23:29:16.616Z
+ * Generated on 2026-09-25T01:02:04.251Z
  */
 
 var __defProp = Object.defineProperty;
@@ -5702,6 +5702,69 @@ var KEYBOARD_REFERENCE_SPECIAL_CLASS_BY_CODE = Object.freeze({
   Backspace: "key key-backspace"
 });
 
+// src/utils/open-url-list.js
+var OPEN_URLS_MAX = 20;
+function canonicalizeHttpUrl(value) {
+  let raw = String(value ?? "").trim();
+  if (!raw || /\s/.test(raw)) return "";
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(raw)) raw = `https://${raw}`;
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return "";
+    if (!url.hostname || !url.hostname.includes(".")) return "";
+    return url.href;
+  } catch {
+    return "";
+  }
+}
+function normalizeOpenUrlList(raw, max = OPEN_URLS_MAX) {
+  const limit = Number.isFinite(max) && max > 0 ? Math.floor(max) : OPEN_URLS_MAX;
+  const items = Array.isArray(raw) ? raw : typeof raw === "string" ? raw.split(/\r?\n/) : [];
+  const out = [];
+  const seen = /* @__PURE__ */ new Set();
+  for (const item of items) {
+    const url = canonicalizeHttpUrl(item);
+    if (!url || seen.has(url)) continue;
+    seen.add(url);
+    out.push(url);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
+// src/config/stock-actions.js
+var STOCK_SOCIAL_MEDIA_ACTION_ID = "stock:social-media";
+var STOCK_ACTIONS = Object.freeze([
+  Object.freeze({
+    id: STOCK_SOCIAL_MEDIA_ACTION_ID,
+    functionId: "OPEN_URLS",
+    handler: "handleOpenUrlsKey",
+    keyboardClass: "key-gray",
+    labelKey: "fn_stock_social_media_label",
+    descriptionKey: "fn_stock_social_media_description",
+    label: "Social media",
+    description: "Open Facebook, Instagram, YouTube, and X",
+    parameters: Object.freeze({
+      urls: Object.freeze(normalizeOpenUrlList([
+        "facebook.com",
+        "instagram.com",
+        "youtube.com",
+        "x.com"
+      ]))
+    })
+  })
+]);
+function getStockActionById(id) {
+  const key2 = String(id || "");
+  const found = STOCK_ACTIONS.find((action) => action && action.id === key2);
+  if (!found) return null;
+  return {
+    ...found,
+    label: getMessage(found.labelKey) || found.label || found.id,
+    description: found.descriptionKey && getMessage(found.descriptionKey) || found.description || ""
+  };
+}
+
 // src/config/keyboard-layouts.js
 var DEFAULT_KEYBOARD_LAYOUT_ID = (
   /** @type {const} */
@@ -6141,6 +6204,14 @@ var KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: "key-gray",
     row: 2
   }),
+  TABS_OVERVIEW: Object.freeze({
+    handler: "handleToggleTabsOverview",
+    label: "Tabs Overview",
+    description: "Show every window and tab",
+    details: "Opens an overlay of every browser window with its tabs listed inside. Key-click a tab to switch to it, or key-click a window header to focus that window and keep its active tab. The current window is listed first, and the current tab is highlighted.",
+    keyboardClass: "key-gray",
+    row: 3
+  }),
   TOGGLE_KEYBOARD_HELP: Object.freeze({
     handler: "handleToggleKeyboardHelp",
     label: "KB Reference",
@@ -6317,6 +6388,7 @@ var KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
   TAB_RIGHT: "Tab Control",
   NEW_TAB: "Tab Control",
   TAB_HISTORY: "Tab Control",
+  TABS_OVERVIEW: "Tab Control",
   PAGE_UP_INSTANT: "Scroll",
   PAGE_DOWN_INSTANT: "Scroll",
   PAGE_TOP: "Scroll",
@@ -6415,6 +6487,27 @@ function buildKeybindingsForLayout(layoutId) {
       displayKey: labels.displayKey
     };
   }
+  for (const stock of STOCK_ACTIONS) {
+    const assign = layout?.assignments?.[stock.id];
+    if (!assign || !Array.isArray(assign.keys)) continue;
+    const labels = normalizeAssignmentLabels(assign);
+    const localized = getStockActionById(stock.id);
+    out[stock.id] = {
+      keys: assign.keys.slice(),
+      ...assign.bindingType ? { bindingType: assign.bindingType } : {},
+      ...Array.isArray(assign.matchOn) ? { matchOn: assign.matchOn.slice() } : {},
+      handler: stock.handler,
+      functionId: stock.functionId,
+      instanceId: stock.id,
+      parameters: stock.parameters,
+      label: localized?.label || stock.id,
+      description: localized?.description || "",
+      keyLabel: labels.keyLabel,
+      keyboardClass: stock.keyboardClass ?? null,
+      row: null,
+      displayKey: labels.displayKey
+    };
+  }
   return out;
 }
 var CATALOG_KEYBINDINGS = (() => {
@@ -6464,16 +6557,19 @@ var ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   PAGE_BOTTOM: physicalAssignment("KeyX", "X"),
   PAGE_UP_INSTANT: physicalAssignment("KeyC", "C"),
   PAGE_DOWN_INSTANT: physicalAssignment("KeyV", "V"),
-  ACTIVATE_NEW_TAB: physicalAssignment("KeyB", "B"),
-  SCROLL_LINE: physicalAssignment("KeyN", "N"),
+  SCROLL_LINE: physicalAssignment("KeyB", "B"),
+  ACTIVATE_NEW_TAB: physicalAssignment("KeyN", "N"),
   RECTANGLE_HIGHLIGHT: physicalAssignment("KeyY", "Y"),
   COPY_HOVERED_IMAGE: physicalAssignment("KeyI", "I"),
   COPY_HOVERED_URL: physicalAssignment("KeyU", "U"),
   PAGE_MEDIA: physicalAssignment("KeyO", "O"),
   // M is otherwise unused on the right-handed layout (it's PAGE_DOWN_INSTANT on left-handed).
   OPEN_MEDIA_LIBRARY: physicalAssignment("KeyM", "M"),
-  DELETE: physicalAssignment("Backspace", "Backspace")
+  TABS_OVERVIEW: physicalAssignment("Period", "."),
+  DELETE: physicalAssignment("Backspace", "Backspace"),
   // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
+  // Slash is free on the right-handed layout. Left-handed mirror is KeyZ.
+  [STOCK_SOCIAL_MEDIA_ACTION_ID]: physicalAssignment("Slash", "/")
 });
 var ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   // Top row cluster: Q W E R T  ->  P O I U Y (mirrored)
@@ -6499,15 +6595,19 @@ var ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   OMNIBOX: physicalAssignment("KeyS", "S"),
   TOP_SITES: physicalAssignment("KeyA", "A"),
   // Bottom row cluster: Z X C V B  ->  / . , M N (mirrored)
+  // Period (.) on the right-handed layout mirrors to X.
+  TABS_OVERVIEW: physicalAssignment("KeyX", "X"),
   PAGE_TOP: physicalAssignment("Slash", "/"),
-  PAGE_BOTTOM: physicalAssignment("KeyB", "B"),
+  ACTIVATE_NEW_TAB: physicalAssignment("KeyB", "B"),
   PAGE_UP_INSTANT: physicalAssignment("Comma", ","),
   PAGE_DOWN_INSTANT: physicalAssignment("KeyM", "M"),
-  ACTIVATE_NEW_TAB: physicalAssignment("KeyN", "N"),
+  PAGE_BOTTOM: physicalAssignment("KeyN", "N"),
   // I is OPEN_POPOVER on left-handed; E is free.
   COPY_HOVERED_IMAGE: physicalAssignment("KeyE", "E"),
   // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
-  DELETE: physicalAssignment("Backspace", "Backspace")
+  DELETE: physicalAssignment("Backspace", "Backspace"),
+  // Mirror of right-handed Slash. KeyZ is free here (PAGE_TOP sits on Slash).
+  [STOCK_SOCIAL_MEDIA_ACTION_ID]: physicalAssignment("KeyZ", "Z")
 });
 var SYSTEM_LAYER_ACTION_IDS = Object.freeze([
   "CANCEL",
@@ -6702,12 +6802,12 @@ var KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: "action", id: "PAGE_BOTTOM", fallbackText: "Scroll To Bottom" },
     { type: "action", id: "PAGE_UP_INSTANT", fallbackText: "Page Up" },
     { type: "action", id: "PAGE_DOWN_INSTANT", fallbackText: "Page Down" },
-    { type: "action", id: "ACTIVATE_NEW_TAB", fallbackText: "Click New Tab" },
     { type: "action", id: "SCROLL_LINE", fallbackText: "Scroll Line" },
+    { type: "action", id: "ACTIVATE_NEW_TAB", fallbackText: "Click New Tab" },
     { type: "action", id: "OPEN_MEDIA_LIBRARY", fallbackText: "Media Library" },
     { type: "key", text: "," },
-    { type: "key", text: "." },
-    { type: "key", text: "/" },
+    { type: "action", id: "TABS_OVERVIEW", fallbackText: "Tabs Overview" },
+    { type: "action", id: STOCK_SOCIAL_MEDIA_ACTION_ID, fallbackText: "Social media" },
     { type: "special", text: "Shift", className: "key key-shift" }
   ]
 ]);
@@ -6765,13 +6865,15 @@ var KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
   ],
   [
     { type: "special", text: "Shift", className: "key key-shift" },
-    { type: "key", text: "Z" },
-    { type: "key", text: "X" },
+    { type: "action", id: STOCK_SOCIAL_MEDIA_ACTION_ID, fallbackText: "Social media" },
+    // Z, mirror of /
+    { type: "action", id: "TABS_OVERVIEW", fallbackText: "Tabs Overview" },
+    // X
     { type: "key", text: "C" },
     { type: "key", text: "V" },
-    { type: "action", id: "PAGE_BOTTOM", fallbackText: "Scroll To Bottom" },
-    // B
     { type: "action", id: "ACTIVATE_NEW_TAB", fallbackText: "Click New Tab" },
+    // B
+    { type: "action", id: "PAGE_BOTTOM", fallbackText: "Scroll To Bottom" },
     // N
     { type: "action", id: "PAGE_DOWN_INSTANT", fallbackText: "Page Down" },
     // M
@@ -8940,12 +9042,22 @@ var MSG = Object.freeze({
   // --- Tab / history navigation ---
   TAB_LEFT: "KP_TAB_LEFT",
   TAB_RIGHT: "KP_TAB_RIGHT",
+  /** Content → SW: every normal window and its tabs. */
+  TABS_OVERVIEW_GET: "KP_TABS_OVERVIEW_GET",
+  /** SW → content: payload for TABS_OVERVIEW_GET. */
+  TABS_OVERVIEW_RESULT: "KP_TABS_OVERVIEW_RESULT",
+  /** Content → SW: focus a browser window without changing its active tab. */
+  FOCUS_WINDOW: "KP_FOCUS_WINDOW",
+  /** Content → SW: activate a tab and focus its window. */
+  ACTIVATE_TAB: "KP_ACTIVATE_TAB",
   NEW_TAB: "KP_NEW_TAB",
   CLOSE_TAB: "KP_CLOSE_TAB",
   GO_BACK: "KP_GO_BACK",
   GO_FORWARD: "KP_GO_FORWARD",
   OPEN_URL_BACKGROUND: "KP_OPEN_URL_BACKGROUND",
   OPEN_URL_FOREGROUND: "KP_OPEN_URL_FOREGROUND",
+  /** Open several http(s) URLs as background tabs, in order, after the sender tab. */
+  OPEN_URLS: "KP_OPEN_URLS",
   /** Same-tab navigate (chrome.tabs.update). Used when sandboxed iframes cannot top-navigate without a real user gesture. */
   NAVIGATE_SAME_TAB: "KP_NAVIGATE_SAME_TAB",
   // --- UI open (content-script handlers; SW may forward) ---

@@ -36,7 +36,24 @@ describe('custom keyboard layout physical slots', () => {
       type: 'function',
       id: 'PAGE_TOP'
     });
+    assert.deepEqual(layout.slots['code:Slash'], {
+      type: 'function',
+      id: 'stock:social-media'
+    });
     assert.equal(Object.hasOwn(layout.slots, 'key:y'), false);
+
+    const left = await store.duplicateBuiltinLayoutToUserLayout({
+      builtinLayoutId: 'browsing-left',
+      label: 'Left physical copy'
+    });
+    assert.deepEqual(left.slots['code:KeyZ'], {
+      type: 'function',
+      id: 'stock:social-media'
+    });
+    assert.deepEqual(left.slots['code:Slash'], {
+      type: 'function',
+      id: 'PAGE_TOP'
+    });
   });
 
   it('moves custom physical slots when changing handedness', async () => {

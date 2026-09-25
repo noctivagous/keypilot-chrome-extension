@@ -40,6 +40,7 @@ import {
   resolveKeyboardLayoutId
 } from '../config/keyboard-layouts.js';
 import { getFunctionDef } from '../config/function-library.js';
+import { getStockActionById } from '../config/stock-actions.js';
 import {
   listUserKeyboardLayouts,
   getUserKeyboardLayoutById,
@@ -2599,6 +2600,15 @@ export class FloatingKeyboardHelp {
      */
     const resolveFunctionSlot = (id) => {
       const key = String(id || '');
+      const stock = getStockActionById(key);
+      if (stock) {
+        const def = getFunctionDef(stock.functionId);
+        return {
+          label: String(stock.label || def?.label || key),
+          keyboardClass: String(def?.keyboardClass || stock.keyboardClass || ''),
+          functionId: stock.functionId
+        };
+      }
       if (key.startsWith('action:')) {
         const instance = actionById.get(key);
         const functionId = String(instance?.functionId || '');

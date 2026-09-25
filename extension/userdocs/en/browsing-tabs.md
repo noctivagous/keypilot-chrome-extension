@@ -9,6 +9,7 @@ Move between tabs and browser history without reaching for chrome buttons.
 3. Press <kbd>D</kbd> to go back; <kbd>R</kbd> to go forward.
 4. Press <kbd>S</kbd> (or <kbd>1</kbd>) to jump to the current site’s root (scheme + host).
 5. Press <kbd>J</kbd> for **Tab History** — a branch-aware history strip for this tab (see *Tab History*).
+6. Press <kbd>.</kbd> for **Tabs Overview** — every window as a card, with that window’s tabs listed inside. Key-click a tab to switch to it. Key-click the window’s header bar to focus that window and keep its active tab. Left-handed Browsing uses <kbd>X</kbd>.
 
 ## Reference
 
@@ -24,6 +25,13 @@ Move between tabs and browser history without reaching for chrome buttons.
 | <kbd>R</kbd> | Forward |
 | <kbd>S</kbd> / <kbd>1</kbd> | Site root |
 | <kbd>J</kbd> | Tab History popover |
+| <kbd>.</kbd> | Tabs Overview (left-handed: <kbd>X</kbd>) |
+
+<h3 id="open-urls">Open URLs</h3>
+
+**Open URLs** is an Action Instance in the Tab Control library. In the Keyboard Layout Editor inspector, add the sites you want (for example five news homepages). Place that instance on a key. Pressing the key opens each URL in its own background tab, in list order, just after the current tab. Create another instance for a different set of sites.
+
+Browsing includes a bundled **Social media** instance on <kbd>/</kbd> (right-handed) and <kbd>Z</kbd> (left-handed): Facebook, Instagram, YouTube, and X.
 
 ### Tips
 

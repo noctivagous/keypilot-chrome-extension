@@ -3877,6 +3877,74 @@
     "message": "現在のタブのタブ履歴を開き、ブラウザの履歴UIを使わずに、このタブのセッションで以前訪れたページへジャンプできます。",
     "description": "Function Library details for TAB_HISTORY."
   },
+  "fn_TABS_OVERVIEW_label": {
+    "message": "タブ一覧",
+    "description": "Function Library label for TABS_OVERVIEW."
+  },
+  "fn_TABS_OVERVIEW_description": {
+    "message": "すべてのウィンドウとタブを表示",
+    "description": "Function Library description for TABS_OVERVIEW."
+  },
+  "fn_TABS_OVERVIEW_details": {
+    "message": "すべてのブラウザウィンドウと、その中のタブを一覧表示します。タブをキークリックするとそのタブへ移動します。ウィンドウの見出しをキークリックすると、そのウィンドウだけに移動し、開いているタブは変わりません。現在のウィンドウが先頭で、現在のタブが強調されます。",
+    "description": "Function Library details for TABS_OVERVIEW."
+  },
+  "tabs_overview_title": {
+    "message": "タブ一覧",
+    "description": "Title of the Tabs Overview overlay."
+  },
+  "tabs_overview_hint": {
+    "message": "タブをキークリックすると移動します。ウィンドウの見出しをキークリックすると、そのウィンドウに移動します。",
+    "description": "Subtitle of the Tabs Overview overlay."
+  },
+  "tabs_overview_this_window": {
+    "message": "このウィンドウ",
+    "description": "Header for the window that contains the current tab."
+  },
+  "tabs_overview_window": {
+    "message": "ウィンドウ $INDEX$",
+    "description": "Header for another browser window. $INDEX$ is its position in the grid.",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
+  "tabs_overview_tab_count": {
+    "message": "$COUNT$ 個のタブ",
+    "description": "Tab count on a window header when there is not exactly one tab.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "4"
+      }
+    }
+  },
+  "tabs_overview_tab_count_one": {
+    "message": "1 個のタブ",
+    "description": "Tab count on a window header when the window has one tab."
+  },
+  "tabs_overview_loading": {
+    "message": "ウィンドウを読み込み中…",
+    "description": "Status while Tabs Overview loads."
+  },
+  "tabs_overview_empty": {
+    "message": "表示できるブラウザウィンドウがありません",
+    "description": "Empty state for Tabs Overview."
+  },
+  "tabs_overview_unavailable": {
+    "message": "ウィンドウとタブを読み込めませんでした",
+    "description": "Error state for Tabs Overview."
+  },
+  "tabs_overview_focus_window": {
+    "message": "このウィンドウに移動",
+    "description": "Accessible name suffix for a window header in Tabs Overview."
+  },
+  "tabs_overview_untitled": {
+    "message": "新しいタブ",
+    "description": "Fallback title for a tab with no title in Tabs Overview."
+  },
   "fn_TOGGLE_KEYBOARD_HELP_label": {
     "message": "キーボードリファレンス",
     "description": "Function Library label for TOGGLE_KEYBOARD_HELP. English may keep the KB abbreviation; other locales must not use KB."
@@ -4628,6 +4696,78 @@
   "fn_param_cb_notify": {
     "message": "フラッシュ通知（notify）",
     "description": "Function parameter label for EXECUTE_JS.cbNotify."
+  },
+  "fn_OPEN_URLS_label": {
+    "message": "URLを開く",
+    "description": "Function Library label for OPEN_URLS."
+  },
+  "fn_OPEN_URLS_description": {
+    "message": "複数のページを新しいタブで開く",
+    "description": "Function Library description for OPEN_URLS."
+  },
+  "fn_OPEN_URLS_details": {
+    "message": "このアクションインスタンスに保存した各URLを、現在のタブの直後に、順番にバックグラウンドタブで開きます。インスタンスを複数作ると、キーごとに別のサイト集を持てます。",
+    "description": "Function Library details for OPEN_URLS."
+  },
+  "fn_param_urls": {
+    "message": "URL",
+    "description": "Function parameter label for OPEN_URLS.urls."
+  },
+  "fn_param_urls_placeholder": {
+    "message": "https://example.com",
+    "description": "Function parameter placeholder for OPEN_URLS.urls."
+  },
+  "fn_param_urls_add": {
+    "message": "URLを追加",
+    "description": "Add-row button for the OPEN_URLS URL list."
+  },
+  "fn_param_urls_remove": {
+    "message": "URLを削除",
+    "description": "Remove-row button for the OPEN_URLS URL list."
+  },
+  "fn_summary_url_one": {
+    "message": "1件のURL",
+    "description": "Function parameter summary for a single Open URLs entry."
+  },
+  "fn_summary_url_count": {
+    "message": "$1件のURL",
+    "description": "Function parameter summary for Open URLs. $1 is the number of URLs.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_open_urls_none": {
+    "message": "このキーにURLが設定されていません",
+    "description": "Flash when Open URLs has an empty list."
+  },
+  "fn_open_urls_opened_one": {
+    "message": "1個のタブを開きました",
+    "description": "Flash after Open URLs opens one tab."
+  },
+  "fn_open_urls_opened": {
+    "message": "$1個のタブを開きました",
+    "description": "Flash after Open URLs opens more than one tab. $1 is the tab count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_open_urls_failed": {
+    "message": "タブを開けませんでした",
+    "description": "Flash when Open URLs fails to open tabs."
+  },
+  "fn_stock_social_media_label": {
+    "message": "ソーシャルメディア",
+    "description": "Bundled Open URLs instance label."
+  },
+  "fn_stock_social_media_description": {
+    "message": "Facebook、Instagram、YouTube、X を開く",
+    "description": "Bundled Open URLs instance description."
   },
   "fn_GET_TEXT_AT_CURSOR_label": {
     "message": "カーソル位置のテキストを取得",

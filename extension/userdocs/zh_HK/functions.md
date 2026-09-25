@@ -20,6 +20,8 @@ Navigation · Tab Control · Begin URL · Get Page Data · Maps · Scroll · Sel
 ### 值得注意的功能
 <h3 id="type-characters">Type Characters</h3>
 將儲存文字插入已聚焦欄位。請以修飾鍵組合綁定，使其可在輸入時執行。每個文字片段建立一個動作執行個體。
+<h3 id="open-urls">開啟網址</h3>
+在背景分頁開啟已儲存的一組網站。每組網站建立一個動作執行個體，並在鍵盤佈局編輯器的檢查器中編輯網址清單。參見[分頁與記錄](kp://docs/browsing-tabs#open-urls)。
 <h3 id="font-info">Font Info</h3>
 顯示游標下已套用樣式文字的字型家族、大小、檔案類型、下載 URL 的浮動視窗，以及該文字範圍的外框。
 <h3 id="lookup-word">Lookup Word</h3>

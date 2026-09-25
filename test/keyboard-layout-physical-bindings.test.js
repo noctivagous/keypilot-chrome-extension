@@ -28,7 +28,7 @@ describe('built-in keyboard layout physical bindings', () => {
         assert.equal(binding.bindingType, 'physical', `${layoutId}:${actionId}`);
         assert.deepEqual(binding.matchOn, ['code'], `${layoutId}:${actionId}`);
         assert.equal(binding.keys.length, 1, `${layoutId}:${actionId}`);
-        assert.match(binding.keys[0], /^(Key[A-Z]|Backspace|Semicolon|Comma|Slash)$/, `${layoutId}:${actionId}`);
+        assert.match(binding.keys[0], /^(Key[A-Z]|Backspace|Semicolon|Comma|Period|Slash)$/, `${layoutId}:${actionId}`);
       }
     }
   });

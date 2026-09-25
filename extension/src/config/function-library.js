@@ -33,12 +33,16 @@ import { isWordLookupAiAvailable } from '../modules/ai-text-service.js';
 import { buildKpDeepLink } from '../utils/kp-deep-link.js';
 import { getMessage } from '../utils/i18n.js';
 import { altModifierLabel } from '../utils/platform.js';
+import { OPEN_URLS_MAX, normalizeOpenUrlList } from '../utils/open-url-list.js';
 
 /**
  * @typedef {{
  *   id: string,
  *   labelKey?: string,
- *   type: 'boolean'|'number'|'string'|'enum',
+ *   type: 'boolean'|'number'|'string'|'stringList'|'enum',
+ *   maxItems?: number,
+ *   addLabelKey?: string,
+ *   removeLabelKey?: string,
  *   defaultValue?: any,
  *   options?: Array<{ id: string, labelKey?: string }>,
  *   min?: number,
@@ -392,6 +396,7 @@ const FUNCTION_DOCS_URL_BY_ID = Object.freeze({
   TAB_RIGHT: docsUrl('browsing-tabs'),
   NEW_TAB: docsUrl('browsing-tabs'),
   TAB_HISTORY: docsUrl('tools-tab-history'),
+  TABS_OVERVIEW: docsUrl('browsing-tabs'),
   PAGE_UP_INSTANT: docsUrl('browsing-scroll'),
   PAGE_DOWN_INSTANT: docsUrl('browsing-scroll'),
   PAGE_TOP: docsUrl('browsing-scroll'),
@@ -425,6 +430,7 @@ const FUNCTION_DOCS_URL_BY_ID = Object.freeze({
   POI_WEBSITE: docsUrl('functions', 'poi'),
   POI_ADDRESS: docsUrl('functions', 'poi'),
   TYPE_CHARACTERS: docsUrl('functions', 'type-characters'),
+  OPEN_URLS: docsUrl('browsing-tabs', 'open-urls'),
   EXECUTE_JS: docsUrl('execute-js'),
   GET_TEXT_AT_CURSOR: docsUrl('functions', 'get-text-at-cursor'),
   GET_TEXT_RANGE: docsUrl('functions', 'get-text-at-cursor'),
@@ -553,6 +559,33 @@ const TYPE_CHARACTERS_FUNCTION_DEF = Object.freeze({
       multiline: true,
       defaultValue: '',
       placeholderKey: 'fn_param_text_to_type_placeholder'
+    })
+  ])
+});
+
+/**
+ * Instantiable Function: open a saved list of website URLs in background tabs.
+ * Each Action Instance holds its own list.
+ */
+const OPEN_URLS_FUNCTION_DEF = Object.freeze({
+  id: 'OPEN_URLS',
+  labelKey: 'fn_OPEN_URLS_label',
+  descriptionKey: 'fn_OPEN_URLS_description',
+  detailsKey: 'fn_OPEN_URLS_details',
+  handler: 'handleOpenUrlsKey',
+  category: 'Tab Control',
+  keyboardClass: 'key-gray',
+  dataSource: 'none',
+  parameters: Object.freeze([
+    Object.freeze({
+      id: 'urls',
+      labelKey: 'fn_param_urls',
+      type: 'stringList',
+      defaultValue: Object.freeze([]),
+      maxItems: OPEN_URLS_MAX,
+      placeholderKey: 'fn_param_urls_placeholder',
+      addLabelKey: 'fn_param_urls_add',
+      removeLabelKey: 'fn_param_urls_remove'
     })
   ])
 });
@@ -842,6 +875,7 @@ export const FUNCTION_LIBRARY = Object.freeze(omitBuildExcludedFunctions({
   ...buildBuiltinActionFunctionDefs(),
   ...buildKeystrokeFunctionDefs(),
   [TYPE_CHARACTERS_FUNCTION_DEF.id]: withDocsUrl(TYPE_CHARACTERS_FUNCTION_DEF),
+  [OPEN_URLS_FUNCTION_DEF.id]: withDocsUrl(OPEN_URLS_FUNCTION_DEF),
   [EXECUTE_JS_FUNCTION_DEF.id]: withDocsUrl(EXECUTE_JS_FUNCTION_DEF),
   ...Object.fromEntries(
     Object.entries(buildDataAcquisitionFunctionDefs())
@@ -954,6 +988,7 @@ export const FUNCTION_LIBRARY_ITEM_ORDER = Object.freeze({
   TAB_RIGHT: 130,
   NEW_TAB: 140,
   TAB_HISTORY: 150,
+  TABS_OVERVIEW: 152,
   // Begin URL
   TOP_SITES: 155,
   LAUNCHER: 160,
@@ -1005,6 +1040,8 @@ function localizeFunctionParameter(param) {
   if (param.labelKey) out.label = getMessage(param.labelKey);
   if (param.placeholderKey) out.placeholder = getMessage(param.placeholderKey);
   if (param.groupKey) out.group = getMessage(param.groupKey);
+  if (param.addLabelKey) out.addLabel = getMessage(param.addLabelKey);
+  if (param.removeLabelKey) out.removeLabel = getMessage(param.removeLabelKey);
   if (Array.isArray(param.options)) {
     out.options = param.options.map((opt) => (
       opt?.labelKey ? { ...opt, label: getMessage(opt.labelKey) } : opt
@@ -1169,6 +1206,12 @@ export function normalizeFunctionParameters(functionId, raw) {
       case 'enum':
         out[p.id] = (p.options || []).some((o) => o.id === v) ? v : defaults[p.id];
         break;
+      case 'stringList':
+        out[p.id] = normalizeOpenUrlList(
+          v !== undefined ? v : defaults[p.id],
+          p.maxItems
+        );
+        break;
       default:
         out[p.id] = v !== undefined ? String(v) : (defaults[p.id] ?? '');
     }
@@ -1197,6 +1240,12 @@ export function summarizeFunctionParameters(functionId, parameters) {
     const text = String(parameters?.content || '').trim();
     if (!text) return getMessage('fn_summary_previous_step');
     return text.length > 24 ? `${text.slice(0, 24)}…` : text;
+  }
+  if (functionId === 'OPEN_URLS') {
+    const count = normalizeOpenUrlList(parameters?.urls).length;
+    if (!count) return getMessage('fn_summary_empty');
+    if (count === 1) return getMessage('fn_summary_url_one');
+    return getMessage('fn_summary_url_count', String(count));
   }
   if (functionId === 'EXECUTE_JS') {
     const lines = String(parameters?.script || '').split(/\r?\n/);

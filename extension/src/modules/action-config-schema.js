@@ -4,6 +4,7 @@
  */
 
 import { clampNumber } from './settings-path.js';
+import { normalizeOpenUrlList } from '../utils/open-url-list.js';
 
 /**
  * Enums painted as radio/button groups on the Keyboard Reference key-info popover.
@@ -11,7 +12,7 @@ import { clampNumber } from './settings-path.js';
  */
 export const ACTION_RADIO_PARAMETER_IDS = Object.freeze(['mode', 'action', 'format', 'destination']);
 
-/** @typedef {'toggle'|'select'|'radio'|'range'|'enum'|'text'|'textarea'} ActionControlType */
+/** @typedef {'toggle'|'select'|'radio'|'range'|'enum'|'text'|'textarea'|'stringList'} ActionControlType */
 
 /**
  * @typedef {{
@@ -27,7 +28,10 @@ export const ACTION_RADIO_PARAMETER_IDS = Object.freeze(['mode', 'action', 'form
  *   placeholder?: string,
  *   rows?: number,
  *   defaultValue?: any,
- *   multiline?: boolean
+ *   multiline?: boolean,
+ *   maxItems?: number,
+ *   addLabel?: string,
+ *   removeLabel?: string
  * }} ActionControlSpec
  */
 
@@ -40,6 +44,7 @@ export function controlTypeForParameter(param, opts = {}) {
   if (!param) return 'text';
   if (param.type === 'boolean') return 'toggle';
   if (param.type === 'number') return 'range';
+  if (param.type === 'stringList') return 'stringList';
   if (param.type === 'enum') {
     const radioIds = opts.radioParamIds || [];
     return radioIds.includes(param.id) ? 'radio' : 'enum';
@@ -76,6 +81,11 @@ export function parameterToControlSpec(param, opts = {}) {
   if (param.placeholder) spec.placeholder = String(param.placeholder);
   if (param.multiline) spec.multiline = true;
   if (param.rows != null) spec.rows = param.rows;
+  if (type === 'stringList') {
+    if (param.maxItems != null) spec.maxItems = param.maxItems;
+    if (param.addLabel) spec.addLabel = String(param.addLabel);
+    if (param.removeLabel) spec.removeLabel = String(param.removeLabel);
+  }
   return spec;
 }
 
@@ -145,6 +155,8 @@ export function normalizeControlValue(spec, raw) {
       const options = spec.options || [];
       return options.some((o) => o && o.id === raw) ? raw : spec.defaultValue;
     }
+    case 'stringList':
+      return normalizeOpenUrlList(raw, spec.maxItems);
     default:
       return raw !== undefined && raw !== null ? String(raw) : (spec.defaultValue ?? '');
   }

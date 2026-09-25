@@ -35,7 +35,7 @@ Wire values remain the `KP_*` strings; production code must send/receive via `MS
 **Request/response** (await `sendResponse` / Promise):
 
 - State: `GET_STATE` → `STATE_RESPONSE`; `SET_STATE` → `STATE_CHANGED` / `ERROR`; `TOGGLE_STATE` (no enabled) → `STATE_CHANGED`
-- Navigation / tabs: `TAB_*`, `NEW_TAB`, `CLOSE_TAB`, `GO_*`, `OPEN_URL_*`, `NAVIGATE_SAME_TAB` → `SUCCESS` / `ERROR`
+- Navigation / tabs: `TAB_*`, `NEW_TAB`, `CLOSE_TAB`, `GO_*`, `OPEN_URL_*`, `OPEN_URLS`, `NAVIGATE_SAME_TAB` → `SUCCESS` / `ERROR`
 - Data APIs: omnibox, bookmarks, history, top sites, video thumb, dictionary, media library, navgraph → typed `*_RESPONSE` / `*_RESULT` / `NAVGRAPH_GRAPH` or echo type
 - UI forward: `OPEN_*` / `LAUNCH_WALKTHROUGH` → SW forwards to tab → `SUCCESS` / `ERROR`
 - Popover window: `OPEN_POPOVER_WINDOW`, `CLOSE_POPOVER_WINDOW`, `AM_I_POPOVER_WINDOW`
@@ -47,6 +47,7 @@ Wire values remain the `KP_*` strings; production code must send/receive via `MS
 | `TRANSIENT_ACTION` | `action: string` | `SUCCESS` / `ERROR` |
 | `SET_STATE` | `enabled: boolean` | `STATE_CHANGED` / `ERROR` |
 | `OPEN_URL_*` / `NAVIGATE_SAME_TAB` / `NAVGRAPH_JUMP` | `url: string` | `SUCCESS` / `ERROR` |
+| `OPEN_URLS` | `urls: string[]` (1–20) | `SUCCESS` (`opened`) / `ERROR` |
 | `OPEN_POPOVER_WINDOW` | `url: string` | `SUCCESS` (+ window ids) / `ERROR` |
 | `DICTIONARY_LOOKUP` | `word: string` | `DICTIONARY_LOOKUP` echo |
 | `OPEN_SETTINGS_POPOVER` | optional `panelId` | `SUCCESS` after forward |

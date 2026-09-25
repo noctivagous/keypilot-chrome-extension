@@ -3877,6 +3877,74 @@
     "message": "Öffnet den Tab-Verlauf für den aktuellen Tab, sodass Sie in der Sitzung dieses Tabs zu einer zuvor besuchten Seite springen können, ohne die native Verlaufs-Benutzeroberfläche des Browsers zu verwenden.",
     "description": "Function Library details for TAB_HISTORY."
   },
+  "fn_TABS_OVERVIEW_label": {
+    "message": "Tabs-Übersicht",
+    "description": "Function Library label for TABS_OVERVIEW."
+  },
+  "fn_TABS_OVERVIEW_description": {
+    "message": "Alle Fenster und Tabs anzeigen",
+    "description": "Function Library description for TABS_OVERVIEW."
+  },
+  "fn_TABS_OVERVIEW_details": {
+    "message": "Öffnet eine Übersicht aller Browserfenster mit den darin enthaltenen Tabs. Ein Tastenklick auf einen Tab wechselt dorthin. Ein Tastenklick auf die Titelleiste eines Fensters fokussiert nur dieses Fenster. Das aktuelle Fenster steht zuerst, der aktuelle Tab ist hervorgehoben.",
+    "description": "Function Library details for TABS_OVERVIEW."
+  },
+  "tabs_overview_title": {
+    "message": "Tabs-Übersicht",
+    "description": "Title of the Tabs Overview overlay."
+  },
+  "tabs_overview_hint": {
+    "message": "Tastenklick auf einen Tab wechselt dorthin. Tastenklick auf eine Fenstertitelleiste fokussiert dieses Fenster.",
+    "description": "Subtitle of the Tabs Overview overlay."
+  },
+  "tabs_overview_this_window": {
+    "message": "Dieses Fenster",
+    "description": "Header for the window that contains the current tab."
+  },
+  "tabs_overview_window": {
+    "message": "Fenster $INDEX$",
+    "description": "Header for another browser window. $INDEX$ is its position in the grid.",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
+  "tabs_overview_tab_count": {
+    "message": "$COUNT$ Tabs",
+    "description": "Tab count on a window header when there is not exactly one tab.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "4"
+      }
+    }
+  },
+  "tabs_overview_tab_count_one": {
+    "message": "1 Tab",
+    "description": "Tab count on a window header when the window has one tab."
+  },
+  "tabs_overview_loading": {
+    "message": "Fenster werden geladen…",
+    "description": "Status while Tabs Overview loads."
+  },
+  "tabs_overview_empty": {
+    "message": "Keine Browserfenster vorhanden",
+    "description": "Empty state for Tabs Overview."
+  },
+  "tabs_overview_unavailable": {
+    "message": "Fenster und Tabs konnten nicht geladen werden",
+    "description": "Error state for Tabs Overview."
+  },
+  "tabs_overview_focus_window": {
+    "message": "Dieses Fenster fokussieren",
+    "description": "Accessible name suffix for a window header in Tabs Overview."
+  },
+  "tabs_overview_untitled": {
+    "message": "Neuer Tab",
+    "description": "Fallback title for a tab with no title in Tabs Overview."
+  },
   "fn_TOGGLE_KEYBOARD_HELP_label": {
     "message": "Tastaturreferenz",
     "description": "Function Library label for TOGGLE_KEYBOARD_HELP."
@@ -4628,6 +4696,78 @@
   "fn_param_cb_notify": {
     "message": "Flash-Benachrichtigung (Benachrichtigung)",
     "description": "Function parameter label for EXECUTE_JS.cbNotify."
+  },
+  "fn_OPEN_URLS_label": {
+    "message": "URLs öffnen",
+    "description": "Function Library label for OPEN_URLS."
+  },
+  "fn_OPEN_URLS_description": {
+    "message": "Mehrere Seiten in neuen Tabs öffnen",
+    "description": "Function Library description for OPEN_URLS."
+  },
+  "fn_OPEN_URLS_details": {
+    "message": "Öffnet jede auf dieser Aktionsinstanz gespeicherte URL in einem eigenen Hintergrund-Tab, der Reihe nach, hinter dem aktuellen Tab. Mehrere Instanzen halten verschiedene Seitengruppen auf verschiedenen Tasten.",
+    "description": "Function Library details for OPEN_URLS."
+  },
+  "fn_param_urls": {
+    "message": "URLs",
+    "description": "Function parameter label for OPEN_URLS.urls."
+  },
+  "fn_param_urls_placeholder": {
+    "message": "https://example.com",
+    "description": "Function parameter placeholder for OPEN_URLS.urls."
+  },
+  "fn_param_urls_add": {
+    "message": "URL hinzufügen",
+    "description": "Add-row button for the OPEN_URLS URL list."
+  },
+  "fn_param_urls_remove": {
+    "message": "URL entfernen",
+    "description": "Remove-row button for the OPEN_URLS URL list."
+  },
+  "fn_summary_url_one": {
+    "message": "1 URL",
+    "description": "Function parameter summary for a single Open URLs entry."
+  },
+  "fn_summary_url_count": {
+    "message": "$1 URLs",
+    "description": "Function parameter summary for Open URLs. $1 is the number of URLs.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_open_urls_none": {
+    "message": "Für diese Taste sind keine URLs konfiguriert",
+    "description": "Flash when Open URLs has an empty list."
+  },
+  "fn_open_urls_opened_one": {
+    "message": "1 Tab geöffnet",
+    "description": "Flash after Open URLs opens one tab."
+  },
+  "fn_open_urls_opened": {
+    "message": "$1 Tabs geöffnet",
+    "description": "Flash after Open URLs opens more than one tab. $1 is the tab count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_open_urls_failed": {
+    "message": "Tabs konnten nicht geöffnet werden",
+    "description": "Flash when Open URLs fails to open tabs."
+  },
+  "fn_stock_social_media_label": {
+    "message": "Soziale Medien",
+    "description": "Bundled Open URLs instance label."
+  },
+  "fn_stock_social_media_description": {
+    "message": "Facebook, Instagram, YouTube und X öffnen",
+    "description": "Bundled Open URLs instance description."
   },
   "fn_GET_TEXT_AT_CURSOR_label": {
     "message": "Text am Cursor abrufen",

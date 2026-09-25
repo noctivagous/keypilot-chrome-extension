@@ -81,7 +81,7 @@ describe('Function and Macro catalog localization', () => {
     const { FUNCTION_LIBRARY } = await import('../extension/src/config/function-library.js');
     const { MACRO_KEY_KIND_DEFS, MACRO_BUILDER_STEP_TYPES } = await import('../extension/src/config/macro-keys.js');
     const keys = new Set([
-      ...[...source.matchAll(/(?:labelKey|descriptionKey|detailsKey|placeholderKey|groupKey):\s*'([^']+)'/g)].map((match) => match[1]),
+      ...[...source.matchAll(/(?:labelKey|descriptionKey|detailsKey|placeholderKey|groupKey|addLabelKey|removeLabelKey):\s*'([^']+)'/g)].map((match) => match[1]),
       ...[...macroSource.matchAll(/(?:labelKey|descriptionKey|detailsKey):\s*'([^']+)'/g)].map((match) => match[1]),
       ...[...source.matchAll(/:\s*'(fn_cat_[^']+|fn_section_[^']+)'/g)].map((match) => match[1])
     ]);
@@ -92,6 +92,12 @@ describe('Function and Macro catalog localization', () => {
     keys.add('fn_summary_empty');
     keys.add('fn_summary_previous_step');
     keys.add('fn_summary_script');
+    keys.add('fn_summary_url_one');
+    keys.add('fn_summary_url_count');
+    keys.add('fn_open_urls_none');
+    keys.add('fn_open_urls_opened_one');
+    keys.add('fn_open_urls_opened');
+    keys.add('fn_open_urls_failed');
     keys.add('mk_editor_key');
     for (const def of Object.values(FUNCTION_LIBRARY)) {
       for (const key of [def.labelKey, def.descriptionKey, def.detailsKey]) keys.add(key);

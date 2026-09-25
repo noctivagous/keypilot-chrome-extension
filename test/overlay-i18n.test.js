@@ -42,6 +42,11 @@ const OVERLAY_KEYS = [
     'tab_history_section_tabs',
     'tab_history_section_browser'
   ]],
+  ['extension/src/modules/tabs-overview-popover.js', [
+    'tabs_overview_title',
+    'tabs_overview_hint',
+    'tabs_overview_this_window'
+  ]],
   ['extension/src/modules/launcher-popover.js', [
     'launcher_title',
     'launcher_footer_hint',

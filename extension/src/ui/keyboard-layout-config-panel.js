@@ -56,6 +56,7 @@ import {
   upsertUserMacro
 } from '../modules/keyboard-layout-store.js';
 import { getStockMacroById, isStockMacroId, listStockMacros } from '../config/stock-macros.js';
+import { getStockActionById, listStockActions } from '../config/stock-actions.js';
 import {
   MACRO_KEY_KIND_DEFS,
   localizeMacroCatalogEntry,
@@ -5238,6 +5239,12 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
       return;
     }
 
+    const stock = getStockActionById(sel.id);
+    if (stock) {
+      this._renderStockActionInspector(host, stock);
+      return;
+    }
+
     this._renderFunctionInspector(host, sel.id);
   }
 
@@ -5765,6 +5772,41 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
    * @param {import('../config/function-library.js').FunctionDef} def
    * @param {import('../modules/keyboard-layout-store.js').UserAction} instance
    */
+  /**
+   * Bundled Action Instance (read-only URL list; placeable on a key).
+   * @param {HTMLElement} host
+   * @param {{ id: string, functionId: string, label: string, description?: string, parameters?: { urls?: string[] } }} stock
+   */
+  _renderStockActionInspector(host, stock) {
+    const def = getFunctionDef(stock.functionId);
+    host.appendChild(this._dockTitle(String(stock.label || def?.label || 'Open URLs'), 'Bundled instance', {
+      docsUrl: def?.docsUrl || getFunctionDocsUrl(stock.functionId)
+    }));
+    if (stock.description) {
+      const about = document.createElement('p');
+      about.className = 'kp-cfg-hint';
+      about.textContent = stock.description;
+      host.appendChild(about);
+    }
+    host.appendChild(this._renderAssignmentTable({ type: 'function', id: stock.id }));
+    if (def && functionAssignableToKey(def.id)) {
+      host.appendChild(this._dockActions([{
+        label: 'Place on keyboard',
+        icon: 'kp-cfg-i-place',
+        onClick: () => this._beginPlaceModeFromLibrary({ type: 'function', id: stock.id })
+      }]));
+    }
+    const urls = Array.isArray(stock.parameters?.urls) ? stock.parameters.urls : [];
+    const list = document.createElement('ul');
+    list.className = 'kp-cfg-hint';
+    for (const url of urls) {
+      const li = document.createElement('li');
+      li.textContent = url;
+      list.appendChild(li);
+    }
+    host.appendChild(list);
+  }
+
   _renderActionParamsEditorInto(host, def, instance) {
     const draft = { ...instance, parameters: { ...(instance.parameters || {}) } };
 
@@ -7346,7 +7388,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const filteredDefs = sortFunctionDefsForLibrary(
       q
         ? allDefs.filter((d) => (
-          `${d.id} ${d.label} ${d.description || ''} ${d.details || ''} ${getFunctionCategory(d.id)}`
+          `${d.id} ${d.label} ${d.description || ''} ${d.details || ''} ${getFunctionCategory(d.id)} ${listStockActions(d.id).map((a) => `${a.label} ${a.description}`).join(' ')}`
         ).toLowerCase().includes(q))
         : allDefs
     );
@@ -7387,6 +7429,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
         const isFixedKey = FIXED_KEY_FUNCTION_IDS.includes(def.id);
 
         if (!isFixedKey && isFunctionInstantiable(def.id)) {
+          const stockActions = listStockActions(def.id);
           const instances = (this._st.actions || []).filter((a) => a && a.functionId === def.id);
           const fieldset = document.createElement('fieldset');
           fieldset.className = 'kp-cfg-instance-fieldset';
@@ -7415,9 +7458,22 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
           }, true);
           fieldset.appendChild(addBtn);
 
+          const instGrid = document.createElement('div');
+          instGrid.className = 'kp-cfg-key-grid';
+          for (const stock of stockActions) {
+            const itemEl = appendKeyItem({
+              type: 'function',
+              id: stock.id,
+              label: stock.label,
+              sublabel: summarizeFunctionParameters(stock.functionId, stock.parameters),
+              keyboardClass: def.keyboardClass || '',
+              infoKey: `function:${stock.id}`,
+              variant: 'configurable-fn',
+              functionId: def.id
+            });
+            instGrid.appendChild(itemEl);
+          }
           if (instances.length) {
-            const instGrid = document.createElement('div');
-            instGrid.className = 'kp-cfg-key-grid';
             instances.forEach((inst, index) => {
               const itemEl = appendKeyItem({
                 type: 'function',
@@ -7447,8 +7503,8 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
               }
               instGrid.appendChild(itemEl);
             });
-            fieldset.appendChild(instGrid);
           }
+          if (stockActions.length || instances.length) fieldset.appendChild(instGrid);
 
           grid.appendChild(fieldset);
           continue;
@@ -7859,7 +7915,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
     const filteredDefs = sortFunctionDefsForLibrary(
       q
         ? allDefs.filter((d) => (
-          `${d.id} ${d.label} ${d.description || ''} ${d.details || ''} ${getFunctionCategory(d.id)}`
+          `${d.id} ${d.label} ${d.description || ''} ${d.details || ''} ${getFunctionCategory(d.id)} ${listStockActions(d.id).map((a) => `${a.label} ${a.description}`).join(' ')}`
         ).toLowerCase().includes(q))
         : allDefs
     );
@@ -7901,6 +7957,7 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
             const isFixedKey = FIXED_KEY_FUNCTION_IDS.includes(def.id);
 
             if (!isFixedKey && isFunctionInstantiable(def.id)) {
+              const stockActions = listStockActions(def.id);
               const instances = (this._st.actions || []).filter((a) => a && a.functionId === def.id);
               const parentKey = `fn:${def.id}`;
 
@@ -7928,11 +7985,24 @@ ${getNctDarkUiScrollbarCss({ scopeSelector: '.kp-layout-config-panel' })}
                 groupKey: parentKey,
                 label: def.label,
                 depth: 2,
-                count: instances.length,
+                count: stockActions.length + instances.length,
                 kind: 'Configurable',
                 trailing: addBtn
               })) {
-                if (!instances.length) {
+                for (const stock of stockActions) {
+                  appendLeafRow({
+                    type: 'function',
+                    id: stock.id,
+                    label: stock.label,
+                    kind: 'Bundled',
+                    summary: summarizeFunctionParameters(stock.functionId, stock.parameters),
+                    depth: 3,
+                    variant: 'configurable-fn',
+                    functionId: def.id,
+                    keyboardClass: def.keyboardClass || ''
+                  });
+                }
+                if (!instances.length && !stockActions.length) {
                   appendHintRow('No instances yet — click + New.', 3);
                 }
                 instances.forEach((inst, index) => {

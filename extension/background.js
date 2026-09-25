@@ -32,6 +32,7 @@ import {
 } from './src/modules/keyboard-layout-store.js';
 import { getMessage } from './src/utils/i18n.js';
 import { formatAltShortcut } from './src/utils/platform.js';
+import { normalizeOpenUrlList } from './src/utils/open-url-list.js';
 
 void startKeyPilotDebugFromSettings();
 
@@ -2805,6 +2806,87 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
         }
 
+        case MSG.TABS_OVERVIEW_GET: {
+          const currentWindowId = sender?.tab?.windowId ?? null;
+          const currentTabId = sender?.tab?.id ?? null;
+          try {
+            const allWindows = await chrome.windows.getAll({
+              populate: true,
+              windowTypes: ['normal']
+            });
+            const windows = allWindows.map((win) => ({
+              id: win.id,
+              focused: !!win.focused,
+              tabs: (Array.isArray(win.tabs) ? win.tabs : [])
+                .map((tab) => ({
+                  id: tab.id,
+                  index: tab.index,
+                  active: !!tab.active,
+                  pinned: !!tab.pinned,
+                  title: tab.title || '',
+                  url: tab.url || tab.pendingUrl || '',
+                  favIconUrl: tab.favIconUrl || ''
+                }))
+                .sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
+            }));
+            sendResponse({
+              type: MSG.TABS_OVERVIEW_RESULT,
+              currentWindowId,
+              currentTabId,
+              windows
+            });
+          } catch (error) {
+            console.error('Failed to list windows and tabs:', error);
+            sendResponse({
+              type: MSG.ERROR,
+              error: 'Failed to list windows and tabs: ' + (error?.message || error)
+            });
+          }
+          break;
+        }
+
+        case MSG.FOCUS_WINDOW: {
+          const windowId = Number(message.windowId);
+          if (!Number.isFinite(windowId)) {
+            sendResponse({ type: MSG.ERROR, error: 'Invalid window id' });
+            break;
+          }
+          try {
+            await chrome.windows.update(windowId, { focused: true });
+            sendResponse({ type: MSG.SUCCESS });
+          } catch (error) {
+            console.error('Failed to focus window:', error);
+            sendResponse({
+              type: MSG.ERROR,
+              error: 'Failed to focus window: ' + (error?.message || error)
+            });
+          }
+          break;
+        }
+
+        case MSG.ACTIVATE_TAB: {
+          const tabId = Number(message.tabId);
+          const windowId = Number(message.windowId);
+          if (!Number.isFinite(tabId)) {
+            sendResponse({ type: MSG.ERROR, error: 'Invalid tab id' });
+            break;
+          }
+          try {
+            await chrome.tabs.update(tabId, { active: true });
+            if (Number.isFinite(windowId)) {
+              await chrome.windows.update(windowId, { focused: true });
+            }
+            sendResponse({ type: MSG.SUCCESS });
+          } catch (error) {
+            console.error('Failed to activate tab:', error);
+            sendResponse({
+              type: MSG.ERROR,
+              error: 'Failed to activate tab: ' + (error?.message || error)
+            });
+          }
+          break;
+        }
+
         case MSG.TAB_LEFT:
           // Switch to the tab to the left
           if (sender.tab && sender.tab.id) {
@@ -2995,6 +3077,47 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             });
           }
           break;
+
+        case MSG.OPEN_URLS: {
+          const urls = normalizeOpenUrlList(message.urls);
+          if (!urls.length) {
+            sendResponse({ type: MSG.ERROR, error: 'No urls' });
+            break;
+          }
+          const baseIndex = sender.tab && typeof sender.tab.index === 'number'
+            ? sender.tab.index
+            : null;
+          const windowId = sender.tab && typeof sender.tab.windowId === 'number'
+            ? sender.tab.windowId
+            : null;
+          const openerTabId = sender.tab && typeof sender.tab.id === 'number'
+            ? sender.tab.id
+            : null;
+          let opened = 0;
+          try {
+            for (let i = 0; i < urls.length; i++) {
+              /** @type {chrome.tabs.CreateProperties} */
+              const createProps = {
+                url: urls[i],
+                active: false
+              };
+              if (baseIndex != null) createProps.index = baseIndex + 1 + i;
+              if (windowId != null) createProps.windowId = windowId;
+              if (openerTabId != null) createProps.openerTabId = openerTabId;
+              await chrome.tabs.create(createProps);
+              opened += 1;
+            }
+            sendResponse({ type: MSG.SUCCESS, opened });
+          } catch (error) {
+            console.error('Failed to open URL tabs:', error);
+            sendResponse({
+              type: MSG.ERROR,
+              error: 'Failed to open tabs: ' + error.message,
+              opened
+            });
+          }
+          break;
+        }
 
         case MSG.NAVIGATE_SAME_TAB: {
           // Same-tab navigate — used by frame-click-agent when a sandboxed iframe

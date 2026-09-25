@@ -3877,6 +3877,74 @@
     "message": "打开当前标签页的历史记录，以便跳转到该标签页会话中之前访问过的页面，无需使用浏览器原生历史记录界面。",
     "description": "Function Library details for TAB_HISTORY."
   },
+  "fn_TABS_OVERVIEW_label": {
+    "message": "标签页总览",
+    "description": "Function Library label for TABS_OVERVIEW."
+  },
+  "fn_TABS_OVERVIEW_description": {
+    "message": "显示所有窗口和标签页",
+    "description": "Function Library description for TABS_OVERVIEW."
+  },
+  "fn_TABS_OVERVIEW_details": {
+    "message": "打开所有浏览器窗口及其标签页的总览。对标签页按键点击即可切换到该标签页。对窗口标题栏按键点击只聚焦该窗口，不改变其中的当前标签页。当前窗口排在最前，当前标签页会高亮。",
+    "description": "Function Library details for TABS_OVERVIEW."
+  },
+  "tabs_overview_title": {
+    "message": "标签页总览",
+    "description": "Title of the Tabs Overview overlay."
+  },
+  "tabs_overview_hint": {
+    "message": "对标签页按键点击即可切换。对窗口标题栏按键点击即可聚焦该窗口。",
+    "description": "Subtitle of the Tabs Overview overlay."
+  },
+  "tabs_overview_this_window": {
+    "message": "此窗口",
+    "description": "Header for the window that contains the current tab."
+  },
+  "tabs_overview_window": {
+    "message": "窗口 $INDEX$",
+    "description": "Header for another browser window. $INDEX$ is its position in the grid.",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
+  "tabs_overview_tab_count": {
+    "message": "$COUNT$ 个标签页",
+    "description": "Tab count on a window header when there is not exactly one tab.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "4"
+      }
+    }
+  },
+  "tabs_overview_tab_count_one": {
+    "message": "1 个标签页",
+    "description": "Tab count on a window header when the window has one tab."
+  },
+  "tabs_overview_loading": {
+    "message": "正在加载窗口…",
+    "description": "Status while Tabs Overview loads."
+  },
+  "tabs_overview_empty": {
+    "message": "没有可显示的浏览器窗口",
+    "description": "Empty state for Tabs Overview."
+  },
+  "tabs_overview_unavailable": {
+    "message": "无法加载窗口和标签页",
+    "description": "Error state for Tabs Overview."
+  },
+  "tabs_overview_focus_window": {
+    "message": "聚焦此窗口",
+    "description": "Accessible name suffix for a window header in Tabs Overview."
+  },
+  "tabs_overview_untitled": {
+    "message": "新标签页",
+    "description": "Fallback title for a tab with no title in Tabs Overview."
+  },
   "fn_TOGGLE_KEYBOARD_HELP_label": {
     "message": "键盘参考",
     "description": "Function Library label for TOGGLE_KEYBOARD_HELP. English may keep the KB abbreviation; other locales must not use KB."
@@ -4628,6 +4696,78 @@
   "fn_param_cb_notify": {
     "message": "闪烁通知（notify）",
     "description": "Function parameter label for EXECUTE_JS.cbNotify."
+  },
+  "fn_OPEN_URLS_label": {
+    "message": "打开网址",
+    "description": "Function Library label for OPEN_URLS."
+  },
+  "fn_OPEN_URLS_description": {
+    "message": "在新标签页中一次打开多个页面",
+    "description": "Function Library description for OPEN_URLS."
+  },
+  "fn_OPEN_URLS_details": {
+    "message": "按顺序在当前标签页之后，用后台标签页打开此动作实例中保存的每个网址。可以创建多个实例，把不同的网站组放在不同的键上。",
+    "description": "Function Library details for OPEN_URLS."
+  },
+  "fn_param_urls": {
+    "message": "网址",
+    "description": "Function parameter label for OPEN_URLS.urls."
+  },
+  "fn_param_urls_placeholder": {
+    "message": "https://example.com",
+    "description": "Function parameter placeholder for OPEN_URLS.urls."
+  },
+  "fn_param_urls_add": {
+    "message": "添加网址",
+    "description": "Add-row button for the OPEN_URLS URL list."
+  },
+  "fn_param_urls_remove": {
+    "message": "移除网址",
+    "description": "Remove-row button for the OPEN_URLS URL list."
+  },
+  "fn_summary_url_one": {
+    "message": "1 个网址",
+    "description": "Function parameter summary for a single Open URLs entry."
+  },
+  "fn_summary_url_count": {
+    "message": "$1 个网址",
+    "description": "Function parameter summary for Open URLs. $1 is the number of URLs.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_open_urls_none": {
+    "message": "此键未配置网址",
+    "description": "Flash when Open URLs has an empty list."
+  },
+  "fn_open_urls_opened_one": {
+    "message": "已打开 1 个标签页",
+    "description": "Flash after Open URLs opens one tab."
+  },
+  "fn_open_urls_opened": {
+    "message": "已打开 $1 个标签页",
+    "description": "Flash after Open URLs opens more than one tab. $1 is the tab count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_open_urls_failed": {
+    "message": "无法打开标签页",
+    "description": "Flash when Open URLs fails to open tabs."
+  },
+  "fn_stock_social_media_label": {
+    "message": "社交媒体",
+    "description": "Bundled Open URLs instance label."
+  },
+  "fn_stock_social_media_description": {
+    "message": "打开 Facebook、Instagram、YouTube 和 X",
+    "description": "Bundled Open URLs instance description."
   },
   "fn_GET_TEXT_AT_CURSOR_label": {
     "message": "获取光标处文本",

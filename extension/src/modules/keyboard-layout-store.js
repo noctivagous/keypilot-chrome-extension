@@ -21,6 +21,7 @@ import {
   normalizeKeyboardHandedness,
   resolveKeyboardLayoutId
 } from '../config/keyboard-layouts.js';
+import { getStockActionById, isStockActionId } from '../config/stock-actions.js';
 import {
   defaultFunctionParameters,
   functionWorksWhileTyping,
@@ -855,6 +856,10 @@ export async function setUserKeyboardLayoutSlot(layoutId, slotKey, item) {
       const instance = await getUserActionById(functionId);
       if (!instance) return { ok: false, reason: 'Action instance not found.' };
       functionId = instance.functionId;
+    } else if (isStockActionId(functionId)) {
+      const stock = getStockActionById(functionId);
+      if (!stock) return { ok: false, reason: 'Action instance not found.' };
+      functionId = stock.functionId;
     }
     const check = validateFunctionSlotKey(functionId, key);
     if (!check.ok) return { ok: false, reason: check.reason };

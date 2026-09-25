@@ -124,7 +124,7 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
   function actionCategory(actionId) {
     if (!actionId) return 'Other';
     if (actionId.startsWith('PAGE_')) return 'Page navigation';
-    if (actionId === 'TAB_LEFT' || actionId === 'TAB_RIGHT' || actionId === 'NEW_TAB' || actionId === 'CLOSE_TAB') return 'Tabs';
+    if (actionId === 'TAB_LEFT' || actionId === 'TAB_RIGHT' || actionId === 'NEW_TAB' || actionId === 'CLOSE_TAB' || actionId === 'TABS_OVERVIEW') return 'Tabs';
     if (actionId === 'DELETE' || actionId === 'CANCEL' || actionId === 'HIGHLIGHT' || actionId === 'RECTANGLE_HIGHLIGHT' || actionId === 'TOGGLE_KEYBOARD_HELP') {
       return 'Modes & UI';
     }

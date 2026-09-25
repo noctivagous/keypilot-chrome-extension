@@ -50,6 +50,7 @@ describe('action-config-schema', () => {
     );
     assert.equal(controlTypeForParameter({ type: 'string', multiline: true }), 'textarea');
     assert.equal(controlTypeForParameter({ type: 'string' }), 'text');
+    assert.equal(controlTypeForParameter({ type: 'stringList' }), 'stringList');
 
     const schema = buildActionControlSchema(SAMPLE_PARAMETERS, {
       radioParamIds: ACTION_RADIO_PARAMETER_IDS

@@ -33,6 +33,10 @@ Navigation · Tab-Steuerung · Start-URL · Seitendaten abrufen · Karten · Scr
 
 Fügen Sie gespeicherten Text in das fokussierte Feld ein. Binden Sie es mit einem Modifikatorakkord, damit es beim Tippen ausgeführt werden kann. Erstellen Sie eine Aktionsinstanz pro Snippet.
 
+<h3 id="open-urls">URLs öffnen</h3>
+
+Öffnet eine gespeicherte Liste von Websites in Hintergrund-Tabs. Legen Sie pro Seitengruppe eine Aktionsinstanz an und bearbeiten Sie die URL-Liste im Inspektor des Tastaturlayout-Editors. Siehe [Tabs & Verlauf](kp://docs/browsing-tabs#open-urls).
+
 <h3 id="font-info">Font Info</h3>
 
 Popover mit Familie, Größe, Dateityp und Download-URL für den gestalteten Text unter dem Cursor sowie einer Gliederung dieses Textverlaufs.

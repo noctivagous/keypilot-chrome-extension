@@ -74,6 +74,7 @@ import {
 import { sendTextToAi, isWordLookupAiAvailable } from './modules/ai-text-service.js';
 import { OmniboxManager } from './modules/omnibox-manager.js';
 import { TabHistoryPopover } from './modules/tab-history-popover.js';
+import { TabsOverviewPopover } from './modules/tabs-overview-popover.js';
 import { LauncherPopover } from './modules/launcher-popover.js';
 import { TopSitesPopover } from './modules/top-sites-popover.js';
 import { DEFAULT_SETTINGS, getSettings, setSettings, SETTINGS_STORAGE_KEY } from './modules/settings-manager.js';
@@ -88,6 +89,8 @@ import { characterSlotKeyForCharacter, getOrCreateBuiltinFunctionUserAction, get
 import { runLegacyMacroKeyFunction } from './modules/macro-key-runtime.js';
 import { runUserExecuteJs, stringifyExecuteJsValue } from './modules/execute-js-runtime.js';
 import { getFunctionDef, functionWorksWhileTyping, functionCancelsOnPointerDown, FIXED_KEY_FUNCTION_IDS, UNIT_SELECT_FUNCTION_IDS } from './config/function-library.js';
+import { normalizeOpenUrlList } from './utils/open-url-list.js';
+import { getStockActionById, isStockActionId } from './config/stock-actions.js';
 import { getStockMacroById, resolveMacroById } from './config/stock-macros.js';
 import { chordSlotKeyFromEvent, isChordSlotKey } from './utils/key-chord.js';
 import { getTextAtPoint } from './utils/text-at-point.js';
@@ -243,6 +246,12 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       popupManager: this.overlayManager?.popupManager,
       onStateChange: (open) => {
         this.state.setPopoverOpen(open, open ? 'tab-history' : null);
+      }
+    });
+    this.tabsOverviewPopover = new TabsOverviewPopover({
+      popupManager: this.overlayManager?.popupManager,
+      onStateChange: (open) => {
+        this.state.setPopoverOpen(open, open ? 'tabs-overview' : null);
       }
     });
     this.launcherPopover = new LauncherPopover(this);
@@ -1416,7 +1425,13 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     let parameters;
     let instanceId;
 
-    if (id.startsWith('action:')) {
+    if (isStockActionId(id)) {
+      const stock = getStockActionById(id);
+      if (!stock) return false;
+      functionId = stock.functionId;
+      parameters = stock.parameters;
+      instanceId = id;
+    } else if (id.startsWith('action:')) {
       const instance = (this._currentUserActions || []).find((a) => a && a.id === id);
       if (!instance) {
         // Not cached yet (e.g. instance just created elsewhere) — resolve asynchronously.
@@ -3249,6 +3264,13 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
         this.handleToggleTabHistoryPopover();
         return;
       }
+      if (this._matchesKeybinding(KB.TABS_OVERVIEW, e)) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        this.handleToggleTabsOverview();
+        return;
+      }
       if (this._matchesKeybinding(KB.OPEN_POPOVER, e)) {
         e.preventDefault();
         e.stopPropagation();
@@ -3413,7 +3435,10 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       if (typeof handlerFn === 'function') {
         // Pass the event so handlers can re-check typing with the real event target.
         try {
-          const ret = handlerFn.call(this, e);
+          const ret = handlerFn.call(this, e, keybinding.parameters, {
+            functionId: keybinding.functionId,
+            instanceId: keybinding.instanceId
+          });
           if (ret && typeof ret.then === 'function') {
             void ret.catch((err) => {
               console.warn('[KeyPilot] Action handler failed:', keybinding.handler, err);
@@ -5923,6 +5948,41 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
    * @param {KeyboardEvent} _e
    * @param {{ text?: string }} [parameters]
    */
+  /**
+   * OPEN_URLS Function handler — opens the Action Instance's saved website URLs
+   * in background tabs, in order, after the current tab.
+   * @param {KeyboardEvent} _e
+   * @param {{ urls?: string[] }} [parameters]
+   */
+  handleOpenUrlsKey(_e, parameters) {
+    const urls = normalizeOpenUrlList(parameters?.urls);
+    if (!urls.length) {
+      this.showFlashNotification(getMessage('fn_open_urls_none'), COLORS.NOTIFICATION_INFO);
+      return;
+    }
+    const sent = this._sendRuntimeMessage(
+      { type: MSG.OPEN_URLS, urls },
+      {
+        silent: true,
+        onResponse: (response) => {
+          const opened = Number(response?.opened) || 0;
+          if (response?.type === MSG.SUCCESS && opened > 0) {
+            const message = opened === 1
+              ? getMessage('fn_open_urls_opened_one')
+              : getMessage('fn_open_urls_opened', String(opened));
+            this.showFlashNotification(message, COLORS.NOTIFICATION_SUCCESS);
+            this.emitAction('open_urls', { count: opened });
+            return;
+          }
+          this.showFlashNotification(getMessage('fn_open_urls_failed'), COLORS.NOTIFICATION_ERROR);
+        }
+      }
+    );
+    if (!sent) {
+      this.showFlashNotification(getMessage('fn_open_urls_failed'), COLORS.NOTIFICATION_ERROR);
+    }
+  }
+
   handleTypeCharactersKey(_e, parameters) {
     const text = String(parameters?.text ?? '');
     if (!text) {
@@ -8257,6 +8317,15 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     }
   }
 
+  handleToggleTabsOverview() {
+    if (window !== window.top) return;
+    try {
+      this.tabsOverviewPopover?.toggle?.();
+    } catch (e) {
+      console.warn('[KeyPilot] Failed to toggle tabs overview:', e);
+    }
+  }
+
   handleToggleKeyboardHelp() {
     if (this._isPopoverOsWindow || window.__KP_POPOVER_WINDOW) return;
     try {
@@ -8752,6 +8821,7 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
 
     // Tab history popover
     try { this.tabHistoryPopover?.hide?.(); } catch { /* ignore */ }
+    try { this.tabsOverviewPopover?.hide?.(); } catch { /* ignore */ }
 
     // P-key / settings / guide iframe popovers + preview popovers
     try { this.handleClosePopover?.(); } catch { /* ignore */ }

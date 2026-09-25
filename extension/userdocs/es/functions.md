@@ -33,6 +33,10 @@ Navegación · Control de pestañas · URL de inicio · Obtener datos de página
 
 Inserte el texto guardado en el campo enfocado. Vinculado con un acorde modificador para que pueda ejecutarse mientras se escribe. Cree una instancia de acción por fragmento.
 
+<h3 id="open-urls">Abrir URLs</h3>
+
+Abre una lista guardada de sitios web en pestañas en segundo plano. Cree una instancia de acción por conjunto de sitios y edite las URL en el inspector del editor de distribución del teclado. Consulte [Pestañas e historial](kp://docs/browsing-tabs#open-urls).
+
 <h3 id="font-info">Font Info</h3>
 
 Ventana emergente con familia, tamaño, tipo de archivo y URL de descarga para el texto con estilo debajo del cursor, además de un resumen de esa ejecución de texto.

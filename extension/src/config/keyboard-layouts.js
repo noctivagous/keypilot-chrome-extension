@@ -13,6 +13,11 @@
 
 import { getMessage } from '../utils/i18n.js';
 import { buildKeyboardReferenceUiLayout } from './keyboard-hardware-layouts.js';
+import {
+  getStockActionById,
+  STOCK_ACTIONS,
+  STOCK_SOCIAL_MEDIA_ACTION_ID
+} from './stock-actions.js';
 
 /**
  * @typedef {'browsing-right'|'browsing-left'|'basic-navigation-right'|'basic-navigation-left'|'click-history-right'|'click-history-left'} BuiltinKeyboardLayoutId
@@ -569,6 +574,14 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     keyboardClass: 'key-gray',
     row: 2
   }),
+  TABS_OVERVIEW: Object.freeze({
+    handler: 'handleToggleTabsOverview',
+    label: 'Tabs Overview',
+    description: 'Show every window and tab',
+    details: 'Opens an overlay of every browser window with its tabs listed inside. Key-click a tab to switch to it, or key-click a window header to focus that window and keep its active tab. The current window is listed first, and the current tab is highlighted.',
+    keyboardClass: 'key-gray',
+    row: 3
+  }),
   TOGGLE_KEYBOARD_HELP: Object.freeze({
     handler: 'handleToggleKeyboardHelp',
     label: 'KB Reference',
@@ -746,6 +759,7 @@ export const KEYBINDING_ACTION_CATEGORY_BY_ID = Object.freeze({
   TAB_RIGHT: 'Tab Control',
   NEW_TAB: 'Tab Control',
   TAB_HISTORY: 'Tab Control',
+  TABS_OVERVIEW: 'Tab Control',
   PAGE_UP_INSTANT: 'Scroll',
   PAGE_DOWN_INSTANT: 'Scroll',
   PAGE_TOP: 'Scroll',
@@ -947,6 +961,28 @@ export function buildKeybindingsForLayout(layoutId) {
     };
   }
 
+  for (const stock of STOCK_ACTIONS) {
+    const assign = layout?.assignments?.[stock.id];
+    if (!assign || !Array.isArray(assign.keys)) continue;
+    const labels = normalizeAssignmentLabels(assign);
+    const localized = getStockActionById(stock.id);
+    out[stock.id] = {
+      keys: assign.keys.slice(),
+      ...(assign.bindingType ? { bindingType: assign.bindingType } : {}),
+      ...(Array.isArray(assign.matchOn) ? { matchOn: assign.matchOn.slice() } : {}),
+      handler: stock.handler,
+      functionId: stock.functionId,
+      instanceId: stock.id,
+      parameters: stock.parameters,
+      label: localized?.label || stock.id,
+      description: localized?.description || '',
+      keyLabel: labels.keyLabel,
+      keyboardClass: stock.keyboardClass ?? null,
+      row: null,
+      displayKey: labels.displayKey
+    };
+  }
+
   return out;
 }
 
@@ -1085,17 +1121,20 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   PAGE_BOTTOM: physicalAssignment('KeyX', 'X'),
   PAGE_UP_INSTANT: physicalAssignment('KeyC', 'C'),
   PAGE_DOWN_INSTANT: physicalAssignment('KeyV', 'V'),
-  ACTIVATE_NEW_TAB: physicalAssignment('KeyB', 'B'),
-  SCROLL_LINE: physicalAssignment('KeyN', 'N'),
+  SCROLL_LINE: physicalAssignment('KeyB', 'B'),
+  ACTIVATE_NEW_TAB: physicalAssignment('KeyN', 'N'),
   RECTANGLE_HIGHLIGHT: physicalAssignment('KeyY', 'Y'),
   COPY_HOVERED_IMAGE: physicalAssignment('KeyI', 'I'),
   COPY_HOVERED_URL: physicalAssignment('KeyU', 'U'),
   PAGE_MEDIA: physicalAssignment('KeyO', 'O'),
   // M is otherwise unused on the right-handed layout (it's PAGE_DOWN_INSTANT on left-handed).
   OPEN_MEDIA_LIBRARY: physicalAssignment('KeyM', 'M'),
+  TABS_OVERVIEW: physicalAssignment('Period', '.'),
 
-  DELETE: physicalAssignment('Backspace', 'Backspace')
+  DELETE: physicalAssignment('Backspace', 'Backspace'),
   // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
+  // Slash is free on the right-handed layout. Left-handed mirror is KeyZ.
+  [STOCK_SOCIAL_MEDIA_ACTION_ID]: physicalAssignment('Slash', '/')
 });
 
 /**
@@ -1129,16 +1168,20 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   TOP_SITES: physicalAssignment('KeyA', 'A'),
 
   // Bottom row cluster: Z X C V B  ->  / . , M N (mirrored)
+  // Period (.) on the right-handed layout mirrors to X.
+  TABS_OVERVIEW: physicalAssignment('KeyX', 'X'),
   PAGE_TOP: physicalAssignment('Slash', '/'),
-  PAGE_BOTTOM: physicalAssignment('KeyB', 'B'),
+  ACTIVATE_NEW_TAB: physicalAssignment('KeyB', 'B'),
   PAGE_UP_INSTANT: physicalAssignment('Comma', ','),
   PAGE_DOWN_INSTANT: physicalAssignment('KeyM', 'M'),
-  ACTIVATE_NEW_TAB: physicalAssignment('KeyN', 'N'),
+  PAGE_BOTTOM: physicalAssignment('KeyN', 'N'),
   // I is OPEN_POPOVER on left-handed; E is free.
   COPY_HOVERED_IMAGE: physicalAssignment('KeyE', 'E'),
   // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
 
-  DELETE: physicalAssignment('Backspace', 'Backspace')
+  DELETE: physicalAssignment('Backspace', 'Backspace'),
+  // Mirror of right-handed Slash. KeyZ is free here (PAGE_TOP sits on Slash).
+  [STOCK_SOCIAL_MEDIA_ACTION_ID]: physicalAssignment('KeyZ', 'Z')
 });
 
 /**
@@ -1413,12 +1456,12 @@ const KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: 'action', id: 'PAGE_BOTTOM', fallbackText: 'Scroll To Bottom' },
     { type: 'action', id: 'PAGE_UP_INSTANT', fallbackText: 'Page Up' },
     { type: 'action', id: 'PAGE_DOWN_INSTANT', fallbackText: 'Page Down' },
-    { type: 'action', id: 'ACTIVATE_NEW_TAB', fallbackText: 'Click New Tab' },
     { type: 'action', id: 'SCROLL_LINE', fallbackText: 'Scroll Line' },
+    { type: 'action', id: 'ACTIVATE_NEW_TAB', fallbackText: 'Click New Tab' },
     { type: 'action', id: 'OPEN_MEDIA_LIBRARY', fallbackText: 'Media Library' },
     { type: 'key', text: ',' },
-    { type: 'key', text: '.' },
-    { type: 'key', text: '/' },
+    { type: 'action', id: 'TABS_OVERVIEW', fallbackText: 'Tabs Overview' },
+    { type: 'action', id: STOCK_SOCIAL_MEDIA_ACTION_ID, fallbackText: 'Social media' },
     { type: 'special', text: 'Shift', className: 'key key-shift' }
   ]
 ]);
@@ -1459,12 +1502,12 @@ const KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
   ],
   [
     { type: 'special', text: 'Shift', className: 'key key-shift' },
-    { type: 'key', text: 'Z' },
-    { type: 'key', text: 'X' },
+    { type: 'action', id: STOCK_SOCIAL_MEDIA_ACTION_ID, fallbackText: 'Social media' }, // Z, mirror of /
+    { type: 'action', id: 'TABS_OVERVIEW', fallbackText: 'Tabs Overview' }, // X
     { type: 'key', text: 'C' },
     { type: 'key', text: 'V' },
-    { type: 'action', id: 'PAGE_BOTTOM', fallbackText: 'Scroll To Bottom' }, // B
-    { type: 'action', id: 'ACTIVATE_NEW_TAB', fallbackText: 'Click New Tab' }, // N
+    { type: 'action', id: 'ACTIVATE_NEW_TAB', fallbackText: 'Click New Tab' }, // B
+    { type: 'action', id: 'PAGE_BOTTOM', fallbackText: 'Scroll To Bottom' }, // N
     { type: 'action', id: 'PAGE_DOWN_INSTANT', fallbackText: 'Page Down' }, // M
     { type: 'action', id: 'PAGE_UP_INSTANT', fallbackText: 'Page Up' }, // ,
     { type: 'key', text: '.' },

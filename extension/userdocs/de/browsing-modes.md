@@ -6,7 +6,7 @@ KeyPilot verwendet modale Zustände für Vorgänge, die eine kontinuierliche Ein
 
 1. **Normales Surfen** – Verknüpfungen aktiv; Fokusrechtecke zeigen anklickbare Ziele.
 2. **Textmodus** – drücken Sie <kbd>F</kbd> in einem Textfeld. Geben Sie normal ein. Drücken Sie <kbd>Esc</kbd> (oder das Exit-Steuerelement in der Tastaturreferenz), wenn Sie fertig sind.
-3. **Bildlaufzeile** – drücken Sie <kbd>N</kbd>; Bewegen Sie sich vom Ursprung weg, um zu scrollen. <kbd>N</kbd>, klicken Sie, oder <kbd>Esc</kbd> wird beendet.
+3. **Bildlaufzeile** – drücken Sie <kbd>B</kbd>; Bewegen Sie sich vom Ursprung weg, um zu scrollen. <kbd>B</kbd>, klicken Sie, oder <kbd>Esc</kbd> wird beendet.
 4. **Auswahl** – <kbd>H</kbd> oder <kbd>Y</kbd>; <kbd>Esc</kbd> bricht ab.
 5. **Löschmodus** – drücken Sie <kbd>Backspace</kbd>, zielen Sie auf ein Element und bestätigen Sie, um es von der Seite zu entfernen; <kbd>Esc</kbd> bricht ab.
 6. **Popovers / Omnibox / Layout-Editor** – ihre eigenen Öffnungszustände; <kbd>Esc</kbd> oder die Schließtaste des Tools verwerfen sie.
