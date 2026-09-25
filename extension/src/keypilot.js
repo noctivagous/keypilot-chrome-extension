@@ -133,7 +133,7 @@ import {
   isReaderModeOverlayOpen,
   requestCloseReaderModeOverlay
 } from './ui/reader-mode-overlay.js';
-import { extractReaderArticle, isReaderModeRestrictedUrl } from './utils/reader-mode-extract.js';
+import { isReaderModeRestrictedUrl } from './utils/reader-mode-extract.js';
 import {
   openMediaLibraryOverlay,
   closeMediaLibraryOverlay,
@@ -5672,13 +5672,14 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
    * Press again or Esc to close.
    * @param {KeyboardEvent} [e]
    */
-  handleReaderModeKey(e) {
+  async handleReaderModeKey(e) {
     if (!this._allowActionKey('handleReaderModeKey', e)) return;
 
     if (isReaderModeOverlayOpen()) {
       closeReaderModeOverlay();
       return;
     }
+    if (this._readerModeLoading) return;
 
     const pageUrl = (() => {
       try { return String(window.location?.href || ''); } catch { return ''; }
@@ -5689,8 +5690,10 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     }
 
     let article = null;
+    this._readerModeLoading = true;
     try {
-      article = extractReaderArticle({
+      const { extractReaderArticle } = await import('./utils/reader-mode-extract.js');
+      article = await extractReaderArticle({
         document,
         selectionText: this.getSelectedPlainText(),
         pageTitle: document.title,
@@ -5698,6 +5701,8 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
       });
     } catch (error) {
       console.warn('[KeyPilot] extractReaderArticle failed:', error);
+    } finally {
+      this._readerModeLoading = false;
     }
 
     if (!article?.html) {

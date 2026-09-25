@@ -3,7 +3,6 @@
  * Readability runs on a document clone and never mutates the live page.
  */
 
-import { Readability, isProbablyReaderable } from '@mozilla/readability';
 import { isContentScriptRestrictedUrl } from '../config/url-policy.js';
 
 /** Shortest explicit text selection worth showing. */
@@ -194,12 +193,12 @@ export function htmlFromSelection(text) {
  *   selectionText?: string|null,
  *   pageTitle?: string|null,
  *   pageUrl?: string|null,
- *   Readability?: typeof Readability,
- *   isProbablyReaderable?: typeof isProbablyReaderable
+ *   Readability?: new (document: Document) => { parse: () => any },
+ *   isProbablyReaderable?: (document: Document) => boolean
  * }} opts
- * @returns {ReaderArticle|null}
+ * @returns {Promise<ReaderArticle|null>}
  */
-export function extractReaderArticle(opts) {
+export async function extractReaderArticle(opts) {
   const doc = opts?.document;
   const pageUrl = opts?.pageUrl != null ? String(opts.pageUrl) : '';
   if (pageUrl && isReaderModeRestrictedUrl(pageUrl)) return null;
@@ -214,7 +213,13 @@ export function extractReaderArticle(opts) {
 
   if (!doc || typeof doc.cloneNode !== 'function') return null;
 
-  const Ctor = opts?.Readability || Readability;
+  let Ctor = opts?.Readability;
+  let readerable = opts?.isProbablyReaderable;
+  if (typeof Ctor !== 'function' || typeof readerable !== 'function') {
+    const readability = await import('@mozilla/readability');
+    Ctor ||= readability.Readability;
+    readerable ||= readability.isProbablyReaderable;
+  }
   if (typeof Ctor !== 'function') return null;
 
   let clone = null;
@@ -228,8 +233,7 @@ export function extractReaderArticle(opts) {
   prunePromoRegions(clone);
 
   let parsed = null;
-  const readerable = pageLooksReaderable(clone, opts?.isProbablyReaderable || isProbablyReaderable);
-  if (readerable) {
+  if (pageLooksReaderable(clone, readerable)) {
     try {
       const forParse = typeof clone.cloneNode === 'function' ? clone.cloneNode(true) : clone;
       parsed = new Ctor(forParse).parse();

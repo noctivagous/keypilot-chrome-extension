@@ -16,7 +16,7 @@ import {
 } from '../extension/src/utils/reader-mode-extract.js';
 
 describe('reader mode extract', () => {
-  it('prefers a non-empty selection over Readability', () => {
+  it('prefers a non-empty selection over Readability', async () => {
     let constructed = false;
     class FakeReadability {
       constructor() { constructed = true; }
@@ -29,7 +29,7 @@ describe('reader mode extract', () => {
       }
     }
 
-    const article = extractReaderArticle({
+    const article = await extractReaderArticle({
       document: { cloneNode() { return {}; } },
       selectionText: 'Hello\n\nWorld',
       pageTitle: 'Example',
@@ -43,7 +43,7 @@ describe('reader mode extract', () => {
     assert.equal(article.html, '<p>Hello</p><p>World</p>');
   });
 
-  it('uses Readability when there is no selection', () => {
+  it('uses Readability when there is no selection', async () => {
     class FakeReadability {
       constructor(doc) {
         this.doc = doc;
@@ -61,7 +61,7 @@ describe('reader mode extract', () => {
       }
     }
 
-    const article = extractReaderArticle({
+    const article = await extractReaderArticle({
       document: { cloneNode() { return { cloned: true }; } },
       selectionText: '   ',
       pageTitle: 'Fallback',
@@ -78,14 +78,14 @@ describe('reader mode extract', () => {
     assert.equal(READABILITY_MIN_CHARS, 500);
   });
 
-  it('returns null when Readability finds too little text', () => {
+  it('returns null when Readability finds too little text', async () => {
     class FakeReadability {
       parse() {
         return { title: 'T', content: '<p>Hi</p>', textContent: 'Hi' };
       }
     }
 
-    const article = extractReaderArticle({
+    const article = await extractReaderArticle({
       document: { cloneNode() { return {}; } },
       pageUrl: 'https://example.com/',
       Readability: FakeReadability
@@ -95,11 +95,11 @@ describe('reader mode extract', () => {
     assert.ok(MIN_ARTICLE_CHARS > 10);
   });
 
-  it('rejects restricted URLs', () => {
+  it('rejects restricted URLs', async () => {
     assert.equal(isReaderModeRestrictedUrl('chrome://settings'), true);
     assert.equal(isReaderModeRestrictedUrl('https://example.com/post'), false);
 
-    const article = extractReaderArticle({
+    const article = await extractReaderArticle({
       document: { cloneNode() { return {}; } },
       selectionText: 'Plenty of selected text for a reader overlay.',
       pageUrl: 'chrome://extensions',
@@ -121,7 +121,7 @@ describe('reader mode extract', () => {
     assert.equal(extractIsTooNarrow(8000, 15000), false);
   });
 
-  it('falls back to the primary column when Readability returns a promo sliver', () => {
+  it('falls back to the primary column when Readability returns a promo sliver', async () => {
     const riverText = 'Top News item '.repeat(400);
     const river = {
       id: 'topcol1',
@@ -147,7 +147,7 @@ describe('reader mode extract', () => {
       }
     }
 
-    const article = extractReaderArticle({
+    const article = await extractReaderArticle({
       document: { cloneNode: () => clone },
       pageTitle: 'Techmeme',
       pageUrl: 'https://www.techmeme.com/',
@@ -189,7 +189,7 @@ describe('reader mode extract', () => {
     assert.doesNotMatch(selector, /(^|,\s*)header(\s*,|$)/);
   });
 
-  it('skips Readability when the page does not look readerable', () => {
+  it('skips Readability when the page does not look readerable', async () => {
     let constructed = false;
     class FakeReadability {
       constructor() { constructed = true; }
@@ -199,7 +199,7 @@ describe('reader mode extract', () => {
       }
     }
     const riverText = 'Column text '.repeat(40);
-    const article = extractReaderArticle({
+    const article = await extractReaderArticle({
       document: {
         cloneNode() {
           return {
