@@ -3,9 +3,13 @@
  * Semantic DOM click implementation remains in ActivationHandler.
  * Layout dispatch stays `this[handler]()`; these methods run with KeyPilot as `this`.
  */
-import { COLORS, MODES } from '../config/constants.js';
+import { COLORS, CSS_CLASSES, MODES } from '../config/constants.js';
 import { MSG } from '../messaging/types.js';
 import { closestComposed, containsComposed } from '../ui/kp-chrome-shadow.js';
+import { NCT_DARK_UI_BACKDROP_CLASS } from '../ui/nct-dark-ui.js';
+import { requestClosePageMediaOverlay } from '../ui/page-media-overlay.js';
+import { requestCloseMediaLibraryOverlay } from '../ui/media-library-overlay.js';
+import { requestCloseReaderModeOverlay } from '../ui/reader-mode-overlay.js';
 import { pinKeyPopover } from '../ui/keybindings-ui.js';
 import { findMapSurfaceAtPoint } from '../utils/map-surface-drag.js';
 import { noteExtensionContextError } from '../utils/extension-context.js';
@@ -13,10 +17,61 @@ import { noteExtensionContextError } from '../utils/extension-context.js';
 /** @param {Function} Base */
 export function withActivationHandlers(Base) {
   return class ActivationHandlers extends Base {
+  /**
+   * F on the dimmed backdrop behind KeyPilot chrome closes that surface.
+   * The panel itself stays clickable. Pointer position decides, not focus.
+   * @param {number} x
+   * @param {number} y
+   * @returns {boolean}
+   */
+  _dismissBackdropUnderCursor(x, y) {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return false;
+    let under = null;
+    try {
+      under = this.detector?.deepElementFromPoint?.(x, y);
+    } catch {
+      under = null;
+    }
+    if (!under || under.nodeType !== 1) return false;
+
+    const omnibox = this.omniboxManager;
+    let dismissed = false;
+    if (omnibox?.isOpen?.() && closestComposed(under, `.${CSS_CLASSES.OMNIBOX_BACKDROP}`)) {
+      if (!closestComposed(under, `.${CSS_CLASSES.OMNIBOX_PANEL}`)) {
+        this.handleCloseOmnibox?.();
+        dismissed = true;
+      }
+    } else if (under.classList?.contains?.(CSS_CLASSES.POPUP_BACKDROP)) {
+      const pm = this.overlayManager?.popupManager;
+      if (pm?.isOpen?.()) {
+        pm.requestCloseTop?.();
+        dismissed = true;
+      }
+    }
+    if (!dismissed && under.classList?.contains?.(NCT_DARK_UI_BACKDROP_CLASS)) {
+      const host = closestComposed(under, '#kpv2-page-media-overlay, #kpv2-media-lib-overlay, #kpv2-reader-overlay');
+      const id = host?.id || '';
+      if (id === 'kpv2-page-media-overlay') {
+        requestClosePageMediaOverlay();
+        dismissed = true;
+      } else if (id === 'kpv2-media-lib-overlay') {
+        requestCloseMediaLibraryOverlay();
+        dismissed = true;
+      } else if (id === 'kpv2-reader-overlay') {
+        requestCloseReaderModeOverlay();
+        dismissed = true;
+      }
+    }
+    if (dismissed) this.showRipple?.(x, y);
+    return dismissed;
+  }
+
   handleActivateKey() {
     const currentState = this.state.getState();
     const x = currentState.lastMouse.x;
     const y = currentState.lastMouse.y;
+
+    if (this._dismissBackdropUnderCursor(x, y)) return;
 
     // Cross-origin iframes (Google account switcher, etc.): forward into the frame.
     if (this._tryActivateIframeUnderCursor(x, y, {})) {

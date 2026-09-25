@@ -150,17 +150,22 @@ export function substitutionsForSlot(slot, copyEntry, captureHref) {
     values[`callout.${index}`] = text;
     const kbd = splitCalloutKbd(text);
     if (kbd) {
-      const beforeWidth = estimateTitilliumWidth(kbd.before, 22);
+      const beforeWidth = estimateTitilliumWidth(kbd.before, CALLOUT_FONT_SIZE);
       const kbdX = Math.round(40 + beforeWidth + 8);
       values[`callout.${index}.before`] = kbd.before;
       values[`callout.${index}.kbd`] = kbd.kbd;
       values[`callout.${index}.after`] = kbd.after || ' ';
       values[`callout.${index}.kbdX`] = String(kbdX);
-      values[`callout.${index}.afterX`] = String(kbdX + 22 + 6);
+      values[`callout.${index}.afterX`] = String(kbdX + KBD_CHIP_SIZE + 6);
     }
   }
   return values;
 }
+
+/** Footer callout type, 1.15× the previous 22px size. */
+const CALLOUT_FONT_SIZE = 25.3;
+/** Inline key chip, scaled with the callout so the legend stays centered on the line. */
+const KBD_CHIP_SIZE = 25.3;
 
 function splitCalloutKbd(text) {
   const match = String(text).match(/^(.*)\[\[([A-Za-z0-9]+)\]\](.*)$/s);

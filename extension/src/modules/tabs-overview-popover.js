@@ -360,6 +360,9 @@ export class TabsOverviewPopover {
         height: 16px;
         flex: 0 0 auto;
         display: block;
+        filter:
+          drop-shadow(0 1px 1px rgba(255, 255, 255, 0.45))
+          drop-shadow(0 0 3px rgba(255, 255, 255, 0.35));
       }
 
       .kpv2-tabs-overview-panel .kpv2-tabs-overview-window-name {
@@ -424,16 +427,10 @@ export class TabsOverviewPopover {
 
       .kpv2-tabs-overview-panel .kpv2-tabs-overview-tab-text {
         min-width: 0;
+        flex: 1 1 auto;
         display: flex;
         flex-direction: column;
         gap: 1px;
-      }
-
-      .kpv2-tabs-overview-panel .kpv2-tabs-overview-tab-title-row {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        min-width: 0;
       }
 
       .kpv2-tabs-overview-panel .kpv2-tabs-overview-tab-title {
@@ -448,8 +445,12 @@ export class TabsOverviewPopover {
       .kpv2-tabs-overview-panel .kpv2-tabs-overview-tab-glyph {
         width: 22px;
         height: 12px;
+        margin-left: auto;
         flex: 0 0 auto;
         display: block;
+        filter:
+          drop-shadow(0 1px 1px rgba(255, 255, 255, 0.45))
+          drop-shadow(0 0 3px rgba(255, 255, 255, 0.35));
       }
 
       .kpv2-tabs-overview-panel .kpv2-tabs-overview-tab-url {
@@ -650,23 +651,17 @@ export class TabsOverviewPopover {
         const text = doc.createElement('span');
         text.className = 'kpv2-tabs-overview-tab-text';
 
-        const titleRow = doc.createElement('span');
-        titleRow.className = 'kpv2-tabs-overview-tab-title-row';
-
         const titleEl = doc.createElement('span');
         titleEl.className = 'kpv2-tabs-overview-tab-title';
         titleEl.textContent = title;
-
-        titleRow.append(titleEl, tabIcon(doc));
 
         const urlEl = doc.createElement('span');
         urlEl.className = 'kpv2-tabs-overview-tab-url';
         urlEl.textContent = host || url;
 
-        text.appendChild(titleRow);
+        text.appendChild(titleEl);
         if (urlEl.textContent) text.appendChild(urlEl);
-        row.appendChild(icon);
-        row.appendChild(text);
+        row.append(icon, text, tabIcon(doc));
         row.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();

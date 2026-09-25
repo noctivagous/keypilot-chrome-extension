@@ -18,9 +18,9 @@
       data-copy="callout.0"
       data-max-chars="72"
       x="0"
-      y="21"
+      y="21.5"
       fill="#f4f6f8"
       font-family="Titillium Web, Segoe UI, system-ui, sans-serif"
-      font-size="22">{{callout.0}}</text>
+      font-size="25.3">{{callout.0}}</text>
   </g>
 </svg>

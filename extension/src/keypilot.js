@@ -3175,6 +3175,17 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
         this.handleCloseOmnibox();
         return;
       }
+      // F on the blurred page behind the omnibox closes it. The field stays
+      // focused while it is open, so this has to run before character insert.
+      if (this._matchesKeybinding(KB.ACTIVATE, e)) {
+        const mouse = currentState.lastMouse;
+        if (this._dismissBackdropUnderCursor(mouse?.x, mouse?.y)) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          return;
+        }
+      }
       // When the input already has the event, do not stop here (document
       // capture): that would keep keydown from reaching the field. The
       // omnibox input listener stops bubbling without preventDefault.

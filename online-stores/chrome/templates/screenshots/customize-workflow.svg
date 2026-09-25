@@ -19,10 +19,10 @@
       data-copy="callout.0"
       data-max-chars="72"
       x="40"
-      y="21"
+      y="21.5"
       fill="#f4f6f8"
       font-family="Titillium Web, Segoe UI, system-ui, sans-serif"
-      font-size="22">{{callout.0}}</text>
+      font-size="25.3">{{callout.0}}</text>
   </g>
   <g transform="translate(420,732)">
     <path d="M5 14 H20 M14 8 L21 14 L14 20" fill="none" stroke="#ff8c00" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
@@ -30,9 +30,9 @@
       data-copy="callout.1"
       data-max-chars="72"
       x="40"
-      y="21"
+      y="21.5"
       fill="#f4f6f8"
       font-family="Titillium Web, Segoe UI, system-ui, sans-serif"
-      font-size="22">{{callout.1}}</text>
+      font-size="25.3">{{callout.1}}</text>
   </g>
 </svg>
