@@ -4,7 +4,8 @@ import { describe, it } from 'node:test';
 import {
   PAGE_ZOOM_PRESETS,
   scrollToKeepPoint,
-  stepZoomFactor
+  stepZoomFactor,
+  zoomPreviewScale
 } from '../extension/src/utils/page-zoom.js';
 
 describe('page zoom steps', () => {
@@ -34,6 +35,13 @@ describe('zoom anchor scroll', () => {
     const scale = 1 / 1.1;
     assert.ok(Math.abs((next.x + client.x * scale) - docX) < 1e-9);
     assert.ok(Math.abs((next.y + client.y * scale) - docY) < 1e-9);
+  });
+
+  it('previews a zoom step as a CSS scale against the committed factor', () => {
+    assert.equal(zoomPreviewScale(1, 1.1), 1.1);
+    assert.ok(Math.abs(zoomPreviewScale(1, 1.25) - 1.25) < 1e-9);
+    assert.equal(zoomPreviewScale(1, 1), 1);
+    assert.equal(zoomPreviewScale(0, 1.1), 1);
   });
 
   it('leaves scroll unchanged when the factor does not change', () => {

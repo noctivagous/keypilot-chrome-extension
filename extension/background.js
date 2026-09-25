@@ -3155,9 +3155,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           }
           try {
             const oldZoom = await chrome.tabs.getZoom(tabId);
-            const newZoom = stepZoomFactor(oldZoom, direction);
+            const requested = Number(message.zoomFactor);
+            const newZoom = Number.isFinite(requested) && requested > 0
+              ? Math.min(5, Math.max(0.25, requested))
+              : stepZoomFactor(oldZoom, direction);
             const changed = Math.abs(newZoom - oldZoom) > 0.001;
-            if (changed) await chrome.tabs.setZoom(tabId, newZoom);
+            if (changed && message.apply !== false) await chrome.tabs.setZoom(tabId, newZoom);
             sendResponse({ type: MSG.SUCCESS, changed, oldZoom, newZoom });
           } catch (error) {
             console.error('Failed to zoom tab:', error);

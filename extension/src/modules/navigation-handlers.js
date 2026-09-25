@@ -26,7 +26,7 @@ import {
   SCROLL_LINE_MAP_DRAG_ENABLED
 } from '../utils/map-surface-drag.js';
 import { noteExtensionContextError, safeRuntimeSendMessage } from '../utils/extension-context.js';
-import { scrollToKeepPoint } from '../utils/page-zoom.js';
+import { scrollToKeepPoint, stepZoomFactor, ZOOM_PREVIEW_MS, zoomPreviewScale } from '../utils/page-zoom.js';
 import { shouldShowScrollLineTargetBox } from './scroll-line-overlay.js';
 
 /** @param {Function} Base */
@@ -128,42 +128,228 @@ export function withNavigationHandlers(Base) {
   }
 
   /**
-   * Step browser tab zoom and keep the pre-zoom document point under the cursor.
-   * Repeats queue one pending step so a held key cannot overlap setZoom calls.
+   * Preview the next browser zoom step with a CSS scale at the cursor, then
+   * commit it with chrome.tabs.setZoom. Further presses before the commit
+   * retarget the same preview. The transform stays up until setZoom returns
+   * so the page does not snap back to the old factor first.
    * @param {number} direction Positive zooms in.
    */
   _zoomAtCursor(direction) {
     const dir = direction > 0 ? 1 : -1;
-    if (this._zoomBusy) {
+    const gesture = this._zoomGesture;
+    if (gesture?.committing) {
       this._zoomQueued = dir;
       return;
     }
-    this._zoomBusy = true;
-    const point = this._getScrollCursorPoint();
-    const scrollX = window.scrollX || 0;
-    const scrollY = window.scrollY || 0;
+    if (gesture?.starting) {
+      gesture.pendingDir = dir;
+      return;
+    }
+    if (gesture) {
+      this._zoomRetarget(gesture, dir);
+      return;
+    }
+    this._zoomBegin(dir);
+  }
 
-    let settled = false;
-    const finish = () => {
-      if (settled) return;
-      settled = true;
-      this._zoomBusy = false;
-      const queued = this._zoomQueued;
-      this._zoomQueued = 0;
-      if (queued) this._zoomAtCursor(queued);
+  /**
+   * @param {1|-1} direction
+   */
+  _zoomBegin(direction) {
+    const point = this._getScrollCursorPoint();
+    /** @type {any} */
+    const gesture = {
+      starting: true,
+      committing: false,
+      previewing: false,
+      pendingDir: 0,
+      gen: 0,
+      point,
+      scrollX: window.scrollX || 0,
+      scrollY: window.scrollY || 0,
+      browserZoom: 1,
+      targetZoom: 1,
+      savedStyle: null,
+      timer: 0,
+      onEnd: null
+    };
+    this._zoomGesture = gesture;
+
+    const finishStart = (response) => {
+      if (this._zoomGesture !== gesture) return;
+      const ok = response && typeof response === 'object' && response.type === MSG.SUCCESS;
+      const browserZoom = ok ? Number(response.oldZoom) : Number.NaN;
+      if (!ok || !Number.isFinite(browserZoom) || browserZoom <= 0) {
+        this._zoomGesture = null;
+        this._zoomDrainQueue();
+        return;
+      }
+      let target = Number(response.newZoom);
+      if (!Number.isFinite(target) || target <= 0) target = browserZoom;
+      const extra = gesture.pendingDir;
+      gesture.pendingDir = 0;
+      if (extra) target = stepZoomFactor(target, extra);
+      gesture.starting = false;
+      gesture.browserZoom = browserZoom;
+      gesture.targetZoom = target;
+      if (Math.abs(target - browserZoom) < 0.001) {
+        this._zoomGesture = null;
+        this._zoomDrainQueue();
+        return;
+      }
+      this._zoomPaintPreview(gesture);
+      this._zoomArmCommit(gesture);
     };
 
-    const sent = safeRuntimeSendMessage({ type: MSG.ZOOM_STEP, direction: dir }, {
+    const sent = safeRuntimeSendMessage({
+      type: MSG.ZOOM_STEP,
+      direction,
+      apply: false
+    }, {
       onInvalidated: () => {
         try { this._handleExtensionContextInvalidated?.(); } catch { /* ignore */ }
-        finish();
+        if (this._zoomGesture === gesture) this._zoomGesture = null;
       },
-      onError: () => finish(),
+      onError: () => {
+        if (this._zoomGesture === gesture) this._zoomGesture = null;
+        this._zoomDrainQueue();
+      },
+      onResponse: finishStart
+    });
+    if (!sent && this._zoomGesture === gesture) this._zoomGesture = null;
+  }
+
+  /**
+   * @param {any} gesture
+   * @param {1|-1} direction
+   */
+  _zoomRetarget(gesture, direction) {
+    const next = stepZoomFactor(gesture.targetZoom, direction);
+    if (Math.abs(next - gesture.targetZoom) < 0.001) return;
+    gesture.targetZoom = next;
+    gesture.gen += 1;
+    this._zoomPaintPreview(gesture);
+    this._zoomArmCommit(gesture);
+  }
+
+  /**
+   * @param {any} gesture
+   */
+  _zoomPaintPreview(gesture) {
+    const root = document.documentElement;
+    if (!root) return;
+    if (!gesture.savedStyle) {
+      gesture.savedStyle = {
+        transform: root.style.transform,
+        transformOrigin: root.style.transformOrigin,
+        transition: root.style.transition
+      };
+      const rect = root.getBoundingClientRect();
+      gesture.originX = gesture.point.x - rect.left;
+      gesture.originY = gesture.point.y - rect.top;
+    }
+    const scale = zoomPreviewScale(gesture.browserZoom, gesture.targetZoom);
+    root.style.transition = 'none';
+    root.style.transformOrigin = `${gesture.originX}px ${gesture.originY}px`;
+    if (!gesture.previewing) {
+      root.style.transform = 'scale(1)';
+      gesture.previewing = true;
+    }
+    void root.getBoundingClientRect();
+    root.style.transition = `transform ${ZOOM_PREVIEW_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`;
+    root.style.transform = `scale(${scale})`;
+  }
+
+  /**
+   * @param {any} gesture
+   */
+  _zoomArmCommit(gesture) {
+    const root = document.documentElement;
+    if (!root) return;
+    if (gesture.onEnd) root.removeEventListener('transitionend', gesture.onEnd);
+    if (gesture.timer) clearTimeout(gesture.timer);
+    const gen = gesture.gen;
+    const commit = (event) => {
+      if (event && event.target !== root) return;
+      if (event && event.propertyName && event.propertyName !== 'transform') return;
+      if (this._zoomGesture !== gesture || gesture.gen !== gen || gesture.committing) return;
+      this._zoomCommit(gesture);
+    };
+    gesture.onEnd = commit;
+    root.addEventListener('transitionend', commit);
+    gesture.timer = setTimeout(commit, ZOOM_PREVIEW_MS + 50);
+  }
+
+  /**
+   * @param {any} gesture
+   */
+  _zoomCommit(gesture) {
+    if (gesture.committing) return;
+    gesture.committing = true;
+    const root = document.documentElement;
+    if (gesture.onEnd && root) root.removeEventListener('transitionend', gesture.onEnd);
+    if (gesture.timer) clearTimeout(gesture.timer);
+
+    if (Math.abs(gesture.targetZoom - gesture.browserZoom) < 0.001) {
+      this._zoomRestoreStyle(gesture);
+      this._zoomGesture = null;
+      this._zoomDrainQueue();
+      return;
+    }
+
+    const sent = safeRuntimeSendMessage({
+      type: MSG.ZOOM_STEP,
+      zoomFactor: gesture.targetZoom
+    }, {
+      onInvalidated: () => {
+        try { this._handleExtensionContextInvalidated?.(); } catch { /* ignore */ }
+        this._zoomRestoreStyle(gesture);
+        if (this._zoomGesture === gesture) this._zoomGesture = null;
+      },
+      onError: () => {
+        this._zoomRestoreStyle(gesture);
+        if (this._zoomGesture === gesture) this._zoomGesture = null;
+        this._zoomDrainQueue();
+      },
       onResponse: (response) => {
-        try { this._applyZoomAnchor(response, point, scrollX, scrollY); } finally { finish(); }
+        this._zoomRestoreStyle(gesture);
+        try {
+          this._applyZoomAnchor(response, gesture.point, gesture.scrollX, gesture.scrollY);
+        } finally {
+          if (this._zoomGesture === gesture) this._zoomGesture = null;
+          this._zoomDrainQueue();
+        }
       }
     });
-    if (!sent) finish();
+    if (!sent) {
+      this._zoomRestoreStyle(gesture);
+      if (this._zoomGesture === gesture) this._zoomGesture = null;
+    }
+  }
+
+  /**
+   * Drop the preview transform without animating back through scale(1).
+   * @param {any} gesture
+   */
+  _zoomRestoreStyle(gesture) {
+    const root = document.documentElement;
+    if (!root || !gesture?.savedStyle) return;
+    if (gesture.onEnd) root.removeEventListener('transitionend', gesture.onEnd);
+    if (gesture.timer) clearTimeout(gesture.timer);
+    const saved = gesture.savedStyle;
+    gesture.savedStyle = null;
+    gesture.previewing = false;
+    root.style.transition = 'none';
+    root.style.transform = saved.transform;
+    root.style.transformOrigin = saved.transformOrigin;
+    void root.getBoundingClientRect();
+    root.style.transition = saved.transition;
+  }
+
+  _zoomDrainQueue() {
+    const queued = this._zoomQueued;
+    this._zoomQueued = 0;
+    if (queued) this._zoomAtCursor(queued);
   }
 
   /**

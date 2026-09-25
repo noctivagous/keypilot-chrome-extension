@@ -17,6 +17,118 @@ import {
 import { ensureOpenChromeShadow, injectChromeStyles } from '../ui/kp-chrome-shadow.js';
 import { MSG } from '../messaging/types.js';
 
+const SVG_NS = 'http://www.w3.org/2000/svg';
+let shadeSeq = 0;
+
+/**
+ * @param {Document} doc
+ * @param {string} name
+ * @param {Record<string, string>} attrs
+ * @returns {SVGElement}
+ */
+function svgEl(doc, name, attrs) {
+  const node = doc.createElementNS(SVG_NS, name);
+  for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
+  return node;
+}
+
+/**
+ * Dark GUI Pro vertical bevel. Each glyph owns its gradient so the fill
+ * resolves inside that SVG.
+ * @param {Document} doc
+ * @param {string} id
+ * @param {Array<[string, string]>} stops
+ * @returns {SVGElement}
+ */
+function shadeGradient(doc, id, stops) {
+  const grad = svgEl(doc, 'linearGradient', {
+    id,
+    x1: '0',
+    y1: '0',
+    x2: '0',
+    y2: '1'
+  });
+  for (const [offset, color] of stops) {
+    grad.append(svgEl(doc, 'stop', { offset, 'stop-color': color }));
+  }
+  return grad;
+}
+
+/** @returns {{ body: string, bar: string, defs: SVGElement }} */
+function shadeIds(doc) {
+  const n = ++shadeSeq;
+  const bodyId = `kpTabsOverviewShade${n}`;
+  const barId = `kpTabsOverviewShadeBar${n}`;
+  const defs = svgEl(doc, 'defs', {});
+  defs.append(
+    shadeGradient(doc, bodyId, [
+      ['0', '#4c4c4c'],
+      ['0.45', '#353535'],
+      ['1', '#252525']
+    ]),
+    shadeGradient(doc, barId, [
+      ['0', '#5a5a5a'],
+      ['0.5', '#404040'],
+      ['1', '#323232']
+    ])
+  );
+  return { body: `url(#${bodyId})`, bar: `url(#${barId})`, defs };
+}
+
+/**
+ * @param {Document} doc
+ * @returns {SVGElement}
+ */
+function windowIcon(doc) {
+  const shade = shadeIds(doc);
+  const svg = svgEl(doc, 'svg', {
+    class: 'kpv2-tabs-overview-window-icon',
+    viewBox: '0 0 16 16',
+    'aria-hidden': 'true'
+  });
+  svg.append(shade.defs);
+  svg.append(svgEl(doc, 'rect', {
+    x: '1.15',
+    y: '2.15',
+    width: '13.7',
+    height: '11.7',
+    rx: '1.6',
+    fill: shade.body,
+    stroke: '#111',
+    'stroke-width': '0.85'
+  }));
+  svg.append(svgEl(doc, 'path', {
+    d: 'M1.15 3.75c0-.88.72-1.6 1.6-1.6h10.5c.88 0 1.6.72 1.6 1.6V6.05H1.15V3.75z',
+    fill: shade.bar,
+    stroke: '#111',
+    'stroke-width': '0.85'
+  }));
+  return svg;
+}
+
+/**
+ * Browser-tab silhouette: low shoulder, raised tab, low shoulder.
+ * @param {Document} doc
+ * @returns {SVGElement}
+ */
+function tabIcon(doc) {
+  const shade = shadeIds(doc);
+  const svg = svgEl(doc, 'svg', {
+    class: 'kpv2-tabs-overview-tab-glyph',
+    viewBox: '0 0 26 14',
+    'aria-hidden': 'true'
+  });
+  svg.append(shade.defs);
+  svg.append(svgEl(doc, 'path', {
+    d: 'M0.7 12.55H5.15Q6.35 12.55 7.45 8.15Q8.45 4.15 10.35 4.15H15.65Q17.55 4.15 18.55 8.15Q19.65 12.55 20.85 12.55H25.3V13.4H0.7Z',
+    fill: shade.body,
+    stroke: '#111',
+    'stroke-width': '0.85',
+    'stroke-linejoin': 'round'
+  }));
+  return svg;
+}
+
 /**
  * @param {string} url
  * @returns {string}
@@ -235,6 +347,21 @@ export class TabsOverviewPopover {
         outline: none;
       }
 
+      .kpv2-tabs-overview-panel .kpv2-tabs-overview-window-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        flex: 1 1 auto;
+      }
+
+      .kpv2-tabs-overview-panel .kpv2-tabs-overview-window-icon {
+        width: 16px;
+        height: 16px;
+        flex: 0 0 auto;
+        display: block;
+      }
+
       .kpv2-tabs-overview-panel .kpv2-tabs-overview-window-name {
         font-size: 13px;
         font-weight: 700;
@@ -302,12 +429,27 @@ export class TabsOverviewPopover {
         gap: 1px;
       }
 
+      .kpv2-tabs-overview-panel .kpv2-tabs-overview-tab-title-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+      }
+
       .kpv2-tabs-overview-panel .kpv2-tabs-overview-tab-title {
         font-size: 13px;
         font-weight: 600;
+        min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+      }
+
+      .kpv2-tabs-overview-panel .kpv2-tabs-overview-tab-glyph {
+        width: 22px;
+        height: 12px;
+        flex: 0 0 auto;
+        display: block;
       }
 
       .kpv2-tabs-overview-panel .kpv2-tabs-overview-tab-url {
@@ -461,16 +603,20 @@ export class TabsOverviewPopover {
       headerBtn.className = 'kpv2-tabs-overview-window-header';
       headerBtn.setAttribute('aria-label', `${name}. ${getMessage('tabs_overview_focus_window')}`);
 
+      const titleCluster = doc.createElement('span');
+      titleCluster.className = 'kpv2-tabs-overview-window-title';
+
       const nameEl = doc.createElement('span');
       nameEl.className = 'kpv2-tabs-overview-window-name';
       nameEl.textContent = name;
+
+      titleCluster.append(windowIcon(doc), nameEl);
 
       const metaEl = doc.createElement('span');
       metaEl.className = 'kpv2-tabs-overview-window-meta';
       metaEl.textContent = tabCountLabel(tabs.length);
 
-      headerBtn.appendChild(nameEl);
-      headerBtn.appendChild(metaEl);
+      headerBtn.append(titleCluster, metaEl);
       headerBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -504,15 +650,20 @@ export class TabsOverviewPopover {
         const text = doc.createElement('span');
         text.className = 'kpv2-tabs-overview-tab-text';
 
+        const titleRow = doc.createElement('span');
+        titleRow.className = 'kpv2-tabs-overview-tab-title-row';
+
         const titleEl = doc.createElement('span');
         titleEl.className = 'kpv2-tabs-overview-tab-title';
         titleEl.textContent = title;
+
+        titleRow.append(titleEl, tabIcon(doc));
 
         const urlEl = doc.createElement('span');
         urlEl.className = 'kpv2-tabs-overview-tab-url';
         urlEl.textContent = host || url;
 
-        text.appendChild(titleEl);
+        text.appendChild(titleRow);
         if (urlEl.textContent) text.appendChild(urlEl);
         row.appendChild(icon);
         row.appendChild(text);

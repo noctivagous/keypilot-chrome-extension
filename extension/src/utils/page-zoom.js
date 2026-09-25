@@ -5,7 +5,12 @@
  * does not take a focal point, so the caller scrolls after the factor changes
  * to keep the CSS document point under the cursor fixed — the same result as a
  * pinch gesture on in-flow page content.
+ *
+ * The key handler previews the step with a CSS scale, then commits with setZoom.
  */
+
+/** CSS preview length before the browser zoom commit. */
+export const ZOOM_PREVIEW_MS = 180;
 
 /** Chromium preset browser zoom factors (`page_zoom.cc`). */
 export const PAGE_ZOOM_PRESETS = Object.freeze([
@@ -58,6 +63,19 @@ export function stepZoomFactor(current, direction) {
     if (PAGE_ZOOM_PRESETS[i] < base) return PAGE_ZOOM_PRESETS[i];
   }
   return PAGE_ZOOM_PRESETS[0];
+}
+
+/**
+ * CSS scale that previews a browser-zoom step while the tab zoom is unchanged.
+ * @param {number} browserZoom Last committed tab zoom
+ * @param {number} targetZoom
+ * @returns {number}
+ */
+export function zoomPreviewScale(browserZoom, targetZoom) {
+  const from = Number(browserZoom);
+  const to = Number(targetZoom);
+  if (!Number.isFinite(from) || !Number.isFinite(to) || from <= 0 || to <= 0) return 1;
+  return to / from;
 }
 
 /**

@@ -152,11 +152,15 @@ export function validateRuntimeMessage(message, opts = {}) {
         return 'OPEN_POPOVER_WINDOW requires url: string';
       }
       break;
-    case MSG.ZOOM_STEP:
-      if (message.direction !== 1 && message.direction !== -1) {
-        return 'ZOOM_STEP requires direction: 1 or -1';
+    case MSG.ZOOM_STEP: {
+      const factor = Number(message.zoomFactor);
+      const hasFactor = Number.isFinite(factor) && factor > 0;
+      const hasDir = message.direction === 1 || message.direction === -1;
+      if (!hasFactor && !hasDir) {
+        return 'ZOOM_STEP requires direction: 1 or -1, or zoomFactor';
       }
       break;
+    }
     case MSG.DICTIONARY_LOOKUP:
       if (typeof message.word !== 'string' || !message.word.trim()) {
         return 'DICTIONARY_LOOKUP requires word: string';
