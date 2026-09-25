@@ -73,7 +73,7 @@ export const MACRO_KEY_KIND_DEFS = Object.freeze([
     labelKey: 'mk_roundRobin_label',
     descriptionKey: 'mk_roundRobin_description',
     detailsKey: 'mk_roundRobin_details',
-    keyboardClass: 'key-scroll'
+    keyboardClass: 'key-page-scroll'
   }),
   Object.freeze({
     id: /** @type {const} */ ('continuous'),

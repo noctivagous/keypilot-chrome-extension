@@ -66,6 +66,27 @@ export function stepZoomFactor(current, direction) {
 }
 
 /**
+ * Transform-origin on the preview element (the body border box, not the root).
+ * The root's used origin box is the layout viewport, so a document-sized
+ * `getBoundingClientRect()` offset scales around the wrong point once the page
+ * is scrolled. Body's border box top-left tracks the document, and subtracting
+ * it converts the viewport cursor into that box.
+ * @param {{ x: number, y: number }} client
+ * @param {{ left: number, top: number }} borderBox
+ * @returns {{ x: number, y: number }}
+ */
+export function previewOrigin(client, borderBox) {
+  const x = Number(client?.x);
+  const y = Number(client?.y);
+  const left = Number(borderBox?.left);
+  const top = Number(borderBox?.top);
+  return {
+    x: (Number.isFinite(x) ? x : 0) - (Number.isFinite(left) ? left : 0),
+    y: (Number.isFinite(y) ? y : 0) - (Number.isFinite(top) ? top : 0)
+  };
+}
+
+/**
  * CSS scale that previews a browser-zoom step while the tab zoom is unchanged.
  * @param {number} browserZoom Last committed tab zoom
  * @param {number} targetZoom

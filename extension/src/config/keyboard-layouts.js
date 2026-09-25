@@ -403,7 +403,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Cols Toggle',
     description: 'Multi-column layout under cursor',
     details: 'Columnizes the element under the cursor into a multi-column layout so dense text or lists are easier to scan. Toggle again to restore the original layout.',
-    keyboardClass: 'key-cols',
+    keyboardClass: 'key-highlight',
     row: 3
   }),
   TAB_LEFT: Object.freeze({
@@ -411,7 +411,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Tab Left',
     description: 'Switch to the previous tab',
     details: 'Activates the tab to the left of the current one in the window’s tab strip.',
-    keyboardClass: 'key-gray',
+    keyboardClass: 'key-browser-chrome',
     row: 1
   }),
   TAB_RIGHT: Object.freeze({
@@ -419,7 +419,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Tab Right',
     description: 'Switch to the next tab',
     details: 'Activates the tab to the right of the current one in the window’s tab strip.',
-    keyboardClass: 'key-gray',
+    keyboardClass: 'key-browser-chrome',
     row: 1
   }),
   ROOT: Object.freeze({
@@ -427,7 +427,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Go to Site Root',
     description: 'Navigate to the site origin',
     details: 'Jumps to the site root (scheme + host) of the current page — useful for escaping deep paths without typing a URL.',
-    keyboardClass: null,
+    keyboardClass: 'key-open-urls',
     row: 2
   }),
   LAUNCHER: Object.freeze({
@@ -435,7 +435,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Launcher',
     description: 'Quick-access site launcher',
     details: 'Opens the Launcher popover for jumping to favorite or configured sites without using the omnibox.',
-    keyboardClass: 'key-launcher-orange',
+    keyboardClass: 'key-kp-ui',
     row: 2
   }),
   TOP_SITES: Object.freeze({
@@ -443,7 +443,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Top Sites',
     description: 'Toolbar, visits, and bookmarks',
     details: 'Opens Top Sites: a quick list drawn from the toolbar, most-visited pages, and recent bookmarks so you can open a frequent destination in one step.',
-    keyboardClass: 'key-launcher-orange',
+    keyboardClass: 'key-kp-ui',
     row: 2
   }),
   CLOSE_TAB: Object.freeze({
@@ -459,7 +459,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Exit Focus',
     description: 'Leave modes and overlays',
     details: 'Cancels the current KeyPilot mode or overlay (Delete Mode, Scroll Line, text focus helpers, and similar) and returns to normal browsing.',
-    keyboardClass: null,
+    keyboardClass: 'key-gray',
     row: null
   }),
   PAGE_UP_INSTANT: Object.freeze({
@@ -467,7 +467,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Page Up',
     description: 'Jump one page up instantly',
     details: 'Scrolls the current scroll target up by roughly one viewport without animation — faster than a smooth page-up when you need to move quickly.',
-    keyboardClass: 'key-scroll',
+    keyboardClass: 'key-page-scroll',
     row: 3
   }),
   PAGE_DOWN_INSTANT: Object.freeze({
@@ -475,7 +475,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Page Down',
     description: 'Jump one page down instantly',
     details: 'Scrolls the current scroll target down by roughly one viewport without animation — faster than a smooth page-down when you need to move quickly.',
-    keyboardClass: 'key-scroll',
+    keyboardClass: 'key-page-scroll',
     row: 3
   }),
   PAGE_TOP: Object.freeze({
@@ -483,7 +483,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Scroll To Top',
     description: 'Jump to top of scroll target',
     details: 'Moves to the top of the current scroll target. Fade mode hides the jump; Scroll mode animates. Configure the motion style in Settings → Scrolling.',
-    keyboardClass: 'key-scroll',
+    keyboardClass: 'key-page-scroll',
     row: 3
   }),
   PAGE_BOTTOM: Object.freeze({
@@ -491,7 +491,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Scroll To Bottom',
     description: 'Jump to bottom of scroll target',
     details: 'Moves to the bottom of the current scroll target. Fade mode hides the jump; Scroll mode animates. Configure the motion style in Settings → Scrolling.',
-    keyboardClass: 'key-scroll',
+    keyboardClass: 'key-page-scroll',
     row: 3
   }),
   SCROLL_LINE: Object.freeze({
@@ -499,7 +499,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Scroll Line',
     description: 'Origin-based continuous scroll',
     details: 'Scrolls from a fixed origin: move the mouse away from the on-screen dot to scroll faster in that direction. Optionally enable middle-click on empty page area under Settings → Scrolling.',
-    keyboardClass: 'key-scroll',
+    keyboardClass: 'key-page-scroll',
     row: 3,
     mode: 'scroll_line',
     cancelOnPointerDown: true,
@@ -516,7 +516,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Zoom Out',
     description: 'Zoom the page out at the cursor',
     details: 'Zooms the tab out one browser zoom step and keeps the point under the cursor fixed, the same as a pinch-out gesture.',
-    keyboardClass: 'key-scroll',
+    keyboardClass: 'key-browser-chrome',
     row: 1
   }),
   ZOOM_IN: Object.freeze({
@@ -524,7 +524,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Zoom In',
     description: 'Zoom the page in at the cursor',
     details: 'Zooms the tab in one browser zoom step and keeps the point under the cursor fixed, the same as a pinch-in gesture.',
-    keyboardClass: 'key-scroll',
+    keyboardClass: 'key-browser-chrome',
     row: 1
   }),
   NEW_TAB: Object.freeze({
@@ -532,7 +532,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'New Tab',
     description: 'Open the KeyPilot new tab',
     details: 'Opens a KeyPilot new tab with your bookmarks bar, top sites, and search. The browser’s own new tab stays unchanged.',
-    keyboardClass: 'key-gray',
+    keyboardClass: 'key-browser-chrome',
     row: 1
   }),
   OPEN_POPOVER: Object.freeze({
@@ -564,7 +564,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'POI Address',
     description: 'Copy map place address',
     details: 'When a map place (POI) is under the cursor, copies its street address to the clipboard for pasting into directions, notes, or forms.',
-    keyboardClass: null,
+    keyboardClass: 'key-page-media',
     row: null
   }),
   OPEN_SETTINGS_POPOVER: Object.freeze({
@@ -572,7 +572,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Settings',
     description: 'Open KeyPilot Settings',
     details: 'Opens or closes the KeyPilot Settings popover for themes, scrolling, click mode, layouts, and other preferences.',
-    keyboardClass: 'key-settings-dark',
+    keyboardClass: 'key-kp-ui',
     row: null
   }),
   OMNIBOX: Object.freeze({
@@ -580,7 +580,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Omnibox',
     description: 'Address bar overlay',
     details: 'Opens KeyPilot’s omnibox overlay so you can type a URL or search without clicking the browser address bar.',
-    keyboardClass: 'key-orange',
+    keyboardClass: 'key-kp-ui',
     row: 2
   }),
   TAB_HISTORY: Object.freeze({
@@ -588,7 +588,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Tab History',
     description: 'Browse this tab’s history',
     details: 'Opens Tab History for the current tab so you can jump to a previously visited page in this tab’s session without using the browser’s native history UI.',
-    keyboardClass: 'key-gray',
+    keyboardClass: 'key-kp-ui',
     row: 2
   }),
   TABS_OVERVIEW: Object.freeze({
@@ -596,7 +596,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Tabs Overview',
     description: 'Show every window and tab',
     details: 'Opens an overlay of every browser window with its tabs listed inside. Key-click a tab to switch to it, or key-click a window header to focus that window and keep its active tab. The current window is listed first, and the current tab is highlighted.',
-    keyboardClass: 'key-gray',
+    keyboardClass: 'key-kp-ui',
     row: 3
   }),
   TOGGLE_KEYBOARD_HELP: Object.freeze({
@@ -604,7 +604,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'KB Reference',
     description: 'Show or hide the keyboard map',
     details: 'Toggles the floating Keyboard Reference window that shows your current layout’s keycaps and bindings.',
-    keyboardClass: 'key-purple',
+    keyboardClass: 'key-kp-ui',
     row: 2
   }),
   // Text select: default character-level (H on right-handed layout).
@@ -631,8 +631,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Copy Image',
     description: 'Copy hovered image',
     details: 'Copies the image under the cursor to the clipboard, Media Library, or both — configure the destination on the action. Prefer this when you want the image bytes or a saved library entry, not just a URL.',
-    // Default key face (no tinted key-gray / family fill).
-    keyboardClass: null,
+    keyboardClass: 'key-page-media',
     row: 1
   }),
   // Copy hyperlink under cursor (U on right-handed; no default on left — U is FORWARD there).
@@ -641,7 +640,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Copy URL',
     description: 'Copy hovered link URL',
     details: 'Copies the URL under the cursor to the clipboard, Media Library, or both. Use this when you need the href itself rather than fetching or opening the resource.',
-    keyboardClass: null,
+    keyboardClass: 'key-page-media',
     row: 1
   }),
   // Copy video under cursor — Actions Library only (no built-in layout key).
@@ -650,7 +649,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Copy Video',
     description: 'Copy hovered video',
     details: 'Copies the video under the cursor (file bytes to Media Library when fetchable, or the video URL to the clipboard). No default layout key — bind it in Layout Editor if you need it.',
-    keyboardClass: null,
+    keyboardClass: 'key-page-media',
     row: null
   }),
   // Font under cursor — Actions Library only (no built-in layout key).
@@ -659,7 +658,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Font Info',
     description: 'Inspect font under the cursor',
     details: 'Shows a popover with the font name, size, family, file type, and resource URL for the styled text under the cursor, and outlines that text run. No default layout key — bind it in Layout Editor if you need it.',
-    keyboardClass: null,
+    keyboardClass: 'key-page-media',
     row: null
   }),
   // Page-wide Image / Video / Text gallery (O on right-handed; O is TAB_RIGHT on left-handed).
@@ -668,7 +667,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Page Media',
     description: 'Browse media found on this page',
     details: 'Opens a gallery of images, videos, documents, fonts, and URLs discovered on the current page so you can review or collect them without hunting through the DOM.',
-    keyboardClass: null,
+    keyboardClass: 'key-page-media',
     row: 1
   }),
   // Media Library entry point (M on right-handed only — M is PAGE_DOWN_INSTANT on left-handed,
@@ -678,7 +677,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Media Library',
     description: 'Open saved Media Library',
     details: 'Opens the Media Library where items you previously copied or saved (images, videos, URLs, and related assets) are kept for reuse.',
-    keyboardClass: null,
+    keyboardClass: 'key-media-library',
     row: 1
   }),
   // Clipboard commands (Functions palette — Clipboard category).
@@ -687,7 +686,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Copy',
     description: 'Copy selection to clipboard',
     details: 'Copies the current text selection to the system clipboard. Prefer this over OS shortcuts when you want Copy available as a KeyPilot layout binding.',
-    keyboardClass: null,
+    keyboardClass: 'key-clipboard',
     row: null
   }),
   CLIPBOARD_CUT: Object.freeze({
@@ -695,7 +694,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Cut',
     description: 'Cut selection to clipboard',
     details: 'Cuts the current text selection to the system clipboard from the focused field or editable region.',
-    keyboardClass: null,
+    keyboardClass: 'key-clipboard',
     row: null
   }),
   CLIPBOARD_PASTE: Object.freeze({
@@ -703,7 +702,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Paste',
     description: 'Paste into the focused field',
     details: 'Pastes clipboard text into the focused text field or editable element. Bind with a modifier chord if you need it while typing.',
-    keyboardClass: null,
+    keyboardClass: 'key-clipboard',
     row: null
   }),
   CLIPBOARD_SELECT_ALL: Object.freeze({
@@ -711,7 +710,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Select All',
     description: 'Select all in field or page',
     details: 'Selects all text in the focused field, or the page content when nothing editable is focused — same idea as the usual Select All shortcut.',
-    keyboardClass: null,
+    keyboardClass: 'key-clipboard',
     row: null
   }),
   SELECT_WORD: Object.freeze({
@@ -719,7 +718,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Select Word',
     description: 'Select the word under the cursor',
     details: 'Selects the word under the KeyPilot cursor. Press again over the same word to deselect it. Exclusive vs cumulative is a popover setting (shared, not per-key). Copy reads this selection.',
-    keyboardClass: null,
+    keyboardClass: 'key-highlight',
     row: null
   }),
   SELECT_SENTENCE: Object.freeze({
@@ -727,7 +726,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Select Sentence',
     description: 'Select the sentence under the cursor',
     details: 'Selects the sentence under the KeyPilot cursor. Press again over the same sentence to deselect it. Exclusive vs cumulative is a popover setting (shared, not per-key).',
-    keyboardClass: null,
+    keyboardClass: 'key-highlight',
     row: null
   }),
   SELECT_PARAGRAPH: Object.freeze({
@@ -735,7 +734,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Select Paragraph',
     description: 'Select the paragraph under the cursor',
     details: 'Selects the paragraph (or nearest block) under the KeyPilot cursor. Press again over the same block to deselect it. Exclusive vs cumulative is a popover setting (shared, not per-key).',
-    keyboardClass: null,
+    keyboardClass: 'key-highlight',
     row: null
   }),
   SELECT_IMAGE: Object.freeze({
@@ -743,7 +742,7 @@ export const KEYBINDING_ACTION_DEFS = Object.freeze({
     label: 'Select Image',
     description: 'Select the image under the cursor',
     details: 'Selects the image under the KeyPilot cursor. Press again over the same image to deselect it. Exclusive vs cumulative is a popover setting (shared, not per-key). Copy can copy selected images.',
-    keyboardClass: null,
+    keyboardClass: 'key-highlight',
     row: null
   }),
   // AI (Functions palette — AI category).

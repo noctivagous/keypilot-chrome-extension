@@ -875,7 +875,7 @@ export async function runPostBundleTasks({ shouldMinify = false, enableMacroBuil
     // Blue: history + scroll.
     if (
       id === 'BACK' || id === 'BACK2' || id === 'FORWARD' || id === 'PAGE_TOP' || id === 'PAGE_BOTTOM' ||
-      cls.includes('key-back') || cls.includes('key-forward') || cls.includes('key-scroll')
+      cls.includes('key-back') || cls.includes('key-forward') || cls.includes('key-page-scroll') || cls.includes('key-scroll')
     ) return 'action-blue';
 
     // Green: everything else (activation, tabs, page up/down, UI toggles).

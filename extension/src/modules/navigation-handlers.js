@@ -26,7 +26,7 @@ import {
   SCROLL_LINE_MAP_DRAG_ENABLED
 } from '../utils/map-surface-drag.js';
 import { noteExtensionContextError, safeRuntimeSendMessage } from '../utils/extension-context.js';
-import { scrollToKeepPoint, stepZoomFactor, ZOOM_PREVIEW_MS, zoomPreviewScale } from '../utils/page-zoom.js';
+import { previewOrigin, scrollToKeepPoint, stepZoomFactor, ZOOM_PREVIEW_MS, zoomPreviewScale } from '../utils/page-zoom.js';
 import { shouldShowScrollLineTargetBox } from './scroll-line-overlay.js';
 
 /** @param {Function} Base */
@@ -233,50 +233,60 @@ export function withNavigationHandlers(Base) {
   }
 
   /**
+   * Body, not the root. The root transform box is the layout viewport, so a
+   * document-sized origin misses the cursor after scroll.
+   * @returns {HTMLElement|null}
+   */
+  _zoomPreviewEl() {
+    return document.body || document.documentElement;
+  }
+
+  /**
    * @param {any} gesture
    */
   _zoomPaintPreview(gesture) {
-    const root = document.documentElement;
-    if (!root) return;
+    const el = gesture.previewEl || this._zoomPreviewEl();
+    if (!el) return;
+    gesture.previewEl = el;
     if (!gesture.savedStyle) {
       gesture.savedStyle = {
-        transform: root.style.transform,
-        transformOrigin: root.style.transformOrigin,
-        transition: root.style.transition
+        transform: el.style.transform,
+        transformOrigin: el.style.transformOrigin,
+        transition: el.style.transition
       };
-      const rect = root.getBoundingClientRect();
-      gesture.originX = gesture.point.x - rect.left;
-      gesture.originY = gesture.point.y - rect.top;
+      const origin = previewOrigin(gesture.point, el.getBoundingClientRect());
+      gesture.originX = origin.x;
+      gesture.originY = origin.y;
     }
     const scale = zoomPreviewScale(gesture.browserZoom, gesture.targetZoom);
-    root.style.transition = 'none';
-    root.style.transformOrigin = `${gesture.originX}px ${gesture.originY}px`;
+    el.style.transition = 'none';
+    el.style.transformOrigin = `${gesture.originX}px ${gesture.originY}px`;
     if (!gesture.previewing) {
-      root.style.transform = 'scale(1)';
+      el.style.transform = 'scale(1)';
       gesture.previewing = true;
     }
-    void root.getBoundingClientRect();
-    root.style.transition = `transform ${ZOOM_PREVIEW_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`;
-    root.style.transform = `scale(${scale})`;
+    void el.getBoundingClientRect();
+    el.style.transition = `transform ${ZOOM_PREVIEW_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`;
+    el.style.transform = `scale(${scale})`;
   }
 
   /**
    * @param {any} gesture
    */
   _zoomArmCommit(gesture) {
-    const root = document.documentElement;
-    if (!root) return;
-    if (gesture.onEnd) root.removeEventListener('transitionend', gesture.onEnd);
+    const el = gesture.previewEl || this._zoomPreviewEl();
+    if (!el) return;
+    if (gesture.onEnd) el.removeEventListener('transitionend', gesture.onEnd);
     if (gesture.timer) clearTimeout(gesture.timer);
     const gen = gesture.gen;
     const commit = (event) => {
-      if (event && event.target !== root) return;
+      if (event && event.target !== el) return;
       if (event && event.propertyName && event.propertyName !== 'transform') return;
       if (this._zoomGesture !== gesture || gesture.gen !== gen || gesture.committing) return;
       this._zoomCommit(gesture);
     };
     gesture.onEnd = commit;
-    root.addEventListener('transitionend', commit);
+    el.addEventListener('transitionend', commit);
     gesture.timer = setTimeout(commit, ZOOM_PREVIEW_MS + 50);
   }
 
@@ -286,8 +296,8 @@ export function withNavigationHandlers(Base) {
   _zoomCommit(gesture) {
     if (gesture.committing) return;
     gesture.committing = true;
-    const root = document.documentElement;
-    if (gesture.onEnd && root) root.removeEventListener('transitionend', gesture.onEnd);
+    const el = gesture.previewEl || this._zoomPreviewEl();
+    if (gesture.onEnd && el) el.removeEventListener('transitionend', gesture.onEnd);
     if (gesture.timer) clearTimeout(gesture.timer);
 
     if (Math.abs(gesture.targetZoom - gesture.browserZoom) < 0.001) {
@@ -332,18 +342,18 @@ export function withNavigationHandlers(Base) {
    * @param {any} gesture
    */
   _zoomRestoreStyle(gesture) {
-    const root = document.documentElement;
-    if (!root || !gesture?.savedStyle) return;
-    if (gesture.onEnd) root.removeEventListener('transitionend', gesture.onEnd);
+    const el = gesture?.previewEl || this._zoomPreviewEl();
+    if (!el || !gesture?.savedStyle) return;
+    if (gesture.onEnd) el.removeEventListener('transitionend', gesture.onEnd);
     if (gesture.timer) clearTimeout(gesture.timer);
     const saved = gesture.savedStyle;
     gesture.savedStyle = null;
     gesture.previewing = false;
-    root.style.transition = 'none';
-    root.style.transform = saved.transform;
-    root.style.transformOrigin = saved.transformOrigin;
-    void root.getBoundingClientRect();
-    root.style.transition = saved.transition;
+    el.style.transition = 'none';
+    el.style.transform = saved.transform;
+    el.style.transformOrigin = saved.transformOrigin;
+    void el.getBoundingClientRect();
+    el.style.transition = saved.transition;
   }
 
   _zoomDrainQueue() {
@@ -367,16 +377,7 @@ export function withNavigationHandlers(Base) {
     if (Math.abs(oldZoom - newZoom) < 1e-6) return;
 
     const next = scrollToKeepPoint({ x: scrollX, y: scrollY }, point, oldZoom, newZoom);
-    const apply = () => {
-      try { window.scrollTo(next.x, next.y); } catch { /* ignore */ }
-    };
-    apply();
-    try {
-      requestAnimationFrame(() => {
-        apply();
-        requestAnimationFrame(apply);
-      });
-    } catch { /* ignore */ }
+    this._holdZoomAnchor(next);
 
     const scale = oldZoom / newZoom;
     const nx = point.x * scale;
@@ -385,6 +386,52 @@ export function withNavigationHandlers(Base) {
     try { this.cursor?.updatePosition?.(nx, ny); } catch { /* ignore */ }
     try { this.mouseCoordinateManager?.updateCurrentMousePosition?.(nx, ny); } catch { /* ignore */ }
     try { this.updateElementsUnderCursor?.(nx, ny, false, null); } catch { /* ignore */ }
+  }
+
+  /**
+   * Chrome anchors setZoom at the viewport center and may apply that after the
+   * zoom callback. Keep writing the cursor anchor until the scroll position sticks.
+   * @param {{ x: number, y: number }} next
+   */
+  _holdZoomAnchor(next) {
+    try { this._zoomAnchorCancel?.(); } catch { /* ignore */ }
+    const started = performance.now();
+    let applying = false;
+    let raf = 0;
+    let timer = 0;
+    let stopped = false;
+    const apply = () => {
+      if (applying) return;
+      applying = true;
+      try { window.scrollTo(next.x, next.y); } catch { /* ignore */ }
+      applying = false;
+    };
+    const stop = () => {
+      if (stopped) return;
+      stopped = true;
+      if (raf) cancelAnimationFrame(raf);
+      if (timer) clearTimeout(timer);
+      window.removeEventListener('scroll', onScroll, true);
+      apply();
+      if (this._zoomAnchorCancel === stop) this._zoomAnchorCancel = null;
+    };
+    const onScroll = () => {
+      if (stopped) return;
+      apply();
+    };
+    const tick = () => {
+      if (stopped) return;
+      apply();
+      if (performance.now() - started > 400) {
+        stop();
+        return;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    window.addEventListener('scroll', onScroll, true);
+    this._zoomAnchorCancel = stop;
+    timer = setTimeout(stop, 420);
+    tick();
   }
 
   /**

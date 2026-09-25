@@ -590,7 +590,7 @@ const OPEN_URLS_FUNCTION_DEF = Object.freeze({
   detailsKey: 'fn_OPEN_URLS_details',
   handler: 'handleOpenUrlsKey',
   category: 'Tab Control',
-  keyboardClass: 'key-gray',
+  keyboardClass: 'key-open-urls',
   dataSource: 'none',
   parameters: Object.freeze([
     Object.freeze({
@@ -619,7 +619,7 @@ const OPEN_BOOKMARKS_FUNCTION_DEF = Object.freeze({
   detailsKey: 'fn_OPEN_BOOKMARKS_details',
   handler: 'handleOpenBookmarksKey',
   category: 'Tab Control',
-  keyboardClass: 'key-gray',
+  keyboardClass: 'key-open-urls',
   dataSource: 'none',
   parameters: Object.freeze([
     Object.freeze({
@@ -643,7 +643,7 @@ const RANDOM_BOOKMARK_FUNCTION_DEF = Object.freeze({
   detailsKey: 'fn_RANDOM_BOOKMARK_details',
   handler: 'handleRandomBookmarkKey',
   category: 'Tab Control',
-  keyboardClass: 'key-gray',
+  keyboardClass: 'key-open-urls',
   dataSource: 'none',
   parameters: Object.freeze([
     Object.freeze({
@@ -801,6 +801,7 @@ function buildDataAcquisitionFunctionDefs() {
       detailsKey: 'fn_GET_TEXT_AT_CURSOR_details',
       handler: 'handleGetTextAtCursorKey',
       category: DATA_FUNCTION_CATEGORY,
+      keyboardClass: 'key-clipboard',
       dataSource: 'underCursor',
       dataKind: 'text',
       destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.CLIPBOARD]),
@@ -813,6 +814,7 @@ function buildDataAcquisitionFunctionDefs() {
       detailsKey: 'fn_GET_TEXT_RANGE_details',
       handler: 'handleGetTextRangeKey',
       category: DATA_FUNCTION_CATEGORY,
+      keyboardClass: 'key-clipboard',
       dataSource: 'textRange',
       dataKind: 'text',
       assignableToKey: false
@@ -824,6 +826,7 @@ function buildDataAcquisitionFunctionDefs() {
       detailsKey: 'fn_GET_MEDIA_AT_CURSOR_details',
       handler: 'handleGetMediaAtCursorKey',
       category: DATA_FUNCTION_CATEGORY,
+      keyboardClass: 'key-page-media',
       dataSource: 'underCursor',
       dataKind: 'media',
       destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.CLIPBOARD]),
@@ -846,6 +849,7 @@ function buildDataAcquisitionFunctionDefs() {
       detailsKey: 'fn_LOOKUP_WORD_details',
       handler: 'handleLookupWordKey',
       category: LOOKUP_FUNCTION_CATEGORY,
+      keyboardClass: 'key-page-media',
       dataSource: 'underCursor',
       dataKind: 'text',
       destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.POPOVER]),
@@ -869,6 +873,7 @@ function buildDataAcquisitionFunctionDefs() {
       detailsKey: 'fn_TRANSLATE_details',
       handler: 'handleTranslateKey',
       category: TRANSLATE_FUNCTION_CATEGORY,
+      keyboardClass: 'key-page-media',
       dataSource: 'underCursor',
       dataKind: 'text',
       destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.MODIFY_PAGE, ACTION_RESULT_DESTINATIONS.POPOVER]),
@@ -894,6 +899,7 @@ function buildDataAcquisitionFunctionDefs() {
       detailsKey: 'fn_SHOW_POPOVER_details',
       handler: 'handleShowPopoverKey',
       category: DISPLAY_FUNCTION_CATEGORY,
+      keyboardClass: 'key-kp-ui',
       dataSource: 'none',
       destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.POPOVER]),
       assignableToKey: false,
@@ -913,6 +919,7 @@ function buildDataAcquisitionFunctionDefs() {
       detailsKey: 'fn_ADD_URL_TO_MEDIA_LIBRARY_details',
       handler: 'handleAddUrlToMediaLibraryKey',
       category: MEDIA_LIBRARY_FUNCTION_CATEGORY,
+      keyboardClass: 'key-media-library',
       dataSource: 'underCursor',
       dataKind: 'text',
       destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY])
@@ -924,6 +931,7 @@ function buildDataAcquisitionFunctionDefs() {
       detailsKey: 'fn_FETCH_URL_FOR_MEDIA_LIBRARY_details',
       handler: 'handleFetchUrlForMediaLibraryKey',
       category: MEDIA_LIBRARY_FUNCTION_CATEGORY,
+      keyboardClass: 'key-media-library',
       dataSource: 'urlFetch',
       dataKind: 'file',
       destinations: Object.freeze([ACTION_RESULT_DESTINATIONS.MEDIA_LIBRARY])

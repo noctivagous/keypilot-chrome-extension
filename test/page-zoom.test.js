@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 
 import {
   PAGE_ZOOM_PRESETS,
+  previewOrigin,
   scrollToKeepPoint,
   stepZoomFactor,
   zoomPreviewScale
@@ -35,6 +36,17 @@ describe('zoom anchor scroll', () => {
     const scale = 1 / 1.1;
     assert.ok(Math.abs((next.x + client.x * scale) - docX) < 1e-9);
     assert.ok(Math.abs((next.y + client.y * scale) - docY) < 1e-9);
+  });
+
+  it('places the preview origin at the cursor inside a scrolled border box', () => {
+    assert.deepEqual(
+      previewOrigin({ x: 100, y: 80 }, { left: 0, top: -200 }),
+      { x: 100, y: 280 }
+    );
+    assert.deepEqual(
+      previewOrigin({ x: 40, y: 10 }, { left: 0, top: 0 }),
+      { x: 40, y: 10 }
+    );
   });
 
   it('previews a zoom step as a CSS scale against the committed factor', () => {

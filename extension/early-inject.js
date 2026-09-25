@@ -1631,14 +1631,14 @@
       "description": "Switch to the previous tab",
       "keyLabel": "Q",
       "displayKey": "Q",
-      "keyboardClass": "key-gray"
+      "keyboardClass": "key-browser-chrome"
     },
     "TAB_RIGHT": {
       "label": "Tab Right",
       "description": "Switch to the next tab",
       "keyLabel": "W",
       "displayKey": "W",
-      "keyboardClass": "key-gray"
+      "keyboardClass": "key-browser-chrome"
     },
     "PREVIEW_LINK_POPOVER": {
       "label": "Preview Link",
@@ -1659,7 +1659,7 @@
       "description": "Open the KeyPilot new tab",
       "keyLabel": "T",
       "displayKey": "T",
-      "keyboardClass": "key-gray"
+      "keyboardClass": "key-browser-chrome"
     },
     "RECTANGLE_HIGHLIGHT": {
       "label": "Element Select",
@@ -1673,21 +1673,21 @@
       "description": "Copy hovered link URL",
       "keyLabel": "U",
       "displayKey": "U",
-      "keyboardClass": null
+      "keyboardClass": "key-page-media"
     },
     "COPY_HOVERED_IMAGE": {
       "label": "Copy Image",
       "description": "Copy hovered image",
       "keyLabel": "I",
       "displayKey": "I",
-      "keyboardClass": null
+      "keyboardClass": "key-page-media"
     },
     "PAGE_MEDIA": {
       "label": "Page Media",
       "description": "Browse media found on this page",
       "keyLabel": "O",
       "displayKey": "O",
-      "keyboardClass": null
+      "keyboardClass": "key-page-media"
     },
     "OPEN_POPOVER": {
       "label": "Open Popover",
@@ -1701,14 +1701,14 @@
       "description": "Zoom the page out at the cursor",
       "keyLabel": "[",
       "displayKey": "[",
-      "keyboardClass": "key-scroll"
+      "keyboardClass": "key-browser-chrome"
     },
     "ZOOM_IN": {
       "label": "Zoom In",
       "description": "Zoom the page in at the cursor",
       "keyLabel": "]",
       "displayKey": "]",
-      "keyboardClass": "key-scroll"
+      "keyboardClass": "key-browser-chrome"
     },
     "DELETE": {
       "label": "Delete Mode",
@@ -1729,7 +1729,7 @@
       "description": "Navigate to the site origin",
       "keyLabel": "S",
       "displayKey": "S",
-      "keyboardClass": null
+      "keyboardClass": "key-open-urls"
     },
     "BACK": {
       "label": "Go Back",
@@ -1764,70 +1764,70 @@
       "description": "Browse this tab’s history",
       "keyLabel": "J",
       "displayKey": "J",
-      "keyboardClass": "key-gray"
+      "keyboardClass": "key-kp-ui"
     },
     "TOGGLE_KEYBOARD_HELP": {
       "label": "KB Reference",
       "description": "Show or hide the keyboard map",
       "keyLabel": "K",
       "displayKey": "K",
-      "keyboardClass": "key-purple"
+      "keyboardClass": "key-kp-ui"
     },
     "OMNIBOX": {
       "label": "Omnibox",
       "description": "Address bar overlay",
       "keyLabel": "L",
       "displayKey": "L",
-      "keyboardClass": "key-orange"
+      "keyboardClass": "key-kp-ui"
     },
     "TOP_SITES": {
       "label": "Top Sites",
       "description": "Toolbar, visits, and bookmarks",
       "keyLabel": ";",
       "displayKey": ";",
-      "keyboardClass": "key-launcher-orange"
+      "keyboardClass": "key-kp-ui"
     },
     "OPEN_SETTINGS_POPOVER": {
       "label": "Settings",
       "description": "Open KeyPilot Settings",
       "keyLabel": "'",
       "displayKey": "'",
-      "keyboardClass": "key-settings-dark"
+      "keyboardClass": "key-kp-ui"
     },
     "PAGE_TOP": {
       "label": "Scroll To Top",
       "description": "Jump to top of scroll target",
       "keyLabel": "Z",
       "displayKey": "Z",
-      "keyboardClass": "key-scroll"
+      "keyboardClass": "key-page-scroll"
     },
     "PAGE_BOTTOM": {
       "label": "Scroll To Bottom",
       "description": "Jump to bottom of scroll target",
       "keyLabel": "X",
       "displayKey": "X",
-      "keyboardClass": "key-scroll"
+      "keyboardClass": "key-page-scroll"
     },
     "PAGE_UP_INSTANT": {
       "label": "Page Up",
       "description": "Jump one page up instantly",
       "keyLabel": "C",
       "displayKey": "C",
-      "keyboardClass": "key-scroll"
+      "keyboardClass": "key-page-scroll"
     },
     "PAGE_DOWN_INSTANT": {
       "label": "Page Down",
       "description": "Jump one page down instantly",
       "keyLabel": "V",
       "displayKey": "V",
-      "keyboardClass": "key-scroll"
+      "keyboardClass": "key-page-scroll"
     },
     "SCROLL_LINE": {
       "label": "Scroll Line",
       "description": "Origin-based continuous scroll",
       "keyLabel": "B",
       "displayKey": "B",
-      "keyboardClass": "key-scroll"
+      "keyboardClass": "key-page-scroll"
     },
     "ACTIVATE_NEW_TAB": {
       "label": "Click New Tab",
@@ -1841,35 +1841,35 @@
       "description": "Open saved Media Library",
       "keyLabel": "M",
       "displayKey": "M",
-      "keyboardClass": null
+      "keyboardClass": "key-media-library"
     },
     "stock:random-bookmark": {
       "label": "Random Bookmark",
       "description": "Open one random bookmark",
       "keyLabel": ",",
       "displayKey": ",",
-      "keyboardClass": "key-gray"
+      "keyboardClass": "key-open-urls"
     },
     "stock:social-media": {
       "label": "Social media",
       "description": "Open Facebook, Instagram, YouTube, and X",
       "keyLabel": ".",
       "displayKey": ".",
-      "keyboardClass": "key-gray"
+      "keyboardClass": "key-open-urls"
     },
     "TABS_OVERVIEW": {
       "label": "Tabs Overview",
       "description": "Show every window and tab",
       "keyLabel": "/",
       "displayKey": "/",
-      "keyboardClass": "key-gray"
+      "keyboardClass": "key-kp-ui"
     },
     "CANCEL": {
       "label": "Exit Focus",
       "description": "Leave modes and overlays",
       "keyLabel": "Esc",
       "displayKey": "Esc",
-      "keyboardClass": null
+      "keyboardClass": "key-gray"
     }
   },
   "browsing-left": {
@@ -1878,14 +1878,14 @@
       "description": "Switch to the previous tab",
       "keyLabel": "P",
       "displayKey": "P",
-      "keyboardClass": "key-gray"
+      "keyboardClass": "key-browser-chrome"
     },
     "TAB_RIGHT": {
       "label": "Tab Right",
       "description": "Switch to the next tab",
       "keyLabel": "O",
       "displayKey": "O",
-      "keyboardClass": "key-gray"
+      "keyboardClass": "key-browser-chrome"
     },
     "PREVIEW_LINK_POPOVER": {
       "label": "Preview Link",
@@ -1906,7 +1906,7 @@
       "description": "Open the KeyPilot new tab",
       "keyLabel": "Y",
       "displayKey": "Y",
-      "keyboardClass": "key-gray"
+      "keyboardClass": "key-browser-chrome"
     },
     "RECTANGLE_HIGHLIGHT": {
       "label": "Element Select",
@@ -1920,7 +1920,7 @@
       "description": "Copy hovered image",
       "keyLabel": "E",
       "displayKey": "E",
-      "keyboardClass": null
+      "keyboardClass": "key-page-media"
     },
     "OPEN_POPOVER": {
       "label": "Open Popover",
@@ -1934,14 +1934,14 @@
       "description": "Zoom the page out at the cursor",
       "keyLabel": "[",
       "displayKey": "[",
-      "keyboardClass": "key-scroll"
+      "keyboardClass": "key-browser-chrome"
     },
     "ZOOM_IN": {
       "label": "Zoom In",
       "description": "Zoom the page in at the cursor",
       "keyLabel": "]",
       "displayKey": "]",
-      "keyboardClass": "key-scroll"
+      "keyboardClass": "key-browser-chrome"
     },
     "DELETE": {
       "label": "Delete Mode",
@@ -1962,7 +1962,7 @@
       "description": "Navigate to the site origin",
       "keyLabel": "L",
       "displayKey": "L",
-      "keyboardClass": null
+      "keyboardClass": "key-open-urls"
     },
     "BACK": {
       "label": "Go Back",
@@ -1997,70 +1997,70 @@
       "description": "Browse this tab’s history",
       "keyLabel": "F",
       "displayKey": "F",
-      "keyboardClass": "key-gray"
+      "keyboardClass": "key-kp-ui"
     },
     "TOGGLE_KEYBOARD_HELP": {
       "label": "KB Reference",
       "description": "Show or hide the keyboard map",
       "keyLabel": "D",
       "displayKey": "D",
-      "keyboardClass": "key-purple"
+      "keyboardClass": "key-kp-ui"
     },
     "OMNIBOX": {
       "label": "Omnibox",
       "description": "Address bar overlay",
       "keyLabel": "S",
       "displayKey": "S",
-      "keyboardClass": "key-orange"
+      "keyboardClass": "key-kp-ui"
     },
     "TOP_SITES": {
       "label": "Top Sites",
       "description": "Toolbar, visits, and bookmarks",
       "keyLabel": "A",
       "displayKey": "A",
-      "keyboardClass": "key-launcher-orange"
+      "keyboardClass": "key-kp-ui"
     },
     "OPEN_SETTINGS_POPOVER": {
       "label": "Settings",
       "description": "Open KeyPilot Settings",
       "keyLabel": "'",
       "displayKey": "'",
-      "keyboardClass": "key-settings-dark"
+      "keyboardClass": "key-kp-ui"
     },
     "PAGE_TOP": {
       "label": "Scroll To Top",
       "description": "Jump to top of scroll target",
       "keyLabel": "/",
       "displayKey": "/",
-      "keyboardClass": "key-scroll"
+      "keyboardClass": "key-page-scroll"
     },
     "PAGE_BOTTOM": {
       "label": "Scroll To Bottom",
       "description": "Jump to bottom of scroll target",
       "keyLabel": "N",
       "displayKey": "N",
-      "keyboardClass": "key-scroll"
+      "keyboardClass": "key-page-scroll"
     },
     "PAGE_UP_INSTANT": {
       "label": "Page Up",
       "description": "Jump one page up instantly",
       "keyLabel": ",",
       "displayKey": ",",
-      "keyboardClass": "key-scroll"
+      "keyboardClass": "key-page-scroll"
     },
     "PAGE_DOWN_INSTANT": {
       "label": "Page Down",
       "description": "Jump one page down instantly",
       "keyLabel": "M",
       "displayKey": "M",
-      "keyboardClass": "key-scroll"
+      "keyboardClass": "key-page-scroll"
     },
     "SCROLL_LINE": {
       "label": "Scroll Line",
       "description": "Origin-based continuous scroll",
       "keyLabel": "T",
       "displayKey": "T",
-      "keyboardClass": "key-scroll"
+      "keyboardClass": "key-page-scroll"
     },
     "ACTIVATE_NEW_TAB": {
       "label": "Click New Tab",
@@ -2074,28 +2074,28 @@
       "description": "Open one random bookmark",
       "keyLabel": "C",
       "displayKey": "C",
-      "keyboardClass": "key-gray"
+      "keyboardClass": "key-open-urls"
     },
     "stock:social-media": {
       "label": "Social media",
       "description": "Open Facebook, Instagram, YouTube, and X",
       "keyLabel": "X",
       "displayKey": "X",
-      "keyboardClass": "key-gray"
+      "keyboardClass": "key-open-urls"
     },
     "TABS_OVERVIEW": {
       "label": "Tabs Overview",
       "description": "Show every window and tab",
       "keyLabel": "Z",
       "displayKey": "Z",
-      "keyboardClass": "key-gray"
+      "keyboardClass": "key-kp-ui"
     },
     "CANCEL": {
       "label": "Exit Focus",
       "description": "Leave modes and overlays",
       "keyLabel": "Esc",
       "displayKey": "Esc",
-      "keyboardClass": null
+      "keyboardClass": "key-gray"
     }
   },
   "basic-navigation-right": {
@@ -2104,14 +2104,14 @@
       "description": "Switch to the previous tab",
       "keyLabel": "Q",
       "displayKey": "Q",
-      "keyboardClass": "key-gray"
+      "keyboardClass": "key-browser-chrome"
     },
     "TAB_RIGHT": {
       "label": "Tab Right",
       "description": "Switch to the next tab",
       "keyLabel": "W",
       "displayKey": "W",
-      "keyboardClass": "key-gray"
+      "keyboardClass": "key-browser-chrome"
     },
     "FORWARD": {
       "label": "Go Forward",
@@ -2125,7 +2125,7 @@
       "description": "Navigate to the site origin",
       "keyLabel": "S",
       "displayKey": "S",
-      "keyboardClass": null
+      "keyboardClass": "key-open-urls"
     },
     "BACK": {
       "label": "Go Back",
@@ -2146,49 +2146,49 @@
       "description": "Show or hide the keyboard map",
       "keyLabel": "K",
       "displayKey": "K",
-      "keyboardClass": "key-purple"
+      "keyboardClass": "key-kp-ui"
     },
     "OPEN_SETTINGS_POPOVER": {
       "label": "Settings",
       "description": "Open KeyPilot Settings",
       "keyLabel": "'",
       "displayKey": "'",
-      "keyboardClass": "key-settings-dark"
+      "keyboardClass": "key-kp-ui"
     },
     "PAGE_TOP": {
       "label": "Scroll To Top",
       "description": "Jump to top of scroll target",
       "keyLabel": "Z",
       "displayKey": "Z",
-      "keyboardClass": "key-scroll"
+      "keyboardClass": "key-page-scroll"
     },
     "PAGE_BOTTOM": {
       "label": "Scroll To Bottom",
       "description": "Jump to bottom of scroll target",
       "keyLabel": "X",
       "displayKey": "X",
-      "keyboardClass": "key-scroll"
+      "keyboardClass": "key-page-scroll"
     },
     "PAGE_UP_INSTANT": {
       "label": "Page Up",
       "description": "Jump one page up instantly",
       "keyLabel": "C",
       "displayKey": "C",
-      "keyboardClass": "key-scroll"
+      "keyboardClass": "key-page-scroll"
     },
     "PAGE_DOWN_INSTANT": {
       "label": "Page Down",
       "description": "Jump one page down instantly",
       "keyLabel": "V",
       "displayKey": "V",
-      "keyboardClass": "key-scroll"
+      "keyboardClass": "key-page-scroll"
     },
     "CANCEL": {
       "label": "Exit Focus",
       "description": "Leave modes and overlays",
       "keyLabel": "Esc",
       "displayKey": "Esc",
-      "keyboardClass": null
+      "keyboardClass": "key-gray"
     }
   },
   "basic-navigation-left": {
@@ -2197,14 +2197,14 @@
       "description": "Switch to the previous tab",
       "keyLabel": "P",
       "displayKey": "P",
-      "keyboardClass": "key-gray"
+      "keyboardClass": "key-browser-chrome"
     },
     "TAB_RIGHT": {
       "label": "Tab Right",
       "description": "Switch to the next tab",
       "keyLabel": "O",
       "displayKey": "O",
-      "keyboardClass": "key-gray"
+      "keyboardClass": "key-browser-chrome"
     },
     "FORWARD": {
       "label": "Go Forward",
@@ -2218,7 +2218,7 @@
       "description": "Navigate to the site origin",
       "keyLabel": "L",
       "displayKey": "L",
-      "keyboardClass": null
+      "keyboardClass": "key-open-urls"
     },
     "BACK": {
       "label": "Go Back",
@@ -2239,49 +2239,49 @@
       "description": "Show or hide the keyboard map",
       "keyLabel": "D",
       "displayKey": "D",
-      "keyboardClass": "key-purple"
+      "keyboardClass": "key-kp-ui"
     },
     "OPEN_SETTINGS_POPOVER": {
       "label": "Settings",
       "description": "Open KeyPilot Settings",
       "keyLabel": "'",
       "displayKey": "'",
-      "keyboardClass": "key-settings-dark"
+      "keyboardClass": "key-kp-ui"
     },
     "PAGE_TOP": {
       "label": "Scroll To Top",
       "description": "Jump to top of scroll target",
       "keyLabel": "/",
       "displayKey": "/",
-      "keyboardClass": "key-scroll"
+      "keyboardClass": "key-page-scroll"
     },
     "PAGE_BOTTOM": {
       "label": "Scroll To Bottom",
       "description": "Jump to bottom of scroll target",
       "keyLabel": "N",
       "displayKey": "N",
-      "keyboardClass": "key-scroll"
+      "keyboardClass": "key-page-scroll"
     },
     "PAGE_UP_INSTANT": {
       "label": "Page Up",
       "description": "Jump one page up instantly",
       "keyLabel": ",",
       "displayKey": ",",
-      "keyboardClass": "key-scroll"
+      "keyboardClass": "key-page-scroll"
     },
     "PAGE_DOWN_INSTANT": {
       "label": "Page Down",
       "description": "Jump one page down instantly",
       "keyLabel": "M",
       "displayKey": "M",
-      "keyboardClass": "key-scroll"
+      "keyboardClass": "key-page-scroll"
     },
     "CANCEL": {
       "label": "Exit Focus",
       "description": "Leave modes and overlays",
       "keyLabel": "Esc",
       "displayKey": "Esc",
-      "keyboardClass": null
+      "keyboardClass": "key-gray"
     }
   },
   "click-history-right": {
@@ -2297,7 +2297,7 @@
       "description": "Navigate to the site origin",
       "keyLabel": "S",
       "displayKey": "S",
-      "keyboardClass": null
+      "keyboardClass": "key-open-urls"
     },
     "BACK": {
       "label": "Go Back",
@@ -2318,21 +2318,21 @@
       "description": "Show or hide the keyboard map",
       "keyLabel": "K",
       "displayKey": "K",
-      "keyboardClass": "key-purple"
+      "keyboardClass": "key-kp-ui"
     },
     "OPEN_SETTINGS_POPOVER": {
       "label": "Settings",
       "description": "Open KeyPilot Settings",
       "keyLabel": "'",
       "displayKey": "'",
-      "keyboardClass": "key-settings-dark"
+      "keyboardClass": "key-kp-ui"
     },
     "CANCEL": {
       "label": "Exit Focus",
       "description": "Leave modes and overlays",
       "keyLabel": "Esc",
       "displayKey": "Esc",
-      "keyboardClass": null
+      "keyboardClass": "key-gray"
     }
   },
   "click-history-left": {
@@ -2348,7 +2348,7 @@
       "description": "Navigate to the site origin",
       "keyLabel": "L",
       "displayKey": "L",
-      "keyboardClass": null
+      "keyboardClass": "key-open-urls"
     },
     "BACK": {
       "label": "Go Back",
@@ -2369,21 +2369,21 @@
       "description": "Show or hide the keyboard map",
       "keyLabel": "D",
       "displayKey": "D",
-      "keyboardClass": "key-purple"
+      "keyboardClass": "key-kp-ui"
     },
     "OPEN_SETTINGS_POPOVER": {
       "label": "Settings",
       "description": "Open KeyPilot Settings",
       "keyLabel": "'",
       "displayKey": "'",
-      "keyboardClass": "key-settings-dark"
+      "keyboardClass": "key-kp-ui"
     },
     "CANCEL": {
       "label": "Exit Focus",
       "description": "Leave modes and overlays",
       "keyLabel": "Esc",
       "displayKey": "Esc",
-      "keyboardClass": null
+      "keyboardClass": "key-gray"
     }
   }
 };
@@ -2670,14 +2670,14 @@
     "description": "Switch to the previous tab",
     "keyLabel": "Q",
     "displayKey": "Q",
-    "keyboardClass": "key-gray"
+    "keyboardClass": "key-browser-chrome"
   },
   "TAB_RIGHT": {
     "label": "Tab Right",
     "description": "Switch to the next tab",
     "keyLabel": "W",
     "displayKey": "W",
-    "keyboardClass": "key-gray"
+    "keyboardClass": "key-browser-chrome"
   },
   "PREVIEW_LINK_POPOVER": {
     "label": "Preview Link",
@@ -2698,7 +2698,7 @@
     "description": "Open the KeyPilot new tab",
     "keyLabel": "T",
     "displayKey": "T",
-    "keyboardClass": "key-gray"
+    "keyboardClass": "key-browser-chrome"
   },
   "RECTANGLE_HIGHLIGHT": {
     "label": "Element Select",
@@ -2712,21 +2712,21 @@
     "description": "Copy hovered link URL",
     "keyLabel": "U",
     "displayKey": "U",
-    "keyboardClass": null
+    "keyboardClass": "key-page-media"
   },
   "COPY_HOVERED_IMAGE": {
     "label": "Copy Image",
     "description": "Copy hovered image",
     "keyLabel": "I",
     "displayKey": "I",
-    "keyboardClass": null
+    "keyboardClass": "key-page-media"
   },
   "PAGE_MEDIA": {
     "label": "Page Media",
     "description": "Browse media found on this page",
     "keyLabel": "O",
     "displayKey": "O",
-    "keyboardClass": null
+    "keyboardClass": "key-page-media"
   },
   "OPEN_POPOVER": {
     "label": "Open Popover",
@@ -2740,14 +2740,14 @@
     "description": "Zoom the page out at the cursor",
     "keyLabel": "[",
     "displayKey": "[",
-    "keyboardClass": "key-scroll"
+    "keyboardClass": "key-browser-chrome"
   },
   "ZOOM_IN": {
     "label": "Zoom In",
     "description": "Zoom the page in at the cursor",
     "keyLabel": "]",
     "displayKey": "]",
-    "keyboardClass": "key-scroll"
+    "keyboardClass": "key-browser-chrome"
   },
   "DELETE": {
     "label": "Delete Mode",
@@ -2768,7 +2768,7 @@
     "description": "Navigate to the site origin",
     "keyLabel": "S",
     "displayKey": "S",
-    "keyboardClass": null
+    "keyboardClass": "key-open-urls"
   },
   "BACK": {
     "label": "Go Back",
@@ -2803,70 +2803,70 @@
     "description": "Browse this tab’s history",
     "keyLabel": "J",
     "displayKey": "J",
-    "keyboardClass": "key-gray"
+    "keyboardClass": "key-kp-ui"
   },
   "TOGGLE_KEYBOARD_HELP": {
     "label": "KB Reference",
     "description": "Show or hide the keyboard map",
     "keyLabel": "K",
     "displayKey": "K",
-    "keyboardClass": "key-purple"
+    "keyboardClass": "key-kp-ui"
   },
   "OMNIBOX": {
     "label": "Omnibox",
     "description": "Address bar overlay",
     "keyLabel": "L",
     "displayKey": "L",
-    "keyboardClass": "key-orange"
+    "keyboardClass": "key-kp-ui"
   },
   "TOP_SITES": {
     "label": "Top Sites",
     "description": "Toolbar, visits, and bookmarks",
     "keyLabel": ";",
     "displayKey": ";",
-    "keyboardClass": "key-launcher-orange"
+    "keyboardClass": "key-kp-ui"
   },
   "OPEN_SETTINGS_POPOVER": {
     "label": "Settings",
     "description": "Open KeyPilot Settings",
     "keyLabel": "'",
     "displayKey": "'",
-    "keyboardClass": "key-settings-dark"
+    "keyboardClass": "key-kp-ui"
   },
   "PAGE_TOP": {
     "label": "Scroll To Top",
     "description": "Jump to top of scroll target",
     "keyLabel": "Z",
     "displayKey": "Z",
-    "keyboardClass": "key-scroll"
+    "keyboardClass": "key-page-scroll"
   },
   "PAGE_BOTTOM": {
     "label": "Scroll To Bottom",
     "description": "Jump to bottom of scroll target",
     "keyLabel": "X",
     "displayKey": "X",
-    "keyboardClass": "key-scroll"
+    "keyboardClass": "key-page-scroll"
   },
   "PAGE_UP_INSTANT": {
     "label": "Page Up",
     "description": "Jump one page up instantly",
     "keyLabel": "C",
     "displayKey": "C",
-    "keyboardClass": "key-scroll"
+    "keyboardClass": "key-page-scroll"
   },
   "PAGE_DOWN_INSTANT": {
     "label": "Page Down",
     "description": "Jump one page down instantly",
     "keyLabel": "V",
     "displayKey": "V",
-    "keyboardClass": "key-scroll"
+    "keyboardClass": "key-page-scroll"
   },
   "SCROLL_LINE": {
     "label": "Scroll Line",
     "description": "Origin-based continuous scroll",
     "keyLabel": "B",
     "displayKey": "B",
-    "keyboardClass": "key-scroll"
+    "keyboardClass": "key-page-scroll"
   },
   "ACTIVATE_NEW_TAB": {
     "label": "Click New Tab",
@@ -2880,35 +2880,35 @@
     "description": "Open saved Media Library",
     "keyLabel": "M",
     "displayKey": "M",
-    "keyboardClass": null
+    "keyboardClass": "key-media-library"
   },
   "stock:random-bookmark": {
     "label": "Random Bookmark",
     "description": "Open one random bookmark",
     "keyLabel": ",",
     "displayKey": ",",
-    "keyboardClass": "key-gray"
+    "keyboardClass": "key-open-urls"
   },
   "stock:social-media": {
     "label": "Social media",
     "description": "Open Facebook, Instagram, YouTube, and X",
     "keyLabel": ".",
     "displayKey": ".",
-    "keyboardClass": "key-gray"
+    "keyboardClass": "key-open-urls"
   },
   "TABS_OVERVIEW": {
     "label": "Tabs Overview",
     "description": "Show every window and tab",
     "keyLabel": "/",
     "displayKey": "/",
-    "keyboardClass": "key-gray"
+    "keyboardClass": "key-kp-ui"
   },
   "CANCEL": {
     "label": "Exit Focus",
     "description": "Leave modes and overlays",
     "keyLabel": "Esc",
     "displayKey": "Esc",
-    "keyboardClass": null
+    "keyboardClass": "key-gray"
   }
 };
   const EARLY_FUNCTION_PAINT = {
@@ -2942,23 +2942,23 @@
   },
   "TAB_LEFT": {
     "labelKey": "fn_TAB_LEFT_label",
-    "keyboardClass": "key-gray"
+    "keyboardClass": "key-browser-chrome"
   },
   "TAB_RIGHT": {
     "labelKey": "fn_TAB_RIGHT_label",
-    "keyboardClass": "key-gray"
+    "keyboardClass": "key-browser-chrome"
   },
   "ROOT": {
     "labelKey": "fn_ROOT_label",
-    "keyboardClass": null
+    "keyboardClass": "key-open-urls"
   },
   "LAUNCHER": {
     "labelKey": "fn_LAUNCHER_label",
-    "keyboardClass": "key-launcher-orange"
+    "keyboardClass": "key-kp-ui"
   },
   "TOP_SITES": {
     "labelKey": "fn_TOP_SITES_label",
-    "keyboardClass": "key-launcher-orange"
+    "keyboardClass": "key-kp-ui"
   },
   "CLOSE_TAB": {
     "labelKey": "fn_CLOSE_TAB_label",
@@ -2966,39 +2966,39 @@
   },
   "CANCEL": {
     "labelKey": "fn_CANCEL_label",
-    "keyboardClass": null
+    "keyboardClass": "key-gray"
   },
   "PAGE_UP_INSTANT": {
     "labelKey": "fn_PAGE_UP_INSTANT_label",
-    "keyboardClass": "key-scroll"
+    "keyboardClass": "key-page-scroll"
   },
   "PAGE_DOWN_INSTANT": {
     "labelKey": "fn_PAGE_DOWN_INSTANT_label",
-    "keyboardClass": "key-scroll"
+    "keyboardClass": "key-page-scroll"
   },
   "PAGE_TOP": {
     "labelKey": "fn_PAGE_TOP_label",
-    "keyboardClass": "key-scroll"
+    "keyboardClass": "key-page-scroll"
   },
   "PAGE_BOTTOM": {
     "labelKey": "fn_PAGE_BOTTOM_label",
-    "keyboardClass": "key-scroll"
+    "keyboardClass": "key-page-scroll"
   },
   "SCROLL_LINE": {
     "labelKey": "fn_SCROLL_LINE_label",
-    "keyboardClass": "key-scroll"
+    "keyboardClass": "key-page-scroll"
   },
   "ZOOM_OUT": {
     "labelKey": "fn_ZOOM_OUT_label",
-    "keyboardClass": "key-scroll"
+    "keyboardClass": "key-browser-chrome"
   },
   "ZOOM_IN": {
     "labelKey": "fn_ZOOM_IN_label",
-    "keyboardClass": "key-scroll"
+    "keyboardClass": "key-browser-chrome"
   },
   "NEW_TAB": {
     "labelKey": "fn_NEW_TAB_label",
-    "keyboardClass": "key-gray"
+    "keyboardClass": "key-browser-chrome"
   },
   "OPEN_POPOVER": {
     "labelKey": "fn_OPEN_POPOVER_label",
@@ -3014,27 +3014,27 @@
   },
   "POI_ADDRESS": {
     "labelKey": "fn_POI_ADDRESS_label",
-    "keyboardClass": null
+    "keyboardClass": "key-page-media"
   },
   "OPEN_SETTINGS_POPOVER": {
     "labelKey": "fn_OPEN_SETTINGS_POPOVER_label",
-    "keyboardClass": "key-settings-dark"
+    "keyboardClass": "key-kp-ui"
   },
   "OMNIBOX": {
     "labelKey": "fn_OMNIBOX_label",
-    "keyboardClass": "key-orange"
+    "keyboardClass": "key-kp-ui"
   },
   "TAB_HISTORY": {
     "labelKey": "fn_TAB_HISTORY_label",
-    "keyboardClass": "key-gray"
+    "keyboardClass": "key-kp-ui"
   },
   "TABS_OVERVIEW": {
     "labelKey": "fn_TABS_OVERVIEW_label",
-    "keyboardClass": "key-gray"
+    "keyboardClass": "key-kp-ui"
   },
   "TOGGLE_KEYBOARD_HELP": {
     "labelKey": "fn_TOGGLE_KEYBOARD_HELP_label",
-    "keyboardClass": "key-purple"
+    "keyboardClass": "key-kp-ui"
   },
   "HIGHLIGHT": {
     "labelKey": "fn_HIGHLIGHT_label",
@@ -3046,87 +3046,87 @@
   },
   "COPY_HOVERED_IMAGE": {
     "labelKey": "fn_COPY_HOVERED_IMAGE_label",
-    "keyboardClass": null
+    "keyboardClass": "key-page-media"
   },
   "COPY_HOVERED_URL": {
     "labelKey": "fn_COPY_HOVERED_URL_label",
-    "keyboardClass": null
+    "keyboardClass": "key-page-media"
   },
   "COPY_HOVERED_VIDEO": {
     "labelKey": "fn_COPY_HOVERED_VIDEO_label",
-    "keyboardClass": null
+    "keyboardClass": "key-page-media"
   },
   "FONT_INFO": {
     "labelKey": "fn_FONT_INFO_label",
-    "keyboardClass": null
+    "keyboardClass": "key-page-media"
   },
   "PAGE_MEDIA": {
     "labelKey": "fn_PAGE_MEDIA_label",
-    "keyboardClass": null
+    "keyboardClass": "key-page-media"
   },
   "OPEN_MEDIA_LIBRARY": {
     "labelKey": "fn_OPEN_MEDIA_LIBRARY_label",
-    "keyboardClass": null
+    "keyboardClass": "key-media-library"
   },
   "CLIPBOARD_COPY": {
     "labelKey": "fn_CLIPBOARD_COPY_label",
-    "keyboardClass": null
+    "keyboardClass": "key-clipboard"
   },
   "CLIPBOARD_CUT": {
     "labelKey": "fn_CLIPBOARD_CUT_label",
-    "keyboardClass": null
+    "keyboardClass": "key-clipboard"
   },
   "CLIPBOARD_PASTE": {
     "labelKey": "fn_CLIPBOARD_PASTE_label",
-    "keyboardClass": null
+    "keyboardClass": "key-clipboard"
   },
   "CLIPBOARD_SELECT_ALL": {
     "labelKey": "fn_CLIPBOARD_SELECT_ALL_label",
-    "keyboardClass": null
+    "keyboardClass": "key-clipboard"
   },
   "SELECT_WORD": {
     "labelKey": "fn_SELECT_WORD_label",
-    "keyboardClass": null
+    "keyboardClass": "key-highlight"
   },
   "SELECT_SENTENCE": {
     "labelKey": "fn_SELECT_SENTENCE_label",
-    "keyboardClass": null
+    "keyboardClass": "key-highlight"
   },
   "SELECT_PARAGRAPH": {
     "labelKey": "fn_SELECT_PARAGRAPH_label",
-    "keyboardClass": null
+    "keyboardClass": "key-highlight"
   },
   "SELECT_IMAGE": {
     "labelKey": "fn_SELECT_IMAGE_label",
-    "keyboardClass": null
+    "keyboardClass": "key-highlight"
   },
   "OPEN_URLS": {
     "labelKey": "fn_OPEN_URLS_label",
-    "keyboardClass": "key-gray"
+    "keyboardClass": "key-open-urls"
   },
   "OPEN_BOOKMARKS": {
     "labelKey": "fn_OPEN_BOOKMARKS_label",
-    "keyboardClass": "key-gray"
+    "keyboardClass": "key-open-urls"
   },
   "RANDOM_BOOKMARK": {
     "labelKey": "fn_RANDOM_BOOKMARK_label",
-    "keyboardClass": "key-gray"
+    "keyboardClass": "key-open-urls"
   },
   "LOOKUP_WORD": {
     "labelKey": "fn_LOOKUP_WORD_label",
-    "keyboardClass": null
+    "keyboardClass": "key-page-media"
   },
   "SHOW_POPOVER": {
     "labelKey": "fn_SHOW_POPOVER_label",
-    "keyboardClass": null
+    "keyboardClass": "key-kp-ui"
   },
   "ADD_URL_TO_MEDIA_LIBRARY": {
     "labelKey": "fn_ADD_URL_TO_MEDIA_LIBRARY_label",
-    "keyboardClass": null
+    "keyboardClass": "key-media-library"
   },
   "FETCH_URL_FOR_MEDIA_LIBRARY": {
     "labelKey": "fn_FETCH_URL_FOR_MEDIA_LIBRARY_label",
-    "keyboardClass": null
+    "keyboardClass": "key-media-library"
   }
 };
   const EARLY_CONTROL_STRIP_ICON_URIS = {"TOGGLE_KEYBOARD_HELP":"url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22%23ddd%22%3E%3Cpath%20d%3D%22M0%2096C0%2060.7%2028.7%2032%2064%2032H448c35.3%200%2064%2028.7%2064%2064V416c0%2035.3-28.7%2064-64%2064H64c-35.3%200-64-28.7-64-64V96zm128%2064v32h32V160H128zm64%200v32h32V160H192zm64%200v32h32V160H256zm64%200v32h32V160H320zm64%200v32h32V160H384zM96%20256v32h64V256H96zm96%200v32h32V256H192zm64%200v32h32V256H256zm64%200v32h32V256H320zm64%200v32h32V256H384zm64%200v32h32V256H448zM128%20352v32H384V352H128z%22%2F%3E%3C%2Fsvg%3E\")","OPEN_SETTINGS_POPOVER":"url(\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22%23ddd%22%3E%3Cpath%20d%3D%22M9.405%201.05c-.413-1.4-2.397-1.4-2.81%200l-.1.34a1.464%201.464%200%200%201-2.275.819l-.31-.17c-1.283-.698-2.686.705-1.987%201.987l.169.311c.446.82.023%201.841-.82%202.275l-.34.1c-1.4.413-1.4%202.397%200%202.81l.34.1a1.464%201.464%200%200%201%20.82%202.275l-.17.31c-.698%201.283.705%202.686%201.987%201.987l.311-.169a1.464%201.464%200%200%201%202.275.82l.1.34c.413%201.4%202.397%201.4%202.81%200l.1-.34a1.464%201.464%200%200%201%202.275-.82l.31.17c1.283.698%202.686-.705%201.987-1.987l-.169-.311a1.464%201.464%200%200%201%20.82-2.275l.34-.1c1.4-.413%201.4-2.397%200-2.81l-.34-.1a1.464%201.464%200%200%201-.82-2.275l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464%201.464%200%200%201-2.275-.82zM8%2010.93a2.93%202.93%200%201%201%200-5.86%202.93%202.93%200%200%201%200%205.86z%22%2F%3E%3C%2Fsvg%3E\")"};
@@ -4008,9 +4008,10 @@
 
 }
 
-/* Selection tools: indigo family (distinct from green activate / blue nav / amber unused) */
+/* Selection tools: indigo family (distinct from green activate / blue nav) */
 .kp-keybindings-ui .key.key-highlight,
-.kp-keybindings-ui .key.key-rect-highlight {
+.kp-keybindings-ui .key.key-rect-highlight,
+.kp-keybindings-ui .key.key-cols {
   
   --kp-key-face: #5b6fd4;
   --kp-key-mid: #4a5cbb;
@@ -4020,7 +4021,8 @@
 
 }
 
-.kp-keybindings-ui .key.key-scroll {
+/* Browser chrome (tabs, zoom, new tab) */
+.kp-keybindings-ui .key.key-browser-chrome {
   
   --kp-key-face: #7a5638;
   --kp-key-mid: #63452c;
@@ -4030,8 +4032,19 @@
 
 }
 
-.kp-keybindings-ui .key.key-purple,
-.kp-keybindings-ui .key.key-cols {
+/* Page scrolling. key-scroll is retained for macro round-robin. */
+.kp-keybindings-ui .key.key-page-scroll,
+.kp-keybindings-ui .key.key-scroll {
+  
+  --kp-key-face: #5f6b3c;
+  --kp-key-mid: #4d572f;
+  --kp-key-deep: #3a4223;
+  --kp-key-icon: #1c2110;
+  --kp-key-glow: rgba(164, 180, 80, 0.12);
+
+}
+
+.kp-keybindings-ui .key.key-purple {
   
   --kp-key-face: #7a4ab8;
   --kp-key-mid: #663d9e;
@@ -4041,6 +4054,8 @@
 
 }
 
+/* KeyPilot chrome overlays (Omnibox, Launcher, Top Sites). key-orange is retained for macro hotkeys. */
+.kp-keybindings-ui .key.key-kp-ui,
 .kp-keybindings-ui .key.key-orange {
   
   --kp-key-face: #c97a28;
@@ -4051,13 +4066,36 @@
 
 }
 
-.kp-keybindings-ui .key.key-launcher-orange {
+/* Inspect / collect media on the current page */
+.kp-keybindings-ui .key.key-page-media {
   
-  --kp-key-face: #a06a3a;
-  --kp-key-mid: #85562e;
-  --kp-key-deep: #664122;
-  --kp-key-icon: #322010;
-  --kp-key-glow: rgba(184, 115, 51, 0.12);
+  --kp-key-face: #2d7a7a;
+  --kp-key-mid: #246363;
+  --kp-key-deep: #1a4a4a;
+  --kp-key-icon: #0c2626;
+  --kp-key-glow: rgba(45, 180, 180, 0.12);
+
+}
+
+/* Same hue as page media, brighter and more saturated (saved library) */
+.kp-keybindings-ui .key.key-media-library {
+  
+  --kp-key-face: #2eb8b0;
+  --kp-key-mid: #249a94;
+  --kp-key-deep: #1b7671;
+  --kp-key-icon: #0d3f3c;
+  --kp-key-glow: rgba(46, 220, 210, 0.18);
+
+}
+
+/* Open saved destinations (Open URLs, bookmarks, Site Root) */
+.kp-keybindings-ui .key.key-open-urls {
+  
+  --kp-key-face: #a84a78;
+  --kp-key-mid: #8c3c64;
+  --kp-key-deep: #6b2d4c;
+  --kp-key-icon: #3a1528;
+  --kp-key-glow: rgba(216, 90, 140, 0.14);
 
 }
 
@@ -4078,6 +4116,17 @@
   --kp-key-deep: #343a45;
   --kp-key-icon: #1a1e26;
   --kp-key-glow: rgba(148, 163, 184, 0.1);
+
+}
+
+/* Clipboard commands (copy / cut / paste / select all) */
+.kp-keybindings-ui .key.key-clipboard {
+  
+  --kp-key-face: #4e5d73;
+  --kp-key-mid: #3e4a5c;
+  --kp-key-deep: #2d3644;
+  --kp-key-icon: #151a22;
+  --kp-key-glow: rgba(148, 163, 184, 0.14);
 
 }
 
@@ -4877,7 +4926,12 @@
 .kp-keybindings-ui .key[data-kp-action-id="PAGE_TOP"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M233.4%20105.4c12.5-12.5%2032.8-12.5%2045.3%200l96%2096c12.5%2012.5%2012.5%2032.8%200%2045.3s-32.8%2012.5-45.3%200L288%20205.3V384c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32V205.3l-41.4%2041.4c-12.5%2012.5-32.8%2012.5-45.3%200s-12.5-32.8%200-45.3l96-96zM64%20448c0-17.7%2014.3-32%2032-32H416c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H96c-17.7%200-32-14.3-32-32z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M233.4%20105.4c12.5-12.5%2032.8-12.5%2045.3%200l96%2096c12.5%2012.5%2012.5%2032.8%200%2045.3s-32.8%2012.5-45.3%200L288%20205.3V384c0%2017.7-14.3%2032-32%2032s-32-14.3-32-32V205.3l-41.4%2041.4c-12.5%2012.5-32.8%2012.5-45.3%200s-12.5-32.8%200-45.3l96-96zM64%20448c0-17.7%2014.3-32%2032-32H416c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H96c-17.7%200-32-14.3-32-32z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="PAGE_BOTTOM"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M233.4%20406.6c12.5%2012.5%2032.8%2012.5%2045.3%200l96-96c12.5-12.5%2012.5-32.8%200-45.3s-32.8-12.5-45.3%200L288%20306.7V128c0-17.7-14.3-32-32-32s-32%2014.3-32%2032V306.7l-41.4-41.4c-12.5-12.5-32.8-12.5-45.3%200s-12.5%2032.8%200%2045.3l96%2096zM64%2064c0-17.7%2014.3-32%2032-32H416c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H96C78.3%2096%2064%2081.7%2064%2064z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M233.4%20406.6c12.5%2012.5%2032.8%2012.5%2045.3%200l96-96c12.5-12.5%2012.5-32.8%200-45.3s-32.8-12.5-45.3%200L288%20306.7V128c0-17.7-14.3-32-32-32s-32%2014.3-32%2032V306.7l-41.4-41.4c-12.5-12.5-32.8-12.5-45.3%200s-12.5%2032.8%200%2045.3l96%2096zM64%2064c0-17.7%2014.3-32%2032-32H416c17.7%200%2032%2014.3%2032%2032s-14.3%2032-32%2032H96C78.3%2096%2064%2081.7%2064%2064z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="SCROLL_LINE"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%20512A256%20256%200%201%200%20256%200a256%20256%200%201%200%200%20512z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%20512A256%20256%200%201%200%20256%200a256%20256%200%201%200%200%20512z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="ZOOM_OUT"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M416%20208c0%2045.9-14.9%2088.3-40%20122.7L502.6%20457.4c12.5%2012.5%2012.5%2032.8%200%2045.3s-32.8%2012.5-45.3%200L330.7%20376c-34.4%2025.2-76.8%2040-122.7%2040C93.1%20416%200%20322.9%200%20208S93.1%200%20208%200S416%2093.1%20416%20208zM136%20184c-13.3%200-24%2010.7-24%2024s10.7%2024%2024%2024H280c13.3%200%2024-10.7%2024-24s-10.7-24-24-24H136z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M416%20208c0%2045.9-14.9%2088.3-40%20122.7L502.6%20457.4c12.5%2012.5%2012.5%2032.8%200%2045.3s-32.8%2012.5-45.3%200L330.7%20376c-34.4%2025.2-76.8%2040-122.7%2040C93.1%20416%200%20322.9%200%20208S93.1%200%20208%200S416%2093.1%20416%20208zM136%20184c-13.3%200-24%2010.7-24%2024s10.7%2024%2024%2024H280c13.3%200%2024-10.7%2024-24s-10.7-24-24-24H136z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="ZOOM_IN"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M416%20208c0%2045.9-14.9%2088.3-40%20122.7L502.6%20457.4c12.5%2012.5%2012.5%2032.8%200%2045.3s-32.8%2012.5-45.3%200L330.7%20376c-34.4%2025.2-76.8%2040-122.7%2040C93.1%20416%200%20322.9%200%20208S93.1%200%20208%200S416%2093.1%20416%20208zM184%20296c0%2013.3%2010.7%2024%2024%2024s24-10.7%2024-24V232h64c13.3%200%2024-10.7%2024-24s-10.7-24-24-24H232V120c0-13.3-10.7-24-24-24s-24%2010.7-24%2024v64H120c-13.3%200-24%2010.7-24%2024s10.7%2024%2024%2024h64v64z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M416%20208c0%2045.9-14.9%2088.3-40%20122.7L502.6%20457.4c12.5%2012.5%2012.5%2032.8%200%2045.3s-32.8%2012.5-45.3%200L330.7%20376c-34.4%2025.2-76.8%2040-122.7%2040C93.1%20416%200%20322.9%200%20208S93.1%200%20208%200S416%2093.1%20416%20208zM184%20296c0%2013.3%2010.7%2024%2024%2024s24-10.7%2024-24V232h64c13.3%200%2024-10.7%2024-24s-10.7-24-24-24H232V120c0-13.3-10.7-24-24-24s-24%2010.7-24%2024v64H120c-13.3%200-24%2010.7-24%2024s10.7%2024%2024%2024h64v64z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="NEW_TAB"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M64%2032C28.7%2032%200%2060.7%200%2096V416c0%2035.3%2028.7%2064%2064%2064H448c35.3%200%2064-28.7%2064-64V160c0-35.3-28.7-64-64-64H298.5c-17%200-33.3-6.7-45.3-18.7L226.7%2050.7C214.7%2038.7%20198.5%2032%20181.5%2032H64zM232%20248v-48c0-13.3%2010.7-24%2024-24s24%2010.7%2024%2024v48h48c13.3%200%2024%2010.7%2024%2024s-10.7%2024-24%2024H280v48c0%2013.3-10.7%2024-24%2024s-24-10.7-24-24V296H184c-13.3%200-24-10.7-24-24s10.7-24%2024-24h48z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M64%2032C28.7%2032%200%2060.7%200%2096V416c0%2035.3%2028.7%2064%2064%2064H448c35.3%200%2064-28.7%2064-64V160c0-35.3-28.7-64-64-64H298.5c-17%200-33.3-6.7-45.3-18.7L226.7%2050.7C214.7%2038.7%20198.5%2032%20181.5%2032H64zM232%20248v-48c0-13.3%2010.7-24%2024-24s24%2010.7%2024%2024v48h48c13.3%200%2024%2010.7%2024%2024s-10.7%2024-24%2024H280v48c0%2013.3-10.7%2024-24%2024s-24-10.7-24-24V296H184c-13.3%200-24-10.7-24-24s10.7-24%2024-24h48z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="OPEN_URLS"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M40%2048C26.7%2048%2016%2058.7%2016%2072s10.7%2024%2024%2024l80%200c13.3%200%2024-10.7%2024-24s-10.7-24-24-24L40%2048zm0%20160c-13.3%200-24%2010.7-24%2024s10.7%2024%2024%2024l80%200c13.3%200%2024-10.7%2024-24s-10.7-24-24-24l-80%200zm0%20160c-13.3%200-24%2010.7-24%2024s10.7%2024%2024%2024l80%200c13.3%200%2024-10.7%2024-24s-10.7-24-24-24l-80%200zM176%2072c0%2013.3%2010.7%2024%2024%2024l272%200c13.3%200%2024-10.7%2024-24s-10.7-24-24-24L200%2048c-13.3%200-24%2010.7-24%2024zm0%20160c0%2013.3%2010.7%2024%2024%2024l272%200c13.3%200%2024-10.7%2024-24s-10.7-24-24-24L200%20208c-13.3%200-24%2010.7-24%2024zm0%20160c0%2013.3%2010.7%2024%2024%2024l272%200c13.3%200%2024-10.7%2024-24s-10.7-24-24-24l-272%200c-13.3%200-24%2010.7-24%2024z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M40%2048C26.7%2048%2016%2058.7%2016%2072s10.7%2024%2024%2024l80%200c13.3%200%2024-10.7%2024-24s-10.7-24-24-24L40%2048zm0%20160c-13.3%200-24%2010.7-24%2024s10.7%2024%2024%2024l80%200c13.3%200%2024-10.7%2024-24s-10.7-24-24-24l-80%200zm0%20160c-13.3%200-24%2010.7-24%2024s10.7%2024%2024%2024l80%200c13.3%200%2024-10.7%2024-24s-10.7-24-24-24l-80%200zM176%2072c0%2013.3%2010.7%2024%2024%2024l272%200c13.3%200%2024-10.7%2024-24s-10.7-24-24-24L200%2048c-13.3%200-24%2010.7-24%2024zm0%20160c0%2013.3%2010.7%2024%2024%2024l272%200c13.3%200%2024-10.7%2024-24s-10.7-24-24-24L200%20208c-13.3%200-24%2010.7-24%2024zm0%20160c0%2013.3%2010.7%2024%2024%2024l272%200c13.3%200%2024-10.7%2024-24s-10.7-24-24-24l-272%200c-13.3%200-24%2010.7-24%2024z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="OPEN_BOOKMARKS"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M96%200C60.7%200%2032%2028.7%2032%2064V480c0%2011.5%206.2%2022.1%2016.2%2027.8s22.3%205.6%2032.2-.4L256%20405.3%20431.6%20507.4c9.9%206%2022.2%205.9%2032.2%20.4s16.2-16.3%2016.2-27.8V64c0-35.3-28.7-64-64-64H96z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M96%200C60.7%200%2032%2028.7%2032%2064V480c0%2011.5%206.2%2022.1%2016.2%2027.8s22.3%205.6%2032.2-.4L256%20405.3%20431.6%20507.4c9.9%206%2022.2%205.9%2032.2%20.4s16.2-16.3%2016.2-27.8V64c0-35.3-28.7-64-64-64H96z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
+.kp-keybindings-ui .key[data-kp-action-id="RANDOM_BOOKMARK"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M105.1%20202.6c7.7-21.8%2020.2-42.3%2037.8-59.1c62.5-62.5%20163.8-62.5%20226.3%200L417.3%20192%20384%20192c-17.7%200-32%2014.3-32%2032s14.3%2032%2032%2032l96%200%2016%200c17.7%200%2032-14.3%2032-32l0-96c0-17.7-14.3-32-32-32s-32%2014.3-32%2032l0%2036.7L425.4%2089.9C332.4-3.1%20181.2-3.1%2088.2%2089.9c-29.1%2029.1-48.5%2064.9-56.5%20103.5c-3.8%2018.5%2010.1%2036.9%2029.1%2036.9c14.2%200%2026.8-9.9%2030.3-23.7zM406.9%20309.4c-7.7%2021.8-20.2%2042.3-37.8%2059.1c-62.5%2062.5-163.8%2062.5-226.3%200L94.7%20320l33.3%200c17.7%200%2032-14.3%2032-32s-14.3-32-32-32L32%20256l-16%200C-1.7%20256-16%20270.3-16%20288l0%2096c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32l0-36.7%2033.9%2033.9C186.8%20515.1%20338%20515.1%20431%20422.1c29.1-29.1%2048.5-64.9%2056.5-103.5c3.8-18.5-10.1-36.9-29.1-36.9c-14.2%200-26.8%209.9-30.3%2023.7z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M105.1%20202.6c7.7-21.8%2020.2-42.3%2037.8-59.1c62.5-62.5%20163.8-62.5%20226.3%200L417.3%20192%20384%20192c-17.7%200-32%2014.3-32%2032s14.3%2032%2032%2032l96%200%2016%200c17.7%200%2032-14.3%2032-32l0-96c0-17.7-14.3-32-32-32s-32%2014.3-32%2032l0%2036.7L425.4%2089.9C332.4-3.1%20181.2-3.1%2088.2%2089.9c-29.1%2029.1-48.5%2064.9-56.5%20103.5c-3.8%2018.5%2010.1%2036.9%2029.1%2036.9c14.2%200%2026.8-9.9%2030.3-23.7zM406.9%20309.4c-7.7%2021.8-20.2%2042.3-37.8%2059.1c-62.5%2062.5-163.8%2062.5-226.3%200L94.7%20320l33.3%200c17.7%200%2032-14.3%2032-32s-14.3-32-32-32L32%20256l-16%200C-1.7%20256-16%20270.3-16%20288l0%2096c0%2017.7%2014.3%2032%2032%2032s32-14.3%2032-32l0-36.7%2033.9%2033.9C186.8%20515.1%20338%20515.1%20431%20422.1c29.1-29.1%2048.5-64.9%2056.5-103.5c3.8-18.5-10.1-36.9-29.1-36.9c-14.2%200-26.8%209.9-30.3%2023.7z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="OPEN_POPOVER"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M64%2032C28.7%2032%200%2060.7%200%2096V416c0%2035.3%2028.7%2064%2064%2064H448c35.3%200%2064-28.7%2064-64V96c0-35.3-28.7-64-64-64H64zm32%2096H416c17.7%200%2032%2014.3%2032%2032v32H64V160c0-17.7%2014.3-32%2032-32z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M64%2032C28.7%2032%200%2060.7%200%2096V416c0%2035.3%2028.7%2064%2064%2064H448c35.3%200%2064-28.7%2064-64V96c0-35.3-28.7-64-64-64H64zm32%2096H416c17.7%200%2032%2014.3%2032%2032v32H64V160c0-17.7%2014.3-32%2032-32z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="PREVIEW_LINK_POPOVER"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2096c-89.6%200-168.5%2048.8-212.7%20122.3c-7.3%2012.1-7.3%2027.3%200%2039.4C87.5%20331.2%20166.4%20380%20256%20380s168.5-48.8%20212.7-122.3c7.3-12.1%207.3-27.3%200-39.4C424.5%20144.8%20345.6%2096%20256%2096zm0%20224a96%2096%200%201%201%200-192%2096%2096%200%201%201%200%20192zm0-144a48%2048%200%201%200%200%2096%2048%2048%200%201%200%200-96z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M256%2096c-89.6%200-168.5%2048.8-212.7%20122.3c-7.3%2012.1-7.3%2027.3%200%2039.4C87.5%20331.2%20166.4%20380%20256%20380s168.5-48.8%20212.7-122.3c7.3-12.1%207.3-27.3%200-39.4C424.5%20144.8%20345.6%2096%20256%2096zm0%20224a96%2096%200%201%201%200-192%2096%2096%200%201%201%200%20192zm0-144a48%2048%200%201%200%200%2096%2048%2048%200%201%200%200-96z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }
 .kp-keybindings-ui .key[data-kp-action-id="POI_WEBSITE"] > .key-bg-icon { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M352%20256c0%2022.2-1.2%2043.6-3.3%2064H163.3c-2.2-20.4-3.3-41.8-3.3-64s1.2-43.6%203.3-64H348.7c2.2%2020.4%203.3%2041.8%203.3%2064zm28.8-64H503.9c5.3%2020.5%208.1%2041.9%208.1%2064s-2.8%2043.5-8.1%2064H380.8c2.1-20.6%203.2-42%203.2-64s-1.1-43.4-3.2-64zm112.6-32H376.7c-10-63.9-29.8-117.4-55.3-151.6c78.3%2020.7%20142%2077.5%20171.9%20151.6zm-196.8%200H167.7c6.1-36.4%2015.5-68.6%2027-94.7c10.5-23.6%2022.2-40.7%2033.5-51.5C239.4%203.2%20248.7%200%20256%200s16.6%203.2%2027.8%2013.8c11.3%2010.8%2023%2027.9%2033.5%2051.5c11.6%2026%2020.9%2058.2%2027%2094.7zm-144%200H18.6C48.6%2085.9%20112.2%2029.1%20190.6%208.4C165.1%2042.6%20145.3%2096.1%20135.3%20160zM8.1%20192H131.2c-2.1%2020.6-3.2%2042-3.2%2064s1.1%2043.4%203.2%2064H8.1C2.8%20299.5%200%20278.1%200%20256s2.8-43.5%208.1-64zM194.7%20446.6c-11.6-26-20.9-58.2-27-94.6H344.3c-6.1%2036.4-15.5%2068.6-27%2094.6c-10.5%2023.6-22.2%2040.7-33.5%2051.5C272.6%20508.8%20263.3%20512%20256%20512s-16.6-3.2-27.8-13.8c-11.3-10.8-23-27.9-33.5-51.5zM135.3%20352c10%2063.9%2029.8%20117.4%2055.3%20151.6C112.2%20482.9%2048.6%20426.1%2018.6%20352H135.3zm358.1%200c-30%2074.1-93.6%20130.9-171.9%20151.6c25.5-34.2%2045.2-87.7%2055.3-151.6H493.4z%22%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%20fill%3D%22black%22%3E%3Cpath%20d%3D%22M352%20256c0%2022.2-1.2%2043.6-3.3%2064H163.3c-2.2-20.4-3.3-41.8-3.3-64s1.2-43.6%203.3-64H348.7c2.2%2020.4%203.3%2041.8%203.3%2064zm28.8-64H503.9c5.3%2020.5%208.1%2041.9%208.1%2064s-2.8%2043.5-8.1%2064H380.8c2.1-20.6%203.2-42%203.2-64s-1.1-43.4-3.2-64zm112.6-32H376.7c-10-63.9-29.8-117.4-55.3-151.6c78.3%2020.7%20142%2077.5%20171.9%20151.6zm-196.8%200H167.7c6.1-36.4%2015.5-68.6%2027-94.7c10.5-23.6%2022.2-40.7%2033.5-51.5C239.4%203.2%20248.7%200%20256%200s16.6%203.2%2027.8%2013.8c11.3%2010.8%2023%2027.9%2033.5%2051.5c11.6%2026%2020.9%2058.2%2027%2094.7zm-144%200H18.6C48.6%2085.9%20112.2%2029.1%20190.6%208.4C165.1%2042.6%20145.3%2096.1%20135.3%20160zM8.1%20192H131.2c-2.1%2020.6-3.2%2042-3.2%2064s1.1%2043.4%203.2%2064H8.1C2.8%20299.5%200%20278.1%200%20256s2.8-43.5%208.1-64zM194.7%20446.6c-11.6-26-20.9-58.2-27-94.6H344.3c-6.1%2036.4-15.5%2068.6-27%2094.6c-10.5%2023.6-22.2%2040.7-33.5%2051.5C272.6%20508.8%20263.3%20512%20256%20512s-16.6-3.2-27.8-13.8c-11.3-10.8-23-27.9-33.5-51.5zM135.3%20352c10%2063.9%2029.8%20117.4%2055.3%20151.6C112.2%20482.9%2048.6%20426.1%2018.6%20352H135.3zm358.1%200c-30%2074.1-93.6%20130.9-171.9%20151.6c25.5-34.2%2045.2-87.7%2055.3-151.6H493.4z%22%2F%3E%3C%2Fsvg%3E"); background-color: var(--kp-key-icon, #0c1018); }

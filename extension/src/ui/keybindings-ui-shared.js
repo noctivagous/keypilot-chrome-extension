@@ -65,6 +65,9 @@ const FA_SOLID_PATHS = Object.freeze({
   // Font Awesome Free solid "gear" (512 viewBox)
   'gear': 'M495.9 166.1c3.3 12.7 .9 26.3-7.1 36.1l-37.3 45.7c2.1 11.1 3.2 22.6 3.2 34.3s-1.1 23.2-3.2 34.3l37.3 45.7c8 9.8 10.4 23.4 7.1 36.1c-6.3 24.2-17.7 46.6-33.1 66.3c-8.1 10.3-21.2 14.9-33.9 12.1l-57.5-12.7c-17.9 15.3-38.4 27.3-60.7 35.4l-13.7 57.5c-2.9 12.1-12.9 21.1-25.4 22.4c-24.2 2.6-49.1 2.6-73.3 0c-12.5-1.3-22.5-10.3-25.4-22.4l-13.7-57.5c-22.3-8.1-42.8-20.1-60.7-35.4L71.6 436.6c-12.7 2.8-25.8-1.8-33.9-12.1C22.3 404.8 10.9 382.4 4.6 358.2c-3.3-12.7-.9-26.3 7.1-36.1l37.3-45.7c-2.1-11.1-3.2-22.6-3.2-34.3s1.1-23.2 3.2-34.3L11.7 161.9c-8-9.8-10.4-23.4-7.1-36.1C10.9 101.6 22.3 79.2 37.7 59.5c8.1-10.3 21.2-14.9 33.9-12.1l57.5 12.7c17.9-15.3 38.4-27.3 60.7-35.4L203.5 17.2c2.9-12.1 12.9-21.1 25.4-22.4c24.2-2.6 49.1-2.6 73.3 0c12.5 1.3 22.5 10.3 25.4 22.4l13.7 57.5c22.3 8.1 42.8 20.1 60.7 35.4l57.5-12.7c12.7-2.8 25.8 1.8 33.9 12.1c15.4 19.7 26.8 42.1 33.1 66.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z',
   'magnifying-glass': 'M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z',
+  // FA Free solid "magnifying-glass-plus/minus" — tab zoom
+  'magnifying-glass-plus': 'M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM184 296c0 13.3 10.7 24 24 24s24-10.7 24-24V232h64c13.3 0 24-10.7 24-24s-10.7-24-24-24H232V120c0-13.3-10.7-24-24-24s-24 10.7-24 24v64H120c-13.3 0-24 10.7-24 24s10.7 24 24 24h64v64z',
+  'magnifying-glass-minus': 'M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM136 184c-13.3 0-24 10.7-24 24s10.7 24 24 24H280c13.3 0 24-10.7 24-24s-10.7-24-24-24H136z',
   'keyboard': 'M0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zm128 64v32h32V160H128zm64 0v32h32V160H192zm64 0v32h32V160H256zm64 0v32h32V160H320zm64 0v32h32V160H384zM96 256v32h64V256H96zm96 0v32h32V256H192zm64 0v32h32V256H256zm64 0v32h32V256H320zm64 0v32h32V256H384zm64 0v32h32V256H448zM128 352v32H384V352H128z',
   'clock-rotate-left': 'M256 0C114.6 0 0 114.6 0 256S114.6 512 256 512c53 0 102-16.2 142.7-43.9c10.8-7.4 13.6-22.3 6.2-33.1s-22.3-13.6-33.1-6.2C340.8 449.1 299.6 464 256 464C141.1 464 48 370.9 48 256S141.1 48 256 48c60.7 0 115.5 26.1 153.4 67.7l-33.5 33.5c-9.4 9.4-2.7 25.5 10.5 25.5H456c13.3 0 24-10.7 24-24V56c0-13.2-16.1-19.9-25.5-10.5L418.7 81.3C368.5 31.4 315.1 0 256 0zM232 120c0-13.3-10.7-24-24-24s-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V120z',
   'rocket': 'M156.6 384.9L125.7 354c-8.5-8.5-11.5-20.8-7.7-32.2c3-8.9 7-20.5 11.8-33.8L24 288c-8.6 0-16.6-4.6-20.9-12.1s-4.2-16.7 .2-24.1l52.5-88.5c13-21.9 36.5-35.3 61.9-35.3h82.3c2.4-4 4.8-7.7 7.2-11.3C289.1-4.1 411.1-8.1 483.9 5.3c11.6 2.1 20.6 11.2 22.8 22.8c13.4 72.9 9.3 194.8-111.4 276.7c-3.5 2.4-7.3 4.8-11.3 7.2v82.3c0 25.4-13.4 49-35.3 61.9l-88.5 52.5c-7.4 4.4-16.6 4.5-24.1 .2s-12.1-12.2-12.1-20.9V384.9c-13.3 4.8-24.9 8.8-33.8 11.8c-11.4 3.7-23.7 .7-32.2-7.8zM215.3 237.3c28.3-28.3 73.1-31.3 105.4-8.5L200.5 348.5c-22.8-32.3-19.8-77.1 8.5-105.4l6.3-5.8z',
@@ -109,6 +112,10 @@ const FA_SOLID_PATHS = Object.freeze({
   'arrows-rotate': 'M105.1 202.6c7.7-21.8 20.2-42.3 37.8-59.1c62.5-62.5 163.8-62.5 226.3 0L417.3 192 384 192c-17.7 0-32 14.3-32 32s14.3 32 32 32l96 0 16 0c17.7 0 32-14.3 32-32l0-96c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 36.7L425.4 89.9C332.4-3.1 181.2-3.1 88.2 89.9c-29.1 29.1-48.5 64.9-56.5 103.5c-3.8 18.5 10.1 36.9 29.1 36.9c14.2 0 26.8-9.9 30.3-23.7zM406.9 309.4c-7.7 21.8-20.2 42.3-37.8 59.1c-62.5 62.5-163.8 62.5-226.3 0L94.7 320l33.3 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L32 256l-16 0C-1.7 256-16 270.3-16 288l0 96c0 17.7 14.3 32 32 32s32-14.3 32-32l0-36.7 33.9 33.9C186.8 515.1 338 515.1 431 422.1c29.1-29.1 48.5-64.9 56.5-103.5c3.8-18.5-10.1-36.9-29.1-36.9c-14.2 0-26.8 9.9-30.3 23.7z',
   'layer-group': 'M32 96l224-80 224 80L256 176 32 96zM32 192l224 80 224-80 0 32L256 304 32 224l0-32zm0 96l224 80 224-80 0 32L256 400 32 320l0-32z',
   'globe': 'M352 256c0 22.2-1.2 43.6-3.3 64H163.3c-2.2-20.4-3.3-41.8-3.3-64s1.2-43.6 3.3-64H348.7c2.2 20.4 3.3 41.8 3.3 64zm28.8-64H503.9c5.3 20.5 8.1 41.9 8.1 64s-2.8 43.5-8.1 64H380.8c2.1-20.6 3.2-42 3.2-64s-1.1-43.4-3.2-64zm112.6-32H376.7c-10-63.9-29.8-117.4-55.3-151.6c78.3 20.7 142 77.5 171.9 151.6zm-196.8 0H167.7c6.1-36.4 15.5-68.6 27-94.7c10.5-23.6 22.2-40.7 33.5-51.5C239.4 3.2 248.7 0 256 0s16.6 3.2 27.8 13.8c11.3 10.8 23 27.9 33.5 51.5c11.6 26 20.9 58.2 27 94.7zm-144 0H18.6C48.6 85.9 112.2 29.1 190.6 8.4C165.1 42.6 145.3 96.1 135.3 160zM8.1 192H131.2c-2.1 20.6-3.2 42-3.2 64s1.1 43.4 3.2 64H8.1C2.8 299.5 0 278.1 0 256s2.8-43.5 8.1-64zM194.7 446.6c-11.6-26-20.9-58.2-27-94.6H344.3c-6.1 36.4-15.5 68.6-27 94.6c-10.5 23.6-22.2 40.7-33.5 51.5C272.6 508.8 263.3 512 256 512s-16.6-3.2-27.8-13.8c-11.3-10.8-23-27.9-33.5-51.5zM135.3 352c10 63.9 29.8 117.4 55.3 151.6C112.2 482.9 48.6 426.1 18.6 352H135.3zm358.1 0c-30 74.1-93.6 130.9-171.9 151.6c25.5-34.2 45.2-87.7 55.3-151.6H493.4z',
+  // FA Free solid "list" — Open URLs
+  'list': 'M40 48C26.7 48 16 58.7 16 72s10.7 24 24 24l80 0c13.3 0 24-10.7 24-24s-10.7-24-24-24L40 48zm0 160c-13.3 0-24 10.7-24 24s10.7 24 24 24l80 0c13.3 0 24-10.7 24-24s-10.7-24-24-24l-80 0zm0 160c-13.3 0-24 10.7-24 24s10.7 24 24 24l80 0c13.3 0 24-10.7 24-24s-10.7-24-24-24l-80 0zM176 72c0 13.3 10.7 24 24 24l272 0c13.3 0 24-10.7 24-24s-10.7-24-24-24L200 48c-13.3 0-24 10.7-24 24zm0 160c0 13.3 10.7 24 24 24l272 0c13.3 0 24-10.7 24-24s-10.7-24-24-24L200 208c-13.3 0-24 10.7-24 24zm0 160c0 13.3 10.7 24 24 24l272 0c13.3 0 24-10.7 24-24s-10.7-24-24-24l-272 0c-13.3 0-24 10.7-24 24z',
+  // FA Free solid-style bookmark (512 viewBox)
+  'bookmark': 'M96 0C60.7 0 32 28.7 32 64V480c0 11.5 6.2 22.1 16.2 27.8s22.3 5.6 32.2-.4L256 405.3 431.6 507.4c9.9 6 22.2 5.9 32.2 .4s16.2-16.3 16.2-27.8V64c0-35.3-28.7-64-64-64H96z',
   'location-dot': 'M256 64c-70.7 0-128 57.3-128 128c0 82.4 92.3 197.6 118.7 227.5c4.8 5.4 13.8 5.4 18.6 0C291.7 389.6 384 274.4 384 192c0-70.7-57.3-128-128-128zm0 176a48 48 0 1 1 0-96 48 48 0 1 1 0 96z'
 });
 
@@ -137,7 +144,12 @@ export const KEYBOARD_ACTION_ICON_IDS = Object.freeze({
   PAGE_TOP: 'arrow-up-from-line',
   PAGE_BOTTOM: 'arrow-down-to-line',
   SCROLL_LINE: 'circle',
+  ZOOM_OUT: 'magnifying-glass-minus',
+  ZOOM_IN: 'magnifying-glass-plus',
   NEW_TAB: 'folder-plus',
+  OPEN_URLS: 'list',
+  OPEN_BOOKMARKS: 'bookmark',
+  RANDOM_BOOKMARK: 'arrows-rotate',
   OPEN_POPOVER: 'window-maximize',
   PREVIEW_LINK_POPOVER: 'eye',
   POI_WEBSITE: 'globe',
@@ -918,9 +930,10 @@ ${fontFaceCss}
   })}
 }
 
-/* Selection tools: indigo family (distinct from green activate / blue nav / amber unused) */
+/* Selection tools: indigo family (distinct from green activate / blue nav) */
 .${KEYBINDINGS_UI_ROOT_CLASS} .key.key-highlight,
-.${KEYBINDINGS_UI_ROOT_CLASS} .key.key-rect-highlight {
+.${KEYBINDINGS_UI_ROOT_CLASS} .key.key-rect-highlight,
+.${KEYBINDINGS_UI_ROOT_CLASS} .key.key-cols {
   ${keycapMaterial({
     face: '#5b6fd4',
     mid: '#4a5cbb',
@@ -930,7 +943,8 @@ ${fontFaceCss}
   })}
 }
 
-.${KEYBINDINGS_UI_ROOT_CLASS} .key.key-scroll {
+/* Browser chrome (tabs, zoom, new tab) */
+.${KEYBINDINGS_UI_ROOT_CLASS} .key.key-browser-chrome {
   ${keycapMaterial({
     face: '#7a5638',
     mid: '#63452c',
@@ -940,8 +954,19 @@ ${fontFaceCss}
   })}
 }
 
-.${KEYBINDINGS_UI_ROOT_CLASS} .key.key-purple,
-.${KEYBINDINGS_UI_ROOT_CLASS} .key.key-cols {
+/* Page scrolling. key-scroll is retained for macro round-robin. */
+.${KEYBINDINGS_UI_ROOT_CLASS} .key.key-page-scroll,
+.${KEYBINDINGS_UI_ROOT_CLASS} .key.key-scroll {
+  ${keycapMaterial({
+    face: '#5f6b3c',
+    mid: '#4d572f',
+    deep: '#3a4223',
+    icon: '#1c2110',
+    glow: 'rgba(164, 180, 80, 0.12)'
+  })}
+}
+
+.${KEYBINDINGS_UI_ROOT_CLASS} .key.key-purple {
   ${keycapMaterial({
     face: '#7a4ab8',
     mid: '#663d9e',
@@ -951,6 +976,8 @@ ${fontFaceCss}
   })}
 }
 
+/* KeyPilot chrome overlays (Omnibox, Launcher, Top Sites). key-orange is retained for macro hotkeys. */
+.${KEYBINDINGS_UI_ROOT_CLASS} .key.key-kp-ui,
 .${KEYBINDINGS_UI_ROOT_CLASS} .key.key-orange {
   ${keycapMaterial({
     face: '#c97a28',
@@ -961,13 +988,36 @@ ${fontFaceCss}
   })}
 }
 
-.${KEYBINDINGS_UI_ROOT_CLASS} .key.key-launcher-orange {
+/* Inspect / collect media on the current page */
+.${KEYBINDINGS_UI_ROOT_CLASS} .key.key-page-media {
   ${keycapMaterial({
-    face: '#a06a3a',
-    mid: '#85562e',
-    deep: '#664122',
-    icon: '#322010',
-    glow: 'rgba(184, 115, 51, 0.12)'
+    face: '#2d7a7a',
+    mid: '#246363',
+    deep: '#1a4a4a',
+    icon: '#0c2626',
+    glow: 'rgba(45, 180, 180, 0.12)'
+  })}
+}
+
+/* Same hue as page media, brighter and more saturated (saved library) */
+.${KEYBINDINGS_UI_ROOT_CLASS} .key.key-media-library {
+  ${keycapMaterial({
+    face: '#2eb8b0',
+    mid: '#249a94',
+    deep: '#1b7671',
+    icon: '#0d3f3c',
+    glow: 'rgba(46, 220, 210, 0.18)'
+  })}
+}
+
+/* Open saved destinations (Open URLs, bookmarks, Site Root) */
+.${KEYBINDINGS_UI_ROOT_CLASS} .key.key-open-urls {
+  ${keycapMaterial({
+    face: '#a84a78',
+    mid: '#8c3c64',
+    deep: '#6b2d4c',
+    icon: '#3a1528',
+    glow: 'rgba(216, 90, 140, 0.14)'
   })}
 }
 
@@ -988,6 +1038,17 @@ ${fontFaceCss}
     deep: '#343a45',
     icon: '#1a1e26',
     glow: 'rgba(148, 163, 184, 0.1)'
+  })}
+}
+
+/* Clipboard commands (copy / cut / paste / select all) */
+.${KEYBINDINGS_UI_ROOT_CLASS} .key.key-clipboard {
+  ${keycapMaterial({
+    face: '#4e5d73',
+    mid: '#3e4a5c',
+    deep: '#2d3644',
+    icon: '#151a22',
+    glow: 'rgba(148, 163, 184, 0.14)'
   })}
 }
 
