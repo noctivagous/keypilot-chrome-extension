@@ -3517,6 +3517,20 @@
     "message": "可在設定中變更",
     "description": "Hint shown on hover in the key-info popover when the action has settings."
   },
+  "key_info_instance_title": {
+    "message": "$NAME$：$TYPE$",
+    "description": "Hover tooltip title for an action instance. $1 is the instance name, $2 is the key action type.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Social media"
+      },
+      "type": {
+        "content": "$2",
+        "example": "Open URLs"
+      }
+    }
+  },
   "key_info_config": {
     "message": "配置",
     "description": "Button in the key-info popover that opens the action configuration panel."
@@ -4709,6 +4723,72 @@
     "message": "按順序在目前分頁之後，用背景分頁開啟此動作實例中儲存的每個網址。可以建立多個實例，把不同的網站組放在不同的按鍵上。",
     "description": "Function Library details for OPEN_URLS."
   },
+  "fn_OPEN_BOOKMARKS_label": {
+    "message": "開啟書籤",
+    "description": "Function Library label for OPEN_BOOKMARKS."
+  },
+  "fn_OPEN_BOOKMARKS_description": {
+    "message": "開啟資料夾中靠前的書籤",
+    "description": "Function Library description for OPEN_BOOKMARKS."
+  },
+  "fn_OPEN_BOOKMARKS_details": {
+    "message": "開啟書籤資料夾中前 30 個網站書籤（包含子資料夾），每個在目前分頁之後的背景分頁中開啟。在動作執行個體上選擇資料夾。其他資料夾請另建執行個體。",
+    "description": "Function Library details for OPEN_BOOKMARKS."
+  },
+  "fn_param_bookmark_folder": {
+    "message": "資料夾",
+    "description": "Function parameter label for OPEN_BOOKMARKS.folderId."
+  },
+  "fn_param_bookmark_folder_filter": {
+    "message": "篩選資料夾",
+    "description": "Filter field placeholder in the bookmark folder picker."
+  },
+  "fn_param_bookmark_folder_loading": {
+    "message": "正在載入資料夾…",
+    "description": "Status while bookmark folders are loading."
+  },
+  "fn_param_bookmark_folder_empty": {
+    "message": "沒有書籤資料夾",
+    "description": "Status when no bookmark folders match."
+  },
+  "fn_param_bookmark_folder_missing": {
+    "message": "找不到資料夾",
+    "description": "Status when the saved bookmark folder no longer exists."
+  },
+  "fn_param_bookmark_folder_hint": {
+    "message": "開啟此資料夾中前 30 個網站書籤。",
+    "description": "Hint under the bookmark folder picker. The key opens at most 30 bookmarks."
+  },
+  "fn_open_bookmarks_none": {
+    "message": "請為此按鍵選擇一個書籤資料夾",
+    "description": "Flash when Open Bookmarks has no folder chosen."
+  },
+  "fn_open_bookmarks_empty": {
+    "message": "該資料夾沒有網站書籤",
+    "description": "Flash when the chosen bookmark folder has no website bookmarks."
+  },
+  "fn_open_bookmarks_opened_one": {
+    "message": "已開啟 1 個書籤",
+    "description": "Flash after Open Bookmarks opens one tab."
+  },
+  "fn_open_bookmarks_opened": {
+    "message": "已開啟 $1 個書籤",
+    "description": "Flash after Open Bookmarks opens more than one tab. $1 is the tab count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_open_bookmarks_failed": {
+    "message": "無法開啟書籤",
+    "description": "Flash when Open Bookmarks fails to open tabs."
+  },
+  "fn_summary_bookmark_folder": {
+    "message": "書籤資料夾",
+    "description": "Short summary when an Open Bookmarks instance has a folder."
+  },
   "fn_param_urls": {
     "message": "網址",
     "description": "Function parameter label for OPEN_URLS.urls."
@@ -4768,6 +4848,10 @@
   "fn_stock_social_media_description": {
     "message": "開啟 Facebook、Instagram、YouTube 和 X",
     "description": "Bundled Open URLs instance description."
+  },
+  "fn_instance_name_label": {
+    "message": "名稱",
+    "description": "Action instance name field on the key info popover."
   },
   "fn_GET_TEXT_AT_CURSOR_label": {
     "message": "取得游標處文字",

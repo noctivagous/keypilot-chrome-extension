@@ -5,6 +5,8 @@
 
 import { groupActionControlSpecs } from './action-config-schema.js';
 import { enhanceNativeSelect } from '../ui/select-menu.js';
+import { MSG } from '../messaging/types.js';
+import { getMessage } from '../utils/i18n.js';
 
 /**
  * @typedef {{
@@ -140,6 +142,8 @@ function renderField(doc, spec, current, ctx) {
     control = input;
   } else if (spec.type === 'stringList') {
     control = renderStringList(doc, spec, current, ctx);
+  } else if (spec.type === 'bookmarkFolder') {
+    control = renderBookmarkFolderPicker(doc, spec, current, ctx);
   } else if (spec.type === 'textarea' || spec.multiline) {
     const textarea = doc.createElement('textarea');
     textarea.setAttribute('data-multiline', 'true');
@@ -160,7 +164,7 @@ function renderField(doc, spec, current, ctx) {
     control = input;
   }
 
-  if (spec.type !== 'stringList' && applyControlClass && classes.control && 'className' in control) {
+  if (spec.type !== 'stringList' && spec.type !== 'bookmarkFolder' && applyControlClass && classes.control && 'className' in control) {
     control.className = classes.control;
   }
   if (spec.placeholder && 'placeholder' in control) {
@@ -188,6 +192,7 @@ function renderField(doc, spec, current, ctx) {
  * @returns {HTMLElement}
  */
 function renderStringList(doc, spec, current, ctx) {
+  if (spec.presentation === 'table') return renderStringListTable(doc, spec, current, ctx);
   const { controller, live, classes, listenOpts } = ctx;
   const maxItems = Number.isFinite(spec.maxItems) && spec.maxItems > 0 ? spec.maxItems : 20;
   const wrap = doc.createElement('div');
@@ -264,5 +269,224 @@ function renderStringList(doc, spec, current, ctx) {
   }, listenOpts);
   wrap.appendChild(addBtn);
   syncAddEnabled();
+  return wrap;
+}
+
+/**
+ * Scrollable URL table. `visibleRows` is the viewport (default 5), not the data cap.
+ * @param {Document} doc
+ * @param {import('./action-config-schema.js').ActionControlSpec} spec
+ * @param {any} current
+ * @param {{
+ *   controller: import('./action-config-controller.js').ActionConfigController,
+ *   live: boolean,
+ *   classes: ActionConfigFieldClasses,
+ *   listenOpts: AddEventListenerOptions
+ * }} ctx
+ * @returns {HTMLElement}
+ */
+function renderStringListTable(doc, spec, current, ctx) {
+  const { controller, live, classes, listenOpts } = ctx;
+  const maxItems = Number.isFinite(spec.maxItems) && spec.maxItems > 0 ? spec.maxItems : 20;
+  const visibleRows = Number.isFinite(spec.visibleRows) && spec.visibleRows > 0 ? spec.visibleRows : 5;
+  const wrap = doc.createElement('div');
+  wrap.className = 'kp-string-table';
+
+  const scroller = doc.createElement('div');
+  scroller.className = 'kp-string-table-scroll';
+  scroller.style.maxHeight = `calc(${visibleRows} * var(--kp-string-table-row, 30px))`;
+  scroller.style.overflowY = 'auto';
+
+  const table = doc.createElement('table');
+  const tbody = doc.createElement('tbody');
+  table.appendChild(tbody);
+  scroller.appendChild(table);
+  wrap.appendChild(scroller);
+
+  const addBtn = doc.createElement('button');
+  addBtn.type = 'button';
+  addBtn.className = 'kp-cfg-btn kp-string-table-add';
+  addBtn.textContent = spec.addLabel || 'Add URL';
+
+  const commit = () => {
+    const values = [...tbody.querySelectorAll('input')].map((input) => input.value);
+    void controller.update(spec.path, values);
+  };
+
+  const syncAddEnabled = () => {
+    addBtn.disabled = tbody.childElementCount >= maxItems;
+  };
+
+  const addRow = (value) => {
+    if (tbody.childElementCount >= maxItems) return;
+    const tr = doc.createElement('tr');
+    const valueCell = doc.createElement('td');
+    const input = doc.createElement('input');
+    input.type = 'text';
+    input.inputMode = 'url';
+    input.spellcheck = false;
+    input.autocomplete = 'off';
+    input.value = value == null ? '' : String(value);
+    if (classes.control) input.className = classes.control;
+    if (spec.placeholder) input.placeholder = String(spec.placeholder);
+    input.addEventListener('change', commit, listenOpts);
+    if (live) input.addEventListener('input', commit, listenOpts);
+    valueCell.appendChild(input);
+
+    const removeCell = doc.createElement('td');
+    const remove = doc.createElement('button');
+    remove.type = 'button';
+    remove.className = 'kp-cfg-btn kp-string-table-remove';
+    remove.textContent = '×';
+    remove.setAttribute('aria-label', spec.removeLabel || 'Remove URL');
+    remove.title = spec.removeLabel || 'Remove URL';
+    remove.addEventListener('click', () => {
+      tr.remove();
+      if (!tbody.childElementCount) addRow('');
+      syncAddEnabled();
+      commit();
+    }, listenOpts);
+    removeCell.appendChild(remove);
+
+    tr.appendChild(valueCell);
+    tr.appendChild(removeCell);
+    tbody.appendChild(tr);
+    syncAddEnabled();
+  };
+
+  const initial = Array.isArray(current) ? current.filter((item) => String(item || '').trim()) : [];
+  if (initial.length) {
+    for (const value of initial) addRow(value);
+  } else {
+    addRow('');
+  }
+
+  addBtn.addEventListener('click', () => {
+    addRow('');
+    const inputs = tbody.querySelectorAll('input');
+    const last = inputs[inputs.length - 1];
+    if (last) last.focus();
+    if (tbody.childElementCount > visibleRows) {
+      try { scroller.scrollTop = scroller.scrollHeight; } catch { /* ignore */ }
+    }
+  }, listenOpts);
+  wrap.appendChild(addBtn);
+  syncAddEnabled();
+  return wrap;
+}
+
+/**
+ * @returns {Promise<Array<{ id: string, path: string }>>}
+ */
+async function fetchBookmarkFolders() {
+  try {
+    const response = await chrome.runtime.sendMessage({ type: MSG.LIST_BOOKMARK_FOLDERS });
+    if (response && response.type === MSG.BOOKMARK_FOLDERS && Array.isArray(response.folders)) {
+      return response.folders.filter((folder) => folder && folder.id && folder.path);
+    }
+  } catch { /* ignore */ }
+  return [];
+}
+
+/**
+ * Scrollable Bookmarks Manager folder picker. The stored value is the folder id.
+ * @param {Document} doc
+ * @param {import('./action-config-schema.js').ActionControlSpec} spec
+ * @param {any} current
+ * @param {{
+ *   controller: import('./action-config-controller.js').ActionConfigController,
+ *   classes: ActionConfigFieldClasses,
+ *   listenOpts: AddEventListenerOptions
+ * }} ctx
+ * @returns {HTMLElement}
+ */
+function renderBookmarkFolderPicker(doc, spec, current, ctx) {
+  const { controller, classes, listenOpts } = ctx;
+  let selectedId = current == null ? '' : String(current);
+  const wrap = doc.createElement('div');
+  wrap.className = 'kp-bookmark-folder-list';
+
+  const filter = doc.createElement('input');
+  filter.type = 'text';
+  filter.autocomplete = 'off';
+  filter.spellcheck = false;
+  filter.placeholder = spec.placeholder || getMessage('fn_param_bookmark_folder_filter') || 'Filter folders';
+  filter.setAttribute('aria-label', filter.placeholder);
+  if (classes.control) filter.className = classes.control;
+
+  const scroller = doc.createElement('div');
+  scroller.className = 'kp-bookmark-folder-scroll';
+  scroller.style.maxHeight = 'calc(5 * var(--kp-string-table-row, 30px))';
+  scroller.style.overflowY = 'auto';
+  scroller.setAttribute('role', 'listbox');
+  scroller.setAttribute('aria-label', spec.label || 'Folder');
+
+  const hint = doc.createElement('div');
+  hint.className = 'kp-bookmark-folder-hint';
+  hint.textContent = getMessage('fn_param_bookmark_folder_hint') || 'Opens the first 30 website bookmarks in this folder.';
+
+  /** @type {Array<{ id: string, path: string }>} */
+  let folders = [];
+
+  const paint = (query) => {
+    const needle = String(query || '').trim().toLowerCase();
+    scroller.replaceChildren();
+    const matches = folders.filter((folder) => !needle || folder.path.toLowerCase().includes(needle));
+    if (!folders.length) {
+      const empty = doc.createElement('div');
+      empty.className = 'kp-bookmark-folder-status';
+      empty.textContent = getMessage('fn_param_bookmark_folder_empty') || 'No bookmark folders';
+      scroller.appendChild(empty);
+      return;
+    }
+    if (selectedId && !folders.some((folder) => folder.id === selectedId) && !needle) {
+      const missing = doc.createElement('button');
+      missing.type = 'button';
+      missing.className = 'kp-bookmark-folder-btn';
+      missing.setAttribute('aria-pressed', 'true');
+      missing.textContent = getMessage('fn_param_bookmark_folder_missing') || 'Folder not found';
+      scroller.appendChild(missing);
+    }
+    if (!matches.length) {
+      const empty = doc.createElement('div');
+      empty.className = 'kp-bookmark-folder-status';
+      empty.textContent = getMessage('fn_param_bookmark_folder_empty') || 'No bookmark folders';
+      scroller.appendChild(empty);
+      return;
+    }
+    for (const folder of matches) {
+      const btn = doc.createElement('button');
+      btn.type = 'button';
+      btn.className = 'kp-bookmark-folder-btn';
+      btn.dataset.folderId = folder.id;
+      btn.textContent = folder.path;
+      btn.setAttribute('role', 'option');
+      btn.setAttribute('aria-selected', folder.id === selectedId ? 'true' : 'false');
+      btn.addEventListener('click', () => {
+        selectedId = folder.id;
+        scroller.querySelectorAll('.kp-bookmark-folder-btn').forEach((el) => {
+          el.setAttribute('aria-selected', el === btn ? 'true' : 'false');
+        });
+        void controller.update(spec.path, folder.id);
+      }, listenOpts);
+      scroller.appendChild(btn);
+    }
+  };
+
+  filter.addEventListener('input', () => paint(filter.value), listenOpts);
+  const loading = doc.createElement('div');
+  loading.className = 'kp-bookmark-folder-status';
+  loading.textContent = getMessage('fn_param_bookmark_folder_loading') || 'Loading folders…';
+  scroller.appendChild(loading);
+
+  wrap.appendChild(filter);
+  wrap.appendChild(scroller);
+  wrap.appendChild(hint);
+
+  void fetchBookmarkFolders().then((next) => {
+    if (!wrap.isConnected) return;
+    folders = next;
+    paint(filter.value);
+  });
   return wrap;
 }

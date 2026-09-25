@@ -387,12 +387,12 @@ export class FloatingKeyboardHelp {
    * @param {any|null} [params.userLayout]
    * @param {any[]} [params.userMacros]
    */
-  setActiveLayoutSelection({ currentKeyboardLayoutId, userLayout, userMacros, userActions } = {}) {
+  setActiveLayoutSelection({ currentKeyboardLayoutId, userLayout, userMacros, userActions, render = true } = {}) {
     this._currentKeyboardLayoutId = typeof currentKeyboardLayoutId === 'string' ? currentKeyboardLayoutId : 'builtin';
     this._currentUserLayout = userLayout || null;
     this._currentUserMacros = Array.isArray(userMacros) ? userMacros : [];
     this._currentUserActions = Array.isArray(userActions) ? userActions : [];
-    if (this.root && !this.root.hidden) {
+    if (render !== false && this.root && !this.root.hidden) {
       this._render();
     }
   }
@@ -2340,7 +2340,8 @@ export class FloatingKeyboardHelp {
           keyboardLayout: uiLayout,
           layoutId,
           hardwareLayoutId: settings?.keyboardHardwareLayoutId,
-          attachPopovers: true
+          attachPopovers: true,
+          getKeyPilot: () => this._getKeyPilot?.()
         });
         this._rebuildKeyIndex();
       } catch (e) {
@@ -2378,7 +2379,13 @@ export class FloatingKeyboardHelp {
           });
           const baseHand = inferFamilyAndHandednessFromLayoutId(baseId).handedness;
           this.keybindings = buildEffectiveKeybindings(baseId, baseHand);
-          try { attachKeyPopoverBehavior({ root: this.keyboardContainer, keybindings: this.keybindings }); } catch { /* ignore */ }
+          try {
+            attachKeyPopoverBehavior({
+              root: this.keyboardContainer,
+              keybindings: this.keybindings,
+              getKeyPilot: () => this._getKeyPilot?.()
+            });
+          } catch { /* ignore */ }
           this._rebuildKeyIndex();
           return;
         }
@@ -2428,7 +2435,8 @@ export class FloatingKeyboardHelp {
             keybindings,
             keyboardLayout: uiLayout,
             layoutId,
-            attachPopovers: true
+            attachPopovers: true,
+            getKeyPilot: () => this._getKeyPilot?.()
           });
           this._rebuildKeyIndex();
           await this._refreshLayoutSelectOptions();
@@ -2717,6 +2725,9 @@ export class FloatingKeyboardHelp {
       if (displayAssigned && displayAssigned.type === 'function' && resolvedFn) {
         // Use Function id (not Action Instance id) so FA bg-icon CSS selectors match built-in.
         try { btn.setAttribute('data-kp-action-id', String(resolvedFn.functionId)); } catch { /* ignore */ }
+        if (String(displayAssigned.id) !== String(resolvedFn.functionId)) {
+          try { btn.dataset.kpInstanceId = String(displayAssigned.id); } catch { /* ignore */ }
+        }
         const binding = kb[resolvedFn.functionId];
         const aria = (binding && (binding.description || binding.label)) || resolvedFn.label;
         try { btn.removeAttribute('title'); } catch { /* ignore */ }
@@ -2892,7 +2903,11 @@ export class FloatingKeyboardHelp {
     // View mode: same key-info popovers as the built-in keyboard reference.
     if (!editMode) {
       try {
-        attachKeyPopoverBehavior({ root: container, keybindings: kb });
+        attachKeyPopoverBehavior({
+          root: container,
+          keybindings: kb,
+          getKeyPilot: () => this._getKeyPilot?.()
+        });
       } catch { /* ignore */ }
     }
   }

@@ -3517,6 +3517,20 @@
     "message": "可在设置中更改",
     "description": "Hint shown on hover in the key-info popover when the action has settings."
   },
+  "key_info_instance_title": {
+    "message": "$NAME$：$TYPE$",
+    "description": "Hover tooltip title for an action instance. $1 is the instance name, $2 is the key action type.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Social media"
+      },
+      "type": {
+        "content": "$2",
+        "example": "Open URLs"
+      }
+    }
+  },
   "key_info_config": {
     "message": "配置",
     "description": "Button in the key-info popover that opens the action configuration panel."
@@ -4709,6 +4723,72 @@
     "message": "按顺序在当前标签页之后，用后台标签页打开此动作实例中保存的每个网址。可以创建多个实例，把不同的网站组放在不同的键上。",
     "description": "Function Library details for OPEN_URLS."
   },
+  "fn_OPEN_BOOKMARKS_label": {
+    "message": "打开书签",
+    "description": "Function Library label for OPEN_BOOKMARKS."
+  },
+  "fn_OPEN_BOOKMARKS_description": {
+    "message": "打开文件夹中靠前的书签",
+    "description": "Function Library description for OPEN_BOOKMARKS."
+  },
+  "fn_OPEN_BOOKMARKS_details": {
+    "message": "打开书签文件夹中前 30 个网站书签（包含子文件夹），每个在当前标签页之后的后台标签页中打开。在动作实例上选择文件夹。其他文件夹请另建实例。",
+    "description": "Function Library details for OPEN_BOOKMARKS."
+  },
+  "fn_param_bookmark_folder": {
+    "message": "文件夹",
+    "description": "Function parameter label for OPEN_BOOKMARKS.folderId."
+  },
+  "fn_param_bookmark_folder_filter": {
+    "message": "筛选文件夹",
+    "description": "Filter field placeholder in the bookmark folder picker."
+  },
+  "fn_param_bookmark_folder_loading": {
+    "message": "正在加载文件夹…",
+    "description": "Status while bookmark folders are loading."
+  },
+  "fn_param_bookmark_folder_empty": {
+    "message": "没有书签文件夹",
+    "description": "Status when no bookmark folders match."
+  },
+  "fn_param_bookmark_folder_missing": {
+    "message": "找不到文件夹",
+    "description": "Status when the saved bookmark folder no longer exists."
+  },
+  "fn_param_bookmark_folder_hint": {
+    "message": "打开此文件夹中前 30 个网站书签。",
+    "description": "Hint under the bookmark folder picker. The key opens at most 30 bookmarks."
+  },
+  "fn_open_bookmarks_none": {
+    "message": "请为此键选择一个书签文件夹",
+    "description": "Flash when Open Bookmarks has no folder chosen."
+  },
+  "fn_open_bookmarks_empty": {
+    "message": "该文件夹没有网站书签",
+    "description": "Flash when the chosen bookmark folder has no website bookmarks."
+  },
+  "fn_open_bookmarks_opened_one": {
+    "message": "已打开 1 个书签",
+    "description": "Flash after Open Bookmarks opens one tab."
+  },
+  "fn_open_bookmarks_opened": {
+    "message": "已打开 $1 个书签",
+    "description": "Flash after Open Bookmarks opens more than one tab. $1 is the tab count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_open_bookmarks_failed": {
+    "message": "无法打开书签",
+    "description": "Flash when Open Bookmarks fails to open tabs."
+  },
+  "fn_summary_bookmark_folder": {
+    "message": "书签文件夹",
+    "description": "Short summary when an Open Bookmarks instance has a folder."
+  },
   "fn_param_urls": {
     "message": "网址",
     "description": "Function parameter label for OPEN_URLS.urls."
@@ -4768,6 +4848,10 @@
   "fn_stock_social_media_description": {
     "message": "打开 Facebook、Instagram、YouTube 和 X",
     "description": "Bundled Open URLs instance description."
+  },
+  "fn_instance_name_label": {
+    "message": "名称",
+    "description": "Action instance name field on the key info popover."
   },
   "fn_GET_TEXT_AT_CURSOR_label": {
     "message": "获取光标处文本",

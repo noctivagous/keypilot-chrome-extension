@@ -33,6 +33,10 @@ Move between tabs and browser history without reaching for chrome buttons.
 
 Browsing includes a bundled **Social media** instance on <kbd>/</kbd> (right-handed) and <kbd>Z</kbd> (left-handed): Facebook, Instagram, YouTube, and X.
 
+<h3 id="open-bookmarks">Open Bookmarks</h3>
+
+**Open Bookmarks** is an Action Instance in the Tab Control library. Choose one folder from the Bookmarks Manager. Pressing the key opens the first 30 website bookmarks in that folder, including bookmarks inside subfolders, each in a background tab after the current tab. Create another instance to open a different folder.
+
 ### Tips
 
 - Back/forward follow normal browser history for the tab.

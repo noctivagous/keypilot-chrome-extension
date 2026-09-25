@@ -51,6 +51,18 @@ describe('action-config-schema', () => {
     assert.equal(controlTypeForParameter({ type: 'string', multiline: true }), 'textarea');
     assert.equal(controlTypeForParameter({ type: 'string' }), 'text');
     assert.equal(controlTypeForParameter({ type: 'stringList' }), 'stringList');
+    const { parameterToControlSpec } = await import('../extension/src/modules/action-config-schema.js');
+    const urlSpec = parameterToControlSpec({
+      id: 'urls',
+      label: 'URLs',
+      type: 'stringList',
+      maxItems: 20,
+      presentation: 'table',
+      visibleRows: 5
+    });
+    assert.equal(urlSpec.presentation, 'table');
+    assert.equal(urlSpec.visibleRows, 5);
+    assert.equal(urlSpec.maxItems, 20);
 
     const schema = buildActionControlSchema(SAMPLE_PARAMETERS, {
       radioParamIds: ACTION_RADIO_PARAMETER_IDS

@@ -27,6 +27,10 @@ Muévete entre pestañas y el historial del navegador sin tener que tocar los bo
 | <kbd>J</kbd> | Ventana emergente Historial de pestañas |
 | <kbd>.</kbd> | Vista de pestañas (zurdos: <kbd>X</kbd>) |
 
+<h3 id="open-bookmarks">Abrir marcadores</h3>
+
+**Abrir marcadores** es una instancia de acción en el control de pestañas. Elija una carpeta del administrador de marcadores. La tecla abre los primeros 30 marcadores de sitios web de esa carpeta, incluidas las subcarpetas, cada uno en una pestaña en segundo plano después de la pestaña actual.
+
 ### Consejos
 
 - Atrás/adelante sigue el historial normal del navegador para la pestaña.

@@ -103,6 +103,15 @@ describe('messaging validate', () => {
       validateRuntimeMessage({ type: MSG.OPEN_URLS, urls: ['https://example.com'] }),
       null
     );
+    assert.match(
+      validateRuntimeMessage({ type: MSG.OPEN_BOOKMARK_FOLDER, folderId: '' }) || '',
+      /folderId/
+    );
+    assert.equal(
+      validateRuntimeMessage({ type: MSG.OPEN_BOOKMARK_FOLDER, folderId: '12' }),
+      null
+    );
+    assert.equal(validateRuntimeMessage({ type: MSG.LIST_BOOKMARK_FOLDERS }), null);
   });
 
   it('builds ERROR envelopes', () => {

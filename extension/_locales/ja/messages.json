@@ -3517,6 +3517,20 @@
     "message": "クリックして設定を表示",
     "description": "Hint shown on hover in the key-info popover when the action has settings."
   },
+  "key_info_instance_title": {
+    "message": "$NAME$：$TYPE$",
+    "description": "Hover tooltip title for an action instance. $1 is the instance name, $2 is the key action type.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Social media"
+      },
+      "type": {
+        "content": "$2",
+        "example": "Open URLs"
+      }
+    }
+  },
   "key_info_config": {
     "message": "設定",
     "description": "Button in the key-info popover that opens the action configuration panel."
@@ -4709,6 +4723,72 @@
     "message": "このアクションインスタンスに保存した各URLを、現在のタブの直後に、順番にバックグラウンドタブで開きます。インスタンスを複数作ると、キーごとに別のサイト集を持てます。",
     "description": "Function Library details for OPEN_URLS."
   },
+  "fn_OPEN_BOOKMARKS_label": {
+    "message": "ブックマークを開く",
+    "description": "Function Library label for OPEN_BOOKMARKS."
+  },
+  "fn_OPEN_BOOKMARKS_description": {
+    "message": "フォルダ内の先頭のブックマークを開きます",
+    "description": "Function Library description for OPEN_BOOKMARKS."
+  },
+  "fn_OPEN_BOOKMARKS_details": {
+    "message": "ブックマークフォルダ内のウェブサイトを先頭から30件、サブフォルダを含めて、現在のタブの後にバックグラウンドタブで開きます。フォルダはアクションインスタンスで選びます。別のフォルダには別のインスタンスを作ります。",
+    "description": "Function Library details for OPEN_BOOKMARKS."
+  },
+  "fn_param_bookmark_folder": {
+    "message": "フォルダ",
+    "description": "Function parameter label for OPEN_BOOKMARKS.folderId."
+  },
+  "fn_param_bookmark_folder_filter": {
+    "message": "フォルダを絞り込む",
+    "description": "Filter field placeholder in the bookmark folder picker."
+  },
+  "fn_param_bookmark_folder_loading": {
+    "message": "フォルダを読み込み中…",
+    "description": "Status while bookmark folders are loading."
+  },
+  "fn_param_bookmark_folder_empty": {
+    "message": "ブックマークフォルダがありません",
+    "description": "Status when no bookmark folders match."
+  },
+  "fn_param_bookmark_folder_missing": {
+    "message": "フォルダが見つかりません",
+    "description": "Status when the saved bookmark folder no longer exists."
+  },
+  "fn_param_bookmark_folder_hint": {
+    "message": "このフォルダの先頭30件のウェブサイトを開きます。",
+    "description": "Hint under the bookmark folder picker. The key opens at most 30 bookmarks."
+  },
+  "fn_open_bookmarks_none": {
+    "message": "このキーのブックマークフォルダを選んでください",
+    "description": "Flash when Open Bookmarks has no folder chosen."
+  },
+  "fn_open_bookmarks_empty": {
+    "message": "そのフォルダにウェブサイトのブックマークがありません",
+    "description": "Flash when the chosen bookmark folder has no website bookmarks."
+  },
+  "fn_open_bookmarks_opened_one": {
+    "message": "ブックマークを1件開きました",
+    "description": "Flash after Open Bookmarks opens one tab."
+  },
+  "fn_open_bookmarks_opened": {
+    "message": "ブックマークを$1件開きました",
+    "description": "Flash after Open Bookmarks opens more than one tab. $1 is the tab count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_open_bookmarks_failed": {
+    "message": "ブックマークを開けませんでした",
+    "description": "Flash when Open Bookmarks fails to open tabs."
+  },
+  "fn_summary_bookmark_folder": {
+    "message": "ブックマークフォルダ",
+    "description": "Short summary when an Open Bookmarks instance has a folder."
+  },
   "fn_param_urls": {
     "message": "URL",
     "description": "Function parameter label for OPEN_URLS.urls."
@@ -4768,6 +4848,10 @@
   "fn_stock_social_media_description": {
     "message": "Facebook、Instagram、YouTube、X を開く",
     "description": "Bundled Open URLs instance description."
+  },
+  "fn_instance_name_label": {
+    "message": "名前",
+    "description": "Action instance name field on the key info popover."
   },
   "fn_GET_TEXT_AT_CURSOR_label": {
     "message": "カーソル位置のテキストを取得",

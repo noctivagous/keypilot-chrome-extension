@@ -33,6 +33,11 @@ import {
 import { getMessage } from './src/utils/i18n.js';
 import { formatAltShortcut } from './src/utils/platform.js';
 import { normalizeOpenUrlList } from './src/utils/open-url-list.js';
+import {
+  collectBookmarkUrls,
+  listBookmarkFolders,
+  normalizeBookmarkFolderId
+} from './src/utils/bookmark-folder.js';
 import { stepZoomFactor } from './src/utils/page-zoom.js';
 
 void startKeyPilotDebugFromSettings();
@@ -3111,6 +3116,79 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             sendResponse({ type: MSG.SUCCESS, opened });
           } catch (error) {
             console.error('Failed to open URL tabs:', error);
+            sendResponse({
+              type: MSG.ERROR,
+              error: 'Failed to open tabs: ' + error.message,
+              opened
+            });
+          }
+          break;
+        }
+
+        case MSG.LIST_BOOKMARK_FOLDERS: {
+          try {
+            if (!chrome.bookmarks || typeof chrome.bookmarks.getTree !== 'function') {
+              sendResponse({ type: MSG.BOOKMARK_FOLDERS, folders: [] });
+              break;
+            }
+            const tree = await chrome.bookmarks.getTree();
+            sendResponse({ type: MSG.BOOKMARK_FOLDERS, folders: listBookmarkFolders(tree) });
+          } catch (error) {
+            console.error('KP_LIST_BOOKMARK_FOLDERS failed:', error);
+            sendResponse({ type: MSG.ERROR, error: 'Failed to list bookmark folders' });
+          }
+          break;
+        }
+
+        case MSG.OPEN_BOOKMARK_FOLDER: {
+          const folderId = normalizeBookmarkFolderId(message.folderId);
+          if (!folderId) {
+            sendResponse({ type: MSG.ERROR, error: 'No folder' });
+            break;
+          }
+          let urls = [];
+          try {
+            if (!chrome.bookmarks || typeof chrome.bookmarks.getSubTree !== 'function') {
+              sendResponse({ type: MSG.ERROR, error: 'Bookmarks unavailable' });
+              break;
+            }
+            const subtree = await chrome.bookmarks.getSubTree(folderId);
+            urls = collectBookmarkUrls(subtree);
+          } catch (error) {
+            console.error('KP_OPEN_BOOKMARK_FOLDER failed:', error);
+            sendResponse({ type: MSG.ERROR, error: 'Failed to read bookmark folder' });
+            break;
+          }
+          if (!urls.length) {
+            sendResponse({ type: MSG.SUCCESS, opened: 0 });
+            break;
+          }
+          const baseIndex = sender.tab && typeof sender.tab.index === 'number'
+            ? sender.tab.index
+            : null;
+          const windowId = sender.tab && typeof sender.tab.windowId === 'number'
+            ? sender.tab.windowId
+            : null;
+          const openerTabId = sender.tab && typeof sender.tab.id === 'number'
+            ? sender.tab.id
+            : null;
+          let opened = 0;
+          try {
+            for (let i = 0; i < urls.length; i++) {
+              /** @type {chrome.tabs.CreateProperties} */
+              const createProps = {
+                url: urls[i],
+                active: false
+              };
+              if (baseIndex != null) createProps.index = baseIndex + 1 + i;
+              if (windowId != null) createProps.windowId = windowId;
+              if (openerTabId != null) createProps.openerTabId = openerTabId;
+              await chrome.tabs.create(createProps);
+              opened += 1;
+            }
+            sendResponse({ type: MSG.SUCCESS, opened });
+          } catch (error) {
+            console.error('Failed to open bookmark tabs:', error);
             sendResponse({
               type: MSG.ERROR,
               error: 'Failed to open tabs: ' + error.message,

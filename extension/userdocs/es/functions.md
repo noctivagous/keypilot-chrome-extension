@@ -37,6 +37,10 @@ Inserte el texto guardado en el campo enfocado. Vinculado con un acorde modifica
 
 Abre una lista guardada de sitios web en pestañas en segundo plano. Cree una instancia de acción por conjunto de sitios y edite las URL en el inspector del editor de distribución del teclado. Consulte [Pestañas e historial](kp://docs/browsing-tabs#open-urls).
 
+<h3 id="open-bookmarks">Abrir marcadores</h3>
+
+Abre los primeros 30 marcadores de sitios web de una carpeta de marcadores, incluidas las subcarpetas. Elija la carpeta en la instancia de acción. Consulte [Pestañas e historial](kp://docs/browsing-tabs#open-bookmarks).
+
 <h3 id="font-info">Font Info</h3>
 
 Ventana emergente con familia, tamaño, tipo de archivo y URL de descarga para el texto con estilo debajo del cursor, además de un resumen de esa ejecución de texto.

@@ -34,15 +34,20 @@ import { buildKpDeepLink } from '../utils/kp-deep-link.js';
 import { getMessage } from '../utils/i18n.js';
 import { altModifierLabel } from '../utils/platform.js';
 import { OPEN_URLS_MAX, normalizeOpenUrlList } from '../utils/open-url-list.js';
+import { normalizeBookmarkFolderId } from '../utils/bookmark-folder.js';
 
 /**
  * @typedef {{
  *   id: string,
  *   labelKey?: string,
- *   type: 'boolean'|'number'|'string'|'stringList'|'enum',
+ *   type: 'boolean'|'number'|'string'|'stringList'|'enum'|'bookmarkFolder',
  *   maxItems?: number,
  *   addLabelKey?: string,
  *   removeLabelKey?: string,
+ *   // stringList layout. `table` is a scrollable row list; `visibleRows` is the
+ *   // viewport height in rows, not a data cap (`maxItems` is the data cap).
+ *   presentation?: 'stack'|'table',
+ *   visibleRows?: number,
  *   defaultValue?: any,
  *   options?: Array<{ id: string, labelKey?: string }>,
  *   min?: number,
@@ -433,6 +438,7 @@ const FUNCTION_DOCS_URL_BY_ID = Object.freeze({
   POI_ADDRESS: docsUrl('functions', 'poi'),
   TYPE_CHARACTERS: docsUrl('functions', 'type-characters'),
   OPEN_URLS: docsUrl('browsing-tabs', 'open-urls'),
+  OPEN_BOOKMARKS: docsUrl('browsing-tabs', 'open-bookmarks'),
   EXECUTE_JS: docsUrl('execute-js'),
   GET_TEXT_AT_CURSOR: docsUrl('functions', 'get-text-at-cursor'),
   GET_TEXT_RANGE: docsUrl('functions', 'get-text-at-cursor'),
@@ -585,9 +591,35 @@ const OPEN_URLS_FUNCTION_DEF = Object.freeze({
       type: 'stringList',
       defaultValue: Object.freeze([]),
       maxItems: OPEN_URLS_MAX,
+      presentation: 'table',
+      visibleRows: 5,
       placeholderKey: 'fn_param_urls_placeholder',
       addLabelKey: 'fn_param_urls_add',
       removeLabelKey: 'fn_param_urls_remove'
+    })
+  ])
+});
+
+/**
+ * Instantiable Function: open website bookmarks from one Bookmarks folder.
+ * Each Action Instance holds its own folder id.
+ */
+const OPEN_BOOKMARKS_FUNCTION_DEF = Object.freeze({
+  id: 'OPEN_BOOKMARKS',
+  labelKey: 'fn_OPEN_BOOKMARKS_label',
+  descriptionKey: 'fn_OPEN_BOOKMARKS_description',
+  detailsKey: 'fn_OPEN_BOOKMARKS_details',
+  handler: 'handleOpenBookmarksKey',
+  category: 'Tab Control',
+  keyboardClass: 'key-gray',
+  dataSource: 'none',
+  parameters: Object.freeze([
+    Object.freeze({
+      id: 'folderId',
+      labelKey: 'fn_param_bookmark_folder',
+      type: 'bookmarkFolder',
+      defaultValue: '',
+      placeholderKey: 'fn_param_bookmark_folder_filter'
     })
   ])
 });
@@ -878,6 +910,7 @@ export const FUNCTION_LIBRARY = Object.freeze(omitBuildExcludedFunctions({
   ...buildKeystrokeFunctionDefs(),
   [TYPE_CHARACTERS_FUNCTION_DEF.id]: withDocsUrl(TYPE_CHARACTERS_FUNCTION_DEF),
   [OPEN_URLS_FUNCTION_DEF.id]: withDocsUrl(OPEN_URLS_FUNCTION_DEF),
+  [OPEN_BOOKMARKS_FUNCTION_DEF.id]: withDocsUrl(OPEN_BOOKMARKS_FUNCTION_DEF),
   [EXECUTE_JS_FUNCTION_DEF.id]: withDocsUrl(EXECUTE_JS_FUNCTION_DEF),
   ...Object.fromEntries(
     Object.entries(buildDataAcquisitionFunctionDefs())
@@ -991,6 +1024,7 @@ export const FUNCTION_LIBRARY_ITEM_ORDER = Object.freeze({
   NEW_TAB: 140,
   TAB_HISTORY: 150,
   TABS_OVERVIEW: 152,
+  OPEN_BOOKMARKS: 153,
   // Begin URL
   TOP_SITES: 155,
   LAUNCHER: 160,
@@ -1214,6 +1248,9 @@ export function normalizeFunctionParameters(functionId, raw) {
           p.maxItems
         );
         break;
+      case 'bookmarkFolder':
+        out[p.id] = normalizeBookmarkFolderId(v !== undefined ? v : defaults[p.id]);
+        break;
       default:
         out[p.id] = v !== undefined ? String(v) : (defaults[p.id] ?? '');
     }
@@ -1248,6 +1285,10 @@ export function summarizeFunctionParameters(functionId, parameters) {
     if (!count) return getMessage('fn_summary_empty');
     if (count === 1) return getMessage('fn_summary_url_one');
     return getMessage('fn_summary_url_count', String(count));
+  }
+  if (functionId === 'OPEN_BOOKMARKS') {
+    if (!normalizeBookmarkFolderId(parameters?.folderId)) return getMessage('fn_summary_empty');
+    return getMessage('fn_summary_bookmark_folder');
   }
   if (functionId === 'EXECUTE_JS') {
     const lines = String(parameters?.script || '').split(/\r?\n/);

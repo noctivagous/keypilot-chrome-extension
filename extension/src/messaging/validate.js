@@ -60,6 +60,8 @@ export const SW_RUNTIME_REQUEST_TYPES = Object.freeze([
   MSG.OPEN_URL_BACKGROUND,
   MSG.OPEN_URL_FOREGROUND,
   MSG.OPEN_URLS,
+  MSG.LIST_BOOKMARK_FOLDERS,
+  MSG.OPEN_BOOKMARK_FOLDER,
   MSG.NAVIGATE_SAME_TAB,
   MSG.ZOOM_STEP,
   MSG.STATUS
@@ -145,6 +147,13 @@ export function validateRuntimeMessage(message, opts = {}) {
         || message.urls.length > 20
         || message.urls.some((url) => typeof url !== 'string' || !url.trim())) {
         return 'OPEN_URLS requires urls: non-empty string array (max 20)';
+      }
+      break;
+    case MSG.LIST_BOOKMARK_FOLDERS:
+      break;
+    case MSG.OPEN_BOOKMARK_FOLDER:
+      if (typeof message.folderId !== 'string' || !message.folderId.trim() || message.folderId.length > 64) {
+        return 'OPEN_BOOKMARK_FOLDER requires folderId: non-empty string';
       }
       break;
     case MSG.OPEN_POPOVER_WINDOW:

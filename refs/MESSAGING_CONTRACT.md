@@ -35,7 +35,7 @@ Wire values remain the `KP_*` strings; production code must send/receive via `MS
 **Request/response** (await `sendResponse` / Promise):
 
 - State: `GET_STATE` → `STATE_RESPONSE`; `SET_STATE` → `STATE_CHANGED` / `ERROR`; `TOGGLE_STATE` (no enabled) → `STATE_CHANGED`
-- Navigation / tabs: `TAB_*`, `NEW_TAB`, `CLOSE_TAB`, `GO_*`, `OPEN_URL_*`, `OPEN_URLS`, `NAVIGATE_SAME_TAB`, `ZOOM_STEP` → `SUCCESS` / `ERROR`
+- Navigation / tabs: `TAB_*`, `NEW_TAB`, `CLOSE_TAB`, `GO_*`, `OPEN_URL_*`, `OPEN_URLS`, `OPEN_BOOKMARK_FOLDER`, `LIST_BOOKMARK_FOLDERS`, `NAVIGATE_SAME_TAB`, `ZOOM_STEP` → `SUCCESS` / `ERROR`
 - Data APIs: omnibox, bookmarks, history, top sites, video thumb, dictionary, media library, navgraph → typed `*_RESPONSE` / `*_RESULT` / `NAVGRAPH_GRAPH` or echo type
 - UI forward: `OPEN_*` / `LAUNCH_WALKTHROUGH` → SW forwards to tab → `SUCCESS` / `ERROR`
 - Popover window: `OPEN_POPOVER_WINDOW`, `CLOSE_POPOVER_WINDOW`, `AM_I_POPOVER_WINDOW`
@@ -48,6 +48,8 @@ Wire values remain the `KP_*` strings; production code must send/receive via `MS
 | `SET_STATE` | `enabled: boolean` | `STATE_CHANGED` / `ERROR` |
 | `OPEN_URL_*` / `NAVIGATE_SAME_TAB` / `NAVGRAPH_JUMP` | `url: string` | `SUCCESS` / `ERROR` |
 | `OPEN_URLS` | `urls: string[]` (1–20) | `SUCCESS` (`opened`) / `ERROR` |
+| `LIST_BOOKMARK_FOLDERS` | — | `BOOKMARK_FOLDERS` (`folders: { id, path }[]`) / `ERROR` |
+| `OPEN_BOOKMARK_FOLDER` | `folderId: string` | `SUCCESS` (`opened`) / `ERROR` |
 | `ZOOM_STEP` | `direction: 1 \| -1` (optional `apply: false` to preview) or `zoomFactor` | `SUCCESS` (`oldZoom`, `newZoom`, `changed`) / `ERROR` |
 | `OPEN_POPOVER_WINDOW` | `url: string` | `SUCCESS` (+ window ids) / `ERROR` |
 | `DICTIONARY_LOOKUP` | `word: string` | `DICTIONARY_LOOKUP` echo |

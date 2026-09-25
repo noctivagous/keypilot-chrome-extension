@@ -62,6 +62,10 @@ describe('open URL list', () => {
     assert.equal(functionAssignableToKey('OPEN_URLS'), true);
     assert.equal(getFunctionDef('OPEN_URLS').handler, 'handleOpenUrlsKey');
     assert.equal(getFunctionDef('OPEN_URLS').category, 'Tab Control');
+    const urlsParam = getFunctionDef('OPEN_URLS').parameters.find((param) => param.id === 'urls');
+    assert.equal(urlsParam.presentation, 'table');
+    assert.equal(urlsParam.visibleRows, 5);
+    assert.equal(urlsParam.maxItems, OPEN_URLS_MAX);
 
     const parameters = normalizeFunctionParameters('OPEN_URLS', {
       urls: ['example.com', 'javascript:alert(1)', 'https://example.com/']

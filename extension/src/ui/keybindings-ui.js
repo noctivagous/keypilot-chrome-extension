@@ -29,8 +29,15 @@ import {
   setActionMode,
   setActionParameter
 } from './key-action-settings.js';
-import { getOrCreateBuiltinFunctionUserAction } from '../modules/keyboard-layout-store.js';
+import { getOrCreateBuiltinFunctionUserAction, getUserActionById } from '../modules/keyboard-layout-store.js';
+import { getStockActionById } from '../config/stock-actions.js';
+import { getFunctionDef } from '../config/function-library.js';
 import { resolveKeybinding } from '../config/keyboard-layouts.js';
+import {
+  commitInstanceSettings,
+  instanceIdForKey,
+  renderInstanceSettingsForm
+} from './instance-settings.js';
 import { getMessage, localizeKeycapLabel } from '../utils/i18n.js';
 import {
   closestComposed,
@@ -63,11 +70,17 @@ const KEY_INFO_POPOVER_INNER_HTML = `
       <div class="kp-popover-settings" hidden></div>
     `;
 
+function settingsFunctionId(actionId) {
+  const stock = getStockActionById(actionId);
+  return stock?.functionId || actionId;
+}
+
 function actionHasSettings(actionId) {
-  return actionHasModes(actionId)
-    || actionHasDestination(actionId)
-    || getActionInlineEnumDefs(actionId).length > 0
-    || actionHasParameters(actionId);
+  const id = settingsFunctionId(actionId);
+  return actionHasModes(id)
+    || actionHasDestination(id)
+    || getActionInlineEnumDefs(id).length > 0
+    || actionHasParameters(id);
 }
 
 function getRuntimeFontUrls() {
@@ -190,6 +203,7 @@ function updateExistingKeyboardDOM({ container, keybindings }) {
  * @param {string} [params.layoutId]
  * @param {string} [params.hardwareLayoutId]
  * @param {boolean} [params.attachPopovers=true] When false, skip key info popovers (edit mode).
+ * @param {() => any} [params.getKeyPilot]
  */
 export function renderKeybindingsKeyboard({
   container,
@@ -197,7 +211,8 @@ export function renderKeybindingsKeyboard({
   keyboardLayout,
   layoutId,
   hardwareLayoutId,
-  attachPopovers = true
+  attachPopovers = true,
+  getKeyPilot
 } = {}) {
   if (!container) return;
   const doc = container.ownerDocument || document;
@@ -227,7 +242,7 @@ export function renderKeybindingsKeyboard({
     if (canReuse) {
       if (updateExistingKeyboardDOM({ container, keybindings })) {
         if (attachPopovers) {
-          attachKeyPopoverBehavior({ root: container, keybindings });
+          attachKeyPopoverBehavior({ root: container, keybindings, getKeyPilot });
         } else {
           detachKeyPopoverBehavior(container);
         }
@@ -276,6 +291,7 @@ export function renderKeybindingsKeyboard({
       const className = `${baseClass}${binding && binding.keyboardClass ? ' ' + binding.keyboardClass : ''}`;
       const keyEl = el(doc, 'button', className);
       keyEl.dataset.kpActionId = item.id;
+      if (instanceIdForKey(null, item.id)) keyEl.dataset.kpInstanceId = item.id;
       keyEl.dataset.kpBaseClass = baseClass;
       if (item.code) keyEl.dataset.kpPhysicalCode = String(item.code);
       keyEl.type = 'button'; // Prevent form submission if inside a form
@@ -314,7 +330,8 @@ export function renderKeybindingsKeyboard({
   if (attachPopovers) {
     attachKeyPopoverBehavior({
       root: container,
-      keybindings
+      keybindings,
+      getKeyPilot
     });
   } else {
     detachKeyPopoverBehavior(container);
@@ -468,6 +485,9 @@ function ensurePopover(doc, _container) {
  */
 function hidePopover(pop, opts = {}) {
   if (!pop) return;
+  try { pop._kpFlushInstanceSettings?.(); } catch { /* ignore */ }
+  try { pop._kpFlushInstanceSettings = null; } catch { /* ignore */ }
+  try { pop.classList.remove('kp-popover-has-instance-settings'); } catch { /* ignore */ }
   if (opts.clearPinned !== false) {
     _pinnedActionId = null;
     _pinnedKeyEl = null;
@@ -565,6 +585,28 @@ function applyKeyMaterialToPopover(pop, targetEl) {
  *   container?: HTMLElement|null
  * }} args
  */
+/**
+ * Hover title for an Action Instance: "Social media : Open URLs".
+ * Bare function keys keep their own label.
+ * @param {HTMLElement} targetEl
+ * @param {string} actionId
+ * @param {any} binding
+ * @returns {string}
+ */
+function instancePopoverTitle(targetEl, actionId, binding) {
+  const keycapLabel = (targetEl.querySelector('.key-main')?.textContent || '').trim();
+  const plain = keycapLabel || (binding && binding.label) || actionId;
+  const instanceId = instanceIdForKey(targetEl, actionId);
+  if (!instanceId) return plain;
+  const stock = getStockActionById(instanceId);
+  const functionId = stock?.functionId
+    || (getFunctionDef(actionId) ? actionId : settingsFunctionId(actionId));
+  const typeLabel = String(getFunctionDef(functionId)?.label || '').trim();
+  const name = keycapLabel || String(stock?.label || '').trim();
+  if (!name || !typeLabel || name === typeLabel) return plain;
+  return getMessage('key_info_instance_title', [name, typeLabel]) || `${name} : ${typeLabel}`;
+}
+
 function showPopoverForTarget({ doc, pop, targetEl, binding, actionId, pinned = false }) {
   if (!doc || !pop || !targetEl) return;
 
@@ -574,10 +616,13 @@ function showPopoverForTarget({ doc, pop, targetEl, binding, actionId, pinned = 
   const iconEl = pop.querySelector('.kp-popover-icon');
   const hintEl = pop.querySelector('.kp-popover-settings-hint');
 
-  const title = (binding && binding.label) || actionId;
+  const keycapLabel = (targetEl.querySelector('.key-main')?.textContent || '').trim();
+  const title = pinned
+    ? (keycapLabel || (binding && binding.label) || actionId)
+    : instancePopoverTitle(targetEl, actionId, binding);
   const keys = (binding && (binding.displayKey || binding.keyLabel)) || '';
   const desc = (binding && (binding.description || binding.label)) || '';
-  const iconMaskUri = getActionIconDataUri(actionId, { fill: 'black' });
+  const iconMaskUri = getActionIconDataUri(settingsFunctionId(actionId), { fill: 'black' });
 
   applyKeyMaterialToPopover(pop, targetEl);
 
@@ -619,7 +664,10 @@ function showPopoverForTarget({ doc, pop, targetEl, binding, actionId, pinned = 
     } else {
       _settingsRenderGen += 1;
       pop.removeAttribute('data-kp-popover-pinned');
+      pop.classList.remove('kp-popover-has-instance-settings');
       pop.style.pointerEvents = '';
+      try { pop._kpFlushInstanceSettings?.(); } catch { /* ignore */ }
+      try { pop._kpFlushInstanceSettings = null; } catch { /* ignore */ }
       const settingsHost = pop.querySelector('.kp-popover-settings');
       if (settingsHost) {
         settingsHost.hidden = true;
@@ -628,6 +676,18 @@ function showPopoverForTarget({ doc, pop, targetEl, binding, actionId, pinned = 
     }
   } catch { /* ignore */ }
 
+  positionKeyInfoPopover(doc, pop, targetEl);
+}
+
+/**
+ * Measure the popover and place it above or below the key.
+ * Call again after settings paint, because the form changes the height.
+ * @param {Document} doc
+ * @param {HTMLElement} pop
+ * @param {HTMLElement} targetEl
+ */
+function positionKeyInfoPopover(doc, pop, targetEl) {
+  if (!doc || !pop || !targetEl) return;
   const targetRect = targetEl.getBoundingClientRect();
   openPopoverElement(pop);
 
@@ -790,11 +850,130 @@ function paintPopoverSettings({ doc, pop, targetEl, binding, actionId, parameter
  * Paints immediately with schema defaults, then refreshes stored values after IDB.
  * @param {{ doc: Document, pop: HTMLElement, targetEl: HTMLElement, binding: any, actionId: string }} args
  */
+/**
+ * Name field plus schema parameters for one Action Instance.
+ * @param {{ doc: Document, pop: HTMLElement, targetEl: HTMLElement, actionId: string, instance: { id: string, functionId: string, label?: string, parameters?: Record<string, any> } }} args
+ */
+function paintInstanceSettings({ doc, pop, targetEl, actionId, instance }) {
+  const host = pop.querySelector('.kp-popover-settings');
+  const functionDef = getFunctionDef(instance?.functionId);
+  if (!host || !functionDef || !instance) return;
+  host.hidden = false;
+  pop.classList.add('kp-popover-has-instance-settings');
+
+  let currentId = instance.id;
+  let functionId = instance.functionId || functionDef.id;
+  let pending = null;
+  let running = false;
+  let timer = 0;
+
+  const applyLabel = (label) => {
+    const text = String(label || '').trim() || functionDef.label || functionId;
+    const titleEl = pop.querySelector('.kp-popover-title');
+    if (titleEl) titleEl.textContent = text;
+    const main = targetEl.querySelector('.key-main');
+    if (main) main.textContent = text;
+    try { targetEl.setAttribute('aria-label', text); } catch { /* ignore */ }
+  };
+
+  const step = async () => {
+    running = true;
+    try {
+      while (pending) {
+        const draft = pending;
+        pending = null;
+        const saved = await commitInstanceSettings({
+          getKeyPilot: _activePopoverContext?.getKeyPilot,
+          instanceId: currentId,
+          functionId,
+          label: String(draft.label || '').trim() || functionDef.label || functionId,
+          parameters: draft.parameters || {},
+          keyEl: targetEl
+        });
+        if (saved?.id) {
+          currentId = saved.id;
+          functionId = saved.functionId || functionId;
+          try { targetEl.dataset.kpInstanceId = saved.id; } catch { /* ignore */ }
+        }
+      }
+    } catch (err) {
+      console.warn('[KeyPilot] Instance settings save failed:', err);
+    } finally {
+      running = false;
+      if (pending) void step();
+    }
+  };
+
+  const flush = () => {
+    if (timer) {
+      clearTimeout(timer);
+      timer = 0;
+    }
+    if (!pending || running) return;
+    void step();
+  };
+
+  pop._kpFlushInstanceSettings = flush;
+  applyLabel(instance.label);
+
+  renderInstanceSettingsForm(host, {
+    functionDef,
+    instance,
+    onDraft: (draft) => {
+      applyLabel(draft.label);
+      pending = draft;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(flush, 280);
+    }
+  });
+}
+
 async function renderPopoverSettings({ doc, pop, targetEl, binding, actionId }) {
   const host = pop.querySelector('.kp-popover-settings');
   if (!host) return;
 
   const gen = ++_settingsRenderGen;
+  const instanceId = instanceIdForKey(targetEl, actionId);
+  if (instanceId) {
+    const stock = getStockActionById(instanceId);
+    if (stock) {
+      paintInstanceSettings({
+        doc,
+        pop,
+        targetEl,
+        actionId,
+        instance: {
+          id: stock.id,
+          functionId: stock.functionId,
+          label: stock.label,
+          parameters: { ...(stock.parameters || {}) }
+        }
+      });
+      return;
+    }
+    if (String(instanceId).startsWith('action:')) {
+      let action = null;
+      try { action = await getUserActionById(instanceId); } catch { action = null; }
+      if (gen !== _settingsRenderGen) return;
+      if (!action) return;
+      paintInstanceSettings({
+        doc,
+        pop,
+        targetEl,
+        actionId,
+        instance: {
+          id: action.id,
+          functionId: action.functionId,
+          label: action.label,
+          parameters: action.parameters || {}
+        }
+      });
+      positionKeyInfoPopover(doc, pop, targetEl);
+      return;
+    }
+  }
+
+  pop.classList.remove('kp-popover-has-instance-settings');
   paintPopoverSettings({ doc, pop, targetEl, binding, actionId, parameters: null });
   if (gen !== _settingsRenderGen) return;
 
@@ -934,14 +1113,14 @@ export function unpinKeyPopover() {
   hidePopover(pop);
 }
 
-export function attachKeyPopoverBehavior({ root, keybindings }) {
+export function attachKeyPopoverBehavior({ root, keybindings, getKeyPilot } = {}) {
   if (!root) return;
   const doc = root.ownerDocument || document;
 
   const pop = ensurePopover(doc, null);
   if (!pop) return;
 
-  _activePopoverContext = { root, keybindings };
+  _activePopoverContext = { root, keybindings, getKeyPilot: typeof getKeyPilot === 'function' ? getKeyPilot : null };
 
   if (!root._kpKeyHandlers) {
     root._kpKeyHandlers = {

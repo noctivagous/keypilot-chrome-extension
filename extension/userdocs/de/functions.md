@@ -37,6 +37,10 @@ Fügen Sie gespeicherten Text in das fokussierte Feld ein. Binden Sie es mit ein
 
 Öffnet eine gespeicherte Liste von Websites in Hintergrund-Tabs. Legen Sie pro Seitengruppe eine Aktionsinstanz an und bearbeiten Sie die URL-Liste im Inspektor des Tastaturlayout-Editors. Siehe [Tabs & Verlauf](kp://docs/browsing-tabs#open-urls).
 
+<h3 id="open-bookmarks">Lesezeichen öffnen</h3>
+
+Öffnet die ersten 30 Website-Lesezeichen eines Lesezeichenordners, einschließlich Unterordner. Den Ordner wählen Sie an der Aktionsinstanz. Siehe [Tabs & Verlauf](kp://docs/browsing-tabs#open-bookmarks).
+
 <h3 id="font-info">Font Info</h3>
 
 Popover mit Familie, Größe, Dateityp und Download-URL für den gestalteten Text unter dem Cursor sowie einer Gliederung dieses Textverlaufs.

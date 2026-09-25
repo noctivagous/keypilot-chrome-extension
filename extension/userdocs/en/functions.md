@@ -37,6 +37,10 @@ Insert saved text into the focused field. Bind with a modifier chord so it can r
 
 Open a saved list of websites in background tabs. Create one Action Instance per set of sites and edit the URL list in the Keyboard Layout Editor inspector. See [Tabs & history](kp://docs/browsing-tabs#open-urls).
 
+<h3 id="open-bookmarks">Open Bookmarks</h3>
+
+Open the first 30 website bookmarks in a Bookmarks folder, including subfolders. Choose the folder on the Action Instance. See [Tabs & history](kp://docs/browsing-tabs#open-bookmarks).
+
 <h3 id="font-info">Font Info</h3>
 
 Popover with family, size, file type, and download URL for the styled text under the cursor, plus an outline of that text run.

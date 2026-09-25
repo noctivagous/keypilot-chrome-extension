@@ -3517,6 +3517,20 @@
     "message": "Haz clic para mostrar la configuración",
     "description": "Hint shown on hover in the key-info popover when the action has settings."
   },
+  "key_info_instance_title": {
+    "message": "$NAME$: $TYPE$",
+    "description": "Hover tooltip title for an action instance. $1 is the instance name, $2 is the key action type.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Social media"
+      },
+      "type": {
+        "content": "$2",
+        "example": "Open URLs"
+      }
+    }
+  },
   "key_info_config": {
     "message": "Config",
     "description": "Button in the key-info popover that opens the action configuration panel."
@@ -4709,6 +4723,72 @@
     "message": "Abre cada URL guardada en esta instancia de acción en su propia pestaña en segundo plano, en orden, después de la pestaña actual. Crea varias instancias para tener distintos conjuntos de sitios en distintas teclas.",
     "description": "Function Library details for OPEN_URLS."
   },
+  "fn_OPEN_BOOKMARKS_label": {
+    "message": "Abrir marcadores",
+    "description": "Function Library label for OPEN_BOOKMARKS."
+  },
+  "fn_OPEN_BOOKMARKS_description": {
+    "message": "Abre los primeros marcadores de una carpeta",
+    "description": "Function Library description for OPEN_BOOKMARKS."
+  },
+  "fn_OPEN_BOOKMARKS_details": {
+    "message": "Abre los primeros 30 marcadores de sitios web de una carpeta de marcadores, incluidos los de subcarpetas, cada uno en una pestaña en segundo plano después de la pestaña actual. Elija la carpeta en la instancia de acción. Cree otra instancia para otra carpeta.",
+    "description": "Function Library details for OPEN_BOOKMARKS."
+  },
+  "fn_param_bookmark_folder": {
+    "message": "Carpeta",
+    "description": "Function parameter label for OPEN_BOOKMARKS.folderId."
+  },
+  "fn_param_bookmark_folder_filter": {
+    "message": "Filtrar carpetas",
+    "description": "Filter field placeholder in the bookmark folder picker."
+  },
+  "fn_param_bookmark_folder_loading": {
+    "message": "Cargando carpetas…",
+    "description": "Status while bookmark folders are loading."
+  },
+  "fn_param_bookmark_folder_empty": {
+    "message": "No hay carpetas de marcadores",
+    "description": "Status when no bookmark folders match."
+  },
+  "fn_param_bookmark_folder_missing": {
+    "message": "Carpeta no encontrada",
+    "description": "Status when the saved bookmark folder no longer exists."
+  },
+  "fn_param_bookmark_folder_hint": {
+    "message": "Abre los primeros 30 marcadores de sitios web de esta carpeta.",
+    "description": "Hint under the bookmark folder picker. The key opens at most 30 bookmarks."
+  },
+  "fn_open_bookmarks_none": {
+    "message": "Elija una carpeta de marcadores para esta tecla",
+    "description": "Flash when Open Bookmarks has no folder chosen."
+  },
+  "fn_open_bookmarks_empty": {
+    "message": "Esa carpeta no tiene marcadores de sitios web",
+    "description": "Flash when the chosen bookmark folder has no website bookmarks."
+  },
+  "fn_open_bookmarks_opened_one": {
+    "message": "Se abrió 1 marcador",
+    "description": "Flash after Open Bookmarks opens one tab."
+  },
+  "fn_open_bookmarks_opened": {
+    "message": "Se abrieron $1 marcadores",
+    "description": "Flash after Open Bookmarks opens more than one tab. $1 is the tab count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_open_bookmarks_failed": {
+    "message": "No se pudieron abrir los marcadores",
+    "description": "Flash when Open Bookmarks fails to open tabs."
+  },
+  "fn_summary_bookmark_folder": {
+    "message": "Carpeta de marcadores",
+    "description": "Short summary when an Open Bookmarks instance has a folder."
+  },
   "fn_param_urls": {
     "message": "URLs",
     "description": "Function parameter label for OPEN_URLS.urls."
@@ -4768,6 +4848,10 @@
   "fn_stock_social_media_description": {
     "message": "Abrir Facebook, Instagram, YouTube y X",
     "description": "Bundled Open URLs instance description."
+  },
+  "fn_instance_name_label": {
+    "message": "Nombre",
+    "description": "Action instance name field on the key info popover."
   },
   "fn_GET_TEXT_AT_CURSOR_label": {
     "message": "Obtener texto en el cursor",

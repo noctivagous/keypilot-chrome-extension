@@ -27,6 +27,10 @@ Wechseln Sie zwischen Tabs und dem Browserverlauf, ohne nach Chrome-Schaltfläch
 | <kbd>J</kbd> | Popover „Tab-Verlauf“ |
 | <kbd>.</kbd> | Tabs-Übersicht (linkshändig: <kbd>X</kbd>) |
 
+<h3 id="open-bookmarks">Lesezeichen öffnen</h3>
+
+**Lesezeichen öffnen** ist eine Aktionsinstanz in der Tab-Steuerung. Wählen Sie einen Ordner aus der Lesezeichenverwaltung. Die Taste öffnet die ersten 30 Website-Lesezeichen dieses Ordners, einschließlich Unterordner, jeweils in einem Hintergrund-Tab nach dem aktuellen Tab.
+
 ### Tipps
 
 - Zurück/vorwärts folgen Sie dem normalen Browserverlauf für die Registerkarte.

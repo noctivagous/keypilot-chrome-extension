@@ -3565,6 +3565,20 @@
     "message": "[GB] Click to show settings",
     "description": "Hint shown on hover in the key-info popover when the action has settings."
   },
+  "key_info_instance_title": {
+    "message": "[GB] $NAME$ : $TYPE$",
+    "description": "Hover tooltip title for an action instance. $1 is the instance name, $2 is the key action type.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Social media"
+      },
+      "type": {
+        "content": "$2",
+        "example": "Open URLs"
+      }
+    }
+  },
   "key_info_config": {
     "message": "[GB] Config",
     "description": "Button in the key-info popover that opens the action configuration panel."
@@ -4225,6 +4239,72 @@
     "message": "[GB] Opens each URL saved on this Action Instance in its own background tab, in order, after the current tab. Create more than one instance to keep different sets of sites on different keys.",
     "description": "Function Library details for OPEN_URLS."
   },
+  "fn_OPEN_BOOKMARKS_label": {
+    "message": "[GB] Open Bookmarks",
+    "description": "Function Library label for OPEN_BOOKMARKS."
+  },
+  "fn_OPEN_BOOKMARKS_description": {
+    "message": "[GB] Open the first bookmarks in a folder",
+    "description": "Function Library description for OPEN_BOOKMARKS."
+  },
+  "fn_OPEN_BOOKMARKS_details": {
+    "message": "[GB] Opens the first 30 website bookmarks in a Bookmarks folder, including bookmarks inside subfolders, each in a background tab after the current tab. Choose the folder on the Action Instance. Create another instance for a different folder.",
+    "description": "Function Library details for OPEN_BOOKMARKS."
+  },
+  "fn_param_bookmark_folder": {
+    "message": "[GB] Folder",
+    "description": "Function parameter label for OPEN_BOOKMARKS.folderId."
+  },
+  "fn_param_bookmark_folder_filter": {
+    "message": "[GB] Filter folders",
+    "description": "Filter field placeholder in the bookmark folder picker."
+  },
+  "fn_param_bookmark_folder_loading": {
+    "message": "[GB] Loading folders…",
+    "description": "Status while bookmark folders are loading."
+  },
+  "fn_param_bookmark_folder_empty": {
+    "message": "[GB] No bookmark folders",
+    "description": "Status when no bookmark folders match."
+  },
+  "fn_param_bookmark_folder_missing": {
+    "message": "[GB] Folder not found",
+    "description": "Status when the saved bookmark folder no longer exists."
+  },
+  "fn_param_bookmark_folder_hint": {
+    "message": "[GB] Opens the first 30 website bookmarks in this folder.",
+    "description": "Hint under the bookmark folder picker. The key opens at most 30 bookmarks."
+  },
+  "fn_open_bookmarks_none": {
+    "message": "[GB] Choose a bookmarks folder for this key",
+    "description": "Flash when Open Bookmarks has no folder chosen."
+  },
+  "fn_open_bookmarks_empty": {
+    "message": "[GB] That folder has no website bookmarks",
+    "description": "Flash when the chosen bookmark folder has no website bookmarks."
+  },
+  "fn_open_bookmarks_opened_one": {
+    "message": "[GB] Opened 1 bookmark",
+    "description": "Flash after Open Bookmarks opens one tab."
+  },
+  "fn_open_bookmarks_opened": {
+    "message": "[GB] Opened $1 bookmarks",
+    "description": "Flash after Open Bookmarks opens more than one tab. $1 is the tab count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_open_bookmarks_failed": {
+    "message": "[GB] Could not open bookmarks",
+    "description": "Flash when Open Bookmarks fails to open tabs."
+  },
+  "fn_summary_bookmark_folder": {
+    "message": "[GB] Bookmarks folder",
+    "description": "Short summary when an Open Bookmarks instance has a folder."
+  },
   "fn_param_urls": {
     "message": "[GB] URLs",
     "description": "Function parameter label for OPEN_URLS.urls."
@@ -4284,6 +4364,10 @@
   "fn_stock_social_media_description": {
     "message": "[GB] Open Facebook, Instagram, YouTube, and X",
     "description": "Bundled Open URLs instance description."
+  },
+  "fn_instance_name_label": {
+    "message": "[GB] Name",
+    "description": "Action instance name field on the key info popover."
   },
   "fn_GET_TEXT_AT_CURSOR_label": {
     "message": "[GB] Get Text At Cursor",

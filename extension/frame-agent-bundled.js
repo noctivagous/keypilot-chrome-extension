@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-25T01:22:45.175Z
+ * Generated on 2026-09-25T01:55:32.311Z
  */
 
 (() => {
@@ -38,6 +38,12 @@
     OPEN_URL_FOREGROUND: "KP_OPEN_URL_FOREGROUND",
     /** Open several http(s) URLs as background tabs, in order, after the sender tab. */
     OPEN_URLS: "KP_OPEN_URLS",
+    /** Content → SW: bookmark folders for the Open Bookmarks picker. */
+    LIST_BOOKMARK_FOLDERS: "KP_LIST_BOOKMARK_FOLDERS",
+    /** SW → content: `{ folders: [{ id, path }] }`. */
+    BOOKMARK_FOLDERS: "KP_BOOKMARK_FOLDERS",
+    /** Content → SW: open the first website bookmarks in a folder. */
+    OPEN_BOOKMARK_FOLDER: "KP_OPEN_BOOKMARK_FOLDER",
     /** Same-tab navigate (chrome.tabs.update). Used when sandboxed iframes cannot top-navigate without a real user gesture. */
     NAVIGATE_SAME_TAB: "KP_NAVIGATE_SAME_TAB",
     /** Content → SW: step tab zoom in (+1) or out (-1). Response includes oldZoom/newZoom. */

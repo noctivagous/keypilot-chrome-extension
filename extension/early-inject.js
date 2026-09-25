@@ -3077,6 +3077,10 @@
     "labelKey": "fn_OPEN_URLS_label",
     "keyboardClass": "key-gray"
   },
+  "OPEN_BOOKMARKS": {
+    "labelKey": "fn_OPEN_BOOKMARKS_label",
+    "keyboardClass": "key-gray"
+  },
   "LOOKUP_WORD": {
     "labelKey": "fn_LOOKUP_WORD_label",
     "keyboardClass": null
@@ -4522,6 +4526,134 @@
 
 .kp-keybindings-popover .kp-popover-settings[hidden] {
   display: none !important;
+}
+
+.kp-keybindings-popover[data-kp-popover-pinned="true"].kp-popover-has-instance-settings {
+  width: min(340px, calc(100vw - 20px));
+}
+
+.kp-string-table {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  --kp-string-table-row: 30px;
+}
+
+.kp-string-table-scroll {
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.kp-string-table table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.kp-string-table td {
+  height: var(--kp-string-table-row, 30px);
+  padding: 2px 4px;
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+
+.kp-string-table td:last-child {
+  width: 28px;
+  padding-right: 2px;
+}
+
+.kp-string-table input,
+.kp-keybindings-popover .kp-popover-field {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  height: 24px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.28);
+  color: rgba(248, 250, 252, 0.95);
+  font: inherit;
+  font-size: 11px;
+}
+
+.kp-string-table-remove,
+.kp-string-table-add {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(248, 250, 252, 0.9);
+  border-radius: 4px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.kp-string-table-remove {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  line-height: 20px;
+}
+
+.kp-string-table-add {
+  align-self: flex-start;
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+.kp-string-table-add:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.kp-bookmark-folder-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.kp-bookmark-folder-scroll {
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.kp-bookmark-folder-btn {
+  appearance: none;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: var(--kp-string-table-row, 30px);
+  padding: 4px 8px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: transparent;
+  color: rgba(248, 250, 252, 0.92);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.3;
+  text-align: left;
+  cursor: pointer;
+}
+
+.kp-bookmark-folder-btn[aria-selected="true"] {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.kp-bookmark-folder-status,
+.kp-bookmark-folder-hint {
+  font-size: 10px;
+  line-height: 1.35;
+  color: rgba(248, 250, 252, 0.62);
+}
+
+.kp-bookmark-folder-status {
+  padding: 6px 8px;
 }
 
 .kp-popover-setting-row {
@@ -8501,6 +8633,10 @@
         const resolved = resolveEarlyFunctionSlotPaint(assigned.id);
         if (resolved.keyboardClass) keyEl.className = `key ${resolved.keyboardClass}`;
         try { keyEl.setAttribute('data-kp-action-id', String(resolved.functionId)); } catch { /* ignore */ }
+        const assignedId = String(assigned.id || '');
+        if (assignedId.startsWith('stock:') || assignedId.startsWith('action:')) {
+          try { keyEl.dataset.kpInstanceId = assignedId; } catch { /* ignore */ }
+        }
         keyEl.setAttribute('aria-label', resolved.label || slotLabel);
         mainText = resolved.label;
         ensureBgIcon(keyEl);
@@ -8672,6 +8808,11 @@
         const className = `${baseClass}${binding && binding.keyboardClass ? ' ' + binding.keyboardClass : ''}`;
         const keyEl = el(doc, 'div', className);
         keyEl.dataset.kpActionId = item.id;
+        if (item.code) keyEl.dataset.kpPhysicalCode = String(item.code);
+        const earlyActionId = String(item.id || '');
+        if (earlyActionId.startsWith('stock:') || earlyActionId.startsWith('action:')) {
+          keyEl.dataset.kpInstanceId = earlyActionId;
+        }
         keyEl.dataset.kpBaseClass = baseClass;
         keyEl.setAttribute('role', 'button');
         // Prefer aria-label over title so the browser native tooltip doesn't fight our hover popover.

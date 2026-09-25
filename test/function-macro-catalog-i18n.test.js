@@ -98,6 +98,17 @@ describe('Function and Macro catalog localization', () => {
     keys.add('fn_open_urls_opened_one');
     keys.add('fn_open_urls_opened');
     keys.add('fn_open_urls_failed');
+    keys.add('fn_instance_name_label');
+    keys.add('fn_open_bookmarks_none');
+    keys.add('fn_open_bookmarks_empty');
+    keys.add('fn_open_bookmarks_opened_one');
+    keys.add('fn_open_bookmarks_opened');
+    keys.add('fn_open_bookmarks_failed');
+    keys.add('fn_summary_bookmark_folder');
+    keys.add('fn_param_bookmark_folder_loading');
+    keys.add('fn_param_bookmark_folder_empty');
+    keys.add('fn_param_bookmark_folder_missing');
+    keys.add('fn_param_bookmark_folder_hint');
     keys.add('mk_editor_key');
     for (const def of Object.values(FUNCTION_LIBRARY)) {
       for (const key of [def.labelKey, def.descriptionKey, def.detailsKey]) keys.add(key);

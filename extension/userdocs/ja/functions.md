@@ -37,6 +37,10 @@ Navigation · Tab Control · Begin URL · Get Page Data · Maps · Scroll · Sel
 
 保存したウェブサイトの一覧をバックグラウンドタブで開きます。サイト集ごとにアクションインスタンスを作り、キーボードレイアウトエディタのインスペクタで URL を編集します。[タブと履歴](kp://docs/browsing-tabs#open-urls) を参照してください。
 
+<h3 id="open-bookmarks">ブックマークを開く</h3>
+
+ブックマークフォルダ内のウェブサイトを先頭から30件、サブフォルダを含めて開きます。フォルダはアクションインスタンスで選びます。[タブと履歴](kp://docs/browsing-tabs#open-bookmarks) を参照してください。
+
 <h3 id="font-info">Font Info</h3>
 
 カーソル下のスタイル付きテキストについて、ファミリー、サイズ、ファイル形式、ダウンロード URL をポップオーバーで表示し、そのテキストランのアウトラインも示します。

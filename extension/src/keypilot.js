@@ -90,6 +90,7 @@ import { runLegacyMacroKeyFunction } from './modules/macro-key-runtime.js';
 import { runUserExecuteJs, stringifyExecuteJsValue } from './modules/execute-js-runtime.js';
 import { getFunctionDef, functionWorksWhileTyping, functionCancelsOnPointerDown, FIXED_KEY_FUNCTION_IDS, UNIT_SELECT_FUNCTION_IDS } from './config/function-library.js';
 import { normalizeOpenUrlList } from './utils/open-url-list.js';
+import { normalizeBookmarkFolderId } from './utils/bookmark-folder.js';
 import { getStockActionById, isStockActionId } from './config/stock-actions.js';
 import { getStockMacroById, resolveMacroById } from './config/stock-macros.js';
 import { chordSlotKeyFromEvent, isChordSlotKey } from './utils/key-chord.js';
@@ -1378,7 +1379,8 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
         currentKeyboardLayoutId: this._currentKeyboardLayoutId || (isCurrent ? sel : 'builtin'),
         userLayout: this._currentUserLayout,
         userMacros: this._currentUserMacros,
-        userActions: this._currentUserActions
+        userActions: this._currentUserActions,
+        render: opts.rerender !== false
       });
     } catch { /* ignore */ }
   }
@@ -5980,6 +5982,45 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     );
     if (!sent) {
       this.showFlashNotification(getMessage('fn_open_urls_failed'), COLORS.NOTIFICATION_ERROR);
+    }
+  }
+
+  /**
+   * OPEN_BOOKMARKS Function handler — opens the first website bookmarks in the
+   * Action Instance's Bookmarks folder, in background tabs after the current tab.
+   * @param {KeyboardEvent} _e
+   * @param {{ folderId?: string }} [parameters]
+   */
+  handleOpenBookmarksKey(_e, parameters) {
+    const folderId = normalizeBookmarkFolderId(parameters?.folderId);
+    if (!folderId) {
+      this.showFlashNotification(getMessage('fn_open_bookmarks_none'), COLORS.NOTIFICATION_INFO);
+      return;
+    }
+    const sent = this._sendRuntimeMessage(
+      { type: MSG.OPEN_BOOKMARK_FOLDER, folderId },
+      {
+        silent: true,
+        onResponse: (response) => {
+          const opened = Number(response?.opened) || 0;
+          if (response?.type === MSG.SUCCESS && opened > 0) {
+            const message = opened === 1
+              ? getMessage('fn_open_bookmarks_opened_one')
+              : getMessage('fn_open_bookmarks_opened', String(opened));
+            this.showFlashNotification(message, COLORS.NOTIFICATION_SUCCESS);
+            this.emitAction('open_bookmarks', { count: opened });
+            return;
+          }
+          if (response?.type === MSG.SUCCESS && opened === 0) {
+            this.showFlashNotification(getMessage('fn_open_bookmarks_empty'), COLORS.NOTIFICATION_INFO);
+            return;
+          }
+          this.showFlashNotification(getMessage('fn_open_bookmarks_failed'), COLORS.NOTIFICATION_ERROR);
+        }
+      }
+    );
+    if (!sent) {
+      this.showFlashNotification(getMessage('fn_open_bookmarks_failed'), COLORS.NOTIFICATION_ERROR);
     }
   }
 

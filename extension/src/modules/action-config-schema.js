@@ -5,6 +5,7 @@
 
 import { clampNumber } from './settings-path.js';
 import { normalizeOpenUrlList } from '../utils/open-url-list.js';
+import { normalizeBookmarkFolderId } from '../utils/bookmark-folder.js';
 
 /**
  * Enums painted as radio/button groups on the Keyboard Reference key-info popover.
@@ -12,7 +13,7 @@ import { normalizeOpenUrlList } from '../utils/open-url-list.js';
  */
 export const ACTION_RADIO_PARAMETER_IDS = Object.freeze(['mode', 'action', 'format', 'destination']);
 
-/** @typedef {'toggle'|'select'|'radio'|'range'|'enum'|'text'|'textarea'|'stringList'} ActionControlType */
+/** @typedef {'toggle'|'select'|'radio'|'range'|'enum'|'text'|'textarea'|'stringList'|'bookmarkFolder'} ActionControlType */
 
 /**
  * @typedef {{
@@ -31,7 +32,9 @@ export const ACTION_RADIO_PARAMETER_IDS = Object.freeze(['mode', 'action', 'form
  *   multiline?: boolean,
  *   maxItems?: number,
  *   addLabel?: string,
- *   removeLabel?: string
+ *   removeLabel?: string,
+ *   presentation?: 'stack'|'table',
+ *   visibleRows?: number
  * }} ActionControlSpec
  */
 
@@ -45,6 +48,7 @@ export function controlTypeForParameter(param, opts = {}) {
   if (param.type === 'boolean') return 'toggle';
   if (param.type === 'number') return 'range';
   if (param.type === 'stringList') return 'stringList';
+  if (param.type === 'bookmarkFolder') return 'bookmarkFolder';
   if (param.type === 'enum') {
     const radioIds = opts.radioParamIds || [];
     return radioIds.includes(param.id) ? 'radio' : 'enum';
@@ -85,6 +89,8 @@ export function parameterToControlSpec(param, opts = {}) {
     if (param.maxItems != null) spec.maxItems = param.maxItems;
     if (param.addLabel) spec.addLabel = String(param.addLabel);
     if (param.removeLabel) spec.removeLabel = String(param.removeLabel);
+    if (param.presentation === 'table') spec.presentation = 'table';
+    if (param.visibleRows != null) spec.visibleRows = param.visibleRows;
   }
   return spec;
 }
@@ -157,6 +163,8 @@ export function normalizeControlValue(spec, raw) {
     }
     case 'stringList':
       return normalizeOpenUrlList(raw, spec.maxItems);
+    case 'bookmarkFolder':
+      return normalizeBookmarkFolderId(raw);
     default:
       return raw !== undefined && raw !== null ? String(raw) : (spec.defaultValue ?? '');
   }
