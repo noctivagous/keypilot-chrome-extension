@@ -53,14 +53,9 @@
   <!-- Single flow stage: mouse -> pressed key, no words -->
   <rect x="16" y="92" width="408" height="172" fill="url(#card)" stroke="#41415b" stroke-width="1.5"/>
 
-  <!-- Mini mouse with click waves -->
+  <g transform="translate(18, 10)">
+  <!-- Mini mouse -->
   <ellipse cx="110" cy="232" rx="40" ry="5" fill="#000000" opacity=".4"/>
-  <g fill="none" stroke="#a8c8b8" stroke-linecap="round">
-    <path d="M 70,148 A 16,16 0 0 1 86,132" stroke-width="2.5" opacity=".9"/>
-    <path d="M 60,148 A 26,26 0 0 1 86,122" stroke-width="2.5" opacity=".5"/>
-    <line x1="50" y1="148" x2="40" y2="148" stroke-width="2.5" opacity=".9"/>
-    <line x1="86" y1="112" x2="86" y2="102" stroke-width="2.5" opacity=".9"/>
-  </g>
   <rect x="79" y="134" width="62" height="88" rx="31" fill="url(#mouseBody)"/>
   <rect x="79" y="134" width="62" height="88" rx="31" fill="none" stroke="url(#mouseRim)" stroke-width="1.75"/>
   <g clip-path="url(#mouseClip)">
@@ -76,21 +71,24 @@
 
   <!-- Sequence arrow badge -->
   <circle cx="180" cy="178" r="14" fill="#17172b" stroke="#a8c8b8" stroke-width="1.5"/>
-  <line x1="173" y1="178" x2="185" y2="178" stroke="#a8c8b8" stroke-width="2.5" stroke-linecap="round"/>
-  <polygon points="185,171 185,185 195,178" fill="#a8c8b8"/>
+  <line x1="169" y1="178" x2="181" y2="178" stroke="#a8c8b8" stroke-width="2.5" stroke-linecap="round"/>
+  <polygon points="181,171 181,185 191,178" fill="#a8c8b8"/>
 
-  <!-- Mini pressed keycap with press arrow driving into its click point -->
-  <rect x="252" y="108" width="10" height="30" fill="#a8c8b8"/>
-  <polygon points="242,138 262,138 252,152" fill="#a8c8b8"/>
-  <rect x="216" y="146" width="108" height="108" rx="17" fill="none" stroke="#a8c8b8" stroke-width="2" opacity=".2"/>
-  <rect x="223" y="153" width="94" height="94" rx="14" fill="none" stroke="#a8c8b8" stroke-width="2" opacity=".4"/>
-  <ellipse cx="270" cy="248" rx="40" ry="5" fill="#000000" opacity=".45"/>
-  <rect x="228" y="166" width="84" height="84" rx="12" fill="url(#keyWall)"/>
-  <rect x="236" y="244" width="68" height="1.5" fill="#ffffff" opacity=".22"/>
-  <rect x="228" y="160" width="84" height="84" rx="12" fill="url(#keyFace)" stroke="#9fbfb0" stroke-width="1.75"/>
-  <rect x="240" y="172" width="60" height="56" rx="14" fill="url(#keyDish)"/>
-  <rect x="250" y="176" width="40" height="3" rx="1.5" fill="#ffffff" opacity=".16"/>
-  <circle cx="270" cy="198" r="21" fill="none" stroke="#a8c8b8" stroke-width="2" opacity=".35"/>
-  <circle cx="270" cy="198" r="13" fill="none" stroke="#a8c8b8" stroke-width="2" opacity=".7"/>
-  <circle cx="270" cy="198" r="4" fill="#a8c8b8"/>
+  <!-- Mini pressed keycap -->
+  <rect x="216" y="122" width="108" height="108" rx="17" fill="none" stroke="#a8c8b8" stroke-width="2" opacity=".2"/>
+  <rect x="223" y="129" width="94" height="94" rx="14" fill="none" stroke="#a8c8b8" stroke-width="2" opacity=".4"/>
+  <ellipse cx="270" cy="224" rx="40" ry="5" fill="#000000" opacity=".45"/>
+  <rect x="228" y="142" width="84" height="84" rx="12" fill="url(#keyWall)"/>
+  <rect x="236" y="220" width="68" height="1.5" fill="#ffffff" opacity=".22"/>
+  <rect x="228" y="136" width="84" height="84" rx="12" fill="url(#keyFace)" stroke="#9fbfb0" stroke-width="1.75"/>
+  <rect x="240" y="148" width="60" height="56" rx="14" fill="url(#keyDish)"/>
+  <rect x="250" y="152" width="40" height="3" rx="1.5" fill="#ffffff" opacity=".16"/>
+  <circle cx="270" cy="174" r="21" fill="none" stroke="#a8c8b8" stroke-width="2" opacity=".35"/>
+  <circle cx="270" cy="174" r="13" fill="none" stroke="#a8c8b8" stroke-width="2" opacity=".7"/>
+  <circle cx="270" cy="174" r="4" fill="#a8c8b8"/>
+
+  <!-- Press arrow (drawn last so it sits above the key) -->
+  <rect x="265" y="98" width="10" height="30" fill="#a8c8b8"/>
+  <polygon points="255,128 285,128 270,142" fill="#a8c8b8"/>
+  </g>
 </svg>
