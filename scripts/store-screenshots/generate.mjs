@@ -7,6 +7,7 @@
  *   npm run store:screenshots -- --promo-only
  */
 import {
+  ensureOverlayCjkFonts,
   generateLocaleScreenshots,
   generatePromoTiles,
   loadSlots,
@@ -25,9 +26,10 @@ function parseArgs(argv) {
   return opts;
 }
 
-function main() {
+async function main() {
   const opts = parseArgs(process.argv.slice(2));
   const slots = loadSlots(repoRoot);
+  await ensureOverlayCjkFonts(repoRoot);
 
   const promo = generatePromoTiles(repoRoot, slots);
   for (const item of promo) {
@@ -45,9 +47,7 @@ function main() {
   }
 }
 
-try {
-  main();
-} catch (err) {
+main().catch((err) => {
   console.error(err && err.message ? err.message : err);
   process.exit(1);
-}
+});

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<onboarding version="1">
+  <slide id="basic_navigation" title="Vitajte v KeyPilote">
+   <onEnter type="overlay"
+             title="Vitajte v KeyPilote"
+             message="Ukážeme vám, ako používať KeyPilot krok za krokom."
+             primaryText="OK"
+             secondaryText="Zavrieť"
+             secondaryAction="close" />
+       <task id="click_link" label="Prejdite myšou na odkaz a stlačte kláves `F`, aby ste naň klikli.">
+      <when type="action" action="activate" target="link" />
+    </task>
+    <task id="go_back" label="Ak sa chcete vrátiť späť (história), stlačte kláves `D`.">
+      <when type="action" action="back" />
+    </task>
+    <task id="keyboard_key_info" label="Všimnite si okno s referenciou klávesnice nižšie. Prejdite myšou na jeden z jeho klávesov, aby ste videli, čo robí.">
+      <when type="action" action="hover" target="keyboardHelpKey" />
+    </task>
+    <!-- Turn-off step: while this is the next task, a large focus-colored arrow points at the
+         ON/OFF segment's right edge. After OFF, a tip bubble points at the strip ("click again to turn on").
+         (Former Alt+K step removed; re-enable is guided by the tip bubble, not a separate task.) -->
+    <task id="toggle_extension_off" label="Nad tým je ovládací pruh s nápisom `ON`. Kliknite naň, aby ste KeyPilot úplne vypnuli.">
+      <when type="action" action="toggleExtension" change="off" />
+    </task>
+  </slide>
+
+  <slide id="text_box_mode" title="Režim textového poľa">
+    <onEnter type="overlay"
+             title="KeyPilot je znova zapnutý"
+             message="Ďalej: textové polia."
+             primaryText="OK"
+             effect="marquee" />
+    <task id="enter_text_mode" label="Kliknite klávesom `F` na textové pole vpravo a začne prijímať písanie.">
+      <when type="mode" mode="text_focus" change="enter" />
+    </task>
+    <task id="exit_text_mode" label="Stlačte `Escape`, aby ste opustili textové pole.">
+      <when type="mode" mode="text_focus" change="exit" />
+    </task>
+  </slide>
+
+  <slide id="scrolling" title="Posúvanie stránky">
+    <onEnter type="overlay"
+             title="To je všetko, čo potrebujete na prehliadanie webu s KeyPilotom."
+             message="Chcete vyskúšať ďalšie klávesy?"
+             primaryText="Áno, pokračovať"
+             secondaryText="Nie, urobím to neskôr"
+             secondaryAction="later"
+             laterTitle="K tomuto tutoriálu sa vrátite pomocou `Alt`+`I`"
+             laterPrimaryText="OK, zavrieť" />
+    <task id="scroll_down" label="Posuňte sa nadol klávesom `V`.">
+      <when type="action" action="scrollDown" />
+    </task>
+    <task id="scroll_up" label="Posuňte sa nahor klávesom `C`.">
+      <when type="action" action="scrollUp" />
+    </task>
+    <task id="scroll_bottom" label="Prejdite na koniec stránky klávesom `X`.">
+      <when type="action" action="scrollBottom" />
+    </task>
+    <task id="scroll_top" label="Prejdite na začiatok stránky klávesom `Z`.">
+      <when type="action" action="scrollTop" />
+    </task>
+  </slide>
+
+  <slide id="tabs" title="Karty">
+    <task id="open_link_background_tab" label="Kliknite na hypertextový odkaz do novej karty, ale neotvárajte ju (`G`).">
+      <when type="action" action="activateNewTabBackground" target="link" />
+    </task>
+    <task id="open_link_new_tab" label="Kliknite na hypertextový odkaz do novej karty (`B`).">
+      <when type="action" action="activateNewTab" target="link" />
+    </task>
+    <task id="open_new_tab" label="Otvorte novú kartu (`T`).">
+      <when type="action" action="newTab" />
+    </task>
+    <task id="move_tabs" label="Prechádzajte medzi kartami doľava (`Q`).">
+      <when type="action" action="tabLeft" />
+    </task>
+    
+    <task id="move_tabs_2" label="Prechádzajte medzi kartami doprava (`W`).">
+      <when type="action" action="tabRight" />
+    </task>
+  </slide>
+  
+  <slide id="completion" title="Tutoriál je dokončený">
+    <body>
+Dokončili ste tutoriál a ste pripravení používať KeyPilot.
+    </body>
+  </slide>
+</onboarding>

@@ -4,6 +4,7 @@
         de: "de/",
         es: "es/",
         es_419: "es_419/",
+        ja: "ja/",
         sk: "sk/",
         zh_CN: "zh_CN/",
         zh_TW: "zh_TW/"
@@ -60,6 +61,9 @@
             }
             if (lang === "sk") {
                 return "sk";
+            }
+            if (lang === "ja") {
+                return "ja";
             }
             if (lang === "es") {
                 return LATAM[parts[1] || ""] ? "es_419" : "es";

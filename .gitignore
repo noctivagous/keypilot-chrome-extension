@@ -67,6 +67,9 @@ test-results/
 playwright-report/
 blob-report/
 
+# CJK faces for listing overlay rasterization only (not the extension bundle)
+scripts/store-screenshots/fonts/
+
 # Store-listing composites. Captures live in online-stores/<store>/captures/;
 # SVG templates stay bitmap-free.
 online-stores/**/captures/

@@ -18,30 +18,30 @@
     x="40"
     y="64"
     fill="#f4f6f8"
-    font-family="Titillium Web, Segoe UI, system-ui, sans-serif"
+    font-family="Titillium Web, Noto Sans JP, Noto Sans SC, Noto Sans TC, Noto Sans HK, Hiragino Sans, Hiragino Sans GB, PingFang SC, PingFang TC, STHeiti, Segoe UI, system-ui, sans-serif"
     font-size="39.6"
     font-weight="700">{{headline}}</text>
   <g transform="translate(40,732)">
     <rect width="28" height="28" rx="14" fill="#2f8f5b"/>
-    <text x="14" y="20.5" text-anchor="middle" fill="#f4f6f8" font-family="Titillium Web, Segoe UI, system-ui, sans-serif" font-size="18.4" font-weight="700">1</text>
+    <text x="14" y="20.5" text-anchor="middle" fill="#f4f6f8" font-family="Titillium Web, Noto Sans JP, Noto Sans SC, Noto Sans TC, Noto Sans HK, Hiragino Sans, Hiragino Sans GB, PingFang SC, PingFang TC, STHeiti, Segoe UI, system-ui, sans-serif" font-size="18.4" font-weight="700">1</text>
     <text
       data-copy="callout.0"
       data-max-chars="72"
       x="40"
       y="21.5"
       fill="#f4f6f8"
-      font-family="Titillium Web, Segoe UI, system-ui, sans-serif"
+      font-family="Titillium Web, Noto Sans JP, Noto Sans SC, Noto Sans TC, Noto Sans HK, Hiragino Sans, Hiragino Sans GB, PingFang SC, PingFang TC, STHeiti, Segoe UI, system-ui, sans-serif"
       font-size="25.3">{{callout.0}}</text>
   </g>
   <g transform="translate(640,732)">
     <rect width="28" height="28" rx="14" fill="#2f8f5b"/>
-    <text x="14" y="20.5" text-anchor="middle" fill="#f4f6f8" font-family="Titillium Web, Segoe UI, system-ui, sans-serif" font-size="18.4" font-weight="700">2</text>
+    <text x="14" y="20.5" text-anchor="middle" fill="#f4f6f8" font-family="Titillium Web, Noto Sans JP, Noto Sans SC, Noto Sans TC, Noto Sans HK, Hiragino Sans, Hiragino Sans GB, PingFang SC, PingFang TC, STHeiti, Segoe UI, system-ui, sans-serif" font-size="18.4" font-weight="700">2</text>
     <text
       data-copy="callout.1.before"
       x="40"
       y="21.5"
       fill="#f4f6f8"
-      font-family="Titillium Web, Segoe UI, system-ui, sans-serif"
+      font-family="Titillium Web, Noto Sans JP, Noto Sans SC, Noto Sans TC, Noto Sans HK, Hiragino Sans, Hiragino Sans GB, PingFang SC, PingFang TC, STHeiti, Segoe UI, system-ui, sans-serif"
       font-size="25.3">{{callout.1.before}}</text>
     <g transform="translate({{callout.1.kbdX}}, 1.35)">
       <rect width="25.3" height="25.3" rx="4.6" fill="rgba(244,246,248,0.10)" stroke="#f4f6f8" stroke-width="1.4"/>
@@ -50,7 +50,7 @@
         y="18.15"
         text-anchor="middle"
         fill="#f4f6f8"
-        font-family="Titillium Web, Segoe UI, system-ui, sans-serif"
+        font-family="Titillium Web, Noto Sans JP, Noto Sans SC, Noto Sans TC, Noto Sans HK, Hiragino Sans, Hiragino Sans GB, PingFang SC, PingFang TC, STHeiti, Segoe UI, system-ui, sans-serif"
         font-size="16.445"
         font-weight="700">{{callout.1.kbd}}</text>
     </g>
@@ -59,7 +59,7 @@
       x="{{callout.1.afterX}}"
       y="21.5"
       fill="#f4f6f8"
-      font-family="Titillium Web, Segoe UI, system-ui, sans-serif"
+      font-family="Titillium Web, Noto Sans JP, Noto Sans SC, Noto Sans TC, Noto Sans HK, Hiragino Sans, Hiragino Sans GB, PingFang SC, PingFang TC, STHeiti, Segoe UI, system-ui, sans-serif"
       font-size="25.3">{{callout.1.after}}</text>
   </g>
 </svg>

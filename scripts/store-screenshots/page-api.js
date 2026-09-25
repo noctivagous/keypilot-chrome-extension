@@ -275,6 +275,18 @@
         inspect: '检查'
       };
     }
+    if (lang === 'zh_hk' || lang.startsWith('zh-hk')) {
+      return {
+        back: '上一頁',
+        forward: '下一頁',
+        reload: '重新載入',
+        saveAs: '另存為…',
+        print: '列印…',
+        translate: '翻譯成中文（香港）',
+        viewSource: '檢視網頁原始碼',
+        inspect: '檢查'
+      };
+    }
     if (lang === 'zh_tw' || lang.startsWith('zh-tw')) {
       return {
         back: '返回',
@@ -285,6 +297,30 @@
         translate: '翻譯成繁體中文',
         viewSource: '檢視網頁原始碼',
         inspect: '檢查'
+      };
+    }
+    if (lang.startsWith('ja')) {
+      return {
+        back: '戻る',
+        forward: '進む',
+        reload: '再読み込み',
+        saveAs: '名前を付けて保存…',
+        print: '印刷…',
+        translate: '日本語に翻訳',
+        viewSource: 'ページのソースを表示',
+        inspect: '検証'
+      };
+    }
+    if (lang.startsWith('sk')) {
+      return {
+        back: 'Späť',
+        forward: 'Dopredu',
+        reload: 'Znova načítať',
+        saveAs: 'Uložiť ako…',
+        print: 'Tlačiť…',
+        translate: 'Preložiť do slovenčiny',
+        viewSource: 'Zobraziť zdrojový kód stránky',
+        inspect: 'Skontrolovať'
       };
     }
     return {

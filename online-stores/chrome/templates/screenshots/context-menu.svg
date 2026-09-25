@@ -10,7 +10,7 @@
     x="40"
     y="64"
     fill="#f4f6f8"
-    font-family="Titillium Web, Segoe UI, system-ui, sans-serif"
+    font-family="Titillium Web, Noto Sans JP, Noto Sans SC, Noto Sans TC, Noto Sans HK, Hiragino Sans, Hiragino Sans GB, PingFang SC, PingFang TC, STHeiti, Segoe UI, system-ui, sans-serif"
     font-size="35.2"
     font-weight="700">{{headline}}</text>
   <g transform="translate(40,732)">
@@ -20,7 +20,7 @@
       x="0"
       y="21.5"
       fill="#f4f6f8"
-      font-family="Titillium Web, Segoe UI, system-ui, sans-serif"
+      font-family="Titillium Web, Noto Sans JP, Noto Sans SC, Noto Sans TC, Noto Sans HK, Hiragino Sans, Hiragino Sans GB, PingFang SC, PingFang TC, STHeiti, Segoe UI, system-ui, sans-serif"
       font-size="25.3">{{callout.0}}</text>
   </g>
 </svg>

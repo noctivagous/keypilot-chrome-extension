@@ -150,7 +150,7 @@ export function substitutionsForSlot(slot, copyEntry, captureHref) {
     values[`callout.${index}`] = text;
     const kbd = splitCalloutKbd(text);
     if (kbd) {
-      const beforeWidth = estimateTitilliumWidth(kbd.before, CALLOUT_FONT_SIZE);
+      const beforeWidth = estimateOverlayWidth(kbd.before, CALLOUT_FONT_SIZE);
       const kbdX = Math.round(40 + beforeWidth + 8);
       values[`callout.${index}.before`] = kbd.before;
       values[`callout.${index}.kbd`] = kbd.kbd;
@@ -173,10 +173,27 @@ function splitCalloutKbd(text) {
   return { before: match[1], kbd: match[2], after: match[3] };
 }
 
-function estimateTitilliumWidth(text, fontSize) {
+function isWideGlyph(ch) {
+  const code = ch.codePointAt(0);
+  return (
+    (code >= 0x1100 && code <= 0x11ff) ||
+    (code >= 0x2e80 && code <= 0x9fff) ||
+    (code >= 0xa960 && code <= 0xa97f) ||
+    (code >= 0xac00 && code <= 0xd7af) ||
+    (code >= 0xf900 && code <= 0xfaff) ||
+    (code >= 0xfe10 && code <= 0xfe1f) ||
+    (code >= 0xfe30 && code <= 0xfe4f) ||
+    (code >= 0xff00 && code <= 0xff60) ||
+    (code >= 0xffe0 && code <= 0xffe6) ||
+    (code >= 0x20000 && code <= 0x2fa1f)
+  );
+}
+
+export function estimateOverlayWidth(text, fontSize) {
   let width = 0;
   for (const ch of String(text)) {
     if (ch === ' ') width += fontSize * 0.25;
+    else if (isWideGlyph(ch)) width += fontSize * 1;
     else if ('iIlj.,:;!\''.includes(ch)) width += fontSize * 0.26;
     else if ('mwWM@'.includes(ch)) width += fontSize * 0.76;
     else width += fontSize * 0.5;
@@ -252,13 +269,63 @@ function loadResvg() {
   }
 }
 
-export function fontFiles(root = repoRoot) {
-  const fontsDir = path.join(root, 'extension/fonts');
-  if (!fs.existsSync(fontsDir)) return [];
+export const OVERLAY_FONT_FAMILY =
+  'Titillium Web, Noto Sans JP, Noto Sans SC, Noto Sans TC, Noto Sans HK, Hiragino Sans, Hiragino Sans GB, PingFang SC, PingFang TC, STHeiti, Segoe UI, system-ui, sans-serif';
+
+const FONT_FILE = /\.(ttf|otf|ttc)$/i;
+const LATIN_FONT_FILE = /\.(ttf|otf)$/i;
+
+const NOTO_CJK_SUBSET = [
+  {
+    file: 'NotoSansJP-VF.ttf',
+    url: 'https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@main/Sans/Variable/TTF/Subset/NotoSansJP-VF.ttf'
+  },
+  {
+    file: 'NotoSansSC-VF.ttf',
+    url: 'https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@main/Sans/Variable/TTF/Subset/NotoSansSC-VF.ttf'
+  },
+  {
+    file: 'NotoSansTC-VF.ttf',
+    url: 'https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@main/Sans/Variable/TTF/Subset/NotoSansTC-VF.ttf'
+  },
+  {
+    file: 'NotoSansHK-VF.ttf',
+    url: 'https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@main/Sans/Variable/TTF/Subset/NotoSansHK-VF.ttf'
+  }
+];
+
+function listedFontFiles(dir, pattern = FONT_FILE) {
+  if (!fs.existsSync(dir)) return [];
   return fs
-    .readdirSync(fontsDir)
-    .filter((name) => /\.(ttf|otf)$/i.test(name))
-    .map((name) => path.join(fontsDir, name));
+    .readdirSync(dir)
+    .filter((name) => pattern.test(name))
+    .map((name) => path.join(dir, name));
+}
+
+export function overlayCjkFontDir(root = repoRoot) {
+  return path.join(root, 'scripts/store-screenshots/fonts');
+}
+
+export function fontFiles(root = repoRoot) {
+  return [
+    ...listedFontFiles(path.join(root, 'extension/fonts'), LATIN_FONT_FILE),
+    ...listedFontFiles(overlayCjkFontDir(root))
+  ];
+}
+
+export async function ensureOverlayCjkFonts(root = repoRoot) {
+  const dir = overlayCjkFontDir(root);
+  fs.mkdirSync(dir, { recursive: true });
+  for (const { file, url } of NOTO_CJK_SUBSET) {
+    const dest = path.join(dir, file);
+    if (fs.existsSync(dest) && fs.statSync(dest).size > 10_000) continue;
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to download overlay CJK font ${file} (${response.status})`);
+    }
+    fs.writeFileSync(dest, Buffer.from(await response.arrayBuffer()));
+  }
+  return fontFiles(root);
 }
 
 function assertOpaqueCorners(pixels, width, height) {
@@ -271,14 +338,15 @@ function assertOpaqueCorners(pixels, width, height) {
   }
 }
 
-export function renderSvgToPng(svg, { width, height, root = repoRoot, fullBleed = true } = {}) {
+function rasterizeSvg(svg, { width, height, root = repoRoot, fullBleed = true } = {}) {
   const Resvg = loadResvg();
   const files = fontFiles(root);
+  const hasTitillium = files.some((file) => /titillium/i.test(path.basename(file)));
   const renderer = new Resvg(svg, {
     fitTo: { mode: 'original' },
     font: {
       fontFiles: files,
-      defaultFontFamily: files.length ? 'Titillium Web' : 'sans-serif',
+      defaultFontFamily: hasTitillium ? 'Titillium Web' : 'sans-serif',
       loadSystemFonts: files.length === 0
     }
   });
@@ -287,7 +355,24 @@ export function renderSvgToPng(svg, { width, height, root = repoRoot, fullBleed 
     throw new Error(`Rendered PNG is ${rendered.width}×${rendered.height}, expected ${width}×${height}`);
   }
   if (fullBleed) assertOpaqueCorners(rendered.pixels, rendered.width, rendered.height);
-  return rendered.asPng();
+  return rendered;
+}
+
+export function renderSvgToPng(svg, options = {}) {
+  return rasterizeSvg(svg, options).asPng();
+}
+
+export function countBrightPixels(svg, options = {}, luma = 160) {
+  const rendered = rasterizeSvg(svg, { ...options, fullBleed: options.fullBleed ?? false });
+  let count = 0;
+  const { pixels, width, height } = rendered;
+  for (let i = 0; i < width * height; i++) {
+    const r = pixels[i * 4];
+    const g = pixels[i * 4 + 1];
+    const b = pixels[i * 4 + 2];
+    if (0.299 * r + 0.587 * g + 0.114 * b >= luma) count += 1;
+  }
+  return count;
 }
 
 export function assertGeneratedPng(png, { width, height }) {

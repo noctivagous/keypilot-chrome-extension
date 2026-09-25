@@ -19,6 +19,7 @@ const simplifiedChineseXml = join(root, 'extension/onboarding/zh_CN.xml');
 const traditionalChineseXml = join(root, 'extension/onboarding/zh_TW.xml');
 const hongKongChineseXml = join(root, 'extension/onboarding/zh_HK.xml');
 const japaneseXml = join(root, 'extension/onboarding/ja.xml');
+const slovakXml = join(root, 'extension/onboarding/sk.xml');
 const spanishFixture = join(root, 'test/fixtures/onboarding/es.xml');
 
 /** @type {ReturnType<typeof installChromeMock>} */
@@ -85,6 +86,13 @@ describe('onboarding locale models', () => {
     const german = parseOnboardingXml(readFileSync(germanXml, 'utf8'));
     assert.deepEqual(structureOf(germanXml), structureOf(englishXml));
     assert.notEqual(german.slides[0].title, english.slides[0].title);
+  });
+
+  it('ships the Slovak model with English-compatible structure', () => {
+    const english = parseOnboardingXml(readFileSync(englishXml, 'utf8'));
+    const slovak = parseOnboardingXml(readFileSync(slovakXml, 'utf8'));
+    assert.deepEqual(structureOf(slovakXml), structureOf(englishXml));
+    assert.notEqual(slovak.slides[0].title, english.slides[0].title);
   });
 
   it('ships CJK models with English-compatible structure', () => {

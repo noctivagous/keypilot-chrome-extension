@@ -26,11 +26,11 @@ is a snapshot, not a live status. As of 2026-09-22:
 | `de` | yes | yes | yes | yes | yes | yes | yes | copy + YouTube | yes |
 | `es` | yes | yes | yes | yes | yes | yes | yes | copy + YouTube | yes |
 | `es_419` | yes | no (falls back to `es`/`en`) | no (falls back to `es`/`en`) | yes | yes | yes | yes | copy + YouTube | yes |
-| `sk` | yes (2026-09-22, machine-translated, needs bilingual review) | no | no | no | no | no | no | copy; YouTube pending | HTML yes; listing PNGs missing (`web:locales:check` fails) |
+| `sk` | yes (2026-09-22, machine-translated, needs bilingual review) | no | yes (`onboarding/sk.xml`) | yes | yes | yes | yes | copy; YouTube pending | yes |
 | `zh_CN` | yes | yes | yes | yes | yes | capture when generating listing shots | generate from captures | copy; YouTube pending | yes |
 | `zh_TW` | yes | yes | yes | yes | yes | capture when generating listing shots | generate from captures | copy; YouTube pending | yes |
 | `zh_HK` | yes (from `zh_TW` Traditional, 2026-09-22) | yes | yes | yes | yes | yes (gitignored captures) | yes (gitignored generated PNGs) | copy; YouTube pending | no |
-| `ja` | yes (2026-09-22, machine-translated, needs bilingual review) | yes (machine-translated, needs bilingual review) | yes | yes | yes | no | no | copy; YouTube pending | no |
+| `ja` | yes (2026-09-22, machine-translated, needs bilingual review) | yes (machine-translated, needs bilingual review) | yes | yes | yes | yes | yes | copy; YouTube pending | yes |
 
 A locale can ship in the extension with only `messages.json` complete — Docs,
 onboarding, and store assets fall back to base language then English. The
@@ -99,6 +99,9 @@ table's row is filled in or explicitly deferred (see
 - Needs: complete copy for every defined screenshot slot; must match the
   locale of the underlying GUI capture (never mix a capture from one locale
   with annotation copy from another).
+- CJK copy (`ja`, `zh_CN`, `zh_TW`, `zh_HK`) is stored here and substituted
+  into the templates. Header/footer banners use the overlay CJK faces in
+  §7; missing glyphs there are a compositor issue, not missing copy.
 
 ### 5. Chrome Web Store detailed description — `online-stores/chrome/listing/<locale>.txt`
 
@@ -119,6 +122,11 @@ table's row is filled in or explicitly deferred (see
   behind screenshot slot 1. Add a matching locale object and any necessary
   system-font stack when adding a capture locale; its `?lang=<locale>` view
   must show real locale copy for the GUI capture.
+- Slot 5 (`05-context-menu`) paints a mock Chrome page menu in
+  `scripts/store-screenshots/page-api.js` (`chromePageMenuCopy`). Those labels
+  are Chrome’s, not KeyPilot’s. Add a branch for the new locale before
+  capturing; a missing branch leaves Back/Forward/Reload in English while the
+  KeyPilot submenu is translated.
 - Generate via `npm run store:screenshots:serve` +
   `npm run store:screenshots -- --locale=<locale>`.
 
@@ -126,6 +134,15 @@ table's row is filled in or explicitly deferred (see
 
 - Build output composited from §4 + §6 through the SVG templates in
   `online-stores/chrome/templates/`. Deterministic; do not hand-edit.
+- Overlay text uses Titillium Web plus CJK fallbacks (Noto Sans JP/SC/TC/HK,
+  Hiragino, PingFang, STHeiti). `lib.mjs` `fontFiles()` loads Titillium from
+  `extension/fonts/` and optional Noto files from
+  `scripts/store-screenshots/fonts/`. `loadSystemFonts` stays off when those
+  files are present so rasterization stays fast. `npm run store:screenshots`
+  downloads Noto CJK subset TTF files into that fonts folder when they are
+  missing. Those files are gitignored and must not be copied into the
+  extension bundle. `estimateOverlayWidth` treats CJK/kana as ~1em so
+  `[[F]]` chips sit after the Japanese/Chinese prefix.
 - Global-only assets (never per-locale): small promo tile `440×280` and
   marquee promo tile `1400×560` under
   `online-stores/generated/chrome/promo/`. Chrome does not accept localized
@@ -258,7 +275,9 @@ HTML `lang` uses hyphens.
 3. **Store copy (§4, §5).** Add `online-stores/chrome/copy/<locale>.json`
    (every screenshot slot) and `online-stores/chrome/listing/<locale>.txt`.
    If the news-page fixture has no `?lang=<locale>` object yet, add one in
-   `scripts/store-screenshots/fixture.html` before capturing.
+   `scripts/store-screenshots/fixture.html` before capturing. Add the same
+   locale to `chromePageMenuCopy` in `scripts/store-screenshots/page-api.js`
+   so slot 5’s mock Chrome page menu is not English.
 4. **Generate listing screenshots (§6, §7).** This is the extension-side
    image generation the website consumes:
 
@@ -303,9 +322,9 @@ HTML `lang` uses hyphens.
    keyboard legends match the hardware id, hover shows the localized tooltip,
    and all five screenshots load.
 
-Locales that exist only under `extension/_locales/` (`ja`, `zh_HK` today) do
-not appear on noctivagous.com until steps 6–7. A site folder without §7 PNGs
-(`sk` today) fails `web:locales:check`.
+Locales that exist only under `extension/_locales/` (`zh_HK` today) do
+not appear on noctivagous.com until steps 6–7. `web:locales:check` fails if a
+registered site locale is missing its five listing PNGs.
 
 ## Verification commands
 

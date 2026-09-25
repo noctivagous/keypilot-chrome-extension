@@ -7,11 +7,15 @@ import { describe, it } from 'node:test';
 import {
   applyTemplate,
   assertCopyComplete,
+  countBrightPixels,
+  ensureOverlayCjkFonts,
+  estimateOverlayWidth,
   generateLocaleScreenshots,
   generatePromoTiles,
   loadCopy,
   loadSlots,
   localesToGenerate,
+  OVERLAY_FONT_FAMILY,
   pngToDataUri,
   renderSvgToPng,
   repoRoot,
@@ -97,6 +101,8 @@ describe('Chrome store screenshot pipeline', () => {
       assert.match(svg, /\{\{captureHref\}\}/);
       assert.match(svg, /\{\{headline\}\}/);
       assert.match(svg, /\{\{callout\.0\}\}/);
+      assert.match(svg, /Noto Sans JP/);
+      assert.match(svg, /Hiragino Sans/);
     }
   });
 
@@ -211,5 +217,30 @@ describe('Chrome store screenshot pipeline', () => {
     const values = substitutionsForSlot(slots.slots[0], copy, pngToDataUri(Buffer.from('png')));
     assert.match(values.captureHref, /^data:image\/png;base64,/);
     assert.equal(values.headline, copy.headline);
+  });
+
+  it('places the key chip after CJK callout prefixes at roughly 1em per glyph', () => {
+    const latin = estimateOverlayWidth('Click ', 25.3);
+    const cjk = estimateOverlayWidth('リンクに合わせて ', 25.3);
+    assert.ok(cjk > latin * 1.5);
+    const values = substitutionsForSlot(
+      slots.slots[0],
+      {
+        headline: '見出し',
+        callouts: ['リンクに合わせて [[F]] を押してクリック。']
+      },
+      'data:image/png;base64,aa'
+    );
+    assert.ok(Number(values['callout.0.kbdX']) > 40 + 25.3 * 6);
+  });
+
+  it('rasterizes CJK overlay glyphs instead of empty banner bars', async () => {
+    await ensureOverlayCjkFonts(repoRoot);
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="480" height="80">
+      <rect width="480" height="80" fill="#14171c"/>
+      <text x="20" y="54" fill="#f4f6f8" font-family="${OVERLAY_FONT_FAMILY}" font-size="36" font-weight="700">日本語の見出し中文標題</text>
+    </svg>`;
+    const bright = countBrightPixels(svg, { width: 480, height: 80, root: repoRoot, fullBleed: true });
+    assert.ok(bright > 80, `expected CJK overlay glyphs, counted ${bright} bright pixels`);
   });
 });

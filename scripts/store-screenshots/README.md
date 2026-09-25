@@ -17,6 +17,11 @@ npm run store:screenshots -- --locale=en
 Chrome does **not** read these files from the packed extension. Upload generated
 PNGs by hand in the Developer Dashboard.
 
+Listing overlay type is Titillium plus CJK fallbacks. Rasterization loads
+`extension/fonts/` (Latin) and, if needed, Noto CJK subset files under
+`scripts/store-screenshots/fonts/` or macOS Hiragino/STHeiti. Do not copy those
+CJK faces into the extension bundle.
+
 ## Automated Chrome capture
 
 For unattended capture, use the Chrome launcher and CDP runner. It sets
@@ -53,6 +58,11 @@ adding slots and their `page-api.js` states automatically adds them to the
 capture loop. The launch step is deterministic, but Chrome's macOS UI language
 is process-level, so each locale is launched in sequence rather than inside a
 single browser process.
+
+Slot 5 is not a live Chrome context menu. `page-api.js` draws a mock page menu
+(`chromePageMenuCopy`) and then KeyPilot items from `chrome.i18n`. Add the
+locale to that map when capturing a new language; otherwise Back/Forward/Reload
+stay English.
 
 ## Capture (once per locale)
 

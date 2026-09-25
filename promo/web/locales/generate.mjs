@@ -26,12 +26,13 @@ const CHECK = process.argv.includes("--check");
 
 const SITE = "https://noctivagous.com";
 const SOURCE_LOCALE = "en";
-const LOCALES = ["de", "es", "es_419", "sk", "zh_CN", "zh_TW"];
+const LOCALES = ["de", "es", "es_419", "ja", "sk", "zh_CN", "zh_TW"];
 const HTML_LANG = {
   en: "en",
   de: "de",
   es: "es",
   es_419: "es-419",
+  ja: "ja",
   sk: "sk",
   zh_CN: "zh-CN",
   zh_TW: "zh-TW"
@@ -41,6 +42,7 @@ const LOCALE_META = {
   de: { native: "Deutsch", flag: "de" },
   es: { native: "Español", flag: "es" },
   es_419: { native: "Español (Latinoamérica)", flag: "mx" },
+  ja: { native: "日本語", flag: "jp" },
   sk: { native: "Slovenčina", flag: "sk" },
   zh_CN: { native: "简体中文", flag: "cn" },
   zh_TW: { native: "繁體中文", flag: "tw" }
@@ -50,6 +52,7 @@ const HARDWARE_BY_LOCALE = {
   de: "de-de-qwertz-iso",
   es: "es-es-qwerty-iso",
   es_419: "us-ansi-qwerty",
+  ja: "ja-jis-106",
   sk: "sk-sk-qwertz-iso",
   zh_CN: "us-ansi-qwerty",
   zh_TW: "us-ansi-qwerty"

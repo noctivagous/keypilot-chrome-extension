@@ -48,7 +48,9 @@ Run this when listing images changed and the promo video did not.
    ```
 
    Use `--all` instead of `--locale` to regenerate every shipped locale that
-   is not excluded. Global small and marquee tiles are English-only; regenerate
+   is not excluded. Overlay banners for `ja` / `zh_*` need CJK faces in the
+   compositor (`scripts/store-screenshots/fonts/` or macOS Hiragino), not in
+   the extension package. Global small and marquee tiles are English-only; regenerate
    them with `npm run store:screenshots -- --promo-only` only when that art
    changed.
 4. If noctivagous.com should show the new images, copy them into the site:

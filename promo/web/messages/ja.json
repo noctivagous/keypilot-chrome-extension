@@ -1,0 +1,938 @@
+{
+  "control_strip_collapse": {
+    "message": "折りたたむ",
+    "description": "Control-strip collapse action."
+  },
+  "control_strip_expand": {
+    "message": "展開",
+    "description": "Control-strip expand action."
+  },
+  "keyboard_help_aria_label": {
+    "message": "KeyPilot キーボードリファレンス",
+    "description": "Accessible name for the floating keyboard reference."
+  },
+  "keyboard_help_title": {
+    "message": "キーボードリファレンス",
+    "description": "Title of the floating keyboard reference."
+  },
+  "keyboard_help_title_typing": {
+    "message": "キーボードリファレンス — 入力中",
+    "description": "Keyboard reference title while a text field is focused."
+  },
+  "keyboard_help_toggle_title": {
+    "message": "キーボードリファレンスを切り替え",
+    "description": "Tooltip for the keyboard-reference toggle shortcut."
+  },
+  "keyboard_help_toggle_aria": {
+    "message": "キーボードリファレンスを切り替え（$1）",
+    "description": "Accessible name for the keyboard-reference toggle shortcut. $1 is the key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "K"
+      }
+    }
+  },
+  "keyboard_help_close_aria": {
+    "message": "キーボードリファレンスを閉じる",
+    "description": "Accessible name for closing the keyboard reference."
+  },
+  "keyboard_help_collapse_aria": {
+    "message": "キーボードリファレンスを折りたたむ",
+    "description": "Accessible name for collapsing the keyboard reference."
+  },
+  "keyboard_help_expand_aria": {
+    "message": "キーボードリファレンスを展開",
+    "description": "Accessible name for expanding the keyboard reference."
+  },
+  "keyboard_help_layout_aria": {
+    "message": "現在のキーボードレイアウト",
+    "description": "Accessible name for the keyboard-reference layout picker."
+  },
+  "keyboard_help_editing_aria": {
+    "message": "レイアウト編集中 — $1 で終了",
+    "description": "Hint while the layout editor is open. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+C"
+      }
+    }
+  },
+  "keyboard_help_exit_text_mode": {
+    "message": "テキストモードを終了（$1）",
+    "description": "Button that leaves text mode. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Esc"
+      }
+    }
+  },
+  "keyboard_help_exit_text_mode_label": {
+    "message": "終了",
+    "description": "Visible label on the Keyboard Reference button that leaves text mode."
+  },
+  "keyboard_help_esc_to_exit": {
+    "message": "$1 で終了",
+    "description": "Keyboard Reference titlebar hint while text mode is active. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Esc"
+      }
+    }
+  },
+  "keyboard_help_close_editor": {
+    "message": "レイアウトエディターを閉じる（$1）",
+    "description": "Button that closes the layout editor. $1 is the shortcut glyph.",
+    "placeholders": {
+      "shortcut": {
+        "content": "$1",
+        "example": "Alt+C"
+      }
+    }
+  },
+  "keyboard_help_close_editor_label": {
+    "message": "エディターを閉じる",
+    "description": "Visible label on the Keyboard Reference button that closes the layout editor."
+  },
+  "keycap_tab": {
+    "message": "Tab",
+    "description": "Visible legend on the Tab keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_caps": {
+    "message": "Caps",
+    "description": "Visible legend on the Caps Lock keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_shift": {
+    "message": "Shift",
+    "description": "Visible legend on the Shift keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_enter": {
+    "message": "Enter",
+    "description": "Visible legend on the Enter/Return keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_backspace": {
+    "message": "Backspace",
+    "description": "Visible legend on the Backspace keycap in Keyboard Reference. Keep this short."
+  },
+  "keycap_esc": {
+    "message": "Esc",
+    "description": "Visible legend on the Escape keycap in Keyboard Reference. Keep this short."
+  },
+  "keyboard_help_left_handed": {
+    "message": "左手",
+    "description": "Chip label for left-handed keyboard layout."
+  },
+  "keyboard_help_left_handed_off_aria": {
+    "message": "左手レイアウトをオフにする",
+    "description": "Accessible name for dismissing the left-handed chip."
+  },
+  "keyboard_help_render_error": {
+    "message": "このページではキーボードリファレンスを表示できません。",
+    "description": "Error when the keyboard reference cannot paint."
+  },
+  "keyboard_help_custom_render_error": {
+    "message": "カスタムキーボードレイアウトを表示できません。",
+    "description": "Error when a custom layout cannot paint."
+  },
+  "keyboard_help_remove_action_aria": {
+    "message": "$1 からアクションを削除",
+    "description": "Accessible name for removing a key assignment. $1 is the key label.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "F"
+      }
+    }
+  },
+  "keyboard_help_remove": {
+    "message": "削除",
+    "description": "Tooltip for removing a key assignment."
+  },
+  "layout_family_browsing_label": {
+    "message": "ブラウジング",
+    "description": "Built-in keyboard layout family name."
+  },
+  "layout_family_browsing_description": {
+    "message": "スクロール、タブ、クリック、履歴、ツールなど、ブラウジング操作一式です。",
+    "description": "Description of the Browsing built-in keyboard layout family."
+  },
+  "layout_family_browsing_picker": {
+    "message": "組み込み: ブラウジング",
+    "description": "Built-in keyboard layout family label in the layout picker."
+  },
+  "key_info_key": {
+    "message": "キー: $1",
+    "description": "Physical key caption in the key-info popover. $1 is the key glyph.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "F"
+      }
+    }
+  },
+  "key_info_settings_hint": {
+    "message": "クリックして設定を表示",
+    "description": "Hint shown on hover in the key-info popover when the action has settings."
+  },
+  "key_info_instance_title": {
+    "message": "$NAME$：$TYPE$",
+    "description": "Hover tooltip title for an action instance. $1 is the instance name, $2 is the key action type.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Social media"
+      },
+      "type": {
+        "content": "$2",
+        "example": "Open URLs"
+      }
+    }
+  },
+  "key_info_config": {
+    "message": "設定",
+    "description": "Button in the key-info popover that opens the action configuration panel."
+  },
+  "fn_ACTIVATE_label": {
+    "message": "要素をクリック",
+    "description": "Function Library label for ACTIVATE."
+  },
+  "fn_ACTIVATE_description": {
+    "message": "ホバー中の要素をクリックします",
+    "description": "Function Library description for ACTIVATE."
+  },
+  "fn_ACTIVATE_NEW_TAB_label": {
+    "message": "新しいタブでクリック",
+    "description": "Function Library label for ACTIVATE_NEW_TAB."
+  },
+  "fn_ACTIVATE_NEW_TAB_description": {
+    "message": "リンクを前面の新しいタブで開きます",
+    "description": "Function Library description for ACTIVATE_NEW_TAB."
+  },
+  "fn_ACTIVATE_NEW_TAB_BACKGROUND_label": {
+    "message": "背面タブでクリック",
+    "description": "Function Library label for ACTIVATE_NEW_TAB_BACKGROUND."
+  },
+  "fn_ACTIVATE_NEW_TAB_BACKGROUND_description": {
+    "message": "リンクを背面の新しいタブで開きます",
+    "description": "Function Library description for ACTIVATE_NEW_TAB_BACKGROUND."
+  },
+  "fn_BACK_label": {
+    "message": "戻る",
+    "description": "Function Library label for BACK."
+  },
+  "fn_BACK_description": {
+    "message": "ブラウザ履歴を戻ります",
+    "description": "Function Library description for BACK."
+  },
+  "fn_BACK2_label": {
+    "message": "戻る",
+    "description": "Function Library label for BACK2."
+  },
+  "fn_BACK2_description": {
+    "message": "ブラウザ履歴を戻ります",
+    "description": "Function Library description for BACK2."
+  },
+  "fn_FORWARD_label": {
+    "message": "進む",
+    "description": "Function Library label for FORWARD."
+  },
+  "fn_FORWARD_description": {
+    "message": "ブラウザ履歴を進みます",
+    "description": "Function Library description for FORWARD."
+  },
+  "fn_DELETE_label": {
+    "message": "削除モード",
+    "description": "Function Library label for DELETE."
+  },
+  "fn_DELETE_description": {
+    "message": "カーソル下の要素を隠します",
+    "description": "Function Library description for DELETE."
+  },
+  "fn_TAB_LEFT_label": {
+    "message": "左のタブ",
+    "description": "Function Library label for TAB_LEFT."
+  },
+  "fn_TAB_LEFT_description": {
+    "message": "前のタブに切り替えます",
+    "description": "Function Library description for TAB_LEFT."
+  },
+  "fn_TAB_RIGHT_label": {
+    "message": "右のタブ",
+    "description": "Function Library label for TAB_RIGHT."
+  },
+  "fn_TAB_RIGHT_description": {
+    "message": "次のタブに切り替えます",
+    "description": "Function Library description for TAB_RIGHT."
+  },
+  "fn_ROOT_label": {
+    "message": "サイトルートへ",
+    "description": "Function Library label for ROOT."
+  },
+  "fn_ROOT_description": {
+    "message": "サイトのオリジンへ移動します",
+    "description": "Function Library description for ROOT."
+  },
+  "fn_LAUNCHER_label": {
+    "message": "ランチャー",
+    "description": "Function Library label for LAUNCHER."
+  },
+  "fn_LAUNCHER_description": {
+    "message": "サイトへのクイックアクセスランチャーです",
+    "description": "Function Library description for LAUNCHER."
+  },
+  "fn_TOP_SITES_label": {
+    "message": "トップサイト",
+    "description": "Function Library label for TOP_SITES."
+  },
+  "fn_TOP_SITES_description": {
+    "message": "ツールバー、訪問履歴、ブックマークです",
+    "description": "Function Library description for TOP_SITES."
+  },
+  "fn_CLOSE_TAB_label": {
+    "message": "タブを閉じる",
+    "description": "Function Library label for CLOSE_TAB."
+  },
+  "fn_CLOSE_TAB_description": {
+    "message": "現在のタブを閉じます",
+    "description": "Function Library description for CLOSE_TAB."
+  },
+  "fn_CANCEL_label": {
+    "message": "フォーカスを終了",
+    "description": "Function Library label for CANCEL."
+  },
+  "fn_CANCEL_description": {
+    "message": "モードとオーバーレイを終了します",
+    "description": "Function Library description for CANCEL."
+  },
+  "fn_PAGE_UP_INSTANT_label": {
+    "message": "ページアップ",
+    "description": "Function Library label for PAGE_UP_INSTANT."
+  },
+  "fn_PAGE_UP_INSTANT_description": {
+    "message": "1ページ分すぐ上へジャンプします",
+    "description": "Function Library description for PAGE_UP_INSTANT."
+  },
+  "fn_PAGE_DOWN_INSTANT_label": {
+    "message": "ページダウン",
+    "description": "Function Library label for PAGE_DOWN_INSTANT."
+  },
+  "fn_PAGE_DOWN_INSTANT_description": {
+    "message": "1ページ分すぐ下へジャンプします",
+    "description": "Function Library description for PAGE_DOWN_INSTANT."
+  },
+  "fn_PAGE_TOP_label": {
+    "message": "先頭へスクロール",
+    "description": "Function Library label for PAGE_TOP."
+  },
+  "fn_PAGE_TOP_description": {
+    "message": "スクロール対象の先頭へジャンプします",
+    "description": "Function Library description for PAGE_TOP."
+  },
+  "fn_PAGE_BOTTOM_label": {
+    "message": "末尾へスクロール",
+    "description": "Function Library label for PAGE_BOTTOM."
+  },
+  "fn_PAGE_BOTTOM_description": {
+    "message": "スクロール対象の末尾へジャンプします",
+    "description": "Function Library description for PAGE_BOTTOM."
+  },
+  "fn_SCROLL_LINE_label": {
+    "message": "スクロールライン",
+    "description": "Function Library label for SCROLL_LINE."
+  },
+  "fn_SCROLL_LINE_description": {
+    "message": "原点ベースの連続スクロールです",
+    "description": "Function Library description for SCROLL_LINE."
+  },
+  "fn_NEW_TAB_label": {
+    "message": "新しいタブ",
+    "description": "Function Library label for NEW_TAB."
+  },
+  "fn_NEW_TAB_description": {
+    "message": "KeyPilotの新しいタブを開きます",
+    "description": "Function Library description for NEW_TAB."
+  },
+  "fn_OPEN_POPOVER_label": {
+    "message": "ポップオーバーを開く",
+    "description": "Function Library label for OPEN_POPOVER."
+  },
+  "fn_OPEN_POPOVER_description": {
+    "message": "リンクをポップアップウィンドウで開きます",
+    "description": "Function Library description for OPEN_POPOVER."
+  },
+  "fn_PREVIEW_LINK_POPOVER_label": {
+    "message": "リンクをプレビュー",
+    "description": "Function Library label for PREVIEW_LINK_POPOVER."
+  },
+  "fn_PREVIEW_LINK_POPOVER_description": {
+    "message": "リンクをポップアップでプレビューします",
+    "description": "Function Library description for PREVIEW_LINK_POPOVER."
+  },
+  "fn_POI_WEBSITE_label": {
+    "message": "POIウェブサイト",
+    "description": "Function Library label for POI_WEBSITE."
+  },
+  "fn_POI_WEBSITE_description": {
+    "message": "地図上の場所のウェブサイトを開きます",
+    "description": "Function Library description for POI_WEBSITE."
+  },
+  "fn_POI_ADDRESS_label": {
+    "message": "POI住所",
+    "description": "Function Library label for POI_ADDRESS."
+  },
+  "fn_POI_ADDRESS_description": {
+    "message": "地図上の場所の住所をコピーします",
+    "description": "Function Library description for POI_ADDRESS."
+  },
+  "fn_OPEN_SETTINGS_POPOVER_label": {
+    "message": "設定",
+    "description": "Function Library label for OPEN_SETTINGS_POPOVER."
+  },
+  "fn_OPEN_SETTINGS_POPOVER_description": {
+    "message": "KeyPilot設定を開きます",
+    "description": "Function Library description for OPEN_SETTINGS_POPOVER."
+  },
+  "fn_OMNIBOX_label": {
+    "message": "オムニボックス",
+    "description": "Function Library label for OMNIBOX. Keep this short for keycaps. Do not use the English word Omnibox in non-English catalogs."
+  },
+  "fn_OMNIBOX_description": {
+    "message": "アドレスバーのオーバーレイです",
+    "description": "Function Library description for OMNIBOX."
+  },
+  "fn_TAB_HISTORY_label": {
+    "message": "タブ履歴",
+    "description": "Function Library label for TAB_HISTORY."
+  },
+  "fn_TAB_HISTORY_description": {
+    "message": "このタブの履歴を閲覧します",
+    "description": "Function Library description for TAB_HISTORY."
+  },
+  "fn_TABS_OVERVIEW_label": {
+    "message": "タブ一覧",
+    "description": "Function Library label for TABS_OVERVIEW."
+  },
+  "fn_TABS_OVERVIEW_description": {
+    "message": "すべてのウィンドウとタブを表示",
+    "description": "Function Library description for TABS_OVERVIEW."
+  },
+  "fn_TOGGLE_KEYBOARD_HELP_label": {
+    "message": "キーボードリファレンス",
+    "description": "Function Library label for TOGGLE_KEYBOARD_HELP. English may keep the KB abbreviation; other locales must not use KB."
+  },
+  "fn_TOGGLE_KEYBOARD_HELP_description": {
+    "message": "キーボードマップの表示を切り替えます",
+    "description": "Function Library description for TOGGLE_KEYBOARD_HELP."
+  },
+  "fn_HIGHLIGHT_label": {
+    "message": "テキスト選択",
+    "description": "Function Library label for HIGHLIGHT."
+  },
+  "fn_HIGHLIGHT_description": {
+    "message": "テキストを選択してリッチテキストをコピーします",
+    "description": "Function Library description for HIGHLIGHT."
+  },
+  "fn_RECTANGLE_HIGHLIGHT_label": {
+    "message": "要素選択",
+    "description": "Function Library label for RECTANGLE_HIGHLIGHT."
+  },
+  "fn_RECTANGLE_HIGHLIGHT_description": {
+    "message": "矩形または累積で要素を選びます",
+    "description": "Function Library description for RECTANGLE_HIGHLIGHT."
+  },
+  "fn_COPY_HOVERED_IMAGE_label": {
+    "message": "画像をコピー",
+    "description": "Function Library label for COPY_HOVERED_IMAGE."
+  },
+  "fn_COPY_HOVERED_IMAGE_description": {
+    "message": "ホバー中の画像をコピーします",
+    "description": "Function Library description for COPY_HOVERED_IMAGE."
+  },
+  "fn_COPY_HOVERED_URL_label": {
+    "message": "URLをコピー",
+    "description": "Function Library label for COPY_HOVERED_URL."
+  },
+  "fn_COPY_HOVERED_URL_description": {
+    "message": "ホバー中のリンクURLをコピーします",
+    "description": "Function Library description for COPY_HOVERED_URL."
+  },
+  "fn_COPY_HOVERED_VIDEO_label": {
+    "message": "動画をコピー",
+    "description": "Function Library label for COPY_HOVERED_VIDEO."
+  },
+  "fn_COPY_HOVERED_VIDEO_description": {
+    "message": "ホバー中の動画をコピーします",
+    "description": "Function Library description for COPY_HOVERED_VIDEO."
+  },
+  "fn_FONT_INFO_label": {
+    "message": "フォント情報",
+    "description": "Function Library label for FONT_INFO."
+  },
+  "fn_FONT_INFO_description": {
+    "message": "カーソル下のフォントを調べます",
+    "description": "Function Library description for FONT_INFO."
+  },
+  "fn_PAGE_MEDIA_label": {
+    "message": "ページメディア",
+    "description": "Function Library label for PAGE_MEDIA."
+  },
+  "fn_PAGE_MEDIA_description": {
+    "message": "このページで見つかったメディアを閲覧します",
+    "description": "Function Library description for PAGE_MEDIA."
+  },
+  "fn_OPEN_MEDIA_LIBRARY_label": {
+    "message": "メディアライブラリ",
+    "description": "Function Library label for OPEN_MEDIA_LIBRARY."
+  },
+  "fn_OPEN_MEDIA_LIBRARY_description": {
+    "message": "保存済みのメディアライブラリを開きます",
+    "description": "Function Library description for OPEN_MEDIA_LIBRARY."
+  },
+  "fn_CLIPBOARD_COPY_label": {
+    "message": "コピー",
+    "description": "Function Library label for CLIPBOARD_COPY."
+  },
+  "fn_CLIPBOARD_COPY_description": {
+    "message": "選択範囲をクリップボードにコピーします",
+    "description": "Function Library description for CLIPBOARD_COPY."
+  },
+  "fn_CLIPBOARD_CUT_label": {
+    "message": "カット",
+    "description": "Function Library label for CLIPBOARD_CUT."
+  },
+  "fn_CLIPBOARD_CUT_description": {
+    "message": "選択範囲をクリップボードにカットします",
+    "description": "Function Library description for CLIPBOARD_CUT."
+  },
+  "fn_CLIPBOARD_PASTE_label": {
+    "message": "ペースト",
+    "description": "Function Library label for CLIPBOARD_PASTE."
+  },
+  "fn_CLIPBOARD_PASTE_description": {
+    "message": "フォーカス中のフィールドに貼り付けます",
+    "description": "Function Library description for CLIPBOARD_PASTE."
+  },
+  "fn_CLIPBOARD_SELECT_ALL_label": {
+    "message": "すべて選択",
+    "description": "Function Library label for CLIPBOARD_SELECT_ALL."
+  },
+  "fn_CLIPBOARD_SELECT_ALL_description": {
+    "message": "フィールドまたはページをすべて選択します",
+    "description": "Function Library description for CLIPBOARD_SELECT_ALL."
+  },
+  "fn_SELECT_WORD_label": {
+    "message": "単語を選択",
+    "description": "Function Library label for SELECT_WORD."
+  },
+  "fn_SELECT_WORD_description": {
+    "message": "カーソル下の単語を選択します",
+    "description": "Function Library description for SELECT_WORD."
+  },
+  "fn_SELECT_SENTENCE_label": {
+    "message": "文を選択",
+    "description": "Function Library label for SELECT_SENTENCE."
+  },
+  "fn_SELECT_SENTENCE_description": {
+    "message": "カーソル下の文を選択します",
+    "description": "Function Library description for SELECT_SENTENCE."
+  },
+  "fn_SELECT_PARAGRAPH_label": {
+    "message": "段落を選択",
+    "description": "Function Library label for SELECT_PARAGRAPH."
+  },
+  "fn_SELECT_PARAGRAPH_description": {
+    "message": "カーソル下の段落を選択します",
+    "description": "Function Library description for SELECT_PARAGRAPH."
+  },
+  "fn_SELECT_IMAGE_label": {
+    "message": "画像を選択",
+    "description": "Function Library label for SELECT_IMAGE."
+  },
+  "fn_SELECT_IMAGE_description": {
+    "message": "カーソル下の画像を選択します",
+    "description": "Function Library description for SELECT_IMAGE."
+  },
+  "fn_LOOKUP_WORD_label": {
+    "message": "単語を調べる",
+    "description": "Function Library label for LOOKUP_WORD."
+  },
+  "fn_LOOKUP_WORD_description": {
+    "message": "カーソル下の単語の辞書定義",
+    "description": "Function Library description for LOOKUP_WORD."
+  },
+  "fn_SHOW_POPOVER_label": {
+    "message": "ポップオーバーを表示",
+    "description": "Function Library label for SHOW_POPOVER."
+  },
+  "fn_SHOW_POPOVER_description": {
+    "message": "直前のマクロステップの結果を表示します",
+    "description": "Function Library description for SHOW_POPOVER."
+  },
+  "fn_ADD_URL_TO_MEDIA_LIBRARY_label": {
+    "message": "URLをメディアライブラリに追加",
+    "description": "Function Library label for ADD_URL_TO_MEDIA_LIBRARY."
+  },
+  "fn_ADD_URL_TO_MEDIA_LIBRARY_description": {
+    "message": "ホバー中のhrefを保存します（ダウンロードなし）",
+    "description": "Function Library description for ADD_URL_TO_MEDIA_LIBRARY."
+  },
+  "fn_FETCH_URL_FOR_MEDIA_LIBRARY_label": {
+    "message": "URLをメディアライブラリ用に取得",
+    "description": "Function Library label for FETCH_URL_FOR_MEDIA_LIBRARY."
+  },
+  "fn_FETCH_URL_FOR_MEDIA_LIBRARY_description": {
+    "message": "リンク先ファイルをライブラリにダウンロードします",
+    "description": "Function Library description for FETCH_URL_FOR_MEDIA_LIBRARY."
+  },
+  "fn_cat_navigation_label": {
+    "message": "ナビゲーション",
+    "description": "Actions Library category label for Navigation."
+  },
+  "fn_cat_tab_control_label": {
+    "message": "タブ操作",
+    "description": "Actions Library category label for Tab Control."
+  },
+  "fn_cat_begin_url_label": {
+    "message": "URLを開く",
+    "description": "Actions Library category label for Begin URL."
+  },
+  "fn_cat_get_page_data_label": {
+    "message": "ページデータを取得",
+    "description": "Actions Library category label for Get Page Data."
+  },
+  "fn_cat_maps_label": {
+    "message": "マップ",
+    "description": "Actions Library category label for Maps."
+  },
+  "fn_cat_scroll_label": {
+    "message": "スクロール",
+    "description": "Actions Library category label for Scroll."
+  },
+  "fn_cat_select_label": {
+    "message": "選択",
+    "description": "Actions Library category label for Select."
+  },
+  "fn_cat_clipboard_label": {
+    "message": "クリップボード",
+    "description": "Actions Library category label for Clipboard."
+  },
+  "fn_cat_type_label": {
+    "message": "入力",
+    "description": "Actions Library category label for Type."
+  },
+  "fn_cat_keystrokes_label": {
+    "message": "キーストローク",
+    "description": "Actions Library category label for Keystrokes."
+  },
+  "fn_cat_data_label": {
+    "message": "データ",
+    "description": "Actions Library category label for Data."
+  },
+  "fn_cat_lookup_label": {
+    "message": "調べる",
+    "description": "Actions Library category label for Lookup."
+  },
+  "fn_cat_translate_label": {
+    "message": "翻訳",
+    "description": "Actions Library category label for Translate."
+  },
+  "fn_cat_display_label": {
+    "message": "表示",
+    "description": "Actions Library category label for Display."
+  },
+  "fn_cat_script_label": {
+    "message": "スクリプト",
+    "description": "Actions Library category label for Script."
+  },
+  "fn_cat_media_library_label": {
+    "message": "メディアライブラリ",
+    "description": "Actions Library category label for Media Library."
+  },
+  "fn_cat_ai_label": {
+    "message": "AI",
+    "description": "Actions Library category label for AI."
+  },
+  "fn_cat_keypilot_label": {
+    "message": "KeyPilot",
+    "description": "Actions Library category label for KeyPilot."
+  },
+  "fn_cat_tools_label": {
+    "message": "ツール",
+    "description": "Actions Library category label for Tools."
+  },
+  "fn_cat_system_label": {
+    "message": "システム",
+    "description": "Actions Library category label for System."
+  },
+  "fn_cat_other_label": {
+    "message": "その他",
+    "description": "Actions Library category label for Other."
+  },
+  "fn_cat_navigation_description": {
+    "message": "リンクのクリック、プレビュー、閲覧履歴の移動を行います。",
+    "description": "Actions Library category description for Navigation."
+  },
+  "fn_cat_tab_control_description": {
+    "message": "タブの開閉、切り替え、確認を行います。",
+    "description": "Actions Library category description for Tab Control."
+  },
+  "fn_cat_begin_url_description": {
+    "message": "ランチャー、トップサイト、またはオムニボックスからURLへジャンプします。",
+    "description": "Actions Library category description for Begin URL."
+  },
+  "fn_cat_get_page_data_description": {
+    "message": "テキスト、画像、動画、URL、フォント、その他のページメディアを取得します。",
+    "description": "Actions Library category description for Get Page Data."
+  },
+  "fn_cat_maps_description": {
+    "message": "カーソル下のマップピンから場所のウェブサイトや住所を開きます。",
+    "description": "Actions Library category description for Maps."
+  },
+  "fn_cat_scroll_description": {
+    "message": "行単位、ページ単位、または先頭／末尾へスクロールします。",
+    "description": "Actions Library category description for Scroll."
+  },
+  "fn_cat_select_description": {
+    "message": "複数列選択ヘルパーの削除や切り替えを行います。",
+    "description": "Actions Library category description for Select."
+  },
+  "fn_cat_clipboard_description": {
+    "message": "コピー、カット、ペースト、すべて選択、およびカーソル下の単語・文・段落・画像の選択を行います。",
+    "description": "Actions Library category description for Clipboard."
+  },
+  "fn_cat_type_description": {
+    "message": "保存したテキストをフォーカス中のフィールドに入力します。",
+    "description": "Actions Library category description for Type."
+  },
+  "fn_cat_keystrokes_description": {
+    "message": "キーストローク、コード、バースト、マウス再マップを送信します。",
+    "description": "Actions Library category description for Keystrokes."
+  },
+  "fn_cat_data_description": {
+    "message": "カーソル下またはハイライトからテキストやメディアを読み取ります。",
+    "description": "Actions Library category description for Data."
+  },
+  "fn_cat_lookup_description": {
+    "message": "カーソル下の単語の定義を調べます。",
+    "description": "Actions Library category description for Lookup."
+  },
+  "fn_cat_translate_description": {
+    "message": "ハイライトまたはカーソル下のテキストを翻訳します。",
+    "description": "Actions Library category description for Translate."
+  },
+  "fn_cat_display_description": {
+    "message": "直前のマクロステップの結果をポップオーバーに表示します。",
+    "description": "Actions Library category description for Display."
+  },
+  "fn_cat_script_description": {
+    "message": "ページ状態に対してカスタムのJavaScriptスニペットを実行します。",
+    "description": "Actions Library category description for Script."
+  },
+  "fn_cat_media_library_description": {
+    "message": "リンクや取得したファイルをメディアライブラリに保存します。",
+    "description": "Actions Library category description for Media Library."
+  },
+  "fn_cat_ai_description": {
+    "message": "選択テキストをプロンプト付きでAIに送り、結果の出力先を指定します。",
+    "description": "Actions Library category description for AI."
+  },
+  "fn_cat_keypilot_description": {
+    "message": "KeyPilotの画面（キーボードリファレンス、設定、モード）を開きます。",
+    "description": "Actions Library category description for KeyPilot."
+  },
+  "fn_cat_tools_description": {
+    "message": "ユーティリティのオーバーレイとヘルパーです。",
+    "description": "Actions Library category description for Tools."
+  },
+  "fn_cat_system_description": {
+    "message": "現在のKeyPilotジェスチャーまたはモードをキャンセルします。",
+    "description": "Actions Library category description for System."
+  },
+  "fn_cat_other_description": {
+    "message": "未分類のファンクションです。",
+    "description": "Actions Library category description for Other."
+  },
+  "fn_section_macros_description": {
+    "message": "キーに配置できる複数ステップのシーケンスです。標準マクロをカスタマイズすると、編集可能なコピーが作成されます。",
+    "description": "Actions Library macros section description."
+  },
+  "fn_section_macro_keys_description": {
+    "message": "配置準備済みの保存済みマクロキーインスタンス（ホットキー、バースト、ラウンドロビンなど）です。",
+    "description": "Actions Library macroKeys section description."
+  },
+  "fn_TYPE_CHARACTERS_label": {
+    "message": "文字を入力",
+    "description": "Function Library label for TYPE_CHARACTERS."
+  },
+  "fn_TYPE_CHARACTERS_description": {
+    "message": "保存したテキストをフィールドに入力します",
+    "description": "Function Library description for TYPE_CHARACTERS."
+  },
+  "fn_EXECUTE_JS_label": {
+    "message": "JSを実行",
+    "description": "Function Library label for EXECUTE_JS."
+  },
+  "fn_EXECUTE_JS_description": {
+    "message": "貼り付けたJSスニペットを実行します",
+    "description": "Function Library description for EXECUTE_JS."
+  },
+  "fn_OPEN_URLS_label": {
+    "message": "URLを開く",
+    "description": "Function Library label for OPEN_URLS."
+  },
+  "fn_OPEN_URLS_description": {
+    "message": "複数のページを新しいタブで開く",
+    "description": "Function Library description for OPEN_URLS."
+  },
+  "fn_OPEN_BOOKMARKS_label": {
+    "message": "ブックマークを開く",
+    "description": "Function Library label for OPEN_BOOKMARKS."
+  },
+  "fn_OPEN_BOOKMARKS_description": {
+    "message": "フォルダ内の先頭のブックマークを開きます",
+    "description": "Function Library description for OPEN_BOOKMARKS."
+  },
+  "fn_RANDOM_BOOKMARK_label": {
+    "message": "ランダムブックマーク",
+    "description": "Function Library label for RANDOM_BOOKMARK."
+  },
+  "fn_RANDOM_BOOKMARK_description": {
+    "message": "ランダムなブックマークを開く",
+    "description": "Function Library description for RANDOM_BOOKMARK."
+  },
+  "fn_stock_random_bookmark_label": {
+    "message": "ランダムブックマーク",
+    "description": "Bundled Random Bookmark instance label."
+  },
+  "fn_stock_random_bookmark_description": {
+    "message": "すべてのブックマークから 1 件を開く",
+    "description": "Bundled Random Bookmark instance description."
+  },
+  "fn_stock_social_media_label": {
+    "message": "ソーシャルメディア",
+    "description": "Bundled Open URLs instance label."
+  },
+  "fn_stock_social_media_description": {
+    "message": "Facebook、Instagram、YouTube、X を開く",
+    "description": "Bundled Open URLs instance description."
+  },
+  "fn_instance_name_label": {
+    "message": "名前",
+    "description": "Action instance name field on the key info popover."
+  },
+  "fn_GET_TEXT_AT_CURSOR_label": {
+    "message": "カーソル位置のテキストを取得",
+    "description": "Function Library label for GET_TEXT_AT_CURSOR."
+  },
+  "fn_GET_TEXT_AT_CURSOR_description": {
+    "message": "カーソル下のテキストをコピーします",
+    "description": "Function Library description for GET_TEXT_AT_CURSOR."
+  },
+  "fn_GET_TEXT_RANGE_label": {
+    "message": "テキスト範囲を取得",
+    "description": "Function Library label for GET_TEXT_RANGE."
+  },
+  "fn_GET_TEXT_RANGE_description": {
+    "message": "選択範囲を次のマクロステップに渡します",
+    "description": "Function Library description for GET_TEXT_RANGE."
+  },
+  "fn_GET_MEDIA_AT_CURSOR_label": {
+    "message": "カーソル位置のメディアを取得",
+    "description": "Function Library label for GET_MEDIA_AT_CURSOR."
+  },
+  "fn_GET_MEDIA_AT_CURSOR_description": {
+    "message": "カーソル下のメディアをコピーします",
+    "description": "Function Library description for GET_MEDIA_AT_CURSOR."
+  },
+  "fn_TRANSLATE_label": {
+    "message": "翻訳",
+    "description": "Function Library label for TRANSLATE."
+  },
+  "fn_TRANSLATE_description": {
+    "message": "選択またはカーソル下のテキストを翻訳します",
+    "description": "Function Library description for TRANSLATE."
+  },
+  "fn_COLS_TOGGLE_label": {
+    "message": "列トグル",
+    "description": "Built-in Function COLS_TOGGLE label."
+  },
+  "fn_COLS_TOGGLE_description": {
+    "message": "カーソル下を複数列レイアウトにします",
+    "description": "Built-in Function COLS_TOGGLE short description."
+  },
+  "fn_SEND_TEXT_TO_AI_label": {
+    "message": "テキストをAIに送る",
+    "description": "Built-in Function SEND_TEXT_TO_AI label."
+  },
+  "fn_SEND_TEXT_TO_AI_description": {
+    "message": "選択テキストに対してAIを実行します",
+    "description": "Built-in Function SEND_TEXT_TO_AI short description."
+  },
+  "keyboard_hardware_layout_us_ansi_qwerty": {
+    "message": "US ANSI QWERTY",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_us_ansi_qwerty_description": {
+    "message": "標準的な米国 ANSI キーボード配列。",
+    "description": "Description for the US ANSI QWERTY keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_de_de_qwertz_iso": {
+    "message": "ドイツ語 ISO QWERTZ",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_de_de_qwertz_iso_description": {
+    "message": "ドイツ語 ISO QWERTZ キーボード配列。",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_es_es_qwerty_iso": {
+    "message": "スペイン語（スペイン）ISO QWERTY",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_es_es_qwerty_iso_description": {
+    "message": "スペイン語（スペイン）ISO QWERTY キーボード配列。",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_sk_sk_qwertz_iso": {
+    "message": "スロバキア語 ISO QWERTZ",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_sk_sk_qwertz_iso_description": {
+    "message": "スロバキア語 ISO QWERTZ キーボード配列。",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_ja_jis_106": {
+    "message": "日本語 JIS 106",
+    "description": "Keyboard hardware-layout picker option."
+  },
+  "keyboard_hardware_layout_ja_jis_106_description": {
+    "message": "日本語 JIS 106 キーボード配列。",
+    "description": "Description for a keyboard hardware-layout picker option."
+  },
+  "fn_ZOOM_OUT_label": {
+    "message": "ズームアウト",
+    "description": "Function Library label for ZOOM_OUT."
+  },
+  "fn_ZOOM_OUT_description": {
+    "message": "カーソル位置を基準にページを縮小",
+    "description": "Function Library description for ZOOM_OUT."
+  },
+  "fn_ZOOM_IN_label": {
+    "message": "ズームイン",
+    "description": "Function Library label for ZOOM_IN."
+  },
+  "fn_ZOOM_IN_description": {
+    "message": "カーソル位置を基準にページを拡大",
+    "description": "Function Library description for ZOOM_IN."
+  },
+  "fn_READER_MODE_label": {
+    "message": "Reader Mode",
+    "description": "Function Library label for READER_MODE."
+  },
+  "fn_READER_MODE_description": {
+    "message": "Read this page without clutter",
+    "description": "Function Library description for READER_MODE."
+  }
+}
