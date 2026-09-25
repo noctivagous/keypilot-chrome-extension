@@ -36,7 +36,9 @@ import { normalizeOpenUrlList } from './src/utils/open-url-list.js';
 import {
   collectBookmarkUrls,
   listBookmarkFolders,
-  normalizeBookmarkFolderId
+  normalizeBookmarkFolderId,
+  normalizeRandomBookmarkCount,
+  pickRandomBookmarkUrls
 } from './src/utils/bookmark-folder.js';
 import { stepZoomFactor } from './src/utils/page-zoom.js';
 
@@ -3189,6 +3191,71 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             sendResponse({ type: MSG.SUCCESS, opened });
           } catch (error) {
             console.error('Failed to open bookmark tabs:', error);
+            sendResponse({
+              type: MSG.ERROR,
+              error: 'Failed to open tabs: ' + error.message,
+              opened
+            });
+          }
+          break;
+        }
+
+        case MSG.OPEN_RANDOM_BOOKMARK: {
+          const folderId = normalizeBookmarkFolderId(message.folderId);
+          const count = normalizeRandomBookmarkCount(message.count);
+          let urls = [];
+          try {
+            if (!chrome.bookmarks
+              || typeof chrome.bookmarks.getTree !== 'function'
+              || typeof chrome.bookmarks.getSubTree !== 'function') {
+              sendResponse({ type: MSG.ERROR, error: 'Bookmarks unavailable' });
+              break;
+            }
+            const tree = folderId
+              ? await chrome.bookmarks.getSubTree(folderId)
+              : await chrome.bookmarks.getTree();
+            urls = pickRandomBookmarkUrls(collectBookmarkUrls(tree, Infinity), count);
+          } catch (error) {
+            console.error('KP_OPEN_RANDOM_BOOKMARK failed:', error);
+            sendResponse({ type: MSG.ERROR, error: 'Failed to read bookmarks' });
+            break;
+          }
+          if (!urls.length) {
+            sendResponse({ type: MSG.SUCCESS, opened: 0 });
+            break;
+          }
+          const baseIndex = sender.tab && typeof sender.tab.index === 'number'
+            ? sender.tab.index
+            : null;
+          const windowId = sender.tab && typeof sender.tab.windowId === 'number'
+            ? sender.tab.windowId
+            : null;
+          const openerTabId = sender.tab && typeof sender.tab.id === 'number'
+            ? sender.tab.id
+            : null;
+          let opened = 0;
+          /** @type {number|null} */
+          let focusTabId = null;
+          try {
+            for (let i = 0; i < urls.length; i++) {
+              /** @type {chrome.tabs.CreateProperties} */
+              const createProps = {
+                url: urls[i],
+                active: false
+              };
+              if (baseIndex != null) createProps.index = baseIndex + 1 + i;
+              if (windowId != null) createProps.windowId = windowId;
+              if (openerTabId != null) createProps.openerTabId = openerTabId;
+              const tab = await chrome.tabs.create(createProps);
+              if (i === 0 && tab && typeof tab.id === 'number') focusTabId = tab.id;
+              opened += 1;
+            }
+            if (focusTabId != null) {
+              await chrome.tabs.update(focusTabId, { active: true });
+            }
+            sendResponse({ type: MSG.SUCCESS, opened });
+          } catch (error) {
+            console.error('Failed to open random bookmark tabs:', error);
             sendResponse({
               type: MSG.ERROR,
               error: 'Failed to open tabs: ' + error.message,

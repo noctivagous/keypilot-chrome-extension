@@ -12,6 +12,9 @@ export const STOCK_ACTION_ID_PREFIX = 'stock:';
 /** Open URLs instance: Facebook, Instagram, YouTube, and X. */
 export const STOCK_SOCIAL_MEDIA_ACTION_ID = 'stock:social-media';
 
+/** Random Bookmark instance: one bookmark from every folder, then switch to it. */
+export const STOCK_RANDOM_BOOKMARK_ACTION_ID = 'stock:random-bookmark';
+
 /**
  * @typedef {{
  *   id: string,
@@ -22,7 +25,7 @@ export const STOCK_SOCIAL_MEDIA_ACTION_ID = 'stock:social-media';
  *   descriptionKey: string,
  *   label: string,
  *   description: string,
- *   parameters: { urls: readonly string[] }
+ *   parameters: Readonly<Record<string, unknown>>
  * }} StockActionDef
  */
 
@@ -44,6 +47,20 @@ export const STOCK_ACTIONS = Object.freeze([
         'youtube.com',
         'x.com'
       ]))
+    })
+  }),
+  Object.freeze({
+    id: STOCK_RANDOM_BOOKMARK_ACTION_ID,
+    functionId: 'RANDOM_BOOKMARK',
+    handler: 'handleRandomBookmarkKey',
+    keyboardClass: 'key-gray',
+    labelKey: 'fn_stock_random_bookmark_label',
+    descriptionKey: 'fn_stock_random_bookmark_description',
+    label: 'Random Bookmark',
+    description: 'Open one random bookmark',
+    parameters: Object.freeze({
+      folderId: '',
+      count: 1
     })
   })
 ]);

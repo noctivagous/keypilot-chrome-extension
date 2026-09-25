@@ -101,4 +101,18 @@ describe('open URL list', () => {
     assert.equal(buildKeybindingsForLayout('basic-navigation-right')['stock:social-media'], undefined);
     assert.equal(buildKeybindingsForLayout('click-history-left')['stock:social-media'], undefined);
   });
+
+  it('binds the bundled Random Bookmark instance on Browsing comma and its left-handed mirror', async () => {
+    const { buildKeybindingsForLayout } = await import('../extension/src/config/keyboard-layouts.js');
+    const right = buildKeybindingsForLayout('browsing-right')['stock:random-bookmark'];
+    const left = buildKeybindingsForLayout('browsing-left')['stock:random-bookmark'];
+    assert.equal(right.keys[0], 'Comma');
+    assert.equal(right.handler, 'handleRandomBookmarkKey');
+    assert.equal(right.parameters.folderId, '');
+    assert.equal(right.parameters.count, 1);
+    assert.equal(left.keys[0], 'KeyC');
+    assert.deepEqual(left.parameters, right.parameters);
+    assert.equal(buildKeybindingsForLayout('basic-navigation-right')['stock:random-bookmark'], undefined);
+    assert.equal(buildKeybindingsForLayout('click-history-left')['stock:random-bookmark'], undefined);
+  });
 });

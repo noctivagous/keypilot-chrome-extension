@@ -41,6 +41,10 @@ Fügen Sie gespeicherten Text in das fokussierte Feld ein. Binden Sie es mit ein
 
 Öffnet die ersten 30 Website-Lesezeichen eines Lesezeichenordners, einschließlich Unterordner. Den Ordner wählen Sie an der Aktionsinstanz. Siehe [Tabs & Verlauf](kp://docs/browsing-tabs#open-bookmarks).
 
+<h3 id="random-bookmark">Zufälliges Lesezeichen</h3>
+
+Öffnet ein oder mehrere zufällige Website-Lesezeichen und wechselt zum ersten neuen Tab. Ohne Ordner gelten alle Lesezeichen. Die Anzahl stellen Sie an der Aktionsinstanz ein. Siehe [Tabs & Verlauf](kp://docs/browsing-tabs#random-bookmark).
+
 <h3 id="font-info">Font Info</h3>
 
 Popover mit Familie, Größe, Dateityp und Download-URL für den gestalteten Text unter dem Cursor sowie einer Gliederung dieses Textverlaufs.

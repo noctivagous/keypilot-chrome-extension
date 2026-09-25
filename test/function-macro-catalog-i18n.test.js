@@ -81,7 +81,7 @@ describe('Function and Macro catalog localization', () => {
     const { FUNCTION_LIBRARY } = await import('../extension/src/config/function-library.js');
     const { MACRO_KEY_KIND_DEFS, MACRO_BUILDER_STEP_TYPES } = await import('../extension/src/config/macro-keys.js');
     const keys = new Set([
-      ...[...source.matchAll(/(?:labelKey|descriptionKey|detailsKey|placeholderKey|groupKey|addLabelKey|removeLabelKey):\s*'([^']+)'/g)].map((match) => match[1]),
+      ...[...source.matchAll(/(?:labelKey|descriptionKey|detailsKey|placeholderKey|groupKey|addLabelKey|removeLabelKey|hintKey):\s*'([^']+)'/g)].map((match) => match[1]),
       ...[...macroSource.matchAll(/(?:labelKey|descriptionKey|detailsKey):\s*'([^']+)'/g)].map((match) => match[1]),
       ...[...source.matchAll(/:\s*'(fn_cat_[^']+|fn_section_[^']+)'/g)].map((match) => match[1])
     ]);
@@ -109,6 +109,15 @@ describe('Function and Macro catalog localization', () => {
     keys.add('fn_param_bookmark_folder_empty');
     keys.add('fn_param_bookmark_folder_missing');
     keys.add('fn_param_bookmark_folder_hint');
+    keys.add('fn_param_bookmark_folder_all');
+    keys.add('fn_random_bookmark_empty');
+    keys.add('fn_random_bookmark_opened_one');
+    keys.add('fn_random_bookmark_opened');
+    keys.add('fn_random_bookmark_failed');
+    keys.add('fn_summary_random_bookmark_one');
+    keys.add('fn_summary_random_bookmark_count');
+    keys.add('fn_stock_random_bookmark_label');
+    keys.add('fn_stock_random_bookmark_description');
     keys.add('mk_editor_key');
     for (const def of Object.values(FUNCTION_LIBRARY)) {
       for (const key of [def.labelKey, def.descriptionKey, def.detailsKey]) keys.add(key);

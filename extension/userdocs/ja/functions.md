@@ -41,6 +41,10 @@ Navigation · Tab Control · Begin URL · Get Page Data · Maps · Scroll · Sel
 
 ブックマークフォルダ内のウェブサイトを先頭から30件、サブフォルダを含めて開きます。フォルダはアクションインスタンスで選びます。[タブと履歴](kp://docs/browsing-tabs#open-bookmarks) を参照してください。
 
+<h3 id="random-bookmark">ランダムブックマーク</h3>
+
+ウェブサイトのブックマークを1件以上ランダムに開き、最初の新しいタブへ移動します。フォルダ未選択ならすべてのブックマークから選びます。件数はアクションインスタンスで設定します。[タブと履歴](kp://docs/browsing-tabs#random-bookmark) を参照してください。
+
 <h3 id="font-info">Font Info</h3>
 
 カーソル下のスタイル付きテキストについて、ファミリー、サイズ、ファイル形式、ダウンロード URL をポップオーバーで表示し、そのテキストランのアウトラインも示します。

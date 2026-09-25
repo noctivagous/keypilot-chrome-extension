@@ -41,6 +41,10 @@ Open a saved list of websites in background tabs. Create one Action Instance per
 
 Open the first 30 website bookmarks in a Bookmarks folder, including subfolders. Choose the folder on the Action Instance. See [Tabs & history](kp://docs/browsing-tabs#open-bookmarks).
 
+<h3 id="random-bookmark">Random Bookmark</h3>
+
+Open one or more random website bookmarks and switch to the first new tab. The folder defaults to all bookmarks. Set Count on the Action Instance. See [Tabs & history](kp://docs/browsing-tabs#random-bookmark).
+
 <h3 id="font-info">Font Info</h3>
 
 Popover with family, size, file type, and download URL for the styled text under the cursor, plus an outline of that text run.

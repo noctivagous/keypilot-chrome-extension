@@ -16,6 +16,7 @@ import { buildKeyboardReferenceUiLayout } from './keyboard-hardware-layouts.js';
 import {
   getStockActionById,
   STOCK_ACTIONS,
+  STOCK_RANDOM_BOOKMARK_ACTION_ID,
   STOCK_SOCIAL_MEDIA_ACTION_ID
 } from './stock-actions.js';
 
@@ -1150,6 +1151,8 @@ const ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   // M is otherwise unused on the right-handed layout (it's PAGE_DOWN_INSTANT on left-handed).
   OPEN_MEDIA_LIBRARY: physicalAssignment('KeyM', 'M'),
   TABS_OVERVIEW: physicalAssignment('Period', '.'),
+  // Comma is free on the right-handed layout. Left-handed mirror is KeyC.
+  [STOCK_RANDOM_BOOKMARK_ACTION_ID]: physicalAssignment('Comma', ','),
 
   DELETE: physicalAssignment('Backspace', 'Backspace'),
   // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
@@ -1195,6 +1198,8 @@ const ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   PAGE_TOP: physicalAssignment('Slash', '/'),
   ACTIVATE_NEW_TAB: physicalAssignment('KeyB', 'B'),
   PAGE_UP_INSTANT: physicalAssignment('Comma', ','),
+  // Mirror of right-handed Comma. KeyC is free here (PAGE_UP sits on Comma).
+  [STOCK_RANDOM_BOOKMARK_ACTION_ID]: physicalAssignment('KeyC', 'C'),
   PAGE_DOWN_INSTANT: physicalAssignment('KeyM', 'M'),
   PAGE_BOTTOM: physicalAssignment('KeyN', 'N'),
   // I is OPEN_POPOVER on left-handed; E is free.
@@ -1481,7 +1486,7 @@ const KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: 'action', id: 'SCROLL_LINE', fallbackText: 'Scroll Line' },
     { type: 'action', id: 'ACTIVATE_NEW_TAB', fallbackText: 'Click New Tab' },
     { type: 'action', id: 'OPEN_MEDIA_LIBRARY', fallbackText: 'Media Library' },
-    { type: 'key', text: ',' },
+    { type: 'action', id: STOCK_RANDOM_BOOKMARK_ACTION_ID, fallbackText: 'Random Bookmark' },
     { type: 'action', id: 'TABS_OVERVIEW', fallbackText: 'Tabs Overview' },
     { type: 'action', id: STOCK_SOCIAL_MEDIA_ACTION_ID, fallbackText: 'Social media' },
     { type: 'special', text: 'Shift', className: 'key key-shift' }
@@ -1526,7 +1531,7 @@ const KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
     { type: 'special', text: 'Shift', className: 'key key-shift' },
     { type: 'action', id: STOCK_SOCIAL_MEDIA_ACTION_ID, fallbackText: 'Social media' }, // Z, mirror of /
     { type: 'action', id: 'TABS_OVERVIEW', fallbackText: 'Tabs Overview' }, // X
-    { type: 'key', text: 'C' },
+    { type: 'action', id: STOCK_RANDOM_BOOKMARK_ACTION_ID, fallbackText: 'Random Bookmark' }, // C, mirror of ,
     { type: 'key', text: 'V' },
     { type: 'action', id: 'ACTIVATE_NEW_TAB', fallbackText: 'Click New Tab' }, // B
     { type: 'action', id: 'PAGE_BOTTOM', fallbackText: 'Scroll To Bottom' }, // N

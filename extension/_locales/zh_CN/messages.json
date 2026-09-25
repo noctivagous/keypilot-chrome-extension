@@ -4789,6 +4789,74 @@
     "message": "书签文件夹",
     "description": "Short summary when an Open Bookmarks instance has a folder."
   },
+  "fn_RANDOM_BOOKMARK_label": {
+    "message": "随机书签",
+    "description": "Function Library label for RANDOM_BOOKMARK."
+  },
+  "fn_RANDOM_BOOKMARK_description": {
+    "message": "打开随机书签",
+    "description": "Function Library description for RANDOM_BOOKMARK."
+  },
+  "fn_RANDOM_BOOKMARK_details": {
+    "message": "按数量随机打开网站书签，并切换到第一个新标签页。未选文件夹时从全部书签中选取。数量默认为 1，最多 30。",
+    "description": "Function Library details for RANDOM_BOOKMARK."
+  },
+  "fn_param_random_bookmark_count": {
+    "message": "数量",
+    "description": "Function parameter label for RANDOM_BOOKMARK.count."
+  },
+  "fn_param_bookmark_folder_all": {
+    "message": "全部书签",
+    "description": "Bookmark folder picker option for every bookmark."
+  },
+  "fn_param_random_bookmark_hint": {
+    "message": "按此数量打开随机书签，并切换到第一个新标签页。",
+    "description": "Hint under the Random Bookmark folder picker."
+  },
+  "fn_random_bookmark_empty": {
+    "message": "没有可打开的书签",
+    "description": "Flash when Random Bookmark finds no website bookmarks."
+  },
+  "fn_random_bookmark_opened_one": {
+    "message": "已打开一个随机书签",
+    "description": "Flash after Random Bookmark opens one tab."
+  },
+  "fn_random_bookmark_opened": {
+    "message": "已打开 $1 个随机书签",
+    "description": "Flash after Random Bookmark opens more than one tab. $1 is the tab count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_random_bookmark_failed": {
+    "message": "无法打开随机书签",
+    "description": "Flash when Random Bookmark fails to open tabs."
+  },
+  "fn_summary_random_bookmark_one": {
+    "message": "1 个随机书签",
+    "description": "Short summary for a Random Bookmark instance with count 1."
+  },
+  "fn_summary_random_bookmark_count": {
+    "message": "$1 个随机书签",
+    "description": "Short summary for a Random Bookmark instance. $1 is the count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_stock_random_bookmark_label": {
+    "message": "随机书签",
+    "description": "Bundled Random Bookmark instance label."
+  },
+  "fn_stock_random_bookmark_description": {
+    "message": "从全部书签中打开一个随机书签",
+    "description": "Bundled Random Bookmark instance description."
+  },
   "fn_param_urls": {
     "message": "网址",
     "description": "Function parameter label for OPEN_URLS.urls."

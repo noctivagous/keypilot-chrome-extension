@@ -135,10 +135,12 @@ function renderField(doc, spec, current, ctx) {
     if (spec.max != null) input.max = String(spec.max);
     if (spec.step != null) input.step = String(spec.step);
     input.value = current != null ? String(current) : '';
-    input.addEventListener('change', () => {
+    const commit = () => {
       const n = Number(input.value);
       void controller.update(spec.path, Number.isFinite(n) ? n : spec.defaultValue);
-    }, listenOpts);
+    };
+    input.addEventListener('change', commit, listenOpts);
+    if (live) input.addEventListener('input', commit, listenOpts);
     control = input;
   } else if (spec.type === 'stringList') {
     control = renderStringList(doc, spec, current, ctx);
@@ -423,16 +425,42 @@ function renderBookmarkFolderPicker(doc, spec, current, ctx) {
 
   const hint = doc.createElement('div');
   hint.className = 'kp-bookmark-folder-hint';
-  hint.textContent = getMessage('fn_param_bookmark_folder_hint') || 'Opens the first 30 website bookmarks in this folder.';
+  hint.textContent = spec.hint
+    || getMessage('fn_param_bookmark_folder_hint')
+    || 'Opens the first 30 website bookmarks in this folder.';
 
   /** @type {Array<{ id: string, path: string }>} */
   let folders = [];
+
+  const allLabel = getMessage('fn_param_bookmark_folder_all') || 'All bookmarks';
+  const appendAll = (needle) => {
+    if (!spec.allowAll) return false;
+    if (needle && !allLabel.toLowerCase().includes(needle)) return false;
+    const btn = doc.createElement('button');
+    btn.type = 'button';
+    btn.className = 'kp-bookmark-folder-btn';
+    btn.dataset.folderId = '';
+    btn.textContent = allLabel;
+    btn.setAttribute('role', 'option');
+    btn.setAttribute('aria-selected', selectedId === '' ? 'true' : 'false');
+    btn.addEventListener('click', () => {
+      selectedId = '';
+      scroller.querySelectorAll('.kp-bookmark-folder-btn').forEach((el) => {
+        el.setAttribute('aria-selected', el === btn ? 'true' : 'false');
+      });
+      void controller.update(spec.path, '');
+    }, listenOpts);
+    scroller.appendChild(btn);
+    return true;
+  };
 
   const paint = (query) => {
     const needle = String(query || '').trim().toLowerCase();
     scroller.replaceChildren();
     const matches = folders.filter((folder) => !needle || folder.path.toLowerCase().includes(needle));
+    const showedAll = appendAll(needle);
     if (!folders.length) {
+      if (showedAll) return;
       const empty = doc.createElement('div');
       empty.className = 'kp-bookmark-folder-status';
       empty.textContent = getMessage('fn_param_bookmark_folder_empty') || 'No bookmark folders';

@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-25T01:55:32.311Z
+ * Generated on 2026-09-25T02:03:43.340Z
  */
 
 
@@ -467,6 +467,7 @@ function normalizeOpenUrlList(raw, max = OPEN_URLS_MAX) {
 
 // src/config/stock-actions.js
 var STOCK_SOCIAL_MEDIA_ACTION_ID = "stock:social-media";
+var STOCK_RANDOM_BOOKMARK_ACTION_ID = "stock:random-bookmark";
 var STOCK_ACTIONS = Object.freeze([
   Object.freeze({
     id: STOCK_SOCIAL_MEDIA_ACTION_ID,
@@ -484,6 +485,20 @@ var STOCK_ACTIONS = Object.freeze([
         "youtube.com",
         "x.com"
       ]))
+    })
+  }),
+  Object.freeze({
+    id: STOCK_RANDOM_BOOKMARK_ACTION_ID,
+    functionId: "RANDOM_BOOKMARK",
+    handler: "handleRandomBookmarkKey",
+    keyboardClass: "key-gray",
+    labelKey: "fn_stock_random_bookmark_label",
+    descriptionKey: "fn_stock_random_bookmark_description",
+    label: "Random Bookmark",
+    description: "Open one random bookmark",
+    parameters: Object.freeze({
+      folderId: "",
+      count: 1
     })
   })
 ]);
@@ -1319,6 +1334,8 @@ var ASSIGNMENTS_BROWSING_RIGHT = Object.freeze({
   // M is otherwise unused on the right-handed layout (it's PAGE_DOWN_INSTANT on left-handed).
   OPEN_MEDIA_LIBRARY: physicalAssignment("KeyM", "M"),
   TABS_OVERVIEW: physicalAssignment("Period", "."),
+  // Comma is free on the right-handed layout. Left-handed mirror is KeyC.
+  [STOCK_RANDOM_BOOKMARK_ACTION_ID]: physicalAssignment("Comma", ","),
   DELETE: physicalAssignment("Backspace", "Backspace"),
   // COLS_TOGGLE omitted — see BUILD_EXCLUDED_KEY_ACTIONS
   // Slash is free on the right-handed layout. Left-handed mirror is KeyZ.
@@ -1355,6 +1372,8 @@ var ASSIGNMENTS_BROWSING_LEFT = Object.freeze({
   PAGE_TOP: physicalAssignment("Slash", "/"),
   ACTIVATE_NEW_TAB: physicalAssignment("KeyB", "B"),
   PAGE_UP_INSTANT: physicalAssignment("Comma", ","),
+  // Mirror of right-handed Comma. KeyC is free here (PAGE_UP sits on Comma).
+  [STOCK_RANDOM_BOOKMARK_ACTION_ID]: physicalAssignment("KeyC", "C"),
   PAGE_DOWN_INSTANT: physicalAssignment("KeyM", "M"),
   PAGE_BOTTOM: physicalAssignment("KeyN", "N"),
   // I is OPEN_POPOVER on left-handed; E is free.
@@ -1560,7 +1579,7 @@ var KEYBOARD_UI_LAYOUT_RIGHT = Object.freeze([
     { type: "action", id: "SCROLL_LINE", fallbackText: "Scroll Line" },
     { type: "action", id: "ACTIVATE_NEW_TAB", fallbackText: "Click New Tab" },
     { type: "action", id: "OPEN_MEDIA_LIBRARY", fallbackText: "Media Library" },
-    { type: "key", text: "," },
+    { type: "action", id: STOCK_RANDOM_BOOKMARK_ACTION_ID, fallbackText: "Random Bookmark" },
     { type: "action", id: "TABS_OVERVIEW", fallbackText: "Tabs Overview" },
     { type: "action", id: STOCK_SOCIAL_MEDIA_ACTION_ID, fallbackText: "Social media" },
     { type: "special", text: "Shift", className: "key key-shift" }
@@ -1624,7 +1643,8 @@ var KEYBOARD_UI_LAYOUT_LEFT = Object.freeze([
     // Z, mirror of /
     { type: "action", id: "TABS_OVERVIEW", fallbackText: "Tabs Overview" },
     // X
-    { type: "key", text: "C" },
+    { type: "action", id: STOCK_RANDOM_BOOKMARK_ACTION_ID, fallbackText: "Random Bookmark" },
+    // C, mirror of ,
     { type: "key", text: "V" },
     { type: "action", id: "ACTIVATE_NEW_TAB", fallbackText: "Click New Tab" },
     // B

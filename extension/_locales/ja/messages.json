@@ -4789,6 +4789,74 @@
     "message": "ブックマークフォルダ",
     "description": "Short summary when an Open Bookmarks instance has a folder."
   },
+  "fn_RANDOM_BOOKMARK_label": {
+    "message": "ランダムブックマーク",
+    "description": "Function Library label for RANDOM_BOOKMARK."
+  },
+  "fn_RANDOM_BOOKMARK_description": {
+    "message": "ランダムなブックマークを開く",
+    "description": "Function Library description for RANDOM_BOOKMARK."
+  },
+  "fn_RANDOM_BOOKMARK_details": {
+    "message": "指定した数のウェブサイトのブックマークをランダムに開き、最初の新しいタブへ移動します。フォルダ未選択ならすべてのブックマークから選びます。件数の既定は 1、最大は 30 です。",
+    "description": "Function Library details for RANDOM_BOOKMARK."
+  },
+  "fn_param_random_bookmark_count": {
+    "message": "件数",
+    "description": "Function parameter label for RANDOM_BOOKMARK.count."
+  },
+  "fn_param_bookmark_folder_all": {
+    "message": "すべてのブックマーク",
+    "description": "Bookmark folder picker option for every bookmark."
+  },
+  "fn_param_random_bookmark_hint": {
+    "message": "指定した数のブックマークをランダムに開き、最初の新しいタブへ移動します。",
+    "description": "Hint under the Random Bookmark folder picker."
+  },
+  "fn_random_bookmark_empty": {
+    "message": "開けるブックマークがありません",
+    "description": "Flash when Random Bookmark finds no website bookmarks."
+  },
+  "fn_random_bookmark_opened_one": {
+    "message": "ランダムなブックマークを開きました",
+    "description": "Flash after Random Bookmark opens one tab."
+  },
+  "fn_random_bookmark_opened": {
+    "message": "$1 件のランダムなブックマークを開きました",
+    "description": "Flash after Random Bookmark opens more than one tab. $1 is the tab count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_random_bookmark_failed": {
+    "message": "ブックマークを開けませんでした",
+    "description": "Flash when Random Bookmark fails to open tabs."
+  },
+  "fn_summary_random_bookmark_one": {
+    "message": "ランダムなブックマーク 1 件",
+    "description": "Short summary for a Random Bookmark instance with count 1."
+  },
+  "fn_summary_random_bookmark_count": {
+    "message": "ランダムなブックマーク $1 件",
+    "description": "Short summary for a Random Bookmark instance. $1 is the count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_stock_random_bookmark_label": {
+    "message": "ランダムブックマーク",
+    "description": "Bundled Random Bookmark instance label."
+  },
+  "fn_stock_random_bookmark_description": {
+    "message": "すべてのブックマークから 1 件を開く",
+    "description": "Bundled Random Bookmark instance description."
+  },
   "fn_param_urls": {
     "message": "URL",
     "description": "Function parameter label for OPEN_URLS.urls."

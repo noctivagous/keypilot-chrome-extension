@@ -26,6 +26,10 @@ Navigation · Tab Control · Begin URL · Get Page Data · Maps · Scroll · Sel
 <h3 id="open-bookmarks">開啟書籤</h3>
 
 開啟書籤資料夾中前 30 個網站書籤（包含子資料夾）。在動作執行個體上選擇資料夾。參見[分頁與記錄](kp://docs/browsing-tabs#open-bookmarks)。
+
+<h3 id="random-bookmark">隨機書籤</h3>
+
+隨機開啟一個或多個網站書籤，並切換到第一個新分頁。未選資料夾時從全部書籤中選取。數量在動作執行個體上設定。參見[分頁與記錄](kp://docs/browsing-tabs#random-bookmark)。
 <h3 id="font-info">Font Info</h3>
 顯示游標下已套用樣式文字的字型家族、大小、檔案類型、下載 URL 的浮動視窗，以及該文字範圍的外框。
 <h3 id="lookup-word">Lookup Word</h3>

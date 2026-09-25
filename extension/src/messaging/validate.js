@@ -62,6 +62,7 @@ export const SW_RUNTIME_REQUEST_TYPES = Object.freeze([
   MSG.OPEN_URLS,
   MSG.LIST_BOOKMARK_FOLDERS,
   MSG.OPEN_BOOKMARK_FOLDER,
+  MSG.OPEN_RANDOM_BOOKMARK,
   MSG.NAVIGATE_SAME_TAB,
   MSG.ZOOM_STEP,
   MSG.STATUS
@@ -156,6 +157,16 @@ export function validateRuntimeMessage(message, opts = {}) {
         return 'OPEN_BOOKMARK_FOLDER requires folderId: non-empty string';
       }
       break;
+    case MSG.OPEN_RANDOM_BOOKMARK: {
+      if (message.folderId != null && (typeof message.folderId !== 'string' || message.folderId.length > 64)) {
+        return 'OPEN_RANDOM_BOOKMARK requires folderId: string';
+      }
+      const count = Number(message.count);
+      if (!Number.isInteger(count) || count < 1 || count > 30) {
+        return 'OPEN_RANDOM_BOOKMARK requires count: integer 1-30';
+      }
+      break;
+    }
     case MSG.OPEN_POPOVER_WINDOW:
       if (typeof message.url !== 'string' || !message.url.trim()) {
         return 'OPEN_POPOVER_WINDOW requires url: string';

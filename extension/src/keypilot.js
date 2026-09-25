@@ -90,7 +90,10 @@ import { runLegacyMacroKeyFunction } from './modules/macro-key-runtime.js';
 import { runUserExecuteJs, stringifyExecuteJsValue } from './modules/execute-js-runtime.js';
 import { getFunctionDef, functionWorksWhileTyping, functionCancelsOnPointerDown, FIXED_KEY_FUNCTION_IDS, UNIT_SELECT_FUNCTION_IDS } from './config/function-library.js';
 import { normalizeOpenUrlList } from './utils/open-url-list.js';
-import { normalizeBookmarkFolderId } from './utils/bookmark-folder.js';
+import {
+  normalizeBookmarkFolderId,
+  normalizeRandomBookmarkCount
+} from './utils/bookmark-folder.js';
 import { getStockActionById, isStockActionId } from './config/stock-actions.js';
 import { getStockMacroById, resolveMacroById } from './config/stock-macros.js';
 import { chordSlotKeyFromEvent, isChordSlotKey } from './utils/key-chord.js';
@@ -6021,6 +6024,36 @@ export class KeyPilot extends withActivationHandlers(withNavigationHandlers(Even
     );
     if (!sent) {
       this.showFlashNotification(getMessage('fn_open_bookmarks_failed'), COLORS.NOTIFICATION_ERROR);
+    }
+  }
+
+  handleRandomBookmarkKey(_e, parameters) {
+    const folderId = normalizeBookmarkFolderId(parameters?.folderId);
+    const count = normalizeRandomBookmarkCount(parameters?.count);
+    const sent = this._sendRuntimeMessage(
+      { type: MSG.OPEN_RANDOM_BOOKMARK, folderId, count },
+      {
+        silent: true,
+        onResponse: (response) => {
+          const opened = Number(response?.opened) || 0;
+          if (response?.type === MSG.SUCCESS && opened > 0) {
+            const message = opened === 1
+              ? getMessage('fn_random_bookmark_opened_one')
+              : getMessage('fn_random_bookmark_opened', String(opened));
+            this.showFlashNotification(message, COLORS.NOTIFICATION_SUCCESS);
+            this.emitAction('random_bookmark', { count: opened });
+            return;
+          }
+          if (response?.type === MSG.SUCCESS && opened === 0) {
+            this.showFlashNotification(getMessage('fn_random_bookmark_empty'), COLORS.NOTIFICATION_INFO);
+            return;
+          }
+          this.showFlashNotification(getMessage('fn_random_bookmark_failed'), COLORS.NOTIFICATION_ERROR);
+        }
+      }
+    );
+    if (!sent) {
+      this.showFlashNotification(getMessage('fn_random_bookmark_failed'), COLORS.NOTIFICATION_ERROR);
     }
   }
 

@@ -34,7 +34,11 @@ import { buildKpDeepLink } from '../utils/kp-deep-link.js';
 import { getMessage } from '../utils/i18n.js';
 import { altModifierLabel } from '../utils/platform.js';
 import { OPEN_URLS_MAX, normalizeOpenUrlList } from '../utils/open-url-list.js';
-import { normalizeBookmarkFolderId } from '../utils/bookmark-folder.js';
+import {
+  RANDOM_BOOKMARK_MAX,
+  normalizeBookmarkFolderId,
+  normalizeRandomBookmarkCount
+} from '../utils/bookmark-folder.js';
 
 /**
  * @typedef {{
@@ -55,6 +59,9 @@ import { normalizeBookmarkFolderId } from '../utils/bookmark-folder.js';
  *   step?: number,
  *   multiline?: boolean,
  *   placeholderKey?: string,
+ *   hintKey?: string,
+ *   // bookmarkFolder: empty id means "all bookmarks" instead of "no folder".
+ *   allowAll?: boolean,
  *   // Optional inspector heading (e.g. "Callbacks") grouping consecutive parameters.
  *   groupKey?: string,
  *   // Textarea row count when `multiline` is true.
@@ -439,6 +446,7 @@ const FUNCTION_DOCS_URL_BY_ID = Object.freeze({
   TYPE_CHARACTERS: docsUrl('functions', 'type-characters'),
   OPEN_URLS: docsUrl('browsing-tabs', 'open-urls'),
   OPEN_BOOKMARKS: docsUrl('browsing-tabs', 'open-bookmarks'),
+  RANDOM_BOOKMARK: docsUrl('browsing-tabs', 'random-bookmark'),
   EXECUTE_JS: docsUrl('execute-js'),
   GET_TEXT_AT_CURSOR: docsUrl('functions', 'get-text-at-cursor'),
   GET_TEXT_RANGE: docsUrl('functions', 'get-text-at-cursor'),
@@ -620,6 +628,41 @@ const OPEN_BOOKMARKS_FUNCTION_DEF = Object.freeze({
       type: 'bookmarkFolder',
       defaultValue: '',
       placeholderKey: 'fn_param_bookmark_folder_filter'
+    })
+  ])
+});
+
+/**
+ * Instantiable Function: open a chosen number of random website bookmarks
+ * and switch to the first new tab. An empty folder id means every bookmark.
+ */
+const RANDOM_BOOKMARK_FUNCTION_DEF = Object.freeze({
+  id: 'RANDOM_BOOKMARK',
+  labelKey: 'fn_RANDOM_BOOKMARK_label',
+  descriptionKey: 'fn_RANDOM_BOOKMARK_description',
+  detailsKey: 'fn_RANDOM_BOOKMARK_details',
+  handler: 'handleRandomBookmarkKey',
+  category: 'Tab Control',
+  keyboardClass: 'key-gray',
+  dataSource: 'none',
+  parameters: Object.freeze([
+    Object.freeze({
+      id: 'folderId',
+      labelKey: 'fn_param_bookmark_folder',
+      type: 'bookmarkFolder',
+      defaultValue: '',
+      allowAll: true,
+      placeholderKey: 'fn_param_bookmark_folder_filter',
+      hintKey: 'fn_param_random_bookmark_hint'
+    }),
+    Object.freeze({
+      id: 'count',
+      labelKey: 'fn_param_random_bookmark_count',
+      type: 'number',
+      defaultValue: 1,
+      min: 1,
+      max: RANDOM_BOOKMARK_MAX,
+      step: 1
     })
   ])
 });
@@ -911,6 +954,7 @@ export const FUNCTION_LIBRARY = Object.freeze(omitBuildExcludedFunctions({
   [TYPE_CHARACTERS_FUNCTION_DEF.id]: withDocsUrl(TYPE_CHARACTERS_FUNCTION_DEF),
   [OPEN_URLS_FUNCTION_DEF.id]: withDocsUrl(OPEN_URLS_FUNCTION_DEF),
   [OPEN_BOOKMARKS_FUNCTION_DEF.id]: withDocsUrl(OPEN_BOOKMARKS_FUNCTION_DEF),
+  [RANDOM_BOOKMARK_FUNCTION_DEF.id]: withDocsUrl(RANDOM_BOOKMARK_FUNCTION_DEF),
   [EXECUTE_JS_FUNCTION_DEF.id]: withDocsUrl(EXECUTE_JS_FUNCTION_DEF),
   ...Object.fromEntries(
     Object.entries(buildDataAcquisitionFunctionDefs())
@@ -1025,6 +1069,7 @@ export const FUNCTION_LIBRARY_ITEM_ORDER = Object.freeze({
   TAB_HISTORY: 150,
   TABS_OVERVIEW: 152,
   OPEN_BOOKMARKS: 153,
+  RANDOM_BOOKMARK: 154,
   // Begin URL
   TOP_SITES: 155,
   LAUNCHER: 160,
@@ -1075,6 +1120,7 @@ function localizeFunctionParameter(param) {
   const out = { ...param };
   if (param.labelKey) out.label = getMessage(param.labelKey);
   if (param.placeholderKey) out.placeholder = getMessage(param.placeholderKey);
+  if (param.hintKey) out.hint = getMessage(param.hintKey);
   if (param.groupKey) out.group = getMessage(param.groupKey);
   if (param.addLabelKey) out.addLabel = getMessage(param.addLabelKey);
   if (param.removeLabelKey) out.removeLabel = getMessage(param.removeLabelKey);
@@ -1236,7 +1282,13 @@ export function normalizeFunctionParameters(functionId, raw) {
         break;
       case 'number': {
         const n = Number(v);
-        out[p.id] = Number.isFinite(n) ? n : defaults[p.id];
+        let value = Number.isFinite(n) ? n : defaults[p.id];
+        if (typeof value === 'number' && Number.isFinite(value)) {
+          if (p.step != null && Number(p.step) >= 1) value = Math.round(value);
+          if (p.min != null && value < p.min) value = p.min;
+          if (p.max != null && value > p.max) value = p.max;
+        }
+        out[p.id] = value;
         break;
       }
       case 'enum':
@@ -1289,6 +1341,11 @@ export function summarizeFunctionParameters(functionId, parameters) {
   if (functionId === 'OPEN_BOOKMARKS') {
     if (!normalizeBookmarkFolderId(parameters?.folderId)) return getMessage('fn_summary_empty');
     return getMessage('fn_summary_bookmark_folder');
+  }
+  if (functionId === 'RANDOM_BOOKMARK') {
+    const count = normalizeRandomBookmarkCount(parameters?.count);
+    if (count === 1) return getMessage('fn_summary_random_bookmark_one');
+    return getMessage('fn_summary_random_bookmark_count', String(count));
   }
   if (functionId === 'EXECUTE_JS') {
     const lines = String(parameters?.script || '').split(/\r?\n/);

@@ -5,7 +5,9 @@ import {
   collectBookmarkUrls,
   listBookmarkFolders,
   normalizeBookmarkFolderId,
-  OPEN_BOOKMARKS_MAX
+  normalizeRandomBookmarkCount,
+  OPEN_BOOKMARKS_MAX,
+  pickRandomBookmarkUrls
 } from '../extension/src/utils/bookmark-folder.js';
 
 const TREE = [
@@ -62,5 +64,21 @@ describe('bookmark folders', () => {
     }];
     assert.equal(collectBookmarkUrls(many).length, OPEN_BOOKMARKS_MAX);
     assert.equal(collectBookmarkUrls(many)[0], 'https://site0.example/');
+    assert.equal(collectBookmarkUrls(many, Infinity).length, 40);
+  });
+
+  it('picks distinct random bookmarks up to the requested count', () => {
+    assert.equal(normalizeRandomBookmarkCount(undefined), 1);
+    assert.equal(normalizeRandomBookmarkCount(0), 1);
+    assert.equal(normalizeRandomBookmarkCount(99), 30);
+    assert.equal(normalizeRandomBookmarkCount(10.4), 10);
+    const urls = ['https://a.example/', 'https://b.example/', 'https://a.example/', 'https://c.example/'];
+    let step = 0;
+    const rolls = [0, 0.99];
+    assert.deepEqual(
+      pickRandomBookmarkUrls(urls, 2, () => rolls[step++]),
+      ['https://a.example/', 'https://c.example/']
+    );
+    assert.equal(pickRandomBookmarkUrls(urls, 10).length, 3);
   });
 });

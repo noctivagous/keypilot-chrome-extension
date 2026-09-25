@@ -37,6 +37,12 @@ Browsing includes a bundled **Social media** instance on <kbd>/</kbd> (right-han
 
 **Open Bookmarks** is an Action Instance in the Tab Control library. Choose one folder from the Bookmarks Manager. Pressing the key opens the first 30 website bookmarks in that folder, including bookmarks inside subfolders, each in a background tab after the current tab. Create another instance to open a different folder.
 
+<h3 id="random-bookmark">Random Bookmark</h3>
+
+**Random Bookmark** is an Action Instance in the Tab Control library. It opens random website bookmarks and switches to the first new tab. Leave the folder as All bookmarks, or pick one folder. Count is how many to open (default 1, up to 30). Further tabs open beside the one you land on.
+
+Browsing includes a bundled **Random Bookmark** instance on <kbd>,</kbd> (right-handed) and <kbd>C</kbd> (left-handed): one random bookmark from all bookmarks, and that tab becomes active.
+
 ### Tips
 
 - Back/forward follow normal browser history for the tab.

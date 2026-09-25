@@ -4789,6 +4789,74 @@
     "message": "Priečinok záložiek",
     "description": "Short summary when an Open Bookmarks instance has a folder."
   },
+  "fn_RANDOM_BOOKMARK_label": {
+    "message": "Náhodná záložka",
+    "description": "Function Library label for RANDOM_BOOKMARK."
+  },
+  "fn_RANDOM_BOOKMARK_description": {
+    "message": "Otvoriť náhodné záložky",
+    "description": "Function Library description for RANDOM_BOOKMARK."
+  },
+  "fn_RANDOM_BOOKMARK_details": {
+    "message": "Otvorí zvolený počet náhodných webových záložiek a prejde na prvú novú kartu. Bez priečinka použije všetky záložky. Počet je predvolene 1 a najviac 30.",
+    "description": "Function Library details for RANDOM_BOOKMARK."
+  },
+  "fn_param_random_bookmark_count": {
+    "message": "Počet",
+    "description": "Function parameter label for RANDOM_BOOKMARK.count."
+  },
+  "fn_param_bookmark_folder_all": {
+    "message": "Všetky záložky",
+    "description": "Bookmark folder picker option for every bookmark."
+  },
+  "fn_param_random_bookmark_hint": {
+    "message": "Otvorí tento počet náhodných záložiek a prejde na prvú novú kartu.",
+    "description": "Hint under the Random Bookmark folder picker."
+  },
+  "fn_random_bookmark_empty": {
+    "message": "Žiadne záložky na otvorenie",
+    "description": "Flash when Random Bookmark finds no website bookmarks."
+  },
+  "fn_random_bookmark_opened_one": {
+    "message": "Náhodná záložka otvorená",
+    "description": "Flash after Random Bookmark opens one tab."
+  },
+  "fn_random_bookmark_opened": {
+    "message": "Otvorených $1 náhodných záložiek",
+    "description": "Flash after Random Bookmark opens more than one tab. $1 is the tab count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_random_bookmark_failed": {
+    "message": "Záložku sa nepodarilo otvoriť",
+    "description": "Flash when Random Bookmark fails to open tabs."
+  },
+  "fn_summary_random_bookmark_one": {
+    "message": "1 náhodná záložka",
+    "description": "Short summary for a Random Bookmark instance with count 1."
+  },
+  "fn_summary_random_bookmark_count": {
+    "message": "$1 náhodných záložiek",
+    "description": "Short summary for a Random Bookmark instance. $1 is the count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_stock_random_bookmark_label": {
+    "message": "Náhodná záložka",
+    "description": "Bundled Random Bookmark instance label."
+  },
+  "fn_stock_random_bookmark_description": {
+    "message": "Otvoriť jednu náhodnú záložku zo všetkých záložiek",
+    "description": "Bundled Random Bookmark instance description."
+  },
   "fn_param_urls": {
     "message": "URL",
     "description": "Function parameter label for OPEN_URLS.urls."

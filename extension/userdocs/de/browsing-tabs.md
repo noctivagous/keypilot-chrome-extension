@@ -31,6 +31,12 @@ Wechseln Sie zwischen Tabs und dem Browserverlauf, ohne nach Chrome-Schaltfläch
 
 **Lesezeichen öffnen** ist eine Aktionsinstanz in der Tab-Steuerung. Wählen Sie einen Ordner aus der Lesezeichenverwaltung. Die Taste öffnet die ersten 30 Website-Lesezeichen dieses Ordners, einschließlich Unterordner, jeweils in einem Hintergrund-Tab nach dem aktuellen Tab.
 
+<h3 id="random-bookmark">Zufälliges Lesezeichen</h3>
+
+**Zufälliges Lesezeichen** ist eine Aktionsinstanz in der Tab-Steuerung. Es öffnet zufällige Website-Lesezeichen und wechselt zum ersten neuen Tab. Der Ordner kann „Alle Lesezeichen“ bleiben oder ein einzelner Ordner sein. Anzahl legt fest, wie viele geöffnet werden (Standard 1, höchstens 30). Weitere Tabs öffnen sich daneben.
+
+Browsing enthält die mitgelieferte Instanz **Zufälliges Lesezeichen** auf <kbd>,</kbd> (Rechtshänder) und <kbd>C</kbd> (Linkshänder): ein zufälliges Lesezeichen aus allen Lesezeichen, und dieser Tab wird aktiv.
+
 ### Tipps
 
 - Zurück/vorwärts folgen Sie dem normalen Browserverlauf für die Registerkarte.

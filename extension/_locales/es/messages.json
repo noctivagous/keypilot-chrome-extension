@@ -4789,6 +4789,74 @@
     "message": "Carpeta de marcadores",
     "description": "Short summary when an Open Bookmarks instance has a folder."
   },
+  "fn_RANDOM_BOOKMARK_label": {
+    "message": "Marcador aleatorio",
+    "description": "Function Library label for RANDOM_BOOKMARK."
+  },
+  "fn_RANDOM_BOOKMARK_description": {
+    "message": "Abrir marcadores aleatorios",
+    "description": "Function Library description for RANDOM_BOOKMARK."
+  },
+  "fn_RANDOM_BOOKMARK_details": {
+    "message": "Abre la cantidad elegida de marcadores de sitios al azar y pasa a la primera pestaña nueva. Sin carpeta usa todos los marcadores. La cantidad predeterminada es 1 y el máximo es 30.",
+    "description": "Function Library details for RANDOM_BOOKMARK."
+  },
+  "fn_param_random_bookmark_count": {
+    "message": "Cantidad",
+    "description": "Function parameter label for RANDOM_BOOKMARK.count."
+  },
+  "fn_param_bookmark_folder_all": {
+    "message": "Todos los marcadores",
+    "description": "Bookmark folder picker option for every bookmark."
+  },
+  "fn_param_random_bookmark_hint": {
+    "message": "Abre esta cantidad de marcadores aleatorios y pasa a la primera pestaña nueva.",
+    "description": "Hint under the Random Bookmark folder picker."
+  },
+  "fn_random_bookmark_empty": {
+    "message": "No hay marcadores para abrir",
+    "description": "Flash when Random Bookmark finds no website bookmarks."
+  },
+  "fn_random_bookmark_opened_one": {
+    "message": "Marcador aleatorio abierto",
+    "description": "Flash after Random Bookmark opens one tab."
+  },
+  "fn_random_bookmark_opened": {
+    "message": "Se abrieron $1 marcadores aleatorios",
+    "description": "Flash after Random Bookmark opens more than one tab. $1 is the tab count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_random_bookmark_failed": {
+    "message": "No se pudo abrir un marcador aleatorio",
+    "description": "Flash when Random Bookmark fails to open tabs."
+  },
+  "fn_summary_random_bookmark_one": {
+    "message": "1 marcador aleatorio",
+    "description": "Short summary for a Random Bookmark instance with count 1."
+  },
+  "fn_summary_random_bookmark_count": {
+    "message": "$1 marcadores aleatorios",
+    "description": "Short summary for a Random Bookmark instance. $1 is the count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_stock_random_bookmark_label": {
+    "message": "Marcador aleatorio",
+    "description": "Bundled Random Bookmark instance label."
+  },
+  "fn_stock_random_bookmark_description": {
+    "message": "Abrir un marcador aleatorio de todos los marcadores",
+    "description": "Bundled Random Bookmark instance description."
+  },
   "fn_param_urls": {
     "message": "URLs",
     "description": "Function parameter label for OPEN_URLS.urls."

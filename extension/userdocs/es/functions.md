@@ -41,6 +41,10 @@ Abre una lista guardada de sitios web en pestañas en segundo plano. Cree una in
 
 Abre los primeros 30 marcadores de sitios web de una carpeta de marcadores, incluidas las subcarpetas. Elija la carpeta en la instancia de acción. Consulte [Pestañas e historial](kp://docs/browsing-tabs#open-bookmarks).
 
+<h3 id="random-bookmark">Marcador aleatorio</h3>
+
+Abre uno o más marcadores de sitios al azar y pasa a la primera pestaña nueva. Sin carpeta usa todos los marcadores. La cantidad se define en la instancia de acción. Consulte [Pestañas e historial](kp://docs/browsing-tabs#random-bookmark).
+
 <h3 id="font-info">Font Info</h3>
 
 Ventana emergente con familia, tamaño, tipo de archivo y URL de descarga para el texto con estilo debajo del cursor, además de un resumen de esa ejecución de texto.

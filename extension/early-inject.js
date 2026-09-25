@@ -416,9 +416,11 @@
         "fallbackText": "OPEN_MEDIA_LIBRARY"
       },
       {
-        "type": "key",
+        "type": "action",
         "code": "Comma",
-        "text": ","
+        "legend": ",",
+        "id": "stock:random-bookmark",
+        "fallbackText": "stock:random-bookmark"
       },
       {
         "type": "action",
@@ -654,9 +656,11 @@
         "fallbackText": "TABS_OVERVIEW"
       },
       {
-        "type": "key",
+        "type": "action",
         "code": "KeyC",
-        "text": "C"
+        "legend": "C",
+        "id": "stock:random-bookmark",
+        "fallbackText": "stock:random-bookmark"
       },
       {
         "type": "key",
@@ -1839,6 +1843,13 @@
       "displayKey": "M",
       "keyboardClass": null
     },
+    "stock:random-bookmark": {
+      "label": "Random Bookmark",
+      "description": "Open one random bookmark",
+      "keyLabel": ",",
+      "displayKey": ",",
+      "keyboardClass": "key-gray"
+    },
     "TABS_OVERVIEW": {
       "label": "Tabs Overview",
       "description": "Show every window and tab",
@@ -2057,6 +2068,13 @@
       "keyLabel": "B",
       "displayKey": "B",
       "keyboardClass": "key-activate-new"
+    },
+    "stock:random-bookmark": {
+      "label": "Random Bookmark",
+      "description": "Open one random bookmark",
+      "keyLabel": "C",
+      "displayKey": "C",
+      "keyboardClass": "key-gray"
     },
     "TABS_OVERVIEW": {
       "label": "Tabs Overview",
@@ -2618,9 +2636,11 @@
       "fallbackText": "OPEN_MEDIA_LIBRARY"
     },
     {
-      "type": "key",
+      "type": "action",
       "code": "Comma",
-      "text": ","
+      "legend": ",",
+      "id": "stock:random-bookmark",
+      "fallbackText": "stock:random-bookmark"
     },
     {
       "type": "action",
@@ -2862,6 +2882,13 @@
     "displayKey": "M",
     "keyboardClass": null
   },
+  "stock:random-bookmark": {
+    "label": "Random Bookmark",
+    "description": "Open one random bookmark",
+    "keyLabel": ",",
+    "displayKey": ",",
+    "keyboardClass": "key-gray"
+  },
   "TABS_OVERVIEW": {
     "label": "Tabs Overview",
     "description": "Show every window and tab",
@@ -3079,6 +3106,10 @@
   },
   "OPEN_BOOKMARKS": {
     "labelKey": "fn_OPEN_BOOKMARKS_label",
+    "keyboardClass": "key-gray"
+  },
+  "RANDOM_BOOKMARK": {
+    "labelKey": "fn_RANDOM_BOOKMARK_label",
     "keyboardClass": "key-gray"
   },
   "LOOKUP_WORD": {

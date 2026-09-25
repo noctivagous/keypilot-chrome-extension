@@ -34,7 +34,9 @@ export const ACTION_RADIO_PARAMETER_IDS = Object.freeze(['mode', 'action', 'form
  *   addLabel?: string,
  *   removeLabel?: string,
  *   presentation?: 'stack'|'table',
- *   visibleRows?: number
+ *   visibleRows?: number,
+ *   allowAll?: boolean,
+ *   hint?: string
  * }} ActionControlSpec
  */
 
@@ -85,6 +87,10 @@ export function parameterToControlSpec(param, opts = {}) {
   if (param.placeholder) spec.placeholder = String(param.placeholder);
   if (param.multiline) spec.multiline = true;
   if (param.rows != null) spec.rows = param.rows;
+  if (type === 'bookmarkFolder') {
+    if (param.allowAll) spec.allowAll = true;
+    if (param.hint) spec.hint = String(param.hint);
+  }
   if (type === 'stringList') {
     if (param.maxItems != null) spec.maxItems = param.maxItems;
     if (param.addLabel) spec.addLabel = String(param.addLabel);

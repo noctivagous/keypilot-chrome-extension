@@ -4789,6 +4789,74 @@
     "message": "Bookmarks folder",
     "description": "Short summary when an Open Bookmarks instance has a folder."
   },
+  "fn_RANDOM_BOOKMARK_label": {
+    "message": "Random Bookmark",
+    "description": "Function Library label for RANDOM_BOOKMARK."
+  },
+  "fn_RANDOM_BOOKMARK_description": {
+    "message": "Open random bookmarks",
+    "description": "Function Library description for RANDOM_BOOKMARK."
+  },
+  "fn_RANDOM_BOOKMARK_details": {
+    "message": "Opens the chosen number of random website bookmarks and switches to the first new tab. All bookmarks uses every bookmark, or pick one folder. Count defaults to 1 and can be up to 30.",
+    "description": "Function Library details for RANDOM_BOOKMARK."
+  },
+  "fn_param_random_bookmark_count": {
+    "message": "Count",
+    "description": "Function parameter label for RANDOM_BOOKMARK.count."
+  },
+  "fn_param_bookmark_folder_all": {
+    "message": "All bookmarks",
+    "description": "Bookmark folder picker option for every bookmark."
+  },
+  "fn_param_random_bookmark_hint": {
+    "message": "Opens this many random bookmarks, then switches to the first new tab.",
+    "description": "Hint under the Random Bookmark folder picker."
+  },
+  "fn_random_bookmark_empty": {
+    "message": "No bookmarks to open",
+    "description": "Flash when Random Bookmark finds no website bookmarks."
+  },
+  "fn_random_bookmark_opened_one": {
+    "message": "Opened a random bookmark",
+    "description": "Flash after Random Bookmark opens one tab."
+  },
+  "fn_random_bookmark_opened": {
+    "message": "Opened $1 random bookmarks",
+    "description": "Flash after Random Bookmark opens more than one tab. $1 is the tab count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_random_bookmark_failed": {
+    "message": "Could not open a random bookmark",
+    "description": "Flash when Random Bookmark fails to open tabs."
+  },
+  "fn_summary_random_bookmark_one": {
+    "message": "1 random bookmark",
+    "description": "Short summary for a Random Bookmark instance with count 1."
+  },
+  "fn_summary_random_bookmark_count": {
+    "message": "$1 random bookmarks",
+    "description": "Short summary for a Random Bookmark instance. $1 is the count.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "fn_stock_random_bookmark_label": {
+    "message": "Random Bookmark",
+    "description": "Bundled Random Bookmark instance label."
+  },
+  "fn_stock_random_bookmark_description": {
+    "message": "Open one random bookmark from all bookmarks",
+    "description": "Bundled Random Bookmark instance description."
+  },
   "fn_param_urls": {
     "message": "URLs",
     "description": "Function parameter label for OPEN_URLS.urls."

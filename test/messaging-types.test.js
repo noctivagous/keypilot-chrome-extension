@@ -112,6 +112,22 @@ describe('messaging validate', () => {
       null
     );
     assert.equal(validateRuntimeMessage({ type: MSG.LIST_BOOKMARK_FOLDERS }), null);
+    assert.equal(
+      validateRuntimeMessage({ type: MSG.OPEN_RANDOM_BOOKMARK, folderId: '', count: 1 }),
+      null
+    );
+    assert.equal(
+      validateRuntimeMessage({ type: MSG.OPEN_RANDOM_BOOKMARK, count: 10 }),
+      null
+    );
+    assert.match(
+      validateRuntimeMessage({ type: MSG.OPEN_RANDOM_BOOKMARK, count: 0 }) || '',
+      /count/
+    );
+    assert.match(
+      validateRuntimeMessage({ type: MSG.OPEN_RANDOM_BOOKMARK, count: 31 }) || '',
+      /count/
+    );
   });
 
   it('builds ERROR envelopes', () => {

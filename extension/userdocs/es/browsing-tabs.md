@@ -31,6 +31,12 @@ Muévete entre pestañas y el historial del navegador sin tener que tocar los bo
 
 **Abrir marcadores** es una instancia de acción en el control de pestañas. Elija una carpeta del administrador de marcadores. La tecla abre los primeros 30 marcadores de sitios web de esa carpeta, incluidas las subcarpetas, cada uno en una pestaña en segundo plano después de la pestaña actual.
 
+<h3 id="random-bookmark">Marcador aleatorio</h3>
+
+**Marcador aleatorio** es una instancia de acción en el control de pestañas. Abre marcadores de sitios al azar y pasa a la primera pestaña nueva. La carpeta puede ser Todos los marcadores o una carpeta concreta. Cantidad indica cuántos abrir (predeterminado 1, máximo 30). Las demás pestañas se abren al lado.
+
+Navegación incluye una instancia **Marcador aleatorio** en <kbd>,</kbd> (diestros) y <kbd>C</kbd> (zurdos): un marcador aleatorio de todos los marcadores, y esa pestaña queda activa.
+
 ### Consejos
 
 - Atrás/adelante sigue el historial normal del navegador para la pestaña.
