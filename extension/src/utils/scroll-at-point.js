@@ -230,6 +230,7 @@ function composedParent(node) {
 }
 
 import { deepElementFromPoint as elementFromPointDeep } from './element-from-point.js';
+import { isInteractiveKeyPilotOverlayClass } from '../ui/kp-chrome-shadow.js';
 export { elementFromPointDeep };
 
 /**
@@ -545,24 +546,16 @@ export function findScrollTargetAtPoint(clientX, clientY, sign, ctx = {}) {
       return null;
     }
 
-    // Skip KeyPilot chrome (ids/classes) so we don't scroll our own overlays.
-    try {
-      const id = n.id || '';
-      if (id === 'kpv2-cursor' || id === 'kpv2-frame-hover' || (typeof id === 'string' && id.startsWith('kpv2-'))) {
-        n = composedParent(n);
-        continue;
+    if (isKeyPilotScrollChrome(n)) {
+      const gallery = galleryScrollContent(n);
+      if (gallery) {
+        const galleryCap = getScrollCapacity(gallery, doc);
+        const galleryAxis = pickAxis(galleryCap, gallery, sign);
+        if (galleryAxis) return { el: gallery, axis: galleryAxis };
       }
-      if (n.classList) {
-        let skip = false;
-        n.classList.forEach((c) => {
-          if (typeof c === 'string' && c.startsWith('kpv2-')) skip = true;
-        });
-        if (skip) {
-          n = composedParent(n);
-          continue;
-        }
-      }
-    } catch { /* ignore */ }
+      n = composedParent(n);
+      continue;
+    }
 
     const cap = getScrollCapacity(n, doc);
     if (cap.canY || cap.canX) {
@@ -606,8 +599,33 @@ export function findScrollTargetAtPoint(clientX, clientY, sign, ctx = {}) {
   return null;
 }
 
+/** Scroll pane inside a full-viewport gallery host (open shadow or light DOM). */
+const GALLERY_SCROLL_CONTENT = Object.freeze({
+  'kpv2-reader-overlay': '.kpv2-reader-content',
+  'kpv2-page-media-overlay': '.kpv2-page-media-content',
+  'kpv2-media-lib-overlay': '.kpv2-media-lib-content'
+});
+
+/**
+ * @param {Element} host
+ * @returns {Element|null}
+ */
+function galleryScrollContent(host) {
+  const selector = GALLERY_SCROLL_CONTENT[host?.id];
+  if (!selector) return null;
+  const root = host.shadowRoot || host;
+  try {
+    const found = root.querySelector(selector);
+    return found && found.nodeType === 1 ? found : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * True when the node is KeyPilot chrome that should not be treated as a scroller.
+ * Gallery surfaces (Reader Mode, Page Media, Media Library) are not chrome:
+ * their article/grid panes are the scroll target.
  * @param {Element} n
  * @returns {boolean}
  */
@@ -620,7 +638,10 @@ function isKeyPilotScrollChrome(n) {
     if (n.classList) {
       let skip = false;
       n.classList.forEach((c) => {
-        if (typeof c === 'string' && c.startsWith('kpv2-')) skip = true;
+        if (typeof c !== 'string' || !c.startsWith('kpv2-')) return;
+        // Reader Mode, Page Media, and Media Library scroll inside these classes.
+        if (isInteractiveKeyPilotOverlayClass(c)) return;
+        skip = true;
       });
       if (skip) return true;
     }
@@ -696,6 +717,16 @@ export function findScrollableAtPoint(clientX, clientY, ctx = {}) {
     }
 
     if (isKeyPilotScrollChrome(n)) {
+      const gallery = galleryScrollContent(n);
+      if (gallery) {
+        const galleryCap = getScrollCapacity(gallery, doc);
+        if (
+          (galleryCap.canX || galleryCap.canY) &&
+          !(skipWide && isCarouselLikeOverflowTarget(gallery, galleryCap))
+        ) {
+          return { el: gallery, canX: galleryCap.canX, canY: galleryCap.canY };
+        }
+      }
       n = composedParent(n);
       continue;
     }

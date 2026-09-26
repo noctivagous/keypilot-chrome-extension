@@ -1,6 +1,6 @@
 /**
  * KeyPilot Chrome Extension — esbuild bundle
- * Generated on 2026-09-25T09:10:01.425Z
+ * Generated on 2026-09-26T08:00:43.586Z
  */
 
 (() => {
@@ -3139,6 +3139,556 @@
     return best;
   }
 
+  // themes/chrome-recipes.js
+  var METAL_SPECULAR = "linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.08) 28%, transparent 55%)";
+  function createDarkProColor() {
+    return {
+      bg: "#0f0f10",
+      panel: "#232323",
+      panelEdge: "#3a3a3a",
+      panelEdgeDark: "#111",
+      titleTop: "#4c4c4c",
+      titleMid: "#353535",
+      titleBot: "#252525",
+      btnTop: "#4a4a4a",
+      btnMid: "#343434",
+      btnBot: "#2a2a2a",
+      litTop: "#5a7a9a",
+      litBot: "#3a5570",
+      litEdge: "#2a4a66",
+      accent: "#4a90c8",
+      accent2: "#4a90c8",
+      fg: "#ddd",
+      fgDim: "#aaa",
+      fgMute: "#777",
+      fieldBg: "#141414",
+      fieldEdge: "#0a0a0a",
+      fieldInsetTop: "#333",
+      hover: "rgba(255,255,255,0.06)",
+      selected: "rgba(74,144,200,0.22)",
+      selectedText: "#e8f0f8",
+      focusRing: "inset 0 0 0 1px rgba(74,144,200,0.55)",
+      kbdColor: "#ddd",
+      scrollbarThumb: "#4a4a4a",
+      scrollbarThumbHover: "#5c5c5c",
+      scrollbarTrack: "#141414"
+    };
+  }
+  function createDarkProEffect(c) {
+    return {
+      titlebarBg: `linear-gradient(180deg, ${c.titleTop} 0%, ${c.titleMid} 45%, ${c.titleBot} 100%)`,
+      titlebarBorder: `1px solid ${c.panelEdgeDark}`,
+      titlebarShadow: `0 1px 0 ${c.panelEdge}`,
+      panelBg: c.panel,
+      panelBorder: `1px solid ${c.panelEdgeDark}`,
+      panelShadow: `0 0 0 1px ${c.panelEdge} inset, 0 0 0 1px rgba(190, 190, 190, 0.52), 0 0 10px rgba(255, 255, 255, 0.14), 0 16px 40px rgba(0,0,0,0.55)`,
+      btnBg: `linear-gradient(180deg, ${c.btnTop} 0%, ${c.btnMid} 50%, ${c.btnBot} 100%)`,
+      btnBorder: `1px solid ${c.panelEdgeDark}`,
+      btnLitBg: `linear-gradient(180deg, ${c.litTop} 0%, ${c.litBot} 100%)`,
+      btnLitBorder: `1px solid ${c.litEdge}`,
+      fieldBg: c.fieldBg,
+      fieldBorder: `1px solid ${c.fieldEdge}`,
+      fieldShadow: `inset 0 1px 0 ${c.fieldInsetTop}`,
+      kbdBg: c.fieldBg,
+      kbdBorder: `1px solid ${c.panelEdgeDark}`,
+      kbdShadow: "none",
+      backdropBg: "rgba(0,0,0,0.35)",
+      backdropBlur: "blur(6px)",
+      hatchEdit: "repeating-linear-gradient(-45deg, rgba(180, 200, 220, 0.08) 0px, rgba(180, 200, 220, 0.08) 1px, transparent 1px, transparent 7px)",
+      hatchEditTitlebarBg: "linear-gradient(180deg, #646464 0%, #4a4a4a 45%, #383838 100%)",
+      hatchEditBodyBg: "#1a1c20"
+    };
+  }
+  function createMetalColor() {
+    return {
+      bg: "#6e6e6e",
+      panel: "#838383",
+      panelEdge: "rgba(190,190,190,0.48)",
+      panelEdgeDark: "rgba(42,52,62,0.92)",
+      titleTop: "#b0b0b0",
+      titleMid: "#929292",
+      titleBot: "#787878",
+      btnTop: "#c2c2c2",
+      btnMid: "#9e9e9e",
+      btnBot: "#868686",
+      litTop: "#7aa0c0",
+      litBot: "#4a7090",
+      litEdge: "#3a5a78",
+      accent: "#3a6a94",
+      accent2: "#3a6a94",
+      fg: "#1c1c1c",
+      fgDim: "rgba(28,28,28,0.72)",
+      fgMute: "rgba(28,28,28,0.55)",
+      fieldBg: "#9a9a9a",
+      fieldEdge: "#4a4a4a",
+      fieldInsetTop: "rgba(255,255,255,0.35)",
+      hover: "rgba(255,255,255,0.22)",
+      selected: "rgba(58,106,148,0.28)",
+      selectedText: "#0e1a24",
+      focusRing: "inset 0 0 0 1px rgba(58,106,148,0.55)",
+      kbdColor: "#141414",
+      scrollbarThumb: "#a8a8a8",
+      scrollbarThumbHover: "#b5b5b5",
+      scrollbarTrack: "#747474"
+    };
+  }
+  function createMetalEffect(c) {
+    return {
+      titlebarBg: `${METAL_SPECULAR}, linear-gradient(180deg, ${c.titleTop} 0%, ${c.titleMid} 45%, ${c.titleBot} 100%)`,
+      titlebarBorder: "1px solid #4a4a4a",
+      titlebarShadow: "0 1px 0 rgba(255,255,255,0.35)",
+      panelBg: `${METAL_SPECULAR}, linear-gradient(180deg, #9a9a9a 0%, #838383 48%, #707070 100%)`,
+      panelBorder: "1px solid rgba(42,52,62,0.92)",
+      panelShadow: "0 0 0 1px rgba(255,255,255,0.28) inset, 0 0 0 1px rgba(190,190,190,0.48), 0 0 10px rgba(255,255,255,0.12), 0 16px 40px rgba(0,0,0,0.45)",
+      btnBg: `linear-gradient(180deg, ${c.btnTop} 0%, ${c.btnMid} 50%, ${c.btnBot} 100%)`,
+      btnBorder: "1px solid #4a4a4a",
+      btnLitBg: `linear-gradient(180deg, ${c.litTop} 0%, ${c.litBot} 100%)`,
+      btnLitBorder: `1px solid ${c.litEdge}`,
+      fieldBg: c.fieldBg,
+      fieldBorder: "1px solid #4a4a4a",
+      fieldShadow: "inset 0 1px 0 rgba(255,255,255,0.40)",
+      kbdBg: "linear-gradient(180deg, #e4e4e4 0%, #c8c8c8 45%, #b0b0b0 55%, #9a9a9a 100%)",
+      kbdBorder: "1px solid #3d3d3d",
+      kbdShadow: "0 1px 0 rgba(255,255,255,0.72) inset, 0 -1px 0 rgba(0,0,0,0.28) inset, 0 1px 2px rgba(0,0,0,0.32)",
+      backdropBg: "rgba(40,40,40,0.35)",
+      backdropBlur: "blur(6px)",
+      hatchEdit: "repeating-linear-gradient(-45deg, rgba(24, 24, 24, 0.28) 0px, rgba(24, 24, 24, 0.28) 1px, transparent 1px, transparent 7px)",
+      hatchEditTitlebarBg: `${METAL_SPECULAR}, linear-gradient(180deg, #b8b8b8 0%, #9a9a9a 45%, #808080 100%)`,
+      hatchEditBodyBg: "#8a8a8a"
+    };
+  }
+  function createGxColor() {
+    return {
+      bg: "#0a0a0c",
+      panel: "#16161a",
+      panelEdge: "#2a2a32",
+      panelEdgeDark: "#050506",
+      titleTop: "#2c2c34",
+      titleMid: "#1c1c22",
+      titleBot: "#121216",
+      btnTop: "#3a3a44",
+      btnMid: "#26262e",
+      btnBot: "#1a1a20",
+      litTop: "#00e5ff",
+      litBot: "#0088aa",
+      litEdge: "#006688",
+      accent: "#00e5ff",
+      accent2: "#ff2d95",
+      fg: "#e8e8ef",
+      fgDim: "#9aa0b0",
+      fgMute: "#6a7080",
+      fieldBg: "#0c0c10",
+      fieldEdge: "#000",
+      fieldInsetTop: "#333344",
+      hover: "rgba(0,229,255,0.08)",
+      selected: "rgba(0,229,255,0.18)",
+      selectedText: "#f0ffff",
+      focusRing: "inset 0 0 0 1px rgba(0,229,255,0.55)",
+      kbdColor: "#00e5ff",
+      scrollbarThumb: "#3a3a44",
+      scrollbarThumbHover: "#00e5ff",
+      scrollbarTrack: "#0c0c10"
+    };
+  }
+  function createGxEffect(c) {
+    return {
+      titlebarBg: `linear-gradient(180deg, ${c.titleTop} 0%, ${c.titleMid} 45%, ${c.titleBot} 100%)`,
+      titlebarBorder: `1px solid ${c.panelEdgeDark}`,
+      titlebarShadow: `0 1px 0 ${c.accent}33`,
+      panelBg: `linear-gradient(180deg, #1c1c22 0%, ${c.panel} 48%, #101014 100%)`,
+      panelBorder: `1px solid ${c.panelEdgeDark}`,
+      panelShadow: `0 0 0 1px ${c.panelEdge} inset, 0 0 0 1px rgba(0, 229, 255, 0.22), 0 0 14px rgba(0, 229, 255, 0.12), 0 16px 40px rgba(0,0,0,0.65)`,
+      btnBg: `linear-gradient(180deg, ${c.btnTop} 0%, ${c.btnMid} 50%, ${c.btnBot} 100%)`,
+      btnBorder: `1px solid ${c.panelEdgeDark}`,
+      btnLitBg: `linear-gradient(180deg, ${c.litTop} 0%, ${c.litBot} 100%)`,
+      btnLitBorder: `1px solid ${c.litEdge}`,
+      fieldBg: c.fieldBg,
+      fieldBorder: `1px solid ${c.fieldEdge}`,
+      fieldShadow: `inset 0 1px 0 ${c.fieldInsetTop}`,
+      kbdBg: "rgba(0, 229, 255, 0.08)",
+      kbdBorder: `1px solid ${c.accent}`,
+      kbdShadow: `0 0 0 1px ${c.accent}55, 0 0 8px ${c.accent}44`,
+      backdropBg: "rgba(0,0,0,0.5)",
+      backdropBlur: "blur(8px)",
+      hatchEdit: "repeating-linear-gradient(-45deg, rgba(0, 229, 255, 0.16) 0px, rgba(0, 229, 255, 0.16) 1px, transparent 1px, transparent 7px)",
+      hatchEditTitlebarBg: `linear-gradient(180deg, ${c.titleTop} 0%, ${c.titleMid} 45%, ${c.titleBot} 100%)`,
+      hatchEditBodyBg: "#101014"
+    };
+  }
+
+  // themes/click-defaults.js
+  var NO_CUSTOM = "NO-CUSTOM-CURSORS";
+  var DARK_PRO_CLICK_DEFAULTS = Object.freeze({
+    cursorMode: NO_CUSTOM,
+    clickMode: Object.freeze({
+      cursor: Object.freeze({
+        type: "crosshair",
+        lineWidth: 4,
+        sizePixels: 10,
+        gap: 6
+      }),
+      focusColor: "blue",
+      overlayFillEnabled: false,
+      overlayShadowEnabled: false,
+      rectangleThickness: 3,
+      clickEffect: "flash",
+      keyboardLinkHoverHints: false,
+      paintStrategy: "BC",
+      focusPadding: 2,
+      skipForParent: true
+    })
+  });
+  var GRAY_METAL_CLICK_DEFAULTS = Object.freeze({
+    cursorMode: NO_CUSTOM,
+    clickMode: Object.freeze({
+      cursor: Object.freeze({
+        type: "crosshair",
+        lineWidth: 5,
+        sizePixels: 12,
+        gap: 6
+      }),
+      focusColor: "blue",
+      overlayFillEnabled: false,
+      overlayShadowEnabled: false,
+      rectangleThickness: 4,
+      clickEffect: "flash",
+      keyboardLinkHoverHints: false,
+      paintStrategy: "BC",
+      focusPadding: 2,
+      skipForParent: true
+    })
+  });
+  var GX_ER_CLICK_DEFAULTS = Object.freeze({
+    cursorMode: NO_CUSTOM,
+    clickMode: Object.freeze({
+      cursor: Object.freeze({
+        type: "crosshair",
+        lineWidth: 3,
+        sizePixels: 14,
+        gap: 8
+      }),
+      focusColor: "green",
+      overlayFillEnabled: false,
+      overlayShadowEnabled: true,
+      rectangleThickness: 3,
+      clickEffect: "flash",
+      keyboardLinkHoverHints: false,
+      paintStrategy: "BC",
+      focusPadding: 2,
+      skipForParent: true
+    })
+  });
+
+  // themes/dark-pro/theme.js
+  var color = createDarkProColor();
+  var metalColor = createMetalColor();
+  var DARK_PRO_THEME = Object.freeze({
+    id: "dark-pro",
+    meta: Object.freeze({ name: "Dark Pro" }),
+    type: createProTypeTokens(),
+    titlebar: createTitlebarChromeTokens(),
+    keys: createKeyChromeTokens(),
+    radius: createProRadiusTokens(),
+    color,
+    effect: createDarkProEffect(color),
+    shape: Object.freeze({ cornerMode: "radius", cutSize: "0px" }),
+    icons: Object.freeze({
+      pack: "dark-pro",
+      fallbackPack: "shared",
+      overrides: Object.freeze({}),
+      color: Object.freeze({
+        chrome: color.fg,
+        keycap: "#0c1018",
+        accent: color.accent
+      })
+    }),
+    clickDefaults: DARK_PRO_CLICK_DEFAULTS,
+    surfaces: Object.freeze({
+      onboarding: Object.freeze({
+        color: metalColor,
+        effect: createMetalEffect(metalColor),
+        icons: Object.freeze({
+          color: Object.freeze({
+            chrome: metalColor.fg,
+            keycap: "#1c1c1c",
+            accent: metalColor.accent
+          })
+        })
+      })
+    })
+  });
+
+  // themes/gray-metal-pro/theme.js
+  var color2 = createMetalColor();
+  var GRAY_METAL_PRO_THEME = Object.freeze({
+    id: "gray-metal-pro",
+    meta: Object.freeze({ name: "Gray Metal Pro" }),
+    type: createProTypeTokens({
+      ui: "Helvetica, Arial, sans-serif"
+    }),
+    titlebar: createTitlebarChromeTokens(),
+    keys: createKeyChromeTokens(),
+    radius: createProRadiusTokens({ panel: "3px", btn: "2px" }),
+    color: color2,
+    effect: createMetalEffect(color2),
+    shape: Object.freeze({ cornerMode: "radius", cutSize: "0px" }),
+    icons: Object.freeze({
+      pack: "gray-metal-pro",
+      fallbackPack: "shared",
+      overrides: Object.freeze({}),
+      color: Object.freeze({
+        chrome: color2.fg,
+        keycap: "#1c1c1c",
+        accent: color2.accent
+      })
+    }),
+    clickDefaults: GRAY_METAL_CLICK_DEFAULTS
+  });
+
+  // themes/gx-er/theme.js
+  var color3 = createGxColor();
+  var type = createProTypeTokens({
+    display: "'ROBOTECHGPRegular', 'TitilliumText', Helvetica, Arial, sans-serif",
+    heading: "'Cubellan', 'TitilliumText', Helvetica, Arial, sans-serif",
+    subhead: "'TitilliumText', Helvetica, Arial, sans-serif",
+    body: "'Ezarion', 'Dosis', Helvetica, Arial, sans-serif",
+    ui: "'TitilliumText', Helvetica, Arial, sans-serif",
+    kbd: "'Dosis', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+    mono: "'Dosis', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+    caption: "'Ezarion', Helvetica, Arial, sans-serif"
+  });
+  type.letterSpacing = {
+    display: "0.08em",
+    titlebar: "0.06em",
+    ui: "0.02em"
+  };
+  type.textTransform = {
+    display: "uppercase",
+    titlebar: "uppercase"
+  };
+  var GX_ER_THEME = Object.freeze({
+    id: "gx-er",
+    meta: Object.freeze({ name: "GX-er" }),
+    type,
+    titlebar: createTitlebarChromeTokens({
+      titleWeight: "700",
+      iconDisplay: "inline-flex",
+      iconSize: "12px",
+      kbdTransform: "uppercase",
+      kbdTracking: "0.06em"
+    }),
+    keys: createKeyChromeTokens({
+      shading: "flat",
+      border: "1px solid rgba(0, 229, 255, 0.35)",
+      cornerMode: "cut",
+      cutSize: "4px"
+    }),
+    radius: createProRadiusTokens({
+      panel: "0px",
+      btn: "0px",
+      field: "0px",
+      xs: "0px",
+      sm: "0px"
+    }),
+    color: color3,
+    effect: createGxEffect(color3),
+    shape: Object.freeze({ cornerMode: "cut", cutSize: "8px" }),
+    icons: Object.freeze({
+      pack: "gx-er",
+      fallbackPack: "shared",
+      overrides: Object.freeze({
+        close: "chrome/close.svg",
+        collapse: "chrome/collapse.svg"
+      }),
+      color: Object.freeze({
+        chrome: color3.accent,
+        keycap: "#001018",
+        accent: color3.accent
+      })
+    }),
+    clickDefaults: GX_ER_CLICK_DEFAULTS
+  });
+
+  // themes/icons.js
+  var THEME_ICON_FILES = Object.freeze({
+    close: "chrome/close.svg",
+    collapse: "chrome/collapse.svg",
+    gear: "chrome/gear.svg",
+    keyboard: "chrome/keyboard.svg",
+    window: "chrome/window.svg"
+  });
+  var THEME_ICON_IDS = Object.freeze(Object.keys(THEME_ICON_FILES));
+
+  // themes/index.js
+  var PACKAGES = Object.freeze({
+    "dark-pro": DARK_PRO_THEME,
+    "gray-metal-pro": GRAY_METAL_PRO_THEME,
+    "gx-er": GX_ER_THEME
+  });
+  function getTheme(id, overrides) {
+    const key2 = normalizeThemeId(id);
+    const base = PACKAGES[key2] || PACKAGES[DEFAULT_THEME_ID];
+    return mergeTheme(base, overrides && typeof overrides === "object" ? overrides : {});
+  }
+
+  // src/modules/theme-manager.js
+  var _activeTheme = getTheme(DEFAULT_THEME_ID);
+  var CHROME_THEME_HOST_SEL = [
+    ".kp-chrome-window",
+    "[data-kp-ui-shadow]",
+    "[data-kp-select]",
+    ".kp-select-menu-host",
+    ".kp-select-menu",
+    ".kpv2-settings-host",
+    ".kpv2-docs-host"
+  ].join(", ");
+
+  // src/ui/locale-fonts.js
+  function quoteFamily(name) {
+    return `"${name}"`;
+  }
+  function uiStack(families) {
+    return ["system-ui", "-apple-system", ...families.map(quoteFamily), "sans-serif"].join(", ");
+  }
+  var KP_CJK_UI_STACK_SC = uiStack([
+    "PingFang SC",
+    "Hiragino Sans GB",
+    "Microsoft YaHei",
+    "Noto Sans SC",
+    "Noto Sans CJK SC"
+  ]);
+  var KP_CJK_UI_STACK_TC = uiStack([
+    "PingFang TC",
+    "Hiragino Sans CNS",
+    "Microsoft JhengHei",
+    "Noto Sans TC",
+    "Noto Sans CJK TC"
+  ]);
+  var KP_CJK_UI_STACK_HK = uiStack([
+    "PingFang HK",
+    "PingFang TC",
+    "Hiragino Sans CNS",
+    "Microsoft JhengHei",
+    "Noto Sans HK",
+    "Noto Sans CJK HK",
+    "Noto Sans TC",
+    "Noto Sans CJK TC"
+  ]);
+  var KP_CJK_UI_STACK_JP = uiStack([
+    "Hiragino Sans",
+    "Yu Gothic UI",
+    "Yu Gothic",
+    "Meiryo",
+    "Noto Sans JP",
+    "Noto Sans CJK JP"
+  ]);
+  function isZhHk(tag) {
+    return tag === "zh-hk" || tag.startsWith("zh-hk-") || tag === "zh-mo" || tag.startsWith("zh-mo-") || tag === "zh-hant-hk" || tag.startsWith("zh-hant-hk-") || tag === "zh-hant-mo" || tag.startsWith("zh-hant-mo-");
+  }
+  function isZhTw(tag) {
+    if (isZhHk(tag)) return false;
+    return tag === "zh-tw" || tag.startsWith("zh-tw-") || tag === "zh-hant" || tag.startsWith("zh-hant-");
+  }
+  function isZhHans(tag) {
+    return tag === "zh" || tag === "zh-cn" || tag.startsWith("zh-cn-") || tag === "zh-sg" || tag.startsWith("zh-sg-") || tag === "zh-hans" || tag.startsWith("zh-hans-");
+  }
+  function isJapanese(tag) {
+    return tag === "ja" || tag.startsWith("ja-");
+  }
+  var CJK_FONT_RULES = [
+    {
+      id: "jp",
+      stack: () => KP_CJK_UI_STACK_JP,
+      match: isJapanese,
+      shadow: [
+        ":host(:lang(ja))"
+      ],
+      page: [
+        "html:lang(ja) body"
+      ]
+    },
+    {
+      id: "hk",
+      stack: () => KP_CJK_UI_STACK_HK,
+      match: isZhHk,
+      shadow: [
+        ":host(:lang(zh-HK))",
+        ":host(:lang(zh-MO))",
+        ":host(:lang(zh-Hant-HK))",
+        ":host(:lang(zh-Hant-MO))"
+      ],
+      page: [
+        "html:lang(zh-HK) body",
+        "html:lang(zh-MO) body",
+        "html:lang(zh-Hant-HK) body",
+        "html:lang(zh-Hant-MO) body"
+      ]
+    },
+    {
+      id: "tc",
+      stack: () => KP_CJK_UI_STACK_TC,
+      match: isZhTw,
+      shadow: [
+        ":host(:lang(zh-TW))",
+        ":host(:lang(zh-Hant):not(:lang(zh-Hant-HK)):not(:lang(zh-Hant-MO)))"
+      ],
+      page: [
+        "html:lang(zh-TW) body",
+        "html:lang(zh-Hant):not(:lang(zh-Hant-HK)):not(:lang(zh-Hant-MO)) body"
+      ]
+    },
+    {
+      id: "sc",
+      stack: () => KP_CJK_UI_STACK_SC,
+      match: isZhHans,
+      shadow: [
+        ":host(:lang(zh-CN))",
+        ":host(:lang(zh-SG))",
+        ":host(:lang(zh-Hans))",
+        ':host([lang="zh" i])'
+      ],
+      page: [
+        "html:lang(zh-CN) body",
+        "html:lang(zh-SG) body",
+        "html:lang(zh-Hans) body",
+        'html[lang="zh" i] body'
+      ]
+    }
+  ];
+  function fontFamilyRule(selectors, stack) {
+    return `${selectors.join(",\n")} {
+  font-family: ${stack};
+}`;
+  }
+  var KP_CJK_SHADOW_CSS = CJK_FONT_RULES.map((rule) => fontFamilyRule(rule.shadow, rule.stack())).join("\n");
+
+  // src/ui/kp-chrome-shadow.js
+  function containsComposed(host, node) {
+    if (!host || !node) return false;
+    if (host === node) return true;
+    try {
+      if (host.contains(node)) return true;
+    } catch {
+    }
+    let current = node;
+    let depth = 0;
+    while (current && depth++ < 32) {
+      if (current === host) return true;
+      const parent = current.parentElement;
+      if (parent) {
+        current = parent;
+        continue;
+      }
+      const root = current.getRootNode?.();
+      current = root && typeof ShadowRoot !== "undefined" && root instanceof ShadowRoot ? root.host : null;
+    }
+    return false;
+  }
+  function isInteractiveKeyPilotOverlayClass(className) {
+    const c = String(className || "");
+    return c.startsWith("kpv2-media-lib-") || c.startsWith("kpv2-page-media-") || c.startsWith("kpv2-reader-");
+  }
+
   // src/utils/scroll-at-point.js
   var EDGE_EPS = 1;
   function isInstantScrollBehavior(behavior) {
@@ -3410,23 +3960,15 @@
       if (n.tagName === "IFRAME" || n.tagName === "FRAME") {
         return null;
       }
-      try {
-        const id = n.id || "";
-        if (id === "kpv2-cursor" || id === "kpv2-frame-hover" || typeof id === "string" && id.startsWith("kpv2-")) {
-          n = composedParent(n);
-          continue;
+      if (isKeyPilotScrollChrome(n)) {
+        const gallery = galleryScrollContent(n);
+        if (gallery) {
+          const galleryCap = getScrollCapacity(gallery, doc);
+          const galleryAxis = pickAxis(galleryCap, gallery, sign);
+          if (galleryAxis) return { el: gallery, axis: galleryAxis };
         }
-        if (n.classList) {
-          let skip = false;
-          n.classList.forEach((c) => {
-            if (typeof c === "string" && c.startsWith("kpv2-")) skip = true;
-          });
-          if (skip) {
-            n = composedParent(n);
-            continue;
-          }
-        }
-      } catch {
+        n = composedParent(n);
+        continue;
       }
       const cap = getScrollCapacity(n, doc);
       if (cap.canY || cap.canX) {
@@ -3464,6 +4006,22 @@
     }
     return null;
   }
+  var GALLERY_SCROLL_CONTENT = Object.freeze({
+    "kpv2-reader-overlay": ".kpv2-reader-content",
+    "kpv2-page-media-overlay": ".kpv2-page-media-content",
+    "kpv2-media-lib-overlay": ".kpv2-media-lib-content"
+  });
+  function galleryScrollContent(host) {
+    const selector = GALLERY_SCROLL_CONTENT[host?.id];
+    if (!selector) return null;
+    const root = host.shadowRoot || host;
+    try {
+      const found = root.querySelector(selector);
+      return found && found.nodeType === 1 ? found : null;
+    } catch {
+      return null;
+    }
+  }
   function isKeyPilotScrollChrome(n) {
     try {
       const id = n.id || "";
@@ -3473,7 +4031,9 @@
       if (n.classList) {
         let skip = false;
         n.classList.forEach((c) => {
-          if (typeof c === "string" && c.startsWith("kpv2-")) skip = true;
+          if (typeof c !== "string" || !c.startsWith("kpv2-")) return;
+          if (isInteractiveKeyPilotOverlayClass(c)) return;
+          skip = true;
         });
         if (skip) return true;
       }
@@ -3525,6 +4085,13 @@
         return null;
       }
       if (isKeyPilotScrollChrome(n)) {
+        const gallery = galleryScrollContent(n);
+        if (gallery) {
+          const galleryCap = getScrollCapacity(gallery, doc);
+          if ((galleryCap.canX || galleryCap.canY) && !(skipWide && isCarouselLikeOverflowTarget(gallery, galleryCap))) {
+            return { el: gallery, canX: galleryCap.canX, canY: galleryCap.canY };
+          }
+        }
         n = composedParent(n);
         continue;
       }
@@ -4130,552 +4697,6 @@
     "data-destination",
     "data-kp-url"
   ]);
-
-  // themes/chrome-recipes.js
-  var METAL_SPECULAR = "linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.08) 28%, transparent 55%)";
-  function createDarkProColor() {
-    return {
-      bg: "#0f0f10",
-      panel: "#232323",
-      panelEdge: "#3a3a3a",
-      panelEdgeDark: "#111",
-      titleTop: "#4c4c4c",
-      titleMid: "#353535",
-      titleBot: "#252525",
-      btnTop: "#4a4a4a",
-      btnMid: "#343434",
-      btnBot: "#2a2a2a",
-      litTop: "#5a7a9a",
-      litBot: "#3a5570",
-      litEdge: "#2a4a66",
-      accent: "#4a90c8",
-      accent2: "#4a90c8",
-      fg: "#ddd",
-      fgDim: "#aaa",
-      fgMute: "#777",
-      fieldBg: "#141414",
-      fieldEdge: "#0a0a0a",
-      fieldInsetTop: "#333",
-      hover: "rgba(255,255,255,0.06)",
-      selected: "rgba(74,144,200,0.22)",
-      selectedText: "#e8f0f8",
-      focusRing: "inset 0 0 0 1px rgba(74,144,200,0.55)",
-      kbdColor: "#ddd",
-      scrollbarThumb: "#4a4a4a",
-      scrollbarThumbHover: "#5c5c5c",
-      scrollbarTrack: "#141414"
-    };
-  }
-  function createDarkProEffect(c) {
-    return {
-      titlebarBg: `linear-gradient(180deg, ${c.titleTop} 0%, ${c.titleMid} 45%, ${c.titleBot} 100%)`,
-      titlebarBorder: `1px solid ${c.panelEdgeDark}`,
-      titlebarShadow: `0 1px 0 ${c.panelEdge}`,
-      panelBg: c.panel,
-      panelBorder: `1px solid ${c.panelEdgeDark}`,
-      panelShadow: `0 0 0 1px ${c.panelEdge} inset, 0 0 0 1px rgba(190, 190, 190, 0.52), 0 0 10px rgba(255, 255, 255, 0.14), 0 16px 40px rgba(0,0,0,0.55)`,
-      btnBg: `linear-gradient(180deg, ${c.btnTop} 0%, ${c.btnMid} 50%, ${c.btnBot} 100%)`,
-      btnBorder: `1px solid ${c.panelEdgeDark}`,
-      btnLitBg: `linear-gradient(180deg, ${c.litTop} 0%, ${c.litBot} 100%)`,
-      btnLitBorder: `1px solid ${c.litEdge}`,
-      fieldBg: c.fieldBg,
-      fieldBorder: `1px solid ${c.fieldEdge}`,
-      fieldShadow: `inset 0 1px 0 ${c.fieldInsetTop}`,
-      kbdBg: c.fieldBg,
-      kbdBorder: `1px solid ${c.panelEdgeDark}`,
-      kbdShadow: "none",
-      backdropBg: "rgba(0,0,0,0.35)",
-      backdropBlur: "blur(6px)",
-      hatchEdit: "repeating-linear-gradient(-45deg, rgba(180, 200, 220, 0.08) 0px, rgba(180, 200, 220, 0.08) 1px, transparent 1px, transparent 7px)",
-      hatchEditTitlebarBg: "linear-gradient(180deg, #646464 0%, #4a4a4a 45%, #383838 100%)",
-      hatchEditBodyBg: "#1a1c20"
-    };
-  }
-  function createMetalColor() {
-    return {
-      bg: "#6e6e6e",
-      panel: "#838383",
-      panelEdge: "rgba(190,190,190,0.48)",
-      panelEdgeDark: "rgba(42,52,62,0.92)",
-      titleTop: "#b0b0b0",
-      titleMid: "#929292",
-      titleBot: "#787878",
-      btnTop: "#c2c2c2",
-      btnMid: "#9e9e9e",
-      btnBot: "#868686",
-      litTop: "#7aa0c0",
-      litBot: "#4a7090",
-      litEdge: "#3a5a78",
-      accent: "#3a6a94",
-      accent2: "#3a6a94",
-      fg: "#1c1c1c",
-      fgDim: "rgba(28,28,28,0.72)",
-      fgMute: "rgba(28,28,28,0.55)",
-      fieldBg: "#9a9a9a",
-      fieldEdge: "#4a4a4a",
-      fieldInsetTop: "rgba(255,255,255,0.35)",
-      hover: "rgba(255,255,255,0.22)",
-      selected: "rgba(58,106,148,0.28)",
-      selectedText: "#0e1a24",
-      focusRing: "inset 0 0 0 1px rgba(58,106,148,0.55)",
-      kbdColor: "#141414",
-      scrollbarThumb: "#a8a8a8",
-      scrollbarThumbHover: "#b5b5b5",
-      scrollbarTrack: "#747474"
-    };
-  }
-  function createMetalEffect(c) {
-    return {
-      titlebarBg: `${METAL_SPECULAR}, linear-gradient(180deg, ${c.titleTop} 0%, ${c.titleMid} 45%, ${c.titleBot} 100%)`,
-      titlebarBorder: "1px solid #4a4a4a",
-      titlebarShadow: "0 1px 0 rgba(255,255,255,0.35)",
-      panelBg: `${METAL_SPECULAR}, linear-gradient(180deg, #9a9a9a 0%, #838383 48%, #707070 100%)`,
-      panelBorder: "1px solid rgba(42,52,62,0.92)",
-      panelShadow: "0 0 0 1px rgba(255,255,255,0.28) inset, 0 0 0 1px rgba(190,190,190,0.48), 0 0 10px rgba(255,255,255,0.12), 0 16px 40px rgba(0,0,0,0.45)",
-      btnBg: `linear-gradient(180deg, ${c.btnTop} 0%, ${c.btnMid} 50%, ${c.btnBot} 100%)`,
-      btnBorder: "1px solid #4a4a4a",
-      btnLitBg: `linear-gradient(180deg, ${c.litTop} 0%, ${c.litBot} 100%)`,
-      btnLitBorder: `1px solid ${c.litEdge}`,
-      fieldBg: c.fieldBg,
-      fieldBorder: "1px solid #4a4a4a",
-      fieldShadow: "inset 0 1px 0 rgba(255,255,255,0.40)",
-      kbdBg: "linear-gradient(180deg, #e4e4e4 0%, #c8c8c8 45%, #b0b0b0 55%, #9a9a9a 100%)",
-      kbdBorder: "1px solid #3d3d3d",
-      kbdShadow: "0 1px 0 rgba(255,255,255,0.72) inset, 0 -1px 0 rgba(0,0,0,0.28) inset, 0 1px 2px rgba(0,0,0,0.32)",
-      backdropBg: "rgba(40,40,40,0.35)",
-      backdropBlur: "blur(6px)",
-      hatchEdit: "repeating-linear-gradient(-45deg, rgba(24, 24, 24, 0.28) 0px, rgba(24, 24, 24, 0.28) 1px, transparent 1px, transparent 7px)",
-      hatchEditTitlebarBg: `${METAL_SPECULAR}, linear-gradient(180deg, #b8b8b8 0%, #9a9a9a 45%, #808080 100%)`,
-      hatchEditBodyBg: "#8a8a8a"
-    };
-  }
-  function createGxColor() {
-    return {
-      bg: "#0a0a0c",
-      panel: "#16161a",
-      panelEdge: "#2a2a32",
-      panelEdgeDark: "#050506",
-      titleTop: "#2c2c34",
-      titleMid: "#1c1c22",
-      titleBot: "#121216",
-      btnTop: "#3a3a44",
-      btnMid: "#26262e",
-      btnBot: "#1a1a20",
-      litTop: "#00e5ff",
-      litBot: "#0088aa",
-      litEdge: "#006688",
-      accent: "#00e5ff",
-      accent2: "#ff2d95",
-      fg: "#e8e8ef",
-      fgDim: "#9aa0b0",
-      fgMute: "#6a7080",
-      fieldBg: "#0c0c10",
-      fieldEdge: "#000",
-      fieldInsetTop: "#333344",
-      hover: "rgba(0,229,255,0.08)",
-      selected: "rgba(0,229,255,0.18)",
-      selectedText: "#f0ffff",
-      focusRing: "inset 0 0 0 1px rgba(0,229,255,0.55)",
-      kbdColor: "#00e5ff",
-      scrollbarThumb: "#3a3a44",
-      scrollbarThumbHover: "#00e5ff",
-      scrollbarTrack: "#0c0c10"
-    };
-  }
-  function createGxEffect(c) {
-    return {
-      titlebarBg: `linear-gradient(180deg, ${c.titleTop} 0%, ${c.titleMid} 45%, ${c.titleBot} 100%)`,
-      titlebarBorder: `1px solid ${c.panelEdgeDark}`,
-      titlebarShadow: `0 1px 0 ${c.accent}33`,
-      panelBg: `linear-gradient(180deg, #1c1c22 0%, ${c.panel} 48%, #101014 100%)`,
-      panelBorder: `1px solid ${c.panelEdgeDark}`,
-      panelShadow: `0 0 0 1px ${c.panelEdge} inset, 0 0 0 1px rgba(0, 229, 255, 0.22), 0 0 14px rgba(0, 229, 255, 0.12), 0 16px 40px rgba(0,0,0,0.65)`,
-      btnBg: `linear-gradient(180deg, ${c.btnTop} 0%, ${c.btnMid} 50%, ${c.btnBot} 100%)`,
-      btnBorder: `1px solid ${c.panelEdgeDark}`,
-      btnLitBg: `linear-gradient(180deg, ${c.litTop} 0%, ${c.litBot} 100%)`,
-      btnLitBorder: `1px solid ${c.litEdge}`,
-      fieldBg: c.fieldBg,
-      fieldBorder: `1px solid ${c.fieldEdge}`,
-      fieldShadow: `inset 0 1px 0 ${c.fieldInsetTop}`,
-      kbdBg: "rgba(0, 229, 255, 0.08)",
-      kbdBorder: `1px solid ${c.accent}`,
-      kbdShadow: `0 0 0 1px ${c.accent}55, 0 0 8px ${c.accent}44`,
-      backdropBg: "rgba(0,0,0,0.5)",
-      backdropBlur: "blur(8px)",
-      hatchEdit: "repeating-linear-gradient(-45deg, rgba(0, 229, 255, 0.16) 0px, rgba(0, 229, 255, 0.16) 1px, transparent 1px, transparent 7px)",
-      hatchEditTitlebarBg: `linear-gradient(180deg, ${c.titleTop} 0%, ${c.titleMid} 45%, ${c.titleBot} 100%)`,
-      hatchEditBodyBg: "#101014"
-    };
-  }
-
-  // themes/click-defaults.js
-  var NO_CUSTOM = "NO-CUSTOM-CURSORS";
-  var DARK_PRO_CLICK_DEFAULTS = Object.freeze({
-    cursorMode: NO_CUSTOM,
-    clickMode: Object.freeze({
-      cursor: Object.freeze({
-        type: "crosshair",
-        lineWidth: 4,
-        sizePixels: 10,
-        gap: 6
-      }),
-      focusColor: "blue",
-      overlayFillEnabled: false,
-      overlayShadowEnabled: false,
-      rectangleThickness: 3,
-      clickEffect: "flash",
-      keyboardLinkHoverHints: false,
-      paintStrategy: "BC",
-      focusPadding: 2,
-      skipForParent: true
-    })
-  });
-  var GRAY_METAL_CLICK_DEFAULTS = Object.freeze({
-    cursorMode: NO_CUSTOM,
-    clickMode: Object.freeze({
-      cursor: Object.freeze({
-        type: "crosshair",
-        lineWidth: 5,
-        sizePixels: 12,
-        gap: 6
-      }),
-      focusColor: "blue",
-      overlayFillEnabled: false,
-      overlayShadowEnabled: false,
-      rectangleThickness: 4,
-      clickEffect: "flash",
-      keyboardLinkHoverHints: false,
-      paintStrategy: "BC",
-      focusPadding: 2,
-      skipForParent: true
-    })
-  });
-  var GX_ER_CLICK_DEFAULTS = Object.freeze({
-    cursorMode: NO_CUSTOM,
-    clickMode: Object.freeze({
-      cursor: Object.freeze({
-        type: "crosshair",
-        lineWidth: 3,
-        sizePixels: 14,
-        gap: 8
-      }),
-      focusColor: "green",
-      overlayFillEnabled: false,
-      overlayShadowEnabled: true,
-      rectangleThickness: 3,
-      clickEffect: "flash",
-      keyboardLinkHoverHints: false,
-      paintStrategy: "BC",
-      focusPadding: 2,
-      skipForParent: true
-    })
-  });
-
-  // themes/dark-pro/theme.js
-  var color = createDarkProColor();
-  var metalColor = createMetalColor();
-  var DARK_PRO_THEME = Object.freeze({
-    id: "dark-pro",
-    meta: Object.freeze({ name: "Dark Pro" }),
-    type: createProTypeTokens(),
-    titlebar: createTitlebarChromeTokens(),
-    keys: createKeyChromeTokens(),
-    radius: createProRadiusTokens(),
-    color,
-    effect: createDarkProEffect(color),
-    shape: Object.freeze({ cornerMode: "radius", cutSize: "0px" }),
-    icons: Object.freeze({
-      pack: "dark-pro",
-      fallbackPack: "shared",
-      overrides: Object.freeze({}),
-      color: Object.freeze({
-        chrome: color.fg,
-        keycap: "#0c1018",
-        accent: color.accent
-      })
-    }),
-    clickDefaults: DARK_PRO_CLICK_DEFAULTS,
-    surfaces: Object.freeze({
-      onboarding: Object.freeze({
-        color: metalColor,
-        effect: createMetalEffect(metalColor),
-        icons: Object.freeze({
-          color: Object.freeze({
-            chrome: metalColor.fg,
-            keycap: "#1c1c1c",
-            accent: metalColor.accent
-          })
-        })
-      })
-    })
-  });
-
-  // themes/gray-metal-pro/theme.js
-  var color2 = createMetalColor();
-  var GRAY_METAL_PRO_THEME = Object.freeze({
-    id: "gray-metal-pro",
-    meta: Object.freeze({ name: "Gray Metal Pro" }),
-    type: createProTypeTokens({
-      ui: "Helvetica, Arial, sans-serif"
-    }),
-    titlebar: createTitlebarChromeTokens(),
-    keys: createKeyChromeTokens(),
-    radius: createProRadiusTokens({ panel: "3px", btn: "2px" }),
-    color: color2,
-    effect: createMetalEffect(color2),
-    shape: Object.freeze({ cornerMode: "radius", cutSize: "0px" }),
-    icons: Object.freeze({
-      pack: "gray-metal-pro",
-      fallbackPack: "shared",
-      overrides: Object.freeze({}),
-      color: Object.freeze({
-        chrome: color2.fg,
-        keycap: "#1c1c1c",
-        accent: color2.accent
-      })
-    }),
-    clickDefaults: GRAY_METAL_CLICK_DEFAULTS
-  });
-
-  // themes/gx-er/theme.js
-  var color3 = createGxColor();
-  var type = createProTypeTokens({
-    display: "'ROBOTECHGPRegular', 'TitilliumText', Helvetica, Arial, sans-serif",
-    heading: "'Cubellan', 'TitilliumText', Helvetica, Arial, sans-serif",
-    subhead: "'TitilliumText', Helvetica, Arial, sans-serif",
-    body: "'Ezarion', 'Dosis', Helvetica, Arial, sans-serif",
-    ui: "'TitilliumText', Helvetica, Arial, sans-serif",
-    kbd: "'Dosis', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-    mono: "'Dosis', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-    caption: "'Ezarion', Helvetica, Arial, sans-serif"
-  });
-  type.letterSpacing = {
-    display: "0.08em",
-    titlebar: "0.06em",
-    ui: "0.02em"
-  };
-  type.textTransform = {
-    display: "uppercase",
-    titlebar: "uppercase"
-  };
-  var GX_ER_THEME = Object.freeze({
-    id: "gx-er",
-    meta: Object.freeze({ name: "GX-er" }),
-    type,
-    titlebar: createTitlebarChromeTokens({
-      titleWeight: "700",
-      iconDisplay: "inline-flex",
-      iconSize: "12px",
-      kbdTransform: "uppercase",
-      kbdTracking: "0.06em"
-    }),
-    keys: createKeyChromeTokens({
-      shading: "flat",
-      border: "1px solid rgba(0, 229, 255, 0.35)",
-      cornerMode: "cut",
-      cutSize: "4px"
-    }),
-    radius: createProRadiusTokens({
-      panel: "0px",
-      btn: "0px",
-      field: "0px",
-      xs: "0px",
-      sm: "0px"
-    }),
-    color: color3,
-    effect: createGxEffect(color3),
-    shape: Object.freeze({ cornerMode: "cut", cutSize: "8px" }),
-    icons: Object.freeze({
-      pack: "gx-er",
-      fallbackPack: "shared",
-      overrides: Object.freeze({
-        close: "chrome/close.svg",
-        collapse: "chrome/collapse.svg"
-      }),
-      color: Object.freeze({
-        chrome: color3.accent,
-        keycap: "#001018",
-        accent: color3.accent
-      })
-    }),
-    clickDefaults: GX_ER_CLICK_DEFAULTS
-  });
-
-  // themes/icons.js
-  var THEME_ICON_FILES = Object.freeze({
-    close: "chrome/close.svg",
-    collapse: "chrome/collapse.svg",
-    gear: "chrome/gear.svg",
-    keyboard: "chrome/keyboard.svg",
-    window: "chrome/window.svg"
-  });
-  var THEME_ICON_IDS = Object.freeze(Object.keys(THEME_ICON_FILES));
-
-  // themes/index.js
-  var PACKAGES = Object.freeze({
-    "dark-pro": DARK_PRO_THEME,
-    "gray-metal-pro": GRAY_METAL_PRO_THEME,
-    "gx-er": GX_ER_THEME
-  });
-  function getTheme(id, overrides) {
-    const key2 = normalizeThemeId(id);
-    const base = PACKAGES[key2] || PACKAGES[DEFAULT_THEME_ID];
-    return mergeTheme(base, overrides && typeof overrides === "object" ? overrides : {});
-  }
-
-  // src/modules/theme-manager.js
-  var _activeTheme = getTheme(DEFAULT_THEME_ID);
-  var CHROME_THEME_HOST_SEL = [
-    ".kp-chrome-window",
-    "[data-kp-ui-shadow]",
-    "[data-kp-select]",
-    ".kp-select-menu-host",
-    ".kp-select-menu",
-    ".kpv2-settings-host",
-    ".kpv2-docs-host"
-  ].join(", ");
-
-  // src/ui/locale-fonts.js
-  function quoteFamily(name) {
-    return `"${name}"`;
-  }
-  function uiStack(families) {
-    return ["system-ui", "-apple-system", ...families.map(quoteFamily), "sans-serif"].join(", ");
-  }
-  var KP_CJK_UI_STACK_SC = uiStack([
-    "PingFang SC",
-    "Hiragino Sans GB",
-    "Microsoft YaHei",
-    "Noto Sans SC",
-    "Noto Sans CJK SC"
-  ]);
-  var KP_CJK_UI_STACK_TC = uiStack([
-    "PingFang TC",
-    "Hiragino Sans CNS",
-    "Microsoft JhengHei",
-    "Noto Sans TC",
-    "Noto Sans CJK TC"
-  ]);
-  var KP_CJK_UI_STACK_HK = uiStack([
-    "PingFang HK",
-    "PingFang TC",
-    "Hiragino Sans CNS",
-    "Microsoft JhengHei",
-    "Noto Sans HK",
-    "Noto Sans CJK HK",
-    "Noto Sans TC",
-    "Noto Sans CJK TC"
-  ]);
-  var KP_CJK_UI_STACK_JP = uiStack([
-    "Hiragino Sans",
-    "Yu Gothic UI",
-    "Yu Gothic",
-    "Meiryo",
-    "Noto Sans JP",
-    "Noto Sans CJK JP"
-  ]);
-  function isZhHk(tag) {
-    return tag === "zh-hk" || tag.startsWith("zh-hk-") || tag === "zh-mo" || tag.startsWith("zh-mo-") || tag === "zh-hant-hk" || tag.startsWith("zh-hant-hk-") || tag === "zh-hant-mo" || tag.startsWith("zh-hant-mo-");
-  }
-  function isZhTw(tag) {
-    if (isZhHk(tag)) return false;
-    return tag === "zh-tw" || tag.startsWith("zh-tw-") || tag === "zh-hant" || tag.startsWith("zh-hant-");
-  }
-  function isZhHans(tag) {
-    return tag === "zh" || tag === "zh-cn" || tag.startsWith("zh-cn-") || tag === "zh-sg" || tag.startsWith("zh-sg-") || tag === "zh-hans" || tag.startsWith("zh-hans-");
-  }
-  function isJapanese(tag) {
-    return tag === "ja" || tag.startsWith("ja-");
-  }
-  var CJK_FONT_RULES = [
-    {
-      id: "jp",
-      stack: () => KP_CJK_UI_STACK_JP,
-      match: isJapanese,
-      shadow: [
-        ":host(:lang(ja))"
-      ],
-      page: [
-        "html:lang(ja) body"
-      ]
-    },
-    {
-      id: "hk",
-      stack: () => KP_CJK_UI_STACK_HK,
-      match: isZhHk,
-      shadow: [
-        ":host(:lang(zh-HK))",
-        ":host(:lang(zh-MO))",
-        ":host(:lang(zh-Hant-HK))",
-        ":host(:lang(zh-Hant-MO))"
-      ],
-      page: [
-        "html:lang(zh-HK) body",
-        "html:lang(zh-MO) body",
-        "html:lang(zh-Hant-HK) body",
-        "html:lang(zh-Hant-MO) body"
-      ]
-    },
-    {
-      id: "tc",
-      stack: () => KP_CJK_UI_STACK_TC,
-      match: isZhTw,
-      shadow: [
-        ":host(:lang(zh-TW))",
-        ":host(:lang(zh-Hant):not(:lang(zh-Hant-HK)):not(:lang(zh-Hant-MO)))"
-      ],
-      page: [
-        "html:lang(zh-TW) body",
-        "html:lang(zh-Hant):not(:lang(zh-Hant-HK)):not(:lang(zh-Hant-MO)) body"
-      ]
-    },
-    {
-      id: "sc",
-      stack: () => KP_CJK_UI_STACK_SC,
-      match: isZhHans,
-      shadow: [
-        ":host(:lang(zh-CN))",
-        ":host(:lang(zh-SG))",
-        ":host(:lang(zh-Hans))",
-        ':host([lang="zh" i])'
-      ],
-      page: [
-        "html:lang(zh-CN) body",
-        "html:lang(zh-SG) body",
-        "html:lang(zh-Hans) body",
-        'html[lang="zh" i] body'
-      ]
-    }
-  ];
-  function fontFamilyRule(selectors, stack) {
-    return `${selectors.join(",\n")} {
-  font-family: ${stack};
-}`;
-  }
-  var KP_CJK_SHADOW_CSS = CJK_FONT_RULES.map((rule) => fontFamilyRule(rule.shadow, rule.stack())).join("\n");
-
-  // src/ui/kp-chrome-shadow.js
-  function containsComposed(host, node) {
-    if (!host || !node) return false;
-    if (host === node) return true;
-    try {
-      if (host.contains(node)) return true;
-    } catch {
-    }
-    let current = node;
-    let depth = 0;
-    while (current && depth++ < 32) {
-      if (current === host) return true;
-      const parent = current.parentElement;
-      if (parent) {
-        current = parent;
-        continue;
-      }
-      const root = current.getRootNode?.();
-      current = root && typeof ShadowRoot !== "undefined" && root instanceof ShadowRoot ? root.host : null;
-    }
-    return false;
-  }
 
   // src/utils/synthetic-pointer.js
   function buildMouseEventInit(target, clientX, clientY, buttons = 1) {
